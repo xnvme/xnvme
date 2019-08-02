@@ -1,0 +1,18 @@
+Usage: xnvme feature-set <uri> [<args>]
+
+Execute a Set-Features Command
+
+Where <args> include:
+
+  uri                           ; Device URI e.g. /dev/nvme0n1 or pci://0000:01:00.1
+  --fid 0xNUM                   ; Feature Identifier
+  --feat 0xNUM                  ; Feature e.g. cdw12 content
+  [ --nsid 0xNUM ]              ; Namespace Identifier
+  [ --save ]                    ; Save
+  [ --data-input FILE ]         ; Path to data input-file
+  [ --help ]                    ; Show usage / help
+
+See 'xnvme --help' for other commands
+
+xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 0, patch: 9}
+

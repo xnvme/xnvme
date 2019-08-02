@@ -1,0 +1,12 @@
+Usage: xnvme enum [<args>]
+
+Enumerate devices on the system
+
+Where <args> include:
+
+  [ --help ]                    ; Show usage / help
+
+See 'xnvme --help' for other commands
+
+xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 0, patch: 9}
+

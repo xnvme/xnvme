@@ -1,0 +1,13 @@
+/sys/kernel/iommu_groups/7/devices/0000:01:00.0
+/sys/kernel/iommu_groups/5/devices/0000:00:05.0
+/sys/kernel/iommu_groups/3/devices/0000:00:03.0
+/sys/kernel/iommu_groups/1/devices/0000:00:01.0
+/sys/kernel/iommu_groups/8/devices/0000:03:00.0
+/sys/kernel/iommu_groups/8/devices/0000:02:00.0
+/sys/kernel/iommu_groups/6/devices/0000:00:1f.2
+/sys/kernel/iommu_groups/6/devices/0000:00:1f.0
+/sys/kernel/iommu_groups/6/devices/0000:00:1f.3
+/sys/kernel/iommu_groups/4/devices/0000:00:04.0
+/sys/kernel/iommu_groups/2/devices/0000:00:02.0
+/sys/kernel/iommu_groups/0/devices/0000:00:00.0
+

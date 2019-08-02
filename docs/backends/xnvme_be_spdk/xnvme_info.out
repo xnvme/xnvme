@@ -1,0 +1,36 @@
+0000:03:00.0 (8086 5846): nvme -> vfio-pci
+0000:00:05.0 (1af4 1001): Active mountpoints on /dev/vda, so not binding
+
+
+EAL:   using IOMMU type 1 (Type 1)
+xnvme_dev:
+  xnvme_ident:
+    uri: 'pci://0000:03:00.0/1'
+    type: 'XNVME_IDENT_NS'
+    nst: 'XNVME_SPEC_NSTYPE_NOCHECK'
+    nsid: 0x1
+    be_uri: 'traddr:0000:03:00:0'
+    be_name: 'SPDK'
+    be_id: 0x59da
+  xnvme_cmd_opts:
+    mask: '00000000000000000000000000000001'
+    iomd: 'SYNC'
+    payload_data: 'DRV'
+    payload_meta: 'DRV'
+    ssw: 12
+  xnvme_geo:
+    type: XNVME_GEO_CONVENTIONAL
+    npugrp: 1
+    npunit: 1
+    nzone: 1
+    nsect: 2097152
+    nbytes: 4096
+    nbytes_oob: 0
+    tbytes: 8589934592
+    tmbytes: 8192
+    mdts_nbytes: 67108864
+
+EAL: No available hugepages reported in hugepages-1048576kB
+nvme_qpair.c: 118:nvme_admin_qpair_print_command: *NOTICE*: GET LOG PAGE (02) sqid:0 cid:95 nsid:ffffffff cdw10:007f00c0 cdw11:00000000
+nvme_qpair.c: 306:spdk_nvme_qpair_print_completion: *NOTICE*: INVALID FIELD (00/02) sqid:0 cid:95 cdw0:0 sqhd:000e p:1 m:0 dnr:1
+nvme_ctrlr.c: 469:nvme_ctrlr_set_intel_support_log_pages: *WARNING*: Intel log pages not supported on Intel drive!

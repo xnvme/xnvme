@@ -1,0 +1,9 @@
+# MGMT: zslba: 0x0000000000000000, action: 0x4, str: ZND_SEND_RESET
+# Completed without errors
+
+
+# Write zslba: 0x0000000000000000 with nlb: 0
+# Allocating dbuf
+# Filling dbuf with random data
+# Completed without errors
+

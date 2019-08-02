@@ -1,0 +1,15 @@
+Usage: lblk idfy <uri> [<args>]
+
+Identify the namespace for the given URI
+
+Where <args> include:
+
+  uri                           ; Device URI e.g. /dev/nvme0n1 or pci://0000:01:00.1
+  [ --nsid 0xNUM ]              ; Namespace Identifier
+  [ --data-output FILE ]        ; Path to data output-file
+  [ --help ]                    ; Show usage / help
+
+See 'lblk --help' for other commands
+
+Logical Block Namespace Utility -- ver: {major: 0, minor: 0, patch: 9}
+

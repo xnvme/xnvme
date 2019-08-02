@@ -1,0 +1,27 @@
+xnvme_dev:
+  xnvme_ident:
+    uri: '/dev/nvme0n2'
+    type: 'XNVME_IDENT_NS'
+    nst: 'XNVME_SPEC_NSTYPE_ZONED'
+    nsid: 0x2
+    be_uri: '/dev/nvme0n2'
+    be_name: 'XNVME_BE_LIOU'
+    be_id: 0x8
+  xnvme_cmd_opts:
+    mask: '00000000000000000000000000000001'
+    iomd: 'SYNC'
+    payload_data: 'DRV'
+    payload_meta: 'DRV'
+    ssw: 12
+  xnvme_geo:
+    type: XNVME_GEO_ZONED
+    npugrp: 1
+    npunit: 1
+    nzone: 512
+    nsect: 4096
+    nbytes: 4096
+    nbytes_oob: 0
+    tbytes: 8589934592
+    tmbytes: 8192
+    mdts_nbytes: 67108864
+

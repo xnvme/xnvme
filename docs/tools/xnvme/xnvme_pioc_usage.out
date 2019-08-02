@@ -1,0 +1,20 @@
+Usage: xnvme pioc <uri> [<args>]
+
+Pass a used-defined IO Command through
+
+Where <args> include:
+
+  uri                           ; Device URI e.g. /dev/nvme0n1 or pci://0000:01:00.1
+  --cmd-input FILE              ; Path to command input-file
+  [ --data-input FILE ]         ; Path to data input-file
+  [ --data-output FILE ]        ; Path to data output-file
+  [ --data-nbytes NUM ]         ; Data size in bytes
+  [ --meta-input FILE ]         ; Path to meta input-file
+  [ --meta-output FILE ]        ; Path to meta output-file
+  [ --meta-nbytes NUM ]         ; Meta size in bytes
+  [ --help ]                    ; Show usage / help
+
+See 'xnvme --help' for other commands
+
+xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 0, patch: 9}
+

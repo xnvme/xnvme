@@ -1,0 +1,3 @@
+0000:03:00.0 (8086 5846): Already using the vfio-pci driver
+0000:00:05.0 (1af4 1001): Active mountpoints on /dev/vda, so not binding
+

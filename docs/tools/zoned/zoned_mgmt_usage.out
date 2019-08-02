@@ -1,0 +1,17 @@
+Usage: zoned mgmt <uri> [<args>]
+
+Zone Management Send Command with custom action
+
+Where <args> include:
+
+  uri                           ; Device URI e.g. /dev/nvme0n1 or pci://0000:01:00.1
+  --slba 0xNUM                  ; Start Logical Block Address
+  --action 0xNUM                ; Command action
+  [ --nsid 0xNUM ]              ; Namespace Identifier
+  [ --all ]                     ; Select / Affect all
+  [ --help ]                    ; Show usage / help
+
+See 'zoned --help' for other commands
+
+Zoned Namespace Utility -- ver: {major: 0, minor: 0, patch: 9}
+

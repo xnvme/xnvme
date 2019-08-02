@@ -1,0 +1,14 @@
+# xnvme_enumerate()
+Starting SPDK v19.07.1 / DPDK 19.05.0 initialization...
+[ DPDK EAL parameters: spdk --no-shconf -c 0x1 --log-level=lib.eal:6 --log-level=lib.cryptodev:5 --log-level=user1:6 --base-virtaddr=0x200000000000 --match-allocations --file-prefix=spdk_pid2154 ]
+xnvme_enumeration:
+  capacity: 96
+  nentries: 4
+  entries:
+  - {uri: '/dev/nvme0n1', type: 'XNVME_IDENT_NS', nst: 'XNVME_SPEC_NSTYPE_LBLK', nsid: 0x1, be_uri: '/dev/nvme0n1', be_name: 'XNVME_BE_LIOC', be_id: 0x4}
+  - {uri: '/dev/nvme0n2', type: 'XNVME_IDENT_NS', nst: 'XNVME_SPEC_NSTYPE_ZONED', nsid: 0x2, be_uri: '/dev/nvme0n2', be_name: 'XNVME_BE_LIOC', be_id: 0x4}
+  - {uri: '/dev/nvme0n1', type: 'XNVME_IDENT_NS', nst: 'XNVME_SPEC_NSTYPE_LBLK', nsid: 0x1, be_uri: '/dev/nvme0n1', be_name: 'XNVME_BE_LIOC', be_id: 0x4}
+  - {uri: '/dev/nvme0n2', type: 'XNVME_IDENT_NS', nst: 'XNVME_SPEC_NSTYPE_ZONED', nsid: 0x2, be_uri: '/dev/nvme0n2', be_name: 'XNVME_BE_LIOC', be_id: 0x4}
+
+EAL: FATAL: Cannot get hugepage information.
+Failed to initialize DPDK

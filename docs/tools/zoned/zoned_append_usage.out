@@ -1,0 +1,18 @@
+Usage: zoned append <uri> [<args>]
+
+Execute an Append Command
+
+Where <args> include:
+
+  uri                           ; Device URI e.g. /dev/nvme0n1 or pci://0000:01:00.1
+  --slba 0xNUM                  ; Start Logical Block Address
+  --nlb NUM                     ; Number of LBAs (NOTE: zero-based value)
+  [ --nsid 0xNUM ]              ; Namespace Identifier
+  [ --data-input FILE ]         ; Path to data input-file
+  [ --meta-input FILE ]         ; Path to meta input-file
+  [ --help ]                    ; Show usage / help
+
+See 'zoned --help' for other commands
+
+Zoned Namespace Utility -- ver: {major: 0, minor: 0, patch: 9}
+

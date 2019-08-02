@@ -1,0 +1,3 @@
+0000:03:00.0 (8086 5846): vfio-pci -> nvme
+0000:00:05.0 (1af4 1001): Already using the virtio-pci driver
+
