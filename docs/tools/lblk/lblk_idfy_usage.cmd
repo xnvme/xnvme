@@ -1,0 +1,1 @@
+lblk idfy --help

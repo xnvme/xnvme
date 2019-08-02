@@ -1,0 +1,19 @@
+Usage: xnvme idfy <uri> [<args>]
+
+Execute an User-defined Identify Command
+
+Where <args> include:
+
+  uri                           ; Device URI e.g. /dev/nvme0n1 or pci://0000:01:00.1
+  --cns 0xNUM                   ; CNS?
+  [ --cntid 0xNUM ]             ; Controller Identifier
+  [ --nsid 0xNUM ]              ; Namespace Identifier
+  [ --setid 0xNUM ]             ; NVM Set Identifier
+  [ --uuid 0xNUM ]              ; Universally Unique Identifier
+  [ --data-output FILE ]        ; Path to data output-file
+  [ --help ]                    ; Show usage / help
+
+See 'xnvme --help' for other commands
+
+xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 0, patch: 16}
+

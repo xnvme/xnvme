@@ -1,0 +1,13 @@
+Usage: lblk enum [<args>]
+
+Enumerate Logical Block Namespaces on the system
+
+Where <args> include:
+
+  [ --flags 0xNUM ]             ; Command flags
+  [ --help ]                    ; Show usage / help
+
+See 'lblk --help' for other commands
+
+Logical Block Namespace Utility -- ver: {major: 0, minor: 0, patch: 16}
+

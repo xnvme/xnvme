@@ -1,0 +1,51 @@
+.. _sec-c-apis-{{ ns }}:
+
+{{ ns }}
+########
+
+.. _sec-c-apis-{{ ns }}-enum:
+
+Enums
+=====
+
+{% for symb in api.enum %}
+.. _sec-c-apis-{{ ns }}-enum-{{ symb }}:
+
+{{ symb }}
+{% for _ in range(symb|length) %}-{% endfor %}
+
+.. doxygenenum:: {{ symb }}
+
+{% endfor %}
+
+.. _sec-c-apis-{{ ns }}-struct:
+
+Structs
+=======
+
+{% for symb in api.struct %}
+.. _sec-c-apis-{{ ns }}-struct-{{ symb }}:
+
+{{ symb }}
+{% for _ in range(symb|length) %}-{% endfor %}
+
+.. doxygenstruct:: {{ symb }}
+   :members:
+   :undoc-members:
+
+{% endfor %}
+
+.. _sec-c-apis-{{ ns }}-func:
+
+Functions
+=========
+
+{% for symb in api.func %}
+.. _sec-c-apis-{{ ns }}-func-{{ symb }}:
+
+{{ symb }}
+{% for _ in range(symb|length) %}-{% endfor %}
+
+.. doxygenfunction:: {{ symb }}
+
+{% endfor %}

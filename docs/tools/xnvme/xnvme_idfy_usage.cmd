@@ -1,0 +1,1 @@
+xnvme idfy --help
