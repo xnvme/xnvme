@@ -1,0 +1,14 @@
+diff --git i/lib/librte_eal/common/eal_common_options.c w/lib/librte_eal/common/eal_common_options.c
+index 0c91024c4..f4125f502 100644
+--- i/lib/librte_eal/common/eal_common_options.c
++++ w/lib/librte_eal/common/eal_common_options.c
+@@ -278,6 +278,9 @@ eal_plugindir_init(const char *path)
+ int
+ eal_plugins_init(void)
+ {
++	// NOTE: disabling support for plugins to avoid linker issues with 'dl'
++	return 0;
++
+ 	struct shared_driver *solib = NULL;
+ 	struct stat sb;
+ 
