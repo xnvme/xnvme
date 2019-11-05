@@ -1,0 +1,31 @@
+diff --git i/dpdk w/dpdk
+--- i/dpdk
++++ w/dpdk
+@@ -1 +1 @@
+-Subproject commit 6ed84b28a03c2ad01aa6e4c2130f2aaf961512ba
++Subproject commit 6ed84b28a03c2ad01aa6e4c2130f2aaf961512ba-dirty
+diff --git i/include/spdk/nvme_spec.h w/include/spdk/nvme_spec.h
+index f06931abf..2596e1ccb 100644
+--- i/include/spdk/nvme_spec.h
++++ w/include/spdk/nvme_spec.h
+@@ -121,6 +121,7 @@ SPDK_STATIC_ASSERT(sizeof(union spdk_nvme_cap_register) == 8, "Incorrect size");
+  */
+ enum spdk_nvme_cc_css {
+ 	SPDK_NVME_CC_CSS_NVM		= 0x0,	/**< NVM command set */
++	SPDK_NVME_CC_CSS_ALL		= 0x6	/**< All supported I/O C.sets */
+ };
+ 
+ #define SPDK_NVME_CAP_CSS_NVM (1u << SPDK_NVME_CC_CSS_NVM) /**< NVM command set supported */
+diff --git i/lib/nvme/nvme_ctrlr_cmd.c w/lib/nvme/nvme_ctrlr_cmd.c
+index 1f6c9ff2d..225d95667 100644
+--- i/lib/nvme/nvme_ctrlr_cmd.c
++++ w/lib/nvme/nvme_ctrlr_cmd.c
+@@ -144,6 +144,8 @@ nvme_ctrlr_cmd_identify(struct spdk_nvme_ctrlr *ctrlr, uint8_t cns, uint16_t cnt
+ 	cmd->cdw10 = cns | ((uint32_t)cntid << 16);
+ 	cmd->nsid = nsid;
+ 
++	cmd->cdw11 = 0xFF << 24;		// Skip namespace-type checking
++
+ 	return nvme_ctrlr_submit_admin_request(ctrlr, req);
+ }
+ 
