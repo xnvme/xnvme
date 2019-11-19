@@ -227,6 +227,24 @@ znd_cmd_mgmt_send(struct xnvme_dev *dev, uint32_t nsid, uint64_t zslba,
 }
 
 int
+znd_cmd_zrwa_commit(struct xnvme_dev *dev, uint32_t nsid,
+		    struct znd_commit_range *crange, uint8_t nrange, int opts,
+		    struct xnvme_req *req)
+{
+	struct znd_cmd cmd = { 0 };
+
+	const uint32_t crange_nbytes = nrange * sizeof(crange->elba[0]);
+
+	cmd.common.opcode = ZND_CMD_OPC_MGMT_SEND;
+	cmd.common.nsid = nsid;
+	cmd.mgmt_send.zsa = ZND_SEND_COMMIT;
+	cmd.mgmt_send.nrange = nrange;
+
+	return xnvme_cmd_pass(dev, &cmd.base, crange, crange_nbytes, NULL, 0,
+			      opts, req);
+}
+
+int
 znd_cmd_mgmt_recv(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba,
 		  enum znd_recv_action action, enum znd_recv_action_sf sf,
 		  uint8_t partial, void *dbuf, uint32_t dbuf_nbytes,
@@ -300,6 +318,8 @@ znd_send_action_sf_str(enum znd_send_action_sf sf)
 	switch (sf) {
 	case ZND_SEND_SF_SALL:
 		return "ZND_SEND_SF_SALL";
+	case ZND_SEND_SF_ZRWA:
+		return "ZND_SEND_SF_ZRWA";
 	}
 
 	return "ZND_SEND_SF_ENOSYS";
@@ -321,6 +341,8 @@ znd_send_action_str(enum znd_send_action action)
 		return "ZND_SEND_OFFLINE";
 	case ZND_SEND_DESCRIPTOR:
 		return "ZND_SEND_DESCRIPTOR";
+	case ZND_SEND_COMMIT:
+		return "ZND_SEND_COMMIT";
 	}
 
 	return "ZND_SEND_ENOSYS";

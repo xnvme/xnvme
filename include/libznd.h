@@ -16,6 +16,19 @@ extern "C" {
 
 #include <libxnvme.h>
 
+#define ZND_ZRWA_COMMIT_NRANGE_MAX 32
+
+/**
+ * Encapsulation of the largest datastructure to use with Zoned MGMT Send Commit
+ *
+ * @struct znd_commit_range
+ */
+struct znd_commit_range {
+	uint64_t elba[ZND_ZRWA_COMMIT_NRANGE_MAX];
+};
+XNVME_STATIC_ASSERT(sizeof(struct znd_commit_range) == 256, "Incorrect size")
+
+
 /**
  * Zoned Command Set opcodes
  *
@@ -49,12 +62,13 @@ struct znd_cmd_mgmt_send {
 	/* cdw 10-11 */
 	uint64_t slba;			///< Start LBA
 
-	uint32_t cdw12;
+	/* cdw 12 */
+	uint32_t nrange;		///< Number of ranges <= 32
 
 	/* cdw 13 */
 	uint32_t zsa		: 8;	///< Zone Send Action
-	uint32_t zsasf		: 1;	///< Select All
-	uint32_t rsvd		: 23;
+	uint32_t zsasf		: 2;	///< Select All / ZRWA
+	uint32_t rsvd		: 22;
 
 	uint32_t cdw14_15[2];		///< Command dword 14 to 15
 };
@@ -161,6 +175,7 @@ znd_status_code_str(enum znd_status_code sc);
  */
 enum znd_send_action_sf {
 	ZND_SEND_SF_SALL	= 0x1,		///< ZND_SEND_SF_SALL
+	ZND_SEND_SF_ZRWA	= 0x1 << 1,	///< ZND_SEND_SF_ZRWA
 };
 
 /**
@@ -189,6 +204,7 @@ enum znd_send_action {
 	ZND_SEND_RESET		= 0x4,	///< ZND_SEND_RESET
 	ZND_SEND_OFFLINE	= 0x5,	///< ZND_SEND_OFFLINE
 	ZND_SEND_DESCRIPTOR	= 0x10,	///< ZND_SEND_DESCRIPTOR
+	ZND_SEND_COMMIT		= 0x11,	///< ZND_SEND_COMMIT
 };
 
 /**
@@ -399,13 +415,17 @@ struct znd_idfy_ns {
 
 	uint32_t nar;		///< Number of Active Resources
 	uint32_t nor;		///< Number of Open Resources
+	uint32_t mzrwar;	///< Max. Number of ZRWA Resources
 
-	uint8_t rsvd281[8];
+	uint8_t rsvd281[4];
 
 	uint32_t zal;		///< Seconds before controller is allowed
 	uint32_t rrl;		///< Reset Recommended Limit
 
-	uint8_t rsvd296[3480];
+	uint32_t zrwas;
+	uint32_t zrwacg;	///< Zone RWA Commit Granularity
+
+	uint8_t rsvd296[3472];
 
 	struct znd_idfy_zonef zonef[4];
 	uint8_t vs[256];
@@ -636,6 +656,25 @@ int
 znd_cmd_mgmt_send(struct xnvme_dev *dev, uint32_t nsid, uint64_t zslba,
 		  enum znd_send_action action, enum znd_send_action_sf sf,
 		  void *dbuf, int opts, struct xnvme_req *ret);
+
+/**
+ * Submit, and optionally wait for completion of, a Zone RWA Commit
+ *
+ * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param nsid Namespace Identifier
+ * @param crange Ranges of ELBAs to commit, see ::znd_commit_range
+ * @param nrange Number of ELBAs in the given crange
+ * @param opts command-options, see ::xnvme_cmd_opts
+ * @param ret Pointer to structure for async. context and NVMe completion
+ *
+ * @return On success, 0 is returned. On error, -1 is returned, `errno` set to
+ * indicate the error and when CMD_MODE_SYNC then `ret` is filled with
+ * completion entry.
+ */
+int
+znd_cmd_zrwa_commit(struct xnvme_dev *dev, uint32_t nsid,
+		    struct znd_commit_range *crange, uint8_t nrange, int opts,
+		    struct xnvme_req *ret);
 
 /**
  * Submit, and optionally wait for completion of, a Zone Append
