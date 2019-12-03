@@ -29,6 +29,15 @@ SYSTEM::linux:/
   Repos: https://github.com/spdk/spdk
   Website: https://www.linuxfoundation.org/
 
+REPOS/third-party/liburing
+  Summary: For the xNVMe backend for Linux, then this git subodule is provided
+  and tagged with the liburing version which xNVMe has been tested.
+
+  License: LGPL
+
+  Repos: https://git.kernel.dk/liburing
+  Website: https://git.kernel.dk/cgit/liburing/
+
 REPOS/include/bsd/sys/queue.h
   Summary: within the SGL code, queues / lists are needed. An implement of
   queues are used from FreeBSD. Specifically, "sys/queue.h". NOTE: this is
@@ -58,7 +67,6 @@ REPOS/scripts/xnvme-driver.sh
 
   Repos: https://github.com/spdk/spdk
   Website: https://spdk.io/
-
 
 TODO
 ====

@@ -1,3 +1,6 @@
 [submodule "third-party/spdk"]
 	path = third-party/spdk
 	url = https://github.com/spdk/spdk.git
+[submodule "third-party/liburing"]
+	path = third-party/liburing
+	url = https://git.kernel.dk/liburing
