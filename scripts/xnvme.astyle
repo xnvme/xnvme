@@ -1,0 +1,60 @@
+#
+# File to use with astyle
+#
+
+# Kernighan & Ritchie, with some changes...
+style=kr
+attach-closing-while
+
+add-braces
+# Add braces to one-line conditional statements
+#
+# if (isFoo)
+#     isFoo = false;
+#
+# becomes:
+#
+# if (isFoo) {
+#    isFoo = false;
+# }
+
+# Break return type, on def. and decl.
+#
+# void Foo(bool isFoo)
+#
+# becomes:
+#
+# void
+# Foo(bool isFoo)
+#
+break-return-type
+break-return-type-decl
+
+# Indentation
+indent=force-tab=8 # Use tabs for indentation, spaces for minor alignment
+min-conditional-indent=0
+indent-col1-comments
+# For preprocessors
+#indent-preproc-define
+
+# Padding
+unpad-paren
+pad-oper
+pad-header
+
+# Pointers
+align-pointer=name
+
+# Lines: less than 100 characters, end with LF, and break after logical
+#
+# break-after-logical, looks like this:
+# if (foo && \\
+#     bar)
+#
+max-code-length=99
+break-after-logical
+lineend=linux
+
+# General options
+suffix=none
+formatted
