@@ -247,6 +247,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_lbaf) == 4, "Incorrect size")
  */
 enum xnvme_spec_csi {
 	XNVME_SPEC_CSI_LBLK	= 0x0,	///< XNVME_SPEC_CSI_LBLK
+	XNVME_SPEC_CSI_ZONED	= 0x2,	///< XNVME_SPEC_CSI_ZONED
 
 	XNVME_SPEC_CSI_NOCHECK	= 0xFF,	///< XNVME_SPEC_CSI_NOCHECK
 };
@@ -929,7 +930,9 @@ struct xnvme_spec_cs_vector {
 	union {
 		struct {
 			uint64_t nvm : 1;
-			uint64_t rsvd : 63;
+			uint64_t rsvd1 : 1;
+			uint64_t zns : 1;
+			uint64_t rsvd : 61;
 		};
 		uint64_t val;
 	};

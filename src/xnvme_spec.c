@@ -444,7 +444,8 @@ xnvme_spec_idfy_cs_fpr(FILE *stream, const struct xnvme_spec_idfy_cs *idfy,
 		wrtn += fprintf(stream, "  - { ");
 		wrtn += fprintf(stream, "iocsci: %d, ", i);
 		wrtn += fprintf(stream, "val: 0x%lx, ", iocscv->val);
-		wrtn += fprintf(stream, "nvm: %d", iocscv->nvm);
+		wrtn += fprintf(stream, "nvm: %d,", iocscv->nvm);
+		wrtn += fprintf(stream, "zns: %d", iocscv->zns);
 		wrtn += fprintf(stream, " }");
 
 		count++;
@@ -597,6 +598,8 @@ xnvme_spec_csi_str(enum xnvme_spec_csi csi)
 	switch (csi) {
 	case XNVME_SPEC_CSI_LBLK:
 		return "XNVME_SPEC_CSI_LBLK";
+	case XNVME_SPEC_CSI_ZONED:
+		return "XNVME_SPEC_CSI_ZONED";
 
 	case XNVME_SPEC_CSI_NOCHECK:
 		return "XNVME_SPEC_CSI_NOCHECK";

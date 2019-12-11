@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <errno.h>
 #include <libxnvme.h>
+#include <libznd.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 
@@ -508,6 +509,44 @@ xnvme_be_spdk_dev_idfy(struct xnvme_dev *dev)
 	//
 	// Determine command-set / namespace type by probing
 	//
+
+	// Attempt to identify Zoned Namespace
+	{
+		struct znd_idfy_ns *zns = (void *)idfy_ns;
+
+		memset(idfy_ctrlr, 0, sizeof(*idfy_ctrlr));
+		memset(&req, 0, sizeof(req));
+		err = xnvme_cmd_idfy_ctrlr_csi(dev, XNVME_SPEC_CSI_ZONED,
+					       idfy_ctrlr, &req);
+		if (err || xnvme_req_cpl_status(&req)) {
+			XNVME_DEBUG("INFO: !id-ctrlr-zns");
+			goto not_zns;
+		}
+
+		memset(idfy_ns, 0, sizeof(*idfy_ns));
+		memset(&req, 0, sizeof(req));
+		err = xnvme_cmd_idfy_ns_csi(dev, dev->nsid,
+					    XNVME_SPEC_CSI_ZONED, idfy_ns,
+					    &req);
+		if (err || xnvme_req_cpl_status(&req)) {
+			XNVME_DEBUG("INFO: !id-ns-zns");
+			goto not_zns;
+		}
+		
+		if (!zns->lbafe[0].zsze) {
+			goto not_zns;
+		}
+
+		memcpy(&dev->idcss.ctrlr, idfy_ctrlr, sizeof(*idfy_ctrlr));
+		memcpy(&dev->idcss.ns, idfy_ns, sizeof(*idfy_ns));
+		dev->csi = XNVME_SPEC_CSI_ZONED;
+
+		XNVME_DEBUG("INFO: looks like csi(ZNS)");
+		goto exit;
+
+not_zns:
+		XNVME_DEBUG("INFO: failed idfy with csi(ZNS)");
+	}
 
 	// Attempt to identify LBLK Namespace
 	memset(idfy_ns, 0, sizeof(*idfy_ns));

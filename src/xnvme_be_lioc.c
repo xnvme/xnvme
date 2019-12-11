@@ -26,6 +26,7 @@
 #include <paths.h>
 #include <xnvme_be_lioc.h>
 #include <xnvme_dev.h>
+#include <libznd.h>
 
 /**
  * Encapsulation of NVMe command representation as sent via the Linux IOCTLs
@@ -358,7 +359,7 @@ int
 xnvme_be_lioc_dev_idfy(struct xnvme_dev *dev)
 {
 	struct xnvme_be_lioc_state *state = (void *)dev->be.state;
-	struct xnvme_spec_idfy *idfy = NULL;
+	struct xnvme_spec_idfy *idfy_ctrlr = NULL, *idfy_ns = NULL;
 	struct xnvme_req req = { 0 };
 	int err;
 
@@ -370,13 +371,7 @@ xnvme_be_lioc_dev_idfy(struct xnvme_dev *dev)
 	}
 
 	dev->dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
-
-	idfy = xnvme_buf_alloc(dev, sizeof(*idfy), NULL);
-	if (!idfy) {
-		XNVME_DEBUG("FAILED: failed allocating buffer");
-		return -errno;
-	}
-
+	dev->csi = XNVME_SPEC_CSI_NOCHECK;
 	err = ioctl(state->fd, NVME_IOCTL_ID);
 	if (err < 1) {
 		XNVME_DEBUG("FAILED: retrieving nsid, got: %x", err);
@@ -385,47 +380,98 @@ xnvme_be_lioc_dev_idfy(struct xnvme_dev *dev)
 	}
 	dev->nsid = err;
 
-	// Retrieve and store idfy-ctrl
-	memset(idfy, 0, sizeof(*idfy));
+	// Allocate buffers for idfy
+	idfy_ctrlr = xnvme_buf_alloc(dev, sizeof(*idfy_ctrlr), NULL);
+	if (!idfy_ctrlr) {
+		XNVME_DEBUG("FAILED: xnvme_buf_alloc()");
+		err = -errno;
+		goto exit;
+	}
+	idfy_ns = xnvme_buf_alloc(dev, sizeof(*idfy_ns), NULL);
+	if (!idfy_ns) {
+		XNVME_DEBUG("FAILED: xnvme_buf_alloc()");
+		err = -errno;
+		goto exit;
+	}
+
+	// Retrieve and store ctrl and ns
+	memset(idfy_ctrlr, 0, sizeof(*idfy_ctrlr));
 	memset(&req, 0, sizeof(req));
-	err = xnvme_cmd_idfy_ctrlr(dev, idfy, &req);
+	err = xnvme_cmd_idfy_ctrlr(dev, idfy_ctrlr, &req);
 	if (err || xnvme_req_cpl_status(&req)) {
 		XNVME_DEBUG("FAILED: identify controller");
 		err = err ? err : -EIO;
 		goto exit;
 	}
-	memcpy(&dev->id.ctrlr, idfy, sizeof(*idfy));
-
-	// Retrieve and store idfy-ns
-	memset(idfy, 0, sizeof(*idfy));
+	memset(idfy_ns, 0, sizeof(*idfy_ns));
 	memset(&req, 0, sizeof(req));
-	err = xnvme_cmd_idfy_ns(dev, dev->nsid, idfy, &req);
+	err = xnvme_cmd_idfy_ns(dev, dev->nsid, idfy_ns, &req);
 	if (err || xnvme_req_cpl_status(&req)) {
 		XNVME_DEBUG("FAILED: identify namespace, err: %d", err);
 		goto exit;
 	}
-	memcpy(&dev->id.ns, idfy, sizeof(*idfy));
+	memcpy(&dev->id.ctrlr, idfy_ctrlr, sizeof(*idfy_ctrlr));
+	memcpy(&dev->id.ns, idfy_ns, sizeof(*idfy_ns));
 
 	//
-	// Detemine command-set / namespace type by probing
+	// Determine command-set / namespace type by probing
 	//
+
+	// Attempt to identify Zoned Namespace
+	{
+		struct znd_idfy_ns *zns = (void *)idfy_ns;
+
+		memset(idfy_ctrlr, 0, sizeof(*idfy_ctrlr));
+		memset(&req, 0, sizeof(req));
+		err = xnvme_cmd_idfy_ctrlr_csi(dev, XNVME_SPEC_CSI_ZONED,
+					       idfy_ctrlr, &req);
+		if (err || xnvme_req_cpl_status(&req)) {
+			XNVME_DEBUG("INFO: !id-ctrlr-zns");
+			goto not_zns;
+		}
+
+		memset(idfy_ns, 0, sizeof(*idfy_ns));
+		memset(&req, 0, sizeof(req));
+		err = xnvme_cmd_idfy_ns_csi(dev, dev->nsid,
+					    XNVME_SPEC_CSI_ZONED, idfy_ns,
+					    &req);
+		if (err || xnvme_req_cpl_status(&req)) {
+			XNVME_DEBUG("INFO: !id-ns-zns");
+			goto not_zns;
+		}
+
+		if (!zns->lbafe[0].zsze) {
+			goto not_zns;
+		}
+
+		memcpy(&dev->idcss.ctrlr, idfy_ctrlr, sizeof(*idfy_ctrlr));
+		memcpy(&dev->idcss.ns, idfy_ns, sizeof(*idfy_ns));
+		dev->csi = XNVME_SPEC_CSI_ZONED;
+
+		XNVME_DEBUG("INFO: looks like csi(ZNS)");
+		goto exit;
+
+not_zns:
+		XNVME_DEBUG("INFO: failed idfy with csi(ZNS)");
+	}
 
 	// Attempt to identify LBLK Namespace
-	memset(idfy, 0, sizeof(*idfy));
+	memset(idfy_ns, 0, sizeof(*idfy_ns));
 	memset(&req, 0, sizeof(req));
-	err = xnvme_cmd_idfy_ns_csi(dev, dev->nsid, XNVME_SPEC_CSI_LBLK, idfy, &req);
+	err = xnvme_cmd_idfy_ns_csi(dev, dev->nsid, XNVME_SPEC_CSI_LBLK, idfy_ns, &req);
 	if (!(err || xnvme_req_cpl_status(&req))) {
-		XNVME_DEBUG("INFO: NS/CS looks like NVM");
-		memcpy(&dev->idcss.ns, idfy, sizeof(*idfy));
-		dev->csi = XNVME_SPEC_CSI_LBLK;
+		XNVME_DEBUG("INFO: NS/CS does not look like NVM");
+		XNVME_DEBUG("INFO: failed determining Command Set");
 		goto exit;
 	}
-	XNVME_DEBUG("INFO: NS/CS does not look like NVM");
 
-	XNVME_DEBUG("INFO: failed determining Command Set");
+	XNVME_DEBUG("INFO: NS/CS looks like NVM");
+	dev->csi = XNVME_SPEC_CSI_LBLK;
+	memcpy(&dev->idcss.ns, idfy_ns, sizeof(*idfy_ns));
 
 exit:
-	xnvme_buf_free(dev, idfy);
+	xnvme_buf_free(dev, idfy_ctrlr);
+	xnvme_buf_free(dev, idfy_ns);
 
 	return err;
 }

@@ -6,6 +6,7 @@
 #include <paths.h>
 #include <errno.h>
 #include <libxnvme.h>
+#include <libznd.h>
 #include <xnvme_be.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_registry.c>
@@ -239,6 +240,48 @@ xnvme_be_attr_list_pr(const struct xnvme_be_attr_list *list, int opts)
 }
 
 static inline int
+_zoned_geometry(struct xnvme_dev *dev)
+{
+	struct xnvme_spec_idfy_ns *nvm = (void *)xnvme_dev_get_ns(dev);
+	struct xnvme_spec_lbaf *lbaf = &nvm->lbaf[nvm->flbas.format];
+	struct znd_idfy_ns *zns = (void *)xnvme_dev_get_ns_css(dev);
+	struct znd_idfy_lbafe *lbafe = &zns->lbafe[nvm->flbas.format];
+	struct xnvme_geo *geo = &dev->geo;
+	uint64_t nzones;
+	int err;
+
+	if (!zns->lbafe[0].zsze) {
+		XNVME_DEBUG("FAILED: !zns.lbafe[0].zsze");
+		return -EINVAL;
+	}
+
+	err = znd_stat_dev(dev, ZND_RECV_SF_ALL, &nzones);
+	if (err) {
+		XNVME_DEBUG("FAILED: znd_cmd_mgmt_recv()");
+		return err ? err : -EIO;
+	}
+
+	geo->type = XNVME_GEO_ZONED;
+
+	geo->npugrp = 1;
+	geo->npunit = 1;
+	geo->nzone = nzones;
+	geo->nsect = lbafe->zsze;
+
+	geo->nbytes = 2 << (lbaf->ds - 1);
+	geo->nbytes_oob = lbaf->ms;
+
+	geo->lba_nbytes = geo->nbytes;
+	geo->lba_extended = nvm->flbas.extended && lbaf->ms;
+	if (geo->lba_extended) {
+		geo->lba_nbytes += geo->nbytes_oob;
+	}
+
+	return 0;
+}
+
+// TODO: select LBAF correctly, instead of the first
+static inline int
 _conventional_geometry(struct xnvme_dev *dev)
 {
 	const struct xnvme_spec_idfy_ns *nvm = (void *)xnvme_dev_get_ns(dev);
@@ -336,6 +379,13 @@ xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 
 	case XNVME_DEV_TYPE_NVME_NAMESPACE:
 		switch (dev->csi) {
+		case XNVME_SPEC_CSI_ZONED:
+			if (_zoned_geometry(dev)) {
+				XNVME_DEBUG("FAILED: _zoned_geometry");
+				return -EINVAL;
+			}
+			break;
+
 		case XNVME_SPEC_CSI_NOCHECK:
 		case XNVME_SPEC_CSI_LBLK:
 			if (_conventional_geometry(dev)) {
