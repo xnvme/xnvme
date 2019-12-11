@@ -1,0 +1,201 @@
+#!/usr/bin/env bash
+
+set -e
+
+trap 'echo -e "\n\nConfiguration failed\n\n" >&2' ERR
+
+# Default configuration values
+declare -A CONFIG
+
+# Installation prefix
+CONFIG[PREFIX]="/usr/local"
+
+# Build with debug logging and symbols. debug logging consists of an
+# error-message prefixed with "XNVME_DEBUG: " printed to stderr on all functions
+# returning errors
+
+# Turn off for performance testing and normal usage
+CONFIG[DEBUG]=OFF
+
+# Build adhoc Debian packages
+CONFIG[DEBS]=OFF
+
+# Build tests, these are executables named "xnvme_examples_*"
+CONFIG[EXAMPLES]=ON
+
+# Build tests, these are executables named "xnvme_test_*"
+CONFIG[TESTS]=ON
+
+# Build TOOLS command-line interface; executables named "xnvme" and "zoned"
+CONFIG[TOOLS]=ON
+
+case "${OSTYPE,,}" in
+	*linux* )
+		CONFIG[DEBS]=ON
+		;;
+
+	*freebsd* )
+		CONFIG[DEBS]=OFF
+		;;
+esac
+
+function check_dir() {
+	arg="$1"
+	dir="${arg#*=}"
+	if [ ! -d "$dir" ]; then
+		echo "$arg: directory not found"
+		exit 1
+	fi
+}
+
+function usage()
+{
+	echo "'configure' configures XNVME to compile on supported platforms."
+	echo ""
+	echo "Usage: ./configure [OPTION] ..."
+	echo ""
+	echo "Defaults for the options are specified in brackets."
+	echo ""
+	echo "General:"
+	echo " -h, --help                Display this help and exit"
+	echo ""
+	echo " --prefix=path             Configure installation prefix (default: /usr/local)"
+	echo ""
+	echo " --enable-debug            Configure for debug builds"
+	echo " --enable-debs             Enable the build of Debian Packages"
+	echo " --disable-examples        Disable building of examples"
+	echo " --disable-tests           Disable building of tests"
+	echo " --disable-tools           Disable building of cli-tools"
+	echo ""
+	echo "Environment variables:"
+	echo ""
+	echo "CC                         C compiler"
+	echo "CFLAGS                     C compiler flags"
+	echo "LD                         Linker"
+	echo "LDFLAGS                    Linker flags"
+	echo "DESTDIR                    Destination for 'make install'"
+	echo ""
+
+	echo "Default configuration on current system:"
+
+	local jazz=""
+	for key in "${!CONFIG[@]}"; do
+		jazz="$jazz\n  $key: ${CONFIG[$key]}"
+	done
+
+	echo -e $jazz | sort
+}
+
+for i in "$@"; do
+	case "$i" in
+		-h|--help)
+			usage
+			exit 0
+			;;
+
+		--prefix=*)
+			CONFIG[PREFIX]="${i#*=}"
+			;;
+
+		--build=*)
+			;;
+		--includedir=*)
+			;;
+		--mandir=*)
+			;;
+		--infodir=*)
+			;;
+		--sysconfdir=*)
+			;;
+		--localstatedir=*)
+			;;
+		--disable-silent-rules)
+			;;
+		--libdir=*)
+			;;
+		--libexecdir=*)
+			;;
+		--disable-maintainer-mode)
+			;;
+		--disable-dependency-tracking)
+			;;
+		--runstatedir=*)
+			;;
+
+		--enable-debug)
+			CONFIG[DEBUG]=ON
+			;;
+		--disable-debug)
+			CONFIG[DEBUG]=OFF
+			;;
+
+		--enable-debs)
+			CONFIG[DEBS]=ON
+			;;
+		--disable-debs)
+			CONFIG[DEBS]=OFF
+			;;
+
+		--enable-examples)
+			CONFIG[TESTS]=ON
+			;;
+		--disable-examples)
+			CONFIG[TESTS]=OFF
+			;;
+
+		--enable-tests)
+			CONFIG[TESTS]=ON
+			;;
+		--disable-tests)
+			CONFIG[TESTS]=OFF
+			;;
+
+		--enable-tools)
+			CONFIG[TOOLS]=ON
+			;;
+		--disable-tools)
+			CONFIG[TOOLS]=OFF
+			;;
+
+		--)
+			break
+			;;
+		*)
+			echo "Unrecognized option $i"
+			usage
+			exit 1
+	esac
+done
+
+cmake --version || (echo "\n** Please install 'cmake' **\n" && exit 1)
+
+CMAKE_OPTS="$CMAKE_OPTS -DEXAMPLES=${CONFIG[EXAMPLES]}"
+CMAKE_OPTS="$CMAKE_OPTS -DTESTS=${CONFIG[TESTS]}"
+CMAKE_OPTS="$CMAKE_OPTS -DTOOLS=${CONFIG[TOOLS]}"
+
+BUILD_DIR="build"
+BUILD_TYPE="debug"
+
+if [[ "${CONFIG[DEBUG]}" == "OFF" ]]; then
+	BUILD_TYPE="Release"
+fi
+
+echo "CMake Options: '$CMAKE_OPTS'"
+
+mkdir -p $BUILD_DIR
+cd $BUILD_DIR
+cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+	-DCMAKE_INSTALL_PREFIX:PATH=${CONFIG[PREFIX]} \
+	$CMAKE_OPTS \
+	-G "Unix Makefiles" ../
+
+if [[ "${CONFIG[DEBS]}" == "ON" ]]; then
+	touch build_deb
+fi
+
+echo ""
+echo "---=={[ Configured ]}==---"
+echo ""
+echo "Type 'make' to build."
+
+exit 0
