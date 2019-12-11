@@ -1,0 +1,46 @@
+# xnvme_tests_ident completion                           -*- shell-script -*-
+#
+# Bash completion script for the `xnvme_tests_ident` CLI
+#
+# Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
+# SPDX-License-Identifier: Apache-2.0
+
+_xnvme_tests_ident_completions()
+{
+    local cur=${COMP_WORDS[COMP_CWORD]}
+    local sub=""
+    local opts=""
+
+    COMPREPLY=()
+
+    # Complete sub-commands
+    if [[ $COMP_CWORD < 2 ]]; then
+        COMPREPLY+=( $( compgen -W 'ident_from_uri --help' -- $cur ) )
+        return 0
+    fi
+
+    # Complete sub-command arguments
+
+    sub=${COMP_WORDS[1]}
+
+    if [[ "$sub" != "enum" ]]; then
+        opts+="/dev/nvme* "
+    fi
+
+    case "$sub" in
+    
+    "ident_from_uri")
+        opts+="--help"
+        ;;
+
+    esac
+
+    COMPREPLY+=( $( compgen -W "$opts" -- $cur ) )
+
+    return 0
+}
+
+#
+complete -o nosort -F _xnvme_tests_ident_completions xnvme_tests_ident
+
+# ex: filetype=sh

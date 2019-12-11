@@ -1,0 +1,54 @@
+# zoned_io_async completion                           -*- shell-script -*-
+#
+# Bash completion script for the `zoned_io_async` CLI
+#
+# Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
+# SPDX-License-Identifier: Apache-2.0
+
+_zoned_io_async_completions()
+{
+    local cur=${COMP_WORDS[COMP_CWORD]}
+    local sub=""
+    local opts=""
+
+    COMPREPLY=()
+
+    # Complete sub-commands
+    if [[ $COMP_CWORD < 2 ]]; then
+        COMPREPLY+=( $( compgen -W 'read write append --help' -- $cur ) )
+        return 0
+    fi
+
+    # Complete sub-command arguments
+
+    sub=${COMP_WORDS[1]}
+
+    if [[ "$sub" != "enum" ]]; then
+        opts+="/dev/nvme* "
+    fi
+
+    case "$sub" in
+    
+    "read")
+        opts+="--qdepth --lba --nlb --seed --data-output --help"
+        ;;
+
+    "write")
+        opts+="--qdepth --lba --nlb --seed --data-input --help"
+        ;;
+
+    "append")
+        opts+="--qdepth --lba --nlb --seed --data-input --help"
+        ;;
+
+    esac
+
+    COMPREPLY+=( $( compgen -W "$opts" -- $cur ) )
+
+    return 0
+}
+
+#
+complete -o nosort -F _zoned_io_async_completions zoned_io_async
+
+# ex: filetype=sh
