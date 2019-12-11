@@ -1,0 +1,289 @@
+#!/usr/bin/env bash
+
+set -e
+
+trap 'echo -e "\n\nConfiguration failed\n\n" >&2' ERR
+
+function usage()
+{
+	echo "'configure' configures XNVME to compile on supported platforms."
+	echo ""
+	echo "Usage: ./configure [OPTION] ..."
+	echo ""
+	echo "Defaults for the options are specified in brackets."
+	echo ""
+	echo "General:"
+	echo " -h, --help                Display this help and exit"
+	echo ""
+	echo " --prefix=path             Configure installation prefix (default: /usr/local)"
+	echo ""
+	echo " --enable-debug            Configure for debug builds"
+	echo " --enable-debs             Enable the build of Debian Packages"
+	echo " --disable-tools           Disable building of cli-tools"
+	echo " --disable-tests           Disable building of tests"
+	echo " --disable-examples        Disable building of examples"
+	echo ""
+	echo "Specifying backends to build into the library"
+	echo " --enable-be-spdk          Enable the SPDK backend"
+	echo " --enable-be-fioc          Enable the FreeBSD/IOCTL backend"
+	echo " --enable-be-lioc          Enable the Linux/IOCTL backend"
+	echo " --enable-be-liou          Enable the Linux/io_uring backend"
+	echo ""
+	echo "Specifying Dependencies:"
+	echo "--liburing-include-path    Path to DIR with liburing headers"
+	echo "--liburing-library-path    Path to DIR with liburing libraries"
+	echo ""
+	echo "--spdk-include-path    Path to DIR with SPDK headers"
+	echo "--spdk-library-path    Path to DIR with SPDK libraries"
+	echo ""
+	echo "--dpdk-include-path    Path to DIR with DPDK headers"
+	echo "--dpdk-library-path    Path to DIR with DPDK libraries"
+	echo ""
+	echo "Environment variables:"
+	echo ""
+	echo "CC                         C compiler"
+	echo "CFLAGS                     C compiler flags"
+	echo "LD                         Linker"
+	echo "LDFLAGS                    Linker flags"
+	echo "DESTDIR                    Destination for 'make install'"
+	echo ""
+}
+
+# Default configuration values
+declare -A CONFIG
+
+# Installation prefix
+CONFIG[PREFIX]="/usr/local"
+
+# Build with debug logging and symbols. debug logging consists of an
+# error-message prefixed with "XNVME_DEBUG: " printed to stderr on all functions
+# returning errors
+
+# Turn off for performance testing and normal usage
+CONFIG[DEBUG]=OFF
+
+# Build adhoc Debian packages
+CONFIG[DEBS]=OFF
+
+# Enable the Linux/IOCTL backend
+CONFIG[BE_LIOC]=OFF
+
+# Enable the Linux/iouring backend
+CONFIG[BE_LIOU]=OFF
+
+# Enable the FreeBSD/IOCTL backend
+CONFIG[BE_FIOC]=OFF
+
+# Enable the SPDK backend
+CONFIG[BE_SPDK]=OFF
+
+# Directory containing liburing headers
+CONFIG[LIBURING_INCLUDE_PATH]="${PWD}/third-party/liburing/src/include"
+
+# Directory containing liburing libraries
+CONFIG[LIBURING_LIBRARY_PATH]="${PWD}/third-party/liburing/src"
+
+# Directory that contains the desired SPDK headers
+CONFIG[SPDK_INCLUDE_PATH]="${PWD}/third-party/spdk/include"
+
+# Directory that contains the desired SPDK libraries
+CONFIG[SPDK_LIBRARY_PATH]="${PWD}/third-party/spdk/build/lib"
+
+# Directory that contains the desired DPDK headers
+CONFIG[DPDK_INCLUDE_PATH]="${PWD}/third-party/spdk/dpdk/build/include"
+
+# Directory that contains the desired DPDK libraries
+CONFIG[DPDK_LIBRARY_PATH]="${PWD}/third-party/spdk/dpdk/build/lib"
+
+# Build tests, these are executables named "xnvme_test_*"
+CONFIG[TESTS]=ON
+
+# Build tests, these are executables named "xnvme_examples_*"
+CONFIG[EXAMPLES]=ON
+
+# Build TOOLS command-line interface; executables named "xnvme" and "zoned"
+CONFIG[TOOLS]=ON
+
+function check_dir() {
+	arg="$1"
+	dir="${arg#*=}"
+	if [ ! -d "$dir" ]; then
+		echo "$arg: directory not found"
+		exit 1
+	fi
+}
+
+for i in "$@"; do
+	case "$i" in
+		-h|--help)
+			usage
+			exit 0
+			;;
+
+		--prefix=*)
+			CONFIG[PREFIX]="${i#*=}"
+			;;
+
+		--build=*)
+			;;
+		--includedir=*)
+			;;
+		--mandir=*)
+			;;
+		--infodir=*)
+			;;
+		--sysconfdir=*)
+			;;
+		--localstatedir=*)
+			;;
+		--disable-silent-rules)
+			;;
+		--libdir=*)
+			;;
+		--libexecdir=*)
+			;;
+		--disable-maintainer-mode)
+			;;
+		--disable-dependency-tracking)
+			;;
+		--runstatedir=*)
+			;;
+
+		--enable-debs)
+			CONFIG[DEBS]=ON
+			;;
+		--disable-debs)
+			CONFIG[DEBS]=OFF
+			;;
+
+		--enable-debug)
+			CONFIG[DEBUG]=ON
+			;;
+		--disable-debug)
+			CONFIG[DEBUG]=OFF
+			;;
+
+		--enable-tools)
+			CONFIG[TOOLS]=ON
+			;;
+		--disable-tools)
+			CONFIG[TOOLS]=OFF
+			;;
+
+		--enable-examples)
+			CONFIG[TESTS]=ON
+			;;
+		--disable-examples)
+			CONFIG[TESTS]=OFF
+			;;
+
+		--enable-tests)
+			CONFIG[TESTS]=ON
+			;;
+		--disable-tests)
+			CONFIG[TESTS]=OFF
+			;;
+
+		--enable-be-spdk)
+			CONFIG[BE_SPDK]=ON
+			;;
+		--disable-be-spdk)
+			CONFIG[BE_SPDK]=OFF
+			;;
+		--enable-be-lioc)
+			CONFIG[BE_LIOC]=ON
+			;;
+		--disable-be-lioc)
+			CONFIG[BE_LIOC]=OFF
+			;;
+		--enable-be-liou)
+			CONFIG[BE_LIOU]=ON
+			;;
+		--disable-be-liou)
+			CONFIG[BE_LIOU]=OFF
+			;;
+		--enable-be-fioc)
+			CONFIG[BE_FIOC]=ON
+			;;
+		--disable-be-fioc)
+			CONFIG[BE_FIOC]=OFF
+			;;
+
+		--liburing-include-path=*)
+			check_dir "$i"
+			CONFIG[LIBURING_INCLUDE_PATH]=$(readlink -f ${i#*=})
+			;;
+		--liburing-library-path=*)
+			check_dir "$i"
+			CONFIG[LIBURING_LIBRARY_PATH]=$(readlink -f ${i#*=})
+			;;
+
+		--spdk-include-path=*)
+			check_dir "$i"
+			CONFIG[SPDK_INCLUDE_PATH]=$(readlink -f ${i#*=})
+			;;
+		--spdk-library-path=*)
+			check_dir "$i"
+			CONFIG[SPDK_LIBRARY_PATH]=$(readlink -f ${i#*=})
+			;;
+		--dpdk-include-path=*)
+			check_dir "$i"
+			CONFIG[DPDK_INCLUDE_PATH]=$(readlink -f ${i#*=})
+			;;
+		--dpdk-library-path=*)
+			check_dir "$i"
+			CONFIG[DPDK_LIBRARY_PATH]=$(readlink -f ${i#*=})
+			;;
+
+		--)
+			break
+			;;
+		*)
+			echo "Unrecognized option $i"
+			usage
+			exit 1
+	esac
+done
+
+cmake --version || (echo "\n** Please install 'cmake' **\n" && exit 1)
+
+CMAKE_OPTS="$CMAKE_OPTS -DEXAMPLES=${CONFIG[EXAMPLES]}"
+CMAKE_OPTS="$CMAKE_OPTS -DTESTS=${CONFIG[TESTS]}"
+CMAKE_OPTS="$CMAKE_OPTS -DTOOLS=${CONFIG[TOOLS]}"
+CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_LIOC_ENABLED=${CONFIG[BE_LIOC]}"
+CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_LIOU_ENABLED=${CONFIG[BE_LIOU]}"
+CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_FIOC_ENABLED=${CONFIG[BE_FIOC]}"
+CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_SPDK_ENABLED=${CONFIG[BE_SPDK]}"
+CMAKE_OPTS="$CMAKE_OPTS -DLIBURING_INCLUDE_PATH=${CONFIG[LIBURING_INCLUDE_PATH]}"
+CMAKE_OPTS="$CMAKE_OPTS -DLIBURING_LIBRARY_PATH=${CONFIG[LIBURING_LIBRARY_PATH]}"
+CMAKE_OPTS="$CMAKE_OPTS -DSPDK_INCLUDE_PATH=${CONFIG[SPDK_INCLUDE_PATH]}"
+CMAKE_OPTS="$CMAKE_OPTS -DSPDK_LIBRARY_PATH=${CONFIG[SPDK_LIBRARY_PATH]}"
+CMAKE_OPTS="$CMAKE_OPTS -DDPDK_INCLUDE_PATH=${CONFIG[DPDK_INCLUDE_PATH]}"
+CMAKE_OPTS="$CMAKE_OPTS -DDPDK_LIBRARY_PATH=${CONFIG[DPDK_LIBRARY_PATH]}"
+
+BUILD_DIR="build"
+BUILD_TYPE="debug"
+
+if [[ "${CONFIG[DEBUG]}" == "OFF" ]]; then
+	BUILD_TYPE="Release"
+fi
+
+echo "CMake Options: '$CMAKE_OPTS'"
+
+mkdir -p $BUILD_DIR
+cd $BUILD_DIR
+cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+	-DCMAKE_INSTALL_PREFIX:PATH=${CONFIG[PREFIX]} \
+	$CMAKE_OPTS \
+	-G "Unix Makefiles" ../
+
+if [[ "${CONFIG[DEBS]}" == "ON" ]]; then
+	touch build_deb
+fi
+
+echo ""
+echo "---=={[ Configured ]}==---"
+echo ""
+echo "Type 'make' to build."
+
+exit 0
