@@ -1,0 +1,15 @@
+hello
+*.o
+*.o[ls]
+*.orig
+*.pyc
+*.rej
+*~
+.cache
+.idea
+/*.patch
+build
+docs/build
+cscope.out
+tags
+cmake-build-debug/
