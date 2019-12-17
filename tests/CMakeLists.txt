@@ -11,10 +11,11 @@ include_directories("${PROJECT_SOURCE_DIR}/include")
 message(STATUS "TESTS-CMAKE_C_FLAGS(${CMAKE_C_FLAGS})")
 
 set(SOURCE_FILES
+	${CMAKE_CURRENT_SOURCE_DIR}/async_intf.c
+	${CMAKE_CURRENT_SOURCE_DIR}/ident.c
+	${CMAKE_CURRENT_SOURCE_DIR}/lblk.c
 	${CMAKE_CURRENT_SOURCE_DIR}/znd_explicit_open.c
 	${CMAKE_CURRENT_SOURCE_DIR}/znd_zrwa.c
-	${CMAKE_CURRENT_SOURCE_DIR}/lblk.c
-	${CMAKE_CURRENT_SOURCE_DIR}/async_intf.c
 )
 
 #
