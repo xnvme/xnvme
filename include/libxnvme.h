@@ -527,6 +527,11 @@ struct xnvme_req;
  */
 typedef void (*xnvme_async_cb)(struct xnvme_req *req, void *opaque);
 
+struct pseudovec {
+	void  *iov_base;    /* Starting address */
+	size_t iov_len;     /* Number of bytes to transfer */
+};
+
 /**
  * IO ASYNC command context per IO, setup this struct inside xnvme_req per call
  * to the xnvme_cmd IO functions and set the CMD option XNVME_CMD_ASYNC.
@@ -540,6 +545,8 @@ struct xnvme_async_cmd_ctx {
 	struct xnvme_async_ctx *ctx;	///< from xnvme_async_init
 	xnvme_async_cb cb;		///< User provided callback function
 	void *cb_arg;			///< User provided callback arguments
+
+	struct pseudovec iov;
 };
 
 /**
