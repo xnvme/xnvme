@@ -359,7 +359,7 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 
 	{XNVMEC_OPT_ZF,		XNVMEC_OPT_VTYPE_HEX,	"zf",		"ZOne Format"},
 	{XNVMEC_OPT_SES,	XNVMEC_OPT_VTYPE_HEX,	"ses",		"Ses?"},
-	{XNVMEC_OPT_SEL,	XNVMEC_OPT_VTYPE_HEX,	"sel",		"Select?"},
+	{XNVMEC_OPT_SEL,	XNVMEC_OPT_VTYPE_HEX,	"sel",		"current=0x0, default=0x1, saved=0x2, supported=0x3"},
 	{XNVMEC_OPT_MSET,	XNVMEC_OPT_VTYPE_HEX,	"mset",		"Mset?"},
 	{XNVMEC_OPT_AUSE,	XNVMEC_OPT_VTYPE_HEX,	"ause",		"AUSE?"},
 	{XNVMEC_OPT_OVRPAT,	XNVMEC_OPT_VTYPE_HEX,	"ovrpat",	"Overwrite Pattern"},
