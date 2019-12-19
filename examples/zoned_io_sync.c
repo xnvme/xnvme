@@ -69,6 +69,7 @@ sub_sync_read(struct xnvmec *cli)
 	xnvmec_pinfo("Clearing it ...");
 	xnvmec_buf_clear(buf, buf_nbytes);
 
+	xnvmec_pinfo("uri: '%s'", cli->args.uri);
 	xnvmec_pinfo("Read zlba: 0x%016x, nlb: %u, QD(1)", zlba, nlb);
 	xnvmec_pinfo("nsect: %zu, nbytes: %zu", nsect, nsect * geo->nbytes);
 	xnvmec_timer_start(cli);
@@ -159,6 +160,7 @@ sub_sync_write(struct xnvmec *cli)
 		xnvmec_buf_fill(buf, buf_nbytes);
 	}
 
+	xnvmec_pinfo("uri: '%s'", cli->args.uri);
 	xnvmec_pinfo("Writing zlba: 0x%016x, nlb: %u, QD(1)", zlba, nlb);
 	xnvmec_pinfo("nsect: %zu, nbytes: %zu", nsect, nsect * geo->nbytes);
 	xnvmec_timer_start(cli);
@@ -240,6 +242,7 @@ sub_sync_append(struct xnvmec *cli)
 		xnvmec_buf_fill(buf, buf_nbytes);
 	}
 
+	xnvmec_pinfo("uri: '%s'", cli->args.uri);
 	xnvmec_pinfo("Appending zlba: 0x%016x, nlb: %u, QD(1)", zlba, nlb);
 	xnvmec_pinfo("nsect: %zu, nbytes: %zu", nsect, nsect * geo->nbytes);
 	xnvmec_timer_start(cli);
