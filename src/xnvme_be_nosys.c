@@ -4,7 +4,7 @@
 #include <libxnvme.h>
 
 #define XNVME_BE_NOSYS_BID 0x3838
-#define XNVME_BE_NOSYS_NAME "nosys"
+#define XNVME_BE_NOSYS_NAME "NOSYS"
 
 int
 xnvme_be_nosys_ident_from_uri(const char *XNVME_UNUSED(uri),
