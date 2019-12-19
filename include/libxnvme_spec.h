@@ -955,6 +955,8 @@ enum xnvme_spec_feat_id {
 	XNVME_SPEC_FEAT_LBA_RANGETYPE = 0x3, ///< XNVME_SPEC_FEAT_LBA_RANGETYPE
 	XNVME_SPEC_FEAT_TEMP_THRESHOLD = 0x4, ///< XNVME_SPEC_FEAT_TEMP_THRESHOLD
 	XNVME_SPEC_FEAT_ERROR_RECOVERY = 0x5, ///< XNVME_SPEC_FEAT_ERROR_RECOVERY
+	XNVME_SPEC_FEAT_VWCACHE = 0x6, ///< XNVME_SPEC_FEAT_VWCACHE
+	XNVME_SPEC_FEAT_NQUEUES = 0x7, ///< XNVME_SPEC_FEAT_NQUEUES
 };
 
 /**
@@ -989,6 +991,11 @@ struct xnvme_spec_feat {
 			uint32_t dulbe :  1;
 			uint32_t rsvd  : 15;
 		} error_recovery;	// Error recovery attributes
+
+		struct {
+			uint32_t nsqa	: 16;
+			uint32_t ncqa	: 16;
+		} nqueues;
 
 		uint32_t val;	///< For constructing feature without accessors
 	};
