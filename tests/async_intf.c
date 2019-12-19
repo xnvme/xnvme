@@ -158,7 +158,8 @@ test_init_term(struct xnvmec *cli)
 		return 1;
 	}
 
-	{	// Ask how many queues are supported
+	{
+		// Ask how many queues are supported
 		struct xnvme_spec_feat feat = { .val = 0 };
 		struct xnvme_req req = { 0 };
 		int err;
