@@ -531,9 +531,16 @@ xnvme_spec_feat_fpr(FILE *stream, uint8_t fid, struct xnvme_spec_feat feat,
 				feat.temp_threshold.thsel);
 		return wrtn;
 
+	case XNVME_SPEC_FEAT_NQUEUES:
+		wrtn += fprintf(stream, "feat: { nsqa: %u, ncqa: %u }\n",
+				feat.nqueues.nsqa,
+				feat.nqueues.ncqa);
+		return wrtn;
+
 	case XNVME_SPEC_FEAT_ARBITRATION:
 	case XNVME_SPEC_FEAT_PWR_MGMT:
 	case XNVME_SPEC_FEAT_LBA_RANGETYPE:
+	default:
 		wrtn += fprintf(stream,
 				"# ENOSYS: printer not implemented for fid: %x",
 				fid);
