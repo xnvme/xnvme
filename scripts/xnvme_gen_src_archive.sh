@@ -8,15 +8,13 @@
 # archives
 #
 PROJECT=xnvme
-MAJOR=0
-MINOR=0
-PATCH=11
-VERSION="${MAJOR}.${MINOR}.${PATCH}"
+VERSION=$(python scripts/xnvme_ver.py --cml CMakeLists.txt)
 
 REF="v${VERSION}"
 
 PREFIX="${PROJECT}-${VERSION}"
-DEST="build/${PREFIX}.src.tar.gz"
+BUILD="build"
+DEST="${BUILD}/${PREFIX}.src.tar.gz"
 
 # Check that git-archive-all is installed
 if ! git-archive-all --help &> /dev/null; then
@@ -34,6 +32,8 @@ for DNAME in $DLIST; do
     exit 1
   fi
 done
+
+mkdir "${BUILD}"
 
 # Now create the archive!
 git-archive-all --prefix="${PREFIX}" --force-submodules $DEST
