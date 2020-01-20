@@ -1,0 +1,8 @@
+#!/usr/bin/env python
+import xnvme
+
+def main():
+    xnvme.ver_pr()
+
+if __name__ == "__main__":
+    main()
