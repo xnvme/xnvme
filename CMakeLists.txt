@@ -414,6 +414,7 @@ install(FILES ${PUBLIC_FILES} DESTINATION include COMPONENT dev)
 add_subdirectory(examples)
 add_subdirectory(tests)
 add_subdirectory(tools)
+add_subdirectory(tools/fio-engine)
 
 #
 # Packages
