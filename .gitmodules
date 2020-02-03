@@ -4,3 +4,6 @@
 [submodule "third-party/liburing"]
 	path = third-party/liburing
 	url = https://git.kernel.dk/liburing
+[submodule "third-party/fio"]
+	path = third-party/fio
+	url = https://git.kernel.dk/fio

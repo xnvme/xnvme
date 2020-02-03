@@ -1,0 +1,143 @@
+; Verify different fio IO engines with a random-write workload using 4K BS at QD16
+;
+; README
+;
+; Make sure you provide the correct path to 'libxnvme-fio-engine.so' in the sections below
+;
+; Take note of the "special" use of 'filename' in the sections below
+;
+; In the fio-file, it needs "\" to escape ":", eg.
+; filename=liou\:/dev/nvme0n1?poll_sq=1
+;
+; On the command-line, it needs "\\" to escape ":", eg.
+; --filename=liou\\:/dev/nvme0n1?poll_sq=1
+;
+; Job-file is intended to be used as:
+;
+; fio xnvme-compare.fio \
+;		--section=qd1 \
+;		--filename=liou:\\/dev/nvme0n1 \
+;		--ioengine=external:/usr/lib/libxnvme-fio-engine.so \
+;		--sqthread_poll=1
+;
+; or
+;
+; fio xnvme-compare.fio \
+;		--section=qd1 \
+;		--filename=/dev/nvme0n1 \
+;		--ioengine=io_uring \
+;		--sqthread_poll=1
+;
+; That is, varying the ioengine, and its options, on the command-line,
+; fixing the workload, with the exception of changing io-depth using the
+; --section
+;
+[global]
+rw=randwrite
+size=1G
+iodepth=16
+bs=4k
+direct=1
+verify=crc32c
+thread=1
+
+; Avoid accidentally creating device files; e.g. "/dev/nvme0n1", "/dev/nullb0"
+allow_file_create=0
+
+[default]
+
+[qd1]
+iodepth=1
+
+[qd2]
+iodepth=2
+
+[qd4]
+iodepth=4
+
+[qd8]
+iodepth=8
+
+[qd16]
+iodepth=16
+
+[qd32]
+iodepth=32
+
+; Regular/io_uring engine
+
+[uring]
+ioengine=io_uring
+hipri=0
+fixedbufs=0
+registerfiles=0
+sqthread_poll=0
+;filename=/dev/nullb0
+;filename=/dev/nvme0n1
+
+[uring_iop]
+ioengine=io_uring
+hipri=1
+fixedbufs=0
+registerfiles=1
+sqthread_poll=0
+;filename=/dev/nullb0
+;filename=/dev/nvme0n1
+
+[uring_sqt]
+ioengine=io_uring
+hipri=0
+fixedbufs=0
+registerfiles=1
+sqthread_poll=1
+;filename=/dev/nullb0
+;filename=/dev/nvme0n1
+
+[uring_all]
+ioengine=io_uring
+hipri=1
+fixedbufs=1
+registerfiles=1
+sqthread_poll=1
+;filename=/dev/nullb0
+;filename=/dev/nvme0n1
+
+[aio]
+ioengine=libaio
+;filename=/dev/nullb0
+;filename=/dev/nvme0n1
+
+[psync]
+ioengine=psync
+;filename=/dev/nullb0
+;filename=/dev/nvme0n1
+
+; xNVMe/io_uring engine
+
+[xnvme_uring]
+ioengine=external:/usr/lib/libxnvme-fio-engine.so
+;filename=liou\:/dev/nullb0?poll_io=0?poll_sq=0?pseudo=1
+;filename=liou\:/dev/nvme0n1?poll_io=0?poll_sq=0
+
+[xnvme_uring_sqt]
+ioengine=external:/usr/lib/libxnvme-fio-engine.so
+;filename=liou\:/dev/nullb0?poll_io=0?poll_sq=1?pseudo=1
+;filename=liou\:/dev/nvme0n1?poll_io=0?poll_sq=1
+
+[xnvme_uring_iop]
+ioengine=external:/usr/lib/libxnvme-fio-engine.so
+;filename=liou\:/dev/nullb0?poll_io=1?poll_sq=0?pseudo=1
+;filename=liou\:/dev/nvme0n1?poll_io=1?poll_sq=0
+
+[xnvme_uring_all]
+ioengine=external:/usr/lib/libxnvme-fio-engine.so
+;filename=liou\:/dev/nullb0?poll_io=1?poll_sq=1?pseudo=1
+;filename=liou\:/dev/nvme0n1?poll_io=1?poll_sq=1
+
+; xNVMe/SPDK engine
+
+[xnvme_spdk]
+ioengine=external:/usr/lib/libxnvme-fio-engine.so
+;filename=pci\:0000\:01\:00.0?nsid=1
+;filename=pci\:0000\:03\:00.0?nsid=1
+
