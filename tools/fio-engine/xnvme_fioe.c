@@ -45,6 +45,7 @@
 #include <fio/optgroup.h>
 #include <libxnvme.h>
 
+
 struct xnvme_fioe_data {
 	///< I/O completion queue
 	struct io_u **iocq;
@@ -69,6 +70,35 @@ struct xnvme_fioe_data {
 struct xnvme_fioe_wrap {
 	struct xnvme_fioe_data *xd;
 	struct io_u *io_u;
+};
+struct xnvme_fioe_options {
+	void *padding;
+	unsigned int hipri;
+	unsigned int sqpoll_thread;
+};
+
+static struct fio_option options[] = {
+	{
+		.name   = "hipri",
+		.lname  = "High Priority",
+		.type   = FIO_OPT_STR_SET,
+		.off1   = offsetof(struct xnvme_fioe_options, hipri),
+		.help   = "Use polled IO completions",
+		.category = FIO_OPT_C_ENGINE,
+		.group  = FIO_OPT_G_IOURING,
+	},
+	{
+		.name   = "sqthread_poll",
+		.lname  = "Kernel SQ thread polling",
+		.type   = FIO_OPT_INT,
+		.off1   = offsetof(struct xnvme_fioe_options, sqpoll_thread),
+		.help   = "Offload submission/completion to kernel thread",
+		.category = FIO_OPT_C_ENGINE,
+		.group  = FIO_OPT_G_IOURING,
+	},
+	{
+		.name   = NULL,
+	},
 };
 
 static void
@@ -135,6 +165,15 @@ static int
 xnvme_fioe_init(struct thread_data *td)
 {
 	struct xnvme_fioe_data *xd = NULL;
+	struct xnvme_fioe_options *o = td->eo;
+	int flags = 0;
+
+	if (o->hipri) {
+		flags |= XNVME_ASYNC_IOPOLL;
+	}
+	if (o->sqpoll_thread) {
+		flags |= XNVME_ASYNC_SQPOLL;
+	}
 
 	if (!td->o.use_thread) {
 		log_err("xnvme_fioe: init(): --thread=1 is required\n");
@@ -161,7 +200,7 @@ xnvme_fioe_init(struct thread_data *td)
 	xd->ssw = xnvme_dev_get_ssw(xd->dev);
 	xd->ecount = 0;
 
-	if (xnvme_async_init(xd->dev, &(xd->ctx), td->o.iodepth)) {
+	if (xnvme_async_init(xd->dev, &(xd->ctx), td->o.iodepth, flags)) {
 		log_err("xnvme_fioe: init(): failed xnvme_async_init()\n");
 		return 1;
 	}
@@ -388,6 +427,8 @@ xnvme_fioe_open(struct thread_data *td, struct fio_file *f)
 struct ioengine_ops ioengine = {
 	.name		= "xnvme",
 	.version	= FIO_IOOPS_VERSION,
+	.options                = options,
+	.option_struct_size     = sizeof(struct xnvme_fioe_options),
 	.flags		= \
 	FIO_DISKLESSIO | \
 	FIO_NODISKUTIL | \

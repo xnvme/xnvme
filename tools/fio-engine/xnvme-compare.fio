@@ -1,4 +1,4 @@
-; Compare different fio IO engines with a random-read workload using 4K BS at QD1
+; Compare fio IO engines with a random-read workload using 4K BS at QD1
 ;
 ; README
 ;
@@ -7,10 +7,10 @@
 ; Take note of the "special" use of 'filename' in the sections below
 ;
 ; In the fio-file, it needs "\" to escape ":", eg.
-; filename=liou\:/dev/nvme0n1?poll_sq=1
+; filename=liou\:/dev/nvme0n1
 ;
 ; On the command-line, it needs "\\" to escape ":", eg.
-; --filename=liou\\:/dev/nvme0n1?poll_sq=1
+; --filename=liou\\:/dev/nvme0n1
 ;
 ; Job-file is intended to be used as:
 ;
@@ -115,29 +115,42 @@ ioengine=psync
 ;filename=/dev/nullb0
 ;filename=/dev/nvme0n1
 
+[xnvme]
+ioengine=external:/usr/lib/libxnvme-fio-engine.so
+;filename=liou\:/dev/nullb0?pseudo=1
+;filename=liou\:/dev/nvme0n1
+;filename=pci\:0000\:01\:00.0?nsid=1
+;filename=pci\:0000\:03\:00.0?nsid=1
+
 ; xNVMe/io_uring engine
 
 [xnvme_uring]
 ioengine=external:/usr/lib/libxnvme-fio-engine.so
-;filename=liou\:/dev/nullb0?poll_io=0?poll_sq=0?pseudo=1
-;filename=liou\:/dev/nvme0n1?poll_io=0?poll_sq=0
+hipri=0
+sqthread_poll=0
+;filename=liou\:/dev/nullb0?pseudo=1
+;filename=liou\:/dev/nvme0n1
 
 [xnvme_uring_sqt]
 ioengine=external:/usr/lib/libxnvme-fio-engine.so
-;filename=liou\:/dev/nullb0?poll_io=0?poll_sq=1?pseudo=1
-;filename=liou\:/dev/nvme0n1?poll_io=0?poll_sq=1
+hipri=0
+sqthread_poll=1
+;filename=liou\:/dev/nullb0?pseudo=1
+;filename=liou\:/dev/nvme0n1
 
 [xnvme_uring_iop]
 ioengine=external:/usr/lib/libxnvme-fio-engine.so
-;filename=liou\:/dev/nullb0?poll_io=1?poll_sq=0?pseudo=1
-;filename=liou\:/dev/nvme0n1?poll_io=1?poll_sq=0
+hipri=1
+sqthread_poll=0
+;filename=liou\:/dev/nullb0?pseudo=1
+;filename=liou\:/dev/nvme0n1
 
 [xnvme_uring_all]
 ioengine=external:/usr/lib/libxnvme-fio-engine.so
-;filename=liou\:/dev/nullb0?poll_io=1?poll_sq=1?pseudo=1
-;filename=liou\:/dev/nvme0n1?poll_io=1?poll_sq=1
-
-; xNVMe/SPDK engine
+hipri=1
+sqthread_poll=1
+;filename=liou\:/dev/nullb0?pseudo=1
+;filename=liou\:/dev/nvme0n1
 
 [xnvme_spdk]
 ioengine=external:/usr/lib/libxnvme-fio-engine.so
