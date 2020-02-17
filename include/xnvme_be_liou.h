@@ -38,7 +38,7 @@ XNVME_STATIC_ASSERT(
 
 int
 xnvme_be_liou_async_init(struct xnvme_dev *dev, struct xnvme_async_ctx **ctx,
-			 uint16_t depth);
+			 uint16_t depth, int flags);
 
 int
 xnvme_be_liou_async_term(struct xnvme_async_ctx *ctx);

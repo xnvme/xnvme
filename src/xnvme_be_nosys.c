@@ -32,7 +32,7 @@ xnvme_be_nosys_dev_close(struct xnvme_dev *XNVME_UNUSED(dev))
 int
 xnvme_be_nosys_async_init(struct xnvme_dev *XNVME_UNUSED(dev),
 			  struct xnvme_async_ctx **XNVME_UNUSED(ctx),
-			  uint16_t XNVME_UNUSED(depth))
+			  uint16_t XNVME_UNUSED(depth), int XNVME_UNUSED(flags))
 {
 	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");
 	return -ENOSYS;

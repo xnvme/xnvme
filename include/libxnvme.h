@@ -32,6 +32,15 @@ enum xnvme_pr {
 	XNVME_PR_YAML = 0x1,	///< XNVME_PR_YAML: Print formatted as YAML
 	XNVME_PR_TERSE = 0x2	///< XNVME_PR_TERSE: Print without formatting
 };
+/**
+ *
+ * io_uring_setup() flags
+ * @enum xnvme_async_opts
+ */
+enum xnvme_async_opts {
+	XNVME_ASYNC_IOPOLL = 0x1,       ///< XNVME_ASYNC_IOPOLL: io_context is polled
+	XNVME_ASYNC_SQPOLL = 0x1 << 1,  ///< XNVME_ASYNC_SQPOLL: SQ poll thread
+};
 
 /**
  * Representation of xNVMe library backend attributes
@@ -592,7 +601,7 @@ struct xnvme_async_ctx;
  */
 int
 xnvme_async_init(struct xnvme_dev *dev, struct xnvme_async_ctx **ctx,
-		 uint16_t depth);
+		 uint16_t depth, int flags);
 
 /**
  * Get the I/O depth of the context.

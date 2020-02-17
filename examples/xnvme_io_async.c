@@ -88,7 +88,7 @@ sub_async_read(struct xnvmec *cli)
 	}
 
 	xnvmec_pinf("Initializing async. context + alloc/init requests");
-	err = xnvme_async_init(dev, &ctx, qd);
+	err = xnvme_async_init(dev, &ctx, qd, 0);
 	if (err) {
 		xnvmec_perr("xnvme_async_init()", err);
 		goto exit;
@@ -231,7 +231,7 @@ sub_async_write(struct xnvmec *cli)
 	}
 
 	xnvmec_pinf("Initializing async. context + alloc/init requests");
-	err = xnvme_async_init(dev, &ctx, qd);
+	err = xnvme_async_init(dev, &ctx, qd, 0);
 	if (err) {
 		xnvmec_perr("xnvme_async_init()", err);
 		goto exit;

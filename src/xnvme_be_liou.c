@@ -31,12 +31,12 @@
 
 int
 xnvme_be_liou_async_init(struct xnvme_dev *dev, struct xnvme_async_ctx **ctx,
-			 uint16_t depth)
+			 uint16_t depth, int flags)
 {
 	struct xnvme_be_liou_state *state = (void *)dev->be.state;
 	struct xnvme_async_ctx_liou *lctx = NULL;
-	int flags = 0;
 	int err = 0;
+	int iou_flags = 0;
 
 	*ctx = calloc(1, sizeof(**ctx));
 	if (!*ctx) {
@@ -46,21 +46,34 @@ xnvme_be_liou_async_init(struct xnvme_dev *dev, struct xnvme_async_ctx **ctx,
 	(*ctx)->depth = depth;
 
 	lctx = (void *)(*ctx);
-	lctx->poll_sq = state->poll_sq;
-	lctx->poll_io = state->poll_io;
+
+	if ((flags & XNVME_ASYNC_SQPOLL) || (state->poll_sq)) {
+		lctx->poll_sq = 1;
+	}
+	if ((flags & XNVME_ASYNC_IOPOLL) || (state->poll_io)) {
+		lctx->poll_io = 1;
+	}
+
+	XNVME_DEBUG("lctx->poll_sq: %d", lctx->poll_sq);
+	XNVME_DEBUG("lctx->poll_io: %d", lctx->poll_io);
+
+	// NOTE: Disabling IOPOLL, to avoid lock-up, until fixed in `_poke`
+	if (lctx->poll_io) {
+		printf("ENOSYS: IORING_SETUP_IOPOLL\n");
+		lctx->poll_io = 0;
+	}
 
 	//
 	// Ring-initialization
 	//
-
 	if (lctx->poll_sq) {
-		flags |= IORING_SETUP_SQPOLL;
+		iou_flags |= IORING_SETUP_SQPOLL;
 	}
 	if (lctx->poll_io) {
-		flags |= IORING_SETUP_IOPOLL;
+		iou_flags |= IORING_SETUP_IOPOLL;
 	}
 
-	err = io_uring_queue_init(depth, &lctx->ring, flags);
+	err = io_uring_queue_init(depth, &lctx->ring, iou_flags);
 	if (err) {
 		XNVME_DEBUG("FAILED: alloc. qpair");
 		free(*ctx);

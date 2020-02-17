@@ -55,7 +55,7 @@ test_init_term(struct xnvmec *cli)
 	for (uint64_t qn = 0; qn < count; ++qn) {
 		int err;
 
-		err = xnvme_async_init(dev, &actx[qn], qd);
+		err = xnvme_async_init(dev, &actx[qn], qd, 0);
 		if (err) {
 			XNVME_DEBUG("FAILED: xnvme_async_init qn(%zu), qd(%zu)",
 				    qn, qd);

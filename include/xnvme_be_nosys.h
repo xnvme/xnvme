@@ -32,7 +32,7 @@ xnvme_be_nosys_buf_free(const struct xnvme_dev *dev, void *buf);
 
 int
 xnvme_be_nosys_async_init(struct xnvme_dev *dev, struct xnvme_async_ctx **ctx,
-			  uint16_t depth);
+			  uint16_t depth, int flags);
 
 int
 xnvme_be_nosys_async_term(struct xnvme_async_ctx *ctx);

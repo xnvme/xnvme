@@ -580,7 +580,7 @@ xnvme_be_spdk_dev_from_ident(const struct xnvme_ident *ident,
  */
 int
 xnvme_be_spdk_async_init(struct xnvme_dev *dev, struct xnvme_async_ctx **ctx,
-			 uint16_t depth)
+			 uint16_t depth, int XNVME_UNUSED(flags))
 {
 	struct xnvme_be_spdk_state *state = (void *)dev->be.state;
 	struct xnvme_async_ctx_spdk *sctx = NULL;

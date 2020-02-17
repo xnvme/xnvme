@@ -49,7 +49,7 @@ struct xnvme_be_func {
 	 * Initialize an asynchronous command context
 	 */
 	int (*async_init)(struct xnvme_dev *, struct xnvme_async_ctx **,
-			  uint16_t);
+			  uint16_t, int flags);
 
 	/**
 	 * Terminate an asynchronous command context
