@@ -7,3 +7,6 @@
 [submodule "third-party/fio"]
 	path = third-party/fio
 	url = https://git.kernel.dk/fio
+[submodule "third-party/libnvme"]
+	path = third-party/libnvme
+	url = https://github.com/linux-nvme/libnvme.git
