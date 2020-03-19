@@ -1,0 +1,13 @@
+bash
+build-base
+cmake
+coreutils
+gawk
+libexecinfo-dev
+bsd-compat-headers
+linux-headers
+make
+musl-dev
+numactl-dev
+python3
+util-linux-dev

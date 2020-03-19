@@ -1,0 +1,11 @@
+CUnit-devel
+git
+glibc-static
+libaio-devel
+libuuid-devel
+make
+nasm
+numactl-devel
+openssl-devel
+patch
+wget
