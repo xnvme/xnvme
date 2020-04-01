@@ -281,6 +281,15 @@ endif()
 message( STATUS "BE:SPDK ENABLED(${XNVME_BE_SPDK_ENABLED})" )
 
 #
+# XNVME_BE_FIOC
+#
+set(XNVME_BE_FIOC_ENABLED ${FREEBSD} CACHE BOOL "be_fioc: FreeBSD/IOCTL backend")
+if(XNVME_BE_FIOC_ENABLED)
+	add_definitions(-DXNVME_BE_FIOC_ENABLED)
+endif()
+message( STATUS "BE:FIOC ENABLED(${XNVME_BE_FIOC_ENABLED})" )
+
+#
 # BACKENDS -- end
 #
 
