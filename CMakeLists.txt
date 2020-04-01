@@ -299,6 +299,58 @@ endif()
 message( STATUS "BE:LIOC ENABLED(${XNVME_BE_LIOC_ENABLED})" )
 
 #
+# XNVME_BE_LIOU
+#
+set(XNVME_BE_LIOU_ENABLED ${LINUX} CACHE BOOL "be_liou: Linux/io_uring backend")
+set(LIBURING_REPOS "${PROJECT_SOURCE_DIR}/third-party/liburing")
+set(LIBURING_INCLUDE_PATH
+	"${LIBURING_REPOS}/src/include"
+	CACHE PATH "LIBURING include path")
+set(LIBURING_LIBRARY_PATH
+	"${LIBURING_REPOS}/src"
+	CACHE PATH "LIBURING library path")
+
+if(XNVME_BE_LIOU_ENABLED)
+	message( STATUS "LIBURING_LIBRARY_PATH(${LIBURING_LIBRARY_PATH})" )
+	message( STATUS "LIBURING_INCLUDE_PATH(${LIBURING_INCLUDE_PATH})" )
+
+	if(NOT (EXISTS ${LIBURING_LIBRARY_PATH} AND
+		EXISTS ${LIBURING_INCLUDE_PATH}))
+		execute_process(
+			COMMAND make liburing-fetch
+			RESULT_VARIABLE res
+			WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+		if(res)
+			message( FATAL_ERROR "Failed fetching liburing" )
+		endif()
+	endif()
+
+	if(NOT EXISTS "${LIBURING_LIBRARY_PATH}/liburing.a")
+		execute_process(
+			COMMAND make third-party-liburing-build
+			RESULT_VARIABLE res
+			WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+		if(res)
+			message( FATAL_ERROR "Failed building liburing" )
+		endif()
+	endif()
+
+	add_definitions(-DXNVME_BE_LIOU_ENABLED)
+
+	message( STATUS "ENABLING ASYNC SUPPORT" )
+	add_definitions(-DXNVME_ASYNC_ENABLED)
+
+	list(APPEND LIBS uring)
+
+	# Add liburing to library and include
+	include_directories("${LIBURING_INCLUDE_PATH}")
+	link_directories("${LIBURING_LIBRARY_PATH}")
+
+	list(APPEND AUX_LIB_PATHS ${LIBURING_LIBRARY_PATH})
+endif()
+message( STATUS "BE:LIOU ENABLED(${XNVME_BE_LIOU_ENABLED})" )
+
+#
 # BACKENDS -- end
 #
 
