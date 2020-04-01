@@ -167,6 +167,120 @@ list(APPEND LIBS_SYSTEM Threads::Threads)
 #
 
 #
+# XNVME_BE_SPDK
+#
+set(XNVME_BE_SPDK_ENABLED ${UNIX} CACHE BOOL "be_spdk: SPDK backend")
+set(SPDK_REPOS
+	"${PROJECT_SOURCE_DIR}/third-party"
+	CACHE PATH "SPDK Repository path")
+set(SPDK_INCLUDE_PATH
+	"${SPDK_REPOS}/spdk/include"
+	CACHE PATH "SPDK include path")
+set(SPDK_LIBRARY_PATH
+	"${SPDK_REPOS}/spdk/build/lib"
+	CACHE PATH "SPDK library path")
+set(DPDK_INCLUDE_PATH
+	"${SPDK_REPOS}/spdk/dpdk/build/include"
+	CACHE PATH "DPDK include path")
+set(DPDK_LIBRARY_PATH
+	"${SPDK_REPOS}/spdk/dpdk/build/lib"
+	CACHE PATH "DPDK library path")
+
+if(XNVME_BE_SPDK_ENABLED)
+	message( STATUS "SPDK_LIBRARY_PATH(${SPDK_LIBRARY_PATH})" )
+	message( STATUS "SPDK_INCLUDE_PATH(${SPDK_INCLUDE_PATH})" )
+	message( STATUS "DPDK_LIBRARY_PATH(${DPDK_LIBRARY_PATH})" )
+	message( STATUS "DPDK_INCLUDE_PATH(${DPDK_INCLUDE_PATH})" )
+
+	# Fetch SPDK/DPDK if it is not there
+	if(NOT EXISTS "${SPDK_INCLUDE_PATH}")
+		message( STATUS "Preparing SPDK/DPDK" )
+		execute_process(
+			COMMAND make spdk-fetch
+			RESULT_VARIABLE res
+			WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+		if(res)
+			message( FATAL_ERROR "Failed fetching SPDK/DPDK" )
+		endif()
+	endif()
+
+	# Build SPDK/DPDK if SPDK libraries are not there
+	if(NOT EXISTS "${SPDK_LIBRARY_PATH}/libspdk_nvme.a")
+		message( STATUS "Preparing SPDK/DPDK dependency" )
+
+		message( STATUS "Patching SPDK/DPDK" )
+		execute_process(
+			COMMAND make third-party-spdk-patch
+			RESULT_VARIABLE res
+			WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+		if(res)
+			message( FATAL_ERROR "Failed patching SPDK/DPDK" )
+		endif()
+
+		message( STATUS "Configuring SPDK/DPDK" )
+		execute_process(
+			COMMAND make third-party-spdk-configure
+			RESULT_VARIABLE res
+			WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+		if(res)
+			message( FATAL_ERROR "Failed configuring SPDK/DPDK" )
+		endif()
+
+		message( STATUS "Building SPDK/DPDK" )
+		execute_process(
+			COMMAND make third-party-spdk-build
+			RESULT_VARIABLE res
+			WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+		if(res)
+			message( FATAL_ERROR "Failed building SPDK/DPDK" )
+		endif()
+	endif()
+
+	add_definitions(-DXNVME_BE_SPDK_ENABLED)
+
+	message( STATUS "ENABLING ASYNC SUPPORT" )
+	add_definitions(-DXNVME_ASYNC_ENABLED)
+
+	# These are expected to be available on the system
+	list(APPEND LIBS_SYSTEM rt)
+	if (LINUX)
+		list(APPEND LIBS_SYSTEM numa)
+	elseif (FREEBSD)
+		list(APPEND LIBS_SYSTEM execinfo)
+		list(APPEND LIBS_SYSTEM elf)
+	endif()
+	list(APPEND LIBS_SYSTEM uuid)
+
+	#
+	# Must be built and available in SPDK_LIBRARY_PATH
+	#
+	list(APPEND LIBS spdk_nvme)
+	list(APPEND LIBS spdk_env_dpdk)
+	list(APPEND LIBS spdk_sock)
+	list(APPEND LIBS spdk_util)
+	list(APPEND LIBS spdk_log)
+
+	#
+	# Must available in DPDK_LIBRARY_PATH
+	#
+	list(APPEND LIBS rte_eal)
+	list(APPEND LIBS rte_bus_pci)
+	list(APPEND LIBS rte_pci)
+	list(APPEND LIBS rte_ring)
+	list(APPEND LIBS rte_mempool)
+	list(APPEND LIBS rte_kvargs)
+
+	include_directories("${SPDK_INCLUDE_PATH}")
+	include_directories("${DPDK_INCLUDE_PATH}")
+	link_directories("${SPDK_LIBRARY_PATH}")
+	link_directories("${DPDK_LIBRARY_PATH}")
+
+	list(APPEND AUX_LIB_PATHS ${SPDK_LIBRARY_PATH})
+	list(APPEND AUX_LIB_PATHS ${DPDK_LIBRARY_PATH})
+endif()
+message( STATUS "BE:SPDK ENABLED(${XNVME_BE_SPDK_ENABLED})" )
+
+#
 # BACKENDS -- end
 #
 
