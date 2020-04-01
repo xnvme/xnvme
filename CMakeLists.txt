@@ -290,6 +290,15 @@ endif()
 message( STATUS "BE:FIOC ENABLED(${XNVME_BE_FIOC_ENABLED})" )
 
 #
+# XNVME_BE_LIOC
+#
+set(XNVME_BE_LIOC_ENABLED ${LINUX} CACHE BOOL "be_lioc: Linux/IOCTL backend")
+if(XNVME_BE_LIOC_ENABLED)
+	add_definitions(-DXNVME_BE_LIOC_ENABLED)
+endif()
+message( STATUS "BE:LIOC ENABLED(${XNVME_BE_LIOC_ENABLED})" )
+
+#
 # BACKENDS -- end
 #
 
