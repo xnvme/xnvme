@@ -4,5 +4,6 @@
 #define __INTERNAL_XNVME_BE_REGISTRY_H
 
 extern struct xnvme_be xnvme_be_spdk;
+extern struct xnvme_be xnvme_be_fioc;
 
 #endif /* __INTERNAL_XNVME_BE_REGISTRY_H */
