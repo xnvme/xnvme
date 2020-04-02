@@ -29,15 +29,32 @@ CONFIG[TESTS]=ON
 # Build TOOLS command-line interface; executables named "xnvme" and "zoned"
 CONFIG[TOOLS]=ON
 
+# Enable the SPDK backend
+CONFIG[BE_SPDK]=OFF
+
 case "${OSTYPE,,}" in
 	*linux* )
 		CONFIG[DEBS]=ON
+		CONFIG[BE_SPDK]=ON
 		;;
 
 	*freebsd* )
 		CONFIG[DEBS]=OFF
+		CONFIG[BE_SPDK]=ON
 		;;
 esac
+
+# Directory that contains the desired SPDK headers
+CONFIG[SPDK_INCLUDE_PATH]="${PWD}/third-party/spdk/include"
+
+# Directory that contains the desired SPDK libraries
+CONFIG[SPDK_LIBRARY_PATH]="${PWD}/third-party/spdk/build/lib"
+
+# Directory that contains the desired DPDK headers
+CONFIG[DPDK_INCLUDE_PATH]="${PWD}/third-party/spdk/dpdk/build/include"
+
+# Directory that contains the desired DPDK libraries
+CONFIG[DPDK_LIBRARY_PATH]="${PWD}/third-party/spdk/dpdk/build/lib"
 
 function check_dir() {
 	arg="$1"
@@ -66,6 +83,17 @@ function usage()
 	echo " --disable-examples        Disable building of examples"
 	echo " --disable-tests           Disable building of tests"
 	echo " --disable-tools           Disable building of cli-tools"
+	echo ""
+	echo "Specifying backends to build into the library"
+	echo " --enable-be-spdk          Enable the SPDK backend"
+	echo ""
+	echo "Overriding Dependencies:"
+	echo ""
+	echo "--spdk-include-path    Path to DIR with SPDK headers"
+	echo "--spdk-library-path    Path to DIR with SPDK libraries"
+	echo ""
+	echo "--dpdk-include-path    Path to DIR with DPDK headers"
+	echo "--dpdk-library-path    Path to DIR with DPDK libraries"
 	echo ""
 	echo "Environment variables:"
 	echo ""
@@ -157,6 +185,30 @@ for i in "$@"; do
 			CONFIG[TOOLS]=OFF
 			;;
 
+		--enable-be-spdk)
+			CONFIG[BE_SPDK]=ON
+			;;
+		--disable-be-spdk)
+			CONFIG[BE_SPDK]=OFF
+			;;
+		--spdk-include-path=*)
+			check_dir "$i"
+			CONFIG[SPDK_INCLUDE_PATH]=$(readlink -f ${i#*=})
+			;;
+		--spdk-library-path=*)
+			check_dir "$i"
+			CONFIG[SPDK_LIBRARY_PATH]=$(readlink -f ${i#*=})
+			;;
+		--dpdk-include-path=*)
+			check_dir "$i"
+			CONFIG[DPDK_INCLUDE_PATH]=$(readlink -f ${i#*=})
+			;;
+		--dpdk-library-path=*)
+			check_dir "$i"
+			CONFIG[DPDK_LIBRARY_PATH]=$(readlink -f ${i#*=})
+			;;
+
+
 		--)
 			break
 			;;
@@ -172,6 +224,12 @@ cmake --version || (echo "\n** Please install 'cmake' **\n" && exit 1)
 CMAKE_OPTS="$CMAKE_OPTS -DEXAMPLES=${CONFIG[EXAMPLES]}"
 CMAKE_OPTS="$CMAKE_OPTS -DTESTS=${CONFIG[TESTS]}"
 CMAKE_OPTS="$CMAKE_OPTS -DTOOLS=${CONFIG[TOOLS]}"
+
+CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_SPDK_ENABLED=${CONFIG[BE_SPDK]}"
+CMAKE_OPTS="$CMAKE_OPTS -DSPDK_INCLUDE_PATH=${CONFIG[SPDK_INCLUDE_PATH]}"
+CMAKE_OPTS="$CMAKE_OPTS -DSPDK_LIBRARY_PATH=${CONFIG[SPDK_LIBRARY_PATH]}"
+CMAKE_OPTS="$CMAKE_OPTS -DDPDK_INCLUDE_PATH=${CONFIG[DPDK_INCLUDE_PATH]}"
+CMAKE_OPTS="$CMAKE_OPTS -DDPDK_LIBRARY_PATH=${CONFIG[DPDK_LIBRARY_PATH]}"
 
 BUILD_DIR="build"
 BUILD_TYPE="debug"
