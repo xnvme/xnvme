@@ -44,12 +44,16 @@ CONFIG[BE_LIOC]=OFF
 # Enable the Linux/iouring backend
 CONFIG[BE_LIOU]=OFF
 
+# Enable the Linux/libaio backend
+CONFIG[BE_LAIO]=OFF
+
 case "${OSTYPE,,}" in
 	*linux* )
 		CONFIG[DEBS]=ON
 		CONFIG[BE_SPDK]=ON
 		CONFIG[BE_LIOC]=ON
 		CONFIG[BE_LIOU]=ON
+		CONFIG[BE_LAIO]=ON
 		;;
 
 	*freebsd* )
@@ -111,6 +115,7 @@ function usage()
 	echo " --enable-be-fioc          Enable the FreeBSD/IOCTL backend"
 	echo " --enable-be-lioc          Enable the Linux/IOCTL backend"
 	echo " --enable-be-liou          Enable the Linux/io_uring backend"
+	echo " --enable-be-laio          Enable the Linux/libaio backend"
 	echo ""
 	echo "Overriding Dependencies:"
 	echo ""
@@ -263,6 +268,14 @@ for i in "$@"; do
 		--disable-be-liou)
 			CONFIG[BE_LIOU]=OFF
 			;;
+
+		--enable-be-laio)
+			CONFIG[BE_LAIO]=ON
+			;;
+		--disable-be-laio)
+			CONFIG[BE_LAIO]=OFF
+			;;
+
 		--liburing-include-path=*)
 			check_dir "$i"
 			CONFIG[LIBURING_INCLUDE_PATH]=$(readlink -f ${i#*=})
@@ -297,6 +310,7 @@ CMAKE_OPTS="$CMAKE_OPTS -DDPDK_LIBRARY_PATH=${CONFIG[DPDK_LIBRARY_PATH]}"
 CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_FIOC_ENABLED=${CONFIG[BE_FIOC]}"
 CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_LIOC_ENABLED=${CONFIG[BE_LIOC]}"
 CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_LIOU_ENABLED=${CONFIG[BE_LIOU]}"
+CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_LAIO_ENABLED=${CONFIG[BE_LAIO]}"
 CMAKE_OPTS="$CMAKE_OPTS -DLIBURING_INCLUDE_PATH=${CONFIG[LIBURING_INCLUDE_PATH]}"
 CMAKE_OPTS="$CMAKE_OPTS -DLIBURING_LIBRARY_PATH=${CONFIG[LIBURING_LIBRARY_PATH]}"
 
