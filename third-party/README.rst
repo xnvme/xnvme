@@ -25,3 +25,13 @@ REPOS/scripts/xnvme-driver.sh
 
   Repos: https://github.com/spdk/spdk
   Website: https://spdk.io/
+
+SYSTEM:freebsd:/
+  Summary: Headers for the FreeBSD Kernel NVMe driver IOCTLs are used by the
+  `be:fioc`, then headers for backend. These headers are not distributed with
+  xNVMe but rather expected to be available on the system where xNVMe is built.
+
+  License: BSD
+
+  Repos: https://svnweb.freebsd.org/
+  Website: https://www.freebsd.org/
