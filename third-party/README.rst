@@ -35,3 +35,14 @@ SYSTEM:freebsd:/
 
   Repos: https://svnweb.freebsd.org/
   Website: https://www.freebsd.org/
+
+SYSTEM::linux:/
+  Summary: Headers for the Linux Kernel NVMe driver IOCTLs are used by the
+  ``be:lioc`` backend. These headers are not distributed with xNVMe but rather
+  expected to be available on the system where xNVMe is built.
+
+  License: GPL-2.0 WITH Linux-syscall-note
+  https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/uapi/linux/nvme_ioctl.h?h=v5.3-rc8
+
+  Repos: https://github.com/spdk/spdk
+  Website: https://www.linuxfoundation.org/
