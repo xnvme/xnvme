@@ -351,6 +351,21 @@ endif()
 message( STATUS "BE:LIOU ENABLED(${XNVME_BE_LIOU_ENABLED})" )
 
 #
+# XNVME_BE_LAIO
+#
+set(XNVME_BE_LAIO_ENABLED ${LINUX} CACHE BOOL "be_laio: Linux/libaio backend")
+if(XNVME_BE_LAIO_ENABLED)
+	add_definitions(-DXNVME_BE_LAIO_ENABLED)
+
+	list(APPEND LIBS_SYSTEM aio)
+
+	message( STATUS "ENABLING ASYNC SUPPORT" )
+	add_definitions(-DXNVME_ASYNC_ENABLED)
+
+endif()
+message( STATUS "BE:LAIO ENABLED(${XNVME_BE_LAIO_ENABLED})" )
+
+#
 # BACKENDS -- end
 #
 
