@@ -64,3 +64,12 @@ REPOS/third-party/fio
 
   Repos: https://git.kernel.dk/fio
   Website: https://fio.readthedocs.io/en/latest/
+
+REPOS/third-party/libnvme
+  Summary: For the xNVMe backend for Linux, then this git submodule is provided
+  and tagged with the libnvme version of which xNVMe has been tested.
+
+  License: LGPL
+
+  Repos: https://github.com/linux-nvme/libnvme.git
+  Website: https://github.com/linux-nvme/libnvme
