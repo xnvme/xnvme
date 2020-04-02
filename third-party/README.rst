@@ -46,3 +46,12 @@ SYSTEM::linux:/
 
   Repos: https://github.com/spdk/spdk
   Website: https://www.linuxfoundation.org/
+
+REPOS/third-party/liburing
+  Summary: For the xNVMe backend for Linux, then this git submodule is provided
+  and tagged with the liburing version which xNVMe has been tested.
+
+  License: LGPL
+
+  Repos: https://git.kernel.dk/liburing
+  Website: https://git.kernel.dk/cgit/liburing/
