@@ -38,11 +38,15 @@ CONFIG[BE_FIOC]=OFF
 # Enable the Linux/IOCTL backend
 CONFIG[BE_LIOC]=OFF
 
+# Enable the Linux/iouring backend
+CONFIG[BE_LIOU]=OFF
+
 case "${OSTYPE,,}" in
 	*linux* )
 		CONFIG[DEBS]=ON
 		CONFIG[BE_SPDK]=ON
 		CONFIG[BE_LIOC]=ON
+		CONFIG[BE_LIOU]=ON
 		;;
 
 	*freebsd* )
@@ -63,6 +67,12 @@ CONFIG[DPDK_INCLUDE_PATH]="${PWD}/third-party/spdk/dpdk/build/include"
 
 # Directory that contains the desired DPDK libraries
 CONFIG[DPDK_LIBRARY_PATH]="${PWD}/third-party/spdk/dpdk/build/lib"
+
+# Directory containing liburing headers
+CONFIG[LIBURING_INCLUDE_PATH]="${PWD}/third-party/liburing/src/include"
+
+# Directory containing liburing libraries
+CONFIG[LIBURING_LIBRARY_PATH]="${PWD}/third-party/liburing/src"
 
 function check_dir() {
 	arg="$1"
@@ -96,6 +106,7 @@ function usage()
 	echo " --enable-be-spdk          Enable the SPDK backend"
 	echo " --enable-be-fioc          Enable the FreeBSD/IOCTL backend"
 	echo " --enable-be-lioc          Enable the Linux/IOCTL backend"
+	echo " --enable-be-liou          Enable the Linux/io_uring backend"
 	echo ""
 	echo "Overriding Dependencies:"
 	echo ""
@@ -104,6 +115,9 @@ function usage()
 	echo ""
 	echo "--dpdk-include-path    Path to DIR with DPDK headers"
 	echo "--dpdk-library-path    Path to DIR with DPDK libraries"
+	echo ""
+	echo "--liburing-include-path    Path to DIR with liburing headers"
+	echo "--liburing-library-path    Path to DIR with liburing libraries"
 	echo ""
 	echo "Environment variables:"
 	echo ""
@@ -232,6 +246,21 @@ for i in "$@"; do
 			CONFIG[BE_LIOC]=OFF
 			;;
 
+		--enable-be-liou)
+			CONFIG[BE_LIOU]=ON
+			;;
+		--disable-be-liou)
+			CONFIG[BE_LIOU]=OFF
+			;;
+		--liburing-include-path=*)
+			check_dir "$i"
+			CONFIG[LIBURING_INCLUDE_PATH]=$(readlink -f ${i#*=})
+			;;
+		--liburing-library-path=*)
+			check_dir "$i"
+			CONFIG[LIBURING_LIBRARY_PATH]=$(readlink -f ${i#*=})
+			;;
+
 		--)
 			break
 			;;
@@ -255,6 +284,9 @@ CMAKE_OPTS="$CMAKE_OPTS -DDPDK_INCLUDE_PATH=${CONFIG[DPDK_INCLUDE_PATH]}"
 CMAKE_OPTS="$CMAKE_OPTS -DDPDK_LIBRARY_PATH=${CONFIG[DPDK_LIBRARY_PATH]}"
 CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_FIOC_ENABLED=${CONFIG[BE_FIOC]}"
 CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_LIOC_ENABLED=${CONFIG[BE_LIOC]}"
+CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_LIOU_ENABLED=${CONFIG[BE_LIOU]}"
+CMAKE_OPTS="$CMAKE_OPTS -DLIBURING_INCLUDE_PATH=${CONFIG[LIBURING_INCLUDE_PATH]}"
+CMAKE_OPTS="$CMAKE_OPTS -DLIBURING_LIBRARY_PATH=${CONFIG[LIBURING_LIBRARY_PATH]}"
 
 BUILD_DIR="build"
 BUILD_TYPE="debug"
