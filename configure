@@ -32,6 +32,9 @@ CONFIG[TOOLS]=ON
 # Enable the SPDK backend
 CONFIG[BE_SPDK]=OFF
 
+# Enable the FreeBSD/IOCTL backend
+CONFIG[BE_FIOC]=OFF
+
 case "${OSTYPE,,}" in
 	*linux* )
 		CONFIG[DEBS]=ON
@@ -41,6 +44,7 @@ case "${OSTYPE,,}" in
 	*freebsd* )
 		CONFIG[DEBS]=OFF
 		CONFIG[BE_SPDK]=ON
+		CONFIG[BE_FIOC]=ON
 		;;
 esac
 
@@ -86,6 +90,7 @@ function usage()
 	echo ""
 	echo "Specifying backends to build into the library"
 	echo " --enable-be-spdk          Enable the SPDK backend"
+	echo " --enable-be-fioc          Enable the FreeBSD/IOCTL backend"
 	echo ""
 	echo "Overriding Dependencies:"
 	echo ""
@@ -208,6 +213,12 @@ for i in "$@"; do
 			CONFIG[DPDK_LIBRARY_PATH]=$(readlink -f ${i#*=})
 			;;
 
+		--enable-be-fioc)
+			CONFIG[BE_FIOC]=ON
+			;;
+		--disable-be-fioc)
+			CONFIG[BE_FIOC]=OFF
+			;;
 
 		--)
 			break
@@ -230,6 +241,7 @@ CMAKE_OPTS="$CMAKE_OPTS -DSPDK_INCLUDE_PATH=${CONFIG[SPDK_INCLUDE_PATH]}"
 CMAKE_OPTS="$CMAKE_OPTS -DSPDK_LIBRARY_PATH=${CONFIG[SPDK_LIBRARY_PATH]}"
 CMAKE_OPTS="$CMAKE_OPTS -DDPDK_INCLUDE_PATH=${CONFIG[DPDK_INCLUDE_PATH]}"
 CMAKE_OPTS="$CMAKE_OPTS -DDPDK_LIBRARY_PATH=${CONFIG[DPDK_LIBRARY_PATH]}"
+CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_FIOC_ENABLED=${CONFIG[BE_FIOC]}"
 
 BUILD_DIR="build"
 BUILD_TYPE="debug"
