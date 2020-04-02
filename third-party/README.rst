@@ -55,3 +55,12 @@ REPOS/third-party/liburing
 
   Repos: https://git.kernel.dk/liburing
   Website: https://git.kernel.dk/cgit/liburing/
+
+REPOS/third-party/fio
+  Summary: For the xNVMe fio IO engine, then this git submodule is provided
+  and tagged with the fio version which xNVMe has been tested.
+
+  License: GPL-2.0
+
+  Repos: https://git.kernel.dk/fio
+  Website: https://fio.readthedocs.io/en/latest/
