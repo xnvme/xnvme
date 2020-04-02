@@ -29,6 +29,9 @@ CONFIG[TESTS]=ON
 # Build TOOLS command-line interface; executables named "xnvme" and "zoned"
 CONFIG[TOOLS]=ON
 
+# Build TOOLS_FIOE fio ioengine using xNVMe
+CONFIG[TOOLS_FIOE]=ON
+
 # Enable the SPDK backend
 CONFIG[BE_SPDK]=OFF
 
@@ -101,6 +104,7 @@ function usage()
 	echo " --disable-examples        Disable building of examples"
 	echo " --disable-tests           Disable building of tests"
 	echo " --disable-tools           Disable building of cli-tools"
+	echo " --disable-tools-fio       Disable building of fio xNVMe engine"
 	echo ""
 	echo "Specifying backends to build into the library"
 	echo " --enable-be-spdk          Enable the SPDK backend"
@@ -209,6 +213,13 @@ for i in "$@"; do
 			CONFIG[TOOLS]=OFF
 			;;
 
+		--enable-tools-fio)
+			CONFIG[TOOLS_FIOE]=ON
+			;;
+		--disable-tools-fio)
+			CONFIG[TOOLS_FIOE]=OFF
+			;;
+
 		--enable-be-spdk)
 			CONFIG[BE_SPDK]=ON
 			;;
@@ -276,6 +287,7 @@ cmake --version || (echo "\n** Please install 'cmake' **\n" && exit 1)
 CMAKE_OPTS="$CMAKE_OPTS -DEXAMPLES=${CONFIG[EXAMPLES]}"
 CMAKE_OPTS="$CMAKE_OPTS -DTESTS=${CONFIG[TESTS]}"
 CMAKE_OPTS="$CMAKE_OPTS -DTOOLS=${CONFIG[TOOLS]}"
+CMAKE_OPTS="$CMAKE_OPTS -DTOOLS_FIOE=${CONFIG[TOOLS_FIOE]}"
 
 CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_SPDK_ENABLED=${CONFIG[BE_SPDK]}"
 CMAKE_OPTS="$CMAKE_OPTS -DSPDK_INCLUDE_PATH=${CONFIG[SPDK_INCLUDE_PATH]}"
