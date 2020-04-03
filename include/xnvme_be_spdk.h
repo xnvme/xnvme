@@ -46,7 +46,11 @@ struct xnvme_be_spdk_state {
 
 	uint8_t attached;
 
-	uint8_t _rsvd[35];
+	// Options
+	uint8_t cmb_sqs;
+	uint8_t css;
+
+	uint8_t _rsvd[33];
 };
 XNVME_STATIC_ASSERT(
 	sizeof(struct xnvme_be_spdk_state) == XNVME_BE_STATE_NBYTES,

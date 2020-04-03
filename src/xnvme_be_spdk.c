@@ -232,12 +232,10 @@ probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid_probed,
 		return false;
 	}
 
-	/* Disable CMB sqs / cqs for now due to shared PMR / CMB */
-	opts->use_cmb_sqs = false;
-
-	/* Enable all I/O command-sets */
-	// TODO: KNOWN ISSUE
-	//opts->command_set = 0x6;
+	opts->use_cmb_sqs = state->cmb_sqs ? true : false;
+	if (state->css) {
+		opts->command_set = state->css;
+	}
 
 	return true;
 }
@@ -303,23 +301,28 @@ xnvme_be_spdk_dev_close(struct xnvme_dev *dev)
 	memset(&dev->be, 0, sizeof(dev->be));
 }
 
+struct xnvme_be_spdk_enumerate_ctx {
+	struct xnvme_enumeration *list;
+	uint8_t cmb_sqs;
+	uint8_t css;
+};
+
 /**
  * Always attach such that `enumerate_attach_cb` can grab namespaces
  *
  * And disable CMB sqs / cqs for now due to shared PMR / CMB
  */
 static bool
-enumerate_probe_cb(void *XNVME_UNUSED(cb_ctx),
+enumerate_probe_cb(void *cb_ctx,
 		   const struct spdk_nvme_transport_id *XNVME_UNUSED(trid),
 		   struct spdk_nvme_ctrlr_opts *copts)
 {
-	XNVME_DEBUG("INFO: hello hello!? probne!?");
+	struct xnvme_be_spdk_enumerate_ctx *ectx = cb_ctx;
 
-	copts->use_cmb_sqs = false;
-
-	/* Enable all I/O command-sets */
-	// TODO: KNOWN ISSUE
-	//copts->command_set = 0x6;
+	copts->use_cmb_sqs = ectx->cmb_sqs ? true : false;
+	if (ectx->css) {
+		copts->command_set = ectx->css;
+	}
 
 	return 1;
 }
@@ -329,10 +332,8 @@ enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
 		    struct spdk_nvme_ctrlr *ctrlr,
 		    const struct spdk_nvme_ctrlr_opts *XNVME_UNUSED(copts))
 {
-	struct xnvme_enumeration *list = cb_ctx;
+	struct xnvme_be_spdk_enumerate_ctx *ectx = cb_ctx;
 	const int num_ns = spdk_nvme_ctrlr_get_num_ns(ctrlr);
-
-	XNVME_DEBUG("hello hello");
 
 	for (int nsid = 1; nsid <= num_ns; ++nsid) {
 		struct spdk_nvme_ns *ns;
@@ -362,11 +363,22 @@ enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
 			char uri[XNVME_IDENT_URI_LEN] = { 0 };
 			struct xnvme_ident ident = { 0 };
 
-			snprintf(uri, sizeof(uri), "pci:%s?nsid=%d",
-				 trid->traddr, nsid);
+			snprintf(uri, sizeof(uri), "pci:%s", trid->traddr);
+
+			snprintf(uri + strlen(uri), sizeof(uri), "?nsid=%d",
+				 nsid);
+			if (ectx->css) {
+				snprintf(uri + strlen(uri), sizeof(uri),
+					 "?css=1");
+			}
+			if (ectx->cmb_sqs) {
+				snprintf(uri + strlen(uri), sizeof(uri),
+					 "?cmb_sqs=1");
+			}
+
 			xnvme_ident_from_uri(uri, &ident);
 
-			if (xnvme_enumeration_append(list, &ident)) {
+			if (xnvme_enumeration_append(ectx->list, &ident)) {
 				XNVME_DEBUG("FAILED: adding ident");
 			}
 		}
@@ -381,16 +393,19 @@ enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
 // TODO: enumerate fabrics
 //
 int
-xnvme_be_spdk_enumerate(struct xnvme_enumeration *list, int XNVME_UNUSED(opts))
+xnvme_be_spdk_enumerate(struct xnvme_enumeration *list, int opts)
 {
+	struct xnvme_be_spdk_enumerate_ctx ectx = { 0 };
 	int err;
-
-	XNVME_DEBUG("INFO: hello hello!?");
 
 	if (_spdk_env_init(NULL)) {
 		XNVME_DEBUG("FAILED: _spdk_env_init()");
 		return -1;
 	}
+
+	ectx.list = list;
+	ectx.cmb_sqs = false;
+	ectx.css = opts & 0x7;
 
 	/*
 	 * Start the SPDK NVMe enumeration process
@@ -403,9 +418,8 @@ xnvme_be_spdk_enumerate(struct xnvme_enumeration *list, int XNVME_UNUSED(opts))
 	 * SPDK NVMe driver has completed initializing the controller we chose
 	 * to attach
 	 */
-	err = spdk_nvme_probe(NULL, list, enumerate_probe_cb,
-			      enumerate_attach_cb,
-			      NULL);
+	err = spdk_nvme_probe(NULL, &ectx, enumerate_probe_cb,
+			      enumerate_attach_cb, NULL);
 	if (err) {
 		XNVME_DEBUG("FAILED: spdk_nvme_probe, err: %d", err);
 	}
@@ -453,6 +467,7 @@ xnvme_be_spdk_dev_idfy(struct xnvme_dev *dev)
 
 /**
  * - Intialize SPDK environment
+ * - Parse options from dev->ident
  * - Attach to controller matching dev->ident
  * - create sync-io-qpair
  * - create lock protecting sync-io-qpair
@@ -464,7 +479,30 @@ xnvme_be_spdk_state_init(struct xnvme_dev *dev)
 	struct spdk_nvme_transport_id trid = {
 		.trtype = SPDK_NVME_TRANSPORT_PCIE
 	};
+	uint32_t nsid;
+	uint32_t cmb_sqs = 0x0;
+	uint32_t css = 0x0;
 	int err;
+
+	// Parse options from dev->ident
+	if (!xnvme_ident_opt_to_val(&dev->ident, "nsid", &nsid)) {
+		XNVME_DEBUG("!xnvme_ident_opt_to_val(opt:nsid)");
+		return -EINVAL;
+	}
+	if (!xnvme_ident_opt_to_val(&dev->ident, "cmb_sqs", &cmb_sqs)) {
+		XNVME_DEBUG("!xnvme_ident_opt_to_val(opt:cmb_sqs)");
+	}
+	if (!xnvme_ident_opt_to_val(&dev->ident, "css", &css)) {
+		XNVME_DEBUG("!xnvme_ident_opt_to_val(opt:css)");
+	}
+
+	// Setup options in dev and state
+	dev->nsid = nsid;
+	state->cmb_sqs = cmb_sqs ? true : false;
+	state->css = css & 0x7;
+
+	XNVME_DEBUG("INFO: dev->nsid: %d, state->cmb_sqs: %d, state->css: 0x%x",
+		    nsid, state->cmb_sqs, state->css);
 
 	err = _spdk_env_init(NULL);
 	if (err) {
@@ -484,7 +522,6 @@ xnvme_be_spdk_state_init(struct xnvme_dev *dev)
 	 * chose to attach.
 	 */
 	for (int i = 0; !state->attached; ++i) {
-
 		if (XNVME_BE_SPDK_MAX_PROBE_ATTEMPTS == i) {
 			XNVME_DEBUG("FAILED: max attempts exceeded");
 			return -ENXIO;
@@ -528,17 +565,6 @@ xnvme_be_spdk_dev_from_ident(const struct xnvme_ident *ident,
 	}
 	(*dev)->ident = *ident;
 	(*dev)->be = xnvme_be_spdk;
-
-	{
-		uint32_t nsid;
-
-		if (!xnvme_ident_opt_to_val(&(*dev)->ident, "nsid", &nsid)) {
-			XNVME_DEBUG("xnvme_ident_opt_to_val(opt:nsid)");
-			return -EINVAL;
-		}
-
-		(*dev)->nsid = nsid;
-	}
 
 	err = xnvme_be_spdk_state_init(*dev);
 	if (err) {
