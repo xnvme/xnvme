@@ -857,7 +857,6 @@ xnvme_cmd_pass_admin(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
  * @param cns the ::xnvme_spec_idfy_cns to retrieve
  * @param cntid Controller Identifier
  * @param nsid Namespace Identifier
- * @param nst Namespace Type
  * @param nvmsetid NVM set Identifier
  * @param uuid UUID index
  * @param dbuf ponter to data-payload
@@ -867,8 +866,8 @@ xnvme_cmd_pass_admin(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
  */
 int
 xnvme_cmd_idfy(struct xnvme_dev *dev, uint8_t cns, uint16_t cntid, uint8_t nsid,
-	       uint8_t nst, uint16_t nvmsetid, uint8_t uuid,
-	       struct xnvme_spec_idfy *dbuf, struct xnvme_req *req);
+	       uint16_t nvmsetid, uint8_t uuid, struct xnvme_spec_idfy *dbuf,
+	       struct xnvme_req *req);
 
 /**
  * Submit and wait for completion of an NVMe Identify command for the
@@ -896,15 +895,13 @@ xnvme_cmd_idfy_ctrlr(struct xnvme_dev *dev, struct xnvme_spec_idfy *dbuf,
  *
  * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
  * @param nsid Namespace identifier
- * @param nstype Namespace type, identify namespace of the specific type. Ignore
- * the namespace typecheck by providning 0xFF
  * @param dbuf Buffer allocated by xnvme_buf_alloc()
  * @param req Pointer to structure for NVMe completion
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
-xnvme_cmd_idfy_ns(struct xnvme_dev *dev, uint32_t nsid, uint8_t nstype,
+xnvme_cmd_idfy_ns(struct xnvme_dev *dev, uint32_t nsid,
 		  struct xnvme_spec_idfy *dbuf, struct xnvme_req *req);
 
 /**
