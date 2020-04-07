@@ -1,0 +1,50 @@
+# nvmec completion                           -*- shell-script -*-
+#
+# Bash completion script for the `nvmec` CLI
+#
+# Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
+# SPDX-License-Identifier: Apache-2.0
+
+_nvmec_completions()
+{
+    local cur=${COMP_WORDS[COMP_CWORD]}
+    local sub=""
+    local opts=""
+
+    COMPREPLY=()
+
+    # Complete sub-commands
+    if [[ $COMP_CWORD < 2 ]]; then
+        COMPREPLY+=( $( compgen -W 'show create --help' -- $cur ) )
+        return 0
+    fi
+
+    # Complete sub-command arguments
+
+    sub=${COMP_WORDS[1]}
+
+    if [[ "$sub" != "enum" ]]; then
+        opts+="/dev/nvme* "
+    fi
+
+    case "$sub" in
+    
+    "show")
+        opts+="--cmd-input --help"
+        ;;
+
+    "create")
+        opts+="--cmd-output --cdw0 --cdw1 --cdw2 --cdw3 --cdw4 --cdw4 --cdw5 --cdw6 --cdw7 --cdw8 --cdw9 --cdw10 --cdw11 --cdw12 --cdw13 --cdw14 --cdw15 --opcode --nsid --help"
+        ;;
+
+    esac
+
+    COMPREPLY+=( $( compgen -W "$opts" -- $cur ) )
+
+    return 0
+}
+
+#
+complete -o nosort -F _nvmec_completions nvmec
+
+# ex: filetype=sh

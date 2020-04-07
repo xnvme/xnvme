@@ -1,0 +1,102 @@
+# xnvme completion                           -*- shell-script -*-
+#
+# Bash completion script for the `xnvme` CLI
+#
+# Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
+# SPDX-License-Identifier: Apache-2.0
+
+_xnvme_completions()
+{
+    local cur=${COMP_WORDS[COMP_CWORD]}
+    local sub=""
+    local opts=""
+
+    COMPREPLY=()
+
+    # Complete sub-commands
+    if [[ $COMP_CWORD < 2 ]]; then
+        COMPREPLY+=( $( compgen -W 'enum info idfy idfy-ns idfy-ctrlr log log-erri log-health feature-get feature-set format sanitize pioc padc library-info --help' -- $cur ) )
+        return 0
+    fi
+
+    # Complete sub-command arguments
+
+    sub=${COMP_WORDS[1]}
+
+    if [[ "$sub" != "enum" ]]; then
+        opts+="/dev/nvme* "
+    fi
+
+    case "$sub" in
+    
+    "enum")
+        opts+="--flags --help"
+        ;;
+
+    "info")
+        opts+="--help"
+        ;;
+
+    "idfy")
+        opts+="--cns --cntid --nsid --setid --uuid --data-output --help"
+        ;;
+
+    "idfy-ns")
+        opts+="--nsid --data-output --help"
+        ;;
+
+    "idfy-ctrlr")
+        opts+="--data-output --help"
+        ;;
+
+    "log")
+        opts+="--lid --lsp --lpo-nbytes --nsid --rae --data-nbytes --data-output --help"
+        ;;
+
+    "log-erri")
+        opts+="--nsid --limit --data-output --help"
+        ;;
+
+    "log-health")
+        opts+="--nsid --data-output --help"
+        ;;
+
+    "feature-get")
+        opts+="--fid --nsid --sel --data-output --help"
+        ;;
+
+    "feature-set")
+        opts+="--fid --feat --nsid --save --data-input --help"
+        ;;
+
+    "format")
+        opts+="--nsid --help"
+        ;;
+
+    "sanitize")
+        opts+="--help"
+        ;;
+
+    "pioc")
+        opts+="--cmd-input --data-input --data-output --data-nbytes --meta-input --meta-output --meta-nbytes --help"
+        ;;
+
+    "padc")
+        opts+="--cmd-input --data-input --data-output --data-nbytes --meta-input --meta-output --meta-nbytes --help"
+        ;;
+
+    "library-info")
+        opts+="--help"
+        ;;
+
+    esac
+
+    COMPREPLY+=( $( compgen -W "$opts" -- $cur ) )
+
+    return 0
+}
+
+#
+complete -o nosort -F _xnvme_completions xnvme
+
+# ex: filetype=sh
