@@ -33,7 +33,7 @@ path_to_ll(const char *path, uint64_t *val)
 	int buf_len = 0x1000;
 	char buf[buf_len];
 	FILE *fp;
-	char c;
+	int c;
 	int base = 10;
 
 	fp = fopen(path, "rb");
