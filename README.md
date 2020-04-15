@@ -3,6 +3,8 @@
 xNVMe: cross-platform libraries and tools for NVMe devices
 ============================================================
 
+See: https://xnvme.io/docs for documentation
+
 - xNVMe, base NVMe specification (1.4) available as library and CLI `xnvme`
   - Memory Management
   - NVMe command interface
