@@ -1,0 +1,14 @@
+Usage: zoned changes <uri> [<args>]
+
+Retrieve the Changed Zone list
+
+Where <args> include:
+
+  uri                           ; Device URI e.g. /dev/nvme0n1, liou:/dev/nvme0n1 or pci:0000:01:00.1
+  [ --data-output FILE ]        ; Path to data output-file
+  [ --help ]                    ; Show usage / help
+
+See 'zoned --help' for other commands
+
+Zoned Namespace Utility -- ver: {major: 0, minor: 0, patch: 17}
+

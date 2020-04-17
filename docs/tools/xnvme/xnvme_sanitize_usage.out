@@ -4,10 +4,10 @@ Sanitize...
 
 Where <args> include:
 
-  uri                           ; Device URI e.g. /dev/nvme0n1 or pci://0000:01:00.1
+  uri                           ; Device URI e.g. /dev/nvme0n1, liou:/dev/nvme0n1 or pci:0000:01:00.1
   [ --help ]                    ; Show usage / help
 
 See 'xnvme --help' for other commands
 
-xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 0, patch: 16}
+xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 0, patch: 17}
 

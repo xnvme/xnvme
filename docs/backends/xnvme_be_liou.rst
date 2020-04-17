@@ -3,12 +3,11 @@
 Linux/io_uring
 ==============
 
-The ``XNVME_BE_LIOU`` backend uses synchronous ``ioctl`` calls to have the
-kernel perform NVMe command and ``io_uring`` for:
+The Linux/io_uring backend, ``be:liou``, uses ``io_uring`` to provide an
+asynchronous interface, over which NVMe command opcodes with equivalent
+``io_uring`` opcodes are shipped. Currently, this includes read and write.
 
-* ``xnvme_cmd_read``
-* ``xnvme_cmd_write``
-* And for everything else it can ship via ``io_uring`` opcodes
+Everything else is mapped to the Linux NVMe Driver IOCTLs via ``be:lioc``.
 
 Note on Errors
 --------------

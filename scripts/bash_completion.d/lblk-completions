@@ -30,7 +30,7 @@ _lblk_completions()
     case "$sub" in
     
     "enum")
-        opts+="--flags --help"
+        opts+="--uri --flags --help"
         ;;
 
     "info")

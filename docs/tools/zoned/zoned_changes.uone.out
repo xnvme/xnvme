@@ -1,0 +1,5 @@
+# Retrieving the Changed Zone List
+znd_changes:
+  nidents: 0
+  idents: ~
+

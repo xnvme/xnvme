@@ -102,7 +102,7 @@ Device Identifiers
 Since devices are no longer available in ``/dev``, then the PCI ids are used,
 such as ``pci:0000:03:00.0?nsid=1``, e.g. using the CLI:
 
-.. literalinclude:: xnvme_info.cmd
+.. literalinclude:: 115_xnvme_info.cmd
    :language: bash
 
 And using the API it would be similar to::

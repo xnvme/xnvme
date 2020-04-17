@@ -11,6 +11,8 @@ xnvme_dev:
     iomd: 'SYNC'
     payload_data: 'DRV'
     payload_meta: 'DRV'
+    csi: 0xff
+    nsid: 0x1
     ssw: 12
   xnvme_geo:
     type: XNVME_GEO_CONVENTIONAL
@@ -21,5 +23,7 @@ xnvme_dev:
     nbytes: 4096
     nbytes_oob: 0
     tbytes: 8589934592
-    mdts_nbytes: 16777216
+    mdts_nbytes: 520192
+    lba_nbytes: 4096
+    lba_extended: 0
 

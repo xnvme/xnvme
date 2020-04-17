@@ -1,0 +1,17 @@
+# xNVMe Library Information
+ver: {major: 0, minor: 0, patch: 17}
+xnvme_3p:
+  - 'fio;git-describe:fio-3.20-62-gc7f72c4b'
+  - 'spdk;git-describe:v20.04-rc1-528-g8c710c9d;+patches'
+  - 'libnvme;git-rev:master/a458217'
+  - 'liburing;git-describe:liburing-0.6-53-g94ba6378'
+xnvme_be_attr_list:
+  count: 5
+  capacity: 5
+  items:
+  - {name: 'spdk', enabled: 1, schemes: [pci, spdk, pcie, fab]}
+  - {name: 'liou', enabled: 1, schemes: [liou, file]}
+  - {name: 'laio', enabled: 1, schemes: [laio, file]}
+  - {name: 'lioc', enabled: 1, schemes: [lioc, file]}
+  - {name: 'fioc', enabled: 0, schemes: [fioc, file]}
+

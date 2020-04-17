@@ -4,7 +4,7 @@ Pass a user-defined ADmin Command through
 
 Where <args> include:
 
-  uri                           ; Device URI e.g. /dev/nvme0n1 or pci://0000:01:00.1
+  uri                           ; Device URI e.g. /dev/nvme0n1, liou:/dev/nvme0n1 or pci:0000:01:00.1
   --cmd-input FILE              ; Path to command input-file
   [ --data-input FILE ]         ; Path to data input-file
   [ --data-output FILE ]        ; Path to data output-file
@@ -16,5 +16,5 @@ Where <args> include:
 
 See 'xnvme --help' for other commands
 
-xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 0, patch: 16}
+xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 0, patch: 17}
 

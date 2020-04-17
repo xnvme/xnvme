@@ -1,0 +1,140 @@
+# Retrieving device properties ...
+dev_attr:
+  be_id: 0x01
+  be_name: 'XNVME_BE_LKRNL'
+  ssw: 12
+dev_geo:
+  npugrp: 1
+  npunit: 1
+  nzone: 510
+  nsect: 4096
+  nbytes: 4096
+  nbytes_oob: 16
+  tbytes: 8556380160
+  tmbytes: 8160
+dev_cmd_opts:
+  mask: '00000000000000000000000001010000'
+  iomd: 'SYNC'
+  plod: 'PRP'
+xnvme_spec_idfy_ctrlr:
+  vid: 0x8086
+  ssvid: 0x1af4
+  sn: 'deadbeef            '
+  mn: 'QEMU NVMe Ctrl                          '
+  fr: '1.0     '
+  rab: 6
+  ieee: b30200
+  cmic: 0
+  mdts: 7
+  cntlid: 0
+  ver: 0x10400
+  rtd3r: 0
+  rtd3e: 0
+  oaes: 0
+  ctratt: 0
+  oacs: 0
+  acl: 3
+  aerl: 3
+  frmw: 0xe
+  lpa: { ns_smart: 0, celp: 0, edlp: 1, telemetry: 0, val: 0x4}
+  elpe: 3
+  npss: 0
+  avscc: 0
+  apsta: 0
+  wctemp: 0
+  cctemp: 0
+  mtfa: 0
+  hmpre: 0
+  hmmin: 0
+  tnvmcap: [0, 0]
+  unvmcap: [0, 0]
+  rpmbs: 0
+  edstt: 0
+  dsto: 0
+  fwug: 0
+  kas: 0
+  hctma: 0
+  mntmt: 0
+  mxtmt: 0
+  sanicap: 0
+  sqes: 0x66
+  cqes: 0x44
+  maxcmd: 0
+  nn: 1
+  oncs: 0x40
+  fuses: 0
+  fna: 0
+  vwc: 0x1
+  awun: 0
+  awupf: 0
+  nvscc: 0
+  acwu: 0
+  sgls: 0xa0001
+  subnqn: 'nqn.2014-08.org.nvmexpress:uuid:e947cb7d-330e-4614-8afd-ccaa32a17bdd'
+xnvme_spec_idfy_ns:
+  nsze: 2088960
+  ncap: 2088960
+  nuse: 2088960
+  nlbaf: 0
+  nsfeat:
+    thin_prov: 0
+    ns_atomic_write_unit: 0
+    dealloc_or_unwritten_error: 0
+    guid_never_reused: 0
+    reserved1: 0
+  flbas:
+    format: 0
+    extended: 0
+    reserved2: 0
+  mc:
+    extended: 0
+    pointer: 1
+    reserved3: 0
+  dpc: 0
+  dps: 0
+  nsrescap: 0
+  fpi: 0
+  dlfeat: 0
+  nawun: 0
+  nawupf: 0
+  nacwu: 0
+  nabsn: 0
+  nabspf: 0
+  noiob: 0
+  nvmcap:
+    - 0
+    - 0
+  nguid: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  eui64: 0
+  # ms: meta-data-size-in-nbytes
+  # ds: data-size in 2^ds bytes
+  # rp: relative performance 00b, 1b 10b, 11b
+  lbaf:
+    - {ms: 16, ds: 12, rp: 0}
+    - {ms: 0, ds: 0, rp: 0}
+    - {ms: 0, ds: 0, rp: 0}
+    - {ms: 0, ds: 0, rp: 0}
+    - {ms: 0, ds: 0, rp: 0}
+    - {ms: 0, ds: 0, rp: 0}
+    - {ms: 0, ds: 0, rp: 0}
+    - {ms: 0, ds: 0, rp: 0}
+    - {ms: 0, ds: 0, rp: 0}
+    - {ms: 0, ds: 0, rp: 0}
+    - {ms: 0, ds: 0, rp: 0}
+    - {ms: 0, ds: 0, rp: 0}
+    - {ms: 0, ds: 0, rp: 0}
+    - {ms: 0, ds: 0, rp: 0}
+    - {ms: 0, ds: 0, rp: 0}
+    - {ms: 0, ds: 0, rp: 0}
+  fzsze: 0
+  nar: 0
+  nor: 0
+  zal: 0
+  zoc: 0
+  zds: 128
+  zonef0: {zs: 16777216, lbafs: 0}
+  zonef1: {zs: 0, lbafs: 0}
+  zonef2: {zs: 0, lbafs: 0}
+  zonef3: {zs: 0, lbafs: 0}
+# Completed without errors
+

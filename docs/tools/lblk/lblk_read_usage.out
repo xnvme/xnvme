@@ -4,7 +4,7 @@ Read data and optionally metadata
 
 Where <args> include:
 
-  uri                           ; Device URI e.g. /dev/nvme0n1 or pci://0000:01:00.1
+  uri                           ; Device URI e.g. /dev/nvme0n1, liou:/dev/nvme0n1 or pci:0000:01:00.1
   --slba 0xNUM                  ; Start Logical Block Address
   --nlb NUM                     ; Number of LBAs (NOTE: zero-based value)
   [ --nsid 0xNUM ]              ; Namespace Identifier
@@ -14,5 +14,5 @@ Where <args> include:
 
 See 'lblk --help' for other commands
 
-Logical Block Namespace Utility -- ver: {major: 0, minor: 0, patch: 16}
+Logical Block Namespace Utility -- ver: {major: 0, minor: 0, patch: 17}
 

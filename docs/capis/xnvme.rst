@@ -49,6 +49,14 @@ xnvme_pr
 .. doxygenenum:: xnvme_pr
 
 
+.. _sec-c-apis-xnvme-enum-xnvme_spec_csi:
+
+xnvme_spec_csi
+--------------
+
+.. doxygenenum:: xnvme_spec_csi
+
+
 .. _sec-c-apis-xnvme-enum-xnvme_spec_feat_id:
 
 xnvme_spec_feat_id
@@ -290,6 +298,16 @@ xnvme_spec_cpl
    :undoc-members:
 
 
+.. _sec-c-apis-xnvme-struct-xnvme_spec_cs_vector:
+
+xnvme_spec_cs_vector
+--------------------
+
+.. doxygenstruct:: xnvme_spec_cs_vector
+   :members:
+   :undoc-members:
+
+
 .. _sec-c-apis-xnvme-struct-xnvme_spec_dsm_range:
 
 xnvme_spec_dsm_range
@@ -316,6 +334,16 @@ xnvme_spec_idfy
 ---------------
 
 .. doxygenstruct:: xnvme_spec_idfy
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-apis-xnvme-struct-xnvme_spec_idfy_cs:
+
+xnvme_spec_idfy_cs
+------------------
+
+.. doxygenstruct:: xnvme_spec_idfy_cs
    :members:
    :undoc-members:
 
@@ -439,6 +467,22 @@ XNVME_MIN
 ---------
 
 .. doxygenfunction:: XNVME_MIN
+
+
+.. _sec-c-apis-xnvme-func-xnvme_3p_ver_fpr:
+
+xnvme_3p_ver_fpr
+----------------
+
+.. doxygenfunction:: xnvme_3p_ver_fpr
+
+
+.. _sec-c-apis-xnvme-func-xnvme_3p_ver_pr:
+
+xnvme_3p_ver_pr
+---------------
+
+.. doxygenfunction:: xnvme_3p_ver_pr
 
 
 .. _sec-c-apis-xnvme-func-xnvme_async_get_depth:
@@ -609,12 +653,28 @@ xnvme_cmd_idfy_ctrlr
 .. doxygenfunction:: xnvme_cmd_idfy_ctrlr
 
 
+.. _sec-c-apis-xnvme-func-xnvme_cmd_idfy_ctrlr_csi:
+
+xnvme_cmd_idfy_ctrlr_csi
+------------------------
+
+.. doxygenfunction:: xnvme_cmd_idfy_ctrlr_csi
+
+
 .. _sec-c-apis-xnvme-func-xnvme_cmd_idfy_ns:
 
 xnvme_cmd_idfy_ns
 -----------------
 
 .. doxygenfunction:: xnvme_cmd_idfy_ns
+
+
+.. _sec-c-apis-xnvme-func-xnvme_cmd_idfy_ns_csi:
+
+xnvme_cmd_idfy_ns_csi
+---------------------
+
+.. doxygenfunction:: xnvme_cmd_idfy_ns_csi
 
 
 .. _sec-c-apis-xnvme-func-xnvme_cmd_log:
@@ -697,12 +757,28 @@ xnvme_dev_get_be_state
 .. doxygenfunction:: xnvme_dev_get_be_state
 
 
+.. _sec-c-apis-xnvme-func-xnvme_dev_get_csi:
+
+xnvme_dev_get_csi
+-----------------
+
+.. doxygenfunction:: xnvme_dev_get_csi
+
+
 .. _sec-c-apis-xnvme-func-xnvme_dev_get_ctrlr:
 
 xnvme_dev_get_ctrlr
 -------------------
 
 .. doxygenfunction:: xnvme_dev_get_ctrlr
+
+
+.. _sec-c-apis-xnvme-func-xnvme_dev_get_ctrlr_css:
+
+xnvme_dev_get_ctrlr_css
+-----------------------
+
+.. doxygenfunction:: xnvme_dev_get_ctrlr_css
 
 
 .. _sec-c-apis-xnvme-func-xnvme_dev_get_geo:
@@ -719,6 +795,14 @@ xnvme_dev_get_ns
 ----------------
 
 .. doxygenfunction:: xnvme_dev_get_ns
+
+
+.. _sec-c-apis-xnvme-func-xnvme_dev_get_ns_css:
+
+xnvme_dev_get_ns_css
+--------------------
+
+.. doxygenfunction:: xnvme_dev_get_ns_css
 
 
 .. _sec-c-apis-xnvme-func-xnvme_dev_get_nsid:
@@ -993,6 +1077,14 @@ xnvme_spec_cmd_pr
 .. doxygenfunction:: xnvme_spec_cmd_pr
 
 
+.. _sec-c-apis-xnvme-func-xnvme_spec_csi_str:
+
+xnvme_spec_csi_str
+------------------
+
+.. doxygenfunction:: xnvme_spec_csi_str
+
+
 .. _sec-c-apis-xnvme-func-xnvme_spec_feat_fpr:
 
 xnvme_spec_feat_fpr
@@ -1007,6 +1099,22 @@ xnvme_spec_feat_pr
 ------------------
 
 .. doxygenfunction:: xnvme_spec_feat_pr
+
+
+.. _sec-c-apis-xnvme-func-xnvme_spec_idfy_cs_fpr:
+
+xnvme_spec_idfy_cs_fpr
+----------------------
+
+.. doxygenfunction:: xnvme_spec_idfy_cs_fpr
+
+
+.. _sec-c-apis-xnvme-func-xnvme_spec_idfy_cs_pr:
+
+xnvme_spec_idfy_cs_pr
+---------------------
+
+.. doxygenfunction:: xnvme_spec_idfy_cs_pr
 
 
 .. _sec-c-apis-xnvme-func-xnvme_spec_idfy_ctrl_fpr:

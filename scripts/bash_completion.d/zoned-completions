@@ -1,0 +1,102 @@
+# zoned completion                           -*- shell-script -*-
+#
+# Bash completion script for the `zoned` CLI
+#
+# Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
+# SPDX-License-Identifier: Apache-2.0
+
+_zoned_completions()
+{
+    local cur=${COMP_WORDS[COMP_CWORD]}
+    local sub=""
+    local opts=""
+
+    COMPREPLY=()
+
+    # Complete sub-commands
+    if [[ $COMP_CWORD < 2 ]]; then
+        COMPREPLY+=( $( compgen -W 'enum info idfy-ctrlr idfy-ns report changes errors read write append mgmt-open mgmt-close mgmt-finish mgmt-reset mgmt --help' -- $cur ) )
+        return 0
+    fi
+
+    # Complete sub-command arguments
+
+    sub=${COMP_WORDS[1]}
+
+    if [[ "$sub" != "enum" ]]; then
+        opts+="/dev/nvme* "
+    fi
+
+    case "$sub" in
+    
+    "enum")
+        opts+="--uri --flags --help"
+        ;;
+
+    "info")
+        opts+="--help"
+        ;;
+
+    "idfy-ctrlr")
+        opts+="--help"
+        ;;
+
+    "idfy-ns")
+        opts+="--help"
+        ;;
+
+    "report")
+        opts+="--slba --limit --data-output --help"
+        ;;
+
+    "changes")
+        opts+="--data-output --help"
+        ;;
+
+    "errors")
+        opts+="--nsid --data-output --help"
+        ;;
+
+    "read")
+        opts+="--slba --nlb --nsid --data-output --meta-output --help"
+        ;;
+
+    "write")
+        opts+="--slba --nlb --nsid --data-input --meta-input --help"
+        ;;
+
+    "append")
+        opts+="--slba --nlb --nsid --data-input --meta-input --help"
+        ;;
+
+    "mgmt-open")
+        opts+="--slba --nsid --all --help"
+        ;;
+
+    "mgmt-close")
+        opts+="--slba --nsid --all --help"
+        ;;
+
+    "mgmt-finish")
+        opts+="--slba --nsid --all --help"
+        ;;
+
+    "mgmt-reset")
+        opts+="--slba --nsid --all --help"
+        ;;
+
+    "mgmt")
+        opts+="--slba --action --nsid --all --help"
+        ;;
+
+    esac
+
+    COMPREPLY+=( $( compgen -W "$opts" -- $cur ) )
+
+    return 0
+}
+
+#
+complete -o nosort -F _zoned_completions zoned
+
+# ex: filetype=sh

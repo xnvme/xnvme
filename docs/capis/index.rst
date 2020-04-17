@@ -26,9 +26,10 @@ The :ref:`sec-c-apis-lblk-headers` is available for inspection in its raw form.
 **znd**
 
 Building on top of the functionality of :ref:`sec-c-apis-xnvme` then the
-**znd** API provides helpers and structures specific to NVMe command-set
-provided by Zoned Namespaces. It will be available as soon as the NVMe
-specification is made public.
+:ref:`sec-c-apis-znd` API provides helpers and structures specific to NVMe
+command-set provided by Zoned Namespaces.
+
+The :ref:`sec-c-apis-znd-headers` is available for inspection in its raw form.
 
 **xnvmec**
 

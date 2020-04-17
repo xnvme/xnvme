@@ -1,0 +1,12 @@
+# xnvme_enumerate()
+xnvme_enumeration:
+  capacity: 94
+  nentries: 6
+  entries:
+  - {trgt: '/dev/nvme0n1', schm: 'liou', opts: '', uri: 'liou:/dev/nvme0n1'}
+  - {trgt: '/dev/nvme0n2', schm: 'liou', opts: '', uri: 'liou:/dev/nvme0n2'}
+  - {trgt: '/dev/nvme0n1', schm: 'laio', opts: '', uri: 'laio:/dev/nvme0n1'}
+  - {trgt: '/dev/nvme0n2', schm: 'laio', opts: '', uri: 'laio:/dev/nvme0n2'}
+  - {trgt: '/dev/nvme0n1', schm: 'lioc', opts: '', uri: 'lioc:/dev/nvme0n1'}
+  - {trgt: '/dev/nvme0n2', schm: 'lioc', opts: '', uri: 'lioc:/dev/nvme0n2'}
+

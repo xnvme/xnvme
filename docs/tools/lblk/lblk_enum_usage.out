@@ -4,10 +4,11 @@ Enumerate Logical Block Namespaces on the system
 
 Where <args> include:
 
+  [ --uri uri ]                 ; System URI e.g. fab:10.9.8.1:8888
   [ --flags 0xNUM ]             ; Command flags
   [ --help ]                    ; Show usage / help
 
 See 'lblk --help' for other commands
 
-Logical Block Namespace Utility -- ver: {major: 0, minor: 0, patch: 16}
+Logical Block Namespace Utility -- ver: {major: 0, minor: 0, patch: 17}
 

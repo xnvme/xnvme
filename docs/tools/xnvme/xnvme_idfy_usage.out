@@ -4,8 +4,8 @@ Execute an User-defined Identify Command
 
 Where <args> include:
 
-  uri                           ; Device URI e.g. /dev/nvme0n1 or pci://0000:01:00.1
-  --cns 0xNUM                   ; CNS?
+  uri                           ; Device URI e.g. /dev/nvme0n1, liou:/dev/nvme0n1 or pci:0000:01:00.1
+  --cns 0xNUM                   ; Controller or Namespace Struct
   [ --cntid 0xNUM ]             ; Controller Identifier
   [ --nsid 0xNUM ]              ; Namespace Identifier
   [ --setid 0xNUM ]             ; NVM Set Identifier
@@ -15,5 +15,5 @@ Where <args> include:
 
 See 'xnvme --help' for other commands
 
-xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 0, patch: 16}
+xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 0, patch: 17}
 

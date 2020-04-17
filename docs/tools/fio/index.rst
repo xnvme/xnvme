@@ -8,16 +8,9 @@ Provided with **xNVMe** is an external fio_ IO engine.
 Caveat
 ------
 
-1. Can handle only a single device at a time
-2. Must be used with ``--thread=1``
-3. Supports only "raw" device-files
+1. For "raw" device-files only
    - That is, ``/dev/nvme0n1``, ``/dev/nullb0`` and **NOT** file-system files
-
-TODO
-----
-
-* Fix caveat 1; that is, add support for multiple devices
-* Fix caveat 2; figure out how to unify the fio/xNVMe/SPDK threading models
+2. Must be used with ``--thread=1``
 
 Usage
 -----
@@ -54,7 +47,7 @@ See details on the parameters of the ``.fio`` file in the following section.
 fio xNVMe IO Engine verification
 --------------------------------
 
-This fio-script is used for verifying the **xNVMe** under load.
+This fio-script is used for verifying **xNVMe** under load.
 
 .. literalinclude:: ../../../tools/fio-engine/xnvme-verify.fio
    :language: bash
@@ -67,6 +60,16 @@ means of shipping IO to your device. E.g. **xNVMe/uring vs uring**.
 
 .. literalinclude:: ../../../tools/fio-engine/xnvme-compare.fio
    :language: bash
+
+fio xNVMe IO Engine on NVMe Device with Zoned Command Set
+---------------------------------------------------------
+
+This fio-script provides the basics for running on an NVMe device with the
+Zoned Command Set enabled.
+
+.. literalinclude:: ../../../tools/fio-engine/xnvme-zoned.fio
+   :language: bash
+
 
 Build Notes
 -----------

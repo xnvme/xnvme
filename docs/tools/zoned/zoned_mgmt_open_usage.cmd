@@ -1,0 +1,1 @@
+zoned mgmt-open --help

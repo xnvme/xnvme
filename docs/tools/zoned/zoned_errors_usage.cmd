@@ -1,0 +1,1 @@
+zoned errors --help

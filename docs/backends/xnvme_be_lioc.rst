@@ -3,12 +3,15 @@
 Linux/IOCTL
 ===========
 
-The ``XNVME_BE_LIOC`` backend uses synchronous ``ioctl`` calls to have the
-kernel perform NVMe commands. To enable asynchronous IO, then there are two
-options:
+The ``be:lioc`` backend communicates with the Linux NVMe driver via IOCTLs. The
+backend relies on the driver-provided passthrough interface to submit admin,
+IO, and arbitrary user-defined commands.
 
-* Using ``libaio`` (TODO: no implemented yet)
-* Using ``io_uring`` via the ``Linux/io_uring backend`` / ``XNVME_BE_LIOU``
+The backend does not support the asynchronous command interface, to enable it
+for a subset of commands then two options are available:
+
+* The :ref:`sec-backends-liou` backend (``be:liou``)
+* The :ref:`sec-backends-laio` backend (``be:laio``)
 
 Note on Errors
 --------------

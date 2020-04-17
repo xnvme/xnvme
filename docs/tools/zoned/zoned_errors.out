@@ -1,0 +1,4 @@
+# Error-Information-Log has 0 valid entries
+xnvme_spec_log_erri:
+  - {ecnt: 0, sqid: 0, cid: 0, status: 0, eloc: 0, lba: 0, nsid: 0, ven_si: 0, trtype: 0, cmd_si: 0, trtype_si: 0}
+
