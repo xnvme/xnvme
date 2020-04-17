@@ -152,6 +152,11 @@ sqthread_poll=1
 ;filename=liou\:/dev/nullb0?pseudo=1
 ;filename=liou\:/dev/nvme0n1
 
+[xnvme_laio]
+ioengine=external:/usr/lib/libxnvme-fio-engine.so
+;filename=laio\:/dev/nullb0?pseudo=1
+;filename=laio\:/dev/nvme0n1
+
 [xnvme_spdk]
 ioengine=external:/usr/lib/libxnvme-fio-engine.so
 ;filename=pci\:0000\:01\:00.0?nsid=1
