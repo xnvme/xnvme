@@ -33,6 +33,12 @@ if not on_rtd:
 
 html_static_path = [os.sep.join(["..", "_static"])]
 
+html_context = {
+    "css_files": [
+        "_static/theme_overrides.css",
+    ]
+}
+
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'xnvmedoc'
 
