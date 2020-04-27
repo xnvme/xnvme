@@ -1041,6 +1041,7 @@ xnvmec_parse(struct xnvmec *cli)
 
 			case XNVMEC_POSA:
 				XNVME_DEBUG("Positional out of place");
+				errno = EINVAL;
 				return -1;
 			}
 
@@ -1052,6 +1053,7 @@ xnvmec_parse(struct xnvmec *cli)
 
 		if (!found) {
 			XNVME_DEBUG("Chaos");
+			errno = EINVAL;
 			return -1;
 		}
 
@@ -1168,7 +1170,7 @@ xnvmec(struct xnvmec *cli, int argc, char **argv, int opts)
 
 	err = xnvmec_parse(cli);
 	if (err) {
-		xnvmec_perr("xnvmec()", err);
+		xnvmec_perr("xnvmec()", errno);
 		return err;
 	}
 
