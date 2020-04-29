@@ -319,6 +319,7 @@ xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 	switch (dev->dtype) {
 	case XNVME_DEV_TYPE_BLOCK_DEVICE:
 		if (_blockdevice_geometry(dev)) {
+			XNVME_DEBUG("FAILED: _blockdevice_geometry");
 			return -EINVAL;
 		}
 		break;
