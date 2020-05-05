@@ -753,7 +753,7 @@ xnvmec_assign_arg(struct xnvmec *cli, int optval, char *arg,
 		args->rae = num;
 		break;
 	case XNVMEC_OPT_CLEAR:
-		args->clear = num;
+		args->clear = arg ? num : 1;
 		break;
 	case XNVMEC_OPT_ZF:
 		args->zf = num;
