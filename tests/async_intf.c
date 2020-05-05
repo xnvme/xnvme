@@ -24,7 +24,11 @@ test_init_term(struct xnvmec *cli)
 		return 1;
 	}
 
-	{
+	xnvmec_pinf("count: %zu", count);
+	xnvmec_pinf("qdepth: %zu", qd);
+	xnvmec_pinf("clear: %d", cli->args.clear);
+
+	if (!cli->args.clear) {
 		// Ask how many queues are supported
 		struct xnvme_spec_feat feat = { .val = 0 };
 		struct xnvme_req req = { 0 };
@@ -41,11 +45,10 @@ test_init_term(struct xnvmec *cli)
 
 		feat.val = req.cpl.cdw0;
 
-		xnvmec_pinf("qd: %zu, count: %zu", qd, count);
 		xnvme_spec_feat_pr(XNVME_SPEC_FEAT_NQUEUES, feat, XNVME_PR_DEF);
 
-		if (count > feat.nqueues.nsqa) {
-			xnvmec_pinf("skipping -- count: %zu > nsqa: %u",
+		if (count > (uint64_t)(feat.nqueues.nsqa + 1)) {
+			xnvmec_pinf("skipping -- count: %zu > (nsqa + 1): %u",
 				    count, feat.nqueues.nsqa);
 			return 0;
 		}
@@ -91,6 +94,7 @@ static struct xnvmec_sub subs[] = {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_COUNT, XNVMEC_LREQ},
 			{XNVMEC_OPT_QDEPTH, XNVMEC_LREQ},
+			{XNVMEC_OPT_CLEAR, XNVMEC_LFLG},
 		}
 	},
 };
