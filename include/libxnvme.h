@@ -782,30 +782,32 @@ enum xnvme_geo_type {
  * Representation of device "geometry"
  *
  * This will remain in some, encapsulating IO parameters such as MDTS, ZONE
- * APPEND MDTS, nbytes, nsect etc. mapping to zone characteristics
+ * APPEND MDTS, nbytes, nsect etc. mapping to zone characteristics, as well as
+ * extended LBA formats.
  *
  * @struct xnvme_geo
  */
 struct xnvme_geo {
 	enum xnvme_geo_type type;
 
-	/**
-	 * Pseudo-geometry npugrp and npunit are irrelevant...
-	 */
-	uint32_t npugrp;		///< Nr. of Parallel Unit Groups
-	uint32_t npunit;		///< Nr. of Parallel Units in PUG
+	uint32_t npugrp;	///< Nr. of Parallel Unit Groups
+	uint32_t npunit;	///< Nr. of Parallel Units in PUG
 
 	uint32_t nzone;		///< Nr. of zones in PU
 	uint64_t nsect;		///< Nr. of sectors per zone
 	uint32_t nbytes;	///< Nr. of bytes per sector
 	uint32_t nbytes_oob;	///< Nr. of bytes per sector in OOB
 
-	uint64_t tbytes;		///< Total # bytes in geometry
+	uint64_t tbytes;	///< Total # bytes in geometry
 
-	uint32_t mdts_nbytes;	///< Maximum data transfer size in bytes
+	uint32_t mdts_nbytes;	///< Maximum-data-transfer-size in unit of bytes
 
-	uint8_t _rsvd[20];
+	uint32_t lba_nbytes;	///< Size of an LBA in bytes
+	uint8_t lba_extended;	///< Extended LBA: 1=Supported, 0=Not-Supported
+
+	uint8_t _rsvd[15];
 };
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_geo) == 64, "Incorrect size")
 
 /**
  * Prints the given ::xnvme_geo to the given output stream

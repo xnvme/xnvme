@@ -242,9 +242,12 @@ xnvme_cmd_read(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba,
 	       uint16_t nlb, void *dbuf, void *mbuf, int opts,
 	       struct xnvme_req *ret)
 {
-	size_t dbuf_nbytes = dbuf ? dev->geo.nbytes * (nlb + 1) : 0;
+	size_t dbuf_nbytes = dbuf ? dev->geo.lba_nbytes * (nlb + 1) : 0;
 	size_t mbuf_nbytes = mbuf ? dev->geo.nbytes_oob * (nlb + 1) : 0;
 	struct xnvme_spec_cmd cmd = { 0 };
+
+	// TODO: consider returning -EINVAL when mbuf is provided and namespace
+	// have extended-lba in effect
 
 	cmd.common.opcode = XNVME_SPEC_OPC_READ;
 	cmd.common.nsid = nsid;
@@ -263,9 +266,12 @@ xnvme_cmd_write(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba,
 	void *cdbuf = (void *)dbuf;
 	void *cmbuf = (void *)mbuf;
 
-	size_t dbuf_nbytes = cdbuf ? dev->geo.nbytes * (nlb + 1) : 0;
+	size_t dbuf_nbytes = cdbuf ? dev->geo.lba_nbytes * (nlb + 1) : 0;
 	size_t mbuf_nbytes = cmbuf ? dev->geo.nbytes_oob * (nlb + 1) : 0;
 	struct xnvme_spec_cmd cmd = { 0 };
+
+	// TODO: consider returning -EINVAL when mbuf is provided and namespace
+	// have extended-lba in effect
 
 	cmd.common.opcode = XNVME_SPEC_OPC_WRITE;
 	cmd.common.nsid = nsid;

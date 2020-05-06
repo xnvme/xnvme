@@ -256,6 +256,12 @@ _conventional_geometry(struct xnvme_dev *dev)
 	geo->nbytes = 2 << (lbaf->ds - 1);
 	geo->nbytes_oob = lbaf->ms;
 
+	geo->lba_nbytes = geo->nbytes;
+	geo->lba_extended = dev->id.ns.flbas.extended && lbaf->ms;
+	if (geo->lba_extended) {
+		geo->lba_nbytes += geo->nbytes_oob;
+	}
+
 	return 0;
 }
 
@@ -305,6 +311,9 @@ _blockdevice_geometry(struct xnvme_dev *dev)
 	geo->mdts_nbytes = val * 1024;
 
 	dev->ssw = XNVME_ILOG2(geo->nbytes);
+
+	geo->lba_extended = 0;
+	geo->lba_nbytes = geo->nbytes;
 
 	return 0;
 }

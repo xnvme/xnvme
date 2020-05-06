@@ -90,11 +90,8 @@ sub_read(struct xnvmec *cli)
 	const size_t nlb = cli->args.nlb;
 	uint8_t nsid = cli->args.nsid;
 
-	void *dbuf = NULL;
-	void *mbuf = NULL;
-	size_t dbuf_nbytes = (nlb + 1) * geo->nbytes;
-	size_t mbuf_nbytes = (nlb + 1) * geo->nbytes_oob;
-
+	void *dbuf = NULL, *mbuf = NULL;
+	size_t dbuf_nbytes, mbuf_nbytes;
 	struct xnvme_req req = { 0 };
 	int err;
 
@@ -102,28 +99,29 @@ sub_read(struct xnvmec *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
+	dbuf_nbytes = (nlb + 1) * geo->lba_nbytes;
+	mbuf_nbytes = geo->lba_extended ? 0 : (nlb + 1) * geo->nbytes_oob;
+
 	xnvmec_pinf("Reading nsid: 0x%x, slba: 0x%016x, nlb: %zu",
 		    nsid, slba, nlb);
 
-	xnvmec_pinf("Allocating dbuf_nbytes: %zu", dbuf_nbytes);
+	xnvmec_pinf("Alloc/clear dbuf, dbuf_nbytes: %zu", dbuf_nbytes);
 	dbuf = xnvme_buf_alloc(dev, dbuf_nbytes, NULL);
 	if (!dbuf) {
 		err = -errno;
 		xnvmec_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	xnvmec_pinf("Clearing dbuf");
 	memset(dbuf, 0, dbuf_nbytes);
 
 	if (mbuf_nbytes) {
-		xnvmec_pinf("Allocating mbuf_nbytes: %zu", mbuf_nbytes);
+		xnvmec_pinf("Alloc/clear mbuf, mbuf_nbytes: %zu", mbuf_nbytes);
 		mbuf = xnvme_buf_alloc(dev, mbuf_nbytes, NULL);
 		if (!mbuf) {
 			err = -errno;
 			xnvmec_perr("xnvme_buf_alloc()", err);
 			goto exit;
 		}
-		xnvmec_pinf("Clearing mbuf");
 		memset(mbuf, 0, mbuf_nbytes);
 	}
 
@@ -161,11 +159,8 @@ sub_write(struct xnvmec *cli)
 	const size_t nlb = cli->args.nlb;
 	uint32_t nsid = cli->args.nsid;
 
-	int dbuf_nbytes = (nlb + 1) * geo->nbytes;
-	char *dbuf = NULL;
-	int mbuf_nbytes = (nlb + 1) * geo->nbytes_oob;
-	char *mbuf = NULL;
-
+	void *dbuf = NULL, *mbuf = NULL;
+	size_t dbuf_nbytes, mbuf_nbytes;
 	struct xnvme_req req = { 0 };
 	int err;
 
@@ -173,10 +168,13 @@ sub_write(struct xnvmec *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
+	dbuf_nbytes = (nlb + 1) * geo->lba_nbytes;
+	mbuf_nbytes = geo->lba_extended ? 0 : (nlb + 1) * geo->nbytes_oob;
+
 	xnvmec_pinf("Writing nsid: 0x%x, slba: 0x%016x, nlb: %zu",
 		    nsid, slba, nlb);
 
-	xnvmec_pinf("Allocating dbuf");
+	xnvmec_pinf("Alloc/fill dbuf, dbuf_nbytes: %zu", dbuf_nbytes);
 	dbuf = xnvme_buf_alloc(dev, dbuf_nbytes, NULL);
 	if (!dbuf) {
 		err = -errno;
@@ -190,7 +188,7 @@ sub_write(struct xnvmec *cli)
 	}
 
 	if (mbuf_nbytes) {
-		xnvmec_pinf("Allocating and filling mbuf");
+		xnvmec_pinf("Alloc/fill mbuf, mbuf_nbytes: %zu", mbuf_nbytes);
 		mbuf = xnvme_buf_alloc(dev, mbuf_nbytes, NULL);
 		if (!mbuf) {
 			err = -errno;

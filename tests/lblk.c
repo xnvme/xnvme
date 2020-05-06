@@ -21,12 +21,12 @@ boilerplate(struct xnvmec *cli, uint8_t **wbuf, uint8_t **rbuf,
 	*rng_elba = cli->args.elba;
 
 	*mdts_naddr = XNVME_MIN(geo->mdts_nbytes / geo->lba_nbytes, 256);
-	*buf_nbytes = (*mdts_naddr) * geo->nbytes;
+	*buf_nbytes = (*mdts_naddr) * geo->lba_nbytes;
 
 	// Construct a range if none is given
 	if (!(cli->given[XNVMEC_OPT_SLBA] && cli->given[XNVMEC_OPT_ELBA])) {
 		*rng_slba = 0;
-		*rng_elba = (1 << 28) / geo->nbytes;	// Around 256MB
+		*rng_elba = (1 << 28) / geo->lba_nbytes;	// About 256MB
 	}
 	rng_naddr = *rng_elba - *rng_slba + 1;
 
@@ -113,7 +113,7 @@ sub_io(struct xnvmec *cli)
 	}
 
 	for (uint64_t count = 0; count < mdts_naddr; ++count) {
-		size_t wbuf_ofz = count * geo->nbytes;
+		size_t wbuf_ofz = count * geo->lba_nbytes;
 		uint64_t slba = rng_slba + count * 4;
 		struct xnvme_req req = { 0 };
 		int err = 0;
@@ -133,7 +133,7 @@ sub_io(struct xnvmec *cli)
 
 	xnvmec_buf_clear(rbuf, buf_nbytes);
 	for (uint64_t count = 0; count < mdts_naddr; ++count) {
-		size_t rbuf_ofz = count * geo->nbytes;
+		size_t rbuf_ofz = count * geo->lba_nbytes;
 		uint64_t slba = rng_slba + count * 4;
 		struct xnvme_req req = { 0 };
 
@@ -231,7 +231,7 @@ test_scopy(struct xnvmec *cli)
 	xnvmec_pinf("Writing payload scattered within LBA range [slba,elba]");
 	xnvmec_buf_fill(wbuf, buf_nbytes, "anum");
 	for (uint64_t count = 0; count < mdts_naddr; ++count) {
-		size_t wbuf_ofz = count * geo->nbytes;
+		size_t wbuf_ofz = count * geo->lba_nbytes;
 		uint64_t slba = rng_slba + count * 4;
 		struct xnvme_req req = { 0 };
 

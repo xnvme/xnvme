@@ -54,8 +54,13 @@ xnvme_geo_yaml(FILE *stream, const struct xnvme_geo *geo, int indent,
 	wrtn += fprintf(stream, "%*stbytes: %zu%s", indent, "",
 			geo->tbytes, sep);
 
-	wrtn += fprintf(stream, "%*smdts_nbytes: %u", indent, "",
-			geo->mdts_nbytes);
+	wrtn += fprintf(stream, "%*smdts_nbytes: %u%s", indent, "",
+			geo->mdts_nbytes, sep);
+
+	wrtn += fprintf(stream, "%*slba_nbytes: %u%s", indent, "",
+			geo->lba_nbytes, sep);
+	wrtn += fprintf(stream, "%*slba_extended: %u", indent, "",
+			geo->lba_extended);
 
 	return wrtn;
 }
