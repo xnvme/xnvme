@@ -25,9 +25,10 @@ XNVME_STATIC_ASSERT(
 struct xnvme_be_liou_state {
 	int fd;
 
+	uint8_t pseudo;
+
 	uint8_t poll_io;
 	uint8_t poll_sq;
-	uint8_t pseudo;
 
 	uint8_t rsvd[121];
 };
