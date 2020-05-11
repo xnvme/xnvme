@@ -41,11 +41,17 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_status) == 2, "Incorrect size")
  * @struct xnvme_spec_cpl
  */
 struct xnvme_spec_cpl {
-	/* dword 0 */
-	uint32_t		cdw0;	///< command-specific
+	union {
+		struct {
+			/* dword 0 */
+			uint32_t	cdw0;	///< command-specific
 
-	/* dword 1 */
-	uint32_t		rsvd1;
+			/* dword 1 */
+			uint32_t	rsvd1;
+		};
+
+		uint64_t result;	/* Combined result of cdw 0 and cdw 1 */
+	};
 
 	/* dword 2 */
 	uint16_t		sqhd;	///< submission queue head pointer
