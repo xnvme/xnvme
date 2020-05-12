@@ -32,9 +32,9 @@ lblk_status_code_str(enum lblk_status_code sc)
 }
 
 static int
-lblk_source_range_entry_yaml(FILE *stream,
-			     const struct lblk_source_range_entry *entry,
-			     int indent, const char *sep)
+lblk_scopy_fmt_zero_yaml(FILE *stream,
+			 const struct lblk_scopy_fmt_zero *entry,
+			 int indent, const char *sep)
 {
 	int wrtn = 0;
 
@@ -57,9 +57,9 @@ lblk_source_range_entry_yaml(FILE *stream,
 }
 
 int
-lblk_source_range_entry_fpr(FILE *stream,
-			    const struct lblk_source_range_entry *entry,
-			    int opts)
+lblk_scopy_fmt_zero_fpr(FILE *stream,
+			const struct lblk_scopy_fmt_zero *entry,
+			int opts)
 {
 	int wrtn = 0;
 
@@ -73,24 +73,24 @@ lblk_source_range_entry_fpr(FILE *stream,
 		return wrtn;
 	}
 
-	wrtn += fprintf(stream, "lblk_source_range_entry:");
+	wrtn += fprintf(stream, "lblk_scopy_fmt_zero:");
 	if (!entry) {
 		wrtn += fprintf(stream, " ~\n");
 		return wrtn;
 	}
 
 	wrtn += fprintf(stream, "\n");
-	wrtn += lblk_source_range_entry_yaml(stream, entry, 2, "\n");
+	wrtn += lblk_scopy_fmt_zero_yaml(stream, entry, 2, "\n");
 	wrtn += fprintf(stream, "\n");
 
 	return wrtn;
 }
 
 int
-lblk_source_range_entry_pr(const struct lblk_source_range_entry *entry,
-			   int opts)
+lblk_scopy_fmt_zero_pr(const struct lblk_scopy_fmt_zero *entry,
+		       int opts)
 {
-	return lblk_source_range_entry_fpr(stdout, entry, opts);
+	return lblk_scopy_fmt_zero_fpr(stdout, entry, opts);
 }
 
 int
@@ -121,13 +121,13 @@ lblk_source_range_fpr(FILE *stream, const struct lblk_source_range *srange,
 	wrtn += fprintf(stream, "  entries:\n");
 
 	for (int i = 0; i < LBLK_SCOPY_NENTRY_MAX; ++i) {
-		if ((nr) && (i > nr)) {
+		if (i > nr) {
 			break;
 		}
 
 		wrtn += fprintf(stream, "  - { ");
-		wrtn += lblk_source_range_entry_yaml(stream, &srange->entry[i],
-						     0, ", ");
+		wrtn += lblk_scopy_fmt_zero_yaml(stream, &srange->entry[i],
+						 0, ", ");
 		wrtn += fprintf(stream, " }\n");
 	}
 
@@ -234,10 +234,18 @@ lblk_idfy_ns_pr(struct lblk_idfy_ns *idfy, int opts)
 
 int
 lblk_cmd_scopy(struct xnvme_dev *dev, uint32_t nsid, uint64_t sdlba,
-	       struct lblk_source_range_entry *ranges, uint8_t nr, int opts,
-	       struct xnvme_req *ret)
+	       struct lblk_scopy_fmt_zero *ranges, uint8_t nr,
+	       enum lblk_scopy_fmt copy_fmt, int opts, struct xnvme_req *ret)
 {
-	size_t ranges_nbytes = (nr + 1) * sizeof(*ranges);
+	size_t ranges_nbytes = 0;
+
+	if (copy_fmt & LBLK_SCOPY_FMT_ZERO) {
+		ranges_nbytes = (nr + 1) * sizeof(*ranges);
+	}
+	if (copy_fmt & LBLK_SCOPY_FMT_SRCLEN) {
+		ranges_nbytes = (nr + 1) * sizeof(struct lblk_scopy_fmt_srclen);
+	}
+
 	struct lblk_cmd cmd = { 0 };
 
 	cmd.common.opcode = LBLK_CMD_OPC_SCOPY;

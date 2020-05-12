@@ -5,6 +5,14 @@
 #include <liblblk.h>
 #include <libxnvmec.h>
 
+/**
+ * Constructs an LBA range if --slba and --elba are not provided by CLI
+ *  - Stored in [rng_slba, rng_elba]
+ *
+ * Allocates buffers to support transfers of mdts_naddr
+ *  - wbuf -- to be used for writes
+ *  - rbuf -- to be used for read
+ */
 static int
 boilerplate(struct xnvmec *cli, uint8_t **wbuf, uint8_t **rbuf,
 	    size_t *buf_nbytes, uint64_t *mdts_naddr, uint32_t *nsid,
@@ -186,7 +194,7 @@ test_scopy(struct xnvmec *cli)
 
 	struct lblk_source_range *sranges = NULL;	// For the copy-payload
 	uint64_t sdlba = 0;
-
+	enum lblk_scopy_fmt copy_fmt;
 	int err;
 
 	err = boilerplate(cli, &wbuf, &rbuf, &buf_nbytes, &mdts_naddr, &nsid,
@@ -206,6 +214,9 @@ test_scopy(struct xnvmec *cli)
 
 	// Copy to the end of [slba,elba]
 	sdlba = rng_elba - mdts_naddr;
+
+	// NVMe-struct copy format
+	copy_fmt = LBLK_SCOPY_FMT_ZERO;
 
 	lblk_idfy_ctrlr_pr((struct lblk_idfy_ctrlr *)xnvme_dev_get_ctrlr(dev),
 			   XNVME_PR_DEF);
@@ -256,7 +267,7 @@ test_scopy(struct xnvmec *cli)
 		lblk_source_range_pr(sranges, nr, XNVME_PR_DEF);
 
 		err = lblk_cmd_scopy(dev, nsid, sdlba, sranges->entry, nr,
-				     XNVME_CMD_SYNC, &req);
+				     copy_fmt, XNVME_CMD_SYNC, &req);
 		if (err || xnvme_req_cpl_status(&req)) {
 			xnvmec_perr("xnvme_cmd_scopy()", err);
 			xnvme_req_pr(&req, XNVME_PR_DEF);

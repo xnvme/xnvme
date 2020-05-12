@@ -30,6 +30,16 @@ enum lblk_cmd_opc {
 };
 
 /**
+ * Structure conversion for support Kernel format
+ *
+ * @enum lblk_scopy_fmt
+ */
+enum lblk_scopy_fmt {
+	LBLK_SCOPY_FMT_ZERO     = 0x1,          ///< user provides entries as ::lblk_scopy_fmt_zero
+	LBLK_SCOPY_FMT_SRCLEN   = 0x1 << 8,     ///< user provides entries as ::lblk_scopy_fmt_srclen
+};
+
+/**
  * Produces a string representation of the given ::lblk_cmd_opc
  *
  * @param opc the enum value to produce a string representation of
@@ -62,9 +72,9 @@ const char *
 lblk_status_code_str(enum lblk_status_code sc);
 
 /**
- * @struct lblk_source_range_entry
+ * @struct lblk_scopy_fmt_zero
  */
-struct lblk_source_range_entry {
+struct lblk_scopy_fmt_zero {
 	uint8_t rsvd0[8];
 
 	uint64_t slba;		///< Start LBA
@@ -77,10 +87,10 @@ struct lblk_source_range_entry {
 	uint32_t elbatm;	///< Expected Logical Block App. Tag Mask
 	uint32_t elbat;		///< Expected Logical Block App. Tag
 };
-XNVME_STATIC_ASSERT(sizeof(struct lblk_source_range_entry) == 32, "Incorrect size")
+XNVME_STATIC_ASSERT(sizeof(struct lblk_scopy_fmt_zero) == 32, "Incorrect size")
 
 /**
- * Prints the given ::lblk_source_range_entry to the given output stream
+ * Prints the given ::lblk_scopy_fmt_zero to the given output stream
  *
  * @param stream output stream used for printing
  * @param entry pointer to structure to print
@@ -89,12 +99,12 @@ XNVME_STATIC_ASSERT(sizeof(struct lblk_source_range_entry) == 32, "Incorrect siz
  * @return On success, the number of characters printed is returned
  */
 int
-lblk_source_range_entry_fpr(FILE *stream,
-			    const struct lblk_source_range_entry *entry,
-			    int opts);
+lblk_scopy_fmt_zero_fpr(FILE *stream,
+			const struct lblk_scopy_fmt_zero *entry,
+			int opts);
 
 /**
- * Prints the given ::lblk_source_range_entry to stdout
+ * Prints the given ::lblk_scopy_fmt_zero to stdout
  *
  * @param entry pointer to structure to print
  * @param opts printer options, see ::xnvme_pr
@@ -102,14 +112,14 @@ lblk_source_range_entry_fpr(FILE *stream,
  * @return On success, the number of characters printed is returned
  */
 int
-lblk_source_range_entry_pr(const struct lblk_source_range_entry *entry,
-			   int opts);
+lblk_scopy_fmt_zero_pr(const struct lblk_scopy_fmt_zero *entry,
+		       int opts);
 
 /**
  * @see Specification Section 6.TBD.1
  */
 struct lblk_source_range {
-	struct lblk_source_range_entry entry[LBLK_SCOPY_NENTRY_MAX];
+	struct lblk_scopy_fmt_zero entry[LBLK_SCOPY_NENTRY_MAX];
 };
 XNVME_STATIC_ASSERT(sizeof(struct lblk_source_range) == 4096, "Incorrect size")
 
@@ -118,8 +128,7 @@ XNVME_STATIC_ASSERT(sizeof(struct lblk_source_range) == 4096, "Incorrect size")
  *
  * @param stream output stream used for printing
  * @param srange pointer to structure to print
- * @param nr nr=0: print ::LBLK_SCOPY_NENTRY_MAX entries from the given , nr>0:
- * print no more than nr
+ * @param nr zero-based number of entries, at most ::LBLK_SCOPY_NENTRY_MAX -1
  * @param opts printer options, see ::xnvme_pr
  *
  * @return On success, the number of characters printed is returned
@@ -155,11 +164,9 @@ struct lblk_cmd_scopy {
 
 	/* cdw 12 */
 	uint32_t nr		: 8;	///< Number of Ranges
-
-	uint32_t rsvd1		: 4;
-
-	uint32_t prinfor	: 4;	///< Protection Info. Field Read
 	uint32_t df		: 4;	///< Descriptor Format
+	uint32_t prinfor	: 4;	///< Protection Info. Field Read
+	uint32_t rsvd1		: 4;
 	uint32_t dtype		: 4;	///< Directive Type
 	uint32_t rsvd2		: 2;
 	uint32_t prinfow	: 4;	///< Protection Info. Field Write
@@ -179,6 +186,16 @@ struct lblk_cmd_scopy {
 
 };
 XNVME_STATIC_ASSERT(sizeof(struct lblk_cmd_scopy) == 64, "Incorrect size")
+
+/**
+ * Kernel format structre for scopy
+ *
+ * @struct lblk_kernel_fmt_range_entry
+ */
+struct lblk_scopy_fmt_srclen {
+	uint64_t  start;
+	uint64_t  len;
+};
 
 /**
  * NVMe Command Accessors for the Logical Block Command Set
@@ -215,7 +232,7 @@ struct lblk_idfy_ctrlr {
 		uint16_t val;
 	} oncs;
 
-	uint8_t byte522_543[22];
+	uint8_t byte522_533[12];
 
 	union {
 		struct {
@@ -225,7 +242,7 @@ struct lblk_idfy_ctrlr {
 		uint16_t val;
 	} ocfs;	///< Optional Copy Format Supported
 
-	uint8_t byte546_4095[3550];
+	uint8_t byte536_4095[3559];
 };
 XNVME_STATIC_ASSERT(sizeof(struct lblk_idfy_ctrlr) == 4096, "Incorrect size")
 
@@ -255,13 +272,13 @@ int
 lblk_idfy_ctrlr_pr(struct lblk_idfy_ctrlr *idfy, int opts);
 
 struct lblk_idfy_ns {
-	uint8_t byte0_75[76];
+	uint8_t byte0_73[74];
 
-	uint32_t mcl;	///< Maximum Copy Length
 	uint16_t mssrl;	///< Maximum Single Source Range Length
+	uint32_t mcl;	///< Maximum Copy Length
 	uint8_t msrc;	///< Maximum Source Range Count
 
-	uint8_t byte83_4095[4013];
+	uint8_t byte81_4095[4014];
 };
 XNVME_STATIC_ASSERT(sizeof(struct lblk_idfy_ns) == 4096, "Incorrect size")
 
@@ -312,7 +329,7 @@ XNVME_STATIC_ASSERT(sizeof(struct lblk_idfy) == 4096, "Incorrect size")
  * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
  * @param nsid Namespace Identifier
  * @param sdlba The Starting Destination LBA to start copying to
- * @param ranges Pointer to ranges-buffer, see ::lblk_source_range_entry
+ * @param ranges Pointer to ranges-buffer, see ::lblk_scopy_fmt_zero
  * @param nr Number of ranges in the given ranges-buffer, zero-based value
  * @param opts command options, see ::xnvme_cmd_opts
  * @param ret Pointer to structure for NVMe completion and async. context
@@ -322,8 +339,8 @@ XNVME_STATIC_ASSERT(sizeof(struct lblk_idfy) == 4096, "Incorrect size")
  */
 int
 lblk_cmd_scopy(struct xnvme_dev *dev, uint32_t nsid, uint64_t sdlba,
-	       struct lblk_source_range_entry *ranges, uint8_t nr,
-	       int opts, struct xnvme_req *ret);
+	       struct lblk_scopy_fmt_zero *ranges, uint8_t nr,
+	       enum lblk_scopy_fmt copy_fmt, int opts, struct xnvme_req *ret);
 
 #ifdef __cplusplus
 }
