@@ -400,22 +400,6 @@ xnvme_spec_idfy_ns_fpr(FILE *stream, const struct xnvme_spec_idfy_ns *idfy,
 				idfy->lbaf[i].rp);
 	}
 
-	/*
-	// Zoned stuff
-	wrtn += fprintf(stream, "  fzsze: %u\n", idfy->fzsze);
-	// Missing from BIRD-FW-2.0
-	//wrtn += fprintf(stream, "  nzonef: %u\n", idfy->nzonef);
-	wrtn += fprintf(stream, "  nar: %u\n", idfy->nar);
-	wrtn += fprintf(stream, "  nor: %u\n", idfy->nor);
-	wrtn += fprintf(stream, "  zal: %u\n", idfy->zal);
-	wrtn += fprintf(stream, "  zoc: %u\n", idfy->zoc);
-	wrtn += fprintf(stream, "  zds: %u\n", idfy->zds);
-	for (int i = 0; i < 4; ++i) {
-		wrtn += fprintf(stream, "  zonef%d: {zs: %zu, lbafs: %#x}\n", i,
-		       idfy->zonef[i].zs, idfy->zonef[i].lbafs);
-	}
-	*/
-
 	return wrtn;
 }
 
