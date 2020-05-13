@@ -148,8 +148,15 @@ xnvme_be_spdk_buf_alloc(const struct xnvme_dev *dev, size_t nbytes,
 			uint64_t *phys)
 {
 	const size_t alignment = dev->geo.nbytes;
+	void *buf;
 
-	return spdk_dma_malloc(nbytes, alignment, phys);
+	buf = spdk_dma_malloc(nbytes, alignment, phys);
+	if (!buf) {
+		errno = ENOMEM;
+		return NULL;
+	}
+
+	return buf;
 }
 
 void *
@@ -157,8 +164,15 @@ xnvme_be_spdk_buf_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes,
 			  uint64_t *phys)
 {
 	const size_t alignment = dev->geo.nbytes;
+	void *rebuf;
 
-	return spdk_dma_realloc(buf, nbytes, alignment, phys);
+	rebuf = spdk_dma_realloc(buf, nbytes, alignment, phys);
+	if (!rebuf) {
+		errno = ENOMEM;
+		return NULL;
+	}
+
+	return rebuf;
 }
 
 void
