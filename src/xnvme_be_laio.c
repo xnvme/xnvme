@@ -336,6 +336,11 @@ xnvme_be_laio_dev_from_ident(const struct xnvme_ident *ident,
 		return err;
 	}
 
+	// TODO: consider this. Due to Kernel-segment constraint force mdts down
+	if (((*dev)->geo.mdts_nbytes / (*dev)->geo.lba_nbytes) > 127) {
+		(*dev)->geo.mdts_nbytes = (*dev)->geo.lba_nbytes * 127;
+	}
+
 	return 0;
 }
 
