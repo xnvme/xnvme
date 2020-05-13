@@ -627,8 +627,7 @@ xnvme_be_spdk_async_init(struct xnvme_dev *dev, struct xnvme_async_ctx **ctx,
 	(*ctx)->depth = depth;
 	sctx = (void *)(*ctx);
 
-	sctx->qpair = spdk_nvme_ctrlr_alloc_io_qpair(state->ctrlr, &qopts,
-						     sizeof(qopts));
+	sctx->qpair = spdk_nvme_ctrlr_alloc_io_qpair(state->ctrlr, &qopts, sizeof(qopts));
 	if (!sctx->qpair) {
 		XNVME_DEBUG("FAILED: alloc. qpair");
 		free((*ctx));
