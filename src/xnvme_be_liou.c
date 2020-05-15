@@ -146,8 +146,7 @@ xnvme_be_liou_async_poke(struct xnvme_dev *XNVME_UNUSED(dev),
 		}
 
 		// Map cqe-result to req-completion
-		req->cpl.cdw0 = cqe->res > 0 ? cqe->res : 0;
-		req->cpl.status.sc = cqe->res < 0 ? -cqe->res : 0x0;
+		req->cpl.status.sc = cqe->res;
 
 		req->async.cb(req, req->async.cb_arg);
 
