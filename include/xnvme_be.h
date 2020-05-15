@@ -54,17 +54,17 @@ struct xnvme_be_func {
 	/**
 	 * Terminate an asynchronous command context
 	 */
-	int (*async_term)(struct xnvme_async_ctx *);
+	int (*async_term)(struct xnvme_dev *, struct xnvme_async_ctx *);
 
 	/**
 	 * Attempt to read all asynchronous events from a given context
 	 */
-	int (*async_poke)(struct xnvme_async_ctx *, uint32_t);
+	int (*async_poke)(struct xnvme_dev *, struct xnvme_async_ctx *, uint32_t);
 
 	/**
 	 * Wait for completion of all asynchronous events on a given context
 	 */
-	int (*async_wait)(struct xnvme_async_ctx *);
+	int (*async_wait)(struct xnvme_dev *, struct xnvme_async_ctx *);
 
 	/**
 	 * Allocate a buffer usable for NVMe commands

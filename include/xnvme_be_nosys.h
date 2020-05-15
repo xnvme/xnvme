@@ -35,14 +35,14 @@ xnvme_be_nosys_async_init(struct xnvme_dev *dev, struct xnvme_async_ctx **ctx,
 			  uint16_t depth, int flags);
 
 int
-xnvme_be_nosys_async_term(struct xnvme_async_ctx *ctx);
+xnvme_be_nosys_async_term(struct xnvme_dev *dev, struct xnvme_async_ctx *ctx);
 
 int
-xnvme_be_nosys_async_poke(struct xnvme_async_ctx *ctx,
+xnvme_be_nosys_async_poke(struct xnvme_dev *dev, struct xnvme_async_ctx *ctx,
 			  uint32_t max);
 
 int
-xnvme_be_nosys_async_wait(struct xnvme_async_ctx *ctx);
+xnvme_be_nosys_async_wait(struct xnvme_dev *dev, struct xnvme_async_ctx *ctx);
 
 int
 xnvme_be_nosys_cmd_pass(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,

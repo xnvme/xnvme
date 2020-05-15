@@ -606,7 +606,8 @@ xnvme_be_spdk_async_init(struct xnvme_dev *dev, struct xnvme_async_ctx **ctx,
 }
 
 int
-xnvme_be_spdk_async_term(struct xnvme_async_ctx *ctx)
+xnvme_be_spdk_async_term(struct xnvme_dev *XNVME_UNUSED(dev),
+			 struct xnvme_async_ctx *ctx)
 {
 	struct xnvme_async_ctx_spdk *sctx = (void *)ctx;
 	int err;
@@ -633,7 +634,8 @@ xnvme_be_spdk_async_term(struct xnvme_async_ctx *ctx)
 }
 
 int
-xnvme_be_spdk_async_poke(struct xnvme_async_ctx *ctx, uint32_t max)
+xnvme_be_spdk_async_poke(struct xnvme_dev *XNVME_UNUSED(dev),
+			 struct xnvme_async_ctx *ctx, uint32_t max)
 {
 	struct xnvme_async_ctx_spdk *sctx = (void *)ctx;
 	int err;
@@ -652,14 +654,15 @@ xnvme_be_spdk_async_poke(struct xnvme_async_ctx *ctx, uint32_t max)
 }
 
 int
-xnvme_be_spdk_async_wait(struct xnvme_async_ctx *ctx)
+xnvme_be_spdk_async_wait(struct xnvme_dev *dev,
+			 struct xnvme_async_ctx *ctx)
 {
 	int acc = 0;
 
 	while (ctx->outstanding) {
 		int err;
 
-		err = xnvme_be_spdk_async_poke(ctx, 0);
+		err = xnvme_be_spdk_async_poke(dev, ctx, 0);
 		if (err < 0) {
 			XNVME_DEBUG("FAILED: xnvme_be_spdk_async_poke");
 			return err;

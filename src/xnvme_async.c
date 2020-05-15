@@ -23,20 +23,20 @@ xnvme_async_init(struct xnvme_dev *dev, struct xnvme_async_ctx **ctx,
 int
 xnvme_async_term(struct xnvme_dev *dev, struct xnvme_async_ctx *ctx)
 {
-	return dev->be.func.async_term(ctx);
+	return dev->be.func.async_term(dev, ctx);
 }
 
 int
 xnvme_async_wait(struct xnvme_dev *dev, struct xnvme_async_ctx *ctx)
 {
-	return dev->be.func.async_wait(ctx);
+	return dev->be.func.async_wait(dev, ctx);
 }
 
 int
 xnvme_async_poke(struct xnvme_dev *dev, struct xnvme_async_ctx *ctx,
 		 uint32_t max)
 {
-	return dev->be.func.async_poke(ctx, max);
+	return dev->be.func.async_poke(dev, ctx, max);
 }
 
 uint32_t
