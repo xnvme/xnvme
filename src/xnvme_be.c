@@ -592,8 +592,6 @@ norm_uri(const char *uri, struct xnvme_ident *ident, const char *schm_def)
 		uri_len = strlen(ident->uri);
 	}
 
-	XNVME_DEBUG("ident->uri: '%s'", ident->uri);
-
 	for (int i = 0; i < bound && uri[i] != '\0'; i++) {
 		char cur = uri[i];
 
@@ -609,7 +607,6 @@ norm_uri(const char *uri, struct xnvme_ident *ident, const char *schm_def)
 
 		prev = uri[i];
 	}
-	XNVME_DEBUG("ident->uri: '%s'", ident->uri);
 }
 
 /**
