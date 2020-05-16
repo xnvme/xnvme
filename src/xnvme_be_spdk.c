@@ -112,8 +112,9 @@ _spdk_env_init(struct spdk_env_opts *opts)
 	int err;
 
 	if (g_xnvme_be_spdk_env_is_initialized) {
-		XNVME_DEBUG("INFO: spdk_env already initialized; skipping...");
-		return 0;
+		XNVME_DEBUG("INFO: already initialized");
+		err = 0;
+		goto exit;
 	}
 
 	xnvme_spdk_choker_on();
@@ -134,6 +135,10 @@ _spdk_env_init(struct spdk_env_opts *opts)
 	g_xnvme_be_spdk_env_is_initialized = err == 0;
 
 	xnvme_spdk_choker_off();
+
+exit:
+	XNVME_DEBUG("INFO: spdk_env_is_initialized: %d",
+		    g_xnvme_be_spdk_env_is_initialized);
 
 	return err;
 }
@@ -501,8 +506,9 @@ xnvme_be_spdk_state_init(struct xnvme_dev *dev)
 	state->cmb_sqs = cmb_sqs ? true : false;
 	state->css = css & 0x7;
 
-	XNVME_DEBUG("INFO: dev->nsid: %d, state->cmb_sqs: %d, state->css: 0x%x",
-		    nsid, state->cmb_sqs, state->css);
+	XNVME_DEBUG("INFO: dev->nsid: %d", nsid);
+	XNVME_DEBUG("INFO: state->cmb_sqs: %d", state->cmb_sqs);
+	XNVME_DEBUG("INFO: state->css: 0x%x", state->css);
 
 	err = _spdk_env_init(NULL);
 	if (err) {
