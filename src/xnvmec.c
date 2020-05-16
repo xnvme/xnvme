@@ -604,9 +604,6 @@ xnvmec_assign_arg(struct xnvmec *cli, int optval, char *arg,
 
 	// Check numerical args
 	if (arg && (opt_type != XNVMEC_LFLG)) {
-		XNVME_DEBUG("arg: %s, type: %s", arg,
-			    xnvmec_opt_type_str(opt_type));
-
 		int num_base = attr->vtype == XNVMEC_OPT_VTYPE_NUM ? 10 : 16;
 
 		switch (attr->vtype) {
