@@ -42,6 +42,8 @@ xnvme_dev_cmd_opts_yaml(FILE *stream, const struct xnvme_dev *dev, int indent,
 			(dev->cmd_opts & XNVME_CMD_UPLD_SGLM) ? "USER" : "DRV",
 			sep);
 
+	wrtn += fprintf(stream, "%*snsid: 0x%u%s", indent, "", dev->nsid, sep);
+
 	wrtn += fprintf(stream, "%*sssw: %"PRIu64"", indent, "", dev->ssw);
 
 	return 0;
