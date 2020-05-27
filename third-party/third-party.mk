@@ -1,10 +1,10 @@
 #
 # THIRD-PARTY Libraries
 #
-include third-party/spdk.mk
-include third-party/liburing.mk
-include third-party/fio.mk
-include third-party/libnvme.mk
+include third-party/spdk/third-party.mk
+include third-party/liburing/third-party.mk
+include third-party/fio/third-party.mk
+include third-party/libnvme/third-party.mk
 
 .PHONY: third-party-clean
 third-party-clean:

@@ -174,16 +174,16 @@ set(SPDK_REPOS
 	"${PROJECT_SOURCE_DIR}/third-party"
 	CACHE PATH "SPDK Repository path")
 set(SPDK_INCLUDE_PATH
-	"${SPDK_REPOS}/spdk/include"
+	"${SPDK_REPOS}/spdk/repos/include"
 	CACHE PATH "SPDK include path")
 set(SPDK_LIBRARY_PATH
-	"${SPDK_REPOS}/spdk/build/lib"
+	"${SPDK_REPOS}/spdk/repos/build/lib"
 	CACHE PATH "SPDK library path")
 set(DPDK_INCLUDE_PATH
-	"${SPDK_REPOS}/spdk/dpdk/build/include"
+	"${SPDK_REPOS}/spdk/repos/dpdk/build/include"
 	CACHE PATH "DPDK include path")
 set(DPDK_LIBRARY_PATH
-	"${SPDK_REPOS}/spdk/dpdk/build/lib"
+	"${SPDK_REPOS}/spdk/repos/dpdk/build/lib"
 	CACHE PATH "DPDK library path")
 
 if(XNVME_BE_SPDK_ENABLED)
@@ -302,7 +302,7 @@ message( STATUS "BE:LIOC ENABLED(${XNVME_BE_LIOC_ENABLED})" )
 # XNVME_BE_LIOU
 #
 set(XNVME_BE_LIOU_ENABLED ${LINUX} CACHE BOOL "be_liou: Linux/io_uring backend")
-set(LIBURING_REPOS "${PROJECT_SOURCE_DIR}/third-party/liburing")
+set(LIBURING_REPOS "${PROJECT_SOURCE_DIR}/third-party/liburing/repos")
 set(LIBURING_INCLUDE_PATH
 	"${LIBURING_REPOS}/src/include"
 	CACHE PATH "LIBURING include path")

@@ -60,22 +60,22 @@ case "${OSTYPE,,}" in
 esac
 
 # Directory that contains the desired SPDK headers
-CONFIG[SPDK_INCLUDE_PATH]="${PWD}/third-party/spdk/include"
+CONFIG[SPDK_INCLUDE_PATH]="${PWD}/third-party/spdk/repos/include"
 
 # Directory that contains the desired SPDK libraries
-CONFIG[SPDK_LIBRARY_PATH]="${PWD}/third-party/spdk/build/lib"
+CONFIG[SPDK_LIBRARY_PATH]="${PWD}/third-party/spdk/repos/build/lib"
 
 # Directory that contains the desired DPDK headers
-CONFIG[DPDK_INCLUDE_PATH]="${PWD}/third-party/spdk/dpdk/build/include"
+CONFIG[DPDK_INCLUDE_PATH]="${PWD}/third-party/spdk/repos/dpdk/build/include"
 
 # Directory that contains the desired DPDK libraries
-CONFIG[DPDK_LIBRARY_PATH]="${PWD}/third-party/spdk/dpdk/build/lib"
+CONFIG[DPDK_LIBRARY_PATH]="${PWD}/third-party/spdk/repos/dpdk/build/lib"
 
 # Directory containing liburing headers
-CONFIG[LIBURING_INCLUDE_PATH]="${PWD}/third-party/liburing/src/include"
+CONFIG[LIBURING_INCLUDE_PATH]="${PWD}/third-party/liburing/repos/src/include"
 
 # Directory containing liburing libraries
-CONFIG[LIBURING_LIBRARY_PATH]="${PWD}/third-party/liburing/src"
+CONFIG[LIBURING_LIBRARY_PATH]="${PWD}/third-party/liburing/repos/src"
 
 function check_dir() {
 	arg="$1"

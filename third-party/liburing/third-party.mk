@@ -1,11 +1,13 @@
 #
 # liburing
 #
+XNVME_3P_LIBURING_REPOS:=third-party/liburing/repos
+
 .PHONY: third-party-liburing
 third-party-liburing:
 	@echo "## xNVMe: make third-party-liburing"
 	@echo "# Preparing third-party (liburing)"
-	@if [ ! -f "third-party/liburing/README" ]; then	\
+	@if [ ! -f "${XNVME_3P_LIBURING_REPOS}/README" ]; then	\
 		$(MAKE) third-party-liburing-fetch;		\
 	fi
 	@$(MAKE) third-party-liburing-clean
@@ -14,18 +16,18 @@ third-party-liburing:
 .PHONY: third-party-liburing-clean
 third-party-liburing-clean:
 	@echo "## xNVMe: make third-party-liburing-clean"
-	cd third-party/liburing && ${MAKE} clean || true
+	cd ${XNVME_3P_LIBURING_REPOS} && ${MAKE} clean || true
 
 .PHONY: third-party-liburing-clobber
 third-party-liburing-clobber: third-party-liburing-clean
 	@echo "## xNVMe: make third-party-liburing-clobber"
-	cd third-party/liburing && git clean -dfx || true
-	cd third-party/liburing && git clean -dfX || true
-	cd third-party/liburing && git checkout . || true
+	cd ${XNVME_3P_LIBURING_REPOS} && git clean -dfx || true
+	cd ${XNVME_3P_LIBURING_REPOS} && git clean -dfX || true
+	cd ${XNVME_3P_LIBURING_REPOS} && git checkout . || true
 
 .PHONY: third-party-liburing-build
 third-party-liburing-build:
 	@echo "## xNVMe: make third-party-liburing-build"
-	cd third-party/liburing && ./configure
-	cd third-party/liburing && $(MAKE) -C src CFLAGS="$(CFLAGS) -fPIC"
-	cd third-party/liburing/src && ln -s liburing.so.1.0.6 liburing.so
+	cd ${XNVME_3P_LIBURING_REPOS} && ./configure
+	cd ${XNVME_3P_LIBURING_REPOS} && $(MAKE) -C src CFLAGS="$(CFLAGS) -fPIC"
+	cd ${XNVME_3P_LIBURING_REPOS}/src && ln -s liburing.so.1.0.6 liburing.so

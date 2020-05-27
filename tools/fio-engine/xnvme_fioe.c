@@ -41,8 +41,8 @@
  */
 #include <stdlib.h>
 #include <assert.h>
-#include <fio/fio.h>
-#include <fio/optgroup.h>
+#include <fio.h>
+#include <optgroup.h>
 #include <libxnvme.h>
 
 

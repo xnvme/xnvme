@@ -36,7 +36,10 @@ target_compile_options(${FIOE_NAME} PUBLIC -Wno-missing-braces)
 # skipping warning on unused-parameter as it triggers on fio headers
 target_compile_options(${FIOE_NAME} PUBLIC -Wno-unused-parameter)
 target_compile_options(${FIOE_NAME} PUBLIC -include
-	"${PROJECT_SOURCE_DIR}/third-party/fio/config-host.h")
+	"${PROJECT_SOURCE_DIR}/third-party/fio/repos/config-host.h")
+
+target_include_directories(${FIOE_NAME} PRIVATE
+       "${PROJECT_SOURCE_DIR}/third-party/fio/repos")
 
 # LINKAGE
 target_link_libraries(${FIOE_NAME} -Wl,--whole-archive)
@@ -46,14 +49,11 @@ target_link_libraries(${FIOE_NAME} -Wl,--no-whole-archive)
 target_link_libraries(${FIOE_NAME} -Wl,--as-needed)
 target_link_libraries(${FIOE_NAME} ${LIBS_SYSTEM})
 
-target_include_directories(${FIOE_NAME} PRIVATE
-	"${PROJECT_SOURCE_DIR}/third-party")
-
 install(TARGETS ${FIOE_NAME} DESTINATION lib COMPONENT tools)
 install(FILES xnvme-verify.fio DESTINATION share/xnvme COMPONENT tools)
 install(FILES xnvme-compare.fio DESTINATION share/xnvme COMPONENT tools)
 
-set(FIO_SRC_PATH "${PROJECT_SOURCE_DIR}/third-party/fio" CACHE STRING "tools: xNVME fio io-engine")
+set(FIO_SRC_PATH "${PROJECT_SOURCE_DIR}/third-party/fio/repos" CACHE STRING "tools: xNVME fio io-engine")
 
 # Define fio as a dependency, this ensures that arch-conf headers are available
 if(NOT EXISTS "${FIO_SRC_PATH}/fio")
