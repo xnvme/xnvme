@@ -238,7 +238,6 @@ xnvme_be_attr_list_pr(const struct xnvme_be_attr_list *list, int opts)
 	return xnvme_be_attr_list_fpr(stdout, list, opts);
 }
 
-// TODO: select LBAF correctly, instead of the first
 static inline int
 _conventional_geometry(struct xnvme_dev *dev)
 {
