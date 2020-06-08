@@ -12,7 +12,7 @@ struct xnvme_async_ctx_liou {
 	uint8_t poll_io;
 	uint8_t poll_sq;
 
-	uint8_t rsvd[22];
+	uint8_t _rsvd[14];
 };
 XNVME_STATIC_ASSERT(
 	sizeof(struct xnvme_async_ctx_liou) == XNVME_BE_ACTX_NBYTES,
