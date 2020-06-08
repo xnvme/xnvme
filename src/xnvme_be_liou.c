@@ -29,6 +29,50 @@
 #include <xnvme_be_liou.h>
 #include <xnvme_dev.h>
 
+static int g_opcodes[] = {
+	IORING_OP_READV,
+	IORING_OP_WRITEV,
+	IORING_OP_READ_FIXED,
+	IORING_OP_WRITE_FIXED,
+	IORING_OP_READ,
+	IORING_OP_WRITE,
+};
+int g_nopcodes = sizeof g_opcodes / sizeof(*g_opcodes);
+
+/**
+ * Check whether the Kernel supports the io_uring features used by xNVMe
+ *
+ * @return On success, 0 is returned. On error, negative errno is returned,
+ * specifically -ENOSYS;
+ */
+static int
+xnvme_be_liou_check_support(void)
+{
+	struct io_uring_probe *probe;
+	int err = 0;
+
+	probe = io_uring_get_probe();
+	if (!probe) {
+		XNVME_DEBUG("FAILED: io_uring_get_probe()");
+		err = -ENOSYS;
+		goto exit;
+	}
+
+	for (int i = 0; i < g_nopcodes; ++i) {
+		if (!io_uring_opcode_supported(probe, g_opcodes[i])) {
+			err = -ENOSYS;
+			XNVME_DEBUG("FAILED: Kernel does not support opc: %d",
+				    g_opcodes[i]);
+			goto exit;
+		}
+	}
+
+exit:
+	free(probe);
+
+	return err;
+}
+
 int
 xnvme_be_liou_async_init(struct xnvme_dev *dev, struct xnvme_async_ctx **ctx,
 			 uint16_t depth, int flags)
@@ -308,6 +352,12 @@ xnvme_be_liou_state_init(struct xnvme_dev *dev)
 	struct stat dev_stat;
 	uint32_t opt_val;
 	int err;
+
+	err = xnvme_be_liou_check_support();
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_be_liou_check_support()");
+		return err;
+	}
 
 	state->fd = open(dev->ident.trgt, O_RDWR | O_DIRECT);
 	if (state->fd < 0) {
