@@ -130,6 +130,8 @@ hipri=0
 sqthread_poll=0
 ;filename=liou\:/dev/nullb0?pseudo=1
 ;filename=liou\:/dev/nvme0n1
+;filename=/dev/nvme0n1
+;be=liou
 
 [xnvme_uring_sqt]
 ioengine=external:/usr/lib/libxnvme-fio-engine.so
@@ -137,6 +139,8 @@ hipri=0
 sqthread_poll=1
 ;filename=liou\:/dev/nullb0?pseudo=1
 ;filename=liou\:/dev/nvme0n1
+;filename=/dev/nvme0n1
+;be=liou
 
 [xnvme_uring_iop]
 ioengine=external:/usr/lib/libxnvme-fio-engine.so
@@ -144,18 +148,24 @@ hipri=1
 sqthread_poll=0
 ;filename=liou\:/dev/nullb0?pseudo=1
 ;filename=liou\:/dev/nvme0n1
+;filename=/dev/nvme0n1
+;be=liou
 
 [xnvme_uring_all]
-ioengine=external:/usr/lib/libxnvme-fio-engine.so
+ioengine=external:/usr/lib/fio-engine/libxnvme-fio-engine.so
 hipri=1
 sqthread_poll=1
 ;filename=liou\:/dev/nullb0?pseudo=1
 ;filename=liou\:/dev/nvme0n1
+;filename=/dev/nvme0n1
+;be=liou
 
 [xnvme_laio]
 ioengine=external:/usr/lib/libxnvme-fio-engine.so
 ;filename=laio\:/dev/nullb0?pseudo=1
 ;filename=laio\:/dev/nvme0n1
+;filename=/dev/nvme0n1
+;be=laio
 
 [xnvme_spdk]
 ioengine=external:/usr/lib/libxnvme-fio-engine.so
