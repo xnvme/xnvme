@@ -209,6 +209,10 @@ enum xnvme_spec_idfy_cns {
 	XNVME_SPEC_IDFY_NSDSCR = 0x3, ///< XNVME_SPEC_IDFY_NSDSCR
 	XNVME_SPEC_IDFY_SETL = 0x4, ///< XNVME_SPEC_IDFY_SETL
 
+	XNVME_SPEC_IDFY_NS_IOCS = 0x05, ///< XNVME_SPEC_IDFY_NS_IOCS
+	XNVME_SPEC_IDFY_CTRLR_IOCS = 0x6, ///< XNVME_SPEC_IDFY_CTRLR_IOCS
+	XNVME_SPEC_IDFY_NSLIST_IOCS = 0x7, ///< XNVME_SPEC_IDFY_NSLIST_IOCS
+
 	XNVME_SPEC_IDFY_NSLIST_ALLOC = 0x10, ///< XNVME_SPEC_IDFY_NSLIST_ALLOC
 	XNVME_SPEC_IDFY_NS_ALLOC = 0x11, ///< XNVME_SPEC_IDFY_NS_ALLOC
 	XNVME_SPEC_IDFY_CTRLR_NS = 0x12, ///< XNVME_SPEC_IDFY_CTRLR_NS
@@ -218,6 +222,9 @@ enum xnvme_spec_idfy_cns {
 	XNVME_SPEC_IDFY_NSGRAN = 0x16, ///< XNVME_SPEC_IDFY_NSGRAN
 	XNVME_SPEC_IDFY_UUIDL = 0x17, ///< XNVME_SPEC_IDFY_UUIDL
 
+	XNVME_SPEC_IDFY_NSLIST_ALLOC_IOCS = 0x1A, ///< XNVME_SPEC_IDFY_NSLIST_ALLOC_IOCS
+	XNVME_SPEC_IDFY_NS_ALLOC_IOCS = 0x1B, ///< XNVME_SPEC_IDFY_NS_ALLOC_IOCS
+	XNVME_SPEC_IDFY_IOCS = 0x1C, ///< XNVME_SPEC_IDFY_IOCS
 };
 
 /**
@@ -230,6 +237,29 @@ struct xnvme_spec_lbaf {
 	uint8_t	 rsvd : 6;
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_lbaf) == 4, "Incorrect size")
+
+/**
+ * Command Set Identifiers
+ *
+ * @see Specification Section 5.15.2.1, figure X1
+ *
+ * @enum xnvme_spec_csi
+ */
+enum xnvme_spec_csi {
+	XNVME_SPEC_CSI_LBLK	= 0x0,	///< XNVME_SPEC_CSI_LBLK
+
+	XNVME_SPEC_CSI_NOCHECK	= 0xFF,	///< XNVME_SPEC_CSI_NOCHECK
+};
+
+/**
+ * Produces a string representation of the given ::xnvme_spec_csi
+ *
+ * @param nst the enum value to produce a string representation of
+ * @return On success, a string representation is returned. On error, the string
+ * "XNVME_SPEC_CSI_ENOSYS" is returned.
+ */
+const char *
+xnvme_spec_csi_str(enum xnvme_spec_csi csi);
 
 /**
  * Representation of NVMe completion result Identify Namespace
@@ -889,6 +919,46 @@ int
 xnvme_spec_idfy_ctrl_pr(const struct xnvme_spec_idfy_ctrlr *idfy, int opts);
 
 /**
+ * Representation of I/O Command Set Vector
+ *
+ * See NVMe spec tbd, section xyz, for details
+ *
+ * @struct xnvme_spec_cs_vector
+ */
+struct xnvme_spec_cs_vector {
+	union {
+		struct {
+			uint64_t nvm : 1;
+			uint64_t rsvd : 63;
+		};
+		uint64_t val;
+	};
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cs_vector) == 8, "Incorrect size")
+
+#define XNVME_SPEC_IDFY_CS_IOCSC_LEN 512
+
+/**
+ * Representation of I/O Command Set data structure
+ *
+ * See NVMe spec tbd, section xyz, for details
+ *
+ * @struct xnvme_spec_idfy_cs
+ */
+struct xnvme_spec_idfy_cs {
+	// I/O Command Set Combinations
+	struct xnvme_spec_cs_vector iocsc[XNVME_SPEC_IDFY_CS_IOCSC_LEN];
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_cs) == 4096, "Incorrect size")
+
+int
+xnvme_spec_idfy_cs_fpr(FILE *stream, const struct xnvme_spec_idfy_cs *idfy,
+		       int opts);
+
+int
+xnvme_spec_idfy_cs_pr(const struct xnvme_spec_idfy_cs *idfy, int opts);
+
+/**
  * NVMe completion result accessor
  *
  * TODO: clarify
@@ -899,6 +969,7 @@ struct xnvme_spec_idfy {
 	union {
 		struct xnvme_spec_idfy_ctrlr ctrlr;
 		struct xnvme_spec_idfy_ns ns;
+		struct xnvme_spec_idfy_cs cs;
 	};
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy) == 4096, "Incorrect size")
@@ -1249,7 +1320,8 @@ struct xnvme_spec_cmd_idfy {
 	uint32_t cntid		: 16;	///< Controller Identifier
 
 	uint32_t nvmsetid	: 16;	///< NVM Set Identifier
-	uint32_t rsvd2		: 16;
+	uint32_t rsvd2		: 8;
+	uint32_t csi		: 8;	///< Command Set Identifier
 
 	uint32_t cdw12_13[2];		///< Command dword 12 to 13
 

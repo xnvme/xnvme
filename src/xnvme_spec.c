@@ -410,6 +410,58 @@ xnvme_spec_idfy_ns_pr(const struct xnvme_spec_idfy_ns *idfy, int opts)
 }
 
 int
+xnvme_spec_idfy_cs_fpr(FILE *stream, const struct xnvme_spec_idfy_cs *idfy,
+		       int opts)
+{
+	int count = 0;
+	int wrtn = 0;
+
+	switch (opts) {
+	case XNVME_PR_TERSE:
+		wrtn += fprintf(stream, "# ENOSYS: opts(0x%x)", opts);
+		return wrtn;
+
+	case XNVME_PR_DEF:
+	case XNVME_PR_YAML:
+		break;
+	}
+
+	wrtn += fprintf(stream, "xnvme_spec_idfy_cs:");
+
+	if (!idfy) {
+		wrtn += fprintf(stream, " ~\n");
+		return wrtn;
+	}
+
+	for (int i = 0; i < XNVME_SPEC_IDFY_CS_IOCSC_LEN; ++i) {
+		const struct xnvme_spec_cs_vector *iocscv = &idfy->iocsc[i];
+
+		if (!iocscv->val) {
+			continue;
+		}
+
+		wrtn += fprintf(stream, "\n");
+		wrtn += fprintf(stream, "  - { ");
+		wrtn += fprintf(stream, "iocsci: %d, ", i);
+		wrtn += fprintf(stream, "val: 0x%lx, ", iocscv->val);
+		wrtn += fprintf(stream, "nvm: %d", iocscv->nvm);
+		wrtn += fprintf(stream, " }");
+
+		count++;
+	}
+
+	wrtn += fprintf(stream, count ? "\n" : " ~\n");
+
+	return wrtn;
+}
+
+int
+xnvme_spec_idfy_cs_pr(const struct xnvme_spec_idfy_cs *idfy, int opts)
+{
+	return xnvme_spec_idfy_cs_fpr(stdout, idfy, opts);
+}
+
+int
 xnvme_spec_cmd_fpr(FILE *stream, struct xnvme_spec_cmd *cmd, int opts)
 {
 	int wrtn = 0;
@@ -539,3 +591,16 @@ xnvme_spec_feat_pr(uint8_t fid, struct xnvme_spec_feat feat, int opts)
 	return xnvme_spec_feat_fpr(stdout, fid, feat, opts);
 }
 
+const char *
+xnvme_spec_csi_str(enum xnvme_spec_csi csi)
+{
+	switch (csi) {
+	case XNVME_SPEC_CSI_LBLK:
+		return "XNVME_SPEC_CSI_LBLK";
+
+	case XNVME_SPEC_CSI_NOCHECK:
+		return "XNVME_SPEC_CSI_NOCHECK";
+	}
+
+	return "XNVME_SPEC_CSI_ENOSYS";
+}

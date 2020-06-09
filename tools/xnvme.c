@@ -81,6 +81,10 @@ _sub_idfy(struct xnvmec *cli, uint8_t cns, uint16_t cntid, uint8_t nsid,
 		xnvme_spec_idfy_ctrl_pr(&dbuf->ctrlr, XNVME_PR_DEF);
 		break;
 
+	case XNVME_SPEC_IDFY_IOCS:
+		xnvme_spec_idfy_cs_pr(&dbuf->cs, XNVME_PR_DEF);
+		break;
+
 	default:
 		xnvmec_pinf("No pretty-printer for the given "
 			    "cns(0%x0)\n"
@@ -136,6 +140,12 @@ static int
 sub_idfy_ctrlr(struct xnvmec *cli)
 {
 	return _sub_idfy(cli, XNVME_SPEC_IDFY_CTRLR, 0x0, 0x0, 0x0, 0x0);
+}
+
+static int
+sub_idfy_cs(struct xnvmec *cli)
+{
+	return _sub_idfy(cli, XNVME_SPEC_IDFY_IOCS, 0xFFFF, 0x0, 0x0, 0x0);
 }
 
 static int
@@ -588,6 +598,13 @@ static struct xnvmec_sub subs[] = {
 	{
 		"idfy-ctrlr", "Identify the given Controller",
 		"Identify the given Controller", sub_idfy_ctrlr, {
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
+		}
+	},
+	{
+		"idfy-cs", "Identify the Command Sets supported by the controller",
+		"Identify the Command Sets supported by the controller", sub_idfy_cs, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
 		}

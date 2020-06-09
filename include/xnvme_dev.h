@@ -19,13 +19,21 @@ struct xnvme_dev {
 	uint64_t cmd_opts;		///< Default options for CMD execution
 
 	uint32_t nsid;			///< Namespace Identifier
+	enum xnvme_spec_csi csi;	///< Command Set Identifier
 
 	enum xnvme_dev_type dtype;	///< Device type
 
 	uint8_t _pad[36];
 
-	struct xnvme_spec_idfy_ctrlr ctrlr;	///< NVMe identify controller
-	struct xnvme_spec_idfy_ns ns;		///< NVMe identify namespace
+	struct {
+		struct xnvme_spec_idfy_ctrlr ctrlr;	///< NVMe id-ctrlr
+		struct xnvme_spec_idfy_ns ns;		///< NVMe id-ns
+	} id;
+
+	struct {
+		struct xnvme_spec_idfy_ctrlr ctrlr;	///< NVMe id-ctrlr
+		struct xnvme_spec_idfy_ns ns;		///< NVMe id-ns
+	} idcss;			///< Command Set Specific
 
 	struct xnvme_ident ident;		///< Device identifier
 };

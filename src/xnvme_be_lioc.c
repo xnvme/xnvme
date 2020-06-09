@@ -349,6 +349,7 @@ xnvme_be_lioc_state_init(struct xnvme_dev *dev, void *opts)
  *
  * - Identify namespace		(setup: dev->ns)
  * - Identify namespace-id	(setup: dev->nsid)
+ * - Determine Command Set	(setup: dev->csi)
  *
  * TODO: fixup for XNVME_DEV_TYPE_NVME_NAMESPACE
  * TODO: fixup for XNVME_DEV_TYPE_BLOCK_DEVICE
@@ -364,6 +365,7 @@ xnvme_be_lioc_dev_idfy(struct xnvme_dev *dev)
 	if (state->pseudo) {
 		dev->dtype = XNVME_DEV_TYPE_BLOCK_DEVICE;
 		dev->nsid = 1;
+		dev->csi = XNVME_SPEC_CSI_LBLK;
 		return 0;
 	}
 
@@ -392,7 +394,7 @@ xnvme_be_lioc_dev_idfy(struct xnvme_dev *dev)
 		err = err ? err : -EIO;
 		goto exit;
 	}
-	memcpy(&dev->ctrlr, idfy, sizeof(*idfy));
+	memcpy(&dev->id.ctrlr, idfy, sizeof(*idfy));
 
 	// Retrieve and store idfy-ns
 	memset(idfy, 0, sizeof(*idfy));
@@ -402,7 +404,25 @@ xnvme_be_lioc_dev_idfy(struct xnvme_dev *dev)
 		XNVME_DEBUG("FAILED: identify namespace, err: %d", err);
 		goto exit;
 	}
-	memcpy(&dev->ns, idfy, sizeof(*idfy));
+	memcpy(&dev->id.ns, idfy, sizeof(*idfy));
+
+	//
+	// Detemine command-set / namespace type by probing
+	//
+
+	// Attempt to identify LBLK Namespace
+	memset(idfy, 0, sizeof(*idfy));
+	memset(&req, 0, sizeof(req));
+	err = xnvme_cmd_idfy_ns_csi(dev, dev->nsid, XNVME_SPEC_CSI_LBLK, idfy, &req);
+	if (!(err || xnvme_req_cpl_status(&req))) {
+		XNVME_DEBUG("INFO: NS/CS looks like NVM");
+		memcpy(&dev->idcss.ns, idfy, sizeof(*idfy));
+		dev->csi = XNVME_SPEC_CSI_LBLK;
+		goto exit;
+	}
+	XNVME_DEBUG("INFO: NS/CS does not look like NVM");
+
+	XNVME_DEBUG("INFO: failed determining Command Set");
 
 exit:
 	xnvme_buf_free(dev, idfy);
@@ -423,6 +443,8 @@ xnvme_be_lioc_dev_from_ident(const struct xnvme_ident *ident,
 	}
 	(*dev)->ident = *ident;
 	(*dev)->be = xnvme_be_lioc;
+
+	// TODO: determine nsid, csi, and device-type
 
 	err = xnvme_be_lioc_state_init(*dev, NULL);
 	if (err) {

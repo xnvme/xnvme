@@ -132,6 +132,8 @@ struct xnvmec_args {
 	uint32_t uuid;
 	uint32_t nsid;
 	uint32_t cns;
+	uint32_t csi;
+	uint64_t index;
 	uint32_t setid;
 
 	uint64_t cntid;
@@ -226,6 +228,8 @@ enum xnvmec_opt {
 	XNVMEC_OPT_UUID = 'S', ///< XNVMEC_OPT_UUID
 	XNVMEC_OPT_NSID = 'T', ///< XNVMEC_OPT_NSID
 	XNVMEC_OPT_CNS = 'U', ///< XNVMEC_OPT_CNS
+	XNVMEC_OPT_CSI = '/', ///< XNVMEC_OPT_CSI
+	XNVMEC_OPT_INDEX = '-', ///< XNVMEC_OPT_INDEX
 	XNVMEC_OPT_SETID = 'V', ///< XNVMEC_OPT_SETID
 
 	XNVMEC_OPT_CNTID = 'W', ///< XNVMEC_OPT_CNTID
@@ -279,8 +283,6 @@ enum xnvmec_opt {
 	XNVMEC_OPT_UNUSED06 = '%',
 	XNVMEC_OPT_UNUSED07 = '&',
 	XNVMEC_OPT_UNUSED08 = '+',
-	XNVMEC_OPT_UNUSED10 = '-',
-	XNVMEC_OPT_UNUSED11 = '/',
 
 	XNVMEC_OPT_UNKNOWN = '?',	///< XNVMEC_OPT_UNKNOWN: do not use getopt special char
 	XNVMEC_OPT_WEIRD = ':',		///< XNVMEC_OPT_WEIRD: do not use getopt special char

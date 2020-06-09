@@ -231,6 +231,8 @@ xnvmec_int2opt(int opt) {
 	case XNVMEC_OPT_UUID:
 	case XNVMEC_OPT_NSID:
 	case XNVMEC_OPT_CNS:
+	case XNVMEC_OPT_CSI:
+	case XNVMEC_OPT_INDEX:
 	case XNVMEC_OPT_SETID:
 
 	case XNVMEC_OPT_CNTID:
@@ -280,8 +282,6 @@ xnvmec_int2opt(int opt) {
 	case XNVMEC_OPT_UNUSED06:
 	case XNVMEC_OPT_UNUSED07:
 	case XNVMEC_OPT_UNUSED08:
-	case XNVMEC_OPT_UNUSED10:
-	case XNVMEC_OPT_UNUSED11:
 
 	case XNVMEC_OPT_UNKNOWN:
 	case XNVMEC_OPT_WEIRD:
@@ -362,7 +362,9 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 	{XNVMEC_OPT_CNTID,		XNVMEC_OPT_VTYPE_HEX,	"cntid",	"Controller Identifier"},
 	{XNVMEC_OPT_NSID,		XNVMEC_OPT_VTYPE_HEX,	"nsid",		"Namespace Identifier"},
 	{XNVMEC_OPT_UUID,		XNVMEC_OPT_VTYPE_HEX,	"uuid",		"Universally Unique Identifier"},
-	{XNVMEC_OPT_CNS,		XNVMEC_OPT_VTYPE_HEX,	"cns",		"CNS?"},
+	{XNVMEC_OPT_CNS,		XNVMEC_OPT_VTYPE_HEX,	"cns",		"Controller or Namespace Struct"},
+	{XNVMEC_OPT_CSI,		XNVMEC_OPT_VTYPE_HEX,	"csi",		"Command Set Identifier"},
+	{XNVMEC_OPT_INDEX,		XNVMEC_OPT_VTYPE_HEX,	"index",	"Index"},
 	{XNVMEC_OPT_SETID,		XNVMEC_OPT_VTYPE_HEX,	"setid",	"NVM Set Identifier"},
 
 	{XNVMEC_OPT_LPO_NBYTES,		XNVMEC_OPT_VTYPE_NUM,	"lpo-nbytes",	"Log-Page Offset (in bytes)"},
@@ -735,6 +737,12 @@ xnvmec_assign_arg(struct xnvmec *cli, int optval, char *arg,
 	case XNVMEC_OPT_CNS:
 		args->cns = num;
 		break;
+	case XNVMEC_OPT_CSI:
+		args->csi = num;
+		break;
+	case XNVMEC_OPT_INDEX:
+		args->index = num;
+		break;
 	case XNVMEC_OPT_SETID:
 		args->setid = num;
 		break;
@@ -854,8 +862,6 @@ xnvmec_assign_arg(struct xnvmec *cli, int optval, char *arg,
 	case XNVMEC_OPT_UNUSED06:
 	case XNVMEC_OPT_UNUSED07:
 	case XNVMEC_OPT_UNUSED08:
-	case XNVMEC_OPT_UNUSED10:
-	case XNVMEC_OPT_UNUSED11:
 		errno = EINVAL;
 		XNVME_DEBUG("subopt: 0x%x", subopt);
 		return -1;

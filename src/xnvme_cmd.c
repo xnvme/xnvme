@@ -151,6 +151,21 @@ xnvme_cmd_idfy_ctrlr(struct xnvme_dev *dev, struct xnvme_spec_idfy *dbuf,
 }
 
 int
+xnvme_cmd_idfy_ctrlr_csi(struct xnvme_dev *dev, uint8_t csi,
+			 struct xnvme_spec_idfy *dbuf, struct xnvme_req *req)
+{
+	const size_t dbuf_nbytes = sizeof(*dbuf);
+	struct xnvme_spec_cmd cmd = { 0 };
+
+	cmd.common.opcode = XNVME_SPEC_OPC_IDFY;
+	cmd.idfy.cns = XNVME_SPEC_IDFY_CTRLR_IOCS;
+	cmd.idfy.csi = csi;
+
+	return dev->be.func.cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL,
+					   0x0, 0x0, req);
+}
+
+int
 xnvme_cmd_idfy_ns(struct xnvme_dev *dev, uint32_t nsid,
 		  struct xnvme_spec_idfy *dbuf, struct xnvme_req *req)
 {
@@ -160,6 +175,23 @@ xnvme_cmd_idfy_ns(struct xnvme_dev *dev, uint32_t nsid,
 	cmd.common.opcode = XNVME_SPEC_OPC_IDFY;
 	cmd.common.nsid = (nsid) ? nsid : xnvme_dev_get_nsid(dev);
 	cmd.idfy.cns = XNVME_SPEC_IDFY_NS;
+	cmd.idfy.csi = XNVME_SPEC_CSI_NOCHECK;
+
+	return dev->be.func.cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL,
+					   0x0, 0x0, req);
+}
+
+int
+xnvme_cmd_idfy_ns_csi(struct xnvme_dev *dev, uint32_t nsid, uint8_t csi,
+		      struct xnvme_spec_idfy *dbuf, struct xnvme_req *req)
+{
+	const size_t dbuf_nbytes = sizeof(*dbuf);
+	struct xnvme_spec_cmd cmd = { 0 };
+
+	cmd.common.opcode = XNVME_SPEC_OPC_IDFY;
+	cmd.common.nsid = (nsid) ? nsid : xnvme_dev_get_nsid(dev);
+	cmd.idfy.cns = XNVME_SPEC_IDFY_NS_IOCS;
+	cmd.idfy.csi = csi;
 
 	return dev->be.func.cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL,
 					   0x0, 0x0, req);

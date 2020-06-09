@@ -252,7 +252,8 @@ probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid_probed,
 	}
 
 	opts->use_cmb_sqs = state->cmb_sqs ? true : false;
-	if (state->css) {
+	opts->command_set = 0x6;	// Default: try to select-all
+	if (state->css) {		// Override by user
 		opts->command_set = state->css;
 	}
 
@@ -339,7 +340,8 @@ enumerate_probe_cb(void *cb_ctx,
 	struct xnvme_be_spdk_enumerate_ctx *ectx = cb_ctx;
 
 	copts->use_cmb_sqs = ectx->cmb_sqs ? true : false;
-	if (ectx->css) {
+	copts->command_set = 0x6;	// Default: try to select-all
+	if (ectx->css) {		// Override by user
 		copts->command_set = ectx->css;
 	}
 
@@ -461,6 +463,7 @@ xnvme_be_spdk_enumerate(struct xnvme_enumeration *list, const char *sys_uri,
  *
  * - Identify namespace		(setup: dev->ns)
  * - Identify namespace-id	(setup: dev->nsid)
+ * - Determine Command Set	(setup: dev->csi)
  *
  * TODO: fixup for XNVME_DEV_TYPE_NVME_CONTROLLER
  */
@@ -468,26 +471,69 @@ int
 xnvme_be_spdk_dev_idfy(struct xnvme_dev *dev)
 {
 	struct xnvme_be_spdk_state *state = (void *)dev->be.state;
+	struct xnvme_spec_idfy *idfy_ctrlr = NULL, *idfy_ns = NULL;
 	const struct spdk_nvme_ctrlr_data *ctrlr_data;
 	const struct spdk_nvme_ns_data *ns_data;
+	struct xnvme_req req = { 0 };
+	int err;
 
 	dev->dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
+	dev->csi = XNVME_SPEC_CSI_NOCHECK;
 
+	// Allocate buffers for idfy
+	idfy_ctrlr = spdk_dma_malloc(sizeof(*idfy_ctrlr), 0x1000, NULL);
+	if (!idfy_ctrlr) {
+		XNVME_DEBUG("FAILED: spdk_dma_malloc()");
+		err = -ENOMEM;
+		goto exit;
+	}
+	idfy_ns = spdk_dma_malloc(sizeof(*idfy_ns), 0x1000, NULL);
+	if (!idfy_ns) {
+		XNVME_DEBUG("FAILED: spdk_dma_malloc()");
+		err = -ENOMEM;
+		goto exit;
+	}
+
+	// Retrieve and store ctrl and ns
 	ctrlr_data = spdk_nvme_ctrlr_get_data(state->ctrlr);
 	if (!ctrlr_data) {
 		XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_data()");
-		return -EINVAL;
+		err = -ENOMEM;
+		goto exit;
 	}
-	memcpy(&dev->ctrlr, ctrlr_data, sizeof(dev->ctrlr));
-
 	ns_data = spdk_nvme_ns_get_data(state->ns);
 	if (!ns_data) {
 		XNVME_DEBUG("FAILED: spdk_nvme_ns_get_data()");
-		return -EINVAL;
+		err = -ENOMEM;
+		goto exit;
 	}
-	memcpy(&dev->ns, ns_data, sizeof(dev->ns));
+	memcpy(&dev->id.ctrlr, ctrlr_data, sizeof(dev->id.ctrlr));
+	memcpy(&dev->id.ns, ns_data, sizeof(dev->id.ns));
 
-	return 0;
+	//
+	// Determine command-set / namespace type by probing
+	//
+
+	// Attempt to identify LBLK Namespace
+	memset(idfy_ns, 0, sizeof(*idfy_ns));
+	memset(&req, 0, sizeof(req));
+	err = xnvme_cmd_idfy_ns_csi(dev, dev->nsid, XNVME_SPEC_CSI_LBLK, idfy_ns, &req);
+	if (err || xnvme_req_cpl_status(&req)) {
+		XNVME_DEBUG("INFO: NS/CS does NOT look like NVM");
+		XNVME_DEBUG("INFO: failed determining Command Set");
+		err = 0;
+		goto exit;
+	}
+
+	XNVME_DEBUG("INFO: NS/CS looks like NVM");
+	dev->csi = XNVME_SPEC_CSI_LBLK;
+	memcpy(&dev->idcss.ns, idfy_ns, sizeof(*idfy_ns));
+
+exit:
+	xnvme_buf_free(dev, idfy_ctrlr);
+	xnvme_buf_free(dev, idfy_ns);
+
+	return err;
 }
 
 /**

@@ -15,3 +15,4 @@ tools, and guides on setting up various environments for NVMe deployments.
 
    fabrics
    library
+   nvme/index

@@ -925,6 +925,21 @@ xnvme_cmd_idfy_ctrlr(struct xnvme_dev *dev, struct xnvme_spec_idfy *dbuf,
 		     struct xnvme_req *req);
 
 /**
+ * Submit and wait for completion of an NVMe Identify command for the
+ * controller associated with the given device
+ *
+ * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param csi Command Set Identifier
+ * @param dbuf Buffer allocated by xnvme_buf_alloc()
+ * @param req Pointer to structure for NVMe completion
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ */
+int
+xnvme_cmd_idfy_ctrlr_csi(struct xnvme_dev *dev, uint8_t csi,
+			 struct xnvme_spec_idfy *dbuf, struct xnvme_req *req);
+
+/**
  * Submit and wait for completion of an NVMe Identify command for the given nsid
  *
  * Execute an NVMe identify namespace command for the namespace associated with
@@ -944,6 +959,25 @@ xnvme_cmd_idfy_ctrlr(struct xnvme_dev *dev, struct xnvme_spec_idfy *dbuf,
 int
 xnvme_cmd_idfy_ns(struct xnvme_dev *dev, uint32_t nsid,
 		  struct xnvme_spec_idfy *dbuf, struct xnvme_req *req);
+
+/**
+ * Submit and wait for completion of an NVMe Identify command for the given nsid
+ *
+ * Execute an I/O Command Set specific NVMe identify namespace command for the
+ * given 'nsid'. When the given 'nsid' == 0, then the command is executed for
+ * the namespace associated with the given device
+ *
+ * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param nsid Namespace identifier
+ * @param csi Command Set Identifier
+ * @param dbuf Buffer allocated by xnvme_buf_alloc()
+ * @param req Pointer to structure for NVMe completion
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ */
+int
+xnvme_cmd_idfy_ns_csi(struct xnvme_dev *dev, uint32_t nsid, uint8_t csi,
+		      struct xnvme_spec_idfy *dbuf, struct xnvme_req *req);
 
 /**
  * Submit and wait for completion of an NVMe Get Log Page command
@@ -1150,6 +1184,18 @@ const struct xnvme_spec_idfy_ctrlr *
 xnvme_dev_get_ctrlr(const struct xnvme_dev *dev);
 
 /**
+ * Returns the NVMe identify controller structure specific to the Command Set
+ * and Namespace associated with the given device
+ *
+ * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ *
+ * @return On success, pointer to namespace structure. On error, NULL is
+ * returned and `errno` is set to indicate the error
+ */
+const struct xnvme_spec_idfy_ctrlr *
+xnvme_dev_get_ctrlr_css(const struct xnvme_dev *dev);
+
+/**
  * Returns the NVMe identify namespace structure associated with the given
  * device
  *
@@ -1162,6 +1208,18 @@ const struct xnvme_spec_idfy_ns *
 xnvme_dev_get_ns(const struct xnvme_dev *dev);
 
 /**
+ * Returns the NVMe identify namespace structure specific to the Command Set and
+ * Namespace associated with the given device
+ *
+ * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ *
+ * @return On success, pointer to namespace structure. On error, NULL is
+ * returned and `errno` is set to indicate the error
+ */
+const struct xnvme_spec_idfy_ns *
+xnvme_dev_get_ns_css(const struct xnvme_dev *dev);
+
+/**
  * Returns the NVMe namespace identifier associated with the given `dev`
  *
  * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
@@ -1170,6 +1228,16 @@ xnvme_dev_get_ns(const struct xnvme_dev *dev);
  */
 uint32_t
 xnvme_dev_get_nsid(const struct xnvme_dev *dev);
+
+/**
+ * Returns the NVMe Command Set Identifier associated with the given `dev`
+ *
+ * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ *
+ * @return On success, NVMe Command Set Identifier is returned
+ */
+uint8_t
+xnvme_dev_get_csi(const struct xnvme_dev *dev);
 
 /**
  * Returns the internal backend state of the given `dev`

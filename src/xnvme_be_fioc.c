@@ -94,7 +94,7 @@ xnvme_be_fioc_dev_idfy(struct xnvme_dev *dev)
 		free(dev);
 		return err;
 	}
-	memcpy(&dev->ctrlr, idfy, sizeof(*idfy));
+	memcpy(&dev->id.ctrlr, idfy, sizeof(*idfy));
 
 	{
 		int ioctl_nsid = dev->nsid ? dev->nsid : 1;
@@ -109,7 +109,7 @@ xnvme_be_fioc_dev_idfy(struct xnvme_dev *dev)
 			free(dev);
 			return err;
 		}
-		memcpy(&dev->ns, idfy, sizeof(*idfy));
+		memcpy(&dev->id.ns, idfy, sizeof(*idfy));
 	}
 
 	xnvme_buf_free(dev, idfy);

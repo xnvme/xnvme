@@ -42,6 +42,7 @@ xnvme_dev_cmd_opts_yaml(FILE *stream, const struct xnvme_dev *dev, int indent,
 			(dev->cmd_opts & XNVME_CMD_UPLD_SGLM) ? "USER" : "DRV",
 			sep);
 
+	wrtn += fprintf(stream, "%*scsi: 0x%x%s", indent, "", dev->csi, sep);
 	wrtn += fprintf(stream, "%*snsid: 0x%u%s", indent, "", dev->nsid, sep);
 
 	wrtn += fprintf(stream, "%*sssw: %"PRIu64"", indent, "", dev->ssw);
@@ -97,22 +98,40 @@ xnvme_dev_get_geo(const struct xnvme_dev *dev)
 	return &dev->geo;
 }
 
-const struct xnvme_spec_idfy_ns *
-xnvme_dev_get_ns(const struct xnvme_dev *dev)
-{
-	return &dev->ns;
-}
-
 const struct xnvme_spec_idfy_ctrlr *
 xnvme_dev_get_ctrlr(const struct xnvme_dev *dev)
 {
-	return &dev->ctrlr;
+	return &dev->id.ctrlr;
+}
+
+const struct xnvme_spec_idfy_ctrlr *
+xnvme_dev_get_ctrlr_css(const struct xnvme_dev *dev)
+{
+	return &dev->idcss.ctrlr;
+}
+
+const struct xnvme_spec_idfy_ns *
+xnvme_dev_get_ns(const struct xnvme_dev *dev)
+{
+	return &dev->id.ns;
+}
+
+const struct xnvme_spec_idfy_ns *
+xnvme_dev_get_ns_css(const struct xnvme_dev *dev)
+{
+	return &dev->idcss.ns;
 }
 
 uint32_t
 xnvme_dev_get_nsid(const struct xnvme_dev *dev)
 {
 	return dev->nsid;
+}
+
+uint8_t
+xnvme_dev_get_csi(const struct xnvme_dev *dev)
+{
+	return dev->csi;
 }
 
 uint64_t

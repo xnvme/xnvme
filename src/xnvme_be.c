@@ -241,10 +241,9 @@ xnvme_be_attr_list_pr(const struct xnvme_be_attr_list *list, int opts)
 static inline int
 _conventional_geometry(struct xnvme_dev *dev)
 {
+	const struct xnvme_spec_idfy_ns *nvm = (void *)xnvme_dev_get_ns(dev);
+	const struct xnvme_spec_lbaf *lbaf = &nvm->lbaf[nvm->flbas.format];
 	struct xnvme_geo *geo = &dev->geo;
-	struct xnvme_spec_lbaf *lbaf = NULL;
-
-	lbaf = &dev->ns.lbaf[dev->ns.flbas.format];
 
 	geo->type = XNVME_GEO_CONVENTIONAL;
 
@@ -252,12 +251,12 @@ _conventional_geometry(struct xnvme_dev *dev)
 	geo->npunit = 1;
 	geo->nzone = 1;
 
-	geo->nsect = dev->ns.nsze;
+	geo->nsect = dev->id.ns.nsze;
 	geo->nbytes = 2 << (lbaf->ds - 1);
 	geo->nbytes_oob = lbaf->ms;
 
 	geo->lba_nbytes = geo->nbytes;
-	geo->lba_extended = dev->id.ns.flbas.extended && lbaf->ms;
+	geo->lba_extended = nvm->flbas.extended && lbaf->ms;
 	if (geo->lba_extended) {
 		geo->lba_nbytes += geo->nbytes_oob;
 	}
@@ -336,9 +335,14 @@ xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 		return -ENOSYS;
 
 	case XNVME_DEV_TYPE_NVME_NAMESPACE:
-		if (_conventional_geometry(dev)) {
-			XNVME_DEBUG("FAILED: _conventional_geometry");
-			return -EINVAL;
+		switch (dev->csi) {
+		case XNVME_SPEC_CSI_NOCHECK:
+		case XNVME_SPEC_CSI_LBLK:
+			if (_conventional_geometry(dev)) {
+				XNVME_DEBUG("FAILED: _conventional_geometry");
+				return -EINVAL;
+			}
+			break;
 		}
 		break;
 	}
@@ -359,7 +363,7 @@ xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 	// TODO: read the mpsmin register...
 	{
 		size_t mpsmin = 0;
-		size_t mdts = dev->ctrlr.mdts;
+		size_t mdts = dev->id.ctrlr.mdts;
 
 		if (!mdts) {
 			geo->mdts_nbytes = 1 << 20;

@@ -1,0 +1,3 @@
+xnvme_spec_idfy_cs:
+  - { iocsci: 0, val: 0x5, nvm: 1,zns: 1 }
+
