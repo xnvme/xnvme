@@ -13,7 +13,7 @@ sub_enumerate(struct xnvmec *cli)
 
 	xnvmec_pinf("xnvme_enumerate()");
 
-	err = xnvme_enumerate(&listing, NULL, cli->args.flags);
+	err = xnvme_enumerate(&listing, cli->args.sys_uri, cli->args.flags);
 	if (err) {
 		xnvmec_perr("xnvme_enumerate()", err);
 		goto exit;
@@ -566,6 +566,7 @@ static struct xnvmec_sub subs[] = {
 	{
 		"enum", "Enumerate devices on the system",
 		"Enumerate devices on the system", sub_enumerate, {
+			{XNVMEC_OPT_SYS_URI, XNVMEC_LOPT},
 			{XNVMEC_OPT_FLAGS, XNVMEC_LOPT},
 		}
 	},

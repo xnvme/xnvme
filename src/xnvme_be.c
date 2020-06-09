@@ -420,6 +420,12 @@ xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 		} else {
 			geo->mdts_nbytes = 1 << (mdts + 12 + mpsmin);
 		}
+
+		// Fabrics work-around
+		if ((geo->mdts_nbytes > (16 * 1024)) && \
+		    (!strncmp(dev->ident.schm, "fab", 3))) {
+			geo->mdts_nbytes = 16 * 1024;
+		}
 	}
 
 	// TODO: add zamdts

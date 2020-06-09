@@ -170,11 +170,15 @@ list(APPEND LIBS_SYSTEM Threads::Threads)
 # XNVME_BE_SPDK
 #
 set(XNVME_BE_SPDK_ENABLED ${UNIX} CACHE BOOL "be_spdk: SPDK backend")
+set(XNVME_BE_SPDK_TRANSPORT_PCIE_ENABLED ${UNIX} CACHE BOOL "be:spdk: PCIe Transport")
+set(XNVME_BE_SPDK_TRANSPORT_TCP_ENABLED ${UNIX} CACHE BOOL "be:spdk: TCP Transport")
+set(XNVME_BE_SPDK_TRANSPORT_RDMA_ENABLED ${UNIX} CACHE BOOL "be:spdk: RDMA Transport")
+set(XNVME_BE_SPDK_TRANSPORT_FC_ENABLED ${UNIX} CACHE BOOL "be:spdk: FC Transport")
 set(SPDK_REPOS
 	"${PROJECT_SOURCE_DIR}/third-party"
 	CACHE PATH "SPDK Repository path")
 set(SPDK_INCLUDE_PATH
-	"${SPDK_REPOS}/spdk/repos/include"
+	"${SPDK_REPOS}/spdk/repos/build/include"
 	CACHE PATH "SPDK include path")
 set(SPDK_LIBRARY_PATH
 	"${SPDK_REPOS}/spdk/repos/build/lib"
@@ -237,6 +241,18 @@ if(XNVME_BE_SPDK_ENABLED)
 	endif()
 
 	add_definitions(-DXNVME_BE_SPDK_ENABLED)
+	if(XNVME_BE_SPDK_TRANSPORT_PCIE_ENABLED)
+		add_definitions(-DXNVME_BE_SPDK_TRANSPORT_PCIE_ENABLED)
+	endif()
+	if(XNVME_BE_SPDK_TRANSPORT_TCP_ENABLED)
+		add_definitions(-DXNVME_BE_SPDK_TRANSPORT_TCP_ENABLED)
+	endif()
+	if(XNVME_BE_SPDK_TRANSPORT_RDMA_ENABLED)
+		add_definitions(-DXNVME_BE_SPDK_TRANSPORT_RDMA_ENABLED)
+	endif()
+	if(XNVME_BE_SPDK_TRANSPORT_FC_ENABLED)
+		add_definitions(-DXNVME_BE_SPDK_TRANSPORT_FC_ENABLED)
+	endif()
 
 	message( STATUS "ENABLING ASYNC SUPPORT" )
 	add_definitions(-DXNVME_ASYNC_ENABLED)
@@ -257,6 +273,7 @@ if(XNVME_BE_SPDK_ENABLED)
 	list(APPEND LIBS spdk_nvme)
 	list(APPEND LIBS spdk_env_dpdk)
 	list(APPEND LIBS spdk_sock)
+	list(APPEND LIBS spdk_sock_posix)
 	list(APPEND LIBS spdk_util)
 	list(APPEND LIBS spdk_log)
 
