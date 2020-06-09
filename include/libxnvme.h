@@ -362,15 +362,16 @@ int
 xnvme_enumeration_pr(struct xnvme_enumeration *list, int opts);
 
 /**
- * Enumerate devices on the system
+ * Enumerate devices on the given system
  *
  * @param list Pointer to pointer of the list of device enumerated
+ * @param sys_uri URI of the system to enumerate on, when NULL, localhost/PCIe
  * @param opts System enumeration options
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
-xnvme_enumerate(struct xnvme_enumeration **list, int opts);
+xnvme_enumerate(struct xnvme_enumeration **list, const char *sys_uri, int opts);
 
 /**
  * Opaque device handle.

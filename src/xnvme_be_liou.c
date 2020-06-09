@@ -446,10 +446,16 @@ xnvme_be_liou_dev_close(struct xnvme_dev *dev)
 }
 
 int
-xnvme_be_liou_enumerate(struct xnvme_enumeration *list, int XNVME_UNUSED(opts))
+xnvme_be_liou_enumerate(struct xnvme_enumeration *list, const char *sys_uri,
+			int XNVME_UNUSED(opts))
 {
 	struct dirent **ns = NULL;
 	int nns = 0;
+
+	if (sys_uri) {
+		XNVME_DEBUG("FAILED: sys_uri: %s is not supported", sys_uri);
+		return -ENOSYS;
+	}
 
 	nns = scandir("/sys/block", &ns, xnvme_path_nvme_filter, alphasort);
 	for (int ni = 0; ni < nns; ++ni) {

@@ -88,9 +88,9 @@ struct xnvme_be_func {
 	void (*buf_free)(const struct xnvme_dev *, void *);
 
 	/**
-	 * Enumerate devices on the system
+	 * Enumerate devices on/at the given 'sys_uri' when NULL local devices
 	 */
-	int (*enumerate)(struct xnvme_enumeration *, int);
+	int (*enumerate)(struct xnvme_enumeration *, const char *, int);
 
 	/**
 	 * Construct a device from the given identifier

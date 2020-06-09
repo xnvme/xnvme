@@ -6,7 +6,8 @@
 extern struct xnvme_be xnvme_be_nosys;
 
 int
-xnvme_be_nosys_enumerate(struct xnvme_enumeration *list, int opts);
+xnvme_be_nosys_enumerate(struct xnvme_enumeration *list,
+			 const char *sys_uri, int opts);
 
 int
 xnvme_be_nosys_dev_from_ident(const struct xnvme_ident *ident,

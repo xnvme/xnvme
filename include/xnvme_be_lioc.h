@@ -61,7 +61,8 @@ void
 xnvme_be_lioc_dev_close(struct xnvme_dev *dev);
 
 int
-xnvme_be_lioc_enumerate(struct xnvme_enumeration *list, int opts);
+xnvme_be_lioc_enumerate(struct xnvme_enumeration *list, const char *sys_uri,
+			int opts);
 
 static inline uint64_t
 xnvme_lba2off(struct xnvme_dev *dev, uint64_t lba)

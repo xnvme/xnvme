@@ -553,7 +553,7 @@ xnvme_be_factory(const char *uri, struct xnvme_dev **dev)
 }
 
 int
-xnvme_enumerate(struct xnvme_enumeration **list, int opts)
+xnvme_enumerate(struct xnvme_enumeration **list, const char *sys_uri, int opts)
 {
 	int err;
 
@@ -561,14 +561,14 @@ xnvme_enumerate(struct xnvme_enumeration **list, int opts)
 	// parsed on-wards as **, such that it can be re-allocated and expanded
 	err = xnvme_enumeration_alloc(list, 100);
 	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_enumeration_alloc");
+		XNVME_DEBUG("FAILED: xnvme_enumeration_alloc()");
 		return err;
 	}
 
 	for (int i = 0; xnvme_be_registry[i]; ++i) {
 		int err;
 
-		err = xnvme_be_registry[i]->func.enumerate(*list, opts);
+		err = xnvme_be_registry[i]->func.enumerate(*list, sys_uri, opts);
 		if (err) {
 			XNVME_DEBUG("FAILED: %s->enumerate(...), err: '%s', i: %d",
 				    xnvme_be_registry[i]->attr.name,

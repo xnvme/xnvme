@@ -7,6 +7,7 @@
 
 int
 xnvme_be_nosys_enumerate(struct xnvme_enumeration *XNVME_UNUSED(list),
+			 const char *XNVME_UNUSED(sys_uri),
 			 int XNVME_UNUSED(opts))
 {
 	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");

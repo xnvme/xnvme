@@ -13,7 +13,7 @@ sub_enumerate(struct xnvmec *cli)
 
 	xnvmec_pinf("xnvme_enumerate()");
 
-	err = xnvme_enumerate(&listing, cli->args.flags);
+	err = xnvme_enumerate(&listing, NULL, cli->args.flags);
 	if (err) {
 		xnvmec_perr("xnvme_enumerate()", err);
 		goto exit;

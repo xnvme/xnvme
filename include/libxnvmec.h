@@ -109,6 +109,7 @@ struct xnvmec_args {
 	const struct xnvme_geo *geo;			///< Created
 
 	const char *uri;
+	const char *sys_uri;
 
 	const char *cmd_input;
 	const char *cmd_output;
@@ -221,6 +222,7 @@ enum xnvmec_opt {
 	XNVMEC_OPT_NLB = 'Q', ///< XNVMEC_OPT_NLB
 
 	XNVMEC_OPT_URI = 'R', ///< XNVMEC_OPT_URI
+	XNVMEC_OPT_SYS_URI = ',', ///< XNVMEC_OPT_SYS_URI
 	XNVMEC_OPT_UUID = 'S', ///< XNVMEC_OPT_UUID
 	XNVMEC_OPT_NSID = 'T', ///< XNVMEC_OPT_NSID
 	XNVMEC_OPT_CNS = 'U', ///< XNVMEC_OPT_CNS
@@ -277,7 +279,6 @@ enum xnvmec_opt {
 	XNVMEC_OPT_UNUSED06 = '%',
 	XNVMEC_OPT_UNUSED07 = '&',
 	XNVMEC_OPT_UNUSED08 = '+',
-	XNVMEC_OPT_UNUSED09 = ',',
 	XNVMEC_OPT_UNUSED10 = '-',
 	XNVMEC_OPT_UNUSED11 = '/',
 

@@ -412,10 +412,16 @@ enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
 // TODO: enumerate fabrics
 //
 int
-xnvme_be_spdk_enumerate(struct xnvme_enumeration *list, int opts)
+xnvme_be_spdk_enumerate(struct xnvme_enumeration *list, const char *sys_uri,
+			int opts)
 {
 	struct xnvme_be_spdk_enumerate_ctx ectx = { 0 };
 	int err;
+
+	if (sys_uri) {
+		XNVME_DEBUG("FAILED: sys_uri: %s is not supported", sys_uri);
+		return -ENOSYS;
+	}
 
 	if (_spdk_env_init(NULL)) {
 		XNVME_DEBUG("FAILED: _spdk_env_init()");

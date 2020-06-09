@@ -178,6 +178,7 @@ xnvmec_args_pr(struct xnvmec_args *args, int opts)
 	}
 
 	printf("uri: '%s'\n", args->uri);
+	printf("sys_uri: '%s'\n", args->sys_uri);
 
 	printf("fid: 0x%x\n", args->fid);
 	printf("feat: 0x%x\n", args->feat);
@@ -226,6 +227,7 @@ xnvmec_int2opt(int opt) {
 	case XNVMEC_OPT_ELBA:
 	case XNVMEC_OPT_NLB:
 	case XNVMEC_OPT_URI:
+	case XNVMEC_OPT_SYS_URI:
 	case XNVMEC_OPT_UUID:
 	case XNVMEC_OPT_NSID:
 	case XNVMEC_OPT_CNS:
@@ -278,7 +280,6 @@ xnvmec_int2opt(int opt) {
 	case XNVMEC_OPT_UNUSED06:
 	case XNVMEC_OPT_UNUSED07:
 	case XNVMEC_OPT_UNUSED08:
-	case XNVMEC_OPT_UNUSED09:
 	case XNVMEC_OPT_UNUSED10:
 	case XNVMEC_OPT_UNUSED11:
 
@@ -356,7 +357,8 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 	{XNVMEC_OPT_LBA,		XNVMEC_OPT_VTYPE_HEX,	"lba",	"Logical Block Address"},
 	{XNVMEC_OPT_NLB,		XNVMEC_OPT_VTYPE_NUM,	"nlb",	"Number of LBAs (NOTE: zero-based value)"},
 
-	{XNVMEC_OPT_URI,		XNVMEC_OPT_VTYPE_URI,	"uri",		"Device URI e.g. /dev/nvme0n1 or pci://0000:01:00.1"},
+	{XNVMEC_OPT_URI,		XNVMEC_OPT_VTYPE_URI,	"uri",		"Device URI e.g. /dev/nvme0n1, liou:/dev/nvme0n1 or pci:0000:01:00.1"},
+	{XNVMEC_OPT_SYS_URI,		XNVMEC_OPT_VTYPE_URI,	"uri",		"System URI e.g. fab:10.9.8.1:8888"},
 	{XNVMEC_OPT_CNTID,		XNVMEC_OPT_VTYPE_HEX,	"cntid",	"Controller Identifier"},
 	{XNVMEC_OPT_NSID,		XNVMEC_OPT_VTYPE_HEX,	"nsid",		"Namespace Identifier"},
 	{XNVMEC_OPT_UUID,		XNVMEC_OPT_VTYPE_HEX,	"uuid",		"Universally Unique Identifier"},
@@ -721,6 +723,9 @@ xnvmec_assign_arg(struct xnvmec *cli, int optval, char *arg,
 	case XNVMEC_OPT_URI:
 		args->uri = arg ? arg : "INVALID_INPUT";
 		break;
+	case XNVMEC_OPT_SYS_URI:
+		args->sys_uri = arg ? arg : "INVALID_INPUT";
+		break;
 	case XNVMEC_OPT_UUID:
 		args->uuid = num;
 		break;
@@ -849,7 +854,6 @@ xnvmec_assign_arg(struct xnvmec *cli, int optval, char *arg,
 	case XNVMEC_OPT_UNUSED06:
 	case XNVMEC_OPT_UNUSED07:
 	case XNVMEC_OPT_UNUSED08:
-	case XNVMEC_OPT_UNUSED09:
 	case XNVMEC_OPT_UNUSED10:
 	case XNVMEC_OPT_UNUSED11:
 		errno = EINVAL;

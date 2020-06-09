@@ -185,10 +185,16 @@ xnvme_be_fioc_dev_from_ident(const struct xnvme_ident *ident,
 }
 
 int
-xnvme_be_fioc_enumerate(struct xnvme_enumeration *list, int XNVME_UNUSED(opts))
+xnvme_be_fioc_enumerate(struct xnvme_enumeration *list, const char *sys_uri,
+			int XNVME_UNUSED(opts))
 {
 	struct dirent **dent = NULL;
 	int ndev = 0;
+
+	if (sys_uri) {
+		XNVME_DEBUG("FAILED: sys_uri: %s is not supported", sys_uri);
+		return -ENOSYS;
+	}
 
 	ndev = scandir(_PATH_DEV, &dent, _nvme_filter, alphasort);
 
