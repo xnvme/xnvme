@@ -8,12 +8,12 @@ Contributors to the current release
 
 * Simon A. F. Lund, [Samsung]
 * Gurmeet Singh, [Samsung]
-* Klaus B. A. Jensen, [Samsung]
-* Javier González [Samsung]
+* Ivan I. Picoli, [Samsung]
 
 Contributors to previous releases
 ---------------------------------
 
+* Javier González [Samsung]
 * Simon A. F. Lund, [CNEX Labs], [Samsung]
 * Klaus B. A. Jensen, [CNEX Labs], [Samsung]
 
