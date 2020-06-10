@@ -115,6 +115,7 @@ struct xnvme_fioe_options {
 	void *padding;
 	unsigned int hipri;
 	unsigned int sqpoll_thread;
+	char *be;
 };
 
 static struct fio_option options[] = {
@@ -135,6 +136,15 @@ static struct fio_option options[] = {
 		.help   = "Offload submission/completion to kernel thread",
 		.category = FIO_OPT_C_ENGINE,
 		.group  = FIO_OPT_G_IOURING,
+	},
+	{
+		.name   = "be",
+		.lname  = "xNVMe Backend",
+		.type   = FIO_OPT_STR_STORE,
+		.off1   = offsetof(struct xnvme_fioe_options, be),
+		.help   = "Default backend when none is provided e.g. /dev/nvme0n1",
+		.category = FIO_OPT_C_ENGINE,
+		.group  = FIO_OPT_G_NBD,
 	},
 	{
 		.name   = NULL,
@@ -212,8 +222,16 @@ _dev_open(struct thread_data *td, struct fio_file *f)
 	struct xnvme_fioe_data *xd = td->io_ops_data;
 	struct xnvme_fioe_fwrap *fwrap;
 	const struct xnvme_geo *geo;
+	char dev_uri[XNVME_IDENT_URI_LEN] = { 0 };
+	int fn_has_scheme;
 	int flags = 0;
 
+	XNVME_DEBUG("o->be: '%s'", o->be);
+
+	if (o->be && (strlen(o->be) > XNVME_IDENT_SCHM_LEN)) {
+		log_err("xnvme_fioe: invalid --be=%s\n", o->be);
+		return 1;
+	}
 	if (o->hipri) {
 		flags |= XNVME_ASYNC_IOPOLL;
 	}
@@ -225,11 +243,27 @@ _dev_open(struct thread_data *td, struct fio_file *f)
 		return 1;
 	}
 
+	{
+		char schm[XNVME_IDENT_SCHM_LEN];
+		char sep[1];
+		int matches;
+
+		matches = sscanf(f->file_name, "%4[a-z]%1[:]", schm, sep) == 2;
+		fn_has_scheme = matches == 2;
+	}
+
+	if (o->be && (!fn_has_scheme)) {
+		snprintf(dev_uri, XNVME_IDENT_URI_LEN - 2, "%s:", o->be);
+	}
+	strncat(dev_uri, f->file_name, XNVME_IDENT_URI_LEN - strlen(dev_uri));
+
+	XNVME_DEBUG("INFO: dev_uri: '%s'", dev_uri);
+
 	fwrap = &xd->files[f->fileno];
-	fwrap->dev = xnvme_dev_open(f->file_name);
+	fwrap->dev = xnvme_dev_open(dev_uri);
 	if (!fwrap->dev) {
 		log_err("xnvme_fioe: init(): {uri: '%s', err: '%s'}\n",
-			f->file_name, strerror(errno));
+			dev_uri, strerror(errno));
 		return 1;
 	}
 	geo = xnvme_dev_get_geo(fwrap->dev);
