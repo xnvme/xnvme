@@ -32,6 +32,35 @@ enum xnvme_pr {
 	XNVME_PR_YAML = 0x1,	///< XNVME_PR_YAML: Print formatted as YAML
 	XNVME_PR_TERSE = 0x2	///< XNVME_PR_TERSE: Print without formatting
 };
+
+/**
+ * Array of version-strings for libraries bundled with xNVMe
+ */
+extern const char *xnvme_3p_ver[];
+
+/**
+ * Prints the given array of version-strings to the given output stream
+ *
+ * @param stream output stream used for printing
+ * @param attr Pointer to the array of strings to print
+ * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_3p_ver_fpr(FILE* stream, const char *ver[], enum xnvme_pr opts);
+
+/**
+ * Prints the given array of version-strings to stdout
+ *
+ * @param attr Pointer to the array of strings to print
+ * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_3p_ver_pr(const char *ver[], enum xnvme_pr opts);
+
 /**
  *
  * io_uring_setup() flags
