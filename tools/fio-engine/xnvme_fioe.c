@@ -315,8 +315,10 @@ xnvme_fioe_init(struct thread_data *td)
 	if (!td->io_ops) {
 		log_err("xnvme_fioe: init(): !td->io_ops\n");
 		log_err("xnvme_fioe: init(): Check fio version\n");
-		log_err("xnvme_fioe: init(): I/O engine built against: '%s'\n",
+		log_err("xnvme_fioe: init(): I/O engine running with: '%s'\n",
 			fio_version_string);
+		log_err("xnvme_fioe: init(): I/O engine built with:\n");
+		xnvme_3p_ver_fpr(stderr, xnvme_3p_ver, XNVME_PR_DEF);
 		return 1;
 	}
 
