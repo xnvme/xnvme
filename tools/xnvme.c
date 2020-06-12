@@ -531,7 +531,9 @@ sub_library_info(struct xnvmec *XNVME_UNUSED(cli))
 
 	xnvmec_pinf("xNVMe Library Information");
 	xnvme_ver_pr(XNVME_PR_DEF);
+
 	printf("\n");
+	xnvme_3p_ver_pr(xnvme_3p_ver, XNVME_PR_DEF);
 
 	err = xnvme_be_attr_list(&list);
 	if (err) {
