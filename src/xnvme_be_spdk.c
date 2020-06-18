@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <rte_log.h>
 #include <spdk/log.h>
+#include <spdk/nvme_spec.h>
 
 #include <xnvme_async.h>
 #include <xnvme_be.h>
@@ -252,10 +253,7 @@ probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid_probed,
 	}
 
 	opts->use_cmb_sqs = state->cmb_sqs ? true : false;
-	opts->command_set = 0x6;	// Default: try to select-all
-	if (state->css) {		// Override by user
-		opts->command_set = state->css;
-	}
+	opts->command_set = state->css ? state->css : SPDK_NVME_CC_CSS_IOCS;
 
 	return true;
 }
@@ -340,10 +338,7 @@ enumerate_probe_cb(void *cb_ctx,
 	struct xnvme_be_spdk_enumerate_ctx *ectx = cb_ctx;
 
 	copts->use_cmb_sqs = ectx->cmb_sqs ? true : false;
-	copts->command_set = 0x6;	// Default: try to select-all
-	if (ectx->css) {		// Override by user
-		copts->command_set = ectx->css;
-	}
+	copts->command_set = ectx->css ? ectx->css : SPDK_NVME_CC_CSS_IOCS;
 
 	return 1;
 }
