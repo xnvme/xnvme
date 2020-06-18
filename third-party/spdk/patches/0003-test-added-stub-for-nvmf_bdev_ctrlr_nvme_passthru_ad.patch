@@ -1,0 +1,49 @@
+From 1398eb04e9d7d5bc78815564a6858e0455dfadb5 Mon Sep 17 00:00:00 2001
+From: "Ivan L. Picoli" <i.picoli@samsung.com>
+Date: Tue, 16 Jun 2020 22:28:44 +0200
+Subject: [PATCH 3/6] test: added stub for
+ nvmf_bdev_ctrlr_nvme_passthru_admin()
+
+Signed-off-by: Ivan L. Picoli <i.picoli@samsung.com>
+---
+ test/unit/lib/nvmf/ctrlr.c/ctrlr_ut.c | 6 ++++++
+ test/unit/lib/nvmf/tcp.c/tcp_ut.c     | 6 ++++++
+ 2 files changed, 12 insertions(+)
+
+diff --git a/test/unit/lib/nvmf/ctrlr.c/ctrlr_ut.c b/test/unit/lib/nvmf/ctrlr.c/ctrlr_ut.c
+index e6ddff9bd..36d0803cf 100644
+--- a/test/unit/lib/nvmf/ctrlr.c/ctrlr_ut.c
++++ b/test/unit/lib/nvmf/ctrlr.c/ctrlr_ut.c
+@@ -167,6 +167,12 @@ DEFINE_STUB(nvmf_bdev_ctrlr_nvme_passthru_io,
+ 	     struct spdk_nvmf_request *req),
+ 	    0);
+ 
++DEFINE_STUB(spdk_nvmf_bdev_ctrlr_nvme_passthru_admin,
++	    int,
++	    (struct spdk_bdev *bdev, struct spdk_bdev_desc *desc, struct spdk_io_channel *ch,
++	     struct spdk_nvmf_request *req, spdk_nvmf_nvme_passthru_cmd_cb cb_fn),
++	    0);
++
+ DEFINE_STUB(nvmf_transport_req_complete,
+ 	    int,
+ 	    (struct spdk_nvmf_request *req),
+diff --git a/test/unit/lib/nvmf/tcp.c/tcp_ut.c b/test/unit/lib/nvmf/tcp.c/tcp_ut.c
+index d82402926..d58e50c92 100644
+--- a/test/unit/lib/nvmf/tcp.c/tcp_ut.c
++++ b/test/unit/lib/nvmf/tcp.c/tcp_ut.c
+@@ -163,6 +163,12 @@ DEFINE_STUB(nvmf_bdev_ctrlr_nvme_passthru_io,
+ 	     struct spdk_nvmf_request *req),
+ 	    0);
+ 
++DEFINE_STUB(spdk_nvmf_bdev_ctrlr_nvme_passthru_admin,
++	    int,
++	    (struct spdk_bdev *bdev, struct spdk_bdev_desc *desc, struct spdk_io_channel *ch,
++	     struct spdk_nvmf_request *req, spdk_nvmf_nvme_passthru_cmd_cb cb_fn),
++	    0);
++
+ DEFINE_STUB(nvmf_bdev_ctrlr_get_dif_ctx,
+ 	    bool,
+ 	    (struct spdk_bdev *bdev, struct spdk_nvme_cmd *cmd, struct spdk_dif_ctx *dif_ctx),
+-- 
+2.20.1
+
