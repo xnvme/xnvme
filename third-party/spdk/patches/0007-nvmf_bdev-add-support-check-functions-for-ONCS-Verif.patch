@@ -1,0 +1,52 @@
+From 5f29150501e7b03027df7907617e4a0748807c03 Mon Sep 17 00:00:00 2001
+From: "Ivan L. Picoli" <i.picoli@samsung.com>
+Date: Wed, 22 Jul 2020 18:11:48 +0200
+Subject: [PATCH 7/8] nvmf_bdev: add support-check functions for ONCS Verify
+ and Simple Copy
+
+Signed-off-by: Ivan L. Picoli <i.picoli@samsung.com>
+Change-Id: I1a25364abb7c887fa827541fe10eb6b11af38ea4
+---
+ lib/nvmf/ctrlr_bdev.c    | 12 ++++++++++++
+ lib/nvmf/nvmf_internal.h |  2 ++
+ 2 files changed, 14 insertions(+)
+
+diff --git a/lib/nvmf/ctrlr_bdev.c b/lib/nvmf/ctrlr_bdev.c
+index 13e0a4309..6ba800e5b 100644
+--- a/lib/nvmf/ctrlr_bdev.c
++++ b/lib/nvmf/ctrlr_bdev.c
+@@ -75,6 +75,18 @@ nvmf_subsystem_bdev_io_type_supported(struct spdk_nvmf_subsystem *subsystem,
+ 	return true;
+ }
+ 
++bool
++nvmf_ctrlr_verify_supported(struct spdk_nvmf_ctrlr *ctrlr)
++{
++	return nvmf_subsystem_bdev_io_type_supported(ctrlr->subsys, SPDK_BDEV_IO_TYPE_VERIFY);
++}
++
++bool
++nvmf_ctrlr_simple_copy_supported(struct spdk_nvmf_ctrlr *ctrlr)
++{
++	return nvmf_subsystem_bdev_io_type_supported(ctrlr->subsys, SPDK_BDEV_IO_TYPE_SIMPLE_COPY);
++}
++
+ bool
+ nvmf_ctrlr_dsm_supported(struct spdk_nvmf_ctrlr *ctrlr)
+ {
+diff --git a/lib/nvmf/nvmf_internal.h b/lib/nvmf/nvmf_internal.h
+index f1f3837d5..396e381cb 100644
+--- a/lib/nvmf/nvmf_internal.h
++++ b/lib/nvmf/nvmf_internal.h
+@@ -287,6 +287,8 @@ void nvmf_ctrlr_destruct(struct spdk_nvmf_ctrlr *ctrlr);
+ int nvmf_ctrlr_process_fabrics_cmd(struct spdk_nvmf_request *req);
+ int nvmf_ctrlr_process_admin_cmd(struct spdk_nvmf_request *req);
+ int nvmf_ctrlr_process_io_cmd(struct spdk_nvmf_request *req);
++bool nvmf_ctrlr_verify_supported(struct spdk_nvmf_ctrlr *ctrlr);
++bool nvmf_ctrlr_simple_copy_supported(struct spdk_nvmf_ctrlr *ctrlr);
+ bool nvmf_ctrlr_dsm_supported(struct spdk_nvmf_ctrlr *ctrlr);
+ bool nvmf_ctrlr_write_zeroes_supported(struct spdk_nvmf_ctrlr *ctrlr);
+ void nvmf_ctrlr_ns_changed(struct spdk_nvmf_ctrlr *ctrlr, uint32_t nsid);
+-- 
+2.20.1
+
