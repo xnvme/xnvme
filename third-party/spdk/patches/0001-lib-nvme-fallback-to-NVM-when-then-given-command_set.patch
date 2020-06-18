@@ -1,0 +1,45 @@
+From 08336cabfea41fce41aa65a5bf95caca854812bf Mon Sep 17 00:00:00 2001
+From: "Simon A. F. Lund" <simon.lund@samsung.com>
+Date: Tue, 16 Jun 2020 18:35:12 +0200
+Subject: [PATCH 1/6] lib/nvme: fallback to NVM when then given command_set is
+ not supported
+
+When the user requests a non-default command set configuration, via the
+probe_cb() supplied to spdk_nvme_probe(), which is not supported, then
+the controller initialization will not proceed.
+
+This patch changes that behavior into falling back to the NVM command
+set and continue with the controller initialization. It is done by
+assigning the NVM command set to opts.command_set such that the user
+knows in attach_cb() with which command_set the controller is
+configured/enabled.
+
+The fallback is needed since the user does not have access to the
+controller capabilities register. The strategy left for the user is thus
+to try. However, this is an issue, as the user only has one attempt, as
+subsequent calls to spdk_nvme_probe() will not trigger probe_cb() for
+the controllers whose initialization did not proceed.
+
+Signed-off-by: Simon A. F. Lund <simon.lund@samsung.com>
+Change-Id: Ia414628fcd7d56956649647775462e62d98c0a90
+---
+ lib/nvme/nvme_ctrlr.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/lib/nvme/nvme_ctrlr.c b/lib/nvme/nvme_ctrlr.c
+index 79bd1caf6..b69fe02a5 100644
+--- a/lib/nvme/nvme_ctrlr.c
++++ b/lib/nvme/nvme_ctrlr.c
+@@ -901,7 +901,8 @@ nvme_ctrlr_enable(struct spdk_nvme_ctrlr *ctrlr)
+ 	if (!(ctrlr->cap.bits.css & (1u << ctrlr->opts.command_set))) {
+ 		SPDK_DEBUGLOG(SPDK_LOG_NVME, "Requested I/O command set %u but supported mask is 0x%x\n",
+ 			      ctrlr->opts.command_set, ctrlr->cap.bits.css);
+-		return -EINVAL;
++		SPDK_DEBUGLOG(SPDK_LOG_NVME, "Falling back to NVM. Assuming NVM is supported.\n");
++		ctrlr->opts.command_set = SPDK_NVME_CC_CSS_NVM;
+ 	}
+ 
+ 	cc.bits.css = ctrlr->opts.command_set;
+-- 
+2.20.1
+
