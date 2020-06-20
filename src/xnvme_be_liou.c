@@ -183,7 +183,6 @@ xnvme_be_liou_async_poke(struct xnvme_dev *XNVME_UNUSED(dev),
 			XNVME_DEBUG("cqe->flags: %u", cqe->flags);
 
 			io_uring_cqe_seen(&lctx->ring, cqe);
-			req->async.cb(req, req->async.cb_arg);
 			ctx->outstanding -= 1;
 
 			return -EIO;
