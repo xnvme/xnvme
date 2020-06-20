@@ -683,7 +683,7 @@ struct xnvme_req {
 		void *cb_arg;			///< User callback arguments
 
 		///< Per request backend specific data
-		uint8_t be_rsvd[16];
+		uint8_t be_rsvd[8];
 	} async;
 
 	///< Fields for request-pool
