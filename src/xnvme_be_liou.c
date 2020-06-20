@@ -264,7 +264,6 @@ async_io(struct xnvme_dev *dev, int opcode, struct xnvme_spec_cmd *cmd,
 	struct xnvme_be_liou_state *state = (void *)dev->be.state;
 	struct xnvme_async_ctx_liou *lctx = (void *)req->async.ctx;
 	struct io_uring_sqe *sqe = NULL;
-	struct iovec *iovec = (struct iovec *) & (req->async.be_rsvd);
 	int err = 0;
 
 	if (lctx->outstanding == lctx->depth) {
@@ -281,18 +280,15 @@ async_io(struct xnvme_dev *dev, int opcode, struct xnvme_spec_cmd *cmd,
 		return -EAGAIN;
 	}
 
-	iovec->iov_base = dbuf;
-	iovec->iov_len = dbuf_nbytes;
-
 	sqe->opcode = opcode;
+	sqe->addr = (unsigned long) dbuf;
+	sqe->len = dbuf_nbytes;
 	sqe->flags = lctx->poll_sq ? IOSQE_FIXED_FILE : 0;
 	sqe->ioprio = 0;
 	// NOTE: we only ever register a single file, the raw device, so the
 	// provided index will always be 0
 	sqe->fd = lctx->poll_sq ? 0 : state->fd;
 	sqe->off = cmd->lblk.slba << dev->ssw;
-	sqe->addr = (unsigned long) iovec;
-	sqe->len = 1;
 	sqe->rw_flags = 0;
 	sqe->user_data = (unsigned long)req;
 	sqe->__pad2[0] = sqe->__pad2[1] = sqe->__pad2[2] = 0;
@@ -324,11 +320,11 @@ xnvme_be_liou_cmd_pass(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 
 	switch (cmd->common.opcode) {
 	case XNVME_SPEC_OPC_WRITE:
-		return async_io(dev, IORING_OP_WRITEV, cmd, dbuf, dbuf_nbytes,
+		return async_io(dev, IORING_OP_WRITE, cmd, dbuf, dbuf_nbytes,
 				mbuf, mbuf_nbytes, opts, req);
 
 	case XNVME_SPEC_OPC_READ:
-		return async_io(dev, IORING_OP_READV, cmd, dbuf, dbuf_nbytes,
+		return async_io(dev, IORING_OP_READ, cmd, dbuf, dbuf_nbytes,
 				mbuf, mbuf_nbytes, opts, req);
 	}
 
