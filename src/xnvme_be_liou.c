@@ -283,12 +283,12 @@ async_io(struct xnvme_dev *dev, int opcode, struct xnvme_spec_cmd *cmd,
 	sqe->opcode = opcode;
 	sqe->addr = (unsigned long) dbuf;
 	sqe->len = dbuf_nbytes;
+		sqe->off = cmd->lblk.slba << dev->ssw;
 	sqe->flags = lctx->poll_sq ? IOSQE_FIXED_FILE : 0;
 	sqe->ioprio = 0;
 	// NOTE: we only ever register a single file, the raw device, so the
 	// provided index will always be 0
 	sqe->fd = lctx->poll_sq ? 0 : state->fd;
-	sqe->off = cmd->lblk.slba << dev->ssw;
 	sqe->rw_flags = 0;
 	sqe->user_data = (unsigned long)req;
 	sqe->__pad2[0] = sqe->__pad2[1] = sqe->__pad2[2] = 0;
