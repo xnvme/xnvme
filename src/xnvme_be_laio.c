@@ -114,7 +114,6 @@ xnvme_be_laio_async_poke(struct xnvme_async_ctx *ctx, uint32_t max)
 				XNVME_DEBUG("event->data is NULL! => NO REQ!");
 				XNVME_DEBUG("event->res: %ld", ev->res);
 
-				req->async.cb(req, req->async.cb_arg);
 				ctx->outstanding -= 1;
 
 				return -EIO;
