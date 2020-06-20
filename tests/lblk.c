@@ -20,8 +20,7 @@ boilerplate(struct xnvmec *cli, uint8_t **wbuf, uint8_t **rbuf,
 	*rng_slba = cli->args.slba;
 	*rng_elba = cli->args.elba;
 
-	//*mdts_naddr = XNVME_MIN(geo->mdts_nbytes / geo->nbytes, 256);
-	*mdts_naddr = 64;
+	*mdts_naddr = XNVME_MIN(geo->mdts_nbytes / geo->lba_nbytes, 256);
 	*buf_nbytes = (*mdts_naddr) * geo->nbytes;
 
 	// Construct a range if none is given
