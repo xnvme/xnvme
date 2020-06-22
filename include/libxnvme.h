@@ -48,7 +48,7 @@ extern const char *xnvme_3p_ver[];
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_3p_ver_fpr(FILE* stream, const char *ver[], enum xnvme_pr opts);
+xnvme_3p_ver_fpr(FILE *stream, const char *ver[], enum xnvme_pr opts);
 
 /**
  * Prints the given array of version-strings to stdout
