@@ -11,6 +11,7 @@ third-party-fio:
 		$(MAKE) third-party-update;			\
 	fi
 	@$(MAKE) third-party-fio-clean
+	@$(MAKE) third-party-fio-patch
 	@$(MAKE) third-party-fio-build
 
 .PHONY: third-party-fio-clean
@@ -24,6 +25,15 @@ third-party-fio-clobber: third-party-fio-clean
 	cd ${XNVME_3P_FIO_REPOS} && git clean -dfx || true
 	cd ${XNVME_3P_FIO_REPOS} && git clean -dfX || true
 	cd ${XNVME_3P_FIO_REPOS} && git checkout . || true
+
+.PHONY: third-party-fio-patch
+third-party-fio-patch:
+	@echo "## xNVMe: make third-party-fio-patch"
+	@if [ "$(ls third-party/fio/patches/)" ]; then	\
+		echo "## Got patches...";		\
+		cd ${XNVME_3P_FIO_REPOS};		\
+		find ../patches -type f -name '0*.patch' -print0 | sort -z | xargs -t -0 -n 1 patch -p1 --forward -i || true; \
+	fi
 
 .PHONY: third-party-fio-build
 third-party-fio-build:
