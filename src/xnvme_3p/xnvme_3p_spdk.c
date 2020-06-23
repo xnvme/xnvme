@@ -1,0 +1,1 @@
+static const char xnvme_3p_spdk[] = "spdk;git-describe:v20.04-rc1-528-g8c710c9d;+patches";
