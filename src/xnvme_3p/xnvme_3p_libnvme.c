@@ -1,0 +1,1 @@
+static const char xnvme_3p_libnvme[] = "libnvme;git-rev:master/a458217";
