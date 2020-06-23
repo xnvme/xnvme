@@ -86,6 +86,18 @@ struct xnvme_fioe_fwrap {
 	///< xNVMe device handle
 	struct xnvme_dev *dev;
 
+	struct xnvme_async_ctx *ctx;
+	struct xnvme_req_pool *reqs;
+
+	uint32_t ssw;
+
+	uint32_t lba_nbytes;
+
+	uint8_t _pad[24];
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_fioe_fwrap) == 64, "Incorrect size")
+
+struct xnvme_fioe_data {
 	///< I/O completion queue
 	struct io_u **iocq;
 
@@ -95,21 +107,20 @@ struct xnvme_fioe_fwrap {
 	///< # of errors; incremented when observed on completion via getevents()/cb_pool()
 	uint64_t ecount;
 
-	struct xnvme_async_ctx *ctx;
-	struct xnvme_req_pool *reqs;
+	///< Controller which device/file to select
+	int32_t prev;
+	int32_t cur;
 
-	uint32_t ssw;
-
-	uint32_t lba_nbytes;
-};
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_fioe_fwrap) == 64, "Incorrect size")
-
-struct xnvme_fioe_data {
-	uint64_t cur;
+	///< Number of devices/files for which open() has been called
 	uint64_t nopen;
+	///< Number of devices/files allocated in files[]
 	uint64_t nallocated;
+
+	uint8_t _pad[16];
+
 	struct xnvme_fioe_fwrap files[];
 };
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_fioe_data) == 64, "Incorrect size")
 
 struct xnvme_fioe_options {
 	void *padding;
@@ -156,15 +167,14 @@ cb_pool(struct xnvme_req *req, void *cb_arg)
 {
 	struct io_u *io_u = cb_arg;
 	struct xnvme_fioe_data *xd = io_u->engine_data;
-	struct xnvme_fioe_fwrap *fwrap = &xd->files[io_u->file->fileno];
 
 	if (xnvme_req_cpl_status(req)) {
 		xnvme_req_pr(req, XNVME_PR_DEF);
-		fwrap->ecount += 1;
+		xd->ecount += 1;
 		io_u->error = EIO;
 	}
 
-	fwrap->iocq[fwrap->completed++] = io_u;
+	xd->iocq[xd->completed++] = io_u;
 	SLIST_INSERT_HEAD(&req->pool->head, req, link);
 }
 
@@ -188,7 +198,6 @@ _dev_close(struct thread_data *td, struct xnvme_fioe_fwrap *fwrap)
 	if (fwrap->dev) {
 		xnvme_async_term(fwrap->dev, fwrap->ctx);
 	}
-	free(fwrap->iocq);
 	xnvme_req_pool_free(fwrap->reqs);
 	xnvme_dev_close(fwrap->dev);
 
@@ -211,6 +220,7 @@ xnvme_fioe_cleanup(struct thread_data *td)
 		}
 	}
 
+	free(xd->iocq);
 	free(xd);
 	td->io_ops_data = NULL;
 }
@@ -268,12 +278,6 @@ _dev_open(struct thread_data *td, struct fio_file *f)
 	}
 	geo = xnvme_dev_get_geo(fwrap->dev);
 
-	fwrap->iocq = malloc(td->o.iodepth * sizeof(struct io_u *));
-	memset(fwrap->iocq, 0, td->o.iodepth * sizeof(struct io_u *));
-
-	fwrap->completed = 0;
-	fwrap->ecount = 0;
-
 	if (xnvme_async_init(fwrap->dev, &(fwrap->ctx), td->o.iodepth, flags)) {
 		log_err("xnvme_fioe: init(): failed xnvme_async_init()\n");
 		return 1;
@@ -328,7 +332,13 @@ xnvme_fioe_init(struct thread_data *td)
 		log_err("xnvme_fioe: init(): !malloc()\n");
 		return 1;
 	}
+
 	memset(xd, 0, sizeof(*xd) + sizeof(*xd->files) * td->o.nr_files);
+
+	xd->iocq = malloc(td->o.iodepth * sizeof(struct io_u *));
+	memset(xd->iocq, 0, td->o.iodepth * sizeof(struct io_u *));
+
+	xd->prev = -1;
 	td->io_ops_data = xd;
 
 	for_each_file(td, f, i) {
@@ -399,12 +409,11 @@ static struct io_u *
 xnvme_fioe_event(struct thread_data *td, int event)
 {
 	struct xnvme_fioe_data *xd = td->io_ops_data;
-	struct xnvme_fioe_fwrap *fwrap = &xd->files[xd->cur];
 
 	assert(event >= 0);
-	assert((unsigned)event < fwrap->completed);
+	assert((unsigned)event < xd->completed);
 
-	return fwrap->iocq[event];
+	return xd->iocq[event];
 }
 
 static int
@@ -412,36 +421,63 @@ xnvme_fioe_getevents(struct thread_data *td, unsigned int min,
 		     unsigned int max, const struct timespec *t)
 {
 	struct xnvme_fioe_data *xd = td->io_ops_data;
-	struct xnvme_fioe_fwrap *fwrap;
-	int err;
-
-	fwrap = &xd->files[xd->cur];
-	fwrap->completed = 0;
+	struct xnvme_fioe_fwrap *fwrap = NULL;
+	int nfiles = xd->nallocated;
+	int err = 0;
 
 	if (t) {
 		assert(false);
 	}
 
-	do {
-		err = xnvme_async_poke(fwrap->dev, fwrap->ctx,
-				       max - fwrap->completed);
-		if (err >= 0) {
-			continue;
-		}
-		switch (err) {
-		case -EBUSY:
-		case -EAGAIN:
-			usleep(1);
-			break;
+	if (xd->prev != -1 && ++xd->prev < nfiles) {
+		fwrap = &xd->files[xd->prev];
+		xd->cur = xd->prev;
+	}
 
-		default:
-			XNVME_DEBUG("Oh my");
-			assert(false);
-			return 0;
+	xd->completed = 0;
+	for (; ;) {
+		if (fwrap == NULL || xd->cur == nfiles) {
+			fwrap = &xd->files[0];
+			xd->cur = 0;
 		}
-	} while (fwrap->completed < min);
 
-	return fwrap->completed;
+		while (fwrap != NULL && xd->cur < nfiles && err >= 0) {
+			err = xnvme_async_poke(fwrap->dev, fwrap->ctx,
+					       max - xd->completed);
+			if (err < 0) {
+				switch (err) {
+				case -EBUSY:
+				case -EAGAIN:
+					usleep(1);
+					break;
+
+				default:
+					XNVME_DEBUG("Oh my");
+					assert(false);
+					return 0;
+				}
+			}
+			if (xd->completed >= min) {
+				xd->prev = xd->cur;
+				return xd->completed;
+			}
+			xd->cur++;
+			fwrap = &xd->files[xd->cur];
+
+			if (err < 0) {
+				switch (err) {
+				case -EBUSY:
+				case -EAGAIN:
+					usleep(1);
+					break;
+				}
+			}
+		}
+	}
+
+	xd->cur = 0;
+
+	return xd->completed;
 }
 
 static enum fio_q_status
@@ -533,17 +569,6 @@ xnvme_fioe_open(struct thread_data *td, struct fio_file *f)
 	struct xnvme_fioe_data *xd = td->io_ops_data;
 
 	XNVME_DEBUG_FCALL(_fio_file_pr(f);)
-
-	// Prevent multiple devices / files
-	if (xd->nopen) {
-		log_err("xnvme_fioe: multiple devices are not supported\n");
-		XNVME_DEBUG("xd->nopen > 0");
-		return 1;
-	}
-	if (f->fileno) {
-		log_err("xnvme_fioe: expected: f->fileno == 0\n");
-		return 1;
-	}
 
 	if (f->fileno > (int)xd->nallocated) {
 		XNVME_DEBUG("f->fileno > xd->nallocated; invalid assumption");
