@@ -25,6 +25,104 @@
 #define XNVME_BE_SPDK_MAX_PROBE_ATTEMPTS 1
 #define XNVME_BE_SPDK_AVLB_TRANSPORTS    3
 
+#define XNVME_BE_SPDK_CREFS_LEN 100
+static struct xnvme_be_spdk_ctrlr_ref g_cref[XNVME_BE_SPDK_CREFS_LEN];
+
+/**
+ * look for a cref for the given given ident
+ *
+ * @return On success, a pointer to the cref is returned. When none existsWhen a
+ * ref is found, 1 is returned cref is assigned, 0 otherwise.
+ */
+static struct spdk_nvme_ctrlr *
+_cref_lookup(struct xnvme_ident *id)
+{
+	for (int i = 0; i < XNVME_BE_SPDK_CREFS_LEN; ++i) {
+		if (strncmp(g_cref[i].trgt, id->trgt, XNVME_IDENT_TRGT_LEN)) {
+			continue;
+		}
+
+		if (!g_cref[i].ctrlr) {
+			XNVME_DEBUG("FAILED: corrupted ctrlr in cref");
+			return NULL;
+		}
+		if (g_cref[i].refcount < 1) {
+			XNVME_DEBUG("FAILED: corrupted refcount");
+			return NULL;
+		}
+
+		g_cref[i].refcount += 1;
+
+		return g_cref[i].ctrlr;
+	}
+
+	return NULL;
+}
+
+/**
+ * Insert the given controller
+ *
+ * @return On success, 0 is return. On error, negated ``errno`` is return to
+ * indicate the error.
+ */
+static int
+_cref_insert(struct xnvme_ident *ident, struct spdk_nvme_ctrlr *ctrlr)
+{
+	if (!ctrlr) {
+		XNVME_DEBUG("FAILED: !ctrlr");
+		return -EINVAL;
+	}
+
+	for (int i = 0; i < XNVME_BE_SPDK_CREFS_LEN; ++i) {
+		if (g_cref[i].refcount) {
+			continue;
+		}
+
+		g_cref[i].ctrlr = ctrlr;
+		g_cref[i].refcount += 1;
+		strncpy(g_cref[i].trgt, ident->trgt, XNVME_IDENT_TRGT_LEN);
+
+		return 0;
+	}
+
+	return -ENOMEM;
+}
+
+int
+_cref_deref(struct spdk_nvme_ctrlr *ctrlr)
+{
+	if (!ctrlr) {
+		XNVME_DEBUG("FAILED: !ctrlr");
+		return -EINVAL;
+	}
+
+	for (int i = 0; i < XNVME_BE_SPDK_CREFS_LEN; ++i) {
+		if (g_cref[i].ctrlr != ctrlr) {
+			continue;
+		}
+
+		if (g_cref[i].refcount < 1) {
+			XNVME_DEBUG("FAILED: invalid refcount: %d",
+				    g_cref[i].refcount);
+			return -EINVAL;
+		}
+
+		g_cref[i].refcount -= 1;
+
+		if (g_cref[i].refcount == 0) {
+			XNVME_DEBUG("INFO: refcount: %d => detaching",
+				    g_cref[i].refcount);
+			spdk_nvme_detach(ctrlr);
+			memset(&g_cref[i], 0, sizeof g_cref[i]);
+		}
+
+		return 0;
+	}
+
+	XNVME_DEBUG("FAILED: no tracking for %p", (void *)ctrlr);
+	return -EINVAL;
+}
+
 static int g_xnvme_be_spdk_transport[] = {
 #ifdef XNVME_BE_SPDK_TRANSPORT_PCIE_ENABLED
 	SPDK_NVME_TRANSPORT_PCIE,
@@ -449,12 +547,12 @@ attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *XNVME_UNUSED(trid),
 void
 xnvme_be_spdk_state_term(struct xnvme_be_spdk_state *state)
 {
+	int err;
+
 	if (!state) {
 		return;
 	}
 	if (state->qpair) {
-		int err;
-
 		spdk_nvme_ctrlr_free_io_qpair(state->qpair);
 		err = pthread_mutex_destroy(&state->qpair_lock);
 		if (err) {
@@ -462,8 +560,9 @@ xnvme_be_spdk_state_term(struct xnvme_be_spdk_state *state)
 			       strerror(err));
 		}
 	}
-	if (state->ctrlr) {
-		spdk_nvme_detach(state->ctrlr);
+	err = _cref_deref(state->ctrlr);
+	if (err) {
+		XNVME_DEBUG("FAILED: _cref_deref():, err: %d", err);
 	}
 }
 
@@ -601,7 +700,7 @@ enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
 	}
 
 	if (spdk_nvme_detach(ctrlr)) {
-		XNVME_DEBUG("FAILED: spdk_nvme_detach");
+		XNVME_DEBUG("FAILED: spdk_nvme_detach()");
 	}
 }
 
@@ -867,6 +966,32 @@ xnvme_be_spdk_state_init(struct xnvme_dev *dev)
 		return err;
 	}
 
+	state->ctrlr = _cref_lookup(&dev->ident);
+	if (state->ctrlr) {
+		struct spdk_nvme_ns *ns;
+
+		ns = spdk_nvme_ctrlr_get_ns(state->ctrlr, dev->nsid);
+		if (!ns) {
+			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_ns(0x%x)", dev->nsid);
+			if (_cref_deref(state->ctrlr)) {
+				XNVME_DEBUG("FAILED: _cref_deref");
+			}
+			goto probe;
+		}
+		if (!spdk_nvme_ns_is_active(ns)) {
+			XNVME_DEBUG("FAILED: !spdk_nvme_ns_is_active(nsid:0x%x)",
+				    dev->nsid);
+			if (_cref_deref(state->ctrlr)) {
+				XNVME_DEBUG("FAILED: _cref_deref");
+			}
+			goto probe;
+		}
+
+		state->ns = ns;
+		state->attached = 1;
+		XNVME_DEBUG("INFO: re-using previously attached controller");
+	}
+probe:
 	// Probe for device matching dev->ident
 	for (int i = 0; !state->attached; ++i) {
 		if (XNVME_BE_SPDK_MAX_PROBE_ATTEMPTS == i) {
@@ -908,6 +1033,12 @@ xnvme_be_spdk_state_init(struct xnvme_dev *dev)
 	if (!state->qpair) {
 		XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_alloc_io_qpair()");
 		return -ENOMEM;
+	}
+
+	err = _cref_insert(&dev->ident, state->ctrlr);
+	if (err) {
+		XNVME_DEBUG("FAILED: _cref_insert(), err: %d", err);
+		return err;
 	}
 
 	return 0;
