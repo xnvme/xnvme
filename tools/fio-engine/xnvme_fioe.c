@@ -39,19 +39,12 @@
  * touched during `_init()` which is why `_init()` echoes the value of
  * `td->io_ops`.
  *
- * CAVEAT -- Multi-device support
+ * CAVEAT: Multi-device support
  *
- * Currently multiple devices is *not* supported. However, things are
- * progressing. The current caveats follow below.
+ * Support is here, however, there is one limiting caveat, and two others noted
+ * in case issues should arise.
  *
- * - 1) The implementation assumes that 'thread_data.o.nr_files' is available
- *   and that instances of 'fio_file.fileno' are valued [0,
- *   thread_data.o.nr_files -1].
- *   This is to pre-allocate file-wrapping-structures, xnvme_fioe_fwrap, at I/O
- *   engine initialization time and to reference file-wrapping with
- *   constant-time lookup
- *
- * - 2) iomem_{alloc/free} introduces a limitation with regards to multiple
+ * - 1) iomem_{alloc/free} introduces a limitation with regards to multiple
  *   devices. Specifically, the devices opened must use backends which share
  *   memory allocators. E.g. using be:laio + be:liou is fine, using be:liou +
  *   be:spdk is not.
@@ -60,15 +53,18 @@
  *   buffer-allocators. Currently, the implementation does dot check for this
  *   unsupported use-case, and will thus lead to a runtime error.
  *
+ * - 2) The implementation assumes that 'thread_data.o.nr_files' is available
+ *   and that instances of 'fio_file.fileno' are valued [0,
+ *   thread_data.o.nr_files -1].
+ *   This is to pre-allocate file-wrapping-structures, xnvme_fioe_fwrap, at I/O
+ *   engine initialization time and to reference file-wrapping with
+ *   constant-time lookup
+ *
  * - 3) The _open() and _close() functions do not implement the "real"
  *   device/file opening, this is done in _init() and torn down in _cleanup() as
  *   the io-engine needs device handles ready for iomem_{alloc/free}
  *
- * - 4) Submitting and reaping completions. This part is simply not implemented,
- *   and is thus the main limitation. Proper handling of multiple devices needs
- *   to be added to _event() and _getevents().
- *
- * CAVEAT -- Supporting NVMe devices formatted with extended-LBA
+ * CAVEAT: Supporting NVMe devices formatted with extended-LBA
  *
  * To support extended-lba initial work has been done in xNVMe, however, further
  * work is probably need for this to trickle up from the fio I/O engine
