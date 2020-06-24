@@ -42,15 +42,13 @@ struct xnvme_be_spdk_state {
 	struct spdk_nvme_ctrlr *ctrlr;	///< Pointer to attached controller
 	struct spdk_nvme_ns *ns;	///< Pointer to associated namespace
 
-	int vam_outstanding;		///< Outstanding SYNC ADMIN commands
-
 	uint8_t attached;
 
 	// Options
 	uint8_t cmb_sqs;
 	uint8_t css;
 
-	uint8_t _rsvd[33];
+	uint8_t _rsvd[37];
 };
 XNVME_STATIC_ASSERT(
 	sizeof(struct xnvme_be_spdk_state) == XNVME_BE_STATE_NBYTES,
