@@ -30,4 +30,4 @@ third-party-liburing-build:
 	@echo "## xNVMe: make third-party-liburing-build"
 	cd ${XNVME_3P_LIBURING_REPOS} && ./configure
 	cd ${XNVME_3P_LIBURING_REPOS} && $(MAKE) -C src CFLAGS="$(CFLAGS) -fPIC"
-	cd ${XNVME_3P_LIBURING_REPOS}/src && ln -s liburing.so.1.0.6 liburing.so
+	cd ${XNVME_3P_LIBURING_REPOS}/src && ln -s liburing.so.1.0.7 liburing.so
