@@ -79,6 +79,8 @@
 #include <optgroup.h>
 #include <libxnvme.h>
 
+static pthread_mutex_t g_serialize = PTHREAD_MUTEX_INITIALIZER;
+
 struct xnvme_fioe_fwrap {
 	///< fio file representation
 	struct fio_file *fio_file;
@@ -214,7 +216,9 @@ xnvme_fioe_cleanup(struct thread_data *td)
 	for (uint64_t i = 0; i < xd->nallocated; ++i) {
 		int err;
 
+		pthread_mutex_lock(&g_serialize);
 		err = _dev_close(td, &xd->files[i]);
+		pthread_mutex_unlock(&g_serialize);
 		if (err) {
 			XNVME_DEBUG("xnvme_fioe: cleanup(): Unexpected error");
 		}
@@ -270,7 +274,10 @@ _dev_open(struct thread_data *td, struct fio_file *f)
 	XNVME_DEBUG("INFO: dev_uri: '%s'", dev_uri);
 
 	fwrap = &xd->files[f->fileno];
+
+	pthread_mutex_lock(&g_serialize);
 	fwrap->dev = xnvme_dev_open(dev_uri);
+	pthread_mutex_unlock(&g_serialize);
 	if (!fwrap->dev) {
 		log_err("xnvme_fioe: init(): {uri: '%s', err: '%s'}\n",
 			dev_uri, strerror(errno));
