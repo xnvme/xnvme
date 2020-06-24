@@ -32,6 +32,15 @@ XNVME_STATIC_ASSERT(
 	"Incorrect size"
 )
 
+/**
+ * Wrapping the SPDK controller with reference count
+ */
+struct xnvme_be_spdk_ctrlr_ref {
+	struct spdk_nvme_ctrlr *ctrlr;	///< Pointer to attached controller
+	int refcount;			///< # of refs. to 'ctrlr'
+	char trgt[XNVME_IDENT_TRGT_LEN];
+};
+
 struct xnvme_be_spdk_state {
 	union {
 		pthread_mutex_t qpair_lock;	///< LOCK for SYNC IO commands
