@@ -973,11 +973,6 @@ xnvme_be_spdk_async_init(struct xnvme_dev *dev, struct xnvme_async_ctx **ctx,
 	struct xnvme_async_ctx_spdk *sctx = NULL;
 	struct spdk_nvme_io_qpair_opts qopts = { 0 };
 
-	spdk_nvme_ctrlr_get_default_io_qpair_opts(state->ctrlr, &qopts, sizeof(qopts));
-
-	qopts.io_queue_size = depth;
-	qopts.io_queue_requests = depth * 2;
-
 	(*ctx) = calloc(1, sizeof(**ctx));
 	if (!(*ctx)) {
 		XNVME_DEBUG("FAILED: calloc, ctx: %p, errno: %s",
@@ -987,6 +982,11 @@ xnvme_be_spdk_async_init(struct xnvme_dev *dev, struct xnvme_async_ctx **ctx,
 
 	(*ctx)->depth = depth;
 	sctx = (void *)(*ctx);
+
+	spdk_nvme_ctrlr_get_default_io_qpair_opts(state->ctrlr, &qopts, sizeof(qopts));
+
+	qopts.io_queue_size = XNVME_MAX(depth, qopts.io_queue_size);
+	qopts.io_queue_requests = qopts.io_queue_size * 2;
 
 	sctx->qpair = spdk_nvme_ctrlr_alloc_io_qpair(state->ctrlr, &qopts, sizeof(qopts));
 	if (!sctx->qpair) {
