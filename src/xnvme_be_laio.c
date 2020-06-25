@@ -186,7 +186,9 @@ async_io(struct xnvme_dev *dev, int opcode, struct xnvme_spec_cmd *cmd,
 		return -ENOSYS;
 	}
 
-	lctx->queued++;
+	if (lctx->outstanding < lctx->depth) {
+		lctx->queued++;
+	}
 
 	if (lctx->outstanding == lctx->depth) {
 		XNVME_DEBUG("FAILED: queue is full");
