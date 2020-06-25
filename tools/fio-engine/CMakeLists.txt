@@ -52,6 +52,7 @@ target_link_libraries(${FIOE_NAME} ${LIBS_SYSTEM})
 install(TARGETS ${FIOE_NAME} DESTINATION lib COMPONENT tools)
 install(FILES xnvme-verify.fio DESTINATION share/xnvme COMPONENT tools)
 install(FILES xnvme-compare.fio DESTINATION share/xnvme COMPONENT tools)
+install(FILES xnvme-zoned.fio DESTINATION share/xnvme COMPONENT tools)
 
 set(FIO_SRC_PATH "${PROJECT_SOURCE_DIR}/third-party/fio/repos" CACHE STRING "tools: xNVME fio io-engine")
 

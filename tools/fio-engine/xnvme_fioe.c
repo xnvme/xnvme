@@ -72,8 +72,10 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <fio.h>
+#include <zbd_types.h>
 #include <optgroup.h>
 #include <libxnvme.h>
+#include <libznd.h>
 
 static pthread_mutex_t g_serialize = PTHREAD_MUTEX_INITIALIZER;
 
@@ -83,15 +85,16 @@ struct xnvme_fioe_fwrap {
 
 	///< xNVMe device handle
 	struct xnvme_dev *dev;
+	///< xNVMe device geometry
+	const struct xnvme_geo *geo;
 
 	struct xnvme_async_ctx *ctx;
 	struct xnvme_req_pool *reqs;
 
 	uint32_t ssw;
-
 	uint32_t lba_nbytes;
 
-	uint8_t _pad[24];
+	uint8_t _pad[16];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_fioe_fwrap) == 64, "Incorrect size")
 
@@ -231,7 +234,6 @@ _dev_open(struct thread_data *td, struct fio_file *f)
 	struct xnvme_fioe_options *o = td->eo;
 	struct xnvme_fioe_data *xd = td->io_ops_data;
 	struct xnvme_fioe_fwrap *fwrap;
-	const struct xnvme_geo *geo;
 	char dev_uri[XNVME_IDENT_URI_LEN] = { 0 };
 	int fn_has_scheme;
 	int flags = 0;
@@ -279,7 +281,7 @@ _dev_open(struct thread_data *td, struct fio_file *f)
 			dev_uri, strerror(errno));
 		return 1;
 	}
-	geo = xnvme_dev_get_geo(fwrap->dev);
+	fwrap->geo = xnvme_dev_get_geo(fwrap->dev);
 
 	if (xnvme_async_init(fwrap->dev, &(fwrap->ctx), td->o.iodepth, flags)) {
 		log_err("xnvme_fioe: init(): failed xnvme_async_init()\n");
@@ -296,11 +298,11 @@ _dev_open(struct thread_data *td, struct fio_file *f)
 	}
 
 	fwrap->ssw = xnvme_dev_get_ssw(fwrap->dev);
-	fwrap->lba_nbytes = geo->lba_nbytes;
+	fwrap->lba_nbytes = fwrap->geo->lba_nbytes;
 
 	fwrap->fio_file = f;
 	fwrap->fio_file->filetype = FIO_TYPE_BLOCK;
-	fwrap->fio_file->real_file_size = geo->tbytes;
+	fwrap->fio_file->real_file_size = fwrap->geo->tbytes;
 	fio_file_set_size_known(fwrap->fio_file);
 
 	return 0;
@@ -335,7 +337,6 @@ xnvme_fioe_init(struct thread_data *td)
 		log_err("xnvme_fioe: init(): !malloc()\n");
 		return 1;
 	}
-
 	memset(xd, 0, sizeof(*xd) + sizeof(*xd->files) * td->o.nr_files);
 
 	xd->iocq = malloc(td->o.iodepth * sizeof(struct io_u *));
@@ -587,6 +588,217 @@ xnvme_fioe_open(struct thread_data *td, struct fio_file *f)
 	return 0;
 }
 
+static int
+xnvme_fioe_invalidate(struct thread_data *td, struct fio_file *f)
+{
+	// Consider only doing this with be:spdk
+	return 0;
+}
+
+/**
+ * Currently, this function is called before of I/O engine initialization, so,
+ * we cannot consult the file-wrapping done when 'fioe' initializes.
+ * Instead we just open base don the given filename.
+ *
+ * TODO: unify the different setup methods, consider keeping the handle around,
+ * and consider how to support the --be option in this usecase
+ */
+static int
+xnvme_fioe_get_zoned_model(struct thread_data *XNVME_UNUSED(td),
+			   struct fio_file *f, enum zbd_zoned_model *model)
+{
+	struct xnvme_dev *dev;
+
+	XNVME_DEBUG("Getting the zoned model for: '%s'", f->file_name);
+
+	if (f->filetype != FIO_TYPE_BLOCK && f->filetype != FIO_TYPE_CHAR) {
+		*model = ZBD_IGNORE;
+		XNVME_DEBUG("INFO: ignoring filetype");
+		return 0;
+	}
+
+	pthread_mutex_lock(&g_serialize);
+	dev = xnvme_dev_open(f->file_name);
+	pthread_mutex_unlock(&g_serialize);
+	if (!dev) {
+		XNVME_DEBUG("FAILED: retrieving device handle");
+		return 1;
+	}
+
+	switch(xnvme_dev_get_geo(dev)->type) {
+	case XNVME_GEO_UNKNOWN:
+		XNVME_DEBUG("INFO: got 'unknown', assigning ZBD_NONE");
+		*model = ZBD_NONE;
+		break;
+
+	case XNVME_GEO_CONVENTIONAL:
+		XNVME_DEBUG("INFO: got 'conventional', assigning ZBD_NONE");
+		*model = ZBD_NONE;
+		break;
+
+	case XNVME_GEO_ZONED:
+		XNVME_DEBUG("INFO: got 'zoned', assigning ZBD_HOST_MANAGED");
+		*model = ZBD_HOST_MANAGED;
+		break;
+
+	default:
+		XNVME_DEBUG("FAILED:: got 'zoned', assigning ZBD_HOST_MANAGED");
+		*model = ZBD_NONE;
+		return -EINVAL;
+	}
+
+	pthread_mutex_lock(&g_serialize);
+	xnvme_dev_close(dev);
+	pthread_mutex_unlock(&g_serialize);
+	
+	XNVME_DEBUG("INFO: so good to far...");
+
+	return 0;
+}
+
+/**
+ * Currently, this function is called before of I/O engine initialization, so,
+ * we cannot consult the file-wrapping done when 'fioe' initializes.
+ * Instead we just open base don the given filename.
+ *
+ * TODO: unify the different setup methods, consider keeping the handle around,
+ * and consider how to support the --be option in this usecase
+ */
+static int
+xnvme_fioe_report_zones(struct thread_data *XNVME_UNUSED(td),
+			struct fio_file *f, uint64_t offset,
+			struct zbd_zone *zbdz, unsigned int nr_zones)
+{
+	struct xnvme_dev *dev = NULL;
+	const struct xnvme_geo *geo = NULL;
+	struct znd_report *rprt = NULL;
+	uint32_t ssw;
+	uint64_t slba;
+	int err = 0;
+
+	XNVME_DEBUG("report_zones(): '%s', offset: %zu, nr_zones: %u",
+		    f->file_name, offset, nr_zones);
+
+	pthread_mutex_lock(&g_serialize);
+	dev = xnvme_dev_open(f->file_name);
+	pthread_mutex_unlock(&g_serialize);
+	if (!dev) {
+		XNVME_DEBUG("FAILED: xnvme_dev_open(), errno: %d", errno);
+		goto exit;
+	}
+
+	geo = xnvme_dev_get_geo(dev);
+	ssw = xnvme_dev_get_ssw(dev);
+
+	slba = ((offset >> ssw) / geo->nsect) * geo->nsect;
+
+	rprt = znd_report_from_dev(dev, slba, nr_zones, 0);
+	if (!rprt) {
+		XNVME_DEBUG("FAILED: znd_report_from_dev(), errno: %d", errno);
+		err = -errno;
+		goto exit;
+	}
+	if (rprt->nentries != nr_zones) {
+		XNVME_DEBUG("FAILED: nentries != nr_zones");
+		err = 1;
+		goto exit;
+	}
+	if (offset > geo->tbytes) {
+		XNVME_DEBUG("INFO: out-of-bounds");
+		goto exit;
+	}
+
+	// Transform the zone-report
+	for (uint32_t idx = 0; idx < rprt->nentries; ++idx) {
+		struct znd_descr *descr = ZND_REPORT_DESCR(rprt, idx);
+
+		zbdz[idx].start = descr->zslba << ssw;
+		zbdz[idx].len = descr->zcap << ssw;
+		zbdz[idx].wp = descr->wp << ssw;
+
+		switch (descr->zt) {
+		case ZND_TYPE_SEQWR:
+			zbdz[idx].type = ZBD_ZONE_TYPE_SWR;
+			break;
+
+		default:
+			log_err("%s: invalid type for zone at offset%zu.\n",
+				f->file_name, zbdz[idx].start);
+			err = -EIO;
+			goto exit;
+		}
+
+		switch (descr->zs) {
+		case ZND_STATE_EMPTY:
+			zbdz[idx].cond = ZBD_ZONE_COND_EMPTY;
+			break;
+		case ZND_STATE_IOPEN:
+			zbdz[idx].cond = ZBD_ZONE_COND_IMP_OPEN;
+			break;
+		case ZND_STATE_EOPEN:
+			zbdz[idx].cond = ZBD_ZONE_COND_EXP_OPEN;
+			break;
+		case ZND_STATE_CLOSED:
+			zbdz[idx].cond = ZBD_ZONE_COND_CLOSED;
+			break;
+		case ZND_STATE_FULL:
+			zbdz[idx].cond = ZBD_ZONE_COND_FULL;
+			break;
+
+		case ZND_STATE_RONLY:
+		case ZND_STATE_OFFLINE:
+		default:
+			zbdz[idx].cond = ZBD_ZONE_COND_OFFLINE;
+			break;
+		}
+	}
+
+exit:
+	xnvme_buf_virt_free(rprt);
+
+	pthread_mutex_lock(&g_serialize);
+	xnvme_dev_close(dev);
+	pthread_mutex_unlock(&g_serialize);
+
+	XNVME_DEBUG("err: %d, nr_zones: %d", err, (int)nr_zones);
+
+	return err ? err : (int)nr_zones;
+}
+
+static int
+xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint64_t offset,
+		    uint64_t length)
+{
+	struct xnvme_fioe_data *xd = td->io_ops_data;
+	struct xnvme_fioe_fwrap *fwrap = &xd->files[f->fileno];
+	uint64_t first, last;
+	uint32_t nsid;
+	int err = 0;
+
+	XNVME_DEBUG("Resetting the write-pointer...");
+
+	assert(fwrap->dev);
+	assert(fwrap->geo);
+
+	nsid = xnvme_dev_get_nsid(fwrap->dev);
+
+	first = ((offset >> fwrap->ssw) / fwrap->geo->nsect) * fwrap->geo->nsect;
+	last = (((offset + length) >> fwrap->ssw) / fwrap->geo->nsect) * fwrap->geo->nsect;
+	for (uint64_t zslba = first; zslba <= last; zslba += fwrap->geo->nsect) {
+		struct xnvme_req req = { 0 };
+
+		err = znd_cmd_mgmt_send(fwrap->dev, nsid, zslba, ZND_SEND_RESET,
+					0x0, NULL, XNVME_CMD_SYNC, &req);
+		if (err || xnvme_req_cpl_status(&req)) {
+			err = err ? err : -EIO;
+			goto exit;
+		}
+	}
+
+exit:
+	return err;
+}
+
 struct ioengine_ops ioengine = {
 	.name			= "xnvme",
 	.version		= FIO_IOOPS_VERSION,
@@ -614,4 +826,9 @@ struct ioengine_ops ioengine = {
 
 	.close_file	= xnvme_fioe_close,
 	.open_file	= xnvme_fioe_open,
+
+	.invalidate		= xnvme_fioe_invalidate,
+	.get_zoned_model	= xnvme_fioe_get_zoned_model,
+	.report_zones		= xnvme_fioe_report_zones,
+	.reset_wp		= xnvme_fioe_reset_wp,
 };
