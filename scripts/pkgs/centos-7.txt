@@ -5,6 +5,7 @@ libaio-devel
 libuuid-devel
 make
 nasm
+ncurses-devel
 numactl-devel
 openssl-devel
 patch

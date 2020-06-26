@@ -6,5 +6,6 @@ cunit
 e2fsprogs-libuuid
 gmake
 nasm
+ncurses
 openssl
 python

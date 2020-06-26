@@ -6,4 +6,5 @@ git
 libaio
 libutil-linux
 make
+ncurses
 numactl
