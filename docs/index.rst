@@ -16,9 +16,9 @@ parameters essential for I/O applications. Such as your maximum data transfer
 size and introducing the concept of a device geometry.
 
 The foundation is as such fairly low-level, sitting right on top of a NVMe
-driver. The actual NVMe driver being used by the ``libxnvme`` is re-targetable
-and can be one of: The GNU/Linux Kernel NVMe driver, the hybrid GNU/Linux
-NVMe-Direct driver, the FreeBSD NVMe driver, or the Intel SPDK NVMe driver.
+driver. The actual NVMe driver being used by ``libxnvme`` is re-targetable and
+can be any one of the GNU/Linux Kernel NVMe driver via ``libaio``, ``IOCTLs``,
+and ``io_uring``, the SPDK NVMe driver, or your own custom NVMe driver.
 
 As such, ``libxnvme`` provides a unifying ``C API`` for NVMe tool builders,
 application developers, and for anyone wanting their host-defined software to
@@ -28,14 +28,13 @@ On top of ``libxnvme`` a suite of tools and libraries are provided, that is, a
 command-line interface for managing your NVMe device named ``xnvme``, and
 ``lblk`` for commands specific to NVM Namespaces.
 
-To evaluate the performance of abstractions introduced by ``xNVMe`` a Fio IO
-engine is provided.
-
-Pending public release is a command-line interface designed specifically for
+For the Zoned Command Set a command-line interface designed specifically for
 convenient management of Zoned NVMe devices named ``zoned`` and a library for
 direct application integration of Zoned NVMe device named ``libznd``.
-Additionally, a user space filesystem is provided giving you access to your
-``zoned`` device using file system semantics.
+
+To evaluate the performance of abstractions introduced by ``xNVMe`` a Fio IO
+engine is provided, supporting **conventional** NVMe devices, as well as
+**Zoned** devices.
 
 Jump right into the :ref:`sec-quick-start` and with the basics in place you can
 explore the :ref:`sec-c-apis` and the :ref:`sec-tools`.
