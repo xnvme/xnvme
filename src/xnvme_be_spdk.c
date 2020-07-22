@@ -854,6 +854,7 @@ xnvme_be_spdk_dev_idfy(struct xnvme_dev *dev)
 	//
 	// Determine command-set / namespace type by probing
 	//
+	dev->csi = XNVME_SPEC_CSI_LBLK;		// Assume NVM
 
 	// Attempt to identify Zoned Namespace
 	{
@@ -898,14 +899,11 @@ not_zns:
 	memset(&req, 0, sizeof(req));
 	err = xnvme_cmd_idfy_ns_csi(dev, dev->nsid, XNVME_SPEC_CSI_LBLK, idfy_ns, &req);
 	if (err || xnvme_req_cpl_status(&req)) {
-		XNVME_DEBUG("INFO: NS/CS does NOT look like NVM");
-		XNVME_DEBUG("INFO: failed determining Command Set");
+		XNVME_DEBUG("INFO: not csi-specific id-NVM");
+		XNVME_DEBUG("INFO: falling back to NVM assumption");
 		err = 0;
 		goto exit;
 	}
-
-	XNVME_DEBUG("INFO: NS/CS looks like NVM");
-	dev->csi = XNVME_SPEC_CSI_LBLK;
 	memcpy(&dev->idcss.ns, idfy_ns, sizeof(*idfy_ns));
 
 exit:
