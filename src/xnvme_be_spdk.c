@@ -1123,6 +1123,7 @@ xnvme_be_spdk_async_init(struct xnvme_dev *dev, struct xnvme_async_ctx **ctx,
 	if (!sctx->qpair) {
 		XNVME_DEBUG("FAILED: alloc. qpair");
 		free((*ctx));
+		*ctx = NULL;
 		return -ENOMEM;
 	}
 
