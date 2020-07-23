@@ -1,6 +1,7 @@
 // Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
 // SPDX-License-Identifier: Apache-2.0
 #include <stdio.h>
+#include <errno.h>
 #include <libxnvmec.h>
 
 #define XNVME_TESTS_QDEPTH_MAX 512
@@ -12,6 +13,7 @@ test_init_term(struct xnvmec *cli)
 	struct xnvme_dev *dev = cli->args.dev;
 	uint64_t count = cli->args.count;
 	uint64_t qd = cli->args.qdepth;
+	int err;
 
 	struct xnvme_async_ctx *actx[XNVME_TESTS_NQUEUE_MAX] = { 0 };
 
@@ -32,7 +34,6 @@ test_init_term(struct xnvmec *cli)
 		// Ask how many queues are supported
 		struct xnvme_spec_feat feat = { .val = 0 };
 		struct xnvme_req req = { 0 };
-		int err;
 
 		err = xnvme_cmd_gfeat(dev, 0x0, XNVME_SPEC_FEAT_NQUEUES,
 				      XNVME_SPEC_FEAT_SEL_CURRENT, NULL, 0,
@@ -40,7 +41,8 @@ test_init_term(struct xnvmec *cli)
 		if (err || xnvme_req_cpl_status(&req)) {
 			xnvmec_perr("xnvme_cmd_gfeat()", err);
 			xnvme_req_pr(&req, XNVME_PR_DEF);
-			return -1;
+			err = err ? err : -EIO;
+			return err;
 		}
 
 		feat.val = req.cpl.cdw0;
@@ -54,33 +56,44 @@ test_init_term(struct xnvmec *cli)
 		}
 	}
 
-	// Initialize asynchronous contexts
+	// Initialize and check depth of asynchronous contexts
 	for (uint64_t qn = 0; qn < count; ++qn) {
-		int err;
-
 		err = xnvme_async_init(dev, &actx[qn], qd, 0);
 		if (err) {
-			XNVME_DEBUG("FAILED: xnvme_async_init qn(%zu), qd(%zu)",
-				    qn, qd);
-			return err;
+			XNVME_DEBUG("FAILED: init qn: %zu, qd: %zu, err: %d",
+				    qn, qd, err);
+
+			if (!((err == -ENOMEM) && (qn == count - 1))) {
+				goto exit;
+			}
+
+			XNVME_DEBUG("INFO: expected failure => OK");
+			err = 0;
+			continue;
 		}
 
 		if (xnvme_async_get_depth(actx[qn]) != qd) {
 			XNVME_DEBUG("FAILED: xnvme_async_get_depth != qd(%zu)",
 				    qd);
-			return -1;
+			err = -EIO;
+			goto exit;
 		}
 	}
 
+exit:
 	// Tear down asynchronous contexts
 	for (uint64_t qn = 0; qn < count; ++qn) {
+		XNVME_DEBUG("INFO: qn: %zu", qn);
+		if (!actx[qn]) {
+			continue;
+		}
 		if (xnvme_async_term(dev, actx[qn])) {
 			XNVME_DEBUG("FAILED: xnvme_async_term, qn(%zu)", qn);
-			return 1;
+			err = -EIO;
 		}
 	}
 
-	return 0;
+	return err;
 }
 
 //
