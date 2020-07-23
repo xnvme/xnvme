@@ -31,6 +31,18 @@ Known Issues
 
   - Does not support command-option ``XNVME_CMD_ASYNC``
 
+
+v0.0.18
+-------
+
+* Third-party libraries: SPDK
+
+  - Updated tracking of SPDK to current master(7dbaf54bf) and adjusted linkage
+  - Removed patches that are now upstream
+  - Updated nvmf/IOCS support
+
+* Fixed non-IOCS device identification
+
 v0.0.17
 -------
 
