@@ -9,7 +9,7 @@ xnvme_dev:
     iomd: 'SYNC'
     payload_data: 'DRV'
     payload_meta: 'DRV'
-    csi: 0xff
+    csi: 0x0
     nsid: 0x1
     ssw: 12
   xnvme_geo:
