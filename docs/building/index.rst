@@ -78,12 +78,12 @@ Arch Linux 20200306
 
 Install the following packages via ``pacman``:
 
-.. literalinclude:: ../../scripts/pkgs/arch-20200306.txt
+.. literalinclude:: ../../scripts/pkgs/arch:20200306.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/arch-20200306.sh
+.. literalinclude:: ../../scripts/pkgs/arch:20200306.sh
    :language: bash
    :lines: 8-
 
@@ -92,12 +92,12 @@ CentOS 7
 
 Install the following packages via ``yum``:
 
-.. literalinclude:: ../../scripts/pkgs/centos-7.txt
+.. literalinclude:: ../../scripts/pkgs/centos:centos7.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/centos-7.sh
+.. literalinclude:: ../../scripts/pkgs/centos:centos7.sh
    :language: bash
    :lines: 8-
 
@@ -106,12 +106,12 @@ Debian 11 (Bullseye)
 
 Install the following packages via ``apt-get``:
 
-.. literalinclude:: ../../scripts/pkgs/debian-11.txt
+.. literalinclude:: ../../scripts/pkgs/debian:bullseye.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/debian-11.sh
+.. literalinclude:: ../../scripts/pkgs/debian:bullseye.sh
    :language: bash
    :lines: 17-
 
@@ -120,12 +120,12 @@ Debian 10 (Buster)
 
 Install the following packages via ``apt-get``:
 
-.. literalinclude:: ../../scripts/pkgs/debian-10.txt
+.. literalinclude:: ../../scripts/pkgs/debian:buster.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/debian-10.sh
+.. literalinclude:: ../../scripts/pkgs/debian:buster.sh
    :language: bash
    :lines: 17-
 
@@ -134,12 +134,12 @@ Debian 9 (Stretch)
 
 Install the following packages via ``apt-get``:
 
-.. literalinclude:: ../../scripts/pkgs/debian-9.txt
+.. literalinclude:: ../../scripts/pkgs/debian:stretch.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/debian-9.sh
+.. literalinclude:: ../../scripts/pkgs/debian:stretch.sh
    :language: bash
    :lines: 17-
 
@@ -163,12 +163,12 @@ Ubuntu 20.04 (Focal)
 
 Install the following packages via ``apt-get``:
 
-.. literalinclude:: ../../scripts/pkgs/ubuntu-2004.txt
+.. literalinclude:: ../../scripts/pkgs/ubuntu:focal.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/ubuntu-2004.sh
+.. literalinclude:: ../../scripts/pkgs/ubuntu:focal.sh
    :language: bash
    :lines: 17-
 
@@ -177,12 +177,12 @@ Ubuntu 18.04 (Bionic)
 
 Install the following packages via ``apt-get``:
 
-.. literalinclude:: ../../scripts/pkgs/ubuntu-1804.txt
+.. literalinclude:: ../../scripts/pkgs/ubuntu:bionic.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/ubuntu-1804.sh
+.. literalinclude:: ../../scripts/pkgs/ubuntu:bionic.sh
    :language: bash
    :lines: 17-
 
@@ -191,12 +191,12 @@ Ubuntu 16.04 (Xenial)
 
 Install the following packages via ``apt-get``:
 
-.. literalinclude:: ../../scripts/pkgs/ubuntu-1604.txt
+.. literalinclude:: ../../scripts/pkgs/ubuntu:xenial.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/ubuntu-1604.sh
+.. literalinclude:: ../../scripts/pkgs/ubuntu:xenial.sh
    :language: bash
    :lines: 17-
 
@@ -205,12 +205,12 @@ Alpine Linux 3.11.3
 
 Install the following packages via ``apk``:
 
-.. literalinclude:: ../../scripts/pkgs/alpine-3.11.3.txt
+.. literalinclude:: ../../scripts/pkgs/alpine:3.12.0.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/alpine-3.11.3.sh
+.. literalinclude:: ../../scripts/pkgs/alpine:3.12.0.sh
    :language: bash
    :lines: 8-
 
