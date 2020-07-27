@@ -1,3 +1,4 @@
+astyle
 build-essential
 cmake
 git

@@ -13,11 +13,7 @@ apt-get -qy \
   -o "Dpkg::Options::=--force-confdef" \
   -o "Dpkg::Options::=--force-confold" upgrade
 apt-get -qy autoclean
+apt-get -qy install aptitude
 
-# Install packages via apt-get
-apt-get install -qy $(cat scripts/pkgs/ubuntu-1604.txt)
-
-# Install CMake using installer from GitHUB
-wget https://github.com/Kitware/CMake/releases/download/v3.16.5/cmake-3.16.5-Linux-x86_64.sh -O cmake.sh
-chmod +x cmake.sh
-./cmake.sh --skip-license --prefix=/usr/
+# Install packages via aptitude -- seems to handle dependencies better
+aptitude -q -y -f install $(cat "scripts/pkgs/debian:bullseye.txt")

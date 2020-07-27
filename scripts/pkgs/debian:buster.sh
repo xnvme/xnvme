@@ -15,4 +15,4 @@ apt-get -qy \
 apt-get -qy autoclean
 
 # Install packages via apt-get
-apt-get install -qy $(cat scripts/pkgs/ubuntu-1804.txt)
+apt-get install -qy $(cat "scripts/pkgs/debian:buster.txt")

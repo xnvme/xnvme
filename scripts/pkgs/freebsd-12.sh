@@ -6,4 +6,4 @@ ld --version || true
 ldd --version || true
 
 # Install packages via pkg
-pkg install -qy $(cat scripts/pkgs/freebsd-12.txt)
+pkg install -qy $(cat "scripts/pkgs/freebsd-12.txt")

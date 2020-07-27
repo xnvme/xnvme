@@ -1,0 +1,10 @@
+base-devel
+cmake
+cunit
+gcc
+git
+libaio
+libutil-linux
+make
+ncurses
+numactl
