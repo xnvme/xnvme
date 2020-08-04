@@ -29,6 +29,9 @@
 #include <xnvme_be_liou.h>
 #include <xnvme_dev.h>
 
+// TODO: replace this with liburing 0.7 barriers
+#define xnvme_be_liou_barrier()  __asm__ __volatile__("":::"memory")
+
 static int g_opcodes[] = {
 	IORING_OP_READV,
 	IORING_OP_WRITEV,
@@ -169,7 +172,7 @@ xnvme_be_liou_async_poke(struct xnvme_dev *XNVME_UNUSED(dev),
 		struct io_uring_cqe *cqe;
 		struct xnvme_req *req;
 
-		io_uring_barrier();
+		xnvme_be_liou_barrier();
 		if (head == *ring->ktail) {
 			break;
 		}
@@ -199,7 +202,8 @@ xnvme_be_liou_async_poke(struct xnvme_dev *XNVME_UNUSED(dev),
 
 	lctx->outstanding -= completed;
 	*ring->khead = head;
-	io_uring_barrier();
+
+	xnvme_be_liou_barrier();
 
 	return completed;
 }
