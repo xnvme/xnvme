@@ -284,6 +284,7 @@ if(XNVME_BE_SPDK_ENABLED)
 	# Must available in DPDK_LIBRARY_PATH
 	#
 	list(APPEND LIBS rte_eal)
+	list(APPEND LIBS rte_telemetry)
 	list(APPEND LIBS rte_bus_pci)
 	list(APPEND LIBS rte_pci)
 	list(APPEND LIBS rte_ring)
