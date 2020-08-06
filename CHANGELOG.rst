@@ -23,14 +23,52 @@ Known Issues
     16 * 1024 bytes. Thus a work-around is applied bounding the derived
     ``mdts_nbytes`` associated with the device geometry.
 
+* Binaries
+
+  - xNVMe does not build with ``-march=native``, however, SPDK/DPDK does. Thus,
+    when the xNVMe library "bundles" SPDK/DPDK and the binaries are linked,
+    then they can contain ISA-specific instructions.
+    If you invoke e.g. ``xnvme enum`` and see the message ``Illegal
+    Instruction``, then this is why.
+
 * ``be::spdk``
 
   - Does not build on Alpine Linux
+  - Re-initialization fails, e.g. repeatedly calling ``xnvme_enumerate()``
 
 * ``be::lioc``
 
   - Does not support command-option ``XNVME_CMD_ASYNC``
 
+* ``be::liou`` and ``be::laio``
+
+  - Simple-Copy-Command via the Kernel path is not available as support has not
+    been merged with upstream
+  - Append via the Kernel path is not available as support has not been merged
+    with upstream
+
+v0.0.19
+-------
+
+* Third-party libraries
+
+  - Updated to liburing/v0.7, SPDK/v20.07, fio/v3.21
+  - Updated docs describing new third-party requirements for building
+  - Adjusted patches and build-system to changes
+
+* Fabrics: SPDK-patches enabling zone-changes over Fabrics
+
+* Added public-domain CI
+
+  - Primarily using GitHUB Actions / Workflows
+  - Aux. analysis via lgtm.com
+  - Updated docs and scripts for CI via GitHUB Actions
+
+* Updated support for the NVMe Simple-Copy-Command (SCC)
+
+  - Targeting TP 2020.05.04 (Ratified)
+  - Added ``tests/scc.c`` testing for SCC-support, print identify fields, and
+    exercises the command itself
 
 v0.0.18
 -------
