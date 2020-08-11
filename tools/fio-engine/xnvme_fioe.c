@@ -625,7 +625,7 @@ xnvme_fioe_get_zoned_model(struct thread_data *XNVME_UNUSED(td),
 		return 1;
 	}
 
-	switch(xnvme_dev_get_geo(dev)->type) {
+	switch (xnvme_dev_get_geo(dev)->type) {
 	case XNVME_GEO_UNKNOWN:
 		XNVME_DEBUG("INFO: got 'unknown', assigning ZBD_NONE");
 		*model = ZBD_NONE;
@@ -650,7 +650,7 @@ xnvme_fioe_get_zoned_model(struct thread_data *XNVME_UNUSED(td),
 	pthread_mutex_lock(&g_serialize);
 	xnvme_dev_close(dev);
 	pthread_mutex_unlock(&g_serialize);
-	
+
 	XNVME_DEBUG("INFO: so good to far...");
 
 	return 0;
@@ -805,11 +805,11 @@ struct ioengine_ops ioengine = {
 	.options		= options,
 	.option_struct_size	= sizeof(struct xnvme_fioe_options),
 	.flags			= \
-		FIO_DISKLESSIO | \
-		FIO_NODISKUTIL | \
-		FIO_NOEXTEND | \
-		FIO_MEMALIGN | \
-		FIO_RAWIO,
+	FIO_DISKLESSIO | \
+	FIO_NODISKUTIL | \
+	FIO_NOEXTEND | \
+	FIO_MEMALIGN | \
+	FIO_RAWIO,
 
 	.cleanup	= xnvme_fioe_cleanup,
 	.init		= xnvme_fioe_init,
