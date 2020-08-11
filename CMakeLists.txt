@@ -175,19 +175,19 @@ set(XNVME_BE_SPDK_TRANSPORT_TCP_ENABLED ${UNIX} CACHE BOOL "be:spdk: TCP Transpo
 set(XNVME_BE_SPDK_TRANSPORT_RDMA_ENABLED ${UNIX} CACHE BOOL "be:spdk: RDMA Transport")
 set(XNVME_BE_SPDK_TRANSPORT_FC_ENABLED ${UNIX} CACHE BOOL "be:spdk: FC Transport")
 set(SPDK_REPOS
-	"${PROJECT_SOURCE_DIR}/third-party"
+	"${PROJECT_SOURCE_DIR}/third-party/spdk/repos"
 	CACHE PATH "SPDK Repository path")
 set(SPDK_INCLUDE_PATH
-	"${SPDK_REPOS}/spdk/repos/build/include"
+	"${SPDK_REPOS}/build/include"
 	CACHE PATH "SPDK include path")
 set(SPDK_LIBRARY_PATH
-	"${SPDK_REPOS}/spdk/repos/build/lib"
+	"${SPDK_REPOS}/build/lib"
 	CACHE PATH "SPDK library path")
 set(DPDK_INCLUDE_PATH
-	"${SPDK_REPOS}/spdk/repos/dpdk/build/include"
+	"${SPDK_REPOS}/dpdk/build/include"
 	CACHE PATH "DPDK include path")
 set(DPDK_LIBRARY_PATH
-	"${SPDK_REPOS}/spdk/repos/dpdk/build/lib"
+	"${SPDK_REPOS}/dpdk/build/lib"
 	CACHE PATH "DPDK library path")
 
 if(XNVME_BE_SPDK_ENABLED)
@@ -200,7 +200,7 @@ if(XNVME_BE_SPDK_ENABLED)
 	if(NOT EXISTS "${SPDK_INCLUDE_PATH}")
 		message( STATUS "Preparing SPDK/DPDK" )
 		execute_process(
-			COMMAND make spdk-fetch
+			COMMAND make third-party-update
 			RESULT_VARIABLE res
 			WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
 		if(res)
@@ -338,7 +338,7 @@ if(XNVME_BE_LIOU_ENABLED)
 	if(NOT (EXISTS ${LIBURING_LIBRARY_PATH} AND
 		EXISTS ${LIBURING_INCLUDE_PATH}))
 		execute_process(
-			COMMAND make liburing-fetch
+			COMMAND make third-party-update
 			RESULT_VARIABLE res
 			WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
 		if(res)
