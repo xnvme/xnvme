@@ -8,7 +8,7 @@ third-party-spdk:
 	@echo "## xNVMe: make third-party-spdk"
 	@echo "# Preparing third-party (SPDK/DPDK)"
 	@if [ ! -d "${XNVME_3P_SPDK_REPOS}/dpdk" ]; then	\
-		$(MAKE) third-party-fetch;		\
+		$(MAKE) third-party-update;		\
 	fi
 	@$(MAKE) third-party-spdk-clean
 	@$(MAKE) third-party-spdk-patch
