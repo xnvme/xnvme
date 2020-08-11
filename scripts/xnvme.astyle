@@ -4,9 +4,24 @@
 
 # Kernighan & Ritchie, with some changes...
 style=kr
+
+# do
+# {
+#     bar();
+#     ++x;
+# }
+# while x == 1;
+#
+# becomes:
+#
+# do
+# {
+#     bar();
+#     ++x;
+# } while x == 1;
+#
 attach-closing-while
 
-add-braces
 # Add braces to one-line conditional statements
 #
 # if (isFoo)
@@ -17,6 +32,7 @@ add-braces
 # if (isFoo) {
 #    isFoo = false;
 # }
+add-braces
 
 # Break return type, on def. and decl.
 #
@@ -31,7 +47,8 @@ break-return-type
 break-return-type-decl
 
 # Indentation
-indent=force-tab=8 # Use tabs for indentation, spaces for minor alignment
+# Use tabs for indentation, spaces for minor alignment
+indent=force-tab=8
 min-conditional-indent=0
 indent-col1-comments
 # For preprocessors
