@@ -17,3 +17,6 @@ apt-get -qy install aptitude
 
 # Install packages via aptitude -- seems to handle dependencies better
 aptitude -q -y -f install $(cat "scripts/pkgs/debian:bullseye.txt")
+
+# Install packages via PyPI
+pip3 install meson ninja

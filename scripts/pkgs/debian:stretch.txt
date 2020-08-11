@@ -6,5 +6,7 @@ libncurses5-dev
 libnuma-dev
 libssl-dev
 nasm
+python3
+python3-pip
 uuid-dev
 wget

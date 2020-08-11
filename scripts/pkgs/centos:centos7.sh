@@ -18,17 +18,16 @@ wget https://github.com/Kitware/CMake/releases/download/v3.16.5/cmake-3.16.5-Lin
 chmod +x cmake.sh
 ./cmake.sh --skip-license --prefix=/usr/
 
-# Source them in for usage before building
+# Install packages via PyPI
+pip3 install meson ninja
 
+# Source them in for usage before building
 source /opt/rh/devtoolset-8/enable
 
 gcc --version
 g++ --version
 
-#echo "source /opt/rh/devtoolset-8/enable" >> ~/.bash_profile
-#echo "source /opt/rh/devtoolset-8/enable" >> ~/.bashrc
-#echo "#!/bin/bash\nsource /opt/rh/devtoolset-8/enable" >> /etc/profile.d/devtoolset.sh
-echo "#!/bin/bash\nsource scl_source enable devtoolset-8" >> /etc/profile.d/devtoolset.sh
-echo "#!/bin/bash\nsource scl_source enable devtoolset-8" >> ~/.bashrc
-echo "#!/bin/bash\nsource scl_source enable devtoolset-8" >> ~/.bash_profile
-
+# Add to bash-profile if it makes sense to you
+#echo "#!/bin/bash\nsource scl_source enable devtoolset-8" >> /etc/profile.d/devtoolset.sh
+#echo "#!/bin/bash\nsource scl_source enable devtoolset-8" >> ~/.bashrc
+#echo "#!/bin/bash\nsource scl_source enable devtoolset-8" >> ~/.bash_profile

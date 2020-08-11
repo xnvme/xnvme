@@ -4,11 +4,15 @@ build-base
 cmake
 coreutils
 gawk
+git
 libexecinfo-dev
 linux-headers
+meson
+ninja
 make
 musl-dev
 ncurses
 numactl-dev
 python3
+python3-pip
 util-linux-dev

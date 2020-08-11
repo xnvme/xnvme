@@ -9,4 +9,6 @@ ncurses-devel
 numactl-devel
 openssl-devel
 patch
+python3
+python3-pip
 wget

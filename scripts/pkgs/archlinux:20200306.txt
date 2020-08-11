@@ -3,8 +3,12 @@ cmake
 cunit
 gcc
 git
+git
 libaio
 libutil-linux
 make
+meson
 ncurses
+ninja
 numactl
+python3

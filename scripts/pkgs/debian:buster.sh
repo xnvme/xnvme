@@ -16,3 +16,6 @@ apt-get -qy autoclean
 
 # Install packages via apt-get
 apt-get install -qy $(cat "scripts/pkgs/debian:buster.txt")
+
+# Install packages via PyPI
+pip3 install meson ninja
