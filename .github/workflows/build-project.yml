@@ -1,0 +1,330 @@
+name: basics
+
+on: [push, pull_request]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+
+  #
+  # Grab the code and run an 'astyle' check on it
+  #
+  style:
+
+    runs-on: ubuntu-latest
+    container: debian:bullseye
+
+    steps:
+    - name: Grab sources
+      uses: actions/checkout@v2
+
+    - name: Prepare container
+      run: source scripts/pkgs/debian:bullseye.sh
+
+    - name: check
+      run: |
+        cd scripts
+        ./style.sh
+
+  #
+  # Produce a "full" source-archive, that is, including source from submodules
+  #
+  # This is done to provide the source-archive for users in environments without
+  # submodule access and for the containers in the workflow which does not have
+  # a recent enough version of git do pull down the modules
+  #
+  source-archive-gen:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Grab source
+      uses: actions/checkout@v2
+
+    - name: Prepare Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Generate Full Source Archive
+      run: |
+        pip install git-archive-all
+        make gen-src-archive
+
+    - name: Upload source archive
+      uses: actions/upload-artifact@v2
+      with:
+        name: archive-src
+        path: build/*.src.tar.gz
+
+  # Grab the source and build on self-hosted, matching the CPU on which it will
+  # be tested. This is done, since SPDK/DPDK is build with "-march=native", and
+  # thus needs to run on a CPU with the same ISA
+  linux-bins:
+    runs-on: self-hosted
+    needs: source-archive-gen
+
+    container: debian:bullseye
+
+    steps:
+    - name: Self-hosted, prep
+      run: |
+        rm -rf *
+        ls
+
+    - name: Container-prep, get the full-source-archive
+      uses: actions/download-artifact@v2
+      with:
+        name: archive-src
+
+    - name: Unpack the full-source-archive
+      run: |
+        ls
+        tar xzf *.src.tar.gz
+        rm *.src.tar.gz
+        mv xnvme-* xnvme
+
+    - name: Install build-requirements
+      run: |
+        cd xnvme
+        source scripts/pkgs/debian:bullseye.sh
+        [[ ! -f "/usr/bin/python" ]] && ln -s /usr/bin/python3.8 /usr/bin/python || true
+
+    - name: Configure, the build
+      run: |
+        cd xnvme
+        make config
+
+    - name: Dump, the compile-commands and machine
+      run: |
+        cat /proc/cpuinfo
+        cat xnvme/build/compile_commands.json
+
+    - name: Build!
+      run: |
+        cd xnvme
+        make
+
+    - name: Install
+      run: |
+        cd xnvme
+        make install
+
+    - name: Execute '/usr/local/bin/xnvme enum'
+      run: /usr/local/bin/xnvme enum
+
+    # The is intended for testing and for quick-preview for those that do not
+    # want to build from source. It will later be used for installation inside a
+    # docker-container, as well as inside of a qemu-guest
+    - name: Upload Archive
+      uses: actions/upload-artifact@v2
+      with:
+        name: archive-bin
+        path: xnvme/build/*.bin.tar.gz
+
+    - name: Upload Debian Packages
+      uses: actions/upload-artifact@v2
+      with:
+        name: pkg-deb
+        path: xnvme/build/*.deb
+
+    # The git-hub-actions-runner does not cleanup after itself
+    - name: Self-hosted, cleanup
+      if: always()
+      run: rm -rf *
+
+  # Test the pkg-deb built on Debian Bullseye / 11 using CIJOE
+  linux-testing:
+    needs: linux-bins
+
+    runs-on: self-hosted
+    container:
+      image: refenv/qemu-nvme:latest
+      options: --privileged
+
+    steps:
+    - name: Self-hosted, prep
+      run: rm -rf *
+
+    - name: Container-prep, define env.
+      run: |
+        source /opt/scripts/suitup.sh
+        echo "::set-env name=RESULTS::/tmp/results"
+        echo "::set-env name=TARGET_ENV::${CIJ_ENVS}/refenv-xnvme-qemu.sh"
+        echo "::set-env name=CLOUD_IMG_URL::https://cloud.debian.org/images/cloud/bullseye/daily/20200807-351/debian-11-generic-amd64-daily-20200807-351.qcow2"
+
+    - name: Container-prep, download Debian packages
+      uses: actions/download-artifact@v2
+      with:
+        name: pkg-deb
+
+    - name: Container-prep, start the SSH server
+      run: service ssh restart
+
+    - name: CIJOE, re-install as pre-release and install the xNVMe package
+      run: |
+        pip3 uninstall -y cijoe
+        pip3 install --pre cijoe
+        pip3 install --pre cijoe-pkg-xnvme
+
+    - name: CIJOE, define and create result folder
+      run: |
+        mkdir -p ${RESULTS}/base
+        mkdir -p ${RESULTS}/lblk
+        mkdir -p ${RESULTS}/zoned
+
+    - name: CIJOE/QEMU, provision guest using Debian cloud image
+      run: |
+        source /opt/scripts/suitup.sh
+        qemu::img_from_url "${CLOUD_IMG_URL}"
+
+    - name: CIJOE/QEMU, start the guest
+      run: |
+        source /opt/scripts/suitup.sh
+        source "${CIJ_TESTFILES}/qemu_setup_nvme_1c2ns_nvm_zns.sh"
+        qemu_setup_pcie
+        QEMU_ARGS_EXTRA="$QEMU_SETUP_PCIE"
+        qemu::run
+
+    - name: CIJOE/QEMU, install Debian packages in guest
+      run: |
+        source /opt/scripts/suitup.sh
+
+        for deb in *.deb; do
+          ssh::push "$deb" "/tmp/"
+        done
+
+        ssh::cmd "dpkg -i /tmp/*.deb"
+
+    - name: CIJOE/QEMU, check binaries are available
+      if: always()
+      run: |
+        source /opt/scripts/suitup.sh
+        ssh::cmd "hostname || true"
+        ssh::cmd "which xnvme || true"
+        ssh::cmd "whereis which zoned || true"
+        ssh::cmd "xnvme library-info || true"
+        ssh::cmd "xnvme enum || true"
+
+    - name: CIJOE/QEMU, testplan xnvme-base-linux.plan
+      if: always()
+      run: |
+        source /opt/scripts/suitup.sh
+        cij_runner \
+          $CIJ_TESTPLANS/xnvme-base-linux.plan \
+          ${TARGET_ENV} --output ${RESULTS}/base
+
+    - name: CIJOE/QEMU, testplan xnvme-lblk-linux.plan
+      if: always()
+      run: |
+        source /opt/scripts/suitup.sh
+        cij_runner \
+          $CIJ_TESTPLANS/xnvme-lblk-linux.plan \
+          ${TARGET_ENV} --output ${RESULTS}/lblk
+
+    - name: CIJOE/QEMU, testplan xnvme-zoned-linux.plan
+      if: always()
+      run: |
+        source /opt/scripts/suitup.sh
+        cij_runner \
+          $CIJ_TESTPLANS/xnvme-zoned-linux.plan \
+          ${TARGET_ENV} --output ${RESULTS}/zoned
+
+    - name: CIJOE/QEMU, kill the guest
+      if: always()
+      run: |
+        source /opt/scripts/suitup.sh
+        qemu::kill
+
+    - name: CIJOE, result-log-dump on error
+      if: failure()
+      run: find ${RESULTS} -name "*.log" | xargs cat
+
+    - name: CIJOE, generate report from results
+      if: always()
+      run: |
+        source /opt/scripts/suitup.sh
+        cij_reporter ${RESULTS}/base
+        cij_reporter ${RESULTS}/lblk
+        cij_reporter ${RESULTS}/zoned
+
+    - name: CIJOE, upload test results and report
+      uses: actions/upload-artifact@v2
+      if: always()
+      with:
+        name: test-results
+        path: ${{ env.RESULTS }}/*
+
+    # The git-hub-actions-runner does not cleanup after itself
+    - name: Self-hosted, cleanup
+      if: always()
+      run: rm -rf *
+
+  # Grab and build the source on multiple Linux distributions
+  linux-build:
+    runs-on: ubuntu-latest
+    needs: source-archive-gen
+
+    strategy:
+      matrix:
+        container:
+        # - 'alpine:3.12.0'
+        - 'archlinux:20200306'
+        - 'archlinux:latest'
+        - 'centos:centos7'
+        - 'debian:bullseye'
+        - 'debian:buster'
+        - 'debian:stretch'
+        - 'ubuntu:bionic'
+        - 'ubuntu:focal'
+        - 'ubuntu:xenial'
+
+    container:
+      image: ${{ matrix.container }}
+
+    steps:
+    - name: Container-prep, get the full-source-archive
+      uses: actions/download-artifact@v2
+      with:
+        name: archive-src
+
+    - name: Unpack the full-source-archive
+      run: |
+        ls
+        tar xzf *.src.tar.gz
+        rm *.src.tar.gz
+        mv xnvme-* xnvme
+
+    - name: Install build-requirements
+      run: |
+        cd xnvme
+        source scripts/pkgs/${{ matrix.container }}.sh
+        [[ ! -f "/usr/bin/python" ]] && ln -s /usr/bin/python3.8 /usr/bin/python || true
+
+    - name: Configure, the build
+      run: |
+        [[ -f "/opt/rh/devtoolset-8/enable" ]] && source /opt/rh/devtoolset-8/enable || true
+        cd xnvme
+        make config
+
+    - name: Dump, the compile-commands and machine
+      run: |
+        [[ -f "/opt/rh/devtoolset-8/enable" ]] && source /opt/rh/devtoolset-8/enable || true
+        cat /proc/cpuinfo
+        cat xnvme/build/compile_commands.json
+
+    - name: Build!
+      run: |
+        [[ -f "/opt/rh/devtoolset-8/enable" ]] && source /opt/rh/devtoolset-8/enable || true
+        cd xnvme
+        make
+
+    - name: Install
+      run: |
+        [[ -f "/opt/rh/devtoolset-8/enable" ]] && source /opt/rh/devtoolset-8/enable || true
+        cd xnvme
+        make install
+
+    - name: Execute '/usr/local/bin/xnvme enum'
+      run: /usr/local/bin/xnvme enum
