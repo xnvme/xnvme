@@ -58,11 +58,13 @@ The toolchain (compiler, archiver, and linker) used for building **xNVMe**
 must support **C11**, **pthreads**:
 
 * CMake (>= 3.9, For **xNVMe**)
-* glibc (>= 2.28, for **io_uring**)
+* glibc (>= 2.28, for **io_uring/liburing**)
 * libaio-dev (>=0.3, For **xNVMe** and **SPDK**)
 * libnuma-dev (>=2, For **SPDK**)
 * libssl-dev (>=1.1, For **SPDK**)
 * make (gmake)
+* meson (>=0.48, for **SPDK**)
+* ninja (>=, for **SPDK**)
 * uuid-dev (>=2.3, For **SPDK**)
 
 The preferred toolchain is **gcc** and the following sections describe how to
