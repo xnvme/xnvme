@@ -1,4 +1,5 @@
 hello
+astyle.log
 *.o
 *.o[ls]
 *.orig
