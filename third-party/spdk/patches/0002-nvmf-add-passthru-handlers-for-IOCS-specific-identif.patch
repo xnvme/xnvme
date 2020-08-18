@@ -1,7 +1,7 @@
 From 11319979eefbf91e32891d30bfa6631f883e7be0 Mon Sep 17 00:00:00 2001
 From: "Ivan L. Picoli" <i.picoli@samsung.com>
 Date: Tue, 16 Jun 2020 20:58:31 +0200
-Subject: [PATCH 2/8] nvmf: add passthru handlers for IOCS specific identify
+Subject: [PATCH 2/9] nvmf: add passthru handlers for IOCS specific identify
  [rfc]
 
 Signed-off-by: Ivan L. Picoli <i.picoli@samsung.com>

@@ -1,7 +1,7 @@
 From 6beffb4fa1eaf2b56719a37d4ee58cc1efb23bf2 Mon Sep 17 00:00:00 2001
 From: "Ivan L. Picoli" <i.picoli@samsung.com>
 Date: Wed, 22 Jul 2020 18:17:50 +0200
-Subject: [PATCH 8/8] test: add stub for the ONCS Verify and Simple Copy
+Subject: [PATCH 8/9] test: add stub for the ONCS Verify and Simple Copy
 
 Signed-off-by: Ivan L. Picoli <i.picoli@samsung.com>
 Change-Id: I145155cfce2d1942312072fc9ba19920b9c081b8

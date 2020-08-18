@@ -1,7 +1,7 @@
 From 7f28611909d09cb120deb8062ad9ae36314b28a8 Mon Sep 17 00:00:00 2001
 From: "Ivan L. Picoli" <i.picoli@samsung.com>
 Date: Tue, 16 Jun 2020 21:47:38 +0200
-Subject: [PATCH 4/8] nvmf: derived the ONCS Verify and Simple Copy
+Subject: [PATCH 4/9] nvmf: derived the ONCS Verify and Simple Copy
  controller-data
 
 Signed-off-by: Ivan L. Picoli <i.picoli@samsung.com>

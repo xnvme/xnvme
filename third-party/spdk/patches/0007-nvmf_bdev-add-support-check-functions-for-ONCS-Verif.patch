@@ -1,7 +1,7 @@
 From 5f29150501e7b03027df7907617e4a0748807c03 Mon Sep 17 00:00:00 2001
 From: "Ivan L. Picoli" <i.picoli@samsung.com>
 Date: Wed, 22 Jul 2020 18:11:48 +0200
-Subject: [PATCH 7/8] nvmf_bdev: add support-check functions for ONCS Verify
+Subject: [PATCH 7/9] nvmf_bdev: add support-check functions for ONCS Verify
  and Simple Copy
 
 Signed-off-by: Ivan L. Picoli <i.picoli@samsung.com>

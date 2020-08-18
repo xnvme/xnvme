@@ -1,7 +1,7 @@
 From 555197eb678503690f1abe0d7292ac55a5420443 Mon Sep 17 00:00:00 2001
 From: "Ivan L. Picoli" <i.picoli@samsung.com>
 Date: Wed, 22 Jul 2020 18:08:55 +0200
-Subject: [PATCH 5/8] bdev: add definitions for the ONCS Verify and Simple Copy
+Subject: [PATCH 5/9] bdev: add definitions for the ONCS Verify and Simple Copy
 
 Signed-off-by: Ivan L. Picoli <i.picoli@samsung.com>
 Change-Id: I504e8aa2987442adf653ef1424d204e94d64739d
