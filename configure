@@ -321,6 +321,8 @@ if [[ "${CONFIG[DEBUG]}" == "OFF" ]]; then
 	BUILD_TYPE="Release"
 fi
 
+CMAKE_OPTS="$CMAKE_OPTS -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+
 echo "CMake Options: '$CMAKE_OPTS'"
 
 mkdir -p $BUILD_DIR
