@@ -1,5 +1,5 @@
 # xNVMe Library Information
-ver: {major: 0, minor: 0, patch: 18}
+ver: {major: 0, minor: 0, patch: 19}
 xnvme_3p:
   - 'fio;git-describe:fio-3.20-62-gc7f72c4b'
   - 'spdk;git-describe:v20.04-rc1-528-g8c710c9d;+patches'

@@ -17,8 +17,8 @@ znd_report:
     - {zslba: 0x0000000000003000, wp: 0x0000000000004000, zcap: 4096, zt: 0x2, zs:    ZND_STATE_FULL, za: '0b00000000'}
     - {zslba: 0x0000000000004000, wp: 0x0000000000005000, zcap: 4096, zt: 0x2, zs:    ZND_STATE_FULL, za: '0b00000000'}
     - {zslba: 0x0000000000005000, wp: 0x0000000000006000, zcap: 4096, zt: 0x2, zs:    ZND_STATE_FULL, za: '0b00000000'}
-    - {zslba: 0x0000000000006000, wp: 0x0000000000006000, zcap: 4096, zt: 0x2, zs:   ZND_STATE_EMPTY, za: '0b00000000'}
-    - {zslba: 0x0000000000007000, wp: 0x0000000000007000, zcap: 4096, zt: 0x2, zs:   ZND_STATE_EMPTY, za: '0b00000000'}
-    - {zslba: 0x0000000000008000, wp: 0x0000000000008000, zcap: 4096, zt: 0x2, zs:   ZND_STATE_EMPTY, za: '0b00000000'}
-    - {zslba: 0x0000000000009000, wp: 0x0000000000009000, zcap: 4096, zt: 0x2, zs:   ZND_STATE_EMPTY, za: '0b00000000'}
+    - {zslba: 0x0000000000006000, wp: 0x0000000000007000, zcap: 4096, zt: 0x2, zs:    ZND_STATE_FULL, za: '0b00000000'}
+    - {zslba: 0x0000000000007000, wp: 0x0000000000008000, zcap: 4096, zt: 0x2, zs:    ZND_STATE_FULL, za: '0b00000000'}
+    - {zslba: 0x0000000000008000, wp: 0x0000000000009000, zcap: 4096, zt: 0x2, zs:    ZND_STATE_FULL, za: '0b00000000'}
+    - {zslba: 0x0000000000009000, wp: 0x000000000000a000, zcap: 4096, zt: 0x2, zs:    ZND_STATE_FULL, za: '0b00000000'}
 
