@@ -17,6 +17,14 @@ lblk_cmd_opc
 .. doxygenenum:: lblk_cmd_opc
 
 
+.. _sec-c-apis-lblk-enum-lblk_scopy_fmt:
+
+lblk_scopy_fmt
+--------------
+
+.. doxygenenum:: lblk_scopy_fmt
+
+
 .. _sec-c-apis-lblk-enum-lblk_status_code:
 
 lblk_status_code
@@ -82,22 +90,32 @@ lblk_idfy_ns
    :undoc-members:
 
 
+.. _sec-c-apis-lblk-struct-lblk_scopy_fmt_srclen:
+
+lblk_scopy_fmt_srclen
+---------------------
+
+.. doxygenstruct:: lblk_scopy_fmt_srclen
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-apis-lblk-struct-lblk_scopy_fmt_zero:
+
+lblk_scopy_fmt_zero
+-------------------
+
+.. doxygenstruct:: lblk_scopy_fmt_zero
+   :members:
+   :undoc-members:
+
+
 .. _sec-c-apis-lblk-struct-lblk_source_range:
 
 lblk_source_range
 -----------------
 
 .. doxygenstruct:: lblk_source_range
-   :members:
-   :undoc-members:
-
-
-.. _sec-c-apis-lblk-struct-lblk_source_range_entry:
-
-lblk_source_range_entry
------------------------
-
-.. doxygenstruct:: lblk_source_range_entry
    :members:
    :undoc-members:
 
@@ -157,20 +175,20 @@ lblk_idfy_ns_pr
 .. doxygenfunction:: lblk_idfy_ns_pr
 
 
-.. _sec-c-apis-lblk-func-lblk_source_range_entry_fpr:
+.. _sec-c-apis-lblk-func-lblk_scopy_fmt_zero_fpr:
 
-lblk_source_range_entry_fpr
----------------------------
+lblk_scopy_fmt_zero_fpr
+-----------------------
 
-.. doxygenfunction:: lblk_source_range_entry_fpr
+.. doxygenfunction:: lblk_scopy_fmt_zero_fpr
 
 
-.. _sec-c-apis-lblk-func-lblk_source_range_entry_pr:
+.. _sec-c-apis-lblk-func-lblk_scopy_fmt_zero_pr:
 
-lblk_source_range_entry_pr
---------------------------
+lblk_scopy_fmt_zero_pr
+----------------------
 
-.. doxygenfunction:: lblk_source_range_entry_pr
+.. doxygenfunction:: lblk_scopy_fmt_zero_pr
 
 
 .. _sec-c-apis-lblk-func-lblk_source_range_fpr:
