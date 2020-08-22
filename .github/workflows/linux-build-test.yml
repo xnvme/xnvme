@@ -1,0 +1,113 @@
+name: linux-build-test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - dev
+    tags:
+      - v*
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  #
+  # Produce a "full" source-archive, that is, including source from submodules
+  #
+  # This is done to provide the source-archive for users in environments without
+  # submodule access and for the containers in the workflow which does not have
+  # a recent enough version of git do pull down the modules
+  #
+  source-archive-gen:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Grab source
+      uses: actions/checkout@v2
+
+    - name: Prepare Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Generate Full Source Archive
+      run: |
+        pip install git-archive-all
+        make gen-src-archive
+
+    - name: Upload source archive
+      uses: actions/upload-artifact@v2
+      with:
+        name: archive-src
+        path: build/*.src.tar.gz
+
+  # Build the source-archive on multiple Linux distributions
+  linux-build:
+    runs-on: ubuntu-latest
+    needs: source-archive-gen
+
+    strategy:
+      matrix:
+        container:
+        # - 'alpine:3.12.0'
+        - 'archlinux:20200306'
+        - 'archlinux:latest'
+        - 'centos:centos7'
+        - 'debian:bullseye'
+        - 'debian:buster'
+        - 'debian:stretch'
+        - 'ubuntu:bionic'
+        - 'ubuntu:focal'
+        - 'ubuntu:xenial'
+
+    container:
+      image: ${{ matrix.container }}
+
+    steps:
+    - name: Container-prep, get the full-source-archive
+      uses: actions/download-artifact@v2
+      with:
+        name: archive-src
+
+    - name: Unpack the full-source-archive
+      run: |
+        ls
+        tar xzf *.src.tar.gz
+        rm *.src.tar.gz
+        mv xnvme-* xnvme
+
+    - name: Install build-requirements
+      run: |
+        cd xnvme
+        source scripts/pkgs/${{ matrix.container }}.sh
+        [[ ! -f "/usr/bin/python" ]] && ln -s /usr/bin/python3.8 /usr/bin/python || true
+
+    - name: Configure, the build
+      run: |
+        [[ -f "/opt/rh/devtoolset-8/enable" ]] && source /opt/rh/devtoolset-8/enable || true
+        cd xnvme
+        make config
+
+    - name: Dump, the compile-commands and machine
+      run: |
+        [[ -f "/opt/rh/devtoolset-8/enable" ]] && source /opt/rh/devtoolset-8/enable || true
+        cat /proc/cpuinfo
+        cat xnvme/build/compile_commands.json
+
+    - name: Build!
+      run: |
+        [[ -f "/opt/rh/devtoolset-8/enable" ]] && source /opt/rh/devtoolset-8/enable || true
+        cd xnvme
+        make
+
+    - name: Install
+      run: |
+        [[ -f "/opt/rh/devtoolset-8/enable" ]] && source /opt/rh/devtoolset-8/enable || true
+        cd xnvme
+        make install
+
+    - name: Execute '/usr/local/bin/xnvme enum'
+      run: /usr/local/bin/xnvme enum

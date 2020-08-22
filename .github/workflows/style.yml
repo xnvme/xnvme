@@ -1,0 +1,36 @@
+#
+# Grab the source run the style-checker script on it
+#
+name: style
+
+on: ["push", "pull_request"]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  style:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Install astyle
+      run: |
+        export DEBIAN_FRONTEND=noninteractive
+        export DEBIAN_PRIORITY=critical
+        sudo apt-get -qy update
+        sudo apt-get -qy \
+          -o "Dpkg::Options::=--force-confdef" \
+          -o "Dpkg::Options::=--force-confold" upgrade
+        sudo apt-get -qy autoclean
+
+        # Install packages via apt-get
+        sudo apt-get install -qy astyle
+
+    - name: xNVMe, grab the sources
+      uses: actions/checkout@v2
+
+    - name: xNVMe, run the style-checker script
+      run: |
+        cd scripts
+        ./style.sh

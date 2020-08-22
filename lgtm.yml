@@ -14,7 +14,6 @@ path_classifiers:
     - examples
 
 queries:
-  - exclude: "*"
   - include:
       tags:
         - "security"
