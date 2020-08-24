@@ -1,0 +1,55 @@
+#
+# Provide a docker-container in which to build and then run xNVMe
+#
+name: dockerize
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - dockerize
+    tags:
+      - v*
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+
+  source-gen-and-dockerize:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Grab source
+      uses: actions/checkout@v2
+
+    - name: Prepare Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Generate Full Source Archive
+      run: |
+        pip install git-archive-all
+        make gen-src-archive
+
+    - name: Create a docker context
+      run: |
+        mkdir -p /tmp/dockerize/xnvme
+        tar xzf build/xnvme-*.src.tar.gz --strip 1 -C /tmp/dockerize/xnvme
+
+    - name: Log into docker registry
+      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+    - name: Dockerize bin
+      run: |
+        TAG=${GITHUB_SHA::8}
+        docker build \
+          -t refenv/xnvme:latest \
+          -t refenv/xnvme:${TAG} \
+          -f scripts/Dockerfile /tmp/dockerize
+
+    - name: Push Docker image
+      run: docker push refenv/xnvme
