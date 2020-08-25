@@ -350,6 +350,12 @@ struct xnvme_enumeration {
 int
 xnvme_enumeration_fpr(FILE *stream, struct xnvme_enumeration *list, int opts);
 
+int
+xnvme_enumeration_fpp(FILE *stream, struct xnvme_enumeration *list, int opts);
+
+int
+xnvme_enumeration_pp(struct xnvme_enumeration *list, int opts);
+
 /**
  * Prints the given ::xnvme_enumeration to stdout
  *
