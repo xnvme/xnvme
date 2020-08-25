@@ -579,6 +579,91 @@ xnvme_enumeration_append(struct xnvme_enumeration *list,
 	return 0;
 }
 
+/**
+ * Check whether the given list has the trgt as associated with the given ident
+ *
+ * @return Returns 1 it is exist, 0 otherwise.
+ */
+static int
+enumeration_has_trgt(struct xnvme_enumeration *list, struct xnvme_ident *ident,
+		     uint32_t idx)
+{
+	uint32_t bound = XNVME_MIN(list->nentries, idx);
+
+	for (uint32_t idx = 0; idx < bound; ++idx) {
+		struct xnvme_ident *id = &list->entries[idx];
+
+		if (!strncmp(ident->trgt, id->trgt, XNVME_IDENT_TRGT_LEN)) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+int
+xnvme_enumeration_fpp(FILE *stream, struct xnvme_enumeration *list, int opts)
+{
+	int wrtn = 0;
+
+	switch (opts) {
+	case XNVME_PR_TERSE:
+		wrtn += fprintf(stream, "# ENOSYS: opts(%x)", opts);
+		return wrtn;
+
+	case XNVME_PR_DEF:
+	case XNVME_PR_YAML:
+		break;
+	}
+
+	wrtn += fprintf(stream, "xnvme_enumeration:");
+
+	if (!list) {
+		wrtn += fprintf(stream, " ~\n");
+		return wrtn;
+	}
+
+	if (!list->nentries) {
+		wrtn += fprintf(stream, " ~\n");
+		return wrtn;
+	}
+
+	for (uint32_t idx = 0; idx < list->nentries; ++idx) {
+		struct xnvme_ident *ident = &list->entries[idx];
+		int nschemes = 0;
+
+		if (enumeration_has_trgt(list, ident, idx)) {
+			continue;
+		}
+
+		wrtn += fprintf(stream, "\n");
+		wrtn += fprintf(stream, "  - trgt: %s\n", ident->trgt);
+		wrtn += fprintf(stream, "    schm: [");
+
+		for (uint32_t sidx = 0; sidx < list->nentries; ++sidx) {
+			struct xnvme_ident *sident = &list->entries[sidx];
+
+			if (strcmp(ident->trgt, sident->trgt)) {
+				continue;
+			}
+
+			wrtn += fprintf(stream, "%s%s", nschemes ? "," : "",
+					sident->schm);
+			++nschemes;
+		}
+		wrtn += fprintf(stream, "]\n");
+	}
+
+	return wrtn;
+}
+
+int
+xnvme_enumeration_pp(struct xnvme_enumeration *list, int opts)
+{
+	return xnvme_enumeration_fpp(stdout, list, opts);
+}
+
+
 int
 xnvme_be_factory(const char *uri, struct xnvme_dev **dev)
 {
