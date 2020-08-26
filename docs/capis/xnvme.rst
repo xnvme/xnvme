@@ -853,12 +853,28 @@ xnvme_enumerate
 .. doxygenfunction:: xnvme_enumerate
 
 
+.. _sec-c-apis-xnvme-func-xnvme_enumeration_fpp:
+
+xnvme_enumeration_fpp
+---------------------
+
+.. doxygenfunction:: xnvme_enumeration_fpp
+
+
 .. _sec-c-apis-xnvme-func-xnvme_enumeration_fpr:
 
 xnvme_enumeration_fpr
 ---------------------
 
 .. doxygenfunction:: xnvme_enumeration_fpr
+
+
+.. _sec-c-apis-xnvme-func-xnvme_enumeration_pp:
+
+xnvme_enumeration_pp
+--------------------
+
+.. doxygenfunction:: xnvme_enumeration_pp
 
 
 .. _sec-c-apis-xnvme-func-xnvme_enumeration_pr:

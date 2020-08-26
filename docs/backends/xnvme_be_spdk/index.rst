@@ -164,8 +164,8 @@ Should rebind the device to ``vfio-pci``, eg.:
 .. literalinclude:: 400_xnvme_driver.out
    :language: bash
 
-Inspecting and manually changing memory avai;able to `SPDK` aka `HUGEPAGES`
----------------------------------------------------------------------------
+Inspecting and manually changing memory available to ``SPDK`` aka ``HUGEPAGES``
+-------------------------------------------------------------------------------
 
 The `SPDK` setup script provides `HUGEMEM` and `NRHUGE` environment variables
 to control the amount of memory available via `HUGEPAGES`. However, if you want
