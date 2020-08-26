@@ -54,8 +54,6 @@ install(FILES xnvme-verify.fio DESTINATION share/xnvme COMPONENT tools)
 install(FILES xnvme-compare.fio DESTINATION share/xnvme COMPONENT tools)
 install(FILES xnvme-zoned.fio DESTINATION share/xnvme COMPONENT tools)
 
-set(FIO_SRC_PATH "${PROJECT_SOURCE_DIR}/third-party/fio/repos" CACHE STRING "tools: xNVME fio io-engine")
-
 # Define fio as a dependency, this ensures that arch-conf headers are available
 if(NOT EXISTS "${FIO_SRC_PATH}/fio")
 	message("Building fio")

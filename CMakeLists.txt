@@ -162,6 +162,9 @@ list(APPEND LIBS_STATIC "")
 #
 list(APPEND LIBS_SYSTEM Threads::Threads)
 
+set(FIO_SRC_PATH "${PROJECT_SOURCE_DIR}/third-party/fio/repos"
+	CACHE STRING "fio-engines: path to fio source repos")
+
 #
 # BACKENDS -- begin
 #
@@ -195,6 +198,19 @@ if(XNVME_BE_SPDK_ENABLED)
 	message( STATUS "SPDK_INCLUDE_PATH(${SPDK_INCLUDE_PATH})" )
 	message( STATUS "DPDK_LIBRARY_PATH(${DPDK_LIBRARY_PATH})" )
 	message( STATUS "DPDK_INCLUDE_PATH(${DPDK_INCLUDE_PATH})" )
+
+	# This ensures that arch-conf headers are available
+	if(NOT EXISTS "${FIO_SRC_PATH}/fio")
+		message("Building fio")
+
+		execute_process(
+			COMMAND make third-party-fio
+			RESULT_VARIABLE res
+			WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+		if(res)
+			message( FATAL_ERROR "Failed building fio" )
+		endif()
+	endif()
 
 	# Fetch SPDK/DPDK if it is not there
 	if(NOT EXISTS "${SPDK_INCLUDE_PATH}")
