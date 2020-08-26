@@ -42,17 +42,17 @@ third-party-spdk-configure:
 	@echo "## xNVMe: make third-party-spdk-configure"
 	@echo "# Configuring SPDK"
 	cd ${XNVME_3P_SPDK_REPOS} && ./configure	\
-		--without-fio			\
-		--without-isal			\
-		--without-iscsi-initiator	\
-		--without-ocf			\
-		--without-pmdk			\
-		--without-rbd			\
-		--without-reduce		\
-		--without-shared		\
-		--without-uring			\
-		--without-vhost			\
-		--without-virtio		\
+		--with-fio=../../fio/repos/		\
+		--without-isal				\
+		--without-iscsi-initiator		\
+		--without-ocf				\
+		--without-pmdk				\
+		--without-rbd				\
+		--without-reduce			\
+		--without-shared			\
+		--without-uring				\
+		--without-vhost				\
+		--without-virtio			\
 		--without-vpp
 
 .PHONY: third-party-spdk-build
