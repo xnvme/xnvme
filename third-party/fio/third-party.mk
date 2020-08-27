@@ -29,11 +29,7 @@ third-party-fio-clobber: third-party-fio-clean
 .PHONY: third-party-fio-patch
 third-party-fio-patch:
 	@echo "## xNVMe: make third-party-fio-patch"
-	@if [ "$(ls third-party/fio/patches/)" ]; then	\
-		echo "## Got patches...";		\
-		cd ${XNVME_3P_FIO_REPOS};		\
-		find ../patches -type f -name '0*.patch' -print0 | sort -z | xargs -t -0 -n 1 patch -p1 --forward -i || true; \
-	fi
+	@cd ${XNVME_3P_FIO_REPOS} && find ../patches -type f -name '0*.patch' -print0 | sort -z | xargs -t -0 -n 1 patch -p1 --forward -i || true
 
 .PHONY: third-party-fio-build
 third-party-fio-build:
