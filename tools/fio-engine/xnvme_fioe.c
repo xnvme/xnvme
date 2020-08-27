@@ -726,6 +726,7 @@ xnvme_fioe_report_zones(struct thread_data *XNVME_UNUSED(td),
 
 		zbdz[idx].start = descr->zslba << ssw;
 		zbdz[idx].len = descr->zcap << ssw;
+		zbdz[idx].capacity = descr->zcap << ssw;
 		zbdz[idx].wp = descr->wp << ssw;
 
 		switch (descr->zt) {
