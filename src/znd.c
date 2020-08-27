@@ -39,8 +39,9 @@ znd_report_init(struct xnvme_dev *dev, uint64_t slba, size_t limit, uint8_t exte
 	// Determine number of entries
 	nentries = limit ? limit : geo->nzone;
 	if (nentries > geo->nzone) {
-		XNVME_DEBUG("FAILED: nentires > geo->nzone");
-		errno = ENOSYS;
+		XNVME_DEBUG("FAILED: nentries: %zu > geo->nzone: %u",
+			    nentries, geo->nzone);
+		errno = EINVAL;
 		return NULL;
 	}
 
