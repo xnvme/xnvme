@@ -113,7 +113,7 @@ struct xnvme_fioe_data {
 	int32_t cur;
 
 	///< Number of devices/files for which open() has been called
-	uint64_t nopen;
+	int64_t nopen;
 	///< Number of devices/files allocated in files[]
 	uint64_t nallocated;
 
@@ -183,6 +183,11 @@ cb_pool(struct xnvme_req *req, void *cb_arg)
 static void
 _fio_file_pr(struct fio_file *f)
 {
+	if (!f) {
+		log_info("fio_file: ~\n");
+		return;
+	}
+
 	log_info("fio_file: { ");
 	log_info("file_name: '%s', ", f->file_name);
 	log_info("fileno: %d, ", f->fileno);
@@ -315,7 +320,7 @@ xnvme_fioe_init(struct thread_data *td)
 	struct fio_file *f;
 	unsigned int i;
 
-	log_info("xnvme_fioe: init(): td->io_ops: %p\n", td->io_ops);
+	log_err("xnvme_fioe: init(): td->io_ops: %p\n", td->io_ops);
 
 	if (!td->o.use_thread) {
 		log_err("xnvme_fioe: init(): --thread=1 is required\n");
@@ -559,6 +564,7 @@ xnvme_fioe_close(struct thread_data *td, struct fio_file *f)
 {
 	struct xnvme_fioe_data *xd = td->io_ops_data;
 
+	XNVME_DEBUG("xnvme_fioe_close: closing -- nopen: %ld", xd->nopen);
 	XNVME_DEBUG_FCALL(_fio_file_pr(f);)
 
 	--(xd->nopen);
@@ -572,6 +578,7 @@ xnvme_fioe_open(struct thread_data *td, struct fio_file *f)
 {
 	struct xnvme_fioe_data *xd = td->io_ops_data;
 
+	XNVME_DEBUG("xnvme_fioe_open: opening -- nopen: %ld", xd->nopen);
 	XNVME_DEBUG_FCALL(_fio_file_pr(f);)
 
 	if (f->fileno > (int)xd->nallocated) {
@@ -609,11 +616,11 @@ xnvme_fioe_get_zoned_model(struct thread_data *XNVME_UNUSED(td),
 {
 	struct xnvme_dev *dev;
 
-	XNVME_DEBUG("Getting the zoned model for: '%s'", f->file_name);
-
-	if (f->filetype != FIO_TYPE_BLOCK && f->filetype != FIO_TYPE_CHAR) {
+	if (f->filetype != FIO_TYPE_FILE && \
+		f->filetype != FIO_TYPE_BLOCK && \
+		f->filetype != FIO_TYPE_CHAR) {
 		*model = ZBD_IGNORE;
-		XNVME_DEBUG("INFO: ignoring filetype");
+		XNVME_DEBUG("INFO: ignoring filetype: %d", f->filetype);
 		return 0;
 	}
 
@@ -674,6 +681,7 @@ xnvme_fioe_report_zones(struct thread_data *XNVME_UNUSED(td),
 	struct znd_report *rprt = NULL;
 	uint32_t ssw;
 	uint64_t slba;
+	unsigned int limit = 0;
 	int err = 0;
 
 	XNVME_DEBUG("report_zones(): '%s', offset: %zu, nr_zones: %u",
@@ -690,15 +698,19 @@ xnvme_fioe_report_zones(struct thread_data *XNVME_UNUSED(td),
 	geo = xnvme_dev_get_geo(dev);
 	ssw = xnvme_dev_get_ssw(dev);
 
+	limit = nr_zones > geo->nzone ? geo->nzone : nr_zones;
+
+	XNVME_DEBUG("INFO: limit: %u", limit);
+
 	slba = ((offset >> ssw) / geo->nsect) * geo->nsect;
 
-	rprt = znd_report_from_dev(dev, slba, nr_zones, 0);
+	rprt = znd_report_from_dev(dev, slba, limit, 0);
 	if (!rprt) {
 		XNVME_DEBUG("FAILED: znd_report_from_dev(), errno: %d", errno);
 		err = -errno;
 		goto exit;
 	}
-	if (rprt->nentries != nr_zones) {
+	if (rprt->nentries != limit) {
 		XNVME_DEBUG("FAILED: nentries != nr_zones");
 		err = 1;
 		goto exit;
@@ -762,7 +774,7 @@ exit:
 
 	XNVME_DEBUG("err: %d, nr_zones: %d", err, (int)nr_zones);
 
-	return err ? err : (int)nr_zones;
+	return err ? err : (int)limit;
 }
 
 static int
