@@ -1,0 +1,28 @@
+From 1eb65f52dd069278aa589e0a194b56f155052795 Mon Sep 17 00:00:00 2001
+From: "Simon A. F. Lund" <simon.lund@samsung.com>
+Date: Thu, 27 Aug 2020 17:26:47 +0200
+Subject: [PATCH 3/3] zbd: commented-out sfree causing destruction of 'malloc
+ post redzone'
+
+Signed-off-by: Simon A. F. Lund <simon.lund@samsung.com>
+---
+ zbd.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/zbd.c b/zbd.c
+index c5e5df8f..65564e5d 100644
+--- a/zbd.c
++++ b/zbd.c
+@@ -535,7 +535,8 @@ static int parse_zone_info(struct thread_data *td, struct fio_file *f)
+ 	ret = 0;
+ 
+ out:
+-	sfree(zbd_info);
++	// TODO: fix this
++	//sfree(zbd_info);
+ 	free(zones);
+ 	return ret;
+ }
+-- 
+2.20.1
+

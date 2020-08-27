@@ -1,0 +1,30 @@
+From f92d006157134be50663ec711bf53d068a04d57f Mon Sep 17 00:00:00 2001
+From: "Simon A. F. Lund" <simon.lund@samsung.com>
+Date: Thu, 27 Aug 2020 17:14:23 +0200
+Subject: [PATCH 2/3] zbd: commented-out sfree causing destruction of 'malloc
+ post redzone'
+
+Signed-off-by: Simon A. F. Lund <simon.lund@samsung.com>
+---
+ zbd.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/zbd.c b/zbd.c
+index 437a9493..c5e5df8f 100644
+--- a/zbd.c
++++ b/zbd.c
+@@ -590,8 +590,9 @@ void zbd_free_zone_info(struct fio_file *f)
+ 	pthread_mutex_unlock(&f->zbd_info->mutex);
+ 
+ 	assert((int32_t)refcount >= 0);
+-	if (refcount == 0)
+-		sfree(f->zbd_info);
++	// TODO: fix this
++	//if (refcount == 0)
++	//	sfree(f->zbd_info);
+ 	f->zbd_info = NULL;
+ }
+ 
+-- 
+2.20.1
+
