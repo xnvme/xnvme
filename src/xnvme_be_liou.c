@@ -224,7 +224,6 @@ xnvme_be_liou_async_wait(struct xnvme_dev *dev, struct xnvme_async_ctx *ctx)
 		}
 
 		switch (err) {
-		case 0:
 		case -EAGAIN:
 		case -EBUSY:
 			nanosleep(&ts1, NULL);

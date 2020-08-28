@@ -38,7 +38,7 @@ XNVME_STATIC_ASSERT(
 struct xnvme_be_spdk_ctrlr_ref {
 	struct spdk_nvme_ctrlr *ctrlr;	///< Pointer to attached controller
 	int refcount;			///< # of refs. to 'ctrlr'
-	char trgt[XNVME_IDENT_TRGT_LEN];
+	char trgt[XNVME_IDENT_TRGT_LEN + 1];
 };
 
 struct xnvme_be_spdk_state {

@@ -527,13 +527,19 @@ sub_pass(struct xnvmec *cli, int opts, int admin)
 
 	if (data_nbytes && cli->args.data_output) {
 		xnvmec_pinf("Dumping data(%s)", cli->args.data_output);
-		xnvmec_buf_to_file(data_buf, data_nbytes,
-				   cli->args.data_output);
+		err = xnvmec_buf_to_file(data_buf, data_nbytes,
+					 cli->args.data_output);
+		if (err) {
+			xnvmec_perr("xnvmec_buf_to_file()", err);
+		}
 	}
 	if (meta_nbytes && cli->args.meta_output) {
 		xnvmec_pinf("Dumping meta(%s)", cli->args.meta_output);
-		xnvmec_buf_to_file(meta_buf, meta_nbytes,
-				   cli->args.meta_output);
+		err = xnvmec_buf_to_file(meta_buf, meta_nbytes,
+					 cli->args.meta_output);
+		if (err) {
+			xnvmec_perr("xnvmec_buf_to_file()", err);
+		}
 	}
 
 exit:

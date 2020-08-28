@@ -66,9 +66,9 @@ test_virt_buf_alloc_free(struct xnvmec *cli)
 			nerr += 1;
 			continue;
 		}
-		xnvme_buf_virt_free(buf);
-
 		xnvmec_pinf("buf: %p", buf);
+
+		xnvme_buf_virt_free(buf);
 	}
 
 	printf("\n");
