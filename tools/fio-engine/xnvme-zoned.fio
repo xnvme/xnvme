@@ -8,24 +8,25 @@
 ; Take note of the "special" use of 'filename' in the sections below
 ;
 ; In the fio-file, it needs "\" to escape ":", eg.
-; filename=liou\:/dev/nvme0n1
+; filename=liou\:/dev/nvme0n2
 ;
 ; On the command-line, it needs "\\" to escape ":", eg.
-; --filename=liou\\:/dev/nvme0n1
+; --filename=liou\\:/dev/nvme0n2
 ;
 ; Job-file is intended to be used as:
 ;
-; fio xnvme-zoned.fio \
-;		--section=verify \
-;		--filename=liou:\\/dev/nvme0n1
+;   fio xnvme-zoned.fio \
+;     --section=verify \
+;     --filename=liou:\\/dev/nvme0n2
 ;
 ; Have a look at xnvme-compare.fio, for the details on instrumenting the
 ; different backends and comparing performance.
 ;
-; I/O errors have been observed with fio 3.20, if you encounted them, then you
-; can clean up the drive by first invoking:
+; I/O errors have been observed with fio 3.20, however, not with 3.22, in any
+; case, if you encounter them, then you can clean up the drive by first
+; invoking:
 ;
-; zoned mgmt-reset /dev/nvme0n2 --slba 0x0 --all
+;   zoned mgmt-reset /dev/nvme0n2 --slba 0x0 --all
 ;
 ; Which will prepare the drive
 ;
@@ -37,8 +38,8 @@ iodepth=1
 bs=4K
 direct=1
 thread=1
-time_based=1
-runtime=10
+;time_based=1
+;runtime=10
 ramp_time=1
 norandommap=1
 ; If fio complains about zone-size, then run:
