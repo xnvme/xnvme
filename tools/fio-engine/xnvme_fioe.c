@@ -625,6 +625,7 @@ xnvme_fioe_get_zoned_model(struct thread_data *XNVME_UNUSED(td),
 			   struct fio_file *f, enum zbd_zoned_model *model)
 {
 	struct xnvme_dev *dev;
+	int err = 0;
 
 	if (f->filetype != FIO_TYPE_FILE && \
 		f->filetype != FIO_TYPE_BLOCK && \
@@ -636,10 +637,10 @@ xnvme_fioe_get_zoned_model(struct thread_data *XNVME_UNUSED(td),
 
 	pthread_mutex_lock(&g_serialize);
 	dev = xnvme_dev_open(f->file_name);
-	pthread_mutex_unlock(&g_serialize);
 	if (!dev) {
 		XNVME_DEBUG("FAILED: retrieving device handle");
-		return 1;
+		err = -errno;
+		goto exit;
 	}
 
 	switch (xnvme_dev_get_geo(dev)->type) {
@@ -659,18 +660,20 @@ xnvme_fioe_get_zoned_model(struct thread_data *XNVME_UNUSED(td),
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED:: got 'zoned', assigning ZBD_HOST_MANAGED");
+		XNVME_DEBUG("FAILED: hit-default, assigning ZBD_NONE");
 		*model = ZBD_NONE;
-		return -EINVAL;
+		errno = EINVAL;
+		err = -errno;
+		break;
 	}
 
-	pthread_mutex_lock(&g_serialize);
+exit:
 	xnvme_dev_close(dev);
 	pthread_mutex_unlock(&g_serialize);
 
 	XNVME_DEBUG("INFO: so good to far...");
 
-	return 0;
+	return err;
 }
 
 /**
@@ -699,7 +702,6 @@ xnvme_fioe_report_zones(struct thread_data *XNVME_UNUSED(td),
 
 	pthread_mutex_lock(&g_serialize);
 	dev = xnvme_dev_open(f->file_name);
-	pthread_mutex_unlock(&g_serialize);
 	if (!dev) {
 		XNVME_DEBUG("FAILED: xnvme_dev_open(), errno: %d", errno);
 		goto exit;
@@ -779,7 +781,6 @@ xnvme_fioe_report_zones(struct thread_data *XNVME_UNUSED(td),
 exit:
 	xnvme_buf_virt_free(rprt);
 
-	pthread_mutex_lock(&g_serialize);
 	xnvme_dev_close(dev);
 	pthread_mutex_unlock(&g_serialize);
 
