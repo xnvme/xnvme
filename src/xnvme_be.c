@@ -65,16 +65,6 @@ xnvme_lba_fpr(FILE *stream, uint64_t lba, enum xnvme_pr opts)
 
 	switch (opts) {
 	case XNVME_PR_TERSE:
-		wrtn += fprintf(stream, "# ENOSYS: opts(%x)", opts);
-		return wrtn;
-
-	case XNVME_PR_DEF:
-	case XNVME_PR_YAML:
-		break;
-	}
-
-	switch (opts) {
-	case XNVME_PR_TERSE:
 		wrtn += fprintf(stream, "0x%016lx", lba);
 		break;
 
@@ -258,7 +248,7 @@ _zoned_geometry(struct xnvme_dev *dev)
 	err = znd_stat_dev(dev, ZND_RECV_SF_ALL, &nzones);
 	if (err) {
 		XNVME_DEBUG("FAILED: znd_cmd_mgmt_recv()");
-		return err ? err : -EIO;
+		return err;
 	}
 
 	geo->type = XNVME_GEO_ZONED;

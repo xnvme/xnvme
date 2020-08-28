@@ -29,7 +29,7 @@ cmd_setup_sgl(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *data,
 		cmd->common.dptr.sgl.addr = phys;
 	}
 
-	if (opts & XNVME_CMD_UPLD_SGLM) {
+	if ((opts & XNVME_CMD_UPLD_SGLM) && meta) {
 		sgl = meta;
 
 		xnvme_buf_vtophys(dev, sgl->descriptors, &phys);
@@ -54,7 +54,7 @@ xnvme_cmd_pass(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *dbuf,
 	       size_t dbuf_nbytes, void *mbuf, size_t mbuf_nbytes, int opts,
 	       struct xnvme_req *ret)
 {
-	if (opts & XNVME_CMD_MASK_UPLD) {
+	if ((opts & XNVME_CMD_MASK_UPLD) && dbuf) {
 		cmd_setup_sgl(dev, cmd, dbuf, mbuf, opts);
 	}
 
@@ -67,7 +67,7 @@ xnvme_cmd_pass_admin(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 		     void *dbuf, size_t dbuf_nbytes, void *mbuf,
 		     size_t mbuf_nbytes, int opts, struct xnvme_req *ret)
 {
-	if (opts & XNVME_CMD_MASK_UPLD) {
+	if ((opts & XNVME_CMD_MASK_UPLD) && dbuf) {
 		cmd_setup_sgl(dev, cmd, dbuf, mbuf, opts);
 	}
 

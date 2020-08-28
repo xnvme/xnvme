@@ -345,10 +345,6 @@ _xnvme_be_spdk_ident_to_trid(const struct xnvme_ident *ident,
 		snprintf(trid->subnqn, sizeof trid->subnqn, "%s",
 			 SPDK_NVMF_DISCOVERY_NQN);
 		break;
-
-	case SPDK_NVME_TRANSPORT_FC:
-	case SPDK_NVME_TRANSPORT_CUSTOM:
-		break;
 	}
 
 	return 0;
@@ -668,7 +664,8 @@ enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
 		case SPDK_NVME_TRANSPORT_RDMA:
 			snprintf(uri, sizeof(uri), "fab:%s:%s",
 				 probed->traddr, probed->trsvcid);
-			snprintf(uri + strlen(uri), sizeof(uri), "?adrfam=%s",
+			snprintf(uri + strlen(uri), sizeof(uri) - strlen(uri),
+				 "?adrfam=%s",
 				 _spdk_nvmf_adrfam_str(probed->adrfam));
 			break;
 
@@ -678,14 +675,15 @@ enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
 				    spdk_nvme_transport_id_trtype_str(trtype));
 			continue;
 		}
-		snprintf(uri + strlen(uri), sizeof(uri), "?nsid=%d", nsid);
+		snprintf(uri + strlen(uri), sizeof(uri) - strlen(uri),
+			 "?nsid=%d", nsid);
 
 		if (ectx->cmb_sqs) {
-			snprintf(uri + strlen(uri), sizeof(uri),
+			snprintf(uri + strlen(uri), sizeof(uri) - strlen(uri),
 				 "?cmb_sqs=1");
 		}
 		if (ectx->css) {
-			snprintf(uri + strlen(uri), sizeof(uri),
+			snprintf(uri + strlen(uri), sizeof(uri) - strlen(uri),
 				 "?css=%d", ctrlr_opts->command_set);
 		}
 

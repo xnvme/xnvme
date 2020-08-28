@@ -254,7 +254,6 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 		err = lblk_cmd_scopy(dev, nsid, sdlba, range->entry, nr, copy_fmt, XNVME_CMD_ASYNC, &req);
 		if (err) {
 			xnvmec_perr("lblk_cmd_scopy()", err);
-			err = err ? err : -EIO;
 			xnvme_async_term(dev, ctx);
 			goto exit;
 		}

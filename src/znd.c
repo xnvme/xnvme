@@ -823,6 +823,7 @@ znd_idfy_lbafe_fpr(FILE *stream, struct znd_idfy_lbafe *lbafe, int opts)
 
 	if (!lbafe) {
 		wrtn += fprintf(stream, "~");
+		return wrtn;
 	}
 
 	wrtn += fprintf(stream, "{ zsze: %zu, zdes: %d }", lbafe->zsze, lbafe->zdes);
