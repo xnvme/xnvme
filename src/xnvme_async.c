@@ -12,6 +12,10 @@ int
 xnvme_async_init(struct xnvme_dev *dev, struct xnvme_async_ctx **ctx,
 		 uint16_t depth, int flags)
 {
+	if (!dev) {
+		XNVME_DEBUG("FAILED: !dev");
+		return -EINVAL;
+	}
 	if (!(xnvme_is_pow2(depth) && (depth < 4096))) {
 		XNVME_DEBUG("EINVAL: depth: %u", depth);
 		return -EINVAL;
@@ -23,6 +27,11 @@ xnvme_async_init(struct xnvme_dev *dev, struct xnvme_async_ctx **ctx,
 int
 xnvme_async_term(struct xnvme_dev *dev, struct xnvme_async_ctx *ctx)
 {
+	if (!dev) {
+		XNVME_DEBUG("FAILED: !dev");
+		return -EINVAL;
+	}
+
 	return dev->be.func.async_term(dev, ctx);
 }
 
