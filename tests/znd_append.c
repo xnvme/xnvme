@@ -28,7 +28,7 @@ cb_lbacheck(struct xnvme_req *req, void *cb_arg)
 
 	if (req->cpl.result != expected) {
 		xnvmec_pinf("ERR: req->cpl.result: 0x%016lx != 0x%016lx",
-			    req->cpl.result, expected, XNVME_PR_DEF);
+			    req->cpl.result, expected);
 		cb_args->ecount_offset += 1;
 	}
 }

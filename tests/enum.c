@@ -17,22 +17,22 @@ test_enum(struct xnvmec *cli)
 
 	nlistings = XNVME_MAX(nlistings, cli->args.count);
 	if (nlistings > MAX_LISTINGS) {
-		xnvmec_pinf("--count: %d > %d", cli->args.count, MAX_LISTINGS);
+		xnvmec_pinf("--count: %ld > %d", cli->args.count, MAX_LISTINGS);
 		return -EINVAL;
 	}
-	xnvmec_pinf("Will enumerate %d times", nlistings);
+	xnvmec_pinf("Will enumerate %ld times", nlistings);
 
 	for (uint64_t i = 0; i < nlistings; ++i) {
 		err = xnvme_enumerate(&listing[i], cli->args.sys_uri, cli->args.flags);
 		if (err) {
 			nerr += 1;
 			xnvmec_perr("xnvme_enumerate()", err);
-			xnvmec_pinf("The %d' xnvme_enumerate() failed", i + 1);
+			xnvmec_pinf("The %ld' xnvme_enumerate() failed", i + 1);
 		}
 
 		if (i && (listing[i]->nentries != listing[i - 1]->nentries)) {
 			nerr += 1;
-			xnvmec_pinf("The enumeration %d did not match the prev");
+			xnvmec_pinf("The enumeration %ld did not match the prev", i);
 
 			xnvme_enumeration_pr(listing[i], XNVME_PR_DEF);
 			xnvme_enumeration_pr(listing[i - 1], XNVME_PR_DEF);

@@ -102,7 +102,7 @@ sub_read(struct xnvmec *cli)
 	dbuf_nbytes = (nlb + 1) * geo->lba_nbytes;
 	mbuf_nbytes = geo->lba_extended ? 0 : (nlb + 1) * geo->nbytes_oob;
 
-	xnvmec_pinf("Reading nsid: 0x%x, slba: 0x%016x, nlb: %zu",
+	xnvmec_pinf("Reading nsid: 0x%x, slba: 0x%016lx, nlb: %zu",
 		    nsid, slba, nlb);
 
 	xnvmec_pinf("Alloc/clear dbuf, dbuf_nbytes: %zu", dbuf_nbytes);
@@ -171,7 +171,7 @@ sub_write(struct xnvmec *cli)
 	dbuf_nbytes = (nlb + 1) * geo->lba_nbytes;
 	mbuf_nbytes = geo->lba_extended ? 0 : (nlb + 1) * geo->nbytes_oob;
 
-	xnvmec_pinf("Writing nsid: 0x%x, slba: 0x%016x, nlb: %zu",
+	xnvmec_pinf("Writing nsid: 0x%x, slba: 0x%016lx, nlb: %zu",
 		    nsid, slba, nlb);
 
 	xnvmec_pinf("Alloc/fill dbuf, dbuf_nbytes: %zu", dbuf_nbytes);

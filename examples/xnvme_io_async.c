@@ -105,7 +105,7 @@ sub_async_read(struct xnvmec *cli)
 		goto exit;
 	}
 
-	xnvmec_pinf("Read nsect: %zu, [0x%016x,0x%016x], qd: %d, uri: '%s'",
+	xnvmec_pinf("Read nsect: %zu, [0x%016lx,0x%016lx], qd: %d, uri: '%s'",
 		    nsect, slba, elba, qd, cli->args.uri);
 
 	xnvmec_timer_start(cli);
@@ -247,7 +247,7 @@ sub_async_write(struct xnvmec *cli)
 		goto exit;
 	}
 
-	xnvmec_pinf("Write nsect: %zu, [0x%016x,0x%016x], qd: %d, uri: '%s'",
+	xnvmec_pinf("Write nsect: %zu, [0x%016lx,0x%016lx], qd: %d, uri: '%s'",
 		    nsect, slba, elba, qd, cli->args.uri);
 
 	xnvmec_timer_start(cli);
