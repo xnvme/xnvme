@@ -75,7 +75,7 @@ test_open_zdptr(struct xnvmec *cli)
 		goto exit;
 	}
 
-	xnvmec_pinf("Using: {zslba: 0x%016x, zidx: %zu}", zslba, zidx);
+	xnvmec_pinf("Using: {zslba: 0x%016lx, zidx: %zu}", zslba, zidx);
 
 	xnvmec_pinf("Before");
 	znd_descr_pr(ZND_REPORT_DESCR(before, zidx), XNVME_PR_DEF);

@@ -62,7 +62,7 @@ boilerplate(struct xnvmec *cli, uint8_t **wbuf, uint8_t **rbuf,
 	}
 
 	xnvmec_pinf("nsid: 0x%x", *nsid);
-	xnvmec_pinf("range: { slba: 0x%016x, elba: 0x%016x, naddr: %zu }",
+	xnvmec_pinf("range: { slba: 0x%016lx, elba: 0x%016lx, naddr: %zu }",
 		    *rng_slba, *rng_elba, rng_naddr);
 	xnvmec_pinf("buf_nbytes: %zu", *buf_nbytes);
 	xnvmec_pinf("mdts_naddr: %zu", *mdts_naddr);
@@ -106,7 +106,7 @@ sub_io(struct xnvmec *cli)
 				      XNVME_CMD_SYNC, &req);
 		if (err || xnvme_req_cpl_status(&req)) {
 			xnvmec_pinf("xnvme_cmd_write(): "
-				    "{err: 0x%x, slba: 0x%016x}",
+				    "{err: 0x%x, slba: 0x%016lx}",
 				    err, slba);
 			xnvme_req_pr(&req, XNVME_PR_DEF);
 			goto exit;
@@ -130,7 +130,7 @@ sub_io(struct xnvmec *cli)
 				      XNVME_CMD_SYNC, &req);
 		if (err || xnvme_req_cpl_status(&req)) {
 			xnvmec_pinf("xnvme_cmd_write(): "
-				    "{err: 0x%x, slba: 0x%016x}",
+				    "{err: 0x%x, slba: 0x%016lx}",
 				    err, slba);
 			xnvme_req_pr(&req, XNVME_PR_DEF);
 			goto exit;
@@ -149,7 +149,7 @@ sub_io(struct xnvmec *cli)
 				     XNVME_CMD_SYNC, &req);
 		if (err || xnvme_req_cpl_status(&req)) {
 			xnvmec_pinf("xnvme_cmd_read(): "
-				    "{err: 0x%x, slba: 0x%016x}",
+				    "{err: 0x%x, slba: 0x%016lx}",
 				    err, slba);
 			xnvme_req_pr(&req, XNVME_PR_DEF);
 			goto exit;
@@ -263,7 +263,7 @@ test_scopy(struct xnvmec *cli)
 		struct xnvme_req req = { 0 };
 		uint8_t nr = mdts_naddr - 1;
 
-		xnvmec_pinf("scopy sranges to sdlba: 0x%016x", sdlba);
+		xnvmec_pinf("scopy sranges to sdlba: 0x%016lx", sdlba);
 		lblk_source_range_pr(sranges, nr, XNVME_PR_DEF);
 
 		err = lblk_cmd_scopy(dev, nsid, sdlba, sranges->entry, nr,
@@ -275,7 +275,7 @@ test_scopy(struct xnvmec *cli)
 			goto exit;
 		}
 
-		xnvmec_pinf("read sdlba: 0x%016x", sdlba);
+		xnvmec_pinf("read sdlba: 0x%016lx", sdlba);
 		memset(rbuf, 0, buf_nbytes);
 		err = xnvme_cmd_read(dev, nsid, sdlba, nr, rbuf, NULL,
 				     XNVME_CMD_SYNC, &req);

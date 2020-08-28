@@ -265,7 +265,7 @@ cmd_read(struct xnvmec *cli)
 	dbuf_nbytes = (nlb + 1) * geo->lba_nbytes;
 	mbuf_nbytes = geo->lba_extended ? 0 : (nlb + 1) * geo->nbytes_oob;
 
-	xnvmec_pinf("Reading nsid: 0x%x, slba: 0x%016x, nlb: %zu",
+	xnvmec_pinf("Reading nsid: 0x%x, slba: 0x%016lx, nlb: %zu",
 		    nsid, slba, nlb);
 
 	xnvmec_pinf("Alloc/clear dbuf, dbuf_nbytes: %zu", dbuf_nbytes);
@@ -334,7 +334,7 @@ cmd_write(struct xnvmec *cli)
 	dbuf_nbytes = (nlb + 1) * geo->lba_nbytes;
 	mbuf_nbytes = geo->lba_extended ? 0 : (nlb + 1) * geo->nbytes_oob;
 
-	xnvmec_pinf("Writing nsid: 0x%x, slba: 0x%016x, nlb: %zu",
+	xnvmec_pinf("Writing nsid: 0x%x, slba: 0x%016lx, nlb: %zu",
 		    nsid, slba, nlb);
 
 	xnvmec_pinf("Alloc/fill dbuf, dbuf_nbytes: %zu", dbuf_nbytes);
@@ -399,7 +399,7 @@ cmd_append(struct xnvmec *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
-	xnvmec_pinf("Zone Append nlb: %zu to zslba: 0x%016x",
+	xnvmec_pinf("Zone Append nlb: %d to zslba: 0x%016lx",
 		    nlb, zslba);
 
 	xnvmec_pinf("Allocating dbuf");
@@ -454,7 +454,7 @@ _cmd_mgmt(struct xnvmec *cli, uint8_t action)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
-	xnvmec_pinf("MGMT: zslba: 0x%016x, action: 0x%x, str: %s", zslba,
+	xnvmec_pinf("MGMT: zslba: 0x%016lx, action: 0x%x, str: %s", zslba,
 		    action, znd_send_action_str(action));
 
 	if ((action == ZND_SEND_DESCRIPTOR) && cli->args.data_input) {
