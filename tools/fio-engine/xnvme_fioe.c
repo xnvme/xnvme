@@ -280,26 +280,25 @@ _dev_open(struct thread_data *td, struct fio_file *f)
 
 	pthread_mutex_lock(&g_serialize);
 	fwrap->dev = xnvme_dev_open(dev_uri);
-	pthread_mutex_unlock(&g_serialize);
 	if (!fwrap->dev) {
 		log_err("xnvme_fioe: init(): {uri: '%s', err: '%s'}\n",
 			dev_uri, strerror(errno));
-		return 1;
+		goto failure;
 	}
 	fwrap->geo = xnvme_dev_get_geo(fwrap->dev);
 
 	if (xnvme_async_init(fwrap->dev, &(fwrap->ctx), td->o.iodepth, flags)) {
 		log_err("xnvme_fioe: init(): failed xnvme_async_init()\n");
-		return 1;
+		goto failure;
 	}
 	if (xnvme_req_pool_alloc(&fwrap->reqs, td->o.iodepth + 1)) {
 		log_err("xnvme_fioe: init(): xnvme_req_pool_alloc()\n");
-		return 1;
+		goto failure;
 	}
 	// NOTE: cb_args are assigned in _queue()
 	if (xnvme_req_pool_init(fwrap->reqs, fwrap->ctx, cb_pool, NULL)) {
 		log_err("xnvme_fioe: init(): xnvme_req_pool_init()\n");
-		return 1;
+		goto failure;
 	}
 
 	fwrap->ssw = xnvme_dev_get_ssw(fwrap->dev);
@@ -310,7 +309,18 @@ _dev_open(struct thread_data *td, struct fio_file *f)
 	fwrap->fio_file->real_file_size = fwrap->geo->tbytes;
 	fio_file_set_size_known(fwrap->fio_file);
 
+	pthread_mutex_unlock(&g_serialize);
+
 	return 0;
+
+failure:
+	xnvme_req_pool_free(fwrap->reqs);
+	xnvme_async_term(fwrap->dev, fwrap->ctx);
+	xnvme_dev_close(fwrap->dev);
+
+	pthread_mutex_unlock(&g_serialize);
+
+	return 1;
 }
 
 static int
