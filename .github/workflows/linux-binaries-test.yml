@@ -115,6 +115,18 @@ jobs:
         name: pkg-deb
         path: xnvme/build/*.deb
 
+    - name: Upload fio binary
+      uses: actions/upload-artifact@v2
+      with:
+        name: fio-bin
+        path: xnvme/third-party/fio/repos/fio
+
+    - name: Upload the SPDK fio io-engines
+      uses: actions/upload-artifact@v2
+      with:
+        name: fio-spdk-ioengines
+        path: xnvme/third-party/spdk/repos/build/fio/*
+
     # The git-hub-actions-runner does not cleanup after itself
     - name: Self-hosted, cleanup
       if: always()
@@ -136,6 +148,7 @@ jobs:
     - name: Container-prep, define env.
       run: |
         source /opt/scripts/suitup.sh
+
         echo "::set-env name=RESULTS::/tmp/results"
         echo "::set-env name=TARGET_ENV::${CIJ_ENVS}/refenv-xnvme-qemu.sh"
         echo "::set-env name=CLOUD_IMG_URL::https://cloud.debian.org/images/cloud/bullseye/daily/20200807-351/debian-11-generic-amd64-daily-20200807-351.qcow2"
@@ -144,6 +157,16 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: pkg-deb
+
+    - name: Container-prep, download fio binary
+      uses: actions/download-artifact@v2
+      with:
+        name: fio-bin
+
+    - name: Container-prep, download SPDK fio io-engines
+      uses: actions/download-artifact@v2
+      with:
+        name: fio-spdk-ioengines
 
     - name: Container-prep, start the SSH server
       run: service ssh restart
@@ -182,6 +205,16 @@ jobs:
         done
 
         ssh::cmd "dpkg -i /tmp/*.deb"
+
+    - name: CIJOE/QEMU, dump fio binary and SPDK io-engines in guest
+      run: |
+        source /opt/scripts/suitup.sh
+        ssh::cmd "mkdir /opt/aux"
+        ssh::push "fio" "/opt/aux/"
+        ssh::push "spdk_nvme" "/opt/aux/"
+        ssh::push "spdk_bdev" "/opt/aux/"
+        ssh::cmd "find /opt/aux"
+        ssh::cmd "chmod +x /opt/aux/fio"
 
     - name: CIJOE/QEMU, check binaries are available
       if: always()
