@@ -217,16 +217,16 @@ xnvme_fioe_cleanup(struct thread_data *td)
 {
 	struct xnvme_fioe_data *xd = td->io_ops_data;
 
+	pthread_mutex_lock(&g_serialize);
 	for (uint64_t i = 0; i < xd->nallocated; ++i) {
 		int err;
 
-		pthread_mutex_lock(&g_serialize);
 		err = _dev_close(td, &xd->files[i]);
-		pthread_mutex_unlock(&g_serialize);
 		if (err) {
 			XNVME_DEBUG("xnvme_fioe: cleanup(): Unexpected error");
 		}
 	}
+	pthread_mutex_unlock(&g_serialize);
 
 	free(xd->iocq);
 	free(xd);
