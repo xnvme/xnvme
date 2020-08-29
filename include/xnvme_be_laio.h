@@ -33,7 +33,9 @@ XNVME_STATIC_ASSERT(
 struct xnvme_be_laio_state {
 	int fd;
 
-	uint8_t rsvd[124];
+	uint8_t pseudo;
+
+	uint8_t rsvd[123];
 };
 XNVME_STATIC_ASSERT(
 	sizeof(struct xnvme_be_laio_state) == XNVME_BE_STATE_NBYTES,

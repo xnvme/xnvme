@@ -278,6 +278,7 @@ xnvme_be_laio_state_init(struct xnvme_dev *dev)
 {
 	struct xnvme_be_laio_state *state = (void *)dev->be.state;
 	struct stat dev_stat;
+	uint32_t opt_val;
 	int err;
 
 	state->fd = open(dev->ident.trgt, O_RDWR | O_DIRECT);
@@ -295,6 +296,12 @@ xnvme_be_laio_state_init(struct xnvme_dev *dev)
 		XNVME_DEBUG("FAILED: device is not a block device");
 		return -ENOTBLK;
 	}
+
+	if (xnvme_ident_opt_to_val(&dev->ident, "pseudo", &opt_val)) {
+		state->pseudo = opt_val == 1;
+	}
+
+	XNVME_DEBUG("state->pseudo: %d", state->pseudo);
 
 	return 0;
 }
