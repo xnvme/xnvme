@@ -387,7 +387,7 @@ xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 		break;
 	}
 
-	geo->tbytes = geo->npugrp * geo->npunit * geo->nzone * geo->nsect * \
+	geo->tbytes = (unsigned long)(geo->npugrp) * geo->npunit * geo->nzone * geo->nsect * \
 		      geo->nbytes;
 
 	/* Derive the sector-shift-width for LBA mapping */
