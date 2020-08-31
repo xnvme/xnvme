@@ -580,8 +580,8 @@ enumeration_has_trgt(struct xnvme_enumeration *list, struct xnvme_ident *ident,
 {
 	uint32_t bound = XNVME_MIN(list->nentries, idx);
 
-	for (uint32_t idx = 0; idx < bound; ++idx) {
-		struct xnvme_ident *id = &list->entries[idx];
+	for (uint32_t i = 0; i < bound; ++i) {
+		struct xnvme_ident *id = &list->entries[i];
 
 		if (!strncmp(ident->trgt, id->trgt, XNVME_IDENT_TRGT_LEN)) {
 			return 1;

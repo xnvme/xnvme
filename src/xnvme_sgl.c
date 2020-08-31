@@ -109,11 +109,11 @@ xnvme_sgl_add(struct xnvme_dev *dev, struct xnvme_sgl *sgl, void *buf,
 	}
 
 	if (sgl->ndescr == sgl->nalloc) {
-		size_t nbytes;
+		size_t desr_nbytes;
 		sgl->nalloc = sgl->nalloc ? 2 * sgl->nalloc : 1;
-		nbytes = sgl->nalloc * sizeof(struct xnvme_spec_sgl_descriptor);
+		desr_nbytes = sgl->nalloc * sizeof(struct xnvme_spec_sgl_descriptor);
 		sgl->descriptors = xnvme_buf_realloc(dev, sgl->descriptors,
-						     nbytes, NULL);
+						     desr_nbytes, NULL);
 		if (!sgl->descriptors) {
 			return -1;
 		}
