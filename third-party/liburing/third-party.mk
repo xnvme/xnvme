@@ -17,6 +17,7 @@ third-party-liburing:
 third-party-liburing-clean:
 	@echo "## xNVMe: make third-party-liburing-clean"
 	cd ${XNVME_3P_LIBURING_REPOS} && ${MAKE} clean || true
+	cd ${XNVME_3P_LIBURING_REPOS} && git reset --hard HEAD || true
 
 .PHONY: third-party-liburing-clobber
 third-party-liburing-clobber: third-party-liburing-clean

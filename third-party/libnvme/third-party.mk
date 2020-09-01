@@ -17,6 +17,7 @@ third-party-libnvme:
 third-party-libnvme-clean:
 	@echo "## xNVMe: make third-party-libnvme-clean"
 	cd ${XNVME_3P_LIBNVME_REPOS} && ${MAKE} clean || true
+	cd ${XNVME_3P_LIBNVME_REPOS} && git reset --hard HEAD || true
 
 .PHONY: third-party-libnvme-clobber
 third-party-libnvme-clobber: third-party-libnvme-clean
