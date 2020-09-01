@@ -823,7 +823,33 @@ xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint64_t offset,
 exit:
 	return err;
 }
+static int
+xnvme_fioe_get_file_size(struct thread_data *td, struct fio_file *f)
+{
+	struct xnvme_dev *dev;
+	int ret = 0;
 
+	if (fio_file_size_known(f))
+		return 0;
+
+	pthread_mutex_lock(&g_serialize);
+	dev = xnvme_dev_open(f->file_name);
+	if (!dev) {
+		XNVME_DEBUG("FAILED: xnvme_dev_open(), errno: %d", errno);
+		ret = -errno;
+		goto exit;
+	}
+
+	f->real_file_size = xnvme_dev_get_geo(dev)->tbytes;
+	fio_file_set_size_known(f);
+
+exit:
+	xnvme_dev_close(dev);
+	pthread_mutex_unlock(&g_serialize);
+
+	return ret;
+
+}
 struct ioengine_ops ioengine = {
 	.name			= "xnvme",
 	.version		= FIO_IOOPS_VERSION,
@@ -851,6 +877,7 @@ struct ioengine_ops ioengine = {
 
 	.close_file	= xnvme_fioe_close,
 	.open_file	= xnvme_fioe_open,
+	.get_file_size  = xnvme_fioe_get_file_size,
 
 	.invalidate		= xnvme_fioe_invalidate,
 	.get_zoned_model	= xnvme_fioe_get_zoned_model,
