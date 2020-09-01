@@ -1,4 +1,5 @@
 static struct xnvme_be *xnvme_be_registry[] = {
+	&xnvme_be_nwrp,
 	&xnvme_be_spdk,
 	&xnvme_be_liou,
 	&xnvme_be_laio,

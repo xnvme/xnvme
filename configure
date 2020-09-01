@@ -41,6 +41,9 @@ CONFIG[BE_FIOC]=OFF
 # Enable the Linux/IOCTL backend
 CONFIG[BE_LIOC]=OFF
 
+# Enable the Null-async IO backend
+CONFIG[BE_NWRP]=OFF
+
 # Enable the Linux/iouring backend
 CONFIG[BE_LIOU]=OFF
 
@@ -52,6 +55,7 @@ case "${OSTYPE,,}" in
 		CONFIG[DEBS]=ON
 		CONFIG[BE_SPDK]=ON
 		CONFIG[BE_LIOC]=ON
+		CONFIG[BE_NWRP]=ON
 		CONFIG[BE_LIOU]=ON
 		CONFIG[BE_LAIO]=ON
 		;;
@@ -111,6 +115,7 @@ function usage()
 	echo " --disable-tools-fio       Disable building of fio xNVMe engine"
 	echo ""
 	echo "Specifying backends to build into the library"
+	echo " --enable-be-nwrp          Enable the Null-IO backend"
 	echo " --enable-be-spdk          Enable the SPDK backend"
 	echo " --enable-be-fioc          Enable the FreeBSD/IOCTL backend"
 	echo " --enable-be-lioc          Enable the Linux/IOCTL backend"

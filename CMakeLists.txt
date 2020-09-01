@@ -336,6 +336,16 @@ endif()
 message( STATUS "BE:LIOC ENABLED(${XNVME_BE_LIOC_ENABLED})" )
 
 #
+# XNVME_BE_NWRP
+#
+set(XNVME_BE_NWRP_ENABLED ${LINUX} CACHE BOOL "be_nwrp: Linux Null-IO backend")
+if(XNVME_BE_NWRP_ENABLED)
+	add_definitions(-DXNVME_BE_NWRP_ENABLED)
+endif()
+message( STATUS "BE:NWRP ENABLED(${XNVME_BE_NWRP_ENABLED})" )
+
+
+#
 # XNVME_BE_LIOU
 #
 set(XNVME_BE_LIOU_ENABLED ${LINUX} CACHE BOOL "be_liou: Linux/io_uring backend")
