@@ -45,7 +45,7 @@ BUILD_DIR?=build
 .PHONY: default
 default: info tags
 	@echo "## xNVMe: make default"
-	@if [ ! -d "$(BUILD_DIR)" ]; then $(MAKE) config; fi;
+	@if [ ! -d "$(BUILD_DIR)" -o ! -d "$(BUILD_DIR)/CMakeLists.txt" ]; then $(MAKE) config; fi;
 	$(MAKE) build
 
 .PHONY: config
