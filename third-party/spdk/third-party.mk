@@ -19,7 +19,6 @@ third-party-spdk:
 third-party-spdk-clean:
 	@echo "## xNVMe: make third-party-spdk-clean"
 	cd ${XNVME_3P_SPDK_REPOS} && ${MAKE} clean || true
-	cd ${XNVME_3P_SPDK_REPOS} && git reset --hard HEAD || true
 
 .PHONY: third-party-spdk-clobber
 third-party-spdk-clobber: third-party-spdk-clean

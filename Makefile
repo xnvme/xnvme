@@ -115,7 +115,7 @@ clean:
 	@echo "## xNVMe: make clean"
 	rm -fr $(BUILD_DIR) || true
 	rm -fr cmake-build-debug || true
-	$(MAKE) third-party-clean
+	$(MAKE) third-party-clobber
 
 #
 # Helper-target to produce full-source archive

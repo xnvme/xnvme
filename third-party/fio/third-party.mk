@@ -18,7 +18,6 @@ third-party-fio:
 third-party-fio-clean:
 	@echo "## xNVMe: make third-party-fio-clean"
 	cd ${XNVME_3P_FIO_REPOS} && $(MAKE) clean || true
-	cd ${XNVME_3P_FIO_REPOS} && git reset --hard HEAD || true
 
 .PHONY: third-party-fio-clobber
 third-party-fio-clobber: third-party-fio-clean
