@@ -47,6 +47,48 @@ Known Issues
   - Append via the Kernel path is not available as support has not been merged
     with upstream
 
+v0.0.20/dev
+-----------
+
+* Third-party libraries
+
+  - Updated to fio/v3.22
+  - Made fio available to the third-party SPDK build
+  - Added build of SPDK fio io-engine
+  - Fixed missing update of third-party version-strings
+
+* The xNVMe fio io-engine
+
+  - Several fixes to locking/serialization and error-handling
+  - Adjusted to changes in upstream ZBD support
+  - Changed the zoned fio-example to not be timebased, since it could lead to
+    the verify-job never getting to the verify-part when running on emulated
+    devices
+  - Increased ``ramp_time`` in comparison-script
+  - Fixed memory issue due to missing ``get_file_size``
+
+* Backends
+
+  - Added a backend ``nwrp`` the NULL-Async-IO backend, purpose of which is to
+    troubleshoot and benchmark the async-io path
+
+* General
+
+  - A bunch of fixes including bad format-strings, out-of-bound / array
+    overflows, non-atomic locks, improper error-path handling
+
+* CI
+
+  - Added workflow generating docker-image with latest source, providing
+    everything needed to build xNVMe and latest qemu to deploy and experiment
+    with xNVMe on emulated NVMe devices
+  - Added workflow doing Coverity scan and uploading results for analysis
+  - Added ``fio`` binary and SPDK fio io-engines as artifacts. During testing,
+    fio is needed, however, the test-environment might not have the same
+    version available as the io-engines are built against, usually xNVMe is
+    built against the latest release which might not have made it into the
+    package repos.
+
 v0.0.19
 -------
 
