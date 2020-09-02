@@ -84,6 +84,10 @@ jobs:
         cd xnvme
         source scripts/pkgs/${{ matrix.container }}.sh
         [[ ! -f "/usr/bin/python" ]] && ln -s /usr/bin/python3.8 /usr/bin/python || true
+        
+    - name: xNVMe, update meson
+      run: |
+        apt install meson -y
 
     - name: Configure, the build
       run: |
