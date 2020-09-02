@@ -67,7 +67,8 @@
  * CAVEAT: Supporting NVMe devices formatted with extended-LBA
  *
  * To support extended-lba initial work has been done in xNVMe, however, further
- * work is probably need for this to trickle up from the fio I/O engine
+ * work is probably need for this to trickle up from the fio I/O engine, also,
+ * in the io-engine ">> ssw" are used which does not account for extended LBA.
  */
 #include <stdlib.h>
 #include <assert.h>
@@ -516,7 +517,7 @@ xnvme_fioe_queue(struct thread_data *td, struct io_u *io_u)
 	nsid = xnvme_dev_get_nsid(fwrap->dev);
 
 	slba = io_u->offset >> fwrap->ssw;
-	nlb = (io_u->xfer_buflen / fwrap->lba_nbytes) - 1;
+	nlb = (io_u->xfer_buflen >> fwrap->ssw) - 1;
 
 	if (td->io_ops->flags & FIO_SYNCIO) {
 		log_err("xnvme_fioe: queue(): Got sync...\n");
