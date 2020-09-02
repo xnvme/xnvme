@@ -25,4 +25,6 @@ third-party-clobber: third-party-clean
 .PHONY: third-party-update
 third-party-update:
 	@echo "## xNVMe: third-party-update"
-	@git submodule update --init --recursive
+	@if [ -d .git ]; then					\
+		git submodule update --init --recursive;	\
+	fi
