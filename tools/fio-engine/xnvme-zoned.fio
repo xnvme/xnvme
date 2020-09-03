@@ -17,6 +17,7 @@
 ;
 ;   fio xnvme-zoned.fio \
 ;     --section=verify \
+;     --ioengine=external:/usr/lib/libxnvme-fio-engine.so \
 ;     --filename=liou:\\/dev/nvme0n2
 ;
 ; Have a look at xnvme-compare.fio, for the details on instrumenting the
@@ -31,7 +32,7 @@
 ; Which will prepare the drive
 ;
 [global]
-ioengine=external:/usr/lib/libxnvme-fio-engine.so
+;ioengine=external:/usr/lib/libxnvme-fio-engine.so
 zonemode=zbd
 size=1G
 iodepth=1
