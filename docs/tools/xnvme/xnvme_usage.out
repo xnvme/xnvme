@@ -2,6 +2,7 @@ Usage: xnvme <command> [<args>]
 
 Where <command> is one of:
 
+  list             | List devices on the system
   enum             | Enumerate devices on the system
   info             | Retrieve derived information for given device
   idfy             | Execute an User-defined Identify Command
@@ -21,5 +22,5 @@ Where <command> is one of:
 
 See 'xnvme <command> --help' for the description of [<args>]
 
-xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 0, patch: 19}
+xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 0, patch: 21}
 

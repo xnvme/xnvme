@@ -6,6 +6,10 @@ xnvme_dev:
     schm: 'pci'
     opts: '?nsid=1'
     uri: 'pci:0000:03:00.0?nsid=1'
+  xnvme_be:
+    async: {id: 'nvme_driver', enabled: 1}
+    sync: {id: 'nvme_driver', enabled: 1}
+    attr: {name: 'spdk', enabled: 1}
   xnvme_cmd_opts:
     mask: '00000000000000000000000000000001'
     iomd: 'SYNC'

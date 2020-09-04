@@ -1,5 +1,5 @@
 0000:03:00.0 (1b36 0010): Already using the vfio-pci driver
-0000:00:05.0 (1af4 1001): Active mountpoints on /dev/vda, so not binding
+0000:00:02.0 (1af4 1001): Active mountpoints on /dev/vda, so not binding
 
 
 xnvme_dev:
@@ -8,6 +8,10 @@ xnvme_dev:
     schm: 'pci'
     opts: '?nsid=1'
     uri: 'pci:0000:03:00.0?nsid=1'
+  xnvme_be:
+    async: {id: 'nvme_driver', enabled: 1}
+    sync: {id: 'nvme_driver', enabled: 1}
+    attr: {name: 'spdk', enabled: 1}
   xnvme_cmd_opts:
     mask: '00000000000000000000000000000001'
     iomd: 'SYNC'
