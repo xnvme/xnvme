@@ -4,7 +4,7 @@ Retrieve the **xNVMe** repository from
 .. code-block:: bash
 
   # Clone the xNVMe repos
-  git clone https://github.com/OpenMPDK/xNVMe.git --recursive
+  git clone https://github.com/OpenMPDK/xNVMe.git --recursive xnvme
   cd xnvme
 
   # make: auto-configure xNVMe, build third-party libraries, and xNVMe itself
