@@ -1,5 +1,6 @@
 // Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
 // Copyright (C) Klaus B. A. Jensen <k.jensen@samsung.com>
+// Copyright (C) Gurmeet Singh <gur.singh@samsung.com>
 // SPDX-License-Identifier: Apache-2.0
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
