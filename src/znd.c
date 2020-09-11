@@ -444,8 +444,8 @@ znd_cmd_append(struct xnvme_dev *dev, uint32_t nsid, uint64_t zslba,
 	cmd.append.zslba = zslba;
 	cmd.append.nlb = nlb;
 
-	return dev->be.func.cmd_pass(dev, &cmd.base, cdbuf, dbuf_nbytes, cmbuf,
-				     mbuf_nbytes, opts, req);
+	return xnvme_cmd_pass(dev, &cmd.base, cdbuf, dbuf_nbytes, cmbuf,
+			      mbuf_nbytes, opts, req);
 }
 
 const char *

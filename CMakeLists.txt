@@ -318,37 +318,31 @@ endif()
 message( STATUS "BE:SPDK ENABLED(${XNVME_BE_SPDK_ENABLED})" )
 
 #
-# XNVME_BE_FIOC
+# XNVME_BE_FBSD
 #
-set(XNVME_BE_FIOC_ENABLED ${FREEBSD} CACHE BOOL "be_fioc: FreeBSD/IOCTL backend")
-if(XNVME_BE_FIOC_ENABLED)
-	add_definitions(-DXNVME_BE_FIOC_ENABLED)
+set(XNVME_BE_FBSD_ENABLED ${FREEBSD} CACHE BOOL
+	"be_fbsd: FreeBSD backend")
+if(XNVME_BE_FBSD_ENABLED)
+	add_definitions(-DXNVME_BE_FBSD_ENABLED)
 endif()
-message( STATUS "BE:FIOC ENABLED(${XNVME_BE_FIOC_ENABLED})" )
+message( STATUS "BE:FBSD ENABLED(${XNVME_BE_FBSD_ENABLED})" )
 
 #
-# XNVME_BE_LIOC
+# XNVME_BE_LINUX
 #
-set(XNVME_BE_LIOC_ENABLED ${LINUX} CACHE BOOL "be_lioc: Linux/IOCTL backend")
-if(XNVME_BE_LIOC_ENABLED)
-	add_definitions(-DXNVME_BE_LIOC_ENABLED)
-endif()
-message( STATUS "BE:LIOC ENABLED(${XNVME_BE_LIOC_ENABLED})" )
+set(XNVME_BE_LINUX_ENABLED ${LINUX} CACHE BOOL
+	"be_linux: Linux backend")
+set(XNVME_BE_LINUX_AIO_ENABLED ${LINUX} CACHE BOOL
+	"be_linux_async_aio: aio supportin Linux backend")
+set(XNVME_BE_LINUX_IOU_ENABLED ${LINUX} CACHE BOOL
+	"be_linux_async_iou: io_uring support in Linux backend")
+set(XNVME_BE_LINUX_NIL_ENABLED ${LINUX} CACHE BOOL
+	"be_linux_async_nil: null-io support in Linux backend")
+set(XNVME_BE_LINUX_BLOCK_ENABLED ${LINUX} CACHE BOOL
+	"be_linux_block: support for non-NVMe devices via Kernel Block Layer")
 
-#
-# XNVME_BE_NWRP
-#
-set(XNVME_BE_NWRP_ENABLED ${LINUX} CACHE BOOL "be_nwrp: Linux Null-IO backend")
-if(XNVME_BE_NWRP_ENABLED)
-	add_definitions(-DXNVME_BE_NWRP_ENABLED)
-endif()
-message( STATUS "BE:NWRP ENABLED(${XNVME_BE_NWRP_ENABLED})" )
+# TODO: do a check verifying features of the linux/blkzoned.h header file
 
-
-#
-# XNVME_BE_LIOU
-#
-set(XNVME_BE_LIOU_ENABLED ${LINUX} CACHE BOOL "be_liou: Linux/io_uring backend")
 set(LIBURING_REPOS "${PROJECT_SOURCE_DIR}/third-party/liburing/repos")
 set(LIBURING_INCLUDE_PATH
 	"${LIBURING_REPOS}/src/include"
@@ -357,60 +351,74 @@ set(LIBURING_LIBRARY_PATH
 	"${LIBURING_REPOS}/src"
 	CACHE PATH "LIBURING library path")
 
-if(XNVME_BE_LIOU_ENABLED)
-	message( STATUS "LIBURING_LIBRARY_PATH(${LIBURING_LIBRARY_PATH})" )
-	message( STATUS "LIBURING_INCLUDE_PATH(${LIBURING_INCLUDE_PATH})" )
+if(XNVME_BE_LINUX_ENABLED)
 
-	if(NOT (EXISTS ${LIBURING_LIBRARY_PATH} AND
-		EXISTS ${LIBURING_INCLUDE_PATH}))
-		execute_process(
-			COMMAND make third-party-update
-			RESULT_VARIABLE res
-			WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
-		if(res)
-			message( FATAL_ERROR "Failed fetching liburing" )
-		endif()
+	add_definitions(-DXNVME_BE_LINUX_ENABLED)
+
+	if(XNVME_BE_LINUX_BLOCK_ENABLED)
+		add_definitions(-DXNVME_BE_LINUX_BLOCK_ENABLED)
 	endif()
 
-	if(NOT EXISTS "${LIBURING_LIBRARY_PATH}/liburing.a")
-		execute_process(
-			COMMAND make third-party-liburing-build
-			RESULT_VARIABLE res
-			WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
-		if(res)
-			message( FATAL_ERROR "Failed building liburing" )
-		endif()
+	if(XNVME_BE_LINUX_AIO_ENABLED)
+		add_definitions(-DXNVME_BE_LINUX_AIO_ENABLED)
+
+		list(APPEND LIBS_SYSTEM aio)
+
+		message( STATUS "ENABLING ASYNC SUPPORT" )
+		add_definitions(-DXNVME_ASYNC_ENABLED)
 	endif()
 
-	add_definitions(-DXNVME_BE_LIOU_ENABLED)
+	if(XNVME_BE_LINUX_IOU_ENABLED)
+		message( STATUS "LIBURING_LIBRARY_PATH(${LIBURING_LIBRARY_PATH})" )
+		message( STATUS "LIBURING_INCLUDE_PATH(${LIBURING_INCLUDE_PATH})" )
 
-	message( STATUS "ENABLING ASYNC SUPPORT" )
-	add_definitions(-DXNVME_ASYNC_ENABLED)
+		if(NOT (EXISTS ${LIBURING_LIBRARY_PATH} AND
+			EXISTS ${LIBURING_INCLUDE_PATH}))
+			execute_process(
+				COMMAND make third-party-update
+				RESULT_VARIABLE res
+				WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+			if(res)
+				message( FATAL_ERROR "Failed fetching liburing" )
+			endif()
+		endif()
 
-	list(APPEND LIBS uring)
+		if(NOT EXISTS "${LIBURING_LIBRARY_PATH}/liburing.a")
+			execute_process(
+				COMMAND make third-party-liburing-build
+				RESULT_VARIABLE res
+				WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+			if(res)
+				message( FATAL_ERROR "Failed building liburing" )
+			endif()
+		endif()
 
-	# Add liburing to library and include
-	include_directories("${LIBURING_INCLUDE_PATH}")
-	link_directories("${LIBURING_LIBRARY_PATH}")
+		add_definitions(-DXNVME_BE_LINUX_IOU_ENABLED)
 
-	list(APPEND AUX_LIB_PATHS ${LIBURING_LIBRARY_PATH})
+		list(APPEND LIBS uring)
+
+		# Add liburing to library and include
+		include_directories("${LIBURING_INCLUDE_PATH}")
+		link_directories("${LIBURING_LIBRARY_PATH}")
+
+		list(APPEND AUX_LIB_PATHS ${LIBURING_LIBRARY_PATH})
+
+		message( STATUS "ENABLING ASYNC SUPPORT" )
+		add_definitions(-DXNVME_ASYNC_ENABLED)
+	endif()
+
+	if(XNVME_BE_LINUX_NIL_ENABLED)
+		add_definitions(-DXNVME_BE_LINUX_NIL_ENABLED)
+
+		message( STATUS "ENABLING ASYNC SUPPORT" )
+		add_definitions(-DXNVME_ASYNC_ENABLED)
+	endif()
+
 endif()
-message( STATUS "BE:LIOU ENABLED(${XNVME_BE_LIOU_ENABLED})" )
-
-#
-# XNVME_BE_LAIO
-#
-set(XNVME_BE_LAIO_ENABLED ${LINUX} CACHE BOOL "be_laio: Linux/libaio backend")
-if(XNVME_BE_LAIO_ENABLED)
-	add_definitions(-DXNVME_BE_LAIO_ENABLED)
-
-	list(APPEND LIBS_SYSTEM aio)
-
-	message( STATUS "ENABLING ASYNC SUPPORT" )
-	add_definitions(-DXNVME_ASYNC_ENABLED)
-
-endif()
-message( STATUS "BE:LAIO ENABLED(${XNVME_BE_LAIO_ENABLED})" )
+message( STATUS "BE:LINUX ENABLED(${XNVME_BE_LINUX_ENABLED})" )
+message( STATUS "BE:LINUX_AIO ENABLED(${XNVME_BE_LINUX_AIO_ENABLED})" )
+message( STATUS "BE:LINUX_IOU ENABLED(${XNVME_BE_LINUX_IOU_ENABLED})" )
+message( STATUS "BE:LINUX_NIL ENABLED(${XNVME_BE_LINUX_NIL_ENABLED})" )
 
 #
 # BACKENDS -- end

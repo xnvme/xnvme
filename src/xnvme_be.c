@@ -11,6 +11,63 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_registry.c>
 
+int
+xnvme_be_yaml(FILE *stream, const struct xnvme_be *be, int indent,
+	      const char *sep, int head)
+{
+	int wrtn = 0;
+
+	if (head) {
+		wrtn += fprintf(stream, "%*sxnvme_be:", indent, "");
+		indent += 2;
+	}
+	if (!be) {
+		wrtn += fprintf(stream, " ~");
+		return wrtn;
+	}
+	if (head) {
+		wrtn += fprintf(stream, "\n");
+	}
+
+	wrtn += fprintf(stream, "%*sasync: {id: '%s', enabled: %zu}%s",
+			indent, "",
+			be->async.id, be->async.enabled, sep);
+	wrtn += fprintf(stream, "%*ssync: {id: '%s', enabled: %zu}%s",
+			indent, "",
+			be->sync.id, be->sync.enabled, sep);
+	wrtn += fprintf(stream, "%*sattr: {name: '%s', enabled: %u}", indent, "",
+			be->attr.name, be->attr.enabled);
+
+	return wrtn;
+}
+
+int
+xnvme_be_fpr(FILE *stream, const struct xnvme_be *be, enum xnvme_pr opts)
+{
+	int wrtn = 0;
+
+	switch (opts) {
+	case XNVME_PR_TERSE:
+		wrtn += fprintf(stream, "# ENOSYS: opts(%x)", opts);
+		return wrtn;
+
+	case XNVME_PR_DEF:
+	case XNVME_PR_YAML:
+		break;
+	}
+
+	wrtn += xnvme_be_yaml(stream, be, 2, "\n", 1);
+	wrtn += fprintf(stream, "\n");
+
+	return wrtn;
+}
+
+int
+xnvme_be_pr(const struct xnvme_be *be, enum xnvme_pr opts)
+{
+	return xnvme_be_fpr(stdout, be, opts);
+}
+
 bool
 xnvme_ident_opt_to_val(const struct xnvme_ident *ident, const char *opt,
 		       uint32_t *val)
@@ -166,7 +223,7 @@ xnvme_be_attr_fpr(FILE *stream, const struct xnvme_be_attr *attr, int opts)
 	wrtn += fprintf(stream, "enabled: %d, ", attr->enabled);
 
 	wrtn += fprintf(stream, "schemes: [");
-	for (int i = 0; i < attr->nschemes; ++i) {
+	for (uint32_t i = 0; i < attr->nschemes; ++i) {
 		if (i) {
 			wrtn += fprintf(stream, ", ");
 		}
@@ -297,59 +354,6 @@ _conventional_geometry(struct xnvme_dev *dev)
 	return 0;
 }
 
-// TODO: extract basename from ident->trgt
-static inline int
-_blockdevice_geometry(struct xnvme_dev *dev)
-{
-	struct xnvme_geo *geo = &dev->geo;
-	int sysfs_len = 0x1000;
-	char sysfs_path[sysfs_len];
-	char dev_fname[XNVME_IDENT_URI_LEN];
-	uint64_t val = 1;
-	int err;
-
-	sprintf(dev_fname, "nullb0");
-
-	geo->type = XNVME_GEO_CONVENTIONAL;
-
-	sprintf(sysfs_path, "/sys/block/%s/size", dev_fname);
-	err = path_to_ll(sysfs_path, &val);
-	if (err) {
-		XNVME_DEBUG("err: '%s'", strerror(err));
-		return err;
-	}
-	geo->tbytes = val * 512;
-
-	sprintf(sysfs_path, "/sys/block/%s/queue/minimum_io_size", dev_fname);
-	err = path_to_ll(sysfs_path, &val);
-	if (err) {
-		XNVME_DEBUG("err: '%s'", strerror(err));
-		return err;
-	}
-	geo->nbytes = val;
-	geo->nbytes_oob = 0;
-
-	geo->npugrp = 1;
-	geo->npunit = 1;
-	geo->nzone = 1;
-	geo->nsect = geo->tbytes / geo->nbytes;
-
-	sprintf(sysfs_path, "/sys/block/%s/queue/max_sectors_kb", dev_fname);
-	err = path_to_ll(sysfs_path, &val);
-	if (err) {
-		XNVME_DEBUG("err: '%s'", strerror(err));
-		return err;
-	}
-	geo->mdts_nbytes = val * 1024;
-
-	dev->ssw = XNVME_ILOG2(geo->nbytes);
-
-	geo->lba_extended = 0;
-	geo->lba_nbytes = geo->nbytes;
-
-	return 0;
-}
-
 // TODO: add proper handling of NVMe controllers
 int
 xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
@@ -357,16 +361,11 @@ xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 	struct xnvme_geo *geo = &dev->geo;
 
 	switch (dev->dtype) {
-	case XNVME_DEV_TYPE_BLOCK_DEVICE:
-		if (_blockdevice_geometry(dev)) {
-			XNVME_DEBUG("FAILED: _blockdevice_geometry");
-			return -EINVAL;
-		}
-		break;
-
 	case XNVME_DEV_TYPE_NVME_CONTROLLER:
+		XNVME_DEBUG("FAILED: not supported");
 		return -ENOSYS;
 
+	case XNVME_DEV_TYPE_BLOCK_DEVICE:
 	case XNVME_DEV_TYPE_NVME_NAMESPACE:
 		switch (dev->csi) {
 		case XNVME_SPEC_CSI_ZONED:
@@ -677,7 +676,7 @@ xnvme_be_factory(const char *uri, struct xnvme_dev **dev)
 			continue;
 		}
 
-		if (!be->func.dev_from_ident(&ident, dev)) {
+		if (!be->dev.dev_from_ident(&ident, dev)) {
 			return 0;
 		}
 	}
@@ -703,7 +702,7 @@ xnvme_enumerate(struct xnvme_enumeration **list, const char *sys_uri, int opts)
 	for (int i = 0; xnvme_be_registry[i]; ++i) {
 		int err;
 
-		err = xnvme_be_registry[i]->func.enumerate(*list, sys_uri, opts);
+		err = xnvme_be_registry[i]->dev.enumerate(*list, sys_uri, opts);
 		if (err) {
 			XNVME_DEBUG("FAILED: %s->enumerate(...), err: '%s', i: %d",
 				    xnvme_be_registry[i]->attr.name,

@@ -255,7 +255,7 @@ lblk_cmd_scopy(struct xnvme_dev *dev, uint32_t nsid, uint64_t sdlba,
 
 	// TODO: consider the remaining command-fields
 
-	return dev->be.func.cmd_pass(dev, &cmd.base, ranges, ranges_nbytes,
-				     NULL, 0, opts, ret);
+	return xnvme_cmd_pass(dev, &cmd.base, ranges, ranges_nbytes, NULL, 0,
+			      opts, ret);
 }
 

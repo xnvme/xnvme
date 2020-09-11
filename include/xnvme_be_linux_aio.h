@@ -3,10 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <libaio.h>
 
-#ifndef __INTERNAL_XNVME_BE_LAIO_H
-#define __INTERNAL_XNVME_BE_LAIO_H
+#ifndef __INTERNAL_XNVME_BE_LINUX_AIO_H
+#define __INTERNAL_XNVME_BE_LINUX_AIO_H
 
-struct xnvme_async_ctx_laio {
+struct xnvme_async_ctx_aio {
 	uint32_t depth;         ///< IO depth
 	uint32_t outstanding;   ///< Outstanding IO on the context/ring/queue
 
@@ -23,23 +23,8 @@ struct xnvme_async_ctx_laio {
 	uint8_t rsvd[76];
 };
 XNVME_STATIC_ASSERT(
-	sizeof(struct xnvme_async_ctx_laio) == XNVME_BE_ACTX_NBYTES,
+	sizeof(struct xnvme_async_ctx_aio) == XNVME_BE_ACTX_NBYTES,
 	"Incorrect size"
 )
 
-/**
- * Internal representation of XNVME_BE_LAIO state
- */
-struct xnvme_be_laio_state {
-	int fd;
-
-	uint8_t pseudo;
-
-	uint8_t rsvd[123];
-};
-XNVME_STATIC_ASSERT(
-	sizeof(struct xnvme_be_laio_state) == XNVME_BE_STATE_NBYTES,
-	"Incorrect size"
-)
-
-#endif /* __INTERNAL_XNVME_BE_LAIO */
+#endif /* __INTERNAL_XNVME_BE_LINUX_AIO */

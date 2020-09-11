@@ -77,6 +77,9 @@ xnvme_dev_fpr(FILE *stream, const struct xnvme_dev *dev, int opts)
 	wrtn += xnvme_ident_yaml(stream, &dev->ident, 2, "\n", 1);
 	wrtn += fprintf(stream, "\n");
 
+	wrtn += xnvme_be_yaml(stream, &dev->be, 2, "\n", 1);
+	wrtn += fprintf(stream, "\n");
+
 	wrtn += xnvme_dev_cmd_opts_yaml(stream, dev, 2, "\n", 1);
 	wrtn += fprintf(stream, "\n");
 
@@ -190,7 +193,7 @@ xnvme_dev_close(struct xnvme_dev *dev)
 		return;
 	}
 
-	dev->be.func.dev_close(dev);
+	dev->be.dev.dev_close(dev);
 	free(dev);
 }
 

@@ -54,12 +54,25 @@ xnvme_cmd_pass(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *dbuf,
 	       size_t dbuf_nbytes, void *mbuf, size_t mbuf_nbytes, int opts,
 	       struct xnvme_req *ret)
 {
-	if ((opts & XNVME_CMD_MASK_UPLD) && dbuf) {
+	const int cmd_opts = opts & XNVME_CMD_MASK;
+
+	if ((cmd_opts & XNVME_CMD_MASK_UPLD) && dbuf) {
 		cmd_setup_sgl(dev, cmd, dbuf, mbuf, opts);
 	}
 
-	return dev->be.func.cmd_pass(dev, cmd, dbuf, dbuf_nbytes, mbuf,
-				     mbuf_nbytes, opts, ret);
+	switch (cmd_opts & XNVME_CMD_MASK_IOMD) {
+	case XNVME_CMD_ASYNC:
+		return dev->be.async.cmd_io(dev, cmd, dbuf, dbuf_nbytes, mbuf,
+					    mbuf_nbytes, opts, ret);
+
+	case XNVME_CMD_SYNC:
+		return dev->be.sync.cmd_io(dev, cmd, dbuf, dbuf_nbytes, mbuf,
+					   mbuf_nbytes, opts, ret);
+
+	default:
+		XNVME_DEBUG("FAILED: command-mode not provided");
+		return -EINVAL;
+	}
 }
 
 int
@@ -67,12 +80,16 @@ xnvme_cmd_pass_admin(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 		     void *dbuf, size_t dbuf_nbytes, void *mbuf,
 		     size_t mbuf_nbytes, int opts, struct xnvme_req *ret)
 {
+	if (XNVME_CMD_ASYNC & opts) {
+		XNVME_DEBUG("FAILED: Admin commands are always sync.");
+		return -EINVAL;
+	}
 	if ((opts & XNVME_CMD_MASK_UPLD) && dbuf) {
 		cmd_setup_sgl(dev, cmd, dbuf, mbuf, opts);
 	}
 
-	return dev->be.func.cmd_pass_admin(dev, cmd, dbuf, dbuf_nbytes, mbuf,
-					   mbuf_nbytes, opts, ret);
+	return dev->be.sync.cmd_admin(dev, cmd, dbuf, dbuf_nbytes, mbuf,
+				      mbuf_nbytes, opts, ret);
 }
 
 int
@@ -113,8 +130,8 @@ xnvme_cmd_log(struct xnvme_dev *dev, uint8_t lid, uint8_t lsp,
 	// TODO: should we check ctrlr->lpa.edlp for ext. buf and lpo support?
 	// TODO: add support for uuid?
 
-	return dev->be.func.cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL, 0x0,
-					   0x0, ret);
+	return xnvme_cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL, 0x0,
+				    0x0, ret);
 }
 
 int
@@ -132,8 +149,8 @@ xnvme_cmd_idfy(struct xnvme_dev *dev, uint8_t cns, uint16_t cntid, uint8_t nsid,
 	cmd.idfy.nvmsetid = nvmsetid;
 	cmd.idfy.uuid = uuid;
 
-	return dev->be.func.cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL,
-					   0x0, 0x0, ret);
+	return xnvme_cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL, 0x0,
+				    0x0, ret);
 }
 
 int
@@ -146,8 +163,8 @@ xnvme_cmd_idfy_ctrlr(struct xnvme_dev *dev, struct xnvme_spec_idfy *dbuf,
 	cmd.common.opcode = XNVME_SPEC_OPC_IDFY;
 	cmd.idfy.cns = XNVME_SPEC_IDFY_CTRLR;
 
-	return dev->be.func.cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL,
-					   0x0, 0x0, req);
+	return xnvme_cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL, 0x0,
+				    0x0, req);
 }
 
 int
@@ -161,8 +178,8 @@ xnvme_cmd_idfy_ctrlr_csi(struct xnvme_dev *dev, uint8_t csi,
 	cmd.idfy.cns = XNVME_SPEC_IDFY_CTRLR_IOCS;
 	cmd.idfy.csi = csi;
 
-	return dev->be.func.cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL,
-					   0x0, 0x0, req);
+	return xnvme_cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL, 0x0,
+				    0x0, req);
 }
 
 int
@@ -177,8 +194,8 @@ xnvme_cmd_idfy_ns(struct xnvme_dev *dev, uint32_t nsid,
 	cmd.idfy.cns = XNVME_SPEC_IDFY_NS;
 	cmd.idfy.csi = XNVME_SPEC_CSI_NOCHECK;
 
-	return dev->be.func.cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL,
-					   0x0, 0x0, req);
+	return xnvme_cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL,
+				    0x0, 0x0, req);
 }
 
 int
@@ -193,8 +210,8 @@ xnvme_cmd_idfy_ns_csi(struct xnvme_dev *dev, uint32_t nsid, uint8_t csi,
 	cmd.idfy.cns = XNVME_SPEC_IDFY_NS_IOCS;
 	cmd.idfy.csi = csi;
 
-	return dev->be.func.cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL,
-					   0x0, 0x0, req);
+	return xnvme_cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL,
+				    0x0, 0x0, req);
 }
 
 int
@@ -210,8 +227,8 @@ xnvme_cmd_gfeat(struct xnvme_dev *dev, uint32_t nsid, uint8_t fid, uint8_t sel,
 
 	// TODO: cdw14/uuid?
 
-	return dev->be.func.cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL, 0x0,
-					   0x0, ret);
+	return xnvme_cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL, 0x0,
+				    0x0, ret);
 }
 
 int
@@ -227,8 +244,8 @@ xnvme_cmd_sfeat(struct xnvme_dev *dev, uint32_t nsid, uint8_t fid,
 	cmd.sfeat.feat.val = feat;
 	cmd.sfeat.save = save;
 
-	return dev->be.func.cmd_pass_admin(dev, &cmd, (void *)dbuf, dbuf_nbytes,
-					   NULL, 0x0, 0x0, ret);
+	return xnvme_cmd_pass_admin(dev, &cmd, (void *)dbuf, dbuf_nbytes,
+				    NULL, 0x0, 0x0, ret);
 }
 
 int
@@ -247,7 +264,7 @@ xnvme_cmd_format(struct xnvme_dev *dev, uint32_t nsid, uint8_t lbaf, uint8_t zf,
 	cmd.format.pil = pil;
 	cmd.format.ses = ses;
 
-	return dev->be.func.cmd_pass_admin(dev, &cmd, NULL, 0, NULL, 0, 0x0, ret);
+	return xnvme_cmd_pass_admin(dev, &cmd, NULL, 0, NULL, 0, 0x0, ret);
 }
 
 int
@@ -266,7 +283,7 @@ xnvme_cmd_sanitize(struct xnvme_dev *dev, uint8_t sanact, uint8_t ause,
 	cmd.sanitize.ause = ause;
 	cmd.sanitize.ovrpat = ovrpat;
 
-	return dev->be.func.cmd_pass_admin(dev, &cmd, NULL, 0, NULL, 0, 0x0, ret);
+	return xnvme_cmd_pass_admin(dev, &cmd, NULL, 0, NULL, 0, 0x0, ret);
 }
 
 int
@@ -286,8 +303,8 @@ xnvme_cmd_read(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba,
 	cmd.lblk.slba = slba;
 	cmd.lblk.nlb = nlb;
 
-	return dev->be.func.cmd_pass(dev, &cmd, dbuf, dbuf_nbytes, mbuf,
-				     mbuf_nbytes, opts, ret);
+	return xnvme_cmd_pass(dev, &cmd, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes,
+			      opts, ret);
 }
 
 int
@@ -310,6 +327,6 @@ xnvme_cmd_write(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba,
 	cmd.lblk.slba = slba;
 	cmd.lblk.nlb = nlb;
 
-	return dev->be.func.cmd_pass(dev, &cmd, cdbuf, dbuf_nbytes, cmbuf,
-				     mbuf_nbytes, opts, ret);
+	return xnvme_cmd_pass(dev, &cmd, cdbuf, dbuf_nbytes, cmbuf, mbuf_nbytes,
+			      opts, ret);
 }

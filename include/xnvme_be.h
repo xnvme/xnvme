@@ -20,52 +20,81 @@
 
 #define XNVME_BE_ACTX_NBYTES 192
 
-#define XNVME_BE_FUNC_NBYTES 104
+#define XNVME_BE_ASYNC_NBYTES 64
+#define XNVME_BE_SYNC_NBYTES 40
+#define XNVME_BE_DEV_NBYTES 24
+#define XNVME_BE_MEM_NBYTES 32
 #define XNVME_BE_ATTR_NBYTES 24
 #define XNVME_BE_STATE_NBYTES 128
 #define XNVME_BE_NBYTES \
-	( XNVME_BE_FUNC_NBYTES + XNVME_BE_ATTR_NBYTES + XNVME_BE_STATE_NBYTES )
+	( XNVME_BE_ASYNC_NBYTES + XNVME_BE_SYNC_NBYTES + XNVME_BE_DEV_NBYTES + XNVME_BE_MEM_NBYTES + XNVME_BE_ATTR_NBYTES + XNVME_BE_STATE_NBYTES )
 
-/**
- * Backend function-interface
- */
-struct xnvme_be_func {
+struct xnvme_be_async {
+	int (*cmd_io)(struct xnvme_dev *, struct xnvme_spec_cmd *, void *,
+		      size_t, void *, size_t, int, struct xnvme_req *);
+
+	int (*poke)(struct xnvme_dev *, struct xnvme_async_ctx *, uint32_t);
+
+	int (*wait)(struct xnvme_dev *, struct xnvme_async_ctx *);
+
+	int (*init)(struct xnvme_dev *, struct xnvme_async_ctx **,
+		    uint16_t, int flags);
+
+	int (*term)(struct xnvme_dev *, struct xnvme_async_ctx *);
+
+	int (*supported)(struct xnvme_dev *, uint32_t);
+
+	const char *id;
+
+	uint64_t enabled;
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_async) == XNVME_BE_ASYNC_NBYTES,
+		    "Incorrect size")
+
+struct xnvme_be_sync {
 	/**
 	 * Pass a NVMe I/O Command Through to the device with minimal driver
 	 * intervention
 	 */
-	int (*cmd_pass)(struct xnvme_dev *, struct xnvme_spec_cmd *, void *,
-			size_t, void *, size_t, int, struct xnvme_req *);
+	int (*cmd_io)(struct xnvme_dev *, struct xnvme_spec_cmd *, void *,
+		      size_t, void *, size_t, int, struct xnvme_req *);
 
 	/**
 	 * Pass a NVMe Admin Command Through to the device with minimal driver
 	 * intervention
 	 */
-	int (*cmd_pass_admin)(struct xnvme_dev *, struct xnvme_spec_cmd *,
-			      void *, size_t, void *, size_t, int,
-			      struct xnvme_req *);
+	int (*cmd_admin)(struct xnvme_dev *, struct xnvme_spec_cmd *,
+			 void *, size_t, void *, size_t, int,
+			 struct xnvme_req *);
+
+	int (*supported)(struct xnvme_dev *, uint32_t);
+
+	const char *id;
+	uint64_t enabled;
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_sync) == XNVME_BE_SYNC_NBYTES,
+		    "Incorrect size")
+
+struct xnvme_be_dev {
+	/**
+	 * Enumerate devices on/at the given 'sys_uri' when NULL local devices
+	 */
+	int (*enumerate)(struct xnvme_enumeration *, const char *, int);
 
 	/**
-	 * Initialize an asynchronous command context
+	 * Construct a device from the given identifier
 	 */
-	int (*async_init)(struct xnvme_dev *, struct xnvme_async_ctx **,
-			  uint16_t, int flags);
+	int (*dev_from_ident)(const struct xnvme_ident *, struct xnvme_dev **);
 
 	/**
-	 * Terminate an asynchronous command context
+	 * Close the given device
 	 */
-	int (*async_term)(struct xnvme_dev *, struct xnvme_async_ctx *);
+	void (*dev_close)(struct xnvme_dev *);
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_dev) == XNVME_BE_DEV_NBYTES,
+		    "Incorrect size")
 
-	/**
-	 * Attempt to read all asynchronous events from a given context
-	 */
-	int (*async_poke)(struct xnvme_dev *, struct xnvme_async_ctx *, uint32_t);
-
-	/**
-	 * Wait for completion of all asynchronous events on a given context
-	 */
-	int (*async_wait)(struct xnvme_dev *, struct xnvme_async_ctx *);
-
+struct xnvme_be_mem {
 	/**
 	 * Allocate a buffer usable for NVMe commands
 	 */
@@ -86,31 +115,23 @@ struct xnvme_be_func {
 	 * Free a buffer usable for NVMe commands
 	 */
 	void (*buf_free)(const struct xnvme_dev *, void *);
-
-	/**
-	 * Enumerate devices on/at the given 'sys_uri' when NULL local devices
-	 */
-	int (*enumerate)(struct xnvme_enumeration *, const char *, int);
-
-	/**
-	 * Construct a device from the given identifier
-	 */
-	int (*dev_from_ident)(const struct xnvme_ident *, struct xnvme_dev **);
-
-	/**
-	 * Close the given device
-	 */
-	void (*dev_close)(struct xnvme_dev *);
 };
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_func) == XNVME_BE_FUNC_NBYTES,
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_mem) == XNVME_BE_MEM_NBYTES,
 		    "Incorrect size")
+
+/**
+ * Backend function-interface
+ */
 
 /**
  * Backend interface consisting of functions, attributes and instance state
  */
 struct xnvme_be {
-	struct xnvme_be_func func;		///< Functions
+	struct xnvme_be_async async;		///< Asynchronous commands
+	struct xnvme_be_sync sync;		///< Synchronous commands
+	struct xnvme_be_dev dev;		///< Device functions
 	struct xnvme_be_attr attr;		///< Attributes
+	struct xnvme_be_mem mem;		///< Memory management
 	uint8_t state[XNVME_BE_STATE_NBYTES];	///< Instance state
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be) == XNVME_BE_NBYTES,
@@ -140,6 +161,16 @@ xnvme_be_name2id(const char *bname);
  */
 int
 xnvme_be_factory(const char *uri, struct xnvme_dev **dev);
+
+int
+xnvme_be_yaml(FILE *stream, const struct xnvme_be *be, int indent,
+	      const char *sep, int head);
+
+int
+xnvme_be_fpr(FILE *stream, const struct xnvme_be *be, enum xnvme_pr opts);
+
+int
+xnvme_be_pr(const struct xnvme_be *be, enum xnvme_pr opts);
 
 int
 xnvme_be_dev_derive_geometry(struct xnvme_dev *dev);

@@ -6,10 +6,10 @@
 #ifdef XNVME_BE_SPDK_ENABLED
 #include "xnvme_3p/xnvme_3p_spdk.c"
 #endif
-#ifdef XNVME_BE_LIOC_ENABLED
+#ifdef XNVME_BE_LINUX_ENABLED
 #include "xnvme_3p/xnvme_3p_libnvme.c"
 #endif
-#ifdef XNVME_BE_LIOU_ENABLED
+#ifdef XNVME_BE_LINUX_IOU_ENABLED
 #include "xnvme_3p/xnvme_3p_liburing.c"
 #endif
 
@@ -18,10 +18,10 @@ const char *xnvme_3p_ver[] = {
 #ifdef XNVME_BE_SPDK_ENABLED
 	xnvme_3p_spdk,
 #endif
-#ifdef XNVME_BE_LIOC_ENABLED
+#ifdef XNVME_BE_LINUX_ENABLED
 	xnvme_3p_libnvme,
 #endif
-#ifdef XNVME_BE_LIOU_ENABLED
+#ifdef XNVME_BE_LINUX_IOU_ENABLED
 	xnvme_3p_liburing,
 #endif
 	0,

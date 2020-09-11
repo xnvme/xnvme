@@ -43,24 +43,24 @@ xnvme_buf_virt_free(void *buf)
 void *
 xnvme_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
 {
-	return dev->be.func.buf_alloc(dev, nbytes, phys);
+	return dev->be.mem.buf_alloc(dev, nbytes, phys);
 }
 
 void *
 xnvme_buf_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes,
 		  uint64_t *phys)
 {
-	return dev->be.func.buf_realloc(dev, buf, nbytes, phys);
+	return dev->be.mem.buf_realloc(dev, buf, nbytes, phys);
 }
 
 void
 xnvme_buf_free(const struct xnvme_dev *dev, void *buf)
 {
-	dev->be.func.buf_free(dev, buf);
+	dev->be.mem.buf_free(dev, buf);
 }
 
 int
 xnvme_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys)
 {
-	return dev->be.func.buf_vtophys(dev, buf, phys);
+	return dev->be.mem.buf_vtophys(dev, buf, phys);
 }

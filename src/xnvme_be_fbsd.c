@@ -5,9 +5,10 @@
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 
-#define XNVME_BE_FIOC_NAME "fioc"
+#define XNVME_BE_FBSD_NAME "fbsd"
+#define XNVME_BE_FBSD_SCHM "file"
 
-#ifdef XNVME_BE_FIOC_ENABLED
+#ifdef XNVME_BE_FBSD_ENABLED
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 #include <sys/param.h>
@@ -29,11 +30,11 @@ __FBSDID("$FreeBSD$");
 #include <libxnvme_spec.h>
 #include <libxnvme_util.h>
 #include <xnvme_be.h>
-#include <xnvme_be_fioc.h>
+#include <xnvme_be_fbsd.h>
 #include <xnvme_dev.h>
 
 void
-xnvme_be_fioc_state_term(struct xnvme_be_fioc_state *state)
+xnvme_be_fbsd_state_term(struct xnvme_be_fbsd_state *state)
 {
 	if (!state) {
 		return;
@@ -43,20 +44,20 @@ xnvme_be_fioc_state_term(struct xnvme_be_fioc_state *state)
 }
 
 void
-xnvme_be_fioc_dev_close(struct xnvme_dev *dev)
+xnvme_be_fbsd_dev_close(struct xnvme_dev *dev)
 {
 	if (!dev) {
 		return;
 	}
 
-	xnvme_be_fioc_state_term((void *)dev->be.state);
+	xnvme_be_fbsd_state_term((void *)dev->be.state);
 	memset(&dev->be, 0, sizeof(dev->be));
 }
 
 int
-xnvme_be_fioc_state_init(struct xnvme_dev *dev, void *XNVME_UNUSED(opts))
+xnvme_be_fbsd_state_init(struct xnvme_dev *dev, void *XNVME_UNUSED(opts))
 {
-	struct xnvme_be_fioc_state *state = (void *)dev->be.state;
+	struct xnvme_be_fbsd_state *state = (void *)dev->be.state;
 
 	state->fd = open(dev->ident.trgt, O_RDWR);
 	if (state->fd < 0) {
@@ -69,9 +70,9 @@ xnvme_be_fioc_state_init(struct xnvme_dev *dev, void *XNVME_UNUSED(opts))
 }
 
 int
-xnvme_be_fioc_dev_idfy(struct xnvme_dev *dev)
+xnvme_be_fbsd_dev_idfy(struct xnvme_dev *dev)
 {
-	struct xnvme_be_fioc_state *state = (void *)dev->be.state;
+	struct xnvme_be_fbsd_state *state = (void *)dev->be.state;
 	struct xnvme_spec_idfy *idfy = NULL;
 	struct xnvme_req req = { 0 };
 	int err;
@@ -90,7 +91,7 @@ xnvme_be_fioc_dev_idfy(struct xnvme_dev *dev)
 	if (err || xnvme_req_cpl_status(&req)) {
 		XNVME_DEBUG("FAILED: identify controller");
 		xnvme_buf_free(dev, idfy);
-		xnvme_be_fioc_state_term(state);
+		xnvme_be_fbsd_state_term(state);
 		free(dev);
 		return err;
 	}
@@ -105,7 +106,7 @@ xnvme_be_fioc_dev_idfy(struct xnvme_dev *dev)
 		if (err || xnvme_req_cpl_status(&req)) {
 			XNVME_DEBUG("FAILED: identify namespace, err: %d", err);
 			xnvme_buf_free(dev, idfy);
-			xnvme_be_fioc_state_term(state);
+			xnvme_be_fbsd_state_term(state);
 			free(dev);
 			return err;
 		}
@@ -147,7 +148,7 @@ _nvme_filter(const struct dirent *d)
 }
 
 int
-xnvme_be_fioc_dev_from_ident(const struct xnvme_ident *ident,
+xnvme_be_fbsd_dev_from_ident(const struct xnvme_ident *ident,
 			     struct xnvme_dev **dev)
 {
 	int err;
@@ -158,25 +159,25 @@ xnvme_be_fioc_dev_from_ident(const struct xnvme_ident *ident,
 		return err;
 	}
 	(*dev)->ident = *ident;
-	(*dev)->be = xnvme_be_fioc;
+	(*dev)->be = xnvme_be_fbsd;
 
-	err = xnvme_be_fioc_state_init(*dev, NULL);
+	err = xnvme_be_fbsd_state_init(*dev, NULL);
 	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_be_fioc_state_init()");
+		XNVME_DEBUG("FAILED: xnvme_be_fbsd_state_init()");
 		free(*dev);
 		return err;
 	}
-	err = xnvme_be_fioc_dev_idfy(*dev);
+	err = xnvme_be_fbsd_dev_idfy(*dev);
 	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_be_fioc_dev_idfy()");
-		xnvme_be_fioc_state_term((void *)(*dev)->be.state);
+		XNVME_DEBUG("FAILED: xnvme_be_fbsd_dev_idfy()");
+		xnvme_be_fbsd_state_term((void *)(*dev)->be.state);
 		free(*dev);
 		return err;
 	}
 	err = xnvme_be_dev_derive_geometry(*dev);
 	if (err) {
 		XNVME_DEBUG("FAILED: xnvme_be_dev_derive_geometry()");
-		xnvme_be_fioc_state_term((void *)(*dev)->be.state);
+		xnvme_be_fbsd_state_term((void *)(*dev)->be.state);
 		free(*dev);
 		return err;
 	}
@@ -185,7 +186,7 @@ xnvme_be_fioc_dev_from_ident(const struct xnvme_ident *ident,
 }
 
 int
-xnvme_be_fioc_enumerate(struct xnvme_enumeration *list, const char *sys_uri,
+xnvme_be_fbsd_enumerate(struct xnvme_enumeration *list, const char *sys_uri,
 			int XNVME_UNUSED(opts))
 {
 	struct dirent **dent = NULL;
@@ -204,17 +205,17 @@ xnvme_be_fioc_enumerate(struct xnvme_enumeration *list, const char *sys_uri,
 		struct xnvme_dev *dev;
 
 		snprintf(uri, XNVME_IDENT_URI_LEN - 1,
-			 XNVME_BE_FIOC_NAME ":" _PATH_DEV "%s",
+			 XNVME_BE_FBSD_NAME ":" _PATH_DEV "%s",
 			 dent[di]->d_name);
 		if (xnvme_ident_from_uri(uri, &ident)) {
 			XNVME_DEBUG("uri: '%s'", uri);
 			continue;
 		}
-		if (xnvme_be_fioc_dev_from_ident(&ident, &dev)) {
-			XNVME_DEBUG("FAILED: xnvme_be_fioc_dev_from_ident()");
+		if (xnvme_be_fbsd_dev_from_ident(&ident, &dev)) {
+			XNVME_DEBUG("FAILED: xnvme_be_fbsd_dev_from_ident()");
 			continue;
 		}
-		xnvme_be_fioc_dev_close(dev);
+		xnvme_be_fbsd_dev_close(dev);
 		free(dev);
 
 		if (xnvme_enumeration_append(list, &ident)) {
@@ -231,7 +232,7 @@ xnvme_be_fioc_enumerate(struct xnvme_enumeration *list, const char *sys_uri,
 }
 
 void *
-xnvme_be_fioc_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev),
+xnvme_be_fbsd_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev),
 			size_t nbytes, uint64_t *XNVME_UNUSED(phys))
 {
 	//NOTE: Assign virt to phys?
@@ -239,63 +240,58 @@ xnvme_be_fioc_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev),
 }
 
 void *
-xnvme_be_fioc_buf_realloc(const struct xnvme_dev *XNVME_UNUSED(dev),
+xnvme_be_fbsd_buf_realloc(const struct xnvme_dev *XNVME_UNUSED(dev),
 			  void *XNVME_UNUSED(buf), size_t XNVME_UNUSED(nbytes),
 			  uint64_t *XNVME_UNUSED(phys))
 {
-	XNVME_DEBUG("FAILED: XNVME_BE_FIOC: does not support realloc");
+	XNVME_DEBUG("FAILED: XNVME_BE_FBSD: does not support realloc");
 	errno = ENOSYS;
 	return NULL;
 }
 
 void
-xnvme_be_fioc_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
+xnvme_be_fbsd_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
 {
 	xnvme_buf_virt_free(buf);
 }
 
 int
-xnvme_be_fioc_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev),
+xnvme_be_fbsd_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev),
 			  void *XNVME_UNUSED(buf), uint64_t *XNVME_UNUSED(phys))
 {
-	XNVME_DEBUG("FAILED: XNVME_BE_FIOC: does not support DMA alloc");
+	XNVME_DEBUG("FAILED: XNVME_BE_FBSD: does not support DMA alloc");
 	return -ENOSYS;
 }
 
 #endif
 
 static const char *g_schemes[] = {
-	XNVME_BE_FIOC_NAME,
-	"file"
+	"file",
+	XNVME_BE_FBSD_NAME,
 };
 
-struct xnvme_be xnvme_be_fioc = {
-#ifdef XNVME_BE_FIOC_ENABLED
-	.func = {
-		.cmd_pass = xnvme_be_nosys_cmd_pass,
-		.cmd_pass_admin = xnvme_be_nosys_cmd_pass_admin,
-
-		.async_init = xnvme_be_nosys_async_init,
-		.async_term = xnvme_be_nosys_async_term,
-		.async_poke = xnvme_be_nosys_async_poke,
-		.async_wait = xnvme_be_nosys_async_wait,
-
-		.buf_alloc = xnvme_be_fioc_buf_alloc,
-		.buf_realloc = xnvme_be_fioc_buf_realloc,
-		.buf_free = xnvme_be_fioc_buf_free,
-		.buf_vtophys = xnvme_be_fioc_buf_vtophys,
-
-		.enumerate = xnvme_be_fioc_enumerate,
-
-		.dev_from_ident = xnvme_be_fioc_dev_from_ident,
-		.dev_close = xnvme_be_fioc_dev_close,
+struct xnvme_be xnvme_be_fbsd = {
+#ifdef XNVME_BE_FBSD_ENABLED
+	.mem = {
+		.buf_alloc = xnvme_be_fbsd_buf_alloc,
+		.buf_realloc = xnvme_be_fbsd_buf_realloc,
+		.buf_free = xnvme_be_fbsd_buf_free,
+		.buf_vtophys = xnvme_be_fbsd_buf_vtophys,
+	},
+	.dev = {
+		.enumerate = xnvme_be_fbsd_enumerate,
+		.dev_from_ident = xnvme_be_fbsd_dev_from_ident,
+		.dev_close = xnvme_be_fbsd_dev_close,
 	},
 #else
-	.func = XNVME_BE_NOSYS_FUNC,
+	.mem = XNVME_BE_NOSYS_MEM,
+	.dev = XNVME_BE_NOSYS_DEV,
 #endif
+	.sync = XNVME_BE_NOSYS_SYNC,
+	.async = XNVME_BE_NOSYS_ASYNC,
 	.attr = {
-		.name = XNVME_BE_FIOC_NAME,
-#ifdef XNVME_BE_FIOC_ENABLED
+		.name = XNVME_BE_FBSD_NAME,
+#ifdef XNVME_BE_FBSD_ENABLED
 		.enabled = 1,
 #else
 		.enabled = 0,

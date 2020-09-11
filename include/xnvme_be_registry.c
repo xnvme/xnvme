@@ -1,10 +1,7 @@
 static struct xnvme_be *xnvme_be_registry[] = {
-	&xnvme_be_nwrp,
 	&xnvme_be_spdk,
-	&xnvme_be_liou,
-	&xnvme_be_laio,
-	&xnvme_be_lioc,
-	&xnvme_be_fioc,
+	&xnvme_be_linux,
+	&xnvme_be_fbsd,
 	NULL
 };
 

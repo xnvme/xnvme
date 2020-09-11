@@ -3,7 +3,7 @@
 SPDK
 ====
 
-**xNVMe** provides a kernel-bypassing backend implemented using `Intel SPDK
+**xNVMe** provides a kernel-bypassing backend implemented using `SPDK
 <http://www.spdk.io/>`_. SPDK is built and embedded in the main static
 **xNVMe** library ``libxnvme.a``.
 

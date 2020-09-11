@@ -1,13 +1,11 @@
-.. _sec-backends-laio:
+.. _sec-backends-fbsd:
 
-Linux/libaio
-============
+FreeBSD
+=======
 
-The Linux/libaio backend, ``be:laio``, uses ``libaio`` to provide an
-asynchronous interface, over which NVMe command opcodes with equivalent
-``libaio`` opcodes are shipped. Currently, this includes read and write.
-
-Everything else is mapped to the Linux NVMe Driver IOCTLs via ``be:lioc``.
+The FreeBSD backend uses synchronous ``ioctl`` calls to have the kernel perform
+NVMe commands. Note that the backend needs a re-implementation it is currently
+not in a very usable state.
 
 Note on Errors
 --------------
