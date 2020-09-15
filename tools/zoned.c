@@ -289,7 +289,8 @@ cmd_read(struct xnvmec *cli)
 	}
 
 	xnvmec_pinf("Sending the command...");
-	err = xnvme_cmd_read(dev, nsid, slba, nlb, dbuf, mbuf, 0x0, &req);
+	err = xnvme_cmd_read(dev, nsid, slba, nlb, dbuf, mbuf, XNVME_CMD_SYNC,
+			     &req);
 	if (err || xnvme_req_cpl_status(&req)) {
 		xnvmec_perr("xnvme_cmd_read()", err);
 		xnvme_req_pr(&req, XNVME_PR_DEF);
@@ -366,7 +367,8 @@ cmd_write(struct xnvmec *cli)
 	}
 
 	xnvmec_pinf("Sending the command...");
-	err = xnvme_cmd_write(dev, nsid, slba, nlb, dbuf, mbuf, 0x0, &req);
+	err = xnvme_cmd_write(dev, nsid, slba, nlb, dbuf, mbuf, XNVME_CMD_SYNC,
+			      &req);
 	if (err || xnvme_req_cpl_status(&req)) {
 		xnvmec_perr("xnvme_cmd_write()", err);
 		xnvme_req_pr(&req, XNVME_PR_DEF);
