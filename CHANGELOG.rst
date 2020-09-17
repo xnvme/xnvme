@@ -25,9 +25,9 @@ Known Issues
 
 * Binaries
 
-  - xNVMe does not build with ``-march=native``, however, SPDK/DPDK does. Thus,
-    when the xNVMe library "bundles" SPDK/DPDK and the binaries are linked,
-    then they can contain ISA-specific instructions.
+  - xNVMe does not build with ``-march=native``, however, SPDK/DPDK does.
+    Thus, when the xNVMe library "bundles" SPDK/DPDK and the binaries are
+    linked, then they can contain ISA-specific instructions.
     If you invoke e.g. ``xnvme enum`` and see the message ``Illegal
     Instruction``, then this is why.
 
@@ -36,19 +36,82 @@ Known Issues
   - Does not build on Alpine Linux
   - Re-initialization fails, e.g. repeatedly calling ``xnvme_enumerate()``
 
-* ``be::lioc``
+* ``be::linux``
 
-  - Does not support command-option ``XNVME_CMD_ASYNC``
+  - When enabling the use of ``io_uring`` or ``libaio`` via
+    ``?async={iou,aio}``, then all async. commands are sent via the chosen
+    async. path. Take note, that these async. paths only supports read and
+    write.  Commands such as the Simple-Copy-Command, Append, and
+    Zone-Management are not supported in upstream Linux in this manner. This
+    means, as a user that you must sent non-read/write commands with mode
+    ``XNVME_CMD_SYNC``.
 
-* ``be::liou`` and ``be::laio``
+v0.0.21
+-------
 
-  - Simple-Copy-Command via the Kernel path is not available as support has not
-    been merged with upstream
-  - Append via the Kernel path is not available as support has not been merged
-    with upstream
+* Refactored backend interface
 
-v0.0.20/dev
------------
+  - Changed to support interchangeable ``sync`` and ``async`` implementations
+
+* The Linux backend ``be::linux``
+  - Merged ``be:lioc``, ``be:laio``, ``be:liou``, and ``nil`` into one backend
+    ``be:linux``, having the async-implementation be an engine parameter
+    controllable via uri-opt ``?async`` values: ``thr``, ``aio``, ``iou``,
+    ``nil``.
+  - Added proper support for the Linux Block Device model, replacing the
+    ``?pseudo`` option with ``sync`` interfaces ``nvme_ioctl`` and
+    ``block_ioctl``. Gracefully falling back to the Block Layer when the given
+    device is not an NVMe device, and thus supporting everything the Linux
+    Block Supports including the Zoned Block Device model
+  - Added support for ``XNVME_CMD_ASYNC`` for ``ioctl``-driven commands. This
+    provides an async.interface to Linux driver-ioctls(), for commands other
+    than read/write.  Next step is to make it run fast by providing a less
+    costly kernel path. This path is enabled via ``?async=thr``.
+  - With these changes, the build-configuration of backends has changed and
+    documentation describes how to enable/disable the different backends, sync,
+    and async implementations
+
+* Changed command behavior
+
+  - api-functions taking command-options, e.g.  ``xnvme_cmd_pass``,
+    ``znd_cmd_mgmt_send``, now **require** that either ``XNVME_CMD_SYNC`` or
+    ``XNVME_CMD_ASYNC`` is given as argument. When none is given, negated
+    ``EINVAL`` is returned.
+
+* xNVMe fio io-engine
+
+  - Replace ``--be`` option with ``--async``, this makes it a easier to
+    instrument ``fio`` to use a different async. implementation in the Linux
+    backend of xNVMe. Previously it relied on schema-prefix, the prefix-prefix
+    was annoying to use with fio as it required escape-chars.
+
+  - ``fio`` scripts and docs have been updated with the new ``--async`` argument
+
+  - ``fio`` scripts simplified and aligned such that they all three can be used
+    in the same manner using the ``--sector=default`` and ``--sector=override``
+    to override ``rw``, ``iodepth``, and ``bs`` via environment variables.
+
+* Third-party libraries
+
+  - Added Linux/UAPI version to ``xnvme library-info``, this can give a good
+    hint on why certain features aren't behaving as expected, such as the Linux
+    versions without the Zoned Block headers
+  - Updated to fio/v3.23
+
+* A general handful of code-cleanups and fixes, both on style as well as
+  potential issues such local-vars shadowing global-vars, potential arithmetic
+  overflows
+
+* Continous Integration
+
+  - Added testing of Linux paths using Nullblock instances in addition to
+    emulated NVMe devices
+
+  - Added integration of GitHUB/CodeQL, since Semmle got acquired by GitHUB,
+    this will replace the lgtm.com integration.
+
+v0.0.20
+-------
 
 * Third-party libraries
 
@@ -220,8 +283,8 @@ Backlog
   - Expand documentation on Fabrics setup
   - Expand library usage examples
 
-* For the Linux Kernel backends ``be:{lioc,liou}`` replace device enumeration
-  with the encapsulations provided by``libnvme``
+* For the Linux backend ``be:linux``, replace the device enumeration with the
+  encapsulations provided by ``libnvme``
 
 * build
 
