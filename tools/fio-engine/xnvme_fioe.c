@@ -128,7 +128,7 @@ struct xnvme_fioe_options {
 	void *padding;
 	unsigned int hipri;
 	unsigned int sqpoll_thread;
-	char *be;
+	char *async;
 };
 
 static struct fio_option options[] = {
@@ -151,11 +151,11 @@ static struct fio_option options[] = {
 		.group  = FIO_OPT_G_IOURING,
 	},
 	{
-		.name   = "be",
-		.lname  = "xNVMe Backend",
+		.name   = "async",
+		.lname  = "xNVMe Linux Backend async. impl. [iou,aio,nil]",
 		.type   = FIO_OPT_STR_STORE,
-		.off1   = offsetof(struct xnvme_fioe_options, be),
-		.help   = "Default backend when none is provided e.g. /dev/nvme0n1",
+		.off1   = offsetof(struct xnvme_fioe_options, async),
+		.help   = "Async. implementation for e.g. /dev/nvme0n1",
 		.category = FIO_OPT_C_ENGINE,
 		.group  = FIO_OPT_G_NBD,
 	},
@@ -240,14 +240,12 @@ _dev_open(struct thread_data *td, struct fio_file *f)
 	struct xnvme_fioe_options *o = td->eo;
 	struct xnvme_fioe_data *xd = td->io_ops_data;
 	struct xnvme_fioe_fwrap *fwrap;
-	char dev_uri[XNVME_IDENT_URI_LEN] = { 0 };
-	int fn_has_scheme;
+	struct xnvme_ident ident = { 0 };
 	int flags = 0;
+	int err;
 
-	XNVME_DEBUG("o->be: '%s'", o->be);
-
-	if (o->be && (strlen(o->be) > XNVME_IDENT_SCHM_LEN)) {
-		log_err("xnvme_fioe: invalid --be=%s\n", o->be);
+	if (o->async && (strlen(o->async) > 3)) {
+		log_err("xnvme_fioe: invalid --async=%s\n", o->async);
 		return 1;
 	}
 	if (o->hipri) {
@@ -261,29 +259,47 @@ _dev_open(struct thread_data *td, struct fio_file *f)
 		return 1;
 	}
 
-	{
-		char schm[XNVME_IDENT_SCHM_LEN];
-		char sep[1];
-		int matches;
-
-		matches = sscanf(f->file_name, "%4[a-z]%1[:]", schm, sep) == 2;
-		fn_has_scheme = matches == 2;
+	err = xnvme_ident_from_uri(f->file_name, &ident);
+	if (err) {
+		log_err("xnvme_fioe: _dev_open(); EINV: %s\n", f->file_name);
+		return 1;
 	}
 
-	if (o->be && (!fn_has_scheme)) {
-		snprintf(dev_uri, XNVME_IDENT_URI_LEN - 2, "%s:", o->be);
-	}
-	strncat(dev_uri, f->file_name, XNVME_IDENT_URI_LEN - strlen(dev_uri));
+	if (o->async && (strnlen(o->async, 4) == 3) && \
+		(!strstr(ident.opts, "async")) && \
+		(!strncmp(ident.schm, "file", XNVME_IDENT_SCHM_LEN - 1))) {
+		size_t ofz;
 
-	XNVME_DEBUG("INFO: dev_uri: '%s'", dev_uri);
+		ofz = strnlen(ident.uri, XNVME_IDENT_URI_LEN);
+		if ((ofz + 11) >= XNVME_IDENT_URI_LEN) {
+			log_err("xnvme_fioe: _dev_open(); EINV: %s, %s\n",
+				f->file_name, o->async);
+			return 1;
+		}
+		snprintf(ident.uri + ofz, XNVME_IDENT_URI_LEN - 11, "?async=%s",
+			 o->async);
+
+		ofz = strnlen(ident.opts, XNVME_IDENT_OPTS_LEN);
+		if ((ofz + 11) >= XNVME_IDENT_OPTS_LEN) {
+			log_err("xnvme_fioe: _dev_open(); EINV: %s, %s\n",
+				f->file_name, o->async);
+			return 1;
+		}
+		snprintf(ident.opts + ofz, XNVME_IDENT_OPTS_LEN - 11, "?async=%s",
+			 o->async);
+	}
 
 	fwrap = &xd->files[f->fileno];
 
+#ifdef XNVME_DEBUG_ENABLED
+	xnvme_ident_pr(&ident, XNVME_PR_DEF);
+#endif
+
 	pthread_mutex_lock(&g_serialize);
-	fwrap->dev = xnvme_dev_open(dev_uri);
+	fwrap->dev = xnvme_dev_open(ident.uri);
 	if (!fwrap->dev) {
 		log_err("xnvme_fioe: init(): {uri: '%s', err: '%s'}\n",
-			dev_uri, strerror(errno));
+			ident.uri, strerror(errno));
 		goto failure;
 	}
 	fwrap->geo = xnvme_dev_get_geo(fwrap->dev);
