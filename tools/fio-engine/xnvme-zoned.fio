@@ -5,23 +5,39 @@
 ; Make sure you provide the correct path to 'libxnvme-fio-engine.so' in the
 ; sections below
 ;
-; Take note of the "special" use of 'filename' in the sections below
-;
-; In the fio-file, it needs "\" to escape ":", eg.
-; filename=liou\:/dev/nvme0n2
-;
-; On the command-line, it needs "\\" to escape ":", eg.
-; --filename=liou\\:/dev/nvme0n2
-;
 ; Job-file is intended to be used as:
 ;
-;   fio xnvme-zoned.fio \
-;     --section=verify \
-;     --ioengine=external:/usr/lib/libxnvme-fio-engine.so \
-;     --filename=liou:\\/dev/nvme0n2
+; fio xnvme-compare.fio \
+;		--section=qd1 \
+;		--filename=/dev/nvme0n1 \
+;		--ioengine=external:/usr/lib/libxnvme-fio-engine.so \
+;		--async=iou \
+;		--sqthread_poll=1
 ;
-; Have a look at xnvme-compare.fio, for the details on instrumenting the
-; different backends and comparing performance.
+; or
+;
+; fio xnvme-compare.fio \
+;		--section=qd1 \
+;		--filename=/dev/nvme0n1 \
+;		--ioengine=io_uring \
+;		--sqthread_poll=1
+;
+; That is, varying the ioengine, and its options, on the command-line,
+; fixing the workload, with the exception of changing io-depth using the
+; --section
+;
+; Take note of the "special" use of 'filename' in the sections below, for
+; direct access via the user-space NVMe driver provided by SPDK, then the ":" in
+; the --filename argument must be escaped. Notice that it needs a different
+; escape sequence in the .fio file and when provided and command-line-argument.
+;
+; On the command-line, it needs "\\" to escape ":", eg.
+; --filename=pci\\:0000\\:01\\:00.0?nsid=1
+;
+; Whereas, when given as 'filename' in the fio-script, only a single "\" is
+; needed, like so:
+; filename=pci\:0000\:01\:00.0?nsid=1
+;
 ;
 ; I/O errors have been observed with fio 3.20, however, not with 3.22, in any
 ; case, if you encounter them, then you can clean up the drive by first
