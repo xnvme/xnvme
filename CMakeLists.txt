@@ -10,6 +10,7 @@ set(CMAKE_C_STANDARD 11)
 include(FeatureSummary)
 include(CheckCCompilerFlag)
 include(CheckLibraryExists)
+include(CheckIncludeFile)
 include(CheckFunctionExists)
 include(CheckIPOSupported)
 include(bundle_libs)
@@ -339,9 +340,18 @@ set(XNVME_BE_LINUX_IOU_ENABLED ${LINUX} CACHE BOOL
 set(XNVME_BE_LINUX_NIL_ENABLED ${LINUX} CACHE BOOL
 	"be_linux_async_nil: null-io support in Linux backend")
 set(XNVME_BE_LINUX_BLOCK_ENABLED ${LINUX} CACHE BOOL
-	"be_linux_block: support for non-NVMe devices via Kernel Block Layer")
+	"be_linux_block: support for non-NVMe devices via the Linux Block Layer")
+set(XNVME_BE_LINUX_BLOCK_ZONED_ENABLED ${LINUX} CACHE BOOL
+	"be_linux_block_zoned: support Linux Zoned Block Devices")
 
-# TODO: do a check verifying features of the linux/blkzoned.h header file
+# TODO: consider expanding compile-time checking of Linux Block layer features
+if(XNVME_BE_LINUX_BLOCK_ZONED_ENABLED)
+	CHECK_INCLUDE_FILE(linux/blkzoned.h HAVE_LINUX_BLKZONED_HEADERS)
+	if(NOT HAVE_LINUX_BLKZONED_HEADERS)
+		message( WARNING "disabling Linux Zoned Block device support, cannot find header: linux/blkzoned.h " )
+		set(XNVME_BE_LINUX_BLOCK_ENABLED off)
+	endif()
+endif()
 
 set(LIBURING_REPOS "${PROJECT_SOURCE_DIR}/third-party/liburing/repos")
 set(LIBURING_INCLUDE_PATH
@@ -357,6 +367,10 @@ if(XNVME_BE_LINUX_ENABLED)
 
 	if(XNVME_BE_LINUX_BLOCK_ENABLED)
 		add_definitions(-DXNVME_BE_LINUX_BLOCK_ENABLED)
+
+		if(XNVME_BE_LINUX_BLOCK_ZONED_ENABLED)
+			add_definitions(-DXNVME_BE_LINUX_BLOCK_ZONED_ENABLED)
+		endif()
 	endif()
 
 	if(XNVME_BE_LINUX_AIO_ENABLED)
