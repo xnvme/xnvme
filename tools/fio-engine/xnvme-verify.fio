@@ -1,43 +1,54 @@
-; Verify fio IO engines with a random-write workload using 4K BS at QD16
+; Verify fio IO engines with a random-write workload using BS=4k at QD=16
 ;
 ; README
 ;
-; Make sure you provide the correct path to 'libxnvme-fio-engine.so' in the
-; sections below
+; Make sure you provide the correct path to 'libxnvme-fio-engine.so' when
+; invoking fio. This job-file is intended to be used as:
 ;
-; Job-file is intended to be used as:
-;
+; # Use the built-in io_uring engine to get baseline numbers
 ; fio xnvme-compare.fio \
-;		--section=qd1 \
-;		--filename=/dev/nvme0n1 \
-;		--ioengine=external:/usr/lib/libxnvme-fio-engine.so \
-;		--async=iou \
-;		--sqthread_poll=1
+;   --section=default \
+;   --ioengine=io_uring \
+;   --sqthread_poll=1 \
+;   --filename=/dev/nvme0n1
 ;
-; or
-;
+; # Use the xNVMe io-engine engine with Linux backend and libaio async. impl.
 ; fio xnvme-compare.fio \
-;		--section=qd1 \
-;		--filename=/dev/nvme0n1 \
-;		--ioengine=io_uring \
-;		--sqthread_poll=1
+;   --section=default \
+;   --ioengine=external:/usr/lib/libxnvme-fio-engine.so \
+;   --sqthread_poll=1 \
+;   --async=aio \
+;   --filename=/dev/nvme0n1
 ;
-; That is, varying the ioengine, and its options, on the command-line,
-; fixing the workload, with the exception of changing io-depth using the
-; --section
+; # Use the xNVMe io-engine engine with Linux backend and io_uring async. impl.
+; fio xnvme-compare.fio \
+;   --section=default \
+;   --ioengine=external:/usr/lib/libxnvme-fio-engine.so \
+;   --sqthread_poll=1 \
+;   --async=iou \
+;   --filename=/dev/nvme0n1
 ;
-; Take note of the "special" use of 'filename' in the sections below, for
-; direct access via the user-space NVMe driver provided by SPDK, then the ":" in
-; the --filename argument must be escaped. Notice that it needs a different
-; escape sequence in the .fio file and when provided and command-line-argument.
+; # Use the xNVMe io-engine engine with SPDK backend
+; fio xnvme-compare.fio \
+;   --ioengine=io_uring \
+;   --section=default \
+;   --filename=pci\\:0000\\:01\\:00.0?nsid=1
 ;
-; On the command-line, it needs "\\" to escape ":", eg.
+; NOTE: The URI encoded in the filename above, the ":" must be escaped.
+;
+; On the command-line using two "\\":
+;
 ; --filename=pci\\:0000\\:01\\:00.0?nsid=1
 ;
-; Whereas, when given as 'filename' in the fio-script, only a single "\" is
-; needed, like so:
-; filename=pci\:0000\:01\:00.0?nsid=1
+; Within a fio-script using a single "\":
 ;
+; filename=pci\:0000\:01\:00.0?nsid=1
+
+; NOTE: If you want to override the default bs, iodepth, and workload, then
+; invoke it as:
+;
+; FIO_BS="512" FIO_RW="verify" FIO_IODEPTH=16 fio xnvme-compare.fio \
+;   --section=override
 ;
 [global]
 rw=randwrite
@@ -45,134 +56,15 @@ size=1G
 iodepth=16
 bs=4k
 direct=1
-verify=crc32c
 thread=1
+verify=crc32c
 
 ; Avoid accidentally creating device files; e.g. "/dev/nvme0n1", "/dev/nullb0"
 allow_file_create=0
 
 [default]
 
-[qd1]
-iodepth=1
-
-[qd2]
-iodepth=2
-
-[qd4]
-iodepth=4
-
-[qd8]
-iodepth=8
-
-[qd16]
-iodepth=16
-
-[qd32]
-iodepth=32
-
-; Regular/io_uring engine
-
-[uring]
-ioengine=io_uring
-hipri=0
-fixedbufs=0
-registerfiles=0
-sqthread_poll=0
-;filename=/dev/nullb0
-;filename=/dev/nvme0n1
-
-[uring_iop]
-ioengine=io_uring
-hipri=1
-fixedbufs=0
-registerfiles=1
-sqthread_poll=0
-;filename=/dev/nullb0
-;filename=/dev/nvme0n1
-
-[uring_sqt]
-ioengine=io_uring
-hipri=0
-fixedbufs=0
-registerfiles=1
-sqthread_poll=1
-;filename=/dev/nullb0
-;filename=/dev/nvme0n1
-
-[uring_all]
-ioengine=io_uring
-hipri=1
-fixedbufs=1
-registerfiles=1
-sqthread_poll=1
-;filename=/dev/nullb0
-;filename=/dev/nvme0n1
-
-[aio]
-ioengine=libaio
-;filename=/dev/nullb0
-;filename=/dev/nvme0n1
-
-[psync]
-ioengine=psync
-;filename=/dev/nullb0
-;filename=/dev/nvme0n1
-
-[xnvme]
-ioengine=external:/usr/lib/libxnvme-fio-engine.so
-;filename=liou\:/dev/nullb0?pseudo=1
-;filename=liou\:/dev/nvme0n1
-;filename=pci\:0000\:01\:00.0?nsid=1
-;filename=pci\:0000\:03\:00.0?nsid=1
-
-; xNVMe/io_uring engine
-
-[xnvme_uring]
-ioengine=external:/usr/lib/libxnvme-fio-engine.so
-hipri=0
-sqthread_poll=0
-;filename=liou\:/dev/nullb0?pseudo=1
-;filename=liou\:/dev/nvme0n1
-;filename=/dev/nvme0n1
-;be=liou
-
-[xnvme_uring_sqt]
-ioengine=external:/usr/lib/libxnvme-fio-engine.so
-hipri=0
-sqthread_poll=1
-;filename=liou\:/dev/nullb0?pseudo=1
-;filename=liou\:/dev/nvme0n1
-;filename=/dev/nvme0n1
-;be=liou
-
-[xnvme_uring_iop]
-ioengine=external:/usr/lib/libxnvme-fio-engine.so
-hipri=1
-sqthread_poll=0
-;filename=liou\:/dev/nullb0?pseudo=1
-;filename=liou\:/dev/nvme0n1
-;filename=/dev/nvme0n1
-;be=liou
-
-[xnvme_uring_all]
-ioengine=external:/usr/lib/libxnvme-fio-engine.so
-hipri=1
-sqthread_poll=1
-;filename=liou\:/dev/nullb0?pseudo=1
-;filename=liou\:/dev/nvme0n1
-;filename=/dev/nvme0n1
-;be=liou
-
-[xnvme_laio]
-ioengine=external:/usr/lib/libxnvme-fio-engine.so
-;filename=laio\:/dev/nullb0?pseudo=1
-;filename=laio\:/dev/nvme0n1
-;filename=/dev/nvme0n1
-;be=laio
-
-[xnvme_spdk]
-ioengine=external:/usr/lib/libxnvme-fio-engine.so
-;filename=pci\:0000\:01\:00.0?nsid=1
-;filename=pci\:0000\:03\:00.0?nsid=1
-
+[override]
+rw=${FIO_RW}
+iodepth=${FIO_IODEPTH}
+bs=${FIO_BS}
