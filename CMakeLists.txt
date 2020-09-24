@@ -333,6 +333,9 @@ message( STATUS "BE:FBSD ENABLED(${XNVME_BE_FBSD_ENABLED})" )
 #
 set(XNVME_BE_LINUX_ENABLED ${LINUX} CACHE BOOL
 	"be_linux: Linux backend")
+#set(XNVME_BE_LINUX_THR_ENABLED OFF CACHE BOOL
+set(XNVME_BE_LINUX_THR_ENABLED ${LINUX} CACHE BOOL
+	"be_linux_async_thr: thread support in Linux backend")
 set(XNVME_BE_LINUX_AIO_ENABLED ${LINUX} CACHE BOOL
 	"be_linux_async_aio: aio supportin Linux backend")
 set(XNVME_BE_LINUX_IOU_ENABLED ${LINUX} CACHE BOOL
@@ -371,6 +374,15 @@ if(XNVME_BE_LINUX_ENABLED)
 		if(XNVME_BE_LINUX_BLOCK_ZONED_ENABLED)
 			add_definitions(-DXNVME_BE_LINUX_BLOCK_ZONED_ENABLED)
 		endif()
+	endif()
+
+	if(XNVME_BE_LINUX_THR_ENABLED)
+		add_definitions(-DXNVME_BE_LINUX_THR_ENABLED)
+
+		list(APPEND LIBS_SYSTEM pthread)
+
+		message( STATUS "ENABLING ASYNC SUPPORT" )
+		add_definitions(-DXNVME_ASYNC_ENABLED)
 	endif()
 
 	if(XNVME_BE_LINUX_AIO_ENABLED)

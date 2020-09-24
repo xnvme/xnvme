@@ -41,11 +41,13 @@ static struct xnvme_be_sync *g_linux_sync[] = {
 static int
 g_linux_sync_count = sizeof g_linux_sync / sizeof * g_linux_sync - 1;
 
+extern struct xnvme_be_async g_linux_thr;
 extern struct xnvme_be_async g_linux_aio;
 extern struct xnvme_be_async g_linux_iou;
 extern struct xnvme_be_async g_linux_nil;
 
 static struct xnvme_be_async *g_linux_async[] = {
+	&g_linux_thr,
 	&g_linux_iou,
 	&g_linux_aio,
 	&g_linux_nil,
