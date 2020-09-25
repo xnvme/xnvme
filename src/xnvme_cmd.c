@@ -52,7 +52,7 @@ cmd_setup_sgl(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *data,
 int
 xnvme_cmd_pass(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *dbuf,
 	       size_t dbuf_nbytes, void *mbuf, size_t mbuf_nbytes, int opts,
-	       struct xnvme_req *ret)
+	       struct xnvme_req *req)
 {
 	const int cmd_opts = opts & XNVME_CMD_MASK;
 
@@ -63,11 +63,11 @@ xnvme_cmd_pass(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *dbuf,
 	switch (cmd_opts & XNVME_CMD_MASK_IOMD) {
 	case XNVME_CMD_ASYNC:
 		return dev->be.async.cmd_io(dev, cmd, dbuf, dbuf_nbytes, mbuf,
-					    mbuf_nbytes, opts, ret);
+					    mbuf_nbytes, opts, req);
 
 	case XNVME_CMD_SYNC:
 		return dev->be.sync.cmd_io(dev, cmd, dbuf, dbuf_nbytes, mbuf,
-					   mbuf_nbytes, opts, ret);
+					   mbuf_nbytes, opts, req);
 
 	default:
 		XNVME_DEBUG("FAILED: command-mode not provided");
