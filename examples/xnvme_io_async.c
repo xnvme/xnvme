@@ -51,9 +51,9 @@ sub_async_read(struct xnvmec *cli)
 	uint64_t elba = cli->args.elba;
 	size_t nsect;
 
+	struct cb_args cb_args = { 0 };
 	struct xnvme_async_ctx *ctx = NULL;
 	struct xnvme_req_pool *reqs = NULL;
-	struct cb_args cb_args = { 0 };
 
 	size_t buf_nbytes;
 	char *buf = NULL;
@@ -93,7 +93,6 @@ sub_async_read(struct xnvmec *cli)
 		xnvmec_perr("xnvme_async_init()", err);
 		goto exit;
 	}
-
 	err = xnvme_req_pool_alloc(&reqs, qd + 1);
 	if (err) {
 		xnvmec_perr("xnvme_req_pool_alloc()", err);
