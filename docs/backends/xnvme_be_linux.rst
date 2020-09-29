@@ -4,19 +4,26 @@ Linux
 =====
 
 The Linux backend communicates with the Linux NVMe driver via IOCTLs. The
-backend relies on the driver-provided passthrough interface to submit admin,
+backend relies on the driver-provided passthru interface to submit admin,
 IO, and arbitrary user-defined commands.
 
-The backend supports three different asynchronous implementations:
+The backend has four different asynchronous implementations:
 
-* ``libaio``
-* ``io_uring``
-* ``nil``
+* ``thr``, wraps around the synchronous interface providing async. behavior
+* ``libaio``, Linux Asynchronous IO.
+* ``io_uring``, the efficient Linux IO interface, io_uring.
+* ``nil``, xNVMe null-IO, does nothing but complete submitted commands, for
+  experimentation only
 
-By default the backend will use ``io_uring`` if it supported, otherwise, it
-will fall back to ``libaio``. To explicitly select a backend, then if you are
-using device ``/dev/nvme0n1``, then append the ``?async=impl`` option to the
-path, e.g.::
+By default the Linux backend will use ``thr`` as it has the broadest
+command-support. When interested only in read/write commands, one can use the
+``io_uring``, if it supported, otherwise, it will fall back to ``libaio``.
+
+To explicitly select an async. implementation, then if you are using device
+``/dev/nvme0n1``, add ``?async=impl`` option to the path, e.g.::
+
+  # Use the thr implemention or fail
+  xnvme info /dev/nvme0n1?async=thr
 
   # Use the libaio implemention or fail
   xnvme info /dev/nvme0n1?async=aio
@@ -31,9 +38,7 @@ The ``nil`` backend is entirely for debugging and measuring the IO-layer, all
 the ``nil`` async. implementation does is queue up commands and when polled for
 completion they are returned with success.
 
-Take note that only ``read`` and ``write`` commands work with the Linux
-async.-implementations. If you need to submit other commands, then either use
-the synchronous commands or use the ``SPDK`` backend.
+If you want both control and performance then use the ``SPDK`` backend.
 
 Note on Errors
 --------------
