@@ -4,6 +4,10 @@
 #define __INTERNAL_XNVME_BE_LINUX_H
 #include <xnvme_dev.h>
 
+#ifndef LINUX_BLOCK_SSW
+#define LINUX_BLOCK_SSW 9
+#endif
+
 /**
  * @enum xnvme_be_linux_opts
  */
