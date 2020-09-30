@@ -117,6 +117,14 @@ clean:
 	rm -fr cmake-build-debug || true
 
 #
+# Helper-target generating third-party strings
+#
+.PHONY: gen-3p-ver
+gen-3p-ver:
+	@echo "## xNVMe: make gen-3p-ver"
+	./scripts/xnvme_3p.py --repos .
+
+#
 # Helper-target to produce full-source archive
 #
 .PHONY: gen-src-archive
