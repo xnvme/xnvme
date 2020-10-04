@@ -8,7 +8,6 @@ xNVMe: cross-platform libraries and tools for NVMe devices
 [![CI](https://github.com/OpenMPDK/xNVMe/workflows/dockerize/badge.svg)](https://github.com/OpenMPDK/xNVMe/actions/)
 [![CI](https://github.com/OpenMPDK/xNVMe/workflows/style/badge.svg)](https://github.com/OpenMPDK/xNVMe/actions/)
 [![Coverity](https://scan.coverity.com/projects/xNVMe/badge.svg)](https://scan.coverity.com/projects/xNVMe)
-[![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/OpenMPDK/xNVMe.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/OpenMPDK/xNVMe/context:cpp)
 
 See: https://xnvme.io/docs for documentation
 

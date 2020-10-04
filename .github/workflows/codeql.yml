@@ -1,0 +1,61 @@
+name: "CodeQL Scan / Analysis"
+
+on:
+  push:
+    branches:
+      - master
+      - dev
+      - codeql
+    tags:
+      - v*
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language:
+        - 'cpp'
+        container:
+        - 'debian:bullseye'
+
+    container:
+      image: ${{ matrix.container }}
+
+    steps:
+    - name: Grab source, for build-requirements
+      uses: actions/checkout@v2
+
+    - name: Install build-requirements
+      run: |
+        source scripts/pkgs/${{ matrix.container }}.sh
+
+    - name: Grab source, for getting the actual source
+      uses: actions/checkout@v2
+      with:
+        submodules: "recursive"
+        fetch-depth: "0"
+
+    - name: Configure, the build
+      run: |
+        make config
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v1
+      with:
+        languages: ${{ matrix.language }}
+        config-file: ./.github/codeql/codeql-config.yml
+
+    - name: Build
+      run: |
+        make -j $(nproc)
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v1
