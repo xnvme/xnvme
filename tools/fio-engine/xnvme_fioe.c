@@ -462,7 +462,7 @@ xnvme_fioe_getevents(struct thread_data *td, unsigned int min,
 	int err = 0;
 
 	if (t) {
-		assert(false);
+		XNVME_DEBUG("INFO: ignoring timespec");
 	}
 
 	if (xd->prev != -1 && ++xd->prev < nfiles) {
@@ -816,8 +816,6 @@ xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint64_t offset,
 	uint32_t nsid;
 	int err = 0;
 
-	XNVME_DEBUG("Resetting the write-pointer...");
-
 	assert(fwrap->dev);
 	assert(fwrap->geo);
 
@@ -825,13 +823,21 @@ xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint64_t offset,
 
 	first = ((offset >> fwrap->ssw) / fwrap->geo->nsect) * fwrap->geo->nsect;
 	last = (((offset + length) >> fwrap->ssw) / fwrap->geo->nsect) * fwrap->geo->nsect;
+	XNVME_DEBUG("INFO: first: 0x%lx, last: 0x%lx", first, last);
 	for (uint64_t zslba = first; zslba <= last; zslba += fwrap->geo->nsect) {
 		struct xnvme_req req = { 0 };
+
+		if (zslba >= (fwrap->geo->nsect * fwrap->geo->nzone)) {
+			XNVME_DEBUG("INFO: out-of-bounds");
+			err = 0;
+			break;
+		}
 
 		err = znd_cmd_mgmt_send(fwrap->dev, nsid, zslba, ZND_SEND_RESET,
 					0x0, NULL, XNVME_CMD_SYNC, &req);
 		if (err || xnvme_req_cpl_status(&req)) {
 			err = err ? err : -EIO;
+			XNVME_DEBUG("FAILED: err: %d, sc=%d", err, req.cpl.status.sc);
 			goto exit;
 		}
 	}
