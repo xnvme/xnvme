@@ -700,8 +700,6 @@ xnvme_enumerate(struct xnvme_enumeration **list, const char *sys_uri, int opts)
 	}
 
 	for (int i = 0; xnvme_be_registry[i]; ++i) {
-		int err;
-
 		err = xnvme_be_registry[i]->dev.enumerate(*list, sys_uri, opts);
 		if (err) {
 			XNVME_DEBUG("FAILED: %s->enumerate(...), err: '%s', i: %d",
