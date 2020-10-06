@@ -205,7 +205,7 @@ test_scopy(struct xnvmec *cli)
 	}
 
 	sranges = xnvme_buf_alloc(dev, sizeof(*sranges), NULL);
-	if (!wbuf) {
+	if (!sranges) {
 		err = -errno;
 		xnvmec_perr("xnvme_buf_alloc()", err);
 		goto exit;
