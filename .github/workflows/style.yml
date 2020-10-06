@@ -3,7 +3,15 @@
 #
 name: style
 
-on: ["push", "pull_request"]
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - dev
+      - style
+    tags:
+      - v*
 
 defaults:
   run:
