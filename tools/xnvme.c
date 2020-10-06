@@ -590,7 +590,7 @@ exit:
 //
 // Command-Line Interface (CLI) definition
 //
-static struct xnvmec_sub subs[] = {
+static struct xnvmec_sub g_subs[] = {
 	{
 		"list", "List devices on the system",
 		"List devices on the system", sub_listing, {
@@ -742,16 +742,16 @@ static struct xnvmec_sub subs[] = {
 	},
 };
 
-static struct xnvmec cli = {
+static struct xnvmec g_cli = {
 	.title = "xNVMe - Cross-platform NVMe utility",
 	.descr_short = "Construct and execute NVMe Commands",
 	.descr_long = "",
-	.subs = subs,
-	.nsubs = sizeof subs / sizeof(*subs),
+	.subs = g_subs,
+	.nsubs = sizeof g_subs / sizeof(*g_subs),
 };
 
 int
 main(int argc, char **argv)
 {
-	return xnvmec(&cli, argc, argv, XNVMEC_INIT_DEV_OPEN);
+	return xnvmec(&g_cli, argc, argv, XNVMEC_INIT_DEV_OPEN);
 }

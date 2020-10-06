@@ -86,7 +86,7 @@ test_virt_buf_alloc_free(struct xnvmec *cli)
 //
 // Command-Line Interface (CLI) definition
 //
-static struct xnvmec_sub subs[] = {
+static struct xnvmec_sub g_subs[] = {
 	{
 		"buf_alloc_free",
 		"Allocate and free a buffer 'count' times of size [1, 2^count]",
@@ -107,15 +107,15 @@ static struct xnvmec_sub subs[] = {
 	},
 };
 
-static struct xnvmec cli = {
+static struct xnvmec g_cli = {
 	.title = "Test xNVMe basic buffer alloc/free",
 	.descr_short = "Test xNVMe basic buffer alloc/free",
-	.subs = subs,
-	.nsubs = sizeof subs / sizeof(*subs),
+	.subs = g_subs,
+	.nsubs = sizeof g_subs / sizeof(*g_subs),
 };
 
 int
 main(int argc, char **argv)
 {
-	return xnvmec(&cli, argc, argv, XNVMEC_INIT_DEV_OPEN);
+	return xnvmec(&g_cli, argc, argv, XNVMEC_INIT_DEV_OPEN);
 }

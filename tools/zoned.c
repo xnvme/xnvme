@@ -523,7 +523,7 @@ cmd_mgmt_reset(struct xnvmec *cli)
 // Command-Line Interface (CLI) definition
 //
 
-static struct xnvmec_sub subs[] = {
+static struct xnvmec_sub g_subs[] = {
 	{
 		"enum", "Enumerate Zoned Namespaces on the system",
 		"Enumerate Zoned Namespaces on the system", cmd_enumerate, {
@@ -655,15 +655,15 @@ static struct xnvmec_sub subs[] = {
 	},
 };
 
-static struct xnvmec cli = {
+static struct xnvmec g_cli = {
 	.title = "Zoned Namespace Utility",
 	.descr_short = "Enumerate Zoned Namespaces, manage, inspect properties, state, and send IO to them",
-	.subs = subs,
-	.nsubs = sizeof subs / sizeof(*subs),
+	.subs = g_subs,
+	.nsubs = sizeof g_subs / sizeof(*g_subs),
 };
 
 int
 main(int argc, char **argv)
 {
-	return xnvmec(&cli, argc, argv, XNVMEC_INIT_DEV_OPEN);
+	return xnvmec(&g_cli, argc, argv, XNVMEC_INIT_DEV_OPEN);
 }

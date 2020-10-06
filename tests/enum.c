@@ -122,7 +122,7 @@ exit:
 //
 // Command-Line Interface (CLI) definition
 //
-static struct xnvmec_sub subs[] = {
+static struct xnvmec_sub g_subs[] = {
 	{
 		"multi",
 		"Call xnvme_enumerate() 'count' times",
@@ -146,15 +146,15 @@ static struct xnvmec_sub subs[] = {
 	},
 };
 
-static struct xnvmec cli = {
+static struct xnvmec g_cli = {
 	.title = "Test xNVMe enumeration",
 	.descr_short = "Test xNVMe enumeration",
-	.subs = subs,
-	.nsubs = sizeof subs / sizeof(*subs),
+	.subs = g_subs,
+	.nsubs = sizeof g_subs / sizeof(*g_subs),
 };
 
 int
 main(int argc, char **argv)
 {
-	return xnvmec(&cli, argc, argv, XNVMEC_INIT_DEV_OPEN);
+	return xnvmec(&g_cli, argc, argv, XNVMEC_INIT_DEV_OPEN);
 }

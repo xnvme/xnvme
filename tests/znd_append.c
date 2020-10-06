@@ -195,7 +195,7 @@ exit:
 //
 // Command-Line Interface (CLI) definition
 //
-static struct xnvmec_sub subs[] = {
+static struct xnvmec_sub g_subs[] = {
 	{
 		"verify",
 		"Fills a Zone one LBA at a time, checking addr on completion",
@@ -207,15 +207,15 @@ static struct xnvmec_sub subs[] = {
 	},
 };
 
-static struct xnvmec cli = {
+static struct xnvmec g_cli = {
 	.title = "Tests for Zoned Random Write Area",
 	.descr_short = "Tests for Zoned Random Write Area",
-	.subs = subs,
-	.nsubs = sizeof subs / sizeof(*subs),
+	.subs = g_subs,
+	.nsubs = sizeof g_subs / sizeof(*g_subs),
 };
 
 int
 main(int argc, char **argv)
 {
-	return xnvmec(&cli, argc, argv, XNVMEC_INIT_DEV_OPEN);
+	return xnvmec(&g_cli, argc, argv, XNVMEC_INIT_DEV_OPEN);
 }

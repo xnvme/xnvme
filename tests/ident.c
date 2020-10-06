@@ -220,7 +220,7 @@ test_ident_from_uri(struct xnvmec *XNVME_UNUSED(cli))
 //
 // Command-Line Interface (CLI) definition
 //
-static struct xnvmec_sub subs[] = {
+static struct xnvmec_sub g_subs[] = {
 	{
 		"ident_from_uri",
 		"Test 'xnvme_ident_from_uri'",
@@ -230,15 +230,15 @@ static struct xnvmec_sub subs[] = {
 	},
 };
 
-static struct xnvmec cli = {
+static struct xnvmec g_cli = {
 	.title = "Test 'xnvme_ident' and 'xnvme_enumerate' helpers",
 	.descr_short = "Test 'xnvme_ident' and 'xnvme_enumerate' helpers",
-	.subs = subs,
-	.nsubs = sizeof subs / sizeof(*subs),
+	.subs = g_subs,
+	.nsubs = sizeof g_subs / sizeof(*g_subs),
 };
 
 int
 main(int argc, char **argv)
 {
-	return xnvmec(&cli, argc, argv, XNVMEC_INIT_NONE);
+	return xnvmec(&g_cli, argc, argv, XNVMEC_INIT_NONE);
 }

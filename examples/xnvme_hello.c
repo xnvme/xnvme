@@ -27,7 +27,7 @@ sub_hw_example(struct xnvmec *cli)
 // Command-Line Interface (CLI) definition
 //
 
-static struct xnvmec_sub subs[] = {
+static struct xnvmec_sub g_subs[] = {
 	{
 		"hw", "Hello-World Example", "Hello-World Example", sub_hw_example, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
@@ -35,15 +35,15 @@ static struct xnvmec_sub subs[] = {
 	},
 };
 
-static struct xnvmec cli = {
+static struct xnvmec g_cli = {
 	.title = "xNVMe hello-device example",
 	.descr_short = "Open the given device and print its attributes",
-	.subs = subs,
-	.nsubs = sizeof subs / sizeof(*subs),
+	.subs = g_subs,
+	.nsubs = sizeof g_subs / sizeof(*g_subs),
 };
 
 int
 main(int argc, char **argv)
 {
-	return xnvmec(&cli, argc, argv, XNVMEC_INIT_NONE);
+	return xnvmec(&g_cli, argc, argv, XNVMEC_INIT_NONE);
 }

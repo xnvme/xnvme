@@ -247,7 +247,7 @@ exit:
 // Command-Line Interface (CLI) definition
 //
 
-static struct xnvmec_sub subs[] = {
+static struct xnvmec_sub g_subs[] = {
 	{
 		"read", "Zone Read of a full zone",
 		"Zone Read of a full zone", sub_sync_read, {
@@ -276,16 +276,16 @@ static struct xnvmec_sub subs[] = {
 	},
 };
 
-static struct xnvmec cli = {
+static struct xnvmec g_cli = {
 	.title = "Zoned Synchronous IO Example",
 	.descr_short =	"Synchronous IO: read / write / append, "
 	"using 4k payload at QD1",
-	.subs = subs,
-	.nsubs = sizeof subs / sizeof(*subs),
+	.subs = g_subs,
+	.nsubs = sizeof g_subs / sizeof(*g_subs),
 };
 
 int
 main(int argc, char **argv)
 {
-	return xnvmec(&cli, argc, argv, XNVMEC_INIT_DEV_OPEN);
+	return xnvmec(&g_cli, argc, argv, XNVMEC_INIT_DEV_OPEN);
 }

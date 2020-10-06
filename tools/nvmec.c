@@ -112,7 +112,7 @@ sub_create(struct xnvmec *cli)
 //
 // Command-Line Interface (CLI) definition
 //
-static struct xnvmec_sub subs[] = {
+static struct xnvmec_sub g_subs[] = {
 	{
 		"show", "Print the given NVMe command-file",
 		"Print the given NVMe command-file", sub_show, {
@@ -146,18 +146,18 @@ static struct xnvmec_sub subs[] = {
 	},
 };
 
-static struct xnvmec cli = {
+static struct xnvmec g_cli = {
 	.title = "nvmec: NVMe Command Builder",
 	.descr_short = ""
 	"Construct, and show,  NVMe Command files for use with"
 	"e.g.the xNVMe CLI",
 	.descr_long = "",
-	.subs = subs,
-	.nsubs = sizeof subs / sizeof(*subs),
+	.subs = g_subs,
+	.nsubs = sizeof g_subs / sizeof(*g_subs),
 };
 
 int
 main(int argc, char **argv)
 {
-	return xnvmec(&cli, argc, argv, XNVMEC_INIT_NONE);
+	return xnvmec(&g_cli, argc, argv, XNVMEC_INIT_NONE);
 }
