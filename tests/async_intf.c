@@ -13,7 +13,7 @@ test_init_term(struct xnvmec *cli)
 	struct xnvme_dev *dev = cli->args.dev;
 	uint64_t count = cli->args.count;
 	uint64_t qd = cli->args.qdepth;
-	int err;
+	int err = 0;
 
 	struct xnvme_async_ctx *actx[XNVME_TESTS_NQUEUE_MAX] = { 0 };
 
