@@ -391,7 +391,7 @@ cmd_append(struct xnvmec *cli)
 	const uint64_t zslba = cli->args.slba;
 	uint16_t nlb = cli->args.nlb;
 
-	size_t dbuf_nbytes = cli->args.geo->nbytes * (nlb + 1);
+	size_t dbuf_nbytes = (size_t)cli->args.geo->nbytes * (size_t)(nlb + 1);
 	char *dbuf = NULL;
 
 	struct xnvme_req req = { 0 };
