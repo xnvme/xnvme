@@ -124,7 +124,6 @@ sub_io(struct xnvmec *cli)
 		size_t wbuf_ofz = count * geo->lba_nbytes;
 		uint64_t slba = rng_slba + count * 4;
 		struct xnvme_req req = { 0 };
-		int err = 0;
 
 		err = xnvme_cmd_write(dev, nsid, slba, 0, wbuf + wbuf_ofz, NULL,
 				      XNVME_CMD_SYNC, &req);
