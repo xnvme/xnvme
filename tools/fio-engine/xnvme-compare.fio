@@ -30,7 +30,7 @@
 ;
 ; # Use the xNVMe io-engine engine with SPDK backend
 ; fio xnvme-compare.fio \
-;   --ioengine=io_uring \
+;   --ioengine=external:/usr/lib/libxnvme-fio-engine.so \
 ;   --section=default \
 ;   --filename=pci\\:0000\\:01\\:00.0?nsid=1
 ;
