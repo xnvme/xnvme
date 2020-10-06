@@ -31,6 +31,15 @@ cb_pool(struct xnvme_req *req, void *cb_arg)
 	SLIST_INSERT_HEAD(&req->pool->head, req, link);
 }
 
+/**
+ * This function provides an example of reading a Zone in an asynchronous
+ * manner, it has all the boiler-plate code taking care of:
+ *
+ * - Command-payload buffers
+ * - Context allocation
+ * - Request-pool allocation
+ * - As well as sending the read commands and consuming their completion
+ */
 static int
 sub_async_read(struct xnvmec *cli)
 {
@@ -178,6 +187,16 @@ exit:
 	return err < 0 ? err : 0;
 }
 
+/**
+ * This function provides an example of writing a Zone in an asynchronous
+ * manner, it has all the boiler-plate code taking care of:
+ *
+ * - Command-payload buffers
+ * - Context allocation
+ * - Request-pool allocation
+ * - As well as sending the write commands and consuming their completion,
+ *   specifically writing under the sequential-ordering contraint of a Zone
+ */
 static int
 sub_async_write(struct xnvmec *cli)
 {
@@ -321,6 +340,15 @@ exit:
 	return err < 0 ? err : 0;
 }
 
+/**
+ * This function provides an example of writing a Zone in an asynchronous
+ * manner, it has all the boiler-plate code taking care of:
+ *
+ * - Command-payload buffers
+ * - Context allocation
+ * - Request-pool allocation
+ * - As well as sending the append commands and consuming their completion
+ */
 static int
 sub_async_append(struct xnvmec *cli)
 {
