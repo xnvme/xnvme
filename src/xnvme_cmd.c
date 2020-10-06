@@ -21,7 +21,6 @@ cmd_setup_sgl(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *data,
 	if (sgl->ndescr == 1) {
 		cmd->common.dptr.sgl = sgl->descriptors[0];
 	} else {
-		uint64_t phys;
 		xnvme_buf_vtophys(dev, sgl->descriptors, &phys);
 
 		cmd->common.dptr.sgl.unkeyed.type = XNVME_SPEC_SGL_DESCR_TYPE_LAST_SEGMENT;
