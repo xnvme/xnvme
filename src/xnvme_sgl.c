@@ -99,7 +99,7 @@ xnvme_sgl_add(struct xnvme_dev *dev, struct xnvme_sgl *sgl, void *buf,
 	struct xnvme_spec_sgl_descriptor *d;
 
 	/**
-	 * FIXME(klaus.jensen): currently we only support one Last Segment
+	 * TODO(klaus.jensen): currently we only support one Last Segment
 	 * descriptor (one 4K page).
 	 */
 	if (sgl->ndescr == 256) {
