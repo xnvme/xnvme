@@ -56,6 +56,10 @@ xnvmec_buf_diff_pr(const void *expected, const void *actual, size_t nbytes,
 /**
  * Write content of buffer into file
  *
+ * - If file exists, then it is truncated / overwritten
+ * - If file does NOT exist, then it is created
+ * - When file is created, permissions are set to user WRITE + READ
+ *
  * @param buf Pointer to the buffer
  * @param nbytes Size of buf
  * @param path Destination where buffer will be dumped to

@@ -5,8 +5,11 @@
 #include <stdio.h>
 #include <errno.h>
 #include <getopt.h>
+#include <limits.h>
 #include <time.h>
 #include <stdint.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <libxnvmec.h>
 
 const char *
@@ -32,41 +35,69 @@ xnvmec_buf_clear(void *buf, size_t nbytes)
 	return memset(buf, 0, nbytes);
 }
 
-int
-xnvmec_buf_from_file(void *buf, size_t nbytes, const char *path)
+/**
+ * Helper function writing/reading given buf to/from file. When mode has
+ * O_WRONLY, the given buffer is written to file, otherwise, it is read.
+ *
+ * NOTE: this depends on POSIX syscalls
+ */
+static int
+fdio_func(void *buf, size_t nbytes, const char *path, int flags, mode_t mode)
 {
-	FILE *fhandle = NULL;
-	size_t fcount = 0;
+	const int do_write = flags & O_WRONLY;
+	size_t transferred = 0;
+	int hnd, err;
 
-	fhandle = fopen(path, "rb");
-	fcount = fread(buf, 1, nbytes, fhandle);
-	fclose(fhandle);
+	hnd = open(path, flags, mode);
+	if (hnd == -1) {
+		XNVME_DEBUG("FAILED: open(), errno: %d", errno);
+		return -errno;
+	}
 
-	if (fcount != nbytes) {
-		XNVME_DEBUG("FAILED: xnvmec_buf_from_file");
-		return -EINVAL;
+	while (transferred < nbytes) {
+		const size_t remain = nbytes - transferred;
+		size_t nbytes_call = remain < SSIZE_MAX ? remain : SSIZE_MAX;
+		ssize_t ret;
+
+		ret = do_write ? write(hnd, buf + transferred, nbytes_call) : \
+		      read(hnd, buf + transferred, nbytes_call);
+		if (ret <= 0) {
+			XNVME_DEBUG("FAILED: do_write: %d, ret: %ld, errno: %d",
+				    do_write, ret, errno);
+			close(hnd);
+			return -errno;
+		}
+
+		transferred += ret;
+	}
+
+	err = close(hnd);
+	if (err) {
+		XNVME_DEBUG("FAILED: do_write: %d, err: %d, errno: %d",
+			    do_write, err, errno);
+		return -errno;
+	}
+	if (transferred != nbytes) {
+		XNVME_DEBUG("FAILED: xnvmec_buf_to_file(), transferred: %zu",
+			    transferred);
+		errno = EIO;
+		return -errno;
 	}
 
 	return 0;
 }
 
 int
+xnvmec_buf_from_file(void *buf, size_t nbytes, const char *path)
+{
+	return fdio_func(buf, nbytes, path, O_RDONLY, 0x0);
+}
+
+int
 xnvmec_buf_to_file(void *buf, size_t nbytes, const char *path)
 {
-	FILE *fhandle = NULL;
-	size_t fcount = 0;
-
-	fhandle = fopen(path, "wb");
-	fcount = fwrite(buf, 1, nbytes, fhandle);
-	fclose(fhandle);
-
-	if (fcount != nbytes) {
-		XNVME_DEBUG("FAILED: xnvmec_buf_to_file");
-		errno = EINVAL;
-		return -1;
-	}
-
-	return 0;
+	return fdio_func(buf, nbytes, path, O_CREAT | O_TRUNC | O_WRONLY,
+			 S_IWUSR | S_IRUSR);
 }
 
 int
@@ -131,7 +162,6 @@ xnvmec_buf_diff_pr(const void *expected, const void *actual, size_t nbytes,
 	printf("  nbytes: %zu\n", nbytes);
 	printf("  nbytes_diff: %zu\n", diff);
 }
-
 
 /**
  * Returns the minimum width required for sub-name, should be in the range
