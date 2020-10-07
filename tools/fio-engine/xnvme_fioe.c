@@ -234,6 +234,13 @@ xnvme_fioe_cleanup(struct thread_data *td)
 	td->io_ops_data = NULL;
 }
 
+/**
+ * Helper function setting up device handles as addressed by the naming
+ * convention of the given `fio_file` filename.
+ *
+ * Checks thread-options for explicit control of asynchronous implementation via
+ * the ``--async={thr,aio,iou,nil}`` / ``?async={thr,aio,iou,nil}`` option.
+ */
 static int
 _dev_open(struct thread_data *td, struct fio_file *f)
 {
@@ -694,12 +701,18 @@ exit:
 }
 
 /**
- * Currently, this function is called before of I/O engine initialization, so,
- * we cannot consult the file-wrapping done when 'fioe' initializes.
- * Instead we just open base don the given filename.
+ * Fills the given ``zbdz`` with at most ``nr_zones`` zone-descriptors.
+ *
+ * The implementation converts the NVMe Zoned Command Set log-pages for Zone
+ * descriptors into the Linux Kernel Zoned Block Report format.
+ *
+ * NOTE: This function is called before I/O engine initialization, that is,
+ * before ``_dev_open`` has been called and file-wrapping is setup. Thus is has
+ * to do the ``_dev_open`` itself, and shut it down again once it is done
+ * retrieving the log-pages and converting them to the report format.
  *
  * TODO: unify the different setup methods, consider keeping the handle around,
- * and consider how to support the --be option in this usecase
+ * and consider how to support the --async option in this usecase
  */
 static int
 xnvme_fioe_report_zones(struct thread_data *XNVME_UNUSED(td),
