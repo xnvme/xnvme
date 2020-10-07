@@ -1,6 +1,7 @@
 // Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
 // SPDX-License-Identifier: Apache-2.0
 #include <libxnvme.h>
+#include <xnvme_be_linux.h>
 
 int
 xnvme_3p_ver_fpr(FILE *stream, const char *ver[], enum xnvme_pr opts)
@@ -28,6 +29,12 @@ xnvme_3p_ver_fpr(FILE *stream, const char *ver[], enum xnvme_pr opts)
 	for (int i = 0; xnvme_3p_ver[i]; ++i) {
 		fprintf(stream, "  - '%s'\n", xnvme_3p_ver[i]);
 	}
+
+	// TODO: this is kinda hackish... a better means for backends to provide
+	// various introspective information should be provided
+	wrtn += fprintf(stream, "  - '");
+	wrtn += xnvme_be_linux_uapi_ver_fpr(stream, XNVME_PR_DEF);
+	wrtn += fprintf(stream, "'\n");
 
 	return wrtn;
 }
