@@ -39,6 +39,16 @@ cb_pool(struct xnvme_req *req, void *cb_arg)
 	SLIST_INSERT_HEAD(&req->pool->head, req, link);
 }
 
+/**
+ * This example shows how to do asynchronous reads
+ *
+ * - Allocate command-payload buffers
+ * - Setup async. context
+ * - Setup request pool
+ * - Submit read commands
+ * - Reap their completion
+ * - Teardown
+ */
 static int
 sub_async_read(struct xnvmec *cli)
 {
@@ -181,6 +191,16 @@ exit:
 	return err < 0 ? err : 0;
 }
 
+/**
+ * This example shows how to do asynchronous write
+ *
+ * - Allocate command-payload buffers
+ * - Setup async. context
+ * - Setup request pool
+ * - Submit write commands
+ * - Reap their completion
+ * - Teardown
+ */
 static int
 sub_async_write(struct xnvmec *cli)
 {
