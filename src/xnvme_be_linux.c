@@ -16,6 +16,7 @@
 #ifdef XNVME_BE_LINUX_ENABLED
 #include <fcntl.h>
 #include <errno.h>
+#include <linux/version.h>
 #include <linux/fs.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,6 +56,30 @@ static struct xnvme_be_async *g_linux_async[] = {
 };
 static int
 g_linux_async_count = sizeof g_linux_async / sizeof * g_linux_async - 1;
+
+int
+xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr opts)
+{
+	int wrtn = 0;
+
+	switch (opts) {
+	case XNVME_PR_TERSE:
+		wrtn += fprintf(stream, "# ENOSYS: opts(%x)", opts);
+		return wrtn;
+
+	case XNVME_PR_DEF:
+	case XNVME_PR_YAML:
+		break;
+	}
+
+	wrtn += fprintf(stream, "linux;LINUX_VERSION_CODE-UAPI/%d-%d.%d.%d",
+			LINUX_VERSION_CODE,
+			(LINUX_VERSION_CODE & (0xff << 16)) >> 16,
+			(LINUX_VERSION_CODE & (0xff << 8)) >> 8,
+			LINUX_VERSION_CODE & 0xff);
+
+	return wrtn;
+}
 
 int
 _sysfs_path_to_buf(const char *path, char *buf, int buf_len)
@@ -516,6 +541,12 @@ xnvme_be_linux_enumerate(struct xnvme_enumeration *list, const char *sys_uri,
 	free(ns);
 
 	return 0;
+}
+#else
+int
+xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr XNVME_UNUSED(opts))
+{
+	return fprintf(stream, "linux;LINUX_VERSION_CODE-UAPI/NOSYS\n",
 }
 #endif
 

@@ -93,5 +93,7 @@ int
 xnvme_be_linux_sysfs_dev_attr_to_num(struct xnvme_dev *dev, const char *attr,
 				     uint64_t *val);
 
+int
+xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr opts);
 
 #endif /* __INTERNAL_XNVME_BE_LINUX */
