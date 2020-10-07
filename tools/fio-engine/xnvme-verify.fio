@@ -1,5 +1,7 @@
 ; Verify fio IO engines with a random-write workload using BS=4k at QD=16
 ;
+; Writes, at random, 1GB at QD16 using 4K BS and verifies it.
+;
 ; README
 ;
 ; Make sure you provide the correct path to 'libxnvme-fio-engine.so' when
@@ -30,7 +32,7 @@
 ;
 ; # Use the xNVMe io-engine engine with SPDK backend
 ; fio xnvme-compare.fio \
-;   --ioengine=io_uring \
+;   --ioengine=external:/usr/lib/libxnvme-fio-engine.so \
 ;   --section=default \
 ;   --filename=pci\\:0000\\:01\\:00.0?nsid=1
 ;
@@ -43,7 +45,7 @@
 ; Within a fio-script using a single "\":
 ;
 ; filename=pci\:0000\:01\:00.0?nsid=1
-
+;
 ; NOTE: If you want to override the default bs, iodepth, and workload, then
 ; invoke it as:
 ;

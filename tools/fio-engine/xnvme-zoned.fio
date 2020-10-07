@@ -1,5 +1,7 @@
 ; Running xNVMe/fio on a Zoned Device
 ;
+; Writes 1GB at QD1 using 4K BS and verifies it.
+;
 ; README
 ;
 ; Make sure you provide the correct path to 'libxnvme-fio-engine.so' when
@@ -30,7 +32,7 @@
 ;
 ; # Use the xNVMe io-engine engine with SPDK backend
 ; fio xnvme-compare.fio \
-;   --ioengine=io_uring \
+;   --ioengine=external:/usr/lib/libxnvme-fio-engine.so \
 ;   --section=default \
 ;   --filename=pci\\:0000\\:01\\:00.0?nsid=1
 ;
@@ -43,6 +45,12 @@
 ; Within a fio-script using a single "\":
 ;
 ; filename=pci\:0000\:01\:00.0?nsid=1
+;
+; NOTE: If you want to override the default bs, iodepth, and workload, then
+; invoke it as:
+;
+; FIO_BS="512" FIO_RW="verify" FIO_IODEPTH=16 fio xnvme-compare.fio \
+;   --section=override
 ;
 ; NOTE: I/O errors have been observed with fio 3.20, however, not with 3.22,
 ; in any case, if you encounter them, then you can clean up the drive by first
@@ -60,8 +68,6 @@ iodepth=1
 bs=4K
 direct=1
 thread=1
-;time_based=1
-;runtime=10
 ramp_time=1
 norandommap=1
 verify=crc32c
