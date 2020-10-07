@@ -184,13 +184,13 @@ int
 znd_report_find_arbitrary(const struct znd_report *report, enum znd_state state,
 			  uint64_t *zlba, int opts)
 {
-	int arb = 0;
+	uint64_t arb;
 
 	srand(opts ? opts : time(NULL));
-	arb = rand();
+	arb = rand() % UINT32_MAX;
 
-	for (uint64_t ci = 0; ci < report->nentries; ++ci) {
-		const uint64_t idx = (ci + arb) % report->nentries;
+	for (uint32_t ci = 0; ci < report->nentries; ++ci) {
+		const uint64_t idx = (arb++) % ((uint64_t)report->nentries);
 		struct znd_descr *zdescr = NULL;
 
 		zdescr = ZND_REPORT_DESCR(report, idx);
