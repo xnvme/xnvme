@@ -9,7 +9,16 @@
 #include <libznd.h>
 #include <xnvme_be.h>
 #include <xnvme_dev.h>
-#include <xnvme_be_registry.c>
+
+static struct xnvme_be *g_xnvme_be_registry[] = {
+	&xnvme_be_spdk,
+	&xnvme_be_linux,
+	&xnvme_be_fbsd,
+	NULL
+};
+
+static int
+xnvme_be_count = sizeof g_xnvme_be_registry / sizeof * g_xnvme_be_registry - 1;
 
 int
 xnvme_be_yaml(FILE *stream, const struct xnvme_be *be, int indent,
@@ -196,7 +205,7 @@ xnvme_be_attr_list(struct xnvme_be_attr_list **list)
 	(*list)->count = xnvme_be_count;
 	(*list)->capacity = xnvme_be_count;
 	for (int i = 0; i < xnvme_be_count; ++i) {
-		(*list)->item[i] = xnvme_be_registry[i]->attr;
+		(*list)->item[i] = g_xnvme_be_registry[i]->attr;
 	}
 
 	return 0;
@@ -272,7 +281,7 @@ xnvme_be_attr_list_fpr(FILE *stream, const struct xnvme_be_attr_list *list,
 	wrtn += fprintf(stream, "\n");
 	for (int i = 0; i < list->count; ++i) {
 		wrtn += fprintf(stream, "  - ");
-		wrtn += xnvme_be_attr_fpr(stream, &xnvme_be_registry[i]->attr,
+		wrtn += xnvme_be_attr_fpr(stream, &g_xnvme_be_registry[i]->attr,
 					  opts);
 		wrtn += fprintf(stream, "\n");
 	}
@@ -665,8 +674,8 @@ xnvme_be_factory(const char *uri, struct xnvme_dev **dev)
 		return err;
 	}
 
-	for (int i = 0; xnvme_be_registry[i]; ++i) {
-		struct xnvme_be *be = xnvme_be_registry[i];
+	for (int i = 0; g_xnvme_be_registry[i]; ++i) {
+		struct xnvme_be *be = g_xnvme_be_registry[i];
 
 		if (!be->attr.enabled) {
 			continue;
@@ -699,11 +708,11 @@ xnvme_enumerate(struct xnvme_enumeration **list, const char *sys_uri, int opts)
 		return err;
 	}
 
-	for (int i = 0; xnvme_be_registry[i]; ++i) {
-		err = xnvme_be_registry[i]->dev.enumerate(*list, sys_uri, opts);
+	for (int i = 0; g_xnvme_be_registry[i]; ++i) {
+		err = g_xnvme_be_registry[i]->dev.enumerate(*list, sys_uri, opts);
 		if (err) {
 			XNVME_DEBUG("FAILED: %s->enumerate(...), err: '%s', i: %d",
-				    xnvme_be_registry[i]->attr.name,
+				    g_xnvme_be_registry[i]->attr.name,
 				    strerror(-err), i);
 		}
 	}
