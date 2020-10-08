@@ -440,10 +440,10 @@ _cmd_mgmt(struct xnvmec *cli, uint8_t action)
 	struct xnvme_dev *dev = cli->args.dev;
 	uint32_t nsid = cli->args.nsid;
 	const uint64_t zslba = cli->args.slba;
+	const struct znd_idfy_lbafe *lbafe = znd_get_lbafe(dev);
 	int asf = 0;
 
-	//size_t dbuf_nbytes = xnvme_dev_get_ns(dev)->zds;
-	size_t dbuf_nbytes = 0;
+	size_t dbuf_nbytes = lbafe ? lbafe->zdes : 0;
 	char *dbuf = NULL;
 
 	struct xnvme_req req = { 0 };
