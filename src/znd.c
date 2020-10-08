@@ -889,3 +889,69 @@ znd_type_str(enum znd_type zt)
 
 	return "ZND_TYPE_ENOSYS";
 }
+
+const struct znd_idfy_ctrlr *
+znd_get_ctrlr(struct xnvme_dev *dev)
+{
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
+	struct znd_idfy_ctrlr *zctrlr;
+
+	if (geo->type != XNVME_GEO_ZONED) {
+		XNVME_DEBUG("FAILED: device is not zoned");
+		errno = EINVAL;
+		return NULL;
+	}
+
+	zctrlr = (void *)xnvme_dev_get_ctrlr_css(dev);
+	if (!zctrlr) {
+		XNVME_DEBUG("FAILED: !xnvme_dev_get_ns()");
+		return NULL;
+	}
+
+	return zctrlr;
+}
+
+const struct znd_idfy_ns *
+znd_get_ns(struct xnvme_dev *dev)
+{
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
+	struct znd_idfy_ns *zns;
+
+	if (geo->type != XNVME_GEO_ZONED) {
+		XNVME_DEBUG("FAILED: device is not zoned");
+		errno = EINVAL;
+		return NULL;
+	}
+
+	zns = (void *)xnvme_dev_get_ns_css(dev);
+	if (!zns) {
+		XNVME_DEBUG("FAILED: !xnvme_dev_get_ns_css()");
+		return NULL;
+	}
+
+	return zns;
+}
+
+const struct znd_idfy_lbafe *
+znd_get_lbafe(struct xnvme_dev *dev)
+{
+	const struct xnvme_spec_idfy_ns *ns;
+	const struct znd_idfy_ns *zns;
+	const struct znd_idfy_lbafe *lbafe;
+
+	ns = xnvme_dev_get_ns(dev);
+	if (!ns) {
+		XNVME_DEBUG("FAILED: !xnvme_de_get_ns()");
+		return NULL;
+	}
+
+	zns = znd_get_ns(dev);
+	if (!zns) {
+		XNVME_DEBUG("FAILED: !zns_get_ns()");
+		return NULL;
+	}
+
+	lbafe = &zns->lbafe[ns->flbas.format];
+
+	return lbafe;
+}

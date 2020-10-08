@@ -406,6 +406,15 @@ struct znd_idfy_ns {
 };
 XNVME_STATIC_ASSERT(sizeof(struct znd_idfy_ns) == 4096, "Incorrect size")
 
+const struct znd_idfy_ns *
+znd_get_ns(struct xnvme_dev *dev);
+
+const struct znd_idfy_ctrlr *
+znd_get_ctrlr(struct xnvme_dev *dev);
+
+const struct znd_idfy_lbafe *
+znd_get_lbafe(struct xnvme_dev *dev);
+
 /**
  * Prints the given ::znd_idfy_ns to the given output stream
  *
