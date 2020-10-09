@@ -109,5 +109,8 @@ jobs:
         cd xnvme
         make install
 
-    - name: Execute '/usr/local/bin/xnvme enum'
-      run: /usr/local/bin/xnvme enum
+    - name: Execute 'xnvme enum'
+      run: xnvme enum
+
+    - name: Execute 'xnvme library-info'
+      run: xnvme library-info

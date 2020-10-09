@@ -97,8 +97,11 @@ jobs:
         cd xnvme
         make install
 
-    - name: Execute '/usr/local/bin/xnvme enum'
-      run: /usr/local/bin/xnvme enum
+    - name: Execute 'xnvme enum'
+      run: xnvme enum
+
+    - name: Execute 'xnvme library-info'
+      run: xnvme library-info
 
     # The is intended for testing and for quick-preview for those that do not
     # want to build from source. It will later be used for installation inside a
@@ -149,9 +152,9 @@ jobs:
       run: |
         source /opt/scripts/suitup.sh
 
-        echo "::set-env name=RESULTS::/tmp/results"
-        echo "::set-env name=TARGET_ENV::${CIJ_ENVS}/refenv-xnvme-qemu.sh"
-        echo "::set-env name=CLOUD_IMG_URL::https://cloud.debian.org/images/cloud/bullseye/daily/20200807-351/debian-11-generic-amd64-daily-20200807-351.qcow2"
+        echo "RESULTS=/tmp/results" >> $GITHUB_ENV
+        echo "TARGET_ENV=${CIJ_ENVS}/refenv-xnvme-qemu.sh" >> $GITHUB_ENV
+        echo "CLOUD_IMG_URL=https://cloud.debian.org/images/cloud/bullseye/daily/20200807-351/debian-11-generic-amd64-daily-20200807-351.qcow2" >> $GITHUB_ENV
 
     - name: Container-prep, download Debian packages
       uses: actions/download-artifact@v2

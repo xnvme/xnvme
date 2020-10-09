@@ -90,8 +90,8 @@ jobs:
 
     - name: Project, define version env. var.
       run: |
-        PROJECT_VERSION="hmmm"
-        echo "::set-env name=PROJECT_VERSION::${PROJECT_VERSION}"
+        PROJECT_VERSION=$(python3 scripts/xnvme_ver.py --cml CMakeLists.txt)
+        echo "PROJECT_VERSION=${PROJECT_VERSION}" >> $GITHUB_ENV
 
     - name: Coverity, install requirements
       run: |
