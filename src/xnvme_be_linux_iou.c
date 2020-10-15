@@ -291,7 +291,8 @@ _linux_iou_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 
 	err = io_uring_submit(&actx->ring);
 	if (err < 0) {
-		XNVME_DEBUG("io_uring_submit(%d), err: %d", opcode, err);
+		XNVME_DEBUG("io_uring_submit(%d), err: %d", cmd->common.opcode,
+			    err);
 		return err;
 	}
 
