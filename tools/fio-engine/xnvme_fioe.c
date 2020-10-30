@@ -719,6 +719,7 @@ xnvme_fioe_report_zones(struct thread_data *XNVME_UNUSED(td),
 			struct fio_file *f, uint64_t offset,
 			struct zbd_zone *zbdz, unsigned int nr_zones)
 {
+	const struct znd_idfy_lbafe *lbafe = NULL;
 	struct xnvme_dev *dev = NULL;
 	const struct xnvme_geo *geo = NULL;
 	struct znd_report *rprt = NULL;
@@ -739,6 +740,7 @@ xnvme_fioe_report_zones(struct thread_data *XNVME_UNUSED(td),
 
 	geo = xnvme_dev_get_geo(dev);
 	ssw = xnvme_dev_get_ssw(dev);
+	lbafe = znd_get_lbafe(dev);
 
 	limit = nr_zones > geo->nzone ? geo->nzone : nr_zones;
 
@@ -767,7 +769,7 @@ xnvme_fioe_report_zones(struct thread_data *XNVME_UNUSED(td),
 		struct znd_descr *descr = ZND_REPORT_DESCR(rprt, idx);
 
 		zbdz[idx].start = descr->zslba << ssw;
-		zbdz[idx].len = descr->zcap << ssw;
+		zbdz[idx].len = lbafe->zsze << ssw;
 		zbdz[idx].capacity = descr->zcap << ssw;
 		zbdz[idx].wp = descr->wp << ssw;
 
