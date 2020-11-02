@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <stdio.h>
 #include <errno.h>
-#include <libznd.h>
+#include <libxnvme.h>
+#include <libxnvme_spec_pp.h>
+#include <libxnvme_nvm.h>
+#include <libxnvme_znd.h>
 #include <libxnvmec.h>
 
 struct cb_args {
@@ -39,7 +42,7 @@ cmd_verify(struct xnvmec *cli)
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = cli->args.geo;
 	uint32_t nsid = cli->args.nsid;
-	struct znd_descr zone = { 0 };
+	struct xnvme_spec_znd_descr zone = {0 };
 
 	int cmd_opts = XNVME_CMD_ASYNC;
 	struct cb_args cb_args = { 0 };
@@ -59,13 +62,13 @@ cmd_verify(struct xnvmec *cli)
 	}
 
 	// Find an empty zone
-	err = znd_descr_from_dev_in_state(dev, ZND_STATE_EMPTY, &zone);
+	err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
 	if (err) {
-		xnvmec_perr("znd_descr_from_dev()", -err);
+		xnvmec_perr("xnvme_znd_descr_from_dev()", -err);
 		goto exit;
 	}
 	xnvmec_pinf("Using the following zone:");
-	znd_descr_pr(&zone, XNVME_PR_DEF);
+	xnvme_spec_znd_descr_pr(&zone, XNVME_PR_DEF);
 
 	// Buffers for verification
 	buf_nbytes = zone.zcap * geo->lba_nbytes;
@@ -105,9 +108,9 @@ cmd_verify(struct xnvmec *cli)
 		req.async.cb = cb_lbacheck;
 		req.async.cb_arg = &cb_args;
 
-		err = znd_cmd_append(dev, nsid, zone.zslba, 0,
-				     dbuf + sect * geo->lba_nbytes, NULL,
-				     cmd_opts, &req);
+		err = xnvme_znd_append(dev, nsid, zone.zslba, 0,
+				       dbuf + sect * geo->lba_nbytes, NULL,
+				       cmd_opts, &req);
 		switch (err) {
 		case 0:
 			cb_args.submitted += 1;
@@ -148,11 +151,11 @@ cmd_verify(struct xnvmec *cli)
 	for (uint64_t sect = 0; sect < zone.zcap; ++sect) {
 		struct xnvme_req req = { 0 };
 
-		err = xnvme_cmd_read(dev, nsid, zone.zslba + sect, 0,
+		err = xnvme_nvm_read(dev, nsid, zone.zslba + sect, 0,
 				     vbuf + sect * geo->lba_nbytes, NULL,
 				     XNVME_CMD_SYNC, &req);
 		if (err || xnvme_req_cpl_status(&req)) {
-			xnvmec_perr("xnvme_cmd_read()", err);
+			xnvmec_perr("xnvme_nvm_read()", err);
 			xnvme_req_pr(&req, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;

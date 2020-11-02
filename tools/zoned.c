@@ -1,7 +1,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <libznd.h>
+#include <libxnvme.h>
+#include <libxnvme_spec_pp.h>
+#include <libxnvme_adm.h>
+#include <libxnvme_nvm.h>
+#include <libxnvme_znd.h>
 #include <libxnvmec.h>
 
 // TODO: Have this enumeration only show zoned namespaces
@@ -43,11 +47,11 @@ cmd_idfy_ctrlr(struct xnvmec *cli)
 	struct xnvme_dev *dev = cli->args.dev;
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
 	enum xnvme_spec_csi csi = XNVME_SPEC_CSI_ZONED;
-	struct znd_idfy *idfy = NULL;
+	struct xnvme_spec_znd_idfy *idfy = NULL;
 	struct xnvme_req req = { 0 };
 	int err;
 
-	xnvmec_pinf("xnvme_cmd_idfy_ctrlr: {nsid: 0x%x, csi: %s}", nsid,
+	xnvmec_pinf("xnvme_adm_idfy_ctrlr: {nsid: 0x%x, csi: %s}", nsid,
 		    xnvme_spec_csi_str(csi));
 
 	idfy = xnvme_buf_alloc(dev, sizeof(*idfy), NULL);
@@ -57,15 +61,15 @@ cmd_idfy_ctrlr(struct xnvmec *cli)
 		goto exit;
 	}
 
-	err = xnvme_cmd_idfy_ctrlr_csi(dev, XNVME_SPEC_CSI_ZONED, &idfy->base, &req);
+	err = xnvme_adm_idfy_ctrlr_csi(dev, XNVME_SPEC_CSI_ZONED, &idfy->base, &req);
 	if (err || xnvme_req_cpl_status(&req)) {
-		xnvmec_perr("xnvme_cmd_idfy_ctrlr_csi()", err);
+		xnvmec_perr("xnvme_adm_idfy_ctrlr_csi()", err);
 		xnvme_req_pr(&req, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}
 
-	znd_idfy_ctrlr_pr(&idfy->zctrlr, XNVME_PR_DEF);
+	xnvme_spec_znd_idfy_ctrlr_pr(&idfy->zctrlr, XNVME_PR_DEF);
 
 	if (cli->args.data_output) {
 		xnvmec_pinf("Dumping to: '%s'", cli->args.data_output);
@@ -88,11 +92,11 @@ cmd_idfy_ns(struct xnvmec *cli)
 	struct xnvme_dev *dev = cli->args.dev;
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
 	enum xnvme_spec_csi csi = XNVME_SPEC_CSI_ZONED;
-	struct znd_idfy *idfy = NULL;
+	struct xnvme_spec_znd_idfy *idfy = NULL;
 	struct xnvme_req req = { 0 };
 	int err;
 
-	xnvmec_pinf("xnvme_cmd_idfy_ns: {nsid: 0x%x, csi: %s}", nsid,
+	xnvmec_pinf("xnvme_adm_idfy_ns: {nsid: 0x%x, csi: %s}", nsid,
 		    xnvme_spec_csi_str(csi));
 
 	idfy = xnvme_buf_alloc(dev, sizeof(*idfy), NULL);
@@ -102,15 +106,15 @@ cmd_idfy_ns(struct xnvmec *cli)
 		goto exit;
 	}
 
-	err = xnvme_cmd_idfy_ns_csi(dev, nsid, XNVME_SPEC_CSI_ZONED, &idfy->base, &req);
+	err = xnvme_adm_idfy_ns_csi(dev, nsid, XNVME_SPEC_CSI_ZONED, &idfy->base, &req);
 	if (err || xnvme_req_cpl_status(&req)) {
-		xnvmec_perr("xnvme_cmd_idfy_ns_csi()", err);
+		xnvmec_perr("xnvme_adm_idfy_ns_csi()", err);
 		xnvme_req_pr(&req, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}
 
-	znd_idfy_ns_pr(&idfy->zns, XNVME_PR_DEF);
+	xnvme_spec_znd_idfy_ns_pr(&idfy->zns, XNVME_PR_DEF);
 
 	if (cli->args.data_output) {
 		xnvmec_pinf("Dumping to: '%s'", cli->args.data_output);
@@ -136,20 +140,20 @@ cmd_report(struct xnvmec *cli)
 	uint64_t zslba = cli->args.slba;
 	uint64_t limit = cli->args.limit;
 
-	struct znd_report *report = NULL;
+	struct xnvme_znd_report *report = NULL;
 	int err;
 
 	xnvmec_pinf("Zone Information Report for lba: 0x%016lx, limit: %zu",
 		    zslba, limit ? limit : cli->args.geo->nzone);
 
-	report = znd_report_from_dev(dev, zslba, limit, 0);
+	report = xnvme_znd_report_from_dev(dev, zslba, limit, 0);
 	if (!report) {
 		err = -errno;
-		xnvmec_perr("znd_report_from_dev()", err);
+		xnvmec_perr("xnvme_znd_report_from_dev()", err);
 		goto exit;
 	}
 
-	znd_report_pr(report, XNVME_PR_DEF);
+	xnvme_znd_report_pr(report, XNVME_PR_DEF);
 	err = 0;
 
 	if (cli->args.data_output) {
@@ -172,19 +176,19 @@ exit:
 static int
 cmd_changes(struct xnvmec *cli)
 {
-	struct znd_changes *changes = NULL;
+	struct xnvme_spec_znd_log_changes *changes = NULL;
 	int err;
 
 	xnvmec_pinf("Retrieving the Changed Zone List");
 
-	changes = znd_changes_from_dev(cli->args.dev);
+	changes = xnvme_znd_log_changes_from_dev(cli->args.dev);
 	if (!changes) {
 		err = -errno;
-		xnvmec_perr("znd_changes_from_dev()", err);
+		xnvmec_perr("xnvme_znd_log_changes_from_dev()", err);
 		goto exit;
 	}
 
-	znd_changes_pr(changes, XNVME_PR_DEF);
+	xnvme_spec_znd_log_changes_pr(changes, XNVME_PR_DEF);
 	err = 0;
 
 exit:
@@ -219,10 +223,10 @@ cmd_errors(struct xnvmec *cli)
 		goto exit;
 	}
 
-	err = xnvme_cmd_log(cli->args.dev, XNVME_SPEC_LOG_ERRI, nsid, 0, 0, 0,
+	err = xnvme_adm_log(cli->args.dev, XNVME_SPEC_LOG_ERRI, nsid, 0, 0, 0,
 			    log, log_nbytes, &req);
 	if (err || xnvme_req_cpl_status(&req)) {
-		xnvmec_perr("xnvme_cmd_log(XNVME_SPEC_LOG_ERRI)", err);
+		xnvmec_perr("xnvme_adm_log(XNVME_SPEC_LOG_ERRI)", err);
 		xnvme_req_pr(&req, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -289,10 +293,10 @@ cmd_read(struct xnvmec *cli)
 	}
 
 	xnvmec_pinf("Sending the command...");
-	err = xnvme_cmd_read(dev, nsid, slba, nlb, dbuf, mbuf, XNVME_CMD_SYNC,
+	err = xnvme_nvm_read(dev, nsid, slba, nlb, dbuf, mbuf, XNVME_CMD_SYNC,
 			     &req);
 	if (err || xnvme_req_cpl_status(&req)) {
-		xnvmec_perr("xnvme_cmd_read()", err);
+		xnvmec_perr("xnvme_nvm_read()", err);
 		xnvme_req_pr(&req, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -367,10 +371,10 @@ cmd_write(struct xnvmec *cli)
 	}
 
 	xnvmec_pinf("Sending the command...");
-	err = xnvme_cmd_write(dev, nsid, slba, nlb, dbuf, mbuf, XNVME_CMD_SYNC,
+	err = xnvme_nvm_write(dev, nsid, slba, nlb, dbuf, mbuf, XNVME_CMD_SYNC,
 			      &req);
 	if (err || xnvme_req_cpl_status(&req)) {
-		xnvmec_perr("xnvme_cmd_write()", err);
+		xnvmec_perr("xnvme_nvm_write()", err);
 		xnvme_req_pr(&req, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -417,10 +421,10 @@ cmd_append(struct xnvmec *cli)
 		goto exit;
 	}
 
-	err = znd_cmd_append(dev, nsid, zslba, nlb, dbuf, NULL,
-			     XNVME_CMD_SYNC, &req);
+	err = xnvme_znd_append(dev, nsid, zslba, nlb, dbuf, NULL,
+			       XNVME_CMD_SYNC, &req);
 	if (err || xnvme_req_cpl_status(&req)) {
-		xnvmec_perr("znd_cmd_append()", err);
+		xnvmec_perr("xnvme_znd_append()", err);
 		xnvme_req_pr(&req, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -440,7 +444,7 @@ _cmd_mgmt(struct xnvmec *cli, uint8_t action)
 	struct xnvme_dev *dev = cli->args.dev;
 	uint32_t nsid = cli->args.nsid;
 	const uint64_t zslba = cli->args.slba;
-	const struct znd_idfy_lbafe *lbafe = znd_get_lbafe(dev);
+	const struct xnvme_spec_znd_idfy_lbafe *lbafe = xnvme_znd_dev_get_lbafe(dev);
 	int asf = 0;
 
 	size_t dbuf_nbytes = lbafe ? lbafe->zdes : 0;
@@ -450,16 +454,16 @@ _cmd_mgmt(struct xnvmec *cli, uint8_t action)
 	int err;
 
 	if (cli->given[XNVMEC_OPT_ALL]) {
-		asf = ZND_SEND_SF_SALL;
+		asf = XNVME_SPEC_ZND_MGMT_SEND_ASF_SALL;
 	}
 	if (!cli->given[XNVMEC_OPT_NSID]) {
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
 	xnvmec_pinf("MGMT: zslba: 0x%016lx, action: 0x%x, str: %s", zslba,
-		    action, znd_send_action_str(action));
+		    action, xnvme_spec_znd_cmd_mgmt_send_action_str(action));
 
-	if ((action == ZND_SEND_DESCRIPTOR) && cli->args.data_input) {
+	if ((action == XNVME_SPEC_ZND_CMD_MGMT_SEND_DESCRIPTOR) && cli->args.data_input) {
 		xnvmec_pinf("Allocating dbuf");
 		dbuf = xnvme_buf_alloc(dev, dbuf_nbytes, NULL);
 		if (!dbuf) {
@@ -474,10 +478,10 @@ _cmd_mgmt(struct xnvmec *cli, uint8_t action)
 		}
 	}
 
-	err = znd_cmd_mgmt_send(dev, nsid, zslba, action, asf, dbuf,
-				XNVME_CMD_SYNC, &req);
+	err = xnvme_znd_mgmt_send(dev, nsid, zslba, action, asf, dbuf,
+				  XNVME_CMD_SYNC, &req);
 	if (err || xnvme_req_cpl_status(&req)) {
-		xnvmec_perr("znd_cmd_mgmt_send()", err);
+		xnvmec_perr("xnvme_znd_mgmt_send()", err);
 		xnvme_req_pr(&req, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -498,25 +502,25 @@ cmd_mgmt(struct xnvmec *cli)
 static int
 cmd_mgmt_open(struct xnvmec *cli)
 {
-	return _cmd_mgmt(cli, ZND_SEND_OPEN);
+	return _cmd_mgmt(cli, XNVME_SPEC_ZND_CMD_MGMT_SEND_OPEN);
 }
 
 static int
 cmd_mgmt_finish(struct xnvmec *cli)
 {
-	return _cmd_mgmt(cli, ZND_SEND_FINISH);
+	return _cmd_mgmt(cli, XNVME_SPEC_ZND_CMD_MGMT_SEND_FINISH);
 }
 
 static int
 cmd_mgmt_close(struct xnvmec *cli)
 {
-	return _cmd_mgmt(cli, ZND_SEND_CLOSE);
+	return _cmd_mgmt(cli, XNVME_SPEC_ZND_CMD_MGMT_SEND_CLOSE);
 }
 
 static int
 cmd_mgmt_reset(struct xnvmec *cli)
 {
-	return _cmd_mgmt(cli, ZND_SEND_RESET);
+	return _cmd_mgmt(cli, XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET);
 }
 
 //

@@ -175,12 +175,12 @@ _linux_aio_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 	int ret = 0;
 
 	switch (cmd->common.opcode) {
-	case XNVME_SPEC_OPC_WRITE:
-		io_prep_pwrite(iocb, state->fd, dbuf, dbuf_nbytes, cmd->lblk.slba << dev->ssw);
+	case XNVME_SPEC_NVM_OPC_WRITE:
+		io_prep_pwrite(iocb, state->fd, dbuf, dbuf_nbytes, cmd->nvm.slba << dev->ssw);
 		break;
 
-	case XNVME_SPEC_OPC_READ:
-		io_prep_pread(iocb, state->fd, dbuf, dbuf_nbytes, cmd->lblk.slba << dev->ssw);
+	case XNVME_SPEC_NVM_OPC_READ:
+		io_prep_pread(iocb, state->fd, dbuf, dbuf_nbytes, cmd->nvm.slba << dev->ssw);
 		break;
 
 	default:

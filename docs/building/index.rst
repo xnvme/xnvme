@@ -80,12 +80,12 @@ Arch Linux 20200306
 
 Install the following packages via ``pacman``:
 
-.. literalinclude:: ../../scripts/pkgs/arch:20200306.txt
+.. literalinclude:: ../../scripts/pkgs/archlinux:20200306.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/arch:20200306.sh
+.. literalinclude:: ../../scripts/pkgs/archlinux:20200306.sh
    :language: bash
    :lines: 8-
 

@@ -6,7 +6,7 @@
 #include <paths.h>
 #include <errno.h>
 #include <libxnvme.h>
-#include <libznd.h>
+#include <libxnvme_znd.h>
 #include <xnvme_be.h>
 #include <xnvme_dev.h>
 
@@ -300,8 +300,8 @@ _zoned_geometry(struct xnvme_dev *dev)
 {
 	struct xnvme_spec_idfy_ns *nvm = (void *)xnvme_dev_get_ns(dev);
 	struct xnvme_spec_lbaf *lbaf = &nvm->lbaf[nvm->flbas.format];
-	struct znd_idfy_ns *zns = (void *)xnvme_dev_get_ns_css(dev);
-	struct znd_idfy_lbafe *lbafe = &zns->lbafe[nvm->flbas.format];
+	struct xnvme_spec_znd_idfy_ns *zns = (void *)xnvme_dev_get_ns_css(dev);
+	struct xnvme_spec_znd_idfy_lbafe *lbafe = &zns->lbafe[nvm->flbas.format];
 	struct xnvme_geo *geo = &dev->geo;
 	uint64_t nzones;
 	int err;
@@ -311,9 +311,9 @@ _zoned_geometry(struct xnvme_dev *dev)
 		return -EINVAL;
 	}
 
-	err = znd_stat_dev(dev, ZND_RECV_SF_ALL, &nzones);
+	err = xnvme_znd_stat(dev, XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL, &nzones);
 	if (err) {
-		XNVME_DEBUG("FAILED: znd_cmd_mgmt_recv()");
+		XNVME_DEBUG("FAILED: xnvme_znd_mgmt_recv()");
 		return err;
 	}
 
@@ -385,7 +385,7 @@ xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 			break;
 
 		case XNVME_SPEC_CSI_NOCHECK:
-		case XNVME_SPEC_CSI_LBLK:
+		case XNVME_SPEC_CSI_NVM:
 			if (_conventional_geometry(dev)) {
 				XNVME_DEBUG("FAILED: _conventional_geometry");
 				return -EINVAL;

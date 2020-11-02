@@ -62,3 +62,4 @@ Not all backends support all features.
    xnvme_be_fbsd
    xnvme_be_linux
    xnvme_be_spdk/index
+   xnvme_be_intf

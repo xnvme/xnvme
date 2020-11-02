@@ -144,30 +144,6 @@ struct __attribute__((packed)) xnvme_spec_log_health_entry {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_log_health_entry) == 512, "Incorrect size")
 
 /**
- * Prints the given :;xnvme_spec_log_health_entry to the given output stream
- *
- * @param stream output stream used for printing
- * @param log pointer to the structure to print
- * @param opts printer options, see ::xnvme_pr
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_spec_log_health_fpr(FILE *stream,
-			  const struct xnvme_spec_log_health_entry *log,
-			  int opts);
-
-/**
- * Prints the given :;xnvme_spec_log_health_entry to stdout
- *
- * @param log
- * @param opts
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_spec_log_health_pr(const struct xnvme_spec_log_health_entry *log,
-			 int opts);
-
-/**
  * NVMe get-log-page entry for error information
  *
  * NVMe 1.4 - Figure ?
@@ -192,32 +168,6 @@ struct xnvme_spec_log_erri_entry {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_log_erri_entry) == 64, "Incorrect size")
 
 /**
- * Prints the given :;xnvme_spec_log_erri_entry to stdout
- *
- * @param stream output stream used for printing
- * @param log
- * @param limit
- * @param opts
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_spec_log_erri_fpr(FILE *stream,
-			const struct xnvme_spec_log_erri_entry *log, int limit,
-			int opts);
-
-/**
- * Prints the given :;xnvme_spec_log_erri_entry to stdout
- *
- * @param log
- * @param limit
- * @param opts printer options, see ::xnvme_pr
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_spec_log_erri_pr(const struct xnvme_spec_log_erri_entry *log, int limit,
-		       int opts);
-
-/**
  * Identifiers (lpi) for NVMe get-log-page
  *
  * NVMe 1.4 - Figure ?
@@ -225,43 +175,43 @@ xnvme_spec_log_erri_pr(const struct xnvme_spec_log_erri_entry *log, int limit,
  * @enum xnvme_spec_log_lpi
  */
 enum xnvme_spec_log_lpi {
-	XNVME_SPEC_LOG_RSVD = 0x0,  ///< XNVME_SPEC_LOG_RSVD
-	XNVME_SPEC_LOG_ERRI = 0x1,	 ///< XNVME_SPEC_LOG_ERRI
-	XNVME_SPEC_LOG_HEALTH = 0x2,	 ///< XNVME_SPEC_LOG_HEALTH
-	XNVME_SPEC_LOG_FW = 0x3,		 ///< XNVME_SPEC_LOG_FW
-	XNVME_SPEC_LOG_CHNS = 0x4,	 ///< XNVME_SPEC_LOG_CHNS
-	XNVME_SPEC_LOG_CSAE = 0x5,	 ///< XNVME_SPEC_LOG_CSAE
-	XNVME_SPEC_LOG_SELFTEST = 0x6,	 ///< XNVME_SPEC_LOG_SELFTEST
-	XNVME_SPEC_LOG_TELEHOST = 0x7,	 ///< XNVME_SPEC_LOG_TELEHOST
-	XNVME_SPEC_LOG_TELECTRLR = 0x8,	 ///< XNVME_SPEC_LOG_TELECTRLR
+	XNVME_SPEC_LOG_RSVD = 0x0,	///< XNVME_SPEC_LOG_RSVD
+	XNVME_SPEC_LOG_ERRI = 0x1,	///< XNVME_SPEC_LOG_ERRI
+	XNVME_SPEC_LOG_HEALTH = 0x2,	///< XNVME_SPEC_LOG_HEALTH
+	XNVME_SPEC_LOG_FW = 0x3,	///< XNVME_SPEC_LOG_FW
+	XNVME_SPEC_LOG_CHNS = 0x4,	///< XNVME_SPEC_LOG_CHNS
+	XNVME_SPEC_LOG_CSAE = 0x5,	///< XNVME_SPEC_LOG_CSAE
+	XNVME_SPEC_LOG_SELFTEST = 0x6,	///< XNVME_SPEC_LOG_SELFTEST
+	XNVME_SPEC_LOG_TELEHOST = 0x7,	///< XNVME_SPEC_LOG_TELEHOST
+	XNVME_SPEC_LOG_TELECTRLR = 0x8,	///< XNVME_SPEC_LOG_TELECTRLR
 };
 
 /**
  * @enum xnvme_spec_idfy_cns
  */
 enum xnvme_spec_idfy_cns {
-	XNVME_SPEC_IDFY_NS = 0x0, ///< XNVME_SPEC_IDFY_NS
-	XNVME_SPEC_IDFY_CTRLR = 0x1, ///< XNVME_SPEC_IDFY_CTRLR
-	XNVME_SPEC_IDFY_NSLIST = 0x2, ///< XNVME_SPEC_IDFY_NSLIST
-	XNVME_SPEC_IDFY_NSDSCR = 0x3, ///< XNVME_SPEC_IDFY_NSDSCR
-	XNVME_SPEC_IDFY_SETL = 0x4, ///< XNVME_SPEC_IDFY_SETL
+	XNVME_SPEC_IDFY_NS = 0x0,	///< XNVME_SPEC_IDFY_NS
+	XNVME_SPEC_IDFY_CTRLR = 0x1,	///< XNVME_SPEC_IDFY_CTRLR
+	XNVME_SPEC_IDFY_NSLIST = 0x2,	///< XNVME_SPEC_IDFY_NSLIST
+	XNVME_SPEC_IDFY_NSDSCR = 0x3,	///< XNVME_SPEC_IDFY_NSDSCR
+	XNVME_SPEC_IDFY_SETL = 0x4,	///< XNVME_SPEC_IDFY_SETL
 
-	XNVME_SPEC_IDFY_NS_IOCS = 0x05, ///< XNVME_SPEC_IDFY_NS_IOCS
-	XNVME_SPEC_IDFY_CTRLR_IOCS = 0x6, ///< XNVME_SPEC_IDFY_CTRLR_IOCS
-	XNVME_SPEC_IDFY_NSLIST_IOCS = 0x7, ///< XNVME_SPEC_IDFY_NSLIST_IOCS
+	XNVME_SPEC_IDFY_NS_IOCS = 0x05,		///< XNVME_SPEC_IDFY_NS_IOCS
+	XNVME_SPEC_IDFY_CTRLR_IOCS = 0x6,	///< XNVME_SPEC_IDFY_CTRLR_IOCS
+	XNVME_SPEC_IDFY_NSLIST_IOCS = 0x7,	///< XNVME_SPEC_IDFY_NSLIST_IOCS
 
-	XNVME_SPEC_IDFY_NSLIST_ALLOC = 0x10, ///< XNVME_SPEC_IDFY_NSLIST_ALLOC
-	XNVME_SPEC_IDFY_NS_ALLOC = 0x11, ///< XNVME_SPEC_IDFY_NS_ALLOC
-	XNVME_SPEC_IDFY_CTRLR_NS = 0x12, ///< XNVME_SPEC_IDFY_CTRLR_NS
-	XNVME_SPEC_IDFY_CTRLR_SUB = 0x13, ///< XNVME_SPEC_IDFY_CTRLR_SUB
-	XNVME_SPEC_IDFY_CTRLR_PRI = 0x14, ///< XNVME_SPEC_IDFY_CTRLR_PRI
-	XNVME_SPEC_IDFY_CTRLR_SEC = 0x15, ///< XNVME_SPEC_IDFY_CTRLR_SEC
-	XNVME_SPEC_IDFY_NSGRAN = 0x16, ///< XNVME_SPEC_IDFY_NSGRAN
-	XNVME_SPEC_IDFY_UUIDL = 0x17, ///< XNVME_SPEC_IDFY_UUIDL
+	XNVME_SPEC_IDFY_NSLIST_ALLOC = 0x10,	///< XNVME_SPEC_IDFY_NSLIST_ALLOC
+	XNVME_SPEC_IDFY_NS_ALLOC = 0x11,	///< XNVME_SPEC_IDFY_NS_ALLOC
+	XNVME_SPEC_IDFY_CTRLR_NS = 0x12,	///< XNVME_SPEC_IDFY_CTRLR_NS
+	XNVME_SPEC_IDFY_CTRLR_SUB = 0x13,	///< XNVME_SPEC_IDFY_CTRLR_SUB
+	XNVME_SPEC_IDFY_CTRLR_PRI = 0x14,	///< XNVME_SPEC_IDFY_CTRLR_PRI
+	XNVME_SPEC_IDFY_CTRLR_SEC = 0x15,	///< XNVME_SPEC_IDFY_CTRLR_SEC
+	XNVME_SPEC_IDFY_NSGRAN = 0x16,		///< XNVME_SPEC_IDFY_NSGRAN
+	XNVME_SPEC_IDFY_UUIDL = 0x17,		///< XNVME_SPEC_IDFY_UUIDL
 
-	XNVME_SPEC_IDFY_NSLIST_ALLOC_IOCS = 0x1A, ///< XNVME_SPEC_IDFY_NSLIST_ALLOC_IOCS
-	XNVME_SPEC_IDFY_NS_ALLOC_IOCS = 0x1B, ///< XNVME_SPEC_IDFY_NS_ALLOC_IOCS
-	XNVME_SPEC_IDFY_IOCS = 0x1C, ///< XNVME_SPEC_IDFY_IOCS
+	XNVME_SPEC_IDFY_NSLIST_ALLOC_IOCS = 0x1A,	///< XNVME_SPEC_IDFY_NSLIST_ALLOC_IOCS
+	XNVME_SPEC_IDFY_NS_ALLOC_IOCS = 0x1B,		///< XNVME_SPEC_IDFY_NS_ALLOC_IOCS
+	XNVME_SPEC_IDFY_IOCS = 0x1C,			///< XNVME_SPEC_IDFY_IOCS
 };
 
 /**
@@ -283,21 +233,13 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_lbaf) == 4, "Incorrect size")
  * @enum xnvme_spec_csi
  */
 enum xnvme_spec_csi {
-	XNVME_SPEC_CSI_LBLK	= 0x0,	///< XNVME_SPEC_CSI_LBLK
+	XNVME_SPEC_CSI_NVM	= 0x0,	///< XNVME_SPEC_CSI_NVM
 	XNVME_SPEC_CSI_ZONED	= 0x2,	///< XNVME_SPEC_CSI_ZONED
 
 	XNVME_SPEC_CSI_NOCHECK	= 0xFF,	///< XNVME_SPEC_CSI_NOCHECK
 };
 
-/**
- * Produces a string representation of the given ::xnvme_spec_csi
- *
- * @param nst the enum value to produce a string representation of
- * @return On success, a string representation is returned. On error, the string
- * "XNVME_SPEC_CSI_ENOSYS" is returned.
- */
-const char *
-xnvme_spec_csi_str(enum xnvme_spec_csi csi);
+
 
 /**
  * Representation of NVMe completion result Identify Namespace
@@ -307,16 +249,16 @@ xnvme_spec_csi_str(enum xnvme_spec_csi csi);
  * @struct xnvme_spec_idfy_ns
  */
 struct xnvme_spec_idfy_ns {
-	uint64_t	nsze; ///< namespace size
-	uint64_t	ncap; ///< namespace capacity
-	uint64_t	nuse; ///< namespace utilization
+	uint64_t	nsze;	///< namespace size
+	uint64_t	ncap;	///< namespace capacity
+	uint64_t	nuse;	///< namespace utilization
 
 	/** namespace features */
 	struct {
-		uint8_t	thin_prov : 1; ///< thin provisioning
-		uint8_t	ns_atomic_write_unit : 1; ///< NAWUN, NAWUPF, and NACWU
+		uint8_t	thin_prov : 1;			///< thin provisioning
+		uint8_t	ns_atomic_write_unit : 1;	///< NAWUN, NAWUPF, and NACWU
 		uint8_t	dealloc_or_unwritten_error : 1;
-		uint8_t	guid_never_reused : 1; ////< Non-zero NGUID and EUI64
+		uint8_t	guid_never_reused : 1;		////< Non-zero NGUID and EUI64
 
 		uint8_t	reserved1 : 4;
 	} nsfeat;
@@ -490,28 +432,6 @@ struct xnvme_spec_idfy_ns {
 	uint8_t vendor_specific[256];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_ns) == 4096, "Incorrect size")
-
-/**
- * Prints the given :;xnvme_spec_idfy_ns to the given output stream
- *
- * @param stream output stream used for printing
- * @param idfy pointer to structure to print
- * @param opts printer options, see ::xnvme_pr
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_spec_idfy_ns_fpr(FILE *stream, const struct xnvme_spec_idfy_ns *idfy,
-		       int opts);
-
-/**
- * Prints the given :;xnvme_spec_idfy_ns to stdout
- *
- * @param idfy pointer to structure to print
- * @param opts printer options, see ::xnvme_pr
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_spec_idfy_ns_pr(const struct xnvme_spec_idfy_ns *idfy, int opts);
 
 #define XNVME_SPEC_CTRLR_SN_LEN 20
 #define XNVME_SPEC_CTRLR_MN_LEN 40
@@ -935,28 +855,6 @@ struct xnvme_spec_idfy_ctrlr {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_ctrlr) == 4096, "Incorrect size")
 
 /**
- * Prints the given :;xnvme_spec_idfy_ctrlr to the given output stream
- *
- * @param stream output stream used for printing
- * @param idfy pointer to structure to print
- * @param opts printer options, see ::xnvme_pr
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_spec_idfy_ctrl_fpr(FILE *stream, const struct xnvme_spec_idfy_ctrlr *idfy,
-			 int opts);
-
-/**
- * Prints the given :;xnvme_spec_idfy_ctrlr to stdout
- *
- * @param idfy pointer to structure to print
- * @param opts printer options, see ::xnvme_pr
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_spec_idfy_ctrl_pr(const struct xnvme_spec_idfy_ctrlr *idfy, int opts);
-
-/**
  * Representation of I/O Command Set Vector
  *
  * See NVMe spec tbd, section xyz, for details
@@ -991,13 +889,6 @@ struct xnvme_spec_idfy_cs {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_cs) == 4096, "Incorrect size")
 
-int
-xnvme_spec_idfy_cs_fpr(FILE *stream, const struct xnvme_spec_idfy_cs *idfy,
-		       int opts);
-
-int
-xnvme_spec_idfy_cs_pr(const struct xnvme_spec_idfy_cs *idfy, int opts);
-
 /**
  * NVMe completion result accessor
  *
@@ -1015,23 +906,35 @@ struct xnvme_spec_idfy {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy) == 4096, "Incorrect size")
 
 /**
- * NVMe command opcodes
+ * NVMe Admin Command Opcodes
  *
  * @see specification Section xx, figure yy
  *
- * @enum xnvme_spec_opcodes
+ * @enum xnvme_spec_adm_opc
  */
-enum xnvme_spec_opcodes {
-	XNVME_SPEC_OPC_IDFY = 0x06, ///< XNVME_SPEC_OPC_IDFY
-	XNVME_SPEC_OPC_LOG = 0x02, ///< XNVME_SPEC_OPC_LOG
-	XNVME_SPEC_OPC_SFEAT = 0x09, ///< XNVME_SPEC_OPC_SFEAT
-	XNVME_SPEC_OPC_GFEAT = 0x0A, ///< XNVME_SPEC_OPC_GFEAT
+enum xnvme_spec_adm_opc {
+	XNVME_SPEC_ADM_OPC_LOG = 0x02,	///< XNVME_SPEC_ADM_OPC_LOG
+	XNVME_SPEC_ADM_OPC_IDFY = 0x06,	///< XNVME_SPEC_ADM_OPC_IDFY
 
-	XNVME_SPEC_OPC_WRITE = 0x01, ///< XNVME_SPEC_OPC_WRITE
-	XNVME_SPEC_OPC_READ = 0x02, ///< XNVME_SPEC_OPC_READ
+	XNVME_SPEC_ADM_OPC_SFEAT = 0x09,	///< XNVME_SPEC_ADM_OPC_SFEAT
+	XNVME_SPEC_ADM_OPC_GFEAT = 0x0A,	///< XNVME_SPEC_ADM_OPC_GFEAT
+};
 
-	XNVME_SPEC_OPC_FMT_NVM = 0x80, ///< XNVME_SPEC_OPC_FMT_NVM
-	XNVME_SPEC_OPC_SANITIZE = 0x84, ///< XNVME_SPEC_OPC_SANITIZE
+/**
+ * NVMe Non-Volatile Memory Command Opcodes
+ *
+ * @see specification Section xx, figure yy
+ *
+ * @enum xnvme_spec_nvm_opc
+ */
+enum xnvme_spec_nvm_opc {
+	XNVME_SPEC_NVM_OPC_WRITE = 0x01,	///< XNVME_SPEC_NVM_OPC_WRITE
+	XNVME_SPEC_NVM_OPC_READ = 0x02,		///< XNVME_SPEC_NVM_OPC_READ
+
+	XNVME_SPEC_NVM_OPC_SCOPY	= 0x19,	///< XNVME_SPEC_NVM_OPC_SCOPY
+
+	XNVME_SPEC_NVM_OPC_FMT = 0x80,		///< XNVME_SPEC_NVM_OPC_FMT
+	XNVME_SPEC_NVM_OPC_SANITIZE = 0x84,	///< XNVME_SPEC_NVM_OPC_SANITIZE
 };
 
 /**
@@ -1093,30 +996,6 @@ struct xnvme_spec_feat {
 	};
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_feat) == 4, "Incorrect size")
-
-/**
- * Prints the given :;xnvme_spec_feat to the given output stream
- *
- * @param stream output stream used for printing
- * @param fid feature identifier
- * @param feat feature values
- * @param opts printer options, see ::xnvme_pr
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_spec_feat_fpr(FILE *stream, uint8_t fid, struct xnvme_spec_feat feat,
-		    int opts);
-
-/**
- * Prints the given :;xnvme_spec_feat to the given output stream
- *
- * @param fid feature identifier
- * @param feat feature values
- * @param opts printer options, see ::xnvme_pr
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_spec_feat_pr(uint8_t fid, struct xnvme_spec_feat feat, int opts);
 
 #define XNVME_SPEC_FEAT_ERROR_RECOVERY_DULBE(feat) (feat & (1 << 16))
 #define XNVME_SPEC_FEAT_ERROR_RECOVERY_TLER(feat)  (feat & 0xffff)
@@ -1399,12 +1278,282 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_log) == 64, "Incorrect size")
 /**
  * NVMe Command Accessors for the NVM Command Set
  *
- * @struct xnvme_spec_cmd_lblk
+ * @struct xnvme_spec_cmd_nvm
  */
-struct xnvme_spec_cmd_lblk {
+struct xnvme_spec_cmd_nvm {
 	uint32_t cdw00_09[10];	///< Command dword 0 to 9
 
 	uint64_t slba;		///< SLBA: Start Logical Block Address
+
+	uint32_t nlb	: 16;	///< NLB: Number of logical blocks
+	uint32_t rsvd	:  4;
+	uint32_t dtype	:  4;	///< DT: Directive Type
+	uint32_t rsvd2	:  2;
+	uint32_t prinfo	:  4;	///< PI: Protection Information Field
+	uint32_t fua	:  1;	///< FUA: Force unit access
+	uint32_t lr	:  1;	///< LR: Limited retry
+
+	uint32_t cdw13_15[3];	///< Command dword 13 to 15
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_nvm) == 64, "Incorrect size")
+
+};
+
+/**
+ * Command-set specific status codes related to Logical Block Namespaces
+ *
+ * @see Specification Section 6.TBD.1, figure 355
+ */
+enum xnvme_spec_nvm_cmd_cpl_sc {
+	/// Copy Command Specific Status Values
+	XNVME_SPEC_NVM_CMD_CPL_SC_WRITE_TO_RONLY	= 0x82,	///< XNVME_SPEC_NVM_CMD_CPL_SC_WRITE_TO_RONLY
+};
+
+/**
+ * @struct xnvme_spec_nvm_scopy_fmt_zero
+ */
+struct xnvme_spec_nvm_scopy_fmt_zero {
+	uint8_t rsvd0[8];
+
+	uint64_t slba;		///< Start LBA
+
+	uint32_t nlb	: 16;	///< Number of logical blocks, zero-based
+
+	uint32_t rsvd20	: 16;
+
+	uint32_t eilbrt;	///< Expected Initial Logical Block Ref. Tag
+	uint32_t elbatm;	///< Expected Logical Block App. Tag Mask
+	uint32_t elbat;		///< Expected Logical Block App. Tag
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_scopy_fmt_zero) == 32, "Incorrect size")
+
+/**
+ * Structure conversion for support Kernel format
+ *
+ * @enum xnvme_nvm_scopy_fmt
+ */
+enum xnvme_nvm_scopy_fmt {
+	XNVME_NVM_SCOPY_FMT_ZERO	= 0x1,		///< user provides entries formatted as ::XNVME_NVM_SCOPY_FMT_ZERO
+	XNVME_NVM_SCOPY_FMT_SRCLEN	= 0x1 << 8,	///< user provides entries formatted as ::XNVME_NVM_SCOPY_FMT_SRCLEN
+};
+
+#define XNVME_SPEC_NVM_SCOPY_NENTRY_MAX 128
+
+/**
+ * @see Specification Section 6.TBD.1
+ */
+struct xnvme_spec_nvm_scopy_source_range {
+	struct xnvme_spec_nvm_scopy_fmt_zero entry[XNVME_SPEC_NVM_SCOPY_NENTRY_MAX];
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_scopy_source_range) == 4096, "Incorrect size")
+
+
+/**
+ * NVMe Command Accessor for command with opcode XNVME_SPEC_NVM_CMD_OPC_SCOPY
+ *
+ * @struct xnvme_spec_nvm_cmd_scopy
+ */
+struct xnvme_spec_nvm_cmd_scopy {
+	uint32_t cdw00_09[10];		///< Command dword 0 to 9
+
+	/* cdw 10-11 */
+	uint64_t sdlba;			///< Start Destination LBA
+
+	/* cdw 12 */
+	uint32_t nr		: 8;	///< Number of Ranges
+	uint32_t df		: 4;	///< Descriptor Format
+	uint32_t prinfor	: 4;	///< Protection Info. Field Read
+	uint32_t rsvd1		: 4;
+	uint32_t dtype		: 4;	///< Directive Type
+	uint32_t rsvd2		: 2;
+	uint32_t prinfow	: 4;	///< Protection Info. Field Write
+	uint32_t fua		: 1;	///< Force Unit Access
+	uint32_t lr		: 1;	///< Limited Retry
+
+	/* cdw 13 */
+	uint32_t rsvd3		: 16;
+	uint32_t dspec		: 16;	///< Directive Specific
+
+	/* cdw 14 */
+	uint32_t ilbrt;			///< Initial Logical Block Ref. Tag
+
+	/* cdw 15 */
+	uint32_t lbat		: 16;	///< Logical Block App. Tag
+	uint32_t lbatm		: 16;	///< Logical Block App. Tag Mask
+
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_cmd_scopy) == 64, "Incorrect size")
+
+/**
+ * Kernel format structure for scopy
+ *
+ * @note Intruder alert!T his is not defined in the NVMe specification. Yet, it is provided here as though it was.
+ * It is intensionally done so to provide a format within the framework provided by NVMe.
+ *
+ * @struct xnvme_spec_nvm_cmd_scopy_fmt_srclen
+ */
+struct xnvme_spec_nvm_cmd_scopy_fmt_srclen {
+	uint64_t  start;
+	uint64_t  len;
+};
+
+/**
+ * NVMe Command Accessors for the NVM Command Set
+ *
+ * @struct xnvme_spec_nvm_cmd
+ */
+struct xnvme_spec_nvm_cmd {
+	union {
+		struct xnvme_spec_nvm_cmd_scopy scopy;
+	};
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_cmd) == 64, "Incorrect size")
+
+struct xnvme_spec_nvm_idfy_ctrlr {
+	uint8_t byte0_519[520];
+
+	/** optional nvm command support */
+	union {
+		struct {
+			uint16_t compare		: 1;
+			uint16_t write_unc		: 1;
+			uint16_t dsm			: 1;
+			uint16_t write_zeroes		: 1;
+			uint16_t set_features_save	: 1;
+			uint16_t reservations		: 1;
+			uint16_t timestamp		: 1;
+			uint16_t verify			: 1;
+			uint16_t copy			: 1;
+			uint16_t reserved		: 7;
+		};
+		uint16_t val;
+	} oncs;
+
+	uint8_t byte522_533[12];
+
+	union {
+		struct {
+			uint16_t copy_fmt0	: 1;
+			uint16_t rsvd		: 15;
+		};
+		uint16_t val;
+	} ocfs;	///< Optional Copy Format Supported
+
+	uint8_t byte536_4095[3559];
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_idfy_ctrlr) == 4096, "Incorrect size")
+
+
+/**
+ * @todo Document this
+ */
+struct xnvme_spec_nvm_idfy_ns {
+	uint8_t byte0_73[74];
+
+	uint16_t mssrl;	///< Maximum Single Source Range Length
+	uint32_t mcl;	///< Maximum Copy Length
+	uint8_t msrc;	///< Maximum Source Range Count
+
+	uint8_t byte81_4095[4014];
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_idfy_ns) == 4096, "Incorrect size")
+
+/**
+ * Representation of the NVMe Identify Namespace command completion result
+ *
+ * @struct xnvme_spec_znd_idfy
+ */
+struct xnvme_spec_nvm_idfy {
+	union {
+		struct xnvme_spec_idfy base;
+		struct xnvme_spec_nvm_idfy_ctrlr ctrlr;
+		struct xnvme_spec_nvm_idfy_ns ns;
+	};
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_idfy) == 4096, "Incorrect size")
+
+/**
+ * Log identifiers for Zoned Namespaces
+ *
+ * TODO: merge this with the set of log-identifiers
+ *
+ * @enum xnvme_spec_znd_log_lid
+ */
+enum xnvme_spec_znd_log_lid {
+	XNVME_SPEC_LOG_ZND_CHANGES = 0xBF,	///< ZND_CMD_LOG_CHANGES
+};
+
+/**
+ * Zoned Command Set opcodes
+ *
+ * @see Specification Section 6, figure ZONEDOPCODES
+ *
+ * @struct xnvme_spec_znd_opc
+ */
+enum xnvme_spec_znd_opc {
+	XNVME_SPEC_ZND_OPC_MGMT_SEND	= 0x79,	///< XNVME_SPEC_ZND_OPC_MGMT_SEND
+	XNVME_SPEC_ZND_OPC_MGMT_RECV	= 0x7A,	///< XNVME_SPEC_ZND_OPC_MGMT_RECV
+	XNVME_SPEC_ZND_OPC_APPEND	= 0x7D,	///< XNVME_SPEC_ZND_OPC_APPEND
+};
+
+/**
+ * NVMe Command Accessor for command with opcode ZND_CMD_OPC_MGMT_SEND
+ *
+ * @struct xnvme_spec_znd_cmd_mgmt_send
+ */
+struct xnvme_spec_znd_cmd_mgmt_send {
+	uint32_t cdw00_09[10];		///< Command dword 0 to 9
+
+	/* cdw 10-11 */
+	uint64_t slba;			///< Start LBA
+
+	uint32_t cdw12;
+
+	/* cdw 13 */
+	uint32_t zsa		: 8;	///< Zone Send Action
+	uint32_t zsasf		: 1;	///< Select All
+	uint32_t rsvd		: 23;
+
+	uint32_t cdw14_15[2];		///< Command dword 14 to 15
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_cmd_mgmt_send) == 64, "Incorrect size")
+
+/**
+ * NVMe Command Accessor for a command with opcode XNVME_SPEC_ZND_OPC_MGMT_RECV
+ *
+ * @see enum xnvme_spec_znd_cmd_mgmt_recv
+ * @struct xnvme_spec_znd_cmd_mgmt_recv
+ */
+struct xnvme_spec_znd_cmd_mgmt_recv {
+	uint32_t cdw00_09[10];	///< Command dword 0 to 9
+
+	/* cdw 10-11 */
+	uint64_t slba;		///< Start LBA
+
+	/* cdw 12 */
+	uint32_t ndwords;	///< Number of dwords in data-payload
+
+	/* cdw 13 */
+	uint32_t zra		: 8;	///< Zone Receive Action
+	uint32_t zrasf		: 8;	///< Zone Receive Action Specific Field
+	uint32_t partial	: 1;	///< Partial
+
+	uint32_t rsvd		: 15;
+
+	/* cdw 14-15 */
+	uint64_t addrs_dst;		///< destination addresses
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_cmd_mgmt_recv) == 64, "Incorrect size")
+
+/**
+ * NVMe Command Accessor for a command with opcode ZND_CMD_OPC_APPEND
+ *
+ * @struct xnvme_spec_znd_cmd_append
+ */
+struct xnvme_spec_znd_cmd_append {
+	uint32_t cdw00_09[10];	///< Command dword 0 to 9
+
+	uint64_t zslba;		///< SLBA: Start Logical Block Address
 
 	uint32_t nlb	: 16;	///< NLB: Number of logical blocks
 	uint32_t rsvd	:  4;
@@ -1416,7 +1565,21 @@ struct xnvme_spec_cmd_lblk {
 
 	uint32_t cdw13_15[3];	///< Command dword 13 to 15
 };
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_lblk) == 64, "Incorrect size")
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_cmd_append) == 64, "Incorrect size")
+
+/**
+ * NVMe Command Accessors for the Zoned Command Set
+ *
+ * @struct xnvme_spec_znd_cmd
+ */
+struct xnvme_spec_znd_cmd {
+	union {
+		struct xnvme_spec_znd_cmd_mgmt_send mgmt_send;
+		struct xnvme_spec_znd_cmd_mgmt_recv mgmt_recv;
+		struct xnvme_spec_znd_cmd_append append;
+	};
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_cmd) == 64, "Incorrect size")
 
 /**
  * NVMe Command Accessors
@@ -1432,10 +1595,393 @@ struct xnvme_spec_cmd {
 		struct xnvme_spec_cmd_gfeat gfeat;
 		struct xnvme_spec_cmd_sfeat sfeat;
 		struct xnvme_spec_cmd_idfy idfy;
-		struct xnvme_spec_cmd_lblk lblk;
+		struct xnvme_spec_cmd_nvm nvm;
+		struct xnvme_spec_nvm_cmd_scopy scopy;
+		struct xnvme_spec_znd_cmd znd;
 	};
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd) == 64, "Incorrect size")
+
+/**
+ * Command-set specific status codes related to Zoned Namespaces
+ *
+ * @see Specification Section 4.1.1.1.1, figures GENERICSTATUSCODES and
+ * STATUSCODES
+ *
+ * @enum xnvme_spec_znd_status_code
+ */
+enum xnvme_spec_znd_status_code {
+	// Namespace Management
+	XNVME_SPEC_ZND_SC_INVALID_FORMAT	= 0x7F,	///< ZND_SC_INVALID_FORMAT
+
+	/// Zoned Command Set
+	XNVME_SPEC_ZND_SC_BOUNDARY_ERROR	= 0xB8,	///< ZND_SC_BOUNDARY_ERROR
+	XNVME_SPEC_ZND_SC_IS_FULL		= 0xB9,	///< ZND_SC_IS_FULL
+	XNVME_SPEC_ZND_SC_IS_READONLY		= 0xBA,	///< ZND_SC_IS_READONLY
+	XNVME_SPEC_ZND_SC_IS_OFFLINE		= 0xBB,	///< ZND_SC_IS_OFFLINE
+	XNVME_SPEC_ZND_SC_INVALID_WRITE		= 0xBC,	///< ZND_SC_INVALID_WRITE
+	XNVME_SPEC_ZND_SC_TOO_MANY_ACTIVE	= 0xBD,	///< ZND_SC_TOO_MANY_ACTIVE
+	XNVME_SPEC_ZND_SC_TOO_MANY_OPEN		= 0xBE,	///< ZND_SC_TOO_MANY_OPEN
+	XNVME_SPEC_ZND_SC_INVALID_TRANS		= 0xBF,	///< ZND_SC_INVALID_TRANS
+};
+
+/**
+ * This is not defined in any spec... it would just seem sane if it was...
+ *
+ * @enum xnvme_spec_znd_mgmt_send_action_sf
+ */
+enum xnvme_spec_znd_mgmt_send_action_sf {
+	XNVME_SPEC_ZND_MGMT_SEND_ASF_SALL	= 0x1,	///< XNVME_SPEC_ZND_MGMT_SEND_ASF_SALL
+};
+
+/**
+ * Actions for the Zone Management Send command
+ *
+ * @see Specification Section 6.1, figure TBDZMDW13
+ *
+ * @enum xnvme_spec_znd_cmd_mgmt_send_action
+ */
+enum xnvme_spec_znd_cmd_mgmt_send_action {
+	XNVME_SPEC_ZND_CMD_MGMT_SEND_CLOSE	= 0x1,	///< XNVME_SPEC_ZND_CMD_MGMT_SEND_CLOSE
+	XNVME_SPEC_ZND_CMD_MGMT_SEND_FINISH	= 0x2,	///< XNVME_SPEC_ZND_CMD_MGMT_SEND_FINISH
+	XNVME_SPEC_ZND_CMD_MGMT_SEND_OPEN	= 0x3,	///< XNVME_SPEC_ZND_CMD_MGMT_SEND_OPEN
+	XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET	= 0x4,	///< XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET
+	XNVME_SPEC_ZND_CMD_MGMT_SEND_OFFLINE	= 0x5,	///< XNVME_SPEC_ZND_CMD_MGMT_SEND_OFFLINE
+	XNVME_SPEC_ZND_CMD_MGMT_SEND_DESCRIPTOR	= 0x10,	///< XNVME_SPEC_ZND_CMD_MGMT_SEND_DESCRIPTOR
+};
+
+/**
+ * Zone Receive Action (::xnvme_spec_znd_cmd_mgmt_recv_action) specific field values
+ *
+ * @see Specification Section 6.2, figure TBDZMRDW13
+ *
+ * @enum xnvme_spec_znd_cmd_mgmt_recv_action_sf
+ */
+enum xnvme_spec_znd_cmd_mgmt_recv_action_sf {
+	XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL	= 0x0,	///< XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL
+	XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_EMPTY	= 0x1,	///< XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_EMPTY
+	XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_IOPEN	= 0x2,	///< XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_IOPEN
+	XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_EOPEN	= 0x3,	///< XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_EOPEN
+	XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_CLOSED	= 0x4,	///< XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_CLOSED
+	XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_FULL	= 0x5,	///< XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_FULL
+	XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_RONLY	= 0x6,	///< XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_RONLY
+	XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_OFFLINE	= 0x7,	///< XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_OFFLINE
+};
+
+/**
+ * Zoned Receive Action
+ *
+ * @see Specification Section 6.2, figure TBDZMRDW13
+ * @enum xnvme_spec_znd_cmd_mgmt_recv_action
+ */
+enum xnvme_spec_znd_cmd_mgmt_recv_action {
+	///< XNvME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT
+	XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT		= 0x0,
+	///< XNvME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT_EXTENDED
+	XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT_EXTENDED	= 0x1,
+};
+
+/**
+ * Zone Type
+ *
+ * @see Specification Section 6.2.2.3, figure TBDZMRD
+ * @enum xnvme_spec_znd_type
+ */
+enum xnvme_spec_znd_type {
+	XNVME_SPEC_ZND_TYPE_SEQWR = 0x2,	///< XNVME_SPEC_ZND_TYPE_SEQWR
+};
+
+/**
+ * Zone State as reported by Zone Management Receive
+ *
+ * @see Specification Section 6.2.2.3, figure TBDZMRZD
+ * @enum xnvme_spec_znd_state
+ */
+enum xnvme_spec_znd_state {
+	XNVME_SPEC_ZND_STATE_EMPTY		= 0x1,	///< XNVME_SPEC_ZND_STATE_EMPTY
+	XNVME_SPEC_ZND_STATE_IOPEN		= 0x2,	///< XNVME_SPEC_ZND_STATE_IOPEN
+	XNVME_SPEC_ZND_STATE_EOPEN		= 0x3,	///< XNVME_SPEC_ZND_STATE_EOPEN
+	XNVME_SPEC_ZND_STATE_CLOSED	= 0x4,	///< XNVME_SPEC_ZND_STATE_CLOSED
+	XNVME_SPEC_ZND_STATE_RONLY		= 0xD,	///< XNVME_SPEC_ZND_STATE_RONLY
+	XNVME_SPEC_ZND_STATE_FULL		= 0xE,	///< XNVME_SPEC_ZND_STATE_FULL
+	XNVME_SPEC_ZND_STATE_OFFLINE	= 0xF,	///< XNVME_SPEC_ZND_STATE_OFFLINE
+};
+
+/**
+ * Identify controller accessor only for Zoned specific fields
+ *
+ * @see Specification, section 3.1.2
+ * @struct xnvme_spec_znd_idfy_ctrlr
+ */
+struct xnvme_spec_znd_idfy_ctrlr {
+	uint8_t zasl;		///< Zone Append Size Limit
+
+	uint8_t rsvd8[4095];
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_idfy_ctrlr) == 4096, "Incorrect size")
+
+/**
+ * LBA Format Extension
+ *
+ * @see Specification Section 5.1.2, figure LBAFE
+ *
+ * @struct xnvme_spec_znd_idfy_lbafe
+ */
+struct xnvme_spec_znd_idfy_lbafe {
+	uint64_t zsze;		///< Zone Size in number of logical blocks
+	uint8_t zdes;		///< Zone Descriptor Extensions Size
+
+	uint8_t rsvd[7];
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_idfy_lbafe) == 16, "Incorrect size")
+
+/**
+ * Zoned Command Set specific identify namespace data structure
+ *
+ * @see TP4053, section 3
+ * @struct xnvme_spec_znd_idfy_ns
+ */
+struct xnvme_spec_znd_idfy_ns {
+	struct {
+		uint16_t vzcap	: 1;	///< Variable Zone Capacity
+		uint16_t zae	: 1;	///< Zone Active Excursions
+
+		uint16_t rsvd	: 14;
+	} zoc; ///< Zone Operation Characteristics
+
+	struct {
+		uint16_t razb	: 1;	///< Read Across zone boundaries
+
+		uint16_t rsvd	: 15;
+	} ozcs; ///< Optional Zoned Command Support
+
+	uint32_t mar;		///< Maximum Active Resources
+	uint32_t mor;		///< Maximum Open Resources
+
+	uint32_t rrl;		///< Reset Recommended Limit
+	uint32_t frl;		///< Finish Recommended Limit
+
+	uint8_t rsvd20_2815[2796];
+
+	struct xnvme_spec_znd_idfy_lbafe lbafe[16];
+
+	uint8_t rsvd3072_3839[768];
+
+	uint8_t vs[256];	///< Vendor Specific
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_idfy_ns) == 4096, "Incorrect size")
+
+/**
+ * Representation of the NVMe Identify Namespace command completion result
+ *
+ * @todo merge this into the libxnvme_spec.h providing a one-stop shop for idfy-representation
+ * @struct xnvme_spec_znd_idfy
+ */
+struct xnvme_spec_znd_idfy {
+	union {
+		struct xnvme_spec_idfy base;
+		struct xnvme_spec_znd_idfy_ctrlr zctrlr;
+		struct xnvme_spec_znd_idfy_ns zns;
+	};
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_idfy) == 4096, "Incorrect size")
+
+#define ZND_CHANGES_LEN 511
+
+/**
+ * Zone Identifier List as returned by get-log-page
+ *
+ * @see Specification Section 5.3.1.1, figure TBDZONELIST
+ *
+ * @struct xnvme_spec_znd_log_changes
+ */
+struct xnvme_spec_znd_log_changes {
+	uint16_t nidents;			///< Number of Zone Identifiers
+	uint8_t rsvd2[6];
+	uint64_t idents[ZND_CHANGES_LEN];	///< Zone Identifiers
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_log_changes) == 4096, "Incorrect size")
+
+/**
+ * Zone Descriptor as reported by Zone Management Receive command
+ *
+ * @see Specification Section 6.2.2.3, figure TBDZMRZD
+ */
+struct xnvme_spec_znd_descr {
+	uint8_t zt		: 4;	///< Zone Type
+	uint8_t rsvd0		: 4;
+
+	uint8_t rsvd1		: 4;
+	uint8_t zs		: 4;	///< Zone State
+
+	/**
+	 * Zone Attributes
+	 */
+	union {
+		struct {
+			uint8_t zfc: 1;		///< Zone Finished by controller
+			uint8_t zfr: 1;		///< Zone Finish Recommended
+			uint8_t rzr: 1;		///< Reset Zone Recommended
+
+			uint8_t rsvd3 : 4;
+
+			uint8_t zdev: 1;	///< Zone Descriptor Valid
+		};
+		uint8_t val;
+	} za;
+
+	uint8_t rsvd7[5];
+
+	uint64_t zcap;			///< Zone Capacity (in number of LBAs)
+	uint64_t zslba;			///< Zone Start LBA
+	uint64_t wp;			///< Write Pointer
+	uint8_t rsvd63[32];
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_descr) == 64, "Incorrect size")
+
+/**
+ * Report Zones Data Structure header
+ *
+ * The first 16 bytes of the two Report Zoned data structures
+ *
+ * @see Specification Section 6.2.2.1, figure TBDZMRRZ
+ * @see Specification Section 6.2.2.2, figure TBDZMRERZ
+ * @struct xnvme_spec_znd_report_hdr
+ */
+struct xnvme_spec_znd_report_hdr {
+	/**
+	 * Number of zones in namespace when receiving with partial=0
+	 * Number of zones in the data-buffer, when receiving with partial=1
+	 */
+	uint64_t nzones;
+	uint8_t rsvd[56];
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_report_hdr) == 64, "Incorrect size")
+
+/**
+ * Prints the given :;xnvme_spec_log_health_entry to the given output stream
+ *
+ * @param stream output stream used for printing
+ * @param log pointer to the structure to print
+ * @param opts printer options, see ::xnvme_pr
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_log_health_fpr(FILE *stream,
+			  const struct xnvme_spec_log_health_entry *log,
+			  int opts);
+
+/**
+ * Prints the given :;xnvme_spec_log_health_entry to stdout
+ *
+ * @param log
+ * @param opts
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_log_health_pr(const struct xnvme_spec_log_health_entry *log,
+			 int opts);
+
+/**
+ * Prints the given :;xnvme_spec_log_erri_entry to stdout
+ *
+ * @param stream output stream used for printing
+ * @param log
+ * @param limit
+ * @param opts
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_log_erri_fpr(FILE *stream,
+			const struct xnvme_spec_log_erri_entry *log, int limit,
+			int opts);
+
+/**
+ * Prints the given :;xnvme_spec_log_erri_entry to stdout
+ *
+ * @param log
+ * @param limit
+ * @param opts printer options, see ::xnvme_pr
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_log_erri_pr(const struct xnvme_spec_log_erri_entry *log, int limit,
+		       int opts);
+
+/**
+ * Prints the given :;xnvme_spec_idfy_ns to the given output stream
+ *
+ * @param stream output stream used for printing
+ * @param idfy pointer to structure to print
+ * @param opts printer options, see ::xnvme_pr
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_idfy_ns_fpr(FILE *stream, const struct xnvme_spec_idfy_ns *idfy,
+		       int opts);
+
+/**
+ * Prints the given :;xnvme_spec_idfy_ns to stdout
+ *
+ * @param idfy pointer to structure to print
+ * @param opts printer options, see ::xnvme_pr
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_idfy_ns_pr(const struct xnvme_spec_idfy_ns *idfy, int opts);
+
+/**
+ * Prints the given :;xnvme_spec_idfy_ctrlr to the given output stream
+ *
+ * @param stream output stream used for printing
+ * @param idfy pointer to structure to print
+ * @param opts printer options, see ::xnvme_pr
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_idfy_ctrl_fpr(FILE *stream, const struct xnvme_spec_idfy_ctrlr *idfy,
+			 int opts);
+
+/**
+ * Prints the given :;xnvme_spec_idfy_ctrlr to stdout
+ *
+ * @param idfy pointer to structure to print
+ * @param opts printer options, see ::xnvme_pr
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_idfy_ctrl_pr(const struct xnvme_spec_idfy_ctrlr *idfy, int opts);
+
+int
+xnvme_spec_idfy_cs_fpr(FILE *stream, const struct xnvme_spec_idfy_cs *idfy,
+		       int opts);
+
+int
+xnvme_spec_idfy_cs_pr(const struct xnvme_spec_idfy_cs *idfy, int opts);
+
+/**
+ * Prints the given :;xnvme_spec_feat to the given output stream
+ *
+ * @param stream output stream used for printing
+ * @param fid feature identifier
+ * @param feat feature values
+ * @param opts printer options, see ::xnvme_pr
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_feat_fpr(FILE *stream, uint8_t fid, struct xnvme_spec_feat feat,
+		    int opts);
+
+/**
+ * Prints the given :;xnvme_spec_feat to the given output stream
+ *
+ * @param fid feature identifier
+ * @param feat feature values
+ * @param opts printer options, see ::xnvme_pr
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_feat_pr(uint8_t fid, struct xnvme_spec_feat feat, int opts);
 
 /**
  * Prints the given :;xnvme_spec_cmd to the given output stream
@@ -1457,5 +2003,240 @@ xnvme_spec_cmd_fpr(FILE *stream, struct xnvme_spec_cmd *cmd, int opts);
  */
 int
 xnvme_spec_cmd_pr(struct xnvme_spec_cmd *cmd, int opts);
+
+int
+xnvme_spec_nvm_scopy_fmt_zero_fpr(FILE *stream,
+				  const struct xnvme_spec_nvm_scopy_fmt_zero *entry,
+				  int opts);
+
+/**
+ * Prints the given ::xnvme_spec_nvm_scopy_fmt_zero to stdout
+ *
+ * @param entry pointer to structure to print
+ * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned
+ */
+int
+xnvme_spec_nvm_scopy_fmt_zero_pr(const struct xnvme_spec_nvm_scopy_fmt_zero *entry,
+				 int opts);
+
+/**
+ * Prints the given ::xnvme_spec_nvm_scopy_source_range to the given output stream
+ *
+ * @param stream output stream used for printing
+ * @param srange pointer to structure to print
+ * @param nr zero-based number of entries, at most ::XNVME_SPEC_NVM_SCOPY_NENTRY_MAX -1
+ * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned
+ */
+int
+xnvme_spec_nvm_scopy_source_range_fpr(FILE *stream,
+				      const struct xnvme_spec_nvm_scopy_source_range *srange,
+				      uint8_t nr, int opts);
+
+/**
+ * Prints the given ::xnvme_spec_nvm_scopy_source_range to stdout
+ *
+ * @param srange pointer to structure to print
+ * @param nr nr=0: print ::XNVME_SPEC_NVM_SCOPY_NENTRY_MAX entries from the given , nr>0:
+ * print no more than nr
+ * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned
+ */
+int
+xnvme_spec_nvm_scopy_source_range_pr(const struct xnvme_spec_nvm_scopy_source_range *srange,
+				     uint8_t nr,
+				     int opts);
+
+/**
+ * Prints the given ::xnvme_spec_nvm_idfy_ctrlr to the given output stream
+ *
+ * Only fields specific to Logical Block Namespaces are printed by this function
+ *
+ * @param stream output stream used for printing
+ * @param idfy pointer to the structure to print
+ * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned
+ */
+int
+xnvme_spec_idfy_ctrlr_fpr(FILE *stream, struct xnvme_spec_nvm_idfy_ctrlr *idfy, int opts);
+
+/**
+ * Prints the given ::xnvme_spec_nvm_idfy_ctrlr to stdout
+ *
+ * @param idfy pointer to ::xnvme_spec_nvm_idfy_ctrlr
+ * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned
+ */
+int
+xnvme_spec_nvm_idfy_ctrlr_pr(struct xnvme_spec_nvm_idfy_ctrlr *idfy, int opts);
+
+/**
+ * Prints the given ::xnvme_spec_nvm_idfy_ns to the given output stream
+ *
+ * Only fields specific to Logical Block Namespaces are printed by this function
+ *
+ * @param stream output stream used for printing
+ * @param idfy pointer to the structure to print
+ * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned
+ */
+int
+xnvme_spec_nvm_idfy_ns_fpr(FILE *stream, struct xnvme_spec_nvm_idfy_ns *idfy, int opts);
+
+/**
+ * Prints the given ::xnvme_spec_nvm_idfy_ns to stdout
+ *
+ * @param idfy pointer to ::xnvme_spec_nvm_idfy_ns
+ * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned
+ */
+int
+xnvme_spec_nvm_idfy_ns_pr(struct xnvme_spec_nvm_idfy_ns *idfy, int opts);
+
+/**
+ * Prints the given ::xnvme_spec_znd_idfy_ctrlr to the given output stream
+ *
+ * Only fields specific to Zoned Namespaces are printed by this function
+ *
+ * @param stream output stream used for printing
+ * @param zctrlr pointer to the structure to print
+ * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned
+ */
+int
+xnvme_spec_znd_idfy_ctrlr_fpr(FILE *stream, struct xnvme_spec_znd_idfy_ctrlr *zctrlr, int opts);
+
+/**
+ * Prints the given ::xnvme_spec_znd_idfy_ctrlr to the given output stream
+ *
+ * Only fields specific to Zoned Namespaces are printed by this function
+ *
+ * @param zctrlr pointer to the structure to print
+ * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned
+ */
+int
+xnvme_spec_znd_idfy_ctrlr_pr(struct xnvme_spec_znd_idfy_ctrlr *zctrlr, int opts);
+
+/**
+ * Prints the given ::xnvme_spec_znd_idfy_lbafe to the given output stream
+ *
+ * @param stream output stream used for printing
+ * @param zonef pointer to structure to print
+ * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned
+ */
+int
+xnvme_spec_znd_idfy_lbafe_fpr(FILE *stream, struct xnvme_spec_znd_idfy_lbafe *zonef, int opts);
+
+/**
+ * Prints the given ::xnvme_spec_znd_idfy_ns to the given output stream
+ *
+ * Only fields specific to Zoned Namespaces are printed by this function
+ *
+ * @param stream output stream used for printing
+ * @param zns pointer to the structure to print
+ * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned
+ */
+int
+xnvme_spec_znd_idfy_ns_fpr(FILE *stream, struct xnvme_spec_znd_idfy_ns *zns, int opts);
+
+/**
+ * Prints the given ::xnvme_spec_znd_idfy_ns to stdout
+ *
+ * @param zns pointer to ::xnvme_spec_znd_idfy_ns
+ * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned
+ */
+int
+xnvme_spec_znd_idfy_ns_pr(struct xnvme_spec_znd_idfy_ns *zns, int opts);
+
+/**
+ * Prints the given ::xnvme_spec_znd_log_changes to the given output stream
+ *
+ * @param stream output stream used for printing
+ * @param changes pointer to subject to print
+ * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_znd_log_changes_fpr(FILE *stream, const struct xnvme_spec_znd_log_changes *changes,
+			       int opts);
+
+/**
+ * Pretty-printer of ::xnvme_spec_znd_log_changes
+ *
+ * @param changes pointer to subject to print
+ * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_znd_log_changes_pr(const struct xnvme_spec_znd_log_changes *changes, int opts);
+
+/**
+ * Prints the given ::xnvme_spec_znd_descr to the given stream
+ *
+ * @param stream output stream used for printing
+ * @param descr the struct to print
+ * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_znd_descr_fpr(FILE *stream, const struct xnvme_spec_znd_descr *descr, int opts);
+
+/**
+ * Prints the given ::xnvme_spec_znd_descr to stdout
+ *
+ * @param descr the structure to print
+ * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_znd_descr_pr(const struct xnvme_spec_znd_descr *descr, int opts);
+
+/**
+ * Print the given ::xnvme_spec_znd_report_hdr to the given output stream
+ *
+ * @param stream output stream used for printing
+ * @param hdr the struct to print
+ * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_znd_report_hdr_fpr(FILE *stream, const struct xnvme_spec_znd_report_hdr *hdr, int opts);
+
+/**
+ * Print the given ::xnvme_spec_znd_report_hdr to the stdout
+ *
+ * @param hdr the struct to print
+ * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_znd_report_hdr_pr(const struct xnvme_spec_znd_report_hdr *hdr, int opts);
+
+int
+xnvme_spec_znd_descr_fpr_yaml(FILE *stream, const struct xnvme_spec_znd_descr *descr, int indent,
+			      const char *sep);
 
 #endif /* __LIBXNVME_SPEC_H */

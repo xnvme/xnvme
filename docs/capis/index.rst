@@ -1,54 +1,57 @@
-.. _sec-c-apis:
+.. _sec-c-api:
 
 ########
- C APIs
+ C API
 ########
 
-A brief overview of the APIs provided by xNVMe follows.
+A brief overview of the C API provided by xNVMe follows.
 
 **xnvme**
 
-The :ref:`sec-c-apis-xnvme` API is the foundational API of **xNVMe**, providing
+The :ref:`sec-c-api-xnvme` API is the foundational API of **xNVMe**, providing
 device enumeration, memory handling, asynchronous primitives and the
 fundamental command-interface for communicating with devices.
 
-The :ref:`sec-c-apis-xnvme-headers` is available for inspection in its raw form.
+The :ref:`sec-c-api-xnvme-header` is available for inspection in its raw form.
 
-**lblk**
+**Block (NVM)**
 
-Building on top of the functionality of :ref:`sec-c-apis-xnvme` then the
-:ref:`sec-c-apis-lblk` API provides helpers and structures specific to the NVMe
-command-set provided by NVM/Logical/Conventional Namespaces. That is the usual
-read/write, and optional commands such as the Simple-Copy-Command (SCC).
+Building on top of the functionality of :ref:`sec-c-api-xnvme` then the
+:ref:`sec-c-api-xnvme_nvm` API provides helpers and structures specific to the
+NVMe command-set provided by NVM/Logical/Conventional Namespaces. That is the
+usual read/write, and optional commands such as the Simple-Copy-Command (SCC).
 
-The :ref:`sec-c-apis-lblk-headers` is available for inspection in its raw form.
+The :ref:`sec-c-api-xnvme_nvm-header` is available for inspection in its raw form.
 
-**znd**
+**Zoned (ZNS)**
 
-Building on top of the functionality of :ref:`sec-c-apis-xnvme` then the
-:ref:`sec-c-apis-znd` API provides helpers and structures specific to NVMe
+Building on top of the functionality of :ref:`sec-c-api-xnvme` then the
+:ref:`sec-c-api-xnvme_znd` API provides helpers and structures specific to NVMe
 command-set provided by Zoned Namespaces.
 
-The :ref:`sec-c-apis-znd-headers` is available for inspection in its raw form.
+The :ref:`sec-c-api-xnvme_znd-header` is available for inspection in its raw form.
 
 **xnvmec**
 
-The :ref:`sec-c-apis-xnvmec` API provides functionality to create
+The :ref:`sec-c-api-xnvmec` API provides functionality to create
 command-line-interfaces for **xNVMe** related applications. The **xNVMe**
 examples, tools, and tests use the library to provide a coherent command-line
 interface with bash-completion-scripts and man-pages.
 
-The :ref:`sec-c-apis-xnvmec-headers` is available for inspection in its raw
+The :ref:`sec-c-api-xnvmec-header` is available for inspection in its raw
 form.
 
 .. toctree::
    :hidden:
 
    xnvme
-   xnvme_headers
-   lblk
-   lblk_headers
-   znd
-   znd_headers
+   xnvme_nvm
+   xnvme_znd
+   xnvme_adm
+   xnvme_dev
+   xnvme_geo
+   xnvme_spec
+   xnvme_sgl
+   xnvme_3p
+   xnvme_ver
    xnvmec
-   xnvmec_headers

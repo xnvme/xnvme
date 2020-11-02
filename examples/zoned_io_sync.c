@@ -3,9 +3,11 @@
 #include <stdio.h>
 #include <errno.h>
 #include <libxnvme.h>
-#include <libxnvmec.h>
+#include <libxnvme_spec_pp.h>
+#include <libxnvme_nvm.h>
+#include <libxnvme_znd.h>
 #include <libxnvme_util.h>
-#include <libznd.h>
+#include <libxnvmec.h>
 #include <time.h>
 
 static int
@@ -15,7 +17,7 @@ sub_sync_read(struct xnvmec *cli)
 	const struct xnvme_geo *geo = cli->args.geo;
 	uint32_t nsid = cli->args.nsid;
 
-	struct znd_descr zone = { 0 };
+	struct xnvme_spec_znd_descr zone = {0 };
 
 	int cmd_opts = XNVME_CMD_SYNC;
 
@@ -27,20 +29,20 @@ sub_sync_read(struct xnvmec *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 	if (cli->given[XNVMEC_OPT_SLBA]) {
-		err = znd_descr_from_dev(dev, cli->args.slba, &zone);
+		err = xnvme_znd_descr_from_dev(dev, cli->args.slba, &zone);
 		if (err) {
-			xnvmec_perr("znd_descr_from_dev()", -err);
+			xnvmec_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
 		}
 	} else {
-		err = znd_descr_from_dev_in_state(dev, ZND_STATE_EMPTY, &zone);
+		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
 		if (err) {
-			xnvmec_perr("znd_descr_from_dev()", -err);
+			xnvmec_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
 		}
 	}
 	xnvmec_pinf("Using the following zone:");
-	znd_descr_pr(&zone, XNVME_PR_DEF);
+	xnvme_spec_znd_descr_pr(&zone, XNVME_PR_DEF);
 
 	buf_nbytes = zone.zcap * geo->lba_nbytes;
 
@@ -64,10 +66,10 @@ sub_sync_read(struct xnvmec *cli)
 		void *payload = buf + sect * geo->lba_nbytes;
 		struct xnvme_req req = { 0 };
 
-		err = xnvme_cmd_read(dev, nsid, zone.zslba + sect, 0, payload,
+		err = xnvme_nvm_read(dev, nsid, zone.zslba + sect, 0, payload,
 				     NULL, cmd_opts, &req);
 		if (err || xnvme_req_cpl_status(&req)) {
-			xnvmec_perr("xnvme_cmd_read()", err);
+			xnvmec_perr("xnvme_nvm_read()", err);
 			xnvme_req_pr(&req, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
@@ -100,7 +102,7 @@ sub_sync_write(struct xnvmec *cli)
 	const struct xnvme_geo *geo = cli->args.geo;
 	uint32_t nsid = cli->args.nsid;
 
-	struct znd_descr zone = { 0 };
+	struct xnvme_spec_znd_descr zone = {0 };
 
 	int cmd_opts = XNVME_CMD_SYNC;
 
@@ -112,20 +114,20 @@ sub_sync_write(struct xnvmec *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 	if (cli->given[XNVMEC_OPT_SLBA]) {
-		err = znd_descr_from_dev(dev, cli->args.slba, &zone);
+		err = xnvme_znd_descr_from_dev(dev, cli->args.slba, &zone);
 		if (err) {
-			xnvmec_perr("znd_descr_from_dev()", -err);
+			xnvmec_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
 		}
 	} else {
-		err = znd_descr_from_dev_in_state(dev, ZND_STATE_EMPTY, &zone);
+		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
 		if (err) {
-			xnvmec_perr("znd_descr_from_dev()", -err);
+			xnvmec_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
 		}
 	}
 	xnvmec_pinf("Using the following zone:");
-	znd_descr_pr(&zone, XNVME_PR_DEF);
+	xnvme_spec_znd_descr_pr(&zone, XNVME_PR_DEF);
 
 	buf_nbytes = zone.zcap * geo->lba_nbytes;
 
@@ -149,7 +151,7 @@ sub_sync_write(struct xnvmec *cli)
 		void *payload = buf + sect * geo->lba_nbytes;
 		struct xnvme_req req = { 0 };
 
-		err = xnvme_cmd_write(dev, nsid, zone.zslba + sect, 0, payload,
+		err = xnvme_nvm_write(dev, nsid, zone.zslba + sect, 0, payload,
 				      NULL, cmd_opts, &req);
 		if (err || xnvme_req_cpl_status(&req)) {
 			xnvmec_perr("xnvme_cmd_append()", err);
@@ -175,7 +177,7 @@ sub_sync_append(struct xnvmec *cli)
 	const struct xnvme_geo *geo = cli->args.geo;
 	uint32_t nsid = cli->args.nsid;
 
-	struct znd_descr zone = { 0 };
+	struct xnvme_spec_znd_descr zone = {0 };
 
 	int cmd_opts = XNVME_CMD_SYNC;
 
@@ -187,20 +189,20 @@ sub_sync_append(struct xnvmec *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 	if (cli->given[XNVMEC_OPT_SLBA]) {
-		err = znd_descr_from_dev(dev, cli->args.slba, &zone);
+		err = xnvme_znd_descr_from_dev(dev, cli->args.slba, &zone);
 		if (err) {
-			xnvmec_perr("znd_descr_from_dev()", -err);
+			xnvmec_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
 		}
 	} else {
-		err = znd_descr_from_dev_in_state(dev, ZND_STATE_EMPTY, &zone);
+		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
 		if (err) {
-			xnvmec_perr("znd_descr_from_dev()", -err);
+			xnvmec_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
 		}
 	}
 	xnvmec_pinf("Using the following zone:");
-	znd_descr_pr(&zone, XNVME_PR_DEF);
+	xnvme_spec_znd_descr_pr(&zone, XNVME_PR_DEF);
 
 	buf_nbytes = zone.zcap * geo->lba_nbytes;
 
@@ -224,8 +226,8 @@ sub_sync_append(struct xnvmec *cli)
 		void *payload = buf + sect * geo->lba_nbytes;
 		struct xnvme_req req = { 0 };
 
-		err = znd_cmd_append(dev, nsid, zone.zslba, 0, payload,
-				     NULL, cmd_opts, &req);
+		err = xnvme_znd_append(dev, nsid, zone.zslba, 0, payload,
+				       NULL, cmd_opts, &req);
 		if (err || xnvme_req_cpl_status(&req)) {
 			xnvmec_perr("xnvme_cmd_append()", err);
 			xnvme_req_pr(&req, XNVME_PR_DEF);

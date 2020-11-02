@@ -10,8 +10,8 @@ IO, and arbitrary user-defined commands.
 The backend has four different asynchronous implementations:
 
 * ``thr``, wraps around the synchronous interface providing async. behavior
-* ``libaio``, Linux Asynchronous IO.
-* ``io_uring``, the efficient Linux IO interface, io_uring.
+* ``aio``, Linux Asynchronous IO.
+* ``iou``, the efficient Linux IO interface, io_uring.
 * ``nil``, xNVMe null-IO, does nothing but complete submitted commands, for
   experimentation only
 
@@ -49,4 +49,4 @@ user, some violations may be picked up by the kernel cause the ``ioctl`` to
 fail with ``-1`` and ``errno`` set to ``Invalid Argument``.
 
 In this case, the backend will transform such errors into the NVMe equivalent.
-See the documentation on :ref:`xnvme_req <sec-c-apis-xnvme-struct-xnvme_req>`.
+See the documentation on :ref:`xnvme_req <sec-c-api-xnvme-struct-xnvme_req>`.

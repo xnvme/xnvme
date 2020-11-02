@@ -3,6 +3,7 @@
 #ifndef __INTERNAL_XNVME_BE_H
 #define __INTERNAL_XNVME_BE_H
 #include <paths.h>
+#include <libxnvme_pp.h>
 #include <xnvme_be_registry.h>
 #include <stdbool.h>
 

@@ -248,11 +248,11 @@ _linux_iou_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 	int err = 0;
 
 	switch (cmd->common.opcode) {
-	case XNVME_SPEC_OPC_WRITE:
+	case XNVME_SPEC_NVM_OPC_WRITE:
 		opcode = IORING_OP_WRITE;
 		break;
 
-	case XNVME_SPEC_OPC_READ:
+	case XNVME_SPEC_NVM_OPC_READ:
 		opcode = IORING_OP_READ;
 		break;
 
@@ -279,7 +279,7 @@ _linux_iou_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 	sqe->opcode = opcode;
 	sqe->addr = (unsigned long) dbuf;
 	sqe->len = dbuf_nbytes;
-	sqe->off = cmd->lblk.slba << dev->ssw;
+	sqe->off = cmd->nvm.slba << dev->ssw;
 	sqe->flags = actx->poll_sq ? IOSQE_FIXED_FILE : 0;
 	sqe->ioprio = 0;
 	// NOTE: we only ever register a single file, the raw device, so the

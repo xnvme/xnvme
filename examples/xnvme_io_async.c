@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <libxnvme.h>
+#include <libxnvme_nvm.h>
 #include <libxnvmec.h>
 #include <libxnvme_util.h>
 #include <time.h>
@@ -126,7 +127,7 @@ sub_async_read(struct xnvmec *cli)
 		SLIST_REMOVE_HEAD(&reqs->head, link);
 
 submit:
-		err = xnvme_cmd_read(dev, nsid, slba + sect, 0, payload,
+		err = xnvme_nvm_read(dev, nsid, slba + sect, 0, payload,
 				     NULL, XNVME_CMD_ASYNC, req);
 		switch (err) {
 		case 0:
@@ -278,7 +279,7 @@ sub_async_write(struct xnvmec *cli)
 		SLIST_REMOVE_HEAD(&reqs->head, link);
 
 submit:
-		err = xnvme_cmd_write(dev, nsid, slba + sect, 0, payload,
+		err = xnvme_nvm_write(dev, nsid, slba + sect, 0, payload,
 				      NULL, XNVME_CMD_ASYNC, req);
 		switch (err) {
 		case 0:

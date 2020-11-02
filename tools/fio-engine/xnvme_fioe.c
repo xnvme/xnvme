@@ -76,7 +76,9 @@
 #include <zbd_types.h>
 #include <optgroup.h>
 #include <libxnvme.h>
-#include <libznd.h>
+#include <libxnvme_3p.h>
+#include <libxnvme_nvm.h>
+#include <libxnvme_znd.h>
 
 static pthread_mutex_t g_serialize = PTHREAD_MUTEX_INITIALIZER;
 
@@ -555,15 +557,15 @@ xnvme_fioe_queue(struct thread_data *td, struct io_u *io_u)
 
 	switch (io_u->ddir) {
 	case DDIR_READ:
-		err = xnvme_cmd_read(fwrap->dev, nsid, slba, nlb,
-				     io_u->xfer_buf, NULL, XNVME_CMD_ASYNC,
-				     req);
+		err = xnvme_nvm_read(fwrap->dev, nsid, slba, nlb,
+                             io_u->xfer_buf, NULL, XNVME_CMD_ASYNC,
+                             req);
 		break;
 
 	case DDIR_WRITE:
-		err = xnvme_cmd_write(fwrap->dev, nsid, slba, nlb,
-				      io_u->xfer_buf, NULL, XNVME_CMD_ASYNC,
-				      req);
+		err = xnvme_nvm_write(fwrap->dev, nsid, slba, nlb,
+                              io_u->xfer_buf, NULL, XNVME_CMD_ASYNC,
+                              req);
 		break;
 
 	default:
@@ -719,10 +721,10 @@ xnvme_fioe_report_zones(struct thread_data *XNVME_UNUSED(td),
 			struct fio_file *f, uint64_t offset,
 			struct zbd_zone *zbdz, unsigned int nr_zones)
 {
-	const struct znd_idfy_lbafe *lbafe = NULL;
+	const struct xnvme_spec_znd_idfy_lbafe *lbafe = NULL;
 	struct xnvme_dev *dev = NULL;
 	const struct xnvme_geo *geo = NULL;
-	struct znd_report *rprt = NULL;
+	struct xnvme_znd_report *rprt = NULL;
 	uint32_t ssw;
 	uint64_t slba;
 	unsigned int limit = 0;
@@ -740,7 +742,7 @@ xnvme_fioe_report_zones(struct thread_data *XNVME_UNUSED(td),
 
 	geo = xnvme_dev_get_geo(dev);
 	ssw = xnvme_dev_get_ssw(dev);
-	lbafe = znd_get_lbafe(dev);
+	lbafe = xnvme_znd_dev_get_lbafe(dev);
 
 	limit = nr_zones > geo->nzone ? geo->nzone : nr_zones;
 
@@ -748,9 +750,9 @@ xnvme_fioe_report_zones(struct thread_data *XNVME_UNUSED(td),
 
 	slba = ((offset >> ssw) / geo->nsect) * geo->nsect;
 
-	rprt = znd_report_from_dev(dev, slba, limit, 0);
+	rprt = xnvme_znd_report_from_dev(dev, slba, limit, 0);
 	if (!rprt) {
-		XNVME_DEBUG("FAILED: znd_report_from_dev(), errno: %d", errno);
+		XNVME_DEBUG("FAILED: xnvme_znd_report_from_dev(), errno: %d", errno);
 		err = -errno;
 		goto exit;
 	}
@@ -766,7 +768,7 @@ xnvme_fioe_report_zones(struct thread_data *XNVME_UNUSED(td),
 
 	// Transform the zone-report
 	for (uint32_t idx = 0; idx < rprt->nentries; ++idx) {
-		struct znd_descr *descr = ZND_REPORT_DESCR(rprt, idx);
+		struct xnvme_spec_znd_descr *descr = XNVME_ZND_REPORT_DESCR(rprt, idx);
 
 		zbdz[idx].start = descr->zslba << ssw;
 		zbdz[idx].len = lbafe->zsze << ssw;
@@ -774,7 +776,7 @@ xnvme_fioe_report_zones(struct thread_data *XNVME_UNUSED(td),
 		zbdz[idx].wp = descr->wp << ssw;
 
 		switch (descr->zt) {
-		case ZND_TYPE_SEQWR:
+		case XNVME_SPEC_ZND_TYPE_SEQWR:
 			zbdz[idx].type = ZBD_ZONE_TYPE_SWR;
 			break;
 
@@ -786,24 +788,24 @@ xnvme_fioe_report_zones(struct thread_data *XNVME_UNUSED(td),
 		}
 
 		switch (descr->zs) {
-		case ZND_STATE_EMPTY:
+		case XNVME_SPEC_ZND_STATE_EMPTY:
 			zbdz[idx].cond = ZBD_ZONE_COND_EMPTY;
 			break;
-		case ZND_STATE_IOPEN:
+		case XNVME_SPEC_ZND_STATE_IOPEN:
 			zbdz[idx].cond = ZBD_ZONE_COND_IMP_OPEN;
 			break;
-		case ZND_STATE_EOPEN:
+		case XNVME_SPEC_ZND_STATE_EOPEN:
 			zbdz[idx].cond = ZBD_ZONE_COND_EXP_OPEN;
 			break;
-		case ZND_STATE_CLOSED:
+		case XNVME_SPEC_ZND_STATE_CLOSED:
 			zbdz[idx].cond = ZBD_ZONE_COND_CLOSED;
 			break;
-		case ZND_STATE_FULL:
+		case XNVME_SPEC_ZND_STATE_FULL:
 			zbdz[idx].cond = ZBD_ZONE_COND_FULL;
 			break;
 
-		case ZND_STATE_RONLY:
-		case ZND_STATE_OFFLINE:
+		case XNVME_SPEC_ZND_STATE_RONLY:
+		case XNVME_SPEC_ZND_STATE_OFFLINE:
 		default:
 			zbdz[idx].cond = ZBD_ZONE_COND_OFFLINE;
 			break;
@@ -848,8 +850,8 @@ xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint64_t offset,
 			break;
 		}
 
-		err = znd_cmd_mgmt_send(fwrap->dev, nsid, zslba, ZND_SEND_RESET,
-					0x0, NULL, XNVME_CMD_SYNC, &req);
+		err = xnvme_znd_mgmt_send(fwrap->dev, nsid, zslba, XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET,
+                                  0x0, NULL, XNVME_CMD_SYNC, &req);
 		if (err || xnvme_req_cpl_status(&req)) {
 			err = err ? err : -EIO;
 			XNVME_DEBUG("FAILED: err: %d, sc=%d", err, req.cpl.status.sc);

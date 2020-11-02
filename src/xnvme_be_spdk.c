@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <errno.h>
 #include <libxnvme.h>
-#include <libznd.h>
+#include <libxnvme_znd.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 
@@ -21,6 +21,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_sgl.h>
 #include <libxnvme_spec.h>
+#include <libxnvme_adm.h>
 
 #define XNVME_BE_SPDK_MAX_PROBE_ATTEMPTS 1
 #define XNVME_BE_SPDK_AVLB_TRANSPORTS    3
@@ -846,15 +847,15 @@ xnvme_be_spdk_dev_idfy(struct xnvme_dev *dev)
 	//
 	// Determine command-set / namespace type by probing
 	//
-	dev->csi = XNVME_SPEC_CSI_LBLK;		// Assume NVM
+	dev->csi = XNVME_SPEC_CSI_NVM;		// Assume NVM
 
 	// Attempt to identify Zoned Namespace
 	{
-		struct znd_idfy_ns *zns = (void *)idfy_ns;
+		struct xnvme_spec_znd_idfy_ns *zns = (void *)idfy_ns;
 
 		memset(idfy_ctrlr, 0, sizeof(*idfy_ctrlr));
 		memset(&req, 0, sizeof(req));
-		err = xnvme_cmd_idfy_ctrlr_csi(dev, XNVME_SPEC_CSI_ZONED,
+		err = xnvme_adm_idfy_ctrlr_csi(dev, XNVME_SPEC_CSI_ZONED,
 					       idfy_ctrlr, &req);
 		if (err || xnvme_req_cpl_status(&req)) {
 			XNVME_DEBUG("INFO: !id-ctrlr-zns");
@@ -863,7 +864,7 @@ xnvme_be_spdk_dev_idfy(struct xnvme_dev *dev)
 
 		memset(idfy_ns, 0, sizeof(*idfy_ns));
 		memset(&req, 0, sizeof(req));
-		err = xnvme_cmd_idfy_ns_csi(dev, dev->nsid,
+		err = xnvme_adm_idfy_ns_csi(dev, dev->nsid,
 					    XNVME_SPEC_CSI_ZONED, idfy_ns,
 					    &req);
 		if (err || xnvme_req_cpl_status(&req)) {
@@ -889,7 +890,7 @@ not_zns:
 	// Attempt to identify LBLK Namespace
 	memset(idfy_ns, 0, sizeof(*idfy_ns));
 	memset(&req, 0, sizeof(req));
-	err = xnvme_cmd_idfy_ns_csi(dev, dev->nsid, XNVME_SPEC_CSI_LBLK, idfy_ns, &req);
+	err = xnvme_adm_idfy_ns_csi(dev, dev->nsid, XNVME_SPEC_CSI_NVM, idfy_ns, &req);
 	if (err || xnvme_req_cpl_status(&req)) {
 		XNVME_DEBUG("INFO: not csi-specific id-NVM");
 		XNVME_DEBUG("INFO: falling back to NVM assumption");

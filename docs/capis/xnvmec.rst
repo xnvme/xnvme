@@ -1,15 +1,23 @@
-.. _sec-c-apis-xnvmec:
+.. _sec-c-api-xnvmec:
 
 xnvmec
 ########
 
-.. _sec-c-apis-xnvmec-enum:
+.. _sec-c-api-xnvmec-header:
+
+Header
+======
+
+.. literalinclude:: ../../include/libxnvmec.h
+   :language: c
+
+.. _sec-c-api-xnvmec-enum:
 
 Enums
 =====
 
 
-.. _sec-c-apis-xnvmec-enum-xnvmec_opt:
+.. _sec-c-api-xnvmec-enum-xnvmec_opt:
 
 xnvmec_opt
 ----------
@@ -17,7 +25,7 @@ xnvmec_opt
 .. doxygenenum:: xnvmec_opt
 
 
-.. _sec-c-apis-xnvmec-enum-xnvmec_opt_type:
+.. _sec-c-api-xnvmec-enum-xnvmec_opt_type:
 
 xnvmec_opt_type
 ---------------
@@ -25,7 +33,7 @@ xnvmec_opt_type
 .. doxygenenum:: xnvmec_opt_type
 
 
-.. _sec-c-apis-xnvmec-enum-xnvmec_opts:
+.. _sec-c-api-xnvmec-enum-xnvmec_opts:
 
 xnvmec_opts
 -----------
@@ -34,13 +42,13 @@ xnvmec_opts
 
 
 
-.. _sec-c-apis-xnvmec-struct:
+.. _sec-c-api-xnvmec-struct:
 
 Structs
 =======
 
 
-.. _sec-c-apis-xnvmec-struct-xnvmec:
+.. _sec-c-api-xnvmec-struct-xnvmec:
 
 xnvmec
 ------
@@ -50,7 +58,7 @@ xnvmec
    :undoc-members:
 
 
-.. _sec-c-apis-xnvmec-struct-xnvmec_args:
+.. _sec-c-api-xnvmec-struct-xnvmec_args:
 
 xnvmec_args
 -----------
@@ -60,7 +68,7 @@ xnvmec_args
    :undoc-members:
 
 
-.. _sec-c-apis-xnvmec-struct-xnvmec_sub:
+.. _sec-c-api-xnvmec-struct-xnvmec_sub:
 
 xnvmec_sub
 ----------
@@ -70,7 +78,7 @@ xnvmec_sub
    :undoc-members:
 
 
-.. _sec-c-apis-xnvmec-struct-xnvmec_sub_opt:
+.. _sec-c-api-xnvmec-struct-xnvmec_sub_opt:
 
 xnvmec_sub_opt
 --------------
@@ -81,13 +89,13 @@ xnvmec_sub_opt
 
 
 
-.. _sec-c-apis-xnvmec-func:
+.. _sec-c-api-xnvmec-func:
 
 Functions
 =========
 
 
-.. _sec-c-apis-xnvmec-func-xnvmec:
+.. _sec-c-api-xnvmec-func-xnvmec:
 
 xnvmec
 ------
@@ -95,7 +103,7 @@ xnvmec
 .. doxygenfunction:: xnvmec
 
 
-.. _sec-c-apis-xnvmec-func-xnvmec_args_pr:
+.. _sec-c-api-xnvmec-func-xnvmec_args_pr:
 
 xnvmec_args_pr
 --------------
@@ -103,7 +111,7 @@ xnvmec_args_pr
 .. doxygenfunction:: xnvmec_args_pr
 
 
-.. _sec-c-apis-xnvmec-func-xnvmec_buf_clear:
+.. _sec-c-api-xnvmec-func-xnvmec_buf_clear:
 
 xnvmec_buf_clear
 ----------------
@@ -111,7 +119,7 @@ xnvmec_buf_clear
 .. doxygenfunction:: xnvmec_buf_clear
 
 
-.. _sec-c-apis-xnvmec-func-xnvmec_buf_diff:
+.. _sec-c-api-xnvmec-func-xnvmec_buf_diff:
 
 xnvmec_buf_diff
 ---------------
@@ -119,7 +127,7 @@ xnvmec_buf_diff
 .. doxygenfunction:: xnvmec_buf_diff
 
 
-.. _sec-c-apis-xnvmec-func-xnvmec_buf_diff_pr:
+.. _sec-c-api-xnvmec-func-xnvmec_buf_diff_pr:
 
 xnvmec_buf_diff_pr
 ------------------
@@ -127,7 +135,7 @@ xnvmec_buf_diff_pr
 .. doxygenfunction:: xnvmec_buf_diff_pr
 
 
-.. _sec-c-apis-xnvmec-func-xnvmec_buf_fill:
+.. _sec-c-api-xnvmec-func-xnvmec_buf_fill:
 
 xnvmec_buf_fill
 ---------------
@@ -135,7 +143,7 @@ xnvmec_buf_fill
 .. doxygenfunction:: xnvmec_buf_fill
 
 
-.. _sec-c-apis-xnvmec-func-xnvmec_buf_from_file:
+.. _sec-c-api-xnvmec-func-xnvmec_buf_from_file:
 
 xnvmec_buf_from_file
 --------------------
@@ -143,7 +151,7 @@ xnvmec_buf_from_file
 .. doxygenfunction:: xnvmec_buf_from_file
 
 
-.. _sec-c-apis-xnvmec-func-xnvmec_buf_to_file:
+.. _sec-c-api-xnvmec-func-xnvmec_buf_to_file:
 
 xnvmec_buf_to_file
 ------------------
@@ -151,7 +159,7 @@ xnvmec_buf_to_file
 .. doxygenfunction:: xnvmec_buf_to_file
 
 
-.. _sec-c-apis-xnvmec-func-xnvmec_cmd_from_file:
+.. _sec-c-api-xnvmec-func-xnvmec_cmd_from_file:
 
 xnvmec_cmd_from_file
 --------------------
@@ -159,7 +167,7 @@ xnvmec_cmd_from_file
 .. doxygenfunction:: xnvmec_cmd_from_file
 
 
-.. _sec-c-apis-xnvmec-func-xnvmec_cmd_to_file:
+.. _sec-c-api-xnvmec-func-xnvmec_cmd_to_file:
 
 xnvmec_cmd_to_file
 ------------------
@@ -167,7 +175,7 @@ xnvmec_cmd_to_file
 .. doxygenfunction:: xnvmec_cmd_to_file
 
 
-.. _sec-c-apis-xnvmec-func-xnvmec_int2opt:
+.. _sec-c-api-xnvmec-func-xnvmec_int2opt:
 
 xnvmec_int2opt
 --------------
@@ -175,7 +183,7 @@ xnvmec_int2opt
 .. doxygenfunction:: xnvmec_int2opt
 
 
-.. _sec-c-apis-xnvmec-func-xnvmec_perr:
+.. _sec-c-api-xnvmec-func-xnvmec_perr:
 
 xnvmec_perr
 -----------
@@ -183,7 +191,7 @@ xnvmec_perr
 .. doxygenfunction:: xnvmec_perr
 
 
-.. _sec-c-apis-xnvmec-func-xnvmec_pinf:
+.. _sec-c-api-xnvmec-func-xnvmec_pinf:
 
 xnvmec_pinf
 -----------
@@ -191,7 +199,7 @@ xnvmec_pinf
 .. doxygenfunction:: xnvmec_pinf
 
 
-.. _sec-c-apis-xnvmec-func-xnvmec_timer_bw_pr:
+.. _sec-c-api-xnvmec-func-xnvmec_timer_bw_pr:
 
 xnvmec_timer_bw_pr
 ------------------
@@ -199,7 +207,7 @@ xnvmec_timer_bw_pr
 .. doxygenfunction:: xnvmec_timer_bw_pr
 
 
-.. _sec-c-apis-xnvmec-func-xnvmec_timer_start:
+.. _sec-c-api-xnvmec-func-xnvmec_timer_start:
 
 xnvmec_timer_start
 ------------------
@@ -207,7 +215,7 @@ xnvmec_timer_start
 .. doxygenfunction:: xnvmec_timer_start
 
 
-.. _sec-c-apis-xnvmec-func-xnvmec_timer_stop:
+.. _sec-c-api-xnvmec-func-xnvmec_timer_stop:
 
 xnvmec_timer_stop
 -----------------

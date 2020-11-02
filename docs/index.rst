@@ -29,15 +29,15 @@ command-line interface for managing your NVMe device named ``xnvme``, and
 ``lblk`` for commands specific to NVM Namespaces.
 
 For the Zoned Command Set a command-line interface designed specifically for
-convenient management of Zoned NVMe devices named ``zoned`` and a library for
-direct application integration of Zoned NVMe device named ``libznd``.
+convenient management of Zoned NVMe devices named ``zoned`` and a C API
+``libxnvme_znd.h``.
 
 To evaluate the performance of abstractions introduced by ``xNVMe`` a Fio IO
 engine is provided, supporting **conventional** NVMe devices, as well as
 **Zoned** devices.
 
 Jump right into the :ref:`sec-quick-start` and with the basics in place you can
-explore the :ref:`sec-c-apis` and the :ref:`sec-tools`.
+explore the :ref:`sec-c-api` and the :ref:`sec-tools`.
 
 Contents:
 

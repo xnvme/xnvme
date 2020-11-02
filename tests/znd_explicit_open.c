@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <stdio.h>
 #include <errno.h>
-#include <libznd.h>
+#include <libxnvme_spec.h>
+#include <libxnvme_spec_pp.h>
+#include <libxnvme_znd.h>
 #include <libxnvmec.h>
 
 static int
@@ -10,7 +12,7 @@ test_open_zdptr(struct xnvmec *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_spec_idfy_ns *nvm = (void *)xnvme_dev_get_ns(dev);
-	struct znd_idfy_ns *zns = (void *)xnvme_dev_get_ns_css(dev);
+	struct xnvme_spec_znd_idfy_ns *zns = (void *)xnvme_dev_get_ns_css(dev);
 	uint32_t nsid = xnvme_dev_get_nsid(dev);
 
 	uint32_t zde_nbytes = zns->lbafe[nvm->flbas.format].zdes * 64;
@@ -19,7 +21,7 @@ test_open_zdptr(struct xnvmec *cli)
 	uint64_t zslba = cli->args.lba;
 	uint64_t zidx = 0;
 
-	struct znd_report *before = NULL, *after = NULL;
+	struct xnvme_znd_report *before = NULL, *after = NULL;
 	struct xnvme_req req = { 0 };
 	int err;
 
@@ -44,25 +46,25 @@ test_open_zdptr(struct xnvmec *cli)
 
 	xnvmec_pinf("Retrieving state before EOPEN");
 
-	before = znd_report_from_dev(dev, 0x0, 0, 0);
+	before = xnvme_znd_report_from_dev(dev, 0x0, 0, 0);
 	if (!before) {
 		err = -errno;
-		xnvmec_perr("znd_report_from_dev()", err);
+		xnvmec_perr("xnvme_znd_report_from_dev()", err);
 		goto exit;
 	}
 
 	xnvmec_pinf("Scan for empty and sequential write req. zone");
 
 	for (uint64_t idx = 0; idx < before->nentries; ++idx) {
-		struct znd_descr *descr = ZND_REPORT_DESCR(before, idx);
+		struct xnvme_spec_znd_descr *descr = XNVME_ZND_REPORT_DESCR(before, idx);
 
 		if (cli->given[XNVMEC_OPT_SLBA] && \
 		    (cli->args.lba != descr->zslba)) {
 			continue;
 		}
 
-		if ((descr->zs == ZND_STATE_EMPTY) && \
-		    (descr->zt == ZND_TYPE_SEQWR) && \
+		if ((descr->zs == XNVME_SPEC_ZND_STATE_EMPTY) && \
+		    (descr->zt == XNVME_SPEC_ZND_TYPE_SEQWR) && \
 		    (descr->zcap)) {
 			zslba = descr->zslba;
 			zidx = idx;
@@ -78,20 +80,20 @@ test_open_zdptr(struct xnvmec *cli)
 	xnvmec_pinf("Using: {zslba: 0x%016lx, zidx: %zu}", zslba, zidx);
 
 	xnvmec_pinf("Before");
-	znd_descr_pr(ZND_REPORT_DESCR(before, zidx), XNVME_PR_DEF);
+	xnvme_spec_znd_descr_pr(XNVME_ZND_REPORT_DESCR(before, zidx), XNVME_PR_DEF);
 
-	err = znd_cmd_mgmt_send(dev, nsid, zslba, ZND_SEND_RESET, 0x0, NULL,
-				XNVME_CMD_SYNC, &req);
+	err = xnvme_znd_mgmt_send(dev, nsid, zslba, XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET, 0x0, NULL,
+				  XNVME_CMD_SYNC, &req);
 	if (err || xnvme_req_cpl_status(&req)) {
-		xnvmec_pinf("znd_cmd_mgmt_send(RESET)");
+		xnvmec_pinf("xnvme_znd_mgmt_send(RESET)");
 		err = err ? err : -EIO;
 		goto exit;
 	}
 
 	xnvmec_pinf("Sending MGMT-EOPEN");
 
-	err = znd_cmd_mgmt_send(dev, nsid, zslba, ZND_SEND_OPEN, 0, zde,
-				XNVME_CMD_SYNC, &req);
+	err = xnvme_znd_mgmt_send(dev, nsid, zslba, XNVME_SPEC_ZND_CMD_MGMT_SEND_OPEN, 0, zde,
+				  XNVME_CMD_SYNC, &req);
 	if (err || xnvme_req_cpl_status(&req)) {
 		xnvmec_pinf("xnvme_cmd_zone_mgmt(OPEN)");
 		err = err ? err : -EIO;
@@ -100,19 +102,19 @@ test_open_zdptr(struct xnvmec *cli)
 
 	xnvmec_pinf("After");
 
-	after = znd_report_from_dev(dev, 0x0, 0, 0);
+	after = xnvme_znd_report_from_dev(dev, 0x0, 0, 0);
 	if (!after) {
 		err = -errno;
-		xnvmec_perr("znd_report_from_dev", err);
+		xnvmec_perr("xnvme_znd_report_from_dev", err);
 		goto exit;
 	}
 
-	znd_descr_pr(ZND_REPORT_DESCR(before, zidx), XNVME_PR_DEF);
+	xnvme_spec_znd_descr_pr(XNVME_ZND_REPORT_DESCR(before, zidx), XNVME_PR_DEF);
 
 	{
 		// Verification
-		struct znd_descr *descr = ZND_REPORT_DESCR(after, zidx);
-		uint8_t *zde_after = ZND_REPORT_DEXT(after, zidx);
+		struct xnvme_spec_znd_descr *descr = XNVME_ZND_REPORT_DESCR(after, zidx);
+		uint8_t *zde_after = XNVME_ZND_REPORT_DEXT(after, zidx);
 
 		if (xnvmec_buf_diff(zde, zde_after, zde_nbytes)) {
 			xnvmec_buf_diff_pr(zde, descr, zde_nbytes,
@@ -127,7 +129,7 @@ test_open_zdptr(struct xnvmec *cli)
 			goto exit;
 		}
 
-		if (ZND_STATE_EOPEN != descr->zs) {
+		if (XNVME_SPEC_ZND_STATE_EOPEN != descr->zs) {
 			xnvmec_pinf("ERR: invalid zc: 0x%x", descr->zs);
 			err = -EIO;
 			goto exit;

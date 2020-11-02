@@ -3,7 +3,8 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <sys/queue.h>
-#include <libxnvme_spec.h>
+#include <libxnvme.h>
+#include <libxnvme_sgl.h>
 #include <xnvme_dev.h>
 #include <xnvme_sgl.h>
 

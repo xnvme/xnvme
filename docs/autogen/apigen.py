@@ -83,12 +83,15 @@ def symbols(args, namespaces):
             symtype = line[-2]
             symb = line.split("\t")[0]
 
-            parts = symb.split("_")
-            ns = parts[0].lower()
-            tail = parts[-1]
+            ns = None
+            for namespace in namespaces:
+                if symb.lower().startswith(namespace):
+                    ns = namespace
+                    break
 
-            if ns not in namespaces:
+            if not ns:
                 continue
+
             if ns not in syms:
                 syms[ns] = copy.deepcopy(DECLARATIONS)
 
@@ -142,7 +145,18 @@ def main(args):
     logging.info("Output: %r", args.output)
 
     namespaces = [
-        "xnvme", "lblk", "znd", "xnvmec"
+        "xnvme_3p",
+        "xnvme_adm",
+        "xnvme_dev",
+        "xnvme_geo",
+        "xnvme_nvm",
+        "xnvme_sgl",
+        "xnvme_spec",
+        "xnvme_util",
+        "xnvme_ver",
+        "xnvme_znd",
+        "xnvmec",
+        "xnvme"
     ]
 
     syms = symbols(args, namespaces)

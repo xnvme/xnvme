@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <stdio.h>
 #include <errno.h>
+#include <libxnvme.h>
+#include <libxnvme_adm.h>
 #include <libxnvmec.h>
 
 #define XNVME_TESTS_QDEPTH_MAX 512
@@ -35,11 +37,11 @@ test_init_term(struct xnvmec *cli)
 		struct xnvme_spec_feat feat = { .val = 0 };
 		struct xnvme_req req = { 0 };
 
-		err = xnvme_cmd_gfeat(dev, 0x0, XNVME_SPEC_FEAT_NQUEUES,
+		err = xnvme_adm_gfeat(dev, 0x0, XNVME_SPEC_FEAT_NQUEUES,
 				      XNVME_SPEC_FEAT_SEL_CURRENT, NULL, 0,
 				      &req);
 		if (err || xnvme_req_cpl_status(&req)) {
-			xnvmec_perr("xnvme_cmd_gfeat()", err);
+			xnvmec_perr("xnvme_adm_gfeat()", err);
 			xnvme_req_pr(&req, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			return err;

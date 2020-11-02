@@ -3,6 +3,8 @@
 #include <string.h>
 #include <errno.h>
 #include <libxnvme.h>
+#include <libxnvme_adm.h>
+#include <libxnvme_nvm.h>
 #include <libxnvmec.h>
 
 // TODO: only show namespaces of logical block type
@@ -47,7 +49,7 @@ sub_idfy(struct xnvmec *cli)
 	struct xnvme_req req = { 0 };
 	int err;
 
-	xnvmec_pinf("xnvme_cmd_idfy: {nsid: 0x%x}", nsid);
+	xnvmec_pinf("xnvme_adm_idfy: {nsid: 0x%x}", nsid);
 
 	idfy = xnvme_buf_alloc(dev, sizeof(*idfy), NULL);
 	if (!idfy) {
@@ -56,9 +58,9 @@ sub_idfy(struct xnvmec *cli)
 		goto exit;
 	}
 
-	err = xnvme_cmd_idfy_ns(dev, nsid, idfy, &req);
+	err = xnvme_adm_idfy_ns(dev, nsid, idfy, &req);
 	if (err || xnvme_req_cpl_status(&req)) {
-		xnvmec_perr("xnvme_cmd_idfy()", err);
+		xnvmec_perr("xnvme_adm_idfy()", err);
 		xnvme_req_pr(&req, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -126,10 +128,10 @@ sub_read(struct xnvmec *cli)
 	}
 
 	xnvmec_pinf("Sending the command...");
-	err = xnvme_cmd_read(dev, nsid, slba, nlb, dbuf, mbuf, XNVME_CMD_SYNC,
+	err = xnvme_nvm_read(dev, nsid, slba, nlb, dbuf, mbuf, XNVME_CMD_SYNC,
 			     &req);
 	if (err || xnvme_req_cpl_status(&req)) {
-		xnvmec_perr("xnvme_cmd_read()", err);
+		xnvmec_perr("xnvme_nvm_read()", err);
 		xnvme_req_pr(&req, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -204,10 +206,10 @@ sub_write(struct xnvmec *cli)
 	}
 
 	xnvmec_pinf("Sending the command...");
-	err = xnvme_cmd_write(dev, nsid, slba, nlb, dbuf, mbuf, XNVME_CMD_SYNC,
+	err = xnvme_nvm_write(dev, nsid, slba, nlb, dbuf, mbuf, XNVME_CMD_SYNC,
 			      &req);
 	if (err || xnvme_req_cpl_status(&req)) {
-		xnvmec_perr("xnvme_cmd_write()", err);
+		xnvmec_perr("xnvme_nvm_write()", err);
 		xnvme_req_pr(&req, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;

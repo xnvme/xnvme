@@ -3,9 +3,11 @@
 #include <stdio.h>
 #include <errno.h>
 #include <libxnvme.h>
-#include <libxnvmec.h>
+#include <libxnvme_spec_pp.h>
+#include <libxnvme_nvm.h>
 #include <libxnvme_util.h>
-#include <libznd.h>
+#include <libxnvme_znd.h>
+#include <libxnvmec.h>
 #include <time.h>
 
 #define DEFAULT_QD 8
@@ -48,7 +50,7 @@ sub_async_read(struct xnvmec *cli)
 	uint32_t nsid = cli->args.nsid;
 
 	const uint32_t qd = cli->args.qdepth ? cli->args.qdepth : DEFAULT_QD;
-	struct znd_descr zone = { 0 };
+	struct xnvme_spec_znd_descr zone = {0 };
 
 	int cmd_opts = XNVME_CMD_ASYNC;
 	struct cb_args cb_args = { 0 };
@@ -64,20 +66,20 @@ sub_async_read(struct xnvmec *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 	if (cli->given[XNVMEC_OPT_SLBA]) {
-		err = znd_descr_from_dev(dev, cli->args.slba, &zone);
+		err = xnvme_znd_descr_from_dev(dev, cli->args.slba, &zone);
 		if (err) {
-			xnvmec_perr("znd_descr_from_dev()", -err);
+			xnvmec_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
 		}
 	} else {
-		err = znd_descr_from_dev_in_state(dev, ZND_STATE_FULL, &zone);
+		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_FULL, &zone);
 		if (err) {
-			xnvmec_perr("znd_descr_from_dev()", -err);
+			xnvmec_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
 		}
 	}
 	xnvmec_pinf("Using the following zone:");
-	znd_descr_pr(&zone, XNVME_PR_DEF);
+	xnvme_spec_znd_descr_pr(&zone, XNVME_PR_DEF);
 
 	buf_nbytes = zone.zcap * geo->lba_nbytes;
 
@@ -122,7 +124,7 @@ sub_async_read(struct xnvmec *cli)
 		SLIST_REMOVE_HEAD(&reqs->head, link);
 
 submit:
-		err = xnvme_cmd_read(dev, nsid, zone.zslba + sect, 0, payload, NULL,
+		err = xnvme_nvm_read(dev, nsid, zone.zslba + sect, 0, payload, NULL,
 				     cmd_opts, req);
 		switch (err) {
 		case 0:
@@ -205,7 +207,7 @@ sub_async_write(struct xnvmec *cli)
 	uint32_t nsid = cli->args.nsid;
 
 	const uint32_t qd = cli->args.qdepth ? cli->args.qdepth : DEFAULT_QD;
-	struct znd_descr zone = { 0 };
+	struct xnvme_spec_znd_descr zone = {0 };
 
 	int cmd_opts = XNVME_CMD_ASYNC;
 	struct cb_args cb_args = { 0 };
@@ -221,20 +223,20 @@ sub_async_write(struct xnvmec *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 	if (cli->given[XNVMEC_OPT_SLBA]) {
-		err = znd_descr_from_dev(dev, cli->args.slba, &zone);
+		err = xnvme_znd_descr_from_dev(dev, cli->args.slba, &zone);
 		if (err) {
-			xnvmec_perr("znd_descr_from_dev()", -err);
+			xnvmec_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
 		}
 	} else {
-		err = znd_descr_from_dev_in_state(dev, ZND_STATE_EMPTY, &zone);
+		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
 		if (err) {
-			xnvmec_perr("znd_descr_from_dev()", -err);
+			xnvmec_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
 		}
 	}
 	xnvmec_pinf("Using the following zone:");
-	znd_descr_pr(&zone, XNVME_PR_DEF);
+	xnvme_spec_znd_descr_pr(&zone, XNVME_PR_DEF);
 
 	buf_nbytes = zone.zcap * geo->lba_nbytes;
 
@@ -278,7 +280,7 @@ sub_async_write(struct xnvmec *cli)
 		SLIST_REMOVE_HEAD(&reqs->head, link);
 
 submit:
-		err = xnvme_cmd_write(dev, nsid, zone.zslba + sect, 0, payload,
+		err = xnvme_nvm_write(dev, nsid, zone.zslba + sect, 0, payload,
 				      NULL, cmd_opts, req);
 		switch (err) {
 		case 0:
@@ -357,7 +359,7 @@ sub_async_append(struct xnvmec *cli)
 	uint32_t nsid = cli->args.nsid;
 
 	const uint32_t qd = cli->args.qdepth ? cli->args.qdepth : DEFAULT_QD;
-	struct znd_descr zone = { 0 };
+	struct xnvme_spec_znd_descr zone = {0 };
 
 	int cmd_opts = XNVME_CMD_ASYNC;
 	struct cb_args cb_args = { 0 };
@@ -373,20 +375,20 @@ sub_async_append(struct xnvmec *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 	if (cli->given[XNVMEC_OPT_SLBA]) {
-		err = znd_descr_from_dev(dev, cli->args.slba, &zone);
+		err = xnvme_znd_descr_from_dev(dev, cli->args.slba, &zone);
 		if (err) {
-			xnvmec_perr("znd_descr_from_dev()", -err);
+			xnvmec_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
 		}
 	} else {
-		err = znd_descr_from_dev_in_state(dev, ZND_STATE_EMPTY, &zone);
+		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
 		if (err) {
-			xnvmec_perr("znd_descr_from_dev()", -err);
+			xnvmec_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
 		}
 	}
 	xnvmec_pinf("Using the following zone:");
-	znd_descr_pr(&zone, XNVME_PR_DEF);
+	xnvme_spec_znd_descr_pr(&zone, XNVME_PR_DEF);
 
 	buf_nbytes = zone.zcap * geo->lba_nbytes;
 
@@ -431,8 +433,8 @@ sub_async_append(struct xnvmec *cli)
 		SLIST_REMOVE_HEAD(&reqs->head, link);
 
 submit:
-		err = znd_cmd_append(dev, nsid, zone.zslba, 0, payload,
-				     NULL, cmd_opts, req);
+		err = xnvme_znd_append(dev, nsid, zone.zslba, 0, payload,
+				       NULL, cmd_opts, req);
 		switch (err) {
 		case 0:
 			cb_args.submitted += 1;

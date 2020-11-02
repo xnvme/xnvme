@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <stdio.h>
 #include <libxnvme.h>
+#include <libxnvme_pp.h>
 
 static inline const char *
 xnvme_geo_type_str(int type)

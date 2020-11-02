@@ -26,14 +26,13 @@ the NVMe status code in the ``status`` field.
 
 **Note** that while the :ref:`spdk <sec-backends-spdk>` backend has a
 one-to-one correspondence between what is in the ``xnvme_req`` and what is
-reported by the device, the :ref:`Linux/IOCTL <sec-backends-lioc>`,
-:ref:`Linux/io_uring <sec-backends-liou>` backend will transform certain errors
-from the kernel into their NVMe equivalents.
+reported by the device, the :ref:`Linux <sec-backends-linux>`, backend will
+transform certain errors from the kernel into their NVMe equivalents.
 
 This is because certain ``ioctl`` calls may return ``-1`` and ``Invalid
 Argument`` without actually sending a command to the device. To align the
-backends with each other, such an error wil be transformed into the NVMe
-equivalent if possible. For example, ``Invalid Argument`` will be transformed
+backends with each other, such an error will be transformed into the NVMe
+equivalent, if possible. For example, ``Invalid Argument`` will be transformed
 into the NVMe status code ``Invalid Field in Command`` and set that in the
 given ``xnvme_req``.
 

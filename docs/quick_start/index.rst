@@ -58,5 +58,5 @@ Which should output information similar to:
    :language: bash
 
 With the basics in place, have a look at the :ref:`sec-examples`, follow the
-:ref:`sec-tutorials`, and dive deeper into the :ref:`sec-c-apis` and experiment
+:ref:`sec-tutorials`, and dive deeper into the :ref:`sec-c-api` and experiment
 with the :ref:`sec-tools`.

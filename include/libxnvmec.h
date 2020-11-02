@@ -13,6 +13,8 @@ extern "C" {
 
 #include <libxnvme.h>
 #include <libxnvme_util.h>
+#include <libxnvme_ver.h>
+#include <libxnvme_pp.h>
 
 /**
  * Fills `buf` with content `nbytes` of content

@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include <errno.h>
 #include <libxnvmec.h>
-#include <liblblk.h>
+#include <libxnvme_nvm.h>
+#include <libxnvme_spec_pp.h>
 
 /**
  * TODO: add a test, scopy-failure, verifying the following completion-behavior:
@@ -21,8 +22,8 @@ static int
 sub_support(struct xnvmec *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	struct lblk_idfy_ctrlr *ctrlr;
-	struct lblk_idfy_ns *ns;
+	struct xnvme_spec_nvm_idfy_ctrlr *ctrlr;
+	struct xnvme_spec_nvm_idfy_ns *ns;
 	int err = 0;
 
 	ctrlr = (void *)xnvme_dev_get_ctrlr(dev);
@@ -37,8 +38,8 @@ sub_support(struct xnvmec *cli)
 		xnvmec_perr("xnvme_dev_get_ns()", -err);
 		return err;
 	}
-	lblk_idfy_ctrlr_pr(ctrlr, XNVME_PR_DEF);
-	lblk_idfy_ns_pr(ns, XNVME_PR_DEF);
+	xnvme_spec_nvm_idfy_ctrlr_pr(ctrlr, XNVME_PR_DEF);
+	xnvme_spec_nvm_idfy_ns_pr(ns, XNVME_PR_DEF);
 
 	if (!ctrlr->oncs.copy) {
 		err = -ENOSYS;
@@ -67,8 +68,8 @@ static int
 sub_idfy(struct xnvmec *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	struct lblk_idfy_ctrlr *ctrlr;
-	struct lblk_idfy_ns *ns;
+	struct xnvme_spec_nvm_idfy_ctrlr *ctrlr;
+	struct xnvme_spec_nvm_idfy_ns *ns;
 	int err;
 
 	ctrlr = (void *)xnvme_dev_get_ctrlr(dev);
@@ -84,8 +85,8 @@ sub_idfy(struct xnvmec *cli)
 		return err;
 	}
 
-	lblk_idfy_ctrlr_pr(ctrlr, XNVME_PR_DEF);
-	lblk_idfy_ns_pr(ns, XNVME_PR_DEF);
+	xnvme_spec_nvm_idfy_ctrlr_pr(ctrlr, XNVME_PR_DEF);
+	xnvme_spec_nvm_idfy_ns_pr(ns, XNVME_PR_DEF);
 
 	xnvmec_pinf("LGTM");
 
@@ -114,12 +115,12 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	uint32_t nsid = cli->args.nsid;
-	struct lblk_idfy_ns *ns;
-	enum lblk_scopy_fmt copy_fmt;
+	struct xnvme_spec_nvm_idfy_ns *ns;
+	enum xnvme_nvm_scopy_fmt copy_fmt;
 	char *dbuf = NULL, *vbuf = NULL;
 	size_t buf_nbytes;
 	uint64_t sdlba;
-	struct lblk_source_range *range = NULL;
+	struct xnvme_spec_nvm_scopy_source_range *range = NULL;
 	uint8_t nr;
 	int err;
 
@@ -188,18 +189,18 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 	sdlba = range->entry[nr].slba + range->entry[nr].nlb + 1;
 
 	// NVMe-struct copy format
-	copy_fmt = LBLK_SCOPY_FMT_ZERO;
+	copy_fmt = XNVME_NVM_SCOPY_FMT_ZERO;
 
 	// Write the dbuf to source LBAs
 	for (uint64_t i = 0; i < tlbas; ++i) {
 		struct xnvme_req req = { 0 };
 		size_t ofz = i * geo->lba_nbytes;
 
-		err = xnvme_cmd_write(dev, nsid, range->entry[i].slba,
+		err = xnvme_nvm_write(dev, nsid, range->entry[i].slba,
 				      range->entry[i].nlb, dbuf + ofz, NULL,
 				      XNVME_CMD_SYNC, &req);
 		if (err || xnvme_req_cpl_status(&req)) {
-			xnvmec_perr("xnvme_cmd_write()", err);
+			xnvmec_perr("xnvme_nvm_write()", err);
 			xnvme_req_pr(&req, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
@@ -211,10 +212,10 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 		struct xnvme_req req = { 0 };
 		size_t ofz = i * geo->lba_nbytes;
 
-		err = xnvme_cmd_write(dev, nsid, sdlba + i, 0, vbuf + ofz, NULL,
+		err = xnvme_nvm_write(dev, nsid, sdlba + i, 0, vbuf + ofz, NULL,
 				      XNVME_CMD_SYNC, &req);
 		if (err || xnvme_req_cpl_status(&req)) {
-			xnvmec_perr("xnvme_cmd_read()", err);
+			xnvmec_perr("xnvme_nvm_read()", err);
 			xnvme_req_pr(&req, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
@@ -222,7 +223,7 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 	}
 
 	xnvmec_pinf("Copying:");
-	lblk_source_range_pr(range, nr, XNVME_PR_DEF);
+	xnvme_spec_nvm_scopy_source_range_pr(range, nr, XNVME_PR_DEF);
 
 	xnvmec_pinf("To:");
 	printf("sdlba: 0x%016lx\n", sdlba);
@@ -230,9 +231,9 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 	if (cli->args.clear) {
 		struct xnvme_req req = { 0 };
 		xnvmec_pinf("Using XNVME_CMD_SYNC mode");
-		err = lblk_cmd_scopy(dev, nsid, sdlba, range->entry, nr, copy_fmt, XNVME_CMD_SYNC, &req);
+		err = xnvme_nvm_scopy(dev, nsid, sdlba, range->entry, nr, copy_fmt, XNVME_CMD_SYNC, &req);
 		if (err || xnvme_req_cpl_status(&req)) {
-			xnvmec_perr("lblk_cmd_scopy()", err);
+			xnvmec_perr("xnvme_nvm_scopy()", err);
 			xnvme_req_pr(&req, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
@@ -251,9 +252,10 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 		req.async.ctx = ctx;
 		req.async.cb = cb_noop;
 
-		err = lblk_cmd_scopy(dev, nsid, sdlba, range->entry, nr, copy_fmt, XNVME_CMD_ASYNC, &req);
+		err = xnvme_nvm_scopy(dev, nsid, sdlba, range->entry, nr, copy_fmt, XNVME_CMD_ASYNC,
+				      &req);
 		if (err) {
-			xnvmec_perr("lblk_cmd_scopy()", err);
+			xnvmec_perr("xnvme_nvm_scopy()", err);
 			xnvme_async_term(dev, ctx);
 			goto exit;
 		}
@@ -270,10 +272,10 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 		struct xnvme_req req = { 0 };
 		size_t ofz = i * geo->lba_nbytes;
 
-		err = xnvme_cmd_read(dev, nsid, sdlba + i, 0, vbuf + ofz, NULL,
+		err = xnvme_nvm_read(dev, nsid, sdlba + i, 0, vbuf + ofz, NULL,
 				     XNVME_CMD_SYNC, &req);
 		if (err || xnvme_req_cpl_status(&req)) {
-			xnvmec_perr("xnvme_cmd_read()", err);
+			xnvmec_perr("xnvme_nvm_read()", err);
 			xnvme_req_pr(&req, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
@@ -311,7 +313,7 @@ sub_scopy(struct xnvmec *cli)
 static int
 sub_scopy_msrc(struct xnvmec *cli)
 {
-	struct lblk_idfy_ns *ns;
+	struct xnvme_spec_nvm_idfy_ns *ns;
 
 	ns = (void *)xnvme_dev_get_ns(cli->args.dev);
 	if (!ns) {

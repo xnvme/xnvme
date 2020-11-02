@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <xnvme_be_linux.h>
-#include <libznd.h>
+#include <libxnvme_znd.h>
 
 #ifdef BLK_ZONE_REP_CAPACITY
 static uint64_t
@@ -35,7 +35,7 @@ _lzbd_zone_capacity(struct blk_zone_report *XNVME_UNUSED(hdr),
 #endif
 
 static int
-_lzbd_zone_mgmt_send(struct xnvme_dev *dev, struct znd_cmd *cmd)
+_lzbd_zone_mgmt_send(struct xnvme_dev *dev, struct xnvme_spec_znd_cmd *cmd)
 {
 	struct xnvme_be_linux_state *state = (void *)dev->be.state;
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
@@ -52,22 +52,22 @@ _lzbd_zone_mgmt_send(struct xnvme_dev *dev, struct znd_cmd *cmd)
 
 	switch (cmd->mgmt_send.zsa) {
 #ifdef BLKCLOSEZONE
-	case ZND_SEND_CLOSE:
+	case XNVME_SPEC_ZND_CMD_MGMT_SEND_CLOSE:
 		err = ioctl(state->fd, BLKCLOSEZONE, &zr);
 		break;
 #endif
 #ifdef BLKFINISHZONE
-	case ZND_SEND_FINISH:
+	case XNVME_SPEC_ZND_CMD_MGMT_SEND_FINISH:
 		err = ioctl(state->fd, BLKFINISHZONE, &zr);
 		break;
 #endif
 #ifdef BLKOPENZONE
-	case ZND_SEND_OPEN:
+	case XNVME_SPEC_ZND_CMD_MGMT_SEND_OPEN:
 		err = ioctl(state->fd, BLKOPENZONE, &zr);
 		break;
 #endif
 #ifdef BLKRESETZONE
-	case ZND_SEND_RESET:
+	case XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET:
 		err = ioctl(state->fd, BLKRESETZONE, &zr);
 		break;
 #endif
@@ -163,7 +163,7 @@ _lzbd_ioctl_rprt(struct xnvme_dev *XNVME_UNUSED(dev),
 static int
 _lzbd_ioctl_zblk_to_descr(struct xnvme_dev *dev,
 			  struct blk_zone_report *lzbd_rprt,
-			  struct blk_zone *blkz, struct znd_descr *zdescr)
+			  struct blk_zone *blkz, struct xnvme_spec_znd_descr *zdescr)
 {
 	zdescr->zslba = blkz->start >> (dev->ssw - LINUX_BLOCK_SSW);
 	zdescr->wp = blkz->wp >> (dev->ssw - LINUX_BLOCK_SSW);
@@ -174,34 +174,34 @@ _lzbd_ioctl_zblk_to_descr(struct xnvme_dev *dev,
 
 	// When the type is not defined in the NVMe-spec, then treat
 	// them as offline
-	zdescr->zt = ZND_TYPE_SEQWR;
-	zdescr->zs = (blkz->type == ZND_TYPE_SEQWR) ? \
+	zdescr->zt = XNVME_SPEC_ZND_TYPE_SEQWR;
+	zdescr->zs = (blkz->type == XNVME_SPEC_ZND_TYPE_SEQWR) ? \
 		     blkz->cond : \
-		     ZND_STATE_OFFLINE;
+		     XNVME_SPEC_ZND_STATE_OFFLINE;
 
 	return 0;
 }
 
 static int
-_zrasf_to_state(enum znd_recv_action_sf zrasf)
+_zrasf_to_state(enum xnvme_spec_znd_cmd_mgmt_recv_action_sf zrasf)
 {
 	switch (zrasf) {
-	case ZND_RECV_SF_ALL:
+	case XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL:
 		return 0;
-	case ZND_RECV_SF_EMPTY:
-		return ZND_STATE_EMPTY;
-	case ZND_RECV_SF_IOPEN:
-		return ZND_STATE_IOPEN;
-	case ZND_RECV_SF_EOPEN:
-		return ZND_STATE_EOPEN;
-	case ZND_RECV_SF_CLOSED:
-		return ZND_STATE_CLOSED;
-	case ZND_RECV_SF_FULL:
-		return ZND_STATE_FULL;
-	case ZND_RECV_SF_RONLY:
-		return ZND_STATE_RONLY;
-	case ZND_RECV_SF_OFFLINE:
-		return ZND_STATE_OFFLINE;
+	case XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_EMPTY:
+		return XNVME_SPEC_ZND_STATE_EMPTY;
+	case XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_IOPEN:
+		return XNVME_SPEC_ZND_STATE_IOPEN;
+	case XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_EOPEN:
+		return XNVME_SPEC_ZND_STATE_EOPEN;
+	case XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_CLOSED:
+		return XNVME_SPEC_ZND_STATE_CLOSED;
+	case XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_FULL:
+		return XNVME_SPEC_ZND_STATE_FULL;
+	case XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_RONLY:
+		return XNVME_SPEC_ZND_STATE_RONLY;
+	case XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_OFFLINE:
+		return XNVME_SPEC_ZND_STATE_OFFLINE;
 	}
 
 	return -1;
@@ -221,12 +221,12 @@ _zrasf_to_state(enum znd_recv_action_sf zrasf)
  * When partial=1, then NVMe has the same behavior as Linux Zoned.
  */
 static int
-_lzbd_zone_mgmt_recv(struct xnvme_dev *dev, struct znd_cmd *cmd, void *dbuf,
+_lzbd_zone_mgmt_recv(struct xnvme_dev *dev, struct xnvme_spec_znd_cmd *cmd, void *dbuf,
 		     size_t dbuf_nbytes)
 {
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
-	struct znd_rprt_hdr *nvme_rprt = (void *)dbuf;
-	struct znd_descr *nvme_descr = (void *)dbuf + sizeof(*nvme_rprt);
+	struct xnvme_spec_znd_report_hdr *nvme_rprt = (void *)dbuf;
+	struct xnvme_spec_znd_descr *nvme_descr = (void *)dbuf + sizeof(*nvme_rprt);
 	struct blk_zone_report *lzbd_rprt = NULL;
 	uint64_t nzones_per_cmd = 64;
 	uint64_t nzones_dev = 0;
@@ -253,7 +253,7 @@ _lzbd_zone_mgmt_recv(struct xnvme_dev *dev, struct znd_cmd *cmd, void *dbuf,
 	dbuf_nzones = (dbuf_nbytes - sizeof(*nvme_rprt)) / sizeof(*nvme_descr);
 
 	// Special-case; e.g. asking "how-many-zones" and no room for entries
-	if ((cmd->mgmt_recv.zrasf == ZND_RECV_SF_ALL) && (dbuf_nzones == 0)) {
+	if ((cmd->mgmt_recv.zrasf == XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL) && (dbuf_nzones == 0)) {
 		nvme_rprt->nzones = nzones_dev;
 		return 0;
 	}
@@ -324,9 +324,9 @@ xnvme_be_linux_block_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 	ssize_t nbytes;
 
 	switch (cmd->common.opcode) {
-	case XNVME_SPEC_OPC_WRITE:
+	case XNVME_SPEC_NVM_OPC_WRITE:
 		nbytes = pwrite(state->fd, dbuf, dbuf_nbytes,
-				cmd->lblk.slba  << dev->ssw);
+				cmd->nvm.slba << dev->ssw);
 		if (nbytes != (ssize_t)dbuf_nbytes) {
 			XNVME_DEBUG("FAILED: W nbytes: %ld != dbuf_nbytes: %zu, errno: %d",
 				    nbytes, dbuf_nbytes, errno);
@@ -334,9 +334,9 @@ xnvme_be_linux_block_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 		}
 		return 0;
 
-	case XNVME_SPEC_OPC_READ:
+	case XNVME_SPEC_NVM_OPC_READ:
 		nbytes = pread(state->fd, dbuf, dbuf_nbytes,
-			       cmd->lblk.slba  << dev->ssw);
+			       cmd->nvm.slba << dev->ssw);
 		if (nbytes != (ssize_t)dbuf_nbytes) {
 			XNVME_DEBUG("FAILED: R nbytes: %ld != dbuf_nbytes: %zu, errno: %d",
 				    nbytes, dbuf_nbytes, errno);
@@ -344,10 +344,10 @@ xnvme_be_linux_block_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 		}
 		return 0;
 
-	case ZND_CMD_OPC_MGMT_SEND:
+	case XNVME_SPEC_ZND_OPC_MGMT_SEND:
 		return _lzbd_zone_mgmt_send(dev, (void *)cmd);
 
-	case ZND_CMD_OPC_MGMT_RECV:
+	case XNVME_SPEC_ZND_OPC_MGMT_RECV:
 		return _lzbd_zone_mgmt_recv(dev, (void *)cmd, dbuf, dbuf_nbytes);
 
 	default:
@@ -381,7 +381,7 @@ _idfy_ctrlr(struct xnvme_dev *dev, void *dbuf)
 int
 _idfy_ns_iocs(struct xnvme_dev *dev, void *dbuf)
 {
-	struct znd_idfy_ns *zns = dbuf;
+	struct xnvme_spec_znd_idfy_ns *zns = dbuf;
 	uint64_t tbytes, nsect, nbytes, val;
 	uint64_t nr_zones = 0;
 	int err;
@@ -454,7 +454,7 @@ int
 _idfy(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *dbuf,
       struct xnvme_req *req)
 {
-	struct znd_idfy_ctrlr *zctrlr = dbuf;
+	struct xnvme_spec_znd_idfy_ctrlr *zctrlr = dbuf;
 	const int buf_len = 0x1000;
 	char buf[buf_len];
 	int is_zoned;
@@ -513,10 +513,10 @@ xnvme_be_linux_block_cmd_admin(struct xnvme_dev *dev,
 			       int XNVME_UNUSED(opts), struct xnvme_req *req)
 {
 	switch (cmd->common.opcode) {
-	case XNVME_SPEC_OPC_IDFY:
+	case XNVME_SPEC_ADM_OPC_IDFY:
 		return _idfy(dev, cmd, dbuf, req);
 
-	case XNVME_SPEC_OPC_LOG:
+	case XNVME_SPEC_ADM_OPC_LOG:
 		XNVME_DEBUG("FAILED: not implemented yet.");
 		return -ENOSYS;
 

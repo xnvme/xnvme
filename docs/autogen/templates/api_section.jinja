@@ -1,15 +1,23 @@
-.. _sec-c-apis-{{ ns }}:
+.. _sec-c-api-{{ ns }}:
 
 {{ ns }}
 ########
 
-.. _sec-c-apis-{{ ns }}-enum:
+.. _sec-c-api-{{ ns }}-header:
+
+Header
+======
+
+.. literalinclude:: ../../include/lib{{ ns }}.h
+   :language: c
+
+.. _sec-c-api-{{ ns }}-enum:
 
 Enums
 =====
 
 {% for symb in api.enum %}
-.. _sec-c-apis-{{ ns }}-enum-{{ symb }}:
+.. _sec-c-api-{{ ns }}-enum-{{ symb }}:
 
 {{ symb }}
 {% for _ in range(symb|length) %}-{% endfor %}
@@ -18,13 +26,13 @@ Enums
 
 {% endfor %}
 
-.. _sec-c-apis-{{ ns }}-struct:
+.. _sec-c-api-{{ ns }}-struct:
 
 Structs
 =======
 
 {% for symb in api.struct %}
-.. _sec-c-apis-{{ ns }}-struct-{{ symb }}:
+.. _sec-c-api-{{ ns }}-struct-{{ symb }}:
 
 {{ symb }}
 {% for _ in range(symb|length) %}-{% endfor %}
@@ -35,13 +43,13 @@ Structs
 
 {% endfor %}
 
-.. _sec-c-apis-{{ ns }}-func:
+.. _sec-c-api-{{ ns }}-func:
 
 Functions
 =========
 
 {% for symb in api.func %}
-.. _sec-c-apis-{{ ns }}-func-{{ symb }}:
+.. _sec-c-api-{{ ns }}-func-{{ symb }}:
 
 {{ symb }}
 {% for _ in range(symb|length) %}-{% endfor %}
