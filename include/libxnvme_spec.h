@@ -1,6 +1,30 @@
 /**
  * libxnvme_spec - NVMe structs, enum, values and helper function declarations
  *
+ * If an entity is defined in the NVMe specification, then an enum or struct should exist in this
+ * header file. The purpose of this is to provide a single point of entry for spec. definitions for
+ * the purpose of providing structs with accessors, possibly bit-fields, and enums for values such
+ * as command opcodes.
+ *
+ * Auxilary header files are provided for the different IO command-sets, e.g. ``libxnvme_nvm.h``,
+ * providing utility functions such as ``xnvme_nvm_read``, ``xnvme_nvm_write``, and similarly
+ * ``libxnvme_znd.h`` with utilities such as ``xnvme_znd_append``, ``xnvme_znd_mgmt_send``.
+ * These can also contain enums and structs, however, these are not based on definitions in the NVMe
+ * specification, rather, these build on the spec. definition in order to provide something sligthly
+ * more convenient to the user.
+ *
+ * A special class of utility functions are pretty-printers, all spec. defintions have two
+ * associated pretty-printers named by the type, suffixed by ``_fpr`` and ``_pr``, for example:
+ *
+ * - xnvme_spec_cpl_fpr(), prints the given ``struct xnvme_spec_cpl`` struct to the given fstream
+ * - xnvme_spec_cpl_pr(),  prints the given ``struct xnvme_spec_cpl`` struct to stdout
+ *
+ * These functions are auto-generated and available by importing ``libxnvme_spec_pp.h``. Thus, when
+ * you see a definition in ``libxnvme_spec.h`` then you can count on always having a textual
+ * representation available for that definition by importing ``libxnvme_spec_pp.h``.
+ * You can also choose to add the ``libxnvme_pp.h`` which includes pretty-printers for all enums and
+ * struct known by xNVMe.
+ *
  * Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
  * Copyright (C) Klaus B. A. Jensen <k.jensen@samsung.com>
  * SPDX-License-Identifier: Apache-2.0
