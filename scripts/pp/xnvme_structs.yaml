@@ -1,0 +1,14 @@
+structs:
+  - name: "xnvme_geo"
+    members:
+      type: 'xnvme_geo_type_str'
+      npugrp: '%u'
+      npunit: '%u'
+      nzone: '%u'
+      nsect: '%zu'
+      nbytes: '%u'
+      nbytes_oob: '%u'
+      tbytes: '%zu'
+      mdts_nbytes: '%u'
+      lba_nbytes: '%u'
+      lba_extended: '%u'
