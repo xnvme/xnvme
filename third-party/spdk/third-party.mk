@@ -52,8 +52,7 @@ third-party-spdk-configure:
 		--without-shared			\
 		--without-uring				\
 		--without-vhost				\
-		--without-virtio			\
-		--without-vpp
+		--without-virtio
 
 .PHONY: third-party-spdk-build
 third-party-spdk-build:
