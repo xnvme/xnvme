@@ -1,22 +1,22 @@
-From 5f29150501e7b03027df7907617e4a0748807c03 Mon Sep 17 00:00:00 2001
-From: "Ivan L. Picoli" <i.picoli@samsung.com>
-Date: Wed, 22 Jul 2020 18:11:48 +0200
-Subject: [PATCH 7/9] nvmf_bdev: add support-check functions for ONCS Verify
+From 054467311ecc4b178faf131544ac30ce39b77be7 Mon Sep 17 00:00:00 2001
+From: "Simon A. F. Lund" <simon.lund@samsung.com>
+Date: Thu, 5 Nov 2020 15:06:22 +0100
+Subject: [PATCH 07/10] nvmf_bdev: add support-check functions for ONCS Verify
  and Simple Copy
 
-Signed-off-by: Ivan L. Picoli <i.picoli@samsung.com>
-Change-Id: I1a25364abb7c887fa827541fe10eb6b11af38ea4
+Signed-off-by: Simon A. F. Lund <simon.lund@samsung.com>
+Change-Id: I3761cc606838b3f1374b14db6c49802f134769ff
 ---
  lib/nvmf/ctrlr_bdev.c    | 12 ++++++++++++
  lib/nvmf/nvmf_internal.h |  2 ++
  2 files changed, 14 insertions(+)
 
 diff --git a/lib/nvmf/ctrlr_bdev.c b/lib/nvmf/ctrlr_bdev.c
-index 13e0a4309..6ba800e5b 100644
+index a631b8003..62d5ebe51 100644
 --- a/lib/nvmf/ctrlr_bdev.c
 +++ b/lib/nvmf/ctrlr_bdev.c
-@@ -75,6 +75,18 @@ nvmf_subsystem_bdev_io_type_supported(struct spdk_nvmf_subsystem *subsystem,
- 	return true;
+@@ -87,6 +87,18 @@ nvmf_ctrlr_write_zeroes_supported(struct spdk_nvmf_ctrlr *ctrlr)
+ 	return nvmf_subsystem_bdev_io_type_supported(ctrlr->subsys, SPDK_BDEV_IO_TYPE_WRITE_ZEROES);
  }
  
 +bool
@@ -31,15 +31,15 @@ index 13e0a4309..6ba800e5b 100644
 +	return nvmf_subsystem_bdev_io_type_supported(ctrlr->subsys, SPDK_BDEV_IO_TYPE_SIMPLE_COPY);
 +}
 +
- bool
- nvmf_ctrlr_dsm_supported(struct spdk_nvmf_ctrlr *ctrlr)
- {
+ static void
+ nvmf_bdev_ctrlr_complete_cmd(struct spdk_bdev_io *bdev_io, bool success,
+ 			     void *cb_arg)
 diff --git a/lib/nvmf/nvmf_internal.h b/lib/nvmf/nvmf_internal.h
-index f1f3837d5..396e381cb 100644
+index f20ae924e..ec075b650 100644
 --- a/lib/nvmf/nvmf_internal.h
 +++ b/lib/nvmf/nvmf_internal.h
-@@ -287,6 +287,8 @@ void nvmf_ctrlr_destruct(struct spdk_nvmf_ctrlr *ctrlr);
- int nvmf_ctrlr_process_fabrics_cmd(struct spdk_nvmf_request *req);
+@@ -312,6 +312,8 @@ void nvmf_get_discovery_log_page(struct spdk_nvmf_tgt *tgt, const char *hostnqn,
+ void nvmf_ctrlr_destruct(struct spdk_nvmf_ctrlr *ctrlr);
  int nvmf_ctrlr_process_admin_cmd(struct spdk_nvmf_request *req);
  int nvmf_ctrlr_process_io_cmd(struct spdk_nvmf_request *req);
 +bool nvmf_ctrlr_verify_supported(struct spdk_nvmf_ctrlr *ctrlr);

@@ -1,13 +1,14 @@
 diff --git i/lib/librte_eal/common/eal_common_options.c w/lib/librte_eal/common/eal_common_options.c
-index 8f2cbd1c6..607154ccf 100644
+index a5426e123..f73782904 100644
 --- i/lib/librte_eal/common/eal_common_options.c
 +++ w/lib/librte_eal/common/eal_common_options.c
-@@ -366,6 +366,8 @@ eal_plugindir_init(const char *path)
+@@ -484,6 +484,9 @@ eal_dlopen(const char *pathname)
  int
  eal_plugins_init(void)
  {
 +	// NOTE: disabling support for plugins to avoid linker issue with 'dl'
 +	return 0;
- #ifndef RTE_EXEC_ENV_WINDOWS
++
  	struct shared_driver *solib = NULL;
  	struct stat sb;
+ 

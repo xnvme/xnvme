@@ -1,7 +1,8 @@
-From 555197eb678503690f1abe0d7292ac55a5420443 Mon Sep 17 00:00:00 2001
+From 0c4231c9b99a02e6579ce6b87ddd6a3a8a59190e Mon Sep 17 00:00:00 2001
 From: "Ivan L. Picoli" <i.picoli@samsung.com>
 Date: Wed, 22 Jul 2020 18:08:55 +0200
-Subject: [PATCH 5/9] bdev: add definitions for the ONCS Verify and Simple Copy
+Subject: [PATCH 05/10] bdev: add definitions for the ONCS Verify and Simple
+ Copy
 
 Signed-off-by: Ivan L. Picoli <i.picoli@samsung.com>
 Change-Id: I504e8aa2987442adf653ef1424d204e94d64739d
@@ -10,7 +11,7 @@ Change-Id: I504e8aa2987442adf653ef1424d204e94d64739d
  1 file changed, 2 insertions(+)
 
 diff --git a/include/spdk/bdev.h b/include/spdk/bdev.h
-index 0bb39c410..f891922ec 100644
+index 749404d22..07d75f32f 100644
 --- a/include/spdk/bdev.h
 +++ b/include/spdk/bdev.h
 @@ -140,6 +140,8 @@ enum spdk_bdev_io_type {

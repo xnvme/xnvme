@@ -1,7 +1,7 @@
-From 6beffb4fa1eaf2b56719a37d4ee58cc1efb23bf2 Mon Sep 17 00:00:00 2001
+From 8dc41efcb8b0bd9935dab93495869f5de467cfc5 Mon Sep 17 00:00:00 2001
 From: "Ivan L. Picoli" <i.picoli@samsung.com>
 Date: Wed, 22 Jul 2020 18:17:50 +0200
-Subject: [PATCH 8/9] test: add stub for the ONCS Verify and Simple Copy
+Subject: [PATCH 08/10] test: add stub for the ONCS Verify and Simple Copy
 
 Signed-off-by: Ivan L. Picoli <i.picoli@samsung.com>
 Change-Id: I145155cfce2d1942312072fc9ba19920b9c081b8
@@ -11,10 +11,10 @@ Change-Id: I145155cfce2d1942312072fc9ba19920b9c081b8
  2 files changed, 20 insertions(+)
 
 diff --git a/test/unit/lib/nvmf/ctrlr.c/ctrlr_ut.c b/test/unit/lib/nvmf/ctrlr.c/ctrlr_ut.c
-index 7257a5991..5073237d1 100644
+index 810e2337d..d95331a72 100644
 --- a/test/unit/lib/nvmf/ctrlr.c/ctrlr_ut.c
 +++ b/test/unit/lib/nvmf/ctrlr.c/ctrlr_ut.c
-@@ -95,6 +95,16 @@ DEFINE_STUB(nvmf_subsystem_get_ctrlr,
+@@ -85,6 +85,16 @@ DEFINE_STUB(nvmf_subsystem_get_ctrlr,
  	    (struct spdk_nvmf_subsystem *subsystem, uint16_t cntlid),
  	    NULL);
  
@@ -32,10 +32,10 @@ index 7257a5991..5073237d1 100644
  	    bool,
  	    (struct spdk_nvmf_ctrlr *ctrlr),
 diff --git a/test/unit/lib/nvmf/tcp.c/tcp_ut.c b/test/unit/lib/nvmf/tcp.c/tcp_ut.c
-index 465ea5dea..294b25931 100644
+index e6cce35de..eb7f0b394 100644
 --- a/test/unit/lib/nvmf/tcp.c/tcp_ut.c
 +++ b/test/unit/lib/nvmf/tcp.c/tcp_ut.c
-@@ -105,6 +105,16 @@ DEFINE_STUB(spdk_nvmf_subsystem_host_allowed,
+@@ -111,6 +111,16 @@ DEFINE_STUB(spdk_nvmf_subsystem_host_allowed,
  	    (struct spdk_nvmf_subsystem *subsystem, const char *hostnqn),
  	    true);
  

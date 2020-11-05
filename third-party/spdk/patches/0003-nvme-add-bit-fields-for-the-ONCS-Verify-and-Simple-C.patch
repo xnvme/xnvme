@@ -1,7 +1,8 @@
-From b368cf41095ad8649025f8db9362f921ac779ceb Mon Sep 17 00:00:00 2001
+From 5894c3a9ca407041d2b7e386fd12e448b318b798 Mon Sep 17 00:00:00 2001
 From: "Simon A. F. Lund" <simon.lund@samsung.com>
 Date: Tue, 16 Jun 2020 21:35:26 +0200
-Subject: [PATCH 3/9] nvme: add bit-fields for the ONCS Verify and Simple Copy
+Subject: [PATCH 03/10] nvme: add bit-fields for the ONCS Verify and Simple
+ Copy
 
 Signed-off-by: Simon A. F. Lund <simon.lund@samsung.com>
 Change-Id: I184e298396a2e58c683ac3624db9bbfef1d737d6
@@ -10,10 +11,10 @@ Change-Id: I184e298396a2e58c683ac3624db9bbfef1d737d6
  1 file changed, 11 insertions(+), 2 deletions(-)
 
 diff --git a/include/spdk/nvme_spec.h b/include/spdk/nvme_spec.h
-index 281ac500b..fa5d4ee75 100644
+index c4d7d1948..2d2be2749 100644
 --- a/include/spdk/nvme_spec.h
 +++ b/include/spdk/nvme_spec.h
-@@ -1883,7 +1883,9 @@ struct __attribute__((packed)) __attribute__((aligned)) spdk_nvme_ctrlr_data {
+@@ -1937,7 +1937,9 @@ struct __attribute__((packed)) __attribute__((aligned)) spdk_nvme_ctrlr_data {
  		uint16_t	set_features_save: 1;
  		uint16_t	reservations: 1;
  		uint16_t	timestamp: 1;
@@ -24,7 +25,7 @@ index 281ac500b..fa5d4ee75 100644
  	} oncs;
  
  	/** fused operation support */
-@@ -1921,7 +1923,14 @@ struct __attribute__((packed)) __attribute__((aligned)) spdk_nvme_ctrlr_data {
+@@ -1975,7 +1977,14 @@ struct __attribute__((packed)) __attribute__((aligned)) spdk_nvme_ctrlr_data {
  	/** atomic compare & write unit */
  	uint16_t		acwu;
  

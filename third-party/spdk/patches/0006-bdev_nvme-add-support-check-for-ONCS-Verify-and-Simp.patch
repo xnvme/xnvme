@@ -1,7 +1,7 @@
-From b279db1cfd430510ecb8c6d3a0b41486612fbe3d Mon Sep 17 00:00:00 2001
+From f8b8b3f5885759979510066e26c026aaec67a39e Mon Sep 17 00:00:00 2001
 From: "Ivan L. Picoli" <i.picoli@samsung.com>
 Date: Wed, 22 Jul 2020 18:09:58 +0200
-Subject: [PATCH 6/9] bdev_nvme: add support-check for ONCS Verify and Simple
+Subject: [PATCH 06/10] bdev_nvme: add support-check for ONCS Verify and Simple
  Copy
 
 Signed-off-by: Ivan L. Picoli <i.picoli@samsung.com>
@@ -11,10 +11,10 @@ Change-Id: Ib5e625810073710683857290da0d78216c4174cd
  1 file changed, 8 insertions(+)
 
 diff --git a/module/bdev/nvme/bdev_nvme.c b/module/bdev/nvme/bdev_nvme.c
-index 4a89b8eb2..d7b523f9d 100644
+index 837a325e0..c221c88fc 100644
 --- a/module/bdev/nvme/bdev_nvme.c
 +++ b/module/bdev/nvme/bdev_nvme.c
-@@ -707,6 +707,14 @@ bdev_nvme_io_type_supported(void *ctx, enum spdk_bdev_io_type io_type)
+@@ -745,6 +745,14 @@ bdev_nvme_io_type_supported(void *ctx, enum spdk_bdev_io_type io_type)
  		}
  		return false;
  
