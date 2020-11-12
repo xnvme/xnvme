@@ -1,5 +1,6 @@
 // Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
 // SPDX-License-Identifier: Apache-2.0
+#include <stdbool.h>
 #include <stdio.h>
 #include <errno.h>
 #include <libxnvme_nvm.h>
@@ -426,6 +427,104 @@ exit:
 	return err;
 }
 
+/**
+ * 0) Fill wbuff with '!'
+ * 1) Write the entire LBA range [slba, elba] using wbuf
+ * 2) Read the entire LBA range and compare to wbuff
+ * 3) Execute write uncorrectable command for LBA range
+ * 4) Read the entire LBA range and verify that error is returned
+ */
+static int
+test_write_uncorrectable(struct xnvmec *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	const struct xnvme_geo *geo = cli->args.geo;
+	uint32_t nsid;
+	uint64_t rng_slba, rng_elba, mdts_naddr;
+	size_t buf_nbytes;
+	uint8_t *wbuf = NULL, *rbuf = NULL;
+	int err;
+
+	bool entered_uncorrectable_loop = false;
+
+	err = boilerplate(cli, &wbuf, &rbuf, &buf_nbytes, &mdts_naddr, &nsid,
+			  &rng_slba, &rng_elba);
+	if (err) {
+		xnvmec_perr("boilerplate()", err);
+		goto exit;
+	}
+
+	/* Fill lbas with '!' */
+	err = fill_lba_range_and_write_buffer_with_character(wbuf, buf_nbytes, rng_slba, rng_elba,
+			mdts_naddr, dev, nsid, '!');
+	if (err) {
+		xnvmec_perr("fill_lba_range_and_write_buffer_with_character()", err);
+		goto exit;
+	}
+
+	/* Read lbas into rbuf */
+	xnvmec_buf_clear(rbuf, buf_nbytes);
+	err = read_from_lba_range(rbuf, rng_slba, mdts_naddr, geo, dev, nsid);
+	if (err) {
+		xnvmec_perr("read_from_lba_range()", err);
+		goto exit;
+	}
+
+	/* Verify that lbas have '!'*/
+	xnvmec_pinf("Comparing wbuf and rbuf");
+	if (xnvmec_buf_diff(wbuf, rbuf, buf_nbytes)) {
+		xnvmec_buf_diff_pr(wbuf, rbuf, buf_nbytes, XNVME_PR_DEF);
+		err = err ? err : -EIO;
+		goto exit;
+	}
+
+	/* Set all lbas to uncorrectable */
+	xnvmec_pinf("Setting to LBA range [slba,elba] as uncorrectable");
+	entered_uncorrectable_loop = true;
+	for (uint64_t slba = rng_slba; slba < rng_elba ; slba += mdts_naddr) {
+		struct xnvme_req req = { 0 };
+		uint16_t nlb = mdts_naddr;
+		err = xnvme_nvm_write_uncorrectable(dev, nsid, slba, nlb,
+						    XNVME_CMD_SYNC, &req);
+		if (err || xnvme_req_cpl_status(&req)) {
+			xnvmec_perr("xnvme_nvm_write_uncorrectable()", err);
+			err = err ? err : -EIO;
+			goto exit;
+		}
+	}
+
+	/* Make sure that all lbas return an error when read */
+	xnvmec_pinf("Reading from LBA range [slba,elba]");
+	for (uint64_t count = 0; count < mdts_naddr; ++count) {
+		size_t rbuf_ofz = count * geo->lba_nbytes;
+		uint64_t slba = rng_slba + count * 4;
+		struct xnvme_req req = { 0 };
+		int read_err;
+
+		read_err = xnvme_nvm_read(dev, nsid, slba, 0, rbuf + rbuf_ofz, NULL,
+					  XNVME_CMD_SYNC, &req);
+		if (!read_err) {
+			err = -EIO;
+			xnvmec_perr("inefective xnvme_nvm_write_uncorrectable", err);
+			goto exit;
+		}
+	}
+
+exit:
+	if (entered_uncorrectable_loop) {
+		xnvmec_pinf("Writing zeros to lba range to reset unocrrectable bit");
+		int recover_err = fill_lba_range_and_write_buffer_with_character(
+					  wbuf, buf_nbytes, rng_slba, rng_elba, mdts_naddr, dev, nsid, 0);
+		if (recover_err) {
+			xnvmec_perr("fill_lba_range_and_write_buffer_with_character()", recover_err);
+		}
+	}
+
+	xnvme_buf_free(dev, wbuf);
+	xnvme_buf_free(dev, rbuf);
+
+	return err;
+}
 
 //
 // Command-Line Interface (CLI) definition
@@ -461,6 +560,16 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_ELBA, XNVMEC_LOPT},
 		}
 	},
+	{
+		"write_uncorrectable",
+		"Basic verification of the write uncorrectable command",
+		"Basic verification of the write uncorrectable command",
+		test_write_uncorrectable, {
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
+			{XNVMEC_OPT_ELBA, XNVMEC_LOPT},
+		}
+	}
 };
 
 static struct xnvmec g_cli = {
