@@ -239,21 +239,30 @@ test_scopy(struct xnvmec *cli)
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = cli->args.geo;
 	uint32_t nsid;
-	uint64_t rng_slba, rng_elba, mdts_naddr;
+	uint64_t rng_slba, rng_elba, xfer_naddr;
 	size_t buf_nbytes;
 	uint8_t *wbuf = NULL, *rbuf = NULL;
 
 	struct xnvme_spec_nvm_scopy_source_range *sranges = NULL;	// For the copy-payload
+	struct xnvme_spec_nvm_idfy_ns *nvm = NULL;
 	uint64_t sdlba = 0;
 	enum xnvme_nvm_scopy_fmt copy_fmt;
 	int err;
 
-	err = boilerplate(cli, &wbuf, &rbuf, &buf_nbytes, &mdts_naddr, &nsid,
+	err = boilerplate(cli, &wbuf, &rbuf, &buf_nbytes, &xfer_naddr, &nsid,
 			  &rng_slba, &rng_elba);
 	if (err) {
 		xnvmec_perr("boilerplate()", err);
 		goto exit;
 	}
+
+	nvm = (void *)xnvme_dev_get_ns(dev);
+	xnvme_spec_nvm_idfy_ns_pr(nvm, XNVME_PR_DEF);
+
+	if (nvm->msrc) {
+		xfer_naddr = XNVME_MIN((uint64_t)nvm->msrc + 1, xfer_naddr);
+	}
+	buf_nbytes = xfer_naddr * geo->nbytes;
 
 	sranges = xnvme_buf_alloc(dev, sizeof(*sranges), NULL);
 	if (!sranges) {
@@ -264,7 +273,7 @@ test_scopy(struct xnvmec *cli)
 	memset(sranges, 0, sizeof(*sranges));
 
 	// Copy to the end of [slba,elba]
-	sdlba = rng_elba - mdts_naddr;
+	sdlba = rng_elba - xfer_naddr;
 
 	// NVMe-struct copy format
 	copy_fmt = XNVME_NVM_SCOPY_FMT_ZERO;
@@ -275,7 +284,7 @@ test_scopy(struct xnvmec *cli)
 				  XNVME_PR_DEF);
 
 	err = fill_lba_range_and_write_buffer_with_character(wbuf, buf_nbytes, rng_slba, rng_elba,
-			mdts_naddr, dev, nsid, '!');
+			xfer_naddr, dev, nsid, '!');
 	if (err) {
 		xnvmec_perr("fill_lba_range_and_write_buffer_with_character()", err);
 		goto exit;
@@ -283,7 +292,7 @@ test_scopy(struct xnvmec *cli)
 
 	xnvmec_pinf("Writing payload scattered within LBA range [slba,elba]");
 	xnvmec_buf_fill(wbuf, buf_nbytes, "anum");
-	for (uint64_t count = 0; count < mdts_naddr; ++count) {
+	for (uint64_t count = 0; count < xfer_naddr; ++count) {
 		size_t wbuf_ofz = count * geo->lba_nbytes;
 		uint64_t slba = rng_slba + count * 4;
 		struct xnvme_req req = { 0 };
@@ -303,7 +312,7 @@ test_scopy(struct xnvmec *cli)
 
 	{
 		struct xnvme_req req = { 0 };
-		uint8_t nr = mdts_naddr - 1;
+		uint8_t nr = xfer_naddr - 1;
 
 		xnvmec_pinf("scopy sranges to sdlba: 0x%016lx", sdlba);
 		xnvme_spec_nvm_scopy_source_range_pr(sranges, nr, XNVME_PR_DEF);
