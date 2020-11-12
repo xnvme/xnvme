@@ -72,6 +72,35 @@ boilerplate(struct xnvmec *cli, uint8_t **wbuf, uint8_t **rbuf,
 	return 0;
 }
 
+static int
+fill_lba_range_and_write_buffer_with_character(uint8_t *wbuf, size_t buf_nbytes, uint64_t rng_slba,
+		uint64_t rng_elba, uint64_t mdts_naddr,
+		struct xnvme_dev *dev, uint32_t nsid, char character)
+{
+	int err;
+
+	xnvmec_pinf("Writing %c to LBA range [slba,elba]", character);
+	memset(wbuf, character, buf_nbytes);
+
+	for (uint64_t slba = rng_slba; slba < rng_elba; slba += mdts_naddr) {
+		uint64_t nlb = XNVME_MIN(rng_elba - slba, mdts_naddr) - 1;
+		struct xnvme_req req = { 0 };
+
+		err = xnvme_nvm_write(dev, nsid, slba, nlb, wbuf, NULL, XNVME_CMD_SYNC, &req);
+		if (err || xnvme_req_cpl_status(&req)) {
+			xnvmec_pinf("xnvme_nvm_write(): {err: 0x%x, slba: 0x%016lx}", err, slba);
+			xnvme_req_pr(&req, XNVME_PR_DEF);
+			err = err ? err : -EIO;
+			goto exit;
+		}
+	}
+
+	return 0;
+
+exit:
+	return err;
+}
+
 /**
  * 0) Fill wbuf with '!'
  * 1) Write the entire LBA range [slba, elba] using wbuf
@@ -99,20 +128,11 @@ sub_io(struct xnvmec *cli)
 	}
 
 	xnvmec_pinf("Writing '!' to LBA range [slba,elba]");
-	memset(wbuf, '!', buf_nbytes);
-	for (uint64_t slba = rng_slba; slba < rng_elba; slba += mdts_naddr) {
-		uint64_t nlb = XNVME_MIN(rng_elba - slba, mdts_naddr) - 1;
-		struct xnvme_req req = { 0 };
-
-		err = xnvme_nvm_write(dev, nsid, slba, nlb, wbuf, NULL,
-				      XNVME_CMD_SYNC, &req);
-		if (err || xnvme_req_cpl_status(&req)) {
-			xnvmec_pinf("xnvme_nvm_write(): "
-				    "{err: 0x%x, slba: 0x%016lx}",
-				    err, slba);
-			xnvme_req_pr(&req, XNVME_PR_DEF);
-			goto exit;
-		}
+	err = fill_lba_range_and_write_buffer_with_character(wbuf, buf_nbytes, rng_slba, rng_elba,
+			mdts_naddr, dev, nsid, '!');
+	if (err) {
+		xnvmec_perr("fill_lba_range_and_write_buffer_with_character()", err);
+		goto exit;
 	}
 
 	xnvmec_pinf("Writing payload scattered within LBA range [slba,elba]");
@@ -224,20 +244,11 @@ test_scopy(struct xnvmec *cli)
 	xnvme_spec_nvm_idfy_ns_pr((struct xnvme_spec_nvm_idfy_ns *) xnvme_dev_get_ns(dev),
 				  XNVME_PR_DEF);
 
-	xnvmec_pinf("Writing '!' to LBA range [slba,elba]");
-	memset(wbuf, '!', buf_nbytes);
-	for (uint64_t slba = rng_slba; slba < rng_elba; slba += mdts_naddr) {
-		uint64_t nlb = XNVME_MIN(rng_elba - slba, mdts_naddr) - 1;
-		struct xnvme_req req = { 0 };
-
-		err = xnvme_nvm_write(dev, nsid, slba, nlb, wbuf, NULL,
-				      XNVME_CMD_SYNC, &req);
-		if (err || xnvme_req_cpl_status(&req)) {
-			xnvmec_perr("xnvme_nvm_write()", err);
-			xnvme_req_pr(&req, XNVME_PR_DEF);
-			err = err ? err : -EIO;
-			goto exit;
-		}
+	err = fill_lba_range_and_write_buffer_with_character(wbuf, buf_nbytes, rng_slba, rng_elba,
+			mdts_naddr, dev, nsid, '!');
+	if (err) {
+		xnvmec_perr("fill_lba_range_and_write_buffer_with_character()", err);
+		goto exit;
 	}
 
 	xnvmec_pinf("Writing payload scattered within LBA range [slba,elba]");
