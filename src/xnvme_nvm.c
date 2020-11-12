@@ -89,6 +89,20 @@ xnvme_nvm_write(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba, uint16_t nl
 }
 
 int
+xnvme_nvm_write_uncorrectable(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba, uint16_t nlb,
+			      int opts, struct xnvme_req *ret)
+{
+	struct xnvme_spec_cmd cmd = {0};
+
+	cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE_UNCORRECTABLE;
+	cmd.common.nsid = nsid;
+	cmd.nvm.slba = slba;
+	cmd.nvm.nlb = nlb;
+
+	return xnvme_cmd_pass(dev, &cmd, NULL, 0, NULL, 0, opts, ret);
+}
+
+int
 xnvme_nvm_write_zeroes(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba, uint16_t nlb, int opts,
 		       struct xnvme_req *ret)
 {

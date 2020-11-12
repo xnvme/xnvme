@@ -56,6 +56,20 @@ xnvme_nvm_write(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba,
 		struct xnvme_req *req);
 
 /**
+ * Submit a write uncorrected command
+ *
+ * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param nsid Namespace Identifier
+ * @param slba The Starting Destination LBA
+ * @param nlb Number Of Logical Blocks
+ * @param opts command options, see ::xnvme_cmd_opts
+ * @param ret Pointer to structure for NVMe completion and async. context
+*/
+int
+xnvme_nvm_write_uncorrectable(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba, uint16_t nlb,
+			      int opts, struct xnvme_req *ret);
+
+/**
  * Submit a write zeroes command
  *
  * @see xnvme_cmd_opts
