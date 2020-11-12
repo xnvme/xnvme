@@ -56,6 +56,26 @@ xnvme_nvm_write(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba,
 		struct xnvme_req *req);
 
 /**
+ * Submit a write zeroes command
+ *
+ * @see xnvme_cmd_opts
+ *
+ * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param nsid Namespace Identifier
+ * @param sdlba The Starting Destination LBA to start copying to
+ * @param nlb Number Of Logical Blocks
+ * @param opts command options, see ::xnvme_cmd_opts
+ * @param ret Pointer to structure for NVMe completion and async. context
+ *
+ * @return On success, 0 is returned. On error, -1 is returned, `errno` set to
+ * indicate and `ret` filled with lower-level status codes* @param dev
+ */
+int
+xnvme_nvm_write_zeroes(struct xnvme_dev *dev, uint32_t nsid, uint64_t sdlba, uint16_t nlb,
+		       int opts,
+		       struct xnvme_req *ret);
+
+/**
  * Submit, and optionally wait for completion of a NVMe Simple-Copy-Command
  *
  * @see xnvme_cmd_opts

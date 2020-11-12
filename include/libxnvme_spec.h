@@ -931,6 +931,8 @@ enum xnvme_spec_nvm_opc {
 	XNVME_SPEC_NVM_OPC_WRITE = 0x01,	///< XNVME_SPEC_NVM_OPC_WRITE
 	XNVME_SPEC_NVM_OPC_READ = 0x02,		///< XNVME_SPEC_NVM_OPC_READ
 
+	XNVME_SPEC_NVM_OPC_WRITE_ZEROES = 0x08,		///< XNVME_SPEC_NVM_OPC_WRITE_ZEROES
+
 	XNVME_SPEC_NVM_OPC_SCOPY	= 0x19,	///< XNVME_SPEC_NVM_OPC_SCOPY
 
 	XNVME_SPEC_NVM_OPC_FMT = 0x80,		///< XNVME_SPEC_NVM_OPC_FMT
@@ -1297,7 +1299,31 @@ struct xnvme_spec_cmd_nvm {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_nvm) == 64, "Incorrect size")
 
+struct xnvme_spec_nvm_write_zeroes {
+	uint32_t cdw00_09[10];	///< Command dword 0 to 9
+
+	/* cdw 10-11 */
+	uint64_t slba;		///< Start LBA
+
+	/* cdw 12 */
+	uint32_t nlb	: 16;	///< Number of logical blocks, zero-based
+	uint32_t rsvd1	: 8;
+	uint32_t deac	: 1;	///< Dealocate
+	uint32_t prinfo	: 4;	///< Protection Info.
+	uint32_t fua	: 1;	///< Force Unit Access
+	uint32_t lr	: 1;	///< Limited Retry
+
+	/* cdw 13 */
+	uint32_t cdw_13;	///< Command dword 13
+
+	/* cdw 14 */
+	uint32_t ilbrt	: 32;	///< Initial Logical Block Reference Tag
+
+	/* cdw 15 */
+	uint32_t lbat	: 16;	///< Logical Block Application Tag
+	uint32_t lbatm	: 16;	///< logical Block Application Tag Mask
 };
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_write_zeroes) == 64, "Incorrect size")
 
 /**
  * Command-set specific status codes related to Logical Block Namespaces
@@ -1597,6 +1623,7 @@ struct xnvme_spec_cmd {
 		struct xnvme_spec_cmd_idfy idfy;
 		struct xnvme_spec_cmd_nvm nvm;
 		struct xnvme_spec_nvm_cmd_scopy scopy;
+		struct xnvme_spec_nvm_write_zeroes write_zeroes;
 		struct xnvme_spec_znd_cmd znd;
 	};
 };

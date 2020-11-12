@@ -203,6 +203,8 @@ xnvme_spec_nvm_opc_str(enum xnvme_spec_nvm_opc eval)
 		return "NVM_OPC_SCOPY";
 	case XNVME_SPEC_NVM_OPC_WRITE:
 		return "NVM_OPC_WRITE";
+	case XNVME_SPEC_NVM_OPC_WRITE_ZEROES:
+		return "NVM_OPC_WRITE_ZEROES";
 	}
 
 	return "ENOSYS";

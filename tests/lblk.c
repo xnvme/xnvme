@@ -343,6 +343,89 @@ exit:
 	return err;
 }
 
+/**
+ * 0) Fill wbuf with '!'
+ * 1) Write the entire LBA range [slba, elba] using wbuf
+ * 2) Make sure that we wrote '!'
+ * 3) Execute the write zeroes command
+ * 4) Fill wbuf with 0
+ * 5) Read, with exponential stride, within [slba,elba] using rbuf
+ * 6) Verify that the content of rbuf is the same as wbuf
+ */
+static int
+test_write_zeroes(struct xnvmec *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	const struct xnvme_geo *geo = cli->args.geo;
+	uint32_t nsid;
+	uint64_t rng_slba, rng_elba, mdts_naddr;
+	size_t buf_nbytes;
+	uint8_t *wbuf = NULL, *rbuf = NULL;
+	int err;
+
+	err = boilerplate(cli, &wbuf, &rbuf, &buf_nbytes, &mdts_naddr, &nsid,
+			  &rng_slba, &rng_elba);
+	if (err) {
+		xnvmec_perr("boilerplate()", err);
+		goto exit;
+	}
+
+	err = fill_lba_range_and_write_buffer_with_character(wbuf, buf_nbytes, rng_slba, rng_elba,
+			mdts_naddr, dev, nsid, '!');
+	if (err) {
+		xnvmec_perr("fill_lba_range_and_write_buffer_with_character()", err);
+		goto exit;
+	}
+
+	xnvmec_buf_clear(rbuf, buf_nbytes);
+	err = read_from_lba_range(rbuf, rng_slba, mdts_naddr, geo, dev, nsid);
+	if (err) {
+		xnvmec_perr("read_from_lba_range()", err);
+		goto exit;
+	}
+
+	xnvmec_pinf("Comparing wbuf and rbuf");
+	if (xnvmec_buf_diff(wbuf, rbuf, buf_nbytes)) {
+		xnvmec_buf_diff_pr(wbuf, rbuf, buf_nbytes, XNVME_PR_DEF);
+		err = err ? err : -EIO;
+		goto exit;
+	}
+
+	xnvmec_pinf("Writing zeroes to LBA range [slba,elba]");
+	for (uint64_t slba = rng_slba; slba < rng_elba ; slba += mdts_naddr) {
+		struct xnvme_req req = { 0 };
+		uint16_t nlb = XNVME_MIN((rng_elba - slba) * geo->lba_nbytes, UINT16_MAX);
+		err = xnvme_nvm_write_zeroes(dev, nsid, slba, nlb,
+					     XNVME_CMD_SYNC, &req);
+		if (err || xnvme_req_cpl_status(&req)) {
+			xnvmec_perr("xnvme_nvm_write_zeroes()", err);
+			err = err ? err : -EIO;
+			goto exit;
+		}
+	}
+
+	xnvmec_buf_clear(rbuf, buf_nbytes);
+	err = read_from_lba_range(rbuf, rng_slba, mdts_naddr,
+				  geo, dev, nsid);
+	if (err) {
+		xnvmec_perr("read_from_lba_range()", err);
+		goto exit;
+	}
+
+	xnvmec_buf_clear(wbuf, buf_nbytes);
+	xnvmec_pinf("Comparing wbuf and rbuf");
+	if (xnvmec_buf_diff(wbuf, rbuf, buf_nbytes)) {
+		xnvmec_buf_diff_pr(wbuf, rbuf, buf_nbytes, XNVME_PR_DEF);
+		goto exit;
+	}
+
+exit:
+	xnvme_buf_free(dev, wbuf);
+	xnvme_buf_free(dev, rbuf);
+
+	return err;
+}
+
 
 //
 // Command-Line Interface (CLI) definition
@@ -366,6 +449,16 @@ static struct xnvmec_sub g_subs[] = {
 		test_scopy, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
+		}
+	},
+	{
+		"write_zeroes",
+		"Basic verification of the write zeros command",
+		"Basic verification of the write zeros command",
+		test_write_zeroes, {
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
+			{XNVMEC_OPT_ELBA, XNVMEC_LOPT},
 		}
 	},
 };

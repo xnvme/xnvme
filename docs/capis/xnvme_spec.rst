@@ -464,6 +464,16 @@ xnvme_spec_nvm_scopy_source_range
    :undoc-members:
 
 
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_nvm_write_zeroes:
+
+xnvme_spec_nvm_write_zeroes
+---------------------------
+
+.. doxygenstruct:: xnvme_spec_nvm_write_zeroes
+   :members:
+   :undoc-members:
+
+
 .. _sec-c-api-xnvme_spec-struct-xnvme_spec_power_state:
 
 xnvme_spec_power_state
