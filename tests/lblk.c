@@ -73,6 +73,35 @@ boilerplate(struct xnvmec *cli, uint8_t **wbuf, uint8_t **rbuf,
 }
 
 static int
+read_from_lba_range(uint8_t *rbuf, uint64_t rng_slba, uint64_t mdts_naddr,
+		    const struct xnvme_geo *geo, struct xnvme_dev *dev, uint32_t nsid)
+{
+	int err;
+	xnvmec_pinf("Reading from LBA range [slba,elba]");
+	for (uint64_t count = 0; count < mdts_naddr; ++count) {
+		size_t rbuf_ofz = count * geo->lba_nbytes;
+		uint64_t slba = rng_slba + count * 4;
+		struct xnvme_req req = { 0 };
+
+		err = xnvme_nvm_read(dev, nsid, slba, 0, rbuf + rbuf_ofz, NULL,
+				     XNVME_CMD_SYNC, &req);
+		if (err || xnvme_req_cpl_status(&req)) {
+			xnvmec_pinf("xnvme_nvm_read(): "
+				    "{err: 0x%x, slba: 0x%016lx}",
+				    err, slba);
+			xnvme_req_pr(&req, XNVME_PR_DEF);
+			err = err ? err : -EIO;
+			goto exit;
+		}
+	}
+
+	return 0;
+
+exit:
+	return err;
+}
+
+static int
 fill_lba_range_and_write_buffer_with_character(uint8_t *wbuf, size_t buf_nbytes, uint64_t rng_slba,
 		uint64_t rng_elba, uint64_t mdts_naddr,
 		struct xnvme_dev *dev, uint32_t nsid, char character)
