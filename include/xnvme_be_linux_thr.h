@@ -22,16 +22,15 @@ struct _qp {
 	struct _entry elm[];
 };
 
-struct xnvme_async_ctx_thr {
-	uint32_t depth;		///< IO depth
-	uint32_t outstanding;	///< Outstanding IO on the context/ring/qp
+struct xnvme_queue_thr {
+	struct xnvme_queue_base base;
 
 	struct _qp *qp;
 
-	uint8_t _rsvd[176];
+	uint8_t _rsvd[168];
 };
 XNVME_STATIC_ASSERT(
-	sizeof(struct xnvme_async_ctx_thr) == XNVME_BE_ACTX_NBYTES,
+	sizeof(struct xnvme_queue_thr) == XNVME_BE_QUEUE_STATE_NBYTES,
 	"Incorrect size"
 )
 

@@ -23,7 +23,7 @@
 #include <dirent.h>
 #include <paths.h>
 
-#include <xnvme_async.h>
+#include <xnvme_queue.h>
 #include <xnvme_be_linux.h>
 #include <xnvme_be_linux_thr.h>
 #include <xnvme_dev.h>
@@ -67,19 +67,11 @@ _qp_init(struct _qp *qp)
 }
 
 int
-_linux_thr_term(struct xnvme_dev *XNVME_UNUSED(dev),
-		struct xnvme_async_ctx *ctx)
+_linux_thr_term(struct xnvme_queue *queue)
 {
-	struct xnvme_async_ctx_thr *actx = (void *)ctx;
+	struct xnvme_queue_thr *qctx = (void *)queue;
 
-	if (!ctx) {
-		XNVME_DEBUG("FAILED: ctx: %p", (void *)ctx);
-		return -EINVAL;
-	}
-
-	_qp_term(actx->qp);
-
-	free(ctx);
+	_qp_term(qctx->qp);
 
 	return 0;
 }
@@ -94,23 +86,15 @@ _linux_thr_term(struct xnvme_dev *XNVME_UNUSED(dev),
  * This should probably be done with an SPMC or something clever.
 */
 int
-_linux_thr_init(struct xnvme_dev *dev, struct xnvme_async_ctx **ctx,
-		uint16_t depth, int XNVME_UNUSED(flags))
+_linux_thr_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
 {
-	struct xnvme_async_ctx_thr **actx = (void *)ctx;
+	struct xnvme_queue_thr *qctx = (void *)queue;
 
-	*ctx = calloc(1, sizeof(**ctx));
-	if (!*ctx) {
-		XNVME_DEBUG("FAILED: calloc(ctx), errno: %s", strerror(errno));
-		return -errno;
-	}
-	(*ctx)->depth = depth;
-
-	if (_qp_alloc(&(*actx)->qp, depth)) {
+	if (_qp_alloc(&(qctx->qp), queue->base.depth)) {
 		XNVME_DEBUG("FAILED: _qp_alloc()");
 		goto failed;
 	}
-	if (_qp_init((*actx)->qp)) {
+	if (_qp_init(qctx->qp)) {
 		XNVME_DEBUG("FAILED: _qp_init()");
 		goto failed;
 	}
@@ -118,21 +102,20 @@ _linux_thr_init(struct xnvme_dev *dev, struct xnvme_async_ctx **ctx,
 	return 0;
 
 failed:
-	_linux_thr_term(dev, *ctx);
+	_linux_thr_term(queue);
 
 	return 1;
 }
 
 int
-_linux_thr_poke(struct xnvme_dev *dev,
-		struct xnvme_async_ctx *ctx, uint32_t max)
+_linux_thr_poke(struct xnvme_queue *queue, uint32_t max)
 {
-	struct xnvme_async_ctx_thr *actx = (void *)ctx;
-	struct _qp *qp = actx->qp;
+	struct xnvme_queue_thr *qctx = (void *)queue;
+	struct _qp *qp = qctx->qp;
 	unsigned completed = 0;
 
-	max = max ? max : actx->outstanding;
-	max = max > actx->outstanding ? actx->outstanding : max;
+	max = max ? max : queue->base.outstanding;
+	max = max > queue->base.outstanding ? queue->base.outstanding : max;
 
 	while (completed < max) {
 		struct _entry *entry = STAILQ_FIRST(&qp->sq);
@@ -140,10 +123,10 @@ _linux_thr_poke(struct xnvme_dev *dev,
 
 		STAILQ_REMOVE_HEAD(&qp->sq, link);
 
-		err = dev->be.sync.cmd_io(entry->dev, &entry->cmd, entry->dbuf,
-					  entry->dbuf_nbytes, entry->mbuf,
-					  entry->mbuf_nbytes, XNVME_CMD_SYNC,
-					  entry->req);
+		err = queue->base.dev->be.sync.cmd_io(entry->dev, &entry->cmd, entry->dbuf,
+						      entry->dbuf_nbytes, entry->mbuf,
+						      entry->mbuf_nbytes, XNVME_CMD_SYNC,
+						      entry->req);
 		if (err) {
 			XNVME_DEBUG("FAILED: err: %d", err);
 			entry->req->cpl.status.sc = err;
@@ -154,20 +137,20 @@ _linux_thr_poke(struct xnvme_dev *dev,
 		++completed;
 	};
 
-	actx->outstanding -= completed;
+	queue->base.outstanding -= completed;
 	return completed;
 }
 
 int
-_linux_thr_wait(struct xnvme_dev *dev, struct xnvme_async_ctx *ctx)
+_linux_thr_wait(struct xnvme_queue *queue)
 {
 	int acc = 0;
 
-	while (ctx->outstanding) {
+	while (queue->base.outstanding) {
 		struct timespec ts1 = {.tv_sec = 0, .tv_nsec = 1000};
 		int err;
 
-		err = _linux_thr_poke(dev, ctx, 0);
+		err = _linux_thr_poke(queue, 0);
 		if (!err) {
 			acc += 1;
 			continue;
@@ -192,11 +175,11 @@ _linux_thr_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *dbuf,
 		  size_t dbuf_nbytes, void *mbuf, size_t mbuf_nbytes,
 		  int XNVME_UNUSED(opts), struct xnvme_req *req)
 {
-	struct xnvme_async_ctx_thr *actx = (void *)req->async.ctx;
-	struct _qp *qp = actx->qp;
+	struct xnvme_queue_thr *qctx = (void *)req->async.queue;
+	struct _qp *qp = qctx->qp;
 	struct _entry *entry;
 
-	if (actx->outstanding == actx->depth) {
+	if (req->async.queue->base.outstanding == qctx->base.depth) {
 		XNVME_DEBUG("FAILED: queue is full");
 		return -EBUSY;
 	}
@@ -219,7 +202,7 @@ _linux_thr_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *dbuf,
 
 	STAILQ_INSERT_TAIL(&qp->sq, entry, link);
 
-	actx->outstanding += 1;
+	req->async.queue->base.outstanding += 1;
 
 	return 0;
 }

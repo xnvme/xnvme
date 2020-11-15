@@ -64,34 +64,28 @@ xnvme_be_nosys_async_cmd_io(struct xnvme_dev *XNVME_UNUSED(dev),
 }
 
 int
-xnvme_be_nosys_async_poke(struct xnvme_dev *XNVME_UNUSED(dev),
-			  struct xnvme_async_ctx *XNVME_UNUSED(ctx),
-			  uint32_t XNVME_UNUSED(max))
+xnvme_be_nosys_queue_poke(struct xnvme_queue *XNVME_UNUSED(queue), uint32_t XNVME_UNUSED(max))
 {
 	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");
 	return -ENOSYS;
 }
 
 int
-xnvme_be_nosys_async_wait(struct xnvme_dev *XNVME_UNUSED(dev),
-			  struct xnvme_async_ctx *XNVME_UNUSED(ctx))
+xnvme_be_nosys_queue_wait(struct xnvme_queue *XNVME_UNUSED(queue))
 {
 	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");
 	return -ENOSYS;
 }
 
 int
-xnvme_be_nosys_async_init(struct xnvme_dev *XNVME_UNUSED(dev),
-			  struct xnvme_async_ctx **XNVME_UNUSED(ctx),
-			  uint16_t XNVME_UNUSED(depth), int XNVME_UNUSED(flags))
+xnvme_be_nosys_queue_init(struct xnvme_queue *XNVME_UNUSED(queue), int XNVME_UNUSED(opts))
 {
 	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");
 	return -ENOSYS;
 }
 
 int
-xnvme_be_nosys_async_term(struct xnvme_dev *XNVME_UNUSED(dev),
-			  struct xnvme_async_ctx *XNVME_UNUSED(ctx))
+xnvme_be_nosys_queue_term(struct xnvme_queue *XNVME_UNUSED(queue))
 {
 	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");
 	return -ENOSYS;
@@ -171,7 +165,7 @@ static const char *g_schemes[] = {
 
 struct xnvme_be xnvme_be_nosys = {
 	.sync = XNVME_BE_NOSYS_SYNC,
-	.async = XNVME_BE_NOSYS_ASYNC,
+	.async = XNVME_BE_NOSYS_QUEUE,
 	.mem = XNVME_BE_NOSYS_MEM,
 	.dev = XNVME_BE_NOSYS_DEV,
 	.attr = XNVME_BE_NOSYS_ATTR,

@@ -240,29 +240,29 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 		}
 	} else {
 		struct xnvme_req req = { 0 };
-		struct xnvme_async_ctx *ctx = NULL;
+		struct xnvme_queue *queue = NULL;
 
 		xnvmec_pinf("Using XNVME_CMD_ASYNC mode");
 
-		err = xnvme_async_init(dev, &ctx, 2, 0);
+		err = xnvme_queue_init(dev, 2, 0, &queue);
 		if (err) {
-			xnvmec_perr("xnvme_async_init()", err);
+			xnvmec_perr("xnvme_queue_init()", err);
 			goto exit;
 		}
-		req.async.ctx = ctx;
+		req.async.queue = queue;
 		req.async.cb = cb_noop;
 
 		err = xnvme_nvm_scopy(dev, nsid, sdlba, range->entry, nr, copy_fmt, XNVME_CMD_ASYNC,
 				      &req);
 		if (err) {
 			xnvmec_perr("xnvme_nvm_scopy()", err);
-			xnvme_async_term(dev, ctx);
+			xnvme_queue_term(queue);
 			goto exit;
 		}
-		err = xnvme_async_wait(dev, ctx);
+		err = xnvme_queue_wait(queue);
 		if (err < 0) {
-			xnvmec_perr("xnvme_async_wait()", err);
-			xnvme_async_term(dev, ctx);
+			xnvmec_perr("xnvme_queue_wait()", err);
+			xnvme_queue_term(queue);
 			goto exit;
 		}
 	}

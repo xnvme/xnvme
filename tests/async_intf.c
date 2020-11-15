@@ -17,7 +17,7 @@ test_init_term(struct xnvmec *cli)
 	uint64_t qd = cli->args.qdepth;
 	int err = 0;
 
-	struct xnvme_async_ctx *actx[XNVME_TESTS_NQUEUE_MAX] = { 0 };
+	struct xnvme_queue *queue[XNVME_TESTS_NQUEUE_MAX] = { 0 };
 
 	if (count > XNVME_TESTS_NQUEUE_MAX) {
 		XNVME_DEBUG("FAILED: count(%zu) out-of-bounds for test", count);
@@ -38,8 +38,7 @@ test_init_term(struct xnvmec *cli)
 		struct xnvme_req req = { 0 };
 
 		err = xnvme_adm_gfeat(dev, 0x0, XNVME_SPEC_FEAT_NQUEUES,
-				      XNVME_SPEC_FEAT_SEL_CURRENT, NULL, 0,
-				      &req);
+				      XNVME_SPEC_FEAT_SEL_CURRENT, NULL, 0, &req);
 		if (err || xnvme_req_cpl_status(&req)) {
 			xnvmec_perr("xnvme_adm_gfeat()", err);
 			xnvme_req_pr(&req, XNVME_PR_DEF);
@@ -51,7 +50,7 @@ test_init_term(struct xnvmec *cli)
 
 		xnvme_spec_feat_pr(XNVME_SPEC_FEAT_NQUEUES, feat, XNVME_PR_DEF);
 
-		if (count > (uint64_t)(feat.nqueues.nsqa + 1)) {
+		if (count >= (uint64_t)(feat.nqueues.nsqa + 1)) {
 			xnvmec_pinf("skipping -- count: %zu > (nsqa + 1): %u",
 				    count, feat.nqueues.nsqa);
 			return 0;
@@ -60,10 +59,9 @@ test_init_term(struct xnvmec *cli)
 
 	// Initialize and check depth of asynchronous contexts
 	for (uint64_t qn = 0; qn < count; ++qn) {
-		err = xnvme_async_init(dev, &actx[qn], qd, 0);
+		err = xnvme_queue_init(dev, qd, 0, &queue[qn]);
 		if (err) {
-			XNVME_DEBUG("FAILED: init qn: %zu, qd: %zu, err: %d",
-				    qn, qd, err);
+			XNVME_DEBUG("FAILED: init qn: %zu, qd: %zu, err: %d", qn, qd, err);
 
 			if (!((err == -ENOMEM) && (qn == count - 1))) {
 				goto exit;
@@ -74,8 +72,8 @@ test_init_term(struct xnvmec *cli)
 			continue;
 		}
 
-		if (xnvme_async_get_depth(actx[qn]) != qd) {
-			XNVME_DEBUG("FAILED: xnvme_async_get_depth != qd(%zu)",
+		if (xnvme_queue_get_depth(queue[qn]) != qd) {
+			XNVME_DEBUG("FAILED: xnvme_queue_get_depth() != qd(%zu)",
 				    qd);
 			err = -EIO;
 			goto exit;
@@ -83,14 +81,14 @@ test_init_term(struct xnvmec *cli)
 	}
 
 exit:
-	// Tear down asynchronous contexts
+	// Tear down queues
 	for (uint64_t qn = 0; qn < count; ++qn) {
 		XNVME_DEBUG("INFO: qn: %zu", qn);
-		if (!actx[qn]) {
+		if (!queue[qn]) {
 			continue;
 		}
-		if (xnvme_async_term(dev, actx[qn])) {
-			XNVME_DEBUG("FAILED: xnvme_async_term, qn(%zu)", qn);
+		if (xnvme_queue_term(queue[qn])) {
+			XNVME_DEBUG("FAILED: xnvme_queue_term, qn(%zu)", qn);
 			err = -EIO;
 		}
 	}

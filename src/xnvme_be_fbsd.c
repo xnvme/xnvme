@@ -288,7 +288,7 @@ struct xnvme_be xnvme_be_fbsd = {
 	.dev = XNVME_BE_NOSYS_DEV,
 #endif
 	.sync = XNVME_BE_NOSYS_SYNC,
-	.async = XNVME_BE_NOSYS_ASYNC,
+	.async = XNVME_BE_NOSYS_QUEUE,
 	.attr = {
 		.name = XNVME_BE_FBSD_NAME,
 #ifdef XNVME_BE_FBSD_ENABLED

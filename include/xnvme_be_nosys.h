@@ -25,18 +25,16 @@ xnvme_be_nosys_async_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 			    size_t mbuf_nbytes, int opts, struct xnvme_req *req);
 
 int
-xnvme_be_nosys_async_poke(struct xnvme_dev *dev, struct xnvme_async_ctx *ctx,
-			  uint32_t max);
+xnvme_be_nosys_queue_poke(struct xnvme_queue *queue, uint32_t max);
 
 int
-xnvme_be_nosys_async_wait(struct xnvme_dev *dev, struct xnvme_async_ctx *ctx);
+xnvme_be_nosys_queue_wait(struct xnvme_queue *queue);
 
 int
-xnvme_be_nosys_async_init(struct xnvme_dev *dev, struct xnvme_async_ctx **ctx,
-			  uint16_t depth, int flags);
+xnvme_be_nosys_queue_init(struct xnvme_queue *queue, int opts);
 
 int
-xnvme_be_nosys_async_term(struct xnvme_dev *dev, struct xnvme_async_ctx *ctx);
+xnvme_be_nosys_queue_term(struct xnvme_queue *queue);
 
 int
 xnvme_be_nosys_async_supported(struct xnvme_dev *dev, uint32_t opts);
@@ -75,12 +73,12 @@ xnvme_be_nosys_dev_close(struct xnvme_dev *dev);
 	.enabled = 0,						\
 }
 
-#define XNVME_BE_NOSYS_ASYNC {					\
+#define XNVME_BE_NOSYS_QUEUE {					\
 	.cmd_io = xnvme_be_nosys_async_cmd_io,			\
-	.poke = xnvme_be_nosys_async_poke,			\
-	.wait = xnvme_be_nosys_async_wait,			\
-	.init = xnvme_be_nosys_async_init,			\
-	.term = xnvme_be_nosys_async_term,			\
+	.poke = xnvme_be_nosys_queue_poke,			\
+	.wait = xnvme_be_nosys_queue_wait,			\
+	.init = xnvme_be_nosys_queue_init,			\
+	.term = xnvme_be_nosys_queue_term,			\
 	.supported = xnvme_be_nosys_async_supported,		\
 	.id = "ENOSYS",						\
 	.enabled = 0,						\

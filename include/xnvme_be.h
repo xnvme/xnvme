@@ -19,7 +19,7 @@
 #define XNVME_LINUX_CTRLR_FMT _PATH_DEV "nvme%1u"
 #define XNVME_LINUX_NS_FMT _PATH_DEV "nvme%1un%1u"
 
-#define XNVME_BE_ACTX_NBYTES 192
+#define XNVME_BE_QUEUE_STATE_NBYTES 192
 
 #define XNVME_BE_ASYNC_NBYTES 64
 #define XNVME_BE_SYNC_NBYTES 40
@@ -34,14 +34,13 @@ struct xnvme_be_async {
 	int (*cmd_io)(struct xnvme_dev *, struct xnvme_spec_cmd *, void *,
 		      size_t, void *, size_t, int, struct xnvme_req *);
 
-	int (*poke)(struct xnvme_dev *, struct xnvme_async_ctx *, uint32_t);
+	int (*poke)(struct xnvme_queue *, uint32_t);
 
-	int (*wait)(struct xnvme_dev *, struct xnvme_async_ctx *);
+	int (*wait)(struct xnvme_queue *);
 
-	int (*init)(struct xnvme_dev *, struct xnvme_async_ctx **,
-		    uint16_t, int flags);
+	int (*init)(struct xnvme_queue *, int opts);
 
-	int (*term)(struct xnvme_dev *, struct xnvme_async_ctx *);
+	int (*term)(struct xnvme_queue *);
 
 	int (*supported)(struct xnvme_dev *, uint32_t);
 

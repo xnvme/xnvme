@@ -168,7 +168,7 @@ xnvme_adm_sfeat(struct xnvme_dev *dev, uint32_t nsid, uint8_t fid, uint32_t feat
  */
 int
 xnvme_adm_format(struct xnvme_dev *dev, uint32_t nsid, uint8_t lbaf, uint8_t zf, uint8_t mset,
-                 uint8_t ses, uint8_t pi, uint8_t pil, struct xnvme_req *req);
+		 uint8_t ses, uint8_t pi, uint8_t pil, struct xnvme_req *req);
 
 /**
  * Submit and wait for completion of an Sanitize command
@@ -196,7 +196,7 @@ xnvme_adm_format(struct xnvme_dev *dev, uint32_t nsid, uint8_t lbaf, uint8_t zf,
  */
 int
 xnvme_nvm_sanitize(struct xnvme_dev *dev, uint8_t sanact, uint8_t ause, uint32_t ovrpat,
-                   uint8_t owpass, uint8_t oipbp, uint8_t nodas, struct xnvme_req *req);
+		   uint8_t owpass, uint8_t oipbp, uint8_t nodas, struct xnvme_req *req);
 
 #ifdef __cplusplus
 }

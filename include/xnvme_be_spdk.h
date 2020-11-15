@@ -10,16 +10,15 @@
 #define XNVME_BE_SPDK_QPAIR_MAX 64
 #define XNVME_BE_SPDK_ALIGN 0x1000
 
-struct xnvme_async_ctx_spdk {
-	uint32_t depth;		///< IO depth
-	uint32_t outstanding;	///< Outstanding IO on the context/ring/queue
+struct xnvme_queue_spdk {
+	struct xnvme_queue_base base;
 
 	struct spdk_nvme_qpair *qpair;
 
-	uint8_t rsvd[176];
+	uint8_t rsvd[168];
 };
 XNVME_STATIC_ASSERT(
-	sizeof(struct xnvme_async_ctx_spdk) == XNVME_BE_ACTX_NBYTES,
+	sizeof(struct xnvme_queue_spdk) == XNVME_BE_QUEUE_STATE_NBYTES,
 	"Incorrect size"
 )
 

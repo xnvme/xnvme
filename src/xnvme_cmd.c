@@ -10,7 +10,8 @@
  * Calling this requires that opts at least has `XNVME_CMD_SGL_DATA`
  */
 static inline void
-xnvme_sgl_setup(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *data, void *meta, int opts)
+xnvme_sgl_setup(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *data, void *meta,
+		int opts)
 {
 	struct xnvme_sgl *sgl = data;
 	uint64_t phys;

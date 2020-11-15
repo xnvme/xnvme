@@ -23,38 +23,42 @@
 #include <paths.h>
 #include <libaio.h>
 
-#include <xnvme_async.h>
+#include <xnvme_queue.h>
 #include <xnvme_be_linux.h>
 #include <xnvme_be_linux_aio.h>
 #include <xnvme_dev.h>
 
 int
-_linux_aio_init(struct xnvme_dev *XNVME_UNUSED(dev),
-		struct xnvme_async_ctx **ctx, uint16_t depth,
-		int XNVME_UNUSED(flags))
+_linux_aio_term(struct xnvme_queue *queue)
 {
-	struct xnvme_async_ctx_aio *actx = NULL;
-	int err = 0;
+	struct xnvme_queue_aio *actx = (void *)queue;
 
-	(*ctx) = calloc(1, sizeof(**ctx));
-	if (!(*ctx)) {
-		XNVME_DEBUG("FAILED: calloc, ctx: %p, errno: %s",
-			    (void *)(*ctx), strerror(errno));
-		return -errno;
+	if (!queue) {
+		XNVME_DEBUG("FAILED: queue: %p", (void *)queue);
+		return -EINVAL;
 	}
 
-	(*ctx)->depth = depth;
-	actx = (void *)(*ctx);
+	io_destroy(actx->aio_ctx);
+	free(actx->aio_events);
+	free(actx->iocbs);
+
+	return 0;
+}
+
+int
+_linux_aio_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
+{
+	struct xnvme_queue_aio *actx = (void *)queue;
+	int err = 0;
 
 	actx->aio_ctx = 0;
-	actx->entries = depth;
+	actx->entries = queue->base.depth;
 	actx->aio_events = calloc(actx->entries, sizeof(struct io_event));
 	actx->iocbs = calloc(actx->entries, sizeof(struct iocb *));
 
 	err = io_queue_init(actx->entries, &actx->aio_ctx);
 	if (err) {
-		XNVME_DEBUG("FAILED: alloc. qpair");
-		free(*ctx);
+		XNVME_DEBUG("FAILED: io_queue_init(), err: %d", err);
 		return err;
 	}
 
@@ -62,36 +66,14 @@ _linux_aio_init(struct xnvme_dev *XNVME_UNUSED(dev),
 }
 
 int
-_linux_aio_term(struct xnvme_dev *XNVME_UNUSED(dev),
-		struct xnvme_async_ctx *ctx)
+_linux_aio_poke(struct xnvme_queue *queue, uint32_t max)
 {
-	struct xnvme_async_ctx_aio *actx = NULL;
-
-	if (!ctx) {
-		XNVME_DEBUG("FAILED: ctx: %p", (void *)ctx);
-		return -EINVAL;
-	}
-
-	actx = (void *)ctx;
-
-	io_destroy(actx->aio_ctx);
-	free(actx->aio_events);
-	free(actx->iocbs);
-	free(ctx);
-
-	return 0;
-}
-
-int
-_linux_aio_poke(struct xnvme_dev *XNVME_UNUSED(dev),
-		struct xnvme_async_ctx *ctx, uint32_t max)
-{
-	struct xnvme_async_ctx_aio *actx = (void *)ctx;
+	struct xnvme_queue_aio *actx = (void *)queue;
 	unsigned completed = 0;
 	int ret = 0, event = 0;
 
-	max = max ? max : actx->outstanding;
-	max = max > actx->outstanding ? actx->outstanding : max;
+	max = max ? max : queue->base.outstanding;
+	max = max > queue->base.outstanding ? queue->base.outstanding : max;
 
 	do {
 		struct io_event *ev;
@@ -108,7 +90,7 @@ _linux_aio_poke(struct xnvme_dev *XNVME_UNUSED(dev),
 				XNVME_DEBUG("event->data is NULL! => NO REQ!");
 				XNVME_DEBUG("event->res: %ld", ev->res);
 
-				ctx->outstanding -= 1;
+				queue->base.outstanding -= 1;
 
 				return -EIO;
 			}
@@ -122,21 +104,20 @@ _linux_aio_poke(struct xnvme_dev *XNVME_UNUSED(dev),
 
 	} while (completed < max);
 
-	actx->outstanding -= completed;
+	queue->base.outstanding -= completed;
 	return completed;
 }
 
 int
-_linux_aio_wait(struct xnvme_dev *dev,
-		struct xnvme_async_ctx *ctx)
+_linux_aio_wait(struct xnvme_queue *queue)
 {
 	int acc = 0;
 
-	while (ctx->outstanding) {
+	while (queue->base.outstanding) {
 		struct timespec ts1 = {.tv_sec = 0, .tv_nsec = 1000};
 		int err;
 
-		err = _linux_aio_poke(dev, ctx, 0);
+		err = _linux_aio_poke(queue, 0);
 		if (!err) {
 			acc += 1;
 			continue;
@@ -157,7 +138,7 @@ _linux_aio_wait(struct xnvme_dev *dev,
 }
 
 static inline void
-_ring_inc(struct xnvme_async_ctx_aio *actx, unsigned int *val, unsigned int add)
+_ring_inc(struct xnvme_queue_aio *actx, unsigned int *val, unsigned int add)
 {
 	*val = (*val + add) & (actx->entries - 1);
 }
@@ -169,7 +150,7 @@ _linux_aio_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 		  struct xnvme_req *req)
 {
 	struct xnvme_be_linux_state *state = (void *)dev->be.state;
-	struct xnvme_async_ctx_aio *actx  = (void *)req->async.ctx;
+	struct xnvme_queue_aio *actx  = (void *)req->async.queue;
 	struct iocb *iocb = &actx->iocb;
 	struct iocb **iocbs;
 	int ret = 0;
@@ -187,11 +168,11 @@ _linux_aio_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 		return -ENOSYS;
 	}
 
-	if (actx->outstanding < actx->depth) {
+	if (req->async.queue->base.outstanding < req->async.queue->base.depth) {
 		actx->queued++;
 	}
 
-	if (actx->outstanding == actx->depth) {
+	if (req->async.queue->base.outstanding == req->async.queue->base.depth) {
 		XNVME_DEBUG("FAILED: queue is full");
 		return -EBUSY;
 	}
@@ -205,7 +186,7 @@ _linux_aio_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 
 	_ring_inc(actx, &actx->head, 1);
 
-	actx->outstanding += 1;
+	req->async.queue->base.outstanding += 1;
 
 	do {
 		long nr = actx->queued;
@@ -242,8 +223,7 @@ _linux_aio_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 }
 
 int
-_linux_aio_supported(struct xnvme_dev *XNVME_UNUSED(dev),
-		     uint32_t XNVME_UNUSED(opts))
+_linux_aio_supported(struct xnvme_dev *XNVME_UNUSED(dev), uint32_t XNVME_UNUSED(opts))
 {
 	return 1;
 }

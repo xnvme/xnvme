@@ -247,17 +247,17 @@ xnvme_be_linux_state_init(struct xnvme_dev *dev, void *XNVME_UNUSED(opts))
 		chosen = sscanf(dev->ident.opts, "?async=%3[a-z]", aname) == 1;
 
 		for (int i = 0; i < g_linux_async_count; ++i) {
-			struct xnvme_be_async *async = g_linux_async[i];
+			struct xnvme_be_async *queue = g_linux_async[i];
 
-			if (chosen && strncmp(aname, async->id, 3)) {
-				XNVME_DEBUG("chosen: %s != async->id: %s",
-					    aname, async->id);
+			if (chosen && strncmp(aname, queue->id, 3)) {
+				XNVME_DEBUG("chosen: %s != queue->id: %s",
+					    aname, queue->id);
 				continue;
 			}
 
-			if (async->enabled && async->supported(dev, 0x0)) {
-				dev->be.async = *async;
-				XNVME_DEBUG("got: %s", async->id);
+			if (queue->enabled && queue->supported(dev, 0x0)) {
+				dev->be.async = *queue;
+				XNVME_DEBUG("got: %s", queue->id);
 				break;
 			}
 		}
@@ -557,7 +557,7 @@ static const char *g_schemes[] = {
 
 struct xnvme_be xnvme_be_linux = {
 #ifdef XNVME_BE_LINUX_ENABLED
-	.async = XNVME_BE_NOSYS_ASYNC,	///< Selected at runtime
+	.async = XNVME_BE_NOSYS_QUEUE,	///< Selected at runtime
 	.sync = XNVME_BE_NOSYS_SYNC,	///< Selected at runtime
 	.mem = {
 		.buf_alloc = xnvme_be_linux_buf_alloc,
@@ -572,7 +572,7 @@ struct xnvme_be xnvme_be_linux = {
 		.dev_close = xnvme_be_linux_dev_close,
 	},
 #else
-	.async = XNVME_BE_NOSYS_ASYNC,
+	.async = XNVME_BE_NOSYS_QUEUE,
 	.sync = XNVME_BE_NOSYS_SYNC,
 	.mem = XNVME_BE_NOSYS_MEM,
 	.dev = XNVME_BE_NOSYS_DEV,

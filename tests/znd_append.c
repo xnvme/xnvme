@@ -46,7 +46,7 @@ cmd_verify(struct xnvmec *cli)
 
 	int cmd_opts = XNVME_CMD_ASYNC;
 	struct cb_args cb_args = { 0 };
-	struct xnvme_async_ctx *ctx = NULL;
+	struct xnvme_queue *queue = NULL;
 
 	size_t buf_nbytes;
 	void *dbuf = NULL, *vbuf = NULL;
@@ -91,9 +91,9 @@ cmd_verify(struct xnvmec *cli)
 	xnvmec_pinf("Using XNVME_CMD_ASYNC mode");
 
 	xnvmec_pinf("Initializing async. context + alloc/init requests");
-	err = xnvme_async_init(dev, &ctx, 2, 0);
+	err = xnvme_queue_init(dev, 2, 0, &queue);
 	if (err) {
-		xnvmec_perr("xnvme_async_init()", -err);
+		xnvmec_perr("xnvme_queue_init()", -err);
 		goto exit;
 	}
 
@@ -104,7 +104,7 @@ cmd_verify(struct xnvmec *cli)
 	for (uint64_t sect = 0; (sect < zone.zcap) && !cb_args.ecount; ++sect) {
 		struct xnvme_req req = { 0 };
 
-		req.async.ctx = ctx;
+		req.async.queue = queue;
 		req.async.cb = cb_lbacheck;
 		req.async.cb_arg = &cb_args;
 
@@ -126,9 +126,9 @@ cmd_verify(struct xnvmec *cli)
 			goto exit;
 		}
 
-		err = xnvme_async_wait(dev, ctx);
+		err = xnvme_queue_wait(queue);
 		if (err < 0) {
-			xnvmec_perr("xnvme_async_wait()", err);
+			xnvmec_perr("xnvme_queue_wait()", err);
 			goto exit;
 		}
 	}
@@ -183,9 +183,9 @@ exit:
 		    cb_args.ecount);
 
 	{
-		int err_exit = xnvme_async_term(dev, ctx);
+		int err_exit = xnvme_queue_term(queue);
 		if (err_exit) {
-			xnvmec_perr("xnvme_async_term()", err_exit);
+			xnvmec_perr("xnvme_queue_term()", err_exit);
 		}
 	}
 	xnvme_buf_free(dev, dbuf);

@@ -91,7 +91,7 @@ struct xnvme_fioe_fwrap {
 	///< xNVMe device geometry
 	const struct xnvme_geo *geo;
 
-	struct xnvme_async_ctx *ctx;
+	struct xnvme_queue *queue;
 	struct xnvme_req_pool *reqs;
 
 	uint32_t ssw;
@@ -205,7 +205,7 @@ static int
 _dev_close(struct thread_data *td, struct xnvme_fioe_fwrap *fwrap)
 {
 	if (fwrap->dev) {
-		xnvme_async_term(fwrap->dev, fwrap->ctx);
+        xnvme_queue_term(fwrap->queue);
 	}
 	xnvme_req_pool_free(fwrap->reqs);
 	xnvme_dev_close(fwrap->dev);
@@ -258,10 +258,10 @@ _dev_open(struct thread_data *td, struct fio_file *f)
 		return 1;
 	}
 	if (o->hipri) {
-		flags |= XNVME_ASYNC_IOPOLL;
+		flags |= XNVME_QUEUE_IOPOLL;
 	}
 	if (o->sqpoll_thread) {
-		flags |= XNVME_ASYNC_SQPOLL;
+		flags |= XNVME_QUEUE_SQPOLL;
 	}
 	if (f->fileno > (int)xd->nallocated) {
 		log_err("xnvme_fioe: _dev_open(); invalid assumption\n");
@@ -313,8 +313,8 @@ _dev_open(struct thread_data *td, struct fio_file *f)
 	}
 	fwrap->geo = xnvme_dev_get_geo(fwrap->dev);
 
-	if (xnvme_async_init(fwrap->dev, &(fwrap->ctx), td->o.iodepth, flags)) {
-		log_err("xnvme_fioe: init(): failed xnvme_async_init()\n");
+	if (xnvme_queue_init(fwrap->dev, td->o.iodepth, flags, &(fwrap->queue))) {
+		log_err("xnvme_fioe: init(): failed xnvme_queue_init()\n");
 		goto failure;
 	}
 	if (xnvme_req_pool_alloc(&fwrap->reqs, td->o.iodepth + 1)) {
@@ -322,7 +322,7 @@ _dev_open(struct thread_data *td, struct fio_file *f)
 		goto failure;
 	}
 	// NOTE: cb_args are assigned in _queue()
-	if (xnvme_req_pool_init(fwrap->reqs, fwrap->ctx, cb_pool, NULL)) {
+	if (xnvme_req_pool_init(fwrap->reqs, fwrap->queue, cb_pool, NULL)) {
 		log_err("xnvme_fioe: init(): xnvme_req_pool_init()\n");
 		goto failure;
 	}
@@ -341,7 +341,7 @@ _dev_open(struct thread_data *td, struct fio_file *f)
 
 failure:
 	xnvme_req_pool_free(fwrap->reqs);
-	xnvme_async_term(fwrap->dev, fwrap->ctx);
+    xnvme_queue_term(fwrap->queue);
 	xnvme_dev_close(fwrap->dev);
 
 	pthread_mutex_unlock(&g_serialize);
@@ -487,8 +487,8 @@ xnvme_fioe_getevents(struct thread_data *td, unsigned int min,
 		}
 
 		while (fwrap != NULL && xd->cur < nfiles && err >= 0) {
-			err = xnvme_async_poke(fwrap->dev, fwrap->ctx,
-					       max - xd->completed);
+			err = xnvme_queue_poke(fwrap->queue,
+                                   max - xd->completed);
 			if (err < 0) {
 				switch (err) {
 				case -EBUSY:

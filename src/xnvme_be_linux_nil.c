@@ -23,45 +23,27 @@
 #include <dirent.h>
 #include <paths.h>
 
-#include <xnvme_async.h>
+#include <xnvme_queue.h>
 #include <xnvme_be_linux.h>
 #include <xnvme_be_linux_nil.h>
 #include <xnvme_dev.h>
 
 int
-_linux_nil_init(struct xnvme_dev *XNVME_UNUSED(dev),
-		struct xnvme_async_ctx **ctx, uint16_t depth,
-		int XNVME_UNUSED(flags))
+_linux_nil_init(struct xnvme_queue *XNVME_UNUSED(queue), int XNVME_UNUSED(opts))
 {
-	*ctx = calloc(1, sizeof(**ctx));
-	if (!*ctx) {
-		XNVME_DEBUG("FAILED: calloc(ctx), errno: %s", strerror(errno));
-		return -errno;
-	}
-	(*ctx)->depth = depth;
-
 	return 0;
 }
 
 int
-_linux_nil_term(struct xnvme_dev *XNVME_UNUSED(dev),
-		struct xnvme_async_ctx *ctx)
+_linux_nil_term(struct xnvme_queue *XNVME_UNUSED(queue))
 {
-	if (!ctx) {
-		XNVME_DEBUG("FAILED: ctx: %p", (void *)ctx);
-		return -EINVAL;
-	}
-
-	free(ctx);
-
 	return 0;
 }
 
 int
-_linux_nil_poke(struct xnvme_dev *XNVME_UNUSED(dev),
-		struct xnvme_async_ctx *ctx, uint32_t max)
+_linux_nil_poke(struct xnvme_queue *queue, uint32_t max)
 {
-	struct xnvme_async_ctx_nil *actx = (void *)ctx;
+	struct xnvme_queue_nil *actx = (void *)queue;
 	unsigned completed = 0;
 
 	max = max ? max : actx->outstanding;
@@ -76,7 +58,7 @@ _linux_nil_poke(struct xnvme_dev *XNVME_UNUSED(dev),
 			XNVME_DEBUG("-{[THIS SHOULD NOT HAPPEN]}-");
 
 			++completed;
-			ctx->outstanding -= completed;
+			queue->base.outstanding -= completed;
 			return -EIO;
 		}
 
@@ -92,15 +74,15 @@ _linux_nil_poke(struct xnvme_dev *XNVME_UNUSED(dev),
 }
 
 int
-_linux_nil_wait(struct xnvme_dev *dev, struct xnvme_async_ctx *ctx)
+_linux_nil_wait(struct xnvme_queue *queue)
 {
 	int acc = 0;
 
-	while (ctx->outstanding) {
+	while (queue->base.outstanding) {
 		struct timespec ts1 = {.tv_sec = 0, .tv_nsec = 1000};
 		int err;
 
-		err = _linux_nil_poke(dev, ctx, 0);
+		err = _linux_nil_poke(queue, 0);
 		if (!err) {
 			acc += 1;
 			continue;
@@ -127,7 +109,7 @@ _linux_nil_cmd_io(struct xnvme_dev *XNVME_UNUSED(dev),
 		  size_t XNVME_UNUSED(mbuf_nbytes), int XNVME_UNUSED(opts),
 		  struct xnvme_req *req)
 {
-	struct xnvme_async_ctx_nil *actx = (void *)req->async.ctx;
+	struct xnvme_queue_nil *actx = (void *)req->async.queue;
 
 	if (actx->outstanding == actx->depth) {
 		XNVME_DEBUG("FAILED: queue is full");
@@ -140,8 +122,7 @@ _linux_nil_cmd_io(struct xnvme_dev *XNVME_UNUSED(dev),
 }
 
 int
-_linux_nil_supported(struct xnvme_dev *XNVME_UNUSED(dev),
-		     uint32_t XNVME_UNUSED(opts))
+_linux_nil_supported(struct xnvme_dev *XNVME_UNUSED(dev), uint32_t XNVME_UNUSED(opts))
 {
 	return 1;
 }

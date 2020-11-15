@@ -10,7 +10,7 @@
 
 int
 xnvme_adm_format(struct xnvme_dev *dev, uint32_t nsid, uint8_t lbaf, uint8_t zf, uint8_t mset,
-                 uint8_t ses, uint8_t pi, uint8_t pil, struct xnvme_req *req)
+		 uint8_t ses, uint8_t pi, uint8_t pil, struct xnvme_req *req)
 {
 	struct xnvme_spec_cmd cmd = {0 };
 

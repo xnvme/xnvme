@@ -21,7 +21,7 @@
 #include <paths.h>
 #include <liburing.h>
 
-#include <xnvme_async.h>
+#include <xnvme_queue.h>
 #include <xnvme_be_linux.h>
 #include <xnvme_be_linux_iou.h>
 #include <xnvme_dev.h>
@@ -74,39 +74,27 @@ exit:
 }
 
 int
-_linux_iou_init(struct xnvme_dev *dev,
-		struct xnvme_async_ctx **ctx, uint16_t depth,
-		int flags)
+_linux_iou_init(struct xnvme_queue *queue, int opts)
 {
-	struct xnvme_be_linux_state *state = (void *)dev->be.state;
-	struct xnvme_async_ctx_linux_iou *actx = NULL;
+	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_queue_iou *actx = (void *)queue;
 	int err = 0;
 	int iou_flags = 0;
 
-	*ctx = calloc(1, sizeof(**ctx));
-	if (!*ctx) {
-		XNVME_DEBUG("FAILED: calloc(ctx), err: %s", strerror(errno));
-		return -errno;
-	}
-	(*ctx)->depth = depth;
-
-	actx = (void *)(*ctx);
-
-	if ((flags & XNVME_ASYNC_SQPOLL) || (state->poll_sq)) {
+	if ((opts & XNVME_QUEUE_SQPOLL) || (state->poll_sq)) {
 		actx->poll_sq = 1;
 	}
-	if ((flags & XNVME_ASYNC_IOPOLL) || (state->poll_io)) {
+	if ((opts & XNVME_QUEUE_IOPOLL) || (state->poll_io)) {
 		actx->poll_io = 1;
 	}
-
-	XNVME_DEBUG("actx->poll_sq: %d", actx->poll_sq);
-	XNVME_DEBUG("actx->poll_io: %d", actx->poll_io);
 
 	// NOTE: Disabling IOPOLL, to avoid lock-up, until fixed in `_poke`
 	if (actx->poll_io) {
 		printf("ENOSYS: IORING_SETUP_IOPOLL\n");
 		actx->poll_io = 0;
 	}
+	XNVME_DEBUG("actx->poll_sq: %d", actx->poll_sq);
+	XNVME_DEBUG("actx->poll_io: %d", actx->poll_io);
 
 	//
 	// Ring-initialization
@@ -118,10 +106,9 @@ _linux_iou_init(struct xnvme_dev *dev,
 		iou_flags |= IORING_SETUP_IOPOLL;
 	}
 
-	err = io_uring_queue_init(depth, &actx->ring, iou_flags);
+	err = io_uring_queue_init(queue->base.depth, &actx->ring, iou_flags);
 	if (err) {
-		XNVME_DEBUG("FAILED: alloc. qpair");
-		free(*ctx);
+		XNVME_DEBUG("FAILED: io_uring_queue_init(), err: %d", err);
 		return err;
 	}
 
@@ -133,37 +120,34 @@ _linux_iou_init(struct xnvme_dev *dev,
 }
 
 int
-_linux_iou_term(struct xnvme_dev *XNVME_UNUSED(dev),
-		struct xnvme_async_ctx *ctx)
+_linux_iou_term(struct xnvme_queue *queue)
 {
-	struct xnvme_async_ctx_linux_iou *actx = NULL;
+	struct xnvme_queue_iou *actx = (void *)queue;
 
-	if (!ctx) {
-		XNVME_DEBUG("FAILED: ctx: %p", (void *)ctx);
+	if (!queue) {
+		XNVME_DEBUG("FAILED: queue: %p", (void *)queue);
 		return -EINVAL;
 	}
 
-	actx = (void *)ctx;
+	actx = (void *)queue;
 
 	io_uring_unregister_files(&actx->ring);
 	io_uring_queue_exit(&actx->ring);
-	free(ctx);
 
 	return 0;
 }
 
 int
-_linux_iou_poke(struct xnvme_dev *XNVME_UNUSED(dev),
-		struct xnvme_async_ctx *ctx, uint32_t max)
+_linux_iou_poke(struct xnvme_queue *queue, uint32_t max)
 {
-	struct xnvme_async_ctx_linux_iou *actx = (void *)ctx;
+	struct xnvme_queue_iou *actx = (void *)queue;
 	struct io_uring_cq *ring = &actx->ring.cq;
 	unsigned cq_ring_mask = *ring->kring_mask;
 	unsigned completed = 0;
 	unsigned head;
 
-	max = max ? max : actx->outstanding;
-	max = max > actx->outstanding ? actx->outstanding : max;
+	max = max ? max : queue->base.outstanding;
+	max = max > queue->base.outstanding ? queue->base.outstanding : max;
 
 	head = *ring->khead;
 	do {
@@ -184,7 +168,7 @@ _linux_iou_poke(struct xnvme_dev *XNVME_UNUSED(dev),
 			XNVME_DEBUG("cqe->flags: %u", cqe->flags);
 
 			io_uring_cqe_seen(&actx->ring, cqe);
-			ctx->outstanding -= 1;
+			queue->base.outstanding -= 1;
 
 			return -EIO;
 		}
@@ -198,7 +182,7 @@ _linux_iou_poke(struct xnvme_dev *XNVME_UNUSED(dev),
 		++head;
 	} while (completed < max);
 
-	actx->outstanding -= completed;
+	queue->base.outstanding -= completed;
 	*ring->khead = head;
 
 	_linux_iou_barrier();
@@ -207,15 +191,15 @@ _linux_iou_poke(struct xnvme_dev *XNVME_UNUSED(dev),
 }
 
 int
-_linux_iou_wait(struct xnvme_dev *dev, struct xnvme_async_ctx *ctx)
+_linux_iou_wait(struct xnvme_queue *queue)
 {
 	int acc = 0;
 
-	while (ctx->outstanding) {
+	while (queue->base.outstanding) {
 		struct timespec ts1 = {.tv_sec = 0, .tv_nsec = 1000};
 		int err;
 
-		err = _linux_iou_poke(dev, ctx, 0);
+		err = _linux_iou_poke(queue, 0);
 		if (!err) {
 			acc += 1;
 			continue;
@@ -242,7 +226,7 @@ _linux_iou_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 		  struct xnvme_req *req)
 {
 	struct xnvme_be_linux_state *state = (void *)dev->be.state;
-	struct xnvme_async_ctx_linux_iou *actx = (void *)req->async.ctx;
+	struct xnvme_queue_iou *actx = (void *)req->async.queue;
 	struct io_uring_sqe *sqe = NULL;
 	int opcode;
 	int err = 0;
@@ -262,7 +246,7 @@ _linux_iou_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 		return -ENOSYS;
 	}
 
-	if (actx->outstanding == actx->depth) {
+	if (req->async.queue->base.outstanding == req->async.queue->base.depth) {
 		XNVME_DEBUG("FAILED: queue is full");
 		return -EBUSY;
 	}
@@ -296,7 +280,7 @@ _linux_iou_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 		return err;
 	}
 
-	actx->outstanding += 1;
+	req->async.queue->base.outstanding += 1;
 
 	return 0;
 }

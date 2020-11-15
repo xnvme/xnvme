@@ -54,7 +54,7 @@ sub_async_read(struct xnvmec *cli)
 
 	int cmd_opts = XNVME_CMD_ASYNC;
 	struct cb_args cb_args = { 0 };
-	struct xnvme_async_ctx *ctx = NULL;
+	struct xnvme_queue *queue = NULL;
 	struct xnvme_req_pool *reqs = NULL;
 
 	size_t buf_nbytes;
@@ -97,9 +97,9 @@ sub_async_read(struct xnvmec *cli)
 	}
 
 	xnvmec_pinf("Initializing async. context + alloc/init requests");
-	err = xnvme_async_init(dev, &ctx, qd, 0);
+	err = xnvme_queue_init(dev, qd, 0, &queue);
 	if (err) {
-		xnvmec_perr("xnvme_async_init()", err);
+		xnvmec_perr("xnvme_queue_init()", err);
 		goto exit;
 	}
 	err = xnvme_req_pool_alloc(&reqs, qd + 1);
@@ -107,7 +107,7 @@ sub_async_read(struct xnvmec *cli)
 		xnvmec_perr("xnvme_req_pool_alloc()", err);
 		goto exit;
 	}
-	err = xnvme_req_pool_init(reqs, ctx, cb_pool, &cb_args);
+	err = xnvme_req_pool_init(reqs, queue, cb_pool, &cb_args);
 	if (err) {
 		xnvmec_perr("xnvme_req_pool_init()", err);
 		goto exit;
@@ -133,7 +133,7 @@ submit:
 
 		case -EBUSY:
 		case -EAGAIN:
-			xnvme_async_poke(dev, ctx, 0);
+			xnvme_queue_poke(queue, 0);
 			goto submit;
 
 		default:
@@ -146,9 +146,9 @@ next:
 		payload += geo->lba_nbytes;
 	}
 
-	err = xnvme_async_wait(dev, ctx);
+	err = xnvme_queue_wait(queue);
 	if (err < 0) {
-		xnvmec_perr("xnvme_async_wait()", err);
+		xnvmec_perr("xnvme_queue_wait()", err);
 		goto exit;
 	}
 
@@ -177,10 +177,10 @@ exit:
 		    cb_args.submitted, cb_args.completed,
 		    cb_args.ecount);
 
-	if (ctx) {
-		int err_exit = xnvme_async_term(dev, ctx);
+	if (queue) {
+		int err_exit = xnvme_queue_term(queue);
 		if (err_exit) {
-			xnvmec_perr("xnvme_async_term()", err_exit);
+			xnvmec_perr("xnvme_queue_term()", err_exit);
 		}
 	}
 	xnvme_req_pool_free(reqs);
@@ -211,7 +211,7 @@ sub_async_write(struct xnvmec *cli)
 
 	int cmd_opts = XNVME_CMD_ASYNC;
 	struct cb_args cb_args = { 0 };
-	struct xnvme_async_ctx *ctx = NULL;
+	struct xnvme_queue *queue = NULL;
 	struct xnvme_req_pool *reqs = NULL;
 
 	size_t buf_nbytes;
@@ -254,9 +254,9 @@ sub_async_write(struct xnvmec *cli)
 	}
 
 	xnvmec_pinf("Initializing async. context + alloc/init requests");
-	err = xnvme_async_init(dev, &ctx, qd, 0);
+	err = xnvme_queue_init(dev, qd, 0, &queue);
 	if (err) {
-		xnvmec_perr("xnvme_async_init()", err);
+		xnvmec_perr("xnvme_queue_init()", err);
 		goto exit;
 	}
 	err = xnvme_req_pool_alloc(&reqs, qd + 1);
@@ -264,7 +264,7 @@ sub_async_write(struct xnvmec *cli)
 		xnvmec_perr("xnvme_req_pool_alloc()", err);
 		goto exit;
 	}
-	err = xnvme_req_pool_init(reqs, ctx, cb_pool, &cb_args);
+	err = xnvme_req_pool_init(reqs, queue, cb_pool, &cb_args);
 	if (err) {
 		xnvmec_perr("xnvme_req_pool_init()", err);
 		goto exit;
@@ -289,7 +289,7 @@ submit:
 
 		case -EBUSY:
 		case -EAGAIN:
-			xnvme_async_poke(dev, ctx, 0);
+			xnvme_queue_poke(queue, 0);
 			goto submit;
 
 		default:
@@ -299,9 +299,9 @@ submit:
 
 next:
 		// Wait for completion to avoid racing zone.wp
-		err = xnvme_async_wait(dev, ctx);
+		err = xnvme_queue_wait(queue);
 		if (err < 0) {
-			xnvmec_perr("xnvme_async_wait()", err);
+			xnvmec_perr("xnvme_queue_wait()", err);
 			goto exit;
 		}
 
@@ -309,9 +309,9 @@ next:
 		payload += geo->lba_nbytes;
 	}
 
-	err = xnvme_async_wait(dev, ctx);
+	err = xnvme_queue_wait(queue);
 	if (err < 0) {
-		xnvmec_perr("xnvme_async_wait()", err);
+		xnvmec_perr("xnvme_queue_wait()", err);
 		goto exit;
 	}
 
@@ -330,10 +330,10 @@ exit:
 		    cb_args.submitted, cb_args.completed,
 		    cb_args.ecount);
 
-	if (ctx) {
-		int err_exit = xnvme_async_term(dev, ctx);
+	if (queue) {
+		int err_exit = xnvme_queue_term(queue);
 		if (err_exit) {
-			xnvmec_perr("xnvme_async_term()", err_exit);
+			xnvmec_perr("xnvme_queue_term()", err_exit);
 		}
 	}
 	xnvme_req_pool_free(reqs);
@@ -363,7 +363,7 @@ sub_async_append(struct xnvmec *cli)
 
 	int cmd_opts = XNVME_CMD_ASYNC;
 	struct cb_args cb_args = { 0 };
-	struct xnvme_async_ctx *ctx = NULL;
+	struct xnvme_queue *queue = NULL;
 	struct xnvme_req_pool *reqs = NULL;
 
 	size_t buf_nbytes;
@@ -406,9 +406,9 @@ sub_async_append(struct xnvmec *cli)
 	}
 
 	xnvmec_pinf("Initializing async. context + alloc/init requests");
-	err = xnvme_async_init(dev, &ctx, qd, 0);
+	err = xnvme_queue_init(dev, qd, 0, &queue);
 	if (err) {
-		xnvmec_perr("xnvme_async_init()", err);
+		xnvmec_perr("xnvme_queue_init()", err);
 		goto exit;
 	}
 	err = xnvme_req_pool_alloc(&reqs, qd + 1);
@@ -416,7 +416,7 @@ sub_async_append(struct xnvmec *cli)
 		xnvmec_perr("xnvme_req_pool_alloc()", err);
 		goto exit;
 	}
-	err = xnvme_req_pool_init(reqs, ctx, cb_pool, &cb_args);
+	err = xnvme_req_pool_init(reqs, queue, cb_pool, &cb_args);
 	if (err) {
 		xnvmec_perr("xnvme_req_pool_init()", err);
 		goto exit;
@@ -442,7 +442,7 @@ submit:
 
 		case -EBUSY:
 		case -EAGAIN:
-			xnvme_async_poke(dev, ctx, 0);
+			xnvme_queue_poke(queue, 0);
 			goto submit;
 
 		default:
@@ -455,9 +455,9 @@ next:
 		payload += geo->lba_nbytes;
 	}
 
-	err = xnvme_async_wait(dev, ctx);
+	err = xnvme_queue_wait(queue);
 	if (err < 0) {
-		xnvmec_perr("xnvme_async_wait()", err);
+		xnvmec_perr("xnvme_queue_wait()", err);
 		goto exit;
 	}
 
@@ -476,10 +476,10 @@ exit:
 		    cb_args.submitted, cb_args.completed,
 		    cb_args.ecount);
 
-	if (ctx) {
-		int err_exit = xnvme_async_term(dev, ctx);
+	if (queue) {
+		int err_exit = xnvme_queue_term(queue);
 		if (err_exit) {
-			xnvmec_perr("xnvme_async_term()", err_exit);
+			xnvmec_perr("xnvme_queue_term()", err_exit);
 		}
 	}
 	xnvme_req_pool_free(reqs);

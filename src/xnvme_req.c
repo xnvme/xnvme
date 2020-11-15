@@ -30,13 +30,13 @@ xnvme_req_pool_alloc(struct xnvme_req_pool **pool, uint32_t capacity)
 
 int
 xnvme_req_pool_init(struct xnvme_req_pool *pool,
-		    struct xnvme_async_ctx *ctx,
-		    xnvme_async_cb cb,
+		    struct xnvme_queue *queue,
+		    xnvme_queue_cb cb,
 		    void *cb_arg)
 {
 	for (uint32_t i = 0; i < pool->capacity; ++i) {
 		pool->elm[i].pool = pool;
-		pool->elm[i].async.ctx = ctx;
+		pool->elm[i].async.queue = queue;
 		pool->elm[i].async.cb = cb;
 		pool->elm[i].async.cb_arg = cb_arg;
 

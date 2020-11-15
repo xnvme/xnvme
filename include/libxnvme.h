@@ -87,10 +87,10 @@ struct xnvme_ident {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_ident) == 704, "Incorrect size")
 
 /**
- * Parse the given 'uri' into 'ident'
+ * Parse the given 'uri' into ::xnvme_ident
  *
  * @param uri
- * @param ident Pointer to ident to fill with values parsed from 'ident_uri'
+ * @param ident Pointer to ident to fill with values parsed from 'uri'
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
@@ -238,75 +238,73 @@ void
 xnvme_buf_virt_free(void *buf);
 
 /**
- * Opaque asynchronous context as provided by xnvme_async_init()
+ * Opaque Command Queue Handle to be initialized by xnvme_queue_init()
  *
- * @see xnvme_async_init
- * @see xnvme_async_term
+ * @see xnvme_queue_init
+ * @see xnvme_queue_term
  *
- * @struct xnvme_async_ctx
+ * @struct xnvme_queue
  */
-struct xnvme_async_ctx;
+struct xnvme_queue;
 
 /**
- * Async / queue flags
- * @enum xnvme_async_opts
+ * Command Queue initialization options
+ *
+ * @enum xnvme_queue_opts
  */
-enum xnvme_async_opts {
-	XNVME_ASYNC_IOPOLL = 0x1,       ///< XNVME_ASYNC_IOPOLL: ctx. is polled for completions
-	XNVME_ASYNC_SQPOLL = 0x1 << 1,  ///< XNVME_ASYNC_SQPOLL: ctx. is polled for submissions
+enum xnvme_queue_opts {
+	XNVME_QUEUE_IOPOLL = 0x1,       ///< XNVME_QUEUE_IOPOLL: queue. is polled for completions
+	XNVME_QUEUE_SQPOLL = 0x1 << 1,  ///< XNVME_QUEUE_SQPOLL: queue. is polled for submissions
 };
 
 /**
- * Allocate an asynchronous context for command submission of the given depth
- * for submission of commands to the given device
+ * Allocate a Command Queue for asynchronous command submission and completion
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
- * @param ctx Pointer-pointer to initialized context
- * @param depth Maximum iodepth / qdepth, maximum number of outstanding commands
- * @param flags Initialization flags
- * of the returned context, note that is must be a power of 2 within the range
- * [1,4096]
+ * @param dev Handle ::xnvme_dev obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param depth Maximum number of outstanding commands on the initialized queue, note that it must
+ * be a power of 2 within the range [1,4096]
+ * @param opts Queue options
+ * @param queue Pointer-pointer to the ::xnvme_queue to initialize
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
-xnvme_async_init(struct xnvme_dev *dev, struct xnvme_async_ctx **ctx, uint16_t depth, int flags);
+xnvme_queue_init(struct xnvme_dev *dev, uint16_t depth, int opts, struct xnvme_queue **queue);
 
 /**
- * Get the I/O depth of the context.
+ * Get the I/O depth of the ::xnvme_queue
  *
- * @param ctx Asynchronous context
+ * @param queue Command context
  *
  * @return On success, depth of the given context is returned. On error, 0 is
  * returned e.g. errors are silent
  */
 uint32_t
-xnvme_async_get_depth(struct xnvme_async_ctx *ctx);
+xnvme_queue_get_depth(struct xnvme_queue *queue);
 
 /**
- * Get the number of outstanding I/O.
+ * Get the number of outstanding commands on the given ::xnvme_queue
  *
- * @param ctx Asynchronous context
+ * @param queue Command Queue
  *
  * @return On success, number of outstanding commands are returned. On error, 0
  * is returned e.g. errors are silent
  */
 uint32_t
-xnvme_async_get_outstanding(struct xnvme_async_ctx *ctx);
+xnvme_queue_get_outstanding(struct xnvme_queue *queue);
 
 /**
- * Tear down the given Asynchronous context
+ * Tear down the given ::xnvme_queue
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
- * @param ctx
+ * @param queue
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
-xnvme_async_term(struct xnvme_dev *dev, struct xnvme_async_ctx *ctx);
+xnvme_queue_term(struct xnvme_queue *queue);
 
 /**
- * Process completions from the given Asynchronous context
+ * Process completions of commands on the given ::xnvme_queue
  *
  * Set process 'max' to limit number of completions, 0 means no max.
  *
@@ -314,17 +312,16 @@ xnvme_async_term(struct xnvme_dev *dev, struct xnvme_async_ctx *ctx);
  * negative `errno` is returned.
  */
 int
-xnvme_async_poke(struct xnvme_dev *dev, struct xnvme_async_ctx *ctx,
-		 uint32_t max);
+xnvme_queue_poke(struct xnvme_queue *queue, uint32_t max);
 
 /**
- * Wait for completion of all outstanding commands in the given 'ctx'
+ * Wait for completion of all outstanding commands in the given ::xnvme_queue
  *
  * @return On success, number of completions processed, may be 0. On error,
  * negative `errno` is returned.
  */
 int
-xnvme_async_wait(struct xnvme_dev *dev, struct xnvme_async_ctx *ctx);
+xnvme_queue_wait(struct xnvme_queue *queue);
 
 /**
  * Forward declaration, see definition further down
@@ -333,9 +330,9 @@ struct xnvme_req;
 struct xnvme_req_pool;
 
 /**
- * Signature of function used with asynchronous callbacks.
+ * Signature of function used with Command Queues for async. callback upon command-completion
  */
-typedef void (*xnvme_async_cb)(struct xnvme_req *req, void *opaque);
+typedef void (*xnvme_queue_cb)(struct xnvme_req *req, void *opaque);
 
 /**
  * Encapsulation and representation of lower-level error conditions
@@ -347,8 +344,8 @@ struct xnvme_req {
 
 	///< Fields for CMD_OPT: XNVME_CMD_ASYNC
 	struct {
-		struct xnvme_async_ctx *ctx;	///< Asynchronous context
-		xnvme_async_cb cb;		///< User callback function
+		struct xnvme_queue *queue;	///< Queue context
+		xnvme_queue_cb cb;		///< User callback function
 		void *cb_arg;			///< User callback arguments
 
 		///< Per request backend specific data
@@ -370,8 +367,8 @@ int
 xnvme_req_pool_alloc(struct xnvme_req_pool **pool, uint32_t capacity);
 
 int
-xnvme_req_pool_init(struct xnvme_req_pool *pool, struct xnvme_async_ctx *ctx,
-		    xnvme_async_cb cb, void *cb_args);
+xnvme_req_pool_init(struct xnvme_req_pool *pool, struct xnvme_queue *queue, xnvme_queue_cb cb,
+		    void *cb_args);
 
 void
 xnvme_req_pool_free(struct xnvme_req_pool *pool);
