@@ -1356,6 +1356,7 @@ struct xnvme_be xnvme_be_spdk = {
 	.async = XNVME_BE_NOSYS_QUEUE,
 	.sync = XNVME_BE_NOSYS_SYNC,
 	.mem = XNVME_BE_NOSYS_MEM,
+	.dev = XNVME_BE_NOSYS_DEV,
 #endif
 	.attr = {
 		.name = XNVME_BE_SPDK_NAME,

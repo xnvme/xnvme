@@ -272,6 +272,8 @@ static const char *g_schemes[] = {
 
 struct xnvme_be xnvme_be_fbsd = {
 #ifdef XNVME_BE_FBSD_ENABLED
+	.async = XNVME_BE_NOSYS_QUEUE,
+	.sync = XNVME_BE_NOSYS_SYNC,
 	.mem = {
 		.buf_alloc = xnvme_be_fbsd_buf_alloc,
 		.buf_realloc = xnvme_be_fbsd_buf_realloc,
@@ -284,11 +286,11 @@ struct xnvme_be xnvme_be_fbsd = {
 		.dev_close = xnvme_be_fbsd_dev_close,
 	},
 #else
+	.async = XNVME_BE_NOSYS_QUEUE,
+	.sync = XNVME_BE_NOSYS_SYNC,
 	.mem = XNVME_BE_NOSYS_MEM,
 	.dev = XNVME_BE_NOSYS_DEV,
 #endif
-	.sync = XNVME_BE_NOSYS_SYNC,
-	.async = XNVME_BE_NOSYS_QUEUE,
 	.attr = {
 		.name = XNVME_BE_FBSD_NAME,
 #ifdef XNVME_BE_FBSD_ENABLED
