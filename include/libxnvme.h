@@ -19,88 +19,17 @@ extern "C" {
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/queue.h>
+#include <libxnvme_ident.h>
+#include <libxnvme_be.h>
 #include <libxnvme_spec.h>
 #include <libxnvme_util.h>
 #include <libxnvme_geo.h>
 #include <libxnvme_dev.h>
 
 /**
- * Representation of xNVMe library backend attributes
- *
- * @struct xnvme_be_attr_list
- */
-struct xnvme_be_attr {
-	const char *name;	///< Backend name
-
-	/**
-	 * The default URI 'scheme', as in, the URI-definition below:
-	 *
-	 * scheme:target[?option=val]
-	 *
-	 * For which this backend identifies devices
-	 */
-	const char **schemes;
-
-	uint32_t nschemes;		///< Number of schemes in 'schemes'
-	uint32_t enabled;		///< Whether the backend is 'enabled'
-};
-
-/**
- * List of xNVMe library backend attributes
- *
- * @struct xnvme_be_attr_list
- */
-struct xnvme_be_attr_list {
-	uint32_t capacity;		///< Remaining unused entries
-	int count;			///< Number of used entries
-	struct xnvme_be_attr item[];	///< Array of items
-};
-
-/**
- * List backends supported by the library
- *
- * @return On success, 0 is returned. On error, negative `errno` is returned.
- */
-int
-xnvme_be_attr_list(struct xnvme_be_attr_list **list);
-
-#define XNVME_IDENT_URI_LEN 384
-#define XNVME_IDENT_URI_LEN_MIN 10
-
-#define XNVME_IDENT_SCHM_LEN 5
-#define XNVME_IDENT_TRGT_LEN 155
-#define XNVME_IDENT_OPTS_LEN 160
-#define XNVME_IDENT_OPTS_SEP '?'
-
-/**
- * Representation of device identifiers once decoded from text-representation
- *
- * @struct xnvme_ident
- */
-struct xnvme_ident {
-	char uri[XNVME_IDENT_URI_LEN];
-
-	char schm[XNVME_IDENT_SCHM_LEN];
-	char trgt[XNVME_IDENT_TRGT_LEN];
-	char opts[XNVME_IDENT_OPTS_LEN];
-};
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_ident) == 704, "Incorrect size")
-
-/**
- * Parse the given 'uri' into ::xnvme_ident
- *
- * @param uri
- * @param ident Pointer to ident to fill with values parsed from 'uri'
- *
- * @return On success, 0 is returned. On error, negative `errno` is returned.
- */
-int
-xnvme_ident_from_uri(const char *uri, struct xnvme_ident *ident);
-
-/**
  * List of devices found on the system usable with xNVMe
  *
- * @struct xnvme_sys_list
+ * @struct xnvme_enumeration
  */
 struct xnvme_enumeration {
 	uint32_t capacity;		///< Remaining unused entries
@@ -123,14 +52,16 @@ xnvme_enumerate(struct xnvme_enumeration **list, const char *sys_uri, int opts);
 /**
  * Opaque device handle.
  *
+ * @see xnvme_dev_open()
+ *
  * @struct xnvme_dev
  */
 struct xnvme_dev;
 
 /**
- * Creates a handle to given device identifier
+ * Creates a device handle (::xnvme_dev) based on the given device-uri
  *
- * @param dev_uri File path "/dev/nvme0n1" or "pci://0000:04.01"
+ * @param dev_uri File path "/dev/nvme0n1" or "pci://0000:04.01?nsid=1"
  *
  * @return On success, a handle to the device. On error, NULL is returned and
  * `errno` set to indicate the error.
@@ -139,7 +70,7 @@ struct xnvme_dev *
 xnvme_dev_open(const char *dev_uri);
 
 /**
- * Destroys device-handle
+ * Destroy the given device handle (::xnvme_dev)
  *
  * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
  */

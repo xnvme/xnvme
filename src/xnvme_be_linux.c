@@ -7,6 +7,7 @@
 #endif
 #include <errno.h>
 #include <libxnvme.h>
+#include <libxnvme_be.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 
