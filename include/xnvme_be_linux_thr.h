@@ -10,7 +10,7 @@ struct _entry {
 	size_t dbuf_nbytes;
 	void *mbuf;
 	size_t mbuf_nbytes;
-	struct xnvme_req *req;
+	struct xnvme_cmd_ctx *ctx;
 	STAILQ_ENTRY(_entry) link;
 };
 

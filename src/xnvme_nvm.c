@@ -10,7 +10,7 @@
 
 int
 xnvme_adm_format(struct xnvme_dev *dev, uint32_t nsid, uint8_t lbaf, uint8_t zf, uint8_t mset,
-		 uint8_t ses, uint8_t pi, uint8_t pil, struct xnvme_req *req)
+		 uint8_t ses, uint8_t pi, uint8_t pil, struct xnvme_cmd_ctx *ctx)
 {
 	struct xnvme_spec_cmd cmd = {0 };
 
@@ -23,12 +23,12 @@ xnvme_adm_format(struct xnvme_dev *dev, uint32_t nsid, uint8_t lbaf, uint8_t zf,
 	cmd.format.pil = pil;
 	cmd.format.ses = ses;
 
-	return xnvme_cmd_pass_admin(dev, &cmd, NULL, 0, NULL, 0, 0x0, req);
+	return xnvme_cmd_pass_admin(dev, &cmd, NULL, 0, NULL, 0, 0x0, ctx);
 }
 
 int
 xnvme_nvm_sanitize(struct xnvme_dev *dev, uint8_t sanact, uint8_t ause, uint32_t ovrpat,
-		   uint8_t owpass, uint8_t oipbp, uint8_t nodas, struct xnvme_req *req)
+		   uint8_t owpass, uint8_t oipbp, uint8_t nodas, struct xnvme_cmd_ctx *ctx)
 {
 	struct xnvme_spec_cmd cmd = { 0 };
 
@@ -41,12 +41,12 @@ xnvme_nvm_sanitize(struct xnvme_dev *dev, uint8_t sanact, uint8_t ause, uint32_t
 	cmd.sanitize.ause = ause;
 	cmd.sanitize.ovrpat = ovrpat;
 
-	return xnvme_cmd_pass_admin(dev, &cmd, NULL, 0, NULL, 0, 0x0, req);
+	return xnvme_cmd_pass_admin(dev, &cmd, NULL, 0, NULL, 0, 0x0, ctx);
 }
 
 int
 xnvme_nvm_read(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba, uint16_t nlb, void *dbuf,
-	       void *mbuf, int opts, struct xnvme_req *req)
+	       void *mbuf, int opts, struct xnvme_cmd_ctx *ctx)
 {
 	size_t dbuf_nbytes = dbuf ? dev->geo.lba_nbytes * (nlb + 1) : 0;
 	size_t mbuf_nbytes = mbuf ? dev->geo.nbytes_oob * (nlb + 1) : 0;
@@ -61,13 +61,13 @@ xnvme_nvm_read(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba, uint16_t nlb
 	cmd.nvm.nlb = nlb;
 
 	return xnvme_cmd_pass(dev, &cmd, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes,
-			      opts, req);
+			      opts, ctx);
 }
 
 int
 xnvme_nvm_write(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba, uint16_t nlb,
 		const void *dbuf,
-		const void *mbuf, int opts, struct xnvme_req *req)
+		const void *mbuf, int opts, struct xnvme_cmd_ctx *ctx)
 {
 	void *cdbuf = (void *)dbuf;
 	void *cmbuf = (void *)mbuf;
@@ -85,12 +85,12 @@ xnvme_nvm_write(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba, uint16_t nl
 	cmd.nvm.nlb = nlb;
 
 	return xnvme_cmd_pass(dev, &cmd, cdbuf, dbuf_nbytes, cmbuf, mbuf_nbytes,
-			      opts, req);
+			      opts, ctx);
 }
 
 int
 xnvme_nvm_write_uncorrectable(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba, uint16_t nlb,
-			      int opts, struct xnvme_req *ret)
+			      int opts, struct xnvme_cmd_ctx *ret)
 {
 	struct xnvme_spec_cmd cmd = {0};
 
@@ -104,7 +104,7 @@ xnvme_nvm_write_uncorrectable(struct xnvme_dev *dev, uint32_t nsid, uint64_t slb
 
 int
 xnvme_nvm_write_zeroes(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba, uint16_t nlb, int opts,
-		       struct xnvme_req *ret)
+		       struct xnvme_cmd_ctx *ret)
 {
 	struct xnvme_spec_cmd cmd = { 0 };
 
@@ -119,7 +119,7 @@ xnvme_nvm_write_zeroes(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba, uint
 int
 xnvme_nvm_scopy(struct xnvme_dev *dev, uint32_t nsid, uint64_t sdlba,
 		struct xnvme_spec_nvm_scopy_fmt_zero *ranges, uint8_t nr,
-		enum xnvme_nvm_scopy_fmt copy_fmt, int opts, struct xnvme_req *ret)
+		enum xnvme_nvm_scopy_fmt copy_fmt, int opts, struct xnvme_cmd_ctx *ret)
 {
 	size_t ranges_nbytes = 0;
 

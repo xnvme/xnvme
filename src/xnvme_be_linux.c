@@ -290,7 +290,7 @@ int
 xnvme_be_linux_dev_idfy(struct xnvme_dev *dev)
 {
 	struct xnvme_spec_idfy *idfy_ctrlr = NULL, *idfy_ns = NULL;
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	if (strncmp(dev->be.sync.id, "block_ioctl", 11) == 0) {
@@ -327,17 +327,17 @@ xnvme_be_linux_dev_idfy(struct xnvme_dev *dev)
 
 	// Retrieve and store ctrl and ns
 	memset(idfy_ctrlr, 0, sizeof(*idfy_ctrlr));
-	memset(&req, 0, sizeof(req));
-	err = xnvme_adm_idfy_ctrlr(dev, idfy_ctrlr, &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+	memset(&ctx, 0, sizeof(ctx));
+	err = xnvme_adm_idfy_ctrlr(dev, idfy_ctrlr, &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("FAILED: identify controller");
 		err = err ? err : -EIO;
 		goto exit;
 	}
 	memset(idfy_ns, 0, sizeof(*idfy_ns));
-	memset(&req, 0, sizeof(req));
-	err = xnvme_adm_idfy_ns(dev, dev->nsid, idfy_ns, &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+	memset(&ctx, 0, sizeof(ctx));
+	err = xnvme_adm_idfy_ns(dev, dev->nsid, idfy_ns, &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("FAILED: identify namespace, err: %d", err);
 		goto exit;
 	}
@@ -354,20 +354,20 @@ xnvme_be_linux_dev_idfy(struct xnvme_dev *dev)
 		struct xnvme_spec_znd_idfy_ns *zns = (void *)idfy_ns;
 
 		memset(idfy_ctrlr, 0, sizeof(*idfy_ctrlr));
-		memset(&req, 0, sizeof(req));
+		memset(&ctx, 0, sizeof(ctx));
 		err = xnvme_adm_idfy_ctrlr_csi(dev, XNVME_SPEC_CSI_ZONED,
-					       idfy_ctrlr, &req);
-		if (err || xnvme_req_cpl_status(&req)) {
+					       idfy_ctrlr, &ctx);
+		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			XNVME_DEBUG("INFO: !id-ctrlr-zns");
 			goto not_zns;
 		}
 
 		memset(idfy_ns, 0, sizeof(*idfy_ns));
-		memset(&req, 0, sizeof(req));
+		memset(&ctx, 0, sizeof(ctx));
 		err = xnvme_adm_idfy_ns_csi(dev, dev->nsid,
 					    XNVME_SPEC_CSI_ZONED, idfy_ns,
-					    &req);
-		if (err || xnvme_req_cpl_status(&req)) {
+					    &ctx);
+		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			XNVME_DEBUG("INFO: !id-ns-zns");
 			goto not_zns;
 		}
@@ -389,9 +389,9 @@ not_zns:
 
 	// Attempt to identify LBLK Namespace
 	memset(idfy_ns, 0, sizeof(*idfy_ns));
-	memset(&req, 0, sizeof(req));
-	err = xnvme_adm_idfy_ns_csi(dev, dev->nsid, XNVME_SPEC_CSI_NVM, idfy_ns, &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+	memset(&ctx, 0, sizeof(ctx));
+	err = xnvme_adm_idfy_ns_csi(dev, dev->nsid, XNVME_SPEC_CSI_NVM, idfy_ns, &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("INFO: not csi-specific id-NVM");
 		XNVME_DEBUG("INFO: falling back to NVM assumption");
 		err = 0;

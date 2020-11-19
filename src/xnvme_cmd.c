@@ -48,10 +48,78 @@ xnvme_sgl_setup(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *data, v
 	}
 }
 
+// Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
+// SPDX-License-Identifier: Apache-2.0
+#include <stdio.h>
+#include <errno.h>
+#include <libxnvme.h>
+
+void
+xnvme_cmd_ctx_pool_free(struct xnvme_cmd_ctx_pool *pool)
+{
+	free(pool);
+}
+
+int
+xnvme_cmd_ctx_pool_alloc(struct xnvme_cmd_ctx_pool **pool, uint32_t capacity)
+{
+	const size_t nbytes = capacity * sizeof(*(*pool)->elm) + sizeof(**pool);
+
+	(*pool) = malloc(nbytes);
+	if (!(*pool)) {
+		return -errno;
+	}
+	memset((*pool), 0, nbytes);
+
+	SLIST_INIT(&(*pool)->head);
+
+	(*pool)->capacity = capacity;
+
+	return 0;
+}
+
+int
+xnvme_cmd_ctx_pool_init(struct xnvme_cmd_ctx_pool *pool,
+			struct xnvme_queue *queue,
+			xnvme_queue_cb cb,
+			void *cb_args)
+{
+	for (uint32_t i = 0; i < pool->capacity; ++i) {
+		pool->elm[i].pool = pool;
+		pool->elm[i].async.queue = queue;
+		pool->elm[i].async.cb = cb;
+		pool->elm[i].async.cb_arg = cb_args;
+
+		SLIST_INSERT_HEAD(&pool->head, &pool->elm[i], link);
+	}
+
+	return 0;
+}
+
+void
+xnvme_cmd_ctx_pr(const struct xnvme_cmd_ctx *ctx, int XNVME_UNUSED(opts))
+{
+	printf("xnvme_cmd_ctx: ");
+
+	if (!ctx) {
+		printf("~\n");
+		return;
+	}
+
+	printf("{cdw0: 0x%x, sc: 0x%x, sct: 0x%x}\n", ctx->cpl.cdw0,
+	       ctx->cpl.status.sc, ctx->cpl.status.sct);
+}
+
+void
+xnvme_cmd_ctx_clear(struct xnvme_cmd_ctx *cmd_ctx)
+{
+	memset(cmd_ctx, 0x0, sizeof(*cmd_ctx));
+}
+
 int
 xnvme_cmd_pass(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *dbuf,
 	       size_t dbuf_nbytes, void *mbuf, size_t mbuf_nbytes, int opts,
-	       struct xnvme_req *req)
+	       struct xnvme_cmd_ctx *cmd_ctx)
 {
 	const int cmd_opts = opts & XNVME_CMD_MASK;
 
@@ -62,11 +130,11 @@ xnvme_cmd_pass(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *dbuf,
 	switch (cmd_opts & XNVME_CMD_MASK_IOMD) {
 	case XNVME_CMD_ASYNC:
 		return dev->be.async.cmd_io(dev, cmd, dbuf, dbuf_nbytes, mbuf,
-					    mbuf_nbytes, opts, req);
+					    mbuf_nbytes, opts, cmd_ctx);
 
 	case XNVME_CMD_SYNC:
 		return dev->be.sync.cmd_io(dev, cmd, dbuf, dbuf_nbytes, mbuf,
-					   mbuf_nbytes, opts, req);
+					   mbuf_nbytes, opts, cmd_ctx);
 
 	default:
 		XNVME_DEBUG("FAILED: command-mode not provided");
@@ -77,7 +145,7 @@ xnvme_cmd_pass(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *dbuf,
 int
 xnvme_cmd_pass_admin(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 		     void *dbuf, size_t dbuf_nbytes, void *mbuf,
-		     size_t mbuf_nbytes, int opts, struct xnvme_req *ret)
+		     size_t mbuf_nbytes, int opts, struct xnvme_cmd_ctx *cmd_ctx)
 {
 	if (XNVME_CMD_ASYNC & opts) {
 		XNVME_DEBUG("FAILED: Admin commands are always sync.");
@@ -88,6 +156,5 @@ xnvme_cmd_pass_admin(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 	}
 
 	return dev->be.sync.cmd_admin(dev, cmd, dbuf, dbuf_nbytes, mbuf,
-				      mbuf_nbytes, opts, ret);
+				      mbuf_nbytes, opts, cmd_ctx);
 }
-

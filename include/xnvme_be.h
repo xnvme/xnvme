@@ -32,7 +32,7 @@
 
 struct xnvme_be_async {
 	int (*cmd_io)(struct xnvme_dev *, struct xnvme_spec_cmd *, void *,
-		      size_t, void *, size_t, int, struct xnvme_req *);
+		      size_t, void *, size_t, int, struct xnvme_cmd_ctx *);
 
 	int (*poke)(struct xnvme_queue *, uint32_t);
 
@@ -57,7 +57,7 @@ struct xnvme_be_sync {
 	 * intervention
 	 */
 	int (*cmd_io)(struct xnvme_dev *, struct xnvme_spec_cmd *, void *,
-		      size_t, void *, size_t, int, struct xnvme_req *);
+		      size_t, void *, size_t, int, struct xnvme_cmd_ctx *);
 
 	/**
 	 * Pass a NVMe Admin Command Through to the device with minimal driver
@@ -65,7 +65,7 @@ struct xnvme_be_sync {
 	 */
 	int (*cmd_admin)(struct xnvme_dev *, struct xnvme_spec_cmd *,
 			 void *, size_t, void *, size_t, int,
-			 struct xnvme_req *);
+			 struct xnvme_cmd_ctx *);
 
 	int (*supported)(struct xnvme_dev *, uint32_t);
 

@@ -69,13 +69,13 @@ xnvme_be_linux_nvme_cmd_pr(struct xnvme_be_linux_nvme_ioctl *kcmd)
 
 static inline int
 ioctl_wrap(struct xnvme_dev *dev, unsigned long ioctl_req,
-	   struct xnvme_be_linux_nvme_ioctl *kcmd, struct xnvme_req *req)
+	   struct xnvme_be_linux_nvme_ioctl *kcmd, struct xnvme_cmd_ctx *ctx)
 {
 	struct xnvme_be_linux_state *state = (void *)dev->be.state;
 	int err = ioctl(state->fd, ioctl_req, kcmd);
 
-	if (req) {	// TODO: fix return / completion data from kcmd
-		req->cpl.cdw0 = kcmd->result;
+	if (ctx) {	// TODO: fix return / completion data from kcmd
+		ctx->cpl.cdw0 = kcmd->result;
 	}
 	if (!err) {	// No errors
 		return 0;
@@ -84,8 +84,8 @@ ioctl_wrap(struct xnvme_dev *dev, unsigned long ioctl_req,
 	XNVME_DEBUG("FAILED: ioctl(%s), err(%d), errno(%d)",
 		    ioctl_request_to_str(ioctl_req), err, errno);
 
-	if (!req) {
-		XNVME_DEBUG("INFO: !req => setting errno and returning err");
+	if (!ctx) {
+		XNVME_DEBUG("INFO: !cmd_ctx => setting errno and returning err");
 		errno = errno ? errno : EIO;
 		return err;
 	}
@@ -96,10 +96,10 @@ ioctl_wrap(struct xnvme_dev *dev, unsigned long ioctl_req,
 		XNVME_DEBUG("INFO: overwrr. err(%d) with '0x2'", err);
 		err = 0x2;
 	}
-	if (err > 0 && !req->cpl.status.val) {
+	if (err > 0 && !ctx->cpl.status.val) {
 		XNVME_DEBUG("INFO: overwr. cpl.status.val(0x%x) with '%d'",
-			    req->cpl.status.val, err);
-		req->cpl.status.val = err;
+			    ctx->cpl.status.val, err);
+		ctx->cpl.status.val = err;
 	}
 	if (!errno) {
 		XNVME_DEBUG("INFO: !errno, setting errno=EIO");
@@ -113,7 +113,7 @@ int
 xnvme_be_linux_nvme_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 			   void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			   size_t mbuf_nbytes, int XNVME_UNUSED(opts),
-			   struct xnvme_req *req)
+			   struct xnvme_cmd_ctx *req)
 {
 	struct xnvme_be_linux_nvme_ioctl kcmd = { 0 };
 	int err;
@@ -138,7 +138,7 @@ int
 xnvme_be_linux_nvme_cmd_admin(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 			      void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			      size_t mbuf_nbytes, int XNVME_UNUSED(opts),
-			      struct xnvme_req *req)
+			      struct xnvme_cmd_ctx *req)
 {
 	struct xnvme_be_linux_nvme_ioctl kcmd = { 0 };
 	int err;

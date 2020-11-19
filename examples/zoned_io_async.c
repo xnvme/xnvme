@@ -19,14 +19,14 @@ struct cb_args {
 };
 
 static void
-cb_pool(struct xnvme_req *req, void *cb_arg)
+cb_pool(struct xnvme_cmd_ctx *req, void *cb_arg)
 {
 	struct cb_args *cb_args = cb_arg;
 
 	cb_args->completed += 1;
 
-	if (xnvme_req_cpl_status(req)) {
-		xnvme_req_pr(req, XNVME_PR_DEF);
+	if (xnvme_cmd_ctx_cpl_status(req)) {
+		xnvme_cmd_ctx_pr(req, XNVME_PR_DEF);
 		cb_args->ecount += 1;
 	}
 
@@ -55,7 +55,7 @@ sub_async_read(struct xnvmec *cli)
 	int cmd_opts = XNVME_CMD_ASYNC;
 	struct cb_args cb_args = { 0 };
 	struct xnvme_queue *queue = NULL;
-	struct xnvme_req_pool *reqs = NULL;
+	struct xnvme_cmd_ctx_pool *reqs = NULL;
 
 	size_t buf_nbytes;
 	char *buf = NULL;
@@ -102,14 +102,14 @@ sub_async_read(struct xnvmec *cli)
 		xnvmec_perr("xnvme_queue_init()", err);
 		goto exit;
 	}
-	err = xnvme_req_pool_alloc(&reqs, qd + 1);
+	err = xnvme_cmd_ctx_pool_alloc(&reqs, qd + 1);
 	if (err) {
-		xnvmec_perr("xnvme_req_pool_alloc()", err);
+		xnvmec_perr("xnvme_cmd_ctx_pool_alloc()", err);
 		goto exit;
 	}
-	err = xnvme_req_pool_init(reqs, queue, cb_pool, &cb_args);
+	err = xnvme_cmd_ctx_pool_init(reqs, queue, cb_pool, &cb_args);
 	if (err) {
-		xnvmec_perr("xnvme_req_pool_init()", err);
+		xnvmec_perr("xnvme_cmd_ctx_pool_init()", err);
 		goto exit;
 	}
 
@@ -119,7 +119,7 @@ sub_async_read(struct xnvmec *cli)
 
 	payload = buf;
 	for (uint64_t sect = 0; (sect < zone.zcap) && !cb_args.ecount;) {
-		struct xnvme_req *req = SLIST_FIRST(&reqs->head);
+		struct xnvme_cmd_ctx *req = SLIST_FIRST(&reqs->head);
 
 		SLIST_REMOVE_HEAD(&reqs->head, link);
 
@@ -183,7 +183,7 @@ exit:
 			xnvmec_perr("xnvme_queue_term()", err_exit);
 		}
 	}
-	xnvme_req_pool_free(reqs);
+	xnvme_cmd_ctx_pool_free(reqs);
 	xnvme_buf_free(dev, buf);
 
 	return err < 0 ? err : 0;
@@ -212,7 +212,7 @@ sub_async_write(struct xnvmec *cli)
 	int cmd_opts = XNVME_CMD_ASYNC;
 	struct cb_args cb_args = { 0 };
 	struct xnvme_queue *queue = NULL;
-	struct xnvme_req_pool *reqs = NULL;
+	struct xnvme_cmd_ctx_pool *reqs = NULL;
 
 	size_t buf_nbytes;
 	char *buf = NULL;
@@ -259,14 +259,14 @@ sub_async_write(struct xnvmec *cli)
 		xnvmec_perr("xnvme_queue_init()", err);
 		goto exit;
 	}
-	err = xnvme_req_pool_alloc(&reqs, qd + 1);
+	err = xnvme_cmd_ctx_pool_alloc(&reqs, qd + 1);
 	if (err) {
-		xnvmec_perr("xnvme_req_pool_alloc()", err);
+		xnvmec_perr("xnvme_cmd_ctx_pool_alloc()", err);
 		goto exit;
 	}
-	err = xnvme_req_pool_init(reqs, queue, cb_pool, &cb_args);
+	err = xnvme_cmd_ctx_pool_init(reqs, queue, cb_pool, &cb_args);
 	if (err) {
-		xnvmec_perr("xnvme_req_pool_init()", err);
+		xnvmec_perr("xnvme_cmd_ctx_pool_init()", err);
 		goto exit;
 	}
 
@@ -275,7 +275,7 @@ sub_async_write(struct xnvmec *cli)
 
 	payload = buf;
 	for (uint64_t sect = 0; (sect < zone.zcap) && !cb_args.ecount;) {
-		struct xnvme_req *req = SLIST_FIRST(&reqs->head);
+		struct xnvme_cmd_ctx *req = SLIST_FIRST(&reqs->head);
 
 		SLIST_REMOVE_HEAD(&reqs->head, link);
 
@@ -336,7 +336,7 @@ exit:
 			xnvmec_perr("xnvme_queue_term()", err_exit);
 		}
 	}
-	xnvme_req_pool_free(reqs);
+	xnvme_cmd_ctx_pool_free(reqs);
 	xnvme_buf_free(dev, buf);
 
 	return err < 0 ? err : 0;
@@ -364,7 +364,7 @@ sub_async_append(struct xnvmec *cli)
 	int cmd_opts = XNVME_CMD_ASYNC;
 	struct cb_args cb_args = { 0 };
 	struct xnvme_queue *queue = NULL;
-	struct xnvme_req_pool *reqs = NULL;
+	struct xnvme_cmd_ctx_pool *reqs = NULL;
 
 	size_t buf_nbytes;
 	char *buf = NULL;
@@ -411,14 +411,14 @@ sub_async_append(struct xnvmec *cli)
 		xnvmec_perr("xnvme_queue_init()", err);
 		goto exit;
 	}
-	err = xnvme_req_pool_alloc(&reqs, qd + 1);
+	err = xnvme_cmd_ctx_pool_alloc(&reqs, qd + 1);
 	if (err) {
-		xnvmec_perr("xnvme_req_pool_alloc()", err);
+		xnvmec_perr("xnvme_cmd_ctx_pool_alloc()", err);
 		goto exit;
 	}
-	err = xnvme_req_pool_init(reqs, queue, cb_pool, &cb_args);
+	err = xnvme_cmd_ctx_pool_init(reqs, queue, cb_pool, &cb_args);
 	if (err) {
-		xnvmec_perr("xnvme_req_pool_init()", err);
+		xnvmec_perr("xnvme_cmd_ctx_pool_init()", err);
 		goto exit;
 	}
 
@@ -428,7 +428,7 @@ sub_async_append(struct xnvmec *cli)
 
 	payload = buf;
 	for (uint64_t sect = 0; (sect < zone.zcap) && !cb_args.ecount;) {
-		struct xnvme_req *req = SLIST_FIRST(&reqs->head);
+		struct xnvme_cmd_ctx *req = SLIST_FIRST(&reqs->head);
 
 		SLIST_REMOVE_HEAD(&reqs->head, link);
 
@@ -482,7 +482,7 @@ exit:
 			xnvmec_perr("xnvme_queue_term()", err_exit);
 		}
 	}
-	xnvme_req_pool_free(reqs);
+	xnvme_cmd_ctx_pool_free(reqs);
 	xnvme_buf_free(dev, buf);
 
 	return err < 0 ? err : 0;

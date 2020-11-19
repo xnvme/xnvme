@@ -318,7 +318,7 @@ xnvme_be_linux_block_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 			    void *dbuf, size_t dbuf_nbytes,
 			    void *XNVME_UNUSED(mbuf),
 			    size_t XNVME_UNUSED(mbuf_nbytes),
-			    int XNVME_UNUSED(opts), struct xnvme_req *XNVME_UNUSED(req))
+			    int XNVME_UNUSED(opts), struct xnvme_cmd_ctx *XNVME_UNUSED(ctx))
 {
 	struct xnvme_be_linux_state *state = (void *)dev->be.state;
 	ssize_t nbytes;
@@ -452,7 +452,7 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 
 int
 _idfy(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *dbuf,
-      struct xnvme_req *req)
+      struct xnvme_cmd_ctx *ctx)
 {
 	struct xnvme_spec_znd_idfy_ctrlr *zctrlr = dbuf;
 	const int buf_len = 0x1000;
@@ -494,13 +494,13 @@ _idfy(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *dbuf,
 		goto failed;
 	}
 
-	req->cpl.status.val = 0;
+	ctx->cpl.status.val = 0;
 	return 0;
 
 failed:
 	///< TODO: set some appropriate status-code for other idfy-cmds
-	req->cpl.status.sc = 0x3;
-	req->cpl.status.sct = 0x3;
+	ctx->cpl.status.sc = 0x3;
+	ctx->cpl.status.sct = 0x3;
 	return 1;
 }
 
@@ -510,11 +510,11 @@ xnvme_be_linux_block_cmd_admin(struct xnvme_dev *dev,
 			       size_t XNVME_UNUSED(dbuf_nbytes),
 			       void *XNVME_UNUSED(mbuf),
 			       size_t XNVME_UNUSED(mbuf_nbytes),
-			       int XNVME_UNUSED(opts), struct xnvme_req *req)
+			       int XNVME_UNUSED(opts), struct xnvme_cmd_ctx *ctx)
 {
 	switch (cmd->common.opcode) {
 	case XNVME_SPEC_ADM_OPC_IDFY:
-		return _idfy(dev, cmd, dbuf, req);
+		return _idfy(dev, cmd, dbuf, ctx);
 
 	case XNVME_SPEC_ADM_OPC_LOG:
 		XNVME_DEBUG("FAILED: not implemented yet.");

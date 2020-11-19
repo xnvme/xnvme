@@ -126,13 +126,13 @@ _linux_thr_poke(struct xnvme_queue *queue, uint32_t max)
 		err = queue->base.dev->be.sync.cmd_io(entry->dev, &entry->cmd, entry->dbuf,
 						      entry->dbuf_nbytes, entry->mbuf,
 						      entry->mbuf_nbytes, XNVME_CMD_SYNC,
-						      entry->req);
+						      entry->ctx);
 		if (err) {
 			XNVME_DEBUG("FAILED: err: %d", err);
-			entry->req->cpl.status.sc = err;
+			entry->ctx->cpl.status.sc = err;
 		}
 		STAILQ_INSERT_TAIL(&qp->rp, entry, link);
-		entry->req->async.cb(entry->req, entry->req->async.cb_arg);
+		entry->ctx->async.cb(entry->ctx, entry->ctx->async.cb_arg);
 
 		++completed;
 	};
@@ -173,7 +173,7 @@ _linux_thr_wait(struct xnvme_queue *queue)
 static inline int
 _linux_thr_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *dbuf,
 		  size_t dbuf_nbytes, void *mbuf, size_t mbuf_nbytes,
-		  int XNVME_UNUSED(opts), struct xnvme_req *req)
+		  int XNVME_UNUSED(opts), struct xnvme_cmd_ctx *req)
 {
 	struct xnvme_queue_thr *qctx = (void *)req->async.queue;
 	struct _qp *qp = qctx->qp;
@@ -198,7 +198,7 @@ _linux_thr_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *dbuf,
 	entry->dbuf_nbytes = dbuf_nbytes;
 	entry->mbuf = mbuf;
 	entry->mbuf_nbytes = mbuf_nbytes;
-	entry->req = req;
+	entry->ctx = req;
 
 	STAILQ_INSERT_TAIL(&qp->sq, entry, link);
 

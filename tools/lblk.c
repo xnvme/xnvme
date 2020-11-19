@@ -46,7 +46,7 @@ sub_idfy(struct xnvmec *cli)
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_spec_idfy *idfy = NULL;
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	xnvmec_pinf("xnvme_adm_idfy: {nsid: 0x%x}", nsid);
@@ -58,10 +58,10 @@ sub_idfy(struct xnvmec *cli)
 		goto exit;
 	}
 
-	err = xnvme_adm_idfy_ns(dev, nsid, idfy, &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+	err = xnvme_adm_idfy_ns(dev, nsid, idfy, &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_adm_idfy()", err);
-		xnvme_req_pr(&req, XNVME_PR_DEF);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}
@@ -94,7 +94,7 @@ sub_read(struct xnvmec *cli)
 
 	void *dbuf = NULL, *mbuf = NULL;
 	size_t dbuf_nbytes, mbuf_nbytes;
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	if (!cli->given[XNVMEC_OPT_NSID]) {
@@ -129,10 +129,10 @@ sub_read(struct xnvmec *cli)
 
 	xnvmec_pinf("Sending the command...");
 	err = xnvme_nvm_read(dev, nsid, slba, nlb, dbuf, mbuf, XNVME_CMD_SYNC,
-			     &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+			     &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_nvm_read()", err);
-		xnvme_req_pr(&req, XNVME_PR_DEF);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}
@@ -164,7 +164,7 @@ sub_write(struct xnvmec *cli)
 
 	void *dbuf = NULL, *mbuf = NULL;
 	size_t dbuf_nbytes, mbuf_nbytes;
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	if (!cli->given[XNVMEC_OPT_NSID]) {
@@ -207,10 +207,10 @@ sub_write(struct xnvmec *cli)
 
 	xnvmec_pinf("Sending the command...");
 	err = xnvme_nvm_write(dev, nsid, slba, nlb, dbuf, mbuf, XNVME_CMD_SYNC,
-			      &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+			      &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_nvm_write()", err);
-		xnvme_req_pr(&req, XNVME_PR_DEF);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}

@@ -35,18 +35,18 @@ test_init_term(struct xnvmec *cli)
 	if (!cli->args.clear) {
 		// Ask how many queues are supported
 		struct xnvme_spec_feat feat = { .val = 0 };
-		struct xnvme_req req = { 0 };
+		struct xnvme_cmd_ctx ctx = {0 };
 
 		err = xnvme_adm_gfeat(dev, 0x0, XNVME_SPEC_FEAT_NQUEUES,
-				      XNVME_SPEC_FEAT_SEL_CURRENT, NULL, 0, &req);
-		if (err || xnvme_req_cpl_status(&req)) {
+				      XNVME_SPEC_FEAT_SEL_CURRENT, NULL, 0, &ctx);
+		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			xnvmec_perr("xnvme_adm_gfeat()", err);
-			xnvme_req_pr(&req, XNVME_PR_DEF);
+			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			return err;
 		}
 
-		feat.val = req.cpl.cdw0;
+		feat.val = ctx.cpl.cdw0;
 
 		xnvme_spec_feat_pr(XNVME_SPEC_FEAT_NQUEUES, feat, XNVME_PR_DEF);
 

@@ -105,7 +105,7 @@ xnvme_znd_report_from_dev(struct xnvme_dev *dev, uint64_t slba, size_t limit, ui
 	struct xnvme_znd_report *report = NULL;
 	enum xnvme_spec_znd_cmd_mgmt_recv_action action;
 
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	report = znd_report_init(dev, slba, limit, extended);
@@ -155,8 +155,8 @@ xnvme_znd_report_from_dev(struct xnvme_dev *dev, uint64_t slba, size_t limit, ui
 
 		err = xnvme_znd_mgmt_recv(dev, nsid, zslba, action,
 					  XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL, 0x0, dbuf,
-					  dbuf_nbytes, XNVME_CMD_SYNC, &req);
-		if (err || xnvme_req_cpl_status(&req)) {
+					  dbuf_nbytes, XNVME_CMD_SYNC, &ctx);
+		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			XNVME_DEBUG("FAILED: xnvme_znd_mgmt_recv()");
 			xnvme_buf_virt_free(report);
 			xnvme_buf_free(dev, dbuf);
@@ -216,7 +216,7 @@ xnvme_znd_descr_from_dev(struct xnvme_dev *dev, uint64_t slba,
 			 struct xnvme_spec_znd_descr *zdescr)
 {
 	const uint32_t nsid = xnvme_dev_get_nsid(dev);
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	struct xnvme_spec_znd_report_hdr *hdr;
 	size_t dbuf_nbytes;
 	void *dbuf;
@@ -233,8 +233,8 @@ xnvme_znd_descr_from_dev(struct xnvme_dev *dev, uint64_t slba,
 	err = xnvme_znd_mgmt_recv(dev, nsid, slba,
 				  XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT,
 				  XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL, 0x0, dbuf,
-				  dbuf_nbytes, XNVME_CMD_SYNC, &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+				  dbuf_nbytes, XNVME_CMD_SYNC, &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("FAILED: xnvme_znd_mgmt_recv()");
 		err = err ? err : -EIO;
 		goto exit;
@@ -259,7 +259,7 @@ xnvme_znd_descr_from_dev_in_state(struct xnvme_dev *dev, enum xnvme_spec_znd_sta
 				  struct xnvme_spec_znd_descr *zdescr)
 {
 	const uint32_t nsid = xnvme_dev_get_nsid(dev);
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	struct xnvme_spec_znd_report_hdr *hdr;
 	size_t dbuf_nbytes;
 	void *dbuf;
@@ -304,8 +304,8 @@ xnvme_znd_descr_from_dev_in_state(struct xnvme_dev *dev, enum xnvme_spec_znd_sta
 
 	err = xnvme_znd_mgmt_recv(dev, nsid, 0x0,
 				  XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT, sfield, 0x1,
-				  dbuf, dbuf_nbytes, XNVME_CMD_SYNC, &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+				  dbuf, dbuf_nbytes, XNVME_CMD_SYNC, &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("FAILED: xnvme_znd_mgmt_recv()");
 		err = err ? err : -EIO;
 		goto exit;
@@ -330,7 +330,7 @@ xnvme_znd_stat(struct xnvme_dev *dev, enum xnvme_spec_znd_cmd_mgmt_recv_action_s
 	       uint64_t *nzones)
 {
 	const uint32_t nsid = xnvme_dev_get_nsid(dev);
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	struct xnvme_spec_znd_report_hdr *hdr;
 	const size_t hdr_nbytes = sizeof(*hdr);
 	;
@@ -345,8 +345,8 @@ xnvme_znd_stat(struct xnvme_dev *dev, enum xnvme_spec_znd_cmd_mgmt_recv_action_s
 
 	err = xnvme_znd_mgmt_recv(dev, nsid, 0x0,
 				  XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT, sfield, 0x0,
-				  hdr, hdr_nbytes, XNVME_CMD_SYNC, &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+				  hdr, hdr_nbytes, XNVME_CMD_SYNC, &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("FAILED: xnvme_znd_mgmt_recv()");
 		err = err ? err : -EIO;
 		goto exit;
@@ -364,7 +364,7 @@ struct xnvme_spec_znd_log_changes *xnvme_znd_log_changes_from_dev(struct xnvme_d
 {
 	struct xnvme_spec_znd_log_changes *log = NULL;
 	const size_t log_nbytes = sizeof(*log);
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	// Allocate buffer for the maximum possible amount of log entries
@@ -376,8 +376,8 @@ struct xnvme_spec_znd_log_changes *xnvme_znd_log_changes_from_dev(struct xnvme_d
 
 	// Retrieve Changed Zone Information List for namespace with nsid=1
 	err = xnvme_adm_log(dev, XNVME_SPEC_LOG_ZND_CHANGES, 0, 0,
-			    xnvme_dev_get_nsid(dev), 0, log, log_nbytes, &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+			    xnvme_dev_get_nsid(dev), 0, log, log_nbytes, &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("FAILED: xnvme_adm_log(XNVME_SPEC_LOG_TBD_ZCHG)");
 		xnvme_buf_free(dev, log);
 		return NULL;
@@ -390,7 +390,7 @@ int
 xnvme_znd_mgmt_send(struct xnvme_dev *dev, uint32_t nsid, uint64_t zslba,
 		    enum xnvme_spec_znd_cmd_mgmt_send_action action,
 		    enum xnvme_spec_znd_mgmt_send_action_sf sf, void *dbuf, int opts,
-		    struct xnvme_req *ret)
+		    struct xnvme_cmd_ctx *ret)
 {
 	struct xnvme_spec_cmd cmd = { 0 };
 
@@ -416,7 +416,7 @@ int
 xnvme_znd_mgmt_recv(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba,
 		    enum xnvme_spec_znd_cmd_mgmt_recv_action action,
 		    enum xnvme_spec_znd_cmd_mgmt_recv_action_sf sf, uint8_t partial,
-		    void *dbuf, uint32_t dbuf_nbytes, int opts, struct xnvme_req *ret)
+		    void *dbuf, uint32_t dbuf_nbytes, int opts, struct xnvme_cmd_ctx *ret)
 {
 	struct xnvme_spec_cmd cmd = {0 };
 
@@ -433,7 +433,7 @@ xnvme_znd_mgmt_recv(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba,
 
 int
 xnvme_znd_append(struct xnvme_dev *dev, uint32_t nsid, uint64_t zslba, uint16_t nlb,
-		 const void *dbuf, const void *mbuf, int opts, struct xnvme_req *ret)
+		 const void *dbuf, const void *mbuf, int opts, struct xnvme_cmd_ctx *ret)
 {
 	void *cdbuf = (void *)dbuf;
 	void *cmbuf = (void *)mbuf;

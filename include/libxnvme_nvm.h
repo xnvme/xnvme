@@ -26,13 +26,13 @@ extern "C" {
  * @param dbuf Pointer to data-payload
  * @param mbuf Pointer to meta-payload
  * @param opts command options, see ::xnvme_cmd_opts
- * @param req Pointer to structure for NVMe completion and async. context
+ * @param ctx Pointer to structure for NVMe completion and async. context
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
 xnvme_nvm_read(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba, uint16_t nlb, void *dbuf,
-	       void *mbuf, int opts, struct xnvme_req *req);
+	       void *mbuf, int opts, struct xnvme_cmd_ctx *ctx);
 
 /**
  * Submit, and optionally wait for completion of, a NVMe Write
@@ -46,14 +46,14 @@ xnvme_nvm_read(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba, uint16_t nlb
  * @param dbuf Pointer to buffer; Payload as indicated by 'opts'
  * @param mbuf Pointer to buffer; Payload as indicated by 'opts'
  * @param opts command options, see ::xnvme_cmd_opts
- * @param req Pointer to structure for NVMe completion and async. context
+ * @param ctx Pointer to structure for NVMe completion and async. context
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
 xnvme_nvm_write(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba,
 		uint16_t nlb, const void *dbuf, const void *mbuf, int opts,
-		struct xnvme_req *req);
+		struct xnvme_cmd_ctx *ctx);
 
 /**
  * Submit a write uncorrected command
@@ -67,7 +67,7 @@ xnvme_nvm_write(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba,
 */
 int
 xnvme_nvm_write_uncorrectable(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba, uint16_t nlb,
-			      int opts, struct xnvme_req *ret);
+			      int opts, struct xnvme_cmd_ctx *ret);
 
 /**
  * Submit a write zeroes command
@@ -87,7 +87,7 @@ xnvme_nvm_write_uncorrectable(struct xnvme_dev *dev, uint32_t nsid, uint64_t slb
 int
 xnvme_nvm_write_zeroes(struct xnvme_dev *dev, uint32_t nsid, uint64_t sdlba, uint16_t nlb,
 		       int opts,
-		       struct xnvme_req *ret);
+		       struct xnvme_cmd_ctx *ret);
 
 /**
  * Submit, and optionally wait for completion of a NVMe Simple-Copy-Command
@@ -109,7 +109,7 @@ xnvme_nvm_write_zeroes(struct xnvme_dev *dev, uint32_t nsid, uint64_t sdlba, uin
 int
 xnvme_nvm_scopy(struct xnvme_dev *dev, uint32_t nsid, uint64_t sdlba,
 		struct xnvme_spec_nvm_scopy_fmt_zero *ranges, uint8_t nr,
-		enum xnvme_nvm_scopy_fmt copy_fmt, int opts, struct xnvme_req *ret);
+		enum xnvme_nvm_scopy_fmt copy_fmt, int opts, struct xnvme_cmd_ctx *ret);
 
 #ifdef __cplusplus
 }

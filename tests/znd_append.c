@@ -17,21 +17,21 @@ struct cb_args {
 };
 
 static void
-cb_lbacheck(struct xnvme_req *req, void *cb_arg)
+cb_lbacheck(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 {
 	struct cb_args *cb_args = cb_arg;
 	uint64_t expected = cb_args->zslba + cb_args->completed;
 
 	cb_args->completed += 1;
 
-	if (xnvme_req_cpl_status(req)) {
-		xnvme_req_pr(req, XNVME_PR_DEF);
+	if (xnvme_cmd_ctx_cpl_status(ctx)) {
+		xnvme_cmd_ctx_pr(ctx, XNVME_PR_DEF);
 		cb_args->ecount += 1;
 	}
 
-	if (req->cpl.result != expected) {
-		xnvmec_pinf("ERR: req->cpl.result: 0x%016lx != 0x%016lx",
-			    req->cpl.result, expected);
+	if (ctx->cpl.result != expected) {
+		xnvmec_pinf("ERR: cmd_ctx->cpl.result: 0x%016lx != 0x%016lx",
+			    ctx->cpl.result, expected);
 		cb_args->ecount_offset += 1;
 	}
 }
@@ -102,15 +102,15 @@ cmd_verify(struct xnvmec *cli)
 	cb_args.zslba = zone.zslba;
 
 	for (uint64_t sect = 0; (sect < zone.zcap) && !cb_args.ecount; ++sect) {
-		struct xnvme_req req = { 0 };
+		struct xnvme_cmd_ctx ctx = {0 };
 
-		req.async.queue = queue;
-		req.async.cb = cb_lbacheck;
-		req.async.cb_arg = &cb_args;
+		ctx.async.queue = queue;
+		ctx.async.cb = cb_lbacheck;
+		ctx.async.cb_arg = &cb_args;
 
 		err = xnvme_znd_append(dev, nsid, zone.zslba, 0,
 				       dbuf + sect * geo->lba_nbytes, NULL,
-				       cmd_opts, &req);
+				       cmd_opts, &ctx);
 		switch (err) {
 		case 0:
 			cb_args.submitted += 1;
@@ -149,14 +149,14 @@ cmd_verify(struct xnvmec *cli)
 
 	// Read zone content into vbuf
 	for (uint64_t sect = 0; sect < zone.zcap; ++sect) {
-		struct xnvme_req req = { 0 };
+		struct xnvme_cmd_ctx ctx = {0 };
 
 		err = xnvme_nvm_read(dev, nsid, zone.zslba + sect, 0,
 				     vbuf + sect * geo->lba_nbytes, NULL,
-				     XNVME_CMD_SYNC, &req);
-		if (err || xnvme_req_cpl_status(&req)) {
+				     XNVME_CMD_SYNC, &ctx);
+		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			xnvmec_perr("xnvme_nvm_read()", err);
-			xnvme_req_pr(&req, XNVME_PR_DEF);
+			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
 		}

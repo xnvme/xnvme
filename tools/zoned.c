@@ -48,7 +48,7 @@ cmd_idfy_ctrlr(struct xnvmec *cli)
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
 	enum xnvme_spec_csi csi = XNVME_SPEC_CSI_ZONED;
 	struct xnvme_spec_znd_idfy *idfy = NULL;
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	xnvmec_pinf("xnvme_adm_idfy_ctrlr: {nsid: 0x%x, csi: %s}", nsid,
@@ -61,10 +61,10 @@ cmd_idfy_ctrlr(struct xnvmec *cli)
 		goto exit;
 	}
 
-	err = xnvme_adm_idfy_ctrlr_csi(dev, XNVME_SPEC_CSI_ZONED, &idfy->base, &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+	err = xnvme_adm_idfy_ctrlr_csi(dev, XNVME_SPEC_CSI_ZONED, &idfy->base, &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_adm_idfy_ctrlr_csi()", err);
-		xnvme_req_pr(&req, XNVME_PR_DEF);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}
@@ -93,7 +93,7 @@ cmd_idfy_ns(struct xnvmec *cli)
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
 	enum xnvme_spec_csi csi = XNVME_SPEC_CSI_ZONED;
 	struct xnvme_spec_znd_idfy *idfy = NULL;
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	xnvmec_pinf("xnvme_adm_idfy_ns: {nsid: 0x%x, csi: %s}", nsid,
@@ -106,10 +106,10 @@ cmd_idfy_ns(struct xnvmec *cli)
 		goto exit;
 	}
 
-	err = xnvme_adm_idfy_ns_csi(dev, nsid, XNVME_SPEC_CSI_ZONED, &idfy->base, &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+	err = xnvme_adm_idfy_ns_csi(dev, nsid, XNVME_SPEC_CSI_ZONED, &idfy->base, &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_adm_idfy_ns_csi()", err);
-		xnvme_req_pr(&req, XNVME_PR_DEF);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}
@@ -205,7 +205,7 @@ cmd_errors(struct xnvmec *cli)
 	uint32_t log_nentries = 0;
 	uint32_t log_nbytes = 0;
 
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	size_t nvalid = 0;
 	int err;
 
@@ -224,10 +224,10 @@ cmd_errors(struct xnvmec *cli)
 	}
 
 	err = xnvme_adm_log(cli->args.dev, XNVME_SPEC_LOG_ERRI, nsid, 0, 0, 0,
-			    log, log_nbytes, &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+			    log, log_nbytes, &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_adm_log(XNVME_SPEC_LOG_ERRI)", err);
-		xnvme_req_pr(&req, XNVME_PR_DEF);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}
@@ -259,7 +259,7 @@ cmd_read(struct xnvmec *cli)
 
 	void *dbuf = NULL, *mbuf = NULL;
 	size_t dbuf_nbytes, mbuf_nbytes;
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	if (!cli->given[XNVMEC_OPT_NSID]) {
@@ -294,10 +294,10 @@ cmd_read(struct xnvmec *cli)
 
 	xnvmec_pinf("Sending the command...");
 	err = xnvme_nvm_read(dev, nsid, slba, nlb, dbuf, mbuf, XNVME_CMD_SYNC,
-			     &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+			     &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_nvm_read()", err);
-		xnvme_req_pr(&req, XNVME_PR_DEF);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}
@@ -329,7 +329,7 @@ cmd_write(struct xnvmec *cli)
 
 	void *dbuf = NULL, *mbuf = NULL;
 	size_t dbuf_nbytes, mbuf_nbytes;
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	if (!cli->given[XNVMEC_OPT_NSID]) {
@@ -372,10 +372,10 @@ cmd_write(struct xnvmec *cli)
 
 	xnvmec_pinf("Sending the command...");
 	err = xnvme_nvm_write(dev, nsid, slba, nlb, dbuf, mbuf, XNVME_CMD_SYNC,
-			      &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+			      &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_nvm_write()", err);
-		xnvme_req_pr(&req, XNVME_PR_DEF);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}
@@ -398,7 +398,7 @@ cmd_append(struct xnvmec *cli)
 	size_t dbuf_nbytes = (size_t)cli->args.geo->nbytes * (size_t)(nlb + 1);
 	char *dbuf = NULL;
 
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	if (!cli->given[XNVMEC_OPT_NSID]) {
@@ -422,15 +422,15 @@ cmd_append(struct xnvmec *cli)
 	}
 
 	err = xnvme_znd_append(dev, nsid, zslba, nlb, dbuf, NULL,
-			       XNVME_CMD_SYNC, &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+			       XNVME_CMD_SYNC, &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_znd_append()", err);
-		xnvme_req_pr(&req, XNVME_PR_DEF);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}
 
-	xnvmec_pinf("Appended to slba: 0x%016x", req.cpl.cdw0);
+	xnvmec_pinf("Appended to slba: 0x%016x", ctx.cpl.cdw0);
 
 exit:
 	xnvme_buf_free(dev, dbuf);
@@ -450,7 +450,7 @@ _cmd_mgmt(struct xnvmec *cli, uint8_t action)
 	size_t dbuf_nbytes = lbafe ? lbafe->zdes : 0;
 	char *dbuf = NULL;
 
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	if (cli->given[XNVMEC_OPT_ALL]) {
@@ -479,10 +479,10 @@ _cmd_mgmt(struct xnvmec *cli, uint8_t action)
 	}
 
 	err = xnvme_znd_mgmt_send(dev, nsid, zslba, action, asf, dbuf,
-				  XNVME_CMD_SYNC, &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+				  XNVME_CMD_SYNC, &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_znd_mgmt_send()", err);
-		xnvme_req_pr(&req, XNVME_PR_DEF);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}

@@ -65,7 +65,7 @@ int
 xnvme_znd_mgmt_recv(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba,
 		    enum xnvme_spec_znd_cmd_mgmt_recv_action action,
 		    enum xnvme_spec_znd_cmd_mgmt_recv_action_sf sf, uint8_t partial, void *dbuf,
-		    uint32_t dbuf_nbytes, int opts, struct xnvme_req *ret);
+		    uint32_t dbuf_nbytes, int opts, struct xnvme_cmd_ctx *ret);
 
 /**
  * Fills 'zdescr' with the Zone on the given 'dev' that starts at 'slba'
@@ -147,7 +147,7 @@ int
 xnvme_znd_mgmt_send(struct xnvme_dev *dev, uint32_t nsid, uint64_t zslba,
 		    enum xnvme_spec_znd_cmd_mgmt_send_action action,
 		    enum xnvme_spec_znd_mgmt_send_action_sf sf, void *dbuf, int opts,
-		    struct xnvme_req *ret);
+		    struct xnvme_cmd_ctx *ret);
 
 /**
  * Submit, and optionally wait for completion of, a Zone Append
@@ -165,7 +165,7 @@ xnvme_znd_mgmt_send(struct xnvme_dev *dev, uint32_t nsid, uint64_t zslba,
  */
 int
 xnvme_znd_append(struct xnvme_dev *dev, uint32_t nsid, uint64_t zslba, uint16_t nlb,
-		 const void *dbuf, const void *mbuf, int opts, struct xnvme_req *ret);
+		 const void *dbuf, const void *mbuf, int opts, struct xnvme_cmd_ctx *ret);
 
 /**
  * Encapsulation of Zone Descriptors and Zone Descriptor Extensions

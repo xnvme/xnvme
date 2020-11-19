@@ -8,7 +8,7 @@ struct xnvme_queue_nil {
 	uint32_t depth;		///< IO depth
 	uint32_t outstanding;	///< Outstanding IO on the context/ring/queue
 
-	struct xnvme_req *reqs[XNVME_BE_LINUX_NIL_CTX_DEPTH_MAX];
+	struct xnvme_cmd_ctx *ctx[XNVME_BE_LINUX_NIL_CTX_DEPTH_MAX];
 };
 XNVME_STATIC_ASSERT(
 	sizeof(struct xnvme_queue_nil) == XNVME_BE_QUEUE_STATE_NBYTES,

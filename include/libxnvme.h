@@ -257,20 +257,20 @@ xnvme_queue_wait(struct xnvme_queue *queue);
 /**
  * Forward declaration, see definition further down
  */
-struct xnvme_req;
-struct xnvme_req_pool;
+struct xnvme_cmd_ctx;
+struct xnvme_cmd_ctx_pool;
 
 /**
  * Signature of function used with Command Queues for async. callback upon command-completion
  */
-typedef void (*xnvme_queue_cb)(struct xnvme_req *req, void *opaque);
+typedef void (*xnvme_queue_cb)(struct xnvme_cmd_ctx *cmd_ctx, void *opaque);
 
 /**
- * Encapsulation and representation of lower-level error conditions
+ * Command Context
  *
- * @struct xnvme_req
+ * @struct xnvme_cmd_ctx
  */
-struct xnvme_req {
+struct xnvme_cmd_ctx {
 	struct xnvme_spec_cpl cpl;		///< NVMe completion
 
 	///< Fields for CMD_OPT: XNVME_CMD_ASYNC
@@ -279,51 +279,52 @@ struct xnvme_req {
 		xnvme_queue_cb cb;		///< User callback function
 		void *cb_arg;			///< User callback arguments
 
-		///< Per request backend specific data
+		///< Per command for backend specific data
 		uint8_t be_rsvd[8];
 	} async;
 
-	///< Fields for request-pool
-	struct xnvme_req_pool *pool;
-	SLIST_ENTRY(xnvme_req) link;
+	///< Fields for cmd_ctx-pool
+	struct xnvme_cmd_ctx_pool *pool;
+	SLIST_ENTRY(xnvme_cmd_ctx) link;
 };
 
-struct xnvme_req_pool {
-	SLIST_HEAD(, xnvme_req) head;
+struct xnvme_cmd_ctx_pool {
+	SLIST_HEAD(, xnvme_cmd_ctx) head;
 	uint32_t capacity;
-	struct xnvme_req elm[];
+	struct xnvme_cmd_ctx elm[];
 };
 
 int
-xnvme_req_pool_alloc(struct xnvme_req_pool **pool, uint32_t capacity);
+xnvme_cmd_ctx_pool_alloc(struct xnvme_cmd_ctx_pool **pool, uint32_t capacity);
 
 int
-xnvme_req_pool_init(struct xnvme_req_pool *pool, struct xnvme_queue *queue, xnvme_queue_cb cb,
-		    void *cb_args);
+xnvme_cmd_ctx_pool_init(struct xnvme_cmd_ctx_pool *pool, struct xnvme_queue *queue,
+			xnvme_queue_cb cb,
+			void *cb_args);
 
 void
-xnvme_req_pool_free(struct xnvme_req_pool *pool);
+xnvme_cmd_ctx_pool_free(struct xnvme_cmd_ctx_pool *pool);
 
 /**
- * Clears/resets the given #xnvme_req
+ * Clears/resets the given ::xnvme_cmd_ctx
  *
- * @param req Pointer to the #xnvme_req to clear
+ * @param cmd_ctx Pointer to the ::xnvme_cmd_ctx to clear
  */
 void
-xnvme_req_clear(struct xnvme_req *req);
+xnvme_cmd_ctx_clear(struct xnvme_cmd_ctx *cmd_ctx);
 
 /**
  * Encapsulate completion-error checking here for now.
  *
  * @todo re-think this
- * @param req Pointer to the #xnvme_req to check status on
+ * @param cmd_ctx Pointer to the ::xnvme_cmd_ctx to check status on
  *
  * @return On success, 0 is return. On error, a non-zero value is returned.
  */
 static inline int
-xnvme_req_cpl_status(struct xnvme_req *req)
+xnvme_cmd_ctx_cpl_status(struct xnvme_cmd_ctx *cmd_ctx)
 {
-	return req->cpl.status.sc || req->cpl.status.sct;
+	return cmd_ctx->cpl.status.sc || cmd_ctx->cpl.status.sct;
 }
 
 /**
@@ -332,11 +333,11 @@ xnvme_req_cpl_status(struct xnvme_req *req)
  * @enum xnvme_cmd_opts
  */
 enum xnvme_cmd_opts {
-	XNVME_CMD_SYNC		= 0x1 << 0,	///< XNVME_CMD_SYNC: Synchronous command
-	XNVME_CMD_ASYNC		= 0x1 << 1,	///< XNVME_CMD_ASYNC: Asynchronous command
+	XNVME_CMD_SYNC          = 0x1 << 0,     ///< XNVME_CMD_SYNC: Synchronous command
+	XNVME_CMD_ASYNC         = 0x1 << 1,     ///< XNVME_CMD_ASYNC: Asynchronous command
 
-	XNVME_CMD_UPLD_SGLD	= 0x1 << 2,	///< XNVME_CMD_UPLD_SGLD: User-managed SGL data
-	XNVME_CMD_UPLD_SGLM	= 0x1 << 3,	///< XNVME_CMD_UPLD_SGLM: User-managed SGL meta
+	XNVME_CMD_UPLD_SGLD     = 0x1 << 2,     ///< XNVME_CMD_UPLD_SGLD: User-managed SGL data
+	XNVME_CMD_UPLD_SGLM     = 0x1 << 3,     ///< XNVME_CMD_UPLD_SGLM: User-managed SGL meta
 };
 
 #define XNVME_CMD_MASK_IOMD ( XNVME_CMD_SYNC | XNVME_CMD_ASYNC )
@@ -345,6 +346,7 @@ enum xnvme_cmd_opts {
 
 #define XNVME_CMD_DEF_IOMD XNVME_CMD_SYNC
 #define XNVME_CMD_DEF_UPLD ( 0x0 )
+
 
 /**
  * Pass a NVMe IO Command through to the device with minimal intervention
@@ -366,13 +368,13 @@ enum xnvme_cmd_opts {
  * @param mbuf pointer to meta-payload
  * @param mbuf_nbytes size of the meta-payload in bytes
  * @param opts Command options; see
- * @param req Pointer to structure for async. context and NVMe completion
+ * @param cmd_ctx Pointer to structure for async. context and NVMe completion
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
 xnvme_cmd_pass(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *dbuf, size_t dbuf_nbytes,
-	       void *mbuf, size_t mbuf_nbytes, int opts, struct xnvme_req *req);
+	       void *mbuf, size_t mbuf_nbytes, int opts, struct xnvme_cmd_ctx *cmd_ctx);
 
 /**
  * Pass a NVMe Admin Command through to the device with minimal intervention
@@ -394,14 +396,14 @@ xnvme_cmd_pass(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *dbuf, si
  * @param mbuf pointer to meta-payload
  * @param mbuf_nbytes size of the meta-payload in bytes
  * @param opts Command options; see
- * @param req Pointer to structure for async. context and NVMe completion
+ * @param cmd_ctx Pointer to structure for async. context and NVMe completion
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
 xnvme_cmd_pass_admin(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *dbuf,
 		     size_t dbuf_nbytes, void *mbuf, size_t mbuf_nbytes, int opts,
-		     struct xnvme_req *req);
+		     struct xnvme_cmd_ctx *cmd_ctx);
 
 #ifdef __cplusplus
 }

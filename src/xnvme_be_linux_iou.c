@@ -152,7 +152,7 @@ _linux_iou_poke(struct xnvme_queue *queue, uint32_t max)
 	head = *ring->khead;
 	do {
 		struct io_uring_cqe *cqe;
-		struct xnvme_req *req;
+		struct xnvme_cmd_ctx *ctx;
 
 		_linux_iou_barrier();
 		if (head == *ring->ktail) {
@@ -160,8 +160,8 @@ _linux_iou_poke(struct xnvme_queue *queue, uint32_t max)
 		}
 		cqe = &ring->cqes[head & cq_ring_mask];
 
-		req = (struct xnvme_req *)(uintptr_t) cqe->user_data;
-		if (!req) {
+		ctx = (struct xnvme_cmd_ctx *)(uintptr_t) cqe->user_data;
+		if (!ctx) {
 			XNVME_DEBUG("-{[THIS SHOULD NOT HAPPEN]}-");
 			XNVME_DEBUG("cqe->user_data is NULL! => NO REQ!");
 			XNVME_DEBUG("cqe->res: %d", cqe->res);
@@ -173,10 +173,10 @@ _linux_iou_poke(struct xnvme_queue *queue, uint32_t max)
 			return -EIO;
 		}
 
-		// Map cqe-result to req-completion
-		req->cpl.status.sc = cqe->res;
+		// Map cqe-result to cmd_ctx-completion
+		ctx->cpl.status.sc = cqe->res;
 
-		req->async.cb(req, req->async.cb_arg);
+		ctx->async.cb(ctx, ctx->async.cb_arg);
 
 		++completed;
 		++head;
@@ -223,10 +223,10 @@ int
 _linux_iou_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 		  void *dbuf, size_t dbuf_nbytes, void *mbuf,
 		  size_t mbuf_nbytes, int XNVME_UNUSED(opts),
-		  struct xnvme_req *req)
+		  struct xnvme_cmd_ctx *ctx)
 {
 	struct xnvme_be_linux_state *state = (void *)dev->be.state;
-	struct xnvme_queue_iou *actx = (void *)req->async.queue;
+	struct xnvme_queue_iou *actx = (void *)ctx->async.queue;
 	struct io_uring_sqe *sqe = NULL;
 	int opcode;
 	int err = 0;
@@ -246,7 +246,7 @@ _linux_iou_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 		return -ENOSYS;
 	}
 
-	if (req->async.queue->base.outstanding == req->async.queue->base.depth) {
+	if (ctx->async.queue->base.outstanding == ctx->async.queue->base.depth) {
 		XNVME_DEBUG("FAILED: queue is full");
 		return -EBUSY;
 	}
@@ -270,7 +270,7 @@ _linux_iou_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 	// provided index will always be 0
 	sqe->fd = actx->poll_sq ? 0 : state->fd;
 	sqe->rw_flags = 0;
-	sqe->user_data = (unsigned long)req;
+	sqe->user_data = (unsigned long)ctx;
 	sqe->__pad2[0] = sqe->__pad2[1] = sqe->__pad2[2] = 0;
 
 	err = io_uring_submit(&actx->ring);
@@ -280,7 +280,7 @@ _linux_iou_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 		return err;
 	}
 
-	req->async.queue->base.outstanding += 1;
+	ctx->async.queue->base.outstanding += 1;
 
 	return 0;
 }

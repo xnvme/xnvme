@@ -70,7 +70,7 @@ _sub_idfy(struct xnvmec *cli, uint8_t cns, uint16_t cntid, uint8_t nsid,
 	struct xnvme_spec_cmd cmd = { 0 };
 	struct xnvme_spec_idfy *dbuf = NULL;
 	size_t dbuf_nbytes = sizeof(*dbuf);
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	// Setup command
@@ -89,10 +89,10 @@ _sub_idfy(struct xnvmec *cli, uint8_t cns, uint16_t cntid, uint8_t nsid,
 	}
 
 	err = xnvme_cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL, 0x0, 0x0,
-				   &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+				   &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_cmd_pass_admin()", err);
-		xnvme_req_pr(&req, XNVME_PR_DEF);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}
@@ -181,7 +181,7 @@ sub_log_health(struct xnvmec *cli)
 
 	struct xnvme_spec_log_health_entry *log = NULL;
 	const size_t log_nbytes = sizeof(*log);
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	if (!cli->given[XNVMEC_OPT_NSID]) {
@@ -199,10 +199,10 @@ sub_log_health(struct xnvmec *cli)
 
 	xnvmec_pinf("Retrieving SMART / health log page ...");
 	err = xnvme_adm_log(dev, XNVME_SPEC_LOG_HEALTH, 0x0, 0, nsid, 0, log,
-			    log_nbytes, &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+			    log_nbytes, &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_adm_log(XNVME_SPEC_LOG_HEALTH)", err);
-		xnvme_req_pr(&req, XNVME_PR_DEF);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}
@@ -225,7 +225,7 @@ sub_log_erri(struct xnvmec *cli)
 	struct xnvme_spec_log_erri_entry *log = NULL;
 	uint32_t log_nentries = 0;
 	uint32_t log_nbytes = 0;
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	if (!cli->given[XNVMEC_OPT_NSID]) {
@@ -250,10 +250,10 @@ sub_log_erri(struct xnvmec *cli)
 
 	xnvmec_pinf("Retrieving error-info-log ...");
 	err = xnvme_adm_log(dev, XNVME_SPEC_LOG_ERRI, 0x0, 0x0, nsid, 0, log,
-			    log_nbytes, &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+			    log_nbytes, &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_adm_log(XNVME_SPEC_LOG_ERRI)", err);
-		xnvme_req_pr(&req, XNVME_PR_DEF);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}
@@ -280,7 +280,7 @@ sub_log(struct xnvmec *cli)
 	uint32_t buf_nbytes = cli->args.data_nbytes;
 
 	void *buf = NULL;
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	if (!cli->given[XNVMEC_OPT_NSID]) {
@@ -305,10 +305,10 @@ sub_log(struct xnvmec *cli)
 	}
 
 	err = xnvme_adm_log(dev, lid, lsp, lpo_nbytes, nsid, rae, buf,
-			    buf_nbytes, &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+			    buf_nbytes, &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_adm_log()", err);
-		xnvme_req_pr(&req, XNVME_PR_DEF);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}
@@ -342,7 +342,7 @@ sub_gfeat(struct xnvmec *cli)
 	uint8_t fid = cli->args.fid;
 	uint8_t sel = cli->args.sel;
 	uint32_t nsid = cli->args.nsid;
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	if (!cli->given[XNVMEC_OPT_NSID]) {
@@ -352,16 +352,16 @@ sub_gfeat(struct xnvmec *cli)
 	xnvmec_pinf("cmd_gfeat: {nsid: 0x%x, fid: 0x%x, sel: 0x%x}",
 		    nsid, fid, sel);
 
-	err = xnvme_adm_gfeat(dev, nsid, fid, sel, NULL, 0, &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+	err = xnvme_adm_gfeat(dev, nsid, fid, sel, NULL, 0, &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_adm_gfeat()", err);
-		xnvme_req_pr(&req, XNVME_PR_DEF);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}
 
 	{
-		struct xnvme_spec_feat feat = { .val = req.cpl.cdw0 };
+		struct xnvme_spec_feat feat = { .val = ctx.cpl.cdw0 };
 		xnvme_spec_feat_pr(fid, feat, XNVME_PR_DEF);
 	}
 
@@ -377,7 +377,7 @@ sub_sfeat(struct xnvmec *cli)
 	uint32_t feat = cli->args.feat;
 	uint8_t save = cli->args.save;
 	uint32_t nsid = cli->args.nsid;
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	if (!cli->given[XNVMEC_OPT_NSID]) {
@@ -387,10 +387,10 @@ sub_sfeat(struct xnvmec *cli)
 	xnvmec_pinf("cmd_sfeat: {nsid: 0%x, fid: 0x%x, feat: 0x%x, 0x%x}",
 		    nsid, fid, feat, save);
 
-	err = xnvme_adm_sfeat(dev, 0, fid, feat, 0, NULL, 0, &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+	err = xnvme_adm_sfeat(dev, 0, fid, feat, 0, NULL, 0, &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_adm_sfeat()", err);
-		xnvme_req_pr(&req, XNVME_PR_DEF);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 	}
 
@@ -408,7 +408,7 @@ sub_format(struct xnvmec *cli)
 	uint8_t ses = cli->args.ses;
 	uint8_t pi = cli->args.pi;
 	uint8_t pil = cli->args.pil;
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	if (!cli->given[XNVMEC_OPT_NSID]) {
@@ -419,10 +419,10 @@ sub_format(struct xnvmec *cli)
 		    "mset: 0x%x, ses: 0x%x, pi: 0x%x, pil: 0x%x}", nsid,
 		    lbaf, zf, mset, ses, pi, pil);
 
-	err = xnvme_adm_format(dev, nsid, lbaf, zf, mset, ses, pi, pil, &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+	err = xnvme_adm_format(dev, nsid, lbaf, zf, mset, ses, pi, pil, &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_adm_format()", err);
-		xnvme_req_pr(&req, XNVME_PR_DEF);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 	}
 
@@ -439,7 +439,7 @@ sub_sanitize(struct xnvmec *cli)
 	uint8_t owpass = cli->args.owpass;
 	uint8_t oipbp = cli->args.oipbp;
 	uint8_t nodas = cli->args.nodas;
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	xnvmec_pinf("xnvme_nvm_sanitize: {sanact: 0x%x, ause: 0x%x, "
@@ -449,10 +449,10 @@ sub_sanitize(struct xnvmec *cli)
 
 	err = xnvme_nvm_sanitize(dev, sanact, ause, ovrpat, owpass, oipbp,
 				 nodas,
-				 &req);
-	if (err || xnvme_req_cpl_status(&req)) {
+				 &ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_nvm_sanitize()", err);
-		xnvme_req_pr(&req, XNVME_PR_DEF);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 	}
 
@@ -464,7 +464,7 @@ sub_pass(struct xnvmec *cli, int opts, int admin)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_spec_cmd cmd = { 0 };
-	struct xnvme_req req = { 0 };
+	struct xnvme_cmd_ctx ctx = {0 };
 	void *data_buf = NULL;
 	size_t data_nbytes = cli->args.data_nbytes;
 	void *meta_buf = NULL;
@@ -516,14 +516,14 @@ sub_pass(struct xnvmec *cli, int opts, int admin)
 
 	if (admin) {
 		err = xnvme_cmd_pass_admin(dev, &cmd, data_buf, data_nbytes,
-					   meta_buf, meta_nbytes, opts, &req);
+					   meta_buf, meta_nbytes, opts, &ctx);
 	} else {
 		err = xnvme_cmd_pass(dev, &cmd, data_buf, data_nbytes, meta_buf,
-				     meta_nbytes, opts, &req);
+				     meta_nbytes, opts, &ctx);
 	}
-	if (err || xnvme_req_cpl_status(&req)) {
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_cmd_pass[_admin]()", err);
-		xnvme_req_pr(&req, XNVME_PR_DEF);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}

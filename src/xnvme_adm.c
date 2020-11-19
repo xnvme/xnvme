@@ -5,7 +5,7 @@
 
 int
 xnvme_adm_log(struct xnvme_dev *dev, uint8_t lid, uint8_t lsp, uint64_t lpo_nbytes, uint32_t nsid,
-	      uint8_t rae, void *dbuf, uint32_t dbuf_nbytes, struct xnvme_req *req)
+	      uint8_t rae, void *dbuf, uint32_t dbuf_nbytes, struct xnvme_cmd_ctx *ctx)
 {
 	struct xnvme_spec_cmd cmd = {0 };
 	uint32_t numdw;
@@ -41,12 +41,12 @@ xnvme_adm_log(struct xnvme_dev *dev, uint8_t lid, uint8_t lsp, uint64_t lpo_nbyt
 	// TODO: add support for uuid?
 
 	return xnvme_cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL, 0x0,
-				    0x0, req);
+				    0x0, ctx);
 }
 
 int
 xnvme_adm_idfy(struct xnvme_dev *dev, uint8_t cns, uint16_t cntid, uint8_t nsid, uint16_t nvmsetid,
-	       uint8_t uuid, struct xnvme_spec_idfy *dbuf, struct xnvme_req *req)
+	       uint8_t uuid, struct xnvme_spec_idfy *dbuf, struct xnvme_cmd_ctx *ctx)
 {
 	const size_t dbuf_nbytes = sizeof(*dbuf);
 	struct xnvme_spec_cmd cmd = { 0 };
@@ -59,12 +59,12 @@ xnvme_adm_idfy(struct xnvme_dev *dev, uint8_t cns, uint16_t cntid, uint8_t nsid,
 	cmd.idfy.uuid = uuid;
 
 	return xnvme_cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL, 0x0,
-				    0x0, req);
+				    0x0, ctx);
 }
 
 int
 xnvme_adm_idfy_ctrlr(struct xnvme_dev *dev, struct xnvme_spec_idfy *dbuf,
-		     struct xnvme_req *req)
+		     struct xnvme_cmd_ctx *ctx)
 {
 	const size_t dbuf_nbytes = sizeof(*dbuf);
 	struct xnvme_spec_cmd cmd = { 0 };
@@ -73,12 +73,12 @@ xnvme_adm_idfy_ctrlr(struct xnvme_dev *dev, struct xnvme_spec_idfy *dbuf,
 	cmd.idfy.cns = XNVME_SPEC_IDFY_CTRLR;
 
 	return xnvme_cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL, 0x0,
-				    0x0, req);
+				    0x0, ctx);
 }
 
 int
 xnvme_adm_idfy_ctrlr_csi(struct xnvme_dev *dev, uint8_t csi,
-			 struct xnvme_spec_idfy *dbuf, struct xnvme_req *req)
+			 struct xnvme_spec_idfy *dbuf, struct xnvme_cmd_ctx *ctx)
 {
 	const size_t dbuf_nbytes = sizeof(*dbuf);
 	struct xnvme_spec_cmd cmd = { 0 };
@@ -88,12 +88,12 @@ xnvme_adm_idfy_ctrlr_csi(struct xnvme_dev *dev, uint8_t csi,
 	cmd.idfy.csi = csi;
 
 	return xnvme_cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL, 0x0,
-				    0x0, req);
+				    0x0, ctx);
 }
 
 int
 xnvme_adm_idfy_ns(struct xnvme_dev *dev, uint32_t nsid,
-		  struct xnvme_spec_idfy *dbuf, struct xnvme_req *req)
+		  struct xnvme_spec_idfy *dbuf, struct xnvme_cmd_ctx *ctx)
 {
 	const size_t dbuf_nbytes = sizeof(*dbuf);
 	struct xnvme_spec_cmd cmd = { 0 };
@@ -104,12 +104,12 @@ xnvme_adm_idfy_ns(struct xnvme_dev *dev, uint32_t nsid,
 	cmd.idfy.csi = XNVME_SPEC_CSI_NOCHECK;
 
 	return xnvme_cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL,
-				    0x0, 0x0, req);
+				    0x0, 0x0, ctx);
 }
 
 int
 xnvme_adm_idfy_ns_csi(struct xnvme_dev *dev, uint32_t nsid, uint8_t csi,
-		      struct xnvme_spec_idfy *dbuf, struct xnvme_req *req)
+		      struct xnvme_spec_idfy *dbuf, struct xnvme_cmd_ctx *ctx)
 {
 	const size_t dbuf_nbytes = sizeof(*dbuf);
 	struct xnvme_spec_cmd cmd = { 0 };
@@ -120,12 +120,12 @@ xnvme_adm_idfy_ns_csi(struct xnvme_dev *dev, uint32_t nsid, uint8_t csi,
 	cmd.idfy.csi = csi;
 
 	return xnvme_cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL,
-				    0x0, 0x0, req);
+				    0x0, 0x0, ctx);
 }
 
 int
 xnvme_adm_gfeat(struct xnvme_dev *dev, uint32_t nsid, uint8_t fid, uint8_t sel,
-		void *dbuf, size_t dbuf_nbytes, struct xnvme_req *req)
+		void *dbuf, size_t dbuf_nbytes, struct xnvme_cmd_ctx *ctx)
 {
 	struct xnvme_spec_cmd cmd = { 0 };
 
@@ -137,13 +137,13 @@ xnvme_adm_gfeat(struct xnvme_dev *dev, uint32_t nsid, uint8_t fid, uint8_t sel,
 	// TODO: cdw14/uuid?
 
 	return xnvme_cmd_pass_admin(dev, &cmd, dbuf, dbuf_nbytes, NULL, 0x0,
-				    0x0, req);
+				    0x0, ctx);
 }
 
 int
 xnvme_adm_sfeat(struct xnvme_dev *dev, uint32_t nsid, uint8_t fid,
 		uint32_t feat, uint8_t save, const void *dbuf,
-		size_t dbuf_nbytes, struct xnvme_req *req)
+		size_t dbuf_nbytes, struct xnvme_cmd_ctx *ctx)
 {
 	struct xnvme_spec_cmd cmd = { 0 };
 
@@ -154,5 +154,5 @@ xnvme_adm_sfeat(struct xnvme_dev *dev, uint32_t nsid, uint8_t fid,
 	cmd.sfeat.save = save;
 
 	return xnvme_cmd_pass_admin(dev, &cmd, (void *)dbuf, dbuf_nbytes,
-				    NULL, 0x0, 0x0, req);
+				    NULL, 0x0, 0x0, ctx);
 }

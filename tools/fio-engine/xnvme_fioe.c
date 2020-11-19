@@ -92,7 +92,7 @@ struct xnvme_fioe_fwrap {
 	const struct xnvme_geo *geo;
 
 	struct xnvme_queue *queue;
-	struct xnvme_req_pool *reqs;
+	struct xnvme_cmd_ctx_pool *pool;
 
 	uint32_t ssw;
 	uint32_t lba_nbytes;
@@ -167,13 +167,13 @@ static struct fio_option options[] = {
 };
 
 static void
-cb_pool(struct xnvme_req *req, void *cb_arg)
+cb_pool(struct xnvme_cmd_ctx *req, void *cb_arg)
 {
 	struct io_u *io_u = cb_arg;
 	struct xnvme_fioe_data *xd = io_u->engine_data;
 
-	if (xnvme_req_cpl_status(req)) {
-		xnvme_req_pr(req, XNVME_PR_DEF);
+	if (xnvme_cmd_ctx_cpl_status(req)) {
+        xnvme_cmd_ctx_pr(req, XNVME_PR_DEF);
 		xd->ecount += 1;
 		io_u->error = EIO;
 	}
@@ -207,7 +207,7 @@ _dev_close(struct thread_data *td, struct xnvme_fioe_fwrap *fwrap)
 	if (fwrap->dev) {
         xnvme_queue_term(fwrap->queue);
 	}
-	xnvme_req_pool_free(fwrap->reqs);
+    xnvme_cmd_ctx_pool_free(fwrap->pool);
 	xnvme_dev_close(fwrap->dev);
 
 	memset(fwrap, 0, sizeof(*fwrap));
@@ -317,13 +317,13 @@ _dev_open(struct thread_data *td, struct fio_file *f)
 		log_err("xnvme_fioe: init(): failed xnvme_queue_init()\n");
 		goto failure;
 	}
-	if (xnvme_req_pool_alloc(&fwrap->reqs, td->o.iodepth + 1)) {
-		log_err("xnvme_fioe: init(): xnvme_req_pool_alloc()\n");
+	if (xnvme_cmd_ctx_pool_alloc(&fwrap->pool, td->o.iodepth + 1)) {
+		log_err("xnvme_fioe: init(): xnvme_cmd_ctx_pool_alloc()\n");
 		goto failure;
 	}
 	// NOTE: cb_args are assigned in _queue()
-	if (xnvme_req_pool_init(fwrap->reqs, fwrap->queue, cb_pool, NULL)) {
-		log_err("xnvme_fioe: init(): xnvme_req_pool_init()\n");
+	if (xnvme_cmd_ctx_pool_init(fwrap->pool, fwrap->queue, cb_pool, NULL)) {
+		log_err("xnvme_fioe: init(): xnvme_cmd_ctx_pool_init()\n");
 		goto failure;
 	}
 
@@ -340,7 +340,7 @@ _dev_open(struct thread_data *td, struct fio_file *f)
 	return 0;
 
 failure:
-	xnvme_req_pool_free(fwrap->reqs);
+    xnvme_cmd_ctx_pool_free(fwrap->pool);
     xnvme_queue_term(fwrap->queue);
 	xnvme_dev_close(fwrap->dev);
 
@@ -530,7 +530,7 @@ xnvme_fioe_queue(struct thread_data *td, struct io_u *io_u)
 {
 	struct xnvme_fioe_data *xd = td->io_ops_data;
 	struct xnvme_fioe_fwrap *fwrap;
-	struct xnvme_req *req;
+	struct xnvme_cmd_ctx *req;
 	uint32_t nsid;
 	uint64_t slba;
 	uint16_t nlb;
@@ -550,8 +550,8 @@ xnvme_fioe_queue(struct thread_data *td, struct io_u *io_u)
 		return FIO_Q_COMPLETED;
 	}
 
-	req = SLIST_FIRST(&fwrap->reqs->head);
-	SLIST_REMOVE_HEAD(&fwrap->reqs->head, link);
+	req = SLIST_FIRST(&fwrap->pool->head);
+	SLIST_REMOVE_HEAD(&fwrap->pool->head, link);
 
 	req->async.cb_arg = io_u;
 
@@ -842,7 +842,7 @@ xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint64_t offset,
 	last = (((offset + length) >> fwrap->ssw) / fwrap->geo->nsect) * fwrap->geo->nsect;
 	XNVME_DEBUG("INFO: first: 0x%lx, last: 0x%lx", first, last);
 	for (uint64_t zslba = first; zslba <= last; zslba += fwrap->geo->nsect) {
-		struct xnvme_req req = { 0 };
+		struct xnvme_cmd_ctx req = {0 };
 
 		if (zslba >= (fwrap->geo->nsect * fwrap->geo->nzone)) {
 			XNVME_DEBUG("INFO: out-of-bounds");
@@ -852,7 +852,7 @@ xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint64_t offset,
 
 		err = xnvme_znd_mgmt_send(fwrap->dev, nsid, zslba, XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET,
                                   0x0, NULL, XNVME_CMD_SYNC, &req);
-		if (err || xnvme_req_cpl_status(&req)) {
+		if (err || xnvme_cmd_ctx_cpl_status(&req)) {
 			err = err ? err : -EIO;
 			XNVME_DEBUG("FAILED: err: %d, sc=%d", err, req.cpl.status.sc);
 			goto exit;

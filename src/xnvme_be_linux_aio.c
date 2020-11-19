@@ -77,15 +77,15 @@ _linux_aio_poke(struct xnvme_queue *queue, uint32_t max)
 
 	do {
 		struct io_event *ev;
-		struct xnvme_req *req;
+		struct xnvme_cmd_ctx *ctx;
 
 		ret = io_getevents(actx->aio_ctx, 1, max, actx->aio_events, NULL);
 
 		for (event = 0; event < ret; event++) {
 			ev =  actx->aio_events + event;
-			req = (struct xnvme_req *)(uintptr_t)ev->data;
+			ctx = (struct xnvme_cmd_ctx *)(uintptr_t)ev->data;
 
-			if (!req) {
+			if (!ctx) {
 				XNVME_DEBUG("-{[THIS SHOULD NOT HAPPEN]}-");
 				XNVME_DEBUG("event->data is NULL! => NO REQ!");
 				XNVME_DEBUG("event->res: %ld", ev->res);
@@ -95,9 +95,9 @@ _linux_aio_poke(struct xnvme_queue *queue, uint32_t max)
 				return -EIO;
 			}
 
-			// Map event-result to req-completion
-			req->cpl.status.sc = ev->res;
-			req->async.cb(req, req->async.cb_arg);
+			// Map event-result to cmd_ctx-completion
+			ctx->cpl.status.sc = ev->res;
+			ctx->async.cb(ctx, ctx->async.cb_arg);
 
 			++completed;
 		}
@@ -147,11 +147,11 @@ int
 _linux_aio_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 		  void *dbuf, size_t dbuf_nbytes, void *mbuf,
 		  size_t mbuf_nbytes, int XNVME_UNUSED(opts),
-		  struct xnvme_req *req)
+		  struct xnvme_cmd_ctx *ctx)
 {
 	struct xnvme_be_linux_state *state = (void *)dev->be.state;
-	struct xnvme_queue_aio *actx  = (void *)req->async.queue;
-	struct iocb *iocb = &actx->iocb;
+	struct xnvme_queue_aio *qctx  = (void *)ctx->async.queue;
+	struct iocb *iocb = &qctx->iocb;
 	struct iocb **iocbs;
 	int ret = 0;
 
@@ -168,11 +168,11 @@ _linux_aio_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 		return -ENOSYS;
 	}
 
-	if (req->async.queue->base.outstanding < req->async.queue->base.depth) {
-		actx->queued++;
+	if (ctx->async.queue->base.outstanding < ctx->async.queue->base.depth) {
+		qctx->queued++;
 	}
 
-	if (req->async.queue->base.outstanding == req->async.queue->base.depth) {
+	if (ctx->async.queue->base.outstanding == ctx->async.queue->base.depth) {
 		XNVME_DEBUG("FAILED: queue is full");
 		return -EBUSY;
 	}
@@ -181,43 +181,43 @@ _linux_aio_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 		return -ENOSYS;
 	}
 
-	iocb->data = (unsigned long *)req;
-	actx->iocbs[actx->head] = &actx->iocb;
+	iocb->data = (unsigned long *)ctx;
+	qctx->iocbs[qctx->head] = &qctx->iocb;
 
-	_ring_inc(actx, &actx->head, 1);
+	_ring_inc(qctx, &qctx->head, 1);
 
-	req->async.queue->base.outstanding += 1;
+	ctx->async.queue->base.outstanding += 1;
 
 	do {
-		long nr = actx->queued;
-		nr = XNVME_MIN((unsigned int) nr, actx->entries - actx->tail);
+		long nr = qctx->queued;
+		nr = XNVME_MIN((unsigned int) nr, qctx->entries - qctx->tail);
 
-		iocbs = actx->iocbs + actx->tail;
+		iocbs = qctx->iocbs + qctx->tail;
 
-		ret = io_submit(actx->aio_ctx, nr, iocbs);
+		ret = io_submit(qctx->aio_ctx, nr, iocbs);
 
 		if (ret > 0) {
-			actx->queued -= ret;
-			_ring_inc(actx, &actx->tail, ret);
+			qctx->queued -= ret;
+			_ring_inc(qctx, &qctx->tail, ret);
 			ret = 0;
 		} else if (ret == -EINTR || !ret) {
 			continue;
 		} else if (ret == -EAGAIN) {
-			if (actx->queued) {
+			if (qctx->queued) {
 				ret = 0;
 				break;
 			}
 			continue;
 		} else if (ret == -ENOMEM) {
 
-			if (actx->queued) {
+			if (qctx->queued) {
 				ret = 0;
 			}
 			break;
 		} else {
 			break;
 		}
-	} while (actx->queued);
+	} while (qctx->queued);
 
 	return 0;
 }

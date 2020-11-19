@@ -51,13 +51,13 @@ xnvme_be_linux_buf_vtophys(const struct xnvme_dev *dev, void *buf,
 int
 xnvme_be_linux_cmd_pass(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 			void *dbuf, size_t dbuf_nbytes, void *mbuf,
-			size_t mbuf_nbytes, int opts, struct xnvme_req *req);
+			size_t mbuf_nbytes, int opts, struct xnvme_cmd_ctx *req);
 
 int
 xnvme_be_linux_cmd_pass_admin(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 			      void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			      size_t mbuf_nbytes, int opts,
-			      struct xnvme_req *req);
+			      struct xnvme_cmd_ctx *req);
 
 int
 xnvme_be_linux_dev_from_ident(const struct xnvme_ident *ident,

@@ -68,6 +68,26 @@ xnvme_be_attr_list
    :undoc-members:
 
 
+.. _sec-c-api-xnvme-struct-xnvme_cmd_ctx:
+
+xnvme_cmd_ctx
+-------------
+
+.. doxygenstruct:: xnvme_cmd_ctx
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-api-xnvme-struct-xnvme_cmd_ctx_pool:
+
+xnvme_cmd_ctx_pool
+------------------
+
+.. doxygenstruct:: xnvme_cmd_ctx_pool
+   :members:
+   :undoc-members:
+
+
 .. _sec-c-api-xnvme-struct-xnvme_enumeration:
 
 xnvme_enumeration
@@ -84,26 +104,6 @@ xnvme_ident
 -----------
 
 .. doxygenstruct:: xnvme_ident
-   :members:
-   :undoc-members:
-
-
-.. _sec-c-api-xnvme-struct-xnvme_req:
-
-xnvme_req
----------
-
-.. doxygenstruct:: xnvme_req
-   :members:
-   :undoc-members:
-
-
-.. _sec-c-api-xnvme-struct-xnvme_req_pool:
-
-xnvme_req_pool
---------------
-
-.. doxygenstruct:: xnvme_req_pool
    :members:
    :undoc-members:
 
@@ -235,6 +235,54 @@ xnvme_buf_vtophys
 -----------------
 
 .. doxygenfunction:: xnvme_buf_vtophys
+
+
+.. _sec-c-api-xnvme-func-xnvme_cmd_ctx_clear:
+
+xnvme_cmd_ctx_clear
+-------------------
+
+.. doxygenfunction:: xnvme_cmd_ctx_clear
+
+
+.. _sec-c-api-xnvme-func-xnvme_cmd_ctx_cpl_status:
+
+xnvme_cmd_ctx_cpl_status
+------------------------
+
+.. doxygenfunction:: xnvme_cmd_ctx_cpl_status
+
+
+.. _sec-c-api-xnvme-func-xnvme_cmd_ctx_pool_alloc:
+
+xnvme_cmd_ctx_pool_alloc
+------------------------
+
+.. doxygenfunction:: xnvme_cmd_ctx_pool_alloc
+
+
+.. _sec-c-api-xnvme-func-xnvme_cmd_ctx_pool_free:
+
+xnvme_cmd_ctx_pool_free
+-----------------------
+
+.. doxygenfunction:: xnvme_cmd_ctx_pool_free
+
+
+.. _sec-c-api-xnvme-func-xnvme_cmd_ctx_pool_init:
+
+xnvme_cmd_ctx_pool_init
+-----------------------
+
+.. doxygenfunction:: xnvme_cmd_ctx_pool_init
+
+
+.. _sec-c-api-xnvme-func-xnvme_cmd_ctx_pr:
+
+xnvme_cmd_ctx_pr
+----------------
+
+.. doxygenfunction:: xnvme_cmd_ctx_pr
 
 
 .. _sec-c-api-xnvme-func-xnvme_cmd_pass:
@@ -403,54 +451,6 @@ xnvme_queue_wait
 ----------------
 
 .. doxygenfunction:: xnvme_queue_wait
-
-
-.. _sec-c-api-xnvme-func-xnvme_req_clear:
-
-xnvme_req_clear
----------------
-
-.. doxygenfunction:: xnvme_req_clear
-
-
-.. _sec-c-api-xnvme-func-xnvme_req_cpl_status:
-
-xnvme_req_cpl_status
---------------------
-
-.. doxygenfunction:: xnvme_req_cpl_status
-
-
-.. _sec-c-api-xnvme-func-xnvme_req_pool_alloc:
-
-xnvme_req_pool_alloc
---------------------
-
-.. doxygenfunction:: xnvme_req_pool_alloc
-
-
-.. _sec-c-api-xnvme-func-xnvme_req_pool_free:
-
-xnvme_req_pool_free
--------------------
-
-.. doxygenfunction:: xnvme_req_pool_free
-
-
-.. _sec-c-api-xnvme-func-xnvme_req_pool_init:
-
-xnvme_req_pool_init
--------------------
-
-.. doxygenfunction:: xnvme_req_pool_init
-
-
-.. _sec-c-api-xnvme-func-xnvme_req_pr:
-
-xnvme_req_pr
-------------
-
-.. doxygenfunction:: xnvme_req_pr
 
 
 .. _sec-c-api-xnvme-func-xnvme_timer_bw_pr:
