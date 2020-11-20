@@ -18,7 +18,7 @@ struct xnvme_queue_aio {
 	uint32_t head;
 	uint32_t tail;
 
-	uint8_t rsvd[68];
+	uint8_t rsvd[128];
 };
 XNVME_STATIC_ASSERT(
 	sizeof(struct xnvme_queue_aio) == XNVME_BE_QUEUE_STATE_NBYTES,

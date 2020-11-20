@@ -118,8 +118,7 @@ xnvme_be_linux_sysfs_dev_attr_to_buf(struct xnvme_dev *dev, const char *attr,
 }
 
 int
-xnvme_be_linux_sysfs_dev_attr_to_num(struct xnvme_dev *dev, const char *attr,
-				     uint64_t *num)
+xnvme_be_linux_sysfs_dev_attr_to_num(struct xnvme_dev *dev, const char *attr, uint64_t *num)
 {
 	const int buf_len = 0x1000;
 	char buf[buf_len];
@@ -142,8 +141,8 @@ xnvme_be_linux_sysfs_dev_attr_to_num(struct xnvme_dev *dev, const char *attr,
 }
 
 void *
-xnvme_be_linux_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev),
-			 size_t nbytes, uint64_t *XNVME_UNUSED(phys))
+xnvme_be_linux_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t nbytes,
+			 uint64_t *XNVME_UNUSED(phys))
 {
 	// TODO: register buffer when async=iou
 
@@ -152,9 +151,8 @@ xnvme_be_linux_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev),
 }
 
 void *
-xnvme_be_linux_buf_realloc(const struct xnvme_dev *XNVME_UNUSED(dev),
-			   void *XNVME_UNUSED(buf), size_t XNVME_UNUSED(nbytes),
-			   uint64_t *XNVME_UNUSED(phys))
+xnvme_be_linux_buf_realloc(const struct xnvme_dev *XNVME_UNUSED(dev), void *XNVME_UNUSED(buf),
+			   size_t XNVME_UNUSED(nbytes), uint64_t *XNVME_UNUSED(phys))
 {
 	XNVME_DEBUG("FAILED: xnvme_be_linux: does not support realloc");
 	errno = ENOSYS;
@@ -170,8 +168,8 @@ xnvme_be_linux_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
 }
 
 int
-xnvme_be_linux_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev),
-			   void *XNVME_UNUSED(buf), uint64_t *XNVME_UNUSED(phys))
+xnvme_be_linux_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *XNVME_UNUSED(buf),
+			   uint64_t *XNVME_UNUSED(phys))
 {
 	XNVME_DEBUG("FAILED: xnvme_be_linux: does not support phys/DMA alloc");
 	return -ENOSYS;
@@ -289,8 +287,8 @@ xnvme_be_linux_state_init(struct xnvme_dev *dev, void *XNVME_UNUSED(opts))
 int
 xnvme_be_linux_dev_idfy(struct xnvme_dev *dev)
 {
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 	struct xnvme_spec_idfy *idfy_ctrlr = NULL, *idfy_ns = NULL;
-	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	if (strncmp(dev->be.sync.id, "block_ioctl", 11) == 0) {
@@ -327,16 +325,17 @@ xnvme_be_linux_dev_idfy(struct xnvme_dev *dev)
 
 	// Retrieve and store ctrl and ns
 	memset(idfy_ctrlr, 0, sizeof(*idfy_ctrlr));
-	memset(&ctx, 0, sizeof(ctx));
-	err = xnvme_adm_idfy_ctrlr(dev, idfy_ctrlr, &ctx);
+	ctx = xnvme_cmd_ctx_from_dev(dev);
+	err = xnvme_adm_idfy_ctrlr(&ctx, idfy_ctrlr);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("FAILED: identify controller");
 		err = err ? err : -EIO;
 		goto exit;
 	}
+
 	memset(idfy_ns, 0, sizeof(*idfy_ns));
-	memset(&ctx, 0, sizeof(ctx));
-	err = xnvme_adm_idfy_ns(dev, dev->nsid, idfy_ns, &ctx);
+	ctx = xnvme_cmd_ctx_from_dev(dev);
+	err = xnvme_adm_idfy_ns(&ctx, dev->nsid, idfy_ns);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("FAILED: identify namespace, err: %d", err);
 		goto exit;
@@ -354,19 +353,16 @@ xnvme_be_linux_dev_idfy(struct xnvme_dev *dev)
 		struct xnvme_spec_znd_idfy_ns *zns = (void *)idfy_ns;
 
 		memset(idfy_ctrlr, 0, sizeof(*idfy_ctrlr));
-		memset(&ctx, 0, sizeof(ctx));
-		err = xnvme_adm_idfy_ctrlr_csi(dev, XNVME_SPEC_CSI_ZONED,
-					       idfy_ctrlr, &ctx);
+		ctx = xnvme_cmd_ctx_from_dev(dev);
+		err = xnvme_adm_idfy_ctrlr_csi(&ctx, XNVME_SPEC_CSI_ZONED, idfy_ctrlr);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			XNVME_DEBUG("INFO: !id-ctrlr-zns");
 			goto not_zns;
 		}
 
 		memset(idfy_ns, 0, sizeof(*idfy_ns));
-		memset(&ctx, 0, sizeof(ctx));
-		err = xnvme_adm_idfy_ns_csi(dev, dev->nsid,
-					    XNVME_SPEC_CSI_ZONED, idfy_ns,
-					    &ctx);
+		ctx = xnvme_cmd_ctx_from_dev(dev);
+		err = xnvme_adm_idfy_ns_csi(&ctx, dev->nsid, XNVME_SPEC_CSI_ZONED, idfy_ns);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			XNVME_DEBUG("INFO: !id-ns-zns");
 			goto not_zns;
@@ -389,8 +385,8 @@ not_zns:
 
 	// Attempt to identify LBLK Namespace
 	memset(idfy_ns, 0, sizeof(*idfy_ns));
-	memset(&ctx, 0, sizeof(ctx));
-	err = xnvme_adm_idfy_ns_csi(dev, dev->nsid, XNVME_SPEC_CSI_NVM, idfy_ns, &ctx);
+	ctx = xnvme_cmd_ctx_from_dev(dev);
+	err = xnvme_adm_idfy_ns_csi(&ctx, dev->nsid, XNVME_SPEC_CSI_NVM, idfy_ns);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("INFO: not csi-specific id-NVM");
 		XNVME_DEBUG("INFO: falling back to NVM assumption");
@@ -407,8 +403,7 @@ exit:
 }
 
 int
-xnvme_be_linux_dev_from_ident(const struct xnvme_ident *ident,
-			      struct xnvme_dev **dev)
+xnvme_be_linux_dev_from_ident(const struct xnvme_ident *ident, struct xnvme_dev **dev)
 {
 	int err;
 

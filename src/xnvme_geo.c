@@ -1,7 +1,5 @@
 // Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
 // SPDX-License-Identifier: Apache-2.0
-#include <stdio.h>
-#include <libxnvme.h>
 #include <libxnvme_pp.h>
 
 static inline const char *

@@ -283,8 +283,7 @@ _spdk_nvmf_adrfam_str(enum spdk_nvmf_adrfam adrfam)
  * - construct trid for FC
  */
 static inline int
-_xnvme_be_spdk_ident_to_trid(const struct xnvme_ident *ident,
-			     struct spdk_nvme_transport_id *trid,
+_xnvme_be_spdk_ident_to_trid(const struct xnvme_ident *ident, struct spdk_nvme_transport_id *trid,
 			     int trtype)
 {
 	char trid_str[1024] = { 0 }; // TODO: fix this size
@@ -346,8 +345,7 @@ _xnvme_be_spdk_ident_to_trid(const struct xnvme_ident *ident,
 }
 
 void *
-xnvme_be_spdk_buf_alloc(const struct xnvme_dev *dev, size_t nbytes,
-			uint64_t *phys)
+xnvme_be_spdk_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
 {
 	const size_t alignment = dev->geo.nbytes;
 	void *buf;
@@ -362,8 +360,7 @@ xnvme_be_spdk_buf_alloc(const struct xnvme_dev *dev, size_t nbytes,
 }
 
 void *
-xnvme_be_spdk_buf_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes,
-			  uint64_t *phys)
+xnvme_be_spdk_buf_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes, uint64_t *phys)
 {
 	const size_t alignment = dev->geo.nbytes;
 	void *rebuf;
@@ -395,19 +392,16 @@ xnvme_be_spdk_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf,
 }
 
 static inline int
-submit_ioc(struct spdk_nvme_ctrlr *ctrlr, struct spdk_nvme_qpair *qpair,
-	   struct xnvme_spec_cmd *cmd, void *dbuf, uint32_t dbuf_nbytes,
-	   void *mbuf, spdk_nvme_cmd_cb cb_fn, void *cb_arg)
+submit_ioc(struct spdk_nvme_ctrlr *ctrlr, struct spdk_nvme_qpair *qpair, struct xnvme_cmd_ctx *ctx,
+	   void *dbuf, uint32_t dbuf_nbytes, void *mbuf, spdk_nvme_cmd_cb cb_fn, void *cb_arg)
 {
 #ifdef XNVME_TRACE_ENABLED
 	XNVME_DEBUG("Dumping IO command");
 	xnvme_spec_cmd_pr(cmd, XNVME_PR_DEF);
 #endif
 
-	return spdk_nvme_ctrlr_cmd_io_raw_with_md(ctrlr, qpair,
-			(struct spdk_nvme_cmd *)cmd,
-			dbuf, dbuf_nbytes, mbuf,
-			cb_fn, cb_arg);
+	return spdk_nvme_ctrlr_cmd_io_raw_with_md(ctrlr, qpair, (struct spdk_nvme_cmd *)&ctx->cmd,
+			dbuf, dbuf_nbytes, mbuf, cb_fn, cb_arg);
 }
 
 int
@@ -466,7 +460,7 @@ probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
 		return false;
 	}
 	if (_spdk_nvme_transport_id_compare_weak(probed, &req)) {
-		XNVME_DEBUG("SKIP: mismatching trid prbed != cmd_ctx");
+		XNVME_DEBUG("SKIP: mismatching trid prbed != ctx");
 
 		_spdk_nvme_transport_id_pr(probed);
 		_spdk_nvme_transport_id_pr(&req);
@@ -508,8 +502,7 @@ probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
  */
 static void
 attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *XNVME_UNUSED(trid),
-	  struct spdk_nvme_ctrlr *ctrlr,
-	  const struct spdk_nvme_ctrlr_opts *XNVME_UNUSED(opts))
+	  struct spdk_nvme_ctrlr *ctrlr, const struct spdk_nvme_ctrlr_opts *XNVME_UNUSED(opts))
 {
 	struct xnvme_dev *dev = cb_ctx;
 	struct xnvme_be_spdk_state *state = (void *)dev->be.state;
@@ -704,8 +697,7 @@ enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
  * - Consider how to support enumerating custom transports
  */
 int
-xnvme_be_spdk_enumerate(struct xnvme_enumeration *list, const char *sys_uri,
-			int opts)
+xnvme_be_spdk_enumerate(struct xnvme_enumeration *list, const char *sys_uri, int opts)
 {
 	struct xnvme_be_spdk_enumerate_ctx ectx = { 0 };
 	char addr[SPDK_NVMF_TRADDR_MAX_LEN + 1] = { 0 };
@@ -802,11 +794,11 @@ xnvme_be_spdk_enumerate(struct xnvme_enumeration *list, const char *sys_uri,
 int
 xnvme_be_spdk_dev_idfy(struct xnvme_dev *dev)
 {
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 	struct xnvme_be_spdk_state *state = (void *)dev->be.state;
 	struct xnvme_spec_idfy *idfy_ctrlr = NULL, *idfy_ns = NULL;
 	const struct spdk_nvme_ctrlr_data *ctrlr_data;
 	const struct spdk_nvme_ns_data *ns_data;
-	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	dev->dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
@@ -852,19 +844,18 @@ xnvme_be_spdk_dev_idfy(struct xnvme_dev *dev)
 		struct xnvme_spec_znd_idfy_ns *zns = (void *)idfy_ns;
 
 		memset(idfy_ctrlr, 0, sizeof(*idfy_ctrlr));
-		memset(&ctx, 0, sizeof(ctx));
-		err = xnvme_adm_idfy_ctrlr_csi(dev, XNVME_SPEC_CSI_ZONED,
-					       idfy_ctrlr, &ctx);
+		ctx = xnvme_cmd_ctx_from_dev(dev);
+
+		err = xnvme_adm_idfy_ctrlr_csi(&ctx, XNVME_SPEC_CSI_ZONED, idfy_ctrlr);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			XNVME_DEBUG("INFO: !id-ctrlr-zns");
 			goto not_zns;
 		}
 
 		memset(idfy_ns, 0, sizeof(*idfy_ns));
-		memset(&ctx, 0, sizeof(ctx));
-		err = xnvme_adm_idfy_ns_csi(dev, dev->nsid,
-					    XNVME_SPEC_CSI_ZONED, idfy_ns,
-					    &ctx);
+		ctx = xnvme_cmd_ctx_from_dev(dev);
+
+		err = xnvme_adm_idfy_ns_csi(&ctx, dev->nsid, XNVME_SPEC_CSI_ZONED, idfy_ns);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			XNVME_DEBUG("INFO: !id-ns-zns");
 			goto not_zns;
@@ -887,8 +878,9 @@ not_zns:
 
 	// Attempt to identify LBLK Namespace
 	memset(idfy_ns, 0, sizeof(*idfy_ns));
-	memset(&ctx, 0, sizeof(ctx));
-	err = xnvme_adm_idfy_ns_csi(dev, dev->nsid, XNVME_SPEC_CSI_NVM, idfy_ns, &ctx);
+	ctx = xnvme_cmd_ctx_from_dev(dev);
+
+	err = xnvme_adm_idfy_ns_csi(&ctx, dev->nsid, XNVME_SPEC_CSI_NVM, idfy_ns);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("INFO: not csi-specific id-NVM");
 		XNVME_DEBUG("INFO: falling back to NVM assumption");
@@ -1034,8 +1026,7 @@ probe:
 }
 
 int
-xnvme_be_spdk_dev_from_ident(const struct xnvme_ident *ident,
-			     struct xnvme_dev **dev)
+xnvme_be_spdk_dev_from_ident(const struct xnvme_ident *ident, struct xnvme_dev **dev)
 {
 	int err;
 
@@ -1086,19 +1077,19 @@ xnvme_be_spdk_dev_from_ident(const struct xnvme_ident *ident,
  * xnvme_queue->be_rsvd
  */
 int
-xnvme_be_spdk_queue_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
+xnvme_be_spdk_queue_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 {
-	struct xnvme_queue_spdk *qctx = (void *)(queue);
+	struct xnvme_queue_spdk *queue = (void *)(q);
 	struct xnvme_be_spdk_state *state = (void *)queue->base.dev->be.state;
 	struct spdk_nvme_io_qpair_opts qopts = { 0 };
 
 	spdk_nvme_ctrlr_get_default_io_qpair_opts(state->ctrlr, &qopts, sizeof(qopts));
 
-	qopts.io_queue_size = XNVME_MAX(queue->base.depth, qopts.io_queue_size);
+	qopts.io_queue_size = XNVME_MAX(queue->base.capacity, qopts.io_queue_size);
 	qopts.io_queue_requests = qopts.io_queue_size * 2;
 
-	qctx->qpair = spdk_nvme_ctrlr_alloc_io_qpair(state->ctrlr, &qopts, sizeof(qopts));
-	if (!qctx->qpair) {
+	queue->qpair = spdk_nvme_ctrlr_alloc_io_qpair(state->ctrlr, &qopts, sizeof(qopts));
+	if (!queue->qpair) {
 		XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_alloc_io_qpair()");
 		return -ENOMEM;
 	}
@@ -1107,20 +1098,20 @@ xnvme_be_spdk_queue_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
 }
 
 int
-xnvme_be_spdk_queue_term(struct xnvme_queue *queue)
+xnvme_be_spdk_queue_term(struct xnvme_queue *q)
 {
-	struct xnvme_queue_spdk *qctx = (void *)queue;
+	struct xnvme_queue_spdk *queue = (void *)q;
 	int err;
 
-	if (!qctx->qpair) {
-		XNVME_DEBUG("FAILED: !qctx->qpair");
+	if (!queue->qpair) {
+		XNVME_DEBUG("FAILED: !queue->qpair");
 		return -EINVAL;
 	}
 
-	err = spdk_nvme_ctrlr_free_io_qpair(qctx->qpair);
+	err = spdk_nvme_ctrlr_free_io_qpair(queue->qpair);
 	if (err) {
 		XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_free_io_qpair(%p), errno: %s",
-			    (void *)qctx->qpair, strerror(errno));
+			    (void *)queue->qpair, strerror(errno));
 		return err;
 	}
 
@@ -1128,12 +1119,12 @@ xnvme_be_spdk_queue_term(struct xnvme_queue *queue)
 }
 
 int
-xnvme_be_spdk_queue_poke(struct xnvme_queue *queue, uint32_t max)
+xnvme_be_spdk_queue_poke(struct xnvme_queue *q, uint32_t max)
 {
-	struct xnvme_queue_spdk *qctx = (void *)queue;
+	struct xnvme_queue_spdk *queue = (void *)q;
 	int err;
 
-	err = spdk_nvme_qpair_process_completions(qctx->qpair, max);
+	err = spdk_nvme_qpair_process_completions(queue->qpair, max);
 	if (err < 0) {
 		XNVME_DEBUG("FAILED: spdk_nvme_qpair_process_completion(), err: %d", err);
 	}
@@ -1165,9 +1156,10 @@ static void
 cmd_sync_cb(void *cb_arg, const struct spdk_nvme_cpl *cpl)
 {
 	struct xnvme_cmd_ctx *ctx = cb_arg;
+	uint8_t *completed = &ctx->be_rsvd[0];
 
 	ctx->cpl = *(const struct xnvme_spec_cpl *)cpl;
-	ctx->async.cb_arg = (void *)cb_arg;	// Assign completion-indicator
+	*completed = 1;
 }
 
 static void
@@ -1183,27 +1175,26 @@ cmd_async_cb(void *cb_arg, const struct spdk_nvme_cpl *cpl)
 // TODO: consider whether 'mbuf_nbytes' is needed here
 // TODO: consider whether 'opts' is needed here
 int
-xnvme_be_spdk_async_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
-			   void *dbuf, size_t dbuf_nbytes, void *mbuf, size_t XNVME_UNUSED(mbuf_nbytes),
-			   int XNVME_UNUSED(opts), struct xnvme_cmd_ctx *ctx)
+xnvme_be_spdk_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			   size_t XNVME_UNUSED(mbuf_nbytes))
 {
-	struct xnvme_be_spdk_state *state = (void *)dev->be.state;
-	struct xnvme_queue_spdk *qctx = (void *)ctx->async.queue;
+	struct xnvme_queue_spdk *queue = (void *)ctx->async.queue;
+	struct xnvme_be_spdk_state *state = (void *)queue->base.dev->be.state;
 	int err;
 
 	// TODO: do something with mbuf?
 
 	// Early exit when queue is full
-	if (ctx->async.queue->base.outstanding == ctx->async.queue->base.depth) {
+	if (queue->base.outstanding == queue->base.capacity) {
 		XNVME_DEBUG("FAILED: queue is full");
 		return -EBUSY;
 	}
 
-	ctx->async.queue->base.outstanding += 1;
-	err = submit_ioc(state->ctrlr, qctx->qpair, cmd, dbuf, dbuf_nbytes, mbuf,
-			 cmd_async_cb, ctx);
+	queue->base.outstanding += 1;
+	err = submit_ioc(state->ctrlr, queue->qpair, ctx, dbuf, dbuf_nbytes, mbuf, cmd_async_cb,
+			 ctx);
 	if (err) {
-		ctx->async.queue->base.outstanding -= 1;
+		queue->base.outstanding -= 1;
 		XNVME_DEBUG("FAILED: submission failed");
 		return err;
 	}
@@ -1214,40 +1205,33 @@ xnvme_be_spdk_async_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 // TODO: consider whether 'mbuf_nbytes' is needed here
 // TODO: consider whether 'opts' is needed here
 int
-xnvme_be_spdk_sync_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *dbuf,
-			  size_t dbuf_nbytes, void *mbuf, size_t XNVME_UNUSED(mbuf_nbytes),
-			  int XNVME_UNUSED(opts), struct xnvme_cmd_ctx *ctx)
+xnvme_be_spdk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			  size_t XNVME_UNUSED(mbuf_nbytes))
 {
-	struct xnvme_be_spdk_state *state = (void *)dev->be.state;
+	struct xnvme_be_spdk_state *state = (void *)ctx->dev->be.state;
 	struct spdk_nvme_qpair *qpair = state->qpair;
 	pthread_mutex_t *qpair_lock = &state->qpair_lock;
-	struct xnvme_cmd_ctx ctx_local = {0 };
+	uint8_t *completed = &ctx->be_rsvd[0];
 
-	int err = 0;
+	int err;
 
-	if (!ctx) {			// Ensure that a cmd_ctx is available
-		ctx = &ctx_local;
-	}
-	if (ctx->async.cb_arg) {	// It is used as completion-indicator
-		XNVME_DEBUG("FAILED: sync.cmd may not provide async.cb_arg");
-		return -EINVAL;
-	}
+	*completed = 0;
 
 	pthread_mutex_lock(qpair_lock);
-	err = submit_ioc(state->ctrlr, qpair, cmd, dbuf, dbuf_nbytes,
-			 mbuf, cmd_sync_cb, ctx);
+	err = submit_ioc(state->ctrlr, qpair, ctx, dbuf, dbuf_nbytes, mbuf, cmd_sync_cb, ctx);
 	pthread_mutex_unlock(qpair_lock);
 	if (err) {
 		XNVME_DEBUG("FAILED: submit_ioc(), err: %d", err);
 		return err;
 	}
 
-	while (!ctx->async.cb_arg) {
+	while (!*completed) {
 		pthread_mutex_lock(qpair_lock);
 		spdk_nvme_qpair_process_completions(qpair, 0);
 		pthread_mutex_unlock(qpair_lock);
 	}
-	ctx->async.cb_arg = NULL;
+
+	*completed = 0;
 
 	if (xnvme_cmd_ctx_cpl_status(ctx)) {
 		XNVME_DEBUG("FAILED: xnvme_cmd_ctx_cpl_status()");
@@ -1259,15 +1243,14 @@ xnvme_be_spdk_sync_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, voi
 
 // TODO: consider whether 'opts' should be used for anything here...
 static inline int
-cmd_admin_submit(struct spdk_nvme_ctrlr *ctrlr, struct xnvme_spec_cmd *cmd,
-		 void *dbuf, uint32_t dbuf_nbytes, void *mbuf,
-		 uint32_t mbuf_nbytes, int XNVME_UNUSED(opts),
-		 spdk_nvme_cmd_cb cb_fn, void *cb_arg)
+cmd_admin_submit(struct spdk_nvme_ctrlr *ctrlr, struct xnvme_cmd_ctx *ctx, void *dbuf,
+		 uint32_t dbuf_nbytes, void *mbuf, uint32_t mbuf_nbytes, spdk_nvme_cmd_cb cb_fn,
+		 void *cb_arg)
 {
-	cmd->common.mptr = (uint64_t)mbuf ? (uint64_t)mbuf : cmd->common.mptr;
+	ctx->cmd.common.mptr = (uint64_t)mbuf ? (uint64_t)mbuf : ctx->cmd.common.mptr;
 
 	if (mbuf_nbytes && mbuf) {
-		cmd->common.ndm = mbuf_nbytes / 4;
+		ctx->cmd.common.ndm = mbuf_nbytes / 4;
 	}
 
 #ifdef XNVME_TRACE_ENABLED
@@ -1275,38 +1258,30 @@ cmd_admin_submit(struct spdk_nvme_ctrlr *ctrlr, struct xnvme_spec_cmd *cmd,
 	xnvme_spec_cmd_pr(cmd, 0x0);
 #endif
 
-	return spdk_nvme_ctrlr_cmd_admin_raw(ctrlr, (struct spdk_nvme_cmd *)cmd,
+	return spdk_nvme_ctrlr_cmd_admin_raw(ctrlr, (struct spdk_nvme_cmd *)&ctx->cmd,
 					     dbuf, dbuf_nbytes, cb_fn, cb_arg);
 }
 
 int
-xnvme_be_spdk_sync_cmd_admin(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
-			     void *dbuf, size_t dbuf_nbytes, void *mbuf,
-			     size_t mbuf_nbytes, int opts,
-			     struct xnvme_cmd_ctx *ctx)
+xnvme_be_spdk_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			     size_t mbuf_nbytes)
 {
-	struct xnvme_be_spdk_state *state = (void *)dev->be.state;
-	struct xnvme_cmd_ctx ctx_local = {0 };
+	struct xnvme_be_spdk_state *state = (void *)ctx->dev->be.state;
+	uint8_t *completed = &ctx->be_rsvd[0];
 
-	if (!ctx) {	// Ensure that a cmd_ctx is available
-		ctx = &ctx_local;
-	}
-	// cmd_ctx.async.cb_arg is used as completion-indicator
-	if (ctx->async.cb_arg) {
-		XNVME_DEBUG("FAILED: sync.cmd may not provide async.cb_arg");
-		return -EINVAL;
-	}
+	*completed = 0;
 
-	if (cmd_admin_submit(state->ctrlr, cmd, dbuf, dbuf_nbytes, mbuf,
-			     mbuf_nbytes, opts, cmd_sync_cb, ctx)) {
+	if (cmd_admin_submit(state->ctrlr, ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes, cmd_sync_cb,
+			     ctx)) {
 		XNVME_DEBUG("FAILED: cmd_admin_submit");
 		return -EIO;
 	}
 
-	while (!ctx->async.cb_arg) {	// Wait for completion-indicator
+	while (!*completed) {	// Wait for completion-indicator
 		spdk_nvme_ctrlr_process_admin_completions(state->ctrlr);
 	}
-	ctx->async.cb_arg = NULL;
+
+	*completed = 0;
 
 	// check for errors
 	if (xnvme_cmd_ctx_cpl_status(ctx)) {

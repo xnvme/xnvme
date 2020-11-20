@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <libxnvme.h>
 #include <xnvme_be.h>
+#include <xnvme_cmd.h>
 #include <xnvme_dev.h>
 #include <xnvme_sgl.h>
 
@@ -10,90 +11,41 @@
  * Calling this requires that opts at least has `XNVME_CMD_SGL_DATA`
  */
 static inline void
-xnvme_sgl_setup(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *data, void *meta,
-		int opts)
+xnvme_sgl_setup(struct xnvme_cmd_ctx *ctx, void *data, void *meta)
 {
 	struct xnvme_sgl *sgl = data;
 	uint64_t phys;
 
-	cmd->common.psdt = XNVME_SPEC_PSDT_SGL_MPTR_CONTIGUOUS;
+	ctx->cmd.common.psdt = XNVME_SPEC_PSDT_SGL_MPTR_CONTIGUOUS;
 
 	if (sgl->ndescr == 1) {
-		cmd->common.dptr.sgl = sgl->descriptors[0];
+		ctx->cmd.common.dptr.sgl = sgl->descriptors[0];
 	} else {
-		xnvme_buf_vtophys(dev, sgl->descriptors, &phys);
+		xnvme_buf_vtophys(ctx->dev, sgl->descriptors, &phys);
 
-		cmd->common.dptr.sgl.unkeyed.type = XNVME_SPEC_SGL_DESCR_TYPE_LAST_SEGMENT;
-		cmd->common.dptr.sgl.unkeyed.len = sgl->ndescr * sizeof(struct xnvme_spec_sgl_descriptor);
-		cmd->common.dptr.sgl.addr = phys;
+		ctx->cmd.common.dptr.sgl.unkeyed.type = XNVME_SPEC_SGL_DESCR_TYPE_LAST_SEGMENT;
+		ctx->cmd.common.dptr.sgl.unkeyed.len = sgl->ndescr * sizeof(struct xnvme_spec_sgl_descriptor);
+		ctx->cmd.common.dptr.sgl.addr = phys;
 	}
 
-	if ((opts & XNVME_CMD_UPLD_SGLM) && meta) {
+	if ((ctx->opts & XNVME_CMD_UPLD_SGLM) && meta) {
 		sgl = meta;
 
-		xnvme_buf_vtophys(dev, sgl->descriptors, &phys);
+		xnvme_buf_vtophys(ctx->dev, sgl->descriptors, &phys);
 
-		cmd->common.psdt = XNVME_SPEC_PSDT_SGL_MPTR_SGL;
+		ctx->cmd.common.psdt = XNVME_SPEC_PSDT_SGL_MPTR_SGL;
 
 		if (sgl->ndescr == 1) {
-			cmd->common.mptr = phys;
+			ctx->cmd.common.mptr = phys;
 		} else {
 			sgl->indirect->unkeyed.type = XNVME_SPEC_SGL_DESCR_TYPE_LAST_SEGMENT;
 			sgl->indirect->unkeyed.len = sgl->ndescr * sizeof(struct xnvme_spec_sgl_descriptor);
 			sgl->indirect->addr = phys;
 
-			xnvme_buf_vtophys(dev, sgl->indirect, &phys);
-			cmd->common.mptr = phys;
+			xnvme_buf_vtophys(ctx->dev, sgl->indirect, &phys);
+			ctx->cmd.common.mptr = phys;
 		}
 	}
-}
-
-// Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
-// SPDX-License-Identifier: Apache-2.0
-#include <stdio.h>
-#include <errno.h>
-#include <libxnvme.h>
-
-void
-xnvme_cmd_ctx_pool_free(struct xnvme_cmd_ctx_pool *pool)
-{
-	free(pool);
-}
-
-int
-xnvme_cmd_ctx_pool_alloc(struct xnvme_cmd_ctx_pool **pool, uint32_t capacity)
-{
-	const size_t nbytes = capacity * sizeof(*(*pool)->elm) + sizeof(**pool);
-
-	(*pool) = malloc(nbytes);
-	if (!(*pool)) {
-		return -errno;
-	}
-	memset((*pool), 0, nbytes);
-
-	SLIST_INIT(&(*pool)->head);
-
-	(*pool)->capacity = capacity;
-
-	return 0;
-}
-
-int
-xnvme_cmd_ctx_pool_init(struct xnvme_cmd_ctx_pool *pool,
-			struct xnvme_queue *queue,
-			xnvme_queue_cb cb,
-			void *cb_args)
-{
-	for (uint32_t i = 0; i < pool->capacity; ++i) {
-		pool->elm[i].pool = pool;
-		pool->elm[i].async.queue = queue;
-		pool->elm[i].async.cb = cb;
-		pool->elm[i].async.cb_arg = cb_args;
-
-		SLIST_INSERT_HEAD(&pool->head, &pool->elm[i], link);
-	}
-
-	return 0;
 }
 
 void
@@ -111,30 +63,41 @@ xnvme_cmd_ctx_pr(const struct xnvme_cmd_ctx *ctx, int XNVME_UNUSED(opts))
 }
 
 void
-xnvme_cmd_ctx_clear(struct xnvme_cmd_ctx *cmd_ctx)
+xnvme_cmd_ctx_clear(struct xnvme_cmd_ctx *ctx)
 {
-	memset(cmd_ctx, 0x0, sizeof(*cmd_ctx));
+	memset(ctx, 0x0, sizeof(*ctx));
+}
+
+struct xnvme_cmd_ctx
+xnvme_cmd_ctx_from_dev(struct xnvme_dev *dev)
+{
+	struct xnvme_cmd_ctx ctx = { .dev = dev, .opts = XNVME_CMD_SYNC };
+
+	return ctx;
+}
+
+struct xnvme_cmd_ctx *
+xnvme_cmd_ctx_from_queue(struct xnvme_queue *queue)
+{
+	return xnvme_queue_get_cmd_ctx(queue);
 }
 
 int
-xnvme_cmd_pass(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *dbuf,
-	       size_t dbuf_nbytes, void *mbuf, size_t mbuf_nbytes, int opts,
-	       struct xnvme_cmd_ctx *cmd_ctx)
+xnvme_cmd_pass(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+	       size_t mbuf_nbytes)
 {
-	const int cmd_opts = opts & XNVME_CMD_MASK;
+	const int cmd_opts = ctx->opts & XNVME_CMD_MASK;
 
 	if ((cmd_opts & XNVME_CMD_MASK_UPLD) && dbuf) {
-		xnvme_sgl_setup(dev, cmd, dbuf, mbuf, opts);
+		xnvme_sgl_setup(ctx, dbuf, mbuf);
 	}
 
 	switch (cmd_opts & XNVME_CMD_MASK_IOMD) {
 	case XNVME_CMD_ASYNC:
-		return dev->be.async.cmd_io(dev, cmd, dbuf, dbuf_nbytes, mbuf,
-					    mbuf_nbytes, opts, cmd_ctx);
+		return ctx->dev->be.async.cmd_io(ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
 
 	case XNVME_CMD_SYNC:
-		return dev->be.sync.cmd_io(dev, cmd, dbuf, dbuf_nbytes, mbuf,
-					   mbuf_nbytes, opts, cmd_ctx);
+		return ctx->dev->be.sync.cmd_io(ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
 
 	default:
 		XNVME_DEBUG("FAILED: command-mode not provided");
@@ -143,18 +106,17 @@ xnvme_cmd_pass(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *dbuf,
 }
 
 int
-xnvme_cmd_pass_admin(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
-		     void *dbuf, size_t dbuf_nbytes, void *mbuf,
-		     size_t mbuf_nbytes, int opts, struct xnvme_cmd_ctx *cmd_ctx)
+xnvme_cmd_pass_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+		     size_t mbuf_nbytes)
 {
-	if (XNVME_CMD_ASYNC & opts) {
+	if (ctx->opts & XNVME_CMD_ASYNC) {
 		XNVME_DEBUG("FAILED: Admin commands are always sync.");
 		return -EINVAL;
 	}
-	if ((opts & XNVME_CMD_MASK_UPLD) && dbuf) {
-		xnvme_sgl_setup(dev, cmd, dbuf, mbuf, opts);
+
+	if ((ctx->opts & XNVME_CMD_MASK_UPLD) && dbuf) {
+		xnvme_sgl_setup(ctx, dbuf, mbuf);
 	}
 
-	return dev->be.sync.cmd_admin(dev, cmd, dbuf, dbuf_nbytes, mbuf,
-				      mbuf_nbytes, opts, cmd_ctx);
+	return ctx->dev->be.sync.cmd_admin(ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
 }

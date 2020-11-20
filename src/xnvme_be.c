@@ -661,7 +661,6 @@ xnvme_enumeration_pp(struct xnvme_enumeration *list, int opts)
 	return xnvme_enumeration_fpp(stdout, list, opts);
 }
 
-
 int
 xnvme_be_factory(const char *uri, struct xnvme_dev **dev)
 {
@@ -680,19 +679,29 @@ xnvme_be_factory(const char *uri, struct xnvme_dev **dev)
 		if (!be->attr.enabled) {
 			continue;
 		}
-		if (!has_scheme(ident.schm, be->attr.schemes,
-				be->attr.nschemes)) {
+		if (!has_scheme(ident.schm, be->attr.schemes, be->attr.nschemes)) {
 			continue;
 		}
 
-		if (!be->dev.dev_from_ident(&ident, dev)) {
-			return 0;
+		err = be->dev.dev_from_ident(&ident, dev);
+		switch (err < 0 ? -err : err) {
+		case EPERM:
+			XNVME_DEBUG("INFO: failed and stop trying");
+			return err;
+
+		case 0:
+			XNVME_DEBUG("INFO: good!");
+			return err;
+
+		default:
+			XNVME_DEBUG("INFO: skipping due to err: %d", err);
+			break;
 		}
 	}
 
 	XNVME_DEBUG("FAILED: no backend for uri: '%s'", uri);
 
-	return -ENXIO;
+	return err ? err : -ENXIO;
 }
 
 int

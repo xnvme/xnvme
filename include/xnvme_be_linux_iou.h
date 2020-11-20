@@ -12,7 +12,7 @@ struct xnvme_queue_iou {
 	uint8_t poll_io;
 	uint8_t poll_sq;
 
-	uint8_t _rsvd[6];
+	uint8_t _rsvd[61];
 };
 XNVME_STATIC_ASSERT(
 	sizeof(struct xnvme_queue_iou) == XNVME_BE_QUEUE_STATE_NBYTES,

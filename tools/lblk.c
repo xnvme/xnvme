@@ -44,9 +44,9 @@ static inline int
 sub_idfy(struct xnvmec *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 	struct xnvme_spec_idfy *idfy = NULL;
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
-	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	xnvmec_pinf("xnvme_adm_idfy: {nsid: 0x%x}", nsid);
@@ -58,7 +58,7 @@ sub_idfy(struct xnvmec *cli)
 		goto exit;
 	}
 
-	err = xnvme_adm_idfy_ns(dev, nsid, idfy, &ctx);
+	err = xnvme_adm_idfy_ns(&ctx, nsid, idfy);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_adm_idfy()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
@@ -87,6 +87,7 @@ static int
 sub_read(struct xnvmec *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 	const struct xnvme_geo *geo = cli->args.geo;
 	const uint64_t slba = cli->args.slba;
 	const size_t nlb = cli->args.nlb;
@@ -94,11 +95,10 @@ sub_read(struct xnvmec *cli)
 
 	void *dbuf = NULL, *mbuf = NULL;
 	size_t dbuf_nbytes, mbuf_nbytes;
-	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	if (!cli->given[XNVMEC_OPT_NSID]) {
-		nsid = xnvme_dev_get_nsid(cli->args.dev);
+		nsid = xnvme_dev_get_nsid(dev);
 	}
 
 	dbuf_nbytes = (nlb + 1) * geo->lba_nbytes;
@@ -128,8 +128,7 @@ sub_read(struct xnvmec *cli)
 	}
 
 	xnvmec_pinf("Sending the command...");
-	err = xnvme_nvm_read(dev, nsid, slba, nlb, dbuf, mbuf, XNVME_CMD_SYNC,
-			     &ctx);
+	err = xnvme_nvm_read(&ctx, nsid, slba, nlb, dbuf, mbuf);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_nvm_read()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
@@ -157,6 +156,7 @@ static int
 sub_write(struct xnvmec *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 	const struct xnvme_geo *geo = cli->args.geo;
 	const uint64_t slba = cli->args.slba;
 	const size_t nlb = cli->args.nlb;
@@ -164,7 +164,6 @@ sub_write(struct xnvmec *cli)
 
 	void *dbuf = NULL, *mbuf = NULL;
 	size_t dbuf_nbytes, mbuf_nbytes;
-	struct xnvme_cmd_ctx ctx = {0 };
 	int err;
 
 	if (!cli->given[XNVMEC_OPT_NSID]) {
@@ -206,8 +205,7 @@ sub_write(struct xnvmec *cli)
 	}
 
 	xnvmec_pinf("Sending the command...");
-	err = xnvme_nvm_write(dev, nsid, slba, nlb, dbuf, mbuf, XNVME_CMD_SYNC,
-			      &ctx);
+	err = xnvme_nvm_write(&ctx, nsid, slba, nlb, dbuf, mbuf);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_nvm_write()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);

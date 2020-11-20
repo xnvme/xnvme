@@ -425,7 +425,7 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 
 	{XNVMEC_OPT_SEED,	XNVMEC_OPT_VTYPE_NUM,	"seed",		"Use given 'NUM' as random seed"},
 	{XNVMEC_OPT_LIMIT,	XNVMEC_OPT_VTYPE_NUM,	"limit",	"Restrict amount to 'NUM'"},
-	{XNVMEC_OPT_QDEPTH,	XNVMEC_OPT_VTYPE_NUM,	"qdepth",	"Use given 'NUM' as queue max depth"},
+	{XNVMEC_OPT_QDEPTH,	XNVMEC_OPT_VTYPE_NUM,	"qdepth",	"Use given 'NUM' as queue max capacity"},
 
 	{XNVMEC_OPT_COUNT,	XNVMEC_OPT_VTYPE_NUM,	"count",	"Use given 'NUM' as count"},
 	{XNVMEC_OPT_OFFSET,	XNVMEC_OPT_VTYPE_NUM,	"offset",	"Use given 'NUM' as offset"},

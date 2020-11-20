@@ -67,11 +67,11 @@ _qp_init(struct _qp *qp)
 }
 
 int
-_linux_thr_term(struct xnvme_queue *queue)
+_linux_thr_term(struct xnvme_queue *q)
 {
-	struct xnvme_queue_thr *qctx = (void *)queue;
+	struct xnvme_queue_thr *queue = (void *)q;
 
-	_qp_term(qctx->qp);
+	_qp_term(queue->qp);
 
 	return 0;
 }
@@ -86,15 +86,15 @@ _linux_thr_term(struct xnvme_queue *queue)
  * This should probably be done with an SPMC or something clever.
 */
 int
-_linux_thr_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
+_linux_thr_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 {
-	struct xnvme_queue_thr *qctx = (void *)queue;
+	struct xnvme_queue_thr *queue = (void *)q;
 
-	if (_qp_alloc(&(qctx->qp), queue->base.depth)) {
+	if (_qp_alloc(&(queue->qp), queue->base.capacity)) {
 		XNVME_DEBUG("FAILED: _qp_alloc()");
 		goto failed;
 	}
-	if (_qp_init(qctx->qp)) {
+	if (_qp_init(queue->qp)) {
 		XNVME_DEBUG("FAILED: _qp_init()");
 		goto failed;
 	}
@@ -102,16 +102,16 @@ _linux_thr_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
 	return 0;
 
 failed:
-	_linux_thr_term(queue);
+	_linux_thr_term(q);
 
 	return 1;
 }
 
 int
-_linux_thr_poke(struct xnvme_queue *queue, uint32_t max)
+_linux_thr_poke(struct xnvme_queue *q, uint32_t max)
 {
-	struct xnvme_queue_thr *qctx = (void *)queue;
-	struct _qp *qp = qctx->qp;
+	struct xnvme_queue_thr *queue = (void *)q;
+	struct _qp *qp = queue->qp;
 	unsigned completed = 0;
 
 	max = max ? max : queue->base.outstanding;
@@ -123,10 +123,8 @@ _linux_thr_poke(struct xnvme_queue *queue, uint32_t max)
 
 		STAILQ_REMOVE_HEAD(&qp->sq, link);
 
-		err = queue->base.dev->be.sync.cmd_io(entry->dev, &entry->cmd, entry->dbuf,
-						      entry->dbuf_nbytes, entry->mbuf,
-						      entry->mbuf_nbytes, XNVME_CMD_SYNC,
-						      entry->ctx);
+		err = queue->base.dev->be.sync.cmd_io(entry->ctx, entry->dbuf, entry->dbuf_nbytes,
+						      entry->mbuf, entry->mbuf_nbytes);
 		if (err) {
 			XNVME_DEBUG("FAILED: err: %d", err);
 			entry->ctx->cpl.status.sc = err;
@@ -138,6 +136,7 @@ _linux_thr_poke(struct xnvme_queue *queue, uint32_t max)
 	};
 
 	queue->base.outstanding -= completed;
+
 	return completed;
 }
 
@@ -171,15 +170,14 @@ _linux_thr_wait(struct xnvme_queue *queue)
 }
 
 static inline int
-_linux_thr_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *dbuf,
-		  size_t dbuf_nbytes, void *mbuf, size_t mbuf_nbytes,
-		  int XNVME_UNUSED(opts), struct xnvme_cmd_ctx *req)
+_linux_thr_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+		  size_t mbuf_nbytes)
 {
-	struct xnvme_queue_thr *qctx = (void *)req->async.queue;
-	struct _qp *qp = qctx->qp;
+	struct xnvme_queue_thr *queue = (void *)ctx->async.queue;
+	struct _qp *qp = queue->qp;
 	struct _entry *entry;
 
-	if (req->async.queue->base.outstanding == qctx->base.depth) {
+	if (queue->base.outstanding == queue->base.capacity) {
 		XNVME_DEBUG("FAILED: queue is full");
 		return -EBUSY;
 	}
@@ -192,24 +190,22 @@ _linux_thr_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd, void *dbuf,
 	}
 	STAILQ_REMOVE_HEAD(&qp->rp, link);
 
-	entry->dev = dev;
-	entry->cmd = *cmd;
+	entry->dev = ctx->dev;
+	entry->ctx = ctx;
 	entry->dbuf = dbuf;
 	entry->dbuf_nbytes = dbuf_nbytes;
 	entry->mbuf = mbuf;
 	entry->mbuf_nbytes = mbuf_nbytes;
-	entry->ctx = req;
 
 	STAILQ_INSERT_TAIL(&qp->sq, entry, link);
 
-	req->async.queue->base.outstanding += 1;
+	ctx->async.queue->base.outstanding += 1;
 
 	return 0;
 }
 
 int
-_linux_thr_supported(struct xnvme_dev *XNVME_UNUSED(dev),
-		     uint32_t XNVME_UNUSED(opts))
+_linux_thr_supported(struct xnvme_dev *XNVME_UNUSED(dev), uint32_t XNVME_UNUSED(opts))
 {
 	return 1;
 }

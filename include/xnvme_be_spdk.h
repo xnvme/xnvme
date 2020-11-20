@@ -15,7 +15,7 @@ struct xnvme_queue_spdk {
 
 	struct spdk_nvme_qpair *qpair;
 
-	uint8_t rsvd[168];
+	uint8_t rsvd[224];
 };
 XNVME_STATIC_ASSERT(
 	sizeof(struct xnvme_queue_spdk) == XNVME_BE_QUEUE_STATE_NBYTES,

@@ -92,12 +92,11 @@ struct xnvme_fioe_fwrap {
 	const struct xnvme_geo *geo;
 
 	struct xnvme_queue *queue;
-	struct xnvme_cmd_ctx_pool *pool;
 
 	uint32_t ssw;
 	uint32_t lba_nbytes;
 
-	uint8_t _pad[16];
+	uint8_t _pad[24];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_fioe_fwrap) == 64, "Incorrect size")
 
@@ -167,19 +166,19 @@ static struct fio_option options[] = {
 };
 
 static void
-cb_pool(struct xnvme_cmd_ctx *req, void *cb_arg)
+cb_pool(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 {
 	struct io_u *io_u = cb_arg;
 	struct xnvme_fioe_data *xd = io_u->engine_data;
 
-	if (xnvme_cmd_ctx_cpl_status(req)) {
-        xnvme_cmd_ctx_pr(req, XNVME_PR_DEF);
+	if (xnvme_cmd_ctx_cpl_status(ctx)) {
+		xnvme_cmd_ctx_pr(ctx, XNVME_PR_DEF);
 		xd->ecount += 1;
 		io_u->error = EIO;
 	}
 
 	xd->iocq[xd->completed++] = io_u;
-	SLIST_INSERT_HEAD(&req->pool->head, req, link);
+	xnvme_queue_put_cmd_ctx(ctx->async.queue, ctx);
 }
 
 #ifdef XNVME_DEBUG_ENABLED
@@ -205,9 +204,8 @@ static int
 _dev_close(struct thread_data *td, struct xnvme_fioe_fwrap *fwrap)
 {
 	if (fwrap->dev) {
-        xnvme_queue_term(fwrap->queue);
+		xnvme_queue_term(fwrap->queue);
 	}
-    xnvme_cmd_ctx_pool_free(fwrap->pool);
 	xnvme_dev_close(fwrap->dev);
 
 	memset(fwrap, 0, sizeof(*fwrap));
@@ -317,15 +315,7 @@ _dev_open(struct thread_data *td, struct fio_file *f)
 		log_err("xnvme_fioe: init(): failed xnvme_queue_init()\n");
 		goto failure;
 	}
-	if (xnvme_cmd_ctx_pool_alloc(&fwrap->pool, td->o.iodepth + 1)) {
-		log_err("xnvme_fioe: init(): xnvme_cmd_ctx_pool_alloc()\n");
-		goto failure;
-	}
-	// NOTE: cb_args are assigned in _queue()
-	if (xnvme_cmd_ctx_pool_init(fwrap->pool, fwrap->queue, cb_pool, NULL)) {
-		log_err("xnvme_fioe: init(): xnvme_cmd_ctx_pool_init()\n");
-		goto failure;
-	}
+	xnvme_queue_set_cb(fwrap->queue, cb_pool, NULL);
 
 	fwrap->ssw = xnvme_dev_get_ssw(fwrap->dev);
 	fwrap->lba_nbytes = fwrap->geo->lba_nbytes;
@@ -340,8 +330,7 @@ _dev_open(struct thread_data *td, struct fio_file *f)
 	return 0;
 
 failure:
-    xnvme_cmd_ctx_pool_free(fwrap->pool);
-    xnvme_queue_term(fwrap->queue);
+	xnvme_queue_term(fwrap->queue);
 	xnvme_dev_close(fwrap->dev);
 
 	pthread_mutex_unlock(&g_serialize);
@@ -530,7 +519,7 @@ xnvme_fioe_queue(struct thread_data *td, struct io_u *io_u)
 {
 	struct xnvme_fioe_data *xd = td->io_ops_data;
 	struct xnvme_fioe_fwrap *fwrap;
-	struct xnvme_cmd_ctx *req;
+	struct xnvme_cmd_ctx *ctx;
 	uint32_t nsid;
 	uint64_t slba;
 	uint16_t nlb;
@@ -550,22 +539,16 @@ xnvme_fioe_queue(struct thread_data *td, struct io_u *io_u)
 		return FIO_Q_COMPLETED;
 	}
 
-	req = SLIST_FIRST(&fwrap->pool->head);
-	SLIST_REMOVE_HEAD(&fwrap->pool->head, link);
-
-	req->async.cb_arg = io_u;
+	ctx = xnvme_queue_get_cmd_ctx(fwrap->queue);
+	ctx->async.cb_arg = io_u;
 
 	switch (io_u->ddir) {
 	case DDIR_READ:
-		err = xnvme_nvm_read(fwrap->dev, nsid, slba, nlb,
-                             io_u->xfer_buf, NULL, XNVME_CMD_ASYNC,
-                             req);
+		err = xnvme_nvm_read(ctx, nsid, slba, nlb, io_u->xfer_buf, NULL);
 		break;
 
 	case DDIR_WRITE:
-		err = xnvme_nvm_write(fwrap->dev, nsid, slba, nlb,
-                              io_u->xfer_buf, NULL, XNVME_CMD_ASYNC,
-                              req);
+		err = xnvme_nvm_write(ctx, nsid, slba, nlb, io_u->xfer_buf, NULL);
 		break;
 
 	default:
@@ -581,13 +564,14 @@ xnvme_fioe_queue(struct thread_data *td, struct io_u *io_u)
 
 	case -EBUSY:
 	case -EAGAIN:
-		SLIST_INSERT_HEAD(&req->pool->head, req, link);
+		xnvme_queue_put_cmd_ctx(ctx->async.queue, ctx);
 		return FIO_Q_BUSY;
 
 	default:
 		log_err("xnvme_fioe: queue(): err: '%d'\n", err);
 
-		SLIST_INSERT_HEAD(&req->pool->head, req, link);
+		xnvme_queue_put_cmd_ctx(ctx->async.queue, ctx);
+
 		io_u->error = abs(err);
 		assert(false);
 		return FIO_Q_COMPLETED;
@@ -824,8 +808,7 @@ exit:
 }
 
 static int
-xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint64_t offset,
-		    uint64_t length)
+xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint64_t offset, uint64_t length)
 {
 	struct xnvme_fioe_data *xd = td->io_ops_data;
 	struct xnvme_fioe_fwrap *fwrap = &xd->files[f->fileno];
@@ -841,8 +824,9 @@ xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint64_t offset,
 	first = ((offset >> fwrap->ssw) / fwrap->geo->nsect) * fwrap->geo->nsect;
 	last = (((offset + length) >> fwrap->ssw) / fwrap->geo->nsect) * fwrap->geo->nsect;
 	XNVME_DEBUG("INFO: first: 0x%lx, last: 0x%lx", first, last);
+
 	for (uint64_t zslba = first; zslba <= last; zslba += fwrap->geo->nsect) {
-		struct xnvme_cmd_ctx req = {0 };
+		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(fwrap->dev);
 
 		if (zslba >= (fwrap->geo->nsect * fwrap->geo->nzone)) {
 			XNVME_DEBUG("INFO: out-of-bounds");
@@ -850,11 +834,11 @@ xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint64_t offset,
 			break;
 		}
 
-		err = xnvme_znd_mgmt_send(fwrap->dev, nsid, zslba, XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET,
-                                  0x0, NULL, XNVME_CMD_SYNC, &req);
-		if (err || xnvme_cmd_ctx_cpl_status(&req)) {
+		err = xnvme_znd_mgmt_send(&ctx, nsid, zslba,
+                                  XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET, 0x0, NULL);
+		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			err = err ? err : -EIO;
-			XNVME_DEBUG("FAILED: err: %d, sc=%d", err, req.cpl.status.sc);
+			XNVME_DEBUG("FAILED: err: %d, sc=%d", err, ctx.cpl.status.sc);
 			goto exit;
 		}
 	}

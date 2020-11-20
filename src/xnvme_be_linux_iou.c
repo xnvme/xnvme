@@ -29,7 +29,7 @@
 // TODO: replace this with liburing 0.7 barriers
 #define _linux_iou_barrier()  __asm__ __volatile__("":::"memory")
 
-static int g_linux_iou_opcodes[] = {
+static int g_linux_iou_required[] = {
 	IORING_OP_READV,
 	IORING_OP_WRITEV,
 	IORING_OP_READ_FIXED,
@@ -37,7 +37,7 @@ static int g_linux_iou_opcodes[] = {
 	IORING_OP_READ,
 	IORING_OP_WRITE,
 };
-int g_linux_iou_nopcodes = sizeof g_linux_iou_opcodes / sizeof(*g_linux_iou_opcodes);
+int g_linux_iou_nrequired = sizeof g_linux_iou_required / sizeof(*g_linux_iou_required);
 
 /**
  * Check whether the Kernel supports the io_uring features used by xNVMe
@@ -58,11 +58,11 @@ _linux_iou_supported(struct xnvme_dev *XNVME_UNUSED(dev), uint32_t XNVME_UNUSED(
 		goto exit;
 	}
 
-	for (int i = 0; i < g_linux_iou_nopcodes; ++i) {
-		if (!io_uring_opcode_supported(probe, g_linux_iou_opcodes[i])) {
+	for (int i = 0; i < g_linux_iou_nrequired; ++i) {
+		if (!io_uring_opcode_supported(probe, g_linux_iou_required[i])) {
 			err = -ENOSYS;
 			XNVME_DEBUG("FAILED: Kernel does not support opc: %d",
-				    g_linux_iou_opcodes[i]);
+				    g_linux_iou_required[i]);
 			goto exit;
 		}
 	}
@@ -74,74 +74,72 @@ exit:
 }
 
 int
-_linux_iou_init(struct xnvme_queue *queue, int opts)
+_linux_iou_init(struct xnvme_queue *q, int opts)
 {
+	struct xnvme_queue_iou *queue = (void *)q;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
-	struct xnvme_queue_iou *actx = (void *)queue;
 	int err = 0;
 	int iou_flags = 0;
 
 	if ((opts & XNVME_QUEUE_SQPOLL) || (state->poll_sq)) {
-		actx->poll_sq = 1;
+		queue->poll_sq = 1;
 	}
 	if ((opts & XNVME_QUEUE_IOPOLL) || (state->poll_io)) {
-		actx->poll_io = 1;
+		queue->poll_io = 1;
 	}
 
 	// NOTE: Disabling IOPOLL, to avoid lock-up, until fixed in `_poke`
-	if (actx->poll_io) {
+	if (queue->poll_io) {
 		printf("ENOSYS: IORING_SETUP_IOPOLL\n");
-		actx->poll_io = 0;
+		queue->poll_io = 0;
 	}
-	XNVME_DEBUG("actx->poll_sq: %d", actx->poll_sq);
-	XNVME_DEBUG("actx->poll_io: %d", actx->poll_io);
+	XNVME_DEBUG("queue->poll_sq: %d", queue->poll_sq);
+	XNVME_DEBUG("queue->poll_io: %d", queue->poll_io);
 
 	//
 	// Ring-initialization
 	//
-	if (actx->poll_sq) {
+	if (queue->poll_sq) {
 		iou_flags |= IORING_SETUP_SQPOLL;
 	}
-	if (actx->poll_io) {
+	if (queue->poll_io) {
 		iou_flags |= IORING_SETUP_IOPOLL;
 	}
 
-	err = io_uring_queue_init(queue->base.depth, &actx->ring, iou_flags);
+	err = io_uring_queue_init(queue->base.capacity, &queue->ring, iou_flags);
 	if (err) {
 		XNVME_DEBUG("FAILED: io_uring_queue_init(), err: %d", err);
 		return err;
 	}
 
-	if (actx->poll_sq) {
-		io_uring_register_files(&actx->ring, &(state->fd), 1);
+	if (queue->poll_sq) {
+		io_uring_register_files(&queue->ring, &(state->fd), 1);
 	}
 
 	return 0;
 }
 
 int
-_linux_iou_term(struct xnvme_queue *queue)
+_linux_iou_term(struct xnvme_queue *q)
 {
-	struct xnvme_queue_iou *actx = (void *)queue;
+	struct xnvme_queue_iou *queue = (void *)q;
 
 	if (!queue) {
 		XNVME_DEBUG("FAILED: queue: %p", (void *)queue);
 		return -EINVAL;
 	}
 
-	actx = (void *)queue;
-
-	io_uring_unregister_files(&actx->ring);
-	io_uring_queue_exit(&actx->ring);
+	io_uring_unregister_files(&queue->ring);
+	io_uring_queue_exit(&queue->ring);
 
 	return 0;
 }
 
 int
-_linux_iou_poke(struct xnvme_queue *queue, uint32_t max)
+_linux_iou_poke(struct xnvme_queue *q, uint32_t max)
 {
-	struct xnvme_queue_iou *actx = (void *)queue;
-	struct io_uring_cq *ring = &actx->ring.cq;
+	struct xnvme_queue_iou *queue = (void *)q;
+	struct io_uring_cq *ring = &queue->ring.cq;
 	unsigned cq_ring_mask = *ring->kring_mask;
 	unsigned completed = 0;
 	unsigned head;
@@ -167,14 +165,14 @@ _linux_iou_poke(struct xnvme_queue *queue, uint32_t max)
 			XNVME_DEBUG("cqe->res: %d", cqe->res);
 			XNVME_DEBUG("cqe->flags: %u", cqe->flags);
 
-			io_uring_cqe_seen(&actx->ring, cqe);
+			io_uring_cqe_seen(&queue->ring, cqe);
 			queue->base.outstanding -= 1;
 
 			return -EIO;
 		}
 
 		// Map cqe-result to cmd_ctx-completion
-		ctx->cpl.status.sc = cqe->res;
+		ctx->cpl.status.sc = cqe->res ? cqe->res : ctx->cpl.status.sc;
 
 		ctx->async.cb(ctx, ctx->async.cb_arg);
 
@@ -220,18 +218,27 @@ _linux_iou_wait(struct xnvme_queue *queue)
 }
 
 int
-_linux_iou_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
-		  void *dbuf, size_t dbuf_nbytes, void *mbuf,
-		  size_t mbuf_nbytes, int XNVME_UNUSED(opts),
-		  struct xnvme_cmd_ctx *ctx)
+_linux_iou_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+		  size_t mbuf_nbytes)
 {
-	struct xnvme_be_linux_state *state = (void *)dev->be.state;
-	struct xnvme_queue_iou *actx = (void *)ctx->async.queue;
+	struct xnvme_queue_iou *queue = (void *)ctx->async.queue;
+	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
+	const uint64_t ssw = queue->base.dev->ssw;
 	struct io_uring_sqe *sqe = NULL;
-	int opcode;
+
+	int opcode = IORING_OP_NOP;
 	int err = 0;
 
-	switch (cmd->common.opcode) {
+	if (queue->base.outstanding == queue->base.capacity) {
+		XNVME_DEBUG("FAILED: queue is full");
+		return -EBUSY;
+	}
+
+	if (mbuf || mbuf_nbytes) {
+		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
+		return -ENOSYS;
+	}
+	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
 		opcode = IORING_OP_WRITE;
 		break;
@@ -242,20 +249,11 @@ _linux_iou_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 
 	default:
 		XNVME_DEBUG("FAILED: unsupported opcode: %d for async",
-			    cmd->common.opcode);
+			    ctx->cmd.common.opcode);
 		return -ENOSYS;
 	}
 
-	if (ctx->async.queue->base.outstanding == ctx->async.queue->base.depth) {
-		XNVME_DEBUG("FAILED: queue is full");
-		return -EBUSY;
-	}
-	if (mbuf || mbuf_nbytes) {
-		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
-		return -ENOSYS;
-	}
-
-	sqe = io_uring_get_sqe(&actx->ring);
+	sqe = io_uring_get_sqe(&queue->ring);
 	if (!sqe) {
 		return -EAGAIN;
 	}
@@ -263,24 +261,24 @@ _linux_iou_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 	sqe->opcode = opcode;
 	sqe->addr = (unsigned long) dbuf;
 	sqe->len = dbuf_nbytes;
-	sqe->off = cmd->nvm.slba << dev->ssw;
-	sqe->flags = actx->poll_sq ? IOSQE_FIXED_FILE : 0;
+	sqe->off = ctx->cmd.nvm.slba << ssw;
+	sqe->flags = queue->poll_sq ? IOSQE_FIXED_FILE : 0;
 	sqe->ioprio = 0;
 	// NOTE: we only ever register a single file, the raw device, so the
 	// provided index will always be 0
-	sqe->fd = actx->poll_sq ? 0 : state->fd;
+	sqe->fd = queue->poll_sq ? 0 : state->fd;
 	sqe->rw_flags = 0;
 	sqe->user_data = (unsigned long)ctx;
 	sqe->__pad2[0] = sqe->__pad2[1] = sqe->__pad2[2] = 0;
 
-	err = io_uring_submit(&actx->ring);
+	err = io_uring_submit(&queue->ring);
 	if (err < 0) {
-		XNVME_DEBUG("io_uring_submit(%d), err: %d", cmd->common.opcode,
+		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opcode,
 			    err);
 		return err;
 	}
 
-	ctx->async.queue->base.outstanding += 1;
+	queue->base.outstanding += 1;
 
 	return 0;
 }

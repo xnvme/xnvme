@@ -48,7 +48,7 @@ xnvme_znd_dev_get_lbafe(struct xnvme_dev *dev);
  * @note When `opts | CMD_MODE_SYNC` then `ret` is filled with completion entry
  * upon return
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  * @param nsid Namespace Identifier
  * @param slba Start LBA of the Zone to receive for
  * @param action the ::xnvme_spec_znd_cmd_mgmt_send_action
@@ -56,27 +56,24 @@ xnvme_znd_dev_get_lbafe(struct xnvme_dev *dev);
  * @param partial partial request
  * @param dbuf pointer to data payload
  * @param dbuf_nbytes pointer to meta payload
- * @param opts command-options, see ::xnvme_cmd_opts
- * @param ret Pointer to structure for async. context and NVMe completion
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
-xnvme_znd_mgmt_recv(struct xnvme_dev *dev, uint32_t nsid, uint64_t slba,
-		    enum xnvme_spec_znd_cmd_mgmt_recv_action action,
-		    enum xnvme_spec_znd_cmd_mgmt_recv_action_sf sf, uint8_t partial, void *dbuf,
-		    uint32_t dbuf_nbytes, int opts, struct xnvme_cmd_ctx *ret);
+xnvme_znd_mgmt_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba,
+		    enum xnvme_spec_znd_cmd_mgmt_recv_action action, enum xnvme_spec_znd_cmd_mgmt_recv_action_sf sf,
+		    uint8_t partial, void *dbuf, uint32_t dbuf_nbytes);
 
 /**
  * Fills 'zdescr' with the Zone on the given 'dev' that starts at 'slba'
  *
- * @param dev The device to receive descriptors from
+ * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
  * @param slba The Zone Start LBA
- * @param zdescr Pointer to the descriptor the function should fill
+ * @param zdescr Pointer to the ::xnvme_spec_znd_descr to fill
  *
- * @return On succes, 0 is returned and 'zdescr' filled with matching Zone
- * Descriptor. On error, negative ``errno`` is returned to indicate the error,
- * and the content of given 'zdescr' is undefined.
+ * @return On success, 0 is returned and 'zdescr' filled with matching Zone Descriptor. On error,
+ * negative ``errno`` is returned to indicate the error, and the content of given 'zdescr' is
+ * undefined.
  */
 int
 xnvme_znd_descr_from_dev(struct xnvme_dev *dev, uint64_t slba,
@@ -132,40 +129,36 @@ xnvme_znd_log_changes_from_dev(struct xnvme_dev *dev);
 /**
  * Submit, and optionally wait for completion of, a Zone Management Send
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  * @param nsid Namespace Identifier
  * @param zslba Start LBA of the Zone to manage
  * @param action Management action to perform with zone at zslba
  * @param sf the ::xnvme_spec_znd_cmd_mgmt_recv_action_sf option
  * @param dbuf For action=ZND_SEND_DESCRIPTOR provide buffer
- * @param opts command-options, see ::xnvme_cmd_opts
- * @param ret Pointer to structure for async. context and NVMe completion
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
-xnvme_znd_mgmt_send(struct xnvme_dev *dev, uint32_t nsid, uint64_t zslba,
-		    enum xnvme_spec_znd_cmd_mgmt_send_action action,
-		    enum xnvme_spec_znd_mgmt_send_action_sf sf, void *dbuf, int opts,
-		    struct xnvme_cmd_ctx *ret);
+xnvme_znd_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba,
+		    enum xnvme_spec_znd_cmd_mgmt_send_action action, enum xnvme_spec_znd_mgmt_send_action_sf sf,
+		    void *dbuf);
 
 /**
  * Submit, and optionally wait for completion of, a Zone Append
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  * @param nsid Namespace Identifier
  * @param zslba First LBA of the Zone to append to
  * @param nlb number of LBAs, this is zero-based value
  * @param dbuf pointer to data payload
  * @param mbuf pointer to meta payload
- * @param opts command-options, see ::xnvme_cmd_opts
- * @param ret Pointer to structure for async. context and NVMe completion
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
-xnvme_znd_append(struct xnvme_dev *dev, uint32_t nsid, uint64_t zslba, uint16_t nlb,
-		 const void *dbuf, const void *mbuf, int opts, struct xnvme_cmd_ctx *ret);
+xnvme_znd_append(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, uint16_t nlb,
+		 const void *dbuf,
+		 const void *mbuf);
 
 /**
  * Encapsulation of Zone Descriptors and Zone Descriptor Extensions

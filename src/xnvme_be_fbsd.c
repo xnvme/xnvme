@@ -72,9 +72,10 @@ xnvme_be_fbsd_state_init(struct xnvme_dev *dev, void *XNVME_UNUSED(opts))
 int
 xnvme_be_fbsd_dev_idfy(struct xnvme_dev *dev)
 {
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 	struct xnvme_be_fbsd_state *state = (void *)dev->be.state;
 	struct xnvme_spec_idfy *idfy = NULL;
-	struct xnvme_cmd_ctx cmd_ctx = { 0 };
+
 	int err;
 
 	dev->dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
@@ -86,9 +87,8 @@ xnvme_be_fbsd_dev_idfy(struct xnvme_dev *dev)
 	}
 
 	memset(idfy, 0, sizeof(*idfy));
-	memset(&cmd_ctx, 0, sizeof(cmd_ctx));
-	err = xnvme_cmd_idfy_ctrlr(dev, idfy, &cmd_ctx);
-	if (err || xnvme_req_cpl_status(&cmd_ctx)) {
+	err = xnvme_cmd_idfy_ctrlr(dev, idfy, &ctx);
+	if (err || xnvme_req_cpl_status(&ctx)) {
 		XNVME_DEBUG("FAILED: identify controller");
 		xnvme_buf_free(dev, idfy);
 		xnvme_be_fbsd_state_term(state);
@@ -101,9 +101,9 @@ xnvme_be_fbsd_dev_idfy(struct xnvme_dev *dev)
 		int ioctl_nsid = dev->nsid ? dev->nsid : 1;
 
 		memset(idfy, 0, sizeof(*idfy));
-		memset(&cmd_ctx, 0, sizeof(cmd_ctx));
-		err = xnvme_cmd_idfy_ns(dev, ioctl_nsid, idfy, &cmd_ctx);
-		if (err || xnvme_req_cpl_status(&cmd_ctx)) {
+		ctx = xnvme_cmd_ctx_from_dev(dev)
+		      err = xnvme_cmd_idfy_ns(dev, ioctl_nsid, idfy, &ctx);
+		if (err || xnvme_req_cpl_status(&ctx)) {
 			XNVME_DEBUG("FAILED: identify namespace, err: %d", err);
 			xnvme_buf_free(dev, idfy);
 			xnvme_be_fbsd_state_term(state);

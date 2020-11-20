@@ -37,95 +37,101 @@ ioctl_request_to_str(unsigned long req)
 }
 #endif
 
-/**
- * Encapsulation of NVMe Command sub. and compl. as sent via the Linux IOCTLs
- *
- * See definitions in: linux/nvme_ioctl.h
- */
-struct xnvme_be_linux_nvme_ioctl {
+struct _kernel_cpl {
 	union {
-		struct nvme_user_io user_io;
-		struct nvme_passthru_cmd passthru_cmd;
-		struct nvme_passthru_cmd admin_cmd;
-
 		struct {
-			struct xnvme_spec_cmd nvme;
 			uint32_t timeout_ms;
 			uint32_t result;
-		};
+			uint64_t rsvd;
+		} res32;
 
-		uint32_t cdw[18];	///< IOCTL as an array of dwords
+		struct {
+			uint32_t timeout_ms;
+			uint32_t rsvd1;
+			uint64_t result;
+		} res64;
 	};
 };
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cpl) == sizeof(struct _kernel_cpl), "Incorrect size")
 
-void
-xnvme_be_linux_nvme_cmd_pr(struct xnvme_be_linux_nvme_ioctl *kcmd)
+int
+xnvme_be_linux_nvme_map_cpl(struct xnvme_cmd_ctx *ctx, unsigned long ioctl_req)
 {
-	printf("xnvme_be_linux_nvme_ioctl:\n");
-	for (int32_t i = 0; i < 16; ++i)
-		printf("  cdw%02"PRIi32": "XNVME_I32_FMT"\n", i,
-		       XNVME_I32_TO_STR(kcmd->cdw[i]));
+	struct _kernel_cpl *kcpl = (void *)&ctx->cpl;
+
+	// Assign the completion-result
+	switch (ioctl_req) {
+	case NVME_IOCTL_ADMIN_CMD:
+	case NVME_IOCTL_IO_CMD:
+		ctx->cpl.result = kcpl->res32.result;
+		break;
+#ifdef NVME_IOCTL_IO64
+	case NVME_IOCTL_IO64_CMD:
+		ctx->cpl.result = kcpl->res64.result;
+		break;
+#endif
+#ifdef NVME_IOCTL_ADMIN64
+	case NVME_IOCTL_ADMIN64_CMD:
+		ctx->cpl.result = kcpl->res64.result;
+		break;
+#endif
+	default:
+		return -1;
+	}
+
+	// Zero-out the remainder of the completion
+	ctx->cpl.status.val = 0;
+	ctx->cpl.sqhd = 0;
+	ctx->cpl.sqid = 0;
+	ctx->cpl.cid = 0;
+
+	return 0;
 }
 
 static inline int
-ioctl_wrap(struct xnvme_dev *dev, unsigned long ioctl_req,
-	   struct xnvme_be_linux_nvme_ioctl *kcmd, struct xnvme_cmd_ctx *ctx)
+ioctl_wrap(struct xnvme_dev *dev, unsigned long ioctl_req, struct xnvme_cmd_ctx *ctx)
 {
 	struct xnvme_be_linux_state *state = (void *)dev->be.state;
-	int err = ioctl(state->fd, ioctl_req, kcmd);
+	int err;
 
-	if (ctx) {	// TODO: fix return / completion data from kcmd
-		ctx->cpl.cdw0 = kcmd->result;
+	err = ioctl(state->fd, ioctl_req, ctx);
+	if (xnvme_be_linux_nvme_map_cpl(ctx, ioctl_req)) {
+		return -ENOSYS;
 	}
-	if (!err) {	// No errors
+
+	if (!err) {
 		return 0;
 	}
 
-	XNVME_DEBUG("FAILED: ioctl(%s), err(%d), errno(%d)",
-		    ioctl_request_to_str(ioctl_req), err, errno);
+	// Transform ioctl-errors to completion status-codes
+	XNVME_DEBUG("FAILED: ioctl(%s), err(%d), errno(%d)", ioctl_request_to_str(ioctl_req),
+		    err, errno);
 
-	if (!ctx) {
-		XNVME_DEBUG("INFO: !cmd_ctx => setting errno and returning err");
-		errno = errno ? errno : EIO;
-		return err;
-	}
-
-	// Transform ioctl EINVAL to Invalid field in command
+	// Transform ioctl EINVAL to Invalid Field in Command
 	if (err == -1 && errno == EINVAL) {
-		XNVME_DEBUG("INFO: ioctl-errno(EINVAL) => INV_FIELD_IN_CMD");
-		XNVME_DEBUG("INFO: overwrr. err(%d) with '0x2'", err);
-		err = 0x2;
-	}
-	if (err > 0 && !ctx->cpl.status.val) {
-		XNVME_DEBUG("INFO: overwr. cpl.status.val(0x%x) with '%d'",
-			    ctx->cpl.status.val, err);
-		ctx->cpl.status.val = err;
+		ctx->cpl.status.val = 0x2;
 	}
 	if (!errno) {
 		XNVME_DEBUG("INFO: !errno, setting errno=EIO");
 		errno = EIO;
 	}
 
-	return err;
+	return -errno;
 }
 
 int
-xnvme_be_linux_nvme_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
-			   void *dbuf, size_t dbuf_nbytes, void *mbuf,
-			   size_t mbuf_nbytes, int XNVME_UNUSED(opts),
-			   struct xnvme_cmd_ctx *req)
+xnvme_be_linux_nvme_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			   size_t mbuf_nbytes)
 {
-	struct xnvme_be_linux_nvme_ioctl kcmd = { 0 };
 	int err;
 
-	kcmd.nvme = *cmd;
-	kcmd.nvme.common.dptr.lnx_ioctl.data = (uint64_t)dbuf;
-	kcmd.nvme.common.dptr.lnx_ioctl.data_len = dbuf_nbytes;
+	ctx->cmd.common.dptr.lnx_ioctl.data = (uint64_t)dbuf;
+	ctx->cmd.common.dptr.lnx_ioctl.data_len = dbuf_nbytes;
 
-	kcmd.nvme.common.mptr = (uint64_t)mbuf;
-	kcmd.nvme.common.dptr.lnx_ioctl.metadata_len = mbuf_nbytes;
+	ctx->cmd.common.mptr = (uint64_t)mbuf;
+	ctx->cmd.common.dptr.lnx_ioctl.metadata_len = mbuf_nbytes;
 
-	err = ioctl_wrap(dev, NVME_IOCTL_IO_CMD, &kcmd, req);
+	err = ioctl_wrap(ctx->dev, NVME_IOCTL_IO_CMD, ctx);
 	if (err) {
 		XNVME_DEBUG("FAILED: ioctl_wrap(), err: %d", err);
 		return err;
@@ -135,22 +141,18 @@ xnvme_be_linux_nvme_cmd_io(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
 }
 
 int
-xnvme_be_linux_nvme_cmd_admin(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
-			      void *dbuf, size_t dbuf_nbytes, void *mbuf,
-			      size_t mbuf_nbytes, int XNVME_UNUSED(opts),
-			      struct xnvme_cmd_ctx *req)
+xnvme_be_linux_nvme_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
+			      void *mbuf, size_t mbuf_nbytes)
 {
-	struct xnvme_be_linux_nvme_ioctl kcmd = { 0 };
 	int err;
 
-	kcmd.nvme = *cmd;
-	kcmd.nvme.common.dptr.lnx_ioctl.data = (uint64_t)dbuf;
-	kcmd.nvme.common.dptr.lnx_ioctl.data_len = dbuf_nbytes;
+	ctx->cmd.common.dptr.lnx_ioctl.data = (uint64_t)dbuf;
+	ctx->cmd.common.dptr.lnx_ioctl.data_len = dbuf_nbytes;
 
-	kcmd.nvme.common.mptr = (uint64_t)mbuf;
-	kcmd.nvme.common.dptr.lnx_ioctl.metadata_len = mbuf_nbytes;
+	ctx->cmd.common.mptr = (uint64_t)mbuf;
+	ctx->cmd.common.dptr.lnx_ioctl.metadata_len = mbuf_nbytes;
 
-	err = ioctl_wrap(dev, NVME_IOCTL_ADMIN_CMD, &kcmd, req);
+	err = ioctl_wrap(ctx->dev, NVME_IOCTL_ADMIN_CMD, ctx);
 	if (err) {
 		XNVME_DEBUG("FAILED: ioctl_wrap() err: %d", err);
 		return err;

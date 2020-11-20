@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <libxnvme.h>
 #include <xnvme_be.h>
+#include <xnvme_cmd.h>
 #include <xnvme_dev.h>
 #include <xnvme_geo.h>
 

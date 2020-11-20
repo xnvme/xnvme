@@ -193,12 +193,11 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 
 	// Write the dbuf to source LBAs
 	for (uint64_t i = 0; i < tlbas; ++i) {
-		struct xnvme_cmd_ctx ctx = {0 };
+		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 		size_t ofz = i * geo->lba_nbytes;
 
-		err = xnvme_nvm_write(dev, nsid, range->entry[i].slba,
-				      range->entry[i].nlb, dbuf + ofz, NULL,
-				      XNVME_CMD_SYNC, &ctx);
+		err = xnvme_nvm_write(&ctx, nsid, range->entry[i].slba, range->entry[i].nlb,
+				      dbuf + ofz, NULL);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			xnvmec_perr("xnvme_nvm_write()", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
@@ -209,11 +208,10 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 
 	// Write the vbuf to destination LBAs
 	for (uint64_t i = 0; i < tlbas; ++i) {
-		struct xnvme_cmd_ctx ctx = {0 };
+		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 		size_t ofz = i * geo->lba_nbytes;
 
-		err = xnvme_nvm_write(dev, nsid, sdlba + i, 0, vbuf + ofz, NULL,
-				      XNVME_CMD_SYNC, &ctx);
+		err = xnvme_nvm_write(&ctx, nsid, sdlba + i, 0, vbuf + ofz, NULL);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			xnvmec_perr("xnvme_nvm_read()", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
@@ -229,9 +227,11 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 	printf("sdlba: 0x%016lx\n", sdlba);
 
 	if (cli->args.clear) {
-		struct xnvme_cmd_ctx ctx = {0 };
+		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+
 		xnvmec_pinf("Using XNVME_CMD_SYNC mode");
-		err = xnvme_nvm_scopy(dev, nsid, sdlba, range->entry, nr, copy_fmt, XNVME_CMD_SYNC, &ctx);
+		err = xnvme_nvm_scopy(
+			      &ctx, nsid, sdlba, range->entry, nr, copy_fmt);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			xnvmec_perr("xnvme_nvm_scopy()", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
@@ -239,7 +239,7 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 			goto exit;
 		}
 	} else {
-		struct xnvme_cmd_ctx ctx = {0 };
+		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 		struct xnvme_queue *queue = NULL;
 
 		xnvmec_pinf("Using XNVME_CMD_ASYNC mode");
@@ -252,8 +252,8 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 		ctx.async.queue = queue;
 		ctx.async.cb = cb_noop;
 
-		err = xnvme_nvm_scopy(dev, nsid, sdlba, range->entry, nr, copy_fmt, XNVME_CMD_ASYNC,
-				      &ctx);
+		err = xnvme_nvm_scopy(
+			      &ctx, nsid, sdlba, range->entry, nr, copy_fmt);
 		if (err) {
 			xnvmec_perr("xnvme_nvm_scopy()", err);
 			xnvme_queue_term(queue);
@@ -269,11 +269,10 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 
 	// Read destination LBAs into vbuf
 	for (uint64_t i = 0; i < tlbas; ++i) {
-		struct xnvme_cmd_ctx ctx = {0 };
+		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 		size_t ofz = i * geo->lba_nbytes;
 
-		err = xnvme_nvm_read(dev, nsid, sdlba + i, 0, vbuf + ofz, NULL,
-				     XNVME_CMD_SYNC, &ctx);
+		err = xnvme_nvm_read(&ctx, nsid, sdlba + i, 0, vbuf + ofz, NULL);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			xnvmec_perr("xnvme_nvm_read()", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
