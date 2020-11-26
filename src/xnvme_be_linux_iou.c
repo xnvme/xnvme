@@ -24,10 +24,14 @@
 #include <xnvme_queue.h>
 #include <xnvme_be_linux.h>
 #include <xnvme_be_linux_iou.h>
+#include <xnvme_be_linux_nvme.h>
 #include <xnvme_dev.h>
 
 // TODO: replace this with liburing 0.7 barriers
 #define _linux_iou_barrier()  __asm__ __volatile__("":::"memory")
+
+#define IORING_OP_IOCTL 37
+#define IORING_OP_IOCTL_PT 38
 
 static int g_linux_iou_required[] = {
 	IORING_OP_READV,
@@ -38,6 +42,12 @@ static int g_linux_iou_required[] = {
 	IORING_OP_WRITE,
 };
 int g_linux_iou_nrequired = sizeof g_linux_iou_required / sizeof(*g_linux_iou_required);
+
+static int g_linux_iou_optional[] = {
+	IORING_OP_IOCTL,
+	IORING_OP_IOCTL_PT
+};
+int g_linux_iou_noptional = sizeof g_linux_iou_optional / sizeof(*g_linux_iou_optional);
 
 /**
  * Check whether the Kernel supports the io_uring features used by xNVMe
@@ -73,6 +83,29 @@ exit:
 	return err ? 0 : 1;
 }
 
+static int
+_linux_iou_noptional_missing(void)
+{
+	struct io_uring_probe *probe;
+	int missing = 0;
+
+	probe = io_uring_get_probe();
+	if (!probe) {
+		XNVME_DEBUG("FAILED: io_uring_get_probe()");
+		return -ENOSYS;
+	}
+
+	for (int i = 0; i < g_linux_iou_noptional; ++i) {
+		if (!io_uring_opcode_supported(probe, g_linux_iou_optional[i])) {
+			missing += 1;
+		}
+	}
+
+	free(probe);
+
+	return missing;
+}
+
 int
 _linux_iou_init(struct xnvme_queue *q, int opts)
 {
@@ -86,6 +119,10 @@ _linux_iou_init(struct xnvme_queue *q, int opts)
 	}
 	if ((opts & XNVME_QUEUE_IOPOLL) || (state->poll_io)) {
 		queue->poll_io = 1;
+	}
+	if (state->ioctl_ring && !_linux_iou_noptional_missing()) {
+		queue->ioctl_ring = 1;
+		fprintf(stdout, "# ENABLED: IOCTL-over-io_uring!\n");
 	}
 
 	// NOTE: Disabling IOPOLL, to avoid lock-up, until fixed in `_poke`
@@ -224,6 +261,10 @@ _linux_iou_poke(struct xnvme_queue *q, uint32_t max)
 			return -EIO;
 		}
 
+		if (queue->ioctl_ring) {
+			xnvme_be_linux_nvme_map_cpl(ctx, NVME_IOCTL_IO_CMD);
+		}
+
 		// Map cqe-result to cmd_ctx-completion
 		ctx->cpl.status.sc = cqe->res ? cqe->res : ctx->cpl.status.sc;
 		if (ctx->cpl.status.sc) {
@@ -290,23 +331,25 @@ _linux_iou_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, voi
 		return -EBUSY;
 	}
 
-	if (mbuf || mbuf_nbytes) {
-		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
-		return -ENOSYS;
-	}
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_NVM_OPC_WRITE:
-		opcode = IORING_OP_WRITE;
-		break;
+	if (!queue->ioctl_ring) {
+		if (mbuf || mbuf_nbytes) {
+			XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
+			return -ENOSYS;
+		}
+		switch (ctx->cmd.common.opcode) {
+		case XNVME_SPEC_NVM_OPC_WRITE:
+			opcode = IORING_OP_WRITE;
+			break;
 
-	case XNVME_SPEC_NVM_OPC_READ:
-		opcode = IORING_OP_READ;
-		break;
+		case XNVME_SPEC_NVM_OPC_READ:
+			opcode = IORING_OP_READ;
+			break;
 
-	default:
-		XNVME_DEBUG("FAILED: unsupported opcode: %d for async",
-			    ctx->cmd.common.opcode);
-		return -ENOSYS;
+		default:
+			XNVME_DEBUG("FAILED: unsupported opcode: %d for async",
+				    ctx->cmd.common.opcode);
+			return -ENOSYS;
+		}
 	}
 
 	sqe = io_uring_get_sqe(&queue->ring);
@@ -314,10 +357,22 @@ _linux_iou_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, voi
 		return -EAGAIN;
 	}
 
-	sqe->opcode = opcode;
-	sqe->addr = (unsigned long) dbuf;
-	sqe->len = dbuf_nbytes;
-	sqe->off = ctx->cmd.nvm.slba << ssw;
+	if (queue->ioctl_ring) {
+		ctx->cmd.common.dptr.lnx_ioctl.data = (uint64_t)dbuf;
+		ctx->cmd.common.dptr.lnx_ioctl.data_len = dbuf_nbytes;
+
+		ctx->cmd.common.mptr = (uint64_t)mbuf;
+		ctx->cmd.common.dptr.lnx_ioctl.metadata_len = mbuf_nbytes;
+
+		sqe->opcode = IORING_OP_IOCTL_PT;
+		sqe->len = NVME_IOCTL_IO_CMD;
+		sqe->off = (uint64_t)ctx;
+	} else {
+		sqe->opcode = opcode;
+		sqe->addr = (unsigned long) dbuf;
+		sqe->len = dbuf_nbytes;
+		sqe->off = ctx->cmd.nvm.slba << ssw;
+	}
 	sqe->flags = queue->poll_sq ? IOSQE_FIXED_FILE : 0;
 	sqe->ioprio = 0;
 	// NOTE: we only ever register a single file, the raw device, so the

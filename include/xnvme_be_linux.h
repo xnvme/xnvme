@@ -24,8 +24,9 @@ struct xnvme_be_linux_state {
 	uint8_t pseudo;
 	uint8_t poll_io;
 	uint8_t poll_sq;
+	uint8_t ioctl_ring;
 
-	uint8_t _rsvd[121];
+	uint8_t _rsvd[120];
 };
 XNVME_STATIC_ASSERT(
 	sizeof(struct xnvme_be_linux_state) == XNVME_BE_STATE_NBYTES,
