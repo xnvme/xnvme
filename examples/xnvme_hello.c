@@ -12,9 +12,8 @@ sub_hw_example(struct xnvmec *cli)
 
 	dev = xnvme_dev_open(cli->args.uri);
 	if (!dev) {
-		int err = -errno;
-		xnvmec_perr("xnvme_dev_open()", err);
-		return err;
+		xnvmec_perr("xnvme_dev_open()", errno);
+		return -errno;
 	}
 
 	xnvme_dev_pr(dev, XNVME_PR_DEF);
