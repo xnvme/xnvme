@@ -40,6 +40,19 @@
 #include <libxnvme_util.h>
 
 /**
+ * NVMe Command Status Code Types
+ *
+ * @enum xnvme_spec_status_code_type
+ */
+enum xnvme_spec_status_code_type {
+	XNVME_STATUS_CODE_TYPE_GENERIC	= 0x0,	///< Generic
+	XNVME_STATUS_CODE_TYPE_CMDSPEC	= 0x1,	///< Command Specific
+	XNVME_STATUS_CODE_TYPE_MEDIA	= 0x2,	///< Media and data integrity error
+	XNVME_STATUS_CODE_TYPE_PATH	= 0x3,	///< Path related status
+	XNVME_STATUS_CODE_TYPE_VENDOR	= 0x7,	///< Vendor specific
+};
+
+/**
  * NVMe Command Completion Status field
  *
  * @struct xnvme_spec_status
