@@ -39,12 +39,84 @@ Known Issues
 * ``be::linux``
 
   - When enabling the use of ``io_uring`` or ``libaio`` via
-    ``?async={iou,aio}``, then all async. commands are sent via the chosen
-    async. path. Take note, that these async. paths only supports read and
-    write.  Commands such as the Simple-Copy-Command, Append, and
+    ``?async={io_uring,libaio}``, then all async. commands are sent via the
+    chosen async. path. Take note, that these async. paths only supports read
+    and write. Commands such as the Simple-Copy-Command, Append, and
     Zone-Management are not supported in upstream Linux in this manner. This
     means, as a user that you must sent non-read/write commands with mode
     ``XNVME_CMD_SYNC``.
+
+v0.0.22
+-------
+
+This release contains a major refactoring of the API along with a handful of
+minor fixes. The refactoring goals are to align to existing nomenclature and
+simplify usage.
+
+* Reduce to five abstractions: devices, queues, commands, and command-contexts
+  - Devices are base handles to NVMe Namespaces and a list of devices are
+    retrieved via ``xnvme_enumerate()``, and handles to individual devices
+    retrieved via ``xnvme_dev_open()`` and released via ``xnvme_dev_close()``.
+  - The abstraction formerly known as an ``asynchronous context`` is now dubbed
+    a ``queue``. The ``queue`` now has a ``capacity`` instead of a ``depth``.
+  - ``queues`` are created on top of ``devices`` and belong to the device.
+  - The definition, submission, and completion of a command is encapsulated in
+    a context; the command-context. The command-context replaces the previous
+    abstraction named the ``request``.
+  - A command can reach a device via a ``queue``, in a deferred / asynchronous
+    callback-based manner, or it go via the device in a synchronous / blocking
+    manner. Regardless, the command needs a context, and the context is
+    retrieved via ``xnvme_cmd_ctx_from_queue()`` or
+    ``xnvme_cmd_ctx_from_dev()``.
+  - Commands are passed down via ``xnvme_cmd_pass`` for NVMe IO Commands, and
+    through ``xnvme_cmd_pass_admin`` for NVMe Admin Commands via the given
+    command-context.
+
+* Core API reduction
+  - The core xNVMe API as provided by ``libxnvme.h`` it is reduced to a minimal
+    interface. Auxilary helpers, convenience functions, and pretty-printers are
+    no longer part of the core API but provided via individual header-files
+  - The core of the xNVMe API thus consists of
+    Device Handling: enumerate, dev_open, dev_close
+    Memory: alloc, realloc, free, vtophys, virt_alloc, virt_free
+    Queueing: init, term, poke, wait, get_command_ctx, get_capacity, get_outstanding
+    Commands: pass, pass_admin
+    Supporting the four abstractions described above
+  - The manual allocation of a request-pool / command-context-pool is no longer
+    needed. xNVMe does not prevent you from creating one if you want to, but it
+    is no longer required. Each 'queue' now provides a pre-allocated pool of
+    resources, and the manual request-pool is thus replaced by a call to the
+    function ``xnvme_cmd_ctx_from_queue()``. If you are familiar with
+    ``io_uring`` then think of this function as the equivalent of
+    ``io_uring_get_sqe()``.
+
+* API re-organization
+  - Previously each command-set had its own top-level namespace, e.g. functions
+    and structures for the Zoned Command-Set was using ``znd_*``. This was
+    slightly quirky since it still relied on core of the xNVMe namespace
+    ``xnvme_*`` for device handles etc. Thus, the command-set specific APIs
+    providing helper-functions and convenience are now nested in the xNVMe API
+    Namespace e.g. ``znd_*`` is now ``xnvme_znd_*`` and provided via
+    ``libxnvme_znd.h``.
+  - The NVM Command-Set API was ``lblk_*`` it is now ``xnvme_nvm_*``, and
+    provided via ``libxnvme_nvm.h``.
+
+* be:linux: changed error-mapping for non-NVMe errors
+  - The Linux block based and sync. interfaces does not provide the underlying
+    NVMe command status code and status code type since this is hidden behind
+    the block-interface. Previously, the NVMe-completion status-code was just
+    assigned the ``errno`` provided by the Kernel, which is highly confusing.
+    This behavior is replaced by assigning the status-code-type of
+    "vendor-specific" to indicate the status-codes are not defined in the spec.
+
+* be:linux:aio: fixed submission and completion paths
+  - The submission, via ``cmd_io()``, of a single command would submit all
+    outstanding command, effectively limiting queue-depth
+  - The completion via ``poke()``/``wait()`` could potentially complete more
+    than requested by the user
+  - The encapsulation of io-control-blocks, array of io-control-block pointers,
+    were all pointing to the same control-block. Note, this was not causing
+    issues due to the short-coming in ``cmd_io()``.
 
 v0.0.21
 -------
