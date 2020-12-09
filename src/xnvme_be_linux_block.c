@@ -486,6 +486,26 @@ failed:
 }
 
 int
+_gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
+{
+	struct xnvme_spec_feat feat = { 0 };
+
+	switch (ctx->cmd.gfeat.fid) {
+	case XNVME_SPEC_FEAT_NQUEUES:
+		feat.nqueues.nsqa = 63;
+		feat.nqueues.ncqa = 63;
+		ctx->cpl.cdw0 = feat.val;
+		break;
+
+	default:
+		XNVME_DEBUG("FAILED: unsupported fid: %d", ctx->cmd.gfeat.fid);
+		return -ENOSYS;
+	}
+
+	return 0;
+}
+
+int
 xnvme_be_linux_block_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf,
 			       size_t XNVME_UNUSED(dbuf_nbytes), void *XNVME_UNUSED(mbuf),
 			       size_t XNVME_UNUSED(mbuf_nbytes))
@@ -493,6 +513,9 @@ xnvme_be_linux_block_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf,
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_ADM_OPC_IDFY:
 		return _idfy(ctx, dbuf);
+
+	case XNVME_SPEC_ADM_OPC_GFEAT:
+		return _gfeat(ctx, dbuf);
 
 	case XNVME_SPEC_ADM_OPC_LOG:
 		XNVME_DEBUG("FAILED: not implemented yet.");
