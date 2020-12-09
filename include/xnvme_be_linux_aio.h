@@ -10,15 +10,8 @@ struct xnvme_queue_aio {
 
 	io_context_t aio_ctx;
 	struct io_event *aio_events;
-	struct iocb **iocbs;
-	struct iocb iocb;
 
-	uint32_t entries;
-	uint32_t queued;
-	uint32_t head;
-	uint32_t tail;
-
-	uint8_t rsvd[128];
+	uint8_t rsvd[213];
 };
 XNVME_STATIC_ASSERT(
 	sizeof(struct xnvme_queue_aio) == XNVME_BE_QUEUE_STATE_NBYTES,
