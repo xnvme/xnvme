@@ -124,9 +124,7 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 	uint8_t nr;
 	int err;
 
-	if (!cli->given[XNVMEC_OPT_NSID]) {
-		nsid = xnvme_dev_get_nsid(cli->args.dev);
-	}
+	nsid = cli->given[XNVMEC_OPT_NSID] ? nsid : xnvme_dev_get_nsid(cli->args.dev);
 
 	// Retrieve SCC parameters via idfy-namespace
 	ns = (void *)xnvme_dev_get_ns(dev);
@@ -136,6 +134,9 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 		return err;
 	}
 
+	xnvmec_pinf("tlbas: %zu, mcl: %u, msrc: %d, mssrl: %u",
+		    tlbas, ns->mcl, ns->msrc + 1, ns->mssrl);
+
 	if (!tlbas) {
 		err = -EINVAL;
 		xnvmec_perr("!tlbas", -err);
@@ -143,12 +144,12 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 	}
 	if (tlbas > (uint64_t)ns->mcl) {
 		err = -EINVAL;
-		xnvmec_perr("tlbas > ns->mcl", -err);
+		xnvmec_perr("tlbas > ns.mcl", -err);
 		goto exit;
 	}
 	if (tlbas > ((uint64_t)ns->msrc) + 1) {
 		err = -EINVAL;
-		xnvmec_perr("tlbas > ns->msrc", -err);
+		xnvmec_perr("tlbas > ns.msrc", -err);
 		goto exit;
 	}
 
@@ -306,7 +307,7 @@ exit:
 static int
 sub_scopy(struct xnvmec *cli)
 {
-	return _scopy_helper(cli, 1);
+	return _scopy_helper(cli, 8);
 }
 
 static int
@@ -320,7 +321,7 @@ sub_scopy_msrc(struct xnvmec *cli)
 		return -errno;
 	}
 
-	return _scopy_helper(cli, ns->msrc + 1);
+	return _scopy_helper(cli, XNVME_MIN(ns->msrc + 1, ns->mcl));
 }
 
 //
