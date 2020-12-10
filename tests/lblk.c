@@ -244,8 +244,8 @@ test_scopy(struct xnvmec *cli)
 	enum xnvme_nvm_scopy_fmt copy_fmt;
 	int err;
 
-	err = boilerplate(cli, &wbuf, &rbuf, &buf_nbytes, &xfer_naddr, &nsid,
-			  &rng_slba, &rng_elba);
+	err = boilerplate(cli, &wbuf, &rbuf, &buf_nbytes, &xfer_naddr, &nsid, &rng_slba,
+			  &rng_elba);
 	if (err) {
 		xnvmec_perr("boilerplate()", err);
 		goto exit;
@@ -255,7 +255,7 @@ test_scopy(struct xnvmec *cli)
 	xnvme_spec_nvm_idfy_ns_pr(nvm, XNVME_PR_DEF);
 
 	if (nvm->msrc) {
-		xfer_naddr = XNVME_MIN((uint64_t)nvm->msrc + 1, xfer_naddr);
+		xfer_naddr = XNVME_MIN(XNVME_MIN((uint64_t)nvm->msrc + 1, xfer_naddr), nvm->mcl);
 	}
 	buf_nbytes = xfer_naddr * geo->nbytes;
 
