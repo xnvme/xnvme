@@ -20,7 +20,7 @@
 const char *
 {{ ent["name"] }}_str(enum {{ ent["name"] }} obj);
 {% endfor %}
-{% for struct in structs %}
+{% for struct in (structs_1 + structs_2) %}
 /**
  * Prints the given ::{{ struct["name"] }} to the given 'stream'
  *

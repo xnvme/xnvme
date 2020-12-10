@@ -210,7 +210,8 @@ def main(args):
     tags = tags_from_file(ctags_fpath)
     declr = tags_to_declr(args, tags)
     fmt = yaml.load(open(args.fmt), Loader=yaml.Loader)
-    fmt["structs"] = [d for d in fmt["structs"] if d["name"].startswith(tuple(args.namespaces))]
+    fmt["structs_1"] = [d for d in fmt["structs_1"] if d["name"].startswith(tuple(args.namespaces))]
+    fmt["structs_2"] =  [d for d in fmt["structs_2"] if d["name"].startswith(tuple(args.namespaces))]
 
     # Generate header
     tmpl_loader = jinja2.FileSystemLoader(searchpath=args.templates)
@@ -223,14 +224,13 @@ def main(args):
 
     with open(declr["hdr_path"], "w") as hfd:
         hfd.write(tmpl_env.get_template(tmpl_paths["hdr"]).render(
-            declr=declr, structs=fmt["structs"]
+            declr=declr, structs_1=fmt["structs_1"], structs_2=fmt["structs_2"]
         ))
 
     with open(declr["src_path"], "w") as hfd:
         hfd.write(tmpl_env.get_template(tmpl_paths["src"]).render(
-            declr=declr, structs=fmt["structs"]
+            declr=declr, structs_1=fmt["structs_1"], structs_2=fmt["structs_2"]
         ))
-
     return 0 if declr else 1
 
 if __name__ == "__main__":

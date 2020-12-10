@@ -1,14 +1,292 @@
-structs:
-  - name: "xnvme_geo"
-    members:
-      type: 'xnvme_geo_type_str'
-      npugrp: '%u'
-      npunit: '%u'
-      nzone: '%u'
-      nsect: '%zu'
-      nbytes: '%u'
-      nbytes_oob: '%u'
-      tbytes: '%zu'
-      mdts_nbytes: '%u'
-      lba_nbytes: '%u'
-      lba_extended: '%u'
+structs_1:
+      - name: "xnvme_geo"
+        obj:  "geo"
+        members:
+                type: 'xnvme_geo_type_str'
+                npugrp: '%u'
+                npunit: '%u'
+                nzone: '%u'
+                nsect: '%zu'
+                nbytes: '%u'
+                nbytes_oob: '%u'
+                tbytes: '%zu'
+                mdts_nbytes: '%u'
+                lba_nbytes: '%u'
+                lba_extended: '%u'
+
+      - name: "xnvme_ident"
+        obj:  "ident"
+        members:
+                trgt:  '%s'
+                schm:  '%s'
+                opts:  '%s'
+                uri:   '%s'
+
+      - name: "xnvme_be"
+        obj:  "be"
+        members:
+                async:
+                        id : '%s'
+                        enabled : '%zu'
+                sync:
+                        id : '%s'
+                        enabled : '%zu'
+                attr:
+                        name : '%s'
+                        enabled : '%zu'
+
+      - name: "xnvme_spec_log_health_entry"
+        obj: "entry"
+        members:
+                ecnt: '%zu'
+                sqid: '%u'
+                cid:  '%u'
+                status: '%#x'
+                eloc:   '%#x'
+                lba:    '%#lx'
+                nsid:   '%u'
+                ven_si: '%#x'
+                trtype: '%#x'
+                cmd_si: '%#lx'
+                trtype_si: '%#x'
+
+      - name: "xnvme_spec_znd_descr"
+        obj: "descr"
+        members:
+                zslba: '0x%016lx'
+                wp:    '0x%016lx'
+                zcap:  '%zu'
+                zt:    '%#x'
+                zs:    '%*s'
+                za:    '0b"XNVME_I8_FMT"'
+ 
+      - name: "xnvme_spec_nvm_scopy_fmt_zero"
+        obj: "entry"
+        members:
+                slba:  '0x%016lx'
+                nlb:   '%u'
+                eilbrt: '0x%08x'
+                elbatm: '0x%08x'
+                elbat:  '0x%08x'
+
+
+structs_2:
+
+      - name: "xnvme_spec_log_health_entry"
+        obj:  "log"
+        intial: None
+        arguments: { idfy: 'const struct xnvme_spec_log_health_entry *', opts: 'int' }
+        members:
+                crit_warn: '%u'
+                comp_temp: '%u'
+                avail_spare: '%u'
+                avail_spare_thrash: '%u'
+                pct_used:  '%u'
+                eg_crit_warn_sum: '%u'
+                data_units_read[]16: '%.0Lf:bytes2double'
+                data_units_written[]16: '%.0Lf:bytes2double'
+                host_read_cmds[]16:  '%.0Lf:bytes2double'
+                host_write_cmds[]16: '%.0Lf:bytes2double'
+                ctrlr_busy_time[]16: '%.0Lf:bytes2double'
+                pwr_cycles[]16: '%.0Lf:bytes2double'
+                pwr_on_hours[]16: '%.0Lf:bytes2double'
+                unsafe_shutdowns[]16: '%.0Lf:bytes2double'
+                nr_err_logs[]16: '%.0Lf:bytes2double'
+                warn_comp_temp_time: '%u'
+                crit_comp_temp_time: '%u'
+                temp_sens[]8: '%u'
+                tmt1tc:       '%u'
+                tmt2tc:       '%u'
+                tttmt1:       '%u'
+                tttmt2:       '%u'
+
+      - name: "xnvme_spec_idfy_ctrlr"
+        obj:  "idfy"
+        intial: None
+        arguments: { idfy: 'struct xnvme_spec_idfy_ctrlr *', opts: 'int' }
+        members:
+                vid:    '%#x'
+                ssvid:  '%#x'
+                sn:     '%-.*s:XNVME_SPEC_CTRLR_SN_LEN'
+                mn:     '%-.*s:XNVME_SPEC_CTRLR_MN_LEN'
+                fr:     '%-.*s:XNVME_SPEC_CTRLR_FR_LEN'
+                rab:    '%d'
+                ieee[]3: '%02x'
+                cmic:
+                        val: '%#x'
+                mdts:   '%d'
+                cntlid: '%#x'
+                ver:
+                        val:    '%#x'
+                rtd3r:  '%#x'
+                rtd3e:  '%#x'
+                oaes:
+                        val:   '%#x'
+                ctratt:
+                        val: '%#x'
+                oacs:
+                        val:  '%#x'
+                acl:    '%d'
+                aerl:   '%d'
+                frmw:   '%#x'
+                lpa:
+                        ns_smart:  '%u'
+                        celp:   '%u'
+                        edlp:   '%u'
+                        telemetry:  '%u'
+                        val:    '%#x'
+                elpe:   '%d'
+                npss:   '%d'
+                avscc:
+                        val:   '%#x'
+                apsta:
+                        val:   '%#x'
+                wctemp:      '%d'
+                cctemp:      '%d'
+                mtfa:        '%d'
+                hmpre:       '%d'
+                hmmin:       '%d'
+                tnvmcap[]2:  '%zu'
+                unvmcap[]2:  '%zu'
+                rpmbs:
+                        val:   '%#x'
+                edstt:       '%d'
+                dsto:
+                        val:        '%d'
+                fwug:        '%d'
+                kas:         '%d'
+                hctma:
+                        val:       '%#x'
+                mntmt:       '%d'
+                mxtmt:       '%d'
+                sanicap:
+                        val:     '%#x'
+                sqes:
+                        val:        '%#x'
+                cqes:
+                        val:        '%#x'
+                maxcmd:          '%d'
+                nn:             '%d'
+                oncs:
+                        val:           '%#x'
+                fuses:          '%#x'
+                fna:
+                        val:        '%#x'
+                vwc:
+                        val:        '%#x'
+                awun:           '%d'
+                awupf:          '%d'
+                nvscc:          '%d'
+                acwu:           '%d'
+                sgls:
+                        val:       '%#x'
+                subnqn:         '%-.*s'
+
+      - name: "xnvme_spec_idfy_ns"
+        obj:  "idfy"
+        intial: None
+        arguments: { idfy: 'const struct xnvme_spec_idfy_ns *', opts: 'int' }
+        members:
+                nsze:   '%zu'
+                ncap:   '%zu'
+                nuse:   '%zu'
+                nlbaf:  '%d'
+                nsfeat:
+                        thin_prov:      '%d'
+                        ns_atomic_write_unit:   '%d'
+                        dealloc_or_unwritten_error:     '%d'
+                        guid_never_reused:      '%d'
+                        reserved1:       '%d'
+                flbas:
+                        format:  '%d'
+                        extended:  '%d'
+                        reserved2: '%d'
+                mc:
+                        extended:  '%d'
+                        pointer:  '%d'
+                        reserved3:  '%d'
+                dpc:
+                        val:  '%#x'
+                dps:
+                        val:  '%#x'
+                nsrescap:
+                        val:  '%#x'
+                fpi:
+                        val:  '%#x'
+                dlfeat:
+                        val:  '%#x'
+                nawun:  '%#x'
+                nawupf: '%#x'
+                nacwu:  '%#x'
+                nabsn:  '%#x'
+                nabspf: '%#x'
+                noiob:  '%#x'
+                nvmcap: ''
+                nvmcap[0]: '- %zu'
+                nvmcap[1]: '- %zu'
+                nguid[]16: '%#x'
+                eui64:    '%zu'
+                ms:   'meta-data-size-in-nbytes' 
+                ds:   'data-size in 2^ds bytes'
+                rp:   'relative performance 00b, 1b 10b, 11b'
+                lbaf[]16:
+                        ms:  '%u'
+                        ds:  '%u'
+                        rp:  '%u'
+
+      - name: "xnvme_spec_nvm_idfy_ctrlr"
+        obj:  "idfy"
+        intial: None
+        arguments: { idfy: 'struct xnvme_spec_idfy_ctrlr *', opts: 'int'  }
+        members:
+                oncs:
+                        compare:  '%u'
+                        write_unc:  '%u'
+                        dsm:       '%u'
+                        write_zeros:  '%u'
+                        set_features_save: '%u'
+                        reservations:  '%u'
+                        timestamp:  '%u'
+                        verify:  '%u'
+                        copy:    '%u'
+                ocfs:
+                        copy_fmt0: '%u'
+
+      - name: "xnvme_spec_nvm_idfy_ns"
+        obj:  "idfy"
+        intial: None
+        arguments: { idfy: 'struct xnvme_spec_nvm_idfy_ns *', opts: 'int'  }
+        members:
+                mcl:   '%d'
+                mssrl: '%d'
+                msrc:  '%d'
+ 
+
+      - name: "xnvme_spec_znd_report_hdr"
+        obj:  "hdr"
+        intial: None
+        arguments: { hdr: 'const struct xnvme_spec_znd_report_hdr *', opts: 'int'  }
+        members:
+                nzones: '%zu'
+
+      - name: "xnvme_spec_znd_idfy_ctrlr"
+        obj:  "zctrlr"
+        intial: None
+        arguments: { zctrlr: 'struct xnvme_spec_idfy_ctrlr *', opts: 'int'  }
+        members:
+                zasl:  '%d'
+
+      - name: "xnvme_spec_idfy_cs"
+        obj:  "idfy"
+        intial: None
+        arguments: { idfy: 'const struct xnvme_spec_idfy_cs *', opts: 'int'  }
+        members:
+                iocscv[]XNVME_SPEC_IDFY_CS_IOCSC_LEN/512:
+                                                        info: 'const struct xnvme_spec_cs_vector *iocscv = &idfy->iocsc[i];
+                                                               if (!iocscv->val) {
+                                                               continue;
+                                                               }'
+                                                        val: '0x%lx'
+                                                        nvm:  '%d'
+                                                        zns:  '%d' 
+
