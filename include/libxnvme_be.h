@@ -46,12 +46,12 @@ struct xnvme_be_attr_list {
 };
 
 /**
- * List backends supported by the library
+ * List backends bundled with the library
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
-xnvme_be_attr_list(struct xnvme_be_attr_list **list);
+xnvme_be_attr_list_bundled(struct xnvme_be_attr_list **list);
 
 #ifdef __cplusplus
 }

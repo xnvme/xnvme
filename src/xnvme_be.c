@@ -192,7 +192,7 @@ xnvme_lba_prn(const uint64_t *lba, uint16_t nlb, enum xnvme_pr opts)
 }
 
 int
-xnvme_be_attr_list(struct xnvme_be_attr_list **list)
+xnvme_be_attr_list_bundled(struct xnvme_be_attr_list **list)
 {
 	const size_t list_nbytes = sizeof(**list) + xnvme_be_count * \
 				   sizeof((*list)->item[0]);
