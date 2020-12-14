@@ -117,7 +117,7 @@ _linux_aio_wait(struct xnvme_queue *queue)
 		int err;
 
 		err = _linux_aio_poke(queue, 0);
-		if (!err) {
+		if (err >= 0) {
 			acc += 1;
 			continue;
 		}

@@ -83,8 +83,8 @@ _linux_nil_wait(struct xnvme_queue *queue)
 		int err;
 
 		err = _linux_nil_poke(queue, 0);
-		if (!err) {
-			acc += 1;
+		if (err >= 0) {
+			acc += err;
 			continue;
 		}
 
