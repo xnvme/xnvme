@@ -1,7 +1,8 @@
 .. _sec-c-api-xnvme_geo:
 
-xnvme_geo
-########
+===========
+ xnvme_geo
+===========
 
 .. _sec-c-api-xnvme_geo-header:
 

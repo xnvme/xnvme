@@ -1,7 +1,8 @@
 .. _sec-c-api-xnvme_znd:
 
-xnvme_znd
-########
+===========
+ xnvme_znd
+===========
 
 .. _sec-c-api-xnvme_znd-header:
 

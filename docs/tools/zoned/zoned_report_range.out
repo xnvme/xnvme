@@ -1,5 +1,5 @@
 # Zone Information Report for lba: 0x0000000000000000, limit: 10
-znd_report:
+xnvme_znd_report:
   report_nbytes: 704
   entries_nbytes: 640
   zd_nbytes: 64
@@ -7,7 +7,7 @@ znd_report:
   zrent_nbytes: 64
   zslba: 0x0000000000000000
   zelba: 0x0000000000009000
-  nzones: 512
+  nzones: 4096
   nentries: 10
   extended: 0
   entries:

@@ -1,7 +1,8 @@
 .. _sec-c-api-xnvme_spec:
 
-xnvme_spec
-########
+============
+ xnvme_spec
+============
 
 .. _sec-c-api-xnvme_spec-header:
 
@@ -103,6 +104,14 @@ xnvme_spec_sgl_descriptor_subtype
 ---------------------------------
 
 .. doxygenenum:: xnvme_spec_sgl_descriptor_subtype
+
+
+.. _sec-c-api-xnvme_spec-enum-xnvme_spec_status_code_type:
+
+xnvme_spec_status_code_type
+---------------------------
+
+.. doxygenenum:: xnvme_spec_status_code_type
 
 
 .. _sec-c-api-xnvme_spec-enum-xnvme_spec_znd_cmd_mgmt_recv_action:

@@ -1,8 +1,8 @@
-# MGMT: zslba: 0x0000000000000000, action: 0x4, str: ZND_SEND_RESET
+# MGMT: zslba: 0x0000000000000000, action: 0x4, str: ZND_CMD_MGMT_SEND_RESET
 
 
 # Zone Information Report for lba: 0x0000000000000000, limit: 1
-znd_report:
+xnvme_znd_report:
   report_nbytes: 128
   entries_nbytes: 64
   zd_nbytes: 64
@@ -10,7 +10,7 @@ znd_report:
   zrent_nbytes: 64
   zslba: 0x0000000000000000
   zelba: 0x0000000000000000
-  nzones: 512
+  nzones: 4096
   nentries: 1
   extended: 0
   entries:
@@ -33,7 +33,7 @@ znd_report:
 
 
 # Zone Information Report for lba: 0x0000000000000000, limit: 1
-znd_report:
+xnvme_znd_report:
   report_nbytes: 128
   entries_nbytes: 64
   zd_nbytes: 64
@@ -41,7 +41,7 @@ znd_report:
   zrent_nbytes: 64
   zslba: 0x0000000000000000
   zelba: 0x0000000000000000
-  nzones: 512
+  nzones: 4096
   nentries: 1
   extended: 0
   entries:

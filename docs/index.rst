@@ -36,8 +36,8 @@ To evaluate the performance of abstractions introduced by ``xNVMe`` a Fio IO
 engine is provided, supporting **conventional** NVMe devices, as well as
 **Zoned** devices.
 
-Jump right into the :ref:`sec-quick-start` and with the basics in place you can
-explore the :ref:`sec-c-api` and the :ref:`sec-tools`.
+Jump right into the :ref:`sec-getting-started` and with the basics in place you
+can explore the :ref:`sec-tools` and the :ref:`sec-c-api`.
 
 Contents:
 
@@ -45,13 +45,12 @@ Contents:
    :maxdepth: 2
    :includehidden:
 
-   quick_start/index.rst
+   getting_started/index.rst
    tools/index.rst
    capis/index.rst
    examples/index.rst
    tutorial/index.rst
    backends/index.rst
-   building/index.rst
 
 Indices and tables
 ==================

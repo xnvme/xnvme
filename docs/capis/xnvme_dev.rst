@@ -1,7 +1,8 @@
 .. _sec-c-api-xnvme_dev:
 
-xnvme_dev
-########
+===========
+ xnvme_dev
+===========
 
 .. _sec-c-api-xnvme_dev-header:
 

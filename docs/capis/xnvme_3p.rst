@@ -1,7 +1,8 @@
 .. _sec-c-api-xnvme_3p:
 
-xnvme_3p
-########
+==========
+ xnvme_3p
+==========
 
 .. _sec-c-api-xnvme_3p-header:
 

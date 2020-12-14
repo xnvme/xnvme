@@ -1,7 +1,8 @@
 .. _sec-c-api-xnvme_adm:
 
-xnvme_adm
-########
+===========
+ xnvme_adm
+===========
 
 .. _sec-c-api-xnvme_adm-header:
 

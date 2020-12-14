@@ -1,5 +1,4 @@
 # Retrieving the Changed Zone List
-znd_changes:
-  nidents: 0
-  idents: ~
 
+# ERR: 'xnvme_znd_log_changes_from_dev()': {errno: -5, msg: 'Input/output error'}
+# ERR: 'changes': {errno: -5, msg: 'Input/output error'}

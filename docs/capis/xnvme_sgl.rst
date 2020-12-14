@@ -1,7 +1,8 @@
 .. _sec-c-api-xnvme_sgl:
 
-xnvme_sgl
-########
+===========
+ xnvme_sgl
+===========
 
 .. _sec-c-api-xnvme_sgl-header:
 
