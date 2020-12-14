@@ -173,6 +173,9 @@ _linux_iou_poke(struct xnvme_queue *q, uint32_t max)
 
 		// Map cqe-result to cmd_ctx-completion
 		ctx->cpl.status.sc = cqe->res ? cqe->res : ctx->cpl.status.sc;
+		if (ctx->cpl.status.sc) {
+			ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
+		}
 
 		ctx->async.cb(ctx, ctx->async.cb_arg);
 

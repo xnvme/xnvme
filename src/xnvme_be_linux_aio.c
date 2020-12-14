@@ -93,6 +93,9 @@ _linux_aio_poke(struct xnvme_queue *q, uint32_t max)
 
 			// Map event-result to ctx-completion
 			ctx->cpl.status.sc = ev->res;
+			if (ev->res) {
+				ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
+			}
 			ctx->async.cb(ctx, ctx->async.cb_arg);
 
 			++completed;

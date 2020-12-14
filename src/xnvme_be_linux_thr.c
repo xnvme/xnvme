@@ -128,9 +128,10 @@ _linux_thr_poke(struct xnvme_queue *q, uint32_t max)
 		if (err) {
 			XNVME_DEBUG("FAILED: err: %d", err);
 			entry->ctx->cpl.status.sc = err;
+			entry->ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
 		}
-		STAILQ_INSERT_TAIL(&qp->rp, entry, link);
 		entry->ctx->async.cb(entry->ctx, entry->ctx->async.cb_arg);
+		STAILQ_INSERT_TAIL(&qp->rp, entry, link);
 
 		++completed;
 	};
