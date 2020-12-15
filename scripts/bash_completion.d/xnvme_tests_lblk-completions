@@ -15,7 +15,7 @@ _xnvme_tests_lblk_completions()
 
     # Complete sub-commands
     if [[ $COMP_CWORD < 2 ]]; then
-        COMPREPLY+=( $( compgen -W 'io scopy --help' -- $cur ) )
+        COMPREPLY+=( $( compgen -W 'io scopy write_zeroes write_uncorrectable --help' -- $cur ) )
         return 0
     fi
 
@@ -35,6 +35,14 @@ _xnvme_tests_lblk_completions()
 
     "scopy")
         opts+="--slba --help"
+        ;;
+
+    "write_zeroes")
+        opts+="--slba --elba --help"
+        ;;
+
+    "write_uncorrectable")
+        opts+="--slba --elba --help"
         ;;
 
     esac

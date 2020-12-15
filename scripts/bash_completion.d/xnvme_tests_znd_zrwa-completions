@@ -15,7 +15,7 @@ _xnvme_tests_znd_zrwa_completions()
 
     # Complete sub-commands
     if [[ $COMP_CWORD < 2 ]]; then
-        COMPREPLY+=( $( compgen -W 'commit --help' -- $cur ) )
+        COMPREPLY+=( $( compgen -W 'support idfy open-with-zrwa open-without-zrwa flush flush-explicit flush-implicit --help' -- $cur ) )
         return 0
     fi
 
@@ -29,7 +29,31 @@ _xnvme_tests_znd_zrwa_completions()
 
     case "$sub" in
     
-    "commit")
+    "support")
+        opts+="--help"
+        ;;
+
+    "idfy")
+        opts+="--help"
+        ;;
+
+    "open-with-zrwa")
+        opts+="--slba --help"
+        ;;
+
+    "open-without-zrwa")
+        opts+="--slba --help"
+        ;;
+
+    "flush")
+        opts+="--slba --help"
+        ;;
+
+    "flush-explicit")
+        opts+="--slba --help"
+        ;;
+
+    "flush-implicit")
         opts+="--slba --help"
         ;;
 
