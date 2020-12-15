@@ -1834,6 +1834,8 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_log_changes) == 4096, "Incorrec
  * Zone Descriptor as reported by Zone Management Receive command
  *
  * @see Specification Section 6.2.2.3, figure TBDZMRZD
+ *
+ * @struct xnvme_spec_znd_descr
  */
 struct xnvme_spec_znd_descr {
 	uint8_t zt		: 4;	///< Zone Type
