@@ -307,9 +307,9 @@ enum xnvmec_opt xnvmec_int2opt(int opt);
 
 /**
  * XNVMEC_LFLG: ./cli --verbose; always optional
- * XNVMEC_LOPT: ./cli --lba 0x0; optionally provide a value
- * XNVMEC_LREQ: ./cli required and provides a value
- * XNVMEC_POSA: ./cli <arg1> <arg2>; required, ordered, and provides a value
+ * XNVMEC_LOPT: ./cli --arg 0x0; optionally provide a value
+ * XNVMEC_LREQ: ./cli --arg 0x0; require providing a value
+ * XNVMEC_POSA: ./cli arg1 arg2; required, ordered, and provides a value
  *
  * @enum xnvmec_opt_type
  */
