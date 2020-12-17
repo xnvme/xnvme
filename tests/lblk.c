@@ -389,7 +389,7 @@ test_write_zeroes(struct xnvmec *cli)
 	xnvmec_pinf("Comparing wbuf and rbuf");
 	if (xnvmec_buf_diff(wbuf, rbuf, buf_nbytes)) {
 		xnvmec_buf_diff_pr(wbuf, rbuf, buf_nbytes, XNVME_PR_DEF);
-		err = err ? err : -EIO;
+		err = -EIO;
 		goto exit;
 	}
 
@@ -475,7 +475,7 @@ test_write_uncorrectable(struct xnvmec *cli)
 	xnvmec_pinf("Comparing wbuf and rbuf");
 	if (xnvmec_buf_diff(wbuf, rbuf, buf_nbytes)) {
 		xnvmec_buf_diff_pr(wbuf, rbuf, buf_nbytes, XNVME_PR_DEF);
-		err = err ? err : -EIO;
+		err = -EIO;
 		goto exit;
 	}
 
