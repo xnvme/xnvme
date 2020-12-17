@@ -58,26 +58,30 @@ int
 xnvme_be_linux_nvme_map_cpl(struct xnvme_cmd_ctx *ctx, unsigned long ioctl_req)
 {
 	struct _kernel_cpl *kcpl = (void *)&ctx->cpl;
+	uint64_t cpl_res;
 
 	// Assign the completion-result
 	switch (ioctl_req) {
 	case NVME_IOCTL_ADMIN_CMD:
 	case NVME_IOCTL_IO_CMD:
-		ctx->cpl.result = kcpl->res32.result;
+		cpl_res = kcpl->res32.result;
 		break;
 #ifdef NVME_IOCTL_IO64
 	case NVME_IOCTL_IO64_CMD:
-		ctx->cpl.result = kcpl->res64.result;
+		cpl_res = kcpl->res64.result;
 		break;
 #endif
 #ifdef NVME_IOCTL_ADMIN64
 	case NVME_IOCTL_ADMIN64_CMD:
-		ctx->cpl.result = kcpl->res64.result;
+		cpl_res = kcpl->res64.result;
 		break;
 #endif
 	default:
-		return -1;
+		XNVME_DEBUG("FAILED: ioctl_req: %d", ioctl_req);
+		return -ENOSYS;
 	}
+
+	ctx->cpl.result = cpl_res;
 
 	// Zero-out the remainder of the completion
 	ctx->cpl.status.val = 0;
@@ -96,6 +100,7 @@ ioctl_wrap(struct xnvme_dev *dev, unsigned long ioctl_req, struct xnvme_cmd_ctx 
 
 	err = ioctl(state->fd, ioctl_req, ctx);
 	if (xnvme_be_linux_nvme_map_cpl(ctx, ioctl_req)) {
+		XNVME_DEBUG("FAILED: xnvme_be_linux_map_cpl()");
 		return -ENOSYS;
 	}
 
