@@ -19,16 +19,18 @@ See: https://xnvme.io/docs for documentation
   - Helpers / convenience functions for common operations
   - CLI-library for convenient derivative work
   - Multiple backend implementations
-    | Linux + FreeBSD SPDK
-    | FreeBSD IOCTL
+    | Linux SPDK
     | Linux IOCTL
-    | Linux IOCTL + io_uring async. IO
-- libxnvme, base NVMe Specification available as library and CLI `xnvme`
-- liblblk, NVM optional command-set / extension Specification `lblk`
-- libznd, ZNS Specification available as library and CLI `zoned`
-- libkvs, SNIA KV API implemented [TODO]
-- libocssd, Open-Channel 2.0 support [TODO]
-- libWHATEVERYOUWANT, Go ahead and implement what your need [TODO]
+    | Linux io_uring
+    | Linux libaio
+    | FreeBSD SPDK
+    | FreeBSD IOCTL
+- `libxnvme`, base NVMe Specification available as library and via CLI `xnvme`
+- `libxnvme_nvm`, The NVM Commands Set
+- `libxnvme_znd`, The Zoned Command Set available as a library and via CLI `zoned`
+- `libkvs`, SNIA KV API implemented [TODO]
+- `libocssd`, Open-Channel 2.0 support [TODO]
+- `libWHATEVERYOUWANT`, Go ahead and implement what you need [TODO]
 
 Contact and Contributions
 =========================
