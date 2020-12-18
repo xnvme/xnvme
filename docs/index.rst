@@ -49,8 +49,6 @@ Contents:
    tools/index.rst
    capis/index.rst
    examples/index.rst
-   tutorial/index.rst
-   backends/index.rst
 
 Indices and tables
 ==================

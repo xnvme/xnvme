@@ -1,5 +1,3 @@
-
-
 xnvme_dev:
   xnvme_ident:
     trgt: '/dev/nvme0n1'

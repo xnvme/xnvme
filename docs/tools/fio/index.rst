@@ -19,11 +19,14 @@ Given that you have installed **xNVMe** then the IO engine should be available
 as a shared library.
 
 The library prefix, and suffix vary based on distribution and platform,
-however, on a Debian-like distribution it is available as
-``libxnvme-fio-engine.so``. Location of the engine is also dist specific, but
-would end up in e.g. ``/usr/lib/``.
+however, on a Debian-like distribution it is available under the filename
+``libxnvme-fio-engine.so`` and located in ``/usr/lib/`` when installed.
 
-Make sure you adjust it accordingly when using the fio-examples below.
+In the examples below, it is assumed that the io-engine is available at::
+
+  --ioengine=external:/usr/lib/libxnvme-fio-engine.so
+
+Adjust the fio ``--ioengine=external:`` to match your system.
 
 Also, when, using the **SPDK** backend do::
 

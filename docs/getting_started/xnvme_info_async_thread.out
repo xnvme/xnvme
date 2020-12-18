@@ -1,11 +1,9 @@
-
-
 xnvme_dev:
   xnvme_ident:
     trgt: '/dev/nvme0n1'
     schm: 'file'
-    opts: ''
-    uri: 'file:/dev/nvme0n1'
+    opts: '?async=thr'
+    uri: 'file:/dev/nvme0n1?async=thr'
   xnvme_be:
     async: {id: 'thr', enabled: 1}
     sync: {id: 'nvme_ioctl', enabled: 1}

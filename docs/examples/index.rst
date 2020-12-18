@@ -1,8 +1,8 @@
 .. _sec-examples:
 
-==================
- C APIs: Examples
-==================
+=================
+ C API: Examples
+=================
 
 In the source repos you will find usage examples in the ``examples`` folder.
 Additionally, having a look at cli-tools in ``tools`` is also useful as they

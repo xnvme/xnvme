@@ -4,10 +4,10 @@ xnvme_dev:
   xnvme_ident:
     trgt: '/dev/nvme0n1'
     schm: 'file'
-    opts: ''
-    uri: 'file:/dev/nvme0n1'
+    opts: '?async=libaio'
+    uri: 'file:/dev/nvme0n1?async=libaio'
   xnvme_be:
-    async: {id: 'thr', enabled: 1}
+    async: {id: 'libaio', enabled: 1}
     sync: {id: 'nvme_ioctl', enabled: 1}
     attr: {name: 'linux', enabled: 1}
   xnvme_cmd_opts:

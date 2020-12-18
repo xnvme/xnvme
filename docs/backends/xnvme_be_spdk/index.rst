@@ -7,13 +7,6 @@ SPDK
 <http://www.spdk.io/>`_. SPDK is built and embedded in the main static
 **xNVMe** library ``libxnvme.a``.
 
-Build **xNVMe** with **SPDK** support
--------------------------------------
-
-With **SPDK** in place, configure the **xNVMe** build with::
-
-  ./configure --enable-be-spdk
-
 Compiling and linking your code with **xNVMe**
 ----------------------------------------------
 

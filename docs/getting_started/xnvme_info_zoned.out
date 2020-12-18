@@ -1,31 +1,41 @@
+
+
+
+
+
+
 xnvme_dev:
   xnvme_ident:
-    trgt: '/dev/nvme0n1'
+    trgt: '/dev/nullb0'
     schm: 'file'
     opts: ''
-    uri: 'file:/dev/nvme0n1'
+    uri: 'file:/dev/nullb0'
   xnvme_be:
     async: {id: 'thr', enabled: 1}
-    sync: {id: 'nvme_ioctl', enabled: 1}
+    sync: {id: 'block_ioctl', enabled: 1}
     attr: {name: 'linux', enabled: 1}
   xnvme_cmd_opts:
     mask: '00000000000000000000000000000001'
     iomd: 'SYNC'
     payload_data: 'DRV'
     payload_meta: 'DRV'
-    csi: 0x0
+    csi: 0x2
     nsid: 0x1
-    ssw: 12
+    ssw: 9
   xnvme_geo:
-    type: XNVME_GEO_CONVENTIONAL
+    type: XNVME_GEO_ZONED
     npugrp: 1
     npunit: 1
-    nzone: 1
-    nsect: 2097152
-    nbytes: 4096
+    nzone: 1000
+    nsect: 524288
+    nbytes: 512
     nbytes_oob: 0
-    tbytes: 8589934592
-    mdts_nbytes: 520192
-    lba_nbytes: 4096
+    tbytes: 268435456000
+    mdts_nbytes: 65024
+    lba_nbytes: 512
     lba_extended: 0
+
+
+
+
 

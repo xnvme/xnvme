@@ -19,20 +19,13 @@ apis:
 	@cd ../.. && make tags-xnvme-public
 	@python apigen.py --tags ../../tags --output ../capis
 
-.PHONY: commands-linux
-commands-linux:
-	@echo "# commands-linux"
-	@kmdo ../building  || true
+.PHONY: commands
+commands:
+	@echo "# commands"
+	@kmdo ../getting_started  || true
 	@kmdo ../capis || true
 	@kmdo ../examples || true
-	@kmdo ../quick_start || true
 	@kmdo ../tools || true
-	@kmdo ../tutorial || true
-	@kmdo ../backends -r || true
-
-.PHONY: commands-spdk
-commands-spdk:
-	@kmdo ../backends/xnvme_be_spdk || true
 
 .PHONY: doxy
 doxy:
