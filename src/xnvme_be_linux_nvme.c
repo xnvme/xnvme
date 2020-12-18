@@ -77,7 +77,7 @@ xnvme_be_linux_nvme_map_cpl(struct xnvme_cmd_ctx *ctx, unsigned long ioctl_req)
 		break;
 #endif
 	default:
-		XNVME_DEBUG("FAILED: ioctl_req: %d", ioctl_req);
+		XNVME_DEBUG("FAILED: ioctl_req: %u", ioctl_req);
 		return -ENOSYS;
 	}
 
