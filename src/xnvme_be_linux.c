@@ -240,10 +240,10 @@ xnvme_be_linux_state_init(struct xnvme_dev *dev, void *XNVME_UNUSED(opts))
 
 	// Determine async-engine to use and setup the func-pointers
 	{
-		char aname[4] = { 0 };
+		char aname[10] = { 0 };
 		uint8_t chosen;
 
-		chosen = sscanf(dev->ident.opts, "?async=%3[a-z]", aname) == 1;
+		chosen = sscanf(dev->ident.opts, "?async=%3[a-z_]", aname) == 1;
 
 		for (int i = 0; i < g_linux_async_count; ++i) {
 			struct xnvme_be_async *queue = g_linux_async[i];
