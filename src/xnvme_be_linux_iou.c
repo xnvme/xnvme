@@ -287,7 +287,7 @@ _linux_iou_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, voi
 }
 
 struct xnvme_be_async g_linux_iou = {
-	.id = "iou",
+	.id = "io_uring",
 #ifdef XNVME_BE_LINUX_IOU_ENABLED
 	.enabled = 1,
 	.cmd_io = _linux_iou_cmd_io,
