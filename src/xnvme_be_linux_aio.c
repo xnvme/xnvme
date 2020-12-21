@@ -187,7 +187,7 @@ _linux_aio_supported(struct xnvme_dev *XNVME_UNUSED(dev), uint32_t XNVME_UNUSED(
 }
 
 struct xnvme_be_async g_linux_aio = {
-	.id = "aio",
+	.id = "libaio",
 #ifdef XNVME_BE_LINUX_AIO_ENABLED
 	.enabled = 1,
 	.cmd_io = _linux_aio_cmd_io,
