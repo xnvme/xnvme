@@ -840,7 +840,7 @@ command-transport and async interface.
 
 .. _discussion: https://github.com/OpenMPDK/xNVMe/discussions
 
-.. _Discord: https://discord.gg/ycHjJd5y
+.. _Discord: https://discord.com/invite/XCbBX9DmKf
 
 .. _vfio: https://www.kernel.org/doc/Documentation/vfio.txt
 
