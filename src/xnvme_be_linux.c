@@ -35,6 +35,7 @@
 
 extern struct xnvme_be_sync g_linux_nvme;
 extern struct xnvme_be_sync g_linux_block;
+extern struct xnvme_be_sync g_linux_fs;
 
 static struct xnvme_be_sync *g_linux_sync[] = {
 	&g_linux_nvme,
@@ -215,27 +216,50 @@ xnvme_be_linux_state_init(struct xnvme_dev *dev, void *XNVME_UNUSED(opts))
 	}
 	err = fstat(state->fd, &dev_stat);
 	if (err < 0) {
+		XNVME_DEBUG("FAILED: err: %d, errno: %d", err, errno);
 		return -errno;
-	}
-	if (!S_ISBLK(dev_stat.st_mode)) {
-		XNVME_DEBUG("FAILED: device is not a block device");
-		return -ENOTBLK;
 	}
 
 	// Determine sync-engine to use and setup func-pointers
-	{
+	switch(dev_stat.st_mode & S_IFMT) {
+	case S_IFREG:
+		XNVME_DEBUG("INFO: regular file");
+		dev->be.sync = g_linux_fs;
+		break;
+
+	case S_IFCHR:
+		XNVME_DEBUG("INFO: char-device file");
+		dev->be.sync = g_linux_nvme;
+		break;
+
+	case S_IFBLK:
+		XNVME_DEBUG("INFO: block-device file");
 		for (int i = 0; i < g_linux_sync_count; ++i) {
 			struct xnvme_be_sync *sync = g_linux_sync[i];
 
 			XNVME_DEBUG("id: %s, enabled: %zu", sync->id,
 				    sync->enabled);
 
-			if (sync->enabled && sync->supported(dev, 0x0)) {
-				dev->be.sync = *sync;
-				XNVME_DEBUG("got: %s", sync->id);
-				break;
+			if (!(sync->enabled && sync->supported(dev, 0x0))) {
+				XNVME_DEBUG("INFO: skipping: '%s'", sync->id);
+				continue;
 			}
+
+			dev->be.sync = *sync;
+			break;
+
 		}
+		break;
+
+	default:
+		XNVME_DEBUG("FAILED: unsupported file-type");
+		return -EINVAL;
+	}
+
+	XNVME_DEBUG("INFO: selected sync: '%s'", dev->be.sync.id);
+	if (!(dev->be.sync.enabled && dev->be.sync.supported(dev, 0x0))) {
+		XNVME_DEBUG("FAILED: skipping, !enabled || !supported");
+		return -ENOSYS;
 	}
 
 	// Determine async-engine to use and setup the func-pointers
@@ -267,6 +291,8 @@ xnvme_be_linux_state_init(struct xnvme_dev *dev, void *XNVME_UNUSED(opts))
 		return -ENOSYS;
 	}
 
+	XNVME_DEBUG("INFO: selected async: '%s'", dev->be.async.id);
+
 	return 0;
 }
 
@@ -293,6 +319,10 @@ xnvme_be_linux_dev_idfy(struct xnvme_dev *dev)
 
 	if (strncmp(dev->be.sync.id, "block_ioctl", 11) == 0) {
 		dev->dtype = XNVME_DEV_TYPE_BLOCK_DEVICE;
+		dev->csi = XNVME_SPEC_CSI_NVM;
+		dev->nsid = 1;
+	} else if (strncmp(dev->be.sync.id, g_linux_fs.id, 11) == 0) {
+		dev->dtype = XNVME_DEV_TYPE_FS_FILE;
 		dev->csi = XNVME_SPEC_CSI_NVM;
 		dev->nsid = 1;
 	} else {
