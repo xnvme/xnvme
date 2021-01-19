@@ -145,6 +145,53 @@ int
 _linux_iou_poke(struct xnvme_queue *q, uint32_t max)
 {
 	struct xnvme_queue_iou *queue = (void *)q;
+	struct io_uring_cqe *cqes[XNVME_QUEUE_IOU_CQE_BATCH_MAX];
+	unsigned completed;
+
+	max = max ? max : queue->base.outstanding;
+	max = max > queue->base.outstanding ? queue->base.outstanding : max;
+	max = max > XNVME_QUEUE_IOU_CQE_BATCH_MAX ? XNVME_QUEUE_IOU_CQE_BATCH_MAX : max;
+
+	completed = io_uring_peek_batch_cqe(&queue->ring, cqes, max);
+	for (unsigned i = 0; i < completed; ++i) {
+		struct io_uring_cqe *cqe = cqes[i];
+		struct xnvme_cmd_ctx *ctx;
+		
+		ctx = io_uring_cqe_get_data(cqe);
+		if (!ctx) {
+			XNVME_DEBUG("-{[THIS SHOULD NOT HAPPEN]}-");
+			XNVME_DEBUG("cqe->user_data is NULL! => NO REQ!");
+			XNVME_DEBUG("cqe->res: %d", cqe->res);
+			XNVME_DEBUG("cqe->flags: %u", cqe->flags);
+			return -EIO;
+		}
+
+		if (queue->ioctl_ring) {
+			xnvme_be_linux_nvme_map_cpl(ctx, NVME_IOCTL_IO_CMD);
+		}
+
+		// Map cqe-result to cmd_ctx-completion
+		ctx->cpl.status.sc = cqe->res ? cqe->res : ctx->cpl.status.sc;
+		if (ctx->cpl.status.sc) {
+			ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
+		}
+
+		ctx->async.cb(ctx, ctx->async.cb_arg);
+	};
+
+	if (completed) {
+		io_uring_cq_advance(&queue->ring, completed);
+		queue->base.outstanding -= completed;
+	}
+
+	return completed;
+}
+
+/*
+int
+_linux_iou_poke(struct xnvme_queue *q, uint32_t max)
+{
+	struct xnvme_queue_iou *queue = (void *)q;
 	struct io_uring_cq *ring = &queue->ring.cq;
 	unsigned cq_ring_mask = *ring->kring_mask;
 	unsigned completed = 0;
@@ -195,7 +242,7 @@ _linux_iou_poke(struct xnvme_queue *q, uint32_t max)
 	_linux_iou_barrier();
 
 	return completed;
-}
+}*/
 
 int
 _linux_iou_wait(struct xnvme_queue *queue)
