@@ -203,11 +203,6 @@ xnvme_be_linux_state_init(struct xnvme_dev *dev, void *XNVME_UNUSED(opts))
 	if (xnvme_ident_opt_to_val(&dev->ident, "ioctl_ring", &opt_val)) {
 		state->ioctl_ring = opt_val == 1;
 	}
-	// NOTE: Disabling IOPOLL, to avoid lock-up, until fixed
-	if (state->poll_io) {
-		printf("ENOSYS: IORING_SETUP_IOPOLL\n");
-		state->poll_io = 0;
-	}
 	XNVME_DEBUG("state->poll_io: %d", state->poll_io);
 	XNVME_DEBUG("state->poll_sq: %d", state->poll_sq);
 
