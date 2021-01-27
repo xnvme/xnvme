@@ -19,7 +19,7 @@ We have a 3 step process for contributions:
 Licensing is very important to open source projects. It helps ensure the
 software continues to be available under the terms that the author desired.
 
-libznd uses the Apache 2.0 LICENSE to strike a balance between open contribution
+xNVMe uses the Apache 2.0 LICENSE to strike a balance between open contribution
 and allowing you to use the software however you would like to.
 
 The license tells you what rights you have that are provided by the copyright
@@ -27,7 +27,7 @@ holder. It is important that the contributor fully understands what rights they
 are licensing and agrees to them. Sometimes the copyright holder isn't the
 contributor, such as when the contributor is doing work on behalf of a company.
 
-To make a good faith effort to ensure these criteria are met, libznd requires
+To make a good faith effort to ensure these criteria are met, xNVMe requires
 the Developer Certificate of Origin (DCO) process to be followed.
 
 The DCO is an attestation attached to every contribution made by every
