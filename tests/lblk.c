@@ -443,6 +443,19 @@ exit:
 	return err;
 }
 
+/**
+ * 0) Fill wbuff with 'a' char
+ * 1) Write the entire LBA range [slba, elba] using wbuf
+ * 2) Read the entire LBA range and compare to wbuff
+ * 3) Execute write zeroes command for LBA range
+ * 4) Read the entire LBA range and verify that it contains zeroes
+ */
+static int 
+test_write_zeroes(struct xnvmec *cli)
+{
+	return 1;
+}
+
 //
 // Command-Line Interface (CLI) definition
 //
@@ -472,6 +485,16 @@ static struct xnvmec_sub g_subs[] = {
 		"Basic verification of the write uncorrectable command",
 		"Basic verification of the write uncorrectable command",
 		test_write_uncorrectable, {
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
+			{XNVMEC_OPT_ELBA, XNVMEC_LOPT},
+		}
+	},
+	{
+		"write_zeroes",
+		"Basic verification of the write zeroes command",
+		"Basic verification of the write zeroes command",
+		test_write_zeroes, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
 			{XNVMEC_OPT_ELBA, XNVMEC_LOPT},
