@@ -92,6 +92,18 @@ xnvme_nvm_write_uncorrectable(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t
 }
 
 int
+xnvme_nvm_write_zeroes(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba,
+		       uint16_t nlb)
+{
+	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE_ZEROES;
+	ctx->cmd.common.nsid = nsid;
+	ctx->cmd.nvm.slba = slba;
+	ctx->cmd.nvm.nlb = nlb;
+
+	return xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
+}
+
+int
 xnvme_nvm_scopy(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t sdlba,
 		struct xnvme_spec_nvm_scopy_fmt_zero *ranges, uint8_t nr,
 		enum xnvme_nvm_scopy_fmt copy_fmt)

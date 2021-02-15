@@ -61,6 +61,19 @@ xnvme_nvm_write_uncorrectable(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t
 			      uint16_t nlb);
 
 /**
+ * Submit a write zeroes command
+ *
+ * @param ctx Pointer to command context (::xnvme_cmd_ctx)
+ * @param nsid Namespace Identifier
+ * @param slba The Starting Destination LBA
+ * @param nlb Number Of Logical Blocks
+ *
+*/
+int
+xnvme_nvm_write_zeroes(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba,
+		       uint16_t nlb);
+
+/**
  * Submit, and optionally wait for completion of a NVMe Simple-Copy-Command
  *
  * @see xnvme_cmd_opts
