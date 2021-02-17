@@ -1,0 +1,37 @@
+From 5e9350006fb89bce4ef7a9e0b194aa91106521c7 Mon Sep 17 00:00:00 2001
+From: "Ivan L. Picoli" <i.picoli@samsung.com>
+Date: Wed, 22 Jul 2020 18:08:55 +0200
+Subject: [PATCH 4/9] bdev: add definitions for the ONCS Verify and Simple Copy
+
+Signed-off-by: Ivan L. Picoli <i.picoli@samsung.com>
+Change-Id: I504e8aa2987442adf653ef1424d204e94d64739d
+---
+ include/spdk/bdev.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/include/spdk/bdev.h b/include/spdk/bdev.h
+index d8946464b..67c25366e 100644
+--- a/include/spdk/bdev.h
++++ b/include/spdk/bdev.h
+@@ -135,16 +135,18 @@ enum spdk_bdev_io_type {
+ 	SPDK_BDEV_IO_TYPE_WRITE_ZEROES,
+ 	SPDK_BDEV_IO_TYPE_ZCOPY,
+ 	SPDK_BDEV_IO_TYPE_GET_ZONE_INFO,
+ 	SPDK_BDEV_IO_TYPE_ZONE_MANAGEMENT,
+ 	SPDK_BDEV_IO_TYPE_ZONE_APPEND,
+ 	SPDK_BDEV_IO_TYPE_COMPARE,
+ 	SPDK_BDEV_IO_TYPE_COMPARE_AND_WRITE,
+ 	SPDK_BDEV_IO_TYPE_ABORT,
++	SPDK_BDEV_IO_TYPE_SIMPLE_COPY,
++	SPDK_BDEV_IO_TYPE_VERIFY,
+ 	SPDK_BDEV_NUM_IO_TYPES /* Keep last */
+ };
+ 
+ /** bdev QoS rate limit type */
+ enum spdk_bdev_qos_rate_limit_type {
+ 	/** IOPS rate limit for both read and write */
+ 	SPDK_BDEV_QOS_RW_IOPS_RATE_LIMIT = 0,
+ 	/** Byte per second rate limit for both read and write */
+-- 
+2.20.1
+

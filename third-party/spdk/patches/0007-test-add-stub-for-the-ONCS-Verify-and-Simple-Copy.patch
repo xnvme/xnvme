@@ -1,7 +1,7 @@
-From 8dc41efcb8b0bd9935dab93495869f5de467cfc5 Mon Sep 17 00:00:00 2001
+From cabaf336212cd3875f37a690a9a436c6ee1bf909 Mon Sep 17 00:00:00 2001
 From: "Ivan L. Picoli" <i.picoli@samsung.com>
 Date: Wed, 22 Jul 2020 18:17:50 +0200
-Subject: [PATCH 08/10] test: add stub for the ONCS Verify and Simple Copy
+Subject: [PATCH 7/9] test: add stub for the ONCS Verify and Simple Copy
 
 Signed-off-by: Ivan L. Picoli <i.picoli@samsung.com>
 Change-Id: I145155cfce2d1942312072fc9ba19920b9c081b8
@@ -11,10 +11,15 @@ Change-Id: I145155cfce2d1942312072fc9ba19920b9c081b8
  2 files changed, 20 insertions(+)
 
 diff --git a/test/unit/lib/nvmf/ctrlr.c/ctrlr_ut.c b/test/unit/lib/nvmf/ctrlr.c/ctrlr_ut.c
-index 810e2337d..d95331a72 100644
+index aa2912f6f..c4f748185 100644
 --- a/test/unit/lib/nvmf/ctrlr.c/ctrlr_ut.c
 +++ b/test/unit/lib/nvmf/ctrlr.c/ctrlr_ut.c
-@@ -85,6 +85,16 @@ DEFINE_STUB(nvmf_subsystem_get_ctrlr,
+@@ -79,16 +79,26 @@ DEFINE_STUB(nvmf_subsystem_add_ctrlr,
+ 	    (struct spdk_nvmf_subsystem *subsystem, struct spdk_nvmf_ctrlr *ctrlr),
+ 	    0);
+ 
+ DEFINE_STUB(nvmf_subsystem_get_ctrlr,
+ 	    struct spdk_nvmf_ctrlr *,
  	    (struct spdk_nvmf_subsystem *subsystem, uint16_t cntlid),
  	    NULL);
  
@@ -31,11 +36,21 @@ index 810e2337d..d95331a72 100644
  DEFINE_STUB(nvmf_ctrlr_dsm_supported,
  	    bool,
  	    (struct spdk_nvmf_ctrlr *ctrlr),
+ 	    false);
+ 
+ DEFINE_STUB(nvmf_ctrlr_write_zeroes_supported,
+ 	    bool,
+ 	    (struct spdk_nvmf_ctrlr *ctrlr),
 diff --git a/test/unit/lib/nvmf/tcp.c/tcp_ut.c b/test/unit/lib/nvmf/tcp.c/tcp_ut.c
-index e6cce35de..eb7f0b394 100644
+index 9b06633a0..00ae565cd 100644
 --- a/test/unit/lib/nvmf/tcp.c/tcp_ut.c
 +++ b/test/unit/lib/nvmf/tcp.c/tcp_ut.c
-@@ -111,6 +111,16 @@ DEFINE_STUB(spdk_nvmf_subsystem_host_allowed,
+@@ -105,16 +105,26 @@ DEFINE_STUB(spdk_nvmf_subsystem_get_next_ns,
+ 	    (struct spdk_nvmf_subsystem *subsystem, struct spdk_nvmf_ns *prev_ns),
+ 	    NULL);
+ 
+ DEFINE_STUB(spdk_nvmf_subsystem_host_allowed,
+ 	    bool,
  	    (struct spdk_nvmf_subsystem *subsystem, const char *hostnqn),
  	    true);
  
@@ -50,6 +65,11 @@ index e6cce35de..eb7f0b394 100644
 +	    false);
 +
  DEFINE_STUB(nvmf_ctrlr_dsm_supported,
+ 	    bool,
+ 	    (struct spdk_nvmf_ctrlr *ctrlr),
+ 	    false);
+ 
+ DEFINE_STUB(nvmf_ctrlr_write_zeroes_supported,
  	    bool,
  	    (struct spdk_nvmf_ctrlr *ctrlr),
 -- 

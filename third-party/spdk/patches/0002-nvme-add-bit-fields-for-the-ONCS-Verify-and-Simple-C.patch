@@ -1,8 +1,7 @@
-From 5894c3a9ca407041d2b7e386fd12e448b318b798 Mon Sep 17 00:00:00 2001
+From e449e0956ca4d40eb959653d230506f3cb360555 Mon Sep 17 00:00:00 2001
 From: "Simon A. F. Lund" <simon.lund@samsung.com>
 Date: Tue, 16 Jun 2020 21:35:26 +0200
-Subject: [PATCH 03/10] nvme: add bit-fields for the ONCS Verify and Simple
- Copy
+Subject: [PATCH 2/9] nvme: add bit-fields for the ONCS Verify and Simple Copy
 
 Signed-off-by: Simon A. F. Lund <simon.lund@samsung.com>
 Change-Id: I184e298396a2e58c683ac3624db9bbfef1d737d6
@@ -11,10 +10,15 @@ Change-Id: I184e298396a2e58c683ac3624db9bbfef1d737d6
  1 file changed, 11 insertions(+), 2 deletions(-)
 
 diff --git a/include/spdk/nvme_spec.h b/include/spdk/nvme_spec.h
-index c4d7d1948..2d2be2749 100644
+index ca91c8bc1..2615c2205 100644
 --- a/include/spdk/nvme_spec.h
 +++ b/include/spdk/nvme_spec.h
-@@ -1937,7 +1937,9 @@ struct __attribute__((packed)) __attribute__((aligned)) spdk_nvme_ctrlr_data {
+@@ -1954,17 +1954,19 @@ struct __attribute__((packed)) __attribute__((aligned)) spdk_nvme_ctrlr_data {
+ 	struct {
+ 		uint16_t	compare : 1;
+ 		uint16_t	write_unc : 1;
+ 		uint16_t	dsm: 1;
+ 		uint16_t	write_zeroes: 1;
  		uint16_t	set_features_save: 1;
  		uint16_t	reservations: 1;
  		uint16_t	timestamp: 1;
@@ -25,7 +29,17 @@ index c4d7d1948..2d2be2749 100644
  	} oncs;
  
  	/** fused operation support */
-@@ -1975,7 +1977,14 @@ struct __attribute__((packed)) __attribute__((aligned)) spdk_nvme_ctrlr_data {
+ 	struct {
+ 		uint16_t	compare_and_write : 1;
+ 		uint16_t	reserved : 15;
+ 	} fuses;
+ 
+@@ -1992,17 +1994,24 @@ struct __attribute__((packed)) __attribute__((aligned)) spdk_nvme_ctrlr_data {
+ 	/** NVM vendor specific command configuration */
+ 	uint8_t			nvscc;
+ 
+ 	uint8_t			reserved531;
+ 
  	/** atomic compare & write unit */
  	uint16_t		acwu;
  
@@ -40,6 +54,11 @@ index c4d7d1948..2d2be2749 100644
 +	} ocfs;
  
  	struct spdk_nvme_cdata_sgls sgls;
+ 
+ 	/* maximum number of allowed namespaces */
+ 	uint32_t		mnan;
+ 
+ 	uint8_t			reserved4[224];
  
 -- 
 2.20.1
