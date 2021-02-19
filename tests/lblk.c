@@ -444,16 +444,126 @@ exit:
 }
 
 /**
- * 0) Fill wbuff with 'a' char
+ * 0) Fill wbuff with '!' char
  * 1) Write the entire LBA range [slba, elba] using wbuf
  * 2) Read the entire LBA range and compare to wbuff
  * 3) Execute write zeroes command for LBA range
  * 4) Read the entire LBA range and verify that it contains zeroes
  */
-static int 
+static int
 test_write_zeroes(struct xnvmec *cli)
 {
-	return 1;
+	int err;
+	struct xnvme_dev *dev = cli->args.dev;
+	const struct xnvme_geo *geo = cli->args.geo;
+	const char char_for_test = 'a';
+	uint32_t nsid = xnvme_dev_get_nsid(dev);
+
+	xnvmec_pinf("Maximum-data-transfer-size in bytes %i", geo->mdts_nbytes);
+	xnvmec_pinf("nsid %i", nsid);
+
+	uint64_t rng_slba = 0;
+	// 1 * 2^28 = 268435456
+	// 268435456 / number of bytes in LBA = index of the last LBA
+	uint64_t rng_elba = (1 << 28) / geo->lba_nbytes;
+
+	rng_elba = 127;
+
+	xnvmec_pinf("rng_slba %i rng_elba %i", rng_slba, rng_elba);
+
+	// Number of LBAs, which can be written with a single command
+	int mdts_naddr = XNVME_MIN(geo->mdts_nbytes / geo->lba_nbytes, 256);
+
+	// Number of bytes we can write with a single SQ command
+	size_t buf_nbytes = mdts_naddr * geo->lba_nbytes;
+
+	// Write buffer
+	uint8_t *wbuf = xnvme_buf_alloc(dev, buf_nbytes, NULL);
+
+	if (!wbuf) {
+		err = -errno;
+		xnvmec_perr("xnvme_buf_alloc()", err);
+		xnvme_buf_free(dev, wbuf);
+		goto exit;
+	}
+
+	// Read buffer
+	uint8_t *rbuf = xnvme_buf_alloc(dev, buf_nbytes, NULL);
+
+	if (!rbuf) {
+		err = -errno;
+		xnvmec_perr("xnvme_buff_alloc()", err);
+		xnvme_buf_free(dev, rbuf);
+		return err;
+	}
+
+	memset(wbuf, char_for_test, buf_nbytes);
+
+	xnvmec_pinf("Writing %c to a range from %i to %i LBAs", char_for_test, rng_slba, rng_elba);
+
+	for (uint64_t clba = rng_slba; clba < rng_elba; clba += mdts_naddr) {
+		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+
+		err = xnvme_nvm_write(&ctx, nsid, clba, mdts_naddr - 1, wbuf, NULL);
+
+		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+			xnvmec_perr("xnvme_write()", err);
+			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+			goto exit;
+		}
+	}
+
+	xnvmec_pinf("Done writing \"%c\" into LBAs", char_for_test);
+
+	xnvmec_pinf("sending write_zeroes command");
+	{
+		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+
+		err = xnvme_nvm_write_zeroes(&ctx, nsid, rng_slba, rng_elba - rng_slba);
+
+		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+			xnvmec_perr("xnvme_nvm_write_zeroes()", err);
+			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+			goto exit;
+		}
+	}
+
+	xnvmec_pinf("Done sending write_zeroes");
+	xnvmec_pinf("Reading data from device %d", nsid);
+
+	xnvmec_buf_clear(wbuf, buf_nbytes);
+
+	for (uint64_t cur_slba = rng_slba; cur_slba < rng_elba; cur_slba += mdts_naddr) {
+		// Clear the buffer before reading into it
+		xnvmec_buf_clear(rbuf, buf_nbytes);
+
+		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+
+		err = xnvme_nvm_read(&ctx, nsid, cur_slba, mdts_naddr - 1, rbuf, NULL);
+
+		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+			xnvmec_perr("xnvme_nvm_read()", err);
+			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+		}
+
+		if (xnvmec_buf_diff(wbuf, rbuf, buf_nbytes)) {
+			xnvmec_buf_diff_pr(wbuf, rbuf, buf_nbytes, XNVME_PR_DEF);
+			xnvmec_pinf("mdts_naddr %li buf_nbytes %li", mdts_naddr, buf_nbytes);
+
+			xnvmec_pinf("Error ocurred between LBAs %i and %i", cur_slba, cur_slba + mdts_naddr);
+			xnvmec_pinf("Last LBA is %i", rng_elba);
+			xnvmec_pinf("geo->lba_nbytes %li", geo->lba_nbytes);
+
+			err = -EIO;
+			goto exit;
+		}
+	}
+
+	xnvmec_pinf("Done testing write_zeroes()");
+exit:
+	xnvme_buf_free(dev, wbuf);
+	xnvme_buf_free(dev, rbuf);
+	return err;
 }
 
 //
@@ -495,9 +605,7 @@ static struct xnvmec_sub g_subs[] = {
 		"Basic verification of the write zeroes command",
 		"Basic verification of the write zeroes command",
 		test_write_zeroes, {
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
-			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
-			{XNVMEC_OPT_ELBA, XNVMEC_LOPT},
+			{XNVMEC_OPT_URI, XNVMEC_POSA}
 		}
 	}
 };
