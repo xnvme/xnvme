@@ -46,6 +46,49 @@ Known Issues
     means, as a user that you must sent non-read/write commands with mode
     ``XNVME_CMD_SYNC``.
 
+v0.0.23
+-------
+
+This release contains updates to third-party repositories along with any
+changes necessary for xNVMe due to third-party changes.
+
+* Third-party
+  - SPDK updated to v21.04
+  - liburing updated to v2.0
+  - fio, not updated, due to a compiler-warning breaking the xNVMe build
+
+This release contains another major refactoring of the API along with a handful
+of fixes and updates. The goal of the refactoring is to further simplify the
+"core" of the API.
+
+* The buffer-allocator ``xnvme_buf_alloc()`` automatically selects the type of
+  memory-allocator to use based on the device. However, it took a 'phys'
+  argument which is only valid for very specific use-cases. Thus, this argument
+  is removed and replaced by explicit ``physical`` allocators. This simplifies
+  the "core" usage, without sacrificing low-level control, it is just provided
+  via an explitcit interface instead.
+
+* xNVMe now provides an API for file-system file-io
+  - Plugs into the synchronous as well as the asynchronous xNVMe command API
+  - I/O provided by ``xnvme_file_pread`` and ``xnvme_file_write``
+  - Provides support for diirect and non-direct I/O
+  - Two tools are provided utilizing the API ``xdd`` a simplified version of
+    ``dd`` and ``xnvme_file`` utilizing sync. and sync. code-paths for
+    load/dump/copy of files
+
+* Examples
+  - Add minimal examples for command submission and completion
+
+* Backends
+  - linux:fs: preliminary support for file-system I/O
+  - linux:io_uring now does batched completion-handling
+  - linux:io_uring now supports kernel-completion-polling (IOPOLL)
+  - linux:io_uring fixes for use auto-handling of register-files
+  - spdk now provides core-mask control via ident-uri-options
+  - spdk now provides shared-memory group control via ident-uri-options
+
+* A good handful of fixes, see the commit-messages for details
+
 v0.0.22
 -------
 
