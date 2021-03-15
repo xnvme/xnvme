@@ -70,6 +70,7 @@ static struct flag_opt g_flag_opts[] = {
 	{ XNVME_FILE_OFLG_RDONLY,	"?rdonly=1" },
 	{ XNVME_FILE_OFLG_WRONLY,	"?wronly=1" },
 	{ XNVME_FILE_OFLG_RDWR,		"?rdwr=1" },
+	{ XNVME_FILE_OFLG_TRUNC,	"?trunc=1" },
 };
 static int g_nflag_opts = sizeof g_flag_opts / sizeof(*g_flag_opts);
 

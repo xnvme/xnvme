@@ -436,7 +436,7 @@ xnvme_be_linux_parse_opts(const struct xnvme_ident *ident)
 {
 	struct xnvme_be_linux_opts opts = { 0 };
 
-	uint32_t create, direct, rdonly, wronly, rdwr = 0;
+	uint32_t create, direct, rdonly, wronly, rdwr, trunc = 0;
 	char cmask[12];
 
 	int xnvme_flags = 0;
@@ -475,6 +475,10 @@ xnvme_be_linux_parse_opts(const struct xnvme_ident *ident)
 		opts.mode = strtol(cmask, NULL, 8);
 	}
 
+	if (xnvme_ident_opt_to_val(ident, "trunc", &trunc) && trunc) {
+		xnvme_flags |= XNVME_FILE_OFLG_TRUNC;
+	}
+
 	if (xnvme_flags & XNVME_FILE_OFLG_CREATE) {
 		opts.flags |= O_CREAT;
 	}
@@ -489,6 +493,9 @@ xnvme_be_linux_parse_opts(const struct xnvme_ident *ident)
 	}
 	if (xnvme_flags & XNVME_FILE_OFLG_RDWR) {
 		opts.flags |= O_RDWR;
+	}
+	if (xnvme_flags & XNVME_FILE_OFLG_TRUNC) {
+		opts.flags |= O_TRUNC;
 	}
 
 	return opts;
