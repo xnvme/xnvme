@@ -373,7 +373,7 @@ xnvme_timer_bw_pr(struct xnvme_timer *t, const char *prefix, size_t nbytes)
 	double secs = xnvme_timer_elapsed_secs(t);
 	double mb = nbytes / (double)1048576;
 
-	printf("%s: {elapsed: %.4f, mb: %.2f, mbsec: %.2f}\n",
+	printf("%s: {elapsed: %.4f, mib: %.2f, mib_sec: %.2f}\n",
 	       prefix, secs, mb, mb / secs);
 }
 
