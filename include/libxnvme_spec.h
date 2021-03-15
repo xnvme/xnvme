@@ -924,6 +924,7 @@ enum xnvme_spec_adm_opc {
  * @enum xnvme_spec_nvm_opc
  */
 enum xnvme_spec_nvm_opc {
+	XNVME_SPEC_NVM_OPC_FLUSH = 0x00,    ///< XNVME_SPEC_NVM_OPC_FLUSH
 	XNVME_SPEC_NVM_OPC_WRITE = 0x01,	///< XNVME_SPEC_NVM_OPC_WRITE
 	XNVME_SPEC_NVM_OPC_READ = 0x02,		///< XNVME_SPEC_NVM_OPC_READ
 
