@@ -28,6 +28,10 @@ xnvme_be_linux_fs_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyt
 		res = pread(state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
 		break;
 
+	case XNVME_SPEC_NVM_OPC_FLUSH:
+		res = fsync(state->fd);
+		break;
+
 	default:
 		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opcode);
 		return -ENOSYS;
@@ -35,15 +39,16 @@ xnvme_be_linux_fs_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyt
 
 	ctx->cpl.result = res;
 	if (res < 0) {
-		XNVME_DEBUG("FAILED: {pread,pwrite}(), errno: %d", errno);
+		XNVME_DEBUG("FAILED: {pread,pwrite,fsync}(), errno: %d", errno);
 
 		ctx->cpl.result = 0;
 		ctx->cpl.status.sc = errno;
 		ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
 		return -errno;
 	} else if (res != (ssize_t)dbuf_nbytes) {
-		XNVME_DEBUG("FAILED: {pread,pwrite}(), res: %ld != dbuf_nbytes: %zu",
-			    res, dbuf_nbytes);
+		XNVME_DEBUG(
+			"FAILED: {pread,pwrite,fsync}(), res: %ld != dbuf_nbytes: %zu",
+			res, dbuf_nbytes);
 
 		ctx->cpl.status.sc = EIO;
 		ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;

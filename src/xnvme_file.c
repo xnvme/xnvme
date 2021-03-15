@@ -44,11 +44,11 @@ xnvme_file_close(struct xnvme_dev *fh)
 int
 xnvme_file_sync(struct xnvme_dev *fh)
 {
-	// TODO: I expect that we want to send this through xnvme_cmd_pass
-	// or at least have some other level of indirection, allowing us to
-	// fsync on multiple OSes
-	struct xnvme_be_linux_state *state = (void *)fh->be.state;
-	return fsync(state->fd);
+	struct xnvme_cmd_ctx ctx = xnvme_file_get_cmd_ctx(fh);
+	ctx.cmd.common.opcode = XNVME_SPEC_NVM_OPC_FLUSH;
+	ctx.cmd.common.nsid = xnvme_dev_get_nsid(ctx.dev);
+
+	return xnvme_cmd_pass(&ctx, NULL, 0, NULL, 0);
 }
 
 struct xnvme_cmd_ctx
@@ -56,7 +56,6 @@ xnvme_file_get_cmd_ctx(struct xnvme_dev *fh)
 {
 	return xnvme_cmd_ctx_from_dev(fh);
 }
-
 
 struct flag_opt {
 	int flag;
