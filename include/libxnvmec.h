@@ -391,14 +391,9 @@ static inline uint64_t xnvmec_timer_stop(struct xnvmec *cli)
 	return cli->timer.stop;
 }
 
-static inline void xnvmec_timer_bw_pr(struct xnvmec *cli, const char *prefix,
-				      size_t nbytes)
+static inline void xnvmec_timer_bw_pr(struct xnvmec *cli, const char *prefix, size_t nbytes)
 {
-	double secs = xnvme_timer_elapsed_secs(&cli->timer);
-	double mb = nbytes / (double)1048576;
-
-	printf("%s: {elapsed: %.4f, mb: %.2f, mbsec: %.2f}\n",
-	       prefix, secs, mb, mb / secs);
+	xnvme_timer_bw_pr(&cli->timer, prefix, nbytes);
 }
 
 void xnvmec_pinf(const char *format, ...);
