@@ -45,14 +45,6 @@ xnvme_be_linux_fs_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyt
 		ctx->cpl.status.sc = errno;
 		ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
 		return -errno;
-	} else if (res != (ssize_t)dbuf_nbytes) {
-		XNVME_DEBUG(
-			"FAILED: {pread,pwrite,fsync}(), res: %ld != dbuf_nbytes: %zu",
-			res, dbuf_nbytes);
-
-		ctx->cpl.status.sc = EIO;
-		ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
-		return -EIO;
 	}
 
 	return 0;
