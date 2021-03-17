@@ -203,8 +203,8 @@ xnvme_be_linux_state_init(struct xnvme_dev *dev, void *opts)
 		state->poll_sq = opt_val == 1;
 	}
 	XNVME_DEBUG("INFO: flags: 0x%x, mode: 0x%x", linux_opts->flags, linux_opts->mode);
-	XNVME_DEBUG("state->poll_io: %d", state->poll_io);
-	XNVME_DEBUG("state->poll_sq: %d", state->poll_sq);
+	XNVME_DEBUG("INFO: state->poll_io: %d", state->poll_io);
+	XNVME_DEBUG("INFO: state->poll_sq: %d", state->poll_sq);
 
 	state->fd = open(dev->ident.trgt, linux_opts->flags, linux_opts->mode);
 	if (state->fd < 0) {
@@ -235,7 +235,7 @@ xnvme_be_linux_state_init(struct xnvme_dev *dev, void *opts)
 		for (int i = 0; i < g_linux_sync_count; ++i) {
 			struct xnvme_be_sync *sync = g_linux_sync[i];
 
-			XNVME_DEBUG("id: %s, enabled: %zu", sync->id, sync->enabled);
+			XNVME_DEBUG("INFO: id: %s, enabled: %zu", sync->id, sync->enabled);
 
 			if (!(sync->enabled && sync->supported(dev, 0x0))) {
 				XNVME_DEBUG("INFO: skipping: '%s'", sync->id);
@@ -249,7 +249,7 @@ xnvme_be_linux_state_init(struct xnvme_dev *dev, void *opts)
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: unsupported file-type");
+		XNVME_DEBUG("FAILED: unsupported S_IFMT: %d", dev_stat.st_mode & S_IFMT);
 		return -EINVAL;
 	}
 
@@ -286,12 +286,11 @@ xnvme_be_linux_state_init(struct xnvme_dev *dev, void *opts)
 		}
 	}
 
+	XNVME_DEBUG("INFO: using async: '%s'", dev->be.async.id);
 	if (!(dev->be.async.enabled && dev->be.async.supported(dev, 0x0))) {
-		XNVME_DEBUG("FAILED: no async-interface");
+		XNVME_DEBUG("FAILED: no async; selection is !enabled || !supported");
 		return -ENOSYS;
 	}
-
-	XNVME_DEBUG("INFO: using async: '%s'", dev->be.async.id);
 
 	return 0;
 }
