@@ -88,10 +88,6 @@ file_write_ascii(const char *path, size_t nbytes, int flags)
 /**
  * Tests that xnvme_file_open handles the XNVME_FILE_OFLG_TRUNC flag correctly.
  *
- * TODO: xnvme_dev_get_geo(fh)->tbytes returns 512 * floor(file_size / 512) meaning that
- * trunc_write_size must be a multiple of 512 in order for the following assertion to work as
- * expected.
- *
  * Opens and writes a file of size 1024 and then opens the same file using
  * XNVME_FILE_OFLG_TRUNC and writes 64 bytes, before verifying that the file
  * contains only 64 bytes in the end.
@@ -100,7 +96,7 @@ int
 test_file_trunc(struct xnvmec *cli)
 {
 	const char *output_path = cli->args.data_output;
-	size_t init_write_size = 1024, trunc_write_size = 512, tbytes = 0;
+	size_t init_write_size = 1024, trunc_write_size = 123, tbytes = 0;
 	struct xnvme_dev *fh;
 	int err;
 
