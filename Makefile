@@ -39,11 +39,18 @@ NPROC = $$( \
 		( * ) echo Unrecognized ;; \
 	esac)
 
+GIT = $$( \
+	case $(PLATFORM_ID) in \
+		( Linux ) echo "git" ;; \
+		( FreeBSD | OpenBSD | NetBSD ) echo "git" ;; \
+		( * ) echo Unrecognized ;; \
+	esac)
+
 # TODO: fix this
 BUILD_DIR?=build
 
 .PHONY: default
-default: info tags
+default: info tags git-setup
 	@echo "## xNVMe: make default"
 	@if [ ! -d "$(BUILD_DIR)" ]; then $(MAKE) config; fi;
 	$(MAKE) build
@@ -57,6 +64,16 @@ config:
 config-debug:
 	@echo "## xNVMe: make configure"
 	CC=$(CC) ./configure --enable-debug
+
+.PHONY: git-setup
+git-setup:
+	@echo "## xNVMe:: git-setup"
+	$(GIT) config core.hooksPath .githooks || true
+
+.PHONY: git-update
+git-update:
+	@echo "## xNVMe:: git-setup"
+	$(GIT) submodule update --init --recursive
 
 .PHONY: info
 info:
