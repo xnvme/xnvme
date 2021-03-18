@@ -74,9 +74,9 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 		return -ENOSYS;
 	}
 
-	ns->nsze = stat.st_size / 512;
-	ns->ncap = stat.st_size / 512;
-	ns->nuse = stat.st_size / 512;
+	ns->nsze = stat.st_size;
+	ns->ncap = stat.st_size;
+	ns->nuse = stat.st_size;
 
 	ns->nlbaf = 0;          ///< This means that there is only one
 	ns->flbas.format = 0;   ///< using the first one
