@@ -112,6 +112,14 @@ xnvmec_buf_fill(void *buf, size_t nbytes, const char *content)
 		return 0;
 	}
 
+	if (!strncmp(content, "ascii", 5)) {
+		for (size_t i = 0; i < nbytes; ++i) {
+			cbuf[i] = (i % 26) + 65;
+		}
+
+		return 0;
+	}
+
 	if (!strncmp(content, "zero", 4)) {
 		xnvmec_buf_clear(buf, nbytes);
 
