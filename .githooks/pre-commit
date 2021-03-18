@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Call the style-check script
+exec 1>&2
+cd scripts
+if ! ./style.sh --dry-run; then
+	cat <<\EOF
+Error: invalid code-format
+
+Run: cd scripts/ && ./style.sh
+
+Check: scripts/astyle.log
+
+Fix the code-format, then commit again.
+EOF
+	exit 1
+fi
+exit 0
