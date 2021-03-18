@@ -414,6 +414,34 @@ _conventional_geometry(struct xnvme_dev *dev)
 	return 0;
 }
 
+static inline int
+_fs_geometry(struct xnvme_dev *dev)
+{
+	const struct xnvme_spec_idfy_ns *nvm = (void *)xnvme_dev_get_ns(dev);
+	const struct xnvme_spec_lbaf *lbaf = &nvm->lbaf[nvm->flbas.format];
+	struct xnvme_geo *geo = &dev->geo;
+
+	geo->type = XNVME_GEO_CONVENTIONAL;
+
+	geo->npugrp = 1;
+	geo->npunit = 1;
+	geo->nzone = 1;
+	geo->nsect = dev->id.ns.nsze;
+
+	geo->nbytes_oob = 0;
+	geo->nbytes = 2 << (lbaf->ds - 1);
+
+	geo->lba_nbytes = geo->nbytes;
+	geo->lba_extended = 0;
+
+	geo->tbytes = dev->id.ns.nsze;
+
+	geo->mdts_nbytes = 1 << 20;
+	dev->ssw = XNVME_ILOG2(dev->geo.nbytes);
+
+	return 0;
+}
+
 // TODO: add proper handling of NVMe controllers
 int
 xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
@@ -425,9 +453,11 @@ xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 		XNVME_DEBUG("FAILED: not supported");
 		return -ENOSYS;
 
+	case XNVME_DEV_TYPE_FS_FILE:
+		return _fs_geometry(dev);
+
 	case XNVME_DEV_TYPE_BLOCK_DEVICE:
 	case XNVME_DEV_TYPE_NVME_NAMESPACE:
-	case XNVME_DEV_TYPE_FS_FILE:
 		switch (dev->csi) {
 		case XNVME_SPEC_CSI_ZONED:
 			if (_zoned_geometry(dev)) {
