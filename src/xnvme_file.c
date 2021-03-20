@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <libxnvme_file.h>
+#include <libxnvme_spec.h>
+#include <libxnvme_spec_fs.h>
 #include <xnvme_be_linux.h>
 
 
