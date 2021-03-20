@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <libxnvme_spec_fs.h>
 #include <xnvme_be_linux.h>
 
 int
@@ -51,11 +52,48 @@ xnvme_be_linux_fs_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyt
 }
 
 static int
+_idfy_ctrlr_iocs(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
+{
+	struct xnvme_spec_fs_idfy_ctrlr *ctrlr = dbuf;
+
+	ctrlr->caps.direct = 1;
+
+	ctrlr->iosizes.min = 1;
+	ctrlr->iosizes.max = 1024 * 1024 * 128;
+	ctrlr->iosizes.opt = 1024 * 64;
+
+	ctrlr->limits.file_data_size = 1;
+
+	return 0;
+}
+
+static int
+_idfy_ns_iocs(struct xnvme_dev *dev, void *dbuf)
+{
+	struct xnvme_be_linux_state *state = (void *)dev->be.state;
+	struct xnvme_spec_fs_idfy_ns *ns = dbuf;
+	struct stat stat = { 0 };
+	int err;
+
+	err = fstat(state->fd, &stat);
+	if (err) {
+		XNVME_DEBUG("FAILED: fstat, err: %d", err);
+		return -ENOSYS;
+	}
+
+	ns->nsze = stat.st_size;
+	ns->ncap = stat.st_size;
+	ns->nuse = stat.st_size;
+
+	return 0;
+}
+
+static int
 _idfy_ctrlr(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 {
 	struct xnvme_spec_idfy_ctrlr *ctrlr = dbuf;
 
-	ctrlr->mdts = 9;
+	ctrlr->mdts = XNVME_ILOG2(1024 * 1024);
 
 	return 0;
 }
@@ -82,7 +120,7 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 	ns->flbas.format = 0;   ///< using the first one
 
 	ns->lbaf[0].ms = 0;
-	ns->lbaf[0].ds = 9;
+	ns->lbaf[0].ds = XNVME_ILOG2(512);
 	ns->lbaf[0].rp = 0;
 
 	return 0;
@@ -99,7 +137,24 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf)
 		return _idfy_ctrlr(ctx->dev, dbuf);
 
 	case XNVME_SPEC_IDFY_NS_IOCS:
+		switch (ctx->cmd.idfy.csi) {
+		case XNVME_SPEC_CSI_FS:
+			return _idfy_ns_iocs(ctx->dev, dbuf);
+
+		default:
+			break;
+		}
+		break;
+
 	case XNVME_SPEC_IDFY_CTRLR_IOCS:
+		switch (ctx->cmd.idfy.csi) {
+		case XNVME_SPEC_CSI_FS:
+			return _idfy_ctrlr_iocs(ctx->dev, dbuf);
+		default:
+			break;
+		}
+		break;
+
 	default:
 		break;
 	}
