@@ -434,12 +434,11 @@ exit:
 struct xnvme_be_linux_opts
 xnvme_be_linux_parse_opts(const struct xnvme_ident *ident)
 {
+	uint32_t create = 0, direct = 0, rdonly = 0, wronly = 0, rdwr = 0, trunc = 0;
 	struct xnvme_be_linux_opts opts = { 0 };
-
-	uint32_t create, direct, rdonly, wronly, rdwr, trunc = 0;
+	int xnvme_flags = 0;
 	char cmask[12];
 
-	int xnvme_flags = 0;
 	if (xnvme_ident_opt_to_val(ident, "create", &create) && create) {
 		xnvme_flags |= XNVME_FILE_OFLG_CREATE;
 		opts.mode = 0755; // default value
