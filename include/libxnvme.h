@@ -319,6 +319,22 @@ struct xnvme_cmd_ctx {
 };
 
 /**
+ * Assign a callback-function and argument to be used with the given command-context
+ *
+ * @param ctx Pointer to the ::xnvme_cmd_ctx to setup callback for
+ * @param cb The callback function to use
+ * @param cb_arg The callback argument to use
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ */
+static inline void
+xnvme_cmd_ctx_set_cb(struct xnvme_cmd_ctx *ctx, xnvme_queue_cb cb, void *cb_arg)
+{
+	ctx->async.cb = cb;
+	ctx->async.cb_arg = cb_arg;
+}
+
+/**
  * Assign a callback-function and argument to be used with the ::xnvme_cmd_ctx of the queue
  *
  * @param queue The ::xnvme_queue to assign default callback function for
