@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <libxnvme.h>
+#include <libxnvme_spec_fs.h>
 #include <libxnvme_znd.h>
 #include <xnvme_be.h>
 #include <xnvme_dev.h>
@@ -429,8 +430,7 @@ _conventional_geometry(struct xnvme_dev *dev)
 static inline int
 _fs_geometry(struct xnvme_dev *dev)
 {
-	const struct xnvme_spec_idfy_ns *nvm = (void *)xnvme_dev_get_ns(dev);
-	const struct xnvme_spec_lbaf *lbaf = &nvm->lbaf[nvm->flbas.format];
+	const struct xnvme_spec_fs_idfy_ns *ns = (void *)xnvme_dev_get_ns_css(dev);
 	struct xnvme_geo *geo = &dev->geo;
 
 	geo->type = XNVME_GEO_CONVENTIONAL;
@@ -438,18 +438,18 @@ _fs_geometry(struct xnvme_dev *dev)
 	geo->npugrp = 1;
 	geo->npunit = 1;
 	geo->nzone = 1;
-	geo->nsect = dev->id.ns.nsze;
+	geo->nsect = 1;
 
+	geo->nbytes = 1;
 	geo->nbytes_oob = 0;
-	geo->nbytes = 2 << (lbaf->ds - 1);
 
-	geo->lba_nbytes = geo->nbytes;
+	geo->lba_nbytes = 512;
 	geo->lba_extended = 0;
 
-	geo->tbytes = dev->id.ns.nsze;
+	geo->tbytes = ns->nuse;
 
 	geo->mdts_nbytes = 1 << 20;
-	dev->ssw = XNVME_ILOG2(dev->geo.nbytes);
+	dev->ssw = XNVME_ILOG2(geo->lba_nbytes);
 
 	return 0;
 }
