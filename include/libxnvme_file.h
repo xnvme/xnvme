@@ -25,10 +25,12 @@ enum XNVME_FILE_OFLG {
 	XNVME_FILE_OFLG_RDONLY = 0x1 << 0,
 	XNVME_FILE_OFLG_WRONLY = 0x1 << 1,
 	XNVME_FILE_OFLG_RDWR   = 0x1 << 2,
+
 	XNVME_FILE_OFLG_CREATE = 0x1 << 3,
-	XNVME_FILE_OFLG_DIRECT_ON = 0x1 << 4,
-	XNVME_FILE_OFLG_DIRECT_OFF = 0x1 << 5,
-	XNVME_FILE_OFLG_TRUNC = 0x1 << 6,
+	XNVME_FILE_OFLG_TRUNC = 0x1 << 4,
+
+	XNVME_FILE_OFLG_DIRECT_ON = 0x1 << 5,
+	XNVME_FILE_OFLG_DIRECT_OFF = 0x1 << 6,
 };
 
 /**
@@ -91,11 +93,9 @@ int
 xnvme_file_pwrite(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, off_t offset);
 
 /**
- * Force a sync of the file or device encapsulated by 'fh', forcing a flush of
- * all OS buffers related to the file to disk
+ * Force a sync of the file or device encapsulated by 'fh'
  *
- * Retrieve a synchronous context using ::xnvme_cmd_ctx_from_dev and an asynchronous context using
- * ::xnvme_cmd_ctx_from_queue
+ * This will attempt to flush any system caches containing data destined for the given device
  *
  * @param fh File-handle as obtained by with ::xnvme_file_open
  *
@@ -105,18 +105,9 @@ int
 xnvme_file_sync(struct xnvme_dev *fh);
 
 /**
- * Fills the given 'statbuf' with information about a file
- *
- * @param fh File-handle as obtained by with ::xnvme_file_open
- * @return On success, 0 is returned. On error, negative `errno` is returned.
- */
-int
-xnvme_file_stat(struct xnvme_dev *fh);
-
-/**
  * Returns a synchronous command-context for the given file-handle
  *
- * For asynchronous I/O, see the ::xnvme_queue interface and use xnvme_cmd_ctx_from_queue
+ * @note For asynchronous I/O, see the ::xnvme_queue interface and ::xnvme_cmd_ctx_from_queue
  */
 struct xnvme_cmd_ctx
 xnvme_file_get_cmd_ctx(struct xnvme_dev *fh);
