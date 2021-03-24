@@ -1,18 +1,78 @@
 // Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
 // Copyright (C) Gurmeet Singh <gur.singh@samsung.com>
 // SPDX-License-Identifier: Apache-2.0
-#ifdef XNVME_BE_LINUX_BLOCK_ENABLED
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
+#include <xnvme_be_linux.h>
+#include <xnvme_be_nosys.h>
+#ifdef XNVME_BE_LINUX_BLOCK_ENABLED
+#include <errno.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+#include <libxnvme_znd.h>
+#include <xnvme_be_linux.h>
+
 #ifdef XNVME_BE_LINUX_BLOCK_ZONED_ENABLED
 #include <linux/blkzoned.h>
 #endif
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <errno.h>
-#include <xnvme_be_linux.h>
-#include <libxnvme_znd.h>
+
+int
+_sysfs_path_to_buf(const char *path, char *buf, int buf_len)
+{
+	FILE *fp;
+	int c;
+
+	fp = fopen(path, "rb");
+	if (!fp) {
+		return -errno;
+	}
+
+	memset(buf, 0, sizeof(char) * buf_len);
+	for (int i = 0; (((c = getc(fp)) != EOF) && i < buf_len); ++i) {
+		buf[i] = c;
+	}
+
+	fclose(fp);
+
+	return 0;
+}
+
+int
+xnvme_be_linux_sysfs_dev_attr_to_buf(struct xnvme_dev *dev, const char *attr, char *buf,
+				     int buf_len)
+{
+	const char *dev_name = basename(dev->ident.trgt);
+	int path_len = 0x1000;
+	char path[path_len];
+
+	sprintf(path, "/sys/block/%s/%s", dev_name, attr);
+
+	return _sysfs_path_to_buf(path, buf, buf_len);
+}
+
+int
+xnvme_be_linux_sysfs_dev_attr_to_num(struct xnvme_dev *dev, const char *attr, uint64_t *num)
+{
+	const int buf_len = 0x1000;
+	char buf[buf_len];
+	int base = 10;
+	int err;
+
+	err = xnvme_be_linux_sysfs_dev_attr_to_buf(dev, attr, buf, buf_len);
+	if (err) {
+		XNVME_DEBUG("FAILED: _path_to_buf, err: %d", err);
+		return err;
+	}
+
+	if ((strlen(buf) > 2) && (buf[0] == '0') && (buf[1] == 'x')) {
+		base = 16;
+	}
+
+	*num = strtoll(buf, NULL, base);
+
+	return 0;
+}
 
 #ifdef BLK_ZONE_REP_CAPACITY
 static uint64_t
@@ -541,23 +601,22 @@ xnvme_be_linux_block_supported(struct xnvme_dev *dev, uint32_t XNVME_UNUSED(opts
 
 	return 1;
 }
-
-struct xnvme_be_sync g_linux_block = {
-	.cmd_io = xnvme_be_linux_block_cmd_io,
-	.cmd_admin = xnvme_be_linux_block_cmd_admin,
-	.id = "block_ioctl",
-	.enabled = 1,
-	.supported = xnvme_be_linux_block_supported,
-};
-#else
-#include <xnvme_be_linux.h>
-#include <xnvme_be_nosys.h>
-struct xnvme_be_sync g_linux_block = {
-	.cmd_io = xnvme_be_nosys_sync_cmd_io,
-	.cmd_admin = xnvme_be_nosys_sync_cmd_admin,
-	.id = "block_ioctl",
-	.enabled = 0,
-	.supported = xnvme_be_nosys_sync_supported,
-};
 #endif
 
+struct xnvme_be_sync g_xnvme_be_linux_sync_block = {
+	.id = "block",
+#ifdef XNVME_BE_LINUX_BLOCK_ENABLED
+	.cmd_io = xnvme_be_linux_block_cmd_io,
+#else
+	.cmd_io = xnvme_be_nosys_sync_cmd_io,
+#endif
+};
+
+struct xnvme_be_admin g_xnvme_be_linux_admin_block = {
+	.id = "block",
+#ifdef XNVME_BE_LINUX_BLOCK_ENABLED
+	.cmd_admin = xnvme_be_linux_block_cmd_admin,
+#else
+	.cmd_admin = xnvme_be_nosys_sync_cmd_admin,
+#endif
+};

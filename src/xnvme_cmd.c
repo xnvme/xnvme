@@ -118,5 +118,5 @@ xnvme_cmd_pass_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, 
 		xnvme_sgl_setup(ctx, dbuf, mbuf);
 	}
 
-	return ctx->dev->be.sync.cmd_admin(ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
+	return ctx->dev->be.admin.cmd_admin(ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
 }

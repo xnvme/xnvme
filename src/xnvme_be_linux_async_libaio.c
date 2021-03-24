@@ -4,34 +4,20 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
-#include <errno.h>
-#include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-
-#ifdef XNVME_BE_LINUX_AIO_ENABLED
-#include <fcntl.h>
-#include <linux/fs.h>
-#include <linux/nvme_ioctl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/ioctl.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <dirent.h>
-#include <paths.h>
+#ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
+#include <errno.h>
 #include <libaio.h>
-
 #include <xnvme_queue.h>
 #include <xnvme_be_linux.h>
-#include <xnvme_be_linux_aio.h>
+#include <xnvme_be_linux_libaio.h>
 #include <xnvme_dev.h>
 
 int
-_linux_aio_term(struct xnvme_queue *q)
+_linux_libaio_term(struct xnvme_queue *q)
 {
-	struct xnvme_queue_aio *queue = (void *)q;
+	struct xnvme_queue_libaio *queue = (void *)q;
 
 	if (!queue) {
 		XNVME_DEBUG("FAILED: queue: %p", (void *)queue);
@@ -45,9 +31,9 @@ _linux_aio_term(struct xnvme_queue *q)
 }
 
 int
-_linux_aio_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
+_linux_libaio_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 {
-	struct xnvme_queue_aio *queue = (void *)q;
+	struct xnvme_queue_libaio *queue = (void *)q;
 	int err = 0;
 
 	queue->aio_ctx = 0;
@@ -63,9 +49,9 @@ _linux_aio_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 }
 
 int
-_linux_aio_poke(struct xnvme_queue *q, uint32_t max)
+_linux_libaio_poke(struct xnvme_queue *q, uint32_t max)
 {
-	struct xnvme_queue_aio *queue = (void *)q;
+	struct xnvme_queue_libaio *queue = (void *)q;
 	int completed = 0;
 
 	max = max ? max : queue->base.outstanding;
@@ -108,7 +94,7 @@ _linux_aio_poke(struct xnvme_queue *q, uint32_t max)
 }
 
 int
-_linux_aio_wait(struct xnvme_queue *queue)
+_linux_libaio_wait(struct xnvme_queue *queue)
 {
 	int acc = 0;
 
@@ -116,7 +102,7 @@ _linux_aio_wait(struct xnvme_queue *queue)
 		struct timespec ts1 = {.tv_sec = 0, .tv_nsec = 1000};
 		int err;
 
-		err = _linux_aio_poke(queue, 0);
+		err = _linux_libaio_poke(queue, 0);
 		if (err >= 0) {
 			acc += 1;
 			continue;
@@ -137,10 +123,10 @@ _linux_aio_wait(struct xnvme_queue *queue)
 }
 
 int
-_linux_aio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
-		  size_t mbuf_nbytes)
+_linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+		     size_t mbuf_nbytes)
 {
-	struct xnvme_queue_aio *queue = (void *)ctx->async.queue;
+	struct xnvme_queue_libaio *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
 	const uint64_t ssw = (queue->base.dev->dtype == XNVME_DEV_TYPE_FS_FILE) ? \
 			     0 : queue->base.dev->ssw;
@@ -184,32 +170,21 @@ _linux_aio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, voi
 
 	return err;
 }
+#endif
 
-int
-_linux_aio_supported(struct xnvme_dev *XNVME_UNUSED(dev), uint32_t XNVME_UNUSED(opts))
-{
-	return 1;
-}
-
-struct xnvme_be_async g_linux_aio = {
+struct xnvme_be_async g_xnvme_be_linux_async_libaio = {
 	.id = "libaio",
-#ifdef XNVME_BE_LINUX_AIO_ENABLED
-	.enabled = 1,
-	.cmd_io = _linux_aio_cmd_io,
-	.poke = _linux_aio_poke,
-	.wait = _linux_aio_wait,
-	.init = _linux_aio_init,
-	.term = _linux_aio_term,
-	.supported = _linux_aio_supported,
+#ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
+	.cmd_io = _linux_libaio_cmd_io,
+	.poke = _linux_libaio_poke,
+	.wait = _linux_libaio_wait,
+	.init = _linux_libaio_init,
+	.term = _linux_libaio_term,
 #else
-	.enabled = 0,
-	.cmd_io = xnvme_be_nosys_async_cmd_io,
-	.poke = xnvme_be_nosys_async_poke,
-	.wait = xnvme_be_nosys_async_wait,
-	.init = xnvme_be_nosys_async_init,
-	.term = xnvme_be_nosys_async_term,
-	.supported = xnvme_be_nosys_async_supported,
+	.cmd_io = xnvme_be_nosys_queue_cmd_io,
+	.poke = xnvme_be_nosys_queue_poke,
+	.wait = xnvme_be_nosys_queue_wait,
+	.init = xnvme_be_nosys_queue_init,
+	.term = xnvme_be_nosys_queue_term,
 #endif
 };
-
-#endif

@@ -45,13 +45,13 @@ CONFIG[BE_LINUX]=OFF
 CONFIG[BE_LINUX_BLOCK]=OFF
 
 # Enable the libaio async-implementation in the Linux backend
-CONFIG[BE_LINUX_AIO]=OFF
+CONFIG[BE_LINUX_LIBAIO]=OFF
 
 # Enable the liburing/io_uring async-implementation in the Linux backend
-CONFIG[BE_LINUX_IOU]=OFF
+CONFIG[BE_LINUX_LIBURING]=OFF
 
-# Enable the nil-async-implementation in the Linux backend
-CONFIG[BE_LINUX_NIL]=OFF
+# Enable the POSIX Backend
+CONFIG[BE_POSIX]=OFF
 
 case "${OSTYPE,,}" in
 	*linux* )
@@ -59,15 +59,16 @@ case "${OSTYPE,,}" in
 		CONFIG[BE_SPDK]=ON
 		CONFIG[BE_LINUX]=ON
 		CONFIG[BE_LINUX_BLOCK]=ON
-		CONFIG[BE_LINUX_AIO]=ON
-		CONFIG[BE_LINUX_IOU]=ON
-		CONFIG[BE_LINUX_NIL]=ON
+		CONFIG[BE_LINUX_LIBAIO]=ON
+		CONFIG[BE_LINUX_LIBURING]=ON
+		CONFIG[BE_POSIX]=ON
 		;;
 
 	*freebsd* )
 		CONFIG[DEBS]=OFF
 		CONFIG[BE_SPDK]=ON
 		CONFIG[BE_FBSD]=ON
+		CONFIG[BE_POSIX]=ON
 		;;
 esac
 
@@ -123,8 +124,8 @@ function usage()
 	echo " --enable-be-fbsd          Enable the FreeBSD backend"
 	echo " --enable-be-linux         Enable the Linux backend"
 	echo " --enable-be-linux-block   Enable Linux Block Device support"
-	echo " --enable-be-linux-aio     Enable Linux ASYNC IO support"
-	echo " --enable-be-linux-iou     Enable Linux liburing/io_uring support"
+	echo " --enable-be-linux-libaio  Enable Linux ASYNC IO support"
+	echo " --enable-be-linux-liburing     Enable Linux liburing/io_uring support"
 	echo " --enable-be-linux-nil     Enable Linux nil-async-io support"
 	echo ""
 	echo "Overriding Dependencies:"
@@ -279,25 +280,18 @@ for i in "$@"; do
 			CONFIG[BE_LINUX_BLOCK]=OFF
 			;;
 
-		--enable-be-linux-aio)
-			CONFIG[BE_LINUX_AIO]=ON
+		--enable-be-linux-libaio)
+			CONFIG[BE_LINUX_LIBAIO]=ON
 			;;
-		--disable-be-linux-aio)
-			CONFIG[BE_LINUX_AIO]=OFF
-			;;
-
-		--enable-be-linux-iou)
-			CONFIG[BE_LINUX_IOU]=ON
-			;;
-		--disable-be-linux-iou)
-			CONFIG[BE_LINUX_IOU]=OFF
+		--disable-be-linux-libaio)
+			CONFIG[BE_LINUX_LIBAIO]=OFF
 			;;
 
-		--enable-be-linux-nil)
-			CONFIG[BE_LINUX_NIL]=ON
+		--enable-be-linux-liburing)
+			CONFIG[BE_LINUX_LIBURING]=ON
 			;;
-		--disable-be-linux-nil)
-			CONFIG[BE_LINUX_NIL]=OFF
+		--disable-be-linux-liburing)
+			CONFIG[BE_LINUX_LIBURING]=OFF
 			;;
 
 		--liburing-include-path=*)
@@ -334,11 +328,11 @@ CMAKE_OPTS="$CMAKE_OPTS -DDPDK_LIBRARY_PATH=${CONFIG[DPDK_LIBRARY_PATH]}"
 CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_FBSD_ENABLED=${CONFIG[BE_FBSD]}"
 CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_LINUX_ENABLED=${CONFIG[BE_LINUX]}"
 CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_LINUX_BLOCK_ENABLED=${CONFIG[BE_LINUX_BLOCK]}"
-CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_LINUX_AIO_ENABLED=${CONFIG[BE_LINUX_AIO]}"
-CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_LINUX_IOU_ENABLED=${CONFIG[BE_LINUX_IOU]}"
-CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_LINUX_NIL_ENABLED=${CONFIG[BE_LINUX_NIL]}"
+CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_LINUX_LIBAIO_ENABLED=${CONFIG[BE_LINUX_LIBAIO]}"
+CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_LINUX_LIBURING_ENABLED=${CONFIG[BE_LINUX_LIBURING]}"
 CMAKE_OPTS="$CMAKE_OPTS -DLIBURING_INCLUDE_PATH=${CONFIG[LIBURING_INCLUDE_PATH]}"
 CMAKE_OPTS="$CMAKE_OPTS -DLIBURING_LIBRARY_PATH=${CONFIG[LIBURING_LIBRARY_PATH]}"
+CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_POSIX_ENABLED=${CONFIG[BE_POSIX]}"
 
 BUILD_DIR="build"
 BUILD_TYPE="debug"

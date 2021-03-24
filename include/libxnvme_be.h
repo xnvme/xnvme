@@ -30,8 +30,11 @@ struct xnvme_be_attr {
 	 */
 	const char **schemes;
 
-	uint32_t nschemes;		///< Number of schemes in 'schemes'
-	uint32_t enabled;		///< Whether the backend is 'enabled'
+	uint8_t nschemes;		///< Number of schemes in 'schemes'
+
+	uint8_t enabled;		///< Whether the backend is 'enabled'
+
+	uint8_t _rsvd[5];
 };
 
 /**

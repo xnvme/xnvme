@@ -156,11 +156,19 @@ xnvme_dev_openf(const char *dev_uri, int cmd_opts)
 	struct xnvme_dev *dev = NULL;
 	int err;
 
-	err = xnvme_be_factory(dev_uri, &dev);
+	err = xnvme_dev_alloc(&dev);
+	if (err) {
+		XNVME_DEBUG("FAILED: failed xnvme_dev_alloc()");
+		errno = -err;
+		return NULL;
+	}
+
+	err = xnvme_be_factory(dev_uri, dev);
 	if (err) {
 		XNVME_DEBUG("FAILED: failed opening uri: %s with flags: %d",
 			    dev_uri, cmd_opts);
 		errno = -err;
+		free(dev);
 		return NULL;
 	}
 

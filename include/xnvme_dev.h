@@ -37,6 +37,7 @@ struct xnvme_dev {
 	} idcss;			///< Command Set Specific
 
 	struct xnvme_ident ident;		///< Device identifier
+	struct xnvme_be_options opts;
 };
 //XNVME_STATIC_ASSERT(sizeof(struct xnvme_ident) == 768, "Incorrect size")
 

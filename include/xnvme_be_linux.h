@@ -8,13 +8,11 @@
 #define LINUX_BLOCK_SSW 9
 #endif
 
-/**
- * Internal representation of options for Linux backends
- */
-struct xnvme_be_linux_opts {
-	int flags;
-	int mode;
-};
+#define XNVME_LINUX_CTRLR_SCAN _PATH_DEV "nvme%1u%[^\n]"
+#define XNVME_LINUX_NS_SCAN _PATH_DEV "nvme%1un%1u%[^\n]"
+
+#define XNVME_LINUX_CTRLR_FMT _PATH_DEV "nvme%1u"
+#define XNVME_LINUX_NS_FMT _PATH_DEV "nvme%1un%1u"
 
 /**
  * Internal representation of XNVME_BE_LINUX state
@@ -33,43 +31,9 @@ XNVME_STATIC_ASSERT(
 	"Incorrect size"
 )
 
-void *
-xnvme_be_linux_buf_alloc(const struct xnvme_dev *dev, size_t nbytes,
-			 uint64_t *phys);
-
-void *
-xnvme_be_linux_buf_realloc(const struct xnvme_dev *XNVME_UNUSED(dev),
-			   void *XNVME_UNUSED(buf), size_t XNVME_UNUSED(nbytes),
-			   uint64_t *XNVME_UNUSED(phys));
-
-void
-xnvme_be_linux_buf_free(const struct xnvme_dev *dev, void *buf);
-
 int
-xnvme_be_linux_buf_vtophys(const struct xnvme_dev *dev, void *buf,
-			   uint64_t *phys);
+xnvme_file_oflg_to_linux(int oflags);
 
-int
-xnvme_be_linux_cmd_pass(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
-			void *dbuf, size_t dbuf_nbytes, void *mbuf,
-			size_t mbuf_nbytes, int opts, struct xnvme_cmd_ctx *req);
-
-int
-xnvme_be_linux_cmd_pass_admin(struct xnvme_dev *dev, struct xnvme_spec_cmd *cmd,
-			      void *dbuf, size_t dbuf_nbytes, void *mbuf,
-			      size_t mbuf_nbytes, int opts,
-			      struct xnvme_cmd_ctx *req);
-
-int
-xnvme_be_linux_dev_from_ident(const struct xnvme_ident *ident,
-			      struct xnvme_dev **dev);
-
-void
-xnvme_be_linux_dev_close(struct xnvme_dev *dev);
-
-int
-xnvme_be_linux_enumerate(struct xnvme_enumeration *list, const char *sys_uri,
-			 int opts);
 
 static inline uint64_t
 xnvme_lba2off(struct xnvme_dev *dev, uint64_t lba)
@@ -84,17 +48,42 @@ xnvme_off2lba(struct xnvme_dev *dev, uint64_t off)
 }
 
 int
-xnvme_be_linux_dev_idfy(struct xnvme_dev *dev);
+xnvme_be_linux_sysfs_dev_attr_to_buf(struct xnvme_dev *dev, const char *attr, char *buf,
+				     int buf_len);
 
 int
-xnvme_be_linux_sysfs_dev_attr_to_buf(struct xnvme_dev *dev, const char *attr,
-				     char *buf, int buf_len);
-
-int
-xnvme_be_linux_sysfs_dev_attr_to_num(struct xnvme_dev *dev, const char *attr,
-				     uint64_t *val);
+xnvme_be_linux_sysfs_dev_attr_to_num(struct xnvme_dev *dev, const char *attr, uint64_t *val);
 
 int
 xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr opts);
+
+/**
+ * Implementations of the memory management interface
+ */
+extern struct xnvme_be_mem g_xnvme_be_posix_mem;
+
+/**
+ * Implementations of the admin command interface
+ */
+extern struct xnvme_be_admin g_xnvme_be_linux_admin_nvme;
+extern struct xnvme_be_admin g_xnvme_be_linux_admin_block;
+
+/**
+ * Implementations of the synchronous command interface
+ */
+extern struct xnvme_be_sync g_xnvme_be_posix_sync_psync;
+extern struct xnvme_be_sync g_xnvme_be_linux_sync_nvme;
+extern struct xnvme_be_sync g_xnvme_be_linux_sync_block;
+
+/**
+ * Implementations of the asynchronous command interface
+ */
+extern struct xnvme_be_async g_xnvme_be_linux_async_libaio;
+extern struct xnvme_be_async g_xnvme_be_linux_async_liburing;
+
+/**
+ * Implementations of the device enumeration and handles
+ */
+extern struct xnvme_be_dev g_xnvme_be_dev_linux;
 
 #endif /* __INTERNAL_XNVME_BE_LINUX */

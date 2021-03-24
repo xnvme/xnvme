@@ -5,15 +5,14 @@
 #endif
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_FBSD_ENABLED
+#ifdef XNVME_BE_POSIX_ENABLED
 #include <xnvme_be_posix.h>
-#include <xnvme_be_fbsd.h>
 
-static struct xnvme_be_mixin g_xnvme_be_mixin_fbsd[] = {
+static struct xnvme_be_mixin g_xnvme_be_mixin_posix[] = {
 	{
 		.mtype = XNVME_BE_MEM,
 		.name = "posix",
-		.descr = "Use C11 lib malloc/free with sysconf for alignment",
+		.descr = "Use libc malloc()/free() with sysconf for alignment",
 		.mem = &g_xnvme_be_posix_mem,
 		.check_support = xnvme_be_supported,
 	},
@@ -47,38 +46,46 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_fbsd[] = {
 		.sync = &g_xnvme_be_posix_sync_psync,
 		.check_support = xnvme_be_supported,
 	},
+
+	{
+		.mtype = XNVME_BE_ADMIN,
+		.name = "file_as_ns",
+		.descr = "Use file-stat as to construct NVMe idfy responses",
+		.admin = &g_xnvme_be_posix_admin_shim,
+		.check_support = xnvme_be_supported,
+	},
+
 	{
 		.mtype = XNVME_BE_DEV,
-		.name = "fbsd",
-		.descr = "Use FreeBSD file/dev handles and enumerate NVMe devices",
-		.dev = &g_xnvme_be_fbsd_dev,
+		.name = "posix",
+		.descr = "Use POSIX file/dev handles and no device enumeration",
+		.dev = &g_xnvme_be_posix_dev,
 		.check_support = xnvme_be_supported,
 	},
 };
 static const int
-g_xnvme_be_mixin_fbsd_nobjs = sizeof g_xnvme_be_mixin_fbsd / sizeof * g_xnvme_be_mixin_fbsd;
+g_xnvme_be_mixin_posix_nobjs = sizeof g_xnvme_be_mixin_posix / sizeof * g_xnvme_be_mixin_posix;
 #endif
 
 static const char *g_schemes[] = {
-	"file",
-	"fbsd",
+	"file", "psx",
 };
-struct xnvme_be xnvme_be_fbsd = {
+struct xnvme_be xnvme_be_posix = {
+	.mem = XNVME_BE_NOSYS_MEM,
 	.admin = XNVME_BE_NOSYS_ADMIN,
+	.sync = XNVME_BE_NOSYS_SYNC,
 	.async = XNVME_BE_NOSYS_QUEUE,
 	.dev = XNVME_BE_NOSYS_DEV,
-	.mem = XNVME_BE_NOSYS_MEM,
-	.sync = XNVME_BE_NOSYS_SYNC,
 	.attr = {
-#ifdef XNVME_BE_FBSD_ENABLED
-		.enabled = 1,
-#endif
-		.name = "fbsd",
+		.name = "posix",
 		.schemes = g_schemes,
 		.nschemes = sizeof g_schemes / sizeof(*g_schemes),
+#ifdef XNVME_BE_POSIX_ENABLED
+		.enabled = 1,
+#endif
 	},
-#ifdef XNVME_BE_FBSD_ENABLED
-	.nobjs = g_xnvme_be_mixin_fbsd_nobjs,
-	.objs = g_xnvme_be_mixin_fbsd,
+#ifdef XNVME_BE_POSIX_ENABLED
+	.nobjs = g_xnvme_be_mixin_posix_nobjs,
+	.objs = g_xnvme_be_mixin_posix,
 #endif
 };

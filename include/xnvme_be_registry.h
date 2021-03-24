@@ -6,5 +6,6 @@
 extern struct xnvme_be xnvme_be_spdk;
 extern struct xnvme_be xnvme_be_linux;
 extern struct xnvme_be xnvme_be_fbsd;
+extern struct xnvme_be xnvme_be_posix;
 
 #endif /* __INTERNAL_XNVME_BE_REGISTRY_H */

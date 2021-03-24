@@ -31,14 +31,14 @@ xnvme_be_nosys_sync_supported(struct xnvme_dev *XNVME_UNUSED(dev), uint32_t XNVM
 }
 
 int
-xnvme_be_nosys_async_supported(struct xnvme_dev *XNVME_UNUSED(dev), uint32_t XNVME_UNUSED(opts))
+xnvme_be_nosys_queue_supported(struct xnvme_dev *XNVME_UNUSED(dev), uint32_t XNVME_UNUSED(opts))
 {
 	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");
 	return -ENOSYS;
 }
 
 int
-xnvme_be_nosys_async_cmd_io(struct xnvme_cmd_ctx *XNVME_UNUSED(ctx), void *XNVME_UNUSED(dbuf),
+xnvme_be_nosys_queue_cmd_io(struct xnvme_cmd_ctx *XNVME_UNUSED(ctx), void *XNVME_UNUSED(dbuf),
 			    size_t XNVME_UNUSED(dbuf_nbytes), void *XNVME_UNUSED(mbuf),
 			    size_t XNVME_UNUSED(mbuf_nbytes))
 {
@@ -115,8 +115,7 @@ xnvme_be_nosys_enumerate(struct xnvme_enumeration *XNVME_UNUSED(list),
 }
 
 int
-xnvme_be_nosys_dev_from_ident(const struct xnvme_ident *XNVME_UNUSED(ident),
-			      struct xnvme_dev **XNVME_UNUSED(dev))
+xnvme_be_nosys_dev_open(struct xnvme_dev *XNVME_UNUSED(dev))
 {
 	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");
 	return -ENOSYS;

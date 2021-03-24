@@ -338,21 +338,14 @@ message( STATUS "BE:FBSD ENABLED(${XNVME_BE_FBSD_ENABLED})" )
 #
 set(XNVME_BE_LINUX_ENABLED ${LINUX} CACHE BOOL
 	"be_linux: Linux backend")
-#set(XNVME_BE_LINUX_THR_ENABLED OFF CACHE BOOL
-set(XNVME_BE_LINUX_THR_ENABLED ${LINUX} CACHE BOOL
-	"be_linux_async_thr: thread support in Linux backend")
-set(XNVME_BE_LINUX_AIO_ENABLED ${LINUX} CACHE BOOL
-	"be_linux_async_aio: aio supportin Linux backend")
-set(XNVME_BE_LINUX_IOU_ENABLED ${LINUX} CACHE BOOL
+set(XNVME_BE_LINUX_LIBAIO_ENABLED ${LINUX} CACHE BOOL
+	"be_linux_async_libaio: libaio support in Linux backend")
+set(XNVME_BE_LINUX_LIBURING_ENABLED ${LINUX} CACHE BOOL
 	"be_linux_async_iou: io_uring support in Linux backend")
-set(XNVME_BE_LINUX_NIL_ENABLED ${LINUX} CACHE BOOL
-	"be_linux_async_nil: null-io support in Linux backend")
 set(XNVME_BE_LINUX_BLOCK_ENABLED ${LINUX} CACHE BOOL
 	"be_linux_block: support for non-NVMe devices via the Linux Block Layer")
 set(XNVME_BE_LINUX_BLOCK_ZONED_ENABLED ${LINUX} CACHE BOOL
 	"be_linux_block_zoned: support Linux Zoned Block Devices")
-set(XNVME_BE_LINUX_FS_ENABLED ${LINUX} CACHE BOOL
-	"be_linux_fs: support for traditional file-system file-IO via the Linux Block Layer")
 
 # TODO: consider expanding compile-time checking of Linux Block layer features
 if(XNVME_BE_LINUX_BLOCK_ZONED_ENABLED)
@@ -375,10 +368,6 @@ if(XNVME_BE_LINUX_ENABLED)
 
 	add_definitions(-DXNVME_BE_LINUX_ENABLED)
 
-	if(XNVME_BE_LINUX_FS_ENABLED)
-		add_definitions(-DXNVME_BE_LINUX_FS_ENABLED)
-	endif()
-
 	if(XNVME_BE_LINUX_BLOCK_ENABLED)
 		add_definitions(-DXNVME_BE_LINUX_BLOCK_ENABLED)
 
@@ -387,17 +376,8 @@ if(XNVME_BE_LINUX_ENABLED)
 		endif()
 	endif()
 
-	if(XNVME_BE_LINUX_THR_ENABLED)
-		add_definitions(-DXNVME_BE_LINUX_THR_ENABLED)
-
-		list(APPEND LIBS_SYSTEM pthread)
-
-		message( STATUS "ENABLING ASYNC SUPPORT" )
-		add_definitions(-DXNVME_ASYNC_ENABLED)
-	endif()
-
-	if(XNVME_BE_LINUX_AIO_ENABLED)
-		add_definitions(-DXNVME_BE_LINUX_AIO_ENABLED)
+	if(XNVME_BE_LINUX_LIBAIO_ENABLED)
+		add_definitions(-DXNVME_BE_LINUX_LIBAIO_ENABLED)
 
 		list(APPEND LIBS_SYSTEM aio)
 
@@ -405,7 +385,7 @@ if(XNVME_BE_LINUX_ENABLED)
 		add_definitions(-DXNVME_ASYNC_ENABLED)
 	endif()
 
-	if(XNVME_BE_LINUX_IOU_ENABLED)
+	if(XNVME_BE_LINUX_LIBURING_ENABLED)
 		message( STATUS "LIBURING_LIBRARY_PATH(${LIBURING_LIBRARY_PATH})" )
 		message( STATUS "LIBURING_INCLUDE_PATH(${LIBURING_INCLUDE_PATH})" )
 
@@ -430,7 +410,7 @@ if(XNVME_BE_LINUX_ENABLED)
 			endif()
 		endif()
 
-		add_definitions(-DXNVME_BE_LINUX_IOU_ENABLED)
+		add_definitions(-DXNVME_BE_LINUX_LIBURING_ENABLED)
 
 		list(APPEND LIBS uring)
 
@@ -443,19 +423,27 @@ if(XNVME_BE_LINUX_ENABLED)
 		message( STATUS "ENABLING ASYNC SUPPORT" )
 		add_definitions(-DXNVME_ASYNC_ENABLED)
 	endif()
-
-	if(XNVME_BE_LINUX_NIL_ENABLED)
-		add_definitions(-DXNVME_BE_LINUX_NIL_ENABLED)
-
-		message( STATUS "ENABLING ASYNC SUPPORT" )
-		add_definitions(-DXNVME_ASYNC_ENABLED)
-	endif()
-
 endif()
 message( STATUS "BE:LINUX ENABLED(${XNVME_BE_LINUX_ENABLED})" )
-message( STATUS "BE:LINUX_AIO ENABLED(${XNVME_BE_LINUX_AIO_ENABLED})" )
-message( STATUS "BE:LINUX_IOU ENABLED(${XNVME_BE_LINUX_IOU_ENABLED})" )
-message( STATUS "BE:LINUX_NIL ENABLED(${XNVME_BE_LINUX_NIL_ENABLED})" )
+message( STATUS "BE:LINUX_LIBAIO ENABLED(${XNVME_BE_LINUX_LIBAIO_ENABLED})" )
+message( STATUS "BE:LINUX_LIBURING ENABLED(${XNVME_BE_LINUX_LIBURING_ENABLED})" )
+
+if(WIN32)
+	message( WARNING "Do Windows Backend Specifics here" )
+	set(XNVME_BE_POSIX_ENABLED FALSE CACHE BOOL "be_posix: Posix backend")
+else()
+	set(XNVME_BE_POSIX_ENABLED TRUE CACHE BOOL "be_posix: Posix backend")
+endif()
+
+if(XNVME_BE_POSIX_ENABLED)
+	add_definitions(-DXNVME_BE_POSIX_ENABLED)
+
+	list(APPEND LIBS_SYSTEM pthread)
+
+	message( STATUS "ENABLING ASYNC SUPPORT via BE:POSIX" )
+	add_definitions(-DXNVME_ASYNC_ENABLED)
+endif()
+message( STATUS "BE:POSIX ENABLED(${XNVME_BE_POSIX_ENABLED})" )
 
 #
 # BACKENDS -- end

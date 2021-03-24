@@ -1,13 +1,15 @@
 // Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
 // Copyright (C) Gurmeet Singh <gur.singh@samsung.com>
 // SPDX-License-Identifier: Apache-2.0
-#ifdef XNVME_BE_LINUX_ENABLED
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
-#include <linux/nvme_ioctl.h>
-#include <sys/ioctl.h>
+#include <xnvme_be.h>
+#include <xnvme_be_nosys.h>
+#ifdef XNVME_BE_LINUX_ENABLED
 #include <errno.h>
+#include <sys/ioctl.h>
+#include <linux/nvme_ioctl.h>
 #include <xnvme_be_linux.h>
 #include <xnvme_be_linux_nvme.h>
 
@@ -181,14 +183,22 @@ xnvme_be_linux_nvme_supported(struct xnvme_dev *dev, uint32_t XNVME_UNUSED(opts)
 
 	return nsid > 0;
 }
-
-struct xnvme_be_sync g_linux_nvme = {
-	.cmd_io = xnvme_be_linux_nvme_cmd_io,
-	.cmd_admin = xnvme_be_linux_nvme_cmd_admin,
-	.id = "nvme_ioctl",
-	.enabled = 1,
-	.supported = xnvme_be_linux_nvme_supported,
-};
-
 #endif
 
+struct xnvme_be_sync g_xnvme_be_linux_sync_nvme = {
+	.id = "nvme",
+#ifdef XNVME_BE_LINUX_ENABLED
+	.cmd_io = xnvme_be_linux_nvme_cmd_io,
+#else
+	.cmd_io = xnvme_be_nosys_sync_cmd_io,
+#endif
+};
+
+struct xnvme_be_admin g_xnvme_be_linux_admin_nvme = {
+	.id = "nvme",
+#ifdef XNVME_BE_LINUX_ENABLED
+	.cmd_admin = xnvme_be_linux_nvme_cmd_admin,
+#else
+	.cmd_admin = xnvme_be_nosys_sync_cmd_admin,
+#endif
+};

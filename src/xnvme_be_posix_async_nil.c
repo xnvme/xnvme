@@ -1,47 +1,47 @@
 // Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
 // SPDX-License-Identifier: Apache-2.0
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
 #endif
-#include <errno.h>
-#include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-
-#define XNVME_BE_LINUX_NIL_NAME "nil"
-
-#ifdef XNVME_BE_LINUX_NIL_ENABLED
-#include <fcntl.h>
-#include <linux/fs.h>
-#include <linux/nvme_ioctl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/ioctl.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <dirent.h>
-#include <paths.h>
-
+#ifdef XNVME_BE_POSIX_ENABLED
+#include <errno.h>
 #include <xnvme_queue.h>
-#include <xnvme_be_linux.h>
-#include <xnvme_be_linux_nil.h>
 #include <xnvme_dev.h>
+#include <libxnvme.h>
+
+#define XNVME_BE_POSIX_ASYNC_NIL_CTX_DEPTH_MAX 29
+
+struct xnvme_queue_nil {
+	struct xnvme_queue_base base;
+
+	struct xnvme_cmd_ctx *ctx[XNVME_BE_POSIX_ASYNC_NIL_CTX_DEPTH_MAX];
+};
+XNVME_STATIC_ASSERT(
+	sizeof(struct xnvme_queue_nil) == XNVME_BE_QUEUE_STATE_NBYTES,
+	"Incorrect size"
+)
 
 int
-_linux_nil_init(struct xnvme_queue *XNVME_UNUSED(queue), int XNVME_UNUSED(opts))
+_posix_nil_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
+{
+	if (queue->base.capacity > XNVME_BE_POSIX_ASYNC_NIL_CTX_DEPTH_MAX) {
+		XNVME_DEBUG("FAILED: requested more than async-nil supports");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int
+_posix_nil_term(struct xnvme_queue *XNVME_UNUSED(queue))
 {
 	return 0;
 }
 
 int
-_linux_nil_term(struct xnvme_queue *XNVME_UNUSED(queue))
-{
-	return 0;
-}
-
-int
-_linux_nil_poke(struct xnvme_queue *q, uint32_t max)
+_posix_nil_poke(struct xnvme_queue *q, uint32_t max)
 {
 	struct xnvme_queue_nil *queue = (void *)q;
 	unsigned completed = 0;
@@ -74,7 +74,7 @@ _linux_nil_poke(struct xnvme_queue *q, uint32_t max)
 }
 
 int
-_linux_nil_wait(struct xnvme_queue *queue)
+_posix_nil_wait(struct xnvme_queue *queue)
 {
 	int acc = 0;
 
@@ -82,7 +82,7 @@ _linux_nil_wait(struct xnvme_queue *queue)
 		struct timespec ts1 = {.tv_sec = 0, .tv_nsec = 1000};
 		int err;
 
-		err = _linux_nil_poke(queue, 0);
+		err = _posix_nil_poke(queue, 0);
 		if (err >= 0) {
 			acc += err;
 			continue;
@@ -103,7 +103,7 @@ _linux_nil_wait(struct xnvme_queue *queue)
 }
 
 static inline int
-_linux_nil_cmd_io(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf),
+_posix_nil_cmd_io(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf),
 		  size_t XNVME_UNUSED(dbuf_nbytes), void *XNVME_UNUSED(mbuf),
 		  size_t XNVME_UNUSED(mbuf_nbytes))
 {
@@ -118,33 +118,21 @@ _linux_nil_cmd_io(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf),
 
 	return 0;
 }
+#endif
 
-int
-_linux_nil_supported(struct xnvme_dev *XNVME_UNUSED(dev), uint32_t XNVME_UNUSED(opts))
-{
-	return 1;
-}
-
-struct xnvme_be_async g_linux_nil = {
+struct xnvme_be_async g_xnvme_be_posix_async_nil = {
 	.id = "nil",
-#ifdef XNVME_BE_LINUX_IOU_ENABLED
-	.enabled = 1,
-	.cmd_io = _linux_nil_cmd_io,
-	.poke = _linux_nil_poke,
-	.wait = _linux_nil_wait,
-	.init = _linux_nil_init,
-	.term = _linux_nil_term,
-	.supported = _linux_nil_supported,
+#ifdef XNVME_BE_POSIX_ENABLED
+	.cmd_io = _posix_nil_cmd_io,
+	.poke = _posix_nil_poke,
+	.wait = _posix_nil_wait,
+	.init = _posix_nil_init,
+	.term = _posix_nil_term,
 #else
-	.enabled = 0,
-	.cmd_io = xnvme_be_nosys_async_cmd_io,
-	.poke = xnvme_be_nosys_async_poke,
-	.wait = xnvme_be_nosys_async_wait,
-	.init = xnvme_be_nosys_async_init,
-	.term = xnvme_be_nosys_async_term,
-	.supported = xnvme_be_nosys_async_supported,
+	.cmd_io = xnvme_be_nosys_queue_cmd_io,
+	.poke = xnvme_be_nosys_queue_poke,
+	.wait = xnvme_be_nosys_queue_wait,
+	.init = xnvme_be_nosys_queue_init,
+	.term = xnvme_be_nosys_queue_term,
 #endif
-
 };
-
-#endif

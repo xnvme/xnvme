@@ -1,32 +1,44 @@
 // Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
 // SPDX-License-Identifier: Apache-2.0
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
 #endif
-#include <errno.h>
-#include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-
-#define XNVME_BE_LINUX_THR_NAME "thr"
-
-#ifdef XNVME_BE_LINUX_THR_ENABLED
-#include <fcntl.h>
-#include <linux/fs.h>
-#include <linux/nvme_ioctl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/ioctl.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <dirent.h>
-#include <paths.h>
-
+#ifdef XNVME_BE_POSIX_ENABLED
+#include <errno.h>
 #include <xnvme_queue.h>
-#include <xnvme_be_linux.h>
-#include <xnvme_be_linux_thr.h>
 #include <xnvme_dev.h>
+
+struct _entry {
+	struct xnvme_dev *dev;
+	struct xnvme_cmd_ctx *ctx;
+	void *dbuf;
+	size_t dbuf_nbytes;
+	void *mbuf;
+	size_t mbuf_nbytes;
+	STAILQ_ENTRY(_entry) link;
+};
+
+struct _qp {
+	STAILQ_HEAD(, _entry) rp;	///< Request pool
+	STAILQ_HEAD(, _entry) sq;	///< Submission queue
+	STAILQ_HEAD(, _entry) cq;	///< Completion queue
+	uint32_t capacity;
+	struct _entry elm[];
+};
+
+struct xnvme_queue_emu {
+	struct xnvme_queue_base base;
+
+	struct _qp *qp;
+
+	uint8_t _rsvd[224];
+};
+XNVME_STATIC_ASSERT(
+	sizeof(struct xnvme_queue_emu) == XNVME_BE_QUEUE_STATE_NBYTES,
+	"Incorrect size"
+)
 
 int
 _qp_term(struct _qp *qp)
@@ -67,9 +79,9 @@ _qp_init(struct _qp *qp)
 }
 
 int
-_linux_thr_term(struct xnvme_queue *q)
+_posix_async_emu_term(struct xnvme_queue *q)
 {
-	struct xnvme_queue_thr *queue = (void *)q;
+	struct xnvme_queue_emu *queue = (void *)q;
 
 	_qp_term(queue->qp);
 
@@ -86,9 +98,9 @@ _linux_thr_term(struct xnvme_queue *q)
  * This should probably be done with an SPMC or something clever.
 */
 int
-_linux_thr_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
+_posix_async_emu_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 {
-	struct xnvme_queue_thr *queue = (void *)q;
+	struct xnvme_queue_emu *queue = (void *)q;
 
 	if (_qp_alloc(&(queue->qp), queue->base.capacity)) {
 		XNVME_DEBUG("FAILED: _qp_alloc()");
@@ -102,15 +114,15 @@ _linux_thr_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 	return 0;
 
 failed:
-	_linux_thr_term(q);
+	_posix_async_emu_term(q);
 
 	return 1;
 }
 
 int
-_linux_thr_poke(struct xnvme_queue *q, uint32_t max)
+_posix_async_emu_poke(struct xnvme_queue *q, uint32_t max)
 {
-	struct xnvme_queue_thr *queue = (void *)q;
+	struct xnvme_queue_emu *queue = (void *)q;
 	struct _qp *qp = queue->qp;
 	unsigned completed = 0;
 
@@ -141,7 +153,7 @@ _linux_thr_poke(struct xnvme_queue *q, uint32_t max)
 }
 
 int
-_linux_thr_wait(struct xnvme_queue *queue)
+_posix_async_emu_wait(struct xnvme_queue *queue)
 {
 	int acc = 0;
 
@@ -149,7 +161,7 @@ _linux_thr_wait(struct xnvme_queue *queue)
 		struct timespec ts1 = {.tv_sec = 0, .tv_nsec = 1000};
 		int err;
 
-		err = _linux_thr_poke(queue, 0);
+		err = _posix_async_emu_poke(queue, 0);
 		if (err >= 0) {
 			acc += err;
 			continue;
@@ -170,10 +182,10 @@ _linux_thr_wait(struct xnvme_queue *queue)
 }
 
 static inline int
-_linux_thr_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
-		  size_t mbuf_nbytes)
+_posix_async_emu_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			size_t mbuf_nbytes)
 {
-	struct xnvme_queue_thr *queue = (void *)ctx->async.queue;
+	struct xnvme_queue_emu *queue = (void *)ctx->async.queue;
 	struct _qp *qp = queue->qp;
 	struct _entry *entry;
 
@@ -203,33 +215,21 @@ _linux_thr_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, voi
 
 	return 0;
 }
+#endif
 
-int
-_linux_thr_supported(struct xnvme_dev *XNVME_UNUSED(dev), uint32_t XNVME_UNUSED(opts))
-{
-	return 1;
-}
-
-struct xnvme_be_async g_linux_thr = {
-	.id = "thr",
-#ifdef XNVME_BE_LINUX_IOU_ENABLED
-	.enabled = 1,
-	.cmd_io = _linux_thr_cmd_io,
-	.poke = _linux_thr_poke,
-	.wait = _linux_thr_wait,
-	.init = _linux_thr_init,
-	.term = _linux_thr_term,
-	.supported = _linux_thr_supported,
+struct xnvme_be_async g_xnvme_be_posix_async_emu = {
+	.id = "emu",
+#ifdef XNVME_BE_POSIX_ENABLED
+	.cmd_io = _posix_async_emu_cmd_io,
+	.poke = _posix_async_emu_poke,
+	.wait = _posix_async_emu_wait,
+	.init = _posix_async_emu_init,
+	.term = _posix_async_emu_term,
 #else
-	.enabled = 0,
-	.cmd_io = xnvme_be_nosys_async_cmd_io,
-	.poke = xnvme_be_nosys_async_poke,
-	.wait = xnvme_be_nosys_async_wait,
-	.init = xnvme_be_nosys_async_init,
-	.term = xnvme_be_nosys_async_term,
-	.supported = xnvme_be_nosys_async_supported,
+	.cmd_io = xnvme_be_nosys_queue_cmd_io,
+	.poke = xnvme_be_nosys_queue_poke,
+	.wait = xnvme_be_nosys_queue_wait,
+	.init = xnvme_be_nosys_queue_init,
+	.term = xnvme_be_nosys_queue_term,
 #endif
-
 };
-
-#endif

@@ -1,35 +1,22 @@
 // Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
 // SPDX-License-Identifier: Apache-2.0
-#ifdef XNVME_BE_LINUX_IOU_ENABLED
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
-#include <errno.h>
-#include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#include <fcntl.h>
-#include <linux/fs.h>
-#include <linux/nvme_ioctl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/ioctl.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <dirent.h>
-#include <paths.h>
+#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
+#include <errno.h>
 #include <liburing.h>
-
 #include <xnvme_queue.h>
-#include <xnvme_be_linux.h>
-#include <xnvme_be_linux_iou.h>
 #include <xnvme_dev.h>
+#include <xnvme_be_linux_liburing.h>
+#include <xnvme_be_linux.h>
 
 // TODO: replace this with liburing 0.7 barriers
-#define _linux_iou_barrier()  __asm__ __volatile__("":::"memory")
+#define _linux_liburing_barrier()  __asm__ __volatile__("":::"memory")
 
-static int g_linux_iou_required[] = {
+static int g_linux_liburing_required[] = {
 	IORING_OP_READV,
 	IORING_OP_WRITEV,
 	IORING_OP_READ_FIXED,
@@ -37,7 +24,8 @@ static int g_linux_iou_required[] = {
 	IORING_OP_READ,
 	IORING_OP_WRITE,
 };
-int g_linux_iou_nrequired = sizeof g_linux_iou_required / sizeof(*g_linux_iou_required);
+int g_linux_liburing_nrequired = sizeof g_linux_liburing_required /
+				 sizeof(*g_linux_liburing_required);
 
 /**
  * Check whether the Kernel supports the io_uring features used by xNVMe
@@ -46,7 +34,7 @@ int g_linux_iou_nrequired = sizeof g_linux_iou_required / sizeof(*g_linux_iou_re
  * specifically -ENOSYS;
  */
 int
-_linux_iou_supported(struct xnvme_dev *XNVME_UNUSED(dev), uint32_t XNVME_UNUSED(opts))
+_linux_liburing_supported(struct xnvme_dev *XNVME_UNUSED(dev), uint32_t XNVME_UNUSED(opts))
 {
 	struct io_uring_probe *probe;
 	int err = 0;
@@ -58,11 +46,11 @@ _linux_iou_supported(struct xnvme_dev *XNVME_UNUSED(dev), uint32_t XNVME_UNUSED(
 		goto exit;
 	}
 
-	for (int i = 0; i < g_linux_iou_nrequired; ++i) {
-		if (!io_uring_opcode_supported(probe, g_linux_iou_required[i])) {
+	for (int i = 0; i < g_linux_liburing_nrequired; ++i) {
+		if (!io_uring_opcode_supported(probe, g_linux_liburing_required[i])) {
 			err = -ENOSYS;
 			XNVME_DEBUG("FAILED: Kernel does not support opc: %d",
-				    g_linux_iou_required[i]);
+				    g_linux_liburing_required[i]);
 			goto exit;
 		}
 	}
@@ -74,9 +62,9 @@ exit:
 }
 
 int
-_linux_iou_init(struct xnvme_queue *q, int opts)
+_linux_liburing_init(struct xnvme_queue *q, int opts)
 {
-	struct xnvme_queue_iou *queue = (void *)q;
+	struct xnvme_queue_liburing *queue = (void *)q;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
 	int err = 0;
 	int iou_flags = 0;
@@ -119,9 +107,9 @@ _linux_iou_init(struct xnvme_queue *q, int opts)
 }
 
 int
-_linux_iou_term(struct xnvme_queue *q)
+_linux_liburing_term(struct xnvme_queue *q)
 {
-	struct xnvme_queue_iou *queue = (void *)q;
+	struct xnvme_queue_liburing *queue = (void *)q;
 
 	if (!queue) {
 		XNVME_DEBUG("FAILED: queue: %p", (void *)queue);
@@ -137,16 +125,15 @@ _linux_iou_term(struct xnvme_queue *q)
 }
 
 int
-_linux_iou_poke(struct xnvme_queue *q, uint32_t max)
+_linux_liburing_poke(struct xnvme_queue *q, uint32_t max)
 {
-	struct xnvme_queue_iou *queue = (void *)q;
+	struct xnvme_queue_liburing *queue = (void *)q;
 	struct io_uring_cqe *cqes[XNVME_QUEUE_IOU_CQE_BATCH_MAX];
 	unsigned completed;
 
 	max = max ? max : queue->base.outstanding;
 	max = max > queue->base.outstanding ? queue->base.outstanding : max;
 	max = max > XNVME_QUEUE_IOU_CQE_BATCH_MAX ? XNVME_QUEUE_IOU_CQE_BATCH_MAX : max;
-
 
 	if (queue->poll_io) {
 		int ret = io_uring_wait_cqe(&queue->ring, &cqes[0]);
@@ -194,7 +181,7 @@ _linux_iou_poke(struct xnvme_queue *q, uint32_t max)
 }
 
 int
-_linux_iou_wait(struct xnvme_queue *queue)
+_linux_liburing_wait(struct xnvme_queue *queue)
 {
 	int acc = 0;
 
@@ -202,7 +189,7 @@ _linux_iou_wait(struct xnvme_queue *queue)
 		struct timespec ts1 = {.tv_sec = 0, .tv_nsec = 1000};
 		int err;
 
-		err = _linux_iou_poke(queue, 0);
+		err = _linux_liburing_poke(queue, 0);
 		if (err >= 0) {
 			acc += err;
 			continue;
@@ -223,10 +210,10 @@ _linux_iou_wait(struct xnvme_queue *queue)
 }
 
 int
-_linux_iou_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
-		  size_t mbuf_nbytes)
+_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+		       size_t mbuf_nbytes)
 {
-	struct xnvme_queue_iou *queue = (void *)ctx->async.queue;
+	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
 	const uint64_t ssw = (queue->base.dev->dtype == XNVME_DEV_TYPE_FS_FILE) ? \
 			     0 : queue->base.dev->ssw;
@@ -288,26 +275,21 @@ _linux_iou_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, voi
 
 	return 0;
 }
+#endif
 
-struct xnvme_be_async g_linux_iou = {
+struct xnvme_be_async g_xnvme_be_linux_async_liburing = {
 	.id = "io_uring",
-#ifdef XNVME_BE_LINUX_IOU_ENABLED
-	.enabled = 1,
-	.cmd_io = _linux_iou_cmd_io,
-	.poke = _linux_iou_poke,
-	.wait = _linux_iou_wait,
-	.init = _linux_iou_init,
-	.term = _linux_iou_term,
-	.supported = _linux_iou_supported,
+#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
+	.cmd_io = _linux_liburing_cmd_io,
+	.poke = _linux_liburing_poke,
+	.wait = _linux_liburing_wait,
+	.init = _linux_liburing_init,
+	.term = _linux_liburing_term,
 #else
-	.enabled = 0,
-	.cmd_io = xnvme_be_nosys_async_cmd_io,
-	.poke = xnvme_be_nosys_async_poke,
-	.wait = xnvme_be_nosys_async_wait,
-	.init = xnvme_be_nosys_async_init,
-	.term = xnvme_be_nosys_async_term,
-	.supported = xnvme_be_nosys_async_supported,
+	.cmd_io = xnvme_be_nosys_queue_cmd_io,
+	.poke = xnvme_be_nosys_queue_poke,
+	.wait = xnvme_be_nosys_queue_wait,
+	.init = xnvme_be_nosys_queue_init,
+	.term = xnvme_be_nosys_queue_term,
 #endif
 };
-
-#endif

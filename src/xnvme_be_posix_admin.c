@@ -1,55 +1,17 @@
 // Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
-// Copyright (C) Gurmeet Singh <gur.singh@samsung.com>
 // SPDX-License-Identifier: Apache-2.0
-#ifdef XNVME_BE_LINUX_FS_ENABLED
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
 #endif
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include <xnvme_be.h>
+#include <xnvme_be_nosys.h>
+#ifdef XNVME_BE_POSIX_ENABLED
 #include <errno.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <libxnvme_spec_fs.h>
-#include <xnvme_be_linux.h>
-
-int
-xnvme_be_linux_fs_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
-			 void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
-{
-	struct xnvme_be_linux_state *state = (void *)ctx->dev->be.state;
-	ssize_t res;
-
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_NVM_OPC_WRITE:
-		res = pwrite(state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
-		break;
-
-	case XNVME_SPEC_NVM_OPC_READ:
-		res = pread(state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
-		break;
-
-	case XNVME_SPEC_NVM_OPC_FLUSH:
-		res = fsync(state->fd);
-		break;
-
-	default:
-		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opcode);
-		return -ENOSYS;
-	}
-
-	ctx->cpl.result = res;
-	if (res < 0) {
-		XNVME_DEBUG("FAILED: {pread,pwrite,fsync}(), errno: %d", errno);
-
-		ctx->cpl.result = 0;
-		ctx->cpl.status.sc = errno;
-		ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
-		return -errno;
-	}
-
-	return 0;
-}
+#include <xnvme_be_posix.h>
+#include <xnvme_dev.h>
 
 static int
 _idfy_ctrlr_iocs(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
@@ -70,7 +32,7 @@ _idfy_ctrlr_iocs(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 static int
 _idfy_ns_iocs(struct xnvme_dev *dev, void *dbuf)
 {
-	struct xnvme_be_linux_state *state = (void *)dev->be.state;
+	struct xnvme_be_posix_state *state = (void *)dev->be.state;
 	struct xnvme_spec_fs_idfy_ns *ns = dbuf;
 	struct stat stat = { 0 };
 	int err;
@@ -101,7 +63,7 @@ _idfy_ctrlr(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 static int
 _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 {
-	struct xnvme_be_linux_state *state = (void *)dev->be.state;
+	struct xnvme_be_posix_state *state = (void *)dev->be.state;
 	struct xnvme_spec_idfy_ns *ns = dbuf;
 	struct stat stat = { 0 };
 	int err;
@@ -186,9 +148,9 @@ _gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 }
 
 int
-xnvme_be_linux_fs_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf,
-			    size_t XNVME_UNUSED(dbuf_nbytes), void *XNVME_UNUSED(mbuf),
-			    size_t XNVME_UNUSED(mbuf_nbytes))
+_xnvme_be_posix_admin_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf,
+				size_t XNVME_UNUSED(dbuf_nbytes), void *XNVME_UNUSED(mbuf),
+				size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_ADM_OPC_IDFY:
@@ -206,29 +168,13 @@ xnvme_be_linux_fs_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf,
 		return -ENOSYS;
 	}
 }
-
-int
-xnvme_be_linux_fs_supported(struct xnvme_dev *XNVME_UNUSED(dev), uint32_t XNVME_UNUSED(opts))
-{
-	return 1;
-}
-
-struct xnvme_be_sync g_linux_fs = {
-	.cmd_io = xnvme_be_linux_fs_cmd_io,
-	.cmd_admin = xnvme_be_linux_fs_cmd_admin,
-	.id = "linux_fs",
-	.enabled = 1,
-	.supported = xnvme_be_linux_fs_supported,
-};
-#else
-#include <xnvme_be_linux.h>
-#include <xnvme_be_nosys.h>
-struct xnvme_be_sync g_linux_fs = {
-	.cmd_io = xnvme_be_nosys_sync_cmd_io,
-	.cmd_admin = xnvme_be_nosys_sync_cmd_admin,
-	.id = "linux_fs",
-	.enabled = 0,
-	.supported = xnvme_be_nosys_sync_supported,
-};
 #endif
 
+struct xnvme_be_admin g_xnvme_be_posix_admin_shim = {
+	.id = "file_as_ns",
+#ifdef XNVME_BE_POSIX_ENABLED
+	.cmd_admin = _xnvme_be_posix_admin_cmd_admin,
+#else
+	.cmd_admin = _xnvme_be_enosys_admin_cmd_admin,
+#endif
+};
