@@ -1,16 +1,29 @@
 # xNVMe Library Information
-ver: {major: 0, minor: 0, patch: 22}
+ver: {major: 0, minor: 0, patch: 23}
 xnvme_3p:
   - 'fio;git-describe:fio-3.25'
   - 'libnvme;git-rev:master/a458217'
-  - 'liburing;git-describe:liburing-0.7'
-  - 'spdk;git-describe:v20.10;+patches'
-  - 'linux;LINUX_VERSION_CODE-UAPI/329995-5.9.11'
+  - 'liburing;git-describe:liburing-2.0'
+  - 'spdk;git-describe:v21.01.1;+patches'
+  - 'linux;LINUX_VERSION_CODE-UAPI/330268-5.10.28'
 xnvme_be_attr_list:
-  count: 3
-  capacity: 3
+  count: 4
+  capacity: 4
   items:
-  - {name: 'spdk', enabled: 1, schemes: [pci, pcie, fab]}
-  - {name: 'linux', enabled: 1, schemes: [file]}
-  - {name: 'fbsd', enabled: 0, schemes: [file, fbsd]}
+  - name: 'spdk'
+    enabled: 1
+    schemes: ['pci', 'pcie', 'fab', 'spdk']
+
+  - name: 'linux'
+    enabled: 1
+    schemes: ['file', 'lnx']
+
+  - name: 'fbsd'
+    enabled: 0
+    schemes: ['file', 'fbsd']
+
+  - name: 'posix'
+    enabled: 1
+    schemes: ['file', 'psx']
+
 

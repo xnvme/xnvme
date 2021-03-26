@@ -3,6 +3,17 @@
 FreeBSD
 =======
 
+FreeBSD expose NVMe devices via the following device-files:
+
+* ``/dev/nvme{ctrlr_id}``, NVMe Controller device node
+* ``/dev/nvme{ctrlr_id}ns{ns_id}``, NVMe Namespace as device node
+* ``/dev/nda{num}``, NVMe Namespace as storage device node
+* ``/dev/nvd{num}``, NVMe Namespace as disk drive
+
+For details see the following man-pages::
+
+  nvme, nda, nvd, pci, disk, and nvmecontrol
+
 The FreeBSD backend uses synchronous ``ioctl`` calls to have the kernel perform
 NVMe commands. Note that the backend needs a re-implementation it is currently
 not in a very usable state.

@@ -58,6 +58,14 @@ xnvme_spec_flag
 .. doxygenenum:: xnvme_spec_flag
 
 
+.. _sec-c-api-xnvme_spec-enum-xnvme_spec_fs_opcs:
+
+xnvme_spec_fs_opcs
+------------------
+
+.. doxygenenum:: xnvme_spec_fs_opcs
+
+
 .. _sec-c-api-xnvme_spec-enum-xnvme_spec_idfy_cns:
 
 xnvme_spec_idfy_cns
@@ -319,6 +327,26 @@ xnvme_spec_feat
 ---------------
 
 .. doxygenstruct:: xnvme_spec_feat
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_fs_idfy_ctrlr:
+
+xnvme_spec_fs_idfy_ctrlr
+------------------------
+
+.. doxygenstruct:: xnvme_spec_fs_idfy_ctrlr
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_fs_idfy_ns:
+
+xnvme_spec_fs_idfy_ns
+---------------------
+
+.. doxygenstruct:: xnvme_spec_fs_idfy_ns
    :members:
    :undoc-members:
 

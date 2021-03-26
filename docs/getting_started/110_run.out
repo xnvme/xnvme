@@ -7,17 +7,13 @@ xnvme_dev:
     opts: '?nsid=1'
     uri: 'pci:0000:03:00.0?nsid=1'
   xnvme_be:
-    async: {id: 'nvme_driver', enabled: 1}
-    sync: {id: 'nvme_driver', enabled: 1}
-    attr: {name: 'spdk', enabled: 1}
+    admin: {id: 'nvme'}
+    sync: {id: 'nvme'}
+    async: {id: 'nvme'}
+    attr: {name: 'spdk'}
   xnvme_cmd_opts:
-    mask: '00000000000000000000000000000001'
-    iomd: 'SYNC'
-    payload_data: 'DRV'
-    payload_meta: 'DRV'
     csi: 0x0
     nsid: 0x1
-    ssw: 9
   xnvme_geo:
     type: XNVME_GEO_CONVENTIONAL
     npugrp: 1
@@ -30,4 +26,5 @@ xnvme_dev:
     mdts_nbytes: 524288
     lba_nbytes: 512
     lba_extended: 0
+    ssw: 9
 

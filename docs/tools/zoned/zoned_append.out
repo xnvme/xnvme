@@ -10,11 +10,11 @@ xnvme_znd_report:
   zrent_nbytes: 64
   zslba: 0x0000000000000000
   zelba: 0x0000000000000000
-  nzones: 4096
+  nzones: 256
   nentries: 1
   extended: 0
   entries:
-    - {zslba: 0x0000000000000000, wp: 0x0000000000000000, zcap: 4096, zt: 0x2, zs:   ZND_STATE_EMPTY, za: '0b00000000'}
+    - {zslba: 0x0000000000000000, wp: 0x0000000000000000, zcap: 32768, zt: 0x2, zs:   ZND_STATE_EMPTY, za: '0b00000000'}
 
 
 # Zone Append nlb: 0 to zslba: 0x0000000000000000
@@ -41,9 +41,9 @@ xnvme_znd_report:
   zrent_nbytes: 64
   zslba: 0x0000000000000000
   zelba: 0x0000000000000000
-  nzones: 4096
+  nzones: 256
   nentries: 1
   extended: 0
   entries:
-    - {zslba: 0x0000000000000000, wp: 0x0000000000000003, zcap: 4096, zt: 0x2, zs:   ZND_STATE_IOPEN, za: '0b00000000'}
+    - {zslba: 0x0000000000000000, wp: 0x0000000000000003, zcap: 32768, zt: 0x2, zs:   ZND_STATE_IOPEN, za: '0b00000000'}
 

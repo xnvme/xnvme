@@ -803,7 +803,7 @@ determined by the environment variable ``OSTYPE``.
 
 On Linux, the configure script enables the SPDK backend ``be:spdk`` and the
 Linux native backend ``be:linux``, with all features enabled, that is, support
-for ``libaio``, ``io_uring``, ``nil``, and ``thr``.
+for ``libaio``, ``io_uring``, ``nil``, and ``emu``.
 
 On FreeBSD, the configure script enables the SPDK backend ``be:spdk`` and the
 FreeBSD native backend ``be:fbsd``. For more information about these so-called

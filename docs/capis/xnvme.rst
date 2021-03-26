@@ -318,6 +318,14 @@ xnvme_cmd_ctx_pr
 .. doxygenfunction:: xnvme_cmd_ctx_pr
 
 
+.. _sec-c-api-xnvme-func-xnvme_cmd_ctx_set_cb:
+
+xnvme_cmd_ctx_set_cb
+--------------------
+
+.. doxygenfunction:: xnvme_cmd_ctx_set_cb
+
+
 .. _sec-c-api-xnvme-func-xnvme_cmd_pass:
 
 xnvme_cmd_pass
@@ -412,14 +420,6 @@ xnvme_file_pwrite
 -----------------
 
 .. doxygenfunction:: xnvme_file_pwrite
-
-
-.. _sec-c-api-xnvme-func-xnvme_file_stat:
-
-xnvme_file_stat
----------------
-
-.. doxygenfunction:: xnvme_file_stat
 
 
 .. _sec-c-api-xnvme-func-xnvme_file_sync:
