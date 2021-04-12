@@ -26,16 +26,22 @@
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_attr) == XNVME_BE_ATTR_NBYTES, "Incorrect size");
 
 struct xnvme_be_async {
+	// Submit an async io command to be processed on the backend's io path
 	int (*cmd_io)(struct xnvme_cmd_ctx *, void *, size_t, void *, size_t);
 
+	// Non-blocking reaping of up to `max` io completions
 	int (*poke)(struct xnvme_queue *, uint32_t);
 
+	// Blocking reaping of all outstanding io completions
 	int (*wait)(struct xnvme_queue *);
 
-	int (*init)(struct xnvme_queue *, int opts);
+	// Do initialization of the underlying backend's io path
+	int (*init)(struct xnvme_queue *, int);
 
+	// Close resources allocated for the underlying backend's io path
 	int (*term)(struct xnvme_queue *);
 
+	// Check if the backend is supported in the current environment
 	const char *id;
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_async) == XNVME_BE_ASYNC_NBYTES, "Incorrect size")
