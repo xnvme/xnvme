@@ -6,41 +6,155 @@
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_POSIX_ENABLED
-#include <aio.h>
+#include <inttypes.h>
 #include <errno.h>
-#include <xnvme_be_posix.h>
+#include <aio.h>
 #include <xnvme_queue.h>
 #include <xnvme_dev.h>
+#include <xnvme_be_posix.h>
+
+// TODO: move to header?
+#define XNVME_QUEUE_AIO_CQE_BATCH_MAX 8
 
 struct xnvme_queue_posix {
 	struct xnvme_queue_base base;
-	struct aiocb aiocb;
 
-	uint8_t rsvd[232];
+	TAILQ_HEAD(, xnvme_posix_aio_request) reqs_ready;
+	TAILQ_HEAD(, xnvme_posix_aio_request) reqs_outstanding;
+	struct xnvme_posix_aio_request *reqs_storage;
+
+	uint8_t rsvd[188];
+};
+XNVME_STATIC_ASSERT(
+	sizeof(struct xnvme_queue_posix) == XNVME_BE_QUEUE_STATE_NBYTES,
+	"Incorrect size"
+)
+
+struct xnvme_posix_aio_request {
+	struct xnvme_cmd_ctx *ctx;
+	struct aiocb aiocb;
+	TAILQ_ENTRY(xnvme_posix_aio_request) link;
 };
 
 int
-_posix_async_aio_term(struct xnvme_queue *XNVME_UNUSED(q))
+_posix_async_aio_term(struct xnvme_queue *q)
 {
-	return -ENOSYS;
+	struct xnvme_queue_posix *queue = (void *)q;
+
+	free(queue->reqs_storage);
+
+	return 0;
 }
 
 int
-_posix_async_aio_init(struct xnvme_queue *XNVME_UNUSED(q), int XNVME_UNUSED(opts))
+_posix_async_aio_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 {
-	return -ENOSYS;
+	struct xnvme_queue_posix *queue = (void *)q;
+	size_t queue_nbytes = queue->base.capacity * sizeof(struct xnvme_posix_aio_request);
+
+	queue->reqs_storage = calloc(1, queue_nbytes);
+	if (!queue->reqs_storage) {
+		XNVME_DEBUG("FAILED: calloc(reqs_ready), err: %s", strerror(errno));
+		return -errno;
+	}
+	TAILQ_INIT(&queue->reqs_ready);
+	for (uint32_t i = 0; i < queue->base.capacity; i++) {
+		TAILQ_INSERT_HEAD(&queue->reqs_ready, &queue->reqs_storage[i], link);
+	}
+
+	TAILQ_INIT(&queue->reqs_outstanding);
+
+	return 0;
 }
 
 int
-_posix_async_aio_poke(struct xnvme_queue *XNVME_UNUSED(q), uint32_t XNVME_UNUSED(max))
+_posix_async_aio_poke(struct xnvme_queue *q, uint32_t max)
 {
-	return -ENOSYS;
+	struct xnvme_queue_posix *queue = (void *)q;
+	struct xnvme_posix_aio_request *req;
+	struct xnvme_cmd_ctx *ctx;
+	size_t completed = 0;
+
+	max = max ? max : queue->base.outstanding;
+	max = XNVME_MIN(max, queue->base.outstanding);
+	max = XNVME_MIN(max, XNVME_QUEUE_AIO_CQE_BATCH_MAX);
+
+	if (!queue->base.outstanding) {
+		return 0;
+	}
+
+	req = TAILQ_FIRST(&queue->reqs_outstanding);
+	assert(req != NULL);
+
+	while (req != NULL && completed < max) {
+		ssize_t res = 0;
+		int err;
+
+		err = aio_error(&req->aiocb);
+		switch (err) {
+		case 0:
+			res = aio_return(&req->aiocb);
+			break;
+
+		case EINPROGRESS:
+			TAILQ_NEXT(req, link);
+			continue;
+
+		case ECANCELED:	// Canceled or error, do not grab return-value
+		default:
+			break;
+		}
+
+		ctx = req->ctx;
+		ctx->cpl.result = res;
+		if (err || (res < 0)) {
+			ctx->cpl.result = 0;
+			// When aio_error() fails, we use 'err'
+			// When aio_return() fails, we use 'errno'
+			ctx->cpl.status.sc = err ? err : errno;
+			ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
+		}
+
+		ctx->async.cb(ctx, ctx->async.cb_arg);
+
+		completed += 1;
+		queue->base.outstanding -= 1;
+
+		// Prepare req for reuse
+		memset(&req->aiocb, 0, sizeof(struct aiocb));
+		req->ctx = NULL;
+
+		TAILQ_REMOVE(&queue->reqs_outstanding, req, link);
+		TAILQ_INSERT_TAIL(&queue->reqs_ready, req, link);
+
+		req = TAILQ_FIRST(&queue->reqs_outstanding);
+	}
+
+	return completed;
 }
 
 int
-_posix_async_aio_wait(struct xnvme_queue *XNVME_UNUSED(queue))
+_posix_async_aio_wait(struct xnvme_queue *queue)
 {
-	return -ENOSYS;
+	int acc = 0;
+
+	while (queue->base.outstanding) {
+		int err;
+
+		err = _posix_async_aio_poke(queue, 0);
+		if (err >= 0) {
+			acc += err;
+			continue;
+		}
+
+		if (err < 0) {
+			XNVME_DEBUG("-{[THIS SHOULD NOT HAPPEN]}-");
+			XNVME_DEBUG("_posix_async_aio_poke(): %d", err);
+			return err;
+		}
+	}
+
+	return acc;
 }
 
 int
@@ -48,11 +162,12 @@ _posix_async_aio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyte
 			size_t mbuf_nbytes)
 {
 	struct xnvme_queue_posix *queue = (void *)ctx->async.queue;
+
 	struct xnvme_be_posix_state *state = (void *)queue->base.dev->be.state;
 	const uint64_t ssw = (queue->base.dev->dtype == XNVME_DEV_TYPE_FS_FILE) ? \
 			     0 : queue->base.dev->geo.ssw;
-
-	struct aiocb aiocb = { 0 };
+	struct xnvme_posix_aio_request *req;
+	struct aiocb *aiocb;
 	int err;
 
 	if (queue->base.outstanding == queue->base.capacity) {
@@ -64,27 +179,45 @@ _posix_async_aio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyte
 		return -ENOSYS;
 	}
 
-	aiocb.aio_fildes = state->fd;
-	aiocb.aio_offset = ctx->cmd.nvm.slba << ssw;
-	aiocb.aio_buf = dbuf;
-	aiocb.aio_nbytes = dbuf_nbytes;
+	req = TAILQ_FIRST(&queue->reqs_ready);
+	assert(req != NULL);
 
-	///< Literally convert the NVMe command / sqe memory to an io-control-block
+	req->ctx = ctx;
+	aiocb = &req->aiocb;
+	aiocb->aio_fildes = state->fd;
+	aiocb->aio_offset = ctx->cmd.nvm.slba << ssw;
+	aiocb->aio_buf = dbuf;
+	aiocb->aio_nbytes = dbuf_nbytes;
+	aiocb->aio_sigevent.sigev_notify = SIGEV_NONE;
+
+	///< Literally convert the NVMe command / sqe memory to an aio-control-block
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
-		err = aio_write(&aiocb);
+		err = aio_write(aiocb);
 		break;
 
 	case XNVME_SPEC_NVM_OPC_READ:
-		err = aio_read(&aiocb);
+		err = aio_read(aiocb);
 		break;
+
+	case XNVME_SPEC_NVM_OPC_FLUSH:
+	// TODO: should this be handled by calling aio_fsync()?
+	// err = aio_fsync(_, &aiocb);
 
 	default:
 		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);
 		return -ENOSYS;
 	}
 
-	XNVME_DEBUG("FAILED: io_submit(), err: %d", err);
+	if (err) {
+		XNVME_DEBUG("FAILED: {aio_write(),aio_read()}: err: %d", errno)
+		return -errno;
+	}
+
+	TAILQ_REMOVE(&queue->reqs_ready, req, link);
+	TAILQ_INSERT_TAIL(&queue->reqs_outstanding, req, link);
+
+	queue->base.outstanding += 1;
 
 	return err;
 }
