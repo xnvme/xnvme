@@ -122,9 +122,9 @@ fill_lba_range_and_write_buffer_with_character(uint8_t *wbuf, size_t buf_nbytes,
 	memset(wbuf, character, buf_nbytes);
 
 	*written_bytes = 0;
-	for (uint64_t slba = rng_slba; slba < rng_elba; slba += mdts_naddr) {
+	for (uint64_t slba = rng_slba; slba <= rng_elba; slba += mdts_naddr) {
 		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
-		uint64_t nlb = XNVME_MIN(rng_elba - slba, mdts_naddr) - 1;
+		uint64_t nlb = XNVME_MIN(rng_elba - slba, mdts_naddr - 1);
 		*written_bytes += (1 + nlb) * geo->lba_nbytes;
 
 		err = xnvme_nvm_write(&ctx, nsid, slba, nlb, wbuf, NULL);
