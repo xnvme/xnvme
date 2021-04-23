@@ -17,7 +17,6 @@ struct xnvme_dev {
 	struct xnvme_geo geo;		///< Device geometry
 	struct xnvme_be be;		///< Backend interface
 	uint64_t ssw;			///< Bit-width for LBA fmt conversion
-	uint64_t cmd_opts;		///< Default options for CMD execution
 
 	uint32_t nsid;			///< Namespace Identifier
 	enum xnvme_spec_csi csi;	///< Command Set Identifier

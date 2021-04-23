@@ -30,19 +30,6 @@ xnvme_dev_cmd_opts_yaml(FILE *stream, const struct xnvme_dev *dev, int indent,
 		wrtn += fprintf(stream, "\n");
 	}
 
-	wrtn += fprintf(stream, "%*smask: '"XNVME_I32_FMT"'%s", indent, "",
-			XNVME_I32_TO_STR(dev->cmd_opts), sep);
-
-	wrtn += fprintf(stream, "%*siomd: '%s'%s", indent, "",
-			(dev->cmd_opts & XNVME_CMD_SYNC) ? "SYNC" : "ASYNC",
-			sep);
-	wrtn += fprintf(stream, "%*spayload_data: '%s'%s", indent, "",
-			(dev->cmd_opts & XNVME_CMD_UPLD_SGLD) ? "USER" : "DRV",
-			sep);
-	wrtn += fprintf(stream, "%*spayload_meta: '%s'%s", indent, "",
-			(dev->cmd_opts & XNVME_CMD_UPLD_SGLM) ? "USER" : "DRV",
-			sep);
-
 	wrtn += fprintf(stream, "%*scsi: 0x%x%s", indent, "", dev->csi, sep);
 	wrtn += fprintf(stream, "%*snsid: 0x%u%s", indent, "", dev->nsid, sep);
 
@@ -151,7 +138,7 @@ xnvme_dev_get_be_state(const struct xnvme_dev *dev)
 }
 
 struct xnvme_dev *
-xnvme_dev_openf(const char *dev_uri, int cmd_opts)
+xnvme_dev_openf(const char *dev_uri, int XNVME_UNUSED(cmd_opts))
 {
 	struct xnvme_dev *dev = NULL;
 	int err;
@@ -165,25 +152,10 @@ xnvme_dev_openf(const char *dev_uri, int cmd_opts)
 
 	err = xnvme_be_factory(dev_uri, dev);
 	if (err) {
-		XNVME_DEBUG("FAILED: failed opening uri: %s with flags: %d",
-			    dev_uri, cmd_opts);
+		XNVME_DEBUG("FAILED: failed opening uri: %s", dev_uri);
 		errno = -err;
 		free(dev);
 		return NULL;
-	}
-
-	dev->cmd_opts = 0;	// Setup CMD options
-
-	if (cmd_opts & XNVME_CMD_MASK_IOMD) {
-		dev->cmd_opts |= cmd_opts & XNVME_CMD_MASK_IOMD;
-	} else {
-		dev->cmd_opts |= XNVME_CMD_DEF_IOMD;
-	}
-
-	if (cmd_opts & XNVME_CMD_MASK_UPLD) {
-		dev->cmd_opts |= cmd_opts & XNVME_CMD_MASK_UPLD;
-	} else {
-		dev->cmd_opts |= XNVME_CMD_DEF_UPLD;
 	}
 
 	return dev;
