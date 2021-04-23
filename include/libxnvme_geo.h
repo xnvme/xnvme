@@ -34,13 +34,14 @@ struct xnvme_geo {
 	uint32_t nbytes_oob;	///< Nr. of bytes per sector in OOB
 
 	uint64_t tbytes;	///< Total # bytes in geometry
+	uint64_t ssw;		///< Bit-width for LBA fmt conversion
 
 	uint32_t mdts_nbytes;	///< Maximum-data-transfer-size in unit of bytes
 
 	uint32_t lba_nbytes;	///< Size of an LBA in bytes
 	uint8_t lba_extended;	///< Extended LBA: 1=Supported, 0=Not-Supported
 
-	uint8_t _rsvd[15];
+	uint8_t _rsvd[7];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_geo) == 64, "Incorrect size")
 

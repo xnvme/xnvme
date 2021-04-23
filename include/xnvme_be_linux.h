@@ -38,13 +38,13 @@ xnvme_file_oflg_to_linux(int oflags);
 static inline uint64_t
 xnvme_lba2off(struct xnvme_dev *dev, uint64_t lba)
 {
-	return lba << dev->ssw;
+	return lba << dev->geo.ssw;
 }
 
 static inline uint64_t
 xnvme_off2lba(struct xnvme_dev *dev, uint64_t off)
 {
-	return off >> dev->ssw;
+	return off >> dev->geo.ssw;
 }
 
 int

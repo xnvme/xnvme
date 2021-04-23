@@ -11,8 +11,8 @@
 #include <xnvme_geo.h>
 
 static inline int
-xnvme_dev_cmd_opts_yaml(FILE *stream, const struct xnvme_dev *dev, int indent,
-			const char *sep, int head)
+xnvme_dev_cmd_opts_yaml(FILE *stream, const struct xnvme_dev *dev, int indent, const char *sep,
+			int head)
 {
 	int wrtn = 0;
 
@@ -32,8 +32,6 @@ xnvme_dev_cmd_opts_yaml(FILE *stream, const struct xnvme_dev *dev, int indent,
 
 	wrtn += fprintf(stream, "%*scsi: 0x%x%s", indent, "", dev->csi, sep);
 	wrtn += fprintf(stream, "%*snsid: 0x%u", indent, "", dev->nsid);
-
-	wrtn += fprintf(stream, "%*sssw: %"PRIu64"", indent, "", dev->ssw);
 
 	return 0;
 }
@@ -128,7 +126,7 @@ xnvme_dev_get_csi(const struct xnvme_dev *dev)
 uint64_t
 xnvme_dev_get_ssw(const struct xnvme_dev *dev)
 {
-	return dev->ssw;
+	return dev->geo.ssw;
 }
 
 const void *

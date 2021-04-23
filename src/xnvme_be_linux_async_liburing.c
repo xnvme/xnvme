@@ -216,7 +216,7 @@ _linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
 	const uint64_t ssw = (queue->base.dev->dtype == XNVME_DEV_TYPE_FS_FILE) ? \
-			     0 : queue->base.dev->ssw;
+			     0 : queue->base.dev->geo.ssw;
 	struct io_uring_sqe *sqe = NULL;
 
 	int opcode = IORING_OP_NOP;

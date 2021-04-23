@@ -50,7 +50,7 @@ _posix_async_aio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyte
 	struct xnvme_queue_posix *queue = (void *)ctx->async.queue;
 	struct xnvme_be_posix_state *state = (void *)queue->base.dev->be.state;
 	const uint64_t ssw = (queue->base.dev->dtype == XNVME_DEV_TYPE_FS_FILE) ? \
-			     0 : queue->base.dev->ssw;
+			     0 : queue->base.dev->geo.ssw;
 
 	struct aiocb aiocb = { 0 };
 	int err;

@@ -16,14 +16,12 @@ enum xnvme_dev_type {
 struct xnvme_dev {
 	struct xnvme_geo geo;		///< Device geometry
 	struct xnvme_be be;		///< Backend interface
-	uint64_t ssw;			///< Bit-width for LBA fmt conversion
 
 	uint32_t nsid;			///< Namespace Identifier
 	enum xnvme_spec_csi csi;	///< Command Set Identifier
-
 	enum xnvme_dev_type dtype;	///< Device type
 
-	uint8_t _pad[36];
+	uint8_t _pad[4];
 
 	struct {
 		struct xnvme_spec_idfy_ctrlr ctrlr;	///< NVMe id-ctrlr

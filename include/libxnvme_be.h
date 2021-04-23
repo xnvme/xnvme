@@ -34,7 +34,7 @@ struct xnvme_be_attr {
 
 	uint8_t enabled;		///< Whether the backend is 'enabled'
 
-	uint8_t _rsvd[5];
+	uint8_t _rsvd[6];
 };
 
 /**

@@ -558,7 +558,7 @@ _fs_geometry(struct xnvme_dev *dev)
 	geo->tbytes = ns->nuse;
 
 	geo->mdts_nbytes = 1 << 20;
-	dev->ssw = XNVME_ILOG2(geo->lba_nbytes);
+	geo->ssw = XNVME_ILOG2(geo->lba_nbytes);
 
 	return 0;
 }
@@ -609,7 +609,7 @@ xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 		      geo->nbytes;
 
 	/* Derive the sector-shift-width for LBA mapping */
-	dev->ssw = XNVME_ILOG2(dev->geo.nbytes);
+	geo->ssw = XNVME_ILOG2(dev->geo.nbytes);
 
 	//
 	// If the controller reports that MDTS is unbounded, that is, it can be

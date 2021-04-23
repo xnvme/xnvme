@@ -102,7 +102,7 @@ _lzbd_zone_mgmt_send(struct xnvme_cmd_ctx *ctx)
 	struct blk_zone_range zr = { 0 };
 	int err;
 
-	zr.sector = ctx->cmd.znd.mgmt_send.slba << (ctx->dev->ssw - LINUX_BLOCK_SSW);
+	zr.sector = ctx->cmd.znd.mgmt_send.slba << (ctx->dev->geo.ssw - LINUX_BLOCK_SSW);
 	zr.nr_sectors = zone_nbytes >> LINUX_BLOCK_SSW;
 
 	if (ctx->cmd.znd.mgmt_send.zsasf) {
@@ -197,7 +197,7 @@ _lzbd_ioctl_rprt(struct xnvme_dev *dev, uint64_t zslba, uint32_t nzones,
 {
 	struct xnvme_be_linux_state *state = (void *)dev->be.state;
 
-	report->sector = zslba << (dev->ssw - LINUX_BLOCK_SSW);
+	report->sector = zslba << (dev->geo.ssw - LINUX_BLOCK_SSW);
 	report->nr_zones = nzones;
 
 	XNVME_DEBUG("sector: 0x%llx, nr_zones: %u", report->sector, report->nr_zones);
@@ -219,10 +219,10 @@ static int
 _lzbd_ioctl_zblk_to_descr(struct xnvme_dev *dev, struct blk_zone_report *lzbd_rprt,
 			  struct blk_zone *blkz, struct xnvme_spec_znd_descr *zdescr)
 {
-	zdescr->zslba = blkz->start >> (dev->ssw - LINUX_BLOCK_SSW);
-	zdescr->wp = blkz->wp >> (dev->ssw - LINUX_BLOCK_SSW);
+	zdescr->zslba = blkz->start >> (dev->geo.ssw - LINUX_BLOCK_SSW);
+	zdescr->wp = blkz->wp >> (dev->geo.ssw - LINUX_BLOCK_SSW);
 	zdescr->zcap = _lzbd_zone_capacity(lzbd_rprt, blkz);
-	zdescr->zcap = zdescr->zcap >> (dev->ssw - LINUX_BLOCK_SSW);
+	zdescr->zcap = zdescr->zcap >> (dev->geo.ssw - LINUX_BLOCK_SSW);
 
 	// TODO: convert zone-cap correctly
 
@@ -371,7 +371,8 @@ xnvme_be_linux_block_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
-		nbytes = pwrite(state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba << ctx->dev->ssw);
+		nbytes = pwrite(state->fd, dbuf, dbuf_nbytes,
+				ctx->cmd.nvm.slba << ctx->dev->geo.ssw);
 		if (nbytes != (ssize_t)dbuf_nbytes) {
 			XNVME_DEBUG("FAILED: W nbytes: %ld != dbuf_nbytes: %zu, errno: %d",
 				    nbytes, dbuf_nbytes, errno);
@@ -380,7 +381,8 @@ xnvme_be_linux_block_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 		return 0;
 
 	case XNVME_SPEC_NVM_OPC_READ:
-		nbytes = pread(state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba << ctx->dev->ssw);
+		nbytes = pread(state->fd, dbuf, dbuf_nbytes,
+			       ctx->cmd.nvm.slba << ctx->dev->geo.ssw);
 		if (nbytes != (ssize_t)dbuf_nbytes) {
 			XNVME_DEBUG("FAILED: R nbytes: %ld != dbuf_nbytes: %zu, errno: %d",
 				    nbytes, dbuf_nbytes, errno);
