@@ -17,7 +17,7 @@
 ;   --section=default \
 ;   --ioengine=external:/usr/lib/libxnvme-fio-engine.so \
 ;   --sqthread_poll=1 \
-;   --async=aio \
+;   --async=libaio \
 ;   --filename=/dev/nvme0n1
 ;
 ; # Use the xNVMe io-engine engine with Linux backend and io_uring async. impl.
@@ -25,7 +25,7 @@
 ;   --section=default \
 ;   --ioengine=external:/usr/lib/libxnvme-fio-engine.so \
 ;   --sqthread_poll=1 \
-;   --async=iou \
+;   --async=io_uring \
 ;   --filename=/dev/nvme0n1
 ;
 ; # Use the xNVMe io-engine engine with SPDK backend
