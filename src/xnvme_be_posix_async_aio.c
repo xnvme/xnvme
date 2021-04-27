@@ -13,9 +13,6 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_posix.h>
 
-// TODO: move to header?
-#define XNVME_QUEUE_AIO_CQE_BATCH_MAX 8
-
 struct xnvme_queue_posix {
 	struct xnvme_queue_base base;
 
@@ -77,7 +74,6 @@ _posix_async_aio_poke(struct xnvme_queue *q, uint32_t max)
 
 	max = max ? max : queue->base.outstanding;
 	max = XNVME_MIN(max, queue->base.outstanding);
-	max = XNVME_MIN(max, XNVME_QUEUE_AIO_CQE_BATCH_MAX);
 
 	if (!queue->base.outstanding) {
 		return 0;
