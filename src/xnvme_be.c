@@ -1123,25 +1123,11 @@ be_setup(struct xnvme_be *be, enum xnvme_be_mixin_type mtype, const char *mname)
 	return -ENOSYS;
 }
 
-
-// TODO: add option-parsing
 int
-xnvme_be_factory(const char *uri, struct xnvme_dev *dev)
+xnvme_be_factory(struct xnvme_dev *dev)
 {
 	struct xnvme_be_options *opts = &dev->opts;
-	struct xnvme_ident *ident = &dev->ident;
-	int err;
-
-	err = xnvme_ident_from_uri(uri, ident);
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_ident_from_uri(), err: %d", err);
-		return err;
-	}
-	err = xnvme_be_options_from_ident(ident, opts);
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_be_options_from_ident(), err: %d", err);
-		return err;
-	}
+	int err = 0;
 
 	for (int i = 0; (i < g_xnvme_be_count) && g_xnvme_be_registry[i]; ++i) {
 		struct xnvme_be be = *g_xnvme_be_registry[i];
@@ -1196,7 +1182,7 @@ xnvme_be_factory(const char *uri, struct xnvme_dev *dev)
 		}
 	}
 
-	XNVME_DEBUG("FAILED: no backend for uri: '%s'", uri);
+	XNVME_DEBUG("FAILED: no backend for uri: '%s'", dev->ident.uri);
 
 	return err ? err : -ENXIO;
 }

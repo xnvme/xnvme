@@ -252,10 +252,10 @@ int
 xnvme_be_name2id(const char *bname);
 
 /**
- * Produce a device with a backend attached
+ * Instantiate a backend instance for the given device
  */
 int
-xnvme_be_factory(const char *uri, struct xnvme_dev *dev);
+xnvme_be_factory(struct xnvme_dev *dev);
 
 int
 xnvme_be_yaml(FILE *stream, const struct xnvme_be *be, int indent, const char *sep, int head);

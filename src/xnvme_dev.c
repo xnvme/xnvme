@@ -148,7 +148,22 @@ xnvme_dev_openf(const char *dev_uri, int XNVME_UNUSED(cmd_opts))
 		return NULL;
 	}
 
-	err = xnvme_be_factory(dev_uri, dev);
+	err = xnvme_ident_from_uri(dev_uri, &dev->ident);
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_ident_from_uri(), err: %d", err);
+		errno = -err;
+		free(dev);
+		return NULL;
+	}
+	err = xnvme_be_options_from_ident(&dev->ident, &dev->opts);
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_be_options_from_ident(), err: %d", err);
+		errno = -err;
+		free(dev);
+		return NULL;
+	}
+
+	err = xnvme_be_factory(dev);
 	if (err) {
 		XNVME_DEBUG("FAILED: failed opening uri: %s", dev_uri);
 		errno = -err;
