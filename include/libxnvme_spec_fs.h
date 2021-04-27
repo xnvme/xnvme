@@ -55,7 +55,10 @@ struct xnvme_spec_fs_idfy_ctrlr {
 		uint32_t opt;
 	} iosizes;
 
-	uint8_t rsvd[3511];
+	uint8_t rsvd[3509];
+
+	uint8_t ac;
+	uint8_t dc;
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_fs_idfy_ctrlr) == 4096, "Incorrect size")
 
@@ -69,7 +72,10 @@ struct xnvme_spec_fs_idfy_ns {
 
 	uint8_t rsvd[3816];
 
-	uint8_t vendor_specific[256];
+	uint8_t vendor_specific[254];
+
+	uint8_t ac;
+	uint8_t dc;
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_fs_idfy_ns) == 4096, "Incorrect size")
 
