@@ -47,6 +47,23 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_fbsd[] = {
 		.sync = &g_xnvme_be_posix_sync_psync,
 		.check_support = xnvme_be_supported,
 	},
+
+	{
+		.mtype = XNVME_BE_SYNC,
+		.name = "nvme",
+		.descr = "Use FreeBSD NVMe Driver ioctl() for sync commands",
+		.sync = &g_xnvme_be_fbsd_sync_nvme,
+		.check_support = xnvme_be_supported,
+	},
+
+	{
+		.mtype = XNVME_BE_ADMIN,
+		.name = "nvme",
+		.descr = "Use FreeBSD NVMe Driver ioctl() for admin commands",
+		.admin = &g_xnvme_be_fbsd_admin_nvme,
+		.check_support = xnvme_be_supported,
+	},
+
 	{
 		.mtype = XNVME_BE_DEV,
 		.name = "fbsd",
