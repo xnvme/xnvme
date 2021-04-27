@@ -671,8 +671,8 @@ xnvme_be_dev_idfy(struct xnvme_dev *dev)
 	ctx = xnvme_cmd_ctx_from_dev(dev);
 	err = xnvme_adm_idfy_ctrlr(&ctx, idfy_ctrlr);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		XNVME_DEBUG("FAILED: identify controller");
 		err = err ? err : -EIO;
+		XNVME_DEBUG("FAILED: xnvme_adm_idfy_ctrlr(), err: %d", err);
 		goto exit;
 	}
 
@@ -681,7 +681,8 @@ xnvme_be_dev_idfy(struct xnvme_dev *dev)
 	ctx = xnvme_cmd_ctx_from_dev(dev);
 	err = xnvme_adm_idfy_ns(&ctx, dev->nsid, idfy_ns);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		XNVME_DEBUG("FAILED: identify namespace, err: %d", err);
+		err = err ? err : -EIO;
+		XNVME_DEBUG("FAILED: xnvme_adm_idfy_ns(), err: %d", err);
 		goto exit;
 	}
 
@@ -701,7 +702,7 @@ xnvme_be_dev_idfy(struct xnvme_dev *dev)
 		ctx = xnvme_cmd_ctx_from_dev(dev);
 		err = xnvme_adm_idfy_ctrlr_csi(&ctx, XNVME_SPEC_CSI_ZONED, idfy_ctrlr);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			XNVME_DEBUG("INFO: !id-ctrlr-zns");
+			XNVME_DEBUG("INFO: !xnvme_adm_idfy_ctrlr_csi(CSI_ZONED)");
 			goto not_zns;
 		}
 
@@ -709,7 +710,7 @@ xnvme_be_dev_idfy(struct xnvme_dev *dev)
 		ctx = xnvme_cmd_ctx_from_dev(dev);
 		err = xnvme_adm_idfy_ns_csi(&ctx, dev->nsid, XNVME_SPEC_CSI_ZONED, idfy_ns);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			XNVME_DEBUG("INFO: !id-ns-zns");
+			XNVME_DEBUG("INFO: !xnvme_adm_idfy_ns_csi(CSI_ZONED)");
 			goto not_zns;
 		}
 
@@ -1117,7 +1118,8 @@ be_setup(struct xnvme_be *be, enum xnvme_be_mixin_type mtype, const char *mname)
 		return mtype;
 	}
 
-	XNVME_DEBUG("FAILED: no backend mixin");
+	XNVME_DEBUG("FAILED: be: '%s' has no mixin of mtype: %x, mtype_key: '%s' with mname: '%s'",
+		    be->attr.name, mtype, xnvme_be_mixin_key(mtype), mname);
 	return -ENOSYS;
 }
 
@@ -1146,7 +1148,7 @@ xnvme_be_factory(const char *uri, struct xnvme_dev *dev)
 		int setup = 0;
 
 		if (!be.attr.enabled) {
-			XNVME_DEBUG("INFO: skipping be: '%s' because !enabled", be.attr.name);
+			XNVME_DEBUG("INFO: skipping be: '%s'; !enabled", be.attr.name);
 			continue;
 		}
 
@@ -1229,8 +1231,7 @@ xnvme_enumerate(struct xnvme_enumeration **list, const char *sys_uri, int opts)
 		err = be.dev.enumerate(*list, sys_uri, opts);
 		if (err) {
 			XNVME_DEBUG("FAILED: %s->enumerate(...), err: '%s', i: %d",
-				    g_xnvme_be_registry[i]->attr.name,
-				    strerror(-err), i);
+				    g_xnvme_be_registry[i]->attr.name, strerror(-err), i);
 		}
 	}
 
