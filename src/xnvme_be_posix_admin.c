@@ -26,6 +26,9 @@ _idfy_ctrlr_iocs(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 
 	ctrlr->limits.file_data_size = 1;
 
+	ctrlr->ac = 0xAC;
+	ctrlr->dc = 0xDC;
+
 	return 0;
 }
 
@@ -46,6 +49,9 @@ _idfy_ns_iocs(struct xnvme_dev *dev, void *dbuf)
 	ns->nsze = stat.st_size;
 	ns->ncap = stat.st_size;
 	ns->nuse = stat.st_size;
+
+	ns->ac = 0xAC;
+	ns->dc = 0xDC;
 
 	return 0;
 }
