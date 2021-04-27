@@ -31,7 +31,7 @@ xnvme_dev_cmd_opts_yaml(FILE *stream, const struct xnvme_dev *dev, int indent,
 	}
 
 	wrtn += fprintf(stream, "%*scsi: 0x%x%s", indent, "", dev->csi, sep);
-	wrtn += fprintf(stream, "%*snsid: 0x%u%s", indent, "", dev->nsid, sep);
+	wrtn += fprintf(stream, "%*snsid: 0x%u", indent, "", dev->nsid);
 
 	wrtn += fprintf(stream, "%*sssw: %"PRIu64"", indent, "", dev->ssw);
 
