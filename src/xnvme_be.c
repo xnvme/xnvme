@@ -729,11 +729,18 @@ not_zns:
 	}
 
 	{
+		struct xnvme_spec_fs_idfy_ctrlr *fs_ctrlr = (void *)idfy_ctrlr;
+		struct xnvme_spec_fs_idfy_ns *fs_ns = (void *)idfy_ns;
+
 		memset(idfy_ctrlr, 0, sizeof(*idfy_ctrlr));
 		ctx = xnvme_cmd_ctx_from_dev(dev);
 		err = xnvme_adm_idfy_ctrlr_csi(&ctx, XNVME_SPEC_CSI_FS, idfy_ctrlr);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			XNVME_DEBUG("INFO: !xnvme_adm_idfy_ctrlr_csi(CSI_FS)");
+			goto not_fs;
+		}
+		if (!(fs_ctrlr->ac == 0xAC && fs_ctrlr->dc == 0xDC)) {
+			XNVME_DEBUG("INFO: invalid values in idfy-ctrlr(CSI_FS)");
 			goto not_fs;
 		}
 
@@ -744,12 +751,16 @@ not_zns:
 			XNVME_DEBUG("INFO: !xnvme_adm_idfy_ns_csi(CSI_FS)");
 			goto not_fs;
 		}
+		if (!(fs_ns->nsze && fs_ns->ncap && fs_ns->ac == 0xAC && fs_ns->dc == 0xDC)) {
+			XNVME_DEBUG("INFO: invalid values in idfy-ctrlr(CSI_FS)");
+			goto not_fs;
+		}
+
 		memcpy(&dev->idcss.ctrlr, idfy_ctrlr, sizeof(*idfy_ctrlr));
 		memcpy(&dev->idcss.ns, idfy_ns, sizeof(*idfy_ns));
 
-		dev->csi = XNVME_SPEC_CSI_FS;
-
 		XNVME_DEBUG("INFO: looks like csi(FS)");
+		dev->csi = XNVME_SPEC_CSI_FS;
 		goto exit;
 
 not_fs:
