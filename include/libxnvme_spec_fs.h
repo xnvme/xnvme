@@ -79,6 +79,6 @@ enum xnvme_spec_fs_opcs {
 	XNVME_SPEC_FS_OPC_READ		= 0x02,
 };
 
-#define XNVME_SPEC_CSI_FS 0x3F
+#define XNVME_SPEC_CSI_FS 0x1F
 
 #endif /* __LIBXNVME_SPEC_FS_H */
