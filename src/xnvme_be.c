@@ -1145,6 +1145,11 @@ xnvme_be_factory(const char *uri, struct xnvme_dev *dev)
 		struct xnvme_be be = *g_xnvme_be_registry[i];
 		int setup = 0;
 
+		if (!be.attr.enabled) {
+			XNVME_DEBUG("INFO: skipping be: '%s' because !enabled", be.attr.name);
+			continue;
+		}
+
 		for (int j = 0; j < 5; ++j) {
 			char *mname = NULL;
 			int mtype = 1 << j;
@@ -1209,6 +1214,11 @@ xnvme_enumerate(struct xnvme_enumeration **list, const char *sys_uri, int opts)
 
 	for (int i = 0; g_xnvme_be_registry[i]; ++i) {
 		struct xnvme_be be = *g_xnvme_be_registry[i];
+
+		if (!be.attr.enabled) {
+			XNVME_DEBUG("INFO: skipping be: '%s'; !enabled", be.attr.name);
+			continue;
+		}
 
 		err = be_setup(&be, XNVME_BE_DEV, "");
 		if (err < 0) {
