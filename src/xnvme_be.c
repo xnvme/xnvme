@@ -579,6 +579,14 @@ xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 
 	case XNVME_DEV_TYPE_BLOCK_DEVICE:
 	case XNVME_DEV_TYPE_NVME_NAMESPACE:
+		if (dev->csi == XNVME_SPEC_CSI_FS) {
+			if (_conventional_geometry(dev)) {
+				XNVME_DEBUG("FAILED: _conventional_geometry");
+				return -EINVAL;
+			}
+			break;
+		}
+
 		switch (dev->csi) {
 		case XNVME_SPEC_CSI_ZONED:
 			if (_zoned_geometry(dev)) {

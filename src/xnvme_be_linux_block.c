@@ -524,6 +524,7 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf)
 	case XNVME_SPEC_IDFY_CTRLR_IOCS:
 		// TODO: setup command-set specific stuff for zoned
 		if (!((ctx->cmd.idfy.csi == XNVME_SPEC_CSI_ZONED) && (is_zoned))) {
+			XNVME_DEBUG("FAILED: device is not zoned");
 			goto failed;
 		}
 
