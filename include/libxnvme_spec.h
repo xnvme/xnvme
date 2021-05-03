@@ -520,7 +520,12 @@ struct xnvme_spec_idfy_ctrlr {
 			/** Supports sending Firmware Activation Notices. */
 			uint32_t fw_activation_notices	: 1;
 
-			uint32_t reserved2		: 22;
+			uint32_t reserved2		: 17;
+
+			/** Supports Zone Descriptor Changed Notices/Changed Zoned List log page*/
+			uint32_t zone_changes		: 1;
+
+			uint32_t reserved3		: 4;
 		};
 		uint32_t val;
 	} oaes;
