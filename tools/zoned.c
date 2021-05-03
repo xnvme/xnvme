@@ -176,10 +176,16 @@ exit:
 static int
 cmd_changes(struct xnvmec *cli)
 {
+	const struct xnvme_spec_idfy_ctrlr *idfy_ctrlr = xnvme_dev_get_ctrlr_css(cli->args.dev);
 	struct xnvme_spec_znd_log_changes *changes = NULL;
 	int err;
 
 	xnvmec_pinf("Retrieving the Changed Zone List");
+
+	if (!idfy_ctrlr->oaes.zone_changes) {
+		xnvmec_pinf("Zoned Changes log page is an optional feature");
+		xnvmec_pinf("This devices does not support it; expect failure");
+	}
 
 	changes = xnvme_znd_log_changes_from_dev(cli->args.dev);
 	if (!changes) {
