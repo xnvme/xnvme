@@ -50,7 +50,7 @@ int
 copy_async(struct xnvmec *cli)
 {
 	const char *src_uri, *dst_uri;
-	struct xnvme_dev *src_fh, *dst_fh;
+	struct xnvme_dev *src_dev, *dst_dev;
 	int src_flags, dst_flags;
 	size_t buf_nbytes, tbytes, iosize;
 	char *buf = NULL;
@@ -72,26 +72,27 @@ copy_async(struct xnvmec *cli)
 	iosize = cli->given[XNVMEC_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
 	qdepth = cli->given[XNVMEC_OPT_QDEPTH] ? cli->args.qdepth : QDEPTH_DEF;
 
-	src_fh = xnvme_file_open(src_uri, src_flags);
-	if (src_fh == NULL) {
+	src_dev = xnvme_file_open(src_uri, src_flags);
+	if (src_dev == NULL) {
 		xnvmec_perr("xnvme_file_open(src)", errno);
 		return errno;
 	}
-	dst_fh = xnvme_file_open(dst_uri, dst_flags);
-	if (dst_fh == NULL) {
+	dst_dev = xnvme_file_open(dst_uri, dst_flags);
+	if (dst_dev == NULL) {
 		xnvmec_perr("xnvme_file_open(dst)", errno);
-		goto exit;
+		xnvme_file_close(src_dev);
+		return errno;
 	}
 
 	buf_nbytes = iosize * qdepth;
-	buf = xnvme_buf_alloc(src_fh, buf_nbytes);
+	buf = xnvme_buf_alloc(dst_dev, buf_nbytes);
 	if (!buf) {
 		xnvmec_perr("xnvme_buf_alloc()", errno);
 		goto exit;
 	}
 	xnvmec_buf_fill(buf, buf_nbytes, "zero");
 
-	err = xnvme_queue_init(src_fh, qdepth, 0, &queue);
+	err = xnvme_queue_init(src_dev, qdepth, 0, &queue);
 	if (err) {
 		xnvmec_perr("xnvme_queue_init()", err);
 		goto exit;
@@ -109,7 +110,7 @@ copy_async(struct xnvmec *cli)
 
 		work->nerrors = &nerrors;
 		work->buf = buf + (i * iosize);
-		work->dst_ctx = xnvme_file_get_cmd_ctx(dst_fh);
+		work->dst_ctx = xnvme_file_get_cmd_ctx(dst_dev);
 	}
 
 	for (size_t ofz = 0; (ofz < tbytes) && !nerrors;) {
@@ -168,9 +169,9 @@ exit:
 		}
 	}
 
-	xnvme_buf_free(src_fh, buf);
-	xnvme_file_close(src_fh);
-	xnvme_file_close(dst_fh);
+	xnvme_buf_free(dst_dev, buf);
+	xnvme_file_close(src_dev);
+	xnvme_file_close(dst_dev);
 	return 0;
 }
 
@@ -178,7 +179,7 @@ int
 copy_sync(struct xnvmec *cli)
 {
 	const char *src_uri, *dst_uri;
-	struct xnvme_dev *src_fh, *dst_fh;
+	struct xnvme_dev *src_dev, *dst_dev;
 	int src_flags, dst_flags;
 	size_t buf_nbytes, tbytes, iosize;
 	char *buf = NULL;
@@ -193,19 +194,20 @@ copy_sync(struct xnvmec *cli)
 	dst_flags |= cli->given[XNVMEC_OPT_DIRECT] ? XNVME_FILE_OFLG_DIRECT_ON : 0x0;
 	iosize = cli->given[XNVMEC_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
 
-	src_fh = xnvme_file_open(src_uri, src_flags);
-	if (!src_fh) {
+	src_dev = xnvme_file_open(src_uri, src_flags);
+	if (!src_dev) {
 		xnvmec_perr("xnvme_file_open(src)", errno);
 		return errno;
 	}
-	dst_fh = xnvme_file_open(dst_uri, dst_flags);
-	if (!dst_fh) {
+	dst_dev = xnvme_file_open(dst_uri, dst_flags);
+	if (!dst_dev) {
 		xnvmec_perr("xnvme_file_open(dst)", errno);
-		goto exit;
+		xnvme_file_close(src_dev);
+		return errno;
 	}
 
 	buf_nbytes = iosize;
-	buf = xnvme_buf_alloc(src_fh, buf_nbytes);
+	buf = xnvme_buf_alloc(dst_dev, buf_nbytes);
 	if (!buf) {
 		xnvmec_perr("xnvme_buf_alloc()", errno);
 		goto exit;
@@ -218,8 +220,8 @@ copy_sync(struct xnvmec *cli)
 	xnvmec_timer_start(cli);
 
 	for (size_t ofz = 0; ofz < tbytes; ofz += iosize) {
-		struct xnvme_cmd_ctx src_ctx = xnvme_file_get_cmd_ctx(src_fh);
-		struct xnvme_cmd_ctx dst_ctx = xnvme_file_get_cmd_ctx(dst_fh);
+		struct xnvme_cmd_ctx src_ctx = xnvme_file_get_cmd_ctx(src_dev);
+		struct xnvme_cmd_ctx dst_ctx = xnvme_file_get_cmd_ctx(dst_dev);
 		size_t nbytes = XNVME_MIN_U64(iosize, tbytes - ofz);
 		ssize_t res;
 
@@ -242,9 +244,9 @@ copy_sync(struct xnvmec *cli)
 	xnvmec_timer_bw_pr(cli, "wall-clock", tbytes);
 
 exit:
-	xnvme_buf_free(src_fh, buf);
-	xnvme_file_close(src_fh);
-	xnvme_file_close(dst_fh);
+	xnvme_buf_free(dst_dev, buf);
+	xnvme_file_close(src_dev);
+	xnvme_file_close(dst_dev);
 	return 0;
 }
 
