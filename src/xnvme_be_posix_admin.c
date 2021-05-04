@@ -14,7 +14,7 @@
 #include <xnvme_dev.h>
 
 static int
-_idfy_ctrlr_iocs(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
+_idfy_ctrlr_iocs_fs(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 {
 	struct xnvme_spec_fs_idfy_ctrlr *ctrlr = dbuf;
 
@@ -33,7 +33,7 @@ _idfy_ctrlr_iocs(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 }
 
 static int
-_idfy_ns_iocs(struct xnvme_dev *dev, void *dbuf)
+_idfy_ns_iocs_fs(struct xnvme_dev *dev, void *dbuf)
 {
 	struct xnvme_be_posix_state *state = (void *)dev->be.state;
 	struct xnvme_spec_fs_idfy_ns *ns = dbuf;
@@ -107,7 +107,7 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf)
 	case XNVME_SPEC_IDFY_NS_IOCS:
 		switch (ctx->cmd.idfy.csi) {
 		case XNVME_SPEC_CSI_FS:
-			return _idfy_ns_iocs(ctx->dev, dbuf);
+			return _idfy_ns_iocs_fs(ctx->dev, dbuf);
 
 		default:
 			break;
@@ -117,7 +117,8 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf)
 	case XNVME_SPEC_IDFY_CTRLR_IOCS:
 		switch (ctx->cmd.idfy.csi) {
 		case XNVME_SPEC_CSI_FS:
-			return _idfy_ctrlr_iocs(ctx->dev, dbuf);
+			return _idfy_ctrlr_iocs_fs(ctx->dev, dbuf);
+
 		default:
 			break;
 		}
