@@ -117,6 +117,26 @@ xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 		break;
 
 	case S_IFCHR:
+		XNVME_DEBUG("INFO: open() : char-device-file");
+		dev->dtype = XNVME_DEV_TYPE_FS_FILE;
+		dev->csi = XNVME_SPEC_CSI_FS;
+		dev->nsid = 1;
+		if (!opts->provided.admin) {
+			dev->be.admin = g_xnvme_be_posix_admin_shim;
+		}
+		if (!opts->provided.sync) {
+			dev->be.sync = g_xnvme_be_posix_sync_psync;
+		}
+		if (!opts->provided.async) {
+			dev->be.async = g_xnvme_be_posix_async_emu;
+		}
+
+		err = xnvme_be_linux_nvme_dev_nsid(dev);
+		if (err < 1) {
+			XNVME_DEBUG("INFO: open() : retrieving nsid, got: %x", err);
+			break;
+		}
+
 		XNVME_DEBUG("INFO: open() : char-device-file: NVMe ioctl() with async. emulation");
 		dev->dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
 		dev->csi = XNVME_SPEC_CSI_NVM;
