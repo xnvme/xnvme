@@ -46,8 +46,6 @@ struct xnvme_be_mixin g_xnvme_be_mixin_spdk[] = {
 		.check_support = xnvme_be_supported,
 	},
 };
-static const int
-g_xnvme_be_mixin_spdk_nobjs = sizeof g_xnvme_be_mixin_spdk / sizeof * g_xnvme_be_mixin_spdk;
 #endif
 
 static const char *g_schemes[] = {
@@ -72,7 +70,7 @@ struct xnvme_be xnvme_be_spdk = {
 #endif
 	},
 #ifdef XNVME_BE_SPDK_ENABLED
-	.nobjs = g_xnvme_be_mixin_spdk_nobjs,
+	.nobjs = sizeof g_xnvme_be_mixin_spdk / sizeof * g_xnvme_be_mixin_spdk,
 	.objs = g_xnvme_be_mixin_spdk,
 #endif
 };
