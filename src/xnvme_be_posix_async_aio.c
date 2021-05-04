@@ -9,6 +9,7 @@
 #include <inttypes.h>
 #include <errno.h>
 #include <aio.h>
+#include <libxnvme_spec_fs.h>
 #include <xnvme_queue.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_posix.h>
@@ -160,8 +161,7 @@ _posix_async_aio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyte
 	struct xnvme_queue_posix *queue = (void *)ctx->async.queue;
 
 	struct xnvme_be_posix_state *state = (void *)queue->base.dev->be.state;
-	const uint64_t ssw = (queue->base.dev->dtype == XNVME_DEV_TYPE_FS_FILE) ? \
-			     0 : queue->base.dev->geo.ssw;
+	const uint64_t ssw = queue->base.dev->geo.ssw;
 	struct xnvme_posix_aio_request *req;
 	struct aiocb *aiocb;
 	int err;
@@ -181,22 +181,35 @@ _posix_async_aio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyte
 	req->ctx = ctx;
 	aiocb = &req->aiocb;
 	aiocb->aio_fildes = state->fd;
-	aiocb->aio_offset = ctx->cmd.nvm.slba << ssw;
 	aiocb->aio_buf = dbuf;
 	aiocb->aio_nbytes = dbuf_nbytes;
 	aiocb->aio_sigevent.sigev_notify = SIGEV_NONE;
 
 	///< Literally convert the NVMe command / sqe memory to an aio-control-block
+	///< NOTE: opcode-dispatch (io)
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
+		aiocb->aio_offset = ctx->cmd.nvm.slba << ssw;
 		err = aio_write(aiocb);
 		break;
 
 	case XNVME_SPEC_NVM_OPC_READ:
+		aiocb->aio_offset = ctx->cmd.nvm.slba << ssw;
+		err = aio_read(aiocb);
+		break;
+
+	case XNVME_SPEC_FS_OPC_WRITE:
+		aiocb->aio_offset = ctx->cmd.nvm.slba;
+		err = aio_write(aiocb);
+		break;
+
+	case XNVME_SPEC_FS_OPC_READ:
+		aiocb->aio_offset = ctx->cmd.nvm.slba;
 		err = aio_read(aiocb);
 		break;
 
 	case XNVME_SPEC_NVM_OPC_FLUSH:
+	case XNVME_SPEC_FS_OPC_FLUSH:
 	// TODO: should this be handled by calling aio_fsync()?
 	// err = aio_fsync(_, &aiocb);
 
