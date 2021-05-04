@@ -151,6 +151,13 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_linux[] = {
 	},
 #ifdef XNVME_BE_LINUX_BLOCK_ENABLED
 	{
+		.mtype = XNVME_BE_SYNC,
+		.name = "block",
+		.descr = "Use Linux Block Layer ioctl() and pread()/pwrite() for I/O",
+		.sync = &g_xnvme_be_linux_sync_block,
+		.check_support = xnvme_be_supported,
+	},
+	{
 		.mtype = XNVME_BE_ADMIN,
 		.name = "block",
 		.descr = "Use Linux Block Layer ioctl() and sysfs for admin commands",
