@@ -81,8 +81,8 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_fs_idfy_ns) == 4096, "Incorrect siz
 
 enum xnvme_spec_fs_opcs {
 	XNVME_SPEC_FS_OPC_FLUSH		= 0x00,
-	XNVME_SPEC_FS_OPC_WRITE		= 0x01,
-	XNVME_SPEC_FS_OPC_READ		= 0x02,
+	XNVME_SPEC_FS_OPC_WRITE		= 0xAC,
+	XNVME_SPEC_FS_OPC_READ		= 0xDC,
 };
 
 #define XNVME_SPEC_CSI_FS 0x1F

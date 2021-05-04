@@ -14,7 +14,7 @@
 int
 xnvme_file_pread(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, off_t offset)
 {
-	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
+	ctx->cmd.common.opcode = XNVME_SPEC_FS_OPC_READ;
 	ctx->cmd.common.nsid = xnvme_dev_get_nsid(ctx->dev);
 	ctx->cmd.nvm.slba = offset;
 
@@ -24,10 +24,7 @@ xnvme_file_pread(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, off_t offse
 int
 xnvme_file_pwrite(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, off_t offset)
 {
-	// TODO: consider returning -EINVAL when mbuf is provided and namespace
-	// have extended-lba in effect
-
-	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
+	ctx->cmd.common.opcode = XNVME_SPEC_FS_OPC_WRITE;
 	ctx->cmd.common.nsid = xnvme_dev_get_nsid(ctx->dev);
 	ctx->cmd.nvm.slba = offset;
 
@@ -47,7 +44,8 @@ int
 xnvme_file_sync(struct xnvme_dev *fh)
 {
 	struct xnvme_cmd_ctx ctx = xnvme_file_get_cmd_ctx(fh);
-	ctx.cmd.common.opcode = XNVME_SPEC_NVM_OPC_FLUSH;
+
+	ctx.cmd.common.opcode = XNVME_SPEC_FS_OPC_FLUSH;
 	ctx.cmd.common.nsid = xnvme_dev_get_nsid(ctx.dev);
 
 	return xnvme_cmd_pass(&ctx, NULL, 0, NULL, 0);
