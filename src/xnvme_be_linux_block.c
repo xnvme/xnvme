@@ -11,6 +11,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <libxnvme_znd.h>
+#include <libxnvme_spec_fs.h>
 #include <xnvme_be_linux.h>
 
 #ifdef XNVME_BE_LINUX_BLOCK_ZONED_ENABLED
@@ -367,25 +368,50 @@ xnvme_be_linux_block_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 			    void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	struct xnvme_be_linux_state *state = (void *)ctx->dev->be.state;
-	ssize_t nbytes;
+	const uint64_t ssw = ctx->dev->geo.ssw;
+	ssize_t res;
 
+	// NOTE: opcode-dispatch (io)
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
-		nbytes = pwrite(state->fd, dbuf, dbuf_nbytes,
-				ctx->cmd.nvm.slba << ctx->dev->geo.ssw);
-		if (nbytes != (ssize_t)dbuf_nbytes) {
-			XNVME_DEBUG("FAILED: W nbytes: %ld != dbuf_nbytes: %zu, errno: %d",
-				    nbytes, dbuf_nbytes, errno);
+		res = pwrite(state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba << ssw);
+		if (res != (ssize_t)dbuf_nbytes) {
+			XNVME_DEBUG("FAILED: W res: %ld != dbuf_nbytes: %zu, errno: %d",
+				    res, dbuf_nbytes, errno);
 			return -errno;
 		}
 		return 0;
 
 	case XNVME_SPEC_NVM_OPC_READ:
-		nbytes = pread(state->fd, dbuf, dbuf_nbytes,
-			       ctx->cmd.nvm.slba << ctx->dev->geo.ssw);
-		if (nbytes != (ssize_t)dbuf_nbytes) {
-			XNVME_DEBUG("FAILED: R nbytes: %ld != dbuf_nbytes: %zu, errno: %d",
-				    nbytes, dbuf_nbytes, errno);
+		res = pread(state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba << ssw);
+		if (res != (ssize_t)dbuf_nbytes) {
+			XNVME_DEBUG("FAILED: R res: %ld != dbuf_nbytes: %zu, errno: %d",
+				    res, dbuf_nbytes, errno);
+			return -errno;
+		}
+		return 0;
+
+	case XNVME_SPEC_FS_OPC_WRITE:
+		res = pwrite(state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
+		if (res != (ssize_t)dbuf_nbytes) {
+			XNVME_DEBUG("FAILED: W res: %ld != dbuf_nbytes: %zu, errno: %d",
+				    res, dbuf_nbytes, errno);
+			return -errno;
+		}
+		return 0;
+
+	case XNVME_SPEC_FS_OPC_READ:
+		res = pread(state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
+		if (res != (ssize_t)dbuf_nbytes) {
+			XNVME_DEBUG("FAILED: R res: %ld != dbuf_nbytes: %zu, errno: %d",
+				    res, dbuf_nbytes, errno);
+			return -errno;
+		}
+		return 0;
+
+	case XNVME_SPEC_NVM_OPC_FLUSH:
+	case XNVME_SPEC_FS_OPC_FLUSH:
+		if (fsync(state->fd)) {
 			return -errno;
 		}
 		return 0;
@@ -573,6 +599,7 @@ xnvme_be_linux_block_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf,
 			       size_t XNVME_UNUSED(dbuf_nbytes), void *XNVME_UNUSED(mbuf),
 			       size_t XNVME_UNUSED(mbuf_nbytes))
 {
+	// NOTE: opcode-dispatch (admin)
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_ADM_OPC_IDFY:
 		return _idfy(ctx, dbuf);
