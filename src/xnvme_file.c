@@ -63,7 +63,7 @@ struct flag_opt {
 };
 
 static struct flag_opt g_flag_opts[] = {
-	{ XNVME_FILE_OFLG_CREATE,	"?cmask=0755" },
+	{ XNVME_FILE_OFLG_CREATE,	"?mode=0755" },
 	{ XNVME_FILE_OFLG_CREATE,	"?create=1" },
 	{ XNVME_FILE_OFLG_DIRECT_ON,	"?direct=1" },
 	{ XNVME_FILE_OFLG_DIRECT_OFF,	"?direct=0" },
