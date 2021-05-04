@@ -63,8 +63,6 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_posix[] = {
 		.check_support = xnvme_be_supported,
 	},
 };
-static const int
-g_xnvme_be_mixin_posix_nobjs = sizeof g_xnvme_be_mixin_posix / sizeof * g_xnvme_be_mixin_posix;
 #endif
 
 static const char *g_schemes[] = {
@@ -85,7 +83,7 @@ struct xnvme_be xnvme_be_posix = {
 #endif
 	},
 #ifdef XNVME_BE_POSIX_ENABLED
-	.nobjs = g_xnvme_be_mixin_posix_nobjs,
+	.nobjs = sizeof g_xnvme_be_mixin_posix / sizeof * g_xnvme_be_mixin_posix,
 	.objs = g_xnvme_be_mixin_posix,
 #endif
 };
