@@ -6,7 +6,7 @@ const char *xnvme_3p_ver[] = {
 #else
 	"libnvme;NOSYS",
 #endif
-#ifdef XNVME_BE_LINUX_IOU_ENABLED
+#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
 	"liburing;git-describe:liburing-2.0",
 #else
 	"liburing;NOSYS",
