@@ -6,6 +6,7 @@
 #include <xnvme_dev.h>
 #include <spdk/env.h>
 #include <errno.h>
+#include <libxnvme_spec_fs.h>
 #include <xnvme_queue.h>
 #include <xnvme_be_spdk.h>
 
@@ -117,6 +118,18 @@ submit_ioc(struct spdk_nvme_ctrlr *ctrlr, struct spdk_nvme_qpair *qpair, struct 
 	XNVME_DEBUG("Dumping IO command");
 	xnvme_spec_cmd_pr(cmd, XNVME_PR_DEF);
 #endif
+
+	switch (ctx->cmd.common.opcode) {
+	case XNVME_SPEC_FS_OPC_READ:
+		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
+		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
+		break;
+
+	case XNVME_SPEC_FS_OPC_WRITE:
+		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
+		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
+		break;
+	}
 
 	return spdk_nvme_ctrlr_cmd_io_raw_with_md(ctrlr, qpair, (struct spdk_nvme_cmd *)&ctx->cmd,
 			dbuf, dbuf_nbytes, mbuf, cb_fn, cb_arg);
