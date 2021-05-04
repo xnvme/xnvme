@@ -8,6 +8,7 @@
 #ifdef XNVME_BE_LINUX_LIBURING_ENABLED
 #include <errno.h>
 #include <liburing.h>
+#include <libxnvme_spec_fs.h>
 #include <xnvme_queue.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_linux_liburing.h>
@@ -215,8 +216,7 @@ _linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 {
 	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
-	const uint64_t ssw = (queue->base.dev->dtype == XNVME_DEV_TYPE_FS_FILE) ? \
-			     0 : queue->base.dev->geo.ssw;
+	uint64_t ssw = 0;
 	struct io_uring_sqe *sqe = NULL;
 
 	int opcode = IORING_OP_NOP;
@@ -231,12 +231,20 @@ _linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
 		return -ENOSYS;
 	}
+
+	///< NOTE: opcode-dispatch (io)
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
+		ssw = queue->base.dev->geo.ssw;
+	/* fall through */
+	case XNVME_SPEC_FS_OPC_WRITE:
 		opcode = IORING_OP_WRITE;
 		break;
 
 	case XNVME_SPEC_NVM_OPC_READ:
+		ssw = queue->base.dev->geo.ssw;
+	/* fall through */
+	case XNVME_SPEC_FS_OPC_READ:
 		opcode = IORING_OP_READ;
 		break;
 
