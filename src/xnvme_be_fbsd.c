@@ -72,8 +72,6 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_fbsd[] = {
 		.check_support = xnvme_be_supported,
 	},
 };
-static const int
-g_xnvme_be_mixin_fbsd_nobjs = sizeof g_xnvme_be_mixin_fbsd / sizeof * g_xnvme_be_mixin_fbsd;
 #endif
 
 static const char *g_schemes[] = {
@@ -95,7 +93,7 @@ struct xnvme_be xnvme_be_fbsd = {
 		.nschemes = sizeof g_schemes / sizeof(*g_schemes),
 	},
 #ifdef XNVME_BE_FBSD_ENABLED
-	.nobjs = g_xnvme_be_mixin_fbsd_nobjs,
+	.nobjs = sizeof g_xnvme_be_mixin_fbsd / sizeof * g_xnvme_be_mixin_fbsd,
 	.objs = g_xnvme_be_mixin_fbsd,
 #endif
 };
