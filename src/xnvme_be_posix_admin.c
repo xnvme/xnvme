@@ -159,6 +159,7 @@ _xnvme_be_posix_admin_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf,
 				size_t XNVME_UNUSED(dbuf_nbytes), void *XNVME_UNUSED(mbuf),
 				size_t XNVME_UNUSED(mbuf_nbytes))
 {
+	///< NOTE: opcode-dispatch (admin)
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_ADM_OPC_IDFY:
 		return _idfy(ctx, dbuf);
