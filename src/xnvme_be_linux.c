@@ -167,8 +167,8 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_linux[] = {
 		.check_support = xnvme_be_supported,
 	},
 };
-static const int
-g_xnvme_be_mixin_linux_nobjs = sizeof g_xnvme_be_mixin_linux / sizeof * g_xnvme_be_mixin_linux;
+//static const int
+//g_xnvme_be_mixin_linux_nobjs = sizeof g_xnvme_be_mixin_linux / sizeof * g_xnvme_be_mixin_linux;
 #else
 int
 xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr XNVME_UNUSED(opts))
@@ -198,7 +198,7 @@ struct xnvme_be xnvme_be_linux = {
 	},
 	.state = { 0 },
 #ifdef XNVME_BE_LINUX_ENABLED
-	.nobjs = g_xnvme_be_mixin_linux_nobjs,
+	.nobjs = sizeof g_xnvme_be_mixin_linux / sizeof * g_xnvme_be_mixin_linux,
 	.objs = g_xnvme_be_mixin_linux,
 #endif
 };
