@@ -68,21 +68,22 @@ xnvme_be_posix_dev_open(struct xnvme_dev *dev)
 		return -errno;
 	}
 
+	if (!opts->provided.admin) {
+		dev->be.admin = g_xnvme_be_posix_admin_shim;
+	}
+	if (!opts->provided.sync) {
+		dev->be.sync = g_xnvme_be_posix_sync_psync;
+	}
+	if (!opts->provided.async) {
+		dev->be.async = g_xnvme_be_posix_async_emu;
+	}
+
 	switch (dev_stat.st_mode & S_IFMT) {
 	case S_IFREG:
 		XNVME_DEBUG("INFO: open() : regular file");
 		dev->dtype = XNVME_DEV_TYPE_FS_FILE;
 		dev->csi = XNVME_SPEC_CSI_FS;
 		dev->nsid = 1;
-		if (!opts->provided.admin) {
-			dev->be.admin = g_xnvme_be_posix_admin_shim;
-		}
-		if (!opts->provided.sync) {
-			dev->be.sync = g_xnvme_be_posix_sync_psync;
-		}
-		if (!opts->provided.async) {
-			dev->be.async = g_xnvme_be_posix_async_emu;
-		}
 		break;
 
 	case S_IFBLK:
@@ -90,21 +91,14 @@ xnvme_be_posix_dev_open(struct xnvme_dev *dev)
 		dev->dtype = XNVME_DEV_TYPE_BLOCK_DEVICE;
 		dev->csi = XNVME_SPEC_CSI_FS;
 		dev->nsid = 1;
-		if (!opts->provided.admin) {
-			dev->be.admin = g_xnvme_be_posix_admin_shim;
-		}
-		if (!opts->provided.sync) {
-			dev->be.sync = g_xnvme_be_posix_sync_psync;
-		}
-		if (!opts->provided.async) {
-			dev->be.async = g_xnvme_be_posix_async_emu;
-		}
 		break;
 
 	case S_IFCHR:
-		XNVME_DEBUG("FAILED: open() : char-device-file: no support under POSIX");
-		close(state->fd);
-		return -ENOSYS;
+		XNVME_DEBUG("FAILED: open() : char-device-file");
+		dev->dtype = XNVME_DEV_TYPE_FS_FILE;
+		dev->csi = XNVME_SPEC_CSI_FS;
+		dev->nsid = 1;
+		break;
 
 	default:
 		XNVME_DEBUG("FAILED: open() : unsupported S_IFMT: %d", dev_stat.st_mode & S_IFMT);
