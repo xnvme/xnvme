@@ -13,6 +13,7 @@
 #include <xnvme_be_linux.h>
 #include <xnvme_be_linux_libaio.h>
 #include <xnvme_dev.h>
+#include <libxnvme_spec_fs.h>
 
 int
 _linux_libaio_term(struct xnvme_queue *q)
@@ -128,8 +129,7 @@ _linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, 
 {
 	struct xnvme_queue_libaio *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
-	const uint64_t ssw = (queue->base.dev->dtype == XNVME_DEV_TYPE_FS_FILE) ? \
-			     0 : queue->base.dev->geo.ssw;
+	const uint64_t ssw = queue->base.dev->geo.ssw;
 
 	struct iocb *iocb = (void *)&ctx->cmd;
 	int err;
@@ -143,7 +143,8 @@ _linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, 
 		return -ENOSYS;
 	}
 
-	///< Literally convert the NVMe command / sqe memory to an io-control-block
+	///< Convert the NVMe command/sqe to an Linux aio io-control-block
+	///< NOTE: opcode-dispatch (io)
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
 		io_prep_pwrite(iocb, state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba << ssw);
@@ -152,6 +153,16 @@ _linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, 
 	case XNVME_SPEC_NVM_OPC_READ:
 		io_prep_pread(iocb, state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba << ssw);
 		break;
+
+	case XNVME_SPEC_FS_OPC_WRITE:
+		io_prep_pwrite(iocb, state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
+		break;
+
+	case XNVME_SPEC_FS_OPC_READ:
+		io_prep_pread(iocb, state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
+		break;
+
+	// TODO: determine how to handle fsync
 
 	default:
 		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);
