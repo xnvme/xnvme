@@ -878,8 +878,8 @@ struct xnvme_be_dev g_xnvme_be_spdk_dev = {
 	.dev_open = xnvme_be_spdk_dev_open,
 	.dev_close = xnvme_be_spdk_dev_close,
 #else
-	.enumerate = xnvme_be_enosys_enumerate,
-	.dev_open = xnvme_be_enosys_dev_open,
-	.dev_close = xnvme_be_enosys_dev_close,
+	.enumerate = xnvme_be_nosys_enumerate,
+	.dev_open = xnvme_be_nosys_dev_open,
+	.dev_close = xnvme_be_nosys_dev_close,
 #endif
 };
