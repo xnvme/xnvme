@@ -444,6 +444,7 @@ endif()
 if(XNVME_BE_POSIX_ENABLED)
 	add_definitions(-DXNVME_BE_POSIX_ENABLED)
 
+	list(APPEND LIBS_SYSTEM rt)
 	list(APPEND LIBS_SYSTEM pthread)
 
 	message( STATUS "ENABLING ASYNC SUPPORT via BE:POSIX" )
