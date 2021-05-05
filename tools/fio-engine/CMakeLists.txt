@@ -42,11 +42,15 @@ target_include_directories(${FIOE_NAME} PRIVATE
        "${PROJECT_SOURCE_DIR}/third-party/fio/repos")
 
 # LINKAGE
-target_link_libraries(${FIOE_NAME} -Wl,--whole-archive)
-target_link_libraries(${FIOE_NAME} -Wl,--no-as-needed)
+if (XNVME_LINK_WITH_ATTR_CTOR)
+	target_link_libraries(${FIOE_NAME} -Wl,--whole-archive)
+	target_link_libraries(${FIOE_NAME} -Wl,--no-as-needed)
+endif()
 target_link_libraries(${FIOE_NAME} ${LIB_BUNDLE})
-target_link_libraries(${FIOE_NAME} -Wl,--no-whole-archive)
-target_link_libraries(${FIOE_NAME} -Wl,--as-needed)
+if (XNVME_LINK_WITH_ATTR_CTOR)
+	target_link_libraries(${FIOE_NAME} -Wl,--no-whole-archive)
+	target_link_libraries(${FIOE_NAME} -Wl,--as-needed)
+endif()
 target_link_libraries(${FIOE_NAME} ${LIBS_SYSTEM})
 
 install(TARGETS ${FIOE_NAME} DESTINATION lib COMPONENT tools)

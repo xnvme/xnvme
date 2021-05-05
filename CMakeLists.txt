@@ -93,6 +93,12 @@ message( STATUS "CMAKE_AR: '${CMAKE_AR}'" )
 
 message( STATUS "UNIX(${UNIX}), FREEBSD(${FREEBSD}), LINUX(${LINUX}), WIN32(${WIN32})" )
 
+#
+# Control whether '--whole-archive' are used when linking tools, examples, tests, etc. with xNVMe
+#
+set(XNVME_LINK_CTORS ${UNIX} CACHE BOOL "Link tools, examples, tests with whole-archive")
+message( STATUS "XNVME_LINK_CTORS: '${XNVME_LINK_CTORS}'" )
+
 if(WIN32)
 	add_definitions(-D__USE_MINGW_ANSI_STDIO=1)
 endif()
