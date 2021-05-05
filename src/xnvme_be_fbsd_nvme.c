@@ -13,6 +13,7 @@ __FBSDID("$FreeBSD$");
 #include <unistd.h>
 #include <dev/nvme/nvme.h>
 #include <errno.h>
+#include <libxnvme_spec_fs.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_fbsd.h>
 
@@ -59,6 +60,18 @@ xnvme_be_fbsd_nvme_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 	struct xnvme_be_fbsd_state *state = (void *)ctx->dev->be.state;
 	struct nvme_pt_command ptc = { 0 };
 	int err;
+
+	switch (ctx->cmd.common.opcode) {
+	case XNVME_SPEC_FS_OPC_READ:
+		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
+		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
+		break;
+
+	case XNVME_SPEC_FS_OPC_WRITE:
+		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
+		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
+		break;
+	}
 
 	memcpy(&ptc.cmd, &ctx->cmd, sizeof(ptc.cmd));
 	ptc.buf = dbuf;
