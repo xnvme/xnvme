@@ -1,7 +1,7 @@
 From adf8830442a49c52714e9d503abef1300d8e9d0a Mon Sep 17 00:00:00 2001
 From: "Simon A. F. Lund" <simon.lund@samsung.com>
 Date: Tue, 16 Jun 2020 21:35:26 +0200
-Subject: [PATCH 2/8] nvme: add bit-fields for the ONCS Verify and Simple Copy
+Subject: [PATCH 2/9] nvme: add bit-fields for the ONCS Verify and Simple Copy
 
 Signed-off-by: Simon A. F. Lund <simon.lund@samsung.com>
 Change-Id: I184e298396a2e58c683ac3624db9bbfef1d737d6

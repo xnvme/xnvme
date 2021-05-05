@@ -1,7 +1,7 @@
 From 8457d527a63e7c424fac14fd08a4dc5092fcea23 Mon Sep 17 00:00:00 2001
 From: "Ivan L. Picoli" <i.picoli@samsung.com>
 Date: Wed, 22 Jul 2020 18:09:58 +0200
-Subject: [PATCH 5/8] bdev_nvme: add support-check for ONCS Verify and Simple
+Subject: [PATCH 5/9] bdev_nvme: add support-check for ONCS Verify and Simple
  Copy
 
 Signed-off-by: Simon A. F. Lund <simon.lund@samsung.com>

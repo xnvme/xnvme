@@ -1,7 +1,7 @@
 From 96375f0f25f654beebf216fafa6205ecfef3c5cf Mon Sep 17 00:00:00 2001
 From: "Simon A. F. Lund" <simon.lund@samsung.com>
 Date: Thu, 5 Nov 2020 15:02:57 +0100
-Subject: [PATCH 3/8] nvmf: derived the ONCS Verify and Simple Copy
+Subject: [PATCH 3/9] nvmf: derived the ONCS Verify and Simple Copy
 
 Signed-off-by: Simon A. F. Lund <simon.lund@samsung.com>
 Change-Id: I44a267573f0f9bb7f41a61ef9740a7e4d8674585

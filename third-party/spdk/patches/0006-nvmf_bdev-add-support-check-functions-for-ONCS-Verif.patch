@@ -1,7 +1,7 @@
 From c510919429242bbd2898bc6a7adc6a9a945d3f22 Mon Sep 17 00:00:00 2001
 From: "Simon A. F. Lund" <simon.lund@samsung.com>
 Date: Thu, 5 Nov 2020 15:06:22 +0100
-Subject: [PATCH 6/8] nvmf_bdev: add support-check functions for ONCS Verify
+Subject: [PATCH 6/9] nvmf_bdev: add support-check functions for ONCS Verify
  and Simple Copy
 
 Signed-off-by: Simon A. F. Lund <simon.lund@samsung.com>
