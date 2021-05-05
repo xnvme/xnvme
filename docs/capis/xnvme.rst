@@ -18,14 +18,6 @@ Enums
 =====
 
 
-.. _sec-c-api-xnvme-enum-XNVME_FILE_OFLG:
-
-XNVME_FILE_OFLG
----------------
-
-.. doxygenenum:: XNVME_FILE_OFLG
-
-
 .. _sec-c-api-xnvme-enum-xnvme_pr:
 
 xnvme_pr
@@ -380,54 +372,6 @@ xnvme_enumeration_pr
 --------------------
 
 .. doxygenfunction:: xnvme_enumeration_pr
-
-
-.. _sec-c-api-xnvme-func-xnvme_file_close:
-
-xnvme_file_close
-----------------
-
-.. doxygenfunction:: xnvme_file_close
-
-
-.. _sec-c-api-xnvme-func-xnvme_file_get_cmd_ctx:
-
-xnvme_file_get_cmd_ctx
-----------------------
-
-.. doxygenfunction:: xnvme_file_get_cmd_ctx
-
-
-.. _sec-c-api-xnvme-func-xnvme_file_open:
-
-xnvme_file_open
----------------
-
-.. doxygenfunction:: xnvme_file_open
-
-
-.. _sec-c-api-xnvme-func-xnvme_file_pread:
-
-xnvme_file_pread
-----------------
-
-.. doxygenfunction:: xnvme_file_pread
-
-
-.. _sec-c-api-xnvme-func-xnvme_file_pwrite:
-
-xnvme_file_pwrite
------------------
-
-.. doxygenfunction:: xnvme_file_pwrite
-
-
-.. _sec-c-api-xnvme-func-xnvme_file_sync:
-
-xnvme_file_sync
----------------
-
-.. doxygenfunction:: xnvme_file_sync
 
 
 .. _sec-c-api-xnvme-func-xnvme_ident_fpr:

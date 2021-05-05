@@ -147,6 +147,7 @@ def main(args):
     namespaces = [
         "xnvme_3p",
         "xnvme_adm",
+        "xnvme_file",
         "xnvme_dev",
         "xnvme_geo",
         "xnvme_nvm",

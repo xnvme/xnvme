@@ -45,6 +45,7 @@ form.
    :hidden:
 
    xnvme
+   xnvme_file
    xnvme_nvm
    xnvme_znd
    xnvme_adm
