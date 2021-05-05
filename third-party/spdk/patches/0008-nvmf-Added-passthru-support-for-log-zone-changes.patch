@@ -1,7 +1,7 @@
-From ee5d0a367257fbc775cb45a91bb5fa2e19e98c46 Mon Sep 17 00:00:00 2001
+From 0e4f5e8b668c926593657e5ea423b28c355e48f3 Mon Sep 17 00:00:00 2001
 From: "Ivan L. Picoli" <i.picoli@samsung.com>
 Date: Tue, 18 Aug 2020 17:31:37 +0200
-Subject: [PATCH 8/9] nvmf: Added passthru support for log zone changes
+Subject: [PATCH 8/8] nvmf: Added passthru support for log zone changes
 
 Signed-off-by: Ivan L. Picoli <i.picoli@samsung.com>
 ---
@@ -10,10 +10,10 @@ Signed-off-by: Ivan L. Picoli <i.picoli@samsung.com>
  2 files changed, 13 insertions(+)
 
 diff --git a/include/spdk/nvme_spec.h b/include/spdk/nvme_spec.h
-index 2615c2205..d7d22bf7c 100644
+index d73a88a07..befd5ddf4 100644
 --- a/include/spdk/nvme_spec.h
 +++ b/include/spdk/nvme_spec.h
-@@ -2589,16 +2589,19 @@ enum spdk_nvme_log_page {
+@@ -2797,16 +2797,19 @@ enum spdk_nvme_log_page {
  	/** Reservation notification (optional) */
  	SPDK_NVME_LOG_RESERVATION_NOTIFICATION	= 0x80,
  
@@ -34,7 +34,7 @@ index 2615c2205..d7d22bf7c 100644
  struct spdk_nvme_error_information_entry {
  	uint64_t		error_count;
 diff --git a/lib/nvmf/ctrlr.c b/lib/nvmf/ctrlr.c
-index 935db5aa8..d4e2aeae3 100644
+index 731072c5f..f6f1afe93 100644
 --- a/lib/nvmf/ctrlr.c
 +++ b/lib/nvmf/ctrlr.c
 @@ -442,16 +442,17 @@ nvmf_ctrlr_create(struct spdk_nvmf_subsystem *subsystem,
@@ -55,7 +55,7 @@ index 935db5aa8..d4e2aeae3 100644
  _nvmf_ctrlr_destruct(void *ctx)
  {
  	struct spdk_nvmf_ctrlr *ctrlr = ctx;
-@@ -2817,16 +2818,25 @@ nvmf_ctrlr_process_admin_cmd(struct spdk_nvmf_request *req)
+@@ -2828,16 +2829,25 @@ nvmf_ctrlr_process_admin_cmd(struct spdk_nvmf_request *req)
  			case SPDK_NVME_IDENTIFY_NS:
  				break;
  

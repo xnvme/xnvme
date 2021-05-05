@@ -1,7 +1,7 @@
-From d99174ce7a3b1485b649ebdbae40e747b7e63db5 Mon Sep 17 00:00:00 2001
+From 96375f0f25f654beebf216fafa6205ecfef3c5cf Mon Sep 17 00:00:00 2001
 From: "Simon A. F. Lund" <simon.lund@samsung.com>
 Date: Thu, 5 Nov 2020 15:02:57 +0100
-Subject: [PATCH 3/9] nvmf: derived the ONCS Verify and Simple Copy
+Subject: [PATCH 3/8] nvmf: derived the ONCS Verify and Simple Copy
 
 Signed-off-by: Simon A. F. Lund <simon.lund@samsung.com>
 Change-Id: I44a267573f0f9bb7f41a61ef9740a7e4d8674585
@@ -10,10 +10,10 @@ Change-Id: I44a267573f0f9bb7f41a61ef9740a7e4d8674585
  1 file changed, 3 insertions(+)
 
 diff --git a/lib/nvmf/ctrlr.c b/lib/nvmf/ctrlr.c
-index 1ebf42b89..935db5aa8 100644
+index 6f649f5c5..731072c5f 100644
 --- a/lib/nvmf/ctrlr.c
 +++ b/lib/nvmf/ctrlr.c
-@@ -2217,16 +2217,19 @@ spdk_nvmf_ctrlr_identify_ctrlr(struct spdk_nvmf_ctrlr *ctrlr, struct spdk_nvme_c
+@@ -2228,16 +2228,19 @@ spdk_nvmf_ctrlr_identify_ctrlr(struct spdk_nvmf_ctrlr *ctrlr, struct spdk_nvme_c
  		cdata->vwc.present = 1;
  		cdata->vwc.flush_broadcast = SPDK_NVME_FLUSH_BROADCAST_NOT_SUPPORTED;
  

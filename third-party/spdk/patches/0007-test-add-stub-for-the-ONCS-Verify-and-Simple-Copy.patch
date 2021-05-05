@@ -1,7 +1,7 @@
-From cabaf336212cd3875f37a690a9a436c6ee1bf909 Mon Sep 17 00:00:00 2001
+From 27755a7bf09904896cf16a44d9f0f6abd6df1503 Mon Sep 17 00:00:00 2001
 From: "Ivan L. Picoli" <i.picoli@samsung.com>
 Date: Wed, 22 Jul 2020 18:17:50 +0200
-Subject: [PATCH 7/9] test: add stub for the ONCS Verify and Simple Copy
+Subject: [PATCH 7/8] test: add stub for the ONCS Verify and Simple Copy
 
 Signed-off-by: Ivan L. Picoli <i.picoli@samsung.com>
 Change-Id: I145155cfce2d1942312072fc9ba19920b9c081b8
@@ -42,10 +42,10 @@ index aa2912f6f..c4f748185 100644
  	    bool,
  	    (struct spdk_nvmf_ctrlr *ctrlr),
 diff --git a/test/unit/lib/nvmf/tcp.c/tcp_ut.c b/test/unit/lib/nvmf/tcp.c/tcp_ut.c
-index 9b06633a0..00ae565cd 100644
+index b96f9e854..9959bfd87 100644
 --- a/test/unit/lib/nvmf/tcp.c/tcp_ut.c
 +++ b/test/unit/lib/nvmf/tcp.c/tcp_ut.c
-@@ -105,16 +105,26 @@ DEFINE_STUB(spdk_nvmf_subsystem_get_next_ns,
+@@ -107,16 +107,26 @@ DEFINE_STUB(spdk_nvmf_subsystem_get_next_ns,
  	    (struct spdk_nvmf_subsystem *subsystem, struct spdk_nvmf_ns *prev_ns),
  	    NULL);
  
