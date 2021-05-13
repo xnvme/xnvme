@@ -140,7 +140,7 @@ xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 		XNVME_DEBUG("INFO: open() : char-device-file: NVMe ioctl() with async. emulation");
 		dev->dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
 		dev->csi = XNVME_SPEC_CSI_NVM;
-		dev->nsid = 1;
+		dev->nsid = err;
 
 		if (!opts->provided.admin) {
 			dev->be.admin = g_xnvme_be_linux_admin_nvme;
