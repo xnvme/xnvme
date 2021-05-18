@@ -622,10 +622,69 @@ xnvme_fioe_invalidate(struct thread_data *td, struct fio_file *f)
 	return 0;
 }
 
+#if defined FIO_IOOPS_VERSION && FIO_IOOPS_VERSION >= 30
+static int
+xnvme_fioe_get_max_open_zones(struct thread_data *XNVME_UNUSED(td), struct fio_file *f,
+			      unsigned int *max_open_zones)
+{
+	struct xnvme_dev *dev;
+	int err = 0, err_lock;
+
+	if (f->filetype != FIO_TYPE_FILE && \
+		f->filetype != FIO_TYPE_BLOCK && \
+		f->filetype != FIO_TYPE_CHAR) {
+		XNVME_DEBUG("INFO: ignoring filetype: %d", f->filetype);
+		return 0;
+	}
+	err_lock = pthread_mutex_lock(&g_serialize);
+	if (err_lock) {
+		XNVME_DEBUG("FAILED: pthread_mutex_lock(), err_lock: %d", err_lock);
+		return -err_lock;
+	}
+
+	dev = xnvme_dev_open(f->file_name);
+	if (!dev) {
+		XNVME_DEBUG("FAILED: retrieving device handle");
+		err = -errno;
+		goto exit;
+	}
+	if (xnvme_dev_get_geo(dev)->type != XNVME_GEO_ZONED) {
+		errno = EINVAL;
+		err = -errno;
+		goto exit;
+	}
+
+	{
+		const struct xnvme_spec_znd_idfy_ns *zns;
+
+		zns = (void*)xnvme_dev_get_ns_css(dev);
+		if (!zns) {
+			XNVME_DEBUG("FAILED: xnvme_dev_get_ns_css(), errno: %d", errno);
+			err = -errno;
+			goto exit;
+		}
+
+		// intentional overflow as the value is zero-based and NVMe defines 0xFFFFFFFF
+		// as unlimited thus overflowing to 0 which is how fio indicates unlimited and
+		// otherwise just converting to one-based
+		*max_open_zones = zns->mor + 1;
+	}
+
+exit:
+	xnvme_dev_close(dev);
+	err_lock = pthread_mutex_unlock(&g_serialize);
+	if (err_lock) {
+		XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err_lock: %d", err_lock);
+	}
+
+	return err;
+}
+#endif
+
 /**
  * Currently, this function is called before of I/O engine initialization, so,
  * we cannot consult the file-wrapping done when 'fioe' initializes.
- * Instead we just open base don the given filename.
+ * Instead we just open based on the given filename.
  *
  * TODO: unify the different setup methods, consider keeping the handle around,
  * and consider how to support the --be option in this usecase
@@ -903,6 +962,9 @@ struct ioengine_ops ioengine = {
 	.get_file_size  = xnvme_fioe_get_file_size,
 
 	.invalidate		= xnvme_fioe_invalidate,
+#if defined FIO_IOOPS_VERSION && FIO_IOOPS_VERSION >= 30
+	.get_max_open_zones	= xnvme_fioe_get_max_open_zones,
+#endif
 	.get_zoned_model	= xnvme_fioe_get_zoned_model,
 	.report_zones		= xnvme_fioe_report_zones,
 	.reset_wp		= xnvme_fioe_reset_wp,
