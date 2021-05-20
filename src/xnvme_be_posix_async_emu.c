@@ -10,28 +10,27 @@
 #include <xnvme_queue.h>
 #include <xnvme_dev.h>
 
-struct _entry {
+struct _emu_entry {
 	struct xnvme_dev *dev;
 	struct xnvme_cmd_ctx *ctx;
 	void *dbuf;
 	size_t dbuf_nbytes;
 	void *mbuf;
 	size_t mbuf_nbytes;
-	STAILQ_ENTRY(_entry) link;
+	STAILQ_ENTRY(_emu_entry) link;
 };
 
-struct _qp {
-	STAILQ_HEAD(, _entry) rp;	///< Request pool
-	STAILQ_HEAD(, _entry) sq;	///< Submission queue
-	STAILQ_HEAD(, _entry) cq;	///< Completion queue
+struct _emu_qp {
+	STAILQ_HEAD(, _emu_entry) rp;	///< Request pool
+	STAILQ_HEAD(, _emu_entry) sq;	///< Submission queue
 	uint32_t capacity;
-	struct _entry elm[];
+	struct _emu_entry elm[];
 };
 
 struct xnvme_queue_emu {
 	struct xnvme_queue_base base;
 
-	struct _qp *qp;
+	struct _emu_qp *qp;
 
 	uint8_t _rsvd[224];
 };
@@ -41,7 +40,7 @@ XNVME_STATIC_ASSERT(
 )
 
 int
-_qp_term(struct _qp *qp)
+_emu_qp_term(struct _emu_qp *qp)
 {
 	free(qp);
 
@@ -49,7 +48,7 @@ _qp_term(struct _qp *qp)
 }
 
 int
-_qp_alloc(struct _qp **qp, uint32_t capacity)
+_emu_qp_alloc(struct _emu_qp **qp, uint32_t capacity)
 {
 	const size_t nbytes = capacity * sizeof(*(*qp)->elm) + sizeof(**qp);
 
@@ -60,7 +59,6 @@ _qp_alloc(struct _qp **qp, uint32_t capacity)
 	memset((*qp), 0, nbytes);
 
 	STAILQ_INIT(&(*qp)->sq);
-	STAILQ_INIT(&(*qp)->cq);
 	STAILQ_INIT(&(*qp)->rp);
 
 	(*qp)->capacity = capacity;
@@ -69,7 +67,7 @@ _qp_alloc(struct _qp **qp, uint32_t capacity)
 }
 
 int
-_qp_init(struct _qp *qp)
+_emu_qp_init(struct _emu_qp *qp)
 {
 	for (uint32_t i = 0; i < qp->capacity; ++i) {
 		STAILQ_INSERT_HEAD(&qp->rp, &qp->elm[i], link);
@@ -83,7 +81,7 @@ _posix_async_emu_term(struct xnvme_queue *q)
 {
 	struct xnvme_queue_emu *queue = (void *)q;
 
-	_qp_term(queue->qp);
+	_emu_qp_term(queue->qp);
 
 	return 0;
 }
@@ -102,12 +100,12 @@ _posix_async_emu_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 {
 	struct xnvme_queue_emu *queue = (void *)q;
 
-	if (_qp_alloc(&(queue->qp), queue->base.capacity)) {
-		XNVME_DEBUG("FAILED: _qp_alloc()");
+	if (_emu_qp_alloc(&(queue->qp), queue->base.capacity)) {
+		XNVME_DEBUG("FAILED: _emu_qp_alloc()");
 		goto failed;
 	}
-	if (_qp_init(queue->qp)) {
-		XNVME_DEBUG("FAILED: _qp_init()");
+	if (_emu_qp_init(queue->qp)) {
+		XNVME_DEBUG("FAILED: _emu_qp_init()");
 		goto failed;
 	}
 
@@ -123,14 +121,14 @@ int
 _posix_async_emu_poke(struct xnvme_queue *q, uint32_t max)
 {
 	struct xnvme_queue_emu *queue = (void *)q;
-	struct _qp *qp = queue->qp;
+	struct _emu_qp *qp = queue->qp;
 	unsigned completed = 0;
 
 	max = max ? max : queue->base.outstanding;
 	max = max > queue->base.outstanding ? queue->base.outstanding : max;
 
 	while (completed < max) {
-		struct _entry *entry = STAILQ_FIRST(&qp->sq);
+		struct _emu_entry *entry = STAILQ_FIRST(&qp->sq);
 		int err;
 
 		STAILQ_REMOVE_HEAD(&qp->sq, link);
@@ -186,8 +184,8 @@ _posix_async_emu_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyte
 			size_t mbuf_nbytes)
 {
 	struct xnvme_queue_emu *queue = (void *)ctx->async.queue;
-	struct _qp *qp = queue->qp;
-	struct _entry *entry;
+	struct _emu_qp *qp = queue->qp;
+	struct _emu_entry *entry;
 
 	if (queue->base.outstanding == queue->base.capacity) {
 		XNVME_DEBUG("FAILED: queue is full");
