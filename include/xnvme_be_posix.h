@@ -8,10 +8,9 @@ struct xnvme_be_posix_state {
 
 	uint8_t _rsvd[124];
 };
-XNVME_STATIC_ASSERT(
-	sizeof(struct xnvme_be_posix_state) == XNVME_BE_STATE_NBYTES,
-	"Incorrect size"
-);
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_posix_state) ==
+		    XNVME_BE_STATE_NBYTES,
+		    "Incorrect size");
 
 int
 xnvme_be_posix_supported(struct xnvme_dev *dev, uint32_t opts);
@@ -21,6 +20,7 @@ extern struct xnvme_be_sync g_xnvme_be_posix_sync_psync;
 extern struct xnvme_be_async g_xnvme_be_posix_async_nil;
 extern struct xnvme_be_async g_xnvme_be_posix_async_emu;
 extern struct xnvme_be_async g_xnvme_be_posix_async_aio;
+extern struct xnvme_be_async g_xnvme_be_posix_async_thrpool;
 extern struct xnvme_be_mem g_xnvme_be_posix_mem;
 extern struct xnvme_be_dev g_xnvme_be_posix_dev;
 
