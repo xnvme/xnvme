@@ -150,7 +150,9 @@ include_directories("${PROJECT_SOURCE_DIR}/include")
 
 # Default 'clang' on FreeBSD does not look here, so we tell it to probably
 # another symptom of 'base-system-compiler-we-do-not-care'
+if (FREEBSD)
 link_directories("/usr/local/lib")
+endif()
 
 #
 # LIBS are the libraries which are "submoduled" by xNVMe and linked statically,
