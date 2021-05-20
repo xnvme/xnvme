@@ -24,10 +24,10 @@ jobs:
         language:
         - 'cpp'
         container:
-        - 'debian:bullseye'
+        - { os: 'debian', ver: 'bullseye' }
 
     container:
-      image: ${{ matrix.container }}
+      image: ${{ matrix.container.os }}:${{ matrix.container.ver }}
 
     steps:
     - name: Grab source, for build-requirements
@@ -35,7 +35,7 @@ jobs:
 
     - name: Install build-requirements
       run: |
-        source scripts/pkgs/${{ matrix.container }}.sh
+        source scripts/pkgs/${{ matrix.container.os }}-${{ matrix.container.ver }}.sh
 
     - name: Grab source, for getting the actual source
       uses: actions/checkout@v2

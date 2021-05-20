@@ -11,7 +11,7 @@ yum-config-manager --enable rhel-server-rhscl-7-rpms
 yum install -y devtoolset-8
 
 # Install packages via yum
-yum install -y $(cat "scripts/pkgs/centos:centos7.txt")
+yum install -y $(cat "scripts/pkgs/centos-centos7.txt")
 
 # Install CMake using installer from GitHUB
 wget https://github.com/Kitware/CMake/releases/download/v3.16.5/cmake-3.16.5-Linux-x86_64.sh -O cmake.sh

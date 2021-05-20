@@ -77,7 +77,7 @@ jobs:
 
     - name: xNVMe, install build-requirements
       run: |
-        source scripts/pkgs/debian:buster.sh
+        source scripts/pkgs/debian-buster.sh
 
     - name: xNVMe, configure the build
       run: |

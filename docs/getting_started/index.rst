@@ -72,12 +72,12 @@ Arch Linux 20200306
 
 Install the following packages via ``pacman``:
 
-.. literalinclude:: ../../scripts/pkgs/archlinux:20200306.txt
+.. literalinclude:: ../../scripts/pkgs/archlinux-20200306.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/archlinux:20200306.sh
+.. literalinclude:: ../../scripts/pkgs/archlinux-20200306.sh
    :language: bash
    :lines: 8-
 
@@ -86,12 +86,12 @@ CentOS 7
 
 Install the following packages via ``yum``:
 
-.. literalinclude:: ../../scripts/pkgs/centos:centos7.txt
+.. literalinclude:: ../../scripts/pkgs/centos-centos7.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/centos:centos7.sh
+.. literalinclude:: ../../scripts/pkgs/centos-centos7.sh
    :language: bash
    :lines: 8-
 
@@ -100,12 +100,12 @@ Debian 11 (Bullseye)
 
 Install the following packages via ``apt-get``:
 
-.. literalinclude:: ../../scripts/pkgs/debian:bullseye.txt
+.. literalinclude:: ../../scripts/pkgs/debian-bullseye.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/debian:bullseye.sh
+.. literalinclude:: ../../scripts/pkgs/debian-bullseye.sh
    :language: bash
    :lines: 17-
 
@@ -114,12 +114,12 @@ Debian 10 (Buster)
 
 Install the following packages via ``apt-get``:
 
-.. literalinclude:: ../../scripts/pkgs/debian:buster.txt
+.. literalinclude:: ../../scripts/pkgs/debian-buster.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/debian:buster.sh
+.. literalinclude:: ../../scripts/pkgs/debian-buster.sh
    :language: bash
    :lines: 17-
 
@@ -128,12 +128,12 @@ Debian 9 (Stretch)
 
 Install the following packages via ``apt-get``:
 
-.. literalinclude:: ../../scripts/pkgs/debian:stretch.txt
+.. literalinclude:: ../../scripts/pkgs/debian-stretch.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/debian:stretch.sh
+.. literalinclude:: ../../scripts/pkgs/debian-stretch.sh
    :language: bash
    :lines: 17-
 
@@ -157,12 +157,12 @@ Ubuntu 20.04 (Focal)
 
 Install the following packages via ``apt-get``:
 
-.. literalinclude:: ../../scripts/pkgs/ubuntu:focal.txt
+.. literalinclude:: ../../scripts/pkgs/ubuntu-focal.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/ubuntu:focal.sh
+.. literalinclude:: ../../scripts/pkgs/ubuntu-focal.sh
    :language: bash
    :lines: 17-
 
@@ -171,12 +171,12 @@ Ubuntu 18.04 (Bionic)
 
 Install the following packages via ``apt-get``:
 
-.. literalinclude:: ../../scripts/pkgs/ubuntu:bionic.txt
+.. literalinclude:: ../../scripts/pkgs/ubuntu-bionic.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/ubuntu:bionic.sh
+.. literalinclude:: ../../scripts/pkgs/ubuntu-bionic.sh
    :language: bash
    :lines: 17-
 
@@ -190,12 +190,12 @@ non-supported distribution.
 
 Install the following packages via ``apt-get``:
 
-.. literalinclude:: ../../scripts/pkgs/ubuntu:xenial.txt
+.. literalinclude:: ../../scripts/pkgs/ubuntu-xenial.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/ubuntu:xenial.sh
+.. literalinclude:: ../../scripts/pkgs/ubuntu-xenial.sh
    :language: bash
    :lines: 17-
 
@@ -204,12 +204,12 @@ Alpine Linux 3.11.3
 
 Install the following packages via ``apk``:
 
-.. literalinclude:: ../../scripts/pkgs/alpine:3.12.0.txt
+.. literalinclude:: ../../scripts/pkgs/alpine-3.12.0.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/alpine:3.12.0.sh
+.. literalinclude:: ../../scripts/pkgs/alpine-3.12.0.sh
    :language: bash
    :lines: 8-
 

@@ -17,6 +17,6 @@ apt-get -qy \
 apt-get -qy autoclean
 
 # Install packages via apt-get
-apt-get install -qy $(cat "scripts/pkgs/debian:buster.txt")
+apt-get install -qy $(cat "scripts/pkgs/debian-buster.txt")
 
 apt-get -t buster-backports install -qy meson ninja-build

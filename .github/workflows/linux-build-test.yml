@@ -52,17 +52,17 @@ jobs:
     strategy:
       matrix:
         container:
-        # - 'alpine:3.12.0'
-        - 'archlinux:latest'
-        - 'centos:centos7'
-        - 'debian:bullseye'
-        - 'debian:buster'
-        - 'debian:stretch'
-        - 'ubuntu:bionic'
-        - 'ubuntu:focal'
+        #- { os: 'alpine', ver: 'latest' }
+        - { os: 'archlinux', ver: 'latest' }
+        - { os: 'centos', ver: 'centos7' }
+        - { os: 'debian', ver: 'bullseye' }
+        - { os: 'debian', ver: 'buster' }
+        - { os: 'debian', ver: 'stretch' }
+        - { os: 'ubuntu', ver: 'bionic' }
+        - { os: 'ubuntu', ver: 'focal' }
 
     container:
-      image: ${{ matrix.container }}
+      image: ${{ matrix.container.os }}:${{ matrix.container.ver }}
 
     steps:
     - name: Container-prep, get the full-source-archive
@@ -80,7 +80,7 @@ jobs:
     - name: Install build-requirements
       run: |
         cd xnvme
-        source scripts/pkgs/${{ matrix.container }}.sh
+        source scripts/pkgs/${{ matrix.container.os }}-${{ matrix.container.ver }}.sh
         [[ ! -f "/usr/bin/python" ]] && ln -s /usr/bin/python3.8 /usr/bin/python || true
 
     - name: Configure, the build

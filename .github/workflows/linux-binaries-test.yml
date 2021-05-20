@@ -74,7 +74,7 @@ jobs:
     - name: Install build-requirements
       run: |
         cd xnvme
-        source scripts/pkgs/debian:bullseye.sh
+        source scripts/pkgs/debian-bullseye.sh
         [[ ! -f "/usr/bin/python" ]] && ln -s /usr/bin/python3.8 /usr/bin/python || true
 
     - name: Configure, the build
