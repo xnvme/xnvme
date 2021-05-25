@@ -18,3 +18,13 @@ docs/build
 cscope.out
 tags
 cmake-build-debug/
+# Windows
+*Debug*
+config/
+build-win/
+build-win-tmp/
+out/
+.vs/
+*.exe
+*.lib
+*.vcxproj.*
