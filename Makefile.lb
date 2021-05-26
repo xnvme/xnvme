@@ -1,0 +1,30 @@
+XNVME_INSTALL_DIR ?= $(shell component-tool localpath --repo=xnvme --type=$(BUILD_TYPE) xnvme)
+
+all: build
+
+ifeq ($(BUILD_TYPE), dev)
+CMAKE_BUILD_TYPE := Debug
+else
+CMAKE_BUILD_TYPE := Release
+endif
+
+build_dir:
+	@mkdir -p build
+
+install_dir:
+	@mkdir -p $(XNVME_INSTALL_DIR)
+
+build: |build_dir
+	(cd build && cmake -DCMAKE_BUILD_TYPE=$(CMAKE_BUILD_TYPE) -DCMAKE_INSTALL_PREFIX=$(XNVME_INSTALL_DIR) ../ && make)
+
+install: build |install_dir
+	(cd build; make install)
+
+checkin:
+	$(Q)component-tool checkin -v --repo=xnvme --type=$(BUILD_TYPE) xnvme
+
+clean:
+	@rm ./build -rf
+
+.PHONY: clean install_dir checkin build
+

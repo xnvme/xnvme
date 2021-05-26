@@ -1,0 +1,8 @@
+xnvme:
+  xnvme:
+    build: 
+      - make -f Makefile.lb all
+    install: 
+      - make -f Makefile.lb install
+    deps:
+    - file://src
