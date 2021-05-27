@@ -132,16 +132,18 @@ xnvme_znd_log_changes_from_dev(struct xnvme_dev *dev);
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  * @param nsid Namespace Identifier
  * @param zslba Start LBA of the Zone to manage
- * @param action Management action to perform with zone at zslba
- * @param sf the ::xnvme_spec_znd_cmd_mgmt_recv_action_sf option
+ * @param select_all Ignore zslba, command affects all LBAs
+ * @param action Management the ::xnvme_spec_znd_cmd_mgmt_send_action to perform with zone at zslba
+ * or all LBAs when select_all is true
+ * @param action_sf the ::xnvme_spec_znd_mgmt_send_action_sf option
  * @param dbuf For action=ZND_SEND_DESCRIPTOR provide buffer
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
-xnvme_znd_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba,
-		    enum xnvme_spec_znd_cmd_mgmt_send_action action, enum xnvme_spec_znd_mgmt_send_action_sf sf,
-		    void *dbuf);
+xnvme_znd_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, bool select_all,
+		    enum xnvme_spec_znd_cmd_mgmt_send_action action,
+		    enum xnvme_spec_znd_mgmt_send_action_sf action_sf, void *dbuf);
 
 /**
  * Submit, and optionally wait for completion of, a Zone Append

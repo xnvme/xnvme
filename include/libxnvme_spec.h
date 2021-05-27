@@ -1575,8 +1575,9 @@ struct xnvme_spec_znd_cmd_mgmt_send {
 
 	/* cdw 13 */
 	uint32_t zsa		: 8;	///< Zone Send Action
-	uint32_t zsasf		: 1;	///< Select All
-	uint32_t rsvd		: 23;
+	uint32_t select_all	: 1;	///< Select All, that is, ignore the slba, affects all LBAs
+	uint32_t zsasf		: 1;	///< Zone Send Action Specific Field
+	uint32_t rsvd		: 22;
 
 	uint32_t cdw14_15[2];		///< Command dword 14 to 15
 };

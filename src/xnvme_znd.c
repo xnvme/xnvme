@@ -383,17 +383,18 @@ xnvme_znd_log_changes_from_dev(struct xnvme_dev *dev)
 }
 
 int
-xnvme_znd_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba,
-		    enum xnvme_spec_znd_cmd_mgmt_send_action action, enum xnvme_spec_znd_mgmt_send_action_sf sf,
-		    void *dbuf)
+xnvme_znd_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, bool select_all,
+		    enum xnvme_spec_znd_cmd_mgmt_send_action action,
+		    enum xnvme_spec_znd_mgmt_send_action_sf action_sf, void *dbuf)
 {
 	uint32_t dbuf_nbytes = 0;
 
 	ctx->cmd.common.opcode = XNVME_SPEC_ZND_OPC_MGMT_SEND;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.znd.mgmt_send.slba = zslba;
+	ctx->cmd.znd.mgmt_send.select_all = select_all;
 	ctx->cmd.znd.mgmt_send.zsa = action;
-	ctx->cmd.znd.mgmt_send.zsasf = sf;
+	ctx->cmd.znd.mgmt_send.zsasf = action_sf;
 
 	if (dbuf) {
 		struct xnvme_spec_idfy_ns *nvm = (void *)xnvme_dev_get_ns(ctx->dev);

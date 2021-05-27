@@ -40,7 +40,7 @@ cmd_transition(struct xnvmec *cli)
 		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 		struct xnvme_spec_znd_descr zone = { 0 };
 
-		err = xnvme_znd_mgmt_send(&ctx, nsid, slba, actions[i].action, 0x0, NULL);
+		err = xnvme_znd_mgmt_send(&ctx, nsid, slba, false, actions[i].action, 0x0, NULL);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			xnvmec_perr("xnvme_znd_mgmt_send()", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);

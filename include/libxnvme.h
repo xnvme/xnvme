@@ -17,6 +17,7 @@ extern "C" {
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <sys/types.h>
 #include <sys/queue.h>
 #include <libxnvme_be.h>

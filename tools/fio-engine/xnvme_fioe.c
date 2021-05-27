@@ -977,8 +977,8 @@ xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint64_t offset,
 			break;
 		}
 
-		err = xnvme_znd_mgmt_send(&ctx, nsid, zslba,
-                                  XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET, 0x0, NULL);
+		err = xnvme_znd_mgmt_send(&ctx, nsid, zslba, false,
+					  XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET, 0x0, NULL);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			err = err ? err : -EIO;
 			XNVME_DEBUG("FAILED: err: %d, sc=%d", err, ctx.cpl.status.sc);

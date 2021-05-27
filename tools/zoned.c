@@ -481,16 +481,14 @@ _cmd_mgmt(struct xnvmec *cli, uint8_t action)
 	uint32_t nsid = cli->args.nsid;
 	const uint64_t zslba = cli->args.slba;
 	const struct xnvme_spec_znd_idfy_lbafe *lbafe = xnvme_znd_dev_get_lbafe(dev);
-	int asf = 0;
+	bool select_all = false;
 
 	size_t dbuf_nbytes = lbafe ? lbafe->zdes : 0;
 	char *dbuf = NULL;
 
 	int err;
 
-	if (cli->given[XNVMEC_OPT_ALL]) {
-		asf = XNVME_SPEC_ZND_MGMT_SEND_ASF_SALL;
-	}
+	select_all = cli->given[XNVMEC_OPT_ALL] ? true : false;
 	if (!cli->given[XNVMEC_OPT_NSID]) {
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
@@ -513,7 +511,7 @@ _cmd_mgmt(struct xnvmec *cli, uint8_t action)
 		}
 	}
 
-	err = xnvme_znd_mgmt_send(&ctx, nsid, zslba, action, asf, dbuf);
+	err = xnvme_znd_mgmt_send(&ctx, nsid, zslba, select_all, action, 0x0, dbuf);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_znd_mgmt_send()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);

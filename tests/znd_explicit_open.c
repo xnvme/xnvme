@@ -83,7 +83,8 @@ test_open_zdptr(struct xnvmec *cli)
 	xnvmec_pinf("Before");
 	xnvme_spec_znd_descr_pr(XNVME_ZND_REPORT_DESCR(before, zidx), XNVME_PR_DEF);
 
-	err = xnvme_znd_mgmt_send(&ctx, nsid, zslba, XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET, 0x0, NULL);
+	err = xnvme_znd_mgmt_send(&ctx, nsid, zslba, false, XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET,
+				  0x0, NULL);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_pinf("xnvme_znd_mgmt_send(RESET)");
 		err = err ? err : -EIO;
@@ -92,7 +93,8 @@ test_open_zdptr(struct xnvmec *cli)
 
 	xnvmec_pinf("Sending MGMT-EOPEN");
 
-	err = xnvme_znd_mgmt_send(&ctx, nsid, zslba, XNVME_SPEC_ZND_CMD_MGMT_SEND_OPEN, 0, zde);
+	err = xnvme_znd_mgmt_send(&ctx, nsid, zslba, false, XNVME_SPEC_ZND_CMD_MGMT_SEND_OPEN,
+				  0x0, zde);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_pinf("xnvme_cmd_zone_mgmt(OPEN)");
 		err = err ? err : -EIO;
