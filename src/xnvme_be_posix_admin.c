@@ -183,6 +183,6 @@ struct xnvme_be_admin g_xnvme_be_posix_admin_shim = {
 #ifdef XNVME_BE_POSIX_ENABLED
 	.cmd_admin = _xnvme_be_posix_admin_cmd_admin,
 #else
-	.cmd_admin = _xnvme_be_enosys_admin_cmd_admin,
+	.cmd_admin = xnvme_be_nosys_sync_cmd_admin,
 #endif
 };
