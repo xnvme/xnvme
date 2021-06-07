@@ -42,12 +42,12 @@ target_include_directories(${FIOE_NAME} PRIVATE
        "${PROJECT_SOURCE_DIR}/third-party/fio/repos")
 
 # LINKAGE
-if (XNVME_LINK_WITH_ATTR_CTOR)
+if (XNVME_LINK_CTORS)
 	target_link_libraries(${FIOE_NAME} -Wl,--whole-archive)
 	target_link_libraries(${FIOE_NAME} -Wl,--no-as-needed)
 endif()
 target_link_libraries(${FIOE_NAME} ${LIB_BUNDLE})
-if (XNVME_LINK_WITH_ATTR_CTOR)
+if (XNVME_LINK_CTORS)
 	target_link_libraries(${FIOE_NAME} -Wl,--no-whole-archive)
 	target_link_libraries(${FIOE_NAME} -Wl,--as-needed)
 endif()
