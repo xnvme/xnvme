@@ -217,8 +217,14 @@ static void
 xnvme_fioe_cleanup(struct thread_data *td)
 {
 	struct xnvme_fioe_data *xd = td->io_ops_data;
+	int err;
 
-	pthread_mutex_lock(&g_serialize);
+	err = pthread_mutex_lock(&g_serialize);
+	if (err) {
+		XNVME_DEBUG("FAILED: pthread_mutex_lock(), err: %d", err);
+		// NOTE: not returning here
+	}
+
 	for (uint64_t i = 0; i < xd->nallocated; ++i) {
 		int err;
 
@@ -227,7 +233,10 @@ xnvme_fioe_cleanup(struct thread_data *td)
 			XNVME_DEBUG("xnvme_fioe: cleanup(): Unexpected error");
 		}
 	}
-	pthread_mutex_unlock(&g_serialize);
+	err = pthread_mutex_unlock(&g_serialize);
+	if (err) {
+		XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err: %d", err);
+	}
 
 	free(xd->iocq);
 	free(xd);
@@ -302,7 +311,12 @@ _dev_open(struct thread_data *td, struct fio_file *f)
 	xnvme_ident_pr(&ident, XNVME_PR_DEF);
 #endif
 
-	pthread_mutex_lock(&g_serialize);
+	err = pthread_mutex_lock(&g_serialize);
+	if (err) {
+		XNVME_DEBUG("FAILED: pthread_mutex_lock(), err: %d", err);
+		return -err;
+	}
+
 	fwrap->dev = xnvme_dev_open(ident.uri);
 	if (!fwrap->dev) {
 		log_err("xnvme_fioe: init(): {uri: '%s', err: '%s'}\n",
@@ -325,7 +339,10 @@ _dev_open(struct thread_data *td, struct fio_file *f)
 	fwrap->fio_file->real_file_size = fwrap->geo->tbytes;
 	fio_file_set_size_known(fwrap->fio_file);
 
-	pthread_mutex_unlock(&g_serialize);
+	err = pthread_mutex_unlock(&g_serialize);
+	if (err) {
+		XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err: %d", err);
+	}
 
 	return 0;
 
@@ -333,7 +350,10 @@ failure:
 	xnvme_queue_term(fwrap->queue);
 	xnvme_dev_close(fwrap->dev);
 
-	pthread_mutex_unlock(&g_serialize);
+	err = pthread_mutex_unlock(&g_serialize);
+	if (err) {
+		XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err: %d", err);
+	}
 
 	return 1;
 }
@@ -704,7 +724,12 @@ xnvme_fioe_get_zoned_model(struct thread_data *XNVME_UNUSED(td),
 		return 0;
 	}
 
-	pthread_mutex_lock(&g_serialize);
+	err = pthread_mutex_lock(&g_serialize);
+	if (err) {
+		XNVME_DEBUG("FAILED: pthread_mutex_lock(), err: %d", err);
+		return -err;
+	}
+
 	dev = xnvme_dev_open(f->file_name);
 	if (!dev) {
 		XNVME_DEBUG("FAILED: retrieving device handle");
@@ -738,7 +763,14 @@ xnvme_fioe_get_zoned_model(struct thread_data *XNVME_UNUSED(td),
 
 exit:
 	xnvme_dev_close(dev);
-	pthread_mutex_unlock(&g_serialize);
+	{
+		int err_lock;
+
+		err_lock = pthread_mutex_unlock(&g_serialize);
+		if (err_lock) {
+			XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err: %d", err_lock);
+		}
+	}
 
 	XNVME_DEBUG("INFO: so good to far...");
 
@@ -776,7 +808,12 @@ xnvme_fioe_report_zones(struct thread_data *XNVME_UNUSED(td),
 	XNVME_DEBUG("report_zones(): '%s', offset: %zu, nr_zones: %u",
 		    f->file_name, offset, nr_zones);
 
-	pthread_mutex_lock(&g_serialize);
+	err = pthread_mutex_lock(&g_serialize);
+	if (err) {
+		XNVME_DEBUG("FAILED: pthread_mutex_lock(), err: %d", err);
+		return -err;
+	}
+
 	dev = xnvme_dev_open(f->file_name);
 	if (!dev) {
 		XNVME_DEBUG("FAILED: xnvme_dev_open(), errno: %d", errno);
@@ -859,8 +896,14 @@ exit:
 	xnvme_buf_virt_free(rprt);
 
 	xnvme_dev_close(dev);
-	pthread_mutex_unlock(&g_serialize);
+	{
+		int err_lock;
 
+		err_lock = pthread_mutex_unlock(&g_serialize);
+		if (err_lock) {
+			XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err_lock: %d", err_lock);
+		}
+	}
 	XNVME_DEBUG("err: %d, nr_zones: %d", err, (int)nr_zones);
 
 	return err ? err : (int)limit;
@@ -914,7 +957,12 @@ xnvme_fioe_get_file_size(struct thread_data *td, struct fio_file *f)
 	if (fio_file_size_known(f))
 		return 0;
 
-	pthread_mutex_lock(&g_serialize);
+	ret = pthread_mutex_lock(&g_serialize);
+	if (ret) {
+		XNVME_DEBUG("FAILED: pthread_mutex_lock(), err: %d", ret);
+		return -ret;
+	}
+
 	dev = xnvme_dev_open(f->file_name);
 	if (!dev) {
 		XNVME_DEBUG("FAILED: xnvme_dev_open(), errno: %d", errno);
@@ -927,7 +975,12 @@ xnvme_fioe_get_file_size(struct thread_data *td, struct fio_file *f)
 
 exit:
 	xnvme_dev_close(dev);
-	pthread_mutex_unlock(&g_serialize);
+	{
+		int err = pthread_mutex_unlock(&g_serialize);
+		if (err) {
+			XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err: %d", err);
+		}
+	}
 
 	return ret;
 
