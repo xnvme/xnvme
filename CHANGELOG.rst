@@ -46,6 +46,21 @@ Known Issues
     means, as a user that you must sent non-read/write commands with mode
     ``XNVME_CMD_SYNC``.
 
+v0.0.24
+-------
+
+A release primarily of fixes, a new thread-pool based async. implementation and
+a third-party update of fio.
+
+* Third-party
+  - fio, updated to 3.27
+
+* Backends
+  - posix:async:thrpool: add async-implementation with async.emulation via
+    threadpool processing
+
+* A good handful of fixes, see the commit-messages for details
+
 v0.0.23
 -------
 
