@@ -40,6 +40,41 @@
 #include <libxnvme_util.h>
 
 /**
+ * NVMe PCIe BAR0 as-a-struct.
+ *
+ * @struct xnvme_spec_ctrlr_bar
+ */
+struct xnvme_spec_ctrlr_bar {
+	uint64_t cap;
+	uint32_t vs;
+	uint32_t intms;
+	uint32_t intmc;
+	uint32_t cc;
+	uint32_t rsvd24;
+	uint32_t csts;
+	uint32_t nssr;
+	uint32_t aqa;
+	uint64_t asq;
+	uint64_t acq;
+	uint32_t cmbloc;
+	uint32_t cmbsz;
+	uint32_t bpinfo;
+	uint32_t bprsel;
+	uint64_t bpmbl;
+	uint64_t cmbmsc;
+	uint32_t cmbsts;
+	uint8_t  rsvd92[3492];
+	uint32_t pmrcap;
+	uint32_t pmrctl;
+	uint32_t pmrsts;
+	uint32_t pmrebs;
+	uint32_t pmrswtp;
+	uint32_t pmrmscl;
+	uint32_t pmrmscu;
+	uint8_t  css[484];
+} __attribute__((__packed__));
+
+/**
  * NVMe Command Status Code Types
  *
  * @enum xnvme_spec_status_code_type
