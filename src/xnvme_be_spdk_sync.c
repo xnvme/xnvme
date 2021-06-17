@@ -55,33 +55,45 @@ xnvme_be_spdk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nby
 	struct spdk_nvme_qpair *qpair = state->qpair;
 	pthread_mutex_t *qpair_lock = &state->qpair_lock;
 	uint8_t *completed = &ctx->be_rsvd[0];
-
-	int err;
+	int err, err_lock;
 
 	*completed = 0;
 
-	pthread_mutex_lock(qpair_lock);
-	err = submit_ioc(state->ctrlr, qpair, ctx, dbuf, dbuf_nbytes, mbuf, cmd_sync_cb, ctx);
-	pthread_mutex_unlock(qpair_lock);
-	if (err) {
-		XNVME_DEBUG("FAILED: submit_ioc(), err: %d", err);
-		return err;
+	err_lock = pthread_mutex_lock(qpair_lock);
+	if (err_lock) {
+		XNVME_DEBUG("FAILED: pthread_mutex_lock(), err_lock: %d", err_lock);
+		return -err_lock;
 	}
 
+	err = submit_ioc(state->ctrlr, qpair, ctx, dbuf, dbuf_nbytes, mbuf, cmd_sync_cb, ctx);
+	if (err) {
+		XNVME_DEBUG("FAILED: submit_ioc(), err: %d", err);
+		goto exit;
+	}
 	while (!*completed) {
-		pthread_mutex_lock(qpair_lock);
-		spdk_nvme_qpair_process_completions(qpair, 0);
-		pthread_mutex_unlock(qpair_lock);
+		err = spdk_nvme_qpair_process_completions(qpair, 0);
+		if (err < 0) {
+			XNVME_DEBUG("FAILED: spdk_nvme_qpair_process_completions(), err: %d", err);
+			goto exit;
+		}
+
+		err = 0;
+	}
+
+exit:
+	err_lock = pthread_mutex_unlock(qpair_lock);
+	if (err_lock) {
+		XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err_lock: %d", err_lock);
 	}
 
 	*completed = 0;
 
 	if (xnvme_cmd_ctx_cpl_status(ctx)) {
 		XNVME_DEBUG("FAILED: xnvme_cmd_ctx_cpl_status()");
-		return -EIO;
+		err = err ? err : -EIO;
 	}
 
-	return 0;
+	return err;
 }
 #endif
 
