@@ -63,14 +63,8 @@ _emu_qp_alloc(struct _emu_qp **qp, uint32_t capacity)
 
 	(*qp)->capacity = capacity;
 
-	return 0;
-}
-
-int
-_emu_qp_init(struct _emu_qp *qp)
-{
-	for (uint32_t i = 0; i < qp->capacity; ++i) {
-		STAILQ_INSERT_HEAD(&qp->rp, &qp->elm[i], link);
+	for (uint32_t i = 0; i < (*qp)->capacity; ++i) {
+		STAILQ_INSERT_HEAD(&(*qp)->rp, &(*qp)->elm[i], link);
 	}
 
 	return 0;
@@ -102,10 +96,6 @@ _posix_async_emu_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 
 	if (_emu_qp_alloc(&(queue->qp), queue->base.capacity)) {
 		XNVME_DEBUG("FAILED: _emu_qp_alloc()");
-		goto failed;
-	}
-	if (_emu_qp_init(queue->qp)) {
-		XNVME_DEBUG("FAILED: _emu_qp_init()");
 		goto failed;
 	}
 
