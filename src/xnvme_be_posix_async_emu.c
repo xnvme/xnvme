@@ -80,15 +80,6 @@ _posix_async_emu_term(struct xnvme_queue *q)
 	return 0;
 }
 
-/**
- * TODO: add a thread-pool consuming the submission-queue, and populating the
- * completion-queue, replacing the submission in _poke consumption of entries in
- * the completion-queue. This should provide better throughput as commands will
- * leave xNVMe and go to the device as new ones are submitted. Additional
- * threads could further improve as overlapping threads can hide the round-trip
- * latency as well as the sw-stack overhead.
- * This should probably be done with an SPMC or something clever.
-*/
 int
 _posix_async_emu_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 {
