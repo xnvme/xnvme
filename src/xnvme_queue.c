@@ -70,6 +70,7 @@ xnvme_queue_init(struct xnvme_dev *dev, uint16_t capacity, int opts, struct xnvm
 	if (err) {
 		XNVME_DEBUG("FAILED: backend-queue initialization with err: %d", err);
 		free(*queue);
+		*queue = NULL;
 		return err;
 	}
 
