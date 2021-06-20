@@ -22,5 +22,5 @@ Where <command> is one of:
 
 See 'xnvme <command> --help' for the description of [<args>]
 
-xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 0, patch: 23}
+xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 0, patch: 24}
 

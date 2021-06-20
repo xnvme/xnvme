@@ -1,11 +1,11 @@
 # xNVMe Library Information
-ver: {major: 0, minor: 0, patch: 23}
+ver: {major: 0, minor: 0, patch: 24}
 xnvme_3p:
-  - 'fio;git-describe:fio-3.25'
+  - 'fio;git-describe:fio-3.27'
   - 'libnvme;git-rev:master/a458217'
   - 'liburing;git-describe:liburing-2.0'
-  - 'spdk;git-describe:v21.01.1;+patches'
-  - 'linux;LINUX_VERSION_CODE-UAPI/330268-5.10.28'
+  - 'spdk;git-describe:v21.04;+patches'
+  - 'linux;LINUX_VERSION_CODE-UAPI/330752-5.12.0'
 xnvme_be_attr_list:
   count: 4
   capacity: 4

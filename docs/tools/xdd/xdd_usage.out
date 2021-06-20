@@ -7,5 +7,5 @@ Where <command> is one of:
 
 See 'xdd <command> --help' for the description of [<args>]
 
-xNVMe dd - Copy bytes from input to output -- ver: {major: 0, minor: 0, patch: 23}
+xNVMe dd - Copy bytes from input to output -- ver: {major: 0, minor: 0, patch: 24}
 
