@@ -54,8 +54,16 @@ xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 	if (state->fd < 0) {
 		XNVME_DEBUG("FAILED: open(trgt: '%s') : state->fd: '%d', errno: %d",
 			    ident->trgt, state->fd, errno);
-		return -errno;
+
+		flags = xnvme_file_oflg_to_linux(opts->oflags & ~XNVME_FILE_OFLG_DIRECT_ON);
+		state->fd = open(ident->trgt, flags, opts->mode);
+		if (state->fd < 0) {
+			XNVME_DEBUG("FAILED: open(trgt: '%s') : state->fd: '%d', errno: %d",
+				    ident->trgt, state->fd, errno);
+			return -errno;
+		}
 	}
+
 	err = fstat(state->fd, &dev_stat);
 	if (err < 0) {
 		XNVME_DEBUG("FAILED: open() : fstat() : err: %d, errno: %d", err, errno);
