@@ -15,16 +15,17 @@ For details see the following man-pages::
   nvme, nda, nvd, pci, disk, and nvmecontrol
 
 The FreeBSD backend uses synchronous ``ioctl`` calls to have the kernel perform
-NVMe commands. Note that the backend needs a re-implementation it is currently
-not in a very usable state.
+NVMe commands.
 
-Note on Errors
---------------
+NVMe Driver IOCTL
+-----------------
 
-Some commands may be issued through ``ioctl`` that are invalid. While most
-commands will still be issued to the drive and the error relayed back to the
-user, some violations may be picked up by the kernel cause the ``ioctl`` to
-fail with ``-1`` and ``errno`` set to ``Invalid Argument``.
+The FreeBSD NVMe Driver IOCTL provides a rich interface for submitting commands
+similar to that of the Linux NVMe Driver IOCTL. However, for completion-errors,
+the FreeBSD NVMe Driver IOCTL provides the entire NVMe Completion result, where
+the Linux IOCTL maps the completion-result to an ``errno`` value and returns
+that instead.
 
 In this case, the backend will transform such errors into the NVMe equivalent.
-See the documentation on :ref:`xnvme_cmd_ctx <sec-c-api-xnvme-struct-xnvme_cmd_ctx>`.
+See the documentation on
+:ref:`xnvme_cmd_ctx <sec-c-api-xnvme-struct-xnvme_cmd_ctx>`.
