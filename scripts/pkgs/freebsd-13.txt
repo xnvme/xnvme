@@ -1,0 +1,15 @@
+autoconf
+automake
+bash
+cmake
+cunit
+e2fsprogs-libuuid
+git
+gmake
+meson
+nasm
+ncurses
+ninja
+openssl
+python
+python3
