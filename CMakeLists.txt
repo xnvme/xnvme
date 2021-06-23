@@ -443,6 +443,17 @@ else()
 	set(XNVME_BE_POSIX_ENABLED TRUE CACHE BOOL "be_posix: Posix backend")
 endif()
 
+if(XNVME_BE_HERMES_ENABLED)
+        add_definitions(-DXNVME_BE_HERMES_ENABLED)
+
+        message( STATUS "ENABLING POSIX SUPPORT via BE:HERMES" )
+        add_definitions(-DXNVME_BE_POSIX_ENABLED)
+
+        message( STATUS "ENABLING COMPUTE SUPPORT via BE:HERMES" )
+        add_definitions(-DXNVME_BE_COMPUTE_ENABLED)
+endif()
+message( STATUS "BE:HERMES ENABLED(${XNVME_BE_HERMES_ENABLED})" )#
+
 if(XNVME_BE_POSIX_ENABLED)
 	add_definitions(-DXNVME_BE_POSIX_ENABLED)
 
@@ -454,7 +465,6 @@ if(XNVME_BE_POSIX_ENABLED)
 endif()
 message( STATUS "BE:POSIX ENABLED(${XNVME_BE_POSIX_ENABLED})" )
 
-#
 # BACKENDS -- end
 #
 

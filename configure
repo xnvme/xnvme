@@ -53,6 +53,12 @@ CONFIG[BE_LINUX_LIBURING]=OFF
 # Enable the POSIX Backend
 CONFIG[BE_POSIX]=OFF
 
+# Enable the compute interface
+CONFIG[BE_HERMES]=OFF
+
+# Enable the Hermes Backend
+CONFIG[BE_HERMES]=OFF
+
 case "${OSTYPE,,}" in
 	*linux* )
 		CONFIG[DEBS]=ON
@@ -127,6 +133,8 @@ function usage()
 	echo " --enable-be-linux-libaio  Enable Linux ASYNC IO support"
 	echo " --enable-be-linux-liburing     Enable Linux liburing/io_uring support"
 	echo " --enable-be-linux-nil     Enable Linux nil-async-io support"
+        echo " --enable-be-compute       Enable compute support"
+        echo " --enable-be-hermes        Enable Hermes support"
 	echo ""
 	echo "Overriding Dependencies:"
 	echo ""
@@ -265,7 +273,18 @@ for i in "$@"; do
 		--disable-be-fbsd)
 			CONFIG[BE_FBSD]=OFF
 			;;
-
+		--enable-be-hermes)
+			CONFIG[BE_HERMES]=ON
+			;;
+		--disable-be-hermes)
+			CONFIG[BE_HERMES]=OFF
+			;;
+                --enable-be-compute)
+                        CONFIG[BE_COMPUTE]=ON
+                        ;;
+                --disable-be-compute)
+                        CONFIG[BE_COMPUTE]=OFF
+                        ;;
 		--enable-be-linux)
 			CONFIG[BE_LINUX]=ON
 			;;

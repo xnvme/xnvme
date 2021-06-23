@@ -27,6 +27,7 @@
  *
  * Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
  * Copyright (C) Klaus B. A. Jensen <k.jensen@samsung.com>
+ * Copyright (C) Niclas Hedam <n.hedam@samsung.com, nhed@itu.dk>
  * SPDX-License-Identifier: Apache-2.0
  *
  * @headerfile libxnvme_spec.h
@@ -891,6 +892,21 @@ struct xnvme_spec_idfy_cs {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_cs) == 4096, "Incorrect size")
 
 /**
+ * Compute opcodes
+ *
+ * @see specification Section xx, figure yy
+ *
+ * @enum xnvme_spec_compute_opc
+ */
+enum xnvme_spec_compute_opc {
+	XNVME_SPEC_COMPUTE_OPC_LOAD = 0x00,
+	XNVME_SPEC_COMPUTE_OPC_UNLOAD = 0x01,
+	XNVME_SPEC_COMPUTE_OPC_EXEC = 0x02,
+	XNVME_SPEC_COMPUTE_OPC_PULL = 0x03,
+	XNVME_SPEC_COMPUTE_OPC_PUSH = 0x04,
+};
+
+/**
  * NVMe completion result accessor
  *
  * TODO: clarify
@@ -1610,6 +1626,11 @@ struct xnvme_spec_znd_cmd {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_cmd) == 64, "Incorrect size")
 
+struct xnvme_spec_compute_cmd {
+	uint16_t opcode :  8;           ///< OPC: Command Opcode
+	uint32_t slot;
+};
+
 /**
  * NVMe Command Accessors
  *
@@ -1628,6 +1649,7 @@ struct xnvme_spec_cmd {
 		struct xnvme_spec_nvm_cmd_scopy scopy;
 		struct xnvme_spec_nvm_write_zeroes write_zeroes;
 		struct xnvme_spec_znd_cmd znd;
+		struct xnvme_spec_compute_cmd compute;
 	};
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd) == 64, "Incorrect size")
