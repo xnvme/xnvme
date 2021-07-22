@@ -94,7 +94,7 @@ _posix_async_aio_poke(struct xnvme_queue *q, uint32_t max)
 			break;
 
 		case EINPROGRESS:
-			TAILQ_NEXT(req, link);
+			req = TAILQ_NEXT(req, link);
 			continue;
 
 		case ECANCELED:	// Canceled or error, do not grab return-value
