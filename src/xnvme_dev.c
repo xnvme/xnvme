@@ -103,6 +103,12 @@ xnvme_dev_get_csi(const struct xnvme_dev *dev)
 	return dev->ident.csi;
 }
 
+const struct xnvme_ident *
+xnvme_dev_get_ident(const struct xnvme_dev *dev)
+{
+	return &dev->ident;
+}
+
 uint64_t
 xnvme_dev_get_ssw(const struct xnvme_dev *dev)
 {
