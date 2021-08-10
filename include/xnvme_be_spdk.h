@@ -39,7 +39,7 @@ XNVME_STATIC_ASSERT(
 struct xnvme_be_spdk_ctrlr_ref {
 	struct spdk_nvme_ctrlr *ctrlr;	///< Pointer to attached controller
 	int refcount;			///< # of refs. to 'ctrlr'
-	char trgt[XNVME_IDENT_TRGT_LEN + 1];
+	char uri[XNVME_IDENT_URI_LEN + 1];
 };
 
 struct xnvme_be_spdk_state {
@@ -54,13 +54,7 @@ struct xnvme_be_spdk_state {
 
 	uint8_t attached;
 
-	// Options
-	uint8_t cmb_sqs;
-	uint8_t css;
-	uint8_t shm_id;
-	uint8_t cmask;
-
-	uint8_t _rsvd[35];
+	uint8_t _rsvd[39];
 };
 XNVME_STATIC_ASSERT(
 	sizeof(struct xnvme_be_spdk_state) == XNVME_BE_STATE_NBYTES,

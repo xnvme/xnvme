@@ -21,7 +21,7 @@ extern "C" {
  * @note
  * De-allocate the buffer using xnvme_buf_phys_free()
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open()
  * @param nbytes The size of the allocated buffer in bytes
  * @param phys A pointer to the variable to hold the physical address of the allocated buffer. If
  * NULL, the physical address is not returned.
@@ -35,7 +35,7 @@ xnvme_buf_phys_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
 /**
  * Free the given buffer of physical memory allocated with xnvme_buf_phys_alloc()
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open()
  * @param buf Pointer to a buffer allocated with xnvme_buf_phys_alloc()
  */
 void
@@ -49,7 +49,7 @@ xnvme_buf_phys_free(const struct xnvme_dev *dev, void *buf);
  * @note
  * De-allocate the buffer using xnvme_buf_phys_free()
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open()
  * @param buf The buffer to reallocate
  * @param nbytes The size of the allocated buffer in bytes
  * @param phys A pointer to the variable to hold the physical address of the allocated buffer. If
@@ -68,7 +68,7 @@ xnvme_buf_phys_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes, ui
  * allocated with xnvme_buf_phys_alloc() or xnvme_buf_alloc(), where the 'phys' argument was either
  * not provided.
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open()
  * @param buf Pointer to a buffer allocated with xnvme_buf_alloc()
  * @param phys A pointer to the variable to hold the physical address of the given buffer.
  *

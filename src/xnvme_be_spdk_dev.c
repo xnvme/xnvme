@@ -35,10 +35,9 @@ static struct spdk_nvme_ctrlr *
 _cref_lookup(struct xnvme_ident *id)
 {
 	for (int i = 0; i < XNVME_BE_SPDK_CREFS_LEN; ++i) {
-		if (strncmp(g_cref[i].trgt, id->trgt, XNVME_IDENT_TRGT_LEN)) {
+		if (strncmp(g_cref[i].uri, id->uri, XNVME_IDENT_URI_LEN - 1)) {
 			continue;
 		}
-
 		if (!g_cref[i].ctrlr) {
 			XNVME_DEBUG("FAILED: corrupted ctrlr in cref");
 			return NULL;
@@ -77,7 +76,7 @@ _cref_insert(struct xnvme_ident *ident, struct spdk_nvme_ctrlr *ctrlr)
 
 		g_cref[i].ctrlr = ctrlr;
 		g_cref[i].refcount += 1;
-		strncpy(g_cref[i].trgt, ident->trgt, XNVME_IDENT_TRGT_LEN);
+		strncpy(g_cref[i].uri, ident->uri, XNVME_IDENT_URI_LEN);
 
 		return 0;
 	}
@@ -286,8 +285,8 @@ _spdk_nvmf_adrfam_str(enum spdk_nvmf_adrfam adrfam)
  * - construct trid for FC
  */
 static inline int
-_xnvme_be_spdk_ident_to_trid(const struct xnvme_ident *ident, struct spdk_nvme_transport_id *trid,
-			     int trtype)
+_xnvme_be_spdk_ident_to_trid(const struct xnvme_ident *ident, struct xnvme_opts *opts,
+			     struct spdk_nvme_transport_id *trid, int trtype)
 {
 	char trid_str[1024] = { 0 }; // TODO: fix this size
 	char addr[SPDK_NVMF_TRADDR_MAX_LEN + 1] = { 0 };
@@ -299,24 +298,20 @@ _xnvme_be_spdk_ident_to_trid(const struct xnvme_ident *ident, struct spdk_nvme_t
 	switch (trtype) {
 	case SPDK_NVME_TRANSPORT_PCIE:
 		sprintf(trid_str, "trtype:%s traddr:%s",
-			spdk_nvme_transport_id_trtype_str(trtype),
-			ident->trgt);
+			spdk_nvme_transport_id_trtype_str(trtype), ident->uri);
 		break;
 
 	case SPDK_NVME_TRANSPORT_TCP:
 	case SPDK_NVME_TRANSPORT_RDMA:
-		if (sscanf(ident->trgt, "%[^:]:%d", addr, &port) != 2) {
-			XNVME_DEBUG("FAILED: trgt: %s, trtype: %s",
-				    ident->trgt,
-				    spdk_nvme_transport_id_trtype_str(trtype));
+		if (sscanf(ident->uri, "%[^:]:%d", addr, &port) != 2) {
+			XNVME_DEBUG("FAILED: uri: %s, trtype: %s",
+				    ident->uri, spdk_nvme_transport_id_trtype_str(trtype));
 			return -EINVAL;
 		}
-
 		snprintf(trid_str, sizeof(trid_str),
 			 "trtype:%s adrfam:%s traddr:%s trsvcid:%d",
 			 spdk_nvme_transport_id_trtype_str(trtype),
-			 strstr(ident->opts, "?adrfam=IPv6") ? "IPv6" : "IPv4",
-			 addr, port);
+			 opts->adrfam ? opts->adrfam : "IPv4", addr, port);
 		break;
 
 	case SPDK_NVME_TRANSPORT_FC:
@@ -328,7 +323,8 @@ _xnvme_be_spdk_ident_to_trid(const struct xnvme_ident *ident, struct spdk_nvme_t
 
 	err = spdk_nvme_transport_id_parse(trid, trid_str);
 	if (err) {
-		XNVME_DEBUG("FAILED: parsing trid from trgt: %s, err: %d", ident->trgt, err);
+		XNVME_DEBUG("FAILED: parsing trid_str: %s from uri: %s, err: %d",
+			    trid_str, ident->uri, err);
 		return err;
 	}
 
@@ -395,7 +391,7 @@ probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
 		XNVME_DEBUG("SKIP: Already attached");
 		return false;
 	}
-	if (_xnvme_be_spdk_ident_to_trid(&dev->ident, &req, probed->trtype)) {
+	if (_xnvme_be_spdk_ident_to_trid(&dev->ident, &dev->opts, &req, probed->trtype)) {
 		XNVME_DEBUG("SKIP: !_xnvme_be_spdk_ident_to_trid()");
 		return false;
 	}
@@ -409,11 +405,11 @@ probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
 	}
 
 	// Setup controller options, general as well as trtype-specific
-	ctrlr_opts->command_set = state->css ? state->css : SPDK_NVME_CC_CSS_IOCS;
+	ctrlr_opts->command_set = dev->opts.css.given ? dev->opts.css.value : SPDK_NVME_CC_CSS_IOCS;
 
 	switch (req.trtype) {
 	case SPDK_NVME_TRANSPORT_PCIE:
-		ctrlr_opts->use_cmb_sqs = state->cmb_sqs ? true : false;
+		ctrlr_opts->use_cmb_sqs = dev->opts.use_cmb_sqs ? true : false;
 		break;
 
 	case SPDK_NVME_TRANSPORT_TCP:
@@ -443,23 +439,25 @@ probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
  */
 static void
 attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *XNVME_UNUSED(trid),
-	  struct spdk_nvme_ctrlr *ctrlr, const struct spdk_nvme_ctrlr_opts *XNVME_UNUSED(opts))
+	  struct spdk_nvme_ctrlr *ctrlr,
+	  const struct spdk_nvme_ctrlr_opts *XNVME_UNUSED(ctrlr_opts))
 {
 	struct xnvme_dev *dev = cb_ctx;
+	struct xnvme_opts *opts = &dev->opts;
 	struct xnvme_be_spdk_state *state = (void *)dev->be.state;
 	struct spdk_nvme_ns *ns = NULL;
 
-	XNVME_DEBUG("INFO: nsid: %d", dev->nsid);
+	XNVME_DEBUG("INFO: nsid: %d", opts->nsid);
 
-	ns = spdk_nvme_ctrlr_get_ns(ctrlr, dev->nsid);
+	ns = spdk_nvme_ctrlr_get_ns(ctrlr, opts->nsid);
 	if (!ns) {
-		XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_ns(0x%x)", dev->nsid);
+		XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_ns(0x%x)", opts->nsid);
 		spdk_nvme_detach(ctrlr);
 		return;
 	}
 	if (!spdk_nvme_ns_is_active(ns)) {
-		XNVME_DEBUG("FAILED: !spdk_nvme_ns_is_active(nsid:0x%x)",
-			    dev->nsid);
+		XNVME_DEBUG("FAILED: !spdk_nvme_ns_is_active(opts->nsid:0x%x)",
+			    opts->nsid);
 		spdk_nvme_detach(ctrlr);
 		return;
 	}
@@ -547,19 +545,20 @@ enumerate_probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
 
 /**
  * TODO:
- * - Add setup of ?addrfam for TCP and RDMA transports
- * - Add '?addrfam' option for TCP  + RDMA transport
+ * - Consider whether/how 'xnvme_opts' should be carried in the identifier since it is no longer
+ *   carried in the uri-encoding, currently communicating if the controller is using the following:
+ *   adrfam, css, use_cmb_sqs
  */
 static void
 enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
-		    struct spdk_nvme_ctrlr *ctrlr, const struct spdk_nvme_ctrlr_opts *ctrlr_opts)
+		    struct spdk_nvme_ctrlr *ctrlr,
+		    const struct spdk_nvme_ctrlr_opts *XNVME_UNUSED(ctrlr_opts))
 {
 	struct xnvme_be_spdk_enumerate_ctx *ectx = cb_ctx;
 	const int num_ns = spdk_nvme_ctrlr_get_num_ns(ctrlr);
 	int trtype = probed->trtype;
 
 	for (int nsid = 1; nsid <= num_ns; ++nsid) {
-		char uri[XNVME_IDENT_URI_LEN] = { 0 };
 		struct xnvme_ident ident = { 0 };
 		struct spdk_nvme_ns *ns;
 
@@ -569,8 +568,7 @@ enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
 		}
 		ns = spdk_nvme_ctrlr_get_ns(ctrlr, nsid);
 		if (!ns) {
-			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_ns(nsid:%d)",
-				    nsid);
+			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_ns(nsid:%d)", nsid);
 			continue;
 		}
 		if (!spdk_nvme_ns_is_active(ns)) {
@@ -582,19 +580,20 @@ enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
 			continue;
 		}
 
+		ident.dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
+		ident.nsid = nsid;
+		ident.csi = spdk_nvme_ns_get_csi(ns);
+
 		// Namespace looks good, construct xNVMe identifier, and ..
 		switch (trtype) {
 		case SPDK_NVME_TRANSPORT_PCIE:
-			snprintf(uri, sizeof(uri), "pci:%s", probed->traddr);
+			snprintf(ident.uri, sizeof(ident.uri), "%s", probed->traddr);
 			break;
 
 		case SPDK_NVME_TRANSPORT_TCP:
 		case SPDK_NVME_TRANSPORT_RDMA:
-			snprintf(uri, sizeof(uri), "fab:%s:%s",
+			snprintf(ident.uri, sizeof(ident.uri), "%s:%s",
 				 probed->traddr, probed->trsvcid);
-			snprintf(uri + strlen(uri), sizeof(uri) - strlen(uri),
-				 "?adrfam=%s",
-				 _spdk_nvmf_adrfam_str(probed->adrfam));
 			break;
 
 		case SPDK_NVME_TRANSPORT_FC:
@@ -603,21 +602,8 @@ enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
 				    spdk_nvme_transport_id_trtype_str(trtype));
 			continue;
 		}
-		snprintf(uri + strlen(uri), sizeof(uri) - strlen(uri), "?nsid=%d", nsid);
-
-		if (ectx->cmb_sqs) {
-			snprintf(uri + strlen(uri), sizeof(uri) - strlen(uri), "?cmb_sqs=1");
-		}
-		if (ectx->css) {
-			snprintf(uri + strlen(uri), sizeof(uri) - strlen(uri),
-				 "?css=%d", ctrlr_opts->command_set);
-		}
 
 		// .. add it to the enumeration.
-		if (xnvme_ident_from_uri(uri, &ident)) {
-			XNVME_DEBUG("FAILED: ident_from_uri, uri: %s", uri);
-			continue;
-		}
 		if (xnvme_enumeration_append(ectx->list, &ident)) {
 			XNVME_DEBUG("FAILED: adding ident");
 		}
@@ -653,11 +639,12 @@ xnvme_be_spdk_enumerate(struct xnvme_enumeration *list, const char *sys_uri, int
 			XNVME_DEBUG("FAILED: ident_from_uri, uri: %s", sys_uri);
 			return -EINVAL;
 		}
-		if (sscanf(ident.trgt, "%[^:]:%d", addr, &port) != 2) {
+		if (sscanf(ident.uri, "%[^:]:%d", addr, &port) != 2) {
 			XNVME_DEBUG("FAILED: invalid sys_uri: %s", sys_uri);
 			return -EINVAL;
 		}
 	}
+	XNVME_DEBUG("INFO: addr: %s, port: %d", addr, port);
 
 	ectx.list = list;
 	ectx.cmb_sqs = false;
@@ -688,8 +675,7 @@ xnvme_be_spdk_enumerate(struct xnvme_enumeration *list, const char *sys_uri, int
 			snprintf(trid_str, sizeof trid_str,
 				 "trtype:%s adrfam:%s traddr:%s trsvcid:%d",
 				 spdk_nvme_transport_id_trtype_str(trtype),
-				 strstr(ident.opts, "?adrfam=IPv6") ? "IPv6" : "IPv4",
-				 addr, port);
+				 "IPv4", addr, port);
 
 			err = spdk_nvme_transport_id_parse(&trid, trid_str);
 			if (err) {
@@ -720,7 +706,7 @@ xnvme_be_spdk_enumerate(struct xnvme_enumeration *list, const char *sys_uri, int
 
 /**
  * - Parse options from dev->ident
- * - Intialize SPDK environment
+ * - Initialize SPDK environment
  * - Attach to controller matching dev->ident
  * - create sync-io-qpair
  * - create lock protecting sync-io-qpair
@@ -729,33 +715,21 @@ int
 xnvme_be_spdk_state_init(struct xnvme_dev *dev)
 {
 	struct xnvme_be_spdk_state *state = (void *)dev->be.state;
-	const struct xnvme_be_options *opts = &dev->opts;
 	struct spdk_env_opts env_opts = { 0 };
 	int err;
 
-	if (!opts->nsid) {
-		XNVME_DEBUG("FAILED: opts->nsid: %d, ", opts->nsid);
+	if (!dev->opts.nsid) {
+		XNVME_DEBUG("FAILED: dev->opts.nsid: %d, ", dev->opts.nsid);
 		return -EINVAL;
 	}
 
-	dev->dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
-	dev->csi = XNVME_SPEC_CSI_NVM;
-	dev->nsid = opts->nsid;
-
-	state->cmb_sqs = opts->cmb_sqs ? true : false;
-	state->css = opts->css & 0x7;		// Assign only the relevant bits
-
-	XNVME_DEBUG("INFO: dev->nsid: %d, state->cmb_sqs: %d, state->css: %d",
-		    dev->nsid, state->cmb_sqs, state->css);
-
 	spdk_env_opts_init(&env_opts);
-	if (strcmp(dev->ident.schm, "fab") == 0) {
-		env_opts.shm_id = -1;
-		env_opts.no_pci = true;
-	}
-	if (opts->provided.shm_id && opts->provided.corelist) {
-		env_opts.shm_id = opts->shm_id;
-		env_opts.core_mask = opts->corelist;
+
+	if (dev->opts.core_mask) {
+		XNVME_DEBUG("INFO: multi-process setup");
+		env_opts.shm_id = dev->opts.shm_id;
+		env_opts.core_mask = dev->opts.core_mask;
+		env_opts.main_core = dev->opts.main_core;
 	}
 
 	err = _spdk_env_init(&env_opts);
@@ -768,17 +742,18 @@ xnvme_be_spdk_state_init(struct xnvme_dev *dev)
 	if (state->ctrlr) {
 		struct spdk_nvme_ns *ns;
 
-		ns = spdk_nvme_ctrlr_get_ns(state->ctrlr, dev->nsid);
+		XNVME_DEBUG("INFO: found dev->ident.uri: '%s' via cref_lookup()", dev->ident.uri);
+
+		ns = spdk_nvme_ctrlr_get_ns(state->ctrlr, dev->opts.nsid);
 		if (!ns) {
-			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_ns(0x%x)", dev->nsid);
+			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_ns(0x%x)", dev->opts.nsid);
 			if (_cref_deref(state->ctrlr)) {
 				XNVME_DEBUG("FAILED: _cref_deref");
 			}
 			goto probe;
 		}
 		if (!spdk_nvme_ns_is_active(ns)) {
-			XNVME_DEBUG("FAILED: !spdk_nvme_ns_is_active(nsid:0x%x)",
-				    dev->nsid);
+			XNVME_DEBUG("FAILED: !spdk_nvme_ns_is_active(nsid:0x%x)", dev->opts.nsid);
 			if (_cref_deref(state->ctrlr)) {
 				XNVME_DEBUG("FAILED: _cref_deref");
 			}
@@ -802,11 +777,12 @@ probe:
 			int trtype = g_xnvme_be_spdk_transport[t];
 			struct spdk_nvme_transport_id trid = { 0 };
 
+			XNVME_DEBUG("############################");
 			XNVME_DEBUG("INFO: trtype: %s, # %d of %d",
 				    spdk_nvme_transport_id_trtype_str(trtype),
 				    t + 1, g_xnvme_be_spdk_ntransport);
 
-			if (_xnvme_be_spdk_ident_to_trid(&dev->ident, &trid, trtype)) {
+			if (_xnvme_be_spdk_ident_to_trid(&dev->ident, &dev->opts, &trid, trtype)) {
 				XNVME_DEBUG("SKIP/FAILED: ident_to_trid()");
 				continue;
 			}
@@ -818,6 +794,10 @@ probe:
 			}
 		}
 	}
+
+	dev->ident.dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
+	dev->ident.csi = spdk_nvme_ns_get_csi(state->ns);
+	dev->ident.nsid = dev->opts.nsid;
 
 	// Setup IO qpair lock for SYNC commands
 	err = pthread_mutex_init(&state->qpair_lock, NULL);

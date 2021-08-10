@@ -48,6 +48,7 @@ int
 main(int argc, char **argv)
 {
 	struct cb_args cb_args = { 0 };
+	struct xnvme_opts opts = xnvme_opts_default();
 	struct xnvme_dev *dev = NULL;
 	uint32_t nsid;
 	char *buf = NULL;
@@ -61,7 +62,7 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	dev = xnvme_dev_open(argv[1]);
+	dev = xnvme_dev_open(argv[1], &opts);
 	if (!dev) {
 		xnvmec_perr("xnvme_dev_open()", errno);
 		return 1;

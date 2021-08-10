@@ -93,6 +93,9 @@ static struct xnvmec_sub g_subs[] = {
 		test_buf_alloc_free, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_COUNT, XNVMEC_LREQ},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 		},
 	},
 	{
@@ -102,6 +105,9 @@ static struct xnvmec_sub g_subs[] = {
 		test_virt_buf_alloc_free, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_COUNT, XNVMEC_LREQ},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 		},
 	},
 };

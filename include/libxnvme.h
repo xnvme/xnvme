@@ -19,13 +19,64 @@ extern "C" {
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/queue.h>
-#include <libxnvme_ident.h>
 #include <libxnvme_be.h>
-#include <libxnvme_spec.h>
-#include <libxnvme_util.h>
-#include <libxnvme_geo.h>
 #include <libxnvme_dev.h>
 #include <libxnvme_buf.h>
+#include <libxnvme_geo.h>
+#include <libxnvme_ident.h>
+#include <libxnvme_spec.h>
+#include <libxnvme_util.h>
+
+/**
+ * xNVMe options
+ *
+ * @see xnvme_dev_open()
+ *
+ * @struct xnvme_opts
+ */
+struct xnvme_opts {
+	const char *be;		///< Backend/system interface to use
+	const char *dev;	///< Device manager/enumerator
+	const char *mem;	///< Memory allocator to use for buffers
+	const char *sync;	///< Synchronous Command-interface
+	const char *async;	///> Asynchronous Command-interface
+	const char *admin;	///< Administrative Command-interface
+	uint32_t nsid;		///< Namespace identifier
+	union {
+		struct {
+			uint32_t rdonly		: 1;	///< OS open; read-only
+			uint32_t wronly		: 1;	///< OS open; write-only
+			uint32_t rdwr		: 1;	///< OS open; for read and only
+			uint32_t create		: 1;	///< OS open; create if it does not exist
+			uint32_t truncate	: 1;	///< OS open; truncate content
+			uint32_t direct		: 1;	///< OS open; attempt bypass OS-caching
+			uint32_t _rsvd		: 26;
+		};
+		uint32_t oflags;
+	};
+	uint32_t create_mode;		///< OS file creation-mode
+	uint8_t poll_io;		///< io_uring: enable io-polling
+	uint8_t poll_sq;		///< io_uring: enable sqthread-polling
+	uint8_t register_files;		///< io_uring: enable file-regirations
+	uint8_t register_buffers;	///< io_uring: enable buffer-registration
+	struct {
+		uint32_t value	: 31;
+		uint32_t given	: 1;
+	} css;			///< SPDK controller-setup: do command-set-selection
+	uint32_t use_cmb_sqs;	///< SPDK controller-setup: use controller-memory-buffer for sq
+	uint32_t shm_id;	///< SPDK multi-processing: shared-memory-id
+	uint32_t main_core;	///< SPDK multi-processing: main-core
+	const char *core_mask;	///< SPDK multi-processing: core-mask
+	const char *adrfam;	///< SPDK fabrics: address-family, IPv4/IPv6
+};
+
+/**
+ * Returns an initialized option-struct with default values
+ *
+ * @return Zero-initialized and with default values where applicable
+ */
+struct xnvme_opts
+xnvme_opts_default(void);
 
 /**
  * List of devices found on the system usable with xNVMe
@@ -51,29 +102,26 @@ int
 xnvme_enumerate(struct xnvme_enumeration **list, const char *sys_uri, int opts);
 
 /**
- * Opaque device handle.
+ * Creates a device handle (::xnvme_dev) based on the given device-uri and options
  *
- * @see xnvme_dev_open()
+ * Note: when using pci-addresses, then the options must have a 'nsid' identifying the NVMe
+ * namespace to use
  *
- * @struct xnvme_dev
- */
-struct xnvme_dev;
-
-/**
- * Creates a device handle (::xnvme_dev) based on the given device-uri
+ * @param dev_uri File path "/dev/nvme0n1" or "0000:04.01"
+ * @param opts Options for library backend and system-interfaces
  *
- * @param dev_uri File path "/dev/nvme0n1" or "pci://0000:04.01?nsid=1"
+ * @see xnvme_opts
  *
  * @return On success, a handle to the device. On error, NULL is returned and `errno` set to
  * indicate the error.
  */
 struct xnvme_dev *
-xnvme_dev_open(const char *dev_uri);
+xnvme_dev_open(const char *dev_uri, struct xnvme_opts *opts);
 
 /**
  * Destroy the given device handle (::xnvme_dev)
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open()
  */
 void
 xnvme_dev_close(struct xnvme_dev *dev);
@@ -89,7 +137,7 @@ xnvme_dev_close(struct xnvme_dev *dev);
  * @note
  * De-allocate the buffer using xnvme_buf_free()
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open()
  * @param nbytes The size of the allocated buffer in bytes
  *
  * @return On success, a pointer to the allocated memory is returned. On error, NULL is returned
@@ -109,7 +157,7 @@ xnvme_buf_alloc(const struct xnvme_dev *dev, size_t nbytes);
  * @note
  * De-allocate the buffer using xnvme_buf_free()
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open()
  * @param buf The buffer to reallocate
  * @param nbytes The size of the allocated buffer in bytes
  *
@@ -122,7 +170,7 @@ xnvme_buf_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes);
 /**
  * Free the given IO buffer allocated with xnvme_buf_alloc()
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open()
  * @param buf Pointer to a buffer allocated with xnvme_buf_alloc()
  */
 void
@@ -151,7 +199,7 @@ enum xnvme_queue_opts {
 /**
  * Allocate a Command Queue for asynchronous command submission and completion
  *
- * @param dev Device handle (::xnvme_dev) obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle (::xnvme_dev) obtained with xnvme_dev_open()
  * @param capacity Maximum number of outstanding commands on the initialized queue, note that it
  * must be a power of 2 within the range [1,4096]
  * @param opts Queue options
@@ -311,7 +359,7 @@ xnvme_queue_set_cb(struct xnvme_queue *queue, xnvme_queue_cb cb, void *cb_arg);
 /**
  * Retrieve a command-context for issuing commands to the given device
  *
- * @param dev Device handle (::xnvme_dev) obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle (::xnvme_dev) obtained with xnvme_dev_open()
  *
  * @return A ::xnvme_cmd_ctx initialized synchronous command on the given device
  */

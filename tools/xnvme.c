@@ -589,6 +589,8 @@ static struct xnvmec_sub g_subs[] = {
 		"List devices on the system", sub_listing, {
 			{XNVMEC_OPT_SYS_URI, XNVMEC_LOPT},
 			{XNVMEC_OPT_FLAGS, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 		}
 	},
 	{
@@ -596,12 +598,18 @@ static struct xnvmec_sub g_subs[] = {
 		"Enumerate devices on the system", sub_enumerate, {
 			{XNVMEC_OPT_SYS_URI, XNVMEC_LOPT},
 			{XNVMEC_OPT_FLAGS, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 		}
 	},
 	{
 		"info", "Retrieve derived information for given device",
 		"Retrieve derived information for given device", sub_info, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 		}
 	},
 	{
@@ -614,6 +622,10 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_SETID, XNVMEC_LOPT},
 			{XNVMEC_OPT_UUID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 		}
 	},
 	{
@@ -622,6 +634,10 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 		}
 	},
 	{
@@ -629,6 +645,10 @@ static struct xnvmec_sub g_subs[] = {
 		"Identify the given Controller", sub_idfy_ctrlr, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 		}
 	},
 	{
@@ -636,6 +656,10 @@ static struct xnvmec_sub g_subs[] = {
 		"Identify the Command Sets supported by the controller", sub_idfy_cs, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 		}
 	},
 	{
@@ -649,6 +673,10 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_RAE, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 		}
 	},
 	{
@@ -658,6 +686,10 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_LIMIT, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 		}
 	},
 	{
@@ -666,6 +698,10 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 		}
 	},
 	{
@@ -676,6 +712,10 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_SEL, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 		}
 	},
 	{
@@ -687,6 +727,10 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_SAVE, XNVMEC_LFLG},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 		}
 	},
 	{
@@ -702,17 +746,25 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_PI, XNVMEC_LOPT},
 			{XNVMEC_OPT_PIL, XNVMEC_LOPT},
 
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 		}
 	},
 	{
 		"sanitize", "Sanitize...", "Sanitize...", sub_sanitize, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 		}
 	},
 	{
 		"pioc", "Pass a used-defined IO Command through",
 		"Pass a used-defined IO Command through", sub_pioc, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_CMD_INPUT, XNVMEC_LREQ},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
@@ -720,12 +772,17 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_META_INPUT, XNVMEC_LOPT},
 			{XNVMEC_OPT_META_OUTPUT, XNVMEC_LOPT},
 			{XNVMEC_OPT_META_NBYTES, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 		}
 	},
 	{
 		"padc", "Pass a user-defined ADmin Command through",
 		"Pass a user-defined ADmin Command through", sub_padc, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_CMD_INPUT, XNVMEC_LREQ},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
@@ -733,6 +790,10 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_META_INPUT, XNVMEC_LOPT},
 			{XNVMEC_OPT_META_OUTPUT, XNVMEC_LOPT},
 			{XNVMEC_OPT_META_NBYTES, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 		}
 	},
 	{

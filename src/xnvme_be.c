@@ -81,227 +81,6 @@ xnvme_be_pr(const struct xnvme_be *be, enum xnvme_pr opts)
 	return xnvme_be_fpr(stdout, be, opts);
 }
 
-bool
-xnvme_ident_opt_to_val(const struct xnvme_ident *ident, const char *opt, uint32_t *val)
-{
-	const char *ofz = NULL;
-	char fmt[100] = { 0 };
-
-	ofz = strstr(ident->opts, opt);
-	if (!ofz) {
-		return false;
-	}
-
-	sprintf(fmt, "%s=%%x", opt);
-
-	return sscanf(ofz, fmt, val) == 1;
-}
-
-bool
-xnvme_ident_optval_to_buf(const char *opts, const char *opt, char *buf, uint32_t buf_len)
-{
-	char haystack[XNVME_IDENT_OPTS_LEN] = { 0 };
-
-	if (strlen(opts) > (XNVME_IDENT_OPTS_LEN - 1)) {
-		XNVME_DEBUG("FAILED: len(opts) out-of-bounds");
-		return false;
-	}
-	if (strlen(opt) > XNVME_IDENT_OPT_MAX) {
-		XNVME_DEBUG("FAILED: len(opt) out-of-bounds");
-		return false;
-	}
-	/*
-	if (buf_len < (strlen(opt) + 32)) {
-		return false;
-	}*/
-
-	snprintf(haystack, XNVME_IDENT_OPTS_LEN, "%s", opts);
-
-	for (char *tok = strtok(haystack, "?"); tok; tok = strtok(NULL, "?")) {
-		char fmt[100] = { 0 };
-
-		snprintf(fmt, sizeof(fmt), "%s=%%%d[a-z_0123456789]", opt, (int)(buf_len - 1));
-
-		if (sscanf(tok, fmt, buf) == 1) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-bool
-check_cmask_validity(const char *cmask, int nproc)
-{
-	char string[100];
-
-	if (sscanf(cmask, "%s", string) != 0) {
-		return false;
-	}
-
-	char *token = strtok(string, "[,-]");
-	while (token != NULL) {
-
-		for (size_t i = 0; i < strlen(token); i ++) {
-			if (!isdigit(token[i])) {
-				goto not_a_number;
-			}
-		}
-
-		if (atoi(token) >= nproc) {
-			goto fail;
-		}
-
-		token = strtok(NULL, "[,-]");
-	}
-
-	return true;
-
-fail:
-
-not_a_number:
-	return false;
-}
-
-int
-xnvme_be_options_from_ident(const struct xnvme_ident *ident, struct xnvme_be_options *opts)
-{
-	char optstr[XNVME_BE_OPTION_CHAR_LEN] = { 0 };
-	uint32_t optv = 0;
-
-	memset(opts, 0, sizeof(*opts));
-
-	// File open flags
-	if ((optv = 0) || (xnvme_ident_opt_to_val(ident, "create", &optv) && (optv == 1))) {
-		opts->oflags |= XNVME_FILE_OFLG_CREATE;
-	}
-	if ((optv = 0) || xnvme_ident_opt_to_val(ident, "direct", &optv)) {
-		if (optv == 1) {
-			opts->oflags |= XNVME_FILE_OFLG_DIRECT_ON;
-		} else {
-			opts->oflags |= XNVME_FILE_OFLG_DIRECT_OFF;
-		}
-	} else {
-		opts->oflags |= XNVME_FILE_OFLG_DIRECT_ON;
-	}
-
-	if ((optv = 0) || (xnvme_ident_opt_to_val(ident, "rdonly", &optv) && (optv == 1))) {
-		opts->oflags |= XNVME_FILE_OFLG_RDONLY;
-	} else if ((optv = 0) || (xnvme_ident_opt_to_val(ident, "wronly", &optv) && (optv == 1))) {
-		opts->oflags |= XNVME_FILE_OFLG_WRONLY;
-	} else if ((optv = 0) || (xnvme_ident_opt_to_val(ident, "rdwr", &optv) && (optv == 1))) {
-		opts->oflags |= XNVME_FILE_OFLG_RDWR;
-	} else {	// None explicitly chosen, set a default
-		opts->oflags |= XNVME_FILE_OFLG_RDWR;
-	}
-
-	if ((optv = 0) || (xnvme_ident_opt_to_val(ident, "trunc", &optv) && (optv == 1))) {
-		opts->oflags |= XNVME_FILE_OFLG_TRUNC;
-	}
-	opts->provided.oflags = 1;	// A default is always set
-
-	// File creation mode when XNVME_FILE_OFLG_CREATE is provided
-	memset(optstr, 0, sizeof(optstr));
-	if (xnvme_ident_optval_to_buf(ident->opts, "mode", optstr, sizeof(optstr) - 1)) {
-		opts->mode = strtol(optstr, NULL, 8);
-		opts->provided.mode = 1;
-	}
-
-	// io_uring
-	if ((optv = 0) || xnvme_ident_opt_to_val(ident, "poll_io", &optv)) {
-		opts->poll_io = (optv == 1);
-		opts->provided.poll_io = 1;
-	}
-	if ((optv = 0) || xnvme_ident_opt_to_val(ident, "poll_sq", &optv)) {
-		opts->poll_sq = (optv == 1);
-		opts->provided.poll_sq = 1;
-	}
-
-	// SPDK options
-	if ((optv = 0) || xnvme_ident_opt_to_val(ident, "nsid", &optv)) {
-		opts->nsid = optv;
-		opts->provided.nsid = 1;
-		XNVME_DEBUG("INFO: opts->nsid: %d", opts->nsid);
-	}
-	if ((optv = 0) || xnvme_ident_opt_to_val(ident, "css", &optv)) {
-		opts->css = optv;
-		opts->provided.css = 1;
-	}
-	if ((optv = 0) || xnvme_ident_opt_to_val(ident, "cmb_sqs", &optv)) {
-		opts->cmb_sqs = (optv == 1);
-		opts->provided.cmb_sqs = 1;
-	}
-	if ((optv = 0) || xnvme_ident_opt_to_val(ident, "shm_id", &optv)) {
-		opts->shm_id = optv;
-		opts->provided.shm_id = 1;
-	}
-
-	memset(optstr, 0, sizeof(optstr));
-	if (xnvme_ident_optval_to_buf(ident->opts, "corelist", optstr, sizeof(optstr) - 1)) {
-		memcpy(opts->corelist, optstr, XNVME_BE_OPTION_CHAR_LEN - 1);
-		opts->provided.corelist = 1;
-	}
-	memset(optstr, 0, sizeof(optstr));
-	if (xnvme_ident_optval_to_buf(ident->opts, "adrfam", optstr, sizeof(optstr) - 1)) {
-		memcpy(opts->adrfam, optstr, XNVME_BE_OPTION_CHAR_LEN - 1);
-		opts->provided.adrfam = 1;
-	}
-
-	// Backend interface options
-	if (xnvme_ident_optval_to_buf(ident->opts, "admin", opts->admin,
-				      XNVME_BE_MIXIN_NAME_LEN - 1)) {
-		opts->provided.admin = 1;
-	}
-	if (xnvme_ident_optval_to_buf(ident->opts, "dev", opts->dev,
-				      XNVME_BE_MIXIN_NAME_LEN - 1)) {
-		opts->provided.dev = 1;
-	}
-	if (xnvme_ident_optval_to_buf(ident->opts, "mem", opts->mem,
-				      XNVME_BE_MIXIN_NAME_LEN - 1)) {
-		opts->provided.mem = 1;
-	}
-	if (xnvme_ident_optval_to_buf(ident->opts, "async", opts->async,
-				      XNVME_BE_MIXIN_NAME_LEN - 1)) {
-		opts->provided.async = 1;
-	}
-	if (xnvme_ident_optval_to_buf(ident->opts, "sync", opts->sync,
-				      XNVME_BE_MIXIN_NAME_LEN - 1)) {
-		opts->provided.sync = 1;
-	}
-
-	return 0;
-}
-
-int
-path_to_ll(const char *path, uint64_t *val)
-{
-	int buf_len = 0x1000;
-	char buf[buf_len];
-	FILE *fp;
-	int c;
-	int base = 10;
-
-	fp = fopen(path, "rb");
-	if (!fp) {
-		return -errno;
-	}
-
-	memset(buf, 0, sizeof(char) * buf_len);
-	for (int i = 0; (((c = getc(fp)) != EOF) && i < buf_len); ++i) {
-		buf[i] = c;
-	}
-
-	fclose(fp);
-
-	if ((strlen(buf) > 2) && (buf[0] == '0') && (buf[1] == 'x')) {
-		base = 16;
-	}
-
-	*val = strtoll(buf, NULL, base);
-
-	return 0;
-}
-
 int
 xnvme_lba_fpr(FILE *stream, uint64_t lba, enum xnvme_pr opts)
 {
@@ -569,7 +348,7 @@ xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 {
 	struct xnvme_geo *geo = &dev->geo;
 
-	switch (dev->dtype) {
+	switch (dev->ident.dtype) {
 	case XNVME_DEV_TYPE_NVME_CONTROLLER:
 		XNVME_DEBUG("FAILED: not supported");
 		return -ENOSYS;
@@ -579,7 +358,7 @@ xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 
 	case XNVME_DEV_TYPE_BLOCK_DEVICE:
 	case XNVME_DEV_TYPE_NVME_NAMESPACE:
-		if (dev->csi == XNVME_SPEC_CSI_FS) {
+		if (dev->ident.csi == XNVME_SPEC_CSI_FS) {
 			if (_conventional_geometry(dev)) {
 				XNVME_DEBUG("FAILED: _conventional_geometry");
 				return -EINVAL;
@@ -587,7 +366,7 @@ xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 			break;
 		}
 
-		switch (dev->csi) {
+		switch (dev->ident.csi) {
 		case XNVME_SPEC_CSI_ZONED:
 			if (_zoned_geometry(dev)) {
 				XNVME_DEBUG("FAILED: _zoned_geometry");
@@ -603,13 +382,13 @@ xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 			break;
 
 		default:
-			XNVME_DEBUG("FAILED: unhandled csi: 0x%x", dev->csi);
+			XNVME_DEBUG("FAILED: unhandled csi: 0x%x", dev->ident.csi);
 			return -ENOSYS;
 		}
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: unhandled dtype: 0x%x", dev->dtype);
+		XNVME_DEBUG("FAILED: unhandled dtype: 0x%x", dev->ident.dtype);
 		return -ENOSYS;
 	}
 
@@ -638,10 +417,12 @@ xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 		}
 
 		// Fabrics work-around
+		/** TODO: fix this after removal of uri-encoded options
 		if ((geo->mdts_nbytes > (16 * 1024)) && \
 		    (!strncmp(dev->ident.schm, "fab", 3))) {
 			geo->mdts_nbytes = 16 * 1024;
 		}
+		*/
 	}
 
 	// TODO: add zamdts
@@ -687,7 +468,7 @@ xnvme_be_dev_idfy(struct xnvme_dev *dev)
 	// Retrieve idfy-ns
 	memset(idfy_ns, 0, sizeof(*idfy_ns));
 	ctx = xnvme_cmd_ctx_from_dev(dev);
-	err = xnvme_adm_idfy_ns(&ctx, dev->nsid, idfy_ns);
+	err = xnvme_adm_idfy_ns(&ctx, dev->ident.nsid, idfy_ns);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		err = err ? err : -EIO;
 		XNVME_DEBUG("FAILED: xnvme_adm_idfy_ns(), err: %d", err);
@@ -716,7 +497,7 @@ xnvme_be_dev_idfy(struct xnvme_dev *dev)
 
 		memset(idfy_ns, 0, sizeof(*idfy_ns));
 		ctx = xnvme_cmd_ctx_from_dev(dev);
-		err = xnvme_adm_idfy_ns_csi(&ctx, dev->nsid, XNVME_SPEC_CSI_ZONED, idfy_ns);
+		err = xnvme_adm_idfy_ns_csi(&ctx, dev->ident.nsid, XNVME_SPEC_CSI_ZONED, idfy_ns);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			XNVME_DEBUG("INFO: !xnvme_adm_idfy_ns_csi(CSI_ZONED)");
 			goto not_zns;
@@ -728,7 +509,7 @@ xnvme_be_dev_idfy(struct xnvme_dev *dev)
 
 		memcpy(&dev->idcss.ctrlr, idfy_ctrlr, sizeof(*idfy_ctrlr));
 		memcpy(&dev->idcss.ns, idfy_ns, sizeof(*idfy_ns));
-		dev->csi = XNVME_SPEC_CSI_ZONED;
+		dev->ident.csi = XNVME_SPEC_CSI_ZONED;
 
 		XNVME_DEBUG("INFO: looks like csi(ZNS)");
 		goto exit;
@@ -755,7 +536,7 @@ not_zns:
 
 		memset(idfy_ns, 0, sizeof(*idfy_ns));
 		ctx = xnvme_cmd_ctx_from_dev(dev);
-		err = xnvme_adm_idfy_ns_csi(&ctx, dev->nsid, XNVME_SPEC_CSI_FS, idfy_ns);
+		err = xnvme_adm_idfy_ns_csi(&ctx, dev->ident.nsid, XNVME_SPEC_CSI_FS, idfy_ns);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			XNVME_DEBUG("INFO: !xnvme_adm_idfy_ns_csi(CSI_FS)");
 			goto not_fs;
@@ -769,7 +550,7 @@ not_zns:
 		memcpy(&dev->idcss.ns, idfy_ns, sizeof(*idfy_ns));
 
 		XNVME_DEBUG("INFO: looks like csi(FS)");
-		dev->csi = XNVME_SPEC_CSI_FS;
+		dev->ident.csi = XNVME_SPEC_CSI_FS;
 		goto exit;
 
 not_fs:
@@ -779,7 +560,7 @@ not_fs:
 	// Attempt to identify LBLK Namespace
 	memset(idfy_ns, 0, sizeof(*idfy_ns));
 	ctx = xnvme_cmd_ctx_from_dev(dev);
-	err = xnvme_adm_idfy_ns_csi(&ctx, dev->nsid, XNVME_SPEC_CSI_NVM, idfy_ns);
+	err = xnvme_adm_idfy_ns_csi(&ctx, dev->ident.nsid, XNVME_SPEC_CSI_NVM, idfy_ns);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("INFO: not csi-specific id-NVM");
 		XNVME_DEBUG("INFO: falling back to NVM assumption");
@@ -815,16 +596,10 @@ xnvme_ident_yaml(FILE *stream, const struct xnvme_ident *ident, int indent, cons
 		wrtn += fprintf(stream, "\n");
 	}
 
-	wrtn += fprintf(stream, "%*strgt: '%s'%s", indent, "", ident->trgt,
-			sep);
-
-	wrtn += fprintf(stream, "%*sschm: '%s'%s", indent, "", ident->schm,
-			sep);
-
-	wrtn += fprintf(stream, "%*sopts: '%s'%s", indent, "", ident->opts,
-			sep);
-
-	wrtn += fprintf(stream, "%*suri: '%s'", indent, "", ident->uri);
+	wrtn += fprintf(stream, "%*suri: '%s'%s", indent, "", ident->uri, sep);
+	wrtn += fprintf(stream, "%*sdtype: 0x%x%s", indent, "", ident->dtype, sep);
+	wrtn += fprintf(stream, "%*snsid: 0x%x%s", indent, "", ident->nsid, sep);
+	wrtn += fprintf(stream, "%*scsi: 0x%x", indent, "", ident->csi);
 
 	return wrtn;
 }
@@ -947,15 +722,23 @@ xnvme_enumeration_append(struct xnvme_enumeration *list,
  * @return Returns 1 it is exist, 0 otherwise.
  */
 static int
-enumeration_has_trgt(struct xnvme_enumeration *list, struct xnvme_ident *ident,
-		     uint32_t idx)
+enumeration_has_ident(struct xnvme_enumeration *list, struct xnvme_ident *ident, uint32_t idx)
 {
 	uint32_t bound = XNVME_MIN(list->nentries, idx);
 
 	for (uint32_t i = 0; i < bound; ++i) {
 		struct xnvme_ident *id = &list->entries[i];
 
-		if (!strncmp(ident->trgt, id->trgt, XNVME_IDENT_TRGT_LEN)) {
+		if (id->nsid != ident->nsid) {
+			continue;
+		}
+		if (id->csi != ident->csi) {
+			continue;
+		}
+		if (id->dtype != ident->dtype) {
+			continue;
+		}
+		if (!strncmp(ident->uri, id->uri, XNVME_IDENT_URI_LEN - 1)) {
 			return 1;
 		}
 	}
@@ -992,28 +775,13 @@ xnvme_enumeration_fpp(FILE *stream, struct xnvme_enumeration *list, int opts)
 
 	for (uint32_t idx = 0; idx < list->nentries; ++idx) {
 		struct xnvme_ident *ident = &list->entries[idx];
-		int nschemes = 0;
 
-		if (enumeration_has_trgt(list, ident, idx)) {
+		if (enumeration_has_ident(list, ident, idx)) {
 			continue;
 		}
 
 		wrtn += fprintf(stream, "\n");
-		wrtn += fprintf(stream, "  - trgt: %s\n", ident->trgt);
-		wrtn += fprintf(stream, "    schm: [");
-
-		for (uint32_t sidx = 0; sidx < list->nentries; ++sidx) {
-			struct xnvme_ident *sident = &list->entries[sidx];
-
-			if (strcmp(ident->trgt, sident->trgt)) {
-				continue;
-			}
-
-			wrtn += fprintf(stream, "%s%s", nschemes ? "," : "",
-					sident->schm);
-			++nschemes;
-		}
-		wrtn += fprintf(stream, "]\n");
+		wrtn += fprintf(stream, "  - uri: %s\n", ident->uri);
 	}
 
 	return wrtn;
@@ -1025,87 +793,44 @@ xnvme_enumeration_pp(struct xnvme_enumeration *list, int opts)
 	return xnvme_enumeration_fpp(stdout, list, opts);
 }
 
-int
-be_options_pr(const struct xnvme_be_options *opts)
-{
-	int wrtn = 0;
-
-	wrtn += printf("be_options:\n");
-	wrtn += printf("  admin: '%s'\n", opts->admin);
-	wrtn += printf("  dev: '%s'\n", opts->dev);
-	wrtn += printf("  mem: '%s'\n", opts->mem);
-
-	wrtn += printf("  sync: '%s'\n", opts->sync);
-	wrtn += printf("  async: '%s'\n", opts->async);
-
-	return wrtn;
-}
-
-int
-be_options_mname_by_mtype(struct xnvme_be_options *opts, enum xnvme_be_mixin_type mtype,
-			  char **mname)
-{
-	switch (mtype) {
-	case XNVME_BE_ASYNC:
-		*mname = opts->async;
-		return 0;
-
-	case XNVME_BE_SYNC:
-		*mname = opts->sync;
-		return 0;
-
-	case XNVME_BE_ADMIN:
-		*mname = opts->admin;
-		return 0;
-
-	case XNVME_BE_DEV:
-		*mname = opts->dev;
-		return 0;
-
-	case XNVME_BE_MEM:
-		*mname = opts->mem;
-		return 0;
-
-	case XNVME_BE_ATTR:
-	case XNVME_BE_END:
-		XNVME_DEBUG("FAILED: attr | end");
-		break;
-	}
-
-	return -ENOSYS;
-}
-
 /**
- * Set up mixin of 'be' of the given 'mtype' and optionally matching 'mname'
+ * Set up mixin of 'be' of the given 'mtype' and matching 'opts' when provided
  */
 static int
-be_setup(struct xnvme_be *be, enum xnvme_be_mixin_type mtype, const char *mname)
+be_setup(struct xnvme_be *be, enum xnvme_be_mixin_type mtype, struct xnvme_opts *opts)
 {
-	if (!mname) {
-		XNVME_DEBUG("FAILED: mname == NULL, must be a string, possibly empty");
-		return -EINVAL;
-	}
-
 	for (uint64_t  j = 0; (j < be->nobjs); ++j) {
 		const struct xnvme_be_mixin *mixin = &be->objs[j];
 
 		if (mixin->mtype != mtype) {
 			continue;
 		}
-		if (mname[0] != '\0' && strcmp(mname, mixin->name)) {
-			continue;
-		}
 
 		switch (mtype) {
 		case XNVME_BE_ASYNC:
+			if ((opts) && (opts->async) && strcmp(opts->async, mixin->name)) {
+				XNVME_DEBUG("INFO: skipping async: '%s' != '%s'",
+					    mixin->name, opts->async);
+				continue;
+			}
 			be->async = *mixin->async;
 			break;
 
 		case XNVME_BE_SYNC:
+			if ((opts) && (opts->sync) && strcmp(opts->sync, mixin->name)) {
+				XNVME_DEBUG("INFO: skipping sync: '%s' != '%s'",
+					    mixin->name, opts->sync);
+				continue;
+			}
 			be->sync = *mixin->sync;
 			break;
 
 		case XNVME_BE_ADMIN:
+			if ((opts) && (opts->admin) && strcmp(opts->admin, mixin->name)) {
+				XNVME_DEBUG("INFO: skipping admin: '%s' != '%s'",
+					    mixin->name, opts->admin);
+				continue;
+			}
 			be->admin = *mixin->admin;
 			break;
 
@@ -1114,6 +839,11 @@ be_setup(struct xnvme_be *be, enum xnvme_be_mixin_type mtype, const char *mname)
 			break;
 
 		case XNVME_BE_MEM:
+			if ((opts) && (opts->mem) && strcmp(opts->mem, mixin->name)) {
+				XNVME_DEBUG("INFO: skipping mem: '%s' != '%s'",
+					    mixin->name, opts->mem);
+				continue;
+			}
 			be->mem = *mixin->mem;
 			break;
 
@@ -1126,15 +856,15 @@ be_setup(struct xnvme_be *be, enum xnvme_be_mixin_type mtype, const char *mname)
 		return mtype;
 	}
 
-	XNVME_DEBUG("FAILED: be: '%s' has no mixin of mtype: %x, mtype_key: '%s' with mname: '%s'",
-		    be->attr.name, mtype, xnvme_be_mixin_key(mtype), mname);
+	XNVME_DEBUG("FAILED: be: '%s' has no matching mixin of mtype: %x, mtype_key: '%s'",
+		    be->attr.name, mtype, xnvme_be_mixin_key(mtype));
+
 	return -ENOSYS;
 }
 
 int
-xnvme_be_factory(struct xnvme_dev *dev)
+xnvme_be_factory(struct xnvme_dev *dev, struct xnvme_opts *opts)
 {
-	struct xnvme_be_options *opts = &dev->opts;
 	int err = 0;
 
 	for (int i = 0; (i < g_xnvme_be_count) && g_xnvme_be_registry[i]; ++i) {
@@ -1145,18 +875,15 @@ xnvme_be_factory(struct xnvme_dev *dev)
 			XNVME_DEBUG("INFO: skipping be: '%s'; !enabled", be.attr.name);
 			continue;
 		}
+		if (opts && (opts->be) && strcmp(opts->be, be.attr.name)) {
+			XNVME_DEBUG("INFO: skipping be: '%s' != '%s'", be.attr.name, opts->be);
+			continue;
+		}
 
 		for (int j = 0; j < 5; ++j) {
-			char *mname = NULL;
 			int mtype = 1 << j;
 
-			err = be_options_mname_by_mtype(opts, mtype, &mname);
-			if (err) {
-				XNVME_DEBUG("FAILED: be_options_mname_by_mtype()");
-				continue;
-			}
-
-			err = be_setup(&be, mtype, mname);
+			err = be_setup(&be, mtype, opts);
 			if (err < 0) {
 				XNVME_DEBUG("FAILED: be_setup(%s); err: %d", be.attr.name, err);
 				continue;
@@ -1171,6 +898,7 @@ xnvme_be_factory(struct xnvme_dev *dev)
 		}
 
 		dev->be = be;
+		dev->opts = *opts;
 
 		XNVME_DEBUG("INFO: obtained backend instance be: '%s'", be.attr.name);
 
@@ -1178,6 +906,13 @@ xnvme_be_factory(struct xnvme_dev *dev)
 		switch (err < 0 ? -err : err) {
 		case 0:
 			XNVME_DEBUG("INFO: obtained device handle");
+			dev->opts.be = be.attr.name;
+			dev->opts.admin = dev->be.admin.id;
+			dev->opts.sync = dev->be.sync.id;
+			dev->opts.async = dev->be.async.id;
+
+			dev->opts.mem = "FIX-ID-VS-MIXIN-NAME";
+			dev->opts.dev = "FIX-ID-VS-MIXIN-NAME";
 			return 0;
 
 		case EPERM:
@@ -1216,7 +951,7 @@ xnvme_enumerate(struct xnvme_enumeration **list, const char *sys_uri, int opts)
 			continue;
 		}
 
-		err = be_setup(&be, XNVME_BE_DEV, "");
+		err = be_setup(&be, XNVME_BE_DEV, NULL);
 		if (err < 0) {
 			XNVME_DEBUG("FAILED: be_setup(); err: %d", err);
 			continue;
@@ -1232,117 +967,33 @@ xnvme_enumerate(struct xnvme_enumeration **list, const char *sys_uri, int opts)
 	return 0;
 }
 
-/**
- * Copy 'uri' into 'xnvme_ident.uri'
- *
- * @note consecutive '/' are replaced by a single '/'
- * @note if 'uri' begins with '/' then 'schm_def' is prepended to
- * 'xnvme_ident.uri'
- * @note breaks copy when seeing a space (' ')
- */
-static void
-norm_uri(const char *uri, struct xnvme_ident *ident, const char *schm_def)
-{
-	int bound;
-	char prev = '!';
-	int uri_len = 0;
-
-	bound = strlen(uri) > XNVME_IDENT_URI_LEN ? XNVME_IDENT_URI_LEN : strlen(uri);
-
-	if (uri[0] == '/') {
-		sprintf(ident->uri, "%s:", schm_def);
-		uri_len = strlen(ident->uri);
-	}
-
-	for (int i = 0; i < bound && uri[i] != '\0'; i++) {
-		char cur = uri[i];
-
-		if (cur == ' ') {
-			break;
-		}
-
-		if (i && (cur == '/') && (prev == cur)) {
-			continue;
-		}
-
-		ident->uri[uri_len++] = cur;
-
-		prev = uri[i];
-	}
-}
-
-/**
- * Searches the 'haystack' for 'needle', assigns 'ofz' when found
- *
- * @returns On success, that is, needle is found, 1 is returned. On error, that
- * is when 'needle' is not in haystack, the 0 is returned.
- */
-static bool
-strhas(const char *haystack, char needle, int *ofz)
-{
-	for (int i = 0; haystack[i] != '\0'; i++) {
-		if (haystack[i] == needle) {
-			*ofz = i;
-			return true;
-		}
-	}
-
-	return false;
-}
-
-bool
-has_scheme(const char *needle, const char *haystack[], int len)
-{
-	for (int i = 0; i < len; ++i) {
-		if (!strncmp(needle, haystack[i], 4)) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
 int
 xnvme_ident_from_uri(const char *uri, struct xnvme_ident *ident)
 {
-	int trgt_len = 0, opts_len = 0;
-	int trgt_ofz, opts_ofz;
-	int uri_len;
-	int matches;
-	char sep[1];
+	if (strlen(uri) >= XNVME_IDENT_URI_LEN) {
+		XNVME_DEBUG("FAILED: strlen(uri) too long");
+		return -EINVAL;
+	}
 
 	memset(ident, 0, sizeof(*ident));
-
-	norm_uri(uri, ident, "file");
-
-	uri_len = strlen(ident->uri);
-
-	if (uri_len < XNVME_IDENT_URI_LEN_MIN) {
-		XNVME_DEBUG("FAILED: uri is less than minimum length");
-		return -EINVAL;
-	}
-
-	matches = sscanf(ident->uri, "%4[a-z]%1[:]", ident->schm, sep);
-	if (matches != 2) {
-		XNVME_DEBUG("FAILED: uri has no scheme");
-		return -EINVAL;
-	}
-
-	if (strhas(ident->uri, XNVME_IDENT_OPTS_SEP, &opts_ofz)) {
-		opts_len = uri_len - opts_ofz;
-		strncpy(ident->opts, ident->uri + opts_ofz, opts_len);
-	}
-
-	trgt_ofz = strnlen(ident->schm, XNVME_IDENT_SCHM_LEN) + 1;
-	trgt_len = uri_len - trgt_ofz - opts_len;
-
-	if (trgt_len >= XNVME_IDENT_TRGT_LEN) {
-		XNVME_DEBUG("FAILED: uri-target exceeds maximum length");
-		return -EINVAL;
-	}
-
-	strncpy(ident->trgt, ident->uri + trgt_ofz, trgt_len);
+	strncpy(ident->uri, uri, XNVME_IDENT_URI_LEN - 1);
+	ident->dtype = XNVME_DEV_TYPE_UNKNOWN;
+	ident->nsid = 0xFFFFFFFF;
+	ident->csi = 0xFF;
 
 	return 0;
+}
+
+struct xnvme_opts
+xnvme_opts_default(void)
+{
+	struct xnvme_opts opts = { 0 };
+
+	opts.rdwr = 1;
+
+	// Value is only applicable if the user also sets opts.create = 1
+	opts.create_mode = S_IRUSR | S_IWUSR;
+
+	return opts;
 }
 

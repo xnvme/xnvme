@@ -202,13 +202,18 @@ static struct xnvmec_sub g_subs[] = {
 		cmd_verify, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_CLEAR, XNVMEC_LFLG},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			{XNVMEC_OPT_ASYNC, XNVMEC_LOPT},
 		}
 	},
 };
 
 static struct xnvmec g_cli = {
-	.title = "Tests for Zoned Random Write Area",
-	.descr_short = "Tests for Zoned Random Write Area",
+	.title = "Tests for Zone Append via Async interfaces",
+	.descr_short = "Tests for Zone Append via Async interfaces",
 	.subs = g_subs,
 	.nsubs = sizeof g_subs / sizeof(*g_subs),
 };

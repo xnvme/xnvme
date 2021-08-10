@@ -71,21 +71,21 @@ cb_func_copy(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 int
 read_write(struct xnvmec *cli)
 {
-	int size = cli->args.data_nbytes;
 	const char *uri = cli->args.sys_uri;
+	int size = cli->args.data_nbytes;
+	struct xnvme_opts opts = { .create = 1, .rdwr = 1 };
+	struct xnvme_cmd_ctx ctx;
 	struct xnvme_dev *dev;
 	ssize_t err;
+	char *buf;
 
 	xnvmec_pinf("opening '%s'\n", uri);
-	dev = xnvme_file_open(uri, XNVME_FILE_OFLG_CREATE | XNVME_FILE_OFLG_RDWR);
+	dev = xnvme_file_open(uri, &opts);
 	if (dev == NULL) {
 		xnvmec_perr("no xnvme device. abort mission!\n", errno);
 		return errno;
 	}
 	xnvmec_pinf("opened nvme device %s", uri);
-
-	char *buf;
-	struct xnvme_cmd_ctx ctx;
 
 	buf = xnvme_buf_alloc(dev, size);
 	for (int u = 0; u < size; u++) {
@@ -118,18 +118,16 @@ exit:
 int
 dump_sync(struct xnvmec *cli)
 {
-	const char *fpath;
+	struct xnvme_opts opts = { .create = 1, .wronly = 1, .direct = cli->args.direct };
 	struct xnvme_dev *fh;
-	int flags;
+	const char *fpath;
 	size_t buf_nbytes, tbytes, iosize;
 	char *buf;
 
 	fpath = cli->args.data_output;
-	flags = XNVME_FILE_OFLG_CREATE | XNVME_FILE_OFLG_WRONLY;
-	flags |= cli->given[XNVMEC_OPT_DIRECT] ? XNVME_FILE_OFLG_DIRECT_ON : 0x0;
 	iosize = cli->given[XNVMEC_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
 
-	fh = xnvme_file_open(fpath, flags);
+	fh = xnvme_file_open(fpath, &opts);
 	if (!fh) {
 		xnvmec_perr("xnvme_file_open(fh)", errno);
 		return errno;
@@ -174,24 +172,21 @@ exit:
 int
 dump_async(struct xnvmec *cli)
 {
-	const char *fpath;
-	struct xnvme_dev *fh;
-	int flags;
-	size_t buf_nbytes, tbytes, iosize;
-	char *buf;
-
-	struct cb_args cb_args = { 0 };
+	struct xnvme_opts opts = { .create = 1, .wronly = 1, .direct = cli->args.direct };
 	struct xnvme_queue *queue = NULL;
+	struct cb_args cb_args = { 0 };
+	size_t buf_nbytes, tbytes, iosize;
+	struct xnvme_dev *fh;
+	const char *fpath;
+	char *buf;
 	uint32_t qdepth;
 	int err;
 
 	fpath = cli->args.data_output;
-	flags = XNVME_FILE_OFLG_CREATE | XNVME_FILE_OFLG_WRONLY;
-	flags |= cli->given[XNVMEC_OPT_DIRECT] ? XNVME_FILE_OFLG_DIRECT_ON : 0x0;
 	iosize = cli->given[XNVMEC_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
 	qdepth = cli->given[XNVMEC_OPT_QDEPTH] ? cli->args.qdepth : QDEPTH_DEF;
 
-	fh = xnvme_file_open(fpath, flags);
+	fh = xnvme_file_open(fpath, &opts);
 	if (fh == NULL) {
 		xnvmec_perr("xnvme_file_open(fh)", errno);
 		return errno;
@@ -272,18 +267,16 @@ exit:
 int
 load_sync(struct xnvmec *cli)
 {
-	const char *fpath;
+	struct xnvme_opts opts = { .rdonly = 1, .direct = cli->args.direct };
 	struct xnvme_dev *fh;
-	int flags;
+	const char *fpath;
 	size_t buf_nbytes, tbytes, iosize;
 	char *buf;
 
 	fpath = cli->args.data_input;
-	flags = XNVME_FILE_OFLG_RDONLY;
-	flags |= cli->given[XNVMEC_OPT_DIRECT] ? XNVME_FILE_OFLG_DIRECT_ON : 0x0;
 	iosize = cli->given[XNVMEC_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
 
-	fh = xnvme_file_open(fpath, flags);
+	fh = xnvme_file_open(fpath, &opts);
 	if (!fh) {
 		xnvmec_perr("xnvme_file_open(fh)", errno);
 		return errno;
@@ -330,8 +323,8 @@ int
 load_async(struct xnvmec *cli)
 {
 	const char *fpath;
+	struct xnvme_opts opts = { .rdonly = 1, .direct = cli->args.direct };
 	struct xnvme_dev *fh;
-	int flags;
 	size_t buf_nbytes, tbytes, iosize;
 	char *buf;
 
@@ -341,12 +334,10 @@ load_async(struct xnvmec *cli)
 	int err;
 
 	fpath = cli->args.data_input;
-	flags = XNVME_FILE_OFLG_RDONLY;
-	flags |= cli->given[XNVMEC_OPT_DIRECT] ? XNVME_FILE_OFLG_DIRECT_ON : 0x0;
 	iosize = cli->given[XNVMEC_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
 	qdepth = cli->given[XNVMEC_OPT_QDEPTH] ? cli->args.qdepth : QDEPTH_DEF;
 
-	fh = xnvme_file_open(fpath, flags);
+	fh = xnvme_file_open(fpath, &opts);
 	if (fh == NULL) {
 		xnvmec_perr("xnvme_file_open(fh)", errno);
 		return errno;
@@ -428,26 +419,23 @@ exit:
 int
 copy_file_sync(struct xnvmec *cli)
 {
-	const char *src_fpath, *dst_fpath;
+	struct xnvme_opts src_opts = { .rdonly = 1, .direct = cli->args.direct };
+	struct xnvme_opts dst_opts = { .create = 1, .wronly = 1, .direct = cli->args.direct };
 	struct xnvme_dev *src_fh, *dst_fh;
-	int src_flags, dst_flags;
+	const char *src_fpath, *dst_fpath;
 	size_t buf_nbytes, tbytes, iosize;
 	char *buf = NULL;
 
 	src_fpath = cli->args.data_input;
 	dst_fpath = cli->args.data_output;
-	src_flags = XNVME_FILE_OFLG_RDONLY;
-	src_flags |= cli->given[XNVMEC_OPT_DIRECT] ? XNVME_FILE_OFLG_DIRECT_ON : 0x0;
-	dst_flags = XNVME_FILE_OFLG_CREATE | XNVME_FILE_OFLG_WRONLY;
-	dst_flags |= cli->given[XNVMEC_OPT_DIRECT] ? XNVME_FILE_OFLG_DIRECT_ON : 0x0;
 	iosize = cli->given[XNVMEC_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
 
-	src_fh = xnvme_file_open(src_fpath, src_flags);
+	src_fh = xnvme_file_open(src_fpath, &src_opts);
 	if (src_fh == NULL) {
 		xnvmec_perr("xnvme_file_open(src)", errno);
 		return errno;
 	}
-	dst_fh = xnvme_file_open(dst_fpath, dst_flags);
+	dst_fh = xnvme_file_open(dst_fpath, &dst_opts);
 	if (dst_fh == NULL) {
 		xnvmec_perr("xnvme_file_open(dst)", errno);
 		goto exit;
@@ -501,9 +489,10 @@ exit:
 int
 copy_file_async(struct xnvmec *cli)
 {
-	const char *src_fpath, *dst_fpath;
+	struct xnvme_opts src_opts = { .rdonly = 1, .direct = cli->args.direct };
+	struct xnvme_opts dst_opts = { .create = 1, .wronly = 1, .direct = cli->args.direct };
 	struct xnvme_dev *src_fh, *dst_fh;
-	int src_flags, dst_flags;
+	const char *src_fpath, *dst_fpath;
 	size_t buf_nbytes, tbytes, iosize;
 	char *buf = NULL;
 
@@ -515,19 +504,15 @@ copy_file_async(struct xnvmec *cli)
 
 	src_fpath = cli->args.data_input;
 	dst_fpath = cli->args.data_output;
-	src_flags = XNVME_FILE_OFLG_RDONLY;
-	src_flags |= cli->given[XNVMEC_OPT_DIRECT] ? XNVME_FILE_OFLG_DIRECT_ON : 0x0;
-	dst_flags = XNVME_FILE_OFLG_CREATE | XNVME_FILE_OFLG_WRONLY;
-	dst_flags |= cli->given[XNVMEC_OPT_DIRECT] ? XNVME_FILE_OFLG_DIRECT_ON : 0x0;
 	iosize = cli->given[XNVMEC_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
 	qdepth = cli->given[XNVMEC_OPT_QDEPTH] ? cli->args.qdepth : QDEPTH_DEF;
 
-	src_fh = xnvme_file_open(src_fpath, src_flags);
+	src_fh = xnvme_file_open(src_fpath, &src_opts);
 	if (src_fh == NULL) {
 		xnvmec_perr("xnvme_file_open(src)", errno);
 		return errno;
 	}
-	dst_fh = xnvme_file_open(dst_fpath, dst_flags);
+	dst_fh = xnvme_file_open(dst_fpath, &dst_opts);
 	if (dst_fh == NULL) {
 		xnvmec_perr("xnvme_file_open(dst)", errno);
 		goto exit;

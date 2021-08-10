@@ -57,7 +57,7 @@ xnvme_lba_range_pr(struct xnvme_lba_range *range, int opts);
 /**
  * Initializes a range starting at the given byte-offset and spanning nbytes
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open()
  * @param offset Offset in bytes satisfying offset < capacity
  * @param nbytes Number of bytes, satisfying offset + nbytes < capacity
  *
@@ -70,7 +70,7 @@ xnvme_lba_range_from_offset_nbytes(struct xnvme_dev *dev, uint64_t offset, uint6
 /**
  * Initializes a range starting at the given start-lba (slba) and spanning naddrs
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open()
  * @param slba A valid lba on the given dev
  * @param elba A valid lba on the given dev
  *
@@ -83,7 +83,7 @@ xnvme_lba_range_from_slba_elba(struct xnvme_dev *dev, uint64_t slba, uint64_t el
 /**
  * Initializes a range starting at the given start-lba (slba) and spanning naddrs
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open()
  * @param slba A valid lba on the given dev
  * @param naddrs A non-zero number of addresses, satisfying slba + naddrs < device capacity
  *
@@ -96,7 +96,7 @@ xnvme_lba_range_from_slba_naddrs(struct xnvme_dev *dev, uint64_t slba, uint64_t 
 /**
  * Initializes a range starting at the given zone-start-LBA and spanning zone-capacity
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open()
  * @param zdescr Pointer to a zone-descriptor valid on the given dev
  *
  * @return On success, an initialized range is returned by value with attr.is_valid = 1. On error,

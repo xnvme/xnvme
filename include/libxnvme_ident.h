@@ -34,11 +34,12 @@ extern "C" {
 struct xnvme_ident {
 	char uri[XNVME_IDENT_URI_LEN];
 
-	char schm[XNVME_IDENT_SCHM_LEN];
-	char trgt[XNVME_IDENT_TRGT_LEN];
-	char opts[XNVME_IDENT_OPTS_LEN];
+	uint32_t dtype;
+	uint32_t nsid;
+	uint8_t csi;
+	uint8_t rsvd[3];
 };
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_ident) == 704, "Incorrect size")
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_ident) == 396, "Incorrect size")
 
 /**
  * Parse the given 'uri' into ::xnvme_ident

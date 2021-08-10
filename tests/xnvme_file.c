@@ -5,6 +5,7 @@
 int
 test_file_fsync(struct xnvmec *cli)
 {
+	struct xnvme_opts opts = { .create = 1, .wronly = 1 };
 	const char *output_path = cli->args.data_output;
 	const size_t bytes_per_write = 1024;
 	const size_t num_writes = 8;
@@ -12,7 +13,7 @@ test_file_fsync(struct xnvmec *cli)
 	char *buf;
 	int err;
 
-	fh = xnvme_file_open(output_path, XNVME_FILE_OFLG_CREATE | XNVME_FILE_OFLG_WRONLY);
+	fh = xnvme_file_open(output_path, &opts);
 	if (fh == NULL) {
 		xnvmec_perr("xnvme_file_open()", errno);
 		return -errno;
@@ -51,15 +52,15 @@ test_file_fsync(struct xnvmec *cli)
  * Opens a file at the given path with the given flags and writes ASCII
  * [33; 125] to it repeatedly, i.e. "!@#$%^&\()*+," and so on.
  */
-int
-file_write_ascii(const char *path, size_t nbytes, int flags)
+static int
+file_write_ascii(const char *path, size_t nbytes, struct xnvme_opts *opts)
 {
 	struct xnvme_dev *fh = NULL;
-	struct xnvme_cmd_ctx ctx;
+	struct xnvme_cmd_ctx ctx = { 0 };
 	char *buf = NULL;
 	int err;
 
-	fh = xnvme_file_open(path, flags);
+	fh = xnvme_file_open(path, opts);
 	if (fh == NULL) {
 		xnvmec_perr("xnvme_file_open()", errno);
 		return -errno;
@@ -101,20 +102,26 @@ test_file_trunc(struct xnvmec *cli)
 	int err;
 
 	err = file_write_ascii(output_path, init_write_size,
-			       XNVME_FILE_OFLG_CREATE | XNVME_FILE_OFLG_WRONLY | XNVME_FILE_OFLG_TRUNC);
+	&(struct xnvme_opts) {
+		.create = 1, .wronly = 1, .truncate = 1
+	});
 	if (err) {
 		xnvmec_perr("file_open_write_ascii()", err);
 		return err;
 	}
 
 	err = file_write_ascii(output_path, trunc_write_size,
-			       XNVME_FILE_OFLG_CREATE | XNVME_FILE_OFLG_WRONLY | XNVME_FILE_OFLG_TRUNC);
+	&(struct xnvme_opts) {
+		.create = 1, .wronly = 1, .truncate = 1
+	});
 	if (err) {
 		xnvmec_perr("file_open_write_ascii()", err);
 		return err;
 	}
 
-	fh = xnvme_file_open(output_path, XNVME_FILE_OFLG_RDONLY);
+	fh = xnvme_file_open(output_path, &(struct xnvme_opts) {
+		.rdonly = 1
+	});
 	if (fh == NULL) {
 		xnvmec_perr("xnvme_file_open()", err);
 		return err;

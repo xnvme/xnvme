@@ -13,7 +13,7 @@
 #include <libxnvmec.h>
 #include <libxnvme_file.h>
 
-#define XNVMEC_SUB_MAXOPTS 24
+#define XNVMEC_SUB_MAXOPTS 64
 
 const char *
 xnvmec_opt_type_str(enum xnvmec_opt_type otype)
@@ -45,25 +45,16 @@ xnvmec_buf_clear(void *buf, size_t nbytes)
  * NOTE: this depends on POSIX syscalls
  */
 static int
-fdio_func(void *buf, size_t nbytes, const char *path, int flags, mode_t mode)
+fdio_func(void *buf, size_t nbytes, const char *path, struct xnvme_opts *opts)
 {
-	const int do_write = flags & XNVME_FILE_OFLG_WRONLY;
-	size_t transferred = 0;
-	struct xnvme_dev *fh = NULL;
 	struct xnvme_cmd_ctx ctx = { 0 };
-	char uri[XNVME_IDENT_URI_LEN] = { 0 };
+	struct xnvme_dev *fh = NULL;
+	size_t transferred = 0;
 	int err = 0;
 
-	// Build xNVMe URI to pass mode along
-	err = snprintf(uri, XNVME_IDENT_URI_LEN - 1, "%s?cmask=%05o", path, mode);
-	if (err < 0 || (err >= (int)XNVME_IDENT_URI_LEN - 1)) {
-		XNVME_DEBUG("FAILED: constructing uri");
-		return err;
-	}
-
-	fh = xnvme_file_open(uri, flags);
+	fh = xnvme_file_open(path, opts);
 	if (fh == NULL) {
-		XNVME_DEBUG("FAILED: open(), errno: %d", errno);
+		XNVME_DEBUG("FAILED: xnvme_file_open(), errno: %d", errno);
 		return -errno;
 	}
 
@@ -73,20 +64,20 @@ fdio_func(void *buf, size_t nbytes, const char *path, int flags, mode_t mode)
 		const size_t remain = nbytes - transferred;
 		size_t nbytes_call = remain < SSIZE_MAX ? remain : SSIZE_MAX;
 
-		if (do_write) {
+		if (opts->wronly) {
 			err = xnvme_file_pwrite(&ctx, buf + transferred, nbytes_call, transferred);
 		} else {
 			err = xnvme_file_pread(&ctx, buf + transferred, nbytes_call, transferred);
 		}
 		if (err) {
-			XNVME_DEBUG("FAILED: do_write: %d, cpl.result: %ld, errno: %d",
-				    do_write, ctx.cpl.result, errno);
+			XNVME_DEBUG("FAILED: opts->wronly: %d, cpl.result: %ld, errno: %d",
+				    opts->wronly, ctx.cpl.result, errno);
 			xnvme_file_close(fh);
 			return -errno;
 		}
 
 		// when reading, break at end of file
-		if (!do_write && ctx.cpl.result == 0) {
+		if (!opts->wronly && ctx.cpl.result == 0) {
 			break;
 		}
 
@@ -95,8 +86,8 @@ fdio_func(void *buf, size_t nbytes, const char *path, int flags, mode_t mode)
 
 	err = xnvme_file_close(fh);
 	if (err) {
-		XNVME_DEBUG("FAILED: do_write: %d, err: %d, errno: %d",
-			    do_write, err, errno);
+		XNVME_DEBUG("FAILED: opts->wronly: %d, err: %d, errno: %d",
+			    opts->wronly, err, errno);
 		return -errno;
 	}
 
@@ -106,14 +97,23 @@ fdio_func(void *buf, size_t nbytes, const char *path, int flags, mode_t mode)
 int
 xnvmec_buf_from_file(void *buf, size_t nbytes, const char *path)
 {
-	return fdio_func(buf, nbytes, path, XNVME_FILE_OFLG_RDONLY, 0x0);
+	struct xnvme_opts opts = {
+		.rdonly = 1,
+	};
+
+	return fdio_func(buf, nbytes, path, &opts);
 }
 
 int
 xnvmec_buf_to_file(void *buf, size_t nbytes, const char *path)
 {
-	return fdio_func(buf, nbytes, path, XNVME_FILE_OFLG_CREATE | XNVME_FILE_OFLG_WRONLY,
-			 S_IWUSR | S_IRUSR);
+	struct xnvme_opts opts = {
+		.create = 1,
+		.wronly = 1,
+		.create_mode = S_IWUSR | S_IRUSR
+	};
+
+	return fdio_func(buf, nbytes, path, &opts);
 }
 
 int
@@ -243,14 +243,6 @@ xnvmec_args_pr(struct xnvmec_args *args, int opts)
 	printf("help: %d\n", args->help);
 }
 
-enum xnvmec_opt_value_type {
-	XNVMEC_OPT_VTYPE_URI = 0x1,
-	XNVMEC_OPT_VTYPE_NUM = 0x2,
-	XNVMEC_OPT_VTYPE_HEX = 0x3,
-	XNVMEC_OPT_VTYPE_FILE = 0x4,
-	XNVMEC_OPT_VTYPE_STR = 0x5,
-};
-
 const char *
 xnvmec_opt_value_type_str(int vtype)
 {
@@ -269,15 +261,6 @@ xnvmec_opt_value_type_str(int vtype)
 
 	return "ENOSYS";
 }
-
-struct xnvmec_opt_attr {
-	enum xnvmec_opt opt;
-	enum xnvmec_opt_value_type vtype;
-	const char *name;
-	const char *descr;
-
-	char getoptval;		// character returned by getopt_log() when found
-};
 
 static struct xnvmec_opt_attr xnvmec_opts[] = {
 	{
@@ -401,55 +384,55 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 		.name = "uri", .descr = "Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888'"
 	},
 	{
-		.opt = XNVMEC_OPT_SYS_URI, .vtype = 	XNVMEC_OPT_VTYPE_URI,
+		.opt = XNVMEC_OPT_SYS_URI, .vtype = XNVMEC_OPT_VTYPE_URI,
 		.name = "uri", .descr = "System URI e.g. '10.9.8.1:8888'"
 	},
 	{
-		.opt = XNVMEC_OPT_CNTID, .vtype = 	XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVMEC_OPT_CNTID, .vtype = XNVMEC_OPT_VTYPE_HEX,
 		.name = "cntid", .descr = "Controller Identifier"
 	},
 	{
-		.opt = XNVMEC_OPT_NSID, .vtype = 	XNVMEC_OPT_VTYPE_HEX,
-		.name = "nsid", .descr = "Namespace Identifier"
+		.opt = XNVMEC_OPT_NSID, .vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "nsid", .descr = "Namespace Identifier for Command Construction"
 	},
 	{
-		.opt = XNVMEC_OPT_UUID, .vtype = 	XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVMEC_OPT_UUID, .vtype = XNVMEC_OPT_VTYPE_HEX,
 		.name = "uuid", .descr = "Universally Unique Identifier"
 	},
 	{
-		.opt = XNVMEC_OPT_CNS, .vtype = 	XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVMEC_OPT_CNS, .vtype = XNVMEC_OPT_VTYPE_HEX,
 		.name = "cns", .descr = "Controller or Namespace Struct"
 	},
 	{
-		.opt = XNVMEC_OPT_CSI, .vtype = 	XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVMEC_OPT_CSI, .vtype = XNVMEC_OPT_VTYPE_HEX,
 		.name = "csi", .descr = "Command Set Identifier"
 	},
 	{
-		.opt = XNVMEC_OPT_INDEX, .vtype = 	XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVMEC_OPT_INDEX, .vtype = XNVMEC_OPT_VTYPE_HEX,
 		.name = "index", .descr = "Index"
 	},
 	{
-		.opt = XNVMEC_OPT_SETID, .vtype = 	XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVMEC_OPT_SETID, .vtype = XNVMEC_OPT_VTYPE_HEX,
 		.name = "setid", .descr = "NVM Set Identifier"
 	},
 	{
-		.opt = XNVMEC_OPT_LPO_NBYTES, .vtype = 	XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVMEC_OPT_LPO_NBYTES, .vtype = XNVMEC_OPT_VTYPE_NUM,
 		.name = "lpo-nbytes", .descr = "Log-Page Offset (in bytes)"
 	},
 	{
-		.opt = XNVMEC_OPT_LID, .vtype = 	XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVMEC_OPT_LID, .vtype = XNVMEC_OPT_VTYPE_HEX,
 		.name = "lid", .descr = "Log-page IDentifier"
 	},
 	{
-		.opt = XNVMEC_OPT_LSP, .vtype = 	XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVMEC_OPT_LSP, .vtype = XNVMEC_OPT_VTYPE_HEX,
 		.name = "lsp", .descr = "Log-SPecific parameters"
 	},
 	{
-		.opt = XNVMEC_OPT_RAE, .vtype = 	XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVMEC_OPT_RAE, .vtype = XNVMEC_OPT_VTYPE_HEX,
 		.name = "rae", .descr = "Reset Async. Events"
 	},
 	{
-		.opt = XNVMEC_OPT_ZF, .vtype = 	XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVMEC_OPT_ZF, .vtype = XNVMEC_OPT_VTYPE_HEX,
 		.name = "zf", .descr = "Zone Format"
 	},
 	{
@@ -573,6 +556,10 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 		.name = "help", .descr = "Show usage / help"
 	},
 	{
+		.opt = XNVMEC_OPT_DEV_NSID, .vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "dev-nsid", .descr = "Namespace Identifier for Device Handle"
+	},
+	{
 		.opt = XNVMEC_OPT_BE, .vtype = 	XNVMEC_OPT_VTYPE_STR,
 		.name = "be", .descr = "xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix'"
 	},
@@ -594,16 +581,74 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 	},
 
 	{
-		.opt = XNVMEC_OPT_ADMIN, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "admin", .descr = "For be=spdk, multi-process shared-memory-id"
+		.opt = XNVMEC_OPT_SHM_ID, .vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "shm_id", .descr = "For be=spdk, multi-process shared-memory-id"
 	},
 	{
-		.opt = XNVMEC_OPT_ADMIN, .vtype = XNVMEC_OPT_VTYPE_STR,
-		.name = "admin", .descr = "For be=spdk, multi-process core-mask"
+		.opt = XNVMEC_OPT_MAIN_CORE, .vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "main_core", .descr = "For be=spdk, multi-process main core"
 	},
 	{
-		.opt = XNVMEC_OPT_ADMIN, .vtype = XNVMEC_OPT_VTYPE_STR,
-		.name = "admin", .descr = "For be=spdk, multi-process main-core"
+		.opt = XNVMEC_OPT_CORE_MASK, .vtype = XNVMEC_OPT_VTYPE_STR,
+		.name = "core_mask", .descr = "For be=spdk, multi-process core_mask/cpus"
+	},
+	{
+		.opt = XNVMEC_OPT_USE_CMB_SQS, .vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "use_cmb_sqs", .descr = "For be=spdk, use controller-memory-buffer for sqs"
+	},
+	{
+		.opt = XNVMEC_OPT_CSS, .vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "css", .descr = "For be=spdk, ctrl.config. command-set-selection"
+	},
+	{
+		.opt = XNVMEC_OPT_ADRFAM, .vtype = XNVMEC_OPT_VTYPE_STR,
+		.name = "adrfam", .descr = "For be=spdk, Fabrics Address-Family e.g. IPv4/IPv6"
+	},
+
+	{
+		.opt = XNVMEC_OPT_POLL_IO, .vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "poll_io", .descr = "For async=io_uring, enable hipri/io-compl.polling"
+	},
+	{
+		.opt = XNVMEC_OPT_POLL_SQ, .vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "poll_sq", .descr = "For async=io_uring, enable kernel-side sqthread-poll"
+	},
+	{
+		.opt = XNVMEC_OPT_REGISTER_FILES, .vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "register_files", .descr = "For async=io_uring, register files"
+	},
+	{
+		.opt = XNVMEC_OPT_REGISTER_BUFFERS, .vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "register_buffers", .descr = "For async=io_uring, register buffers"
+	},
+	{
+		.opt = XNVMEC_OPT_TRUNCATE, .vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "truncate", .descr = "For files; on-open truncate contents"
+	},
+	{
+		.opt = XNVMEC_OPT_RDONLY, .vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "rdonly", .descr = "For files; open read-only"
+	},
+	{
+		.opt = XNVMEC_OPT_WRONLY, .vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "wronly", .descr = "For files; open write-only"
+	},
+	{
+		.opt = XNVMEC_OPT_RDWR, .vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "rdwr", .descr = "For files; open for read and write"
+	},
+	{
+		.opt = XNVMEC_OPT_CREATE, .vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "create", .descr = "For files; on-open create"
+	},
+	{
+		.opt = XNVMEC_OPT_OFLAGS, .vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "oflags", .descr = "For files; combination of file-open-flags"
+	},
+
+	{
+		.opt = XNVMEC_OPT_CREATE_MODE, .vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "create_mode", .descr = "For files; create-mode / umask / mode_t in HEX"
 	},
 
 	{
@@ -624,6 +669,12 @@ xnvmec_opt_attr_by_opt(enum xnvmec_opt opt, struct xnvmec_opt_attr *attrs)
 	}
 
 	return NULL;
+}
+
+const struct xnvmec_opt_attr *
+xnvmec_get_opt_attr(enum xnvmec_opt opt)
+{
+	return xnvmec_opt_attr_by_opt(opt, xnvmec_opts);
 }
 
 struct xnvmec_opt_attr *
@@ -940,6 +991,9 @@ xnvmec_assign_arg(struct xnvmec *cli, struct xnvmec_opt_attr *opt_attr, char *ar
 	case XNVMEC_OPT_NSID:
 		args->nsid = num;
 		break;
+	case XNVMEC_OPT_DEV_NSID:
+		args->dev_nsid = num;
+		break;
 	case XNVMEC_OPT_CNS:
 		args->cns = num;
 		break;
@@ -1082,14 +1136,58 @@ xnvmec_assign_arg(struct xnvmec *cli, struct xnvmec_opt_attr *opt_attr, char *ar
 		args->admin = arg ? arg : "INVALID_INPUT";
 		break;
 
-	case XNVMEC_OPT_SHMID:
-		args->shmid = num;
+	case XNVMEC_OPT_SHM_ID:
+		args->shm_id = num;
 		break;
-	case XNVMEC_OPT_MAINCORE:
-		args->maincore = arg ? arg : "INVALID_INPUT";
+	case XNVMEC_OPT_MAIN_CORE:
+		args->main_core = arg ? num : 0;
 		break;
-	case XNVMEC_OPT_COREMASK:
-		args->coremask = arg ? arg : "INVALID_INPUT";
+	case XNVMEC_OPT_CORE_MASK:
+		args->core_mask = arg ? arg : "INVALID_INPUT";
+		break;
+	case XNVMEC_OPT_USE_CMB_SQS:
+		args->use_cmb_sqs = arg ? num : 0;
+		break;
+	case XNVMEC_OPT_CSS:
+		args->css.value = arg ? num : 0;
+		args->css.given = arg ? 1 : 0;
+		break;
+
+	case XNVMEC_OPT_POLL_IO:
+		args->poll_io = arg ? num : 0;
+		break;
+	case XNVMEC_OPT_POLL_SQ:
+		args->poll_sq = arg ? num : 0;
+		break;
+	case XNVMEC_OPT_REGISTER_FILES:
+		args->register_files = arg ? num : 0;
+		break;
+	case XNVMEC_OPT_REGISTER_BUFFERS:
+		args->register_buffers = arg ? num : 0;
+		break;
+	case XNVMEC_OPT_TRUNCATE:
+		args->truncate = arg ? num : 0;
+		break;
+	case XNVMEC_OPT_RDONLY:
+		args->rdonly = arg ? num : 0;
+		break;
+	case XNVMEC_OPT_WRONLY:
+		args->wronly = arg ? num : 0;
+		break;
+	case XNVMEC_OPT_RDWR:
+		args->rdwr = arg ? num : 0;
+		break;
+	case XNVMEC_OPT_CREATE:
+		args->create = arg ? num : 0;
+		break;
+	case XNVMEC_OPT_CREATE_MODE:
+		args->create = arg ? num : 0;
+		break;
+	case XNVMEC_OPT_OFLAGS:
+		args->oflags = arg ? num : 0;
+		break;
+	case XNVMEC_OPT_ADRFAM:
+		args->adrfam = arg ? arg : "IPv4";
 		break;
 
 	case XNVMEC_OPT_END:
@@ -1178,7 +1276,7 @@ xnvmec_parse(struct xnvmec *cli)
 		struct option *lopt = NULL;
 
 		if ((oi + 1) >= (XNVMEC_SUB_MAXOPTS)) {
-			xnvmec_pinf("Invalid arguments: too many! exceeding 24");
+			xnvmec_pinf("Invalid arguments: nargs-exceeding '%d'", XNVMEC_SUB_MAXOPTS);
 			errno = EINVAL;
 			return -1;
 		}
@@ -1427,7 +1525,14 @@ xnvmec(struct xnvmec *cli, int argc, char **argv, int opts)
 	}
 
 	if ((opts & XNVMEC_INIT_DEV_OPEN) && cli->args.uri) {
-		cli->args.dev = xnvme_dev_open(cli->args.uri);
+		struct xnvme_opts opts = xnvme_opts_default();
+
+		if (xnvmec_cli_to_opts(cli, &opts)) {
+			xnvmec_perr("xnvmec_cli_to_opts()", errno);
+			return - 1;
+		}
+
+		cli->args.dev = xnvme_dev_open(cli->args.uri, &opts);
 		if (!cli->args.dev) {
 			err = -errno;
 			xnvmec_perr("xnvme_dev_open()", err);
@@ -1451,3 +1556,44 @@ xnvmec(struct xnvmec *cli, int argc, char **argv, int opts)
 
 	return err ? 1 : 0;
 }
+
+int
+xnvmec_cli_to_opts(const struct xnvmec *cli, struct xnvme_opts *opts)
+{
+	opts->be = cli->args.be;
+	//opts->dev = cli->args.dev;
+	opts->mem = cli->args.mem;
+	opts->sync = cli->args.sync;
+	opts->async = cli->args.async;
+	opts->admin = cli->args.admin;
+
+	opts->nsid = cli->args.dev_nsid;
+
+	opts->direct = cli->args.direct;
+	opts->create = cli->args.create;
+	opts->truncate = cli->args.truncate;
+	opts->rdonly = cli->args.rdonly;
+	opts->wronly = cli->args.wronly;
+	opts->rdwr = cli->args.rdwr;
+	opts->oflags = cli->args.oflags;
+	opts->create_mode = cli->args.create_mode;
+
+	opts->poll_io = cli->args.poll_io;
+	opts->poll_sq = cli->args.poll_sq;
+	opts->register_files = cli->args.register_files;
+	opts->register_buffers = cli->args.register_buffers;
+
+	opts->css.value = cli->args.css.value;
+	opts->css.given = cli->args.css.given;
+
+	opts->use_cmb_sqs = cli->args.use_cmb_sqs;
+	opts->shm_id = cli->args.shm_id;
+	opts->main_core = cli->args.main_core;
+	opts->core_mask = cli->args.core_mask;
+	opts->adrfam = cli->args.adrfam;
+
+	errno = 0;
+
+	return 0;
+}
+

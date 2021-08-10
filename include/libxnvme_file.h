@@ -17,33 +17,16 @@ extern "C" {
 #include <libxnvme.h>
 
 /**
- * Flags supported when opening files
- *
- * @enum XNVME_FILE_OFLG
- */
-enum XNVME_FILE_OFLG {
-	XNVME_FILE_OFLG_RDONLY = 0x1 << 0,
-	XNVME_FILE_OFLG_WRONLY = 0x1 << 1,
-	XNVME_FILE_OFLG_RDWR   = 0x1 << 2,
-
-	XNVME_FILE_OFLG_CREATE = 0x1 << 3,
-	XNVME_FILE_OFLG_TRUNC = 0x1 << 4,
-
-	XNVME_FILE_OFLG_DIRECT_ON = 0x1 << 5,
-	XNVME_FILE_OFLG_DIRECT_OFF = 0x1 << 6,
-};
-
-/**
  * Open the file identified by pathname for I/O operation
  *
  * @param pathname Path to the file
- * @param flags Mode of operation for the given file, one of #XNVME_FILE_OFLG
+ * @param Opts Options for opening files, see #XNVME_OPTS
  *
  * @return On success, an initialized struct xnvme_dev is returned. On error,
  * NULL is returned.
  */
 struct xnvme_dev *
-xnvme_file_open(const char *pathname, int flags);
+xnvme_file_open(const char *pathname, struct xnvme_opts *opts);
 
 /**
  * Close the file encapsulated by the given ::xnvme_dev handle

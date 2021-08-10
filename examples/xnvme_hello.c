@@ -8,9 +8,15 @@
 static int
 sub_hw_example(struct xnvmec *cli)
 {
+	struct xnvme_opts opts = xnvme_opts_default();
 	struct xnvme_dev *dev = NULL;
 
-	dev = xnvme_dev_open(cli->args.uri);
+	if (xnvmec_cli_to_opts(cli, &opts)) {
+		xnvmec_perr("xnvmec_cli_to_opts()", errno);
+		return -errno;
+	}
+
+	dev = xnvme_dev_open(cli->args.uri, &opts);
 	if (!dev) {
 		xnvmec_perr("xnvme_dev_open()", errno);
 		return -errno;
@@ -28,8 +34,13 @@ sub_hw_example(struct xnvmec *cli)
 
 static struct xnvmec_sub g_subs[] = {
 	{
-		"hw", "Hello-World Example", "Hello-World Example", sub_hw_example, {
+		"hw", "Hello-World Example", "Hello-World Example",
+		sub_hw_example, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 		}
 	},
 };

@@ -51,7 +51,15 @@ copy_async(struct xnvmec *cli)
 {
 	const char *src_uri, *dst_uri;
 	struct xnvme_dev *src_dev, *dst_dev;
-	int src_flags, dst_flags;
+	struct xnvme_opts src_opts = {
+		.rdonly = 1,
+		.direct = cli->args.direct
+	};
+	struct xnvme_opts dst_opts = {
+		.wronly = 1,
+		.create = 1,
+		.direct = cli->args.direct
+	};
 	size_t buf_nbytes, tbytes, iosize;
 	char *buf = NULL;
 
@@ -65,19 +73,15 @@ copy_async(struct xnvmec *cli)
 	dst_uri = cli->args.data_output;
 	tbytes = cli->args.data_nbytes;
 
-	src_flags = XNVME_FILE_OFLG_RDONLY;
-	src_flags |= cli->given[XNVMEC_OPT_DIRECT] ? XNVME_FILE_OFLG_DIRECT_ON : 0x0;
-	dst_flags = XNVME_FILE_OFLG_CREATE | XNVME_FILE_OFLG_WRONLY;
-	dst_flags |= cli->given[XNVMEC_OPT_DIRECT] ? XNVME_FILE_OFLG_DIRECT_ON : 0x0;
 	iosize = cli->given[XNVMEC_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
 	qdepth = cli->given[XNVMEC_OPT_QDEPTH] ? cli->args.qdepth : QDEPTH_DEF;
 
-	src_dev = xnvme_file_open(src_uri, src_flags);
+	src_dev = xnvme_file_open(src_uri, &src_opts);
 	if (src_dev == NULL) {
 		xnvmec_perr("xnvme_file_open(src)", errno);
 		return errno;
 	}
-	dst_dev = xnvme_file_open(dst_uri, dst_flags);
+	dst_dev = xnvme_file_open(dst_uri, &dst_opts);
 	if (dst_dev == NULL) {
 		xnvmec_perr("xnvme_file_open(dst)", errno);
 		xnvme_file_close(src_dev);
@@ -180,7 +184,15 @@ copy_sync(struct xnvmec *cli)
 {
 	const char *src_uri, *dst_uri;
 	struct xnvme_dev *src_dev, *dst_dev;
-	int src_flags, dst_flags;
+	struct xnvme_opts src_opts = {
+		.rdonly = 1,
+		.direct = cli->args.direct
+	};
+	struct xnvme_opts dst_opts = {
+		.wronly = 1,
+		.create = 1,
+		.direct = cli->args.direct
+	};
 	size_t buf_nbytes, tbytes, iosize;
 	char *buf = NULL;
 
@@ -188,18 +200,14 @@ copy_sync(struct xnvmec *cli)
 	dst_uri = cli->args.data_output;
 	tbytes = cli->args.data_nbytes;
 
-	src_flags = XNVME_FILE_OFLG_RDONLY;
-	src_flags |= cli->given[XNVMEC_OPT_DIRECT] ? XNVME_FILE_OFLG_DIRECT_ON : 0x0;
-	dst_flags = XNVME_FILE_OFLG_CREATE | XNVME_FILE_OFLG_WRONLY;
-	dst_flags |= cli->given[XNVMEC_OPT_DIRECT] ? XNVME_FILE_OFLG_DIRECT_ON : 0x0;
 	iosize = cli->given[XNVMEC_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
 
-	src_dev = xnvme_file_open(src_uri, src_flags);
+	src_dev = xnvme_file_open(src_uri, &src_opts);
 	if (!src_dev) {
 		xnvmec_perr("xnvme_file_open(src)", errno);
 		return errno;
 	}
-	dst_dev = xnvme_file_open(dst_uri, dst_flags);
+	dst_dev = xnvme_file_open(dst_uri, &dst_opts);
 	if (!dst_dev) {
 		xnvmec_perr("xnvme_file_open(dst)", errno);
 		xnvme_file_close(src_dev);

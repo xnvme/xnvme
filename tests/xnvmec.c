@@ -6,12 +6,13 @@ int
 xnvmec_copy_io(struct xnvmec *cli)
 {
 	const char *input_path = cli->args.data_input, *output_path = cli->args.data_output;
+	struct xnvme_opts opts = { .rdonly = 1 };
 	struct xnvme_dev *fh;
 	void *buf;
 	size_t file_size;
 	int err = 0;
 
-	fh = xnvme_file_open(input_path, XNVME_FILE_OFLG_RDONLY);
+	fh = xnvme_file_open(input_path, &opts);
 	if (fh == NULL) {
 		xnvmec_perr("xnvme_file_open()", errno);
 		return -errno;
@@ -43,6 +44,26 @@ exit:
 	return err;
 }
 
+int
+xnvmec_check_opt_attr(struct xnvmec *XNVME_UNUSED(cli))
+{
+	int err = 0;
+
+	for (int opt = 1; opt < XNVMEC_OPT_END; ++opt) {
+		const struct xnvmec_opt_attr *opt_attr;
+
+		opt_attr = xnvmec_get_opt_attr(opt);
+		if (opt_attr) {
+			continue;
+		}
+
+		err = ENOSYS;
+		xnvmec_pinf("ERR: !opt_attr for opt: %d", opt);
+	}
+
+	return err;
+}
+
 static struct xnvmec_sub g_subs[] = {
 	{
 		"copy-xnvmec", "Copy a file using xnvmec_buf_{to,from}_file",
@@ -51,11 +72,15 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
 		}
 	},
+	{
+		"check-opt-attr", "Check that all 'xnvmec_opt' has attributes defined",
+		"Check that all 'xnvmec_opt' has attributes defined", xnvmec_check_opt_attr, { 0 }
+	},
 };
 
 static struct xnvmec g_cli = {
-	.title = "xNVMe file - Exercise the xnvme_file API",
-	.descr_short = "Exercise the xnvme_file API",
+	.title = "xNVMe command-line-interface exercises",
+	.descr_short = "xNVMe command-line-interface exercises",
 	.descr_long = "",
 	.subs = g_subs,
 	.nsubs = sizeof g_subs / sizeof(*g_subs),

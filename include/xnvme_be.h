@@ -167,53 +167,6 @@ struct xnvme_be_mixin {
 };
 
 #define XNVME_BE_MIXIN_NAME_LEN 32
-#define XNVME_BE_OPTION_CHAR_LEN 128
-
-struct xnvme_be_options {
-	union {
-		struct {
-			uint32_t admin : 1;
-			uint32_t sync : 1;
-			uint32_t async : 1;
-			uint32_t mem : 1;
-			uint32_t dev : 1;
-
-			uint32_t oflags : 1;
-			uint32_t mode : 1;
-			uint32_t poll_io : 1;
-			uint32_t poll_sq : 1;
-			uint32_t nsid : 1;
-			uint32_t cmb_sqs: 1;
-			uint32_t css : 1;
-			uint32_t shm_id : 1;
-			uint32_t corelist : 1;
-			uint32_t adrfam : 1;
-
-			uint32_t _rsvd : 16;
-		};
-		uint32_t val;
-	} provided;
-
-	char admin[XNVME_BE_MIXIN_NAME_LEN];	///< Name of the admin-interface to use
-	char sync[XNVME_BE_MIXIN_NAME_LEN];	///< Name of the sync-interface to use
-	char async[XNVME_BE_MIXIN_NAME_LEN];	///< Name of async-interface to use
-	char mem[XNVME_BE_MIXIN_NAME_LEN];	///< Name of the memory-interface to use
-	char dev[XNVME_BE_MIXIN_NAME_LEN];	///< Name of the device-handle interface to use
-
-	int oflags;		///< File open flags XNVME_FILE_OFLG_CREATE
-	int mode;		///< File permissions/mode when oflags | XNVME_OFLG_CREATE
-
-	uint32_t poll_io;	///< For kernel-side completion-polling in io_uring
-	uint32_t poll_sq;	///< For kernel-side submission-polling in io_uring
-
-	uint32_t nsid;		///< Identifier of the namespace to use
-	uint32_t cmb_sqs;	///< Use submission-queues in controller-memory-buffers
-	uint32_t css;		///< Use 'css' as 'command-set-selection'
-	uint32_t shm_id;	///< Shared memory id
-	char corelist[XNVME_BE_OPTION_CHAR_LEN];	///< List of cores to bind to
-	char adrfam[XNVME_BE_OPTION_CHAR_LEN];		///< List of cores to bind to
-};
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_options) == 452, "Incorrect size")
 
 /**
  * Backend interface consisting of functions, attributes and instance state
@@ -255,7 +208,7 @@ xnvme_be_name2id(const char *bname);
  * Instantiate a backend instance for the given device
  */
 int
-xnvme_be_factory(struct xnvme_dev *dev);
+xnvme_be_factory(struct xnvme_dev *dev, struct xnvme_opts *opts);
 
 int
 xnvme_be_yaml(FILE *stream, const struct xnvme_be *be, int indent, const char *sep, int head);
@@ -273,9 +226,6 @@ int
 xnvme_be_dev_idfy(struct xnvme_dev *dev);
 
 int
-uri_parse_scheme(const char *uri, char *scheme);
-
-int
 xnvme_ident_yaml(FILE *stream, const struct xnvme_ident *ident, int indent, const char *sep,
 		 int head);
 
@@ -288,35 +238,10 @@ xnvme_enumeration_free(struct xnvme_enumeration *list);
 int
 xnvme_enumeration_append(struct xnvme_enumeration *list, struct xnvme_ident *entry);
 
-bool
-has_scheme(const char *needle, const char *haystack[], int len);
-
-int
-path_to_ll(const char *path, uint64_t *val);
-
-bool
-xnvme_ident_opt_to_val(const struct xnvme_ident *ident, const char *opt, uint32_t *val);
-
-/**
- * Copies an option value to the given buf
- *
- * The given 'opts' string is on the form "?opt1=val_x?opt2=val_y"
- * The given 'opt' is a string on  the form "opt2"
- * The provided 'buf' must contain atleast 'buf_len' bytes of memory
- */
-bool
-xnvme_ident_optval_to_buf(const char *opts, const char *opt, char *buf, uint32_t buf_len);
-
 static inline int
 xnvme_be_supported(struct xnvme_dev *XNVME_UNUSED(dev), uint32_t XNVME_UNUSED(opts))
 {
 	return 1;
 }
-
-bool
-check_cmask_validity(const char *cmask, int nproc);
-
-int
-xnvme_be_options_from_ident(const struct xnvme_ident *ident, struct xnvme_be_options *opts);
 
 #endif /* __INTERNAL_XNVME_BE_H */

@@ -82,11 +82,14 @@ test_enum_open(struct xnvmec *cli)
 		struct xnvme_dev *dev[MAX_HANDLES] = { 0 };
 
 		for (int hidx = 0; hidx < count; ++hidx) {
-			dev[hidx] = xnvme_dev_open(listing->entries[i].uri);
+			struct xnvme_opts opts = xnvme_opts_default();
+
+			opts.nsid = listing->entries[i].nsid;
+
+			dev[hidx] = xnvme_dev_open(listing->entries[i].uri, &opts);
 			if (!dev[hidx]) {
 				nerr += 1;
-				xnvmec_pinf("xnvme_dev_open(%s)",
-					    listing->entries[i].uri);
+				xnvmec_pinf("xnvme_dev_open(%s)", listing->entries[i].uri);
 				xnvmec_perr("xnvme_dev_open()", errno);
 			}
 			if (cli->args.verbose) {

@@ -39,27 +39,28 @@ int
 xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 {
 	struct xnvme_be_linux_state *state = (void *)dev->be.state;
-	const struct xnvme_be_options *opts = &dev->opts;
 	const struct xnvme_ident *ident = &dev->ident;
+	struct xnvme_opts *opts = &dev->opts;
 	struct stat dev_stat;
 	int flags;
 	int err;
 
-	flags = xnvme_file_oflg_to_linux(opts->oflags);
+	flags = xnvme_file_opts_to_linux(opts);
 
-	XNVME_DEBUG("INFO: open() : opts->oflags: 0x%x, flags: 0x%x, opts->mode: 0x%x",
-		    opts->oflags, flags, opts->mode);
+	XNVME_DEBUG("INFO: open() : opts->oflags: 0x%x, flags: 0x%x, opts->create_mode: 0x%x",
+		    opts->oflags, flags, opts->create_mode);
 
-	state->fd = open(ident->trgt, flags, opts->mode);
+	state->fd = open(ident->uri, flags, opts->create_mode);
 	if (state->fd < 0) {
-		XNVME_DEBUG("FAILED: open(trgt: '%s') : state->fd: '%d', errno: %d",
-			    ident->trgt, state->fd, errno);
+		XNVME_DEBUG("FAILED: open(uri: '%s') : state->fd: '%d', errno: %d",
+			    ident->uri, state->fd, errno);
 
-		flags = xnvme_file_oflg_to_linux(opts->oflags & ~XNVME_FILE_OFLG_DIRECT_ON);
-		state->fd = open(ident->trgt, flags, opts->mode);
+		opts->direct = 0;
+		flags = xnvme_file_opts_to_linux(opts);
+		state->fd = open(ident->uri, flags, opts->create_mode);
 		if (state->fd < 0) {
-			XNVME_DEBUG("FAILED: open(trgt: '%s') : state->fd: '%d', errno: %d",
-				    ident->trgt, state->fd, errno);
+			XNVME_DEBUG("FAILED: open(uri: '%s') : state->fd: '%d', errno: %d",
+				    ident->uri, state->fd, errno);
 			return -errno;
 		}
 	}
@@ -74,68 +75,70 @@ xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 	switch (dev_stat.st_mode & S_IFMT) {
 	case S_IFREG:
 		XNVME_DEBUG("INFO: open() : regular file");
-		dev->dtype = XNVME_DEV_TYPE_FS_FILE;
-		dev->csi = XNVME_SPEC_CSI_FS;
-		dev->nsid = 1;
-		if (!opts->provided.admin) {
+		dev->ident.dtype = XNVME_DEV_TYPE_FS_FILE;
+		dev->ident.csi = XNVME_SPEC_CSI_FS;
+		dev->ident.nsid = 1;
+		if (!opts->admin) {
 			dev->be.admin = g_xnvme_be_posix_admin_shim;
 		}
-		if (!opts->provided.sync) {
+		if (!opts->sync) {
 			dev->be.sync = g_xnvme_be_posix_sync_psync;
 		}
-		if (!opts->provided.async) {
+		if (!opts->async) {
 			dev->be.async = g_xnvme_be_posix_async_emu;
 		}
 		break;
 
 	case S_IFBLK:
 		XNVME_DEBUG("INFO: open() : block-device file");
-		dev->dtype = XNVME_DEV_TYPE_BLOCK_DEVICE;
-		dev->csi = XNVME_SPEC_CSI_FS;
-		dev->nsid = 1;
-		if (!opts->provided.admin) {
+		dev->ident.dtype = XNVME_DEV_TYPE_BLOCK_DEVICE;
+		dev->ident.csi = XNVME_SPEC_CSI_FS;
+		dev->ident.nsid = 1;
+
+		if (!opts->admin) {
 			dev->be.admin = g_xnvme_be_linux_admin_block;
 		}
-		if (!opts->provided.sync) {
+		if (!opts->sync) {
 			dev->be.sync = g_xnvme_be_linux_sync_block;
 		}
-		if (!opts->provided.async) {
+		if (!opts->async) {
 			dev->be.async = g_xnvme_be_posix_async_emu;
 		}
 
 		err = xnvme_be_linux_nvme_dev_nsid(dev);
 		if (err < 1) {
-			XNVME_DEBUG("INFO: open() : retrieving nsid, got: %x", err);
+			XNVME_DEBUG("INFO: open() : retrieving nsid, got: {nsid: %x, err: %d}",
+				    err, err);
 			break;
 		}
 
 		XNVME_DEBUG("INFO: open() : block-device file (is a NVMe namespace)");
-		dev->dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
-		dev->csi = XNVME_SPEC_CSI_NVM;
-		dev->nsid = err;
-		if (!opts->provided.admin) {
+		dev->ident.dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
+		dev->ident.csi = XNVME_SPEC_CSI_NVM;
+		dev->ident.nsid = err;
+		if (!opts->admin) {
 			dev->be.admin = g_xnvme_be_linux_admin_nvme;
 		}
-		if (!opts->provided.sync) {
+		if (!opts->sync) {
 			dev->be.sync = g_xnvme_be_linux_sync_nvme;
 		}
-		if (!opts->provided.async) {
+		if (!opts->async) {
 			dev->be.async = g_xnvme_be_posix_async_emu;
 		}
 		break;
 
 	case S_IFCHR:
 		XNVME_DEBUG("INFO: open() : char-device-file");
-		dev->dtype = XNVME_DEV_TYPE_FS_FILE;
-		dev->csi = XNVME_SPEC_CSI_FS;
-		dev->nsid = 1;
-		if (!opts->provided.admin) {
+		dev->ident.dtype = XNVME_DEV_TYPE_FS_FILE;
+		dev->ident.csi = XNVME_SPEC_CSI_FS;
+		dev->ident.nsid = 1;
+		if (!opts->admin) {
 			dev->be.admin = g_xnvme_be_posix_admin_shim;
 		}
-		if (!opts->provided.sync) {
+		if (!opts->sync) {
 			dev->be.sync = g_xnvme_be_posix_sync_psync;
 		}
-		if (!opts->provided.async) {
+		if (!opts->async) {
 			dev->be.async = g_xnvme_be_posix_async_emu;
 		}
 
@@ -146,17 +149,17 @@ xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 		}
 
 		XNVME_DEBUG("INFO: open() : char-device-file: NVMe ioctl() with async. emulation");
-		dev->dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
-		dev->csi = XNVME_SPEC_CSI_NVM;
-		dev->nsid = err;
+		dev->ident.dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
+		dev->ident.csi = XNVME_SPEC_CSI_NVM;
+		dev->ident.nsid = err;
 
-		if (!opts->provided.admin) {
+		if (!opts->admin) {
 			dev->be.admin = g_xnvme_be_linux_admin_nvme;
 		}
-		if (!opts->provided.sync) {
+		if (!opts->sync) {
 			dev->be.sync = g_xnvme_be_linux_sync_nvme;
 		}
-		if (!opts->provided.async) {
+		if (!opts->async) {
 			dev->be.async = g_xnvme_be_posix_async_emu;
 		}
 		break;
@@ -261,9 +264,7 @@ xnvme_be_linux_enumerate(struct xnvme_enumeration *list, const char *sys_uri,
 		char uri[XNVME_IDENT_URI_LEN] = { 0 };
 		struct xnvme_ident ident = { 0 };
 
-		snprintf(uri, XNVME_IDENT_URI_LEN - 1,
-			 "file:" _PATH_DEV "%s",
-			 ns[ni]->d_name);
+		snprintf(uri, XNVME_IDENT_URI_LEN - 1, _PATH_DEV "%s", ns[ni]->d_name);
 		if (xnvme_ident_from_uri(uri, &ident)) {
 			continue;
 		}

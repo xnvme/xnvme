@@ -30,8 +30,8 @@ xnvme_dev_cmd_opts_yaml(FILE *stream, const struct xnvme_dev *dev, int indent, c
 		wrtn += fprintf(stream, "\n");
 	}
 
-	wrtn += fprintf(stream, "%*scsi: 0x%x%s", indent, "", dev->csi, sep);
-	wrtn += fprintf(stream, "%*snsid: 0x%u", indent, "", dev->nsid);
+	wrtn += fprintf(stream, "%*scsi: 0x%x%s", indent, "", dev->ident.csi, sep);
+	wrtn += fprintf(stream, "%*snsid: 0x%u", indent, "", dev->ident.nsid);
 
 	return 0;
 }
@@ -65,6 +65,15 @@ xnvme_dev_fpr(FILE *stream, const struct xnvme_dev *dev, int opts)
 
 	wrtn += xnvme_be_yaml(stream, &dev->be, 2, "\n", 1);
 	wrtn += fprintf(stream, "\n");
+
+	wrtn += fprintf(stream, "  xnvme_opts:\n");
+	wrtn += fprintf(stream, "    be: '%s'\n", dev->opts.be);
+	wrtn += fprintf(stream, "    mem: '%s'\n", dev->opts.mem);
+	wrtn += fprintf(stream, "    dev: '%s'\n", dev->opts.dev);
+	wrtn += fprintf(stream, "    admin: '%s'\n", dev->opts.admin);
+	wrtn += fprintf(stream, "    sync: '%s'\n", dev->opts.sync);
+	wrtn += fprintf(stream, "    async: '%s'\n", dev->opts.async);
+	wrtn += fprintf(stream, "    oflags: 0x%x\n", dev->opts.oflags);
 
 	wrtn += xnvme_dev_cmd_opts_yaml(stream, dev, 2, "\n", 1);
 	wrtn += fprintf(stream, "\n");
@@ -114,13 +123,13 @@ xnvme_dev_get_ns_css(const struct xnvme_dev *dev)
 uint32_t
 xnvme_dev_get_nsid(const struct xnvme_dev *dev)
 {
-	return dev->nsid;
+	return dev->ident.nsid;
 }
 
 uint8_t
 xnvme_dev_get_csi(const struct xnvme_dev *dev)
 {
-	return dev->csi;
+	return dev->ident.csi;
 }
 
 uint64_t
@@ -136,10 +145,21 @@ xnvme_dev_get_be_state(const struct xnvme_dev *dev)
 }
 
 struct xnvme_dev *
-xnvme_dev_openf(const char *dev_uri, int XNVME_UNUSED(cmd_opts))
+xnvme_dev_open(const char *dev_uri, struct xnvme_opts *opts)
 {
+	struct xnvme_opts opts_default = xnvme_opts_default();
 	struct xnvme_dev *dev = NULL;
 	int err;
+
+	if (!opts) {					///< Set defaults when none are given
+		opts = &opts_default;
+	}
+	if (!opts->oflags) {				///< Set a default open-mode
+		opts->rdwr = opts_default.rdwr;
+	}
+	if (opts->create && !opts->create_mode) {	///< Set a default umask/mode_t/create-mode
+		opts->create_mode = opts_default.create_mode;
+	}
 
 	err = xnvme_dev_alloc(&dev);
 	if (err) {
@@ -155,15 +175,8 @@ xnvme_dev_openf(const char *dev_uri, int XNVME_UNUSED(cmd_opts))
 		free(dev);
 		return NULL;
 	}
-	err = xnvme_be_options_from_ident(&dev->ident, &dev->opts);
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_be_options_from_ident(), err: %d", err);
-		errno = -err;
-		free(dev);
-		return NULL;
-	}
 
-	err = xnvme_be_factory(dev);
+	err = xnvme_be_factory(dev, opts);
 	if (err) {
 		XNVME_DEBUG("FAILED: failed opening uri: %s", dev_uri);
 		errno = -err;
@@ -172,12 +185,6 @@ xnvme_dev_openf(const char *dev_uri, int XNVME_UNUSED(cmd_opts))
 	}
 
 	return dev;
-}
-
-struct xnvme_dev *
-xnvme_dev_open(const char *dev_uri)
-{
-	return xnvme_dev_openf(dev_uri, 0x0);
 }
 
 void

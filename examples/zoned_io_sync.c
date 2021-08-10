@@ -243,8 +243,14 @@ static struct xnvmec_sub g_subs[] = {
 		"read", "Zone Read of a full zone",
 		"Zone Read of a full zone", sub_sync_read, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
 		}
 	},
 
@@ -252,8 +258,14 @@ static struct xnvmec_sub g_subs[] = {
 		"write", "Zone Write sync. until full",
 		"Zone Write sync. until full", sub_sync_write, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
 		}
 	},
 
@@ -261,8 +273,14 @@ static struct xnvmec_sub g_subs[] = {
 		"append", "Zone Append sync. until full",
 		"Zone Append sync. until full", sub_sync_append, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
 		}
 	},
 };

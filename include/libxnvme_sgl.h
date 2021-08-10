@@ -29,7 +29,7 @@ struct xnvme_sgl_pool;
 /**
  * Create an pool of Scather-Gather-List (SGL)
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open()
  *
  * @return An initialized pool that can be used to amortize the cost of repeated
  * SGL allocations
@@ -53,7 +53,7 @@ xnvme_sgl_pool_destroy(struct xnvme_sgl_pool *pool);
  * @see xnvme_sgl_free
  * @see xnvme_sgl_add
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open()
  * @param hint Allocation hint.
  *
  * @return On success, an initialized (empty) SGL is returned. On error, NULL is
@@ -67,7 +67,7 @@ xnvme_sgl_create(struct xnvme_dev *dev, int hint);
  *
  * @see xnvme_sgl_free
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open()
  * @param sgl Pointer to SGL as allocated by xnvme_sgl_alloc() or
  * xnvme_sgl_create()
  */
@@ -114,13 +114,12 @@ xnvme_sgl_reset(struct xnvme_sgl *sgl);
  * @see xnvme_sgl_alloc
  * @see xnvme_buf_alloc
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open()
  * @param sgl Pointer to sgl as allocated by xnvme_sgl_alloc()
  * @param buf Pointer to buffer as allocated with xnvme_buf_alloc()
  * @param nbytes Size of the given buffer in bytes
  */
 int
-xnvme_sgl_add(struct xnvme_dev *dev, struct xnvme_sgl *sgl, void *buf,
-	      size_t nbytes);
+xnvme_sgl_add(struct xnvme_dev *dev, struct xnvme_sgl *sgl, void *buf, size_t nbytes);
 
 #endif

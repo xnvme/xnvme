@@ -67,7 +67,7 @@ xnvme_znd_mgmt_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba,
 /**
  * Fills 'zdescr' with the Zone on the given 'dev' that starts at 'slba'
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open()
  * @param slba The Zone Start LBA
  * @param zdescr Pointer to the ::xnvme_spec_znd_descr to fill
  *
@@ -118,7 +118,7 @@ xnvme_znd_stat(struct xnvme_dev *dev, enum xnvme_spec_znd_cmd_mgmt_recv_action_s
  * Caller is responsible for de-allocating the returned structure using
  * `xnvme_buf_free`
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open()
  *
  * @return On success, pointer to namespace structure. On error, NULL is
  * returned and `errno` is set to indicate the error
@@ -246,7 +246,7 @@ xnvme_znd_report_pr(const struct xnvme_znd_report *report, int flags);
  * Caller is responsible for de-allocating the returned structure using
  * xnvme_buf_virt_free()
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open()
  * @param slba LBA of the first zone in the report
  * @param limit when 0 then provide a report for all zones start from slba.
  * Otherwise, provide a report for [slba, slba+limit]

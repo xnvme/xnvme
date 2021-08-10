@@ -446,9 +446,15 @@ static struct xnvmec_sub g_subs[] = {
 		"read", "Asynchronous Zone Read of an entire Zone",
 		"Asynchronous Zone Read of an entire Zone", sub_async_read, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
 			{XNVMEC_OPT_QDEPTH, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			{XNVMEC_OPT_ASYNC, XNVMEC_LOPT},
 		}
 	},
 
@@ -456,9 +462,15 @@ static struct xnvmec_sub g_subs[] = {
 		"write", "Asynchronous Zone Write until full",
 		"Zone asynchronous Write until full", sub_async_write, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
 			{XNVMEC_OPT_QDEPTH, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			{XNVMEC_OPT_ASYNC, XNVMEC_LOPT},
 		}
 	},
 
@@ -466,17 +478,22 @@ static struct xnvmec_sub g_subs[] = {
 		"append", "Asynchronous Zone Append until full",
 		"Zone asynchronous Append until full", sub_async_append, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
 			{XNVMEC_OPT_QDEPTH, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			{XNVMEC_OPT_ASYNC, XNVMEC_LOPT},
 		}
 	},
 };
 
 static struct xnvmec g_cli = {
-	.title = "Zoned Synchronous IO Example",
-	.descr_short =	"Synchronous IO: read / write / append, "
-	"using 4k payload at QD1",
+	.title = "Zoned Asynchronous IO Example",
+	.descr_short = "Asynchronous IO: read / write / append, using 4k payload at QD1",
 	.subs = g_subs,
 	.nsubs = sizeof g_subs / sizeof(*g_subs),
 };

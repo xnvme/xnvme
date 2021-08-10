@@ -137,6 +137,7 @@ struct xnvmec_args {
 
 	uint32_t uuid;
 	uint32_t nsid;
+	uint32_t dev_nsid;
 	uint32_t cns;
 	uint32_t csi;
 	uint64_t index;
@@ -192,9 +193,30 @@ struct xnvmec_args {
 	const char *async;
 	const char *admin;
 
-	uint64_t shmid;
-	const char *maincore;
-	const char *coremask;
+	uint64_t shm_id;
+	uint32_t main_core;
+	const char *core_mask;
+
+	struct {
+		uint32_t value	: 31;
+		uint32_t given	: 1;
+	} css;			///< SPDK controller-setup: do command-set-selection
+
+	uint32_t use_cmb_sqs;
+	const char *adrfam;
+
+	uint32_t poll_io;
+	uint32_t poll_sq;
+	uint32_t register_files;
+	uint32_t register_buffers;
+
+	uint32_t truncate;
+	uint32_t rdonly;
+	uint32_t wronly;
+	uint32_t rdwr;
+	uint32_t create;
+	uint32_t create_mode;
+	uint32_t oflags;
 };
 
 void xnvmec_args_pr(struct xnvmec_args *args, int opts);
@@ -301,11 +323,32 @@ enum xnvmec_opt {
 	XNVMEC_OPT_ASYNC	= 77, ///< XNVMEC_OPT_ASYNC
 	XNVMEC_OPT_ADMIN	= 78, ///< XNVMEC_OPT_ADMIN
 
-	XNVMEC_OPT_SHMID	= 79, ///< XNVMEC_OPT_SHMID
-	XNVMEC_OPT_MAINCORE	= 80, ///< XNVMEC_OPT_MAINCORE
-	XNVMEC_OPT_COREMASK	= 81, ///< XNVMEC_OPT_COREMASK
+	XNVMEC_OPT_SHM_ID	= 79, ///< XNVMEC_OPT_SHM_ID
+	XNVMEC_OPT_MAIN_CORE	= 80, ///< XNVMEC_OPT_MAIN_CORE
+	XNVMEC_OPT_CORE_MASK	= 81, ///< XNVMEC_OPT_CORE_MASK
 
-	XNVMEC_OPT_END		= 100, ///< XNVMEC_OPT_END
+	XNVMEC_OPT_USE_CMB_SQS  = 82, ///< XNVMEC_OPT_USE_CMB_SQS
+	XNVMEC_OPT_CSS		= 83, ///< XNVMEC_OPT_CSS
+
+	XNVMEC_OPT_POLL_IO	= 84, ///< XNVMEC_OPT_POLL_IO
+	XNVMEC_OPT_POLL_SQ	= 85, ///< XNVMEC_OPT_POLL_SQ
+	XNVMEC_OPT_REGISTER_FILES	= 86, ///< XNVMEC_OPT_REGISTER_FILES
+	XNVMEC_OPT_REGISTER_BUFFERS	= 87, ///< XNVMEC_OPT_REGISTER_BUFFERS
+
+	XNVMEC_OPT_TRUNCATE	= 88, ///< XNVMEC_OPT_TRUNCATE
+	XNVMEC_OPT_RDONLY	= 89, ///< XNVMEC_OPT_RDONLY
+	XNVMEC_OPT_WRONLY	= 90, ///< XNVMEC_OPT_WRONLY
+	XNVMEC_OPT_RDWR		= 91, ///< XNVMEC_OPT_RDWR
+
+	XNVMEC_OPT_CREATE	= 92, ///< XNVMEC_OPT_CREATE
+	XNVMEC_OPT_CREATE_MODE	= 93, ///< XNVMEC_OPT_CREATE_MODE
+
+	XNVMEC_OPT_OFLAGS	= 94, ///< XNVMEC_OPT_OFLAGS
+
+	XNVMEC_OPT_ADRFAM	= 95, ///< XNVMEC_OPT_ADRFAM
+	XNVMEC_OPT_DEV_NSID	= 96, ///< XNVMEC_OPT_DEV_NSID
+
+	XNVMEC_OPT_END		= 97, ///< XNVMEC_OPT_END
 };
 
 /**
@@ -322,6 +365,26 @@ enum xnvmec_opt_type {
 	XNVMEC_LOPT = 0x3, ///< XNVMEC_LOPT
 	XNVMEC_LREQ = 0x4, ///< XNVMEC_LREQ
 };
+
+enum xnvmec_opt_value_type {
+	XNVMEC_OPT_VTYPE_URI = 0x1,
+	XNVMEC_OPT_VTYPE_NUM = 0x2,
+	XNVMEC_OPT_VTYPE_HEX = 0x3,
+	XNVMEC_OPT_VTYPE_FILE = 0x4,
+	XNVMEC_OPT_VTYPE_STR = 0x5,
+};
+
+struct xnvmec_opt_attr {
+	enum xnvmec_opt opt;
+	enum xnvmec_opt_value_type vtype;
+	const char *name;
+	const char *descr;
+
+	char getoptval;		// character returned by getopt_log() when found
+};
+
+const struct xnvmec_opt_attr *
+xnvmec_get_opt_attr(enum xnvmec_opt opt);
 
 /**
  * @struct xnvmec_sub_opt
@@ -404,6 +467,18 @@ void xnvmec_pinf(const char *format, ...);
 void xnvmec_perr(const char *msg, int err);
 
 int xnvmec(struct xnvmec *cli, int argc, char **argv, int opts);
+
+/**
+ * Fill the given 'opts' with values parsed in the given 'cli'
+ *
+ * @param cli The command-line-interface to parse arguments for
+ * @param opts The device-options to fill
+ *
+ * @return On success, the 0 is returned. On error, -1 is returned and `errno` set to indicate the
+ * error.
+ */
+int
+xnvmec_cli_to_opts(const struct xnvmec *cli, struct xnvme_opts *opts);
 
 #ifdef __cplusplus
 }

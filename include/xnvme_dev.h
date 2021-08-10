@@ -7,6 +7,7 @@
 #include <xnvme_be.h>
 
 enum xnvme_dev_type {
+	XNVME_DEV_TYPE_UNKNOWN,
 	XNVME_DEV_TYPE_NVME_CONTROLLER,
 	XNVME_DEV_TYPE_NVME_NAMESPACE,
 	XNVME_DEV_TYPE_BLOCK_DEVICE,
@@ -16,10 +17,7 @@ enum xnvme_dev_type {
 struct xnvme_dev {
 	struct xnvme_geo geo;		///< Device geometry
 	struct xnvme_be be;		///< Backend interface
-
-	uint32_t nsid;			///< Namespace Identifier
-	enum xnvme_spec_csi csi;	///< Command Set Identifier
-	enum xnvme_dev_type dtype;	///< Device type
+	struct xnvme_ident ident;	///< Device identifier
 
 	uint8_t _pad[4];
 
@@ -33,8 +31,8 @@ struct xnvme_dev {
 		struct xnvme_spec_idfy_ns ns;		///< NVMe id-ns
 	} idcss;			///< Command Set Specific
 
-	struct xnvme_ident ident;		///< Device identifier
-	struct xnvme_be_options opts;
+	struct xnvme_opts opts;		///< Options
+
 };
 //XNVME_STATIC_ASSERT(sizeof(struct xnvme_ident) == 768, "Incorrect size")
 

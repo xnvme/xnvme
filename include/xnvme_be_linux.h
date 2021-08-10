@@ -32,8 +32,7 @@ XNVME_STATIC_ASSERT(
 )
 
 int
-xnvme_file_oflg_to_linux(int oflags);
-
+xnvme_file_opts_to_linux(struct xnvme_opts *opts);
 
 static inline uint64_t
 xnvme_lba2off(struct xnvme_dev *dev, uint64_t lba)

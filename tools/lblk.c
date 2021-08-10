@@ -269,12 +269,18 @@ static struct xnvmec_sub g_subs[] = {
 		"Enumerate Logical Block Namespaces on the system", sub_enumerate, {
 			{XNVMEC_OPT_SYS_URI, XNVMEC_LOPT},
 			{XNVMEC_OPT_FLAGS, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 		}
 	},
 	{
 		"info", "Retrieve derived information for the given URI",
 		"Retrieve derived information for the given URI", sub_info, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 		}
 	},
 	{
@@ -283,6 +289,10 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 		}
 	},
 	{
@@ -294,6 +304,11 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
 			{XNVMEC_OPT_META_OUTPUT, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
 		}
 	},
 	{
@@ -305,6 +320,11 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
 			{XNVMEC_OPT_META_INPUT, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
 		}
 	},
 	{
@@ -316,6 +336,11 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
 			{XNVMEC_OPT_META_INPUT, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
 		}
 	},
 	{
@@ -327,6 +352,11 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
 			{XNVMEC_OPT_META_INPUT, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
 		}
 	},
 };

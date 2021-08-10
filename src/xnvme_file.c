@@ -10,7 +10,6 @@
 #include <libxnvme_spec_fs.h>
 #include <xnvme_be_linux.h>
 
-
 int
 xnvme_file_pread(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, off_t offset)
 {
@@ -57,67 +56,8 @@ xnvme_file_get_cmd_ctx(struct xnvme_dev *fh)
 	return xnvme_cmd_ctx_from_dev(fh);
 }
 
-struct flag_opt {
-	int flag;
-	const char *opt;
-};
-
-static struct flag_opt g_flag_opts[] = {
-	{ XNVME_FILE_OFLG_CREATE,	"?mode=0755" },
-	{ XNVME_FILE_OFLG_CREATE,	"?create=1" },
-	{ XNVME_FILE_OFLG_DIRECT_ON,	"?direct=1" },
-	{ XNVME_FILE_OFLG_DIRECT_OFF,	"?direct=0" },
-	{ XNVME_FILE_OFLG_RDONLY,	"?rdonly=1" },
-	{ XNVME_FILE_OFLG_WRONLY,	"?wronly=1" },
-	{ XNVME_FILE_OFLG_RDWR,		"?rdwr=1" },
-	{ XNVME_FILE_OFLG_TRUNC,	"?trunc=1" },
-};
-static int g_nflag_opts = sizeof g_flag_opts / sizeof(*g_flag_opts);
-
 struct xnvme_dev *
-xnvme_file_open(const char *pathname, int flags)
+xnvme_file_open(const char *pathname, struct xnvme_opts *opts)
 {
-	size_t left = XNVME_IDENT_URI_LEN;
-	int wrote = 0;
-	char uri[XNVME_IDENT_URI_LEN] = { 0 };
-
-	if (strlen(pathname) >= XNVME_IDENT_URI_LEN) {
-		XNVME_DEBUG("FAILED: constructing uri");
-		errno = EINVAL;
-		return NULL;
-	}
-
-	if (!(flags & (XNVME_FILE_OFLG_DIRECT_ON | XNVME_FILE_OFLG_DIRECT_OFF))) {
-		flags |= XNVME_FILE_OFLG_DIRECT_OFF;
-	}
-
-	XNVME_DEBUG("INFO: strlen(pathname): %zu", strlen(pathname));
-
-	wrote = snprintf(uri, left - 1, "%s", pathname);
-	if (wrote < 0 || (wrote >= (int)left - 1)) {
-		XNVME_DEBUG("FAILED: constructing uri");
-		return NULL;
-	}
-	left -= wrote;
-
-	XNVME_DEBUG("INFO: left: %zu, wrote: %d", left, wrote);
-
-	for (int i = 0; i < g_nflag_opts; ++i) {
-		if (g_flag_opts[i].flag && (!(flags & g_flag_opts[i].flag))) {
-			continue;
-		}
-
-		wrote = snprintf(uri + XNVME_IDENT_URI_LEN - left, left - 1, "%s",
-				 g_flag_opts[i].opt);
-		if (wrote < 0 || (wrote >= ((int)left - 1))) {
-			XNVME_DEBUG("FAILED: constructing uri");
-			return NULL;
-		}
-
-		left -= wrote;
-	}
-
-	XNVME_DEBUG("INFO: uri: %s, len: %zu", uri, strlen(uri));
-
-	return xnvme_dev_openf(uri, 0x0);
+	return xnvme_dev_open(pathname, opts);
 }

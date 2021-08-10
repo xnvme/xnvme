@@ -52,28 +52,16 @@ xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr opts)
 }
 
 int
-xnvme_file_oflg_to_linux(int oflags)
+xnvme_file_opts_to_linux(struct xnvme_opts *opts)
 {
 	int flags = 0;
 
-	if (oflags & XNVME_FILE_OFLG_CREATE) {
-		flags |= O_CREAT;
-	}
-	if (oflags & XNVME_FILE_OFLG_DIRECT_ON) {
-		flags |= O_DIRECT;
-	}
-	if (oflags & XNVME_FILE_OFLG_RDONLY) {
-		flags |= O_RDONLY;
-	}
-	if (oflags & XNVME_FILE_OFLG_WRONLY) {
-		flags |= O_WRONLY;
-	}
-	if (oflags & XNVME_FILE_OFLG_RDWR) {
-		flags |= O_RDWR;
-	}
-	if (oflags & XNVME_FILE_OFLG_TRUNC) {
-		flags |= O_TRUNC;
-	}
+	flags |= opts->create ? O_CREAT : 0x0;
+	flags |= opts->direct ? O_DIRECT : 0x0;
+	flags |= opts->rdonly ? O_RDONLY : 0x0;
+	flags |= opts->wronly ? O_WRONLY : 0x0;
+	flags |= opts->rdwr ? O_RDWR : 0x0;
+	flags |= opts->truncate ? O_TRUNC : 0x0;
 
 	return flags;
 }
