@@ -408,8 +408,8 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 	{XNVMEC_OPT_LBA,		XNVMEC_OPT_VTYPE_HEX,	"lba",	"Logical Block Address"},
 	{XNVMEC_OPT_NLB,		XNVMEC_OPT_VTYPE_NUM,	"nlb",	"Number of LBAs (NOTE: zero-based value)"},
 
-	{XNVMEC_OPT_URI,		XNVMEC_OPT_VTYPE_URI,	"uri",		"Device URI e.g. /dev/nvme0n1, liou:/dev/nvme0n1 or pci:0000:01:00.1"},
-	{XNVMEC_OPT_SYS_URI,		XNVMEC_OPT_VTYPE_URI,	"uri",		"System URI e.g. fab:10.9.8.1:8888"},
+	{XNVMEC_OPT_URI,		XNVMEC_OPT_VTYPE_URI,	"uri",		"Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888'"},
+	{XNVMEC_OPT_SYS_URI,		XNVMEC_OPT_VTYPE_URI,	"uri",		"System URI e.g. '10.9.8.1:8888'"},
 	{XNVMEC_OPT_CNTID,		XNVMEC_OPT_VTYPE_HEX,	"cntid",	"Controller Identifier"},
 	{XNVMEC_OPT_NSID,		XNVMEC_OPT_VTYPE_HEX,	"nsid",		"Namespace Identifier"},
 	{XNVMEC_OPT_UUID,		XNVMEC_OPT_VTYPE_HEX,	"uuid",		"Universally Unique Identifier"},
