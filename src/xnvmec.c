@@ -348,6 +348,7 @@ enum xnvmec_opt_value_type {
 	XNVMEC_OPT_VTYPE_NUM = 0x2,
 	XNVMEC_OPT_VTYPE_HEX = 0x3,
 	XNVMEC_OPT_VTYPE_FILE = 0x4,
+	XNVMEC_OPT_VTYPE_STR = 0x5,
 };
 
 const char *
@@ -362,6 +363,8 @@ xnvmec_opt_value_type_str(int vtype)
 		return "0xNUM";
 	case XNVMEC_OPT_VTYPE_FILE:
 		return "FILE";
+	case XNVMEC_OPT_VTYPE_STR:
+		return "STRING";
 	}
 
 	return "ENOSYS";
@@ -665,6 +668,7 @@ xnvmec_assign_arg(struct xnvmec *cli, int optval, char *arg, enum xnvmec_opt_typ
 		switch (attr->vtype) {
 		case XNVMEC_OPT_VTYPE_URI:
 		case XNVMEC_OPT_VTYPE_FILE:
+		case XNVMEC_OPT_VTYPE_STR:
 			break;
 
 		case XNVMEC_OPT_VTYPE_NUM:
