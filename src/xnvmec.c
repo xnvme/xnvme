@@ -325,13 +325,14 @@ xnvmec_int2opt(int opt) {
 	case XNVMEC_OPT_OPCODE:
 	case XNVMEC_OPT_FLAGS:
 	case XNVMEC_OPT_ALL:
+
+	case XNVMEC_OPT_BE:
+	case XNVMEC_OPT_MEM:
+	case XNVMEC_OPT_SYNC:
+	case XNVMEC_OPT_ASYNC:
+	case XNVMEC_OPT_ADMIN:
 		return val;
 
-	case XNVMEC_OPT_UNUSED03:
-	case XNVMEC_OPT_UNUSED04:
-	case XNVMEC_OPT_UNUSED05:
-	case XNVMEC_OPT_UNUSED06:
-	case XNVMEC_OPT_UNUSED07:
 	case XNVMEC_OPT_UNUSED08:
 
 	case XNVMEC_OPT_UNKNOWN:
@@ -463,6 +464,12 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 	{XNVMEC_OPT_RESET,	XNVMEC_OPT_VTYPE_NUM,	"reset",	"Reset controller"},
 	{XNVMEC_OPT_VERBOSE,	XNVMEC_OPT_VTYPE_NUM,	"verbose",	"Increase output info"},
 	{XNVMEC_OPT_HELP,	XNVMEC_OPT_VTYPE_NUM,	"help",		"Show usage / help"},
+
+	{XNVMEC_OPT_BE,		XNVMEC_OPT_VTYPE_STR,	"backend",	"xNVMe backend"},
+	{XNVMEC_OPT_MEM,	XNVMEC_OPT_VTYPE_STR,	"mem",		"xNVMe buffer/memory manager"},
+	{XNVMEC_OPT_SYNC,	XNVMEC_OPT_VTYPE_STR,	"sync",		"xNVMe synchronous command-interface"},
+	{XNVMEC_OPT_ASYNC,	XNVMEC_OPT_VTYPE_STR,	"async",	"xNVMe asynchronous command-interface"},
+	{XNVMEC_OPT_ADMIN,	XNVMEC_OPT_VTYPE_STR,	"admin",	"xNVMe administrative command-interface"},
 
 	{XNVMEC_OPT_END, XNVMEC_OPT_VTYPE_NUM, "", ""},
 };
@@ -916,11 +923,22 @@ xnvmec_assign_arg(struct xnvmec *cli, int optval, char *arg, enum xnvmec_opt_typ
 		args->offset = arg ? num : 1;
 		break;
 
-	case XNVMEC_OPT_UNUSED03:
-	case XNVMEC_OPT_UNUSED04:
-	case XNVMEC_OPT_UNUSED05:
-	case XNVMEC_OPT_UNUSED06:
-	case XNVMEC_OPT_UNUSED07:
+	case XNVMEC_OPT_BE:
+		args->be = arg ? arg : "INVALID_INPUT";
+		break;
+	case XNVMEC_OPT_MEM:
+		args->mem = arg ? arg : "INVALID_INPUT";
+		break;
+	case XNVMEC_OPT_SYNC:
+		args->sync = arg ? arg : "INVALID_INPUT";
+		break;
+	case XNVMEC_OPT_ASYNC:
+		args->async = arg ? arg : "INVALID_INPUT";
+		break;
+	case XNVMEC_OPT_ADMIN:
+		args->admin = arg ? arg : "INVALID_INPUT";
+		break;
+
 	case XNVMEC_OPT_UNUSED08:
 		errno = EINVAL;
 		XNVME_DEBUG("subopt: 0x%x", subopt);

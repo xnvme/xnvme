@@ -185,6 +185,12 @@ struct xnvmec_args {
 	uint32_t reset;
 	uint32_t verbose;
 	uint32_t help;
+
+	const char *be;
+	const char *mem;
+	const char *sync;
+	const char *async;
+	const char *admin;
 };
 
 void xnvmec_args_pr(struct xnvmec_args *args, int opts);
@@ -285,11 +291,12 @@ enum xnvmec_opt {
 
 	XNVMEC_OPT_ALL = '.', ///< XNVMEC_OPT_ALL
 
-	XNVMEC_OPT_UNUSED03 = '!',
-	XNVMEC_OPT_UNUSED04 = '"',
-	XNVMEC_OPT_UNUSED05 = '$',
-	XNVMEC_OPT_UNUSED06 = '%',
-	XNVMEC_OPT_UNUSED07 = '&',
+	XNVMEC_OPT_BE = '!',
+	XNVMEC_OPT_MEM = '"',
+	XNVMEC_OPT_SYNC = '$',
+	XNVMEC_OPT_ASYNC = '%',
+	XNVMEC_OPT_ADMIN = '&',
+
 	XNVMEC_OPT_UNUSED08 = '+',
 
 	XNVMEC_OPT_UNKNOWN = '?',	///< XNVMEC_OPT_UNKNOWN: do not use getopt special char
