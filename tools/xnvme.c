@@ -694,6 +694,14 @@ static struct xnvmec_sub g_subs[] = {
 		"Format a NVM namespace", sub_format, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_LBAF, XNVMEC_LOPT},
+			{XNVMEC_OPT_ZF, XNVMEC_LOPT},
+			{XNVMEC_OPT_MSET, XNVMEC_LOPT},
+			{XNVMEC_OPT_SES, XNVMEC_LOPT},
+			{XNVMEC_OPT_PI, XNVMEC_LOPT},
+			{XNVMEC_OPT_PIL, XNVMEC_LOPT},
+
 		}
 	},
 	{
