@@ -72,11 +72,9 @@ fdio_func(void *buf, size_t nbytes, const char *path, int flags, mode_t mode)
 		size_t nbytes_call = remain < SSIZE_MAX ? remain : SSIZE_MAX;
 
 		if (do_write) {
-			err = xnvme_file_pwrite(&ctx, buf + transferred, nbytes_call,
-						transferred);
+			err = xnvme_file_pwrite(&ctx, buf + transferred, nbytes_call, transferred);
 		} else {
-			err = xnvme_file_pread(&ctx, buf + transferred, nbytes_call,
-					       transferred);
+			err = xnvme_file_pread(&ctx, buf + transferred, nbytes_call, transferred);
 		}
 		if (err) {
 			XNVME_DEBUG("FAILED: do_write: %d, cpl.result: %ld, errno: %d",
@@ -165,8 +163,7 @@ xnvmec_buf_diff(const void *expected, const void *actual, size_t nbytes)
 }
 
 void
-xnvmec_buf_diff_pr(const void *expected, const void *actual, size_t nbytes,
-		   int XNVME_UNUSED(opts))
+xnvmec_buf_diff_pr(const void *expected, const void *actual, size_t nbytes, int XNVME_UNUSED(opts))
 {
 	const uint8_t *exp = expected;
 	const uint8_t *act = actual;
@@ -644,8 +641,7 @@ xnvmec_usage(struct xnvmec *cli)
 }
 
 int
-xnvmec_assign_arg(struct xnvmec *cli, int optval, char *arg,
-		  enum xnvmec_opt_type opt_type)
+xnvmec_assign_arg(struct xnvmec *cli, int optval, char *arg, enum xnvmec_opt_type opt_type)
 {
 	struct xnvmec_opt_attr *attr = NULL;
 	struct xnvmec_args *args = &cli->args;
@@ -1078,8 +1074,7 @@ xnvmec_parse(struct xnvmec *cli)
 		int ret = 0;
 		int found = 0;
 
-		ret = getopt_long(cli->argc, cli->argv, "", long_options,
-				  &optidx);
+		ret = getopt_long(cli->argc, cli->argv, "", long_options, &optidx);
 		if (ret == -1) {
 			break;
 		}
@@ -1168,8 +1163,7 @@ xnvmec_parse(struct xnvmec *cli)
 
 			attr = pos_args[pos];
 
-			if (xnvmec_assign_arg(cli, attr->opt, cli->argv[idx],
-					      XNVMEC_POSA)) {
+			if (xnvmec_assign_arg(cli, attr->opt, cli->argv[idx], XNVMEC_POSA)) {
 				XNVME_DEBUG("FAILED: xnvmec_assign_arg()");
 				xnvmec_pinf("invalid argument value(%s)",
 					    cli->argv[idx]);
