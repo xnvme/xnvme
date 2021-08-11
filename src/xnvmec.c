@@ -1027,23 +1027,23 @@ xnvmec_parse(struct xnvmec *cli)
 
 	// Convert from XNVMEC_OPT to getopt long_options
 	for (int oi = 0; oi < XNVMEC_SUB_OPTS_LEN; ++oi) {
-		struct xnvmec_sub_opt *opt = &sub->opts[oi];
-		struct xnvmec_opt_attr *attr = NULL;
+		struct xnvmec_sub_opt *sub_opt = &sub->opts[oi];
+		struct xnvmec_opt_attr *opt_attr = NULL;
 		struct option *lopt = NULL;
 
-		if ((opt->opt == XNVMEC_OPT_END) || \
-		    (opt->opt == XNVMEC_OPT_NONE)) {
+		if ((sub_opt->opt == XNVMEC_OPT_END) || \
+		    (sub_opt->opt == XNVMEC_OPT_NONE)) {
 			break;
 		}
 
-		attr = xnvmec_opt_attr_by_opt(opt->opt, xnvmec_opts);
-		if (!attr) {
+		opt_attr = xnvmec_opt_attr_by_opt(sub_opt->opt, xnvmec_opts);
+		if (!opt_attr) {
 			xnvmec_pinf("Invalid arguments: cannot parse value");
 			errno = EINVAL;
 			return -1;
 		}
 
-		switch (opt->type) {
+		switch (sub_opt->type) {
 		case XNVMEC_LFLG:
 			++signature.lflg;
 			++signature.total_long;
@@ -1066,25 +1066,25 @@ xnvmec_parse(struct xnvmec *cli)
 		}
 		++signature.total;
 
-		switch (opt->type) {
+		switch (sub_opt->type) {
 		case XNVMEC_LFLG:
 		case XNVMEC_LREQ:
 		case XNVMEC_LOPT:
 
 			lopt = &long_options[signature.total_long - 1];
-			lopt->name = attr->name;
+			lopt->name = opt_attr->name;
 			lopt->flag = NULL;
-			lopt->val = opt->opt;
+			lopt->val = sub_opt->opt;
 
 			lopt->has_arg = required_argument;
-			if (opt->type == XNVMEC_LFLG) {
+			if (sub_opt->type == XNVMEC_LFLG) {
 				lopt->has_arg = no_argument;
 			}
 
 			break;
 
 		case XNVMEC_POSA:
-			pos_args[signature.posa - 1] = attr;
+			pos_args[signature.posa - 1] = opt_attr;
 			break;
 		}
 	}
