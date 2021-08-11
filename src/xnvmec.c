@@ -574,7 +574,7 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 	},
 	{
 		.opt = XNVMEC_OPT_BE, .vtype = 	XNVMEC_OPT_VTYPE_STR,
-		.name = "backend", .descr = "xNVMe backend"
+		.name = "be", .descr = "xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix'"
 	},
 	{
 		.opt = XNVMEC_OPT_MEM, .vtype = XNVMEC_OPT_VTYPE_STR,
@@ -582,15 +582,15 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 	},
 	{
 		.opt = XNVMEC_OPT_SYNC, .vtype = XNVMEC_OPT_VTYPE_STR,
-		.name = "sync", .descr = "xNVMe synchronous command-interface"
+		.name = "sync", .descr = "xNVMe sync. command-interface, e.g. 'nvme', 'block'"
 	},
 	{
 		.opt = XNVMEC_OPT_ASYNC, .vtype = XNVMEC_OPT_VTYPE_STR,
-		.name = "async", .descr = "xNVMe asynchronous command-interface"
+		.name = "async", .descr = "xNVMe async. command-interface, e.g. 'io_uring', 'emu'"
 	},
 	{
 		.opt = XNVMEC_OPT_ADMIN, .vtype = XNVMEC_OPT_VTYPE_STR,
-		.name = "admin", .descr = "xNVMe administrative command-interface"
+		.name = "admin", .descr = "xNVMe admin. command-interface, e.g. 'nvme', 'block'"
 	},
 
 	{
