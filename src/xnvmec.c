@@ -13,6 +13,8 @@
 #include <libxnvmec.h>
 #include <libxnvme_file.h>
 
+#define XNVMEC_SUB_MAXOPTS 24
+
 const char *
 xnvmec_opt_type_str(enum xnvmec_opt_type otype)
 {
@@ -241,109 +243,6 @@ xnvmec_args_pr(struct xnvmec_args *args, int opts)
 	printf("help: %d\n", args->help);
 }
 
-enum xnvmec_opt
-xnvmec_int2opt(int opt) {
-	enum xnvmec_opt val = opt;
-
-	switch (val)
-	{
-	case XNVMEC_OPT_NONE:
-	case XNVMEC_OPT_CDW00:
-	case XNVMEC_OPT_CDW01:
-	case XNVMEC_OPT_CDW02:
-	case XNVMEC_OPT_CDW03:
-	case XNVMEC_OPT_CDW04:
-	case XNVMEC_OPT_CDW05:
-	case XNVMEC_OPT_CDW06:
-	case XNVMEC_OPT_CDW07:
-	case XNVMEC_OPT_CDW08:
-	case XNVMEC_OPT_CDW09:
-	case XNVMEC_OPT_CDW10:
-	case XNVMEC_OPT_CDW11:
-	case XNVMEC_OPT_CDW12:
-	case XNVMEC_OPT_CDW13:
-	case XNVMEC_OPT_CDW14:
-	case XNVMEC_OPT_CDW15:
-	case XNVMEC_OPT_CMD_INPUT:
-	case XNVMEC_OPT_CMD_OUTPUT:
-	case XNVMEC_OPT_DATA_NBYTES:
-	case XNVMEC_OPT_DATA_INPUT:
-	case XNVMEC_OPT_DATA_OUTPUT:
-	case XNVMEC_OPT_META_NBYTES:
-	case XNVMEC_OPT_META_INPUT:
-	case XNVMEC_OPT_META_OUTPUT:
-	case XNVMEC_OPT_LBAF:
-	case XNVMEC_OPT_LBA:
-	case XNVMEC_OPT_SLBA:
-	case XNVMEC_OPT_ELBA:
-	case XNVMEC_OPT_NLB:
-	case XNVMEC_OPT_URI:
-	case XNVMEC_OPT_SYS_URI:
-	case XNVMEC_OPT_UUID:
-	case XNVMEC_OPT_NSID:
-	case XNVMEC_OPT_CNS:
-	case XNVMEC_OPT_CSI:
-	case XNVMEC_OPT_INDEX:
-	case XNVMEC_OPT_SETID:
-
-	case XNVMEC_OPT_CNTID:
-	case XNVMEC_OPT_LID:
-	case XNVMEC_OPT_LSP:
-	case XNVMEC_OPT_LPO_NBYTES:
-	case XNVMEC_OPT_RAE:
-	case XNVMEC_OPT_CLEAR:
-	case XNVMEC_OPT_ZF:
-	case XNVMEC_OPT_SES:
-	case XNVMEC_OPT_SEL:
-	case XNVMEC_OPT_MSET:
-	case XNVMEC_OPT_AUSE:
-	case XNVMEC_OPT_OVRPAT:
-	case XNVMEC_OPT_OWPASS:
-	case XNVMEC_OPT_OIPBP:
-	case XNVMEC_OPT_NODAS:
-
-	case XNVMEC_OPT_ACTION:
-	case XNVMEC_OPT_ZRMS:
-	case XNVMEC_OPT_PI:
-	case XNVMEC_OPT_PIL:
-	case XNVMEC_OPT_FID:
-	case XNVMEC_OPT_FEAT:
-	case XNVMEC_OPT_SEED:
-	case XNVMEC_OPT_LIMIT:
-	case XNVMEC_OPT_IOSIZE:
-	case XNVMEC_OPT_QDEPTH:
-	case XNVMEC_OPT_DIRECT:
-	case XNVMEC_OPT_STATUS:
-	case XNVMEC_OPT_SAVE:
-	case XNVMEC_OPT_RESET:
-	case XNVMEC_OPT_VERBOSE:
-	case XNVMEC_OPT_HELP:
-
-	case XNVMEC_OPT_COUNT:
-	case XNVMEC_OPT_OFFSET:
-
-	case XNVMEC_OPT_OPCODE:
-	case XNVMEC_OPT_FLAGS:
-	case XNVMEC_OPT_ALL:
-
-	case XNVMEC_OPT_BE:
-	case XNVMEC_OPT_MEM:
-	case XNVMEC_OPT_SYNC:
-	case XNVMEC_OPT_ASYNC:
-	case XNVMEC_OPT_ADMIN:
-		return val;
-
-	case XNVMEC_OPT_UNUSED08:
-
-	case XNVMEC_OPT_UNKNOWN:
-	case XNVMEC_OPT_WEIRD:
-	case XNVMEC_OPT_END:
-		return XNVMEC_OPT_END;
-	}
-
-	return XNVMEC_OPT_END;
-}
-
 enum xnvmec_opt_value_type {
 	XNVMEC_OPT_VTYPE_URI = 0x1,
 	XNVMEC_OPT_VTYPE_NUM = 0x2,
@@ -376,6 +275,8 @@ struct xnvmec_opt_attr {
 	enum xnvmec_opt_value_type vtype;
 	const char *name;
 	const char *descr;
+
+	char getoptval;		// character returned by getopt_log() when found
 };
 
 static struct xnvmec_opt_attr xnvmec_opts[] = {
@@ -692,7 +593,10 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 		.name = "admin", .descr = "xNVMe administrative command-interface"
 	},
 
-	{XNVMEC_OPT_END, XNVMEC_OPT_VTYPE_NUM, "", "", 0},
+	{
+		.opt = XNVMEC_OPT_END, .vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "", .descr = ""
+	}
 };
 
 struct xnvmec_opt_attr *
@@ -708,6 +612,21 @@ xnvmec_opt_attr_by_opt(enum xnvmec_opt opt, struct xnvmec_opt_attr *attrs)
 
 	return NULL;
 }
+
+struct xnvmec_opt_attr *
+xnvmec_opt_attr_by_getoptval(int getoptval, struct xnvmec_opt_attr *attrs)
+{
+	for (int idx = 0; attrs[idx].getoptval; ++idx) {
+		if (attrs[idx].getoptval != getoptval) {
+			continue;
+		}
+
+		return &attrs[idx];
+	}
+
+	return NULL;
+}
+
 
 void
 xnvmec_pinf(const char *format, ...)
@@ -872,28 +791,18 @@ xnvmec_usage(struct xnvmec *cli)
 }
 
 int
-xnvmec_assign_arg(struct xnvmec *cli, int optval, char *arg, enum xnvmec_opt_type opt_type)
+xnvmec_assign_arg(struct xnvmec *cli, struct xnvmec_opt_attr *opt_attr, char *arg,
+		  enum xnvmec_opt_type opt_type)
 {
-	struct xnvmec_opt_attr *attr = NULL;
 	struct xnvmec_args *args = &cli->args;
-	enum xnvmec_opt subopt;
 	char *endptr = NULL;
 	uint64_t num = 0;
 
-	subopt = xnvmec_int2opt(optval);
-
-	attr = xnvmec_opt_attr_by_opt(subopt, xnvmec_opts);
-	if (!attr) {
-		XNVME_DEBUG("FAILED: xnvmec_opt_attr_by_opt()");
-		errno = EINVAL;
-		return -1;
-	}
-
 	// Check numerical args
 	if (arg && (opt_type != XNVMEC_LFLG)) {
-		int num_base = attr->vtype == XNVMEC_OPT_VTYPE_NUM ? 10 : 16;
+		int num_base = opt_attr->vtype == XNVMEC_OPT_VTYPE_NUM ? 10 : 16;
 
-		switch (attr->vtype) {
+		switch (opt_attr->vtype) {
 		case XNVMEC_OPT_VTYPE_URI:
 		case XNVMEC_OPT_VTYPE_FILE:
 		case XNVMEC_OPT_VTYPE_STR:
@@ -918,7 +827,7 @@ xnvmec_assign_arg(struct xnvmec *cli, int optval, char *arg, enum xnvmec_opt_typ
 		}
 	}
 
-	switch (subopt) {
+	switch (opt_attr->opt) {
 	case XNVMEC_OPT_CDW00:
 		args->cdw[0] = num;
 		break;
@@ -1160,21 +1069,14 @@ xnvmec_assign_arg(struct xnvmec *cli, int optval, char *arg, enum xnvmec_opt_typ
 		args->admin = arg ? arg : "INVALID_INPUT";
 		break;
 
-	case XNVMEC_OPT_UNUSED08:
-		errno = EINVAL;
-		XNVME_DEBUG("subopt: 0x%x", subopt);
-		return -1;
-
-	case XNVMEC_OPT_WEIRD:
-	case XNVMEC_OPT_UNKNOWN:
 	case XNVMEC_OPT_END:
 	case XNVMEC_OPT_NONE:
 		errno = EINVAL;
-		XNVME_DEBUG("subopt: 0x%x", subopt);
+		XNVME_DEBUG("opt_attr->opt: 0x%x", opt_attr->opt);
 		return -1;
 	}
 
-	cli->given[subopt] = 1;
+	cli->given[opt_attr->opt] = 1;
 
 	return 0;
 }
@@ -1252,6 +1154,12 @@ xnvmec_parse(struct xnvmec *cli)
 		struct xnvmec_opt_attr *opt_attr = NULL;
 		struct option *lopt = NULL;
 
+		if ((oi + 1) >= (XNVMEC_SUB_MAXOPTS)) {
+			xnvmec_pinf("Invalid arguments: too many! exceeding 24");
+			errno = EINVAL;
+			return -1;
+		}
+
 		if ((sub_opt->opt == XNVMEC_OPT_END) || \
 		    (sub_opt->opt == XNVMEC_OPT_NONE)) {
 			break;
@@ -1263,6 +1171,9 @@ xnvmec_parse(struct xnvmec *cli)
 			errno = EINVAL;
 			return -1;
 		}
+
+		// "Dynamically" create the option-character, starting at 'a'
+		opt_attr->getoptval = 97 + oi;
 
 		switch (sub_opt->type) {
 		case XNVMEC_LFLG:
@@ -1295,7 +1206,7 @@ xnvmec_parse(struct xnvmec *cli)
 			lopt = &long_options[signature.total_long - 1];
 			lopt->name = opt_attr->name;
 			lopt->flag = NULL;
-			lopt->val = sub_opt->opt;
+			lopt->val = opt_attr->getoptval;
 
 			lopt->has_arg = required_argument;
 			if (sub_opt->type == XNVMEC_LFLG) {
@@ -1312,7 +1223,8 @@ xnvmec_parse(struct xnvmec *cli)
 
 	// Parse the long-opts
 	for (int count = 0; count < signature.total_long; ++count) {
-		struct xnvmec_sub_opt *opti = NULL;
+		struct xnvmec_sub_opt *sub_opt = NULL;
+		struct xnvmec_opt_attr *opt_attr = NULL;
 		int optidx = 0;
 		int ret = 0;
 		int found = 0;
@@ -1322,15 +1234,22 @@ xnvmec_parse(struct xnvmec *cli)
 			break;
 		}
 
-		// scan for the corresponding option
+		// Find the option, and the option-attributes matching the getopt-optionchar/ret
 		for (int oi = 0; oi < XNVMEC_SUB_OPTS_LEN; ++oi) {
-			opti = &sub->opts[oi];
+			sub_opt = &sub->opts[oi];
 
-			if ((int)opti->opt != ret) {
+			opt_attr = xnvmec_opt_attr_by_opt(sub_opt->opt, xnvmec_opts);
+			if (!opt_attr) {
+				xnvmec_pinf("no joy");
+				errno = EINVAL;
+				return -1;
+			}
+
+			if (opt_attr->getoptval != ret) {
 				continue;
 			}
 
-			switch (opti->type) {
+			switch (sub_opt->type) {
 			case XNVMEC_LFLG:
 				++parsed.lflg;
 				break;
@@ -1362,7 +1281,7 @@ xnvmec_parse(struct xnvmec *cli)
 			return -1;
 		}
 
-		if (xnvmec_assign_arg(cli, ret, optarg, opti->type)) {
+		if (xnvmec_assign_arg(cli, opt_attr, optarg, sub_opt->type)) {
 			XNVME_DEBUG("FAILED: xnvmec_assign_arg()");
 			xnvmec_pinf("invalid argument value(%s)", optarg);
 			errno = EINVAL;
@@ -1406,7 +1325,7 @@ xnvmec_parse(struct xnvmec *cli)
 
 			attr = pos_args[pos];
 
-			if (xnvmec_assign_arg(cli, attr->opt, cli->argv[idx], XNVMEC_POSA)) {
+			if (xnvmec_assign_arg(cli, attr, cli->argv[idx], XNVMEC_POSA)) {
 				XNVME_DEBUG("FAILED: xnvmec_assign_arg()");
 				xnvmec_pinf("invalid argument value(%s)",
 					    cli->argv[idx]);
