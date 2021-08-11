@@ -450,11 +450,11 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 	},
 	{
 		.opt = XNVMEC_OPT_ZF, .vtype = 	XNVMEC_OPT_VTYPE_HEX,
-		.name = "zf", .descr = "ZOne Format"
+		.name = "zf", .descr = "Zone Format"
 	},
 	{
 		.opt = XNVMEC_OPT_SES, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "ses", .descr = "Ses?"
+		.name = "ses", .descr = "Secure Erase setting. No=0x0, UserData=0x1, Cryptographic=0x2"
 	},
 	{
 		.opt = XNVMEC_OPT_SEL, .vtype = XNVMEC_OPT_VTYPE_HEX,
@@ -462,7 +462,7 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 	},
 	{
 		.opt = XNVMEC_OPT_MSET, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "mset", .descr = "Mset?"
+		.name = "mset", .descr = "Metadata settings. Off=0x0, On=0x1"
 	},
 	{
 		.opt = XNVMEC_OPT_AUSE, .vtype = XNVMEC_OPT_VTYPE_HEX,
@@ -494,11 +494,11 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 	},
 	{
 		.opt = XNVMEC_OPT_PI, .vtype = 	XNVMEC_OPT_VTYPE_HEX,
-		.name = "pi", .descr = "Protection Information"
+		.name = "pi", .descr = "Protection Information. Off=0x0, Type1/2/3=0x1/0x2/0x3"
 	},
 	{
 		.opt = XNVMEC_OPT_PIL, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "pil", .descr = "Protection Information Location"
+		.name = "pil", .descr = "Protection Information Location. Last=0x0, First=0x1"
 	},
 	{
 		.opt = XNVMEC_OPT_FID, .vtype = XNVMEC_OPT_VTYPE_HEX,
