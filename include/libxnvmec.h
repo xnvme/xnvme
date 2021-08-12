@@ -191,6 +191,10 @@ struct xnvmec_args {
 	const char *sync;
 	const char *async;
 	const char *admin;
+
+	uint64_t shmid;
+	const char *maincore;
+	const char *coremask;
 };
 
 void xnvmec_args_pr(struct xnvmec_args *args, int opts);
@@ -297,7 +301,11 @@ enum xnvmec_opt {
 	XNVMEC_OPT_ASYNC	= 77, ///< XNVMEC_OPT_ASYNC
 	XNVMEC_OPT_ADMIN	= 78, ///< XNVMEC_OPT_ADMIN
 
-	XNVMEC_OPT_END		= 79, ///< XNVMEC_OPT_END
+	XNVMEC_OPT_SHMID	= 79, ///< XNVMEC_OPT_SHMID
+	XNVMEC_OPT_MAINCORE	= 80, ///< XNVMEC_OPT_MAINCORE
+	XNVMEC_OPT_COREMASK	= 81, ///< XNVMEC_OPT_COREMASK
+
+	XNVMEC_OPT_END		= 100, ///< XNVMEC_OPT_END
 };
 
 /**

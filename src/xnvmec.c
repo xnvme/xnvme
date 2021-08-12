@@ -594,6 +594,19 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 	},
 
 	{
+		.opt = XNVMEC_OPT_ADMIN, .vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "admin", .descr = "For be=spdk, multi-process shared-memory-id"
+	},
+	{
+		.opt = XNVMEC_OPT_ADMIN, .vtype = XNVMEC_OPT_VTYPE_STR,
+		.name = "admin", .descr = "For be=spdk, multi-process core-mask"
+	},
+	{
+		.opt = XNVMEC_OPT_ADMIN, .vtype = XNVMEC_OPT_VTYPE_STR,
+		.name = "admin", .descr = "For be=spdk, multi-process main-core"
+	},
+
+	{
 		.opt = XNVMEC_OPT_END, .vtype = XNVMEC_OPT_VTYPE_NUM,
 		.name = "", .descr = ""
 	}
@@ -1067,6 +1080,16 @@ xnvmec_assign_arg(struct xnvmec *cli, struct xnvmec_opt_attr *opt_attr, char *ar
 		break;
 	case XNVMEC_OPT_ADMIN:
 		args->admin = arg ? arg : "INVALID_INPUT";
+		break;
+
+	case XNVMEC_OPT_SHMID:
+		args->shmid = num;
+		break;
+	case XNVMEC_OPT_MAINCORE:
+		args->maincore = arg ? arg : "INVALID_INPUT";
+		break;
+	case XNVMEC_OPT_COREMASK:
+		args->coremask = arg ? arg : "INVALID_INPUT";
 		break;
 
 	case XNVMEC_OPT_END:
