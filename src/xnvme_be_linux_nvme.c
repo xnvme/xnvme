@@ -69,12 +69,12 @@ xnvme_be_linux_nvme_map_cpl(struct xnvme_cmd_ctx *ctx, unsigned long ioctl_req)
 	case NVME_IOCTL_IO_CMD:
 		cpl_res = kcpl->res32.result;
 		break;
-#ifdef NVME_IOCTL_IO64
+#ifdef NVME_IOCTL_IO64_CMD
 	case NVME_IOCTL_IO64_CMD:
 		cpl_res = kcpl->res64.result;
 		break;
 #endif
-#ifdef NVME_IOCTL_ADMIN64
+#ifdef NVME_IOCTL_ADMIN64_CMD
 	case NVME_IOCTL_ADMIN64_CMD:
 		cpl_res = kcpl->res64.result;
 		break;
