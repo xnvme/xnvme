@@ -152,6 +152,25 @@ For example, from the root of the **xNVMe** source repository, do:
    :language: bash
    :lines: 8-
 
+Gentoo
+------
+
+Install the following packages using ``emerge``:
+
+
+.. literalinclude:: ../../scripts/pkgs/gentoo-latest.txt
+   :language: bash
+
+For example, from the root of the **xNVMe** source repository, do:
+
+.. literalinclude:: ../../scripts/pkgs/gentoo-latest.sh
+   :language: bash
+   :lines: 9-
+
+.. note:: In case you get: ``error adding symbols: DSO missing from command
+   line``, during compilation, then add ``-ltinfo -lnurces`` to ``LDFLAGS``.
+   For example: ``export LDFLAGS=-ltinfo -lncurses"``.
+
 Ubuntu 20.04 (Focal)
 --------------------
 

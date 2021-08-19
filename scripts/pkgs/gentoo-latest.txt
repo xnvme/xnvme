@@ -1,0 +1,8 @@
+dev-lang/nasm
+dev-libs/libaio
+dev-util/cmake
+dev-util/cunit
+dev-util/meson
+dev-util/ninja
+sys-libs/ncurses
+sys-process/numactl
