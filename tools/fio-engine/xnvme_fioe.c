@@ -917,28 +917,60 @@ exit:
 	return err ? err : (int)limit;
 }
 
+/**
+ * NOTE: This function may get called before I/O engine initialization, that is,
+ * before ``_dev_open`` has been called and file-wrapping is setup. In such
+ * case it has to do ``_dev_open`` itself, and shut it down again once it is
+ * done resetting write pointer of zones.
+ */
 static int
 xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint64_t offset, uint64_t length)
 {
-	struct xnvme_fioe_data *xd = td->io_ops_data;
-	struct xnvme_fioe_fwrap *fwrap = &xd->files[f->fileno];
+	struct xnvme_fioe_data *xd = NULL;
+	struct xnvme_fioe_fwrap *fwrap = NULL;
+	struct xnvme_dev *dev = NULL;
+	const struct xnvme_geo *geo = NULL;
 	uint64_t first, last;
+	uint32_t ssw;
 	uint32_t nsid;
 	int err = 0;
 
-	assert(fwrap->dev);
-	assert(fwrap->geo);
+	if (td->io_ops_data) {
+		xd = td->io_ops_data;
+		fwrap = &xd->files[f->fileno];
 
-	nsid = xnvme_dev_get_nsid(fwrap->dev);
+		assert(fwrap->dev);
+		assert(fwrap->geo);
 
-	first = ((offset >> fwrap->ssw) / fwrap->geo->nsect) * fwrap->geo->nsect;
-	last = (((offset + length) >> fwrap->ssw) / fwrap->geo->nsect) * fwrap->geo->nsect;
+		dev = fwrap->dev;
+		geo = fwrap->geo;
+		ssw = fwrap->ssw;
+	} else {
+		err = pthread_mutex_lock(&g_serialize);
+		if (err) {
+			XNVME_DEBUG("FAILED: pthread_mutex_lock(), err: %d", err);
+			return -err;
+		}
+
+		dev = xnvme_dev_open(f->file_name);
+		if (!dev) {
+			XNVME_DEBUG("FAILED: xnvme_dev_open(), errno: %d", errno);
+			goto exit;
+		}
+		geo = xnvme_dev_get_geo(dev);
+		ssw = xnvme_dev_get_ssw(dev);
+	}
+
+	nsid = xnvme_dev_get_nsid(dev);
+
+	first = ((offset >> ssw) / geo->nsect) * geo->nsect;
+	last = (((offset + length) >> ssw) / geo->nsect) * geo->nsect;
 	XNVME_DEBUG("INFO: first: 0x%lx, last: 0x%lx", first, last);
 
-	for (uint64_t zslba = first; zslba <= last; zslba += fwrap->geo->nsect) {
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(fwrap->dev);
+	for (uint64_t zslba = first; zslba <= last; zslba += geo->nsect) {
+		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 
-		if (zslba >= (fwrap->geo->nsect * fwrap->geo->nzone)) {
+		if (zslba >= (geo->nsect * geo->nzone)) {
 			XNVME_DEBUG("INFO: out-of-bounds");
 			err = 0;
 			break;
@@ -954,6 +986,18 @@ xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint64_t offset,
 	}
 
 exit:
+	if (!td->io_ops_data) {
+		xnvme_dev_close(dev);
+		{
+			int err_lock;
+
+			err_lock = pthread_mutex_unlock(&g_serialize);
+			if (err_lock) {
+				XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err: %d", err_lock);
+			}
+		}
+	}
+
 	return err;
 }
 static int
