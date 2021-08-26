@@ -24,4 +24,20 @@ XNVME_STATIC_ASSERT(
 int
 xnvme_be_linux_liburing_check_support(void);
 
+int
+xnvme_be_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
+			       void *mbuf, size_t mbuf_nbytes);
+
+int
+xnvme_be_linux_liburing_poke(struct xnvme_queue *queue, uint32_t max);
+
+int
+xnvme_be_linux_liburing_wait(struct xnvme_queue *queue);
+
+int
+xnvme_be_linux_liburing_init(struct xnvme_queue *queue, int opts);
+
+int
+xnvme_be_linux_liburing_term(struct xnvme_queue *queue);
+
 #endif /* __INTERNAL_XNVME_BE_LINUX_LIBURING_H */

@@ -63,7 +63,7 @@ exit:
 }
 
 int
-_linux_liburing_init(struct xnvme_queue *q, int opts)
+xnvme_be_linux_liburing_init(struct xnvme_queue *q, int opts)
 {
 	struct xnvme_queue_liburing *queue = (void *)q;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
@@ -108,7 +108,7 @@ _linux_liburing_init(struct xnvme_queue *q, int opts)
 }
 
 int
-_linux_liburing_term(struct xnvme_queue *q)
+xnvme_be_linux_liburing_term(struct xnvme_queue *q)
 {
 	struct xnvme_queue_liburing *queue = (void *)q;
 
@@ -126,7 +126,7 @@ _linux_liburing_term(struct xnvme_queue *q)
 }
 
 int
-_linux_liburing_poke(struct xnvme_queue *q, uint32_t max)
+xnvme_be_linux_liburing_poke(struct xnvme_queue *q, uint32_t max)
 {
 	struct xnvme_queue_liburing *queue = (void *)q;
 	struct io_uring_cqe *cqes[XNVME_QUEUE_IOU_CQE_BATCH_MAX];
@@ -182,7 +182,7 @@ _linux_liburing_poke(struct xnvme_queue *q, uint32_t max)
 }
 
 int
-_linux_liburing_wait(struct xnvme_queue *queue)
+xnvme_be_linux_liburing_wait(struct xnvme_queue *queue)
 {
 	int acc = 0;
 
@@ -190,7 +190,7 @@ _linux_liburing_wait(struct xnvme_queue *queue)
 		struct timespec ts1 = {.tv_sec = 0, .tv_nsec = 1000};
 		int err;
 
-		err = _linux_liburing_poke(queue, 0);
+		err = xnvme_be_linux_liburing_poke(queue, 0);
 		if (err >= 0) {
 			acc += err;
 			continue;
@@ -211,8 +211,8 @@ _linux_liburing_wait(struct xnvme_queue *queue)
 }
 
 int
-_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
-		       size_t mbuf_nbytes)
+xnvme_be_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
+			       void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
@@ -288,11 +288,11 @@ _linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 struct xnvme_be_async g_xnvme_be_linux_async_liburing = {
 	.id = "io_uring",
 #ifdef XNVME_BE_LINUX_LIBURING_ENABLED
-	.cmd_io = _linux_liburing_cmd_io,
-	.poke = _linux_liburing_poke,
-	.wait = _linux_liburing_wait,
-	.init = _linux_liburing_init,
-	.term = _linux_liburing_term,
+	.cmd_io = xnvme_be_linux_liburing_cmd_io,
+	.poke = xnvme_be_linux_liburing_poke,
+	.wait = xnvme_be_linux_liburing_wait,
+	.init = xnvme_be_linux_liburing_init,
+	.term = xnvme_be_linux_liburing_term,
 #else
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.poke = xnvme_be_nosys_queue_poke,
