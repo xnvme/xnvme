@@ -154,8 +154,7 @@ jobs:
 
         echo "RESULTS=/tmp/results" >> $GITHUB_ENV
         echo "TARGET_ENV=${CIJ_ENVS}/refenv-xnvme-qemu.sh" >> $GITHUB_ENV
-        echo "CLOUD_IMG_URL=https://cloud.debian.org/images/cloud/bullseye/daily/20210425-618/debian-11-generic-amd64-daily-20210425-618.qcow2" >> $GITHUB_ENV
-
+        echo "CLOUD_IMG_URL=https://cloud.debian.org/images/cloud/bullseye/daily/latest/debian-11-generic-amd64-daily.qcow2" >> $GITHUB_ENV
     - name: Container-prep, download Debian packages
       uses: actions/download-artifact@v2
       with:
