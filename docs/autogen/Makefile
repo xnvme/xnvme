@@ -17,7 +17,7 @@ configure: clean
 .PHONY: apis
 apis:
 	@cd ../.. && make tags-xnvme-public
-	@python apigen.py --tags ../../tags --output ../capis
+	@python3 apigen.py --tags ../../tags --output ../capis
 
 .PHONY: commands
 commands:
