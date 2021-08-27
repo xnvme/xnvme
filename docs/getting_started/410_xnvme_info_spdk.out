@@ -1,17 +1,22 @@
 xnvme_dev:
   xnvme_ident:
-    trgt: '0000:03:00.0'
-    schm: 'pci'
-    opts: '?nsid=1'
-    uri: 'pci:0000:03:00.0?nsid=1'
+    uri: '0000:03:00.0'
+    dtype: 0x2
+    nsid: 0x1
+    csi: 0x0
   xnvme_be:
     admin: {id: 'nvme'}
     sync: {id: 'nvme'}
     async: {id: 'nvme'}
     attr: {name: 'spdk'}
-  xnvme_cmd_opts:
-    csi: 0x0
-    nsid: 0x1
+  xnvme_opts:
+    be: 'spdk'
+    mem: 'FIX-ID-VS-MIXIN-NAME'
+    dev: 'FIX-ID-VS-MIXIN-NAME'
+    admin: 'nvme'
+    sync: 'nvme'
+    async: 'nvme'
+    oflags: 0x4
   xnvme_geo:
     type: XNVME_GEO_CONVENTIONAL
     npugrp: 1

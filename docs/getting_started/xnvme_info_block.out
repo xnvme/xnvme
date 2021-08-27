@@ -6,18 +6,23 @@
 
 xnvme_dev:
   xnvme_ident:
-    trgt: '/dev/nullb0'
-    schm: 'file'
-    opts: ''
-    uri: 'file:/dev/nullb0'
+    uri: '/dev/nullb0'
+    dtype: 0x3
+    nsid: 0x1
+    csi: 0x1f
   xnvme_be:
     admin: {id: 'block'}
     sync: {id: 'block'}
     async: {id: 'emu'}
     attr: {name: 'linux'}
-  xnvme_cmd_opts:
-    csi: 0x1f
-    nsid: 0x1
+  xnvme_opts:
+    be: 'linux'
+    mem: 'FIX-ID-VS-MIXIN-NAME'
+    dev: 'FIX-ID-VS-MIXIN-NAME'
+    admin: 'block'
+    sync: 'block'
+    async: 'emu'
+    oflags: 0x4
   xnvme_geo:
     type: XNVME_GEO_CONVENTIONAL
     npugrp: 1

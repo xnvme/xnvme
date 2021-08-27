@@ -88,6 +88,14 @@ xnvme_dev_get_geo
 .. doxygenfunction:: xnvme_dev_get_geo
 
 
+.. _sec-c-api-xnvme_dev-func-xnvme_dev_get_ident:
+
+xnvme_dev_get_ident
+-------------------
+
+.. doxygenfunction:: xnvme_dev_get_ident
+
+
 .. _sec-c-api-xnvme_dev-func-xnvme_dev_get_ns:
 
 xnvme_dev_get_ns
@@ -126,14 +134,6 @@ xnvme_dev_open
 --------------
 
 .. doxygenfunction:: xnvme_dev_open
-
-
-.. _sec-c-api-xnvme_dev-func-xnvme_dev_openf:
-
-xnvme_dev_openf
----------------
-
-.. doxygenfunction:: xnvme_dev_openf
 
 
 .. _sec-c-api-xnvme_dev-func-xnvme_dev_pr:

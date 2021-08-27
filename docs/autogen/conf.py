@@ -10,7 +10,7 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.imgmath',
-    'sphinxcontrib.bibtex',
+#    'sphinxcontrib.bibtex',
     'breathe',
 ]
 

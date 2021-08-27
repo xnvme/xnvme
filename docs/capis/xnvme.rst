@@ -18,6 +18,14 @@ Enums
 =====
 
 
+.. _sec-c-api-xnvme-enum-xnvme_enumerate_action:
+
+xnvme_enumerate_action
+----------------------
+
+.. doxygenenum:: xnvme_enumerate_action
+
+
 .. _sec-c-api-xnvme-enum-xnvme_pr:
 
 xnvme_pr
@@ -97,6 +105,16 @@ xnvme_lba_range
 ---------------
 
 .. doxygenstruct:: xnvme_lba_range
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-api-xnvme-struct-xnvme_opts:
+
+xnvme_opts
+----------
+
+.. doxygenstruct:: xnvme_opts
    :members:
    :undoc-members:
 
@@ -342,6 +360,22 @@ xnvme_enumerate
 .. doxygenfunction:: xnvme_enumerate
 
 
+.. _sec-c-api-xnvme-func-xnvme_enumeration_alloc:
+
+xnvme_enumeration_alloc
+-----------------------
+
+.. doxygenfunction:: xnvme_enumeration_alloc
+
+
+.. _sec-c-api-xnvme-func-xnvme_enumeration_append:
+
+xnvme_enumeration_append
+------------------------
+
+.. doxygenfunction:: xnvme_enumeration_append
+
+
 .. _sec-c-api-xnvme-func-xnvme_enumeration_fpp:
 
 xnvme_enumeration_fpp
@@ -356,6 +390,14 @@ xnvme_enumeration_fpr
 ---------------------
 
 .. doxygenfunction:: xnvme_enumeration_fpr
+
+
+.. _sec-c-api-xnvme-func-xnvme_enumeration_free:
+
+xnvme_enumeration_free
+----------------------
+
+.. doxygenfunction:: xnvme_enumeration_free
 
 
 .. _sec-c-api-xnvme-func-xnvme_enumeration_pp:
@@ -484,6 +526,14 @@ xnvme_lba_range_pr
 ------------------
 
 .. doxygenfunction:: xnvme_lba_range_pr
+
+
+.. _sec-c-api-xnvme-func-xnvme_opts_default:
+
+xnvme_opts_default
+------------------
+
+.. doxygenfunction:: xnvme_opts_default
 
 
 .. _sec-c-api-xnvme-func-xnvme_queue_get_capacity:

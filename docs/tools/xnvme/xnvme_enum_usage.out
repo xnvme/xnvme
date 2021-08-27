@@ -4,11 +4,12 @@ Enumerate devices on the system
 
 Where <args> include:
 
-  [ --uri uri ]                 ; System URI e.g. fab:10.9.8.1:8888
+  [ --uri uri ]                 ; System URI e.g. '10.9.8.1:8888'
   [ --flags 0xNUM ]             ; Command flags
+  [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix'
   [ --help ]                    ; Show usage / help
 
 See 'xnvme --help' for other commands
 
-xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 0, patch: 24}
+xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 0, patch: 25}
 

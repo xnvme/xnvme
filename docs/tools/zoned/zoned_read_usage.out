@@ -6,7 +6,6 @@ Where <command> is one of:
   info             | Retrieve device info
   idfy-ctrlr       | Zoned Command Set specific identify-controller
   idfy-ns          | Zoned Command Set specific identify-controller
-  report           | Retrieve Zone Information
   changes          | Retrieve the Changed Zone list
   errors           | Retrieve the Error-Log
   read             | Execute a Read Command
@@ -17,8 +16,9 @@ Where <command> is one of:
   mgmt-finish      | Finish a Zone
   mgmt-reset       | Reset a Zone
   mgmt             | Zone Management Send Command with custom action
+  report           | Retrieve Zone Information
 
 See 'zoned <command> --help' for the description of [<args>]
 
-Zoned Namespace Utility -- ver: {major: 0, minor: 0, patch: 24}
+Zoned Namespace Utility -- ver: {major: 0, minor: 0, patch: 25}
 

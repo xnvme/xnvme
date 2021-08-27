@@ -34,6 +34,14 @@ xnvmec_opt_type
 .. doxygenenum:: xnvmec_opt_type
 
 
+.. _sec-c-api-xnvmec-enum-xnvmec_opt_value_type:
+
+xnvmec_opt_value_type
+---------------------
+
+.. doxygenenum:: xnvmec_opt_value_type
+
+
 .. _sec-c-api-xnvmec-enum-xnvmec_opts:
 
 xnvmec_opts
@@ -65,6 +73,16 @@ xnvmec_args
 -----------
 
 .. doxygenstruct:: xnvmec_args
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-api-xnvmec-struct-xnvmec_opt_attr:
+
+xnvmec_opt_attr
+---------------
+
+.. doxygenstruct:: xnvmec_opt_attr
    :members:
    :undoc-members:
 
@@ -160,6 +178,14 @@ xnvmec_buf_to_file
 .. doxygenfunction:: xnvmec_buf_to_file
 
 
+.. _sec-c-api-xnvmec-func-xnvmec_cli_to_opts:
+
+xnvmec_cli_to_opts
+------------------
+
+.. doxygenfunction:: xnvmec_cli_to_opts
+
+
 .. _sec-c-api-xnvmec-func-xnvmec_cmd_from_file:
 
 xnvmec_cmd_from_file
@@ -176,12 +202,12 @@ xnvmec_cmd_to_file
 .. doxygenfunction:: xnvmec_cmd_to_file
 
 
-.. _sec-c-api-xnvmec-func-xnvmec_int2opt:
+.. _sec-c-api-xnvmec-func-xnvmec_get_opt_attr:
 
-xnvmec_int2opt
---------------
+xnvmec_get_opt_attr
+-------------------
 
-.. doxygenfunction:: xnvmec_int2opt
+.. doxygenfunction:: xnvmec_get_opt_attr
 
 
 .. _sec-c-api-xnvmec-func-xnvmec_perr:

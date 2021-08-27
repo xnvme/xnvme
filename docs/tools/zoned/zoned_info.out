@@ -1,17 +1,22 @@
 xnvme_dev:
   xnvme_ident:
-    trgt: '/dev/nvme0n2'
-    schm: 'file'
-    opts: ''
-    uri: 'file:/dev/nvme0n2'
+    uri: '/dev/nvme0n2'
+    dtype: 0x2
+    nsid: 0x2
+    csi: 0x2
   xnvme_be:
     admin: {id: 'nvme'}
     sync: {id: 'nvme'}
     async: {id: 'emu'}
     attr: {name: 'linux'}
-  xnvme_cmd_opts:
-    csi: 0x2
-    nsid: 0x2
+  xnvme_opts:
+    be: 'linux'
+    mem: 'FIX-ID-VS-MIXIN-NAME'
+    dev: 'FIX-ID-VS-MIXIN-NAME'
+    admin: 'nvme'
+    sync: 'nvme'
+    async: 'emu'
+    oflags: 0x4
   xnvme_geo:
     type: XNVME_GEO_ZONED
     npugrp: 1

@@ -1,8 +1,4 @@
-# xnvme_enumerate()
 xnvme_enumeration:
-  capacity: 98
-  nentries: 2
-  entries:
-  - {trgt: '0000:03:00.0', schm: 'pci', opts: '?nsid=1', uri: 'pci:0000:03:00.0?nsid=1'}
-  - {trgt: '0000:03:00.0', schm: 'pci', opts: '?nsid=2', uri: 'pci:0000:03:00.0?nsid=2'}
+  - {uri: '0000:03:00.0', dtype: 0x2, nsid: 0x1, csi: 0x0}
+  - {uri: '0000:03:00.0', dtype: 0x2, nsid: 0x2, csi: 0x2}
 

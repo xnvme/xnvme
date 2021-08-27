@@ -18,14 +18,6 @@ Enums
 =====
 
 
-.. _sec-c-api-xnvme_file-enum-XNVME_FILE_OFLG:
-
-XNVME_FILE_OFLG
----------------
-
-.. doxygenenum:: XNVME_FILE_OFLG
-
-
 
 .. _sec-c-api-xnvme_file-struct:
 

@@ -4,14 +4,17 @@ Execute a Get Features Command
 
 Where <args> include:
 
-  uri                           ; Device URI e.g. /dev/nvme0n1, liou:/dev/nvme0n1 or pci:0000:01:00.1
+  uri                           ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888'
   --fid 0xNUM                   ; Feature Identifier
-  [ --nsid 0xNUM ]              ; Namespace Identifier
+  [ --nsid 0xNUM ]              ; Namespace Identifier for Command Construction
   [ --sel 0xNUM ]               ; current=0x0, default=0x1, saved=0x2, supported=0x3
   [ --data-output FILE ]        ; Path to data output-file
+  [ --dev-nsid 0xNUM ]          ; Namespace Identifier for Device Handle
+  [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix'
+  [ --admin STRING ]            ; xNVMe admin. command-interface, e.g. 'nvme', 'block'
   [ --help ]                    ; Show usage / help
 
 See 'xnvme --help' for other commands
 
-xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 0, patch: 24}
+xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 0, patch: 25}
 

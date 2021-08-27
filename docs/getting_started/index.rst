@@ -360,17 +360,18 @@ Async I/O via ``libaio``
 
 When AIO is available then the NVMe NVM Commands for **read** and **write** are
 sent over the Linux AIO interface. Doing so improves command-throughput at
-higher queue-depths when compared to sending the command over the driver-ioctl.
+higher queue-depths when compared to sending the command over via the NVMe
+driver ioctl().
 
 One can explicitly tell **xNVMe** to utilize ``libaio`` for async I/O by
 encoding it in the device identifier, like so:
 
-.. literalinclude:: xnvme_info_async_libaio.cmd
+.. literalinclude:: xnvme_io_async_read_libaio.cmd
    :language: bash
 
 Yielding the output:
 
-.. literalinclude:: xnvme_info_async_libaio.out
+.. literalinclude:: xnvme_io_async_read_libaio.out
    :language: bash
    :lines: 1-12
 
@@ -392,12 +393,12 @@ enabling I/O polling and kernel-side submission polling.
 One can explicitly tell **xNVMe** to utilize ``io_uring`` for async I/O by
 encoding it in the device identifier, like so:
 
-.. literalinclude:: xnvme_info_async_io_uring.cmd
+.. literalinclude:: xnvme_io_async_read_io_uring.cmd
    :language: bash
 
 Yielding the output:
 
-.. literalinclude:: xnvme_info_async_io_uring.out
+.. literalinclude:: xnvme_io_async_read_io_uring.out
    :language: bash
    :lines: 1-12
 

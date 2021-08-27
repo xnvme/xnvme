@@ -4,7 +4,12 @@
 
 int main(int argc, char **argv)
 {
-	struct xnvme_dev *dev = xnvme_dev_open("pci:0000:03:00.0?nsid=1");
+	struct xnvme_opts opts = xnvme_opts_default();
+	struct xnvme_dev *dev;
+
+	opts.nsid = 1;
+
+	dev = xnvme_dev_open("0000:03:00.0", &opts);
 	if (!dev) {
 		perror("xnvme_dev_open");
 		return 1;

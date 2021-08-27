@@ -4,13 +4,16 @@ Retrieve and print log
 
 Where <args> include:
 
-  uri                           ; Device URI e.g. /dev/nvme0n1, liou:/dev/nvme0n1 or pci:0000:01:00.1
-  [ --nsid 0xNUM ]              ; Namespace Identifier
+  uri                           ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888'
+  [ --nsid 0xNUM ]              ; Namespace Identifier for Command Construction
   [ --limit NUM ]               ; Restrict amount to 'NUM'
   [ --data-output FILE ]        ; Path to data output-file
+  [ --dev-nsid 0xNUM ]          ; Namespace Identifier for Device Handle
+  [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix'
+  [ --admin STRING ]            ; xNVMe admin. command-interface, e.g. 'nvme', 'block'
   [ --help ]                    ; Show usage / help
 
 See 'xnvme --help' for other commands
 
-xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 0, patch: 24}
+xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 0, patch: 25}
 

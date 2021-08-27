@@ -4,11 +4,12 @@
 
 int main(int argc, char **argv)
 {
+	struct xnvme_opts opts = xnvme_opts_default();
 	struct xnvme_dev *dev;
 
-	dev = xnvme_dev_open("/dev/nvme0n1");
+	dev = xnvme_dev_open("/dev/nvme0n1", &opts);
 	if (!dev) {
-		perror("xnvme_dev_open");
+		perror("xnvme_dev_open()");
 		return 1;
 	}
 

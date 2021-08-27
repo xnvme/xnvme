@@ -1,8 +1,3 @@
-# xnvme_enumerate()
 xnvme_enumeration:
-  capacity: 98
-  nentries: 2
-  entries:
-  - {trgt: '/dev/nvme0n1', schm: 'file', opts: '', uri: 'file:/dev/nvme0n1'}
-  - {trgt: '/dev/nvme0n2', schm: 'file', opts: '', uri: 'file:/dev/nvme0n2'}
+  - {uri: '/dev/nvme0n2', dtype: 0x2, nsid: 0x2, csi: 0x2}
 

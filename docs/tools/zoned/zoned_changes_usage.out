@@ -4,11 +4,14 @@ Retrieve the Changed Zone list
 
 Where <args> include:
 
-  uri                           ; Device URI e.g. /dev/nvme0n1, liou:/dev/nvme0n1 or pci:0000:01:00.1
+  uri                           ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888'
   [ --data-output FILE ]        ; Path to data output-file
+  [ --dev-nsid 0xNUM ]          ; Namespace Identifier for Device Handle
+  [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix'
+  [ --admin STRING ]            ; xNVMe admin. command-interface, e.g. 'nvme', 'block'
   [ --help ]                    ; Show usage / help
 
 See 'zoned --help' for other commands
 
-Zoned Namespace Utility -- ver: {major: 0, minor: 0, patch: 24}
+Zoned Namespace Utility -- ver: {major: 0, minor: 0, patch: 25}
 

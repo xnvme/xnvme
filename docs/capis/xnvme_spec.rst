@@ -311,6 +311,16 @@ xnvme_spec_cs_vector
    :undoc-members:
 
 
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_ctrlr_bar:
+
+xnvme_spec_ctrlr_bar
+--------------------
+
+.. doxygenstruct:: xnvme_spec_ctrlr_bar
+   :members:
+   :undoc-members:
+
+
 .. _sec-c-api-xnvme_spec-struct-xnvme_spec_dsm_range:
 
 xnvme_spec_dsm_range
