@@ -15,7 +15,7 @@ _zoned_completions()
 
     # Complete sub-commands
     if [[ $COMP_CWORD < 2 ]]; then
-        COMPREPLY+=( $( compgen -W 'enum info idfy-ctrlr idfy-ns report changes errors read write append mgmt-open mgmt-close mgmt-finish mgmt-reset mgmt --help' -- $cur ) )
+        COMPREPLY+=( $( compgen -W 'enum info idfy-ctrlr idfy-ns changes errors read write append mgmt-open mgmt-close mgmt-finish mgmt-reset mgmt report --help' -- $cur ) )
         return 0
     fi
 
@@ -30,63 +30,63 @@ _zoned_completions()
     case "$sub" in
     
     "enum")
-        opts+="--uri --flags --help"
+        opts+="--uri --flags --be --help"
         ;;
 
     "info")
-        opts+="--help"
+        opts+="--dev-nsid --be --admin --help"
         ;;
 
     "idfy-ctrlr")
-        opts+="--help"
+        opts+="--dev-nsid --be --admin --help"
         ;;
 
     "idfy-ns")
-        opts+="--help"
-        ;;
-
-    "report")
-        opts+="--slba --limit --data-output --help"
+        opts+="--dev-nsid --be --admin --help"
         ;;
 
     "changes")
-        opts+="--data-output --help"
+        opts+="--data-output --dev-nsid --be --admin --help"
         ;;
 
     "errors")
-        opts+="--nsid --data-output --help"
+        opts+="--nsid --data-output --dev-nsid --be --admin --help"
         ;;
 
     "read")
-        opts+="--slba --nlb --nsid --data-output --meta-output --help"
+        opts+="--slba --nlb --nsid --data-output --meta-output --dev-nsid --be --admin --sync --help"
         ;;
 
     "write")
-        opts+="--slba --nlb --nsid --data-input --meta-input --help"
+        opts+="--slba --nlb --nsid --data-input --meta-input --dev-nsid --be --admin --sync --help"
         ;;
 
     "append")
-        opts+="--slba --nlb --nsid --data-input --meta-input --help"
+        opts+="--slba --nlb --nsid --data-input --meta-input --dev-nsid --be --admin --sync --help"
         ;;
 
     "mgmt-open")
-        opts+="--slba --nsid --all --help"
+        opts+="--slba --nsid --all --dev-nsid --be --admin --sync --help"
         ;;
 
     "mgmt-close")
-        opts+="--slba --nsid --all --help"
+        opts+="--slba --nsid --all --dev-nsid --be --admin --sync --help"
         ;;
 
     "mgmt-finish")
-        opts+="--slba --nsid --all --help"
+        opts+="--slba --nsid --all --dev-nsid --be --admin --sync --help"
         ;;
 
     "mgmt-reset")
-        opts+="--slba --nsid --all --help"
+        opts+="--slba --nsid --all --dev-nsid --be --admin --sync --help"
         ;;
 
     "mgmt")
-        opts+="--slba --action --nsid --all --help"
+        opts+="--slba --action --nsid --all --dev-nsid --be --admin --sync --help"
+        ;;
+
+    "report")
+        opts+="--slba --limit --data-output --dev-nsid --be --admin --sync --help"
         ;;
 
     esac

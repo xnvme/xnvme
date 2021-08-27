@@ -30,19 +30,19 @@ _xnvme_tests_scc_completions()
     case "$sub" in
     
     "support")
-        opts+="--help"
+        opts+="--dev-nsid --be --admin --sync --help"
         ;;
 
     "idfy")
-        opts+="--help"
+        opts+="--dev-nsid --be --admin --sync --help"
         ;;
 
     "scopy")
-        opts+="--clear --help"
+        opts+="--clear --dev-nsid --be --admin --sync --help"
         ;;
 
     "scopy-msrc")
-        opts+="--clear --help"
+        opts+="--clear --dev-nsid --be --admin --sync --help"
         ;;
 
     esac

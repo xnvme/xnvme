@@ -30,11 +30,11 @@ _xnvme_tests_buf_completions()
     case "$sub" in
     
     "buf_alloc_free")
-        opts+="--count --help"
+        opts+="--count --dev-nsid --be --help"
         ;;
 
     "buf_virt_alloc_free")
-        opts+="--count --help"
+        opts+="--count --dev-nsid --be --help"
         ;;
 
     esac

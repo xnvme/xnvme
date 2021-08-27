@@ -15,7 +15,7 @@ _xnvme_tests_xnvmec_completions()
 
     # Complete sub-commands
     if [[ $COMP_CWORD < 2 ]]; then
-        COMPREPLY+=( $( compgen -W 'copy-xnvmec --help' -- $cur ) )
+        COMPREPLY+=( $( compgen -W 'copy-xnvmec check-opt-attr --help' -- $cur ) )
         return 0
     fi
 
@@ -30,6 +30,10 @@ _xnvme_tests_xnvmec_completions()
     case "$sub" in
     
     "copy-xnvmec")
+        opts+="--help"
+        ;;
+
+    "check-opt-attr")
         opts+="--help"
         ;;
 

@@ -30,67 +30,67 @@ _xnvme_completions()
     case "$sub" in
     
     "list")
-        opts+="--uri --flags --help"
+        opts+="--uri --flags --be --help"
         ;;
 
     "enum")
-        opts+="--uri --flags --help"
+        opts+="--uri --flags --be --help"
         ;;
 
     "info")
-        opts+="--help"
+        opts+="--dev-nsid --be --admin --help"
         ;;
 
     "idfy")
-        opts+="--cns --cntid --nsid --setid --uuid --data-output --help"
+        opts+="--cns --cntid --nsid --setid --uuid --data-output --dev-nsid --be --admin --help"
         ;;
 
     "idfy-ns")
-        opts+="--nsid --data-output --help"
+        opts+="--nsid --data-output --dev-nsid --be --admin --help"
         ;;
 
     "idfy-ctrlr")
-        opts+="--data-output --help"
+        opts+="--data-output --dev-nsid --be --admin --help"
         ;;
 
     "idfy-cs")
-        opts+="--data-output --help"
+        opts+="--data-output --dev-nsid --be --admin --help"
         ;;
 
     "log")
-        opts+="--lid --lsp --lpo-nbytes --nsid --rae --data-nbytes --data-output --help"
+        opts+="--lid --lsp --lpo-nbytes --nsid --rae --data-nbytes --data-output --dev-nsid --be --admin --help"
         ;;
 
     "log-erri")
-        opts+="--nsid --limit --data-output --help"
+        opts+="--nsid --limit --data-output --dev-nsid --be --admin --help"
         ;;
 
     "log-health")
-        opts+="--nsid --data-output --help"
+        opts+="--nsid --data-output --dev-nsid --be --admin --help"
         ;;
 
     "feature-get")
-        opts+="--fid --nsid --sel --data-output --help"
+        opts+="--fid --nsid --sel --data-output --dev-nsid --be --admin --help"
         ;;
 
     "feature-set")
-        opts+="--fid --feat --nsid --save --data-input --help"
+        opts+="--fid --feat --nsid --save --data-input --dev-nsid --be --admin --help"
         ;;
 
     "format")
-        opts+="--nsid --help"
+        opts+="--nsid --lbaf --zf --mset --ses --pi --pil --dev-nsid --be --admin --help"
         ;;
 
     "sanitize")
-        opts+="--help"
+        opts+="--dev-nsid --be --admin --help"
         ;;
 
     "pioc")
-        opts+="--cmd-input --data-input --data-output --data-nbytes --meta-input --meta-output --meta-nbytes --help"
+        opts+="--nsid --cmd-input --data-input --data-output --data-nbytes --meta-input --meta-output --meta-nbytes --dev-nsid --be --admin --help"
         ;;
 
     "padc")
-        opts+="--cmd-input --data-input --data-output --data-nbytes --meta-input --meta-output --meta-nbytes --help"
+        opts+="--nsid --cmd-input --data-input --data-output --data-nbytes --meta-input --meta-output --meta-nbytes --dev-nsid --be --admin --help"
         ;;
 
     "library-info")

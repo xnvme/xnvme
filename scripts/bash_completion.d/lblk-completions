@@ -30,31 +30,31 @@ _lblk_completions()
     case "$sub" in
     
     "enum")
-        opts+="--uri --flags --help"
+        opts+="--uri --flags --be --help"
         ;;
 
     "info")
-        opts+="--help"
+        opts+="--dev-nsid --be --admin --help"
         ;;
 
     "idfy")
-        opts+="--nsid --data-output --help"
+        opts+="--nsid --data-output --dev-nsid --be --admin --help"
         ;;
 
     "read")
-        opts+="--slba --nlb --nsid --data-output --meta-output --help"
+        opts+="--slba --nlb --nsid --data-output --meta-output --dev-nsid --be --admin --sync --help"
         ;;
 
     "write")
-        opts+="--slba --nlb --nsid --data-input --meta-input --help"
+        opts+="--slba --nlb --nsid --data-input --meta-input --dev-nsid --be --admin --sync --help"
         ;;
 
     "write-zeros")
-        opts+="--slba --nlb --nsid --data-input --meta-input --help"
+        opts+="--slba --nlb --nsid --data-input --meta-input --dev-nsid --be --admin --sync --help"
         ;;
 
     "write-uncor")
-        opts+="--slba --nlb --nsid --data-input --meta-input --help"
+        opts+="--slba --nlb --nsid --data-input --meta-input --dev-nsid --be --admin --sync --help"
         ;;
 
     esac

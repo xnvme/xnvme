@@ -1,11 +1,11 @@
-# xnvme_tests_znd_state completion                           -*- shell-script -*-
+# xnvme_tests_cli completion                           -*- shell-script -*-
 #
-# Bash completion script for the `xnvme_tests_znd_state` CLI
+# Bash completion script for the `xnvme_tests_cli` CLI
 #
 # Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
 # SPDX-License-Identifier: Apache-2.0
 
-_xnvme_tests_znd_state_completions()
+_xnvme_tests_cli_completions()
 {
     local cur=${COMP_WORDS[COMP_CWORD]}
     local sub=""
@@ -15,7 +15,7 @@ _xnvme_tests_znd_state_completions()
 
     # Complete sub-commands
     if [[ $COMP_CWORD < 2 ]]; then
-        COMPREPLY+=( $( compgen -W 'transition changes --help' -- $cur ) )
+        COMPREPLY+=( $( compgen -W 'optional --help' -- $cur ) )
         return 0
     fi
 
@@ -29,12 +29,8 @@ _xnvme_tests_znd_state_completions()
 
     case "$sub" in
     
-    "transition")
-        opts+="--nsid --slba --dev-nsid --be --admin --sync --help"
-        ;;
-
-    "changes")
-        opts+="--nsid --dev-nsid --be --admin --sync --help"
+    "optional")
+        opts+="--be --mem --sync --async --admin --help"
         ;;
 
     esac
@@ -45,6 +41,6 @@ _xnvme_tests_znd_state_completions()
 }
 
 #
-complete -o nosort -F _xnvme_tests_znd_state_completions xnvme_tests_znd_state
+complete -o nosort -F _xnvme_tests_cli_completions xnvme_tests_cli
 
 # ex: filetype=sh

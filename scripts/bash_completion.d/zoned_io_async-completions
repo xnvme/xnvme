@@ -30,15 +30,15 @@ _zoned_io_async_completions()
     case "$sub" in
     
     "read")
-        opts+="--slba --qdepth --data-output --help"
+        opts+="--nsid --slba --qdepth --data-output --dev-nsid --be --admin --async --help"
         ;;
 
     "write")
-        opts+="--slba --qdepth --data-input --help"
+        opts+="--nsid --slba --qdepth --data-input --dev-nsid --be --admin --async --help"
         ;;
 
     "append")
-        opts+="--slba --qdepth --data-input --help"
+        opts+="--nsid --slba --qdepth --data-input --dev-nsid --be --admin --async --help"
         ;;
 
     esac

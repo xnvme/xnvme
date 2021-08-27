@@ -30,7 +30,7 @@ _xnvme_hello_completions()
     case "$sub" in
     
     "hw")
-        opts+="--help"
+        opts+="--dev-nsid --be --admin --help"
         ;;
 
     esac
