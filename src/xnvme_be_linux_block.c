@@ -488,10 +488,10 @@ _idfy_ns_iocs(struct xnvme_dev *dev, void *dbuf)
 			    err, errno);
 		return err;
 	}
-	err = xnvme_be_linux_sysfs_dev_attr_to_num(dev, "queue/minimum_io_size",
+	err = xnvme_be_linux_sysfs_dev_attr_to_num(dev, "queue/logical_block_size",
 			&nbytes);
 	if (err) {
-		XNVME_DEBUG("FAILED: reading 'minimum_io_size' from sysfs");
+		XNVME_DEBUG("FAILED: reading 'logical_block_size' from sysfs");
 		return err;
 	}
 
@@ -517,13 +517,14 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 		XNVME_DEBUG("FAILED: reading 'size' from sysfs");
 		return err;
 	}
-	err = xnvme_be_linux_sysfs_dev_attr_to_num(dev, "queue/minimum_io_size",
+	err = xnvme_be_linux_sysfs_dev_attr_to_num(dev, "queue/logical_block_size",
 			&nbytes);
 	if (err) {
-		XNVME_DEBUG("FAILED: reading 'minimum_io_size' from sysfs");
+		XNVME_DEBUG("FAILED: reading 'logical_block_size' from sysfs");
 		return err;
 	}
 
+	val /= nbytes >> LINUX_BLOCK_SSW; ///< Size sysfs attr is in terms of LINUX block sector
 	ns->nsze = val;
 	ns->ncap = val;
 	ns->nuse = val;
