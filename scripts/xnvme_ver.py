@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
     Extract the xNVMe version from the given CMakeLists.txt
 

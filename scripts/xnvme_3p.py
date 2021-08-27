@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
     Produce 3p:ver strings from xNVMe repos
 
