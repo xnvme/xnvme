@@ -160,7 +160,7 @@ gen-src-archive:
 gen-bash-completions:
 	@echo "## xNVMe: make gen-bash-completions"
 	$(eval TOOLS := $(shell find build/tools build/examples build/tests -not -name "*.so" -type f -executable -exec basename {} \;))
-	python ./scripts/xnvmec_generator.py cpl --tools ${TOOLS} --output scripts/bash_completion.d
+	python3 ./scripts/xnvmec_generator.py cpl --tools ${TOOLS} --output scripts/bash_completion.d
 
 #
 # Helper-target to produce man pages for tools (tools, examples, tests)
@@ -173,7 +173,7 @@ gen-bash-completions:
 gen-man-pages:
 	@echo "## xNVMe: make gen-man-pages"
 	$(eval TOOLS := $(shell find build/tools build/examples build/tests -not -name "*.so" -type f -executable -exec basename {} \;))
-	python ./scripts/xnvmec_generator.py man --tools ${TOOLS} --output man/
+	python3 ./scripts/xnvmec_generator.py man --tools ${TOOLS} --output man/
 
 #
 # Helper-target to produce tags
