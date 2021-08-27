@@ -238,6 +238,34 @@ xnvme_path_nvme_filter(const struct dirent *d)
 	return 0;
 }
 
+int
+xnvme_path_ng_filter(const struct dirent *d)
+{
+	char path[264];
+	struct stat bd;
+	int ctrl, ns;
+
+	if (d->d_name[0] == '.') {
+		return 0;
+	}
+
+	if (strstr(d->d_name, "ng")) {
+		snprintf(path, sizeof(path), "%s%s", "/dev/", d->d_name);
+		if (stat(path, &bd)) {
+			return 0;
+		}
+		if (!S_ISCHR(bd.st_mode)) {
+			return 0;
+		}
+		if (sscanf(d->d_name, "ng%dn%d", &ctrl, &ns) != 2) {
+			return 0;
+		}
+		return 1;
+	}
+
+	return 0;
+}
+
 /**
  * Scanning /sys/class/nvme can give device names, such as "nvme0c65n1", which
  * are linked as virtual devices to the block device. So instead of scanning
@@ -260,6 +288,20 @@ xnvme_be_linux_enumerate(struct xnvme_enumeration *list, const char *sys_uri,
 	}
 
 	nns = scandir("/sys/block", &ns, xnvme_path_nvme_filter, alphasort);
+	for (int ni = 0; ni < nns; ++ni) {
+		char uri[XNVME_IDENT_URI_LEN] = { 0 };
+		struct xnvme_ident ident = { 0 };
+
+		snprintf(uri, XNVME_IDENT_URI_LEN - 1, _PATH_DEV "%s", ns[ni]->d_name);
+		if (xnvme_ident_from_uri(uri, &ident)) {
+			continue;
+		}
+
+		if (xnvme_enumeration_append(list, &ident)) {
+			XNVME_DEBUG("FAILED: adding ident");
+		}
+	}
+	nns = scandir("/dev", &ns, xnvme_path_ng_filter, alphasort);
 	for (int ni = 0; ni < nns; ++ni) {
 		char uri[XNVME_IDENT_URI_LEN] = { 0 };
 		struct xnvme_ident ident = { 0 };
