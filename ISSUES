@@ -1,0 +1,170 @@
+Known Issues
+============
+
+* Fabrics
+
+  - Errors are observed when constructing payloads with an mdts exceeding
+    16 * 1024 bytes. Thus a work-around is applied bounding the derived
+    ``mdts_nbytes`` associated with the device geometry.
+
+* Binaries
+
+  - xNVMe does not build with ``-march=native``, however, SPDK/DPDK does.
+    Thus, when the xNVMe library "bundles" SPDK/DPDK and the binaries are
+    linked, then they can contain ISA-specific instructions.
+    If you invoke e.g. ``xnvme enum`` and see the message ``Illegal
+    Instruction``, then this is why.
+
+* ``be::spdk``
+
+  - Does not build on Alpine Linux
+  - Re-initialization fails, e.g. repeatedly calling ``xnvme_enumerate()``
+
+* ``be::linux``
+
+  - When enabling the use of ``io_uring`` or ``libaio`` via
+    ``--async={io_uring,libaio}``, then all async. commands are sent via the chosen
+    async. path. Take note, that these async. paths only supports read and write.
+    Commands such as the Simple-Copy-Command, Append, and Zone-Management are not
+    supported in upstream Linux in this manner. This means, as a user that you must
+    sent non-read/write commands via a synchronous command-path.
+
+TODO and Caveats
+================
+
+Runtime instrumentation of `dev` and `mem`
+------------------------------------------
+
+It is currently not possible to control the "mixin" of ``dev`` and ``mem``
+interfaces. It is not critical since each backend only has a single one of each
+of these interfaces. However, it should be cleaned up and instrumentation
+enabled.
+
+Cleanup 'schemes'
+-----------------
+
+A left-over of the URI-encoding of runtime-instrumentation are 'schemes'. These are unused,
+however, still lingering in the backend-interface structure, and they are communicated in the
+output from e.g. ``xnvme library-info``. These should be removed.
+
+Improve communication of backend capabilities
+---------------------------------------------
+
+The CLI tool ``xnvme library-info`` prints the backends "enabled" with the xNVMe library. However,
+it is missing information about all the different **mixins**. That is, informing which
+asynchronous, synchronous, admin, and enumeration interfaces which can be utilized. This should be
+added and a section in the documentation describing how runtime-instrumentation works and how to
+probe xNVMe for the capabilities.
+
+Multiple device-handles per queue
+---------------------------------
+
+The ``xnvme_queue`` which abstracts system interfaces of io-control blocks, io-control ports,
+user-rings, and NVMe queue-pairs, is currently tied to a single device-identifier. This is obvious
+in the case of a user-space NVMe driver, where one explicitly allocates an io-qpair, however, for
+OS managed abstractions of files, and device-files, there the queue-abstraction could and should be
+able to dispatch commands to different devices and not be tied to a single device-handle.
+A further improvement would be to also support dispatch, through a single queue-instances to either
+the OS managed queueing-interface and a user-space NVMe driver.
+
+Handling buffer registrations
+-----------------------------
+
+System interfaces such as ``io_uring`` provides a means to lower Kernel -- User-Space communication
+by registering resources such as files and buffers. By doing so, then less time is spent mapping
+doing memory-translation and resource-lookup. However, xNVMe currently does not have a way to
+explicitly control this.
+Currently, file-registration is automatic, however, transparently adding buffer registration
+without the user doing anything is a non-trivial task. Thus, this needs to be remedied, by either
+expanding the programming model offered by xNVMe, or providing an explicit resource-registration
+API.
+
+NVMe controller handles
+-----------------------
+
+NVMe controllers are currently not enumerated and it is not possible to obtain
+a device-handle (``xnvme_dev``) to an NVMe controller. This is a bit of
+short-coming, however, commands for a controller are routed via the namespace.
+That is, a device-handle to an NVMe namespace, controller/admin commands are
+sent to the NVMe controller associated with the namespace.
+
+However, this should be improved by included controllers in enumeration results
+and enabling device-handles to controllers.
+
+* Enable device-handles to NVMe controllers
+* List NVMe controllers in enumeration results
+* Adjust cli-tools that work exclusively with NVMe controllers e.g. "xnvme idfy-controller"
+
+File-creation mode
+------------------
+
+Currently, xNVMe are passing POSIX ``mode_t`` as default for ``create_mode``.
+And passing this down the stack.  Consider a more elegant / cross-platform
+solution to this.
+
+Improve command-line interface
+------------------------------
+
+With the recent removal of "URI-encoding/decoding" of runtime instrumentation,
+then these are now given via command-line arguments. Since this can be an
+overwhelming amount of knobs/handles for the user to familiarize themselves
+with, then they should be grouped separately from the command-line interface itself.
+
+For example the current interface of of the cli-tool ``zoned``::
+
+	Usage: zoned mgmt-reset <uri> [<args>]
+
+	Reset a Zone
+
+	Where <args> include:
+
+	  uri                           ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888'
+	  --slba 0xNUM                  ; Start Logical Block Address
+	  [ --nsid 0xNUM ]              ; Namespace Identifier for Command Construction
+	  [ --all ]                     ; Select / Affect all
+	  [ --dev-nsid 0xNUM ]          ; Namespace Identifier for Device Handle
+	  [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix'
+	  [ --admin STRING ]            ; xNVMe admin. command-interface, e.g. 'nvme', 'block'
+	  [ --help ]                    ; Show usage / help
+
+
+Could look something like the following instead::
+
+	Usage: zoned mgmt-reset <uri> [<args>]
+
+	Reset a Zone
+
+	Where <args> include:
+
+	  uri                           ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888'
+	  --slba 0xNUM                  ; Start Logical Block Address
+	  [ --nsid 0xNUM ]              ; Namespace Identifier for Command Construction
+	  [ --all ]                     ; Select / Affect all
+
+	  [Runtime Instrumentation]
+	  [ --dev-nsid 0xNUM ]          ; Namespace Identifier for Device Handle
+	  [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix'
+	  [ --admin STRING ]            ; xNVMe admin. command-interface, e.g. 'nvme', 'block'
+	  [ --help ]                    ; Show usage / help
+
+Such that the options are less "overwhelming". Also, emphasizing the difference
+between providing a ``nsid`` for the cli-tool, which is separate from that of
+the backend instrument ``dev-nsid``.
+
+SPDK Enumeration
+----------------
+
+Add 'xnvme_opts' to enumeration, such that various arguments previously encoding in the URI are
+accessible to the enumeration. E.g. adrfam, use_cmb_sqs, css, etc.
+
+SPDK multi-process
+------------------
+
+Add testcases for the multi-process code as well as documentation on how to use it in the docs.
+
+SPDK controller/up/down control
+-------------------------------
+
+When utilizing the NVMe driver via the CLI, then each command brings the controller up/down.
+Forcing state transitions, such as closing zones. However, SPDK has an option to skip this.
+Controlling this should be added to "xnvme_opts" command-line arguments and to various CLI-tools.
