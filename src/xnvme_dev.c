@@ -10,32 +10,6 @@
 #include <xnvme_dev.h>
 #include <xnvme_geo.h>
 
-static inline int
-xnvme_dev_cmd_opts_yaml(FILE *stream, const struct xnvme_dev *dev, int indent, const char *sep,
-			int head)
-{
-	int wrtn = 0;
-
-	if (head) {
-		wrtn += fprintf(stream, "%*sxnvme_cmd_opts:", indent, "");
-		indent += 2;
-	}
-
-	if (!dev) {
-		wrtn += fprintf(stream, " ~");
-		return wrtn;
-	}
-
-	if (head) {
-		wrtn += fprintf(stream, "\n");
-	}
-
-	wrtn += fprintf(stream, "%*scsi: 0x%x%s", indent, "", dev->ident.csi, sep);
-	wrtn += fprintf(stream, "%*snsid: 0x%u", indent, "", dev->ident.nsid);
-
-	return 0;
-}
-
 int
 xnvme_dev_fpr(FILE *stream, const struct xnvme_dev *dev, int opts)
 {
@@ -74,9 +48,6 @@ xnvme_dev_fpr(FILE *stream, const struct xnvme_dev *dev, int opts)
 	wrtn += fprintf(stream, "    sync: '%s'\n", dev->opts.sync);
 	wrtn += fprintf(stream, "    async: '%s'\n", dev->opts.async);
 	wrtn += fprintf(stream, "    oflags: 0x%x\n", dev->opts.oflags);
-
-	wrtn += xnvme_dev_cmd_opts_yaml(stream, dev, 2, "\n", 1);
-	wrtn += fprintf(stream, "\n");
 
 	wrtn += xnvme_geo_yaml(stream, &dev->geo, 2, "\n", 1);
 	wrtn += fprintf(stream, "\n");
