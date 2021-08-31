@@ -17,34 +17,54 @@ The "Backlog" section describe changes on the roadmap for xNVMe.
 Known Issues
 ------------
 
-* Fabrics
+See the file named ``ISSUES`` in the root of the repository.
 
-  - Errors are observed when constructing payloads with an mdts exceeding
-    16 * 1024 bytes. Thus a work-around is applied bounding the derived
-    ``mdts_nbytes`` associated with the device geometry.
+v0.0.25
+-------
 
-* Binaries
+Major improvements to the usability of xNVMe and enchancements of the API
+along with a couple of fixes.
 
-  - xNVMe does not build with ``-march=native``, however, SPDK/DPDK does.
-    Thus, when the xNVMe library "bundles" SPDK/DPDK and the binaries are
-    linked, then they can contain ISA-specific instructions.
-    If you invoke e.g. ``xnvme enum`` and see the message ``Illegal
-    Instruction``, then this is why.
+* Encoding of runtime instrumentation, that is, selection of backend, async
+  interface etc. has until now been encoded in the device URI, e.g.
+  ``xnvme_dev_open("/dev/nvme0n1?async=io_uring")`` in order to use
+  ``io_uring``, this has now been replaced by ``struct xnvme_opts``, making it
+  much easier to instrument the library runtime via the API. The command-line
+  is also affected, as the command-line parser is extended enabling parsing of
+  said options along with the tests, examples, and tools are extended with
+  these options.
 
-* ``be::spdk``
+* Device enumeration populated a list with device-identifiers, this has been
+  replaced by invocation of a user-defined call-back function for each
+  discovered device. Where instead of identifiers, device-handles are passed
+  to the callback. This makes it much simpler to e.g. filtering namespace with
+  a specific command-set.
 
-  - Does not build on Alpine Linux
-  - Re-initialization fails, e.g. repeatedly calling ``xnvme_enumerate()``
+* To support the above then most of information carried in the ``xnvme_ident``
+  is removed, expect for the ``uri``, and extended with: ``dtype``, ``nsid``,
+  and ``csi``. Where ``dtype`` denotes e.g. ``file``, ``block device``, ``NVMe
+  controller``, ``NVMe Namespace``.
 
-* ``be::linux``
+* The ``xnvme_znd_mgmt_send()`` has now has an explicit ``select_all`` argument
+  for setting the matching command-field, this replaces the use of the
+  non-standardized ``zrasf`` field associated enumeration-values.
 
-  - When enabling the use of ``io_uring`` or ``libaio`` via
-    ``?async={io_uring,libaio}``, then all async. commands are sent via the
-    chosen async. path. Take note, that these async. paths only supports read
-    and write. Commands such as the Simple-Copy-Command, Append, and
-    Zone-Management are not supported in upstream Linux in this manner. This
-    means, as a user that you must sent non-read/write commands with mode
-    ``XNVME_CMD_SYNC``.
+* Documentation for building on Gentoo is added along with addition to the
+  automated build-test.
+
+* nvme:spec: expanded with PCIe-bar registers
+
+* Support for enumeration and device-handles for Linux NVMe Namespaces
+  represented in devfs as char-devices, e.g. ``/dev/ngXnY`` is added.
+
+* **Experimental** support for sending NVMe commands over ``io_uring``
+  infrastructure is added. Think of this as sending the **synchronous** NVMe
+  Driver ``ioctl()`` commands via the **asynchronous** ``io_uring`` interface.
+  You thus get the control and capabilities of the ioctl() with the efficiency
+  of ``io_uring``.
+  This feature is enabled by setting ``opts.async=io_uring_cmd`` via the API or
+  ``--async=io_uring_cmd`` via the command-line. The feature is experimental as
+  it depends on non-upstream Kernel Support.
 
 v0.0.24
 -------
