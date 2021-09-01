@@ -80,38 +80,50 @@ struct xnvme_opts
 xnvme_opts_default(void);
 
 /**
- * List of devices found on the system usable with xNVMe
+ * Opaque device handle.
  *
- * @struct xnvme_enumeration
+ * @see xnvme_dev_open()
+ *
+ * @struct xnvme_dev
  */
-struct xnvme_enumeration {
-	uint32_t capacity;		///< Remaining unused entries
-	uint32_t nentries;		///< Used entries
-	struct xnvme_ident entries[];	///< Device entries
+struct xnvme_dev;
+
+enum xnvme_enumerate_action {
+	XNVME_ENUMERATE_DEV_KEEP_OPEN = 0x0,	///< Keep device-handle open after callback returns
+	XNVME_ENUMERATE_DEV_CLOSE = 0x1		///< Close device-handle when callback returns
 };
 
 /**
- * Enumerate devices on the given system
+ * Signature of callback function used with 'xnvme_enumerate' invoked for each discoved device
  *
- * @param list Pointer to pointer of the list of device enumerated
- * @param sys_uri URI of the system to enumerate on, when NULL, localhost/PCIe
- * @param opts System enumeration options
+ * The callback function signals whether the device-handle it receives should by closed, that is,
+ * backend with invoke 'xnvme_dev_close(), after the callback returns or kept open. In the latter
+ * case then it is up to the user to invoke 'xnvme_dev_close()' on the device-handle.
+ *
+ * Each signal is represented by the enum #xnvme_enumerate_action, and the values
+ * XNVME_ENUMERATE_DEV_KEEP_OPEN or XNVME_ENUMERATE_DEV_CLOSE.
+ */
+typedef int (*xnvme_enumerate_cb)(struct xnvme_dev *dev, void *cb_args);
+
+/**
+ * enumerate devices
+ *
+ * @param sys_uri URI of the system to enumerate, when NULL, localhost/PCIe
+ * @param opts Options for instrumenting the runtime during enumeration
+ * @param cb_func Callback function to invoke for each yielded device
+ * @param cb_args Arguments passed to the callback function
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
-xnvme_enumerate(struct xnvme_enumeration **list, const char *sys_uri, int opts);
+xnvme_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
+		void *cb_args);
 
 /**
- * Creates a device handle (::xnvme_dev) based on the given device-uri and options
- *
- * Note: when using pci-addresses, then the options must have a 'nsid' identifying the NVMe
- * namespace to use
+ * Creates a device handle (::xnvme_dev) based on the given device-uri
  *
  * @param dev_uri File path "/dev/nvme0n1" or "0000:04.01"
  * @param opts Options for library backend and system-interfaces
- *
- * @see xnvme_opts
  *
  * @return On success, a handle to the device. On error, NULL is returned and `errno` set to
  * indicate the error.

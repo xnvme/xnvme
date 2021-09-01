@@ -69,9 +69,9 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_admin) == XNVME_BE_ADMIN_NBYTES, "Inc
 
 struct xnvme_be_dev {
 	/**
-	 * Enumerate devices on/at the given 'sys_uri' when NULL local devices
+	 * enumerate devices on/at the given 'sys_uri' when NULL local devices
 	 */
-	int (*enumerate)(struct xnvme_enumeration *, const char *, int);
+	int (*enumerate)(const char *, struct xnvme_opts *, xnvme_enumerate_cb, void *);
 
 	/**
 	 * Construct a device from the given identifier
@@ -228,15 +228,6 @@ xnvme_be_dev_idfy(struct xnvme_dev *dev);
 int
 xnvme_ident_yaml(FILE *stream, const struct xnvme_ident *ident, int indent, const char *sep,
 		 int head);
-
-int
-xnvme_enumeration_alloc(struct xnvme_enumeration **list, uint32_t capacity);
-
-void
-xnvme_enumeration_free(struct xnvme_enumeration *list);
-
-int
-xnvme_enumeration_append(struct xnvme_enumeration *list, struct xnvme_ident *entry);
 
 static inline int
 xnvme_be_supported(struct xnvme_dev *XNVME_UNUSED(dev), uint32_t XNVME_UNUSED(opts))

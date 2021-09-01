@@ -631,168 +631,6 @@ xnvme_ident_pr(const struct xnvme_ident *ident, int opts)
 	return xnvme_ident_fpr(stdout, ident, opts);
 }
 
-int
-xnvme_enumeration_fpr(FILE *stream, struct xnvme_enumeration *list, int opts)
-{
-	int wrtn = 0;
-
-	switch (opts) {
-	case XNVME_PR_TERSE:
-		wrtn += fprintf(stream, "# ENOSYS: opts(%x)", opts);
-		return wrtn;
-
-	case XNVME_PR_DEF:
-	case XNVME_PR_YAML:
-		break;
-	}
-
-	wrtn += fprintf(stream, "xnvme_enumeration:");
-
-	if (!list) {
-		wrtn += fprintf(stream, " ~\n");
-		return wrtn;
-	}
-
-	wrtn += fprintf(stream, "\n");
-	wrtn += fprintf(stream, "  capacity: %u\n", list->capacity);
-	wrtn += fprintf(stream, "  nentries: %u\n", list->nentries);
-	wrtn += fprintf(stream, "  entries:");
-
-	if (!list->nentries) {
-		wrtn += fprintf(stream, " ~\n");
-		return wrtn;
-	}
-
-	for (uint64_t idx = 0; idx < list->nentries; ++idx) {
-		struct xnvme_ident *entry = &list->entries[idx];
-
-		wrtn += fprintf(stream, "\n  - {");
-		wrtn += xnvme_ident_yaml(stream, entry, 0, ", ", 0);
-		wrtn += fprintf(stream, "}");
-	}
-	wrtn += fprintf(stream, "\n");
-
-	return wrtn;
-}
-
-int
-xnvme_enumeration_pr(struct xnvme_enumeration *list, int opts)
-{
-	return xnvme_enumeration_fpr(stdout, list, opts);
-}
-
-void
-xnvme_enumeration_free(struct xnvme_enumeration *list)
-{
-	free(list);
-}
-
-int
-xnvme_enumeration_alloc(struct xnvme_enumeration **list, uint32_t capacity)
-{
-	*list = malloc(sizeof(**list) + sizeof(*(*list)->entries) * capacity);
-	if (!(*list)) {
-		XNVME_DEBUG("FAILED: malloc(list + entry * cap(%u))", capacity);
-		return -errno;
-	}
-	(*list)->capacity = capacity;
-	(*list)->nentries = 0;
-
-	return 0;
-}
-
-int
-xnvme_enumeration_append(struct xnvme_enumeration *list,
-			 struct xnvme_ident *entry)
-{
-	if (!list->capacity) {
-		XNVME_DEBUG("FAILED: syslist->capacity: %u", list->capacity);
-		return -ENOMEM;
-	}
-
-	list->entries[(list->nentries)++] = *entry;
-	list->capacity--;
-
-	return 0;
-}
-
-/**
- * Check whether the given list has the trgt as associated with the given ident
- *
- * @return Returns 1 it is exist, 0 otherwise.
- */
-static int
-enumeration_has_ident(struct xnvme_enumeration *list, struct xnvme_ident *ident, uint32_t idx)
-{
-	uint32_t bound = XNVME_MIN(list->nentries, idx);
-
-	for (uint32_t i = 0; i < bound; ++i) {
-		struct xnvme_ident *id = &list->entries[i];
-
-		if (id->nsid != ident->nsid) {
-			continue;
-		}
-		if (id->csi != ident->csi) {
-			continue;
-		}
-		if (id->dtype != ident->dtype) {
-			continue;
-		}
-		if (!strncmp(ident->uri, id->uri, XNVME_IDENT_URI_LEN - 1)) {
-			return 1;
-		}
-	}
-
-	return 0;
-}
-
-int
-xnvme_enumeration_fpp(FILE *stream, struct xnvme_enumeration *list, int opts)
-{
-	int wrtn = 0;
-
-	switch (opts) {
-	case XNVME_PR_TERSE:
-		wrtn += fprintf(stream, "# ENOSYS: opts(%x)", opts);
-		return wrtn;
-
-	case XNVME_PR_DEF:
-	case XNVME_PR_YAML:
-		break;
-	}
-
-	wrtn += fprintf(stream, "xnvme_enumeration:");
-
-	if (!list) {
-		wrtn += fprintf(stream, " ~\n");
-		return wrtn;
-	}
-
-	if (!list->nentries) {
-		wrtn += fprintf(stream, " ~\n");
-		return wrtn;
-	}
-
-	for (uint32_t idx = 0; idx < list->nentries; ++idx) {
-		struct xnvme_ident *ident = &list->entries[idx];
-
-		if (enumeration_has_ident(list, ident, idx)) {
-			continue;
-		}
-
-		wrtn += fprintf(stream, "\n");
-		wrtn += fprintf(stream, "  - uri: %s\n", ident->uri);
-	}
-
-	return wrtn;
-}
-
-int
-xnvme_enumeration_pp(struct xnvme_enumeration *list, int opts)
-{
-	return xnvme_enumeration_fpp(stdout, list, opts);
-}
-
 /**
  * Set up mixin of 'be' of the given 'mtype' and matching 'opts' when provided
  */
@@ -931,17 +769,10 @@ xnvme_be_factory(struct xnvme_dev *dev, struct xnvme_opts *opts)
 }
 
 int
-xnvme_enumerate(struct xnvme_enumeration **list, const char *sys_uri, int opts)
+xnvme_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
+		void *cb_args)
 {
 	int err;
-
-	// TODO: improve in this static allocation of 100 entries should be
-	// parsed on-wards as **, such that it can be re-allocated and expanded
-	err = xnvme_enumeration_alloc(list, 100);
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_enumeration_alloc()");
-		return err;
-	}
 
 	for (int i = 0; g_xnvme_be_registry[i]; ++i) {
 		struct xnvme_be be = *g_xnvme_be_registry[i];
@@ -957,7 +788,7 @@ xnvme_enumerate(struct xnvme_enumeration **list, const char *sys_uri, int opts)
 			continue;
 		}
 
-		err = be.dev.enumerate(*list, sys_uri, opts);
+		err = be.dev.enumerate(sys_uri, opts, cb_func, cb_args);
 		if (err) {
 			XNVME_DEBUG("FAILED: %s->enumerate(...), err: '%s', i: %d",
 				    g_xnvme_be_registry[i]->attr.name, strerror(-err), i);

@@ -48,7 +48,8 @@ void
 xnvme_be_nosys_buf_free(const struct xnvme_dev *dev, void *buf);
 
 int
-xnvme_be_nosys_enumerate(struct xnvme_enumeration *list, const char *sys_uri, int opts);
+xnvme_be_nosys_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
+			 void *cb_args);
 
 int
 xnvme_be_nosys_dev_open(struct xnvme_dev *dev);

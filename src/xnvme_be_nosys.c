@@ -107,8 +107,10 @@ xnvme_be_nosys_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *XNVM
 }
 
 int
-xnvme_be_nosys_enumerate(struct xnvme_enumeration *XNVME_UNUSED(list),
-			 const char *XNVME_UNUSED(sys_uri), int XNVME_UNUSED(opts))
+xnvme_be_nosys_enumerate(const char *XNVME_UNUSED(sys_uri),
+			 struct xnvme_opts *XNVME_UNUSED(opts),
+			 xnvme_enumerate_cb XNVME_UNUSED(cb_func),
+			 void *XNVME_UNUSED(cb_args))
 {
 	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");
 	return -ENOSYS;

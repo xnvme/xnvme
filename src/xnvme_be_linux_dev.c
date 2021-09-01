@@ -276,8 +276,8 @@ xnvme_path_ng_filter(const struct dirent *d)
  * topology functions
  */
 int
-xnvme_be_linux_enumerate(struct xnvme_enumeration *list, const char *sys_uri,
-			 int XNVME_UNUSED(opts))
+xnvme_be_linux_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
+			 void *cb_args)
 {
 	struct dirent **ns = NULL;
 	int nns = 0;
@@ -290,29 +290,33 @@ xnvme_be_linux_enumerate(struct xnvme_enumeration *list, const char *sys_uri,
 	nns = scandir("/sys/block", &ns, xnvme_path_nvme_filter, alphasort);
 	for (int ni = 0; ni < nns; ++ni) {
 		char uri[XNVME_IDENT_URI_LEN] = { 0 };
-		struct xnvme_ident ident = { 0 };
+		struct xnvme_dev *dev = NULL;
 
 		snprintf(uri, XNVME_IDENT_URI_LEN - 1, _PATH_DEV "%s", ns[ni]->d_name);
-		if (xnvme_ident_from_uri(uri, &ident)) {
-			continue;
-		}
 
-		if (xnvme_enumeration_append(list, &ident)) {
-			XNVME_DEBUG("FAILED: adding ident");
+		dev = xnvme_dev_open(uri, opts);
+		if (!dev) {
+			XNVME_DEBUG("xnvme_dev_open(): %d", errno);
+			return -errno;
+		}
+		if (cb_func(dev, cb_args)) {
+			xnvme_dev_close(dev);
 		}
 	}
 	nns = scandir("/dev", &ns, xnvme_path_ng_filter, alphasort);
 	for (int ni = 0; ni < nns; ++ni) {
 		char uri[XNVME_IDENT_URI_LEN] = { 0 };
-		struct xnvme_ident ident = { 0 };
+		struct xnvme_dev *dev = NULL;
 
 		snprintf(uri, XNVME_IDENT_URI_LEN - 1, _PATH_DEV "%s", ns[ni]->d_name);
-		if (xnvme_ident_from_uri(uri, &ident)) {
-			continue;
-		}
 
-		if (xnvme_enumeration_append(list, &ident)) {
-			XNVME_DEBUG("FAILED: adding ident");
+		dev = xnvme_dev_open(uri, opts);
+		if (!dev) {
+			XNVME_DEBUG("xnvme_dev_open(): %d", errno);
+			return -errno;
+		}
+		if (cb_func(dev, cb_args)) {
+			xnvme_dev_close(dev);
 		}
 	}
 

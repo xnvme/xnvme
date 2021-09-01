@@ -8,12 +8,32 @@
 #define MAX_LISTINGS 1024
 #define MAX_HANDLES 1024
 
+int
+enumerate_cb(struct xnvme_dev *dev, void *cb_args)
+{
+	struct xnvme_enumeration *list = cb_args;
+	const struct xnvme_ident *ident = xnvme_dev_get_ident(dev);
+
+	if (xnvme_enumeration_append(list, ident)) {
+		XNVME_DEBUG("FAILED: adding ident");
+	}
+
+	return XNVME_ENUMERATE_DEV_CLOSE;
+}
+
 static int
 test_enum(struct xnvmec *cli)
 {
 	struct xnvme_enumeration *listing[MAX_LISTINGS] = { 0 };
+	struct xnvme_opts opts = { 0 };
 	uint64_t nlistings = 2;
 	int nerr = 0, err;
+
+	err = xnvmec_cli_to_opts(cli, &opts);
+	if (err) {
+		xnvmec_perr("xnvmec_cli_to_opts()", err);
+		return err;
+	}
 
 	nlistings = XNVME_MAX(nlistings, cli->args.count);
 	if (nlistings > MAX_LISTINGS) {
@@ -23,7 +43,13 @@ test_enum(struct xnvmec *cli)
 	xnvmec_pinf("Will enumerate %ld times", nlistings);
 
 	for (uint64_t i = 0; i < nlistings; ++i) {
-		err = xnvme_enumerate(&listing[i], cli->args.sys_uri, cli->args.flags);
+		err = xnvme_enumeration_alloc(&listing[i], 100);
+		if (err) {
+			XNVME_DEBUG("FAILED: xnvme_enumeration_alloc()");
+			return err;
+		}
+
+		err = xnvme_enumerate(cli->args.sys_uri, &opts, *enumerate_cb, listing[i]);
 		if (err) {
 			nerr += 1;
 			xnvmec_perr("xnvme_enumerate()", err);
@@ -52,10 +78,6 @@ exit:
 	}
 	printf("\n");
 
-	for (uint64_t i = 0; i < nlistings; ++i) {
-		free(listing[i]);
-	}
-
 	return nerr ? -ENOMEM : 0;
 }
 
@@ -63,10 +85,23 @@ static int
 test_enum_open(struct xnvmec *cli)
 {
 	struct xnvme_enumeration *listing = NULL;
+	struct xnvme_opts enum_opts = { 0 };
 	int count = 1;
 	int nerr = 0, err;
 
-	err = xnvme_enumerate(&listing, cli->args.sys_uri, cli->args.flags);
+	err = xnvmec_cli_to_opts(cli, &enum_opts);
+	if (err) {
+		xnvmec_perr("xnvmec_cli_to_opts()", err);
+		return err;
+	}
+
+	err = xnvme_enumeration_alloc(&listing, 100);
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_enumeration_alloc()");
+		return err;
+	}
+
+	err = xnvme_enumerate(cli->args.sys_uri, &enum_opts, *enumerate_cb, listing);
 	if (err) {
 		nerr += 1;
 		xnvmec_perr("xnvme_enumerate()", err);
@@ -82,7 +117,13 @@ test_enum_open(struct xnvmec *cli)
 		struct xnvme_dev *dev[MAX_HANDLES] = { 0 };
 
 		for (int hidx = 0; hidx < count; ++hidx) {
-			struct xnvme_opts opts = xnvme_opts_default();
+			struct xnvme_opts opts = { 0 };
+
+			err = xnvmec_cli_to_opts(cli, &opts);
+			if (err) {
+				xnvmec_perr("xnvmec_cli_to_opts()", err);
+				return err;
+			}
 
 			opts.nsid = listing->entries[i].nsid;
 
@@ -116,8 +157,6 @@ exit:
 		xnvmec_pinf("LGMT: xnvme_enumerate() + xnvme_dev_open() * count");
 	}
 	printf("\n");
-
-	free(listing);
 
 	return nerr ? -ENOMEM : 0;
 }

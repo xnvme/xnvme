@@ -2,31 +2,63 @@
 #include <string.h>
 #include <errno.h>
 #include <libxnvme.h>
+#include <libxnvme_ident.h>
+#include <xnvme_be.h>
+#include <libxnvme_dev.h>
 #include <libxnvme_spec_pp.h>
 #include <libxnvme_adm.h>
 #include <libxnvme_nvm.h>
 #include <libxnvme_znd.h>
 #include <libxnvmec.h>
 
-// TODO: Have this enumeration only show zoned namespaces
+int
+enumerate_cb(struct xnvme_dev *dev, void *cb_args)
+{
+	uint32_t *ns_count_ref = cb_args;
+	const struct xnvme_ident *ident;
+
+	ident = xnvme_dev_get_ident(dev);
+	if (ident->csi != XNVME_SPEC_CSI_ZONED) {
+		return XNVME_ENUMERATE_DEV_CLOSE;
+	}
+
+	if (*ns_count_ref == 0) {
+		fprintf(stdout, "\n");
+	}
+
+	fprintf(stdout, "  - {");
+	xnvme_ident_yaml(stdout, ident, 0, ", ", 0);
+	fprintf(stdout, "}\n");
+
+	*ns_count_ref = *ns_count_ref + 1;
+
+	return XNVME_ENUMERATE_DEV_CLOSE;
+}
+
 static int
 cmd_enumerate(struct xnvmec *cli)
 {
-	struct xnvme_enumeration *listing = NULL;
+	struct xnvme_opts opts = { 0 };
+	uint32_t ns_count = 0;
 	int err;
 
-	xnvmec_pinf("xnvme_enumerate()");
-
-	err = xnvme_enumerate(&listing, cli->args.sys_uri, cli->args.flags);
+	err = xnvmec_cli_to_opts(cli, &opts);
 	if (err) {
-		xnvmec_perr("xnvme_enumerate()", err);
-		goto exit;
+		xnvmec_perr("xnvmec_cli_to_opts()", err);
+		return err;
 	}
 
-	xnvme_enumeration_pr(listing, XNVME_PR_DEF);
+	fprintf(stdout, "xnvme_enumeration:");
 
-exit:
-	free(listing);
+	err = xnvme_enumerate(cli->args.sys_uri, &opts, *enumerate_cb, &ns_count);
+	if (err) {
+		xnvmec_perr("xnvme_enumerate()", err);
+		return err;
+	}
+
+	if (ns_count == 0) {
+		fprintf(stdout, "~\n");
+	}
 
 	return 0;
 }

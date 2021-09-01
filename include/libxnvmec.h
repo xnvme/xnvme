@@ -445,6 +445,26 @@ enum xnvmec_opts {
 	XNVMEC_INIT_DEV_OPEN = 0x1,
 };
 
+/**
+ * List of devices found on the system usable with xNVMe
+ *
+ * @struct xnvme_enumeration
+ */
+struct xnvme_enumeration {
+	uint32_t capacity;		///< Remaining unused entries
+	uint32_t nentries;		///< Used entries
+	struct xnvme_ident entries[];	///< Device entries
+};
+
+int
+xnvme_enumeration_alloc(struct xnvme_enumeration **list, uint32_t capacity);
+
+void
+xnvme_enumeration_free(struct xnvme_enumeration *list);
+
+int
+xnvme_enumeration_append(struct xnvme_enumeration *list, const struct xnvme_ident *entry);
+
 static inline uint64_t xnvmec_timer_start(struct xnvmec *cli)
 {
 	cli->timer.start = _xnvme_timer_clock_sample();

@@ -129,10 +129,13 @@ xnvme_be_posix_dev_close(struct xnvme_dev *dev)
 }
 
 int
-xnvme_be_posix_enumerate(struct xnvme_enumeration *XNVME_UNUSED(list),
-			 const char *XNVME_UNUSED(sys_uri), int XNVME_UNUSED(opts))
+xnvme_be_posix_enumerate(const char *XNVME_UNUSED(sys_uri),
+			 struct xnvme_opts *XNVME_UNUSED(opts),
+			 xnvme_enumerate_cb XNVME_UNUSED(cb_func),
+			 void *XNVME_UNUSED(cb_args))
 {
-	return 0;
+	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");
+	return -ENOSYS;
 }
 #endif
 
