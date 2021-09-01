@@ -6,6 +6,7 @@ on:
     branches:
       - master
       - dev
+      - build_test
     tags:
       - v*
 
@@ -53,6 +54,7 @@ jobs:
       matrix:
         container:
         #- { os: 'alpine', ver: 'latest' }
+        - { os: 'gentoo/stage3', ver: 'latest' }
         - { os: 'archlinux', ver: 'latest' }
         - { os: 'centos', ver: 'centos7' }
         - { os: 'debian', ver: 'bullseye' }
@@ -80,14 +82,17 @@ jobs:
     - name: Install build-requirements
       run: |
         cd xnvme
-        source scripts/pkgs/${{ matrix.container.os }}-${{ matrix.container.ver }}.sh
+        [[ ${{ matrix.container.os }} == *"gentoo"* ]] && emerge-webrsync || true
+        [[ ${{ matrix.container.os }} == *"gentoo"* ]] && source scripts/pkgs/gentoo-${{ matrix.container.ver }}.sh || true
+        [[ ${{ matrix.container.os }} != *"gentoo"* ]] && source scripts/pkgs/${{ matrix.container.os }}-${{ matrix.container.ver }}.sh || true
         [[ ! -f "/usr/bin/python" ]] && ln -s /usr/bin/python3.8 /usr/bin/python || true
 
     - name: Configure, the build
       run: |
         [[ -f "/opt/rh/devtoolset-8/enable" ]] && source /opt/rh/devtoolset-8/enable || true
         cd xnvme
-        make config
+        [[ ${{ matrix.container.os }} == *gentoo** ]] && LDFLAGS="-ltinfo -lncurses" make config || true
+        [[ ${{ matrix.container.os }} != *gentoo** ]] && make config || true
 
     - name: Dump, the compile-commands and machine
       run: |
@@ -99,7 +104,8 @@ jobs:
       run: |
         [[ -f "/opt/rh/devtoolset-8/enable" ]] && source /opt/rh/devtoolset-8/enable || true
         cd xnvme
-        make
+        [[ ${{ matrix.container.os }} == *gentoo** ]] && LDFLAGS="-ltinfo -lncurses" make || true
+        [[ ${{ matrix.container.os }} != *gentoo** ]] && make || true
 
     - name: Install
       run: |
