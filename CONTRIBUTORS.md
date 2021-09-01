@@ -1,21 +1,28 @@
 xNVMe Contributors
 ==================
 
-The following people have contributed to the implementation of xNVMe:
+The following people have contributed to the implementation of xNVMe.
 
 Contributors to the current release
 -----------------------------------
 
+* Ankit Kumar, [Samsung]
+* Eduard Kyvenko, [Samsung]
+* Jesper Devantier, [Samsung]
+* Klaus B. A. Jensen, [Samsung]
+* Michael Bang, [Samsung]
 * Simon A. F. Lund, [Samsung]
-* Gurmeet Singh, [Samsung]
-* Ivan I. Picoli, [Samsung]
 
 Contributors to previous releases
 ---------------------------------
 
+* Gurmeet Singh, [Samsung]
+* Ivan I. Picoli, [Samsung]
 * Javier González [Samsung]
-* Simon A. F. Lund, [CNEX Labs], [Samsung]
+* Joel Granados, [Samsung]
 * Klaus B. A. Jensen, [CNEX Labs], [Samsung]
+* Michael Bang, [Samsung]
+* Simon A. F. Lund, [CNEX Labs], [Samsung]
 
 ---
 
