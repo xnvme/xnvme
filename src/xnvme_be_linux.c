@@ -90,6 +90,13 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_linux[] = {
 		.async = &g_xnvme_be_linux_async_liburing,
 		.check_support = xnvme_be_supported,
 	},
+	{
+		.mtype = XNVME_BE_ASYNC,
+		.name = "io_uring_cmd",
+		.descr = "Use Linux io_uring passthru command for Asynchronous I/O",
+		.async = &g_xnvme_be_linux_async_ucmd,
+		.check_support = xnvme_be_supported,
+	},
 #endif
 #ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
 	{
