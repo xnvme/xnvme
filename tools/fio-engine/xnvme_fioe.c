@@ -926,6 +926,7 @@ exit:
 static int
 xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint64_t offset, uint64_t length)
 {
+	struct xnvme_opts opts = xnvme_opts_from_fioe(td);
 	struct xnvme_fioe_data *xd = NULL;
 	struct xnvme_fioe_fwrap *fwrap = NULL;
 	struct xnvme_dev *dev = NULL;
@@ -952,7 +953,7 @@ xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint64_t offset,
 			return -err;
 		}
 
-		dev = xnvme_dev_open(f->file_name);
+		dev = xnvme_dev_open(f->file_name, &opts);
 		if (!dev) {
 			XNVME_DEBUG("FAILED: xnvme_dev_open(), errno: %d", errno);
 			goto exit;
