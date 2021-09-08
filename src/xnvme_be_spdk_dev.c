@@ -438,8 +438,7 @@ probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
  * detached if dev->nsid is not a match
  */
 static void
-attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *XNVME_UNUSED(trid),
-	  struct spdk_nvme_ctrlr *ctrlr,
+attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid, struct spdk_nvme_ctrlr *ctrlr,
 	  const struct spdk_nvme_ctrlr_opts *XNVME_UNUSED(ctrlr_opts))
 {
 	struct xnvme_dev *dev = cb_ctx;
@@ -465,6 +464,7 @@ attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *XNVME_UNUSED(trid),
 	state->ns = ns;
 	state->ctrlr = ctrlr;
 	state->attached = 1;
+	opts->spdk_fabrics = trid->trtype > SPDK_NVME_TRANSPORT_PCIE;
 }
 
 void
@@ -545,13 +545,12 @@ enumerate_probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
 }
 
 static void
-enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
+enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
 		    struct spdk_nvme_ctrlr *ctrlr,
 		    const struct spdk_nvme_ctrlr_opts *ctrlr_opts)
 {
 	struct xnvme_be_spdk_enumerate_ctx *ectx = cb_ctx;
 	const int num_ns = spdk_nvme_ctrlr_get_num_ns(ctrlr);
-	int trtype = probed->trtype;
 
 	for (int nsid = 1; nsid <= num_ns; ++nsid) {
 		struct xnvme_opts opts = *ectx->opts;
@@ -564,6 +563,7 @@ enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
 		// NOTE: we communicate the css via the dev->ident.csi
 		opts.use_cmb_sqs = ctrlr_opts->use_cmb_sqs;
 		opts.nsid = nsid;
+		opts.spdk_fabrics = trid->trtype > SPDK_NVME_TRANSPORT_PCIE;
 
 		if (!spdk_nvme_ctrlr_get_data(ctrlr)) {
 			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_data");
@@ -587,21 +587,22 @@ enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
 		ident.csi = spdk_nvme_ns_get_csi(ns);
 
 		// Namespace looks good, construct xNVMe identifier, and ..
-		switch (trtype) {
+		switch (trid->trtype) {
 		case SPDK_NVME_TRANSPORT_PCIE:
-			snprintf(ident.uri, sizeof(ident.uri), "%s", probed->traddr);
+			snprintf(ident.uri, sizeof(ident.uri), "%s", trid->traddr);
 			break;
 
 		case SPDK_NVME_TRANSPORT_TCP:
 		case SPDK_NVME_TRANSPORT_RDMA:
 			snprintf(ident.uri, sizeof(ident.uri), "%s:%s",
-				 probed->traddr, probed->trsvcid);
+				 trid->traddr, trid->trsvcid);
 			break;
 
 		case SPDK_NVME_TRANSPORT_FC:
 		case SPDK_NVME_TRANSPORT_CUSTOM:
+		case SPDK_NVME_TRANSPORT_VFIOUSER:
 			XNVME_DEBUG("SKIP: ENOSYS trtype: %s",
-				    spdk_nvme_transport_id_trtype_str(trtype));
+				    spdk_nvme_transport_id_trtype_str(trid->trtype));
 			continue;
 		}
 
