@@ -417,12 +417,9 @@ xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 		}
 
 		// Fabrics work-around
-		/** TODO: fix this after removal of uri-encoded options
-		if ((geo->mdts_nbytes > (16 * 1024)) && \
-		    (!strncmp(dev->ident.schm, "fab", 3))) {
+		if ((geo->mdts_nbytes > (16 * 1024)) && (dev->opts.spdk_fabrics)) {
 			geo->mdts_nbytes = 16 * 1024;
 		}
-		*/
 	}
 
 	// TODO: add zamdts
