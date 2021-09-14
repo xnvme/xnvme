@@ -382,7 +382,7 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 	},
 	{
 		.opt = XNVMEC_OPT_URI, .vtype = XNVMEC_OPT_VTYPE_URI,
-		.name = "uri", .descr = "Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888'"
+		.name = "uri", .descr = "Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888', '\\\\.\\PhysicalDrive1'"
 	},
 	{
 		.opt = XNVMEC_OPT_SYS_URI, .vtype = XNVMEC_OPT_VTYPE_URI,
@@ -562,7 +562,7 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 	},
 	{
 		.opt = XNVMEC_OPT_BE, .vtype = 	XNVMEC_OPT_VTYPE_STR,
-		.name = "be", .descr = "xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix'"
+		.name = "be", .descr = "xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix', 'windows'"
 	},
 	{
 		.opt = XNVMEC_OPT_MEM, .vtype = XNVMEC_OPT_VTYPE_STR,
@@ -708,6 +708,35 @@ xnvmec_pinf(const char *format, ...)
 	fflush(stdout);
 }
 
+#ifdef WIN32
+#include <windows.h>
+void
+xnvmec_perr(const char *msg, int err)
+{
+	if (err < 0) {
+		err = err * -1;
+	}
+	char err_msg_buff[1024];
+	int count;
+
+	count = FormatMessage(
+			FORMAT_MESSAGE_FROM_SYSTEM,
+			NULL,
+			err,
+			0,
+			(LPTSTR)&err_msg_buff,
+			sizeof(err_msg_buff),
+			NULL);
+
+	if (count != 0) {
+		fprintf(stderr, "# ERR: '%s': {error code: %d, msg: '%s'}\n",
+			msg, err, err_msg_buff);
+	} else {
+		fprintf(stderr, "# ERR: Format message failed:  {error code: %d}\n",
+			GetLastError());
+	}
+}
+#else
 void
 xnvmec_perr(const char *msg, int err)
 {
@@ -716,6 +745,7 @@ xnvmec_perr(const char *msg, int err)
 
 	fflush(stderr);
 }
+#endif
 
 void
 xnvmec_usage_sub_long(struct xnvmec *cli, struct xnvmec_sub *sub)
