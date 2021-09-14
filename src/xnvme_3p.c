@@ -3,6 +3,7 @@
 #include <libxnvme.h>
 #include <libxnvme_3p.h>
 #include <xnvme_be_linux.h>
+#include <xnvme_be_windows.h>
 
 int
 xnvme_3p_ver_fpr(FILE *stream, const char *ver[], enum xnvme_pr opts)
@@ -34,7 +35,11 @@ xnvme_3p_ver_fpr(FILE *stream, const char *ver[], enum xnvme_pr opts)
 	// TODO: this is kinda hackish... a better means for backends to provide
 	// various introspective information should be provided
 	wrtn += fprintf(stream, "  - '");
+#ifdef XNVME_BE_WINDOWS_ENABLED
+	wrtn += xnvme_be_windows_uapi_ver_fpr(stream, XNVME_PR_DEF);
+#elif XNVME_BE_LINUX_ENABLED
 	wrtn += xnvme_be_linux_uapi_ver_fpr(stream, XNVME_PR_DEF);
+#endif
 	wrtn += fprintf(stream, "'\n");
 
 	return wrtn;

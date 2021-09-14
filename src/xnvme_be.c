@@ -4,7 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
+#ifndef WIN32
 #include <paths.h>
+#endif
 #include <ctype.h>
 #include <errno.h>
 #include <libxnvme.h>
@@ -20,6 +22,7 @@ static struct xnvme_be *g_xnvme_be_registry[] = {
 	&xnvme_be_linux,
 	&xnvme_be_fbsd,
 	&xnvme_be_posix,
+	&xnvme_be_windows,
 	NULL
 };
 static int g_xnvme_be_count = sizeof g_xnvme_be_registry / sizeof * g_xnvme_be_registry - 1;
