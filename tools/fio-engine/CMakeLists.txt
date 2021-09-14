@@ -41,6 +41,11 @@ target_compile_options(${FIOE_NAME} PUBLIC -include
 target_include_directories(${FIOE_NAME} PRIVATE
        "${PROJECT_SOURCE_DIR}/third-party/fio/repos")
 
+if (WINDOWS)
+	target_include_directories(${FIOE_NAME} PRIVATE
+		"${FIO_SRC_PATH}/os/windows/posix/include")
+endif()
+
 # LINKAGE
 if (XNVME_LINK_CTORS)
 	target_link_libraries(${FIOE_NAME} -Wl,--whole-archive)
@@ -59,7 +64,13 @@ install(FILES xnvme-compare.fio DESTINATION share/xnvme COMPONENT tools)
 install(FILES xnvme-zoned.fio DESTINATION share/xnvme COMPONENT tools)
 
 # Define fio as a dependency, this ensures that arch-conf headers are available
-if(NOT EXISTS "${FIO_SRC_PATH}/fio")
+if(WINDOWS)
+	set(FIO_BINARY_NAME "fio.exe")
+else()
+	set(FIO_BINARY_NAME "fio")
+endif()
+
+if(NOT EXISTS "${FIO_SRC_PATH}/${FIO_BINARY_NAME}")
 	message("Building fio")
 
 	execute_process(

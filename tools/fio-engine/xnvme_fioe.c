@@ -125,6 +125,36 @@ struct xnvme_fioe_data {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_fioe_data) == 64, "Incorrect size")
 
+#ifdef WIN32
+ssize_t log_err(const char* format, ...)
+{
+	char buffer[1024];
+	va_list args;
+	size_t len;
+
+	va_start(args, format);
+	len = vsnprintf(buffer, sizeof(buffer), format, args);
+	va_end(args);
+	len = min(len, sizeof(buffer) - 1);
+
+	return fwrite(buffer, len, 1, stderr);
+}
+
+ssize_t log_info(const char* format, ...)
+{
+	char buffer[1024];
+	va_list args;
+	size_t len;
+
+	va_start(args, format);
+	len = vsnprintf(buffer, sizeof(buffer), format, args);
+	va_end(args);
+	len = min(len, sizeof(buffer) - 1);
+
+	return fwrite(buffer, len, 1, stdout);
+}
+#endif
+
 struct xnvme_fioe_options {
 	void *padding;
 	unsigned int hipri;
@@ -381,8 +411,10 @@ xnvme_fioe_init(struct thread_data *td)
 	if (!td->io_ops) {
 		log_err("xnvme_fioe: init(): !td->io_ops\n");
 		log_err("xnvme_fioe: init(): Check fio version\n");
+#ifndef WIN32
 		log_err("xnvme_fioe: init(): I/O engine running with: '%s'\n",
 			fio_version_string);
+#endif
 		log_err("xnvme_fioe: init(): I/O engine built with:\n");
 		xnvme_3p_ver_fpr(stderr, xnvme_3p_ver, XNVME_PR_DEF);
 		return 1;

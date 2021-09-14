@@ -34,4 +34,7 @@ third-party-fio-patch:
 .PHONY: third-party-fio-build
 third-party-fio-build:
 	@echo "## xNVMe: make third-party-fio-build"
+	@if [ "$(OS)" == "Windows_NT" ]; then    \
+		cd ${XNVME_3P_FIO_REPOS} && ./configure --cc=clang;    \
+	fi
 	cd ${XNVME_3P_FIO_REPOS} && $(MAKE)
