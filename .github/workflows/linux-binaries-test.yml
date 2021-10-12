@@ -186,7 +186,7 @@ jobs:
     - name: CIJOE/QEMU, provision guest using Debian cloud image
       run: |
         source /opt/scripts/suitup.sh
-        qemu::img_from_url "${CLOUD_IMG_URL}"
+        qemu.img_from_url "${CLOUD_IMG_URL}"
 
     - name: CIJOE/QEMU, start the guest
       run: |
@@ -194,37 +194,37 @@ jobs:
         source "${CIJ_TESTFILES}/qemu6_pcie_nvme_1c2ns_nvm_zns.sh"
         qemu_setup_pcie
         QEMU_ARGS_EXTRA="$QEMU_SETUP_PCIE"
-        qemu::run
+        qemu.run
 
     - name: CIJOE/QEMU, install Debian packages in guest
       run: |
         source /opt/scripts/suitup.sh
 
         for deb in *.deb; do
-          ssh::push "$deb" "/tmp/"
+          ssh.push "$deb" "/tmp/"
         done
 
-        ssh::cmd "dpkg -i /tmp/*.deb"
+        ssh.cmd "dpkg -i /tmp/*.deb"
 
     - name: CIJOE/QEMU, dump fio binary and SPDK io-engines in guest
       run: |
         source /opt/scripts/suitup.sh
-        ssh::cmd "mkdir /opt/aux"
-        ssh::push "fio" "/opt/aux/"
-        ssh::push "spdk_nvme" "/opt/aux/"
-        ssh::push "spdk_bdev" "/opt/aux/"
-        ssh::cmd "find /opt/aux"
-        ssh::cmd "chmod +x /opt/aux/fio"
+        ssh.cmd "mkdir /opt/aux"
+        ssh.push "fio" "/opt/aux/"
+        ssh.push "spdk_nvme" "/opt/aux/"
+        ssh.push "spdk_bdev" "/opt/aux/"
+        ssh.cmd "find /opt/aux"
+        ssh.cmd "chmod +x /opt/aux/fio"
 
     - name: CIJOE/QEMU, check binaries are available
       if: always()
       run: |
         source /opt/scripts/suitup.sh
-        ssh::cmd "hostname || true"
-        ssh::cmd "which xnvme || true"
-        ssh::cmd "whereis which zoned || true"
-        ssh::cmd "xnvme library-info || true"
-        ssh::cmd "xnvme enum || true"
+        ssh.cmd "hostname || true"
+        ssh.cmd "which xnvme || true"
+        ssh.cmd "whereis which zoned || true"
+        ssh.cmd "xnvme library-info || true"
+        ssh.cmd "xnvme enum || true"
 
     - name: CIJOE/QEMU, run testplans
       if: always()
@@ -247,7 +247,7 @@ jobs:
       if: always()
       run: |
         source /opt/scripts/suitup.sh
-        qemu::kill
+        qemu.kill
 
     - name: CIJOE, result-log-dump on error
       if: failure()
