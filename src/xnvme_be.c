@@ -186,16 +186,6 @@ xnvme_be_attr_fpr(FILE *stream, const struct xnvme_be_attr *attr, int opts)
 	wrtn += fprintf(stream, "name: '%s'\n", attr->name);
 	wrtn += fprintf(stream, "    enabled: %d\n", attr->enabled);
 
-	wrtn += fprintf(stream, "    schemes: [");
-	for (uint8_t i = 0; i < attr->nschemes; ++i) {
-		if (i) {
-			wrtn += fprintf(stream, ", ");
-		}
-
-		wrtn += fprintf(stream, "'%s'", attr->schemes[i]);
-	}
-	wrtn += fprintf(stream, "]\n");
-
 	return wrtn;
 }
 

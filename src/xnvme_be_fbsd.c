@@ -81,10 +81,6 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_fbsd[] = {
 };
 #endif
 
-static const char *g_schemes[] = {
-	"file",
-	"fbsd",
-};
 struct xnvme_be xnvme_be_fbsd = {
 	.admin = XNVME_BE_NOSYS_ADMIN,
 	.async = XNVME_BE_NOSYS_QUEUE,
@@ -96,8 +92,6 @@ struct xnvme_be xnvme_be_fbsd = {
 		.enabled = 1,
 #endif
 		.name = "fbsd",
-		.schemes = g_schemes,
-		.nschemes = sizeof g_schemes / sizeof(*g_schemes),
 	},
 #ifdef XNVME_BE_FBSD_ENABLED
 	.nobjs = sizeof g_xnvme_be_mixin_fbsd / sizeof * g_xnvme_be_mixin_fbsd,

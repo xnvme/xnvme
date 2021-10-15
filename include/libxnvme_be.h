@@ -21,20 +21,9 @@ extern "C" {
 struct xnvme_be_attr {
 	const char *name;	///< Backend name
 
-	/**
-	 * The default URI 'scheme', as in, the URI-definition below:
-	 *
-	 * scheme:target[?option=val]
-	 *
-	 * For which this backend identifies devices
-	 */
-	const char **schemes;
-
-	uint8_t nschemes;		///< Number of schemes in 'schemes'
-
 	uint8_t enabled;		///< Whether the backend is 'enabled'
 
-	uint8_t _rsvd[6];
+	uint8_t _rsvd[15];
 };
 
 /**

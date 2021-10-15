@@ -131,15 +131,9 @@ xnvme_be_nosys_dev_close(struct xnvme_dev *XNVME_UNUSED(dev))
 	return;
 }
 
-static const char *g_schemes[] = {
-	"nosys",
-};
-
 #define XNVME_BE_NOSYS_ATTR {					\
 	.name = "nosys",					\
 	.enabled = 1,						\
-	.schemes = g_schemes,					\
-	.nschemes = sizeof g_schemes / sizeof(*g_schemes),	\
 }
 
 struct xnvme_be xnvme_be_nosys = {

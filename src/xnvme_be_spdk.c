@@ -48,13 +48,6 @@ struct xnvme_be_mixin g_xnvme_be_mixin_spdk[] = {
 };
 #endif
 
-static const char *g_schemes[] = {
-	"pci",
-	"pcie",
-	"fab",
-	"spdk"
-};
-
 struct xnvme_be xnvme_be_spdk = {
 	.mem = XNVME_BE_NOSYS_MEM,
 	.admin = XNVME_BE_NOSYS_ADMIN,
@@ -63,8 +56,6 @@ struct xnvme_be xnvme_be_spdk = {
 	.dev = XNVME_BE_NOSYS_DEV,
 	.attr = {
 		.name = "spdk",
-		.schemes = g_schemes,
-		.nschemes = sizeof g_schemes / sizeof(*g_schemes),
 #ifdef XNVME_BE_SPDK_ENABLED
 		.enabled = 1,
 #endif

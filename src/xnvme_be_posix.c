@@ -72,9 +72,6 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_posix[] = {
 };
 #endif
 
-static const char *g_schemes[] = {
-	"file", "psx",
-};
 struct xnvme_be xnvme_be_posix = {
 	.mem = XNVME_BE_NOSYS_MEM,
 	.admin = XNVME_BE_NOSYS_ADMIN,
@@ -83,8 +80,6 @@ struct xnvme_be xnvme_be_posix = {
 	.dev = XNVME_BE_NOSYS_DEV,
 	.attr = {
 		.name = "posix",
-		.schemes = g_schemes,
-		.nschemes = sizeof g_schemes / sizeof(*g_schemes),
 #ifdef XNVME_BE_POSIX_ENABLED
 		.enabled = 1,
 #endif

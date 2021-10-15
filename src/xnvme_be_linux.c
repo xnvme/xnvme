@@ -186,11 +186,6 @@ xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr XNVME_UNUSED(opts))
 }
 #endif
 
-static const char *g_schemes[] = {
-	"file",
-	"lnx"
-};
-
 struct xnvme_be xnvme_be_linux = {
 	.mem = XNVME_BE_NOSYS_MEM,
 	.admin = XNVME_BE_NOSYS_ADMIN,
@@ -202,8 +197,6 @@ struct xnvme_be xnvme_be_linux = {
 		.enabled = 1,
 #endif
 		.name = "linux",
-		.schemes = g_schemes,
-		.nschemes = sizeof g_schemes / sizeof(*g_schemes),
 	},
 	.state = { 0 },
 #ifdef XNVME_BE_LINUX_ENABLED
