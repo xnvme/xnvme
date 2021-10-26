@@ -68,6 +68,8 @@ if [[ -v XNVME_BE && "$XNVME_BE" == "spdk" ]]; then
   else
     XNVME_URI="${PCI_DEV_NAME}"; export XNVME_URI
   fi
+elif [[ -v XNVME_BE && "${XNVME_BE}" == "vfio" ]]; then
+  XNVME_URI="${PCI_DEV_NAME}"; export XNVME_URI
 elif [[ -v XNVME_BE && "${XNVME_BE}" == "linux" ]]; then
   if [[ -v DEV_TYPE && "${DEV_TYPE}" == "nullblk" ]]; then
     case $NVME_NSTYPE in

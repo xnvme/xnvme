@@ -1,6 +1,7 @@
 option('with-liburing', type: 'boolean', value: true)
 option('with-libaio', type: 'boolean', value: true)
 option('with-spdk', type: 'boolean', value: true)
+option('with-libvfn', type: 'boolean', value: true)
 option('with-fio', type: 'boolean', value: true)
 
 option('be_ramdisk', type: 'boolean', value: true)

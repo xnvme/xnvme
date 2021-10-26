@@ -36,6 +36,12 @@ xnvmelib_source = [
   'xnvme_be_spdk_dev.c',
   'xnvme_be_spdk_mem.c',
   'xnvme_be_spdk_sync.c',
+  'xnvme_be_vfio.c',
+  'xnvme_be_vfio_admin.c',
+  'xnvme_be_vfio_async.c',
+  'xnvme_be_vfio_dev.c',
+  'xnvme_be_vfio_mem.c',
+  'xnvme_be_vfio_sync.c',
   'xnvme_be_windows.c',
   'xnvme_be_windows_async_iocp.c',
   'xnvme_be_windows_async_iocp_th.c',
@@ -75,16 +81,17 @@ xnvmelib_deps_shared = [
   aio_dep,
   setupapi_dep,
   corefoundation_dep,
-  iokit_dep
+  iokit_dep,
+  libvfn_dep,
 ]
 
 xnvmelib_deps_static = []
-xnvmelib_deps_static += [spdk_dep, uring_dep, corefoundation_dep, iokit_dep]
+xnvmelib_deps_static += [spdk_dep, uring_dep, corefoundation_dep, iokit_dep, libvfn_dep]
 xnvmelib_deps = xnvmelib_deps_shared + xnvmelib_deps_static
 
 xnvmelib_deps_bundle = [
   uring_dep,
-  spdk_dep
+  spdk_dep,
 ]
 
 # We are not relying on meson to control whether or not static/shared libraries are built, this is
@@ -114,17 +121,30 @@ xnvmelib_static = static_library(
 # Produce a static library containing xNVMe, liburing, and SPDK
 bundle_lib_paths = []
 bundle_lib_paths += [ 'lib' / 'libxnvme-static.a' ]
+
+if conf_data.get('XNVME_BE_LINUX_VFIO_ENABLED')
+  bundle_lib_paths += ['subprojects' / 'libvfn' / 'src' / 'libvfn.a']
+endif
+
 foreach blib : xnvmelib_deps_bundle
   if get_option('build_subprojects') and blib.found()
     bundle_lib_paths += blib.get_variable(internal: 'lib_paths').split(' ')
   endif
 endforeach
 
+xnvmelib_bundle_depends = [xnvmelib_static]
+
+if conf_data.get('XNVME_BE_LINUX_VFIO_ENABLED')
+  # custom targets cannot depend on dependency() objects, so depend on the
+  # library build target from the subproject.
+  xnvmelib_bundle_depends += subproject('libvfn').get_variable('vfn_lib')
+endif
+
 # missing xnvme and liburing, howto find / produce absolute paths to these?
 xnvmelib_bundle = custom_target(
   'xnvme',
   build_by_default: true,
-  depends: xnvmelib_static,
+  depends: xnvmelib_bundle_depends,
   command: [ prog_python, '@INPUT@', '--output', '@OUTPUT@', '--libs' ] + bundle_lib_paths,
   input: tb_library_bundler,
   output: 'libxnvme.a',

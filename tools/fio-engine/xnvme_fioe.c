@@ -143,7 +143,8 @@ static struct fio_option options[] = {
 		.lname = "xNVMe Asynchronous command-interface",
 		.type = FIO_OPT_STR_STORE,
 		.off1 = offsetof(struct xnvme_fioe_options, xnvme_async),
-		.help = "Select xNVMe async. interface: [emu,thrpool,io_uring,libaio,posix,nil]",
+		.help = "Select xNVMe async. interface: "
+			"[emu,thrpool,io_uring,libaio,posix,vfio,nil]",
 		.category = FIO_OPT_C_ENGINE,
 		.group = FIO_OPT_G_INVALID,
 	},
