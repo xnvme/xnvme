@@ -745,10 +745,13 @@ jobs:
           "${CIJ_TESTPLANS}/xnvme-zns-zrwa-linux-spdk.plan" \
           "${CIJ_TESTPLANS}/xnvme-base-linux.plan" \
           "${CIJ_TESTPLANS}/xnvme-base-spdk.plan" \
+          "${CIJ_TESTPLANS}/xnvme-base-vfio.plan" \
           "${CIJ_TESTPLANS}/xnvme-nvm-spdk.plan" \
+          "${CIJ_TESTPLANS}/xnvme-nvm-vfio.plan" \
           "${CIJ_TESTPLANS}/xnvme-nvm-linux-nvme.plan" \
           "${CIJ_TESTPLANS}/xnvme-nvm-linux-null.plan" \
           "${CIJ_TESTPLANS}/xnvme-zns-spdk.plan" \
+          "${CIJ_TESTPLANS}/xnvme-zns-vfio.plan" \
           "${CIJ_TESTPLANS}/xnvme-zns-linux-nvme.plan" \
           "${CIJ_TESTPLANS}/xnvme-zns-linux-null.plan" \
           "${CIJ_TESTPLANS}/example_01.plan"

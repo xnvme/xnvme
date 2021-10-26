@@ -40,6 +40,9 @@ hook.xnvme_enter() {
     fi
     ;;
 
+  vfio)
+    ;;
+
   *)
     XNVME_DRIVER_CMD="${XNVME_DRIVER_CMD} reset"
   esac
