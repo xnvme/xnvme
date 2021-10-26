@@ -1,0 +1,6 @@
+[wrap-git]
+url = https://github.com/OpenMPDK/libvfn.git
+revision = v1.0.0-rc0
+
+[provide]
+_vfn = libvfn_dep

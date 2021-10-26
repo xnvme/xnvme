@@ -74,7 +74,10 @@ conf_data.set('XNVME_BE_LINUX_BLOCK_ZONED_ENABLED', is_linux ? cc.has_header('li
 conf_data.set('XNVME_BE_LINUX_LIBAIO_ENABLED', is_linux and get_option('with-libaio'))
 conf_data.set('XNVME_BE_LINUX_LIBURING_ENABLED', is_linux and get_option('with-liburing'))
 
+conf_data.set('XNVME_BE_LINUX_VFIO_ENABLED', is_linux and get_option('with-libvfn'))
+
 conf_data.set('XNVME_BE_MACOS_ENABLED', is_darwin)
+
 conf_data.set('XNVME_BE_FBSD_ENABLED', is_freebsd)
 conf_data.set('XNVME_BE_POSIX_ENABLED', is_linux or is_freebsd or is_darwin)
 
@@ -207,6 +210,15 @@ iokit_dep = dependency(
   'appleframeworks',
   modules: 'IOKit',
   required: is_darwin
+)
+libvfn_dep = dependency(
+  '_vfn',
+  default_options: [
+    'libnvme=disabled',
+    'docs=disabled',
+    'default_library=static',
+  ],
+  required: conf_data.get('XNVME_BE_LINUX_VFIO_ENABLED')
 )
 
 # Headers
