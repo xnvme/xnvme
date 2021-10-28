@@ -968,7 +968,7 @@ xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint64_t offset,
 	last = (((offset + length) >> ssw) / geo->nsect) * geo->nsect;
 	XNVME_DEBUG("INFO: first: 0x%lx, last: 0x%lx", first, last);
 
-	for (uint64_t zslba = first; zslba <= last; zslba += geo->nsect) {
+	for (uint64_t zslba = first; zslba < last; zslba += geo->nsect) {
 		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 
 		if (zslba >= (geo->nsect * geo->nzone)) {
