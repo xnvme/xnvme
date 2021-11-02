@@ -727,9 +727,8 @@ xnvme_fioe_get_zoned_model(struct thread_data *td, struct fio_file *f, enum zbd_
 	if (f->filetype != FIO_TYPE_FILE && \
 		f->filetype != FIO_TYPE_BLOCK && \
 		f->filetype != FIO_TYPE_CHAR) {
-		*model = ZBD_IGNORE;
 		XNVME_DEBUG("INFO: ignoring filetype: %d", f->filetype);
-		return 0;
+		return -EINVAL;
 	}
 
 	err = pthread_mutex_lock(&g_serialize);
