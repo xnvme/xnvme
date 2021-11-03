@@ -17,7 +17,7 @@
 #include <xnvme_be_linux_nvme.h>
 #include <linux/nvme_ioctl.h>
 
-#define IORING_OP_URING_CMD 37
+#define IORING_OP_URING_CMD 40
 
 /* This shadows struct io_uring_cmd (40 bytes) */
 struct block_uring_cmd {
