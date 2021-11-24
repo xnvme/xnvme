@@ -8,6 +8,7 @@
 #ifdef XNVME_BE_LINUX_ENABLED
 #include <errno.h>
 #include <dirent.h>
+#include <paths.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
