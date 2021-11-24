@@ -10,4 +10,5 @@ meson
 ncurses
 ninja
 numactl
+python-pyelftools
 python3

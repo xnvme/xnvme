@@ -19,4 +19,4 @@ apt-get -qy install aptitude
 aptitude -q -y -f install $(cat "scripts/pkgs/debian-bullseye.txt")
 
 # Install packages via PyPI
-pip3 install meson ninja
+pip3 install meson ninja pyelftools

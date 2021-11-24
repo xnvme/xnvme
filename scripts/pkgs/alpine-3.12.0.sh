@@ -9,4 +9,4 @@ ldd --version || true
 apk add $(cat "scripts/pkgs/alpine-3.12.0.txt")
 
 # Install packages via PyPI
-pip3 install meson ninja
+pip3 install meson ninja pyelftools

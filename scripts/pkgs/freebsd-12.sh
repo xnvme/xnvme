@@ -9,4 +9,4 @@ ldd --version || true
 pkg install -qy $(cat "scripts/pkgs/freebsd-12.txt")
 
 # Install packages via PyPI
-pip3 install meson ninja
+pip3 install meson ninja pyelftools

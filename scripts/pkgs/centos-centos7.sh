@@ -19,7 +19,7 @@ chmod +x cmake.sh
 ./cmake.sh --skip-license --prefix=/usr/
 
 # Install packages via PyPI
-pip3 install meson ninja
+pip3 install meson ninja pyelftools
 
 # Source them in for usage before building
 source /opt/rh/devtoolset-8/enable

@@ -18,4 +18,4 @@ apt-get -qy autoclean
 apt-get install -qy $(cat "scripts/pkgs/ubuntu-focal.txt")
 
 # Install packages via PyPI
-pip3 install meson ninja
+pip3 install meson ninja pyelftools
