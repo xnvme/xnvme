@@ -19,6 +19,34 @@ Known Issues
 
 See the file named ``ISSUES`` in the root of the repository.
 
+v0.0.26
+-------
+
+Expanded platform support, updated experimental features, and extended
+command-set-support for ZNS/ZRWA, along with a couple of fixes and third-party
+updates.
+
+* Third-party
+  - fio, updated to 3.27
+  - spdk, updated to v21.10
+
+* Windows Support
+  - xNVMe now builds on Windows, it uses the MinGW toolchain to be compatible
+    with fio, however, xNVMe does also build with MSVC
+  - Using IOCP for async I/O
+  - Supports a limited number non-I/O commands via driver IOCTL mapping
+
+* uring_cmd
+  - Experimental interface updated for patch-set on top of 5.15 kernel
+
+* Zoned Namespaces
+  - Added support for Zone Random Write Area (ZRWA)
+
+* Fixes
+  - Linux Block Backend: fix and update sysfs processing
+  - fio io-engine: Fix of xnvme_fioe_reset_wp() resetting one too many zones
+  - Adjustments to CI and partly removed of deprecated 'schemes'
+
 v0.0.25
 -------
 
