@@ -35,6 +35,7 @@ third-party-spdk-patch:
 	@echo "## xNVMe: make third-party-spdk-patch"
 	@echo "# Patching DPDK to NOT use dynamic linking / plugins"
 	@cd ${XNVME_3P_SPDK_REPOS}/dpdk && patch -p1 --forward < ../../patches/spdk-dpdk-no-plugins.patch || true
+	@cd ${XNVME_3P_SPDK_REPOS}/dpdk && patch -p1 --forward < ../../patches/spdk-dpdk-no-libarchive.patch || true
 	@cd ${XNVME_3P_SPDK_REPOS} && find ../patches -type f -name '0*.patch' -print0 | sort -z | xargs -t -0 -n 1 patch -p1 --forward -i || true
 
 .PHONY: third-party-spdk-configure

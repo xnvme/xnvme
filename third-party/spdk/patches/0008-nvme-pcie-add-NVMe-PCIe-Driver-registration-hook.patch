@@ -1,7 +1,7 @@
-From 3985cd7948a51e9401c32f390f28c580406affbe Mon Sep 17 00:00:00 2001
+From ea1b570caa9fa8130f0ce5c976287ad58e972d46 Mon Sep 17 00:00:00 2001
 From: "Simon A. F. Lund" <os@safl.dk>
 Date: Wed, 5 May 2021 18:33:05 +0200
-Subject: [PATCH 9/9] nvme/pcie: add NVMe PCIe Driver registration-hook
+Subject: [PATCH 8/8] nvme/pcie: add NVMe PCIe Driver registration-hook
 
 Signed-off-by: Simon A. F. Lund <os@safl.dk>
 Change-Id: I573f6bf51d0c26903764ddc66fe138a0f197b5e2
@@ -12,10 +12,10 @@ Change-Id: I573f6bf51d0c26903764ddc66fe138a0f197b5e2
  3 files changed, 15 insertions(+)
 
 diff --git a/include/spdk/nvme.h b/include/spdk/nvme.h
-index f5a8f73c9..0b563dc3a 100644
+index 72d3f2897..7060f7cbc 100644
 --- a/include/spdk/nvme.h
 +++ b/include/spdk/nvme.h
-@@ -3666,13 +3666,18 @@ void spdk_nvme_transport_register(const struct spdk_nvme_transport_ops *ops);
+@@ -3942,13 +3942,18 @@ void spdk_nvme_transport_register(const struct spdk_nvme_transport_ops *ops);
   * Macro used to register new transports.
   */
  #define SPDK_NVME_TRANSPORT_REGISTER(name, transport_ops) \
@@ -35,10 +35,10 @@ index f5a8f73c9..0b563dc3a 100644
  
  #endif
 diff --git a/lib/nvme/nvme_pcie.c b/lib/nvme/nvme_pcie.c
-index 2a5a7f72d..c6a438257 100644
+index 23f4d69b0..d393f3fad 100644
 --- a/lib/nvme/nvme_pcie.c
 +++ b/lib/nvme/nvme_pcie.c
-@@ -1688,8 +1688,17 @@ const struct spdk_nvme_transport_ops pcie_ops = {
+@@ -1164,8 +1164,17 @@ const struct spdk_nvme_transport_ops pcie_ops = {
  	.poll_group_remove = nvme_pcie_poll_group_remove,
  	.poll_group_process_completions = nvme_pcie_poll_group_process_completions,
  	.poll_group_destroy = nvme_pcie_poll_group_destroy,
@@ -57,7 +57,7 @@ index 2a5a7f72d..c6a438257 100644
 +				 SPDK_PCI_DRIVER_NEED_MAPPING | SPDK_PCI_DRIVER_WC_ACTIVATE);
 +}
 diff --git a/lib/nvme/spdk_nvme.map b/lib/nvme/spdk_nvme.map
-index f9d95dba2..85bf834d1 100644
+index 9d4d57805..4a9cf79de 100644
 --- a/lib/nvme/spdk_nvme.map
 +++ b/lib/nvme/spdk_nvme.map
 @@ -1,12 +1,13 @@
@@ -75,5 +75,5 @@ index f9d95dba2..85bf834d1 100644
  	spdk_nvme_transport_id_trtype_str;
  	spdk_nvme_transport_id_adrfam_str;
 -- 
-2.20.1
+2.30.2
 

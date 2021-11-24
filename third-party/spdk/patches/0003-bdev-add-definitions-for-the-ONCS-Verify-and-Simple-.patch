@@ -1,7 +1,7 @@
-From a3307ffef3fdbf6cb4f59cb1b8022433aeef98a3 Mon Sep 17 00:00:00 2001
+From aa48a186a7de7729054b83a0781c3deb5307a8a2 Mon Sep 17 00:00:00 2001
 From: "Ivan L. Picoli" <i.picoli@samsung.com>
 Date: Wed, 22 Jul 2020 18:08:55 +0200
-Subject: [PATCH 4/9] bdev: add definitions for the ONCS Verify and Simple Copy
+Subject: [PATCH 3/8] bdev: add definitions for the ONCS Verify and Simple Copy
 
 Signed-off-by: Ivan L. Picoli <i.picoli@samsung.com>
 Change-Id: I504e8aa2987442adf653ef1424d204e94d64739d
@@ -10,10 +10,10 @@ Change-Id: I504e8aa2987442adf653ef1424d204e94d64739d
  1 file changed, 2 insertions(+)
 
 diff --git a/include/spdk/bdev.h b/include/spdk/bdev.h
-index 72f673b04..abc0e9e7e 100644
+index aa7116290..dc0fcf764 100644
 --- a/include/spdk/bdev.h
 +++ b/include/spdk/bdev.h
-@@ -135,16 +135,18 @@ enum spdk_bdev_io_type {
+@@ -136,16 +136,18 @@ enum spdk_bdev_io_type {
  	SPDK_BDEV_IO_TYPE_WRITE_ZEROES,
  	SPDK_BDEV_IO_TYPE_ZCOPY,
  	SPDK_BDEV_IO_TYPE_GET_ZONE_INFO,
@@ -33,5 +33,5 @@ index 72f673b04..abc0e9e7e 100644
  	SPDK_BDEV_QOS_RW_IOPS_RATE_LIMIT = 0,
  	/** Byte per second rate limit for both read and write */
 -- 
-2.20.1
+2.30.2
 
