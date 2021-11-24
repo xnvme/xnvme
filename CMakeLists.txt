@@ -296,6 +296,7 @@ if(XNVME_BE_SPDK_ENABLED)
 		list(APPEND LIBS_SYSTEM elf)
 	endif()
 	list(APPEND LIBS_SYSTEM uuid)
+	list(APPEND LIBS_SYSTEM m)
 
 	#
 	# Must be built and available in SPDK_LIBRARY_PATH
@@ -305,6 +306,7 @@ if(XNVME_BE_SPDK_ENABLED)
 	list(APPEND LIBS spdk_sock)
 	list(APPEND LIBS spdk_sock_posix)
 	list(APPEND LIBS spdk_rpc)
+	list(APPEND LIBS spdk_trace)
 	list(APPEND LIBS spdk_jsonrpc)
 	list(APPEND LIBS spdk_json)
 	list(APPEND LIBS spdk_util)
