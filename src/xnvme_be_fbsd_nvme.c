@@ -9,6 +9,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/ioccom.h>
 #include <sys/stat.h>
 
+#include <paths.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <dev/nvme/nvme.h>
