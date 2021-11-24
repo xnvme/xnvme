@@ -98,7 +98,7 @@ jobs:
       run: |
         [[ -f "/opt/rh/devtoolset-8/enable" ]] && source /opt/rh/devtoolset-8/enable || true
         cat /proc/cpuinfo
-        cat xnvme/build/compile_commands.json
+        cat xnvme/build/compile_commands.json || true
 
     - name: Build!
       run: |

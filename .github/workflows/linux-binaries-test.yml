@@ -85,7 +85,7 @@ jobs:
     - name: Dump, the compile-commands and machine
       run: |
         cat /proc/cpuinfo
-        cat xnvme/build/compile_commands.json
+        cat xnvme/build/compile_commands.json || true
 
     - name: Build!
       run: |
