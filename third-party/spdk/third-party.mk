@@ -44,15 +44,22 @@ third-party-spdk-configure:
 	@echo "# Configuring SPDK"
 	cd ${XNVME_3P_SPDK_REPOS} && ./configure	\
 		--with-fio=../../fio/repos/		\
+		--disable-apps				\
+		--without-crypto			\
+		--without-fuse				\
+		--without-idxd				\
 		--without-isal				\
 		--without-iscsi-initiator		\
+		--without-nvme-cuse			\
 		--without-ocf				\
 		--without-pmdk				\
 		--without-rbd				\
 		--without-reduce			\
 		--without-shared			\
 		--without-uring				\
+		--without-usdt				\
 		--without-vhost				\
+		--without-vtune				\
 		--without-virtio
 
 .PHONY: third-party-spdk-build
