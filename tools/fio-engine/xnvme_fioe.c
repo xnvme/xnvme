@@ -1025,6 +1025,7 @@ xnvme_fioe_get_file_size(struct thread_data *td, struct fio_file *f)
 
 	f->real_file_size = xnvme_dev_get_geo(dev)->tbytes;
 	fio_file_set_size_known(f);
+	f->filetype = FIO_TYPE_BLOCK;
 
 exit:
 	xnvme_dev_close(dev);
