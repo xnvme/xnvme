@@ -1240,9 +1240,14 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_format) == 64, "Incorrect size"
 struct xnvme_spec_cmd_gfeat {
 	uint32_t cdw00_09[10];		///< Command dword 0 to 9
 
-	uint32_t fid		: 8;	///< Feature Identifier
-	uint32_t sel		: 3;	///< Select
-	uint32_t rsvd10		: 21;
+	union {
+		struct {
+			uint32_t fid		: 8;	///< Feature Identifier
+			uint32_t sel		: 3;	///< Select
+			uint32_t rsvd10		: 21;
+		};
+		uint32_t val;
+	} cdw10;
 
 	uint32_t cdw11_15[5];		///< Command dword 11 to 15
 };
@@ -1256,9 +1261,14 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_gfeat) == 64, "Incorrect size")
 struct xnvme_spec_cmd_sfeat {
 	uint32_t cdw00_09[10];		///< Command dword 0 to 9
 
-	uint32_t fid		: 8;	///< Feature Identifier
-	uint32_t rsvd10		: 23;
-	uint32_t save		: 1;	///< Save
+	union {
+		struct {
+			uint32_t fid		: 8;	///< Feature Identifier
+			uint32_t rsvd10		: 23;
+			uint32_t save		: 1;	///< Save
+		};
+		uint32_t val;
+	} cdw10;
 
 	struct xnvme_spec_feat feat;	///< Feature
 

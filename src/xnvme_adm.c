@@ -114,8 +114,8 @@ xnvme_adm_gfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint8_t s
 {
 	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_GFEAT;
 	ctx->cmd.common.nsid = nsid;
-	ctx->cmd.gfeat.fid = fid;
-	ctx->cmd.gfeat.sel = sel;
+	ctx->cmd.gfeat.cdw10.fid = fid;
+	ctx->cmd.gfeat.cdw10.sel = sel;
 
 	// TODO: cdw14/uuid?
 
@@ -128,9 +128,9 @@ xnvme_adm_sfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint32_t 
 {
 	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_SFEAT;
 	ctx->cmd.common.nsid = nsid;
-	ctx->cmd.sfeat.fid = fid;
+	ctx->cmd.sfeat.cdw10.fid = fid;
 	ctx->cmd.sfeat.feat.val = feat;
-	ctx->cmd.sfeat.save = save;
+	ctx->cmd.sfeat.cdw10.save = save;
 
 	return xnvme_cmd_pass_admin(ctx, (void *) dbuf, dbuf_nbytes, NULL, 0x0);
 }

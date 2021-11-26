@@ -139,7 +139,7 @@ _gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 {
 	struct xnvme_spec_feat feat = { 0 };
 
-	switch (ctx->cmd.gfeat.fid) {
+	switch (ctx->cmd.gfeat.cdw10.fid) {
 	case XNVME_SPEC_FEAT_NQUEUES:
 		feat.nqueues.nsqa = 63;
 		feat.nqueues.ncqa = 63;
@@ -147,7 +147,7 @@ _gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: unsupported fid: %d", ctx->cmd.gfeat.fid);
+		XNVME_DEBUG("FAILED: unsupported fid: %d", ctx->cmd.gfeat.cdw10.fid);
 		return -ENOSYS;
 	}
 
