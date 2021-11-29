@@ -1,6 +1,6 @@
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_POSIX_ENABLED
+#ifdef XNVME_BE_ASYNC_THRPOOL_ENABLED
 #include <errno.h>
 #include <xnvme_queue.h>
 #include <xnvme_dev.h>
@@ -378,7 +378,7 @@ _posix_async_thrpool_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 
 struct xnvme_be_async g_xnvme_be_posix_async_thrpool = {
 	.id = "thrpool",
-#ifdef XNVME_BE_POSIX_ENABLED
+#ifdef XNVME_BE_ASYNC_THRPOOL_ENABLED
 	.cmd_io = _posix_async_thrpool_cmd_io,
 	.poke = _posix_async_thrpool_poke,
 	.wait = _posix_async_thrpool_wait,
