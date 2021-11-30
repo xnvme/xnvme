@@ -11,37 +11,40 @@
 # Additional targets come after these which modify CMAKE build-options and other
 # common practices associated with xNVMe development
 #
+ifeq ($(PLATFORM_ID),Windows)
+else
 PLATFORM_ID = $$( uname -s )
+endif
 PLATFORM = $$( \
 	case $(PLATFORM_ID) in \
-		( Linux | FreeBSD | OpenBSD | NetBSD ) echo $(PLATFORM_ID) ;; \
+		( Linux | FreeBSD | OpenBSD | NetBSD | Windows) echo $(PLATFORM_ID) ;; \
 		( * ) echo Unrecognized ;; \
 	esac)
 
 CTAGS = $$( \
 	case $(PLATFORM_ID) in \
 		( Linux ) echo "ctags" ;; \
-		( FreeBSD | OpenBSD | NetBSD ) echo "exctags" ;; \
+		( FreeBSD | OpenBSD | NetBSD | Windows) echo "exctags" ;; \
 		( * ) echo Unrecognized ;; \
 	esac)
 
 MAKE = $$( \
 	case $(PLATFORM_ID) in \
-		( Linux ) echo "make" ;; \
+		( Linux | Windows) echo "make" ;; \
 		( FreeBSD | OpenBSD | NetBSD ) echo "gmake" ;; \
 		( * ) echo Unrecognized ;; \
 	esac)
 
 NPROC = $$( \
 	case $(PLATFORM_ID) in \
-		( Linux ) nproc ;; \
+		( Linux | Windows) nproc ;; \
 		( FreeBSD | OpenBSD | NetBSD ) sysctl -n hw.ncpu ;; \
 		( * ) echo Unrecognized ;; \
 	esac)
 
 GIT = $$( \
 	case $(PLATFORM_ID) in \
-		( Linux ) echo "git" ;; \
+		( Linux | Windows) echo "git" ;; \
 		( FreeBSD | OpenBSD | NetBSD ) echo "git" ;; \
 		( * ) echo Unrecognized ;; \
 	esac)
