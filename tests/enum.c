@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <errno.h>
 #include <libxnvmec.h>
-#include <omp.h>
 
 #define MAX_LISTINGS 1024
 #define MAX_HANDLES 1024
