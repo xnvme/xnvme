@@ -4,9 +4,9 @@ Retrieve derived information for given device
 
 Where <args> include:
 
-  uri                           ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888'
+  uri                           ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888', '\\.\PhysicalDrive1'
   [ --dev-nsid 0xNUM ]          ; Namespace Identifier for Device Handle
-  [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix'
+  [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix', 'windows'
   [ --admin STRING ]            ; xNVMe admin. command-interface, e.g. 'nvme', 'block'
   [ --help ]                    ; Show usage / help
 

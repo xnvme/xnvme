@@ -4,7 +4,7 @@ Pass a user-defined ADmin Command through
 
 Where <args> include:
 
-  uri                           ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888'
+  uri                           ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888', '\\.\PhysicalDrive1'
   [ --nsid 0xNUM ]              ; Namespace Identifier for Command Construction
   --cmd-input FILE              ; Path to command input-file
   [ --data-input FILE ]         ; Path to data input-file
@@ -14,7 +14,7 @@ Where <args> include:
   [ --meta-output FILE ]        ; Path to meta output-file
   [ --meta-nbytes NUM ]         ; Meta size in bytes
   [ --dev-nsid 0xNUM ]          ; Namespace Identifier for Device Handle
-  [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix'
+  [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix', 'windows'
   [ --admin STRING ]            ; xNVMe admin. command-interface, e.g. 'nvme', 'block'
   [ --help ]                    ; Show usage / help
 

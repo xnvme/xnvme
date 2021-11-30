@@ -19,6 +19,7 @@ Such as::
   file:/dev/nvme0n1
   file:/dev/nvme0ns1
   pci:0000:01:00.0?nsid=1
+  \\.\PhysicalDrive1
 
 If the ``scheme:`` part of the uri is not provided, then the first backend
 capable of opening the given device does so. E.g. when providing only::
@@ -26,6 +27,7 @@ capable of opening the given device does so. E.g. when providing only::
   /dev/nvme0n1
 
 Then, when on Linux, the Linux backend is associated, and when on FreeBSD the Freebsd backend is associated.
+On Windows, the Windows backend is associated.
 The uri-encoding is used to provide backend specific options.
 
 If it is a pci device identifier, such as ``pci:0000:00:05.0?nsid=1``  then the
@@ -42,19 +44,19 @@ Not all backends support all features.
 
 +----------------------------+------------------------------------+
 |                            | Backends                           |
-+----------------------------+-------------+-----------+----------+
-| Feature                    | ``FreeBSD`` | ``Linux`` | ``spdk`` |
-+============================+=============+===========+==========+
-| Admin Commands             | **yes**     | **yes**   | **yes**  |
-+----------------------------+-------------+-----------+----------+
-| I/O                        | **no**      | **yes**   | **yes**  |
-+----------------------------+-------------+-----------+----------+
-| I/O *(w/ metadata)*        | **no**      | **yes**   | **yes**  |
-+----------------------------+-------------+-----------+----------+
-| SGLs                       | **no**      | **no**    | **yes**  |
-+----------------------------+-------------+-----------+----------+
-| Async                      | **no**      | **yes**   | **yes**  |
-+----------------------------+-------------+-----------+----------+
++----------------------------+-------------+-----------+----------+-------------+
+| Feature                    | ``FreeBSD`` | ``Linux`` | ``spdk`` | ``Windows`` |
++============================+=============+===========+==========+=============+
+| Admin Commands             | **yes**     | **yes**   | **yes**  |   **yes**   |
++----------------------------+-------------+-----------+----------+-------------+
+| I/O                        | **no**      | **yes**   | **yes**  |   **yes**   |
++----------------------------+-------------+-----------+----------+-------------+
+| I/O *(w/ metadata)*        | **no**      | **yes**   | **yes**  |   **no**   |
++----------------------------+-------------+-----------+----------+-------------+
+| SGLs                       | **no**      | **no**    | **yes**  |   **no**   |
++----------------------------+-------------+-----------+----------+-------------+
+| Async                      | **no**      | **yes**   | **yes**  |   **yes**   |
++----------------------------+-------------+-----------+----------+-------------+
 
 
 Appendix
@@ -71,3 +73,4 @@ Appendix
    xnvme_be_linux
    xnvme_be_spdk/index
    xnvme_be_intf
+   xnvme_be_windows

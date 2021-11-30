@@ -4,7 +4,7 @@ Format a NVM namespace
 
 Where <args> include:
 
-  uri                           ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888'
+  uri                           ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888', '\\.\PhysicalDrive1'
   [ --nsid 0xNUM ]              ; Namespace Identifier for Command Construction
   [ --lbaf 0xNUM ]              ; LBA Format
   [ --zf 0xNUM ]                ; Zone Format
@@ -13,7 +13,7 @@ Where <args> include:
   [ --pi 0xNUM ]                ; Protection Information. Off=0x0, Type1/2/3=0x1/0x2/0x3
   [ --pil 0xNUM ]               ; Protection Information Location. Last=0x0, First=0x1
   [ --dev-nsid 0xNUM ]          ; Namespace Identifier for Device Handle
-  [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix'
+  [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix', 'windows'
   [ --admin STRING ]            ; xNVMe admin. command-interface, e.g. 'nvme', 'block'
   [ --help ]                    ; Show usage / help
 

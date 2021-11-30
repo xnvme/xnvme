@@ -4,14 +4,14 @@ Execute a Set-Features Command
 
 Where <args> include:
 
-  uri                           ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888'
+  uri                           ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888', '\\.\PhysicalDrive1'
   --fid 0xNUM                   ; Feature Identifier
   --feat 0xNUM                  ; Feature e.g. cdw12 content
   [ --nsid 0xNUM ]              ; Namespace Identifier for Command Construction
   [ --save ]                    ; Save
   [ --data-input FILE ]         ; Path to data input-file
   [ --dev-nsid 0xNUM ]          ; Namespace Identifier for Device Handle
-  [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix'
+  [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix', 'windows'
   [ --admin STRING ]            ; xNVMe admin. command-interface, e.g. 'nvme', 'block'
   [ --help ]                    ; Show usage / help
 

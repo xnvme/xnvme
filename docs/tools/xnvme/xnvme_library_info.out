@@ -6,9 +6,10 @@ xnvme_3p:
   - 'liburing;git-describe:liburing-2.0'
   - 'spdk;git-describe:v21.04;+patches'
   - 'linux;LINUX_VERSION_CODE-UAPI/330286-5.10.46'
+  - 'WINDOWS;NOSYS'
 xnvme_be_attr_list:
-  count: 4
-  capacity: 4
+  count: 5
+  capacity: 5
   items:
   - name: 'spdk'
     enabled: 1
@@ -26,4 +27,6 @@ xnvme_be_attr_list:
     enabled: 1
     schemes: ['file', 'psx']
 
-
+  - name: 'windows'
+    enabled: 0
+    schemes: ['file', 'dev']
