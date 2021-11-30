@@ -10,7 +10,7 @@ RUN apt-get -qy update && \
 
 WORKDIR xnvme
 
-RUN bash scripts/pkgs/debian:bullseye.sh
+RUN bash scripts/pkgs/debian-bullseye.sh
 
 RUN ./configure --disable-be-spdk && \
 	make && \
