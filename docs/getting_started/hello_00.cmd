@@ -2,5 +2,5 @@ gcc ../getting_started/hello.c \
 	-Wl,--whole-archive -Wl,--no-as-needed \
 	-lxnvme \
 	-Wl,--no-whole-archive -Wl,--as-needed \
-	-lrt -laio -luuid -lnuma -pthread \
+	-lm -lrt -laio -luuid -lnuma -pthread \
 	-o hello

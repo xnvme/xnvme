@@ -24,12 +24,12 @@ xnvme_dev:
     npugrp: 1
     npunit: 1
     nzone: 1
-    nsect: 16777216
-    nbytes: 512
+    nsect: 2097152
+    nbytes: 4096
     nbytes_oob: 0
     tbytes: 8589934592
     mdts_nbytes: 524288
-    lba_nbytes: 512
+    lba_nbytes: 4096
     lba_extended: 0
-    ssw: 9
+    ssw: 12
 

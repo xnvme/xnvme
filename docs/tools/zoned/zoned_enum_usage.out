@@ -6,10 +6,10 @@ Where <args> include:
 
   [ --uri uri ]                 ; System URI e.g. '10.9.8.1:8888'
   [ --flags 0xNUM ]             ; Command flags
-  [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix'
+  [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix', 'windows'
   [ --help ]                    ; Show usage / help
 
 See 'zoned --help' for other commands
 
-Zoned Namespace Utility -- ver: {major: 0, minor: 0, patch: 25}
+Zoned Namespace Utility -- ver: {major: 0, minor: 0, patch: 26}
 

@@ -21,8 +21,8 @@ xnvme_dev:
     type: XNVME_GEO_ZONED
     npugrp: 1
     npunit: 1
-    nzone: 256
-    nsect: 65536
+    nzone: 2048
+    nsect: 8192
     nbytes: 512
     nbytes_oob: 0
     tbytes: 8589934592
