@@ -124,7 +124,7 @@ _lzbd_zone_mgmt_send(struct xnvme_cmd_ctx *ctx)
 	zr.sector = ctx->cmd.znd.mgmt_send.slba << (ctx->dev->geo.ssw - LINUX_BLOCK_SSW);
 	zr.nr_sectors = zone_nbytes >> LINUX_BLOCK_SSW;
 
-	if (ctx->cmd.znd.mgmt_send.zsasf) {
+	if (ctx->cmd.znd.mgmt_send.select_all) {
 		zr.nr_sectors = zr.nr_sectors * geo->nzone;
 	}
 
