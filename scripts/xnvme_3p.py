@@ -106,6 +106,8 @@ def traverse_projects(args):
         project["patches"] = "+patches" if len(glob.glob(
             os.path.join(project["path"]["patches"], "*.patch")
         )) > 0 else ""
+        if not os.path.exists(project["path"]["repos"]):
+                continue
 
         descr = gen_description(project)
         if descr:
