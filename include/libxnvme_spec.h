@@ -1581,12 +1581,13 @@ struct xnvme_spec_znd_cmd_mgmt_send {
 	/* cdw 10-11 */
 	uint64_t slba;			///< Start LBA
 
-	uint32_t cdw12;
+	/* cdw 12 */
+	uint32_t nrange;                ///< Number of ranges <= 32
 
 	/* cdw 13 */
 	uint32_t zsa		: 8;	///< Zone Send Action
 	uint32_t select_all	: 1;	///< Select All, that is, ignore the slba, affects all LBAs
-	uint32_t zsasf		: 1;	///< Zone Send Action Specific Field
+	uint32_t zsaso		: 1;	///< Zone Send Action Specific Option
 	uint32_t rsvd		: 22;
 
 	uint32_t cdw14_15[2];		///< Command dword 14 to 15
@@ -1691,6 +1692,8 @@ enum xnvme_spec_znd_status_code {
 	XNVME_SPEC_ZND_SC_INVALID_FORMAT	= 0x7F,	///< ZND_SC_INVALID_FORMAT
 
 	/// Zoned Command Set
+	XNVME_SPEC_ZND_SC_INVALID_ZONE_OP	= 0xB6, ///< ZND_SC_INVALID_ZONE_OP
+	XNVME_SPEC_ZND_SC_NOZRWA		= 0xB7, ///< ZND_SC_NOZRWA
 	XNVME_SPEC_ZND_SC_BOUNDARY_ERROR	= 0xB8,	///< ZND_SC_BOUNDARY_ERROR
 	XNVME_SPEC_ZND_SC_IS_FULL		= 0xB9,	///< ZND_SC_IS_FULL
 	XNVME_SPEC_ZND_SC_IS_READONLY		= 0xBA,	///< ZND_SC_IS_READONLY
@@ -1704,10 +1707,10 @@ enum xnvme_spec_znd_status_code {
 /**
  * This is not defined in any spec... it would just seem sane if it was...
  *
- * @enum xnvme_spec_znd_mgmt_send_action_sf
+ * @enum xnvme_spec_znd_mgmt_send_action_so
  */
-enum xnvme_spec_znd_mgmt_send_action_sf {
-	XNVME_SPEC_ZND_MGMT_SEND_ASF_SALL	= 0x1,	///< XNVME_SPEC_ZND_MGMT_SEND_ASF_SALL
+enum xnvme_spec_znd_mgmt_send_action_so {
+	XNVME_SPEC_ZND_MGMT_OPEN_WITH_ZRWA	= 0x1,	///< XNVME_SPEC_ZND_MGMT_OPEN_WITH_ZRWA
 };
 
 /**
@@ -1724,6 +1727,7 @@ enum xnvme_spec_znd_cmd_mgmt_send_action {
 	XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET	= 0x4,	///< XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET
 	XNVME_SPEC_ZND_CMD_MGMT_SEND_OFFLINE	= 0x5,	///< XNVME_SPEC_ZND_CMD_MGMT_SEND_OFFLINE
 	XNVME_SPEC_ZND_CMD_MGMT_SEND_DESCRIPTOR	= 0x10,	///< XNVME_SPEC_ZND_CMD_MGMT_SEND_DESCRIPTOR
+	XNVME_SPEC_ZND_CMD_MGMT_SEND_FLUSH	= 0x11,	///< XNVME_SPEC_ZND_CMD_MGMT_SEND_FLUSH
 };
 
 /**
@@ -1818,18 +1822,25 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_idfy_lbafe) == 16, "Incorrect s
  * @struct xnvme_spec_znd_idfy_ns
  */
 struct xnvme_spec_znd_idfy_ns {
-	struct {
-		uint16_t vzcap	: 1;	///< Variable Zone Capacity
-		uint16_t zae	: 1;	///< Zone Active Excursions
+	union {
+		struct {
+			uint16_t vzcap	: 1;	///< Variable Zone Capacity
+			uint16_t zae	: 1;	///< Zone Active Excursions
 
-		uint16_t rsvd	: 14;
+			uint16_t rsvd	: 14;
+		} bits;
+		uint16_t val;
 	} zoc; ///< Zone Operation Characteristics
 
-	struct {
-		uint16_t razb	: 1;	///< Read Across zone boundaries
+	union {
+		struct {
+			uint16_t razb    : 1;    ///< Read Across zone boundaries
+			uint16_t zrwasup : 1;    ///< Namespace supports Zone-Random-Write-Area (ZRWA)
 
-		uint16_t rsvd	: 15;
-	} ozcs; ///< Optional Zoned Command Support
+			uint16_t rsvd    : 14;
+		} bits; ///< Optional Zoned Command Support
+		uint16_t val;
+	} ozcs;
 
 	uint32_t mar;		///< Maximum Active Resources
 	uint32_t mor;		///< Maximum Open Resources
@@ -1837,11 +1848,26 @@ struct xnvme_spec_znd_idfy_ns {
 	uint32_t rrl;		///< Reset Recommended Limit
 	uint32_t frl;		///< Finish Recommended Limit
 
-	uint8_t rsvd20_2815[2796];
+	uint8_t rsvd12[24];
+
+	uint32_t numzrwa;       ///< Number of ZRWA resources available to the namespace
+	uint16_t zrwafg;        ///< ZRWA Flush Granularity; in unit of LBAs
+	uint16_t zrwas;        ///< ZRWA Size; in unit of LBAs
+
+	union {
+		struct {
+			uint8_t expflushsup : 1; ///< Explicit Flush Supported
+
+			uint8_t rsvd0 : 7;
+		} bits;
+		uint8_t val;
+	} zrwacap;
+
+	uint8_t rsvd53[2763];
 
 	struct xnvme_spec_znd_idfy_lbafe lbafe[16];
 
-	uint8_t rsvd3072_3839[768];
+	uint8_t rsvd3072[768];
 
 	uint8_t vs[256];	///< Vendor Specific
 };
@@ -1900,8 +1926,9 @@ struct xnvme_spec_znd_descr {
 			uint8_t zfc: 1;		///< Zone Finished by controller
 			uint8_t zfr: 1;		///< Zone Finish Recommended
 			uint8_t rzr: 1;		///< Reset Zone Recommended
+			uint8_t zrwav: 1;       ///< Zone has a ZRWA associated
 
-			uint8_t rsvd3 : 4;
+			uint8_t rsvd3 : 3;
 
 			uint8_t zdev: 1;	///< Zone Descriptor Valid
 		};

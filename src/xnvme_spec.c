@@ -1022,9 +1022,13 @@ xnvme_spec_znd_idfy_ns_fpr(FILE *stream, struct xnvme_spec_znd_idfy_ns *zns, int
 	}
 
 	wrtn += fprintf(stream, "\n");
-	wrtn += fprintf(stream, "  zoc: { vzcap: %d, zae: %d }\n",
-			zns->zoc.vzcap, zns->zoc.zae);
-	wrtn += fprintf(stream, "  ozcs: { razb: %d }\n", zns->ozcs.razb);
+	wrtn += fprintf(stream, "  zoc: { vzcap: %d, zae: %d }\n", zns->zoc.bits.vzcap,
+			zns->zoc.bits.zae);
+
+	wrtn += fprintf(stream, "  ozcs:\n");
+	wrtn += fprintf(stream, "    val: 0x%x\n", zns->ozcs.val);
+	wrtn += fprintf(stream, "    razb: %d\n", zns->ozcs.bits.razb);
+	wrtn += fprintf(stream, "    zrwasup: %d\n", zns->ozcs.bits.zrwasup);
 
 	wrtn += fprintf(stream, "  mar: %u\n", zns->mar);
 	wrtn += fprintf(stream, "  mor: %u\n", zns->mor);
@@ -1038,6 +1042,14 @@ xnvme_spec_znd_idfy_ns_fpr(FILE *stream, struct xnvme_spec_znd_idfy_ns *zns, int
 		wrtn += xnvme_spec_znd_idfy_lbafe_fpr(stream, &zns->lbafe[nfmt], opts);
 		wrtn += fprintf(stream, "\n");
 	}
+
+	wrtn += fprintf(stream, "  numzrwa: %u\n", zns->numzrwa);
+	wrtn += fprintf(stream, "  zrwas: %u\n", zns->zrwas);
+	wrtn += fprintf(stream, "  zrwafg: %u\n", zns->zrwafg);
+
+	wrtn += fprintf(stream, "  zrwacap:\n");
+	wrtn += fprintf(stream, "    val: 0x%x\n", zns->zrwacap.val);
+	wrtn += fprintf(stream, "    expflushsup: %d\n", zns->zrwacap.bits.expflushsup);
 
 	return wrtn;
 }

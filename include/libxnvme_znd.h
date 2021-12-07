@@ -135,7 +135,7 @@ xnvme_znd_log_changes_from_dev(struct xnvme_dev *dev);
  * @param select_all Ignore zslba, command affects all LBAs
  * @param action Management the ::xnvme_spec_znd_cmd_mgmt_send_action to perform with zone at zslba
  * or all LBAs when select_all is true
- * @param action_sf the ::xnvme_spec_znd_mgmt_send_action_sf option
+ * @param action_so the ::xnvme_spec_znd_mgmt_send_action_so option
  * @param dbuf For action=ZND_SEND_DESCRIPTOR provide buffer
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
@@ -143,7 +143,7 @@ xnvme_znd_log_changes_from_dev(struct xnvme_dev *dev);
 int
 xnvme_znd_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, bool select_all,
 		    enum xnvme_spec_znd_cmd_mgmt_send_action action,
-		    enum xnvme_spec_znd_mgmt_send_action_sf action_sf, void *dbuf);
+		    enum xnvme_spec_znd_mgmt_send_action_so action_so, void *dbuf);
 
 /**
  * Submit, and optionally wait for completion of, a Zone Append
@@ -161,6 +161,18 @@ int
 xnvme_znd_append(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, uint16_t nlb,
 		 const void *dbuf,
 		 const void *mbuf);
+
+/**
+ * Submit, and optionally wait for completion of, a Zone RWA Commit
+ *
+ * @param ctx Pointer to command context (::xnvme_cmd_ctx)
+ * @param nsid Namespace Identifier
+ * @param lba Commit from ZRWA to Zone up-to and including the given 'lba'
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ */
+int
+xnvme_znd_zrwa_flush(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t lba);
 
 /**
  * Encapsulation of Zone Descriptors and Zone Descriptor Extensions

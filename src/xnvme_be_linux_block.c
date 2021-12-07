@@ -127,6 +127,11 @@ _lzbd_zone_mgmt_send(struct xnvme_cmd_ctx *ctx)
 	if (ctx->cmd.znd.mgmt_send.select_all) {
 		zr.nr_sectors = zr.nr_sectors * geo->nzone;
 	}
+	if (ctx->cmd.znd.mgmt_send.zsaso) {
+		XNVME_DEBUG("FAILED: block-interface does not support ZRWA");
+		errno = ENOSYS;
+		return -errno;
+	}
 
 	switch (ctx->cmd.znd.mgmt_send.zsa) {
 #ifdef BLKCLOSEZONE

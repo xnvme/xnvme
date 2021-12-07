@@ -284,6 +284,8 @@ xnvme_spec_znd_cmd_mgmt_send_action_str(enum xnvme_spec_znd_cmd_mgmt_send_action
 	switch (eval) {
 	case XNVME_SPEC_ZND_CMD_MGMT_SEND_CLOSE:
 		return "ZND_CMD_MGMT_SEND_CLOSE";
+	case XNVME_SPEC_ZND_CMD_MGMT_SEND_FLUSH:
+		return "ZND_CMD_MGMT_SEND_FLUSH";
 	case XNVME_SPEC_ZND_CMD_MGMT_SEND_DESCRIPTOR:
 		return "ZND_CMD_MGMT_SEND_DESCRIPTOR";
 	case XNVME_SPEC_ZND_CMD_MGMT_SEND_FINISH:
@@ -315,11 +317,11 @@ xnvme_spec_znd_opc_str(enum xnvme_spec_znd_opc eval)
 }
 
 const char *
-xnvme_spec_znd_mgmt_send_action_sf_str(enum xnvme_spec_znd_mgmt_send_action_sf eval)
+xnvme_spec_znd_mgmt_send_action_so_str(enum xnvme_spec_znd_mgmt_send_action_so eval)
 {
 	switch (eval) {
-	case XNVME_SPEC_ZND_MGMT_SEND_ASF_SALL:
-		return "ZND_MGMT_SEND_ASF_SALL";
+	case XNVME_SPEC_ZND_MGMT_OPEN_WITH_ZRWA:
+		return "XNVME_SPEC_ZND_MGMT_OPEN_WITH_ZRWA";
 	}
 
 	return "ENOSYS";
@@ -329,6 +331,10 @@ const char *
 xnvme_spec_znd_status_code_str(enum xnvme_spec_znd_status_code eval)
 {
 	switch (eval) {
+	case XNVME_SPEC_ZND_SC_INVALID_ZONE_OP:
+		return "XNVME_SPEC_ZND_SC_INVALID_ZONE_OP";
+	case XNVME_SPEC_ZND_SC_NOZRWA:
+		return "XNVME_SPEC_ZND_SC_NOZRWA";
 	case XNVME_SPEC_ZND_SC_BOUNDARY_ERROR:
 		return "ZND_SC_BOUNDARY_ERROR";
 	case XNVME_SPEC_ZND_SC_INVALID_FORMAT:

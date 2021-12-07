@@ -171,14 +171,14 @@ const char *
 xnvme_spec_znd_opc_str(enum xnvme_spec_znd_opc eval);
 
 /**
- * Produces a string representation of the given ::xnvme_spec_znd_mgmt_send_action_sf
+ * Produces a string representation of the given ::xnvme_spec_znd_mgmt_send_action_so
  *
  * @param eval the enum value to produce a string representation of
  * @return On success, a string representation is returned. On error, the string
  * "ENOSYS" is returned.
  */
 const char *
-xnvme_spec_znd_mgmt_send_action_sf_str(enum xnvme_spec_znd_mgmt_send_action_sf eval);
+xnvme_spec_znd_mgmt_send_action_so_str(enum xnvme_spec_znd_mgmt_send_action_so eval);
 
 /**
  * Produces a string representation of the given ::xnvme_spec_znd_status_code
