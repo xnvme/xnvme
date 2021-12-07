@@ -191,7 +191,8 @@ jobs:
     - name: CIJOE/QEMU, start the guest
       run: |
         source /opt/scripts/suitup.sh
-        source "${CIJ_TESTFILES}/qemu6_pcie_nvme_1c2ns_nvm_zns.sh"
+        #source "${CIJ_TESTFILES}/qemu6_pcie_nvme_1c2ns_nvm_zns.sh"
+        source "${CIJ_TESTFILES}/qemu_setup_nvme_1c2ns_nvm_zrwa.sh"
         qemu_setup_pcie
         QEMU_ARGS_EXTRA="$QEMU_SETUP_PCIE"
         qemu.run
@@ -232,6 +233,8 @@ jobs:
         source /opt/scripts/suitup.sh
         cij_runner \
           --testplan \
+          "$CIJ_TESTPLANS/xnvme-zns-zrwa-linux-nvme.plan" \
+          "$CIJ_TESTPLANS/xnvme-zns-zrwa-linux-spdk.plan" \
           "$CIJ_TESTPLANS/xnvme-base-linux.plan" \
           "$CIJ_TESTPLANS/xnvme-base-spdk.plan" \
           "$CIJ_TESTPLANS/xnvme-nvm-spdk.plan" \
