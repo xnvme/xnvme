@@ -153,3 +153,11 @@ xnvme_znd_stat
 
 .. doxygenfunction:: xnvme_znd_stat
 
+
+.. _sec-c-api-xnvme_znd-func-xnvme_znd_zrwa_flush:
+
+xnvme_znd_zrwa_flush
+--------------------
+
+.. doxygenfunction:: xnvme_znd_zrwa_flush
+

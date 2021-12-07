@@ -154,12 +154,12 @@ xnvme_spec_znd_log_lid
 .. doxygenenum:: xnvme_spec_znd_log_lid
 
 
-.. _sec-c-api-xnvme_spec-enum-xnvme_spec_znd_mgmt_send_action_sf:
+.. _sec-c-api-xnvme_spec-enum-xnvme_spec_znd_mgmt_send_action_so:
 
-xnvme_spec_znd_mgmt_send_action_sf
+xnvme_spec_znd_mgmt_send_action_so
 ----------------------------------
 
-.. doxygenenum:: xnvme_spec_znd_mgmt_send_action_sf
+.. doxygenenum:: xnvme_spec_znd_mgmt_send_action_so
 
 
 .. _sec-c-api-xnvme_spec-enum-xnvme_spec_znd_opc:
@@ -1044,12 +1044,12 @@ xnvme_spec_znd_log_lid_str
 .. doxygenfunction:: xnvme_spec_znd_log_lid_str
 
 
-.. _sec-c-api-xnvme_spec-func-xnvme_spec_znd_mgmt_send_action_sf_str:
+.. _sec-c-api-xnvme_spec-func-xnvme_spec_znd_mgmt_send_action_so_str:
 
-xnvme_spec_znd_mgmt_send_action_sf_str
+xnvme_spec_znd_mgmt_send_action_so_str
 --------------------------------------
 
-.. doxygenfunction:: xnvme_spec_znd_mgmt_send_action_sf_str
+.. doxygenfunction:: xnvme_spec_znd_mgmt_send_action_so_str
 
 
 .. _sec-c-api-xnvme_spec-func-xnvme_spec_znd_opc_str:
