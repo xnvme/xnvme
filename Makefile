@@ -162,7 +162,7 @@ gen-src-archive:
 .PHONY: gen-bash-completions
 gen-bash-completions:
 	@echo "## xNVMe: make gen-bash-completions"
-	$(eval TOOLS := $(shell find build/tools build/examples build/tests -not -name "xnvme_single*" -not -name "*.so" -type f -executable -exec basename {} \;))
+	$(eval TOOLS := $(shell find build/tools build/examples build/tests -not -name "xnvme_single*" -not -name "xnvme_enum" -not -name "xnvme_dev" -not -name "*.so" -type f -executable -exec basename {} \;))
 	python3 ./scripts/xnvmec_generator.py cpl --tools ${TOOLS} --output scripts/bash_completion.d
 
 #
