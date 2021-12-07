@@ -175,7 +175,7 @@ gen-bash-completions:
 .PHONY: gen-man-pages
 gen-man-pages:
 	@echo "## xNVMe: make gen-man-pages"
-	$(eval TOOLS := $(shell find build/tools build/examples build/tests -not -name "xnvme_single*" -not -name "*.so" -type f -executable -exec basename {} \;))
+	$(eval TOOLS := $(shell find build/tools build/examples build/tests -not -name "xnvme_single*" -not -name "xnvme_enum" -not -name "xnvme_dev" -not -name "*.so" -type f -executable -exec basename {} \;))
 	python3 ./scripts/xnvmec_generator.py man --tools ${TOOLS} --output man/
 
 #
