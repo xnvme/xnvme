@@ -30,31 +30,31 @@ _xnvme_tests_znd_zrwa_completions()
     case "$sub" in
     
     "support")
-        opts+="--help"
+        opts+="--dev-nsid --be --admin --sync --async --help"
         ;;
 
     "idfy")
-        opts+="--help"
+        opts+="--dev-nsid --be --admin --sync --async --help"
         ;;
 
     "open-with-zrwa")
-        opts+="--slba --help"
+        opts+="--slba --dev-nsid --be --admin --sync --async --help"
         ;;
 
     "open-without-zrwa")
-        opts+="--slba --help"
+        opts+="--slba --dev-nsid --be --admin --sync --async --help"
         ;;
 
     "flush")
-        opts+="--slba --help"
+        opts+="--slba --dev-nsid --be --admin --sync --async --help"
         ;;
 
     "flush-explicit")
-        opts+="--slba --help"
+        opts+="--slba --dev-nsid --be --admin --sync --async --help"
         ;;
 
     "flush-implicit")
-        opts+="--slba --help"
+        opts+="--slba --dev-nsid --be --admin --sync --async --help"
         ;;
 
     esac
