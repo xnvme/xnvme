@@ -26,19 +26,34 @@ prerequisites, followed by a section describing runtime requirements in
 Building xNVMe
 ==============
 
-**xNVMe** builds and runs on Linux, FreeBSD, and Windows. The latter is not
-publicly supported, however, if you are interested in Windows support then have
-a look at the :ref:`sec-building-windows` section for more information.
+**xNVMe** builds and runs on Linux, FreeBSD and Windows. First, retrieve the
+**xNVMe** repository from  `GitHUB <https://github.com/OpenMPDK/xNVMe>`_:
 
 .. include:: clone.rst
 
-If you want to change the build-configuration, then have a look at the
-following :ref:`sec-building-config`, if you are seeing build errors, then jump
-to the :ref:`sec-building-toolchain` section describing packages to install on
-different Linux distributions and on FreeBSD.
+Then build and install xNVMe in one of the three following ways, depending on
+your operating system and distribution.
+
+**1)** On Linux, with a distribution supporting ``.deb`` package installation
+via ``dpkg``, do:
+
+.. include:: build_linux.rst
+
+**2)** On FreeBSD or a Linux distribution without ``dpkg``, do:
+
+.. include:: build_freebsd.rst
+
+**3)** On Windows, do:
+
+.. include:: build_windows.rst
+
+In case you are seeing build errors, then jump to the
+:ref:`sec-building-toolchain` section describing packages to install on
+different Linux distributions, FreeBSD and Windows.
 
 There you will also find notes on customizing the toolchain and
-cross-compilation.
+cross-compilation. If you want to change the build-configuration, then have a
+look at the following :ref:`sec-building-config`.
 
 .. _sec-building-toolchain:
 
@@ -60,8 +75,8 @@ and tools must be available:
 * uuid-dev (>=2.3, For **SPDK**)
 
 The preferred toolchain is **gcc** and the following sections describe how to
-install it and required libraries on FreeBSD and a set of popular Linux
-Distributions.
+install it and required libraries on FreeBSD, a set of popular Linux
+Distributions and Windows.
 
 If you which to use a different toolchain then see the
 :ref:`sec-building-custom-toolchain`, on how to instrument the build-system
@@ -231,6 +246,36 @@ For example, from the root of the **xNVMe** source repository, do:
 .. literalinclude:: ../../scripts/pkgs/alpine-3.12.0.sh
    :language: bash
    :lines: 8-
+
+Windows
+-------
+
+xNVMe builds **natively** with the MSVC compiler via CMake. However, the
+libraries produced by the MSVC compiler depends on runtimes which are not
+compatible with fio, thus when using MSVC, then the xNVMe fio IO-engine is not
+usable.
+
+To obtain fio-compatibility, then a gcc-based toolchain is recommended,
+specfically MinGW_. The toolchain,  consists of:
+
+.. literalinclude:: ../../scripts/pkgs/windows-2019.txt
+   :language: bash
+
+Installing it can be done by first installing the Chocolatey_ Windows package
+manager via PowerShell, then install CMake and msys2 via Chocolatey_, lastly
+the actual compiler-toolchain is installed via **pacman** provided by the
+``msys2`` Shell.
+
+A batch-script comes with xNVMe, ``scripts/pkgs/windows-2019.bat``, which does
+what is described above. Invoke the script in an elevated command-prompt
+(``cmd.exe`` as Administrator)::
+
+  cd scripts\pkgs
+  windows-2019.bat
+
+.. note:: in case you see .dll loader-errors, then check that the environment
+   variable ``PATH`` contains the various library locations of the the
+   toolchain.
 
 .. _sec-gs-system-config:
 
@@ -834,33 +879,6 @@ embeds them in the **xNVMe** static libraries and executables. If you want to
 link with your version of these libraries then you can overwrite the respective
 include and library paths. See ``./configure --help`` for details.
 
-.. _sec-building-windows:
-
-Windows
--------
-
-Windows is not supported in public domain. However, if you want to roll your
-support into **xNVMe**, then you could follow the pointers below.
-
-C11 support is quite poor with most compilers on Windows except for Intel ICC
-and the GCC port `TDM-GCC <http://tdm-gcc.tdragon.net/>`_.
-
-A backend implementation for Windows could utilize an IO path, sending
-read/write IO to the block device and then wrap all other NVMe commands around
-the NVMe driver IOCTL interface.
-
-Such as the one provided by the Open-Source NVMe Driver for Windows:
-
-* https://svn.openfabrics.org/svnrepo/nvmewin/
-
-Or use the IOCTL interface of the built-in NVMe driver:
-
-* https://docs.microsoft.com/en-us/windows/win32/fileio/working-with-nvme-devices
-
-A bit of care has been taken in **xNVMe**, e.g. buffer-allocation, to support /
-run on Windows. So, you "only" have to worry about implementing the
-command-transport and async interface.
-
 .. _issue: https://github.com/OpenMPDK/xNVMe/issues
 
 .. _discussion: https://github.com/OpenMPDK/xNVMe/discussions
@@ -870,3 +888,7 @@ command-transport and async interface.
 .. _vfio: https://www.kernel.org/doc/Documentation/vfio.txt
 
 .. _uio: https://www.kernel.org/doc/html/v4.14/driver-api/uio-howto.html
+
+.. _Chocolatey: https://chocolatey.org/
+
+.. _MinGW: https://www.mingw-w64.org/

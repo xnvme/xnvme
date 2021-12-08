@@ -1,7 +1,7 @@
 .. _sec-backends-windows:
 
 Windows
-=====
+=======
 
 The Windows backend communicates with the Windows NVMe driver StorNVMe.sys via IOCTLs.
 The backend relies on the NVMe pass-through through IOCTLs to submit admin,
