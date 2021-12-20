@@ -137,13 +137,24 @@ xnvme_be_linux_liburing_poke(struct xnvme_queue *q, uint32_t max)
 	max = max > XNVME_QUEUE_IOU_CQE_BATCH_MAX ? XNVME_QUEUE_IOU_CQE_BATCH_MAX : max;
 
 	if (queue->poll_io) {
-		int ret = io_uring_wait_cqe(&queue->ring, &cqes[0]);
+		int ret;
+
+		ret = io_uring_wait_cqe(&queue->ring, &cqes[0]);
 		if (ret) {
 			XNVME_DEBUG("FAILED: foo");
 			return ret;
 		}
 		completed = 1;
 	} else {
+		if (!queue->poll_sq) {
+			int ret;
+
+			ret = io_uring_wait_cqe_nr(&queue->ring, cqes, max);
+			if (ret) {
+				XNVME_DEBUG("FAILED: foo");
+				return ret;
+			}
+		}
 		completed = io_uring_peek_batch_cqe(&queue->ring, cqes, max);
 	}
 	for (unsigned i = 0; i < completed; ++i) {

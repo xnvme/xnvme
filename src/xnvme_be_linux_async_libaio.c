@@ -53,12 +53,13 @@ int
 _linux_libaio_poke(struct xnvme_queue *q, uint32_t max)
 {
 	struct xnvme_queue_libaio *queue = (void *)q;
+	struct timespec timeout = { .tv_sec = 0, .tv_nsec = 100000 };
 	int completed = 0;
 
 	max = max ? max : queue->base.outstanding;
 	max = max > queue->base.outstanding ? queue->base.outstanding : max;
 
-	completed = io_getevents(queue->aio_ctx, 0, max, queue->aio_events, NULL);
+	completed = io_getevents(queue->aio_ctx, 1, max, queue->aio_events, &timeout);
 	if (completed < 0) {
 		XNVME_DEBUG("FAILED: completed: %d, errno: %d", completed, errno);
 		return completed;
