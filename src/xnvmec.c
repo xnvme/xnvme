@@ -826,7 +826,7 @@ xnvmec_usage_sub_long(struct xnvmec *cli, struct xnvmec_sub *sub)
 	if (cli->title) {
 		printf("\n");
 		printf("%s -- ", cli->title);
-		cli->ver_pr();
+		cli->ver_pr(XNVME_PR_DEF);
 		printf("\n");
 	}
 }
@@ -880,7 +880,7 @@ xnvmec_usage(struct xnvmec *cli)
 	if (cli->title) {
 		printf("\n");
 		printf("%s -- ", cli->title);
-		cli->ver_pr();
+		cli->ver_pr(XNVME_PR_DEF);
 		printf("\n");
 	}
 }

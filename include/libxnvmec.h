@@ -427,7 +427,7 @@ struct xnvmec {
 	int nsubs;			///< Setup by user
 	struct xnvmec_sub *subs;	///< Setup by user
 
-	int (*ver_pr)();		///< Setup by library if unset
+	int (*ver_pr)(int);		///< Setup by library if unset
 
 	int argc;			///< Setup by library
 	char **argv;			///< Setup by library
