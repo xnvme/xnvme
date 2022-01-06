@@ -131,35 +131,6 @@ _posix_async_emu_poke(struct xnvme_queue *q, uint32_t max)
 	return completed;
 }
 
-int
-_posix_async_emu_wait(struct xnvme_queue *queue)
-{
-	int acc = 0;
-
-	while (queue->base.outstanding) {
-		struct timespec ts1 = {.tv_sec = 0, .tv_nsec = 1000};
-		int err;
-
-		err = _posix_async_emu_poke(queue, 0);
-		if (err >= 0) {
-			acc += err;
-			continue;
-		}
-
-		switch (err) {
-		case -EAGAIN:
-		case -EBUSY:
-			nanosleep(&ts1, NULL);
-			continue;
-
-		default:
-			return err;
-		}
-	}
-
-	return acc;
-}
-
 static inline int
 _posix_async_emu_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			size_t mbuf_nbytes)
@@ -201,7 +172,7 @@ struct xnvme_be_async g_xnvme_be_posix_async_emu = {
 #ifdef XNVME_BE_ASYNC_EMU_ENABLED
 	.cmd_io = _posix_async_emu_cmd_io,
 	.poke = _posix_async_emu_poke,
-	.wait = _posix_async_emu_wait,
+	.wait = xnvme_be_nosys_queue_wait,
 	.init = _posix_async_emu_init,
 	.term = _posix_async_emu_term,
 #else

@@ -96,35 +96,6 @@ _linux_libaio_poke(struct xnvme_queue *q, uint32_t max)
 }
 
 int
-_linux_libaio_wait(struct xnvme_queue *queue)
-{
-	int acc = 0;
-
-	while (queue->base.outstanding) {
-		struct timespec ts1 = {.tv_sec = 0, .tv_nsec = 1000};
-		int err;
-
-		err = _linux_libaio_poke(queue, 0);
-		if (err >= 0) {
-			acc += 1;
-			continue;
-		}
-
-		switch (err) {
-		case -EAGAIN:
-		case -EBUSY:
-			nanosleep(&ts1, NULL);
-			continue;
-
-		default:
-			return err;
-		}
-	}
-
-	return acc;
-}
-
-int
 _linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 		     size_t mbuf_nbytes)
 {
@@ -189,7 +160,7 @@ struct xnvme_be_async g_xnvme_be_linux_async_libaio = {
 #ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
 	.cmd_io = _linux_libaio_cmd_io,
 	.poke = _linux_libaio_poke,
-	.wait = _linux_libaio_wait,
+	.wait = xnvme_be_nosys_queue_wait,
 	.init = _linux_libaio_init,
 	.term = _linux_libaio_term,
 #else

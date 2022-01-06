@@ -80,26 +80,6 @@ xnvme_be_spdk_queue_poke(struct xnvme_queue *q, uint32_t max)
 	return err;
 }
 
-int
-xnvme_be_spdk_queue_wait(struct xnvme_queue *queue)
-{
-	int acc = 0;
-
-	while (queue->base.outstanding) {
-		int err;
-
-		err = xnvme_be_spdk_queue_poke(queue, 0);
-		if (err < 0) {
-			XNVME_DEBUG("FAILED: xnvme_be_spdk_queue_poke");
-			return err;
-		}
-
-		acc += err;
-	}
-
-	return acc;
-}
-
 static void
 cmd_async_cb(void *cb_arg, const struct spdk_nvme_cpl *cpl)
 {
@@ -171,7 +151,7 @@ struct xnvme_be_async g_xnvme_be_spdk_async = {
 #ifdef XNVME_BE_SPDK_ENABLED
 	.cmd_io = xnvme_be_spdk_async_cmd_io,
 	.poke = xnvme_be_spdk_queue_poke,
-	.wait = xnvme_be_spdk_queue_wait,
+	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_spdk_queue_init,
 	.term = xnvme_be_spdk_queue_term,
 #else

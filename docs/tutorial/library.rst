@@ -31,7 +31,7 @@ For asynchronous execution, then you get the command context from a queue::
   res = xnvme_queue_poke(queue, n);
 
   # Wait for all
-  res = xnvme_queue_wait(queue);
+  res = xnvme_queue_drain(queue);
 
 There are more details to the use of the library. E.g. what is a command, how
 do you construct and how do you allocate and provide data for the command to

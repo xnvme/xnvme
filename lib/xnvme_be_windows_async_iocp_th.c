@@ -230,34 +230,6 @@ _windows_async_iocp_th_poke(struct xnvme_queue *q, uint32_t max)
 }
 
 int
-_windows_async_iocp_th_wait(struct xnvme_queue *queue)
-{
-	int acc = 0;
-
-	while (queue->base.outstanding) {
-		struct timespec ts1 = { .tv_sec = 0, .tv_nsec = 1000 };
-		int err;
-
-		err = _windows_async_iocp_th_poke(queue, 0);
-		if (err >= 0) {
-			acc += 1;
-			continue;
-		}
-
-		switch (err) {
-		case -EAGAIN:
-		case -EBUSY:
-			nanosleep(&ts1, NULL);
-			continue;
-
-		default:
-			return err;
-		}
-	}
-	return acc;
-}
-
-int
 _windows_async_iocp_th_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf,
 			      size_t dbuf_nbytes, void *mbuf, size_t mbuf_nbytes)
 {
@@ -369,7 +341,7 @@ struct xnvme_be_async g_xnvme_be_windows_async_iocp_th = {
 #ifdef XNVME_BE_WINDOWS_ASYNC_ENABLED
 	.cmd_io = _windows_async_iocp_th_cmd_io,
 	.poke = _windows_async_iocp_th_poke,
-	.wait = _windows_async_iocp_th_wait,
+	.wait = xnvme_be_nosys_queue_wait,
 	.init = _windows_async_iocp_th_init,
 	.term = _windows_async_iocp_th_term,
 #else

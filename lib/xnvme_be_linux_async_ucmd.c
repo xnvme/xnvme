@@ -139,35 +139,6 @@ xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 }
 
 int
-xnvme_be_linux_ucmd_wait(struct xnvme_queue *queue)
-{
-	int acc = 0;
-
-	while (queue->base.outstanding) {
-		struct timespec ts1 = {.tv_sec = 0, .tv_nsec = 1000};
-		int err;
-
-		err = xnvme_be_linux_ucmd_poke(queue, 0);
-		if (err >= 0) {
-			acc += err;
-			continue;
-		}
-
-		switch (err) {
-		case -EAGAIN:
-		case -EBUSY:
-			nanosleep(&ts1, NULL);
-			continue;
-
-		default:
-			return err;
-		}
-	}
-
-	return acc;
-}
-
-int
 xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 		       void *mbuf, size_t mbuf_nbytes)
 {
@@ -239,7 +210,7 @@ struct xnvme_be_async g_xnvme_be_linux_async_ucmd = {
 #ifdef XNVME_BE_LINUX_LIBURING_ENABLED
 	.cmd_io = xnvme_be_linux_ucmd_io,
 	.poke = xnvme_be_linux_ucmd_poke,
-	.wait = xnvme_be_linux_ucmd_wait,
+	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_linux_ucmd_init,
 	.term = xnvme_be_linux_liburing_term,
 #else

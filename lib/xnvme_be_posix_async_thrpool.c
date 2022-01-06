@@ -299,35 +299,6 @@ _posix_async_thrpool_poke(struct xnvme_queue *q, uint32_t max)
 	return completed;
 }
 
-int
-_posix_async_thrpool_wait(struct xnvme_queue *queue)
-{
-	int acc = 0;
-
-	while (queue->base.outstanding) {
-		const struct timespec ts1 = {.tv_sec = 0, .tv_nsec = 1000};
-		int res;
-
-		res = _posix_async_thrpool_poke(queue, 0);
-		if (res >= 0) {
-			acc += res;
-			continue;
-		}
-
-		switch (res) {
-		case -EAGAIN:
-		case -EBUSY:
-			nanosleep(&ts1, NULL);
-			continue;
-
-		default:
-			return res;
-		}
-	}
-
-	return acc;
-}
-
 static inline int
 _posix_async_thrpool_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			    size_t mbuf_nbytes)
@@ -381,7 +352,7 @@ struct xnvme_be_async g_xnvme_be_posix_async_thrpool = {
 #ifdef XNVME_BE_ASYNC_THRPOOL_ENABLED
 	.cmd_io = _posix_async_thrpool_cmd_io,
 	.poke = _posix_async_thrpool_poke,
-	.wait = _posix_async_thrpool_wait,
+	.wait = xnvme_be_nosys_queue_wait,
 	.init = _posix_async_thrpool_init,
 	.term = _posix_async_thrpool_term,
 #else
