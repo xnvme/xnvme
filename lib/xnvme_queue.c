@@ -101,7 +101,28 @@ xnvme_queue_poke(struct xnvme_queue *queue, uint32_t max)
 int
 xnvme_queue_wait(struct xnvme_queue *queue)
 {
-	return queue->base.dev->be.async.wait(queue);
+	printf("ERR: USING DEPRECATED FUNCTION: xnvme_queue_wait(*queue) use xnvme_queue_drain(*queue) instead\n");
+	return xnvme_queue_drain(queue);
+}
+
+int
+xnvme_queue_drain(struct xnvme_queue *queue)
+{
+	int acc = 0;
+
+	while (queue->base.outstanding) {
+		int err;
+
+		err = xnvme_queue_poke(queue, 0);
+		if (err < 0) {
+			XNVME_DEBUG("FAILED: xnvme_queue_poke(), err: %d", err);
+			return err;
+		}
+
+		acc += err;
+	}
+
+	return acc;
 }
 
 uint32_t

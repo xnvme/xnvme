@@ -271,11 +271,22 @@ int
 xnvme_queue_poke(struct xnvme_queue *queue, uint32_t max);
 
 /**
- * Wait for completion of all outstanding commands in the given ::xnvme_queue
+ * Process outstanding commands on the given ::xnvme_queue until it is empty
  *
- * @param queue Pointer to the ::xnvme_queue to wait for completions on
+ * @param queue Pointer to the ::xnvme_queue to wait/process commands on
  *
- * @return On success, number of completions processed, may be 0. On error, negative `errno` is
+ * @return On success, number of commands processed, may be 0. On error, negative `errno` is
+ * returned.
+ */
+int
+xnvme_queue_drain(struct xnvme_queue *queue);
+
+/**
+ * DEPRECATED: expect that this function will be removed in an upcoming release
+ *
+ * @param queue Pointer to the ::xnvme_queue to wait/process commands on
+ *
+ * @return On success, number of commands processed, may be 0. On error, negative `errno` is
  * returned.
  */
 int

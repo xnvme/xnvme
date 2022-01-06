@@ -260,9 +260,9 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 			xnvme_queue_term(queue);
 			goto exit;
 		}
-		err = xnvme_queue_wait(queue);
+		err = xnvme_queue_drain(queue);
 		if (err < 0) {
-			xnvmec_perr("xnvme_queue_wait()", err);
+			xnvmec_perr("xnvme_queue_drain()", err);
 			xnvme_queue_term(queue);
 			goto exit;
 		}

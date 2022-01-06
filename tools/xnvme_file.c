@@ -240,9 +240,9 @@ next:
 		ofz += iosize;
 	}
 
-	err = xnvme_queue_wait(queue);
+	err = xnvme_queue_drain(queue);
 	if (err < 0) {
-		xnvmec_perr("xnvme_queue_wait()", err);
+		xnvmec_perr("xnvme_queue_drain()", err);
 		goto exit;
 	}
 
@@ -391,9 +391,9 @@ next:
 		ofz += iosize;
 	}
 
-	err = xnvme_queue_wait(queue);
+	err = xnvme_queue_drain(queue);
 	if (err < 0) {
-		xnvmec_perr("xnvme_queue_wait()", err);
+		xnvmec_perr("xnvme_queue_drain()", err);
 		goto exit;
 	}
 
@@ -578,9 +578,9 @@ next:
 		ofz += iosize;
 	}
 
-	err = xnvme_queue_wait(queue);
+	err = xnvme_queue_drain(queue);
 	if (err < 0) {
-		xnvmec_perr("xnvme_queue_wait()", err);
+		xnvmec_perr("xnvme_queue_drain()", err);
 		goto exit;
 	}
 

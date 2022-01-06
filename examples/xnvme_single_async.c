@@ -121,9 +121,9 @@ submit:
 next:
 
 	// Done submitting, wait for all outstanding I/O to complete as we are about to exit
-	ret = xnvme_queue_wait(queue);
+	ret = xnvme_queue_drain(queue);
 	if (ret < 0) {
-		xnvmec_perr("xnvme_queue_wait()", ret);
+		xnvmec_perr("xnvme_queue_drain()", ret);
 		goto exit;
 	}
 
