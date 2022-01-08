@@ -72,13 +72,13 @@
  */
 #include <stdlib.h>
 #include <assert.h>
-#include <fio.h>
-#include <zbd_types.h>
-#include <optgroup.h>
 #include <libxnvme.h>
 #include <libxnvme_3p.h>
 #include <libxnvme_nvm.h>
 #include <libxnvme_znd.h>
+#include "fio.h"
+#include "zbd_types.h"
+#include "optgroup.h"
 
 static pthread_mutex_t g_serialize = PTHREAD_MUTEX_INITIALIZER;
 
