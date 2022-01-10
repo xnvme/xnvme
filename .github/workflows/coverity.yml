@@ -24,11 +24,10 @@ defaults:
 
 jobs:
   #
-  # Produce a "full" source-archive, that is, including source from submodules
+  # Produce a "full" source-archive, that is, including third-party source via meson subprojects
   #
-  # This is done to provide the source-archive for users in environments without
-  # submodule access and for the containers in the workflow which does not have
-  # a recent enough version of git do pull down the modules
+  # This is done to provide the source-archive for users in environments without network access
+  # and for the containers in the workflow to fetch the entire source archive once
   #
   source-archive-gen:
     runs-on: ubuntu-latest
@@ -44,14 +43,14 @@ jobs:
 
     - name: Generate Full Source Archive
       run: |
-        pip install git-archive-all
-        make gen-src-archive
+        sudo ./scripts/pkgs/ubuntu-focal.sh
+        make clobber gen-src-archive
 
     - name: Upload source archive
       uses: actions/upload-artifact@v2
       with:
         name: archive-src
-        path: build/*.src.tar.gz
+        path: builddir/meson-dist/*
 
   linux-build-coverity:
     runs-on: ubuntu-latest
@@ -72,8 +71,8 @@ jobs:
 
     - name: xNVMe, extract the full-source-archive
       run: |
-        tar xzf xnvme*src.tar.gz --strip 1
-        rm xnvme*src.tar.gz
+        tar xzf xnvme*.tar.gz --strip 1
+        rm xnvme*.tar.gz
 
     - name: xNVMe, install build-requirements
       run: |
@@ -90,7 +89,7 @@ jobs:
 
     - name: Project, define version env. var.
       run: |
-        PROJECT_VERSION=$(python3 scripts/xnvme_ver.py --cml CMakeLists.txt)
+        PROJECT_VERSION=$(python3 scripts/xnvme_ver.py --path meson.build)
         echo "PROJECT_VERSION=${PROJECT_VERSION}" >> $GITHUB_ENV
 
     - name: Coverity, install requirements

@@ -126,12 +126,10 @@ _be_windows_nvme_storage_property(struct xnvme_cmd_ctx *ctx, void *dbuf,
 	case XNVME_SPEC_ADM_OPC_SFEAT: {
 		PSTORAGE_PROPERTY_SET query = NULL;
 		PSTORAGE_PROTOCOL_SPECIFIC_DATA_EXT protocol_data = NULL;
-		PSTORAGE_PROTOCOL_DATA_DESCRIPTOR_EXT protocol_data_descr = NULL;
 		DWORD cdw11 = 0;
 
 		ioctl = IOCTL_STORAGE_SET_PROPERTY;
 		query = (PSTORAGE_PROPERTY_SET)buffer;
-		protocol_data_descr = (PSTORAGE_PROTOCOL_DATA_DESCRIPTOR_EXT)buffer;
 		protocol_data = (PSTORAGE_PROTOCOL_SPECIFIC_DATA_EXT)query->AdditionalParameters;
 
 		query->PropertyId = StorageDeviceProtocolSpecificProperty;

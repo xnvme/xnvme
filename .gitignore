@@ -14,9 +14,13 @@ astyle.log*
 .idea
 /*.patch
 build
+builddir
 docs/build
 cscope.out
 tags
+subprojects/fio
+subprojects/liburing
+subprojects/spdk
 cmake-build-debug/
 # Windows
 *Debug*

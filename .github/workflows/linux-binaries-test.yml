@@ -4,8 +4,10 @@ on:
   pull_request:
   push:
     branches:
+      - main
       - master
-      - dev
+      - dev*
+      - ci-bintest-linux
     tags:
       - v*
 
@@ -35,14 +37,14 @@ jobs:
 
     - name: Generate Full Source Archive
       run: |
-        pip install git-archive-all
-        make gen-src-archive
+        sudo ./scripts/pkgs/ubuntu-focal.sh
+        make clobber gen-src-archive
 
     - name: Upload source archive
       uses: actions/upload-artifact@v2
       with:
         name: archive-src
-        path: build/*.src.tar.gz
+        path: builddir/meson-dist/*.tar.gz
 
   # Grab the source and build on self-hosted, matching the CPU on which it will
   # be tested. This is done, since SPDK/DPDK is build with "-march=native", and
@@ -66,35 +68,33 @@ jobs:
 
     - name: Unpack the full-source-archive
       run: |
-        ls
-        tar xzf *.src.tar.gz
-        rm *.src.tar.gz
-        mv xnvme-* xnvme
+        tar xzf xnvme*.tar.gz --strip 1
+        rm xnvme*.tar.gz
 
     - name: Install build-requirements
       run: |
-        cd xnvme
         source scripts/pkgs/debian-bullseye.sh
         [[ ! -f "/usr/bin/python" ]] && ln -s /usr/bin/python3.8 /usr/bin/python || true
 
     - name: Configure, the build
       run: |
-        cd xnvme
         make config
 
     - name: Dump, the compile-commands and machine
       run: |
         cat /proc/cpuinfo
-        cat xnvme/build/compile_commands.json || true
+        cat builddir/compile_commands.json || true
 
     - name: Build!
       run: |
-        cd xnvme
         make
+
+    - name: Build! bin-deb-pkg
+      run: |
+        make build-deb
 
     - name: Install
       run: |
-        cd xnvme
         make install
 
     - name: Execute 'xnvme enum'
@@ -106,29 +106,29 @@ jobs:
     # The is intended for testing and for quick-preview for those that do not
     # want to build from source. It will later be used for installation inside a
     # docker-container, as well as inside of a qemu-guest
-    - name: Upload Archive
-      uses: actions/upload-artifact@v2
-      with:
-        name: archive-bin
-        path: xnvme/build/*.bin.tar.gz
+    #- name: Upload Archive
+    #  uses: actions/upload-artifact@v2
+    #  with:
+    #    name: archive-bin
+    #    path: builddir/*.bin.tar.gz
 
     - name: Upload Debian Packages
       uses: actions/upload-artifact@v2
       with:
         name: pkg-deb
-        path: xnvme/build/*.deb
+        path: builddir/meson-dist/*.deb
 
     - name: Upload fio binary
       uses: actions/upload-artifact@v2
       with:
         name: fio-bin
-        path: xnvme/third-party/fio/repos/fio
+        path: subprojects/fio/fio
 
     - name: Upload the SPDK fio io-engines
       uses: actions/upload-artifact@v2
       with:
         name: fio-spdk-ioengines
-        path: xnvme/third-party/spdk/repos/build/fio/*
+        path: subprojects/spdk/build/fio/*
 
     # The git-hub-actions-runner does not cleanup after itself
     - name: Self-hosted, cleanup
@@ -176,8 +176,7 @@ jobs:
     - name: CIJOE, re-install as pre-release and install the xNVMe package
       run: |
         pip3 uninstall -y cijoe
-        pip3 install --pre cijoe
-        pip3 install --pre cijoe-pkg-xnvme
+        pip3 install --pre cijoe cijoe-pkg-linux cijoe-pkg-qemu cijoe-pkg-xnvme
 
     - name: CIJOE, define and create result folder
       run: |
@@ -186,6 +185,7 @@ jobs:
     - name: CIJOE/QEMU, provision guest using Debian cloud image
       run: |
         source /opt/scripts/suitup.sh
+        ls $CIJ_MODULES
         qemu.img_from_url "${CLOUD_IMG_URL}"
 
     - name: CIJOE/QEMU, start the guest

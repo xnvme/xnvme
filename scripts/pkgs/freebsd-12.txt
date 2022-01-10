@@ -1,7 +1,6 @@
 autoconf
 automake
 bash
-cmake
 cunit
 e2fsprogs-libuuid
 git

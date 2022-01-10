@@ -6,7 +6,7 @@ This file and directory contain information about the software on which
 xNVMe depend. The licenses and links to project web-pages and sources are
 provided and a brief summary of how xNVMe uses the third-party software.
 
-REPOS/third-party/spdk/
+REPOS/subprojects/spdk/
   Summary: For the xNVMe backend using SPDK, then this git submodule is
   provided and tagged with the SPDK version on which xNVMe has been tested.
 
@@ -15,6 +15,24 @@ REPOS/third-party/spdk/
 
   Repos: https://github.com/spdk/spdk
   Website: https://spdk.io/
+
+REPOS/subprojects/liburing
+  Summary: For the xNVMe backend for Linux, then this git submodule is provided
+  and tagged with the liburing version which xNVMe has been tested.
+
+  License: LGPL
+
+  Repos: https://git.kernel.dk/liburing
+  Website: https://git.kernel.dk/cgit/liburing/
+
+REPOS/subprojects/fio
+  Summary: For the xNVMe fio IO engine, then this git submodule is provided
+  and tagged with the fio version which xNVMe has been tested.
+
+  License: GPL-2.0
+
+  Repos: https://git.kernel.dk/fio
+  Website: https://fio.readthedocs.io/en/latest/
 
 REPOS/scripts/xnvme-driver.sh
   Summary: This script is based on the setup.sh and its associated scripts from
@@ -46,30 +64,3 @@ SYSTEM::linux:/
 
   Repos: https://github.com/spdk/spdk
   Website: https://www.linuxfoundation.org/
-
-REPOS/third-party/liburing
-  Summary: For the xNVMe backend for Linux, then this git submodule is provided
-  and tagged with the liburing version which xNVMe has been tested.
-
-  License: LGPL
-
-  Repos: https://git.kernel.dk/liburing
-  Website: https://git.kernel.dk/cgit/liburing/
-
-REPOS/third-party/fio
-  Summary: For the xNVMe fio IO engine, then this git submodule is provided
-  and tagged with the fio version which xNVMe has been tested.
-
-  License: GPL-2.0
-
-  Repos: https://git.kernel.dk/fio
-  Website: https://fio.readthedocs.io/en/latest/
-
-REPOS/third-party/libnvme
-  Summary: For the xNVMe backend for Linux, then this git submodule is provided
-  and tagged with the libnvme version of which xNVMe has been tested.
-
-  License: LGPL
-
-  Repos: https://github.com/linux-nvme/libnvme.git
-  Website: https://github.com/linux-nvme/libnvme

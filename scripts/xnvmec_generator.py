@@ -20,6 +20,9 @@ import sys
 import os
 import re
 
+MESON_BASH_INSTALL = "install_data('{completion}', install_dir: bash_completion_dep.get_variable('completionsdir'))"
+MESON_MAN_INSTALL = "install_man('{manpage}')"
+
 RE_SIG = "".join([
     r"^Usage:\s(?P<usage>.*)$",
     r"(?P<descr>(.|\n)*)",
@@ -118,10 +121,18 @@ def expand_path(path):
 
     return os.path.abspath(os.path.expanduser(os.path.expandvars(path)))
 
-def run(cmd, cmd_input=None):
+def run(cmd, cmd_input=None, cwd=None):
     """Run the given 'cmd' and return (stdout, stderr, returncode)"""
 
-    proc = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    proc = Popen(
+        " ".join(cmd) if cwd else cmd,
+        stdin=PIPE,
+        stdout=PIPE,
+        stderr=PIPE,
+        cwd=cwd,
+        shell=True,
+        env={"PATH": cwd} if cwd else None
+    )
     out, err = proc.communicate(
         input=cmd_input.encode('utf-8') if cmd_input else None
     )
@@ -129,18 +140,20 @@ def run(cmd, cmd_input=None):
 
     return out.decode('utf-8'), err.decode('utf-8'), rcode
 
-def parse_tool_sub_sig(tname, sname):
+def parse_tool_sub_sig(tsig, sname):
     """Parse the signature of the given tool sub-command"""
 
-    out, err, rcode = run([tname, sname, "--help"])
+    tname = tsig["name"]
+
+    out, err, rcode = run([tname, sname, "--help"], cwd=tsig["dirname"])
     if rcode:
         logging.error(out, err, rcode)
-        return None
+        return False
 
     match = re.match(RE_SIG, str(out), re.MULTILINE|re.IGNORECASE)
     if not match:
         logging.error("No match!")
-        return None
+        return False
 
     sig = {
         "name": sname,
@@ -167,12 +180,26 @@ def parse_tool_sub_sig(tname, sname):
             opt = arg.replace("[", "").replace("]", "").strip().split(" ")[0]
             sig["opts"].append(opt)
 
-    return sig
+    tsig["subs"][sname] = sig
 
-def parse_tool_sig(tname):
+    return True
+
+def parse_tool_sig(tpath):
     """Parse the signature of the given tool and its sub-commands"""
 
-    out, err, rcode = run([tname, "--help"])
+    tname = os.path.basename(tpath)
+    tdirname = os.path.dirname(tpath)
+
+    if not tdirname:    # Expect to find it in $PATH
+        for path in os.getenv("PATH").split(":"):
+            if os.path.exists(os.path.join(path, tname)):
+                tdirname = path
+                break
+
+    tdirname = expand_path(tdirname)
+    logging.info(f"Using tool at: {tdirname}")
+
+    out, err, rcode = run([tname, "--help"], cwd=tdirname)
     if rcode:
         logging.error(out, err, rcode)
         return None
@@ -184,6 +211,8 @@ def parse_tool_sig(tname):
 
     tsig = {
         "name": tname,
+        "path": tpath,
+        "dirname": tdirname,
         "usage": match.group("usage"),
         "descr": match.group("descr").strip(),
         "descr_long": match.group("descr").strip(),
@@ -196,12 +225,9 @@ def parse_tool_sig(tname):
         sname = line.strip().split(" ")[0]
         tsig["snames"].append(sname)
 
-        sub = parse_tool_sub_sig(tname, sname)
-        if not sub:
+        if not parse_tool_sub_sig(tsig, sname):
             logging.error("FAILED: parsing tname: %s, sname: %s", tname, sname)
             return None
-
-        tsig["subs"][sname] = sub
 
     return tsig
 
@@ -229,6 +255,8 @@ def emit_completion(tool):
 def gen_completions(args, tools):
     """Generate Bash-completions"""
 
+    meson = []  # Populate with lines for a meson.build file
+
     logging.info("Writing scripts to: %r", args.output)
     for tool in tools:
 
@@ -241,6 +269,12 @@ def gen_completions(args, tools):
 
         with open(tool_fpath, "w") as tfd:
             tfd.write(script)
+
+        meson.append(MESON_BASH_INSTALL.format(completion=tool_fname))
+
+    # Emit a meson.build
+    with open(os.sep.join([args.output, "meson.build"]), "w") as mfd:
+            mfd.write("\n".join(meson))
 
     return 0
 
@@ -336,6 +370,8 @@ def emit_manpage_main(tool):
 def gen_manpage(args, tools):
     """Generate man pages"""
 
+    meson = []  # Populate with lines for a meson.build file
+
     logging.info("Writing man pages to: %r", args.output)
     for tool in tools:
         tool_fname = "%s.1" % tool["name"]
@@ -347,6 +383,8 @@ def gen_manpage(args, tools):
         with open(tool_fpath, "w") as tfd:
             tfd.write(manpage)
 
+        meson.append(MESON_MAN_INSTALL.format(manpage=tool_fname))
+
         for sname in tool["snames"]:
             sub = tool["subs"][sname]
             sub_fname = "%s-%s.1" % (tool["name"], sub["name"])
@@ -357,6 +395,12 @@ def gen_manpage(args, tools):
             manpage = emit_manpage_sub(tool, sub)
             with open(sub_fpath, "w") as mfd:
                 mfd.write(manpage)
+
+            meson.append(MESON_MAN_INSTALL.format(manpage=sub_fname))
+
+    # Emit a meson.build
+    with open(os.sep.join([args.output, "meson.build"]), "w") as mfd:
+            mfd.write("\n".join(meson))
 
     return 0
 
@@ -412,17 +456,17 @@ def main(args):
     """Generate bash-completions and man-pages for xNVMe CLI tools"""
 
     tools = []
+    for tool in args.tools:        # Parse tools, their subs and args
+        logging.info("Parsing tool: %r", tool)
 
-    for tname in args.tools:        # Parse tools, their subs and args
-        logging.info("Parsing tool: %r", tname)
-
-        tsig = parse_tool_sig(tname)
+        tsig = parse_tool_sig(tool)
         if not tsig["snames"]:
-            logging.error("failed parsing snames from tname: '%s'", tname)
+            logging.error("failed parsing snames from tool: '%s'", tool)
 
         tools.append(tsig)
 
     return args.gen(args, tools)
+
 
 if __name__ == "__main__":
     sys.exit(main(setup()))

@@ -7,15 +7,15 @@ xnvme_znd_report:
   zrent_nbytes: 64
   zslba: 0x0000000000000000
   zelba: 0x0000000000012000
-  nzones: 2048
+  nzones: 256000
   nentries: 10
   extended: 0
   entries:
     - {zslba: 0x0000000000000000, wp: 0x0000000000000000, zcap: 4096, zt: 0x2, zs:   ZND_STATE_EMPTY, za: '0b00000000'}
     - {zslba: 0x0000000000002000, wp: 0x0000000000002000, zcap: 4096, zt: 0x2, zs:   ZND_STATE_EMPTY, za: '0b00000000'}
-    - {zslba: 0x0000000000004000, wp: 0xffffffffffffffff, zcap: 4096, zt: 0x2, zs:    ZND_STATE_FULL, za: '0b00000000'}
-    - {zslba: 0x0000000000006000, wp: 0xffffffffffffffff, zcap: 4096, zt: 0x2, zs:    ZND_STATE_FULL, za: '0b00000000'}
-    - {zslba: 0x0000000000008000, wp: 0x0000000000008fe8, zcap: 4096, zt: 0x2, zs:  ZND_STATE_CLOSED, za: '0b00001000'}
+    - {zslba: 0x0000000000004000, wp: 0x0000000000004000, zcap: 4096, zt: 0x2, zs:   ZND_STATE_EMPTY, za: '0b00000000'}
+    - {zslba: 0x0000000000006000, wp: 0x0000000000006000, zcap: 4096, zt: 0x2, zs:   ZND_STATE_EMPTY, za: '0b00000000'}
+    - {zslba: 0x0000000000008000, wp: 0x0000000000008000, zcap: 4096, zt: 0x2, zs:   ZND_STATE_EMPTY, za: '0b00000000'}
     - {zslba: 0x000000000000a000, wp: 0x000000000000a000, zcap: 4096, zt: 0x2, zs:   ZND_STATE_EMPTY, za: '0b00000000'}
     - {zslba: 0x000000000000c000, wp: 0x000000000000c000, zcap: 4096, zt: 0x2, zs:   ZND_STATE_EMPTY, za: '0b00000000'}
     - {zslba: 0x000000000000e000, wp: 0x000000000000e000, zcap: 4096, zt: 0x2, zs:   ZND_STATE_EMPTY, za: '0b00000000'}

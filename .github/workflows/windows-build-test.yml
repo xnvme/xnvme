@@ -6,7 +6,7 @@ on:
     branches:
       - master
       - dev
-      - build_test
+      - ci-build-windows
     tags:
       - v*
 
@@ -23,7 +23,7 @@ jobs:
   # a recent enough version of git do pull down the modules
   #
   source-archive-gen:
-    runs-on: windows-2019
+    runs-on: ubuntu-latest
 
     steps:
     - name: Grab source
@@ -36,15 +36,15 @@ jobs:
 
     - name: Generate Full Source Archive
       run: |
-        pip install git-archive-all
-        make gen-src-archive
-
+        sudo ./scripts/pkgs/ubuntu-focal.sh
+        make clobber gen-src-archive
 
     - name: Upload source archive
       uses: actions/upload-artifact@v2
       with:
         name: archive-src
-        path: build/*.src.tar.gz
+        path: builddir/meson-dist/*.tar.gz
+
 
   # Build the source-archive on Windows
   windows-build:
@@ -55,6 +55,7 @@ jobs:
       matrix:
         runner:
           - { os: 'windows', ver: '2019' }
+          - { os: 'windows', ver: '2022' }
 
     steps:
     - name: Image-prep, get the full-source-archive
@@ -64,67 +65,33 @@ jobs:
 
     - name: Unpack the full-source-archive
       run: |
-        ls
-        7z x *.src.tar.gz -so | 7z x -ttar -si -aoa
-        rm *.src.tar.gz
-        mv xnvme-* xnvme
+        tar xzf xnvme*.tar.gz --strip 1
+        rm xnvme*.tar.gz
 
     - name: Install build-requirements
       run: |
-        cd xnvme
         cmd.exe /c "echo %cd%"
         cmd.exe /c "scripts\pkgs\${{ matrix.runner.os }}-${{ matrix.runner.ver }}.bat"
 
-        [[ ! -f "/usr/bin/python" ]] && ln -s /usr/bin/python3.8 /usr/bin/python || true
-
     - name: Build!
       run: |
-        cd xnvme
         cmd.exe /c "build.bat"
 
     - name: Dump the compile-commands and machine
       run: |
-        cat /proc/cpuinfo
-        cat xnvme/build/compile_commands.json
+        cat /proc/cpuinfo || true
+        cat builddir/compile_commands.json || true
 
     - name: Install
       shell: cmd
       run: |
-        @echo off
-        @setlocal enableextensions enabledelayedexpansion
-
-        set CC=clang
-        set TYPE=release
-        set PLATFORM_ID=Windows
-
-        set CXX=%CC%
-        if "%CC%"=="clang" set "CXX=clang++"
-
-        set LD=
-        if "%CC%"=="clang" set LD=lld-link
-
-        set ENV=CC='%CC%' CXX='%CXX%' LD='%LD%' PLATFORM_ID='%PLATFORM_ID%'
-
-        :: set msys2-shell
-        set SH=call msys2_shell -no-start -here -use-full-path -defterm
-
-        set "PATH=%ALLUSERSPROFILE%\chocolatey\bin;!PATH!"
-        set "PATH=%SystemDrive%\tools\msys64;!PATH!"
-        set "PATH=%ProgramFiles%\LLVM\bin;!PATH!"
-
-        cd xnvme
-        %SH% -c "make install"
+        cmd.exe /c "build.bat install"
 
     - name: Execute xnvme commands
       shell: cmd
       run: |
-        @echo off
-        @setlocal enableextensions enabledelayedexpansion
-
-        set "PATH=%ALLUSERSPROFILE%\chocolatey\bin;!PATH!"
         set "PATH=%SystemDrive%\tools\msys64;!PATH!"
-        set "PATH=%ProgramFiles%\LLVM\bin;!PATH!"
-        set "PATH=%SystemDrive%\tools\msys64\usr\local\bin;!PATH!"
+        set "PATH=%SystemDrive%\tools\msys64\mingw64\bin;!PATH!"
 
         xnvme.exe enum
         xnvme.exe library-info

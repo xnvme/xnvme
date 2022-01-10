@@ -31,24 +31,14 @@ Building xNVMe
 
 .. include:: clone.rst
 
-Then build and install xNVMe in one of the three following ways, depending on
-your operating system and distribution.
+Regardless of whether you are on Linux, FreeBSD or Windows, then the build is
+done in the same way:
 
-**1)** On Linux, with a distribution supporting ``.deb`` package installation
-via ``dpkg``, do:
+.. include:: build_meson.rst
 
-.. include:: build_linux.rst
-
-**2)** On FreeBSD or a Linux distribution without ``dpkg``, do:
-
-.. include:: build_freebsd.rst
-
-**3)** On Windows, do:
-
-.. include:: build_windows.rst
-
-In case you are seeing build errors, then jump to the
-:ref:`sec-building-toolchain` section describing packages to install on
+However, the installation of the required toolchain and libraries depend on
+operating system and distribution. In case you see build errors, then jump to
+the :ref:`sec-building-toolchain` section describing packages to install on
 different Linux distributions, FreeBSD and Windows.
 
 There you will also find notes on customizing the toolchain and
@@ -61,17 +51,21 @@ Toolchain
 =========
 
 The toolchain (compiler, archiver, and linker) used for building **xNVMe**
-must support **C11**, **pthreads** and on the system the following libraries
-and tools must be available:
+must support **C11**, **pthreads** and on the system the following tools must
+be available:
 
-* CMake (>= 3.9, For **xNVMe**)
+* Python (>=3.7)
+* meson (>=0.61)
+* ninja (>=)
+* make (gmake)
+* gcc/mingw/clang
+
+Along with libraries:
+
 * glibc (>= 2.28, for **io_uring/liburing**)
 * libaio-dev (>=0.3, For **xNVMe** and **SPDK**)
 * libnuma-dev (>=2, For **SPDK**)
 * libssl-dev (>=1.1, For **SPDK**)
-* make (gmake)
-* meson (>=0.48, for **SPDK**)
-* ninja (>=, for **SPDK**)
 * uuid-dev (>=2.3, For **SPDK**)
 
 The preferred toolchain is **gcc** and the following sections describe how to
@@ -82,17 +76,17 @@ If you which to use a different toolchain then see the
 :ref:`sec-building-custom-toolchain`, on how to instrument the build-system
 using a compiler other than **gcc**.
 
-Arch Linux 20200306
--------------------
+Arch Linux
+----------
 
 Install the following packages via ``pacman``:
 
-.. literalinclude:: ../../scripts/pkgs/archlinux-20200306.txt
+.. literalinclude:: ../../scripts/pkgs/archlinux-latest.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/archlinux-20200306.sh
+.. literalinclude:: ../../scripts/pkgs/archlinux-latest.sh
    :language: bash
    :lines: 8-
 
@@ -141,6 +135,9 @@ For example, from the root of the **xNVMe** source repository, do:
 Debian 9 (Stretch)
 ------------------
 
+.. note: Debian 9 / stretch is EOL, LTS support is available EOL June 2022.
+   After this date xNVMe will stop supporting it.
+
 Install the following packages via ``apt-get``:
 
 .. literalinclude:: ../../scripts/pkgs/debian-stretch.txt
@@ -152,18 +149,18 @@ For example, from the root of the **xNVMe** source repository, do:
    :language: bash
    :lines: 17-
 
-Freebsd 12
+Freebsd 13
 ----------
 
 Ensure that you have kernel source in ``/usr/src``, then install the following
 packages via ``pkg``:
 
-.. literalinclude:: ../../scripts/pkgs/freebsd-12.txt
+.. literalinclude:: ../../scripts/pkgs/freebsd-13.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/freebsd-12.sh
+.. literalinclude:: ../../scripts/pkgs/freebsd-13.sh
    :language: bash
    :lines: 8-
 
@@ -185,6 +182,21 @@ For example, from the root of the **xNVMe** source repository, do:
 .. note:: In case you get: ``error adding symbols: DSO missing from command
    line``, during compilation, then add ``-ltinfo -lnurces`` to ``LDFLAGS``.
    For example: ``export LDFLAGS=-ltinfo -lncurses"``.
+
+Ubuntu 21.10 (Impish)
+---------------------
+
+Install the following packages via ``apt-get``:
+
+.. literalinclude:: ../../scripts/pkgs/ubuntu-focal.txt
+   :language: bash
+
+For example, from the root of the **xNVMe** source repository, do:
+
+.. literalinclude:: ../../scripts/pkgs/ubuntu-focal.sh
+   :language: bash
+   :lines: 17-
+
 
 Ubuntu 20.04 (Focal)
 --------------------
@@ -233,41 +245,42 @@ For example, from the root of the **xNVMe** source repository, do:
    :language: bash
    :lines: 17-
 
-Alpine Linux 3.11.3
+Alpine Linux
 -------------------
 
 Install the following packages via ``apk``:
 
-.. literalinclude:: ../../scripts/pkgs/alpine-3.12.0.txt
+.. literalinclude:: ../../scripts/pkgs/alpine-latest.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/alpine-3.12.0.sh
+.. literalinclude:: ../../scripts/pkgs/alpine-latest.sh
    :language: bash
    :lines: 8-
 
 Windows
 -------
 
-xNVMe builds **natively** with the MSVC compiler via CMake. However, the
-libraries produced by the MSVC compiler depends on runtimes which are not
-compatible with fio, thus when using MSVC, then the xNVMe fio IO-engine is not
-usable.
+You can build xNVMe with a MSVC toolchain, however, some of the features are
+lost when doing so, such as the xNVMe fio io-engine. Thus, here instructions
+are provided on building xNVMe with the most features available.
 
-To obtain fio-compatibility, then a gcc-based toolchain is recommended,
-specfically MinGW_. The toolchain,  consists of:
+The toolchain setup is a bit involved, it "bootstraps" by installing the
+Chocolatey package manager by running::
 
-.. literalinclude:: ../../scripts/pkgs/windows-2019.txt
-   :language: bash
+  Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 
-Installing it can be done by first installing the Chocolatey_ Windows package
-manager via PowerShell, then install CMake and msys2 via Chocolatey_, lastly
-the actual compiler-toolchain is installed via **pacman** provided by the
-``msys2`` Shell.
+Then continues with installing a couple of tools via Chocolatey, then the
+actual compiler toolchain via the msys2. A script stays more than a thousand
+words, so please consult the scripts::
 
-A batch-script comes with xNVMe, ``scripts/pkgs/windows-2019.bat``, which does
-what is described above. Invoke the script in an elevated command-prompt
+  scripts/pkgs/windows-2019.bat
+  scripts/pkgs/windows-2022.bat
+
+For details.
+
+To utilize the scripts, then invoke the script in an elevated command-prompt
 (``cmd.exe`` as Administrator)::
 
   cd scripts\pkgs
@@ -276,6 +289,7 @@ what is described above. Invoke the script in an elevated command-prompt
 .. note:: in case you see .dll loader-errors, then check that the environment
    variable ``PATH`` contains the various library locations of the the
    toolchain.
+
 
 .. _sec-gs-system-config:
 
@@ -613,6 +627,20 @@ To use **xNVMe** include the ``libxnvme.h`` header in your C/C++ source:
 Compile and link
 ----------------
 
+A pkg-config is provided with xNVMe, you can use ``pkg-config`` to get the
+required linker flags:
+
+.. literalinclude:: pkg_config_00.cmd
+   :language: bash
+
+This will output something like the output below, it will vary depending on the
+features enabled/disabled.
+
+.. literalinclude:: pkg_config_00.out
+   :language: bash
+
+You can pass the arguments above to your compiler, or using pkg-config like so:
+
 .. literalinclude:: hello_00.cmd
    :language: bash
 
@@ -714,21 +742,13 @@ Build Errors
 If you are getting errors while attempting to configure and build **xNVMe**
 then it is likely due to one of the following:
 
-**git submodules**
+* You are building in an **offline** environment and only have a shallow
+  source-archive or a git-repository without subprojects.
 
-* You did not clone with ``--recursive`` or are for other reasons missing the
-  submodules. Either clone again with the ``--recursive`` flag, or update
-  submodules: ``git submodule update --init --recursive``.
-
-* You used the **"Download Source"** link on GitHUB, this does not work as it
-  does not provide all the third-party repositories, only the xNVMe
-  source-tree.
-
-In case you cannot use git submodules then a source-archive is provided with
-each xNVMe release, you can download it from the `GitHUB Release page
-<https://github.com/OpenMPDK/xNVMe/releases>`_ release page. It contains the
-xNVMe source code along with all the third-party dependencies, namely: SPDK,
-liburing, libnvme, and fio.
+The full source-archive is made available with each release and downloadble
+from the `GitHUB Release page <https://github.com/OpenMPDK/xNVMe/releases>`_
+release page. It contains the xNVMe source code along with all the third-party
+dependencies, namely: SPDK, liburing, libnvme, and fio.
 
 **missing dependencies / toolchain**
 
@@ -737,7 +757,7 @@ liburing, libnvme, and fio.
 
 The :ref:`sec-building-toolchain` section describes preferred ways of
 installing libraries and tools. For example, on Ubuntu 18.04 it is preferred to
-install ``meson`` via ``pip`` since the version in the package registry is too
+install ``meson`` via ``pip3`` since the version in the package registry is too
 old for SPDK, thus if installed via the package manager then you will
 experience build errors as the xNVMe build system starts building SPDK.
 
@@ -764,7 +784,7 @@ to musl standard library not being entirely compatible with **GLIBC** /
 The SPDK backend does not build on due to re-definition of ``STAILQ_*``
 macros. As a work-around, then disable the SPDK backend::
 
-  ./configure --disable-be-spdk
+  meson setup builddir -Dwith-spdk=false
 
 The Linux backend support for ``io_uring`` fails on **Alpine Linux** due to a
 missing definition in **musl** leading to this error message::
@@ -774,7 +794,7 @@ missing definition in **musl** leading to this error message::
 
 As a work-around, then disable ``io_uring`` support::
 
-  ./configure --disable-be-linux-iou
+  meson setup builddir -Dwith-liburing=false
 
 See more details on changing the default build-configuration of **xNVMe** in
 the section :ref:`sec-building-config`.
@@ -816,68 +836,32 @@ a bit of fiddling.
 The path of least fiddling around is to just install the toolchain and
 libraries as described in the :ref:`sec-building-toolchain` section.
 
-.. _sec-building-crosscompiling:
-
-Cross-compiling for ARM on x86
-------------------------------
-
-In case you do not have the build-tools available on your ARM target, then you
-can cross-compile g by parsing ``CC`` parameter to make e.g.:
-
-.. code-block:: bash
-
-  CC=aarch64-linux-gnu-gcc-9 ./configure <config_options>
-  make CC=aarch64-linux-gnu-gcc-9
-
-Then transfer and unpack ``xnvme0.tar.gz`` from the ``build`` directory to your
-ARM machine.
-
-.. note:: This is currently not supported with the SPDK backend
-
 .. _sec-building-config:
 
 Custom Configuration
 --------------------
 
-The **xNVMe** build system configures itself, so you do not have to run
-configure script yourself. Manually invoking the **xNVMe** build-configuration
-should not be needed, for the common task of enabling debugging then just do::
+See the list of options in ``meson_options.txt``, this file options the
+different non-generic options that you can toggle. For traditional
+build-configuration such as ``--prefix`` then these are managed like all other
+meson-based builds::
 
-  make clean
-  make config-debug
-  make
+  meson setup builddir -Dprefix=/foo/bar
 
-However, if for some reason you want to manually run the **xNVMe**
-build-configuration, then this section describes how to accomplish that.
+See: https://mesonbuild.com/Builtin-options.html
 
-A ``configure`` script is provided to configure the build of **xNVMe**. You can
-inspect configuration options by invoking::
+For details
 
-  ./configure --help
+.. _sec-building-crosscompiling:
 
-* Boolean options are enabled by prefixing ``--enable-<OPTION>``
-* Boolean options are disabled by prefixing ``--disable-<OPTION>``
-* A couple of examples:
+Cross-compiling for ARM on x86
+------------------------------
 
-  - Enable debug with: ``--enable-debug``
+This is managed by like any other meson-based build, see:
 
-  - Disable the SPDK backend with: ``--disable-be-spdk``
+https://mesonbuild.com/Cross-compilation.html
 
-The configure-script will enable backends relevant to the system platform
-determined by the environment variable ``OSTYPE``.
-
-On Linux, the configure script enables the SPDK backend ``be:spdk`` and the
-Linux native backend ``be:linux``, with all features enabled, that is, support
-for ``libaio``, ``io_uring``, ``nil``, and ``emu``.
-
-On FreeBSD, the configure script enables the SPDK backend ``be:spdk`` and the
-FreeBSD native backend ``be:fbsd``. For more information about these so-called
-library backends, see the :ref:`sec-backends` section.
-
-**xNVMe** provides third-party libraries via submodules, it builds these and
-embeds them in the **xNVMe** static libraries and executables. If you want to
-link with your version of these libraries then you can overwrite the respective
-include and library paths. See ``./configure --help`` for details.
+for details
 
 .. _issue: https://github.com/OpenMPDK/xNVMe/issues
 

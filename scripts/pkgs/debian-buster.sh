@@ -19,4 +19,5 @@ apt-get -qy autoclean
 # Install packages via apt-get
 apt-get install -qy $(cat "scripts/pkgs/debian-buster.txt")
 
-apt-get -t buster-backports install -qy meson ninja-build python3-pyelftools
+# Install packages via PyPI
+pip3 install meson ninja pyelftools

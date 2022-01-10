@@ -13,11 +13,6 @@ yum install -y devtoolset-8
 # Install packages via yum
 yum install -y $(cat "scripts/pkgs/centos-centos7.txt")
 
-# Install CMake using installer from GitHUB
-wget https://github.com/Kitware/CMake/releases/download/v3.16.5/cmake-3.16.5-Linux-x86_64.sh -O cmake.sh
-chmod +x cmake.sh
-./cmake.sh --skip-license --prefix=/usr/
-
 # Install packages via PyPI
 pip3 install meson ninja pyelftools
 

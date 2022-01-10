@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-    Extract the xNVMe version from the given CMakeLists.txt
+    Extract the version meson build
 
     When running from shell, returns 0 on success, some other value otherwise
 """
@@ -13,41 +13,41 @@ def expand_path(path):
 
     return os.path.abspath(os.path.expanduser(os.path.expandvars(path)))
 
-def xnvme_ver(cml_path=None):
+def xnvme_ver(path=None):
     """
-    Retrieve the xNVMe version from project CMakeLists.txt
+    Retrieve the version from project CMakeLists.txt
 
     @returns "x.y.z", {"major": x, "minor": y, "patch": z}
     """
 
-    if cml_path is None:
-        cml_path = os.sep.join(["..", "..", "CMakeLists.txt"])
+    if path is None:
+        path = os.sep.join(["..", "..", "meson.build"])
 
-    with open(cml_path) as cmake:
+    with open(path) as cmake:
         for line in cmake.readlines():
-            if "\tVERSION " not in line:
+            if "version:" not in line:
                 continue
 
-            _, vtxt = line.split("VERSION ", 1)
+            _, vtxt = line.split("version:", 1)
 
-            return vtxt.strip()
+            return vtxt.replace(",", "").replace("'", "").strip()
 
     return ""
 
-def setup():
+def parse_args():
     """Parse command-line arguments"""
 
     prsr = argparse.ArgumentParser(
-        description="Extract the xNVMe version from the given CMakeLists.txt",
+        description="Extract the xNVMe version from the meson.build",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     prsr.add_argument(
-        "--cml",
-        help="Path to 'CMakeLists.txt'",
+        "--path",
+        help="Path to 'meson.build'",
         required=True
     )
     args = prsr.parse_args()
-    args.cml = expand_path(args.cml)
+    args.path= expand_path(args.path)
 
     return args
 
@@ -55,11 +55,11 @@ def main(args):
     """Entry point"""
 
     try:
-        print(xnvme_ver(args.cml))
+        print(xnvme_ver(args.path))
     except FileNotFoundError:
         return 1
 
     return 0
 
 if __name__ == "__main__":
-    sys.exit(main(setup()))
+    sys.exit(main(parse_args()))

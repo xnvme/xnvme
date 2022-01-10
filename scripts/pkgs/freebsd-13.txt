@@ -1,8 +1,8 @@
 autoconf
 automake
 bash
-cmake
 cunit
+devel/py-pyelftools
 e2fsprogs-libuuid
 git
 gmake
@@ -11,5 +11,4 @@ nasm
 ncurses
 ninja
 openssl
-python
 python3

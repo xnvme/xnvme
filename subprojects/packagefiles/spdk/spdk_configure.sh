@@ -1,0 +1,20 @@
+#!/usr/bin/env sh
+./configure \
+  --with-fio=../fio \
+  --disable-apps \
+  --without-crypto \
+  --without-fuse \
+  --without-idxd \
+  --without-isal \
+  --without-iscsi-initiator \
+  --without-nvme-cuse \
+  --without-ocf \
+  --without-pmdk \
+  --without-rbd \
+  --without-reduce \
+  --without-shared \
+  --without-uring \
+  --without-usdt \
+  --without-vhost \
+  --without-vtune \
+  --without-virtio

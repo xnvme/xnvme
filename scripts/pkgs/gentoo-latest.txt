@@ -1,7 +1,6 @@
 dev-lang/nasm
 dev-libs/libaio
 dev-python/pyelftools
-dev-util/cmake
 dev-util/cunit
 dev-util/meson
 dev-util/ninja

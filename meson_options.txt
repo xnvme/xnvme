@@ -1,0 +1,20 @@
+option('with-liburing', type: 'boolean', value: true)
+option('with-libaio', type: 'boolean', value: true)
+option('with-spdk', type: 'boolean', value: true)
+option('with-fio', type: 'boolean', value: true)
+
+option('async_emu', type: 'boolean', value: true)
+option('async_thrpool', type: 'boolean', value: true)
+
+option('examples', type: 'boolean', value: true)
+option('tests', type: 'boolean', value: true)
+option('tools', type: 'boolean', value: true)
+
+option('shared_library', type: 'boolean', value: true)
+
+option('build_subprojects', type : 'boolean', value : true, yield : true)
+
+option('enable-ysnp', type: 'boolean', value: true)
+
+option('manpages', type: 'boolean', value: 'true', description: 'Install manpages for all CLI tools/examples/tests')
+option('bash_completion', type: 'feature', value: 'disabled', description: 'Install bash-completions for all CLI tools/examples/tests')

@@ -1,6 +1,5 @@
 astyle
 build-essential
-cmake
 git
 libaio-dev
 libcunit1-dev

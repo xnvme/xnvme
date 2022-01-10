@@ -1,9 +1,9 @@
 .. code-block:: bash
 
-  # Clone the xNVMe repos
-  git clone https://github.com/OpenMPDK/xNVMe.git --recursive xnvme
-  cd xnvme
+  # Clone the xNVMe repos into the folder 'xnvme'
+  git clone https://github.com/OpenMPDK/xNVMe.git xnvme
 
-.. note:: The repository uses git-submodules, so make sure you are cloning with
-  ``--recursive``, if you overlooked that, then invoke ``git submodule update
-  --init --recursive``
+.. note:: The xNVMe build-system uses ``meson/ninja`` and its
+   subproject-feature with wraps, dependencies such as fio, liburing, and SPDK
+   are fetched by the build-system (meson), not as previously done via
+   git-submodules.

@@ -2,11 +2,12 @@ build-essential
 git
 libaio-dev
 libcunit1-dev
+libffi-dev
 libncurses5-dev
 libnuma-dev
 libssl-dev
 nasm
-python3
-python3-pip
+procps
 uuid-dev
 wget
+zlib1g-dev

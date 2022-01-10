@@ -1,5 +1,4 @@
 base-devel
-cmake
 cunit
 gcc
 git

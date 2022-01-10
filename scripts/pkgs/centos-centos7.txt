@@ -11,4 +11,5 @@ openssl-devel
 patch
 python3
 python3-pip
+unzip
 wget

@@ -17,10 +17,18 @@ apt-get -qy autoclean
 # Install packages via apt-get
 apt-get install -qy $(cat "scripts/pkgs/debian-stretch.txt")
 
-# Install CMake using installer from GitHUB
-wget https://github.com/Kitware/CMake/releases/download/v3.16.5/cmake-3.16.5-Linux-x86_64.sh -O cmake.sh
-chmod +x cmake.sh
-./cmake.sh --skip-license --prefix=/usr/
+# Recent versions of meson needs a recent version of Python.
+# The Python3 available via Debian Stretch packages, 3.5, is too old (3.5).
+pushd /tmp
+PYTHON_VER="3.7.9"
+wget "https://www.python.org/ftp/python/${PYTHON_VER}/Python-${PYTHON_VER}.tgz"
+tar xzf "Python-${PYTHON_VER}.tgz"
+cd "Python-${PYTHON_VER}"
+./configure --enable-optimizations
+make altinstall -j $(nproc)
+update-alternatives --install /usr/bin/python3 python3 /usr/local/bin/python3.7 10
+update-alternatives --install /usr/bin/pip3 pip3 /usr/local/bin/pip3.7 10
+popd
 
 # Install packages via PyPI
 pip3 install meson ninja pyelftools

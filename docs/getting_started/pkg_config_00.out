@@ -1,0 +1,2 @@
+-Wl,--whole-archive -Wl,--no-as-needed -lxnvme -Wl,--no-whole-archive -Wl,--as-needed -pthread -lrt -lm -lnuma -luuid -laio
+

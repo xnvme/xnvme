@@ -1,115 +1,35 @@
 #!/usr/bin/env bash
-
+#
+# This is not an actual configure-script.
+#
+# This file is just here for the those with the habit of grabbing the source and running:
+#
+# ./configure
+# make
+# make install
+#
+# This will inform them about the build-system and to consult the online docs, or in-repos:
+#
+# * https://xnvme.io/docs/latest/getting_started/index.html
+# * docs/getting_started/index.rst
+#
+# for documentation on building and getting started. Also, xNVMe used to actually utilize this
+# 'configure-script' as a frontend for CMake. However, with the migration to meson and their easily
+# readable docs:
+#
+# https://mesonbuild.com/Commands.html#setup
+#
+# Then having to maintain multiple ways of configuration xNVMe is not worth the effort. Having said
+# that, then the 'Makefile' still provide some common-case ease-of-use.
+#
 set -e
-
 trap 'echo -e "\n\nConfiguration failed\n\n" >&2' ERR
 
-# Default configuration values
-declare -A CONFIG
-
-# Installation prefix
-CONFIG[PREFIX]="/usr/local"
-
-# Build with debug logging and symbols. debug logging consists of an
-# error-message prefixed with "XNVME_DEBUG: " printed to stderr on all functions
-# returning errors
-
-# Turn off for performance testing and normal usage
-CONFIG[DEBUG]=OFF
-
-# Build adhoc Debian packages
-CONFIG[DEBS]=OFF
-
-# Build tests, these are executables named "xnvme_examples_*"
-CONFIG[EXAMPLES]=ON
-
-# Build tests, these are executables named "xnvme_test_*"
-CONFIG[TESTS]=ON
-
-# Build TOOLS command-line interface; executables named "xnvme" and "zoned"
-CONFIG[TOOLS]=ON
-
-# Build TOOLS_FIOE fio ioengine using xNVMe
-CONFIG[TOOLS_FIOE]=ON
-
-# Enable the SPDK backend
-CONFIG[BE_SPDK]=OFF
-
-# Enable the FreeBSD backend
-CONFIG[BE_FBSD]=OFF
-
-# Enable the Linux backend
-CONFIG[BE_LINUX]=OFF
-
-# Enable the support for the Linux Block Device Model in the Linux backend
-CONFIG[BE_LINUX_BLOCK]=OFF
-
-# Enable the libaio async-implementation in the Linux backend
-CONFIG[BE_LINUX_LIBAIO]=OFF
-
-# Enable the liburing/io_uring async-implementation in the Linux backend
-CONFIG[BE_LINUX_LIBURING]=OFF
-
-# Enable the POSIX Backend
-CONFIG[BE_POSIX]=OFF
-
-# Enable the POSIX async Backend
-CONFIG[BE_ASYNC_POSIX]=ON
-
-case "${OSTYPE,,}" in
-	*linux* )
-		CONFIG[DEBS]=ON
-		CONFIG[BE_SPDK]=ON
-		CONFIG[BE_LINUX]=ON
-		CONFIG[BE_LINUX_BLOCK]=ON
-		CONFIG[BE_LINUX_LIBAIO]=ON
-		CONFIG[BE_LINUX_LIBURING]=ON
-		CONFIG[BE_POSIX]=ON
-		;;
-
-	*freebsd* )
-		CONFIG[DEBS]=OFF
-		CONFIG[BE_SPDK]=ON
-		CONFIG[BE_FBSD]=ON
-		CONFIG[BE_POSIX]=ON
-		;;
-	*msys* )
-		CONFIG[DEBS]=ON
-		CONFIG[BE_SPDK]=OFF
-		CONFIG[BE_WINDOWS]=ON
-		;;
-esac
-
-# Directory that contains the desired SPDK headers
-CONFIG[SPDK_INCLUDE_PATH]="${PWD}/third-party/spdk/repos/include"
-
-# Directory that contains the desired SPDK libraries
-CONFIG[SPDK_LIBRARY_PATH]="${PWD}/third-party/spdk/repos/build/lib"
-
-# Directory that contains the desired DPDK headers
-CONFIG[DPDK_INCLUDE_PATH]="${PWD}/third-party/spdk/repos/dpdk/build/include"
-
-# Directory that contains the desired DPDK libraries
-CONFIG[DPDK_LIBRARY_PATH]="${PWD}/third-party/spdk/repos/dpdk/build/lib"
-
-# Directory containing liburing headers
-CONFIG[LIBURING_INCLUDE_PATH]="${PWD}/third-party/liburing/repos/src/include"
-
-# Directory containing liburing libraries
-CONFIG[LIBURING_LIBRARY_PATH]="${PWD}/third-party/liburing/repos/src"
-
-function check_dir() {
-	arg="$1"
-	dir="${arg#*=}"
-	if [ ! -d "$dir" ]; then
-		echo "$arg: directory not found"
-		exit 1
-	fi
-}
+meson --version || (echo "\n** Please install 'meson' **\n" && exit 1)
 
 function usage()
 {
-	echo "'configure' configures XNVME to compile on supported platforms."
+	echo "'configure' is not the actual config as xNVMe is built using meson/ninja"
 	echo ""
 	echo "Usage: ./configure [OPTION] ..."
 	echo ""
@@ -121,31 +41,6 @@ function usage()
 	echo " --prefix=path             Configure installation prefix (default: /usr/local)"
 	echo ""
 	echo " --enable-debug            Configure for debug builds"
-	echo " --enable-debs             Enable the build of Debian Packages"
-	echo " --disable-examples        Disable building of examples"
-	echo " --disable-tests           Disable building of tests"
-	echo " --disable-tools           Disable building of cli-tools"
-	echo " --disable-tools-fio       Disable building of fio xNVMe engine"
-	echo ""
-	echo "Specifying backends, and options to build into the library"
-	echo " --enable-be-spdk          Enable the SPDK backend"
-	echo " --enable-be-fbsd          Enable the FreeBSD backend"
-	echo " --enable-be-linux         Enable the Linux backend"
-	echo " --enable-be-linux-block   Enable Linux Block Device support"
-	echo " --enable-be-linux-libaio  Enable Linux ASYNC IO support"
-	echo " --enable-be-linux-liburing     Enable Linux liburing/io_uring support"
-	echo " --enable-be-linux-nil     Enable Linux nil-async-io support"
-	echo ""
-	echo "Overriding Dependencies:"
-	echo ""
-	echo "--spdk-include-path    Path to DIR with SPDK headers"
-	echo "--spdk-library-path    Path to DIR with SPDK libraries"
-	echo ""
-	echo "--dpdk-include-path    Path to DIR with DPDK headers"
-	echo "--dpdk-library-path    Path to DIR with DPDK libraries"
-	echo ""
-	echo "--liburing-include-path    Path to DIR with liburing headers"
-	echo "--liburing-library-path    Path to DIR with liburing libraries"
 	echo ""
 	echo "Environment variables:"
 	echo ""
@@ -155,15 +50,6 @@ function usage()
 	echo "LDFLAGS                    Linker flags"
 	echo "DESTDIR                    Destination for 'make install'"
 	echo ""
-
-	echo "Default configuration on current system:"
-
-	local jazz=""
-	for key in "${!CONFIG[@]}"; do
-		jazz="$jazz\n  $key: ${CONFIG[$key]}"
-	done
-
-	echo -e $jazz | sort
 }
 
 for i in "$@"; do
@@ -203,117 +89,18 @@ for i in "$@"; do
 			;;
 
 		--enable-debug)
-			CONFIG[DEBUG]=ON
+			make config-debug
+			exit 0
 			;;
 		--disable-debug)
-			CONFIG[DEBUG]=OFF
-			;;
-
-		--enable-debs)
-			CONFIG[DEBS]=ON
-			;;
-		--disable-debs)
-			CONFIG[DEBS]=OFF
-			;;
-
-		--enable-examples)
-			CONFIG[EXAMPLES]=ON
-			;;
-		--disable-examples)
-			CONFIG[EXAMPLES]=OFF
-			;;
-
-		--enable-tests)
-			CONFIG[TESTS]=ON
-			;;
-		--disable-tests)
-			CONFIG[TESTS]=OFF
-			;;
-
-		--enable-tools)
-			CONFIG[TOOLS]=ON
-			;;
-		--disable-tools)
-			CONFIG[TOOLS]=OFF
-			;;
-
-		--enable-tools-fio)
-			CONFIG[TOOLS_FIOE]=ON
-			;;
-		--disable-tools-fio)
-			CONFIG[TOOLS_FIOE]=OFF
-			;;
-
-		--enable-be-spdk)
-			CONFIG[BE_SPDK]=ON
-			;;
-		--disable-be-spdk)
-			CONFIG[BE_SPDK]=OFF
-			;;
-		--spdk-include-path=*)
-			check_dir "$i"
-			CONFIG[SPDK_INCLUDE_PATH]=$(readlink -f ${i#*=})
-			;;
-		--spdk-library-path=*)
-			check_dir "$i"
-			CONFIG[SPDK_LIBRARY_PATH]=$(readlink -f ${i#*=})
-			;;
-		--dpdk-include-path=*)
-			check_dir "$i"
-			CONFIG[DPDK_INCLUDE_PATH]=$(readlink -f ${i#*=})
-			;;
-		--dpdk-library-path=*)
-			check_dir "$i"
-			CONFIG[DPDK_LIBRARY_PATH]=$(readlink -f ${i#*=})
-			;;
-
-		--enable-be-fbsd)
-			CONFIG[BE_FBSD]=ON
-			;;
-		--disable-be-fbsd)
-			CONFIG[BE_FBSD]=OFF
-			;;
-
-		--enable-be-linux)
-			CONFIG[BE_LINUX]=ON
-			;;
-		--disable-be-linux)
-			CONFIG[BE_LINUX]=OFF
-			;;
-
-		--enable-be-linux-block)
-			CONFIG[BE_LINUX_BLOCK]=ON
-			;;
-		--disable-be-linux-block)
-			CONFIG[BE_LINUX_BLOCK]=OFF
-			;;
-
-		--enable-be-linux-libaio)
-			CONFIG[BE_LINUX_LIBAIO]=ON
-			;;
-		--disable-be-linux-libaio)
-			CONFIG[BE_LINUX_LIBAIO]=OFF
-			;;
-
-		--enable-be-linux-liburing)
-			CONFIG[BE_LINUX_LIBURING]=ON
-			;;
-		--disable-be-linux-liburing)
-			CONFIG[BE_LINUX_LIBURING]=OFF
-			;;
-
-		--liburing-include-path=*)
-			check_dir "$i"
-			CONFIG[LIBURING_INCLUDE_PATH]=$(readlink -f ${i#*=})
-			;;
-		--liburing-library-path=*)
-			check_dir "$i"
-			CONFIG[LIBURING_LIBRARY_PATH]=$(readlink -f ${i#*=})
+			make config
+			exit 0
 			;;
 
 		--)
 			break
 			;;
+
 		*)
 			echo "Unrecognized option $i"
 			usage
@@ -321,57 +108,5 @@ for i in "$@"; do
 	esac
 done
 
-cmake --version || (echo "\n** Please install 'cmake' **\n" && exit 1)
-
-CMAKE_OPTS="$CMAKE_OPTS -DEXAMPLES=${CONFIG[EXAMPLES]}"
-CMAKE_OPTS="$CMAKE_OPTS -DTESTS=${CONFIG[TESTS]}"
-CMAKE_OPTS="$CMAKE_OPTS -DTOOLS=${CONFIG[TOOLS]}"
-CMAKE_OPTS="$CMAKE_OPTS -DTOOLS_FIOE=${CONFIG[TOOLS_FIOE]}"
-
-CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_SPDK_ENABLED=${CONFIG[BE_SPDK]}"
-CMAKE_OPTS="$CMAKE_OPTS -DSPDK_INCLUDE_PATH=${CONFIG[SPDK_INCLUDE_PATH]}"
-CMAKE_OPTS="$CMAKE_OPTS -DSPDK_LIBRARY_PATH=${CONFIG[SPDK_LIBRARY_PATH]}"
-CMAKE_OPTS="$CMAKE_OPTS -DDPDK_INCLUDE_PATH=${CONFIG[DPDK_INCLUDE_PATH]}"
-CMAKE_OPTS="$CMAKE_OPTS -DDPDK_LIBRARY_PATH=${CONFIG[DPDK_LIBRARY_PATH]}"
-CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_FBSD_ENABLED=${CONFIG[BE_FBSD]}"
-CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_LINUX_ENABLED=${CONFIG[BE_LINUX]}"
-CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_LINUX_BLOCK_ENABLED=${CONFIG[BE_LINUX_BLOCK]}"
-CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_LINUX_LIBAIO_ENABLED=${CONFIG[BE_LINUX_LIBAIO]}"
-CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_LINUX_LIBURING_ENABLED=${CONFIG[BE_LINUX_LIBURING]}"
-CMAKE_OPTS="$CMAKE_OPTS -DLIBURING_INCLUDE_PATH=${CONFIG[LIBURING_INCLUDE_PATH]}"
-CMAKE_OPTS="$CMAKE_OPTS -DLIBURING_LIBRARY_PATH=${CONFIG[LIBURING_LIBRARY_PATH]}"
-CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_POSIX_ENABLED=${CONFIG[BE_POSIX]}"
-CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_ASYNC_EMU_ENABLED=${CONFIG[BE_ASYNC_POSIX]}"
-CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_ASYNC_THRPOOL_ENABLED=${CONFIG[BE_ASYNC_POSIX]}"
-CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_WINDOWS_ENABLED=${CONFIG[BE_WINDOWS]}"
-CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_WINDOWS_FS_ENABLED=${CONFIG[BE_WINDOWS]}"
-CMAKE_OPTS="$CMAKE_OPTS -DXNVME_BE_WINDOWS_ASYNC_ENABLED=${CONFIG[BE_WINDOWS]}"
-
-BUILD_DIR="build"
-BUILD_TYPE="debug"
-
-if [[ "${CONFIG[DEBUG]}" == "OFF" ]]; then
-	BUILD_TYPE="Release"
-fi
-
-CMAKE_OPTS="$CMAKE_OPTS -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
-
-echo "CMake Options: '$CMAKE_OPTS'"
-
-mkdir -p $BUILD_DIR
-cd $BUILD_DIR
-cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-	-DCMAKE_INSTALL_PREFIX:PATH=${CONFIG[PREFIX]} \
-	$CMAKE_OPTS \
-	-G "Unix Makefiles" ../
-
-if [[ "${CONFIG[DEBS]}" == "ON" ]]; then
-	touch build_deb
-fi
-
-echo ""
-echo "---=={[ Configured ]}==---"
-echo ""
-echo "Type 'make' to build."
-
+make config
 exit 0
