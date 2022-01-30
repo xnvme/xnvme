@@ -19,6 +19,18 @@ Known Issues
 
 See the file named ``ISSUES`` in the root of the repository.
 
+v0.0.27
+-------
+
+* Build-system migrated from CMake to meson
+  The Makefile "frontend" to the build-system is still available, and
+  instruments meson in the same manner it instrumented CMake. However, this is
+  no longer intended for anything other than development. Meson is the way to
+  go and the documentation thus describes how to use it rather than the
+  make-helpers instrumenting meson.
+
+* Reduced cpu-utilization on libaio and io_uring ``poke()`` implementations
+
 v0.0.26
 -------
 
@@ -27,7 +39,7 @@ command-set-support for ZNS/ZRWA, along with a couple of fixes and third-party
 updates.
 
 * Third-party
-  - fio, updated to 3.27
+  - fio, updated to 3.28
   - spdk, updated to v21.10
 
 * Windows Support
