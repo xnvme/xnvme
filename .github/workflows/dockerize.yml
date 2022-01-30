@@ -7,10 +7,7 @@ on:
   pull_request:
   push:
     branches:
-      - master
       - dockerize
-    tags:
-      - v*
 
 defaults:
   run:
