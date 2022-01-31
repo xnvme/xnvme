@@ -1,5 +1,5 @@
 # xNVMe Library Information
-ver: {major: 0, minor: 0, patch: 27}
+ver: {major: 0, minor: 0, patch: 28}
 xnvme_3p:
   - 'fio;git-describe:fio-3.28'
   - 'libnvme;git-rev:master/a458217'
