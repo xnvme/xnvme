@@ -10,7 +10,7 @@ xnvme_znd_report:
   zrent_nbytes: 64
   zslba: 0x0000000000000000
   zelba: 0x0000000000000000
-  nzones: 256000
+  nzones: 2048
   nentries: 1
   extended: 0
   entries:
@@ -41,7 +41,7 @@ xnvme_znd_report:
   zrent_nbytes: 64
   zslba: 0x0000000000000000
   zelba: 0x0000000000000000
-  nzones: 256000
+  nzones: 2048
   nentries: 1
   extended: 0
   entries:
