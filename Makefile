@@ -58,7 +58,7 @@ GIT = $$( \
 # TODO: fix this
 BUILD_DIR?=builddir
 PROJECT?=xnvme
-PROJECT_VER?=0.0.27
+PROJECT_VER?=0.0.28
 
 .PHONY: default
 default: info tags git-setup
