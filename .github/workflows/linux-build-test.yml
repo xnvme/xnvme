@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - master
       - dev*
       - ci-build-linux
     tags:

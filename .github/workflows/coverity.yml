@@ -12,7 +12,7 @@ name: coverity
 on:
   push:
     branches:
-      - master
+      - main
       - dev
       - coverity
     tags:

@@ -3,7 +3,7 @@ name: "CodeQL Scan / Analysis"
 on:
   push:
     branches:
-      - master
+      - main
       - dev
       - codeql
     tags:
