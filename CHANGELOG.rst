@@ -19,6 +19,14 @@ Known Issues
 
 See the file named ``ISSUES`` in the root of the repository.
 
+v0.0.28
+-------
+
+This and the previous release contain minimal library/logical changes as major
+changes to the build-system and source organization is changed.
+
+* Moved the libraries sources from 'src' to 'lib'
+
 v0.0.27
 -------
 
