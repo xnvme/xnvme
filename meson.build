@@ -126,7 +126,7 @@ scripts_bundler = files('scripts'/'library_bundler.py')
 
 #
 # Third-party dependencies -- this is actually lib-specific... should probably be moved into
-# 'src/meson.build'?
+# 'lib/meson.build'?
 #
 thread_dep = dependency('threads')
 
@@ -201,7 +201,7 @@ spdk_dep = dependency(
 subdir('include')
 
 # Library source
-subdir('src')
+subdir('lib')
 
 # Tests, tools, fio io-engine, and code examples
 if get_option('tests')

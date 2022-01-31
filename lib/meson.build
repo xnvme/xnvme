@@ -100,7 +100,7 @@ xnvmelib_static = static_library(
 
 # Produce a static library containing xNVMe, liburing, and SPDK
 bundle_lib_paths = []
-bundle_lib_paths += [ 'src' / 'libxnvme-static.a' ]
+bundle_lib_paths += [ 'lib' / 'libxnvme-static.a' ]
 foreach blib : xnvmelib_deps_bundle
   if get_option('build_subprojects') and blib.found()
     bundle_lib_paths += blib.get_variable(internal: 'lib_paths').split(' ')

@@ -19,7 +19,7 @@ if [[ ! -f "$ASTYLE_FNAME" ]]; then
   exit 1
 fi
 
-FILES=$(find ../{include,src,examples,tests,tools} -type f -name *.h -o -name *.c | grep -v xnvme_fioe.c)
+FILES=$(find ../{include,lib,examples,tests,tools} -type f -name *.h -o -name *.c | grep -v xnvme_fioe.c)
 
 if [[ -f astyle.log ]]; then
   mv astyle.log "astyle.log.${RANDOM}"

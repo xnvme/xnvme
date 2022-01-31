@@ -245,7 +245,7 @@ tags:
 	@echo "## xNVMe: make tags"
 	@$(CTAGS) * --languages=C -h=".c.h" -R --exclude=builddir \
 		include \
-		src \
+		lib \
 		tools \
 		examples \
 		tests \
