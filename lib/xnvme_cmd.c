@@ -113,6 +113,25 @@ xnvme_cmd_pass(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *
 }
 
 int
+xnvme_cmd_passv(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, size_t dvec_nbytes,
+		struct iovec *mvec, size_t mvec_cnt, size_t mvec_nbytes)
+{
+	const int cmd_opts = ctx->opts & XNVME_CMD_MASK;
+
+	switch (cmd_opts & XNVME_CMD_MASK_IOMD) {
+	case XNVME_CMD_ASYNC:
+		return ctx->dev->be.async.cmd_iov(ctx, dvec, dvec_cnt, dvec_nbytes, mvec, mvec_cnt,
+						  mvec_nbytes);
+	case XNVME_CMD_SYNC:
+		return ctx->dev->be.sync.cmd_iov(ctx, dvec, dvec_cnt, dvec_nbytes, mvec, mvec_cnt,
+						 mvec_nbytes);
+	default:
+		XNVME_DEBUG("FAILED: command-mode not provided");
+		return -EINVAL;
+	}
+}
+
+int
 xnvme_cmd_pass_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 		     size_t mbuf_nbytes)
 {

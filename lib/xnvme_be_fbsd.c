@@ -50,8 +50,8 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_fbsd[] = {
 	{
 		.mtype = XNVME_BE_SYNC,
 		.name = "psync",
-		.descr = "Use pread()/write() for synchronous I/O",
-		.sync = &g_xnvme_be_posix_sync_psync,
+		.descr = "Use pread()/write() for synchronous I/O and FreeBSD preadv()/pwritev()",
+		.sync = &g_xnvme_be_fbsd_sync_psync,
 		.check_support = xnvme_be_supported,
 	},
 

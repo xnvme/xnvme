@@ -114,8 +114,10 @@ struct xnvme_be_sync g_xnvme_be_fbsd_sync_nvme = {
 	.id = "nvme",
 #ifdef XNVME_BE_FBSD_ENABLED
 	.cmd_io = xnvme_be_fbsd_nvme_io,
+	.cmd_iov = xnvme_be_nosys_sync_cmd_iov,
 #else
 	.cmd_io = xnvme_be_nosys_sync_cmd_io,
+	.cmd_iov = xnvme_be_nosys_sync_cmd_iov,
 #endif
 };
 

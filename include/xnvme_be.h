@@ -12,8 +12,8 @@
 
 #define XNVME_BE_QUEUE_STATE_NBYTES 256
 
-#define XNVME_BE_ASYNC_NBYTES  48
-#define XNVME_BE_SYNC_NBYTES   16
+#define XNVME_BE_ASYNC_NBYTES  56
+#define XNVME_BE_SYNC_NBYTES   24
 #define XNVME_BE_ADMIN_NBYTES  16
 #define XNVME_BE_DEV_NBYTES    24
 #define XNVME_BE_MEM_NBYTES    32
@@ -30,6 +30,10 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_attr) == XNVME_BE_ATTR_NBYTES, "Incor
 struct xnvme_be_async {
 	// Submit an async io command to be processed on the backend's io path
 	int (*cmd_io)(struct xnvme_cmd_ctx *, void *, size_t, void *, size_t);
+
+	// Submit a vectored async io command to be processed on the backend's io path
+	int (*cmd_iov)(struct xnvme_cmd_ctx *, struct iovec *, size_t, size_t, struct iovec *,
+		       size_t, size_t);
 
 	// Non-blocking reaping of up to `max` io completions
 	int (*poke)(struct xnvme_queue *, uint32_t);
@@ -54,6 +58,13 @@ struct xnvme_be_sync {
 	 * intervention
 	 */
 	int (*cmd_io)(struct xnvme_cmd_ctx *, void *, size_t, void *, size_t);
+
+	/**
+	 * Pass a vectored NVMe I/O Command Through to the device with minimal
+	 * driver intervention
+	 */
+	int (*cmd_iov)(struct xnvme_cmd_ctx *, struct iovec *, size_t, size_t, struct iovec *,
+		       size_t, size_t);
 
 	const char *id;
 };
