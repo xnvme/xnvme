@@ -203,8 +203,10 @@ struct xnvme_be_sync g_xnvme_be_linux_sync_nvme = {
 	.id = "nvme",
 #ifdef XNVME_BE_LINUX_ENABLED
 	.cmd_io = xnvme_be_linux_nvme_cmd_io,
+	.cmd_iov = xnvme_be_nosys_sync_cmd_iov,
 #else
 	.cmd_io = xnvme_be_nosys_sync_cmd_io,
+	.cmd_iov = xnvme_be_nosys_sync_cmd_iov,
 #endif
 };
 

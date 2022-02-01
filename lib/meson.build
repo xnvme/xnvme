@@ -4,6 +4,7 @@ xnvmelib_source = [
   'xnvme_be_fbsd.c',
   'xnvme_be_fbsd_dev.c',
   'xnvme_be_fbsd_nvme.c',
+  'xnvme_be_fbsd_sync.c',
   'xnvme_be_linux.c',
   'xnvme_be_linux_async_libaio.c',
   'xnvme_be_linux_async_liburing.c',

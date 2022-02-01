@@ -101,7 +101,9 @@ struct xnvme_be_sync g_xnvme_be_spdk_sync = {
 	.id = "nvme",
 #ifdef XNVME_BE_SPDK_ENABLED
 	.cmd_io = xnvme_be_spdk_sync_cmd_io,
+	.cmd_iov = xnvme_be_nosys_sync_cmd_iov,
 #else
 	.cmd_io = xnvme_be_nosys_sync_cmd_io,
+	.cmd_iov = xnvme_be_nosys_sync_cmd_iov,
 #endif
 };

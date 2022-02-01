@@ -254,18 +254,87 @@ xnvme_be_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 
 	return 0;
 }
+
+int
+xnvme_be_linux_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+				size_t XNVME_UNUSED(dvec_nbytes), struct iovec *mvec,
+				size_t mvec_cnt, size_t mvec_nbytes)
+{
+	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
+	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
+	uint64_t ssw = 0;
+	struct io_uring_sqe *sqe = NULL;
+
+	int fd;
+	int err = 0;
+
+	if (queue->base.outstanding == queue->base.capacity) {
+		XNVME_DEBUG("FAILED: queue is full");
+		return -EBUSY;
+	}
+
+	if (mvec || mvec_cnt || mvec_nbytes) {
+		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
+		return -ENOSYS;
+	}
+
+	sqe = io_uring_get_sqe(&queue->ring);
+	if (!sqe) {
+		return -EAGAIN;
+	}
+
+	sqe->flags = queue->poll_sq ? IOSQE_FIXED_FILE : 0;
+
+	// NOTE: we only ever register a single file, the raw device, so the
+	// provided index will always be 0
+	fd = queue->poll_sq ? 0 : state->fd;
+
+	switch (ctx->cmd.common.opcode) {
+	case XNVME_SPEC_NVM_OPC_WRITE:
+		ssw = queue->base.dev->geo.ssw;
+	/* fall through */
+	case XNVME_SPEC_FS_OPC_WRITE:
+		io_uring_prep_writev(sqe, fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
+		break;
+
+	case XNVME_SPEC_NVM_OPC_READ:
+		ssw = queue->base.dev->geo.ssw;
+	/* fall through */
+	case XNVME_SPEC_FS_OPC_READ:
+		io_uring_prep_readv(sqe, fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
+		break;
+
+	default:
+		XNVME_DEBUG("FAILED: unsupported opcode: %d for async", ctx->cmd.common.opcode);
+		return -ENOSYS;
+	}
+
+	io_uring_sqe_set_data(sqe, ctx);
+
+	err = io_uring_submit(&queue->ring);
+	if (err < 0) {
+		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opcode, err);
+		return err;
+	}
+
+	queue->base.outstanding += 1;
+
+	return 0;
+}
 #endif
 
 struct xnvme_be_async g_xnvme_be_linux_async_liburing = {
 	.id = "io_uring",
 #ifdef XNVME_BE_LINUX_LIBURING_ENABLED
 	.cmd_io = xnvme_be_linux_liburing_cmd_io,
+	.cmd_iov = xnvme_be_linux_liburing_cmd_iov,
 	.poke = xnvme_be_linux_liburing_poke,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_linux_liburing_init,
 	.term = xnvme_be_linux_liburing_term,
 #else
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
+	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
 	.poke = xnvme_be_nosys_queue_poke,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_nosys_queue_init,

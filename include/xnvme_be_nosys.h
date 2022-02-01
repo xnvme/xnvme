@@ -10,6 +10,11 @@ xnvme_be_nosys_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 			   size_t mbuf_nbytes);
 
 int
+xnvme_be_nosys_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+			    size_t dvec_nbytes, struct iovec *mvec, size_t mvec_cnt,
+			    size_t mvec_nbytes);
+
+int
 xnvme_be_nosys_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 			      void *mbuf, size_t mbuf_nbytes);
 
@@ -19,6 +24,11 @@ xnvme_be_nosys_sync_supported(struct xnvme_dev *dev, uint32_t opts);
 int
 xnvme_be_nosys_queue_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			    size_t mbuf_nbytes);
+
+int
+xnvme_be_nosys_queue_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+			     size_t dvec_nbytes, struct iovec *mvec, size_t mvec_cnt,
+			     size_t mvec_nbytes);
 
 int
 xnvme_be_nosys_queue_poke(struct xnvme_queue *queue, uint32_t max);
@@ -62,9 +72,10 @@ xnvme_be_nosys_dev_close(struct xnvme_dev *dev);
 		.cmd_admin = xnvme_be_nosys_sync_cmd_admin, .id = "ENOSYS", \
 	}
 
-#define XNVME_BE_NOSYS_SYNC                                           \
-	{                                                             \
-		.cmd_io = xnvme_be_nosys_sync_cmd_io, .id = "ENOSYS", \
+#define XNVME_BE_NOSYS_SYNC                                                                   \
+	{                                                                                     \
+		.cmd_iov = xnvme_be_nosys_sync_cmd_iov, .cmd_io = xnvme_be_nosys_sync_cmd_io, \
+		.id = "ENOSYS",                                                               \
 	}
 
 #define XNVME_BE_NOSYS_QUEUE                                                              \

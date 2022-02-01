@@ -15,6 +15,16 @@ xnvme_be_nosys_sync_cmd_io(struct xnvme_cmd_ctx *XNVME_UNUSED(ctx), void *XNVME_
 }
 
 int
+xnvme_be_nosys_sync_cmd_iov(struct xnvme_cmd_ctx *XNVME_UNUSED(ctx),
+			    struct iovec *XNVME_UNUSED(dvec), size_t XNVME_UNUSED(dvec_cnt),
+			    size_t XNVME_UNUSED(dvec_nbytes), struct iovec *XNVME_UNUSED(mvec),
+			    size_t XNVME_UNUSED(mvec_cnt), size_t XNVME_UNUSED(mvec_nbytes))
+{
+	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");
+	return -ENOSYS;
+}
+
+int
 xnvme_be_nosys_sync_cmd_admin(struct xnvme_cmd_ctx *XNVME_UNUSED(ctx), void *XNVME_UNUSED(dbuf),
 			      size_t XNVME_UNUSED(dbuf_nbytes), void *XNVME_UNUSED(mbuf),
 			      size_t XNVME_UNUSED(mbuf_nbytes))
@@ -41,6 +51,16 @@ int
 xnvme_be_nosys_queue_cmd_io(struct xnvme_cmd_ctx *XNVME_UNUSED(ctx), void *XNVME_UNUSED(dbuf),
 			    size_t XNVME_UNUSED(dbuf_nbytes), void *XNVME_UNUSED(mbuf),
 			    size_t XNVME_UNUSED(mbuf_nbytes))
+{
+	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");
+	return -ENOSYS;
+}
+
+int
+xnvme_be_nosys_queue_cmd_iov(struct xnvme_cmd_ctx *XNVME_UNUSED(ctx),
+			     struct iovec *XNVME_UNUSED(dvec), size_t XNVME_UNUSED(dvec_cnt),
+			     size_t XNVME_UNUSED(dvec_nbytes), struct iovec *XNVME_UNUSED(mvec),
+			     size_t XNVME_UNUSED(mvec_cnt), size_t XNVME_UNUSED(mvec_nbytes))
 {
 	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");
 	return -ENOSYS;
