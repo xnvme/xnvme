@@ -55,10 +55,8 @@ GIT = $$( \
 		( * ) echo Unrecognized ;; \
 	esac)
 
-# TODO: fix this
+PROJECT_VER = $(( python3 scripts/xnvme_ver.py --path meson.build ))
 BUILD_DIR?=builddir
-PROJECT?=xnvme
-PROJECT_VER=$(( python3 scripts/xnvme_ver.py --path meson.build ))
 
 .PHONY: default
 default: info tags git-setup
