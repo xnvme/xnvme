@@ -58,7 +58,7 @@ GIT = $$( \
 # TODO: fix this
 BUILD_DIR?=builddir
 PROJECT?=xnvme
-PROJECT_VER?=0.0.28
+PROJECT_VER=$(( python3 scripts/xnvme_ver.py --path meson.build ))
 
 .PHONY: default
 default: info tags git-setup
