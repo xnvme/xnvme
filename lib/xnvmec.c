@@ -844,11 +844,19 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 	},
 
 	{
+		.opt = XNVMEC_OPT_VEC_CNT,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "vec-cnt",
+		.descr = "Number of elements in vectors when doing vectored IOs",
+	},
+
+	{
 		.opt = XNVMEC_OPT_END,
 		.vtype = XNVMEC_OPT_VTYPE_NUM,
 		.name = "",
 		.descr = "",
-	}};
+	},
+};
 
 struct xnvmec_opt_attr *
 xnvmec_opt_attr_by_opt(enum xnvmec_opt opt, struct xnvmec_opt_attr *attrs)
@@ -1399,6 +1407,9 @@ xnvmec_assign_arg(struct xnvmec *cli, struct xnvmec_opt_attr *opt_attr, char *ar
 		break;
 	case XNVMEC_OPT_ADRFAM:
 		args->adrfam = arg ? arg : "IPv4";
+		break;
+	case XNVMEC_OPT_VEC_CNT:
+		args->vec_cnt = num ? num : 1;
 		break;
 
 	case XNVMEC_OPT_END:

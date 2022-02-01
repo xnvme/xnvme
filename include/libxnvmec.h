@@ -216,6 +216,8 @@ struct xnvmec_args {
 	uint32_t create;
 	uint32_t create_mode;
 	uint32_t oflags;
+
+	uint32_t vec_cnt;
 };
 
 void
@@ -348,7 +350,9 @@ enum xnvmec_opt {
 	XNVMEC_OPT_ADRFAM   = 95, ///< XNVMEC_OPT_ADRFAM
 	XNVMEC_OPT_DEV_NSID = 96, ///< XNVMEC_OPT_DEV_NSID
 
-	XNVMEC_OPT_END = 97, ///< XNVMEC_OPT_END
+	XNVMEC_OPT_VEC_CNT = 97, ///< XNVMEC_OPT_VEC_CNT
+
+	XNVMEC_OPT_END = 98, ///< XNVMEC_OPT_END
 };
 
 /**
