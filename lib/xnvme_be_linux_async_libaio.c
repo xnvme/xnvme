@@ -149,18 +149,80 @@ _linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, 
 
 	return err;
 }
+
+int
+_linux_libaio_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+		      size_t XNVME_UNUSED(dvec_nbytes), struct iovec *mvec, size_t mvec_cnt,
+		      size_t mvec_nbytes)
+{
+	struct xnvme_queue_libaio *queue = (void *)ctx->async.queue;
+	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
+	const uint64_t ssw = queue->base.dev->geo.ssw;
+
+	struct iocb *iocb = (void *)&ctx->cmd;
+	int err;
+
+	if (queue->base.outstanding == queue->base.capacity) {
+		XNVME_DEBUG("FAILED: queue is full");
+		return -EBUSY;
+	}
+	if (mvec || mvec_cnt || mvec_nbytes) {
+		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
+		return -ENOSYS;
+	}
+
+	///< Convert the NVMe command/sqe to an Linux aio io-control-block
+	///< NOTE: opcode-dispatch (io)
+	switch (ctx->cmd.common.opcode) {
+	case XNVME_SPEC_NVM_OPC_WRITE:
+		io_prep_pwritev(iocb, state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
+		break;
+
+	case XNVME_SPEC_NVM_OPC_READ:
+		io_prep_preadv(iocb, state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
+		break;
+
+	case XNVME_SPEC_FS_OPC_WRITE:
+		io_prep_pwritev(iocb, state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba);
+		break;
+
+	case XNVME_SPEC_FS_OPC_READ:
+		io_prep_preadv(iocb, state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba);
+		break;
+
+		// TODO: determine how to handle fsync
+
+	default:
+		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);
+		return -ENOSYS;
+	}
+
+	iocb->data = (unsigned long *)ctx;
+
+	err = io_submit(queue->aio_ctx, 1, &iocb);
+	if (err == 1) {
+		ctx->async.queue->base.outstanding += 1;
+		return 0;
+	}
+
+	XNVME_DEBUG("FAILED: io_submit(), err: %d", err);
+
+	return err;
+}
 #endif
 
 struct xnvme_be_async g_xnvme_be_linux_async_libaio = {
 	.id = "libaio",
 #ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
 	.cmd_io = _linux_libaio_cmd_io,
+	.cmd_iov = _linux_libaio_cmd_iov,
 	.poke = _linux_libaio_poke,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = _linux_libaio_init,
 	.term = _linux_libaio_term,
 #else
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
+	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
 	.poke = xnvme_be_nosys_queue_poke,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_nosys_queue_init,

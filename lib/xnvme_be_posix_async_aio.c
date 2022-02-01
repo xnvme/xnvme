@@ -206,12 +206,14 @@ struct xnvme_be_async g_xnvme_be_posix_async_aio = {
 	.id = "posix",
 #ifdef XNVME_BE_POSIX_ENABLED
 	.cmd_io = _posix_async_aio_cmd_io,
+	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
 	.poke = _posix_async_aio_poke,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = _posix_async_aio_init,
 	.term = _posix_async_aio_term,
 #else
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
+	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
 	.poke = xnvme_be_nosys_queue_poke,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_nosys_queue_init,

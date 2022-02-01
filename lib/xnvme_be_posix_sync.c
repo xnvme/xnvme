@@ -65,7 +65,9 @@ struct xnvme_be_sync g_xnvme_be_posix_sync_psync = {
 	.id = "psync",
 #ifdef XNVME_BE_POSIX_ENABLED
 	.cmd_io = xnvme_be_posix_sync_cmd_io,
+	.cmd_iov = xnvme_be_nosys_sync_cmd_iov,
 #else
 	.cmd_io = xnvme_be_nosys_sync_cmd_io,
+	.cmd_iov = xnvme_be_nosys_sync_cmd_iov,
 #endif
 };

@@ -451,6 +451,73 @@ xnvme_be_linux_block_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 }
 
 int
+xnvme_be_linux_block_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+			     size_t dvec_nbytes, struct iovec *XNVME_UNUSED(mvec),
+			     size_t XNVME_UNUSED(mvec_cnt), size_t XNVME_UNUSED(mvec_nbytes))
+{
+	struct xnvme_be_linux_state *state = (void *)ctx->dev->be.state;
+	const uint64_t ssw = ctx->dev->geo.ssw;
+	ssize_t res;
+
+	switch (ctx->cmd.common.opcode) {
+	case XNVME_SPEC_NVM_OPC_WRITE:
+
+		res = pwritev(state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
+		if (res != (ssize_t)dvec_nbytes) {
+			XNVME_DEBUG("FAILED: W res: %ld != dvec_nbytes: %zu, errno: %d", res,
+				    dvec_nbytes, errno);
+			return -errno;
+		}
+		return 0;
+
+	case XNVME_SPEC_NVM_OPC_READ:
+		res = preadv(state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
+		if (res != (ssize_t)dvec_nbytes) {
+			XNVME_DEBUG("FAILED: R res: %ld != dvec_nbytes: %zu, errno: %d", res,
+				    dvec_nbytes, errno);
+			return -errno;
+		}
+		return 0;
+
+	case XNVME_SPEC_FS_OPC_WRITE:
+		res = pwritev(state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba);
+		if (res != (ssize_t)dvec_nbytes) {
+			XNVME_DEBUG("FAILED: W res: %ld != dvec_nbytes: %zu, errno: %d", res,
+				    dvec_nbytes, errno);
+			return -errno;
+		}
+		return 0;
+
+	case XNVME_SPEC_FS_OPC_READ:
+		res = preadv(state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba);
+		if (res != (ssize_t)dvec_nbytes) {
+			XNVME_DEBUG("FAILED: R res: %ld != dvec_nbytes: %zu, errno: %d", res,
+				    dvec_nbytes, errno);
+			return -errno;
+		}
+		return 0;
+
+	case XNVME_SPEC_NVM_OPC_FLUSH:
+	case XNVME_SPEC_FS_OPC_FLUSH:
+		if (fsync(state->fd)) {
+			return -errno;
+		}
+		return 0;
+
+		// TODO: how should these be handled?
+		// case XNVME_SPEC_ZND_OPC_MGMT_SEND:
+		// 	return _lzbd_zone_mgmt_send(ctx);
+
+		// case XNVME_SPEC_ZND_OPC_MGMT_RECV:
+		// 	return _lzbd_zone_mgmt_recv(ctx, dbuf, dbuf_nbytes);
+
+	default:
+		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opcode);
+		return -ENOSYS;
+	}
+}
+
+int
 _idfy_ctrlr(struct xnvme_dev *dev, void *dbuf)
 {
 	struct xnvme_spec_idfy_ctrlr *ctrlr = dbuf;
@@ -657,8 +724,10 @@ struct xnvme_be_sync g_xnvme_be_linux_sync_block = {
 	.id = "block",
 #ifdef XNVME_BE_LINUX_BLOCK_ENABLED
 	.cmd_io = xnvme_be_linux_block_cmd_io,
+	.cmd_iov = xnvme_be_linux_block_cmd_iov,
 #else
 	.cmd_io = xnvme_be_nosys_sync_cmd_io,
+	.cmd_iov = xnvme_be_nosys_sync_cmd_iov,
 #endif
 };
 

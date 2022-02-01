@@ -24,6 +24,7 @@ xnvme_be_fbsd_nvme_get_nsid_and_ctrlr_fd(int fd, uint32_t *nsid, int *ctrlr_fd);
 
 extern struct xnvme_be_admin g_xnvme_be_fbsd_admin_nvme;
 extern struct xnvme_be_sync g_xnvme_be_fbsd_sync_nvme;
+extern struct xnvme_be_sync g_xnvme_be_fbsd_sync_psync;
 extern struct xnvme_be_dev g_xnvme_be_fbsd_dev;
 
 #endif /* __INTERNAL_XNVME_BE_FBSD */
