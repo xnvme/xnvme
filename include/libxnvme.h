@@ -413,7 +413,7 @@ xnvme_cmd_ctx_cpl_status(struct xnvme_cmd_ctx *ctx)
 }
 
 /**
- * Pass a NVMe IO Command through to the device via the given ::xnvme_cmd_ctx
+ * Pass an NVMe IO Command through to the device via the given ::xnvme_cmd_ctx
  *
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  * @param dbuf pointer to data-payload
