@@ -6,6 +6,7 @@
 #include <libxnvme.h>
 #include <libxnvmec.h>
 #include <libxnvme_file.h>
+#include <libxnvme_spec_fs.h>
 
 #define IOSIZE_DEF 4096
 #define QDEPTH_MAX 256
@@ -170,6 +171,86 @@ exit:
 }
 
 int
+dump_sync_iovec(struct xnvmec *cli)
+{
+	struct xnvme_opts opts = {.create = 1,
+				  .wronly = 1,
+				  .direct = cli->args.direct,
+				  .be = cli->args.be,
+				  .sync = cli->args.sync};
+	struct xnvme_dev *fh;
+	struct xnvme_cmd_ctx ctx;
+	const char *fpath;
+	size_t buf_nbytes, tbytes, iosize, tbytes_left;
+	int npayloads, nios;
+	size_t ofz = 0;
+	int dvec_cnt = cli->args.vec_cnt;
+	char *buf;
+
+	fpath = cli->args.data_output;
+	iosize = cli->given[XNVMEC_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
+
+	fh = xnvme_file_open(fpath, &opts);
+	if (!fh) {
+		xnvmec_perr("xnvme_file_open(fh)", errno);
+		return errno;
+	}
+	tbytes = cli->args.data_nbytes;
+	tbytes_left = tbytes;
+
+	buf_nbytes = tbytes;
+	buf = xnvme_buf_alloc(fh, buf_nbytes);
+	if (!buf) {
+		xnvmec_perr("xnvme_buf_alloc()", errno);
+		goto exit;
+	}
+	xnvmec_buf_fill(buf, buf_nbytes, "anum");
+
+	xnvmec_pinf("dump-sync-iovec: {fpath: %s, tbytes: %zu, buf_nbytes: %zu iosize: %zu}",
+		    fpath, tbytes, buf_nbytes, iosize);
+
+	xnvmec_timer_start(cli);
+
+	ctx = xnvme_file_get_cmd_ctx(fh);
+	ctx.cmd.common.nsid = xnvme_dev_get_nsid(ctx.dev);
+	ctx.cmd.common.opcode = XNVME_SPEC_FS_OPC_WRITE;
+	ctx.cmd.nvm.slba = ofz;
+
+	npayloads = (buf_nbytes + iosize - 1) / iosize;
+	nios = (npayloads + dvec_cnt - 1) / dvec_cnt;
+	for (int i = 0; i < nios; i++) {
+		struct iovec dvec[dvec_cnt];
+		int ndvec = XNVME_MIN_U64(dvec_cnt, (tbytes_left + iosize - 1) / iosize);
+		int res;
+		size_t nbytes = 0;
+
+		for (int k = 0; k < ndvec; k++) {
+			size_t iov_len = XNVME_MIN_U64(iosize, tbytes_left);
+			dvec[k].iov_base = buf + ofz;
+			dvec[k].iov_len = iov_len;
+			ofz += iov_len;
+			tbytes_left -= iov_len;
+			nbytes += iov_len;
+		}
+
+		res = xnvme_cmd_passv(&ctx, dvec, ndvec, nbytes, NULL, 0, 0);
+		if (res || xnvme_cmd_ctx_cpl_status(&ctx)) {
+			xnvmec_perr("xnvme_cmd_passv(fh)", res);
+			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+			goto exit;
+		}
+	}
+
+	xnvmec_timer_stop(cli);
+	xnvmec_timer_bw_pr(cli, "wall-clock", tbytes);
+
+exit:
+	xnvme_buf_free(fh, buf);
+	xnvme_file_close(fh);
+	return 0;
+}
+
+int
 dump_async(struct xnvmec *cli)
 {
 	struct xnvme_opts opts = {.create = 1, .wronly = 1, .direct = cli->args.direct};
@@ -259,6 +340,111 @@ exit:
 		}
 	}
 
+	xnvme_buf_free(fh, buf);
+	xnvme_file_close(fh);
+	return 0;
+}
+
+int
+dump_async_iovec(struct xnvmec *cli)
+{
+	struct xnvme_opts opts = {.create = 1,
+				  .wronly = 1,
+				  .direct = cli->args.direct,
+				  .be = cli->args.be,
+				  .async = cli->args.async};
+	struct xnvme_dev *fh;
+	struct xnvme_queue *queue = NULL;
+	struct cb_args cb_args = {0};
+	const char *fpath;
+	size_t buf_nbytes, tbytes, iosize, tbytes_left;
+	int npayloads, nios;
+	uint32_t qdepth;
+	size_t ofz = 0;
+	int dvec_cnt = cli->args.vec_cnt;
+	char *buf;
+	int err;
+
+	fpath = cli->args.data_output;
+	iosize = cli->given[XNVMEC_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
+	qdepth = cli->given[XNVMEC_OPT_QDEPTH] ? cli->args.qdepth : QDEPTH_DEF;
+
+	fh = xnvme_file_open(fpath, &opts);
+	if (!fh) {
+		xnvmec_perr("xnvme_file_open(fh)", errno);
+		return errno;
+	}
+	tbytes = cli->args.data_nbytes;
+	tbytes_left = tbytes;
+
+	buf_nbytes = tbytes;
+	buf = xnvme_buf_alloc(fh, buf_nbytes);
+	if (!buf) {
+		xnvmec_perr("xnvme_buf_alloc()", errno);
+		goto exit;
+	}
+	xnvmec_buf_fill(buf, buf_nbytes, "anum");
+
+	err = xnvme_queue_init(fh, qdepth, 0, &queue);
+	if (err) {
+		xnvmec_perr("xnvme_queue_init()", err);
+		goto exit;
+	}
+	xnvme_queue_set_cb(queue, cb_func, &cb_args);
+
+	xnvmec_pinf("dump-async-iovec{fpath: %s, tbytes: %zu, buf_nbytes: %zu, iosize: %zu, "
+		    "qdepth: %d}",
+		    fpath, tbytes, buf_nbytes, iosize, qdepth);
+
+	xnvmec_timer_start(cli);
+
+	npayloads = (buf_nbytes + iosize - 1) / iosize;
+	nios = (npayloads + dvec_cnt - 1) / dvec_cnt;
+	for (int i = 0; i < nios; i++) {
+		struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(queue);
+		struct iovec dvec[dvec_cnt];
+		int ndvec = XNVME_MIN_U64(dvec_cnt, (tbytes_left + iosize - 1) / iosize);
+		int res;
+		size_t nbytes = 0;
+
+		ctx->cmd.common.nsid = xnvme_dev_get_nsid(ctx->dev);
+		ctx->cmd.common.opcode = XNVME_SPEC_FS_OPC_WRITE;
+		ctx->cmd.nvm.slba = ofz;
+
+		for (int k = 0; k < ndvec; k++) {
+			size_t iov_len = XNVME_MIN_U64(iosize, tbytes_left);
+			dvec[k].iov_base = buf + ofz;
+			dvec[k].iov_len = iov_len;
+			ofz += iov_len;
+			tbytes_left -= iov_len;
+			nbytes += iov_len;
+		}
+
+submit:
+		res = xnvme_cmd_passv(ctx, dvec, ndvec, nbytes, NULL, 0, 0);
+		switch (res) {
+		case 0:
+			cb_args.nsubmissions += 1;
+			continue;
+
+		case -EBUSY:
+		case -EAGAIN:
+			xnvme_queue_poke(queue, 0);
+			goto submit;
+
+		default:
+			xnvmec_perr("submission-error", err);
+			xnvme_queue_put_cmd_ctx(queue, ctx);
+			goto exit;
+		}
+	}
+
+	xnvme_queue_wait(queue);
+
+	xnvmec_timer_stop(cli);
+	xnvmec_timer_bw_pr(cli, "wall-clock", tbytes);
+
+exit:
 	xnvme_buf_free(fh, buf);
 	xnvme_file_close(fh);
 	return 0;
@@ -634,6 +820,21 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
+		"dump-sync-iovec",
+		"Write a buffer of 'data-nbytes' to file using vectored ios",
+		"Write a buffer of 'data-nbytes' to file",
+		dump_sync_iovec,
+		{
+			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
+			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LREQ},
+			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
+			{XNVMEC_OPT_DIRECT, XNVMEC_LFLG},
+			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_VEC_CNT, XNVMEC_LOPT},
+		},
+	},
+	{
 		"dump-async",
 		"Write a buffer of 'data-nbytes' to file --data-output",
 		"Write a buffer of 'data-nbytes' to file --data-output",
@@ -644,6 +845,22 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
 			{XNVMEC_OPT_QDEPTH, XNVMEC_LOPT},
 			{XNVMEC_OPT_DIRECT, XNVMEC_LFLG},
+		},
+	},
+	{
+		"dump-async-iovec",
+		"Write a buffer of 'data-nbytes' to file --data-output using vectored ios",
+		"Write a buffer of 'data-nbytes' to file --data-output",
+		dump_async_iovec,
+		{
+			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
+			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LREQ},
+			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
+			{XNVMEC_OPT_QDEPTH, XNVMEC_LOPT},
+			{XNVMEC_OPT_DIRECT, XNVMEC_LFLG},
+			{XNVMEC_OPT_ASYNC, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_VEC_CNT, XNVMEC_LOPT},
 		},
 	},
 	{
