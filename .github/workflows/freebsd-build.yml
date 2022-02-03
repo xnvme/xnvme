@@ -1,0 +1,147 @@
+name: build-freebsd
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - ci-build-freebsd
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  #
+  # Produce a "full" source-archive, that is, including source from submodules
+  #
+  # This is done to provide the source-archive for users in environments without
+  # submodule access and for the containers in the workflow which does not have
+  # a recent enough version of git do pull down the modules
+  #
+  source-archive-gen:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Grab source
+      uses: actions/checkout@v2
+
+    - name: Prepare Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Generate Full Source Archive
+      run: |
+        sudo ./scripts/pkgs/ubuntu-focal.sh
+        make clobber gen-src-archive
+
+    - name: Upload source archive
+      uses: actions/upload-artifact@v2
+      with:
+        name: archive-src
+        path: builddir/meson-dist/*.tar.gz
+
+  # Grab the source and build on self-hosted, matching the CPU on which it will
+  # be tested. This is done, since SPDK/DPDK is build with "-march=native", and
+  # thus needs to run on a CPU with the same ISA
+  build-freebsd:
+    needs: source-archive-gen
+
+    runs-on: self-hosted
+    container:
+      image: refenv/qemu-nvme:latest
+      options: --privileged
+
+    steps:
+    - name: Runnner-prep, clean up self-hosted left-overs
+      run: |
+        rm -rf *
+        ls
+
+    - name: Container-prep, get the full-source-archive
+      uses: actions/download-artifact@v2
+      with:
+        name: archive-src
+
+    - name: Provision qemu-guest
+      id: cijoe-qemu
+      uses: refenv/gh-cijoe-qemu-action@main
+      with:
+        #vm-image: 'https://cloud.debian.org/images/cloud/bullseye/daily/latest/debian-11-genericcloud-amd64-daily.qcow2'
+        #vm-cloudinit: 'debian-bullseye'
+        #vm-image: 'https://object-storage.public.mtl1.vexxhost.net/swift/v1/1dbafeefbd4f4c80864414a441e72dd2/bsd-cloud-image.org/images/freebsd/13.0/freebsd-13.0-zfs.qcow2'
+        vm-image: 'https://refenv.fra1.digitaloceanspaces.com/freebsd13-ufs-ksrc.qcow2'
+        vm-cloudinit: 'freebsd-13'
+
+    - name: CIJOE, run commands inside the qemu-guest
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd
+        source ${{ steps.cijoe-qemu.outputs.target-env }}
+        cij.cmd "lspci"
+
+    - name: CIJOE, transfer source to qemu-guest
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd
+        source ${{ steps.cijoe-qemu.outputs.target-env }}
+        ssh.push xnvme*.tar.gz xnvme.tar.gz
+        cij.cmd "tar xzf xnvme.tar.gz --strip 1"
+
+    - name: CIJOE, install packages
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd
+        source ${{ steps.cijoe-qemu.outputs.target-env }}
+        cij.cmd "./scripts/pkgs/freebsd-13.sh"
+
+    - name: CIJOE, build xNVMe
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd
+        source ${{ steps.cijoe-qemu.outputs.target-env }}
+        cij.cmd "gmake"
+
+    - name: CIJOE, build xNVMe dump log on failure
+      if: failure()
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd
+        source ${{ steps.cijoe-qemu.outputs.target-env }}
+        cij.cmd "cat builddir/meson-logs/meson-log.txt"
+
+    - name: CIJOE, instal xNVMe
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd
+        source ${{ steps.cijoe-qemu.outputs.target-env }}
+        cij.cmd "gmake install"
+
+    - name: CIJOE, check binaries are available
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd
+        source ${{ steps.cijoe-qemu.outputs.target-env }}
+
+        cij.cmd "xnvme enum"
+        cij.cmd "xnvme library-info"
+
+    - name: CIJOE, run testplans using qemu-guest as test-target
+      run: |
+        source /opt/scripts/suitup.sh
+        cij_runner \
+          --env ${{ steps.cijoe-qemu.outputs.target-env }} \
+          --output ${{ steps.cijoe-qemu.outputs.results }} \
+          --testplan \
+          "${CIJ_TESTPLANS}/example_01.plan"
+
+    - name: CIJOE, result-log-dump on error
+      if: failure()
+      run: find ${{ steps.cijoe-qemu.outputs.results }} -name "*.log" | xargs cat
+
+    - name: CIJOE, generate report from results
+      if: always()
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd
+        cij_reporter --output ${{ steps.cijoe-qemu.outputs.results }}
+
+    - name: CIJOE, upload test results and report
+      uses: actions/upload-artifact@v2
+      if: always()
+      with:
+        name: test-results
+        path: ${{ steps.cijoe-qemu.outputs.results }}/*
