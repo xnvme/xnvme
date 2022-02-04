@@ -1,0 +1,12 @@
+--- a/buildtools/meson.build	2022-02-04 11:09:21.041366280 +0100
++++ b/buildtools/meson.build	2022-02-04 11:12:31.596987283 +0100
+@@ -27,6 +27,9 @@
+         pmdinfo += 'llvm-ar'
+     endif
+     pmdinfogen += 'coff'
++elif host_machine.system() == 'freebsd'
++    pmdinfo += 'llvm-ar'
++    pmdinfogen += 'elf'
+ else
+     pmdinfo += 'ar'
+     pmdinfogen += 'elf'

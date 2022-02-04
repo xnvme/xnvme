@@ -3,3 +3,4 @@ find patches -type f -name '0*.patch' -print0 | sort -z | xargs -t -0 -n 1 patch
 cd dpdk
 patch -p1 --forward < ../patches/spdk-dpdk-no-plugins.patch || true
 patch -p1 --forward < ../patches/spdk-dpdk-no-libarchive.patch || true
+patch -p1 --forward < ../patches/spdk-dpdk-use-llvm-ar-on-freebsd.patch || true
