@@ -12,3 +12,4 @@ ncurses
 ninja
 openssl
 python3
+wget
