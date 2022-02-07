@@ -12,8 +12,9 @@ WORKDIR xnvme
 
 RUN bash scripts/pkgs/debian-bullseye.sh
 
-RUN ./configure --disable-be-spdk && \
+RUN meson setup builddir -Dwith-spdk=false && \
 	make && \
+	make build-deb && \
 	make install-deb && \
 	make clean
 
