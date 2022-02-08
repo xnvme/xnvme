@@ -20,7 +20,7 @@ templates_path = [os.sep.join(["_templates"])]
 source_suffix = '.rst'
 master_doc = 'index'
 project = u'xNVMe'
-copyright = u'2020, xNVMe'
+copyright = u'2022, xNVMe'
 version = xnvme_ver()
 release = xnvme_ver()
 
