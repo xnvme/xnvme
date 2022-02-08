@@ -19,6 +19,21 @@ Known Issues
 
 See the file named ``ISSUES`` in the root of the repository.
 
+v0.0.29
+-------
+
+Another infrastructure / fixes release.
+
+* Re-worked the continous integration
+  - Fixed the broken build of the "dockerized" source
+  - Fixed build on FreeBSD
+  - Added build and test of FreeBSD
+  - Combined all workflows in a single workflow, this vastly improves how the
+    CI is triggered and linked with artifacts and artifacts verified
+
+* 3p:windows
+  - Added definition for iovec, in preparation for iovec support
+
 v0.0.28
 -------
 
