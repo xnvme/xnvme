@@ -1,0 +1,15 @@
+cunit-devel
+findutils
+gcc
+gcc-c++
+git
+gzip
+libaio-devel
+libnuma-devel
+libopenssl-devel
+libuuid-devel
+make
+patch
+python3
+python3-pip
+tar

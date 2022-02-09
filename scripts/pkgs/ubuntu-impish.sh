@@ -15,7 +15,7 @@ apt-get -qy \
 apt-get -qy autoclean
 
 # Install packages via apt-get
-apt-get install -qy $(cat "scripts/pkgs/ubuntu-focal.txt")
+apt-get install -qy $(cat "scripts/pkgs/ubuntu-impish.txt")
 
 # Install packages via PyPI
 pip3 install meson ninja pyelftools

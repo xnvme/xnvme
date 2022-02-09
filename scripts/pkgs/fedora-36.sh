@@ -5,5 +5,5 @@ ld --version || true
 # Query the (g)libc version
 ldd --version || true
 
-# Install packages via pkg
-pkg install -qy $(cat "scripts/pkgs/freebsd-13.txt")
+# Install packages via dnf
+dnf install -y $(cat "scripts/pkgs/fedora-36.txt")

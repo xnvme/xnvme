@@ -4,5 +4,6 @@ dev-python/pyelftools
 dev-util/cunit
 dev-util/meson
 dev-util/ninja
+dev-util/pkgconf
 sys-libs/ncurses
 sys-process/numactl

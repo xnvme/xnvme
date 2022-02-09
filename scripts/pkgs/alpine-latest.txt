@@ -13,6 +13,7 @@ musl-dev
 ncurses
 ninja
 numactl-dev
+pkgconf
 py3-pip
 python3
 util-linux-dev

@@ -11,5 +11,6 @@ nasm
 ncurses
 ninja
 openssl
+pkgconf
 python3
 wget

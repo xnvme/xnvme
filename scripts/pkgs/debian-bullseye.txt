@@ -1,5 +1,6 @@
 astyle
 build-essential
+clang-format
 git
 libaio-dev
 libcunit1-dev
@@ -7,6 +8,7 @@ libncurses5-dev
 libnuma-dev
 libssl-dev
 nasm
+pkg-config
 python3
 python3-pip
 uuid-dev

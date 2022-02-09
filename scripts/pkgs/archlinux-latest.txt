@@ -1,13 +1,12 @@
 base-devel
 cunit
-gcc
 git
 libaio
 libutil-linux
-make
 meson
 ncurses
 ninja
 numactl
+pkgconf
 python-pyelftools
 python3
