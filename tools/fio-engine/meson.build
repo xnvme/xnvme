@@ -24,7 +24,6 @@ xnvmefioe = shared_module(
 install_data('xnvme-compare.fio', install_dir : get_option('datadir') / meson.project_name())
 install_data('xnvme-verify.fio', install_dir : get_option('datadir') / meson.project_name())
 install_data('xnvme-zoned.fio', install_dir : get_option('datadir') / meson.project_name())
-install_data('xnvme-compare.fio', install_dir : get_option('datadir') / meson.project_name())
 
 # pkg-config -- describing how to find the xNVMe fio io-engine and the associated fio-scripts
 pconf.generate(
