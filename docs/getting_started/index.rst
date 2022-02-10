@@ -76,6 +76,31 @@ If you which to use a different toolchain then see the
 :ref:`sec-building-custom-toolchain`, on how to instrument the build-system
 using a compiler other than **gcc**.
 
+Alpine Linux
+------------
+
+Install the following packages via ``apk``:
+
+.. literalinclude:: ../../scripts/pkgs/alpine-latest.txt
+   :language: bash
+
+For example, from the root of the **xNVMe** source repository, do:
+
+.. literalinclude:: ../../scripts/pkgs/alpine-latest.sh
+   :language: bash
+   :lines: 8-
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../scripts/pkgs/alpine-latest-build.sh
+   :language: bash
+   :lines: 2-
+
+.. note:: There are issues with SPDK/DPDK due to incompatibilities with the
+   standard library provided by ``musl libc``. Pull-requests fixing this is
+   most welcome, until then, disable support for the SPDK NVMe driver as the
+   ``meson setup`` command above.
+
 Arch Linux
 ----------
 
@@ -89,6 +114,12 @@ For example, from the root of the **xNVMe** source repository, do:
 .. literalinclude:: ../../scripts/pkgs/archlinux-latest.sh
    :language: bash
    :lines: 8-
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../scripts/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
 
 CentOS 7
 --------
@@ -104,10 +135,36 @@ For example, from the root of the **xNVMe** source repository, do:
    :language: bash
    :lines: 8-
 
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../scripts/pkgs/centos-centos7-build.sh
+   :language: bash
+   :lines: 2-
+
+Debian 12 (Bookworm)
+--------------------
+
+Install the following packages via ``apt-get`` and ``aptitude``:
+
+.. literalinclude:: ../../scripts/pkgs/debian-bookworm.txt
+   :language: bash
+
+For example, from the root of the **xNVMe** source repository, do:
+
+.. literalinclude:: ../../scripts/pkgs/debian-bookworm.sh
+   :language: bash
+   :lines: 17-
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../scripts/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
+
 Debian 11 (Bullseye)
 --------------------
 
-Install the following packages via ``apt-get``:
+Install the following packages via ``apt-get``, ``aptitude`` and ``pip3``:
 
 .. literalinclude:: ../../scripts/pkgs/debian-bullseye.txt
    :language: bash
@@ -118,10 +175,16 @@ For example, from the root of the **xNVMe** source repository, do:
    :language: bash
    :lines: 17-
 
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../scripts/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
+
 Debian 10 (Buster)
 ------------------
 
-Install the following packages via ``apt-get``:
+Install the following packages via ``apt-get``, ``aptitude`` and ``pip3``:
 
 .. literalinclude:: ../../scripts/pkgs/debian-buster.txt
    :language: bash
@@ -132,13 +195,20 @@ For example, from the root of the **xNVMe** source repository, do:
    :language: bash
    :lines: 17-
 
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../scripts/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
+
 Debian 9 (Stretch)
 ------------------
 
-.. note: Debian 9 / stretch is EOL, LTS support is available EOL June 2022.
-   After this date xNVMe will stop supporting it.
+.. note:: Debian 9 / stretch is EOL, LTS support is available EOL June 2022.
+   After this date xNVMe will stop supporting it. Might drop it sooner when
+   upgrading to liburing 2.1.
 
-Install the following packages via ``apt-get``:
+Install the following packages via ``apt-get``, ``aptitude`` and ``pip3``:
 
 .. literalinclude:: ../../scripts/pkgs/debian-stretch.txt
    :language: bash
@@ -148,6 +218,80 @@ For example, from the root of the **xNVMe** source repository, do:
 .. literalinclude:: ../../scripts/pkgs/debian-stretch.sh
    :language: bash
    :lines: 17-
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../scripts/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
+
+Fedora (36)
+-----------
+
+Install the following packages via ``apt-get``:
+
+.. literalinclude:: ../../scripts/pkgs/fedora-36.txt
+   :language: bash
+
+For example, from the root of the **xNVMe** source repository, do:
+
+.. literalinclude:: ../../scripts/pkgs/fedora-36.sh
+   :language: bash
+   :lines: 8-
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../scripts/pkgs/fedora-36-build.sh
+   :language: bash
+   :lines: 2-
+
+.. note:: There are issues with liburing 2.0, this will be fixed by upgrading
+   to liburing 2.1 in a near future, until then, disable support for
+   ``io_uring/liburing`` as in the ``meson setup`` command above.
+
+Fedora (35)
+-----------
+
+Install the following packages via ``apt-get``:
+
+.. literalinclude:: ../../scripts/pkgs/fedora-35.txt
+   :language: bash
+
+For example, from the root of the **xNVMe** source repository, do:
+
+.. literalinclude:: ../../scripts/pkgs/fedora-35.sh
+   :language: bash
+   :lines: 8-
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../scripts/pkgs/fedora-35-build.sh
+   :language: bash
+   :lines: 2-
+
+.. note:: There are issues with liburing 2.0, this will be fixed by upgrading
+   to liburing 2.1 in a near future, until then, disable support for
+   ``io_uring/liburing`` as in the ``meson setup`` command above.
+
+Fedora (34)
+-----------
+
+Install the following packages via ``apt-get``:
+
+.. literalinclude:: ../../scripts/pkgs/fedora-34.txt
+   :language: bash
+
+For example, from the root of the **xNVMe** source repository, do:
+
+.. literalinclude:: ../../scripts/pkgs/fedora-34.sh
+   :language: bash
+   :lines: 8-
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../scripts/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
 
 Freebsd 13
 ----------
@@ -164,11 +308,16 @@ For example, from the root of the **xNVMe** source repository, do:
    :language: bash
    :lines: 8-
 
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../scripts/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
+
 Gentoo
 ------
 
 Install the following packages using ``emerge``:
-
 
 .. literalinclude:: ../../scripts/pkgs/gentoo-latest.txt
    :language: bash
@@ -179,29 +328,104 @@ For example, from the root of the **xNVMe** source repository, do:
    :language: bash
    :lines: 9-
 
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../scripts/pkgs/gentoo-latest-build.sh
+   :language: bash
+   :lines: 2-
+
 .. note:: In case you get: ``error adding symbols: DSO missing from command
-   line``, during compilation, then add ``-ltinfo -lnurces`` to ``LDFLAGS``.
-   For example: ``export LDFLAGS=-ltinfo -lncurses"``.
+   line``, during compilation, then add ``-ltinfo -lnurces`` to ``LDFLAGS`` as
+   it is done in the commands above.
+
+openSUSE Tumbleweed
+-------------------
+
+Install the following packages via ``zypper``:
+
+.. literalinclude:: ../../scripts/pkgs/opensuse-tumbleweed-latest.txt
+   :language: bash
+
+For example, from the root of the **xNVMe** source repository, do:
+
+.. literalinclude:: ../../scripts/pkgs/opensuse-tumbleweed-latest.sh
+   :language: bash
+   :lines: 8-
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../scripts/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
+
+openSUSE Leap (15.4)
+--------------------
+
+Install the following packages via ``zypper``:
+
+.. literalinclude:: ../../scripts/pkgs/opensuse-leap-15.4.txt
+   :language: bash
+
+For example, from the root of the **xNVMe** source repository, do:
+
+.. literalinclude:: ../../scripts/pkgs/opensuse-leap-15.4.sh
+   :language: bash
+   :lines: 8-
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../scripts/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
+
+openSUSE Leap (15.3)
+--------------------
+
+Install the following packages via ``zypper``:
+
+.. literalinclude:: ../../scripts/pkgs/opensuse-leap-15.3.txt
+   :language: bash
+
+For example, from the root of the **xNVMe** source repository, do:
+
+.. literalinclude:: ../../scripts/pkgs/opensuse-leap-15.3.sh
+   :language: bash
+   :lines: 8-
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../scripts/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
 
 Ubuntu 21.10 (Impish)
 ---------------------
 
-Install the following packages via ``apt-get``:
+Install the following packages via ``apt-get`` and ``pip3``:
 
-.. literalinclude:: ../../scripts/pkgs/ubuntu-focal.txt
+.. literalinclude:: ../../scripts/pkgs/ubuntu-impish.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/ubuntu-focal.sh
+.. literalinclude:: ../../scripts/pkgs/ubuntu-impish.sh
    :language: bash
    :lines: 17-
 
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../scripts/pkgs/ubuntu-impish-build.sh
+   :language: bash
+   :lines: 2-
+
+.. note:: There are issues with liburing 2.0, this will be upgrade in the near
+   future. For now, disable support for ``io_uring/liburing`` as in the
+   commands above.
 
 Ubuntu 20.04 (Focal)
 --------------------
 
-Install the following packages via ``apt-get``:
+Install the following packages via ``apt-get`` and ``pip3``:
 
 .. literalinclude:: ../../scripts/pkgs/ubuntu-focal.txt
    :language: bash
@@ -212,10 +436,16 @@ For example, from the root of the **xNVMe** source repository, do:
    :language: bash
    :lines: 17-
 
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../scripts/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
+
 Ubuntu 18.04 (Bionic)
 ---------------------
 
-Install the following packages via ``apt-get``:
+Install the following packages via ``apt-get`` and ``pip3``:
 
 .. literalinclude:: ../../scripts/pkgs/ubuntu-bionic.txt
    :language: bash
@@ -226,38 +456,11 @@ For example, from the root of the **xNVMe** source repository, do:
    :language: bash
    :lines: 17-
 
-Ubuntu 16.04 (Xenial)
----------------------
+Then go ahead and configure, build and install using ``meson``:
 
-**Ubunt 16.04 / Xenial is EOL in April 2021**
-
-The following, might still work, however, you should expect issues on this
-non-supported distribution.
-
-Install the following packages via ``apt-get``:
-
-.. literalinclude:: ../../scripts/pkgs/ubuntu-xenial.txt
+.. literalinclude:: ../../scripts/pkgs/default-build.sh
    :language: bash
-
-For example, from the root of the **xNVMe** source repository, do:
-
-.. literalinclude:: ../../scripts/pkgs/ubuntu-xenial.sh
-   :language: bash
-   :lines: 17-
-
-Alpine Linux
--------------------
-
-Install the following packages via ``apk``:
-
-.. literalinclude:: ../../scripts/pkgs/alpine-latest.txt
-   :language: bash
-
-For example, from the root of the **xNVMe** source repository, do:
-
-.. literalinclude:: ../../scripts/pkgs/alpine-latest.sh
-   :language: bash
-   :lines: 8-
+   :lines: 2-
 
 Windows
 -------
