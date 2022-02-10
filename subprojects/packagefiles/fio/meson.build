@@ -7,7 +7,7 @@ fs = import('fs')
 
 if get_option('build_subprojects') and not fs.exists('config-host.h')
   message('Configuring ..')
-  run_command('./configure', capture: false, check: true)
+  run_command('./configure', capture: true, check: true)
 endif
 if get_option('build_subprojects') and not fs.exists('fio')
   cpu_count = run_command([
@@ -24,7 +24,7 @@ if get_option('build_subprojects') and not fs.exists('fio')
       '-j',
       cpu_count
     ],
-    capture: false,
+    capture: true,
     check: true
   )
 endif

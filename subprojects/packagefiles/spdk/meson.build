@@ -7,9 +7,9 @@ fs = import('fs')
 
 if get_option('build_subprojects') and not fs.exists('build')
   message('Patching ..')
-  run_command('spdk_patches.sh', capture: false, check: true)
+  run_command('spdk_patches.sh', capture: true, check: true)
   message('Configuring ..')
-  run_command('spdk_configure.sh', capture: false, check: true)
+  run_command('spdk_configure.sh', capture: true, check: true)
 endif
 if get_option('build_subprojects') and not fs.exists('build' / 'lib' / 'src' / 'spdk_nvme.a')
   cpu_count = run_command([
@@ -26,7 +26,7 @@ if get_option('build_subprojects') and not fs.exists('build' / 'lib' / 'src' / '
       '-j',
       cpu_count
     ],
-    capture: false,
+    capture: true,
     check: true
   )
 endif
