@@ -249,32 +249,38 @@ jobs:
     strategy:
       matrix:
         container:
-        # no known issues
-        - { os: 'archlinux', ver: 'latest' }
-        # liburing 2.1 not supported, prevents upgrading subproject
-        - { os: 'centos', ver: 'centos7' }
-        # no known issues
-        - { os: 'debian', ver: 'bullseye' }
-        # liburing 2.1 not supported, prevents upgrading subproject
-        - { os: 'debian', ver: 'buster' }
-        # no known issues
-        - { os: 'debian', ver: 'stretch' }
-        # no known issues
-        - { os: 'gentoo/stage3', ver: 'latest' }
-        # no known issues
-        - { os: 'ubuntu', ver: 'bionic' }
-        # no known issues
-        - { os: 'ubuntu', ver: 'focal' }
-
-        # liburing 2.0 not supported, not added as it is not LTS
-        #- { os: 'ubuntu', ver: 'impish' }
-        ## fails for other reasons
-        #- { os: 'alpine', ver: 'latest' }
+        # Using an alpine container which is the same as upstream but with bash
+        # alpine: SPDK not supported, --with-spdk=false
+        # centos7: liburing 2.1 not supported, --with-liburing=false
+        # debian-stretch: liburing 2.1 not supported, --with-liburing=false
+        - { os: 'alpine', dh: 'refenv/alpine-bash', ver: 'latest' }
+        - { os: 'archlinux', dh: 'archlinux', ver: 'latest' }
+        - { os: 'centos', dh: 'tgagor/centos', ver: 'stream9' }
+        - { os: 'centos', dh: 'tgagor/centos', ver: 'stream8' }
+        - { os: 'centos', dh: 'centos', ver: 'centos7' }
+        - { os: 'debian', dh: 'debian', ver: 'bookworm' }
+        - { os: 'debian', dh: 'debian', ver: 'bullseye' }
+        - { os: 'debian', dh: 'debian', ver: 'buster' }
+        - { os: 'debian', dh: 'debian', ver: 'stretch' }
+        - { os: 'fedora', dh: 'fedora', ver: '36' }
+        - { os: 'fedora', dh: 'fedora', ver: '35' }
+        - { os: 'fedora', dh: 'fedora', ver: '34' }
+        - { os: 'gentoo', dh: 'gentoo/stage3', ver: 'latest' }
+        - { os: 'opensuse-tumbleweed', dh: 'opensuse/tumbleweed', ver: 'latest' }
+        - { os: 'opensuse-leap', dh: 'opensuse/leap', ver: '15.4' }
+        - { os: 'opensuse-leap', dh: 'opensuse/leap', ver: '15.3' }
+        - { os: 'ubuntu', dh: 'ubuntu', ver: 'impish' }
+        - { os: 'ubuntu', dh: 'ubuntu', ver: 'focal' }
+        - { os: 'ubuntu', dh: 'ubuntu', ver: 'bionic' }
 
     container:
-      image: ${{ matrix.container.os }}:${{ matrix.container.ver }}
+      image: ${{ matrix.container.dh }}:${{ matrix.container.ver }}
 
     steps:
+    - name: Container-preparation, openSUSE does not have tar and gzip...
+      if: contains(matrix.container.os, 'opensuse')
+      run: zypper --non-interactive install -y tar gzip
+
     - name: Retrieve the source-archive
       uses: actions/download-artifact@v2
       with:
@@ -286,33 +292,19 @@ jobs:
 
     - name: Install build-requirements
       run: |
-        [[ ${{ matrix.container.os }} == *"gentoo"* ]] && emerge-webrsync || true
-        [[ ${{ matrix.container.os }} == *"gentoo"* ]] && source scripts/pkgs/gentoo-${{ matrix.container.ver }}.sh || true
-        [[ ${{ matrix.container.os }} != *"gentoo"* ]] && source scripts/pkgs/${{ matrix.container.os }}-${{ matrix.container.ver }}.sh || true
-        [[ ! -f "/usr/bin/python" ]] && ln -s /usr/bin/python3.8 /usr/bin/python || true
+        source scripts/pkgs/${{ matrix.container.os }}-${{ matrix.container.ver }}.sh || true
 
-    - name: Configure, the build
+    - name: Configure, Build, and Install
+      env:
+        BSCRIPT_DEF: scripts/pkgs/default-build.sh
+        BSCRIPT: scripts/pkgs/${{ matrix.container.os }}-${{ matrix.container.ver }}-build.sh
       run: |
-        [[ -f "/opt/rh/devtoolset-8/enable" ]] && source /opt/rh/devtoolset-8/enable || true
-        [[ ${{ matrix.container.os }} == *gentoo** ]] && LDFLAGS="-ltinfo -lncurses" make config || true
-        [[ ${{ matrix.container.os }} != *gentoo** ]] && make config || true
+        if [[ -f "${BSCRIPT}" ]]; then source ${BSCRIPT}; else source ${BSCRIPT_DEF}; fi
 
-    - name: Dump, the compile-commands and machine
+    - name: dump meson-log on failure
+      if: failure()
       run: |
-        [[ -f "/opt/rh/devtoolset-8/enable" ]] && source /opt/rh/devtoolset-8/enable || true
-        cat /proc/cpuinfo
-        cat builddir/compile_commands.json || true
-
-    - name: Build!
-      run: |
-        [[ -f "/opt/rh/devtoolset-8/enable" ]] && source /opt/rh/devtoolset-8/enable || true
-        [[ ${{ matrix.container.os }} == *gentoo** ]] && LDFLAGS="-ltinfo -lncurses" make || true
-        [[ ${{ matrix.container.os }} != *gentoo** ]] && make || true
-
-    - name: Install
-      run: |
-        [[ -f "/opt/rh/devtoolset-8/enable" ]] && source /opt/rh/devtoolset-8/enable || true
-        make install
+        cat builddir/meson-logs/meson-log.txt
 
     - name: Execute 'xnvme enum'
       run: xnvme enum
