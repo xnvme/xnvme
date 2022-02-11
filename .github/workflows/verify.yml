@@ -35,20 +35,19 @@ jobs:
   #
   source-archive:
     runs-on: ubuntu-20.04
+    container: refenv/alpine-bash
 
     steps:
+    - name: Install git
+      run: apk add git
+
     - name: Grab source
       uses: actions/checkout@v2
 
-    - name: Prepare Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
-
     - name: Generate Full Source Archive
       run: |
-        sudo ./scripts/pkgs/ubuntu-focal.sh
-        make clobber gen-src-archive
+        ./scripts/pkgs/alpine-latest.sh
+        make clean gen-src-archive
 
     - name: Upload source archive
       uses: actions/upload-artifact@v2
