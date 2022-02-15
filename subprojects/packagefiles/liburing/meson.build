@@ -1,14 +1,14 @@
 project(
   'liburing',
   'c',
-  version: '2.0'
+  version: '2.1'
 )
 fs = import('fs')
 
 get_option('build_subprojects')
 
 if get_option('build_subprojects') and not fs.exists('config-host.h')
-  run_command('./configure', capture: true, check: true)
+  run_command('./liburing_configure.sh', capture: true, check: true)
 endif
 if get_option('build_subprojects') and not fs.exists('src' / 'liburing.a')
   run_command('./liburing_build.sh', capture: true, check: true)
