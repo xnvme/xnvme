@@ -19,6 +19,19 @@ Known Issues
 
 See the file named ``ISSUES`` in the root of the repository.
 
+v0.1.0
+------
+
+Another infrastructure / fixes release.
+
+* 3p:liburing
+  - Bumped to 2.1
+  - This breaks old distros: Debian Stretch and CentOS 7 but adds support for
+    the latest Arch, Fedora, Tumbleweed, and Ubuntu
+
+* docs
+  - Added scripts and docs for: openSUSE, Fedora, CentOS Stream
+
 v0.0.29
 -------
 
