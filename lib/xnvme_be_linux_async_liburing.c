@@ -281,7 +281,7 @@ xnvme_be_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	sqe->fd = queue->poll_sq ? 0 : state->fd;
 	sqe->rw_flags = 0;
 	sqe->user_data = (unsigned long)ctx;
-	sqe->__pad2[0] = sqe->__pad2[1] = sqe->__pad2[2] = 0;
+	//sqe->__pad2[0] = sqe->__pad2[1] = sqe->__pad2[2] = 0;
 
 	err = io_uring_submit(&queue->ring);
 	if (err < 0) {
