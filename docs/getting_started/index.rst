@@ -31,19 +31,30 @@ Building xNVMe
 
 .. include:: clone.rst
 
-Regardless of whether you are on Linux, FreeBSD or Windows, then the build is
-done in the same way:
+Before you invoke the compilation, then setup your toolchain, that is, ensure
+that you you have the compiler, build-tools, and auxilary packages needed. The
+:ref:`sec-building-toolchain` section describes what to install, and how, on
+rich selection of Linux distributions, FreeBSD and Windows.
+
+With that out of the way, then go ahead:
 
 .. include:: build_meson.rst
 
-However, the installation of the required toolchain and libraries depend on
-operating system and distribution. In case you see build errors, then jump to
-the :ref:`sec-building-toolchain` section describing packages to install on
-different Linux distributions, FreeBSD and Windows.
+.. note:: Details on the build-errors can be seen by inspecting
+   ``builddir/meson-logs/meson-log.txt``.
 
-There you will also find notes on customizing the toolchain and
-cross-compilation. If you want to change the build-configuration, then have a
+.. note:: In case you ran the meson-commands before installing, then you can
+   probably need to remove your ``builddir`` before re-running build commands.
+
+In case you want to customize the build, e.g. install into a differnt location
+etc. then this is all handled by `meson built-in options
+<https://mesonbuild.com/Builtin-options.html>`_, in addition to those, then you
+can inspect ``meson_options.txt`` which contains build-options specific to
+**xNVMe**. For examples on customizing the build then have a look in the 
 look at the following :ref:`sec-building-config`.
+
+Otherwise, with a successfully built and installed **xNVMe**, then jump to
+:ref:`sec-gs-system-config` and :ref:`sec-building-example`.
 
 .. _sec-building-toolchain:
 
@@ -79,16 +90,16 @@ using a compiler other than **gcc**.
 Alpine Linux
 ------------
 
-Install the following packages via ``apk``:
-
-.. literalinclude:: ../../scripts/pkgs/alpine-latest.txt
-   :language: bash
-
-For example, from the root of the **xNVMe** source repository, do:
+From the root of the **xNVMe** source repository, do:
 
 .. literalinclude:: ../../scripts/pkgs/alpine-latest.sh
    :language: bash
    :lines: 8-
+
+This will install the packages listed below via the sytems package manager.
+
+.. literalinclude:: ../../scripts/pkgs/alpine-latest.txt
+   :language: bash
 
 Then go ahead and configure, build and install using ``meson``:
 
