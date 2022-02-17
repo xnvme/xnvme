@@ -508,3 +508,134 @@ jobs:
       with:
         name: test-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
         path: ${{ steps.cijoe-qemu.outputs.results }}/*
+
+  # This is a lot of effort to generate documentation, however, it ensures that command-line
+  # utilities, build-examples, commands-output of various kinds are up-to-date.
+  # It pushes branches to: docs/<branch>
+  # It pushes tags to: docs/<tag>
+  # and to: docs/latest
+  # The event only triggers on Push events
+  docgen:
+    needs: source-archive
+    runs-on: self-hosted
+    if: ((!contains(github.ref, 'ci')) || contains(github.ref, 'ci-docgen')) && (github.event_name == 'push')
+
+    strategy:
+      matrix:
+        guest:
+        - { os: 'debian', ver: 'bullseye', img: 'https://cloud.debian.org/images/cloud/bullseye/daily/latest/debian-11-generic-amd64-daily.qcow2' }
+
+    container:
+      image: refenv/qemu-nvme:latest
+      options: --privileged
+
+    steps:
+    - name: Runnner-prep, clean up self-hosted left-overs
+      run: |
+        rm -rf *
+        ls
+
+    - name: Container-prep, get the full-source-archive
+      uses: actions/download-artifact@v2
+      with:
+        name: archive-src
+    - name: Extract the full-source-archive
+      run: |
+        tar xzf xnvme*.tar.gz --strip 1
+
+    - name: Provision qemu-guest
+      id: cijoe-qemu
+      uses: refenv/gh-cijoe-qemu-action@main
+      with:
+        vm-image: ${{ matrix.guest.img }}
+        vm-cloudinit: ${{ matrix.guest.os }}-${{ matrix.guest.ver }}
+        cijoe-packages: 'cijoe-pkg-xnvme'
+
+    - name: CIJOE, transfer source to qemu-guest
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd
+        source ${{ steps.cijoe-qemu.outputs.target-env }}
+        ssh.push xnvme*.tar.gz xnvme.tar.gz
+        cij.cmd "tar xzf xnvme.tar.gz --strip 1"
+        cij.cmd "rm xnvme.tar.gz"
+        cij.cmd "df -h"
+
+    - name: CIJOE, install packages
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd
+        source ${{ steps.cijoe-qemu.outputs.target-env }}
+        cij.cmd "./scripts/pkgs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.sh"
+
+    - name: CIJOE/QEMU, Package installation, for xNVMe-docgen
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd && source ${{ steps.cijoe-qemu.outputs.target-env }}
+        cij.cmd "./docs/autogen/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.sh"
+        cij.cmd "cd docs/autogen && make deps-system"
+
+    - name: CIJOE, configure xNVMe build
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd
+        source ${{ steps.cijoe-qemu.outputs.target-env }}
+        cij.cmd "meson setup builddir"
+
+    - name: CIJOE, build xNVMe
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd
+        source ${{ steps.cijoe-qemu.outputs.target-env }}
+        cij.cmd "meson compile -C builddir"
+
+    - name: CIJOE, build xNVMe dump log on failure
+      if: failure()
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd
+        source ${{ steps.cijoe-qemu.outputs.target-env }}
+        cij.cmd "cat builddir/meson-logs/meson-log.txt"
+
+    - name: CIJOE, install xNVMe
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd
+        source ${{ steps.cijoe-qemu.outputs.target-env }}
+        cij.cmd "meson install -C builddir"
+
+    - name: CIJOE, check binaries are available
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd
+        source ${{ steps.cijoe-qemu.outputs.target-env }}
+        cij.cmd "xnvme enum"
+        cij.cmd "xnvme library-info"
+
+    - name: CIJOE/QEMU, xnvme-docgen generate command-output
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd && source ${{ steps.cijoe-qemu.outputs.target-env }}
+        cij.cmd "sync; echo 1 > /proc/sys/vm/drop_caches"
+        cij.cmd "cd docs/autogen && make commands"
+
+    - name: CIJOE/QEMU, xnvme-docgen generate doxy, apis and sphinx aka docs
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd && source ${{ steps.cijoe-qemu.outputs.target-env }}
+        cij.cmd "cd docs/autogen && make docs"
+
+    - name: Transfer from qemu-guest to container
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd && source ${{ steps.cijoe-qemu.outputs.target-env }}
+        cij.pull "docs/autogen/builddir/html" html-docs
+
+    - name: Checkout site
+      uses: actions/checkout@v2
+      with:
+        repository: "xnvme/xnvme.github.io"
+        token: ${{ secrets.DOCS_PAT }}
+        path: site
+
+    - name: Add docgen to site
+      run: |
+        ./docs/autogen/dest.py --docs html-docs --site site --ref "${{ github.ref }}"
+
+    - name: Push site-changes
+      run: |
+        cd site
+        git config --global user.name 'GitHUB Service'
+        git config --global user.email 'ghs@safl.dk'
+        git add .
+        git commit -a -m "Auto-deployed update of 'docs/' for '${{ github.ref }}'"
+        git push
