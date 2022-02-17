@@ -1,1 +1,1 @@
-HUGEMEM=8192 xnvme-driver
+HUGEMEM=4096 xnvme-driver

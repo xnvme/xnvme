@@ -1,10 +1,18 @@
-BUILD_DIR?=build
+# The builddir path is hardcoded in the config/doxy.conf and config/conf.py
+BUILD_DIR?=builddir
+SOURCE_DIR?=../../
+CONFIG_DIR?=./
+DOCS_DIR?=../
 
 default: docs docs-view-html
 
 .PHONY: deps
 deps:
 	pip3 install -r requirements.txt --user
+
+.PHONY: deps-system
+deps-system:
+	pip3 install -r requirements.txt
 
 .PHONY: clean
 clean:
@@ -14,18 +22,19 @@ clean:
 configure: clean
 	mkdir -p $(BUILD_DIR)
 
+# This needs the xNVMe source-code
 .PHONY: apis
 apis:
-	@cd ../.. && make tags-xnvme-public
-	@python3 apigen.py --tags ../../tags --output ../capis
+	@cd $(SOURCE_DIR) && make tags-xnvme-public
+	@python3 apigen.py --tags $(SOURCE_DIR)/tags --output $(DOCS_DIR)/capis
 
 .PHONY: commands
 commands:
 	@echo "# commands"
-	@kmdo ../getting_started  || true
-	@kmdo ../capis || true
-	@kmdo ../examples || true
-	@kmdo ../tools || true
+	@kmdo $(DOCS_DIR)/getting_started
+	@kmdo $(DOCS_DIR)/capis
+	@kmdo $(DOCS_DIR)/examples
+	@kmdo $(DOCS_DIR)/tools
 
 .PHONY: doxy
 doxy:
@@ -39,7 +48,8 @@ doxy-view:
 .PHONY: sphinx
 sphinx:
 	@mkdir -p $(BUILD_DIR)/html
-	PYTHONPATH="${PYTHONPATH}:${PWD}/../../scripts" sphinx-build -E -b html -c ./ ../ $(BUILD_DIR)/html
+	# The PYTHONPATH is needed such that we can call the 'xnvme_ver.py' script
+	PYTHONPATH="${PYTHONPATH}:${PWD}/$(SOURCE_DIR)/scripts" sphinx-build -E -b html -c $(CONFIG_DIR) $(DOCS_DIR) $(BUILD_DIR)/html
 
 # Produce the sphinx stuff (without commands)
 .PHONY: docs

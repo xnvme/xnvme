@@ -352,6 +352,14 @@ xnvme_cmd_pass_admin
 .. doxygenfunction:: xnvme_cmd_pass_admin
 
 
+.. _sec-c-api-xnvme-func-xnvme_cmd_passv:
+
+xnvme_cmd_passv
+---------------
+
+.. doxygenfunction:: xnvme_cmd_passv
+
+
 .. _sec-c-api-xnvme-func-xnvme_enumerate:
 
 xnvme_enumerate

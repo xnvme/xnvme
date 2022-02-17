@@ -204,22 +204,23 @@ Then go ahead and configure, build and install using ``meson``:
 Debian 9 (Stretch)
 ------------------
 
-.. note:: Debian 9 / stretch is EOL, LTS support is available EOL June 2022.
-   After this date xNVMe will stop supporting it. Might drop it sooner when
-   upgrading to liburing 2.1.
-
-Install the following packages via ``apt-get``, ``aptitude`` and ``pip3``:
-
-.. literalinclude:: ../../scripts/pkgs/debian-stretch.txt
-   :language: bash
-
-For example, from the root of the **xNVMe** source repository, do:
+From the root of the **xNVMe** repository, do:
 
 .. literalinclude:: ../../scripts/pkgs/debian-stretch.sh
    :language: bash
    :lines: 17-
 
+The above will install following packages seen below via the system
+package-manager and via ``pip3``:
+
+.. literalinclude:: ../../scripts/pkgs/debian-stretch.txt
+   :language: bash
+
 Then go ahead and configure, build and install using ``meson``:
+
+.. note:: Debian 9 / stretch is EOL, LTS support is available EOL June 2022.
+   After this date xNVMe will stop supporting it. Currently, liburing 2.1 is
+   not supported, so dropping that via configuration options.
 
 .. literalinclude:: ../../scripts/pkgs/default-build.sh
    :language: bash
@@ -228,40 +229,31 @@ Then go ahead and configure, build and install using ``meson``:
 Fedora (36)
 -----------
 
-Install the following packages via ``apt-get``:
-
-.. literalinclude:: ../../scripts/pkgs/fedora-36.txt
-   :language: bash
-
-For example, from the root of the **xNVMe** source repository, do:
+From the root of the **xNVMe** source repository, do:
 
 .. literalinclude:: ../../scripts/pkgs/fedora-36.sh
    :language: bash
    :lines: 8-
 
-Then go ahead and configure, build and install using ``meson``:
+This will install the following packages via ``apt-get``:
 
-.. literalinclude:: ../../scripts/pkgs/fedora-36-build.sh
+.. literalinclude:: ../../scripts/pkgs/fedora-36.txt
    :language: bash
-   :lines: 2-
-
-.. note:: There are issues with liburing 2.0, this will be fixed by upgrading
-   to liburing 2.1 in a near future, until then, disable support for
-   ``io_uring/liburing`` as in the ``meson setup`` command above.
 
 Fedora (35)
 -----------
 
-Install the following packages via ``apt-get``:
-
-.. literalinclude:: ../../scripts/pkgs/fedora-35.txt
-   :language: bash
-
-For example, from the root of the **xNVMe** source repository, do:
+From the root of the **xNVMe** source repository, do:
 
 .. literalinclude:: ../../scripts/pkgs/fedora-35.sh
    :language: bash
    :lines: 8-
+
+The above will install following packages seen below via the system
+package-manager and via ``pip3``:
+
+.. literalinclude:: ../../scripts/pkgs/fedora-35.txt
+   :language: bash
 
 Then go ahead and configure, build and install using ``meson``:
 

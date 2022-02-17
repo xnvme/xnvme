@@ -16,13 +16,13 @@ extensions = [
 
 exclude_patterns = ['autogen']
 
-templates_path = [os.sep.join(["_templates"])]
+templates_path = [os.path.join("..", "templates")]
 source_suffix = '.rst'
 master_doc = 'index'
 project = u'xNVMe'
 copyright = u'2022, xNVMe'
-version = xnvme_ver()
-release = xnvme_ver()
+version = xnvme_ver(os.path.join('..', '..', 'meson.build'))
+release = xnvme_ver(os.path.join('..', '..', 'meson.build'))
 
 pygments_style = 'sphinx'
 
@@ -31,11 +31,16 @@ if not on_rtd:
     html_theme = "sphinx_rtd_theme"
     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
-html_static_path = [os.sep.join(["..", "_static"])]
+html_theme_options = {
+        "analytics_id": "UA-159785887-1"
+}
+html_static_path = [
+    os.path.join("..", "_static")
+]
 
 html_context = {
     "css_files": [
-        "_static/theme_overrides.css",
+        os.path.join("..", "_static", "theme_overrides.css"),
     ]
 }
 
@@ -43,7 +48,7 @@ html_context = {
 htmlhelp_basename = 'xnvmedoc'
 
 breathe_projects = {
-    project: os.path.abspath("build/doxy/xml/")
+    project: os.path.join("builddir", "doxy", "xml")
 }
 breathe_default_project = project
 breathe_domain_by_extension = {
