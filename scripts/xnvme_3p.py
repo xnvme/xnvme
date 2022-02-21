@@ -93,15 +93,15 @@ def gen_description(project):
 def traverse_projects(args):
     """Traverse third-party projects / repositories"""
 
-    dirname = os.path.join(args.repos, "third-party")
-    for path in sorted(f.path for f in os.scandir(dirname) if f.is_dir()):
+    dirname = os.path.join(args.repos, "subprojects")
+    for projname in sorted(f.split('.')[0] for f in glob.glob("*.wrap",root_dir=dirname)):
         vfields = ["name", "descr", "patches"]
 
         project = dict.fromkeys(vfields, "unknown")
-        project["name"] = os.path.basename(path)
+        project["name"] = projname
         project["path"] = {
-            "repos": os.path.join(path, "repos"),
-            "patches": os.path.join(path, "patches"),
+            "repos": os.path.join(dirname, projname),
+            "patches": os.path.join(dirname, f"packagefiles/{projname}/patches"),
         }
         project["patches"] = "+patches" if len(glob.glob(
             os.path.join(project["path"]["patches"], "*.patch")
@@ -124,7 +124,7 @@ def ver_to_file(args, project):
 
     symb = "xnvme_3p_%s" % project["name"]
     fname = "%s.c" % symb
-    fpath = os.path.join(args.repos, "src", "xnvme_3p", fname)
+    fpath = os.path.join(args.repos, "lib", "xnvme_3p", fname)
 
     code = 'static const char %s[] = "%s";' % (symb, project["ver"])
 
@@ -165,7 +165,7 @@ def update(args):
         print("Got failures -- not updating")
         return 1
 
-    with open(os.path.join(args.repos, "src", "xnvme_3p_ver.c"), "wt") as vfd:
+    with open(os.path.join(args.repos, "lib", "xnvme_3p_ver.c"), "wt") as vfd:
         vfd.write(ver)
 
     return 0
