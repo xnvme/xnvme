@@ -28,8 +28,8 @@ xnvme_3p_ver_fpr(FILE *stream, const char *ver[], enum xnvme_pr opts)
 	}
 
 	wrtn += fprintf(stream, "\n");
-	for (int i = 0; xnvme_3p_ver[i]; ++i) {
-		fprintf(stream, "  - '%s'\n", xnvme_3p_ver[i]);
+	for (int i = 0; ver[i]; ++i) {
+		fprintf(stream, "  - '%s'\n", ver[i]);
 	}
 
 	// TODO: this is kinda hackish... a better means for backends to provide
