@@ -1482,3 +1482,47 @@ xnvme_spec_znd_idfy_ns_pr(struct xnvme_spec_znd_idfy_ns *zns, int opts)
 {
 	return xnvme_spec_znd_idfy_ns_fpr(stdout, zns, opts);
 }
+
+int
+xnvme_spec_kvs_idfy_ns_fpr(FILE *stream, const struct xnvme_spec_kvs_idfy_ns *idfy, int opts)
+{
+	int wrtn = 0;
+
+	switch (opts) {
+	case XNVME_PR_DEF:
+	case XNVME_PR_YAML:
+		break;
+
+	case XNVME_PR_TERSE:
+		wrtn += fprintf(stream, "# ENOSYS: opts(%x)", opts);
+		return wrtn;
+	}
+
+	wrtn += fprintf(stream, "xnvme_spec_kvs_idfy_ns:");
+
+	if (!idfy) {
+		wrtn += fprintf(stream, " ~\n");
+		return wrtn;
+	}
+
+	wrtn += fprintf(stream, "\n");
+	wrtn += fprintf(stream, "  nsze: %" PRIu64 "\n", idfy->nsze);
+	wrtn += fprintf(stream, "  nuse: %" PRIu64 "\n", idfy->nuse);
+	wrtn += fprintf(stream, "  nkvf: %" PRIu8 "\n", idfy->nkvf);
+
+	wrtn += fprintf(stream, "  kvf:\n");
+	for (int i = 0; i < idfy->nkvf; i++) {
+		wrtn += fprintf(stream, "  - kml: %" PRIu16 "\n", idfy->kvf[i].kml);
+		wrtn += fprintf(stream, "    vml: %" PRIu32 "\n", idfy->kvf[i].vml);
+		wrtn += fprintf(stream, "    mnk: %" PRIu32 "\n", idfy->kvf[i].mnk);
+	}
+	wrtn += fprintf(stream, "\n");
+
+	return wrtn;
+}
+
+int
+xnvme_spec_kvs_idfy_ns_pr(const struct xnvme_spec_kvs_idfy_ns *idfy, int opts)
+{
+	return xnvme_spec_kvs_idfy_ns_fpr(stdout, idfy, opts);
+}

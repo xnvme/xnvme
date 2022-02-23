@@ -19,6 +19,7 @@ tests_source = [
   'znd_explicit_open.c',
   'znd_state.c',
   'znd_zrwa.c',
+  'kvs.c',
 ]
 
 foreach test_source : tests_source

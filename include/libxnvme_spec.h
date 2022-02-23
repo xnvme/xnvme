@@ -487,6 +487,15 @@ struct xnvme_spec_lbaf {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_lbaf) == 4, "Incorrect size")
 
+#define XNVME_KVS_RETRIEVE_OPT_RETRIEVE_RAW 1 << 0
+
+// Only update existing
+#define XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_NOT_EXISTS 1 << 0
+
+// Only add new
+#define XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_EXISTS 1 << 1
+#define XNVME_KVS_STORE_OPT_COMPRESS                 1 << 2
+
 /**
  * Command Set Identifiers
  *
@@ -496,6 +505,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_lbaf) == 4, "Incorrect size")
  */
 enum xnvme_spec_csi {
 	XNVME_SPEC_CSI_NVM   = 0x0, ///< XNVME_SPEC_CSI_NVM
+	XNVME_SPEC_CSI_KV    = 0x1, ///< XNVME_SPEC_CSI_KV
 	XNVME_SPEC_CSI_ZONED = 0x2, ///< XNVME_SPEC_CSI_ZONED
 };
 
@@ -2448,6 +2458,54 @@ struct xnvme_spec_io_mgmt_cmd {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_io_mgmt_cmd) == 64, "Incorrect size")
 
 /**
+ * KV Command Set opcodes
+ *
+ * @see TP4015a, Section 2.5, figure X1
+ *
+ * @struct xnvme_spec_znd_opc
+ */
+enum xnvme_spec_kv_opc {
+	XNVME_SPEC_KV_OPC_STORE    = 0x01, ///< XNVME_SPEC_KV_OPC_STORE
+	XNVME_SPEC_KV_OPC_RETRIEVE = 0x02, ///< XNVME_SPEC_KV_OPC_RETRIEVE
+	XNVME_SPEC_KV_OPC_DELETE   = 0x10, ///< XNVME_SPEC_KV_OPC_DELETE
+	XNVME_SPEC_KV_OPC_EXIST    = 0x14, ///< XNVME_SPEC_KV_OPC_EXIST
+	XNVME_SPEC_KV_OPC_LIST     = 0x06, ///< XNVME_SPEC_KV_OPC_LIST
+};
+
+/**
+ * NVMe Command Accessors for the KV Command Set
+ *
+ * @see TP4015a, Section 5
+ *
+ * @struct xnvme_spec_kvs_cmd
+ */
+struct xnvme_spec_kvs_cmd {
+	uint32_t cdw0;
+	uint32_t nsid;
+	/* cdw 02-03 */
+	uint64_t key;    ///< KV key bits 0:63
+	uint64_t mptr;   ///< Reserverd for MPTR
+	/* cdw 06-09: */ ///< DPTR -- data pointer
+	uint32_t cdw06;
+	uint32_t cdw07;
+	uint32_t cdw08;
+	uint32_t cdw09;
+	uint32_t cdw10; ///< Host Buffer Size or Value Size
+
+	/* cdw 11 */
+	struct {
+		uint8_t kl;
+		uint8_t ro;
+		uint16_t rsvd;
+	} cdw11;
+	uint32_t cdw12;
+	uint32_t cdw13;
+	/* cdw 14-15 */
+	uint64_t key_hi; ///< KV key bits 64:127
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_kvs_cmd) == 64, "Incorrect size")
+
+/**
  * NVMe Command Accessors
  *
  * @struct xnvme_spec_cmd
@@ -2469,6 +2527,7 @@ struct xnvme_spec_cmd {
 		struct xnvme_spec_nvm_write_zeroes write_zeroes;
 		struct xnvme_spec_znd_cmd znd;
 		struct xnvme_spec_io_mgmt_cmd mgmt;
+		struct xnvme_spec_kvs_cmd kvs;
 	};
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd) == 64, "Incorrect size")
@@ -2757,6 +2816,59 @@ struct xnvme_spec_znd_report_hdr {
 	uint8_t rsvd[56];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_report_hdr) == 64, "Incorrect size")
+
+/**
+ * Key Value Command Set KV Format data structure
+ *
+ * @see TP4015a, Section 3.1
+ * @struct xnvme_spec_ksd_idfy_ns
+ */
+struct xnvme_spec_kvs_idfy_ns_format {
+	uint16_t kml; ///< KV Key Max Length
+	uint8_t rsvd2;
+	uint8_t fopt; ///< Additional format options
+	uint32_t vml; ///< KV Value Max Length
+	uint32_t mnk; ///< Max Num Keys
+	uint8_t rsvd12[4];
+};
+
+/**
+ * Key Value Command Set identify namespace data structure
+ *
+ * @see TP4015a, Section 3.1
+ * @struct xnvme_spec_ksd_idfy_ns
+ */
+struct xnvme_spec_kvs_idfy_ns {
+	uint64_t nsze; ///< Namespace Size
+	uint8_t rsvd8[8];
+	uint64_t nuse;  ///< Namespace Utilization
+	uint8_t nsfeat; ///< Namespace Features
+	uint8_t nkvf;   ///< Number of KV Formats
+	uint8_t nmic;   ///< Namespace Multi-path I/O and Namespace Sharing Capabilities
+	uint8_t rescap; ///< Reservation Capabilities
+	uint8_t fpi;    ///< Format Progress Indicator
+	uint8_t rsvd29[3];
+	uint32_t novg;     ///< Namespace Optimal Value Granularity
+	uint32_t anagrpid; ///< ANA Group Identifier
+	uint8_t rsvd40[3];
+	uint8_t nsattr;                               ///< Namespace Attributes
+	uint16_t nvmsetid;                            ///< NVM Set Identifier
+	uint16_t endgid;                              ///< Endurance Group Identifier
+	uint64_t nguid[2];                            ///< Namespace Globally Unique Identifier
+	uint64_t eui64;                               ///< IEEE Extended Unique Identifier
+	struct xnvme_spec_kvs_idfy_ns_format kvf[16]; ///< KV Format 0 to 15
+	uint8_t rsvd328[3512];                        // 3839:328
+	uint8_t vs[256];
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_kvs_idfy_ns) == 4096, "Incorrect size")
+
+struct xnvme_spec_kvs_idfy {
+	union {
+		struct xnvme_spec_idfy base;
+		struct xnvme_spec_kvs_idfy_ns ns;
+	};
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_kvs_idfy) == 4096, "Incorrect size")
 
 /**
  * Prints the given :;xnvme_spec_log_health_entry to the given output stream
@@ -3233,5 +3345,26 @@ xnvme_spec_znd_report_hdr_pr(const struct xnvme_spec_znd_report_hdr *hdr, int op
 int
 xnvme_spec_znd_descr_fpr_yaml(FILE *stream, const struct xnvme_spec_znd_descr *descr, int indent,
 			      const char *sep);
+
+/**
+ * Prints the given xnvme_spec_kvs_idfy to the given output stream
+ *
+ * @param stream output stream used for printing
+ * @param idfy pointer to structure to print
+ * @param opts printer options, see ::xnvme_pr
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_kvs_idfy_ns_fpr(FILE *stream, const struct xnvme_spec_kvs_idfy_ns *idfy, int opts);
+
+/**
+ * Prints the given :;xnvme_spec_kvs_idfy to stdout
+ *
+ * @param idfy pointer to structure to print
+ * @param opts printer options, see ::xnvme_pr
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_kvs_idfy_ns_pr(const struct xnvme_spec_kvs_idfy_ns *idfy, int opts);
 
 #endif /* __LIBXNVME_SPEC_H */

@@ -18,7 +18,8 @@
 enum xnvme_geo_type {
 	XNVME_GEO_UNKNOWN      = 0x0,
 	XNVME_GEO_CONVENTIONAL = 0x1,
-	XNVME_GEO_ZONED        = 0x2
+	XNVME_GEO_ZONED        = 0x2,
+	XNVME_GEO_KV           = 0x3,
 };
 
 /**
