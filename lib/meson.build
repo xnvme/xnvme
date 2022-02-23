@@ -71,6 +71,7 @@ xnvmelib_source = [
   'xnvme_spec_pp.c',
   'xnvme_ver.c',
   'xnvme_znd.c',
+  'xnvme_kvs.c',
   'xnvmec.c'
 ]
 

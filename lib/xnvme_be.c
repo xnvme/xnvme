@@ -329,6 +329,14 @@ _fs_geometry(struct xnvme_dev *dev)
 	return 0;
 }
 
+int
+_kvs_geometry(struct xnvme_dev *dev)
+{
+	struct xnvme_geo *geo = &dev->geo;
+	geo->type = XNVME_GEO_KV;
+	return 0;
+}
+
 // TODO: add proper handling of NVMe controllers
 int
 xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
@@ -369,12 +377,19 @@ xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 			}
 			break;
 
+		case XNVME_SPEC_CSI_KV:
+			if (_kvs_geometry(dev)) {
+				XNVME_DEBUG("FAILED: _kvs_geometry");
+				return -EINVAL;
+			}
+			break;
+
 		default:
 			XNVME_DEBUG("FAILED: unhandled csi: 0x%x", dev->ident.csi);
 			return -ENOSYS;
+			break;
 		}
 		break;
-
 	default:
 		XNVME_DEBUG("FAILED: unhandled dtype: 0x%x", dev->ident.dtype);
 		return -ENOSYS;
