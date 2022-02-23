@@ -256,8 +256,14 @@ struct xnvmec_args {
 	uint32_t endir;
 	uint32_t tgtdir;
 	uint32_t nsr;
+
 	uint32_t lsi;
 	uint32_t pid;
+
+	const char *kv_key;
+	const char *kv_val;
+	bool kv_store_add;
+	bool kv_store_update;
 };
 
 void
@@ -414,7 +420,14 @@ enum xnvmec_opt {
 
 	XNVMEC_OPT_LSI = 113, ///< XNVMEC_OPT_LSI
 	XNVMEC_OPT_PID = 114, ///< XNVMEC_OPT_PID
-	XNVMEC_OPT_END = 115, ///< XNVMEC_OPT_END
+
+	XNVMEC_OPT_KV_KEY = 115, ///< XNVMEC_OPT_KV_KEY
+	XNVMEC_OPT_KV_VAL = 116, ///< XNVMEC_OPT_KV_VAL
+
+	XNVMEC_OPT_KV_STORE_UPDATE = 117, ///< XNVMEC_OPT_KV_STORE_UPDATE
+	XNVMEC_OPT_KV_STORE_ADD    = 118, ///< XNVMEC_OPT_KV_STORE_ADD
+
+	XNVMEC_OPT_END = 119, ///< XNVMEC_OPT_END
 };
 
 /**

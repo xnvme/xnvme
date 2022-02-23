@@ -33,6 +33,8 @@ xnvme_spec_csi_str(enum xnvme_spec_csi eval)
 		return "CSI_NVM";
 	case XNVME_SPEC_CSI_ZONED:
 		return "CSI_ZONED";
+	case XNVME_SPEC_CSI_KV:
+		return "CSI_KV";
 	}
 
 	return "ENOSYS";

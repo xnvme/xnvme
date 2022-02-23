@@ -11,6 +11,7 @@ tools_source = [
   'xnvme.c',
   'xnvme_file.c',
   'zoned.c',
+  'kvs.c',
 ]
 
 foreach source : tools_source

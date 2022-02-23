@@ -981,6 +981,32 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 		.name = "pid",
 		.descr = "Placement identifier",
 	},
+
+	{
+		.opt = XNVMEC_OPT_KV_VAL,
+		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.name = "value",
+		.descr = "KV Pair Value"
+	},
+	{
+		.opt = XNVMEC_OPT_KV_KEY,
+		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.name = "key",
+		.descr = "KV Pair Key"
+	},
+	{
+		.opt = XNVMEC_OPT_KV_STORE_UPDATE,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "only-update",
+		.descr = "KV Store Option to only update existing"
+	},
+	{
+		.opt = XNVMEC_OPT_KV_STORE_ADD,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "only-add",
+		.descr = "KV Store Option to only add new KV-Pairs"
+	},
+
 	{
 		.opt = XNVMEC_OPT_END,
 		.vtype = XNVMEC_OPT_VTYPE_NUM,
@@ -1584,6 +1610,37 @@ xnvmec_assign_arg(struct xnvmec *cli, struct xnvmec_opt_attr *opt_attr, char *ar
 		break;
 	case XNVMEC_OPT_IDR:
 		args->idr = arg ? num : 1;
+		break;
+	case XNVMEC_OPT_KV_KEY:
+		if (strlen(arg) > 16) {
+			xnvmec_pinf("KV Key longer than 16 bytes is not supported");
+			errno = EINVAL;
+			return -1;
+		}
+		args->kv_key = arg ? arg : "INVALID_INPUT";
+		break;
+	case XNVMEC_OPT_KV_VAL:
+		if (strlen(arg) > 4096) {
+			errno = EINVAL;
+			return -1;
+		}
+		args->kv_val = arg ? arg : "INVALID_INPUT";
+		break;
+	case XNVMEC_OPT_KV_STORE_UPDATE:
+		if (args->kv_store_add) {
+			errno = EINVAL;
+			xnvmec_perr("--update-only and --add-only are mutually exclusive", errno);
+			return -1;
+		}
+		args->kv_store_update = true;
+		break;
+	case XNVMEC_OPT_KV_STORE_ADD:
+		if (args->kv_store_update) {
+			errno = EINVAL;
+			xnvmec_perr("--update-only and --add-only are mutually exclusive", errno);
+			return -1;
+		}
+		args->kv_store_add = true;
 		break;
 	case XNVMEC_OPT_LSI:
 		args->lsi = num;
