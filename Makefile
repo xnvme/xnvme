@@ -190,11 +190,11 @@ clean-subprojects:
 #
 # Helper-target generating third-party strings
 #
-.PHONY: gen-3p-ver
-gen-3p-ver:
-	@echo "## xNVMe: make gen-3p-ver"
-	./scripts/xnvme_3p.py --repos .
-	@echo "## xNVMe: make gen-3p-ver [DONE]"
+.PHONY: gen-libconf
+gen-libconf:
+	@echo "## xNVMe: make gen-libconf"
+	./scripts/xnvme_libconf.py --repos .
+	@echo "## xNVMe: make gen-libconf [DONE]"
 
 
 #

@@ -1,6 +1,4 @@
 xnvmelib_source = [
-  'xnvme_3p.c',
-  'xnvme_3p_ver.c',
   'xnvme_adm.c',
   'xnvme_be.c',
   'xnvme_be_fbsd.c',
@@ -42,6 +40,8 @@ xnvmelib_source = [
   'xnvme_file.c',
   'xnvme_geo.c',
   'xnvme_lba.c',
+  'xnvme_libconf.c',
+  'xnvme_libconf_entries.c',
   'xnvme_nvm.c',
   'xnvme_queue.c',
   'xnvme_req.c',
