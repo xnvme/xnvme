@@ -58,24 +58,37 @@ GIT = $$( \
 PROJECT_VER = $(( python3 scripts/xnvme_ver.py --path meson.build ))
 BUILD_DIR?=builddir
 
+define default-help
+# Run info, tags, git-setup and configure targets
+# This is called when running 'make'
+endef
 .PHONY: default
 default: info tags git-setup
 	@echo "## xNVMe: make default"
 	@if [ ! -d "$(BUILD_DIR)" ]; then $(MAKE) config; fi;
 	$(MAKE) build
 
+define config-help
+# Configure Meson
+endef
 .PHONY: config
 config:
 	@echo "## xNVMe: make config"
 	CC=$(CC) CXX=$(CXX) $(MESON) setup $(BUILD_DIR)
 	@echo "## xNVMe: make config [DONE]"
 
+define config-debug-help
+# Configure Meson to compile xNVMe with '--buildtype=debug'
+endef
 .PHONY: config-debug
 config-debug:
 	@echo "## xNVMe: make config-debug"
 	CC=$(CC) CXX=$(CXX) $(MESON) setup $(BUILD_DIR) --buildtype=debug
 	@echo "## xNVMe: make config-debug [DONE]"
 
+define config-uring-help
+# Configure Meson to compile xNVMe with liburing as the only backend
+endef
 .PHONY: config-uring
 config-uring:
 	@echo "## xNVMe: config-uring"
@@ -85,6 +98,9 @@ config-uring:
 	   -Dwith-liburing=true
 	@echo "## xNVMe: config-uring [DONE]"
 
+define config-slim-help
+# Configure Meson to compile xNVMe without backends
+endef
 .PHONY: config-slim
 config-slim:
 	@echo "## xNVMe: make config-slim"
@@ -94,12 +110,22 @@ config-slim:
 	   -Dwith-liburing=false
 	@echo "## xNVMe: make config-slim [DONE]"
 
+define git-setup-help
+# Setup .githooks
+endef
 .PHONY: git-setup
 git-setup:
 	@echo "## xNVMe:: git-setup"
 	$(GIT) config core.hooksPath .githooks || true
 	@echo "## xNVMe:: git-setup [DONE]"
 
+define info-help
+# Print information relevant to xNVMe
+# Such as:
+# - OS
+# - Project version
+# - Versions of tools
+endef
 .PHONY: info
 info:
 	@echo "## xNVMe: make info"
@@ -113,40 +139,43 @@ info:
 	@echo "PROJECT_VER: $(PROTECT_VER)"
 	@echo "## xNVMe: make info [DONE]"
 
+define build-help
+# Build xNVMe with Meson
+endef
 .PHONY: build
 build: info _require_builddir
 	@echo "## xNVMe: make build"
 	$(MESON) compile -C $(BUILD_DIR)
 	@echo "## xNVMe: make build [DONE]"
 
+define install-help
+# Install xNVMe with Meson
+endef
 .PHONY: install
 install: _require_builddir
 	@echo "## xNVMe: make install"
 	$(MESON) install -C $(BUILD_DIR)
 	@echo "## xNVMe: make install [DONE]"
 
+define uninstall-help
+# Uninstall xNVMe with Meson
+endef
 .PHONY: uninstall
 uninstall: 
-	@echo "## xNVMe: make install"
+	@echo "## xNVMe: make uninstall"
 	@if [ ! -d "$(BUILD_DIR)" ]; then		\
 		echo "Missing builddir('$(BUILD_DIR))";	\
 		false;					\
 	fi
 	cd $(BUILD_DIR) && $(MESON) --internal uninstall
-	@echo "## xNVMe: make install [DONE]"
+	@echo "## xNVMe: make uninstall [DONE]"
 
+define build-deb-help
+# Build a binary DEB package
 #
-# The binary DEB packages generated here are not meant to be used for anything
+# NOTE: The binary DEB packages generated here are not meant to be used for anything
 # but easy install/uninstall during test and development
-#
-# make install-deb
-#
-# Which will build a deb pkg and install it instead of copying it directly
-# into the system paths. This is convenient as it is easier to purge it by
-# running e.g.
-#
-# make uninstall-deb
-#
+endef
 .PHONY: build-deb
 build-deb: _require_builddir
 	@echo "## xNVMe: make build-deb"
@@ -160,36 +189,52 @@ build-deb: _require_builddir
 	@echo "## xNVMe: make-deb [DONE]; find it here:"
 	@find $(BUILD_DIR)/meson-dist/ -name '*.deb'
 
+define install-deb-help
+# Install the binary DEB package created with: make build-deb
+# This will install it instead of copying it directly
+# into the system paths. This is convenient as it is easier to purge it by
+# running eg.
+# 	make uninstall-deb
+endef
 .PHONY: install-deb
 install-deb: _require_builddir
 	@echo "## xNVMe: make install-deb"
 	dpkg -i $(BUILD_DIR)/meson-dist/xnvme.deb
 	@echo "## xNVMe: make install-deb [DONE]"
 
+define uninstall-deb-help
+# Uninstall xNVMe with apt-get
+endef
 .PHONY: uninstall-deb
 uninstall-deb:
 	@echo "## xNVMe: make uninstall-deb"
 	apt-get --yes remove xnvme* || true
 	@echo "## xNVMe: make uninstall-deb [DONE]"
 
+define clean-help
+# Remove Meson builddir
+endef
 .PHONY: clean
 clean:
 	@echo "## xNVMe: make clean"
 	rm -fr $(BUILD_DIR) || true
 	@echo "## xNVMe: make clean [DONE]"
 
+define clean-subprojects-help
+# Remove Meson builddir as well as running 'make clean' in all subprojects 
+endef
 .PHONY: clean-subprojects
 clean-subprojects:
-	@echo "## xNVMe: make clean"
+	@echo "## xNVMe: make clean-subprojects"
 	@if [ -d "subprojects/spdk" ]; then cd subprojects/spdk &&$(MAKE) clean; fi;
 	@if [ -d "subprojects/fio" ]; then cd subprojects/fio && $(MAKE) clean; fi;
 	@if [ -d "subprojects/liburing" ]; then cd subprojects/liburing &&$(MAKE) clean; fi;
 	rm -fr $(BUILD_DIR) || true
-	@echo "## xNVMe: make clean [DONE]"
+	@echo "## xNVMe: make clean-subprojects [DONE]"
 
-#
+define gen-3p-ver-help
 # Helper-target generating third-party strings
-#
+endef
 .PHONY: gen-3p-ver
 gen-3p-ver:
 	@echo "## xNVMe: make gen-3p-ver"
@@ -197,9 +242,9 @@ gen-3p-ver:
 	@echo "## xNVMe: make gen-3p-ver [DONE]"
 
 
-#
+define gen-src-archive-help
 # Helper-target to produce full-source archive
-#
+endef
 .PHONY: gen-src-archive
 gen-src-archive:
 	@echo "## xNVMe: make gen-src-archive"
@@ -207,13 +252,13 @@ gen-src-archive:
 	$(MESON) dist -C $(BUILD_DIR) --include-subprojects --no-tests --formats gztar
 	@echo "## xNVMe: make gen-src-archive [DONE]"
 
-#
+define gen-bash-completions-help
 # Helper-target to produce Bash-completions for tools (tools, examples, tests)
 #
 # NOTE: This target requires a bunch of things: binaries must be built and
 # residing in 'builddir/tools' etc. AND installed on the system. Also, the find
 # command has only been tried with GNU find
-#
+endef
 .PHONY: gen-bash-completions
 gen-bash-completions:
 	@echo "## xNVMe: make gen-bash-completions"
@@ -221,13 +266,13 @@ gen-bash-completions:
 	python3 ./scripts/xnvmec_generator.py cpl --tools ${TOOLS} --output scripts/bash_completion.d
 	@echo "## xNVMe: make gen-bash-completions [DONE]"
 
-#
+define gen-man-pages-help
 # Helper-target to produce man pages for tools (tools, examples, tests)
-#
+# 
 # NOTE: This target requires a bunch of things: binaries must be built and
 # residing in 'builddir/tools' etc. AND installed on the system. Also, the find
 # command has only been tried with GNU find
-#
+endef
 .PHONY: gen-man-pages
 gen-man-pages:
 	@echo "## xNVMe: make gen-man-pages"
@@ -235,9 +280,9 @@ gen-man-pages:
 	python3 ./scripts/xnvmec_generator.py man --tools ${TOOLS} --output man/
 	@echo "## xNVMe: make gen-man-pages [DONE]"
 
-#
+define tags-help
 # Helper-target to produce tags
-#
+endef
 .PHONY: tags
 tags:
 	@echo "## xNVMe: make tags"
@@ -251,11 +296,14 @@ tags:
 		|| true
 	@echo "## xNVMe: make tags [DONE]"
 
+define tags-xnvme-public-help
+# Make tags for public APIs
+endef
 .PHONY: tags-xnvme-public
 tags-xnvme-public:
-	@echo "## xNVMe: make tags for public APIs"
+	@echo "## xNVMe: make tags-xnvme-public"
 	@$(CTAGS) --c-kinds=dfpgs -R include/lib*.h || true
-	@echo "## xNVMe: make tags for public APIs [DONE]"
+	@echo "## xNVMe: make tags-xnvme-public [DONE]"
 
 .PHONY: _require_builddir
 _require_builddir:
@@ -274,10 +322,9 @@ _require_builddir:
 		false;							\
 	fi
 
-#
-# clobber: clean third-party builds, drop any third-party changes and clean any
-# untracked stuff lying around
-#
+define clobber-help
+# Clean third-party builds, drop any third-party changes and clean any untracked stuff lying around
+endef
 .PHONY: clobber
 clobber: clean
 	@echo "## xNVMe: clobber"
@@ -288,3 +335,20 @@ clobber: clean
 	@rm -rf subprojects/spdk || true
 	@rm -rf subprojects/liburing || true
 	@echo "## xNVMe: clobber [DONE]"
+
+
+define help-help
+# Print the description of every target
+endef
+.PHONY: help
+help: 
+	@./scripts/print_help.py --repos . 
+
+define help-verbose-help
+# Print the verbose description of every target
+endef
+.PHONY: help-verbose
+help-verbose: 
+	@./scripts/print_help.py --verbose --repos . 
+
+
