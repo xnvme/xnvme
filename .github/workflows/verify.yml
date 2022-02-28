@@ -89,7 +89,7 @@ jobs:
   analyze-codeql:
     needs: source-archive
     runs-on: ubuntu-latest
-    if: (! contains(github.ref, 'ci')) || contains(github.ref, 'ci-analyze-codeql')
+    if: ((! contains(github.ref, 'ci')) || contains(github.ref, 'ci-analyze-codeql')) && (github.event_name == 'push')
 
     container: debian:bullseye
 
@@ -127,7 +127,7 @@ jobs:
   analyze-coverity:
     needs: source-archive
     runs-on: ubuntu-latest
-    if: (! contains(github.ref, 'ci')) || contains(github.ref, 'ci-analyze-coverity')
+    if: ((! contains(github.ref, 'ci')) || contains(github.ref, 'ci-analyze-coverity')) && (github.event_name == 'push')
 
     container: debian:buster
     env:
@@ -209,7 +209,7 @@ jobs:
   dockerize-source:
     needs: source-archive
     runs-on: ubuntu-latest
-    if: (! contains(github.ref, 'ci')) || contains(github.ref, 'ci-dockerize')
+    if: ((! contains(github.ref, 'ci')) || contains(github.ref, 'ci-dockerize')) && (github.event_name == 'push')
 
     steps:
     - name: Retrieve the source-archive
