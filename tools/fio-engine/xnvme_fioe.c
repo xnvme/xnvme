@@ -73,7 +73,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <libxnvme.h>
-#include <libxnvme_3p.h>
+#include <libxnvme_libconf.h>
 #include <libxnvme_nvm.h>
 #include <libxnvme_znd.h>
 #include "fio.h"
@@ -416,7 +416,7 @@ xnvme_fioe_init(struct thread_data *td)
 			fio_version_string);
 #endif
 		log_err("xnvme_fioe: init(): I/O engine built with:\n");
-		xnvme_3p_ver_fpr(stderr, xnvme_3p_ver, XNVME_PR_DEF);
+		xnvme_libconf_fpr(stderr, XNVME_PR_DEF);
 		return 1;
 	}
 
