@@ -19,7 +19,12 @@ if [[ ! -f "$ASTYLE_FNAME" ]]; then
   exit 1
 fi
 
-FILES=$(find ../{include,lib,examples,tests,tools} -type f -name *.h -o -name *.c | grep -v xnvme_fioe.c)
+FILES=$(git diff --name-only | egrep '\.[ch]$' | grep -v xnvme_fioe.c) || echo ""
+
+if ! $FILES; then
+    echo "No files to process"
+    exit 0
+fi
 
 if [[ -f astyle.log ]]; then
   mv astyle.log "astyle.log.${RANDOM}"

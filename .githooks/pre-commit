@@ -1,6 +1,22 @@
 #!/usr/bin/env bash
 # Call the style-check script
 exec 1>&2
+
+function cleanup {
+  echo "Git: Unstashing files"
+  git stash pop >> /dev/null
+}
+
+if git diff --name-only | egrep '.githooks/pre-commit|scripts/style.sh' > /dev/null; then
+    echo "Unstaged changes in '.githooks/pre-commit' or 'scripts/style.sh'. Remember to stage these."
+    exit 1
+fi
+
+
+echo "Git: Stashing unstaged changes before code checks"
+git stash --keep-index >> /dev/null
+trap cleanup EXIT
+
 cd scripts
 if ! ./style.sh --dry-run; then
 	cat <<\EOF
