@@ -232,14 +232,14 @@ clean-subprojects:
 	rm -fr $(BUILD_DIR) || true
 	@echo "## xNVMe: make clean-subprojects [DONE]"
 
-define gen-3p-ver-help
+#
 # Helper-target generating third-party strings
-endef
-.PHONY: gen-3p-ver
-gen-3p-ver:
-	@echo "## xNVMe: make gen-3p-ver"
-	./scripts/xnvme_3p.py --repos .
-	@echo "## xNVMe: make gen-3p-ver [DONE]"
+#
+.PHONY: gen-libconf
+gen-libconf:
+	@echo "## xNVMe: make gen-libconf"
+	./scripts/xnvme_libconf.py --repos .
+	@echo "## xNVMe: make gen-libconf [DONE]"
 
 
 define gen-src-archive-help

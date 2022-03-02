@@ -1,1 +1,0 @@
-static const char xnvme_3p_fio[] = "fio;git-describe:fio-3.23";

@@ -1,1 +1,0 @@
-static const char xnvme_3p_liburing[] = "liburing;git-describe:liburing-0.7";
