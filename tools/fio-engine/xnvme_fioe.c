@@ -165,6 +165,7 @@ struct xnvme_fioe_options {
 	unsigned int sqpoll_thread;
 	unsigned int xnvme_dev_nsid;
 	unsigned int xnvme_iovec;
+	char *xnvme_be;
 	char *xnvme_async;
 	char *xnvme_sync;
 	char *xnvme_admin;
@@ -186,6 +187,15 @@ static struct fio_option options[] = {
 		.type = FIO_OPT_INT,
 		.off1 = offsetof(struct xnvme_fioe_options, sqpoll_thread),
 		.help = "Offload submission/completion to kernel thread",
+		.category = FIO_OPT_C_ENGINE,
+		.group = FIO_OPT_G_INVALID,
+	},
+	{
+		.name = "xnvme_be",
+		.lname = "xNVMe Backend",
+		.type = FIO_OPT_STR_STORE,
+		.off1 = offsetof(struct xnvme_fioe_options, xnvme_be),
+		.help = "Select backend.",
 		.category = FIO_OPT_C_ENGINE,
 		.group = FIO_OPT_G_INVALID,
 	},
@@ -261,6 +271,7 @@ static struct xnvme_opts xnvme_opts_from_fioe(struct thread_data *td)
 	struct xnvme_opts opts = xnvme_opts_default();
 
 	opts.nsid = o->xnvme_dev_nsid;
+	opts.be = o->xnvme_be;
 	opts.async = o->xnvme_async;
 	opts.sync = o->xnvme_sync;
 	opts.admin = o->xnvme_admin;
