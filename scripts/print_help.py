@@ -6,6 +6,11 @@ import sys
 import os
 
 
+TEXT_FMT_BOLD="\033[1m"
+TEXT_FMT_END="\033[0m"
+SEP=";"
+
+
 def expand_path(path):
     """Expands variables from the given path and turns it into absolute path"""
 
@@ -30,6 +35,13 @@ def setup():
         help="If set, print verbose descriptions",
         required=False
     )
+    prsr.add_argument(
+        "--no-colorize",
+        action="store_true",
+        default=False,
+        help="If set, colorizes the text-output",
+        required=False,
+    )
     args = prsr.parse_args()
     args.repos = expand_path(args.repos)
 
@@ -38,6 +50,7 @@ def setup():
 
 def gen_help(args):
     """Generate dict from help instructions in Makefile"""
+
     define_regex = re.compile("define (?P<target>.+)-help")
     endef_regex = re.compile("endef")
     args.help = {}
@@ -59,13 +72,31 @@ def gen_help(args):
 
 def print_help(args):
     """Print the help instructions"""
+
+    print("\n".join([
+        "Usage:",
+        " ",
+        f"  make help          {SEP} Brief target description",
+        f"  make help-verbose  {SEP} Verbose target descriptions",
+        f"  make [target]      {SEP} Invoke the given 'target'",
+        " ",
+        "Targets:",
+        " ",
+    ]))
+
+    width = max(len(k) for k in args.help)
+
     for key, desc in sorted(args.help.items()):
-        print(key + ":")
-        if args.verbose:
-            for line in desc:
-                print("\t" + line)
-        else:
-            print("\t" + desc[0])
+        short = "".join([
+            key.ljust(width), f" {SEP}{desc[0]}"
+        ] if args.no_colorize else [
+            TEXT_FMT_BOLD, key.ljust(width), TEXT_FMT_END, f" {SEP}{desc[0]}"
+        ])
+        print(short)
+        if args.verbose and len(desc) > 1:
+            for line in desc[1:]:
+                print(line)
+            print("")
 
 
 def main(args):
