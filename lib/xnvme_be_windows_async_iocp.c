@@ -144,10 +144,6 @@ _windows_async_iocp_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf,
 	uint64_t slba = ctx->cmd.nvm.slba << ssw;
 	bool ret = 0;
 
-	if (queue->base.outstanding == queue->base.capacity) {
-		XNVME_DEBUG("FAILED: queue is full");
-		return -EBUSY;
-	}
 	if (mbuf || mbuf_nbytes) {
 		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
 		return -ENOSYS;

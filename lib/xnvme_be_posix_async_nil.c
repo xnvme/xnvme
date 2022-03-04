@@ -80,11 +80,6 @@ _posix_nil_cmd_io(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf),
 {
 	struct xnvme_queue_nil *queue = (void *)ctx->async.queue;
 
-	if (queue->base.outstanding == queue->base.capacity) {
-		XNVME_DEBUG("FAILED: queue is full");
-		return -EBUSY;
-	}
-
 	queue->ctx[queue->base.outstanding++] = ctx;
 
 	return 0;
