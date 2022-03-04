@@ -59,8 +59,10 @@ PROJECT_VER = $(( python3 scripts/xnvme_ver.py --path meson.build ))
 BUILD_DIR?=builddir
 
 define default-help
-# Run info, tags, git-setup and configure targets
-# This is called when running 'make'
+# invoke: 'make info', 'make tags', 'make git-setup', 'make config' and 'make build'
+#
+# The default behavior when invoking 'make', that is, dump out info relevant to the system,
+# generate ctags, setup git-hoooks, configure the meson-build and start compiling
 endef
 .PHONY: default
 default: info tags git-setup
@@ -121,6 +123,7 @@ git-setup:
 
 define info-help
 # Print information relevant to xNVMe
+#
 # Such as:
 # - OS
 # - Project version
@@ -191,10 +194,11 @@ build-deb: _require_builddir
 
 define install-deb-help
 # Install the binary DEB package created with: make build-deb
+#
 # This will install it instead of copying it directly
 # into the system paths. This is convenient as it is easier to purge it by
 # running eg.
-# 	make uninstall-deb
+#   make uninstall-deb
 endef
 .PHONY: install-deb
 install-deb: _require_builddir
@@ -232,15 +236,14 @@ clean-subprojects:
 	rm -fr $(BUILD_DIR) || true
 	@echo "## xNVMe: make clean-subprojects [DONE]"
 
-#
-# Helper-target generating third-party strings
-#
+define gen-libconf-help
+# Helper-target generating third-party/subproject/os/library-configuration string
+endef
 .PHONY: gen-libconf
 gen-libconf:
 	@echo "## xNVMe: make gen-libconf"
 	./scripts/xnvme_libconf.py --repos .
 	@echo "## xNVMe: make gen-libconf [DONE]"
-
 
 define gen-src-archive-help
 # Helper-target to produce full-source archive
@@ -268,7 +271,7 @@ gen-bash-completions:
 
 define gen-man-pages-help
 # Helper-target to produce man pages for tools (tools, examples, tests)
-# 
+#
 # NOTE: This target requires a bunch of things: binaries must be built and
 # residing in 'builddir/tools' etc. AND installed on the system. Also, the find
 # command has only been tried with GNU find
@@ -323,7 +326,11 @@ _require_builddir:
 	fi
 
 define clobber-help
-# Clean third-party builds, drop any third-party changes and clean any untracked stuff lying around
+# invoke 'make clean' and: remove subproject builds, git-clean and git-checkout .
+#
+# This is intended as a way to clearing out the repository for any old "build-debris",
+# take care that you have stashed/commit any of your local changes as anything unstaged
+# will be removed.
 endef
 .PHONY: clobber
 clobber: clean
