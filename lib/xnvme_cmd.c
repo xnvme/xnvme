@@ -6,6 +6,7 @@
 #include <xnvme_cmd.h>
 #include <xnvme_dev.h>
 #include <xnvme_sgl.h>
+#include <xnvme_queue.h>
 
 /**
  * Calling this requires that opts at least has `XNVME_CMD_SGL_DATA`
@@ -94,6 +95,10 @@ xnvme_cmd_pass(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *
 
 	switch (cmd_opts & XNVME_CMD_MASK_IOMD) {
 	case XNVME_CMD_ASYNC:
+		if (ctx->async.queue->base.outstanding == ctx->async.queue->base.capacity) {
+			XNVME_DEBUG("FAILED: queue is fulll err = -EBUSY");
+			return -EBUSY;
+		}
 		return ctx->dev->be.async.cmd_io(ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
 
 	case XNVME_CMD_SYNC:

@@ -126,13 +126,6 @@ xnvme_be_spdk_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 	int err;
 
 	// TODO: do something with mbuf?
-
-	// Early exit when queue is full
-	if (queue->base.outstanding == queue->base.capacity) {
-		XNVME_DEBUG("FAILED: queue is full");
-		return -EBUSY;
-	}
-
 	queue->base.outstanding += 1;
 	err = submit_ioc(state->ctrlr, queue->qpair, ctx, dbuf, dbuf_nbytes, mbuf, cmd_async_cb,
 			 ctx);

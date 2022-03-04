@@ -106,10 +106,6 @@ _linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, 
 	struct iocb *iocb = (void *)&ctx->cmd;
 	int err;
 
-	if (queue->base.outstanding == queue->base.capacity) {
-		XNVME_DEBUG("FAILED: queue is full");
-		return -EBUSY;
-	}
 	if (mbuf || mbuf_nbytes) {
 		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
 		return -ENOSYS;

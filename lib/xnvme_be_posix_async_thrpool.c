@@ -308,11 +308,6 @@ _posix_async_thrpool_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 	struct _thrpool_entry *entry = NULL;
 	int err;
 
-	if (queue->base.outstanding == queue->base.capacity) {
-		XNVME_DEBUG("FAILED: queue is full");
-		return -EBUSY;
-	}
-
 	entry = STAILQ_FIRST(&qp->rp);
 	STAILQ_REMOVE_HEAD(&qp->rp, link);
 

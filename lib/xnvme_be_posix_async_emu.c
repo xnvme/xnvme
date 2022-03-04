@@ -139,11 +139,6 @@ _posix_async_emu_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyte
 	struct _emu_qp *qp = queue->qp;
 	struct _emu_entry *entry;
 
-	if (queue->base.outstanding == queue->base.capacity) {
-		XNVME_DEBUG("FAILED: queue is full");
-		return -EBUSY;
-	}
-
 	// Grab entry from rp and push into sq
 	entry = STAILQ_FIRST(&qp->rp);
 	if (!entry) {
