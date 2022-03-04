@@ -1600,13 +1600,14 @@ xnvmec_cli_to_opts(const struct xnvmec *cli, struct xnvme_opts *opts)
 
 	opts->nsid = cli->args.dev_nsid;
 
-	opts->direct = cli->args.direct;
-	opts->create = cli->args.create;
-	opts->truncate = cli->args.truncate;
+	opts->oflags = cli->args.oflags;
 	opts->rdonly = cli->args.rdonly;
 	opts->wronly = cli->args.wronly;
 	opts->rdwr = cli->args.rdwr;
-	opts->oflags = cli->args.oflags;
+	opts->create = cli->args.create;
+	opts->truncate = cli->args.truncate;
+	opts->direct = cli->args.direct;
+
 	opts->create_mode = cli->args.create_mode;
 
 	opts->poll_io = cli->args.poll_io;
