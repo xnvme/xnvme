@@ -1,6 +1,7 @@
 hello
 astyle.log
 astyle.log*
+scripts/source-format.log*
 *.o
 *.o[ls]
 *.orig

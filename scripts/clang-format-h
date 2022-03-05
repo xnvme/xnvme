@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+BasedOnStyle: LLVM
+
+AlignConsecutiveAssignments: true
+AlignConsecutiveBitFields: AcrossEmptyLinesAndComments
+AlignConsecutiveMacros: true
+AlignEscapedNewlines: Left
+AlwaysBreakAfterReturnType: All
+BreakBeforeBraces: WebKit
+ColumnLimit: 99
+ContinuationIndentWidth: 8
+IndentGotoLabels: false
+IndentWidth: 8
+MaxEmptyLinesToKeep: 1
+SortIncludes: Never
+TabWidth: 8
+UseTab: ForContinuationAndIndentation
