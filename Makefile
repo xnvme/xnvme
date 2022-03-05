@@ -113,12 +113,13 @@ config-slim:
 	@echo "## xNVMe: make config-slim [DONE]"
 
 define git-setup-help
-# Setup .githooks
+# Do git config for: 'core.hooksPath' and 'blame.ignoreRevsFile'
 endef
 .PHONY: git-setup
 git-setup:
 	@echo "## xNVMe:: git-setup"
 	$(GIT) config core.hooksPath .githooks || true
+	$(GIT) config blame.ignoreRevsFile .git-blame-ignore-revs
 	@echo "## xNVMe:: git-setup [DONE]"
 
 define info-help
@@ -282,6 +283,24 @@ gen-man-pages:
 	$(eval TOOLS := $(shell find builddir/tools builddir/examples builddir/tests -not -name "xnvme_single*" -not -name "xnvme_enum" -not -name "xnvme_dev" -not -name "*.so" -type f -executable -exec basename {} \;))
 	python3 ./scripts/xnvmec_generator.py man --tools ${TOOLS} --output man/
 	@echo "## xNVMe: make gen-man-pages [DONE]"
+
+define source-format-check-help
+# invoke the source-formatter, logging format-changes
+endef
+.PHONY: source-format-check
+source-format-check:
+	@echo "## xNVMe: source-format-check"
+	@cd scripts && ./source-format.sh || echo "Format issues; check: scripts/source-format.log"
+	@echo "## xNVME: source-format-check [DONE]"
+
+define source-format-help
+# invoke the source-formatter, applying format-changes
+endef
+.PHONY: source-format
+source-format:
+	@echo "## xNVMe: source-format"
+	@cd scripts && ./source-format.sh 1 || echo "Format issues; 'git diff' to see changes"
+	@echo "## xNVME: source-format [DONE]"
 
 define tags-help
 # Helper-target to produce tags

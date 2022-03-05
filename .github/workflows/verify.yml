@@ -56,12 +56,12 @@ jobs:
         path: builddir/meson-dist/*.tar.gz
 
   #
-  # Check that the code formating matches the astyle definition
+  # Check source-format using ./scripts/source-format.sh
   #
-  check-format:
+  source-format-check:
     needs: source-archive
     runs-on: ubuntu-latest
-    if: (! contains(github.ref, 'ci')) || contains(github.ref, 'ci-check-format')
+    if: (! contains(github.ref, 'ci')) || contains(github.ref, 'ci-source-format-check')
 
     container: debian:bullseye
 
@@ -76,12 +76,28 @@ jobs:
         rm xnvme*.tar.gz
 
     - name: Install build-requirements
-      run: source scripts/pkgs/debian-bullseye.sh
-
-    - name: xNVMe, run the style-checker script
       run: |
-        cd scripts
-        ./style.sh
+        source scripts/pkgs/debian-bullseye.sh
+        apt -qy install wget gnupg2 lsb-release software-properties-common
+        wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
+        add-apt-repository -y "deb http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-14 main"
+        apt -qy update
+        apt -qy install clang-format-14
+
+    - name: xNVMe, run the source-format script
+      run: |
+        cd scripts && ./source-format.sh
+
+    - name: dump log, on failure
+      if: failure()
+      run: |
+        cat scripts/source-format.log
+
+    - name: Upload source-format log
+      uses: actions/upload-artifact@v2
+      with:
+        name: source-format-issues
+        path: scripts/source-format.log
 
   #
   # Code-analysis using GitHUB CodeQL
