@@ -123,11 +123,13 @@ xnvmelib_bundle = custom_target(
 # although they currently link "directly" to the regular static library
 xnvmelib_bundle_dep = declare_dependency(
   dependencies: xnvmelib_deps,
-  link_args: [
-    '-Wl,--whole-archive', '-Wl,--no-as-needed',
+  link_args: conf_data.get('XNVME_BE_SPDK_ENABLED') ? [
+    '-Wl,--whole-archive',
+    '-Wl,--no-as-needed',
     '-lxnvme',
-    '-Wl,--no-whole-archive', '-Wl,--as-needed'
-  ]
+    '-Wl,--no-whole-archive',
+    '-Wl,--as-needed',
+  ] : [ '-lxnvme' ]
 )
 
 # pkg-config -- describing how to consume the xNVMe library
