@@ -53,10 +53,10 @@ sub_async_read(struct xnvmec *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = cli->args.geo;
-	struct xnvme_spec_znd_descr zone = { 0 };
+	struct xnvme_spec_znd_descr zone = {0};
 	uint32_t nsid, qd;
 
-	struct cb_args cb_args = { 0 };
+	struct cb_args cb_args = {0};
 	struct xnvme_queue *queue = NULL;
 
 	char *buf = NULL, *payload = NULL;
@@ -159,8 +159,8 @@ next:
 	}
 
 exit:
-	xnvmec_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}",
-		    cb_args.submitted, cb_args.completed, cb_args.ecount);
+	xnvmec_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}", cb_args.submitted,
+		    cb_args.completed, cb_args.ecount);
 
 	if (queue) {
 		int err_exit = xnvme_queue_term(queue);
@@ -191,10 +191,10 @@ sub_async_write(struct xnvmec *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = cli->args.geo;
-	struct xnvme_spec_znd_descr zone = { 0 };
+	struct xnvme_spec_znd_descr zone = {0};
 	uint32_t nsid, qd;
 
-	struct cb_args cb_args = { 0 };
+	struct cb_args cb_args = {0};
 	struct xnvme_queue *queue = NULL;
 
 	char *buf = NULL, *payload = NULL;
@@ -227,7 +227,8 @@ sub_async_write(struct xnvmec *cli)
 		xnvmec_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	err = xnvmec_buf_fill(buf, buf_nbytes, cli->args.data_input ? cli->args.data_input : "anum");
+	err = xnvmec_buf_fill(buf, buf_nbytes,
+			      cli->args.data_input ? cli->args.data_input : "anum");
 	if (err) {
 		xnvmec_perr("xnvmec_buf_fill()", err);
 		goto exit;
@@ -296,9 +297,8 @@ next:
 	xnvmec_timer_bw_pr(cli, "Wall-clock", zone.zcap * geo->lba_nbytes);
 
 exit:
-	xnvmec_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}",
-		    cb_args.submitted, cb_args.completed,
-		    cb_args.ecount);
+	xnvmec_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}", cb_args.submitted,
+		    cb_args.completed, cb_args.ecount);
 
 	if (queue) {
 		int err_exit = xnvme_queue_term(queue);
@@ -325,10 +325,10 @@ sub_async_append(struct xnvmec *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = cli->args.geo;
-	struct xnvme_spec_znd_descr zone = { 0 };
+	struct xnvme_spec_znd_descr zone = {0};
 	uint32_t nsid, qd;
 
-	struct cb_args cb_args = { 0 };
+	struct cb_args cb_args = {0};
 	struct xnvme_queue *queue = NULL;
 
 	char *buf = NULL, *payload = NULL;
@@ -361,7 +361,8 @@ sub_async_append(struct xnvmec *cli)
 		xnvmec_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	err = xnvmec_buf_fill(buf, buf_nbytes, cli->args.data_input ? cli->args.data_input : "anum");
+	err = xnvmec_buf_fill(buf, buf_nbytes,
+			      cli->args.data_input ? cli->args.data_input : "anum");
 	if (err) {
 		xnvmec_perr("xnvmec_buf_fill()", err);
 		goto exit;
@@ -423,8 +424,8 @@ next:
 	xnvmec_timer_bw_pr(cli, "Wall-clock", zone.zcap * geo->lba_nbytes);
 
 exit:
-	xnvmec_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}",
-		    cb_args.submitted, cb_args.completed, cb_args.ecount);
+	xnvmec_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}", cb_args.submitted,
+		    cb_args.completed, cb_args.ecount);
 
 	if (queue) {
 		int err_exit = xnvme_queue_term(queue);
@@ -443,8 +444,11 @@ exit:
 
 static struct xnvmec_sub g_subs[] = {
 	{
-		"read", "Asynchronous Zone Read of an entire Zone",
-		"Asynchronous Zone Read of an entire Zone", sub_async_read, {
+		"read",
+		"Asynchronous Zone Read of an entire Zone",
+		"Asynchronous Zone Read of an entire Zone",
+		sub_async_read,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
@@ -458,8 +462,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"write", "Asynchronous Zone Write until full",
-		"Zone asynchronous Write until full", sub_async_write, {
+		"write",
+		"Asynchronous Zone Write until full",
+		"Zone asynchronous Write until full",
+		sub_async_write,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
@@ -473,8 +480,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"append", "Asynchronous Zone Append until full",
-		"Zone asynchronous Append until full", sub_async_append, {
+		"append",
+		"Asynchronous Zone Append until full",
+		"Zone asynchronous Append until full",
+		sub_async_append,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},

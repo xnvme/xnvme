@@ -47,7 +47,7 @@ static int
 sub_listing(struct xnvmec *cli)
 {
 	struct xnvme_enumeration *listing = NULL;
-	struct xnvme_opts opts = { 0 };
+	struct xnvme_opts opts = {0};
 	int err;
 
 	err = xnvmec_cli_to_opts(cli, &opts);
@@ -79,7 +79,7 @@ exit:
 static int
 sub_enumerate(struct xnvmec *cli)
 {
-	struct xnvme_opts opts = { 0 };
+	struct xnvme_opts opts = {0};
 	uint32_t ns_count = 0;
 	int err = 0;
 
@@ -115,8 +115,8 @@ sub_info(struct xnvmec *cli)
 }
 
 static inline int
-_sub_idfy(struct xnvmec *cli, uint8_t cns, uint16_t cntid, uint8_t nsid,
-	  uint16_t nvmsetid, uint8_t uuid)
+_sub_idfy(struct xnvmec *cli, uint8_t cns, uint16_t cntid, uint8_t nsid, uint16_t nvmsetid,
+	  uint8_t uuid)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
@@ -170,8 +170,7 @@ _sub_idfy(struct xnvmec *cli, uint8_t cns, uint16_t cntid, uint8_t nsid,
 
 	if (cli->args.data_output) {
 		xnvmec_pinf("Dumping to: '%s'", cli->args.data_output);
-		err = xnvmec_buf_to_file((char *) dbuf, dbuf_nbytes,
-					 cli->args.data_output);
+		err = xnvmec_buf_to_file((char *)dbuf, dbuf_nbytes, cli->args.data_output);
 		if (err) {
 			xnvmec_perr("xnvmec_buf_to_file()", err);
 		}
@@ -282,7 +281,7 @@ sub_log_erri(struct xnvmec *cli)
 	}
 
 	// NOTE: The Error Log Page Entries (elpe) is a zero-based value
-	log_nentries = (uint32_t) xnvme_dev_get_ctrlr(dev)->elpe + 1;
+	log_nentries = (uint32_t)xnvme_dev_get_ctrlr(dev)->elpe + 1;
 	if (limit) {
 		log_nentries = limit;
 	}
@@ -369,8 +368,7 @@ sub_log(struct xnvmec *cli)
 	// Generic buf-print and/or dump to file
 	if (cli->args.data_output) {
 		xnvmec_pinf("Dumping to: '%s'", cli->args.data_output);
-		err = xnvmec_buf_to_file(buf, buf_nbytes,
-					 cli->args.data_output);
+		err = xnvmec_buf_to_file(buf, buf_nbytes, cli->args.data_output);
 		if (err) {
 			xnvmec_perr("xnvmec_buf_to_file()", err);
 		}
@@ -396,8 +394,7 @@ sub_gfeat(struct xnvmec *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
-	xnvmec_pinf("cmd_gfeat: {nsid: 0x%x, fid: 0x%x, sel: 0x%x}",
-		    nsid, fid, sel);
+	xnvmec_pinf("cmd_gfeat: {nsid: 0x%x, fid: 0x%x, sel: 0x%x}", nsid, fid, sel);
 
 	err = xnvme_adm_gfeat(&ctx, nsid, fid, sel, NULL, 0);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
@@ -408,7 +405,7 @@ sub_gfeat(struct xnvmec *cli)
 	}
 
 	{
-		struct xnvme_spec_feat feat = { .val = ctx.cpl.cdw0 };
+		struct xnvme_spec_feat feat = {.val = ctx.cpl.cdw0};
 		xnvme_spec_feat_pr(fid, feat, XNVME_PR_DEF);
 	}
 
@@ -431,8 +428,7 @@ sub_sfeat(struct xnvmec *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
-	xnvmec_pinf("cmd_sfeat: {nsid: 0%x, fid: 0x%x, feat: 0x%x, 0x%x}",
-		    nsid, fid, feat, save);
+	xnvmec_pinf("cmd_sfeat: {nsid: 0%x, fid: 0x%x, feat: 0x%x, 0x%x}", nsid, fid, feat, save);
 
 	err = xnvme_adm_sfeat(&ctx, 0, fid, feat, 0, NULL, 0);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
@@ -463,8 +459,8 @@ sub_format(struct xnvmec *cli)
 	}
 
 	xnvmec_pinf("xnvme_adm_format: {nsid: 0x%08x, lbaf: 0x%x, zf: 0x%x, "
-		    "mset: 0x%x, ses: 0x%x, pi: 0x%x, pil: 0x%x}", nsid,
-		    lbaf, zf, mset, ses, pi, pil);
+		    "mset: 0x%x, ses: 0x%x, pi: 0x%x, pil: 0x%x}",
+		    nsid, lbaf, zf, mset, ses, pi, pil);
 
 	err = xnvme_adm_format(&ctx, nsid, lbaf, zf, mset, ses, pi, pil);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
@@ -491,8 +487,8 @@ sub_sanitize(struct xnvmec *cli)
 
 	xnvmec_pinf("xnvme_nvm_sanitize: {sanact: 0x%x, ause: 0x%x, "
 		    "ovrpat: 0x%x, owpass: 0x%x, oipbp: 0x%x, "
-		    "nodas: 0x%x}", sanact, ause, ovrpat, owpass, oipbp,
-		    nodas);
+		    "nodas: 0x%x}",
+		    sanact, ause, ovrpat, owpass, oipbp, nodas);
 
 	err = xnvme_nvm_sanitize(&ctx, sanact, ause, ovrpat, owpass, oipbp, nodas);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
@@ -534,8 +530,7 @@ sub_pass(struct xnvmec *cli, int admin)
 
 		if (cli->args.data_input) {
 			xnvmec_pinf("Reading data(%s)", cli->args.data_input);
-			xnvmec_buf_from_file(data_buf, data_nbytes,
-					     cli->args.data_input);
+			xnvmec_buf_from_file(data_buf, data_nbytes, cli->args.data_input);
 		}
 	}
 
@@ -549,8 +544,7 @@ sub_pass(struct xnvmec *cli, int admin)
 
 		if (cli->args.meta_input) {
 			xnvmec_pinf("Reading meta(%s)", cli->args.meta_input);
-			xnvmec_buf_from_file(meta_buf, meta_nbytes,
-					     cli->args.meta_input);
+			xnvmec_buf_from_file(meta_buf, meta_nbytes, cli->args.meta_input);
 		}
 	}
 
@@ -572,16 +566,14 @@ sub_pass(struct xnvmec *cli, int admin)
 
 	if (data_nbytes && cli->args.data_output) {
 		xnvmec_pinf("Dumping data(%s)", cli->args.data_output);
-		err = xnvmec_buf_to_file(data_buf, data_nbytes,
-					 cli->args.data_output);
+		err = xnvmec_buf_to_file(data_buf, data_nbytes, cli->args.data_output);
 		if (err) {
 			xnvmec_perr("xnvmec_buf_to_file()", err);
 		}
 	}
 	if (meta_nbytes && cli->args.meta_output) {
 		xnvmec_pinf("Dumping meta(%s)", cli->args.meta_output);
-		err = xnvmec_buf_to_file(meta_buf, meta_nbytes,
-					 cli->args.meta_output);
+		err = xnvmec_buf_to_file(meta_buf, meta_nbytes, cli->args.meta_output);
 		if (err) {
 			xnvmec_perr("xnvmec_buf_to_file()", err);
 		}
@@ -637,8 +629,11 @@ exit:
 //
 static struct xnvmec_sub g_subs[] = {
 	{
-		"list", "List devices on the system",
-		"List devices on the system", sub_listing, {
+		"list",
+		"List devices on the system",
+		"List devices on the system",
+		sub_listing,
+		{
 			{XNVMEC_OPT_SYS_URI, XNVMEC_LOPT},
 			{XNVMEC_OPT_FLAGS, XNVMEC_LOPT},
 
@@ -646,8 +641,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"enum", "Enumerate devices on the system",
-		"Enumerate devices on the system", sub_enumerate, {
+		"enum",
+		"Enumerate devices on the system",
+		"Enumerate devices on the system",
+		sub_enumerate,
+		{
 			{XNVMEC_OPT_SYS_URI, XNVMEC_LOPT},
 			{XNVMEC_OPT_FLAGS, XNVMEC_LOPT},
 
@@ -655,8 +653,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"info", "Retrieve derived information for given device",
-		"Retrieve derived information for given device", sub_info, {
+		"info",
+		"Retrieve derived information for given device",
+		"Retrieve derived information for given device",
+		sub_info,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
@@ -665,8 +666,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"idfy", "Execute an User-defined Identify Command",
-		"Execute an User-defined Identify Command", sub_idfy, {
+		"idfy",
+		"Execute an User-defined Identify Command",
+		"Execute an User-defined Identify Command",
+		sub_idfy,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_CNS, XNVMEC_LREQ},
 			{XNVMEC_OPT_CNTID, XNVMEC_LOPT},
@@ -681,8 +685,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"idfy-ns", "Identify the given Namespace",
-		"Identify the given Namespace", sub_idfy_ns, {
+		"idfy-ns",
+		"Identify the given Namespace",
+		"Identify the given Namespace",
+		sub_idfy_ns,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
@@ -693,8 +700,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"idfy-ctrlr", "Identify the given Controller",
-		"Identify the given Controller", sub_idfy_ctrlr, {
+		"idfy-ctrlr",
+		"Identify the given Controller",
+		"Identify the given Controller",
+		sub_idfy_ctrlr,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
 
@@ -704,8 +714,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"idfy-cs", "Identify the Command Sets supported by the controller",
-		"Identify the Command Sets supported by the controller", sub_idfy_cs, {
+		"idfy-cs",
+		"Identify the Command Sets supported by the controller",
+		"Identify the Command Sets supported by the controller",
+		sub_idfy_cs,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
 
@@ -715,8 +728,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"log", "Retrieve a User-defined Log",
-		"Retrieve and print log", sub_log, {
+		"log",
+		"Retrieve a User-defined Log",
+		"Retrieve and print log",
+		sub_log,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_LID, XNVMEC_LREQ},
 			{XNVMEC_OPT_LSP, XNVMEC_LOPT},
@@ -732,8 +748,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"log-erri", "Retrieve the error-information log",
-		"Retrieve and print log", sub_log_erri, {
+		"log-erri",
+		"Retrieve the error-information log",
+		"Retrieve and print log",
+		sub_log_erri,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_LIMIT, XNVMEC_LOPT},
@@ -745,8 +764,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"log-health", "Retrieve the S.M.A.R.T. / Health information log",
-		"Retrieve and print log", sub_log_health, {
+		"log-health",
+		"Retrieve the S.M.A.R.T. / Health information log",
+		"Retrieve and print log",
+		sub_log_health,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
@@ -757,8 +779,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"feature-get", "Execute a Get-Features Command",
-		"Execute a Get Features Command", sub_gfeat, {
+		"feature-get",
+		"Execute a Get-Features Command",
+		"Execute a Get Features Command",
+		sub_gfeat,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_FID, XNVMEC_LREQ},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
@@ -771,8 +796,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"feature-set", "Execute a Set-Features Command",
-		"Execute a Set-Features Command", sub_sfeat, {
+		"feature-set",
+		"Execute a Set-Features Command",
+		"Execute a Set-Features Command",
+		sub_sfeat,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_FID, XNVMEC_LREQ},
 			{XNVMEC_OPT_FEAT, XNVMEC_LREQ},
@@ -786,8 +814,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"format", "Format a NVM namespace",
-		"Format a NVM namespace", sub_format, {
+		"format",
+		"Format a NVM namespace",
+		"Format a NVM namespace",
+		sub_format,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 
@@ -804,7 +835,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"sanitize", "Sanitize...", "Sanitize...", sub_sanitize, {
+		"sanitize",
+		"Sanitize...",
+		"Sanitize...",
+		sub_sanitize,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
@@ -813,26 +848,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"pioc", "Pass a used-defined IO Command through",
-		"Pass a used-defined IO Command through", sub_pioc, {
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
-			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_CMD_INPUT, XNVMEC_LREQ},
-			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
-			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
-			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LOPT},
-			{XNVMEC_OPT_META_INPUT, XNVMEC_LOPT},
-			{XNVMEC_OPT_META_OUTPUT, XNVMEC_LOPT},
-			{XNVMEC_OPT_META_NBYTES, XNVMEC_LOPT},
-
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		},
-	},
-	{
-		"padc", "Pass a user-defined ADmin Command through",
-		"Pass a user-defined ADmin Command through", sub_padc, {
+		"pioc",
+		"Pass a used-defined IO Command through",
+		"Pass a used-defined IO Command through",
+		sub_pioc,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_CMD_INPUT, XNVMEC_LREQ},
@@ -849,9 +869,33 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"library-info", "Produce information about the library",
-		"Produce information about the library", sub_library_info, {
-			{ 0 },
+		"padc",
+		"Pass a user-defined ADmin Command through",
+		"Pass a user-defined ADmin Command through",
+		sub_padc,
+		{
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_CMD_INPUT, XNVMEC_LREQ},
+			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
+			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
+			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LOPT},
+			{XNVMEC_OPT_META_INPUT, XNVMEC_LOPT},
+			{XNVMEC_OPT_META_OUTPUT, XNVMEC_LOPT},
+			{XNVMEC_OPT_META_NBYTES, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+		},
+	},
+	{
+		"library-info",
+		"Produce information about the library",
+		"Produce information about the library",
+		sub_library_info,
+		{
+			{0},
 		},
 	},
 };

@@ -19,15 +19,15 @@ extern "C" {
  * @struct xnvme_lba_range
  */
 struct xnvme_lba_range {
-	uint64_t slba;		///< Range start-LBA; begins at and includes this address
-	uint64_t elba;		///< Range end-LBA; ends at and includes this address
-	uint32_t naddrs;	///< Number of addresses in range [slba, elba]
-	uint64_t nbytes;	///< Number of bytes covered by [slba, elba]
+	uint64_t slba;   ///< Range start-LBA; begins at and includes this address
+	uint64_t elba;   ///< Range end-LBA; ends at and includes this address
+	uint32_t naddrs; ///< Number of addresses in range [slba, elba]
+	uint64_t nbytes; ///< Number of bytes covered by [slba, elba]
 
 	struct {
 		uint32_t is_zoned : 1; ///< Whether the range covers a zone [zslba, zslba + cap]
 		uint32_t is_valid : 1; ///< Whether the range is valid
-		uint32_t rsvd : 30;
+		uint32_t rsvd     : 30;
 	} attr;
 };
 

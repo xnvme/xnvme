@@ -15,18 +15,14 @@
 #include <xnvme_be_linux.h>
 
 // TODO: replace this with liburing 0.7 barriers
-#define _linux_liburing_barrier()  __asm__ __volatile__("":::"memory")
+#define _linux_liburing_barrier() __asm__ __volatile__("" ::: "memory")
 
 static int g_linux_liburing_required[] = {
-	IORING_OP_READV,
-	IORING_OP_WRITEV,
-	IORING_OP_READ_FIXED,
-	IORING_OP_WRITE_FIXED,
-	IORING_OP_READ,
-	IORING_OP_WRITE,
+	IORING_OP_READV,       IORING_OP_WRITEV, IORING_OP_READ_FIXED,
+	IORING_OP_WRITE_FIXED, IORING_OP_READ,   IORING_OP_WRITE,
 };
-int g_linux_liburing_nrequired = sizeof g_linux_liburing_required /
-				 sizeof(*g_linux_liburing_required);
+int g_linux_liburing_nrequired =
+	sizeof g_linux_liburing_required / sizeof(*g_linux_liburing_required);
 
 /**
  * Check whether the Kernel supports the io_uring features used by xNVMe
@@ -226,8 +222,7 @@ xnvme_be_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: unsupported opcode: %d for async",
-			    ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: unsupported opcode: %d for async", ctx->cmd.common.opcode);
 		return -ENOSYS;
 	}
 
@@ -237,7 +232,7 @@ xnvme_be_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	}
 
 	sqe->opcode = opcode;
-	sqe->addr = (unsigned long) dbuf;
+	sqe->addr = (unsigned long)dbuf;
 	sqe->len = dbuf_nbytes;
 	sqe->off = ctx->cmd.nvm.slba << ssw;
 	sqe->flags = queue->poll_sq ? IOSQE_FIXED_FILE : 0;
@@ -247,12 +242,11 @@ xnvme_be_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	sqe->fd = queue->poll_sq ? 0 : state->fd;
 	sqe->rw_flags = 0;
 	sqe->user_data = (unsigned long)ctx;
-	//sqe->__pad2[0] = sqe->__pad2[1] = sqe->__pad2[2] = 0;
+	// sqe->__pad2[0] = sqe->__pad2[1] = sqe->__pad2[2] = 0;
 
 	err = io_uring_submit(&queue->ring);
 	if (err < 0) {
-		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opcode,
-			    err);
+		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opcode, err);
 		return err;
 	}
 

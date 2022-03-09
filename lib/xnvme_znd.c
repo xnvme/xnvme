@@ -42,8 +42,7 @@ znd_report_init(struct xnvme_dev *dev, uint64_t slba, size_t limit, uint8_t exte
 	// Determine number of entries
 	nentries = limit ? limit : geo->nzone;
 	if (nentries > geo->nzone) {
-		XNVME_DEBUG("FAILED: nentries: %zu > geo->nzone: %u",
-			    nentries, geo->nzone);
+		XNVME_DEBUG("FAILED: nentries: %zu > geo->nzone: %u", nentries, geo->nzone);
 		errno = EINVAL;
 		return NULL;
 	}
@@ -139,13 +138,13 @@ xnvme_znd_report_from_dev(struct xnvme_dev *dev, uint64_t slba, size_t limit, ui
 	}
 
 	// Determine Management Receive Action
-	action = report->extended ? XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT_EXTENDED :
-		 XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT;
+	action = report->extended ? XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT_EXTENDED
+				  : XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT;
 
 	for (uint64_t zslba = report->zslba; zslba <= report->zelba;) {
 		struct xnvme_spec_znd_report_hdr *hdr = (void *)dbuf;
-		size_t nentries = XNVME_MIN(dbuf_nentries_max,
-					    ((report->zelba - zslba) / geo->nsect) + 1);
+		size_t nentries =
+			XNVME_MIN(dbuf_nentries_max, ((report->zelba - zslba) / geo->nsect) + 1);
 
 		XNVME_DEBUG("INFO: nentries: %zu", nentries);
 		if ((!nentries) || (nentries > dbuf_nentries_max)) {
@@ -171,8 +170,7 @@ xnvme_znd_report_from_dev(struct xnvme_dev *dev, uint64_t slba, size_t limit, ui
 		}
 
 		// Skip the header and copy the remainder
-		memcpy(report->storage + \
-		       ((zslba - slba) / geo->nsect) * report->zrent_nbytes,
+		memcpy(report->storage + ((zslba - slba) / geo->nsect) * report->zrent_nbytes,
 		       ((uint8_t *)dbuf) + sizeof(struct xnvme_spec_znd_report_hdr),
 		       report->zrent_nbytes * nentries);
 
@@ -199,8 +197,7 @@ xnvme_znd_report_find_arbitrary(const struct xnvme_znd_report *report,
 
 		zdescr = XNVME_ZND_REPORT_DESCR(report, idx);
 
-		if ((zdescr->zs == state) && \
-		    (zdescr->zt == XNVME_SPEC_ZND_TYPE_SEQWR) && \
+		if ((zdescr->zs == state) && (zdescr->zt == XNVME_SPEC_ZND_TYPE_SEQWR) &&
 		    (zdescr->zcap)) {
 			*zlba = zdescr->zslba;
 			return 0;
@@ -228,10 +225,8 @@ xnvme_znd_descr_from_dev(struct xnvme_dev *dev, uint64_t slba, struct xnvme_spec
 	}
 	memset(dbuf, 0, dbuf_nbytes);
 
-	err = xnvme_znd_mgmt_recv(&ctx, nsid, slba,
-				  XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT,
-				  XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL, 0x0, dbuf,
-				  dbuf_nbytes);
+	err = xnvme_znd_mgmt_recv(&ctx, nsid, slba, XNVME_SPEC_ZND_CMD_MGMT_RECV_ACTION_REPORT,
+				  XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL, 0x0, dbuf, dbuf_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("FAILED: xnvme_znd_mgmt_recv()");
 		err = err ? err : -EIO;
@@ -371,8 +366,8 @@ xnvme_znd_log_changes_from_dev(struct xnvme_dev *dev)
 	}
 
 	// Retrieve Changed Zone Information List for namespace with nsid=1
-	err = xnvme_adm_log(&ctx, XNVME_SPEC_LOG_ZND_CHANGES, 0, 0, xnvme_dev_get_nsid(dev), 0, log,
-			    log_nbytes);
+	err = xnvme_adm_log(&ctx, XNVME_SPEC_LOG_ZND_CHANGES, 0, 0, xnvme_dev_get_nsid(dev), 0,
+			    log, log_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("FAILED: xnvme_adm_log(XNVME_SPEC_LOG_TBD_ZCHG)");
 		xnvme_buf_free(dev, log);
@@ -408,8 +403,9 @@ xnvme_znd_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, bo
 
 int
 xnvme_znd_mgmt_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba,
-		    enum xnvme_spec_znd_cmd_mgmt_recv_action action, enum xnvme_spec_znd_cmd_mgmt_recv_action_sf sf,
-		    uint8_t partial, void *dbuf, uint32_t dbuf_nbytes)
+		    enum xnvme_spec_znd_cmd_mgmt_recv_action action,
+		    enum xnvme_spec_znd_cmd_mgmt_recv_action_sf sf, uint8_t partial, void *dbuf,
+		    uint32_t dbuf_nbytes)
 {
 	ctx->cmd.common.opcode = XNVME_SPEC_ZND_OPC_MGMT_RECV;
 	ctx->cmd.common.nsid = nsid;
@@ -424,8 +420,7 @@ xnvme_znd_mgmt_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba,
 
 int
 xnvme_znd_append(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, uint16_t nlb,
-		 const void *dbuf,
-		 const void *mbuf)
+		 const void *dbuf, const void *mbuf)
 {
 	void *cdbuf = (void *)dbuf;
 	void *cmbuf = (void *)mbuf;
@@ -477,8 +472,7 @@ xnvme_znd_report_fpr(FILE *stream, const struct xnvme_znd_report *report, int fl
 	}
 
 	wrtn += fprintf(stream, "  report_nbytes: %zu\n", report->report_nbytes);
-	wrtn += fprintf(stream, "  entries_nbytes: %zu\n",
-			report->entries_nbytes);
+	wrtn += fprintf(stream, "  entries_nbytes: %zu\n", report->entries_nbytes);
 
 	wrtn += fprintf(stream, "  zd_nbytes: %d\n", report->zd_nbytes);
 	wrtn += fprintf(stream, "  zdext_nbytes: %d\n", report->zdext_nbytes);

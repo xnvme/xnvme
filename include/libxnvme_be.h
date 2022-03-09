@@ -19,9 +19,9 @@ extern "C" {
  * @struct xnvme_be_attr_list
  */
 struct xnvme_be_attr {
-	const char *name;	///< Backend name
+	const char *name; ///< Backend name
 
-	uint8_t enabled;		///< Whether the backend is 'enabled'
+	uint8_t enabled; ///< Whether the backend is 'enabled'
 
 	uint8_t _rsvd[15];
 };
@@ -32,9 +32,9 @@ struct xnvme_be_attr {
  * @struct xnvme_be_attr_list
  */
 struct xnvme_be_attr_list {
-	uint32_t capacity;		///< Remaining unused entries
-	int count;			///< Number of used entries
-	struct xnvme_be_attr item[];	///< Array of items
+	uint32_t capacity;           ///< Remaining unused entries
+	int count;                   ///< Number of used entries
+	struct xnvme_be_attr item[]; ///< Array of items
 };
 
 /**

@@ -17,9 +17,8 @@
  *  - rbuf -- to be used for read
  */
 static int
-boilerplate(struct xnvmec *cli, uint8_t **wbuf, uint8_t **rbuf,
-	    size_t *buf_nbytes, uint64_t *mdts_naddr, uint32_t *nsid,
-	    uint64_t *rng_slba, uint64_t *rng_elba)
+boilerplate(struct xnvmec *cli, uint8_t **wbuf, uint8_t **rbuf, size_t *buf_nbytes,
+	    uint64_t *mdts_naddr, uint32_t *nsid, uint64_t *rng_slba, uint64_t *rng_elba)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = cli->args.geo;
@@ -37,7 +36,7 @@ boilerplate(struct xnvmec *cli, uint8_t **wbuf, uint8_t **rbuf,
 	// Construct a range if none is given
 	if (!(cli->given[XNVMEC_OPT_SLBA] && cli->given[XNVMEC_OPT_ELBA])) {
 		*rng_slba = 0;
-		*rng_elba = (1 << 28) / geo->lba_nbytes;	// About 256MB
+		*rng_elba = (1 << 28) / geo->lba_nbytes; // About 256MB
 	}
 	rng_naddr = *rng_elba - *rng_slba + 1;
 
@@ -65,8 +64,8 @@ boilerplate(struct xnvmec *cli, uint8_t **wbuf, uint8_t **rbuf,
 	}
 
 	xnvmec_pinf("nsid: 0x%x", *nsid);
-	xnvmec_pinf("range: { slba: 0x%016lx, elba: 0x%016lx, naddr: %zu }",
-		    *rng_slba, *rng_elba, rng_naddr);
+	xnvmec_pinf("range: { slba: 0x%016lx, elba: 0x%016lx, naddr: %zu }", *rng_slba, *rng_elba,
+		    rng_naddr);
 	xnvmec_pinf("buf_nbytes: %zu", *buf_nbytes);
 	xnvmec_pinf("mdts_naddr: %zu", *mdts_naddr);
 
@@ -74,16 +73,15 @@ boilerplate(struct xnvmec *cli, uint8_t **wbuf, uint8_t **rbuf,
 }
 
 static int
-read_and_compare_lba_range(uint8_t *rbuf, const uint8_t *cbuf,
-			   const uint64_t rng_slba, const uint64_t nlb, const uint64_t mdts_naddr,
+read_and_compare_lba_range(uint8_t *rbuf, const uint8_t *cbuf, const uint64_t rng_slba,
+			   const uint64_t nlb, const uint64_t mdts_naddr,
 			   const struct xnvme_geo *geo, struct xnvme_dev *dev, uint32_t nsid,
 			   uint64_t *compared_bytes)
 {
 	int err = 0;
 	uint64_t read_bytes = 0;
 	*compared_bytes = 0;
-	xnvmec_pinf("Reading and comparing in LBA range [%ld,%ld]",
-		    rng_slba, rng_slba + nlb);
+	xnvmec_pinf("Reading and comparing in LBA range [%ld,%ld]", rng_slba, rng_slba + nlb);
 
 	for (uint64_t read_lbs = 0, r_nlb = 0; read_lbs < nlb; read_lbs += r_nlb) {
 		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
@@ -91,7 +89,8 @@ read_and_compare_lba_range(uint8_t *rbuf, const uint8_t *cbuf,
 
 		err = xnvme_nvm_read(&ctx, nsid, rng_slba + read_lbs, r_nlb - 1, rbuf, NULL);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvmec_pinf("xnvme_nvm_read(): {err: 0x%x, slba: 0x%016lx}", err, rng_slba + read_lbs);
+			xnvmec_pinf("xnvme_nvm_read(): {err: 0x%x, slba: 0x%016lx}", err,
+				    rng_slba + read_lbs);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
@@ -110,12 +109,12 @@ exit:
 	return err;
 }
 
-
 static int
 fill_lba_range_and_write_buffer_with_character(uint8_t *wbuf, size_t buf_nbytes, uint64_t rng_slba,
-		uint64_t rng_elba, uint64_t mdts_naddr,
-		struct xnvme_dev *dev, const struct xnvme_geo *geo, uint32_t nsid, char character,
-		uint64_t *written_bytes)
+					       uint64_t rng_elba, uint64_t mdts_naddr,
+					       struct xnvme_dev *dev, const struct xnvme_geo *geo,
+					       uint32_t nsid, char character,
+					       uint64_t *written_bytes)
 {
 	int err;
 
@@ -162,8 +161,8 @@ sub_io(struct xnvmec *cli)
 	int err;
 	uint64_t written_bytes = 0;
 
-	err = boilerplate(cli, &wbuf, &rbuf, &buf_nbytes, &mdts_naddr, &nsid,
-			  &rng_slba, &rng_elba);
+	err = boilerplate(cli, &wbuf, &rbuf, &buf_nbytes, &mdts_naddr, &nsid, &rng_slba,
+			  &rng_elba);
 	if (err) {
 		xnvmec_perr("boilerplate()", err);
 		goto exit;
@@ -171,7 +170,8 @@ sub_io(struct xnvmec *cli)
 
 	xnvmec_pinf("Writing '!' to LBA range [slba,elba]");
 	err = fill_lba_range_and_write_buffer_with_character(wbuf, buf_nbytes, rng_slba, rng_elba,
-			mdts_naddr, dev, geo, nsid, '!', &written_bytes);
+							     mdts_naddr, dev, geo, nsid, '!',
+							     &written_bytes);
 	if (err) {
 		xnvmec_perr("fill_lba_range_and_write_buffer_with_character()", err);
 		goto exit;
@@ -253,7 +253,7 @@ test_scopy(struct xnvmec *cli)
 	size_t buf_nbytes;
 	uint8_t *wbuf = NULL, *rbuf = NULL;
 
-	struct xnvme_spec_nvm_scopy_source_range *sranges = NULL;	// For the copy-payload
+	struct xnvme_spec_nvm_scopy_source_range *sranges = NULL; // For the copy-payload
 	struct xnvme_spec_nvm_idfy_ns *nvm = NULL;
 	uint64_t sdlba = 0;
 	enum xnvme_nvm_scopy_fmt copy_fmt;
@@ -289,13 +289,14 @@ test_scopy(struct xnvmec *cli)
 	// NVMe-struct copy format
 	copy_fmt = XNVME_NVM_SCOPY_FMT_ZERO;
 
-	xnvme_spec_nvm_idfy_ctrlr_pr((struct xnvme_spec_nvm_idfy_ctrlr *) xnvme_dev_get_ctrlr(dev),
+	xnvme_spec_nvm_idfy_ctrlr_pr((struct xnvme_spec_nvm_idfy_ctrlr *)xnvme_dev_get_ctrlr(dev),
 				     XNVME_PR_DEF);
-	xnvme_spec_nvm_idfy_ns_pr((struct xnvme_spec_nvm_idfy_ns *) xnvme_dev_get_ns(dev),
+	xnvme_spec_nvm_idfy_ns_pr((struct xnvme_spec_nvm_idfy_ns *)xnvme_dev_get_ns(dev),
 				  XNVME_PR_DEF);
 
 	err = fill_lba_range_and_write_buffer_with_character(wbuf, buf_nbytes, rng_slba, rng_elba,
-			xfer_naddr, dev, geo, nsid, '!', &written_bytes);
+							     xfer_naddr, dev, geo, nsid, '!',
+							     &written_bytes);
 	if (err) {
 		xnvmec_perr("fill_lba_range_and_write_buffer_with_character()", err);
 		goto exit;
@@ -383,8 +384,8 @@ test_write_zeroes(struct xnvmec *cli)
 	uint64_t compared_bytes = 0;
 	uint64_t written_bytes = 0;
 
-	err = boilerplate(cli, &wbuf, &rbuf, &buf_nbytes, &mdts_naddr, &nsid,
-			  &rng_slba, &rng_elba);
+	err = boilerplate(cli, &wbuf, &rbuf, &buf_nbytes, &mdts_naddr, &nsid, &rng_slba,
+			  &rng_elba);
 	nlb = rng_elba - rng_slba;
 	if (err) {
 		xnvmec_perr("boilerplate()", err);
@@ -392,7 +393,8 @@ test_write_zeroes(struct xnvmec *cli)
 	}
 
 	err = fill_lba_range_and_write_buffer_with_character(wbuf, buf_nbytes, rng_slba, rng_elba,
-			mdts_naddr, dev, geo, nsid, '!', &written_bytes);
+							     mdts_naddr, dev, geo, nsid, '!',
+							     &written_bytes);
 	if (err) {
 		xnvmec_perr("fill_lba_range_and_write_buffer_with_character()", err);
 		goto exit;
@@ -400,15 +402,15 @@ test_write_zeroes(struct xnvmec *cli)
 	xnvmec_pinf("Written bytes %ld with !", written_bytes);
 
 	xnvmec_buf_clear(rbuf, buf_nbytes);
-	err = read_and_compare_lba_range(rbuf, wbuf, rng_slba, nlb, mdts_naddr, geo,
-					 dev, nsid, &compared_bytes);
+	err = read_and_compare_lba_range(rbuf, wbuf, rng_slba, nlb, mdts_naddr, geo, dev, nsid,
+					 &compared_bytes);
 	if (err) {
 		xnvmec_perr("read_and_compare_lba_range()", err);
 		goto exit;
 	}
 	xnvmec_pinf("Compared %ld bytes to !", compared_bytes);
 
-	for (uint64_t slba = rng_slba; slba < rng_elba ; slba += mdts_naddr) {
+	for (uint64_t slba = rng_slba; slba < rng_elba; slba += mdts_naddr) {
 		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 		uint16_t nlb = XNVME_MIN((rng_elba - slba) * geo->lba_nbytes, UINT16_MAX);
 
@@ -424,8 +426,8 @@ test_write_zeroes(struct xnvmec *cli)
 	// Set the rbuf to != 0 so we know that we read zeroes
 	memset(rbuf, 'a', buf_nbytes);
 	xnvmec_buf_clear(wbuf, buf_nbytes);
-	err = read_and_compare_lba_range(rbuf, wbuf, rng_slba, nlb, mdts_naddr, geo,
-					 dev, nsid, &compared_bytes);
+	err = read_and_compare_lba_range(rbuf, wbuf, rng_slba, nlb, mdts_naddr, geo, dev, nsid,
+					 &compared_bytes);
 	if (err) {
 		xnvmec_perr("read_and_compare_lba_range()", err);
 		goto exit;
@@ -460,8 +462,8 @@ test_write_uncorrectable(struct xnvmec *cli)
 	uint64_t written_bytes = 0;
 	bool entered_uncorrectable_loop = false;
 
-	err = boilerplate(cli, &wbuf, &rbuf, &buf_nbytes, &mdts_naddr, &nsid,
-			  &rng_slba, &rng_elba);
+	err = boilerplate(cli, &wbuf, &rbuf, &buf_nbytes, &mdts_naddr, &nsid, &rng_slba,
+			  &rng_elba);
 	nlb = rng_elba - rng_slba;
 	if (err) {
 		xnvmec_perr("boilerplate()", err);
@@ -470,15 +472,16 @@ test_write_uncorrectable(struct xnvmec *cli)
 
 	/* Fill lbas with '!' */
 	err = fill_lba_range_and_write_buffer_with_character(wbuf, buf_nbytes, rng_slba, rng_elba,
-			mdts_naddr, dev, geo, nsid, '!', &written_bytes);
+							     mdts_naddr, dev, geo, nsid, '!',
+							     &written_bytes);
 	if (err) {
 		xnvmec_perr("fill_lba_range_and_write_buffer_with_character()", err);
 		goto exit;
 	}
 
 	xnvmec_buf_clear(rbuf, buf_nbytes);
-	err = read_and_compare_lba_range(rbuf, wbuf, rng_slba, nlb, mdts_naddr, geo,
-					 dev, nsid, &compared_bytes);
+	err = read_and_compare_lba_range(rbuf, wbuf, rng_slba, nlb, mdts_naddr, geo, dev, nsid,
+					 &compared_bytes);
 	if (err) {
 		xnvmec_perr("read_and_compare_lba_range()", err);
 		goto exit;
@@ -493,8 +496,7 @@ test_write_uncorrectable(struct xnvmec *cli)
 		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 		r_nlb = XNVME_MIN(mdts_naddr, nlb - execed_lbs);
 
-		err = xnvme_nvm_write_uncorrectable(&ctx, nsid,
-						    rng_slba + execed_lbs, r_nlb - 1);
+		err = xnvme_nvm_write_uncorrectable(&ctx, nsid, rng_slba + execed_lbs, r_nlb - 1);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			xnvmec_perr("xnvme_nvm_write_uncorrectable()", err);
 			err = err ? err : -EIO;
@@ -522,9 +524,11 @@ exit:
 	if (entered_uncorrectable_loop) {
 		xnvmec_pinf("Writing zeros to lba range to reset unocrrectable bit");
 		int recover_err = fill_lba_range_and_write_buffer_with_character(
-					  wbuf, buf_nbytes, rng_slba, rng_elba, mdts_naddr, dev, geo, nsid, 0, &written_bytes);
+			wbuf, buf_nbytes, rng_slba, rng_elba, mdts_naddr, dev, geo, nsid, 0,
+			&written_bytes);
 		if (recover_err) {
-			xnvmec_perr("fill_lba_range_and_write_buffer_with_character()", recover_err);
+			xnvmec_perr("fill_lba_range_and_write_buffer_with_character()",
+				    recover_err);
 		}
 	}
 
@@ -558,7 +562,8 @@ static struct xnvmec_sub g_subs[] = {
 		"scopy",
 		"Basic Verification of the Simple-Copy Command",
 		"Basic Verification of the Simple-Copy Command",
-		test_scopy, {
+		test_scopy,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
 
@@ -572,7 +577,8 @@ static struct xnvmec_sub g_subs[] = {
 		"write_zeroes",
 		"Basic verification of the write zeros command",
 		"Basic verification of the write zeros command",
-		test_write_zeroes, {
+		test_write_zeroes,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
 			{XNVMEC_OPT_ELBA, XNVMEC_LOPT},
@@ -587,7 +593,8 @@ static struct xnvmec_sub g_subs[] = {
 		"write_uncorrectable",
 		"Basic verification of the write uncorrectable command",
 		"Basic verification of the write uncorrectable command",
-		test_write_uncorrectable, {
+		test_write_uncorrectable,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
 			{XNVMEC_OPT_ELBA, XNVMEC_LOPT},
@@ -597,8 +604,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
 		},
-	}
-};
+	}};
 
 static struct xnvmec g_cli = {
 	.title = "Basic LBLK Verification",

@@ -25,7 +25,8 @@ xnvme_sgl_setup(struct xnvme_cmd_ctx *ctx, void *data, void *meta)
 		xnvme_buf_vtophys(ctx->dev, sgl->descriptors, &phys);
 
 		ctx->cmd.common.dptr.sgl.unkeyed.type = XNVME_SPEC_SGL_DESCR_TYPE_LAST_SEGMENT;
-		ctx->cmd.common.dptr.sgl.unkeyed.len = sgl->ndescr * sizeof(struct xnvme_spec_sgl_descriptor);
+		ctx->cmd.common.dptr.sgl.unkeyed.len =
+			sgl->ndescr * sizeof(struct xnvme_spec_sgl_descriptor);
 		ctx->cmd.common.dptr.sgl.addr = phys;
 	}
 
@@ -40,7 +41,8 @@ xnvme_sgl_setup(struct xnvme_cmd_ctx *ctx, void *data, void *meta)
 			ctx->cmd.common.mptr = phys;
 		} else {
 			sgl->indirect->unkeyed.type = XNVME_SPEC_SGL_DESCR_TYPE_LAST_SEGMENT;
-			sgl->indirect->unkeyed.len = sgl->ndescr * sizeof(struct xnvme_spec_sgl_descriptor);
+			sgl->indirect->unkeyed.len =
+				sgl->ndescr * sizeof(struct xnvme_spec_sgl_descriptor);
 			sgl->indirect->addr = phys;
 
 			xnvme_buf_vtophys(ctx->dev, sgl->indirect, &phys);
@@ -59,8 +61,8 @@ xnvme_cmd_ctx_pr(const struct xnvme_cmd_ctx *ctx, int XNVME_UNUSED(opts))
 		return;
 	}
 
-	printf("{cdw0: 0x%x, sc: 0x%x, sct: 0x%x}\n", ctx->cpl.cdw0,
-	       ctx->cpl.status.sc, ctx->cpl.status.sct);
+	printf("{cdw0: 0x%x, sc: 0x%x, sct: 0x%x}\n", ctx->cpl.cdw0, ctx->cpl.status.sc,
+	       ctx->cpl.status.sct);
 }
 
 void
@@ -72,7 +74,7 @@ xnvme_cmd_ctx_clear(struct xnvme_cmd_ctx *ctx)
 struct xnvme_cmd_ctx
 xnvme_cmd_ctx_from_dev(struct xnvme_dev *dev)
 {
-	struct xnvme_cmd_ctx ctx = { .dev = dev, .opts = XNVME_CMD_SYNC };
+	struct xnvme_cmd_ctx ctx = {.dev = dev, .opts = XNVME_CMD_SYNC};
 
 	return ctx;
 }

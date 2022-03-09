@@ -16,9 +16,9 @@ extern "C" {
  * @enum xnvme_pr
  */
 enum xnvme_pr {
-	XNVME_PR_DEF = 0x0,	///< XNVME_PR_DEF: Default options
-	XNVME_PR_YAML = 0x1,	///< XNVME_PR_YAML: Print formatted as YAML
-	XNVME_PR_TERSE = 0x2	///< XNVME_PR_TERSE: Print without formatting
+	XNVME_PR_DEF   = 0x0, ///< XNVME_PR_DEF: Default options
+	XNVME_PR_YAML  = 0x1, ///< XNVME_PR_YAML: Print formatted as YAML
+	XNVME_PR_TERSE = 0x2  ///< XNVME_PR_TERSE: Print without formatting
 };
 
 /**
@@ -54,8 +54,7 @@ xnvme_be_attr_pr(const struct xnvme_be_attr *attr, int opts);
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_be_attr_list_fpr(FILE *stream, const struct xnvme_be_attr_list *list,
-		       int opts);
+xnvme_be_attr_list_fpr(FILE *stream, const struct xnvme_be_attr_list *list, int opts);
 
 /**
  * Prints the given backend attribute list to standard out
@@ -101,8 +100,7 @@ xnvme_lba_pr(uint64_t lba, enum xnvme_pr opts);
  * @param opts printer options, see ::xnvme_pr
  */
 int
-xnvme_lba_fprn(FILE *stream, const uint64_t *lba, uint16_t nlb,
-	       enum xnvme_pr opts);
+xnvme_lba_fprn(FILE *stream, const uint64_t *lba, uint16_t nlb, enum xnvme_pr opts);
 
 /**
  * Print a list of Logical Block Addresses (LBAs)

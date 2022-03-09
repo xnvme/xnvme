@@ -17,7 +17,7 @@ sub_sync_read(struct xnvmec *cli)
 	const struct xnvme_geo *geo = cli->args.geo;
 	uint32_t nsid = cli->args.nsid;
 
-	struct xnvme_spec_znd_descr zone = {0 };
+	struct xnvme_spec_znd_descr zone = {0};
 
 	size_t buf_nbytes;
 	char *buf = NULL;
@@ -97,7 +97,7 @@ sub_sync_write(struct xnvmec *cli)
 	const struct xnvme_geo *geo = cli->args.geo;
 	uint32_t nsid = cli->args.nsid;
 
-	struct xnvme_spec_znd_descr zone = { 0 };
+	struct xnvme_spec_znd_descr zone = {0};
 
 	size_t buf_nbytes;
 	char *buf = NULL;
@@ -131,7 +131,8 @@ sub_sync_write(struct xnvmec *cli)
 		xnvmec_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	err = xnvmec_buf_fill(buf, buf_nbytes, cli->args.data_input ? cli->args.data_input : "anum");
+	err = xnvmec_buf_fill(buf, buf_nbytes,
+			      cli->args.data_input ? cli->args.data_input : "anum");
 	if (err) {
 		xnvmec_perr("xnvmec_buf_fill()", err);
 		goto exit;
@@ -169,7 +170,7 @@ sub_sync_append(struct xnvmec *cli)
 	const struct xnvme_geo *geo = cli->args.geo;
 	uint32_t nsid = cli->args.nsid;
 
-	struct xnvme_spec_znd_descr zone = {0 };
+	struct xnvme_spec_znd_descr zone = {0};
 
 	size_t buf_nbytes;
 	char *buf = NULL;
@@ -203,7 +204,8 @@ sub_sync_append(struct xnvmec *cli)
 		xnvmec_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	err = xnvmec_buf_fill(buf, buf_nbytes, cli->args.data_input ? cli->args.data_input : "anum");
+	err = xnvmec_buf_fill(buf, buf_nbytes,
+			      cli->args.data_input ? cli->args.data_input : "anum");
 	if (err) {
 		xnvmec_perr("xnvmec_buf_fill()", err);
 		goto exit;
@@ -240,8 +242,11 @@ exit:
 
 static struct xnvmec_sub g_subs[] = {
 	{
-		"read", "Zone Read of a full zone",
-		"Zone Read of a full zone", sub_sync_read, {
+		"read",
+		"Zone Read of a full zone",
+		"Zone Read of a full zone",
+		sub_sync_read,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
@@ -255,8 +260,11 @@ static struct xnvmec_sub g_subs[] = {
 	},
 
 	{
-		"write", "Zone Write sync. until full",
-		"Zone Write sync. until full", sub_sync_write, {
+		"write",
+		"Zone Write sync. until full",
+		"Zone Write sync. until full",
+		sub_sync_write,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
@@ -270,8 +278,11 @@ static struct xnvmec_sub g_subs[] = {
 	},
 
 	{
-		"append", "Zone Append sync. until full",
-		"Zone Append sync. until full", sub_sync_append, {
+		"append",
+		"Zone Append sync. until full",
+		"Zone Append sync. until full",
+		sub_sync_append,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
@@ -287,8 +298,8 @@ static struct xnvmec_sub g_subs[] = {
 
 static struct xnvmec g_cli = {
 	.title = "Zoned Synchronous IO Example",
-	.descr_short =	"Synchronous IO: read / write / append, "
-	"using 4k payload at QD1",
+	.descr_short = "Synchronous IO: read / write / append, "
+		       "using 4k payload at QD1",
 	.subs = g_subs,
 	.nsubs = sizeof g_subs / sizeof(*g_subs),
 };

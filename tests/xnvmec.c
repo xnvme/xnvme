@@ -6,7 +6,7 @@ int
 xnvmec_copy_io(struct xnvmec *cli)
 {
 	const char *input_path = cli->args.data_input, *output_path = cli->args.data_output;
-	struct xnvme_opts opts = { .rdonly = 1 };
+	struct xnvme_opts opts = {.rdonly = 1};
 	struct xnvme_dev *fh;
 	void *buf;
 	size_t file_size;
@@ -66,15 +66,21 @@ xnvmec_check_opt_attr(struct xnvmec *XNVME_UNUSED(cli))
 
 static struct xnvmec_sub g_subs[] = {
 	{
-		"copy-xnvmec", "Copy a file using xnvmec_buf_{to,from}_file",
-		"Copy a file using xnvmec_buf_{to,from}_file", xnvmec_copy_io, {
+		"copy-xnvmec",
+		"Copy a file using xnvmec_buf_{to,from}_file",
+		"Copy a file using xnvmec_buf_{to,from}_file",
+		xnvmec_copy_io,
+		{
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_POSA},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
 		},
 	},
 	{
-		"check-opt-attr", "Check that all 'xnvmec_opt' has attributes defined",
-		"Check that all 'xnvmec_opt' has attributes defined", xnvmec_check_opt_attr, { 0 },
+		"check-opt-attr",
+		"Check that all 'xnvmec_opt' has attributes defined",
+		"Check that all 'xnvmec_opt' has attributes defined",
+		xnvmec_check_opt_attr,
+		{0},
 	},
 };
 

@@ -59,14 +59,12 @@ test_open_zdptr(struct xnvmec *cli)
 	for (uint64_t idx = 0; idx < before->nentries; ++idx) {
 		struct xnvme_spec_znd_descr *descr = XNVME_ZND_REPORT_DESCR(before, idx);
 
-		if (cli->given[XNVMEC_OPT_SLBA] && \
-		    (cli->args.lba != descr->zslba)) {
+		if (cli->given[XNVMEC_OPT_SLBA] && (cli->args.lba != descr->zslba)) {
 			continue;
 		}
 
-		if ((descr->zs == XNVME_SPEC_ZND_STATE_EMPTY) && \
-		    (descr->zt == XNVME_SPEC_ZND_TYPE_SEQWR) && \
-		    (descr->zcap)) {
+		if ((descr->zs == XNVME_SPEC_ZND_STATE_EMPTY) &&
+		    (descr->zt == XNVME_SPEC_ZND_TYPE_SEQWR) && (descr->zcap)) {
 			zslba = descr->zslba;
 			zidx = idx;
 			break;
@@ -93,8 +91,8 @@ test_open_zdptr(struct xnvmec *cli)
 
 	xnvmec_pinf("Sending MGMT-EOPEN");
 
-	err = xnvme_znd_mgmt_send(&ctx, nsid, zslba, false, XNVME_SPEC_ZND_CMD_MGMT_SEND_OPEN,
-				  0x0, zde);
+	err = xnvme_znd_mgmt_send(&ctx, nsid, zslba, false, XNVME_SPEC_ZND_CMD_MGMT_SEND_OPEN, 0x0,
+				  zde);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_pinf("xnvme_cmd_zone_mgmt(OPEN)");
 		err = err ? err : -EIO;
@@ -118,8 +116,7 @@ test_open_zdptr(struct xnvmec *cli)
 		uint8_t *zde_after = XNVME_ZND_REPORT_DEXT(after, zidx);
 
 		if (xnvmec_buf_diff(zde, zde_after, zde_nbytes)) {
-			xnvmec_buf_diff_pr(zde, descr, zde_nbytes,
-					   XNVME_PR_DEF);
+			xnvmec_buf_diff_pr(zde, descr, zde_nbytes, XNVME_PR_DEF);
 			err = -EIO;
 			goto exit;
 		}
@@ -148,12 +145,14 @@ exit:
 // Command-Line Interface (CLI) definition
 //
 static struct xnvmec_sub g_subs[] = {
-	{
-		"test_open_zdptr", "jazz", "jazz", test_open_zdptr, {
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
-			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
-		}
-	},
+	{"test_open_zdptr",
+	 "jazz",
+	 "jazz",
+	 test_open_zdptr,
+	 {
+		 {XNVMEC_OPT_URI, XNVMEC_POSA},
+		 {XNVMEC_OPT_SLBA, XNVMEC_LOPT},
+	 }},
 };
 
 static struct xnvmec g_cli = {

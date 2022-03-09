@@ -9,10 +9,10 @@
 #endif
 
 #define XNVME_LINUX_CTRLR_SCAN _PATH_DEV "nvme%1u%[^\n]"
-#define XNVME_LINUX_NS_SCAN _PATH_DEV "nvme%1un%1u%[^\n]"
+#define XNVME_LINUX_NS_SCAN    _PATH_DEV "nvme%1un%1u%[^\n]"
 
 #define XNVME_LINUX_CTRLR_FMT _PATH_DEV "nvme%1u"
-#define XNVME_LINUX_NS_FMT _PATH_DEV "nvme%1un%1u"
+#define XNVME_LINUX_NS_FMT    _PATH_DEV "nvme%1un%1u"
 
 /**
  * Internal representation of XNVME_BE_LINUX state
@@ -26,10 +26,7 @@ struct xnvme_be_linux_state {
 
 	uint8_t _rsvd[121];
 };
-XNVME_STATIC_ASSERT(
-	sizeof(struct xnvme_be_linux_state) == XNVME_BE_STATE_NBYTES,
-	"Incorrect size"
-)
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_linux_state) == XNVME_BE_STATE_NBYTES, "Incorrect size")
 
 int
 xnvme_file_opts_to_linux(struct xnvme_opts *opts);

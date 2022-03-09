@@ -17,8 +17,7 @@ test_buf_alloc_free(struct xnvmec *cli)
 		void *buf;
 
 		printf("\n");
-		xnvmec_pinf("[alloc/free] i: %zu, buf_nbytes: %zu",
-			    i + 1, buf_nbytes);
+		xnvmec_pinf("[alloc/free] i: %zu, buf_nbytes: %zu", i + 1, buf_nbytes);
 
 		buf = xnvme_buf_alloc(cli->args.dev, buf_nbytes);
 		if (!buf) {
@@ -56,8 +55,7 @@ test_virt_buf_alloc_free(struct xnvmec *cli)
 		void *buf;
 
 		printf("\n");
-		xnvmec_pinf("[alloc/free] i: %zu, buf_nbytes: %zu",
-			    i + 1, buf_nbytes);
+		xnvmec_pinf("[alloc/free] i: %zu, buf_nbytes: %zu", i + 1, buf_nbytes);
 
 		buf = xnvme_buf_virt_alloc(0x1000, buf_nbytes);
 		if (!buf) {
@@ -90,7 +88,8 @@ static struct xnvmec_sub g_subs[] = {
 		"buf_alloc_free",
 		"Allocate and free a buffer 'count' times of size [1, 2^count]",
 		"Allocate and free a buffer 'count' times of size [1, 2^count]",
-		test_buf_alloc_free, {
+		test_buf_alloc_free,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_COUNT, XNVMEC_LREQ},
 
@@ -102,7 +101,8 @@ static struct xnvmec_sub g_subs[] = {
 		"buf_virt_alloc_free",
 		"Allocate and free a buffer 'count' times of size [1, 2^count]",
 		"Allocate and free a buffer 'count' times of size [1, 2^count]",
-		test_virt_buf_alloc_free, {
+		test_virt_buf_alloc_free,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_COUNT, XNVMEC_LREQ},
 

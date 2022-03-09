@@ -13,13 +13,13 @@
 #include <ddk/scsi.h>
 #include <ntddscsi.h>
 
-#define SPT_CDB_LENGTH 32
-#define SPT_SENSE_LENGTH 32
+#define SPT_CDB_LENGTH    32
+#define SPT_SENSE_LENGTH  32
 #define SPTWB_DATA_LENGTH 512
 
 struct scsi_pass_through_direct_with_buffer {
 	SCSI_PASS_THROUGH_DIRECT sptd;
-	ULONG filler;		///< realign buffers to double word boundary
+	ULONG filler; ///< realign buffers to double word boundary
 	UCHAR uc_sense_buf[SPT_SENSE_LENGTH];
 };
 
@@ -36,8 +36,7 @@ struct scsi_pass_through_direct_with_buffer {
  */
 int
 xnvme_be_windows_sync_nvme_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
-				  void *mbuf,
-				  size_t mbuf_nbytes);
+				  void *mbuf, size_t mbuf_nbytes);
 
 /**
  * Pass a NVMe Admin Command through to the device via the Windows NVMe Kernel driver
@@ -52,7 +51,6 @@ xnvme_be_windows_sync_nvme_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t 
  */
 int
 xnvme_be_windows_nvme_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
-				void *mbuf,
-				size_t mbuf_nbytes);
+				void *mbuf, size_t mbuf_nbytes);
 
 #endif /* __INTERNAL_XNVME_BE_WINDOWS_NVME_H */

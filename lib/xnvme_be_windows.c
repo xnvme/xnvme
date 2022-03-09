@@ -18,13 +18,14 @@ typedef NTSTATUS(WINAPI *RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
 RTL_OSVERSIONINFOW
 _be_windows_get_os_version(void)
 {
-	RTL_OSVERSIONINFOW rovi = { 0 };
+	RTL_OSVERSIONINFOW rovi = {0};
 	HMODULE module_handle = GetModuleHandleW(L"ntdll.dll");
 	if (module_handle == NULL) {
 		return rovi;
 	}
 
-	RtlGetVersionPtr fun_ptr = (RtlGetVersionPtr)GetProcAddress(module_handle, "RtlGetVersion");
+	RtlGetVersionPtr fun_ptr =
+		(RtlGetVersionPtr)GetProcAddress(module_handle, "RtlGetVersion");
 	if (fun_ptr == NULL) {
 		return rovi;
 	}
@@ -51,9 +52,7 @@ xnvme_be_windows_uapi_ver_fpr(FILE *stream, enum xnvme_pr opts)
 
 	RTL_OSVERSIONINFOW info = _be_windows_get_os_version();
 	wrtn += fprintf(stream, "WINDOWS;WINDOWS_VERSION_CODE-UAPI/%lu.%lu (%lu) ",
-			info.dwMajorVersion,
-			info.dwMinorVersion,
-			info.dwBuildNumber);
+			info.dwMajorVersion, info.dwMinorVersion, info.dwBuildNumber);
 
 	return wrtn;
 }
@@ -127,7 +126,8 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_windows[] = {
 	{
 		.mtype = XNVME_BE_ASYNC,
 		.name = "iocp",
-		.descr = "Use Windows readfile/writefile with overlapped(iocp) for Asynchronous I/O",
+		.descr = "Use Windows readfile/writefile with overlapped(iocp) for Asynchronous "
+			 "I/O",
 		.async = &g_xnvme_be_windows_async_iocp,
 		.check_support = xnvme_be_supported,
 	},
@@ -135,7 +135,8 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_windows[] = {
 	{
 		.mtype = XNVME_BE_ASYNC,
 		.name = "iocp_th",
-		.descr = "Use Windows readfile/writefile with thread based overlapped(iocp) for Asynchronous I/O",
+		.descr = "Use Windows readfile/writefile with thread based overlapped(iocp) for "
+			 "Asynchronous I/O",
 		.async = &g_xnvme_be_windows_async_iocp_th,
 		.check_support = xnvme_be_supported,
 	},
@@ -189,15 +190,15 @@ struct xnvme_be xnvme_be_windows = {
 	.sync = XNVME_BE_NOSYS_SYNC,
 	.async = XNVME_BE_NOSYS_QUEUE,
 	.dev = XNVME_BE_NOSYS_DEV,
-	.attr = {
-		.name = "windows",
+	.attr =
+		{
+			.name = "windows",
 #ifdef XNVME_BE_WINDOWS_ENABLED
-		.enabled = 1,
+			.enabled = 1,
 #endif
-	},
+		},
 #ifdef XNVME_BE_WINDOWS_ENABLED
-	.nobjs = sizeof g_xnvme_be_mixin_windows / sizeof * g_xnvme_be_mixin_windows,
+	.nobjs = sizeof g_xnvme_be_mixin_windows / sizeof *g_xnvme_be_mixin_windows,
 	.objs = g_xnvme_be_mixin_windows,
 #endif
 };
-

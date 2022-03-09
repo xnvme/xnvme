@@ -51,19 +51,12 @@ copy_async(struct xnvmec *cli)
 {
 	const char *src_uri, *dst_uri;
 	struct xnvme_dev *src_dev, *dst_dev;
-	struct xnvme_opts src_opts = {
-		.rdonly = 1,
-		.direct = cli->args.direct
-	};
-	struct xnvme_opts dst_opts = {
-		.wronly = 1,
-		.create = 1,
-		.direct = cli->args.direct
-	};
+	struct xnvme_opts src_opts = {.rdonly = 1, .direct = cli->args.direct};
+	struct xnvme_opts dst_opts = {.wronly = 1, .create = 1, .direct = cli->args.direct};
 	size_t buf_nbytes, tbytes, iosize;
 	char *buf = NULL;
 
-	struct cb_args cb_args[QDEPTH_MAX] = { 0 };
+	struct cb_args cb_args[QDEPTH_MAX] = {0};
 	uint64_t nerrors = 0, ncompletions = 0, nsubmissions = 0;
 	struct xnvme_queue *queue = NULL;
 	uint32_t qdepth;
@@ -163,8 +156,8 @@ exit:
 		nsubmissions += work->nsubmissions;
 		ncompletions += work->ncompletions;
 	}
-	xnvmec_pinf("cb_args: {nsubmissions: %zu, ncompletions: %zu, nerrors: %zu}",
-		    nsubmissions, ncompletions, nerrors);
+	xnvmec_pinf("cb_args: {nsubmissions: %zu, ncompletions: %zu, nerrors: %zu}", nsubmissions,
+		    ncompletions, nerrors);
 
 	if (queue) {
 		int err_exit = xnvme_queue_term(queue);
@@ -184,15 +177,8 @@ copy_sync(struct xnvmec *cli)
 {
 	const char *src_uri, *dst_uri;
 	struct xnvme_dev *src_dev, *dst_dev;
-	struct xnvme_opts src_opts = {
-		.rdonly = 1,
-		.direct = cli->args.direct
-	};
-	struct xnvme_opts dst_opts = {
-		.wronly = 1,
-		.create = 1,
-		.direct = cli->args.direct
-	};
+	struct xnvme_opts src_opts = {.rdonly = 1, .direct = cli->args.direct};
+	struct xnvme_opts dst_opts = {.wronly = 1, .create = 1, .direct = cli->args.direct};
 	size_t buf_nbytes, tbytes, iosize;
 	char *buf = NULL;
 
@@ -260,8 +246,11 @@ exit:
 
 static struct xnvmec_sub g_subs[] = {
 	{
-		"sync", "Copy --data-nbytes from --data-input to --data--output",
-		"Copy --data-nbytes from --data-input to --data--output", copy_sync, {
+		"sync",
+		"Copy --data-nbytes from --data-input to --data--output",
+		"Copy --data-nbytes from --data-input to --data--output",
+		copy_sync,
+		{
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LREQ},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LREQ},
 			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LREQ},
@@ -270,8 +259,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"async", "Copy --data-nbytes from --data-input to --data--output",
-		"Copy --data-nbytes from --data-input to --data--output", copy_async, {
+		"async",
+		"Copy --data-nbytes from --data-input to --data--output",
+		"Copy --data-nbytes from --data-input to --data--output",
+		copy_async,
+		{
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LREQ},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LREQ},
 			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LREQ},

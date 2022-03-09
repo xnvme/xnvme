@@ -13,9 +13,7 @@ struct xnvme_queue_libaio {
 
 	uint8_t rsvd[213];
 };
-XNVME_STATIC_ASSERT(
-	sizeof(struct xnvme_queue_libaio) == XNVME_BE_QUEUE_STATE_NBYTES,
-	"Incorrect size"
-)
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_libaio) == XNVME_BE_QUEUE_STATE_NBYTES,
+		    "Incorrect size")
 
 #endif /* __INTERNAL_XNVME_BE_LINUX_LIBAIO_H */

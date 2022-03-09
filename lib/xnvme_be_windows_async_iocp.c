@@ -27,10 +27,8 @@ struct xnvme_queue_aio_ov {
 	struct _ov_request *rp;
 	uint8_t rsvd[198];
 };
-XNVME_STATIC_ASSERT(
-	sizeof(struct xnvme_queue_aio_ov) == XNVME_BE_QUEUE_STATE_NBYTES,
-	"Incorrect size"
-)
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_aio_ov) == XNVME_BE_QUEUE_STATE_NBYTES,
+		    "Incorrect size")
 
 int
 _windows_async_iocp_term(struct xnvme_queue *q)
@@ -133,8 +131,8 @@ _windows_async_iocp_poke(struct xnvme_queue *q, uint32_t max)
 }
 
 int
-_windows_async_iocp_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf,
-			   size_t dbuf_nbytes, void *mbuf, size_t mbuf_nbytes)
+_windows_async_iocp_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			   size_t mbuf_nbytes)
 {
 	struct xnvme_queue_aio_ov *queue = (void *)ctx->async.queue;
 	struct xnvme_be_windows_state *state = (void *)ctx->dev->be.state;

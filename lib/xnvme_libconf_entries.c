@@ -68,5 +68,5 @@ const char *xnvme_libconf[] = {
 #ifdef XNVME_BE_ASYNC_THRPOOL_ENABLED
 	"conf: XNVME_BE_ASYNC_THRPOOL_ENABLED",
 #endif
-	0,	///< For array-termination
+	0, ///< For array-termination
 };

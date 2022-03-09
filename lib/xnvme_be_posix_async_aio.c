@@ -23,10 +23,8 @@ struct xnvme_queue_posix {
 
 	uint8_t rsvd[188];
 };
-XNVME_STATIC_ASSERT(
-	sizeof(struct xnvme_queue_posix) == XNVME_BE_QUEUE_STATE_NBYTES,
-	"Incorrect size"
-)
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_posix) == XNVME_BE_QUEUE_STATE_NBYTES,
+		    "Incorrect size")
 
 struct xnvme_posix_aio_request {
 	struct xnvme_cmd_ctx *ctx;
@@ -97,7 +95,7 @@ _posix_async_aio_poke(struct xnvme_queue *q, uint32_t max)
 			req = TAILQ_NEXT(req, link);
 			continue;
 
-		case ECANCELED:	// Canceled or error, do not grab return-value
+		case ECANCELED: // Canceled or error, do not grab return-value
 		default:
 			break;
 		}
@@ -182,8 +180,8 @@ _posix_async_aio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyte
 
 	case XNVME_SPEC_NVM_OPC_FLUSH:
 	case XNVME_SPEC_FS_OPC_FLUSH:
-	// TODO: should this be handled by calling aio_fsync()?
-	// err = aio_fsync(_, &aiocb);
+		// TODO: should this be handled by calling aio_fsync()?
+		// err = aio_fsync(_, &aiocb);
 
 	default:
 		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);

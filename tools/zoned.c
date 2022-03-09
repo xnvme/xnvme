@@ -38,7 +38,7 @@ enumerate_cb(struct xnvme_dev *dev, void *cb_args)
 static int
 cmd_enumerate(struct xnvmec *cli)
 {
-	struct xnvme_opts opts = { 0 };
+	struct xnvme_opts opts = {0};
 	uint32_t ns_count = 0;
 	int err;
 
@@ -83,8 +83,7 @@ cmd_idfy_ctrlr(struct xnvmec *cli)
 	struct xnvme_spec_znd_idfy *idfy = NULL;
 	int err;
 
-	xnvmec_pinf("xnvme_adm_idfy_ctrlr: {nsid: 0x%x, csi: %s}", nsid,
-		    xnvme_spec_csi_str(csi));
+	xnvmec_pinf("xnvme_adm_idfy_ctrlr: {nsid: 0x%x, csi: %s}", nsid, xnvme_spec_csi_str(csi));
 
 	idfy = xnvme_buf_alloc(dev, sizeof(*idfy));
 	if (!idfy) {
@@ -105,8 +104,7 @@ cmd_idfy_ctrlr(struct xnvmec *cli)
 
 	if (cli->args.data_output) {
 		xnvmec_pinf("Dumping to: '%s'", cli->args.data_output);
-		err = xnvmec_buf_to_file((char *) idfy, sizeof(*idfy),
-					 cli->args.data_output);
+		err = xnvmec_buf_to_file((char *)idfy, sizeof(*idfy), cli->args.data_output);
 		if (err) {
 			xnvmec_perr("xnvmec_buf_to_file()", err);
 		}
@@ -128,8 +126,7 @@ cmd_idfy_ns(struct xnvmec *cli)
 	struct xnvme_spec_znd_idfy *idfy = NULL;
 	int err;
 
-	xnvmec_pinf("xnvme_adm_idfy_ns: {nsid: 0x%x, csi: %s}", nsid,
-		    xnvme_spec_csi_str(csi));
+	xnvmec_pinf("xnvme_adm_idfy_ns: {nsid: 0x%x, csi: %s}", nsid, xnvme_spec_csi_str(csi));
 
 	idfy = xnvme_buf_alloc(dev, sizeof(*idfy));
 	if (!idfy) {
@@ -150,8 +147,7 @@ cmd_idfy_ns(struct xnvmec *cli)
 
 	if (cli->args.data_output) {
 		xnvmec_pinf("Dumping to: '%s'", cli->args.data_output);
-		err = xnvmec_buf_to_file((char *) idfy, sizeof(*idfy),
-					 cli->args.data_output);
+		err = xnvmec_buf_to_file((char *)idfy, sizeof(*idfy), cli->args.data_output);
 		if (err) {
 			xnvmec_perr("xnvmec_buf_to_file()", err);
 		}
@@ -162,7 +158,6 @@ exit:
 
 	return err;
 }
-
 
 // TODO: add support for dumping extension as well
 static int
@@ -175,8 +170,8 @@ cmd_report(struct xnvmec *cli)
 	struct xnvme_znd_report *report = NULL;
 	int err;
 
-	xnvmec_pinf("Zone Information Report for lba: 0x%016lx, limit: %zu",
-		    zslba, limit ? limit : cli->args.geo->nzone);
+	xnvmec_pinf("Zone Information Report for lba: 0x%016lx, limit: %zu", zslba,
+		    limit ? limit : cli->args.geo->nzone);
 
 	report = xnvme_znd_report_from_dev(dev, zslba, limit, 0);
 	if (!report) {
@@ -191,8 +186,7 @@ cmd_report(struct xnvmec *cli)
 	if (cli->args.data_output) {
 		xnvmec_pinf("dumping to: '%s'", cli->args.data_output);
 		xnvmec_pinf("NOTE: log-header is omitted, only entries");
-		err = xnvmec_buf_to_file((char *)report->storage,
-					 report->report_nbytes,
+		err = xnvmec_buf_to_file((char *)report->storage, report->report_nbytes,
 					 cli->args.data_output);
 		if (err) {
 			xnvmec_perr("xnvmec_buf_to_file()", err);
@@ -248,7 +242,7 @@ cmd_errors(struct xnvmec *cli)
 	size_t nvalid = 0;
 	int err;
 
-	log_nentries = (uint32_t) xnvme_dev_get_ctrlr(cli->args.dev)->elpe + 1;
+	log_nentries = (uint32_t)xnvme_dev_get_ctrlr(cli->args.dev)->elpe + 1;
 	log_nbytes = log_nentries * sizeof(*log);
 
 	if (!cli->given[XNVMEC_OPT_NSID]) {
@@ -307,8 +301,7 @@ cmd_read(struct xnvmec *cli)
 	dbuf_nbytes = (nlb + 1) * geo->lba_nbytes;
 	mbuf_nbytes = geo->lba_extended ? 0 : (nlb + 1) * geo->nbytes_oob;
 
-	xnvmec_pinf("Reading nsid: 0x%x, slba: 0x%016lx, nlb: %zu",
-		    nsid, slba, nlb);
+	xnvmec_pinf("Reading nsid: 0x%x, slba: 0x%016lx, nlb: %zu", nsid, slba, nlb);
 
 	xnvmec_pinf("Alloc/clear dbuf, dbuf_nbytes: %zu", dbuf_nbytes);
 	dbuf = xnvme_buf_alloc(dev, dbuf_nbytes);
@@ -341,8 +334,7 @@ cmd_read(struct xnvmec *cli)
 
 	if (cli->args.data_output) {
 		xnvmec_pinf("dumping to: '%s'", cli->args.data_output);
-		err = xnvmec_buf_to_file(dbuf, dbuf_nbytes,
-					 cli->args.data_output);
+		err = xnvmec_buf_to_file(dbuf, dbuf_nbytes, cli->args.data_output);
 		if (err) {
 			xnvmec_perr("xnvmec_buf_to_file()", err);
 		}
@@ -376,8 +368,7 @@ cmd_write(struct xnvmec *cli)
 	dbuf_nbytes = (nlb + 1) * geo->lba_nbytes;
 	mbuf_nbytes = geo->lba_extended ? 0 : (nlb + 1) * geo->nbytes_oob;
 
-	xnvmec_pinf("Writing nsid: 0x%x, slba: 0x%016lx, nlb: %zu",
-		    nsid, slba, nlb);
+	xnvmec_pinf("Writing nsid: 0x%x, slba: 0x%016lx, nlb: %zu", nsid, slba, nlb);
 
 	xnvmec_pinf("Alloc/fill dbuf, dbuf_nbytes: %zu", dbuf_nbytes);
 	dbuf = xnvme_buf_alloc(dev, dbuf_nbytes);
@@ -386,7 +377,8 @@ cmd_write(struct xnvmec *cli)
 		xnvmec_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	err = xnvmec_buf_fill(dbuf, dbuf_nbytes, cli->args.data_input ? cli->args.data_input : "anum");
+	err = xnvmec_buf_fill(dbuf, dbuf_nbytes,
+			      cli->args.data_input ? cli->args.data_input : "anum");
 	if (err) {
 		xnvmec_perr("xnvmec_buf_fill()", err);
 		goto exit;
@@ -441,8 +433,7 @@ cmd_append(struct xnvmec *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
-	xnvmec_pinf("Zone Append nlb: %d to zslba: 0x%016lx",
-		    nlb, zslba);
+	xnvmec_pinf("Zone Append nlb: %d to zslba: 0x%016lx", nlb, zslba);
 
 	xnvmec_pinf("Allocating dbuf");
 	dbuf = xnvme_buf_alloc(dev, dbuf_nbytes);
@@ -493,8 +484,8 @@ _cmd_mgmt(struct xnvmec *cli, uint8_t action)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
-	xnvmec_pinf("MGMT: zslba: 0x%016lx, action: 0x%x, str: %s", zslba,
-		    action, xnvme_spec_znd_cmd_mgmt_send_action_str(action));
+	xnvmec_pinf("MGMT: zslba: 0x%016lx, action: 0x%x, str: %s", zslba, action,
+		    xnvme_spec_znd_cmd_mgmt_send_action_str(action));
 
 	if ((action == XNVME_SPEC_ZND_CMD_MGMT_SEND_DESCRIPTOR) && cli->args.data_input) {
 		xnvmec_pinf("Allocating dbuf");
@@ -504,7 +495,8 @@ _cmd_mgmt(struct xnvmec *cli, uint8_t action)
 			xnvmec_perr("xnvme_buf_alloc()", err);
 			goto exit;
 		}
-		err = xnvmec_buf_fill(dbuf, dbuf_nbytes, cli->args.data_input ? cli->args.data_input : "anum");
+		err = xnvmec_buf_fill(dbuf, dbuf_nbytes,
+				      cli->args.data_input ? cli->args.data_input : "anum");
 		if (err) {
 			xnvmec_perr("xnvmec_buf_fill()", err);
 			goto exit;
@@ -561,8 +553,11 @@ cmd_mgmt_reset(struct xnvmec *cli)
 
 static struct xnvmec_sub g_subs[] = {
 	{
-		"enum", "Enumerate Zoned Namespaces on the system",
-		"Enumerate Zoned Namespaces on the system", cmd_enumerate, {
+		"enum",
+		"Enumerate Zoned Namespaces on the system",
+		"Enumerate Zoned Namespaces on the system",
+		cmd_enumerate,
+		{
 			{XNVMEC_OPT_SYS_URI, XNVMEC_LOPT},
 			{XNVMEC_OPT_FLAGS, XNVMEC_LOPT},
 
@@ -570,8 +565,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"info", "Retrieve device info",
-		"Retrieve device info", cmd_info, {
+		"info",
+		"Retrieve device info",
+		"Retrieve device info",
+		cmd_info,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
@@ -580,8 +578,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"idfy-ctrlr", "Zoned Command Set specific identify-controller",
-		"Zoned Command Set specific identify-controller", cmd_idfy_ctrlr, {
+		"idfy-ctrlr",
+		"Zoned Command Set specific identify-controller",
+		"Zoned Command Set specific identify-controller",
+		cmd_idfy_ctrlr,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
@@ -590,8 +591,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"idfy-ns", "Zoned Command Set specific identify-controller",
-		"Zoned Command Set specific identify-controller", cmd_idfy_ns, {
+		"idfy-ns",
+		"Zoned Command Set specific identify-controller",
+		"Zoned Command Set specific identify-controller",
+		cmd_idfy_ns,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
@@ -600,8 +604,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"changes", "Retrieve the Changed Zone list",
-		"Retrieve the Changed Zone list", cmd_changes, {
+		"changes",
+		"Retrieve the Changed Zone list",
+		"Retrieve the Changed Zone list",
+		cmd_changes,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
 
@@ -611,8 +618,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"errors", "Retrieve the Error-Log",
-		"Retrieve the Error-Log", cmd_errors, {
+		"errors",
+		"Retrieve the Error-Log",
+		"Retrieve the Error-Log",
+		cmd_errors,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
@@ -623,8 +633,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"read", "Execute a Read Command",
-		"Execute a Read Command", cmd_read, {
+		"read",
+		"Execute a Read Command",
+		"Execute a Read Command",
+		cmd_read,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NLB, XNVMEC_LREQ},
@@ -639,8 +652,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"write", "Execute a Write Command",
-		"Execute a Write Command", cmd_write, {
+		"write",
+		"Execute a Write Command",
+		"Execute a Write Command",
+		cmd_write,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NLB, XNVMEC_LREQ},
@@ -655,8 +671,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"append", "Execute an Append Command",
-		"Execute an Append Command", cmd_append, {
+		"append",
+		"Execute an Append Command",
+		"Execute an Append Command",
+		cmd_append,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NLB, XNVMEC_LREQ},
@@ -671,8 +690,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"mgmt-open", "Open a Zone",
-		"Open a Zone", cmd_mgmt_open, {
+		"mgmt-open",
+		"Open a Zone",
+		"Open a Zone",
+		cmd_mgmt_open,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
@@ -685,8 +707,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"mgmt-close", "Close a Zone",
-		"Close a Zone", cmd_mgmt_close, {
+		"mgmt-close",
+		"Close a Zone",
+		"Close a Zone",
+		cmd_mgmt_close,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
@@ -699,8 +724,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"mgmt-finish", "Finish a Zone",
-		"Finish a Zone", cmd_mgmt_finish, {
+		"mgmt-finish",
+		"Finish a Zone",
+		"Finish a Zone",
+		cmd_mgmt_finish,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
@@ -713,8 +741,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"mgmt-reset", "Reset a Zone",
-		"Reset a Zone", cmd_mgmt_reset, {
+		"mgmt-reset",
+		"Reset a Zone",
+		"Reset a Zone",
+		cmd_mgmt_reset,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
@@ -727,9 +758,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"mgmt", "Zone Management Send Command with custom action",
+		"mgmt",
 		"Zone Management Send Command with custom action",
-		cmd_mgmt, {
+		"Zone Management Send Command with custom action",
+		cmd_mgmt,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_ACTION, XNVMEC_LREQ},
@@ -743,8 +776,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"report", "Retrieve Zone Information",
-		"Retrieve Zone Information", cmd_report, {
+		"report",
+		"Retrieve Zone Information",
+		"Retrieve Zone Information",
+		cmd_report,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
 			{XNVMEC_OPT_LIMIT, XNVMEC_LOPT},
@@ -760,7 +796,8 @@ static struct xnvmec_sub g_subs[] = {
 
 static struct xnvmec g_cli = {
 	.title = "Zoned Namespace Utility",
-	.descr_short = "Enumerate Zoned Namespaces, manage, inspect properties, state, and send IO to them",
+	.descr_short = "Enumerate Zoned Namespaces, manage, inspect properties, state, and send "
+		       "IO to them",
 	.subs = g_subs,
 	.nsubs = sizeof g_subs / sizeof(*g_subs),
 };

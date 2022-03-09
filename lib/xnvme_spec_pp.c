@@ -391,4 +391,3 @@ xnvme_spec_znd_type_str(enum xnvme_spec_znd_type eval)
 
 	return "ENOSYS";
 }
-

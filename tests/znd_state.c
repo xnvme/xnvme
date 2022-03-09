@@ -14,12 +14,12 @@ struct action {
 };
 
 static struct action actions[] = {
-	{ .action = XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET, .state = XNVME_SPEC_ZND_STATE_EMPTY },
-	{ .action = XNVME_SPEC_ZND_CMD_MGMT_SEND_OPEN, .state = XNVME_SPEC_ZND_STATE_EOPEN },
-	{ .action = XNVME_SPEC_ZND_CMD_MGMT_SEND_CLOSE, .state = XNVME_SPEC_ZND_STATE_CLOSED },
-	{ .action = XNVME_SPEC_ZND_CMD_MGMT_SEND_FINISH, .state = XNVME_SPEC_ZND_STATE_FULL },
+	{.action = XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET, .state = XNVME_SPEC_ZND_STATE_EMPTY},
+	{.action = XNVME_SPEC_ZND_CMD_MGMT_SEND_OPEN, .state = XNVME_SPEC_ZND_STATE_EOPEN},
+	{.action = XNVME_SPEC_ZND_CMD_MGMT_SEND_CLOSE, .state = XNVME_SPEC_ZND_STATE_CLOSED},
+	{.action = XNVME_SPEC_ZND_CMD_MGMT_SEND_FINISH, .state = XNVME_SPEC_ZND_STATE_FULL},
 };
-size_t nactions = sizeof actions / sizeof * actions;
+size_t nactions = sizeof actions / sizeof *actions;
 
 /**
  * Check that a zone can be reset, opened, closed, and finished
@@ -38,7 +38,7 @@ cmd_transition(struct xnvmec *cli)
 
 	for (size_t i = 0; i < nactions; ++i) {
 		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
-		struct xnvme_spec_znd_descr zone = { 0 };
+		struct xnvme_spec_znd_descr zone = {0};
 
 		err = xnvme_znd_mgmt_send(&ctx, nsid, slba, false, actions[i].action, 0x0, NULL);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
@@ -102,36 +102,34 @@ exit:
 // Command-Line Interface (CLI) definition
 //
 static struct xnvmec_sub g_subs[] = {
-	{
-		"transition",
-		"Check zone-transition: reset a zone, open, close it, and fill it.",
-		"Check zone-transition: reset a zone, open, close it, and fill it.",
-		cmd_transition, {
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
-			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
+	{"transition",
+	 "Check zone-transition: reset a zone, open, close it, and fill it.",
+	 "Check zone-transition: reset a zone, open, close it, and fill it.",
+	 cmd_transition,
+	 {
+		 {XNVMEC_OPT_URI, XNVMEC_POSA},
+		 {XNVMEC_OPT_NSID, XNVMEC_LOPT},
+		 {XNVMEC_OPT_SLBA, XNVMEC_LOPT},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-		}
-	},
+		 {XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+		 {XNVMEC_OPT_BE, XNVMEC_LOPT},
+		 {XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+		 {XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+	 }},
 
-	{
-		"changes",
-		"Retrieve the Changed Zone List log page",
-		"Retrieve the Changed Zone List log page",
-		cmd_changes, {
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
-			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
+	{"changes",
+	 "Retrieve the Changed Zone List log page",
+	 "Retrieve the Changed Zone List log page",
+	 cmd_changes,
+	 {
+		 {XNVMEC_OPT_URI, XNVMEC_POSA},
+		 {XNVMEC_OPT_NSID, XNVMEC_LOPT},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-		}
-	},
+		 {XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+		 {XNVMEC_OPT_BE, XNVMEC_LOPT},
+		 {XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+		 {XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+	 }},
 
 };
 

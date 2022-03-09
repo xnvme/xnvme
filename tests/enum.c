@@ -23,8 +23,8 @@ enumerate_cb(struct xnvme_dev *dev, void *cb_args)
 static int
 test_enum(struct xnvmec *cli)
 {
-	struct xnvme_enumeration *listing[MAX_LISTINGS] = { 0 };
-	struct xnvme_opts opts = { 0 };
+	struct xnvme_enumeration *listing[MAX_LISTINGS] = {0};
+	struct xnvme_opts opts = {0};
 	uint64_t nlistings = 2;
 	int nerr = 0, err;
 
@@ -84,7 +84,7 @@ static int
 test_enum_open(struct xnvmec *cli)
 {
 	struct xnvme_enumeration *listing = NULL;
-	struct xnvme_opts enum_opts = { 0 };
+	struct xnvme_opts enum_opts = {0};
 	int count = 1;
 	int nerr = 0, err;
 
@@ -113,10 +113,10 @@ test_enum_open(struct xnvmec *cli)
 	}
 
 	for (int64_t i = 0; i < listing->nentries; ++i) {
-		struct xnvme_dev *dev[MAX_HANDLES] = { 0 };
+		struct xnvme_dev *dev[MAX_HANDLES] = {0};
 
 		for (int hidx = 0; hidx < count; ++hidx) {
-			struct xnvme_opts opts = { 0 };
+			struct xnvme_opts opts = {0};
 
 			err = xnvmec_cli_to_opts(cli, &opts);
 			if (err) {
@@ -168,7 +168,8 @@ static struct xnvmec_sub g_subs[] = {
 		"multi",
 		"Call xnvme_enumerate() 'count' times",
 		"Call xnvme_enumerate() 'count' times",
-		test_enum, {
+		test_enum,
+		{
 			{XNVMEC_OPT_SYS_URI, XNVMEC_LOPT},
 			{XNVMEC_OPT_COUNT, XNVMEC_LOPT},
 			{XNVMEC_OPT_VERBOSE, XNVMEC_LFLG},
@@ -179,7 +180,8 @@ static struct xnvmec_sub g_subs[] = {
 		"Call xnvme_enumerate() once, open each device 'count' times",
 		"Call xnvme_enumerate() once, open each device 'count' times\n"
 		"Dump info on each opened device with --verbose",
-		test_enum_open, {
+		test_enum_open,
+		{
 			{XNVMEC_OPT_SYS_URI, XNVMEC_LOPT},
 			{XNVMEC_OPT_COUNT, XNVMEC_LOPT},
 			{XNVMEC_OPT_VERBOSE, XNVMEC_LFLG},

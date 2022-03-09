@@ -23,8 +23,8 @@ xnvme_be_fbsd_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enum
 
 	for (int cid = 0; cid < 256; cid++) {
 		for (int nid = 0; nid < 256; nid++) {
-			char path[128] = { 0 };
-			char uri[XNVME_IDENT_URI_LEN] = { 0 };
+			char path[128] = {0};
+			char uri[XNVME_IDENT_URI_LEN] = {0};
 			struct xnvme_dev *dev;
 
 			snprintf(path, 127, "%s%s%d%s%d", _PATH_DEV, XNVME_BE_FBSD_CTRLR_PREFIX,
@@ -55,7 +55,7 @@ xnvme_be_fbsd_state_term(struct xnvme_be_fbsd_state *state)
 		return;
 	}
 
-	if (state->fd.ns >= 0)  {
+	if (state->fd.ns >= 0) {
 		close(state->fd.ns);
 	}
 	if ((state->fd.ctrlr >= 0) && (state->fd.ctrlr != state->fd.ns)) {
@@ -96,7 +96,7 @@ xnvme_be_fbsd_dev_open(struct xnvme_dev *dev)
 	const struct xnvme_ident *ident = &dev->ident;
 	struct xnvme_opts *opts = &dev->opts;
 	int flags = xnvme_file_opts_to_fbsd(opts);
-	struct stat dev_stat = { 0 };
+	struct stat dev_stat = {0};
 	int err;
 
 	XNVME_DEBUG("INFO: open() : opts->oflags: 0x%x, flags: 0x%x, opts->create_mode: 0x%x",
@@ -166,7 +166,7 @@ xnvme_be_fbsd_dev_open(struct xnvme_dev *dev)
 		}
 
 		if (xnvme_be_fbsd_nvme_get_nsid_and_ctrlr_fd(state->fd.ns, &dev->ident.nsid,
-				&state->fd.ctrlr)) {
+							     &state->fd.ctrlr)) {
 			XNVME_DEBUG("INFO: open() : assuming it is an NVMe controller");
 			dev->ident.dtype = XNVME_DEV_TYPE_NVME_CONTROLLER;
 			dev->ident.csi = XNVME_SPEC_CSI_NVM;

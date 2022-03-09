@@ -37,7 +37,7 @@ enumerate_cb(struct xnvme_dev *dev, void *cb_args)
 static int
 sub_enumerate(struct xnvmec *cli)
 {
-	struct xnvme_opts opts = { 0 };
+	struct xnvme_opts opts = {0};
 	uint32_t ns_count = 0;
 	int err = 0;
 
@@ -102,8 +102,7 @@ sub_idfy(struct xnvmec *cli)
 
 	if (cli->args.data_output) {
 		xnvmec_pinf("Dumping to: '%s'", cli->args.data_output);
-		err = xnvmec_buf_to_file((char *) idfy, sizeof(*idfy),
-					 cli->args.data_output);
+		err = xnvmec_buf_to_file((char *)idfy, sizeof(*idfy), cli->args.data_output);
 		if (err) {
 			xnvmec_perr("xnvmec_buf_to_file()", err);
 		}
@@ -136,8 +135,7 @@ sub_read(struct xnvmec *cli)
 	dbuf_nbytes = (nlb + 1) * geo->lba_nbytes;
 	mbuf_nbytes = geo->lba_extended ? 0 : (nlb + 1) * geo->nbytes_oob;
 
-	xnvmec_pinf("Reading nsid: 0x%x, slba: 0x%016lx, nlb: %zu",
-		    nsid, slba, nlb);
+	xnvmec_pinf("Reading nsid: 0x%x, slba: 0x%016lx, nlb: %zu", nsid, slba, nlb);
 
 	xnvmec_pinf("Alloc/clear dbuf, dbuf_nbytes: %zu", dbuf_nbytes);
 	dbuf = xnvme_buf_alloc(dev, dbuf_nbytes);
@@ -170,8 +168,7 @@ sub_read(struct xnvmec *cli)
 
 	if (cli->args.data_output) {
 		xnvmec_pinf("dumping to: '%s'", cli->args.data_output);
-		err = xnvmec_buf_to_file(dbuf, dbuf_nbytes,
-					 cli->args.data_output);
+		err = xnvmec_buf_to_file(dbuf, dbuf_nbytes, cli->args.data_output);
 		if (err) {
 			xnvmec_perr("xnvmec_buf_to_file()", err);
 		}
@@ -205,8 +202,7 @@ sub_write(struct xnvmec *cli)
 	dbuf_nbytes = (nlb + 1) * geo->lba_nbytes;
 	mbuf_nbytes = geo->lba_extended ? 0 : (nlb + 1) * geo->nbytes_oob;
 
-	xnvmec_pinf("Writing nsid: 0x%x, slba: 0x%016lx, nlb: %zu",
-		    nsid, slba, nlb);
+	xnvmec_pinf("Writing nsid: 0x%x, slba: 0x%016lx, nlb: %zu", nsid, slba, nlb);
 
 	xnvmec_pinf("Alloc/fill dbuf, dbuf_nbytes: %zu", dbuf_nbytes);
 	dbuf = xnvme_buf_alloc(dev, dbuf_nbytes);
@@ -215,7 +211,8 @@ sub_write(struct xnvmec *cli)
 		xnvmec_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	err = xnvmec_buf_fill(dbuf, dbuf_nbytes, cli->args.data_input ? cli->args.data_input : "anum");
+	err = xnvmec_buf_fill(dbuf, dbuf_nbytes,
+			      cli->args.data_input ? cli->args.data_input : "anum");
 	if (err) {
 		xnvmec_perr("xnvmec_buf_fill()", err);
 		goto exit;
@@ -297,8 +294,11 @@ exit:
 //
 static struct xnvmec_sub g_subs[] = {
 	{
-		"enum", "Enumerate Logical Block Namespaces on the system",
-		"Enumerate Logical Block Namespaces on the system", sub_enumerate, {
+		"enum",
+		"Enumerate Logical Block Namespaces on the system",
+		"Enumerate Logical Block Namespaces on the system",
+		sub_enumerate,
+		{
 			{XNVMEC_OPT_SYS_URI, XNVMEC_LOPT},
 			{XNVMEC_OPT_FLAGS, XNVMEC_LOPT},
 
@@ -306,8 +306,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"info", "Retrieve derived information for the given URI",
-		"Retrieve derived information for the given URI", sub_info, {
+		"info",
+		"Retrieve derived information for the given URI",
+		"Retrieve derived information for the given URI",
+		sub_info,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
@@ -316,8 +319,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"idfy", "Identify the namespace for the given URI",
-		"Identify the namespace for the given URI", sub_idfy, {
+		"idfy",
+		"Identify the namespace for the given URI",
+		"Identify the namespace for the given URI",
+		sub_idfy,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
@@ -328,8 +334,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"read", "Read data and optionally metadata",
-		"Read data and optionally metadata", sub_read, {
+		"read",
+		"Read data and optionally metadata",
+		"Read data and optionally metadata",
+		sub_read,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NLB, XNVMEC_LREQ},
@@ -344,8 +353,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"write", "Writes data and optionally metadata",
-		"Writes data and optionally metadata", sub_write, {
+		"write",
+		"Writes data and optionally metadata",
+		"Writes data and optionally metadata",
+		sub_write,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NLB, XNVMEC_LREQ},
@@ -360,8 +372,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"write-zeros", "Set a range of logical blocks to zero",
-		"Set a range of logical blocks to zero", sub_write_zeroes, {
+		"write-zeros",
+		"Set a range of logical blocks to zero",
+		"Set a range of logical blocks to zero",
+		sub_write_zeroes,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NLB, XNVMEC_LREQ},
@@ -376,8 +391,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"write-uncor", "Mark a range of logical blocks as invalid",
-		"Mark a range of logical blocks as invalid", sub_write_uncor, {
+		"write-uncor",
+		"Mark a range of logical blocks as invalid",
+		"Mark a range of logical blocks as invalid",
+		sub_write_uncor,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NLB, XNVMEC_LREQ},

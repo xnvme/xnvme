@@ -118,7 +118,7 @@ _lzbd_zone_mgmt_send(struct xnvme_cmd_ctx *ctx)
 	struct xnvme_be_linux_state *state = (void *)ctx->dev->be.state;
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(ctx->dev);
 	const uint64_t zone_nbytes = geo->nsect * geo->nbytes;
-	struct blk_zone_range zr = { 0 };
+	struct blk_zone_range zr = {0};
 	int err;
 
 	zr.sector = ctx->cmd.znd.mgmt_send.slba << (ctx->dev->geo.ssw - LINUX_BLOCK_SSW);
@@ -155,8 +155,7 @@ _lzbd_zone_mgmt_send(struct xnvme_cmd_ctx *ctx)
 		break;
 #endif
 	default:
-		XNVME_DEBUG("FAILED: no ioctl for zsa: 0x%x",
-			    ctx->cmd.znd.mgmt_send.zsa);
+		XNVME_DEBUG("FAILED: no ioctl for zsa: 0x%x", ctx->cmd.znd.mgmt_send.zsa);
 		errno = ENOSYS;
 		err = -errno;
 		break;
@@ -174,8 +173,7 @@ _lzbd_ioctl_nrzones(struct xnvme_dev *dev, uint64_t *nr_zones)
 
 	err = ioctl(state->fd, BLKGETNRZONES, nr_zones);
 	if (err) {
-		XNVME_DEBUG("FAILED: ioctl(BLKGETNRZONES), err: %d, errno: %d",
-			    err, errno);
+		XNVME_DEBUG("FAILED: ioctl(BLKGETNRZONES), err: %d, errno: %d", err, errno);
 		return err;
 	}
 	XNVME_DEBUG("INFO: got nr_zones: %zu", *nr_zones);
@@ -253,8 +251,8 @@ _lzbd_ioctl_zblk_to_descr(struct xnvme_dev *dev, struct blk_zone_report *lzbd_rp
 	// When the type is not defined in the NVMe-spec, then treat
 	// them as offline
 	zdescr->zt = XNVME_SPEC_ZND_TYPE_SEQWR;
-	zdescr->zs = (blkz->type == XNVME_SPEC_ZND_TYPE_SEQWR) ? \
-		     blkz->cond : XNVME_SPEC_ZND_STATE_OFFLINE;
+	zdescr->zs = (blkz->type == XNVME_SPEC_ZND_TYPE_SEQWR) ? blkz->cond
+							       : XNVME_SPEC_ZND_STATE_OFFLINE;
 
 	return 0;
 }
@@ -329,7 +327,8 @@ _lzbd_zone_mgmt_recv(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 	dbuf_nzones = (dbuf_nbytes - sizeof(*nvme_rprt)) / sizeof(*nvme_descr);
 
 	// Special-case; e.g. asking "how-many-zones" and no room for entries
-	if ((ctx->cmd.znd.mgmt_recv.zrasf == XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL) && (dbuf_nzones == 0)) {
+	if ((ctx->cmd.znd.mgmt_recv.zrasf == XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL) &&
+	    (dbuf_nzones == 0)) {
 		nvme_rprt->nzones = nzones_dev;
 		return 0;
 	}
@@ -399,8 +398,8 @@ xnvme_be_linux_block_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 	case XNVME_SPEC_NVM_OPC_WRITE:
 		res = pwrite(state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba << ssw);
 		if (res != (ssize_t)dbuf_nbytes) {
-			XNVME_DEBUG("FAILED: W res: %ld != dbuf_nbytes: %zu, errno: %d",
-				    res, dbuf_nbytes, errno);
+			XNVME_DEBUG("FAILED: W res: %ld != dbuf_nbytes: %zu, errno: %d", res,
+				    dbuf_nbytes, errno);
 			return -errno;
 		}
 		return 0;
@@ -408,8 +407,8 @@ xnvme_be_linux_block_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 	case XNVME_SPEC_NVM_OPC_READ:
 		res = pread(state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba << ssw);
 		if (res != (ssize_t)dbuf_nbytes) {
-			XNVME_DEBUG("FAILED: R res: %ld != dbuf_nbytes: %zu, errno: %d",
-				    res, dbuf_nbytes, errno);
+			XNVME_DEBUG("FAILED: R res: %ld != dbuf_nbytes: %zu, errno: %d", res,
+				    dbuf_nbytes, errno);
 			return -errno;
 		}
 		return 0;
@@ -417,8 +416,8 @@ xnvme_be_linux_block_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 	case XNVME_SPEC_FS_OPC_WRITE:
 		res = pwrite(state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
 		if (res != (ssize_t)dbuf_nbytes) {
-			XNVME_DEBUG("FAILED: W res: %ld != dbuf_nbytes: %zu, errno: %d",
-				    res, dbuf_nbytes, errno);
+			XNVME_DEBUG("FAILED: W res: %ld != dbuf_nbytes: %zu, errno: %d", res,
+				    dbuf_nbytes, errno);
 			return -errno;
 		}
 		return 0;
@@ -426,8 +425,8 @@ xnvme_be_linux_block_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 	case XNVME_SPEC_FS_OPC_READ:
 		res = pread(state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
 		if (res != (ssize_t)dbuf_nbytes) {
-			XNVME_DEBUG("FAILED: R res: %ld != dbuf_nbytes: %zu, errno: %d",
-				    res, dbuf_nbytes, errno);
+			XNVME_DEBUG("FAILED: R res: %ld != dbuf_nbytes: %zu, errno: %d", res,
+				    dbuf_nbytes, errno);
 			return -errno;
 		}
 		return 0;
@@ -489,12 +488,10 @@ _idfy_ns_iocs(struct xnvme_dev *dev, void *dbuf)
 
 	err = _lzbd_ioctl_nrzones(dev, &nr_zones);
 	if (err) {
-		XNVME_DEBUG("FAILED blk_zones(), err(%d), errno(%d)",
-			    err, errno);
+		XNVME_DEBUG("FAILED blk_zones(), err(%d), errno(%d)", err, errno);
 		return err;
 	}
-	err = xnvme_be_linux_sysfs_dev_attr_to_num(dev, "queue/logical_block_size",
-			&nbytes);
+	err = xnvme_be_linux_sysfs_dev_attr_to_num(dev, "queue/logical_block_size", &nbytes);
 	if (err) {
 		XNVME_DEBUG("FAILED: reading 'logical_block_size' from sysfs");
 		return err;
@@ -503,8 +500,8 @@ _idfy_ns_iocs(struct xnvme_dev *dev, void *dbuf)
 	nsect = tbytes / (nr_zones * nbytes);
 
 	zns->lbafe[0].zsze = nsect;
-	zns->mar = 0;	///< This means "no limit" but we have no of knowing
-	zns->mor = 0;	///< This means "no limit" but we have no of knowing
+	zns->mar = 0; ///< This means "no limit" but we have no of knowing
+	zns->mor = 0; ///< This means "no limit" but we have no of knowing
 	zns->lbafe[0].zdes = 0;
 
 	return 0;
@@ -522,8 +519,7 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 		XNVME_DEBUG("FAILED: reading 'size' from sysfs");
 		return err;
 	}
-	err = xnvme_be_linux_sysfs_dev_attr_to_num(dev, "queue/logical_block_size",
-			&nbytes);
+	err = xnvme_be_linux_sysfs_dev_attr_to_num(dev, "queue/logical_block_size", &nbytes);
 	if (err) {
 		XNVME_DEBUG("FAILED: reading 'logical_block_size' from sysfs");
 		return err;
@@ -534,8 +530,8 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 	ns->ncap = val;
 	ns->nuse = val;
 
-	ns->nlbaf = 0;          ///< This means that there is only one
-	ns->flbas.format = 0;   ///< using the first one
+	ns->nlbaf = 0;        ///< This means that there is only one
+	ns->flbas.format = 0; ///< using the first one
 
 	ns->lbaf[0].ms = 0;
 	ns->lbaf[0].ds = XNVME_ILOG2(nbytes);
@@ -601,7 +597,7 @@ failed:
 int
 _gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 {
-	struct xnvme_spec_feat feat = { 0 };
+	struct xnvme_spec_feat feat = {0};
 
 	switch (ctx->cmd.gfeat.cdw10.fid) {
 	case XNVME_SPEC_FEAT_NQUEUES:

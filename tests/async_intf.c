@@ -17,7 +17,7 @@ test_init_term(struct xnvmec *cli)
 	uint64_t qd = cli->args.qdepth;
 	int err = 0;
 
-	struct xnvme_queue *queue[XNVME_TESTS_NQUEUE_MAX] = { 0 };
+	struct xnvme_queue *queue[XNVME_TESTS_NQUEUE_MAX] = {0};
 
 	if (count > XNVME_TESTS_NQUEUE_MAX) {
 		XNVME_DEBUG("FAILED: count(%zu) out-of-bounds for test", count);
@@ -35,7 +35,7 @@ test_init_term(struct xnvmec *cli)
 	if (!cli->args.clear) {
 		// Ask how many queues are supported
 		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
-		struct xnvme_spec_feat feat = { .val = 0 };
+		struct xnvme_spec_feat feat = {.val = 0};
 
 		err = xnvme_adm_gfeat(&ctx, 0x0, XNVME_SPEC_FEAT_NQUEUES,
 				      XNVME_SPEC_FEAT_SEL_CURRENT, NULL, 0);
@@ -51,8 +51,8 @@ test_init_term(struct xnvmec *cli)
 		xnvme_spec_feat_pr(XNVME_SPEC_FEAT_NQUEUES, feat, XNVME_PR_DEF);
 
 		if (count >= (uint64_t)(feat.nqueues.nsqa + 1)) {
-			xnvmec_pinf("skipping -- count: %zu > (nsqa + 1): %u",
-				    count, feat.nqueues.nsqa);
+			xnvmec_pinf("skipping -- count: %zu > (nsqa + 1): %u", count,
+				    feat.nqueues.nsqa);
 			return 0;
 		}
 	}
@@ -73,8 +73,7 @@ test_init_term(struct xnvmec *cli)
 		}
 
 		if (xnvme_queue_get_capacity(queue[qn]) != qd) {
-			XNVME_DEBUG("FAILED: xnvme_queue_get_capacity() != qd(%zu)",
-				    qd);
+			XNVME_DEBUG("FAILED: xnvme_queue_get_capacity() != qd(%zu)", qd);
 			err = -EIO;
 			goto exit;
 		}
@@ -103,7 +102,9 @@ static struct xnvmec_sub g_subs[] = {
 	{
 		"init_term",
 		"Create 'count' contexts with given 'qdepth'",
-		"Create 'count' contexts with given 'qdepth'", test_init_term, {
+		"Create 'count' contexts with given 'qdepth'",
+		test_init_term,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_COUNT, XNVMEC_LREQ},
 			{XNVMEC_OPT_QDEPTH, XNVMEC_LREQ},

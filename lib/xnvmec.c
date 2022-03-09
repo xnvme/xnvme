@@ -48,7 +48,7 @@ xnvmec_buf_clear(void *buf, size_t nbytes)
 static int
 fdio_func(void *buf, size_t nbytes, const char *path, struct xnvme_opts *opts)
 {
-	struct xnvme_cmd_ctx ctx = { 0 };
+	struct xnvme_cmd_ctx ctx = {0};
 	struct xnvme_dev *fh = NULL;
 	size_t transferred = 0;
 	int err = 0;
@@ -87,8 +87,8 @@ fdio_func(void *buf, size_t nbytes, const char *path, struct xnvme_opts *opts)
 
 	err = xnvme_file_close(fh);
 	if (err) {
-		XNVME_DEBUG("FAILED: opts->wronly: %d, err: %d, errno: %d",
-			    opts->wronly, err, errno);
+		XNVME_DEBUG("FAILED: opts->wronly: %d, err: %d, errno: %d", opts->wronly, err,
+			    errno);
 		return -errno;
 	}
 
@@ -180,8 +180,7 @@ xnvmec_buf_diff_pr(const void *expected, const void *actual, size_t nbytes, int 
 		}
 
 		++diff;
-		printf("    - {byte: '%06lu', expected: 0x%x, actual: 0x%x)\n",
-		       i, exp[i], act[i]);
+		printf("    - {byte: '%06lu', expected: 0x%x, actual: 0x%x)\n", i, exp[i], act[i]);
 	}
 	printf("  nbytes: %zu\n", nbytes);
 	printf("  nbytes_diff: %zu\n", diff);
@@ -265,397 +264,591 @@ xnvmec_opt_value_type_str(int vtype)
 
 static struct xnvmec_opt_attr xnvmec_opts[] = {
 	{
-		.opt = XNVMEC_OPT_CDW00, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "cdw0", .descr = "Command Dword0",
+		.opt = XNVMEC_OPT_CDW00,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "cdw0",
+		.descr = "Command Dword0",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW01, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "cdw1", .descr = "Command Dword1",
+		.opt = XNVMEC_OPT_CDW01,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "cdw1",
+		.descr = "Command Dword1",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW02, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "cdw2", .descr = "Command Dword2",
+		.opt = XNVMEC_OPT_CDW02,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "cdw2",
+		.descr = "Command Dword2",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW03, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "cdw3", .descr = "Command Dword3",
+		.opt = XNVMEC_OPT_CDW03,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "cdw3",
+		.descr = "Command Dword3",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW04, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "cdw4", .descr = "Command Dword4",
+		.opt = XNVMEC_OPT_CDW04,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "cdw4",
+		.descr = "Command Dword4",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW05, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "cdw5", .descr = "Command Dword5",
+		.opt = XNVMEC_OPT_CDW05,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "cdw5",
+		.descr = "Command Dword5",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW06, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "cdw6", .descr = "Command Dword6",
+		.opt = XNVMEC_OPT_CDW06,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "cdw6",
+		.descr = "Command Dword6",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW07, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "cdw7", .descr = "Command Dword7",
+		.opt = XNVMEC_OPT_CDW07,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "cdw7",
+		.descr = "Command Dword7",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW08, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "cdw8", .descr = "Command Dword8",
+		.opt = XNVMEC_OPT_CDW08,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "cdw8",
+		.descr = "Command Dword8",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW09, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "cdw9", .descr = "Command Dword9",
+		.opt = XNVMEC_OPT_CDW09,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "cdw9",
+		.descr = "Command Dword9",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW10, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "cdw10", .descr = "Command Dword10",
+		.opt = XNVMEC_OPT_CDW10,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "cdw10",
+		.descr = "Command Dword10",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW11, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "cdw11", .descr = "Command Dword11",
+		.opt = XNVMEC_OPT_CDW11,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "cdw11",
+		.descr = "Command Dword11",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW12, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "cdw12", .descr = "Command Dword12",
+		.opt = XNVMEC_OPT_CDW12,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "cdw12",
+		.descr = "Command Dword12",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW13, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "cdw13", .descr = "Command Dword13",
+		.opt = XNVMEC_OPT_CDW13,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "cdw13",
+		.descr = "Command Dword13",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW14, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "cdw14", .descr = "Command Dword14",
+		.opt = XNVMEC_OPT_CDW14,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "cdw14",
+		.descr = "Command Dword14",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW15, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "cdw15", .descr = "Command Dword15",
+		.opt = XNVMEC_OPT_CDW15,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "cdw15",
+		.descr = "Command Dword15",
 	},
 	{
-		.opt = XNVMEC_OPT_CMD_INPUT, .vtype = XNVMEC_OPT_VTYPE_FILE,
-		.name = "cmd-input", .descr = "Path to command input-file",
+		.opt = XNVMEC_OPT_CMD_INPUT,
+		.vtype = XNVMEC_OPT_VTYPE_FILE,
+		.name = "cmd-input",
+		.descr = "Path to command input-file",
 	},
 	{
-		.opt = XNVMEC_OPT_CMD_OUTPUT, .vtype = XNVMEC_OPT_VTYPE_FILE,
-		.name = "cmd-output", .descr = "Path to command output-file",
+		.opt = XNVMEC_OPT_CMD_OUTPUT,
+		.vtype = XNVMEC_OPT_VTYPE_FILE,
+		.name = "cmd-output",
+		.descr = "Path to command output-file",
 	},
 	{
-		.opt = XNVMEC_OPT_DATA_NBYTES, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "data-nbytes", .descr = "Data size in bytes",
+		.opt = XNVMEC_OPT_DATA_NBYTES,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "data-nbytes",
+		.descr = "Data size in bytes",
 	},
 	{
-		.opt = XNVMEC_OPT_DATA_INPUT, .vtype = 	XNVMEC_OPT_VTYPE_FILE,
-		.name = "data-input", .descr = "Path to data input-file",
+		.opt = XNVMEC_OPT_DATA_INPUT,
+		.vtype = XNVMEC_OPT_VTYPE_FILE,
+		.name = "data-input",
+		.descr = "Path to data input-file",
 	},
 	{
-		.opt = XNVMEC_OPT_DATA_OUTPUT, .vtype = XNVMEC_OPT_VTYPE_FILE,
-		.name = "data-output", .descr = "Path to data output-file",
+		.opt = XNVMEC_OPT_DATA_OUTPUT,
+		.vtype = XNVMEC_OPT_VTYPE_FILE,
+		.name = "data-output",
+		.descr = "Path to data output-file",
 	},
 	{
-		.opt = XNVMEC_OPT_META_NBYTES, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "meta-nbytes", .descr = "Meta size in bytes",
+		.opt = XNVMEC_OPT_META_NBYTES,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "meta-nbytes",
+		.descr = "Meta size in bytes",
 	},
 	{
-		.opt = XNVMEC_OPT_META_INPUT, .vtype = 	XNVMEC_OPT_VTYPE_FILE,
-		.name = "meta-input", .descr = "Path to meta input-file",
+		.opt = XNVMEC_OPT_META_INPUT,
+		.vtype = XNVMEC_OPT_VTYPE_FILE,
+		.name = "meta-input",
+		.descr = "Path to meta input-file",
 	},
 	{
-		.opt = XNVMEC_OPT_META_OUTPUT, .vtype = XNVMEC_OPT_VTYPE_FILE,
-		.name = "meta-output", .descr = "Path to meta output-file",
+		.opt = XNVMEC_OPT_META_OUTPUT,
+		.vtype = XNVMEC_OPT_VTYPE_FILE,
+		.name = "meta-output",
+		.descr = "Path to meta output-file",
 	},
 	{
-		.opt = XNVMEC_OPT_LBAF, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "lbaf", .descr = "LBA Format",
+		.opt = XNVMEC_OPT_LBAF,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "lbaf",
+		.descr = "LBA Format",
 	},
 	{
-		.opt = XNVMEC_OPT_SLBA, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "slba", .descr = "Start Logical Block Address",
+		.opt = XNVMEC_OPT_SLBA,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "slba",
+		.descr = "Start Logical Block Address",
 	},
 	{
-		.opt = XNVMEC_OPT_ELBA, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "elba", .descr = "End Logical Block Address",
+		.opt = XNVMEC_OPT_ELBA,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "elba",
+		.descr = "End Logical Block Address",
 	},
 	{
-		.opt = XNVMEC_OPT_LBA, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "lba", .descr = "Logical Block Address",
+		.opt = XNVMEC_OPT_LBA,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "lba",
+		.descr = "Logical Block Address",
 	},
 	{
-		.opt = XNVMEC_OPT_NLB, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "nlb", .descr = "Number of LBAs (NOTE: zero-based value)",
+		.opt = XNVMEC_OPT_NLB,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "nlb",
+		.descr = "Number of LBAs (NOTE: zero-based value)",
 	},
 	{
-		.opt = XNVMEC_OPT_URI, .vtype = XNVMEC_OPT_VTYPE_URI,
-		.name = "uri", .descr = "Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888', '\\\\.\\PhysicalDrive1'",
+		.opt = XNVMEC_OPT_URI,
+		.vtype = XNVMEC_OPT_VTYPE_URI,
+		.name = "uri",
+		.descr = "Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888', "
+			 "'\\\\.\\PhysicalDrive1'",
 	},
 	{
-		.opt = XNVMEC_OPT_SYS_URI, .vtype = XNVMEC_OPT_VTYPE_URI,
-		.name = "uri", .descr = "System URI e.g. '10.9.8.1:8888'",
+		.opt = XNVMEC_OPT_SYS_URI,
+		.vtype = XNVMEC_OPT_VTYPE_URI,
+		.name = "uri",
+		.descr = "System URI e.g. '10.9.8.1:8888'",
 	},
 	{
-		.opt = XNVMEC_OPT_CNTID, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "cntid", .descr = "Controller Identifier",
+		.opt = XNVMEC_OPT_CNTID,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "cntid",
+		.descr = "Controller Identifier",
 	},
 	{
-		.opt = XNVMEC_OPT_NSID, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "nsid", .descr = "Namespace Identifier for Command Construction",
+		.opt = XNVMEC_OPT_NSID,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "nsid",
+		.descr = "Namespace Identifier for Command Construction",
 	},
 	{
-		.opt = XNVMEC_OPT_UUID, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "uuid", .descr = "Universally Unique Identifier",
+		.opt = XNVMEC_OPT_UUID,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "uuid",
+		.descr = "Universally Unique Identifier",
 	},
 	{
-		.opt = XNVMEC_OPT_CNS, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "cns", .descr = "Controller or Namespace Struct",
+		.opt = XNVMEC_OPT_CNS,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "cns",
+		.descr = "Controller or Namespace Struct",
 	},
 	{
-		.opt = XNVMEC_OPT_CSI, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "csi", .descr = "Command Set Identifier",
+		.opt = XNVMEC_OPT_CSI,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "csi",
+		.descr = "Command Set Identifier",
 	},
 	{
-		.opt = XNVMEC_OPT_INDEX, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "index", .descr = "Index",
+		.opt = XNVMEC_OPT_INDEX,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "index",
+		.descr = "Index",
 	},
 	{
-		.opt = XNVMEC_OPT_SETID, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "setid", .descr = "NVM Set Identifier",
+		.opt = XNVMEC_OPT_SETID,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "setid",
+		.descr = "NVM Set Identifier",
 	},
 	{
-		.opt = XNVMEC_OPT_LPO_NBYTES, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "lpo-nbytes", .descr = "Log-Page Offset (in bytes)",
+		.opt = XNVMEC_OPT_LPO_NBYTES,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "lpo-nbytes",
+		.descr = "Log-Page Offset (in bytes)",
 	},
 	{
-		.opt = XNVMEC_OPT_LID, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "lid", .descr = "Log-page IDentifier",
+		.opt = XNVMEC_OPT_LID,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "lid",
+		.descr = "Log-page IDentifier",
 	},
 	{
-		.opt = XNVMEC_OPT_LSP, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "lsp", .descr = "Log-SPecific parameters",
+		.opt = XNVMEC_OPT_LSP,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "lsp",
+		.descr = "Log-SPecific parameters",
 	},
 	{
-		.opt = XNVMEC_OPT_RAE, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "rae", .descr = "Reset Async. Events",
+		.opt = XNVMEC_OPT_RAE,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "rae",
+		.descr = "Reset Async. Events",
 	},
 	{
-		.opt = XNVMEC_OPT_ZF, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "zf", .descr = "Zone Format",
+		.opt = XNVMEC_OPT_ZF,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "zf",
+		.descr = "Zone Format",
 	},
 	{
-		.opt = XNVMEC_OPT_SES, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "ses", .descr = "Secure Erase setting. No=0x0, UserData=0x1, Cryptographic=0x2",
+		.opt = XNVMEC_OPT_SES,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "ses",
+		.descr = "Secure Erase setting. No=0x0, UserData=0x1, Cryptographic=0x2",
 	},
 	{
-		.opt = XNVMEC_OPT_SEL, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "sel", .descr = "current=0x0, default=0x1, saved=0x2, supported=0x3",
+		.opt = XNVMEC_OPT_SEL,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "sel",
+		.descr = "current=0x0, default=0x1, saved=0x2, supported=0x3",
 	},
 	{
-		.opt = XNVMEC_OPT_MSET, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "mset", .descr = "Metadata settings. Off=0x0, On=0x1",
+		.opt = XNVMEC_OPT_MSET,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "mset",
+		.descr = "Metadata settings. Off=0x0, On=0x1",
 	},
 	{
-		.opt = XNVMEC_OPT_AUSE, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "ause", .descr = "AUSE?",
+		.opt = XNVMEC_OPT_AUSE,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "ause",
+		.descr = "AUSE?",
 	},
 	{
-		.opt = XNVMEC_OPT_OVRPAT, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "ovrpat", .descr = "Overwrite Pattern",
+		.opt = XNVMEC_OPT_OVRPAT,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "ovrpat",
+		.descr = "Overwrite Pattern",
 	},
 	{
-		.opt = XNVMEC_OPT_OWPASS, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "owpass", .descr = "Overwrite Passes",
+		.opt = XNVMEC_OPT_OWPASS,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "owpass",
+		.descr = "Overwrite Passes",
 	},
 	{
-		.opt = XNVMEC_OPT_OIPBP, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "oipbp", .descr = "Overwrite Inverse Bit Pattern",
+		.opt = XNVMEC_OPT_OIPBP,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "oipbp",
+		.descr = "Overwrite Inverse Bit Pattern",
 	},
 	{
-		.opt = XNVMEC_OPT_NODAS, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "nodas", .descr = "Nodas?",
+		.opt = XNVMEC_OPT_NODAS,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "nodas",
+		.descr = "Nodas?",
 	},
 	{
-		.opt = XNVMEC_OPT_ACTION, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "action", .descr = "Command action",
+		.opt = XNVMEC_OPT_ACTION,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "action",
+		.descr = "Command action",
 	},
 	{
-		.opt = XNVMEC_OPT_ZRMS, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "zrms", .descr = "Zone Resource Management",
+		.opt = XNVMEC_OPT_ZRMS,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "zrms",
+		.descr = "Zone Resource Management",
 	},
 	{
-		.opt = XNVMEC_OPT_PI, .vtype = 	XNVMEC_OPT_VTYPE_HEX,
-		.name = "pi", .descr = "Protection Information. Off=0x0, Type1/2/3=0x1/0x2/0x3",
+		.opt = XNVMEC_OPT_PI,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "pi",
+		.descr = "Protection Information. Off=0x0, Type1/2/3=0x1/0x2/0x3",
 	},
 	{
-		.opt = XNVMEC_OPT_PIL, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "pil", .descr = "Protection Information Location. Last=0x0, First=0x1",
+		.opt = XNVMEC_OPT_PIL,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "pil",
+		.descr = "Protection Information Location. Last=0x0, First=0x1",
 	},
 	{
-		.opt = XNVMEC_OPT_FID, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "fid", .descr = "Feature Identifier",
+		.opt = XNVMEC_OPT_FID,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "fid",
+		.descr = "Feature Identifier",
 	},
 	{
-		.opt = XNVMEC_OPT_FEAT, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "feat", .descr = "Feature e.g. cdw12 content",
+		.opt = XNVMEC_OPT_FEAT,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "feat",
+		.descr = "Feature e.g. cdw12 content",
 	},
 	{
-		.opt = XNVMEC_OPT_OPCODE, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "opcode", .descr = "Command opcode",
+		.opt = XNVMEC_OPT_OPCODE,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "opcode",
+		.descr = "Command opcode",
 	},
 	{
-		.opt = XNVMEC_OPT_FLAGS, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "flags", .descr = "Command flags",
+		.opt = XNVMEC_OPT_FLAGS,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "flags",
+		.descr = "Command flags",
 	},
 	{
-		.opt = XNVMEC_OPT_ALL, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "all", .descr = "Select / Affect all",
+		.opt = XNVMEC_OPT_ALL,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "all",
+		.descr = "Select / Affect all",
 	},
 	{
-		.opt = XNVMEC_OPT_SEED, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "seed", .descr = "Use given 'NUM' as random seed",
+		.opt = XNVMEC_OPT_SEED,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "seed",
+		.descr = "Use given 'NUM' as random seed",
 	},
 	{
-		.opt = XNVMEC_OPT_LIMIT, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "limit", .descr = "Restrict amount to 'NUM'",
+		.opt = XNVMEC_OPT_LIMIT,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "limit",
+		.descr = "Restrict amount to 'NUM'",
 	},
 	{
-		.opt = XNVMEC_OPT_IOSIZE, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "iosize", .descr = "Use given 'NUM' as bs/iosize",
+		.opt = XNVMEC_OPT_IOSIZE,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "iosize",
+		.descr = "Use given 'NUM' as bs/iosize",
 	},
 	{
-		.opt = XNVMEC_OPT_QDEPTH, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "qdepth", .descr = "Use given 'NUM' as queue max capacity",
+		.opt = XNVMEC_OPT_QDEPTH,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "qdepth",
+		.descr = "Use given 'NUM' as queue max capacity",
 	},
 	{
-		.opt = XNVMEC_OPT_DIRECT, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "direct", .descr = "Bypass layers",
+		.opt = XNVMEC_OPT_DIRECT,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "direct",
+		.descr = "Bypass layers",
 	},
 	{
-		.opt = XNVMEC_OPT_COUNT, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "count", .descr = "Use given 'NUM' as count",
+		.opt = XNVMEC_OPT_COUNT,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "count",
+		.descr = "Use given 'NUM' as count",
 	},
 	{
-		.opt = XNVMEC_OPT_OFFSET, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "offset", .descr = "Use given 'NUM' as offset",
+		.opt = XNVMEC_OPT_OFFSET,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "offset",
+		.descr = "Use given 'NUM' as offset",
 	},
 	{
-		.opt = XNVMEC_OPT_CLEAR, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "clear", .descr = "Clear something...",
+		.opt = XNVMEC_OPT_CLEAR,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "clear",
+		.descr = "Clear something...",
 	},
 	{
-		.opt = XNVMEC_OPT_STATUS, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "status", .descr = "Provide command state",
+		.opt = XNVMEC_OPT_STATUS,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "status",
+		.descr = "Provide command state",
 	},
 	{
-		.opt = XNVMEC_OPT_SAVE, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "save", .descr = "Save",
+		.opt = XNVMEC_OPT_SAVE,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "save",
+		.descr = "Save",
 	},
 	{
-		.opt = XNVMEC_OPT_RESET, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "reset", .descr = "Reset controller",
+		.opt = XNVMEC_OPT_RESET,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "reset",
+		.descr = "Reset controller",
 	},
 	{
-		.opt = XNVMEC_OPT_VERBOSE, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "verbose", .descr = "Increase output info",
+		.opt = XNVMEC_OPT_VERBOSE,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "verbose",
+		.descr = "Increase output info",
 	},
 	{
-		.opt = XNVMEC_OPT_HELP, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "help", .descr = "Show usage / help",
+		.opt = XNVMEC_OPT_HELP,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "help",
+		.descr = "Show usage / help",
 	},
 	{
-		.opt = XNVMEC_OPT_DEV_NSID, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "dev-nsid", .descr = "Namespace Identifier for Device Handle",
+		.opt = XNVMEC_OPT_DEV_NSID,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "dev-nsid",
+		.descr = "Namespace Identifier for Device Handle",
 	},
 	{
-		.opt = XNVMEC_OPT_BE, .vtype = 	XNVMEC_OPT_VTYPE_STR,
-		.name = "be", .descr = "xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix', 'windows'",
+		.opt = XNVMEC_OPT_BE,
+		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.name = "be",
+		.descr = "xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix', 'windows'",
 	},
 	{
-		.opt = XNVMEC_OPT_MEM, .vtype = XNVMEC_OPT_VTYPE_STR,
-		.name = "mem", .descr = "xNVMe buffer/memory manager",
+		.opt = XNVMEC_OPT_MEM,
+		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.name = "mem",
+		.descr = "xNVMe buffer/memory manager",
 	},
 	{
-		.opt = XNVMEC_OPT_SYNC, .vtype = XNVMEC_OPT_VTYPE_STR,
-		.name = "sync", .descr = "xNVMe sync. command-interface, e.g. 'nvme', 'block'",
+		.opt = XNVMEC_OPT_SYNC,
+		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.name = "sync",
+		.descr = "xNVMe sync. command-interface, e.g. 'nvme', 'block'",
 	},
 	{
-		.opt = XNVMEC_OPT_ASYNC, .vtype = XNVMEC_OPT_VTYPE_STR,
-		.name = "async", .descr = "xNVMe async. command-interface, e.g. 'io_uring', 'emu'",
+		.opt = XNVMEC_OPT_ASYNC,
+		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.name = "async",
+		.descr = "xNVMe async. command-interface, e.g. 'io_uring', 'emu'",
 	},
 	{
-		.opt = XNVMEC_OPT_ADMIN, .vtype = XNVMEC_OPT_VTYPE_STR,
-		.name = "admin", .descr = "xNVMe admin. command-interface, e.g. 'nvme', 'block'",
+		.opt = XNVMEC_OPT_ADMIN,
+		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.name = "admin",
+		.descr = "xNVMe admin. command-interface, e.g. 'nvme', 'block'",
 	},
 	{
-		.opt = XNVMEC_OPT_SHM_ID, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "shm_id", .descr = "For be=spdk, multi-process shared-memory-id",
+		.opt = XNVMEC_OPT_SHM_ID,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "shm_id",
+		.descr = "For be=spdk, multi-process shared-memory-id",
 	},
 	{
-		.opt = XNVMEC_OPT_MAIN_CORE, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "main_core", .descr = "For be=spdk, multi-process main core",
+		.opt = XNVMEC_OPT_MAIN_CORE,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "main_core",
+		.descr = "For be=spdk, multi-process main core",
 	},
 	{
-		.opt = XNVMEC_OPT_CORE_MASK, .vtype = XNVMEC_OPT_VTYPE_STR,
-		.name = "core_mask", .descr = "For be=spdk, multi-process core_mask/cpus",
+		.opt = XNVMEC_OPT_CORE_MASK,
+		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.name = "core_mask",
+		.descr = "For be=spdk, multi-process core_mask/cpus",
 	},
 	{
-		.opt = XNVMEC_OPT_USE_CMB_SQS, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "use_cmb_sqs", .descr = "For be=spdk, use controller-memory-buffer for sqs",
+		.opt = XNVMEC_OPT_USE_CMB_SQS,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "use_cmb_sqs",
+		.descr = "For be=spdk, use controller-memory-buffer for sqs",
 	},
 	{
-		.opt = XNVMEC_OPT_CSS, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "css", .descr = "For be=spdk, ctrl.config. command-set-selection",
+		.opt = XNVMEC_OPT_CSS,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "css",
+		.descr = "For be=spdk, ctrl.config. command-set-selection",
 	},
 	{
-		.opt = XNVMEC_OPT_ADRFAM, .vtype = XNVMEC_OPT_VTYPE_STR,
-		.name = "adrfam", .descr = "For be=spdk, Fabrics Address-Family e.g. IPv4/IPv6",
+		.opt = XNVMEC_OPT_ADRFAM,
+		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.name = "adrfam",
+		.descr = "For be=spdk, Fabrics Address-Family e.g. IPv4/IPv6",
 	},
 
 	{
-		.opt = XNVMEC_OPT_POLL_IO, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "poll_io", .descr = "For async=io_uring, enable hipri/io-compl.polling",
+		.opt = XNVMEC_OPT_POLL_IO,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "poll_io",
+		.descr = "For async=io_uring, enable hipri/io-compl.polling",
 	},
 	{
-		.opt = XNVMEC_OPT_POLL_SQ, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "poll_sq", .descr = "For async=io_uring, enable kernel-side sqthread-poll",
+		.opt = XNVMEC_OPT_POLL_SQ,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "poll_sq",
+		.descr = "For async=io_uring, enable kernel-side sqthread-poll",
 	},
 	{
-		.opt = XNVMEC_OPT_REGISTER_FILES, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "register_files", .descr = "For async=io_uring, register files",
+		.opt = XNVMEC_OPT_REGISTER_FILES,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "register_files",
+		.descr = "For async=io_uring, register files",
 	},
 	{
-		.opt = XNVMEC_OPT_REGISTER_BUFFERS, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "register_buffers", .descr = "For async=io_uring, register buffers",
+		.opt = XNVMEC_OPT_REGISTER_BUFFERS,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "register_buffers",
+		.descr = "For async=io_uring, register buffers",
 	},
 	{
-		.opt = XNVMEC_OPT_TRUNCATE, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "truncate", .descr = "For files; on-open truncate contents",
+		.opt = XNVMEC_OPT_TRUNCATE,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "truncate",
+		.descr = "For files; on-open truncate contents",
 	},
 	{
-		.opt = XNVMEC_OPT_RDONLY, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "rdonly", .descr = "For files; open read-only",
+		.opt = XNVMEC_OPT_RDONLY,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "rdonly",
+		.descr = "For files; open read-only",
 	},
 	{
-		.opt = XNVMEC_OPT_WRONLY, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "wronly", .descr = "For files; open write-only",
+		.opt = XNVMEC_OPT_WRONLY,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "wronly",
+		.descr = "For files; open write-only",
 	},
 	{
-		.opt = XNVMEC_OPT_RDWR, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "rdwr", .descr = "For files; open for read and write",
+		.opt = XNVMEC_OPT_RDWR,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "rdwr",
+		.descr = "For files; open for read and write",
 	},
 	{
-		.opt = XNVMEC_OPT_CREATE, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "create", .descr = "For files; on-open create",
+		.opt = XNVMEC_OPT_CREATE,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "create",
+		.descr = "For files; on-open create",
 	},
 	{
-		.opt = XNVMEC_OPT_OFLAGS, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "oflags", .descr = "For files; combination of file-open-flags",
+		.opt = XNVMEC_OPT_OFLAGS,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "oflags",
+		.descr = "For files; combination of file-open-flags",
 	},
 
 	{
-		.opt = XNVMEC_OPT_CREATE_MODE, .vtype = XNVMEC_OPT_VTYPE_HEX,
-		.name = "create_mode", .descr = "For files; create-mode / umask / mode_t in HEX",
+		.opt = XNVMEC_OPT_CREATE_MODE,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "create_mode",
+		.descr = "For files; create-mode / umask / mode_t in HEX",
 	},
 
 	{
-		.opt = XNVMEC_OPT_END, .vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "", .descr = "",
-	}
-};
+		.opt = XNVMEC_OPT_END,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "",
+		.descr = "",
+	}};
 
 struct xnvmec_opt_attr *
 xnvmec_opt_attr_by_opt(enum xnvmec_opt opt, struct xnvmec_opt_attr *attrs)
@@ -691,7 +884,6 @@ xnvmec_opt_attr_by_getoptval(int getoptval, struct xnvmec_opt_attr *attrs)
 	return NULL;
 }
 
-
 void
 xnvmec_pinf(const char *format, ...)
 {
@@ -718,18 +910,12 @@ xnvmec_perr(const char *msg, int err)
 	char err_msg_buff[1024];
 	int count;
 
-	count = FormatMessage(
-			FORMAT_MESSAGE_FROM_SYSTEM,
-			NULL,
-			err,
-			0,
-			(LPTSTR)&err_msg_buff,
-			sizeof(err_msg_buff),
-			NULL);
+	count = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, err, 0, (LPTSTR)&err_msg_buff,
+			      sizeof(err_msg_buff), NULL);
 
 	if (count != 0) {
-		fprintf(stderr, "# ERR: '%s': {error code: %d, msg: '%s'}\n",
-			msg, err, err_msg_buff);
+		fprintf(stderr, "# ERR: '%s': {error code: %d, msg: '%s'}\n", msg, err,
+			err_msg_buff);
 	} else {
 		fprintf(stderr, "# ERR: Format message failed:  {error code: %d}\n",
 			GetLastError());
@@ -739,8 +925,8 @@ xnvmec_perr(const char *msg, int err)
 void
 xnvmec_perr(const char *msg, int err)
 {
-	fprintf(stderr, "# ERR: '%s': {errno: %d, msg: '%s'}\n",
-		msg, err, strerror(err < 0 ? -err : err));
+	fprintf(stderr, "# ERR: '%s': {errno: %d, msg: '%s'}\n", msg, err,
+		strerror(err < 0 ? -err : err));
 
 	fflush(stderr);
 }
@@ -756,8 +942,7 @@ xnvmec_usage_sub_long(struct xnvmec *cli, struct xnvmec_sub *sub)
 		struct xnvmec_sub_opt *opt = &sub->opts[oi];
 		struct xnvmec_opt_attr *attr = NULL;
 
-		if ((opt->opt == XNVMEC_OPT_END) || \
-		    (opt->opt == XNVMEC_OPT_NONE)) {
+		if ((opt->opt == XNVMEC_OPT_END) || (opt->opt == XNVMEC_OPT_NONE)) {
 			break;
 		}
 
@@ -787,8 +972,7 @@ xnvmec_usage_sub_long(struct xnvmec *cli, struct xnvmec_sub *sub)
 		struct xnvmec_opt_attr *attr = NULL;
 		int width = 0;
 
-		if ((opt->opt == XNVMEC_OPT_END) || \
-		    (opt->opt == XNVMEC_OPT_NONE)) {
+		if ((opt->opt == XNVMEC_OPT_END) || (opt->opt == XNVMEC_OPT_NONE)) {
 			break;
 		}
 
@@ -872,9 +1056,7 @@ xnvmec_usage(struct xnvmec *cli)
 	}
 
 	printf("\n");
-	printf(
-		"See '%s <command> --help' for the description of [<args>]\n",
-		cli->argv[0]);
+	printf("See '%s <command> --help' for the description of [<args>]\n", cli->argv[0]);
 
 	if (cli->title) {
 		printf("\n");
@@ -907,8 +1089,7 @@ xnvmec_assign_arg(struct xnvmec *cli, struct xnvmec_opt_attr *opt_attr, char *ar
 			errno = 0;
 			num = strtoll(arg, &endptr, num_base);
 			if (errno) {
-				XNVME_DEBUG("FAILED: strtoll(), errno: %d",
-					    errno);
+				XNVME_DEBUG("FAILED: strtoll(), errno: %d", errno);
 				errno = EINVAL;
 				return -1;
 			}
@@ -1272,11 +1453,11 @@ int
 xnvmec_parse(struct xnvmec *cli)
 {
 	struct xnvmec_args *args = &cli->args;
-	struct option long_options[XNVMEC_SUB_OPTS_LEN] = { 0 };
-	struct xnvmec_opt_attr *pos_args[XNVMEC_SUB_OPTS_LEN] = { 0 };
+	struct option long_options[XNVMEC_SUB_OPTS_LEN] = {0};
+	struct xnvmec_opt_attr *pos_args[XNVMEC_SUB_OPTS_LEN] = {0};
 	struct xnvmec_sub *sub;
-	struct xnvmec_counts signature = { 0 };
-	struct xnvmec_counts parsed = { 0 };
+	struct xnvmec_counts signature = {0};
+	struct xnvmec_counts parsed = {0};
 
 	const char *sub_name = NULL;
 
@@ -1291,13 +1472,12 @@ xnvmec_parse(struct xnvmec *cli)
 
 	sub = sub_by_name(cli, sub_name);
 	if (!sub) {
-		xnvmec_pinf("%s: invalid command: '%s'", cli->argv[0],
-			    sub_name);
+		xnvmec_pinf("%s: invalid command: '%s'", cli->argv[0], sub_name);
 		errno = EINVAL;
 		return -1;
 	}
 
-	cli->sub = sub;		// Boom!
+	cli->sub = sub; // Boom!
 
 	// Convert from XNVMEC_OPT to getopt long_options
 	for (int oi = 0; oi < XNVMEC_SUB_OPTS_LEN; ++oi) {
@@ -1311,8 +1491,7 @@ xnvmec_parse(struct xnvmec *cli)
 			return -1;
 		}
 
-		if ((sub_opt->opt == XNVMEC_OPT_END) || \
-		    (sub_opt->opt == XNVMEC_OPT_NONE)) {
+		if ((sub_opt->opt == XNVMEC_OPT_END) || (sub_opt->opt == XNVMEC_OPT_NONE)) {
 			break;
 		}
 
@@ -1478,8 +1657,7 @@ xnvmec_parse(struct xnvmec *cli)
 
 			if (xnvmec_assign_arg(cli, attr, cli->argv[idx], XNVMEC_POSA)) {
 				XNVME_DEBUG("FAILED: xnvmec_assign_arg()");
-				xnvmec_pinf("invalid argument value(%s)",
-					    cli->argv[idx]);
+				xnvmec_pinf("invalid argument value(%s)", cli->argv[idx]);
 				errno = EINVAL;
 				return -1;
 			}
@@ -1518,13 +1696,12 @@ xnvmec(struct xnvmec *cli, int argc, char **argv, int opts)
 		cli->ver_pr = xnvme_ver_pr;
 	}
 
-	if ((argc < 2) || (!strcmp(argv[1], "--help")) || \
-	    (!strcmp(argv[1], "-h"))) {
+	if ((argc < 2) || (!strcmp(argv[1], "--help")) || (!strcmp(argv[1], "-h"))) {
 		xnvmec_usage(cli);
 		return 0;
 	}
 
-	for (int i = 0; i < cli->nsubs; ++i) {	// We all need help! ;)
+	for (int i = 0; i < cli->nsubs; ++i) { // We all need help! ;)
 		struct xnvmec_sub *sub = &cli->subs[i];
 
 		if (!sub->name) {
@@ -1559,7 +1736,7 @@ xnvmec(struct xnvmec *cli, int argc, char **argv, int opts)
 
 		if (xnvmec_cli_to_opts(cli, &opts)) {
 			xnvmec_perr("xnvmec_cli_to_opts()", errno);
-			return - 1;
+			return -1;
 		}
 
 		cli->args.dev = xnvme_dev_open(cli->args.uri, &opts);
@@ -1591,7 +1768,7 @@ int
 xnvmec_cli_to_opts(const struct xnvmec *cli, struct xnvme_opts *opts)
 {
 	opts->be = cli->args.be;
-	//opts->dev = cli->args.dev;
+	// opts->dev = cli->args.dev;
 	opts->mem = cli->args.mem;
 	opts->sync = cli->args.sync;
 	opts->async = cli->args.async;

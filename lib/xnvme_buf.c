@@ -47,8 +47,7 @@ xnvme_buf_phys_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
 }
 
 void *
-xnvme_buf_phys_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes,
-		       uint64_t *phys)
+xnvme_buf_phys_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes, uint64_t *phys)
 {
 	return dev->be.mem.buf_realloc(dev, buf, nbytes, phys);
 }
@@ -82,4 +81,3 @@ xnvme_buf_free(const struct xnvme_dev *dev, void *buf)
 {
 	xnvme_buf_phys_free(dev, buf);
 }
-

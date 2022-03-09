@@ -112,8 +112,8 @@ ioctl_wrap(struct xnvme_dev *dev, unsigned long ioctl_req, struct xnvme_cmd_ctx 
 	}
 
 	// Transform ioctl-errors to completion status-codes
-	XNVME_DEBUG("FAILED: ioctl(%s), err(%d), errno(%d)", ioctl_request_to_str(ioctl_req),
-		    err, errno);
+	XNVME_DEBUG("FAILED: ioctl(%s), err(%d), errno(%d)", ioctl_request_to_str(ioctl_req), err,
+		    errno);
 
 	// Transform ioctl EINVAL to Invalid Field in Command
 	if (err == -1 && errno == EINVAL) {

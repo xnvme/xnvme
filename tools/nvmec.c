@@ -8,7 +8,7 @@
 static int
 sub_show(struct xnvmec *cli)
 {
-	struct xnvme_spec_cmd cmd = { 0 };
+	struct xnvme_spec_cmd cmd = {0};
 	int err;
 
 	err = xnvmec_buf_from_file(&cmd, sizeof(cmd), cli->args.cmd_input);
@@ -26,7 +26,7 @@ sub_show(struct xnvmec *cli)
 static int
 sub_create(struct xnvmec *cli)
 {
-	struct xnvme_spec_cmd cmd = { 0 };
+	struct xnvme_spec_cmd cmd = {0};
 	uint32_t *cdw = (void *)&cmd;
 	int err;
 
@@ -114,34 +114,30 @@ sub_create(struct xnvmec *cli)
 //
 static struct xnvmec_sub g_subs[] = {
 	{
-		"show", "Print the given NVMe command-file",
-		"Print the given NVMe command-file", sub_show, {
+		"show",
+		"Print the given NVMe command-file",
+		"Print the given NVMe command-file",
+		sub_show,
+		{
 			{XNVMEC_OPT_CMD_INPUT, XNVMEC_LREQ},
 		},
 	},
 	{
-		"create", "Create an NVMe command-file",
-		"Create an NVMe command-file", sub_create, {
-			{XNVMEC_OPT_CMD_OUTPUT, XNVMEC_LREQ},
-			{XNVMEC_OPT_CDW00, XNVMEC_LOPT},
-			{XNVMEC_OPT_CDW01, XNVMEC_LOPT},
-			{XNVMEC_OPT_CDW02, XNVMEC_LOPT},
-			{XNVMEC_OPT_CDW03, XNVMEC_LOPT},
-			{XNVMEC_OPT_CDW04, XNVMEC_LOPT},
-			{XNVMEC_OPT_CDW04, XNVMEC_LOPT},
-			{XNVMEC_OPT_CDW05, XNVMEC_LOPT},
-			{XNVMEC_OPT_CDW06, XNVMEC_LOPT},
-			{XNVMEC_OPT_CDW07, XNVMEC_LOPT},
-			{XNVMEC_OPT_CDW08, XNVMEC_LOPT},
-			{XNVMEC_OPT_CDW09, XNVMEC_LOPT},
-			{XNVMEC_OPT_CDW10, XNVMEC_LOPT},
-			{XNVMEC_OPT_CDW11, XNVMEC_LOPT},
-			{XNVMEC_OPT_CDW12, XNVMEC_LOPT},
-			{XNVMEC_OPT_CDW13, XNVMEC_LOPT},
-			{XNVMEC_OPT_CDW14, XNVMEC_LOPT},
-			{XNVMEC_OPT_CDW15, XNVMEC_LOPT},
-			{XNVMEC_OPT_OPCODE, XNVMEC_LOPT},
-			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
+		"create",
+		"Create an NVMe command-file",
+		"Create an NVMe command-file",
+		sub_create,
+		{
+			{XNVMEC_OPT_CMD_OUTPUT, XNVMEC_LREQ}, {XNVMEC_OPT_CDW00, XNVMEC_LOPT},
+			{XNVMEC_OPT_CDW01, XNVMEC_LOPT},      {XNVMEC_OPT_CDW02, XNVMEC_LOPT},
+			{XNVMEC_OPT_CDW03, XNVMEC_LOPT},      {XNVMEC_OPT_CDW04, XNVMEC_LOPT},
+			{XNVMEC_OPT_CDW04, XNVMEC_LOPT},      {XNVMEC_OPT_CDW05, XNVMEC_LOPT},
+			{XNVMEC_OPT_CDW06, XNVMEC_LOPT},      {XNVMEC_OPT_CDW07, XNVMEC_LOPT},
+			{XNVMEC_OPT_CDW08, XNVMEC_LOPT},      {XNVMEC_OPT_CDW09, XNVMEC_LOPT},
+			{XNVMEC_OPT_CDW10, XNVMEC_LOPT},      {XNVMEC_OPT_CDW11, XNVMEC_LOPT},
+			{XNVMEC_OPT_CDW12, XNVMEC_LOPT},      {XNVMEC_OPT_CDW13, XNVMEC_LOPT},
+			{XNVMEC_OPT_CDW14, XNVMEC_LOPT},      {XNVMEC_OPT_CDW15, XNVMEC_LOPT},
+			{XNVMEC_OPT_OPCODE, XNVMEC_LOPT},     {XNVMEC_OPT_NSID, XNVMEC_LOPT},
 		},
 	},
 };
@@ -149,8 +145,8 @@ static struct xnvmec_sub g_subs[] = {
 static struct xnvmec g_cli = {
 	.title = "nvmec: NVMe Command Builder",
 	.descr_short = ""
-	"Construct, and show,  NVMe Command files for use with"
-	"e.g.the xNVMe CLI",
+		       "Construct, and show,  NVMe Command files for use with"
+		       "e.g.the xNVMe CLI",
 	.descr_long = "",
 	.subs = g_subs,
 	.nsubs = sizeof g_subs / sizeof(*g_subs),
