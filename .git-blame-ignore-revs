@@ -1,1 +1,5 @@
-# Switching from astyle to clang-format
+# bulk: fix code-format; always use tail-comma in list-initializers
+93dcd9c355e5f204c6eccf1c2fc36008af118d47
+
+# bulk: apply source-format as defined by clang-format
+fc45de17335417ad9f65637919c30cd24e4af355
