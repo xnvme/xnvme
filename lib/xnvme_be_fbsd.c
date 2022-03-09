@@ -87,14 +87,15 @@ struct xnvme_be xnvme_be_fbsd = {
 	.dev = XNVME_BE_NOSYS_DEV,
 	.mem = XNVME_BE_NOSYS_MEM,
 	.sync = XNVME_BE_NOSYS_SYNC,
-	.attr = {
+	.attr =
+		{
 #ifdef XNVME_BE_FBSD_ENABLED
-		.enabled = 1,
+			.enabled = 1,
 #endif
-		.name = "fbsd",
-	},
+			.name = "fbsd",
+		},
 #ifdef XNVME_BE_FBSD_ENABLED
-	.nobjs = sizeof g_xnvme_be_mixin_fbsd / sizeof * g_xnvme_be_mixin_fbsd,
+	.nobjs = sizeof g_xnvme_be_mixin_fbsd / sizeof *g_xnvme_be_mixin_fbsd,
 	.objs = g_xnvme_be_mixin_fbsd,
 #endif
 };

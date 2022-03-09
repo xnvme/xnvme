@@ -125,4 +125,3 @@ xnvme_nvm_scopy(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t sdlba,
 
 	return xnvme_cmd_pass(ctx, ranges, ranges_nbytes, NULL, 0);
 }
-

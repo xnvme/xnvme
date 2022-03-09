@@ -53,7 +53,7 @@ int
 _linux_libaio_poke(struct xnvme_queue *q, uint32_t max)
 {
 	struct xnvme_queue_libaio *queue = (void *)q;
-	struct timespec timeout = { .tv_sec = 0, .tv_nsec = 100000 };
+	struct timespec timeout = {.tv_sec = 0, .tv_nsec = 100000};
 	int completed = 0;
 
 	max = max ? max : queue->base.outstanding;
@@ -84,7 +84,7 @@ _linux_libaio_poke(struct xnvme_queue *q, uint32_t max)
 		if (((int64_t)ev->res) < 0) {
 			XNVME_DEBUG("FAILED: res: %lu, res2: %lu", ev->res, ev->res2);
 			ctx->cpl.result = 0;
-			ctx->cpl.status.sc =  -ev->res;
+			ctx->cpl.status.sc = -ev->res;
 			ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
 		}
 
@@ -130,7 +130,7 @@ _linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, 
 		io_prep_pread(iocb, state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
 		break;
 
-	// TODO: determine how to handle fsync
+		// TODO: determine how to handle fsync
 
 	default:
 		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);

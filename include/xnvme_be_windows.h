@@ -22,13 +22,10 @@ struct xnvme_be_windows_state {
 	void *sync_handle;
 	void *async_handle;
 	int fd;
-	uint8_t _rsvd[108];       ///< reserved space
+	uint8_t _rsvd[108]; ///< reserved space
 };
-XNVME_STATIC_ASSERT(
-	sizeof(struct xnvme_be_windows_state) == XNVME_BE_STATE_NBYTES,
-	"Incorrect size"
-)
-
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_windows_state) == XNVME_BE_STATE_NBYTES,
+		    "Incorrect size")
 
 /**
  * Prints the information about the  Windows Version

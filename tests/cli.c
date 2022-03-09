@@ -17,8 +17,11 @@ sub_optional(struct xnvmec *cli)
 
 static struct xnvmec_sub g_subs[] = {
 	{
-		"optional", "Optional command-line arguments",
-		"Optional command-line arguments", sub_optional, {
+		"optional",
+		"Optional command-line arguments",
+		"Optional command-line arguments",
+		sub_optional,
+		{
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_MEM, XNVMEC_LOPT},
 			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},

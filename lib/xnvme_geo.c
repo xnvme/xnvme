@@ -18,8 +18,7 @@ xnvme_geo_type_str(int type)
 }
 
 int
-xnvme_geo_yaml(FILE *stream, const struct xnvme_geo *geo, int indent,
-	       const char *sep, int head)
+xnvme_geo_yaml(FILE *stream, const struct xnvme_geo *geo, int indent, const char *sep, int head)
 {
 	int wrtn = 0;
 
@@ -35,34 +34,22 @@ xnvme_geo_yaml(FILE *stream, const struct xnvme_geo *geo, int indent,
 		wrtn += fprintf(stream, "\n");
 	}
 
-	wrtn += fprintf(stream, "%*stype: %s%s", indent, "",
-			xnvme_geo_type_str(geo->type), sep);
-	wrtn += fprintf(stream, "%*snpugrp: %u%s", indent, "",
-			geo->npugrp, sep);
-	wrtn += fprintf(stream, "%*snpunit: %u%s", indent, "",
-			geo->npunit, sep);
-	wrtn += fprintf(stream, "%*snzone: %u%s", indent, "",
-			geo->nzone, sep);
-	wrtn += fprintf(stream, "%*snsect: %zu%s", indent, "",
-			geo->nsect, sep);
-	wrtn += fprintf(stream, "%*snbytes: %u%s", indent, "",
-			geo->nbytes, sep);
-	wrtn += fprintf(stream, "%*snbytes_oob: %u%s", indent, "",
-			geo->nbytes_oob, sep);
+	wrtn += fprintf(stream, "%*stype: %s%s", indent, "", xnvme_geo_type_str(geo->type), sep);
+	wrtn += fprintf(stream, "%*snpugrp: %u%s", indent, "", geo->npugrp, sep);
+	wrtn += fprintf(stream, "%*snpunit: %u%s", indent, "", geo->npunit, sep);
+	wrtn += fprintf(stream, "%*snzone: %u%s", indent, "", geo->nzone, sep);
+	wrtn += fprintf(stream, "%*snsect: %zu%s", indent, "", geo->nsect, sep);
+	wrtn += fprintf(stream, "%*snbytes: %u%s", indent, "", geo->nbytes, sep);
+	wrtn += fprintf(stream, "%*snbytes_oob: %u%s", indent, "", geo->nbytes_oob, sep);
 
-	wrtn += fprintf(stream, "%*stbytes: %zu%s", indent, "",
-			geo->tbytes, sep);
+	wrtn += fprintf(stream, "%*stbytes: %zu%s", indent, "", geo->tbytes, sep);
 
-	wrtn += fprintf(stream, "%*smdts_nbytes: %u%s", indent, "",
-			geo->mdts_nbytes, sep);
+	wrtn += fprintf(stream, "%*smdts_nbytes: %u%s", indent, "", geo->mdts_nbytes, sep);
 
-	wrtn += fprintf(stream, "%*slba_nbytes: %u%s", indent, "",
-			geo->lba_nbytes, sep);
-	wrtn += fprintf(stream, "%*slba_extended: %u%s", indent, "",
-			geo->lba_extended, sep);
+	wrtn += fprintf(stream, "%*slba_nbytes: %u%s", indent, "", geo->lba_nbytes, sep);
+	wrtn += fprintf(stream, "%*slba_extended: %u%s", indent, "", geo->lba_extended, sep);
 
-	wrtn += fprintf(stream, "%*sssw: %"PRIu64, indent, "",
-			geo->ssw);
+	wrtn += fprintf(stream, "%*sssw: %" PRIu64, indent, "", geo->ssw);
 
 	return wrtn;
 }

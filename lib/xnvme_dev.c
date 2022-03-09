@@ -128,13 +128,13 @@ xnvme_dev_open(const char *dev_uri, struct xnvme_opts *opts)
 	struct xnvme_dev *dev = NULL;
 	int err;
 
-	if (!opts) {					///< Set defaults when none are given
+	if (!opts) { ///< Set defaults when none are given
 		opts = &opts_default;
 	}
-	if (!opts->oflags) {				///< Set a default open-mode
+	if (!opts->oflags) { ///< Set a default open-mode
 		opts->rdwr = opts_default.rdwr;
 	}
-	if (opts->create && !opts->create_mode) {	///< Set a default umask/mode_t/create-mode
+	if (opts->create && !opts->create_mode) { ///< Set a default umask/mode_t/create-mode
 		opts->create_mode = opts_default.create_mode;
 	}
 

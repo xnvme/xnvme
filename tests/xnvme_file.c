@@ -5,7 +5,7 @@
 int
 test_file_fsync(struct xnvmec *cli)
 {
-	struct xnvme_opts opts = { .create = 1, .wronly = 1 };
+	struct xnvme_opts opts = {.create = 1, .wronly = 1};
 	const char *output_path = cli->args.data_output;
 	const size_t bytes_per_write = 1024;
 	const size_t num_writes = 8;
@@ -56,7 +56,7 @@ static int
 file_write_ascii(const char *path, size_t nbytes, struct xnvme_opts *opts)
 {
 	struct xnvme_dev *fh = NULL;
-	struct xnvme_cmd_ctx ctx = { 0 };
+	struct xnvme_cmd_ctx ctx = {0};
 	char *buf = NULL;
 	int err;
 
@@ -102,26 +102,20 @@ test_file_trunc(struct xnvmec *cli)
 	int err;
 
 	err = file_write_ascii(output_path, init_write_size,
-	&(struct xnvme_opts) {
-		.create = 1, .wronly = 1, .truncate = 1
-	});
+			       &(struct xnvme_opts){.create = 1, .wronly = 1, .truncate = 1});
 	if (err) {
 		xnvmec_perr("file_open_write_ascii()", err);
 		return err;
 	}
 
 	err = file_write_ascii(output_path, trunc_write_size,
-	&(struct xnvme_opts) {
-		.create = 1, .wronly = 1, .truncate = 1
-	});
+			       &(struct xnvme_opts){.create = 1, .wronly = 1, .truncate = 1});
 	if (err) {
 		xnvmec_perr("file_open_write_ascii()", err);
 		return err;
 	}
 
-	fh = xnvme_file_open(output_path, &(struct xnvme_opts) {
-		.rdonly = 1
-	});
+	fh = xnvme_file_open(output_path, &(struct xnvme_opts){.rdonly = 1});
 	if (fh == NULL) {
 		xnvmec_perr("xnvme_file_open()", err);
 		return err;
@@ -141,14 +135,20 @@ test_file_trunc(struct xnvmec *cli)
 
 static struct xnvmec_sub g_subs[] = {
 	{
-		"write-fsync", "Write a file and call fsync between writes",
-		"Write a file and call fsync between writes", test_file_fsync, {
+		"write-fsync",
+		"Write a file and call fsync between writes",
+		"Write a file and call fsync between writes",
+		test_file_fsync,
+		{
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
 		},
 	},
 	{
-		"file-trunc", "Write a file and then overwrite it using trunc",
-		"Write a file and then overwrite it using trunc", test_file_trunc, {
+		"file-trunc",
+		"Write a file and then overwrite it using trunc",
+		"Write a file and then overwrite it using trunc",
+		test_file_trunc,
+		{
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
 		},
 	},

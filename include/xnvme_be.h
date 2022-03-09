@@ -12,18 +12,18 @@
 
 #define XNVME_BE_QUEUE_STATE_NBYTES 256
 
-#define XNVME_BE_ASYNC_NBYTES 48
-#define XNVME_BE_SYNC_NBYTES 16
-#define XNVME_BE_ADMIN_NBYTES 16
-#define XNVME_BE_DEV_NBYTES 24
-#define XNVME_BE_MEM_NBYTES 32
-#define XNVME_BE_ATTR_NBYTES 24
-#define XNVME_BE_STATE_NBYTES 128
+#define XNVME_BE_ASYNC_NBYTES  48
+#define XNVME_BE_SYNC_NBYTES   16
+#define XNVME_BE_ADMIN_NBYTES  16
+#define XNVME_BE_DEV_NBYTES    24
+#define XNVME_BE_MEM_NBYTES    32
+#define XNVME_BE_ATTR_NBYTES   24
+#define XNVME_BE_STATE_NBYTES  128
 #define XNVME_BE_MIXINS_NBYTES 16
-#define XNVME_BE_NBYTES \
-	( XNVME_BE_ASYNC_NBYTES + XNVME_BE_SYNC_NBYTES + XNVME_BE_ADMIN_NBYTES + \
-	  XNVME_BE_DEV_NBYTES + XNVME_BE_MEM_NBYTES + XNVME_BE_ATTR_NBYTES + \
-	  XNVME_BE_STATE_NBYTES + XNVME_BE_MIXINS_NBYTES)
+#define XNVME_BE_NBYTES                                                         \
+	(XNVME_BE_ASYNC_NBYTES + XNVME_BE_SYNC_NBYTES + XNVME_BE_ADMIN_NBYTES + \
+	 XNVME_BE_DEV_NBYTES + XNVME_BE_MEM_NBYTES + XNVME_BE_ATTR_NBYTES +     \
+	 XNVME_BE_STATE_NBYTES + XNVME_BE_MIXINS_NBYTES)
 
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_attr) == XNVME_BE_ATTR_NBYTES, "Incorrect size");
 
@@ -101,8 +101,7 @@ struct xnvme_be_mem {
 	/**
 	 * Re-allocate a buffer usable for NVMe commands
 	 */
-	void *(*buf_realloc)(const struct xnvme_dev *, void *, size_t,
-			     uint64_t *);
+	void *(*buf_realloc)(const struct xnvme_dev *, void *, size_t, uint64_t *);
 
 	/**
 	 * Free a buffer usable for NVMe commands
@@ -115,20 +114,16 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_mem) == XNVME_BE_MEM_NBYTES, "Incorre
  * Backend function-interface
  */
 enum xnvme_be_mixin_type {
-	XNVME_BE_MEM	= 0x1 << 0,
-	XNVME_BE_ADMIN	= 0x1 << 1,
-	XNVME_BE_SYNC	= 0x1 << 2,
-	XNVME_BE_ASYNC	= 0x1 << 3,
-	XNVME_BE_DEV	= 0x1 << 4,
-	XNVME_BE_ATTR	= 0x1 << 5,
-	XNVME_BE_END	= 0x1 << 6
+	XNVME_BE_MEM   = 0x1 << 0,
+	XNVME_BE_ADMIN = 0x1 << 1,
+	XNVME_BE_SYNC  = 0x1 << 2,
+	XNVME_BE_ASYNC = 0x1 << 3,
+	XNVME_BE_DEV   = 0x1 << 4,
+	XNVME_BE_ATTR  = 0x1 << 5,
+	XNVME_BE_END   = 0x1 << 6
 };
-#define XNVME_BE_CONFIGURED (	\
-	XNVME_BE_ADMIN |	\
-	XNVME_BE_DEV |		\
-	XNVME_BE_MEM |		\
-	XNVME_BE_SYNC |		\
-	XNVME_BE_ASYNC)
+#define XNVME_BE_CONFIGURED \
+	(XNVME_BE_ADMIN | XNVME_BE_DEV | XNVME_BE_MEM | XNVME_BE_SYNC | XNVME_BE_ASYNC)
 
 static inline const char *
 xnvme_be_mixin_key(enum xnvme_be_mixin_type mtype)
@@ -174,13 +169,13 @@ struct xnvme_be_mixin {
  * Backend interface consisting of functions, attributes and instance state
  */
 struct xnvme_be {
-	struct xnvme_be_async async;		///< Asynchronous I/O command interface
-	struct xnvme_be_sync sync;		///< Synchronous I/O command interface
-	struct xnvme_be_admin admin;		///< Administrative command interface
-	struct xnvme_be_dev dev;		///< Device functions
-	struct xnvme_be_attr attr;		///< Backend Attributes
-	struct xnvme_be_mem mem;		///< Memory Management interface
-	uint8_t state[XNVME_BE_STATE_NBYTES];	///< Backend instance state
+	struct xnvme_be_async async;          ///< Asynchronous I/O command interface
+	struct xnvme_be_sync sync;            ///< Synchronous I/O command interface
+	struct xnvme_be_admin admin;          ///< Administrative command interface
+	struct xnvme_be_dev dev;              ///< Device functions
+	struct xnvme_be_attr attr;            ///< Backend Attributes
+	struct xnvme_be_mem mem;              ///< Memory Management interface
+	uint8_t state[XNVME_BE_STATE_NBYTES]; ///< Backend instance state
 
 	struct xnvme_be_mixin *objs;
 	uint64_t nobjs;

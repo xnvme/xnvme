@@ -18,10 +18,8 @@ struct xnvme_queue_nil {
 
 	struct xnvme_cmd_ctx *ctx[XNVME_BE_POSIX_ASYNC_NIL_CTX_DEPTH_MAX];
 };
-XNVME_STATIC_ASSERT(
-	sizeof(struct xnvme_queue_nil) == XNVME_BE_QUEUE_STATE_NBYTES,
-	"Incorrect size"
-)
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_nil) == XNVME_BE_QUEUE_STATE_NBYTES,
+		    "Incorrect size")
 
 int
 _posix_nil_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))

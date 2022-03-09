@@ -40,7 +40,7 @@ xnvme_be_posix_dev_open(struct xnvme_dev *dev)
 	const struct xnvme_ident *ident = &dev->ident;
 	struct xnvme_opts *opts = &dev->opts;
 	int flags = xnvme_file_opts_to_posix(opts);
-	struct stat dev_stat = { 0 };
+	struct stat dev_stat = {0};
 	int err;
 
 	XNVME_DEBUG("INFO: open() : opts->oflags: 0x%x, flags: 0x%x, opts->create_mode: 0x%x",
@@ -48,8 +48,8 @@ xnvme_be_posix_dev_open(struct xnvme_dev *dev)
 
 	state->fd = open(ident->uri, flags, opts->create_mode);
 	if (state->fd < 0) {
-		XNVME_DEBUG("FAILED: open(uri: '%s'), state->fd: '%d', errno: %d",
-			    ident->uri, state->fd, errno);
+		XNVME_DEBUG("FAILED: open(uri: '%s'), state->fd: '%d', errno: %d", ident->uri,
+			    state->fd, errno);
 		return -errno;
 	}
 	err = fstat(state->fd, &dev_stat);
@@ -129,10 +129,8 @@ xnvme_be_posix_dev_close(struct xnvme_dev *dev)
 }
 
 int
-xnvme_be_posix_enumerate(const char *XNVME_UNUSED(sys_uri),
-			 struct xnvme_opts *XNVME_UNUSED(opts),
-			 xnvme_enumerate_cb XNVME_UNUSED(cb_func),
-			 void *XNVME_UNUSED(cb_args))
+xnvme_be_posix_enumerate(const char *XNVME_UNUSED(sys_uri), struct xnvme_opts *XNVME_UNUSED(opts),
+			 xnvme_enumerate_cb XNVME_UNUSED(cb_func), void *XNVME_UNUSED(cb_args))
 {
 	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");
 	return -ENOSYS;

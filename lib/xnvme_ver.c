@@ -37,9 +37,8 @@ xnvme_ver_fpr(FILE *stream, int opts)
 		break;
 	}
 
-	wrtn += fprintf(stream, "ver: {major: %d, minor: %d, patch: %d}",
-			xnvme_ver_major(), xnvme_ver_minor(), xnvme_ver_patch()
-		       );
+	wrtn += fprintf(stream, "ver: {major: %d, minor: %d, patch: %d}", xnvme_ver_major(),
+			xnvme_ver_minor(), xnvme_ver_patch());
 
 	return wrtn;
 }

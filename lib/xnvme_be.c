@@ -18,18 +18,11 @@
 #include <xnvme_dev.h>
 
 static struct xnvme_be *g_xnvme_be_registry[] = {
-	&xnvme_be_spdk,
-	&xnvme_be_linux,
-	&xnvme_be_fbsd,
-	&xnvme_be_posix,
-	&xnvme_be_windows,
-	NULL
-};
-static int g_xnvme_be_count = sizeof g_xnvme_be_registry / sizeof * g_xnvme_be_registry - 1;
+	&xnvme_be_spdk, &xnvme_be_linux, &xnvme_be_fbsd, &xnvme_be_posix, &xnvme_be_windows, NULL};
+static int g_xnvme_be_count = sizeof g_xnvme_be_registry / sizeof *g_xnvme_be_registry - 1;
 
 int
-xnvme_be_yaml(FILE *stream, const struct xnvme_be *be, int indent,
-	      const char *sep, int head)
+xnvme_be_yaml(FILE *stream, const struct xnvme_be *be, int indent, const char *sep, int head)
 {
 	int wrtn = 0;
 
@@ -110,8 +103,7 @@ xnvme_lba_pr(uint64_t lba, enum xnvme_pr opts)
 }
 
 int
-xnvme_lba_fprn(FILE *stream, const uint64_t *lba, uint16_t nlb,
-	       enum xnvme_pr opts)
+xnvme_lba_fprn(FILE *stream, const uint64_t *lba, uint16_t nlb, enum xnvme_pr opts)
 {
 	int wrtn = 0;
 
@@ -154,8 +146,7 @@ xnvme_lba_prn(const uint64_t *lba, uint16_t nlb, enum xnvme_pr opts)
 int
 xnvme_be_attr_list_bundled(struct xnvme_be_attr_list **list)
 {
-	const size_t list_nbytes = sizeof(**list) + g_xnvme_be_count * \
-				   sizeof((*list)->item[0]);
+	const size_t list_nbytes = sizeof(**list) + g_xnvme_be_count * sizeof((*list)->item[0]);
 
 	*list = malloc(list_nbytes);
 	if (!*list) {
@@ -199,8 +190,7 @@ xnvme_be_attr_pr(const struct xnvme_be_attr *attr, int opts)
 }
 
 int
-xnvme_be_attr_list_fpr(FILE *stream, const struct xnvme_be_attr_list *list,
-		       int opts)
+xnvme_be_attr_list_fpr(FILE *stream, const struct xnvme_be_attr_list *list, int opts)
 {
 	int wrtn = 0;
 
@@ -385,8 +375,8 @@ xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 		return -ENOSYS;
 	}
 
-	geo->tbytes = (unsigned long)(geo->npugrp) * geo->npunit * geo->nzone * geo->nsect * \
-		      geo->nbytes;
+	geo->tbytes =
+		(unsigned long)(geo->npugrp) * geo->npunit * geo->nzone * geo->nsect * geo->nbytes;
 
 	/* Derive the sector-shift-width for LBA mapping */
 	geo->ssw = XNVME_ILOG2(dev->geo.nbytes);
@@ -423,7 +413,7 @@ xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 int
 xnvme_be_dev_idfy(struct xnvme_dev *dev)
 {
-	struct xnvme_cmd_ctx ctx = { 0 };
+	struct xnvme_cmd_ctx ctx = {0};
 	struct xnvme_spec_idfy *idfy_ctrlr = NULL, *idfy_ns = NULL;
 	int err;
 
@@ -627,7 +617,7 @@ xnvme_ident_pr(const struct xnvme_ident *ident, int opts)
 static int
 be_setup(struct xnvme_be *be, enum xnvme_be_mixin_type mtype, struct xnvme_opts *opts)
 {
-	for (uint64_t  j = 0; (j < be->nobjs); ++j) {
+	for (uint64_t j = 0; (j < be->nobjs); ++j) {
 		const struct xnvme_be_mixin *mixin = &be->objs[j];
 
 		if (mixin->mtype != mtype) {
@@ -637,8 +627,8 @@ be_setup(struct xnvme_be *be, enum xnvme_be_mixin_type mtype, struct xnvme_opts 
 		switch (mtype) {
 		case XNVME_BE_ASYNC:
 			if ((opts) && (opts->async) && strcmp(opts->async, mixin->name)) {
-				XNVME_DEBUG("INFO: skipping async: '%s' != '%s'",
-					    mixin->name, opts->async);
+				XNVME_DEBUG("INFO: skipping async: '%s' != '%s'", mixin->name,
+					    opts->async);
 				continue;
 			}
 			be->async = *mixin->async;
@@ -646,8 +636,8 @@ be_setup(struct xnvme_be *be, enum xnvme_be_mixin_type mtype, struct xnvme_opts 
 
 		case XNVME_BE_SYNC:
 			if ((opts) && (opts->sync) && strcmp(opts->sync, mixin->name)) {
-				XNVME_DEBUG("INFO: skipping sync: '%s' != '%s'",
-					    mixin->name, opts->sync);
+				XNVME_DEBUG("INFO: skipping sync: '%s' != '%s'", mixin->name,
+					    opts->sync);
 				continue;
 			}
 			be->sync = *mixin->sync;
@@ -655,8 +645,8 @@ be_setup(struct xnvme_be *be, enum xnvme_be_mixin_type mtype, struct xnvme_opts 
 
 		case XNVME_BE_ADMIN:
 			if ((opts) && (opts->admin) && strcmp(opts->admin, mixin->name)) {
-				XNVME_DEBUG("INFO: skipping admin: '%s' != '%s'",
-					    mixin->name, opts->admin);
+				XNVME_DEBUG("INFO: skipping admin: '%s' != '%s'", mixin->name,
+					    opts->admin);
 				continue;
 			}
 			be->admin = *mixin->admin;
@@ -668,8 +658,8 @@ be_setup(struct xnvme_be *be, enum xnvme_be_mixin_type mtype, struct xnvme_opts 
 
 		case XNVME_BE_MEM:
 			if ((opts) && (opts->mem) && strcmp(opts->mem, mixin->name)) {
-				XNVME_DEBUG("INFO: skipping mem: '%s' != '%s'",
-					    mixin->name, opts->mem);
+				XNVME_DEBUG("INFO: skipping mem: '%s' != '%s'", mixin->name,
+					    opts->mem);
 				continue;
 			}
 			be->mem = *mixin->mem;
@@ -808,7 +798,7 @@ xnvme_ident_from_uri(const char *uri, struct xnvme_ident *ident)
 struct xnvme_opts
 xnvme_opts_default(void)
 {
-	struct xnvme_opts opts = { 0 };
+	struct xnvme_opts opts = {0};
 
 	opts.rdwr = 1;
 
@@ -817,4 +807,3 @@ xnvme_opts_default(void)
 
 	return opts;
 }
-

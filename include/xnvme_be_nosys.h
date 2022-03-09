@@ -57,47 +57,43 @@ xnvme_be_nosys_dev_open(struct xnvme_dev *dev);
 void
 xnvme_be_nosys_dev_close(struct xnvme_dev *dev);
 
-#define XNVME_BE_NOSYS_ADMIN {					\
-	.cmd_admin = xnvme_be_nosys_sync_cmd_admin,		\
-	.id = "ENOSYS",						\
-}
+#define XNVME_BE_NOSYS_ADMIN                                                \
+	{                                                                   \
+		.cmd_admin = xnvme_be_nosys_sync_cmd_admin, .id = "ENOSYS", \
+	}
 
-#define XNVME_BE_NOSYS_SYNC {					\
-	.cmd_io = xnvme_be_nosys_sync_cmd_io,			\
-	.id = "ENOSYS",						\
-}
+#define XNVME_BE_NOSYS_SYNC                                           \
+	{                                                             \
+		.cmd_io = xnvme_be_nosys_sync_cmd_io, .id = "ENOSYS", \
+	}
 
-#define XNVME_BE_NOSYS_QUEUE {					\
-	.cmd_io = xnvme_be_nosys_queue_cmd_io,			\
-	.poke = xnvme_be_nosys_queue_poke,			\
-	.wait = xnvme_be_nosys_queue_wait,			\
-	.init = xnvme_be_nosys_queue_init,			\
-	.term = xnvme_be_nosys_queue_term,			\
-	.id = "ENOSYS",						\
-}
+#define XNVME_BE_NOSYS_QUEUE                                                              \
+	{                                                                                 \
+		.cmd_io = xnvme_be_nosys_queue_cmd_io, .poke = xnvme_be_nosys_queue_poke, \
+		.wait = xnvme_be_nosys_queue_wait, .init = xnvme_be_nosys_queue_init,     \
+		.term = xnvme_be_nosys_queue_term, .id = "ENOSYS",                        \
+	}
 
-#define XNVME_BE_NOSYS_MEM {					\
-	.buf_alloc = xnvme_be_nosys_buf_alloc,			\
-	.buf_vtophys = xnvme_be_nosys_buf_vtophys,		\
-	.buf_realloc = xnvme_be_nosys_buf_realloc,		\
-	.buf_free = xnvme_be_nosys_buf_free,			\
-}
+#define XNVME_BE_NOSYS_MEM                                                                        \
+	{                                                                                         \
+		.buf_alloc = xnvme_be_nosys_buf_alloc, .buf_vtophys = xnvme_be_nosys_buf_vtophys, \
+		.buf_realloc = xnvme_be_nosys_buf_realloc, .buf_free = xnvme_be_nosys_buf_free,   \
+	}
 
-#define XNVME_BE_NOSYS_DEV {					\
-	.enumerate = xnvme_be_nosys_enumerate,			\
-	.dev_open = xnvme_be_nosys_dev_open,	\
-	.dev_close = xnvme_be_nosys_dev_close,			\
-}
+#define XNVME_BE_NOSYS_DEV                                                                  \
+	{                                                                                   \
+		.enumerate = xnvme_be_nosys_enumerate, .dev_open = xnvme_be_nosys_dev_open, \
+		.dev_close = xnvme_be_nosys_dev_close,                                      \
+	}
 
-#define XNVME_BE_NOSYS {					\
-	.admin = XNVME_BE_NOSYS_ADMIN,				\
-	.sync = XNVME_BE_NOSYS_SYNC,				\
-	.async = XNVME_BE_NOSYS_QUEUE,				\
-	.mem = XNVME_BE_NOSYS_MEM,				\
-	.dev = XNVME_BE_NOSYS_DEV,				\
-	.attr = {						\
-		.name = "ENOSYS",				\
-	},							\
-}
+#define XNVME_BE_NOSYS                                                      \
+	{                                                                   \
+		.admin = XNVME_BE_NOSYS_ADMIN, .sync = XNVME_BE_NOSYS_SYNC, \
+		.async = XNVME_BE_NOSYS_QUEUE, .mem = XNVME_BE_NOSYS_MEM,   \
+		.dev  = XNVME_BE_NOSYS_DEV,                                 \
+		.attr = {                                                   \
+			.name = "ENOSYS",                                   \
+		},                                                          \
+	}
 
 #endif /* __INTERNAL_XNVME_BE_NOSYS_H */

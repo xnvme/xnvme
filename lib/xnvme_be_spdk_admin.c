@@ -36,8 +36,8 @@ cmd_admin_submit(struct spdk_nvme_ctrlr *ctrlr, struct xnvme_cmd_ctx *ctx, void 
 	xnvme_spec_cmd_pr(cmd, 0x0);
 #endif
 
-	return spdk_nvme_ctrlr_cmd_admin_raw(ctrlr, (struct spdk_nvme_cmd *)&ctx->cmd,
-					     dbuf, dbuf_nbytes, cb_fn, cb_arg);
+	return spdk_nvme_ctrlr_cmd_admin_raw(ctrlr, (struct spdk_nvme_cmd *)&ctx->cmd, dbuf,
+					     dbuf_nbytes, cb_fn, cb_arg);
 }
 
 int
@@ -55,7 +55,7 @@ xnvme_be_spdk_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_
 		return -EIO;
 	}
 
-	while (!*completed) {	// Wait for completion-indicator
+	while (!*completed) { // Wait for completion-indicator
 		spdk_nvme_ctrlr_process_admin_completions(state->ctrlr);
 	}
 

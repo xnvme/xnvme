@@ -34,8 +34,11 @@ sub_hw_example(struct xnvmec *cli)
 
 static struct xnvmec_sub g_subs[] = {
 	{
-		"hw", "Hello-World Example", "Hello-World Example",
-		sub_hw_example, {
+		"hw",
+		"Hello-World Example",
+		"Hello-World Example",
+		sub_hw_example,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},

@@ -53,8 +53,8 @@ xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 
 	state->fd = open(ident->uri, flags, opts->create_mode);
 	if (state->fd < 0) {
-		XNVME_DEBUG("FAILED: open(uri: '%s') : state->fd: '%d', errno: %d",
-			    ident->uri, state->fd, errno);
+		XNVME_DEBUG("FAILED: open(uri: '%s') : state->fd: '%d', errno: %d", ident->uri,
+			    state->fd, errno);
 
 		opts->direct = 0;
 		flags = xnvme_file_opts_to_linux(opts);
@@ -290,7 +290,7 @@ xnvme_be_linux_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enu
 
 	nns = scandir("/sys/block", &ns, xnvme_path_nvme_filter, alphasort);
 	for (int ni = 0; ni < nns; ++ni) {
-		char uri[XNVME_IDENT_URI_LEN] = { 0 };
+		char uri[XNVME_IDENT_URI_LEN] = {0};
 		struct xnvme_dev *dev = NULL;
 
 		snprintf(uri, XNVME_IDENT_URI_LEN - 1, _PATH_DEV "%s", ns[ni]->d_name);
@@ -306,7 +306,7 @@ xnvme_be_linux_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enu
 	}
 	nns = scandir("/dev", &ns, xnvme_path_ng_filter, alphasort);
 	for (int ni = 0; ni < nns; ++ni) {
-		char uri[XNVME_IDENT_URI_LEN] = { 0 };
+		char uri[XNVME_IDENT_URI_LEN] = {0};
 		struct xnvme_dev *dev = NULL;
 
 		snprintf(uri, XNVME_IDENT_URI_LEN - 1, _PATH_DEV "%s", ns[ni]->d_name);

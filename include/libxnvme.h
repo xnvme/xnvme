@@ -36,40 +36,40 @@ extern "C" {
  * @struct xnvme_opts
  */
 struct xnvme_opts {
-	const char *be;		///< Backend/system interface to use
-	const char *dev;	///< Device manager/enumerator
-	const char *mem;	///< Memory allocator to use for buffers
-	const char *sync;	///< Synchronous Command-interface
-	const char *async;	///> Asynchronous Command-interface
-	const char *admin;	///< Administrative Command-interface
-	uint32_t nsid;		///< Namespace identifier
+	const char *be;    ///< Backend/system interface to use
+	const char *dev;   ///< Device manager/enumerator
+	const char *mem;   ///< Memory allocator to use for buffers
+	const char *sync;  ///< Synchronous Command-interface
+	const char *async; ///> Asynchronous Command-interface
+	const char *admin; ///< Administrative Command-interface
+	uint32_t nsid;     ///< Namespace identifier
 	union {
 		struct {
-			uint32_t rdonly		: 1;	///< OS open; read-only
-			uint32_t wronly		: 1;	///< OS open; write-only
-			uint32_t rdwr		: 1;	///< OS open; for read and only
-			uint32_t create		: 1;	///< OS open; create if it does not exist
-			uint32_t truncate	: 1;	///< OS open; truncate content
-			uint32_t direct		: 1;	///< OS open; attempt bypass OS-caching
-			uint32_t _rsvd		: 26;
+			uint32_t rdonly   : 1; ///< OS open; read-only
+			uint32_t wronly   : 1; ///< OS open; write-only
+			uint32_t rdwr     : 1; ///< OS open; for read and only
+			uint32_t create   : 1; ///< OS open; create if it does not exist
+			uint32_t truncate : 1; ///< OS open; truncate content
+			uint32_t direct   : 1; ///< OS open; attempt bypass OS-caching
+			uint32_t _rsvd    : 26;
 		};
 		uint32_t oflags;
 	};
-	uint32_t create_mode;		///< OS file creation-mode
-	uint8_t poll_io;		///< io_uring: enable io-polling
-	uint8_t poll_sq;		///< io_uring: enable sqthread-polling
-	uint8_t register_files;		///< io_uring: enable file-regirations
-	uint8_t register_buffers;	///< io_uring: enable buffer-registration
+	uint32_t create_mode;     ///< OS file creation-mode
+	uint8_t poll_io;          ///< io_uring: enable io-polling
+	uint8_t poll_sq;          ///< io_uring: enable sqthread-polling
+	uint8_t register_files;   ///< io_uring: enable file-regirations
+	uint8_t register_buffers; ///< io_uring: enable buffer-registration
 	struct {
-		uint32_t value	: 31;
-		uint32_t given	: 1;
-	} css;			///< SPDK controller-setup: do command-set-selection
-	uint32_t use_cmb_sqs;	///< SPDK controller-setup: use controller-memory-buffer for sq
-	uint32_t shm_id;	///< SPDK multi-processing: shared-memory-id
-	uint32_t main_core;	///< SPDK multi-processing: main-core
-	const char *core_mask;	///< SPDK multi-processing: core-mask
-	const char *adrfam;	///< SPDK fabrics: address-family, IPv4/IPv6
-	uint32_t spdk_fabrics;	///< Is assigned a value by backend if SPDK uses fabrics
+		uint32_t value : 31;
+		uint32_t given : 1;
+	} css;                 ///< SPDK controller-setup: do command-set-selection
+	uint32_t use_cmb_sqs;  ///< SPDK controller-setup: use controller-memory-buffer for sq
+	uint32_t shm_id;       ///< SPDK multi-processing: shared-memory-id
+	uint32_t main_core;    ///< SPDK multi-processing: main-core
+	const char *core_mask; ///< SPDK multi-processing: core-mask
+	const char *adrfam;    ///< SPDK fabrics: address-family, IPv4/IPv6
+	uint32_t spdk_fabrics; ///< Is assigned a value by backend if SPDK uses fabrics
 };
 
 /**
@@ -90,8 +90,8 @@ xnvme_opts_default(void);
 struct xnvme_dev;
 
 enum xnvme_enumerate_action {
-	XNVME_ENUMERATE_DEV_KEEP_OPEN = 0x0,	///< Keep device-handle open after callback returns
-	XNVME_ENUMERATE_DEV_CLOSE = 0x1		///< Close device-handle when callback returns
+	XNVME_ENUMERATE_DEV_KEEP_OPEN = 0x0, ///< Keep device-handle open after callback returns
+	XNVME_ENUMERATE_DEV_CLOSE     = 0x1  ///< Close device-handle when callback returns
 };
 
 /**
@@ -206,8 +206,8 @@ struct xnvme_queue;
  * @enum xnvme_queue_opts
  */
 enum xnvme_queue_opts {
-	XNVME_QUEUE_IOPOLL = 0x1,       ///< XNVME_QUEUE_IOPOLL: queue. is polled for completions
-	XNVME_QUEUE_SQPOLL = 0x1 << 1,  ///< XNVME_QUEUE_SQPOLL: queue. is polled for submissions
+	XNVME_QUEUE_IOPOLL = 0x1,      ///< XNVME_QUEUE_IOPOLL: queue. is polled for completions
+	XNVME_QUEUE_SQPOLL = 0x1 << 1, ///< XNVME_QUEUE_SQPOLL: queue. is polled for submissions
 };
 
 /**
@@ -332,22 +332,22 @@ typedef void (*xnvme_queue_cb)(struct xnvme_cmd_ctx *ctx, void *opaque);
  * @struct xnvme_cmd_ctx
  */
 struct xnvme_cmd_ctx {
-	struct xnvme_spec_cmd cmd;		///< Command to be processed
-	struct xnvme_spec_cpl cpl;		///< Completion result from processing
+	struct xnvme_spec_cmd cmd; ///< Command to be processed
+	struct xnvme_spec_cpl cpl; ///< Completion result from processing
 
-	struct xnvme_dev *dev;			///< Device associated with the command
+	struct xnvme_dev *dev; ///< Device associated with the command
 
 	///< Fields for command option: XNVME_CMD_ASYNC
 	struct {
-		struct xnvme_queue *queue;	///< Queue used for command processing
-		xnvme_queue_cb cb;		///< User defined callback function
-		void *cb_arg;			///< User defined callback function arguments
+		struct xnvme_queue *queue; ///< Queue used for command processing
+		xnvme_queue_cb cb;         ///< User defined callback function
+		void *cb_arg;              ///< User defined callback function arguments
 	} async;
 
 	///< Field containing command-options, the field is initialized by helper-functions
 	uint32_t opts;
 
-	uint8_t be_rsvd[4];		///< Fields reserved for use by library internals
+	uint8_t be_rsvd[4]; ///< Fields reserved for use by library internals
 
 	///< Field for including the command-context in BSD-style singly-linked-lists (SLIST)
 	SLIST_ENTRY(xnvme_cmd_ctx) link;
@@ -365,7 +365,7 @@ struct xnvme_cmd_ctx {
 static inline void
 xnvme_cmd_ctx_set_cb(struct xnvme_cmd_ctx *ctx, xnvme_queue_cb cb, void *cb_arg)
 {
-	ctx->async.cb = cb;
+	ctx->async.cb     = cb;
 	ctx->async.cb_arg = cb_arg;
 }
 

@@ -29,7 +29,7 @@ xnvme_be_spdk_queue_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 {
 	struct xnvme_queue_spdk *queue = (void *)(q);
 	struct xnvme_be_spdk_state *state = (void *)queue->base.dev->be.state;
-	struct spdk_nvme_io_qpair_opts qopts = { 0 };
+	struct spdk_nvme_io_qpair_opts qopts = {0};
 
 	spdk_nvme_ctrlr_get_default_io_qpair_opts(state->ctrlr, &qopts, sizeof(qopts));
 
@@ -112,7 +112,7 @@ submit_ioc(struct spdk_nvme_ctrlr *ctrlr, struct spdk_nvme_qpair *qpair, struct 
 	}
 
 	return spdk_nvme_ctrlr_cmd_io_raw_with_md(ctrlr, qpair, (struct spdk_nvme_cmd *)&ctx->cmd,
-			dbuf, dbuf_nbytes, mbuf, cb_fn, cb_arg);
+						  dbuf, dbuf_nbytes, mbuf, cb_fn, cb_arg);
 }
 
 // TODO: consider whether 'mbuf_nbytes' is needed here

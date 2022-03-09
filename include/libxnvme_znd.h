@@ -61,8 +61,9 @@ xnvme_znd_dev_get_lbafe(struct xnvme_dev *dev);
  */
 int
 xnvme_znd_mgmt_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba,
-		    enum xnvme_spec_znd_cmd_mgmt_recv_action action, enum xnvme_spec_znd_cmd_mgmt_recv_action_sf sf,
-		    uint8_t partial, void *dbuf, uint32_t dbuf_nbytes);
+		    enum xnvme_spec_znd_cmd_mgmt_recv_action action,
+		    enum xnvme_spec_znd_cmd_mgmt_recv_action_sf sf, uint8_t partial, void *dbuf,
+		    uint32_t dbuf_nbytes);
 
 /**
  * Fills 'zdescr' with the Zone on the given 'dev' that starts at 'slba'
@@ -159,8 +160,7 @@ xnvme_znd_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, bo
  */
 int
 xnvme_znd_append(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, uint16_t nlb,
-		 const void *dbuf,
-		 const void *mbuf);
+		 const void *dbuf, const void *mbuf);
 
 /**
  * Submit, and optionally wait for completion of, a Zone RWA Commit
@@ -194,20 +194,20 @@ xnvme_znd_zrwa_flush(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t lba);
  * @struct xnvme_znd_report
  */
 struct xnvme_znd_report {
-	uint64_t nzones;		///< Nr. of zones in device
-	uint32_t zd_nbytes;		///< Zone Descriptor in 'B'
-	uint32_t zdext_nbytes;		///< Zone Descriptor Extension in 'B'
+	uint64_t nzones;       ///< Nr. of zones in device
+	uint32_t zd_nbytes;    ///< Zone Descriptor in 'B'
+	uint32_t zdext_nbytes; ///< Zone Descriptor Extension in 'B'
 
-	uint64_t zslba;			///< First Zone in the report
-	uint64_t zelba;			///< Last Zone in the report
-	uint32_t nentries;		///< Nr. of entries in report
+	uint64_t zslba;    ///< First Zone in the report
+	uint64_t zelba;    ///< Last Zone in the report
+	uint32_t nentries; ///< Nr. of entries in report
 
-	uint8_t extended;		///< Whether this report has extensions
+	uint8_t extended; ///< Whether this report has extensions
 	uint8_t _pad[3];
-	uint64_t zrent_nbytes;		///< Zone Report Entry Size in 'B'
+	uint64_t zrent_nbytes; ///< Zone Report Entry Size in 'B'
 
-	uint64_t report_nbytes;		///< Size of this struct in bytes
-	uint64_t entries_nbytes;	///< Size of the entries in bytes
+	uint64_t report_nbytes;  ///< Size of this struct in bytes
+	uint64_t entries_nbytes; ///< Size of the entries in bytes
 
 	///< Array of structs, column format: `descr[,descr_ext]`
 	uint8_t storage[];
@@ -215,8 +215,8 @@ struct xnvme_znd_report {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_znd_report) == 64, "Incorrect size")
 
 /**
-* Access Zone Descriptors, by entry index, in the given znd_report
-*/
+ * Access Zone Descriptors, by entry index, in the given znd_report
+ */
 #define XNVME_ZND_REPORT_DESCR(rprt, nth) \
 	((struct xnvme_spec_znd_descr *)&(rprt->storage[nth * rprt->zrent_nbytes]))
 
@@ -224,10 +224,9 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_znd_report) == 64, "Incorrect size")
  * Access Zone Descriptors Extensions, by entry index, in the given znd_report
  */
 #define XNVME_ZND_REPORT_DEXT(rprt, nth) \
-	((!rprt->extended) ? \
-	 NULL \
-	 : \
-	 ((void *)&rprt->storage[nth * rprt->zrent_nbytes + rprt->zd_nbytes]))
+	((!rprt->extended)               \
+		 ? NULL                  \
+		 : ((void *)&rprt->storage[nth * rprt->zrent_nbytes + rprt->zd_nbytes]))
 
 /**
  * Prints the given ::xnvme_znd_report to the given stream

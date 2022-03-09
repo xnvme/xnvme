@@ -16,10 +16,8 @@ struct xnvme_queue_liburing {
 
 	uint8_t _rsvd[14];
 };
-XNVME_STATIC_ASSERT(
-	sizeof(struct xnvme_queue_liburing) == XNVME_BE_QUEUE_STATE_NBYTES,
-	"Incorrect size"
-)
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_liburing) == XNVME_BE_QUEUE_STATE_NBYTES,
+		    "Incorrect size")
 
 int
 xnvme_be_linux_liburing_check_support(void);

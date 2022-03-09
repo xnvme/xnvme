@@ -21,14 +21,14 @@ struct _thrpool_entry {
 };
 
 struct _thrpool_qp {
-	STAILQ_HEAD(, _thrpool_entry) rp;	///< Request pool
+	STAILQ_HEAD(, _thrpool_entry) rp; ///< Request pool
 
 	pthread_mutex_t sq_mutex;
-	STAILQ_HEAD(, _thrpool_entry) sq;	///< Submission queue
+	STAILQ_HEAD(, _thrpool_entry) sq; ///< Submission queue
 	pthread_cond_t sq_cond;
 
 	pthread_mutex_t cq_mutex;
-	STAILQ_HEAD(, _thrpool_entry) cq;	///< Completion queue
+	STAILQ_HEAD(, _thrpool_entry) cq; ///< Completion queue
 
 	uint32_t capacity;
 	struct _thrpool_entry elm[];
@@ -45,10 +45,8 @@ struct xnvme_queue_thrpool {
 
 	uint8_t _rsvd[204];
 };
-XNVME_STATIC_ASSERT(
-	sizeof(struct xnvme_queue_thrpool) == XNVME_BE_QUEUE_STATE_NBYTES,
-	"Incorrect size"
-)
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_thrpool) == XNVME_BE_QUEUE_STATE_NBYTES,
+		    "Incorrect size")
 
 int
 _thrpool_qp_term(struct _thrpool_qp *qp)
@@ -237,7 +235,8 @@ _posix_async_thrpool_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 	for (int i = 0; i < nthreads; i++) {
 		XNVME_DEBUG("Starting thread %d", i);
 
-		err = pthread_create(&queue->threads[i], NULL, (void *)_thrpool_thread_loop, queue);
+		err = pthread_create(&queue->threads[i], NULL, (void *)_thrpool_thread_loop,
+				     queue);
 		if (err) {
 			XNVME_DEBUG("pthread_create() %d", err);
 			err = -err;
