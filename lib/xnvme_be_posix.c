@@ -78,14 +78,15 @@ struct xnvme_be xnvme_be_posix = {
 	.sync = XNVME_BE_NOSYS_SYNC,
 	.async = XNVME_BE_NOSYS_QUEUE,
 	.dev = XNVME_BE_NOSYS_DEV,
-	.attr = {
-		.name = "posix",
+	.attr =
+		{
+			.name = "posix",
 #ifdef XNVME_BE_POSIX_ENABLED
-		.enabled = 1,
+			.enabled = 1,
 #endif
-	},
+		},
 #ifdef XNVME_BE_POSIX_ENABLED
-	.nobjs = sizeof g_xnvme_be_mixin_posix / sizeof * g_xnvme_be_mixin_posix,
+	.nobjs = sizeof g_xnvme_be_mixin_posix / sizeof *g_xnvme_be_mixin_posix,
 	.objs = g_xnvme_be_mixin_posix,
 #endif
 };

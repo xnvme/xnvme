@@ -180,9 +180,8 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 	ns->ncap = file_size;
 	ns->nuse = file_size;
 
-
-	ns->nlbaf = 0;          ///< This means that there is only one
-	ns->flbas.format = 0;   ///< using the first one
+	ns->nlbaf = 0;        ///< This means that there is only one
+	ns->flbas.format = 0; ///< using the first one
 
 	ns->lbaf[0].ms = 0;
 	ns->lbaf[0].ds = XNVME_ILOG2(512);
@@ -234,7 +233,7 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf)
 static int
 _gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 {
-	struct xnvme_spec_feat feat = { 0 };
+	struct xnvme_spec_feat feat = {0};
 
 	switch (ctx->cmd.gfeat.cdw10.fid) {
 	case XNVME_SPEC_FEAT_NQUEUES:
@@ -300,4 +299,3 @@ struct xnvme_be_admin g_xnvme_be_windows_admin_fs = {
 	.cmd_admin = xnvme_be_nosys_sync_cmd_admin,
 #endif
 };
-

@@ -47,7 +47,7 @@ cb_pool(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 int
 main(int argc, char **argv)
 {
-	struct cb_args cb_args = { 0 };
+	struct cb_args cb_args = {0};
 	struct xnvme_opts opts = xnvme_opts_default();
 	struct xnvme_dev *dev = NULL;
 	uint32_t nsid;
@@ -142,8 +142,8 @@ next:
 	xnvmec_pinf("'");
 
 exit:
-	xnvmec_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}",
-		    cb_args.submitted, cb_args.completed, cb_args.ecount);
+	xnvmec_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}", cb_args.submitted,
+		    cb_args.completed, cb_args.ecount);
 
 	xnvme_buf_free(dev, buf);
 	xnvme_queue_term(queue);

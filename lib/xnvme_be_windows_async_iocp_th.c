@@ -14,12 +14,7 @@
 #include <libxnvme_spec_fs.h>
 #include <windows.h>
 
-enum io_state {
-	NONE,
-	IN_PROGRESS,
-	SUCCESS,
-	FAILED
-};
+enum io_state { NONE, IN_PROGRESS, SUCCESS, FAILED };
 
 struct _thread_ctx {
 	HANDLE iocp;
@@ -44,10 +39,8 @@ struct xnvme_queue_aio_ov {
 	struct _ov_request *rp;
 	uint8_t rsvd[184];
 };
-XNVME_STATIC_ASSERT(
-	sizeof(struct xnvme_queue_aio_ov) == XNVME_BE_QUEUE_STATE_NBYTES,
-	"Incorrect size"
-)
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_aio_ov) == XNVME_BE_QUEUE_STATE_NBYTES,
+		    "Incorrect size")
 
 DWORD WINAPI
 _windows_iocp(LPVOID context)
@@ -64,8 +57,7 @@ _windows_iocp(LPVOID context)
 		comp_key = 0;
 		overlapped = NULL;
 		req = NULL;
-		ret = GetQueuedCompletionStatus(ctx->iocp, &byte_count, &comp_key,
-						&overlapped, 0);
+		ret = GetQueuedCompletionStatus(ctx->iocp, &byte_count, &comp_key, &overlapped, 0);
 		if (!ret && overlapped == NULL) {
 			continue;
 		}
@@ -108,7 +100,7 @@ int
 _windows_async_iocp_th_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 {
 	ULONG queue_nbytes;
-	unsigned long  thread_id;
+	unsigned long thread_id;
 	int err;
 	struct _thread_ctx *pt_ctx;
 	struct xnvme_queue_aio_ov *queue = (void *)q;
@@ -230,8 +222,8 @@ _windows_async_iocp_th_poke(struct xnvme_queue *q, uint32_t max)
 }
 
 int
-_windows_async_iocp_th_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf,
-			      size_t dbuf_nbytes, void *mbuf, size_t mbuf_nbytes)
+_windows_async_iocp_th_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
+			      void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_queue_aio_ov *queue = (void *)ctx->async.queue;
 	struct xnvme_be_windows_state *state = (void *)ctx->dev->be.state;

@@ -76,8 +76,8 @@ xnvme_be_windows_dev_open(struct xnvme_dev *dev)
 
 	state->fd = _open(ident->uri, flags, opts->create_mode);
 	if (state->fd < 0) {
-		XNVME_DEBUG("FAILED: open(uri: '%s') : state->fd: '%d', errno: %d",
-			    ident->uri, state->fd, errno);
+		XNVME_DEBUG("FAILED: open(uri: '%s') : state->fd: '%d', errno: %d", ident->uri,
+			    state->fd, errno);
 
 		state->fd = _open(ident->uri, O_RDONLY);
 		if (state->fd < 0) {
@@ -107,32 +107,23 @@ xnvme_be_windows_dev_open(struct xnvme_dev *dev)
 	// Change {async,sync,admin} based on file unless one was explicitly requested
 	switch (dev_stat.st_mode & S_IFMT) {
 	case S_IFREG:
-		state->sync_handle = CreateFile(
-					     (LPCSTR)ident->uri,
-					     access_mode,
-					     share_mode,
-					     NULL,
-					     dw_creation_mode,
-					     file_attributes,
-					     NULL);
+		state->sync_handle = CreateFile((LPCSTR)ident->uri, access_mode, share_mode, NULL,
+						dw_creation_mode, file_attributes, NULL);
 		if (state->sync_handle == INVALID_HANDLE_VALUE) {
 			err = GetLastError();
-			XNVME_DEBUG("FAILED: CreateFile(trgt: '%s') : state->sync_handle: '%p', errno: %d",
+			XNVME_DEBUG("FAILED: CreateFile(trgt: '%s') : state->sync_handle: '%p', "
+				    "errno: %d",
 				    ident->uri, state->sync_handle, err);
 			return err;
 		}
 
-		state->async_handle = CreateFile(
-					      (LPCSTR)ident->uri,
-					      access_mode,
-					      share_mode,
-					      NULL,
-					      dw_creation_mode,
-					      FILE_FLAG_OVERLAPPED | file_attributes,
-					      NULL);
+		state->async_handle =
+			CreateFile((LPCSTR)ident->uri, access_mode, share_mode, NULL,
+				   dw_creation_mode, FILE_FLAG_OVERLAPPED | file_attributes, NULL);
 		if (state->async_handle == INVALID_HANDLE_VALUE) {
 			err = GetLastError();
-			XNVME_DEBUG("FAILED: CreateFile(trgt: '%s') : state->async_handle: '%p', errno: %d",
+			XNVME_DEBUG("FAILED: CreateFile(trgt: '%s') : state->async_handle: '%p', "
+				    "errno: %d",
 				    ident->uri, state->async_handle, err);
 			return err;
 		}
@@ -153,32 +144,23 @@ xnvme_be_windows_dev_open(struct xnvme_dev *dev)
 		break;
 
 	case S_IFCHR:
-		state->sync_handle = CreateFile(
-					     (LPCSTR)ident->uri,
-					     access_mode,
-					     share_mode,
-					     NULL,
-					     OPEN_EXISTING,
-					     file_attributes,
-					     NULL);
+		state->sync_handle = CreateFile((LPCSTR)ident->uri, access_mode, share_mode, NULL,
+						OPEN_EXISTING, file_attributes, NULL);
 		if (state->sync_handle == INVALID_HANDLE_VALUE) {
 			err = GetLastError();
-			XNVME_DEBUG("FAILED: CreateFile(trgt: '%s') : state->sync_handle: '%p', errno: %d",
+			XNVME_DEBUG("FAILED: CreateFile(trgt: '%s') : state->sync_handle: '%p', "
+				    "errno: %d",
 				    ident->uri, state->sync_handle, err);
 			return err;
 		}
 
-		state->async_handle = CreateFile(
-					      (LPCSTR)ident->uri,
-					      access_mode,
-					      share_mode,
-					      NULL,
-					      OPEN_EXISTING,
-					      FILE_FLAG_OVERLAPPED | file_attributes,
-					      NULL);
+		state->async_handle =
+			CreateFile((LPCSTR)ident->uri, access_mode, share_mode, NULL,
+				   OPEN_EXISTING, FILE_FLAG_OVERLAPPED | file_attributes, NULL);
 		if (state->async_handle == INVALID_HANDLE_VALUE) {
 			err = GetLastError();
-			XNVME_DEBUG("FAILED: CreateFile(trgt: '%s') : state->async_handle: '%p', errno: %d",
+			XNVME_DEBUG("FAILED: CreateFile(trgt: '%s') : state->async_handle: '%p', "
+				    "errno: %d",
 				    ident->uri, state->async_handle, err);
 			return err;
 		}
@@ -186,7 +168,7 @@ xnvme_be_windows_dev_open(struct xnvme_dev *dev)
 		XNVME_DEBUG("INFO: open() : block-device file (is a NVMe namespace)");
 		dev->ident.dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
 		dev->ident.csi = XNVME_SPEC_CSI_NVM;
-		//Making the nsid 1 by default
+		// Making the nsid 1 by default
 		dev->ident.nsid = 1;
 		if (!opts->admin) {
 			dev->be.admin = g_xnvme_be_windows_admin_nvme;
@@ -257,11 +239,8 @@ _be_windows_populate_devices(void)
 	SP_DEVICE_INTERFACE_DATA device_interface_data;
 	DWORD device_index = 0;
 
-	disk_class_devices = SetupDiGetClassDevs(&disk_class_device_interface_guid,
-			     NULL,
-			     NULL,
-			     DIGCF_PRESENT |
-			     DIGCF_DEVICEINTERFACE);
+	disk_class_devices = SetupDiGetClassDevs(&disk_class_device_interface_guid, NULL, NULL,
+						 DIGCF_PRESENT | DIGCF_DEVICEINTERFACE);
 	if (disk_class_devices == INVALID_HANDLE_VALUE) {
 		XNVME_DEBUG("FAILED: invalid disk class device handle, err:%lu", GetLastError());
 		return 0;
@@ -271,9 +250,8 @@ _be_windows_populate_devices(void)
 	device_interface_data.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
 	device_index = 0;
 
-	while (SetupDiEnumDeviceInterfaces(disk_class_devices,
-					   NULL, &disk_class_device_interface_guid,
-					   device_index,
+	while (SetupDiEnumDeviceInterfaces(disk_class_devices, NULL,
+					   &disk_class_device_interface_guid, device_index,
 					   &device_interface_data)) {
 		++device_index;
 	}
@@ -293,8 +271,7 @@ _be_windows_populate_devices(void)
  */
 int
 xnvme_be_windows_enumerate(const char *sys_uri, struct xnvme_opts *opts,
-			   xnvme_enumerate_cb cb_func,
-			   void *cb_args)
+			   xnvme_enumerate_cb cb_func, void *cb_args)
 {
 	if (sys_uri) {
 		XNVME_DEBUG("FAILED: sys_uri: %s is not supported", sys_uri);
@@ -311,12 +288,12 @@ xnvme_be_windows_enumerate(const char *sys_uri, struct xnvme_opts *opts,
 
 	for (int current_index = 0; current_index < num_devices; current_index++) {
 		HANDLE dev_handle = NULL;
-		char str_device_name[256] = { 0 };
-		char uri[XNVME_IDENT_URI_LEN] = { 0 };
+		char str_device_name[256] = {0};
+		char uri[XNVME_IDENT_URI_LEN] = {0};
 		struct xnvme_dev *dev = NULL;
 		ULONG ret_len;
-		STORAGE_PROPERTY_QUERY query = { 0 };
-		STORAGE_ADAPTER_DESCRIPTOR result = { 0 };
+		STORAGE_PROPERTY_QUERY query = {0};
+		STORAGE_ADAPTER_DESCRIPTOR result = {0};
 		int ret;
 		DWORD share_mode = FILE_SHARE_READ | FILE_SHARE_WRITE;
 		DWORD access_mode = GENERIC_WRITE | GENERIC_READ;
@@ -324,32 +301,19 @@ xnvme_be_windows_enumerate(const char *sys_uri, struct xnvme_opts *opts,
 
 		_stprintf_s(str_device_name, 256, _T("\\\\.\\PhysicalDrive%d"), current_index);
 
-		dev_handle = CreateFile(
-				     (LPCSTR)str_device_name,
-				     access_mode,
-				     share_mode,
-				     NULL,
-				     OPEN_EXISTING,
-				     file_attributes,
-				     NULL);
+		dev_handle = CreateFile((LPCSTR)str_device_name, access_mode, share_mode, NULL,
+					OPEN_EXISTING, file_attributes, NULL);
 		if (dev_handle == INVALID_HANDLE_VALUE) {
 			err = GetLastError();
-			XNVME_DEBUG("Error opening %s. Error: %d\n",
-				    str_device_name, err);
+			XNVME_DEBUG("Error opening %s. Error: %d\n", str_device_name, err);
 			continue;
 		}
 
 		query.PropertyId = (STORAGE_PROPERTY_ID)StorageAdapterProperty;
 		query.QueryType = PropertyStandardQuery;
 
-		ret = DeviceIoControl(dev_handle,
-				      IOCTL_STORAGE_QUERY_PROPERTY,
-				      &query,
-				      sizeof(query),
-				      &result,
-				      sizeof(result),
-				      &ret_len,
-				      NULL);
+		ret = DeviceIoControl(dev_handle, IOCTL_STORAGE_QUERY_PROPERTY, &query,
+				      sizeof(query), &result, sizeof(result), &ret_len, NULL);
 		if (!ret) {
 			err = GetLastError();
 			XNVME_DEBUG("Error retriving Storage Query property for %s. Error: %d\n",

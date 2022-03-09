@@ -88,7 +88,6 @@ xnvme_dev_get_nsid(const struct xnvme_dev *dev);
 uint8_t
 xnvme_dev_get_csi(const struct xnvme_dev *dev);
 
-
 /**
  * Returns the representation of device identifier once decoded from
  * text-representation for the given `dev`

@@ -8,7 +8,8 @@
 #include <xnvme_dev.h>
 #include <xnvme_sgl.h>
 
-struct xnvme_sgl_pool *xnvme_sgl_pool_create(struct xnvme_dev *dev)
+struct xnvme_sgl_pool *
+xnvme_sgl_pool_create(struct xnvme_dev *dev)
 {
 	struct xnvme_sgl_pool *pool = calloc(1, sizeof(*pool));
 	if (!pool) {
@@ -35,7 +36,8 @@ xnvme_sgl_pool_destroy(struct xnvme_sgl_pool *pool)
 	free(pool);
 }
 
-struct xnvme_sgl *xnvme_sgl_create(struct xnvme_dev *dev, int hint)
+struct xnvme_sgl *
+xnvme_sgl_create(struct xnvme_dev *dev, int hint)
 {
 	size_t dsize = sizeof(struct xnvme_spec_sgl_descriptor);
 
@@ -58,7 +60,8 @@ struct xnvme_sgl *xnvme_sgl_create(struct xnvme_dev *dev, int hint)
 	return sgl;
 }
 
-struct xnvme_sgl *xnvme_sgl_alloc(struct xnvme_sgl_pool *pool)
+struct xnvme_sgl *
+xnvme_sgl_alloc(struct xnvme_sgl_pool *pool)
 {
 	struct xnvme_sgl *sgl;
 
@@ -94,8 +97,7 @@ xnvme_sgl_free(struct xnvme_sgl_pool *pool, struct xnvme_sgl *sgl)
 }
 
 int
-xnvme_sgl_add(struct xnvme_dev *dev, struct xnvme_sgl *sgl, void *buf,
-	      size_t nbytes)
+xnvme_sgl_add(struct xnvme_dev *dev, struct xnvme_sgl *sgl, void *buf, size_t nbytes)
 {
 	struct xnvme_spec_sgl_descriptor *d;
 
@@ -113,8 +115,7 @@ xnvme_sgl_add(struct xnvme_dev *dev, struct xnvme_sgl *sgl, void *buf,
 		size_t desr_nbytes;
 		sgl->nalloc = sgl->nalloc ? 2 * sgl->nalloc : 1;
 		desr_nbytes = sgl->nalloc * sizeof(struct xnvme_spec_sgl_descriptor);
-		sgl->descriptors = xnvme_buf_realloc(dev, sgl->descriptors,
-						     desr_nbytes);
+		sgl->descriptors = xnvme_buf_realloc(dev, sgl->descriptors, desr_nbytes);
 		if (!sgl->descriptors) {
 			return -1;
 		}

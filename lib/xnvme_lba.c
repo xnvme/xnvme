@@ -47,7 +47,7 @@ struct xnvme_lba_range
 xnvme_lba_range_from_slba_naddrs(struct xnvme_dev *dev, uint64_t slba, uint64_t naddrs)
 {
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
-	struct xnvme_lba_range rng = { 0 };
+	struct xnvme_lba_range rng = {0};
 
 	if (!naddrs) {
 		XNVME_DEBUG("FAILED: !naddrs => the range must be non-empty");
@@ -66,7 +66,7 @@ xnvme_lba_range_from_slba_naddrs(struct xnvme_dev *dev, uint64_t slba, uint64_t 
 struct xnvme_lba_range
 xnvme_lba_range_from_slba_elba(struct xnvme_dev *dev, uint64_t slba, uint64_t elba)
 {
-	struct xnvme_lba_range rng = { 0 };
+	struct xnvme_lba_range rng = {0};
 
 	if (slba > elba) {
 		XNVME_DEBUG("FAILED: invalid range; slba > elba");
@@ -80,7 +80,7 @@ struct xnvme_lba_range
 xnvme_lba_range_from_offset_nbytes(struct xnvme_dev *dev, uint64_t offset, uint64_t nbytes)
 {
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
-	struct xnvme_lba_range rng = { 0 };
+	struct xnvme_lba_range rng = {0};
 
 	if (offset % geo->nbytes) {
 		XNVME_DEBUG("FAILED: offset: %zu, does not align to lba-width: %u", offset,
@@ -101,4 +101,3 @@ xnvme_lba_range_from_zdescr(struct xnvme_dev *dev, struct xnvme_spec_znd_descr *
 {
 	return xnvme_lba_range_from_slba_naddrs(dev, zdescr->zslba, zdescr->zcap);
 }
-

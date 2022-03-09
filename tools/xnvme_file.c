@@ -73,7 +73,7 @@ read_write(struct xnvmec *cli)
 {
 	const char *uri = cli->args.sys_uri;
 	int size = cli->args.data_nbytes;
-	struct xnvme_opts opts = { .create = 1, .rdwr = 1 };
+	struct xnvme_opts opts = {.create = 1, .rdwr = 1};
 	struct xnvme_cmd_ctx ctx;
 	struct xnvme_dev *dev;
 	ssize_t err;
@@ -118,7 +118,7 @@ exit:
 int
 dump_sync(struct xnvmec *cli)
 {
-	struct xnvme_opts opts = { .create = 1, .wronly = 1, .direct = cli->args.direct };
+	struct xnvme_opts opts = {.create = 1, .wronly = 1, .direct = cli->args.direct};
 	struct xnvme_dev *fh;
 	const char *fpath;
 	size_t buf_nbytes, tbytes, iosize;
@@ -142,8 +142,8 @@ dump_sync(struct xnvmec *cli)
 	}
 	xnvmec_buf_fill(buf, buf_nbytes, "anum");
 
-	xnvmec_pinf("dump-sync: {fpath: %s, tbytes: %zu, buf_nbytes: %zu iosize: %zu}",
-		    fpath, tbytes, buf_nbytes, iosize);
+	xnvmec_pinf("dump-sync: {fpath: %s, tbytes: %zu, buf_nbytes: %zu iosize: %zu}", fpath,
+		    tbytes, buf_nbytes, iosize);
 
 	xnvmec_timer_start(cli);
 
@@ -172,9 +172,9 @@ exit:
 int
 dump_async(struct xnvmec *cli)
 {
-	struct xnvme_opts opts = { .create = 1, .wronly = 1, .direct = cli->args.direct };
+	struct xnvme_opts opts = {.create = 1, .wronly = 1, .direct = cli->args.direct};
 	struct xnvme_queue *queue = NULL;
-	struct cb_args cb_args = { 0 };
+	struct cb_args cb_args = {0};
 	size_t buf_nbytes, tbytes, iosize;
 	struct xnvme_dev *fh;
 	const char *fpath;
@@ -267,7 +267,7 @@ exit:
 int
 load_sync(struct xnvmec *cli)
 {
-	struct xnvme_opts opts = { .rdonly = 1, .direct = cli->args.direct };
+	struct xnvme_opts opts = {.rdonly = 1, .direct = cli->args.direct};
 	struct xnvme_dev *fh;
 	const char *fpath;
 	size_t buf_nbytes, tbytes, iosize;
@@ -291,8 +291,8 @@ load_sync(struct xnvmec *cli)
 	}
 	xnvmec_buf_fill(buf, buf_nbytes, "zero");
 
-	xnvmec_pinf("load-sync: {fpath: %s, tbytes: %zu, buf_nbytes: %zu iosize: %zu}",
-		    fpath, tbytes, buf_nbytes, iosize);
+	xnvmec_pinf("load-sync: {fpath: %s, tbytes: %zu, buf_nbytes: %zu iosize: %zu}", fpath,
+		    tbytes, buf_nbytes, iosize);
 
 	xnvmec_timer_start(cli);
 
@@ -323,12 +323,12 @@ int
 load_async(struct xnvmec *cli)
 {
 	const char *fpath;
-	struct xnvme_opts opts = { .rdonly = 1, .direct = cli->args.direct };
+	struct xnvme_opts opts = {.rdonly = 1, .direct = cli->args.direct};
 	struct xnvme_dev *fh;
 	size_t buf_nbytes, tbytes, iosize;
 	char *buf;
 
-	struct cb_args cb_args = { 0 };
+	struct cb_args cb_args = {0};
 	struct xnvme_queue *queue = NULL;
 	uint32_t qdepth;
 	int err;
@@ -419,8 +419,8 @@ exit:
 int
 copy_file_sync(struct xnvmec *cli)
 {
-	struct xnvme_opts src_opts = { .rdonly = 1, .direct = cli->args.direct };
-	struct xnvme_opts dst_opts = { .create = 1, .wronly = 1, .direct = cli->args.direct };
+	struct xnvme_opts src_opts = {.rdonly = 1, .direct = cli->args.direct};
+	struct xnvme_opts dst_opts = {.create = 1, .wronly = 1, .direct = cli->args.direct};
 	struct xnvme_dev *src_fh, *dst_fh;
 	const char *src_fpath, *dst_fpath;
 	size_t buf_nbytes, tbytes, iosize;
@@ -489,14 +489,14 @@ exit:
 int
 copy_file_async(struct xnvmec *cli)
 {
-	struct xnvme_opts src_opts = { .rdonly = 1, .direct = cli->args.direct };
-	struct xnvme_opts dst_opts = { .create = 1, .wronly = 1, .direct = cli->args.direct };
+	struct xnvme_opts src_opts = {.rdonly = 1, .direct = cli->args.direct};
+	struct xnvme_opts dst_opts = {.create = 1, .wronly = 1, .direct = cli->args.direct};
 	struct xnvme_dev *src_fh, *dst_fh;
 	const char *src_fpath, *dst_fpath;
 	size_t buf_nbytes, tbytes, iosize;
 	char *buf = NULL;
 
-	struct cb_args_copy cb_args_copy[QDEPTH_MAX] = { 0 };
+	struct cb_args_copy cb_args_copy[QDEPTH_MAX] = {0};
 	uint64_t nerrors = 0, ncompletions = 0, nsubmissions = 0;
 	struct xnvme_queue *queue = NULL;
 	uint32_t qdepth;
@@ -612,15 +612,21 @@ exit:
 
 static struct xnvmec_sub g_subs[] = {
 	{
-		"write-read", "Write and read a file",
-		"Write and read a file", read_write, {
+		"write-read",
+		"Write and read a file",
+		"Write and read a file",
+		read_write,
+		{
 			{XNVMEC_OPT_SYS_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_POSA},
 		},
 	},
 	{
-		"dump-sync", "Write a buffer of 'data-nbytes' to file",
-		"Write a buffer of 'data-nbytes' to file", dump_sync, {
+		"dump-sync",
+		"Write a buffer of 'data-nbytes' to file",
+		"Write a buffer of 'data-nbytes' to file",
+		dump_sync,
+		{
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
 			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LREQ},
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
@@ -628,8 +634,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"dump-async", "Write a buffer of 'data-nbytes' to file --data-output",
-		"Write a buffer of 'data-nbytes' to file --data-output", dump_async, {
+		"dump-async",
+		"Write a buffer of 'data-nbytes' to file --data-output",
+		"Write a buffer of 'data-nbytes' to file --data-output",
+		dump_async,
+		{
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
 			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LREQ},
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
@@ -638,16 +647,22 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"load-sync", "Read the entire file into memory",
-		"Read the entire file into memory", load_sync, {
+		"load-sync",
+		"Read the entire file into memory",
+		"Read the entire file into memory",
+		load_sync,
+		{
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_POSA},
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
 			{XNVMEC_OPT_DIRECT, XNVMEC_LFLG},
 		},
 	},
 	{
-		"load-async", "Read the entire file into memory",
-		"Read the entire file into memory", load_async, {
+		"load-async",
+		"Read the entire file into memory",
+		"Read the entire file into memory",
+		load_async,
+		{
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_POSA},
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
 			{XNVMEC_OPT_QDEPTH, XNVMEC_LOPT},
@@ -655,8 +670,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"copy-sync", "Copy file --data-input to --data--output",
-		"Copy file --data-input to --data--output", copy_file_sync, {
+		"copy-sync",
+		"Copy file --data-input to --data--output",
+		"Copy file --data-input to --data--output",
+		copy_file_sync,
+		{
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_POSA},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
@@ -664,8 +682,11 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
-		"copy-async", "Copy file -- asynchronously",
-		"Copy file", copy_file_async, {
+		"copy-async",
+		"Copy file -- asynchronously",
+		"Copy file",
+		copy_file_async,
+		{
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_POSA},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},

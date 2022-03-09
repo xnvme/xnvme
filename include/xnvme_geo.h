@@ -7,7 +7,6 @@
 #include <errno.h>
 
 int
-xnvme_geo_yaml(FILE *stream, const struct xnvme_geo *geo, int indent,
-	       const char *sep, int head);
+xnvme_geo_yaml(FILE *stream, const struct xnvme_geo *geo, int indent, const char *sep, int head);
 
 #endif /* __INTERNAL_XNVME_GEO_H */

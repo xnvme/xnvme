@@ -21,17 +21,17 @@
 
 /* This shadows struct io_uring_cmd (40 bytes) */
 struct block_uring_cmd {
-	__u32   ioctl_cmd;
-	__u32   unused1;
-	__u64   unused2[4];
+	__u32 ioctl_cmd;
+	__u32 unused1;
+	__u64 unused2[4];
 };
 XNVME_STATIC_ASSERT(sizeof(struct block_uring_cmd) == 40, "Incorrect size");
 
 static int g_linux_liburing_optional[] = {
 	IORING_OP_URING_CMD,
 };
-static int g_linux_liburing_noptional = sizeof g_linux_liburing_optional /
-					sizeof(*g_linux_liburing_optional);
+static int g_linux_liburing_noptional =
+	sizeof g_linux_liburing_optional / sizeof(*g_linux_liburing_optional);
 
 static int
 _linux_liburing_noptional_missing(void)
@@ -139,8 +139,8 @@ xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 }
 
 int
-xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
-		       void *mbuf, size_t mbuf_nbytes)
+xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+		       size_t mbuf_nbytes)
 {
 	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
@@ -169,7 +169,7 @@ xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 	sqe->fd = queue->poll_sq ? 0 : state->fd;
 	sqe->rw_flags = 0;
 	sqe->user_data = (unsigned long)ctx;
-	//sqe->__pad2[0] = sqe->__pad2[1] = sqe->__pad2[2] = 0;
+	// sqe->__pad2[0] = sqe->__pad2[1] = sqe->__pad2[2] = 0;
 
 	blk_cmd = (void *)&sqe->len;
 #ifdef NVME_IOCTL_IO64_CMD

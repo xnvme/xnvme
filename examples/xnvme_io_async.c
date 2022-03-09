@@ -51,10 +51,10 @@ sub_async_read(struct xnvmec *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = cli->args.geo;
-	struct xnvme_lba_range rng = { 0 };
+	struct xnvme_lba_range rng = {0};
 	uint32_t nsid, qd;
 
-	struct cb_args cb_args = { 0 };
+	struct cb_args cb_args = {0};
 	struct xnvme_queue *queue = NULL;
 
 	char *buf = NULL, *payload = NULL;
@@ -150,8 +150,8 @@ next:
 	}
 
 exit:
-	xnvmec_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}",
-		    cb_args.submitted, cb_args.completed, cb_args.ecount);
+	xnvmec_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}", cb_args.submitted,
+		    cb_args.completed, cb_args.ecount);
 
 	if (queue) {
 		int err_exit = xnvme_queue_term(queue);
@@ -179,10 +179,10 @@ sub_async_write(struct xnvmec *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = cli->args.geo;
-	struct xnvme_lba_range rng = { 0 };
+	struct xnvme_lba_range rng = {0};
 	uint32_t nsid, qd;
 
-	struct cb_args cb_args = { 0 };
+	struct cb_args cb_args = {0};
 	struct xnvme_queue *queue = NULL;
 
 	char *buf = NULL, *payload = NULL;
@@ -270,8 +270,8 @@ next:
 	xnvmec_timer_bw_pr(cli, "wall-clock", rng.nbytes);
 
 exit:
-	xnvmec_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}",
-		    cb_args.submitted, cb_args.completed, cb_args.ecount);
+	xnvmec_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}", cb_args.submitted,
+		    cb_args.completed, cb_args.ecount);
 
 	if (queue) {
 		int err_exit = xnvme_queue_term(queue);
@@ -293,7 +293,8 @@ static struct xnvmec_sub g_subs[] = {
 		"read",
 		"Read the LBAs [SLBA,ELBA]",
 		"Read the LBAs [SLBA,ELBA]",
-		sub_async_read, {
+		sub_async_read,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_QDEPTH, XNVMEC_LOPT},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
@@ -312,7 +313,8 @@ static struct xnvmec_sub g_subs[] = {
 		"write",
 		"Write the LBAs [SLBA,ELBA]",
 		"Write the LBAs [SLBA,ELBA]",
-		sub_async_write, {
+		sub_async_write,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_QDEPTH, XNVMEC_LOPT},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},

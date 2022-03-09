@@ -20,8 +20,8 @@
  * and `errno` set to indicate the error.
  */
 void *
-xnvme_be_windows_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev),
-			   size_t nbytes, uint64_t *XNVME_UNUSED(phys))
+xnvme_be_windows_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t nbytes,
+			   uint64_t *XNVME_UNUSED(phys))
 {
 	// TODO: register buffer when async=iou
 
@@ -31,7 +31,6 @@ xnvme_be_windows_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev),
 
 	return xnvme_buf_virt_alloc(si.dwPageSize, nbytes);
 }
-
 
 /**
  * buffer reallocate implemented for Windows Backend
@@ -80,8 +79,8 @@ xnvme_be_windows_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
  * @return On success, 0 is returned. On error, GetLastError is returned.
  */
 int
-xnvme_be_windows_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev),
-			     void *XNVME_UNUSED(buf), uint64_t *XNVME_UNUSED(phys))
+xnvme_be_windows_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *XNVME_UNUSED(buf),
+			     uint64_t *XNVME_UNUSED(phys))
 {
 	XNVME_DEBUG("FAILED: xnvme_be_windows: does not support phys/DMA alloc");
 	return -ENOSYS;

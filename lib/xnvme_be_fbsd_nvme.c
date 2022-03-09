@@ -18,20 +18,15 @@ __FBSDID("$FreeBSD$");
 #include <xnvme_dev.h>
 #include <xnvme_be_fbsd.h>
 
-XNVME_STATIC_ASSERT(
-	sizeof(struct xnvme_spec_cmd) == sizeof(struct nvme_command),
-	"Incorrect size"
-)
-XNVME_STATIC_ASSERT(
-	sizeof(struct xnvme_spec_cpl) == sizeof(struct nvme_completion),
-	"Incorrect size"
-)
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd) == sizeof(struct nvme_command), "Incorrect size")
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cpl) == sizeof(struct nvme_completion),
+		    "Incorrect size")
 
 int
 xnvme_be_fbsd_nvme_get_nsid_and_ctrlr_fd(int fd, uint32_t *nsid, int *ctrlr_fd)
 {
-	struct nvme_get_nsid get_nsid = { 0 };
-	char ctrlr_path[1024] = { 0 };
+	struct nvme_get_nsid get_nsid = {0};
+	char ctrlr_path[1024] = {0};
 	int nfd;
 	int err;
 
@@ -40,7 +35,7 @@ xnvme_be_fbsd_nvme_get_nsid_and_ctrlr_fd(int fd, uint32_t *nsid, int *ctrlr_fd)
 		return err < 0 ? err : -EIO;
 	}
 
-	snprintf(ctrlr_path, sizeof(ctrlr_path), _PATH_DEV"%s", get_nsid.cdev);
+	snprintf(ctrlr_path, sizeof(ctrlr_path), _PATH_DEV "%s", get_nsid.cdev);
 
 	*nsid = get_nsid.nsid;
 	nfd = open(ctrlr_path, O_RDWR);
@@ -59,7 +54,7 @@ xnvme_be_fbsd_nvme_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 		      void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	struct xnvme_be_fbsd_state *state = (void *)ctx->dev->be.state;
-	struct nvme_pt_command ptc = { 0 };
+	struct nvme_pt_command ptc = {0};
 	int err;
 
 	switch (ctx->cmd.common.opcode) {
@@ -95,7 +90,7 @@ xnvme_be_fbsd_nvme_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyt
 			 void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	struct xnvme_be_fbsd_state *state = (void *)ctx->dev->be.state;
-	struct nvme_pt_command ptc = { 0 };
+	struct nvme_pt_command ptc = {0};
 	int err;
 
 	memcpy(&ptc.cmd, &ctx->cmd, sizeof(ptc.cmd));

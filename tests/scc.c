@@ -94,7 +94,9 @@ sub_idfy(struct xnvmec *cli)
 }
 
 static void
-cb_noop(struct xnvme_cmd_ctx *XNVME_UNUSED(ctx), void *XNVME_UNUSED(cb_arg)) { }
+cb_noop(struct xnvme_cmd_ctx *XNVME_UNUSED(ctx), void *XNVME_UNUSED(cb_arg))
+{
+}
 
 /**
  * Constructs a 'range' and decides on a 'sdlba' for the Simple-Copy-Command
@@ -134,8 +136,8 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 		return err;
 	}
 
-	xnvmec_pinf("tlbas: %zu, mcl: %u, msrc: %d, mssrl: %u",
-		    tlbas, ns->mcl, ns->msrc + 1, ns->mssrl);
+	xnvmec_pinf("tlbas: %zu, mcl: %u, msrc: %d, mssrl: %u", tlbas, ns->mcl, ns->msrc + 1,
+		    ns->mssrl);
 
 	if (!tlbas) {
 		err = -EINVAL;
@@ -231,8 +233,7 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 
 		xnvmec_pinf("Using XNVME_CMD_SYNC mode");
-		err = xnvme_nvm_scopy(
-			      &ctx, nsid, sdlba, range->entry, nr, copy_fmt);
+		err = xnvme_nvm_scopy(&ctx, nsid, sdlba, range->entry, nr, copy_fmt);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			xnvmec_perr("xnvme_nvm_scopy()", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
@@ -253,8 +254,7 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 		ctx.async.queue = queue;
 		ctx.async.cb = cb_noop;
 
-		err = xnvme_nvm_scopy(
-			      &ctx, nsid, sdlba, range->entry, nr, copy_fmt);
+		err = xnvme_nvm_scopy(&ctx, nsid, sdlba, range->entry, nr, copy_fmt);
 		if (err) {
 			xnvmec_perr("xnvme_nvm_scopy()", err);
 			xnvme_queue_term(queue);
@@ -332,7 +332,8 @@ static struct xnvmec_sub g_subs[] = {
 		"support",
 		"Print id-ctrlr-ONCS bits and check for SCC support",
 		"Print id-ctrlr-ONCS bits and check for SCC support",
-		sub_support, {
+		sub_support,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
@@ -345,7 +346,8 @@ static struct xnvmec_sub g_subs[] = {
 		"idfy",
 		"Print SCC related Controller and Namespace identification",
 		"Print SCC related Controller and Namespace identification",
-		sub_idfy, {
+		sub_idfy,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
@@ -359,7 +361,8 @@ static struct xnvmec_sub g_subs[] = {
 		"Copy one LBA using one Simple-Copy-Command",
 		"Copy one LBA using one Simple-Copy-Command"
 		"\n\n**NOTE** --clear toggles sync/async command mode",
-		sub_scopy, {
+		sub_scopy,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_CLEAR, XNVMEC_LFLG},
 
@@ -374,7 +377,8 @@ static struct xnvmec_sub g_subs[] = {
 		"Copy MSRC # of LBAs using one Simple-Copy-Command",
 		"Copy one LBA using one Simple-Copy-Command"
 		"\n\n**NOTE** --clear toggles sync/async command mode",
-		sub_scopy_msrc, {
+		sub_scopy_msrc,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_CLEAR, XNVMEC_LFLG},
 

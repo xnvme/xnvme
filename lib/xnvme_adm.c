@@ -132,5 +132,5 @@ xnvme_adm_sfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint32_t 
 	ctx->cmd.sfeat.feat.val = feat;
 	ctx->cmd.sfeat.cdw10.save = save;
 
-	return xnvme_cmd_pass_admin(ctx, (void *) dbuf, dbuf_nbytes, NULL, 0x0);
+	return xnvme_cmd_pass_admin(ctx, (void *)dbuf, dbuf_nbytes, NULL, 0x0);
 }

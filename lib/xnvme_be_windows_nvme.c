@@ -31,15 +31,8 @@ xnvme_be_windows_format(struct xnvme_dev *dev)
 
 	struct xnvme_be_windows_state *state = (void *)dev->be.state;
 
-	ret = DeviceIoControl(
-		      state->sync_handle,
-		      IOCTL_STORAGE_REINITIALIZE_MEDIA,
-		      NULL,
-		      0,
-		      NULL,
-		      0,
-		      &ret_len,
-		      NULL);
+	ret = DeviceIoControl(state->sync_handle, IOCTL_STORAGE_REINITIALIZE_MEDIA, NULL, 0, NULL,
+			      0, &ret_len, NULL);
 
 	if (ret == 0) {
 		err = GetLastError();
@@ -50,8 +43,7 @@ xnvme_be_windows_format(struct xnvme_dev *dev)
 }
 
 int
-_be_windows_nvme_storage_property(struct xnvme_cmd_ctx *ctx, void *dbuf,
-				  size_t dbuf_nbytes)
+_be_windows_nvme_storage_property(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 {
 	int ret;
 	int err = 0;
@@ -65,9 +57,8 @@ _be_windows_nvme_storage_property(struct xnvme_cmd_ctx *ctx, void *dbuf,
 
 	struct xnvme_be_windows_state *state = (void *)ctx->dev->be.state;
 	// Allocate buffer for use.
-	buff_len = __builtin_offsetof(STORAGE_PROPERTY_QUERY, AdditionalParameters)
-		   + sizeof(STORAGE_PROTOCOL_SPECIFIC_DATA)
-		   + dbuf_nbytes;
+	buff_len = __builtin_offsetof(STORAGE_PROPERTY_QUERY, AdditionalParameters) +
+		   sizeof(STORAGE_PROTOCOL_SPECIFIC_DATA) + dbuf_nbytes;
 
 	buffer = calloc(1, buff_len);
 	if (buffer == NULL) {
@@ -95,7 +86,8 @@ _be_windows_nvme_storage_property(struct xnvme_cmd_ctx *ctx, void *dbuf,
 		protocol_data->DataType = NVMeDataTypeIdentify;
 		protocol_data->ProtocolDataRequestValue = ctx->cmd.idfy.cns;
 		protocol_data->ProtocolDataRequestSubValue = ctx->cmd.common.nsid;
-		if (ctx->cmd.idfy.cns == XNVME_SPEC_IDFY_NS || ctx->cmd.idfy.cns == XNVME_SPEC_IDFY_CTRLR) {
+		if (ctx->cmd.idfy.cns == XNVME_SPEC_IDFY_NS ||
+		    ctx->cmd.idfy.cns == XNVME_SPEC_IDFY_CTRLR) {
 			query->PropertyId = StorageAdapterProtocolSpecificProperty;
 		}
 		break;
@@ -148,15 +140,8 @@ _be_windows_nvme_storage_property(struct xnvme_cmd_ctx *ctx, void *dbuf,
 	}
 	}
 	// Send request down.
-	ret = DeviceIoControl(
-		      state->sync_handle,
-		      ioctl,
-		      buffer,
-		      buff_len,
-		      buffer,
-		      buff_len,
-		      &ret_len,
-		      NULL);
+	ret = DeviceIoControl(state->sync_handle, ioctl, buffer, buff_len, buffer, buff_len,
+			      &ret_len, NULL);
 	if (0 == ret) {
 		err = GetLastError();
 		XNVME_DEBUG("FAILED: DeviceIoControl(), err: %d", err);
@@ -172,7 +157,8 @@ _be_windows_nvme_storage_property(struct xnvme_cmd_ctx *ctx, void *dbuf,
 
 	protocol_data = &protocol_data_descr->ProtocolSpecificData;
 
-	memcpy(dbuf, (void *)((PCHAR)protocol_data + protocol_data->ProtocolDataOffset), dbuf_nbytes);
+	memcpy(dbuf, (void *)((PCHAR)protocol_data + protocol_data->ProtocolDataOffset),
+	       dbuf_nbytes);
 
 error_exit:
 
@@ -182,9 +168,8 @@ error_exit:
 }
 
 int
-xnvme_be_windows_nvme_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf,
-				size_t dbuf_nbytes, void *XNVME_UNUSED(mbuf),
-				size_t XNVME_UNUSED(mbuf_nbytes))
+xnvme_be_windows_nvme_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
+				void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	int ret = 0;
 
@@ -209,8 +194,7 @@ xnvme_be_windows_nvme_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf,
 }
 
 int
-xnvme_be_windows_read(HANDLE handle, struct xnvme_spec_cmd cmd,
-		      void *dbuf, size_t dbuf_nbytes)
+xnvme_be_windows_read(HANDLE handle, struct xnvme_spec_cmd cmd, void *dbuf, size_t dbuf_nbytes)
 {
 	struct scsi_pass_through_direct_with_buffer sptdwb;
 	int ret = 0;
@@ -228,8 +212,8 @@ xnvme_be_windows_read(HANDLE handle, struct xnvme_spec_cmd cmd,
 	sptdwb.sptd.CdbLength = CDB10GENERIC_LENGTH;
 	sptdwb.sptd.DataIn = SCSI_IOCTL_DATA_IN;
 	sptdwb.sptd.SenseInfoLength = SPT_SENSE_LENGTH;
-	sptdwb.sptd.SenseInfoOffset = __builtin_offsetof(struct scsi_pass_through_direct_with_buffer,
-				      uc_sense_buf);
+	sptdwb.sptd.SenseInfoOffset =
+		__builtin_offsetof(struct scsi_pass_through_direct_with_buffer, uc_sense_buf);
 	sptdwb.sptd.DataTransferLength = dbuf_nbytes;
 	sptdwb.sptd.TimeOutValue = 5;
 	sptdwb.sptd.DataBuffer = dbuf;
@@ -242,15 +226,8 @@ xnvme_be_windows_read(HANDLE handle, struct xnvme_spec_cmd cmd,
 	sptdwb.sptd.Cdb[8] = ((FOUR_BYTE *)&nlb)->Byte0;
 
 	length = sizeof(struct scsi_pass_through_direct_with_buffer);
-	ret = DeviceIoControl(
-		      handle,
-		      IOCTL_SCSI_PASS_THROUGH_DIRECT,
-		      &sptdwb,
-		      sizeof(SCSI_PASS_THROUGH_DIRECT),
-		      &sptdwb,
-		      length,
-		      &returned,
-		      FALSE);
+	ret = DeviceIoControl(handle, IOCTL_SCSI_PASS_THROUGH_DIRECT, &sptdwb,
+			      sizeof(SCSI_PASS_THROUGH_DIRECT), &sptdwb, length, &returned, FALSE);
 	if (ret == 0) {
 		err = GetLastError();
 		XNVME_DEBUG("FAILED: DeviceIoControl(), err: %d", err);
@@ -260,8 +237,7 @@ xnvme_be_windows_read(HANDLE handle, struct xnvme_spec_cmd cmd,
 }
 
 int
-xnvme_be_windows_write(HANDLE handle, struct xnvme_spec_cmd cmd,
-		       void *dbuf, size_t dbuf_nbytes)
+xnvme_be_windows_write(HANDLE handle, struct xnvme_spec_cmd cmd, void *dbuf, size_t dbuf_nbytes)
 {
 	struct scsi_pass_through_direct_with_buffer sptdwb;
 	int ret = 0;
@@ -293,15 +269,8 @@ xnvme_be_windows_write(HANDLE handle, struct xnvme_spec_cmd cmd,
 	sptdwb.sptd.Cdb[8] = ((FOUR_BYTE *)&nlb)->Byte0;
 
 	length = sizeof(struct scsi_pass_through_direct_with_buffer);
-	ret = DeviceIoControl(
-		      handle,
-		      IOCTL_SCSI_PASS_THROUGH_DIRECT,
-		      &sptdwb,
-		      length,
-		      &sptdwb,
-		      length,
-		      &returned,
-		      FALSE);
+	ret = DeviceIoControl(handle, IOCTL_SCSI_PASS_THROUGH_DIRECT, &sptdwb, length, &sptdwb,
+			      length, &returned, FALSE);
 	if (ret == 0) {
 		err = GetLastError();
 		XNVME_DEBUG("FAILED: DeviceIoControl(), err: %d", err);
@@ -311,9 +280,8 @@ xnvme_be_windows_write(HANDLE handle, struct xnvme_spec_cmd cmd,
 }
 
 int
-xnvme_be_windows_sync_nvme_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf,
-				  size_t dbuf_nbytes, void *XNVME_UNUSED(mbuf),
-				  size_t XNVME_UNUSED(mbuf_nbytes))
+xnvme_be_windows_sync_nvme_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
+				  void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	struct xnvme_be_windows_state *state = (void *)ctx->dev->be.state;
 	int ret = 0;

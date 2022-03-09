@@ -37,7 +37,7 @@ _idfy_ns_iocs_fs(struct xnvme_dev *dev, void *dbuf)
 {
 	struct xnvme_be_posix_state *state = (void *)dev->be.state;
 	struct xnvme_spec_fs_idfy_ns *ns = dbuf;
-	struct stat stat = { 0 };
+	struct stat stat = {0};
 	int err;
 
 	err = fstat(state->fd, &stat);
@@ -71,7 +71,7 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 {
 	struct xnvme_be_posix_state *state = (void *)dev->be.state;
 	struct xnvme_spec_idfy_ns *ns = dbuf;
-	struct stat stat = { 0 };
+	struct stat stat = {0};
 	int err;
 
 	err = fstat(state->fd, &stat);
@@ -84,8 +84,8 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 	ns->ncap = stat.st_size;
 	ns->nuse = stat.st_size;
 
-	ns->nlbaf = 0;          ///< This means that there is only one
-	ns->flbas.format = 0;   ///< using the first one
+	ns->nlbaf = 0;        ///< This means that there is only one
+	ns->flbas.format = 0; ///< using the first one
 
 	ns->lbaf[0].ms = 0;
 	ns->lbaf[0].ds = XNVME_ILOG2(512);
@@ -137,7 +137,7 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf)
 static int
 _gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 {
-	struct xnvme_spec_feat feat = { 0 };
+	struct xnvme_spec_feat feat = {0};
 
 	switch (ctx->cmd.gfeat.cdw10.fid) {
 	case XNVME_SPEC_FEAT_NQUEUES:

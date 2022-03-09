@@ -42,11 +42,9 @@ xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr opts)
 		break;
 	}
 
-	wrtn += fprintf(stream, "linux;LINUX_VERSION_CODE-UAPI/%d-%d.%d.%d",
-			LINUX_VERSION_CODE,
+	wrtn += fprintf(stream, "linux;LINUX_VERSION_CODE-UAPI/%d-%d.%d.%d", LINUX_VERSION_CODE,
 			(LINUX_VERSION_CODE & (0xff << 16)) >> 16,
-			(LINUX_VERSION_CODE & (0xff << 8)) >> 8,
-			LINUX_VERSION_CODE & 0xff);
+			(LINUX_VERSION_CODE & (0xff << 8)) >> 8, LINUX_VERSION_CODE & 0xff);
 
 	return wrtn;
 }
@@ -176,8 +174,8 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_linux[] = {
 		.check_support = xnvme_be_supported,
 	},
 };
-//static const int
-//g_xnvme_be_mixin_linux_nobjs = sizeof g_xnvme_be_mixin_linux / sizeof * g_xnvme_be_mixin_linux;
+// static const int
+// g_xnvme_be_mixin_linux_nobjs = sizeof g_xnvme_be_mixin_linux / sizeof * g_xnvme_be_mixin_linux;
 #else
 int
 xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr XNVME_UNUSED(opts))
@@ -192,15 +190,16 @@ struct xnvme_be xnvme_be_linux = {
 	.sync = XNVME_BE_NOSYS_SYNC,
 	.async = XNVME_BE_NOSYS_QUEUE,
 	.dev = XNVME_BE_NOSYS_DEV,
-	.attr = {
+	.attr =
+		{
 #ifdef XNVME_BE_LINUX_ENABLED
-		.enabled = 1,
+			.enabled = 1,
 #endif
-		.name = "linux",
-	},
-	.state = { 0 },
+			.name = "linux",
+		},
+	.state = {0},
 #ifdef XNVME_BE_LINUX_ENABLED
-	.nobjs = sizeof g_xnvme_be_mixin_linux / sizeof * g_xnvme_be_mixin_linux,
+	.nobjs = sizeof g_xnvme_be_mixin_linux / sizeof *g_xnvme_be_mixin_linux,
 	.objs = g_xnvme_be_mixin_linux,
 #endif
 };

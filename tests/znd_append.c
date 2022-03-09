@@ -41,9 +41,9 @@ cmd_verify(struct xnvmec *cli)
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = cli->args.geo;
 	uint32_t nsid = cli->args.nsid;
-	struct xnvme_spec_znd_descr zone = {0 };
+	struct xnvme_spec_znd_descr zone = {0};
 
-	struct cb_args cb_args = { 0 };
+	struct cb_args cb_args = {0};
 	struct xnvme_queue *queue = NULL;
 
 	size_t buf_nbytes;
@@ -174,9 +174,8 @@ cmd_verify(struct xnvmec *cli)
 	xnvmec_pinf("LGTM");
 
 exit:
-	xnvmec_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}",
-		    cb_args.submitted, cb_args.completed,
-		    cb_args.ecount);
+	xnvmec_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}", cb_args.submitted,
+		    cb_args.completed, cb_args.ecount);
 
 	{
 		int err_exit = xnvme_queue_term(queue);
@@ -190,7 +189,6 @@ exit:
 	return err < 0 ? err : 0;
 }
 
-
 //
 // Command-Line Interface (CLI) definition
 //
@@ -199,7 +197,8 @@ static struct xnvmec_sub g_subs[] = {
 		"verify",
 		"Fills a Zone one LBA at a time, checking addr on completion",
 		"Fills a Zone one LBA at a time, checking addr on completion",
-		cmd_verify, {
+		cmd_verify,
+		{
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_CLEAR, XNVMEC_LFLG},
 

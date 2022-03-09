@@ -8,8 +8,7 @@ struct xnvme_be_posix_state {
 
 	uint8_t _rsvd[124];
 };
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_posix_state) ==
-		    XNVME_BE_STATE_NBYTES,
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_posix_state) == XNVME_BE_STATE_NBYTES,
 		    "Incorrect size");
 
 int

@@ -54,14 +54,15 @@ struct xnvme_be xnvme_be_spdk = {
 	.sync = XNVME_BE_NOSYS_SYNC,
 	.async = XNVME_BE_NOSYS_QUEUE,
 	.dev = XNVME_BE_NOSYS_DEV,
-	.attr = {
-		.name = "spdk",
+	.attr =
+		{
+			.name = "spdk",
 #ifdef XNVME_BE_SPDK_ENABLED
-		.enabled = 1,
+			.enabled = 1,
 #endif
-	},
+		},
 #ifdef XNVME_BE_SPDK_ENABLED
-	.nobjs = sizeof g_xnvme_be_mixin_spdk / sizeof * g_xnvme_be_mixin_spdk,
+	.nobjs = sizeof g_xnvme_be_mixin_spdk / sizeof *g_xnvme_be_mixin_spdk,
 	.objs = g_xnvme_be_mixin_spdk,
 #endif
 };

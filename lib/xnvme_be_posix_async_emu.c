@@ -21,8 +21,8 @@ struct _emu_entry {
 };
 
 struct _emu_qp {
-	STAILQ_HEAD(, _emu_entry) rp;	///< Request pool
-	STAILQ_HEAD(, _emu_entry) sq;	///< Submission queue
+	STAILQ_HEAD(, _emu_entry) rp; ///< Request pool
+	STAILQ_HEAD(, _emu_entry) sq; ///< Submission queue
 	uint32_t capacity;
 	struct _emu_entry elm[];
 };
@@ -34,10 +34,8 @@ struct xnvme_queue_emu {
 
 	uint8_t _rsvd[224];
 };
-XNVME_STATIC_ASSERT(
-	sizeof(struct xnvme_queue_emu) == XNVME_BE_QUEUE_STATE_NBYTES,
-	"Incorrect size"
-)
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_emu) == XNVME_BE_QUEUE_STATE_NBYTES,
+		    "Incorrect size")
 
 int
 _emu_qp_term(struct _emu_qp *qp)
