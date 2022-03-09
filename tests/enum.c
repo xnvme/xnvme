@@ -171,7 +171,7 @@ static struct xnvmec_sub g_subs[] = {
 		test_enum, {
 			{XNVMEC_OPT_SYS_URI, XNVMEC_LOPT},
 			{XNVMEC_OPT_COUNT, XNVMEC_LOPT},
-			{XNVMEC_OPT_VERBOSE, XNVMEC_LFLG}
+			{XNVMEC_OPT_VERBOSE, XNVMEC_LFLG},
 		},
 	},
 	{
@@ -182,7 +182,7 @@ static struct xnvmec_sub g_subs[] = {
 		test_enum_open, {
 			{XNVMEC_OPT_SYS_URI, XNVMEC_LOPT},
 			{XNVMEC_OPT_COUNT, XNVMEC_LOPT},
-			{XNVMEC_OPT_VERBOSE, XNVMEC_LFLG}
+			{XNVMEC_OPT_VERBOSE, XNVMEC_LFLG},
 		},
 	},
 };
