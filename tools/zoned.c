@@ -567,7 +567,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_FLAGS, XNVMEC_LOPT},
 
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"info", "Retrieve device info",
@@ -577,7 +577,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"idfy-ctrlr", "Zoned Command Set specific identify-controller",
@@ -587,7 +587,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"idfy-ns", "Zoned Command Set specific identify-controller",
@@ -597,7 +597,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"changes", "Retrieve the Changed Zone list",
@@ -608,7 +608,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"errors", "Retrieve the Error-Log",
@@ -620,7 +620,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"read", "Execute a Read Command",
@@ -636,7 +636,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"write", "Execute a Write Command",
@@ -652,7 +652,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"append", "Execute an Append Command",
@@ -668,7 +668,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"mgmt-open", "Open a Zone",
@@ -682,7 +682,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"mgmt-close", "Close a Zone",
@@ -696,7 +696,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"mgmt-finish", "Finish a Zone",
@@ -710,7 +710,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"mgmt-reset", "Reset a Zone",
@@ -724,7 +724,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"mgmt", "Zone Management Send Command with custom action",
@@ -740,7 +740,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"report", "Retrieve Zone Information",
@@ -754,7 +754,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-		}
+		},
 	},
 };
 

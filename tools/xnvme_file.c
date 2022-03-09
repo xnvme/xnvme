@@ -616,7 +616,7 @@ static struct xnvmec_sub g_subs[] = {
 		"Write and read a file", read_write, {
 			{XNVMEC_OPT_SYS_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_POSA},
-		}
+		},
 	},
 	{
 		"dump-sync", "Write a buffer of 'data-nbytes' to file",
@@ -625,7 +625,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LREQ},
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
 			{XNVMEC_OPT_DIRECT, XNVMEC_LFLG},
-		}
+		},
 	},
 	{
 		"dump-async", "Write a buffer of 'data-nbytes' to file --data-output",
@@ -635,7 +635,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
 			{XNVMEC_OPT_QDEPTH, XNVMEC_LOPT},
 			{XNVMEC_OPT_DIRECT, XNVMEC_LFLG},
-		}
+		},
 	},
 	{
 		"load-sync", "Read the entire file into memory",
@@ -643,7 +643,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_POSA},
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
 			{XNVMEC_OPT_DIRECT, XNVMEC_LFLG},
-		}
+		},
 	},
 	{
 		"load-async", "Read the entire file into memory",
@@ -652,7 +652,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
 			{XNVMEC_OPT_QDEPTH, XNVMEC_LOPT},
 			{XNVMEC_OPT_DIRECT, XNVMEC_LFLG},
-		}
+		},
 	},
 	{
 		"copy-sync", "Copy file --data-input to --data--output",
@@ -661,7 +661,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
 			{XNVMEC_OPT_DIRECT, XNVMEC_LFLG},
-		}
+		},
 	},
 	{
 		"copy-async", "Copy file -- asynchronously",
@@ -671,7 +671,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
 			{XNVMEC_OPT_QDEPTH, XNVMEC_LOPT},
 			{XNVMEC_OPT_DIRECT, XNVMEC_LFLG},
-		}
+		},
 	},
 };
 
