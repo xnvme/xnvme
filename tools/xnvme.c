@@ -643,7 +643,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_FLAGS, XNVMEC_LOPT},
 
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"enum", "Enumerate devices on the system",
@@ -652,7 +652,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_FLAGS, XNVMEC_LOPT},
 
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"info", "Retrieve derived information for given device",
@@ -662,7 +662,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"idfy", "Execute an User-defined Identify Command",
@@ -678,7 +678,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"idfy-ns", "Identify the given Namespace",
@@ -690,7 +690,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"idfy-ctrlr", "Identify the given Controller",
@@ -701,7 +701,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"idfy-cs", "Identify the Command Sets supported by the controller",
@@ -712,7 +712,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"log", "Retrieve a User-defined Log",
@@ -729,7 +729,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"log-erri", "Retrieve the error-information log",
@@ -742,7 +742,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"log-health", "Retrieve the S.M.A.R.T. / Health information log",
@@ -754,7 +754,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"feature-get", "Execute a Get-Features Command",
@@ -768,7 +768,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"feature-set", "Execute a Set-Features Command",
@@ -783,7 +783,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"format", "Format a NVM namespace",
@@ -801,7 +801,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"sanitize", "Sanitize...", "Sanitize...", sub_sanitize, {
@@ -810,7 +810,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"pioc", "Pass a used-defined IO Command through",
@@ -828,7 +828,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"padc", "Pass a user-defined ADmin Command through",
@@ -846,13 +846,13 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"library-info", "Produce information about the library",
 		"Produce information about the library", sub_library_info, {
-			{ 0 }
-		}
+			{ 0 },
+		},
 	},
 };
 

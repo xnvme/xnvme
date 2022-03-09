@@ -303,7 +303,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_FLAGS, XNVMEC_LOPT},
 
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"info", "Retrieve derived information for the given URI",
@@ -313,7 +313,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"idfy", "Identify the namespace for the given URI",
@@ -325,7 +325,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"read", "Read data and optionally metadata",
@@ -341,7 +341,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"write", "Writes data and optionally metadata",
@@ -357,7 +357,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"write-zeros", "Set a range of logical blocks to zero",
@@ -373,7 +373,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-		}
+		},
 	},
 	{
 		"write-uncor", "Mark a range of logical blocks as invalid",
@@ -389,7 +389,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-		}
+		},
 	},
 };
 

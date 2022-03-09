@@ -117,7 +117,7 @@ static struct xnvmec_sub g_subs[] = {
 		"show", "Print the given NVMe command-file",
 		"Print the given NVMe command-file", sub_show, {
 			{XNVMEC_OPT_CMD_INPUT, XNVMEC_LREQ},
-		}
+		},
 	},
 	{
 		"create", "Create an NVMe command-file",
@@ -142,7 +142,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_CDW15, XNVMEC_LOPT},
 			{XNVMEC_OPT_OPCODE, XNVMEC_LOPT},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
-		}
+		},
 	},
 };
 

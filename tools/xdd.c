@@ -267,7 +267,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LREQ},
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
 			{XNVMEC_OPT_DIRECT, XNVMEC_LFLG},
-		}
+		},
 	},
 	{
 		"async", "Copy --data-nbytes from --data-input to --data--output",
@@ -278,7 +278,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
 			{XNVMEC_OPT_QDEPTH, XNVMEC_LOPT},
 			{XNVMEC_OPT_DIRECT, XNVMEC_LFLG},
-		}
+		},
 	},
 };
 

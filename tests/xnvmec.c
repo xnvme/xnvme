@@ -70,11 +70,11 @@ static struct xnvmec_sub g_subs[] = {
 		"Copy a file using xnvmec_buf_{to,from}_file", xnvmec_copy_io, {
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_POSA},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
-		}
+		},
 	},
 	{
 		"check-opt-attr", "Check that all 'xnvmec_opt' has attributes defined",
-		"Check that all 'xnvmec_opt' has attributes defined", xnvmec_check_opt_attr, { 0 }
+		"Check that all 'xnvmec_opt' has attributes defined", xnvmec_check_opt_attr, { 0 },
 	},
 };
 

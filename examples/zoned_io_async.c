@@ -455,9 +455,8 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 			{XNVMEC_OPT_ASYNC, XNVMEC_LOPT},
-		}
+		},
 	},
-
 	{
 		"write", "Asynchronous Zone Write until full",
 		"Zone asynchronous Write until full", sub_async_write, {
@@ -471,9 +470,8 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 			{XNVMEC_OPT_ASYNC, XNVMEC_LOPT},
-		}
+		},
 	},
-
 	{
 		"append", "Asynchronous Zone Append until full",
 		"Zone asynchronous Append until full", sub_async_append, {
@@ -487,7 +485,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 			{XNVMEC_OPT_ASYNC, XNVMEC_LOPT},
-		}
+		},
 	},
 };
 
