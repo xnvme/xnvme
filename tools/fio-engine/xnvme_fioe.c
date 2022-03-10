@@ -48,7 +48,7 @@
  *   devices. Specifically, the devices opened must use backends which share
  *   memory allocators. E.g. using be:laio + be:liou is fine, using be:liou +
  *   be:spdk is not.
- *   This is due to the fio 'io_memem_*' helpers are not tied to devices, as
+ *   This is due to the fio 'io_mem_*' helpers are not tied to devices, as
  *   such, it is required that all devices opened use compatible
  *   buffer-allocators. Currently, the implementation does dot check for this
  *   unsupported use-case, and will thus lead to a runtime error.
@@ -83,12 +83,12 @@
 static pthread_mutex_t g_serialize = PTHREAD_MUTEX_INITIALIZER;
 
 struct xnvme_fioe_fwrap {
-	///< fio file representation
+	/* fio file representation */
 	struct fio_file *fio_file;
 
-	///< xNVMe device handle
+	/* xNVMe device handle */
 	struct xnvme_dev *dev;
-	///< xNVMe device geometry
+	/* xNVMe device geometry */
 	const struct xnvme_geo *geo;
 
 	struct xnvme_queue *queue;
@@ -101,22 +101,25 @@ struct xnvme_fioe_fwrap {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_fioe_fwrap) == 64, "Incorrect size")
 
 struct xnvme_fioe_data {
-	///< I/O completion queue
+	/* I/O completion queue */
 	struct io_u **iocq;
 
-	///< # of iocq entries; incremented via getevents()/cb_pool()
+	/* # of iocq entries; incremented via getevents()/cb_pool() */
 	uint64_t completed;
 
-	///< # of errors; incremented when observed on completion via getevents()/cb_pool()
+	/*
+	 *  # of errors; incremented when observed on completion via
+	 *  getevents()/cb_pool()
+	 */
 	uint64_t ecount;
 
-	///< Controller which device/file to select
+	/* Controller which device/file to select */
 	int32_t prev;
 	int32_t cur;
 
-	///< Number of devices/files for which open() has been called
+	/* Number of devices/files for which open() has been called */
 	int64_t nopen;
-	///< Number of devices/files allocated in files[]
+	/* Number of devices/files allocated in files[] */
 	uint64_t nallocated;
 
 	uint8_t _pad[16];
@@ -184,7 +187,6 @@ static struct fio_option options[] = {
 		.category = FIO_OPT_C_ENGINE,
 		.group = FIO_OPT_G_INVALID,
 	},
-
 	{
 		.name = "xnvme_async",
 		.lname = "xNVMe Asynchronous command-interface",
@@ -212,7 +214,6 @@ static struct fio_option options[] = {
 		.category = FIO_OPT_C_ENGINE,
 		.group = FIO_OPT_G_INVALID,
 	},
-
 	{
 		.name = "xnvme_dev_nsid",
 		.lname = "xNVMe Namespace-Identifier, for user-space NVMe driver",
@@ -222,7 +223,6 @@ static struct fio_option options[] = {
 		.category = FIO_OPT_C_ENGINE,
 		.group = FIO_OPT_G_INVALID,
 	},
-
 	{
 		.name = NULL,
 	},
@@ -299,7 +299,7 @@ static void xnvme_fioe_cleanup(struct thread_data *td)
 	err = pthread_mutex_lock(&g_serialize);
 	if (err) {
 		XNVME_DEBUG("FAILED: pthread_mutex_lock(), err: %d", err);
-		// NOTE: not returning here
+		/* NOTE: not returning here */
 	}
 
 	for (uint64_t i = 0; i < xd->nallocated; ++i) {
@@ -412,7 +412,7 @@ static int xnvme_fioe_init(struct thread_data *td)
 		return 1;
 	}
 
-	// Allocate and zero-fill xd
+	/* Allocate and zero-fill xd */
 	xd = malloc(sizeof(*xd) + sizeof(*xd->files) * td->o.nr_files);
 	if (!xd) {
 		log_err("xnvme_fioe: init(): !malloc()\n");
@@ -444,7 +444,7 @@ static int xnvme_fioe_init(struct thread_data *td)
 	return 0;
 }
 
-// NOTE: using the first device for buffer-allocators, see CAVEAT 2)
+/* NOTE: using the first device for buffer-allocators, see CAVEAT 2) */
 static int xnvme_fioe_iomem_alloc(struct thread_data *td, size_t total_mem)
 {
 	struct xnvme_fioe_data *xd = td->io_ops_data;
@@ -460,7 +460,7 @@ static int xnvme_fioe_iomem_alloc(struct thread_data *td, size_t total_mem)
 	return td->orig_buffer == NULL;
 }
 
-// NOTE: using the first device for buffer-allocators, see CAVEAT 2)
+/* NOTE: using the first device for buffer-allocators, see CAVEAT 2) */
 static void xnvme_fioe_iomem_free(struct thread_data *td)
 {
 	struct xnvme_fioe_data *xd = td->io_ops_data;
@@ -621,7 +621,7 @@ static enum fio_q_status xnvme_fioe_queue(struct thread_data *td, struct io_u *i
 	}
 }
 
-// See CAVEAT for explanation and _cleanup() + _dev_close() for implementation
+/* See CAVEAT for explanation and _cleanup() + _dev_close() for implementation */
 static int xnvme_fioe_close(struct thread_data *td, struct fio_file *f)
 {
 	struct xnvme_fioe_data *xd = td->io_ops_data;
@@ -634,7 +634,7 @@ static int xnvme_fioe_close(struct thread_data *td, struct fio_file *f)
 	return 0;
 }
 
-// See CAVEAT for explanation and _init() + _dev_open() for implementation
+/* See CAVEAT for explanation and _init() + _dev_open() for implementation */
 static int xnvme_fioe_open(struct thread_data *td, struct fio_file *f)
 {
 	struct xnvme_fioe_data *xd = td->io_ops_data;
@@ -658,7 +658,7 @@ static int xnvme_fioe_open(struct thread_data *td, struct fio_file *f)
 
 static int xnvme_fioe_invalidate(struct thread_data *td, struct fio_file *f)
 {
-	// Consider only doing this with be:spdk
+	/* Consider only doing this with be:spdk */
 	return 0;
 }
 
@@ -703,9 +703,12 @@ static int xnvme_fioe_get_max_open_zones(struct thread_data *td, struct fio_file
 			goto exit;
 		}
 
-		// intentional overflow as the value is zero-based and NVMe defines 0xFFFFFFFF
-		// as unlimited thus overflowing to 0 which is how fio indicates unlimited and
-		// otherwise just converting to one-based
+		/*
+		 * intentional overflow as the value is zero-based and NVMe
+		 * defines 0xFFFFFFFF as unlimited thus overflowing to 0 which
+		 * is how fio indicates unlimited and otherwise just converting
+		 * to one-based.
+		 */
 		*max_open_zones = zns->mor + 1;
 	}
 
@@ -862,7 +865,7 @@ static int xnvme_fioe_report_zones(struct thread_data *td, struct fio_file *f, u
 		goto exit;
 	}
 
-	// Transform the zone-report
+	/* Transform the zone-report */
 	for (uint32_t idx = 0; idx < rprt->nentries; ++idx) {
 		struct xnvme_spec_znd_descr *descr = XNVME_ZND_REPORT_DESCR(rprt, idx);
 
@@ -1009,6 +1012,7 @@ exit:
 
 	return err;
 }
+
 static int xnvme_fioe_get_file_size(struct thread_data *td, struct fio_file *f)
 {
 	struct xnvme_opts opts = xnvme_opts_from_fioe(td);
@@ -1046,6 +1050,7 @@ exit:
 
 	return ret;
 }
+
 struct ioengine_ops ioengine = {
 	.name = "xnvme",
 	.version = FIO_IOOPS_VERSION,
