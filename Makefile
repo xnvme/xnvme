@@ -119,7 +119,7 @@ endef
 git-setup:
 	@echo "## xNVMe:: git-setup"
 	$(GIT) config core.hooksPath .githooks || true
-	$(GIT) config blame.ignoreRevsFile .git-blame-ignore-revs
+	$(GIT) config blame.ignoreRevsFile .git-blame-ignore-revs || true
 	@echo "## xNVMe:: git-setup [DONE]"
 
 define info-help
