@@ -7,5 +7,5 @@ ldd --version || true
 
 zypper --non-interactive refresh
 
-# Install packages via dnf
-zypper --non-interactive install -y $(cat "scripts/pkgs/opensuse-tumbleweed-latest.txt")
+# Install packages via zypper
+zypper --non-interactive install -y --allow-downgrade $(cat "scripts/pkgs/opensuse-tumbleweed-latest.txt")
