@@ -412,16 +412,18 @@ static int xnvme_fioe_init(struct thread_data *td)
 		return 1;
 	}
 
-	/* Allocate and zero-fill xd */
-	xd = malloc(sizeof(*xd) + sizeof(*xd->files) * td->o.nr_files);
+	/* Allocate xd and iocq */
+	xd = calloc(1, sizeof(*xd) + sizeof(*xd->files) * td->o.nr_files);
 	if (!xd) {
-		log_err("xnvme_fioe: init(): !malloc()\n");
+		log_err("xnvme_fioe: init(): !calloc()\n");
 		return 1;
 	}
-	memset(xd, 0, sizeof(*xd) + sizeof(*xd->files) * td->o.nr_files);
 
-	xd->iocq = malloc(td->o.iodepth * sizeof(struct io_u *));
-	memset(xd->iocq, 0, td->o.iodepth * sizeof(struct io_u *));
+	xd->iocq = calloc(td->o.iodepth, sizeof(struct io_u *));
+	if (!xd->iocq) {
+		log_err("xnvme_fioe: init(): !calloc()\n");
+		return 1;
+	}
 
 	xd->prev = -1;
 	td->io_ops_data = xd;
