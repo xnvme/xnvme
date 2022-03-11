@@ -19,7 +19,7 @@ pconf = import('pkgconfig')
 #
 # Pre-flight check, operating system and compiler arguments
 #
-system_support = ['freebsd', 'linux', 'windows']
+system_support = ['freebsd', 'linux', 'windows', 'darwin']
 system = host_machine.system()
 message('host_machine.system:', system)
 if not system_support.contains(system)
@@ -28,7 +28,6 @@ endif
 foreach sys : system_support
     set_variable('is_' + sys, system == sys)
 endforeach
-is_nixy = is_linux or is_freebsd
 
 cc = meson.get_compiler('c')
 cc_flags = [
@@ -74,13 +73,13 @@ conf_data.set('XNVME_BE_LINUX_LIBAIO_ENABLED', is_linux and get_option('with-lib
 conf_data.set('XNVME_BE_LINUX_LIBURING_ENABLED', is_linux and get_option('with-liburing'))
 
 conf_data.set('XNVME_BE_FBSD_ENABLED', is_freebsd)
-conf_data.set('XNVME_BE_POSIX_ENABLED', is_nixy)
+conf_data.set('XNVME_BE_POSIX_ENABLED', is_linux or is_freebsd or is_darwin)
 
-conf_data.set('XNVME_BE_SPDK_ENABLED', is_nixy and get_option('with-spdk'))
-conf_data.set('XNVME_BE_SPDK_TRANSPORT_PCIE_ENABLED', is_nixy and get_option('with-spdk'))
-conf_data.set('XNVME_BE_SPDK_TRANSPORT_TCP_ENABLED', is_nixy and get_option('with-spdk'))
-conf_data.set('XNVME_BE_SPDK_TRANSPORT_RDMA_ENABLED', is_nixy and get_option('with-spdk'))
-conf_data.set('XNVME_BE_SPDK_TRANSPORT_FC_ENABLED', is_nixy and get_option('with-spdk'))
+conf_data.set('XNVME_BE_SPDK_ENABLED', (is_linux or is_freebsd) and get_option('with-spdk'))
+conf_data.set('XNVME_BE_SPDK_TRANSPORT_PCIE_ENABLED', (is_linux or is_freebsd) and get_option('with-spdk'))
+conf_data.set('XNVME_BE_SPDK_TRANSPORT_TCP_ENABLED', (is_linux or is_freebsd) and get_option('with-spdk'))
+conf_data.set('XNVME_BE_SPDK_TRANSPORT_RDMA_ENABLED', (is_linux or is_freebsd) and get_option('with-spdk'))
+conf_data.set('XNVME_BE_SPDK_TRANSPORT_FC_ENABLED', (is_linux or is_freebsd) and get_option('with-spdk'))
 
 conf_data.set('XNVME_BE_ASYNC_ENABLED', true)
 conf_data.set('XNVME_BE_ASYNC_EMU_ENABLED', get_option('async_emu'))
@@ -150,7 +149,7 @@ setupapi_dep = cc.find_library(
 
 rt_dep = cc.find_library(
   'rt',
-  required: conf_data.get('XNVME_BE_POSIX_ENABLED')
+  required: is_darwin ? false : conf_data.get('XNVME_BE_POSIX_ENABLED')
 )
 if not cc.has_function('clock_gettime', prefix: '#include <time.h>', dependencies: rt_dep)
   error('clock_gettime not found')
