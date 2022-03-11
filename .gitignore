@@ -19,9 +19,6 @@ builddir
 docs/build
 cscope.out
 tags
-subprojects/fio
-subprojects/liburing
-subprojects/spdk
 cmake-build-debug/
 # Windows
 *Debug*
@@ -33,3 +30,9 @@ out/
 *.exe
 *.lib
 *.vcxproj.*
+subprojects/*
+!subprojects/fio.wrap
+!subprojects/liburing.wrap
+!subprojects/spdk.wrap
+!subprojects/libnvme-vfio.wrap
+!subprojects/packagefiles
