@@ -83,10 +83,11 @@ jobs:
         add-apt-repository -y "deb http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-14 main"
         apt -qy update
         apt -qy install clang-format-14
+        update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-14 100
 
     - name: xNVMe, run the source-format script
       run: |
-        cd scripts && ./source-format.sh
+        cd scripts && CLANG_FORMAT_BIN=clang-format ./source-format.sh
 
     - name: dump log, on failure
       if: failure()
