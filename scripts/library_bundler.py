@@ -8,13 +8,14 @@
     of users having to link with all of foo, x, y and z, then a library-bundle
     provides a single link-target foo.
 
-    The GNU 'ar' tool is used to perform the task. If the environment variable
-    AR_TOOL is set then it is used directly, othervise the script relies on
-    'ar' being available in PATH.
+    The GNU 'ar' tool is used to perform the task on Linux. If the environment
+    variable AR_TOOL is set then it is used directly, otherwise the script relies on
+    'ar' being available in PATH. On macOS, libtool will always be used.
 
-    Currently only tested on Linux, should work on FreeBSD and in the msys
+    Currently only tested on Linux and macOS, should work on FreeBSD and in the msys
     environment on Windows.
 """
+import platform
 import subprocess
 import argparse
 import sys
@@ -58,6 +59,14 @@ def gen_archive(ar_script):
 
     return 1
 
+def gen_archive_darwin(out_file, libs):
+        with subprocess.Popen(
+            ["/usr/bin/libtool", "-static", "-o", out_file, *(expand_path(lpath) for lpath in libs)],
+            stdin = subprocess.PIPE,
+            encoding = 'ascii'
+            ) as proc:
+            _, _ = proc.communicate()
+        return proc.returncode
 
 def parse_args():
     """Parse arguments for archiver"""
@@ -85,11 +94,14 @@ def parse_args():
 def main(args):
     """Produce library bundle"""
 
-    ar_script = gen_archive_script(
-        args.output,
-        [expand_path(lpath) for lpath in args.libs]
-    )
-    res = gen_archive(ar_script)
+    if platform.system() == 'Darwin':
+        res = gen_archive_darwin(args.output, args.libs)
+    else:
+        ar_script = gen_archive_script(
+            args.output,
+            [expand_path(lpath) for lpath in args.libs]
+        )
+        res = gen_archive(ar_script)
 
     return res
 

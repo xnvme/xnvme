@@ -16,41 +16,41 @@ PLATFORM_ID = $$( uname -s )
 endif
 PLATFORM = $$( \
 	case $(PLATFORM_ID) in \
-		( Linux | FreeBSD | OpenBSD | NetBSD | Windows) echo $(PLATFORM_ID) ;; \
+		( Linux | FreeBSD | OpenBSD | NetBSD | Windows | Darwin ) echo $(PLATFORM_ID) ;; \
 		( * ) echo Unrecognized ;; \
 	esac)
 
 CTAGS = $$( \
 	case $(PLATFORM_ID) in \
-		( Linux ) echo "ctags" ;; \
+		( Linux | Darwin ) echo "ctags" ;; \
 		( FreeBSD | OpenBSD | NetBSD | Windows) echo "exctags" ;; \
 		( * ) echo Unrecognized ;; \
 	esac)
 
 MAKE = $$( \
 	case $(PLATFORM_ID) in \
-		( Linux | Windows) echo "make" ;; \
+		( Linux | Windows | Darwin ) echo "make" ;; \
 		( FreeBSD | OpenBSD | NetBSD ) echo "gmake" ;; \
 		( * ) echo Unrecognized ;; \
 	esac)
 
 MESON = $$( \
 	case $(PLATFORM_ID) in \
-		( Linux | Windows) echo "meson" ;; \
+		( Linux | Windows | Darwin ) echo "meson" ;; \
 		( FreeBSD | OpenBSD | NetBSD ) echo "meson" ;; \
 		( * ) echo Unrecognized ;; \
 	esac)
 
 NPROC = $$( \
 	case $(PLATFORM_ID) in \
-		( Linux | Windows) nproc ;; \
-		( FreeBSD | OpenBSD | NetBSD ) sysctl -n hw.ncpu ;; \
+		( Linux | Windows ) nproc ;; \
+		( FreeBSD | OpenBSD | NetBSD | Darwin ) sysctl -n hw.ncpu ;; \
 		( * ) echo Unrecognized ;; \
 	esac)
 
 GIT = $$( \
 	case $(PLATFORM_ID) in \
-		( Linux | Windows) echo "git" ;; \
+		( Linux | Windows | Darwin ) echo "git" ;; \
 		( FreeBSD | OpenBSD | NetBSD ) echo "git" ;; \
 		( * ) echo Unrecognized ;; \
 	esac)
@@ -165,7 +165,7 @@ define uninstall-help
 # Uninstall xNVMe with Meson
 endef
 .PHONY: uninstall
-uninstall: 
+uninstall:
 	@echo "## xNVMe: make uninstall"
 	@if [ ! -d "$(BUILD_DIR)" ]; then		\
 		echo "Missing builddir('$(BUILD_DIR))";	\
