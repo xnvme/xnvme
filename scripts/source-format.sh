@@ -18,17 +18,21 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-CLANG_FORMAT_BIN="${CLANG_FORMAT_BIN:=clang-format-14}"
+CLANG_FORMAT_BIN="${CLANG_FORMAT_BIN:=clang-format}"
 
 main() {
   local headers=$(find ../{include,lib,examples,tests,tools} -type f -name *.h)
   local sources=$(find ../{include,lib,examples,tests,tools} -type f -name *.c | grep -v fioe.c)
   local fioe=$(find ../{include,lib,examples,tests,tools} -type f -name *.c | grep fioe.c)
 
+  CLANG_FORMAT_H="{$(tail -n +4 clang-format-h | tr '\n' ',')}"
+  CLANG_FORMAT_C="{$(tail -n +4 clang-format-c | tr '\n' ',')}"
+  CLANG_FORMAT_FIOE="{$(tail -n +4 clang-format-fioe | tr '\n' ',')}"
+
   if [[ $# -eq 1 ]]; then
-      $CLANG_FORMAT_BIN -i --style="file:clang-format-h" ${headers} && \
-      $CLANG_FORMAT_BIN -i --style="file:clang-format-c" ${sources} && \
-      $CLANG_FORMAT_BIN -i --style="file:clang-format-fioe" ${fioe} && \
+      $CLANG_FORMAT_BIN -i -style=$CLANG_FORMAT_H ${headers} && \
+      $CLANG_FORMAT_BIN -i -style=$CLANG_FORMAT_C ${sources} && \
+      $CLANG_FORMAT_BIN -i -style=$CLANG_FORMAT_FIOE ${fioe} && \
       return $?
   fi
 
@@ -36,9 +40,9 @@ main() {
     mv source-format.log "source-format.log.${RANDOM}"
   fi
 
-  diff -u <(cat ${headers}) <($CLANG_FORMAT_BIN --style="file:clang-format-h" ${headers})  >> source-format.log
-  diff -u <(cat ${sources}) <($CLANG_FORMAT_BIN --style="file:clang-format-c" ${sources}) >> source-format.log
-  diff -u <(cat ${fioe}) <($CLANG_FORMAT_BIN --style="file:clang-format-fioe" ${fioe}) >> source-format.log
+  diff -u <(cat ${headers}) <($CLANG_FORMAT_BIN -style=$CLANG_FORMAT_H ${headers})  >> source-format.log
+  diff -u <(cat ${sources}) <($CLANG_FORMAT_BIN -style=$CLANG_FORMAT_C ${sources}) >> source-format.log
+  diff -u <(cat ${fioe}) <($CLANG_FORMAT_BIN -style=$CLANG_FORMAT_FIOE ${fioe}) >> source-format.log
   if grep "@@" source-format.log; then
     echo "clang-format found something, please check: scripts/source-format.log"
     return 1
