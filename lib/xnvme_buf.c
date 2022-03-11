@@ -15,6 +15,9 @@ xnvme_buf_virt_alloc(size_t alignment, size_t nbytes)
 		errno = EINVAL;
 		return NULL;
 	}
+	// nbytes has to be a multiple of alignment. Therefore, we round up to the nearest
+	// multiple.
+	nbytes = (1 + ((nbytes - 1) / alignment)) * (alignment);
 #ifdef WIN32
 	return _aligned_malloc(nbytes, alignment);
 #else
