@@ -3,7 +3,6 @@
 #include <errno.h>
 #include <libxnvme.h>
 #include <libxnvme_ident.h>
-#include <xnvme_be.h>
 #include <libxnvme_dev.h>
 #include <libxnvme_spec_pp.h>
 #include <libxnvme_adm.h>
