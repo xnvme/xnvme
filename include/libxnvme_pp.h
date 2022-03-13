@@ -115,6 +115,13 @@ int
 xnvme_lba_prn(const uint64_t *lba, uint16_t nlb, enum xnvme_pr opts);
 
 /**
+ * Writes a YAML-representation of the given 'ident' to stream
+ */
+int
+xnvme_ident_yaml(FILE *stream, const struct xnvme_ident *ident, int indent, const char *sep,
+		 int head);
+
+/**
  * Prints the given ::xnvme_ident to the given output stream
  *
  * @param stream output stream used for printing
