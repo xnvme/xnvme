@@ -341,6 +341,26 @@ Then go ahead and configure, build and install using ``meson``:
    line``, during compilation, then add ``-ltinfo -lnurces`` to ``LDFLAGS`` as
    it is done in the commands above.
 
+macOS
+--------------------
+
+Install the following packages via ``brew`` and ``pip3``:
+
+.. literalinclude:: ../../scripts/pkgs/macos-11.txt
+   :language: bash
+
+For example, from the root of the **xNVMe** source repository, do:
+
+.. literalinclude:: ../../scripts/pkgs/macos-11.sh
+   :language: bash
+   :lines: 3-
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../scripts/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
+
 openSUSE Tumbleweed
 -------------------
 
