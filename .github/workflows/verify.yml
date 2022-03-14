@@ -330,6 +330,51 @@ jobs:
       run: xnvme library-info
 
   #
+  # Build on macOS
+  #
+  build-macos:
+    needs: source-archive
+    runs-on: ${{ matrix.runner.os }}-${{ matrix.runner.ver }}
+    if: (! contains(github.ref, 'ci')) || contains(github.ref, 'ci-build-mac')
+
+    strategy:
+      matrix:
+        runner:
+          - { os: 'macos', ver: '11' }
+
+    steps:
+    - name: Retrieve the source-archive
+      uses: actions/download-artifact@v2
+      with:
+        name: archive-src
+    - name: Extract the full-source-archive
+      run: |
+        tar xzf xnvme*.tar.gz --strip 1
+        rm xnvme*.tar.gz
+
+    - name: Install build-requirements
+      run: |
+        source scripts/pkgs/${{ matrix.runner.os }}-${{ matrix.runner.ver }}.sh || true
+
+    - name: Configure, Build, and Install
+      env:
+        BSCRIPT_DEF: scripts/pkgs/default-build.sh
+        BSCRIPT: scripts/pkgs/${{ matrix.runner.os }}-${{ matrix.runner.ver }}-build.sh
+      run: |
+        if [[ -f "${BSCRIPT}" ]]; then source ${BSCRIPT}; else source ${BSCRIPT_DEF}; fi
+
+    - name: dump meson-log on failure
+      if: failure()
+      run: |
+        cat builddir/meson-logs/meson-log.txt
+
+    - name: Execute 'xnvme enum'
+      run: xnvme enum
+
+    - name: Execute 'xnvme library-info'
+      run: xnvme library-info
+
+  #
   # Build on Windows
   #
   build-windows:
