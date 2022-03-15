@@ -35,6 +35,7 @@ commands:
 	@kmdo $(DOCS_DIR)/capis
 	@kmdo $(DOCS_DIR)/examples
 	@kmdo $(DOCS_DIR)/tools
+	@kmdo $(DOCS_DIR)/tutorial
 
 .PHONY: doxy
 doxy:
