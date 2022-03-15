@@ -72,9 +72,13 @@ xnvme_be_linux_liburing_init(struct xnvme_queue *q, int opts)
 	if ((opts & XNVME_QUEUE_IOPOLL) || (state->poll_io)) {
 		queue->poll_io = 1;
 	}
+	if (opts & XNVME_QUEUE_SQE128) {
+		queue->sqe128 = 1;
+	}
 
 	XNVME_DEBUG("queue->poll_sq: %d", queue->poll_sq);
 	XNVME_DEBUG("queue->poll_io: %d", queue->poll_io);
+	XNVME_DEBUG("queue->sqe128: %d", queue->sqe128);
 
 	//
 	// Ring-initialization
@@ -84,6 +88,9 @@ xnvme_be_linux_liburing_init(struct xnvme_queue *q, int opts)
 	}
 	if (queue->poll_io) {
 		iou_flags |= IORING_SETUP_IOPOLL;
+	}
+	if (queue->sqe128) {
+		iou_flags |= IORING_SETUP_SQE128;
 	}
 
 	err = io_uring_queue_init(queue->base.capacity, &queue->ring, iou_flags);

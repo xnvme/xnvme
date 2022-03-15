@@ -19,14 +19,6 @@
 
 #define IORING_OP_URING_CMD 40
 
-/* This shadows struct io_uring_cmd (40 bytes) */
-struct block_uring_cmd {
-	__u32 ioctl_cmd;
-	__u32 unused1;
-	__u64 unused2[4];
-};
-XNVME_STATIC_ASSERT(sizeof(struct block_uring_cmd) == 40, "Incorrect size");
-
 static int g_linux_liburing_optional[] = {
 	IORING_OP_URING_CMD,
 };
@@ -63,6 +55,8 @@ xnvme_be_linux_ucmd_init(struct xnvme_queue *q, int opts)
 		fprintf(stderr, "# FAILED: io_uring cmd, not supported by kernel!\n");
 		return -ENOSYS;
 	}
+
+	opts |= XNVME_QUEUE_SQE128; // setting the sqe to 128 bytes
 
 	return xnvme_be_linux_liburing_init(q, opts);
 }
@@ -144,9 +138,9 @@ xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 {
 	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
-	struct block_uring_cmd *blk_cmd = NULL;
 	struct io_uring_sqe *sqe = NULL;
 	int err = 0;
+	struct xnvme_spec_cmd_passthru *cmd;
 
 	if (mbuf || mbuf_nbytes) {
 		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
@@ -159,9 +153,8 @@ xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 	}
 
 	sqe->opcode = IORING_OP_URING_CMD;
-	sqe->addr = 4;
-	sqe->len = dbuf_nbytes;
-	sqe->off = (unsigned long)ctx;
+	sqe->off = NVME_IOCTL_IO64_CMD;
+	sqe->addr = sizeof(struct xnvme_spec_cmd_passthru);
 	sqe->flags = queue->poll_sq ? IOSQE_FIXED_FILE : 0;
 	sqe->ioprio = 0;
 	// NOTE: we only ever register a single file, the raw device, so the
@@ -169,28 +162,26 @@ xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 	sqe->fd = queue->poll_sq ? 0 : state->fd;
 	sqe->rw_flags = 0;
 	sqe->user_data = (unsigned long)ctx;
-	// sqe->__pad2[0] = sqe->__pad2[1] = sqe->__pad2[2] = 0;
 
-	blk_cmd = (void *)&sqe->len;
-#ifdef NVME_IOCTL_IO64_CMD
-	blk_cmd->ioctl_cmd = NVME_IOCTL_IO64_CMD;
-#else
-	blk_cmd->ioctl_cmd = NVME_IOCTL_IO_CMD;
-#endif
-	blk_cmd->unused2[0] = (uint64_t)ctx;
+	cmd = (struct xnvme_spec_cmd_passthru *)&sqe->__pad[0];
 
-	if (queue->poll_io) {
-		ctx->cmd.common.fuse = 1;
-	}
-	ctx->cmd.common.dptr.lnx_ioctl.data = (uint64_t)dbuf;
-	ctx->cmd.common.dptr.lnx_ioctl.data_len = dbuf_nbytes;
+	memset(cmd, 0, sizeof(struct xnvme_spec_cmd_passthru));
 
-	ctx->cmd.common.mptr = (uint64_t)mbuf;
-	ctx->cmd.common.dptr.lnx_ioctl.metadata_len = mbuf_nbytes;
+	cmd->opcode = ctx->cmd.common.opcode;
+	cmd->nsid = ctx->cmd.common.nsid;
+
+	/* cdw10 and cdw11 represent starting slba*/
+	cmd->cdw10 = ctx->cmd.nvm.slba & 0xffffffff;
+	cmd->cdw11 = ctx->cmd.nvm.slba >> 32;
+
+	/* cdw12 represent number of lba to be read*/
+	cmd->cdw12 = ctx->cmd.nvm.nlb;
+	cmd->data = (uint64_t)dbuf;
+	cmd->data_len = dbuf_nbytes;
 
 	err = io_uring_submit(&queue->ring);
 	if (err < 0) {
-		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opcode, err);
+		XNVME_DEBUG("io_uring_submit(%d), err: %d", cmd->opcode, err);
 		return err;
 	}
 

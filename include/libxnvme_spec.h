@@ -1193,6 +1193,47 @@ struct xnvme_spec_cmd_common {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_common) == 64, "Incorrect size")
 
 /**
+ * NVMe Command Accessor for Passthru 80byte NVMe command
+ *
+ * @struct xnvme_spec_cmd_passthru
+ */
+struct xnvme_spec_cmd_passthru {
+	/* cdw 00 */
+	uint8_t opcode;			///< OPC: Command Opcode
+	uint8_t flags;
+	uint16_t rsvd;
+
+	/* cdw 01 */
+	uint32_t nsid;			///< NSID: Namespace identifier
+
+	uint32_t cdw02;
+	uint32_t cdw03;
+
+	/* cdw 04-05 */
+	uint64_t mptr;			///< MPTR -- metadata pointer
+
+	/* cdw 06-09: */		///< DPTR -- data pointer
+	uint64_t data;
+	uint32_t metadata_len;
+	union {
+		uint32_t data_len;
+		uint32_t vec_cnt;
+	};
+
+	uint32_t cdw10;
+	uint32_t cdw11;
+	uint32_t cdw12;
+	uint32_t cdw13;
+	uint32_t cdw14;
+	uint32_t cdw15;
+
+	uint32_t timeout_ms;
+	uint32_t rsvd2;
+	uint64_t result;
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_passthru) == 80, "Incorrect size")
+
+/**
  * NVMe Command Accessor for the Sanitize command
  *
  * @struct xnvme_spec_cmd_sanitize

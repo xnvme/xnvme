@@ -209,6 +209,7 @@ struct xnvme_queue;
 enum xnvme_queue_opts {
 	XNVME_QUEUE_IOPOLL = 0x1,      ///< XNVME_QUEUE_IOPOLL: queue. is polled for completions
 	XNVME_QUEUE_SQPOLL = 0x1 << 1, ///< XNVME_QUEUE_SQPOLL: queue. is polled for submissions
+	XNVME_QUEUE_SQE128 = 0x1 << 7, ///< XNVME_QUEUE_SQE128: queue. sqes are 128b
 };
 
 /**
