@@ -1,0 +1,11 @@
+xnvme_ident:
+  uri: '/dev/nvme0n1'
+  dtype: 0x2
+  nsid: 0x1
+  csi: 0x0
+xnvme_ident:
+  uri: '/dev/nvme0n2'
+  dtype: 0x2
+  nsid: 0x2
+  csi: 0x2
+
