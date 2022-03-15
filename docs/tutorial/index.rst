@@ -4,15 +4,11 @@
  Tutorials
 ###########
 
-This section is a work in progress. Currently consists merely of notes on a
-:ref:`sec-tutorials-fabrics` setup, and :ref:`sec-tutorials-library`.
+This section is a work in progress. Currently it consists merely of notes on :ref:`sec-dynamic-loading`.
 
-These will shape into proper tutorials introducing the **xNVMe** libraries,
-tools, and guides on setting up various environments for NVMe deployments.
+In the future, more tutorials will be added with the purpose of introducing the **xNVMe** libraries and tools. This section will also be expanded with guides on setting up various environments for NVMe deployments.
 
 .. toctree::
    :hidden:
 
-   fabrics
-   library
-   nvme/index
+   dynamic_loading/index.rst
