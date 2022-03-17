@@ -127,6 +127,57 @@ ioctl_wrap(struct xnvme_dev *dev, unsigned long ioctl_req, struct xnvme_cmd_ctx 
 	return -errno;
 }
 
+/**
+ * Expecting this to be available from Linux 5.17
+ */
+#ifdef NVME_IOCTL_IO64_CMD_VEC
+int
+xnvme_be_linux_nvme_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+			    size_t XNVME_UNUSED(dvec_nbytes), struct iovec *mvec, size_t mvec_cnt,
+			    size_t mvec_nbytes)
+{
+	int err;
+
+	switch (ctx->cmd.common.opcode) {
+	case XNVME_SPEC_FS_OPC_READ:
+		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
+		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
+		break;
+
+	case XNVME_SPEC_FS_OPC_WRITE:
+		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
+		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
+		break;
+	}
+
+	ctx->cmd.common.dptr.lnx_ioctl.data = (uint64_t)dvec;
+	ctx->cmd.common.dptr.lnx_ioctl.data_len = dvec_cnt;
+
+	/*
+	ctx->cmd.common.mptr = (uint64_t)mbuf;
+	ctx->cmd.common.dptr.lnx_ioctl.metadata_len = mbuf_nbytes;
+	*/
+
+	err = ioctl_wrap(ctx->dev, NVME_IOCTL_IO64_CMD_VEC, ctx);
+	if (err) {
+		XNVME_DEBUG("FAILED: ioctl_wrap(), err: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+#else
+int
+xnvme_be_linux_nvme_cmd_iov(struct xnvme_cmd_ctx *XNVME_UNUSED(ctx),
+			    struct iovec *XNVME_UNUSED(dvec), size_t XNVME_UNUSED(dvec_cnt),
+			    size_t XNVME_UNUSED(dvec_nbytes), struct iovec *XNVME_UNUSED(mvec),
+			    size_t XNVME_UNUSED(mvec_cnt), size_t XNVME_UNUSED(mvec_nbytes))
+{
+	XNVME_DEBUG("FAILED: NVME_IOCTL_IO64_CMD_VEC; ENOSYS");
+	return -ENOSYS;
+}
+#endif
+
 int
 xnvme_be_linux_nvme_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			   size_t mbuf_nbytes)
