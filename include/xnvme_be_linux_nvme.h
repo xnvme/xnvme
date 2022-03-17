@@ -16,6 +16,6 @@ int
 xnvme_be_linux_nvme_dev_nsid(struct xnvme_dev *dev);
 
 int
-xnvme_be_linux_nvme_map_cpl(struct xnvme_cmd_ctx *ctx, unsigned long ioctl_req);
+xnvme_be_linux_nvme_map_cpl(struct xnvme_cmd_ctx *ctx, unsigned long ioctl_req, int err);
 
 #endif /* __INTERNAL_XNVME_BE_LINUX_NVME_H */
