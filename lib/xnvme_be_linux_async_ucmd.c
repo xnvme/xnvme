@@ -65,6 +65,7 @@ xnvme_be_linux_ucmd_init(struct xnvme_queue *q, int opts)
 	return xnvme_be_linux_liburing_init(q, opts);
 }
 
+#ifdef NVME_IOCTL_IO64_CMD
 int
 xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 {
@@ -100,6 +101,7 @@ xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 	for (unsigned i = 0; i < completed; ++i) {
 		struct io_uring_cqe *cqe = cqes[i];
 		struct xnvme_cmd_ctx *ctx;
+		int err;
 
 		ctx = io_uring_cqe_get_data(cqe);
 		if (!ctx) {
@@ -109,18 +111,13 @@ xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 			XNVME_DEBUG("cqe->flags: %u", cqe->flags);
 			return -EIO;
 		}
-#ifdef NVME_IOCTL_IO64_CMD
-		xnvme_be_linux_nvme_map_cpl(ctx, NVME_IOCTL_IO64_CMD);
-#else
-		return -ENOSYS;
-#endif
-		ctx->cpl.result = cqe->res;
-		if (cqe->res < 0) {
-			ctx->cpl.result = 0;
-			ctx->cpl.status.sc = -cqe->res;
-			ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
-		}
 
+		/** IO64-quirky-handling: this is also for NVME_IOCTL_IO64_CMD_VEC */
+		err = xnvme_be_linux_nvme_map_cpl(ctx, NVME_IOCTL_IO64_CMD, cqe->res);
+		if (err) {
+			XNVME_DEBUG("FAILED: xnvme_be_linux_nvme_map_cpl(), err: %d", err);
+			return err;
+		}
 		ctx->async.cb(ctx, ctx->async.cb_arg);
 	};
 
@@ -135,6 +132,14 @@ xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 
 	return completed;
 }
+#else
+int
+xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
+{
+	XNVME_DEBUG("FAILED: not supported, built on system without NVME_IOCTL_IO64_CMD");
+	return xnvme_be_nosys_queue_poke(q, max);
+}
+#endif
 
 #ifdef NVME_IOCTL_IO64_CMD
 int
