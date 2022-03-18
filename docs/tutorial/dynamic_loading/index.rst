@@ -8,6 +8,7 @@ In this section, you will find an example of how to call the `xnvme_enumerate` f
 
 To get an overview of what the **xNVMe** shared library contains refer to :ref:`sec-c-api`
 
+
 Using the shared library in C
 =============================
 Here `dlopen` is used to load the library and pointers to the relevant functions are returned by `dlsym`.
@@ -26,6 +27,27 @@ Don't dismiss the error handling
 .. literalinclude:: enumerate_example.c
    :language: c
 
+
+Running the example
+-------------------
+Before running the example make sure that the path given to `dlopen` is correct.
+
+Next compile the example:
+
+.. literalinclude:: compile_example.cmd
+   :language: bash
+
+Then run it:
+
+.. literalinclude:: run_c_example.cmd
+   :language: bash
+
+The command should produce output similar to:
+
+.. literalinclude:: run_c_example.out
+   :language: bash
+
+.. note:: If you see no output, you need to run the command as superuser.
 
 
 Using the shared library in Python
@@ -47,4 +69,18 @@ Order matters for structs
 .. literalinclude:: enumerate_example.py
    :language: python
 
+
+Running the example
+-------------------
+The example can be run like so:
+
+.. literalinclude:: run_python_example.cmd
+   :language: bash
+
+The command should produce output similar to:
+
+.. literalinclude:: run_python_example.out
+   :language: bash
+
+.. note:: If you see no output, you need to run the command as superuser.
 
