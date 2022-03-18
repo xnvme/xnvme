@@ -19,9 +19,10 @@ enum_cb(struct xnvme_dev *dev, void *XNVME_UNUSED(cb_args))
 int
 main(int argc, char *argv[])
 {
+  struct xnvme_opts (*opts_default)(void);
+  struct xnvme_opts opts = opts_default();
   void *handle;
   int (*enumerate) (char *, struct xnvme_opts *, xnvme_enumerate_cb, void *); 
-  struct xnvme_opts (*opts_default) (void);
 
   handle = dlopen("/usr/local/lib/libxnvme-shared.so", RTLD_LAZY);
   if (!handle) {
@@ -54,9 +55,6 @@ main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-
-
-  struct xnvme_opts opts = opts_default();
   enumerate(argc > 1 ? argv[1] : NULL, &opts, enum_cb, NULL);
 
   dlclose(handle);

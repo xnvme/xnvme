@@ -1,15 +1,15 @@
 .. _sec-dynamic-loading:
 
-======================================
-Dynamically loading the shared library
-======================================
+========================================
+ Dynamically loading the shared library
+========================================
 
 In this section, you will find an example of how to call the `xnvme_enumerate` function when dynamically loading the **xNVMe** shared library. The example serves to illustrate how one can go about doing this and some common pitfalls to watch out for. The example will first be presented in C and then in python.
 
 To get an overview of what the **xNVMe** shared library contains refer to :ref:`sec-c-api`
 
 Using the shared library in C
------------------------------
+=============================
 Here `dlopen` is used to load the library and pointers to the relevant functions are returned by `dlsym`.
 
 Pitfalls:
@@ -29,7 +29,7 @@ Don't dismiss the error handling
 
 
 Using the shared library in Python
-----------------------------------
+==================================
 Here `ctypes` is used to load the library.
 
 Pitfalls:
