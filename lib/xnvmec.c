@@ -730,7 +730,8 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 		.opt = XNVMEC_OPT_BE,
 		.vtype = XNVMEC_OPT_VTYPE_STR,
 		.name = "be",
-		.descr = "xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix', 'windows'",
+		.descr =
+			"xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'macos', 'posix', 'windows'",
 	},
 	{
 		.opt = XNVMEC_OPT_MEM,
