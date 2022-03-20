@@ -6,6 +6,7 @@
 extern struct xnvme_be xnvme_be_spdk;
 extern struct xnvme_be xnvme_be_linux;
 extern struct xnvme_be xnvme_be_fbsd;
+extern struct xnvme_be xnvme_be_macos;
 extern struct xnvme_be xnvme_be_posix;
 extern struct xnvme_be xnvme_be_ramdisk;
 extern struct xnvme_be xnvme_be_windows;

@@ -74,6 +74,7 @@ conf_data.set('XNVME_BE_LINUX_BLOCK_ZONED_ENABLED', is_linux ? cc.has_header('li
 conf_data.set('XNVME_BE_LINUX_LIBAIO_ENABLED', is_linux and get_option('with-libaio'))
 conf_data.set('XNVME_BE_LINUX_LIBURING_ENABLED', is_linux and get_option('with-liburing'))
 
+conf_data.set('XNVME_BE_MACOS_ENABLED', is_darwin)
 conf_data.set('XNVME_BE_FBSD_ENABLED', is_freebsd)
 conf_data.set('XNVME_BE_POSIX_ENABLED', is_linux or is_freebsd or is_darwin)
 
@@ -196,6 +197,16 @@ elf_dep = cc.find_library(
 spdk_dep = dependency(
   'spdk',
   required: conf_data.get('XNVME_BE_SPDK_ENABLED')
+)
+corefoundation_dep = dependency(
+  'appleframeworks',
+  modules: 'CoreFoundation',
+  required: is_darwin
+)
+iokit_dep = dependency(
+  'appleframeworks',
+  modules: 'IOKit',
+  required: is_darwin
 )
 
 # Headers
