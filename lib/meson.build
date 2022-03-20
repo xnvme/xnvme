@@ -12,6 +12,10 @@ xnvmelib_source = [
   'xnvme_be_linux_block.c',
   'xnvme_be_linux_dev.c',
   'xnvme_be_linux_nvme.c',
+  'xnvme_be_macos.c',
+  'xnvme_be_macos_admin.c',
+  'xnvme_be_macos_dev.c',
+  'xnvme_be_macos_sync.c',
   'xnvme_be_nosys.c',
   'xnvme_be_posix.c',
   'xnvme_be_posix_admin.c',
@@ -69,11 +73,13 @@ xnvmelib_deps_shared = [
   execinfo_dep,
   elf_dep,
   aio_dep,
-  setupapi_dep
+  setupapi_dep,
+  corefoundation_dep,
+  iokit_dep
 ]
 
 xnvmelib_deps_static = []
-xnvmelib_deps_static += [spdk_dep, uring_dep]
+xnvmelib_deps_static += [spdk_dep, uring_dep, corefoundation_dep, iokit_dep]
 xnvmelib_deps = xnvmelib_deps_shared + xnvmelib_deps_static
 
 xnvmelib_deps_bundle = [
