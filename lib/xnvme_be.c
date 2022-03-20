@@ -17,13 +17,9 @@
 #include <xnvme_be.h>
 #include <xnvme_dev.h>
 
-static struct xnvme_be *g_xnvme_be_registry[] = {&xnvme_be_spdk,
-						 &xnvme_be_linux,
-						 &xnvme_be_fbsd,
-						 &xnvme_be_posix,
-						 &xnvme_be_ramdisk,
-						 &xnvme_be_windows,
-						 NULL};
+static struct xnvme_be *g_xnvme_be_registry[] = {
+	&xnvme_be_spdk,  &xnvme_be_linux,   &xnvme_be_fbsd,    &xnvme_be_posix,
+	&xnvme_be_macos, &xnvme_be_windows, &xnvme_be_ramdisk, NULL};
 static int g_xnvme_be_count = sizeof g_xnvme_be_registry / sizeof *g_xnvme_be_registry - 1;
 
 int
