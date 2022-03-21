@@ -12,6 +12,7 @@ enum xnvme_dev_type {
 	XNVME_DEV_TYPE_NVME_NAMESPACE,
 	XNVME_DEV_TYPE_BLOCK_DEVICE,
 	XNVME_DEV_TYPE_FS_FILE,
+	XNVME_DEV_TYPE_RAMDISK,
 };
 
 struct xnvme_dev {
