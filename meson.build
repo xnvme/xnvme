@@ -61,6 +61,8 @@ conf_data.set('XNVME_VERSION_PATCH', project_version_patch)
 
 conf_data.set('XNVME_DEBUG_ENABLED', get_option('buildtype') == 'debug')
 
+conf_data.set('XNVME_BE_RAMDISK_ENABLED', get_option('be_ramdisk'))
+
 conf_data.set('XNVME_BE_WINDOWS_ENABLED', is_windows)
 conf_data.set('XNVME_BE_WINDOWS_FS_ENABLED', is_windows)
 conf_data.set('XNVME_BE_WINDOWS_ASYNC_ENABLED', is_windows)
