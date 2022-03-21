@@ -278,13 +278,13 @@ define gen-bash-completions-help
 # Helper-target to produce Bash-completions for tools (tools, examples, tests)
 #
 # NOTE: This target requires a bunch of things: binaries must be built and
-# residing in 'builddir/tools' etc. AND installed on the system. Also, the find
+# residing in '$(BUILD_DIR)/tools' etc. AND installed on the system. Also, the find
 # command has only been tried with GNU find
 endef
 .PHONY: gen-bash-completions
 gen-bash-completions:
 	@echo "## xNVMe: make gen-bash-completions"
-	$(eval TOOLS := $(shell find builddir/tools builddir/examples builddir/tests -not -name "xnvme_single*" -not -name "xnvme_enum" -not -name "xnvme_dev" -not -name "*.so" -type f -executable -exec basename {} \;))
+	$(eval TOOLS := $(shell find $(BUILD_DIR)/tools $(BUILD_DIR)/examples $(BUILD_DIR)/tests -not -name "xnvme_single*" -not -name "xnvme_enum" -not -name "xnvme_dev" -not -name "*.so" -type f -executable -exec basename {} \;))
 	python3 ./scripts/xnvmec_generator.py cpl --tools ${TOOLS} --output scripts/bash_completion.d
 	@echo "## xNVMe: make gen-bash-completions [DONE]"
 
@@ -292,13 +292,13 @@ define gen-man-pages-help
 # Helper-target to produce man pages for tools (tools, examples, tests)
 #
 # NOTE: This target requires a bunch of things: binaries must be built and
-# residing in 'builddir/tools' etc. AND installed on the system. Also, the find
+# residing in '$(BUILD_DIR)/tools' etc. AND installed on the system. Also, the find
 # command has only been tried with GNU find
 endef
 .PHONY: gen-man-pages
 gen-man-pages:
 	@echo "## xNVMe: make gen-man-pages"
-	$(eval TOOLS := $(shell find builddir/tools builddir/examples builddir/tests -not -name "xnvme_single*" -not -name "xnvme_enum" -not -name "xnvme_dev" -not -name "*.so" -type f -executable -exec basename {} \;))
+	$(eval TOOLS := $(shell find $(BUILD_DIR)/tools $(BUILD_DIR)/examples $(BUILD_DIR)/tests -not -name "xnvme_single*" -not -name "xnvme_enum" -not -name "xnvme_dev" -not -name "*.so" -type f -executable -exec basename {} \;))
 	python3 ./scripts/xnvmec_generator.py man --tools ${TOOLS} --output man/
 	@echo "## xNVMe: make gen-man-pages [DONE]"
 
@@ -308,7 +308,7 @@ endef
 .PHONY: tags
 tags:
 	@echo "## xNVMe: make tags"
-	@$(CTAGS) * --languages=C -h=".c.h" -R --exclude=builddir \
+	@$(CTAGS) * --languages=C -h=".c.h" -R --exclude=$(BUILD_DIR) \
 		include \
 		lib \
 		tools \
