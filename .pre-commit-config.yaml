@@ -1,0 +1,64 @@
+repos:
+- repo: https://github.com/pre-commit/mirrors-clang-format
+  rev: v13.0.1
+  hooks:
+  - id: clang-format
+    args: ["-style={\
+      BasedOnStyle: LLVM,\
+      AlignConsecutiveAssignments: true,\
+      AlignConsecutiveBitFields: AcrossEmptyLinesAndComments,\
+      AlignConsecutiveMacros: true,\
+      AlignEscapedNewlines: Left,\
+      AlwaysBreakAfterReturnType: All,\
+      BreakBeforeBraces: WebKit,\
+      ColumnLimit: 99,\
+      ContinuationIndentWidth: 8,\
+      IndentGotoLabels: false,\
+      IndentWidth: 8,\
+      MaxEmptyLinesToKeep: 1,\
+      SortIncludes: Never,\
+      TabWidth: 8,\
+      UseTab: ForContinuationAndIndentation\
+    }", "-i"]
+    files: ^(include|lib|examples|tests|tools)\/.*\.(h)$
+- repo: https://github.com/pre-commit/mirrors-clang-format
+  rev: v13.0.1
+  hooks:
+  - id: clang-format
+    args: ["-style={\
+      BasedOnStyle: LLVM,\
+      AlignConsecutiveBitFields: AcrossEmptyLinesAndComments,\
+      AlignEscapedNewlines: Left,\
+      AlwaysBreakAfterReturnType: All,\
+      BreakBeforeBraces: WebKit,\
+      ColumnLimit: 99,\
+      ContinuationIndentWidth: 8,\
+      IndentGotoLabels: false,\
+      IndentWidth: 8,\
+      MaxEmptyLinesToKeep: 1,\
+      SortIncludes: Never,\
+      TabWidth: 8,\
+      UseTab: ForContinuationAndIndentation\
+    }", "-i"]
+    files: ^(include|lib|examples|tests|tools)\/((?!fioe\.c$).)*$ # Match all .c files, but not ones ending in "fioe.c"
+- repo: https://github.com/pre-commit/mirrors-clang-format
+  rev: v13.0.1
+  hooks:
+  - id: clang-format
+    args: ["-style={\
+      BasedOnStyle: LLVM,\
+      AlignConsecutiveBitFields: AcrossEmptyLinesAndComments,\
+      AlignEscapedNewlines: Left,\
+      AlwaysBreakAfterDefinitionReturnType: None,\
+      AlwaysBreakAfterReturnType: None,\
+      BreakBeforeBraces: WebKit,\
+      ColumnLimit: 99,\
+      ContinuationIndentWidth: 8,\
+      IndentGotoLabels: false,\
+      IndentWidth: 8,\
+      MaxEmptyLinesToKeep: 1,\
+      SortIncludes: Never,\
+      TabWidth: 8,\
+      UseTab: ForContinuationAndIndentation
+    }", "-i"]
+    files: ^(include|lib|examples|tests|tools)\/.*fioe\.c$ # Match all .c files, that _does_ end in "fioe.c"
