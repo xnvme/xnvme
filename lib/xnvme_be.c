@@ -17,9 +17,13 @@
 #include <xnvme_be.h>
 #include <xnvme_dev.h>
 
-static struct xnvme_be *g_xnvme_be_registry[] = {
-	&xnvme_be_spdk, &xnvme_be_linux, &xnvme_be_fbsd, &xnvme_be_posix, &xnvme_be_windows, NULL,
-};
+static struct xnvme_be *g_xnvme_be_registry[] = {&xnvme_be_spdk,
+						 &xnvme_be_linux,
+						 &xnvme_be_fbsd,
+						 &xnvme_be_posix,
+						 &xnvme_be_ramdisk,
+						 &xnvme_be_windows,
+						 NULL};
 static int g_xnvme_be_count = sizeof g_xnvme_be_registry / sizeof *g_xnvme_be_registry - 1;
 
 int
@@ -340,6 +344,7 @@ xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 	case XNVME_DEV_TYPE_FS_FILE:
 		return _fs_geometry(dev);
 
+	case XNVME_DEV_TYPE_RAMDISK:
 	case XNVME_DEV_TYPE_BLOCK_DEVICE:
 	case XNVME_DEV_TYPE_NVME_NAMESPACE:
 		if (dev->ident.csi == XNVME_SPEC_CSI_FS) {
@@ -634,6 +639,7 @@ xnvme_be_factory(struct xnvme_dev *dev, struct xnvme_opts *opts)
 	for (int i = 0; (i < g_xnvme_be_count) && g_xnvme_be_registry[i]; ++i) {
 		struct xnvme_be be = *g_xnvme_be_registry[i];
 		int setup = 0;
+		XNVME_DEBUG("INFO: checking be: '%s'", be.attr.name);
 
 		if (!be.attr.enabled) {
 			XNVME_DEBUG("INFO: skipping be: '%s'; !enabled", be.attr.name);
