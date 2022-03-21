@@ -1,0 +1,38 @@
+---
+descr: Verify base xNVMe functionality using the ramdisk backend
+descr_long: |
+  Exercises
+  * library-information
+  * device enumeration
+  * admin-commands idfy-ns, idfy-ctrlr, get feature
+  * queue-init/teardown of thrpool
+  Requires
+  * XNVME_URI defines an amount of memory in GB e.g. "2GB"
+hooks: ["xnvme"]
+evars:
+  NVME_NSTYPE: "lblk"
+  DEV_TYPE: "nvme"
+  XNVME_BE: "ramdisk"
+  XNVME_ADMIN: "ramdisk"
+  XNVME_URI: "1GB"
+
+
+
+testsuites:
+- name: xnvme_core
+  alias: "xNVMe: verify base functionality using be:ramdisk"
+
+- name: xnvme_admin_info_idfy_fget
+  alias: "xNVMe: verify base functionality using be:ramdisk"
+  testcases:
+  - xnvme_info.sh
+  - xnvme_idfy_ctrlr.sh
+  - xnvme_idfy_ns.sh
+  - xnvme_idfy.sh
+  - xnvme_feature_get.sh
+  - examples-xnvme_hello.sh
+  - xnvme_tests_enum_open.sh
+
+- name: xnvme_queue
+  alias: "xNVMe: verify base functionality using be:ramdisk/async:thrpool"
+  evars: {XNVME_ASYNC: "thrpool"}
