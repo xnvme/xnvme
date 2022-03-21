@@ -165,6 +165,7 @@ struct xnvme_fioe_options {
 	unsigned int sqpoll_thread;
 	unsigned int xnvme_dev_nsid;
 	unsigned int xnvme_iovec;
+	unsigned int uring_feat;
 	char *xnvme_be;
 	char *xnvme_async;
 	char *xnvme_sync;
@@ -244,7 +245,15 @@ static struct fio_option options[] = {
 		.category = FIO_OPT_C_ENGINE,
 		.group = FIO_OPT_G_INVALID,
 	},
-
+	{
+		.name = "uring_feat",
+		.lname = "xNVMe io_uring 128 byte sqe entries",
+		.type = FIO_OPT_STR_SET,
+		.off1 = offsetof(struct xnvme_fioe_options, uring_feat),
+		.help = "Use 128 byte sqe entries",
+		.category = FIO_OPT_C_ENGINE,
+		.group = FIO_OPT_G_INVALID,
+	},
 	{
 		.name = NULL,
 	},
@@ -278,6 +287,7 @@ static struct xnvme_opts xnvme_opts_from_fioe(struct thread_data *td)
 
 	opts.poll_io = o->hipri;
 	opts.poll_sq = o->sqpoll_thread;
+	opts.uring_feat = o->uring_feat;
 
 	opts.direct = td->o.odirect;
 

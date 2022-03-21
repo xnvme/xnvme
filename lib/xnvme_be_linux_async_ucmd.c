@@ -168,8 +168,6 @@ xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 	sqe->fd = queue->poll_sq ? 0 : state->fd;
 	sqe->rw_flags = 0;
 	sqe->user_data = (unsigned long)ctx;
-	sqe->__pad2[0] = (uint64_t)ctx;
-	sqe->open_flags = IORING_URING_CMD_INDIRECT;
 
 	if (queue->poll_io) {
 		ctx->cmd.common.fuse = 1;
@@ -179,6 +177,15 @@ xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 
 	ctx->cmd.common.mptr = (uint64_t)mbuf;
 	ctx->cmd.common.dptr.lnx_ioctl.metadata_len = mbuf_nbytes;
+
+	if (queue->base.dev->opts.uring_feat) {
+		XNVME_DEBUG("In-Line Command");
+		memcpy(&sqe->__pad[0], &ctx->cmd.common, NVME_PASSTHRU_CMD64_SIZE);
+	} else {
+		XNVME_DEBUG("Indirect Command");
+		sqe->__pad[0] = (uint64_t)ctx;
+		sqe->open_flags = IORING_URING_CMD_INDIRECT;
+	}
 
 	err = io_uring_submit(&queue->ring);
 	if (err < 0) {

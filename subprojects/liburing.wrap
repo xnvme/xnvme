@@ -1,6 +1,6 @@
 [wrap-git]
 url = https://github.com/axboe/liburing.git
-revision = liburing-2.1
+revision = big-sqe
 patch_directory = liburing
 
 [provide]
