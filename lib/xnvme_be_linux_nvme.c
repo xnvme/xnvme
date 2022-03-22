@@ -145,7 +145,13 @@ xnvme_be_linux_nvme_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 {
 	int err;
 
-	///< NOTE: opcode-dispatch (io)
+	/**
+	 * NOTE: For the pseudo-spec encapsulating file-system operations in NVMe-commands aka
+	 * SPEC_FS, then the slba aka "offset" is given in units of bytes, this is converted here
+	 * to an NVM-io command by shifting to obtain a unit of blocks. This of course requires
+	 * that the SPEC_FS operation is aligned to the the block-width, if it is not, then it will
+	 * silently write to "truncated" address.
+	 */
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_FS_OPC_READ:
 		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
