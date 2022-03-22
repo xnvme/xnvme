@@ -61,6 +61,7 @@ struct xnvme_opts {
 	uint8_t poll_sq;          ///< io_uring: enable sqthread-polling
 	uint8_t register_files;   ///< io_uring: enable file-regirations
 	uint8_t register_buffers; ///< io_uring: enable buffer-registration
+	uint8_t uring_feat;       ///< io_uring: enable 128 byte sqe entries
 	struct {
 		uint32_t value : 31;
 		uint32_t given : 1;
