@@ -139,6 +139,55 @@ ioctl_wrap(struct xnvme_dev *dev, unsigned long ioctl_req, struct xnvme_cmd_ctx 
 	return -errno;
 }
 
+#ifdef NVME_IOCTL_IO64_CMD_VEC
+int
+xnvme_be_linux_nvme_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+			    size_t XNVME_UNUSED(dvec_nbytes), struct iovec *mvec, size_t mvec_cnt,
+			    size_t XNVME_UNUSED(mvec_nbytes))
+{
+	struct nvme_passthru_cmd64 *kcmd = (void *)ctx;
+	int err;
+
+	/**
+	 * NOTE: see xnvme_be_linux_nvme_cmd_io()
+	 */
+	switch (ctx->cmd.common.opcode) {
+	case XNVME_SPEC_FS_OPC_READ:
+		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
+		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
+		break;
+
+	case XNVME_SPEC_FS_OPC_WRITE:
+		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
+		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
+		break;
+	}
+
+	kcmd->addr = (uint64_t)dvec;
+	kcmd->vec_cnt = dvec_cnt;
+	kcmd->metadata = (uint64_t)mvec;
+	kcmd->metadata_len = mvec_cnt;
+
+	err = ioctl_wrap(ctx->dev, NVME_IOCTL_IO64_CMD_VEC, ctx);
+	if (err) {
+		XNVME_DEBUG("FAILED: ioctl_wrap(), err: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+#else
+int
+xnvme_be_linux_nvme_cmd_iov(struct xnvme_cmd_ctx *XNVME_UNUSED(ctx),
+			    struct iovec *XNVME_UNUSED(dvec), size_t XNVME_UNUSED(dvec_cnt),
+			    size_t XNVME_UNUSED(dvec_nbytes), struct iovec *XNVME_UNUSED(mvec),
+			    size_t XNVME_UNUSED(mvec_cnt), size_t XNVME_UNUSED(mvec_nbytes))
+{
+	XNVME_DEBUG("FAILED: NVME_IOCTL_IO64_CMD_VEC; ENOSYS");
+	return -ENOSYS;
+}
+#endif
+
 int
 xnvme_be_linux_nvme_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			   size_t mbuf_nbytes)
@@ -229,7 +278,7 @@ struct xnvme_be_sync g_xnvme_be_linux_sync_nvme = {
 	.id = "nvme",
 #ifdef XNVME_BE_LINUX_ENABLED
 	.cmd_io = xnvme_be_linux_nvme_cmd_io,
-	.cmd_iov = xnvme_be_nosys_sync_cmd_iov,
+	.cmd_iov = xnvme_be_linux_nvme_cmd_iov,
 #else
 	.cmd_io = xnvme_be_nosys_sync_cmd_io,
 	.cmd_iov = xnvme_be_nosys_sync_cmd_iov,
