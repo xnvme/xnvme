@@ -360,8 +360,6 @@ struct xnvme_cmd_ctx {
  * @param ctx Pointer to the ::xnvme_cmd_ctx to setup callback for
  * @param cb The callback function to use
  * @param cb_arg The callback argument to use
- *
- * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 static inline void
 xnvme_cmd_ctx_set_cb(struct xnvme_cmd_ctx *ctx, xnvme_queue_cb cb, void *cb_arg)
