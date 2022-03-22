@@ -82,7 +82,7 @@ xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 
 		ret = io_uring_wait_cqe(&queue->ring, &cqes[0]);
 		if (ret) {
-			XNVME_DEBUG("FAILED: foo");
+			XNVME_DEBUG("FAILED: io_uring_wait_cqe(), err: %d", ret);
 			return ret;
 		}
 		completed = 1;
@@ -92,7 +92,7 @@ xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 
 			ret = io_uring_wait_cqe_nr(&queue->ring, cqes, max);
 			if (ret) {
-				XNVME_DEBUG("FAILED: foo");
+				XNVME_DEBUG("FAILED: io_uring_wait_cqe_nr(), err: %d", err);
 				return ret;
 			}
 		}
