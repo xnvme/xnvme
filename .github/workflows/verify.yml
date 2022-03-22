@@ -56,49 +56,19 @@ jobs:
         path: builddir/meson-dist/*.tar.gz
 
   #
-  # Check source-format using ./scripts/source-format.sh
+  # Check source-format using pre-commit
   #
   source-format-check:
     needs: source-archive
     runs-on: ubuntu-latest
     if: (! contains(github.ref, 'ci')) || contains(github.ref, 'ci-source-format-check')
 
-    container: debian:bullseye
+    container: refenv/xnvme-devtools-ci:latest
 
     steps:
-    - name: Retrieve the source-archive
-      uses: actions/download-artifact@v2
-      with:
-        name: archive-src
-    - name: Extract the full-source-archive
-      run: |
-        tar xzf xnvme*.tar.gz --strip 1
-        rm xnvme*.tar.gz
-
-    - name: Install build-requirements
-      run: |
-        source scripts/pkgs/debian-bullseye.sh
-        apt -qy install wget gnupg2 lsb-release software-properties-common
-        wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
-        add-apt-repository -y "deb http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-14 main"
-        apt -qy update
-        apt -qy install clang-format-14
-        update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-14 100
-
-    - name: xNVMe, run the source-format script
-      run: |
-        cd scripts && CLANG_FORMAT_BIN=clang-format ./source-format.sh
-
-    - name: dump log, on failure
-      if: failure()
-      run: |
-        cat scripts/source-format.log
-
-    - name: Upload source-format log
-      uses: actions/upload-artifact@v2
-      with:
-        name: source-format-issues
-        path: scripts/source-format.log
+    - uses: actions/checkout@v2
+    - name: Run pre-commit
+      run: pre-commit run --all-files
 
   #
   # Code-analysis using GitHUB CodeQL
