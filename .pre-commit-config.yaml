@@ -62,3 +62,24 @@ repos:
       UseTab: ForContinuationAndIndentation
     }", "-i"]
     files: ^(include|lib|examples|tests|tools)\/.*fioe\.c$ # Match all .c files, that _does_ end in "fioe.c"
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.1.0
+  hooks:
+  - id: check-yaml # pre-commit-hook-yamlfmt only works on valid YAML files
+- repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
+  rev: 0.1.0
+  hooks:
+  - id: yamlfmt
+    args: ['--mapping', '2', '--sequence', '2', '--offset', '0', --width, '120', '--preserve-quotes']
+    exclude: .pre-commit-config.yaml
+- repo: https://github.com/psf/black
+  rev: '22.1.0'
+  hooks:
+  - id: black
+    args: ['--line-length', '120']
+- repo: https://github.com/pycqa/isort
+  rev: '5.10.1'
+  hooks:
+    - id: isort
+      # Available args: https://pycqa.github.io/isort/docs/configuration/options.html
+      args: ['--profile', 'black', '--line-length', '120']
