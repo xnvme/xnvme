@@ -1,0 +1,7 @@
+xnvme_tests_znd_zrwa_support.sh
+xnvme_tests_znd_zrwa_idfy.sh
+xnvme_tests_znd_zrwa_open_with_zrwa.sh
+xnvme_tests_znd_zrwa_open_without_zrwa.sh
+xnvme_tests_znd_zrwa_flush.sh
+xnvme_tests_znd_zrwa_flush_explicit.sh
+xnvme_tests_znd_zrwa_flush_implicit.sh

@@ -1,0 +1,14 @@
+zoned_enum.sh
+zoned_info.sh
+zoned_idfy_ns.sh
+zoned_idfy_ctrlr.sh
+zoned_report.sh
+zoned_report_one.sh
+zoned_report_some.sh
+zoned_report_all.sh
+zoned_mgmt_open.sh
+zoned_write.sh
+zoned_read.sh
+examples-zoned_io_sync_write.sh
+examples-zoned_io_sync_read.sh
+xnvme_tests_znd_state.sh
