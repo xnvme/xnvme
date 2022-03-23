@@ -250,7 +250,7 @@ endef
 .PHONY: clean-subprojects
 clean-subprojects:
 	@echo "## xNVMe: make clean-subprojects"
-	@if [ -d "subprojects/spdk" ]; then cd subprojects/spdk &&$(MAKE) clean; fi;
+	@if [ -d "subprojects/spdk" ] && [ ${PLATFORM_ID} != 'Darwin' ]; then cd subprojects/spdk &&$(MAKE) clean; fi;
 	@if [ -d "subprojects/fio" ]; then cd subprojects/fio && $(MAKE) clean; fi;
 	@if [ -d "subprojects/liburing" ]; then cd subprojects/liburing &&$(MAKE) clean; fi;
 	rm -fr $(BUILD_DIR) || true
