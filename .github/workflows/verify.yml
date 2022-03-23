@@ -59,7 +59,6 @@ jobs:
   # Check source-format using pre-commit
   #
   source-format-check:
-    needs: source-archive
     runs-on: ubuntu-latest
     if: (! contains(github.ref, 'ci')) || contains(github.ref, 'ci-source-format-check')
 
@@ -229,7 +228,7 @@ jobs:
   # Build on Linux using different Linux distributions
   #
   build-linux:
-    needs: source-archive
+    needs: [source-archive, source-format-check]
     runs-on: ubuntu-latest
     if: (! contains(github.ref, 'ci')) || contains(github.ref, 'ci-build-linux')
 
@@ -303,7 +302,7 @@ jobs:
   # Build on macOS
   #
   build-macos:
-    needs: source-archive
+    needs: [source-archive, source-format-check]
     runs-on: ${{ matrix.runner.os }}-${{ matrix.runner.ver }}
     if: (! contains(github.ref, 'ci')) || contains(github.ref, 'ci-build-mac')
 
@@ -348,7 +347,7 @@ jobs:
   # Build on Windows
   #
   build-windows:
-    needs: source-archive
+    needs: [source-archive, source-format-check]
     runs-on: ${{ matrix.runner.os }}-${{ matrix.runner.ver }}
     if: (! contains(github.ref, 'ci')) || contains(github.ref, 'ci-build-windows')
 
@@ -400,7 +399,7 @@ jobs:
   # Build on run CIJOE testplans
   #
   build-and-test:
-    needs: source-archive
+    needs: [source-archive, source-format-check]
     runs-on: self-hosted
     if: (! contains(github.ref, 'ci')) || contains(github.ref, 'ci-test')
 
