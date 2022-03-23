@@ -1,0 +1,15 @@
+xnvme_enum.sh
+xnvme_info.sh
+xnvme_idfy_ctrlr.sh
+xnvme_idfy_ns.sh
+xnvme_idfy.sh
+xnvme_log.sh
+xnvme_log-erri.sh
+xnvme_log-health.sh
+xnvme_padc.sh
+xnvme_pioc.sh
+xnvme_feature_get.sh
+xnvme_feature_set.sh
+examples-xnvme_hello.sh
+xnvme_tests_enum_open.sh
+xnvme_tests_enum_multi.sh

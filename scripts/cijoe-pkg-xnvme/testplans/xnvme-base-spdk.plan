@@ -1,0 +1,27 @@
+descr: Verify base xNVMe functionality using the SPDK backend
+descr_long: |
+  Exercises 
+  * library-information
+  * device enumeration
+  * admin-commands idfy-ns, idfy-ctrlr, get-log, get/set feature
+  * queue-init/teardown
+  Requires
+  * XNVME_URI points to an NVMe namespace e.g. /dev/nvme0n1
+hooks: ["sysinf", "xnvme"]
+evars:
+  NVME_NSTYPE: "lblk"
+  DEV_TYPE: "nvme"
+  XNVME_BE: "spdk"
+  XNVME_ADMIN: "nvme"
+
+
+testsuites:
+  - name: xnvme_core
+    alias: "xNVMe: verify base functionality using be:spdk"
+
+  - name: xnvme_admin_no_multi
+    alias: "xNVMe: verify base functionality using be:spdk"
+
+  - name: xnvme_queue
+    alias: "xNVMe: verify base functionality using be:spdk"
+    evars: { XNVME_ASYNC: "nvme" }

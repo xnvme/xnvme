@@ -1,0 +1,61 @@
+descr: xNVMe IO comparison using the Flexible I/O Tester (fio)
+descr_long: |
+  Run fio random-read at io-depth 1 with 4K payloads.
+evars:
+  NVME_NSTYPE: "lblk"
+  #CMD_PREFIX: "taskset -c 2 perf stat"
+  CMD_PREFIX: " "
+  FIO_BIN: "/opt/aux/fio"
+  FIO_NRUNS: "3"
+  FIO_SCRIPT: "xnvme-compare.fio"
+  FIO_SECTION: "override"
+  FIO_RW: "randread"
+  FIO_IODEPTH_LIST: "1 2 4 8 16"
+  FIO_BS_LIST: "512 4k 32k"
+  FIO_IOENG_NAME: "io_uring"
+  XNVME_BE: "linux"
+hooks: ["dmesg", "sysinf", "xnvme"]
+testsuites:
+  # Vectored IO without fixed buffers
+  - name: "xnvme_fioe"
+    evars:
+      FIO_AUX: "--sqthread_poll=0 --hipri=0 --registerfiles=1 --fixedbufs=0 --nonvectored=0"
+
+  - name: "xnvme_fioe"
+    evars:
+      FIO_AUX: "--sqthread_poll=1 --hipri=0 --registerfiles=1 --fixedbufs=0 --nonvectored=0"
+
+  - name: "xnvme_fioe"
+    evars:
+      FIO_AUX: "--sqthread_poll=0 --hipri=1 --registerfiles=1 --fixedbufs=0 --nonvectored=0"
+
+  # Vectored IO with fixed buffers
+  - name: "xnvme_fioe"
+    evars:
+      FIO_AUX: "--sqthread_poll=0 --hipri=0 --registerfiles=1 --fixedbufs=1 --nonvectored=0"
+
+  - name: "xnvme_fioe"
+    evars:
+      FIO_AUX: "--sqthread_poll=1 --hipri=0 --registerfiles=1 --fixedbufs=1 --nonvectored=0"
+
+  - name: "xnvme_fioe"
+    evars:
+      FIO_AUX: "--sqthread_poll=0 --hipri=1 --registerfiles=1 --fixedbufs=1 --nonvectored=0"
+
+  # Non-vectored IO
+  - name: "xnvme_fioe"
+    evars:
+      FIO_AUX: "--sqthread_poll=0 --hipri=0 --registerfiles=1 --fixedbufs=0 --nonvectored=1"
+
+  - name: "xnvme_fioe"
+    evars:
+      FIO_AUX: "--sqthread_poll=1 --hipri=0 --registerfiles=1 --fixedbufs=0 --nonvectored=1"
+
+  - name: "xnvme_fioe"
+    evars:
+      FIO_AUX: "--sqthread_poll=0 --hipri=1 --registerfiles=1 --fixedbufs=0 --nonvectored=1"
+
+  # sqt + iop => worse than either
+  - name: "xnvme_fioe"
+    evars:
+      FIO_AUX: "--sqthread_poll=1 --hipri=1 --registerfiles=1 --fixedbufs=0 --nonvectored=0"

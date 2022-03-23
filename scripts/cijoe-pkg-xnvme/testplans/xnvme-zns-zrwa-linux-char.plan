@@ -1,0 +1,13 @@
+descr: Basic verification of Zone-Random-Write-Area ZRWA via xNVMe
+descr_long: Basic verification of Zone-Random-Write-Area ZRWA via xNVMe
+hooks: ["sysinf", "xnvme"]
+evars:
+  NVME_NSTYPE: "zoned"
+  DEV_TYPE: "char"
+  XNVME_BE: "linux"
+  XNVME_ADMIN: "nvme"
+  XNVME_SYNC: "nvme"
+
+testsuites:
+  - name: xnvme_zrwa
+    alias: "xNVMe:zoned:zrwa: verify zoned functionality using be:linux /dev/ngXnY"

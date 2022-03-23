@@ -1,0 +1,54 @@
+descr: Verify xNVMe Zoned Command Set using a Linux NVMe block device aka /dev/nvmeXnY
+descr_long: |
+  Basic verification of xNVMe using through the different IO and control paths.
+  Leaving out changes-log as it is not support in upstream qemu6
+hooks: ["sysinf", "xnvme"]
+evars:
+  CMD_PREFIX: " "
+  FIO_NRUNS: "1"
+  FIO_SECTION: "default"
+  FIO_SCRIPT: "xnvme-zoned.fio"
+  FIO_IOENG_NAME: "xnvme"
+  NVME_NSTYPE: "zoned"
+  DEV_TYPE: "nvme"
+  XNVME_BE: "linux"
+  XNVME_ADMIN: "nvme"
+  XNVME_SYNC: "nvme"
+
+
+
+
+testsuites:
+  - name: xnvme_core
+    alias: "xNVMe: core library information and enumeration for convenience"
+
+  - name: xnvme_zns
+    alias: "xNVMe: Zoned Command Set (mandatory) using be:linux"
+
+  - name: xnvme_zns_opt_append
+    alias: "xNVMe: Zoned Command Set (append) using be:linux"
+    evars: { XNVME_ASYNC: "emu" }
+  - name: xnvme_zns_opt_append
+    alias: "xNVMe: Zoned Command Set (append) using be:linux"
+    evars: { XNVME_ASYNC: "thrpool" }
+
+#  - name: xnvme_zns_opt_changes
+#    alias: "xNVMe: Zoned Command Set (changes) using be:linux"
+#    evars: { XNVME_BE: "linux" }
+#    hooks: [ "xnvme" ]
+
+  - name: xnvme_zns_io
+    alias: "xNVMe: Zoned Command Set (I/O) using be:linux/async:emu"
+    evars: { XNVME_ASYNC: "emu" }
+  - name: xnvme_zns_io
+    alias: "xNVMe: Zoned Command Set (I/O) using be:linux/async:thrpool"
+    evars: { XNVME_ASYNC: "thrpool" }
+  - name: xnvme_zns_io
+    alias: "xNVMe: Zoned Command Set (I/O) using be:linux/async:posix"
+    evars: { XNVME_ASYNC: "posix" }
+  - name: xnvme_zns_io
+    alias: "xNVMe: Zoned Command Set (I/O) using be:linux/async:libaio"
+    evars: { XNVME_ASYNC: "libaio" }
+  - name: xnvme_zns_io
+    alias: "xNVMe: Zoned Command Set (I/O) using be:linux/async:io_uring"
+    evars: { XNVME_ASYNC: "io_uring" }

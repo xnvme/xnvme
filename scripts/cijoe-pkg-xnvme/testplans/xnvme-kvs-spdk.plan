@@ -1,0 +1,15 @@
+descr: Verify xNVMe KV using a SPDK NVMe driver
+descr_long: |
+  Basic verification of xNVMe KV functionality through the different IO and control paths.
+hooks: ["xnvme"]
+evars:
+  CMD_PREFIX: " "
+  NVME_NSTYPE: "kvs"
+  DEV_TYPE: "nvme"
+  XNVME_BE: "spdk"
+  XNVME_ADMIN: "nvme"
+  XNVME_SYNC: "nvme"
+
+testsuites:
+  - name: xnvme_kvs
+    alias: "xNVMe: base KV functionality"

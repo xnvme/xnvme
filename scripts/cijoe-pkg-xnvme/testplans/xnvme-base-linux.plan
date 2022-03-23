@@ -1,0 +1,44 @@
+descr: Verify base xNVMe functionality using the Linux backend
+descr_long: |
+  Exercises 
+  * library-information
+  * device enumeration
+  * admin-commands idfy-ns, idfy-ctrlr, get-log, get/set feature
+  * queue-init/teardown of io_uring/libaio/posix
+  Requires
+  * XNVME_URI points to an NVMe namespace e.g. /dev/nvme0n1
+hooks: ["sysinf", "xnvme"]
+evars:
+  NVME_NSTYPE: "lblk"
+  DEV_TYPE: "nvme"
+  XNVME_BE: "linux"
+  XNVME_ADMIN: "nvme"
+
+
+
+testsuites:
+  - name: xnvme_core
+    alias: "xNVMe: verify base functionality using be:linux"
+
+  - name: xnvme_admin_no_multi
+    alias: "xNVMe: verify base functionality using be:linux"
+
+  - name: xnvme_queue
+    alias: "xNVMe: verify base functionality using be:linux"
+    evars: { XNVME_ASYNC: "io_uring" }
+
+  - name: xnvme_queue
+    alias: "xNVMe: verify base functionality using be:linux/async:libaio"
+    evars: { XNVME_ASYNC: "libaio" }
+
+  - name: xnvme_queue
+    alias: "xNVMe: verify base functionality using be:linux/async:posix"
+    evars: { XNVME_ASYNC: "posix" }
+
+  - name: xnvme_queue
+    alias: "xNVMe: verify base functionality using be:linux/async:emu"
+    evars: { XNVME_ASYNC: "emu" }
+
+  - name: xnvme_queue
+    alias: "xNVMe: verify base functionality using be:linux/async:thrpool"
+    evars: { XNVME_ASYNC: "thrpool" }

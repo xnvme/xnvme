@@ -1,0 +1,47 @@
+descr: Verify xNVMe Zoned Command Set using a Linux NVMe char device aka /dev/ngXnY
+descr_long: |
+  Zone changes are left out as the qemu-device used for testing does not support it.
+  Remove comments when running the testplan on a capable device.
+  The block-layer based I/O interfaces are left out at these are not usable for shipping commands
+  to the char-device.
+hooks: ["sysinf", "xnvme"]
+evars:
+  CMD_PREFIX: " "
+  FIO_NRUNS: "1"
+  FIO_SECTION: "default"
+  FIO_SCRIPT: "xnvme-zoned.fio"
+  FIO_IOENG_NAME: "xnvme"
+  NVME_NSTYPE: "zoned"
+  DEV_TYPE: "char"
+  XNVME_BE: "linux"
+  XNVME_ADMIN: "nvme"
+  XNVME_SYNC: "nvme"
+
+
+
+
+testsuites:
+  - name: xnvme_core
+    alias: "xNVMe: core library information and enumeration for convenience"
+
+  - name: xnvme_zns
+    alias: "xNVMe: Zoned Command Set (mandatory) using be:linux"
+
+  - name: xnvme_zns_opt_append
+    alias: "xNVMe: Zoned Command Set (append) using be:linux"
+    evars: { XNVME_ASYNC: "emu" }
+  - name: xnvme_zns_opt_append
+    alias: "xNVMe: Zoned Command Set (append) using be:linux"
+    evars: { XNVME_ASYNC: "thrpool" }
+
+#  - name: xnvme_zns_opt_changes
+#    alias: "xNVMe: Zoned Command Set (changes) using be:linux"
+#    evars: { XNVME_BE: "linux" }
+#    hooks: [ "xnvme" ]
+
+  - name: xnvme_zns_io
+    alias: "xNVMe: Zoned Command Set (I/O) using be:linux/async:emu"
+    evars: { XNVME_ASYNC: "emu" }
+  - name: xnvme_zns_io
+    alias: "xNVMe: Zoned Command Set (I/O) using be:linux/async:thrpool"
+    evars: { XNVME_ASYNC: "thrpool" }

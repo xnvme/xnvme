@@ -1,0 +1,6 @@
+lblk_enum.sh
+lblk_idfy.sh
+lblk_info.sh
+lblk_read.sh
+lblk_write.sh
+xnvme_tests_lblk_io.sh

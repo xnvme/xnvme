@@ -1,0 +1,114 @@
+descr: xNVMe IO comparison using the Flexible I/O Tester (fio)
+descr_long: |
+  Run fio random-read at varying iodepth and block-sizes
+evars:
+  NVME_NSTYPE: "lblk"
+  # CMD_PREFIX, cannot be used with the SPDK fio io-engine since it uses LD_PRELOAD
+  #CMD_PREFIX: "taskset -c 2 perf stat"
+  CMD_PREFIX: " "
+  FIO_BIN: "/opt/aux/fio"
+  FIO_NRUNS: "3"
+  #FIO_NRUNS: "1"
+  FIO_SCRIPT: "xnvme-compare.fio"
+  FIO_SECTION: "override"
+  FIO_RW: "randread"
+  FIO_IODEPTH_LIST: "1 2 4 8"
+  #FIO_IODEPTH_LIST: "1"
+  FIO_BS_LIST: "512 4k"
+  #FIO_BS_LIST: "512 4k 32k"
+  #FIO_BS_LIST: "512"
+  FIO_AUX: ""
+  XNVME_BE: "linux"
+hooks: ["dmesg", "sysinf"]
+testsuites:
+  #
+  # fio external engine: xnvme with backends: spdk, nil, emu, libaio, and io_uring
+  #
+  - name: "xnvme_fioe"
+    alias: "fio:ext:xNVMe:spdk:nvme"
+    hooks: ["xnvme"]
+    evars:
+      FIO_IOENG_NAME: "xnvme"
+      XNVME_BE: "spdk"
+
+  - name: "xnvme_fioe"
+    alias: "fio:ext:xNVMe:linux:nil"
+    hooks: ["xnvme"]
+    evars:
+      FIO_IOENG_NAME: "xnvme"
+      XNVME_ASYNC: "nil"
+
+  - name: "xnvme_fioe"
+    alias: "fio:ext:xNVMe:linux:emu"
+    hooks: ["xnvme"]
+    evars:
+      FIO_IOENG_NAME: "xnvme"
+      XNVME_ASYNC: "emu"
+
+  - name: "xnvme_fioe"
+    alias: "fio:ext:xNVMe:linux:libaio"
+    hooks: ["xnvme"]
+    evars:
+      FIO_IOENG_NAME: "xnvme"
+      XNVME_ASYNC: "libaio"
+
+  - name: "xnvme_fioe"
+    alias: "fio:ext:xNVMe:linux:io_uring"
+    hooks: ["xnvme"]
+    evars:
+      FIO_IOENG_NAME: "xnvme"
+      FIO_AUX: "--sqthread_poll=0"
+      XNVME_ASYNC: "io_uring"
+
+  - name: "xnvme_fioe"
+    alias: "fio:ext:xNVMe:linux:io_uring:sqt"
+    hooks: ["xnvme"]
+    evars:
+      FIO_IOENG_NAME: "xnvme"
+      FIO_AUX: "--sqthread_poll=1"
+      XNVME_ASYNC: "io_uring"
+
+  #
+  # fio external io-engine: spdk_nvme
+  #
+  # These use the external SPDK fio io-engines: spdk_nvme
+  # Make sure these are set in the target-environment
+  #
+  #   SPDK_FIOE_ROOT: "/opt/aux"
+  #   SPDK_FIOE_FILENAME: "trtype=PCIe traddr=0000.01.00.0 ns=1"
+  #
+  - name: "xnvme_fioe"
+    alias: "fio:ext:spdk:nvme"
+    hooks: ["xnvme"]
+    evars:
+      FIO_IOENG_NAME: "spdk_nvme"
+      XNVME_BE: "spdk"
+
+  #
+  # fio built-in engines: null, libaio and io_uring
+  #
+  - name: "xnvme_fioe"
+    alias: "fio:int:null"
+    hooks: ["xnvme"]
+    evars:
+      FIO_IOENG_NAME: "null"
+
+  - name: "xnvme_fioe"
+    alias: "fio:int:libaio"
+    hooks: ["xnvme"]
+    evars:
+      FIO_IOENG_NAME: "libaio"
+
+  - name: "xnvme_fioe"
+    alias: "fio:int:io_uring:nv"
+    hooks: ["xnvme"]
+    evars:
+      FIO_IOENG_NAME: "io_uring"
+      FIO_AUX: "--sqthread_poll=0 --nonvectored=1"
+
+  - name: "xnvme_fioe"
+    alias: "fio:int:io_uring:sqt_nv"
+    hooks: ["xnvme"]
+    evars:
+      FIO_IOENG_NAME: "io_uring"
+      FIO_AUX: "--sqthread_poll=1 --nonvectored=1"

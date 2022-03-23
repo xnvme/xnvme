@@ -1,0 +1,30 @@
+descr: Verify base xNVMe functionality over Fabrics
+descr_long: |
+  Exercises 
+  * library-information
+  * device enumeration
+  * admin-commands idfy-ns, idfy-ctrlr, get-log, get/set feature
+  * queue-init/teardown of io_uring/libaio/posix
+  Requires
+  * XNVME_URI points to an NVMe namespace over fabrics
+hooks: ["xnvme", "spdk_nvmf_target"]
+evars:
+  NVME_NSTYPE: "lblk"
+  DEV_TYPE: "nvme"
+  XNVME_BE: "spdk"
+  XNVME_ADMIN: "nvme"
+  XNVME_ASYNC: "nvme"
+
+testsuites:
+  - name: XNVME_FABRICS_ENUMERATION
+    alias: "Verification of enumeration over fabrics"
+    testcases:
+      - xnvme_enum_fabrics.sh
+  - name: xnvme_core
+    alias: "xNVMe: verify base functionality using be:spdk/fabrics"
+
+  - name: xnvme_admin_no_multi
+    alias: "xNVMe: verify base functionality using be:spdk/fabrics"
+
+  - name: xnvme_queue
+    alias: "xNVMe: verify base functionality using be:spdk/fabrics"

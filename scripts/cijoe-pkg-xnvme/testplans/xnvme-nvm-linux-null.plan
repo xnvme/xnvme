@@ -1,0 +1,56 @@
+descr: Verify xNVMe NVM Command-set using a Null-block device
+descr_long: |
+  Verify xNVMe mandatory NVM Command-set using a NVMe device
+  Leaving out: simple-copy, write-uncor, write-zero as we cannot exercise those via the Null Block device
+hooks: ["sysinf", "xnvme", "nullblk"]
+evars:
+  CMD_PREFIX: " "
+  FIO_NRUNS: "1"
+  FIO_SECTION: "default"
+  FIO_SCRIPT: "xnvme-verify.fio"
+  FIO_IOENG_NAME: "xnvme"
+  NVME_NSTYPE: "lblk"
+  DEV_TYPE: "nullblk"
+  XNVME_BE: "linux"
+  XNVME_ADMIN: "block"
+  XNVME_SYNC: "block"
+  NULLBLK_ZONED: "1"
+  NULLBLK_GB: "14"
+  NULLBLK_NR_DEVICES: "0"
+  NULLBLK_AUTOCONF: "blk_zblk"
+
+testsuites:
+  - name: xnvme_core
+    alias: "xNVMe: core library info and default enumeration"
+
+  - name: xnvme_nvm
+    alias: "xNVMe: NVM Command Set using be:linux"
+
+  - name: xnvme_nvm_io
+    alias: "xNVMe: NVM Command Set using be:linux/async:emu"
+    evars: { XNVME_ASYNC: "emu" }
+
+  - name: xnvme_nvm_io
+    alias: "xNVMe: NVM Command Set using be:linux/async:thrpool"
+    evars: { XNVME_ASYNC: "thrpool" }
+
+  - name: xnvme_nvm_io
+    alias: "xNVMe: NVM Command Set using be:linux/async:posix"
+    evars: { XNVME_ASYNC: "posix" }
+
+  - name: xnvme_nvm_io
+    alias: "xNVMe: NVM Command Set using be:linux/async:libaio"
+    evars: { XNVME_ASYNC: "libaio" }
+
+  - name: xnvme_nvm_io
+    alias: "xNVMe: NVM Command Set using be:linux/async:io_uring"
+    evars: { XNVME_ASYNC: "io_uring" }
+
+#  - name: xnvme_nvm_opt_scc
+#    alias: "xNVMe: NVM Command Set (Simple-Copy) using be:linux"
+
+#  - name: xnvme_nvm_opt_wunco
+#    alias: "xNVMe: NVM Command Set (Write-Uncorrectable) be:linux"
+
+#  - name: xnvme_nvm_opt_wzero
+#    alias: "xNVMe: NVM Command Set (Write-Zero) using be:linux"

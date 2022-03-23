@@ -1,0 +1,82 @@
+descr: xNVMe IO comparison using the Flexible I/O Tester (fio)
+descr_long: |
+  Run fio random-read at io-depth 1 with 4K payloads.
+evars:
+  NVME_NSTYPE: "lblk"
+  #CMD_PREFIX: "taskset -c 2 perf stat"
+  CMD_PREFIX: ""
+  FIO_BIN: "/opt/aux/fio"
+  FIO_NRUNS: "1"
+  FIO_SCRIPT: "xnvme-compare.fio"
+  FIO_SECTION: "override"
+  FIO_RW: "randread"
+  FIO_IODEPTH_LIST: "1 2 4 8"
+  FIO_BS_LIST: "512 4k"
+  FIO_IOENG_NAME: "io_uring"
+  XNVME_BE: "linux"
+hooks: ["dmesg", "sysinf", "xnvme"]
+testsuites:
+  # fio internal io_uring I/O engine
+  - name: "xnvme_fioe"
+    alias: "fio:int:io_uring:nv"
+    hooks: ["xnvme"]
+    evars:
+      FIO_IOENG_NAME: "io_uring"
+      FIO_AUX: "--sqthread_poll=0 --nonvectored=1"
+
+  - name: "xnvme_fioe"
+    alias: "fio:int:io_uring:sqt:nv"
+    hooks: ["xnvme"]
+    evars:
+      FIO_IOENG_NAME: "io_uring"
+      FIO_AUX: "--sqthread_poll=1 --nonvectored=1"
+
+  # fio external xNVMe I/O engine - ioctl
+  - name: "xnvme_fioe"
+    alias: "fio:ext:xNVMe:emu:ioctl"
+    hooks: ["xnvme"]
+    evars:
+      FIO_IOENG_NAME: "xnvme"
+      XNVME_ASYNC: "emu"
+
+  # fio external xNVMe I/O engine - io_uring
+  - name: "xnvme_fioe"
+    alias: "fio:ext:xNVMe:io_uring"
+    hooks: ["xnvme"]
+    evars:
+      FIO_IOENG_NAME: "xnvme"
+      FIO_AUX: "--sqthread_poll=0"
+      XNVME_ASYNC: "io_uring"
+
+  - name: "xnvme_fioe"
+    alias: "fio:ext:xNVMe:io_uring:sqt"
+    hooks: ["xnvme"]
+    evars:
+      FIO_IOENG_NAME: "xnvme"
+      FIO_AUX: "--sqthread_poll=1"
+      XNVME_ASYNC: "io_uring"
+
+  # fio external xNVMe I/O engine SDPK backend
+  - name: "xnvme_fioe"
+    alias: "fio:ext:xNVMe:spdk:nvme"
+    hooks: ["xnvme"]
+    evars:
+      FIO_IOENG_NAME: "xnvme"
+      XNVME_BE: "spdk"
+
+  # fio external xNVMe I/O engine - ioctl_ring
+  - name: "xnvme_fioe"
+    alias: "fio:ext:xNVMe:ioctl_ring"
+    hooks: ["xnvme"]
+    evars:
+      FIO_IOENG_NAME: "xnvme"
+      FIO_AUX: "--sqthread_poll=0"
+      XNVME_ASYNC: "ioctl_ring"
+
+  - name: "xnvme_fioe"
+    alias: "fio:ext:xNVMe:ioctl_ring:sqt"
+    hooks: ["xnvme"]
+    evars:
+      FIO_IOENG_NAME: "xnvme"
+      FIO_AUX: "--sqthread_poll=1"
+      XNVME_ASYNC: "ioctl_ring"

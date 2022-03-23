@@ -1,0 +1,39 @@
+descr: Verify the xNVMe NVM Command-set using the SPDK NVMe driver backend
+descr_long: |
+  Verify xNVMe mandatory NVM Command-set using a NVMe device
+  Leaving out write-uncor as the qemu-instance primarily used for testing this
+  does not support it.
+hooks: ["sysinf", "xnvme"]
+evars:
+  CMD_PREFIX: " "
+  FIO_NRUNS: "1"
+  FIO_SECTION: "default"
+  FIO_SCRIPT: "xnvme-verify.fio"
+  FIO_IOENG_NAME: "xnvme"
+  NVME_NSTYPE: "lblk"
+  DEV_TYPE: "nvme"
+  XNVME_BE: "spdk"
+  XNVME_ADMIN: "nvme"
+  XNVME_SYNC: "nvme"
+
+
+
+testsuites:
+  - name: xnvme_core
+    alias: "xNVMe: core library info and default enumeration"
+
+  - name: xnvme_nvm
+    alias: "xNVMe: NVM Command Set using be:spdk"
+
+  - name: xnvme_nvm_io
+    alias: "xNVMe: NVM Command Set using be:spdk"
+    evars: { XNVME_ASYNC: "nvme" }
+
+  - name: xnvme_nvm_opt_scc
+    alias: "xNVMe: NVM Command Set (Simple-Copy) using be:spdk"
+
+#  - name: xnvme_nvm_opt_wunco
+#    alias: "xNVMe: NVM Command Set (Write-Uncorrectable) using be:spdk"
+
+  - name: xnvme_nvm_opt_wzero
+    alias: "xNVMe: NVM Command Set (Write-Zero) using be:spdk"
