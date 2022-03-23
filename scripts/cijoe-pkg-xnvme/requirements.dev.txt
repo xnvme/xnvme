@@ -1,0 +1,8 @@
+flake8
+graphviz
+mypy
+pylint
+shellcheck-py
+twine
+types-PyYAML
+wheel

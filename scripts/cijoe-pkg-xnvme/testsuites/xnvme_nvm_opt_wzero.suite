@@ -1,0 +1,2 @@
+lblk_write_zeroes.sh
+xnvme_tests_lblk_zero.sh
