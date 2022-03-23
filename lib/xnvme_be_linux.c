@@ -153,7 +153,8 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_linux[] = {
 	{
 		.mtype = XNVME_BE_SYNC,
 		.name = "block",
-		.descr = "Use Linux Block Layer ioctl() and pread()/pwrite() for I/O",
+		.descr = "Use Linux Block Layer ioctl() and pread()/write()/preadv()/pwritev() "
+			 "for I/O",
 		.sync = &g_xnvme_be_linux_sync_block,
 		.check_support = xnvme_be_supported,
 	},

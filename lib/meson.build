@@ -22,6 +22,7 @@ xnvmelib_source = [
   'xnvme_be_posix_dev.c',
   'xnvme_be_posix_mem.c',
   'xnvme_be_posix_sync.c',
+  'xnvme_be_psync.c',
   'xnvme_be_spdk.c',
   'xnvme_be_spdk_admin.c',
   'xnvme_be_spdk_async.c',

@@ -11,53 +11,15 @@
 #include <libxnvme_spec_fs.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_posix.h>
+#include <xnvme_be_psync.h>
 
 int
-xnvme_be_posix_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
-			   void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
+xnvme_be_posix_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			   size_t mbuf_nbytes)
 {
 	struct xnvme_be_posix_state *state = (void *)ctx->dev->be.state;
-	const uint64_t ssw = ctx->dev->geo.ssw;
-	ssize_t res;
 
-	///< NOTE: opcode-dispatch (io)
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_NVM_OPC_WRITE:
-		res = pwrite(state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba << ssw);
-		break;
-
-	case XNVME_SPEC_NVM_OPC_READ:
-		res = pread(state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba << ssw);
-		break;
-
-	case XNVME_SPEC_FS_OPC_WRITE:
-		res = pwrite(state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
-		break;
-
-	case XNVME_SPEC_FS_OPC_READ:
-		res = pread(state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
-		break;
-
-	case XNVME_SPEC_NVM_OPC_FLUSH:
-	case XNVME_SPEC_FS_OPC_FLUSH:
-		res = fsync(state->fd);
-		break;
-
-	default:
-		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opcode);
-		return -ENOSYS;
-	}
-
-	ctx->cpl.result = res;
-	if (res < 0) {
-		XNVME_DEBUG("FAILED: {pread,pwrite,fsync}(), errno: %d", errno);
-		ctx->cpl.result = 0;
-		ctx->cpl.status.sc = errno;
-		ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
-		return -errno;
-	}
-
-	return 0;
+	return _xnvme_be_psync_cmd_io(ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes, state->fd);
 }
 #endif
 
