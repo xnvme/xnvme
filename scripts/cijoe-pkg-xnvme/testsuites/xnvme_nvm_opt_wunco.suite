@@ -1,0 +1,2 @@
+lblk_write_uncor.sh
+xnvme_tests_lblk_write_uncorrectable.sh

@@ -1,0 +1,8 @@
+xnvme_enum.sh
+xnvme_kvs_idfy_ns.sh
+xnvme_kvs_enum.sh
+xnvme_kvs_retrieve.sh
+xnvme_kvs_exist.sh
+xnvme_kvs_list.sh
+xnvme_kvs_io.sh
+xnvme_kvs_store_opt.sh

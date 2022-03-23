@@ -1,0 +1,4 @@
+zoned_append.sh
+examples-zoned_io_sync_append.sh
+examples-zoned_io_async_append.sh
+xnvme_tests_znd_append.sh
