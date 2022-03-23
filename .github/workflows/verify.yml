@@ -409,6 +409,9 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: archive-src
+    - name: Container-prep, extract the full-source-archive
+      run: |
+        tar xzf xnvme*.tar.gz --strip 1
 
     - name: Provision qemu-guest
       id: cijoe-qemu
@@ -416,7 +419,10 @@ jobs:
       with:
         vm-image: ${{ matrix.guest.img }}
         vm-cloudinit: ${{ matrix.guest.os }}-${{ matrix.guest.ver }}
-        cijoe-packages: 'cijoe-pkg-xnvme'
+
+    - name: CIJOE, install cijoe-pkg-xnvme from source-archive
+      run: |
+        pushd scripts/cijoe-pkg-xnvme && make uninstall && make install-system && popd
 
     - name: CIJOE, transfer source to qemu-guest
       run: |
