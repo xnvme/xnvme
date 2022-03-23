@@ -590,8 +590,8 @@ static struct xnvmec_sub g_subs[] = {
 		}
 	},
 	{
-		"idfy-ns", "Zoned Command Set specific identify-controller",
-		"Zoned Command Set specific identify-controller", cmd_idfy_ns, {
+		"idfy-ns", "Zoned Command Set specific identify-namespace",
+		"Zoned Command Set specific identify-namespace", cmd_idfy_ns, {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
