@@ -12,6 +12,8 @@ xnvmelib_source = [
   'xnvme_be_linux_block.c',
   'xnvme_be_linux_dev.c',
   'xnvme_be_linux_nvme.c',
+  'xnvme_be_macos.c',
+  'xnvme_be_macos_sync.c',
   'xnvme_be_nosys.c',
   'xnvme_be_posix.c',
   'xnvme_be_posix_admin.c',
