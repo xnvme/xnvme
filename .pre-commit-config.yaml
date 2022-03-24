@@ -1,4 +1,7 @@
 exclude: ^subprojects/
+
+#########################################
+# C/C++ hooks
 repos:
 - repo: https://github.com/pre-commit/mirrors-clang-format
   rev: v13.0.1
@@ -63,6 +66,9 @@ repos:
       UseTab: ForContinuationAndIndentation
     }", "-i"]
     files: ^(include|lib|examples|tests|tools)\/.*fioe\.c$ # Match all .c files, that _does_ end in "fioe.c"
+
+#########################################
+# YAML hooks
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v4.1.0
   hooks:
@@ -74,6 +80,16 @@ repos:
     args: ['--mapping', '2', '--sequence', '2', '--offset', '0', --width, '120', '--preserve-quotes']
     exclude: .pre-commit-config.yaml
     types: [yaml]
+
+#########################################
+# Shell hooks
+- repo: https://github.com/jumanjihouse/pre-commit-hooks
+  rev: 2.1.6  # or specific git tag
+  hooks:
+    - id: shellcheck
+
+#########################################
+# Python hooks
 - repo: https://github.com/psf/black
   rev: '22.1.0'
   hooks:
@@ -85,6 +101,48 @@ repos:
     - id: isort
       # Available args: https://pycqa.github.io/isort/docs/configuration/options.html
       args: ['--profile', 'black', '--line-length', '120']
+- repo: https://github.com/pycqa/flake8
+  rev: '4.0.1'
+  hooks:
+  - id: flake8
+    args: [
+      '--max-line-length', '120',
+      '--extend-ignore=E203' # ignore "whitespace before ':'"
+    ]
+    # Additional plugins: https://github.com/DmytroLitvinov/awesome-flake8-extension
+    additional_depencencies: [
+      # 'flake8-isort',
+      # 'flake8-black',
+    ]
+- repo: https://github.com/jendrikseipp/vulture
+  rev: 'v2.3'
+  hooks:
+    - id: vulture
+# Because pre-commit runs mypy from an isolated virtualenv (without your dependencies) you may also find it useful to add the typed dependencies to additional_dependencies so mypy can better perform dynamic analysis
+- repo: https://github.com/pre-commit/mirrors-mypy
+  rev: 'v0.941'
+  hooks:
+  - id: mypy
+    args: ['--no-strict-optional', '--ignore-missing-imports']
+# pre-commit runs pylint from an isolated virtualenv. Many of pylint's checks perform dynamic analysis which will fail there. You may find configuring pylint as a local hook more useful.
+- repo: https://github.com/pre-commit/mirrors-pylint
+  rev: 'v3.0.0a4'
+  hooks:
+  - id: pylint
+    args: [
+    '-j', '4', # Run with 4 threads
+    '-d', 'C0301', # Disables line-length check -- black takes care of this
+    '-d', 'E0401', # Disables import check -- doesn't work in closed env
+    '-d', 'R0801', # Disables duplicate-code check -- too basic, false positives
+    '-d', 'C0114', # Disables "Missing module docstring" -- too basic, not always desired
+    '-d', 'C0115', # Disables "Missing class docstring" -- too basic, not always desired
+    '-d', 'C0116', # Disables "Missing function or method docstring" -- too basic, not always desired
+    '-d', 'R0903', # Disables "Too few public methods" -- there are legitimate reasons for it
+
+  ]
+
+#########################################
+# Commit message hooks
 - repo: local
   hooks:
   - id: commit-msg-check

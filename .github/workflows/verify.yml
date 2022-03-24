@@ -66,6 +66,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - run: apt update && apt install shellcheck -y
     - uses: pre-commit/action@v2.0.3
 
   #
