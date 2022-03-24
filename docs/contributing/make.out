@@ -1,0 +1,35 @@
+Usage:
+ 
+  make help          ; Brief target description
+  make help-verbose  ; Verbose target descriptions
+  make [target]      ; Invoke the given 'target'
+ 
+Targets:
+ 
+build                ; Build xNVMe with Meson
+build-deb            ; Build a binary DEB package
+clean                ; Remove Meson builddir
+clean-subprojects    ; Remove Meson builddir as well as running 'make clean' in all subprojects 
+clobber              ; invoke 'make clean' and: remove subproject builds, git-clean and git-checkout .
+config               ; Configure Meson
+config-debug         ; Configure Meson to compile xNVMe with '--buildtype=debug'
+config-slim          ; Configure Meson to compile xNVMe without subprojects (SPDK, fio, liburing)
+config-uring         ; Configure Meson to compile xNVMe with liburing as the only backend
+default              ; invoke: 'make info', 'make tags', 'make git-setup', 'make config' and 'make build'
+format               ; run code format (style, code-conventions and language-integrity) on staged changes
+format-all           ; run code format (style, code-conventions and language-integrity) on staged and committed changes
+gen-bash-completions ; Helper-target to produce Bash-completions for tools (tools, examples, tests)
+gen-libconf          ; Helper-target generating third-party/subproject/os/library-configuration string
+gen-man-pages        ; Helper-target to produce man pages for tools (tools, examples, tests)
+gen-src-archive      ; Helper-target to produce full-source archive
+git-setup            ; Do git config for: 'core.hooksPath' and 'blame.ignoreRevsFile'
+help                 ; Print the description of every target
+help-verbose         ; Print the verbose description of every target
+info                 ; Print information relevant to xNVMe
+install              ; Install xNVMe with Meson
+install-deb          ; Install the binary DEB package created with: make build-deb
+tags                 ; Helper-target to produce tags
+tags-xnvme-public    ; Make tags for public APIs
+uninstall            ; Uninstall xNVMe with Meson
+uninstall-deb        ; Uninstall xNVMe with apt-get
+
