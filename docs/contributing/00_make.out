@@ -1,0 +1,35 @@
+Usage:
+ 
+  make help          ; Brief target description
+  make help-verbose  ; Verbose target descriptions
+  make [target]      ; Invoke the given 'target'
+ 
+Targets:
+ 
+[1mbuild               [0m ; Build xNVMe with Meson
+[1mbuild-deb           [0m ; Build a binary DEB package
+[1mclean               [0m ; Remove Meson builddir
+[1mclean-subprojects   [0m ; Remove Meson builddir as well as running 'make clean' in all subprojects 
+[1mclobber             [0m ; invoke 'make clean' and: remove subproject builds, git-clean and git-checkout .
+[1mconfig              [0m ; Configure Meson
+[1mconfig-debug        [0m ; Configure Meson to compile xNVMe with '--buildtype=debug'
+[1mconfig-slim         [0m ; Configure Meson to compile xNVMe without subprojects (SPDK, fio, liburing)
+[1mconfig-uring        [0m ; Configure Meson to compile xNVMe with liburing as the only backend
+[1mdefault             [0m ; invoke: 'make info', 'make tags', 'make git-setup', 'make config' and 'make build'
+[1mformat              [0m ; run code format (style, code-conventions and language-integrity) on staged changes
+[1mformat-all          [0m ; run code format (style, code-conventions and language-integrity) on staged and committed changes
+[1mgen-bash-completions[0m ; Helper-target to produce Bash-completions for tools (tools, examples, tests)
+[1mgen-libconf         [0m ; Helper-target generating third-party/subproject/os/library-configuration string
+[1mgen-man-pages       [0m ; Helper-target to produce man pages for tools (tools, examples, tests)
+[1mgen-src-archive     [0m ; Helper-target to produce full-source archive
+[1mgit-setup           [0m ; Do git config for: 'core.hooksPath' and 'blame.ignoreRevsFile'
+[1mhelp                [0m ; Print the description of every target
+[1mhelp-verbose        [0m ; Print the verbose description of every target
+[1minfo                [0m ; Print information relevant to xNVMe
+[1minstall             [0m ; Install xNVMe with Meson
+[1minstall-deb         [0m ; Install the binary DEB package created with: make build-deb
+[1mtags                [0m ; Helper-target to produce tags
+[1mtags-xnvme-public   [0m ; Make tags for public APIs
+[1muninstall           [0m ; Uninstall xNVMe with Meson
+[1muninstall-deb       [0m ; Uninstall xNVMe with apt-get
+
