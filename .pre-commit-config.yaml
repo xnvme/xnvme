@@ -40,3 +40,22 @@ repos:
     entry: '\A(?![A-Za-z]+: .+\nSigned-off-by:.+)'
     args: [--multiline]
     stages: [commit-msg]
+
+# Yaml: intended for the GitHUB Actions .yaml
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.1.0
+  hooks:
+  - id: check-yaml # pre-commit-hook-yamlfmt only works on valid YAML files
+    name: YAML-format-check
+- repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
+  rev: 0.1.0
+  hooks:
+  - id: yamlfmt
+    name: YAML-format
+    args:
+    - '--mapping=2'
+    - '--sequence=2'
+    - '--offset=0'
+    - '--width=120'
+    - '--preserve-quotes'
+    types: [yaml]
