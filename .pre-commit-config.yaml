@@ -124,3 +124,11 @@ repos:
     - '--disable=W1510' # Prefer result-object rather than catching exceptions when subcommands fail
     # excluding sphinx-conf as it would break to change it
     exclude: docs/autogen/conf.py$
+
+# Shell: todo: exclude xnvme-driver.sh
+- repo: https://github.com/jumanjihouse/pre-commit-hooks
+  rev: 2.1.6  # or specific git tag
+  hooks:
+  - id: shellcheck
+    name: Shell-lint
+    exclude: (xnvme-driver\.sh)|(^scripts.*\.sh)$
