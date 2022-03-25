@@ -101,7 +101,7 @@ config-uring:
 	@echo "## xNVMe: config-uring [DONE]"
 
 define config-slim-help
-# Configure Meson to compile xNVMe without backends
+# Configure Meson to compile xNVMe without subprojects (SPDK, fio, liburing)
 endef
 .PHONY: config-slim
 config-slim:
