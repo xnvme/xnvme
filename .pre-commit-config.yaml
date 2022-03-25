@@ -1,0 +1,32 @@
+---
+exclude: ^(subprojects|third-party)/
+default_language_version:
+  # force all unspecified python hooks to run python3
+  python: python3
+
+repos:
+# C source format; minor difference between .c / .h, much different style for the fio io-engine.
+# For the details, then compare: scripts/clang-format-*
+- repo: local
+  hooks:
+  - id: clang-format
+    name: C-format-headers
+    language: system
+    entry: scripts/pcf_clang_format.py
+    args: ["--style-file", "scripts/clang-format-h"]
+    files: \.h$
+
+  - id: clang-format
+    name: C-format-source
+    language: system
+    entry: scripts/pcf_clang_format.py
+    args: ["--style-file", "scripts/clang-format-c"]
+    files: \.c$
+    exclude: xnvme_fioe.c$
+
+  - id: clang-format
+    name: C-format-fioe
+    language: system
+    entry: scripts/pcf_clang_format.py
+    args: ["--style-file", "scripts/clang-format-fioe"]
+    files: xnvme_fioe\.c$
