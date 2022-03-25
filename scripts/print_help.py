@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """Traverse Makefile and print all help instructions"""
-import re
 import argparse
-import sys
 import os
+import re
+import sys
 
-
-TEXT_FMT_BOLD="\033[1m"
-TEXT_FMT_END="\033[0m"
-SEP=";"
+TEXT_FMT_BOLD = "\033[1m"
+TEXT_FMT_END = "\033[0m"
+SEP = ";"
 
 
 def expand_path(path):
@@ -22,18 +21,16 @@ def setup():
 
     prsr = argparse.ArgumentParser(
         description="Traverse Makefile and print all help instructions",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     prsr.add_argument(
-        "--repos",
-        help="Path to root of the xNVMe repository",
-        required=True
+        "--repos", help="Path to root of the xNVMe repository", required=True
     )
     prsr.add_argument(
         "--verbose",
         action="store_true",
         help="If set, print verbose descriptions",
-        required=False
+        required=False,
     )
     prsr.add_argument(
         "--no-colorize",
@@ -56,13 +53,14 @@ def gen_help(args):
     args.help = {}
     key = ""
     desc = []
-    with open(os.path.join(args.repos, 'Makefile')) as makefile:
+    with open(os.path.join(args.repos, "Makefile")) as makefile:
         for line in makefile.readlines():
             if define_regex.match(line):
-                key = define_regex.match(line).group('target')
+                key = define_regex.match(line).group("target")
             elif endef_regex.match(line):
-                args.help[key] = [ln[1:].strip("\n") for ln in desc
-                                  if ln.startswith("#")]
+                args.help[key] = [
+                    ln[1:].strip("\n") for ln in desc if ln.startswith("#")
+                ]
                 key = ""
                 desc = []
             elif key:
@@ -73,25 +71,34 @@ def gen_help(args):
 def print_help(args):
     """Print the help instructions"""
 
-    print("\n".join([
-        "Usage:",
-        " ",
-        f"  make help          {SEP} Brief target description",
-        f"  make help-verbose  {SEP} Verbose target descriptions",
-        f"  make [target]      {SEP} Invoke the given 'target'",
-        " ",
-        "Targets:",
-        " ",
-    ]))
+    print(
+        "\n".join(
+            [
+                "Usage:",
+                " ",
+                f"  make help          {SEP} Brief target description",
+                f"  make help-verbose  {SEP} Verbose target descriptions",
+                f"  make [target]      {SEP} Invoke the given 'target'",
+                " ",
+                "Targets:",
+                " ",
+            ]
+        )
+    )
 
     width = max(len(k) for k in args.help)
 
     for key, desc in sorted(args.help.items()):
-        short = "".join([
-            key.ljust(width), f" {SEP}{desc[0]}"
-        ] if args.no_colorize else [
-            TEXT_FMT_BOLD, key.ljust(width), TEXT_FMT_END, f" {SEP}{desc[0]}"
-        ])
+        short = "".join(
+            [key.ljust(width), f" {SEP}{desc[0]}"]
+            if args.no_colorize
+            else [
+                TEXT_FMT_BOLD,
+                key.ljust(width),
+                TEXT_FMT_END,
+                f" {SEP}{desc[0]}",
+            ]
+        )
         print(short)
         if args.verbose and len(desc) > 1:
             for line in desc[1:]:

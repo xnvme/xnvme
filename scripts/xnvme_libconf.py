@@ -5,74 +5,70 @@
     When running from shell, return 0 on success, some other value otherwise
 
 """
-import subprocess
-import re
 import argparse
 import glob
-import sys
 import os
+import re
+import subprocess
+import sys
+
 
 def expand_path(path):
     """Expands variables from the given path and turns it into absolute path"""
 
     return os.path.abspath(os.path.expanduser(os.path.expandvars(path)))
 
+
 def setup():
     """Parse command-line arguments"""
 
     prsr = argparse.ArgumentParser(
         description="Produce info about 3p libraries and compilation flags",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     prsr.add_argument(
-        "--repos",
-        help="Path to root of the xNVMe repository",
-        required=True
+        "--repos", help="Path to root of the xNVMe repository", required=True
     )
     args = prsr.parse_args()
     args.repos = expand_path(args.repos)
 
     return args
 
+
 def run(cmd):
     """Execute the given command"""
 
-    proc = subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        encoding="UTF-8"
-    )
+    with subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="UTF-8"
+    ) as proc:
 
-    out, err = proc.communicate()
+        out, err = proc.communicate()
 
-    return out, err, proc.returncode
+        return out, err, proc.returncode
+
 
 def git_head_rev_name(repos):
     """Return the git branch of given repository"""
 
-    return run([
-        "git", "-C", str(repos), "rev-parse", "--abbrev-ref", "HEAD"
-    ])
+    return run(["git", "-C", str(repos), "rev-parse", "--abbrev-ref", "HEAD"])
+
 
 def git_head_rev_short(repos):
     """Return the git branch of given repository"""
 
-    return run([
-        "git", "-C", str(repos), "rev-parse", "--short", "HEAD"
-    ])
+    return run(["git", "-C", str(repos), "rev-parse", "--short", "HEAD"])
+
 
 def git_describe(repos):
     """Try running git describe on the given repos"""
 
-    return run([
-        "git", "-C", str(repos), "describe", "--tags", "--abbrev=8"
-    ])
+    return run(["git", "-C", str(repos), "describe", "--tags", "--abbrev=8"])
+
 
 def gen_description(project):
     """Produce a string which identifies the given project and its version"""
 
-    if not os.path.exists(project["path"]["repos"]):    # Info from repos
+    if not os.path.exists(project["path"]["repos"]):  # Info from repos
         return None
 
     out, _, rcode = git_describe(project["path"]["repos"])
@@ -91,12 +87,17 @@ def gen_description(project):
 
     return "git-rev:%s" % "/".join(descr) if descr else None
 
+
 def traverse_projects(args):
     """Traverse third-party projects / repositories"""
 
     dirname = os.path.join(args.repos, "subprojects")
-    for projname in sorted(f.split('.')[0] for f in glob.glob("*.wrap",root_dir=dirname)):
+    for path in sorted(
+        f.split(".")[0] for f in glob.glob(os.path.join(dirname, "*.wrap"))
+    ):
         vfields = ["name", "descr", "patches"]
+
+        projname = os.path.basename(path)
 
         project = dict.fromkeys(vfields, "unknown")
         project["name"] = projname
@@ -104,47 +105,37 @@ def traverse_projects(args):
             "repos": os.path.join(dirname, projname),
             "patches": os.path.join(dirname, f"packagefiles/{projname}/patches"),
         }
-        project["patches"] = "+patches" if len(glob.glob(
-            os.path.join(project["path"]["patches"], "*.patch")
-        )) > 0 else ""
+        project["patches"] = (
+            "+patches"
+            if len(glob.glob(os.path.join(project["path"]["patches"], "*.patch"))) > 0
+            else ""
+        )
         if not os.path.exists(project["path"]["repos"]):
-                continue
+            continue
 
         descr = gen_description(project)
         if descr:
             project["descr"] = descr
 
-        project["ver"] = "3p: " + ";".join((
-            project[field] for field in vfields if project[field]
-        ))
+        project["ver"] = "3p: " + ";".join(
+            (project[field] for field in vfields if project[field])
+        )
 
         yield project, descr is None
 
-def ver_to_file(args, project):
-    """Dumps the 3p version string of the given project to file"""
-
-    symb = "xnvme_3p_%s" % project["name"]
-    fname = "%s.c" % symb
-    fpath = os.path.join(args.repos, "lib", "xnvme_3p", fname)
-
-    code = 'static const char %s[] = "%s";' % (symb, project["ver"])
-
-    with open(fpath, "wt") as vfd:
-        vfd.write(code)
-
-    return True
 
 def gen_flags(args):
-    """Produce a list of strings from the compilation flags in the meson file"""
-    regex = re.compile("conf_data.set\('(?P<flag>.+_ENABLED)'")
+    """Produce a list of strings from the compilation flags in meson.build"""
+    regex = re.compile(r"conf_data.set\('(?P<flag>.+_ENABLED)'")
     flags = []
-    with open(os.path.join(args.repos, 'meson.build')) as mfd:
+    with open(os.path.join(args.repos, "meson.build")) as mfd:
         for line in mfd.readlines():
             match = regex.match(line)
             if match:
-                flags.append(match.group('flag'))
+                flags.append(match.group("flag"))
 
     return flags
+
 
 def update(args):
     """Generate a file containing the version strings and compilation flags"""
@@ -188,6 +179,7 @@ def update(args):
 
     return 0
 
+
 def main(args):
     """Entry point"""
 
@@ -204,6 +196,7 @@ def main(args):
         return 1
 
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main(setup()))

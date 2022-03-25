@@ -1,20 +1,21 @@
+---
 name: verify
 
 on:
   pull_request:
     branches:
-      - main
-      - next
-      - dev*
-      - ci*
+    - main
+    - next
+    - dev*
+    - ci*
   push:
     branches:
-      - main
-      - next
-      - dev*
-      - ci*
+    - main
+    - next
+    - dev*
+    - ci*
     tags:
-      - v*
+    - v*
 
 defaults:
   run:
@@ -239,25 +240,25 @@ jobs:
         # alpine: SPDK not supported, --with-spdk=false
         # centos7: liburing 2.1 not supported, --with-liburing=false
         # debian-stretch: liburing 2.1 not supported, --with-liburing=false
-        - { os: 'alpine', dh: 'refenv/alpine-bash', ver: 'latest' }
-        - { os: 'archlinux', dh: 'archlinux', ver: 'latest' }
-        - { os: 'centos', dh: 'tgagor/centos', ver: 'stream9' }
-        - { os: 'centos', dh: 'tgagor/centos', ver: 'stream8' }
-        - { os: 'centos', dh: 'centos', ver: 'centos7' }
-        - { os: 'debian', dh: 'debian', ver: 'bookworm' }
-        - { os: 'debian', dh: 'debian', ver: 'bullseye' }
-        - { os: 'debian', dh: 'debian', ver: 'buster' }
-        - { os: 'debian', dh: 'debian', ver: 'stretch' }
-        - { os: 'fedora', dh: 'fedora', ver: '36' }
-        - { os: 'fedora', dh: 'fedora', ver: '35' }
-        - { os: 'fedora', dh: 'fedora', ver: '34' }
-        - { os: 'gentoo', dh: 'gentoo/stage3', ver: 'latest' }
-        - { os: 'opensuse-tumbleweed', dh: 'opensuse/tumbleweed', ver: 'latest' }
-        - { os: 'opensuse-leap', dh: 'opensuse/leap', ver: '15.4' }
-        - { os: 'opensuse-leap', dh: 'opensuse/leap', ver: '15.3' }
-        - { os: 'ubuntu', dh: 'ubuntu', ver: 'impish' }
-        - { os: 'ubuntu', dh: 'ubuntu', ver: 'focal' }
-        - { os: 'ubuntu', dh: 'ubuntu', ver: 'bionic' }
+        - {os: 'alpine', dh: 'refenv/alpine-bash', ver: 'latest'}
+        - {os: 'archlinux', dh: 'archlinux', ver: 'latest'}
+        - {os: 'centos', dh: 'tgagor/centos', ver: 'stream9'}
+        - {os: 'centos', dh: 'tgagor/centos', ver: 'stream8'}
+        - {os: 'centos', dh: 'centos', ver: 'centos7'}
+        - {os: 'debian', dh: 'debian', ver: 'bookworm'}
+        - {os: 'debian', dh: 'debian', ver: 'bullseye'}
+        - {os: 'debian', dh: 'debian', ver: 'buster'}
+        - {os: 'debian', dh: 'debian', ver: 'stretch'}
+        - {os: 'fedora', dh: 'fedora', ver: '36'}
+        - {os: 'fedora', dh: 'fedora', ver: '35'}
+        - {os: 'fedora', dh: 'fedora', ver: '34'}
+        - {os: 'gentoo', dh: 'gentoo/stage3', ver: 'latest'}
+        - {os: 'opensuse-tumbleweed', dh: 'opensuse/tumbleweed', ver: 'latest'}
+        - {os: 'opensuse-leap', dh: 'opensuse/leap', ver: '15.4'}
+        - {os: 'opensuse-leap', dh: 'opensuse/leap', ver: '15.3'}
+        - {os: 'ubuntu', dh: 'ubuntu', ver: 'impish'}
+        - {os: 'ubuntu', dh: 'ubuntu', ver: 'focal'}
+        - {os: 'ubuntu', dh: 'ubuntu', ver: 'bionic'}
 
     container:
       image: ${{ matrix.container.dh }}:${{ matrix.container.ver }}
@@ -309,7 +310,7 @@ jobs:
     strategy:
       matrix:
         runner:
-          - { os: 'macos', ver: '11' }
+        - {os: 'macos', ver: '11'}
 
     steps:
     - name: Retrieve the source-archive
@@ -354,8 +355,8 @@ jobs:
     strategy:
       matrix:
         runner:
-          - { os: 'windows', ver: '2019' }
-          - { os: 'windows', ver: '2022' }
+        - {os: 'windows', ver: '2019'}
+        - {os: 'windows', ver: '2022'}
 
     steps:
     - name: Retrieve the source-archive
@@ -406,8 +407,8 @@ jobs:
     strategy:
       matrix:
         guest:
-        - { os: 'freebsd', ver: '13', img: 'https://refenv.fra1.digitaloceanspaces.com/freebsd13-ufs-ksrc.qcow2' }
-        - { os: 'debian', ver: 'bullseye', img: 'https://cloud.debian.org/images/cloud/bullseye/daily/latest/debian-11-generic-amd64-daily.qcow2' }
+        - {os: 'freebsd', ver: '13', img: 'https://refenv.fra1.digitaloceanspaces.com/freebsd13-ufs-ksrc.qcow2'}
+        - {os: 'debian', ver: 'bullseye', img: 'https://cloud.debian.org/images/cloud/bullseye/daily/latest/debian-11-generic-amd64-daily.qcow2'}
 
     container:
       image: refenv/qemu-nvme:latest
@@ -568,7 +569,7 @@ jobs:
     strategy:
       matrix:
         guest:
-        - { os: 'debian', ver: 'bullseye', img: 'https://cloud.debian.org/images/cloud/bullseye/daily/latest/debian-11-generic-amd64-daily.qcow2' }
+        - {os: 'debian', ver: 'bullseye', img: 'https://cloud.debian.org/images/cloud/bullseye/daily/latest/debian-11-generic-amd64-daily.qcow2'}
 
     container:
       image: refenv/qemu-nvme:latest
