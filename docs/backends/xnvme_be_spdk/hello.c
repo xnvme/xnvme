@@ -2,7 +2,8 @@
 #include <libxnvme.h>
 #include <libxnvme_pp.h>
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	struct xnvme_opts opts = xnvme_opts_default();
 	struct xnvme_dev *dev;

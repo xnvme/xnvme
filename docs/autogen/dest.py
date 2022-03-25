@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 import argparse
-import logging
+import os
 import shutil
 import sys
-import os
 
 
 def parse_args():
@@ -11,24 +10,18 @@ def parse_args():
 
     # Parse the Command-Line
     prsr = argparse.ArgumentParser(
-        description='cij_extractor - CIJOE Test data extractor',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        description="cij_extractor - CIJOE Test data extractor",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     prsr.add_argument(
-        '--docs',
-        help="Path SphinxDoc generated HTML",
-        default=os.getcwd()
+        "--docs", help="Path SphinxDoc generated HTML", default=os.getcwd()
     )
     prsr.add_argument(
-        '--site',
+        "--site",
         help="Path to xNVMe.io GitHUB Repository",
-        default=os.getcwd()
+        default=os.getcwd(),
     )
-    prsr.add_argument(
-        '--ref',
-        help="xNVMe repository reference",
-        default=os.getcwd()
-    )
+    prsr.add_argument("--ref", help="xNVMe repository reference", default=os.getcwd())
     args = prsr.parse_args()
 
     return args
@@ -46,13 +39,13 @@ def main(args):
     if not (is_tag or is_branch):
         print(f"Failed: ref('{args.ref}') is neither tag nor branch")
         return 1
-    if ("/" not in args.ref or len(args.ref.split("/")) < 3):
+    if "/" not in args.ref or len(args.ref.split("/")) < 3:
         print(f"Failed: ref('{args.ref}') has unexpected format")
         return 1
 
     ref = "-".join(args.ref.split("/")[2:])
 
-    ref_path = os.path.join(args.site, 'docs', ref)
+    ref_path = os.path.join(args.site, "docs", ref)
     if os.path.exists(ref_path):
         print(f"Removing: '{ref_path}'")
         shutil.rmtree(ref_path)
@@ -63,7 +56,7 @@ def main(args):
     if not is_tag:
         return 0
 
-    latest_path = os.path.join(args.site, 'docs', 'latest')
+    latest_path = os.path.join(args.site, "docs", "latest")
     if os.path.exists(latest_path):
         print(f"Removing: '{latest_path}'")
         shutil.rmtree(latest_path)
