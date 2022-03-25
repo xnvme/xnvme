@@ -122,6 +122,24 @@ git-setup:
 	$(GIT) config blame.ignoreRevsFile .git-blame-ignore-revs || true
 	@echo "## xNVMe: git-setup [DONE]"
 
+define format-help
+# run code format (style, code-conventions and language-integrity) on staged changes
+endef
+.PHONY: format
+format:
+	@echo "## xNVMe: format"
+	@pre-commit run
+	@echo "## xNVME: format [DONE]"
+
+define format-all-help
+# run code format (style, code-conventions and language-integrity) on staged and committed changes
+endef
+.PHONY: format-all
+format-all:
+	@echo "## xNVMe: format-all"
+	@pre-commit run --all-files
+	@echo "## xNVME: format-all [DONE]"
+
 define info-help
 # Print information relevant to xNVMe
 #
