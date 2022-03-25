@@ -1,112 +1,44 @@
 #!/usr/bin/env bash
-#
-# This is not an actual configure-script.
-#
-# This file is just here for the those with the habit of grabbing the source and running:
-#
-# ./configure
-# make
-# make install
-#
-# This will inform them about the build-system and to consult the online docs, or in-repos:
-#
-# * https://xnvme.io/docs/latest/getting_started/index.html
-# * docs/getting_started/index.rst
-#
-# for documentation on building and getting started. Also, xNVMe used to actually utilize this
-# 'configure-script' as a frontend for CMake. However, with the migration to meson and their easily
-# readable docs:
-#
-# https://mesonbuild.com/Commands.html#setup
-#
-# Then having to maintain multiple ways of configuration xNVMe is not worth the effort. Having said
-# that, then the 'Makefile' still provide some common-case ease-of-use.
-#
 set -e
-trap 'echo -e "\n\nConfiguration failed\n\n" >&2' ERR
+trap 'echo -e "\n\nThis is not a configure-script\n\n" >&2' ERR
 
-meson --version || (echo "\n** Please install 'meson' **\n" && exit 1)
+echo ""
+cat << EOF
+===================================================================================================
+                        ---==={[ This is NOT a configure-script ]}=--
+===================================================================================================
 
-function usage()
-{
-	echo "'configure' is not the actual config as xNVMe is built using meson/ninja"
-	echo ""
-	echo "Usage: ./configure [OPTION] ..."
-	echo ""
-	echo "Defaults for the options are specified in brackets."
-	echo ""
-	echo "General:"
-	echo " -h, --help                Display this help and exit"
-	echo ""
-	echo " --prefix=path             Configure installation prefix (default: /usr/local)"
-	echo ""
-	echo " --enable-debug            Configure for debug builds"
-	echo ""
-	echo "Environment variables:"
-	echo ""
-	echo "CC                         C compiler"
-	echo "CFLAGS                     C compiler flags"
-	echo "LD                         Linker"
-	echo "LDFLAGS                    Linker flags"
-	echo "DESTDIR                    Destination for 'make install'"
-	echo ""
-}
+ This file is just here for the those with the habit of grabbing the project sources and running:
 
-for i in "$@"; do
-	case "$i" in
-		-h|--help)
-			usage
-			exit 0
-			;;
+ ./configure
+ make
+ make install
 
-		--prefix=*)
-			CONFIG[PREFIX]="${i#*=}"
-			;;
+ If you are reading this, then you are one of those people, so this is here to inform you that
+ xNVMe has switched build-system to meson. Documentation on building xNVMe and getting-started is
+ available in the online docs and in the repository:
 
-		--build=*)
-			;;
-		--includedir=*)
-			;;
-		--mandir=*)
-			;;
-		--infodir=*)
-			;;
-		--sysconfdir=*)
-			;;
-		--localstatedir=*)
-			;;
-		--disable-silent-rules)
-			;;
-		--libdir=*)
-			;;
-		--libexecdir=*)
-			;;
-		--disable-maintainer-mode)
-			;;
-		--disable-dependency-tracking)
-			;;
-		--runstatedir=*)
-			;;
+ * https://xnvme.io/docs/latest/getting_started/index.html
+ * docs/getting_started/index.rst
 
-		--enable-debug)
-			make config-debug
-			exit 0
-			;;
-		--disable-debug)
-			make config
-			exit 0
-			;;
+ For details on meson, have a look at the documentation:
 
-		--)
-			break
-			;;
+ * https://mesonbuild.com/Commands.html#setup
 
-		*)
-			echo "Unrecognized option $i"
-			usage
-			exit 1
-	esac
-done
+ However, even though the build-system is now meson, then a 'Makefile' is still here, it is mostly
+ useful for xNVMe developers as it has a bunch of recipies for various invocations of the
+ helper-scripts provided in "scripts/" as well as short-hands for invoking meson.
 
-make config
+ But since you might already have invoked this script, then we will just go ahead and check the
+ meson-version and do a default build-configuration.
+
+===================================================================================================
+                        ---==={[ This is NOT a configure-script ]}=--
+===================================================================================================
+EOF
+
+meson --version || (printf "\n** Please install 'meson' **\n" && exit 1)
+
+meson setup builddir
+
 exit 0
