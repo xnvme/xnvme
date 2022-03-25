@@ -2,13 +2,13 @@
 """
     Removes '.git' from subprojects
 
-    This script is intended to be added with 'meson.add_dist_script()', to
-    cleanup the subprojects, that is, remove the '.git'.
+    This script is intended to be added with 'meson.add_dist_script()', to cleanup the
+    subprojects, that is, remove the '.git'.
 """
 import argparse
+import os
 import shutil
 import sys
-import os
 
 
 def expand_path(path):
@@ -22,7 +22,7 @@ def parse_args():
 
     prsr = argparse.ArgumentParser(
         description="Meson dist-archive fixer",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     prsr.add_argument(
         "--path",
@@ -40,14 +40,14 @@ def main(args):
         print("ERR: path: '{path}' looks bad".format(path=args.path))
         return 1
 
-    foo = []
-    for root, dnames, fnames in os.walk(args.path):
+    for root, dnames, _ in os.walk(args.path):
         for dname in dnames:
             path = os.path.join(root, dname)
-            if dname == ".git" and 'builddir' in path and 'subprojects' in path:
+            if dname == ".git" and "builddir" in path and "subprojects" in path:
                 shutil.rmtree(path)
 
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main(parse_args()))

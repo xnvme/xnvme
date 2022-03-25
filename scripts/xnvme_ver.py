@@ -5,13 +5,15 @@
     When running from shell, returns 0 on success, some other value otherwise
 """
 import argparse
-import sys
 import os
+import sys
+
 
 def expand_path(path):
     """Expands variables from the given path and turns it into absolute path"""
 
     return os.path.abspath(os.path.expanduser(os.path.expandvars(path)))
+
 
 def xnvme_ver(path=None):
     """
@@ -34,22 +36,20 @@ def xnvme_ver(path=None):
 
     return ""
 
+
 def parse_args():
     """Parse command-line arguments"""
 
     prsr = argparse.ArgumentParser(
         description="Extract the xNVMe version from the meson.build",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    prsr.add_argument(
-        "--path",
-        help="Path to 'meson.build'",
-        required=True
-    )
+    prsr.add_argument("--path", help="Path to 'meson.build'", required=True)
     args = prsr.parse_args()
-    args.path= expand_path(args.path)
+    args.path = expand_path(args.path)
 
     return args
+
 
 def main(args):
     """Entry point"""
@@ -60,6 +60,7 @@ def main(args):
         return 1
 
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main(parse_args()))

@@ -1,7 +1,8 @@
+---
 name: "xNVMe CodeQL config"
 
 disable-default-queries: false
 
 queries:
-  - uses: security-and-quality
+- uses: security-and-quality
 
