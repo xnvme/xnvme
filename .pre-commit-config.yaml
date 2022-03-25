@@ -30,3 +30,13 @@ repos:
     entry: scripts/pcf_clang_format.py
     args: ["--style-file", "scripts/clang-format-fioe"]
     files: xnvme_fioe\.c$
+
+# Git: intended for commit-message formating
+- repo: local
+  hooks:
+  - id: commit-msg-check
+    name: Git-Validate commit message
+    language: pygrep
+    entry: '\A(?![A-Za-z]+: .+\nSigned-off-by:.+)'
+    args: [--multiline]
+    stages: [commit-msg]
