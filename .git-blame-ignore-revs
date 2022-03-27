@@ -1,3 +1,6 @@
+# bulk: fix format and lint of scripts and YAML
+e9b6fc2b4f42cca807eb0be061d66d872cea55cb
+
 # bulk: fix code-format; always use tail-comma in list-initializers
 e4fa43c899508552a72de0158ca796716166616a
 
