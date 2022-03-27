@@ -7,6 +7,7 @@ xNVMe: cross-platform libraries and tools for NVMe devices
 [![CI](https://github.com/OpenMPDK/xNVMe/workflows/linux-build-test/badge.svg)](https://github.com/OpenMPDK/xNVMe/actions/)
 [![CI](https://github.com/OpenMPDK/xNVMe/workflows/style/badge.svg)](https://github.com/OpenMPDK/xNVMe/actions/)
 [![Coverity](https://scan.coverity.com/projects/xNVMe/badge.svg)](https://scan.coverity.com/projects/xNVMe)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
 See: https://xnvme.io/docs for documentation
 
