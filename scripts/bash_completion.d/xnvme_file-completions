@@ -15,7 +15,7 @@ _xnvme_file_completions()
 
     # Complete sub-commands
     if [[ $COMP_CWORD < 2 ]]; then
-        COMPREPLY+=( $( compgen -W 'write-read dump-sync dump-async load-sync load-async copy-sync copy-async --help' -- $cur ) )
+        COMPREPLY+=( $( compgen -W 'write-read dump-sync dump-sync-iovec dump-async dump-async-iovec load-sync load-async copy-sync copy-async --help' -- $cur ) )
         return 0
     fi
 
@@ -37,8 +37,16 @@ _xnvme_file_completions()
         opts+="--data-nbytes --iosize --direct --help"
         ;;
 
+    "dump-sync-iovec")
+        opts+="--data-nbytes --iosize --direct --sync --be --vec-cnt --help"
+        ;;
+
     "dump-async")
         opts+="--data-nbytes --iosize --qdepth --direct --help"
+        ;;
+
+    "dump-async-iovec")
+        opts+="--data-nbytes --iosize --qdepth --direct --async --be --vec-cnt --help"
         ;;
 
     "load-sync")
