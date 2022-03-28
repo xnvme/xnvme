@@ -274,6 +274,8 @@ def gen_completions(args, tools):
 
         meson.append(MESON_BASH_INSTALL.format(completion=tool_fname))
 
+    meson.sort()
+
     # Emit a meson.build
     with open(os.sep.join([args.output, "meson.build"]), "w") as mfd:
         mfd.write("\n".join(meson))
@@ -415,6 +417,8 @@ def gen_manpage(args, tools):
                 mfd.write(manpage)
 
             meson.append(MESON_MAN_INSTALL.format(manpage=sub_fname))
+
+    meson.sort()
 
     # Emit a meson.build
     with open(os.sep.join([args.output, "meson.build"]), "w") as mfd:
