@@ -117,10 +117,10 @@ define git-setup-help
 endef
 .PHONY: git-setup
 git-setup:
-	@echo "## xNVMe:: git-setup"
-	$(GIT) config core.hooksPath .githooks || true
+	@echo "## xNVMe: git-setup"
+	@./scripts/pre-commit-check.sh;
 	$(GIT) config blame.ignoreRevsFile .git-blame-ignore-revs || true
-	@echo "## xNVMe:: git-setup [DONE]"
+	@echo "## xNVMe: git-setup [DONE]"
 
 define info-help
 # Print information relevant to xNVMe
