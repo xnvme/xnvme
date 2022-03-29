@@ -19,6 +19,63 @@ Known Issues
 
 See the file named ``ISSUES`` in the root of the repository.
 
+v0.2.0
+------
+
+Main feature introduction is vectored I/O across a wider set of system
+interfaces, that is via ioctl(), io_uring (ucmd) and preadv()/pwritev()
+fallback.
+
+* Support for vectored I/O via Linux: ioctl(), psync, and io_uring_cmd
+
+* API
+  - add xnvme_cmd_passv()
+  - rename rename xnvme_queue_wait() to xnvme_queue_drain()
+
+* be:io_uring_cmd:
+  - Enabled NVME_IOCTL_IO64_CMD by default, when available for cmd_io()
+  - Added support NVME_IOCTL_IO64_CMD_VEC over io_uring via cmd_iov()
+
+* be:linux:nvme:
+  - Enabled NVME_IOCTL_IO64_CMD by default, when available for cmd_io()
+  - Added support NVME_IOCTL_IO64_CMD_VEC via cmd_iov()
+  - Normalized error-handling for NVMe-ioctl interfaces, ioctl() as well as
+    io_uring_cmd
+
+* be:thrpool:
+  - Added handling of cmd_iov(), providing a threadpool based fallback when
+    io_uring_cmd is not available
+
+* be:emu:
+  - Added handling of cmd_iov(), providing a pseudo-async fallback when
+    io_uring_cmd is not available
+
+* Re-worked git-pre-commit using the 'pre-commit' framework
+  - mk: added helpers invoking 'pre-commit', 'make format'/'make format-all'
+  - mk: removed auto-setup of git-hooks
+  - git: removed .githooks/pre-commit
+
+* xNVMe fio io-engine
+  - tools:fioe: use calloc instead of malloc
+  - tools:fioe: changes according to fio coding conventions
+
+* Library introspection
+  - fix incorrect generation of third-party information
+  - replace ``xnvme_3p`` with ``xnvme_libconf``
+  - add all build-configs to ``xnvme_libconf``
+
+* Command-line argumenter parser
+  - xnvmec: fix missing setup of --direct
+
+* CLI-fixes
+  - zoned: fix description for identify namespace command
+
+* Toolbox
+  - mk: add script generating help-text on Makefile targets
+  - meson: only do whole-archive in pkg-config when SPDK is enabled
+  - scripts: replace astyle with clang-format
+  - pcf: the pre-commit-framework is available for xNVMe
+
 v0.1.0
 ------
 
