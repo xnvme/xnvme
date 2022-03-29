@@ -302,24 +302,6 @@ gen-man-pages:
 	python3 ./scripts/xnvmec_generator.py man --tools ${TOOLS} --output man/
 	@echo "## xNVMe: make gen-man-pages [DONE]"
 
-define source-format-check-help
-# invoke the source-formatter, logging format-changes
-endef
-.PHONY: source-format-check
-source-format-check:
-	@echo "## xNVMe: source-format-check"
-	@cd scripts && ./source-format.sh || echo "Format issues; check: scripts/source-format.log"
-	@echo "## xNVME: source-format-check [DONE]"
-
-define source-format-help
-# invoke the source-formatter, applying format-changes
-endef
-.PHONY: source-format
-source-format:
-	@echo "## xNVMe: source-format"
-	@cd scripts && ./source-format.sh 1 || echo "Format issues; 'git diff' to see changes"
-	@echo "## xNVME: source-format [DONE]"
-
 define tags-help
 # Helper-target to produce tags
 endef
