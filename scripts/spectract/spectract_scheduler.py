@@ -3,10 +3,8 @@
 Schedule multiple instances of the spectract parser from a yaml file
 """
 import concurrent.futures
-import argparse
-import os
-import sys
 import yaml
+import os
 
 import spectract_parser
 
@@ -17,54 +15,39 @@ def expand_path(path):
     return os.path.abspath(os.path.expanduser(os.path.expandvars(path)))
 
 
-def setup():
-    """Parse command-line arguments"""
-
-    prsr = argparse.ArgumentParser(
-        description='Schedule multiple instances of the spectract parser from a yaml file',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-    prsr.add_argument(
-        'file',
-        help='The yaml file containing the targets to parse',
-    )
-
-    args = prsr.parse_args()
-    args.file = expand_path(args.file)
-
-    return args
-
-
-def process_args(target, args):
-    """Assign the values from the target to args and return args"""
-    args.input = target['input']
-    args.pages = str(target['pages'])
-    args.tables = str(target['tables'])
+def process_target(target):
+    """Process the values from the target and return them"""
+    input_file = expand_path(target['input'])
+    pages = str(target['pages'])
+    table_indices = [int(i) for i in str(target['tables']).split('-')]
     if 'output' not in target:
-        args.output = None
+        filename = os.path.splitext(os.path.basename(input_file))[0]
+        output_file = f'{filename}_{pages}_{target["tables"]}.yaml'
+    else:
+        output_file = target['output']
 
-    return spectract_parser.process_args(args)
+    return input_file, pages, table_indices, output_file
 
 
-def schedule(targets, args):
+def schedule(targets):
     """Assign each target to a different process"""
     executor = concurrent.futures.ProcessPoolExecutor(10)
-    futures = [executor.submit(parse, target, args) for target in targets]
+    futures = [executor.submit(parse, target) for target in targets]
     concurrent.futures.wait(futures)
 
 
-def parse(target, args):
+def parse(target):
     """Pass args to the parser"""
-    spectract_parser.main(process_args(target, args))
+    input_file, pages, table_indices, output_file = process_target(target)
+    spectract_parser.main(input_file, pages, table_indices, output_file)
 
 
-def main(args):
+def main(yaml_file):
     """Entry point"""
-
     try:
-        with open(args.file, 'r') as stream:
+        with open(yaml_file, 'r') as stream:
             try:
-                schedule(yaml.safe_load(stream), args)
+                schedule(yaml.safe_load(stream))
             except yaml.YAMLError as err:
                 print(err)
                 return 1
@@ -72,7 +55,3 @@ def main(args):
         return 1
 
     return 0
-
-
-if __name__ == '__main__':
-    sys.exit(main(setup()))
