@@ -131,4 +131,4 @@ repos:
   hooks:
   - id: shellcheck
     name: Shell-lint
-    exclude: (xnvme-driver\.sh)|(^scripts.*\.sh)$
+    exclude: (xnvme-driver\.sh)|(pkgs.*\.sh)$
