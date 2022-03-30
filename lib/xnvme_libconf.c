@@ -4,6 +4,9 @@
 #include <libxnvme_libconf.h>
 #include <xnvme_be_linux.h>
 #include <xnvme_be_windows.h>
+#ifdef XNVME_BE_LINUX_ENABLED
+#include <linux/nvme_ioctl.h>
+#endif
 
 int
 xnvme_libconf_fpr(FILE *stream, enum xnvme_pr opts)
@@ -37,6 +40,17 @@ xnvme_libconf_fpr(FILE *stream, enum xnvme_pr opts)
 	wrtn += xnvme_be_linux_uapi_ver_fpr(stream, XNVME_PR_DEF);
 #endif
 	wrtn += fprintf(stream, "'\n");
+#ifdef XNVME_BE_LINUX_ENABLED
+#ifdef NVME_IOCTL_IO64_CMD
+	wrtn += fprintf(stream, "  - '3p: NVME_IOCTL_IO64_CMD'\n");
+#endif
+#ifdef NVME_IOCTL_IO64_CMD_VEC
+	wrtn += fprintf(stream, "  - '3p: NVME_IOCTL_IO64_CMD_VEC'\n");
+#endif
+#ifdef NVME_IOCTL_ADMIN64_CMD
+	wrtn += fprintf(stream, "  - '3p: NVME_IOCTL_ADMIN64_CMD'\n");
+#endif
+#endif
 
 	return wrtn;
 }
