@@ -1,0 +1,62 @@
+---
+descr: Verify mandatory NVM Command-set using a be_linux/io_uring_cmd+nvme-ioctl on /dev/ngXnY
+descr_long: |
+  The io_uring_cmd interfaces ships ioctl() over io_uring, xNVMe uses this to ship NVMe-commands
+  over io_uring. In this test-plan, both the NVMe-ioctl() interface is exercised as well as
+  shipping the same commands over the io_uring interface. This is why there are async=emu, and
+  async=thrpool setups
+hooks: ["sysinf", "xnvme"]
+evars:
+  CMD_PREFIX: " "
+  FIO_NRUNS: "1"
+  FIO_SECTION: "default"
+  FIO_SCRIPT: "xnvme-verify.fio"
+  FIO_IOENG_NAME: "xnvme"
+  NVME_NSTYPE: "lblk"
+  DEV_TYPE: "char"
+  XNVME_BE: "linux"
+  XNVME_ASYNC: "io_uring_cmd"
+  XNVME_ADMIN: "nvme"
+  XNVME_SYNC: "nvme"
+
+testsuites:
+- name: xnvme_core
+  alias: "xNVMe: core library info and default enumeration"
+
+- name: xnvme_nvm
+  alias: "xNVMe: IO contig. using be:linux"
+
+# This uses the NVMe-ioctl
+- name: xnvme_nvm_io
+  alias: "xNVMe: IO contig. using be:linux/async:io_uring_cmd"
+  evars:
+    XNVME_ASYNC: "io_uring_cmd"
+
+- name: xnvme_nvm_io
+  alias: "xNVMe: IO contig. using be:linux/async:thrpool"
+  evars:
+    XNVME_ASYNC: "thrpool"
+
+- name: xnvme_nvm_io
+  alias: "xNVMe: IO contig. using be:linux/async:emu"
+  evars:
+    XNVME_ASYNC: "emu"
+
+# This uses the NVMe-iovec-ioctl
+- name: xnvme_nvm_io
+  alias: "xNVMe: IO iovec using be:linux/async:io_uring_cmd"
+  evars:
+    XNVME_ASYNC: "io_uring_cmd"
+    FIO_AUX: "--xnvme_iovec=1"
+
+- name: xnvme_nvm_io
+  alias: "xNVMe: IO iovec using be:linux/async:thrpool"
+  evars:
+    XNVME_ASYNC: "thrpool"
+    FIO_AUX: "--xnvme_iovec=1"
+
+- name: xnvme_nvm_io
+  alias: "xNVMe: IO iovec using be:linux/async:emu"
+  evars:
+    XNVME_ASYNC: "emu"
+    FIO_AUX: "--xnvme_iovec=1"
