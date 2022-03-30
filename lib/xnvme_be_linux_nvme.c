@@ -143,6 +143,11 @@ int
 xnvme_be_linux_nvme_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			   size_t mbuf_nbytes)
 {
+#ifdef NVME_IOCTL_IO64_CMD
+	struct nvme_passthru_cmd64 *kcmd = (void *)ctx;
+#else
+	struct nvme_passthru_cmd *kcmd = (void *)ctx;
+#endif
 	int err;
 
 	/**
@@ -164,13 +169,16 @@ xnvme_be_linux_nvme_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 		break;
 	}
 
-	ctx->cmd.common.dptr.lnx_ioctl.data = (uint64_t)dbuf;
-	ctx->cmd.common.dptr.lnx_ioctl.data_len = dbuf_nbytes;
+	kcmd->addr = (uint64_t)dbuf;
+	kcmd->data_len = dbuf_nbytes;
+	kcmd->metadata = (uint64_t)mbuf;
+	kcmd->metadata_len = mbuf_nbytes;
 
-	ctx->cmd.common.mptr = (uint64_t)mbuf;
-	ctx->cmd.common.dptr.lnx_ioctl.metadata_len = mbuf_nbytes;
-
+#ifdef NVME_IOCTL_IO64_CMD
+	err = ioctl_wrap(ctx->dev, NVME_IOCTL_IO64_CMD, ctx);
+#else
 	err = ioctl_wrap(ctx->dev, NVME_IOCTL_IO_CMD, ctx);
+#endif
 	if (err) {
 		XNVME_DEBUG("FAILED: ioctl_wrap(), err: %d", err);
 		return err;
