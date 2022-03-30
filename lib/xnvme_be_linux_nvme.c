@@ -23,10 +23,22 @@ ioctl_request_to_str(unsigned long req)
 		return "NVME_IOCTL_ID";
 	case NVME_IOCTL_ADMIN_CMD:
 		return "NVME_IOCTL_ADMIN_CMD";
+#ifdef NVME_IOCTL_ADMIN64_CMD
+	case NVME_IOCTL_ADMIN64_CMD:
+		return "NVME_IOCTL_ADMIN64_CMD";
+#endif
 	case NVME_IOCTL_SUBMIT_IO:
 		return "NVME_IOCTL_SUBMIT_IO";
 	case NVME_IOCTL_IO_CMD:
 		return "NVME_IOCTL_IO_CMD";
+#ifdef NVME_IOCTL_IO64_CMD
+	case NVME_IOCTL_IO64_CMD:
+		return "NVME_IOCTL_IO64_CMD";
+#endif
+#ifdef NVME_IOCTL_IO64_CMD_VEC
+	case NVME_IOCTL_IO64_CMD_VEC:
+		return "NVME_IOCTL_IO64_CMD_VEC";
+#endif
 	case NVME_IOCTL_RESET:
 		return "NVME_IOCTL_RESET";
 	case NVME_IOCTL_SUBSYS_RESET:
