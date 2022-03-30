@@ -18,14 +18,12 @@
 #include <linux/nvme_ioctl.h>
 
 #define IORING_OP_URING_CMD 40
+#define NVME_PASSTHRU_CMD64_SIZE 80
 
-/* This shadows struct io_uring_cmd (40 bytes) */
-struct block_uring_cmd {
-	__u32 ioctl_cmd;
-	__u32 unused1;
-	__u64 unused2[4];
-};
-XNVME_STATIC_ASSERT(sizeof(struct block_uring_cmd) == 40, "Incorrect size");
+/*
+ * sqe->uring_cmd_flags
+ */
+#define IORING_URING_CMD_INDIRECT (1U << 0)
 
 static int g_linux_liburing_optional[] = {
 	IORING_OP_URING_CMD,
@@ -102,6 +100,7 @@ xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 	for (unsigned i = 0; i < completed; ++i) {
 		struct io_uring_cqe *cqe = cqes[i];
 		struct xnvme_cmd_ctx *ctx;
+		int err;
 
 		ctx = io_uring_cqe_get_data(cqe);
 		if (!ctx) {
@@ -111,18 +110,16 @@ xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 			XNVME_DEBUG("cqe->flags: %u", cqe->flags);
 			return -EIO;
 		}
-#ifdef NVME_IOCTL_IO64_CMD
-		xnvme_be_linux_nvme_map_cpl(ctx, NVME_IOCTL_IO64_CMD);
+#ifndef NVME_IOCTL_IO64_CMD
+		return -ENOSYS;
 #else
-		xnvme_be_linux_nvme_map_cpl(ctx, NVME_IOCTL_IO_CMD);
-#endif
-		ctx->cpl.result = cqe->res;
-		if (cqe->res < 0) {
-			ctx->cpl.result = 0;
-			ctx->cpl.status.sc = -cqe->res;
-			ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
+		/** IO64-quirky-handling: this is also for NVME_IOCTL_IO64_CMD_VEC */
+		err = xnvme_be_linux_nvme_map_cpl(ctx, NVME_IOCTL_IO64_CMD, cqe->res);
+		if (err) {
+			XNVME_DEBUG("FAILED: xnvme_be_linux_nvme_map_cpl(), err: %d", err);
+			return err;
 		}
-
+#endif
 		ctx->async.cb(ctx, ctx->async.cb_arg);
 	};
 
@@ -144,7 +141,6 @@ xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 {
 	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
-	struct block_uring_cmd *blk_cmd = NULL;
 	struct io_uring_sqe *sqe = NULL;
 	int err = 0;
 
@@ -159,9 +155,12 @@ xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 	}
 
 	sqe->opcode = IORING_OP_URING_CMD;
-	sqe->addr = 4;
-	sqe->len = dbuf_nbytes;
-	sqe->off = (unsigned long)ctx;
+	sqe->addr = NVME_PASSTHRU_CMD64_SIZE;
+#ifdef NVME_IOCTL_IO64_CMD
+	sqe->off = NVME_IOCTL_IO64_CMD;
+#else
+	return -ENOSYS;
+#endif
 	sqe->flags = queue->poll_sq ? IOSQE_FIXED_FILE : 0;
 	sqe->ioprio = 0;
 	// NOTE: we only ever register a single file, the raw device, so the
@@ -169,15 +168,6 @@ xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 	sqe->fd = queue->poll_sq ? 0 : state->fd;
 	sqe->rw_flags = 0;
 	sqe->user_data = (unsigned long)ctx;
-	// sqe->__pad2[0] = sqe->__pad2[1] = sqe->__pad2[2] = 0;
-
-	blk_cmd = (void *)&sqe->len;
-#ifdef NVME_IOCTL_IO64_CMD
-	blk_cmd->ioctl_cmd = NVME_IOCTL_IO64_CMD;
-#else
-	blk_cmd->ioctl_cmd = NVME_IOCTL_IO_CMD;
-#endif
-	blk_cmd->unused2[0] = (uint64_t)ctx;
 
 	if (queue->poll_io) {
 		ctx->cmd.common.fuse = 1;
@@ -187,6 +177,15 @@ xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 
 	ctx->cmd.common.mptr = (uint64_t)mbuf;
 	ctx->cmd.common.dptr.lnx_ioctl.metadata_len = mbuf_nbytes;
+
+	if (queue->base.dev->opts.uring_feat) {
+		XNVME_DEBUG("In-Line Command");
+		memcpy(&sqe->__pad[0], &ctx->cmd.common, NVME_PASSTHRU_CMD64_SIZE);
+	} else {
+		XNVME_DEBUG("Indirect Command");
+		sqe->__pad[0] = (uint64_t)ctx;
+		sqe->open_flags = IORING_URING_CMD_INDIRECT;
+	}
 
 	err = io_uring_submit(&queue->ring);
 	if (err < 0) {
@@ -198,13 +197,86 @@ xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 
 	return 0;
 }
+
+#ifdef NVME_IOCTL_IO64_CMD_VEC
+int
+xnvme_be_linux_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+			size_t dvec_nbytes, struct iovec *mvec, size_t mvec_cnt,
+			size_t mvec_nbytes)
+{
+	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
+	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
+	struct io_uring_sqe *sqe = NULL;
+	int err = 0;
+
+	if (mvec || mvec_cnt || mvec_nbytes) {
+		XNVME_DEBUG("FAILED: mvec or mvec_cnt or mvec_nbytes provided");
+		return -ENOSYS;
+	}
+
+	sqe = io_uring_get_sqe(&queue->ring);
+	if (!sqe) {
+		return -EAGAIN;
+	}
+
+	sqe->opcode = IORING_OP_URING_CMD;
+	sqe->addr = NVME_PASSTHRU_CMD64_SIZE;
+	sqe->off = NVME_IOCTL_IO64_CMD_VEC;
+	sqe->len = dvec_nbytes;
+	sqe->flags = queue->poll_sq ? IOSQE_FIXED_FILE : 0;
+	sqe->ioprio = 0;
+	// NOTE: we only ever register a single file, the raw device, so the
+	// provided index will always be 0
+	sqe->fd = queue->poll_sq ? 0 : state->fd;
+	sqe->rw_flags = 0;
+	sqe->user_data = (unsigned long)ctx;
+
+	if (queue->poll_io) {
+		ctx->cmd.common.fuse = 1;
+	}
+	ctx->cmd.common.dptr.lnx_ioctl.data = (uint64_t)dvec;
+	ctx->cmd.common.dptr.lnx_ioctl.data_len = dvec_cnt;
+
+	ctx->cmd.common.mptr = (uint64_t)mvec;
+	ctx->cmd.common.dptr.lnx_ioctl.metadata_len = mvec_cnt;
+
+	if (queue->base.dev->opts.uring_feat) {
+		XNVME_DEBUG("In-Line Command");
+		memcpy(&sqe->__pad[0], &ctx->cmd.common, NVME_PASSTHRU_CMD64_SIZE);
+	} else {
+		XNVME_DEBUG("Indirect Command");
+		sqe->__pad[0] = (uint64_t)ctx;
+		sqe->open_flags = IORING_URING_CMD_INDIRECT;
+	}
+
+	err = io_uring_submit(&queue->ring);
+	if (err < 0) {
+		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opcode, err);
+		return err;
+	}
+
+	queue->base.outstanding += 1;
+
+	return 0;
+}
+#else
+int
+xnvme_be_linux_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+			size_t dvec_nbytes, struct iovec *mvec, size_t mvec_cnt,
+			size_t mvec_nbytes)
+{
+	XNVME_DEBUG("FAILED: not supported, built on system without NVME_IOCTL_IO64_CMD_VEC");
+	return xnvme_be_nosys_queue_cmd_iov(ctx, dvec, dvec_cnt, dvec_nbytes,
+					    mvec, mvec_cnt, mvec_nbytes);
+}
+#endif
 #endif
 
 struct xnvme_be_async g_xnvme_be_linux_async_ucmd = {
 	.id = "io_uring_cmd",
 #ifdef XNVME_BE_LINUX_LIBURING_ENABLED
 	.cmd_io = xnvme_be_linux_ucmd_io,
-	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
+	.cmd_iov = xnvme_be_linux_ucmd_iov,
 	.poke = xnvme_be_linux_ucmd_poke,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_linux_ucmd_init,

@@ -58,39 +58,43 @@ struct _kernel_cpl {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cpl) == sizeof(struct _kernel_cpl), "Incorrect size")
 
 int
-xnvme_be_linux_nvme_map_cpl(struct xnvme_cmd_ctx *ctx, unsigned long ioctl_req)
+xnvme_be_linux_nvme_map_cpl(struct xnvme_cmd_ctx *ctx, unsigned long ioctl_req, int res)
 {
 	struct _kernel_cpl *kcpl = (void *)&ctx->cpl;
-	uint64_t cpl_res;
 
-	// Assign the completion-result
 	switch (ioctl_req) {
 	case NVME_IOCTL_ADMIN_CMD:
 	case NVME_IOCTL_IO_CMD:
-		cpl_res = kcpl->res32.result;
+		ctx->cpl.result = kcpl->res32.result;
 		break;
 #ifdef NVME_IOCTL_IO64_CMD
 	case NVME_IOCTL_IO64_CMD:
-		cpl_res = kcpl->res64.result;
+		ctx->cpl.result = kcpl->res64.result;
+		break;
+#endif
+#ifdef NVME_IOCTL_IO64_CMD_VEC
+	case NVME_IOCTL_IO64_CMD_VEC:
+		ctx->cpl.result = kcpl->res64.result;
 		break;
 #endif
 #ifdef NVME_IOCTL_ADMIN64_CMD
 	case NVME_IOCTL_ADMIN64_CMD:
-		cpl_res = kcpl->res64.result;
+		ctx->cpl.result = kcpl->res64.result;
 		break;
 #endif
 	default:
-		XNVME_DEBUG("FAILED: ioctl_req: %lu", ioctl_req);
+		XNVME_DEBUG("FAILED: ioctl_req: %lu, res: %d", ioctl_req, res);
 		return -ENOSYS;
 	}
 
-	ctx->cpl.result = cpl_res;
-
-	// Zero-out the remainder of the completion
-	ctx->cpl.status.val = 0;
 	ctx->cpl.sqhd = 0;
 	ctx->cpl.sqid = 0;
 	ctx->cpl.cid = 0;
+	ctx->cpl.status.val = 0;
+	if (res) {
+		ctx->cpl.status.sc = res & 0xFF;
+		ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
+	}
 
 	return 0;
 }
@@ -102,7 +106,7 @@ ioctl_wrap(struct xnvme_dev *dev, unsigned long ioctl_req, struct xnvme_cmd_ctx 
 	int err;
 
 	err = ioctl(state->fd, ioctl_req, ctx);
-	if (xnvme_be_linux_nvme_map_cpl(ctx, ioctl_req)) {
+	if (xnvme_be_linux_nvme_map_cpl(ctx, ioctl_req, err)) {
 		XNVME_DEBUG("FAILED: xnvme_be_linux_map_cpl()");
 		return -ENOSYS;
 	}
@@ -126,6 +130,57 @@ ioctl_wrap(struct xnvme_dev *dev, unsigned long ioctl_req, struct xnvme_cmd_ctx 
 
 	return -errno;
 }
+
+/**
+ * Expecting this to be available from Linux 5.17
+ */
+#ifdef NVME_IOCTL_IO64_CMD_VEC
+int
+xnvme_be_linux_nvme_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+			    size_t XNVME_UNUSED(dvec_nbytes), struct iovec *mvec, size_t mvec_cnt,
+			    size_t mvec_nbytes)
+{
+	int err;
+
+	switch (ctx->cmd.common.opcode) {
+	case XNVME_SPEC_FS_OPC_READ:
+		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
+		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
+		break;
+
+	case XNVME_SPEC_FS_OPC_WRITE:
+		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
+		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
+		break;
+	}
+
+	ctx->cmd.common.dptr.lnx_ioctl.data = (uint64_t)dvec;
+	ctx->cmd.common.dptr.lnx_ioctl.data_len = dvec_cnt;
+
+	/*
+	ctx->cmd.common.mptr = (uint64_t)mbuf;
+	ctx->cmd.common.dptr.lnx_ioctl.metadata_len = mbuf_nbytes;
+	*/
+
+	err = ioctl_wrap(ctx->dev, NVME_IOCTL_IO64_CMD_VEC, ctx);
+	if (err) {
+		XNVME_DEBUG("FAILED: ioctl_wrap(), err: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+#else
+int
+xnvme_be_linux_nvme_cmd_iov(struct xnvme_cmd_ctx *XNVME_UNUSED(ctx),
+			    struct iovec *XNVME_UNUSED(dvec), size_t XNVME_UNUSED(dvec_cnt),
+			    size_t XNVME_UNUSED(dvec_nbytes), struct iovec *XNVME_UNUSED(mvec),
+			    size_t XNVME_UNUSED(mvec_cnt), size_t XNVME_UNUSED(mvec_nbytes))
+{
+	XNVME_DEBUG("FAILED: NVME_IOCTL_IO64_CMD_VEC; ENOSYS");
+	return -ENOSYS;
+}
+#endif
 
 int
 xnvme_be_linux_nvme_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
