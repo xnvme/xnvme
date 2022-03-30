@@ -13,10 +13,15 @@ static const int g_nthreads_def = 4;
 struct _thrpool_entry {
 	struct xnvme_dev *dev;
 	struct xnvme_cmd_ctx *ctx;
-	void *dbuf;
-	size_t dbuf_nbytes;
-	void *mbuf;
-	size_t mbuf_nbytes;
+
+	void *data;
+	void *meta;
+	uint32_t data_nbytes;
+	uint32_t data_vec_cnt;
+	uint32_t meta_nbytes;
+	uint32_t meta_vec_cnt;
+	uint32_t is_vectored;
+
 	STAILQ_ENTRY(_thrpool_entry) link;
 };
 
@@ -136,8 +141,14 @@ _thrpool_thread_loop(void *arg)
 			XNVME_DEBUG("FAILED: pthread_mutex_unlock()");
 		}
 
-		err = queue->base.dev->be.sync.cmd_io(entry->ctx, entry->dbuf, entry->dbuf_nbytes,
-						      entry->mbuf, entry->mbuf_nbytes);
+		err = entry->is_vectored
+			      ? queue->base.dev->be.sync.cmd_iov(
+					entry->ctx, entry->data, entry->data_vec_cnt,
+					entry->data_nbytes, entry->meta, entry->meta_vec_cnt,
+					entry->meta_nbytes)
+			      : queue->base.dev->be.sync.cmd_io(entry->ctx, entry->data,
+								entry->data_nbytes, entry->meta,
+								entry->meta_nbytes);
 		if (err) {
 			XNVME_DEBUG("FAILED: err: %d", err);
 		}
@@ -312,10 +323,14 @@ _posix_async_thrpool_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 
 	entry->dev = ctx->dev;
 	entry->ctx = ctx;
-	entry->dbuf = dbuf;
-	entry->dbuf_nbytes = dbuf_nbytes;
-	entry->mbuf = mbuf;
-	entry->mbuf_nbytes = mbuf_nbytes;
+
+	entry->data = dbuf;
+	entry->data_nbytes = dbuf_nbytes;
+	entry->data_vec_cnt = 0;
+	entry->meta = mbuf;
+	entry->meta_nbytes = mbuf_nbytes;
+	entry->meta_vec_cnt = 0;
+	entry->is_vectored = false;
 
 	err = pthread_mutex_lock(&qp->sq_mutex);
 	if (err) {
@@ -339,13 +354,61 @@ _posix_async_thrpool_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 
 	return 0;
 }
+
+static inline int
+_posix_async_thrpool_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+			     size_t dvec_nbytes, struct iovec *mvec, size_t mvec_cnt,
+			     size_t mvec_nbytes)
+{
+	struct xnvme_queue_thrpool *queue = (void *)ctx->async.queue;
+	struct _thrpool_qp *qp = queue->qp;
+	struct _thrpool_entry *entry = NULL;
+	int err;
+
+	entry = STAILQ_FIRST(&qp->rp);
+	STAILQ_REMOVE_HEAD(&qp->rp, link);
+
+	entry->dev = ctx->dev;
+	entry->ctx = ctx;
+
+	entry->data = dvec;
+	entry->data_nbytes = dvec_nbytes;
+	entry->data_vec_cnt = dvec_cnt;
+	entry->meta = mvec;
+	entry->meta_nbytes = mvec_nbytes;
+	entry->meta_vec_cnt = mvec_cnt;
+	entry->is_vectored = true;
+
+	err = pthread_mutex_lock(&qp->sq_mutex);
+	if (err) {
+		STAILQ_INSERT_TAIL(&qp->rp, entry, link);
+		XNVME_DEBUG("FAILED: pthread_mutex_lock(), err: %d", err);
+		return -err;
+	}
+
+	STAILQ_INSERT_TAIL(&qp->sq, entry, link);
+	ctx->async.queue->base.outstanding += 1;
+
+	err = pthread_mutex_unlock(&qp->sq_mutex);
+	if (err) {
+		XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err: %d", err);
+	}
+	err = pthread_cond_signal(&qp->sq_cond);
+	if (err) {
+		XNVME_DEBUG("FAILED: pthread_cond_signal(), err: %d", err);
+		return -err;
+	}
+
+	return 0;
+}
+
 #endif // XNVME_BE_POSIX_ENABLED
 
 struct xnvme_be_async g_xnvme_be_posix_async_thrpool = {
 	.id = "thrpool",
 #ifdef XNVME_BE_ASYNC_THRPOOL_ENABLED
 	.cmd_io = _posix_async_thrpool_cmd_io,
-	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
+	.cmd_iov = _posix_async_thrpool_cmd_iov,
 	.poke = _posix_async_thrpool_poke,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = _posix_async_thrpool_init,
