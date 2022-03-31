@@ -118,29 +118,32 @@ ioctl_wrap(struct xnvme_dev *dev, unsigned long ioctl_req, struct xnvme_cmd_ctx 
 	int err;
 
 	err = ioctl(state->fd, ioctl_req, ctx);
-	if (xnvme_be_linux_nvme_map_cpl(ctx, ioctl_req, err)) {
-		XNVME_DEBUG("FAILED: xnvme_be_linux_map_cpl()");
-		return -ENOSYS;
-	}
-
-	if (!err) {
-		return 0;
-	}
-
-	// Transform ioctl-errors to completion status-codes
-	XNVME_DEBUG("FAILED: ioctl(%s), err(%d), errno(%d)", ioctl_request_to_str(ioctl_req), err,
+	XNVME_DEBUG("INFO: ioctl(%s), err(%d), errno(%d)", ioctl_request_to_str(ioctl_req), err,
 		    errno);
-
-	// Transform ioctl EINVAL to Invalid Field in Command
-	if (err == -1 && errno == EINVAL) {
-		ctx->cpl.status.val = 0x2;
-	}
-	if (!errno) {
-		XNVME_DEBUG("INFO: !errno, setting errno=EIO");
-		errno = EIO;
+	if (!err) {
+		return xnvme_be_linux_nvme_map_cpl(ctx, ioctl_req, 0);
 	}
 
-	return -errno;
+	if ((err == -1) && errno) {
+		XNVME_DEBUG("INFO: retconv: -1 and set errno")
+		if (xnvme_be_linux_nvme_map_cpl(ctx, ioctl_req, errno)) {
+			XNVME_DEBUG("FAILED: xnvme_be_linux_nvme_map_cpl(errno:%d)", errno);
+		}
+		return -errno;
+	} else if (err < 0) {
+		XNVME_DEBUG("INFO: retconv: -errno; unexpected ioctl() return-val convention.")
+		if (xnvme_be_linux_nvme_map_cpl(ctx, ioctl_req, err)) {
+			XNVME_DEBUG("FAILED: xnvme_be_linux_nvme_map_cpl(err:%d)", err);
+		}
+		return err;
+	}
+
+	XNVME_DEBUG("INFO: retconv: NVMe-completion-status-code. encoded in lower 16-bit")
+	if (xnvme_be_linux_nvme_map_cpl(ctx, ioctl_req, err)) {
+		XNVME_DEBUG("FAILED: xnvme_be_linux_nvme_map_cpl(err:%d)", err);
+	}
+
+	return -EIO;
 }
 
 #ifdef NVME_IOCTL_IO64_CMD_VEC
