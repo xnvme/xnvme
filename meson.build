@@ -1,7 +1,7 @@
 project(
   'xnvme',
   'c',
-  version: '0.1.0',
+  version: '0.2.0',
   license: 'APACHE',
   default_options: [
     'c_std=gnu11',
