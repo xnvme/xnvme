@@ -2,20 +2,32 @@
 name: verify
 
 on:
-  pull_request:
-    branches:
-    - main
-    - next
-    - dev*
-    - ci*
   push:
     branches:
-    - main
-    - next
-    - dev*
-    - ci*
+    - '*'
     tags:
-    - v*
+    - '*'
+  pull_request:
+    branches:
+    - '*'
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'Job'
+        required: true
+        default: all
+        type: choice
+        options:
+        - all
+        - analyze
+        - analyze-codeql
+        - analyze-coverity
+        - build
+        - build-linux
+        - build-windows
+        - build-macos
+        - build-and-test
+        - docgen
 
 defaults:
   run:
@@ -61,8 +73,6 @@ jobs:
   #
   source-format-check:
     runs-on: ubuntu-latest
-    if: (! contains(github.ref, 'ci')) || contains(github.ref, 'ci-source-format-check')
-
     container: refenv/xnvme-devtools-ci:latest
 
     steps:
@@ -76,7 +86,7 @@ jobs:
   analyze-codeql:
     needs: source-archive
     runs-on: ubuntu-latest
-    if: ((! contains(github.ref, 'ci')) || contains(github.ref, 'ci-analyze-codeql')) && (github.event_name == 'push')
+    if: ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job == 'all') || contains('analyze-codeql', github.event.inputs.job)))
 
     container: debian:bullseye
 
@@ -114,7 +124,8 @@ jobs:
   analyze-coverity:
     needs: source-archive
     runs-on: ubuntu-latest
-    if: ((! contains(github.ref, 'ci')) || contains(github.ref, 'ci-analyze-coverity')) && (github.event_name == 'push')
+    if: ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job == 'all') || contains('analyze-coverity',
+      github.event.inputs.job)))
 
     container: debian:buster
     env:
@@ -196,7 +207,8 @@ jobs:
   dockerize-source:
     needs: source-archive
     runs-on: ubuntu-latest
-    if: ((! contains(github.ref, 'ci')) || contains(github.ref, 'ci-dockerize')) && (github.event_name == 'push')
+    if: ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job == 'all') || (github.event.inputs.job ==
+      'dockerize-source')))
 
     steps:
     - name: Retrieve the source-archive
@@ -231,7 +243,7 @@ jobs:
   build-linux:
     needs: [source-archive, source-format-check]
     runs-on: ubuntu-latest
-    if: (! contains(github.ref, 'ci')) || contains(github.ref, 'ci-build-linux')
+    if: ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job == 'all') || contains('build-linux', github.event.inputs.job)))
 
     strategy:
       matrix:
@@ -305,7 +317,7 @@ jobs:
   build-macos:
     needs: [source-archive, source-format-check]
     runs-on: ${{ matrix.runner.os }}-${{ matrix.runner.ver }}
-    if: (! contains(github.ref, 'ci')) || contains(github.ref, 'ci-build-mac')
+    if: ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job == 'all') || contains('build-macos', github.event.inputs.job)))
 
     strategy:
       matrix:
@@ -350,7 +362,7 @@ jobs:
   build-windows:
     needs: [source-archive, source-format-check]
     runs-on: ${{ matrix.runner.os }}-${{ matrix.runner.ver }}
-    if: (! contains(github.ref, 'ci')) || contains(github.ref, 'ci-build-windows')
+    if: ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job == 'all') || contains('build-windows', github.event.inputs.job)))
 
     strategy:
       matrix:
@@ -402,7 +414,8 @@ jobs:
   build-and-test:
     needs: [source-archive, source-format-check]
     runs-on: self-hosted
-    if: (! contains(github.ref, 'ci')) || contains(github.ref, 'ci-test')
+    if: ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job == 'all') || (github.event.inputs.job ==
+      'build-and-test')))
 
     strategy:
       matrix:
@@ -570,7 +583,7 @@ jobs:
   docgen:
     needs: source-archive
     runs-on: self-hosted
-    if: ((!contains(github.ref, 'ci')) || contains(github.ref, 'ci-docgen')) && (github.event_name == 'push')
+    if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen'))
 
     strategy:
       matrix:
