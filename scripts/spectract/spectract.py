@@ -22,20 +22,19 @@ def scheduler(args):
 def main():
     """Parse command-line arguments and call relevant function"""
     prsr = argparse.ArgumentParser(
-        description='Extract content from NVMe specification and convert it to yaml',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        description="Extract content from NVMe specification and convert it to yaml",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
     subprsrs = prsr.add_subparsers()
 
     subprsr_scheduler = subprsrs.add_parser(
-        'extract',
-        help='Extract tables by defining targets in a yaml file'
+        "extract", help="Extract tables by defining targets in a yaml file"
     )
 
     subprsr_scheduler.add_argument(
-        'file',
-        help='The yaml file containing the targets to extract',
+        "file",
+        help="The yaml file containing the targets to extract",
     )
 
     subprsr_scheduler.set_defaults(func=scheduler)
@@ -45,5 +44,5 @@ def main():
     args.func(args)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())
