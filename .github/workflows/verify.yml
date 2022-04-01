@@ -243,7 +243,8 @@ jobs:
   build-linux:
     needs: [source-archive, source-format-check]
     runs-on: ubuntu-latest
-    if: ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job == 'all') || contains('build-linux', github.event.inputs.job)))
+    if: ((github.event_name == 'pull_request') || ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job
+      == 'all') || contains('build-linux', github.event.inputs.job))))
 
     strategy:
       matrix:
@@ -317,7 +318,8 @@ jobs:
   build-macos:
     needs: [source-archive, source-format-check]
     runs-on: ${{ matrix.runner.os }}-${{ matrix.runner.ver }}
-    if: ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job == 'all') || contains('build-macos', github.event.inputs.job)))
+    if: ((github.event_name == 'pull_request') || ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job
+      == 'all') || contains('build-macos', github.event.inputs.job))))
 
     strategy:
       matrix:
@@ -362,7 +364,8 @@ jobs:
   build-windows:
     needs: [source-archive, source-format-check]
     runs-on: ${{ matrix.runner.os }}-${{ matrix.runner.ver }}
-    if: ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job == 'all') || contains('build-windows', github.event.inputs.job)))
+    if: ((github.event_name == 'pull_request') || ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job
+      == 'all') || contains('build-windows', github.event.inputs.job))))
 
     strategy:
       matrix:
