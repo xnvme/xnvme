@@ -4,7 +4,6 @@ Extract content of NVMe specification table and convert it to yaml
 """
 import camelot
 import pandas
-import yaml
 import re
 
 
@@ -83,17 +82,9 @@ def extract_content(headings, table):
     return output
 
 
-def write_to_yaml(output, filename):
-    """Write output to yaml"""
-    with open(filename, 'w') as file:
-        yaml.dump(output, file, default_flow_style=None)
-
-
-def main(input_file, pages, table_indices, output_file):
+def main(input_file, pages, table_indices):
     """Entry point"""
     try:
-        write_to_yaml(extract_table(input_file, pages, table_indices), output_file)
+        return extract_table(input_file, pages, table_indices)
     except FileNotFoundError:
-        return 1
-
-    return 0
+        return {}

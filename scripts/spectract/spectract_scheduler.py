@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 Schedule multiple instances of the spectract parser from a yaml file
+Collect results and write them to yaml
 """
 import concurrent.futures
 import yaml
@@ -20,26 +21,27 @@ def process_target(target):
     input_file = expand_path(target['input'])
     pages = str(target['pages'])
     table_indices = [int(i) for i in str(target['tables']).split('-')]
-    if 'output' not in target:
-        filename = os.path.splitext(os.path.basename(input_file))[0]
-        output_file = f'{filename}_{pages}_{target["tables"]}.yaml'
-    else:
-        output_file = target['output']
-
-    return input_file, pages, table_indices, output_file
+    name = target['name']
+    return input_file, pages, table_indices, name
 
 
 def schedule(targets):
     """Assign each target to a different process"""
     executor = concurrent.futures.ProcessPoolExecutor(10)
-    futures = [executor.submit(parse, target) for target in targets]
-    concurrent.futures.wait(futures)
+    results = [result for result in executor.map(parse, targets)]
+    return results
 
 
 def parse(target):
     """Pass args to the parser"""
-    input_file, pages, table_indices, output_file = process_target(target)
-    spectract_parser.main(input_file, pages, table_indices, output_file)
+    input_file, pages, table_indices, name = process_target(target)
+    return {name: spectract_parser.main(input_file, pages, table_indices)}
+
+
+def write_to_yaml(output):
+    """Write output to yaml"""
+    with open('output.yaml', 'w') as file:
+        yaml.dump(output, file, default_flow_style=None)
 
 
 def main(yaml_file):
@@ -47,7 +49,7 @@ def main(yaml_file):
     try:
         with open(yaml_file, 'r') as stream:
             try:
-                schedule(yaml.safe_load(stream))
+                write_to_yaml(schedule(yaml.safe_load(stream)))
             except yaml.YAMLError as err:
                 print(err)
                 return 1
