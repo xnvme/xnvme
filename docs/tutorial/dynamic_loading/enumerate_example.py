@@ -7,18 +7,20 @@ capi = ctypes.CDLL(xnvme_shared_lib)
 
 class Ident(ctypes.Structure):
     """Struct containing device identifiers"""
+
     _fields_ = [
         ("uri", ctypes.c_char * 384),
         ("dtype", ctypes.c_uint32),
         ("nsid", ctypes.c_uint32),
         ("csi", ctypes.c_uint8),
-        ("rsvd", ctypes.c_uint8 * 3)
+        ("rsvd", ctypes.c_uint8 * 3),
     ]
 
 
 class Dev(ctypes.Structure):
     """Struct representing the device"""
-    _fields_ = []
+
+    _fields_: list[tuple] = []
 
 
 def enum_cb(dev):
