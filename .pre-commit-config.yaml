@@ -50,7 +50,7 @@ repos:
     types: [file]
     files: \.(yaml|yml|plan)$
 - repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
-  rev: 0.1.0
+  rev: 0.1.1
   hooks:
   - id: yamlfmt
     name: YAML-format
