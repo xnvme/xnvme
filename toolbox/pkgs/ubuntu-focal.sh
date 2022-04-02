@@ -13,7 +13,9 @@ apt-get -qy \
   -o "Dpkg::Options::=--force-confdef" \
   -o "Dpkg::Options::=--force-confold" upgrade
 apt-get -qy autoclean
-apt-get -qy install aptitude
 
-# Install packages via aptitude -- seems to handle dependencies better
-aptitude -q -y -f install $(cat "scripts/pkgs/debian-bookworm.txt")
+# Install packages via apt-get
+apt-get install -qy $(cat "toolbox/pkgs/ubuntu-focal.txt")
+
+# Install packages via PyPI
+pip3 install meson ninja pyelftools

@@ -10,6 +10,6 @@ dnf install -y 'dnf-command(config-manager)'
 dnf config-manager --set-enabled crb
 
 # Install packages via dnf
-dnf install -y $(cat "scripts/pkgs/centos-stream9.txt")
+dnf install -y $(cat "toolbox/pkgs/centos-stream9.txt")
 
 pip3 install meson ninja pyelftools

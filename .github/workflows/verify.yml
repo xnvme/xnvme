@@ -66,7 +66,7 @@ jobs:
 
     - name: Generate Full Source Archive
       run: |
-        ./scripts/pkgs/alpine-latest.sh
+        ./toolbox/pkgs/alpine-latest.sh
         make clean gen-src-archive
 
     - name: Upload source archive
@@ -113,7 +113,7 @@ jobs:
         rm xnvme*.tar.gz
 
     - name: Install build-requirements
-      run: source scripts/pkgs/debian-bullseye.sh
+      run: source toolbox/pkgs/debian-bullseye.sh
 
     - name: Configure, the build
       run: make config
@@ -157,7 +157,7 @@ jobs:
 
     - name: xNVMe, install build-requirements
       run: |
-        source scripts/pkgs/debian-buster.sh
+        source toolbox/pkgs/debian-buster.sh
 
     - name: xNVMe, configure the build
       run: |
@@ -170,7 +170,7 @@ jobs:
 
     - name: Project, define version env. var.
       run: |
-        PROJECT_VERSION=$(python3 scripts/xnvme_ver.py --path meson.build)
+        PROJECT_VERSION=$(python3 toolbox/xnvme_ver.py --path meson.build)
         echo "PROJECT_VERSION=${PROJECT_VERSION}" >> $GITHUB_ENV
 
     - name: Coverity, install requirements
@@ -244,7 +244,7 @@ jobs:
         docker build \
           -t refenv/xnvme:latest \
           -t refenv/xnvme:${TAG} \
-          -f scripts/Dockerfile /tmp/dockerize
+          -f toolbox/Dockerfile /tmp/dockerize
 
     - name: Push Docker image
       run: docker push refenv/xnvme
@@ -304,12 +304,12 @@ jobs:
 
     - name: Install build-requirements
       run: |
-        source scripts/pkgs/${{ matrix.container.os }}-${{ matrix.container.ver }}.sh || true
+        source toolbox/pkgs/${{ matrix.container.os }}-${{ matrix.container.ver }}.sh || true
 
     - name: Configure, Build, and Install
       env:
-        BSCRIPT_DEF: scripts/pkgs/default-build.sh
-        BSCRIPT: scripts/pkgs/${{ matrix.container.os }}-${{ matrix.container.ver }}-build.sh
+        BSCRIPT_DEF: toolbox/pkgs/default-build.sh
+        BSCRIPT: toolbox/pkgs/${{ matrix.container.os }}-${{ matrix.container.ver }}-build.sh
       run: |
         if [[ -f "${BSCRIPT}" ]]; then source ${BSCRIPT}; else source ${BSCRIPT_DEF}; fi
 
@@ -350,12 +350,12 @@ jobs:
 
     - name: Install build-requirements
       run: |
-        source scripts/pkgs/${{ matrix.runner.os }}-${{ matrix.runner.ver }}.sh || true
+        source toolbox/pkgs/${{ matrix.runner.os }}-${{ matrix.runner.ver }}.sh || true
 
     - name: Configure, Build, and Install
       env:
-        BSCRIPT_DEF: scripts/pkgs/default-build.sh
-        BSCRIPT: scripts/pkgs/${{ matrix.runner.os }}-${{ matrix.runner.ver }}-build.sh
+        BSCRIPT_DEF: toolbox/pkgs/default-build.sh
+        BSCRIPT: toolbox/pkgs/${{ matrix.runner.os }}-${{ matrix.runner.ver }}-build.sh
       run: |
         if [[ -f "${BSCRIPT}" ]]; then source ${BSCRIPT}; else source ${BSCRIPT_DEF}; fi
 
@@ -398,7 +398,7 @@ jobs:
     - name: Install build-requirements
       run: |
         cmd.exe /c "echo %cd%"
-        cmd.exe /c "scripts\pkgs\${{ matrix.runner.os }}-${{ matrix.runner.ver }}.bat"
+        cmd.exe /c "toolbox\pkgs\${{ matrix.runner.os }}-${{ matrix.runner.ver }}.bat"
 
     - name: Build!
       run: |
@@ -465,7 +465,7 @@ jobs:
 
     - name: CIJOE, install cijoe-pkg-xnvme from source-archive
       run: |
-        pushd scripts/cijoe-pkg-xnvme && make uninstall && make install-system && popd
+        pushd toolbox/cijoe-pkg-xnvme && make uninstall && make install-system && popd
 
     - name: CIJOE, transfer source to qemu-guest
       run: |
@@ -480,7 +480,7 @@ jobs:
       run: |
         pushd $(cij_root) && source modules/cijoe.sh && popd
         source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij.cmd "./scripts/pkgs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.sh"
+        cij.cmd "./toolbox/pkgs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.sh"
 
     - name: CIJOE, configure xNVMe build
       run: |
@@ -644,7 +644,7 @@ jobs:
       run: |
         pushd $(cij_root) && source modules/cijoe.sh && popd
         source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij.cmd "./scripts/pkgs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.sh"
+        cij.cmd "./toolbox/pkgs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.sh"
 
     - name: CIJOE/QEMU, Package installation, for xNVMe-docgen
       run: |

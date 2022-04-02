@@ -55,8 +55,9 @@ GIT = $$( \
 		( * ) echo Unrecognized ;; \
 	esac)
 
-PROJECT_VER = $(( python3 scripts/xnvme_ver.py --path meson.build ))
 BUILD_DIR?=builddir
+TOOLBOX_DIR?=toolbox
+PROJECT_VER = $(( python3 $(TOOLBOX_DIR)/xnvme_ver.py --path meson.build ))
 
 define default-help
 # invoke: 'make info', 'make tags', 'make git-setup', 'make config' and 'make build'
@@ -118,7 +119,7 @@ endef
 .PHONY: git-setup
 git-setup:
 	@echo "## xNVMe: git-setup"
-	@./scripts/pre-commit-check.sh;
+	@./$(TOOLBOX_DIR)/pre-commit-check.sh;
 	$(GIT) config blame.ignoreRevsFile .git-blame-ignore-revs || true
 	@echo "## xNVMe: git-setup [DONE]"
 
@@ -202,7 +203,7 @@ endef
 build-deb: _require_builddir
 	@echo "## xNVMe: make build-deb"
 	rm -rf $(BUILD_DIR)/meson-dist/deb
-	python3 scripts/meson_dist_deb_build.py \
+	python3 $(TOOLBOX_DIR)/meson_dist_deb_build.py \
 		--deb-description "xNVMe binary package for test/development" \
 		--deb-maintainer "See GitHUB and https://xnvme.io/" \
 		--builddir $(BUILD_DIR) \
@@ -261,7 +262,7 @@ endef
 .PHONY: gen-libconf
 gen-libconf:
 	@echo "## xNVMe: make gen-libconf"
-	./scripts/xnvme_libconf.py --repos .
+	./$(TOOLBOX_DIR)/xnvme_libconf.py --repos .
 	@echo "## xNVMe: make gen-libconf [DONE]"
 
 define gen-src-archive-help
@@ -285,7 +286,7 @@ endef
 gen-bash-completions:
 	@echo "## xNVMe: make gen-bash-completions"
 	$(eval TOOLS := $(shell find $(BUILD_DIR)/tools $(BUILD_DIR)/examples $(BUILD_DIR)/tests -not -name "xnvme_single*" -not -name "xnvme_enum" -not -name "xnvme_dev" -not -name "*.so" -type f -executable -exec basename {} \;))
-	python3 ./scripts/xnvmec_generator.py cpl --tools ${TOOLS} --output scripts/bash_completion.d
+	python3 ./$(TOOLBOX_DIR)/xnvmec_generator.py cpl --tools ${TOOLS} --output $(TOOLBOX_DIR)/bash_completion.d
 	@echo "## xNVMe: make gen-bash-completions [DONE]"
 
 define gen-man-pages-help
@@ -299,7 +300,7 @@ endef
 gen-man-pages:
 	@echo "## xNVMe: make gen-man-pages"
 	$(eval TOOLS := $(shell find $(BUILD_DIR)/tools $(BUILD_DIR)/examples $(BUILD_DIR)/tests -not -name "xnvme_single*" -not -name "xnvme_enum" -not -name "xnvme_dev" -not -name "*.so" -type f -executable -exec basename {} \;))
-	python3 ./scripts/xnvmec_generator.py man --tools ${TOOLS} --output man/
+	python3 ./$(TOOLBOX_DIR)/xnvmec_generator.py man --tools ${TOOLS} --output man/
 	@echo "## xNVMe: make gen-man-pages [DONE]"
 
 define tags-help
@@ -368,11 +369,11 @@ define help-help
 endef
 .PHONY: help
 help:
-	@./scripts/print_help.py --repos .
+	@./$(TOOLBOX_DIR)/print_help.py --repos .
 
 define help-verbose-help
 # Print the verbose description of every target
 endef
 .PHONY: help-verbose
 help-verbose:
-	@./scripts/print_help.py --verbose --repos .
+	@./$(TOOLBOX_DIR)/print_help.py --verbose --repos .

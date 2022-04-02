@@ -114,7 +114,7 @@ xnvmelib_bundle = custom_target(
   build_by_default: true,
   depends: xnvmelib_static,
   command: [ prog_python, '@INPUT@', '--output', '@OUTPUT@', '--libs' ] + bundle_lib_paths,
-  input: scripts_bundler,
+  input: tb_library_bundler,
   output: 'libxnvme.a',
   install_dir: xnvmelib_libdir,
   install: true,

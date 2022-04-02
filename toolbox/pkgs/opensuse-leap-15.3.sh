@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Query the linker version
+ld --version || true
+
+# Query the (g)libc version
+ldd --version || true
+
+zypper --non-interactive refresh
+
+# Install packages via dnf
+zypper --non-interactive install -y $(cat "toolbox/pkgs/opensuse-leap-15.3.txt")
+
+# Install packages via PyPI
+pip3 install meson ninja pyelftools

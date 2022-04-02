@@ -8,4 +8,4 @@ emerge-webrsync
 #emerge --sync
 
 # Install packages via emerge
-emerge $(< scripts/pkgs/gentoo-latest.txt )
+emerge $(< toolbox/pkgs/gentoo-latest.txt )

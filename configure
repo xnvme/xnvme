@@ -27,7 +27,7 @@ cat << EOF
 
  However, even though the build-system is now meson, then a 'Makefile' is still here, it is mostly
  useful for xNVMe developers as it has a bunch of recipies for various invocations of the
- helper-scripts provided in "scripts/" as well as short-hands for invoking meson.
+ helper-scripts provided in "toolbox/" as well as short-hands for invoking meson.
 
  But since you might already have invoked this script, then we will just go ahead and check the
  meson-version and do a default build-configuration.

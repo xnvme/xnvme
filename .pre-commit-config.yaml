@@ -6,29 +6,29 @@ default_language_version:
 
 repos:
 # C source format; minor difference between .c / .h, much different style for the fio io-engine.
-# For the details, then compare: scripts/clang-format-*
+# For the details, then compare: toolbox/clang-format-*
 - repo: local
   hooks:
   - id: clang-format
     name: C-format-headers
     language: system
-    entry: scripts/pcf_clang_format.py
-    args: ["--style-file", "scripts/clang-format-h"]
+    entry: toolbox/pcf_clang_format.py
+    args: ["--style-file", "toolbox/clang-format-h"]
     files: \.h$
 
   - id: clang-format
     name: C-format-source
     language: system
-    entry: scripts/pcf_clang_format.py
-    args: ["--style-file", "scripts/clang-format-c"]
+    entry: toolbox/pcf_clang_format.py
+    args: ["--style-file", "toolbox/clang-format-c"]
     files: \.c$
     exclude: xnvme_fioe.c$
 
   - id: clang-format
     name: C-format-fioe
     language: system
-    entry: scripts/pcf_clang_format.py
-    args: ["--style-file", "scripts/clang-format-fioe"]
+    entry: toolbox/pcf_clang_format.py
+    args: ["--style-file", "toolbox/clang-format-fioe"]
     files: xnvme_fioe\.c$
 
 # Git: intended for commit-message formating
@@ -63,7 +63,7 @@ repos:
     types: [file]
     files: \.(yaml|yml|plan)$
 
-# Python: for all the helpers in scripts/*
+# Python: for all the helpers in toolbox/*
 - repo: https://github.com/psf/black
   rev: '22.3.0'
   hooks:

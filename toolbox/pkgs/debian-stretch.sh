@@ -15,7 +15,7 @@ apt-get -qy \
 apt-get -qy autoclean
 
 # Install packages via apt-get
-apt-get install -qy $(cat "scripts/pkgs/debian-stretch.txt")
+apt-get install -qy $(cat "toolbox/pkgs/debian-stretch.txt")
 
 # The meson version available via yum is tool old < 0.54 and the Python version is tool old to
 # support the next release of meson, so to fix this, Python3 is installed from source and meson

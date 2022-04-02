@@ -92,18 +92,18 @@ Alpine Linux
 
 From the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/alpine-latest.sh
+.. literalinclude:: ../../toolbox/pkgs/alpine-latest.sh
    :language: bash
    :lines: 8-
 
 This will install the packages listed below via the sytems package manager.
 
-.. literalinclude:: ../../scripts/pkgs/alpine-latest.txt
+.. literalinclude:: ../../toolbox/pkgs/alpine-latest.txt
    :language: bash
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../scripts/pkgs/alpine-latest-build.sh
+.. literalinclude:: ../../toolbox/pkgs/alpine-latest-build.sh
    :language: bash
    :lines: 2-
 
@@ -117,18 +117,18 @@ Arch Linux
 
 Install the following packages via ``pacman``:
 
-.. literalinclude:: ../../scripts/pkgs/archlinux-latest.txt
+.. literalinclude:: ../../toolbox/pkgs/archlinux-latest.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/archlinux-latest.sh
+.. literalinclude:: ../../toolbox/pkgs/archlinux-latest.sh
    :language: bash
    :lines: 8-
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../scripts/pkgs/default-build.sh
+.. literalinclude:: ../../toolbox/pkgs/default-build.sh
    :language: bash
    :lines: 2-
 
@@ -137,18 +137,18 @@ CentOS 7
 
 Install the following packages via ``yum``:
 
-.. literalinclude:: ../../scripts/pkgs/centos-centos7.txt
+.. literalinclude:: ../../toolbox/pkgs/centos-centos7.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/centos-centos7.sh
+.. literalinclude:: ../../toolbox/pkgs/centos-centos7.sh
    :language: bash
    :lines: 8-
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../scripts/pkgs/centos-centos7-build.sh
+.. literalinclude:: ../../toolbox/pkgs/centos-centos7-build.sh
    :language: bash
    :lines: 2-
 
@@ -157,18 +157,18 @@ Debian 12 (Bookworm)
 
 Install the following packages via ``apt-get`` and ``aptitude``:
 
-.. literalinclude:: ../../scripts/pkgs/debian-bookworm.txt
+.. literalinclude:: ../../toolbox/pkgs/debian-bookworm.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/debian-bookworm.sh
+.. literalinclude:: ../../toolbox/pkgs/debian-bookworm.sh
    :language: bash
    :lines: 17-
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../scripts/pkgs/default-build.sh
+.. literalinclude:: ../../toolbox/pkgs/default-build.sh
    :language: bash
    :lines: 2-
 
@@ -177,18 +177,18 @@ Debian 11 (Bullseye)
 
 Install the following packages via ``apt-get``, ``aptitude`` and ``pip3``:
 
-.. literalinclude:: ../../scripts/pkgs/debian-bullseye.txt
+.. literalinclude:: ../../toolbox/pkgs/debian-bullseye.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/debian-bullseye.sh
+.. literalinclude:: ../../toolbox/pkgs/debian-bullseye.sh
    :language: bash
    :lines: 17-
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../scripts/pkgs/default-build.sh
+.. literalinclude:: ../../toolbox/pkgs/default-build.sh
    :language: bash
    :lines: 2-
 
@@ -197,18 +197,18 @@ Debian 10 (Buster)
 
 Install the following packages via ``apt-get``, ``aptitude`` and ``pip3``:
 
-.. literalinclude:: ../../scripts/pkgs/debian-buster.txt
+.. literalinclude:: ../../toolbox/pkgs/debian-buster.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/debian-buster.sh
+.. literalinclude:: ../../toolbox/pkgs/debian-buster.sh
    :language: bash
    :lines: 17-
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../scripts/pkgs/default-build.sh
+.. literalinclude:: ../../toolbox/pkgs/default-build.sh
    :language: bash
    :lines: 2-
 
@@ -217,14 +217,14 @@ Debian 9 (Stretch)
 
 From the root of the **xNVMe** repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/debian-stretch.sh
+.. literalinclude:: ../../toolbox/pkgs/debian-stretch.sh
    :language: bash
    :lines: 17-
 
 The above will install following packages seen below via the system
 package-manager and via ``pip3``:
 
-.. literalinclude:: ../../scripts/pkgs/debian-stretch.txt
+.. literalinclude:: ../../toolbox/pkgs/debian-stretch.txt
    :language: bash
 
 Then go ahead and configure, build and install using ``meson``:
@@ -233,7 +233,7 @@ Then go ahead and configure, build and install using ``meson``:
    After this date xNVMe will stop supporting it. Currently, liburing 2.1 is
    not supported, so dropping that via configuration options.
 
-.. literalinclude:: ../../scripts/pkgs/default-build.sh
+.. literalinclude:: ../../toolbox/pkgs/default-build.sh
    :language: bash
    :lines: 2-
 
@@ -242,13 +242,13 @@ Fedora (36)
 
 From the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/fedora-36.sh
+.. literalinclude:: ../../toolbox/pkgs/fedora-36.sh
    :language: bash
    :lines: 8-
 
 This will install the following packages via ``apt-get``:
 
-.. literalinclude:: ../../scripts/pkgs/fedora-36.txt
+.. literalinclude:: ../../toolbox/pkgs/fedora-36.txt
    :language: bash
 
 Fedora (35)
@@ -256,19 +256,19 @@ Fedora (35)
 
 From the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/fedora-35.sh
+.. literalinclude:: ../../toolbox/pkgs/fedora-35.sh
    :language: bash
    :lines: 8-
 
 The above will install following packages seen below via the system
 package-manager and via ``pip3``:
 
-.. literalinclude:: ../../scripts/pkgs/fedora-35.txt
+.. literalinclude:: ../../toolbox/pkgs/fedora-35.txt
    :language: bash
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../scripts/pkgs/fedora-35-build.sh
+.. literalinclude:: ../../toolbox/pkgs/fedora-35-build.sh
    :language: bash
    :lines: 2-
 
@@ -281,18 +281,18 @@ Fedora (34)
 
 Install the following packages via ``apt-get``:
 
-.. literalinclude:: ../../scripts/pkgs/fedora-34.txt
+.. literalinclude:: ../../toolbox/pkgs/fedora-34.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/fedora-34.sh
+.. literalinclude:: ../../toolbox/pkgs/fedora-34.sh
    :language: bash
    :lines: 8-
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../scripts/pkgs/default-build.sh
+.. literalinclude:: ../../toolbox/pkgs/default-build.sh
    :language: bash
    :lines: 2-
 
@@ -302,18 +302,18 @@ Freebsd 13
 Ensure that you have kernel source in ``/usr/src``, then install the following
 packages via ``pkg``:
 
-.. literalinclude:: ../../scripts/pkgs/freebsd-13.txt
+.. literalinclude:: ../../toolbox/pkgs/freebsd-13.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/freebsd-13.sh
+.. literalinclude:: ../../toolbox/pkgs/freebsd-13.sh
    :language: bash
    :lines: 8-
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../scripts/pkgs/default-build.sh
+.. literalinclude:: ../../toolbox/pkgs/default-build.sh
    :language: bash
    :lines: 2-
 
@@ -322,18 +322,18 @@ Gentoo
 
 Install the following packages using ``emerge``:
 
-.. literalinclude:: ../../scripts/pkgs/gentoo-latest.txt
+.. literalinclude:: ../../toolbox/pkgs/gentoo-latest.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/gentoo-latest.sh
+.. literalinclude:: ../../toolbox/pkgs/gentoo-latest.sh
    :language: bash
    :lines: 9-
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../scripts/pkgs/gentoo-latest-build.sh
+.. literalinclude:: ../../toolbox/pkgs/gentoo-latest-build.sh
    :language: bash
    :lines: 2-
 
@@ -346,18 +346,18 @@ macOS
 
 Install the following packages via ``brew`` and ``pip3``:
 
-.. literalinclude:: ../../scripts/pkgs/macos-11.txt
+.. literalinclude:: ../../toolbox/pkgs/macos-11.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/macos-11.sh
+.. literalinclude:: ../../toolbox/pkgs/macos-11.sh
    :language: bash
    :lines: 3-
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../scripts/pkgs/default-build.sh
+.. literalinclude:: ../../toolbox/pkgs/default-build.sh
    :language: bash
    :lines: 2-
 
@@ -366,18 +366,18 @@ openSUSE Tumbleweed
 
 Install the following packages via ``zypper``:
 
-.. literalinclude:: ../../scripts/pkgs/opensuse-tumbleweed-latest.txt
+.. literalinclude:: ../../toolbox/pkgs/opensuse-tumbleweed-latest.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/opensuse-tumbleweed-latest.sh
+.. literalinclude:: ../../toolbox/pkgs/opensuse-tumbleweed-latest.sh
    :language: bash
    :lines: 8-
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../scripts/pkgs/default-build.sh
+.. literalinclude:: ../../toolbox/pkgs/default-build.sh
    :language: bash
    :lines: 2-
 
@@ -386,18 +386,18 @@ openSUSE Leap (15.4)
 
 Install the following packages via ``zypper``:
 
-.. literalinclude:: ../../scripts/pkgs/opensuse-leap-15.4.txt
+.. literalinclude:: ../../toolbox/pkgs/opensuse-leap-15.4.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/opensuse-leap-15.4.sh
+.. literalinclude:: ../../toolbox/pkgs/opensuse-leap-15.4.sh
    :language: bash
    :lines: 8-
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../scripts/pkgs/default-build.sh
+.. literalinclude:: ../../toolbox/pkgs/default-build.sh
    :language: bash
    :lines: 2-
 
@@ -406,18 +406,18 @@ openSUSE Leap (15.3)
 
 Install the following packages via ``zypper``:
 
-.. literalinclude:: ../../scripts/pkgs/opensuse-leap-15.3.txt
+.. literalinclude:: ../../toolbox/pkgs/opensuse-leap-15.3.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/opensuse-leap-15.3.sh
+.. literalinclude:: ../../toolbox/pkgs/opensuse-leap-15.3.sh
    :language: bash
    :lines: 8-
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../scripts/pkgs/default-build.sh
+.. literalinclude:: ../../toolbox/pkgs/default-build.sh
    :language: bash
    :lines: 2-
 
@@ -426,18 +426,18 @@ Ubuntu 21.10 (Impish)
 
 Install the following packages via ``apt-get`` and ``pip3``:
 
-.. literalinclude:: ../../scripts/pkgs/ubuntu-impish.txt
+.. literalinclude:: ../../toolbox/pkgs/ubuntu-impish.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/ubuntu-impish.sh
+.. literalinclude:: ../../toolbox/pkgs/ubuntu-impish.sh
    :language: bash
    :lines: 17-
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../scripts/pkgs/ubuntu-impish-build.sh
+.. literalinclude:: ../../toolbox/pkgs/ubuntu-impish-build.sh
    :language: bash
    :lines: 2-
 
@@ -450,18 +450,18 @@ Ubuntu 20.04 (Focal)
 
 Install the following packages via ``apt-get`` and ``pip3``:
 
-.. literalinclude:: ../../scripts/pkgs/ubuntu-focal.txt
+.. literalinclude:: ../../toolbox/pkgs/ubuntu-focal.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/ubuntu-focal.sh
+.. literalinclude:: ../../toolbox/pkgs/ubuntu-focal.sh
    :language: bash
    :lines: 17-
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../scripts/pkgs/default-build.sh
+.. literalinclude:: ../../toolbox/pkgs/default-build.sh
    :language: bash
    :lines: 2-
 
@@ -470,18 +470,18 @@ Ubuntu 18.04 (Bionic)
 
 Install the following packages via ``apt-get`` and ``pip3``:
 
-.. literalinclude:: ../../scripts/pkgs/ubuntu-bionic.txt
+.. literalinclude:: ../../toolbox/pkgs/ubuntu-bionic.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../scripts/pkgs/ubuntu-bionic.sh
+.. literalinclude:: ../../toolbox/pkgs/ubuntu-bionic.sh
    :language: bash
    :lines: 17-
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../scripts/pkgs/default-build.sh
+.. literalinclude:: ../../toolbox/pkgs/default-build.sh
    :language: bash
    :lines: 2-
 
@@ -499,17 +499,17 @@ Chocolatey package manager by running::
 
 Then continues with installing a couple of tools via Chocolatey, then the
 actual compiler toolchain via the msys2. A script stays more than a thousand
-words, so please consult the scripts::
+words, so please consult the ``toolbox`` scripts::
 
-  scripts/pkgs/windows-2019.bat
-  scripts/pkgs/windows-2022.bat
+  toolbox/pkgs/windows-2019.bat
+  toolbox/pkgs/windows-2022.bat
 
 For details.
 
 To utilize the scripts, then invoke the script in an elevated command-prompt
 (``cmd.exe`` as Administrator)::
 
-  cd scripts\pkgs
+  cd toolbox\pkgs
   windows-2019.bat
 
 .. note:: in case you see .dll loader-errors, then check that the environment
