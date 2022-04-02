@@ -104,6 +104,8 @@ repos:
   hooks:
   - id: mypy
     name: Python-lint-mypy
+    additional_dependencies:
+    - 'types-PyYAML==6.0.5'
     args:
     - '--no-strict-optional'
     - '--ignore-missing-imports'
