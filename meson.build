@@ -108,7 +108,7 @@ bash_completion_dep = dependency(
 if bash_completion_dep.found()
   bash_completions_dir = bash_completion_dep.get_variable('completionsdir')
   message('Bash-completions: ' + bash_completions_dir)
-  subdir('scripts'/'bash_completion.d')
+  subdir('toolbox'/'bash_completion.d')
 endif
 
 # man-pages: run the Makefile target 'make gen-man-pages' to update the man-pages
@@ -119,9 +119,9 @@ if get_option('manpages')
 endif
 
 # Scripts
-subdir('scripts')
+subdir('toolbox')
 
-scripts_bundler = files('scripts'/'library_bundler.py')
+tb_library_bundler = files('toolbox'/'library_bundler.py')
 
 #
 # Third-party dependencies -- this is actually lib-specific... should probably be moved into

@@ -8,4 +8,4 @@ ldd --version || true
 zypper --non-interactive refresh
 
 # Install packages via dnf
-zypper --non-interactive install -y $(cat "scripts/pkgs/opensuse-leap-15.4.txt")
+zypper --non-interactive install -y $(cat "toolbox/pkgs/opensuse-leap-15.4.txt")

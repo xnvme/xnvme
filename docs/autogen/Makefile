@@ -49,7 +49,7 @@ doxy-view:
 sphinx:
 	@mkdir -p $(BUILD_DIR)/html
 	# The PYTHONPATH is needed such that we can call the 'xnvme_ver.py' script
-	PYTHONPATH="${PYTHONPATH}:${PWD}/$(SOURCE_DIR)/scripts" sphinx-build -E -b html -c $(CONFIG_DIR) $(DOCS_DIR) $(BUILD_DIR)/html
+	PYTHONPATH="${PYTHONPATH}:${PWD}/$(SOURCE_DIR)/toolbox" sphinx-build -E -b html -c $(CONFIG_DIR) $(DOCS_DIR) $(BUILD_DIR)/html
 
 # Produce the sphinx stuff (without commands)
 .PHONY: docs

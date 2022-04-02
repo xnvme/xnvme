@@ -5,11 +5,13 @@ ld --version || true
 # Query the (g)libc version
 ldd --version || true
 
-# This repos has CUnit-devel
-dnf config-manager --set-enabled powertools
+# Install Developer Tools
+yum install -y centos-release-scl
+yum-config-manager --enable rhel-server-rhscl-7-rpms
+yum install -y devtoolset-8
 
-# Install packages via dnf
-dnf install -y $(cat "scripts/pkgs/centos-stream8.txt")
+# Install packages via yum
+yum install -y $(cat "toolbox/pkgs/centos-centos7.txt")
 
 # The meson version available via yum is tool old < 0.54 and the Python version is tool old to
 # support the next release of meson, so to fix this, Python3 is installed from source and meson
@@ -24,4 +26,5 @@ make altinstall -j $(nproc)
 ln -s /usr/local/bin/pip3.7 /usr/local/bin/pip3
 ln -s /usr/local/bin/python3.7 /usr/local/bin/python3
 
+# Install packages via pip3 / PyPI
 pip3 install meson ninja pyelftools

@@ -13,7 +13,7 @@ Toolchain Support:
 
 Run the below mention batch file to install listed packages:
 
-.. literalinclude:: ../../scripts/pkgs/windows-2019.txt
+.. literalinclude:: ../../toolbox/pkgs/windows-2019.txt
    :language: bash
 
 **xNVMe** can be build by using given build.bat,
