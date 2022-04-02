@@ -6,4 +6,4 @@ ld --version || true
 ldd --version || true
 
 # Install packages via dnf
-dnf install -y $(cat "scripts/pkgs/fedora-36.txt")
+dnf install -y $(cat "toolbox/pkgs/fedora-35.txt")

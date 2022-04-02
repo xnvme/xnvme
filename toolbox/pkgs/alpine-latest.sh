@@ -6,7 +6,7 @@
 ldd || true
 
 # Install packages via apk
-apk add $(cat "scripts/pkgs/alpine-latest.txt")
+apk add $(cat "toolbox/pkgs/alpine-latest.txt")
 
 # Install packages via PyPI
 pip3 install pyelftools
