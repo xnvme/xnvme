@@ -85,10 +85,12 @@ def extract_content(headings, table):
                 "code",
             ]:
                 subheadings = extract_headings(row)
-        elif subheadings:
-            output[-1]["children"].append(extract_row(row, subheadings, len(headings)))
-        else:
-            output[-1]["children"].append(extract_row(row, headings, len(headings)))
+            elif subheadings:
+                output[-1]["children"].append(
+                    extract_row(row, subheadings, len(headings))
+                )
+            else:
+                output[-1]["children"].append(extract_row(row, headings, len(headings)))
 
     return output
 
