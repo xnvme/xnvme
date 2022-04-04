@@ -12,7 +12,7 @@ def extract_table(input_file, pages, table_indices):
     """Read tables, remove first row of each and concatenate"""
 
     tables = camelot.read_pdf(input_file, pages)
-    headings = extract_headings(tables[table_indices[0]].df)
+    headings = extract_headings(tables[table_indices[0]].df.head(1).to_numpy()[0])
 
     if len(table_indices) == 1:
         table = tables[table_indices[0]].df.drop(0).reset_index(drop=True)
@@ -23,15 +23,16 @@ def extract_table(input_file, pages, table_indices):
     return extract_content(headings, table)
 
 
-def extract_headings(table):
-    """Extract headings from first row of table given as a dataframe"""
+def extract_headings(row):
+    """Extract headings from row of table given as a dataframe"""
 
-    return [
-        h.lower().replace("\n", "")
-        for row in table.head(1).to_numpy()
-        for h in row
-        if h not in [None, ""]
-    ]
+    headings = [h.lower().replace("\n", "") for h in row if h not in [None, ""]]
+
+    # clean-up headings containing value
+    if "value" in headings[0]:
+        headings[0] = "value"
+
+    return headings
 
 
 def extract_row(row, headings, start_index):
@@ -83,15 +84,11 @@ def extract_content(headings, table):
                 "value",
                 "code",
             ]:
-                subheadings = [
-                    h.lower().replace("\n", "") for h in row if h not in [None, ""]
-                ]
-            elif subheadings:
-                output[-1]["children"].append(
-                    extract_row(row, subheadings, len(headings))
-                )
-            else:
-                output[-1]["children"].append(extract_row(row, headings, len(headings)))
+                subheadings = extract_headings(row)
+        elif subheadings:
+            output[-1]["children"].append(extract_row(row, subheadings, len(headings)))
+        else:
+            output[-1]["children"].append(extract_row(row, headings, len(headings)))
 
     return output
 
