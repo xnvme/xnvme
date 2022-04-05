@@ -26,9 +26,12 @@ def process_target(target):
 
 
 def schedule(targets):
-    """Assign each target to a different process"""
+    """Assign each target to a different process and collect results in dict"""
     with concurrent.futures.ProcessPoolExecutor(10) as executor:
-        return list(executor.map(parse, targets))
+        tables = {}
+        for table in executor.map(parse, targets):
+            tables.update(table)
+        return tables
 
 
 def parse(target):
