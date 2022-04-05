@@ -8,6 +8,7 @@ on:
     tags:
     - '*'
   pull_request:
+    types: [labeled, opened, reopened, synchronize]
     branches:
     - '*'
   workflow_dispatch:
@@ -49,6 +50,7 @@ jobs:
   source-archive:
     runs-on: ubuntu-20.04
     container: refenv/alpine-bash
+    if: ((github.event.action != 'labeled') || (github.event.action == 'labeled') && (github.event.label.name == 'pr-ready-for-test'))
 
     steps:
     - name: Install git
@@ -417,8 +419,8 @@ jobs:
   build-and-test:
     needs: [source-archive, source-format-check]
     runs-on: self-hosted
-    if: ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job == 'all') || (github.event.inputs.job ==
-      'build-and-test')))
+    if: (((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job == 'all') || (github.event.inputs.job ==
+      'build-and-test'))) || contains(github.event.pull_request.labels.*.name, 'pr-ready-for-test'))
 
     strategy:
       matrix:
