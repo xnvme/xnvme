@@ -1,0 +1,90 @@
+---
+descr: Verify base xNVMe functionality using the Linux backend
+descr_long: |
+  Asynchronous interfaces, io_uring and emu using contigous as well as vectored payloads
+hooks: ["sysinf", "xnvme"]
+evars:
+  CMD_PREFIX: " "
+  NVME_NSTYPE: "lblk"
+  DEV_TYPE: "nvme"
+  XNVME_BE: "linux"
+  XNVME_ADMIN: "nvme"
+  XNVME_ASYNC: "emu"
+  XNVME_DIRECT: "0"
+  FIO_NRUNS: "1"
+  FIO_SECTION: "default"
+  FIO_SCRIPT: "xnvme-verify.fio"
+  FIO_IOENG_NAME: "xnvme"
+
+testsuites:
+- name: iowork1
+  alias: "ioworker: +io_uring +nvme -iovec"
+  evars: {XNVME_ASYNC: "io_uring", XNVME_SYNC: "nvme", XNVME_VEC_CNT: 0}
+  testcases:
+  - xnvme_tests_ioworker.sh
+  - examples-xnvme_io_async_write.sh
+  - examples-xnvme_io_async_read.sh
+  - xnvme_fioe.sh
+
+- name: iowork2
+  alias: "ioworker: +io_uring +nvme +iovec"
+  evars: {XNVME_ASYNC: "io_uring", XNVME_SYNC: "nvme", XNVME_VEC_CNT: 1}
+  testcases:
+  - xnvme_tests_ioworker.sh
+  - examples-xnvme_io_async_write.sh
+  - examples-xnvme_io_async_read.sh
+  - xnvme_fioe.sh
+
+- name: iowork3
+  alias: "ioworker: +emu +block -iovec"
+  evars: {XNVME_ASYNC: "emu", XNVME_SYNC: "block", XNVME_VEC_CNT: 0}
+  testcases:
+  - xnvme_tests_ioworker.sh
+  - examples-xnvme_io_async_write.sh
+  - examples-xnvme_io_async_read.sh
+  - xnvme_fioe.sh
+
+- name: iowork4
+  alias: "ioworker: +emu +block +iovec"
+  evars: {XNVME_ASYNC: "emu", XNVME_SYNC: "block", XNVME_VEC_CNT: 1}
+  testcases:
+  - xnvme_tests_ioworker.sh
+  - examples-xnvme_io_async_write.sh
+  - examples-xnvme_io_async_read.sh
+  - xnvme_fioe.sh
+
+- name: iowork5
+  alias: "ioworker: +emu +nvme -iovec"
+  evars: {XNVME_ASYNC: "emu", XNVME_SYNC: "nvme", XNVME_VEC_CNT: 0}
+  testcases:
+  - xnvme_tests_ioworker.sh
+  - examples-xnvme_io_async_write.sh
+  - examples-xnvme_io_async_read.sh
+  - xnvme_fioe.sh
+
+- name: iowork6
+  alias: "ioworker: +emu +nvme +iovec"
+  evars: {XNVME_ASYNC: "emu", XNVME_SYNC: "nvme", XNVME_VEC_CNT: 1}
+  testcases:
+  - xnvme_tests_ioworker.sh
+  - examples-xnvme_io_async_write.sh
+  - examples-xnvme_io_async_read.sh
+  - xnvme_fioe.sh
+
+- name: iowork7
+  alias: "ioworker: +thrpool +nvme -iovec"
+  evars: {XNVME_ASYNC: "thrpool", XNVME_SYNC: "nvme", XNVME_VEC_CNT: 0}
+  testcases:
+  - xnvme_tests_ioworker.sh
+  - examples-xnvme_io_async_write.sh
+  - examples-xnvme_io_async_read.sh
+  - xnvme_fioe.sh
+
+- name: iowork8
+  alias: "ioworker: +thrpool +nvme +iovec"
+  evars: {XNVME_ASYNC: "thrpool", XNVME_SYNC: "nvme", XNVME_VEC_CNT: 1}
+  testcases:
+  - xnvme_tests_ioworker.sh
+  - examples-xnvme_io_async_write.sh
+  - examples-xnvme_io_async_read.sh
+  - xnvme_fioe.sh
