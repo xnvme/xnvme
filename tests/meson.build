@@ -8,6 +8,7 @@ tests_source = [
   'enum.c',
   'lblk.c',
   'scc.c',
+  'ioworker.c',
   'xnvme_file.c',
   'xnvmec.c',
   'znd_append.c',
