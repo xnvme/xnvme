@@ -130,6 +130,24 @@ xnvmec_buf_fill(void *buf, size_t nbytes, const char *content)
 		return 0;
 	}
 
+	if (!strncmp(content, "rand-t", 6)) {
+		srand(time(NULL));
+		for (size_t i = 0; i < nbytes; ++i) {
+			cbuf[i] = (rand() % 26) + 65;
+		}
+
+		return 0;
+	}
+
+	if (!strncmp(content, "rand-k", 6)) {
+		srand(0);
+		for (size_t i = 0; i < nbytes; ++i) {
+			cbuf[i] = (rand() % 26) + 65;
+		}
+
+		return 0;
+	}
+
 	if (!strncmp(content, "ascii", 5)) {
 		for (size_t i = 0; i < nbytes; ++i) {
 			cbuf[i] = (i % 26) + 65;

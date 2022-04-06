@@ -20,7 +20,7 @@ extern "C" {
  * Fills `buf` with content `nbytes` of content
  *
  * @param buf Pointer to the buffer to fill
- * @param content Name of a file, or special "zero", or "anum"
+ * @param content Name of a file, or special "zero", "anum", "rand-k", "rand-t"
  * @param nbytes Amount of bytes to fill in buf
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
