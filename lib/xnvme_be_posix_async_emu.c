@@ -155,7 +155,7 @@ _posix_async_emu_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyte
 	// Grab entry from rp and push into sq
 	entry = STAILQ_FIRST(&qp->rp);
 	if (!entry) {
-		XNVME_DEBUG("FAILED: should not happen");
+		XNVME_DEBUG("FAILED: !STAILQ_FIRST(&qp->rp)");
 		return -EIO;
 	}
 	STAILQ_REMOVE_HEAD(&qp->rp, link);
@@ -190,7 +190,7 @@ _posix_async_emu_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t d
 	// Grab entry from rp and push into sq
 	entry = STAILQ_FIRST(&qp->rp);
 	if (!entry) {
-		XNVME_DEBUG("FAILED: should not happen");
+		XNVME_DEBUG("FAILED: !STAILQ_FIRST(&qp->rp)");
 		return -EIO;
 	}
 	STAILQ_REMOVE_HEAD(&qp->rp, link);
