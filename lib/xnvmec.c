@@ -1409,7 +1409,7 @@ xnvmec_assign_arg(struct xnvmec *cli, struct xnvmec_opt_attr *opt_attr, char *ar
 		args->adrfam = arg ? arg : "IPv4";
 		break;
 	case XNVMEC_OPT_VEC_CNT:
-		args->vec_cnt = num ? num : 1;
+		args->vec_cnt = arg ? num : 0;
 		break;
 
 	case XNVMEC_OPT_END:
