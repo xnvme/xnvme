@@ -129,8 +129,11 @@ _posix_async_emu_poke(struct xnvme_queue *q, uint32_t max)
 			      : queue->base.dev->be.sync.cmd_io(entry->ctx, entry->data,
 								entry->data_nbytes, entry->meta,
 								entry->meta_nbytes);
+		///< On submission-error; ctx.cpl is not filled, thus assigned below
 		if (err) {
-			XNVME_DEBUG("FAILED: err: %d", err);
+			entry->ctx->cpl.status.sc =
+				entry->ctx->cpl.status.sc ? entry->ctx->cpl.status.sc : err;
+			XNVME_DEBUG("FAILED: sync.cmd_io{v}(), err: %d", err);
 		}
 
 		entry->ctx->async.cb(entry->ctx, entry->ctx->async.cb_arg);
