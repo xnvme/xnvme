@@ -149,8 +149,11 @@ _thrpool_thread_loop(void *arg)
 			      : queue->base.dev->be.sync.cmd_io(entry->ctx, entry->data,
 								entry->data_nbytes, entry->meta,
 								entry->meta_nbytes);
+		///< On submission-error; ctx.cpl is not filled, thus assigned below
 		if (err) {
-			XNVME_DEBUG("FAILED: err: %d", err);
+			entry->ctx->cpl.status.sc =
+				entry->ctx->cpl.status.sc ? entry->ctx->cpl.status.sc : err;
+			XNVME_DEBUG("FAILED: sync.cmd_io{v}(), err: %d", err);
 		}
 
 		err = pthread_mutex_lock(&qp->cq_mutex);
