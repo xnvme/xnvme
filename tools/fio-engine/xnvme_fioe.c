@@ -123,7 +123,9 @@ struct xnvme_fioe_data {
 	/* Number of devices/files allocated in files[] */
 	uint64_t nallocated;
 
-	uint8_t _pad[16];
+	struct iovec *iovec;
+
+	uint8_t _pad[8];
 
 	struct xnvme_fioe_fwrap files[];
 };
@@ -339,6 +341,7 @@ static void xnvme_fioe_cleanup(struct thread_data *td)
 	}
 
 	free(xd->iocq);
+	free(xd->iovec);
 	free(xd);
 	td->io_ops_data = NULL;
 }
@@ -445,6 +448,12 @@ static int xnvme_fioe_init(struct thread_data *td)
 	xd->iocq = calloc(td->o.iodepth, sizeof(struct io_u *));
 	if (!xd->iocq) {
 		log_err("xnvme_fioe: init(): !calloc()\n");
+		return 1;
+	}
+
+	xd->iovec = calloc(td->o.iodepth, sizeof(*xd->iovec));
+	if (!xd->iovec) {
+		log_err("xnvme_fioe: init(): !calloc(xd->iovec)\n");
 		return 1;
 	}
 
@@ -632,12 +641,11 @@ static enum fio_q_status xnvme_fioe_queue(struct thread_data *td, struct io_u *i
 	}
 
 	if (vectored_io) {
-		struct iovec dvec = {
-			.iov_base = io_u->xfer_buf,
-			.iov_len = io_u->xfer_buflen,
-		};
+		xd->iovec[io_u->index].iov_base = io_u->xfer_buf;
+		xd->iovec[io_u->index].iov_len = io_u->xfer_buflen;
 
-		err = xnvme_cmd_passv(ctx, &dvec, 1, io_u->xfer_buflen, NULL, 0, 0);
+		err = xnvme_cmd_passv(ctx, &xd->iovec[io_u->index], 1, io_u->xfer_buflen, NULL, 0,
+				      0);
 	} else {
 		err = xnvme_cmd_pass(ctx, io_u->xfer_buf, io_u->xfer_buflen, NULL, 0);
 	}
