@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-Extract content of NVMe specification table and convert it to yaml
+Extract content of NVMe specification tables and generate C header
 """
 import argparse
 import os
 import sys
 
+import spectract_generator
 import spectract_scheduler
 
 
@@ -19,10 +20,14 @@ def scheduler(args):
     spectract_scheduler.main(expand_path(args.file))
 
 
+def generator(args):
+    spectract_generator.main(expand_path(args.file))
+
+
 def main():
     """Parse command-line arguments and call relevant function"""
     prsr = argparse.ArgumentParser(
-        description="Extract content from NVMe specification and convert it to yaml",
+        description="Extract content from NVMe specification and generate C header",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
@@ -38,6 +43,17 @@ def main():
     )
 
     subprsr_scheduler.set_defaults(func=scheduler)
+
+    subprsr_generator = subprsrs.add_parser(
+        "generate", help="Generate C headers from a yaml file"
+    )
+
+    subprsr_generator.add_argument(
+        "file",
+        help="The yaml file containing the tables to generate the headers from",
+    )
+
+    subprsr_generator.set_defaults(func=generator)
 
     args = prsr.parse_args()
 
