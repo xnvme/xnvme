@@ -46,6 +46,10 @@ xnvme_be_ramdisk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_
 	case XNVME_SPEC_FS_OPC_FLUSH:
 		break;
 
+	case XNVME_SPEC_NVM_OPC_DATASET_MANAGEMENT:
+		// Just pass on the command, as it is just a hint to the controller.
+		break;
+
 	default:
 		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opcode);
 		return -ENOSYS;

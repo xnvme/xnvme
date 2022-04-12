@@ -113,6 +113,20 @@ xnvme_prep_nvm(struct xnvme_cmd_ctx *ctx, uint8_t opcode, uint32_t nsid, uint64_
 }
 
 int
+xnvme_nvm_dsm(struct xnvme_cmd_ctx *ctx, uint32_t nsid, struct xnvme_spec_dsm_range *dsm_range,
+	      uint8_t nr, bool ad, bool idw, bool idr)
+{
+	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_DATASET_MANAGEMENT;
+	ctx->cmd.common.nsid = nsid;
+	ctx->cmd.dsm.nr = nr;
+	ctx->cmd.dsm.ad = ad;
+	ctx->cmd.dsm.idw = idw;
+	ctx->cmd.dsm.idr = idr;
+
+	return xnvme_cmd_pass(ctx, (void *)dsm_range, sizeof(*dsm_range) * nr, NULL, 0);
+}
+
+int
 xnvme_nvm_scopy(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t sdlba,
 		struct xnvme_spec_nvm_scopy_fmt_zero *ranges, uint8_t nr,
 		enum xnvme_nvm_scopy_fmt copy_fmt)

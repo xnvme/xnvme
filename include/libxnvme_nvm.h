@@ -111,6 +111,23 @@ xnvme_nvm_scopy(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t sdlba,
 		struct xnvme_spec_nvm_scopy_fmt_zero *ranges, uint8_t nr,
 		enum xnvme_nvm_scopy_fmt copy_fmt);
 
+/**
+ * Deallocate or hint at read/write usage of a range.
+ *
+ * @param ctx Pointer to command context (::xnvme_cmd_ctx)
+ * @param nsid Namespace Identifier
+ * @param dsm_range A buffer of ranges, each with context attributes, slba and nlb
+ * @param nr Number of ranges in the given ranges-buffer, zero-based value
+ * @param ad The NVM subsystem may deallocate all provided ranges
+ * @param idw The dataset should be optimized for write access as an integral unit
+ * @param idr The dataset should be optimized for read access as an integral unit
+ *
+ * @return On success, 0 is returned. On error, -1 is returned.
+ */
+int
+xnvme_nvm_dsm(struct xnvme_cmd_ctx *ctx, uint32_t nsid, struct xnvme_spec_dsm_range *dsm_range,
+	      uint8_t nr, bool ad, bool idw, bool idr);
+
 #ifdef __cplusplus
 }
 #endif
