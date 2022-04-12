@@ -211,6 +211,8 @@ xnvme_spec_nvm_opc_str(enum xnvme_spec_nvm_opc eval)
 		return "NVM_OPC_COMPARE";
 	case XNVME_SPEC_NVM_OPC_WRITE_ZEROES:
 		return "NVM_OPC_WRITE_ZEROES";
+	case XNVME_SPEC_NVM_OPC_DATASET_MANAGEMENT:
+		return "XNVME_SPEC_NVM_OPC_DATASET_MANAGEMENT";
 	case XNVME_SPEC_NVM_OPC_FLUSH:
 		return "NVM_OPC_FLUSH";
 	}

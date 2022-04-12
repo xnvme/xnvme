@@ -1218,6 +1218,7 @@ enum xnvme_spec_nvm_opc {
 	XNVME_SPEC_NVM_OPC_WRITE_UNCORRECTABLE = 0x04, ///< XNVME_SPEC_NVM_OPC_WRITE_UNCORRECTABLE
 	XNVME_SPEC_NVM_OPC_COMPARE             = 0x05, ///< XNVME_SPEC_NVM_OPC_COMPARE
 	XNVME_SPEC_NVM_OPC_WRITE_ZEROES        = 0x08, ///< XNVME_SPEC_NVM_OPC_WRITE_ZEROES
+	XNVME_SPEC_NVM_OPC_DATASET_MANAGEMENT  = 0x09, ///< XNVME_SPEC_NVM_OPC_DATASET_MANAGEMENT
 
 	XNVME_SPEC_NVM_OPC_SCOPY = 0x19, ///< XNVME_SPEC_NVM_OPC_SCOPY
 
@@ -1432,6 +1433,7 @@ struct xnvme_spec_dsm_range {
 	uint32_t nlb;   ///< Length in logical blocks
 	uint64_t slba;  ///< Starting LBA
 };
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_dsm_range) == 16, "Incorrect size")
 
 /**
  * Enumeration of NVMe flags
@@ -1806,6 +1808,29 @@ struct xnvme_spec_cmd_nvm {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_nvm) == 64, "Incorrect size")
 
+/**
+ * The Dataset Management command is used by the host to indicate attributes for ranges of logical
+ * blocks
+ *
+ * @struct xnvme_spec_cmd_dsm
+ */
+struct xnvme_spec_cmd_dsm {
+	uint32_t cdw00_09[10]; ///< Command dword 0 to 9
+
+	// dword 10
+	uint32_t nr    : 8; ///< NR: Number of Ranges
+	uint32_t rsvd1 : 24;
+
+	// dword 11
+	uint32_t idr   : 1; ///< IDR: Integral Dataset for Read
+	uint32_t idw   : 1; ///< IDW: Integral Dataset for Write
+	uint32_t ad    : 1; ///< AD: Deallocate
+	uint32_t rsvd2 : 29;
+
+	uint32_t cdw12_15[4]; ///< Command dword 12 to 15
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_dsm) == 64, "Incorrect size")
+
 struct xnvme_spec_nvm_write_zeroes {
 	uint32_t cdw00_09[10]; ///< Command dword 0 to 9
 
@@ -2134,6 +2159,7 @@ struct xnvme_spec_cmd {
 		struct xnvme_spec_cmd_dsend dsend;
 		struct xnvme_spec_cmd_drecv drecv;
 		struct xnvme_spec_cmd_nvm nvm;
+		struct xnvme_spec_cmd_dsm dsm;
 		struct xnvme_spec_nvm_cmd_scopy scopy;
 		struct xnvme_spec_nvm_write_zeroes write_zeroes;
 		struct xnvme_spec_znd_cmd znd;

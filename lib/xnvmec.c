@@ -939,6 +939,26 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 		.name = "\nWith <args> for backend:\n",
 		.descr = "",
 	},
+
+	{
+		.opt = XNVMEC_OPT_AD,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "ad",
+		.descr = "If set, deallocate ranges",
+	},
+	{
+		.opt = XNVMEC_OPT_IDW,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "idw",
+		.descr = "If set, hint to use range as an integral unit when writing.",
+	},
+	{
+		.opt = XNVMEC_OPT_IDR,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "idr",
+		.descr = "If set, hint to use range as an integral unit when reading.",
+	},
+
 	{
 		.opt = XNVMEC_OPT_END,
 		.vtype = XNVMEC_OPT_VTYPE_NUM,
@@ -1531,7 +1551,15 @@ xnvmec_assign_arg(struct xnvmec *cli, struct xnvmec_opt_attr *opt_attr, char *ar
 	case XNVMEC_OPT_NSR:
 		args->nsr = num;
 		break;
-
+	case XNVMEC_OPT_AD:
+		args->ad = arg ? num : 0;
+		break;
+	case XNVMEC_OPT_IDW:
+		args->idw = arg ? num : 0;
+		break;
+	case XNVMEC_OPT_IDR:
+		args->idr = arg ? num : 0;
+		break;
 	case XNVMEC_OPT_POSA_TITLE:
 	case XNVMEC_OPT_NON_POSA_TITLE:
 	case XNVMEC_OPT_ORCH_TITLE:
