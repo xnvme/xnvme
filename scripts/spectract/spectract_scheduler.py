@@ -21,8 +21,7 @@ def process_target(target):
     input_file = expand_path(target["input"])
     pages = str(target["pages"])
     table_indices = [int(i) for i in str(target["tables"]).split("-")]
-    name = target["name"]
-    return input_file, pages, table_indices, name
+    return input_file, pages, table_indices
 
 
 def schedule(targets):
@@ -36,8 +35,8 @@ def schedule(targets):
 
 def parse(target):
     """Pass args to the parser"""
-    input_file, pages, table_indices, name = process_target(target)
-    return {name: spectract_parser.main(input_file, pages, table_indices)}
+    input_file, pages, table_indices = process_target(target)
+    return spectract_parser.main(input_file, pages, table_indices)
 
 
 def write_to_yaml(output):

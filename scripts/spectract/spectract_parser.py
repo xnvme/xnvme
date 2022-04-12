@@ -2,16 +2,23 @@
 """
 Extract content of NVMe specification table and convert it to yaml
 """
+
 import re
 
 import camelot
 import pandas
+
+import spectract_captions
 
 
 def extract_table(input_file, pages, table_indices):
     """Read tables, remove first row of each and concatenate"""
 
     tables = camelot.read_pdf(input_file, pages, line_scale=35)
+    captions = spectract_captions.main(input_file, pages)
+    assert(len(tables) == len(captions))
+
+    caption = captions[table_indices[0]]
     headings = extract_headings(tables[table_indices[0]].df.head(1).to_numpy()[0])
 
     if len(table_indices) == 1:
@@ -20,7 +27,7 @@ def extract_table(input_file, pages, table_indices):
         table = pandas.concat(
             [t.df.drop(0) for t in tables[table_indices[0] : table_indices[1] + 1]]
         ).reset_index(drop=True)
-    return extract_content(headings, table)
+    return {caption: extract_content(headings, table)}
 
 
 def extract_headings(row):
