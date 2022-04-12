@@ -623,6 +623,50 @@ exit:
 	return err;
 }
 
+static int
+sub_dsm(struct xnvmec *cli)
+{
+	// We can only define one range in CLI
+	uint32_t nr = 1;
+	struct xnvme_spec_dsm_range *dsm_range;
+
+	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	uint32_t nsid = cli->args.nsid;
+	uint64_t slba = cli->args.slba;
+	uint32_t nlb = cli->args.nlb;
+	bool ad = cli->args.ad;
+	bool idw = cli->args.idw;
+	bool idr = cli->args.idr;
+	int err;
+
+	xnvmec_pinf("xNVMe DSM");
+	if (!cli->given[XNVMEC_OPT_NSID]) {
+		nsid = xnvme_dev_get_nsid(cli->args.dev);
+	}
+
+	dsm_range = xnvme_buf_alloc(dev, sizeof(*dsm_range) * nr);
+	if (!dsm_range) {
+		err = -errno;
+		xnvmec_perr("xnvme_buf_alloc()", err);
+		goto exit;
+	}
+
+	dsm_range->cattr = 0;
+	dsm_range->nlb = nlb;
+	dsm_range->slba = slba;
+
+	err = xnvme_nvm_dsm(&ctx, nsid, dsm_range, nr, ad, idw, idr);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		xnvmec_perr("xnvme_nvm_dsm()", err);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+		err = err ? err : -EIO;
+		goto exit;
+	}
+exit:
+	return err;
+}
+
 //
 // Command-Line Interface (CLI) definition
 //
@@ -906,6 +950,26 @@ static struct xnvmec_sub g_subs[] = {
 		sub_library_info,
 		{
 			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
+		},
+	},
+	{
+		"dsm",
+		"Dataset Management",
+		"Dataset Management",
+		sub_dsm,
+		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_NSID, XNVMEC_LREQ},
+			{XNVMEC_OPT_AD, XNVMEC_LFLG},
+			{XNVMEC_OPT_IDW, XNVMEC_LFLG},
+			{XNVMEC_OPT_IDR, XNVMEC_LFLG},
+			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
+			{XNVMEC_OPT_NLB, XNVMEC_LREQ},
+
+			XNVMEC_ADMIN_OPTS,
 		},
 	},
 };

@@ -240,6 +240,11 @@ struct xnvmec_args {
 	uint32_t create_mode;
 	uint32_t oflags;
 
+	uint32_t nr;
+	uint32_t ad;
+	uint32_t idw;
+	uint32_t idr;
+
 	uint32_t vec_cnt;
 
 	uint32_t dtype;
@@ -397,7 +402,11 @@ enum xnvmec_opt {
 
 	XNVMEC_OPT_ORCH_TITLE = 108, ///< XNVMEC_OPT_ORCH_TITLE
 
-	XNVMEC_OPT_END = 109, ///< XNVMEC_OPT_END
+	XNVMEC_OPT_AD  = 109, ///< XNVMEC_OPT_AD
+	XNVMEC_OPT_IDW = 110, ///< XNVMEC_OPT_IDW
+	XNVMEC_OPT_IDR = 111, ///< XNVMEC_OPT_IDR
+
+	XNVMEC_OPT_END = 112, ///< XNVMEC_OPT_END
 };
 
 /**
