@@ -11,7 +11,7 @@ import pandas
 def extract_table(input_file, pages, table_indices):
     """Read tables, remove first row of each and concatenate"""
 
-    tables = camelot.read_pdf(input_file, pages)
+    tables = camelot.read_pdf(input_file, pages, line_scale=35)
     headings = extract_headings(tables[table_indices[0]].df.head(1).to_numpy()[0])
 
     if len(table_indices) == 1:
