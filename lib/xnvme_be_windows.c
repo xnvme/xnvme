@@ -157,6 +157,14 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_windows[] = {
 		.check_support = xnvme_be_supported,
 	},
 
+	{
+		.mtype = XNVME_BE_ADMIN,
+		.name = "block",
+		.descr = "Use Windows NVMe Driver ioctl() for admin commands",
+		.admin = &g_xnvme_be_windows_admin_block,
+		.check_support = xnvme_be_supported,
+	},
+
 #ifdef XNVME_BE_WINDOWS_FS_ENABLED
 	{
 		.mtype = XNVME_BE_SYNC,

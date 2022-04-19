@@ -53,4 +53,9 @@ int
 xnvme_be_windows_nvme_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 				void *mbuf, size_t mbuf_nbytes);
 
+int
+xnvme_be_windows_block_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf,
+				 size_t XNVME_UNUSED(dbuf_nbytes), void *XNVME_UNUSED(mbuf),
+				 size_t XNVME_UNUSED(mbuf_nbytes));
+
 #endif /* __INTERNAL_XNVME_BE_WINDOWS_NVME_H */

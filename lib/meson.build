@@ -50,6 +50,7 @@ xnvmelib_source = [
   'xnvme_be_windows_fs.c',
   'xnvme_be_windows_mem.c',
   'xnvme_be_windows_nvme.c',
+  'xnvme_be_windows_block.c',
   'xnvme_buf.c',
   'xnvme_cmd.c',
   'xnvme_dev.c',

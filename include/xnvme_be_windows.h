@@ -48,6 +48,7 @@ xnvme_file_attributes_opts_to_windows(struct xnvme_opts *opts);
  */
 extern struct xnvme_be_admin g_xnvme_be_windows_admin_fs;
 extern struct xnvme_be_admin g_xnvme_be_windows_admin_nvme;
+extern struct xnvme_be_admin g_xnvme_be_windows_admin_block;
 
 /**
  * Implementations of the synchronous command interface

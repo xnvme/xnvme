@@ -18,6 +18,30 @@
 #include <libxnvme_spec_fs.h>
 #include <xnvme_be_windows.h>
 
+int
+xnvme_be_windows_get_device_type(HANDLE dev_handle)
+{
+	ULONG ret_len;
+	STORAGE_PROPERTY_QUERY query = {0};
+	STORAGE_ADAPTER_DESCRIPTOR result = {0};
+	int ret;
+	int err = 0;
+
+	query.PropertyId = (STORAGE_PROPERTY_ID)StorageAdapterProperty;
+	query.QueryType = PropertyStandardQuery;
+
+	ret = DeviceIoControl(dev_handle, IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query),
+			      &result, sizeof(result), &ret_len, NULL);
+
+	if (!ret) {
+		err = GetLastError();
+		XNVME_DEBUG("Error retriving Storage Query property for %s. Error: %d\n",
+			    str_device_name, err);
+	}
+
+	return result.BusType;
+}
+
 /**
  * Close a device handle open by CreateFile()
  *
@@ -69,6 +93,7 @@ xnvme_be_windows_dev_open(struct xnvme_dev *dev)
 	DWORD access_mode = 0;
 	DWORD file_attributes = FILE_ATTRIBUTE_NORMAL;
 	int err = 0;
+	int dev_type;
 
 	int flags = xnvme_file_opts_to_win(opts);
 
@@ -171,8 +196,13 @@ xnvme_be_windows_dev_open(struct xnvme_dev *dev)
 		dev->ident.csi = XNVME_SPEC_CSI_NVM;
 		// Making the nsid 1 by default
 		dev->ident.nsid = 1;
+		dev_type = xnvme_be_windows_get_device_type(state->async_handle);
 		if (!opts->admin) {
-			dev->be.admin = g_xnvme_be_windows_admin_nvme;
+			if (dev_type == BusTypeNvme) {
+				dev->be.admin = g_xnvme_be_windows_admin_nvme;
+			} else if (dev_type == BusTypeScsi || dev_type == BusTypeSata) {
+				dev->be.admin = g_xnvme_be_windows_admin_block;
+			}
 		}
 		if (!opts->sync) {
 			dev->be.sync = g_xnvme_be_windows_sync_nvme;
