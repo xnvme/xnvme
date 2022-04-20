@@ -53,11 +53,16 @@ jobs:
     if: ((github.event.action != 'labeled') || (github.event.action == 'labeled') && (github.event.label.name == 'pr-ready-for-test'))
 
     steps:
-    - name: Install git
-      run: apk add git
-
     - name: Grab source
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3.0.1
+    - name: Add repos to git-config safe.directory
+      run: |
+        git config --global --add safe.directory $(pwd)
+
+    - name: Check repository...
+      run: |
+        ls -lha
+        git status
 
     - name: Generate Full Source Archive
       run: |
@@ -78,7 +83,12 @@ jobs:
     container: refenv/xnvme-devtools-ci:latest
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Grab source
+      uses: actions/checkout@v3.0.1
+    - name: Add repos to git-config safe.directory
+      run: |
+        git config --global --add safe.directory $(pwd)
+
     - name: Run pre-commit
       run: pre-commit run --all-files
 
@@ -691,11 +701,14 @@ jobs:
         cij.pull "docs/autogen/builddir/html" html-docs
 
     - name: Checkout site
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3.0.1
       with:
         repository: "xnvme/xnvme.github.io"
         token: ${{ secrets.DOCS_PAT }}
         path: site
+    - name: Add repos to git-config safe.directory
+      run: |
+        git config --global --add safe.directory $(pwd)/site
 
     - name: Add docgen to site
       run: |
