@@ -324,6 +324,9 @@ _posix_async_thrpool_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 	int err;
 
 	entry = STAILQ_FIRST(&qp->rp);
+	if (!entry) {
+		return -EBUSY;
+	}
 	STAILQ_REMOVE_HEAD(&qp->rp, link);
 
 	entry->dev = ctx->dev;
@@ -371,6 +374,9 @@ _posix_async_thrpool_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size
 	int err;
 
 	entry = STAILQ_FIRST(&qp->rp);
+	if (!entry) {
+		return -EBUSY;
+	}
 	STAILQ_REMOVE_HEAD(&qp->rp, link);
 
 	entry->dev = ctx->dev;
