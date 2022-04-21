@@ -1,7 +1,7 @@
 project(
   'fio',
   'c',
-  version: '3.28',
+  version: '3.30',
 )
 fs = import('fs')
 

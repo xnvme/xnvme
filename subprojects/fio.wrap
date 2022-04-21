@@ -1,4 +1,4 @@
 [wrap-git]
 url = https://github.com/axboe/fio.git
-revision = fio-3.28
+revision = fio-3.30
 patch_directory = fio
