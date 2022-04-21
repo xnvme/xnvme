@@ -120,6 +120,10 @@ xnvme_cmd_passv(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, 
 
 	switch (cmd_opts & XNVME_CMD_MASK_IOMD) {
 	case XNVME_CMD_ASYNC:
+		if (ctx->async.queue->base.outstanding == ctx->async.queue->base.capacity) {
+			XNVME_DEBUG("FAILED: queue is full; returning -EBUSY");
+			return -EBUSY;
+		}
 		return ctx->dev->be.async.cmd_iov(ctx, dvec, dvec_cnt, dvec_nbytes, mvec, mvec_cnt,
 						  mvec_nbytes);
 	case XNVME_CMD_SYNC:
