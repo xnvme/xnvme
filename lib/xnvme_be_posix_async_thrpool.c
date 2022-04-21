@@ -287,7 +287,9 @@ _posix_async_thrpool_poke(struct xnvme_queue *q, uint32_t max)
 	}
 
 	while (completed < max) {
-		struct _thrpool_entry *entry = STAILQ_FIRST(&qp->cq);
+		struct _thrpool_entry *entry;
+
+		entry = STAILQ_FIRST(&qp->cq);
 		if (entry == NULL) {
 			break;
 		}
