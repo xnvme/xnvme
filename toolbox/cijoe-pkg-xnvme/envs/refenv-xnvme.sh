@@ -63,6 +63,8 @@ elif [[ -v XNVME_BE && "${XNVME_BE}" == "linux" ]]; then
   fi
 elif [[ -v XNVME_BE && "$XNVME_BE" == "fbsd" ]]; then
   XNVME_URI="/dev/nvme${NVME_CNTID}ns${NVME_NSID}"; export XNVME_URI
+elif [[ -v XNVME_BE && "$XNVME_BE" == "macos" ]]; then
+  XNVME_URI="/dev/disk4"; export XNVME_URI
 fi
 if [[ -v XNVME_BE ]]; then
   XNVME_DEV_NSID="${NVME_NSID}"; export XNVME_DEV_NSID

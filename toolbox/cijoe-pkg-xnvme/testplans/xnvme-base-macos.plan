@@ -1,0 +1,31 @@
+---
+descr: Verify base xNVMe functionality using the macOS backend
+descr_long: |
+  Exercises 
+  * library-information
+  * device enumeration
+  * admin-commands idfy-ns, idfy-ctrlr, get-log, get/set feature
+  * queue-init/teardown of io_uring/libaio/posix
+  Requires
+  * XNVME_URI points to an NVMe namespace e.g. /dev/disk4
+evars:
+  NVME_NSTYPE: "lblk"
+  DEV_TYPE: "nvme"
+  XNVME_BE: "macos"
+  XNVME_ADMIN: "macos"
+
+
+testsuites:
+- name: xnvme_core
+  alias: "xNVMe: verify base functionality using be:macos"
+
+- name: xnvme_admin_idfy_log
+  alias: "xNVMe: verify base functionality using be:macos"
+
+- name: xnvme_queue
+  alias: "xNVMe: verify base functionality using be:macos/async:posix"
+  evars: {XNVME_ASYNC: "posix"}
+
+- name: xnvme_queue
+  alias: "xNVMe: verify base functionality using be:macos/async:thrpool"
+  evars: {XNVME_ASYNC: "thrpool"}

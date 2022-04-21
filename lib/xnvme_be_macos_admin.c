@@ -22,6 +22,26 @@
 #include <fcntl.h>
 
 int
+_gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
+{
+	struct xnvme_spec_feat feat = {0};
+
+	switch (ctx->cmd.gfeat.cdw10.fid) {
+	case XNVME_SPEC_FEAT_NQUEUES:
+		feat.nqueues.nsqa = 63;
+		feat.nqueues.ncqa = 63;
+		ctx->cpl.cdw0 = feat.val;
+		break;
+
+	default:
+		XNVME_DEBUG("FAILED: unsupported fid: %d", ctx->cmd.gfeat.cdw10.fid);
+		return -ENOSYS;
+	}
+
+	return 0;
+}
+
+int
 xnvme_be_macos_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 		     void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
@@ -53,6 +73,8 @@ xnvme_be_macos_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 			return 1;
 		}
 		break;
+	case XNVME_SPEC_ADM_OPC_GFEAT:
+		return _gfeat(ctx, dbuf);
 	default:
 		XNVME_DEBUG("FAILED: ENOSYS opcode: %d", ctx->cmd.common.opcode);
 		return -ENOSYS;
