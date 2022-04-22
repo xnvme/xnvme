@@ -526,21 +526,7 @@ jobs:
         cij.cmd "xnvme library-info"
 
     - name: CIJOE, run Linux testplans using qemu-guest as test-target
-      if: matrix.guest.os == 'debian' && (github.event_name != 'push')
-      run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij_runner \
-          --env ${{ steps.cijoe-qemu.outputs.target-env }} \
-          --output ${{ steps.cijoe-qemu.outputs.results }} \
-          --testplan \
-          "${CIJ_TESTPLANS}/xnvme-base-linux.plan" \
-          "${CIJ_TESTPLANS}/xnvme-base-spdk.plan" \
-          "${CIJ_TESTPLANS}/xnvme-nvm-spdk.plan" \
-          "${CIJ_TESTPLANS}/xnvme-nvm-linux-nvme.plan"
-
-    - name: CIJOE, run Linux testplans using qemu-guest as test-target
-      if: matrix.guest.os == 'debian' && (github.event_name == 'push')
+      if: matrix.guest.os == 'debian'
       run: |
         pushd $(cij_root) && source modules/cijoe.sh && popd
         source ${{ steps.cijoe-qemu.outputs.target-env }}
