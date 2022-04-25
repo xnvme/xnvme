@@ -17,6 +17,7 @@ scripts/source-format.log*
 build
 builddir
 docs/build
+docs/tutorial/dynamic_loading/enumerate_example
 cscope.out
 tags
 cmake-build-debug/
