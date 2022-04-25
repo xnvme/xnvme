@@ -12,6 +12,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include <libxnvme.h>
 
 /**
  * Representation of a range of logical-block-addresses aka LBAs

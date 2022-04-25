@@ -1,5 +1,6 @@
 #ifndef __LIBXNVME_DEV_H
 #define __LIBXNVME_DEV_H
+#include <libxnvme.h>
 
 /**
  * Opaque device handle.
