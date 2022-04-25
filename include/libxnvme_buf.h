@@ -4,7 +4,7 @@
  * Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
  * SPDX-License-Identifier: Apache-2.0
  *
- * @file libxnvme_be.h
+ * @file libxnvme_buf.h
  */
 #ifndef __LIBXNVME_BUF_H
 #define __LIBXNVME_BUF_H
