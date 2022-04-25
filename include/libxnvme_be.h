@@ -8,6 +8,7 @@
  */
 #ifndef __LIBXNVME_BE_H
 #define __LIBXNVME_BE_H
+#include <libxnvme.h>
 
 #ifdef __cplusplus
 extern "C" {

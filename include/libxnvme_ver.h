@@ -1,5 +1,6 @@
 #ifndef __LIBXNVME_VER_H
 #define __LIBXNVME_VER_H
+#include <libxnvme.h>
 
 /**
  * Produces the "major" version of the library
