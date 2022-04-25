@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+import argparse
+import sys
+
+import xnvme.ctypes_mapping as xnvme
+
+xnvme.guard_unloadable()
+
+
+def parse_args():
+    """Parse command-line arguments"""
+
+    parser = argparse.ArgumentParser(
+        description="Open a device and query it for information",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "--uri",
+        help="uri argument to pass to xnvme_dev_open()",
+        required=True,
+        type=str,
+    )
+    parser.add_argument(
+        "--dev-nsid",
+        help="NVMe namespace-identifier",
+        default=0x1,
+        type=lambda x: int(x, 0),
+    )
+
+    return parser.parse_args()
+
+
+def main(args):
+    """Example of xNVMe C API bindings to open a device"""
+
+    opts = xnvme.xnvme_opts()
+    opts.nsid = args.dev_nsid
+
+    dev = xnvme.xnvme_dev_open(args.uri.encode(), opts)
+    if not dev:
+        print(f"FAILED: xnvme_dev_open({args.uri})")
+        return 1
+
+    xnvme.xnvme_dev_pr(dev, xnvme.XNVME_PR_DEF)
+    xnvme.xnvme_dev_close(dev)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(parse_args()))

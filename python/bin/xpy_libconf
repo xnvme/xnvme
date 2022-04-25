@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+import sys
+
+import xnvme.ctypes_mapping as xnvme
+
+xnvme.guard_unloadable()
+
+
+def main():
+    """Print xNVMe library information"""
+
+    xnvme.xnvme_libconf_pr(xnvme.XNVME_PR_DEF)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
