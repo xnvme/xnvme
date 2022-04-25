@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+import sys
+from ctypes import POINTER, c_uint32, cast, pointer
+
+import xnvme.ctypes_mapping as xnvme
+
+xnvme.guard_unloadable()
+
+
+def enumerate_callback(dev, callback_args):
+    """Enumerate devices on the system"""
+
+    count = cast(callback_args, POINTER(c_uint32))
+    count.contents.value += 1
+
+    xnvme.xnvme_dev_pr(dev, xnvme.XNVME_PR_DEF)
+
+    return xnvme.XNVME_ENUMERATE_DEV_CLOSE
+
+
+def main():
+    """Enumerate the local-system passing a variable to increment/count"""
+
+    count = c_uint32(0)
+
+    err = xnvme.xnvme_enumerate(
+        None, None, xnvme.xnvme_enumerate_cb(enumerate_callback), pointer(count)
+    )
+    if err:
+        print(f"FAILED: xnvme_enumerate(), err({err})")
+
+    print(f"Found {count.value} device(s)")
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,28 @@
+---
+descr: Do minimal verification of Python language bindings
+descr_long: |
+  This will exercise the Python language-bindings, invoking Python
+  examples which will touch the trickier parts of the API, that is,
+  callback-functions, non-primitive data-types, and device handles
+evars:
+  NVME_NSTYPE: "lblk"
+  DEV_TYPE: "nvme"
+
+testsuites:
+- name: xpy_kernel
+  alias: "Using the OS NVMe driver"
+  hooks: ["xnvme"]
+  evars: {XNVME_BE: "linux"}
+  testcases:
+  - xpy_dev_open.sh
+  - xpy_enumerate.sh
+  - xpy_libconf.sh
+
+- name: xpy_userspace
+  alias: "Using the user-space NVMe driver"
+  hooks: ["xnvme"]
+  evars: {XNVME_BE: "spdk"}
+  testcases:
+  - xpy_dev_open.sh
+  - xpy_enumerate.sh
+  - xpy_libconf.sh
