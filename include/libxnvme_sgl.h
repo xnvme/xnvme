@@ -9,6 +9,7 @@
  */
 #ifndef __LIBXNVME_SGL_H
 #define __LIBXNVME_SGL_H
+#include <libxnvme.h>
 
 /**
  * Opaque handle for Scatter Gather List (SGL).

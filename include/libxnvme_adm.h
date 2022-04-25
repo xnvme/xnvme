@@ -1,5 +1,6 @@
 #ifndef __LIBXNVME_ADM_H
 #define __LIBXNVME_ADM_H
+#include <libxnvme.h>
 
 #ifdef __cplusplus
 extern "C" {
