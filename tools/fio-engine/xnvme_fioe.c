@@ -1,74 +1,9 @@
 /*
  * fio xNVMe IO Engine
  *
- * IO engine using the asynchronous interface of the xNVMe C API.
+ * IO engine using the xNVMe C API.
  *
  * See: http://xnvme.io/
- *
- * -----------------------------------------------------------------------------
- *
- * Notes on the implementation and fio IO engines in general
- * =========================================================
- *
- * Built-in engine interface:
- *
- * - static void fio_init xnvme_fioe_register(void)
- * - static void fio_exit xnvme_fioe_unregister(void)
- * - static struct ioengine_ops ioengine
- * - Usage: '--ioengine=myengine'
- *
- * External engine interface:
- *
- * - struct ioengine_ops ioengine
- * - Usage: '--ioengine=external:/path/to/myengine.so'
- *
- * When writing an external engine you actually have two choices, you can:
- *
- * 1) Follow the "External engine interface" as described above
- * 2) Fake an internal engine
- *    - Implement the "Built-in engine interface"
- *    - Inject the engine via LD_PRELOAD=/path/to/myengine.so
- *    - NOTE: by injecting you are potentially overwriting more symbols than
- *      just those required by the "Built-in engine interface"
- *
- * It seems like the "cleanest" approach is to implement en engine following the
- * "External engine interface", however, there is some spurious behavior/race
- * causing a segfault when accessing `td->io_ops` in `_queue()`.
- *
- * However, for some reason, this segfault does not occur if `td->io_ops` is
- * touched during `_init()` which is why `_init()` echoes the value of
- * `td->io_ops`.
- *
- * CAVEAT: Multi-device support
- *
- * Support is here, however, there is one limiting caveat, and two others noted
- * in case issues should arise.
- *
- * - 1) iomem_{alloc/free} introduces a limitation with regards to multiple
- *   devices. Specifically, the devices opened must use backends which share
- *   memory allocators. E.g. using be:laio + be:liou is fine, using be:liou +
- *   be:spdk is not.
- *   This is due to the fio 'io_mem_*' helpers are not tied to devices, as
- *   such, it is required that all devices opened use compatible
- *   buffer-allocators. Currently, the implementation does dot check for this
- *   unsupported use-case, and will thus lead to a runtime error.
- *
- * - 2) The implementation assumes that 'thread_data.o.nr_files' is available
- *   and that instances of 'fio_file.fileno' are valued [0,
- *   thread_data.o.nr_files -1].
- *   This is to pre-allocate file-wrapping-structures, xnvme_fioe_fwrap, at I/O
- *   engine initialization time and to reference file-wrapping with
- *   constant-time lookup
- *
- * - 3) The _open() and _close() functions do not implement the "real"
- *   device/file opening, this is done in _init() and torn down in _cleanup() as
- *   the io-engine needs device handles ready for iomem_{alloc/free}
- *
- * CAVEAT: Supporting NVMe devices formatted with extended-LBA
- *
- * To support extended-lba initial work has been done in xNVMe, however, further
- * work is probably need for this to trickle up from the fio I/O engine, also,
- * in the io-engine ">> ssw" are used which does not account for extended LBA.
  */
 #include <stdlib.h>
 #include <assert.h>
