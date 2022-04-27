@@ -45,6 +45,8 @@ form.
    :hidden:
 
    xnvme
+   xnvme_ident
+   xnvme_opts
    xnvme_file
    xnvme_nvm
    xnvme_znd
@@ -53,6 +55,6 @@ form.
    xnvme_geo
    xnvme_spec
    xnvme_sgl
-   xnvme_3p
+   xnvme_libconf
    xnvme_ver
    xnvmec
