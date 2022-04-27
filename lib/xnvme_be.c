@@ -723,17 +723,3 @@ xnvme_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb
 
 	return 0;
 }
-
-
-struct xnvme_opts
-xnvme_opts_default(void)
-{
-	struct xnvme_opts opts = {0};
-
-	opts.rdwr = 1;
-
-	// Value is only applicable if the user also sets opts.create = 1
-	opts.create_mode = S_IRUSR | S_IWUSR;
-
-	return opts;
-}
