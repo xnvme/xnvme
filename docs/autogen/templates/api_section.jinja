@@ -4,6 +4,8 @@
  {{ ns }}
 {% for _ in range(ns|length + 2) %}={% endfor %}
 
+{% if show_header %}
+
 .. _sec-c-api-{{ ns }}-header:
 
 Header
@@ -11,6 +13,8 @@ Header
 
 .. literalinclude:: ../../include/lib{{ ns }}.h
    :language: c
+
+{% endif %}
 
 .. _sec-c-api-{{ ns }}-enum:
 
