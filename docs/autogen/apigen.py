@@ -148,12 +148,14 @@ def main(args):
     logging.info("Output: %r", args.output)
 
     namespaces = [
-        "xnvme_3p",
         "xnvme_adm",
-        "xnvme_file",
         "xnvme_dev",
+        "xnvme_file",
         "xnvme_geo",
+        "xnvme_ident",
+        "xnvme_libconf",
         "xnvme_nvm",
+        "xnvme_opts",
         "xnvme_sgl",
         "xnvme_spec",
         "xnvme_util",
