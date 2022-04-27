@@ -139,7 +139,15 @@ def emit(namespace, api):
     template_env = jinja2.Environment(loader=template_loader)
     template = template_env.get_template("api_section.jinja")
 
-    return template.render({"ns": namespace, "api": api})
+    return template.render(
+        {
+            "ns": namespace,
+            "api": api,
+            "show_header": os.path.exists(
+                os.path.join("..", "..", "include", f"lib{namespace}.h")
+            ),
+        }
+    )
 
 
 def main(args):
