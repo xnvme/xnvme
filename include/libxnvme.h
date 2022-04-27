@@ -443,8 +443,10 @@ xnvme_cmd_pass(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  * @param dvec array of data iovecs
  * @param dvec_cnt number of elements in dvec
+ * @param dvec_nbytes size of the meta-payload in bytes
  * @param mvec array of metadata iovecs
  * @param mvec_cnt number of elements in mvec
+ * @param mvec_nbytes size of the meta-payload in bytes
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
