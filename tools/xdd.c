@@ -10,11 +10,13 @@
 #define IOSIZE_DEF 4096
 #define QDEPTH_MAX 256
 #define QDEPTH_DEF 16
+#define START_OFFSET_DEF 0
 
 struct cb_args {
 	uint64_t *nerrors;
 	uint64_t ncompletions;
 	uint64_t nsubmissions;
+	uint64_t start_offset;
 
 	struct xnvme_cmd_ctx dst_ctx;
 	char *buf;
@@ -35,7 +37,7 @@ cb_func(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 		ssize_t res;
 
 		res = xnvme_file_pwrite(&work->dst_ctx, work->buf, ctx->cpl.result,
-					ctx->cmd.nvm.slba);
+					ctx->cmd.nvm.slba - work->start_offset);
 		if (res || xnvme_cmd_ctx_cpl_status(&work->dst_ctx)) {
 			xnvmec_perr("xnvme_file_pwrite(dst)", res);
 			xnvme_cmd_ctx_pr(&work->dst_ctx, XNVME_PR_DEF);
@@ -53,7 +55,7 @@ copy_async(struct xnvmec *cli)
 	struct xnvme_dev *src_dev, *dst_dev;
 	struct xnvme_opts src_opts = {.rdonly = 1, .direct = cli->args.direct};
 	struct xnvme_opts dst_opts = {.wronly = 1, .create = 1, .direct = cli->args.direct};
-	size_t buf_nbytes, tbytes, iosize;
+	size_t buf_nbytes, tbytes, iosize, start_offset;
 	char *buf = NULL;
 
 	struct cb_args cb_args[QDEPTH_MAX] = {0};
@@ -68,6 +70,7 @@ copy_async(struct xnvmec *cli)
 
 	iosize = cli->given[XNVMEC_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
 	qdepth = cli->given[XNVMEC_OPT_QDEPTH] ? cli->args.qdepth : QDEPTH_DEF;
+	start_offset = cli->given[XNVMEC_OPT_OFFSET] ? cli->args.offset : START_OFFSET_DEF;
 
 	src_dev = xnvme_file_open(src_uri, &src_opts);
 	if (src_dev == NULL) {
@@ -97,8 +100,9 @@ copy_async(struct xnvmec *cli)
 	xnvme_queue_set_cb(queue, cb_func, &cb_args);
 
 	xnvmec_pinf("copy-async: "
-		    "{src: %s, dst: %s, tbytes: %zu, buf_nbytes: %zu, iosize: %zu, qdepth: %u}",
-		    src_uri, dst_uri, tbytes, buf_nbytes, iosize, qdepth);
+		    "{src: %s, dst: %s, tbytes: %zu, buf_nbytes: %zu, iosize: %zu, qdepth: %u, "
+		    "start_offset: %zu}",
+		    src_uri, dst_uri, tbytes, buf_nbytes, iosize, qdepth, start_offset);
 
 	xnvmec_timer_start(cli);
 
@@ -108,12 +112,12 @@ copy_async(struct xnvmec *cli)
 		work->nerrors = &nerrors;
 		work->buf = buf + (i * iosize);
 		work->dst_ctx = xnvme_file_get_cmd_ctx(dst_dev);
+		work->start_offset = start_offset;
 	}
-
-	for (size_t ofz = 0; (ofz < tbytes) && !nerrors;) {
-		struct cb_args *work = &cb_args[(ofz / iosize) % qdepth];
+	for (size_t ofz = start_offset; (ofz - start_offset < tbytes) && !nerrors;) {
+		struct cb_args *work = &cb_args[((ofz - start_offset) / iosize) % qdepth];
 		struct xnvme_cmd_ctx *src_ctx = xnvme_cmd_ctx_from_queue(queue);
-		size_t nbytes = XNVME_MIN_U64(iosize, tbytes - ofz);
+		size_t nbytes = XNVME_MIN_U64(iosize, tbytes - (ofz - start_offset));
 		ssize_t res;
 
 		src_ctx->async.cb_arg = work;
@@ -179,7 +183,7 @@ copy_sync(struct xnvmec *cli)
 	struct xnvme_dev *src_dev, *dst_dev;
 	struct xnvme_opts src_opts = {.rdonly = 1, .direct = cli->args.direct};
 	struct xnvme_opts dst_opts = {.wronly = 1, .create = 1, .direct = cli->args.direct};
-	size_t buf_nbytes, tbytes, iosize;
+	size_t buf_nbytes, tbytes, iosize, start_offset;
 	char *buf = NULL;
 
 	src_uri = cli->args.data_input;
@@ -187,6 +191,7 @@ copy_sync(struct xnvmec *cli)
 	tbytes = cli->args.data_nbytes;
 
 	iosize = cli->given[XNVMEC_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
+	start_offset = cli->given[XNVMEC_OPT_OFFSET] ? cli->args.offset : START_OFFSET_DEF;
 
 	src_dev = xnvme_file_open(src_uri, &src_opts);
 	if (!src_dev) {
@@ -208,15 +213,16 @@ copy_sync(struct xnvmec *cli)
 	}
 	xnvmec_buf_fill(buf, buf_nbytes, "zero");
 
-	xnvmec_pinf("copy-sync: {src: %s, dst: %s, tbytes: %zu, buf_nbytes: %zu, iosize: %zu",
-		    src_uri, dst_uri, tbytes, buf_nbytes, iosize);
+	xnvmec_pinf("copy-sync: {src: %s, dst: %s, tbytes: %zu, buf_nbytes: %zu, iosize: %zu, "
+		    "start_offset: %zu}",
+		    src_uri, dst_uri, tbytes, buf_nbytes, iosize, start_offset);
 
 	xnvmec_timer_start(cli);
 
-	for (size_t ofz = 0; ofz < tbytes; ofz += iosize) {
+	for (size_t ofz = start_offset; ofz - start_offset < tbytes; ofz += iosize) {
 		struct xnvme_cmd_ctx src_ctx = xnvme_file_get_cmd_ctx(src_dev);
 		struct xnvme_cmd_ctx dst_ctx = xnvme_file_get_cmd_ctx(dst_dev);
-		size_t nbytes = XNVME_MIN_U64(iosize, tbytes - ofz);
+		size_t nbytes = XNVME_MIN_U64(iosize, tbytes - (ofz - start_offset));
 		ssize_t res;
 
 		res = xnvme_file_pread(&src_ctx, buf, nbytes, ofz);
@@ -226,7 +232,7 @@ copy_sync(struct xnvmec *cli)
 			goto exit;
 		}
 
-		res = xnvme_file_pwrite(&dst_ctx, buf, nbytes, ofz);
+		res = xnvme_file_pwrite(&dst_ctx, buf, nbytes, ofz - start_offset);
 		if (res || xnvme_cmd_ctx_cpl_status(&dst_ctx)) {
 			xnvmec_perr("xnvme_file_pwrite(dst)", res);
 			xnvme_cmd_ctx_pr(&dst_ctx, XNVME_PR_DEF);
@@ -256,6 +262,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LREQ},
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
 			{XNVMEC_OPT_DIRECT, XNVMEC_LFLG},
+			{XNVMEC_OPT_OFFSET, XNVMEC_LOPT},
 		},
 	},
 	{
@@ -270,6 +277,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
 			{XNVMEC_OPT_QDEPTH, XNVMEC_LOPT},
 			{XNVMEC_OPT_DIRECT, XNVMEC_LFLG},
+			{XNVMEC_OPT_OFFSET, XNVMEC_LOPT},
 		},
 	},
 };
