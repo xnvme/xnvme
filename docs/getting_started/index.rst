@@ -246,10 +246,18 @@ From the root of the **xNVMe** source repository, do:
    :language: bash
    :lines: 8-
 
-This will install the following packages via ``apt-get``:
+The above will install the packages seen below via the system package-manager
+``dnf``:
 
 .. literalinclude:: ../../toolbox/pkgs/fedora-36.txt
    :language: bash
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../toolbox/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
+
 
 Fedora (35)
 -----------
@@ -260,41 +268,40 @@ From the root of the **xNVMe** source repository, do:
    :language: bash
    :lines: 8-
 
-The above will install following packages seen below via the system
-package-manager and via ``pip3``:
+The above will install the packages seen below via the system package-manager
+``dnf``:
 
 .. literalinclude:: ../../toolbox/pkgs/fedora-35.txt
    :language: bash
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../toolbox/pkgs/fedora-35-build.sh
+.. literalinclude:: ../../toolbox/pkgs/default-build.sh
    :language: bash
    :lines: 2-
 
-.. note:: There are issues with liburing 2.0, this will be fixed by upgrading
-   to liburing 2.1 in a near future, until then, disable support for
-   ``io_uring/liburing`` as in the ``meson setup`` command above.
 
 Fedora (34)
 -----------
 
-Install the following packages via ``apt-get``:
-
-.. literalinclude:: ../../toolbox/pkgs/fedora-34.txt
-   :language: bash
-
-For example, from the root of the **xNVMe** source repository, do:
+From the root of the **xNVMe** source repository, do:
 
 .. literalinclude:: ../../toolbox/pkgs/fedora-34.sh
    :language: bash
    :lines: 8-
+
+The above will install the packages seen below via the system package-manager
+``dnf``:
+
+.. literalinclude:: ../../toolbox/pkgs/fedora-34.txt
+   :language: bash
 
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/default-build.sh
    :language: bash
    :lines: 2-
+
 
 Freebsd 13
 ----------
@@ -437,13 +444,9 @@ For example, from the root of the **xNVMe** source repository, do:
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../toolbox/pkgs/ubuntu-impish-build.sh
+.. literalinclude:: ../../toolbox/pkgs/default-build.sh
    :language: bash
    :lines: 2-
-
-.. note:: There are issues with liburing 2.0, this will be upgrade in the near
-   future. For now, disable support for ``io_uring/liburing`` as in the
-   commands above.
 
 Ubuntu 20.04 (Focal)
 --------------------
@@ -692,8 +695,8 @@ Yielding the output:
 User Space
 ----------
 
-Linux provides the **Userspace I/O** (_`uio`) and **Virtual Function I/O**
-_`vfio` frameworks to write user space I/O drivers. Both interfaces work by
+Linux provides the **Userspace I/O** (`uio`_) and **Virtual Function I/O**
+`vfio`_ frameworks to write user space I/O drivers. Both interfaces work by
 binding a given device to an in-kernel stub-driver. The stub-driver in turn
 exposes device-memory and device-interrupts to user space. Thus enabling the
 implementation of device drivers entirely in user space.
