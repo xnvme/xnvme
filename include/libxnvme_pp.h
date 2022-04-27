@@ -230,6 +230,17 @@ xnvme_geo_pr(const struct xnvme_geo *geo, int opts);
 void
 xnvme_cmd_ctx_pr(const struct xnvme_cmd_ctx *ctx, int UNUSED_opts);
 
+/**
+ * Prints a humanly readable representation of the given ::xnvme_opts
+ *
+ * @param opts Pointer to the #xnvme_opts to print
+ * @param pr_opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_opts_pr(const struct xnvme_opts *opts, int pr_opts);
+
 #ifdef __cplusplus
 }
 #endif
