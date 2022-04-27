@@ -4,6 +4,8 @@
  xnvme_geo
 ===========
 
+
+
 .. _sec-c-api-xnvme_geo-header:
 
 Header
@@ -11,6 +13,8 @@ Header
 
 .. literalinclude:: ../../include/libxnvme_geo.h
    :language: c
+
+
 
 .. _sec-c-api-xnvme_geo-enum:
 
