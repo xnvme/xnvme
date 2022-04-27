@@ -20,7 +20,7 @@ extern "C" {
  * Open the file identified by pathname for I/O operation
  *
  * @param pathname Path to the file
- * @param Opts Options for opening files, see #XNVME_OPTS
+ * @param opts Options for opening files, see ::xnvme_opts
  *
  * @return On success, an initialized struct xnvme_dev is returned. On error,
  * NULL is returned.
