@@ -4,6 +4,8 @@
  xnvme
 =======
 
+
+
 .. _sec-c-api-xnvme-header:
 
 Header
@@ -11,6 +13,8 @@ Header
 
 .. literalinclude:: ../../include/libxnvme.h
    :language: c
+
+
 
 .. _sec-c-api-xnvme-enum:
 
@@ -89,32 +93,12 @@ xnvme_enumeration
    :undoc-members:
 
 
-.. _sec-c-api-xnvme-struct-xnvme_ident:
-
-xnvme_ident
------------
-
-.. doxygenstruct:: xnvme_ident
-   :members:
-   :undoc-members:
-
-
 .. _sec-c-api-xnvme-struct-xnvme_lba_range:
 
 xnvme_lba_range
 ---------------
 
 .. doxygenstruct:: xnvme_lba_range
-   :members:
-   :undoc-members:
-
-
-.. _sec-c-api-xnvme-struct-xnvme_opts:
-
-xnvme_opts
-----------
-
-.. doxygenstruct:: xnvme_opts
    :members:
    :undoc-members:
 
@@ -424,30 +408,6 @@ xnvme_enumeration_pr
 .. doxygenfunction:: xnvme_enumeration_pr
 
 
-.. _sec-c-api-xnvme-func-xnvme_ident_fpr:
-
-xnvme_ident_fpr
----------------
-
-.. doxygenfunction:: xnvme_ident_fpr
-
-
-.. _sec-c-api-xnvme-func-xnvme_ident_from_uri:
-
-xnvme_ident_from_uri
---------------------
-
-.. doxygenfunction:: xnvme_ident_from_uri
-
-
-.. _sec-c-api-xnvme-func-xnvme_ident_pr:
-
-xnvme_ident_pr
---------------
-
-.. doxygenfunction:: xnvme_ident_pr
-
-
 .. _sec-c-api-xnvme-func-xnvme_is_pow2:
 
 xnvme_is_pow2
@@ -536,12 +496,12 @@ xnvme_lba_range_pr
 .. doxygenfunction:: xnvme_lba_range_pr
 
 
-.. _sec-c-api-xnvme-func-xnvme_opts_default:
+.. _sec-c-api-xnvme-func-xnvme_queue_drain:
 
-xnvme_opts_default
-------------------
+xnvme_queue_drain
+-----------------
 
-.. doxygenfunction:: xnvme_opts_default
+.. doxygenfunction:: xnvme_queue_drain
 
 
 .. _sec-c-api-xnvme-func-xnvme_queue_get_capacity:

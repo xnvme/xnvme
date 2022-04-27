@@ -4,6 +4,8 @@
  xnvme_adm
 ===========
 
+
+
 .. _sec-c-api-xnvme_adm-header:
 
 Header
@@ -11,6 +13,8 @@ Header
 
 .. literalinclude:: ../../include/libxnvme_adm.h
    :language: c
+
+
 
 .. _sec-c-api-xnvme_adm-enum:
 
