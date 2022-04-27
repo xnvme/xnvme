@@ -45,6 +45,7 @@ xnvmelib_source = [
   'xnvme_libconf.c',
   'xnvme_libconf_entries.c',
   'xnvme_nvm.c',
+  'xnvme_opts.c',
   'xnvme_queue.c',
   'xnvme_req.c',
   'xnvme_sgl.c',
