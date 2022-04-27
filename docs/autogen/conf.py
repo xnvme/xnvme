@@ -37,7 +37,7 @@ html_static_path = [os.path.join("..", "_static")]
 
 html_context = {
     "css_files": [
-        os.path.join("..", "_static", "theme_overrides.css"),
+        os.path.join("_static", "theme_overrides.css"),
     ]
 }
 
