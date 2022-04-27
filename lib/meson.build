@@ -40,6 +40,7 @@ xnvmelib_source = [
   'xnvme_dev.c',
   'xnvme_file.c',
   'xnvme_geo.c',
+  'xnvme_ident.c',
   'xnvme_lba.c',
   'xnvme_libconf.c',
   'xnvme_libconf_entries.c',
