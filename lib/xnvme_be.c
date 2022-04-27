@@ -698,7 +698,12 @@ int
 xnvme_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
 		void *cb_args)
 {
+	struct xnvme_opts opts_default = xnvme_opts_default();
 	int err;
+
+	if (!opts) {
+		opts = &opts_default;
+	}
 
 	for (int i = 0; g_xnvme_be_registry[i]; ++i) {
 		struct xnvme_be be = *g_xnvme_be_registry[i];
