@@ -1,6 +1,6 @@
 breathe
 Jinja2
 kmdo
-sphinx
+sphinx==3
 sphinx_rtd_theme
 sphinxcontrib-bibtex
