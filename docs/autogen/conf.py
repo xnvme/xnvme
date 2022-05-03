@@ -16,7 +16,7 @@ extensions = [
 
 exclude_patterns = ["autogen"]
 
-templates_path = [os.path.join("..", "templates")]
+# templates_path = [os.path.join("autogen", "templates")]
 source_suffix = ".rst"
 master_doc = "index"
 project = "xNVMe"
