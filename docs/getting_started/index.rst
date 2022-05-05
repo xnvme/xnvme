@@ -491,12 +491,12 @@ Then go ahead and configure, build and install using ``meson``:
 Windows
 -------
 
-You can build xNVMe with a MSVC toolchain, however, some of the features are
-lost when doing so, such as the xNVMe fio io-engine. Thus, here instructions
-are provided on building xNVMe with the most features available.
+You can build **xNVMe** using the MSVC toolchain, however, some of the features
+are lost when doing so, specifcally the **xNVMe** fio io-engine. Thus, the
+instructions provided here utilizes **msys2**.
 
-The toolchain setup is a bit involved, it "bootstraps" by installing the
-Chocolatey package manager by running::
+The toolchain setup is a bit involved, it **bootstraps** by installing the
+Chocolatey package manager by opening an eleveted PowerShell and running::
 
   Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 
