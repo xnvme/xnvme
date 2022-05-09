@@ -1,22 +1,23 @@
 .. _sec-dynamic-loading:
 
-========================================
- Dynamically loading the shared library
-========================================
+===========================
+ Dynamically loading xNVMe
+===========================
 
 In this seciton, you will find two examples of dynamically loading the
 **xNVMe** shared library and via it utilize the :ref:`sec-c-api` along with
 notes on common pitfalls when doing so.
 
-The example code demonstrates how to utilize `xnvme_enumerate()` with callback
-function, callback argumens and associated data-structures and API functions.
-he example will first be presented in C and then in python.
+The example code demonstrates how to utilize
+:ref:`sec-c-api-xnvme-func-xnvme_enumerate` with callback function, callback
+arguments and associated data-structures and API functions. The example will
+first be presented in C and then in Python.
 
-Using the shared library in C
-=============================
+In C
+====
 
-Here `dlopen()` is used to load the library and pointers to the relevant
-functions are returned by `dlsym()`.
+Here ``dlopen()`` is used to load the library and pointers to the relevant
+functions are returned by ``dlsym()``.
 
 .. literalinclude:: enumerate_example.c
    :language: c
@@ -54,8 +55,8 @@ The should produce output similar to:
 .. note:: If you see no output, then try running it as super-user or via
    ``sudo``
 
-Using the shared library in Python
-==================================
+In Python
+=========
 
 Here `ctypes` is used to load the library. Unlike C, then each function does
 not need to be be explicitly loaded, additionally some assistance is given to
@@ -73,9 +74,6 @@ locate the library.
    ``ctypes.Structure`` classes. The order in which the fields are declared
    determines which member they are mapped to, not their name.
 
-
-Running the example
--------------------
 The example can be run like so:
 
 .. literalinclude:: 020_run_python_example.cmd
