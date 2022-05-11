@@ -5,6 +5,7 @@
 #include <liburing.h>
 
 #define XNVME_QUEUE_IOU_CQE_BATCH_MAX 8
+#define XNVME_QUEUE_IOU_BIGSQE        (0x1 << 2)
 
 struct xnvme_queue_liburing {
 	struct xnvme_queue_base base;

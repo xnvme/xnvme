@@ -86,6 +86,11 @@ xnvme_be_linux_liburing_init(struct xnvme_queue *q, int opts)
 		iou_flags |= IORING_SETUP_IOPOLL;
 	}
 
+	if (opts & XNVME_QUEUE_IOU_BIGSQE) {
+		iou_flags |= IORING_SETUP_SQE128;
+		iou_flags |= IORING_SETUP_CQE32;
+	}
+
 	err = io_uring_queue_init(queue->base.capacity, &queue->ring, iou_flags);
 	if (err) {
 		XNVME_DEBUG("FAILED: io_uring_queue_init(), err: %d", err);

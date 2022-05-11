@@ -39,6 +39,14 @@ ioctl_request_to_str(unsigned long req)
 	case NVME_IOCTL_IO64_CMD_VEC:
 		return "NVME_IOCTL_IO64_CMD_VEC";
 #endif
+#ifdef NVME_URING_CMD_IO
+	case NVME_URING_CMD_IO:
+		return "NVME_URING_CMD_IO";
+#endif
+#ifdef NVME_URING_CMD_IO_VEC
+	case NVME_URING_CMD_IO_VEC:
+		return "NVME_URING_CMD_IO_VEC";
+#endif
 	case NVME_IOCTL_RESET:
 		return "NVME_IOCTL_RESET";
 	case NVME_IOCTL_SUBSYS_RESET:
@@ -92,6 +100,14 @@ xnvme_be_linux_nvme_map_cpl(struct xnvme_cmd_ctx *ctx, unsigned long ioctl_req, 
 #ifdef NVME_IOCTL_ADMIN64_CMD
 	case NVME_IOCTL_ADMIN64_CMD:
 		ctx->cpl.result = kcpl->res64.result;
+		break;
+#endif
+#ifdef NVME_URING_CMD_IO
+	case NVME_URING_CMD_IO:
+		break;
+#endif
+#ifdef NVME_URING_CMD_IO_VEC
+	case NVME_URING_CMD_IO_VEC:
 		break;
 #endif
 	default:
