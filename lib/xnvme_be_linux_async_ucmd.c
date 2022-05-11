@@ -17,14 +17,6 @@
 #include <xnvme_be_linux_nvme.h>
 #include <linux/nvme_ioctl.h>
 
-#define IORING_OP_URING_CMD 40
-#define NVME_PASSTHRU_CMD64_SIZE 80
-
-/*
- * sqe->uring_cmd_flags
- */
-#define IORING_URING_CMD_INDIRECT (1U << 0)
-
 static int g_linux_liburing_optional[] = {
 	IORING_OP_URING_CMD,
 };
@@ -62,10 +54,12 @@ xnvme_be_linux_ucmd_init(struct xnvme_queue *q, int opts)
 		return -ENOSYS;
 	}
 
+	opts |= XNVME_QUEUE_IOU_BIGSQE;
+
 	return xnvme_be_linux_liburing_init(q, opts);
 }
 
-#ifdef NVME_IOCTL_IO64_CMD
+#ifdef NVME_URING_CMD_IO
 int
 xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 {
@@ -112,8 +106,9 @@ xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 			return -EIO;
 		}
 
-		/** IO64-quirky-handling: this is also for NVME_IOCTL_IO64_CMD_VEC */
-		err = xnvme_be_linux_nvme_map_cpl(ctx, NVME_IOCTL_IO64_CMD, cqe->res);
+		ctx->cpl.result = cqe->big_cqe[0];
+		/** IO64-quirky-handling: this is also for NVME_URING_CMD_IO_VEC */
+		err = xnvme_be_linux_nvme_map_cpl(ctx, NVME_URING_CMD_IO, cqe->res);
 		if (err) {
 			XNVME_DEBUG("FAILED: xnvme_be_linux_nvme_map_cpl(), err: %d", err);
 			return err;
@@ -136,12 +131,12 @@ xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 int
 xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 {
-	XNVME_DEBUG("FAILED: not supported, built on system without NVME_IOCTL_IO64_CMD");
+	XNVME_DEBUG("FAILED: not supported, built on system without NVME_URING_CMD_IO");
 	return xnvme_be_nosys_queue_poke(q, max);
 }
 #endif
 
-#ifdef NVME_IOCTL_IO64_CMD
+#ifdef NVME_URING_CMD_IO
 int
 xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 		       size_t mbuf_nbytes)
@@ -162,17 +157,12 @@ xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 	}
 
 	sqe->opcode = IORING_OP_URING_CMD;
-	sqe->addr = NVME_PASSTHRU_CMD64_SIZE;
-	sqe->off = NVME_IOCTL_IO64_CMD;
+	sqe->off = NVME_URING_CMD_IO;
 	sqe->flags = queue->poll_sq ? IOSQE_FIXED_FILE : 0;
-	sqe->ioprio = 0;
 	// NOTE: we only ever register a single file, the raw device, so the
 	// provided index will always be 0
 	sqe->fd = queue->poll_sq ? 0 : state->fd;
-	sqe->rw_flags = 0;
 	sqe->user_data = (unsigned long)ctx;
-	sqe->__pad2[0] = (uint64_t)ctx;
-	sqe->open_flags = IORING_URING_CMD_INDIRECT;
 
 	if (queue->poll_io) {
 		ctx->cmd.common.fuse = 1;
@@ -182,6 +172,8 @@ xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 
 	ctx->cmd.common.mptr = (uint64_t)mbuf;
 	ctx->cmd.common.dptr.lnx_ioctl.metadata_len = mbuf_nbytes;
+
+	memcpy(&sqe->addr3, &ctx->cmd.common, 64);
 
 	err = io_uring_submit(&queue->ring);
 	if (err < 0) {
@@ -198,15 +190,15 @@ int
 xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 		       size_t mbuf_nbytes)
 {
-	XNVME_DEBUG("FAILED: not supported, built on system without NVME_IOCTL_IO64_CMD");
+	XNVME_DEBUG("FAILED: not supported, built on system without NVME_URING_CMD_IO");
 	return xnvme_be_nosys_queue_cmd_io(ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
 }
 #endif
 
-#ifdef NVME_IOCTL_IO64_CMD_VEC
+#ifdef NVME_URING_CMD_IO_VEC
 int
 xnvme_be_linux_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-			size_t dvec_nbytes, struct iovec *mvec, size_t mvec_cnt,
+			size_t XNVME_UNUSED(dvec_nbytes), struct iovec *mvec, size_t mvec_cnt,
 			size_t mvec_nbytes)
 {
 	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
@@ -225,15 +217,11 @@ xnvme_be_linux_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dv
 	}
 
 	sqe->opcode = IORING_OP_URING_CMD;
-	sqe->addr = NVME_PASSTHRU_CMD64_SIZE;
-	sqe->off = NVME_IOCTL_IO64_CMD_VEC;
-	sqe->len = dvec_nbytes;
+	sqe->off = NVME_URING_CMD_IO_VEC;
 	sqe->flags = queue->poll_sq ? IOSQE_FIXED_FILE : 0;
-	sqe->ioprio = 0;
 	// NOTE: we only ever register a single file, the raw device, so the
 	// provided index will always be 0
 	sqe->fd = queue->poll_sq ? 0 : state->fd;
-	sqe->rw_flags = 0;
 	sqe->user_data = (unsigned long)ctx;
 
 	if (queue->poll_io) {
@@ -245,9 +233,7 @@ xnvme_be_linux_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dv
 	ctx->cmd.common.mptr = (uint64_t)mvec;
 	ctx->cmd.common.dptr.lnx_ioctl.metadata_len = mvec_cnt;
 
-	XNVME_DEBUG("Indirect Command");
-	sqe->__pad2[0] = (uint64_t)ctx;
-	sqe->open_flags = IORING_URING_CMD_INDIRECT;
+	memcpy(&sqe->addr3, &ctx->cmd.common, 64);
 
 	err = io_uring_submit(&queue->ring);
 	if (err < 0) {
@@ -265,7 +251,7 @@ xnvme_be_linux_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dv
 			size_t dvec_nbytes, struct iovec *mvec, size_t mvec_cnt,
 			size_t mvec_nbytes)
 {
-	XNVME_DEBUG("FAILED: not supported, built on system without NVME_IOCTL_IO64_CMD_VEC");
+	XNVME_DEBUG("FAILED: not supported, built on system without NVME_URING_CMD_IO_VEC");
 	return xnvme_be_nosys_queue_cmd_iov(ctx, dvec, dvec_cnt, dvec_nbytes, mvec, mvec_cnt,
 					    mvec_nbytes);
 }
