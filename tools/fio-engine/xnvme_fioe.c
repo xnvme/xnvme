@@ -354,8 +354,6 @@ static int xnvme_fioe_init(struct thread_data *td)
 	struct fio_file *f;
 	unsigned int i;
 
-	log_err("xnvme_fioe: init(): td->io_ops: %p\n", td->io_ops);
-
 	if (!td->o.use_thread) {
 		log_err("xnvme_fioe: init(): --thread=1 is required\n");
 		return 1;
