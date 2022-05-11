@@ -284,7 +284,7 @@ static void xnvme_fioe_cleanup(struct thread_data *td)
  * convention of the given `fio_file` filename.
  *
  * Checks thread-options for explicit control of asynchronous implementation via
- * the ``--async={thrpool,emu,posix,io_uring,libaio,nil}``.
+ * the ``--xnvme_async={thrpool,emu,posix,io_uring,libaio,nil}``.
  */
 static int _dev_open(struct thread_data *td, struct fio_file *f)
 {
@@ -411,7 +411,7 @@ static int xnvme_fioe_init(struct thread_data *td)
 	return 0;
 }
 
-/* NOTE: using the first device for buffer-allocators, see CAVEAT 2) */
+/* NOTE: using the first device for buffer-allocators) */
 static int xnvme_fioe_iomem_alloc(struct thread_data *td, size_t total_mem)
 {
 	struct xnvme_fioe_data *xd = td->io_ops_data;
@@ -427,7 +427,7 @@ static int xnvme_fioe_iomem_alloc(struct thread_data *td, size_t total_mem)
 	return td->orig_buffer == NULL;
 }
 
-/* NOTE: using the first device for buffer-allocators, see CAVEAT 2) */
+/* NOTE: using the first device for buffer-allocators) */
 static void xnvme_fioe_iomem_free(struct thread_data *td)
 {
 	struct xnvme_fioe_data *xd = td->io_ops_data;
@@ -602,7 +602,6 @@ static enum fio_q_status xnvme_fioe_queue(struct thread_data *td, struct io_u *i
 	}
 }
 
-/* See CAVEAT for explanation and _cleanup() + _dev_close() for implementation */
 static int xnvme_fioe_close(struct thread_data *td, struct fio_file *f)
 {
 	struct xnvme_fioe_data *xd = td->io_ops_data;
@@ -615,7 +614,6 @@ static int xnvme_fioe_close(struct thread_data *td, struct fio_file *f)
 	return 0;
 }
 
-/* See CAVEAT for explanation and _init() + _dev_open() for implementation */
 static int xnvme_fioe_open(struct thread_data *td, struct fio_file *f)
 {
 	struct xnvme_fioe_data *xd = td->io_ops_data;
