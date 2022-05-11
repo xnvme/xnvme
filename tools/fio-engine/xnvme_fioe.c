@@ -190,7 +190,7 @@ static struct fio_option options[] = {
 static void cb_pool(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 {
 	struct io_u *io_u = cb_arg;
-	struct xnvme_fioe_data *xd = io_u->engine_data;
+	struct xnvme_fioe_data *xd = io_u->mmap_data;
 
 	if (xnvme_cmd_ctx_cpl_status(ctx)) {
 		xnvme_cmd_ctx_pr(ctx, XNVME_PR_DEF);
@@ -445,14 +445,14 @@ static void xnvme_fioe_iomem_free(struct thread_data *td)
 
 static int xnvme_fioe_io_u_init(struct thread_data *td, struct io_u *io_u)
 {
-	io_u->engine_data = td->io_ops_data;
+	io_u->mmap_data = td->io_ops_data;
 
 	return 0;
 }
 
 static void xnvme_fioe_io_u_free(struct thread_data *td, struct io_u *io_u)
 {
-	io_u->engine_data = NULL;
+	io_u->mmap_data = NULL;
 }
 
 static struct io_u *xnvme_fioe_event(struct thread_data *td, int event)
