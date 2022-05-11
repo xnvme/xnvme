@@ -241,7 +241,7 @@ static void _fio_file_pr(struct fio_file *f)
 }
 #endif
 
-static int _dev_close(struct thread_data *td, struct xnvme_fioe_fwrap *fwrap)
+static void _dev_close(struct thread_data *td, struct xnvme_fioe_fwrap *fwrap)
 {
 	if (fwrap->dev) {
 		xnvme_queue_term(fwrap->queue);
@@ -249,8 +249,6 @@ static int _dev_close(struct thread_data *td, struct xnvme_fioe_fwrap *fwrap)
 	xnvme_dev_close(fwrap->dev);
 
 	memset(fwrap, 0, sizeof(*fwrap));
-
-	return 0;
 }
 
 static void xnvme_fioe_cleanup(struct thread_data *td)
@@ -265,16 +263,14 @@ static void xnvme_fioe_cleanup(struct thread_data *td)
 	}
 
 	for (uint64_t i = 0; i < xd->nallocated; ++i) {
-		int err;
-
-		err = _dev_close(td, &xd->files[i]);
-		if (err) {
-			XNVME_DEBUG("xnvme_fioe: cleanup(): Unexpected error");
-		}
+		_dev_close(td, &xd->files[i]);
 	}
-	err = pthread_mutex_unlock(&g_serialize);
-	if (err) {
-		XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err: %d", err);
+
+	if (!err) {
+		err = pthread_mutex_unlock(&g_serialize);
+		if (err) {
+			XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err: %d", err);
+		}
 	}
 
 	free(xd->iocq);
