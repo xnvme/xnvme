@@ -645,6 +645,7 @@ static int xnvme_fioe_get_max_open_zones(struct thread_data *td, struct fio_file
 {
 	struct xnvme_opts opts = xnvme_opts_from_fioe(td);
 	struct xnvme_dev *dev;
+	const struct xnvme_spec_znd_idfy_ns *zns;
 	int err = 0, err_lock;
 
 	if (f->filetype != FIO_TYPE_FILE && f->filetype != FIO_TYPE_BLOCK &&
@@ -670,24 +671,20 @@ static int xnvme_fioe_get_max_open_zones(struct thread_data *td, struct fio_file
 		goto exit;
 	}
 
-	{
-		const struct xnvme_spec_znd_idfy_ns *zns;
-
-		zns = (void *)xnvme_dev_get_ns_css(dev);
-		if (!zns) {
-			XNVME_DEBUG("FAILED: xnvme_dev_get_ns_css(), errno: %d", errno);
-			err = -errno;
-			goto exit;
-		}
-
-		/*
-		 * intentional overflow as the value is zero-based and NVMe
-		 * defines 0xFFFFFFFF as unlimited thus overflowing to 0 which
-		 * is how fio indicates unlimited and otherwise just converting
-		 * to one-based.
-		 */
-		*max_open_zones = zns->mor + 1;
+	zns = (void *)xnvme_dev_get_ns_css(dev);
+	if (!zns) {
+		XNVME_DEBUG("FAILED: xnvme_dev_get_ns_css(), errno: %d", errno);
+		err = -errno;
+		goto exit;
 	}
+
+	/*
+	 * intentional overflow as the value is zero-based and NVMe
+	 * defines 0xFFFFFFFF as unlimited thus overflowing to 0 which
+	 * is how fio indicates unlimited and otherwise just converting
+	 * to one-based.
+	 */
+	*max_open_zones = zns->mor + 1;
 
 exit:
 	xnvme_dev_close(dev);
@@ -713,7 +710,7 @@ static int xnvme_fioe_get_zoned_model(struct thread_data *td, struct fio_file *f
 {
 	struct xnvme_opts opts = xnvme_opts_from_fioe(td);
 	struct xnvme_dev *dev;
-	int err = 0;
+	int err = 0, err_lock;
 
 	if (f->filetype != FIO_TYPE_FILE && f->filetype != FIO_TYPE_BLOCK &&
 	    f->filetype != FIO_TYPE_CHAR) {
@@ -760,13 +757,10 @@ static int xnvme_fioe_get_zoned_model(struct thread_data *td, struct fio_file *f
 
 exit:
 	xnvme_dev_close(dev);
-	{
-		int err_lock;
 
-		err_lock = pthread_mutex_unlock(&g_serialize);
-		if (err_lock) {
-			XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err: %d", err_lock);
-		}
+	err_lock = pthread_mutex_unlock(&g_serialize);
+	if (err_lock) {
+		XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err: %d", err_lock);
 	}
 
 	XNVME_DEBUG("INFO: so good to far...");
@@ -799,7 +793,7 @@ static int xnvme_fioe_report_zones(struct thread_data *td, struct fio_file *f, u
 	uint32_t ssw;
 	uint64_t slba;
 	unsigned int limit = 0;
-	int err = 0;
+	int err = 0, err_lock;
 
 	XNVME_DEBUG("report_zones(): '%s', offset: %zu, nr_zones: %u", f->file_name, offset,
 		    nr_zones);
@@ -892,13 +886,10 @@ exit:
 	xnvme_buf_virt_free(rprt);
 
 	xnvme_dev_close(dev);
-	{
-		int err_lock;
 
-		err_lock = pthread_mutex_unlock(&g_serialize);
-		if (err_lock) {
-			XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err_lock: %d", err_lock);
-		}
+	err_lock = pthread_mutex_unlock(&g_serialize);
+	if (err_lock) {
+		XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err_lock: %d", err_lock);
 	}
 	XNVME_DEBUG("err: %d, nr_zones: %d", err, (int)nr_zones);
 
@@ -922,7 +913,7 @@ static int xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint6
 	uint64_t first, last;
 	uint32_t ssw;
 	uint32_t nsid;
-	int err = 0;
+	int err = 0, err_lock;
 
 	if (td->io_ops_data) {
 		xd = td->io_ops_data;
@@ -977,13 +968,10 @@ static int xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint6
 exit:
 	if (!td->io_ops_data) {
 		xnvme_dev_close(dev);
-		{
-			int err_lock;
 
-			err_lock = pthread_mutex_unlock(&g_serialize);
-			if (err_lock) {
-				XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err: %d", err_lock);
-			}
+		err_lock = pthread_mutex_unlock(&g_serialize);
+		if (err_lock) {
+			XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err: %d", err_lock);
 		}
 	}
 
@@ -994,7 +982,7 @@ static int xnvme_fioe_get_file_size(struct thread_data *td, struct fio_file *f)
 {
 	struct xnvme_opts opts = xnvme_opts_from_fioe(td);
 	struct xnvme_dev *dev;
-	int ret = 0;
+	int ret = 0, err;
 
 	if (fio_file_size_known(f))
 		return 0;
@@ -1018,11 +1006,9 @@ static int xnvme_fioe_get_file_size(struct thread_data *td, struct fio_file *f)
 
 exit:
 	xnvme_dev_close(dev);
-	{
-		int err = pthread_mutex_unlock(&g_serialize);
-		if (err) {
-			XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err: %d", err);
-		}
+	err = pthread_mutex_unlock(&g_serialize);
+	if (err) {
+		XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err: %d", err);
 	}
 
 	return ret;
