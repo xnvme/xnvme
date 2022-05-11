@@ -223,24 +223,6 @@ static struct xnvme_opts xnvme_opts_from_fioe(struct thread_data *td)
 	return opts;
 }
 
-#ifdef XNVME_DEBUG_ENABLED
-static void _fio_file_pr(struct fio_file *f)
-{
-	if (!f) {
-		log_info("fio_file: ~\n");
-		return;
-	}
-
-	log_info("fio_file: { ");
-	log_info("file_name: '%s', ", f->file_name);
-	log_info("fileno: %d, ", f->fileno);
-	log_info("io_size: %zu, ", f->io_size);
-	log_info("real_file_size: %zu, ", f->real_file_size);
-	log_info("file_offset: %zu", f->file_offset);
-	log_info("}\n");
-}
-#endif
-
 static void _dev_close(struct thread_data *td, struct xnvme_fioe_fwrap *fwrap)
 {
 	if (fwrap->dev) {
@@ -258,7 +240,7 @@ static void xnvme_fioe_cleanup(struct thread_data *td)
 
 	err = pthread_mutex_lock(&g_serialize);
 	if (err) {
-		XNVME_DEBUG("FAILED: pthread_mutex_lock(), err: %d", err);
+		log_err("ioeng->cleanup(): pthread_mutex_lock(), err(%d)\n", err);
 		/* NOTE: not returning here */
 	}
 
@@ -269,7 +251,7 @@ static void xnvme_fioe_cleanup(struct thread_data *td)
 	if (!err) {
 		err = pthread_mutex_unlock(&g_serialize);
 		if (err) {
-			XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err: %d", err);
+			log_err("ioeng->cleanup(): pthread_mutex_unlock(), err(%d)\n", err);
 		}
 	}
 
@@ -295,7 +277,7 @@ static int _dev_open(struct thread_data *td, struct fio_file *f)
 	int err;
 
 	if (f->fileno > (int)xd->nallocated) {
-		log_err("xnvme_fioe: _dev_open(); invalid assumption\n");
+		log_err("ioeng->_dev_open(%s): invalid assumption\n", f->file_name);
 		return 1;
 	}
 
@@ -303,20 +285,20 @@ static int _dev_open(struct thread_data *td, struct fio_file *f)
 
 	err = pthread_mutex_lock(&g_serialize);
 	if (err) {
-		XNVME_DEBUG("FAILED: pthread_mutex_lock(), err: %d", err);
+		log_err("ioeng->_dev_open(%s): pthread_mutex_lock(), err(%d)\n", f->file_name,
+			err);
 		return -err;
 	}
 
 	fwrap->dev = xnvme_dev_open(f->file_name, &opts);
 	if (!fwrap->dev) {
-		log_err("xnvme_fioe: init(): {f->file_name: '%s', err: '%s'}\n", f->file_name,
-			strerror(errno));
+		log_err("ioeng->_dev_open(%s): xnvme_dev_open(), err(%d)\n", f->file_name, errno);
 		goto failure;
 	}
 	fwrap->geo = xnvme_dev_get_geo(fwrap->dev);
 
 	if (xnvme_queue_init(fwrap->dev, td->o.iodepth, flags, &(fwrap->queue))) {
-		log_err("xnvme_fioe: init(): failed xnvme_queue_init()\n");
+		log_err("ioeng->_dev_open(%s): xnvme_queue_init(), err(?)\n", f->file_name);
 		goto failure;
 	}
 	xnvme_queue_set_cb(fwrap->queue, cb_pool, NULL);
@@ -331,7 +313,8 @@ static int _dev_open(struct thread_data *td, struct fio_file *f)
 
 	err = pthread_mutex_unlock(&g_serialize);
 	if (err) {
-		XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err: %d", err);
+		log_err("ioeng->_dev_open(%s): pthread_mutex_unlock(), err(%d)\n", f->file_name,
+			err);
 	}
 
 	return 0;
@@ -342,7 +325,8 @@ failure:
 
 	err = pthread_mutex_unlock(&g_serialize);
 	if (err) {
-		XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err: %d", err);
+		log_err("ioeng->_dev_open(%s): pthread_mutex_unlock(), err(%d)\n", f->file_name,
+			err);
 	}
 
 	return 1;
@@ -355,16 +339,16 @@ static int xnvme_fioe_init(struct thread_data *td)
 	unsigned int i;
 
 	if (!td->o.use_thread) {
-		log_err("xnvme_fioe: init(): --thread=1 is required\n");
+		log_err("ioeng->init(): --thread=1 is required\n");
 		return 1;
 	}
 	if (!td->io_ops) {
-		log_err("xnvme_fioe: init(): !td->io_ops\n");
-		log_err("xnvme_fioe: init(): Check fio version\n");
+		log_err("ioeng->init(): !td->io_ops\n");
+		log_err("ioeng->init(): Check fio version\n");
 #ifndef WIN32
-		log_err("xnvme_fioe: init(): I/O engine running with: '%s'\n", fio_version_string);
+		log_err("ioeng->init(): I/O engine running with: '%s'\n", fio_version_string);
 #endif
-		log_err("xnvme_fioe: init(): I/O engine built with:\n");
+		log_err("ioeng->init(): I/O engine built with:\n");
 		xnvme_libconf_fpr(stderr, XNVME_PR_DEF);
 		return 1;
 	}
@@ -372,19 +356,19 @@ static int xnvme_fioe_init(struct thread_data *td)
 	/* Allocate xd and iocq */
 	xd = calloc(1, sizeof(*xd) + sizeof(*xd->files) * td->o.nr_files);
 	if (!xd) {
-		log_err("xnvme_fioe: init(): !calloc()\n");
+		log_err("ioeng->init(): !calloc(), err(%d)\n", errno);
 		return 1;
 	}
 
 	xd->iocq = calloc(td->o.iodepth, sizeof(struct io_u *));
 	if (!xd->iocq) {
-		log_err("xnvme_fioe: init(): !calloc()\n");
+		log_err("ioeng->init(): !calloc(), err(%d)\n", errno);
 		return 1;
 	}
 
 	xd->iovec = calloc(td->o.iodepth, sizeof(*xd->iovec));
 	if (!xd->iovec) {
-		log_err("xnvme_fioe: init(): !calloc(xd->iovec)\n");
+		log_err("ioeng->init(): !calloc(xd->iovec), err(%d)\n", errno);
 		return 1;
 	}
 
@@ -394,7 +378,7 @@ static int xnvme_fioe_init(struct thread_data *td)
 	for_each_file(td, f, i)
 	{
 		if (_dev_open(td, f)) {
-			log_err("xnvme_fioe: init(): _dev_open(%s)\n", f->file_name);
+			log_err("ioeng->init(): failed; _dev_open(%s)\n", f->file_name);
 			return 1;
 		}
 
@@ -402,7 +386,7 @@ static int xnvme_fioe_init(struct thread_data *td)
 	}
 
 	if (xd->nallocated != td->o.nr_files) {
-		log_err("xnvme_fioe: init(): nallocated != td->o.nr_files\n");
+		log_err("ioeng->init(): failed; nallocated != td->o.nr_files\n");
 		return 1;
 	}
 
@@ -416,7 +400,7 @@ static int xnvme_fioe_iomem_alloc(struct thread_data *td, size_t total_mem)
 	struct xnvme_fioe_fwrap *fwrap = &xd->files[0];
 
 	if (!fwrap->dev) {
-		log_err("xnvme_fioe: failed iomem_alloc(); no dev-handle\n");
+		log_err("ioeng->iomem_alloc(): failed; no dev-handle\n");
 		return 1;
 	}
 
@@ -432,7 +416,7 @@ static void xnvme_fioe_iomem_free(struct thread_data *td)
 	struct xnvme_fioe_fwrap *fwrap = &xd->files[0];
 
 	if (!fwrap->dev) {
-		log_err("xnvme_fioe: failed iomem_free(); no dev-handle\n");
+		log_err("ioeng->iomem_free(): failed no dev-handle\n");
 		return;
 	}
 
@@ -495,7 +479,7 @@ static int xnvme_fioe_getevents(struct thread_data *td, unsigned int min, unsign
 					break;
 
 				default:
-					XNVME_DEBUG("Oh my");
+					log_err("ioeng->getevents(): unhandled IO error\n");
 					assert(false);
 					return 0;
 				}
@@ -543,7 +527,7 @@ static enum fio_q_status xnvme_fioe_queue(struct thread_data *td, struct io_u *i
 	nlb = (io_u->xfer_buflen >> fwrap->ssw) - 1;
 
 	if (td->io_ops->flags & FIO_SYNCIO) {
-		log_err("xnvme_fioe: queue(): Got sync...\n");
+		log_err("ioeng->queue(): got sync...\n");
 		assert(false);
 		return FIO_Q_COMPLETED;
 	}
@@ -565,7 +549,7 @@ static enum fio_q_status xnvme_fioe_queue(struct thread_data *td, struct io_u *i
 		break;
 
 	default:
-		log_err("xnvme_fioe: queue(): ENOSYS: %u\n", io_u->ddir);
+		log_err("ioeng->queue(): ENOSYS: %u\n", io_u->ddir);
 		err = -1;
 		assert(false);
 		break;
@@ -590,7 +574,7 @@ static enum fio_q_status xnvme_fioe_queue(struct thread_data *td, struct io_u *i
 		return FIO_Q_BUSY;
 
 	default:
-		log_err("xnvme_fioe: queue(): err: '%d'\n", err);
+		log_err("ioeng->queue(): err: '%d'\n", err);
 
 		xnvme_queue_put_cmd_ctx(ctx->async.queue, ctx);
 
@@ -604,8 +588,7 @@ static int xnvme_fioe_close(struct thread_data *td, struct fio_file *f)
 {
 	struct xnvme_fioe_data *xd = td->io_ops_data;
 
-	XNVME_DEBUG("xnvme_fioe_close: closing -- nopen: %ld", xd->nopen);
-	XNVME_DEBUG_FCALL(_fio_file_pr(f);)
+	dprint(FD_FILE, "xnvme close %s -- nopen: %ld\n", f->file_name, xd->nopen);
 
 	--(xd->nopen);
 
@@ -616,15 +599,14 @@ static int xnvme_fioe_open(struct thread_data *td, struct fio_file *f)
 {
 	struct xnvme_fioe_data *xd = td->io_ops_data;
 
-	XNVME_DEBUG("xnvme_fioe_open: opening -- nopen: %ld", xd->nopen);
-	XNVME_DEBUG_FCALL(_fio_file_pr(f);)
+	dprint(FD_FILE, "xnvme open %s -- nopen: %ld\n", f->file_name, xd->nopen);
 
 	if (f->fileno > (int)xd->nallocated) {
-		XNVME_DEBUG("f->fileno > xd->nallocated; invalid assumption");
+		log_err("ioeng->open(): f->fileno > xd->nallocated; invalid assumption\n");
 		return 1;
 	}
 	if (xd->files[f->fileno].fio_file != f) {
-		XNVME_DEBUG("well... that is off..");
+		log_err("ioeng->open(): fio_file != f; invalid assumption\n");
 		return 1;
 	}
 
@@ -650,18 +632,18 @@ static int xnvme_fioe_get_max_open_zones(struct thread_data *td, struct fio_file
 
 	if (f->filetype != FIO_TYPE_FILE && f->filetype != FIO_TYPE_BLOCK &&
 	    f->filetype != FIO_TYPE_CHAR) {
-		XNVME_DEBUG("INFO: ignoring filetype: %d", f->filetype);
+		log_info("ioeng->get_max_open_zoned(): ignoring filetype: %d\n", f->filetype);
 		return 0;
 	}
 	err_lock = pthread_mutex_lock(&g_serialize);
 	if (err_lock) {
-		XNVME_DEBUG("FAILED: pthread_mutex_lock(), err_lock: %d", err_lock);
+		log_err("ioeng->get_max_open_zones(): pthread_mutex_lock(), err(%d)\n", err_lock);
 		return -err_lock;
 	}
 
 	dev = xnvme_dev_open(f->file_name, &opts);
 	if (!dev) {
-		XNVME_DEBUG("FAILED: retrieving device handle");
+		log_err("ioeng->get_max_open_zones(): xnvme_dev_open(), err(%d)\n", err_lock);
 		err = -errno;
 		goto exit;
 	}
@@ -673,7 +655,7 @@ static int xnvme_fioe_get_max_open_zones(struct thread_data *td, struct fio_file
 
 	zns = (void *)xnvme_dev_get_ns_css(dev);
 	if (!zns) {
-		XNVME_DEBUG("FAILED: xnvme_dev_get_ns_css(), errno: %d", errno);
+		log_err("ioeng->get_max_open_zones(): xnvme_dev_get_ns_css(), err(%d)\n", errno);
 		err = -errno;
 		goto exit;
 	}
@@ -690,7 +672,8 @@ exit:
 	xnvme_dev_close(dev);
 	err_lock = pthread_mutex_unlock(&g_serialize);
 	if (err_lock) {
-		XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err_lock: %d", err_lock);
+		log_err("ioeng->get_max_open_zones(): pthread_mutex_unlock(), err(%d)\n",
+			err_lock);
 	}
 
 	return err;
@@ -714,41 +697,42 @@ static int xnvme_fioe_get_zoned_model(struct thread_data *td, struct fio_file *f
 
 	if (f->filetype != FIO_TYPE_FILE && f->filetype != FIO_TYPE_BLOCK &&
 	    f->filetype != FIO_TYPE_CHAR) {
-		XNVME_DEBUG("INFO: ignoring filetype: %d", f->filetype);
+		log_info("ioeng->get_zoned_model(): ignoring filetype: %d\n", f->filetype);
 		return -EINVAL;
 	}
 
 	err = pthread_mutex_lock(&g_serialize);
 	if (err) {
-		XNVME_DEBUG("FAILED: pthread_mutex_lock(), err: %d", err);
+		log_err("ioeng->get_zoned_model(): pthread_mutex_lock(), err(%d)\n", err);
 		return -err;
 	}
 
 	dev = xnvme_dev_open(f->file_name, &opts);
 	if (!dev) {
-		XNVME_DEBUG("FAILED: retrieving device handle");
+		log_err("ioeng->get_zoned_model(): xnvme_dev_open(%s) failed, errno: %d\n",
+			f->file_name, errno);
 		err = -errno;
 		goto exit;
 	}
 
 	switch (xnvme_dev_get_geo(dev)->type) {
 	case XNVME_GEO_UNKNOWN:
-		XNVME_DEBUG("INFO: got 'unknown', assigning ZBD_NONE");
+		dprint(FD_ZBD, "%s: got 'unknown', assigning ZBD_NONE\n", f->file_name);
 		*model = ZBD_NONE;
 		break;
 
 	case XNVME_GEO_CONVENTIONAL:
-		XNVME_DEBUG("INFO: got 'conventional', assigning ZBD_NONE");
+		dprint(FD_ZBD, "%s: got 'conventional', assigning ZBD_NONE\n", f->file_name);
 		*model = ZBD_NONE;
 		break;
 
 	case XNVME_GEO_ZONED:
-		XNVME_DEBUG("INFO: got 'zoned', assigning ZBD_HOST_MANAGED");
+		dprint(FD_ZBD, "%s: got 'zoned', assigning ZBD_HOST_MANAGED\n", f->file_name);
 		*model = ZBD_HOST_MANAGED;
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: hit-default, assigning ZBD_NONE");
+		dprint(FD_ZBD, "%s: hit-default, assigning ZBD_NONE\n", f->file_name);
 		*model = ZBD_NONE;
 		errno = EINVAL;
 		err = -errno;
@@ -760,10 +744,8 @@ exit:
 
 	err_lock = pthread_mutex_unlock(&g_serialize);
 	if (err_lock) {
-		XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err: %d", err_lock);
+		log_err("ioeng->get_zoned_model(): pthread_mutex_unlock(), err(%d)\n", err_lock);
 	}
-
-	XNVME_DEBUG("INFO: so good to far...");
 
 	return err;
 }
@@ -795,18 +777,20 @@ static int xnvme_fioe_report_zones(struct thread_data *td, struct fio_file *f, u
 	unsigned int limit = 0;
 	int err = 0, err_lock;
 
-	XNVME_DEBUG("report_zones(): '%s', offset: %zu, nr_zones: %u", f->file_name, offset,
-		    nr_zones);
+	dprint(FD_ZBD, "%s: report_zones() offset: %zu, nr_zones: %u\n", f->file_name, offset,
+	       nr_zones);
 
 	err = pthread_mutex_lock(&g_serialize);
 	if (err) {
-		XNVME_DEBUG("FAILED: pthread_mutex_lock(), err: %d", err);
+		log_err("ioeng->report_zones(%s): pthread_mutex_lock(), err(%d)\n", f->file_name,
+			err);
 		return -err;
 	}
 
 	dev = xnvme_dev_open(f->file_name, &opts);
 	if (!dev) {
-		XNVME_DEBUG("FAILED: xnvme_dev_open(), errno: %d", errno);
+		log_err("ioeng->report_zones(%s): xnvme_dev_open(), err(%d)\n", f->file_name,
+			errno);
 		goto exit;
 	}
 
@@ -816,23 +800,24 @@ static int xnvme_fioe_report_zones(struct thread_data *td, struct fio_file *f, u
 
 	limit = nr_zones > geo->nzone ? geo->nzone : nr_zones;
 
-	XNVME_DEBUG("INFO: limit: %u", limit);
+	dprint(FD_ZBD, "%s: limit: %u\n", f->file_name, limit);
 
 	slba = ((offset >> ssw) / geo->nsect) * geo->nsect;
 
 	rprt = xnvme_znd_report_from_dev(dev, slba, limit, 0);
 	if (!rprt) {
-		XNVME_DEBUG("FAILED: xnvme_znd_report_from_dev(), errno: %d", errno);
+		log_err("ioeng->report_zones(%s): xnvme_znd_report_from_dev(), err(%d)\n",
+			f->file_name, errno);
 		err = -errno;
 		goto exit;
 	}
 	if (rprt->nentries != limit) {
-		XNVME_DEBUG("FAILED: nentries != nr_zones");
+		log_err("ioeng->report_zones(%s): nentries != nr_zones\n", f->file_name);
 		err = 1;
 		goto exit;
 	}
 	if (offset > geo->tbytes) {
-		XNVME_DEBUG("INFO: out-of-bounds");
+		log_err("ioeng->report_zones(%s): out-of-bounds\n", f->file_name);
 		goto exit;
 	}
 
@@ -851,8 +836,8 @@ static int xnvme_fioe_report_zones(struct thread_data *td, struct fio_file *f, u
 			break;
 
 		default:
-			log_err("%s: invalid type for zone at offset%zu.\n", f->file_name,
-				zbdz[idx].start);
+			log_err("ioeng->report_zones(%s): invalid type for zone at offset(%zu)\n",
+				f->file_name, zbdz[idx].start);
 			err = -EIO;
 			goto exit;
 		}
@@ -889,9 +874,9 @@ exit:
 
 	err_lock = pthread_mutex_unlock(&g_serialize);
 	if (err_lock) {
-		XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err_lock: %d", err_lock);
+		log_err("ioeng->report_zones(): pthread_mutex_unlock(), err: %d\n", err_lock);
 	}
-	XNVME_DEBUG("err: %d, nr_zones: %d", err, (int)nr_zones);
+	dprint(FD_ZBD, "err: %d, nr_zones: %d\n", err, (int)nr_zones);
 
 	return err ? err : (int)limit;
 }
@@ -928,13 +913,14 @@ static int xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint6
 	} else {
 		err = pthread_mutex_lock(&g_serialize);
 		if (err) {
-			XNVME_DEBUG("FAILED: pthread_mutex_lock(), err: %d", err);
+			log_err("ioeng->reset_wp(): pthread_mutex_lock(), err(%d)\n", err);
 			return -err;
 		}
 
 		dev = xnvme_dev_open(f->file_name, &opts);
 		if (!dev) {
-			XNVME_DEBUG("FAILED: xnvme_dev_open(), errno: %d", errno);
+			log_err("ioeng->reset_wp(): xnvme_dev_open(%s) failed, errno(%d)\n",
+				f->file_name, errno);
 			goto exit;
 		}
 		geo = xnvme_dev_get_geo(dev);
@@ -945,13 +931,13 @@ static int xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint6
 
 	first = ((offset >> ssw) / geo->nsect) * geo->nsect;
 	last = (((offset + length) >> ssw) / geo->nsect) * geo->nsect;
-	XNVME_DEBUG("INFO: first: 0x%lx, last: 0x%lx", first, last);
+	dprint(FD_ZBD, "first: 0x%lx, last: 0x%lx\n", first, last);
 
 	for (uint64_t zslba = first; zslba < last; zslba += geo->nsect) {
 		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 
 		if (zslba >= (geo->nsect * geo->nzone)) {
-			XNVME_DEBUG("INFO: out-of-bounds");
+			log_err("ioeng->reset_wp(): out-of-bounds\n");
 			err = 0;
 			break;
 		}
@@ -960,7 +946,7 @@ static int xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint6
 					  XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET, 0x0, NULL);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			err = err ? err : -EIO;
-			XNVME_DEBUG("FAILED: err: %d, sc=%d", err, ctx.cpl.status.sc);
+			log_err("ioeng->reset_wp(): err(%d), sc(%d)", err, ctx.cpl.status.sc);
 			goto exit;
 		}
 	}
@@ -971,7 +957,7 @@ exit:
 
 		err_lock = pthread_mutex_unlock(&g_serialize);
 		if (err_lock) {
-			XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err: %d", err_lock);
+			log_err("ioeng->reset_wp(): pthread_mutex_unlock(), err(%d)\n", err_lock);
 		}
 	}
 
@@ -989,13 +975,13 @@ static int xnvme_fioe_get_file_size(struct thread_data *td, struct fio_file *f)
 
 	ret = pthread_mutex_lock(&g_serialize);
 	if (ret) {
-		XNVME_DEBUG("FAILED: pthread_mutex_lock(), err: %d", ret);
+		log_err("ioeng->reset_wp(): pthread_mutex_lock(), err(%d)\n", ret);
 		return -ret;
 	}
 
 	dev = xnvme_dev_open(f->file_name, &opts);
 	if (!dev) {
-		XNVME_DEBUG("FAILED: xnvme_dev_open(), errno: %d", errno);
+		log_err("%s: failed retrieving device handle, errno: %d\n", f->file_name, errno);
 		ret = -errno;
 		goto exit;
 	}
@@ -1008,7 +994,7 @@ exit:
 	xnvme_dev_close(dev);
 	err = pthread_mutex_unlock(&g_serialize);
 	if (err) {
-		XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err: %d", err);
+		log_err("ioeng->reset_wp(): pthread_mutex_unlock(), err(%d)\n", err);
 	}
 
 	return ret;
