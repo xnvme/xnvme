@@ -4,6 +4,8 @@
  * IO engine using the xNVMe C API.
  *
  * See: http://xnvme.io/
+ *
+ * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdlib.h>
 #include <assert.h>
