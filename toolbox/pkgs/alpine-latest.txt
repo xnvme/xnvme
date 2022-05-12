@@ -16,4 +16,5 @@ numactl-dev
 pkgconf
 py3-pip
 python3
+python3-dev
 util-linux-dev

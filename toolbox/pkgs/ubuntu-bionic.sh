@@ -17,6 +17,6 @@ apt-get -qy autoclean
 # Install packages via the system package-manager (apt-get)
 apt-get install -qy $(cat "toolbox/pkgs/ubuntu-bionic.txt")
 
-# Install packages via the Python package-manager (pip)
+# Install packages via PyPI
 python3 -m pip install --upgrade pip
 python3 -m pip install meson ninja pyelftools

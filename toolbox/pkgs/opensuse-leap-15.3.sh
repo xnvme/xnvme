@@ -11,5 +11,5 @@ zypper --non-interactive refresh
 # Install packages via the system package-manager (zypper)
 zypper --non-interactive install -y $(cat "toolbox/pkgs/opensuse-leap-15.3.txt")
 
-# Install packages via the Python package-manager (pip)
+# Install packages via PyPI
 python3 -m pip install meson ninja pyelftools

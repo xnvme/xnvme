@@ -14,3 +14,4 @@ pkgconfig
 unzip
 wget
 zlib-devel
+openssl-devel

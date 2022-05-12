@@ -284,7 +284,6 @@ jobs:
       run: |
         cd python/xnvme-core
         make build
-        for file in dist/*.tar.gz; do mv $file ${file//xnvme/xnvme-py}; done
 
     - name: Upload Python package
       uses: actions/upload-artifact@v2
@@ -388,14 +387,23 @@ jobs:
       with:
         name: python-pkg
 
-    - name: Install and test xNVMe Python bindings
-      if: (!contains(matrix.container.ver, 'bookworm'))
+    - name: Build and test Cython bindings
+      if: "!contains(matrix.container.ver, 'bookworm')"
       run: |
         # Testing sdist build with just ctypes bindings
         python3 -m pip install 'setuptools>=40.1' --user # Introduction of find_namespace_packages
         python3 -c 'import setuptools;print(setuptools.__version__)'
         python3 -m pip install xnvme-py*.tar.gz --user
         python3 -m pytest --pyargs xnvme.ctypes_mapping
+
+        # Locating local repo tests to build tests for Cython bindings
+        cd python/xnvme-core/xnvme/cython_mapping/tests/
+        pip3 install -r requirements.txt --user
+        python3 -c 'import setuptools;print(setuptools.__version__)'
+        # Following path is a temp fix for Arch, CentOS 7/8 and Gentoo
+        PKG_CONFIG_PATH="/usr/local/lib64/pkgconfig:/usr/local/lib/pkgconfig" python3 setup.py build_ext --inplace
+        # Only test_dummy works without an NVMe drive
+        python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v
 
   #
   # Build on macOS
@@ -465,11 +473,18 @@ jobs:
       with:
         name: python-pkg
 
-    - name: Install and test xNVMe Python bindings
+    - name: Build and test Cython bindings
       run: |
+        # Testing sdist build with just ctypes bindings
         python3 -m pip install xnvme-py*.tar.gz --user
         python3 -m pytest --pyargs xnvme.ctypes_mapping
 
+        # Locating local repo tests to build tests for Cython bindings
+        cd python/xnvme-core/xnvme/cython_mapping/tests/
+        pip3 install -r requirements.txt --user
+        python3 setup.py build_ext --inplace
+        # Only test_dummy works without an NVMe drive
+        python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v
   #
   # Build on Windows
   #
@@ -505,6 +520,10 @@ jobs:
       run: |
         cmd.exe /c "build.bat"
 
+    - name: dump meson-log
+      run: |
+        cat builddir/meson-logs/meson-log.txt || true
+
     - name: Dump the compile-commands and machine
       run: |
         cat /proc/cpuinfo || true
@@ -535,7 +554,7 @@ jobs:
   # Build on run CIJOE testplans
   #
   build-and-test:
-    needs: [source-archive, source-format-check]
+    needs: [source-archive, source-format-check, build-python]
     runs-on: self-hosted
     if: (((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job == 'all') || (github.event.inputs.job ==
       'build-and-test'))) || contains(github.event.pull_request.labels.*.name, 'pr-ready-for-test'))
@@ -565,12 +584,18 @@ jobs:
       run: |
         tar xzf xnvme*.tar.gz --strip 1
 
+    - name: Retrieve the xNVMe Python bindings (prebuilt sdist)
+      uses: actions/download-artifact@v2
+      with:
+        name: python-pkg
+
     - name: Provision qemu-guest
       id: cijoe-qemu
       uses: refenv/gh-cijoe-qemu-action@main
       with:
         vm-image: ${{ matrix.guest.img }}
         vm-cloudinit: ${{ matrix.guest.os }}-${{ matrix.guest.ver }}
+        cijoe-packages: './toolbox/cijoe-pkg-xnvme/'
 
     - name: CIJOE, install cijoe-pkg-xnvme from source-archive
       run: |
@@ -580,6 +605,8 @@ jobs:
       run: |
         pushd $(cij_root) && source modules/cijoe.sh && popd
         source ${{ steps.cijoe-qemu.outputs.target-env }}
+        mv xnvme-py*.tar.gz _xnvme-py.tar.gz # Avoid issue with 'xnvme*.tar.gz'
+        ssh.push _xnvme-py.tar.gz xnvme-py.tar.gz
         ssh.push xnvme*.tar.gz xnvme.tar.gz
         cij.cmd "tar xzf xnvme.tar.gz --strip 1"
         cij.cmd "rm xnvme.tar.gz"
@@ -638,11 +665,16 @@ jobs:
       if: matrix.guest.os == 'debian'
       run: |
         pushd $(cij_root) && source modules/cijoe.sh && popd
+        echo 'XNVME_REPO=/root' >> ${{ steps.cijoe-qemu.outputs.target-env }}
         source ${{ steps.cijoe-qemu.outputs.target-env }}
+        cij.cmd "pip3 install xnvme-py.tar.gz --user"
+        cij.cmd "cd python/xnvme-core/xnvme/cython_mapping/tests/ && pip3 install -r requirements.txt --user"
+        cij.cmd "cd python/xnvme-core/xnvme/cython_mapping/tests/ && python3 setup.py build_ext --inplace"
         cij_runner \
           --env ${{ steps.cijoe-qemu.outputs.target-env }} \
           --output ${{ steps.cijoe-qemu.outputs.results }} \
           --testplan \
+          "${CIJ_TESTPLANS}/xnvme-python.plan" \
           "${CIJ_TESTPLANS}/xnvme-zns-zrwa-linux-nvme.plan" \
           "${CIJ_TESTPLANS}/xnvme-zns-zrwa-linux-spdk.plan" \
           "${CIJ_TESTPLANS}/xnvme-base-linux.plan" \
