@@ -15,3 +15,4 @@ pkgconfig
 procps
 python3-pyelftools
 python3-pip
+python3-devel

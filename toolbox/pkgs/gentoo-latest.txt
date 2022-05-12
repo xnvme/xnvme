@@ -8,3 +8,4 @@ dev-util/ninja
 dev-util/pkgconf
 sys-libs/ncurses
 sys-process/numactl
+dev-vcs/git
