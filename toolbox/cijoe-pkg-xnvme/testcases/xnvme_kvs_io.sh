@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Verify that test `xnvme_tests_kvs kvs_io` runs without error
 #

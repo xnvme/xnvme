@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Produce a file of 1GB then copy it in a tmpfs
 #

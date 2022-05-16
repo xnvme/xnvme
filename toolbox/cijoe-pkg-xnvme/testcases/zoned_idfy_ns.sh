@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Verify that the CLI `zoned idfy-ns` runs without error
 #

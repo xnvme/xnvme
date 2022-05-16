@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Compares xNVMe using fio, the Flexible I/O Tester.
 #
