@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Verify that the CLI `xnvme idfy-ctrlr` runs without error
 #

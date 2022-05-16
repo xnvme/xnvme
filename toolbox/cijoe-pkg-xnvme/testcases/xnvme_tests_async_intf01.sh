@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Verify initialization and termination of a single xNVMe asynchronous contexts
 # with queue-depth 64

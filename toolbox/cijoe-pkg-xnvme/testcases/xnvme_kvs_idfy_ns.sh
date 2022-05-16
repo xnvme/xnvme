@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Verify that CLI `kvs idfy-ns` runs without error
 #
