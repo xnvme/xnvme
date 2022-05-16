@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Verify that CLI `kvs store` runs without error,
 # while used with additional STORE command options
