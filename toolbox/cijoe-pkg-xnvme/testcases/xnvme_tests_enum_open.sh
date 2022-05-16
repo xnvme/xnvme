@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Verify xnvme_enumerate() and xnvme_dev_open() / xnvme_dev_close()
 #

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Verify that `xnvme_tests_znd_zrwa commit-implicit` runs without error
 #

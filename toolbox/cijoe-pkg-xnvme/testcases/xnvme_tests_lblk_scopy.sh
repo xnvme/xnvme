@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Verify that `xnvme_tests_lblk scopy` runs without error
 #
