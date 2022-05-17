@@ -8,6 +8,9 @@ fs = import('fs')
 get_option('build_subprojects')
 
 if get_option('build_subprojects') and not fs.exists('config-host.h')
+  message('Patching ..')
+  run_command('./liburing_patches.sh', capture: true, check: true)
+  message('Configuring ..')
   run_command('./liburing_configure.sh', capture: true, check: true)
 endif
 if get_option('build_subprojects') and not fs.exists('src' / 'liburing.a')
