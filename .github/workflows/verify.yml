@@ -313,8 +313,7 @@ jobs:
       run: |
         if [[ -f "${BSCRIPT}" ]]; then source ${BSCRIPT}; else source ${BSCRIPT_DEF}; fi
 
-    - name: dump meson-log on failure
-      if: failure()
+    - name: meson-log-dump
       run: |
         cat builddir/meson-logs/meson-log.txt
 
@@ -359,8 +358,7 @@ jobs:
       run: |
         if [[ -f "${BSCRIPT}" ]]; then source ${BSCRIPT}; else source ${BSCRIPT_DEF}; fi
 
-    - name: dump meson-log on failure
-      if: failure()
+    - name: meson-log-dump
       run: |
         cat builddir/meson-logs/meson-log.txt
 
