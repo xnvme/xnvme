@@ -553,9 +553,12 @@ static enum fio_q_status xnvme_fioe_queue(struct thread_data *td, struct io_u *i
 
 	default:
 		log_err("ioeng->queue(): ENOSYS: %u\n", io_u->ddir);
-		err = -1;
+
+		xnvme_queue_put_cmd_ctx(ctx->async.queue, ctx);
+
+		io_ur->err = ENOSYS;
 		assert(false);
-		break;
+		return FIO_Q_COMPLETED;
 	}
 
 	if (vectored_io) {
