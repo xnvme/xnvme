@@ -3,21 +3,75 @@ Changelog
 
 The repository is tagged using semantic versioning, e.g. ``v1.2.3``.
 
-Each upcoming release is available, as is, with its history subject to change,
-on a branch named ``rX.Y.Z``. Once released, the history of ``rX.Y.Z`` is fixed
-and tagged ``vX.Y.Z`` and pushed to the master branch.
+The ``next`` branch contains a preview of the upcoming release. The history on
+``next`` is subject to change. Upon release, ``next`` is merged with ``main``
+and  and tagged ``vX.Y.Z``.
 
-The history from one patch-version to another is likely to be rebased. E.g.
-squashed into the history of the previous until the next minor release is made.
-
-Changes are described in this file in a section named matching the version tag.
-
-The "Backlog" section describe changes on the roadmap for xNVMe.
+Changes are described in this file in a section matching the version tag.
 
 Known Issues
 ------------
 
 See the file named ``ISSUES`` in the root of the repository.
+
+v0.3.0
+------
+
+This main feature of this release is the alignment of the ``io_uring_cmd``
+implementation with the ``io_uring`` big-sqe/big-cqe approach to asynchronous
+passthru of NVMe commands.
+
+NOTE: the tracking of the liburing repository/subproject is changed from the
+fixed tag ``liburing-2.1`` to the ``master`` branch. Thus, in case you
+experience liburing related build-issues with this release, then it is most
+likely due to changes on ``master``. As soon as ``liburing-2.2`` is released,
+xNVMe will be released as well going back to stable tracking.  Thus, do not pin
+your project to the xNVMe project tag for ``v0.3.0`` if you rely on the
+``io_uring`` functionality.
+
+* Asynchronous Passthru of NVMe Commands via ``io_uring``
+  - There are no API changes to adjust to, the changes are encapsulated inside
+    the implementation of ``be:linux:async:ucmd`` aka ``async=io_uring_cmd``.
+  - The previous version of ``io_uring_cmd`` used indirect-commands, that is,
+    the io_uring-sqe contained a pointer to the NVMe-command. This approach of
+    passthrough via ``io_uring`` has been superseeded by the
+    ``big-sqe/big-cqe`` approach with the NVMe-sqe embedded within the
+    io_uring-sqe, and similar for the NVMe-cqe inside the io_uring-cqe.
+  - This requires changes to how the ``io_uring`` is setup, this task is
+    delegated to ``liburing`` and the subproject-wrap now tracks liburing
+    ``master`` to do this.
+
+* API
+  - Fixed ``xnvme_enumerate()`` when ``NULL`` was passed as ``opts``, it now
+    uses ``xnvme_default_opts()`` when no ``opts`` are given
+  - Misc. fixes to docstrings missing descriptions
+
+* cmd:
+  - Fixed missing full-guard on full-guard in xnvme_cmd_passv()
+
+* be:async:{emu,thrpool}: several fixes to command-processing
+  - Fixed missing setup of completion errors
+  - Fixed missing empty-guard in cmd_io{v}()
+
+* fio IO engine
+  - 3p:fio: bumped to v3.30
+  - tools:fioe: fixed issue with iovec-payloads
+  - tools:fioe: cleanup and alignment with upstream xNVMe fio IO engine
+  - docs: removed deprecated information and re-written with usage examples
+
+* tests:io_worker
+  - Added a basic io_worker to verify the behavior of the
+    submit-upon-completion
+
+* tools:xdd
+  - The ``xdd`` tool now provides an ``offset`` argument (in bytes), previously
+    it started from 0
+
+* Documentation
+  - Re-introduced the ``tutorial`` section containing a guide to dynamically
+    load xNVMe from C and Python
+  - Added a Contributors section containing notes useful for first-time
+    Contributors
 
 v0.2.0
 ------
@@ -555,20 +609,3 @@ v0.0.16
 -------
 
 * Initial public release of xNVMe
-
-Backlog
--------
-
-* Release User-space NVMe Meta-filesystem
-
-* docs
-
-  - Expand documentation on Fabrics setup
-  - Expand library usage examples
-
-* For the Linux backend ``be:linux``, replace the device enumeration with the
-  encapsulations provided by ``libnvme``
-
-* build
-
-  - Provide convenient means of probing source origin e.g. repos, tarball etc.
