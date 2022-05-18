@@ -10,9 +10,10 @@ Where <args> include:
   [ --iosize NUM ]              ; Use given 'NUM' as bs/iosize
   [ --qdepth NUM ]              ; Use given 'NUM' as queue max capacity
   [ --direct ]                  ; Bypass layers
+  [ --offset NUM ]              ; Use given 'NUM' as offset
   [ --help ]                    ; Show usage / help
 
 See 'xdd --help' for other commands
 
-xNVMe dd - Copy bytes from input to output -- ver: {major: 0, minor: 0, patch: 29}
+xNVMe dd - Copy bytes from input to output -- ver: {major: 0, minor: 3, patch: 0}
 
