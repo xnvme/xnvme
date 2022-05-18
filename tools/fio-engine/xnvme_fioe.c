@@ -362,12 +362,15 @@ static int xnvme_fioe_init(struct thread_data *td)
 
 	xd->iocq = calloc(td->o.iodepth, sizeof(struct io_u *));
 	if (!xd->iocq) {
+		free(xd);
 		log_err("ioeng->init(): !calloc(), err(%d)\n", errno);
 		return 1;
 	}
 
 	xd->iovec = calloc(td->o.iodepth, sizeof(*xd->iovec));
 	if (!xd->iovec) {
+		free(xd->iovec);
+		free(xd);
 		log_err("ioeng->init(): !calloc(xd->iovec), err(%d)\n", errno);
 		return 1;
 	}
