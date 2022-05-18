@@ -32,14 +32,14 @@ repos:
     files: xnvme_fioe\.c$
 
 # Git: intended for commit-message formating
-- repo: local
-  hooks:
-  - id: commit-msg-check
-    name: Git-Validate commit message
-    language: pygrep
-    entry: '\A(?![A-Za-z]+: .+\nSigned-off-by:.+)'
-    args: [--multiline]
-    stages: [commit-msg]
+#- repo: local
+#  hooks:
+#  - id: commit-msg-check
+#    name: Git-Validate commit message
+#    language: pygrep
+#    entry: '\A(?![A-Za-z]+: .+\nSigned-off-by:.+)'
+#    args: [--multiline]
+#    stages: [commit-msg]
 
 # Yaml: intended for the GitHUB Actions .yaml
 - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -86,53 +86,10 @@ repos:
     args:
     - '--max-line-length=88'
     - '--extend-ignore=E203' # ignore "whitespace before ':'"
-- repo: https://github.com/jendrikseipp/vulture
-  rev: 'v2.3'
-  hooks:
-  - id: vulture
-    name: Python-lint-vulture
-    types: [python]
-    pass_filenames: true
-    # excluding sphinx-conf as it would break to change it
-    exclude: docs/autogen/conf.py$
-
-# Because pre-commit runs mypy from an isolated virtualenv (without your dependencies) you may also
-# find it useful to add the typed dependencies to additional_dependencies so mypy can better
-# perform dynamic analysis
-- repo: https://github.com/pre-commit/mirrors-mypy
-  rev: 'v0.942'
-  hooks:
-  - id: mypy
-    name: Python-lint-mypy
-    additional_dependencies:
-    - 'types-PyYAML==6.0.5'
-    args:
-    - '--no-strict-optional'
-    - '--ignore-missing-imports'
-# pre-commit runs pylint from an isolated virtualenv. Many of pylint's checks perform dynamic
-# analysis which will fail there. You may find configuring pylint as a local hook more useful.
-- repo: https://github.com/pre-commit/mirrors-pylint
-  rev: 'v3.0.0a4'
-  hooks:
-  - id: pylint
-    name: Python-lint-pylint
-    args:
-    - '--jobs=4' # Run with 4 threads
-    - '--good-names=i,j,k,v,n,f,_,Run,ex' # Add 'f' for with open()
-    - '--disable=C0301' # line-length check -- black takes care of this
-    - '--disable=E0401' # import check -- doesn't work in closed env
-    - '--disable=R0801' # duplicate-code check -- too basic, false positives
-    - '--disable=C0114' # "Missing module docstring" -- too basic, not always desired
-    - '--disable=C0115' # "Missing class docstring" -- too basic, not always desired
-    - '--disable=C0116' # "Missing function or method docstring" -- too basic, not always desired
-    - '--disable=R0903' # "Too few public methods" -- there are legitimate reasons for it
-    - '--disable=W1510' # Prefer result-object rather than catching exceptions when subcommands fail
-    # excluding sphinx-conf as it would break to change it
-    exclude: docs/autogen/conf.py$
 
 # Shell: todo: exclude xnvme-driver.sh
 - repo: https://github.com/jumanjihouse/pre-commit-hooks
-  rev: 2.1.6  # or specific git tag
+  rev: 2.1.6
   hooks:
   - id: shellcheck
     name: Shell-lint
