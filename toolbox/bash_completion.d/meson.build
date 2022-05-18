@@ -9,6 +9,7 @@ install_data('xnvme_tests_async_intf-completions', install_dir: bash_completion_
 install_data('xnvme_tests_buf-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
 install_data('xnvme_tests_cli-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
 install_data('xnvme_tests_enum-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
+install_data('xnvme_tests_ioworker-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
 install_data('xnvme_tests_lblk-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
 install_data('xnvme_tests_scc-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
 install_data('xnvme_tests_xnvme_file-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
