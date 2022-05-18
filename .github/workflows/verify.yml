@@ -661,12 +661,21 @@ jobs:
         source ${{ steps.cijoe-qemu.outputs.target-env }}
         cij.cmd "meson install -C builddir"
 
+    - name: CIJOE, install fio
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd
+        source ${{ steps.cijoe-qemu.outputs.target-env }}
+        cij.cmd "cd subprojects/fio && make install"
+
     - name: CIJOE, check binaries are available
       run: |
         pushd $(cij_root) && source modules/cijoe.sh && popd
         source ${{ steps.cijoe-qemu.outputs.target-env }}
         cij.cmd "xnvme enum"
         cij.cmd "xnvme library-info"
+        cij.cmd "pkg-config xnvme --variable=libdir"
+        cij.cmd "pkg-config xnvme --variable=datadir"
+        cij.cmd "pkg-config xnvme --variable=includedir"
 
     - name: CIJOE/QEMU, xnvme-docgen generate command-output
       run: |
