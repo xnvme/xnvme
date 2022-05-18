@@ -1,8 +1,45 @@
 import ctypes
 import ctypes.util
+import os
+import subprocess
 
-xnvme_shared_lib = ctypes.util.find_library("xnvme-shared")
-capi = ctypes.CDLL(xnvme_shared_lib)
+
+def load_capi():
+    """Attempt to load the library via ctypes"""
+
+    def search_paths():
+        """Generate paths to try and load"""
+
+        for search in ["xnvme-shared", "xnvme_shared"]:
+            path = ctypes.util.find_library(search)
+            if path:
+                yield path
+
+        try:
+            proc = subprocess.run(
+                ["pkg-config", "xnvme", "--variable=libdir"],
+                check=True,
+                capture_output=True,
+            )
+            if not proc.returncode:
+                yield os.path.join(
+                    proc.stdout.decode("utf-8").strip(), "libxnvme-shared.so"
+                )
+        except subprocess.CalledProcessError:
+            pass
+
+    for spath in search_paths():
+        try:
+            lib = ctypes.CDLL(spath)
+            if lib:
+                return lib
+        except OSError:
+            continue
+
+    return None
+
+
+capi = load_capi()
 
 
 class Ident(ctypes.Structure):

@@ -1,1 +1,1 @@
-python3 enumerate_example.py
+python3 ../tutorial/dynamic_loading/enumerate_example.py
