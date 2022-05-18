@@ -2,5 +2,4 @@
 # Zoned Changes log page is an optional feature
 # This devices does not support it; expect failure
 
-# ERR: 'xnvme_znd_log_changes_from_dev()': {errno: -5, msg: 'Input/output error'}
-# ERR: 'changes': {errno: -5, msg: 'Input/output error'}
+# ERR: 'xnvme_znd_log_changes_from_dev()': {errno: 0, msg: 'Success'}
