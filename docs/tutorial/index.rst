@@ -12,3 +12,4 @@ In the future, more tutorials will be added with the purpose of introducing the 
    :hidden:
 
    dynamic_loading/index.rst
+   fabrics/index.rst
