@@ -84,8 +84,7 @@ repos:
   - id: flake8
     name: Python-lint-flake8
     args:
-    - '--max-line-length=88'
-    - '--extend-ignore=E203' # ignore "whitespace before ':'"
+    - '--extend-ignore=E203,E501' # ignore "whitespace before ':'"; ignore line length
     exclude: (ctypes_mapping\/api\.py)$
 
 # Shell: todo: exclude xnvme-driver.sh
