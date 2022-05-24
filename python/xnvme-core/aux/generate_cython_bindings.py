@@ -9,6 +9,7 @@ regex = [
     r"s/SLIST_ENTRY\(xnvme_cmd_ctx\)/struct{struct xnvme_cmd_ctx *sle_next;}/g",
     r"s/SLIST_HEAD\(, xnvme_cmd_ctx\)/struct{struct xnvme_cmd_ctx *slh_first;}/g",
     r"s/struct iovec\s?\*/void */g",
+    r"s/FILE\s?\*/void */g",  # Can actually be removed now, but we need to generate code for it.
     # NOTE: Cython doesn't support arrays without length specified
     r"s/xnvme_be_attr item\[\]/xnvme_be_attr item[1]/g",
     r"s/xnvme_ident entries\[\]/xnvme_ident entries[1]/g",

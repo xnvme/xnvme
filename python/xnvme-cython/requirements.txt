@@ -1,0 +1,7 @@
+# For Python bindings in Cython
+setuptools>=58.5 # Fixes inclusion of libxnvme.pxd in package_data
+xnvme
+cython
+wheel
+# All
+pytest
