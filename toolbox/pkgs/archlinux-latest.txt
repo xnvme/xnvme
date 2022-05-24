@@ -7,6 +7,5 @@ meson
 ncurses
 ninja
 numactl
-pkgconf
 python-pyelftools
 python3
