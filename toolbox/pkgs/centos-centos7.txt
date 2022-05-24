@@ -10,6 +10,7 @@ ncurses-devel
 numactl-devel
 openssl-devel
 patch
+pkgconfig
 unzip
 wget
 zlib-devel
