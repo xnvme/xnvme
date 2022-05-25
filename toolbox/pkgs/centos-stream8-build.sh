@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-export LDFLAGS="-ltinfo -lncurses"
-
 # configure xNVMe and build dependencies (fio, liburing, and SPDK)
 meson setup builddir --prefix=/usr
 
