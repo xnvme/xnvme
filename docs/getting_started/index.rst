@@ -128,9 +128,60 @@ For example, from the root of the **xNVMe** source repository, do:
 
 Then go ahead and configure, build and install using ``meson``:
 
+.. literalinclude:: ../../toolbox/pkgs/archlinux-latest-build.sh
+   :language: bash
+   :lines: 2-
+
+.. note:: The build is configured to install with ``--prefix=/usr`` this is
+   intentional such the the ``pkg-config`` files end up in the default search
+   path on the system. If you do not want this, then remove ``--prefix=/usr``
+   and adjust your ``$PKG_CONFIG_PATH`` accordingly.
+
+CentOS Stream9
+--------------
+
+Install the following packages via ``dnf``:
+
+.. literalinclude:: ../../toolbox/pkgs/centos-stream9.txt
+   :language: bash
+
+For example, from the root of the **xNVMe** source repository, do:
+
+.. literalinclude:: ../../toolbox/pkgs/centos-stream9.sh
+   :language: bash
+   :lines: 8-
+
+Then go ahead and configure, build and install using ``meson``:
+
 .. literalinclude:: ../../toolbox/pkgs/default-build.sh
    :language: bash
    :lines: 2-
+
+CentOS Stream8
+--------------
+
+Install the following packages via ``dnf``:
+
+.. literalinclude:: ../../toolbox/pkgs/centos-stream8.txt
+   :language: bash
+
+For example, from the root of the **xNVMe** source repository, do:
+
+.. literalinclude:: ../../toolbox/pkgs/centos-stream8.sh
+   :language: bash
+   :lines: 8-
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../toolbox/pkgs/centos-stream8-build.sh
+   :language: bash
+   :lines: 2-
+
+.. note:: The build is configured to install with ``--prefix=/usr`` this is
+   intentional such the the ``pkg-config`` files end up in the default search
+   path on the system. If you do not want this, then remove ``--prefix=/usr``
+   and adjust your ``$PKG_CONFIG_PATH`` accordingly.
+
 
 CentOS 7
 --------
@@ -151,6 +202,11 @@ Then go ahead and configure, build and install using ``meson``:
 .. literalinclude:: ../../toolbox/pkgs/centos-centos7-build.sh
    :language: bash
    :lines: 2-
+
+.. note:: The build is configured to install with ``--prefix=/usr`` this is
+   intentional such the the ``pkg-config`` files end up in the default search
+   path on the system. If you do not want this, then remove ``--prefix=/usr``
+   and adjust your ``$PKG_CONFIG_PATH`` accordingly.
 
 Debian 12 (Bookworm)
 --------------------
@@ -347,6 +403,11 @@ Then go ahead and configure, build and install using ``meson``:
 .. note:: In case you get: ``error adding symbols: DSO missing from command
    line``, during compilation, then add ``-ltinfo -lnurces`` to ``LDFLAGS`` as
    it is done in the commands above.
+
+.. note:: The build is configured to install with ``--prefix=/usr`` this is
+   intentional such the the ``pkg-config`` files end up in the default search
+   path on the system. If you do not want this, then remove ``--prefix=/usr``
+   and adjust your ``$PKG_CONFIG_PATH`` accordingly.
 
 macOS
 --------------------
