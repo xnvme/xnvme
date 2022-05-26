@@ -37,7 +37,6 @@ xnvme_be_ramdisk_dev_close(struct xnvme_dev *dev)
 size_t
 _xnvme_be_ramdisk_dev_get_size(struct xnvme_dev *dev)
 {
-	struct xnvme_be_ramdisk_state *state = (void *)dev->be.state;
 	const struct xnvme_ident *ident = &dev->ident;
 	char *gb_marker;
 
@@ -54,7 +53,6 @@ int
 xnvme_be_ramdisk_dev_open(struct xnvme_dev *dev)
 {
 	struct xnvme_be_ramdisk_state *state = (void *)dev->be.state;
-	const struct xnvme_ident *ident = &dev->ident;
 	struct xnvme_opts *opts = &dev->opts;
 	int err;
 
