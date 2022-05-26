@@ -20,9 +20,25 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_ramdisk[] = {
 
 	{
 		.mtype = XNVME_BE_ASYNC,
+		.name = "nil",
+		.descr = "Use nil for Asynchronous I/O",
+		.async = &g_xnvme_be_posix_async_nil,
+		.check_support = xnvme_be_supported,
+	},
+
+	{
+		.mtype = XNVME_BE_ASYNC,
 		.name = "thrpool",
 		.descr = "Use thread pool for Asynchronous I/O",
 		.async = &g_xnvme_be_posix_async_thrpool,
+		.check_support = xnvme_be_supported,
+	},
+
+	{
+		.mtype = XNVME_BE_ASYNC,
+		.name = "emu",
+		.descr = "Use emu pool for Asynchronous I/O",
+		.async = &g_xnvme_be_posix_async_emu,
 		.check_support = xnvme_be_supported,
 	},
 
