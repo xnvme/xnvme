@@ -35,7 +35,6 @@ _idfy_ctrlr_iocs_fs(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 static int
 _idfy_ns_iocs_fs(struct xnvme_dev *dev, void *dbuf)
 {
-	struct xnvme_be_ramdisk_state *state = (void *)dev->be.state;
 	struct xnvme_spec_fs_idfy_ns *ns = dbuf;
 
 	size_t ramdisk_size = _xnvme_be_ramdisk_dev_get_size(dev);
@@ -66,7 +65,6 @@ _idfy_ctrlr(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 static int
 _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 {
-	struct xnvme_be_ramdisk_state *state = (void *)dev->be.state;
 	struct xnvme_spec_idfy_ns *ns = dbuf;
 	size_t ramdisk_size;
 	const size_t lba_size = 512;
