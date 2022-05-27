@@ -15,5 +15,5 @@ apt-get -qy \
 apt-get -qy autoclean
 apt-get -qy install aptitude
 
-# Install packages via aptitude -- seems to handle dependencies better
+# Install packages via the system package-manager (aptitude)
 aptitude -q -y -f install $(cat "toolbox/pkgs/debian-bookworm.txt")

@@ -80,12 +80,22 @@ Along with libraries:
 * uuid-dev (>=2.3, For **SPDK**)
 
 The preferred toolchain is **gcc** and the following sections describe how to
-install it and required libraries on FreeBSD, a set of popular Linux
-Distributions and Windows.
-
-If you which to use a different toolchain then see the
-:ref:`sec-building-custom-toolchain`, on how to instrument the build-system
+install it and required libraries on a set of popular Linux Distributions,
+FreeBSD, MacOS, and Windows. If you wish to use a different toolchain then see
+the :ref:`sec-building-custom-toolchain`, on how to instrument the build-system
 using a compiler other than **gcc**.
+
+In the following sections, the then the system package-manager is used whenever
+possible to install the toolchain and libraries. However, on some Linux
+distribution there are not recent enough versions. To circurvent that, then the
+packages are installed via the Python package-manager. In some cases even a
+recent enough version of Python is not available, to bootstrap it, then Python
+is built and installed from source.
+
+.. note:: When installing packages via the Python package-manager (``python3 -m
+   pip install``), then packages should be installed system-wide. This is
+   ensure that the installed packages behave as though they were installed
+   using the system package-manager.
 
 Alpine Linux
 ------------
@@ -96,7 +106,8 @@ From the root of the **xNVMe** source repository, do:
    :language: bash
    :lines: 8-
 
-This will install the packages listed below via the sytems package manager.
+The commands above will install the following packages via the system
+package-manager (``apk``):
 
 .. literalinclude:: ../../toolbox/pkgs/alpine-latest.txt
    :language: bash
@@ -115,16 +126,17 @@ Then go ahead and configure, build and install using ``meson``:
 Arch Linux
 ----------
 
-Install the following packages via ``pacman``:
-
-.. literalinclude:: ../../toolbox/pkgs/archlinux-latest.txt
-   :language: bash
-
 For example, from the root of the **xNVMe** source repository, do:
 
 .. literalinclude:: ../../toolbox/pkgs/archlinux-latest.sh
    :language: bash
    :lines: 8-
+
+The commands above will install the following packages via the system
+package-manager (``pacman``):
+
+.. literalinclude:: ../../toolbox/pkgs/archlinux-latest.txt
+   :language: bash
 
 Then go ahead and configure, build and install using ``meson``:
 
@@ -410,9 +422,9 @@ Then go ahead and configure, build and install using ``meson``:
    and adjust your ``$PKG_CONFIG_PATH`` accordingly.
 
 macOS
---------------------
+-----
 
-Install the following packages via ``brew`` and ``pip3``:
+Install the following packages using Homebrew_ (``brew``):
 
 .. literalinclude:: ../../toolbox/pkgs/macos-11.txt
    :language: bash
@@ -425,7 +437,7 @@ For example, from the root of the **xNVMe** source repository, do:
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../toolbox/pkgs/default-build.sh
+.. literalinclude:: ../../toolbox/pkgs/toolbox/pkgs/macos-11-build.sh
    :language: bash
    :lines: 2-
 
@@ -1166,3 +1178,5 @@ for details
 .. _Chocolatey: https://chocolatey.org/
 
 .. _MinGW: https://www.mingw-w64.org/
+
+.. _Homebrew: https://brew.sh/

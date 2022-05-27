@@ -14,3 +14,4 @@ patch
 pkgconfig
 procps
 python3-pyelftools
+python3-pip

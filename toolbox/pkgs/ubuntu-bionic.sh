@@ -14,8 +14,9 @@ apt-get -qy \
   -o "Dpkg::Options::=--force-confold" upgrade
 apt-get -qy autoclean
 
-# Install packages via apt-get
+# Install packages via the system package-manager (apt-get)
 apt-get install -qy $(cat "toolbox/pkgs/ubuntu-bionic.txt")
 
-# Install packages via PyPI
-pip3 install meson ninja pyelftools
+# Install packages via the Python package-manager (pip)
+python3 -m pip install --upgrade pip
+python3 -m pip install meson ninja pyelftools
