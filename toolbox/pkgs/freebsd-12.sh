@@ -5,8 +5,8 @@ ld --version || true
 # Query the (g)libc version
 ldd --version || true
 
-# Install packages via pkg
+# Install packages via the system package-manager (pkg)
 pkg install -qy $(cat "toolbox/pkgs/freebsd-12.txt")
 
-# Install packages via PyPI
-pip3 install meson ninja pyelftools
+# Install packages via the Python package-manager (pip)
+python3 -m pip install meson ninja pyelftools
