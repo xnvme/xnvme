@@ -16,3 +16,5 @@ procps
 unzip
 wget
 zlib-devel
+python39
+python39-pip
