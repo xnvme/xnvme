@@ -7,5 +7,5 @@ echo "export LDFLAGS=\"-ltinfo -lncurses\""
 emerge-webrsync
 #emerge --sync
 
-# Install packages via emerge
+# Install packages via the system package-manager (emerge)
 emerge $(< toolbox/pkgs/gentoo-latest.txt )

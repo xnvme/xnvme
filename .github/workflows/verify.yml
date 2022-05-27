@@ -323,15 +323,8 @@ jobs:
     - name: Execute 'xnvme library-info'
       run: xnvme library-info
 
-    - name: Check pkg-config
-      run: |
-        pkg-config xnvme --libs
-        pkg-config xnvme --variable=datadir
-        pkg-config xnvme --variable=includedir
-        pkg-config xnvme --variable=libdir
-        pkg-config xnvme --variable=pcfiledir
-        pkg-config xnvme --variable=prefix
-        ls -lh $(pkg-config xnvme --variable=libdir) | grep xnvme
+    - name: Check pip
+      run: python3 -m pip --version
 
   #
   # Build on macOS
@@ -388,6 +381,9 @@ jobs:
         pkg-config xnvme --variable=prefix
         ls -lh $(pkg-config xnvme --variable=libdir) | grep xnvme
 
+    - name: Check pip
+      run: python3 -m pip --version
+
   #
   # Build on Windows
   #
@@ -440,6 +436,9 @@ jobs:
 
         xnvme.exe enum
         xnvme.exe library-info
+
+    - name: Check pip
+      run: python3 -m pip --version
 
   #
   # Build on run CIJOE testplans

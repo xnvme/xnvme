@@ -9,3 +9,4 @@ ninja
 numactl
 python-pyelftools
 python3
+python-pip

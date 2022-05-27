@@ -15,8 +15,8 @@ apt-get -qy \
 apt-get -qy autoclean
 apt-get -qy install aptitude
 
-# Install packages via aptitude -- seems to handle dependencies better
+# Install packages via the system package-manager (aptitude)
 aptitude -q -y -f install $(cat "toolbox/pkgs/debian-bullseye.txt")
 
-# Install packages via PyPI
-pip3 install meson ninja pyelftools
+# Install packages via the Python package-manager (pip)
+python3 -m pip install meson ninja pyelftools

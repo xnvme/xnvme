@@ -5,8 +5,5 @@
 # Query the (g)libc version
 ldd || true
 
-# Install packages via apk
+# Install packages via the system package-manager (apk)
 apk add $(cat "toolbox/pkgs/alpine-latest.txt")
-
-# Install packages via PyPI
-pip3 install pyelftools

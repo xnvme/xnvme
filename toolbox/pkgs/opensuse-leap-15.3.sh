@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 # Query the linker version
 ld --version || true
 
@@ -7,8 +8,8 @@ ldd --version || true
 
 zypper --non-interactive refresh
 
-# Install packages via dnf
+# Install packages via the system package-manager (zypper)
 zypper --non-interactive install -y $(cat "toolbox/pkgs/opensuse-leap-15.3.txt")
 
-# Install packages via PyPI
-pip3 install meson ninja pyelftools
+# Install packages via the Python package-manager (pip)
+python3 -m pip install meson ninja pyelftools

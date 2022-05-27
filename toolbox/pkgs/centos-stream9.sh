@@ -9,7 +9,8 @@ ldd --version || true
 dnf install -y 'dnf-command(config-manager)'
 dnf config-manager --set-enabled crb
 
-# Install packages via dnf
+# Install packages via the system package-manager (dnf)
 dnf install -y $(cat "toolbox/pkgs/centos-stream9.txt")
 
-pip3 install meson ninja pyelftools
+# Install packages via the Python package-mange (pip)
+python3 -m pip install meson ninja pyelftools

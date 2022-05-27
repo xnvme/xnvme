@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 # Query the linker version
 ld --version || true
 
@@ -7,5 +8,5 @@ ldd --version || true
 
 zypper --non-interactive refresh
 
-# Install packages via zypper
+# Install packages via the system package-manager (zypper)
 zypper --non-interactive install -y --allow-downgrade $(cat "toolbox/pkgs/opensuse-tumbleweed-latest.txt")
