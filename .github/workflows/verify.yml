@@ -250,10 +250,55 @@ jobs:
       run: docker push refenv/xnvme
 
   #
+  # Build Python-bindings
+  #
+  build-python:
+    needs: source-archive
+    runs-on: ubuntu-latest
+    if: ((github.event_name == 'pull_request') || ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job
+      == 'all') || contains('build-linux', github.event.inputs.job))))
+    container: refenv/alpine-bash
+
+    steps:
+    - name: Retrieve the source-archive
+      uses: actions/download-artifact@v2
+      with:
+        name: archive-src
+    - name: Extract the full-source-archive
+      run: |
+        tar xzf xnvme*.tar.gz --strip 1
+        rm xnvme*.tar.gz
+
+    - name: Install build-requirements
+      run: |
+        ./toolbox/pkgs/alpine-latest.sh
+
+    - name: Python bindings, system packages
+      run: |
+        apk add clang-libs
+
+    - name: Python bindings, Python packages
+      run: |
+        cd python
+        python3 -m pip install -r requirements.txt
+
+    - name: Python bindings, generate, patch, and build-sdist
+      run: |
+        cd python
+        make build
+        for file in dist/*.tar.gz; do mv $file ${file//xnvme/xnvme-py}; done
+
+    - name: Upload Python package
+      uses: actions/upload-artifact@v2
+      with:
+        name: python-pkg
+        path: python/dist/xnvme-py-*.tar.gz
+
+  #
   # Build on Linux using different Linux distributions
   #
   build-linux:
-    needs: [source-archive, source-format-check]
+    needs: [source-archive, source-format-check, build-python]
     runs-on: ubuntu-latest
     if: ((github.event_name == 'pull_request') || ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job
       == 'all') || contains('build-linux', github.event.inputs.job))))
@@ -340,11 +385,22 @@ jobs:
         python3 -c "import platform; print(platform.system()); print(platform.uname())"
         python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
 
+    - name: Retrieve the xNVMe Python bindings (prebuilt sdist)
+      uses: actions/download-artifact@v2
+      with:
+        name: python-pkg
+
+    - name: Install and test xNVMe Python bindings
+      if: (!contains(matrix.container.ver, 'bookworm'))
+      run: |
+        python3 -m pip install xnvme-py*.tar.gz --user
+        python3 -m pytest --pyargs xnvme
+
   #
   # Build on macOS
   #
   build-macos:
-    needs: [source-archive, source-format-check]
+    needs: [source-archive, source-format-check, build-python]
     runs-on: ${{ matrix.runner.os }}-${{ matrix.runner.ver }}
     if: ((github.event_name == 'pull_request') || ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job
       == 'all') || contains('build-macos', github.event.inputs.job))))
@@ -401,6 +457,16 @@ jobs:
         python3 -m pip --version
         python3 -c "import platform; print(platform.system()); print(platform.uname())"
         python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
+
+    - name: Retrieve the xNVMe Python bindings (prebuilt sdist)
+      uses: actions/download-artifact@v2
+      with:
+        name: python-pkg
+
+    - name: Install and test xNVMe Python bindings
+      run: |
+        python3 -m pip install xnvme-py*.tar.gz --user
+        python3 -m pytest --pyargs xnvme
 
   #
   # Build on Windows
