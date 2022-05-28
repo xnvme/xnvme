@@ -323,6 +323,15 @@ jobs:
     - name: Execute 'xnvme library-info'
       run: xnvme library-info
 
+    - name: Check pkg-config
+      run: |
+        pkg-config xnvme --libs
+        pkg-config xnvme --variable=datadir
+        pkg-config xnvme --variable=includedir
+        pkg-config xnvme --variable=libdir
+        pkg-config xnvme --variable=pcfiledir
+        pkg-config xnvme --variable=prefix
+        ls -lh $(pkg-config xnvme --variable=libdir) | grep xnvme
 
     - name: Check Python, pip, platform, and sysconfig
       run: |
