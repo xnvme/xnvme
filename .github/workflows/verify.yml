@@ -323,8 +323,13 @@ jobs:
     - name: Execute 'xnvme library-info'
       run: xnvme library-info
 
-    - name: Check pip
-      run: python3 -m pip --version
+
+    - name: Check Python, pip, platform, and sysconfig
+      run: |
+        python3 --version
+        python3 -m pip --version
+        python3 -c "import platform; print(platform.system()); print(platform.uname())"
+        python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
 
   #
   # Build on macOS
@@ -381,8 +386,12 @@ jobs:
         pkg-config xnvme --variable=prefix
         ls -lh $(pkg-config xnvme --variable=libdir) | grep xnvme
 
-    - name: Check pip
-      run: python3 -m pip --version
+    - name: Check Python, pip, platform, and sysconfig
+      run: |
+        python3 --version
+        python3 -m pip --version
+        python3 -c "import platform; print(platform.system()); print(platform.uname())"
+        python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
 
   #
   # Build on Windows
@@ -437,8 +446,12 @@ jobs:
         xnvme.exe enum
         xnvme.exe library-info
 
-    - name: Check pip
-      run: python3 -m pip --version
+    - name: Check Python, pip, platform, and sysconfig
+      run: |
+        python3 --version
+        python3 -m pip --version
+        python3 -c "import platform; print(platform.system()); print(platform.uname())"
+        python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
 
   #
   # Build on run CIJOE testplans
