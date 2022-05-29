@@ -50,6 +50,7 @@ Contents:
    capis/index.rst
    examples/index.rst
    tutorial/index.rst
+   python/index.rst
    contributing/index.rst
 
 Indices and tables
