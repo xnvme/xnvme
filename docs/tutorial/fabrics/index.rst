@@ -32,6 +32,7 @@ This will guide you through the setup of:
 2. A machine to act as a Fabrics **initiator**
 
    * Example showing how to Utilize the exported endpoints using **xNVMe**
+   * Example showing how to Utilize the exported endpoints using **nvme-cli**
 
 The following section will describe the setup and define the environment.
 
@@ -41,9 +42,14 @@ Fabrics Setup
 In the setup **TCP** will be used as the transport. It is quite convenient as
 allows you to work with fabrics using non-RDMA network devices, that is, this
 setup is possible using commodity hardware.
-Additonally a locally attached NVMe PCIe SSD is exported on the **target**. It
-is available on the system in ``/dev/nvme0n1`` and it has PCIe identifier
-``0000:03:00.0``.
+Additonally four locally attached NVMe PCIe SSD is exported on the **target**.
+They are available on the systems via devfs as:
+
+* ``/dev/nvme0n1``, ``/dev/nvme1n1``, ``/dev/nvme2n1``, and ``/dev/nvme3n1``
+
+And with the following PCIe addresses:
+
+* ``0000:41:00.0``, ``0000:42:00.0``, ``0000:43:00.0``, and ``0000:44:00.0``
 
 It is assumed that both the **initiator**, as well as the **target**, are
 running Debian Linux / Bullseye and that **xNVMe** is installed according to
@@ -79,8 +85,8 @@ the following Kernel modules:
 Exporting Targets using the Kernel
 ----------------------------------
 
-With the variables defined, then the following will export the NVMe device at
-``/dev/nvme0n1`` over fabrics using TCP transport:
+With the variables defined, then the following will export the NVMe devices
+over fabrics using TCP transport:
 
 .. literalinclude:: fabrics_target_linux.sh
    :language: bash
