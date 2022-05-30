@@ -63,8 +63,8 @@ xnvme_be_ramdisk_dev_open(struct xnvme_dev *dev)
 
 	state->ramdisk = malloc(ramdisk_size);
 	if (!state->ramdisk) {
-		XNVME_DEBUG("FAILED: Unable to allocate ramdisk: uri=%s, state->ramdisk=%d",
-			    ident->uri, state->ramdisk);
+		XNVME_DEBUG("FAILED: Unable to allocate ramdisk: uri=%s, state->ramdisk=%p",
+			    dev->ident.uri, state->ramdisk);
 		return -errno;
 	}
 
