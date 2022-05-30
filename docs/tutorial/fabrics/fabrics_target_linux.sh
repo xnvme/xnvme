@@ -7,7 +7,7 @@ echo "# Ensure that the NVMe devices are associated with the Linux Kernel NVMe d
 xnvme-driver reset
 
 echo "# Mounting configfs"
-/bin/mount -t configfs none /sys/kernel/config/
+/bin/mount -t configfs none /sys/kernel/config/ || echo "Possibly already mounted"
 
 echo "# Create an NVMe Target Subsystem"
 mkdir -p "/sys/kernel/config/nvmet/subsystems/${NVMET_SUBSYS_NQN}"
@@ -15,14 +15,18 @@ mkdir -p "/sys/kernel/config/nvmet/subsystems/${NVMET_SUBSYS_NQN}"
 echo "# Set subsystem access to 'attr_allow_any_host'"
 echo 1 > "/sys/kernel/config/nvmet/subsystems/${NVMET_SUBSYS_NQN}/attr_allow_any_host"
 
-echo "# Create a NVMe Namespace within the Target Subsystem"
-mkdir -p "/sys/kernel/config/nvmet/subsystems/${NVMET_SUBSYS_NQN}/namespaces/1"
+nsid=0
+for dev_path in ${NVMET_DEVPATHS}; do
+	nsid=$((nsid + 1))
+	echo "# Create a NVMe Namespace within the Target Subsystem"
+	mkdir -p "/sys/kernel/config/nvmet/subsystems/${NVMET_SUBSYS_NQN}/namespaces/${nsid}"
 
-echo "# Export (${EXPORT_DEV_PATH}) -- add device to kernel subsystem"
-echo -n "${EXPORT_DEV_PATH}" > "/sys/kernel/config/nvmet/subsystems/${NVMET_SUBSYS_NQN}/namespaces/1/device_path"
+	echo "# Export (${dev_path}) -- add device to kernel subsystem"
+	echo -n "${dev_path}" > "/sys/kernel/config/nvmet/subsystems/${NVMET_SUBSYS_NQN}/namespaces/${nsid}/device_path"
 
-# Enable the NVMe Target Namespace
-echo 1 > "/sys/kernel/config/nvmet/subsystems/${NVMET_SUBSYS_NQN}/namespaces/1/enable"
+	# Enable the NVMe Target Namespace
+	echo 1 > "/sys/kernel/config/nvmet/subsystems/${NVMET_SUBSYS_NQN}/namespaces/${nsid}/enable"
+done
 
 echo "## Setup NVMe-oF connection-listener"
 echo "# Create a 'port'"
@@ -42,4 +46,4 @@ echo "${NVMET_ADRFAM}" > "/sys/kernel/config/nvmet/ports/1/addr_adrfam"
 
 echo "# Link with the subsystem with the port, thereby enabling it"
 ln -s "/sys/kernel/config/nvmet/subsystems/${NVMET_SUBSYS_NQN}" \
-  "/sys/kernel/config/nvmet/ports/1/subsystems/${NVMET_SUBSYS_NQN}"
+ "/sys/kernel/config/nvmet/ports/1/subsystems/${NVMET_SUBSYS_NQN}"

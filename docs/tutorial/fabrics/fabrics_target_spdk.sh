@@ -22,13 +22,6 @@ if ! pidof nvmf_tgt; then
   exit
 fi
 
-echo "## Attach local PCIe controllers (${NVMET_TRTYPE})"
-"${XNVME_REPOS}/subprojects/spdk/scripts/rpc.py" bdev_nvme_attach_controller \
- -b Nvme0 \
- -t PCIe \
- -a "${EXPORT_DEV_PCIE}"
-# The above command will output e.g. 'Nvme0n1'
-
 echo "## Create NVMe-oF transport (${NVMET_TRTYPE})"
 "${XNVME_REPOS}/subprojects/spdk/scripts/rpc.py" nvmf_create_transport \
 	-t "${NVMET_TRTYPE}" \
@@ -43,15 +36,28 @@ echo "## Create a NVMe-oF subsystem/controller"
 	-s SPDK00000000000001 \
 	-d Controller1
 
-echo "# Export (${EXPORT_DEV_PCIE}) -- add device to SPDK subsystem/controller"
-"${XNVME_REPOS}/subprojects/spdk/scripts/rpc.py" nvmf_subsystem_add_ns \
-	"${NVMET_SUBSYS_NQN}" \
-	Nvme0n1
+echo "## Attach local PCIe controllers (${NVMET_TRTYPE})"
+count=0
+for pcie_id in ${NVMET_PCIE_IDS}; do
+	count=$((count + 1))
+
+	echo "# Attach pcie_id: '${pcie_id}'"
+	# The command below will output e.g. 'Nvme0n1'
+	"${XNVME_REPOS}/subprojects/spdk/scripts/rpc.py" bdev_nvme_attach_controller \
+		-b "Nvme${count}" \
+		-t PCIe \
+		-a "${pcie_id}"
+
+	echo "# Export (${pcie_id}) -- add device to SPDK subsystem/controller"
+	"${XNVME_REPOS}/subprojects/spdk/scripts/rpc.py" nvmf_subsystem_add_ns \
+		"${NVMET_SUBSYS_NQN}" \
+		"Nvme${count}n1"
+done
 
 echo "## Setup NVMe-oF connection-listener"
 "${XNVME_REPOS}/subprojects/spdk/scripts/rpc.py" nvmf_subsystem_add_listener \
 	"${NVMET_SUBSYS_NQN}" \
 	-t "${NVMET_TRTYPE}" \
 	-a "${NVMET_TRADDR}" \
-	-s "${NVMET_PORT}" \
+	-s "${NVMET_TRSVCID}" \
 	-f "${NVMET_ADRFAM}"

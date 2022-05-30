@@ -21,18 +21,23 @@ nvme connect \
   --trsvcid="${NVMET_TRSVCID}" \
   --nqn="${NVMET_SUBSYS_NQN}"
 
+# Time to settle...
+sleep 2
+
 echo "# Show devices after connecting/mounting"
 xnvme enum
 
-echo "# Inspect it, using xNVMe"
-xnvme info /dev/nvme1n1
+for dev_path in ${NVMEI_DEVPATHS}; do
+  echo "# Inspect dev_path: '${dev_path}' using xNVMe"
+  xnvme info "${dev_path}"
 
-echo "# Run fio"
-"${XNVME_REPOS}/subprojects/fio/fio" \
-  /usr/local/share/xnvme/xnvme-compare.fio \
-  --section=default \
-  --ioengine="io_uring" \
-  --filename="/dev/nvme1n1"
+  echo "# Run fio"
+  "${XNVME_REPOS}/subprojects/fio/fio" \
+    /usr/local/share/xnvme/xnvme-compare.fio \
+    --section=default \
+    --ioengine="io_uring" \
+    --filename="${dev_path}"
+done
 
 echo "# Disconnect, unmount the block-device"
 nvme disconnect --nqn="${NVMET_SUBSYS_NQN}"
