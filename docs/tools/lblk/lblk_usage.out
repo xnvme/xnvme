@@ -12,5 +12,5 @@ Where <command> is one of:
 
 See 'lblk <command> --help' for the description of [<args>]
 
-Logical Block Namespace Utility -- ver: {major: 0, minor: 3, patch: 0}
+Logical Block Namespace Utility -- ver: {major: 0, minor: 4, patch: 0}
 

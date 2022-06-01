@@ -15,5 +15,5 @@ Where <args> include:
 
 See 'xdd --help' for other commands
 
-xNVMe dd - Copy bytes from input to output -- ver: {major: 0, minor: 3, patch: 0}
+xNVMe dd - Copy bytes from input to output -- ver: {major: 0, minor: 4, patch: 0}
 
