@@ -21,7 +21,7 @@ def read(*parts):
 
 setup(
     name="cijoe-pkg-xnvme",
-    version="0.3.0",
+    version="0.4.0",
     description="CIJOE: xNVMe package",
     long_description=read("README.rst"),
     author="Simon A. F. Lund",
