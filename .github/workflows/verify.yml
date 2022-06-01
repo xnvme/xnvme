@@ -304,6 +304,7 @@ jobs:
       == 'all') || contains('build-linux', github.event.inputs.job))))
 
     strategy:
+      fail-fast: false
       matrix:
         container:
         # Using an alpine container which is the same as upstream but with bash
@@ -406,6 +407,7 @@ jobs:
       == 'all') || contains('build-macos', github.event.inputs.job))))
 
     strategy:
+      fail-fast: false
       matrix:
         runner:
         - {os: 'macos', ver: '11'}
@@ -478,6 +480,7 @@ jobs:
       == 'all') || contains('build-windows', github.event.inputs.job))))
 
     strategy:
+      fail-fast: false
       matrix:
         runner:
         - {os: 'windows', ver: '2019'}
@@ -538,6 +541,7 @@ jobs:
       'build-and-test'))) || contains(github.event.pull_request.labels.*.name, 'pr-ready-for-test'))
 
     strategy:
+      fail-fast: false
       matrix:
         guest:
         - {os: 'freebsd', ver: '13', img: 'https://refenv.fra1.digitaloceanspaces.com/freebsd13-ufs-ksrc.qcow2'}
@@ -692,6 +696,7 @@ jobs:
     if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen'))
 
     strategy:
+      fail-fast: false
       matrix:
         guest:
         - {os: 'debian', ver: 'bullseye', img: 'https://cloud.debian.org/images/cloud/bullseye/daily/latest/debian-11-generic-amd64-daily.qcow2'}
