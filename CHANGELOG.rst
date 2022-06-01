@@ -14,6 +14,39 @@ Known Issues
 
 See the file named ``ISSUES`` in the root of the repository.
 
+v0.5.0 (future)
+---------------
+
+A bit of expansion in the application of xNVMe with support for macOS, a
+ramdisk backend, revival of Python language bindings and a refresh of the docs
+on NVMe-over-Fabrics.
+
+* be:macos: added a backend for macOS
+  - Initial implementation using the "core" I/O mechanisms of sync-io, async
+    emulation and the threadpool
+  - Does enumeration of NVMe devices through the limited interface provided for
+    user-space by the macOS kernel
+  - Utilizes what is avaiable for admin-command submision
+
+* be:ramdisk: added a backend mimicing the behavior of an NVMe NVM namespace
+  - Intended as a test-vehicle providing a "device" without requiring anything
+    but the consumption of main memory of the system
+  - I/O is "stored" using main-memory
+
+* py: revived the xNVMe Python language bindings
+  - A re-introduction of the Python bindings, these are now generated and thus
+    provide access to the entire xNVMe C API
+  - They are added to the testing infrastructure ensuring that they are aligned
+    with the library
+
+* docs: refreshed the NVMe-over-Fabrics tutorial
+
+v0.4.0 (upcoming)
+-----------------
+
+This is a release with the sole purpose of changing the liburing subproject
+from tracking 'master' to the next stable release that is liburing-2.2.
+
 v0.3.0
 ------
 
