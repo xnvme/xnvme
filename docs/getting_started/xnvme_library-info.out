@@ -1,8 +1,8 @@
 # xNVMe Library Information
-ver: {major: 0, minor: 3, patch: 0}
+ver: {major: 0, minor: 4, patch: 0}
 xnvme_libconf:
   - '3p: fio;git-describe:fio-3.30'
-  - '3p: liburing;git-describe:liburing-2.1-409-gbb756586'
+  - '3p: liburing;git-describe:liburing-2.1-460-g4633a2d0'
   - '3p: spdk;git-describe:v21.10;+patches'
   - 'conf: XNVME_BE_LINUX_ENABLED'
   - 'conf: XNVME_BE_LINUX_BLOCK_ENABLED'

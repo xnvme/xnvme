@@ -14,5 +14,5 @@ Where <command> is one of:
 
 See 'xnvme_file <command> --help' for the description of [<args>]
 
-xNVMe file - Exercise the xnvme_file API -- ver: {major: 0, minor: 3, patch: 0}
+xNVMe file - Exercise the xnvme_file API -- ver: {major: 0, minor: 4, patch: 0}
 

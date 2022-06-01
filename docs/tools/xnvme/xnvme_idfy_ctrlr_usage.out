@@ -13,5 +13,5 @@ Where <args> include:
 
 See 'xnvme --help' for other commands
 
-xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 3, patch: 0}
+xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 4, patch: 0}
 
