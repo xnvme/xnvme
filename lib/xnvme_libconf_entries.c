@@ -2,7 +2,7 @@
 const char *xnvme_libconf[] = {
 	"3p: fio;git-describe:fio-3.30",
 #ifdef XNVME_BE_LINUX_LIBURING_ENABLED
-	"3p: liburing;git-describe:liburing-2.1-409-gbb756586",
+	"3p: liburing;git-describe:liburing-2.2",
 #else
 	"liburing;NOSYS",
 #endif
