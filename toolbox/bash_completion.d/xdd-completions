@@ -30,11 +30,11 @@ _xdd_completions()
     case "$sub" in
     
     "sync")
-        opts+="--data-input --data-output --data-nbytes --iosize --direct --help"
+        opts+="--data-input --data-output --data-nbytes --iosize --direct --offset --help"
         ;;
 
     "async")
-        opts+="--data-input --data-output --data-nbytes --iosize --qdepth --direct --help"
+        opts+="--data-input --data-output --data-nbytes --iosize --qdepth --direct --offset --help"
         ;;
 
     esac
