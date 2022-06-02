@@ -1,34 +1,51 @@
-import codecs
 import glob
 import os
+from distutils.command.sdist import sdist
 
-import setuptools
+from setuptools import setup
 
+PACKAGE_NAME = "xnvme"
+cy_xnvme_pkg_path = os.path.dirname(os.path.realpath(__file__))
+WORKSPACE_ROOT = cy_xnvme_pkg_path + "/.."
+VERSION = "v0.0.0"
 
-def read(*parts):
-    """Read parts to use a e.g. long_description"""
-
-    here = os.path.abspath(os.path.dirname(__file__))
-
-    # intentionally *not* adding an encoding option to open, See:
-    #   https://github.com/pypa/virtualenv/issues/201#issuecomment-3145690
-    with codecs.open(os.path.join(here, *parts), "r") as pfp:
-        return pfp.read()
+LIB_PXD = "libxnvme.pxd"
+LIB_PXD_PATH = f"{cy_xnvme_pkg_path}/{PACKAGE_NAME}/{LIB_PXD}"
 
 
-setuptools.setup(
-    name="xnvme",
-    version="0.3.0",
-    author="Simon A. F. Lund",
-    author_email="os@safl.dk",
+class pre_process_sdist(sdist):
+    def run(self):
+        from aux.generate_cython_bindings import (  # Only needed when building
+            generate_pxd,
+        )
+
+        os.chdir(cy_xnvme_pkg_path)
+        with open(LIB_PXD_PATH, "w") as f_out:
+            f_out.write(generate_pxd(WORKSPACE_ROOT).read())
+
+        return super().run()
+
+
+try:
+    with open("README.rst", "r") as f:
+        long_description = f.read()
+except FileNotFoundError:
+    long_description = ""
+
+setup(
+    name=PACKAGE_NAME,
+    version=VERSION,
+    author="Mads Ynddal",
+    author_email="m.ynddal@samsung.com",
     description="xNVMe Cython and ctypes language-bindings for Python",
-    long_description=read("README.rst"),
+    long_description=long_description,
     url="https://github.com/OpenMPDK/xNVMe",
     project_urls={
         "Bug Tracker": "https://github.com/OpenMPDK/xNVMe/issues",
     },
     license="Apache License, Version 2.0",
     classifiers=[
+        "Programming Language :: Cython",
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
@@ -36,7 +53,10 @@ setuptools.setup(
     data_files=[
         ("bin", glob.glob("bin/*")),
     ],
-    packages=setuptools.find_namespace_packages(include=["xnvme.*"]),
+    packages=setuptools.find_namespace_packages(include=["xnvme.*"]) + ["xnvme", "xnvme.tests"],
+    package_data={"": [LIB_PXD]},
+    include_package_data=True,
+    cmdclass={"sdist": pre_process_sdist},
     python_requires=">=3.6",
     install_requires=[
         "pytest",
