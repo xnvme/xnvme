@@ -2,3 +2,4 @@
 api.py
 libxnvme.pxd
 MANIFEST
+.build-py-env/

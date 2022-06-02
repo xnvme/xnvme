@@ -1,6 +1,11 @@
 #
 # This Makefile serves as convenient command-line auto-completion when working on Python bindings
 #
+#
+PY ?= python3
+PY_ENV_ACTIVATE = . .build-py-env/bin/activate
+PY_ENV = ${PY_ENV_ACTIVATE} && python
+WORKSPACE_ROOT ?= ..
 TOOLBOX_DIR?=../toolbox
 PROJECT_NAME=xnvme
 XNVME_CAPI_HEADERS=$(shell ls ../../include/libxnvme* | grep -v util | grep -v libxnvmec)
@@ -13,6 +18,17 @@ default: build
 	@echo "## py: make default"
 	@echo "## py: make default [DONE]"
 
+
+define build-py-env-help
+# Init python build virtual env
+endef
+.PHONY: build-py-env
+build-py-env:
+	@echo "Creating Python virtual env"
+	@${PY} -m venv .build-py-env
+	@echo "Install python dependencies"
+	@${PY_ENV} -m pip install -r requirements.txt
+
 define build-help
 # Do the common task during development of: uninstall clean build install test
 endef
@@ -20,12 +36,15 @@ endef
 all: uninstall clean build install test
 
 define build-help
-# Generate ctypes, patch them, then create a source package
+# Generate cython pxd, ctypes, patch them, then create a source package
 endef
 .PHONY: build
-build: generate-ctypes patch-ctypes
+build: build-py-env generate-ctypes patch-ctypes
 	@echo "## py: make build-sdist"
-	@python3 setup.py sdist
+	@echo "Building..."
+	@${PY_ENV} setup.py sdist
+	@echo "Copy to build directory"
+	@for file in dist/*.tar.gz; do mv $$file $${file//xnvme/xnvme-py}; done
 	@echo "## py: make build-sdist [DONE]"
 
 define install-help
@@ -34,7 +53,7 @@ endef
 .PHONY: install
 install:
 	@echo "## py: make install"
-	@python3 -m pip install dist/xnvme-*.tar.gz --user
+	@${PY} -m pip install dist/xnvme-*.tar.gz --user
 	@echo "## py: make install [DONE]"
 
 define uninstall-help
@@ -45,7 +64,7 @@ endef
 .PHONY: uninstall
 uninstall:
 	@echo "## py: make uninstall"
-	@python3 -m pip uninstall ${PROJECT_NAME} --yes || echo "Cannot uninstall => That is OK"
+	@${PY} -m pip uninstall ${PROJECT_NAME} --yes || echo "Cannot uninstall => That is OK"
 	@echo "## py: make uninstall [DONE]"
 
 define install-system-help
@@ -56,7 +75,7 @@ endef
 .PHONY: install-system
 install-system:
 	@echo "## py: make install-system"
-	@python3 -m pip install dist/xnvme-*.tar.gz
+	@${PY} -m pip install dist/xnvme-*.tar.gz
 	@echo "## py: make install-system [DONE]"
 
 define test-help
@@ -65,17 +84,17 @@ endef
 .PHONY: test
 test:
 	@echo "## py: make test"
-	@python3 -m pytest --pyargs xnvme
+	@${PY} -m pytest --pyargs xnvme
 	@echo "## py: make test [DONE]"
 
 define generate-ctypes-help
 # Generate definitions (xnvme_ctypes.header) from xNVMe public C API headers
 endef
 .PHONY: generate-ctypes
-generate-ctypes:
+generate-ctypes: build-py-env
 	@echo "## py: gen"
 	@echo "## py:headers: ${XNVME_CAPI_HEADERS}"
-	@clang2py ${XNVME_CAPI_HEADERS} --clang-args="-I../../include" > xnvme/ctypes_mapping/api.py
+	@${PY_ENV_ACTIVATE} && clang2py ${XNVME_CAPI_HEADERS} --clang-args="-I../../include -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include/ " > xnvme/ctypes_mapping/api.py
 	@echo "## Remember to also call 'make patch-ctypes' to fix format"
 	@echo "## py: gen [DONE]"
 
@@ -83,10 +102,10 @@ define patch-ctypes-help
 # Patch definitions (xnvme_ctypes.header)
 endef
 .PHONY: patch-ctypes
-patch-ctypes:
+patch-ctypes: build-py-env
 	@echo "## py: gen"
-	@python3 aux/patch_ctypes_mapping.py --path xnvme/ctypes_mapping/api.py
-	@black xnvme/ctypes_mapping/api.py || echo "could not fix format"
+	@${PY_ENV} aux/patch_ctypes_mapping.py --path xnvme/ctypes_mapping/api.py
+	@${PY_ENV_ACTIVATE} && black xnvme/ctypes_mapping/api.py || echo "could not fix format"
 	@echo "## py: gen [DONE]"
 
 define clean-help
@@ -95,9 +114,13 @@ endef
 .PHONY: clean
 clean:
 	@echo "## py: clean"
+	@rm -r .build-py-env || echo "Cannot remove => That is OK"
 	@rm -r build || echo "Cannot remove => That is OK"
 	@rm -r dist || echo "Cannot remove => That is OK"
 	@rm -r *.egg-info || echo "Cannot remove => That is OK"
+	@rm MANIFEST || echo "Cannot remove => That is OK"
+	@rm xnvme/libxnvme.pxd || echo "Cannot remove => That is OK"
+	@rm xnvme/ctypes_mapping.py || echo "Cannot remove => That is OK"
 	@echo "## py: clean [DONE]"
 
 define help-help
