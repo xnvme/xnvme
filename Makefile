@@ -239,10 +239,19 @@ define clean-help
 # Remove Meson builddir
 endef
 .PHONY: clean
-clean:
+clean: clean-python
 	@echo "## xNVMe: make clean"
 	rm -fr $(BUILD_DIR) || true
 	@echo "## xNVMe: make clean [DONE]"
+
+define clean-python-help
+# Remove python build files
+endef
+.PHONY: clean-python
+clean-python:
+	@echo "## xNVMe: make clean-python"
+	cd python && make clean
+	@echo "## xNVMe: make clean-python [DONE]"
 
 define clean-subprojects-help
 # Remove Meson builddir as well as running 'make clean' in all subprojects 
