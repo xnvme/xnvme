@@ -3,7 +3,7 @@
 #
 TOOLBOX_DIR?=../toolbox
 PROJECT_NAME=xnvme
-XNVME_CAPI_HEADERS=$(shell ls ../include/libxnvme* | grep -v util | grep -v libxnvmec)
+XNVME_CAPI_HEADERS=$(shell ls ../../include/libxnvme* | grep -v util | grep -v libxnvmec)
 
 define default-help
 # invoke: 'make uninstall', 'make install'
@@ -12,6 +12,12 @@ endef
 default: build
 	@echo "## py: make default"
 	@echo "## py: make default [DONE]"
+
+define build-help
+# Do the common task during development of: uninstall clean build install test
+endef
+.PHONY: all
+all: uninstall clean build install test
 
 define build-help
 # Generate ctypes, patch them, then create a source package
@@ -69,7 +75,7 @@ endef
 generate-ctypes:
 	@echo "## py: gen"
 	@echo "## py:headers: ${XNVME_CAPI_HEADERS}"
-	@clang2py ${XNVME_CAPI_HEADERS} --clang-args="-I../include" > xnvme/ctypes_mapping.py
+	@clang2py ${XNVME_CAPI_HEADERS} --clang-args="-I../../include" > xnvme/ctypes_mapping/api.py
 	@echo "## Remember to also call 'make patch-ctypes' to fix format"
 	@echo "## py: gen [DONE]"
 
@@ -79,8 +85,8 @@ endef
 .PHONY: patch-ctypes
 patch-ctypes:
 	@echo "## py: gen"
-	@python3 aux/patch_ctypes_mapping.py --path xnvme/ctypes_mapping.py
-	@black xnvme/ctypes_mapping.py || echo "could not fix format"
+	@python3 aux/patch_ctypes_mapping.py --path xnvme/ctypes_mapping/api.py
+	@black xnvme/ctypes_mapping/api.py || echo "could not fix format"
 	@echo "## py: gen [DONE]"
 
 define clean-help
