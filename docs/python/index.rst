@@ -41,7 +41,8 @@ For a description of building and installing the package from source, then see
 the :ref:`sec-python-development` section.
 
 .. note:: The **xNVMe** Python package comes with pytests, thus, you can verify
-   your installation by running: ``python3 -m pytest --pyargs xnvme``.
+   your installation by running: ``python3 -m pytest --pyargs
+   xnvme.ctypes_mapping``.
 
 .. _sec-python-ctypes:
 

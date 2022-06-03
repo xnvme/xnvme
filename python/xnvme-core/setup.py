@@ -36,8 +36,8 @@ setuptools.setup(
     data_files=[
         ("bin", glob.glob("bin/*")),
     ],
-    package_dir={"": "./"},
-    packages=setuptools.find_packages(where="./"),
+    packages=setuptools.find_namespace_packages(include=["xnvme.*"]),
     python_requires=">=3.6",
     install_requires=["pytest"],
+    zip_safe=False,
 )
