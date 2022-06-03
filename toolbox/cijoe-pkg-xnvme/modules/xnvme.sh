@@ -91,12 +91,12 @@ xnvme.fioe() {
       #return 1
     fi
 
-    _cmd="${_cmd} --ioengine=external:${_fioe_so}"
+    _cmd="${_cmd} --ioengine=\"external:${_fioe_so}\""
     _cmd="${_cmd} --xnvme_async=${XNVME_ASYNC}"
     _cmd="${_cmd} --xnvme_sync=${XNVME_SYNC}"
     _cmd="${_cmd} --xnvme_admin=${XNVME_ADMIN}"
     _cmd="${_cmd} --xnvme_dev_nsid=${XNVME_DEV_NSID}"
-    _cmd="${_cmd} --filename=${_fioe_uri}"
+    _cmd="${_cmd} --filename=\"${_fioe_uri}\""
 
   # Add the special-sauce for the external SPDK io-engine spdk_nvme
   elif [[ "$ioengine_name" == "spdk_nvme" ]]; then
@@ -122,7 +122,7 @@ xnvme.fioe() {
   # Add the not-so-special-sauce for built-in io-engines
   else
     _cmd="${_cmd} --ioengine=${ioengine_name}"
-    _cmd="${_cmd} --filename=${XNVME_URI}"
+    _cmd="${_cmd} --filename=\"${XNVME_URI}\""
   fi
 
   if [[ -v FIO_AUX ]]; then
