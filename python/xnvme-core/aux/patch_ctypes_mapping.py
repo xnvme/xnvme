@@ -21,9 +21,9 @@ def parse_args():
 
 
 SNIPPETS = {
-    "import": ("import ctypes\n" "import sys\n" "\n" "import xnvme.library_loader"),
+    "import": ("import ctypes\n" "import sys\n" "\n" "from . import library_loader"),
     "loader": (
-        "_libraries['xnvme'] = xnvme.library_loader.load()\n"
+        "_libraries['xnvme'] = library_loader.load()\n"
         "is_loaded = _libraries['xnvme'] is not None\n"
         "_libraries['xnvme'] = _libraries['xnvme' ]"
         " if _libraries['xnvme'] else FunctionFactoryStub()"
@@ -54,8 +54,8 @@ def main(args):
     # everything in a single library then just change this to 'xnvme'
     code = code.replace("FIXME_STUB", "xnvme")
 
-    # Replace the FactoryStub/direct ctypes.CDLL load with 'xnvme.library_loader' and
-    # provide a variable to probe for state
+    # Replace the FactoryStub/direct ctypes.CDLL load with
+    # 'xnvme.ctypes_mapping.library_loader' and provide a variable to probe for state
     code = code.replace("import ctypes", SNIPPETS["import"])
     code = code.replace(
         "_libraries['xnvme'] = FunctionFactoryStub()", SNIPPETS["loader"]

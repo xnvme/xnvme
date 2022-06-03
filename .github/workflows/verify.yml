@@ -252,6 +252,8 @@ jobs:
   #
   # Build Python-bindings
   #
+  # This produces the Python source-package for the Python package in '/python/xnvme-core'
+  #
   build-python:
     needs: source-archive
     runs-on: ubuntu-latest
@@ -279,12 +281,12 @@ jobs:
 
     - name: Python bindings, Python packages
       run: |
-        cd python
+        cd python/xnvme-core
         python3 -m pip install -r requirements.txt
 
     - name: Python bindings, generate, patch, and build-sdist
       run: |
-        cd python
+        cd python/xnvme-core
         make build
         for file in dist/*.tar.gz; do mv $file ${file//xnvme/xnvme-py}; done
 
@@ -292,7 +294,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: python-pkg
-        path: python/dist/xnvme-py-*.tar.gz
+        path: python/xnvme-core/dist/xnvme-py-*.tar.gz
 
   #
   # Build on Linux using different Linux distributions
@@ -395,7 +397,7 @@ jobs:
       if: (!contains(matrix.container.ver, 'bookworm'))
       run: |
         python3 -m pip install xnvme-py*.tar.gz --user
-        python3 -m pytest --pyargs xnvme
+        python3 -m pytest --pyargs xnvme.ctypes_mapping
 
   #
   # Build on macOS
@@ -468,7 +470,7 @@ jobs:
     - name: Install and test xNVMe Python bindings
       run: |
         python3 -m pip install xnvme-py*.tar.gz --user
-        python3 -m pytest --pyargs xnvme
+        python3 -m pytest --pyargs xnvme.ctypes_mapping
 
   #
   # Build on Windows
