@@ -2,16 +2,24 @@
  xNVMe Cython and ctypes language-bindings for Python
 ======================================================
 
-This package provides "raw" Python language-bindings to the xNVMe C API.
+In an attempt to separate the build, runtime, and distrbution requirements of
+the **xNVMe** Python bindings then they are packaged as `namespace packages`_.
 
-For documentation consult the following:
+* xnvme-core
+  - Distribution package name: ``xnvme``
+  - Provides Python bindings to **xNVMe** via ``ctypes``
+  - Also, if needed then this package can ship plain-Python utilities
+  - Intented to be distributed as a Python source-package
 
-* The online docs_ for the latest released version
-* The ``docs/python`` folder on the next_ branch of the repository_ for the
-  upcoming release
-* The ``docs/python/`` folder in the repository_ on any outstanding pull-requests_.
+* xnvme-cython
+  - distribution package name: ``xnvme-cython``
+  - Provides Python bindings to **xNVMe** via ``Cython``
+  - Intended to be distributed as a Python binary wheel
 
-.. _docs: https://xnvme.io/docs/latest/python
-.. _next: https://github.com/OpenMPDK/xNVMe/tree/next
-.. _repository: https://github.com/OpenMPDK/xNVMe
-.. _pull-requests: https://github.com/OpenMPDK/xNVMe/pulls
+* xnvme-libraries
+  - Distribution package name: ``xnvme-libraries``
+  - If feasible, then this package should be distributed as a Python
+    source-package containing the entire **xNVMe** source-archive, thus, upon
+    install triggering the build of **xNVMe** producing the shared library
+
+.. _namespace packages: https://packaging.python.org/en/latest/guides/packaging-namespace-packages/
