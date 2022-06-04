@@ -2,14 +2,11 @@
 @setlocal enableextensions enabledelayedexpansion
 
 set PROJECT=xnvme
-set PROJECT_VER=0.0.27
 set CC=clang
 set MESON=meson
 set BUILD_TYPE=release
-set PLATFORM_ID=Windows
 set BUILD_DIR=builddir
 set NPROC=%NUMBER_OF_PROCESSORS%
-set CTAGS=ctags
 set GIT=git
 set INFO=
 set CLOBBER=
@@ -141,24 +138,9 @@ goto :eof
 
 :info
 	@echo "## xNVMe: make info"
-	@echo "PLATFORM: %PLATFORM_ID%"
 	@echo "CC: %CC%"
-	@echo "CTAGS: %CTAGS%"
 	@echo "NPROC: %NPROC%"
-	@echo "PROJECT_VER: %PROJECT_VER%"
 	@echo "## xNVMe: make info [DONE]"
-	@goto :eof
-
-:git-setup
-	@echo "## xNVMe:: git-setup"
-	%SH% -c "%GIT% config core.hooksPath .githooks || true"
-	@echo "## xNVMe:: git-setup [DONE]"
-	@goto :eof
-
-:tags
-	@echo "## xNVMe: make tags"
-	%SH% -c "%CTAGS% * --languages=C -h="".c.h"" -R --exclude=builddir,include,src,tools,examples,tests,subprojects/* || true"
-	@echo "## xNVMe: make tags [DONE]"
 	@goto :eof
 
 :_require_builddir
