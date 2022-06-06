@@ -110,14 +110,14 @@ xnvme.fioe() {
   # Add the special-sauce for the external SPDK/nvme_bdev
   elif [[ "$ioengine_name" == "spdk_bdev" ]]; then
     # Produce SPDK config-file
-    echo "[Nvme]" > /tmp/spdk.bdev.conf
-    echo "  TransportID \"trtype:PCIe traddr:${PCI_DEV_NAME}\" Nvme0" >> /tmp/spdk.bdev.conf
-    ssh.push /tmp/spdk.bdev.conf /opt/aux/spdk.bdev.conf
+    #echo "[Nvme]" > /tmp/spdk.bdev.conf
+    #echo "  TransportID \"trtype:PCIe traddr:${PCI_DEV_NAME}\" Nvme0" >> /tmp/spdk.bdev.conf
+    #ssh.push /tmp/spdk.bdev.conf /opt/aux/spdk.bdev.conf
 
     _cmd="LD_PRELOAD=${SPDK_FIOE_ROOT}/${ioengine_name} ${_cmd}"
     _cmd="${_cmd} --ioengine=${ioengine_name}"
-    _cmd="${_cmd} --spdk_conf=${SPDK_FIOE_ROOT}/spdk.bdev.conf"
-    _cmd="${_cmd} --filename=Nvme0n1"
+    _cmd="${_cmd} --spdk_json_conf=${SPDK_JSON_CONF}"
+    _cmd="${_cmd} --filename=${SPDK_FIOE_FILENAME}"
 
   # Add the not-so-special-sauce for built-in io-engines
   else
