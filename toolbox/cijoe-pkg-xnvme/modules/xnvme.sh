@@ -113,11 +113,15 @@ xnvme.fioe() {
     #echo "[Nvme]" > /tmp/spdk.bdev.conf
     #echo "  TransportID \"trtype:PCIe traddr:${PCI_DEV_NAME}\" Nvme0" >> /tmp/spdk.bdev.conf
     #ssh.push /tmp/spdk.bdev.conf /opt/aux/spdk.bdev.conf
+    cij.emph "engine: spdk_bdev engine... [$XNVME_FOO] --- [$SPDK_JSON_CONF]"
+
+    local _filename=${SPDK_FIOE_FILENAME//:/.};
+    local _spdk_json_conf=${SPDK_JSON_CONF}
 
     _cmd="LD_PRELOAD=${SPDK_FIOE_ROOT}/${ioengine_name} ${_cmd}"
     _cmd="${_cmd} --ioengine=${ioengine_name}"
-    _cmd="${_cmd} --spdk_json_conf=${SPDK_JSON_CONF}"
-    _cmd="${_cmd} --filename=${SPDK_FIOE_FILENAME}"
+    _cmd="${_cmd} --spdk_json_conf=\"${_spdk_json_conf}\""
+    _cmd="${_cmd} --filename=\"${_filename}\""
 
   # Add the not-so-special-sauce for built-in io-engines
   else
