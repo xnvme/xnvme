@@ -74,6 +74,7 @@ jobs:
       with:
         name: archive-src
         path: builddir/meson-dist/*.tar.gz
+        if-no-files-found: error
 
   #
   # Check source-format using pre-commit
@@ -290,6 +291,7 @@ jobs:
       with:
         name: python-pkg
         path: python/xnvme-core/dist/xnvme-py-*.tar.gz
+        if-no-files-found: error
 
   #
   # Build on Linux using different Linux distributions
@@ -681,6 +683,7 @@ jobs:
       with:
         name: test-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
         path: ${{ steps.cijoe-qemu.outputs.results }}/*
+        if-no-files-found: error
 
   # This is a lot of effort to generate documentation, however, it ensures that command-line
   # utilities, build-examples, commands-output of various kinds are up-to-date.
