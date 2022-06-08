@@ -396,6 +396,9 @@ jobs:
     - name: Install and test xNVMe Python bindings
       if: (!contains(matrix.container.ver, 'bookworm'))
       run: |
+        # Testing sdist build with just ctypes bindings
+        python3 -m pip install 'setuptools>=40.1' --user # Introduction of find_namespace_packages
+        python3 -c 'import setuptools;print(setuptools.__version__)'
         python3 -m pip install xnvme-py*.tar.gz --user
         python3 -m pytest --pyargs xnvme.ctypes_mapping
 
