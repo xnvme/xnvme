@@ -38,6 +38,9 @@ setuptools.setup(
     ],
     packages=setuptools.find_namespace_packages(include=["xnvme.*"]),
     python_requires=">=3.6",
-    install_requires=["pytest"],
+    install_requires=[
+        "pytest",
+        "setuptools>=40.1",  # Introduction of find_namespace_packages
+    ],
     zip_safe=False,
 )
