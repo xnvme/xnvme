@@ -119,8 +119,7 @@ clean:
 	@rm -r dist || echo "Cannot remove => That is OK"
 	@rm -r *.egg-info || echo "Cannot remove => That is OK"
 	@rm MANIFEST || echo "Cannot remove => That is OK"
-	@rm xnvme/libxnvme.pxd || echo "Cannot remove => That is OK"
-	@rm xnvme/ctypes_mapping.py || echo "Cannot remove => That is OK"
+	@rm xnvme/cython_mapping/libxnvme.pxd || echo "Cannot remove => That is OK"
 	@echo "## py: clean [DONE]"
 
 define help-help

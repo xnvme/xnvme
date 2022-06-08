@@ -250,7 +250,7 @@ endef
 .PHONY: clean-python
 clean-python:
 	@echo "## xNVMe: make clean-python"
-	cd python && make clean
+	cd python/xnvme-core && make clean
 	@echo "## xNVMe: make clean-python [DONE]"
 
 define clean-subprojects-help
