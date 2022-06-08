@@ -2,15 +2,15 @@ import glob
 import os
 from distutils.command.sdist import sdist
 
-from setuptools import setup
+from setuptools import find_namespace_packages, setup
 
 PACKAGE_NAME = "xnvme"
 cy_xnvme_pkg_path = os.path.dirname(os.path.realpath(__file__))
-WORKSPACE_ROOT = cy_xnvme_pkg_path + "/.."
+WORKSPACE_ROOT = cy_xnvme_pkg_path + "/../.."
 VERSION = "v0.0.0"
 
 LIB_PXD = "libxnvme.pxd"
-LIB_PXD_PATH = f"{cy_xnvme_pkg_path}/{PACKAGE_NAME}/{LIB_PXD}"
+LIB_PXD_PATH = f"{cy_xnvme_pkg_path}/{PACKAGE_NAME}/cython_mapping/{LIB_PXD}"
 
 
 class pre_process_sdist(sdist):
@@ -53,8 +53,8 @@ setup(
     data_files=[
         ("bin", glob.glob("bin/*")),
     ],
-    packages=setuptools.find_namespace_packages(include=["xnvme.*"]) + ["xnvme", "xnvme.tests"],
-    package_data={"": [LIB_PXD]},
+    packages=find_namespace_packages(include=["xnvme.*"]),
+    package_data={"": [LIB_PXD, "test_cython.pyx", "requirements.txt"]},
     include_package_data=True,
     cmdclass={"sdist": pre_process_sdist},
     python_requires=">=3.6",

@@ -8,6 +8,7 @@ the **xNVMe** Python bindings then they are packaged as `namespace packages`_.
 * xnvme-core
   - Distribution package name: ``xnvme``
   - Provides Python bindings to **xNVMe** via ``ctypes``
+  - Provides Cython header to **xNVMe** via a `.pxd` file
   - Also, if needed then this package can ship plain-Python utilities
   - Intented to be distributed as a Python source-package
 
