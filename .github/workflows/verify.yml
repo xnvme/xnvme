@@ -279,11 +279,6 @@ jobs:
       run: |
         apk add clang-libs
 
-    - name: Python bindings, Python packages
-      run: |
-        cd python/xnvme-core
-        python3 -m pip install -r requirements.txt
-
     - name: Python bindings, generate, patch, and build-sdist
       run: |
         cd python/xnvme-core
