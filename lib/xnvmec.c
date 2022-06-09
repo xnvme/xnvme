@@ -469,6 +469,13 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 		.descr = "System URI e.g. '10.9.8.1:8888'",
 	},
 	{
+		.opt = XNVMEC_OPT_SUBNQN,
+		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.name = "subnqn",
+		.descr = "Subsystem NQN of the NVMe over Fabrics endpoint e.g. "
+			 "'nqn.2022-06.io.xnvme:ctrlnode1'",
+	},
+	{
 		.opt = XNVMEC_OPT_CNTID,
 		.vtype = XNVMEC_OPT_VTYPE_HEX,
 		.name = "cntid",
@@ -1223,6 +1230,9 @@ xnvmec_assign_arg(struct xnvmec *cli, struct xnvmec_opt_attr *opt_attr, char *ar
 	case XNVMEC_OPT_SYS_URI:
 		args->sys_uri = arg ? arg : "INVALID_INPUT";
 		break;
+	case XNVMEC_OPT_SUBNQN:
+		args->subnqn = arg ? arg : "INVALID_INPUT";
+		break;
 	case XNVMEC_OPT_UUID:
 		args->uuid = num;
 		break;
@@ -1829,6 +1839,7 @@ xnvmec_cli_to_opts(const struct xnvmec *cli, struct xnvme_opts *opts)
 	opts->main_core = cli->args.main_core;
 	opts->core_mask = cli->args.core_mask;
 	opts->adrfam = cli->args.adrfam;
+	opts->subnqn = cli->args.subnqn;
 
 	errno = 0;
 

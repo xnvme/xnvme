@@ -116,6 +116,8 @@ struct xnvmec_args {
 	const char *uri;
 	const char *sys_uri;
 
+	const char *subnqn;
+
 	const char *cmd_input;
 	const char *cmd_output;
 
@@ -352,7 +354,9 @@ enum xnvmec_opt {
 
 	XNVMEC_OPT_VEC_CNT = 97, ///< XNVMEC_OPT_VEC_CNT
 
-	XNVMEC_OPT_END = 98, ///< XNVMEC_OPT_END
+	XNVMEC_OPT_SUBNQN = 98, ///< XNVME_OPT_SUBNQN
+
+	XNVMEC_OPT_END = 99, ///< XNVMEC_OPT_END
 };
 
 /**
