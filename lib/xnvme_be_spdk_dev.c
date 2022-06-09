@@ -306,9 +306,11 @@ _xnvme_be_spdk_ident_to_trid(const struct xnvme_ident *ident, struct xnvme_opts 
 				    spdk_nvme_transport_id_trtype_str(trtype));
 			return -EINVAL;
 		}
-		snprintf(trid_str, sizeof(trid_str), "trtype:%s adrfam:%s traddr:%s trsvcid:%d",
+		snprintf(trid_str, sizeof(trid_str),
+			 "trtype:%s adrfam:%s traddr:%s trsvcid:%d subnqn:%s",
 			 spdk_nvme_transport_id_trtype_str(trtype),
-			 opts->adrfam ? opts->adrfam : "IPv4", addr, port);
+			 opts->adrfam ? opts->adrfam : "IPv4", addr, port,
+			 opts->subnqn ? opts->subnqn : SPDK_NVMF_DISCOVERY_NQN);
 		break;
 
 	case SPDK_NVME_TRANSPORT_FC:
@@ -323,16 +325,6 @@ _xnvme_be_spdk_ident_to_trid(const struct xnvme_ident *ident, struct xnvme_opts 
 		XNVME_DEBUG("FAILED: parsing trid_str: %s from uri: %s, err: %d", trid_str,
 			    ident->uri, err);
 		return err;
-	}
-
-	switch (trtype) {
-	case SPDK_NVME_TRANSPORT_PCIE:
-		break;
-
-	case SPDK_NVME_TRANSPORT_TCP:
-	case SPDK_NVME_TRANSPORT_RDMA:
-		snprintf(trid->subnqn, sizeof trid->subnqn, "%s", SPDK_NVMF_DISCOVERY_NQN);
-		break;
 	}
 
 	return 0;
@@ -683,16 +675,16 @@ xnvme_be_spdk_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enum
 			}
 
 			snprintf(trid_str, sizeof trid_str,
-				 "trtype:%s adrfam:%s traddr:%s trsvcid:%d",
+				 "trtype:%s adrfam:%s traddr:%s trsvcid:%d subnqn:%s",
 				 spdk_nvme_transport_id_trtype_str(trtype),
-				 opts->adrfam ? opts->adrfam : "IPv4", addr, port);
+				 opts->adrfam ? opts->adrfam : "IPv4", addr, port,
+				 opts->subnqn ? opts->subnqn : SPDK_NVMF_DISCOVERY_NQN);
 
 			err = spdk_nvme_transport_id_parse(&trid, trid_str);
 			if (err) {
 				XNVME_DEBUG("FAILED: id_parse(): %s, err: %d", trid_str, err);
 				continue;
 			}
-			snprintf(trid.subnqn, sizeof trid.subnqn, "%s", SPDK_NVMF_DISCOVERY_NQN);
 			break;
 
 		case SPDK_NVME_TRANSPORT_FC:
