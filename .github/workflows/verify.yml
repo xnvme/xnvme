@@ -674,6 +674,7 @@ jobs:
           --env ${{ steps.cijoe-qemu.outputs.target-env }} \
           --output ${{ steps.cijoe-qemu.outputs.results }} \
           --testplan \
+          "${CIJ_TESTPLANS}/xnvme-cython.plan" \
           "${CIJ_TESTPLANS}/xnvme-python.plan" \
           "${CIJ_TESTPLANS}/xnvme-zns-zrwa-linux-nvme.plan" \
           "${CIJ_TESTPLANS}/xnvme-zns-zrwa-linux-spdk.plan" \
