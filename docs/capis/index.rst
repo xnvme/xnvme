@@ -54,7 +54,6 @@ form.
    xnvme_dev
    xnvme_geo
    xnvme_spec
-   xnvme_sgl
    xnvme_libconf
    xnvme_ver
    xnvmec

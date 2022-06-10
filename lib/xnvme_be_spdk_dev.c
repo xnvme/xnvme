@@ -15,7 +15,6 @@
 #include <xnvme_queue.h>
 #include <xnvme_be_spdk.h>
 #include <xnvme_dev.h>
-#include <xnvme_sgl.h>
 #include <libxnvme_spec.h>
 #include <libxnvme_adm.h>
 
