@@ -312,7 +312,6 @@ jobs:
         # Using an alpine container which is the same as upstream but with bash
         # alpine: SPDK not supported, --with-spdk=false
         # centos7: liburing 2.1 not supported, --with-liburing=false
-        # debian-stretch: liburing 2.1 not supported, --with-liburing=false
         - {os: 'alpine', dh: 'refenv/alpine-bash', ver: 'latest'}
         - {os: 'archlinux', dh: 'archlinux', ver: 'latest'}
         - {os: 'centos', dh: 'tgagor/centos', ver: 'stream9'}
@@ -321,7 +320,6 @@ jobs:
         - {os: 'debian', dh: 'debian', ver: 'bookworm'}
         - {os: 'debian', dh: 'debian', ver: 'bullseye'}
         - {os: 'debian', dh: 'debian', ver: 'buster'}
-        - {os: 'debian', dh: 'debian', ver: 'stretch'}
         - {os: 'fedora', dh: 'fedora', ver: '36'}
         - {os: 'fedora', dh: 'fedora', ver: '35'}
         - {os: 'fedora', dh: 'fedora', ver: '34'}
