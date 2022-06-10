@@ -164,7 +164,6 @@ def main(args):
         "xnvme_libconf",
         "xnvme_nvm",
         "xnvme_opts",
-        "xnvme_sgl",
         "xnvme_spec",
         "xnvme_util",
         "xnvme_ver",
