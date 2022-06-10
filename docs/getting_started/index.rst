@@ -280,31 +280,6 @@ Then go ahead and configure, build and install using ``meson``:
    :language: bash
    :lines: 2-
 
-Debian 9 (Stretch)
-------------------
-
-From the root of the **xNVMe** repository, do:
-
-.. literalinclude:: ../../toolbox/pkgs/debian-stretch.sh
-   :language: bash
-   :lines: 17-
-
-The above will install following packages seen below via the system
-package-manager and via ``pip3``:
-
-.. literalinclude:: ../../toolbox/pkgs/debian-stretch.txt
-   :language: bash
-
-Then go ahead and configure, build and install using ``meson``:
-
-.. note:: Debian 9 / stretch is EOL, LTS support is available EOL June 2022.
-   After this date xNVMe will stop supporting it. Currently, liburing 2.1 is
-   not supported, so dropping that via configuration options.
-
-.. literalinclude:: ../../toolbox/pkgs/default-build.sh
-   :language: bash
-   :lines: 2-
-
 Fedora (36)
 -----------
 
