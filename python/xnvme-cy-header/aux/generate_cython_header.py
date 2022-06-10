@@ -6,8 +6,6 @@ from io import StringIO
 import autopxd
 
 regex = [
-    r"s/SLIST_ENTRY\(xnvme_sgl\)/struct{struct xnvme_sgl *sle_next;}/g",
-    r"s/SLIST_HEAD\(, xnvme_sgl\)/struct{struct xnvme_sgl *slh_first;}/g",
     r"s/SLIST_ENTRY\(xnvme_cmd_ctx\)/struct{struct xnvme_cmd_ctx *sle_next;}/g",
     r"s/SLIST_HEAD\(, xnvme_cmd_ctx\)/struct{struct xnvme_cmd_ctx *slh_first;}/g",
     r"s/struct iovec\s?\*/void */g",
@@ -55,7 +53,6 @@ ctypedef bint bool
         "libxnvme_znd.h",
         "libxnvme_pp.h",
         "libxnvme_be.h",
-        "libxnvme_sgl.h",
         "libxnvme_adm.h",
         "libxnvme_buf.h",
         "libxnvme_util.h",
