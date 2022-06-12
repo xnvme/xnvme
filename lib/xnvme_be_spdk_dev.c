@@ -762,6 +762,16 @@ xnvme_be_spdk_state_init(struct xnvme_dev *dev)
 
 		XNVME_DEBUG("INFO: found dev->ident.uri: '%s' via cref_lookup()", dev->ident.uri);
 
+		err = spdk_nvme_ctrlr_process_admin_completions(state->ctrlr);
+		if (err < 0) {
+			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_process_admin_completions, err: %d",
+				    err);
+			if (_cref_deref(state->ctrlr, true)) {
+				XNVME_DEBUG("FAILED: _cref_deref");
+			}
+			goto probe;
+		}
+
 		ns = spdk_nvme_ctrlr_get_ns(state->ctrlr, dev->opts.nsid);
 		if (!ns) {
 			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_ns(0x%x)", dev->opts.nsid);
