@@ -26,6 +26,8 @@ endef
 build-py-env:
 	@echo "Creating Python virtual env"
 	@${PY} -m venv .build-py-env
+	@echo "Upgrading pip"
+	@${PY_ENV} -m pip install --upgrade pip
 	@echo "Install python dependencies"
 	@${PY_ENV} -m pip install -r requirements.txt
 
@@ -44,7 +46,7 @@ build: build-py-env generate-ctypes patch-ctypes
 	@echo "Building..."
 	@${PY_ENV} setup.py sdist
 	@echo "Copy to build directory"
-	@for file in dist/*.tar.gz; do mv $$file $${file//xnvme/xnvme-py}; done
+	@bash -c 'for file in dist/*.tar.gz; do mv $$file $${file//xnvme-0/xnvme-core-0}; done'
 	@echo "## py: make build-sdist [DONE]"
 
 define install-help
