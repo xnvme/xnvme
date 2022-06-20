@@ -261,6 +261,8 @@ jobs:
     if: ((github.event_name == 'pull_request') || ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job
       == 'all') || contains('build-linux', github.event.inputs.job))))
     container: refenv/alpine-bash
+    strategy:
+      fail-fast: false
 
     steps:
     - name: Retrieve the source-archive
@@ -280,16 +282,19 @@ jobs:
       run: |
         apk add clang-libs
 
-    - name: Python bindings, generate, patch, and build-sdist
+    - name: Python/Cython mappings and Python bindings using Cython -- we're not uploading the bdist!
       run: |
-        cd python/xnvme-core
-        make build
+        cd python/xnvme-cython
+        # This also builds xnvme-core
+        make clean build-py-env build-sdist
 
-    - name: Upload Python package
+    - name: Upload Python xnvme-core and xnvme-bindings package
       uses: actions/upload-artifact@v2
       with:
-        name: python-pkg
-        path: python/xnvme-core/dist/xnvme-py-*.tar.gz
+        name: python-xnvme-pkg
+        path: |
+          python/xnvme-core/dist/xnvme-core-*.tar.gz
+          python/xnvme-cython/dist/xnvme-bindings-*.tar.gz
         if-no-files-found: error
 
   #
@@ -385,16 +390,17 @@ jobs:
     - name: Retrieve the xNVMe Python bindings (prebuilt sdist)
       uses: actions/download-artifact@v2
       with:
-        name: python-pkg
+        name: python-xnvme-pkg
 
     - name: Build and test Cython bindings
       if: "!contains(matrix.container.ver, 'bookworm')"
       run: |
+        set -e
         # Testing sdist build with just ctypes bindings
         python3 -m pip install 'setuptools>=40.1' --user # Introduction of find_namespace_packages
         python3 -c 'import setuptools;print(setuptools.__version__)'
-        python3 -m pip install xnvme-py*.tar.gz --user
-        python3 -m pytest --pyargs xnvme.ctypes_mapping
+        python3 -m pip install xnvme-core/dist/xnvme-core-*.tar.gz --user
+        python3 -m pytest --pyargs xnvme.ctypes_mapping -s
 
         # Locating local repo tests to build tests for Cython bindings
         cd python/xnvme-core/xnvme/cython_mapping/tests/
@@ -403,7 +409,15 @@ jobs:
         # Following path is a temp fix for Arch, CentOS 7/8 and Gentoo
         PKG_CONFIG_PATH="/usr/local/lib64/pkgconfig:/usr/local/lib/pkgconfig" python3 setup.py build_ext --inplace
         # Only test_dummy works without an NVMe drive
-        python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v
+        python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v -s
+        cd ../../../../../
+
+        # Testing locally compiled Python bindings from sdist
+        python3 -m pip install -r python/xnvme-cython/requirements.txt --user # Build requirements
+        # Don't use build-isolation when we only have the packages locally. This isn't a problem on PyPi.
+        python3 -m pip install xnvme-cython/dist/xnvme-bindings-*.tar.gz --user -vvv --no-build-isolation
+        python3 -m pip install -r python/xnvme-cython/xnvme/bindings/tests/requirements.txt --user # Test requirements
+        python3 -m pytest --pyargs xnvme.bindings -k 'test_version' -s
 
   #
   # Build on macOS
@@ -471,20 +485,29 @@ jobs:
     - name: Retrieve the xNVMe Python bindings (prebuilt sdist)
       uses: actions/download-artifact@v2
       with:
-        name: python-pkg
+        name: python-xnvme-pkg
 
     - name: Build and test Cython bindings
       run: |
+        set -e
         # Testing sdist build with just ctypes bindings
-        python3 -m pip install xnvme-py*.tar.gz --user
-        python3 -m pytest --pyargs xnvme.ctypes_mapping
+        python3 -m pip install xnvme-core/dist/xnvme-core-*.tar.gz --user
+        python3 -m pytest --pyargs xnvme.ctypes_mapping -s
 
         # Locating local repo tests to build tests for Cython bindings
         cd python/xnvme-core/xnvme/cython_mapping/tests/
         pip3 install -r requirements.txt --user
         python3 setup.py build_ext --inplace
         # Only test_dummy works without an NVMe drive
-        python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v
+        python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v -s
+        cd ../../../../../
+
+        # Testing locally compiled Python bindings from sdist
+        python3 -m pip install -r python/xnvme-cython/requirements.txt --user # Build requirements
+        # Don't use build-isolation when we only have the packages locally. This isn't a problem on PyPi.
+        python3 -m pip install xnvme-cython/dist/xnvme-bindings-*.tar.gz --user -vvv --no-build-isolation
+        python3 -m pip install -r python/xnvme-cython/xnvme/bindings/tests/requirements.txt --user # Test requirements
+        python3 -m pytest --pyargs xnvme.bindings -k 'test_version' -s
   #
   # Build on Windows
   #
@@ -584,10 +607,10 @@ jobs:
       run: |
         tar xzf xnvme*.tar.gz --strip 1
 
-    - name: Retrieve the xNVMe Python bindings (prebuilt sdist)
+    - name: Retrieve the xNVMe Python mappings (prebuilt sdist)
       uses: actions/download-artifact@v2
       with:
-        name: python-pkg
+        name: python-xnvme-pkg
 
     - name: Provision qemu-guest
       id: cijoe-qemu
@@ -605,8 +628,8 @@ jobs:
       run: |
         pushd $(cij_root) && source modules/cijoe.sh && popd
         source ${{ steps.cijoe-qemu.outputs.target-env }}
-        mv xnvme-py*.tar.gz _xnvme-py.tar.gz # Avoid issue with 'xnvme*.tar.gz'
-        ssh.push _xnvme-py.tar.gz xnvme-py.tar.gz
+        ssh.push xnvme-core/dist/xnvme-core-*.tar.gz xnvme-core.tar.gz
+        ssh.push xnvme-cython/dist/xnvme-bindings-*.tar.gz xnvme-bindings.tar.gz
         ssh.push xnvme*.tar.gz xnvme.tar.gz
         cij.cmd "tar xzf xnvme.tar.gz --strip 1"
         cij.cmd "rm xnvme.tar.gz"
@@ -667,7 +690,17 @@ jobs:
         pushd $(cij_root) && source modules/cijoe.sh && popd
         echo 'XNVME_REPO=/root' >> ${{ steps.cijoe-qemu.outputs.target-env }}
         source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij.cmd "pip3 install xnvme-py.tar.gz"
+
+        cij.cmd "pip3 install xnvme-core.tar.gz"
+
+        # Testing locally compiled Python bindings from sdist
+        cij.cmd "pip3 install -r python/xnvme-cython/requirements.txt" # Build requirements
+        # Don't use build-isolation when we only have the packages locally. This isn't a problem on PyPi.
+        cij.cmd "pip3 install xnvme-bindings.tar.gz --user -vvv --no-build-isolation" # Build requirements
+        cij.cmd "pip3 install -r python/xnvme-cython/xnvme/bindings/tests/requirements.txt --user" # Test requirements
+        cij.cmd "python3 -m pytest --pyargs xnvme.bindings -k 'test_version'" -s # Quick self-test of bindings
+
+        # Building local tests. Not normally compiled in Python packages.
         cij.cmd "cd python/xnvme-core/xnvme/cython_mapping/tests/ && pip3 install -r requirements.txt"
         cij.cmd "cd python/xnvme-core/xnvme/cython_mapping/tests/ && python3 setup.py build_ext --inplace"
         cij_runner \
