@@ -4,6 +4,8 @@ import numpy as np
 import pytest
 import xnvme.bindings as xnvme
 
+from . import conftest
+
 NULL = xnvme.xnvme_void_p(0)
 UINT16_MAX = 0xFFFF
 
@@ -28,6 +30,10 @@ def test_ident(dev):
 enumerated_devices = 0
 
 
+@pytest.mark.skipif(
+    conftest.BACKEND == b"spdk",
+    reason="SPDK cannot handle a dev open/close followed by enumerate",
+)
 def test_enum(opts):
     def callback_func(dev, cb_args):
         global enumerated_devices
