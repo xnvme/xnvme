@@ -5,8 +5,6 @@ project(
 )
 fs = import('fs')
 
-get_option('build_subprojects')
-
 if get_option('build_subprojects') and not fs.exists('config-host.h')
   message('Patching ..')
   run_command('./liburing_patches.sh', capture: true, check: true)
@@ -14,7 +12,23 @@ if get_option('build_subprojects') and not fs.exists('config-host.h')
   run_command('./liburing_configure.sh', capture: true, check: true)
 endif
 if get_option('build_subprojects') and not fs.exists('src' / 'liburing.a')
-  run_command('./liburing_build.sh', capture: true, check: true)
+  cpu_count = run_command([
+    import('python').find_installation('python3'),
+    '-c',
+    'from multiprocessing import cpu_count; print(cpu_count())'
+    ],
+    check: true,
+  ).stdout().strip()
+
+  message('Building ..')
+  run_command([
+      find_program(host_machine.system() == 'freebsd' ? 'gmake' : 'make'),
+      '-j',
+      cpu_count
+    ],
+    capture: true,
+    check: true
+  )
 endif
 
 liburing_lib = fs.exists('src' / 'liburing.a') ? meson.get_compiler('c').find_library(
