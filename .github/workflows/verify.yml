@@ -297,6 +297,60 @@ jobs:
           python/xnvme-cython/dist/xnvme-bindings-*.tar.gz
         if-no-files-found: error
 
+  build-python-wheel-manylinux:
+    needs: source-archive
+    runs-on: ubuntu-latest
+    if: ((github.event_name == 'pull_request') || ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job
+      == 'all') || contains('build-linux', github.event.inputs.job))))
+    container: quay.io/pypa/${{ matrix.manylinux-version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['cp36-cp36m', 'cp37-cp37m', 'cp38-cp38', 'cp39-cp39', 'cp310-cp310']
+        manylinux-version: ['manylinux_2_28_x86_64', 'manylinux2010_x86_64']
+
+    steps:
+    - name: Retrieve the source-archive
+      uses: actions/download-artifact@v2
+      with:
+        name: archive-src
+    - name: Extract the full-source-archive
+      run: |
+        tar xzf xnvme*.tar.gz --strip 1
+        rm xnvme*.tar.gz
+
+    - name: Install build-requirements
+      run: |
+        set -e
+        if [[ "${{ matrix.manylinux-version }}" == "manylinux2010_x86_64" ]]; then
+          ./toolbox/pkgs/centos-centos7.sh
+        else
+          ./toolbox/pkgs/centos-stream9.sh
+        fi
+
+    - name: Python bindings, system packages
+      run: |
+        dnf install -y clang-libs
+
+    - name: Retrieve the xNVMe Python bindings (prebuilt sdist)
+      uses: actions/download-artifact@v2
+      with:
+        name: python-xnvme-pkg
+
+    - name: Python/Cython mappings and Python bindings using Cython -- we're not uploading the bdist!
+      run: |
+        cd python/xnvme-cython
+        # This also builds xnvme-core
+        make clean build-py-env build-sdist
+
+    - name: Upload Python xnvme-bindings wheel
+      uses: actions/upload-artifact@v2
+      with:
+        name: python-xnvme-pkg-whl-${{ matrix.python-version }}-${{ matrix.manylinux-version }}
+        path: |
+          python/xnvme-cython/dist/xnvme-bindings-*.whl
+        if-no-files-found: error
+
   #
   # Build on Linux using different Linux distributions
   #
