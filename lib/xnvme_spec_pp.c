@@ -203,6 +203,8 @@ xnvme_spec_nvm_opc_str(enum xnvme_spec_nvm_opc eval)
 		return "NVM_OPC_WRITE";
 	case XNVME_SPEC_NVM_OPC_WRITE_UNCORRECTABLE:
 		return "NVM_OPC_WRITE_UNCORRECTABLE";
+	case XNVME_SPEC_NVM_OPC_COMPARE:
+		return "NVM_OPC_COMPARE";
 	case XNVME_SPEC_NVM_OPC_WRITE_ZEROES:
 		return "NVM_OPC_WRITE_ZEROES";
 	case XNVME_SPEC_NVM_OPC_FLUSH:
