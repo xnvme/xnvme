@@ -1,0 +1,20 @@
+diff --git a/test/io_uring_register.c b/test/io_uring_register.c
+index e639f05..8c32670 100644
+--- a/test/io_uring_register.c
++++ b/test/io_uring_register.c
+@@ -34,12 +34,13 @@ static int devnull;
+ #if !defined(CONFIG_HAVE_MEMFD_CREATE)
+ #include <sys/syscall.h>
+ #include <linux/memfd.h>
+-
+-static int memfd_create(const char *name, unsigned int flags)
++#ifndef memfd_create
++int memfd_create(const char *name, unsigned int flags)
+ {
+ 	return (int)syscall(SYS_memfd_create, name, flags);
+ }
+ #endif
++#endif
+ 
+ 
+ static int expect_fail(int fd, unsigned int opcode, void *arg,
