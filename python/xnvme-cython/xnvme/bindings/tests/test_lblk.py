@@ -1,5 +1,4 @@
 import ctypes
-import tempfile
 
 import conftest
 import numpy as np
@@ -79,16 +78,15 @@ class TestLBLK:
             if ident.csi != xnvme.XNVME_SPEC_CSI_NVM:
                 return xnvme.XNVME_ENUMERATE_DEV_CLOSE
 
-            print("123")
             xnvme.xnvme_ident_yaml(fd, ident, 0, b", ", 0)
 
             return xnvme.XNVME_ENUMERATE_DEV_CLOSE
 
-        temp_file_stream = tempfile.TemporaryFile("wb+")
-        xnvme.xnvme_enumerate(None, opts, callback_func, temp_file_stream.fileno())
-        temp_file_stream.seek(0)
-        data = temp_file_stream.read()
-        breakpoint()
+        fd = xnvme.FILE()
+        fd.tmpfile()
+        xnvme.xnvme_enumerate(None, opts, callback_func, fd)
+        data = fd.getvalue()
+        print(data.decode())
         assert len(data) != 0
 
     # /**

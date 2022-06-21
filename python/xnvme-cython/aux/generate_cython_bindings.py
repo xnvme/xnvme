@@ -9,8 +9,6 @@ def generate_pyx(pxd_contents):
         """
 ctypedef int off_t
 
-ctypedef int FILE
-
 ctypedef bint bool
 """
     )

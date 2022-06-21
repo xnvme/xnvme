@@ -58,6 +58,46 @@ cdef class xnvme_void_p(xnvme_base):
             return <uintptr_t> self.pointer
         return super().__getattr__(attr_name)
 
+from libc cimport stdio
+
+cdef class FILE(xnvme_base):
+    cdef stdio.FILE *pointer
+
+    def __init__(self):
+        pass
+
+    def fopen(self, filename, opentype):
+        self.pointer = stdio.fopen(filename, opentype)
+
+    def fdopen(self, fd, opentype):
+        self.pointer = stdio.fdopen(fd, opentype)
+
+    def fclose(self):
+        return stdio.fclose(self.pointer)
+
+    def tmpfile(self):
+        self.pointer = stdio.tmpfile()
+
+    def fflush(self):
+        return stdio.fflush(self.pointer)
+
+    def getvalue(self, seek_pos=0):
+        offset = stdio.ftell(self.pointer) # Save to reset later
+        stdio.fseek(self.pointer, seek_pos, stdio.SEEK_SET) # Beginning of file-stream
+
+        ret_string = b''
+        cdef char* data = <char*> calloc(1, 4096)
+        while True:
+            ret = stdio.fread(<void*> data, 1, 4096, self.pointer)
+            if ret == stdio.EOF or ret == 0:
+                break
+            ret_string += data[:ret]
+        free(data)
+
+        stdio.fseek(self.pointer, offset, stdio.SEEK_SET) # Reset file-stream position
+        return ret_string
+
+
 class XNVMeException(Exception):
     pass
 

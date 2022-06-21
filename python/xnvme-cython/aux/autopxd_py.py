@@ -246,6 +246,8 @@ from libxnvme cimport {', '.join(enum_defs)}
             for t, n in func_args:
                 if t in ["void*", "uint64_t*"]:
                     statement = f"xnvme_void_p {n}"
+                elif t in ["FILE*"]:
+                    statement = f"FILE {n}"
                 elif t.startswith("xnvme_") or t.startswith("xnvmec_"):
                     statement = f"{t.replace('*','')} {n}"
                 else:
@@ -260,7 +262,7 @@ from libxnvme cimport {', '.join(enum_defs)}
                     ".pointer"
                     if (
                         (t.startswith("xnvme_") or t.startswith("xnvmec_"))
-                        or t in ["void*", "uint64_t*"]
+                        or t in ["void*", "uint64_t*", "FILE*"]
                     )
                     and t not in enum_defs
                     else ""

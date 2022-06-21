@@ -8,6 +8,24 @@ def test_version():
     assert xnvme.xnvme_ver_patch() >= 0
 
 
+def test_libconf():
+    fd = xnvme.FILE()
+    fd.tmpfile()
+    xnvme.xnvme_libconf_fpr(fd, xnvme.XNVME_PR_DEF)
+    data = fd.getvalue()
+    print(data.decode())
+    assert len(data) != 0, "libconf file-stream is empty!"
+
+
+def test_xnvme_ver_fpr():
+    fd = xnvme.FILE()
+    fd.tmpfile()
+    xnvme.xnvme_ver_fpr(fd, xnvme.XNVME_PR_DEF)
+    data = fd.getvalue()
+    print(data.decode())
+    assert len(data) != 0, "version file-stream is empty!"
+
+
 def test_dev(dev):
     assert dev, xnvme.xnvme_dev_pr(dev, xnvme.XNVME_PR_DEF)
 
