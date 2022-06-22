@@ -1,4 +1,5 @@
 import ctypes
+import os
 
 import conftest
 import numpy as np
@@ -342,7 +343,7 @@ class TestLBLK:
     #  * 5) Read, with exponential stride, within [slba,elba] using rbuf
     #  * 6) Verify that the content of rbuf is the same as wbuf
     #  */
-    @pytest.mark.skipif(True, reason="Unfinished")
+    @pytest.mark.skipif(True, reason="Unfinished. Backend has to support write-zero")
     def test_write_zeroes(self, boilerplate):
         (
             dev,
@@ -368,33 +369,32 @@ class TestLBLK:
             shape=(buf_nbytes,),
         )
         rbuf_mem_view[:] = 0
-        # xnvmec_buf_clear(rbuf, buf_nbytes)
-        # compared_bytes = self.read_and_compare_lba_range(
-        self.read_and_compare_lba_range(
+        compared_bytes = self.read_and_compare_lba_range(
             rbuf, wbuf, rng_slba, nlb, mdts_naddr, geo, dev, nsid
         )
 
-        print("Compared {compared_bytes} bytes to !")
+        print(f"Compared {compared_bytes} bytes to !")
 
-        slba = rng_slba
-        while slba < rng_elba:
+        for slba in range(rng_slba, rng_elba, mdts_naddr):
             ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
             nlb = min((rng_elba - slba) * geo.lba_nbytes, UINT16_MAX)
 
             err = xnvme.xnvme_nvm_write_zeroes(ctx, nsid, slba, nlb)
-            assert not (err or xnvme.xnvme_cmd_ctx_cpl_status(ctx)), xnvme.xnvmec_perr(
-                "xnvme_nvm_write_zeroes()", err
+            assert not (err or xnvme.xnvme_cmd_ctx_cpl_status(ctx)), os.strerror(
+                abs(err)
             )
-
-            slba += mdts_naddr
 
         print("Wrote zeroes to LBA range [{rng_slba},{rng_elba}]")
 
-        assert False, "Unimplemented"
-        # # Set the rbuf to != 0 so we know that we read zeroes
-        # memset(rbuf, "a", buf_nbytes)
-        # xnvmec_buf_clear(wbuf, buf_nbytes)
-        # compared_bytes = self.read_and_compare_lba_range(
-        #     rbuf, wbuf, rng_slba, nlb, mdts_naddr, geo, dev, nsid
-        # )
-        # print("Compared {compared_bytes} bytes to zero")
+        # Set the rbuf to != 0 so we know that we read zeroes
+        rbuf_mem_view = np.ctypeslib.as_array(
+            ctypes.cast(rbuf.void_pointer, ctypes.POINTER(ctypes.c_uint8)),
+            shape=(buf_nbytes,),
+        )
+        rbuf_mem_view[:] = b"a"
+
+        xnvme.xnvmec_buf_clear(wbuf, buf_nbytes)
+        compared_bytes = self.read_and_compare_lba_range(
+            rbuf, wbuf, rng_slba, nlb, mdts_naddr, geo, dev, nsid
+        )
+        print(f"Compared {compared_bytes} bytes to zero")
