@@ -17,6 +17,7 @@ testsuites:
   - xpy_dev_open.sh
   - xpy_enumerate.sh
   - xpy_libconf.sh
+  - xcy_cython_mapping_pytest.sh
 
 - name: xpy_userspace
   alias: "Using the user-space NVMe driver"
@@ -26,3 +27,5 @@ testsuites:
   - xpy_dev_open.sh
   - xpy_enumerate.sh
   - xpy_libconf.sh
+  - xcy_cython_mapping_pytest.sh
+

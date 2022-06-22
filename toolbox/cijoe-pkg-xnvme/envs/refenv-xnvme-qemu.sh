@@ -116,3 +116,8 @@ HUGEMEM="${HUGEMEM:=2048}"; export HUGEMEM
 # These are for the nullblock hook, specifically when loading it
 #
 : "${NULLBLK_NR_DEVICES=0}"; export NULLBLK_NR_DEVICES
+
+#
+# Root directory of repo to locate Pytests etc.
+#
+XNVME_REPO="${HOME}/"; export XNVME_REPO

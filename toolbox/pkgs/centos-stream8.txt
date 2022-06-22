@@ -18,3 +18,4 @@ wget
 zlib-devel
 python39
 python39-pip
+python39-devel
