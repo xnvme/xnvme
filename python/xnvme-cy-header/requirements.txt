@@ -1,0 +1,8 @@
+# For ctypes-bindings
+black
+ctypeslib2
+# For cython-bindings
+setuptools>=58.5 # Fixes inclusion of libxnvme.pxd in package_data
+autopxd2>=2.1.1
+# All
+pytest
