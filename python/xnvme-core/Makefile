@@ -43,8 +43,8 @@ endef
 build: build-py-env generate-ctypes patch-ctypes
 	@echo "## py: make build-sdist"
 	@${PY_ENV} setup.py sdist
-	@echo "Copy to build directory"
-	@for file in dist/*.tar.gz; do mv $$file $${file//xnvme/xnvme-py}; done
+	@echo "Rename 'xnvme-m.m.p.tar.gz' to 'xnvme-core-m.m.p.tar.gz'"
+	@mv dist/${PROJECT_NAME}-0.3.0.tar.gz dist/${PROJECT_NAME}-core-0.3.0.tar.gz
 	@echo "## py: make build-sdist [DONE]"
 
 define install-help
