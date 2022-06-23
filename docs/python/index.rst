@@ -80,7 +80,17 @@ something like this::
 Cython
 ======
 
-Python Cython_ ...
+Two offerings are available for consuming xNVMe via Cython_:
+
+* ``xnvme-cy-header``, a Cython header (``libxnvme.pxd``)) providing access to
+  the xNVMe C API from Cython
+
+Brief note on testing the Cython header::
+
+  cd python/xnvme-cy-header/xnvme/cython_mapping/tests/
+  python3 -m pip install -r requirements.txt --user
+  python3 setup.py build_ext --inplace
+  python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v -s
 
 .. _sec-python-development:
 
