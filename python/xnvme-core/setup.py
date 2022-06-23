@@ -1,20 +1,12 @@
-import codecs
 import glob
-import os
 
 import setuptools
 
-
-def read(*parts):
-    """Read parts to use a e.g. long_description"""
-
-    here = os.path.abspath(os.path.dirname(__file__))
-
-    # intentionally *not* adding an encoding option to open, See:
-    #   https://github.com/pypa/virtualenv/issues/201#issuecomment-3145690
-    with codecs.open(os.path.join(here, *parts), "r") as pfp:
-        return pfp.read()
-
+try:
+    with open("README.rst", "r") as f:
+        long_description = f.read()
+except FileNotFoundError:
+    long_description = ""
 
 setuptools.setup(
     name="xnvme",
@@ -22,7 +14,7 @@ setuptools.setup(
     author="Simon A. F. Lund",
     author_email="os@safl.dk",
     description="xNVMe Cython and ctypes language-bindings for Python",
-    long_description=read("README.rst"),
+    long_description=long_description,
     url="https://github.com/OpenMPDK/xNVMe",
     project_urls={
         "Bug Tracker": "https://github.com/OpenMPDK/xNVMe/issues",
