@@ -284,13 +284,12 @@ jobs:
       run: |
         cd python/xnvme-core
         make build
-        for file in dist/*.tar.gz; do mv $file ${file//xnvme/xnvme-py}; done
 
     - name: Upload Python package
       uses: actions/upload-artifact@v2
       with:
         name: python-pkg
-        path: python/xnvme-core/dist/xnvme-py-*.tar.gz
+        path: python/xnvme-core/dist/xnvme-*.tar.gz
         if-no-files-found: error
 
   #
@@ -391,10 +390,7 @@ jobs:
     - name: Install and test xNVMe Python bindings
       if: (!contains(matrix.container.ver, 'bookworm'))
       run: |
-        # Testing sdist build with just ctypes bindings
-        python3 -m pip install 'setuptools>=40.1' --user # Introduction of find_namespace_packages
-        python3 -c 'import setuptools;print(setuptools.__version__)'
-        python3 -m pip install xnvme-py*.tar.gz --user
+        python3 -m pip install xnvme-core-*.tar.gz --user
         python3 -m pytest --pyargs xnvme.ctypes_mapping
 
   #
@@ -467,7 +463,7 @@ jobs:
 
     - name: Install and test xNVMe Python bindings
       run: |
-        python3 -m pip install xnvme-py*.tar.gz --user
+        python3 -m pip install xnvme-core-*.tar.gz --user
         python3 -m pytest --pyargs xnvme.ctypes_mapping
 
   #
