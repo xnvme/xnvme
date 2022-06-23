@@ -11,8 +11,14 @@ the **xNVMe** Python bindings then they are packaged as `namespace packages`_.
   - Also, if needed then this package can ship plain-Python utilities
   - Intented to be distributed as a Python source-package
 
-* xnvme-cython
-  - distribution package name: ``xnvme-cython``
+* xnvme-cy-header
+  - distribution package name: ``xnvme-cy-header``
+  - Provides a Cython (``libxnvme.pxd``) header, making the xNVMe C API
+    available Cython
+  - Intented to be distributed as a Python source-package
+
+* xnvme-cy-bindings
+  - distribution package name: ``xnvme-cy-bindings``
   - Provides Python bindings to **xNVMe** via ``Cython``
   - Intended to be distributed as a Python binary wheel
 
