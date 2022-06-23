@@ -85,7 +85,7 @@ _cref_insert(struct xnvme_ident *ident, struct spdk_nvme_ctrlr *ctrlr)
 }
 
 int
-_cref_deref(struct spdk_nvme_ctrlr *ctrlr)
+_cref_deref(struct spdk_nvme_ctrlr *ctrlr, bool detach_on_no_refcount)
 {
 	if (!ctrlr) {
 		XNVME_DEBUG("FAILED: !ctrlr");
@@ -105,8 +105,10 @@ _cref_deref(struct spdk_nvme_ctrlr *ctrlr)
 		g_cref[i].refcount -= 1;
 
 		if (g_cref[i].refcount == 0) {
-			XNVME_DEBUG("INFO: refcount: %d => detaching", g_cref[i].refcount);
-			spdk_nvme_detach(ctrlr);
+			if (detach_on_no_refcount) {
+				XNVME_DEBUG("INFO: refcount: %d => detaching", g_cref[i].refcount);
+				spdk_nvme_detach(ctrlr);
+			}
 			memset(&g_cref[i], 0, sizeof g_cref[i]);
 		}
 
@@ -435,6 +437,7 @@ attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid, struct spdk_n
 	struct xnvme_opts *opts = &dev->opts;
 	struct xnvme_be_spdk_state *state = (void *)dev->be.state;
 	struct spdk_nvme_ns *ns = NULL;
+	int err;
 
 	XNVME_DEBUG("INFO: nsid: %d", opts->nsid);
 
@@ -454,6 +457,12 @@ attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid, struct spdk_n
 	state->ctrlr = ctrlr;
 	state->attached = 1;
 	opts->spdk_fabrics = trid->trtype > SPDK_NVME_TRANSPORT_PCIE;
+
+	err = _cref_insert(&dev->ident, state->ctrlr);
+	if (err) {
+		XNVME_DEBUG("FAILED: _cref_insert(), err: %d", err);
+		return;
+	}
 }
 
 void
@@ -471,7 +480,7 @@ xnvme_be_spdk_state_term(struct xnvme_be_spdk_state *state)
 			printf("UNHANDLED: pthread_mutex_destroy(): '%s'\n", strerror(err));
 		}
 	}
-	err = _cref_deref(state->ctrlr);
+	err = _cref_deref(state->ctrlr, true);
 	if (err) {
 		XNVME_DEBUG("FAILED: _cref_deref():, err: %d", err);
 	}
@@ -607,6 +616,11 @@ enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
 		}
 		if (ectx->enumerate_cb(dev, ectx->cb_args)) {
 			xnvme_dev_close(dev);
+		}
+
+		err = _cref_deref(ctrlr, false);
+		if (err) {
+			XNVME_DEBUG("FAILED: _cref_deref():, err: %d", err);
 		}
 	}
 
@@ -746,14 +760,14 @@ xnvme_be_spdk_state_init(struct xnvme_dev *dev)
 		ns = spdk_nvme_ctrlr_get_ns(state->ctrlr, dev->opts.nsid);
 		if (!ns) {
 			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_ns(0x%x)", dev->opts.nsid);
-			if (_cref_deref(state->ctrlr)) {
+			if (_cref_deref(state->ctrlr, true)) {
 				XNVME_DEBUG("FAILED: _cref_deref");
 			}
 			goto probe;
 		}
 		if (!spdk_nvme_ns_is_active(ns)) {
 			XNVME_DEBUG("FAILED: !spdk_nvme_ns_is_active(nsid:0x%x)", dev->opts.nsid);
-			if (_cref_deref(state->ctrlr)) {
+			if (_cref_deref(state->ctrlr, true)) {
 				XNVME_DEBUG("FAILED: _cref_deref");
 			}
 			goto probe;
@@ -810,12 +824,6 @@ probe:
 	if (!state->qpair) {
 		XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_alloc_io_qpair()");
 		return -ENOMEM;
-	}
-
-	err = _cref_insert(&dev->ident, state->ctrlr);
-	if (err) {
-		XNVME_DEBUG("FAILED: _cref_insert(), err: %d", err);
-		return err;
 	}
 
 	XNVME_DEBUG("INFO: open() : OK");
