@@ -505,6 +505,10 @@ jobs:
       run: |
         cmd.exe /c "build.bat"
 
+    - name: dump meson-log
+      run: |
+        cat builddir/meson-logs/meson-log.txt || true
+
     - name: Dump the compile-commands and machine
       run: |
         cat /proc/cpuinfo || true
