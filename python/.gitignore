@@ -1,5 +1,11 @@
 .eggs
 api.py
 libxnvme.pxd
+xnvme-cy-bindings/xnvme/bindings/*.pxd
+xnvme-cy-bindings/xnvme/bindings/*.c
+xnvme-cy-bindings/xnvme/bindings/*.pyx
+xnvme-cy-bindings/xnvme/__init__.py
 MANIFEST
 .build-py-env/
+test_cython.c
+test_cython.*.so
