@@ -628,6 +628,10 @@ jobs:
       with:
         name: python-xnvme-pkg
 
+    - name: CIJOE, install cijoe-pkg-xnvme from source-archive
+      run: |
+        pushd toolbox/cijoe-pkg-xnvme && make uninstall && make install-system && popd
+
     - name: Provision qemu-guest
       id: cijoe-qemu
       uses: refenv/gh-cijoe-qemu-action@main
@@ -635,10 +639,6 @@ jobs:
         vm-image: ${{ matrix.guest.img }}
         vm-cloudinit: ${{ matrix.guest.os }}-${{ matrix.guest.ver }}
         cijoe-packages: './toolbox/cijoe-pkg-xnvme/'
-
-    - name: CIJOE, install cijoe-pkg-xnvme from source-archive
-      run: |
-        pushd toolbox/cijoe-pkg-xnvme && make uninstall && make install-system && popd
 
     - name: CIJOE, transfer source to qemu-guest
       run: |
