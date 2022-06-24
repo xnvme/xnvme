@@ -251,9 +251,7 @@ jobs:
       run: docker push refenv/xnvme
 
   #
-  # Build Python-bindings
-  #
-  # This produces the Python source-package for the Python package in '/python/xnvme-core'
+  # Build xNVMe Python packages
   #
   build-python:
     needs: source-archive
@@ -261,6 +259,8 @@ jobs:
     if: ((github.event_name == 'pull_request') || ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job
       == 'all') || contains('build-linux', github.event.inputs.job))))
     container: refenv/alpine-bash
+    strategy:
+      fail-fast: false
 
     steps:
     - name: Retrieve the source-archive
@@ -276,20 +276,27 @@ jobs:
       run: |
         ./toolbox/pkgs/alpine-latest.sh
 
-    - name: Python bindings, system packages
+    - name: Python sdist-packages, system-package deps.
       run: |
         apk add clang-libs
 
-    - name: Python bindings, generate, patch, and build-sdist
+    - name: Python sdist-packages, build(xnvme-core, xnvme-cy-header, and xnvme-cy-bindings)
       run: |
-        cd python/xnvme-core
-        make build
+        cd python/xnvme-cy-bindings
+        make clean build-py-env build-sdist
 
-    - name: Upload Python package
+    - name: Python sdist-packages, find(...)
+      run: |
+        find python/ -name *tar.gz
+
+    - name: Python sdist-packages, upload(xnvme-core, xnvme-cy-header, xnvme-cy-bindings)
       uses: actions/upload-artifact@v2
       with:
-        name: python-pkg
-        path: python/xnvme-core/dist/xnvme-*.tar.gz
+        name: python-xnvme-pkg
+        path: |
+          python/xnvme-core/dist/xnvme-core-*.tar.gz
+          python/xnvme-cy-bindings/dist/xnvme-cy-bindings-*.tar.gz
+          python/xnvme-cy-header/dist/xnvme-cy-header-*.tar.gz
         if-no-files-found: error
 
   #
@@ -382,15 +389,15 @@ jobs:
         python3 -c "import platform; print(platform.system()); print(platform.uname())"
         python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
 
-    - name: Retrieve the xNVMe Python bindings (prebuilt sdist)
+    - name: Retrieve the xNVMe Python sdist-packages
       uses: actions/download-artifact@v2
       with:
-        name: python-pkg
+        name: python-xnvme-pkg
 
-    - name: Install and test xNVMe Python bindings
+    - name: Install and test xNVMe Python bindings (ctypes)
       if: (!contains(matrix.container.ver, 'bookworm'))
       run: |
-        python3 -m pip install xnvme-core-*.tar.gz --user
+        python3 -m pip install xnvme-core/dist/xnvme-core-*.tar.gz --user
         python3 -m pytest --pyargs xnvme.ctypes_mapping
 
   #
@@ -456,14 +463,14 @@ jobs:
         python3 -c "import platform; print(platform.system()); print(platform.uname())"
         python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
 
-    - name: Retrieve the xNVMe Python bindings (prebuilt sdist)
+    - name: Retrieve the xNVMe Python sdist-packages
       uses: actions/download-artifact@v2
       with:
-        name: python-pkg
+        name: python-xnvme-pkg
 
     - name: Install and test xNVMe Python bindings
       run: |
-        python3 -m pip install xnvme-core-*.tar.gz --user
+        python3 -m pip install xnvme-core/dist/xnvme-core-*.tar.gz --user
         python3 -m pytest --pyargs xnvme.ctypes_mapping
 
   #
