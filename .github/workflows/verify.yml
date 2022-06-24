@@ -594,7 +594,7 @@ jobs:
   # Build on run CIJOE testplans
   #
   build-and-test:
-    needs: [source-archive, source-format-check]
+    needs: [source-archive, source-format-check, build-python]
     runs-on: self-hosted
     if: (((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job == 'all') || (github.event.inputs.job ==
       'build-and-test'))) || contains(github.event.pull_request.labels.*.name, 'pr-ready-for-test'))
@@ -624,12 +624,18 @@ jobs:
       run: |
         tar xzf xnvme*.tar.gz --strip 1
 
+    - name: Retrieve the xNVMe Python bindings (prebuilt sdist)
+      uses: actions/download-artifact@v2
+      with:
+        name: python-xnvme-pkg
+
     - name: Provision qemu-guest
       id: cijoe-qemu
       uses: refenv/gh-cijoe-qemu-action@main
       with:
         vm-image: ${{ matrix.guest.img }}
         vm-cloudinit: ${{ matrix.guest.os }}-${{ matrix.guest.ver }}
+        cijoe-packages: './toolbox/cijoe-pkg-xnvme/'
 
     - name: CIJOE, install cijoe-pkg-xnvme from source-archive
       run: |
@@ -639,6 +645,9 @@ jobs:
       run: |
         pushd $(cij_root) && source modules/cijoe.sh && popd
         source ${{ steps.cijoe-qemu.outputs.target-env }}
+        ssh.push xnvme-core/dist/xnvme-core-*.tar.gz xnvme-core.tar.gz
+        ssh.push xnvme-cy-header/dist/xnvme-cy-header-*.tar.gz xnvme-cy-header.tar.gz
+        ssh.push xnvme-cy-bindings/dist/xnvme-cy-bindings-*.tar.gz xnvme-cy-bindings.tar.gz
         ssh.push xnvme*.tar.gz xnvme.tar.gz
         cij.cmd "tar xzf xnvme.tar.gz --strip 1"
         cij.cmd "rm xnvme.tar.gz"
@@ -693,15 +702,49 @@ jobs:
         cij.cmd "xnvme enum"
         cij.cmd "xnvme library-info"
 
+    - name: CIJOE, Install xNVMe Python bindings (ctypes)
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd
+        echo 'XNVME_REPO=/root' >> ${{ steps.cijoe-qemu.outputs.target-env }}
+        source ${{ steps.cijoe-qemu.outputs.target-env }}
+
+        cij.cmd "python3 -m pip install xnvme-core.tar.gz"
+
+    - name: CIJOE, Install and test xNVMe Cython header (libxnvme.pxd)
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd
+        echo 'XNVME_REPO=/root' >> ${{ steps.cijoe-qemu.outputs.target-env }}
+        source ${{ steps.cijoe-qemu.outputs.target-env }}
+
+        cij.cmd "python3 -m pip install xnvme-cy-header.tar.gz --user"
+        cij.cmd "cd python/xnvme-cy-header/xnvme/cython_mapping/tests/ && pip3 install -r requirements.txt --user"
+        cij.cmd "cd python/xnvme-cy-header/xnvme/cython_mapping/tests/ && python3 setup.py build_ext --inplace"
+        cij.cmd "cd python/xnvme-cy-header/xnvme/cython_mapping/tests/ && python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v -s"
+
+    - name: Install and test xNVMe Python bindings (Cython)
+      run: |
+        pushd $(cij_root) && source modules/cijoe.sh && popd
+        echo 'XNVME_REPO=/root' >> ${{ steps.cijoe-qemu.outputs.target-env }}
+        source ${{ steps.cijoe-qemu.outputs.target-env }}
+
+        cij.cmd "python3 -m pip install -r python/xnvme-cy-bindings/requirements.txt --user"
+        cij.cmd "python3 -m pip install xnvme-cy-bindings.tar.gz --user -vvv --no-build-isolation"
+        cij.cmd "python3 -m pip install -r python/xnvme-cy-bindings/xnvme/bindings/tests/requirements.txt --user"
+        cij.cmd "python3 -m pytest --pyargs xnvme.bindings -k 'test_version' -s"
+
     - name: CIJOE, run Linux testplans using qemu-guest as test-target
       if: matrix.guest.os == 'debian'
       run: |
         pushd $(cij_root) && source modules/cijoe.sh && popd
+        echo 'XNVME_REPO=/root' >> ${{ steps.cijoe-qemu.outputs.target-env }}
         source ${{ steps.cijoe-qemu.outputs.target-env }}
+
         cij_runner \
           --env ${{ steps.cijoe-qemu.outputs.target-env }} \
           --output ${{ steps.cijoe-qemu.outputs.results }} \
           --testplan \
+          "${CIJ_TESTPLANS}/xnvme-cython.plan" \
+          "${CIJ_TESTPLANS}/xnvme-python.plan" \
           "${CIJ_TESTPLANS}/xnvme-zns-zrwa-linux-nvme.plan" \
           "${CIJ_TESTPLANS}/xnvme-zns-zrwa-linux-spdk.plan" \
           "${CIJ_TESTPLANS}/xnvme-base-linux.plan" \
