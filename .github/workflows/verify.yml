@@ -400,6 +400,34 @@ jobs:
         python3 -m pip install xnvme-core/dist/xnvme-core-*.tar.gz --user
         python3 -m pytest --pyargs xnvme.ctypes_mapping
 
+    # This also requires installing 'xnvme/cython_mapping/tests' from the tarball/repository
+    # The tests that are run here only tests "dummy", which means without an NVMe device.
+    #
+    # A PKG_CONFIG_PATH is set, as it is needed on Arch, CentOS 7/8 and Gentoo
+    # Didn't this get fixes previously? Why is this a problem again?
+    - name: Install and test xNVMe Cython header (libxnvme.pxd)
+      if: (!contains(matrix.container.ver, 'bookworm'))
+      run: |
+        python3 -m pip install xnvme-cy-header/dist/xnvme-cy-header-*.tar.gz --user
+        cd python/xnvme-cy-header/xnvme/cython_mapping/tests/ && pip3 install -r requirements.txt --user
+        PKG_CONFIG_PATH="/usr/local/lib64/pkgconfig:/usr/local/lib/pkgconfig" python3 setup.py build_ext --inplace
+        python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v -s
+
+    # Why is this needed: "python/xnvme-cy-bindings/requirements.txt --user" ?
+    # Should't build-requirements take care of this?
+    #
+    # --no-build-isolation, normally packages a build in a venv without access to other installed
+    # packages, in to build the xnvme-cy-bindings the 'xnvme-core' and 'xnvme-cy-header' packages
+    # are needed.
+    # Perhaps no longer the 'xnvme-core'?
+    - name: Install and test xNVMe Python bindings (Cython)
+      if: "!contains(matrix.container.ver, 'bookworm')"
+      run: |
+        python3 -m pip install -r python/xnvme-cy-bindings/requirements.txt --user
+        python3 -m pip install xnvme-cy-bindings/dist/xnvme-cy-bindings-*.tar.gz --user -vvv --no-build-isolation
+        python3 -m pip install -r python/xnvme-cy-bindings/xnvme/bindings/tests/requirements.txt --user
+        python3 -m pytest --pyargs xnvme.bindings -k 'test_version' -s
+
   #
   # Build on macOS
   #
@@ -472,6 +500,30 @@ jobs:
       run: |
         python3 -m pip install xnvme-core/dist/xnvme-core-*.tar.gz --user
         python3 -m pytest --pyargs xnvme.ctypes_mapping
+
+    # This also requires installing 'xnvme/cython_mapping/tests' from the tarball/repository
+    # The tests that are run here only tests "dummy", which means without an NVMe device.
+    - name: Install and test xNVMe Cython header (libxnvme.pxd)
+      if: (!contains(matrix.container.ver, 'bookworm'))
+      run: |
+        python3 -m pip install xnvme-cy-header/dist/xnvme-cy-header-*.tar.gz --user
+        cd python/xnvme-cy-header/xnvme/cython_mapping/tests/ && pip3 install -r requirements.txt --user
+        python3 setup.py build_ext --inplace
+        python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v -s
+
+    # Why is this needed: "python/xnvme-cy-bindings/requirements.txt --user" ?
+    # Should't build-requirements take care of this?
+    #
+    # --no-build-isolation, normally packages a build in a venv without access to other installed
+    # packages, in to build the xnvme-cy-bindings the 'xnvme-core' and 'xnvme-cy-header' packages
+    # are needed.
+    # Perhaps no longer the 'xnvme-core'?
+    - name: Install and test xNVMe Python bindings (Cython)
+      run: |
+        python3 -m pip install -r python/xnvme-cy-bindings/requirements.txt --user
+        python3 -m pip install xnvme-cy-bindings/dist/xnvme-cy-bindings-*.tar.gz --user -vvv --no-build-isolation
+        python3 -m pip install -r python/xnvme-cy-bindings/xnvme/bindings/tests/requirements.txt --user
+        python3 -m pytest --pyargs xnvme.bindings -k 'test_version' -s
 
   #
   # Build on Windows
