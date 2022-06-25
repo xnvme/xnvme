@@ -1,4 +1,4 @@
-import xnvme.bindings as xnvme
+import xnvme.cython_bindings as xnvme
 
 
 class TestBufferAlloc:

@@ -2,7 +2,7 @@
 import sys
 from ctypes import POINTER, c_uint32, cast, pointer
 
-import xnvme.ctypes_mapping as xnvme
+import xnvme.ctypes_bindings as xnvme
 
 xnvme.guard_unloadable()
 

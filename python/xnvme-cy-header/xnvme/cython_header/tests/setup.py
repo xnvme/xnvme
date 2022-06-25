@@ -5,7 +5,7 @@ import subprocess
 from Cython.Build import cythonize
 from setuptools import Extension, setup
 
-import xnvme.cython_mapping  # isort:skip
+import xnvme.cython_header  # isort:skip
 
 
 def pkg_config(*args):
@@ -43,7 +43,7 @@ setup(
                 library_dirs=[libdir],
             ),
         ],
-        include_path=[xnvme.cython_mapping.get_include()],
+        include_path=[xnvme.cython_header.get_include()],
         language_level="3",
         compiler_directives={
             "binding": True,  # INFO: Important to set this!!!

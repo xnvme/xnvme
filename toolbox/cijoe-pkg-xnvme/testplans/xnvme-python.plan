@@ -14,18 +14,15 @@ testsuites:
   hooks: ["xnvme"]
   evars: {XNVME_BE: "linux"}
   testcases:
-  - xpy_dev_open.sh
-  - xpy_enumerate.sh
-  - xpy_libconf.sh
-  - xcy_cython_mapping_pytest.sh
+  - xpy_ctypes_bin_dev_open.sh
+  - xpy_ctypes_bin_enumerate.sh
+  - xpy_ctypes_bin_libconf.sh
 
 - name: xpy_userspace
   alias: "Using the user-space NVMe driver"
   hooks: ["xnvme"]
   evars: {XNVME_BE: "spdk"}
   testcases:
-  - xpy_dev_open.sh
-  - xpy_enumerate.sh
-  - xpy_libconf.sh
-  - xcy_cython_mapping_pytest.sh
-
+  - xpy_ctypes_bin_dev_open.sh
+  - xpy_ctypes_bin_enumerate.sh
+  - xpy_ctypes_bin_libconf.sh

@@ -1,6 +1,6 @@
 import conftest
 import pytest
-import xnvme.bindings as xnvme
+import xnvme.cython_bindings as xnvme
 
 enumerated_devices = 0
 

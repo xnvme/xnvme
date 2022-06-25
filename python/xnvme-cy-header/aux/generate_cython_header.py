@@ -120,7 +120,7 @@ def main(args):
         "python",
         "xnvme-cy-header",
         "xnvme",
-        "cython_mapping",
+        "cython_header",
         "libxnvme.pxd",
     )
     with open(pxd_path, "w") as f_out:
