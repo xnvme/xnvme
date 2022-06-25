@@ -17,7 +17,7 @@
  : "${XNVME_REPO:?Must be set and non-empty}"
  : "${XNVME_DEV_NSID:?Must be set and non-empty}"
 
- if ! cij.cmd "XNVME_URI=${XNVME_URI} XNVME_BE=${XNVME_BE} XNVME_DEV_NSID=${XNVME_DEV_NSID} python3 -m pytest --cython-collect ${XNVME_REPO}/python/xnvme-cy-header/xnvme/cython_mapping/tests/ -v -s"; then
+ if ! cij.cmd "XNVME_URI=${XNVME_URI} XNVME_BE=${XNVME_BE} XNVME_DEV_NSID=${XNVME_DEV_NSID} python3 -m pytest --cython-collect ${XNVME_REPO}/python/xnvme-cy-header/xnvme/cython_header/tests/ -v -s"; then
    test.fail
  fi
 

@@ -1,9 +1,9 @@
-======================================================
- xNVMe Cython and ctypes language-bindings for Python
-======================================================
+===========================================
+ xNVMe Python language bindings via Cython
+===========================================
 
-This package provides the ``core`` Python language-bindings package to the
-xNVMe C API. It is a ``ctypes`` mapping.
+This package provides Python language bindings via ``Cython`` for the xNVMe C
+API.
 
 For documentation consult the following:
 

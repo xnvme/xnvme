@@ -1,10 +1,10 @@
 """
     The xnvme.library_loader provides a single method to dynamically load the xNVMe
     shared library. This intent is that the loader is invoked by the
-    'xnvme.ctypes_mapping' on package-initialization, such that the user can directly
+    'xnvme.ctypes_bindings' on package-initialization, such that the user can directly
     get a library-handle like so:
 
-        from xnvme.ctypes_mapping import capi
+        from xnvme.ctypes_bindings import capi
 
     This is useful since usage of the library handle can have multiple entry points.
 """

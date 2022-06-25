@@ -1,6 +1,5 @@
 #
-# This Makefile serves as convenient command-line auto-completion when working on Python bindings
-#
+# This Makefile serves as convenient command-line auto-completion for the Cython header
 #
 PY ?= python3
 PY_ENV_ACTIVATE = . .build-py-env/bin/activate
@@ -85,12 +84,12 @@ test:
 	@echo "## py: make test [DONE]"
 
 define generate-cython-libxnvme-pxd-help
-# Generate Cython C API mapping (xnvme.cython_mapping) from xNVMe public C API headers
+# Generate Cython C API mapping (xnvme.cython_header) from xNVMe public C API headers
 endef
 .PHONY: generate-cython-libxnvme-pxd
 generate-cython-libxnvme-pxd: build-py-env
 	@echo "## py: generate-cython-libxnvme-pxd"
-	@${PY_ENV} aux/generate_cython_bindings.py --src-root ../..
+	@${PY_ENV} aux/generate_cython_header.py --src-root ../..
 	@echo "## py: generate-cython-libxnvme-pxd [DONE]"
 
 define clean-help

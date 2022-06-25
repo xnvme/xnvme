@@ -1,7 +1,7 @@
 import os
 
 import pytest
-import xnvme.bindings as xnvme
+import xnvme.cython_bindings as xnvme
 
 DEVICE_PATH = os.environ.get("XNVME_URI", "").encode()
 BACKEND = os.environ.get("XNVME_BE", "").encode()

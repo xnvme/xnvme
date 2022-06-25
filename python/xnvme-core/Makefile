@@ -94,7 +94,7 @@ endef
 generate-ctypes: build-py-env
 	@echo "## py: gen"
 	@echo "## py:headers: ${XNVME_CAPI_HEADERS}"
-	@${PY_ENV_ACTIVATE} && clang2py ${XNVME_CAPI_HEADERS} --clang-args="-I../../include -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include/ " > xnvme/ctypes_mapping/api.py
+	@${PY_ENV_ACTIVATE} && clang2py ${XNVME_CAPI_HEADERS} --clang-args="-I../../include -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include/ " > xnvme/ctypes_bindings/api.py
 	@echo "## Remember to also call 'make patch-ctypes' to fix format"
 	@echo "## py: gen [DONE]"
 
@@ -104,8 +104,8 @@ endef
 .PHONY: patch-ctypes
 patch-ctypes: build-py-env
 	@echo "## py: gen"
-	@${PY_ENV} aux/patch_ctypes_mapping.py --path xnvme/ctypes_mapping/api.py
-	@${PY_ENV_ACTIVATE} && black xnvme/ctypes_mapping/api.py || echo "could not fix format"
+	@${PY_ENV} aux/patch_ctypes_bindings.py --path xnvme/ctypes_bindings/api.py
+	@${PY_ENV_ACTIVATE} && black xnvme/ctypes_bindings/api.py || echo "could not fix format"
 	@echo "## py: gen [DONE]"
 
 define clean-help
@@ -119,7 +119,7 @@ clean:
 	@rm -r dist || echo "Cannot remove => That is OK"
 	@rm -r *.egg-info || echo "Cannot remove => That is OK"
 	@rm MANIFEST || echo "Cannot remove => That is OK"
-	@rm xnvme/ctypes_mapping/api.py || echo "Cannot remove => That is OK"
+	@rm xnvme/ctypes_bindings/api.py || echo "Cannot remove => That is OK"
 	@echo "## py: clean [DONE]"
 
 define help-help

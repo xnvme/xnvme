@@ -14,12 +14,13 @@ testsuites:
   hooks: ["xnvme"]
   evars: {XNVME_BE: "linux"}
   testcases:
-  - xcy_cython_bindings_pytest.sh
+  - xpy_cython_header_pytest.sh
+  - xpy_cython_bindings_pytest.sh
 
 - name: xcy_bindings_be_spdk
   alias: "Using the user-space NVMe driver"
   hooks: ["xnvme"]
   evars: {XNVME_BE: "spdk"}
   testcases:
-  - xcy_cython_bindings_pytest.sh
-
+  - xpy_cython_header_pytest.sh
+  - xpy_cython_bindings_pytest.sh
