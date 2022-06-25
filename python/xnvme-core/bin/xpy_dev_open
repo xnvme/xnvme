@@ -2,7 +2,7 @@
 import argparse
 import sys
 
-import xnvme.ctypes_mapping as xnvme
+import xnvme.ctypes_bindings as xnvme
 
 xnvme.guard_unloadable()
 

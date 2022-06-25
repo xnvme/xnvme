@@ -4,7 +4,7 @@ import os
 import conftest
 import numpy as np
 import pytest
-import xnvme.bindings as xnvme
+import xnvme.cython_bindings as xnvme
 
 NULL = xnvme.xnvme_void_p(0)
 UINT16_MAX = 0xFFFF

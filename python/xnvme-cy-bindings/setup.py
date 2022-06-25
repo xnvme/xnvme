@@ -23,22 +23,22 @@ try:
     )  # Don't misinterpret the local directory as the xnvme package
 except FileNotFoundError:
     pass
-import xnvme.cython_mapping  # noqa: E402
+import xnvme.cython_header  # noqa: E402
 
 PACKAGE_NAME = "xnvme"
 cy_xnvme_pkg_path = os.path.dirname(os.path.realpath(__file__))
 WORKSPACE_ROOT = cy_xnvme_pkg_path + "/../.."
 
 LIB_PYX = "cython_bindings.pyx"  # NOTE: Has to be named differently than LIBXNVME_PXD to avoid merging namespaces
-LIB_PYX_PATH = f"{PACKAGE_NAME}/bindings/{LIB_PYX}"
+LIB_PYX_PATH = f"{PACKAGE_NAME}/cython_bindings/{LIB_PYX}"
 
 LIBXNVME_PYX = "libxnvme.pyx"
-LIBXNVME_PYX_PATH = f"{PACKAGE_NAME}/bindings/{LIBXNVME_PYX}"
+LIBXNVME_PYX_PATH = f"{PACKAGE_NAME}/cython_bindings/{LIBXNVME_PYX}"
 Path(LIBXNVME_PYX_PATH).touch()  # We just need an empty file as build target
 LIBXNVME_PXD = "libxnvme.pxd"
 shutil.copy(
-    xnvme.cython_mapping.get_include() + "/" + LIBXNVME_PXD,
-    f"{PACKAGE_NAME}/bindings/{LIBXNVME_PXD}",
+    xnvme.cython_header.get_include() + "/" + LIBXNVME_PXD,
+    f"{PACKAGE_NAME}/cython_bindings/{LIBXNVME_PXD}",
 )
 
 with open(xnvme_init_py_path, "w") as f:
@@ -65,7 +65,7 @@ libdir = "../../builddir/lib/"
 if os.path.isdir(includedir):
     # Assuming installation from Git repo
     with open(LIB_PYX_PATH, "w") as f_out, open(
-        xnvme.cython_mapping.get_include() + "/" + LIBXNVME_PXD, "r"
+        xnvme.cython_header.get_include() + "/" + LIBXNVME_PXD, "r"
     ) as pxd_contents:
         f_out.write(generate_pyx(pxd_contents).read())
 else:
@@ -88,28 +88,28 @@ if cython:
     ext_modules = cythonize(
         [
             Extension(
-                "xnvme.bindings.cython_bindings",
+                "xnvme.cython_bindings.cython_bindings",
                 sources=[LIB_PYX_PATH],
                 libraries=cflag_libraries,
                 include_dirs=[includedir],
                 # library_dirs=[libdir],
             ),
             Extension(
-                "xnvme.bindings.libxnvme",
+                "xnvme.cython_bindings.libxnvme",
                 sources=[LIBXNVME_PYX_PATH],
                 libraries=cflag_libraries,
                 include_dirs=[includedir],
                 # library_dirs=[libdir],
             ),
         ],
-        include_path=[f"{PACKAGE_NAME}/bindings/"],
+        include_path=[f"{PACKAGE_NAME}/cython_bindings/"],
         annotate=False,
         language_level="3",
     )
 else:
     ext_modules = [
         Extension(
-            "xnvme.bindings.cython_bindings",
+            "xnvme.cython_bindings.cython_bindings",
             depends=glob.glob(includedir + "/libxnvme*"),
             sources=[os.path.splitext(LIB_PYX_PATH)[0] + ".c"],
             libraries=cflag_libraries,
@@ -117,7 +117,7 @@ else:
             library_dirs=[libdir],
         ),
         Extension(
-            "xnvme.bindings.libxnvme",
+            "xnvme.cython_bindings.libxnvme",
             depends=glob.glob(includedir + "/libxnvme*"),
             sources=[os.path.splitext(LIBXNVME_PYX_PATH)[0] + ".c"],
             libraries=cflag_libraries,
@@ -161,7 +161,7 @@ setup(
             LIB_PYX,
             LIBXNVME_PXD,
             LIBXNVME_PYX,
-            "xnvme/bindings/*{EXT_SUFFIX}",
+            "xnvme/cython_bindings/*{EXT_SUFFIX}",
             "requirements.txt",
         ]
     },

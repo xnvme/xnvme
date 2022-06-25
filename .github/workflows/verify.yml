@@ -398,9 +398,9 @@ jobs:
       if: (!contains(matrix.container.ver, 'bookworm'))
       run: |
         python3 -m pip install xnvme-core/dist/xnvme-core-*.tar.gz --user
-        python3 -m pytest --pyargs xnvme.ctypes_mapping
+        python3 -m pytest --pyargs xnvme.ctypes_bindings
 
-    # This also requires installing 'xnvme/cython_mapping/tests' from the tarball/repository
+    # This also requires installing 'xnvme/cython_header/tests' from the tarball/repository
     # The tests that are run here only tests "dummy", which means without an NVMe device.
     #
     # A PKG_CONFIG_PATH is set, as it is needed on Arch, CentOS 7/8 and Gentoo
@@ -409,7 +409,7 @@ jobs:
       if: (!contains(matrix.container.ver, 'bookworm'))
       run: |
         python3 -m pip install xnvme-cy-header/dist/xnvme-cy-header-*.tar.gz --user
-        cd python/xnvme-cy-header/xnvme/cython_mapping/tests/ && pip3 install -r requirements.txt --user
+        cd python/xnvme-cy-header/xnvme/cython_header/tests/ && pip3 install -r requirements.txt --user
         PKG_CONFIG_PATH="/usr/local/lib64/pkgconfig:/usr/local/lib/pkgconfig" python3 setup.py build_ext --inplace
         python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v -s
 
@@ -425,8 +425,8 @@ jobs:
       run: |
         python3 -m pip install -r python/xnvme-cy-bindings/requirements.txt --user
         python3 -m pip install xnvme-cy-bindings/dist/xnvme-cy-bindings-*.tar.gz --user -vvv --no-build-isolation
-        python3 -m pip install -r python/xnvme-cy-bindings/xnvme/bindings/tests/requirements.txt --user
-        python3 -m pytest --pyargs xnvme.bindings -k 'test_version' -s
+        python3 -m pip install -r python/xnvme-cy-bindings/xnvme/cython_bindings/tests/requirements.txt --user
+        python3 -m pytest --pyargs xnvme.cython_bindings -k 'test_version' -s
 
   #
   # Build on macOS
@@ -499,15 +499,15 @@ jobs:
     - name: Install and test xNVMe Python bindings
       run: |
         python3 -m pip install xnvme-core/dist/xnvme-core-*.tar.gz --user
-        python3 -m pytest --pyargs xnvme.ctypes_mapping
+        python3 -m pytest --pyargs xnvme.ctypes_bindings
 
-    # This also requires installing 'xnvme/cython_mapping/tests' from the tarball/repository
+    # This also requires installing 'xnvme/cython_header/tests' from the tarball/repository
     # The tests that are run here only tests "dummy", which means without an NVMe device.
     - name: Install and test xNVMe Cython header (libxnvme.pxd)
       if: (!contains(matrix.container.ver, 'bookworm'))
       run: |
         python3 -m pip install xnvme-cy-header/dist/xnvme-cy-header-*.tar.gz --user
-        cd python/xnvme-cy-header/xnvme/cython_mapping/tests/ && pip3 install -r requirements.txt --user
+        cd python/xnvme-cy-header/xnvme/cython_header/tests/ && pip3 install -r requirements.txt --user
         python3 setup.py build_ext --inplace
         python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v -s
 
@@ -522,8 +522,8 @@ jobs:
       run: |
         python3 -m pip install -r python/xnvme-cy-bindings/requirements.txt --user
         python3 -m pip install xnvme-cy-bindings/dist/xnvme-cy-bindings-*.tar.gz --user -vvv --no-build-isolation
-        python3 -m pip install -r python/xnvme-cy-bindings/xnvme/bindings/tests/requirements.txt --user
-        python3 -m pytest --pyargs xnvme.bindings -k 'test_version' -s
+        python3 -m pip install -r python/xnvme-cy-bindings/xnvme/cython_bindings/tests/requirements.txt --user
+        python3 -m pytest --pyargs xnvme.cython_bindings -k 'test_version' -s
 
   #
   # Build on Windows
@@ -717,9 +717,9 @@ jobs:
         source ${{ steps.cijoe-qemu.outputs.target-env }}
 
         cij.cmd "python3 -m pip install xnvme-cy-header.tar.gz --user"
-        cij.cmd "cd python/xnvme-cy-header/xnvme/cython_mapping/tests/ && pip3 install -r requirements.txt --user"
-        cij.cmd "cd python/xnvme-cy-header/xnvme/cython_mapping/tests/ && python3 setup.py build_ext --inplace"
-        cij.cmd "cd python/xnvme-cy-header/xnvme/cython_mapping/tests/ && python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v -s"
+        cij.cmd "cd python/xnvme-cy-header/xnvme/cython_header/tests/ && pip3 install -r requirements.txt --user"
+        cij.cmd "cd python/xnvme-cy-header/xnvme/cython_header/tests/ && python3 setup.py build_ext --inplace"
+        cij.cmd "cd python/xnvme-cy-header/xnvme/cython_header/tests/ && python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v -s"
 
     - name: Install and test xNVMe Python bindings (Cython)
       run: |
@@ -729,8 +729,8 @@ jobs:
 
         cij.cmd "python3 -m pip install -r python/xnvme-cy-bindings/requirements.txt --user"
         cij.cmd "python3 -m pip install xnvme-cy-bindings.tar.gz --user -vvv --no-build-isolation"
-        cij.cmd "python3 -m pip install -r python/xnvme-cy-bindings/xnvme/bindings/tests/requirements.txt --user"
-        cij.cmd "python3 -m pytest --pyargs xnvme.bindings -k 'test_version' -s"
+        cij.cmd "python3 -m pip install -r python/xnvme-cy-bindings/xnvme/cython_bindings/tests/requirements.txt --user"
+        cij.cmd "python3 -m pytest --pyargs xnvme.cython_bindings -k 'test_version' -s"
 
     - name: CIJOE, run Linux testplans using qemu-guest as test-target
       if: matrix.guest.os == 'debian'

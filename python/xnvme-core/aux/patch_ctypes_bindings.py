@@ -7,12 +7,12 @@ def parse_args():
     """Parse command-line arguments"""
 
     parser = argparse.ArgumentParser(
-        description="Patch the given xnvme.ctypes_mapping",
+        description="Patch the given xnvme.ctypes_bindings",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "--path",
-        help="Path to ctypes_mapping.py",
+        help="Path to ctypes_bindings.py",
         required=True,
         type=str,
     )
@@ -55,7 +55,7 @@ def main(args):
     code = code.replace("FIXME_STUB", "xnvme")
 
     # Replace the FactoryStub/direct ctypes.CDLL load with
-    # 'xnvme.ctypes_mapping.library_loader' and provide a variable to probe for state
+    # 'xnvme.ctypes_bindings.library_loader' and provide a variable to probe for state
     code = code.replace("import ctypes", SNIPPETS["import"])
     code = code.replace(
         "_libraries['xnvme'] = FunctionFactoryStub()", SNIPPETS["loader"]
@@ -73,7 +73,7 @@ def main(args):
     code = code.replace("union_xnvme", "xnvme")
 
     # The entities in the 'skiplist' are names of 'static inline' function and thus
-    # unavailable via the shared library, when writing the modified ctypes_mapping to
+    # unavailable via the shared library, when writing the modified ctypes_bindings to
     # file we skip writing them.
     skiplist = ["xnvme_cmd_ctx_set_cb", "xnvme_cmd_ctx_cpl_status"]
 
