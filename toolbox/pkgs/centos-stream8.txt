@@ -13,8 +13,9 @@ openssl-devel
 patch
 pkgconfig
 procps
+python39
+python39-devel
+python39-pip
 unzip
 wget
 zlib-devel
-python39
-python39-pip

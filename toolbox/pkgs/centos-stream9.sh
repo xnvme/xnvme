@@ -13,4 +13,5 @@ dnf config-manager --set-enabled crb
 dnf install -y $(cat "toolbox/pkgs/centos-stream9.txt")
 
 # Install packages via the Python package-mange (pip)
+python3 -m pip install --upgrade pip # Otherwise too old to understand new Manylinux formats
 python3 -m pip install meson ninja pyelftools
