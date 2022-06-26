@@ -7,8 +7,9 @@ libcunit1-dev
 libncurses5-dev
 libnuma-dev
 libssl-dev
-pkg-config
 nasm
-python3.8
+pkg-config
 python3-pip
+python3-venv
+python3.8
 uuid-dev

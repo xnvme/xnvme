@@ -7,6 +7,6 @@ meson
 ncurses
 ninja
 numactl
+python-pip
 python-pyelftools
 python3
-python-pip
