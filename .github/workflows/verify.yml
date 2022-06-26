@@ -409,7 +409,7 @@ jobs:
       if: (!contains(matrix.container.ver, 'bookworm'))
       run: |
         python3 -m pip install xnvme-cy-header/dist/xnvme-cy-header-*.tar.gz --user
-        cd python/xnvme-cy-header/xnvme/cython_header/tests/ && pip3 install -r requirements.txt --user
+        cd python/xnvme-cy-header/xnvme/cython_header/tests/ && python3 -m pip install -r requirements.txt --user
         PKG_CONFIG_PATH="/usr/local/lib64/pkgconfig:/usr/local/lib/pkgconfig" python3 setup.py build_ext --inplace
         python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v -s
 
@@ -504,10 +504,9 @@ jobs:
     # This also requires installing 'xnvme/cython_header/tests' from the tarball/repository
     # The tests that are run here only tests "dummy", which means without an NVMe device.
     - name: Install and test xNVMe Cython header (libxnvme.pxd)
-      if: (!contains(matrix.container.ver, 'bookworm'))
       run: |
         python3 -m pip install xnvme-cy-header/dist/xnvme-cy-header-*.tar.gz --user
-        cd python/xnvme-cy-header/xnvme/cython_header/tests/ && pip3 install -r requirements.txt --user
+        cd python/xnvme-cy-header/xnvme/cython_header/tests/ && python3 -m pip install -r requirements.txt --user
         python3 setup.py build_ext --inplace
         python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v -s
 
@@ -717,7 +716,7 @@ jobs:
         source ${{ steps.cijoe-qemu.outputs.target-env }}
 
         cij.cmd "python3 -m pip install xnvme-cy-header.tar.gz --user"
-        cij.cmd "cd python/xnvme-cy-header/xnvme/cython_header/tests/ && pip3 install -r requirements.txt --user"
+        cij.cmd "cd python/xnvme-cy-header/xnvme/cython_header/tests/ && python3 -m pip install -r requirements.txt --user"
         cij.cmd "cd python/xnvme-cy-header/xnvme/cython_header/tests/ && python3 setup.py build_ext --inplace"
         cij.cmd "cd python/xnvme-cy-header/xnvme/cython_header/tests/ && python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v -s"
 
