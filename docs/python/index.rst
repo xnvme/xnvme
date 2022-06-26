@@ -4,26 +4,53 @@
  Python
 ========
 
-**xNVMe** language bindings for Python provide access to the **xNVMe** C API
-via :ref:`sec-python-ctypes` and :ref:`sec-python-Cython`. Two language binding
-interfaces are provided as they serve different use-cases.
+**xNVMe** provides three ways to consume the **xNVMe** :ref:`sec-c-api` from
+Python:
 
-* The :ref:`sec-python-ctypes` bindings are intended for interactive usage when
-  experimenting with the **xNVMe** API, as well as integration into
-  adminstrative tools such as Web-UI for managing fabrics
-  :ref:`sec-tutorials-fabrics`.
+#. Python bindings via :ref:`sec-python-ctypes`
 
-* The :ref:`sec-python-cython` bindings are intended for Cython applications,
-  that is, to provide Cython bindings readily available such that you don't
-  have to make them in order to use **xNVMe** in your Cython code.
+   * Package Name: ``xnvme``
 
-The library bindings are a work-in-progress, provided as a preview of what can
-be done when integrating with Python. See, section :ref:`sec-python-todo` for a
+#. A :ref:`sec-python-cython` :ref:`sec-python-cython-header`
+
+   * Package name: ``xnvme-cy-header``
+
+#. Python :ref:`sec-python-cython-bindings` via :ref:`sec-python-cython`
+
+   * Package name: ``xnvme-cy-bindings``
+
+They are provided as individual Python namespace packages. This allows the
+separation of the build and installation requirements for the different
+interfaces. Specifically, avoid the requirements of Cython_ if all you need is
+a simple Plain-Python ctypes_ interface.
+
+The interfaces are a work-in-progress, provided as a preview of what can be
+done when integrating with Python. See, section :ref:`sec-python-todo` for a
 list of known short-comings and areas to improve. Your input on these are most
-welcome along with pull-requests to improve the interfaces.
+welcome along with pull-requests.
+
+.. _sec-python-ctypes:
+
+ctypes
+======
+
+The ctypes_ bindings provides access to the xNVMe C API via ctypes_. If you
+have used ctypes_ before, then you can go right ahead and use these. The only
+thing added as an augmentation of what ctypes_ provides is an improvement of
+the Dynamic loader logic:
+
+* library-loading is extended with use of ``pkg-config``
+* library-loading is done implicitly upon ``import``
+* library-loading can be checked via:
+  - ``xnvme.ctypes_bindings.is_loaded``, check the bool
+  - ``xnvme.ctypes_bindings.guard_unloadable()``, exit when not loaded
+
+A convenient aspect of the bindings are that Python ctypes_ comes with
+CPython_, that is, with the reference implementation of the Python intepreter.
+When using the ctypes_ bindings, the only other runtime dependency is pytest_.
 
 Install
-=======
+-------
 
 Before installing, then ensure that the following system dependencies are met:
 
@@ -44,17 +71,8 @@ the :ref:`sec-python-development` section.
    your installation by running: ``python3 -m pytest --pyargs
    xnvme.ctypes_mapping``.
 
-.. _sec-python-ctypes:
-
-ctypes
-======
-
-Python ctypes_ comes with CPython_, that is, with the reference implementation
-of the Python intepreter. When using the ctypes_ bindings, the only other
-runtime dependency is pytest_.
-
-Usage examples
---------------
+Usage
+-----
 
 See the files in ``bin/*``. At the time of writing this, there were three
 examples, two of which require no arguments, these are run like so::
@@ -80,10 +98,20 @@ something like this::
 Cython
 ======
 
+Cython applications, that is, to provide Cython bindings readily available
+such that you don't have to make them in order to use **xNVMe** in your
+Cython code.
+
 Two offerings are available for consuming xNVMe via Cython_:
 
 * ``xnvme-cy-header``, a Cython header (``libxnvme.pxd``)) providing access to
   the xNVMe C API from Cython
+
+
+.. _sec-python-cython-header:
+
+Header
+------
 
 Brief note on testing the Cython header::
 
@@ -92,10 +120,22 @@ Brief note on testing the Cython header::
   python3 setup.py build_ext --inplace
   python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v -s
 
+.. _sec-python-cython-bindings:
+
+Bindings
+--------
+
+...
+
 .. _sec-python-development:
 
 Development
 ===========
+
+A couple of notes on the idiosyncrasies of the implementations.
+
+ctypes
+------
 
 The bindings are generated using the ctypeslib2_ tool, patched (injecting an
 extension to the library-loader), and then formatted with black_.
@@ -140,13 +180,14 @@ the following are mixture of notes for improvment along with things to be aware
 of when using the Python language bindings.
 
 * Explore how to distribute the **xNVMe** source on pypi_
+
   - Should provide the source-archive of **xNVMe**
   - Should provide means of building the library along with the Python package
-  - Should provide a means of making the library available to the Python
-    language bindings
+  - Should provide a means of making the library available to the Python language bindings
   - See one approach to explore in the mention on ``mesonpep517``
 
 * Explore using ``mesonpep517`` for the bindings
+
   - https://pypi.org/project/mesonpep517/
   - https://github.com/mesonbuild/meson/issues/7863
   - https://thiblahute.gitlab.io/mesonpep517/
@@ -164,12 +205,6 @@ of when using the Python language bindings.
 
   - Add testing on Windows
   - Add testing on FreeBSD
-
-* **testing:** a CIJOE testplan and testcases are provided, however, it has
-  shortcomings
-
-  - Must be added to the 'build-and-test' workflow-job
-  - Needs fixing for Windows
 
 * **RECONSIDER:** The auto-generated ctypes-mapping has prefixes for e.g.
   ``union_`` and ``struct_``, the patcher removes these. This works for the
