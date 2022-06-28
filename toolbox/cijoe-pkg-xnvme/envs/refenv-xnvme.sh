@@ -103,3 +103,11 @@ HUGEMEM="${HUGEMEM:=2048}"; export HUGEMEM
 # Root directory of repo to locate Pytests etc.
 #
 XNVME_REPO="${HOME}/"; export XNVME_REPO
+
+#
+# Localhost NVMe-oF setup
+#
+: "${NVMET_IP:=127.0.0.1}"; export NVMET_IP
+: "${NVMET_PORT=4420}"; export NVMET_PORT
+: "${NVMET_SUBNQN_PREFIX=nqn.2022-06.io.xnvme:cnode}"; export NVMET_SUBNQN_PREFIX
+: "${NVMET_PCIE_IDS=0000:03:00.0 0000:04:00.0}"; export NVMET_PCIE_IDS
