@@ -1,0 +1,21 @@
+---
+descr: Verify xNVMe functionality over Fabrics with multiple subsystems
+descr_long: |
+  Exercises 
+  * library-information
+  * device enumeration
+  Requires
+  * NVMET_IP The ip of the target
+  * NVMET_PORT The port to export the devices
+  * NVMET_SUBNQN_PREFIX The prefix of the nqn of the subsystem exported
+  * NVMET_PCIE_IDS The device ids separated by a space
+  * XNVME_REPO The path to the xNVMe repository
+hooks: ["xnvme", "spdk_nvmf_localhost"]
+evars:
+  XNVME_BE: "spdk"
+testsuites:
+- name: XNVME_FABRICS_SUBNQN
+  alias: "Verification of enumeration and library-information over fabrics with multiple subsystems"
+  testcases:
+  - fabrics_enum_subnqn.sh
+  - fabrics_info_subnqn.sh
