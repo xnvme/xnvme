@@ -636,6 +636,7 @@ jobs:
         vm-image: ${{ matrix.guest.img }}
         vm-cloudinit: ${{ matrix.guest.os }}-${{ matrix.guest.ver }}
         cijoe-packages: './toolbox/cijoe-pkg-xnvme/'
+        cijoe-qemu-script: 'qemu_setup_nvme_2c3ns_nvm_zrwa.sh'
 
     - name: CIJOE, transfer source to qemu-guest
       run: |
@@ -739,6 +740,7 @@ jobs:
           --env ${{ steps.cijoe-qemu.outputs.target-env }} \
           --output ${{ steps.cijoe-qemu.outputs.results }} \
           --testplan \
+          "${CIJ_TESTPLANS}/xnvme-fabrics-subnqn.plan" \
           "${CIJ_TESTPLANS}/xnvme-cython.plan" \
           "${CIJ_TESTPLANS}/xnvme-python.plan" \
           "${CIJ_TESTPLANS}/xnvme-zns-zrwa-linux-nvme.plan" \
