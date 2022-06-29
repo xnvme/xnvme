@@ -81,7 +81,8 @@ else:
     assert libdir, "pkg-config returned an empty string as libdir. This won't work."
 
 cflag_libraries = [
-    x.groups()[0] for x in re.finditer(r"-l([a-z]+)", os.environ.get("CFLAGS", ""))
+    x.groups()[0]
+    for x in re.finditer(r"-l([a-z]+)", pkg_config("xnvme", "--libs-only-l"))
 ]
 
 if cython:
