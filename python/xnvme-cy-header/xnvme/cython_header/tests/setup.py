@@ -37,7 +37,9 @@ setup(
                 sources=["test_cython.pyx"],
                 libraries=[
                     x.groups()[0]
-                    for x in re.finditer(r"-l([a-z]+)", os.environ.get("CFLAGS", ""))
+                    for x in re.finditer(
+                        r"-l([a-z]+)", pkg_config("xnvme", "--libs-only-l")
+                    )
                 ],
                 include_dirs=[includedir],
                 library_dirs=[libdir],
