@@ -442,6 +442,80 @@ exit:
 	return err;
 }
 
+static int
+sub_write_directive(struct xnvmec *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	const struct xnvme_geo *geo = cli->args.geo;
+	const uint64_t slba = cli->args.slba;
+	const size_t nlb = cli->args.nlb;
+	uint32_t nsid = cli->args.nsid;
+	uint32_t dtype = cli->args.dtype;
+	uint32_t dspec = cli->args.dspec;
+
+	void *dbuf = NULL, *mbuf = NULL;
+	size_t dbuf_nbytes, mbuf_nbytes;
+	int err;
+
+	if (!cli->given[XNVMEC_OPT_NSID]) {
+		nsid = xnvme_dev_get_nsid(cli->args.dev);
+	}
+
+	dbuf_nbytes = (nlb + 1) * geo->lba_nbytes;
+	mbuf_nbytes = geo->lba_extended ? 0 : (nlb + 1) * geo->nbytes_oob;
+
+	xnvmec_pinf("Writing nsid: 0x%x, slba: 0x%016lx, nlb: %zu", nsid, slba, nlb);
+
+	xnvmec_pinf("Alloc/fill dbuf, dbuf_nbytes: %zu", dbuf_nbytes);
+	dbuf = xnvme_buf_alloc(dev, dbuf_nbytes);
+	if (!dbuf) {
+		err = -errno;
+		xnvmec_perr("xnvme_buf_alloc()", err);
+		goto exit;
+	}
+	err = xnvmec_buf_fill(dbuf, dbuf_nbytes,
+			      cli->args.data_input ? cli->args.data_input : "anum");
+	if (err) {
+		xnvmec_perr("xnvmec_buf_fill()", err);
+		goto exit;
+	}
+
+	if (mbuf_nbytes) {
+		xnvmec_pinf("Alloc/fill mbuf, mbuf_nbytes: %zu", mbuf_nbytes);
+		mbuf = xnvme_buf_alloc(dev, mbuf_nbytes);
+		if (!mbuf) {
+			err = -errno;
+			xnvmec_perr("xnvme_buf_alloc()", err);
+			goto exit;
+		}
+		err = xnvmec_buf_fill(mbuf, mbuf_nbytes, "anum");
+		if (err) {
+			xnvmec_perr("xnvmec_buf_fill()", err);
+			goto exit;
+		}
+	}
+
+	xnvmec_pinf("Preparing and sending the command...");
+	xnvme_prep_nvm(&ctx, XNVME_SPEC_NVM_OPC_WRITE, nsid, slba, nlb);
+	ctx.cmd.nvm.dtype = dtype;
+	ctx.cmd.nvm.dspec = dspec;
+
+	err = xnvme_cmd_pass(&ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		xnvmec_perr("xnvme_cmd_pass()", err);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+		err = err ? err : -EIO;
+		goto exit;
+	}
+
+exit:
+	xnvme_buf_free(dev, dbuf);
+	xnvme_buf_free(dev, mbuf);
+
+	return err;
+}
+
 //
 // Command-Line Interface (CLI) definition
 //
@@ -591,6 +665,27 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
 			{XNVMEC_OPT_META_INPUT, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+		},
+	},
+	{
+		"write-dir",
+		"Writes directive specific data and optionally metadata",
+		"Writes directive specific data and optionally metadata",
+		sub_write_directive,
+		{
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
+			{XNVMEC_OPT_NLB, XNVMEC_LREQ},
+			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
+			{XNVMEC_OPT_META_INPUT, XNVMEC_LOPT},
+			{XNVMEC_OPT_DTYPE, XNVMEC_LOPT},
+			{XNVMEC_OPT_DSPEC, XNVMEC_LOPT},
 
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},

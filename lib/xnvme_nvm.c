@@ -102,6 +102,16 @@ xnvme_nvm_write_zeroes(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t sdlba,
 	return xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
 }
 
+void
+xnvme_prep_nvm(struct xnvme_cmd_ctx *ctx, uint8_t opcode, uint32_t nsid, uint64_t slba,
+	       uint16_t nlb)
+{
+	ctx->cmd.common.opcode = opcode;
+	ctx->cmd.common.nsid = nsid;
+	ctx->cmd.nvm.slba = slba;
+	ctx->cmd.nvm.nlb = nlb;
+}
+
 int
 xnvme_nvm_scopy(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t sdlba,
 		struct xnvme_spec_nvm_scopy_fmt_zero *ranges, uint8_t nr,
