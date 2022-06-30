@@ -221,6 +221,13 @@ struct xnvmec_args {
 	uint32_t oflags;
 
 	uint32_t vec_cnt;
+
+	uint32_t dtype;
+	uint32_t dspec;
+	uint32_t doper;
+	uint32_t endir;
+	uint32_t tgtdir;
+	uint32_t nsr;
 };
 
 void
@@ -358,7 +365,14 @@ enum xnvmec_opt {
 	XNVMEC_OPT_SUBNQN  = 98, ///< XNVME_OPT_SUBNQN
 	XNVMEC_OPT_HOSTNQN = 99, ///< XNVMEC_OPT_HOSTNQN
 
-	XNVMEC_OPT_END = 100, ///< XNVMEC_OPT_END
+	XNVMEC_OPT_DTYPE  = 100, ///< XNVMEC_OPT_DTYPE
+	XNVMEC_OPT_DSPEC  = 101, ///< XNVMEC_OPT_DSPEC
+	XNVMEC_OPT_DOPER  = 102, ///< XNVMEC_OPT_DOPER
+	XNVMEC_OPT_ENDIR  = 103, ///< XNVMEC_OPT_ENDIR
+	XNVMEC_OPT_TGTDIR = 104, ///< XNVMEC_OPT_TGTDIR
+	XNVMEC_OPT_NSR    = 105, ///< XNVMEC_OPT_NSR
+
+	XNVMEC_OPT_END = 106, ///< XNVMEC_OPT_END
 };
 
 /**

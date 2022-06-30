@@ -884,6 +884,43 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 	},
 
 	{
+		.opt = XNVMEC_OPT_DTYPE,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "dtype",
+		.descr = "Directive type; Identify 0x0, Streams 0x1",
+	},
+	{
+		.opt = XNVMEC_OPT_DSPEC,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "dspec",
+		.descr = "Directive specification associated with directive type",
+	},
+	{
+		.opt = XNVMEC_OPT_DOPER,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "doper",
+		.descr = "Directive operation to perform",
+	},
+	{
+		.opt = XNVMEC_OPT_ENDIR,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "endir",
+		.descr = "Directive enable/disable; Enable 0x1, Disable 0x0",
+	},
+	{
+		.opt = XNVMEC_OPT_TGTDIR,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "tgtdir",
+		.descr = "Target directive to enable/disable",
+	},
+	{
+		.opt = XNVMEC_OPT_NSR,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "nsr",
+		.descr = "Namespace streams requested",
+	},
+
+	{
 		.opt = XNVMEC_OPT_END,
 		.vtype = XNVMEC_OPT_VTYPE_NUM,
 		.name = "",
@@ -1449,6 +1486,24 @@ xnvmec_assign_arg(struct xnvmec *cli, struct xnvmec_opt_attr *opt_attr, char *ar
 		break;
 	case XNVMEC_OPT_VEC_CNT:
 		args->vec_cnt = arg ? num : 0;
+		break;
+	case XNVMEC_OPT_DTYPE:
+		args->dtype = num;
+		break;
+	case XNVMEC_OPT_DSPEC:
+		args->dspec = num;
+		break;
+	case XNVMEC_OPT_DOPER:
+		args->doper = num;
+		break;
+	case XNVMEC_OPT_ENDIR:
+		args->endir = num;
+		break;
+	case XNVMEC_OPT_TGTDIR:
+		args->tgtdir = num;
+		break;
+	case XNVMEC_OPT_NSR:
+		args->nsr = num;
 		break;
 
 	case XNVMEC_OPT_END:
