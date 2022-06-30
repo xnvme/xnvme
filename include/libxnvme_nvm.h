@@ -77,6 +77,21 @@ int
 xnvme_nvm_write_zeroes(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t sdlba, uint16_t nlb);
 
 /**
+ * Submit, and optionally wait for completion of, a NVMe Write
+ *
+ * @param ctx Pointer to command context (::xnvme_cmd_ctx)
+ * @param opcode Opcode for the NVMe command
+ * @param nsid Namespace Identifier
+ * @param slba The LBA to start the write at
+ * @param nlb Number of LBAs to be written. NOTE: nlb is a zero-based value
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ */
+void
+xnvme_prep_nvm(struct xnvme_cmd_ctx *ctx, uint8_t opcode, uint32_t nsid, uint64_t slba,
+	       uint16_t nlb);
+
+/**
  * Submit, and optionally wait for completion of a NVMe Simple-Copy-Command
  *
  * @see xnvme_cmd_opts
