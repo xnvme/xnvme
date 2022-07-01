@@ -954,6 +954,8 @@ enum xnvme_spec_adm_opc {
 
 	XNVME_SPEC_ADM_OPC_SFEAT = 0x09, ///< XNVME_SPEC_ADM_OPC_SFEAT
 	XNVME_SPEC_ADM_OPC_GFEAT = 0x0A, ///< XNVME_SPEC_ADM_OPC_GFEAT
+
+	XNVME_SPEC_ADM_OPC_DSEND = 0x19, ///< XNVME_SPEC_ADM_OPC_DSEND
 };
 
 /**
@@ -1003,6 +1005,32 @@ enum xnvme_spec_feat_sel {
 	XNVME_SPEC_FEAT_SEL_DEFAULT   = 0x1, ///< XNVME_SPEC_FEAT_SEL_DEFAULT
 	XNVME_SPEC_FEAT_SEL_SAVED     = 0x2, ///< XNVME_SPEC_FEAT_SEL_SAVED
 	XNVME_SPEC_FEAT_SEL_SUPPORTED = 0x3  ///< XNVME_SPEC_FEAT_SEL_SUPPORTED
+};
+
+/**
+ * @enum xnvme_spec_dir_types
+ */
+enum xnvme_spec_dir_types {
+	XNVME_SPEC_DIR_IDENTIFY = 0x0, ///< XNVME_SPEC_DIR_IDENTIFY
+	XNVME_SPEC_DIR_STREAMS  = 0x1, ///< XNVME_SPEC_DIR_STREAMS
+};
+
+/**
+ * @enum xnvme_spec_dsend_idfy_doper
+ */
+enum xnvme_spec_dsend_idfy_doper {
+	// Identify directive send enable directive
+	XNVME_SPEC_DSEND_IDFY_ENDIR = 0x1,
+};
+
+/**
+ * @enum xnvme_spec_dsend_streams_doper
+ */
+enum xnvme_spec_dsend_streams_doper {
+	// Streams directive send, release identifier
+	XNVME_SPEC_DSEND_STREAMS_RELID = 0x1,
+	// Streams directive send, release resources
+	XNVME_SPEC_DSEND_STREAMS_RELRS = 0x2,
 };
 
 /**
@@ -1277,6 +1305,34 @@ struct xnvme_spec_cmd_sfeat {
 	uint32_t cdw12_15[4]; ///< Command dword 12 to 15
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_sfeat) == 64, "Incorrect size")
+
+/**
+ * NVMe Command Accessor for the directive send command
+ *
+ * @struct xnvme_spec_cmd_dsend
+ */
+struct xnvme_spec_cmd_dsend {
+	uint32_t cdw00_09[10]; ///< Command dword 0 to 9
+
+	uint32_t numd;
+
+	uint32_t doper : 8;  ///< Directive operation
+	uint32_t dtype : 8;  ///< Directive type
+	uint32_t dspec : 16; ///< Directive specific
+
+	union {
+		struct {
+			uint32_t endir  : 1; ///< Enable directive
+			uint32_t rsvd1  : 7;
+			uint32_t tdtype : 8; ///< Target directive to enable / disable
+			uint32_t rsvd2  : 16;
+		};
+		uint32_t val;
+	} cdw12;
+
+	uint32_t cdw13_15[3]; ///< Command dword 13 to 15
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_dsend) == 64, "Incorrect size")
 
 /**
  * NVMe Command Accessor for the identify command
@@ -1687,6 +1743,7 @@ struct xnvme_spec_cmd {
 		struct xnvme_spec_cmd_gfeat gfeat;
 		struct xnvme_spec_cmd_sfeat sfeat;
 		struct xnvme_spec_cmd_idfy idfy;
+		struct xnvme_spec_cmd_dsend dsend;
 		struct xnvme_spec_cmd_nvm nvm;
 		struct xnvme_spec_nvm_cmd_scopy scopy;
 		struct xnvme_spec_nvm_write_zeroes write_zeroes;
