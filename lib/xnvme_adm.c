@@ -134,3 +134,17 @@ xnvme_adm_sfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint32_t 
 
 	return xnvme_cmd_pass_admin(ctx, (void *)dbuf, dbuf_nbytes, NULL, 0x0);
 }
+
+int
+xnvme_adm_dir_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t doper, uint32_t dtype,
+		   uint32_t dspec, uint32_t val)
+{
+	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_DSEND;
+	ctx->cmd.common.nsid = nsid;
+	ctx->cmd.dsend.doper = doper;
+	ctx->cmd.dsend.dtype = dtype;
+	ctx->cmd.dsend.dspec = dspec;
+	ctx->cmd.dsend.cdw12.val = val;
+
+	return xnvme_cmd_pass_admin(ctx, NULL, 0x0, NULL, 0x0);
+}

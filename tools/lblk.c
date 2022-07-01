@@ -288,6 +288,57 @@ exit:
 	return err;
 }
 
+static int
+sub_dir_send(struct xnvmec *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
+	uint32_t doper = cli->args.doper;
+	uint32_t dtype = cli->args.dtype;
+	uint32_t dspec = cli->args.dspec;
+	uint32_t endir = cli->args.endir;
+	uint32_t tgtdir = cli->args.tgtdir;
+	uint32_t cdw12 = 0;
+	int err = -EINVAL;
+
+	xnvmec_pinf("cmd_dsend: {nsid: 0x%x, doper:0x%x, dtype: 0x%x, dspec: 0x%x, endir: 0x%x, "
+		    "tgtdir: 0x%x}",
+		    nsid, doper, dtype, dspec, endir, tgtdir);
+
+	switch (dtype) {
+	case XNVME_SPEC_DIR_IDENTIFY:
+		if (doper == XNVME_SPEC_DSEND_IDFY_ENDIR) {
+			cdw12 = (tgtdir << 8) | endir;
+			break;
+		} else {
+			xnvmec_perr("invalid directive operation for identify directives", err);
+			return err;
+		}
+	case XNVME_SPEC_DIR_STREAMS:
+		if ((doper == XNVME_SPEC_DSEND_STREAMS_RELID) ||
+		    (doper == XNVME_SPEC_DSEND_STREAMS_RELRS)) {
+			break;
+		} else {
+			xnvmec_perr("invalid directive operation for stream directives", err);
+			return err;
+		}
+	default:
+		xnvmec_perr("invalid directive type", err);
+		return err;
+	}
+
+	err = xnvme_adm_dir_send(&ctx, nsid, doper, dtype, dspec, cdw12);
+
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		xnvmec_perr("xnvme_adm_dsend()", err);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+		err = err ? err : -EIO;
+	}
+
+	return err;
+}
+
 //
 // Command-Line Interface (CLI) definition
 //
@@ -326,6 +377,25 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+		},
+	},
+	{
+		"dir-send",
+		"Directive send for the given URI",
+		"Directive send for the given URI",
+		sub_dir_send,
+		{
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_DSPEC, XNVMEC_LOPT},
+			{XNVMEC_OPT_DTYPE, XNVMEC_LOPT},
+			{XNVMEC_OPT_DOPER, XNVMEC_LOPT},
+			{XNVMEC_OPT_ENDIR, XNVMEC_LOPT},
+			{XNVMEC_OPT_TGTDIR, XNVMEC_LOPT},
 
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
