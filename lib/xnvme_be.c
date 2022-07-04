@@ -459,6 +459,9 @@ xnvme_be_dev_idfy(struct xnvme_dev *dev)
 		goto exit;
 	}
 
+	// Store subnqn in device-identifier
+	memcpy(dev->ident.subnqn, idfy_ctrlr->ctrlr.subnqn, sizeof(dev->ident.subnqn));
+
 	// Store idfy-ctrlr and idfy-ns in device instance
 	memcpy(&dev->id.ctrlr, idfy_ctrlr, sizeof(*idfy_ctrlr));
 	memcpy(&dev->id.ns, idfy_ns, sizeof(*idfy_ns));
