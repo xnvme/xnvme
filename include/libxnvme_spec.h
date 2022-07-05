@@ -956,6 +956,7 @@ enum xnvme_spec_adm_opc {
 	XNVME_SPEC_ADM_OPC_GFEAT = 0x0A, ///< XNVME_SPEC_ADM_OPC_GFEAT
 
 	XNVME_SPEC_ADM_OPC_DSEND = 0x19, ///< XNVME_SPEC_ADM_OPC_DSEND
+	XNVME_SPEC_ADM_OPC_DRECV = 0x1A, ///< XNVME_SPEC_ADM_OPC_DRECV
 };
 
 /**
@@ -1031,6 +1032,110 @@ enum xnvme_spec_dsend_streams_doper {
 	XNVME_SPEC_DSEND_STREAMS_RELID = 0x1,
 	// Streams directive send, release resources
 	XNVME_SPEC_DSEND_STREAMS_RELRS = 0x2,
+};
+
+/**
+ * @enum xnvme_spec_drecv_idfy_doper
+ */
+enum xnvme_spec_drecv_idfy_doper {
+	// Identify directive receive return parameters
+	XNVME_SPEC_DRECV_IDFY_RETPR = 0x1,
+};
+
+/**
+ * @enum xnvme_spec_drecv_streams_doper
+ */
+enum xnvme_spec_drecv_streams_doper {
+	// Streams directive receive, return parameters
+	XNVME_SPEC_DRECV_STREAMS_RETPR = 0x1,
+	// Streams directive receive, get status
+	XNVME_SPEC_DRECV_STREAMS_GETST = 0x2,
+	// Streams directive receive, allocate resource
+	XNVME_SPEC_DRECV_STREAMS_ALLRS = 0x3,
+};
+
+/**
+ * This structure holds the return parameters data structure for identify directive
+ *
+ * @struct xnvme_spec_idfy_dir_rp
+ */
+struct xnvme_spec_idfy_dir_rp {
+	/* Directives Supported */
+	struct {
+		uint8_t identify : 1; ///< Identify
+		uint8_t streams  : 1; ///< Streams
+		uint8_t rsvd1    : 6;
+
+		uint8_t rsvd2[31];
+	} directives_supported;
+
+	/* Directives Enabled */
+	struct {
+		uint8_t identify : 1; ///< Identify
+		uint8_t streams  : 1; ///< Streams
+		uint8_t rsvd1    : 6;
+
+		uint8_t rsvd2[31];
+	} directives_enabled;
+
+	uint8_t rsvd4[4032];
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_dir_rp) == 4096, "Incorrect size")
+
+/**
+ * This structure holds the return parameters data structure for streams directive
+ *
+ * @struct xnvme_spec_streams_dir_rp
+ */
+struct xnvme_spec_streams_dir_rp {
+	uint16_t msl;  ///< Max streams limit
+	uint16_t nssa; ///< NVM subsystem streams available
+	uint16_t nsso; ///< NVM subsystems streams open
+
+	union {
+		struct {
+			/* Stream id shared by multiple zon-zero host identifier */
+			uint8_t multi_host : 1;
+			uint8_t reserved   : 7;
+		} bits;
+		uint8_t val;
+	} nssc;
+
+	uint8_t reserved1[9];
+
+	uint32_t sws; ///< Stream write size
+	uint16_t sgs; ///< Stream granularity size
+
+	uint16_t nsa; ///< Namespace streams allocated
+	uint16_t nso; ///< Namespace streams open
+
+	uint8_t reserved2[6];
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_streams_dir_rp) == 32, "Incorrect size")
+
+/**
+ * This structure holds the get status data structure for streams directive
+ *
+ * @struct xnvme_spec_streams_dir_gs
+ */
+struct xnvme_spec_streams_dir_gs {
+	uint16_t open_sc; ///< Open stream count
+	uint16_t sid[];   ///< Stream identifier
+};
+
+/**
+ * This structure is encapsulation for values provided by allocate resource
+ *
+ * @struct xnvme_spec_alloc_resource
+ */
+struct xnvme_spec_alloc_resource {
+	union {
+		struct {
+			uint32_t nsa  : 16; ///< Namespace streams allocated
+			uint32_t rsvd : 16;
+		} bits;
+		uint32_t val;
+	};
 };
 
 /**
@@ -1335,6 +1440,34 @@ struct xnvme_spec_cmd_dsend {
 	uint32_t cdw13_15[3]; ///< Command dword 13 to 15
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_dsend) == 64, "Incorrect size")
+
+/**
+ * NVMe Command Accessor for the directive receive command
+ *
+ * @struct xnvme_spec_cmd_recv
+ */
+struct xnvme_spec_cmd_drecv {
+	uint32_t cdw00_09[10]; ///< Command dword 0 to 9
+
+	uint32_t numd; ///< Command dowrd 10
+
+	/* Command dword 11 */
+	uint32_t doper : 8;  ///< Directive operation
+	uint32_t dtype : 8;  ///< Directive type
+	uint32_t dspec : 16; ///< Directive specific
+
+	/* Command dword 12 */
+	union {
+		struct {
+			uint32_t nsr  : 16; ///< Namespace streams requested
+			uint32_t rsvd : 16;
+		};
+		uint32_t val;
+	} cdw12;
+
+	uint32_t cdw13_15[3]; ///< Command dword 13 to 15
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_drecv) == 64, "Incorrect size")
 
 /**
  * NVMe Command Accessor for the identify command
@@ -1751,6 +1884,7 @@ struct xnvme_spec_cmd {
 		struct xnvme_spec_cmd_sfeat sfeat;
 		struct xnvme_spec_cmd_idfy idfy;
 		struct xnvme_spec_cmd_dsend dsend;
+		struct xnvme_spec_cmd_drecv drecv;
 		struct xnvme_spec_cmd_nvm nvm;
 		struct xnvme_spec_nvm_cmd_scopy scopy;
 		struct xnvme_spec_nvm_write_zeroes write_zeroes;
@@ -2180,6 +2314,46 @@ xnvme_spec_cmd_fpr(FILE *stream, struct xnvme_spec_cmd *cmd, int opts);
  */
 int
 xnvme_spec_cmd_pr(struct xnvme_spec_cmd *cmd, int opts);
+
+/**
+ * Prints the given :;xnvme_spec_idfy_dir_rp to stdout
+ *
+ * @param idfy pointer to structure to print
+ * @param opts printer options, see ::xnvme_pr
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_drecv_idfy_pr(struct xnvme_spec_idfy_dir_rp *idfy, int opts);
+
+/**
+ * Prints the given :;xnvme_spec_streams_dir_rp to stdout
+ *
+ * @param srp pointer to structure to print
+ * @param opts printer options, see ::xnvme_pr
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_drecv_srp_pr(struct xnvme_spec_streams_dir_rp *srp, int opts);
+
+/**
+ * Prints the given :;xnvme_spec_streams_dir_gs to stdout
+ *
+ * @param sgs pointer to structure to print
+ * @param opts printer options, see ::xnvme_pr
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_drecv_sgs_pr(struct xnvme_spec_streams_dir_gs *sgs, int opts);
+
+/**
+ * Prints the given :;xnvme_spec_alloc_resource to stdout
+ *
+ * @param sar structure to print
+ * @param opts printer options, see ::xnvme_pr
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_drecv_sar_pr(struct xnvme_spec_alloc_resource sar, int opts);
 
 int
 xnvme_spec_nvm_scopy_fmt_zero_fpr(FILE *stream, const struct xnvme_spec_nvm_scopy_fmt_zero *entry,
