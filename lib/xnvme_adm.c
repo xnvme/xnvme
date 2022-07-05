@@ -148,3 +148,17 @@ xnvme_adm_dir_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t doper, uint
 
 	return xnvme_cmd_pass_admin(ctx, NULL, 0x0, NULL, 0x0);
 }
+
+int
+xnvme_adm_dir_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t doper, uint32_t dtype,
+		   uint32_t val, void *dbuf, size_t dbuf_nbytes)
+{
+	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_DRECV;
+	ctx->cmd.common.nsid = nsid;
+	ctx->cmd.drecv.numd = (dbuf_nbytes) ? (dbuf_nbytes / sizeof(uint32_t) - 1u) : 0;
+	ctx->cmd.drecv.doper = doper;
+	ctx->cmd.drecv.dtype = dtype;
+	ctx->cmd.drecv.cdw12.val = val;
+
+	return xnvme_cmd_pass_admin(ctx, dbuf, dbuf_nbytes, NULL, 0x0);
+}

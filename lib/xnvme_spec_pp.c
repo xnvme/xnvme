@@ -14,6 +14,8 @@ xnvme_spec_adm_opc_str(enum xnvme_spec_adm_opc eval)
 		return "ADM_OPC_SFEAT";
 	case XNVME_SPEC_ADM_OPC_DSEND:
 		return "ADM_OPC_DSEND";
+	case XNVME_SPEC_ADM_OPC_DRECV:
+		return "ADM_OPC_DRECV";
 	}
 
 	return "ENOSYS";
