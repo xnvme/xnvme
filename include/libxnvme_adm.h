@@ -199,6 +199,21 @@ xnvme_nvm_sanitize(struct xnvme_cmd_ctx *ctx, uint8_t sanact, uint8_t ause, uint
 int
 xnvme_adm_dir_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t doper, uint32_t dtype,
 		   uint32_t dspec, uint32_t val);
+
+/**
+ * Submit and wait for completion of directive receive command
+ *
+ * @param ctx Pointer to ::xnvme_cmd_ctx
+ * @param nsid Namespace identifier
+ * @param doper Directive operation to perform
+ * @param dtype Directive type
+ * @param val Value specific to command dword 12
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ */
+int
+xnvme_adm_dir_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t doper, uint32_t dtype,
+		   uint32_t val, void *dbuf, size_t dbuf_nbytes);
 #ifdef __cplusplus
 }
 #endif

@@ -339,6 +339,109 @@ sub_dir_send(struct xnvmec *cli)
 	return err;
 }
 
+static int
+sub_dir_receive(struct xnvmec *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
+	uint32_t doper = cli->args.doper;
+	uint32_t dtype = cli->args.dtype;
+	uint32_t nsr = cli->args.nsr;
+	uint32_t cdw12 = 0;
+	int err = -EINVAL;
+	size_t dbuf_nbytes = 0;
+	void *dbuf = NULL;
+
+	xnvmec_pinf("cmd_drecv: {nsid: 0x%x, doper:0x%x, dtype: 0x%x, nsr: 0x%x}", nsid, doper,
+		    dtype, nsr);
+
+	switch (dtype) {
+	case XNVME_SPEC_DIR_IDENTIFY:
+		if (doper == XNVME_SPEC_DRECV_IDFY_RETPR) {
+			dbuf_nbytes = 4096;
+			break;
+		} else {
+			xnvmec_perr("invalid directive operation for identify directive", err);
+			return err;
+		}
+	case XNVME_SPEC_DIR_STREAMS:
+		switch (doper) {
+		case XNVME_SPEC_DRECV_STREAMS_RETPR:
+			dbuf_nbytes = 32;
+			break;
+		case XNVME_SPEC_DRECV_STREAMS_GETST:
+			dbuf_nbytes = 128 * 1024;
+			break;
+		case XNVME_SPEC_DRECV_STREAMS_ALLRS:
+			cdw12 = nsr & 0xFFFF;
+			break;
+		default:
+			xnvmec_perr("invalid directive operation for streams directive", err);
+			return err;
+		}
+		break;
+	default:
+		xnvmec_perr("invalid directive type", err);
+		return err;
+	}
+
+	if (dbuf_nbytes) {
+		dbuf = xnvme_buf_alloc(dev, dbuf_nbytes);
+		if (!dbuf) {
+			err = -errno;
+			xnvmec_perr("xnvme_buf_alloc()", err);
+			goto exit;
+		}
+	}
+	err = xnvme_adm_dir_recv(&ctx, nsid, doper, dtype, cdw12, dbuf, dbuf_nbytes);
+
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		xnvmec_perr("xnvme_adm_drecv()", err);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+		err = err ? err : -EIO;
+		goto exit;
+	}
+
+	switch (dtype) {
+	case XNVME_SPEC_DIR_IDENTIFY:
+		if (doper == XNVME_SPEC_DRECV_IDFY_RETPR) {
+			xnvme_spec_drecv_idfy_pr((struct xnvme_spec_idfy_dir_rp *)dbuf,
+						 XNVME_PR_DEF);
+			break;
+		} else {
+			xnvmec_perr("invalid directive operation for identify directive", err);
+			goto exit;
+		}
+	case XNVME_SPEC_DIR_STREAMS:
+		switch (doper) {
+		case XNVME_SPEC_DRECV_STREAMS_RETPR:
+			xnvme_spec_drecv_srp_pr((struct xnvme_spec_streams_dir_rp *)dbuf,
+						XNVME_PR_DEF);
+			break;
+		case XNVME_SPEC_DRECV_STREAMS_GETST:
+			xnvme_spec_drecv_sgs_pr((struct xnvme_spec_streams_dir_gs *)dbuf,
+						XNVME_PR_DEF);
+			break;
+		case XNVME_SPEC_DRECV_STREAMS_ALLRS: {
+			struct xnvme_spec_alloc_resource ar = {.val = ctx.cpl.cdw0};
+			xnvme_spec_drecv_sar_pr(ar, XNVME_PR_DEF);
+		} break;
+		default:
+			xnvmec_perr("invalid directive operation for streams directive", err);
+			goto exit;
+		}
+		break;
+	default:
+		xnvmec_perr("invalid directive type", err);
+		goto exit;
+	}
+
+exit:
+	xnvme_buf_free(dev, dbuf);
+	return err;
+}
+
 //
 // Command-Line Interface (CLI) definition
 //
@@ -396,6 +499,23 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DOPER, XNVMEC_LOPT},
 			{XNVMEC_OPT_ENDIR, XNVMEC_LOPT},
 			{XNVMEC_OPT_TGTDIR, XNVMEC_LOPT},
+
+			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+		},
+	},
+	{
+		"dir-receive",
+		"Directive receive for the given URI",
+		"Directive receive for the given URI",
+		sub_dir_receive,
+		{
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_DTYPE, XNVMEC_LOPT},
+			{XNVMEC_OPT_DOPER, XNVMEC_LOPT},
+			{XNVMEC_OPT_NSR, XNVMEC_LOPT},
 
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},

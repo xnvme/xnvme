@@ -749,6 +749,148 @@ xnvme_spec_nvm_idfy_ns_pr(struct xnvme_spec_nvm_idfy_ns *idfy, int opts)
 }
 
 int
+xnvme_spec_drecv_idfy_fpr(FILE *stream, struct xnvme_spec_idfy_dir_rp *idfy, int opts)
+{
+	int wrtn = 0;
+
+	switch (opts) {
+	case XNVME_PR_DEF:
+	case XNVME_PR_YAML:
+		break;
+
+	case XNVME_PR_TERSE:
+		wrtn += fprintf(stream, "# ENOSYS: opts(%x)", opts);
+		return wrtn;
+	}
+
+	wrtn += fprintf(stream, "xnvme_spec_idfy_dir_rp:");
+	if (!idfy) {
+		wrtn += fprintf(stream, " ~\n");
+		return wrtn;
+	}
+
+	wrtn += fprintf(stream, "\n");
+	wrtn += fprintf(stream, "  Directives supported:\n");
+	wrtn += fprintf(stream, "    identify: %d\n", idfy->directives_supported.identify);
+	wrtn += fprintf(stream, "    streams: %d\n", idfy->directives_supported.streams);
+	wrtn += fprintf(stream, "  Directives enabled:\n");
+	wrtn += fprintf(stream, "    identify: %d\n", idfy->directives_enabled.identify);
+	wrtn += fprintf(stream, "    streams: %d\n", idfy->directives_enabled.streams);
+
+	return wrtn;
+}
+
+int
+xnvme_spec_drecv_idfy_pr(struct xnvme_spec_idfy_dir_rp *idfy, int opts)
+{
+	return xnvme_spec_drecv_idfy_fpr(stdout, idfy, opts);
+}
+
+int
+xnvme_spec_drecv_srp_fpr(FILE *stream, struct xnvme_spec_streams_dir_rp *srp, int opts)
+{
+	int wrtn = 0;
+
+	switch (opts) {
+	case XNVME_PR_DEF:
+	case XNVME_PR_YAML:
+		break;
+
+	case XNVME_PR_TERSE:
+		wrtn += fprintf(stream, "# ENOSYS: opts(%x)", opts);
+		return wrtn;
+	}
+
+	wrtn += fprintf(stream, "xnvme_spec_streams_dir_rp:");
+	if (!srp) {
+		wrtn += fprintf(stream, " ~\n");
+		return wrtn;
+	}
+
+	wrtn += fprintf(stream, "\n");
+	wrtn += fprintf(stream, "  msl: %d\n", srp->msl);
+	wrtn += fprintf(stream, "  nssa: %d\n", srp->nssa);
+	wrtn += fprintf(stream, "  nsso: %d\n", srp->nsso);
+	wrtn += fprintf(stream, "  multi_host: %d\n", srp->nssc.bits.multi_host);
+	wrtn += fprintf(stream, "  sws: %d\n", srp->sws);
+	wrtn += fprintf(stream, "  sgs: %d\n", srp->sgs);
+	wrtn += fprintf(stream, "  nsa: %d\n", srp->nsa);
+	wrtn += fprintf(stream, "  nso: %d\n", srp->nso);
+
+	return wrtn;
+}
+
+int
+xnvme_spec_drecv_srp_pr(struct xnvme_spec_streams_dir_rp *srp, int opts)
+{
+	return xnvme_spec_drecv_srp_fpr(stdout, srp, opts);
+}
+
+int
+xnvme_spec_drecv_sgs_fpr(FILE *stream, struct xnvme_spec_streams_dir_gs *sgs, int opts)
+{
+	int wrtn = 0;
+
+	switch (opts) {
+	case XNVME_PR_DEF:
+	case XNVME_PR_YAML:
+		break;
+
+	case XNVME_PR_TERSE:
+		wrtn += fprintf(stream, "# ENOSYS: opts(%x)", opts);
+		return wrtn;
+	}
+
+	wrtn += fprintf(stream, "xnvme_spec_streams_dir_rp:");
+	if (!sgs) {
+		wrtn += fprintf(stream, " ~\n");
+		return wrtn;
+	}
+
+	wrtn += fprintf(stream, "\n");
+	wrtn += fprintf(stream, "  open_sc: %d\n", sgs->open_sc);
+	for (int osc = 0; osc < sgs->open_sc; ++osc) {
+		wrtn += fprintf(stream, "  - sid[%d]: %d\n", osc, sgs->sid[osc]);
+	}
+
+	return wrtn;
+}
+
+int
+xnvme_spec_drecv_sgs_pr(struct xnvme_spec_streams_dir_gs *sgs, int opts)
+{
+	return xnvme_spec_drecv_sgs_fpr(stdout, sgs, opts);
+}
+
+int
+xnvme_spec_drecv_sar_fpr(FILE *stream, struct xnvme_spec_alloc_resource sar, int opts)
+{
+	int wrtn = 0;
+
+	switch (opts) {
+	case XNVME_PR_DEF:
+	case XNVME_PR_YAML:
+		break;
+
+	case XNVME_PR_TERSE:
+		wrtn += fprintf(stream, "# ENOSYS: opts(%x)", opts);
+		return wrtn;
+	}
+
+	wrtn += fprintf(stream, "xnvme_spec_alloc_resource:");
+	wrtn += fprintf(stream, "\n");
+	wrtn += fprintf(stream, "  nsa: %d\n", sar.bits.nsa);
+
+	return wrtn;
+}
+
+int
+xnvme_spec_drecv_sar_pr(struct xnvme_spec_alloc_resource sar, int opts)
+{
+	return xnvme_spec_drecv_sar_fpr(stdout, sar, opts);
+}
+
+int
 xnvme_spec_znd_descr_fpr_yaml(FILE *stream, const struct xnvme_spec_znd_descr *descr, int indent,
 			      const char *sep)
 {
