@@ -499,13 +499,20 @@ xnvme_be_spdk_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enum
 	for (int i = 0; i < XNVME_BE_SPDK_CTRLRS_MAX; ++i) {
 		struct _ctrlr *cref = &g_ctrlrs[i];
 		int num_ns;
+		int cerr;
 
 		if (!cref->ctrlr) {
 			break;
 		}
 
-		// TODO: add processing of admin-completions-here, e.g. the addition/removal of
-		// namespaces, since the controller was probed
+		// Do this to ensure that any namespaces added or removed are visible when re-using
+		// a controller which since they were probed
+		cerr = spdk_nvme_ctrlr_process_admin_completions(cref->ctrlr);
+		if (cerr < 0) {
+			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_process_admin_completions(), err: %d",
+				    cerr);
+			continue;
+		}
 
 		num_ns = spdk_nvme_ctrlr_get_num_ns(cref->ctrlr);
 		for (int nsid = 1; nsid <= num_ns; ++nsid) {
@@ -634,9 +641,14 @@ xnvme_be_spdk_dev_open(struct xnvme_dev *dev)
 			break;
 		}
 
-		// TODO: add processing of admin-completions-here, e.g. the addition/removal of
-		// namespaces, since the controller was probed
-
+		// Do this to ensure that any namespaces added or removed are visible when re-using
+		// a controller which since they were probed
+		err = spdk_nvme_ctrlr_process_admin_completions(cref->ctrlr);
+		if (err < 0) {
+			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_process_admin_completions(), err: %d",
+				    err);
+			continue;
+		}
 		if (!spdk_nvme_ctrlr_get_data(cref->ctrlr)) {
 			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_data()");
 			continue;
