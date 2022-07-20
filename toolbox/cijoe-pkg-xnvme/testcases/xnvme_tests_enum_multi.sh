@@ -11,10 +11,11 @@ source "$CIJ_ROOT/modules/cijoe.sh"
 test.enter
 
 : "${XNVME_URI:?Must be set and non-empty}"
+: "${XNVME_BE:?Must be set and non-empty}"
 
 COUNT=4
 
-if ! cij.cmd "xnvme_tests_enum multi --count ${COUNT}"; then
+if ! cij.cmd "xnvme_tests_enum multi --be ${XNVME_BE} --count ${COUNT}"; then
   test.fail
 fi
 
