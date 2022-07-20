@@ -29,6 +29,11 @@ xnvme_be_ramdisk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_
 		memcpy(dbuf, offset + (ctx->cmd.nvm.slba << ssw), dbuf_nbytes);
 		break;
 
+	case XNVME_SPEC_NVM_OPC_WRITE_ZEROES:
+		memset(offset + (ctx->cmd.nvm.slba << ssw), 0,
+		       (ctx->cmd.nvm.nlb + 1) * ctx->dev->geo.lba_nbytes);
+		break;
+
 	case XNVME_SPEC_FS_OPC_WRITE:
 		memcpy(offset + ctx->cmd.nvm.slba, dbuf, dbuf_nbytes);
 		break;
