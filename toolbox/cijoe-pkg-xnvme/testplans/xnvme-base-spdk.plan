@@ -6,6 +6,7 @@ descr_long: |
   * device enumeration
   * admin-commands idfy-ns, idfy-ctrlr, get-log, get/set feature
   * queue-init/teardown
+  * read/write
   Requires
   * XNVME_URI points to an NVMe namespace e.g. /dev/nvme0n1
 hooks: ["sysinf", "xnvme"]
@@ -26,3 +27,6 @@ testsuites:
 - name: xnvme_queue
   alias: "xNVMe: verify base functionality using be:spdk"
   evars: {XNVME_ASYNC: "nvme"}
+
+- name: xnvme_ioworker
+  alias: "xNVMe: verify base functionality using be:spdk"
