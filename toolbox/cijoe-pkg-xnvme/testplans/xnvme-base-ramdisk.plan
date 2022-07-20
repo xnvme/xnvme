@@ -6,6 +6,7 @@ descr_long: |
   * device enumeration
   * admin-commands idfy-ns, idfy-ctrlr, get feature
   * queue-init/teardown of thrpool
+  * read/write
   Requires
   * XNVME_URI defines an amount of memory in GB e.g. "2GB"
 hooks: ["xnvme"]
@@ -36,3 +37,6 @@ testsuites:
 - name: xnvme_queue
   alias: "xNVMe: verify base functionality using be:ramdisk/async:thrpool"
   evars: {XNVME_ASYNC: "thrpool"}
+
+- name: xnvme_ioworker
+  alias: "xNVMe: verify base functionality using be:ramdisk"
