@@ -22,6 +22,8 @@
 #define XNVME_BE_SPDK_AVLB_TRANSPORTS 3
 
 #define XNVME_BE_SPDK_CREFS_LEN 100
+#define XNVME_BE_SPDK_ADMIN_TIMEOUT 60000000
+#define XNVME_BE_SPDK_COMMAND_TIMEOUT 30000000
 static struct xnvme_be_spdk_ctrlr_ref g_cref[XNVME_BE_SPDK_CREFS_LEN];
 
 /**
@@ -431,6 +433,14 @@ probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
 	return _spdk_setup_controller_opts(&dev->opts, probed, ctrlr_opts);
 }
 
+static void
+timeout_cb_func(void *XNVME_UNUSED(cb_arg), struct spdk_nvme_ctrlr *ctrlr,
+		struct spdk_nvme_qpair *qpair, uint16_t cid)
+{
+	XNVME_DEBUG("FAILED: timeout reached cid=%d qpair=%p\n", cid, qpair);
+	spdk_nvme_ctrlr_fail(ctrlr);
+}
+
 /**
  * Sets up the state{ns, ctrlr, attached} given via the cb_ctx
  * detached if dev->nsid is not a match
@@ -469,6 +479,8 @@ attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid, struct spdk_n
 		XNVME_DEBUG("FAILED: _cref_insert(), err: %d", err);
 		return;
 	}
+	spdk_nvme_ctrlr_register_timeout_callback(ctrlr, XNVME_BE_SPDK_COMMAND_TIMEOUT,
+						  XNVME_BE_SPDK_ADMIN_TIMEOUT, timeout_cb_func, 0);
 }
 
 void
