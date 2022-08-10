@@ -1746,19 +1746,23 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_idfy) == 64, "Incorrect size")
 struct xnvme_spec_cmd_log {
 	uint32_t cdw00_09[10]; ///< Command dword 0 to 9
 
-	uint32_t lid    : 8; ///< Log Page Identifier
-	uint32_t lsp    : 4; ///< Log Specific Field
-	uint32_t rsvd10 : 3;
-	uint32_t rae    : 1;  ///< Retain Async. Event
-	uint32_t numdl  : 16; ///< Nr. of DWORDS lower-bits
+	uint32_t lid   : 8;  ///< Log Page Identifier
+	uint32_t lsp   : 7;  ///< Log Specific Field
+	uint32_t rae   : 1;  ///< Retain Async. Event
+	uint32_t numdl : 16; ///< Nr. of DWORDS lower-bits
 
-	uint32_t numdu  : 16; ///< Nr. of DWORDS upper-bits
-	uint32_t rsvd11 : 16;
+	uint32_t numdu : 16; ///< Nr. of DWORDS upper-bits
+	uint32_t lsi   : 16; ///< Log Specific Identifier
 
 	uint32_t lpol; ///< Log-page offset lower 32bits
 	uint32_t lpou; ///< Log-page offset upper 32bits
 
-	uint32_t cdw14_15[2]; ///< Command dword 14 to 15
+	uint32_t uuidx : 7; ///< UUID Index
+	uint32_t rsvd1 : 16;
+	uint32_t ot    : 1; ///< Offset Type
+	uint32_t csi   : 8; ///< Command Specific Identifier
+
+	uint32_t cdw15; ///< Command dword 15
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_log) == 64, "Incorrect size")
 
