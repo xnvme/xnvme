@@ -98,7 +98,8 @@ config-uring:
 	CC=$(CC) CXX=$(CXX) $(MESON) setup $(BUILD_DIR) \
 	   -Dwith-spdk=false \
 	   -Dwith-fio=false \
-	   -Dwith-liburing=true
+	   -Dwith-liburing=true \
+	   -Dwith-libvfn=false
 	@echo "## xNVMe: config-uring [DONE]"
 
 define config-slim-help
@@ -110,7 +111,8 @@ config-slim:
 	CC=$(CC) CXX=$(CXX) $(MESON) setup $(BUILD_DIR) \
 	   -Dwith-spdk=false \
 	   -Dwith-fio=false \
-	   -Dwith-liburing=false
+	   -Dwith-liburing=false \
+	   -Dwith-libvfn=false
 	@echo "## xNVMe: make config-slim [DONE]"
 
 define git-setup-help
