@@ -289,18 +289,20 @@ struct xnvme_spec_idfy_ns {
 		uint8_t thin_prov                  : 1; ///< thin provisioning
 		uint8_t ns_atomic_write_unit       : 1; ///< NAWUN, NAWUPF, and NACWU
 		uint8_t dealloc_or_unwritten_error : 1;
-		uint8_t guid_never_reused          : 1; ////< Non-zero NGUID and EUI64
+		uint8_t guid_never_reused          : 1; ///< Non-zero NGUID and EUI64
+		uint8_t optimal_performance        : 1; ///< NPWG, NPWA, NPDG, NPDA
 
-		uint8_t reserved1                  : 4;
+		uint8_t reserved1                  : 3;
 	} nsfeat;
 
 	uint8_t nlbaf; ///< number of lba formats
 
 	/** formatted lba size */
 	struct {
-		uint8_t format    : 4;
-		uint8_t extended  : 1;
-		uint8_t reserved2 : 3;
+		uint8_t format     : 4;
+		uint8_t extended   : 1;
+		uint8_t format_msb : 2;
+		uint8_t reserved2  : 1;
 	} flbas;
 
 	/** metadata capabilities */
@@ -332,6 +334,8 @@ struct xnvme_spec_idfy_ns {
 
 			/** last eight bytes of metadata */
 			uint8_t md_end   : 1;
+
+			uint8_t reserved : 3;
 		};
 		uint8_t val;
 	} dpc;
@@ -448,7 +452,45 @@ struct xnvme_spec_idfy_ns {
 
 	uint64_t nvmcap[2]; ///< NVM Capacity
 
-	uint8_t reserved64[40];
+	/** namespace preferred write granularity */
+	uint16_t npwg;
+
+	/** namespace preferred write alignment */
+	uint16_t npwa;
+
+	/** namespace preferred deallocate granularity */
+	uint16_t npdg;
+
+	/** namespace preferred deallocate alignment */
+	uint16_t npda;
+
+	/** namespace optimal write size */
+	uint16_t nows;
+
+	/** maximum single source range length */
+	uint16_t mssrl;
+
+	/** max copy length */
+	uint32_t mcl;
+
+	/** maximum source range count */
+	uint8_t msrc;
+
+	uint8_t reserved81[11];
+
+	/** ANA group identifier */
+	uint32_t anagrpid;
+
+	uint8_t reserved96[3];
+
+	/** namespace attributes */
+	uint8_t nsattr;
+
+	/** NVM set identifier */
+	uint16_t nvmsetid;
+
+	/** Endurance group identifier */
+	uint16_t endgid;
 
 	/** namespace globally unique identifier */
 	uint8_t nguid[16];
@@ -456,11 +498,9 @@ struct xnvme_spec_idfy_ns {
 	/** IEEE extended unique identifier */
 	uint64_t eui64;
 
-	struct xnvme_spec_lbaf lbaf[16]; /// LBA format support
+	struct xnvme_spec_lbaf lbaf[64]; /// LBA format support
 
-	uint8_t rsvd3776[3648];
-
-	uint8_t vendor_specific[256];
+	uint8_t vendor_specific[3712];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_ns) == 4096, "Incorrect size")
 
