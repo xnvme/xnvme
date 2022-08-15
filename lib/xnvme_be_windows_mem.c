@@ -88,6 +88,7 @@ xnvme_be_windows_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *XN
 #endif
 
 struct xnvme_be_mem g_xnvme_be_windows_mem = {
+	.id = "windows",
 #ifdef XNVME_BE_WINDOWS_ENABLED
 	.buf_alloc = xnvme_be_windows_buf_alloc,
 	.buf_realloc = xnvme_be_windows_buf_realloc,

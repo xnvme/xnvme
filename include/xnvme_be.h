@@ -16,7 +16,7 @@
 #define XNVME_BE_SYNC_NBYTES   24
 #define XNVME_BE_ADMIN_NBYTES  16
 #define XNVME_BE_DEV_NBYTES    24
-#define XNVME_BE_MEM_NBYTES    32
+#define XNVME_BE_MEM_NBYTES    40
 #define XNVME_BE_ATTR_NBYTES   24
 #define XNVME_BE_STATE_NBYTES  128
 #define XNVME_BE_MIXINS_NBYTES 16
@@ -118,6 +118,7 @@ struct xnvme_be_mem {
 	 * Free a buffer usable for NVMe commands
 	 */
 	void (*buf_free)(const struct xnvme_dev *, void *);
+	const char *id;
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_mem) == XNVME_BE_MEM_NBYTES, "Incorrect size")
 

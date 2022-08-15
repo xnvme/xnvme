@@ -664,6 +664,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_SUBNQN, XNVMEC_LOPT},
 			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			{XNVMEC_OPT_MEM, XNVMEC_LOPT},
 			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
 		},
 	},
