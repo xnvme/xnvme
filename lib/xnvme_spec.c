@@ -237,7 +237,15 @@ xnvme_spec_idfy_ctrl_fpr(FILE *stream, const struct xnvme_spec_idfy_ctrlr *idfy,
 	wrtn += fprintf(stream, "  rtd3e: %#x\n", idfy->rtd3e);
 	wrtn += fprintf(stream, "  oaes: %#x\n", idfy->oaes.val);
 	wrtn += fprintf(stream, "  ctratt: %#x\n", idfy->ctratt.val);
+	wrtn += fprintf(stream, "  rrls: %#x\n", idfy->rrls);
+	wrtn += fprintf(stream, "  cntrltype: %#x\n", idfy->cntrltype);
 	// TODO: fguid
+	wrtn += fprintf(stream, "  crdt1: %#x\n", idfy->crdt1);
+	wrtn += fprintf(stream, "  crdt2: %#x\n", idfy->crdt2);
+	wrtn += fprintf(stream, "  crdt3: %#x\n", idfy->crdt3);
+	wrtn += fprintf(stream, "  nvmsr: %#x\n", idfy->nvmsr.val);
+	wrtn += fprintf(stream, "  vwci: %#x\n", idfy->vwci.val);
+	wrtn += fprintf(stream, "  mec: %#x\n", idfy->mec.val);
 	wrtn += fprintf(stream, "  oacs: %#x\n", idfy->oacs.val);
 	wrtn += fprintf(stream, "  acl: %d\n", idfy->acl);
 	wrtn += fprintf(stream, "  aerl: %d\n", idfy->aerl);
@@ -248,6 +256,9 @@ xnvme_spec_idfy_ctrl_fpr(FILE *stream, const struct xnvme_spec_idfy_ctrlr *idfy,
 	wrtn += fprintf(stream, " celp: %u,", idfy->lpa.celp);
 	wrtn += fprintf(stream, " edlp: %u,", idfy->lpa.edlp);
 	wrtn += fprintf(stream, " telemetry: %u,", idfy->lpa.telemetry);
+	wrtn += fprintf(stream, " pel: %u,", idfy->lpa.pel);
+	wrtn += fprintf(stream, " mel: %u,", idfy->lpa.mel);
+	wrtn += fprintf(stream, " tel_da4: %u,", idfy->lpa.tel_da4);
 	wrtn += fprintf(stream, " val: %#x", idfy->lpa.val);
 	wrtn += fprintf(stream, "}\n");
 
@@ -272,6 +283,18 @@ xnvme_spec_idfy_ctrl_fpr(FILE *stream, const struct xnvme_spec_idfy_ctrlr *idfy,
 	wrtn += fprintf(stream, "  mntmt: %d\n", idfy->mntmt);
 	wrtn += fprintf(stream, "  mxtmt: %d\n", idfy->mxtmt);
 	wrtn += fprintf(stream, "  sanicap: %#x\n", idfy->sanicap.val);
+	wrtn += fprintf(stream, "  hmminds: %d\n", idfy->hmminds);
+	wrtn += fprintf(stream, "  hmmaxd: %d\n", idfy->hmmaxd);
+	wrtn += fprintf(stream, "  nsetidmax: %d\n", idfy->nsetidmax);
+	wrtn += fprintf(stream, "  endgidmax: %d\n", idfy->endgidmax);
+	wrtn += fprintf(stream, "  anatt: %d\n", idfy->anatt);
+	wrtn += fprintf(stream, "  anacap: %#x\n", idfy->anacap.val);
+	wrtn += fprintf(stream, "  anagrpmax: %d\n", idfy->anagrpmax);
+	wrtn += fprintf(stream, "  nanagrpid: %d\n", idfy->nanagrpid);
+	wrtn += fprintf(stream, "  pels: %d\n", idfy->pels);
+	wrtn += fprintf(stream, "  domain_identifier: %d\n", idfy->domain_identifier);
+	// TODO: present these better
+	wrtn += fprintf(stream, "  megcap: [%zu, %zu]\n", idfy->megcap[0], idfy->megcap[1]);
 	wrtn += fprintf(stream, "  sqes: %#x\n", idfy->sqes.val);
 	wrtn += fprintf(stream, "  cqes: %#x\n", idfy->cqes.val);
 	wrtn += fprintf(stream, "  maxcmd: %d\n", idfy->maxcmd);
@@ -284,10 +307,15 @@ xnvme_spec_idfy_ctrl_fpr(FILE *stream, const struct xnvme_spec_idfy_ctrlr *idfy,
 	wrtn += fprintf(stream, "  awupf: %d\n", idfy->awupf);
 	wrtn += fprintf(stream, "  nvscc: %d\n", idfy->nvscc);
 	wrtn += fprintf(stream, "  acwu: %d\n", idfy->acwu);
+	wrtn += fprintf(stream, "  cdfs: %#x\n", idfy->cdfs.val);
 	wrtn += fprintf(stream, "  sgls: %#x\n", idfy->sgls.val);
+	wrtn += fprintf(stream, "  mnan: %d\n", idfy->mnan);
+	// TODO: present these better
+	wrtn += fprintf(stream, "  maxdna: [%zu, %zu]\n", idfy->maxdna[0], idfy->maxdna[1]);
+	wrtn += fprintf(stream, "  maxcna: %d\n", idfy->maxcna);
 	wrtn += fprintf(stream, "  subnqn: '%-.*s'\n", (int)sizeof(idfy->subnqn), idfy->subnqn);
 
-	// TODO: added print for remaining fields
+	// TODO: add print for remaining fields
 	return wrtn;
 }
 
