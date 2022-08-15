@@ -360,11 +360,13 @@ xnvme_spec_idfy_ns_fpr(FILE *stream, const struct xnvme_spec_idfy_ns *idfy, int 
 	wrtn += fprintf(stream, "    dealloc_or_unwritten_error: %d\n",
 			idfy->nsfeat.dealloc_or_unwritten_error);
 	wrtn += fprintf(stream, "    guid_never_reused: %d\n", idfy->nsfeat.guid_never_reused);
+	wrtn += fprintf(stream, "    optimal_performance: %d\n", idfy->nsfeat.optimal_performance);
 	wrtn += fprintf(stream, "    reserved1: %d\n", idfy->nsfeat.reserved1);
 
 	wrtn += fprintf(stream, "  flbas:\n");
-	wrtn += fprintf(stream, "    format: %d\n", idfy->flbas.format);
+	wrtn += fprintf(stream, "    format_lsb: %d\n", idfy->flbas.format);
 	wrtn += fprintf(stream, "    extended: %d\n", idfy->flbas.extended);
+	wrtn += fprintf(stream, "    format_msb: %d\n", idfy->flbas.format_msb);
 	wrtn += fprintf(stream, "    reserved2: %d\n", idfy->flbas.reserved2);
 
 	wrtn += fprintf(stream, "  mc:\n");
@@ -388,6 +390,18 @@ xnvme_spec_idfy_ns_fpr(FILE *stream, const struct xnvme_spec_idfy_ns *idfy, int 
 	wrtn += fprintf(stream, "  nvmcap:\n");
 	wrtn += fprintf(stream, "    - %zu\n", idfy->nvmcap[0]);
 	wrtn += fprintf(stream, "    - %zu\n", idfy->nvmcap[1]);
+	wrtn += fprintf(stream, "  npwg: %#x\n", idfy->npwg);
+	wrtn += fprintf(stream, "  npwa: %#x\n", idfy->npwa);
+	wrtn += fprintf(stream, "  npdg: %#x\n", idfy->npdg);
+	wrtn += fprintf(stream, "  npda: %#x\n", idfy->npda);
+	wrtn += fprintf(stream, "  nows: %#x\n", idfy->nows);
+	wrtn += fprintf(stream, "  mssrl: %d\n", idfy->mssrl);
+	wrtn += fprintf(stream, "  mcl: %d\n", idfy->mcl);
+	wrtn += fprintf(stream, "  msrc: %d\n", idfy->msrc);
+	wrtn += fprintf(stream, "  anagrpid: %#x\n", idfy->anagrpid);
+	wrtn += fprintf(stream, "  nsattr: %#x\n", idfy->nsattr);
+	wrtn += fprintf(stream, "  nvmsetid: %#x\n", idfy->nvmsetid);
+	wrtn += fprintf(stream, "  endgid: %#x\n", idfy->endgid);
 	wrtn += fprintf(stream, "  nguid: [");
 	for (int i = 0; i < 16; ++i) {
 		if (i) {
@@ -403,7 +417,7 @@ xnvme_spec_idfy_ns_fpr(FILE *stream, const struct xnvme_spec_idfy_ns *idfy, int 
 	wrtn += fprintf(stream, "  # rp: relative performance 00b, 1b 10b, 11b\n");
 
 	wrtn += fprintf(stream, "  lbaf:\n");
-	for (int i = 0; i < 16; ++i) {
+	for (int i = 0; i <= idfy->nlbaf; ++i) {
 		wrtn += fprintf(stream, "    - {ms: %u, ds: %u, rp: %u}\n", idfy->lbaf[i].ms,
 				idfy->lbaf[i].ds, idfy->lbaf[i].rp);
 	}
