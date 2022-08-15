@@ -495,7 +495,20 @@ struct xnvme_spec_power_state {
 	uint8_t rwl       : 5; /* bits 124:120: relative write latency */
 	uint8_t reserved6 : 3;
 
-	uint8_t reserved7[16];
+	uint16_t idlp; /* bits 143:128: idle power */
+
+	uint8_t reserved7 : 6;
+	uint8_t ips       : 2; /* bits 151:150: idle power scale */
+
+	uint8_t reserved8;
+
+	uint16_t actp; /* bits 175:160: active power */
+
+	uint8_t apw       : 3; /* bits 178:176: active power workload */
+	uint8_t reserved9 : 3;
+	uint8_t aps       : 2; /* bits 183:182: active power scale */
+
+	uint8_t reserved10[9];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_power_state) == 32, "Incorrect size")
 
@@ -532,7 +545,8 @@ struct xnvme_spec_idfy_ctrlr {
 			uint8_t multi_port : 1;
 			uint8_t multi_host : 1;
 			uint8_t sr_iov     : 1;
-			uint8_t reserved   : 5;
+			uint8_t ana_rprt   : 1;
+			uint8_t reserved   : 4;
 		};
 		uint8_t val;
 	} cmic;
@@ -555,12 +569,33 @@ struct xnvme_spec_idfy_ctrlr {
 			/** Supports sending Firmware Activation Notices. */
 			uint32_t fw_activation_notices : 1;
 
-			uint32_t reserved2             : 17;
+			uint32_t reserved2             : 1;
+
+			/** Supports sending Asymmetric Namespace access Change Notices. */
+			uint32_t ana_notices           : 1;
+
+			/** Supports sending Predictable Latency Event Aggregate Log Change
+			 * Notices. */
+			uint32_t pleal_notices         : 1;
+
+			/** Supports sending LBA Status Information Alert Notices. */
+			uint32_t lba_sia_notices       : 1;
+
+			/** Supports sending Endurance Group Event Aggregate Log Change Notices. */
+			uint32_t egea_notices          : 1;
+
+			/** Supports sending Normal NVM Subsystem Shutdown event. */
+			uint32_t normal_nvm_ss         : 1;
+
+			uint32_t reserved3             : 11;
 
 			/** Supports Zone Descriptor Changed Notices/Changed Zoned List log page*/
 			uint32_t zone_changes          : 1;
 
-			uint32_t reserved3             : 4;
+			uint32_t reserved4             : 3;
+
+			/** Supports sending Discovery Log Page Change Notices. */
+			uint32_t discovery_log_notices : 1;
 		};
 		uint32_t val;
 	} oaes;
@@ -574,16 +609,108 @@ struct xnvme_spec_idfy_ctrlr {
 			/** Supports non-operational power state permissive mode */
 			uint32_t non_operational_power_state_permissive_mode : 1;
 
-			uint32_t reserved                                    : 30;
+			/** Supports NVM sets */
+			uint32_t nvm_sets                                    : 1;
+
+			/** Supports Read recovery levels */
+			uint32_t read_recovery_levels                        : 1;
+
+			/** Supports endurance groups */
+			uint32_t endurance_groups                            : 1;
+
+			/** Suports predictable latency mode */
+			uint32_t predictable_latency_mode                    : 1;
+
+			/** Supports Traffic based keep alive */
+			uint32_t tbkas                                       : 1;
+
+			/** Supports Namespace granularity */
+			uint32_t namespace_granularity                       : 1;
+
+			/** Supports SQ associations */
+			uint32_t sq_associations                             : 1;
+
+			/** Supports UUID list */
+			uint32_t uuid_list                                   : 1;
+
+			/** Supports multi-domain subsystem */
+			uint32_t multi_domain_subsystem                      : 1;
+
+			/** Supports fixed capacity management */
+			uint32_t fixed_capacity_management                   : 1;
+
+			/** Supports variable capacity management */
+			uint32_t variable_capacity_management                : 1;
+
+			/** Supports delete endurance group */
+			uint32_t delete_endurance_group                      : 1;
+
+			/** Supports delete NVM set */
+			uint32_t delete_nvm_set                              : 1;
+
+			/** Supports Extended lba formats */
+			uint32_t extended_lba_formats                        : 1;
+
+			uint32_t reserved                                    : 16;
 		};
 		uint32_t val;
 	} ctratt;
 
-	uint8_t reserved_100[12];
+	uint16_t rrls; ///< Read Recovery Levels Supported
+
+	uint8_t reserved_102[9];
+
+	uint8_t cntrltype; ///< Controller Type
 
 	uint8_t fguid[16]; ///< FRU Globally Unique Ident.
 
-	uint8_t reserved_128[128];
+	uint16_t crdt1; ///< Command Retry Delay Time1
+
+	uint16_t crdt2; ///< Command Retry Delay Time2
+
+	uint16_t crdt3; ///< Command Retry Delay Time3
+
+	uint8_t reserved_134[119];
+
+	/** NVM Subsystem Report */
+	union {
+		struct {
+			/* NVMe storage device */
+			uint8_t nvmesd     : 1;
+
+			/* NVMe enclosure */
+			uint8_t nvmee      : 1;
+
+			uint8_t nvmsr_rsvd : 6;
+		};
+		uint8_t val;
+	} nvmsr;
+
+	/** VPD Write Cycle Information */
+	union {
+		struct {
+			/* VPD Write Cycles Remaining */
+			uint8_t vwcr  : 7;
+
+			/* VPD Write Cycles Remaining Valid */
+			uint8_t vwcrv : 1;
+		};
+		uint8_t val;
+	} vwci;
+
+	/** Management Endpoint Capabilities */
+	union {
+		struct {
+			/* SMBus/I2C Port Management Endpoint */
+			uint8_t smbusme  : 1;
+
+			/* PCIe Port Management Endpoint */
+			uint8_t pcieme   : 1;
+
+			uint8_t mec_rsvd : 6;
+		};
+		uint8_t val;
+	} mec;
 
 	/* bytes 256-511: admin command set attributes */
 
@@ -601,16 +728,29 @@ struct xnvme_spec_idfy_ctrlr {
 
 			/* supports ns manage/ns attach commands */
 			uint16_t ns_manage                 : 1;
+
+			/* supports device self test command */
 			uint16_t device_self_test          : 1;
+
+			/* supports directives */
 			uint16_t directives                : 1;
+
+			/* supports NVMe-MI Send/receive commands */
 			uint16_t nvme_mi                   : 1;
 
-			/** Supports SPDK_NVME_OPC_VIRTUALIZATION_MANAGEMENT */
+			/** Supports virtualization management command */
 			uint16_t virtualization_management : 1;
 
-			/** Supports SPDK_NVME_OPC_DOORBELL_BUFFER_CONFIG */
+			/** Supports doorbell buffer config command */
 			uint16_t doorbell_buffer_config    : 1;
-			uint16_t oacs_rsvd                 : 7;
+
+			/** Supports Get LBA status capability */
+			uint16_t lba_status                : 1;
+
+			/** Supports command and feature lockdown capability */
+			uint16_t cmd_feature_lockdown      : 1;
+
+			uint16_t oacs_rsvd                 : 5;
 		};
 		uint16_t val;
 	} oacs;
@@ -633,7 +773,10 @@ struct xnvme_spec_idfy_ctrlr {
 			/* support activation without reset */
 			uint8_t activation_without_reset : 1;
 
-			uint8_t frmw_rsvd                : 3;
+			/* support multiple update detection */
+			uint8_t mul_update_detection     : 1;
+
+			uint8_t frmw_rsvd                : 2;
 		};
 		uint8_t val;
 	} frmw;
@@ -651,8 +794,12 @@ struct xnvme_spec_idfy_ctrlr {
 			uint8_t telemetry : 1;
 			/* Persistent event log */
 			uint8_t pel       : 1;
+			/* Miscellaneous log */
+			uint8_t mel       : 1;
+			/* Data area 4 for telemetry */
+			uint8_t tel_da4   : 1;
 
-			uint8_t lpa_rsvd  : 3;
+			uint8_t lpa_rsvd  : 1;
 		};
 		uint8_t val;
 	} lpa;
@@ -683,7 +830,7 @@ struct xnvme_spec_idfy_ctrlr {
 	uint16_t cctemp; ///< Critical Composite Temperature threshold
 	uint16_t mtfa;   ///< Maximum Time for Firmware Activation
 	uint32_t hmpre;  ///< Host Memory Buffer Preferred size
-	uint32_t hmmin;  ///< Host Memory Buffer Minimum size */
+	uint32_t hmmin;  ///< Host Memory Buffer Minimum size
 
 	/** total NVM capacity */
 	uint64_t tnvmcap[2];
@@ -755,12 +902,48 @@ struct xnvme_spec_idfy_ctrlr {
 			uint32_t crypto_erase : 1;
 			uint32_t block_erase  : 1;
 			uint32_t overwrite    : 1;
-			uint32_t reserved     : 29;
+			uint32_t reserved     : 26;
+			uint32_t ndi          : 1;
+			uint32_t nodmmas      : 2;
 		} bits;
 		uint32_t val;
 	} sanicap;
 
-	uint8_t reserved3[180];
+	uint32_t hmminds; ///< Host Memory Buffer Minimum Descriptor Entry Size
+	uint16_t hmmaxd;  ///< Host Memory Maximum Descriptor Entries
+
+	uint16_t nsetidmax; ///< NVM Set Identifier Maximum
+	uint16_t endgidmax; ///< Endurance Group Identifier Maximum
+
+	uint8_t anatt; ///< ANA Transition Time
+
+	/** Asymmetric Namespace Access capabilities */
+	union {
+		struct {
+			uint8_t optimize     : 1;
+			uint8_t non_optimize : 1;
+			uint8_t inaccessible : 1;
+			uint8_t persist_loss : 1;
+			uint8_t change       : 1;
+			uint8_t reserved1    : 1;
+			uint8_t ns_anagrpid  : 1;
+			uint8_t mgt_anagrpid : 1;
+		} bits;
+		uint8_t val;
+	} anacap;
+
+	uint32_t anagrpmax; ///< ANA Group Identifier Maximum
+	uint32_t nanagrpid; ///< Number of ANA Group Identifiers
+
+	uint32_t pels; ///< Persistent Event Log Size
+
+	uint16_t domain_identifier; ///< Domain Identifier
+
+	uint8_t reserved_358[10];
+
+	uint64_t megcap[2]; ///< Max Endurance Group Capacity
+
+	uint8_t reserved_384[128];
 
 	/* bytes 512-703: nvm command set attributes */
 
@@ -796,7 +979,9 @@ struct xnvme_spec_idfy_ctrlr {
 			uint16_t set_features_save : 1;
 			uint16_t reservations      : 1;
 			uint16_t timestamp         : 1;
-			uint16_t reserved          : 9;
+			uint16_t verify            : 1;
+			uint16_t copy              : 1;
+			uint16_t reserved          : 7;
 		};
 		uint16_t val;
 	} oncs;
@@ -809,7 +994,8 @@ struct xnvme_spec_idfy_ctrlr {
 			uint8_t format_all_ns          : 1;
 			uint8_t erase_all_ns           : 1;
 			uint8_t crypto_erase_supported : 1;
-			uint8_t reserved               : 5;
+			uint8_t nsid_ffffffff          : 1;
+			uint8_t reserved               : 4;
 		};
 		uint8_t val;
 	} fna;
@@ -828,18 +1014,27 @@ struct xnvme_spec_idfy_ctrlr {
 	uint16_t awupf; ///< Atomic Write Unit Power Fail
 	uint8_t nvscc;  ///< NVM vendor specific command configuration
 
-	uint8_t reserved531;
+	uint8_t nwpc; ///< Namespace write protection capabilities
 
 	uint16_t acwu; ///< atomic compare & write unit
 
-	uint16_t reserved534;
+	/** Copy descriptors formats supported */
+	union {
+		struct {
+			uint16_t format0  : 1;
+			uint16_t format1  : 1;
+			uint16_t reserved : 14;
+		};
+		uint16_t val;
+	} cdfs;
 
 	/** SGL support */
 	union {
 		struct {
 			uint32_t supported             : 2;
 			uint32_t keyed_sgl             : 1;
-			uint32_t reserved1             : 13;
+			uint32_t reserved1             : 5;
+			uint32_t sgl_desc_threshold    : 8;
 			uint32_t bit_bucket_descriptor : 1;
 			uint32_t metadata_pointer      : 1;
 			uint32_t oversized_sgl         : 1;
@@ -853,11 +1048,14 @@ struct xnvme_spec_idfy_ctrlr {
 
 	uint32_t mnan; ///< Maximum Number of Allowed Namespaces
 
-	uint8_t reserved4[224];
+	uint64_t maxdna[2]; ///< Maximum Domain Namespace Attachments
+	uint32_t maxcna;    ///< Maximum I/O Controllers Namespace Attachments
 
-	uint8_t subnqn[256];
+	uint8_t reserved_564[204];
 
-	uint8_t reserved5[768];
+	uint8_t subnqn[256]; ///< NVM Subsystems NVMe Qualified Name
+
+	uint8_t reserved_1024[768];
 
 	/** NVMe over Fabrics-specific fields */
 	struct {
@@ -879,7 +1077,13 @@ struct xnvme_spec_idfy_ctrlr {
 		/** Maximum SGL block descriptors (0 = no limit) */
 		uint8_t msdbd;
 
-		uint8_t reserved[244];
+		/** Optional Fabric Commands supported */
+		struct {
+			uint16_t disc_del : 1;
+			uint16_t reserved : 15;
+		} ofcs;
+
+		uint8_t reserved[242];
 	} nvmf_specific;
 
 	/* bytes 2048-3071: power state descriptors */
