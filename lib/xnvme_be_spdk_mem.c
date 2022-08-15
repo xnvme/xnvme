@@ -55,6 +55,7 @@ xnvme_be_spdk_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf, 
 #endif
 
 struct xnvme_be_mem g_xnvme_be_spdk_mem = {
+	.id = "spdk",
 #ifdef XNVME_BE_SPDK_ENABLED
 	.buf_alloc = xnvme_be_spdk_buf_alloc,
 	.buf_realloc = xnvme_be_spdk_buf_realloc,

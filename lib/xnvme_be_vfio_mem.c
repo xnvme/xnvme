@@ -85,6 +85,7 @@ xnvme_be_vfio_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *XNVME
 #endif
 
 struct xnvme_be_mem g_xnvme_be_vfio_mem = {
+	.id = "libvfn",
 #ifdef XNVME_BE_LINUX_VFIO_ENABLED
 	.buf_alloc = xnvme_be_vfio_buf_alloc,
 	.buf_realloc = xnvme_be_vfio_buf_realloc,

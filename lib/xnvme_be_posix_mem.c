@@ -48,6 +48,7 @@ xnvme_be_posix_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *XNVM
 #endif
 
 struct xnvme_be_mem g_xnvme_be_posix_mem = {
+	.id = "posix",
 #ifdef XNVME_BE_POSIX_ENABLED
 	.buf_alloc = xnvme_be_posix_buf_alloc,
 	.buf_realloc = xnvme_be_posix_buf_realloc,
