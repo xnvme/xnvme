@@ -72,6 +72,13 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_linux[] = {
 		.mem = &g_xnvme_be_posix_mem,
 		.check_support = xnvme_be_supported,
 	},
+	{
+		.mtype = XNVME_BE_MEM,
+		.name = "hugepage",
+		.descr = "Allocate buffers using hugepages via mmap on hugetlbfs",
+		.mem = &g_xnvme_be_linux_mem_hugepage,
+		.check_support = xnvme_be_supported,
+	},
 
 	{
 		.mtype = XNVME_BE_ASYNC,
