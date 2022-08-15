@@ -54,9 +54,9 @@ int
 xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr opts);
 
 /**
- * Implementations of the memory management interface
+ * Implementations of the memory management interface using hugepages
  */
-extern struct xnvme_be_mem g_xnvme_be_posix_mem;
+extern struct xnvme_be_mem g_xnvme_be_linux_mem_hugepage;
 
 /**
  * Implementations of the admin command interface
