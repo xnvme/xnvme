@@ -330,7 +330,6 @@ jobs:
         - {os: 'opensuse-tumbleweed', dh: 'opensuse/tumbleweed', ver: 'latest'}
         - {os: 'opensuse-leap', dh: 'opensuse/leap', ver: '15.4'}
         - {os: 'opensuse-leap', dh: 'opensuse/leap', ver: '15.3'}
-        - {os: 'ubuntu', dh: 'ubuntu', ver: 'impish'}
         - {os: 'ubuntu', dh: 'ubuntu', ver: 'focal'}
         - {os: 'ubuntu', dh: 'ubuntu', ver: 'bionic'}
 
