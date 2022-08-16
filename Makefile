@@ -115,6 +115,19 @@ config-slim:
 	   -Dwith-libvfn=false
 	@echo "## xNVMe: make config-slim [DONE]"
 
+define config-fio-debug-help
+# Configure Meson to compile xNVMe with fio but without other subprojects (SPDK, liburing, libvfn)
+endef
+.PHONY: config-fio-debug
+config-fio-debug:
+	@echo "## xNVMe: make config-fio-debug"
+	CC=$(CC) CXX=$(CXX) $(MESON) setup $(BUILD_DIR) --buildtype=debug \
+	   -Dwith-spdk=false \
+	   -Dwith-fio=true \
+	   -Dwith-liburing=false \
+	   -Dwith-libvfn=false
+	@echo "## xNVMe: make config-fio-debug [DONE]"
+
 define git-setup-help
 # Do git config for: 'core.hooksPath' and 'blame.ignoreRevsFile'
 endef
