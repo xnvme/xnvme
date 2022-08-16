@@ -1345,7 +1345,20 @@ struct xnvme_spec_cmd_nvm {
 	uint32_t fua    : 1; ///< FUA: Force unit access
 	uint32_t lr     : 1; ///< LR: Limited retry
 
-	uint32_t cdw13_15[3]; ///< Command dword 13 to 15
+	/* cdw 13 */
+	uint32_t af     : 4; ///< Access Frequency
+	uint32_t al     : 2; ///< Access Latency
+	uint32_t sr     : 1; ///< Sequential Reques
+	uint32_t incom  : 1; ///< Incompressible
+	uint32_t rsvd3  : 8;
+	uint32_t dspec  : 16; ///< Directive Specific
+
+	/* cdw 14 */
+	uint32_t ilbrt  : 32; ///< Initial Logical Block Reference Tag
+
+	/* cdw 15 */
+	uint32_t lbat   : 16; ///< Logical Block Application Tag
+	uint32_t lbatm  : 16; ///< logical Block Application Tag Mask
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_nvm) == 64, "Incorrect size")
 
