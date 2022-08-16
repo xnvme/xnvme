@@ -476,26 +476,6 @@ Then go ahead and configure, build and install using ``meson``:
    :language: bash
    :lines: 2-
 
-Ubuntu 21.10 (Impish)
----------------------
-
-Install the following packages via ``apt-get`` and ``pip3``:
-
-.. literalinclude:: ../../toolbox/pkgs/ubuntu-impish.txt
-   :language: bash
-
-For example, from the root of the **xNVMe** source repository, do:
-
-.. literalinclude:: ../../toolbox/pkgs/ubuntu-impish.sh
-   :language: bash
-   :lines: 17-
-
-Then go ahead and configure, build and install using ``meson``:
-
-.. literalinclude:: ../../toolbox/pkgs/default-build.sh
-   :language: bash
-   :lines: 2-
-
 Ubuntu 20.04 (Focal)
 --------------------
 
