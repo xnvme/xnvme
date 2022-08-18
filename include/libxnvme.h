@@ -71,6 +71,7 @@ struct xnvme_opts {
 	const char *core_mask; ///< SPDK multi-processing: core-mask
 	const char *adrfam;    ///< SPDK fabrics: address-family, IPv4/IPv6
 	const char *subnqn;    ///< SPDK fabrics: Subsystem NQN
+	const char *hostnqn;   ///< SPDK fabrics: Host NQN
 	uint32_t spdk_fabrics; ///< Is assigned a value by backend if SPDK uses fabrics
 };
 

@@ -476,6 +476,13 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 			 "'nqn.2022-06.io.xnvme:ctrlnode1'",
 	},
 	{
+		.opt = XNVMEC_OPT_HOSTNQN,
+		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.name = "hostnqn",
+		.descr = "The host NQN to use when connecting to NVMe over Fabrics "
+			 "controllers",
+	},
+	{
 		.opt = XNVMEC_OPT_CNTID,
 		.vtype = XNVMEC_OPT_VTYPE_HEX,
 		.name = "cntid",
@@ -1233,6 +1240,9 @@ xnvmec_assign_arg(struct xnvmec *cli, struct xnvmec_opt_attr *opt_attr, char *ar
 	case XNVMEC_OPT_SUBNQN:
 		args->subnqn = arg ? arg : "INVALID_INPUT";
 		break;
+	case XNVMEC_OPT_HOSTNQN:
+		args->hostnqn = arg ? arg : "INVALID_INPUT";
+		break;
 	case XNVMEC_OPT_UUID:
 		args->uuid = num;
 		break;
@@ -1840,6 +1850,7 @@ xnvmec_cli_to_opts(const struct xnvmec *cli, struct xnvme_opts *opts)
 	opts->core_mask = cli->args.core_mask;
 	opts->adrfam = cli->args.adrfam;
 	opts->subnqn = cli->args.subnqn;
+	opts->hostnqn = cli->args.hostnqn;
 
 	errno = 0;
 
