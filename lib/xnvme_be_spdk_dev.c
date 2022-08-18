@@ -409,6 +409,9 @@ probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
 		ctrlr_opts->header_digest = 1;
 		ctrlr_opts->data_digest = 1;
 		ctrlr_opts->keep_alive_timeout_ms = 0;
+		if (dev->opts.hostnqn) {
+			strncpy(ctrlr_opts->hostnqn, dev->opts.hostnqn, SPDK_NVMF_NQN_MAX_LEN);
+		}
 		break;
 
 	case SPDK_NVME_TRANSPORT_VFIOUSER:
@@ -529,6 +532,9 @@ enumerate_probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
 		ctrlr_opts->header_digest = 1;
 		ctrlr_opts->data_digest = 1;
 		ctrlr_opts->keep_alive_timeout_ms = 0;
+		if (opts->hostnqn) {
+			strncpy(ctrlr_opts->hostnqn, opts->hostnqn, SPDK_NVMF_NQN_MAX_LEN);
+		}
 		break;
 
 	case SPDK_NVME_TRANSPORT_VFIOUSER:
