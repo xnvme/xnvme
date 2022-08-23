@@ -15,6 +15,7 @@ regex = [
     r"s/xnvme_be_attr item\[\]/xnvme_be_attr item[1]/g",
     r"s/xnvme_ident entries\[\]/xnvme_ident entries[1]/g",
     r"s/uint8_t storage\[\]/uint8_t storage[1]/g",
+    r"s/uint16_t sid\[\]/uint16_t sid[1]/g",
 ]
 
 
