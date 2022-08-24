@@ -12,4 +12,6 @@ xnvme_feature_get.sh
 xnvme_feature_set.sh
 examples-xnvme_hello.sh
 xnvme_tests_enum_open.sh
+xnvme_tests_enum_any_be_open.sh
 xnvme_tests_enum_multi.sh
+xnvme_tests_enum_any_be_multi.sh
