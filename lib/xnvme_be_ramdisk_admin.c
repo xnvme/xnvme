@@ -57,7 +57,7 @@ _idfy_ctrlr(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 {
 	struct xnvme_spec_idfy_ctrlr *ctrlr = dbuf;
 
-	ctrlr->mdts = XNVME_ILOG2(1024 * 1024);
+	ctrlr->mdts = 0;
 
 	return 0;
 }
