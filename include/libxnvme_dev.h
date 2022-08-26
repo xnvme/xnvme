@@ -101,6 +101,16 @@ const struct xnvme_ident *
 xnvme_dev_get_ident(const struct xnvme_dev *dev);
 
 /**
+ * Returns the opts struct for the given `dev`
+ *
+ * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ *
+ * @return On success, device options are returned
+ */
+const struct xnvme_opts *
+xnvme_dev_get_opts(const struct xnvme_dev *dev);
+
+/**
  * Returns the internal backend state of the given `dev`
  *
  * @param dev Device handle obtained with xnvme_dev_open()
