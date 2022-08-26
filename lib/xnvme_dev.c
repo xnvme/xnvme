@@ -109,6 +109,12 @@ xnvme_dev_get_ident(const struct xnvme_dev *dev)
 	return &dev->ident;
 }
 
+const struct xnvme_opts *
+xnvme_dev_get_opts(const struct xnvme_dev *dev)
+{
+	return &dev->opts;
+}
+
 uint64_t
 xnvme_dev_get_ssw(const struct xnvme_dev *dev)
 {
