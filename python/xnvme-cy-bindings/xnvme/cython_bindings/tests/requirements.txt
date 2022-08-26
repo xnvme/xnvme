@@ -1,2 +1,3 @@
 pytest
 numpy
+pytest-lazy-fixture
