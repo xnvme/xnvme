@@ -5,16 +5,19 @@ import pytest
 from ..conftest import xnvme_parametrize
 
 
-@xnvme_parametrize(labels=["dev"], opts=["be"])
+@xnvme_parametrize(labels=["large_mdts"], opts=["be"])
 def test_cython_bindings(cijoe, device, be_opts, cli_args):
 
     if be_opts["be"] not in ["linux", "spdk"]:
         pytest.skip(reason=f"Backend not supported: {be_opts['be']}")
 
     env = {
-        "XNVME_URI": f"{device['uri']}",
-        "XNVME_BE": f"{be_opts['be']}",
+        "XNVME_URI": device["uri"],
+        "XNVME_BE": be_opts["be"],
         "XNVME_DEV_NSID": f"{device['nsid']}",
+        "XNVME_HUGETLB_PATH": cijoe.config.options.get("hugetlbfs", {}).get(
+            "mount_point", ""
+        ),
     }
 
     err, _ = cijoe.run(
@@ -23,7 +26,7 @@ def test_cython_bindings(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-@xnvme_parametrize(labels=["dev"], opts=["be"])
+@xnvme_parametrize(labels=["bdev"], opts=["be"])
 def test_cython_header(cijoe, device, be_opts, cli_args):
 
     if be_opts["be"] not in ["linux", "spdk"]:
@@ -47,6 +50,9 @@ def test_cython_header(cijoe, device, be_opts, cli_args):
         "XNVME_URI": f"{device['uri']}",
         "XNVME_BE": f"{be_opts['be']}",
         "XNVME_DEV_NSID": f"{device['nsid']}",
+        "XNVME_HUGETLB_PATH": cijoe.config.options.get("hugetlbfs", {}).get(
+            "mount_point", ""
+        ),
     }
 
     err, _ = cijoe.run(

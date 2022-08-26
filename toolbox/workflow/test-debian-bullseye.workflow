@@ -6,6 +6,9 @@ steps:
 - name: sysinfo
   uses: linux.sysinfo
 
+- name: hugetlbfs
+  uses: gha_prepare_hugetlbfs
+
 - name: test_ramdisk
   uses: core.testrunner
   with:

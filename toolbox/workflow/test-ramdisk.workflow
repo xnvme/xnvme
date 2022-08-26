@@ -13,4 +13,4 @@ steps:
 - name: test
   uses: core.testrunner
   with:
-    args: '--pyargs cijoe.xnvme.tests -k "ramdisk"'
+    args: '--pyargs cijoe.xnvme.tests -k "ramdisk and not hugepage"'
