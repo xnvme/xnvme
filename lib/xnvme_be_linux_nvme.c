@@ -232,11 +232,13 @@ xnvme_be_linux_nvme_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_FS_OPC_READ:
 		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
+		ctx->cmd.nvm.nlb = (dbuf_nbytes / ctx->dev->geo.lba_nbytes) - 1;
 		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
 		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
+		ctx->cmd.nvm.nlb = (dbuf_nbytes / ctx->dev->geo.lba_nbytes) - 1;
 		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
 		break;
 	}
