@@ -257,7 +257,7 @@ jobs:
     needs: source-archive
     runs-on: ubuntu-latest
     if: ((github.event_name == 'pull_request') || ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job
-      == 'all') || contains('build-linux', github.event.inputs.job))))
+      == 'all') || contains('build-linux', github.event.inputs.job) || contains('docgen', github.event.inputs.job))))
     container: refenv/alpine-bash
     strategy:
       fail-fast: false
@@ -590,7 +590,7 @@ jobs:
         python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
 
   #
-  # Build on run CIJOE testplans
+  # Build and test xNVMe
   #
   build-and-test:
     needs: [source-archive, source-format-check, build-python]
@@ -602,8 +602,8 @@ jobs:
       fail-fast: false
       matrix:
         guest:
-        - {os: 'freebsd', ver: '13', img: 'https://refenv.fra1.digitaloceanspaces.com/freebsd13-ufs-ksrc.qcow2'}
-        - {os: 'debian', ver: 'bullseye', img: 'https://cloud.debian.org/images/cloud/bullseye/daily/latest/debian-11-generic-amd64-daily.qcow2'}
+        - {os: 'freebsd', ver: '13'}
+        - {os: 'debian', ver: 'bullseye'}
 
     container:
       image: refenv/qemu-nvme:latest
@@ -613,7 +613,7 @@ jobs:
     - name: Runnner-prep, clean up self-hosted left-overs
       run: |
         rm -rf *
-        ls
+        ls -lh
 
     - name: Container-prep, get the full-source-archive
       uses: actions/download-artifact@v2
@@ -623,182 +623,82 @@ jobs:
       run: |
         tar xzf xnvme*.tar.gz --strip 1
 
-    - name: Retrieve the xNVMe Python bindings (prebuilt sdist)
+    - name: Retrieve the xNVMe Python Packages (prebuilt sdist)
       uses: actions/download-artifact@v2
       with:
         name: python-xnvme-pkg
 
-    - name: CIJOE, install cijoe-pkg-xnvme from source-archive
+    - name: Move source-archives to /tmp/artifacts
       run: |
-        pushd toolbox/cijoe-pkg-xnvme && make uninstall && make install-system && popd
+        ls -lh
+        find . -name "*.tar.gz"
+        find /tmp -name "*.tar.gz"
+        rm -r /tmp/artifacts || true
+        mkdir /tmp/artifacts
+        mv xnvme-core/dist/xnvme-core-*.tar.gz /tmp/artifacts/xnvme-core.tar.gz
+        mv xnvme-cy-header/dist/xnvme-cy-header-*.tar.gz /tmp/artifacts/xnvme-cy-header.tar.gz
+        mv xnvme-cy-bindings/dist/xnvme-cy-bindings-*.tar.gz /tmp/artifacts/xnvme-cy-bindings.tar.gz
+        mv xnvme-*.*.*.tar.gz /tmp/artifacts/xnvme.tar.gz
+        find /tmp/artifacts -name "*.tar.gz"
 
-    - name: Provision qemu-guest
-      id: cijoe-qemu
-      uses: refenv/gh-cijoe-qemu-action@main
-      with:
-        vm-image: ${{ matrix.guest.img }}
-        vm-cloudinit: ${{ matrix.guest.os }}-${{ matrix.guest.ver }}
-        cijoe-packages: './toolbox/cijoe-pkg-xnvme/'
-        cijoe-qemu-script: 'qemu_setup_nvme_2c3ns_nvm_zrwa.sh'
-
-    - name: CIJOE, transfer source to qemu-guest
+    - name: Remove any existing cijoe installation and install from toolbox
       run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        source ${{ steps.cijoe-qemu.outputs.target-env }}
-        ssh.push xnvme-core/dist/xnvme-core-*.tar.gz xnvme-core.tar.gz
-        ssh.push xnvme-cy-header/dist/xnvme-cy-header-*.tar.gz xnvme-cy-header.tar.gz
-        ssh.push xnvme-cy-bindings/dist/xnvme-cy-bindings-*.tar.gz xnvme-cy-bindings.tar.gz
-        ssh.push xnvme*.tar.gz xnvme.tar.gz
-        cij.cmd "tar xzf xnvme.tar.gz --strip 1"
-        cij.cmd "rm xnvme.tar.gz"
-        cij.cmd "df -h"
+        python3 -m pip uninstall cijoe cijoe-pkg-xnvme cijoe-pkg-linux cijoe-pkg-qemu cijoe-pkg-example -y
+        python3 -m pip list
+        python3 -m pip install cijoe --upgrade
+        pushd toolbox/cijoe-pkg-xnvme && make all && popd
+        cijoe -r
 
-    - name: CIJOE, install packages
+    # cd'ing into 'toolbox/workflow' to auto-collect the non-packaged github-specific configs and
+    # workflows.
+    #
+    # In case non-cijoe commands needs to be run in guest, then the following could be used
+    # eval "$(ssh-agent -s)"
+    # chmod 600 toolbox/workflow/keys/guest_key
+    # ssh-add toolbox/workflow/keys/guest_key
+    - name: CIJOE, run provision.workflow
       run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij.cmd "./toolbox/pkgs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.sh"
+        cd toolbox/workflow && cijoe \
+        --config "ghr-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.config" \
+        --workflow "provision.workflow" \
+        --output "provision-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
-    - name: CIJOE, configure xNVMe build
+    - name: CIJOE, run test.workflow
       run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij.cmd "meson setup builddir"
-
-    - name: CIJOE, build xNVMe
-      run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij.cmd "meson compile -C builddir"
-
-    - name: CIJOE, build xNVMe dump log on failure
-      if: failure()
-      run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij.cmd "cat builddir/meson-logs/meson-log.txt"
-
-    - name: CIJOE, install xNVMe
-      run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij.cmd "meson install -C builddir"
-
-    - name: CIJOE, dump fio binary and SPDK io-engines in guest
-      run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij.cmd "mkdir -p /opt/aux"
-        cij.cmd "cp subprojects/fio/fio /opt/aux/"
-        cij.cmd "cp subprojects/spdk/build/fio/spdk_bdev /opt/aux/"
-        cij.cmd "cp subprojects/spdk/build/fio/spdk_nvme /opt/aux/"
-        cij.cmd "find /opt/aux"
-        cij.cmd "chmod +x /opt/aux/fio"
-
-    - name: CIJOE, check binaries are available
-      run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij.cmd "xnvme enum"
-        cij.cmd "xnvme library-info"
-
-    - name: CIJOE, Install xNVMe Python bindings (ctypes)
-      run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        echo 'XNVME_REPO=/root' >> ${{ steps.cijoe-qemu.outputs.target-env }}
-        source ${{ steps.cijoe-qemu.outputs.target-env }}
-
-        cij.cmd "python3 -m pip install xnvme-core.tar.gz"
-
-    - name: CIJOE, Install and test xNVMe Cython header (libxnvme.pxd)
-      run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        echo 'XNVME_REPO=/root' >> ${{ steps.cijoe-qemu.outputs.target-env }}
-        source ${{ steps.cijoe-qemu.outputs.target-env }}
-
-        cij.cmd "python3 -m pip install xnvme-cy-header.tar.gz --user"
-        cij.cmd "cd python/xnvme-cy-header/xnvme/cython_header/tests/ && python3 -m pip install -r requirements.txt --user"
-        cij.cmd "cd python/xnvme-cy-header/xnvme/cython_header/tests/ && python3 setup.py build_ext --inplace"
-        cij.cmd "cd python/xnvme-cy-header/xnvme/cython_header/tests/ && python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v -s"
-
-    - name: Install and test xNVMe Python bindings (Cython)
-      run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        echo 'XNVME_REPO=/root' >> ${{ steps.cijoe-qemu.outputs.target-env }}
-        source ${{ steps.cijoe-qemu.outputs.target-env }}
-
-        cij.cmd "python3 -m pip install -r python/xnvme-cy-bindings/requirements.txt --user"
-        cij.cmd "python3 -m pip install xnvme-cy-bindings.tar.gz --user -vvv --no-build-isolation"
-        cij.cmd "python3 -m pip install -r python/xnvme-cy-bindings/xnvme/cython_bindings/tests/requirements.txt --user"
-        cij.cmd "python3 -m pytest --pyargs xnvme.cython_bindings -k 'test_version' -s"
-
-    - name: CIJOE, run Linux testplans using qemu-guest as test-target
-      if: matrix.guest.os == 'debian'
-      run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        echo 'XNVME_REPO=/root' >> ${{ steps.cijoe-qemu.outputs.target-env }}
-        source ${{ steps.cijoe-qemu.outputs.target-env }}
-
-        cij_runner \
-          --env ${{ steps.cijoe-qemu.outputs.target-env }} \
-          --output ${{ steps.cijoe-qemu.outputs.results }} \
-          --testplan \
-          "${CIJ_TESTPLANS}/xnvme-fabrics-subnqn.plan" \
-          "${CIJ_TESTPLANS}/xnvme-cython.plan" \
-          "${CIJ_TESTPLANS}/xnvme-python.plan" \
-          "${CIJ_TESTPLANS}/xnvme-zns-zrwa-linux-nvme.plan" \
-          "${CIJ_TESTPLANS}/xnvme-zns-zrwa-linux-spdk.plan" \
-          "${CIJ_TESTPLANS}/xnvme-base-linux.plan" \
-          "${CIJ_TESTPLANS}/xnvme-base-spdk.plan" \
-          "${CIJ_TESTPLANS}/xnvme-base-vfio.plan" \
-          "${CIJ_TESTPLANS}/xnvme-nvm-spdk.plan" \
-          "${CIJ_TESTPLANS}/xnvme-nvm-vfio.plan" \
-          "${CIJ_TESTPLANS}/xnvme-nvm-linux-nvme.plan" \
-          "${CIJ_TESTPLANS}/xnvme-nvm-linux-null.plan" \
-          "${CIJ_TESTPLANS}/xnvme-zns-spdk.plan" \
-          "${CIJ_TESTPLANS}/xnvme-zns-vfio.plan" \
-          "${CIJ_TESTPLANS}/xnvme-zns-linux-nvme.plan" \
-          "${CIJ_TESTPLANS}/xnvme-zns-linux-null.plan" \
-          "${CIJ_TESTPLANS}/example_01.plan"
-
-    - name: CIJOE, run FreeBSD testplans using qemu-guest as test-target
-      if: matrix.guest.os == 'freebsd'
-      run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij_runner \
-          --env ${{ steps.cijoe-qemu.outputs.target-env }} \
-          --output ${{ steps.cijoe-qemu.outputs.results }} \
-          --testplan \
-          "${CIJ_TESTPLANS}/xnvme-base-fbsd.plan" \
-          "${CIJ_TESTPLANS}/example_01.plan"
+        cd toolbox/workflow && cijoe \
+        --config "ghr-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.config" \
+        --workflow "test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.workflow" \
+        --output "test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
     - name: CIJOE, result-log-dump on error
       if: failure()
-      run: find ${{ steps.cijoe-qemu.outputs.results }} -name "*.log" | xargs cat
+      run: find toolbox/workflow/ -name "*.output" | xargs cat
 
-    - name: CIJOE, generate report from results
+    - name: CIJOE, upload workflow-report-provision
+      uses: actions/upload-artifact@v2
       if: always()
-      run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        cij_reporter --output ${{ steps.cijoe-qemu.outputs.results }}
+      with:
+        name: provision-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
+        path: toolbox/workflow/provision-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/*
+        if-no-files-found: error
 
-    - name: CIJOE, upload test results and report
+    - name: CIJOE, upload workflow-report-test
       uses: actions/upload-artifact@v2
       if: always()
       with:
         name: test-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
-        path: ${{ steps.cijoe-qemu.outputs.results }}/*
+        path: toolbox/workflow/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/*
         if-no-files-found: error
+
 
   # This is a lot of effort to generate documentation, however, it ensures that command-line
   # utilities, build-examples, commands-output of various kinds are up-to-date.
   # It pushes branches to: docs/<branch>
   # It pushes tags to: docs/<tag>
   # and to: docs/latest
-  # The event only triggers on Push events
+  # The event only triggers on manual request via 'workflow_dispatch'
   docgen:
-    needs: source-archive
+    needs: [source-archive, source-format-check, build-python]
     runs-on: self-hosted
     if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen'))
 
@@ -806,7 +706,7 @@ jobs:
       fail-fast: false
       matrix:
         guest:
-        - {os: 'debian', ver: 'bullseye', img: 'https://cloud.debian.org/images/cloud/bullseye/daily/latest/debian-11-generic-amd64-daily.qcow2'}
+        - {os: 'debian', ver: 'bullseye'}
 
     container:
       image: refenv/qemu-nvme:latest
@@ -816,101 +716,50 @@ jobs:
     - name: Runnner-prep, clean up self-hosted left-overs
       run: |
         rm -rf *
-        ls
+        ls -lh
 
     - name: Container-prep, get the full-source-archive
       uses: actions/download-artifact@v2
       with:
         name: archive-src
-    - name: Extract the full-source-archive
+    - name: Container-prep, extract the full-source-archive
       run: |
         tar xzf xnvme*.tar.gz --strip 1
 
-    - name: Provision qemu-guest
-      id: cijoe-qemu
-      uses: refenv/gh-cijoe-qemu-action@main
+    - name: Retrieve the xNVMe Python Packages (prebuilt sdist)
+      uses: actions/download-artifact@v2
       with:
-        vm-image: ${{ matrix.guest.img }}
-        vm-cloudinit: ${{ matrix.guest.os }}-${{ matrix.guest.ver }}
-        cijoe-packages: 'cijoe-pkg-xnvme'
+        name: python-xnvme-pkg
 
-    - name: CIJOE, transfer source to qemu-guest
+    - name: Move source-archives to /tmp/artifacts
       run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        source ${{ steps.cijoe-qemu.outputs.target-env }}
-        ssh.push xnvme*.tar.gz xnvme.tar.gz
-        cij.cmd "tar xzf xnvme.tar.gz --strip 1"
-        cij.cmd "rm xnvme.tar.gz"
-        cij.cmd "df -h"
+        ls -lh
+        find . -name "*.tar.gz"
+        find /tmp -name "*.tar.gz"
+        rm -r /tmp/artifacts || true
+        mkdir /tmp/artifacts
+        mv xnvme-core/dist/xnvme-core-*.tar.gz /tmp/artifacts/xnvme-core.tar.gz
+        mv xnvme-cy-header/dist/xnvme-cy-header-*.tar.gz /tmp/artifacts/xnvme-cy-header.tar.gz
+        mv xnvme-cy-bindings/dist/xnvme-cy-bindings-*.tar.gz /tmp/artifacts/xnvme-cy-bindings.tar.gz
+        mv xnvme-*.*.*.tar.gz /tmp/artifacts/xnvme.tar.gz
+        find /tmp/artifacts -name "*.tar.gz"
 
-    - name: CIJOE, install packages
+    - name: Remove any existing cijoe installation and install from toolbox
       run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij.cmd "./toolbox/pkgs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.sh"
+        python3 -m pip uninstall cijoe cijoe-pkg-xnvme cijoe-pkg-linux cijoe-pkg-qemu cijoe-pkg-example -y
+        python3 -m pip list
+        python3 -m pip install cijoe --upgrade
+        pushd toolbox/cijoe-pkg-xnvme && make all && popd
+        cijoe -r
 
-    - name: CIJOE/QEMU, Package installation, for xNVMe-docgen
+    # cd'ing into 'toolbox/workflow' to auto-collect the non-packaged github-specific configs and
+    # workflows.
+    - name: Provision and generate documentation
       run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd && source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij.cmd "./docs/autogen/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.sh"
-        cij.cmd "cd docs/autogen && make deps-system"
-
-    - name: CIJOE, configure xNVMe build
-      run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij.cmd "meson setup builddir"
-
-    - name: CIJOE, build xNVMe
-      run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij.cmd "meson compile -C builddir"
-
-    - name: CIJOE, build xNVMe dump log on failure
-      if: failure()
-      run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij.cmd "cat builddir/meson-logs/meson-log.txt"
-
-    - name: CIJOE, install xNVMe
-      run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij.cmd "meson install -C builddir"
-
-    - name: CIJOE, install fio
-      run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij.cmd "cd subprojects/fio && make install"
-
-    - name: CIJOE, check binaries are available
-      run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd
-        source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij.cmd "xnvme enum"
-        cij.cmd "xnvme library-info"
-        cij.cmd "pkg-config xnvme --variable=libdir"
-        cij.cmd "pkg-config xnvme --variable=datadir"
-        cij.cmd "pkg-config xnvme --variable=includedir"
-
-    - name: CIJOE/QEMU, xnvme-docgen generate command-output
-      run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd && source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij.cmd "sync; echo 1 > /proc/sys/vm/drop_caches"
-        cij.cmd "cd docs/autogen && make commands"
-
-    - name: CIJOE/QEMU, xnvme-docgen generate doxy, apis and sphinx aka docs
-      run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd && source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij.cmd "cd docs/autogen && make docs"
-
-    - name: Transfer from qemu-guest to container
-      run: |
-        pushd $(cij_root) && source modules/cijoe.sh && popd && source ${{ steps.cijoe-qemu.outputs.target-env }}
-        cij.pull "docs/autogen/builddir/html" html-docs
+        cd toolbox/workflow && cijoe \
+        --config "ghr-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.config" \
+        --workflow "docgen-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.workflow" \
+        --output "docgen-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
     - name: Checkout site
       uses: actions/checkout@v3.0.1
@@ -924,7 +773,9 @@ jobs:
 
     - name: Add docgen to site
       run: |
-        ./docs/autogen/dest.py --docs html-docs --site site --ref "${{ github.ref }}"
+        cp toolbox/workflow/docgen-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/artifacts/docs.tar.gz .
+        tar xzf docs.tar.gz
+        ./docs/autogen/dest.py --docs html --site site --ref "${{ github.ref }}"
 
     - name: Push site-changes
       run: |
@@ -934,3 +785,12 @@ jobs:
         git add .
         git commit -a -m "Auto-deployed update of 'docs/' for '${{ github.ref }}'"
         git push
+
+    - name: CIJOE, upload report-docgen
+      uses: actions/upload-artifact@v2
+      if: always()
+      with:
+        name: docgen-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
+        path: toolbox/workflow/docgen-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/*
+        if-no-files-found: error
+
