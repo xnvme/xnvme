@@ -10,3 +10,7 @@ pkg install -qy $(cat "toolbox/pkgs/freebsd-13.txt")
 
 # Upgrade pip
 python3 -m ensurepip --upgrade
+
+# Installing meson via pip as the one available 'pkg install' currently that is 0.62.2, breaks with
+# a "File name too long", 0.60 seems ok.
+python3 -m pip install meson==0.60
