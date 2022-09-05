@@ -6,7 +6,6 @@ devel/py-pyelftools
 e2fsprogs-libuuid
 git
 gmake
-meson
 nasm
 ncurses
 ninja
