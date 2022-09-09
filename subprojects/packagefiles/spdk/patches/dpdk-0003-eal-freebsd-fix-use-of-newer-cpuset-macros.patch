@@ -1,0 +1,82 @@
+From b1bf7916960c4a6a8ad9688b5b060ed6ad8dabad Mon Sep 17 00:00:00 2001
+From: David Marchand <david.marchand@redhat.com>
+Date: Fri, 20 May 2022 19:10:50 +0100
+Subject: [PATCH 3/3] eal/freebsd: fix use of newer cpuset macros
+
+FreeBSD has updated its CPU macros to align more with the definitions
+used on Linux[1]. Unfortunately, while this makes compatibility better
+in future, it means we need to have both legacy and newer definition
+support. Use a meson check to determine which set of macros are used.
+
+[1] https://cgit.freebsd.org/src/commit/?id=e2650af157bc
+
+Bugzilla ID: 1014
+Fixes: c3568ea37670 ("eal: restrict control threads to startup CPU affinity")
+Fixes: b6be16acfeb1 ("eal: fix control thread affinity with --lcores")
+Cc: stable@dpdk.org
+
+Signed-off-by: David Marchand <david.marchand@redhat.com>
+Signed-off-by: Bruce Richardson <bruce.richardson@intel.com>
+Tested-by: Daxue Gao <daxuex.gao@intel.com>
+---
+ lib/eal/freebsd/include/rte_os.h | 17 ++++++++++++++++-
+ lib/eal/freebsd/meson.build      | 11 +++++++++++
+ 2 files changed, 27 insertions(+), 1 deletion(-)
+
+diff --git a/lib/eal/freebsd/include/rte_os.h b/lib/eal/freebsd/include/rte_os.h
+index b4afd45adc..003468caff 100644
+--- a/lib/eal/freebsd/include/rte_os.h
++++ b/lib/eal/freebsd/include/rte_os.h
+@@ -28,6 +28,8 @@ extern "C" {
+ 
+ typedef cpuset_t rte_cpuset_t;
+ #define RTE_HAS_CPUSET
++
++#ifdef RTE_EAL_FREEBSD_CPUSET_LEGACY
+ #define RTE_CPU_AND(dst, src1, src2) do \
+ { \
+ 	cpuset_t tmp; \
+@@ -61,7 +63,20 @@ typedef cpuset_t rte_cpuset_t;
+ 	CPU_ANDNOT(&tmp, src); \
+ 	CPU_COPY(&tmp, dst); \
+ } while (0)
+-#endif
++#endif /* CPU_NAND */
++
++#else /* RTE_EAL_FREEBSD_CPUSET_LEGACY */
++
++#define RTE_CPU_AND CPU_AND
++#define RTE_CPU_OR CPU_OR
++#define RTE_CPU_FILL CPU_FILL
++#define RTE_CPU_NOT(dst, src) do { \
++	cpu_set_t tmp; \
++	CPU_FILL(&tmp); \
++	CPU_XOR(dst, src, &tmp); \
++} while (0)
++
++#endif /* RTE_EAL_FREEBSD_CPUSET_LEGACY */
+ 
+ #ifdef __cplusplus
+ }
+diff --git a/lib/eal/freebsd/meson.build b/lib/eal/freebsd/meson.build
+index 398ceab71d..fe9097303a 100644
+--- a/lib/eal/freebsd/meson.build
++++ b/lib/eal/freebsd/meson.build
+@@ -19,3 +19,14 @@ sources += files(
+ )
+ 
+ deps += ['kvargs', 'telemetry']
++
++# test for version of cpuset macros
++cpuset_test_code = '''
++        #include <sys/types.h>
++        #include <sys/cpuset.h>
++        void cpu_test_or(cpuset_t *s) { CPU_OR(s, s, s); }
++'''
++
++if not cc.compiles(cpuset_test_code, name: 'Detect argument count for CPU_OR')
++    dpdk_conf.set('RTE_EAL_FREEBSD_CPUSET_LEGACY', 1)
++endif
+-- 
+2.30.2
+
