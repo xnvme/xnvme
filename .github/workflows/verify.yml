@@ -363,8 +363,9 @@ jobs:
         if [[ -f "${BSCRIPT}" ]]; then source ${BSCRIPT}; else source ${BSCRIPT_DEF}; fi
 
     - name: meson-log-dump
+      if: always()
       run: |
-        cat builddir/meson-logs/meson-log.txt
+        cat builddir/meson-logs/meson-log.txt || true
 
     - name: Execute 'xnvme enum'
       run: xnvme enum
@@ -462,8 +463,9 @@ jobs:
         if [[ -f "${BSCRIPT}" ]]; then source ${BSCRIPT}; else source ${BSCRIPT_DEF}; fi
 
     - name: meson-log-dump
+      if: always()
       run: |
-        cat builddir/meson-logs/meson-log.txt
+        cat builddir/meson-logs/meson-log.txt || true
 
     - name: Execute 'xnvme enum'
       run: xnvme enum
@@ -556,7 +558,8 @@ jobs:
       run: |
         cmd.exe /c "build.bat"
 
-    - name: dump meson-log
+    - name: meson-log-dump
+      if: always()
       run: |
         cat builddir/meson-logs/meson-log.txt || true
 
