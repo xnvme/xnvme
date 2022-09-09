@@ -1,7 +1,7 @@
-From ea1b570caa9fa8130f0ce5c976287ad58e972d46 Mon Sep 17 00:00:00 2001
+From 9d3c184f521974971899cb94ded6eefc3ea4390b Mon Sep 17 00:00:00 2001
 From: "Simon A. F. Lund" <os@safl.dk>
 Date: Wed, 5 May 2021 18:33:05 +0200
-Subject: [PATCH 8/8] nvme/pcie: add NVMe PCIe Driver registration-hook
+Subject: [PATCH 8/9] nvme/pcie: add NVMe PCIe Driver registration-hook
 
 Signed-off-by: Simon A. F. Lund <os@safl.dk>
 Change-Id: I573f6bf51d0c26903764ddc66fe138a0f197b5e2
@@ -12,15 +12,10 @@ Change-Id: I573f6bf51d0c26903764ddc66fe138a0f197b5e2
  3 files changed, 15 insertions(+)
 
 diff --git a/include/spdk/nvme.h b/include/spdk/nvme.h
-index 72d3f2897..7060f7cbc 100644
+index 4157292da..be7376590 100644
 --- a/include/spdk/nvme.h
 +++ b/include/spdk/nvme.h
-@@ -3942,13 +3942,18 @@ void spdk_nvme_transport_register(const struct spdk_nvme_transport_ops *ops);
-  * Macro used to register new transports.
-  */
- #define SPDK_NVME_TRANSPORT_REGISTER(name, transport_ops) \
- static void __attribute__((constructor)) _spdk_nvme_transport_register_##name(void) \
- { \
+@@ -4003,6 +4003,11 @@ static void __attribute__((constructor)) _spdk_nvme_transport_register_##name(vo
  	spdk_nvme_transport_register(transport_ops); \
  }\
  
@@ -32,18 +27,11 @@ index 72d3f2897..7060f7cbc 100644
  #ifdef __cplusplus
  }
  #endif
- 
- #endif
 diff --git a/lib/nvme/nvme_pcie.c b/lib/nvme/nvme_pcie.c
-index 23f4d69b0..d393f3fad 100644
+index 14f563532..db18b331e 100644
 --- a/lib/nvme/nvme_pcie.c
 +++ b/lib/nvme/nvme_pcie.c
-@@ -1164,8 +1164,17 @@ const struct spdk_nvme_transport_ops pcie_ops = {
- 	.poll_group_remove = nvme_pcie_poll_group_remove,
- 	.poll_group_process_completions = nvme_pcie_poll_group_process_completions,
- 	.poll_group_destroy = nvme_pcie_poll_group_destroy,
- 	.poll_group_get_stats = nvme_pcie_poll_group_get_stats,
- 	.poll_group_free_stats = nvme_pcie_poll_group_free_stats
+@@ -1171,3 +1171,12 @@ const struct spdk_nvme_transport_ops pcie_ops = {
  };
  
  SPDK_NVME_TRANSPORT_REGISTER(pcie, &pcie_ops);
@@ -57,11 +45,10 @@ index 23f4d69b0..d393f3fad 100644
 +				 SPDK_PCI_DRIVER_NEED_MAPPING | SPDK_PCI_DRIVER_WC_ACTIVATE);
 +}
 diff --git a/lib/nvme/spdk_nvme.map b/lib/nvme/spdk_nvme.map
-index 9d4d57805..4a9cf79de 100644
+index f4522aa31..e47813afe 100644
 --- a/lib/nvme/spdk_nvme.map
 +++ b/lib/nvme/spdk_nvme.map
-@@ -1,12 +1,13 @@
- {
+@@ -2,6 +2,7 @@
  	global:
  
  	# public functions from nvme.h
@@ -69,11 +56,6 @@ index 9d4d57805..4a9cf79de 100644
  	spdk_nvme_transport_register;
  	spdk_nvme_transport_available;
  	spdk_nvme_transport_available_by_name;
- 	spdk_nvme_transport_id_parse;
- 	spdk_nvme_transport_id_populate_trstring;
- 	spdk_nvme_transport_id_parse_trtype;
- 	spdk_nvme_transport_id_trtype_str;
- 	spdk_nvme_transport_id_adrfam_str;
 -- 
 2.30.2
 
