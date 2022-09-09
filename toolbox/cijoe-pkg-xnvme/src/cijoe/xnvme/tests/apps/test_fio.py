@@ -1,9 +1,8 @@
 from pathlib import Path
 
-import pytest
 from cijoe.fio.wrapper import fio_fancy
-from cijoe.xnvme.tests.conftest import xnvme_device_driver as device
-from cijoe.xnvme.tests.conftest import xnvme_parametrize
+
+from ..conftest import xnvme_parametrize
 
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin", "sync", "async"])

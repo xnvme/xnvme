@@ -1,7 +1,6 @@
 import pytest
-from cijoe.xnvme.tests.conftest import XnvmeDriver
-from cijoe.xnvme.tests.conftest import xnvme_device_driver as device
-from cijoe.xnvme.tests.conftest import xnvme_parametrize
+
+from ..conftest import XnvmeDriver, xnvme_parametrize
 
 
 def test_library_info(cijoe):

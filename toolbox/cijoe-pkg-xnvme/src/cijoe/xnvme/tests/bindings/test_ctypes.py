@@ -1,6 +1,6 @@
 import pytest
-from cijoe.xnvme.tests.conftest import xnvme_device_driver as device
-from cijoe.xnvme.tests.conftest import xnvme_parametrize
+
+from ..conftest import xnvme_parametrize
 
 pytest.skip(allow_module_level=True, reason="Not implemented")
 

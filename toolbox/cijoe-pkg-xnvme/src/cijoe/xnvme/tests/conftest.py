@@ -16,7 +16,8 @@
 from functools import wraps
 
 import pytest
-from cijoe.xnvme.tests.xnvme_be_combinations import get_combinations
+
+from .xnvme_be_combinations import get_combinations
 
 
 def xnvme_be_opts(options=None, only_labels=[]):
@@ -215,9 +216,9 @@ class XnvmeDriver(object):
 
 
 @pytest.fixture
-def xnvme_device_driver(cijoe, request):
+def device(cijoe, request):
     """
-    This handles NVMe-driver-device-attachment per parametrized testcase.
+    This handles NVMe-device-driver-attachment per parametrized testcase.
 
     Usage example:
 

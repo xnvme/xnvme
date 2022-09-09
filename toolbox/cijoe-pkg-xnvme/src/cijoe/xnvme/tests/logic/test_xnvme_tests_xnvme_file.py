@@ -1,6 +1,6 @@
 import pytest
-from cijoe.xnvme.tests.conftest import xnvme_device_driver as device
-from cijoe.xnvme.tests.conftest import xnvme_setup_device
+
+from ..conftest import xnvme_setup_device
 
 
 @pytest.mark.parametrize(

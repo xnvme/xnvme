@@ -1,6 +1,6 @@
 import pytest
-from cijoe.xnvme.tests.conftest import xnvme_device_driver as device
-from cijoe.xnvme.tests.conftest import xnvme_parametrize
+
+from ..conftest import xnvme_parametrize
 
 
 @xnvme_parametrize(labels=["kvs"], opts=["be", "admin"])
