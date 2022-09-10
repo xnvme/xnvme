@@ -6,7 +6,7 @@ def worklet_entry(args, cijoe, step):
     commands = [
         "sysctl -a hw",
         "dmesg | grep memory",
-        "lspci",
+        "lspci || true",
     ]
     first_err = 0
     for command in commands:
