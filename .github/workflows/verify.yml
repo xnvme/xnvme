@@ -601,11 +601,7 @@ jobs:
       fail-fast: false
       matrix:
         guest:
-        # The cloud-init is out-dated leading to tool breaking when install meson/ninja, attempt at
-        # creating new images fail as FreeBSD 13.1 has build-issues with DPDK, which in turn
-        # requires upgrading the spdk subproject. So, to get beyond this, then this is disabled for
-        # now.
-        #- {os: 'freebsd', ver: '13'}
+        - {os: 'freebsd', ver: '13'}
         - {os: 'debian', ver: 'bullseye'}
 
     container:
