@@ -116,6 +116,9 @@ struct xnvmec_args {
 	const char *uri;
 	const char *sys_uri;
 
+	const char *subnqn;
+	const char *hostnqn;
+
 	const char *cmd_input;
 	const char *cmd_output;
 
@@ -359,14 +362,17 @@ enum xnvmec_opt {
 
 	XNVMEC_OPT_VEC_CNT = 97, ///< XNVMEC_OPT_VEC_CNT
 
-	XNVMEC_OPT_DTYPE  = 98,  ///< XNVMEC_OPT_DTYPE
-	XNVMEC_OPT_DSPEC  = 99,  ///< XNVMEC_OPT_DSPEC
-	XNVMEC_OPT_DOPER  = 100, ///< XNVMEC_OPT_DOPER
-	XNVMEC_OPT_ENDIR  = 101, ///< XNVMEC_OPT_ENDIR
-	XNVMEC_OPT_TGTDIR = 102, ///< XNVMEC_OPT_TGTDIR
-	XNVMEC_OPT_NSR    = 103, ///< XNVMEC_OPT_NSR
+	XNVMEC_OPT_SUBNQN  = 98, ///< XNVME_OPT_SUBNQN
+	XNVMEC_OPT_HOSTNQN = 99, ///< XNVMEC_OPT_HOSTNQN
 
-	XNVMEC_OPT_END = 104, ///< XNVMEC_OPT_END
+  XNVMEC_OPT_DTYPE  = 100,  ///< XNVMEC_OPT_DTYPE
+	XNVMEC_OPT_DSPEC  = 101,  ///< XNVMEC_OPT_DSPEC
+	XNVMEC_OPT_DOPER  = 102, ///< XNVMEC_OPT_DOPER
+	XNVMEC_OPT_ENDIR  = 103, ///< XNVMEC_OPT_ENDIR
+	XNVMEC_OPT_TGTDIR = 104, ///< XNVMEC_OPT_TGTDIR
+	XNVMEC_OPT_NSR    = 105, ///< XNVMEC_OPT_NSR
+
+	XNVMEC_OPT_END = 106, ///< XNVMEC_OPT_END
 };
 
 /**

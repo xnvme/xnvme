@@ -1,0 +1,56 @@
+From 079d91eba2973aa3af30135f94339de221888eb7 Mon Sep 17 00:00:00 2001
+From: "Ivan L. Picoli" <i.picoli@samsung.com>
+Date: Tue, 18 Aug 2020 17:31:37 +0200
+Subject: [PATCH 7/9] nvmf: Added passthru support for log zone changes
+
+Signed-off-by: Ivan L. Picoli <i.picoli@samsung.com>
+---
+ include/spdk/nvme_spec.h |  3 +++
+ lib/nvmf/ctrlr.c         | 10 ++++++++++
+ 2 files changed, 13 insertions(+)
+
+diff --git a/include/spdk/nvme_spec.h b/include/spdk/nvme_spec.h
+index 85adc79b9..f80bb73cb 100644
+--- a/include/spdk/nvme_spec.h
++++ b/include/spdk/nvme_spec.h
+@@ -2850,6 +2850,9 @@ enum spdk_nvme_log_page {
+ 
+ 	/* 0x81-0xBF - I/O command set specific */
+ 
++	/** Zone Changes */
++	SPDK_NVME_LOG_ZONE_CHANGES = 0xBF,
++
+ 	/* 0xC0-0xFF - vendor specific */
+ 	SPDK_NVME_LOG_VENDOR_SPECIFIC_START	= 0xc0,
+ 	SPDK_NVME_LOG_VENDOR_SPECIFIC_END	= 0xff,
+diff --git a/lib/nvmf/ctrlr.c b/lib/nvmf/ctrlr.c
+index 3228319e5..c9267da4f 100644
+--- a/lib/nvmf/ctrlr.c
++++ b/lib/nvmf/ctrlr.c
+@@ -479,6 +479,7 @@ nvmf_ctrlr_create(struct spdk_nvmf_subsystem *subsystem,
+ 	spdk_thread_send_msg(subsystem->thread, _nvmf_subsystem_add_ctrlr, req);
+ 
+ 	spdk_nvmf_set_passthru_admin_cmd(SPDK_NVME_OPC_IDENTIFY, 1);
++	spdk_nvmf_set_passthru_admin_cmd(SPDK_NVME_OPC_GET_LOG_PAGE, 1);
+ 
+ 	return ctrlr;
+ err_listener:
+@@ -3376,6 +3377,15 @@ nvmf_ctrlr_process_admin_cmd(struct spdk_nvmf_request *req)
+ 			}
+ 		}
+ 
++		if (cmd->opc == SPDK_NVME_OPC_GET_LOG_PAGE) {
++			switch (cmd->cdw10_bits.get_log_page.lid) {
++			case SPDK_NVME_LOG_ZONE_CHANGES:
++				break;
++			default:
++				goto not_iocs_idfy;
++			}
++		}
++
+ 		rc = g_nvmf_custom_admin_cmd_hdlrs[cmd->opc].hdlr(req);
+ 		if (rc >= SPDK_NVMF_REQUEST_EXEC_STATUS_COMPLETE) {
+ 			/* The handler took care of this command */
+-- 
+2.30.2
+

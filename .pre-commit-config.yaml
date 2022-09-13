@@ -79,12 +79,12 @@ repos:
     - '--profile=black'
     - '--line-length=88'
 - repo: https://github.com/pycqa/flake8
-  rev: '4.0.1'
+  rev: '5.0.4'
   hooks:
   - id: flake8
     name: Python-lint-flake8
     args:
-    - '--extend-ignore=E203,E501' # ignore "whitespace before ':'"; ignore line length
+    - --extend-ignore=E203,F401,F811,E501
     exclude: (ctypes_mapping\/api\.py)$
 
 # Shell: todo: exclude xnvme-driver.sh

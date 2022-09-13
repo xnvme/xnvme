@@ -1,0 +1,112 @@
+From 1bb284194b8134ac6e3d3baa767895573292b770 Mon Sep 17 00:00:00 2001
+From: Jim Harris <james.r.harris@intel.com>
+Date: Fri, 12 Aug 2022 05:00:25 +0000
+Subject: [PATCH 9/9] configure: add CONFIG_HAVE_ARC4RANDOM
+
+glibc 2.36 added arc4random(), which breaks
+the SPDK iSCSI build since it always implements its
+own arc4random() implementation on non-FreeBSD OS
+(meaning always on Linux).
+
+So instead add a CONFIG_HAVE_ARC4RANDOM and remove
+the explicit FreeBSD dependency - this will work on
+FreeBSD as well as Linux with >= glibc 2.36.
+
+Also fix check_format.sh, so that it does not
+enforce spdk/stdinc.h checks on code snippets in
+the configure file.
+
+Fixes issue #2637.
+
+Reported-by: Karl Bonde Torp <k.torp@samsung.com>
+Signed-off-by: Jim Harris <james.r.harris@intel.com>
+Change-Id: Iab9da8ae30d62a56869530846372ffddf7138eed
+Reviewed-on: https://review.spdk.io/gerrit/c/spdk/spdk/+/14028
+Community-CI: Mellanox Build Bot
+Tested-by: SPDK CI Jenkins <sys_sgci@intel.com>
+Reviewed-by: Aleksey Marchuk <alexeymar@nvidia.com>
+Reviewed-by: Changpeng Liu <changpeng.liu@intel.com>
+Reviewed-by: Dong Yi <dongx.yi@intel.com>
+---
+ CONFIG                  | 3 +++
+ configure               | 5 +++++
+ lib/iscsi/iscsi.c       | 5 ++---
+ scripts/check_format.sh | 2 +-
+ 4 files changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/CONFIG b/CONFIG
+index eba5a8b61..85695f577 100644
+--- a/CONFIG
++++ b/CONFIG
+@@ -199,6 +199,9 @@ CONFIG_USDT=n
+ # In this mode, SPDK shares the DSA device with the kernel.
+ CONFIG_IDXD_KERNEL=n
+ 
++# arc4random is available in stdlib.h
++CONFIG_HAVE_ARC4RANDOM=n
++
+ # Is DPDK using libbsd?
+ CONFIG_HAVE_LIBBSD=n
+ 
+diff --git a/configure b/configure
+index 075114e35..4ec33fe76 100755
+--- a/configure
++++ b/configure
+@@ -1041,6 +1041,11 @@ if [[ "${CONFIG[TSAN]}" = "y" ]]; then
+ 	fi
+ fi
+ 
++if echo -e '#include <stdlib.h>\nint main(void) { arc4random(); return 0; }\n' \
++	| "${BUILD_CMD[@]}" - 2> /dev/null; then
++	CONFIG[HAVE_ARC4RANDOM]="y"
++fi
++
+ if [[ "${CONFIG[OCF]}" = "y" ]]; then
+ 	# If OCF_PATH is a file, assume it is a library and use it to compile with
+ 	if [ -f ${CONFIG[OCF_PATH]} ]; then
+diff --git a/lib/iscsi/iscsi.c b/lib/iscsi/iscsi.c
+index 00b1d62e2..3c403b972 100644
+--- a/lib/iscsi/iscsi.c
++++ b/lib/iscsi/iscsi.c
+@@ -62,7 +62,6 @@
+ 
+ #ifdef __FreeBSD__
+ #define HAVE_SRANDOMDEV 1
+-#define HAVE_ARC4RANDOM 1
+ #endif
+ 
+ struct spdk_iscsi_globals g_iscsi = {
+@@ -97,7 +96,7 @@ srandomdev(void)
+ }
+ #endif /* HAVE_SRANDOMDEV */
+ 
+-#ifndef HAVE_ARC4RANDOM
++#ifndef SPDK_CONFIG_HAVE_ARC4RANDOM
+ static int g_arc4random_initialized = 0;
+ 
+ static uint32_t
+@@ -115,7 +114,7 @@ arc4random(void)
+ 	r = (r1 << 16) | r2;
+ 	return r;
+ }
+-#endif /* HAVE_ARC4RANDOM */
++#endif /* SPDK_CONFIG_HAVE_ARC4RANDOM */
+ 
+ static void
+ gen_random(uint8_t *buf, size_t len)
+diff --git a/scripts/check_format.sh b/scripts/check_format.sh
+index ec47e9b9f..ee8ffa1b0 100755
+--- a/scripts/check_format.sh
++++ b/scripts/check_format.sh
+@@ -270,7 +270,7 @@ function check_posix_includes() {
+ 	local rc=0
+ 
+ 	echo -n "Checking for POSIX includes..."
+-	git grep -I -i -f scripts/posix.txt -- './*' ':!include/spdk/stdinc.h' ':!include/linux/**' ':!lib/rte_vhost*/**' ':!scripts/posix.txt' ':!*.patch' > scripts/posix.log || true
++	git grep -I -i -f scripts/posix.txt -- './*' ':!include/spdk/stdinc.h' ':!include/linux/**' ':!lib/rte_vhost*/**' ':!scripts/posix.txt' ':!*.patch' ':!configure' > scripts/posix.log || true
+ 	if [ -s scripts/posix.log ]; then
+ 		echo "POSIX includes detected. Please include spdk/stdinc.h instead."
+ 		cat scripts/posix.log
+-- 
+2.30.2
+

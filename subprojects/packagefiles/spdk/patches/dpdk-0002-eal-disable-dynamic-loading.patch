@@ -1,0 +1,27 @@
+From d27493f422b9f227e83c2592827a4ad72d7abf64 Mon Sep 17 00:00:00 2001
+From: "Simon A. F. Lund" <os@safl.dk>
+Date: Wed, 24 Nov 2021 14:48:51 +0100
+Subject: [PATCH 2/3] eal: disable dynamic-loading
+
+Signed-off-by: Simon A. F. Lund <os@safl.dk>
+---
+ lib/eal/common/eal_common_options.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/lib/eal/common/eal_common_options.c b/lib/eal/common/eal_common_options.c
+index f247a42455..9df69c7891 100644
+--- a/lib/eal/common/eal_common_options.c
++++ b/lib/eal/common/eal_common_options.c
+@@ -529,6 +529,9 @@ is_shared_build(void)
+ int
+ eal_plugins_init(void)
+ {
++	// NOTE: disabling support for plugins to avoid linker issue with 'dl'
++	return 0;
++
+ 	struct shared_driver *solib = NULL;
+ 	struct stat sb;
+ 
+-- 
+2.30.2
+

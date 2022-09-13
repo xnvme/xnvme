@@ -73,11 +73,11 @@ exit:
 		xnvmec_pinf("--={[ Got Errors - see details above ]}=--");
 		xnvmec_pinf("nerr: %d", nerr);
 	} else {
-		xnvmec_pinf("LGMT: xnvme_enumerate()");
+		xnvmec_pinf("LGTM: xnvme_enumerate()");
 	}
 	printf("\n");
 
-	return nerr ? -ENOMEM : 0;
+	return nerr ? -errno : 0;
 }
 
 static int
@@ -153,11 +153,11 @@ exit:
 		xnvmec_pinf("--={[ Got Errors - see details above ]}=--");
 		xnvmec_pinf("nerr: %d", nerr);
 	} else {
-		xnvmec_pinf("LGMT: xnvme_enumerate() + xnvme_dev_open() * count");
+		xnvmec_pinf("LGTM: xnvme_enumerate() + xnvme_dev_open() * count");
 	}
 	printf("\n");
 
-	return nerr ? -ENOMEM : 0;
+	return nerr ? -errno : 0;
 }
 
 //
@@ -171,6 +171,7 @@ static struct xnvmec_sub g_subs[] = {
 		test_enum,
 		{
 			{XNVMEC_OPT_SYS_URI, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_COUNT, XNVMEC_LOPT},
 			{XNVMEC_OPT_VERBOSE, XNVMEC_LFLG},
 		},
@@ -183,6 +184,7 @@ static struct xnvmec_sub g_subs[] = {
 		test_enum_open,
 		{
 			{XNVMEC_OPT_SYS_URI, XNVMEC_LOPT},
+			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_COUNT, XNVMEC_LOPT},
 			{XNVMEC_OPT_VERBOSE, XNVMEC_LFLG},
 		},

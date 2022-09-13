@@ -1,0 +1,57 @@
+From e55c644e9612ab34456063f3cdf8f40c5c1adf76 Mon Sep 17 00:00:00 2001
+From: "Ivan L. Picoli" <i.picoli@samsung.com>
+Date: Wed, 22 Jul 2020 18:17:50 +0200
+Subject: [PATCH 6/9] test: add stub for the ONCS Verify and Simple Copy
+
+Signed-off-by: Ivan L. Picoli <i.picoli@samsung.com>
+Change-Id: I145155cfce2d1942312072fc9ba19920b9c081b8
+---
+ test/unit/lib/nvmf/ctrlr.c/ctrlr_ut.c | 10 ++++++++++
+ test/unit/lib/nvmf/tcp.c/tcp_ut.c     | 10 ++++++++++
+ 2 files changed, 20 insertions(+)
+
+diff --git a/test/unit/lib/nvmf/ctrlr.c/ctrlr_ut.c b/test/unit/lib/nvmf/ctrlr.c/ctrlr_ut.c
+index 1429a7960..e26ca5799 100644
+--- a/test/unit/lib/nvmf/ctrlr.c/ctrlr_ut.c
++++ b/test/unit/lib/nvmf/ctrlr.c/ctrlr_ut.c
+@@ -92,6 +92,16 @@ DEFINE_STUB(nvmf_subsystem_get_ctrlr,
+ 	    (struct spdk_nvmf_subsystem *subsystem, uint16_t cntlid),
+ 	    NULL);
+ 
++DEFINE_STUB(nvmf_ctrlr_verify_supported,
++	    bool,
++	    (struct spdk_nvmf_ctrlr *ctrlr),
++	    false);
++
++DEFINE_STUB(nvmf_ctrlr_simple_copy_supported,
++	    bool,
++	    (struct spdk_nvmf_ctrlr *ctrlr),
++	    false);
++
+ DEFINE_STUB(nvmf_ctrlr_dsm_supported,
+ 	    bool,
+ 	    (struct spdk_nvmf_ctrlr *ctrlr),
+diff --git a/test/unit/lib/nvmf/tcp.c/tcp_ut.c b/test/unit/lib/nvmf/tcp.c/tcp_ut.c
+index af45b92c6..aae1f1849 100644
+--- a/test/unit/lib/nvmf/tcp.c/tcp_ut.c
++++ b/test/unit/lib/nvmf/tcp.c/tcp_ut.c
+@@ -113,6 +113,16 @@ DEFINE_STUB(spdk_nvmf_subsystem_host_allowed,
+ 	    (struct spdk_nvmf_subsystem *subsystem, const char *hostnqn),
+ 	    true);
+ 
++DEFINE_STUB(nvmf_ctrlr_verify_supported,
++	    bool,
++	    (struct spdk_nvmf_ctrlr *ctrlr),
++	    false);
++
++DEFINE_STUB(nvmf_ctrlr_simple_copy_supported,
++	    bool,
++	    (struct spdk_nvmf_ctrlr *ctrlr),
++	    false);
++
+ DEFINE_STUB(nvmf_ctrlr_dsm_supported,
+ 	    bool,
+ 	    (struct spdk_nvmf_ctrlr *ctrlr),
+-- 
+2.30.2
+

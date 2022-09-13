@@ -1,0 +1,34 @@
+From fc6dc2e6711c322d7cfd370f40dc6a2d8ca52e58 Mon Sep 17 00:00:00 2001
+From: "Ivan L. Picoli" <i.picoli@samsung.com>
+Date: Wed, 22 Jul 2020 18:09:58 +0200
+Subject: [PATCH 4/9] bdev_nvme: add support-check for ONCS Verify and Simple
+ Copy
+
+Signed-off-by: Simon A. F. Lund <simon.lund@samsung.com>
+Change-Id: Id317596458ea8cd1625d867be7c735470a6200d3
+---
+ module/bdev/nvme/bdev_nvme.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/module/bdev/nvme/bdev_nvme.c b/module/bdev/nvme/bdev_nvme.c
+index 0110694c9..dea9f7b83 100644
+--- a/module/bdev/nvme/bdev_nvme.c
++++ b/module/bdev/nvme/bdev_nvme.c
+@@ -2253,6 +2253,14 @@ bdev_nvme_io_type_supported(void *ctx, enum spdk_bdev_io_type io_type)
+ 		}
+ 		return false;
+ 
++	case SPDK_BDEV_IO_TYPE_VERIFY:
++		cdata = spdk_nvme_ctrlr_get_data(ctrlr);
++		return cdata->oncs.verify;
++
++	case SPDK_BDEV_IO_TYPE_SIMPLE_COPY:
++		cdata = spdk_nvme_ctrlr_get_data(ctrlr);
++		return cdata->oncs.copy;
++
+ 	case SPDK_BDEV_IO_TYPE_GET_ZONE_INFO:
+ 	case SPDK_BDEV_IO_TYPE_ZONE_MANAGEMENT:
+ 		return spdk_nvme_ns_get_csi(ns) == SPDK_NVME_CSI_ZNS;
+-- 
+2.30.2
+
