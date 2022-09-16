@@ -524,8 +524,7 @@ xnvmec(struct xnvmec *cli, int argc, char **argv, int opts);
  * @param cli The command-line-interface to parse arguments for
  * @param opts The device-options to fill
  *
- * @return On success, the 0 is returned. On error, -1 is returned and `errno` set to indicate the
- * error.
+ * @return On success, 0 is returned.
  */
 int
 xnvmec_cli_to_opts(const struct xnvmec *cli, struct xnvme_opts *opts);

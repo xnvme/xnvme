@@ -1872,42 +1872,44 @@ xnvmec(struct xnvmec *cli, int argc, char **argv, int opts)
 int
 xnvmec_cli_to_opts(const struct xnvmec *cli, struct xnvme_opts *opts)
 {
-	opts->be = cli->args.be;
-	// opts->dev = cli->args.dev;
-	opts->mem = cli->args.mem;
-	opts->sync = cli->args.sync;
-	opts->async = cli->args.async;
-	opts->admin = cli->args.admin;
+	opts->be = cli->given[XNVMEC_OPT_BE] ? cli->args.be : opts->be;
+	opts->mem = cli->given[XNVMEC_OPT_MEM] ? cli->args.mem : opts->mem;
+	opts->sync = cli->given[XNVMEC_OPT_SYNC] ? cli->args.sync : opts->sync;
+	opts->async = cli->given[XNVMEC_OPT_ASYNC] ? cli->args.async : opts->async;
+	opts->admin = cli->given[XNVMEC_OPT_ADMIN] ? cli->args.admin : opts->admin;
 
-	opts->nsid = cli->args.dev_nsid;
+	opts->nsid = cli->given[XNVMEC_OPT_NSID] ? cli->args.dev_nsid : opts->nsid;
 
-	opts->oflags = cli->args.oflags;
-	opts->rdonly = cli->args.rdonly;
-	opts->wronly = cli->args.wronly;
-	opts->rdwr = cli->args.rdwr;
-	opts->create = cli->args.create;
-	opts->truncate = cli->args.truncate;
-	opts->direct = cli->args.direct;
+	opts->oflags = cli->given[XNVMEC_OPT_OFLAGS] ? cli->args.oflags : opts->oflags;
+	opts->rdonly = cli->given[XNVMEC_OPT_RDONLY] ? cli->args.rdonly : opts->rdonly;
+	opts->wronly = cli->given[XNVMEC_OPT_WRONLY] ? cli->args.wronly : opts->wronly;
+	opts->rdwr = cli->given[XNVMEC_OPT_RDWR] ? cli->args.rdwr : opts->rdwr;
+	opts->create = cli->given[XNVMEC_OPT_CREATE] ? cli->args.create : opts->create;
+	opts->truncate = cli->given[XNVMEC_OPT_TRUNCATE] ? cli->args.truncate : opts->truncate;
+	opts->direct = cli->given[XNVMEC_OPT_DIRECT] ? cli->args.direct : opts->direct;
 
-	opts->create_mode = cli->args.create_mode;
+	opts->create_mode =
+		cli->given[XNVMEC_OPT_CREATE_MODE] ? cli->args.create_mode : opts->create_mode;
 
-	opts->poll_io = cli->args.poll_io;
-	opts->poll_sq = cli->args.poll_sq;
-	opts->register_files = cli->args.register_files;
-	opts->register_buffers = cli->args.register_buffers;
+	opts->poll_io = cli->given[XNVMEC_OPT_POLL_IO] ? cli->args.poll_io : opts->poll_io;
+	opts->poll_sq = cli->given[XNVMEC_OPT_POLL_SQ] ? cli->args.poll_sq : opts->poll_sq;
+	opts->register_files = cli->given[XNVMEC_OPT_REGISTER_FILES] ? cli->args.register_files
+								     : opts->register_files;
+	opts->register_buffers = cli->given[XNVMEC_OPT_REGISTER_BUFFERS]
+					 ? cli->args.register_buffers
+					 : opts->register_buffers;
 
-	opts->css.value = cli->args.css.value;
-	opts->css.given = cli->args.css.given;
+	opts->css.value = cli->given[XNVMEC_OPT_CSS] ? cli->args.css.value : opts->css.value;
+	opts->css.given = cli->given[XNVMEC_OPT_CSS] ? cli->args.css.given : opts->css.given;
 
-	opts->use_cmb_sqs = cli->args.use_cmb_sqs;
-	opts->shm_id = cli->args.shm_id;
-	opts->main_core = cli->args.main_core;
-	opts->core_mask = cli->args.core_mask;
-	opts->adrfam = cli->args.adrfam;
-	opts->subnqn = cli->args.subnqn;
-	opts->hostnqn = cli->args.hostnqn;
-
-	errno = 0;
+	opts->use_cmb_sqs =
+		cli->given[XNVMEC_OPT_USE_CMB_SQS] ? cli->args.use_cmb_sqs : opts->use_cmb_sqs;
+	opts->shm_id = cli->given[XNVMEC_OPT_SHM_ID] ? cli->args.shm_id : opts->shm_id;
+	opts->main_core = cli->given[XNVMEC_OPT_MAIN_CORE] ? cli->args.main_core : opts->main_core;
+	opts->core_mask = cli->given[XNVMEC_OPT_CORE_MASK] ? cli->args.core_mask : opts->core_mask;
+	opts->adrfam = cli->given[XNVMEC_OPT_ADRFAM] ? cli->args.adrfam : opts->adrfam;
+	opts->subnqn = cli->given[XNVMEC_OPT_SUBNQN] ? cli->args.subnqn : opts->subnqn;
+	opts->hostnqn = cli->given[XNVMEC_OPT_HOSTNQN] ? cli->args.hostnqn : opts->hostnqn;
 
 	return 0;
 }
