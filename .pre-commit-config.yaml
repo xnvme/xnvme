@@ -48,7 +48,7 @@ repos:
   - id: check-yaml # pre-commit-hook-yamlfmt only works on valid YAML files
     name: YAML-format-check
     types: [file]
-    files: \.(yaml|yml|plan)$
+    files: \.(yaml|yml|config|workflow)$
 - repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
   rev: 0.1.1
   hooks:
@@ -61,7 +61,7 @@ repos:
     - '--width=120'
     - '--preserve-quotes'
     types: [file]
-    files: \.(yaml|yml|plan)$
+    files: \.(yaml|yml|config|workflow)$
 
 # Python: for all the helpers in toolbox/*
 - repo: https://github.com/psf/black
