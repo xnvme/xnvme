@@ -1,6 +1,18 @@
 ---
 doc: |
-  Initialize guest using boot image
+  Provision a guest using bootimg and xNVMe source
+
+  The guest is created based of the "bootimg" in the config.
+
+  On "local" the folder "/tmp/artifacts", must contain
+
+  * xnvme-core.tar.gz
+  * xnvme-cy-bindings.tar.gz
+  * xnvme-cy-header.tar.gz
+  * xnvme.tar.gz
+
+  These will be transferred to the guest, and unpacked in "/tmp/xnvme_source", then built and
+  installed.
 
 steps:
 - name: kill

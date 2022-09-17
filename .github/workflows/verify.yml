@@ -659,14 +659,14 @@ jobs:
     - name: CIJOE, run provision.workflow
       run: |
         cd toolbox/workflow && cijoe \
-        --config "ghr-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.config" \
+        --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.config" \
         --workflow "provision.workflow" \
         --output "provision-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
     - name: CIJOE, run test.workflow
       run: |
         cd toolbox/workflow && cijoe \
-        --config "ghr-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.config" \
+        --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.config" \
         --workflow "test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.workflow" \
         --output "test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
@@ -757,8 +757,8 @@ jobs:
     - name: Provision and generate documentation
       run: |
         cd toolbox/workflow && cijoe \
-        --config "ghr-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.config" \
-        --workflow "docgen-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.workflow" \
+        --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.config" \
+        --workflow "docgen.workflow" \
         --output "docgen-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
     - name: Checkout site
