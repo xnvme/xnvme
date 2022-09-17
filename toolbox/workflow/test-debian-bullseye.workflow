@@ -1,6 +1,6 @@
 ---
 doc: |
-  Test xNVMe
+  Test xNVMe on Linux
 
 steps:
 - name: sysinfo

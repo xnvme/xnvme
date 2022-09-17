@@ -1,6 +1,6 @@
 ---
 doc: |
-  Test xNVMe
+  Test xNVMe on FreeBSD
 
 steps:
 - name: sysinfo
