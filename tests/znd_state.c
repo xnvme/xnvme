@@ -31,7 +31,7 @@ cmd_transition(struct xnvmec *cli)
 	struct xnvme_dev *dev = cli->args.dev;
 	uint32_t nsid;
 	uint64_t slba;
-	int err;
+	int err = 0;
 
 	nsid = cli->given[XNVMEC_OPT_NSID] ? cli->args.nsid : xnvme_dev_get_nsid(cli->args.dev);
 	slba = cli->given[XNVMEC_OPT_SLBA] ? cli->args.slba : 0x0;
