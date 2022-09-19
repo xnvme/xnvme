@@ -409,7 +409,7 @@ sub_gfeat(struct xnvmec *cli)
 	}
 
 exit:
-	return 0;
+	return err;
 }
 
 static int
