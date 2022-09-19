@@ -94,6 +94,41 @@ jobs:
       run: pre-commit run --all-files
 
   #
+  # Code-analysis using scan-build
+  #
+  analyze-scan-build:
+    needs: source-archive
+    runs-on: ubuntu-latest
+    container: refenv/xnvme-devtools-ci:latest
+
+    steps:
+    - name: Retrieve the source-archive
+      uses: actions/download-artifact@v2
+      with:
+        name: archive-src
+    - name: Extract the full-source-archive
+      run: |
+        tar xzf xnvme*.tar.gz --strip 1
+        rm xnvme*.tar.gz
+
+    - name: install scan-build (clang-tools)
+      run: apt-get install -qy clang-tools
+
+    - name: Run config-debug
+      run: scan-build make config-debug
+
+    - name: Run scan-build
+      run: scan-build --exclude subprojects -o /tmp/scan-build-report make
+
+    - name: Upload scan-build report
+      uses: actions/upload-artifact@v2
+      if: always()
+      with:
+        name: scan-build-report
+        path: /tmp/scan-build-report/*
+        if-no-files-found: error
+
+  #
   # Code-analysis using GitHUB CodeQL
   #
   analyze-codeql:
