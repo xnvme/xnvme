@@ -59,7 +59,8 @@ boilerplate(struct xnvmec *cli, uint8_t **wbuf, uint8_t **rbuf, size_t *buf_nbyt
 	if (!*rbuf) {
 		err = -ENOMEM;
 		xnvmec_perr("xnvme_buf_alloc()", err);
-		xnvme_buf_free(dev, *rbuf);
+		xnvme_buf_free(dev, *wbuf);
+		*wbuf = NULL;
 		return err;
 	}
 
