@@ -203,7 +203,7 @@ _posix_async_thrpool_term(struct xnvme_queue *q)
 		XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err_lock: %d", err_lock);
 	}
 
-	for (int i = 0; i < queue->nthreads; i++) {
+	for (int i = 0; queue->threads && i < queue->nthreads; i++) {
 		pthread_join(queue->threads[i], NULL);
 	}
 	free(queue->threads);
