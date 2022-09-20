@@ -691,7 +691,18 @@ copy_file_async(struct xnvmec *cli)
 	src_fpath = cli->args.data_input;
 	dst_fpath = cli->args.data_output;
 	iosize = cli->given[XNVMEC_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
+	if (!iosize) {
+		err = -EINVAL;
+		xnvmec_perr("iosize can't be set to 0", err);
+		return err;
+	}
+
 	qdepth = cli->given[XNVMEC_OPT_QDEPTH] ? cli->args.qdepth : QDEPTH_DEF;
+	if (!qdepth) {
+		err = -EINVAL;
+		xnvmec_perr("qdepth can't be set to 0", err);
+		return err;
+	}
 
 	src_fh = xnvme_file_open(src_fpath, &src_opts);
 	if (src_fh == NULL) {
