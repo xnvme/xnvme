@@ -50,14 +50,14 @@ boilerplate(struct xnvmec *cli, uint8_t **wbuf, uint8_t **rbuf, size_t *buf_nbyt
 
 	*wbuf = xnvme_buf_alloc(dev, *buf_nbytes);
 	if (!*wbuf) {
-		err = -errno;
+		err = -ENOMEM;
 		xnvmec_perr("xnvme_buf_alloc()", err);
 		return err;
 	}
 
 	*rbuf = xnvme_buf_alloc(dev, *buf_nbytes);
 	if (!*rbuf) {
-		err = -errno;
+		err = -ENOMEM;
 		xnvmec_perr("xnvme_buf_alloc()", err);
 		xnvme_buf_free(dev, *rbuf);
 		return err;
@@ -277,7 +277,7 @@ test_scopy(struct xnvmec *cli)
 
 	sranges = xnvme_buf_alloc(dev, sizeof(*sranges));
 	if (!sranges) {
-		err = -errno;
+		err = -ENOMEM;
 		xnvmec_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
