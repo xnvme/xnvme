@@ -131,6 +131,9 @@ def test_log(cijoe, device, be_opts, cli_args):
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_feature_get(cijoe, device, be_opts, cli_args):
 
+    if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
+        pytest.skip(reason="[admin=block] does not implement feature-get")
+
     for fid, descr in [("0x4", "Temperature threshold"), ("0x5", "Error recovery")]:
         # Get fid without setting select-bit
         err, _ = cijoe.run(f"xnvme feature-get {cli_args} --fid {fid}")
