@@ -74,7 +74,7 @@ int
 xnvme_be_linux_sysfs_dev_attr_to_num(struct xnvme_dev *dev, const char *attr, uint64_t *num)
 {
 	const int buf_len = 0x1000;
-	char buf[buf_len];
+	char buf[0x1000] = {'\0'};
 	int base = 10;
 	int err;
 
