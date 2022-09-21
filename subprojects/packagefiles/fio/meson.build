@@ -1,13 +1,13 @@
 project(
   'fio',
   'c',
-  version: '3.30',
+  version: '3.32',
 )
 fs = import('fs')
 
 if get_option('build_subprojects') and not fs.exists('config-host.h')
   message('Configuring ..')
-  run_command('./configure', capture: true, check: true)
+  run_command(['./configure', '--disable-xnvme'], capture: true, check: true)
 endif
 if get_option('build_subprojects') and not fs.exists('fio')
   cpu_count = run_command([
