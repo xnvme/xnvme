@@ -20,6 +20,15 @@ if get_option('build_subprojects') and not fs.exists('build' / 'lib' / 'src' / '
     check: true,
   ).stdout().strip()
 
+  message('Checking if generic platform (Apple Silicon)')
+  is_platform_generic = target_machine.cpu_family() == 'aarch64' and run_command([
+    import('python').find_installation('python3'),
+    '-c',
+    'print(open("/sys/devices/system/cpu/cpu0/regs/identification/midr_el1").read() == "")'
+    ],
+    check: true,
+  ).stdout().strip() == 'True'
+
   message('Building ..')
   run_command([
       find_program(host_machine.system() == 'freebsd' ? 'gmake' : 'make'),
@@ -27,7 +36,8 @@ if get_option('build_subprojects') and not fs.exists('build' / 'lib' / 'src' / '
       cpu_count
     ],
     capture: true,
-    check: true
+    check: true,
+    env: is_platform_generic ? {'DPDKBUILD_FLAGS':'-Dplatform=generic'} : {}
   )
 endif
 
