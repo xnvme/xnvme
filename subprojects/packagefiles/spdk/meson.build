@@ -56,15 +56,20 @@ dpdk_libnames = get_option('build_subprojects') ? [
   'rte_kvargs'
 ] : []
 
+isal_libnames = get_option('build_subprojects') ? [
+  'isal',
+] : []
+
 cc = meson.get_compiler('c')
 spdk_paths = []
 spdk_libs = []
-foreach libname : spdk_libnames + dpdk_libnames
+foreach libname : spdk_libnames + dpdk_libnames + isal_libnames
   lib_dep = cc.find_library(
     libname,
     dirs: [
       meson.current_source_dir() / 'build' / 'lib',
       meson.current_source_dir() / 'dpdk' / 'build' / 'lib',
+      meson.current_source_dir() / 'isa-l' / '.libs',
     ],
     static: true
   )
@@ -74,6 +79,7 @@ foreach libname : spdk_libnames + dpdk_libnames
   paths = [
     meson.current_source_dir() / 'build' / 'lib' / 'lib' + libname + '.a',
     meson.current_source_dir() / 'dpdk' / 'build' / 'lib' / 'lib' + libname + '.a',
+    meson.current_source_dir() / 'isa-l' / '.libs' / 'lib' + libname + '.a',
   ]
   foreach path : paths
     if lib_dep.found() and fs.exists(path)
