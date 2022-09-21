@@ -367,6 +367,11 @@ jobs:
       run: |
         cat builddir/meson-logs/meson-log.txt || true
 
+    - name: isal-log-dump
+      if: always()
+      run: |
+        cat subprojects/spdk/isa-l/spdk-isal.log || true
+
     - name: Execute 'xnvme enum'
       run: xnvme enum
 
