@@ -13,6 +13,16 @@ yum install -y devtoolset-8
 # Install packages via the system package-manager (yum)
 yum install -y $(cat "toolbox/pkgs/centos-centos7.txt")
 
+# Install nasm from source
+git clone https://github.com/netwide-assembler/nasm.git
+cd nasm
+git checkout nasm-2.15
+./autogen.sh
+./configure --prefix=/usr
+make -j $(nproc)
+make install
+cd ..
+
 # The meson version available via yum is tool old < 0.54 and the Python version is tool old to
 # support the next release of meson, so to fix this, Python3 is installed from source and meson
 # installed via the Python package-manager pip

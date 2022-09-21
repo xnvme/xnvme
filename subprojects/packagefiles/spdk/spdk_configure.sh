@@ -5,7 +5,6 @@
   --without-crypto \
   --without-fuse \
   --without-idxd \
-  --without-isal \
   --without-iscsi-initiator \
   --without-nvme-cuse \
   --without-ocf \
