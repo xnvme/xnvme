@@ -4,6 +4,7 @@ git
 libaio
 libutil-linux
 meson
+nasm
 ncurses
 ninja
 numactl

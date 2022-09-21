@@ -1,3 +1,4 @@
+autoconf
 cunit-devel
 findutils
 gcc
@@ -7,8 +8,10 @@ gzip
 libaio-devel
 libnuma-devel
 libopenssl-devel
+libtool
 libuuid-devel
 make
+nasm
 patch
 pkg-config
 python3

@@ -1,13 +1,16 @@
 CUnit-devel
+autoconf
 diffutils
 findutils
 g++
 gcc
 git
 libaio-devel
+libtool
 libuuid-devel
 make
 meson
+nasm
 numactl-devel
 openssl-devel
 patch

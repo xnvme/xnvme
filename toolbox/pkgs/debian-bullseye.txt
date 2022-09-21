@@ -1,4 +1,4 @@
-astyle
+autoconf
 build-essential
 clang-format
 git
@@ -7,6 +7,7 @@ libcunit1-dev
 libncurses5-dev
 libnuma-dev
 libssl-dev
+libtool
 nasm
 pkg-config
 python3
