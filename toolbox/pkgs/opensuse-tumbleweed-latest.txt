@@ -9,6 +9,7 @@ libaio-devel
 libnuma-devel
 libopenssl-devel
 libtool
+liburing-devel
 libuuid-devel
 make
 meson
