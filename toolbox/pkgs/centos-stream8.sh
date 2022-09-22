@@ -13,3 +13,11 @@ dnf install -y $(cat "toolbox/pkgs/centos-stream8.txt")
 
 # Install packages via the Python package-mange (pip)
 python3 -m pip install meson ninja pyelftools
+
+# Clone, build and install liburing
+git clone https://github.com/axboe/liburing.git
+cd liburing
+git checkout liburing-2.2
+./configure --libdir=/usr/lib64 --libdevdir=/usr/lib64
+make
+make install

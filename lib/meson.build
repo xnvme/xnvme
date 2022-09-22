@@ -82,6 +82,7 @@ xnvmelib_deps_shared = [
   corefoundation_dep,
   iokit_dep,
   libvfn_dep,
+  uring_dep,
 ]
 
 xnvmelib_deps_static = []
@@ -89,7 +90,6 @@ xnvmelib_deps_static += [spdk_dep, uring_dep, corefoundation_dep, iokit_dep, lib
 xnvmelib_deps = xnvmelib_deps_shared + xnvmelib_deps_static
 
 xnvmelib_deps_bundle = [
-  uring_dep,
   spdk_dep,
 ]
 

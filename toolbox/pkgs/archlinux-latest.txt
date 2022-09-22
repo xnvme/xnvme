@@ -2,6 +2,7 @@ base-devel
 cunit
 git
 libaio
+liburing
 libutil-linux
 meson
 nasm

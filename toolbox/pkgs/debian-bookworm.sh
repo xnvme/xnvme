@@ -17,3 +17,11 @@ apt-get -qy install aptitude
 
 # Install packages via the system package-manager (aptitude)
 aptitude -q -y -f install $(cat "toolbox/pkgs/debian-bookworm.txt")
+
+# Clone, build and install liburing
+git clone https://github.com/axboe/liburing.git
+cd liburing
+git checkout liburing-2.2
+./configure
+make
+make install

@@ -66,8 +66,7 @@ must support **C11**, **pthreads** and on the system the following tools must
 be available:
 
 * Python (>=3.7)
-* meson (>=0.61)
-* ninja (>=)
+* meson (>=0.58) and matching version of ninja
 * make (gmake)
 * gcc/mingw/clang
 
@@ -77,6 +76,7 @@ Along with libraries:
 * libaio-dev (>=0.3, For **xNVMe** and **SPDK**)
 * libnuma-dev (>=2, For **SPDK**)
 * libssl-dev (>=1.1, For **SPDK**)
+* liburing (>=2.2, for **xNVMe**)
 * uuid-dev (>=2.3, For **SPDK**)
 
 The preferred toolchain is **gcc** and the following sections describe how to
