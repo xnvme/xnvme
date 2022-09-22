@@ -7,5 +7,6 @@ dev-util/meson
 dev-util/ninja
 dev-util/pkgconf
 dev-vcs/git
+sys-libs/liburing
 sys-libs/ncurses
 sys-process/numactl

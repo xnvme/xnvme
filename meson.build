@@ -166,10 +166,16 @@ aio_dep = cc.find_library(
   has_headers: ['libaio.h'],
   required: conf_data.get('XNVME_BE_LINUX_LIBAIO_ENABLED'),
 )
+
 uring_dep = dependency(
-  'uring',
-  required: conf_data.get('XNVME_BE_LINUX_LIBURING_ENABLED'),
+  'liburing',
+  version: '>=2.2',
+  required: false,
 )
+if conf_data.get('XNVME_BE_LINUX_LIBURING_ENABLED') and not uring_dep.found()
+  error('missing liburing >= 2.2; install it or point PKG_CONFIG_PATH to where it is located')
+endif
+
 math_dep = cc.find_library(
   'm',
   has_headers: ['math.h'],

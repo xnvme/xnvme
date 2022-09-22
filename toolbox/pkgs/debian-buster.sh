@@ -22,3 +22,11 @@ apt-get install -qy $(cat "toolbox/pkgs/debian-buster.txt")
 # Install packages via the Python package-manager (pip)
 python3 -m pip install --upgrade pip
 python3 -m pip install meson ninja pyelftools
+
+# Clone, build and install liburing
+git clone https://github.com/axboe/liburing.git
+cd liburing
+git checkout liburing-2.2
+./configure
+make
+make install
