@@ -32,10 +32,13 @@ _linux_libaio_term(struct xnvme_queue *q)
 }
 
 int
-_linux_libaio_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
+_linux_libaio_init(struct xnvme_queue *q, int opts)
 {
 	struct xnvme_queue_libaio *queue = (void *)q;
+	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
 	int err = 0;
+
+	queue->poll_io = (opts & XNVME_QUEUE_IOPOLL) || state->poll_io;
 
 	queue->aio_ctx = 0;
 	queue->aio_events = calloc(queue->base.capacity, sizeof(struct io_event));
@@ -54,12 +57,13 @@ _linux_libaio_poke(struct xnvme_queue *q, uint32_t max)
 {
 	struct xnvme_queue_libaio *queue = (void *)q;
 	struct timespec timeout = {.tv_sec = 0, .tv_nsec = 100000};
+	int min = queue->poll_io ? 0 : 1;
 	int completed = 0;
 
 	max = max ? max : queue->base.outstanding;
 	max = max > queue->base.outstanding ? queue->base.outstanding : max;
 
-	completed = io_getevents(queue->aio_ctx, 1, max, queue->aio_events, &timeout);
+	completed = io_getevents(queue->aio_ctx, min, max, queue->aio_events, &timeout);
 	if (completed < 0) {
 		XNVME_DEBUG("FAILED: completed: %d, errno: %d", completed, errno);
 		return completed;
