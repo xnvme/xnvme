@@ -172,7 +172,7 @@ def parse_tool_sub_sig(tsig, sname):
     }
 
     for line in match.group("body").strip().splitlines():
-        arg, descr = line.strip().split(";")
+        arg, descr = line.strip().split(";", 1)
 
         arg = arg.strip()
         if arg[0] not in ["-", "["]:
