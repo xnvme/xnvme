@@ -14,35 +14,70 @@ Known Issues
 
 See the file named ``ISSUES`` in the root of the repository.
 
-v0.5.0 (future)
----------------
+v0.5.0
+------
 
 A bit of expansion in the application of xNVMe with support for macOS, a
 ramdisk backend, revival of Python language bindings and a refresh of the docs
 on NVMe-over-Fabrics.
 
-* be:macos: added a backend for macOS
+* API
+  - Removed helpers for SGL
+  - Add 'subnqn' to 'xnvme_ident', useful for NVMe-oF
+  - Add 'hostnqn' to 'opts', useful for NVMe-oF
+  - Add support directive-receive and write-with-directives
+  - Spec adjusted for NVMe 2.0, still more work needed in this area
+
+* Third-party
+  - Bumped fio to v3.32
+  - Bumped SPDK to v22.05
+  - Removed liburing, now relies on on-system library instead of
+    vendoring/bundling, documentation is updated to assist with library
+    installation
+
+* Tooling
+  - Re-working testing using cijoe 0.9+, that is, switching to CIJOE/pytest for
+    testing an CIJOE workflows for instrumentation
+  - liburing is no longer bundled with xNVMe, that is, xNVMe now links with
+    liburing as discovered on the system via pkg-config. This is done to avoid
+    symbol collisions for applications linking or loading liburing and xNVMe.
+
+* be:linux:async:libaio
+  - When 'opts.poll_io' is set then poke() will return immmediatly and now wait
+    for completions. This allows the use of trading CPU for more IOPS and lower
+    per command latency.
+
+* Additional user-space NVMe driver support via libvfn
+  - Added 'be:vfio' providing another user-space driver via libvfn
+
+* Preliminary support for macOS
   - Initial implementation using the "core" I/O mechanisms of sync-io, async
     emulation and the threadpool
   - Does enumeration of NVMe devices through the limited interface provided for
     user-space by the macOS kernel
   - Utilizes what is avaiable for admin-command submision
 
-* be:ramdisk: added a backend mimicing the behavior of an NVMe NVM namespace
+* Prelimiary support for a "ramdisk" device
+  - be:ramdisk: added a backend mimicing the behavior of an NVMe NVM namespace
   - Intended as a test-vehicle providing a "device" without requiring anything
     but the consumption of main memory of the system
   - I/O is "stored" using main-memory
 
-* py: revived the xNVMe Python language bindings
+* Revival of the xNVMe Python language bindings
   - A re-introduction of the Python bindings, these are now generated and thus
     provide access to the entire xNVMe C API
   - They are added to the testing infrastructure ensuring that they are aligned
     with the library
+  - In addition to simple ctypes bindings, then cython headers and bindings
+    based on Cython are provided
 
-* docs: refreshed the NVMe-over-Fabrics tutorial
+* Documentation
+  - Refreshed the NVMe-over-Fabrics tutorial
+  - Expanded with descriptions on installing liburing
+  - Expanded with a section for the WIP Python bindings
 
-v0.4.0 (upcoming)
------------------
+v0.4.0
+------
 
 This is a release with the sole purpose of changing the liburing subproject
 from tracking 'master' to the next stable release that is liburing-2.2.
