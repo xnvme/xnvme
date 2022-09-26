@@ -15,7 +15,7 @@ _lblk_completions()
 
     # Complete sub-commands
     if [[ $COMP_CWORD < 2 ]]; then
-        COMPREPLY+=( $( compgen -W 'enum info idfy read write write-zeros write-uncor --help' -- $cur ) )
+        COMPREPLY+=( $( compgen -W 'enum info idfy dir-send dir-receive read write write-zeros write-uncor write-dir --help' -- $cur ) )
         return 0
     fi
 
@@ -41,6 +41,14 @@ _lblk_completions()
         opts+="--nsid --data-output --dev-nsid --be --admin --help"
         ;;
 
+    "dir-send")
+        opts+="--nsid --dspec --dtype --doper --endir --tgtdir --dev-nsid --be --admin --help"
+        ;;
+
+    "dir-receive")
+        opts+="--nsid --dtype --doper --nsr --dev-nsid --be --admin --help"
+        ;;
+
     "read")
         opts+="--slba --nlb --nsid --data-output --meta-output --dev-nsid --be --admin --sync --help"
         ;;
@@ -55,6 +63,10 @@ _lblk_completions()
 
     "write-uncor")
         opts+="--slba --nlb --nsid --data-input --meta-input --dev-nsid --be --admin --sync --help"
+        ;;
+
+    "write-dir")
+        opts+="--slba --nlb --nsid --data-input --meta-input --dtype --dspec --dev-nsid --be --admin --sync --help"
         ;;
 
     esac
