@@ -2,7 +2,7 @@
 
   cd xnvme
 
-  # configure xNVMe and build dependencies (fio, liburing, and SPDK)
+  # configure xNVMe and build dependencies (fio, libvfn, and SPDK/NVMe)
   meson setup builddir
   cd builddir
 
