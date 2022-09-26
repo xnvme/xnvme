@@ -34,11 +34,11 @@ _xnvme_completions()
         ;;
 
     "enum")
-        opts+="--uri --flags --be --help"
+        opts+="--uri --flags --subnqn --hostnqn --be --help"
         ;;
 
     "info")
-        opts+="--dev-nsid --be --admin --help"
+        opts+="--subnqn --dev-nsid --be --admin --help"
         ;;
 
     "idfy")
