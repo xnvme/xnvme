@@ -46,7 +46,7 @@ With that out of the way, then go ahead:
 .. note:: In case you ran the meson-commands before installing, then you can
    probably need to remove your ``builddir`` before re-running build commands.
 
-In case you want to customize the build, e.g. install into a differnt location
+In case you want to customize the build, e.g. install into a different location
 etc. then this is all handled by `meson built-in options
 <https://mesonbuild.com/Builtin-options.html>`_, in addition to those, then you
 can inspect ``meson_options.txt`` which contains build-options specific to
@@ -921,7 +921,7 @@ You can pass the arguments above to your compiler, or using pkg-config like so:
 .. literalinclude:: hello_00.cmd
    :language: bash
 
-.. note:: You do not need to link with SPDK/DPDK/liburing, as these are bundled
+.. note:: You do not need to link with SPDK/DPDK, as these are bundled
   with **xNVMe**. However, do take note of the linker flags surrounding
   ``-lxnvme``, these are required as SPDK makes use of
   ``__attribute__((constructor))``. Without the linker flags, none of the SPDK
