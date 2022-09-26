@@ -187,7 +187,7 @@ def main(args):
         "fio": None,
         "spdk": "XNVME_BE_SPDK_ENABLED",
         "libnvme": "XNVME_BE_LINUX_ENABLED",
-        "liburing": "XNVME_BE_LINUX_LIBURING_ENABLED",
+        "libvfn": "XNVME_BE_LINUX_VFIO_ENABLED",
     }
 
     try:
