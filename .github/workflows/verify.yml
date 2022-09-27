@@ -466,6 +466,59 @@ jobs:
         python3 -m pip install -r python/xnvme-cy-bindings/xnvme/cython_bindings/tests/requirements.txt --user
         python3 -m pytest --pyargs xnvme.cython_bindings -k 'test_version' -s
 
+    #
+    # Ramdisk testing
+    #
+    # skipping on distros with too old gcc/clang to build fio, and too old a Python to run cijoe
+    #
+    - name: Remove any existing cijoe installation and install from toolbox
+      if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
+        'buster') || contains(matrix.container.ver, 'bionic') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver,
+        '15.4') || contains(matrix.container.ver, '15.3') || contains(matrix.container.os, 'gentoo')))
+      run: |
+        python3 -m pip uninstall cijoe cijoe-pkg-xnvme cijoe-pkg-linux cijoe-pkg-qemu cijoe-pkg-example -y
+        python3 -m pip list
+        python3 -m pip install cijoe --upgrade
+        pushd toolbox/cijoe-pkg-xnvme && make all && popd
+        cijoe -r
+
+    - name: Install fio
+      if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
+        'buster') || contains(matrix.container.ver, 'bionic') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver,
+        '15.4') || contains(matrix.container.ver, '15.3') || contains(matrix.container.os, 'gentoo')))
+      run: |
+        cd subprojects/fio
+        ./configure --disable-xnvme --prefix=/opt/fio
+        make -j $(nproc)
+        make install
+
+    - name: Adjust the cijoe-configuration to match the location of the fio engine
+      if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
+        'buster') || contains(matrix.container.ver, 'bionic') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver,
+        '15.4') || contains(matrix.container.ver, '15.3') || contains(matrix.container.os, 'gentoo')))
+      run: |
+        sed -i "s|path: /usr/local.*|path: $(pkg-config xnvme --variable=libdir)/libxnvme-fio-engine.so|" toolbox/workflow/configs/ramdisk.config
+
+    - name: CIJOE, run test-ramdisk.workflow
+      if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
+        'buster') || contains(matrix.container.ver, 'bionic') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver,
+        '15.4') || contains(matrix.container.ver, '15.3') || contains(matrix.container.os, 'gentoo')))
+      run: |
+        cd toolbox/workflow && cijoe \
+        --config "configs/ramdisk.config" \
+        --workflow "test-ramdisk.workflow" \
+        --output "test-${{ matrix.container.os }}-${{ matrix.container.ver }}"
+
+    - name: CIJOE, upload test-ramdisk-report
+      uses: actions/upload-artifact@v2
+      if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
+        'buster') || contains(matrix.container.ver, 'bionic') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver,
+        '15.4') || contains(matrix.container.ver, '15.3') || contains(matrix.container.os, 'gentoo')))
+      with:
+        name: test-ramdisk-${{ matrix.container.os }}-${{ matrix.container.ver }}
+        path: toolbox/workflow/test-${{ matrix.container.os }}-${{ matrix.container.ver }}/*
+        if-no-files-found: error
+
   #
   # Build on macOS
   #
@@ -833,4 +886,3 @@ jobs:
         name: docgen-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
         path: toolbox/workflow/docgen-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/*
         if-no-files-found: error
-
