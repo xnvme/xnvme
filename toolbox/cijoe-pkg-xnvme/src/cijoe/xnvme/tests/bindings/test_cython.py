@@ -8,8 +8,8 @@ from ..conftest import xnvme_parametrize
 @xnvme_parametrize(labels=["dev"], opts=["be"])
 def test_cython_bindings(cijoe, device, be_opts, cli_args):
 
-    if be_opts["be"] not in ["linux"]:
-        pytest.skip(reason="The env.setup does not work on FreeBSD")
+    if be_opts["be"] not in ["linux", "spdk"]:
+        pytest.skip(reason=f"Backend not supported: {be_opts['be']}")
 
     env = {
         "XNVME_URI": f"{device['uri']}",
@@ -26,8 +26,8 @@ def test_cython_bindings(cijoe, device, be_opts, cli_args):
 @xnvme_parametrize(labels=["dev"], opts=["be"])
 def test_cython_header(cijoe, device, be_opts, cli_args):
 
-    if be_opts["be"] not in ["linux"]:
-        pytest.skip(reason="The env.setup does not work on FreeBSD")
+    if be_opts["be"] not in ["linux", "spdk"]:
+        pytest.skip(reason=f"Backend not supported: {be_opts['be']}")
 
     repos_path = (
         cijoe.config.options.get("xnvme", {}).get("source", {}).get("path", None)
