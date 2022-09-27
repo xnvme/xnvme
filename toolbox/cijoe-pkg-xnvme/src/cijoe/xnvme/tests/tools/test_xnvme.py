@@ -74,6 +74,9 @@ def test_format(cijoe, device, be_opts, cli_args):
 
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
         pytest.skip(reason="[admin=block] does not implement format")
+    elif be_opts["be"] == "spdk" and "fabrics" in device["labels"]:
+        pytest.skip(reason="spdk fabrics does not support format")
+
     if "ramdisk" in device["labels"]:
         pytest.skip(reason="[be=ramdisk] does not implement format")
 
@@ -188,13 +191,14 @@ def test_padc(cijoe, device, be_opts, cli_args):
     assert not err
 
     data_nbytes = 0
-    for line in state.output():
+    for line in state.output().split("\n"):
         if "lba_nbytes" not in line:
             continue
         key, val = line.split(":")
         data_nbytes = int(val.strip())
-        assert data_nbytes > 0
         break
+
+    assert data_nbytes > 0
 
     err, _ = cijoe.run(f"rm {cmd_path}")
 
@@ -223,13 +227,14 @@ def test_pioc(cijoe, device, be_opts, cli_args):
     assert not err
 
     data_nbytes = 0
-    for line in state.output():
+    for line in state.output().split("\n"):
         if "lba_nbytes" not in line:
             continue
         key, val = line.split(":")
         data_nbytes = int(val.strip())
-        assert data_nbytes > 0
         break
+
+    assert data_nbytes > 0
 
     err, _ = cijoe.run(f"rm {cmd_path}")
 
