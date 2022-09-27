@@ -8,6 +8,15 @@ def get_combinations():
     }
 
     combos["linux"] = [
+        # Ramdisk
+        {
+            "be": ["ramdisk"],
+            "admin": ["ramdisk"],
+            "async": ["emu", "thrpool"],
+            "mem": ["posix"],
+            "sync": ["ramdisk"],
+            "label": ["bdev", "ramdisk"],
+        },
         # File-based I/O
         {
             "be": ["linux"],

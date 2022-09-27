@@ -62,6 +62,8 @@ def test_idfy_cs(cijoe, device, be_opts, cli_args):
 
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
         pytest.skip(reason="[admin=block] does not implement idfy-cs")
+    if "ramdisk" in device["labels"]:
+        pytest.skip(reason="[be=ramdisk] does not implement idfy-cs")
 
     err, _ = cijoe.run(f"xnvme idfy-cs {cli_args}")
     assert not err
@@ -72,6 +74,8 @@ def test_format(cijoe, device, be_opts, cli_args):
 
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
         pytest.skip(reason="[admin=block] does not implement format")
+    if "ramdisk" in device["labels"]:
+        pytest.skip(reason="[be=ramdisk] does not implement format")
 
     err, _ = cijoe.run(f"xnvme format {cli_args}")
     assert not err
@@ -93,7 +97,9 @@ def test_sanitize(cijoe, device, be_opts, cli_args):
 def test_log_erri(cijoe, device, be_opts, cli_args):
 
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
-        pytest.skip(reason="[admin=block] does not implement health-log")
+        pytest.skip(reason="[admin=block] does not implement error-log")
+    if "ramdisk" in device["labels"]:
+        pytest.skip(reason="[be=ramdisk] does not implement error-log")
 
     err, _ = cijoe.run(f"xnvme log-erri {cli_args} --nsid {device['nsid']}")
     assert not err
@@ -104,6 +110,8 @@ def test_log_health(cijoe, device, be_opts, cli_args):
 
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
         pytest.skip(reason="[admin=block] does not implement health-log")
+    if "ramdisk" in device["labels"]:
+        pytest.skip(reason="[be=ramdisk] does not implement health-log")
 
     # Check the controller
     err, _ = cijoe.run(f"xnvme log-health {cli_args} --nsid 0xFFFFFFFF")
@@ -117,7 +125,9 @@ def test_log_health(cijoe, device, be_opts, cli_args):
 def test_log(cijoe, device, be_opts, cli_args):
 
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
-        pytest.skip(reason="[admin=block] does not implement get_log")
+        pytest.skip(reason="[admin=block] does not implement get-log")
+    if "ramdisk" in device["labels"]:
+        pytest.skip(reason="[be=ramdisk] does not implement get-log")
 
     lid, lsp, lpo_nbytes, rae, nbytes = "0x1", "0x0", 0, 0, 4096
 
@@ -133,6 +143,8 @@ def test_feature_get(cijoe, device, be_opts, cli_args):
 
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
         pytest.skip(reason="[admin=block] does not implement feature-get")
+    if "ramdisk" in device["labels"]:
+        pytest.skip(reason="[be=ramdisk] does not implement feature-get")
 
     for fid, descr in [("0x4", "Temperature threshold"), ("0x5", "Error recovery")]:
         # Get fid without setting select-bit
@@ -148,6 +160,9 @@ def test_feature_get(cijoe, device, be_opts, cli_args):
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_feature_set(cijoe, device, be_opts, cli_args):
 
+    if "ramdisk" in device["labels"]:
+        pytest.skip(reason="[be=ramdisk] does not implement feature-set")
+
     err, _ = cijoe.run(f"xnvme feature-set {cli_args} --fid 0x4 --feat 0x1 --save")
 
     if be_opts["admin"] == "block":
@@ -162,6 +177,8 @@ def test_padc(cijoe, device, be_opts, cli_args):
 
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
         pytest.skip(reason="[admin=block] does not support admin-passthru")
+    if "ramdisk" in device["labels"]:
+        pytest.skip(reason="[be=ramdisk] does not implement this admin-opcode")
 
     opcode = "0x02"
     cns = "0x1"
