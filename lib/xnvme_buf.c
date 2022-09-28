@@ -13,6 +13,7 @@ xnvme_buf_virt_alloc(size_t alignment, size_t nbytes)
 {
 	if (!nbytes) {
 		errno = EINVAL;
+		XNVME_DEBUG("FAILED: invalid value for nbytes: '%zu')", nbytes);
 		return NULL;
 	}
 	// nbytes has to be a multiple of alignment. Therefore, we round up to the nearest
