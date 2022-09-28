@@ -41,20 +41,21 @@ def xnvme_be_opts(options=None, only_labels=[]):
                 for be_admin in opts["admin"]:
                     for be_sync in opts["sync"]:
                         for be_async in opts["async"]:
+
                             for label in opts["label"]:
                                 if only_labels and label not in only_labels:
                                     continue
 
-                                all_configs.append(
-                                    {
-                                        "be": be,
-                                        "mem": be_mem,
-                                        "admin": be_admin,
-                                        "sync": be_sync,
-                                        "async": be_async,
-                                        "label": label,
-                                    }
-                                )
+                            all_configs.append(
+                                {
+                                    "be": be,
+                                    "mem": be_mem,
+                                    "admin": be_admin,
+                                    "sync": be_sync,
+                                    "async": be_async,
+                                    "label": opts["label"],
+                                }
+                            )
 
     filtered = []
     for cfg in all_configs:
@@ -118,7 +119,7 @@ def xnvme_setup(labels=[], opts=[]):
     )
 
     for be_opts in combinations:
-        search = labels + [be_opts["label"]]
+        search = labels + be_opts["label"]
         device = cijoe_config_get_device(search)
 
         dstr = device["uri"] if device else "None"
