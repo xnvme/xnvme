@@ -60,7 +60,15 @@ def get_combinations():
             "async": ["nvme"],
             "sync": ["nvme"],
             "admin": ["nvme"],
-            "label": ["pcie", "fabrics"],
+            "label": ["pcie"],
+        },
+        {
+            "be": ["spdk"],
+            "mem": ["spdk"],
+            "async": ["nvme"],
+            "sync": ["nvme"],
+            "admin": ["nvme"],
+            "label": ["fabrics"],
         },
     ]
     if False:
