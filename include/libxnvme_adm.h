@@ -83,6 +83,20 @@ xnvme_adm_idfy_ns_csi(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t csi,
 		      struct xnvme_spec_idfy *dbuf);
 
 /**
+ * Prepare NVMe Get Log Page command
+ *
+ * @param ctx Pointer to ::xnvme_cmd_ctx
+ * @param lid Log Page Identifier for the log to retrieve entries for
+ * @param lsp Log Specific Field for the log to retrieve entries for
+ * @param lpo_nbytes Log page Offset in BYTES
+ * @param nsid Namespace Identifier
+ * @param rae Retain Asynchronous Event, 0=Clear, 1=Retain
+ * @param dbuf_nbytes Number of BYTES to write from log-page to buf
+ */
+void
+xnvme_prep_adm_log(struct xnvme_cmd_ctx *ctx, uint8_t lid, uint8_t lsp, uint64_t lpo_nbytes,
+		   uint32_t nsid, uint8_t rae, uint32_t dbuf_nbytes);
+/**
  * Submit and wait for completion of an NVMe Get Log Page command
  *
  * @param ctx Pointer to ::xnvme_cmd_ctx
