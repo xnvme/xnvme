@@ -254,6 +254,7 @@ struct xnvmec_args {
 	uint32_t endir;
 	uint32_t tgtdir;
 	uint32_t nsr;
+	uint32_t lsi;
 };
 
 void
@@ -408,7 +409,8 @@ enum xnvmec_opt {
 	XNVMEC_OPT_IDR = 111, ///< XNVMEC_OPT_IDR
 	XNVMEC_OPT_LLB = 112, ///< XNVMEC_OPT_LLB
 
-	XNVMEC_OPT_END = 113, ///< XNVMEC_OPT_END
+	XNVMEC_OPT_LSI = 113, ///< XNVMEC_OPT_LSI
+	XNVMEC_OPT_END = 114, ///< XNVMEC_OPT_END
 };
 
 /**
