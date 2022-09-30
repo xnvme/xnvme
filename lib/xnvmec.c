@@ -960,6 +960,12 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 	},
 
 	{
+		.opt = XNVMEC_OPT_LSI,
+		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.name = "lsi",
+		.descr = "Log specific identifier",
+	},
+	{
 		.opt = XNVMEC_OPT_END,
 		.vtype = XNVMEC_OPT_VTYPE_NUM,
 		.name = "",
@@ -1560,6 +1566,10 @@ xnvmec_assign_arg(struct xnvmec *cli, struct xnvmec_opt_attr *opt_attr, char *ar
 	case XNVMEC_OPT_IDR:
 		args->idr = arg ? num : 0;
 		break;
+	case XNVMEC_OPT_LSI:
+		args->lsi = num;
+		break;
+
 	case XNVMEC_OPT_POSA_TITLE:
 	case XNVMEC_OPT_NON_POSA_TITLE:
 	case XNVMEC_OPT_ORCH_TITLE:

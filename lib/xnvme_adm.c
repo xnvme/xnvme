@@ -3,6 +3,26 @@
 #include <libxnvme.h>
 #include <errno.h>
 
+void
+xnvme_prep_adm_log(struct xnvme_cmd_ctx *ctx, uint8_t lid, uint8_t lsp, uint64_t lpo_nbytes,
+		   uint32_t nsid, uint8_t rae, uint32_t dbuf_nbytes)
+{
+	uint32_t numdw;
+
+	numdw = dbuf_nbytes / sizeof(uint32_t) - 1u;
+
+	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_LOG;
+	ctx->cmd.common.nsid = nsid;
+
+	ctx->cmd.log.lid = lid;
+	ctx->cmd.log.lsp = lsp;
+	ctx->cmd.log.rae = rae;
+	ctx->cmd.log.numdl = numdw & 0xFFFFu;
+	ctx->cmd.log.numdu = (numdw >> 16) & 0xFFFFu;
+	ctx->cmd.log.lpou = (uint32_t)(lpo_nbytes >> 32);
+	ctx->cmd.log.lpol = (uint32_t)lpo_nbytes & 0xfffffff;
+}
+
 int
 xnvme_adm_log(struct xnvme_cmd_ctx *ctx, uint8_t lid, uint8_t lsp, uint64_t lpo_nbytes,
 	      uint32_t nsid, uint8_t rae, void *dbuf, uint32_t dbuf_nbytes)
