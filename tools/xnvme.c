@@ -387,17 +387,33 @@ sub_gfeat(struct xnvmec *cli)
 	uint8_t fid = cli->args.fid;
 	uint8_t sel = cli->args.sel;
 	uint32_t nsid = cli->args.nsid;
+	uint32_t cdw11 = cli->args.cdw[11];
+	void *dbuf = NULL;
+	size_t dbuf_nbytes = cli->args.data_nbytes;
 	int err;
 
 	if (!cli->given[XNVMEC_OPT_NSID]) {
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
+	if (dbuf_nbytes) {
+		dbuf = xnvme_buf_alloc(dev, dbuf_nbytes);
+		if (!dbuf) {
+			err = -errno;
+			xnvmec_perr("xnvme_buf_alloc()", err);
+			goto exit;
+		}
+		memset(dbuf, 0, dbuf_nbytes);
+	}
+
 	xnvmec_pinf("cmd_gfeat: {nsid: 0x%x, fid: 0x%x, sel: 0x%x}", nsid, fid, sel);
 
-	err = xnvme_adm_gfeat(&ctx, nsid, fid, sel, NULL, 0);
+	xnvme_prep_adm_gfeat(&ctx, nsid, fid, sel);
+	ctx.cmd.gfeat.cdw11 = cdw11;
+
+	err = xnvme_cmd_pass_admin(&ctx, dbuf, dbuf_nbytes, NULL, 0x0);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvmec_perr("xnvme_adm_gfeat()", err);
+		xnvmec_perr("xnvme_cmd_pass_admin()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -408,8 +424,18 @@ sub_gfeat(struct xnvmec *cli)
 		xnvme_spec_feat_pr(fid, feat, XNVME_PR_DEF);
 	}
 
+	if (cli->args.data_output) {
+		xnvmec_pinf("dumping to: '%s'", cli->args.data_output);
+		err = xnvmec_buf_to_file(dbuf, dbuf_nbytes, cli->args.data_output);
+		if (err) {
+			xnvmec_perr("xnvmec_buf_to_file()", err);
+		}
+	}
+
 exit:
-	return err;
+	if (dbuf)
+		xnvme_buf_free(dev, dbuf);
+	return 0;
 }
 
 static int
@@ -421,20 +447,52 @@ sub_sfeat(struct xnvmec *cli)
 	uint32_t feat = cli->args.feat;
 	uint8_t save = cli->args.save;
 	uint32_t nsid = cli->args.nsid;
+	uint32_t cdw12 = cli->args.cdw[12];
+	void *dbuf = NULL;
+	size_t dbuf_nbytes = 0;
 	int err;
 
 	if (!cli->given[XNVMEC_OPT_NSID]) {
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
-	xnvmec_pinf("cmd_sfeat: {nsid: 0%x, fid: 0x%x, feat: 0x%x, 0x%x}", nsid, fid, feat, save);
+	if (cli->args.data_input) {
+		if (!cli->args.data_nbytes) {
+			err = -EINVAL;
+			xnvmec_perr("require data bytes", err);
+			goto exit;
+		}
 
-	err = xnvme_adm_sfeat(&ctx, 0, fid, feat, 0, NULL, 0);
+		dbuf_nbytes = cli->args.data_nbytes;
+		dbuf = xnvme_buf_alloc(dev, dbuf_nbytes);
+		if (!dbuf) {
+			err = -errno;
+			xnvmec_perr("xnvme_buf_alloc()", err);
+			goto exit;
+		}
+		err = xnvmec_buf_fill(dbuf, dbuf_nbytes, cli->args.data_input);
+		if (err) {
+			xnvmec_perr("xnvmec_buf_fill()", err);
+			goto exit;
+		}
+	}
+
+	xnvmec_pinf("cmd_sfeat: {nsid: 0%x, fid: 0x%x, save: 0x%x, feat: 0x%x, cdw12: 0x%x}", nsid,
+		    fid, save, feat, cdw12);
+
+	xnvme_prep_adm_sfeat(&ctx, 0, fid, feat, save);
+	ctx.cmd.sfeat.cdw12 = cdw12;
+
+	err = xnvme_cmd_pass_admin(&ctx, dbuf, dbuf_nbytes, NULL, 0x0);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvmec_perr("xnvme_adm_sfeat()", err);
+		xnvmec_perr("xnvme_cmd_pass_admin()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 	}
+
+exit:
+	if (dbuf)
+		xnvme_buf_free(dev, dbuf);
 
 	return err;
 }
@@ -842,7 +900,9 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_FID, XNVMEC_LREQ},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_SEL, XNVMEC_LOPT},
+			{XNVMEC_OPT_CDW11, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
+			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LOPT},
 
 			XNVMEC_ADMIN_OPTS,
 		},
@@ -861,7 +921,9 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_FEAT, XNVMEC_LREQ},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_SAVE, XNVMEC_LFLG},
+			{XNVMEC_OPT_CDW12, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
+			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LOPT},
 
 			XNVMEC_ADMIN_OPTS,
 		},
