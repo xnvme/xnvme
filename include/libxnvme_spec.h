@@ -1398,6 +1398,7 @@ struct xnvme_spec_feat {
 			uint32_t tmpth  : 16; ///< Temperature threshold
 			uint32_t tmpsel : 4;  ///< Threshold Temp. Select
 			uint32_t thsel  : 3;  ///< Threshold Type Select
+			uint32_t rsvd   : 9;
 		} temp_threshold;
 
 		struct {
@@ -1630,7 +1631,8 @@ struct xnvme_spec_cmd_gfeat {
 		uint32_t val;
 	} cdw10;
 
-	uint32_t cdw11_15[5]; ///< Command dword 11 to 15
+	uint32_t cdw11;       ///< Command dword 11
+	uint32_t cdw12_15[4]; ///< Command dword 12 to 15
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_gfeat) == 64, "Incorrect size")
 
@@ -1653,7 +1655,8 @@ struct xnvme_spec_cmd_sfeat {
 
 	struct xnvme_spec_feat feat; ///< Feature
 
-	uint32_t cdw12_15[4]; ///< Command dword 12 to 15
+	uint32_t cdw12;       ///< Command dword 12
+	uint32_t cdw13_15[3]; ///< Command dword 13 to 15
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_sfeat) == 64, "Incorrect size")
 

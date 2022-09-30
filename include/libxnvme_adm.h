@@ -115,6 +115,31 @@ xnvme_adm_log(struct xnvme_cmd_ctx *ctx, uint8_t lid, uint8_t lsp, uint64_t lpo_
 	      uint32_t nsid, uint8_t rae, void *dbuf, uint32_t dbuf_nbytes);
 
 /**
+ * Prepare NVMe Get Features (gfeat) command
+ *
+ * @param ctx Pointer to ::xnvme_cmd_ctx
+ * @param nsid Namespace identifier
+ * @param fid Feature identifier
+ * @param sel Select which value of the feature to select, that is, one of
+ * current/default/saved/supported
+ */
+void
+xnvme_prep_adm_gfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint8_t sel);
+
+/**
+ * Prepare NVMe Set Feature (sfeat) command
+ *
+ * @param ctx Pointer to ::xnvme_cmd_ctx
+ * @param nsid Namespace identifier
+ * @param fid Feature identifier (see NVMe 1.3; Figure 84)
+ * @param feat Structure defining feature attributes
+ * @param save Specify that controller shall save the attribute
+ */
+void
+xnvme_prep_adm_sfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint32_t feat,
+		     uint8_t save);
+
+/**
  * Submit and wait for completion of an NVMe Get Features (gfeat) command
  *
  * @param ctx Pointer to ::xnvme_cmd_ctx

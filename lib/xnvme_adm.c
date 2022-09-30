@@ -128,6 +128,26 @@ xnvme_adm_idfy_ns_csi(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t csi,
 	return xnvme_cmd_pass_admin(ctx, dbuf, dbuf_nbytes, NULL, 0x0);
 }
 
+void
+xnvme_prep_adm_gfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint8_t sel)
+{
+	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_GFEAT;
+	ctx->cmd.common.nsid = nsid;
+	ctx->cmd.gfeat.cdw10.fid = fid;
+	ctx->cmd.gfeat.cdw10.sel = sel;
+}
+
+void
+xnvme_prep_adm_sfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint32_t feat,
+		     uint8_t save)
+{
+	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_SFEAT;
+	ctx->cmd.common.nsid = nsid;
+	ctx->cmd.sfeat.cdw10.fid = fid;
+	ctx->cmd.sfeat.cdw10.save = save;
+	ctx->cmd.sfeat.feat.val = feat;
+}
+
 int
 xnvme_adm_gfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint8_t sel, void *dbuf,
 		size_t dbuf_nbytes)
@@ -149,8 +169,8 @@ xnvme_adm_sfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint32_t 
 	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_SFEAT;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.sfeat.cdw10.fid = fid;
-	ctx->cmd.sfeat.feat.val = feat;
 	ctx->cmd.sfeat.cdw10.save = save;
+	ctx->cmd.sfeat.feat.val = feat;
 
 	return xnvme_cmd_pass_admin(ctx, (void *)dbuf, dbuf_nbytes, NULL, 0x0);
 }
