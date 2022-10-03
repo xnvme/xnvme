@@ -57,7 +57,7 @@ GIT = $$( \
 
 BUILD_DIR?=builddir
 TOOLBOX_DIR?=toolbox
-PROJECT_VER = $(( python3 $(TOOLBOX_DIR)/xnvme_ver.py --path meson.build ))
+PROJECT_VER = $$( python3 $(TOOLBOX_DIR)/xnvme_ver.py --path meson.build )
 
 define default-help
 # invoke: 'make info', 'make tags', 'make git-setup', 'make config' and 'make build'
@@ -152,14 +152,13 @@ endef
 .PHONY: info
 info:
 	@echo "## xNVMe: make info"
-	@echo "OSTYPE: $(OSTYPE)"
 	@echo "PLATFORM: $(PLATFORM)"
 	@echo "CC: $(CC)"
 	@echo "CXX: $(CXX)"
 	@echo "MAKE: $(MAKE)"
 	@echo "CTAGS: $(CTAGS)"
 	@echo "NPROC: $(NPROC)"
-	@echo "PROJECT_VER: $(PROTECT_VER)"
+	@echo "PROJECT_VER: $(PROJECT_VER)"
 	@echo "## xNVMe: make info [DONE]"
 
 define build-help
