@@ -8,6 +8,9 @@
 #ifdef XNVME_BE_RAMDISK_ENABLED
 #include <xnvme_be_ramdisk.h>
 #include <xnvme_be_posix.h>
+#ifdef XNVME_BE_LINUX_ENABLED
+#include <xnvme_be_linux.h>
+#endif
 
 static struct xnvme_be_mixin g_xnvme_be_mixin_ramdisk[] = {
 	{
@@ -17,6 +20,15 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_ramdisk[] = {
 		.mem = &g_xnvme_be_posix_mem,
 		.check_support = xnvme_be_supported,
 	},
+#ifdef XNVME_BE_LINUX_ENABLED
+	{
+		.mtype = XNVME_BE_MEM,
+		.name = "hugepage",
+		.descr = "Allocate buffers using hugepages via mmap on hugetlbfs",
+		.mem = &g_xnvme_be_linux_mem_hugepage,
+		.check_support = xnvme_be_supported,
+	},
+#endif
 
 	{
 		.mtype = XNVME_BE_ASYNC,
