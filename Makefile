@@ -274,6 +274,26 @@ gen-src-archive:
 	$(MESON) dist -C $(BUILD_DIR) --include-subprojects --no-tests --formats gztar
 	@echo "## xNVMe: make gen-src-archive [DONE]"
 
+define gen-artifacts
+# Generate artifacts in "/tmp/artifacts" for local guest provisoning
+#
+# This is a helper to produce the set of files used by toolbox/workflows/provision.workflow
+# The set of files would usually be downloaded from the CI build-artifacts, however, this helper
+# provides the means to perform local provisioning without downloading files.
+endef
+.PHONY: gen-artifacts
+gen-artifacts: gen-src-archive
+	@echo "## xNVMe: make gen-artifacts"
+	@cd python/xnvme-cy-bindings && make clean build-py-env build-sdist
+	@mkdir -p /tmp/artifacts
+	@ls -l /tmp/artifacts
+	@cp builddir/meson-dist/xnvme-$(PROJECT_VER).tar.gz /tmp/artifacts/xnvme.tar.gz
+	@cp python/xnvme-core/dist/xnvme-core-$(PROJECT_VER).tar.gz /tmp/artifacts/xnvme-core.tar.gz
+	@cp python/xnvme-cy-header/dist/xnvme-cy-header-$(PROJECT_VER).tar.gz /tmp/artifacts/xnvme-cy-header.tar.gz
+	@cp python/xnvme-cy-bindings/dist/xnvme-cy-bindings-$(PROJECT_VER).tar.gz /tmp/artifacts/xnvme-cy-bindings.tar.gz
+	@ls -l /tmp/artifacts
+	@echo "## xNVMe: make gen-artifacts [DONE]"
+
 define gen-bash-completions-help
 # Helper-target to produce Bash-completions for tools (tools, examples, tests)
 #
