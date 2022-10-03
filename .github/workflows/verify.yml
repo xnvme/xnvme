@@ -503,6 +503,7 @@ jobs:
       if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
         'buster') || contains(matrix.container.ver, 'bionic') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver,
         '15.4') || contains(matrix.container.ver, '15.3') || contains(matrix.container.os, 'gentoo')))
+      continue-on-error: true
       run: |
         cd toolbox/workflow && cijoe \
         --config "configs/ramdisk.config" \
