@@ -18,11 +18,10 @@ default: build
 	@echo "## py: make default"
 	@echo "## py: make default [DONE]"
 
-define build-py-env-help
+define .build-py-env-help
 # Init python build virtual env
 endef
-.PHONY: build-py-env
-build-py-env:
+.build-py-env:
 	@echo "Creating Python virtual env"
 	@${PY} -m venv .build-py-env
 	@echo "Upgrading pip"
@@ -30,7 +29,7 @@ build-py-env:
 	@echo "Install python dependencies"
 	@${PY_ENV} -m pip install -r requirements.txt
 
-define build-help
+define all-help
 # Do the common task during development of: uninstall clean build install test
 endef
 .PHONY: all
@@ -40,7 +39,7 @@ define build-help
 # Generate ctypes, patch them, then create a source package
 endef
 .PHONY: build
-build: build-py-env generate-ctypes patch-ctypes
+build: .build-py-env generate-ctypes patch-ctypes
 	@echo "## py: make build-sdist"
 	@${PY_ENV} setup.py sdist
 	@echo "Rename 'xnvme-m.m.p.tar.gz' to 'xnvme-core-m.m.p.tar.gz'"
@@ -69,8 +68,6 @@ uninstall:
 
 define install-system-help
 # install system-wide
-#
-# install system-wide
 endef
 .PHONY: install-system
 install-system:
@@ -91,7 +88,7 @@ define generate-ctypes-help
 # Generate definitions (xnvme_ctypes.header) from xNVMe public C API headers
 endef
 .PHONY: generate-ctypes
-generate-ctypes: build-py-env
+generate-ctypes: .build-py-env
 	@echo "## py: gen"
 	@echo "## py:headers: ${XNVME_CAPI_HEADERS}"
 	@${PY_ENV_ACTIVATE} && clang2py ${XNVME_CAPI_HEADERS} --clang-args="-I../../include -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include/ " > xnvme/ctypes_bindings/api.py
@@ -102,7 +99,7 @@ define patch-ctypes-help
 # Patch definitions (xnvme_ctypes.header)
 endef
 .PHONY: patch-ctypes
-patch-ctypes: build-py-env
+patch-ctypes: .build-py-env
 	@echo "## py: gen"
 	@${PY_ENV} aux/patch_ctypes_bindings.py --path xnvme/ctypes_bindings/api.py
 	@${PY_ENV_ACTIVATE} && black xnvme/ctypes_bindings/api.py || echo "could not fix format"
@@ -114,17 +111,15 @@ endef
 .PHONY: clean
 clean:
 	@echo "## py: clean"
-	@rm -r .build-py-env || echo "Cannot remove => That is OK"
-	@rm -r build || echo "Cannot remove => That is OK"
-	@rm -r dist || echo "Cannot remove => That is OK"
-	@rm -r *.egg-info || echo "Cannot remove => That is OK"
-	@rm MANIFEST || echo "Cannot remove => That is OK"
-	@rm xnvme/ctypes_bindings/api.py || echo "Cannot remove => That is OK"
+	@rm -f -r .build-py-env
+	@rm -f -r build
+	@rm -f -r dist
+	@rm -f -r *.egg-info
+	@rm -f MANIFEST
+	@rm -f xnvme/ctypes_bindings/api.py
 	@echo "## py: clean [DONE]"
 
 define help-help
-# Print the description of every target
-#
 # Print the description of every target
 endef
 .PHONY: help
@@ -132,8 +127,6 @@ help:
 	@./$(TOOLBOX_DIR)/print_help.py --repos .
 
 define help-verbose-help
-# Print the verbose description of every target
-#
 # Print the verbose description of every target
 endef
 .PHONY: help-verbose

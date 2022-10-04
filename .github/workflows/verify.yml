@@ -317,8 +317,18 @@ jobs:
 
     - name: Python sdist-packages, build(xnvme-core, xnvme-cy-header, and xnvme-cy-bindings)
       run: |
-        cd python/xnvme-cy-bindings
-        make clean build-py-env build-sdist
+        pushd python/xnvme-core
+        make clean build
+        popd
+
+        pushd python/xnvme-cy-header
+        make clean build
+        popd
+
+        pushd python/xnvme-cy-bindings
+        # Explicitly avoid bdist build
+        make clean .build-py-env build-sdist
+        popd
 
     - name: Python sdist-packages, find(...)
       run: |
