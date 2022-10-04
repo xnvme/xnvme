@@ -13,8 +13,8 @@ def test_fio_engine(cijoe, device, be_opts, cli_args):
 
     fio_output_fpath = Path("/tmp/fio-output.txt")
 
-    # size = "64M"
-    size = "1G"
+    size = "64M"
+    # size = "1G"
 
     err, _ = fio_fancy(
         cijoe, fio_output_fpath, "verify", "xnvme", device, be_opts, {}, {"size": size}
