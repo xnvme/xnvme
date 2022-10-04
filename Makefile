@@ -284,7 +284,7 @@ endef
 .PHONY: gen-artifacts
 gen-artifacts: gen-src-archive
 	@echo "## xNVMe: make gen-artifacts"
-	@cd python/xnvme-cy-bindings && make clean build-py-env build-sdist
+	@cd python/xnvme-cy-bindings && make clean .build-py-env build-sdist
 	@mkdir -p /tmp/artifacts
 	@ls -l /tmp/artifacts
 	@cp builddir/meson-dist/xnvme-$(PROJECT_VER).tar.gz /tmp/artifacts/xnvme.tar.gz
