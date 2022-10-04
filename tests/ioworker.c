@@ -51,6 +51,7 @@ struct iowork {
 	struct xnvme_queue *queue;
 	uint32_t qdepth; ///< Intended queue-pressure / out-standing I/O
 	uint32_t nsid;
+	uint32_t opc;
 
 	struct iowork_range range; ///< Range to confine I/O inside of
 
@@ -162,13 +163,13 @@ submit:
 }
 
 static int
-_submit_sync(struct iowork *work, int opcode)
+_submit_sync(struct iowork *work)
 {
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(work->dev);
 	struct ioworker *worker = &work->workers[0];
 	int err;
 	ctx.cmd.common.nsid = work->nsid;
-	ctx.cmd.common.opcode = opcode;
+	ctx.cmd.common.opcode = work->opc;
 	ctx.cmd.nvm.nlb = work->io.nlb;
 
 	if (work->vectored) {
@@ -235,6 +236,10 @@ on_completion(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 		return;
 	}
 
+	// Recreate context
+	ctx->cmd.common.nsid = work->nsid;
+	ctx->cmd.common.opcode = work->opc;
+	ctx->cmd.nvm.nlb = work->io.nlb;
 	ctx->cmd.nvm.slba = ++(work->cur.slba);
 
 	_submit(work, worker, ctx);
@@ -352,14 +357,14 @@ failed:
 }
 
 static int
-start_workers(struct iowork *work, int opcode)
+start_workers(struct iowork *work)
 {
 	for (uint32_t i = 0; i < work->nworkers; ++i) {
 		int err;
 		struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(work->queue);
 		struct ioworker *worker = &work->workers[i];
 		ctx->cmd.common.nsid = work->nsid;
-		ctx->cmd.common.opcode = opcode;
+		ctx->cmd.common.opcode = work->opc;
 		ctx->cmd.nvm.nlb = work->io.nlb;
 		ctx->cmd.nvm.slba = work->range.slba + i * work->vec_cnt;
 		ctx->async.cb_arg = worker;
@@ -406,14 +411,13 @@ test_verify(struct xnvmec *cli)
 	xnvme_dev_pr(work.dev, XNVME_PR_DEF);
 
 	for (int i = 0; i < 2; i++) {
-		int opc;
 
 		iowork_stats_reset(&work.stats);
 		work.cur.data = i ? work.rbuf : work.wbuf;
-		opc = i ? XNVME_SPEC_NVM_OPC_READ : XNVME_SPEC_NVM_OPC_WRITE;
+		work.opc = i ? XNVME_SPEC_NVM_OPC_READ : XNVME_SPEC_NVM_OPC_WRITE;
 
 		// Fill queue with commands
-		err = start_workers(&work, opc);
+		err = start_workers(&work);
 		if (err) {
 			xnvmec_perr("_submit()", err);
 			return final(work, err);
@@ -428,7 +432,7 @@ test_verify(struct xnvmec *cli)
 				return final(work, err);
 			}
 		}
-		xnvmec_pinf("opc: %d, stats: {submitted: %u, completed: %u, ecount: %u}", opc,
+		xnvmec_pinf("opc: %d, stats: {submitted: %u, completed: %u, ecount: %u}", work.opc,
 			    work.stats.nsubmissions, work.stats.ncompletions, work.stats.nerrors);
 
 		if (work.stats.ncompletions != work.nio) {
@@ -457,13 +461,12 @@ test_verify_sync(struct xnvmec *cli)
 	xnvme_dev_pr(work.dev, XNVME_PR_DEF);
 
 	for (int i = 0; i < 2; i++) {
-		int opc;
 
 		iowork_stats_reset(&work.stats);
 		work.cur.data = i ? work.rbuf : work.wbuf;
-		opc = i ? XNVME_SPEC_NVM_OPC_READ : XNVME_SPEC_NVM_OPC_WRITE;
+		work.opc = i ? XNVME_SPEC_NVM_OPC_READ : XNVME_SPEC_NVM_OPC_WRITE;
 
-		err = _submit_sync(&work, opc);
+		err = _submit_sync(&work);
 		if (err) {
 			xnvmec_perr("_submit()", err);
 
@@ -472,7 +475,7 @@ test_verify_sync(struct xnvmec *cli)
 
 		xnvmec_pinf("opc: %d, stats: {submitted: %u, completed: %u, "
 			    "ecount: %u}",
-			    opc, work.stats.nsubmissions, work.stats.ncompletions,
+			    work.opc, work.stats.nsubmissions, work.stats.ncompletions,
 			    work.stats.nerrors);
 
 		if (work.stats.ncompletions != work.nio) {
