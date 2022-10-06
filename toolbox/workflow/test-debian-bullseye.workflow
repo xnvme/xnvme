@@ -24,4 +24,4 @@ steps:
 - name: test_fabrics
   uses: core.testrunner
   with:
-    args: '--pyargs cijoe.xnvme.tests -k "fabrics"'
+    args: '--pyargs cijoe.xnvme.tests -k "fabrics and not ioworker"'
