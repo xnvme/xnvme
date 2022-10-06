@@ -4,7 +4,7 @@
  Contributing
 ==============
 
-**xNVMe** is hosted on `GitHUB`_ where you can raise `issues`_, start a
+**xNVMe** is hosted on `GitHUB`_ where you can raise `issues`_, start
 `discussions`_, or set up a `pull-request`_ for contributing your changes.
 This page contains information related to the latter. Specifically, the
 :ref:`sec-contributing-process` is of relevance to you and the
@@ -23,13 +23,41 @@ Contribution Process
 * Make your changes, push them to you fork and create a `pull-request`_
 
   - The `pull-request` should target the ``next`` branch
-  - If you just want feedback/WIP then set up the `pull-request`_ as a Draft
+  - For feedback/RFC then set up the `pull-request`_ as a **Draft**
 
-* The CI will trigger in as you create the PR and re-triggered upon update
+* The CI will trigger as you create the PR and re-triggered upon update
 
   - The default CI-jobs consists of running style/linters and building xNVMe
   - When ready for integration it will be marked ``pr-ready-for-test`` and a
     larger suite of functional tests are triggered
+
+* Go over the :ref:`sec-contributing-process-pr-checklist` and re-iterate on
+  your pull-request / changes
+
+.. _sec-contributing-process-pr-checklist:
+
+Pull-Request Checklist
+----------------------
+
+Please check your pull-request for the following:
+
+* The pull-request itself has a message describing the goal of the pull-request
+
+* Commits are squashed such that each commit is an incremental step towards the
+  goal
+
+* All commits must have their commit messages formatted according to
+  :ref:`sec-contributing-process-commit-messages`
+
+* Commits are rebased on top of ``next``
+
+* New functionality is accompanied by tests verifying it
+
+* The tests are passing
+
+* All review feedback is addressed
+
+.. _sec-contributing-process-commit-messages:
 
 Commit Messages
 ---------------
@@ -37,16 +65,25 @@ Commit Messages
 1. The first line is subject/title
 
    - Keep it at a max. of 72 chars, if possible
-   - Prefix with the compoent e.g. ``be:linux: fix error-handling``
    - Lower-case is preferred
-   - Use the "imperative mood" e.g. ``fix`` rather ``fixes``/``fixed``
    - Do **not** end with a punctuation
+   - Use the **imperative mood** e.g. ``add`` rather than ``added``/``adds``
+   - Prefix with the component(s) e.g. ``component: ...``
+    - If the commit touches the API (``libxnvme*.h``), then prefix with
+      ``api:``
+    - If the commit touches a backend, then prefix with specific backend e.g.
+      ``be/linux: ...``
+    - If the commit touches a "core" component, then prefix that, e.g.
+      ``buf: ...``, ``ident: ...``
+    - In case of multiple components, then separate with a comma e.g.
+      ``ident,be/linux: ...```
+   - **Example**: ``be/libaio: add spin-while-waiting for opts.poll_io``
 
 2. Then an empty line.
 
 3. Then a description (may be omitted for truly trivial changes).
 
-   - Should explain what and why not how
+   - Should motivate the change and explain what and why, not how
 
 4. Then an empty line again (if it has a description).
 
@@ -54,6 +91,11 @@ Commit Messages
 
    - For example: ``Signed-off-by: Foo Bar <foo.bar@example.com>``
    - Use ``git commit -s ...`` to add the sign-off automatically
+   - By adding ``Signed-off-by``, you indicate that you agree to the `DCO`_
+
+Take a look at the commit history (``git log --follow <files>``), for the files
+you are changing, that should give you an idea of the "component" prefix(es) as
+well as the other items on the list above.
 
 .. _sec-contributing-toolbox:
 
@@ -72,10 +114,10 @@ described in section :ref:`sec-contributing-toolbox-precommit`.
 Makefile helper
 ---------------
 
-As described in :ref:`sec-getting_started`, then **xNVMe** uses `Meson`_,
-however, during development usage of the :ref:`sec-contributing-toolbox` is
-invoked via ``make`` based on the ``Makefile`` in the root of the **xNVMe**
-repository.
+As described in :ref:`sec-getting_started`, then **xNVMe** uses the `Meson`_
+build-system, however, during development usage of the
+:ref:`sec-contributing-toolbox` is invoked via ``make`` based on the
+``Makefile`` in the root of the **xNVMe** repository.
 
 The ``Makefile`` contains a bunch of helper-targets. Invoking ``make help``
 provides a brief description of what is available:
@@ -108,3 +150,4 @@ via the :ref:`sec-contributing-toolbox-mkhelper` e.g.::
 .. _meson: https://mesonbuild.com/
 .. _pre-commit: https://pre-commit.com/
 .. _pull-request: https://github.com/OpenMPDK/xNVMe/pulls
+.. _DCO: https://developercertificate.org/
