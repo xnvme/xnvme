@@ -48,7 +48,7 @@ define build-sdist-help
 # Generate cython pxd, ctypes, patch them, then create a source package
 endef
 .PHONY: build-sdist
-build-sdist:
+build-sdist: .build-py-env
 	@echo "## py: make build-sdist"
 	@echo "Building sdist"
 	@${PY_ENV} setup.py sdist
@@ -58,7 +58,7 @@ define build-bdist-help
 # Generate cython pxd, ctypes, patch them, then create a source package
 endef
 .PHONY: build-bdist
-build-bdist:
+build-bdist: .build-py-env
 	@echo "## py: make build-bdist"
 	@echo "Compiling Cython extension"
 	@${PY_ENV} setup.py build_ext
