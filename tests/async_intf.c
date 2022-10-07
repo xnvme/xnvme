@@ -105,15 +105,15 @@ static struct xnvmec_sub g_subs[] = {
 		"Create 'count' contexts with given 'qdepth'",
 		test_init_term,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_COUNT, XNVMEC_LREQ},
 			{XNVMEC_OPT_QDEPTH, XNVMEC_LREQ},
 			{XNVMEC_OPT_CLEAR, XNVMEC_LFLG},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_ASYNC, XNVMEC_LOPT},
+			XNVMEC_ASYNC_OPTS,
 		},
 	},
 };

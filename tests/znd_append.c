@@ -199,13 +199,13 @@ static struct xnvmec_sub g_subs[] = {
 		"Fills a Zone one LBA at a time, checking addr on completion",
 		cmd_verify,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_CLEAR, XNVMEC_LFLG},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_ASYNC, XNVMEC_LOPT},
+			XNVMEC_ASYNC_OPTS,
 		},
 	},
 };

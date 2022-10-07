@@ -16,6 +16,26 @@ extern "C" {
 #include <libxnvme_ver.h>
 #include <libxnvme_pp.h>
 
+#define XNVMEC_CORE_OPTS                                                        \
+	{XNVMEC_OPT_ORCH_TITLE, XNVMEC_SKIP}, {XNVMEC_OPT_SUBNQN, XNVMEC_LOPT}, \
+		{XNVMEC_OPT_HOSTNQN, XNVMEC_LOPT},                              \
+	{                                                                       \
+		XNVMEC_OPT_BE, XNVMEC_LOPT                                      \
+	}
+
+#define XNVMEC_ADMIN_OPTS                                                                      \
+	XNVMEC_CORE_OPTS, {XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT}, {XNVMEC_OPT_ADMIN, XNVMEC_LOPT}, \
+		{XNVMEC_OPT_MEM, XNVMEC_LOPT},                                                 \
+	{                                                                                      \
+		XNVMEC_OPT_DIRECT, XNVMEC_LOPT                                                 \
+	}
+
+#define XNVMEC_SYNC_OPTS \
+	XNVMEC_ADMIN_OPTS, { XNVMEC_OPT_SYNC, XNVMEC_LOPT }
+
+#define XNVMEC_ASYNC_OPTS \
+	XNVMEC_SYNC_OPTS, { XNVMEC_OPT_ASYNC, XNVMEC_LOPT }
+
 /**
  * Fills `buf` with content `nbytes` of content
  *
@@ -372,7 +392,12 @@ enum xnvmec_opt {
 	XNVMEC_OPT_TGTDIR = 104, ///< XNVMEC_OPT_TGTDIR
 	XNVMEC_OPT_NSR    = 105, ///< XNVMEC_OPT_NSR
 
-	XNVMEC_OPT_END = 106, ///< XNVMEC_OPT_END
+	XNVMEC_OPT_POSA_TITLE     = 106, ///< XNVMEC_OPT_POSA_TITLE
+	XNVMEC_OPT_NON_POSA_TITLE = 107, ///< XNVMEC_OPT_NON_POSA_TITLE
+
+	XNVMEC_OPT_ORCH_TITLE = 108, ///< XNVMEC_OPT_ORCH_TITLE
+
+	XNVMEC_OPT_END = 109, ///< XNVMEC_OPT_END
 };
 
 /**
@@ -380,6 +405,7 @@ enum xnvmec_opt {
  * XNVMEC_LOPT: ./cli --arg 0x0; optionally provide a value
  * XNVMEC_LREQ: ./cli --arg 0x0; require providing a value
  * XNVMEC_POSA: ./cli arg1 arg2; required, ordered, and provides a value
+ * XNVMEC_SKIP: ; This argument is used for formatting etc.
  *
  * @enum xnvmec_opt_type
  */
@@ -388,6 +414,7 @@ enum xnvmec_opt_type {
 	XNVMEC_LFLG = 0x2, ///< XNVMEC_LFLG
 	XNVMEC_LOPT = 0x3, ///< XNVMEC_LOPT
 	XNVMEC_LREQ = 0x4, ///< XNVMEC_LREQ
+	XNVMEC_SKIP = 0x5, ///< XNVMEC_SKIP
 };
 
 enum xnvmec_opt_value_type {
@@ -396,6 +423,7 @@ enum xnvmec_opt_value_type {
 	XNVMEC_OPT_VTYPE_HEX  = 0x3,
 	XNVMEC_OPT_VTYPE_FILE = 0x4,
 	XNVMEC_OPT_VTYPE_STR  = 0x5,
+	XNVMEC_OPT_VTYPE_SKIP = 0x6,
 };
 
 struct xnvmec_opt_attr {

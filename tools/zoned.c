@@ -557,10 +557,11 @@ static struct xnvmec_sub g_subs[] = {
 		"Enumerate Zoned Namespaces on the system",
 		cmd_enumerate,
 		{
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_SYS_URI, XNVMEC_LOPT},
 			{XNVMEC_OPT_FLAGS, XNVMEC_LOPT},
 
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			XNVMEC_CORE_OPTS,
 		},
 	},
 	{
@@ -569,11 +570,10 @@ static struct xnvmec_sub g_subs[] = {
 		"Retrieve device info",
 		cmd_info,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			XNVMEC_ADMIN_OPTS,
 		},
 	},
 	{
@@ -582,11 +582,10 @@ static struct xnvmec_sub g_subs[] = {
 		"Zoned Command Set specific identify-controller",
 		cmd_idfy_ctrlr,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			XNVMEC_ADMIN_OPTS,
 		},
 	},
 	{
@@ -595,11 +594,10 @@ static struct xnvmec_sub g_subs[] = {
 		"Zoned Command Set specific identify-namespace",
 		cmd_idfy_ns,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			XNVMEC_ADMIN_OPTS,
 		},
 	},
 	{
@@ -608,12 +606,13 @@ static struct xnvmec_sub g_subs[] = {
 		"Retrieve the Changed Zone list",
 		cmd_changes,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			XNVMEC_ADMIN_OPTS,
 		},
 	},
 	{
@@ -622,13 +621,14 @@ static struct xnvmec_sub g_subs[] = {
 		"Retrieve the Error-Log",
 		cmd_errors,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			XNVMEC_ADMIN_OPTS,
 		},
 	},
 	{
@@ -637,17 +637,17 @@ static struct xnvmec_sub g_subs[] = {
 		"Execute a Read Command",
 		cmd_read,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NLB, XNVMEC_LREQ},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
 			{XNVMEC_OPT_META_OUTPUT, XNVMEC_LOPT},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
 		},
 	},
 	{
@@ -656,17 +656,17 @@ static struct xnvmec_sub g_subs[] = {
 		"Execute a Write Command",
 		cmd_write,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NLB, XNVMEC_LREQ},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
 			{XNVMEC_OPT_META_INPUT, XNVMEC_LOPT},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
 		},
 	},
 	{
@@ -675,17 +675,17 @@ static struct xnvmec_sub g_subs[] = {
 		"Execute an Append Command",
 		cmd_append,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NLB, XNVMEC_LREQ},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
 			{XNVMEC_OPT_META_INPUT, XNVMEC_LOPT},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
 		},
 	},
 	{
@@ -694,15 +694,15 @@ static struct xnvmec_sub g_subs[] = {
 		"Open a Zone",
 		cmd_mgmt_open,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_ALL, XNVMEC_LFLG},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
 		},
 	},
 	{
@@ -711,15 +711,15 @@ static struct xnvmec_sub g_subs[] = {
 		"Close a Zone",
 		cmd_mgmt_close,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_ALL, XNVMEC_LFLG},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
 		},
 	},
 	{
@@ -728,15 +728,15 @@ static struct xnvmec_sub g_subs[] = {
 		"Finish a Zone",
 		cmd_mgmt_finish,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_ALL, XNVMEC_LFLG},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
 		},
 	},
 	{
@@ -745,15 +745,15 @@ static struct xnvmec_sub g_subs[] = {
 		"Reset a Zone",
 		cmd_mgmt_reset,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_ALL, XNVMEC_LFLG},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
 		},
 	},
 	{
@@ -762,16 +762,16 @@ static struct xnvmec_sub g_subs[] = {
 		"Zone Management Send Command with custom action",
 		cmd_mgmt,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_ACTION, XNVMEC_LREQ},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_ALL, XNVMEC_LFLG},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
 		},
 	},
 	{
@@ -780,15 +780,15 @@ static struct xnvmec_sub g_subs[] = {
 		"Retrieve Zone Information",
 		cmd_report,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
 			{XNVMEC_OPT_LIMIT, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
 		},
 	},
 };

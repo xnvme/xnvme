@@ -340,108 +340,111 @@ exit:
 // Command-Line Interface (CLI) definition
 //
 static struct xnvmec_sub subs[] = {
-	{"support",
-	 "Print ZRWA related idfy-fields and check for command support",
-	 "Print ZRWA related idfy-fields and check for command support",
-	 test_support,
-	 {
-		 {XNVMEC_OPT_URI, XNVMEC_POSA},
+	{
+		"support",
+		"Print ZRWA related idfy-fields and check for command support",
+		"Print ZRWA related idfy-fields and check for command support",
+		test_support,
+		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
-		 {XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-		 {XNVMEC_OPT_BE, XNVMEC_LOPT},
-		 {XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		 {XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-		 {XNVMEC_OPT_ASYNC, XNVMEC_LOPT},
-	 }},
+			XNVMEC_ASYNC_OPTS,
+		},
+	},
 
-	{"idfy",
-	 "Print ZRWA related idfy-fields",
-	 "Print ZRWA related idfy-fields",
-	 test_idfy,
-	 {
-		 {XNVMEC_OPT_URI, XNVMEC_POSA},
+	{
+		"idfy",
+		"Print ZRWA related idfy-fields",
+		"Print ZRWA related idfy-fields",
+		test_idfy,
+		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
-		 {XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-		 {XNVMEC_OPT_BE, XNVMEC_LOPT},
-		 {XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		 {XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-		 {XNVMEC_OPT_ASYNC, XNVMEC_LOPT},
-	 }},
+			XNVMEC_ASYNC_OPTS,
+		},
+	},
 
-	{"open-with-zrwa",
-	 "Verify that EOPEN with ZRWAA allocates ZRWA",
-	 "Verify that EOPEN with ZRWAA allocates ZRWA",
-	 test_eopen_with_zrwa,
-	 {
-		 {XNVMEC_OPT_URI, XNVMEC_POSA},
-		 {XNVMEC_OPT_SLBA, XNVMEC_LOPT},
+	{
+		"open-with-zrwa",
+		"Verify that EOPEN with ZRWAA allocates ZRWA",
+		"Verify that EOPEN with ZRWAA allocates ZRWA",
+		test_eopen_with_zrwa,
+		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
-		 {XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-		 {XNVMEC_OPT_BE, XNVMEC_LOPT},
-		 {XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		 {XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-		 {XNVMEC_OPT_ASYNC, XNVMEC_LOPT},
-	 }},
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
 
-	{"open-without-zrwa",
-	 "Verify that EOPEN without ZRWAA does not allocate ZRWA",
-	 "Verify that EOPEN without ZRWAA does not allocate ZRWA",
-	 test_eopen_without_zrwa,
-	 {
-		 {XNVMEC_OPT_URI, XNVMEC_POSA},
-		 {XNVMEC_OPT_SLBA, XNVMEC_LOPT},
+			XNVMEC_ASYNC_OPTS,
+		},
+	},
 
-		 {XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-		 {XNVMEC_OPT_BE, XNVMEC_LOPT},
-		 {XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		 {XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-		 {XNVMEC_OPT_ASYNC, XNVMEC_LOPT},
-	 }},
+	{
+		"open-without-zrwa",
+		"Verify that EOPEN without ZRWAA does not allocate ZRWA",
+		"Verify that EOPEN without ZRWAA does not allocate ZRWA",
+		test_eopen_without_zrwa,
+		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
-	{"flush",
-	 "Verify operation of flush",
-	 "Verify operation of flush",
-	 test_flush,
-	 {
-		 {XNVMEC_OPT_URI, XNVMEC_POSA},
-		 {XNVMEC_OPT_SLBA, XNVMEC_LOPT},
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
 
-		 {XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-		 {XNVMEC_OPT_BE, XNVMEC_LOPT},
-		 {XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		 {XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-		 {XNVMEC_OPT_ASYNC, XNVMEC_LOPT},
-	 }},
+			XNVMEC_ASYNC_OPTS,
+		},
+	},
 
-	{"flush-explicit",
-	 "Verify operation of explicit-flush",
-	 "Verify operation of explicit-flush",
-	 test_flush,
-	 {
-		 {XNVMEC_OPT_URI, XNVMEC_POSA},
-		 {XNVMEC_OPT_SLBA, XNVMEC_LOPT},
+	{
+		"flush",
+		"Verify operation of flush",
+		"Verify operation of flush",
+		test_flush,
+		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
-		 {XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-		 {XNVMEC_OPT_BE, XNVMEC_LOPT},
-		 {XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		 {XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-		 {XNVMEC_OPT_ASYNC, XNVMEC_LOPT},
-	 }},
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
 
-	{"flush-implicit",
-	 "Verify operation of implicit-flush",
-	 "Verify operation of implicit-flush",
-	 test_flush_implicit,
-	 {
-		 {XNVMEC_OPT_URI, XNVMEC_POSA},
-		 {XNVMEC_OPT_SLBA, XNVMEC_LOPT},
+			XNVMEC_ASYNC_OPTS,
+		},
+	},
 
-		 {XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-		 {XNVMEC_OPT_BE, XNVMEC_LOPT},
-		 {XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		 {XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-		 {XNVMEC_OPT_ASYNC, XNVMEC_LOPT},
-	 }},
+	{
+		"flush-explicit",
+		"Verify operation of explicit-flush",
+		"Verify operation of explicit-flush",
+		test_flush,
+		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
+
+			XNVMEC_ASYNC_OPTS,
+		},
+	},
+
+	{
+		"flush-implicit",
+		"Verify operation of implicit-flush",
+		"Verify operation of implicit-flush",
+		test_flush_implicit,
+		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
+
+			XNVMEC_ASYNC_OPTS,
+		},
+	},
 };
 
 static struct xnvmec cli = {

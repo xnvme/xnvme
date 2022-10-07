@@ -22,11 +22,7 @@ static struct xnvmec_sub g_subs[] = {
 		"Optional command-line arguments",
 		sub_optional,
 		{
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_MEM, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-			{XNVMEC_OPT_ASYNC, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			XNVMEC_ASYNC_OPTS,
 		},
 	},
 };

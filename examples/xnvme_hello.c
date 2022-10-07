@@ -39,11 +39,10 @@ static struct xnvmec_sub g_subs[] = {
 		"Hello-World Example",
 		sub_hw_example,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			XNVMEC_ADMIN_OPTS,
 		},
 	},
 };
