@@ -29,8 +29,8 @@ MESON_MAN_INSTALL = "install_man('{manpage}')"
 RE_SIG = "".join(
     [
         r"^Usage:\s(?P<usage>.*)$",
-        r"(?P<descr>(.|\n)*)",
-        r"Where.*:$\n\n(?P<body>(.|\n)*)\n\nSee",
+        r"(?P<descr>(?:.|\n)*?)",
+        r"(?:Where.*:|With.*:|Positional:)$(?P<body>(?:.|\n)*)See",
     ]
 )
 
@@ -172,7 +172,11 @@ def parse_tool_sub_sig(tsig, sname):
     }
 
     for line in match.group("body").strip().splitlines():
-        arg, descr = line.strip().split(";", 1)
+        try:
+            arg, descr = line.strip().split(";", 1)
+        except ValueError:
+            # skip headings and newlines in body e.g. "With <args> for backend:"
+            continue
 
         arg = arg.strip()
         if arg[0] not in ["-", "["]:
@@ -226,7 +230,11 @@ def parse_tool_sig(tpath):
     }
 
     for line in match.group("body").splitlines():
-        sname = line.strip().split(" ")[0]
+        line = line.strip()
+        if not line:
+            continue
+
+        sname = line.split(" ")[0]
         tsig["snames"].append(sname)
 
         if not parse_tool_sub_sig(tsig, sname):

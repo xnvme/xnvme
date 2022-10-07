@@ -140,7 +140,9 @@ static struct xnvmec_sub g_subs[] = {
 		"Write a file and call fsync between writes",
 		test_file_fsync,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 		},
 	},
 	{
@@ -149,7 +151,9 @@ static struct xnvmec_sub g_subs[] = {
 		"Write a file and then overwrite it using trunc",
 		test_file_trunc,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 		},
 	},
 };

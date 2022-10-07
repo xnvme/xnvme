@@ -334,12 +334,10 @@ static struct xnvmec_sub g_subs[] = {
 		"Print id-ctrlr-ONCS bits and check for SCC support",
 		sub_support,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
 		},
 	},
 	{
@@ -348,12 +346,10 @@ static struct xnvmec_sub g_subs[] = {
 		"Print SCC related Controller and Namespace identification",
 		sub_idfy,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
 		},
 	},
 	{
@@ -363,13 +359,13 @@ static struct xnvmec_sub g_subs[] = {
 		"\n\n**NOTE** --clear toggles sync/async command mode",
 		sub_scopy,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_CLEAR, XNVMEC_LFLG},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
 		},
 	},
 	{
@@ -379,13 +375,13 @@ static struct xnvmec_sub g_subs[] = {
 		"\n\n**NOTE** --clear toggles sync/async command mode",
 		sub_scopy_msrc,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_CLEAR, XNVMEC_LFLG},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
 		},
 	},
 };

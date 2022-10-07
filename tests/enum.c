@@ -170,10 +170,11 @@ static struct xnvmec_sub g_subs[] = {
 		"Call xnvme_enumerate() 'count' times",
 		test_enum,
 		{
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_SYS_URI, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_COUNT, XNVMEC_LOPT},
 			{XNVMEC_OPT_VERBOSE, XNVMEC_LFLG},
+			XNVMEC_CORE_OPTS,
 		},
 	},
 	{
@@ -183,10 +184,11 @@ static struct xnvmec_sub g_subs[] = {
 		"Dump info on each opened device with --verbose",
 		test_enum_open,
 		{
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_SYS_URI, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
 			{XNVMEC_OPT_COUNT, XNVMEC_LOPT},
 			{XNVMEC_OPT_VERBOSE, XNVMEC_LFLG},
+			XNVMEC_CORE_OPTS,
 		},
 	},
 };

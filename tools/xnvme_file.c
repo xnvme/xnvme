@@ -814,8 +814,11 @@ static struct xnvmec_sub g_subs[] = {
 		"Write and read a file",
 		read_write,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_SYS_URI, XNVMEC_POSA},
 			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 		},
 	},
 	{
@@ -824,7 +827,10 @@ static struct xnvmec_sub g_subs[] = {
 		"Write a buffer of 'data-nbytes' to file",
 		dump_sync,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LREQ},
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
 			{XNVMEC_OPT_DIRECT, XNVMEC_LFLG},
@@ -836,7 +842,10 @@ static struct xnvmec_sub g_subs[] = {
 		"Write a buffer of 'data-nbytes' to file",
 		dump_sync_iovec,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LREQ},
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
 			{XNVMEC_OPT_DIRECT, XNVMEC_LFLG},
@@ -851,7 +860,10 @@ static struct xnvmec_sub g_subs[] = {
 		"Write a buffer of 'data-nbytes' to file --data-output",
 		dump_async,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LREQ},
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
 			{XNVMEC_OPT_QDEPTH, XNVMEC_LOPT},
@@ -860,11 +872,15 @@ static struct xnvmec_sub g_subs[] = {
 	},
 	{
 		"dump-async-iovec",
-		"Write a buffer of 'data-nbytes' to file --data-output using vectored ios",
+		"Write a buffer of 'data-nbytes' to file --data-output using vectored "
+		"ios",
 		"Write a buffer of 'data-nbytes' to file --data-output",
 		dump_async_iovec,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LREQ},
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
 			{XNVMEC_OPT_QDEPTH, XNVMEC_LOPT},
@@ -880,7 +896,10 @@ static struct xnvmec_sub g_subs[] = {
 		"Read the entire file into memory",
 		load_sync,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
 			{XNVMEC_OPT_DIRECT, XNVMEC_LFLG},
 		},
@@ -891,7 +910,10 @@ static struct xnvmec_sub g_subs[] = {
 		"Read the entire file into memory",
 		load_async,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
 			{XNVMEC_OPT_QDEPTH, XNVMEC_LOPT},
 			{XNVMEC_OPT_DIRECT, XNVMEC_LFLG},
@@ -903,8 +925,11 @@ static struct xnvmec_sub g_subs[] = {
 		"Copy file --data-input to --data--output",
 		copy_file_sync,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_POSA},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
 			{XNVMEC_OPT_DIRECT, XNVMEC_LFLG},
 		},
@@ -915,8 +940,11 @@ static struct xnvmec_sub g_subs[] = {
 		"Copy file",
 		copy_file_async,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_POSA},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
 			{XNVMEC_OPT_QDEPTH, XNVMEC_LOPT},
 			{XNVMEC_OPT_DIRECT, XNVMEC_LFLG},

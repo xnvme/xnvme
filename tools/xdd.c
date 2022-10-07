@@ -268,6 +268,7 @@ static struct xnvmec_sub g_subs[] = {
 		"Copy --data-nbytes from --data-input to --data--output",
 		copy_sync,
 		{
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LREQ},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LREQ},
 			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LREQ},
@@ -282,6 +283,7 @@ static struct xnvmec_sub g_subs[] = {
 		"Copy --data-nbytes from --data-input to --data--output",
 		copy_async,
 		{
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LREQ},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LREQ},
 			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LREQ},

@@ -549,14 +549,14 @@ static struct xnvmec_sub g_subs[] = {
 		"Basic Verification of being able to read, what was written",
 		sub_io,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
 			{XNVMEC_OPT_ELBA, XNVMEC_LOPT},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
 		},
 	},
 	{
@@ -565,13 +565,13 @@ static struct xnvmec_sub g_subs[] = {
 		"Basic Verification of the Simple-Copy Command",
 		test_scopy,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
 		},
 	},
 	{
@@ -580,14 +580,14 @@ static struct xnvmec_sub g_subs[] = {
 		"Basic verification of the write zeros command",
 		test_write_zeroes,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
 			{XNVMEC_OPT_ELBA, XNVMEC_LOPT},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
 		},
 	},
 	{
@@ -596,14 +596,14 @@ static struct xnvmec_sub g_subs[] = {
 		"Basic verification of the write uncorrectable command",
 		test_write_uncorrectable,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
 			{XNVMEC_OPT_ELBA, XNVMEC_LOPT},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
 		},
 	}};
 

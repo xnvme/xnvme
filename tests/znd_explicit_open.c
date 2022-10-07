@@ -145,14 +145,19 @@ exit:
 // Command-Line Interface (CLI) definition
 //
 static struct xnvmec_sub g_subs[] = {
-	{"test_open_zdptr",
-	 "jazz",
-	 "jazz",
-	 test_open_zdptr,
-	 {
-		 {XNVMEC_OPT_URI, XNVMEC_POSA},
-		 {XNVMEC_OPT_SLBA, XNVMEC_LOPT},
-	 }},
+	{
+		"test_open_zdptr",
+		"jazz",
+		"jazz",
+		test_open_zdptr,
+		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
+		},
+	},
 };
 
 static struct xnvmec g_cli = {

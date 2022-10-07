@@ -102,34 +102,38 @@ exit:
 // Command-Line Interface (CLI) definition
 //
 static struct xnvmec_sub g_subs[] = {
-	{"transition",
-	 "Check zone-transition: reset a zone, open, close it, and fill it.",
-	 "Check zone-transition: reset a zone, open, close it, and fill it.",
-	 cmd_transition,
-	 {
-		 {XNVMEC_OPT_URI, XNVMEC_POSA},
-		 {XNVMEC_OPT_NSID, XNVMEC_LOPT},
-		 {XNVMEC_OPT_SLBA, XNVMEC_LOPT},
+	{
+		"transition",
+		"Check zone-transition: reset a zone, open, close it, and fill it.",
+		"Check zone-transition: reset a zone, open, close it, and fill it.",
+		cmd_transition,
+		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
-		 {XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-		 {XNVMEC_OPT_BE, XNVMEC_LOPT},
-		 {XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		 {XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-	 }},
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
 
-	{"changes",
-	 "Retrieve the Changed Zone List log page",
-	 "Retrieve the Changed Zone List log page",
-	 cmd_changes,
-	 {
-		 {XNVMEC_OPT_URI, XNVMEC_POSA},
-		 {XNVMEC_OPT_NSID, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
+		},
+	},
 
-		 {XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-		 {XNVMEC_OPT_BE, XNVMEC_LOPT},
-		 {XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		 {XNVMEC_OPT_SYNC, XNVMEC_LOPT},
-	 }},
+	{
+		"changes",
+		"Retrieve the Changed Zone List log page",
+		"Retrieve the Changed Zone List log page",
+		cmd_changes,
+		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
+
+			XNVMEC_SYNC_OPTS,
+		},
+	},
 
 };
 

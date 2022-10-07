@@ -71,8 +71,11 @@ static struct xnvmec_sub g_subs[] = {
 		"Copy a file using xnvmec_buf_{to,from}_file",
 		xnvmec_copy_io,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_POSA},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 		},
 	},
 	{
@@ -80,7 +83,9 @@ static struct xnvmec_sub g_subs[] = {
 		"Check that all 'xnvmec_opt' has attributes defined",
 		"Check that all 'xnvmec_opt' has attributes defined",
 		xnvmec_check_opt_attr,
-		{0},
+		{
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
+		},
 	},
 };
 

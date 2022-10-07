@@ -90,11 +90,13 @@ static struct xnvmec_sub g_subs[] = {
 		"Allocate and free a buffer 'count' times of size [1, 2^count]",
 		test_buf_alloc_free,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_COUNT, XNVMEC_LREQ},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			XNVMEC_ADMIN_OPTS,
 		},
 	},
 	{
@@ -103,11 +105,13 @@ static struct xnvmec_sub g_subs[] = {
 		"Allocate and free a buffer 'count' times of size [1, 2^count]",
 		test_virt_buf_alloc_free,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_COUNT, XNVMEC_LREQ},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			XNVMEC_ADMIN_OPTS,
 		},
 	},
 };

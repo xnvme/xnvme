@@ -28,6 +28,8 @@ xnvmec_opt_type_str(enum xnvmec_opt_type otype)
 		return "XNVMEC_LOPT";
 	case XNVMEC_LREQ:
 		return "XNVMEC_LREQ";
+	case XNVMEC_SKIP:
+		return "XNVMEC_SKIP";
 	}
 
 	return "XNVMEC_ENOSYS";
@@ -744,8 +746,8 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 		.opt = XNVMEC_OPT_BE,
 		.vtype = XNVMEC_OPT_VTYPE_STR,
 		.name = "be",
-		.descr =
-			"xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'macos', 'posix', 'windows'",
+		.descr = "xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'macos', "
+			 "'posix', 'windows'",
 	},
 	{
 		.opt = XNVMEC_OPT_MEM,
@@ -919,7 +921,24 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 		.name = "nsr",
 		.descr = "Namespace streams requested",
 	},
-
+	{
+		.opt = XNVMEC_OPT_POSA_TITLE,
+		.vtype = XNVMEC_OPT_VTYPE_SKIP,
+		.name = "\nPositional arguments:\n",
+		.descr = "",
+	},
+	{
+		.opt = XNVMEC_OPT_NON_POSA_TITLE,
+		.vtype = XNVMEC_OPT_VTYPE_SKIP,
+		.name = "\nWhere <args> include:\n",
+		.descr = "",
+	},
+	{
+		.opt = XNVMEC_OPT_ORCH_TITLE,
+		.vtype = XNVMEC_OPT_VTYPE_SKIP,
+		.name = "\nWith <args> for backend:\n",
+		.descr = "",
+	},
 	{
 		.opt = XNVMEC_OPT_END,
 		.vtype = XNVMEC_OPT_VTYPE_NUM,
@@ -1028,6 +1047,10 @@ xnvmec_usage_sub_long(struct xnvmec *cli, struct xnvmec_sub *sub)
 		if (!attr) {
 			break;
 		}
+
+		if (opt->type && opt->type == XNVMEC_SKIP) {
+			continue;
+		}
 		if (opt->type && (opt->type != XNVMEC_POSA)) {
 			++nopts;
 			break;
@@ -1041,9 +1064,6 @@ xnvmec_usage_sub_long(struct xnvmec *cli, struct xnvmec_sub *sub)
 	if (strnlen(sub->descr_long, 2) > 1) {
 		printf("\n%s\n", sub->descr_long);
 	}
-
-	printf("\n");
-	printf("Where <args> include:\n\n");
 
 	for (int oi = 0; oi < XNVMEC_SUB_OPTS_LEN; ++oi) {
 		struct xnvmec_sub_opt *opt = &sub->opts[oi];
@@ -1075,9 +1095,14 @@ xnvmec_usage_sub_long(struct xnvmec *cli, struct xnvmec_sub *sub)
 		case XNVMEC_LFLG:
 			width = printf("[ --%s ]", attr->name);
 			break;
+		case XNVMEC_SKIP:
+			width = printf("%s", attr->name);
+			break;
 		}
 
-		printf("%*s; %s", 30 - width, "", attr->descr);
+		if (opt->type != XNVMEC_SKIP) {
+			printf("%*s; %s", 30 - width, "", attr->descr);
+		}
 		printf("\n");
 	}
 
@@ -1160,6 +1185,7 @@ xnvmec_assign_arg(struct xnvmec *cli, struct xnvmec_opt_attr *opt_attr, char *ar
 		case XNVMEC_OPT_VTYPE_URI:
 		case XNVMEC_OPT_VTYPE_FILE:
 		case XNVMEC_OPT_VTYPE_STR:
+		case XNVMEC_OPT_VTYPE_SKIP:
 			break;
 
 		case XNVMEC_OPT_VTYPE_NUM:
@@ -1506,6 +1532,9 @@ xnvmec_assign_arg(struct xnvmec *cli, struct xnvmec_opt_attr *opt_attr, char *ar
 		args->nsr = num;
 		break;
 
+	case XNVMEC_OPT_POSA_TITLE:
+	case XNVMEC_OPT_NON_POSA_TITLE:
+	case XNVMEC_OPT_ORCH_TITLE:
 	case XNVMEC_OPT_END:
 	case XNVMEC_OPT_NONE:
 		errno = EINVAL;
@@ -1630,6 +1659,8 @@ xnvmec_parse(struct xnvmec *cli)
 			++signature.posa;
 			++signature.total_req;
 			break;
+		case XNVMEC_SKIP:
+			continue;
 		}
 		++signature.total;
 
@@ -1652,6 +1683,8 @@ xnvmec_parse(struct xnvmec *cli)
 
 		case XNVMEC_POSA:
 			pos_args[signature.posa - 1] = opt_attr;
+			break;
+		case XNVMEC_SKIP:
 			break;
 		}
 	}
@@ -1702,6 +1735,9 @@ xnvmec_parse(struct xnvmec *cli)
 				XNVME_DEBUG("Positional out of place");
 				errno = EINVAL;
 				return -1;
+
+			case XNVMEC_SKIP:
+				break;
 			}
 
 			++parsed.total_long;

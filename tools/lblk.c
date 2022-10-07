@@ -526,10 +526,11 @@ static struct xnvmec_sub g_subs[] = {
 		"Enumerate Logical Block Namespaces on the system",
 		sub_enumerate,
 		{
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_SYS_URI, XNVMEC_LOPT},
 			{XNVMEC_OPT_FLAGS, XNVMEC_LOPT},
 
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
+			XNVMEC_CORE_OPTS,
 		},
 	},
 	{
@@ -538,11 +539,10 @@ static struct xnvmec_sub g_subs[] = {
 		"Retrieve derived information for the given URI",
 		sub_info,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			XNVMEC_ADMIN_OPTS,
 		},
 	},
 	{
@@ -551,13 +551,14 @@ static struct xnvmec_sub g_subs[] = {
 		"Identify the namespace for the given URI",
 		sub_idfy,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			XNVMEC_ADMIN_OPTS,
 		},
 	},
 	{
@@ -566,7 +567,10 @@ static struct xnvmec_sub g_subs[] = {
 		"Directive send for the given URI",
 		sub_dir_send,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DSPEC, XNVMEC_LOPT},
 			{XNVMEC_OPT_DTYPE, XNVMEC_LOPT},
@@ -574,9 +578,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_ENDIR, XNVMEC_LOPT},
 			{XNVMEC_OPT_TGTDIR, XNVMEC_LOPT},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			XNVMEC_ADMIN_OPTS,
 		},
 	},
 	{
@@ -585,15 +587,16 @@ static struct xnvmec_sub g_subs[] = {
 		"Directive receive for the given URI",
 		sub_dir_receive,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DTYPE, XNVMEC_LOPT},
 			{XNVMEC_OPT_DOPER, XNVMEC_LOPT},
 			{XNVMEC_OPT_NSR, XNVMEC_LOPT},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
+			XNVMEC_ADMIN_OPTS,
 		},
 	},
 	{
@@ -602,17 +605,17 @@ static struct xnvmec_sub g_subs[] = {
 		"Read data and optionally metadata",
 		sub_read,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NLB, XNVMEC_LREQ},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
 			{XNVMEC_OPT_META_OUTPUT, XNVMEC_LOPT},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
 		},
 	},
 	{
@@ -621,17 +624,17 @@ static struct xnvmec_sub g_subs[] = {
 		"Writes data and optionally metadata",
 		sub_write,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NLB, XNVMEC_LREQ},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
 			{XNVMEC_OPT_META_INPUT, XNVMEC_LOPT},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
 		},
 	},
 	{
@@ -640,17 +643,17 @@ static struct xnvmec_sub g_subs[] = {
 		"Set a range of logical blocks to zero",
 		sub_write_zeroes,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NLB, XNVMEC_LREQ},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
 			{XNVMEC_OPT_META_INPUT, XNVMEC_LOPT},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
 		},
 	},
 	{
@@ -659,17 +662,16 @@ static struct xnvmec_sub g_subs[] = {
 		"Mark a range of logical blocks as invalid",
 		sub_write_uncor,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NLB, XNVMEC_LREQ},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
 			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
 			{XNVMEC_OPT_META_INPUT, XNVMEC_LOPT},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
 		},
 	},
 	{
@@ -678,7 +680,10 @@ static struct xnvmec_sub g_subs[] = {
 		"Writes directive specific data and optionally metadata",
 		sub_write_directive,
 		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
 			{XNVMEC_OPT_NLB, XNVMEC_LREQ},
 			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
@@ -687,10 +692,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_DTYPE, XNVMEC_LOPT},
 			{XNVMEC_OPT_DSPEC, XNVMEC_LOPT},
 
-			{XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_BE, XNVMEC_LOPT},
-			{XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-			{XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+			XNVMEC_SYNC_OPTS,
 		},
 	},
 };
