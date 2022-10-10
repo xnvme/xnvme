@@ -63,8 +63,8 @@ xnvme_be_linux_liburing_init(struct xnvme_queue *q, int opts)
 {
 	struct xnvme_queue_liburing *queue = (void *)q;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
+	struct io_uring_params ring_params = {0};
 	int err = 0;
-	int iou_flags = 0;
 
 	if ((opts & XNVME_QUEUE_SQPOLL) || (state->poll_sq)) {
 		queue->poll_sq = 1;
@@ -80,18 +80,18 @@ xnvme_be_linux_liburing_init(struct xnvme_queue *q, int opts)
 	// Ring-initialization
 	//
 	if (queue->poll_sq) {
-		iou_flags |= IORING_SETUP_SQPOLL;
+		ring_params.flags |= IORING_SETUP_SQPOLL;
 	}
 	if (queue->poll_io) {
-		iou_flags |= IORING_SETUP_IOPOLL;
+		ring_params.flags |= IORING_SETUP_IOPOLL;
 	}
 
 	if (opts & XNVME_QUEUE_IOU_BIGSQE) {
-		iou_flags |= IORING_SETUP_SQE128;
-		iou_flags |= IORING_SETUP_CQE32;
+		ring_params.flags |= IORING_SETUP_SQE128;
+		ring_params.flags |= IORING_SETUP_CQE32;
 	}
 
-	err = io_uring_queue_init(queue->base.capacity, &queue->ring, iou_flags);
+	err = io_uring_queue_init_params(queue->base.capacity, &queue->ring, &ring_params);
 	if (err) {
 		XNVME_DEBUG("FAILED: io_uring_queue_init(), err: %d", err);
 		return err;
