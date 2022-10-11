@@ -416,6 +416,7 @@ probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
 	case SPDK_NVME_TRANSPORT_VFIOUSER:
 	case SPDK_NVME_TRANSPORT_FC:
 	case SPDK_NVME_TRANSPORT_CUSTOM:
+	case SPDK_NVME_TRANSPORT_CUSTOM_FABRICS:
 		XNVME_DEBUG("FAILED: unsupported trtype: %d", probed->trtype);
 		return false;
 	}
@@ -539,6 +540,7 @@ enumerate_probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
 	case SPDK_NVME_TRANSPORT_VFIOUSER:
 	case SPDK_NVME_TRANSPORT_FC:
 	case SPDK_NVME_TRANSPORT_CUSTOM:
+	case SPDK_NVME_TRANSPORT_CUSTOM_FABRICS:
 		XNVME_DEBUG("FAILED: unsupported trtype: %d", trid->trtype);
 		return false;
 	}
@@ -602,6 +604,7 @@ enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
 		case SPDK_NVME_TRANSPORT_FC:
 		case SPDK_NVME_TRANSPORT_CUSTOM:
 		case SPDK_NVME_TRANSPORT_VFIOUSER:
+		case SPDK_NVME_TRANSPORT_CUSTOM_FABRICS:
 			XNVME_DEBUG("SKIP: ENOSYS trtype: %s",
 				    spdk_nvme_transport_id_trtype_str(trid->trtype));
 			continue;
