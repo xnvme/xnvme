@@ -17,6 +17,10 @@
 // TODO: replace this with liburing 0.7 barriers
 #define _linux_liburing_barrier() __asm__ __volatile__("" ::: "memory")
 
+#ifndef IORING_SETUP_SINGLE_ISSUER
+#define IORING_SETUP_SINGLE_ISSUER (1U << 12)
+#endif
+
 static int g_linux_liburing_required[] = {
 	IORING_OP_READV,       IORING_OP_WRITEV, IORING_OP_READ_FIXED,
 	IORING_OP_WRITE_FIXED, IORING_OP_READ,   IORING_OP_WRITE,
@@ -59,6 +63,27 @@ exit:
 }
 
 int
+_init_retry(unsigned entries, struct io_uring *ring, struct io_uring_params *p)
+{
+	int err;
+
+retry:
+	err = io_uring_queue_init_params(entries, ring, p);
+	if (err) {
+		if (err == -EINVAL && p->flags & IORING_SETUP_SINGLE_ISSUER) {
+			p->flags &= ~IORING_SETUP_SINGLE_ISSUER;
+			XNVME_DEBUG("FAILED: io_uring_queue_init_params(), retry(!SINGLE_ISSUER)");
+			goto retry;
+		}
+
+		XNVME_DEBUG("FAILED: io_uring_queue_init(), err: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
+int
 xnvme_be_linux_liburing_init(struct xnvme_queue *q, int opts)
 {
 	struct xnvme_queue_liburing *queue = (void *)q;
@@ -81,6 +106,7 @@ xnvme_be_linux_liburing_init(struct xnvme_queue *q, int opts)
 	//
 	if (queue->poll_sq) {
 		ring_params.flags |= IORING_SETUP_SQPOLL;
+		ring_params.flags |= IORING_SETUP_SINGLE_ISSUER;
 	}
 	if (queue->poll_io) {
 		ring_params.flags |= IORING_SETUP_IOPOLL;
@@ -91,9 +117,10 @@ xnvme_be_linux_liburing_init(struct xnvme_queue *q, int opts)
 		ring_params.flags |= IORING_SETUP_CQE32;
 	}
 
-	err = io_uring_queue_init_params(queue->base.capacity, &queue->ring, &ring_params);
+	err = _init_retry(queue->base.capacity, &queue->ring, &ring_params);
 	if (err) {
-		XNVME_DEBUG("FAILED: io_uring_queue_init(), err: %d", err);
+		XNVME_DEBUG("FAILED: _init_retry, err: %d", err);
+
 		return err;
 	}
 
