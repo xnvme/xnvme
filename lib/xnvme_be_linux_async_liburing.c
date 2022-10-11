@@ -6,6 +6,7 @@
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_LINUX_LIBURING_ENABLED
+#include <pthread.h>
 #include <errno.h>
 #include <liburing.h>
 #include <libxnvme_spec_fs.h>
@@ -27,6 +28,18 @@ static int g_linux_liburing_required[] = {
 };
 int g_linux_liburing_nrequired =
 	sizeof g_linux_liburing_required / sizeof(*g_linux_liburing_required);
+
+static struct sqpoll_wq {
+	pthread_mutex_t mutex;
+	struct io_uring ring;
+	bool is_initialized;
+	int refcount;
+} g_sqpoll_wq = {
+	.mutex = PTHREAD_MUTEX_INITIALIZER,
+	.ring = {0},
+	.is_initialized = false,
+	.refcount = 0,
+};
 
 /**
  * Check whether the Kernel supports the io_uring features used by xNVMe
@@ -101,10 +114,43 @@ xnvme_be_linux_liburing_init(struct xnvme_queue *q, int opts)
 	XNVME_DEBUG("queue->poll_sq: %d", queue->poll_sq);
 	XNVME_DEBUG("queue->poll_io: %d", queue->poll_io);
 
+	err = pthread_mutex_lock(&g_sqpoll_wq.mutex);
+	if (err) {
+		XNVME_DEBUG("FAILED: lock(g_sqpoll_wq.mutex), err: %d", err);
+		return -err;
+	}
+
 	//
 	// Ring-initialization
 	//
 	if (queue->poll_sq) {
+		char *env;
+
+		if (!((env = getenv("XNVME_QUEUE_SQPOLL_AWQ")) && atoi(env) == 0)) {
+			if (!g_sqpoll_wq.is_initialized) {
+				struct io_uring_params sqpoll_wq_params = {0};
+
+				sqpoll_wq_params.flags |= IORING_SETUP_SQPOLL;
+				sqpoll_wq_params.flags |= IORING_SETUP_SINGLE_ISSUER;
+
+				err = _init_retry(queue->base.capacity, &g_sqpoll_wq.ring,
+						  &sqpoll_wq_params);
+				if (err) {
+					XNVME_DEBUG(
+						"FAILED: "
+						"io_uring_queue_init_params(g_sqpoll_wq.ring), "
+						"err: %d",
+						err);
+					goto exit;
+				}
+
+				g_sqpoll_wq.is_initialized = true;
+			}
+
+			g_sqpoll_wq.refcount += 1;
+			ring_params.wq_fd = g_sqpoll_wq.ring.ring_fd;
+			ring_params.flags |= IORING_SETUP_ATTACH_WQ;
+		}
 		ring_params.flags |= IORING_SETUP_SQPOLL;
 		ring_params.flags |= IORING_SETUP_SINGLE_ISSUER;
 	}
@@ -120,37 +166,62 @@ xnvme_be_linux_liburing_init(struct xnvme_queue *q, int opts)
 	err = _init_retry(queue->base.capacity, &queue->ring, &ring_params);
 	if (err) {
 		XNVME_DEBUG("FAILED: _init_retry, err: %d", err);
-
-		return err;
+		goto exit;
 	}
 
 	if (queue->poll_sq) {
 		err = io_uring_register_files(&queue->ring, &(state->fd), 1);
 		if (err) {
 			XNVME_DEBUG("FAILED: io_uring_register_files, err: %d", err);
-			return err;
+			goto exit;
 		}
 	}
 
-	return 0;
+exit:
+	if (err && queue->poll_sq && g_sqpoll_wq.is_initialized && (!(--g_sqpoll_wq.refcount))) {
+		io_uring_queue_exit(&g_sqpoll_wq.ring);
+		g_sqpoll_wq.is_initialized = false;
+	}
+	if (pthread_mutex_unlock(&g_sqpoll_wq.mutex)) {
+		XNVME_DEBUG("FAILED: unlock(g_sqpoll_wq.mutex)");
+	}
+
+	return err;
 }
 
 int
 xnvme_be_linux_liburing_term(struct xnvme_queue *q)
 {
 	struct xnvme_queue_liburing *queue = (void *)q;
+	int err;
+
+	err = pthread_mutex_lock(&g_sqpoll_wq.mutex);
+	if (err) {
+		XNVME_DEBUG("FAILED: lock(g_sqpoll_wq.mutex), err: %d", err);
+		return -err;
+	}
 
 	if (!queue) {
 		XNVME_DEBUG("FAILED: queue: %p", (void *)queue);
-		return -EINVAL;
+		err = -EINVAL;
+		goto exit;
 	}
-
 	if (queue->poll_sq) {
 		io_uring_unregister_files(&queue->ring);
 	}
 	io_uring_queue_exit(&queue->ring);
 
-	return 0;
+	if (queue->poll_sq && g_sqpoll_wq.is_initialized && (!(--g_sqpoll_wq.refcount))) {
+		io_uring_queue_exit(&g_sqpoll_wq.ring);
+		g_sqpoll_wq.is_initialized = false;
+	}
+
+exit:
+	if (pthread_mutex_unlock(&g_sqpoll_wq.mutex)) {
+		XNVME_DEBUG("FAILED: unlock(g_sqpoll_wq.mutex)");
+	}
+
+	return err;
 }
 
 int
