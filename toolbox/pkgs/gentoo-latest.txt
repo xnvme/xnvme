@@ -1,5 +1,6 @@
 dev-lang/nasm
 dev-libs/libaio
+dev-libs/openssl
 dev-python/pip
 dev-python/pyelftools
 dev-util/cunit

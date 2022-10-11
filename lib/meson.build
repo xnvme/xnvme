@@ -73,6 +73,8 @@ xnvmelib_source = [
 xnvmelib_deps_shared = [
   thread_dep,
   rt_dep,
+  ssl_dep,
+  dlfcn_dep,
   math_dep,
   numa_dep,
   uuid_dep,

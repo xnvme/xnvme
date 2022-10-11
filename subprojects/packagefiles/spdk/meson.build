@@ -1,7 +1,7 @@
 project(
   'spdk',
   'c',
-  version: '22.05',
+  version: '22.09',
 )
 fs = import('fs')
 
@@ -55,6 +55,10 @@ spdk_libnames = get_option('build_subprojects') ? [
   'spdk_util',
   'spdk_log'
 ] : []
+
+if get_option('build_subprojects') and host_machine.system() != 'freebsd'
+   spdk_libnames += 'spdk_vfio_user'
+endif
 
 dpdk_libnames = get_option('build_subprojects') ? [
   'rte_eal',

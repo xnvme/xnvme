@@ -1,7 +1,7 @@
-From 4c23190a371826d7f8d305520acf4ae1bb039e54 Mon Sep 17 00:00:00 2001
+From 5b9f5600f1137014778dbfa998276094752c60d2 Mon Sep 17 00:00:00 2001
 From: "Simon A. F. Lund" <simon.lund@samsung.com>
 Date: Thu, 5 Nov 2020 15:02:57 +0100
-Subject: [PATCH 2/9] nvmf: derived the ONCS Verify and Simple Copy
+Subject: [PATCH 2/8] nvmf: derived the ONCS Verify and Simple Copy
 
 Signed-off-by: Simon A. F. Lund <simon.lund@samsung.com>
 Change-Id: I44a267573f0f9bb7f41a61ef9740a7e4d8674585
@@ -10,10 +10,10 @@ Change-Id: I44a267573f0f9bb7f41a61ef9740a7e4d8674585
  1 file changed, 3 insertions(+)
 
 diff --git a/lib/nvmf/ctrlr.c b/lib/nvmf/ctrlr.c
-index 8c5baee93..3228319e5 100644
+index 69a628a32..665862ae1 100644
 --- a/lib/nvmf/ctrlr.c
 +++ b/lib/nvmf/ctrlr.c
-@@ -2722,6 +2722,9 @@ spdk_nvmf_ctrlr_identify_ctrlr(struct spdk_nvmf_ctrlr *ctrlr, struct spdk_nvme_c
+@@ -2742,6 +2742,9 @@ spdk_nvmf_ctrlr_identify_ctrlr(struct spdk_nvmf_ctrlr *ctrlr, struct spdk_nvme_c
  		cdata->oncs.dsm = nvmf_ctrlr_dsm_supported(ctrlr);
  		cdata->oncs.write_zeroes = nvmf_ctrlr_write_zeroes_supported(ctrlr);
  		cdata->oncs.reservations = ctrlr->cdata.oncs.reservations;
@@ -24,5 +24,5 @@ index 8c5baee93..3228319e5 100644
  			/* Asymmetric Namespace Access Reporting is supported. */
  			cdata->cmic.ana_reporting = 1;
 -- 
-2.30.2
+2.37.3
 

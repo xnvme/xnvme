@@ -1,7 +1,7 @@
-From 9d3c184f521974971899cb94ded6eefc3ea4390b Mon Sep 17 00:00:00 2001
+From 669de41b1d7e3dd8b251699ed084850e8121e2aa Mon Sep 17 00:00:00 2001
 From: "Simon A. F. Lund" <os@safl.dk>
 Date: Wed, 5 May 2021 18:33:05 +0200
-Subject: [PATCH 8/9] nvme/pcie: add NVMe PCIe Driver registration-hook
+Subject: [PATCH 8/8] nvme/pcie: add NVMe PCIe Driver registration-hook
 
 Signed-off-by: Simon A. F. Lund <os@safl.dk>
 Change-Id: I573f6bf51d0c26903764ddc66fe138a0f197b5e2
@@ -12,12 +12,12 @@ Change-Id: I573f6bf51d0c26903764ddc66fe138a0f197b5e2
  3 files changed, 15 insertions(+)
 
 diff --git a/include/spdk/nvme.h b/include/spdk/nvme.h
-index 4157292da..be7376590 100644
+index cbc93caba..953d0d45a 100644
 --- a/include/spdk/nvme.h
 +++ b/include/spdk/nvme.h
-@@ -4003,6 +4003,11 @@ static void __attribute__((constructor)) _spdk_nvme_transport_register_##name(vo
+@@ -4069,6 +4069,11 @@ static void __attribute__((constructor)) _spdk_nvme_transport_register_##name(vo
  	spdk_nvme_transport_register(transport_ops); \
- }\
+ }
  
 +#define SPDK_REGHOOK_NVME_PCIE_DRIVER 1
 +
@@ -28,10 +28,10 @@ index 4157292da..be7376590 100644
  }
  #endif
 diff --git a/lib/nvme/nvme_pcie.c b/lib/nvme/nvme_pcie.c
-index 14f563532..db18b331e 100644
+index a55c254b9..accbe3abf 100644
 --- a/lib/nvme/nvme_pcie.c
 +++ b/lib/nvme/nvme_pcie.c
-@@ -1171,3 +1171,12 @@ const struct spdk_nvme_transport_ops pcie_ops = {
+@@ -1110,3 +1110,12 @@ const struct spdk_nvme_transport_ops pcie_ops = {
  };
  
  SPDK_NVME_TRANSPORT_REGISTER(pcie, &pcie_ops);
@@ -45,7 +45,7 @@ index 14f563532..db18b331e 100644
 +				 SPDK_PCI_DRIVER_NEED_MAPPING | SPDK_PCI_DRIVER_WC_ACTIVATE);
 +}
 diff --git a/lib/nvme/spdk_nvme.map b/lib/nvme/spdk_nvme.map
-index f4522aa31..e47813afe 100644
+index c4bc133bb..f441e8966 100644
 --- a/lib/nvme/spdk_nvme.map
 +++ b/lib/nvme/spdk_nvme.map
 @@ -2,6 +2,7 @@
@@ -57,5 +57,5 @@ index f4522aa31..e47813afe 100644
  	spdk_nvme_transport_available;
  	spdk_nvme_transport_available_by_name;
 -- 
-2.30.2
+2.37.3
 
