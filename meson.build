@@ -29,6 +29,8 @@ foreach sys : system_support
     set_variable('is_' + sys, system == sys)
 endforeach
 
+is_centos7 = run_command('cat', '/etc/os-release', check: false).stdout().contains('CentOS Linux 7')
+
 cc = meson.get_compiler('c')
 cc_flags = [
   '-Wno-missing-braces',
@@ -181,6 +183,18 @@ math_dep = cc.find_library(
   has_headers: ['math.h'],
   required: conf_data.get('XNVME_BE_SPDK_ENABLED'),
 )
+
+ssl_dep = dependency(
+  is_centos7 ? 'openssl11' : 'openssl', version: '>=1.1.1',
+  required: conf_data.get('XNVME_BE_SPDK_ENABLED'),
+)
+
+dlfcn_dep = cc.find_library(
+  'dl',
+  has_headers: ['dlfcn.h'],
+  required: conf_data.get('XNVME_BE_SPDK_ENABLED'),
+)
+
 uuid_dep = cc.find_library(
   'uuid',
   dirs: is_freebsd ? [ '/usr/local/lib' ] : [],

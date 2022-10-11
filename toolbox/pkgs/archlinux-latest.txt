@@ -9,6 +9,7 @@ nasm
 ncurses
 ninja
 numactl
+openssl
 python-pip
 python-pyelftools
 python3

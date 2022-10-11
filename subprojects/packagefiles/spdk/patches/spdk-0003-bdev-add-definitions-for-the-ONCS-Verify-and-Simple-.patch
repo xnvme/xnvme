@@ -1,7 +1,7 @@
-From 5fd2383425d96681a8791259f9198fdb3f76c6a3 Mon Sep 17 00:00:00 2001
+From f0fc4c8902f1753e67d24c05e9ccba20563b034e Mon Sep 17 00:00:00 2001
 From: "Ivan L. Picoli" <i.picoli@samsung.com>
 Date: Wed, 22 Jul 2020 18:08:55 +0200
-Subject: [PATCH 3/9] bdev: add definitions for the ONCS Verify and Simple Copy
+Subject: [PATCH 3/8] bdev: add definitions for the ONCS Verify and Simple Copy
 
 Signed-off-by: Ivan L. Picoli <i.picoli@samsung.com>
 Change-Id: I504e8aa2987442adf653ef1424d204e94d64739d
@@ -10,18 +10,18 @@ Change-Id: I504e8aa2987442adf653ef1424d204e94d64739d
  1 file changed, 2 insertions(+)
 
 diff --git a/include/spdk/bdev.h b/include/spdk/bdev.h
-index 1060796f4..04b7d5b84 100644
+index b9bd88d84..dec5dc2b1 100644
 --- a/include/spdk/bdev.h
 +++ b/include/spdk/bdev.h
-@@ -142,6 +142,8 @@ enum spdk_bdev_io_type {
- 	SPDK_BDEV_IO_TYPE_COMPARE,
- 	SPDK_BDEV_IO_TYPE_COMPARE_AND_WRITE,
+@@ -119,6 +119,8 @@ enum spdk_bdev_io_type {
  	SPDK_BDEV_IO_TYPE_ABORT,
+ 	SPDK_BDEV_IO_TYPE_SEEK_HOLE,
+ 	SPDK_BDEV_IO_TYPE_SEEK_DATA,
 +	SPDK_BDEV_IO_TYPE_SIMPLE_COPY,
 +	SPDK_BDEV_IO_TYPE_VERIFY,
  	SPDK_BDEV_NUM_IO_TYPES /* Keep last */
  };
  
 -- 
-2.30.2
+2.37.3
 

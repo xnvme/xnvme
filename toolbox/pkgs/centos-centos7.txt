@@ -10,6 +10,7 @@ make
 ncurses-devel
 numactl-devel
 openssl-devel
+openssl11-devel
 patch
 pkgconfig
 unzip

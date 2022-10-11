@@ -9,6 +9,7 @@ libnuma-dev
 libssl-dev
 libtool
 nasm
+openssl
 pkg-config
 python3
 python3-pip

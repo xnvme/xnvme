@@ -6,6 +6,8 @@ ld --version || true
 ldd --version || true
 
 # Install Developer Tools
+yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+yum-config-manager --enable epel
 yum install -y centos-release-scl
 yum-config-manager --enable rhel-server-rhscl-7-rpms
 yum install -y devtoolset-8
