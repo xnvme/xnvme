@@ -101,7 +101,7 @@ endef
 .PHONY: patch-ctypes
 patch-ctypes: .build-py-env
 	@echo "## py: gen"
-	@${PY_ENV} aux/patch_ctypes_bindings.py --path xnvme/ctypes_bindings/api.py
+	@${PY_ENV} auxiliary/patch_ctypes_bindings.py --path xnvme/ctypes_bindings/api.py
 	@${PY_ENV_ACTIVATE} && black xnvme/ctypes_bindings/api.py || echo "could not fix format"
 	@echo "## py: gen [DONE]"
 

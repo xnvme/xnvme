@@ -86,7 +86,7 @@ endef
 .PHONY: generate-cython-libxnvme-pxd
 generate-cython-libxnvme-pxd: .build-py-env
 	@echo "## py: generate-cython-libxnvme-pxd"
-	@${PY_ENV} aux/generate_cython_header.py --src-root ../..
+	@${PY_ENV} auxiliary/generate_cython_header.py --src-root ../..
 	@echo "## py: generate-cython-libxnvme-pxd [DONE]"
 
 define clean-help

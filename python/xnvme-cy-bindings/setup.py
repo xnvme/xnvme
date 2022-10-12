@@ -9,7 +9,7 @@ from pathlib import Path
 from setuptools import Extension, find_namespace_packages, setup
 
 try:
-    from aux.generate_cython_bindings import generate_pyx
+    from auxiliary.generate_cython_bindings import generate_pyx
     from Cython.Build import cythonize
 
     cython = True
