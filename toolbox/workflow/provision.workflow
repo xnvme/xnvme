@@ -22,7 +22,7 @@ steps:
   uses: qemu.guest_bootimg
 
 - name: start
-  uses: qemu.guest_start_nvme
+  uses: xnvme.guest_start_nvme
 #  with:
 #    nvme_img_root: '/tmp'
 
