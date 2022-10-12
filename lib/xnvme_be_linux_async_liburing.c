@@ -130,6 +130,11 @@ xnvme_be_linux_liburing_init(struct xnvme_queue *q, int opts)
 			if (!g_sqpoll_wq.is_initialized) {
 				struct io_uring_params sqpoll_wq_params = {0};
 
+				env = getenv("XNVME_QUEUE_SQPOLL_CPU");
+				if (env) {
+					sqpoll_wq_params.flags |= IORING_SETUP_SQ_AFF;
+					sqpoll_wq_params.sq_thread_cpu = atoi(env);
+				}
 				sqpoll_wq_params.flags |= IORING_SETUP_SQPOLL;
 				sqpoll_wq_params.flags |= IORING_SETUP_SINGLE_ISSUER;
 
