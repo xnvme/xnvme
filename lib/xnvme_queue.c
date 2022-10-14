@@ -141,7 +141,7 @@ xnvme_queue_get_outstanding(struct xnvme_queue *queue)
 struct xnvme_cmd_ctx *
 xnvme_queue_get_cmd_ctx(struct xnvme_queue *queue)
 {
-	struct xnvme_cmd_ctx *ctx = SLIST_FIRST(&queue->base.pool);
+	struct xnvme_cmd_ctx *ctx = (struct xnvme_cmd_ctx *)SLIST_FIRST(&queue->base.pool);
 
 	if (!ctx) {
 		errno = ENOMEM;
@@ -156,7 +156,7 @@ xnvme_queue_get_cmd_ctx(struct xnvme_queue *queue)
 int
 xnvme_queue_put_cmd_ctx(struct xnvme_queue *queue, struct xnvme_cmd_ctx *ctx)
 {
-	SLIST_INSERT_HEAD(&queue->base.pool, ctx, link);
+	SLIST_INSERT_HEAD(&queue->base.pool, (struct xnvme_cmd_ctx_entry *)ctx, link);
 
 	return 0;
 }

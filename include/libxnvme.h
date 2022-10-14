@@ -19,7 +19,6 @@ extern "C" {
 #include <stdlib.h>
 #include <stdbool.h>
 #include <sys/types.h>
-#include <sys/queue.h>
 #include <sys/uio.h>
 #include <libxnvme_be.h>
 #include <libxnvme_dev.h>
@@ -350,11 +349,9 @@ struct xnvme_cmd_ctx {
 	///< Field containing command-options, the field is initialized by helper-functions
 	uint32_t opts;
 
-	uint8_t be_rsvd[4]; ///< Fields reserved for use by library internals
-
-	///< Field for including the command-context in BSD-style singly-linked-lists (SLIST)
-	SLIST_ENTRY(xnvme_cmd_ctx) link;
+	uint8_t be_rsvd[12]; ///< Fields reserved for use by library internals
 };
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_ctx) == 128, "Incorrect size")
 
 /**
  * Assign a callback-function and argument to be used with the given command-context
