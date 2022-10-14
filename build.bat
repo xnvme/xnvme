@@ -90,8 +90,8 @@ goto :eof
 	@echo "## xNVMe: make default"
 	@if not exist %BUILD_DIR% (
 		call :config
-		call :build
 	)
+	call :build
 	@goto :eof
 
 :config

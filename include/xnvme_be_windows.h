@@ -63,6 +63,7 @@ extern struct xnvme_be_async g_xnvme_be_posix_async_emu;
 extern struct xnvme_be_async g_xnvme_be_posix_async_thrpool;
 extern struct xnvme_be_async g_xnvme_be_windows_async_iocp;
 extern struct xnvme_be_async g_xnvme_be_windows_async_iocp_th;
+extern struct xnvme_be_async g_xnvme_be_windows_async_ioring;
 
 /**
  * Implementations of the memory management interface
