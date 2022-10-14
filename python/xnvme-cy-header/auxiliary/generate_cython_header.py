@@ -6,8 +6,6 @@ from io import StringIO
 import autopxd
 
 regex = [
-    r"s/SLIST_ENTRY\(xnvme_cmd_ctx\)/struct{struct xnvme_cmd_ctx *sle_next;}/g",
-    r"s/SLIST_HEAD\(, xnvme_cmd_ctx\)/struct{struct xnvme_cmd_ctx *slh_first;}/g",
     r"s/struct iovec\s?\*/void */g",
     # NOTE: Cython doesn't support arrays without length specified
     r"s/xnvme_be_attr item\[\]/xnvme_be_attr item[1]/g",
