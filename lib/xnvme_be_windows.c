@@ -142,6 +142,14 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_windows[] = {
 	},
 
 	{
+		.mtype = XNVME_BE_ASYNC,
+		.name = "io_ring",
+		.descr = "Use Windows io_ring for Asynchronous I/O",
+		.async = &g_xnvme_be_windows_async_ioring,
+		.check_support = xnvme_be_supported,
+	},
+
+	{
 		.mtype = XNVME_BE_SYNC,
 		.name = "nvme",
 		.descr = "Use Windows NVMe Driver ioctl() for synchronous I/O",
