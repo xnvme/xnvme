@@ -94,6 +94,40 @@ jobs:
       run: pre-commit run --all-files
 
   #
+  # Ensure that bash completions and man pages can be generated without error
+  #
+  test-gen-targets:
+    needs: source-archive
+    runs-on: ubuntu-latest
+    container: refenv/xnvme-devtools-ci:latest
+
+    steps:
+    - name: Retrieve the source-archive
+      uses: actions/download-artifact@v2
+      with:
+        name: archive-src
+
+    - name: Extract the full-source-archive
+      run: |
+        tar xzf xnvme*.tar.gz --strip 1
+        rm xnvme*.tar.gz
+
+    - name: install txt2man
+      run: apt-get install -qy txt2man
+
+    - name: Build xNVMe
+      run: make
+
+    - name: Install xNVMe
+      run: make install
+
+    - name: Run make gen-bash-completions
+      run: make gen-bash-completions
+
+    - name: Run make gen-man-pages
+      run: make gen-man-pages
+
+  #
   # Code-analysis using scan-build
   #
   analyze-scan-build:
