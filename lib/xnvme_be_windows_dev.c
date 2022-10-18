@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <initguid.h>
 #include <windows.h>
 #include <Setupapi.h>
 #include <libxnvme_spec_fs.h>
