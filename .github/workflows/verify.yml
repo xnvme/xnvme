@@ -437,6 +437,7 @@ jobs:
       run: |
         python3 --version
         python3 -m pip --version
+        python3 -c 'import setuptools; print("setuptools version:", setuptools.__version__)'
         python3 -c "import platform; print(platform.system()); print(platform.uname())"
         python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
 
@@ -459,6 +460,8 @@ jobs:
       run: |
         python3 -m pip install xnvme-cy-header/dist/xnvme-cy-header-*.tar.gz --user
         cd python/xnvme-cy-header/xnvme/cython_header/tests/ && python3 -m pip install -r requirements.txt --user
+        # Debian Bookworm python3-setuptools package is seemingly broken. Force install of newest package on PyPi.
+        python3 -m pip install setuptools --force --user
         PKG_CONFIG_PATH="/usr/local/lib64/pkgconfig:/usr/local/lib/pkgconfig:/usr/local/lib/x86_64-linux-gnu/pkgconfig" python3 setup.py build_ext --inplace
         python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v -s
 
