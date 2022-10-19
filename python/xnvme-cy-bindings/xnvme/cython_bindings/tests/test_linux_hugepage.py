@@ -15,6 +15,14 @@ from utils import (
 )
 
 
+class MemorySegmentException(Exception):
+    pass
+
+
+def is_memory_segment_exception(err, *args):
+    return issubclass(err[0], MemorySegmentException)
+
+
 @pytest.mark.skipif(
     conftest.BACKEND != b"linux", reason="Hugepages are only supported on Linux"
 )
@@ -24,6 +32,9 @@ class TestHugepage:
         with open("/sys/kernel/mm/transparent_hugepage/enabled", "r") as f:
             assert f.read() == "always madvise [never]\n"
 
+    @pytest.mark.flaky(
+        max_runs=3, min_passes=1, rerun_filter=is_memory_segment_exception
+    )
     @pytest.mark.xnvme_sync(b"nvme")
     @pytest.mark.xnvme_mem(b"posix")
     def test_max_segments_ioctl(self, dev):
@@ -83,9 +94,9 @@ class TestHugepage:
                 break
             xnvme.xnvme_buf_free(dev, max_segments)
         else:
-            assert (
-                None
-            ), "The buffer doesn't have more than BLK_MAX_SEGMENTS segments, as it should"
+            raise MemorySegmentException(
+                f"The buffer doesn't have more than BLK_MAX_SEGMENTS segments, as it should. The last buffer had {segment_count} segments."
+            )
 
         # Allocate buffer with a 'minimum' of segments -- anything less than BLK_MAX_SEGMENTS will do.
         # Strategy:
