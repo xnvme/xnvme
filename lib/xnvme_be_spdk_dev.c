@@ -677,43 +677,15 @@ xnvme_be_spdk_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enum
 	for (int t = 0; t < g_xnvme_be_spdk_ntransport; ++t) {
 		int trtype = g_xnvme_be_spdk_transport[t];
 		struct spdk_nvme_transport_id trid = {0};
-		char trid_str[1024] = {0};
 		int err;
 
 		XNVME_DEBUG("INFO: trtype: %s, # %d of %d",
 			    spdk_nvme_transport_id_trtype_str(trtype), t + 1,
 			    g_xnvme_be_spdk_ntransport);
 
-		switch (trtype) {
-		case SPDK_NVME_TRANSPORT_PCIE:
-			trid.trtype = trtype;
-			break;
-
-		case SPDK_NVME_TRANSPORT_TCP:
-		case SPDK_NVME_TRANSPORT_RDMA:
-			if (!sys_uri) {
-				XNVME_DEBUG("SKIP: !sys_uri");
-				continue;
-			}
-
-			snprintf(trid_str, sizeof trid_str,
-				 "trtype:%s adrfam:%s traddr:%s trsvcid:%d subnqn:%s",
-				 spdk_nvme_transport_id_trtype_str(trtype),
-				 opts->adrfam ? opts->adrfam : "IPv4", addr, port,
-				 opts->subnqn ? opts->subnqn : SPDK_NVMF_DISCOVERY_NQN);
-
-			err = spdk_nvme_transport_id_parse(&trid, trid_str);
-			if (err) {
-				XNVME_DEBUG("FAILED: id_parse(): %s, err: %d", trid_str, err);
-				continue;
-			}
-			break;
-
-		case SPDK_NVME_TRANSPORT_FC:
-		case SPDK_NVME_TRANSPORT_CUSTOM:
-			XNVME_DEBUG("SKIP: enum. of trtype: %s not implemented",
-				    spdk_nvme_transport_id_trtype_str(trtype));
-			continue;
+		err = _xnvme_be_spdk_ident_to_trid(&ident, opts, &trid, trtype);
+		if (err) {
+			XNVME_DEBUG("SKIP: !_xnvme_be_spdk_ident_to_trid()");
 		}
 
 		err = spdk_nvme_probe(&trid, &ectx, enumerate_probe_cb, enumerate_attach_cb, NULL);
