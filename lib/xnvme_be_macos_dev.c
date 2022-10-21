@@ -127,6 +127,9 @@ xnvme_be_macos_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enu
 		return -ENOSYS;
 	}
 
+	struct xnvme_opts tmp_opts = *opts;
+	tmp_opts.be = xnvme_be_macos.attr.name;
+
 	for (int nid = 0; nid < 256; nid++) {
 		char path[128] = {0};
 		char disk_id[128] = {0};
@@ -143,7 +146,7 @@ xnvme_be_macos_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enu
 
 		snprintf(uri, XNVME_IDENT_URI_LEN - 1, "%s", path);
 
-		dev = xnvme_dev_open(uri, opts);
+		dev = xnvme_dev_open(uri, &tmp_opts);
 		if (!dev) {
 			XNVME_DEBUG("xnvme_dev_open(): %d", errno);
 			continue;
