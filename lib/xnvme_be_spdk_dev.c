@@ -27,8 +27,7 @@ static struct xnvme_be_spdk_ctrlr_ref g_cref[XNVME_BE_SPDK_CREFS_LEN];
 /**
  * look for a cref for the given given ident
  *
- * @return On success, a pointer to the cref is returned. When none existsWhen a
- * ref is found, 1 is returned cref is assigned, 0 otherwise.
+ * @return On success, a pointer to the cref is returned. When none exists, NULL is returned.
  */
 static struct spdk_nvme_ctrlr *
 _cref_lookup(struct xnvme_ident *id)
@@ -57,7 +56,7 @@ _cref_lookup(struct xnvme_ident *id)
 /**
  * Insert the given controller
  *
- * @return On success, 0 is return. On error, negated ``errno`` is return to
+ * @return On success, 0 is returned. On error, negated ``errno`` is returned to
  * indicate the error.
  */
 static int
