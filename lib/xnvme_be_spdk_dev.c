@@ -647,7 +647,10 @@ xnvme_be_spdk_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enum
 	}
 	XNVME_DEBUG("INFO: addr: %s, port: %d", addr, port);
 
-	ectx.opts = opts;
+	struct xnvme_opts tmp_opts = *opts;
+	tmp_opts.be = xnvme_be_spdk.attr.name;
+
+	ectx.opts = &tmp_opts;
 	ectx.enumerate_cb = cb_func;
 	ectx.cb_args = cb_args;
 

@@ -20,6 +20,8 @@ xnvme_be_fbsd_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enum
 		XNVME_DEBUG("FAILED: sys_uri: %s is not supported", sys_uri);
 		return -ENOSYS;
 	}
+	struct xnvme_opts tmp_opts = *opts;
+	tmp_opts.be = xnvme_be_fbsd.attr.name;
 
 	for (int cid = 0; cid < 256; cid++) {
 		for (int nid = 0; nid < 256; nid++) {
@@ -34,7 +36,7 @@ xnvme_be_fbsd_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enum
 			}
 			snprintf(uri, XNVME_IDENT_URI_LEN - 1, "%s", path);
 
-			dev = xnvme_dev_open(uri, opts);
+			dev = xnvme_dev_open(uri, &tmp_opts);
 			if (!dev) {
 				XNVME_DEBUG("xnvme_dev_open(): %d", errno);
 				return -errno;
