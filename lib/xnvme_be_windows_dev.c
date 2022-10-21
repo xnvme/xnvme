@@ -309,6 +309,9 @@ xnvme_be_windows_enumerate(const char *sys_uri, struct xnvme_opts *opts,
 		return -ENOSYS;
 	}
 
+	struct xnvme_opts tmp_opts = *opts;
+	tmp_opts.be = xnvme_be_windows.attr.name;
+
 	int err = 0;
 	int num_devices = 0;
 	num_devices = _be_windows_populate_devices();
@@ -357,7 +360,7 @@ xnvme_be_windows_enumerate(const char *sys_uri, struct xnvme_opts *opts,
 			_stprintf_s(uri, XNVME_IDENT_URI_LEN - 1, _T("%s"), str_device_name);
 			printf("%s\n", uri);
 
-			dev = xnvme_dev_open(uri, opts);
+			dev = xnvme_dev_open(uri, &tmp_opts);
 			if (!dev) {
 				XNVME_DEBUG("xnvme_dev_open(): %d", errno);
 				return -errno;

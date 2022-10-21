@@ -288,6 +288,9 @@ xnvme_be_linux_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enu
 		return -ENOSYS;
 	}
 
+	struct xnvme_opts tmp_opts = *opts;
+	tmp_opts.be = xnvme_be_linux.attr.name;
+
 	nns = scandir("/sys/block", &ns, xnvme_path_nvme_filter, alphasort);
 	for (int ni = 0; ni < nns; ++ni) {
 		char uri[XNVME_IDENT_URI_LEN] = {0};
@@ -295,7 +298,7 @@ xnvme_be_linux_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enu
 
 		snprintf(uri, XNVME_IDENT_URI_LEN - 1, _PATH_DEV "%s", ns[ni]->d_name);
 
-		dev = xnvme_dev_open(uri, opts);
+		dev = xnvme_dev_open(uri, &tmp_opts);
 		if (!dev) {
 			XNVME_DEBUG("xnvme_dev_open(): %d", errno);
 			return -errno;
@@ -311,7 +314,7 @@ xnvme_be_linux_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enu
 
 		snprintf(uri, XNVME_IDENT_URI_LEN - 1, _PATH_DEV "%s", ns[ni]->d_name);
 
-		dev = xnvme_dev_open(uri, opts);
+		dev = xnvme_dev_open(uri, &tmp_opts);
 		if (!dev) {
 			XNVME_DEBUG("xnvme_dev_open(): %d", errno);
 			return -errno;
