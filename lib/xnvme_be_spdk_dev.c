@@ -361,6 +361,41 @@ _spdk_nvme_transport_id_compare_weak(const struct spdk_nvme_transport_id *trid1,
 	return spdk_nvme_transport_id_compare(&one, &other);
 }
 
+bool
+_spdk_setup_controller_opts(struct xnvme_opts *opts, const struct spdk_nvme_transport_id *trid,
+			    struct spdk_nvme_ctrlr_opts *ctrlr_opts)
+{
+#ifdef XNVME_DEBUG_ENABLED
+	_spdk_nvme_transport_id_pr(trid);
+#endif
+
+	ctrlr_opts->command_set = opts->css.given ? opts->css.value : SPDK_NVME_CC_CSS_IOCS;
+
+	switch (trid->trtype) {
+	case SPDK_NVME_TRANSPORT_PCIE:
+		ctrlr_opts->use_cmb_sqs = opts->use_cmb_sqs ? true : false;
+		break;
+
+	case SPDK_NVME_TRANSPORT_TCP:
+	case SPDK_NVME_TRANSPORT_RDMA:
+		ctrlr_opts->header_digest = 1;
+		ctrlr_opts->data_digest = 1;
+		ctrlr_opts->keep_alive_timeout_ms = 0;
+		if (opts->hostnqn) {
+			strncpy(ctrlr_opts->hostnqn, opts->hostnqn, SPDK_NVMF_NQN_MAX_LEN);
+		}
+		break;
+
+	case SPDK_NVME_TRANSPORT_VFIOUSER:
+	case SPDK_NVME_TRANSPORT_FC:
+	case SPDK_NVME_TRANSPORT_CUSTOM:
+	case SPDK_NVME_TRANSPORT_CUSTOM_FABRICS:
+		XNVME_DEBUG("FAILED: unsupported trtype: %d", trid->trtype);
+		return false;
+	}
+	return true;
+}
+
 /**
  * Attach to the device matching the device provided by the user, and only when
  * it is not already attached, e.g. attach when:
@@ -394,38 +429,7 @@ probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
 		return false;
 	}
 
-	// Setup controller options, general as well as trtype-specific
-	ctrlr_opts->command_set =
-		dev->opts.css.given ? dev->opts.css.value : SPDK_NVME_CC_CSS_IOCS;
-
-	switch (req.trtype) {
-	case SPDK_NVME_TRANSPORT_PCIE:
-		ctrlr_opts->use_cmb_sqs = dev->opts.use_cmb_sqs ? true : false;
-		break;
-
-	case SPDK_NVME_TRANSPORT_TCP:
-	case SPDK_NVME_TRANSPORT_RDMA:
-		ctrlr_opts->header_digest = 1;
-		ctrlr_opts->data_digest = 1;
-		ctrlr_opts->keep_alive_timeout_ms = 0;
-		if (dev->opts.hostnqn) {
-			strncpy(ctrlr_opts->hostnqn, dev->opts.hostnqn, SPDK_NVMF_NQN_MAX_LEN);
-		}
-		break;
-
-	case SPDK_NVME_TRANSPORT_VFIOUSER:
-	case SPDK_NVME_TRANSPORT_FC:
-	case SPDK_NVME_TRANSPORT_CUSTOM:
-	case SPDK_NVME_TRANSPORT_CUSTOM_FABRICS:
-		XNVME_DEBUG("FAILED: unsupported trtype: %d", probed->trtype);
-		return false;
-	}
-
-#ifdef XNVME_DEBUG_ENABLED
-	_spdk_nvme_transport_id_pr(probed);
-#endif
-
-	return true;
+	return _spdk_setup_controller_opts(&dev->opts, probed, ctrlr_opts);
 }
 
 /**
@@ -519,33 +523,7 @@ enumerate_probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
 	struct xnvme_be_spdk_enumerate_ctx *ectx = cb_ctx;
 	struct xnvme_opts *opts = ectx->opts;
 
-	// Setup controller options, general as well as trtype-specific
-	ctrlr_opts->command_set = opts->css.given ? opts->css.value : SPDK_NVME_CC_CSS_IOCS;
-
-	switch (trid->trtype) {
-	case SPDK_NVME_TRANSPORT_PCIE:
-		ctrlr_opts->use_cmb_sqs = opts->use_cmb_sqs ? true : false;
-		break;
-
-	case SPDK_NVME_TRANSPORT_TCP:
-	case SPDK_NVME_TRANSPORT_RDMA:
-		ctrlr_opts->header_digest = 1;
-		ctrlr_opts->data_digest = 1;
-		ctrlr_opts->keep_alive_timeout_ms = 0;
-		if (opts->hostnqn) {
-			strncpy(ctrlr_opts->hostnqn, opts->hostnqn, SPDK_NVMF_NQN_MAX_LEN);
-		}
-		break;
-
-	case SPDK_NVME_TRANSPORT_VFIOUSER:
-	case SPDK_NVME_TRANSPORT_FC:
-	case SPDK_NVME_TRANSPORT_CUSTOM:
-	case SPDK_NVME_TRANSPORT_CUSTOM_FABRICS:
-		XNVME_DEBUG("FAILED: unsupported trtype: %d", trid->trtype);
-		return false;
-	}
-
-	return true;
+	return _spdk_setup_controller_opts(opts, trid, ctrlr_opts);
 }
 
 static void
