@@ -7,7 +7,7 @@ const char *xnvme_libconf[] = {
 	"libvfn;NOSYS",
 #endif
 #ifdef XNVME_BE_SPDK_ENABLED
-	"3p: spdk;git-describe:v22.05;+patches",
+	"3p: spdk;git-describe:v22.09;+patches",
 #else
 	"spdk;NOSYS",
 #endif
