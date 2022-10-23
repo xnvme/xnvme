@@ -10,7 +10,7 @@ except FileNotFoundError:
 
 setup(
     name="xnvme-cy-header",
-    version="0.5.0",
+    version="0.6.0",
     author="Mads Ynddal",
     author_email="m.ynddal@samsung.com",
     description="Cython header (libxnvme.pxd) for the xNVMe C API",

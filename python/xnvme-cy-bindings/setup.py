@@ -137,7 +137,7 @@ EXT_SUFFIX = sysconfig.get_config_var("EXT_SUFFIX")
 
 setup(
     name="xnvme-cy-bindings",
-    version="0.5.0",
+    version="0.6.0",
     author="Mads Ynddal",
     author_email="m.ynddal@samsung.com",
     description="xNVMe Python bindings using Cython",
@@ -172,7 +172,7 @@ setup(
     install_requires=[
         "pytest",
         "setuptools>=58.5",  # Fixes inclusion of libxnvme.pxd in package_data
-        "xnvme==0.5.0",
+        "xnvme==0.6.0",
     ],
     setup_requires=["cython"],
     zip_safe=False,
