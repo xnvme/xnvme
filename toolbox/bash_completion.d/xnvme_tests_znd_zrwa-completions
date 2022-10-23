@@ -30,31 +30,31 @@ _xnvme_tests_znd_zrwa_completions()
     case "$sub" in
     
     "support")
-        opts+="--dev-nsid --be --admin --sync --async --help"
+        opts+="--subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --async --help"
         ;;
 
     "idfy")
-        opts+="--dev-nsid --be --admin --sync --async --help"
+        opts+="--subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --async --help"
         ;;
 
     "open-with-zrwa")
-        opts+="--slba --dev-nsid --be --admin --sync --async --help"
+        opts+="--slba --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --async --help"
         ;;
 
     "open-without-zrwa")
-        opts+="--slba --dev-nsid --be --admin --sync --async --help"
+        opts+="--slba --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --async --help"
         ;;
 
     "flush")
-        opts+="--slba --dev-nsid --be --admin --sync --async --help"
+        opts+="--slba --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --async --help"
         ;;
 
     "flush-explicit")
-        opts+="--slba --dev-nsid --be --admin --sync --async --help"
+        opts+="--slba --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --async --help"
         ;;
 
     "flush-implicit")
-        opts+="--slba --dev-nsid --be --admin --sync --async --help"
+        opts+="--slba --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --async --help"
         ;;
 
     esac

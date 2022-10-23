@@ -30,19 +30,19 @@ _xnvme_tests_lblk_completions()
     case "$sub" in
     
     "io")
-        opts+="--slba --elba --dev-nsid --be --admin --sync --help"
+        opts+="--slba --elba --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "scopy")
-        opts+="--slba --dev-nsid --be --admin --sync --help"
+        opts+="--slba --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "write_zeroes")
-        opts+="--slba --elba --dev-nsid --be --admin --sync --help"
+        opts+="--slba --elba --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "write_uncorrectable")
-        opts+="--slba --elba --dev-nsid --be --admin --sync --help"
+        opts+="--slba --elba --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     esac

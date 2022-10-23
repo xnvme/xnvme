@@ -30,11 +30,11 @@ _xnvme_tests_ioworker_completions()
     case "$sub" in
     
     "verify")
-        opts+="--dev-nsid --be --sync --async --admin --direct --vec-cnt --help"
+        opts+="--vec-cnt --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --async --help"
         ;;
 
     "verify-sync")
-        opts+="--dev-nsid --be --sync --async --admin --direct --vec-cnt --help"
+        opts+="--vec-cnt --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     esac

@@ -30,43 +30,43 @@ _lblk_completions()
     case "$sub" in
     
     "enum")
-        opts+="--uri --flags --be --help"
+        opts+="--uri --flags --subnqn --hostnqn --be --help"
         ;;
 
     "info")
-        opts+="--dev-nsid --be --admin --help"
+        opts+="--subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "idfy")
-        opts+="--nsid --data-output --dev-nsid --be --admin --help"
+        opts+="--nsid --data-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "dir-send")
-        opts+="--nsid --dspec --dtype --doper --endir --tgtdir --dev-nsid --be --admin --help"
+        opts+="--nsid --dspec --dtype --doper --endir --tgtdir --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "dir-receive")
-        opts+="--nsid --dtype --doper --nsr --dev-nsid --be --admin --help"
+        opts+="--nsid --dtype --doper --nsr --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "read")
-        opts+="--slba --nlb --nsid --data-output --meta-output --dev-nsid --be --admin --sync --help"
+        opts+="--slba --nlb --nsid --data-output --meta-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "write")
-        opts+="--slba --nlb --nsid --data-input --meta-input --dev-nsid --be --admin --sync --help"
+        opts+="--slba --nlb --nsid --data-input --meta-input --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "write-zeros")
-        opts+="--slba --nlb --nsid --data-input --meta-input --dev-nsid --be --admin --sync --help"
+        opts+="--slba --nlb --nsid --data-input --meta-input --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "write-uncor")
-        opts+="--slba --nlb --nsid --data-input --meta-input --dev-nsid --be --admin --sync --help"
+        opts+="--slba --nlb --nsid --data-input --meta-input --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "write-dir")
-        opts+="--slba --nlb --nsid --data-input --meta-input --dtype --dspec --dev-nsid --be --admin --sync --help"
+        opts+="--slba --nlb --nsid --data-input --meta-input --dtype --dspec --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     esac

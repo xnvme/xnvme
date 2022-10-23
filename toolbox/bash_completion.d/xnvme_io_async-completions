@@ -30,11 +30,11 @@ _xnvme_io_async_completions()
     case "$sub" in
     
     "read")
-        opts+="--qdepth --slba --elba --data-output --seed --dev-nsid --be --admin --async --direct --help"
+        opts+="--qdepth --slba --elba --data-output --seed --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --async --help"
         ;;
 
     "write")
-        opts+="--qdepth --slba --elba --data-input --dev-nsid --be --admin --async --direct --help"
+        opts+="--qdepth --slba --elba --data-input --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --async --help"
         ;;
 
     esac

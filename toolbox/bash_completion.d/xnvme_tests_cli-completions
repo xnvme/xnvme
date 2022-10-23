@@ -30,7 +30,7 @@ _xnvme_tests_cli_completions()
     case "$sub" in
     
     "optional")
-        opts+="--be --mem --sync --async --admin --help"
+        opts+="--subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --async --help"
         ;;
 
     esac

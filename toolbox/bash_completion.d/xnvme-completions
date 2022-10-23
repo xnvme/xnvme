@@ -30,7 +30,7 @@ _xnvme_completions()
     case "$sub" in
     
     "list")
-        opts+="--uri --flags --be --help"
+        opts+="--uri --flags --subnqn --hostnqn --be --help"
         ;;
 
     "enum")
@@ -38,59 +38,59 @@ _xnvme_completions()
         ;;
 
     "info")
-        opts+="--subnqn --dev-nsid --be --admin --help"
+        opts+="--subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "idfy")
-        opts+="--cns --cntid --nsid --setid --uuid --data-output --dev-nsid --be --admin --help"
+        opts+="--cns --cntid --nsid --setid --uuid --data-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "idfy-ns")
-        opts+="--nsid --data-output --dev-nsid --be --admin --help"
+        opts+="--nsid --data-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "idfy-ctrlr")
-        opts+="--data-output --dev-nsid --be --admin --help"
+        opts+="--data-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "idfy-cs")
-        opts+="--data-output --dev-nsid --be --admin --help"
+        opts+="--data-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "log")
-        opts+="--lid --lsp --lpo-nbytes --nsid --rae --data-nbytes --data-output --dev-nsid --be --admin --help"
+        opts+="--lid --lsp --lpo-nbytes --nsid --rae --data-nbytes --data-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "log-erri")
-        opts+="--nsid --limit --data-output --dev-nsid --be --admin --help"
+        opts+="--nsid --limit --data-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "log-health")
-        opts+="--nsid --data-output --dev-nsid --be --admin --help"
+        opts+="--nsid --data-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "feature-get")
-        opts+="--fid --nsid --sel --data-output --dev-nsid --be --admin --help"
+        opts+="--fid --nsid --sel --data-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "feature-set")
-        opts+="--fid --feat --nsid --save --data-input --dev-nsid --be --admin --help"
+        opts+="--fid --feat --nsid --save --data-input --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "format")
-        opts+="--nsid --lbaf --zf --mset --ses --pi --pil --dev-nsid --be --admin --help"
+        opts+="--nsid --lbaf --zf --mset --ses --pi --pil --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "sanitize")
-        opts+="--dev-nsid --be --admin --help"
+        opts+="--subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "pioc")
-        opts+="--nsid --cmd-input --data-input --data-output --data-nbytes --meta-input --meta-output --meta-nbytes --dev-nsid --be --admin --help"
+        opts+="--nsid --cmd-input --data-input --data-output --data-nbytes --meta-input --meta-output --meta-nbytes --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "padc")
-        opts+="--nsid --cmd-input --data-input --data-output --data-nbytes --meta-input --meta-output --meta-nbytes --dev-nsid --be --admin --help"
+        opts+="--nsid --cmd-input --data-input --data-output --data-nbytes --meta-input --meta-output --meta-nbytes --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "library-info")

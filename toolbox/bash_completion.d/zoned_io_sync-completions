@@ -30,15 +30,15 @@ _zoned_io_sync_completions()
     case "$sub" in
     
     "read")
-        opts+="--nsid --slba --data-output --dev-nsid --be --admin --sync --help"
+        opts+="--nsid --slba --data-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "write")
-        opts+="--nsid --slba --data-input --dev-nsid --be --admin --sync --help"
+        opts+="--nsid --slba --data-input --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "append")
-        opts+="--nsid --slba --data-input --dev-nsid --be --admin --sync --help"
+        opts+="--nsid --slba --data-input --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     esac
