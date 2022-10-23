@@ -14,6 +14,41 @@ Known Issues
 
 See the file named ``ISSUES`` in the root of the repository.
 
+v0.6.0
+------
+
+A handful of improvements for Windows, additional steps toward removing
+third-party vendoring / bundling, addition of experimental tunable knobs for
+io_uring/SQPOLL, and several improvements to testing and CI infra.
+
+* API
+  - Removed SLIST from API, although "sys/queue.h" are commonly available on
+    Linux/FreeBSD, then they are not part of toolchain on Windows.
+
+* Third-party
+  - Bumped SPDK to v22.09, and with that removed mutliple out-of-tree patches
+    for DPDK.
+
+* CLI
+  - The xNVMe command-line library (libxnvmec) and all the cli-tools using it
+    are refactored to use common sets of command-line arguments. Along with
+    this came a consistent set of CLI-arguments for admin/sync/async.
+
+* Backends
+  - ramdisk: The ramdisk got support for write-zeroes, iovec payloads and added
+    to CI testing.
+  - linux: support for a buffer-allocator using HUGEPAGES and tunable knobs for
+    controlling the behavior of io_uring SQPOLL via environment variables.
+  - windows: support for the experimental IORING Windows SPDK API and support
+    for block devices (SCSI and SATA).
+  - spdk: when controllers are re-used for device-handles, events are
+    processed as a means to check whether the controller is still "alive"
+
+* CI
+  - scan-build now runs for each PR
+  - basic tests are now running post-building testing using the RAMDISK
+  - Testing of fabrics with TCP transport is now part of the setup
+
 v0.5.0
 ------
 
