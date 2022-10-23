@@ -10,7 +10,7 @@ except FileNotFoundError:
 
 setuptools.setup(
     name="xnvme",
-    version="0.5.0",
+    version="0.6.0",
     author="Simon A. F. Lund",
     author_email="os@safl.dk",
     description="xNVMe Cython and ctypes language-bindings for Python",
