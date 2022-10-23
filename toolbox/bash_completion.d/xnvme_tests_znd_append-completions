@@ -30,7 +30,7 @@ _xnvme_tests_znd_append_completions()
     case "$sub" in
     
     "verify")
-        opts+="--clear --dev-nsid --be --admin --async --help"
+        opts+="--clear --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --async --help"
         ;;
 
     esac

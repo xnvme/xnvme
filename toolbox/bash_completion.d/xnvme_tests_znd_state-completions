@@ -30,11 +30,11 @@ _xnvme_tests_znd_state_completions()
     case "$sub" in
     
     "transition")
-        opts+="--nsid --slba --dev-nsid --be --admin --sync --help"
+        opts+="--nsid --slba --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "changes")
-        opts+="--nsid --dev-nsid --be --admin --sync --help"
+        opts+="--nsid --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     esac

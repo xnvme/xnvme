@@ -30,7 +30,7 @@ _xnvme_tests_async_intf_completions()
     case "$sub" in
     
     "init_term")
-        opts+="--count --qdepth --clear --dev-nsid --be --admin --async --help"
+        opts+="--count --qdepth --clear --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --async --help"
         ;;
 
     esac

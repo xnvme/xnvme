@@ -30,11 +30,11 @@ _xnvme_tests_enum_completions()
     case "$sub" in
     
     "multi")
-        opts+="--uri --be --count --verbose --help"
+        opts+="--uri --count --verbose --subnqn --hostnqn --be --help"
         ;;
 
     "open")
-        opts+="--uri --be --count --verbose --help"
+        opts+="--uri --count --verbose --subnqn --hostnqn --be --help"
         ;;
 
     esac

@@ -30,63 +30,63 @@ _zoned_completions()
     case "$sub" in
     
     "enum")
-        opts+="--uri --flags --be --help"
+        opts+="--uri --flags --subnqn --hostnqn --be --help"
         ;;
 
     "info")
-        opts+="--dev-nsid --be --admin --help"
+        opts+="--subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "idfy-ctrlr")
-        opts+="--dev-nsid --be --admin --help"
+        opts+="--subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "idfy-ns")
-        opts+="--dev-nsid --be --admin --help"
+        opts+="--subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "changes")
-        opts+="--data-output --dev-nsid --be --admin --help"
+        opts+="--data-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "errors")
-        opts+="--nsid --data-output --dev-nsid --be --admin --help"
+        opts+="--nsid --data-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "read")
-        opts+="--slba --nlb --nsid --data-output --meta-output --dev-nsid --be --admin --sync --help"
+        opts+="--slba --nlb --nsid --data-output --meta-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "write")
-        opts+="--slba --nlb --nsid --data-input --meta-input --dev-nsid --be --admin --sync --help"
+        opts+="--slba --nlb --nsid --data-input --meta-input --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "append")
-        opts+="--slba --nlb --nsid --data-input --meta-input --dev-nsid --be --admin --sync --help"
+        opts+="--slba --nlb --nsid --data-input --meta-input --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "mgmt-open")
-        opts+="--slba --nsid --all --dev-nsid --be --admin --sync --help"
+        opts+="--slba --nsid --all --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "mgmt-close")
-        opts+="--slba --nsid --all --dev-nsid --be --admin --sync --help"
+        opts+="--slba --nsid --all --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "mgmt-finish")
-        opts+="--slba --nsid --all --dev-nsid --be --admin --sync --help"
+        opts+="--slba --nsid --all --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "mgmt-reset")
-        opts+="--slba --nsid --all --dev-nsid --be --admin --sync --help"
+        opts+="--slba --nsid --all --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "mgmt")
-        opts+="--slba --action --nsid --all --dev-nsid --be --admin --sync --help"
+        opts+="--slba --action --nsid --all --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "report")
-        opts+="--slba --limit --data-output --dev-nsid --be --admin --sync --help"
+        opts+="--slba --limit --data-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     esac
