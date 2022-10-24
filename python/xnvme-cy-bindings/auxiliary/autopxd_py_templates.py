@@ -191,7 +191,11 @@ cdef class {block_name}(xnvme_base):
             self._self_cast_void_p(__void_p)
 
     def _self_cast_void_p(self, void_p):
-        self.pointer = <{lib_prefix}.{block_name} *> void_p.pointer
+        self.pointer = <{lib_prefix}.{block_name} *> (<uintptr_t> void_p.pointer)
+
+    def __getattr__(self, attr_name):
+        if attr_name == 'void_pointer':
+            return <uintptr_t> self.pointer
 """
 
 SETTER_TEMPLATE = """
@@ -242,7 +246,7 @@ cdef class {block_name}(xnvme_base):
     fields = [{fields}]
 
     def _self_cast_void_p(self, void_p):
-        self.pointer = <{lib_prefix}.{block_name} *> void_p.pointer
+        self.pointer = <{lib_prefix}.{block_name} *> (<uintptr_t> void_p.pointer)
 
     def _self_alloc(self):
         self.pointer = <{lib_prefix}.{block_name} *> calloc(1, sizeof({lib_prefix}.{block_name}))
