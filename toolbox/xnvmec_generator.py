@@ -30,7 +30,7 @@ RE_SIG = "".join(
     [
         r"^Usage:\s(?P<usage>.*)$",
         r"(?P<descr>(?:.|\n)*?)",
-        r"(?:Where.*:|With.*:|Positional:)$(?P<body>(?:.|\n)*)See",
+        r"(?:Where.*:|With.*:|Positional arguments:)$(?P<body>(?:.|\n)*)See",
     ]
 )
 
