@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <errno.h>
 #include <libxnvmec.h>
+#include <libxnvme_dev.h>
+#include <xnvme_be.h>
 
 #define MAX_LISTINGS 1024
 #define MAX_HANDLES 1024
@@ -160,6 +162,85 @@ exit:
 	return nerr ? -errno : 0;
 }
 
+// This is identical to g_xnvme_be_registry
+static struct xnvme_be *g_xnvme_be_test_registry[] = {
+	&xnvme_be_spdk,    &xnvme_be_linux, &xnvme_be_fbsd,
+	&xnvme_be_posix,   &xnvme_be_macos, &xnvme_be_windows,
+	&xnvme_be_ramdisk, &xnvme_be_vfio,  NULL,
+};
+
+struct backend_cb_args {
+	int err;
+	char expected[1024];
+};
+
+int
+backend_cb(struct xnvme_dev *dev, void *cb_args)
+{
+	struct backend_cb_args *args = cb_args;
+	const struct xnvme_opts *opts = xnvme_dev_get_opts(dev);
+
+	if (strcmp(args->expected, opts->be)) {
+		xnvmec_pinf("FAILED: Expected backend: %s is not matching actual: %s",
+			    args->expected, opts->be);
+		args->err = -EIO;
+	} else {
+		xnvmec_pinf("LGTM: Expected backend: %s is matching actual: %s", args->expected,
+			    opts->be);
+	}
+
+	return XNVME_ENUMERATE_DEV_CLOSE;
+}
+
+static int
+test_enum_backend(struct xnvmec *cli)
+{
+	struct xnvme_opts opts = {0};
+	struct backend_cb_args cb_args = {0};
+	int err;
+
+	err = xnvmec_cli_to_opts(cli, &opts);
+	if (err) {
+		xnvmec_perr("xnvmec_cli_to_opts()", err);
+		return err;
+	}
+
+	for (int i = 0; g_xnvme_be_test_registry[i]; ++i) {
+		struct xnvme_be be = *g_xnvme_be_test_registry[i];
+
+		if (!be.attr.enabled) {
+			XNVME_DEBUG("INFO: skipping be: '%s'; !enabled", be.attr.name);
+			continue;
+		}
+
+		enum xnvme_be_mixin_type mtype = XNVME_BE_DEV;
+
+		for (uint64_t j = 0; (j < be.nobjs); ++j) {
+			const struct xnvme_be_mixin *mixin = &be.objs[j];
+
+			if (mixin->mtype != mtype) {
+				continue;
+			}
+
+			be.dev = *mixin->dev;
+		}
+
+		strncpy(cb_args.expected, be.attr.name, 1023);
+
+		err = be.dev.enumerate(cli->args.sys_uri, &opts, backend_cb, &cb_args);
+		if (err) {
+			XNVME_DEBUG("FAILED: %s->enumerate(...), err: '%s', i: %d",
+				    g_xnvme_be_test_registry[i]->attr.name, strerror(-err), i);
+		}
+
+		if (cb_args.err) {
+			return cb_args.err;
+		}
+	}
+
+	return cb_args.err;
+}
+
 //
 // Command-Line Interface (CLI) definition
 //
@@ -189,6 +270,17 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_COUNT, XNVMEC_LOPT},
 			{XNVMEC_OPT_VERBOSE, XNVMEC_LFLG},
 			XNVMEC_CORE_OPTS,
+		},
+	},
+	{
+		"backend",
+		"Call xnvme_enumerate() and verify that the same backend is used for "
+		"enum and open",
+		"Call xnvme_enumerate() and verify that the same backend is used for "
+		"enum and open",
+		test_enum_backend,
+		{
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
 		},
 	},
 };
