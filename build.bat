@@ -1,29 +1,22 @@
 @echo off
 @setlocal enableextensions enabledelayedexpansion
 
-set PROJECT=xnvme
-set PROJECT_VER=0.0.27
 set CC=clang
 set MESON=meson
-set BUILD_TYPE=release
-set PLATFORM_ID=Windows
 set BUILD_DIR=builddir
-set NPROC=%NUMBER_OF_PROCESSORS%
-set CTAGS=ctags
 set GIT=git
+
 set INFO=
-set CLOBBER=
 set CONFIG=
-set CLEAN=
-set INSTALL=
 set BUILD=
+set CLEAN=
+set CLOBBER=
+set INSTALL=
 
 :: set msys2-shell
 set SH=call msys2_shell -no-start -here -use-full-path -defterm
 
 for %%i in (%*) do (
-	if "%%i"=="debug" set BUILD_TYPE=debug
-	if "%%i"=="release" set BUILD_TYPE=release
 	if "%%i"=="info" set INFO=info
 	if "%%i"=="config" set CONFIG=config
 	if "%%i"=="config-debug" set CONFIG=config-debug
@@ -85,8 +78,6 @@ goto :eof
 
 :default
 	call :info
-	call :tags
-	call :git-setup
 	@echo "## xNVMe: make default"
 	@if not exist %BUILD_DIR% (
 		call :config
@@ -141,24 +132,8 @@ goto :eof
 
 :info
 	@echo "## xNVMe: make info"
-	@echo "PLATFORM: %PLATFORM_ID%"
 	@echo "CC: %CC%"
-	@echo "CTAGS: %CTAGS%"
-	@echo "NPROC: %NPROC%"
-	@echo "PROJECT_VER: %PROJECT_VER%"
 	@echo "## xNVMe: make info [DONE]"
-	@goto :eof
-
-:git-setup
-	@echo "## xNVMe:: git-setup"
-	%SH% -c "%GIT% config core.hooksPath .githooks || true"
-	@echo "## xNVMe:: git-setup [DONE]"
-	@goto :eof
-
-:tags
-	@echo "## xNVMe: make tags"
-	%SH% -c "%CTAGS% * --languages=C -h="".c.h"" -R --exclude=builddir,include,src,tools,examples,tests,subprojects/* || true"
-	@echo "## xNVMe: make tags [DONE]"
 	@goto :eof
 
 :_require_builddir
@@ -188,7 +163,5 @@ goto :eof
 	@git clean -dfX
 	@git checkout .
 	@rmdir /s /q subprojects\fio
-	@rmdir /s /q subprojects\spdk
-	@rmdir /s /q subprojects\liburing
 	@echo "## xNVMe: clobber [DONE]"
 	@goto :eof
