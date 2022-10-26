@@ -264,6 +264,7 @@ struct xnvmec_args {
 	const char *kv_val;
 	bool kv_store_add;
 	bool kv_store_update;
+	bool kv_store_compress;
 };
 
 void

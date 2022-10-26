@@ -180,7 +180,7 @@ class TestHugepage:
         # test systems to have BLK_MAX_SEGMENTS * HUGEPAGE_SIZE buffers.
         # But we still proof the presence of hugepages, and allocating buffers
         # multiple times larger than our 4K page test works.
-        buf, buf_memview = autofreed_buffer(buffer_size)
+        buf, buf_memview = autofreed_buffer(dev, buffer_size)
 
         page_frame_number = next(get_page_frame_numbers(buf, buffer_size))
         assert check_frame_is_hugepage(page_frame_number)

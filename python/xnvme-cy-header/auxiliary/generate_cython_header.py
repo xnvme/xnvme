@@ -63,6 +63,7 @@ ctypedef bint bool
         "libxnvme.h",
         "libxnvme_dev.h",
         "libxnvme_ver.h",
+        "libxnvme_kvs.h",
     ]
     for h_file in xnvme_header_files:
         h_path = os.path.join(c_include_path, h_file)

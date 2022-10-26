@@ -51,15 +51,28 @@ def dev(opts, request):
     opts.rdwr = 1
 
     device = xnvme.xnvme_dev_open(DEVICE_PATH, opts)
+    # if not conventional_namespace:
+    #     pytest.skip('Device must use conventional namespace')
     yield device
     device = xnvme.xnvme_dev_close(device)
 
 
+@pytest.fixture
+def dev_kv(dev):
+    # if not key_value_namespace:
+    #     pytest.skip('Device must support key-value namespace')
+    yield dev
+
+
 @pytest.fixture(scope="function")
-def autofreed_buffer(dev):
+def autofreed_buffer():
+    """
+    xNVMe buffer allocator factory. Buffers are allocated based on device, and
+    freed automatically when exiting pytest scope.
+    """
     buffers = []
 
-    def _alloc(buffer_size):
+    def _alloc(dev, buffer_size):
         buf = xnvme.xnvme_buf_alloc(dev, buffer_size)
         buf_memview = np.ctypeslib.as_array(
             ctypes.cast(buf.void_pointer, ctypes.POINTER(ctypes.c_uint8)),
@@ -68,10 +81,10 @@ def autofreed_buffer(dev):
 
         buf_memview[:] = 0  # Zero memory and force page allocation
 
-        buffers.append(buf)
+        buffers.append((dev, buf))
         return buf, buf_memview
 
     yield _alloc
 
-    for buf in buffers:
+    for dev, buf in buffers:
         xnvme.xnvme_buf_free(dev, buf)
