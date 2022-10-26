@@ -969,6 +969,11 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 		.descr = "If set, hint to use range as an integral unit when reading.",
 	},
 
+	{.opt = XNVMEC_OPT_KV_STORE_COMPRESS,
+	 .vtype = XNVMEC_OPT_VTYPE_NUM,
+	 .name = "compress",
+	 .descr = "KV Store Option to compress value on device"},
+
 	{
 		.opt = XNVMEC_OPT_LSI,
 		.vtype = XNVMEC_OPT_VTYPE_HEX,
@@ -1648,13 +1653,15 @@ xnvmec_assign_arg(struct xnvmec *cli, struct xnvmec_opt_attr *opt_attr, char *ar
 		}
 		args->kv_store_add = true;
 		break;
+	case XNVMEC_OPT_KV_STORE_COMPRESS:
+		args->kv_store_compress = true;
+		break;
 	case XNVMEC_OPT_LSI:
 		args->lsi = num;
 		break;
 	case XNVMEC_OPT_PID:
 		args->pid = num;
 		break;
-
 	case XNVMEC_OPT_POSA_TITLE:
 	case XNVMEC_OPT_NON_POSA_TITLE:
 	case XNVMEC_OPT_ORCH_TITLE:

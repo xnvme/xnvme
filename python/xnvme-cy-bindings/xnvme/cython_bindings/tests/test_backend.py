@@ -72,7 +72,7 @@ def test_pwrite_pread(
     ):
         pytest.skip("Unsupported buffer size for backend")
 
-    buf, buf_memview = autofreed_buffer(buffer_size)
+    buf, buf_memview = autofreed_buffer(dev, buffer_size)
 
     page_frame_number = next(get_page_frame_numbers(buf, buffer_size))
     if xnvme.xnvme_dev_get_opts(dev).mem == b"hugepage":
@@ -146,7 +146,7 @@ def test_nvm_write_read(
     ):
         pytest.skip("Unsupported buffer size for backend")
 
-    buf, buf_memview = autofreed_buffer(buffer_size)
+    buf, buf_memview = autofreed_buffer(dev, buffer_size)
 
     page_frame_number = next(get_page_frame_numbers(buf, buffer_size))
     if xnvme.xnvme_dev_get_opts(dev).mem == b"hugepage":

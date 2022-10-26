@@ -16,12 +16,6 @@ def test_enum(cijoe):
 
 
 @xnvme_parametrize(labels=["kvs"], opts=["be", "admin"])
-def test_info(cijoe, device, be_opts, cli_args):
-    err, _ = cijoe.run(f"kvs info {cli_args}")
-    assert not err
-
-
-@xnvme_parametrize(labels=["kvs"], opts=["be", "admin"])
 def test_idfy_ns(cijoe, device, be_opts, cli_args):
     err, _ = cijoe.run(f"kvs idfy-ns {cli_args} --nsid {device['nsid']}")
     assert not err
@@ -35,8 +29,20 @@ def test_delete_store_exist(cijoe, device, be_opts, cli_args):
     # This is just to ensure the key is not there
     cijoe.run(f"kvs delete {cli_args} --key {key}")
 
-    commands = [
+    err, _ = cijoe.run(
         f"kvs exist {cli_args} --key {key}",
+    )
+    assert err, "We expected this to fail"
+
+    err, _ = cijoe.run(
+        f"kvs store {cli_args} --key {key} --value {val} --only-update",
+    )
+    assert err, "We expected this to fail"
+
+    commands = [
+        f"kvs store {cli_args} --key {key} --value {val} --only-add",
+        f"kvs store {cli_args} --key {key} --value {val} --only-update",
+        f"kvs store {cli_args} --key {key} --value {val} --compress",
         f"kvs store {cli_args} --key {key} --value {val}",
         f"kvs exist {cli_args} --key {key}",
     ]
@@ -72,7 +78,7 @@ def test_retrieve(cijoe, device, be_opts, cli_args):
     cijoe.run(f"kvs delete {cli_args} --key {key}")
 
     err, _ = cijoe.run(f"kvs retrieve {cli_args} --key {key}")
-    assert not err
+    assert err, "We expected this to fail"
 
     err, _ = cijoe.run(f"kvs store {cli_args} --key {key} --value {val}")
     assert not err
@@ -90,7 +96,7 @@ def test_store_optional(cijoe, device, be_opts, cli_args):
     err, _ = cijoe.run(f"kvs delete {cli_args} --key {key}")
 
     err, _ = cijoe.run(f"kvs store {cli_args} --key {key} --value {val} --only-update")
-    assert not err
+    assert err, "We expected this to fail"
 
     err, _ = cijoe.run(f"kvs store {cli_args} --key {key} --value {val}")
     assert not err
@@ -101,7 +107,7 @@ def test_store_optional(cijoe, device, be_opts, cli_args):
     assert not err
 
     err, _ = cijoe.run(f"kvs store {cli_args} --key {key} --value {val} --only-add")
-    assert err
+    assert err, "We expected this to fail"
 
     err, _ = cijoe.run(f"kvs delete {cli_args} --key {key}")
     assert not err
