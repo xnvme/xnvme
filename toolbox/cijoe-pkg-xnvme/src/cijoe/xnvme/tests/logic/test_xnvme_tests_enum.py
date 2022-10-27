@@ -39,3 +39,14 @@ def test_multi_all_be(cijoe):
     XnvmeDriver.kernel_detach(cijoe)
     err, _ = cijoe.run("xnvme_tests_enum multi --count 4")
     assert not err
+
+
+def test_backend(cijoe):
+
+    XnvmeDriver.kernel_attach(cijoe)
+    err, _ = cijoe.run("xnvme_tests_enum backend")
+    assert not err
+
+    XnvmeDriver.kernel_detach(cijoe)
+    err, _ = cijoe.run("xnvme_tests_enum backend")
+    assert not err
