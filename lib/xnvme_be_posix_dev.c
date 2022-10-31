@@ -84,7 +84,7 @@ xnvme_be_posix_dev_open(struct xnvme_dev *dev)
 		break;
 
 	case S_IFCHR:
-		XNVME_DEBUG("FAILED: open() : char-device-file");
+		XNVME_DEBUG("INFO: open() : char-device-file");
 		dev->ident.dtype = XNVME_DEV_TYPE_FS_FILE;
 		dev->ident.csi = XNVME_SPEC_CSI_FS;
 		dev->ident.nsid = 1;
