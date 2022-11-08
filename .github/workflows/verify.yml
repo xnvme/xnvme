@@ -717,8 +717,9 @@ jobs:
     - name: Execute xnvme commands
       shell: cmd
       run: |
-        set "PATH=%SystemDrive%\tools\msys64;!PATH!"
-        set "PATH=%SystemDrive%\tools\msys64\mingw64\bin;!PATH!"
+        set "PATH=%SystemDrive%\tools\msys64;%PATH%"
+        set "PATH=%SystemDrive%\tools\msys64\usr\bin;%PATH%"
+        set "PATH=%SystemDrive%\tools\msys64\mingw64\bin;%PATH%"
 
         xnvme.exe enum
         xnvme.exe library-info
