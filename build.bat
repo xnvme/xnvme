@@ -27,9 +27,9 @@ for %%i in (%*) do (
 	if "%%i"=="uninstall" set INSTALL=uninstall
 )
 
-set "PATH=%ALLUSERSPROFILE%\chocolatey\bin;!PATH!"
-set "PATH=%SystemDrive%\tools\msys64;!PATH!"
-set "PATH=%SystemDrive%\tools\msys64\mingw64\bin;!PATH!"
+set "PATH=%ALLUSERSPROFILE%\chocolatey\bin;%PATH%"
+set "PATH=%SystemDrive%\tools\msys64;%PATH%"
+set "PATH=%SystemDrive%\tools\msys64\mingw64\bin;%PATH%"
 
 
 if "%INFO%"=="info" (
