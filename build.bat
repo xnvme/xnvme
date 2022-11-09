@@ -88,7 +88,7 @@ goto :eof
 :config
 	@echo "## xNVMe: make config"
 	@set CC=%CC%
-	%SH% -c "%MESON% setup %BUILD_DIR%"
+	%SH% -c "%MESON% setup %BUILD_DIR% --prefix=/usr"
 	@echo "## xNVMe: make config [DONE]"
 	@goto :eof
 
