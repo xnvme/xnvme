@@ -414,7 +414,7 @@ jobs:
         - {os: 'ubuntu', dh: 'ubuntu', ver: 'bionic'}
 
     container:
-      image: ${{ matrix.container.dh }}:${{ matrix.container.ver }}
+      image: ghcr.io/xnvme/xnvme-deps-${{ matrix.container.os }}-${{ matrix.container.ver }}:next
 
     steps:
     - name: Container-preparation, openSUSE does not have tar and gzip...
@@ -429,10 +429,6 @@ jobs:
       run: |
         tar xzf xnvme*.tar.gz --strip 1
         rm xnvme*.tar.gz
-
-    - name: Install build-requirements
-      run: |
-        source toolbox/pkgs/${{ matrix.container.os }}-${{ matrix.container.ver }}.sh || true
 
     - name: Configure, Build, and Install
       env:
