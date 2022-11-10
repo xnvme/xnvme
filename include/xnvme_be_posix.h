@@ -12,9 +12,6 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_posix_state) == XNVME_BE_STATE_NBYTES
 		    "Incorrect size");
 
 int
-xnvme_be_posix_supported(struct xnvme_dev *dev, uint32_t opts);
-
-int
 xnvme_be_posix_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 			   void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes));
 
@@ -25,6 +22,5 @@ extern struct xnvme_be_async g_xnvme_be_posix_async_emu;
 extern struct xnvme_be_async g_xnvme_be_posix_async_aio;
 extern struct xnvme_be_async g_xnvme_be_posix_async_thrpool;
 extern struct xnvme_be_mem g_xnvme_be_posix_mem;
-extern struct xnvme_be_dev g_xnvme_be_posix_dev;
 
 #endif /* __INTERNAL_XNVME_BE_POSIX_H */
