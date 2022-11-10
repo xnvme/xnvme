@@ -164,9 +164,8 @@ exit:
 
 // This is identical to g_xnvme_be_registry
 static struct xnvme_be *g_xnvme_be_test_registry[] = {
-	&xnvme_be_spdk,    &xnvme_be_linux, &xnvme_be_fbsd,
-	&xnvme_be_posix,   &xnvme_be_macos, &xnvme_be_windows,
-	&xnvme_be_ramdisk, &xnvme_be_vfio,  NULL,
+	&xnvme_be_spdk,    &xnvme_be_linux,   &xnvme_be_fbsd, &xnvme_be_macos,
+	&xnvme_be_windows, &xnvme_be_ramdisk, &xnvme_be_vfio, NULL,
 };
 
 struct backend_cb_args {
