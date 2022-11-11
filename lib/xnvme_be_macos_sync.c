@@ -7,14 +7,13 @@
 #include <unistd.h>
 #include <libxnvme_spec_fs.h>
 #include <xnvme_dev.h>
-#include <xnvme_be_posix.h>
+#include <xnvme_be_cbi.h>
 #include <fcntl.h>
 
-int
-xnvme_be_macos_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
-			   size_t mbuf_nbytes)
+static int
+cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf, size_t mbuf_nbytes)
 {
-	struct xnvme_be_posix_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_cbi_state *state = (void *)ctx->dev->be.state;
 	ssize_t res;
 
 	///< NOTE: opcode-dispatch (io)
@@ -44,7 +43,7 @@ xnvme_be_macos_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 		}
 		return 0;
 	default:
-		return xnvme_be_posix_sync_cmd_io(ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
+		return xnvme_be_cbi_sync_psync_cmd_io(ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
 	}
 }
 #endif
@@ -52,7 +51,7 @@ xnvme_be_macos_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 struct xnvme_be_sync g_xnvme_be_macos_sync_psync = {
 	.id = "macos",
 #ifdef XNVME_BE_MACOS_ENABLED
-	.cmd_io = xnvme_be_macos_sync_cmd_io,
+	.cmd_io = cmd_io,
 	.cmd_iov = xnvme_be_nosys_sync_cmd_iov,
 #else
 	.cmd_io = xnvme_be_nosys_sync_cmd_io,

@@ -24,7 +24,7 @@
 #include <libxnvme_adm.h>
 #include <libxnvme_znd.h>
 #include <xnvme_dev.h>
-#include <xnvme_be_posix.h>
+#include <xnvme_be_cbi.h>
 #include <xnvme_be_linux.h>
 
 int
@@ -69,7 +69,7 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_linux[] = {
 		.mtype = XNVME_BE_MEM,
 		.name = "posix",
 		.descr = "Use C11 lib malloc/free with sysconf for alignment",
-		.mem = &g_xnvme_be_posix_mem,
+		.mem = &g_xnvme_be_cbi_mem_posix,
 		.check_support = xnvme_be_supported,
 	},
 	{
@@ -84,7 +84,7 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_linux[] = {
 		.mtype = XNVME_BE_ASYNC,
 		.name = "emu",
 		.descr = "Use emulated asynchronous I/O",
-		.async = &g_xnvme_be_posix_async_emu,
+		.async = &g_xnvme_be_cbi_async_emu,
 		.check_support = xnvme_be_supported,
 	},
 #ifdef XNVME_BE_LINUX_LIBURING_ENABLED
@@ -112,25 +112,27 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_linux[] = {
 		.check_support = xnvme_be_supported,
 	},
 #endif
+#ifdef XNVME_BE_CBI_ASYNC_POSIX_ENABLED
 	{
 		.mtype = XNVME_BE_ASYNC,
 		.name = "posix",
 		.descr = "Use POSIX aio for Asynchronous I/O",
-		.async = &g_xnvme_be_posix_async_aio,
+		.async = &g_xnvme_be_cbi_async_posix,
 		.check_support = xnvme_be_supported,
 	},
+#endif
 	{
 		.mtype = XNVME_BE_ASYNC,
 		.name = "thrpool",
 		.descr = "Use thread pool for Asynchronous I/O",
-		.async = &g_xnvme_be_posix_async_thrpool,
+		.async = &g_xnvme_be_cbi_async_thrpool,
 		.check_support = xnvme_be_supported,
 	},
 	{
 		.mtype = XNVME_BE_ASYNC,
 		.name = "nil",
 		.descr = "Use nil-io; For introspective perf. evaluation",
-		.async = &g_xnvme_be_posix_async_nil,
+		.async = &g_xnvme_be_cbi_async_nil,
 		.check_support = xnvme_be_supported,
 	},
 
@@ -145,7 +147,7 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_linux[] = {
 		.mtype = XNVME_BE_SYNC,
 		.name = "psync",
 		.descr = "Use pread()/write() for synchronous I/O",
-		.sync = &g_xnvme_be_posix_sync_psync,
+		.sync = &g_xnvme_be_cbi_sync_psync,
 		.check_support = xnvme_be_supported,
 	},
 

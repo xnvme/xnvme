@@ -3,7 +3,6 @@
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_LINUX_VFIO_ENABLED
-#include <xnvme_be_posix.h>
 #include <xnvme_be_vfio.h>
 
 struct xnvme_be_mixin g_xnvme_be_mixin_vfio[] = {

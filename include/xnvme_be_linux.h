@@ -16,6 +16,8 @@
 
 /**
  * Internal representation of XNVME_BE_LINUX state
+ *
+ * NOTE: When changing this struct, ensure compatibility with 'struct xnvme_be_cbi_state'
  */
 struct xnvme_be_linux_state {
 	int fd;
@@ -67,7 +69,6 @@ extern struct xnvme_be_admin g_xnvme_be_linux_admin_block;
 /**
  * Implementations of the synchronous command interface
  */
-extern struct xnvme_be_sync g_xnvme_be_posix_sync_psync;
 extern struct xnvme_be_sync g_xnvme_be_linux_sync_nvme;
 extern struct xnvme_be_sync g_xnvme_be_linux_sync_block;
 

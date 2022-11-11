@@ -21,7 +21,7 @@
 #include <libxnvme_adm.h>
 #include <libxnvme_znd.h>
 #include <xnvme_dev.h>
-#include <xnvme_be_posix.h>
+#include <xnvme_be_cbi.h>
 #include <xnvme_be_linux.h>
 #include <xnvme_be_linux_nvme.h>
 
@@ -80,13 +80,13 @@ xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 		dev->ident.csi = XNVME_SPEC_CSI_FS;
 		dev->ident.nsid = 1;
 		if (!opts->admin) {
-			dev->be.admin = g_xnvme_be_posix_admin_shim;
+			dev->be.admin = g_xnvme_be_cbi_admin_shim;
 		}
 		if (!opts->sync) {
-			dev->be.sync = g_xnvme_be_posix_sync_psync;
+			dev->be.sync = g_xnvme_be_cbi_sync_psync;
 		}
 		if (!opts->async) {
-			dev->be.async = g_xnvme_be_posix_async_emu;
+			dev->be.async = g_xnvme_be_cbi_async_emu;
 		}
 		break;
 
@@ -103,7 +103,7 @@ xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 			dev->be.sync = g_xnvme_be_linux_sync_block;
 		}
 		if (!opts->async) {
-			dev->be.async = g_xnvme_be_posix_async_emu;
+			dev->be.async = g_xnvme_be_cbi_async_emu;
 		}
 
 		err = xnvme_be_linux_nvme_dev_nsid(dev);
@@ -124,7 +124,7 @@ xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 			dev->be.sync = g_xnvme_be_linux_sync_nvme;
 		}
 		if (!opts->async) {
-			dev->be.async = g_xnvme_be_posix_async_emu;
+			dev->be.async = g_xnvme_be_cbi_async_emu;
 		}
 		break;
 
@@ -134,13 +134,13 @@ xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 		dev->ident.csi = XNVME_SPEC_CSI_FS;
 		dev->ident.nsid = 1;
 		if (!opts->admin) {
-			dev->be.admin = g_xnvme_be_posix_admin_shim;
+			dev->be.admin = g_xnvme_be_cbi_admin_shim;
 		}
 		if (!opts->sync) {
-			dev->be.sync = g_xnvme_be_posix_sync_psync;
+			dev->be.sync = g_xnvme_be_cbi_sync_psync;
 		}
 		if (!opts->async) {
-			dev->be.async = g_xnvme_be_posix_async_emu;
+			dev->be.async = g_xnvme_be_cbi_async_emu;
 		}
 
 		err = xnvme_be_linux_nvme_dev_nsid(dev);
@@ -161,7 +161,7 @@ xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 			dev->be.sync = g_xnvme_be_linux_sync_nvme;
 		}
 		if (!opts->async) {
-			dev->be.async = g_xnvme_be_posix_async_emu;
+			dev->be.async = g_xnvme_be_cbi_async_emu;
 		}
 		break;
 

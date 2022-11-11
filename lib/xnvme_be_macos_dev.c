@@ -11,8 +11,8 @@
 #include <libxnvme_file.h>
 #include <libxnvme_spec_fs.h>
 #include <xnvme_dev.h>
+#include <xnvme_be_cbi.h>
 #include <xnvme_be_macos.h>
-#include <xnvme_be_posix.h>
 #include <IOKit/storage/nvme/NVMeSMARTLibExternal.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <mach/mach_error.h>
@@ -249,10 +249,10 @@ xnvme_be_macos_dev_open(struct xnvme_dev *dev)
 			dev->be.admin = g_xnvme_be_macos_admin;
 		}
 		if (!opts->sync) {
-			dev->be.sync = g_xnvme_be_posix_sync_psync;
+			dev->be.sync = g_xnvme_be_cbi_sync_psync;
 		}
 		if (!opts->async) {
-			dev->be.async = g_xnvme_be_posix_async_emu;
+			dev->be.async = g_xnvme_be_cbi_async_emu;
 		}
 	} else {
 		XNVME_DEBUG("non-nvme disks are currently unsupported.");

@@ -14,6 +14,27 @@ const char *xnvme_libconf[] = {
 #ifdef XNVME_DEBUG_ENABLED
 	"conf: XNVME_DEBUG_ENABLED",
 #endif
+#ifdef XNVME_BE_CBI_ADMIN_SHIM_ENABLED
+	"conf: XNVME_BE_CBI_ADMIN_SHIM_ENABLED",
+#endif
+#ifdef XNVME_BE_CBI_ASYNC_EMU_ENABLED
+	"conf: XNVME_BE_CBI_ASYNC_EMU_ENABLED",
+#endif
+#ifdef XNVME_BE_CBI_ASYNC_NIL_ENABLED
+	"conf: XNVME_BE_CBI_ASYNC_NIL_ENABLED",
+#endif
+#ifdef XNVME_BE_CBI_ASYNC_POSIX_ENABLED
+	"conf: XNVME_BE_CBI_ASYNC_POSIX_ENABLED",
+#endif
+#ifdef XNVME_BE_CBI_ASYNC_THRPOOL_ENABLED
+	"conf: XNVME_BE_CBI_ASYNC_THRPOOL_ENABLED",
+#endif
+#ifdef XNVME_BE_CBI_MEM_POSIX_ENABLED
+	"conf: XNVME_BE_CBI_MEM_POSIX_ENABLED",
+#endif
+#ifdef XNVME_BE_CBI_SYNC_PSYNC_ENABLED
+	"conf: XNVME_BE_CBI_SYNC_PSYNC_ENABLED",
+#endif
 #ifdef XNVME_BE_RAMDISK_ENABLED
 	"conf: XNVME_BE_RAMDISK_ENABLED",
 #endif
@@ -50,9 +71,6 @@ const char *xnvme_libconf[] = {
 #ifdef XNVME_BE_FBSD_ENABLED
 	"conf: XNVME_BE_FBSD_ENABLED",
 #endif
-#ifdef XNVME_BE_POSIX_ENABLED
-	"conf: XNVME_BE_POSIX_ENABLED",
-#endif
 #ifdef XNVME_BE_SPDK_ENABLED
 	"conf: XNVME_BE_SPDK_ENABLED",
 #endif
@@ -70,12 +88,6 @@ const char *xnvme_libconf[] = {
 #endif
 #ifdef XNVME_BE_ASYNC_ENABLED
 	"conf: XNVME_BE_ASYNC_ENABLED",
-#endif
-#ifdef XNVME_BE_ASYNC_EMU_ENABLED
-	"conf: XNVME_BE_ASYNC_EMU_ENABLED",
-#endif
-#ifdef XNVME_BE_ASYNC_THRPOOL_ENABLED
-	"conf: XNVME_BE_ASYNC_THRPOOL_ENABLED",
 #endif
 	0, ///< For array-termination
 };

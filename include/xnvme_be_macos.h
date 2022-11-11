@@ -7,8 +7,9 @@
 
 /**
  * Internal representation of XNVME_BE_MACOS state
+ *
+ * NOTE: When changing this struct, ensure compatibility with 'struct xnvme_be_cbi_state'
  */
-
 struct xnvme_be_macos_state {
 	int fd;
 	io_object_t ioservice_device;
