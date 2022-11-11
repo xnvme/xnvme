@@ -5,16 +5,16 @@
 #endif
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_POSIX_ENABLED
+#ifdef XNVME_BE_CBI_ADMIN_SHIM_ENABLED
 #include <errno.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <libxnvme_spec_fs.h>
-#include <xnvme_be_posix.h>
+#include <xnvme_be_cbi.h>
 #include <xnvme_dev.h>
 
 static int
-_idfy_ctrlr_iocs_fs(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
+idfy_ctrlr_iocs_fs(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 {
 	struct xnvme_spec_fs_idfy_ctrlr *ctrlr = dbuf;
 
@@ -33,9 +33,9 @@ _idfy_ctrlr_iocs_fs(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 }
 
 static int
-_idfy_ns_iocs_fs(struct xnvme_dev *dev, void *dbuf)
+idfy_ns_iocs_fs(struct xnvme_dev *dev, void *dbuf)
 {
-	struct xnvme_be_posix_state *state = (void *)dev->be.state;
+	struct xnvme_be_cbi_state *state = (void *)dev->be.state;
 	struct xnvme_spec_fs_idfy_ns *ns = dbuf;
 	struct stat stat = {0};
 	int err;
@@ -57,7 +57,7 @@ _idfy_ns_iocs_fs(struct xnvme_dev *dev, void *dbuf)
 }
 
 static int
-_idfy_ctrlr(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
+idfy_ctrlr(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 {
 	struct xnvme_spec_idfy_ctrlr *ctrlr = dbuf;
 
@@ -67,9 +67,9 @@ _idfy_ctrlr(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 }
 
 static int
-_idfy_ns(struct xnvme_dev *dev, void *dbuf)
+idfy_ns(struct xnvme_dev *dev, void *dbuf)
 {
-	struct xnvme_be_posix_state *state = (void *)dev->be.state;
+	struct xnvme_be_cbi_state *state = (void *)dev->be.state;
 	struct xnvme_spec_idfy_ns *ns = dbuf;
 	struct stat stat = {0};
 	int err;
@@ -95,19 +95,19 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 }
 
 static int
-_idfy(struct xnvme_cmd_ctx *ctx, void *dbuf)
+idfy(struct xnvme_cmd_ctx *ctx, void *dbuf)
 {
 	switch (ctx->cmd.idfy.cns) {
 	case XNVME_SPEC_IDFY_NS:
-		return _idfy_ns(ctx->dev, dbuf);
+		return idfy_ns(ctx->dev, dbuf);
 
 	case XNVME_SPEC_IDFY_CTRLR:
-		return _idfy_ctrlr(ctx->dev, dbuf);
+		return idfy_ctrlr(ctx->dev, dbuf);
 
 	case XNVME_SPEC_IDFY_NS_IOCS:
 		switch (ctx->cmd.idfy.csi) {
 		case XNVME_SPEC_CSI_FS:
-			return _idfy_ns_iocs_fs(ctx->dev, dbuf);
+			return idfy_ns_iocs_fs(ctx->dev, dbuf);
 
 		default:
 			break;
@@ -117,7 +117,7 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf)
 	case XNVME_SPEC_IDFY_CTRLR_IOCS:
 		switch (ctx->cmd.idfy.csi) {
 		case XNVME_SPEC_CSI_FS:
-			return _idfy_ctrlr_iocs_fs(ctx->dev, dbuf);
+			return idfy_ctrlr_iocs_fs(ctx->dev, dbuf);
 
 		default:
 			break;
@@ -135,7 +135,7 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf)
 }
 
 static int
-_gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
+gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 {
 	struct xnvme_spec_feat feat = {0};
 
@@ -154,18 +154,17 @@ _gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 	return 0;
 }
 
-int
-_xnvme_be_posix_admin_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf,
-				size_t XNVME_UNUSED(dbuf_nbytes), void *XNVME_UNUSED(mbuf),
-				size_t XNVME_UNUSED(mbuf_nbytes))
+static int
+shim_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t XNVME_UNUSED(dbuf_nbytes),
+	       void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	///< NOTE: opcode-dispatch (admin)
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_ADM_OPC_IDFY:
-		return _idfy(ctx, dbuf);
+		return idfy(ctx, dbuf);
 
 	case XNVME_SPEC_ADM_OPC_GFEAT:
-		return _gfeat(ctx, dbuf);
+		return gfeat(ctx, dbuf);
 
 	case XNVME_SPEC_ADM_OPC_LOG:
 		XNVME_DEBUG("FAILED: not implemented yet.");
@@ -178,10 +177,10 @@ _xnvme_be_posix_admin_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf,
 }
 #endif
 
-struct xnvme_be_admin g_xnvme_be_posix_admin_shim = {
+struct xnvme_be_admin g_xnvme_be_cbi_admin_shim = {
 	.id = "file_as_ns",
-#ifdef XNVME_BE_POSIX_ENABLED
-	.cmd_admin = _xnvme_be_posix_admin_cmd_admin,
+#ifdef XNVME_BE_CBI_ADMIN_SHIM_ENABLED
+	.cmd_admin = shim_cmd_admin,
 #else
 	.cmd_admin = xnvme_be_nosys_sync_cmd_admin,
 #endif

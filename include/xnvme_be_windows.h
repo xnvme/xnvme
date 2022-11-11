@@ -7,6 +7,7 @@
 #ifndef __INTERNAL_XNVME_BE_WINDOWS_H
 #define __INTERNAL_XNVME_BE_WINDOWS_H
 #include <xnvme_dev.h>
+#include <xnvme_be_cbi.h>
 
 /**
  * Internal representation of options for Windows backends
@@ -59,8 +60,8 @@ extern struct xnvme_be_sync g_xnvme_be_windows_sync_nvme;
 /**
  * Implementations of the asynchronous command interface
  */
-extern struct xnvme_be_async g_xnvme_be_posix_async_emu;
-extern struct xnvme_be_async g_xnvme_be_posix_async_thrpool;
+extern struct xnvme_be_async g_xnvme_be_cbi_async_emu;
+extern struct xnvme_be_async g_xnvme_be_cbi_async_thrpool;
 extern struct xnvme_be_async g_xnvme_be_windows_async_iocp;
 extern struct xnvme_be_async g_xnvme_be_windows_async_iocp_th;
 extern struct xnvme_be_async g_xnvme_be_windows_async_ioring;

@@ -5,48 +5,47 @@
 #endif
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_POSIX_ENABLED
+#ifdef XNVME_BE_CBI_ASYNC_POSIX_ENABLED
 #include <inttypes.h>
 #include <errno.h>
 #include <aio.h>
 #include <libxnvme_spec_fs.h>
 #include <xnvme_queue.h>
 #include <xnvme_dev.h>
-#include <xnvme_be_posix.h>
+#include <xnvme_be_cbi.h>
 
-struct xnvme_queue_posix {
+struct posix_queue {
 	struct xnvme_queue_base base;
 
-	TAILQ_HEAD(, xnvme_posix_aio_request) reqs_ready;
-	TAILQ_HEAD(, xnvme_posix_aio_request) reqs_outstanding;
-	struct xnvme_posix_aio_request *reqs_storage;
+	TAILQ_HEAD(, posix_request) reqs_ready;
+	TAILQ_HEAD(, posix_request) reqs_outstanding;
+	struct posix_request *reqs_storage;
 
 	uint8_t rsvd[188];
 };
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_posix) == XNVME_BE_QUEUE_STATE_NBYTES,
-		    "Incorrect size")
+XNVME_STATIC_ASSERT(sizeof(struct posix_queue) == XNVME_BE_QUEUE_STATE_NBYTES, "Incorrect size")
 
-struct xnvme_posix_aio_request {
+struct posix_request {
 	struct xnvme_cmd_ctx *ctx;
 	struct aiocb aiocb;
-	TAILQ_ENTRY(xnvme_posix_aio_request) link;
+	TAILQ_ENTRY(posix_request) link;
 };
 
-int
-_posix_async_aio_term(struct xnvme_queue *q)
+static int
+posix_term(struct xnvme_queue *q)
 {
-	struct xnvme_queue_posix *queue = (void *)q;
+	struct posix_queue *queue = (void *)q;
 
 	free(queue->reqs_storage);
 
 	return 0;
 }
 
-int
-_posix_async_aio_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
+static int
+posix_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 {
-	struct xnvme_queue_posix *queue = (void *)q;
-	size_t queue_nbytes = queue->base.capacity * sizeof(struct xnvme_posix_aio_request);
+	struct posix_queue *queue = (void *)q;
+	size_t queue_nbytes = queue->base.capacity * sizeof(struct posix_request);
 
 	queue->reqs_storage = calloc(1, queue_nbytes);
 	if (!queue->reqs_storage) {
@@ -63,11 +62,11 @@ _posix_async_aio_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 	return 0;
 }
 
-int
-_posix_async_aio_poke(struct xnvme_queue *q, uint32_t max)
+static int
+posix_poke(struct xnvme_queue *q, uint32_t max)
 {
-	struct xnvme_queue_posix *queue = (void *)q;
-	struct xnvme_posix_aio_request *req;
+	struct posix_queue *queue = (void *)q;
+	struct posix_request *req;
 	struct xnvme_cmd_ctx *ctx;
 	size_t completed = 0;
 
@@ -128,15 +127,15 @@ _posix_async_aio_poke(struct xnvme_queue *q, uint32_t max)
 	return completed;
 }
 
-int
-_posix_async_aio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
-			size_t mbuf_nbytes)
+static int
+posix_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+	     size_t mbuf_nbytes)
 {
-	struct xnvme_queue_posix *queue = (void *)ctx->async.queue;
+	struct posix_queue *queue = (void *)ctx->async.queue;
 
-	struct xnvme_be_posix_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_cbi_state *state = (void *)queue->base.dev->be.state;
 	const uint64_t ssw = queue->base.dev->geo.ssw;
-	struct xnvme_posix_aio_request *req;
+	struct posix_request *req;
 	struct aiocb *aiocb;
 	int err;
 
@@ -202,15 +201,15 @@ _posix_async_aio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyte
 }
 #endif
 
-struct xnvme_be_async g_xnvme_be_posix_async_aio = {
+struct xnvme_be_async g_xnvme_be_cbi_async_posix = {
 	.id = "posix",
-#ifdef XNVME_BE_POSIX_ENABLED
-	.cmd_io = _posix_async_aio_cmd_io,
+#ifdef XNVME_BE_CBI_ASYNC_POSIX_ENABLED
+	.cmd_io = posix_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
-	.poke = _posix_async_aio_poke,
+	.poke = posix_poke,
 	.wait = xnvme_be_nosys_queue_wait,
-	.init = _posix_async_aio_init,
-	.term = _posix_async_aio_term,
+	.init = posix_init,
+	.term = posix_term,
 #else
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,

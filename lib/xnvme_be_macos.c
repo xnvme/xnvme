@@ -4,7 +4,7 @@
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_MACOS_ENABLED
-#include <xnvme_be_posix.h>
+#include <xnvme_be_cbi.h>
 #include <xnvme_be_macos.h>
 
 static struct xnvme_be_mixin g_xnvme_be_mixin_macos[] = {
@@ -12,7 +12,7 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_macos[] = {
 		.mtype = XNVME_BE_MEM,
 		.name = "posix",
 		.descr = "Use C11 lib malloc/free with sysconf for alignment",
-		.mem = &g_xnvme_be_posix_mem,
+		.mem = &g_xnvme_be_cbi_mem_posix,
 		.check_support = xnvme_be_supported,
 	},
 
@@ -20,14 +20,14 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_macos[] = {
 		.mtype = XNVME_BE_ASYNC,
 		.name = "thrpool",
 		.descr = "Use thread pool for Asynchronous I/O",
-		.async = &g_xnvme_be_posix_async_thrpool,
+		.async = &g_xnvme_be_cbi_async_thrpool,
 		.check_support = xnvme_be_supported,
 	},
 	{
 		.mtype = XNVME_BE_ASYNC,
 		.name = "posix",
 		.descr = "Use POSIX aio for Asynchronous I/O",
-		.async = &g_xnvme_be_posix_async_aio,
+		.async = &g_xnvme_be_cbi_async_posix,
 		.check_support = xnvme_be_supported,
 	},
 

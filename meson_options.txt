@@ -6,8 +6,13 @@ option('with-fio', type: 'boolean', value: true)
 
 option('be_ramdisk', type: 'boolean', value: true)
 
-option('async_emu', type: 'boolean', value: true)
-option('async_thrpool', type: 'boolean', value: true)
+option('cbi_admin_shim', type: 'boolean', value: true)
+option('cbi_async_emu', type: 'boolean', value: true)
+option('cbi_async_nil', type: 'boolean', value: true)
+option('cbi_async_posix', type: 'boolean', value: true)
+option('cbi_async_thrpool', type: 'boolean', value: true)
+option('cbi_mem_posix', type: 'boolean', value: true)
+option('cbi_sync_psync', type: 'boolean', value: true)
 
 option('examples', type: 'boolean', value: true)
 option('tests', type: 'boolean', value: true)

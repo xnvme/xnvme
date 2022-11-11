@@ -1,13 +1,13 @@
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_ASYNC_THRPOOL_ENABLED
+#ifdef XNVME_BE_CBI_ASYNC_THRPOOL_ENABLED
 #include <errno.h>
 #include <xnvme_queue.h>
 #include <xnvme_dev.h>
 #include <pthread.h>
 
 // Environment variable used to configure the number of threads in thrpool
-static const char *g_nthreads_env = "XNVME_BE_THRPOOL_NTHREADS";
+static const char *g_nthreads_env = "XNVME_BE_CBI_ASYNC_THRPOOL_NTHREADS";
 static const int g_nthreads_def = 4;
 
 struct _thrpool_entry {
@@ -53,7 +53,7 @@ struct xnvme_queue_thrpool {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_thrpool) == XNVME_BE_QUEUE_STATE_NBYTES,
 		    "Incorrect size")
 
-int
+static int
 _thrpool_qp_term(struct _thrpool_qp *qp)
 {
 	// NOTE: assumes that no thread holds any of the locks
@@ -65,7 +65,7 @@ _thrpool_qp_term(struct _thrpool_qp *qp)
 	return 0;
 }
 
-int
+static int
 _thrpool_qp_alloc(struct _thrpool_qp **qp, uint32_t capacity)
 {
 	const size_t nbytes = sizeof(**qp) + capacity * sizeof(*(*qp)->elm);
@@ -107,7 +107,7 @@ _thrpool_qp_alloc(struct _thrpool_qp **qp, uint32_t capacity)
 	return 0;
 }
 
-int
+static int
 _thrpool_thread_loop(void *arg)
 {
 	struct xnvme_queue_thrpool *queue = arg;
@@ -172,8 +172,8 @@ _thrpool_thread_loop(void *arg)
 	return 0;
 }
 
-int
-_posix_async_thrpool_term(struct xnvme_queue *q)
+static int
+cbi_async_thrpool_term(struct xnvme_queue *q)
 {
 	struct xnvme_queue_thrpool *queue = (void *)q;
 	struct _thrpool_qp *qp = queue->qp;
@@ -216,8 +216,8 @@ _posix_async_thrpool_term(struct xnvme_queue *q)
 	return err;
 }
 
-int
-_posix_async_thrpool_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
+static int
+cbi_async_thrpool_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 {
 	struct xnvme_queue_thrpool *queue = (void *)q;
 	char *env;
@@ -263,12 +263,12 @@ _posix_async_thrpool_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 	return 0;
 
 failed:
-	_posix_async_thrpool_term(q);
+	cbi_async_thrpool_term(q);
 	return err;
 }
 
-int
-_posix_async_thrpool_poke(struct xnvme_queue *q, uint32_t max)
+static int
+cbi_async_thrpool_poke(struct xnvme_queue *q, uint32_t max)
 {
 	struct xnvme_queue_thrpool *queue = (void *)q;
 	struct _thrpool_qp *qp = queue->qp;
@@ -315,8 +315,8 @@ _posix_async_thrpool_poke(struct xnvme_queue *q, uint32_t max)
 }
 
 static inline int
-_posix_async_thrpool_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
-			    size_t mbuf_nbytes)
+cbi_async_thrpool_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			 size_t mbuf_nbytes)
 {
 	struct xnvme_queue_thrpool *queue = (void *)ctx->async.queue;
 	struct _thrpool_qp *qp = queue->qp;
@@ -364,9 +364,9 @@ _posix_async_thrpool_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 }
 
 static inline int
-_posix_async_thrpool_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-			     size_t dvec_nbytes, struct iovec *mvec, size_t mvec_cnt,
-			     size_t mvec_nbytes)
+cbi_async_thrpool_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+			  size_t dvec_nbytes, struct iovec *mvec, size_t mvec_cnt,
+			  size_t mvec_nbytes)
 {
 	struct xnvme_queue_thrpool *queue = (void *)ctx->async.queue;
 	struct _thrpool_qp *qp = queue->qp;
@@ -413,17 +413,17 @@ _posix_async_thrpool_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size
 	return 0;
 }
 
-#endif // XNVME_BE_POSIX_ENABLED
+#endif // XNVME_BE_CBI_ASYNC_THRPOOL_ENABLED
 
-struct xnvme_be_async g_xnvme_be_posix_async_thrpool = {
+struct xnvme_be_async g_xnvme_be_cbi_async_thrpool = {
 	.id = "thrpool",
-#ifdef XNVME_BE_ASYNC_THRPOOL_ENABLED
-	.cmd_io = _posix_async_thrpool_cmd_io,
-	.cmd_iov = _posix_async_thrpool_cmd_iov,
-	.poke = _posix_async_thrpool_poke,
+#ifdef XNVME_BE_CBI_ASYNC_THRPOOL_ENABLED
+	.cmd_io = cbi_async_thrpool_cmd_io,
+	.cmd_iov = cbi_async_thrpool_cmd_iov,
+	.poke = cbi_async_thrpool_poke,
 	.wait = xnvme_be_nosys_queue_wait,
-	.init = _posix_async_thrpool_init,
-	.term = _posix_async_thrpool_term,
+	.init = cbi_async_thrpool_init,
+	.term = cbi_async_thrpool_term,
 #else
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
