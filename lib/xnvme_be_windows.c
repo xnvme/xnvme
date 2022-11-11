@@ -7,6 +7,7 @@
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_WINDOWS_ENABLED
+#include <xnvme_be_cbi.h>
 #include <windows.h>
 #include <xnvme_be_windows.h>
 #include <libxnvme_file.h>
@@ -111,7 +112,7 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_windows[] = {
 		.mtype = XNVME_BE_ASYNC,
 		.name = "emu",
 		.descr = "Use emulated asynchronous I/O",
-		.async = &g_xnvme_be_posix_async_emu,
+		.async = &g_xnvme_be_cbi_async_emu,
 		.check_support = xnvme_be_supported,
 	},
 
@@ -119,7 +120,7 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_windows[] = {
 		.mtype = XNVME_BE_ASYNC,
 		.name = "thrpool",
 		.descr = "Use thread pool for Asynchronous I/O",
-		.async = &g_xnvme_be_posix_async_thrpool,
+		.async = &g_xnvme_be_cbi_async_thrpool,
 		.check_support = xnvme_be_supported,
 	},
 

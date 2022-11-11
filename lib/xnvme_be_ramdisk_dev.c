@@ -15,7 +15,7 @@
 #include <libxnvme_spec_fs.h>
 #include <xnvme_be_ramdisk.h>
 #include <xnvme_dev.h>
-#include <xnvme_be_posix.h>
+#include <xnvme_be_cbi.h>
 
 void
 xnvme_be_ramdisk_dev_close(struct xnvme_dev *dev)
@@ -75,7 +75,7 @@ xnvme_be_ramdisk_dev_open(struct xnvme_dev *dev)
 		dev->be.sync = g_xnvme_be_ramdisk_sync;
 	}
 	if (!opts->async) {
-		dev->be.async = g_xnvme_be_posix_async_thrpool;
+		dev->be.async = g_xnvme_be_cbi_async_thrpool;
 	}
 
 	dev->ident.dtype = XNVME_DEV_TYPE_RAMDISK;

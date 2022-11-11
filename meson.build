@@ -63,6 +63,14 @@ conf_data.set('XNVME_VERSION_PATCH', project_version_patch)
 
 conf_data.set('XNVME_DEBUG_ENABLED', get_option('buildtype') == 'debug')
 
+conf_data.set('XNVME_BE_CBI_ADMIN_SHIM_ENABLED', get_option('cbi_admin_shim'))
+conf_data.set('XNVME_BE_CBI_ASYNC_EMU_ENABLED', get_option('cbi_async_emu'))
+conf_data.set('XNVME_BE_CBI_ASYNC_NIL_ENABLED', get_option('cbi_async_nil'))
+conf_data.set('XNVME_BE_CBI_ASYNC_POSIX_ENABLED', get_option('cbi_async_posix') and (is_linux or is_freebsd or is_darwin))
+conf_data.set('XNVME_BE_CBI_ASYNC_THRPOOL_ENABLED', get_option('cbi_async_thrpool'))
+conf_data.set('XNVME_BE_CBI_MEM_POSIX_ENABLED', get_option('cbi_mem_posix') and (is_linux or is_freebsd or is_darwin))
+conf_data.set('XNVME_BE_CBI_SYNC_PSYNC_ENABLED', get_option('cbi_sync_psync') and (is_linux or is_freebsd or is_darwin))
+
 conf_data.set('XNVME_BE_RAMDISK_ENABLED', get_option('be_ramdisk'))
 
 conf_data.set('XNVME_BE_WINDOWS_ENABLED', is_windows)
@@ -81,7 +89,6 @@ conf_data.set('XNVME_BE_LINUX_VFIO_ENABLED', is_linux and get_option('with-libvf
 conf_data.set('XNVME_BE_MACOS_ENABLED', is_darwin)
 
 conf_data.set('XNVME_BE_FBSD_ENABLED', is_freebsd)
-conf_data.set('XNVME_BE_POSIX_ENABLED', is_linux or is_freebsd or is_darwin)
 
 conf_data.set('XNVME_BE_SPDK_ENABLED', (is_linux or is_freebsd) and get_option('with-spdk'))
 conf_data.set('XNVME_BE_SPDK_TRANSPORT_PCIE_ENABLED', (is_linux or is_freebsd) and get_option('with-spdk'))
@@ -90,8 +97,6 @@ conf_data.set('XNVME_BE_SPDK_TRANSPORT_RDMA_ENABLED', (is_linux or is_freebsd) a
 conf_data.set('XNVME_BE_SPDK_TRANSPORT_FC_ENABLED', (is_linux or is_freebsd) and get_option('with-spdk'))
 
 conf_data.set('XNVME_BE_ASYNC_ENABLED', true)
-conf_data.set('XNVME_BE_ASYNC_EMU_ENABLED', get_option('async_emu'))
-conf_data.set('XNVME_BE_ASYNC_THRPOOL_ENABLED', get_option('async_thrpool'))
 
 conf = configure_file(
   configuration : conf_data,
@@ -155,10 +160,7 @@ setupapi_dep = cc.find_library(
   required: conf_data.get('XNVME_BE_WINDOWS_ENABLED'),
 )
 
-rt_dep = cc.find_library(
-  'rt',
-  required: is_darwin ? false : conf_data.get('XNVME_BE_POSIX_ENABLED')
-)
+rt_dep = cc.find_library('rt', required: is_darwin ? false : (is_linux or is_freebsd))
 if not cc.has_function('clock_gettime', prefix: '#include <time.h>', dependencies: rt_dep)
   error('clock_gettime not found')
 endif

@@ -5,26 +5,25 @@
 #endif
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_POSIX_ENABLED
+#ifdef XNVME_BE_CBI_ASYNC_NIL_ENABLED
 #include <errno.h>
 #include <xnvme_queue.h>
 #include <xnvme_dev.h>
 #include <libxnvme.h>
 
-#define XNVME_BE_POSIX_ASYNC_NIL_CTX_DEPTH_MAX 29
+#define XNVME_BE_CBI_ASYNC_NIL_CTX_DEPTH_MAX 29
 
-struct xnvme_queue_nil {
+struct nil_queue {
 	struct xnvme_queue_base base;
 
-	struct xnvme_cmd_ctx *ctx[XNVME_BE_POSIX_ASYNC_NIL_CTX_DEPTH_MAX];
+	struct xnvme_cmd_ctx *ctx[XNVME_BE_CBI_ASYNC_NIL_CTX_DEPTH_MAX];
 };
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_nil) == XNVME_BE_QUEUE_STATE_NBYTES,
-		    "Incorrect size")
+XNVME_STATIC_ASSERT(sizeof(struct nil_queue) == XNVME_BE_QUEUE_STATE_NBYTES, "Incorrect size")
 
-int
-_posix_nil_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
+static int
+nil_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
 {
-	if (queue->base.capacity > XNVME_BE_POSIX_ASYNC_NIL_CTX_DEPTH_MAX) {
+	if (queue->base.capacity > XNVME_BE_CBI_ASYNC_NIL_CTX_DEPTH_MAX) {
 		XNVME_DEBUG("FAILED: requested more than async-nil supports");
 		return -EINVAL;
 	}
@@ -32,16 +31,16 @@ _posix_nil_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
 	return 0;
 }
 
-int
-_posix_nil_term(struct xnvme_queue *XNVME_UNUSED(queue))
+static int
+nil_term(struct xnvme_queue *XNVME_UNUSED(queue))
 {
 	return 0;
 }
 
-int
-_posix_nil_poke(struct xnvme_queue *q, uint32_t max)
+static int
+nil_poke(struct xnvme_queue *q, uint32_t max)
 {
-	struct xnvme_queue_nil *queue = (void *)q;
+	struct nil_queue *queue = (void *)q;
 	unsigned completed = 0;
 
 	max = max ? max : queue->base.outstanding;
@@ -72,11 +71,10 @@ _posix_nil_poke(struct xnvme_queue *q, uint32_t max)
 }
 
 static inline int
-_posix_nil_cmd_io(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf),
-		  size_t XNVME_UNUSED(dbuf_nbytes), void *XNVME_UNUSED(mbuf),
-		  size_t XNVME_UNUSED(mbuf_nbytes))
+nil_cmd_io(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf), size_t XNVME_UNUSED(dbuf_nbytes),
+	   void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
-	struct xnvme_queue_nil *queue = (void *)ctx->async.queue;
+	struct nil_queue *queue = (void *)ctx->async.queue;
 
 	queue->ctx[queue->base.outstanding++] = ctx;
 
@@ -84,15 +82,15 @@ _posix_nil_cmd_io(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf),
 }
 #endif
 
-struct xnvme_be_async g_xnvme_be_posix_async_nil = {
+struct xnvme_be_async g_xnvme_be_cbi_async_nil = {
 	.id = "nil",
-#ifdef XNVME_BE_POSIX_ENABLED
-	.cmd_io = _posix_nil_cmd_io,
+#ifdef XNVME_BE_CBI_ASYNC_NIL_ENABLED
+	.cmd_io = nil_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
-	.poke = _posix_nil_poke,
+	.poke = nil_poke,
 	.wait = xnvme_be_nosys_queue_wait,
-	.init = _posix_nil_init,
-	.term = _posix_nil_term,
+	.init = nil_init,
+	.term = nil_term,
 #else
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
