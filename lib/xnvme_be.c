@@ -87,12 +87,12 @@ xnvme_lba_fpr(FILE *stream, uint64_t lba, enum xnvme_pr opts)
 
 	switch (opts) {
 	case XNVME_PR_TERSE:
-		wrtn += fprintf(stream, "0x%016lx", lba);
+		wrtn += fprintf(stream, "0x%016" PRIx64, lba);
 		break;
 
 	case XNVME_PR_DEF:
 	case XNVME_PR_YAML:
-		wrtn += fprintf(stream, "lba: 0x%016lx\n", lba);
+		wrtn += fprintf(stream, "lba: 0x%016" PRIx64 "\n", lba);
 		break;
 	}
 

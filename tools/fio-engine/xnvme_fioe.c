@@ -865,7 +865,8 @@ static int xnvme_fioe_report_zones(struct thread_data *td, struct fio_file *f, u
 			break;
 
 		default:
-			log_err("ioeng->report_zones(%s): invalid type for zone at offset(%zu)\n",
+			log_err("ioeng->report_zones(%s): invalid type for zone at offset(%" PRIx64
+				")\n",
 				f->file_name, zbdz[idx].start);
 			err = -EIO;
 			goto exit;
