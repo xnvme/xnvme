@@ -54,7 +54,7 @@ jobs:
 
     steps:
     - name: Grab source
-      uses: actions/checkout@v3.0.1
+      uses: actions/checkout@v3.1.0
     - name: Add repos to git-config safe.directory
       run: |
         git config --global --add safe.directory $(pwd)
@@ -70,7 +70,7 @@ jobs:
         make clean gen-src-archive
 
     - name: Upload source archive
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3.1.1
       with:
         name: archive-src
         path: builddir/meson-dist/*.tar.gz
@@ -85,7 +85,7 @@ jobs:
 
     steps:
     - name: Grab source
-      uses: actions/checkout@v3.0.1
+      uses: actions/checkout@v3.1.0
     - name: Add repos to git-config safe.directory
       run: |
         git config --global --add safe.directory $(pwd)
@@ -103,7 +103,7 @@ jobs:
 
     steps:
     - name: Retrieve the source-archive
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3.0.1
       with:
         name: archive-src
 
@@ -137,7 +137,7 @@ jobs:
 
     steps:
     - name: Retrieve the source-archive
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v3.0.1
       with:
         name: archive-src
     - name: Extract the full-source-archive
@@ -155,7 +155,7 @@ jobs:
       run: scan-build --exclude subprojects -o /tmp/scan-build-report make
 
     - name: Upload scan-build report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3.1.1
       if: always()
       with:
         name: scan-build-report
@@ -174,7 +174,7 @@ jobs:
 
     steps:
     - name: Retrieve the source-archive
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v3.0.1
       with:
         name: archive-src
     - name: Extract the full-source-archive
@@ -217,7 +217,7 @@ jobs:
 
     steps:
     - name: Retrieve the source-archive
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v3.0.1
       with:
         name: archive-src
     - name: Extract the full-source-archive
@@ -294,7 +294,7 @@ jobs:
 
     steps:
     - name: Retrieve the source-archive
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v3.0.1
       with:
         name: archive-src
 
@@ -333,7 +333,7 @@ jobs:
 
     steps:
     - name: Retrieve the source-archive
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v3.0.1
       with:
         name: archive-src
     - name: Extract the full-source-archive
@@ -369,7 +369,7 @@ jobs:
         find python/ -name *tar.gz
 
     - name: Python sdist-packages, upload(xnvme-core, xnvme-cy-header, xnvme-cy-bindings)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3.1.1
       with:
         name: python-xnvme-pkg
         path: |
@@ -422,7 +422,7 @@ jobs:
       run: zypper --non-interactive install -y tar gzip
 
     - name: Retrieve the source-archive
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v3.0.1
       with:
         name: archive-src
     - name: Extract the full-source-archive
@@ -472,7 +472,7 @@ jobs:
         python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
 
     - name: Retrieve the xNVMe Python sdist-packages
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v3.0.1
       with:
         name: python-xnvme-pkg
 
@@ -554,7 +554,7 @@ jobs:
         --output "test-${{ matrix.container.os }}-${{ matrix.container.ver }}"
 
     - name: CIJOE, upload test-ramdisk-report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3.1.1
       if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
         'buster') || contains(matrix.container.ver, 'bionic') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver,
         '15.4') || contains(matrix.container.ver, '15.3') || contains(matrix.container.os, 'gentoo')))
@@ -580,7 +580,7 @@ jobs:
 
     steps:
     - name: Retrieve the source-archive
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v3.0.1
       with:
         name: archive-src
     - name: Extract the full-source-archive
@@ -628,7 +628,7 @@ jobs:
         python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
 
     - name: Retrieve the xNVMe Python sdist-packages
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v3.0.1
       with:
         name: python-xnvme-pkg
 
@@ -678,7 +678,7 @@ jobs:
 
     steps:
     - name: Retrieve the source-archive
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v3.0.1
       with:
         name: archive-src
     - name: Extract the full-source-archive
@@ -754,7 +754,7 @@ jobs:
         ls -lh
 
     - name: Container-prep, get the full-source-archive
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v3.0.1
       with:
         name: archive-src
     - name: Container-prep, extract the full-source-archive
@@ -762,7 +762,7 @@ jobs:
         tar xzf xnvme*.tar.gz --strip 1
 
     - name: Retrieve the xNVMe Python Packages (prebuilt sdist)
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v3.0.1
       with:
         name: python-xnvme-pkg
 
@@ -813,7 +813,7 @@ jobs:
       run: find toolbox/workflow/ -name "*.output" | xargs cat
 
     - name: CIJOE, upload workflow-report-provision
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3.1.1
       if: always()
       with:
         name: provision-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
@@ -821,7 +821,7 @@ jobs:
         if-no-files-found: error
 
     - name: CIJOE, upload workflow-report-test
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3.1.1
       if: always()
       with:
         name: test-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
@@ -857,7 +857,7 @@ jobs:
         ls -lh
 
     - name: Container-prep, get the full-source-archive
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v3.0.1
       with:
         name: archive-src
     - name: Container-prep, extract the full-source-archive
@@ -865,7 +865,7 @@ jobs:
         tar xzf xnvme*.tar.gz --strip 1
 
     - name: Retrieve the xNVMe Python Packages (prebuilt sdist)
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v3.0.1
       with:
         name: python-xnvme-pkg
 
@@ -900,7 +900,7 @@ jobs:
         --output "docgen-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
     - name: Checkout site
-      uses: actions/checkout@v3.0.1
+      uses: actions/checkout@v3.1.0
       with:
         repository: "xnvme/xnvme.github.io"
         token: ${{ secrets.DOCS_PAT }}
@@ -925,7 +925,7 @@ jobs:
         git push
 
     - name: CIJOE, upload report-docgen
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3.1.1
       if: always()
       with:
         name: docgen-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
