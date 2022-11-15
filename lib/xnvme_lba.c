@@ -27,10 +27,10 @@ xnvme_lba_range_fpr(FILE *stream, struct xnvme_lba_range *range, int opts)
 
 	wrtn += fprintf(stream, "\n");
 
-	wrtn += fprintf(stream, "  slba: 0x%016lx\n", range->slba);
-	wrtn += fprintf(stream, "  elba: 0x%016lx\n", range->elba);
+	wrtn += fprintf(stream, "  slba: 0x%016" PRIx64 "\n", range->slba);
+	wrtn += fprintf(stream, "  elba: 0x%016" PRIx64 "\n", range->elba);
 	wrtn += fprintf(stream, "  naddrs: %u\n", range->naddrs);
-	wrtn += fprintf(stream, "  nbytes: %zu\n", range->nbytes);
+	wrtn += fprintf(stream, "  nbytes: %" PRIu64 "\n", range->nbytes);
 	wrtn += fprintf(stream, "  attr: { is_zones: %d, is_valid: %d}\n", range->attr.is_zoned,
 			range->attr.is_valid);
 
@@ -83,12 +83,12 @@ xnvme_lba_range_from_offset_nbytes(struct xnvme_dev *dev, uint64_t offset, uint6
 	struct xnvme_lba_range rng = {0};
 
 	if (offset % geo->nbytes) {
-		XNVME_DEBUG("FAILED: offset: %zu, does not align to lba-width: %u", offset,
+		XNVME_DEBUG("FAILED: offset: %" PRIu64 ", does not align to lba-width: %u", offset,
 			    geo->nbytes);
 		return rng;
 	}
 	if (nbytes % geo->nbytes) {
-		XNVME_DEBUG("FAILED: nbytes: %zu, does not align to lba-width: %u", nbytes,
+		XNVME_DEBUG("FAILED: nbytes: %" PRIu64 ", does not align to lba-width: %u", nbytes,
 			    geo->nbytes);
 		return rng;
 	}

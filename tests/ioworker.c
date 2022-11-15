@@ -96,11 +96,11 @@ iowork_pp(struct iowork *work)
 	printf("  io.naddr: %zu\n", work->io.naddr);
 	printf("  vectored: %d\n", work->vectored);
 	printf("  nworkers: %d\n", work->nworkers);
-	printf("  range.nbytes: %zu\n", work->range.nbytes);
-	printf("  range.naddr: %zu\n", work->range.naddr);
+	printf("  range.nbytes: %" PRIu64 "\n", work->range.nbytes);
+	printf("  range.naddr: %" PRIu64 "\n", work->range.naddr);
 	printf("  range.slba: %u\n", work->range.slba);
 	printf("  range.elba: %u\n", work->range.elba);
-	printf("  nio: %zu\n", work->nio);
+	printf("  nio: %" PRIu64 "\n", work->nio);
 
 	return 0;
 }
@@ -387,8 +387,8 @@ final(struct iowork work, int err)
 	iowork_teardown(&work);
 
 	if (err || (work.stats.nerrors) || diff) {
-		xnvmec_pinf("ERR: {err: %d, nerrs: %zu, diff: %zu}", err, work.stats.nerrors,
-			    diff);
+		xnvmec_pinf("ERR: {err: %d, nerrs: %" PRIu64 ", diff: %" PRIu64 "}", err,
+			    work.stats.nerrors, diff);
 		return EIO;
 	}
 

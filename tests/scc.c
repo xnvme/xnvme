@@ -227,7 +227,7 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 	xnvme_spec_nvm_scopy_source_range_pr(range, nr, XNVME_PR_DEF);
 
 	xnvmec_pinf("To:");
-	printf("sdlba: 0x%016lx\n", sdlba);
+	printf("sdlba: 0x%016" PRIx64 "\n", sdlba);
 
 	if (cli->args.clear) {
 		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
