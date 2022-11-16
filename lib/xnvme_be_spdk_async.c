@@ -49,11 +49,18 @@ int
 xnvme_be_spdk_queue_term(struct xnvme_queue *q)
 {
 	struct xnvme_queue_spdk *queue = (void *)q;
+	spdk_nvme_qp_failure_reason reason;
 	int err;
 
 	if (!queue->qpair) {
 		XNVME_DEBUG("FAILED: !queue->qpair");
 		return -EINVAL;
+	}
+	reason = spdk_nvme_qpair_get_failure_reason(queue->qpair);
+	if (reason) {
+		// the qpair has already disconnected
+		XNVME_DEBUG("WARNING: qpair in failed state, reason: %d", reason);
+		return 0;
 	}
 
 	err = spdk_nvme_ctrlr_free_io_qpair(queue->qpair);
