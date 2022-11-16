@@ -1,0 +1,27 @@
+---
+identify_cns:
+  symbol: 'idfy'
+  brief: "Controller or Namespace Structure (CNS)"
+  full: "This field specifies the information to be returned to the host."
+  ltype: enum
+
+  members:
+  - {ltype: pod, val: 0x0, symbol: "NS", brief: "Identify namespace", full: null}
+  - {ltype: pod, val: 0x1, symbol: "CTRLR", brief: "Identify controller", full: null}
+  - {ltype: pod, val: 0x2, symbol: "NSLIST", brief: "Active Namespace ID list", full: null}
+  - {ltype: pod, val: 0x3, symbol: "NSDSCR", brief: "Namespace ident. descr. list for active ns", full: null}
+  - {ltype: pod, val: 0x4, symbol: "SETL", brief: "...", full: null}
+  - {ltype: pod, val: 0x5, symbol: "NS_IOCS", brief: "Identify namespace, command-set specific", full: null}
+  - {ltype: pod, val: 0x6, symbol: "CTRLR_IOCS", brief: "...", full: null}
+  - {ltype: pod, val: 0x7, symbol: "NSLIST_IOCS", brief: "...", full: null}
+  - {ltype: pod, val: 0x10, symbol: "NSLIST_ALLOC", brief: "...", full: null}
+  - {ltype: pod, val: 0x11, symbol: "NS_ALLOC", brief: "...", full: null}
+  - {ltype: pod, val: 0x12, symbol: "CTRLR_NS", brief: "...", full: null}
+  - {ltype: pod, val: 0x13, symbol: "CTRLR_SUB", brief: "...", full: null}
+  - {ltype: pod, val: 0x14, symbol: "CTRLR_PRI", brief: "...", full: null}
+  - {ltype: pod, val: 0x15, symbol: "CTRLR_SEC", brief: "...", full: null}
+  - {ltype: pod, val: 0x16, symbol: "NSGRAN", brief: "...", full: null}
+  - {ltype: pod, val: 0x17, symbol: "UUIDL", brief: "...", full: null}
+  - {ltype: pod, val: 0x1a, symbol: "NSLIST_ALLOC_IOCS", brief: "...", full: null}
+  - {ltype: pod, val: 0x1b, symbol: "NS_ALLOC_IOCS", brief: "...", full: null}
+  - {ltype: pod, val: 0x1c, symbol: "IOCS", brief: "...", full: null}

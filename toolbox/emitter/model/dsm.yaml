@@ -1,0 +1,16 @@
+---
+dsm_range:
+  symbol: ""
+  brief: ""
+  full: ""
+  ltype: layout
+
+  members:
+  - symbol: dsm_range
+    ltype: struct
+    brief: "brief..."
+    long: "..."
+    members:
+    - {ltype: pod, val: "uint32_t", symbol: cattr, brief: "Context attributes", long: null}
+    - {ltype: pod, val: "uint32_t", symbol: nlb, brief: "Length in logical blocks", long: null}
+    - {ltype: pod, val: "uint64_t", symbol: slba, brief: "Starting LBA", long: null}

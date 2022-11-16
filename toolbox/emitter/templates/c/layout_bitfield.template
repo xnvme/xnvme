@@ -1,0 +1,3 @@
+{%- for member in bitfield.members %}
+{{ bitfield.dtype }} {{ member.symbol }} : {{ member.width }}; ///< {{ member.brief }}
+{%- endfor %}

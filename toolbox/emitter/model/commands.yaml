@@ -1,0 +1,85 @@
+---
+commands:
+  symbol: "cmd_layout"
+  brief: "Fooo"
+  full: "bar"
+  ltype: layout
+
+  members:
+  - symbol: nvm_read
+    brief: "NVM Read Command"
+    full: "Full"
+    ltype: struct
+    members:
+    - symbol:
+      brief:
+      full:
+      ltype: bitfield
+      dtype: 'uint16_t'
+      members:
+      - {ltype: pod, val: '8', symbol: 'opcode', brief: "Command Opcde", full: null}
+      - {ltype: pod, val: '2', symbol: 'fuse', brief: "Fused Operation", full: null}
+      - {ltype: pod, val: '4', symbol: 'rsvd', brief: "Reserved", full: null}
+      - {ltype: pod, val: '2', symbol: 'psdt', brief: "Brief", full: null}
+    - {ltype: pod, val: 'uint16_t', symbol: "cid", brief: "Command Identifier", full: null}
+    - {ltype: pod, val: 'uint32_t', symbol: "nsid", brief: "Namespace Identifier", full: null}
+    - {ltype: pod, val: 'uint32_t', symbol: "cdw02", brief: "Command DWord 2", full: null}
+    - {ltype: pod, val: 'uint32_t', symbol: "cdw03", brief: "Command DWord 3", full: null}
+    - {ltype: pod, val: 'uint64_t', symbol: "mptr", brief: "Metadata pointer", full: null}
+    - symbol: dptr
+      ltype: union
+      brief:
+      full:
+      members:
+      - symbol:
+        brief:
+        full:
+        ltype: struct
+        members:
+        - {ltype: pod, val: 'uint64_t', symbol: "dptr1", brief: "Brief", full: null}
+        - {ltype: pod, val: 'uint64_t', symbol: "dptr2", brief: "Brief", full: null}
+    - {ltype: pod, val: 'uint32_t', symbol: "ndt", brief: "Brief", full: null}
+    - {ltype: pod, val: 'uint32_t', symbol: "ndm", brief: "Number of dwords", full: null}
+    - {ltype: pod, val: 'uint32_t', symbol: "cdw12", brief: "Command DWord 12", full: null}
+    - {ltype: pod, val: 'uint32_t', symbol: "cdw13", brief: "Command DWord 13", full: null}
+    - {ltype: pod, val: 'uint32_t', symbol: "cdw14", brief: "Command DWord 14", full: null}
+    - {ltype: pod, val: 'uint32_t', symbol: "cdw15", brief: "Command DWord 15", full: null}
+
+  - symbol: nvm_write
+    brief: "NVM Write Command"
+    full: "Full"
+    ltype: struct
+    members:
+    - symbol:
+      brief:
+      full:
+      ltype: bitfield
+      dtype: 'uint16_t'
+      members:
+      - {ltype: pod, val: '8', symbol: 'opcode', brief: "Command Opcde", full: null}
+      - {ltype: pod, val: '2', symbol: 'fuse', brief: "Fused Operation", full: null}
+      - {ltype: pod, val: '4', symbol: 'rsvd', brief: "Reserved", full: null}
+      - {ltype: pod, val: '2', symbol: 'psdt', brief: "Brief", full: null}
+    - {ltype: pod, val: 'uint16_t', symbol: "cid", brief: "Command Identifier", full: null}
+    - {ltype: pod, val: 'uint32_t', symbol: "nsid", brief: "Namespace Identifier", full: null}
+    - {ltype: pod, val: 'uint32_t', symbol: "cdw02", brief: "Command DWord 2", full: null}
+    - {ltype: pod, val: 'uint32_t', symbol: "cdw03", brief: "Command DWord 3", full: null}
+    - {ltype: pod, val: 'uint64_t', symbol: "mptr", brief: "Metadata pointer", full: null}
+    - symbol: dptr
+      ltype: union
+      brief:
+      full:
+      members:
+      - symbol:
+        brief:
+        full:
+        ltype: struct
+        members:
+        - {ltype: pod, val: 'uint64_t', symbol: "dptr1", brief: "Brief", full: null}
+        - {ltype: pod, val: 'uint64_t', symbol: "dptr2", brief: "Brief", full: null}
+    - {ltype: pod, val: 'uint32_t', symbol: "ndt", brief: "Brief", full: null}
+    - {ltype: pod, val: 'uint32_t', symbol: "ndm", brief: "Number of dwords", full: null}
+    - {ltype: pod, val: 'uint32_t', symbol: "cdw12", brief: "Command DWord 12", full: null}
+    - {ltype: pod, val: 'uint32_t', symbol: "cdw13", brief: "Command DWord 13", full: null}
+    - {ltype: pod, val: 'uint32_t', symbol: "cdw14", brief: "Command DWord 14", full: null}
+    - {ltype: pod, val: 'uint32_t', symbol: "cdw15", brief: "Command DWord 15", full: null}

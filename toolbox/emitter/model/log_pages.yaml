@@ -1,0 +1,22 @@
+---
+log_page_identifiers:
+  symbol: "log_lpi"
+  brief: "foo"
+  full: "This is a full description of log-page identifiers"
+  ltype: enum
+
+  members:
+  - {ltype: pod, val: 0x01, symbol: "ERROR", brief: "tbd", full: null}
+  - {ltype: pod, val: 0x02, symbol: "HEALTH_INFORMATION", brief: "tbd", full: null}
+  - {ltype: pod, val: 0x03, symbol: "FIRMWARE_SLOT", brief: "tbd", full: null}
+  - {ltype: pod, val: 0x04, symbol: "CHANGED_NS_LIST", brief: "tbd", full: null}
+  - {ltype: pod, val: 0x05, symbol: "COMMAND_EFFECTS_LOG", brief: "tbd", full: null}
+  - {ltype: pod, val: 0x06, symbol: "DEVICE_SELF_TEST", brief: "tbd", full: null}
+  - {ltype: pod, val: 0x07, symbol: "TELEMETRY_HOST_INITIATED", brief: "tbd", full: null}
+  - {ltype: pod, val: 0x08, symbol: "TELEMETRY_CTRLR_INITIATED", brief: "tbd", full: null}
+  - {ltype: pod, val: 0x0c, symbol: "ASSYMETRIC_NAMESPACE_ACCESS", brief: "tbd", full: null}
+  - {ltype: pod, val: 0x70, symbol: "LOG_DISCOVERY", brief: "tbd", full: null}
+  - {ltype: pod, val: 0x80, symbol: "RESERVATION_NOTIFICATION", brief: "tbd", full: null}
+  - {ltype: pod, val: 0x81, symbol: "SANITIZE_STATUS", brief: "tbd", full: null}
+  - {ltype: pod, val: 0xc0, symbol: "VENDOR_SPECIFIC_START", brief: "tbd", full: null}
+  - {ltype: pod, val: 0xff, symbol: "VENDOR_SPECIFIC_END", brief: "tbd", full: null}

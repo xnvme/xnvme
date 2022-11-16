@@ -1,0 +1,13 @@
+{%- for group in topic.members %}
+/**
+ * {{ group.brief }}
+ *
+ * @enum {{ meta.prefix }}_{{ topic.symbol }}_{{ group.symbol }}
+ */
+enum {{ meta.prefix }}_{{ topic.symbol }}_{{ group.symbol }} {
+{%- for ent in group.members %}
+	{{ meta.prefix | upper }}_{{ topic.symbol | upper }}_{{ group.symbol | upper }}_{{ ent.symbol | upper }} = {{ '0x%0x' % ent.val }}, ///< {{ ent.brief }}
+{%- endfor %}
+};
+
+{% endfor %}

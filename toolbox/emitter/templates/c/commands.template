@@ -1,0 +1,23 @@
+/**
+ * {{ topic.brief }}
+{%- if topic.full %}
+ *
+ * {{ topic.full }}
+{%- endif %}
+ *
+ * @struct {{ meta.prefix }}_{{ topic.symbol }}_{{ group_name }}
+ */
+{%- for group_name, entity in topic.members.items() %}
+struct {{ meta.prefix }}_{{ topic.symbol }}_{{ group_name }} {
+{%- for member in entity.struct %}
+{%- if 'bitfield' in member %}
+{%- for bfield in member.bitfield.members  %}
+{{ member.bitfield.dtype }} {{ bfield.symbol }} : {{ bfield.val }}; ///< {{ bfield.brief }}
+{%- endfor %}
+{%- else %}
+{{ member.val }} {{ member.symbol }}; ///< {{ member.brief }}
+{%- endif %}
+{%- endfor %}
+};
+{%- endfor %}
+

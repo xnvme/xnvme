@@ -1,0 +1,53 @@
+---
+status_code_type:
+  symbol: "sct"
+  brief: "Status Code Types"
+  full: "Status Code Types... elaborate description goes here"
+  ltype: enum
+  members:
+  - {ltype: pod, val: 0x0, symbol: "GENERIC", brief: "Successful Completion", full: null}
+  - {ltype: pod, val: 0x1, symbol: "CMDSPEC", brief: "Invalid Command Opcode", full: null}
+  - {ltype: pod, val: 0x2, symbol: "MEDIA", brief: "Invalid Field in Command", full: null}
+  - {ltype: pod, val: 0x3, symbol: "PATH", brief: "Invalid Command Opcode", full: null}
+  - {ltype: pod, val: 0x7, symbol: "VENDOR", brief: "Invalid Command Opcode", full: null}
+
+status_code:
+  symbol: "sc"
+  brief: "Status Codes"
+  full: "Status Codes.. elaborate description goes here"
+  ltype: enum_grouped
+
+  members:
+  - symbol: generic
+    brief: "Status Codes for for Status-Code-Type(0x0)"
+    full: "Status Codes for for Status-Code-Type(0x0)"
+    ltype: enum
+    members:
+    - {ltype: pod, val: 0x0, symbol: "SUCCESS", brief: "Successful Completion", full: null}
+    - {ltype: pod, val: 0x1, symbol: "INVALID_OPCODE", brief: "Invalid Command Opcode", full: null}
+    - {ltype: pod, val: 0x2, symbol: "INVALID_FIELD", brief: "Invalid Field in Command", full: null}
+    - {ltype: pod, val: 0x3, symbol: "COMMAND_ID_CONFLICT", brief: "Command ID Conflict", full: null}
+    - {ltype: pod, val: 0x4, symbol: "DATA_TRANSFER_ERROR", brief: "Data Transfer Error", full: null}
+    - {ltype: pod, val: 0x5, symbol: "ABORTED_POWER_LOSS", brief: "Commands Aborted due to Power Loss Notification", full: null}
+
+  - symbol: command_specific
+    brief: "Status Codes for Command-Specific aka Status-Code-Type(0x1)"
+    full: "Status Codes for Command-Specific aka Status-Code-Type(0x1)"
+    ltype: enum
+    members:
+    - {ltype: pod, val: 0x0, symbol: "COMPLETION_QUEUE_INVALID", brief: "Completion Queue Invalid", full: null}
+    - {ltype: pod, val: 0xb8, symbol: "ZONE_BOUNDARY_ERROR", brief: "Zone Boundary Error", full: null}
+    - {ltype: pod, val: 0xb9, symbol: "ZONE_IS_FULL", brief: "Zone Is Full", full: null}
+    - {ltype: pod, val: 0xba, symbol: "ZONE_IS_READ_ONLY", brief: "Zone Is Read Only", full: null}
+    - {ltype: pod, val: 0xbb, symbol: "ZONE_IS_OFFLINE", brief: "Zone Is Offline", full: null}
+    - {ltype: pod, val: 0xbc, symbol: "ZONE_INVALID_WRITE", brief: "Zone Invalid Write", full: null}
+    - {ltype: pod, val: 0xbd, symbol: "TOO_MANY_ACTIVE_ZONES", brief: "Too Many Active Zones", full: null}
+    - {ltype: pod, val: 0xbe, symbol: "TOO_MANY_OPEN_ZONES", brief: "Too Many Open Zones", full: null}
+    - {ltype: pod, val: 0xbf, symbol: "INVALID_ZONE_STATE_TRANSITION", brief: "Invalid Zone State Transition", full: null}
+
+  - symbol: media_error
+    brief: "Status Codes for INTERNAL_PATH_ERROR aka Status-Code-Type(0x2)"
+    full: "Status Codes for INTERNAL_PATH_ERROR aka Status-Code-Type(0x2)"
+    ltype: enum
+    members:
+    - {ltype: pod, val: 0x0, symbol: "INTERNAL_PATH_ERROR", brief: "Internal Path Error", full: null, status_code_type: 0x2}

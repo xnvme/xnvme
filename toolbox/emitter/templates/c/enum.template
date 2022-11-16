@@ -1,0 +1,15 @@
+/**
+ * {{ topic.brief }}
+{%- if topic.full %}
+ *
+ * {{ topic.full }}
+{%- endif %}
+ *
+ * @enum {{meta.prefix}}_{{ topic.symbol }}
+ */
+enum {{ meta.prefix }}_{{ topic.symbol }} {
+{%- for entity in topic.members %}
+	{{ meta.prefix | upper }}_{{ topic.symbol | upper }}_{{ entity.symbol }} = {{ '0x%0x' % entity.val }}, ///< {{ entity.brief }}
+{%- endfor %}
+};
+

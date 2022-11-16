@@ -1,0 +1,3 @@
+{%- for member in topic.members %}
+#define {{ member.symbol }} {{ member.val }}
+{%- endfor %}

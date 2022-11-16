@@ -1,0 +1,41 @@
+---
+globals:
+  symbol: constants
+  ltype: enum
+  brief: "A collection of NVMe Constants, encapsulated in an enum for convinient lookup"
+  full: "..."
+
+  members:
+  - {ltype: pod, val: 20, symbol: CTRLR_SN_LEN, brief: "Brief description", long: null}
+  - {ltype: pod, val: 40, symbol: CTRLR_MN_LEN, brief: "Brief description", long: null}
+  - {ltype: pod, val: 8, symbol: CTRLR_FR_LEN, brief: "Brief description", long: null}
+  - {ltype: pod, val: 8, symbol: CTRLR_FR_LEN, brief: "Brief description", long: null}
+  - {ltype: pod, val: 0xffffffff, symbol: NSID_ALL, brief: "", long: null}
+  - {ltype: pod, val: 0, symbol: NSID_NONE, brief: "", long: null}
+  - {ltype: pod, val: 0, symbol: UUID_NONE, brief: "", long: null}
+  - {ltype: pod, val: 0, symbol: CNTLID_NONE, brief: "", long: null}
+  - {ltype: pod, val: 0, symbol: CNSSPECID_NONE, brief: "", long: null}
+  - {ltype: pod, val: 0, symbol: LOG_LSP_NONE, brief: "", long: null}
+  - {ltype: pod, val: 0, symbol: LOG_LSI_NONE, brief: "", long: null}
+  - {ltype: pod, val: 0, symbol: LOG_LPO_NONE, brief: "", long: null}
+  - {ltype: pod, val: 4096, symbol: IDENTIFY_DATA_SIZE, brief: "", long: null}
+  - {ltype: pod, val: 256, symbol: LOG_SUPPORTED_LOG_PAGES_MAX, brief: "", long: null}
+  - {ltype: pod, val: 31, symbol: ID_NVMSET_LIST_MAX, brief: "", long: null}
+  - {ltype: pod, val: 127, symbol: ID_UUID_LIST_MAX, brief: "", long: null}
+  - {ltype: pod, val: 2047, symbol: ID_CTRL_LIST_MAX, brief: "", long: null}
+  - {ltype: pod, val: 1024, symbol: ID_NS_LIST_MAX, brief: "", long: null}
+  - {ltype: pod, val: 127, symbol: ID_SECONDARY_CTRL_MAX, brief: "", long: null}
+  - {ltype: pod, val: 31, symbol: ID_DOMAIN_LIST_MAX, brief: "", long: null}
+  - {ltype: pod, val: 2047, symbol: ID_ENDURANCE_GROUP_LIST_MAX, brief: "", long: null}
+  - {ltype: pod, val: 16, symbol: ID_ND_DESCRIPTOR_MAX, brief: "", long: null}
+  - {ltype: pod, val: 64, symbol: FEAT_LBA_RANGE_MAX, brief: "", long: null}
+  - {ltype: pod, val: 20, symbol: LOG_ST_MAX_RESULTS, brief: "", long: null}
+  - {ltype: pod, val: 512, symbol: LOG_TELEM_BLOCK_SIZE, brief: "", long: null}
+  - {ltype: pod, val: 256, symbol: LOG_FID_SUPPORTED_EFFECTS_MAX, brief: "", long: null}
+  - {ltype: pod, val: 256, symbol: LOG_MI_CMD_SUPPORTED_EFFECTS_MAX, brief: "", long: null}
+  - {ltype: pod, val: 768, symbol: LOG_MI_CMD_SUPPORTED_EFFECTS_RESERVED, brief: "", long: null}
+  - {ltype: pod, val: 256, symbol: DSM_MAX_RANGES, brief: "", long: null}
+  - {ltype: pod, val: 256, symbol: NQN_LENGTH, brief: "", long: null}
+  - {ltype: pod, val: 256, symbol: NVMF_TRADDR_SIZE, brief: "", long: null}
+  - {ltype: pod, val: 256, symbol: NVMF_TSAS_SIZE, brief: "", long: null}
+  - {ltype: pod, val: 511, symbol: ZNS_CHANGED_ZONES_MAX, brief: "", long: null}
