@@ -93,6 +93,16 @@ enum xnvme_spec_status_code_type {
 };
 
 /**
+ * NVMe Command Status Code
+ *
+ * @enum xnvme_spec_status_code
+ */
+enum xnvme_spec_status_code {
+	// TODO: Add remaining status codes from spec
+	XNVME_STATUS_CODE_INVALID_FIELD = 0x02, ///< Invalid Field
+};
+
+/**
  * NVMe Command Completion Status field
  *
  * @struct xnvme_spec_status
@@ -2461,6 +2471,19 @@ enum xnvme_spec_kv_opc {
 	XNVME_SPEC_KV_OPC_DELETE   = 0x10, ///< XNVME_SPEC_KV_OPC_DELETE
 	XNVME_SPEC_KV_OPC_EXIST    = 0x14, ///< XNVME_SPEC_KV_OPC_EXIST
 	XNVME_SPEC_KV_OPC_LIST     = 0x06, ///< XNVME_SPEC_KV_OPC_LIST
+};
+
+/**
+ * Command-set specific status codes related to key-value Namespaces
+ *
+ * @enum xnvme_spec_kv_status_code
+ */
+enum xnvme_spec_kv_status_code {
+	/// Key-value Command Set
+	XNVME_SPEC_KV_SC_INVALID_VAL_SIZE = 0x85, ///< XNVME_SPEC_KV_SC_INVALID_VAL_SIZE
+	XNVME_SPEC_KV_SC_INVALID_KEY_SIZE = 0x86, ///< XNVME_SPEC_KV_SC_INVALID_KEY_SIZE
+	XNVME_SPEC_KV_SC_KEY_NOT_EXISTS   = 0x87, ///< XNVME_SPEC_KV_SC_KEY_NOT_EXISTS
+	XNVME_SPEC_KV_SC_KEY_EXISTS       = 0x89, ///< XNVME_SPEC_KV_SC_KEY_EXISTS
 };
 
 /**
