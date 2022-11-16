@@ -492,7 +492,14 @@ xnvme_be_spdk_state_term(struct xnvme_be_spdk_state *state)
 		return;
 	}
 	if (state->qpair) {
-		spdk_nvme_ctrlr_free_io_qpair(state->qpair);
+		spdk_nvme_qp_failure_reason reason;
+		reason = spdk_nvme_qpair_get_failure_reason(state->qpair);
+		if (reason) {
+			// the qpair has already disconnected
+			XNVME_DEBUG("WARNING: qpair in failed state, reason: %d", reason);
+		} else {
+			spdk_nvme_ctrlr_free_io_qpair(state->qpair);
+		}
 		err = pthread_mutex_destroy(&state->qpair_lock);
 		if (err) {
 			printf("UNHANDLED: pthread_mutex_destroy(): '%s'\n", strerror(err));
@@ -689,6 +696,61 @@ xnvme_be_spdk_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enum
 	return 0;
 }
 
+static int
+reconnect_ctrlr(struct spdk_nvme_ctrlr *ctrlr)
+{
+	int err;
+	XNVME_DEBUG("WARNING: attempting to reconnect controller");
+	err = spdk_nvme_ctrlr_reset(ctrlr);
+	if (err < 0) {
+		XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_reset, err: %d", err);
+		return -EBUSY;
+	}
+	XNVME_DEBUG("INFO: controller reconnected");
+	return 0;
+}
+
+void
+_identify_cb(void *ctx, const struct spdk_nvme_cpl *cpl)
+{
+	int *result = (int *)ctx;
+	*result = cpl->status.sc;
+	if (*result != 0) {
+		XNVME_DEBUG("WARNING: bad identify, result: %d", *result);
+	}
+}
+
+/**
+ * See if controller is able to handle a simple admin command if not then the ctrlr is in a bad
+ * state
+ */
+static int
+verify_ctrlr_ok(struct spdk_nvme_ctrlr *ctrlr)
+{
+	struct spdk_nvme_cmd cmd = {0};
+	int cmd_result = -1;
+	int err;
+
+	int buf_size = 4096;
+	void *buf;
+	buf = spdk_dma_malloc(buf_size, 0, NULL);
+	cmd.opc = SPDK_NVME_OPC_IDENTIFY;
+	cmd.cdw10_bits.identify.cns = SPDK_NVME_IDENTIFY_CTRLR;
+	spdk_nvme_ctrlr_cmd_admin_raw(ctrlr, &cmd, buf, buf_size, _identify_cb, &cmd_result);
+	while (cmd_result == -1) {
+		err = spdk_nvme_ctrlr_process_admin_completions(ctrlr);
+		if (err < 0) {
+			XNVME_DEBUG(
+				"WARNING: spdk_nvme_ctrlr_process_admin_completions failed, %d",
+				err);
+			cmd_result = err;
+			break;
+		}
+	}
+	spdk_dma_free(buf);
+	return cmd_result;
+}
+
 /**
  * - Parse options from dev->ident
  * - Initialize SPDK environment
@@ -729,6 +791,20 @@ xnvme_be_spdk_state_init(struct xnvme_dev *dev)
 
 		XNVME_DEBUG("INFO: found dev->ident.uri: '%s' via cref_lookup()", dev->ident.uri);
 
+		int err = verify_ctrlr_ok(state->ctrlr);
+		if (err < 0) {
+			XNVME_DEBUG("FAILED: verify_ctrlr_ok, err: %d", err);
+		}
+		if (err || spdk_nvme_ctrlr_is_failed(state->ctrlr)) {
+			err = reconnect_ctrlr(state->ctrlr);
+			if (err < 0) {
+				if (_cref_deref(state->ctrlr, true)) {
+					XNVME_DEBUG("FAILED: _cref_deref");
+				}
+				return -EBUSY;
+			}
+		}
+
 		err = spdk_nvme_ctrlr_process_admin_completions(state->ctrlr);
 		if (err < 0) {
 			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_process_admin_completions, err: %d",
@@ -736,7 +812,7 @@ xnvme_be_spdk_state_init(struct xnvme_dev *dev)
 			if (_cref_deref(state->ctrlr, true)) {
 				XNVME_DEBUG("FAILED: _cref_deref");
 			}
-			goto probe;
+			return -EBUSY;
 		}
 
 		ns = spdk_nvme_ctrlr_get_ns(state->ctrlr, dev->opts.nsid);
@@ -745,14 +821,14 @@ xnvme_be_spdk_state_init(struct xnvme_dev *dev)
 			if (_cref_deref(state->ctrlr, true)) {
 				XNVME_DEBUG("FAILED: _cref_deref");
 			}
-			goto probe;
+			return -EBUSY;
 		}
 		if (!spdk_nvme_ns_is_active(ns)) {
 			XNVME_DEBUG("FAILED: !spdk_nvme_ns_is_active(nsid:0x%x)", dev->opts.nsid);
 			if (_cref_deref(state->ctrlr, true)) {
 				XNVME_DEBUG("FAILED: _cref_deref");
 			}
-			goto probe;
+			return -EBUSY;
 		}
 
 		state->ns = ns;
@@ -760,7 +836,6 @@ xnvme_be_spdk_state_init(struct xnvme_dev *dev)
 		XNVME_DEBUG("INFO: re-using previously attached controller");
 	}
 
-probe:
 	// Probe for device matching dev->ident
 	for (int i = 0; !state->attached; ++i) {
 		if (XNVME_BE_SPDK_MAX_PROBE_ATTEMPTS == i) {
