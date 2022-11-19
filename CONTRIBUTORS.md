@@ -9,6 +9,7 @@ Contributors to the current release
 * Karl Bonde Torp, [Samsung]
 * Liad Oz
 * Mads Ynddal, [Samsung]
+* Niclas Hedam, [IT University of Copenhagen]
 * Rishabh Shukla, [Samsung]
 * Simon A. F. Lund, [Samsung]
 * Vikash Kumar, [Samsung]
@@ -38,3 +39,4 @@ Contributors to previous releases
 
 [Samsung]: http://www.samsung.com/
 [CNEX Labs]: https://www.cnexlabs.com
+[IT University of Copenhagen]: https://itu.dk
