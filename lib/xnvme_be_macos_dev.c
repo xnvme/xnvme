@@ -75,7 +75,7 @@ _get_nvme_smart_interface(io_object_t ioservice_device,
 		(**plugin_interface)
 			->QueryInterface(*plugin_interface,
 					 CFUUIDGetUUIDBytes(kIONVMeSMARTInterfaceID),
-					 nvme_smart_interface);
+					 (LPVOID *)nvme_smart_interface);
 	} else {
 		XNVME_DEBUG("IOCreatePlugInInterfaceForService failed: %s",
 			    (char *)mach_error_string(ret));
@@ -175,7 +175,7 @@ xnvme_be_macos_state_term(struct xnvme_be_macos_state *state)
 	}
 
 	if (state->nvme_smart_interface) {
-		IOObjectRelease(state->nvme_smart_interface);
+		(*state->nvme_smart_interface)->Release(state->nvme_smart_interface);
 	}
 
 	if (state->plugin_interface) {
@@ -259,7 +259,7 @@ xnvme_be_macos_dev_open(struct xnvme_dev *dev)
 		return -ENOTSUP;
 
 		state->fd = open(dev->ident.uri, flags, opts->create_mode);
-		state->ioservice_device = NULL;
+		state->ioservice_device = 0;
 		state->nvme_smart_interface = NULL;
 		dev->ident.nsid = 1;
 		dev->ident.dtype = XNVME_DEV_TYPE_FS_FILE;
