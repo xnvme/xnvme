@@ -55,6 +55,9 @@ GIT = $$( \
 		( * ) echo Unrecognized ;; \
 	esac)
 
+# This is done to avoid appleframework deprecation warnings
+export MACOSX_DEPLOYMENT_TARGET=11.0
+
 BUILD_DIR?=builddir
 TOOLBOX_DIR?=toolbox
 PROJECT_VER = $$( python3 $(TOOLBOX_DIR)/xnvme_ver.py --path meson.build )

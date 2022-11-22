@@ -405,18 +405,18 @@ macOS
 
 Install the following packages using Homebrew_ (``brew``):
 
-.. literalinclude:: ../../toolbox/pkgs/macos-11.txt
+.. literalinclude:: ../../toolbox/pkgs/macos-12.txt
    :language: bash
 
 For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../toolbox/pkgs/macos-11.sh
+.. literalinclude:: ../../toolbox/pkgs/macos-12.sh
    :language: bash
    :lines: 3-
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../toolbox/pkgs/toolbox/pkgs/macos-11-build.sh
+.. literalinclude:: ../../toolbox/pkgs/toolbox/pkgs/macos-12-build.sh
    :language: bash
    :lines: 2-
 
