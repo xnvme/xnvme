@@ -572,6 +572,7 @@ jobs:
       matrix:
         runner:
         - {os: 'macos', ver: '11'}
+        - {os: 'macos', ver: '12'}
 
     steps:
     - name: Retrieve the source-archive
