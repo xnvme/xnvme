@@ -124,6 +124,9 @@ Then go ahead and configure, build and install using ``meson``:
    fixing this is most welcome, until then, disable support for the SPDK NVMe
    driver as the ``meson setup`` command above.
 
+.. note:: libvfn also relies on ``libexecinfo-dev`` which is currently not
+   available for Alpine Linux. Thus, it is also disabled.
+
 Arch Linux
 ----------
 
