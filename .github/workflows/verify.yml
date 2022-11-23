@@ -326,7 +326,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ((github.event_name == 'pull_request') || ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job
       == 'all') || contains('build-linux', github.event.inputs.job) || contains('docgen', github.event.inputs.job))))
-    container: ghcr.io/xnvme/xnvme-deps-alpine-latest:next
+    container: ghcr.io/xnvme/xnvme-deps-debian-bullseye:next
     strategy:
       fail-fast: false
 
@@ -342,7 +342,7 @@ jobs:
 
     - name: Python sdist-packages, system-package deps.
       run: |
-        apk add clang-libs
+        apt-get install -qy libclang-13-dev
 
     - name: Python sdist-packages, build(xnvme-core, xnvme-cy-header, and xnvme-cy-bindings)
       run: |
