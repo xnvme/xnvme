@@ -5,7 +5,6 @@ coreutils
 gawk
 git
 libaio-dev
-libexecinfo-dev
 linux-headers
 make
 meson
