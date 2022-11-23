@@ -49,7 +49,7 @@ jobs:
   #
   source-archive:
     runs-on: ubuntu-20.04
-    container: refenv/alpine-bash
+    container: ghcr.io/xnvme/xnvme-deps-alpine-latest:next
     if: ((github.event.action != 'labeled') || (github.event.action == 'labeled') && (github.event.label.name == 'pr-ready-for-test'))
 
     steps:
@@ -66,7 +66,6 @@ jobs:
 
     - name: Generate Full Source Archive
       run: |
-        ./toolbox/pkgs/alpine-latest.sh
         make clean gen-src-archive
 
     - name: Upload source archive
@@ -327,7 +326,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ((github.event_name == 'pull_request') || ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job
       == 'all') || contains('build-linux', github.event.inputs.job) || contains('docgen', github.event.inputs.job))))
-    container: refenv/alpine-bash
+    container: ghcr.io/xnvme/xnvme-deps-alpine-latest:next
     strategy:
       fail-fast: false
 
@@ -340,10 +339,6 @@ jobs:
       run: |
         tar xzf xnvme*.tar.gz --strip 1
         rm xnvme*.tar.gz
-
-    - name: Install build-requirements
-      run: |
-        ./toolbox/pkgs/alpine-latest.sh
 
     - name: Python sdist-packages, system-package deps.
       run: |
