@@ -119,9 +119,10 @@ Then go ahead and configure, build and install using ``meson``:
    :lines: 2-
 
 .. note:: There are issues with SPDK/DPDK due to incompatibilities with the
-   standard library provided by ``musl libc``. Pull-requests fixing this is
-   most welcome, until then, disable support for the SPDK NVMe driver as the
-   ``meson setup`` command above.
+   standard library provided by ``musl libc``. Additionally, the
+   ``libexecinfo-dev`` package is no longer available on Alpine. Pull-requests
+   fixing this is most welcome, until then, disable support for the SPDK NVMe
+   driver as the ``meson setup`` command above.
 
 Arch Linux
 ----------
