@@ -469,9 +469,9 @@ function configure_linux_pci {
 function cleanup_linux {
 	shopt -s extglob nullglob
 	dirs_to_clean=""
-	dirs_to_clean="$(echo {/var/run,/tmp}/dpdk/spdk{,_pid}+([0-9])) "
+	dirs_to_clean="$(echo {/var/run,/tmp}/dpdk/spdk{,_pid}+[0-9]) "
 	if [[ -d $XDG_RUNTIME_DIR && $XDG_RUNTIME_DIR != *" "* ]]; then
-		dirs_to_clean+="$(readlink -e assert_not_empty $XDG_RUNTIME_DIR/dpdk/spdk{,_pid}+([0-9]) || true) "
+		dirs_to_clean+="$(readlink -e assert_not_empty $XDG_RUNTIME_DIR/dpdk/spdk{,_pid}+[0-9] || true) "
 	fi
 
 	files_to_clean=""
@@ -488,7 +488,7 @@ function cleanup_linux {
 	fi
 
 	shopt -s extglob
-	for fd_dir in $(echo /proc/+([0-9])); do
+	for fd_dir in $(echo /proc/+[0-9]); do
 		opened_files+="$(readlink -e assert_not_empty $fd_dir/fd/* || true)"
 	done
 	shopt -u extglob
