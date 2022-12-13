@@ -2799,6 +2799,62 @@ int
 xnvme_spec_log_erri_pr(const struct xnvme_spec_log_erri_entry *log, int limit, int opts);
 
 /**
+ * Prints the given :;xnvme_spec_log_fdp_conf to stdout
+ *
+ * @param log
+ * @param opts
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_log_fdp_conf_pr(const struct xnvme_spec_log_fdp_conf *log, int opts);
+
+/**
+ * Prints the given :;xnvme_spec_log_fdp_stats to stdout
+ *
+ * @param log
+ * @param opts
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_log_fdp_stats_pr(const struct xnvme_spec_log_fdp_stats *log, int opts);
+
+/**
+ * Prints the given :;xnvme_spec_log_fdp_events_entry to stdout
+ *
+ * @param log
+ * @param limit
+ * @param opts printer options, see ::xnvme_pr
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_log_fdp_events_pr(const struct xnvme_spec_log_fdp_events *log, int limit, int opts);
+
+/**
+ * Prints the given :;xnvme_spec_log_ruhu to stdout
+ *
+ * @param log
+ * @param limit
+ * @param opts printer options, see ::xnvme_pr
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_log_ruhu_pr(const struct xnvme_spec_log_ruhu *log, int limit, int opts);
+
+/**
+ * Prints the given :;xnvme_spec_ruhs to stdout
+ *
+ * @param ruhs
+ * @param limit
+ * @param opts printer options, see ::xnvme_pr
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_ruhs_pr(const struct xnvme_spec_ruhs *ruhs, int limit, int opts);
+
+/**
+ * Prints the given :;xnvme_spec_idfy_ns to the given output stream
+ *
+ * @param stream output stream used for printing
  * Prints the given :;xnvme_spec_idfy_ns to the given output stream
  *
  * @param stream output stream used for printing
@@ -2868,6 +2924,17 @@ xnvme_spec_feat_fpr(FILE *stream, uint8_t fid, struct xnvme_spec_feat feat, int 
  */
 int
 xnvme_spec_feat_pr(uint8_t fid, struct xnvme_spec_feat feat, int opts);
+
+/**
+ * Prints the :;xnvme_spec_fdp_event_desc to the given output stream
+ *
+ * @param buf Buffer which contains xnvme_spec_fdp_event_desc
+ * @param feat to get number of events
+ * @param opts printer options, see ::xnvme_pr
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_feat_fdp_events_pr(void *buf, struct xnvme_spec_feat feat, int opts);
 
 /**
  * Prints the given :;xnvme_spec_cmd to the given output stream

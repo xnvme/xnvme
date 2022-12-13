@@ -189,6 +189,243 @@ xnvme_spec_log_erri_pr(const struct xnvme_spec_log_erri_entry *log, int limit, i
 }
 
 int
+xnvme_spec_log_fdp_conf_fpr(FILE *stream, const struct xnvme_spec_log_fdp_conf *log, int opts)
+{
+	int wrtn = 0;
+
+	switch (opts) {
+	case XNVME_PR_TERSE:
+		wrtn += fprintf(stream, "# ENOSYS: opts(0x%x)", opts);
+		return wrtn;
+
+	case XNVME_PR_DEF:
+	case XNVME_PR_YAML:
+		break;
+	}
+
+	wrtn += fprintf(stream, "xnvme_spec_log_fdp_conf:");
+
+	if (!log) {
+		wrtn += fprintf(stream, " ~\n");
+		return wrtn;
+	}
+
+	wrtn += fprintf(stream, "\n");
+	wrtn += fprintf(stream, "  ncfg: %d\n", log->ncfg);
+	wrtn += fprintf(stream, "  version: %d\n", log->version);
+	wrtn += fprintf(stream, "  size: %d\n", log->size);
+
+	for (int i = 0; i <= log->ncfg; ++i) {
+		wrtn += fprintf(stream, "  config_desc: %d\n", i);
+		wrtn += fprintf(stream, "  ds: %d\n", log->conf_desc[i].ds);
+		wrtn += fprintf(stream, "  fdp attributes: {");
+		wrtn += fprintf(stream, "    rgif: %u", log->conf_desc[i].fdpa.rgif);
+		wrtn += fprintf(stream, "    fdpvwc: %u", log->conf_desc[i].fdpa.fdpvwc);
+		wrtn += fprintf(stream, "    fdpcv: %u", log->conf_desc[i].fdpa.fdpcv);
+		wrtn += fprintf(stream, "    val: %#x", log->conf_desc[i].fdpa.val);
+		wrtn += fprintf(stream, "  }\n");
+		wrtn += fprintf(stream, "  vss: %d\n", log->conf_desc[i].vss);
+		wrtn += fprintf(stream, "  nrg: %d\n", log->conf_desc[i].nrg);
+		wrtn += fprintf(stream, "  nruh: %d\n", log->conf_desc[i].nruh);
+		wrtn += fprintf(stream, "  maxpids: %d\n", log->conf_desc[i].maxpids);
+		wrtn += fprintf(stream, "  nns: %d\n", log->conf_desc[i].nns);
+		wrtn += fprintf(stream, "  runs: %" PRIu64 "\n", log->conf_desc[i].runs);
+		wrtn += fprintf(stream, "  erutl: %d\n", log->conf_desc[i].erutl);
+
+		for (int j = 0; j < log->conf_desc[i].nruh; j++) {
+			wrtn += fprintf(stream, "   - ruht[%d]: %d\n", j,
+					log->conf_desc[i].ruh_desc[j].ruht);
+		}
+	}
+
+	return wrtn;
+}
+
+int
+xnvme_spec_log_fdp_conf_pr(const struct xnvme_spec_log_fdp_conf *log, int opts)
+{
+	return xnvme_spec_log_fdp_conf_fpr(stdout, log, opts);
+}
+
+int
+xnvme_spec_log_fdp_stats_fpr(FILE *stream, const struct xnvme_spec_log_fdp_stats *log, int opts)
+{
+	int wrtn = 0;
+
+	switch (opts) {
+	case XNVME_PR_TERSE:
+		wrtn += fprintf(stream, "# ENOSYS: opts(0x%x)", opts);
+		return wrtn;
+
+	case XNVME_PR_DEF:
+	case XNVME_PR_YAML:
+		break;
+	}
+
+	wrtn += fprintf(stream, "xnvme_spec_log_fdp_stats:");
+
+	if (!log) {
+		wrtn += fprintf(stream, " ~\n");
+		return wrtn;
+	}
+
+	wrtn += fprintf(stream, "\n");
+	// TODO: present these better
+	wrtn += fprintf(stream, "  hbmw: [%" PRIu64 ", %" PRIu64 "]\n", log->hbmw[0],
+			log->hbmw[1]);
+	wrtn += fprintf(stream, "  mbmw: [%" PRIu64 ", %" PRIu64 "]\n", log->mbmw[0],
+			log->mbmw[1]);
+	wrtn += fprintf(stream, "  mbe: [%" PRIu64 ", %" PRIu64 "]\n", log->mbe[0], log->mbe[1]);
+
+	return wrtn;
+}
+
+int
+xnvme_spec_log_fdp_stats_pr(const struct xnvme_spec_log_fdp_stats *log, int opts)
+{
+	return xnvme_spec_log_fdp_stats_fpr(stdout, log, opts);
+}
+
+static inline int
+log_fdp_event_fpr_yaml(FILE *stream, const struct xnvme_spec_fdp_event *event, int indent,
+		       const char *sep)
+{
+	int wrtn = 0;
+
+	wrtn += fprintf(stream, "%*stype: %d%s", indent, "", event->type, sep);
+	wrtn += fprintf(stream, "%*sfdpef: %#x%s", indent, "", event->fdpef.val, sep);
+	wrtn += fprintf(stream, "%*spid: %d%s", indent, "", event->pid, sep);
+	wrtn += fprintf(stream, "%*stimestamp: %" PRIu64 "%s", indent, "", event->timestamp, sep);
+	wrtn += fprintf(stream, "%*snsid: %d%s", indent, "", event->nsid, sep);
+	// TODO: Event type specific field
+	wrtn += fprintf(stream, "%*srgid: %d%s", indent, "", event->rgid, sep);
+	wrtn += fprintf(stream, "%*sruhid: %d%s", indent, "", event->ruhid, sep);
+
+	return wrtn;
+}
+
+int
+xnvme_spec_log_fdp_events_fpr(FILE *stream, const struct xnvme_spec_log_fdp_events *log, int limit,
+			      int opts)
+{
+	int wrtn = 0;
+
+	switch (opts) {
+	case XNVME_PR_TERSE:
+		wrtn += fprintf(stream, "# ENOSYS: opts(0x%x)", opts);
+		return wrtn;
+
+	case XNVME_PR_DEF:
+	case XNVME_PR_YAML:
+		break;
+	}
+
+	wrtn += fprintf(stream, "xnvme_spec_log_fdp_events:\n");
+
+	if (!log) {
+		wrtn += fprintf(stream, " ~\n");
+		return wrtn;
+	}
+
+	wrtn += fprintf(stream, "  nevents: %d\n", log->nevents);
+
+	for (int i = 0; i < limit; ++i) {
+		struct xnvme_spec_fdp_event event;
+		event = log->event[i];
+		wrtn += fprintf(stream, "  - {");
+		wrtn += log_fdp_event_fpr_yaml(stream, &event, 0, ", ");
+		wrtn += fprintf(stream, "}\n");
+	}
+
+	return wrtn;
+}
+
+int
+xnvme_spec_log_fdp_events_pr(const struct xnvme_spec_log_fdp_events *log, int limit, int opts)
+{
+	return xnvme_spec_log_fdp_events_fpr(stdout, log, limit, opts);
+}
+
+int
+xnvme_spec_log_ruhu_fpr(FILE *stream, const struct xnvme_spec_log_ruhu *log, int limit, int opts)
+{
+	int wrtn = 0;
+
+	switch (opts) {
+	case XNVME_PR_TERSE:
+		wrtn += fprintf(stream, "# ENOSYS: opts(0x%x)", opts);
+		return wrtn;
+
+	case XNVME_PR_DEF:
+	case XNVME_PR_YAML:
+		break;
+	}
+
+	wrtn += fprintf(stream, "xnvme_spec_log_ruhu:\n");
+
+	if (!log) {
+		wrtn += fprintf(stream, " ~\n");
+		return wrtn;
+	}
+
+	wrtn += fprintf(stream, "  nruh: %d\n", log->nruh);
+
+	for (int i = 0; i < limit; ++i) {
+		wrtn += fprintf(stream, "  - ruhu_desc[%d]:  %#x\n", i, log->ruhu_desc[i].ruha);
+	}
+
+	return wrtn;
+}
+
+int
+xnvme_spec_log_ruhu_pr(const struct xnvme_spec_log_ruhu *log, int limit, int opts)
+{
+	return xnvme_spec_log_ruhu_fpr(stdout, log, limit, opts);
+}
+
+int
+xnvme_spec_ruhs_fpr(FILE *stream, const struct xnvme_spec_ruhs *ruhs, int limit, int opts)
+{
+	int wrtn = 0;
+
+	switch (opts) {
+	case XNVME_PR_TERSE:
+		wrtn += fprintf(stream, "# ENOSYS: opts(0x%x)", opts);
+		return wrtn;
+
+	case XNVME_PR_DEF:
+	case XNVME_PR_YAML:
+		break;
+	}
+
+	wrtn += fprintf(stream, "xnvme_spec_ruhs:\n");
+
+	if (!ruhs) {
+		wrtn += fprintf(stream, " ~\n");
+		return wrtn;
+	}
+
+	wrtn += fprintf(stream, "  nruhsd: %d\n", ruhs->nruhsd);
+
+	for (int i = 0; i < limit; ++i) {
+		wrtn += fprintf(stream, "  - ruhs_desc[%d] : {", i);
+		wrtn += fprintf(stream, " pi: %d", ruhs->desc[i].pi);
+		wrtn += fprintf(stream, " ruhi: %d", ruhs->desc[i].ruhi);
+		wrtn += fprintf(stream, " earutr: %d", ruhs->desc[i].earutr);
+		wrtn += fprintf(stream, " ruamw: %" PRIu64 "", ruhs->desc[i].ruamw);
+		wrtn += fprintf(stream, "}\n");
+	}
+
+	return wrtn;
+}
+
+int
+xnvme_spec_ruhs_pr(const struct xnvme_spec_ruhs *ruhs, int limit, int opts)
+{
+	return xnvme_spec_ruhs_fpr(stdout, ruhs, limit, opts);
+}
+
+int
 xnvme_spec_idfy_ctrl_fpr(FILE *stream, const struct xnvme_spec_idfy_ctrlr *idfy, int opts)
 {
 	int wrtn = 0;
@@ -595,6 +832,15 @@ xnvme_spec_feat_fpr(FILE *stream, uint8_t fid, struct xnvme_spec_feat feat, int 
 				feat.nqueues.ncqa);
 		return wrtn;
 
+	case XNVME_SPEC_FEAT_FDP_MODE:
+		wrtn += fprintf(stream, "feat: { fdpe: %u, fdpci: %u }\n", feat.fdp_mode.fdpe,
+				feat.fdp_mode.fdpci);
+		return wrtn;
+
+	case XNVME_SPEC_FEAT_FDP_EVENTS:
+		wrtn += fprintf(stream, "nevents: %u }\n", feat.val);
+		return wrtn;
+
 	case XNVME_SPEC_FEAT_ARBITRATION:
 	case XNVME_SPEC_FEAT_PWR_MGMT:
 	case XNVME_SPEC_FEAT_LBA_RANGETYPE:
@@ -609,6 +855,38 @@ int
 xnvme_spec_feat_pr(uint8_t fid, struct xnvme_spec_feat feat, int opts)
 {
 	return xnvme_spec_feat_fpr(stdout, fid, feat, opts);
+}
+
+int
+xnvme_spec_feat_fdp_events_fpr(FILE *stream, void *buf, struct xnvme_spec_feat feat, int opts)
+{
+	int wrtn = 0;
+
+	switch (opts) {
+	case XNVME_PR_TERSE:
+		wrtn += fprintf(stream, "# ENOSYS: opts(0x%x)", opts);
+		return wrtn;
+
+	case XNVME_PR_DEF:
+	case XNVME_PR_YAML:
+		break;
+	}
+
+	for (uint32_t i = 0; i < feat.val; i++) {
+		struct xnvme_spec_fdp_event_desc *desc =
+			&((struct xnvme_spec_fdp_event_desc *)buf)[i];
+		wrtn += fprintf(stream, "{ type: %#x, event enabled: %u }\n", desc->type,
+				desc->fdpeta.ee);
+		desc += sizeof(struct xnvme_spec_fdp_event_desc);
+	}
+
+	return wrtn;
+}
+
+int
+xnvme_spec_feat_fdp_events_pr(void *buf, struct xnvme_spec_feat feat, int opts)
+{
+	return xnvme_spec_feat_fdp_events_fpr(stdout, buf, feat, opts);
 }
 
 static int
@@ -819,9 +1097,18 @@ xnvme_spec_drecv_idfy_fpr(FILE *stream, struct xnvme_spec_idfy_dir_rp *idfy, int
 	wrtn += fprintf(stream, "  directives_supported:\n");
 	wrtn += fprintf(stream, "    identify: %d\n", idfy->directives_supported.identify);
 	wrtn += fprintf(stream, "    streams: %d\n", idfy->directives_supported.streams);
+	wrtn += fprintf(stream, "    data placement: %d\n",
+			idfy->directives_supported.data_placement);
 	wrtn += fprintf(stream, "  directives_enabled:\n");
 	wrtn += fprintf(stream, "    identify: %d\n", idfy->directives_enabled.identify);
 	wrtn += fprintf(stream, "    streams: %d\n", idfy->directives_enabled.streams);
+	wrtn += fprintf(stream, "    data_placement: %d\n",
+			idfy->directives_enabled.data_placement);
+	wrtn += fprintf(stream, "  directives_persistence:\n");
+	wrtn += fprintf(stream, "    identify: %d\n", idfy->directives_persistence.identify);
+	wrtn += fprintf(stream, "    streams: %d\n", idfy->directives_persistence.streams);
+	wrtn += fprintf(stream, "    data_placement: %d\n",
+			idfy->directives_persistence.data_placement);
 
 	return wrtn;
 }
