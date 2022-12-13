@@ -52,6 +52,10 @@ xnvme_spec_feat_id_str(enum xnvme_spec_feat_id eval)
 		return "FEAT_TEMP_THRESHOLD";
 	case XNVME_SPEC_FEAT_VWCACHE:
 		return "FEAT_VWCACHE";
+	case XNVME_SPEC_FEAT_FDP_MODE:
+		return "FEAT_FDP_MODE";
+	case XNVME_SPEC_FEAT_FDP_EVENTS:
+		return "FEAT_FDP_EVENTS";
 	}
 
 	return "ENOSYS";
@@ -164,6 +168,14 @@ xnvme_spec_log_lpi_str(enum xnvme_spec_log_lpi eval)
 		return "LOG_TELECTRLR";
 	case XNVME_SPEC_LOG_TELEHOST:
 		return "LOG_TELEHOST";
+	case XNVME_SPEC_LOG_FDPCONF:
+		return "LOG_FDPCONF";
+	case XNVME_SPEC_LOG_FDPRUHU:
+		return "LOG_FDPRUHU";
+	case XNVME_SPEC_LOG_FDPSTATS:
+		return "LOG_FDPSTATS";
+	case XNVME_SPEC_LOG_FDPEVENTS:
+		return "LOG_FDPEVENTS";
 	}
 
 	return "ENOSYS";
@@ -215,6 +227,10 @@ xnvme_spec_nvm_opc_str(enum xnvme_spec_nvm_opc eval)
 		return "XNVME_SPEC_NVM_OPC_DATASET_MANAGEMENT";
 	case XNVME_SPEC_NVM_OPC_FLUSH:
 		return "NVM_OPC_FLUSH";
+	case XNVME_SPEC_NVM_OPC_IO_MGMT_RECV:
+		return "XNVME_SPEC_NVM_OPC_IO_MGMT_RECV";
+	case XNVME_SPEC_NVM_OPC_IO_MGMT_SEND:
+		return "XNVME_SPEC_NVM_OPC_IO_MGMT_SEND";
 	}
 
 	return "ENOSYS";
