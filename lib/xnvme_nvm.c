@@ -149,3 +149,28 @@ xnvme_nvm_scopy(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t sdlba,
 
 	return xnvme_cmd_pass(ctx, ranges, ranges_nbytes, NULL, 0);
 }
+
+int
+xnvme_nvm_mgmt_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t mo, uint16_t mos, void *dbuf,
+		    uint32_t dbuf_nbytes)
+{
+	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_IO_MGMT_RECV;
+	ctx->cmd.common.nsid = nsid;
+	ctx->cmd.mgmt.mgmt_recv.mo = mo;
+	ctx->cmd.mgmt.mgmt_recv.mos = mos;
+	ctx->cmd.mgmt.mgmt_recv.numd = dbuf_nbytes / sizeof(uint32_t) - 1u;
+
+	return xnvme_cmd_pass(ctx, dbuf, dbuf_nbytes, NULL, 0x0);
+}
+
+int
+xnvme_nvm_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t mo, uint16_t mos, void *dbuf,
+		    uint32_t dbuf_nbytes)
+{
+	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_IO_MGMT_SEND;
+	ctx->cmd.common.nsid = nsid;
+	ctx->cmd.mgmt.mgmt_send.mo = mo;
+	ctx->cmd.mgmt.mgmt_send.mos = mos;
+
+	return xnvme_cmd_pass(ctx, dbuf, dbuf_nbytes, NULL, 0x0);
+}
