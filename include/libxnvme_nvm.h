@@ -128,6 +128,41 @@ int
 xnvme_nvm_dsm(struct xnvme_cmd_ctx *ctx, uint32_t nsid, struct xnvme_spec_dsm_range *dsm_range,
 	      uint8_t nr, bool ad, bool idw, bool idr);
 
+/**
+ * Submit, and wait for completion of a I/O management receive command
+ *
+ * @see xnvme_cmd_opts
+ *
+ * @param ctx Pointer to command context (::xnvme_cmd_ctx)
+ * @param nsid Namespace Identifier
+ * @param mo Management operation
+ * @param mos Management operation specific field
+ * @param dbuf pointer to data-payload
+ * @param dbuf_nbytes size of the data-payload in bytes
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ */
+int
+xnvme_nvm_mgmt_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t mo, uint16_t mos, void *dbuf,
+		    uint32_t dbuf_nbytes);
+
+/**
+ * Submit, and wait for completion of a I/O management send command
+ *
+ * @see xnvme_cmd_opts
+ *
+ * @param ctx Pointer to command context (::xnvme_cmd_ctx)
+ * @param nsid Namespace Identifier
+ * @param mo Management operation
+ * @param mos Management operation specific field
+ * @param dbuf pointer to data-payload
+ * @param dbuf_nbytes size of the data-payload in bytes
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ */
+int
+xnvme_nvm_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t mo, uint16_t mos, void *dbuf,
+		    uint32_t dbuf_nbytes);
 #ifdef __cplusplus
 }
 #endif
