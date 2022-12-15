@@ -8,6 +8,9 @@
 #include <libxnvme_libconf.h>
 #include <libxnvmec.h>
 
+#define SET_EVENT_TYPES ((uint8_t[]){0x0, 0x1, 0x2, 0x3, 0x80, 0x81})
+#define SET_EVENT_BUF_SIZE sizeof(SET_EVENT_TYPES)
+
 int
 enumerate_cb(struct xnvme_dev *dev, void *cb_args)
 {
@@ -314,6 +317,201 @@ exit:
 }
 
 static int
+sub_log_fdp_config(struct xnvmec *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	uint32_t nsid = cli->args.nsid;
+	uint32_t egi = cli->args.lsi;
+
+	struct xnvme_spec_log_fdp_conf *log = NULL;
+	uint32_t log_nbytes = cli->args.data_nbytes;
+	int err;
+
+	if (!cli->given[XNVMEC_OPT_NSID]) {
+		nsid = xnvme_dev_get_nsid(cli->args.dev);
+	}
+
+	xnvmec_pinf("Allocating and clearing buffer...");
+	if (!log_nbytes) {
+		err = -EINVAL;
+		xnvmec_perr("!arg:data_nbytes", err);
+		goto exit;
+	}
+
+	log = xnvme_buf_alloc(dev, log_nbytes);
+	if (!log) {
+		err = -errno;
+		xnvmec_perr("xnvme_buf_alloc()", err);
+		goto exit;
+	}
+	memset(log, 0, log_nbytes);
+
+	xnvme_prep_adm_log(&ctx, XNVME_SPEC_LOG_FDPCONF, 0x0, 0, nsid, 0, log_nbytes);
+	ctx.cmd.log.lsi = egi;
+
+	xnvmec_pinf("Retrieving FDP configurations log page ...");
+	err = xnvme_cmd_pass_admin(&ctx, log, log_nbytes, NULL, 0x0);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		xnvmec_perr("xnvme_adm_log(XNVME_SPEC_LOG_FDPCONF)", err);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+		err = err ? err : -EIO;
+		goto exit;
+	}
+	xnvme_spec_log_fdp_conf_pr(log, XNVME_PR_DEF);
+
+exit:
+	xnvme_buf_free(dev, log);
+
+	return err;
+}
+
+static int
+sub_log_ruhu(struct xnvmec *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	uint32_t limit = cli->args.limit;
+	uint32_t nsid = cli->args.nsid;
+	uint32_t egi = cli->args.lsi;
+
+	struct xnvme_spec_log_ruhu *log = NULL;
+	uint32_t log_nbytes = 0;
+	int err;
+
+	if (!cli->given[XNVMEC_OPT_NSID]) {
+		nsid = xnvme_dev_get_nsid(cli->args.dev);
+	}
+
+	log_nbytes = sizeof(*log) + limit * sizeof(struct xnvme_spec_ruhu_desc);
+
+	xnvmec_pinf("Allocating and clearing buffer...");
+	log = xnvme_buf_alloc(dev, log_nbytes);
+	if (!log) {
+		err = -errno;
+		xnvmec_perr("xnvme_buf_alloc()", err);
+		goto exit;
+	}
+	memset(log, 0, log_nbytes);
+
+	xnvmec_pinf("Retrieving ruhu-log ...");
+	xnvme_prep_adm_log(&ctx, XNVME_SPEC_LOG_FDPRUHU, 0x0, 0, nsid, 0, log_nbytes);
+	ctx.cmd.log.lsi = egi;
+
+	err = xnvme_cmd_pass_admin(&ctx, log, log_nbytes, NULL, 0x0);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		xnvmec_perr("xnvme_adm_log(XNVME_SPEC_LOG_FDPRUHU)", err);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+		err = err ? err : -EIO;
+		goto exit;
+	}
+
+	printf("# %d reclaim unit handle usage:\n", limit);
+	xnvme_spec_log_ruhu_pr(log, limit, XNVME_PR_DEF);
+
+exit:
+	xnvme_buf_free(dev, log);
+
+	return err;
+}
+
+static int
+sub_log_fdp_stats(struct xnvmec *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	uint32_t nsid = cli->args.nsid;
+	uint32_t egi = cli->args.lsi;
+
+	struct xnvme_spec_log_fdp_stats *log = NULL;
+
+	const size_t log_nbytes = sizeof(*log);
+	int err;
+
+	if (!cli->given[XNVMEC_OPT_NSID]) {
+		nsid = xnvme_dev_get_nsid(cli->args.dev);
+	}
+
+	xnvmec_pinf("Allocating and clearing buffer...");
+	log = xnvme_buf_alloc(dev, log_nbytes);
+	if (!log) {
+		err = -errno;
+		xnvmec_perr("xnvme_buf_alloc()", err);
+		goto exit;
+	}
+	memset(log, 0, log_nbytes);
+
+	xnvme_prep_adm_log(&ctx, XNVME_SPEC_LOG_FDPSTATS, 0x0, 0, nsid, 0, log_nbytes);
+	ctx.cmd.log.lsi = egi;
+
+	xnvmec_pinf("Retrieving FDP statistics log page ...");
+	err = xnvme_cmd_pass_admin(&ctx, log, log_nbytes, NULL, 0x0);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		xnvmec_perr("xnvme_adm_log(XNVME_SPEC_LOG_FDPSTATS)", err);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+		err = err ? err : -EIO;
+		goto exit;
+	}
+	xnvme_spec_log_fdp_stats_pr(log, XNVME_PR_DEF);
+
+exit:
+	xnvme_buf_free(dev, log);
+
+	return err;
+}
+
+static int
+sub_log_fdp_events(struct xnvmec *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	uint32_t limit = cli->args.limit;
+	uint32_t nsid = cli->args.nsid;
+	uint32_t egi = cli->args.lsi;
+	uint32_t lsp = cli->args.lsp;
+
+	struct xnvme_spec_log_fdp_events *log = NULL;
+	uint32_t log_nbytes = 0;
+	int err;
+
+	if (!cli->given[XNVMEC_OPT_NSID]) {
+		nsid = xnvme_dev_get_nsid(cli->args.dev);
+	}
+
+	log_nbytes = sizeof(*log) + limit * sizeof(struct xnvme_spec_fdp_event);
+
+	xnvmec_pinf("Allocating and clearing buffer...");
+	log = xnvme_buf_alloc(dev, log_nbytes);
+	if (!log) {
+		err = -errno;
+		xnvmec_perr("xnvme_buf_alloc()", err);
+		goto exit;
+	}
+	memset(log, 0, log_nbytes);
+
+	xnvmec_pinf("Retrieving fdp-events-log ...");
+	xnvme_prep_adm_log(&ctx, XNVME_SPEC_LOG_FDPEVENTS, 0x0, 0, nsid, 0, log_nbytes);
+	ctx.cmd.log.lsi = egi;
+	ctx.cmd.log.lsp = lsp;
+
+	err = xnvme_cmd_pass_admin(&ctx, log, log_nbytes, NULL, 0x0);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		xnvmec_perr("xnvme_adm_log(XNVME_SPEC_LOG_FDPEVENTS)", err);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+		err = err ? err : -EIO;
+		goto exit;
+	}
+
+	printf("# %d fdp events log page entries:\n", limit);
+	xnvme_spec_log_fdp_events_pr(log, limit, XNVME_PR_DEF);
+
+exit:
+	xnvme_buf_free(dev, log);
+
+	return err;
+}
+
+static int
 sub_log(struct xnvmec *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
@@ -422,6 +620,10 @@ sub_gfeat(struct xnvmec *cli)
 	{
 		struct xnvme_spec_feat feat = {.val = ctx.cpl.cdw0};
 		xnvme_spec_feat_pr(fid, feat, XNVME_PR_DEF);
+
+		if (fid == XNVME_SPEC_FEAT_FDP_EVENTS) {
+			xnvme_spec_feat_fdp_events_pr(dbuf, feat, XNVME_PR_DEF);
+		}
 	}
 
 	if (cli->args.data_output) {
@@ -498,6 +700,52 @@ exit:
 }
 
 static int
+sub_set_fdp_events(struct xnvmec *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	uint8_t fid = cli->args.fid;
+	uint32_t feat = cli->args.feat;
+	uint8_t save = cli->args.save;
+	uint32_t nsid = cli->args.nsid;
+	uint32_t cdw12 = cli->args.cdw[12];
+	uint8_t *dbuf = NULL;
+	int err;
+
+	if (!cli->given[XNVMEC_OPT_NSID]) {
+		nsid = xnvme_dev_get_nsid(cli->args.dev);
+	}
+
+	dbuf = xnvme_buf_alloc(dev, SET_EVENT_BUF_SIZE);
+	if (!dbuf) {
+		err = -errno;
+		xnvmec_perr("xnvme_buf_alloc()", err);
+		goto exit;
+	}
+
+	memcpy(dbuf, SET_EVENT_TYPES, SET_EVENT_BUF_SIZE);
+
+	xnvmec_pinf("cmd_sfeat: {nsid: 0%x, fid: 0x%x, save: 0x%x, feat: 0x%x, cdw12: 0x%x}", nsid,
+		    fid, save, feat, cdw12);
+
+	xnvme_prep_adm_sfeat(&ctx, nsid, fid, feat, save);
+	ctx.cmd.sfeat.cdw12 = cdw12;
+
+	err = xnvme_cmd_pass_admin(&ctx, (void *)dbuf, SET_EVENT_BUF_SIZE, NULL, 0x0);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		xnvmec_perr("xnvme_cmd_pass_admin()", err);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+		err = err ? err : -EIO;
+	}
+
+exit:
+	if (dbuf)
+		xnvme_buf_free(dev, dbuf);
+
+	return err;
+}
+
+static int
 sub_format(struct xnvmec *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
@@ -553,6 +801,93 @@ sub_sanitize(struct xnvmec *cli)
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 	}
+
+	return err;
+}
+
+static int
+sub_ruhs(struct xnvmec *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	uint32_t limit = cli->args.limit;
+	uint32_t nsid = cli->args.nsid;
+
+	struct xnvme_spec_ruhs *ruhs = NULL;
+	uint32_t ruhs_nbytes = 0;
+	int err;
+
+	if (!cli->given[XNVMEC_OPT_NSID]) {
+		nsid = xnvme_dev_get_nsid(cli->args.dev);
+	}
+
+	ruhs_nbytes = sizeof(*ruhs) + limit * sizeof(struct xnvme_spec_ruhs_desc);
+
+	xnvmec_pinf("Allocating and clearing buffer...");
+	ruhs = xnvme_buf_alloc(dev, ruhs_nbytes);
+	if (!ruhs) {
+		err = -errno;
+		xnvmec_perr("xnvme_buf_alloc()", err);
+		goto exit;
+	}
+	memset(ruhs, 0, ruhs_nbytes);
+
+	xnvmec_pinf("Retrieving ruhs ...");
+	err = xnvme_nvm_mgmt_recv(&ctx, nsid, XNVME_SPEC_IO_MGMT_RECV_RUHS, 0, ruhs, ruhs_nbytes);
+
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		xnvmec_perr("xnvme_nvm_mgmt_recv(XNVME_SPEC_IO_MGMT_RECV_RUHS)", err);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+		err = err ? err : -EIO;
+		goto exit;
+	}
+
+	printf("# %d reclaim unit handle status:\n", limit);
+	xnvme_spec_ruhs_pr(ruhs, limit, XNVME_PR_DEF);
+
+exit:
+	xnvme_buf_free(dev, ruhs);
+
+	return err;
+}
+
+static int
+sub_ruhu(struct xnvmec *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	uint32_t pi = cli->args.pi;
+	uint32_t nsid = cli->args.nsid;
+	uint16_t *pid_list = NULL;
+	uint32_t npids = 1;
+
+	int err;
+
+	if (!cli->given[XNVMEC_OPT_NSID]) {
+		nsid = xnvme_dev_get_nsid(cli->args.dev);
+	}
+
+	pid_list = xnvme_buf_alloc(dev, npids * 2);
+	if (!pid_list) {
+		err = -errno;
+		xnvmec_perr("xnvme_buf_alloc()", err);
+		goto exit;
+	}
+	memcpy(pid_list, &pi, npids * 2);
+
+	xnvmec_pinf("Updating ruh ...");
+	err = xnvme_nvm_mgmt_send(&ctx, nsid, XNVME_SPEC_IO_MGMT_SEND_RUHU, npids - 1, pid_list,
+				  npids * 2);
+
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		xnvmec_perr("xnvme_nvm_mgmt_send(XNVME_SPEC_IO_MGMT_SEND_RUHU)", err);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+		err = err ? err : -EIO;
+		goto exit;
+	}
+
+exit:
+	xnvme_buf_free(dev, pid_list);
 
 	return err;
 }
@@ -888,6 +1223,78 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
+		"log-fdp-config",
+		"Retrieve the FDP configurations log",
+		"Retrieve and print log",
+		sub_log_fdp_config,
+		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LREQ},
+			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
+			{XNVMEC_OPT_LSI, XNVMEC_LREQ},
+
+			XNVMEC_ADMIN_OPTS,
+		},
+	},
+	{
+		"log-ruhu",
+		"Retrieve the reclaim unit handle usage log",
+		"Retrieve and print log",
+		sub_log_ruhu,
+		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
+			{XNVMEC_OPT_LIMIT, XNVMEC_LREQ},
+			{XNVMEC_OPT_LSI, XNVMEC_LREQ},
+
+			XNVMEC_ADMIN_OPTS,
+		},
+	},
+	{
+		"log-fdp-stats",
+		"Retrieve the FDP statistics log",
+		"Retrieve and print log",
+		sub_log_fdp_stats,
+		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
+			{XNVMEC_OPT_LSI, XNVMEC_LREQ},
+
+			XNVMEC_ADMIN_OPTS,
+		},
+	},
+	{
+		"log-fdp-events",
+		"Retrieve the fdp-events log",
+		"Retrieve and print log",
+		sub_log_fdp_events,
+		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_LIMIT, XNVMEC_LREQ},
+			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
+			{XNVMEC_OPT_LSI, XNVMEC_LREQ},
+			{XNVMEC_OPT_LSP, XNVMEC_LREQ},
+
+			XNVMEC_ADMIN_OPTS,
+		},
+	},
+	{
 		"feature-get",
 		"Execute a Get-Features Command",
 		"Execute a Get Features Command",
@@ -929,6 +1336,25 @@ static struct xnvmec_sub g_subs[] = {
 		},
 	},
 	{
+		"set-fdp-events",
+		"Enable or disable all events",
+		"Enable or disable all events",
+		sub_set_fdp_events,
+		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_FID, XNVMEC_LREQ},
+			{XNVMEC_OPT_FEAT, XNVMEC_LREQ},
+			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_SAVE, XNVMEC_LFLG},
+			{XNVMEC_OPT_CDW12, XNVMEC_LREQ},
+
+			XNVMEC_ADMIN_OPTS,
+		},
+	},
+	{
 		"format",
 		"Format a NVM namespace",
 		"Format a NVM namespace",
@@ -957,6 +1383,38 @@ static struct xnvmec_sub g_subs[] = {
 		{
 			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			XNVMEC_ADMIN_OPTS,
+		},
+	},
+	{
+		"fdp-ruhs",
+		"Retrieve the Reclaim Unit Handle Status",
+		"Retrieve and print log",
+		sub_ruhs,
+		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_LIMIT, XNVMEC_LREQ},
+
+			XNVMEC_ADMIN_OPTS,
+		},
+	},
+	{
+		"fdp-ruhu",
+		"Reclaim Unit Handle Update for a Placement Identifier",
+		"Reclaim Unit Handle Update for a Placement Identifier",
+		sub_ruhu,
+		{
+			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_URI, XNVMEC_POSA},
+
+			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
+			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
+			{XNVMEC_OPT_PID, XNVMEC_LREQ},
 
 			XNVMEC_ADMIN_OPTS,
 		},
