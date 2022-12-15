@@ -255,6 +255,7 @@ struct xnvmec_args {
 	uint32_t tgtdir;
 	uint32_t nsr;
 	uint32_t lsi;
+	uint32_t pid;
 };
 
 void
@@ -410,7 +411,8 @@ enum xnvmec_opt {
 	XNVMEC_OPT_LLB = 112, ///< XNVMEC_OPT_LLB
 
 	XNVMEC_OPT_LSI = 113, ///< XNVMEC_OPT_LSI
-	XNVMEC_OPT_END = 114, ///< XNVMEC_OPT_END
+	XNVMEC_OPT_PID = 114, ///< XNVMEC_OPT_PID
+	XNVMEC_OPT_END = 115, ///< XNVMEC_OPT_END
 };
 
 /**
