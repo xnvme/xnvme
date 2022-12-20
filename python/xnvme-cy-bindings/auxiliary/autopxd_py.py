@@ -238,6 +238,7 @@ from libxnvme cimport {', '.join(enum_defs)}
                 "xnvme_spec_feat_fpr",  # Takes struct (not pointer) as argument
                 "xnvme_spec_feat_pr",  # Takes struct (not pointer) as argument
                 "xnvme_spec_drecv_sar_pr",  # Takes struct (not pointer) as argument
+                "xnvme_spec_feat_fdp_events_pr",  # Takes struct (not pointer) as argument
                 "xnvmec_cmd_to_file",  # Somehow causes linking issues
             ]
             if func_name in ignore_list:
