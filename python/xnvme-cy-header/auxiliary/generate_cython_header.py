@@ -12,6 +12,11 @@ regex = [
     r"s/xnvme_ident entries\[\]/xnvme_ident entries[1]/g",
     r"s/uint8_t storage\[\]/uint8_t storage[1]/g",
     r"s/uint16_t sid\[\]/uint16_t sid[1]/g",
+    r"s/xnvme_spec_ruh_desc ruh_desc\[\]/xnvme_spec_ruh_desc ruh_desc[1]/g",
+    r"s/xnvme_spec_fdp_conf_desc conf_desc\[\]/xnvme_spec_fdp_conf_desc conf_desc[1]/g",
+    r"s/xnvme_spec_ruhu_desc ruhu_desc\[\]/xnvme_spec_ruhu_desc ruhu_desc[1]/g",
+    r"s/xnvme_spec_fdp_event event\[\]/xnvme_spec_fdp_event event[1]/g",
+    r"s/xnvme_spec_ruhs_desc desc\[\]/xnvme_spec_ruhs_desc desc[1]/g",
 ]
 
 
