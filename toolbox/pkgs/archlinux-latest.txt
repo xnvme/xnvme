@@ -12,4 +12,5 @@ numactl
 openssl
 python-pip
 python-pyelftools
+python-setuptools
 python3
