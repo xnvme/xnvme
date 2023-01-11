@@ -54,7 +54,7 @@ def get_definitions(pxd_f):
 
         args = []
         for arg in re.finditer(
-            r"([_a-zA-Z0-9\*]+) ([_a-zA-Z0-9]+)(?:, )?", arg_body.strip("()")
+            r"(?:const )?([_a-zA-Z0-9\*]+) ([_a-zA-Z0-9]+)(?:, )?", arg_body.strip("()")
         ):
             arg_type, arg_name = arg.groups()
             args.append((arg_type, arg_name))
