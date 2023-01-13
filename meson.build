@@ -147,12 +147,6 @@ fio_dep = dependency(
   'fio',
   required: get_option('with-fio')
 )
-# Fio Windows Posix Headers
-if is_windows and get_option('with-fio')
-    fio_winposix_inc = include_directories('subprojects'/'fio'/'os'/'windows'/'posix'/'include')
-else
-    fio_winposix_inc = include_directories()
-endif
 
 setupapi_dep = cc.find_library(
   'setupapi',
