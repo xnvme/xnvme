@@ -29,9 +29,12 @@ if get_option('build_subprojects') and not fs.exists('fio')
   )
 endif
 
-fio_inc = include_directories('.')
+fio_inc = [ include_directories('.') ]
+if (host_machine.system() == 'windows')
+  fio_inc += [ include_directories('os'/'windows'/'posix'/'include') ]
+endif
 fio_dep = declare_dependency(
-  include_directories: fio_inc
+  include_directories: [ fio_inc ]
 )
 
 meson.override_dependency('fio', fio_dep)
