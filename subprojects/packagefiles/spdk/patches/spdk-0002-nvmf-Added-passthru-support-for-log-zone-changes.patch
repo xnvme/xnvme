@@ -1,7 +1,7 @@
 From dab4fb2ea1a40b27c80a885d34b63a5ec350bcb4 Mon Sep 17 00:00:00 2001
 From: "Ivan L. Picoli" <i.picoli@samsung.com>
 Date: Tue, 18 Aug 2020 17:31:37 +0200
-Subject: [PATCH 7/8] nvmf: Added passthru support for log zone changes
+Subject: [PATCH 2/3] nvmf: Added passthru support for log zone changes
 
 Signed-off-by: Ivan L. Picoli <i.picoli@samsung.com>
 ---
