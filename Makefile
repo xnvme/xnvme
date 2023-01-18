@@ -252,6 +252,42 @@ uninstall-deb:
 	apt-get --yes remove xnvme* || true
 	@echo "## xNVMe: make uninstall-deb [DONE]"
 
+define build-rpm-help
+# Build a binary RPM package
+endef
+.PHONY: build-rpm
+build-rpm: _require_builddir
+	@echo "## xNVMe: make build-rpm"
+	meson ${BUILD_DIR}
+	git archive --format=tar HEAD > xnvme.tar
+	tar rf xnvme.tar ${BUILD_DIR}/xnvme.spec
+	gzip -f -9 xnvme.tar
+	rpmbuild -ta xnvme.tar.gz -v --define "_topdir $(shell pwd)/${BUILD_DIR}/meson-dist" --define "_prefix /usr/local"
+	@echo "## xNVMe: make build-rpm [DONE]; find it here:"
+	@find $(BUILD_DIR)/meson-dist/ -name '*.rpm'
+
+define install-rpm-help
+# Install the binary RPM package created with: make build-rpm
+# This will install it instead of copying it directly
+# into the system paths. This is convenient as it is easier to purge it by
+# running eg.
+#   make uninstall-rpm
+endef
+.PHONY: install-rpm
+install-rpm: _require_builddir
+	@echo "## xNVMe: make install-rpm"
+	rpm -ivh $(shell find $(BUILD_DIR)/meson-dist/ -name '*.rpm')
+	@echo "## xNVMe: make install-rpm [DONE]"
+
+define uninstall-rpm-help
+# Uninstall xNVMe with yum
+endef
+.PHONY: uninstall-rpm
+uninstall-rpm:
+	@echo "## xNVMe: make uninstall-rpm"
+	yum remove -y xnvme* || true
+	@echo "## xNVMe: make uninstall-rpm [DONE]"
+
 define clean-help
 # Remove Meson builddir
 endef

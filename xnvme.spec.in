@@ -1,0 +1,36 @@
+Name:           xnvme
+Version:        @VERSION@
+Release:        0
+Summary:        Cross-platform libraries and tools for NVMe devices
+Source:         xnvme.tar.gz
+License:        @LICENSE@
+URL:            https://github.com/OpenMPDK/xNVMe
+
+%define debug_package %{nil}
+
+%description
+xNVMe provides the means to program and interact with NVMe devices from user space.
+For more description see GitHUB and https://xnvme.io/
+
+BuildRequires:  meson
+BuildRequires:  gcc
+BuildRoot:	%{_tmppath}/%{name}-%{version}-root
+
+%prep
+%autosetup -c
+
+%build
+meson build
+
+%install
+meson install -C build --destdir %{buildroot}
+
+%post -p /sbin/ldconfig
+%postun -p /sbin/ldconfig
+
+%files
+%attr(0644,root,root) %{_includedir}/*
+%attr(0644,root,root) %{_libdir}/*
+%attr(0644,root,root) %{_mandir}/man1/*
+%attr(0644,root,root) %{_bindir}/*
+%attr(0644,root,root) %{_datadir}/xnvme/*
