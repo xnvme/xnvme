@@ -166,7 +166,7 @@ def test_feature_set(cijoe, device, be_opts, cli_args):
     if "ramdisk" in device["labels"]:
         pytest.skip(reason="[be=ramdisk] does not implement feature-set")
 
-    err, _ = cijoe.run(f"xnvme feature-set {cli_args} --fid 0x4 --feat 0x1 --save")
+    err, _ = cijoe.run(f"xnvme feature-set {cli_args} --fid 0x4 --feat 0x1")
 
     if be_opts["admin"] == "block":
         assert err
