@@ -80,7 +80,7 @@ jobs:
   #
   source-format-check:
     runs-on: ubuntu-latest
-    container: refenv/xnvme-devtools-ci:latest
+    container: ghcr.io/xnvme/xnvme-deps-citools-latest:next
 
     steps:
     - name: Grab source
@@ -98,7 +98,7 @@ jobs:
   test-gen-targets:
     needs: source-archive
     runs-on: ubuntu-latest
-    container: refenv/xnvme-devtools-ci:latest
+    container: ghcr.io/xnvme/xnvme-deps-citools-latest:next
 
     steps:
     - name: Retrieve the source-archive
@@ -110,9 +110,6 @@ jobs:
       run: |
         tar xzf xnvme*.tar.gz --strip 1
         rm xnvme*.tar.gz
-
-    - name: install txt2man
-      run: apt-get install -qy txt2man
 
     - name: Build xNVMe
       run: make
@@ -132,7 +129,7 @@ jobs:
   analyze-scan-build:
     needs: source-archive
     runs-on: ubuntu-latest
-    container: refenv/xnvme-devtools-ci:latest
+    container: ghcr.io/xnvme/xnvme-deps-citools-latest:next
 
     steps:
     - name: Retrieve the source-archive
@@ -143,9 +140,6 @@ jobs:
       run: |
         tar xzf xnvme*.tar.gz --strip 1
         rm xnvme*.tar.gz
-
-    - name: install scan-build (clang-tools)
-      run: apt-get install -qy clang-tools
 
     - name: Run config-debug
       run: scan-build make config-debug
