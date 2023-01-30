@@ -70,7 +70,7 @@ repos:
   - id: black
     name: Python-format-black
 - repo: https://github.com/pycqa/isort
-  rev: '5.10.1'
+  rev: '5.12.0'
   hooks:
   # Available args: https://pycqa.github.io/isort/docs/configuration/options.html
   - id: isort
