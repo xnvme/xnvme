@@ -25,7 +25,6 @@ xnvme_be_windows_get_device_type(HANDLE dev_handle)
 	STORAGE_PROPERTY_QUERY query = {0};
 	STORAGE_ADAPTER_DESCRIPTOR result = {0};
 	int ret;
-	int err = 0;
 
 	query.PropertyId = (STORAGE_PROPERTY_ID)StorageAdapterProperty;
 	query.QueryType = PropertyStandardQuery;
@@ -34,9 +33,7 @@ xnvme_be_windows_get_device_type(HANDLE dev_handle)
 			      &result, sizeof(result), &ret_len, NULL);
 
 	if (!ret) {
-		err = GetLastError();
-		XNVME_DEBUG("Error retriving Storage Query property for %s. Error: %d\n",
-			    str_device_name, err);
+		XNVME_DEBUG("Error retriving Storage Query property. Error: %d\n", GetLastError());
 	}
 
 	return result.BusType;
