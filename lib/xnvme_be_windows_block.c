@@ -34,8 +34,8 @@ DWORD
 get_device_size(HANDLE dev_handle)
 {
 	DISK_GEOMETRY pdg; // disk drive geometry structure
-	BOOL res;
-	DWORD disk_size; // size of the drive, in bytes
+	BOOL res = 0;
+	DWORD disk_size = 0; // size of the drive, in bytes
 
 	res = get_drive_geometry(dev_handle, &pdg);
 
@@ -48,9 +48,8 @@ get_device_size(HANDLE dev_handle)
 }
 
 static int
-_idfy_ctrlr(struct xnvme_dev *dev, void *dbuf)
+_idfy_ctrlr(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 {
-	// struct xnvme_be_windows_state* state = (void*)dev->be.state;
 	struct xnvme_spec_idfy_ctrlr *ctrlr = dbuf;
 
 	ctrlr->mdts = XNVME_ILOG2(1024 * 1024);
