@@ -1979,13 +1979,13 @@ xnvmec_cli_to_opts(const struct xnvmec *cli, struct xnvme_opts *opts)
 }
 
 void
-xnvme_enumeration_free(struct xnvme_enumeration *list)
+xnvmec_enumeration_free(struct xnvmec_enumeration *list)
 {
 	free(list);
 }
 
 int
-xnvme_enumeration_alloc(struct xnvme_enumeration **list, uint32_t capacity)
+xnvmec_enumeration_alloc(struct xnvmec_enumeration **list, uint32_t capacity)
 {
 	*list = malloc(sizeof(**list) + sizeof(*(*list)->entries) * capacity);
 	if (!(*list)) {
@@ -1999,7 +1999,7 @@ xnvme_enumeration_alloc(struct xnvme_enumeration **list, uint32_t capacity)
 }
 
 int
-xnvme_enumeration_append(struct xnvme_enumeration *list, const struct xnvme_ident *entry)
+xnvmec_enumeration_append(struct xnvmec_enumeration *list, const struct xnvme_ident *entry)
 {
 	if (!list->capacity) {
 		XNVME_DEBUG("FAILED: syslist->capacity: %u", list->capacity);
@@ -2012,7 +2012,7 @@ xnvme_enumeration_append(struct xnvme_enumeration *list, const struct xnvme_iden
 }
 
 int
-xnvme_enumeration_fpr(FILE *stream, struct xnvme_enumeration *list, int opts)
+xnvmec_enumeration_fpr(FILE *stream, struct xnvmec_enumeration *list, int opts)
 {
 	int wrtn = 0;
 
@@ -2026,7 +2026,7 @@ xnvme_enumeration_fpr(FILE *stream, struct xnvme_enumeration *list, int opts)
 		break;
 	}
 
-	wrtn += fprintf(stream, "xnvme_enumeration:");
+	wrtn += fprintf(stream, "xnvmec_enumeration:");
 
 	if (!list) {
 		wrtn += fprintf(stream, " ~\n");
@@ -2056,9 +2056,9 @@ xnvme_enumeration_fpr(FILE *stream, struct xnvme_enumeration *list, int opts)
 }
 
 int
-xnvme_enumeration_pr(struct xnvme_enumeration *list, int opts)
+xnvmec_enumeration_pr(struct xnvmec_enumeration *list, int opts)
 {
-	return xnvme_enumeration_fpr(stdout, list, opts);
+	return xnvmec_enumeration_fpr(stdout, list, opts);
 }
 
 /**
@@ -2067,7 +2067,7 @@ xnvme_enumeration_pr(struct xnvme_enumeration *list, int opts)
  * @return Returns 1 it is exist, 0 otherwise.
  */
 static int
-enumeration_has_ident(struct xnvme_enumeration *list, struct xnvme_ident *ident, uint32_t idx)
+enumeration_has_ident(struct xnvmec_enumeration *list, struct xnvme_ident *ident, uint32_t idx)
 {
 	uint32_t bound = XNVME_MIN(list->nentries, idx);
 
@@ -2092,7 +2092,7 @@ enumeration_has_ident(struct xnvme_enumeration *list, struct xnvme_ident *ident,
 }
 
 int
-xnvme_enumeration_fpp(FILE *stream, struct xnvme_enumeration *list, int opts)
+xnvmec_enumeration_fpp(FILE *stream, struct xnvmec_enumeration *list, int opts)
 {
 	int wrtn = 0;
 
@@ -2106,7 +2106,7 @@ xnvme_enumeration_fpp(FILE *stream, struct xnvme_enumeration *list, int opts)
 		break;
 	}
 
-	wrtn += fprintf(stream, "xnvme_enumeration:");
+	wrtn += fprintf(stream, "xnvmec_enumeration:");
 
 	if (!list) {
 		wrtn += fprintf(stream, " ~\n");
@@ -2133,7 +2133,7 @@ xnvme_enumeration_fpp(FILE *stream, struct xnvme_enumeration *list, int opts)
 }
 
 int
-xnvme_enumeration_pp(struct xnvme_enumeration *list, int opts)
+xnvmec_enumeration_pp(struct xnvmec_enumeration *list, int opts)
 {
-	return xnvme_enumeration_fpp(stdout, list, opts);
+	return xnvmec_enumeration_fpp(stdout, list, opts);
 }
