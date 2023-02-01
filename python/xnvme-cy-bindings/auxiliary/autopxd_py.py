@@ -224,7 +224,7 @@ from libxnvme cimport {', '.join(enum_defs)}
                 "xnvme_lba_pr",  # uint64_t* supported yet
                 "xnvme_lba_fprn",  # uint64_t* supported yet
                 "xnvme_lba_prn",  # uint64_t* supported yet
-                "xnvme_enumeration_alloc",  # Cannot assign type 'xnvme_enumeration *' to 'xnvme_enumeration **'
+                "xnvmec_enumeration_alloc",  # Cannot assign type 'xnvmec_enumeration *' to 'xnvmec_enumeration **'
                 "xnvmec_get_opt_attr",
                 "xnvmec",
                 "xnvmec_sub",

@@ -46,7 +46,7 @@ sub_enumerate(struct xnvmec *cli)
 		return err;
 	}
 
-	fprintf(stdout, "xnvme_enumeration:");
+	fprintf(stdout, "xnvmec_enumeration:");
 
 	err = xnvme_enumerate(cli->args.sys_uri, &opts, *enumerate_cb, &ns_count);
 	if (err) {
