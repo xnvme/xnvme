@@ -16,7 +16,7 @@ xnvmefioe = shared_module(
     '-include', 'config-host.h',
   ],
   dependencies: [ fio_dep ],
-  link_with: xnvmelib_static,
+  link_with: xnvme_shared_lib,
   link_args: (is_windows or is_darwin) ? '' : '-lrt',
   install: true,
 )

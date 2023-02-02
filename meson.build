@@ -7,14 +7,13 @@ project(
     'c_std=gnu11',
     'warning_level=2',
     'buildtype=release',
-    'default_library=both',
+    'default_library=static',
     'b_staticpic=true'
 # This seems broken on Windows
 #    'b_lto=true',
   ],
   meson_version: '>=0.58'
 )
-pconf = import('pkgconfig')
 
 #
 # Pre-flight check, operating system and compiler arguments
@@ -28,8 +27,6 @@ endif
 foreach sys : system_support
     set_variable('is_' + sys, system == sys)
 endforeach
-
-is_centos7 = run_command('cat', '/etc/os-release', check: false).stdout().contains('CentOS Linux 7')
 
 cc = meson.get_compiler('c')
 cc_flags = [
@@ -60,6 +57,12 @@ conf_data = configuration_data()
 conf_data.set('XNVME_VERSION_MAJOR', project_version_major)
 conf_data.set('XNVME_VERSION_MINOR', project_version_minor)
 conf_data.set('XNVME_VERSION_PATCH', project_version_patch)
+
+if get_option('default_library') == 'both'
+   error('default_library has to be either "static" or "shared"')
+endif
+
+conf_data.set('XNVME_COMPILE_STATIC', get_option('default_library') == 'static')
 
 conf_data.set('XNVME_DEBUG_ENABLED', get_option('buildtype') == 'debug')
 
@@ -133,115 +136,6 @@ endif
 
 # Scripts
 subdir('toolbox')
-
-tb_library_bundler = files('toolbox'/'library_bundler.py')
-
-#
-# Third-party dependencies -- this is actually lib-specific... should probably be moved into
-# 'lib/meson.build'?
-#
-thread_dep = dependency('threads')
-
-fio_cfg_h = 'subprojects'/'fio'/'config-host.h'
-fio_dep = dependency(
-  'fio',
-  required: get_option('with-fio')
-)
-# Fio Windows Posix Headers
-if is_windows and get_option('with-fio')
-    fio_winposix_inc = include_directories('subprojects'/'fio'/'os'/'windows'/'posix'/'include')
-else
-    fio_winposix_inc = include_directories()
-endif
-
-setupapi_dep = cc.find_library(
-  'setupapi',
-  has_headers: ['setupapi.h'],
-  required: conf_data.get('XNVME_BE_WINDOWS_ENABLED'),
-)
-
-rt_dep = cc.find_library('rt', required: is_darwin ? false : (is_linux or is_freebsd))
-if not cc.has_function('clock_gettime', prefix: '#include <time.h>', dependencies: rt_dep)
-  error('clock_gettime not found')
-endif
-
-aio_dep = cc.find_library(
-  'aio',
-  has_headers: ['libaio.h'],
-  required: conf_data.get('XNVME_BE_LINUX_LIBAIO_ENABLED'),
-)
-
-uring_dep = dependency(
-  'liburing',
-  version: '>=2.2',
-  required: false,
-)
-if conf_data.get('XNVME_BE_LINUX_LIBURING_ENABLED') and not uring_dep.found()
-  error('missing liburing >= 2.2; install it or point PKG_CONFIG_PATH to where it is located')
-endif
-
-math_dep = cc.find_library(
-  'm',
-  has_headers: ['math.h'],
-  required: conf_data.get('XNVME_BE_SPDK_ENABLED'),
-)
-
-ssl_dep = dependency(
-  is_centos7 ? 'openssl11' : 'openssl', version: '>=1.1.1',
-  required: conf_data.get('XNVME_BE_SPDK_ENABLED'),
-)
-
-dlfcn_dep = cc.find_library(
-  'dl',
-  has_headers: ['dlfcn.h'],
-  required: conf_data.get('XNVME_BE_SPDK_ENABLED'),
-)
-
-uuid_dep = cc.find_library(
-  'uuid',
-  dirs: is_freebsd ? [ '/usr/local/lib' ] : [],
-  header_include_directories: is_freebsd ? [ include_directories('/usr/local/include') ] : [],
-  has_headers: ['uuid/uuid.h'],
-  required: conf_data.get('XNVME_BE_SPDK_ENABLED'),
-)
-numa_dep = cc.find_library(
-  'numa',
-  has_headers: ['numaif.h'],
-  required: conf_data.get('XNVME_BE_SPDK_ENABLED') and is_linux,
-)
-execinfo_dep = cc.find_library(
-  'execinfo',
-  has_headers: ['execinfo.h'],
-  required: conf_data.get('XNVME_BE_SPDK_ENABLED') and is_freebsd,
-)
-elf_dep = cc.find_library(
-  'elf',
-  has_headers: ['sys/elf_common.h'],
-  required: conf_data.get('XNVME_BE_SPDK_ENABLED') and is_freebsd,
-)
-spdk_dep = dependency(
-  'spdk',
-  required: conf_data.get('XNVME_BE_SPDK_ENABLED')
-)
-corefoundation_dep = dependency(
-  'appleframeworks',
-  modules: 'CoreFoundation',
-  required: is_darwin
-)
-iokit_dep = dependency(
-  'appleframeworks',
-  modules: 'IOKit',
-  required: is_darwin
-)
-libvfn_dep = dependency(
-  '_vfn',
-  default_options: [
-    'libnvme=disabled',
-    'docs=disabled',
-    'default_library=static',
-  ],
-  required: conf_data.get('XNVME_BE_LINUX_VFIO_ENABLED')
-)
 
 # Headers
 subdir('include')

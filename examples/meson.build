@@ -11,12 +11,15 @@ examples_source = [
   'zoned_io_sync.c',
 ]
 
+xnvme_dep = get_variable('lib_' + get_option('default_library'))
+
 foreach example_source : examples_source
   executable(
     fs.stem(example_source),
     example_source,
     include_directories: [conf_inc, xnvme_inc],
-    link_with: xnvmelib_static,
+    dependencies: xnvme_dep,
+    link_whole: conf_data.get('XNVME_COMPILE_STATIC') ? [xnvme_static_lib] : [],
     install: true,
   )
 endforeach

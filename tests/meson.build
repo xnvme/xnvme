@@ -17,12 +17,15 @@ tests_source = [
   'znd_zrwa.c',
 ]
 
+xnvme_dep = get_variable('lib_' + get_option('default_library'))
+
 foreach test_source : tests_source
   executable(
     tests_prefix + fs.stem(test_source),
     test_source,
     include_directories: [conf_inc, xnvme_inc],
-    link_with: xnvmelib_static,
+    dependencies: xnvme_dep,
+    link_whole: conf_data.get('XNVME_COMPILE_STATIC') ? [xnvme_static_lib] : [],
     install: true,
   )
 endforeach

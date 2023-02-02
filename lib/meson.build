@@ -69,106 +69,164 @@ xnvmelib_source = [
   'xnvmec.c'
 ]
 
-xnvmelib_deps_shared = [
-  thread_dep,
-  rt_dep,
-  ssl_dep,
-  dlfcn_dep,
-  math_dep,
-  numa_dep,
-  uuid_dep,
-  execinfo_dep,
-  elf_dep,
-  aio_dep,
-  setupapi_dep,
-  corefoundation_dep,
-  iokit_dep,
-  libvfn_dep,
-  uring_dep,
-]
+pconf = import('pkgconfig')
+pconf_bin = find_program('pkg-config')
 
-xnvmelib_deps_static = []
-xnvmelib_deps_static += [spdk_dep, uring_dep, corefoundation_dep, iokit_dep, libvfn_dep]
-xnvmelib_deps = xnvmelib_deps_shared + xnvmelib_deps_static
 
-xnvmelib_deps_bundle = [
-  spdk_dep,
-]
+#
+# Third-party dependencies
+#
+thread_dep = dependency('threads')
 
-# We are not relying on meson to control whether or not static/shared libraries are built, this is
-# since we need the static library for constructing the bundled library, and we want the
-# 'non-bundled' shared library to be named 'libxnvme-static.' and the bundled to be 'libxnvme'.
-# This naming is not possible when delegating via default_library
-if get_option('shared_library')
-  xnvmelib_shared = shared_library(
-    'xnvme-shared',
-    xnvmelib_source,
-    dependencies: xnvmelib_deps,
-    include_directories: [conf_inc, xnvme_inc],
-    install_dir: xnvmelib_libdir,
-    install: true,
-  )
+fio_cfg_h = 'subprojects'/'fio'/'config-host.h'
+fio_dep = dependency(
+  'fio',
+  required: get_option('with-fio')
+)
+# Fio Windows Posix Headers
+if is_windows and get_option('with-fio')
+    fio_winposix_inc = include_directories('subprojects'/'fio'/'os'/'windows'/'posix'/'include')
+else
+    fio_winposix_inc = include_directories()
 endif
 
-xnvmelib_static = static_library(
-  'xnvme-static',
+setupapi_dep = cc.find_library(
+  'setupapi',
+  has_headers: ['setupapi.h'],
+  required: conf_data.get('XNVME_BE_WINDOWS_ENABLED'),
+)
+
+rt_dep = cc.find_library('rt', required: is_darwin ? false : (is_linux or is_freebsd))
+if not cc.has_function('clock_gettime', prefix: '#include <time.h>', dependencies: rt_dep)
+  error('clock_gettime not found')
+endif
+
+aio_dep = cc.find_library(
+  'aio',
+  has_headers: ['libaio.h'],
+  required: conf_data.get('XNVME_BE_LINUX_LIBAIO_ENABLED'),
+)
+
+uring_dep = dependency(
+  'liburing',
+  version: '>=2.2',
+  required: false,
+)
+if conf_data.get('XNVME_BE_LINUX_LIBURING_ENABLED') and not uring_dep.found()
+  error('missing liburing >= 2.2; install it or point PKG_CONFIG_PATH to where it is located')
+endif
+
+dpdk_dep = dependency(
+  'libdpdk',
+  required: false,
+)
+
+if conf_data.get('XNVME_BE_SPDK_ENABLED') and not dpdk_dep.found()
+   error('missing libdpdk; install it or point PKG_CONFIG_PATH to where it is located')
+endif
+
+spdk_nvme_dep = dependency(
+  'spdk_nvme',
+  required: false,
+)
+
+if conf_data.get('XNVME_BE_SPDK_ENABLED') and not spdk_nvme_dep.found()
+   error('missing spdk_nvme; install it or point PKG_CONFIG_PATH to where it is located')
+endif
+
+spdk_env_dpdk_dep = dependency(
+  'spdk_env_dpdk',
+  required:false,
+)
+
+if conf_data.get('XNVME_BE_SPDK_ENABLED') and not spdk_env_dpdk_dep.found()
+   error('missing spdk_env_dpdk; install it or point PKG_CONFIG_PATH to where it is located')
+endif
+
+spdk_syslibs_dep = dependency(
+  'spdk_syslibs',
+  required:false,
+)
+
+if conf_data.get('XNVME_BE_SPDK_ENABLED') and not spdk_syslibs_dep.found()
+   error('missing spdk_syslibs; install it or point PKG_CONFIG_PATH to where it is located')
+endif
+
+
+spdk_nvme_ldflags_cmd = run_command(pconf_bin, '--libs', 'spdk_nvme', check: true)
+spdk_env_dpdk_ldflags_cmd = run_command(pconf_bin, '--libs', 'spdk_env_dpdk', check: true)
+spdk_syslibs_ldflags_cmd = run_command(pconf_bin, '--libs', '--static', 'spdk_syslibs', check: true)
+
+spdk_nvme_ldflags = spdk_nvme_ldflags_cmd.stdout().split() 
+spdk_env_dpdk_ldflags = spdk_env_dpdk_ldflags_cmd.stdout().split()
+spdk_syslibs_ldflags = spdk_syslibs_ldflags_cmd.stdout().split()
+
+spdk_static_ldflags = ['-Wl,--whole-archive'] + spdk_nvme_ldflags + spdk_env_dpdk_ldflags + spdk_syslibs_ldflags + ['-Wl,--no-whole-archive']
+
+spdk_shared_ldflags = ['-Wl,--no-as-needed'] + spdk_nvme_ldflags + spdk_env_dpdk_ldflags + ['-Wl,--no-as-needed']
+
+corefoundation_dep = dependency(
+  'appleframeworks',
+  modules: 'CoreFoundation',
+  required: is_darwin
+)
+iokit_dep = dependency(
+  'appleframeworks',
+  modules: 'IOKit',
+  required: is_darwin
+)
+libvfn_dep = dependency(
+  '_vfn',
+  default_options: [
+    'libnvme=disabled',
+    'docs=disabled',
+    'default_library=static',
+  ],
+  required: conf_data.get('XNVME_BE_LINUX_VFIO_ENABLED')
+)
+
+
+xnvmelib_deps = [aio_dep, corefoundation_dep, iokit_dep, libvfn_dep, rt_dep, setupapi_dep, thread_dep, uring_dep]
+
+xnvme_static_lib = static_library(
+  'xnvme',
   xnvmelib_source,
   dependencies: xnvmelib_deps,
   include_directories: [conf_inc, xnvme_inc],
+  link_args: spdk_static_ldflags,
   install_dir: xnvmelib_libdir,
   install: true,
 )
-
-# Produce a static library containing xNVMe, liburing, and SPDK
-bundle_lib_paths = []
-bundle_lib_paths += [ 'lib' / 'libxnvme-static.a' ]
-
-if conf_data.get('XNVME_BE_LINUX_VFIO_ENABLED')
-  bundle_lib_paths += ['subprojects' / 'libvfn' / 'src' / 'libvfn.a']
-endif
-
-foreach blib : xnvmelib_deps_bundle
-  if get_option('build_subprojects') and blib.found()
-    bundle_lib_paths += blib.get_variable(internal: 'lib_paths').split(' ')
-  endif
-endforeach
-
-xnvmelib_bundle_depends = [xnvmelib_static]
-
-if conf_data.get('XNVME_BE_LINUX_VFIO_ENABLED')
-  # custom targets cannot depend on dependency() objects, so depend on the
-  # library build target from the subproject.
-  xnvmelib_bundle_depends += subproject('libvfn').get_variable('vfn_lib')
-endif
-
-# missing xnvme and liburing, howto find / produce absolute paths to these?
-xnvmelib_bundle = custom_target(
-  'xnvme',
-  build_by_default: true,
-  depends: xnvmelib_bundle_depends,
-  command: [ prog_python, '@INPUT@', '--output', '@OUTPUT@', '--libs' ] + bundle_lib_paths,
-  input: tb_library_bundler,
-  output: 'libxnvme.a',
-  install_dir: xnvmelib_libdir,
-  install: true,
-)
-
-# We create this as a target to be consumed by pkgconfig, potentially also for the xnvme-cli-tools,
-# although they currently link "directly" to the regular static library
-xnvmelib_bundle_dep = declare_dependency(
+xnvme_static_dep = declare_dependency(
+  include_directories: [conf_inc, xnvme_inc],
+  link_args: spdk_static_ldflags,
   dependencies: xnvmelib_deps,
-  link_args: conf_data.get('XNVME_BE_SPDK_ENABLED') ? [
-    '-Wl,--whole-archive',
-    '-Wl,--no-as-needed',
-    '-lxnvme',
-    '-Wl,--no-whole-archive',
-    '-Wl,--as-needed',
-  ] : [ '-lxnvme' ]
 )
+
+xnvme_shared_lib = shared_library(
+  'xnvme',
+  xnvmelib_source,
+  dependencies: xnvmelib_deps,
+  include_directories: [conf_inc, xnvme_inc],
+  link_args: spdk_shared_ldflags,
+  install_dir: xnvmelib_libdir,
+  install: true,
+)
+xnvme_shared_dep = declare_dependency(
+  link_with: xnvme_shared_lib,
+  include_directories: [conf_inc, xnvme_inc],
+  link_args: spdk_shared_ldflags,
+  dependencies: xnvmelib_deps,
+)
+
+# Define variables for use when linking executables
+set_variable('lib_static', xnvme_static_dep)
+set_variable('lib_shared', xnvme_shared_dep)
 
 # pkg-config -- describing how to consume the xNVMe library
 pconf.generate(
-  libraries: [xnvmelib_bundle_dep] + [xnvmelib_deps_shared],
+  libraries: xnvme_shared_lib,
+  libraries_private: ['-Wl,--whole-archive'] + [xnvme_static_lib] + ['-Wl,--no-whole-archive'],
   version: meson.project_version(),
   variables: [
     'datadir=' + get_option('prefix') / get_option('datadir') / meson.project_name()
