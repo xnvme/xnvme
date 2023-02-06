@@ -424,8 +424,10 @@ probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
 	if (_spdk_nvme_transport_id_compare_weak(probed, &req)) {
 		XNVME_DEBUG("SKIP: mismatching trid prbed != ctx");
 
+#ifdef XNVME_DEBUG_ENABLED
 		_spdk_nvme_transport_id_pr(probed);
 		_spdk_nvme_transport_id_pr(&req);
+#endif
 
 		return false;
 	}
