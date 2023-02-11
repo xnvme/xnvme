@@ -107,7 +107,7 @@ def get_combinations():
         {
             "be": ["fbsd"],
             "mem": ["posix"],
-            "async": ["emu", "posix", "thrpool"],
+            "async": ["emu", "posix", "thrpool", "kqueue"],
             "sync": ["psync", "nvme"],
             "admin": ["nvme"],
             "label": ["bdev"],

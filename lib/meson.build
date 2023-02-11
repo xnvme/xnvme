@@ -13,6 +13,7 @@ xnvmelib_source = [
   'xnvme_be_cbi_mem_posix.c',
   'xnvme_be_cbi_sync_psync.c',
   'xnvme_be_fbsd.c',
+  'xnvme_be_fbsd_async.c',
   'xnvme_be_fbsd_dev.c',
   'xnvme_be_fbsd_nvme.c',
   'xnvme_be_linux.c',
