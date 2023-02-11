@@ -201,6 +201,10 @@ xnvme_be_fbsd_dev_open(struct xnvme_dev *dev)
 		return err;
 	}
 
+	state->poll_io = opts->poll_io;
+
+	XNVME_DEBUG("INFO: open() : dev->state.poll_io: %d", state->poll_io);
+
 	XNVME_DEBUG("INFO: --- open() : OK ---");
 
 	return 0;

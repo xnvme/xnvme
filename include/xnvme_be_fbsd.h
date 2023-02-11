@@ -19,7 +19,9 @@ struct xnvme_be_fbsd_state {
 		int ctrlr;
 	} fd;
 
-	uint8_t _rsvd[120];
+	uint8_t poll_io;
+
+	uint8_t _rsvd[119];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_fbsd_state) == XNVME_BE_STATE_NBYTES, "Incorrect size")
 
@@ -29,5 +31,6 @@ xnvme_be_fbsd_nvme_get_nsid_and_ctrlr_fd(int fd, uint32_t *nsid, int *ctrlr_fd);
 extern struct xnvme_be_admin g_xnvme_be_fbsd_admin_nvme;
 extern struct xnvme_be_sync g_xnvme_be_fbsd_sync_nvme;
 extern struct xnvme_be_dev g_xnvme_be_fbsd_dev;
+extern struct xnvme_be_async g_xnvme_be_fbsd_async;
 
 #endif /* __INTERNAL_XNVME_BE_FBSD */

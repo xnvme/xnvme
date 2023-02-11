@@ -22,6 +22,13 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_fbsd[] = {
 
 	{
 		.mtype = XNVME_BE_ASYNC,
+		.name = "kqueue",
+		.descr = "Use kqueue based aio for Asynchronous I/O",
+		.async = &g_xnvme_be_fbsd_async,
+		.check_support = xnvme_be_supported,
+	},
+	{
+		.mtype = XNVME_BE_ASYNC,
 		.name = "emu",
 		.descr = "Use emulated asynchronous I/O",
 		.async = &g_xnvme_be_cbi_async_emu,
