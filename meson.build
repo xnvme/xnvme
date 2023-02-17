@@ -29,7 +29,7 @@ foreach sys : system_support
     set_variable('is_' + sys, system == sys)
 endforeach
 
-is_centos7 = run_command('cat', '/etc/os-release', check: false).stdout().contains('CentOS Linux 7')
+is_centos7 = is_linux ? run_command('cat', '/etc/os-release', check: false).stdout().contains('CentOS Linux 7') : false
 
 cc = meson.get_compiler('c')
 cc_flags = [
