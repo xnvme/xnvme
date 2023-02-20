@@ -1,0 +1,10 @@
+[package]
+name = "xnvme"
+version = "0.0.0"
+edition = "2021"
+description = "Safe and idiomatic xNVMe-bindings built on top of xnvme-sys. NOTE: This is a crate-namespace-reservation"
+license = "BSD-3-Clause"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
