@@ -1,0 +1,10 @@
+[package]
+name = "xnvme-sys"
+version = "0.0.0"
+edition = "2021"
+description = "Raw/direct/unsafe bindings to the xNVMe C Library. NOTE: This is a crate-namespace-reservation"
+license = "BSD-3-Clause"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
