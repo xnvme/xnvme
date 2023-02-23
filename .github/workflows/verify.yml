@@ -388,7 +388,8 @@ jobs:
         - {os: 'centos', dh: 'tgagor/centos', ver: 'stream9'}
         - {os: 'centos', dh: 'tgagor/centos', ver: 'stream8'}
         - {os: 'centos', dh: 'centos', ver: 'centos7'}
-        - {os: 'debian', dh: 'debian', ver: 'bookworm'}
+        # Skipping due to regression in system-wide packages
+        #- {os: 'debian', dh: 'debian', ver: 'bookworm'}
         - {os: 'debian', dh: 'debian', ver: 'bullseye'}
         - {os: 'debian', dh: 'debian', ver: 'buster'}
         - {os: 'fedora', dh: 'fedora', ver: '36'}
