@@ -5,34 +5,32 @@ ld -v || true
 # Query the (g)libc version
 ldd --version || true
 
-zypper --non-interactive refresh
-
-# Install packages via the system package-manager (zypper)
-zypper --non-interactive install -y --allow-downgrade \
+# Install packages via the system package-manager (dnf)
+dnf install -y \
+ CUnit-devel \
  autoconf \
  bash \
- clang-tools \
- cunit-devel \
+ clang-tools-extra \
+ diffutils \
  findutils \
+ g++ \
  gcc \
- gcc-c++ \
  git \
- gzip \
  libaio-devel \
- libnuma-devel \
- libopenssl-devel \
  libtool \
+ liburing \
  liburing-devel \
  libuuid-devel \
  make \
  meson \
  nasm \
  ncurses \
+ numactl-devel \
+ openssl-devel \
  patch \
- pkg-config \
- python3 \
+ pkgconfig \
+ procps \
  python3-devel \
  python3-pip \
- python3-pyelftools \
- tar
+ python3-pyelftools
 

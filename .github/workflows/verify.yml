@@ -388,20 +388,19 @@ jobs:
         - {os: 'centos', dh: 'tgagor/centos', ver: 'stream9'}
         - {os: 'centos', dh: 'tgagor/centos', ver: 'stream8'}
         - {os: 'centos', dh: 'centos', ver: 'centos7'}
-        # Skipping due to regression in system-wide packages
-        #- {os: 'debian', dh: 'debian', ver: 'bookworm'}
+        - {os: 'debian', dh: 'debian', ver: 'bookworm'}
         - {os: 'debian', dh: 'debian', ver: 'bullseye'}
         - {os: 'debian', dh: 'debian', ver: 'buster'}
+        - {os: 'fedora', dh: 'fedora', ver: '38'}
+        - {os: 'fedora', dh: 'fedora', ver: '37'}
         - {os: 'fedora', dh: 'fedora', ver: '36'}
-        - {os: 'fedora', dh: 'fedora', ver: '35'}
-        - {os: 'fedora', dh: 'fedora', ver: '34'}
         - {os: 'gentoo', dh: 'gentoo/stage3', ver: 'latest'}
         - {os: 'opensuse-tumbleweed', dh: 'opensuse/tumbleweed', ver: 'latest'}
         - {os: 'opensuse-leap', dh: 'opensuse/leap', ver: '15.4'}
         - {os: 'opensuse-leap', dh: 'opensuse/leap', ver: '15.3'}
+        - {os: 'ubuntu', dh: 'ubuntu', ver: 'kinetic'}
         - {os: 'ubuntu', dh: 'ubuntu', ver: 'jammy'}
         - {os: 'ubuntu', dh: 'ubuntu', ver: 'focal'}
-        - {os: 'ubuntu', dh: 'ubuntu', ver: 'bionic'}
 
     container:
       image: ghcr.io/xnvme/xnvme-deps-${{ matrix.container.os }}-${{ matrix.container.ver }}:next

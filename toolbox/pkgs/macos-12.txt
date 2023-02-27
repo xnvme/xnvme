@@ -1,5 +1,0 @@
-clang-format
-git
-python3
-meson
-pkg-config

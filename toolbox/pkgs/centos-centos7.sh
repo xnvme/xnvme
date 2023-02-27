@@ -1,10 +1,11 @@
 #!/bin/sh
 # Query the linker version
-ld --version || true
+ld -v || true
 
 # Query the (g)libc version
 ldd --version || true
 
+# Only CentOS 7 uses yum, the other distros have dnf
 # Install Developer Tools
 yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 yum-config-manager --enable epel
@@ -13,9 +14,30 @@ yum-config-manager --enable rhel-server-rhscl-7-rpms
 yum install -y devtoolset-8
 
 # Install packages via the system package-manager (yum)
-yum install -y $(cat "toolbox/pkgs/centos-centos7.txt")
+yum install -y \
+ CUnit-devel \
+ autoconf \
+ bash \
+ clang-format \
+ findutils \
+ git \
+ glibc-static \
+ libaio-devel \
+ libffi-devel \
+ libtool \
+ libuuid-devel \
+ make \
+ ncurses-devel \
+ numactl-devel \
+ openssl-devel \
+ openssl11-devel \
+ patch \
+ pkgconfig \
+ unzip \
+ wget \
+ zlib-devel
 
-# Install nasm from source
+# Install nasm v2.15 from source
 git clone https://github.com/netwide-assembler/nasm.git
 cd nasm
 git checkout nasm-2.15
@@ -25,9 +47,7 @@ make -j $(nproc)
 make install
 cd ..
 
-# The meson version available via yum is tool old < 0.54 and the Python version is tool old to
-# support the next release of meson, so to fix this, Python3 is installed from source and meson
-# installed via the Python package-manager pip
+# Install Python v3.7.12 from source
 wget https://www.python.org/ftp/python/3.7.12/Python-3.7.12.tgz
 tar xzf Python-3.7.12.tgz
 cd Python-3.7.12
@@ -42,4 +62,8 @@ hash -d python3 || true
 ldconfig /usr/local/lib
 
 # Install packages via the Python package-manager (pip)
-python3 -m pip install meson ninja pyelftools
+python3 -m pip install --upgrade pip
+python3 -m pip install \
+ meson \
+ ninja \
+ pyelftools

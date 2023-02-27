@@ -1,0 +1,5 @@
+# Install packages via the system package-manager (dnf)
+dnf install -y \
+{%- for dep in deps %}
+ {{ dep }}{% if not loop.last %} \{% endif %}
+{%- endfor %}

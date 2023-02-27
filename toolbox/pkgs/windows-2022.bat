@@ -76,3 +76,4 @@ echo [7/8] Install: MinGW/meson via msys2/pacman = OK
 echo [8/8] Install: Python3 and dependencies via msys2/pacman
 %MSYS2% -c "pacman --noconfirm -Syy mingw-w64-x86_64-python mingw-w64-x86_64-python-pip"
 echo [8/8] Install: Python3 and dependencies via msys2/pacman = OK
+

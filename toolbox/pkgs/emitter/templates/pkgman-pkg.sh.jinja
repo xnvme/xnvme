@@ -1,12 +1,5 @@
 #!/bin/sh
 # Query the linker version
-ld -v || true
-
-# Query the (g)libc version
-ldd --version || true
-
-#!/bin/sh
-# Query the linker version
 ld --version || true
 
 # Query the (g)libc version
@@ -14,25 +7,9 @@ ldd --version || true
 
 # Install packages via the system package-manager (pkg)
 pkg install -qy \
- autoconf \
- automake \
- bash \
- clang-format \
- cunit \
- devel/py-pyelftools \
- e2fsprogs-libuuid \
- findutils \
- git \
- gmake \
- libtool \
- meson \
- nasm \
- ncurses \
- openssl \
- patch \
- pkgconf \
- python3 \
- wget
+{%- for dep in deps %}
+ {{ dep }}{% if not loop.last %} \{% endif %}
+{%- endfor %}
 
 # Upgrade pip
 python3 -m ensurepip --upgrade
@@ -40,4 +17,3 @@ python3 -m ensurepip --upgrade
 # Installing meson via pip as the one available 'pkg install' currently that is 0.62.2, breaks with
 # a "File name too long", 0.60 seems ok.
 python3 -m pip install meson==0.60
-
