@@ -6,7 +6,6 @@ extern "C" {
 #endif
 
 #include <libxnvme.h>
-#include <libxnvmec.h>
 
 /**
  * Options for pretty-printer (``*_pr``, ``*_fpr``) functions
@@ -143,37 +142,6 @@ xnvme_ident_fpr(FILE *stream, const struct xnvme_ident *ident, int opts);
  */
 int
 xnvme_ident_pr(const struct xnvme_ident *ident, int opts);
-
-struct xnvme_enumeration;
-
-/**
- * Prints the given ::xnvme_enumeration to the given output stream
- *
- * @param stream output stream used for printing
- * @param list pointer to structure to print
- * @param opts printer options, see ::xnvme_pr
- *
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_enumeration_fpr(FILE *stream, struct xnvme_enumeration *list, int opts);
-
-int
-xnvme_enumeration_fpp(FILE *stream, struct xnvme_enumeration *list, int opts);
-
-int
-xnvme_enumeration_pp(struct xnvme_enumeration *list, int opts);
-
-/**
- * Prints the given ::xnvme_enumeration to stdout
- *
- * @param list pointer to structure to print
- * @param opts printer options, see ::xnvme_pr
- *
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_enumeration_pr(struct xnvme_enumeration *list, int opts);
 
 /**
  * Prints the given ::xnvme_dev to the given output stream

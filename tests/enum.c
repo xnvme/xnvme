@@ -12,10 +12,10 @@
 int
 enumerate_cb(struct xnvme_dev *dev, void *cb_args)
 {
-	struct xnvme_enumeration *list = cb_args;
+	struct xnvmec_enumeration *list = cb_args;
 	const struct xnvme_ident *ident = xnvme_dev_get_ident(dev);
 
-	if (xnvme_enumeration_append(list, ident)) {
+	if (xnvmec_enumeration_append(list, ident)) {
 		XNVME_DEBUG("FAILED: adding ident");
 	}
 
@@ -25,7 +25,7 @@ enumerate_cb(struct xnvme_dev *dev, void *cb_args)
 static int
 test_enum(struct xnvmec *cli)
 {
-	struct xnvme_enumeration *listing[MAX_LISTINGS] = {0};
+	struct xnvmec_enumeration *listing[MAX_LISTINGS] = {0};
 	struct xnvme_opts opts = {0};
 	uint64_t nlistings = 2;
 	int nerr = 0, err;
@@ -44,9 +44,9 @@ test_enum(struct xnvmec *cli)
 	xnvmec_pinf("Will enumerate %ld times", nlistings);
 
 	for (uint64_t i = 0; i < nlistings; ++i) {
-		err = xnvme_enumeration_alloc(&listing[i], 100);
+		err = xnvmec_enumeration_alloc(&listing[i], 100);
 		if (err) {
-			XNVME_DEBUG("FAILED: xnvme_enumeration_alloc()");
+			XNVME_DEBUG("FAILED: xnvmec_enumeration_alloc()");
 			return err;
 		}
 
@@ -61,8 +61,8 @@ test_enum(struct xnvmec *cli)
 			nerr += 1;
 			xnvmec_pinf("The enumeration %ld did not match the prev", i);
 
-			xnvme_enumeration_pr(listing[i], XNVME_PR_DEF);
-			xnvme_enumeration_pr(listing[i - 1], XNVME_PR_DEF);
+			xnvmec_enumeration_pr(listing[i], XNVME_PR_DEF);
+			xnvmec_enumeration_pr(listing[i - 1], XNVME_PR_DEF);
 		}
 	}
 	if (nerr) {
@@ -85,7 +85,7 @@ exit:
 static int
 test_enum_open(struct xnvmec *cli)
 {
-	struct xnvme_enumeration *listing = NULL;
+	struct xnvmec_enumeration *listing = NULL;
 	struct xnvme_opts enum_opts = {0};
 	int count = 1;
 	int nerr = 0, err;
@@ -96,9 +96,9 @@ test_enum_open(struct xnvmec *cli)
 		return err;
 	}
 
-	err = xnvme_enumeration_alloc(&listing, 100);
+	err = xnvmec_enumeration_alloc(&listing, 100);
 	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_enumeration_alloc()");
+		XNVME_DEBUG("FAILED: xnvmec_enumeration_alloc()");
 		return err;
 	}
 
@@ -108,7 +108,7 @@ test_enum_open(struct xnvmec *cli)
 		xnvmec_perr("xnvme_enumerate()", err);
 		goto exit;
 	}
-	xnvme_enumeration_pr(listing, XNVME_PR_DEF);
+	xnvmec_enumeration_pr(listing, XNVME_PR_DEF);
 
 	if (cli->args.count) {
 		count = cli->args.count > MAX_HANDLES ? MAX_HANDLES : cli->args.count;

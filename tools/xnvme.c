@@ -34,11 +34,11 @@ enumerate_cb(struct xnvme_dev *dev, void *cb_args)
 int
 listing_cb(struct xnvme_dev *dev, void *cb_args)
 {
-	struct xnvme_enumeration *list = cb_args;
+	struct xnvmec_enumeration *list = cb_args;
 	const struct xnvme_ident *ident;
 
 	ident = xnvme_dev_get_ident(dev);
-	if (xnvme_enumeration_append(list, ident)) {
+	if (xnvmec_enumeration_append(list, ident)) {
 		XNVME_DEBUG("FAILED: adding ident");
 	}
 
@@ -48,7 +48,7 @@ listing_cb(struct xnvme_dev *dev, void *cb_args)
 static int
 sub_listing(struct xnvmec *cli)
 {
-	struct xnvme_enumeration *listing = NULL;
+	struct xnvmec_enumeration *listing = NULL;
 	struct xnvme_opts opts = {0};
 	int err;
 
@@ -58,9 +58,9 @@ sub_listing(struct xnvmec *cli)
 		return err;
 	}
 
-	err = xnvme_enumeration_alloc(&listing, 100);
+	err = xnvmec_enumeration_alloc(&listing, 100);
 	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_enumeration_alloc()");
+		XNVME_DEBUG("FAILED: xnvmec_enumeration_alloc()");
 		return err;
 	}
 
@@ -70,7 +70,7 @@ sub_listing(struct xnvmec *cli)
 		goto exit;
 	}
 
-	xnvme_enumeration_pp(listing, XNVME_PR_DEF);
+	xnvmec_enumeration_pp(listing, XNVME_PR_DEF);
 
 exit:
 	free(listing);
@@ -91,7 +91,7 @@ sub_enumerate(struct xnvmec *cli)
 		return err;
 	}
 
-	fprintf(stdout, "xnvme_enumeration:");
+	fprintf(stdout, "xnvmec_enumeration:");
 
 	err = xnvme_enumerate(cli->args.sys_uri, &opts, *enumerate_cb, &ns_count);
 	if (err) {

@@ -29,7 +29,7 @@ foreach sys : system_support
     set_variable('is_' + sys, system == sys)
 endforeach
 
-is_centos7 = run_command('cat', '/etc/os-release', check: false).stdout().contains('CentOS Linux 7')
+is_centos7 = is_linux ? run_command('cat', '/etc/os-release', check: false).stdout().contains('CentOS Linux 7') : false
 
 cc = meson.get_compiler('c')
 cc_flags = [
@@ -147,12 +147,6 @@ fio_dep = dependency(
   'fio',
   required: get_option('with-fio')
 )
-# Fio Windows Posix Headers
-if is_windows and get_option('with-fio')
-    fio_winposix_inc = include_directories('subprojects'/'fio'/'os'/'windows'/'posix'/'include')
-else
-    fio_winposix_inc = include_directories()
-endif
 
 setupapi_dep = cc.find_library(
   'setupapi',

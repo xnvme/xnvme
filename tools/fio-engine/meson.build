@@ -1,5 +1,4 @@
 xnvmefioe_inc = is_windows ? [
-  fio_winposix_inc,
   conf_inc,
   xnvme_inc
 ] : [ xnvme_inc ]

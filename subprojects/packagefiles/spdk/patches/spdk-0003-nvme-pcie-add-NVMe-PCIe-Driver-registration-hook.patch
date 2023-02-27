@@ -1,7 +1,7 @@
 From 669de41b1d7e3dd8b251699ed084850e8121e2aa Mon Sep 17 00:00:00 2001
 From: "Simon A. F. Lund" <os@safl.dk>
 Date: Wed, 5 May 2021 18:33:05 +0200
-Subject: [PATCH 8/8] nvme/pcie: add NVMe PCIe Driver registration-hook
+Subject: [PATCH 3/3] nvme/pcie: add NVMe PCIe Driver registration-hook
 
 Signed-off-by: Simon A. F. Lund <os@safl.dk>
 Change-Id: I573f6bf51d0c26903764ddc66fe138a0f197b5e2

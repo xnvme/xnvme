@@ -513,22 +513,51 @@ enum xnvmec_opts {
 /**
  * List of devices found on the system usable with xNVMe
  *
- * @struct xnvme_enumeration
+ * @struct xnvmec_enumeration
  */
-struct xnvme_enumeration {
+struct xnvmec_enumeration {
 	uint32_t capacity;            ///< Remaining unused entries
 	uint32_t nentries;            ///< Used entries
 	struct xnvme_ident entries[]; ///< Device entries
 };
 
 int
-xnvme_enumeration_alloc(struct xnvme_enumeration **list, uint32_t capacity);
+xnvmec_enumeration_alloc(struct xnvmec_enumeration **list, uint32_t capacity);
 
 void
-xnvme_enumeration_free(struct xnvme_enumeration *list);
+xnvmec_enumeration_free(struct xnvmec_enumeration *list);
 
 int
-xnvme_enumeration_append(struct xnvme_enumeration *list, const struct xnvme_ident *entry);
+xnvmec_enumeration_append(struct xnvmec_enumeration *list, const struct xnvme_ident *entry);
+
+/**
+ * Prints the given ::xnvmec_enumeration to the given output stream
+ *
+ * @param stream output stream used for printing
+ * @param list pointer to structure to print
+ * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvmec_enumeration_fpr(FILE *stream, struct xnvmec_enumeration *list, int opts);
+
+int
+xnvmec_enumeration_fpp(FILE *stream, struct xnvmec_enumeration *list, int opts);
+
+int
+xnvmec_enumeration_pp(struct xnvmec_enumeration *list, int opts);
+
+/**
+ * Prints the given ::xnvmec_enumeration to stdout
+ *
+ * @param list pointer to structure to print
+ * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvmec_enumeration_pr(struct xnvmec_enumeration *list, int opts);
 
 static inline uint64_t
 xnvmec_timer_start(struct xnvmec *cli)
