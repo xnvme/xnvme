@@ -9,5 +9,4 @@ patch_directory = spdk
 clone-recursive = true
 
 [provide]
-spdk = spdk
-dependency_names = spdk
+_spdk = spdk_dep

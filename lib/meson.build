@@ -73,49 +73,21 @@ xnvmelib_source = [
   'xnvmec.c'
 ]
 
-xnvmelib_deps_shared = [
-  thread_dep,
-  rt_dep,
-  ssl_dep,
-  dlfcn_dep,
-  math_dep,
-  numa_dep,
-  uuid_dep,
-  execinfo_dep,
-  elf_dep,
-  aio_dep,
+xnvmelib_deps = [
   setupapi_dep,
   corefoundation_dep,
   iokit_dep,
   libvfn_dep,
   uring_dep,
-]
-
-xnvmelib_deps_static = []
-xnvmelib_deps_static += [spdk_dep, uring_dep, corefoundation_dep, iokit_dep, libvfn_dep]
-xnvmelib_deps = xnvmelib_deps_shared + xnvmelib_deps_static
-
-xnvmelib_deps_bundle = [
+  aio_dep,
   spdk_dep,
+  thread_dep,
+  rt_dep,
 ]
 
-# We are not relying on meson to control whether or not static/shared libraries are built, this is
-# since we need the static library for constructing the bundled library, and we want the
-# 'non-bundled' shared library to be named 'libxnvme-static.' and the bundled to be 'libxnvme'.
-# This naming is not possible when delegating via default_library
-if get_option('shared_library')
-  xnvmelib_shared = shared_library(
-    'xnvme-shared',
-    xnvmelib_source,
-    dependencies: xnvmelib_deps,
-    include_directories: [conf_inc, xnvme_inc],
-    install_dir: xnvmelib_libdir,
-    install: true,
-  )
-endif
-
-xnvmelib_static = static_library(
-  'xnvme-static',
+# We always build both the shared and static libraries
+xnvmelib_shared = shared_library(
+  'xnvme',
   xnvmelib_source,
   dependencies: xnvmelib_deps,
   include_directories: [conf_inc, xnvme_inc],
@@ -123,56 +95,21 @@ xnvmelib_static = static_library(
   install: true,
 )
 
-# Produce a static library containing xNVMe, liburing, and SPDK
-bundle_lib_paths = []
-bundle_lib_paths += [ 'lib' / 'libxnvme-static.a' ]
-
-if conf_data.get('XNVME_BE_LINUX_VFIO_ENABLED')
-  bundle_lib_paths += ['subprojects' / 'libvfn' / 'src' / 'libvfn.a']
-endif
-
-foreach blib : xnvmelib_deps_bundle
-  if get_option('build_subprojects') and blib.found()
-    bundle_lib_paths += blib.get_variable(internal: 'lib_paths').split(' ')
-  endif
-endforeach
-
-xnvmelib_bundle_depends = [xnvmelib_static]
-
-if conf_data.get('XNVME_BE_LINUX_VFIO_ENABLED')
-  # custom targets cannot depend on dependency() objects, so depend on the
-  # library build target from the subproject.
-  xnvmelib_bundle_depends += subproject('libvfn').get_variable('vfn_lib')
-endif
-
-# missing xnvme and liburing, howto find / produce absolute paths to these?
-xnvmelib_bundle = custom_target(
+xnvmelib_static = static_library(
   'xnvme',
-  build_by_default: true,
-  depends: xnvmelib_bundle_depends,
-  command: [ prog_python, '@INPUT@', '--output', '@OUTPUT@', '--libs' ] + bundle_lib_paths,
-  input: tb_library_bundler,
-  output: 'libxnvme.a',
+  xnvmelib_source,
+  dependencies: xnvmelib_deps,
+  include_directories: [conf_inc, xnvme_inc],
   install_dir: xnvmelib_libdir,
   install: true,
 )
 
-# We create this as a target to be consumed by pkgconfig, potentially also for the xnvme-cli-tools,
-# although they currently link "directly" to the regular static library
-xnvmelib_bundle_dep = declare_dependency(
-  dependencies: xnvmelib_deps,
-  link_args: conf_data.get('XNVME_BE_SPDK_ENABLED') ? [
-    '-Wl,--whole-archive',
-    '-Wl,--no-as-needed',
-    '-lxnvme',
-    '-Wl,--no-whole-archive',
-    '-Wl,--as-needed',
-  ] : [ '-lxnvme' ]
-)
 
 # pkg-config -- describing how to consume the xNVMe library
 pconf.generate(
-  libraries: [xnvmelib_bundle_dep] + [xnvmelib_deps_shared],
+  xnvmelib_shared,
+  install_dir: is_freebsd ? 'libdata/pkgconfig' : xnvmelib_libdir + '/pkgconfig',
+  libraries_private: xnvmelib_deps,
   version: meson.project_version(),
   variables: [
     'datadir=' + get_option('prefix') / get_option('datadir') / meson.project_name()
