@@ -33,7 +33,6 @@ foreach sys : system_support
     set_variable('is_' + sys, system == sys)
 endforeach
 
-is_centos7 = is_linux ? run_command('cat', '/etc/os-release', check: false).stdout().contains('CentOS Linux 7') : false
 
 cc = meson.get_compiler('c')
 cc_flags = [
@@ -47,7 +46,6 @@ add_project_arguments(
 prog_python = import('python').find_installation('python3')
 message('python.language_version:', prog_python.language_version())
 
-#xnvmelib_libdir = 'lib'
 xnvmelib_libdir = get_option('libdir')
 
 #
@@ -151,8 +149,7 @@ subdir('toolbox')
 tb_library_bundler = files('toolbox'/'library_bundler.py')
 
 #
-# Third-party dependencies -- this is actually lib-specific... should probably be moved into
-# 'lib/meson.build'?
+# Third-party dependencies
 #
 thread_dep = dependency('threads')
 
@@ -182,49 +179,11 @@ if conf_data.get('XNVME_BE_LINUX_LIBURING_ENABLED') and not uring_dep.found()
   error('missing liburing >= 2.2; install it or point PKG_CONFIG_PATH to where it is located')
 endif
 
-math_dep = cc.find_library(
-  'm',
-  has_headers: ['math.h'],
-  required: conf_data.get('XNVME_BE_SPDK_ENABLED'),
-)
-
-ssl_dep = dependency(
-  is_centos7 ? 'openssl11' : 'openssl', version: '>=1.1.1',
-  required: conf_data.get('XNVME_BE_SPDK_ENABLED'),
-)
-
-dlfcn_dep = cc.find_library(
-  'dl',
-  has_headers: ['dlfcn.h'],
-  required: conf_data.get('XNVME_BE_SPDK_ENABLED'),
-)
-
-uuid_dep = cc.find_library(
-  'uuid',
-  dirs: is_freebsd ? [ '/usr/local/lib' ] : [],
-  header_include_directories: is_freebsd ? [ include_directories('/usr/local/include') ] : [],
-  has_headers: ['uuid/uuid.h'],
-  required: conf_data.get('XNVME_BE_SPDK_ENABLED'),
-)
-numa_dep = cc.find_library(
-  'numa',
-  has_headers: ['numaif.h'],
-  required: conf_data.get('XNVME_BE_SPDK_ENABLED') and is_linux,
-)
-execinfo_dep = cc.find_library(
-  'execinfo',
-  has_headers: ['execinfo.h'],
-  required: conf_data.get('XNVME_BE_SPDK_ENABLED') and is_freebsd,
-)
-elf_dep = cc.find_library(
-  'elf',
-  has_headers: ['sys/elf_common.h'],
-  required: conf_data.get('XNVME_BE_SPDK_ENABLED') and is_freebsd,
-)
 spdk_dep = dependency(
-  'spdk',
+  '_spdk',
   required: conf_data.get('XNVME_BE_SPDK_ENABLED')
 )
+
 corefoundation_dep = dependency(
   'appleframeworks',
   modules: 'CoreFoundation',
