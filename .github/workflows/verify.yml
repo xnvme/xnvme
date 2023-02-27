@@ -388,20 +388,19 @@ jobs:
         - {os: 'centos', dh: 'tgagor/centos', ver: 'stream9'}
         - {os: 'centos', dh: 'tgagor/centos', ver: 'stream8'}
         - {os: 'centos', dh: 'centos', ver: 'centos7'}
-        # Skipping due to regression in system-wide packages
-        #- {os: 'debian', dh: 'debian', ver: 'bookworm'}
+        - {os: 'debian', dh: 'debian', ver: 'bookworm'}
         - {os: 'debian', dh: 'debian', ver: 'bullseye'}
         - {os: 'debian', dh: 'debian', ver: 'buster'}
+        - {os: 'fedora', dh: 'fedora', ver: '38'}
+        - {os: 'fedora', dh: 'fedora', ver: '37'}
         - {os: 'fedora', dh: 'fedora', ver: '36'}
-        - {os: 'fedora', dh: 'fedora', ver: '35'}
-        - {os: 'fedora', dh: 'fedora', ver: '34'}
         - {os: 'gentoo', dh: 'gentoo/stage3', ver: 'latest'}
         - {os: 'opensuse-tumbleweed', dh: 'opensuse/tumbleweed', ver: 'latest'}
         - {os: 'opensuse-leap', dh: 'opensuse/leap', ver: '15.4'}
         - {os: 'opensuse-leap', dh: 'opensuse/leap', ver: '15.3'}
+        - {os: 'ubuntu', dh: 'ubuntu', ver: 'kinetic'}
         - {os: 'ubuntu', dh: 'ubuntu', ver: 'jammy'}
         - {os: 'ubuntu', dh: 'ubuntu', ver: 'focal'}
-        - {os: 'ubuntu', dh: 'ubuntu', ver: 'bionic'}
 
     container:
       image: ghcr.io/xnvme/xnvme-deps-${{ matrix.container.os }}-${{ matrix.container.ver }}:next
@@ -506,8 +505,8 @@ jobs:
     #
     - name: Remove any existing cijoe installation and install from toolbox
       if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
-        'buster') || contains(matrix.container.ver, 'bionic') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver,
-        '15.4') || contains(matrix.container.ver, '15.3') || contains(matrix.container.os, 'gentoo')))
+        'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
+        '15.3') || contains(matrix.container.os, 'gentoo')))
       run: |
         python3 -m pip uninstall cijoe cijoe-pkg-xnvme cijoe-pkg-linux cijoe-pkg-qemu cijoe-pkg-example -y
         python3 -m pip list
@@ -517,8 +516,8 @@ jobs:
 
     - name: Install fio
       if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
-        'buster') || contains(matrix.container.ver, 'bionic') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver,
-        '15.4') || contains(matrix.container.ver, '15.3') || contains(matrix.container.os, 'gentoo')))
+        'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
+        '15.3') || contains(matrix.container.os, 'gentoo')))
       run: |
         cd subprojects/fio
         ./configure --disable-xnvme --prefix=/opt/fio
@@ -527,15 +526,15 @@ jobs:
 
     - name: Adjust the cijoe-configuration to match the location of the fio engine
       if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
-        'buster') || contains(matrix.container.ver, 'bionic') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver,
-        '15.4') || contains(matrix.container.ver, '15.3') || contains(matrix.container.os, 'gentoo')))
+        'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
+        '15.3') || contains(matrix.container.os, 'gentoo')))
       run: |
         sed -i "s|path: /usr/local.*|path: $(pkg-config xnvme --variable=libdir)/libxnvme-fio-engine.so|" toolbox/workflow/configs/ramdisk.config
 
     - name: CIJOE, run test-ramdisk.workflow
       if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
-        'buster') || contains(matrix.container.ver, 'bionic') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver,
-        '15.4') || contains(matrix.container.ver, '15.3') || contains(matrix.container.os, 'gentoo')))
+        'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
+        '15.3') || contains(matrix.container.os, 'gentoo')))
       continue-on-error: true
       run: |
         cd toolbox/workflow && cijoe \
@@ -546,8 +545,8 @@ jobs:
     - name: CIJOE, upload test-ramdisk-report
       uses: actions/upload-artifact@v3.1.1
       if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
-        'buster') || contains(matrix.container.ver, 'bionic') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver,
-        '15.4') || contains(matrix.container.ver, '15.3') || contains(matrix.container.os, 'gentoo')))
+        'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
+        '15.3') || contains(matrix.container.os, 'gentoo')))
       with:
         name: test-ramdisk-${{ matrix.container.os }}-${{ matrix.container.ver }}
         path: toolbox/workflow/test-${{ matrix.container.os }}-${{ matrix.container.ver }}/*

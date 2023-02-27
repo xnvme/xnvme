@@ -1,12 +1,3 @@
-@echo off
-@setlocal enableextensions enabledelayedexpansion
-
-net session >nul: 2>&1
-if errorlevel 1 (
-	echo %0 must be run with Administrator privileges
-	goto :eof
-)
-
 :: Use PowerShell to install Chocolatey
 set "PATH=%ALLUSERSPROFILE%\chocolatey\bin;%PATH%"
 echo [1/8] Install: Chocolatey Manager
@@ -76,4 +67,3 @@ echo [7/8] Install: MinGW/meson via msys2/pacman = OK
 echo [8/8] Install: Python3 and dependencies via msys2/pacman
 %MSYS2% -c "pacman --noconfirm -Syy mingw-w64-x86_64-python mingw-w64-x86_64-python-pip"
 echo [8/8] Install: Python3 and dependencies via msys2/pacman = OK
-
