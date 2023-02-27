@@ -24,7 +24,7 @@ SHARED_EXT = {
 def search_paths():
     """Search the system for the shared library emitting paths for ctypes.CDLL()"""
 
-    for search in ["xnvme-shared", "xnvme_shared"]:
+    for search in ["xnvme"]:
         path = ctypes.util.find_library(search)
         if path:
             yield path
@@ -39,9 +39,7 @@ def search_paths():
         if not proc.returncode:
             ext = SHARED_EXT.get(platform.system().lower(), "so")
 
-            yield os.path.join(
-                proc.stdout.decode("utf-8").strip(), f"libxnvme-shared.{ext}"
-            )
+            yield os.path.join(proc.stdout.decode("utf-8").strip(), f"libxnvme.{ext}")
     except subprocess.CalledProcessError:
         pass
 
