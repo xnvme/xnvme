@@ -1,6 +1,5 @@
 #!/usr/bin/env sh
 ./configure \
-  --with-fio=../fio \
   --disable-apps \
   --without-crypto \
   --without-fuse \

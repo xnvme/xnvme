@@ -537,15 +537,13 @@ jobs:
     - name: Install fio
       if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
       run: |
-        cd subprojects/fio
-        ./configure --disable-xnvme --prefix=/opt/fio
+        cd /tmp
+        git clone https://github.com/axboe/fio.git
+        cd fio
+        git checkout fio-3.34
+        ./configure --prefix=/opt/fio
         make -j $(nproc)
         make install
-
-    - name: Adjust the cijoe-configuration to match the location of the fio engine
-      if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
-      run: |
-        sed -i "s|path: /usr/local.*|path: $(pkg-config xnvme --variable=libdir)/libxnvme-fio-engine.so|" toolbox/workflow/configs/ramdisk.config
 
     - name: CIJOE, run test-ramdisk.workflow
       if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
