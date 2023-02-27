@@ -1,0 +1,9 @@
+# Install Python-based command-line tools via pipx
+if ! pipx --help; then
+        python3 -m pip install --upgrade pip
+        python3 -m pip install pipx
+        python3 -m pipx ensurepath
+fi
+{%- for dep in deps %}
+python3 -m pipx install {{ dep }}
+{%- endfor %}

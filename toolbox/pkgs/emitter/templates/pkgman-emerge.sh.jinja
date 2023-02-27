@@ -1,0 +1,9 @@
+echo ""
+echo "build requires linking against ncurses AND tinfo, run the following before compilation:"
+echo "export LDFLAGS=\"-ltinfo -lncurses\""
+
+emerge-webrsync
+emerge \
+{%- for dep in deps %}
+ {{ dep }}{% if not loop.last %} \{% endif %}
+{%- endfor %}
