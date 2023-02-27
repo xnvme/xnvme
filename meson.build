@@ -152,12 +152,6 @@ tb_library_bundler = files('toolbox'/'library_bundler.py')
 #
 thread_dep = dependency('threads')
 
-fio_cfg_h = 'subprojects'/'fio'/'config-host.h'
-fio_dep = dependency(
-  'fio',
-  required: get_option('with-fio')
-)
-
 setupapi_dep = cc.find_library(
   'setupapi',
   has_headers: ['setupapi.h'],
@@ -253,15 +247,12 @@ subdir('include')
 # Library source
 subdir('lib')
 
-# Tests, tools, fio io-engine, and code examples
+# Tests, tools, and code examples
 if get_option('tests')
   subdir('tests')
 endif
 if get_option('tools')
   subdir('tools')
-endif
-if get_option('tools') and get_option('with-fio')
-  subdir('tools/fio-engine')
 endif
 if get_option('examples')
   subdir('examples')

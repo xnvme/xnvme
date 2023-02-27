@@ -1,13 +1,10 @@
 """
-Prepare auxilary xNVMe files
-============================
+Auxiliary preperation
+=====================
 
-This populates "/opt/fio_custom" with:
-
-* fio
-  - sets it executable
-* external fio-engine: spdk_bdev
-* external fio-engine: spdk_nvme
+* Fiddle with ldconfig
+* Check whether xNVMe binaries are available
+* Checkout and install fio v3.34
 
 Step Arguments
 --------------
@@ -25,29 +22,29 @@ import logging as log
 
 
 def worklet_entry(args, cijoe, step):
-
     xnvme_source = step.get("with", {}).get("xnvme_source", "/tmp/xnvme_source")
     if xnvme_source is None:
         log.error(f"invalid step({step})")
         return errno.EINVAL
 
-    commands = [
+    misc = [
         "ldconfig /usr/local/lib/ || true",
         "xnvme enum",
         "xnvme library-info",
-        "mkdir -p /opt/fio_custom",
-        "cp subprojects/fio/fio /opt/fio_custom/",
-        "cp subprojects/spdk/build/fio/spdk_bdev /opt/fio_custom/",
-        "cp subprojects/spdk/build/fio/spdk_nvme /opt/fio_custom/",
-        "find /opt/fio_custom",
-        "chmod +x /opt/fio_custom/fio",
+        "git clone https://github.com/axboe/fio.git /tmp/fio",
+    ]
+    fio = [
+        "git checkout fio-3.34",
+        "./configure --prefix=/opt/fio",
+        "make install || gmake install",
     ]
 
-    first_err = 0
-    for command in commands:
-        err, _ = cijoe.run(command, cwd=xnvme_source)
-        if err:
-            log.error(f"cmd({command}), err({err})")
-            first_err = first_err if first_err else err
+    for commands, cwd in [(misc, xnvme_source), (fio, "/tmp/fio")]:
+        first_err = 0
+        for command in commands:
+            err, _ = cijoe.run(command, cwd=cwd)
+            if err:
+                log.error(f"cmd({command}), err({err})")
+                first_err = first_err if first_err else err
 
     return first_err
