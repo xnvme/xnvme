@@ -18,6 +18,8 @@ dnf install -y \
  git \
  libaio-devel \
  libtool \
+ liburing \
+ liburing-devel \
  libuuid-devel \
  make \
  meson \
@@ -32,12 +34,4 @@ dnf install -y \
  python3-devel \
  python3-pip \
  python3-pyelftools
-
-# Clone, build and install liburing v2.2
-git clone https://github.com/axboe/liburing.git
-cd liburing
-git checkout liburing-2.2
-./configure --libdir=/usr/lib64 --libdevdir=/usr/lib64
-make
-make install
 

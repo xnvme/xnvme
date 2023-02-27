@@ -1,0 +1,9 @@
+# Install nasm v2.15 from source
+git clone https://github.com/netwide-assembler/nasm.git
+cd nasm
+git checkout nasm-2.15
+./autogen.sh
+./configure --prefix=/usr
+make -j $(nproc)
+make install
+cd ..

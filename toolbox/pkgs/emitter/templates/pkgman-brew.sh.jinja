@@ -1,0 +1,7 @@
+# This is done to avoid appleframework deprecation warnings
+export MACOSX_DEPLOYMENT_TARGET=11.0
+
+# Install packages via brew, assuming that brew is: installed, updated, and upgraded
+{%- for dep in deps %}
+{{ dep }} --version && echo "Installed" || brew install {{ dep }} 
+{%- endfor %}

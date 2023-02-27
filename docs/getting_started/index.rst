@@ -79,6 +79,18 @@ Along with libraries:
 * liburing (>=2.2, for **xNVMe**)
 * uuid-dev (>=2.3, For **SPDK**)
 
+xNVMe makes use of libraries and interfaces when available and will "gracefully
+degrade" when a given library is not available. For example, if liburing is not
+available on your system and you do not want to install then, then xNVMe will
+simply build without io_uring-support.
+
+Since software dependencies means a lot of for those building a given project,
+then xNVMe provides an exhaustive overview of what software xNVMe makes use of,
+and for which purposes. Along with the documentation of software-dependencies,
+then the setup of a system with those packages are provided in
+docker-containers, and in the remainder of this section, then description on
+installing xNVMe and co. is provided.
+
 The preferred toolchain is **gcc** and the following sections describe how to
 install it and required libraries on a set of popular Linux Distributions,
 FreeBSD, MacOS, and Windows. If you wish to use a different toolchain then see
@@ -96,6 +108,9 @@ is built and installed from source.
    pip install``), then packages should be installed system-wide. This is
    ensure that the installed packages behave as though they were installed
    using the system package-manager.
+
+Packages managers: apk, pkg, dnf, yum, pacman, apt, aptitude, apt-get, pkg,
+choco, brew.
 
 Alpine Linux
 ------------

@@ -1,0 +1,7 @@
+zypper --non-interactive refresh
+
+# Install packages via the system package-manager (zypper)
+zypper --non-interactive install -y --allow-downgrade \
+{%- for dep in deps %}
+ {{ dep }}{% if not loop.last %} \{% endif %}
+{%- endfor %}

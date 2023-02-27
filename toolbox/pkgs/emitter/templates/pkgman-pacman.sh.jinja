@@ -1,0 +1,6 @@
+# Install packages via the system package-manager (pacman)
+pacman -Syyu --noconfirm
+pacman -S --noconfirm \
+{%- for dep in deps %}
+ {{ dep }}{% if not loop.last %} \{% endif %}
+{%- endfor %}

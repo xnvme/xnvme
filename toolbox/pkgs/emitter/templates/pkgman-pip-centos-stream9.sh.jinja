@@ -1,0 +1,6 @@
+# Install packages via the Python package-manager (pip)
+python3 -m pip install --upgrade pip # Otherwise too old to understand new Manylinux formats
+python3 -m pip install \
+{%- for dep in deps %}
+ {{ dep }}{% if not loop.last %} \{% endif %}
+{%- endfor %}

@@ -1,32 +1,55 @@
 #!/bin/sh
 # Query the linker version
-ld --version || true
+ld -v || true
 
 # Query the (g)libc version
 ldd --version || true
 
-# Unattended update and upgrade
+# Unattended update, upgrade, and install
 export DEBIAN_FRONTEND=noninteractive
 export DEBIAN_PRIORITY=critical
-# Add buster-backports for meson and ninja
-echo "deb http://deb.debian.org/debian buster-backports main contrib non-free" > /etc/apt/sources.list.d/buster-backports.list
 apt-get -qy update
 apt-get -qy \
   -o "Dpkg::Options::=--force-confdef" \
   -o "Dpkg::Options::=--force-confold" upgrade
+apt-get -qy --no-install-recommends install apt-utils
 apt-get -qy autoclean
+apt-get -qy install \
+ autoconf \
+ bash \
+ build-essential \
+ clang-format \
+ findutils \
+ git \
+ libaio-dev \
+ libcunit1-dev \
+ libncurses5-dev \
+ libnuma-dev \
+ libssl-dev \
+ libtool \
+ make \
+ nasm \
+ openssl \
+ patch \
+ pkg-config \
+ python3 \
+ python3-pip \
+ python3-pyelftools \
+ python3-venv \
+ uuid-dev
 
-# Install packages via the system package-manager (apt-get)
-apt-get install -qy $(cat "toolbox/pkgs/debian-buster.txt")
-
-# Install packages via the Python package-manager (pip)
-python3 -m pip install --upgrade pip
-python3 -m pip install meson ninja pyelftools
-
-# Clone, build and install liburing
+# Clone, build and install liburing v2.2
 git clone https://github.com/axboe/liburing.git
 cd liburing
 git checkout liburing-2.2
 ./configure
 make
 make install
+
+# Install packages via the Python package-manager (pip)
+python3 -m pip install --upgrade pip
+python3 -m pip install \
+ meson \
+ ninja \
+ pipx
+

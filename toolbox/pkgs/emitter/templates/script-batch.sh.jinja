@@ -1,0 +1,8 @@
+@echo off
+@setlocal enableextensions enabledelayedexpansion
+
+net session >nul: 2>&1
+if errorlevel 1 (
+	echo %0 must be run with Administrator privileges
+	goto :eof
+)

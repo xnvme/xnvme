@@ -1,0 +1,13 @@
+# Only CentOS 7 uses yum, the other distros have dnf
+# Install Developer Tools
+yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+yum-config-manager --enable epel
+yum install -y centos-release-scl
+yum-config-manager --enable rhel-server-rhscl-7-rpms
+yum install -y devtoolset-8
+
+# Install packages via the system package-manager (yum)
+yum install -y \
+{%- for dep in deps %}
+ {{ dep }}{% if not loop.last %} \{% endif %}
+{%- endfor %}

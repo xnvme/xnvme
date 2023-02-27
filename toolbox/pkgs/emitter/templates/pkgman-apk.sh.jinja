@@ -1,0 +1,5 @@
+# Install packages via the system package-manager (apk)
+apk add \
+{%- for dep in deps %}
+ {{ dep }}{% if not loop.last %} \{% endif %}
+{%- endfor %}
