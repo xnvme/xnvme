@@ -20,7 +20,7 @@ def pkg_config(*args):
         return ""
 
 
-os.environ["CFLAGS"] = os.environ.get("CFLAGS", "") + pkg_config("xnvme", "--libs")
+os.environ["CFLAGS"] = os.environ.get("CFLAGS", "") + pkg_config("xnvme", "--cflags")
 
 includedir = pkg_config("xnvme", "--variable=includedir")
 assert includedir, "pkg-config returned an empty string as includedir. This won't work."
