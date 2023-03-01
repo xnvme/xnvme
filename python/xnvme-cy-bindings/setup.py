@@ -70,7 +70,9 @@ if os.path.isdir(includedir):
         f_out.write(generate_pyx(pxd_contents).read())
 else:
     # Assuming installation from PyPi package
-    os.environ["CFLAGS"] = os.environ.get("CFLAGS", "") + pkg_config("xnvme", "--libs")
+    os.environ["CFLAGS"] = os.environ.get("CFLAGS", "") + pkg_config(
+        "xnvme", "--cflags"
+    )
 
     includedir = pkg_config("xnvme", "--variable=includedir")
     assert (
