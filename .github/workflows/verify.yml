@@ -424,6 +424,13 @@ jobs:
       run: |
         if [[ -f "${BSCRIPT}" ]]; then source ${BSCRIPT}; else source ${BSCRIPT_DEF}; fi
 
+    - name: Execute 'ldconfig'
+      # ldconfig doesn't work on alpine
+      # centos7 needs "ldconfig /usr/lib/local" for python3 to work
+      if: ${{!contains(matrix.container.os, 'alpine') && !contains(matrix.container.ver, 'centos7') && !contains(matrix.container.ver,
+        'stream8')}}
+      run: ldconfig
+
     - name: meson-log-dump
       if: always()
       run: |
