@@ -41,7 +41,7 @@ _linux_liburing_noptional_missing(void)
 		}
 	}
 
-	free(probe);
+	io_uring_free_probe(probe);
 
 	return missing;
 }
