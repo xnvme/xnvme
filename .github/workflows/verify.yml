@@ -460,6 +460,10 @@ jobs:
         python3 -c "import platform; print(platform.system()); print(platform.uname())"
         python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
 
+    - name: Create python-venv
+      run: |
+        python3 -m venv /tmp/venv
+
     - name: Retrieve the xNVMe Python sdist-packages
       uses: actions/download-artifact@v3.0.1
       with:
@@ -467,7 +471,8 @@ jobs:
 
     - name: Install and test xNVMe Python bindings (ctypes)
       run: |
-        python3 -m pip install xnvme-core/dist/xnvme-core-*.tar.gz --user
+        . /tmp/venv/bin/activate
+        python3 -m pip install xnvme-core/dist/xnvme-core-*.tar.gz
         python3 -m pytest --pyargs xnvme.ctypes_bindings
 
     # This also requires installing 'xnvme/cython_header/tests' from the tarball/repository
@@ -477,10 +482,11 @@ jobs:
     # Didn't this get fixes previously? Why is this a problem again?
     - name: Install and test xNVMe Cython header (libxnvme.pxd)
       run: |
-        python3 -m pip install xnvme-cy-header/dist/xnvme-cy-header-*.tar.gz --user
-        cd python/xnvme-cy-header/xnvme/cython_header/tests/ && python3 -m pip install -r requirements.txt --user
+        . /tmp/venv/bin/activate
+        python3 -m pip install xnvme-cy-header/dist/xnvme-cy-header-*.tar.gz
+        cd python/xnvme-cy-header/xnvme/cython_header/tests/ && python3 -m pip install -r requirements.txt
         # Debian Bookworm python3-setuptools package is seemingly broken. Force install of newest package on PyPi.
-        python3 -m pip install setuptools --force --user
+        python3 -m pip install setuptools --force
         PKG_CONFIG_PATH="/usr/local/lib64/pkgconfig:/usr/local/lib/pkgconfig:/usr/local/lib/x86_64-linux-gnu/pkgconfig" python3 setup.py build_ext --inplace
         python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v -s
 
@@ -493,9 +499,10 @@ jobs:
     # Perhaps no longer the 'xnvme-core'?
     - name: Install and test xNVMe Python bindings (Cython)
       run: |
-        python3 -m pip install -r python/xnvme-cy-bindings/requirements.txt --user
-        python3 -m pip install xnvme-cy-bindings/dist/xnvme-cy-bindings-*.tar.gz --user -vvv --no-build-isolation
-        python3 -m pip install -r python/xnvme-cy-bindings/xnvme/cython_bindings/tests/requirements.txt --user
+        . /tmp/venv/bin/activate
+        python3 -m pip install -r python/xnvme-cy-bindings/requirements.txt
+        python3 -m pip install xnvme-cy-bindings/dist/xnvme-cy-bindings-*.tar.gz -vvv --no-build-isolation
+        python3 -m pip install -r python/xnvme-cy-bindings/xnvme/cython_bindings/tests/requirements.txt
         python3 -m pytest --pyargs xnvme.cython_bindings -k 'test_version' -s
 
     #
@@ -508,6 +515,7 @@ jobs:
         'buster') || contains(matrix.container.ver, 'bionic') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver,
         '15.4') || contains(matrix.container.ver, '15.3') || contains(matrix.container.os, 'gentoo')))
       run: |
+        . /tmp/venv/bin/activate
         python3 -m pip uninstall cijoe cijoe-pkg-xnvme cijoe-pkg-linux cijoe-pkg-qemu cijoe-pkg-example -y
         python3 -m pip list
         python3 -m pip install cijoe --upgrade
@@ -537,6 +545,7 @@ jobs:
         '15.4') || contains(matrix.container.ver, '15.3') || contains(matrix.container.os, 'gentoo')))
       continue-on-error: true
       run: |
+        . /tmp/venv/bin/activate
         cd toolbox/workflow && cijoe \
         --config "configs/ramdisk.config" \
         --workflow "test-ramdisk.workflow" \
