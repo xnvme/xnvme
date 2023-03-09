@@ -32,7 +32,7 @@ endef
 .PHONY: install
 install:
 	@echo "## py: make install"
-	@python3 -m pip install dist/*.tar.gz --user
+	@python3 -m pipx inject cijoe dist/*.tar.gz
 	@echo "## py: make install [DONE]"
 
 define uninstall-help
@@ -43,19 +43,8 @@ endef
 .PHONY: uninstall
 uninstall:
 	@echo "## py: make uninstall"
-	@python3 -m pip uninstall ${PROJECT_NAME} --yes || echo "Cannot uninstall => That is OK"
+	@python3 -m pipx runpip uninstall cijoe ${PROJECT_NAME} --yes || echo "Cannot uninstall => That is OK"
 	@echo "## py: make uninstall [DONE]"
-
-define install-system-help
-# install system-wide
-#
-# install system-wide
-endef
-.PHONY: install-system
-install-system:
-	@echo "## py: make install-system"
-	@python3 -m pip install dist/*.tar.gz
-	@echo "## py: make install-system [DONE]"
 
 define examples-help
 # Run pytest on the testcase-test
@@ -63,7 +52,7 @@ endef
 .PHONY: test
 test:
 	@echo "## py: make test"
-	python3 -m pytest --pyargs cijoe.xnvme.selftest --config src/cijoe/xnvme/configs/default.config
+	pytest --pyargs cijoe.xnvme.selftest --config src/cijoe/xnvme/configs/default.config
 	@echo "## py: make test [DONE]"
 
 .PHONY: release-build

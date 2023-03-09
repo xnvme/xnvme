@@ -52,7 +52,7 @@ endef
 .PHONY: install
 install:
 	@echo "## py: make install"
-	@${PY} -m pip install dist/xnvme-*.tar.gz --user
+	@${PY} -m pip install dist/xnvme-*.tar.gz --user --break-system-packages
 	@echo "## py: make install [DONE]"
 
 define uninstall-help
@@ -72,7 +72,7 @@ endef
 .PHONY: install-system
 install-system:
 	@echo "## py: make install-system"
-	@${PY} -m pip install dist/xnvme-*.tar.gz
+	@${PY} -m pip install dist/xnvme-*.tar.gz --break-system-packages
 	@echo "## py: make install-system [DONE]"
 
 define test-help

@@ -73,7 +73,7 @@ endef
 .PHONY: install
 install:
 	@echo "## py: make install"
-	@${PY} -m pip install dist/$(subst -,_,$(PROJECT_NAME))-*.whl --user || ${PY} -m pip install dist/${PROJECT_NAME}-*.tar.gz --user --no-build-isolation
+	@${PY} -m pip install dist/$(subst -,_,$(PROJECT_NAME))-*.whl --user --break-system-packages || ${PY} -m pip install dist/${PROJECT_NAME}-*.tar.gz --user --no-build-isolation  --break-system-packages
 	@echo "## py: make install [DONE]"
 
 define uninstall-help
@@ -96,7 +96,7 @@ install-system:
 	@${PY} --version
 	# --force needed, as when installing a whl, it apparently sees that the local dir has the package "installed".
 	# --no-deps needed, as it tries to find xnvme on PyPi.
-	@${PY} -m pip install dist/$(subst -,_,$(PROJECT_NAME))-*.whl --force --no-deps || ${PY} -m pip install dist/${PROJECT_NAME}-*.tar.gz --no-build-isolation
+	@${PY} -m pip install dist/$(subst -,_,$(PROJECT_NAME))-*.whl --force --no-deps --break-system-packages || ${PY} -m pip install dist/${PROJECT_NAME}-*.tar.gz --no-build-isolation  --break-system-packages
 	@echo "## py: make install-system [DONE]"
 
 define test-help
