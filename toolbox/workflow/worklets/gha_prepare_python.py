@@ -35,11 +35,14 @@ def worklet_entry(args, cijoe, step):
         log.error(f"invalid step({step})")
         return errno.EINVAL
 
-    commands = ["python3 -m pip install xnvme-core.tar.gz --user"]
+    commands = [
+        "python3 -m pip install pytest",
+        "python3 -m pip install xnvme-core.tar.gz",
+    ]
 
     hdr_path = f"{xnvme_source}/python/xnvme-cy-header/xnvme/cython_header/tests/"
     commands += [
-        "python3 -m pip install xnvme-cy-header.tar.gz --user",
+        "python3 -m pip install xnvme-cy-header.tar.gz",
         f"cd {hdr_path}; python3 -m pip install -r requirements.txt",
         f"cd {hdr_path}; python3 setup.py build_ext --inplace",
         f"cd {hdr_path}; python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v -s",

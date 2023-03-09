@@ -452,37 +452,79 @@ jobs:
         pkg-config xnvme --variable=prefix
         ls -lh $(pkg-config xnvme --variable=libdir) | grep xnvme
 
-    - name: Check Python, pip, platform, and sysconfig
+    - name: Check Python, pip, pipx, platform, sysconfig and setup PATH for pipx
       run: |
         python3 --version
         python3 -m pip --version
         python3 -c 'import setuptools; print("setuptools version:", setuptools.__version__)'
         python3 -c "import platform; print(platform.system()); print(platform.uname())"
         python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
+        python3 -m pipx --version
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - name: Retrieve the xNVMe Python sdist-packages
       uses: actions/download-artifact@v3.0.1
       with:
         name: python-xnvme-pkg
 
-    - name: Install and test xNVMe Python bindings (ctypes)
+    # Setup Python virtual-environment for cijoe and Python xNVMe bindings to run ramdisk testing
+    - name: Setup CIJOE
+      if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
+        'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
+        '15.3') || contains(matrix.container.os, 'gentoo') || contains(matrix.container.ver, 'stream8')))
       run: |
-        python3 -m pip install xnvme-core/dist/xnvme-core-*.tar.gz --user
-        python3 -m pytest --pyargs xnvme.ctypes_bindings
+        python3 -m pipx install cijoe --include-deps
+        python3 -m pipx inject cijoe cijoe-pkg-linux
+        python3 -m pipx inject cijoe cijoe-pkg-qemu
+        pushd toolbox/cijoe-pkg-xnvme && make all && popd
+
+    - name: Check CIJOE
+      if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
+        'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
+        '15.3') || contains(matrix.container.os, 'gentoo') || contains(matrix.container.ver, 'stream8')))
+      run: |
+        cijoe -r
+
+    - name: Python-bindings (ctypes), install and test
+      if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
+        'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
+        '15.3') || contains(matrix.container.os, 'gentoo') || contains(matrix.container.ver, 'stream8')))
+      run: |
+        python3 -m pipx inject cijoe xnvme-core/dist/xnvme-core-*.tar.gz
+        pytest --pyargs xnvme.ctypes_bindings
+
+    - name: Cython-header, inject xnvme-cy-header (libxnvme.pxd) and reqs. in pipx-venv
+      if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
+        'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
+        '15.3') || contains(matrix.container.os, 'gentoo') || contains(matrix.container.ver, 'stream8')))
+      run: |
+        python3 -m pipx inject cijoe cython
+        python3 -m pipx inject cijoe "pytest-cython-collect>=0.2"
+        python3 -m pipx inject cijoe "setuptools>=40.1"
+        python3 -m pipx inject cijoe xnvme-cy-header/dist/xnvme-cy-header-*.tar.gz
+
+    - name: Cython-header, install xnvme-core and xnvme-cy-header (libxnvme.pxd) system-wide
+      if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
+        'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
+        '15.3') || contains(matrix.container.os, 'gentoo') || contains(matrix.container.ver, 'stream8')))
+      run: |
+        python3 -m pip install xnvme-core/dist/xnvme-core-*.tar.gz || python3 -m pip install xnvme-core/dist/xnvme-core-*.tar.gz  --break-system-packages
+        python3 -m pip install xnvme-cy-header/dist/xnvme-cy-header-*.tar.gz --user || python3 -m pip install xnvme-cy-header/dist/xnvme-cy-header-*.tar.gz --user --break-system-packages
 
     # This also requires installing 'xnvme/cython_header/tests' from the tarball/repository
     # The tests that are run here only tests "dummy", which means without an NVMe device.
     #
     # A PKG_CONFIG_PATH is set, as it is needed on Arch, CentOS 7/8 and Gentoo
     # Didn't this get fixes previously? Why is this a problem again?
-    - name: Install and test xNVMe Cython header (libxnvme.pxd)
+    - name: Cython, install xnvme-cy-header test-requirements system-wide
+      if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
+        'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
+        '15.3') || contains(matrix.container.os, 'gentoo') || contains(matrix.container.ver, 'stream8')))
       run: |
-        python3 -m pip install xnvme-cy-header/dist/xnvme-cy-header-*.tar.gz --user
-        cd python/xnvme-cy-header/xnvme/cython_header/tests/ && python3 -m pip install -r requirements.txt --user
-        # Debian Bookworm python3-setuptools package is seemingly broken. Force install of newest package on PyPi.
-        python3 -m pip install setuptools --force --user
+        cd python/xnvme-cy-header/xnvme/cython_header/tests/
+        python3 -m pip install -r requirements.txt --user || python3 -m pip install -r requirements.txt --user --break-system-packages
         PKG_CONFIG_PATH="/usr/local/lib64/pkgconfig:/usr/local/lib/pkgconfig:/usr/local/lib/x86_64-linux-gnu/pkgconfig" python3 setup.py build_ext --inplace
-        python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v -s
+        pytest --cython-collect test_cython.pyx::test_dummy -v -s
 
     # Why is this needed: "python/xnvme-cy-bindings/requirements.txt --user" ?
     # Should't build-requirements take care of this?
@@ -491,33 +533,25 @@ jobs:
     # packages, in to build the xnvme-cy-bindings the 'xnvme-core' and 'xnvme-cy-header' packages
     # are needed.
     # Perhaps no longer the 'xnvme-core'?
-    - name: Install and test xNVMe Python bindings (Cython)
+    - name: Python-Bindings (Cython), Cython-implementation, Install and test xNVMe Python bindings (Cython)
+      if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
+        'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
+        '15.3') || contains(matrix.container.os, 'gentoo') || contains(matrix.container.ver, 'stream8')))
       run: |
-        python3 -m pip install -r python/xnvme-cy-bindings/requirements.txt --user
-        python3 -m pip install xnvme-cy-bindings/dist/xnvme-cy-bindings-*.tar.gz --user -vvv --no-build-isolation
-        python3 -m pip install -r python/xnvme-cy-bindings/xnvme/cython_bindings/tests/requirements.txt --user
+        python3 -m pip install -r python/xnvme-cy-bindings/requirements.txt --user || python3 -m pip install -r python/xnvme-cy-bindings/requirements.txt --user --break-system-packages 
+        python3 -m pip install xnvme-cy-bindings/dist/xnvme-cy-bindings-*.tar.gz --user -vvv --no-build-isolation || python3 -m pip install xnvme-cy-bindings/dist/xnvme-cy-bindings-*.tar.gz --user -vvv --no-build-isolation --break-system-packages
+        python3 -m pip install -r python/xnvme-cy-bindings/xnvme/cython_bindings/tests/requirements.txt --user || python3 -m pip install -r python/xnvme-cy-bindings/xnvme/cython_bindings/tests/requirements.txt --user --break-system-packages
         python3 -m pytest --pyargs xnvme.cython_bindings -k 'test_version' -s
 
     #
     # Ramdisk testing
     #
-    # skipping on distros with too old gcc/clang to build fio, and too old a Python to run cijoe
+    # Skipping on distros with too old gcc/clang to build fio, and too old a Python to run cijoe (requires 3.9)
     #
-    - name: Remove any existing cijoe installation and install from toolbox
-      if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
-        'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
-        '15.3') || contains(matrix.container.os, 'gentoo')))
-      run: |
-        python3 -m pip uninstall cijoe cijoe-pkg-xnvme cijoe-pkg-linux cijoe-pkg-qemu cijoe-pkg-example -y
-        python3 -m pip list
-        python3 -m pip install cijoe --upgrade
-        pushd toolbox/cijoe-pkg-xnvme && make all && popd
-        cijoe -r
-
     - name: Install fio
       if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
         'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
-        '15.3') || contains(matrix.container.os, 'gentoo')))
+        '15.3') || contains(matrix.container.os, 'gentoo') || contains(matrix.container.ver, 'stream8')))
       run: |
         cd subprojects/fio
         ./configure --disable-xnvme --prefix=/opt/fio
@@ -527,14 +561,14 @@ jobs:
     - name: Adjust the cijoe-configuration to match the location of the fio engine
       if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
         'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
-        '15.3') || contains(matrix.container.os, 'gentoo')))
+        '15.3') || contains(matrix.container.os, 'gentoo') || contains(matrix.container.ver, 'stream8')))
       run: |
         sed -i "s|path: /usr/local.*|path: $(pkg-config xnvme --variable=libdir)/libxnvme-fio-engine.so|" toolbox/workflow/configs/ramdisk.config
 
     - name: CIJOE, run test-ramdisk.workflow
       if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
         'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
-        '15.3') || contains(matrix.container.os, 'gentoo')))
+        '15.3') || contains(matrix.container.os, 'gentoo') || contains(matrix.container.ver, 'stream8')))
       continue-on-error: true
       run: |
         cd toolbox/workflow && cijoe \
@@ -546,7 +580,7 @@ jobs:
       uses: actions/upload-artifact@v3.1.1
       if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
         'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
-        '15.3') || contains(matrix.container.os, 'gentoo')))
+        '15.3') || contains(matrix.container.os, 'gentoo') || contains(matrix.container.ver, 'stream8')))
       with:
         name: test-ramdisk-${{ matrix.container.os }}-${{ matrix.container.ver }}
         path: toolbox/workflow/test-${{ matrix.container.os }}-${{ matrix.container.ver }}/*
@@ -622,19 +656,64 @@ jobs:
       with:
         name: python-xnvme-pkg
 
-    - name: Install and test xNVMe Python bindings
+    # Setup Python virtual-environment for cijoe and Python xNVMe bindings to run ramdisk testing
+    - name: Setup CIJOE
+      if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
+        'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
+        '15.3') || contains(matrix.container.os, 'gentoo') || contains(matrix.container.ver, 'stream8')))
       run: |
-        python3 -m pip install xnvme-core/dist/xnvme-core-*.tar.gz --user
-        python3 -m pytest --pyargs xnvme.ctypes_bindings
+        python3 -m pipx install cijoe --include-deps
+        python3 -m pipx inject cijoe cijoe-pkg-linux
+        python3 -m pipx inject cijoe cijoe-pkg-qemu
+        pushd toolbox/cijoe-pkg-xnvme && make all && popd
+
+    - name: Check CIJOE
+      if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
+        'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
+        '15.3') || contains(matrix.container.os, 'gentoo') || contains(matrix.container.ver, 'stream8')))
+      run: |
+        cijoe -r
+
+    - name: Python-bindings (ctypes), install and test
+      if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
+        'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
+        '15.3') || contains(matrix.container.os, 'gentoo') || contains(matrix.container.ver, 'stream8')))
+      run: |
+        python3 -m pipx inject cijoe xnvme-core/dist/xnvme-core-*.tar.gz
+        pytest --pyargs xnvme.ctypes_bindings
+
+    - name: Cython-header, inject xnvme-cy-header (libxnvme.pxd) and reqs. in pipx-venv
+      if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
+        'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
+        '15.3') || contains(matrix.container.os, 'gentoo') || contains(matrix.container.ver, 'stream8')))
+      run: |
+        python3 -m pipx inject cijoe cython
+        python3 -m pipx inject cijoe "pytest-cython-collect>=0.2"
+        python3 -m pipx inject cijoe "setuptools>=40.1"
+        python3 -m pipx inject cijoe xnvme-cy-header/dist/xnvme-cy-header-*.tar.gz
+
+    - name: Cython-header, install xnvme-core and xnvme-cy-header (libxnvme.pxd) system-wide
+      if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
+        'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
+        '15.3') || contains(matrix.container.os, 'gentoo') || contains(matrix.container.ver, 'stream8')))
+      run: |
+        python3 -m pip install xnvme-core/dist/xnvme-core-*.tar.gz || python3 -m pip install xnvme-core/dist/xnvme-core-*.tar.gz  --break-system-packages
+        python3 -m pip install xnvme-cy-header/dist/xnvme-cy-header-*.tar.gz --user || python3 -m pip install xnvme-cy-header/dist/xnvme-cy-header-*.tar.gz --user --break-system-packages
 
     # This also requires installing 'xnvme/cython_header/tests' from the tarball/repository
     # The tests that are run here only tests "dummy", which means without an NVMe device.
-    - name: Install and test xNVMe Cython header (libxnvme.pxd)
+    #
+    # A PKG_CONFIG_PATH is set, as it is needed on Arch, CentOS 7/8 and Gentoo
+    # Didn't this get fixes previously? Why is this a problem again?
+    - name: Cython, install xnvme-cy-header test-requirements system-wide
+      if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
+        'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
+        '15.3') || contains(matrix.container.os, 'gentoo') || contains(matrix.container.ver, 'stream8')))
       run: |
-        python3 -m pip install xnvme-cy-header/dist/xnvme-cy-header-*.tar.gz --user
-        cd python/xnvme-cy-header/xnvme/cython_header/tests/ && python3 -m pip install -r requirements.txt --user
-        python3 setup.py build_ext --inplace
-        python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v -s
+        cd python/xnvme-cy-header/xnvme/cython_header/tests/
+        python3 -m pip install -r requirements.txt --user || python3 -m pip install -r requirements.txt --user --break-system-packages
+        PKG_CONFIG_PATH="/usr/local/lib64/pkgconfig:/usr/local/lib/pkgconfig:/usr/local/lib/x86_64-linux-gnu/pkgconfig" python3 setup.py build_ext --inplace
+        pytest --cython-collect test_cython.pyx::test_dummy -v -s
 
     # Why is this needed: "python/xnvme-cy-bindings/requirements.txt --user" ?
     # Should't build-requirements take care of this?
@@ -643,11 +722,14 @@ jobs:
     # packages, in to build the xnvme-cy-bindings the 'xnvme-core' and 'xnvme-cy-header' packages
     # are needed.
     # Perhaps no longer the 'xnvme-core'?
-    - name: Install and test xNVMe Python bindings (Cython)
+    - name: Python-Bindings (Cython), Cython-implementation, Install and test xNVMe Python bindings (Cython)
+      if: (!(contains(matrix.container.ver, 'centos7') || contains(matrix.container.ver, 'opensuse') || contains(matrix.container.ver,
+        'buster') || contains(matrix.container.ver, 'focal') || contains(matrix.container.ver, '15.4') || contains(matrix.container.ver,
+        '15.3') || contains(matrix.container.os, 'gentoo') || contains(matrix.container.ver, 'stream8')))
       run: |
-        python3 -m pip install -r python/xnvme-cy-bindings/requirements.txt --user
-        python3 -m pip install xnvme-cy-bindings/dist/xnvme-cy-bindings-*.tar.gz --user -vvv --no-build-isolation
-        python3 -m pip install -r python/xnvme-cy-bindings/xnvme/cython_bindings/tests/requirements.txt --user
+        python3 -m pip install -r python/xnvme-cy-bindings/requirements.txt --user || python3 -m pip install -r python/xnvme-cy-bindings/requirements.txt --user --break-system-packages 
+        python3 -m pip install xnvme-cy-bindings/dist/xnvme-cy-bindings-*.tar.gz --user -vvv --no-build-isolation || python3 -m pip install xnvme-cy-bindings/dist/xnvme-cy-bindings-*.tar.gz --user -vvv --no-build-isolation --break-system-packages
+        python3 -m pip install -r python/xnvme-cy-bindings/xnvme/cython_bindings/tests/requirements.txt --user || python3 -m pip install -r python/xnvme-cy-bindings/xnvme/cython_bindings/tests/requirements.txt --user --break-system-packages
         python3 -m pytest --pyargs xnvme.cython_bindings -k 'test_version' -s
 
   #
@@ -750,6 +832,7 @@ jobs:
     - name: Container-prep, extract the full-source-archive
       run: |
         tar xzf xnvme*.tar.gz --strip 1
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - name: Retrieve the xNVMe Python Packages (prebuilt sdist)
       uses: actions/download-artifact@v3.0.1
@@ -769,12 +852,27 @@ jobs:
         mv xnvme-*.*.*.tar.gz /tmp/artifacts/xnvme.tar.gz
         find /tmp/artifacts -name "*.tar.gz"
 
-    - name: Remove any existing cijoe installation and install from toolbox
+    - name: Install python-venv on Bullseye
       run: |
-        python3 -m pip uninstall cijoe cijoe-pkg-xnvme cijoe-pkg-linux cijoe-pkg-qemu cijoe-pkg-example -y
+        apt-get install -qy python3-venv
+
+    - name: pipx, Install
+      run: |
+        python3 -m pip uninstall pytest cijoe cijoe-pkg-xnvme cijoe-pkg-linux cijoe-pkg-qemu cijoe-pkg-example -y
+        python3 -m pip install pytest
         python3 -m pip list
-        python3 -m pip install cijoe --upgrade
+        python3 -m pip install pipx
+        python3 -m pipx ensurepath
+
+    - name: CIJOE, setup pipx environment
+      run: |
+        python3 -m pipx install cijoe --include-deps
+        python3 -m pipx inject cijoe cijoe-pkg-linux
+        python3 -m pipx inject cijoe cijoe-pkg-qemu
         pushd toolbox/cijoe-pkg-xnvme && make all && popd
+
+    - name: CIJOE, check that it works
+      run: |
         cijoe -r
 
     # cd'ing into 'toolbox/workflow' to auto-collect the non-packaged github-specific configs and
@@ -817,7 +915,6 @@ jobs:
         name: test-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
         path: toolbox/workflow/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/*
         if-no-files-found: error
-
 
   # This is a lot of effort to generate documentation, however, it ensures that command-line
   # utilities, build-examples, commands-output of various kinds are up-to-date.
