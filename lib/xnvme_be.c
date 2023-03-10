@@ -719,6 +719,11 @@ xnvme_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb
 			continue;
 		}
 
+		if (opts && (opts->be) && strcmp(opts->be, be.attr.name)) {
+			// skip if opts->be != be.attr.name
+			continue;
+		}
+
 		err = be_setup(&be, XNVME_BE_DEV, NULL);
 		if (err < 0) {
 			XNVME_DEBUG("FAILED: be_setup(); err: %d", err);
