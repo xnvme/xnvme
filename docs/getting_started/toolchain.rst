@@ -23,15 +23,8 @@ Along with libraries:
 
 xNVMe makes use of libraries and interfaces when available and will "gracefully
 degrade" when a given library is not available. For example, if liburing is not
-available on your system and you do not want to install then, then xNVMe will
+available on your system and you do not want to install it, then xNVMe will
 simply build without io_uring-support.
-
-Since software dependencies means a lot of for those building a given project,
-then xNVMe provides an exhaustive overview of what software xNVMe makes use of,
-and for which purposes. Along with the documentation of software-dependencies,
-then the setup of a system with those packages are provided in
-docker-containers, and in the remainder of this section, then description on
-installing xNVMe and co. is provided.
 
 The preferred toolchain is **gcc** and the following sections describe how to
 install it and required libraries on a set of popular Linux Distributions,
@@ -39,35 +32,47 @@ FreeBSD, MacOS, and Windows. If you wish to use a different toolchain then see
 the :ref:`sec-building-custom-toolchain`, on how to instrument the build-system
 using a compiler other than **gcc**.
 
-In the following sections, the then the system package-manager is used whenever
-possible to install the toolchain and libraries. However, on some Linux
-distribution there are not recent enough versions. To circurvent that, then the
-packages are installed via the Python package-manager. In some cases even a
-recent enough version of Python is not available, to bootstrap it, then Python
-is built and installed from source.
+In the following sections, the system package-manager is used whenever possible
+to install the toolchain and libraries. However, on some Linux distribution
+there are not recent enough versions. To circumvent that, then the packages are
+installed via the Python package-manager. In some cases even a recent enough
+version of Python is not available, to bootstrap it, then Python is built and
+installed from source.
 
 .. note:: When installing packages via the Python package-manager (``python3 -m
    pip install``), then packages should be installed system-wide. This is
    ensure that the installed packages behave as though they were installed
    using the system package-manager.
 
-Packages managers: apk, pkg, dnf, yum, pacman, apt, aptitude, apt-get, pkg,
+Package-managers: apk, pkg, dnf, yum, pacman, apt, aptitude, apt-get, pkg,
 choco, brew.
 
-Alpine Linux
-------------
 
-From the root of the **xNVMe** source repository, do:
+
+
+
+Alpine Linux (latest)
+---------------------
+
+
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
+
+  sudo ./xnvme/toolbox/pkgs/alpine-latest.sh
+
+Or, run the commands contained within the script manually:
 
 .. literalinclude:: ../../toolbox/pkgs/alpine-latest.sh
    :language: bash
    :lines: 8-
 
-The commands above will install the following packages via the system
-package-manager (``apk``):
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-alpine-latest:next``. This Docker-image contains
+   all the software described above.
 
-.. literalinclude:: ../../toolbox/pkgs/alpine-latest.txt
-   :language: bash
+
 
 Then go ahead and configure, build and install using ``meson``:
 
@@ -75,29 +80,45 @@ Then go ahead and configure, build and install using ``meson``:
    :language: bash
    :lines: 2-
 
-.. note:: There are issues with SPDK/DPDK due to incompatibilities with the
-   standard library provided by ``musl libc``. Additionally, the
-   ``libexecinfo-dev`` package is no longer available on Alpine. Pull-requests
-   fixing this is most welcome, until then, disable support for the SPDK NVMe
-   driver as the ``meson setup`` command above.
 
-.. note:: libvfn also relies on ``libexecinfo-dev`` which is currently not
-   available for Alpine Linux. Thus, it is also disabled.
+.. note::
+   There are issues with SPDK/DPDK due to incompatibilities with the standard
+   library provided by ``musl libc``. Additionally, the ``libexecinfo-dev``
+   package is no longer available on Alpine.
+   Additionally, libvfn also relies on ``libexecinfo-dev`` which is currently
+   not available for Alpine Linux. Thus, it is also disabled.
+   Pull-request fixing these issues are most welcome, until then, disable
+   libvfn and spdk on Alpine.
 
-Arch Linux
-----------
 
-For example, from the root of the **xNVMe** source repository, do:
+
+
+
+
+
+
+Arch Linux (latest)
+-------------------
+
+
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
+
+  sudo ./xnvme/toolbox/pkgs/archlinux-latest.sh
+
+Or, run the commands contained within the script manually:
 
 .. literalinclude:: ../../toolbox/pkgs/archlinux-latest.sh
    :language: bash
    :lines: 8-
 
-The commands above will install the following packages via the system
-package-manager (``pacman``):
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-archlinux-latest:next``. This Docker-image contains
+   all the software described above.
 
-.. literalinclude:: ../../toolbox/pkgs/archlinux-latest.txt
-   :language: bash
+
 
 Then go ahead and configure, build and install using ``meson``:
 
@@ -105,70 +126,42 @@ Then go ahead and configure, build and install using ``meson``:
    :language: bash
    :lines: 2-
 
-.. note:: The build is configured to install with ``--prefix=/usr`` this is
-   intentional such the the ``pkg-config`` files end up in the default search
-   path on the system. If you do not want this, then remove ``--prefix=/usr``
-   and adjust your ``$PKG_CONFIG_PATH`` accordingly.
 
-CentOS Stream9
---------------
-
-Install the following packages via ``dnf``:
-
-.. literalinclude:: ../../toolbox/pkgs/centos-stream9.txt
-   :language: bash
-
-For example, from the root of the **xNVMe** source repository, do:
-
-.. literalinclude:: ../../toolbox/pkgs/centos-stream9.sh
-   :language: bash
-   :lines: 8-
-
-Then go ahead and configure, build and install using ``meson``:
-
-.. literalinclude:: ../../toolbox/pkgs/default-build.sh
-   :language: bash
-   :lines: 2-
-
-CentOS Stream8
---------------
-
-Install the following packages via ``dnf``:
-
-.. literalinclude:: ../../toolbox/pkgs/centos-stream8.txt
-   :language: bash
-
-For example, from the root of the **xNVMe** source repository, do:
-
-.. literalinclude:: ../../toolbox/pkgs/centos-stream8.sh
-   :language: bash
-   :lines: 8-
-
-Then go ahead and configure, build and install using ``meson``:
-
-.. literalinclude:: ../../toolbox/pkgs/centos-stream8-build.sh
-   :language: bash
-   :lines: 2-
-
-.. note:: The build is configured to install with ``--prefix=/usr`` this is
+.. note::
+   The build is configured to install with ``--prefix=/usr`` this is
    intentional such the the ``pkg-config`` files end up in the default search
    path on the system. If you do not want this, then remove ``--prefix=/usr``
    and adjust your ``$PKG_CONFIG_PATH`` accordingly.
 
 
-CentOS 7
---------
 
-Install the following packages via ``yum``:
 
-.. literalinclude:: ../../toolbox/pkgs/centos-centos7.txt
-   :language: bash
 
-For example, from the root of the **xNVMe** source repository, do:
+
+
+
+CentOS (centos7)
+----------------
+
+
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
+
+  sudo ./xnvme/toolbox/pkgs/centos-centos7.sh
+
+Or, run the commands contained within the script manually:
 
 .. literalinclude:: ../../toolbox/pkgs/centos-centos7.sh
    :language: bash
    :lines: 8-
+
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-centos-centos7:next``. This Docker-image contains
+   all the software described above.
+
+
 
 Then go ahead and configure, build and install using ``meson``:
 
@@ -176,24 +169,121 @@ Then go ahead and configure, build and install using ``meson``:
    :language: bash
    :lines: 2-
 
-.. note:: The build is configured to install with ``--prefix=/usr`` this is
+
+.. note::
+   The legacy distribution, does not support ``async=io_uring``  and
+   ``async=io_uring_cmd``, as both kernel and libc are too old to support it.
+   User-space NVMe-drivers (SPDK and libvfn) are the way forward for efficient
+   here.
+
+
+
+
+
+
+
+
+CentOS Stream 8 (stream8)
+-------------------------
+
+
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
+
+  sudo ./xnvme/toolbox/pkgs/centos-stream8.sh
+
+Or, run the commands contained within the script manually:
+
+.. literalinclude:: ../../toolbox/pkgs/centos-stream8.sh
+   :language: bash
+   :lines: 8-
+
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-centos-stream8:next``. This Docker-image contains
+   all the software described above.
+
+
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../toolbox/pkgs/centos-stream8-build.sh
+   :language: bash
+   :lines: 2-
+
+
+.. note::
+   The build is configured to install with ``--prefix=/usr`` this is
    intentional such the the ``pkg-config`` files end up in the default search
    path on the system. If you do not want this, then remove ``--prefix=/usr``
    and adjust your ``$PKG_CONFIG_PATH`` accordingly.
 
-Debian 12 (Bookworm)
---------------------
 
-Install the following packages via ``apt-get`` and ``aptitude``:
 
-.. literalinclude:: ../../toolbox/pkgs/debian-bookworm.txt
+
+
+
+
+
+CentOS Stream 9 (stream9)
+-------------------------
+
+
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
+
+  sudo ./xnvme/toolbox/pkgs/centos-stream9.sh
+
+Or, run the commands contained within the script manually:
+
+.. literalinclude:: ../../toolbox/pkgs/centos-stream9.sh
    :language: bash
+   :lines: 8-
 
-For example, from the root of the **xNVMe** source repository, do:
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-centos-stream9:next``. This Docker-image contains
+   all the software described above.
+
+
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../toolbox/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
+
+
+
+
+
+
+
+
+Debian Testing (bookworm)
+-------------------------
+
+
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
+
+  sudo ./xnvme/toolbox/pkgs/debian-bookworm.sh
+
+Or, run the commands contained within the script manually:
 
 .. literalinclude:: ../../toolbox/pkgs/debian-bookworm.sh
    :language: bash
-   :lines: 17-
+   :lines: 8-
+
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-debian-bookworm:next``. This Docker-image contains
+   all the software described above.
+
+
 
 Then go ahead and configure, build and install using ``meson``:
 
@@ -201,19 +291,35 @@ Then go ahead and configure, build and install using ``meson``:
    :language: bash
    :lines: 2-
 
-Debian 11 (Bullseye)
---------------------
 
-Install the following packages via ``apt-get``, ``aptitude`` and ``pip3``:
 
-.. literalinclude:: ../../toolbox/pkgs/debian-bullseye.txt
-   :language: bash
 
-For example, from the root of the **xNVMe** source repository, do:
+
+
+
+
+Debian Stable (bullseye)
+------------------------
+
+
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
+
+  sudo ./xnvme/toolbox/pkgs/debian-bullseye.sh
+
+Or, run the commands contained within the script manually:
 
 .. literalinclude:: ../../toolbox/pkgs/debian-bullseye.sh
    :language: bash
-   :lines: 17-
+   :lines: 8-
+
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-debian-bullseye:next``. This Docker-image contains
+   all the software described above.
+
+
 
 Then go ahead and configure, build and install using ``meson``:
 
@@ -221,40 +327,139 @@ Then go ahead and configure, build and install using ``meson``:
    :language: bash
    :lines: 2-
 
-Debian 10 (Buster)
-------------------
 
-Install the following packages via ``apt-get``, ``aptitude`` and ``pip3``:
 
-.. literalinclude:: ../../toolbox/pkgs/debian-buster.txt
-   :language: bash
 
-For example, from the root of the **xNVMe** source repository, do:
+
+
+Debian Stable (buster)
+----------------------
+
+
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
+
+  sudo ./xnvme/toolbox/pkgs/debian-buster.sh
+
+Or, run the commands contained within the script manually:
 
 .. literalinclude:: ../../toolbox/pkgs/debian-buster.sh
    :language: bash
-   :lines: 17-
+   :lines: 8-
+
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-debian-buster:next``. This Docker-image contains
+   all the software described above.
+
+
 
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/default-build.sh
    :language: bash
    :lines: 2-
+
+
+
+
+
+
+
+
+Fedora (38)
+-----------
+
+
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
+
+  sudo ./xnvme/toolbox/pkgs/fedora-38.sh
+
+Or, run the commands contained within the script manually:
+
+.. literalinclude:: ../../toolbox/pkgs/fedora-38.sh
+   :language: bash
+   :lines: 8-
+
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-fedora-38:next``. This Docker-image contains
+   all the software described above.
+
+
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../toolbox/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
+
+
+
+
+
+
+Fedora (37)
+-----------
+
+
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
+
+  sudo ./xnvme/toolbox/pkgs/fedora-37.sh
+
+Or, run the commands contained within the script manually:
+
+.. literalinclude:: ../../toolbox/pkgs/fedora-37.sh
+   :language: bash
+   :lines: 8-
+
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-fedora-37:next``. This Docker-image contains
+   all the software described above.
+
+
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../toolbox/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
+
+
+
+
+
+
+
 
 Fedora (36)
 -----------
 
-From the root of the **xNVMe** source repository, do:
+
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
+
+  sudo ./xnvme/toolbox/pkgs/fedora-36.sh
+
+Or, run the commands contained within the script manually:
 
 .. literalinclude:: ../../toolbox/pkgs/fedora-36.sh
    :language: bash
    :lines: 8-
 
-The above will install the packages seen below via the system package-manager
-``dnf``:
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-fedora-36:next``. This Docker-image contains
+   all the software described above.
 
-.. literalinclude:: ../../toolbox/pkgs/fedora-36.txt
-   :language: bash
+
 
 Then go ahead and configure, build and install using ``meson``:
 
@@ -263,20 +468,34 @@ Then go ahead and configure, build and install using ``meson``:
    :lines: 2-
 
 
-Fedora (35)
------------
 
-From the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../toolbox/pkgs/fedora-35.sh
+
+
+
+
+Ubuntu Latest (kinetic)
+-----------------------
+
+
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
+
+  sudo ./xnvme/toolbox/pkgs/ubuntu-kinetic.sh
+
+Or, run the commands contained within the script manually:
+
+.. literalinclude:: ../../toolbox/pkgs/ubuntu-kinetic.sh
    :language: bash
    :lines: 8-
 
-The above will install the packages seen below via the system package-manager
-``dnf``:
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-ubuntu-kinetic:next``. This Docker-image contains
+   all the software described above.
 
-.. literalinclude:: ../../toolbox/pkgs/fedora-35.txt
-   :language: bash
+
 
 Then go ahead and configure, build and install using ``meson``:
 
@@ -285,20 +504,37 @@ Then go ahead and configure, build and install using ``meson``:
    :lines: 2-
 
 
-Fedora (34)
------------
+.. note::
+   All tools and libraries are available via system package-manager.
 
-From the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../toolbox/pkgs/fedora-34.sh
+
+
+
+
+
+Ubuntu LTS (jammy)
+------------------
+
+
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
+
+  sudo ./xnvme/toolbox/pkgs/ubuntu-jammy.sh
+
+Or, run the commands contained within the script manually:
+
+.. literalinclude:: ../../toolbox/pkgs/ubuntu-jammy.sh
    :language: bash
    :lines: 8-
 
-The above will install the packages seen below via the system package-manager
-``dnf``:
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-ubuntu-jammy:next``. This Docker-image contains
+   all the software described above.
 
-.. literalinclude:: ../../toolbox/pkgs/fedora-34.txt
-   :language: bash
+
 
 Then go ahead and configure, build and install using ``meson``:
 
@@ -307,40 +543,74 @@ Then go ahead and configure, build and install using ``meson``:
    :lines: 2-
 
 
-Freebsd 13
-----------
+.. note::
+   Installing liburing from source and meson + ninja via pip
 
-Ensure that you have kernel source in ``/usr/src``, then install the following
-packages via ``pkg``:
 
-.. literalinclude:: ../../toolbox/pkgs/freebsd-13.txt
-   :language: bash
 
-For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../toolbox/pkgs/freebsd-13.sh
+
+Ubuntu LTS (focal)
+------------------
+
+
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
+
+  sudo ./xnvme/toolbox/pkgs/ubuntu-focal.sh
+
+Or, run the commands contained within the script manually:
+
+.. literalinclude:: ../../toolbox/pkgs/ubuntu-focal.sh
    :language: bash
    :lines: 8-
 
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-ubuntu-focal:next``. This Docker-image contains
+   all the software described above.
+
+
+
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/default-build.sh
    :language: bash
    :lines: 2-
 
-Gentoo
-------
 
-Install the following packages using ``emerge``:
+.. note::
+   Installing liburing from source and meson + ninja via pip
 
-.. literalinclude:: ../../toolbox/pkgs/gentoo-latest.txt
-   :language: bash
 
-For example, from the root of the **xNVMe** source repository, do:
+
+
+
+
+
+Gentoo (latest)
+---------------
+
+
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
+
+  sudo ./xnvme/toolbox/pkgs/gentoo-latest.sh
+
+Or, run the commands contained within the script manually:
 
 .. literalinclude:: ../../toolbox/pkgs/gentoo-latest.sh
    :language: bash
-   :lines: 9-
+   :lines: 8-
+
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-gentoo-latest:next``. This Docker-image contains
+   all the software described above.
+
+
 
 Then go ahead and configure, build and install using ``meson``:
 
@@ -348,108 +618,118 @@ Then go ahead and configure, build and install using ``meson``:
    :language: bash
    :lines: 2-
 
-.. note:: In case you get: ``error adding symbols: DSO missing from command
-   line``, during compilation, then add ``-ltinfo -lnurces`` to ``LDFLAGS`` as
-   it is done in the commands above.
 
-.. note:: The build is configured to install with ``--prefix=/usr`` this is
+.. note::
+   In case you get ``error adding symbols: DSO missing from command line``,
+   during compilation, then add ``-ltinfo -lnurces`` to ``LDFLAGS`` as it is
+   done in the commands above.
+   The build is configured to install with ``--prefix=/usr`` this is
    intentional such the the ``pkg-config`` files end up in the default search
    path on the system. If you do not want this, then remove ``--prefix=/usr``
    and adjust your ``$PKG_CONFIG_PATH`` accordingly.
 
-macOS
------
 
-Install the following packages using Homebrew_ (``brew``):
 
-.. literalinclude:: ../../toolbox/pkgs/macos-12.txt
-   :language: bash
 
-For example, from the root of the **xNVMe** source repository, do:
 
-.. literalinclude:: ../../toolbox/pkgs/macos-12.sh
-   :language: bash
-   :lines: 3-
 
-Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../toolbox/pkgs/toolbox/pkgs/macos-12-build.sh
-   :language: bash
-   :lines: 2-
 
-openSUSE Tumbleweed
--------------------
+openSUSE (tumbleweed-latest)
+----------------------------
 
-Install the following packages via ``zypper``:
 
-.. literalinclude:: ../../toolbox/pkgs/opensuse-tumbleweed-latest.txt
-   :language: bash
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
 
-For example, from the root of the **xNVMe** source repository, do:
+  sudo ./xnvme/toolbox/pkgs/opensuse-tumbleweed-latest.sh
+
+Or, run the commands contained within the script manually:
 
 .. literalinclude:: ../../toolbox/pkgs/opensuse-tumbleweed-latest.sh
    :language: bash
    :lines: 8-
 
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-opensuse-tumbleweed-latest:next``. This Docker-image contains
+   all the software described above.
+
+
+
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/default-build.sh
    :language: bash
    :lines: 2-
 
-openSUSE Leap (15.4)
+
+.. note::
+   All tools and libraries are available via system package-manager.
+
+
+
+
+
+
+
+openSUSE (leap-15.4)
 --------------------
 
-Install the following packages via ``zypper``:
 
-.. literalinclude:: ../../toolbox/pkgs/opensuse-leap-15.4.txt
-   :language: bash
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
 
-For example, from the root of the **xNVMe** source repository, do:
+  sudo ./xnvme/toolbox/pkgs/opensuse-leap-15.4.sh
+
+Or, run the commands contained within the script manually:
 
 .. literalinclude:: ../../toolbox/pkgs/opensuse-leap-15.4.sh
    :language: bash
    :lines: 8-
 
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-opensuse-leap-15.4:next``. This Docker-image contains
+   all the software described above.
+
+
+
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/default-build.sh
    :language: bash
    :lines: 2-
 
-openSUSE Leap (15.3)
+
+
+
+
+
+openSUSE (leap-15.3)
 --------------------
 
-Install the following packages via ``zypper``:
 
-.. literalinclude:: ../../toolbox/pkgs/opensuse-leap-15.3.txt
-   :language: bash
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
 
-For example, from the root of the **xNVMe** source repository, do:
+  sudo ./xnvme/toolbox/pkgs/opensuse-leap-15.3.sh
+
+Or, run the commands contained within the script manually:
 
 .. literalinclude:: ../../toolbox/pkgs/opensuse-leap-15.3.sh
    :language: bash
    :lines: 8-
 
-Then go ahead and configure, build and install using ``meson``:
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-opensuse-leap-15.3:next``. This Docker-image contains
+   all the software described above.
 
-.. literalinclude:: ../../toolbox/pkgs/default-build.sh
-   :language: bash
-   :lines: 2-
 
-Ubuntu 22.04 (Jammy)
---------------------
-
-Install the following packages via ``apt-get`` and ``pip3``:
-
-.. literalinclude:: ../../toolbox/pkgs/ubuntu-jammy.txt
-   :language: bash
-
-For example, from the root of the **xNVMe** source repository, do:
-
-.. literalinclude:: ../../toolbox/pkgs/ubuntu-jammy.sh
-   :language: bash
-   :lines: 17-
 
 Then go ahead and configure, build and install using ``meson``:
 
@@ -457,19 +737,35 @@ Then go ahead and configure, build and install using ``meson``:
    :language: bash
    :lines: 2-
 
-Ubuntu 20.04 (Focal)
---------------------
 
-Install the following packages via ``apt-get`` and ``pip3``:
 
-.. literalinclude:: ../../toolbox/pkgs/ubuntu-focal.txt
+
+
+
+
+
+FreeBSD (13)
+------------
+
+
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
+
+  sudo ./xnvme/toolbox/pkgs/freebsd-13.sh
+
+Or, run the commands contained within the script manually:
+
+.. literalinclude:: ../../toolbox/pkgs/freebsd-13.sh
    :language: bash
+   :lines: 8-
 
-For example, from the root of the **xNVMe** source repository, do:
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-freebsd-13:next``. This Docker-image contains
+   all the software described above.
 
-.. literalinclude:: ../../toolbox/pkgs/ubuntu-focal.sh
-   :language: bash
-   :lines: 17-
+
 
 Then go ahead and configure, build and install using ``meson``:
 
@@ -477,19 +773,106 @@ Then go ahead and configure, build and install using ``meson``:
    :language: bash
    :lines: 2-
 
-Ubuntu 18.04 (Bionic)
----------------------
 
-Install the following packages via ``apt-get`` and ``pip3``:
+.. note::
+   Interfaces; libaio, liburing, and libvfn are not supported on FreeBSD.
 
-.. literalinclude:: ../../toolbox/pkgs/ubuntu-bionic.txt
+
+
+
+
+
+
+macOS (12)
+----------
+
+
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
+
+  sudo ./xnvme/toolbox/pkgs/macos-12.sh
+
+Or, run the commands contained within the script manually:
+
+.. literalinclude:: ../../toolbox/pkgs/macos-12.sh
    :language: bash
+   :lines: 8-
 
-For example, from the root of the **xNVMe** source repository, do:
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-macos-12:next``. This Docker-image contains
+   all the software described above.
 
-.. literalinclude:: ../../toolbox/pkgs/ubuntu-bionic.sh
+
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../toolbox/pkgs/macos-12-build.sh
    :language: bash
-   :lines: 17-
+   :lines: 2-
+
+
+.. note::
+   Interfaces; libaio, liburing, libvfn, and SPDK are not supported on macOS.
+
+
+
+
+
+macOS (11)
+----------
+
+
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
+
+  sudo ./xnvme/toolbox/pkgs/macos-11.sh
+
+Or, run the commands contained within the script manually:
+
+.. literalinclude:: ../../toolbox/pkgs/macos-11.sh
+   :language: bash
+   :lines: 8-
+
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-macos-11:next``. This Docker-image contains
+   all the software described above.
+
+
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../toolbox/pkgs/macos-11-build.sh
+   :language: bash
+   :lines: 2-
+
+
+.. note::
+   Interfaces; libaio, liburing, libvfn, and SPDK are not supported on macOS.
+
+
+
+
+
+
+
+Windows (2022)
+--------------
+
+
+From an elevated command-prompt, then invoke the batch-script::
+
+  call xnvme\toolbox\pkgs\windows-2022.bat
+
+Or, run the commands contained within the script manually:
+
+.. literalinclude:: ../../toolbox/pkgs/windows-2022.bat
+   :language: batch
+
+
 
 Then go ahead and configure, build and install using ``meson``:
 
@@ -497,34 +880,46 @@ Then go ahead and configure, build and install using ``meson``:
    :language: bash
    :lines: 2-
 
-Windows
--------
 
-You can build **xNVMe** using the MSVC toolchain, however, some of the features
-are lost when doing so, specifcally the **xNVMe** fio io-engine. Thus, the
-instructions provided here utilizes **msys2**.
+.. note::
+   In case you see ``.dll`` loader-errors, then check that the environment
+   variable ``PATH`` contains the various library locations of the toolchain.
+   Interfaces; libaio, liburing, libvfn, and SPDK are not supported on
+   Windows.
 
-The toolchain setup is a bit involved, it **bootstraps** by installing the
-Chocolatey package manager by opening an eleveted PowerShell and running::
 
-  Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 
-Then continues with installing a couple of tools via Chocolatey, then the
-actual compiler toolchain via the msys2. A script stays more than a thousand
-words, so please consult the ``toolbox`` scripts::
 
-  toolbox/pkgs/windows-2019.bat
-  toolbox/pkgs/windows-2022.bat
 
-For details.
 
-To utilize the scripts, then invoke the script in an elevated command-prompt
-(``cmd.exe`` as Administrator)::
+Windows (2019)
+--------------
 
-  cd toolbox\pkgs
-  windows-2019.bat
 
-.. note:: in case you see .dll loader-errors, then check that the environment
-   variable ``PATH`` contains the various library locations of the the
-   toolchain.
+From an elevated command-prompt, then invoke the batch-script::
+
+  call xnvme\toolbox\pkgs\windows-2019.bat
+
+Or, run the commands contained within the script manually:
+
+.. literalinclude:: ../../toolbox/pkgs/windows-2019.bat
+   :language: batch
+
+
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../toolbox/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
+
+
+.. note::
+   In case you see ``.dll`` loader-errors, then check that the environment
+   variable ``PATH`` contains the various library locations of the toolchain.
+   Interfaces; libaio, liburing, libvfn, and SPDK are not supported on
+   Windows.
+
+
+
 

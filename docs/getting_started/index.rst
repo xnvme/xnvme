@@ -11,9 +11,9 @@ here.  Needlessly, this section will have subsections that you can skip and
 revisit only in case you find **xNVMe**, or the system you are running on, to
 be misbehaving.
 
-If you have read through, and still have questions, then please raise a
-issue_, start an asynchronous discussion_, or go to Discord_ for
-synchronous interaction.
+If you have read through, and still have questions, then please raise an
+issue_, start an asynchronous discussion_, or go to Discord_ for synchronous
+interaction.
 
 The task of getting started with **xNVMe** will take you through
 :ref:`sec-building` with a companion section on :ref:`sec-building-toolchain`
@@ -31,27 +31,29 @@ Building xNVMe
 
 .. include:: clone.rst
 
-Before you invoke the compilation, then setup your toolchain, that is, ensure
-that you you have the compiler, build-tools, and auxilary packages needed. The
-:ref:`sec-building-toolchain` section describes what to install, and how, on
-rich selection of Linux distributions, FreeBSD and Windows.
+Before you invoke the compilation, then ensure that you have the compiler,
+tools, and libraries needed. The :ref:`sec-building-toolchain` section
+describes what to install, and how, on rich a selection of Linux distributions,
+FreeBSD and Windows. For example on Debian do::
 
-With that out of the way, then go ahead:
+  sudo ./xnvme/toolbox/pkgs/debian-bullseye.sh
+
+With the source available, and toolchain up and running, then go ahead:
 
 .. include:: build_meson.rst
 
 .. note:: Details on the build-errors can be seen by inspecting
    ``builddir/meson-logs/meson-log.txt``.
 
-.. note:: In case you ran the meson-commands before installing, then you can
+.. note:: In case you ran the meson-commands before installing, then you
    probably need to remove your ``builddir`` before re-running build commands.
 
 In case you want to customize the build, e.g. install into a different location
 etc. then this is all handled by `meson built-in options
 <https://mesonbuild.com/Builtin-options.html>`_, in addition to those, then you
 can inspect ``meson_options.txt`` which contains build-options specific to
-**xNVMe**. For examples on customizing the build then have a look in the 
-look at the following :ref:`sec-building-config`.
+**xNVMe**. For examples of customizing the build then have a look at the
+following :ref:`sec-building-config`.
 
 Otherwise, with a successfully built and installed **xNVMe**, then jump to
 :ref:`sec-gs-system-config` and :ref:`sec-building-example`.
@@ -65,7 +67,7 @@ Backends and System Config
 
 **xNVMe** relies on certain Operating System Kernel features and infrastructure
 that must be available and correctly configured. This subsection goes through
-what is uses on Linux and how check whether is it available.
+what is used on Linux and how check whether is it available.
 
 Backends
 --------
@@ -75,7 +77,7 @@ supporting the **xNVMe** API in a single library with **batteries included**.
 
 That is, it comes with the essential third-party libraries bundled into the
 **xNVMe** library. Thus, you get a single C API to program against and a single
-library to link with. An similarly for the command-line tools; a single binary
+library to link with. And similarly for the command-line tools; a single binary
 to communicating with devices via the I/O stacks that available on the system.
 
 To inspect the libraries which **xNVMe** is build against and the
@@ -240,11 +242,11 @@ exposes device-memory and device-interrupts to user space. Thus enabling the
 implementation of device drivers entirely in user space.
 
 Although Linux provides a capable NVMe Driver with flexible IOCTLs, then a user
-space NVMe driver serves those who seek the lowest possible command per-command
+space NVMe driver serves those who seek the lowest possible per-command
 processing overhead or wants full control over NVMe command construction,
 including command-payloads.
 
-Fortunately, you do not need to go and write a user space NVMe driver since a
+Fortunately, you do not need to go and write an user space NVMe driver since a
 highly efficient, mature and well-maintained driver already exists. Namely, the
 NVMe driver provided by the **Storage Platform Development Kit** (_`SPDK`).
 
@@ -292,7 +294,7 @@ Should output:
 .. literalinclude:: 200_dmesg.out
    :language: bash
 
-And this this command:
+And this command:
 
 .. literalinclude:: 300_find.cmd
    :language: bash
@@ -305,7 +307,7 @@ Should have output similar to:
 Unbinding and binding
 ~~~~~~~~~~~~~~~~~~~~~
 
-With the system configured then you can use the ``xnvme-driver`` script bind
+With the system configured then you can use the ``xnvme-driver`` script to bind
 and unbind devices. The ``xnvme-driver`` script is a merge of the **SPDK**
 ``setup.sh`` script and its dependencies.
 
@@ -462,22 +464,21 @@ Troubleshooting
 User space
 ----------
 
-In case you are having issues using running with SPDK backend / using then make
-sure you following the config section
-:ref:`sec-gs-system-config-userspace-config` and if issues persist a solution
-might be found in the following subsections.
+In case you are having issues using SPDK backend then make sure you are
+following the config section :ref:`sec-gs-system-config-userspace-config` and
+if issues persist a solution might be found in the following subsections.
 
 No devices found
 ~~~~~~~~~~~~~~~~
 
-When running ``xnvme enum`` then the output-listing is empty, there are no
-devices. When running with ``vfio-pci`` then this can occur when your devices
-are sharing iommu-group with other devices which are still bound to in-kernel
+When running ``xnvme enum`` and the output-listing is empty, then there are no
+devices. When running with ``vfio-pci``, this can occur when your devices are
+sharing iommu-group with other devices which are still bound to in-kernel
 drivers. This could be NICs, GPUs or other kinds of peripherals.
 
 The division of devices into groups is not something that can be easily
-switched, but you try to manually unbind the other devices in the iommu group
-from their kernel drivers.
+switched, but you can try to manually unbind the other devices in the iommu
+group from their kernel drivers.
 
 If that is not an option then you can try to re-organize your physical
 connectivity of deviecs, e.g. move devices around.
@@ -489,7 +490,7 @@ kernel command-line and rebooting.
 Memory Issues
 ~~~~~~~~~~~~~
 
-If you see a message similar to the below while unbind devices::
+If you see a message similar to the below while unbinding devices::
 
   Current user memlock limit: 16 MB
 
@@ -500,8 +501,8 @@ If you see a message similar to the below while unbind devices::
   ## WARNING: memlock limit is less than 64MB
   ## DPDK with VFIO may not be able to initialize if run as current user.
 
-Then go you should do as suggested, that is, adjust ``limits.conf``, see for an
-example of doing here :ref:`sec-gs-system-config-userspace-config`.
+Then go you should do as suggested, that is, adjust ``limits.conf``, for an
+example, see :ref:`sec-gs-system-config-userspace-config`.
 
 Build Errors
 ------------
@@ -512,7 +513,7 @@ then it is likely due to one of the following:
 * You are building in an **offline** environment and only have a shallow
   source-archive or a git-repository without subprojects.
 
-The full source-archive is made available with each release and downloadble
+The full source-archive is made available with each release and downloadable
 from the `GitHUB Release page <https://github.com/OpenMPDK/xNVMe/releases>`_
 release page. It contains the xNVMe source code along with all the third-party
 dependencies, namely: SPDK, liburing, libnvme, and fio.
@@ -535,6 +536,11 @@ is clean from any artifacts left behind by previous build failures::
   make clobber
 
 And then go back to the :ref:`sec-building` and follow the steps there.
+
+.. note::
+   When running ``make clobber`` then everything not comitted is "lost". Thus,
+   if you are developing/modifying xNVMe, then make you commit of stash your
+   changes before running it.
 
 Known Build Issues
 ------------------
@@ -590,25 +596,26 @@ For example, compiling **xNVMe** on a system where the default compiler is not
   make CC=gcc CXX=g++
   make install CC=gcc CXX=g++
 
-Recent versions of **icc**, **clang**, and **pgi** should at be able to satisfy
+Recent versions of **icc**, **clang**, and **pgi** should be able to satisfy
 the **C11** and **pthreads** requirements. However, it will most likely require
 a bit of fiddling.
 
 .. note:: The **icc** works well after you bought a license and installed it
-  correctly. There is a free option with Intel System Suite 2019.
+   correctly. There is a free option with Intel System Suite 2019.
+
 
 .. note:: The **pgi** compiler has some issues linking with **SPDK/DPDK** due
-  to unstable **ABI** for **RTE** it seems.
+   to unstable **ABI** for **RTE** it seems.
 
-The path of least fiddling around is to just install the toolchain and
-libraries as described in the :ref:`sec-building-toolchain` section.
+The path of least resistance is to just install the toolchain and libraries as
+described in the :ref:`sec-building-toolchain` section.
 
 .. _sec-building-config:
 
 Custom Configuration
 --------------------
 
-See the list of options in ``meson_options.txt``, this file options the
+See the list of options in ``meson_options.txt``, this file defines the
 different non-generic options that you can toggle. For traditional
 build-configuration such as ``--prefix`` then these are managed like all other
 meson-based builds::
@@ -624,7 +631,7 @@ For details
 Cross-compiling for ARM on x86
 ------------------------------
 
-This is managed by like any other meson-based build, see:
+This is managed like any other meson-based build, see:
 
 https://mesonbuild.com/Cross-compilation.html
 
