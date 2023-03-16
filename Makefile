@@ -93,43 +93,28 @@ config-debug:
 	@echo "## xNVMe: make config-debug [DONE]"
 
 define config-uring-help
-# Configure Meson to compile xNVMe with liburing as the only backend
+# Configure Meson to compile xNVMe without: SPDK, and libvfn
 endef
 .PHONY: config-uring
 config-uring:
 	@echo "## xNVMe: config-uring"
 	CC=$(CC) CXX=$(CXX) $(MESON) setup $(BUILD_DIR) \
 	   -Dwith-spdk=false \
-	   -Dwith-fio=false \
 	   -Dwith-liburing=true \
 	   -Dwith-libvfn=false
 	@echo "## xNVMe: config-uring [DONE]"
 
 define config-slim-help
-# Configure Meson to compile xNVMe without subprojects (SPDK, fio, liburing)
+# Configure Meson to compile xNVMe without: SPDK, liburing, and libvfn
 endef
 .PHONY: config-slim
 config-slim:
 	@echo "## xNVMe: make config-slim"
 	CC=$(CC) CXX=$(CXX) $(MESON) setup $(BUILD_DIR) \
 	   -Dwith-spdk=false \
-	   -Dwith-fio=false \
 	   -Dwith-liburing=false \
 	   -Dwith-libvfn=false
 	@echo "## xNVMe: make config-slim [DONE]"
-
-define config-fio-debug-help
-# Configure Meson to compile xNVMe with fio but without other subprojects (SPDK, liburing, libvfn)
-endef
-.PHONY: config-fio-debug
-config-fio-debug:
-	@echo "## xNVMe: make config-fio-debug"
-	CC=$(CC) CXX=$(CXX) $(MESON) setup $(BUILD_DIR) --buildtype=debug \
-	   -Dwith-spdk=false \
-	   -Dwith-fio=true \
-	   -Dwith-liburing=false \
-	   -Dwith-libvfn=false
-	@echo "## xNVMe: make config-fio-debug [DONE]"
 
 define git-setup-help
 # Do git config for: 'core.hooksPath' and 'blame.ignoreRevsFile'
@@ -304,8 +289,6 @@ endef
 clean-subprojects:
 	@echo "## xNVMe: make clean-subprojects"
 	@if [ -d "subprojects/spdk" ] && [ ${PLATFORM_ID} != 'Darwin' ]; then cd subprojects/spdk &&$(MAKE) clean; fi;
-	@if [ -d "subprojects/fio" ]; then cd subprojects/fio && $(MAKE) clean; fi;
-	@if [ -d "subprojects/liburing" ]; then cd subprojects/liburing &&$(MAKE) clean; fi;
 	rm -fr $(BUILD_DIR) || true
 	@echo "## xNVMe: make clean-subprojects [DONE]"
 
@@ -433,9 +416,8 @@ clobber: clean
 	@git clean -dfx
 	@git clean -dfX
 	@git checkout .
-	@rm -rf subprojects/fio || true
+	@rm -rf subprojects/libvfn || true
 	@rm -rf subprojects/spdk || true
-	@rm -rf subprojects/liburing || true
 	@echo "## xNVMe: clobber [DONE]"
 
 
