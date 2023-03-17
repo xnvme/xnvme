@@ -28,8 +28,8 @@ def worklet_entry(args, cijoe, step):
         return errno.EINVAL
 
     commands = [
-        "./docs/autogen/debian-bullseye.sh",
-        "cd docs/autogen && make deps-system",
+        "./toolbox/pkgs/docgen.sh",
+        "cd docs/autogen && make deps",
         "cd subprojects/fio && make install",
         "xnvme enum",
         "xnvme library-info",
