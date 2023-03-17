@@ -83,16 +83,6 @@ xnvme_cmd_ctx
    :undoc-members:
 
 
-.. _sec-c-api-xnvme-struct-xnvme_enumeration:
-
-xnvme_enumeration
------------------
-
-.. doxygenstruct:: xnvme_enumeration
-   :members:
-   :undoc-members:
-
-
 .. _sec-c-api-xnvme-struct-xnvme_lba_range:
 
 xnvme_lba_range
@@ -352,62 +342,6 @@ xnvme_enumerate
 .. doxygenfunction:: xnvme_enumerate
 
 
-.. _sec-c-api-xnvme-func-xnvme_enumeration_alloc:
-
-xnvme_enumeration_alloc
------------------------
-
-.. doxygenfunction:: xnvme_enumeration_alloc
-
-
-.. _sec-c-api-xnvme-func-xnvme_enumeration_append:
-
-xnvme_enumeration_append
-------------------------
-
-.. doxygenfunction:: xnvme_enumeration_append
-
-
-.. _sec-c-api-xnvme-func-xnvme_enumeration_fpp:
-
-xnvme_enumeration_fpp
----------------------
-
-.. doxygenfunction:: xnvme_enumeration_fpp
-
-
-.. _sec-c-api-xnvme-func-xnvme_enumeration_fpr:
-
-xnvme_enumeration_fpr
----------------------
-
-.. doxygenfunction:: xnvme_enumeration_fpr
-
-
-.. _sec-c-api-xnvme-func-xnvme_enumeration_free:
-
-xnvme_enumeration_free
-----------------------
-
-.. doxygenfunction:: xnvme_enumeration_free
-
-
-.. _sec-c-api-xnvme-func-xnvme_enumeration_pp:
-
-xnvme_enumeration_pp
---------------------
-
-.. doxygenfunction:: xnvme_enumeration_pp
-
-
-.. _sec-c-api-xnvme-func-xnvme_enumeration_pr:
-
-xnvme_enumeration_pr
---------------------
-
-.. doxygenfunction:: xnvme_enumeration_pr
-
-
 .. _sec-c-api-xnvme-func-xnvme_is_pow2:
 
 xnvme_is_pow2
@@ -494,6 +428,14 @@ xnvme_lba_range_pr
 ------------------
 
 .. doxygenfunction:: xnvme_lba_range_pr
+
+
+.. _sec-c-api-xnvme-func-xnvme_prep_nvm:
+
+xnvme_prep_nvm
+--------------
+
+.. doxygenfunction:: xnvme_prep_nvm
 
 
 .. _sec-c-api-xnvme-func-xnvme_queue_drain:

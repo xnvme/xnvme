@@ -36,6 +36,22 @@ Functions
 =========
 
 
+.. _sec-c-api-xnvme_adm-func-xnvme_adm_dir_recv:
+
+xnvme_adm_dir_recv
+------------------
+
+.. doxygenfunction:: xnvme_adm_dir_recv
+
+
+.. _sec-c-api-xnvme_adm-func-xnvme_adm_dir_send:
+
+xnvme_adm_dir_send
+------------------
+
+.. doxygenfunction:: xnvme_adm_dir_send
+
+
 .. _sec-c-api-xnvme_adm-func-xnvme_adm_format:
 
 xnvme_adm_format
