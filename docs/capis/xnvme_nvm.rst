@@ -52,6 +52,14 @@ Functions
 =========
 
 
+.. _sec-c-api-xnvme_nvm-func-xnvme_nvm_dsm:
+
+xnvme_nvm_dsm
+-------------
+
+.. doxygenfunction:: xnvme_nvm_dsm
+
+
 .. _sec-c-api-xnvme_nvm-func-xnvme_nvm_read:
 
 xnvme_nvm_read
