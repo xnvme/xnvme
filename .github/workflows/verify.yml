@@ -933,12 +933,27 @@ jobs:
         mv xnvme-*.*.*.tar.gz /tmp/artifacts/xnvme.tar.gz
         find /tmp/artifacts -name "*.tar.gz"
 
-    - name: Remove any existing cijoe installation and install from toolbox
+    - name: Install python-venv on Bullseye
       run: |
-        python3 -m pip uninstall cijoe cijoe-pkg-xnvme cijoe-pkg-linux cijoe-pkg-qemu cijoe-pkg-example -y
+        apt-get install -qy python3-venv
+
+    - name: pipx, Install
+      run: |
+        python3 -m pip uninstall pytest cijoe cijoe-pkg-xnvme cijoe-pkg-linux cijoe-pkg-qemu cijoe-pkg-example -y
+        python3 -m pip install pytest
         python3 -m pip list
-        python3 -m pip install cijoe --upgrade
+        python3 -m pip install pipx
+        python3 -m pipx ensurepath
+
+    - name: CIJOE, setup pipx environment
+      run: |
+        python3 -m pipx install cijoe --include-deps
+        python3 -m pipx inject cijoe cijoe-pkg-linux
+        python3 -m pipx inject cijoe cijoe-pkg-qemu
         pushd toolbox/cijoe-pkg-xnvme && make all && popd
+
+    - name: CIJOE, check that it works
+      run: |
         cijoe -r
 
     # cd'ing into 'toolbox/workflow' to auto-collect the non-packaged github-specific configs and
