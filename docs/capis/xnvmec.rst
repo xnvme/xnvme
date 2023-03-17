@@ -81,6 +81,16 @@ xnvmec_args
    :undoc-members:
 
 
+.. _sec-c-api-xnvmec-struct-xnvmec_enumeration:
+
+xnvmec_enumeration
+------------------
+
+.. doxygenstruct:: xnvmec_enumeration
+   :members:
+   :undoc-members:
+
+
 .. _sec-c-api-xnvmec-struct-xnvmec_opt_attr:
 
 xnvmec_opt_attr
@@ -204,6 +214,62 @@ xnvmec_cmd_to_file
 ------------------
 
 .. doxygenfunction:: xnvmec_cmd_to_file
+
+
+.. _sec-c-api-xnvmec-func-xnvmec_enumeration_alloc:
+
+xnvmec_enumeration_alloc
+------------------------
+
+.. doxygenfunction:: xnvmec_enumeration_alloc
+
+
+.. _sec-c-api-xnvmec-func-xnvmec_enumeration_append:
+
+xnvmec_enumeration_append
+-------------------------
+
+.. doxygenfunction:: xnvmec_enumeration_append
+
+
+.. _sec-c-api-xnvmec-func-xnvmec_enumeration_fpp:
+
+xnvmec_enumeration_fpp
+----------------------
+
+.. doxygenfunction:: xnvmec_enumeration_fpp
+
+
+.. _sec-c-api-xnvmec-func-xnvmec_enumeration_fpr:
+
+xnvmec_enumeration_fpr
+----------------------
+
+.. doxygenfunction:: xnvmec_enumeration_fpr
+
+
+.. _sec-c-api-xnvmec-func-xnvmec_enumeration_free:
+
+xnvmec_enumeration_free
+-----------------------
+
+.. doxygenfunction:: xnvmec_enumeration_free
+
+
+.. _sec-c-api-xnvmec-func-xnvmec_enumeration_pp:
+
+xnvmec_enumeration_pp
+---------------------
+
+.. doxygenfunction:: xnvmec_enumeration_pp
+
+
+.. _sec-c-api-xnvmec-func-xnvmec_enumeration_pr:
+
+xnvmec_enumeration_pr
+---------------------
+
+.. doxygenfunction:: xnvmec_enumeration_pr
 
 
 .. _sec-c-api-xnvmec-func-xnvmec_get_opt_attr:

@@ -124,6 +124,14 @@ xnvme_dev_get_nsid
 .. doxygenfunction:: xnvme_dev_get_nsid
 
 
+.. _sec-c-api-xnvme_dev-func-xnvme_dev_get_opts:
+
+xnvme_dev_get_opts
+------------------
+
+.. doxygenfunction:: xnvme_dev_get_opts
+
+
 .. _sec-c-api-xnvme_dev-func-xnvme_dev_get_ssw:
 
 xnvme_dev_get_ssw
