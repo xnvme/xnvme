@@ -101,6 +101,15 @@ def worklet_entry(args, cijoe, step):
     nvme += qemu_nvme_dev2
     drives.append(drive2)
 
+    # Nvme0n3 - KV namespace
+    kv_attributes = {
+        "kv": "on",
+    }
+
+    drv_kv, qemu_nvme_dev_kv = gen_namespace(controller_id1, 3, kv_attributes)
+    nvme += qemu_nvme_dev_kv
+    drives.append(drv_kv)
+
     # Nvme1 - Fabrics NVMe setup
     controller_id2 = "nvme1"
     controller_bus2 = "pcie_downstream_port2"
