@@ -776,7 +776,7 @@ jobs:
         - {os: 'debian', ver: 'bullseye'}
 
     container:
-      image: refenv/qemu-nvme:latest
+      image: ghcr.io/xnvme/xnvme-qemu:latest
       options: --privileged
 
     steps:
@@ -894,7 +894,7 @@ jobs:
         - {os: 'debian', ver: 'bullseye'}
 
     container:
-      image: refenv/qemu-nvme:latest
+      image: ghcr.io/xnvme/xnvme-qemu:latest
       options: --privileged
 
     steps:
