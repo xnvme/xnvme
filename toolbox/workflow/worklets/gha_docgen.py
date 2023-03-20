@@ -30,7 +30,6 @@ def worklet_entry(args, cijoe, step):
     commands = [
         "./toolbox/pkgs/docgen.sh",
         "cd docs/autogen && make deps",
-        "cd subprojects/fio && make install",
         "xnvme enum",
         "xnvme library-info",
         "pkg-config xnvme --variable=libdir",
