@@ -1430,7 +1430,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_feat) == 4, "Incorrect size")
  */
 struct xnvme_spec_dsm_range {
 	uint32_t cattr; ///< Context attributes
-	uint32_t nlb;   ///< Length in logical blocks
+	uint32_t llb;   ///< Length in logical blocks (this is a 1-based value)
 	uint64_t slba;  ///< Starting LBA
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_dsm_range) == 16, "Incorrect size")
