@@ -13,12 +13,12 @@ Toolchain Support:
 
 Run the below mention batch file to install listed packages:
 
-.. literalinclude:: ../../toolbox/pkgs/windows-2019.txt
+.. literalinclude:: ../../toolbox/pkgs/windows-2019.bat
    :language: bash
 
 **xNVMe** can be build by using given build.bat,
 
-.. include:: ../getting_started/win_build.rst
+.. include:: ../getting_started/build_windows.rst
 
 Windows support two schemas ``dev`` and ``file``.
 * ``dev:`` uses NVMe pass-through IOCTLs

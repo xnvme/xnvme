@@ -332,7 +332,7 @@ Should output similar to:
 .. literalinclude:: 500_xnvme_driver_reset.out
    :language: bash
 
-.. _sec-backends-spdk-identifiers:
+.. _sec-device-identifiers:
 
 Device Identifiers
 ~~~~~~~~~~~~~~~~~~
