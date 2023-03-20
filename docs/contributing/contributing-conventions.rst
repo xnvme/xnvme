@@ -54,6 +54,7 @@ C: API
 ------
 
 * The API and its backend implementations aims to be consistent with the following
+
   - Pass pointers to "objects" e.g. ``xnvme_cmd_pass(*ctx, ...);``
   - Pass double-pointers for "object-initialization" e.g. ``xnvme_queue(..., **queue);``
   - On success, return 0. On error, Return negative ``errno``.
