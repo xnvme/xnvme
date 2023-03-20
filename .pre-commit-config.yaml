@@ -24,13 +24,6 @@ repos:
     files: \.c$
     exclude: xnvme_fioe.c$
 
-  - id: clang-format
-    name: C-format-fioe
-    language: system
-    entry: toolbox/pcf_clang_format.py
-    args: ["--style-file", "toolbox/clang-format-fioe"]
-    files: xnvme_fioe\.c$
-
 # Git: intended for commit-message formating
 #- repo: local
 #  hooks:
