@@ -54,14 +54,16 @@ Commit Messages
    - Do **not** end with a punctuation
    - Use the **imperative mood** e.g. ``add`` rather than ``added``/``adds``
    - Prefix with the component(s) e.g. ``component: ...``
-    - If the commit touches the API (``libxnvme*.h``), then prefix with
-      ``api:``
-    - If the commit touches a backend, then prefix with specific backend e.g.
-      ``be/linux: ...``
-    - If the commit touches a "core" component, then prefix that, e.g.
-      ``buf: ...``, ``ident: ...``
-    - In case of multiple components, then separate with a comma e.g.
-      ``ident,be/linux: ...```
+
+     - If the commit touches the API (``libxnvme*.h``), then prefix with
+       ``api:``
+     - If the commit touches a backend, then prefix with specific backend e.g.
+       ``be/linux: ...``
+     - If the commit touches a "core" component, then prefix that, e.g.
+       ``buf: ...``, ``ident: ...``
+     - In case of multiple components, then separate with a comma e.g.
+       ``ident,be/linux: ...```
+
    - **Example**: ``be/libaio: add spin-while-waiting for opts.poll_io``
 
 2. Then an empty line.
