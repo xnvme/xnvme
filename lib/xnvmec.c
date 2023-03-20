@@ -458,6 +458,12 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 		.descr = "Number of LBAs (NOTE: zero-based value)",
 	},
 	{
+		.opt = XNVMEC_OPT_LLB,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "llb",
+		.descr = "Length in LBAs (NOTE: one-based value)",
+	},
+	{
 		.opt = XNVMEC_OPT_URI,
 		.vtype = XNVMEC_OPT_VTYPE_URI,
 		.name = "uri",
@@ -1313,6 +1319,9 @@ xnvmec_assign_arg(struct xnvmec *cli, struct xnvmec_opt_attr *opt_attr, char *ar
 		break;
 	case XNVMEC_OPT_NLB:
 		args->nlb = num;
+		break;
+	case XNVMEC_OPT_LLB:
+		args->llb = num;
 		break;
 	case XNVMEC_OPT_URI:
 		args->uri = arg ? arg : "INVALID_INPUT";
