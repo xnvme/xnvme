@@ -13,6 +13,8 @@ default: docs docs-view-html
 .PHONY: deps
 deps:
 	python3 -m venv venv
+# The PYTHONPATH is needed such that we can call the 'xnvme_ver.py' script
+	echo "export PYTHONPATH=${PYTHONPATH}:${PWD}/$(SOURCE_DIR)/toolbox" >> ${VENV_NAME}/bin/activate
 	${PYTHON} -m pip install -r requirements.txt
 
 .PHONY: clean
@@ -50,8 +52,7 @@ doxy-view:
 .PHONY: sphinx
 sphinx:
 	mkdir -p $(BUILD_DIR)/html
-	# The PYTHONPATH is needed such that we can call the 'xnvme_ver.py' script
-	PYTHONPATH="${PYTHONPATH}:${PWD}/$(SOURCE_DIR)/toolbox" ${PYTHON} -m sphinx -E -b html -c $(CONFIG_DIR) $(DOCS_DIR) $(BUILD_DIR)/html
+	${PYTHON} -m sphinx -E -b html -c $(CONFIG_DIR) $(DOCS_DIR) $(BUILD_DIR)/html
 
 # Produce the sphinx stuff (without commands)
 .PHONY: docs
