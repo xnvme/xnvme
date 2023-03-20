@@ -634,7 +634,7 @@ sub_dsm(struct xnvmec *cli)
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 	uint32_t nsid = cli->args.nsid;
 	uint64_t slba = cli->args.slba;
-	uint32_t nlb = cli->args.nlb;
+	uint32_t llb = cli->args.llb;
 	bool ad = cli->args.ad;
 	bool idw = cli->args.idw;
 	bool idr = cli->args.idr;
@@ -653,7 +653,7 @@ sub_dsm(struct xnvmec *cli)
 	}
 
 	dsm_range->cattr = 0;
-	dsm_range->nlb = nlb;
+	dsm_range->llb = llb;
 	dsm_range->slba = slba;
 
 	err = xnvme_nvm_dsm(&ctx, nsid, dsm_range, nr, ad, idw, idr);
@@ -967,7 +967,7 @@ static struct xnvmec_sub g_subs[] = {
 			{XNVMEC_OPT_IDW, XNVMEC_LFLG},
 			{XNVMEC_OPT_IDR, XNVMEC_LFLG},
 			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
-			{XNVMEC_OPT_NLB, XNVMEC_LREQ},
+			{XNVMEC_OPT_LLB, XNVMEC_LREQ},
 
 			XNVMEC_ADMIN_OPTS,
 		},

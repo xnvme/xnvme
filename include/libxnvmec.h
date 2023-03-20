@@ -153,6 +153,7 @@ struct xnvmec_args {
 
 	uint64_t lbaf;
 	uint64_t lba;
+	uint32_t llb;
 	uint32_t nlb;
 	uint64_t slba;
 	uint64_t elba;
@@ -405,8 +406,9 @@ enum xnvmec_opt {
 	XNVMEC_OPT_AD  = 109, ///< XNVMEC_OPT_AD
 	XNVMEC_OPT_IDW = 110, ///< XNVMEC_OPT_IDW
 	XNVMEC_OPT_IDR = 111, ///< XNVMEC_OPT_IDR
+	XNVMEC_OPT_LLB = 112, ///< XNVMEC_OPT_LLB
 
-	XNVMEC_OPT_END = 112, ///< XNVMEC_OPT_END
+	XNVMEC_OPT_END = 113, ///< XNVMEC_OPT_END
 };
 
 /**

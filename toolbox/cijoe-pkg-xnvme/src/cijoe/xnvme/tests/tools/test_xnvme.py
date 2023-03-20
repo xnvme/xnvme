@@ -259,21 +259,21 @@ def test_pioc(cijoe, device, be_opts, cli_args):
 def test_dsm(cijoe, device, be_opts, cli_args):
 
     err, _ = cijoe.run(
-        f"xnvme dsm {cli_args} --nsid {device['nsid']} --ad --slba 0 --nlb 1"
+        f"xnvme dsm {cli_args} --nsid {device['nsid']} --ad --slba 0 --llb 1"
     )
     assert not err
 
     err, _ = cijoe.run(
-        f"xnvme dsm {cli_args} --nsid {device['nsid']} --idw --slba 0 --nlb 1"
+        f"xnvme dsm {cli_args} --nsid {device['nsid']} --idw --slba 0 --llb 1"
     )
     assert not err
 
     err, _ = cijoe.run(
-        f"xnvme dsm {cli_args} --nsid {device['nsid']} --idr --slba 0 --nlb 1"
+        f"xnvme dsm {cli_args} --nsid {device['nsid']} --idr --slba 0 --llb 1"
     )
     assert not err
 
     err, _ = cijoe.run(
-        f"xnvme dsm {cli_args} --nsid {device['nsid']} --ad --idw --idr --slba 0 --nlb 1"
+        f"xnvme dsm {cli_args} --nsid {device['nsid']} --ad --idw --idr --slba 0 --llb 1"
     )
     assert not err
