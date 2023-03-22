@@ -123,7 +123,7 @@ xnvme_nvm_dsm(struct xnvme_cmd_ctx *ctx, uint32_t nsid, struct xnvme_spec_dsm_ra
 	ctx->cmd.dsm.idw = idw;
 	ctx->cmd.dsm.idr = idr;
 
-	return xnvme_cmd_pass(ctx, (void *)dsm_range, sizeof(*dsm_range) * nr, NULL, 0);
+	return xnvme_cmd_pass(ctx, (void *)dsm_range, sizeof(*dsm_range) * (nr + 1), NULL, 0);
 }
 
 int
