@@ -627,7 +627,6 @@ static int
 sub_dsm(struct xnvmec *cli)
 {
 	// We can only define one range in CLI
-	uint32_t nr = 1;
 	struct xnvme_spec_dsm_range *dsm_range;
 
 	struct xnvme_dev *dev = cli->args.dev;
@@ -645,7 +644,7 @@ sub_dsm(struct xnvmec *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
-	dsm_range = xnvme_buf_alloc(dev, sizeof(*dsm_range) * nr);
+	dsm_range = xnvme_buf_alloc(dev, sizeof(*dsm_range));
 	if (!dsm_range) {
 		err = -errno;
 		xnvmec_perr("xnvme_buf_alloc()", err);
@@ -656,7 +655,7 @@ sub_dsm(struct xnvmec *cli)
 	dsm_range->llb = llb;
 	dsm_range->slba = slba;
 
-	err = xnvme_nvm_dsm(&ctx, nsid, dsm_range, nr, ad, idw, idr);
+	err = xnvme_nvm_dsm(&ctx, nsid, dsm_range, 0, ad, idw, idr);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_nvm_dsm()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
