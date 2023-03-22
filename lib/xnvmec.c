@@ -1561,13 +1561,13 @@ xnvmec_assign_arg(struct xnvmec *cli, struct xnvmec_opt_attr *opt_attr, char *ar
 		args->nsr = num;
 		break;
 	case XNVMEC_OPT_AD:
-		args->ad = arg ? num : 0;
+		args->ad = arg ? num : 1;
 		break;
 	case XNVMEC_OPT_IDW:
-		args->idw = arg ? num : 0;
+		args->idw = arg ? num : 1;
 		break;
 	case XNVMEC_OPT_IDR:
-		args->idr = arg ? num : 0;
+		args->idr = arg ? num : 1;
 		break;
 	case XNVMEC_OPT_POSA_TITLE:
 	case XNVMEC_OPT_NON_POSA_TITLE:
