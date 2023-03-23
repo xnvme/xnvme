@@ -13,6 +13,7 @@ something like:
 * /dev/ng1n1 -- nvm
 
 * /dev/ng2n1 -- nvm (mdts=0 / unlimited)
+* /dev/ng3n1 -- fdp-enabled subsystem and nvm namespace
 
 Using the the 'ng' device-handle, as it is always available, whereas 'nvme' are
 only for block-devices. Regardless, the above is just to illustrate one
@@ -181,6 +182,35 @@ def qemu_nvme_args(nvme_img_root):
     drive4, qemu_nvme_dev4 = namespace(controller_id3, 1)
     nvme += qemu_nvme_dev4
     drives.append(drive4)
+
+    #
+    # Nvme3 - Controller with FDP enabled subsystem
+    #
+    subsys_name = "subsys0"
+    subsys_attributes = {
+        "fdp": "on",
+        "fdp.nruh": "8",
+        "fdp.nrg": "32",
+        "fdp.runs": "40960",
+    }
+    nvme += subsystem(subsys_name, aux=subsys_attributes)
+
+    controller_id4 = "nvme3"
+    controller_bus4 = "pcie_downstream_port4"
+    controller_slot4 = 4
+    nvme += controller(
+        controller_id4,
+        "beefcace",
+        0,
+        controller_bus4,
+        upstream_bus,
+        controller_slot4,
+        subsys_name,
+    )
+
+    drv_fdp, qemu_nvme_dev_fdp = namespace(controller_id4, 1, {"fdp.ruhs": "'0;5;6;7'"})
+    nvme += qemu_nvme_dev_fdp
+    drives.append(drv_fdp)
 
     return drives, nvme
 
