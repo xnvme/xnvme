@@ -28,40 +28,56 @@ from pathlib import Path
 from cijoe.qemu.wrapper import Guest
 
 
-def worklet_entry(args, cijoe, step):
-    """Start a qemu guest"""
+def qemu_nvme_args(nvme_img_root):
+    """
+    Returns list of drive-args and a string of qemu-arguments
 
-    guest = Guest(cijoe, cijoe.config)
+    @returns drives, args
+    """
 
-    nvme_img_root = Path(step.get("with", {}).get("nvme_img_root", guest.guest_path))
-
-    # NVMe configuration arguments, a single controller with two namespaces
     lbads = 12
-    drive_size = "8G"
-    drives = []
 
-    # pcie setup
-    nvme = []
-    nvme += ["-device pcie-root-port,id=pcie_root_port1,chassis=1,slot=1"]
-    upstream_bus = "pcie_upstream_port1"
-    nvme += [f"-device x3130-upstream,id={upstream_bus},bus=pcie_root_port1"]
+    def subsystem(id, nqn=None, aux={}):
+        """
+        Generate a subsystem configuration
+        @param id Identifier, could be something like 'subsys0'
+        @param nqn Non-qualified-name, assigned verbatim when provided
+        @param aux Auxilary arguments, e.g. add {fdp: on} here, to enable fdp
+        """
 
-    def gen_controller(id, serial, mdts, downstream_bus, upstream_bus, controller_slot):
-        controller = {
+        args = {"id": id}
+        if nqn:
+            args["nqn"] = nqn
+        args.update(aux)
+
+        return [
+            "-device",
+            ",".join(["nvme-subsys"] + [f"{k}={v}" for k, v in args.items()]),
+        ]
+
+    def controller(
+        id, serial, mdts, downstream_bus, upstream_bus, controller_slot, subsystem=None
+    ):
+        args = {
             "id": id,
             "serial": serial,
             "bus": downstream_bus,
             "mdts": mdts,
             "ioeventfd": "on",
         }
+        if subsystem:
+            args["subsys"] = subsystem
 
         return [
-            "-device xio3130-downstream"
-            f",id={downstream_bus},bus={upstream_bus},chassis=2,slot={controller_slot}",
-            "-device nvme," + ",".join(f"{k}={v}" for k, v in controller.items()),
+            "-device",
+            f"xio3130-downstream,id={downstream_bus},bus={upstream_bus},chassis=2,slot={controller_slot}",
+            "-device",
+            ",".join(["nvme"] + [f"{k}={v}" for k, v in args.items()]),
         ]
 
-    def gen_namespace(controller_id, nsid, additional_attributes={}):
+    def namespace(controller_id, nsid, aux={}):
+        """Returns qemu-arguments for a namespace configuration"""
+
         drive_id = f"{controller_id}n{nsid}"
         drive = {
             "id": drive_id,
@@ -79,28 +95,43 @@ def worklet_entry(args, cijoe, step):
             "nsid": nsid,
             "logical_block_size": 1 << lbads,
             "physical_block_size": 1 << lbads,
-            **additional_attributes,
+            **aux,
         }
+
         return drive, [
-            "-drive " + ",".join(f"{k}={v}" for k, v in drive.items()),
-            "-device nvme-ns,"
-            + ",".join(f"{k}={v}" for k, v in controller_namespace.items()),
+            "-drive",
+            ",".join(f"{k}={v}" for k, v in drive.items()),
+            "-device",
+            ",".join(
+                ["nvme-ns"] + [f"{k}={v}" for k, v in controller_namespace.items()]
+            ),
         ]
 
-    # Nvme0 - Standard NVMe setup. Conventional and zoned namespaces.
+    drives = []
+
+    # NVMe configuration arguments
+    nvme = []
+    nvme += ["-device", "pcie-root-port,id=pcie_root_port1,chassis=1,slot=1"]
+
+    upstream_bus = "pcie_upstream_port1"
+    nvme += ["-device", f"x3130-upstream,id={upstream_bus},bus=pcie_root_port1"]
+
+    #
+    # Nvme0 - Controller for functional verification of namespaces with NVM, ZNS, and KV command-sets
+    #
     controller_id1 = "nvme0"
     controller_bus1 = "pcie_downstream_port1"
     controller_slot1 = 1
-    nvme += gen_controller(
+    nvme += controller(
         controller_id1, "deadbeef", 7, controller_bus1, upstream_bus, controller_slot1
     )
 
-    # Nvme0n1 - Conventional namespace
-    drive1, qemu_nvme_dev1 = gen_namespace(controller_id1, 1)
+    # Nvme0n1 - NVM namespace
+    drive1, qemu_nvme_dev1 = namespace(controller_id1, 1)
     nvme += qemu_nvme_dev1
     drives.append(drive1)
 
-    # Nvme0n2 - Zoned namespace
+    # Nvme0n2 - ZNS namespace
     zoned_attributes = {
         "zoned": "on",
         "zoned.zone_size": "32M",
@@ -112,7 +143,7 @@ def worklet_entry(args, cijoe, step):
         "zoned.numzrwa": 256,
     }
 
-    drive2, qemu_nvme_dev2 = gen_namespace(controller_id1, 2, zoned_attributes)
+    drive2, qemu_nvme_dev2 = namespace(controller_id1, 2, zoned_attributes)
     nvme += qemu_nvme_dev2
     drives.append(drive2)
 
@@ -121,35 +152,48 @@ def worklet_entry(args, cijoe, step):
         "kv": "on",
     }
 
-    drv_kv, qemu_nvme_dev_kv = gen_namespace(controller_id1, 3, kv_attributes)
+    drv_kv, qemu_nvme_dev_kv = namespace(controller_id1, 3, kv_attributes)
     nvme += qemu_nvme_dev_kv
     drives.append(drv_kv)
 
-    # Nvme1 - Fabrics NVMe setup
+    # Nvme1 - Controller dedicated to Fabrics testing
     controller_id2 = "nvme1"
     controller_bus2 = "pcie_downstream_port2"
     controller_slot2 = 2
-    nvme += gen_controller(
+    nvme += controller(
         controller_id2, "adcdbeef", 7, controller_bus2, upstream_bus, controller_slot2
     )
 
-    # Nvme1n1 - Conventional namespace
-    drive3, qemu_nvme_dev3 = gen_namespace(controller_id2, 1)
+    # Nvme1n1 - Namespace with NVM command-set
+    drive3, qemu_nvme_dev3 = namespace(controller_id2, 1)
     nvme += qemu_nvme_dev3
     drives.append(drive3)
 
-    # Nvme2 - Large MDTS NVMe setup
+    # Nvme2 - Controller dedicated to testing HUGEPAGES / Large MDTS
     controller_id3 = "nvme2"
     controller_bus3 = "pcie_downstream_port3"
     controller_slot3 = 3
-    nvme += gen_controller(
+    nvme += controller(
         controller_id3, "beefcace", 0, controller_bus3, upstream_bus, controller_slot3
     )
 
-    # Nvme2n1 - Conventional namespace
-    drive4, qemu_nvme_dev4 = gen_namespace(controller_id3, 1)
+    # Nvme2n1 - NVM namespace
+    drive4, qemu_nvme_dev4 = namespace(controller_id3, 1)
     nvme += qemu_nvme_dev4
     drives.append(drive4)
+
+    return drives, nvme
+
+
+def worklet_entry(args, cijoe, step):
+    """Start a qemu guest"""
+
+    drive_size = "8G"
+    guest = Guest(cijoe, cijoe.config)
+
+    nvme_img_root = Path(step.get("with", {}).get("nvme_img_root", guest.guest_path))
+
+    drives, nvme_args = qemu_nvme_args(nvme_img_root)
 
     # Check that the backing-storage exists, create them if they do not
     for drive in drives:
@@ -158,7 +202,7 @@ def worklet_entry(args, cijoe, step):
             guest.image_create(drive["file"], drive["format"], drive_size)
         err, _ = cijoe.run_local(f"[ -f { drive['file'] } ]")
 
-    err = guest.start(extra_args=nvme)
+    err = guest.start(extra_args=nvme_args)
     if err:
         log.error(f"guest.start() : err({err})")
         return err
