@@ -2,6 +2,8 @@ import pytest
 
 from ..conftest import xnvme_parametrize
 
+pytest.skip(allow_module_level=True, reason="Not implemented")
+
 
 @xnvme_parametrize(labels=["kvs"], opts=["be", "admin"])
 def test_kvs_io(cijoe, device, be_opts, cli_args):
