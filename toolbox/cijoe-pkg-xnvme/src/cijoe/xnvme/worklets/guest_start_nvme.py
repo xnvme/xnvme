@@ -3,6 +3,21 @@
 Start a qemu-guest with NVMe devices
 ====================================
 
+This creates a configuration, which on a recent Linux installation would be
+something like:
+
+* /dev/ng0n1 -- nvm
+* /dev/ng0n2 -- zns
+* /dev/ng0n3 -- kv
+
+* /dev/ng1n1 -- nvm
+
+* /dev/ng2n1 -- nvm (mdts=0 / unlimited)
+
+Using the the 'ng' device-handle, as it is always available, whereas 'nvme' are
+only for block-devices. Regardless, the above is just to illustrate one
+possible "appearance" of the devices in Linux.
+
 Retargetable: false
 -------------------
 """
