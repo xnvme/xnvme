@@ -2,8 +2,8 @@
 #
 # Bash completion script for the `xnvme` CLI
 #
-# Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
-# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) Samsung Electronics Co., Ltd
+# SPDX-License-Identifier: BSD-3-Clause
 
 _xnvme_completions()
 {
@@ -15,7 +15,7 @@ _xnvme_completions()
 
     # Complete sub-commands
     if [[ $COMP_CWORD < 2 ]]; then
-        COMPREPLY+=( $( compgen -W 'list enum info idfy idfy-ns idfy-ctrlr idfy-cs log log-erri log-health feature-get feature-set format sanitize pioc padc library-info --help' -- $cur ) )
+        COMPREPLY+=( $( compgen -W 'list enum info idfy idfy-ns idfy-ctrlr idfy-cs log log-erri log-health feature-get feature-set format sanitize pioc padc library-info dsm --help' -- $cur ) )
         return 0
     fi
 
@@ -95,6 +95,10 @@ _xnvme_completions()
 
     "library-info")
         opts+="--help"
+        ;;
+
+    "dsm")
+        opts+="--nsid --ad --idw --idr --slba --llb --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     esac

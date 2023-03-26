@@ -1,12 +1,11 @@
-/*
- * The User space library for Non-Volatile Memory NVMe Namespaces based on xNVMe, the
- * Cross-platform libraries and tools for NVMe devices
+/**
+ * SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
  *
- * Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: BSD-3-Clause
  *
- * @headerfile libxnvme_nvm.h
+ * @headerfile libxnvme_file.h
  */
+
 #ifndef __LIBXNVME_FILE_H
 #define __LIBXNVME_FILE_H
 

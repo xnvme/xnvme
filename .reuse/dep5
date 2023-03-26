@@ -1,0 +1,52 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: xNVMe
+Upstream-Contact: Simon A. F. Lund <os@safl.dk>
+Source: https://xnvme.io/
+
+Files: .github/codeql/codeql-config.yml .github/workflows/verify.yml .pre-commit-config.yaml meson_options.txt xnvme.spec.in
+Copyright: Samsung Electronics Co., Ltd
+License: BSD-3-Clause
+
+Files: docs/*
+Copyright: Samsung Electronics Co., Ltd
+License: BSD-3-Clause
+
+Files: toolbox/*.py
+Copyright: Samsung Electronics Co., Ltd
+License: BSD-3-Clause
+
+Files: toolbox/pkgs/emitter/*
+Copyright: Samsung Electronics Co., Ltd
+License: BSD-3-Clause
+
+Files: toolbox/pkgs/*.bat toolbox/pkgs/*.sh
+Copyright: Samsung Electronics Co., Ltd
+License: BSD-3-Clause
+
+Files: toolbox/xnvme-driver.sh
+Copyright: 2016 Intel Corporation
+License: BSD-3-Clause
+
+Files: toolbox/workflow/*
+Copyright: Samsung Electronics Co., Ltd
+License: BSD-3-Clause
+
+Files: toolbox/cijoe-pkg-xnvme/*
+Copyright: Samsung Electronics Co., Ltd
+License: BSD-3-Clause
+
+Files: third-party/windows/getopt/*/*
+Copyright: 2015 Koji Takami
+License: MIT
+
+Files: python/*
+Copyright: Samsung Electronics Co., Ltd
+License: BSD-3-Clause
+
+Files: rust/*
+Copyright: Samsung Electronics Co., Ltd
+License: BSD-3-Clause
+
+Files: man/*
+Copyright: Samsung Electronics Co., Ltd
+License: BSD-3-Clause

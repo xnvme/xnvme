@@ -1,3 +1,11 @@
+/**
+ * SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * @headerfile libxnvme_geo.h
+ */
+
 #ifndef __LIBXNVME_GEO_H
 #define __LIBXNVME_GEO_H
 #include <libxnvme_util.h>

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>

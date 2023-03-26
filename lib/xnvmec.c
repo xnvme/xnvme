@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 #define _XOPEN_SOURCE 700
 #include <stdlib.h>
 #include <stdarg.h>

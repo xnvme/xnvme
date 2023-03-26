@@ -1,5 +1,7 @@
-// Copyright (C) Mads Ynddal <m.ynddal@samsung.com>
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 #ifndef __INTERNAL_XNVME_BE_RAMDISK_H
 #define __INTERNAL_XNVME_BE_RAMDISK_H
 struct xnvme_be_ramdisk_state {
