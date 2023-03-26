@@ -1,12 +1,11 @@
 /**
- * Cross-platform I/O library for NVMe based devices
+ * SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
  *
- * Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
- * Copyright (C) Klaus B. A. Jensen <k.jensen@samsung.com>
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: BSD-3-Clause
  *
- * @file libxnvme_ident.h
+ * @headerfile libxnvme_ident.h
  */
+
 #ifndef __LIBXNVME_IDENT
 #define __LIBXNVME_IDENT
 

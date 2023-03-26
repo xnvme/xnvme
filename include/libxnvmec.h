@@ -1,9 +1,11 @@
 /**
- * Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
  *
- * @file libxnvmec.h
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * @headerfile libxnvmec.h
  */
+
 #ifndef __LIBXNVMEC_H
 #define __LIBXNVMEC_H
 

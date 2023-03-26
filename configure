@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 set -e
 trap 'echo -e "\n\nThis is not a configure-script\n\n" >&2' ERR
 

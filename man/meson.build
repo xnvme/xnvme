@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 install_man('lblk-dir-receive.1')
 install_man('lblk-dir-send.1')
 install_man('lblk-enum.1')

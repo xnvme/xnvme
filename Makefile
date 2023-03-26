@@ -10,6 +10,10 @@
 # actually use meson, this is just here to get one started, showing some default usage of meson and
 # providing pointers to where to read about meson.
 #
+# SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 ifeq ($(PLATFORM_ID),Windows)
 else
 PLATFORM_ID = $$( uname -s )

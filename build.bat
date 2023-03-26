@@ -1,3 +1,7 @@
+REM SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+REM
+REM SPDX-License-Identifier: BSD-3-Clause
+
 @echo off
 @setlocal enableextensions enabledelayedexpansion
 

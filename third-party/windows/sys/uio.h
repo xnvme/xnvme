@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+//
+// SPDX-License-Identifier: BSD-3-Clause
 #ifndef SYS_UIO_H
 #define SYS_UIO_H
 #include <sys/types.h>

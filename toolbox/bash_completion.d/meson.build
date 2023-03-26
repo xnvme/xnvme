@@ -1,7 +1,7 @@
-install_data('lblk-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
-install_data('nvmec-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
-install_data('xdd-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
-install_data('xnvme-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
+# SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 install_data('xnvme_file-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
 install_data('xnvme_hello-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
 install_data('xnvme_io_async-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
@@ -18,6 +18,3 @@ install_data('xnvme_tests_znd_append-completions', install_dir: bash_completion_
 install_data('xnvme_tests_znd_explicit_open-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
 install_data('xnvme_tests_znd_state-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
 install_data('xnvme_tests_znd_zrwa-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
-install_data('zoned-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
-install_data('zoned_io_async-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
-install_data('zoned_io_sync-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))

@@ -1,11 +1,11 @@
 /**
- * Utilities to tedious tasks with LBAs, such as generating and validating ranges of them
+ * SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
  *
- * Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: BSD-3-Clause
  *
- * @file libxnvme_lba.h
+ * @headerfile libxnvme_lba.h
  */
+
 #ifndef __LIBXNVME_LBA_H
 #define __LIBXNVME_LBA_H
 

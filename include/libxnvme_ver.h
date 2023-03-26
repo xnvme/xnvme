@@ -1,3 +1,11 @@
+/**
+ * SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * @headerfile libxnvme_ver.h
+ */
+
 #ifndef __LIBXNVME_VER_H
 #define __LIBXNVME_VER_H
 #include <libxnvme.h>
