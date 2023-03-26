@@ -18,6 +18,7 @@ import logging
 import os
 import re
 import sys
+from pathlib import Path
 from subprocess import PIPE, Popen
 
 MESON_BASH_INSTALL = (
@@ -44,8 +45,9 @@ SCRIPT = """# ${tname} completion                           -*- shell-script -*-
 #
 # Bash completion script for the `${tname}` CLI
 #
-# Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+#
+# SPDX-License-Identifier: BSD-3-Clause
 
 _${tname}_completions()
 {
@@ -286,6 +288,10 @@ def gen_completions(args, tools):
 
     # Emit a meson.build
     with open(os.sep.join([args.output, "meson.build"]), "w") as mfd:
+        mfd.write("# SPDX-FileCopyrightText: Samsung Electronics Co., Ltd\n")
+        mfd.write("#\n")
+        mfd.write("# SPDX-License-Identifier: BSD-3-Clause\n")
+        mfd.write("\n")
         mfd.write("\n".join(meson))
 
     return 0
@@ -435,6 +441,25 @@ def gen_manpage(args, tools):
     return 0
 
 
+def find_binaries():
+    """This will look in builddir for xnvme-executables"""
+
+    builddir = Path(__file__).parent.parent / "builddir"
+
+    bins = []
+    for path in sorted(builddir.rglob("xnvme_*")):
+        if path.stem.startswith("xnvme_single"):
+            continue
+        if path.stem.startswith("xnvme_dev"):
+            continue
+        if path.stem.startswith("xnvme_enum"):
+            continue
+        if path.is_file() and path.stat().st_mode & os.X_OK:
+            bins.append(path.name)
+
+    return bins
+
+
 def setup():
     """Parse command-line arguments for generator and setup logger"""
 
@@ -452,8 +477,7 @@ def setup():
     )
     prsr.add_argument(
         "--tools",
-        nargs="+",
-        required=True,
+        nargs="*",
         help="Name of tools to generate bash-completions for",
     )
     prsr.add_argument(
@@ -471,6 +495,9 @@ def setup():
     args = prsr.parse_args()
     args.output = expand_path(args.output)
     args.gen = generators[args.generator]
+
+    if not args.tools:
+        args.tools = find_binaries()
 
     logging.basicConfig(
         format="%(asctime)s %(message)s",
