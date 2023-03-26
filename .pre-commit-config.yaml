@@ -24,15 +24,11 @@ repos:
     files: \.c$
     exclude: xnvme_fioe.c$
 
-# Git: intended for commit-message formating
-#- repo: local
-#  hooks:
-#  - id: commit-msg-check
-#    name: Git-Validate commit message
-#    language: pygrep
-#    entry: '\A(?![A-Za-z]+: .+\nSigned-off-by:.+)'
-#    args: [--multiline]
-#    stages: [commit-msg]
+# REUSE-software compliance check
+- repo: https://github.com/fsfe/reuse-tool
+  rev: v1.1.2
+  hooks:
+  - id: reuse
 
 # Yaml: intended for the GitHUB Actions .yaml
 - repo: https://github.com/pre-commit/pre-commit-hooks
