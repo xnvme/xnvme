@@ -1,6 +1,7 @@
-// Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
-// Copyright (C) Klaus B. A. Jensen <k.jensen@samsung.com>
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 #ifndef __INTERNAL_XNVME_QUEUE_H
 #define __INTERNAL_XNVME_QUEUE_H
 #include <sys/queue.h>

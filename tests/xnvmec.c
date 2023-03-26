@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include <errno.h>
 #include <libxnvme_file.h>
 #include <libxnvmec.h>

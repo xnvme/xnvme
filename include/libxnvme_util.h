@@ -1,12 +1,11 @@
 /**
- * libxnvme_util: timers, string-formats, debug-printers and other utilities
+ * SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
  *
- * Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
- * Copyright (C) Klaus B. A. Jensen <k.jensen@samsung.com>
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: BSD-3-Clause
  *
- * @file libxnvme_util.h
+ * @headerfile libxnvme_util.h
  */
+
 #ifndef __LIBXNVME_UTIL_H
 #define __LIBXNVME_UTIL_H
 #include <string.h>

@@ -1,5 +1,7 @@
-// Copyright (C) Rishabh Shukla <rishabh.sh@samsung.com>
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 700
 #endif

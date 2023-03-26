@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+
+SPDX-License-Identifier: BSD-3-Clause
+-->
+
 ![xNVMe Logo](/docs/_static/xnvme-logo-medium.png)
 
 xNVMe: cross-platform libraries and tools for NVMe devices
@@ -8,6 +14,7 @@ xNVMe: cross-platform libraries and tools for NVMe devices
 [![CI](https://github.com/OpenMPDK/xNVMe/workflows/style/badge.svg)](https://github.com/OpenMPDK/xNVMe/actions/)
 [![Coverity](https://scan.coverity.com/projects/xNVMe/badge.svg)](https://scan.coverity.com/projects/xNVMe)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
+[![REUSE status](https://api.reuse.software/badge/github.com/OpenMPDK/xNVMe)](https://api.reuse.software/info/github.com/OpenMPDK/xNVMe)
 
 See: https://xnvme.io/docs for documentation
 
@@ -35,5 +42,11 @@ See: https://xnvme.io/docs for documentation
 Contact and Contributions
 =========================
 
-xNVMe: is in active development and maintained by Simon A. F. Lund
-<simon.lund@samsung.com>, pull requests are most welcome.
+xNVMe: is in active development and maintained by Simon A. F. Lund <simon.lund@samsung.com>, pull
+requests are most welcome. See, CONTRIBUTORS.md for a list of contributors to the current and
+previous versions of xNVMe. For a contributor-guidelines then have a look at the online
+documentation:
+
+* Web: https://xnvme.io/docs/latest/contributing/
+
+* Join us on Discord: https://discord.gg/XCbBX9DmKf

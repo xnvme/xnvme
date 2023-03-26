@@ -2,8 +2,8 @@
 #
 # Bash completion script for the `zoned_io_async` CLI
 #
-# Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
-# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) Samsung Electronics Co., Ltd
+# SPDX-License-Identifier: BSD-3-Clause
 
 _zoned_io_async_completions()
 {

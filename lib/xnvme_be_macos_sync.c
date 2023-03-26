@@ -1,5 +1,7 @@
-// Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 /**
  * On MacOS, fsync() does not behave in the same manner as on Linux and FreeBSD, e.g. a fsync()
  * does not flush to the storage device. To achieve the same behavior fcntl(..., F_FULLFSYNC) is
