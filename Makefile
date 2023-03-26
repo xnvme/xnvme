@@ -343,8 +343,7 @@ endef
 .PHONY: gen-bash-completions
 gen-bash-completions:
 	@echo "## xNVMe: make gen-bash-completions"
-	$(eval TOOLS := $(shell find $(BUILD_DIR)/tools $(BUILD_DIR)/examples $(BUILD_DIR)/tests -not -name "xnvme_single*" -not -name "xnvme_enum" -not -name "xnvme_dev" -not -name "*.so" -type f -executable -exec basename {} \;))
-	python3 ./$(TOOLBOX_DIR)/xnvmec_generator.py cpl --tools ${TOOLS} --output $(TOOLBOX_DIR)/bash_completion.d
+	python3 ./$(TOOLBOX_DIR)/xnvmec_generator.py cpl --output $(TOOLBOX_DIR)/bash_completion.d
 	@echo "## xNVMe: make gen-bash-completions [DONE]"
 
 define gen-man-pages-help
@@ -357,8 +356,7 @@ endef
 .PHONY: gen-man-pages
 gen-man-pages:
 	@echo "## xNVMe: make gen-man-pages"
-	$(eval TOOLS := $(shell find $(BUILD_DIR)/tools $(BUILD_DIR)/examples $(BUILD_DIR)/tests -not -name "xnvme_single*" -not -name "xnvme_enum" -not -name "xnvme_dev" -not -name "*.so" -type f -executable -exec basename {} \;))
-	python3 ./$(TOOLBOX_DIR)/xnvmec_generator.py man --tools ${TOOLS} --output man/
+	python3 ./$(TOOLBOX_DIR)/xnvmec_generator.py man --output man/
 	@echo "## xNVMe: make gen-man-pages [DONE]"
 
 define tags-help
