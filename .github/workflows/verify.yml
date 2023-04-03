@@ -870,12 +870,17 @@ jobs:
         path: toolbox/workflow/provision-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/*
         if-no-files-found: error
 
+    - name: CIJOE, compress workflow-report-test
+      if: always()
+      run: |
+        tar czf test-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.tar.gz toolbox/workflow/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/* 
+
     - name: CIJOE, upload workflow-report-test
       uses: actions/upload-artifact@v3.1.1
       if: always()
       with:
         name: test-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
-        path: toolbox/workflow/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/*
+        path: test-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.tar.gz
         if-no-files-found: error
 
   # This is a lot of effort to generate documentation, however, it ensures that command-line
