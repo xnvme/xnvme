@@ -422,6 +422,8 @@ xnvme_be_dev_idfy(struct xnvme_dev *dev)
 	struct xnvme_spec_idfy *idfy_ctrlr = NULL, *idfy_ns = NULL;
 	int err;
 
+	// TODO: introduce the "anonymous" device here
+
 	//
 	// Identify controller and namespace
 	//
