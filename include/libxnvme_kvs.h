@@ -1,9 +1,7 @@
 /**
- * The User space library for Key-Value Namespaces based on xNVMe, the
- * Cross-platform libraries and tools for NVMe devices
+ * SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
  *
- * Copyright (C) Simon A. F. Lund <simon.lund@samsung.com>
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: BSD-3-Clause
  *
  * @headerfile libxnvme_kv.h
  */
