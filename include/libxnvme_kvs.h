@@ -31,14 +31,14 @@ enum xnvme_store_opts {
  * @param nsid Namespace Identifier
  * @param key pointer to a KV Key buffer
  * @param key_len KV Key size in bytes
- * @param dbuf pointer to Host Buffer
- * @param dbuf_nbytes Host Buffer size in bytes
+ * @param vbuf pointer to Host Buffer
+ * @param vbuf_nbytes Host Buffer size in bytes
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
 xnvme_kvs_retrieve(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, uint8_t key_len,
-		   uint8_t opt, const void *dbuf, size_t dbuf_nbytes);
+		   const void *vbuf, uint32_t vbuf_nbytes, uint8_t opt);
 
 /**
  * Submit, and optionally wait for completion of, a KV Store
@@ -47,14 +47,14 @@ xnvme_kvs_retrieve(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, ui
  * @param nsid Namespace Identifier
  * @param key pointer to a KV Key buffer
  * @param key_len KV Key size in bytes
- * @param dbuf pointer to data payload
- * @param dbuf_nbytes data payload size in bytes
+ * @param vbuf pointer to data payload
+ * @param vbuf_nbytes data payload size in bytes
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
 xnvme_kvs_store(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, uint8_t key_len,
-		uint8_t opt, const void *dbuf, size_t dbuf_nbytes);
+		const void *vbuf, uint32_t vbuf_nbytes, uint8_t opt);
 
 /**
  * Submit, and optionally wait for completion of, a KV Delete
@@ -89,14 +89,14 @@ xnvme_kvs_exist(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, uint8
  * @param nsid Namespace Identifier
  * @param key pointer to a KV Key buffer
  * @param key_len KV Key size in bytes
- * @param dbuf pointer to Host Buffer
- * @param dbuf_nbytes Host Buffer size in bytes
+ * @param vbuf pointer to Host Buffer
+ * @param vbuf_nbytes Host Buffer size in bytes
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
 xnvme_kvs_list(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, uint8_t key_len,
-	       const void *dbuf, size_t dbuf_nbytes);
+	       const void *vbuf, uint32_t vbuf_nbytes);
 
 #ifdef __cplusplus
 }

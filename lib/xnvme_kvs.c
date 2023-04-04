@@ -31,7 +31,7 @@ kvs_cmd_set_key(struct xnvme_spec_cmd *cmd, const void *key, uint8_t key_len)
 
 int
 xnvme_kvs_retrieve(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, uint8_t key_len,
-		   uint8_t opt, const void *dbuf, size_t dbuf_nbytes)
+		   const void *dbuf, uint32_t dbuf_nbytes, uint8_t opt)
 {
 	void *cdbuf = (void *)dbuf;
 
@@ -50,7 +50,7 @@ xnvme_kvs_retrieve(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, ui
 
 int
 xnvme_kvs_store(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, uint8_t key_len,
-		uint8_t opt, const void *dbuf, size_t dbuf_nbytes)
+		const void *dbuf, uint32_t dbuf_nbytes, uint8_t opt)
 {
 	void *cdbuf = (void *)dbuf;
 
@@ -101,7 +101,7 @@ xnvme_kvs_exist(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, uint8
 
 int
 xnvme_kvs_list(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, uint8_t key_len,
-	       const void *dbuf, size_t dbuf_nbytes)
+	       const void *dbuf, uint32_t dbuf_nbytes)
 {
 	void *cdbuf = (void *)dbuf;
 

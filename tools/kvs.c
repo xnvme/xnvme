@@ -140,8 +140,8 @@ cmd_retrieve(struct xnvmec *cli)
 	memset(dbuf, 0, dbuf_nbytes);
 
 	xnvmec_pinf("Sending xnvme_kvs_retrieve command");
-	err = xnvme_kvs_retrieve(&ctx, nsid, cli->args.kv_key, strlen(cli->args.kv_key), 0, dbuf,
-				 dbuf_nbytes);
+	err = xnvme_kvs_retrieve(&ctx, nsid, cli->args.kv_key, strlen(cli->args.kv_key), dbuf,
+				 dbuf_nbytes, 0);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_kvs_retrieve()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
@@ -196,8 +196,8 @@ cmd_store(struct xnvmec *cli)
 
 	memcpy(dbuf, cli->args.kv_val, dbuf_nbytes);
 
-	err = xnvme_kvs_store(&ctx, nsid, cli->args.kv_key, strlen(cli->args.kv_key), opt, dbuf,
-			      dbuf_nbytes);
+	err = xnvme_kvs_store(&ctx, nsid, cli->args.kv_key, strlen(cli->args.kv_key), dbuf,
+			      dbuf_nbytes, opt);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvmec_perr("xnvme_kvs_store()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
@@ -302,7 +302,7 @@ cmd_list(struct xnvmec *cli)
 		goto exit;
 	}
 
-	XNVME_DEBUG("KV List retrieved with %ld keys\n", *(uint32_t *)dbuf);
+	XNVME_DEBUG("KV List retrieved with %u keys\n", *(uint32_t *)dbuf);
 
 	stdio_wrtn = fwrite(dbuf, sizeof(uint8_t), dbuf_nbytes, stdout);
 
