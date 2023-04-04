@@ -120,6 +120,15 @@ config-slim:
 	   -Dwith-libvfn=false
 	@echo "## xNVMe: make config-slim [DONE]"
 
+define docker-help
+# drop into a docker instance with the repository bind-mounted at /tmp/xnvme
+endef
+.PHONY: docker
+docker:
+	@echo "## xNVMe: docker"
+	@docker run -it -w /tmp/xnvme --mount type=bind,source="$(shell pwd)",target=/tmp/xnvme ghcr.io/xnvme/xnvme-deps-debian-bullseye:next bash
+	@echo "## xNVME: docker [DONE]"
+
 define git-setup-help
 # Do git config for: 'core.hooksPath' and 'blame.ignoreRevsFile'
 endef
