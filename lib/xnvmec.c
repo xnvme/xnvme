@@ -986,25 +986,25 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 		.opt = XNVMEC_OPT_KV_VAL,
 		.vtype = XNVMEC_OPT_VTYPE_STR,
 		.name = "value",
-		.descr = "KV Pair Value"
+		.descr = "KV Pair Value",
 	},
 	{
 		.opt = XNVMEC_OPT_KV_KEY,
 		.vtype = XNVMEC_OPT_VTYPE_STR,
 		.name = "key",
-		.descr = "KV Pair Key"
+		.descr = "KV Pair Key",
 	},
 	{
 		.opt = XNVMEC_OPT_KV_STORE_UPDATE,
 		.vtype = XNVMEC_OPT_VTYPE_NUM,
 		.name = "only-update",
-		.descr = "KV Store Option to only update existing"
+		.descr = "KV Store Option to only update existing",
 	},
 	{
 		.opt = XNVMEC_OPT_KV_STORE_ADD,
 		.vtype = XNVMEC_OPT_VTYPE_NUM,
 		.name = "only-add",
-		.descr = "KV Store Option to only add new KV-Pairs"
+		.descr = "KV Store Option to only add new KV-Pairs",
 	},
 
 	{
