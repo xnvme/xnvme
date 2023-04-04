@@ -92,14 +92,11 @@ static struct xnvmec_sub g_subs[] = {
 	 "Basic Verification of being able to read, what was written",
 	 kvs_io,
 	 {
+		 {XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
 		 {XNVMEC_OPT_URI, XNVMEC_POSA},
 		 {XNVMEC_OPT_KV_KEY, XNVMEC_LOPT},
 		 {XNVMEC_OPT_KV_VAL, XNVMEC_LOPT},
-
-		 {XNVMEC_OPT_DEV_NSID, XNVMEC_LOPT},
-		 {XNVMEC_OPT_BE, XNVMEC_LOPT},
-		 {XNVMEC_OPT_ADMIN, XNVMEC_LOPT},
-		 {XNVMEC_OPT_SYNC, XNVMEC_LOPT},
+		 XNVMEC_SYNC_OPTS,
 	 }},
 };
 
