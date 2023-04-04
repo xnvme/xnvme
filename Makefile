@@ -324,7 +324,7 @@ gen-src-archive:
 	$(MESON) dist -C $(BUILD_DIR) --include-subprojects --no-tests --formats gztar
 	@echo "## xNVMe: make gen-src-archive [DONE]"
 
-define gen-artifacts
+define gen-artifacts-help
 # Generate artifacts in "/tmp/artifacts" for local guest provisoning
 #
 # This is a helper to produce the set of files used by toolbox/workflows/provision.workflow
@@ -397,6 +397,9 @@ tags-xnvme-public:
 	@$(CTAGS) --c-kinds=dfpgs -R include/lib*.h || true
 	@echo "## xNVMe: make tags-xnvme-public [DONE]"
 
+define _require_builddir-help
+# This helper is not intended to be invoked via the command-line-interface.
+endef
 .PHONY: _require_builddir
 _require_builddir:
 	@if [ ! -d "$(BUILD_DIR)" ]; then				\
