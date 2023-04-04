@@ -14,14 +14,15 @@ extern "C" {
 
 #include <libxnvme.h>
 
-#define XNVME_KVS_RETRIEVE_OPT_RETRIEVE_RAW 1 << 0
+enum xnvme_retreive_opts {
+	XNVME_KVS_RETRIEVE_OPT_RETRIEVE_RAW = 1 << 0,
+};
 
-// Only update existing
-#define XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_NOT_EXISTS 1 << 0
-
-// Only add new
-#define XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_EXISTS 1 << 1
-#define XNVME_KVS_STORE_OPT_COMPRESS                 1 << 2
+enum xnvme_store_opts {
+	XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_NOT_EXISTS = 1 << 0,
+	XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_EXISTS     = 1 << 1,
+	XNVME_KVS_STORE_OPT_COMPRESS                     = 1 << 2,
+};
 
 /**
  * Submit, and optionally wait for completion of, a KV Retrieve
