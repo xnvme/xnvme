@@ -1006,6 +1006,12 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 		.name = "only-add",
 		.descr = "KV Store Option to only add new KV-Pairs",
 	},
+	{
+		.opt = XNVMEC_OPT_KV_STORE_COMPRESS,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "compress",
+		.descr = "KV Store Option to compress value on device",
+	},
 
 	{
 		.opt = XNVMEC_OPT_END,
