@@ -14,9 +14,10 @@
 #include <libxnvmec.h>
 
 static inline void
-kvs_put_key_into_cmd(struct xnvme_spec_cmd *cmd, const void *key, uint8_t key_len)
+kvs_cmd_set_key(struct xnvme_spec_cmd *cmd, const void *key, uint8_t key_len)
 {
 	uint8_t *key_ptr = (uint8_t *)key;
+
 	cmd->kvs.cdw11.kl = key_len;
 
 	memcpy((void *)&cmd->kvs.key, key, XNVME_MIN(key_len, 8));
@@ -36,7 +37,7 @@ xnvme_kvs_retrieve(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, ui
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.kvs.cdw10 = dbuf_nbytes;
 
-	kvs_put_key_into_cmd(&ctx->cmd, key, key_len);
+	kvs_cmd_set_key(&ctx->cmd, key, key_len);
 
 	if (opt & XNVME_KVS_RETRIEVE_OPT_RETRIEVE_RAW) {
 		ctx->cmd.kvs.cdw11.ro = opt;
@@ -69,7 +70,7 @@ xnvme_kvs_store(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, uint8
 		ctx->cmd.kvs.cdw11.ro = ctx->cmd.kvs.cdw11.ro | XNVME_KVS_STORE_OPT_COMPRESS;
 	}
 
-	kvs_put_key_into_cmd(&ctx->cmd, key, key_len);
+	kvs_cmd_set_key(&ctx->cmd, key, key_len);
 
 	return xnvme_cmd_pass(ctx, cdbuf, dbuf_nbytes, NULL, 0);
 }
@@ -80,7 +81,7 @@ xnvme_kvs_delete(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, uint
 	ctx->cmd.common.opcode = XNVME_SPEC_KV_OPC_DELETE;
 	ctx->cmd.common.nsid = nsid;
 
-	kvs_put_key_into_cmd(&ctx->cmd, key, key_len);
+	kvs_cmd_set_key(&ctx->cmd, key, key_len);
 
 	return xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
 }
@@ -91,7 +92,7 @@ xnvme_kvs_exist(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, uint8
 	ctx->cmd.common.opcode = XNVME_SPEC_KV_OPC_EXIST;
 	ctx->cmd.common.nsid = nsid;
 
-	kvs_put_key_into_cmd(&ctx->cmd, key, key_len);
+	kvs_cmd_set_key(&ctx->cmd, key, key_len);
 
 	return xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
 }
@@ -106,7 +107,7 @@ xnvme_kvs_list(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, uint8_
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.kvs.cdw10 = dbuf_nbytes;
 
-	kvs_put_key_into_cmd(&ctx->cmd, key, key_len);
+	kvs_cmd_set_key(&ctx->cmd, key, key_len);
 
 	return xnvme_cmd_pass(ctx, cdbuf, dbuf_nbytes, NULL, 0);
 }
