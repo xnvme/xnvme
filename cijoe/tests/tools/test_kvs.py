@@ -2,8 +2,6 @@ import pytest
 
 from ..conftest import XnvmeDriver, xnvme_parametrize
 
-pytest.skip(allow_module_level=True, reason="Not implemented")
-
 
 def test_enum(cijoe):
     XnvmeDriver.kernel_attach(cijoe)
