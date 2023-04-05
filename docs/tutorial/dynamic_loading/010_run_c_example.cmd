@@ -1,1 +1,1 @@
-./enumerate_example $(pkg-config xnvme --variable=libdir)/libxnvme-shared.so
+./enumerate_example $(pkg-config xnvme --variable=libdir)/libxnvme.so

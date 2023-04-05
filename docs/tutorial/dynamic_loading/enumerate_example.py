@@ -10,7 +10,7 @@ def load_capi():
     def search_paths():
         """Generate paths to try and load"""
 
-        for search in ["xnvme-shared", "xnvme_shared"]:
+        for search in ["xnvme"]:
             path = ctypes.util.find_library(search)
             if path:
                 yield path
@@ -22,9 +22,7 @@ def load_capi():
                 capture_output=True,
             )
             if not proc.returncode:
-                yield os.path.join(
-                    proc.stdout.decode("utf-8").strip(), "libxnvme-shared.so"
-                )
+                yield os.path.join(proc.stdout.decode("utf-8").strip(), "libxnvme.so")
         except subprocess.CalledProcessError:
             pass
 
