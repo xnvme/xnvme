@@ -435,6 +435,13 @@ jobs:
         cmd.exe /c "echo %cd%"
         cmd.exe /c "toolbox\pkgs\${{ matrix.runner.os }}-${{ matrix.runner.ver }}.bat"
 
+    - name: Setup WSL
+      uses: Vampire/setup-wsl@v2.0.1
+      with:
+        distribution: Ubuntu-22.04
+        update: 'true'
+        additional-packages: gcc-mingw-w64 g++-mingw-w64 yasm pkg-config
+
     - name: Build!
       shell: cmd
       run: |

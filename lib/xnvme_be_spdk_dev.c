@@ -25,6 +25,11 @@
 #define XNVME_BE_SPDK_CREFS_LEN 100
 static struct xnvme_be_spdk_ctrlr_ref g_cref[XNVME_BE_SPDK_CREFS_LEN];
 
+#ifdef XNVME_BE_WINDOWS_ENABLED
+#define dup _dup
+#define dup2 _dup2
+#endif
+
 /**
  * look for a cref for the given given ident
  *
@@ -378,7 +383,9 @@ _spdk_setup_controller_opts(struct xnvme_opts *opts, const struct spdk_nvme_tran
 	case SPDK_NVME_TRANSPORT_VFIOUSER:
 	case SPDK_NVME_TRANSPORT_FC:
 	case SPDK_NVME_TRANSPORT_CUSTOM:
+#ifndef XNVME_BE_WINDOWS_ENABLED
 	case SPDK_NVME_TRANSPORT_CUSTOM_FABRICS:
+#endif
 		XNVME_DEBUG("FAILED: unsupported trtype: %d", trid->trtype);
 		return false;
 	}
@@ -597,7 +604,9 @@ enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
 		case SPDK_NVME_TRANSPORT_FC:
 		case SPDK_NVME_TRANSPORT_CUSTOM:
 		case SPDK_NVME_TRANSPORT_VFIOUSER:
+#ifndef XNVME_BE_WINDOWS_ENABLED
 		case SPDK_NVME_TRANSPORT_CUSTOM_FABRICS:
+#endif
 			XNVME_DEBUG("SKIP: ENOSYS trtype: %s",
 				    spdk_nvme_transport_id_trtype_str(trid->trtype));
 			continue;
