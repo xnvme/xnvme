@@ -1,0 +1,61 @@
+From 4224e7609ba4cb6478bcba504396d0501c1ef687 Mon Sep 17 00:00:00 2001
+From: Rishabh Shukla <rishabh.sh@samsung.com>
+Date: Mon, 30 Jan 2023 16:49:41 +0530
+Subject: nvme pcie add NVMe PCIe Driver registration hook
+
+---
+ include/spdk/nvme.h    |  6 ++++++
+ lib/nvme/nvme_pcie.c   | 10 ++++++++++
+ lib/nvme/spdk_nvme.map |  1 +
+ 3 files changed, 17 insertions(+)
+
+diff --git a/include/spdk/nvme.h b/include/spdk/nvme.h
+index ab66365eb..730e7d7da 100644
+--- a/include/spdk/nvme.h
++++ b/include/spdk/nvme.h
+@@ -3514,6 +3514,12 @@ struct spdk_nvme_transport_ops {
+  */
+ void spdk_nvme_transport_register(const struct spdk_nvme_transport_ops *ops);
+ 
++#define SPDK_REGHOOK_NVME_PCIE_DRIVER 1
++
++void
++spdk_reghook_nvme_pcie_driver(void);
++
++
+ /*
+  * Macro used to register new transports.
+  */
+diff --git a/lib/nvme/nvme_pcie.c b/lib/nvme/nvme_pcie.c
+index 4eb9c7c4f..e987a9d5b 100644
+--- a/lib/nvme/nvme_pcie.c
++++ b/lib/nvme/nvme_pcie.c
+@@ -1355,3 +1355,13 @@ const struct spdk_nvme_transport_ops pcie_ops = {
+ };
+ 
+ SPDK_NVME_TRANSPORT_REGISTER(pcie, &pcie_ops);
++
++
++void
++spdk_reghook_nvme_pcie_driver(void)
++{
++	spdk_nvme_transport_register(&pcie_ops);
++
++	spdk_pci_driver_register("nvme", nvme_pci_driver_id,
++				 SPDK_PCI_DRIVER_NEED_MAPPING | SPDK_PCI_DRIVER_WC_ACTIVATE);
++}
+diff --git a/lib/nvme/spdk_nvme.map b/lib/nvme/spdk_nvme.map
+index 0120aeb62..4f46b2daf 100644
+--- a/lib/nvme/spdk_nvme.map
++++ b/lib/nvme/spdk_nvme.map
+@@ -2,6 +2,7 @@
+ 	global:
+ 
+ 	# public functions from nvme.h
++	spdk_reghook_nvme_pcie_driver;
+ 	spdk_nvme_transport_register;
+ 	spdk_nvme_transport_available;
+ 	spdk_nvme_transport_available_by_name;
+-- 
+2.25.1
+

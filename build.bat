@@ -6,6 +6,7 @@ REM SPDX-License-Identifier: BSD-3-Clause
 @setlocal enableextensions enabledelayedexpansion
 
 set CC=gcc
+set CXX=g++
 set MESON=meson
 set BUILD_DIR=builddir
 set GIT=git
@@ -16,9 +17,6 @@ set BUILD=
 set CLEAN=
 set CLOBBER=
 set INSTALL=
-
-if "%CC%"=="clang" set "CXX=clang++"
-if "%CC%"=="gcc" set "CXX=g++"
 
 :: set msys2-shell
 set SH=call msys2_shell -no-start -here -use-full-path -defterm
