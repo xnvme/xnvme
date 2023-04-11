@@ -30,7 +30,9 @@ meson install -C build --destdir %{buildroot}
 
 %files
 %attr(0644,root,root) %{_includedir}/*
-%attr(0644,root,root) %{_libdir}/*
+%dir %attr(0755,root,root) %{_libdir}/pkgconfig
+%attr(0644,root,root) %{_libdir}/pkgconfig/*
+%attr(0755,root,root) %{_libdir}/*.*
 %attr(0644,root,root) %{_mandir}/man1/*
-%attr(0644,root,root) %{_bindir}/*
+%attr(0755,root,root) %{_bindir}/*
 %attr(0644,root,root) %{_datadir}/xnvme/*
