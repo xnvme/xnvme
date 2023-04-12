@@ -1,0 +1,6 @@
+[xnvme.repository]
+remote = "https://github.com/OpenMPDK/xNVMe.git"
+path = "{{ local.env.HOME }}/git/xnvme"
+
+[xnvme.build]
+type = "debug"

@@ -4,14 +4,14 @@ doc: |
 
 steps:
 - name: sysinfo
-  uses: freebsd_sysinfo
+  uses: xnvme_freebsd_sysinfo
 
 - name: kldconfig
-  uses: kldconfig
+  uses: xnvme_kldconfig
   with:
     xnvme_source: '/tmp/xnvme_source'
 
 - name: test
   uses: core.testrunner
   with:
-    args: '--pyargs cijoe.xnvme.tests'
+    args: 'tests'

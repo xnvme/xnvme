@@ -27,7 +27,7 @@ import errno
 import logging as log
 
 
-def worklet_entry(args, cijoe, step):
+def main(args, cijoe, step):
     """Transfer artifacts"""
 
     xnvme_source = step.get("with", {}).get("xnvme_source", "/tmp/xnvme_source")

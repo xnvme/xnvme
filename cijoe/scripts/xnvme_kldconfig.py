@@ -9,7 +9,7 @@ Retargetable: True
 """
 
 
-def worklet_entry(args, cijoe, step):
+def main(args, cijoe, step):
 
     osname = cijoe.config.options.get("os", {}).get("name", None)
     if not osname:

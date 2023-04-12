@@ -28,7 +28,7 @@ import logging as log
 from pathlib import Path
 
 
-def worklet_entry(args, cijoe, step):
+def main(args, cijoe, step):
 
     osinfo = cijoe.config.options.get("os", None)
     if not osinfo:
