@@ -226,17 +226,6 @@ _spdk_env_init(struct spdk_env_opts *opts)
 		goto exit;
 	}
 
-#ifdef SPDK_REGHOOK_NVME_PCIE_DRIVER
-	XNVME_DEBUG("INFO: SPDK NVMe PCIe Driver registration -- BEGIN");
-	if (!spdk_nvme_transport_available_by_name("PCIe")) {
-		XNVME_DEBUG("INFO: registering...");
-		spdk_reghook_nvme_pcie_driver();
-	} else {
-		XNVME_DEBUG("INFO: skipping, already registered.");
-	}
-	XNVME_DEBUG("INFO: SPDK NVMe PCIe Driver registration -- END");
-#endif
-
 	xnvme_spdk_choker_on();
 
 	if (!opts) {
