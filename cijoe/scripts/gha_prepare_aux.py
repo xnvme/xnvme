@@ -21,7 +21,7 @@ import errno
 import logging as log
 
 
-def worklet_entry(args, cijoe, step):
+def main(args, cijoe, step):
     xnvme_source = step.get("with", {}).get("xnvme_source", "/tmp/xnvme_source")
     if xnvme_source is None:
         log.error(f"invalid step({step})")

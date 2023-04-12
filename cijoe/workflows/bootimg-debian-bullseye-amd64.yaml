@@ -33,7 +33,7 @@ steps:
 - name: linux_install_kdebs
   uses: linux.transfer_and_install_kdebs
   with:
-    local_kdebs_dir: "kdebs"
+    local_kdebs_dir: "_kdebs"
 
 - name: guest_grub_default
   run: |

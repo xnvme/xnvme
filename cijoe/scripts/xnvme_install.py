@@ -15,7 +15,7 @@ import errno
 from pathlib import Path
 
 
-def worklet_entry(args, cijoe, step):
+def main(args, cijoe, step):
 
     conf = cijoe.config.options.get("xnvme", None)
     if not conf:

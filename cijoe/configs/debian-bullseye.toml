@@ -1,0 +1,240 @@
+# The SSH options are passed verbatim to paramiko; see https://www.paramiko.org/
+[transport.ssh]
+username = "root"
+password = "root"
+hostname = "localhost"
+port = 4200
+
+[os]
+name = "debian"
+version = "bullseye"
+
+# cloudinit:
+# These are used by joe.qemu.wrapper.Guest().cloudinit() and the worklet "qemu.guest_provision" to
+# "provision" a guest with the given OS. That is, boot it up, configure the OS, then shut it down
+# ready for use.
+# The 'joe.qemu.auxiliary' files provide initialization-files (user-data and meta-data) and a
+# "trick" to inject a public-key into the guest.
+[cloudinit.bullseye]
+url = "https://cloud.debian.org/images/cloud/bullseye/daily/latest/debian-11-generic-amd64-daily.qcow2"
+img = "{{ local.env.HOME }}/images/cloudinit/debian-11-generic-amd64-daily.qcow2"
+meta = "{{ resources.auxiliary['qemu.cloudinit-debian-bullseye-meta'] }}"
+user = "{{ resources.auxiliary['qemu.cloudinit-debian-bullseye-user'] }}"
+#pubkey = "keys/guest_key.pub"
+
+# boot_images:
+# qemu images, could be cloudinit images which have been processed through initialization process
+[boot_images.bullseye]
+url = "https://refenv.fra1.digitaloceanspaces.com/boot_images/debian-bullseye-amd64.qcow2"
+img = "{{ local.env.HOME }}/images/boot_images/debian-bullseye-amd64.qcow2"
+
+[qemu]
+#system_bin = "{{ local.env.HOME }}/opt/qemu/bin/qemu-system-x86_64"
+system_bin = "/opt/qemu/bin/qemu-system-x86_64"
+img_bin = "qemu-img"
+
+[qemu.repository]
+upstream = "https://github.com/qemu/qemu.git"
+path = "{{ local.env.HOME }}/git/qemu"
+tag = "v7.1.0"
+
+[qemu.build]
+prefix = "{{ local.env.HOME }}/opt/qemu"
+
+[qemu.guests.bullseye]
+path = "{{ local.env.HOME }}/guests/bullseye-amd64"
+boot_img = "bullseye"
+cloudinit = "bullseye"
+
+# This string is appended to the end of the qemu-system command-line, a wildcard for whatever
+# you need. You can also consider writing a worklet to serve your needs. See the
+# "qemu.guest_start" and "qemu.guest_start_nvme" worklets for reference.
+extra_args = ""
+
+# Plain qemu-system arguments (-cpu, -machine, -smp, etc), the sub-keys are
+# e.g. "-machine type=..."
+[qemu.guests.bullseye.system_args]
+cpu = "host"
+smp = 4
+m = "6G"
+device = "intel-iommu,pt=on,intremap=on"
+
+[qemu.guests.bullseye.system_args.machine]
+type = "q35,kernel_irqchip=split,accel=kvm"
+
+## Fancy Arguments
+#
+# host_share: enables the the guest to mount a directory from the host by running:
+# "mount -t 9p -o trans=virtio hostshare foo -oversion=9p2000.L"
+#[qemu.guests.bullseye.fancy]
+#host_share = "{{ local.env.HOME }}/git"
+
+# tcp_forward: enables the host access to the 'guest' port via the 'host' port.
+# Useful for doing things like SSH-ing into the guest
+[qemu.guests.bullseye.fancy.tcp_forward]
+host = 4200
+guest = 22
+
+[[devices]]
+uri = "/dev/nvme0n1"
+nsid = 1
+labels = [ "dev", "bdev", "nvm", "scc", "write_zeroes" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "/dev/ng0n1"
+nsid = 1
+labels = [ "dev", "cdev", "nvm", "scc", "write_zeroes" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:03:00.0"
+nsid = 1
+labels = [ "dev", "pcie", "nvm", "scc", "write_zeroes" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "/dev/nvme0n2"
+nsid = 2
+labels = [ "dev", "bdev", "zns", "zrwa" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "/dev/ng0n2"
+nsid = 2
+labels = [ "dev", "cdev", "zns", "zrwa" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:03:00.0"
+nsid = 2
+labels = [ "dev", "pcie", "zns", "zrwa" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "/dev/ng0n3"
+nsid = 3
+labels = [ "dev", "cdev", "kvs" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:03:00.0"
+nsid = 3
+labels = [ "dev", "pcie", "kvs" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "/dev/nvme1n1"
+nsid = 1
+labels = [ "dev", "bdev", "nvm", "scc", "write_zeroes" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "/dev/ng1n1"
+nsid = 1
+labels = [ "dev", "cdev", "nvm", "scc", "write_zeroes" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:04:00.0"
+nsid = 1
+labels = [ "dev", "pcie", "nvm", "scc", "write_zeroes" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "/dev/nvme2n1"
+nsid = 1
+labels = [ "dev", "bdev", "nvm", "scc", "large_mdts" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "/dev/nvme3n1"
+nsid = 1
+labels = [ "dev", "bdev", "nvm", "scc", "fdp" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "/dev/ng3n1"
+nsid = 1
+labels = [ "dev", "cdev", "nvm", "scc", "fdp" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:06:00.0"
+nsid = 1
+labels = [ "dev", "pcie", "nvm", "scc", "fdp" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "127.0.0.1:4420"
+nsid = 1
+labels = [ "dev", "fabrics", "nvm", "write_zeroes" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "127.0.0.1:4420"
+nsid = 2
+labels = [ "dev", "fabrics", "zns" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "/tmp/xnvme-testfile.bin"
+nsid = 1
+labels = [ "file" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "2GB"
+nsid = 1
+labels = [ "dev", "bdev", "nvm", "ramdisk", "write_zeroes" ]
+driver_attachment = "kernel"
+
+[xnvme.repository]
+upstream = "https://github.com/OpenMPDK/xNVMe.git"
+path = "/root/git/xnvme"
+
+[xnvme.source]
+path = "/tmp/xnvme_source"
+
+[xnvme.build]
+type = "debug"
+
+[hugetlbfs]
+mount_point = "/mnt/huge"
+nr_hugepages = "128"
+
+[fio]
+bin = "/opt/fio/bin/fio"
+
+[fio.repository]
+upstream = "https://github.com/axboe/fio.git"
+path = "/root/git/fio"
+tag = "fio-3.34"
+
+[fio.build]
+prefix = "/opt/fio"
+
+[fio.engines.libaio]
+type = "builtin"
+
+[fio.engines.io_uring]
+type = "builtin"
+
+[fio.engines.io_uring_cmd]
+type = "builtin"
+
+[fio.engines.xnvme]
+type = "builtin"
+
+[fio.engines.spdk_nvme]
+path = "/opt/aux/spdk_nvme"
+type = "external_preload"
+
+[fio.engines.spdk_bdev]
+path = "/opt/aux/spdk_bdev"
+type = "external_preload"
+
+[linux.repository]
+remote = "https://github.com/linux/linux.git"
+path = "{{ local.env.HOME }}/git/linux"
+tag = "v5.19"

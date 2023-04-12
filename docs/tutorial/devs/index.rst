@@ -153,6 +153,35 @@ The directories are used for the following:
 **images**
   A place to store VM "boot-images", such as cloud-init enabled images.
 
+.. _sec-tutorials-devs-screen:
+
+Screen + http.server
+--------------------
+
+Regardless of whether your **devbox** is physical/virtual/local/remote or some
+combination thereof. Then having access to misc. files, and specifically, to
+things like **cijoe** output / reports. Is very convenient.
+
+With minimal fuss, then this is achievable with a combinaion of ``screen`` and
+Python::
+
+  cd ~/workdirs
+  screen -d -m python3 -m http.server
+
+The above starts a webserver, serving the content of the ``cwd`` where
+``python3`` is executed and served up over ``tcp/http`` on port **8000**.
+
+The ``screen -d -m`` part, creates a screen-session and detaches from it. Thus,
+it continues executing even if you disconnect.
+
+You can see the running screen-sessions with::
+
+  screen -list
+
+And attach to them using their ``<name>``::
+
+  screen -r <name>
+
 .. _sec-tutorials-devs-cijoe:
 
 CIJOE
@@ -195,35 +224,6 @@ directory holds all information about what was executed.
 Have a look at the generated report at
 ``cijoe-output/report.html``.
 
-.. _sec-tutorials-devs-screen:
-
-Screen + http.server
---------------------
-
-Regardless of whether your **devbox** is physical/virtual/local/remote or some
-combination thereof. Then having access to misc. files, and specifically, to
-things like **cijoe** output / reports. Is very convenient.
-
-With minimal fuss, then this is achievable with a combinaion of ``screen`` and
-Python::
-
-  cd ~/workdirs
-  screen -d -m python3 -m http.server
-
-The above starts a webserver, serving the content of the ``cwd`` where
-``python3`` is executed and served up over ``tcp/http`` on port **8000**.
-
-The ``screen -d -m`` part, creates a screen-session and detaches from it. Thus,
-it continues executing even if you disconnect.
-
-You can see the running screen-sessions with::
-
-  screen -list
-
-And attach to them using their ``<name>``::
-
-  screen -r <name>
-
 .. _sec-tutorials-devs-customkernel:
 
 Linux Kernel
@@ -263,6 +263,8 @@ collect the artifacts of interest::
 You can install them by running::
 
   sudo dpkg -i ~/artifacts/linux/*.deb
+
+.. _sec-tutorials-devs-qemu:
 
 Qemu
 ----
@@ -398,40 +400,62 @@ Produce a set of **artifacts**::
    ``/tmp/artifacts``. There are **cijoe** workflows, expecting to be available
    at that location, specifically the **provision** workflow.
 
+Reproduce GitHUB Actions locally
+--------------------------------
 
-cijoe-pkg-xnvme
-~~~~~~~~~~~~~~~
+The **cijoe** workflows and configurations in this directory are used in the
+xNVMe GitHUB actions. You can reproduce what is running on GitHUB by adjusting
+the config-files, and provide the artifacts from the GitHUB action:
 
-Goto the **xNVMe** toolbox::
+* xnvme-core.tar.gz
+* xnvme-cy-bindings.tar.gz
+* xnvme-cy-header.tar.gz
+* xnvme.tar.gz
 
-  cd ~/git/xnvme/toolbox/
+To do so, then:
 
-Have a look around here.
+* Place the artifacts in ``/tmp/artifacts``
+* Change ``qemu.system_bin`` to point to your qemu-system-binary (qemu 7+)
+* Add the SSH-key(``keys/guest_key``) to your SSH-agent.
 
-Then build and install the **xNVMe** **cijoe** package::
+Then you should be able to run the following::
 
-  cd ~/git/xnvme/toolbox/cijoe-pkg-xnvme
+  # Provision and test on Debian Bullseye
+  cijoe -c configs/debian-bullseye.config -w workflows/provision.yaml
+  cijoe -c configs/debian-bullseye.config -w workflows/test-debian-bullseye.yaml
 
-  # Build the package
-  make
+  # Provision and test on FreeBSD 13
+  cijoe -c configs/freebsd-13.config -w workflows/provision.yaml
+  cijoe -c configs/freebsd-13.config -w workflows/test-freebsd-13.yaml
 
-  # Add it to the cijoe pipx-environment
-  pipx inject cijoe dist/cijoe-pkg-xnvme-*.tar.gz
+  # Generate documentation (provisions qemu-guest and generates the docs)
+  cijoe -c configs/debian-bullseye.config -w workflows/docgen.yaml
 
-xNVMe: Workflows
-----------------
+In case you are setting up the test-target using other tools, or just want to
+run pytest directly, then the following two sections describe how to do that.
 
-Create a workdir with workflows from the repository::
+Running pytest from the repository
+----------------------------------
 
-  cp -r ~/git/xnvme/toolbox/workflow ~/workdirs/xnvme
-  cd ~/workdirs/xnvme/
+Invoke pytest providing a configuration file and an output directory for
+artifacts and captured output::
+
+  pytest \
+    --config configs/debian-bullseye.config \
+    --output /tmp/somewhere \
+   tests
+
+The ``--config`` is needed to inform pytest about the environment you are
+running in such as which devices it can use for testing. The information is
+utilized by pytest to, among other things, do parametrization for xNVMe backend
+configurations etc.
 
 Provision a qemu-guest
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Setup a virtual machine with **xNVMe** installed, and a bunch of NVMe devices configured::
 
-  cijoe -c configs/debian-bullseye.config -w provision.workflow
+  cijoe -c configs/debian-bullseye.config -w provision.yaml
 
 .. tip::
    It will likely fail with the error::
@@ -441,3 +465,14 @@ Setup a virtual machine with **xNVMe** installed, and a bunch of NVMe devices co
    This is because the default configuration is for running on Github. Thus,
    adjust the file ``configs/debian-bullseye.config`` such that qemu is
    pointing to ``$HOME``.
+
+Create boot-images
+~~~~~~~~~~~~~~~~~~
+
+The ``debian-bullseye-amd64.qcow2`` is created by::
+
+  cijoe -c configs/debian-bullseye.config -w workflows/bootimg-debian-bullseye-amd64.yaml
+
+The ``freebsd-13.1-ksrc-amd64.qcow2`` is created by::
+
+  cijoe -c configs/freebsd-13.config -w workflows/bootimg-freebsd-13-amd64.yaml

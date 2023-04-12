@@ -1,7 +1,7 @@
 import logging as log
 
 
-def worklet_entry(args, cijoe, step):
+def main(args, cijoe, step):
 
     commands = [
         "sysctl -a hw",

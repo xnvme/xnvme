@@ -1,10 +1,18 @@
 ---
 doc: |
-  Initialize guest for documentation generation and then generate the documentation
+  Provision a guest using bootimg and xNVMe source
 
-  * Build and install xNVMe from source
-  * Build and install xNVMe Python packages from source
-  * Prepare custom fio in /opt/custom_fio along with external engines
+  The guest is created based of the "bootimg" in the config.
+
+  On "local" the folder "/tmp/artifacts", must contain
+
+  * xnvme-core.tar.gz
+  * xnvme-cy-bindings.tar.gz
+  * xnvme-cy-header.tar.gz
+  * xnvme.tar.gz
+
+  These will be transferred to the guest, and unpacked in "/tmp/xnvme_source", then built and
+  installed.
 
 steps:
 - name: kill
@@ -14,10 +22,13 @@ steps:
   uses: qemu.guest_bootimg
 
 - name: start
-  uses: qemu.guest_start_nvme
+  uses: xnvme_guest_start_nvme
+#  with:
+#    nvme_img_root: '/tmp'
 
-- name: sysinfo
-  uses: linux.sysinfo
+- name: check
+  run: |
+    hostname
 
 - name: gha_prepare_source
   uses: gha_prepare_source
@@ -26,17 +37,17 @@ steps:
     xnvme_source: '/tmp/xnvme_source'
 
 - name: build_prep
-  uses: xnvme.build_prep
+  uses: xnvme_build_prep
   with:
     xnvme_source: '/tmp/xnvme_source'
 
 - name: build
-  uses: xnvme.build
+  uses: xnvme_build
   with:
     xnvme_source: '/tmp/xnvme_source'
 
 - name: install
-  uses: xnvme.install
+  uses: xnvme_install
   with:
     xnvme_source: '/tmp/xnvme_source'
 
@@ -47,10 +58,5 @@ steps:
 
 - name: gha_prepare_python
   uses: gha_prepare_python
-  with:
-    xnvme_source: '/tmp/xnvme_source'
-
-- name: gha_docgen
-  uses: gha_docgen
   with:
     xnvme_source: '/tmp/xnvme_source'
