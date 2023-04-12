@@ -12,19 +12,19 @@ steps:
 - name: test_ramdisk
   uses: core.testrunner
   with:
-    args: '--pyargs cijoe.xnvme.tests -k "ramdisk"'
+    args: '-k "ramdisk" tests'
 
 - name: test_os
   uses: core.testrunner
   with:
-    args: '--pyargs cijoe.xnvme.tests -k "(not ramdisk) and (not pcie) and (not fabrics)"'
+    args: '-k "(not ramdisk) and (not pcie) and (not fabrics)" tests'
 
 - name: test_pcie
   uses: core.testrunner
   with:
-    args: '--pyargs cijoe.xnvme.tests -k "pcie"'
+    args: '-k "pcie" tests'
 
 - name: test_fabrics
   uses: core.testrunner
   with:
-    args: '--pyargs cijoe.xnvme.tests -k "fabrics and not ioworker"'
+    args: '-k "fabrics and not ioworker" tests'

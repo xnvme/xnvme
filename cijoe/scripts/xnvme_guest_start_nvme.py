@@ -215,7 +215,7 @@ def qemu_nvme_args(nvme_img_root):
     return drives, nvme
 
 
-def worklet_entry(args, cijoe, step):
+def main(args, cijoe, step):
     """Start a qemu guest"""
 
     drive_size = "8G"

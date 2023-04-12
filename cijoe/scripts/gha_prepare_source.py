@@ -24,7 +24,7 @@ Retargetable: True
 import logging as log
 
 
-def worklet_entry(args, cijoe, step):
+def main(args, cijoe, step):
     """Transfer artifacts"""
 
     artifacts = step.get("with", {}).get("artifacts", "/tmp/artifacts")

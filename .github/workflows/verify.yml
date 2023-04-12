@@ -473,15 +473,12 @@ jobs:
         name: python-xnvme-pkg
 
     # Setup Python virtual-environment for cijoe and Python xNVMe bindings to run ramdisk testing
-    - name: Setup CIJOE
+    - name: CIJOE, setup pipx environment
       if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
       run: |
-        python3 -m pipx install cijoe --include-deps
-        python3 -m pipx inject cijoe cijoe-pkg-linux
-        python3 -m pipx inject cijoe cijoe-pkg-qemu
-        pushd toolbox/cijoe-pkg-xnvme && make all && popd
+        pushd cijoe && make all && popd
 
-    - name: Check CIJOE
+    - name: CIJOE, check that it is available
       if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
       run: |
         cijoe -r
@@ -550,13 +547,13 @@ jobs:
         make -j $(nproc)
         make install
 
-    - name: CIJOE, run test-ramdisk.workflow
+    - name: CIJOE, run test-ramdisk.yaml
       if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
       continue-on-error: true
       run: |
-        cd toolbox/workflow && cijoe \
-        --config "configs/ramdisk.config" \
-        --workflow "test-ramdisk.workflow" \
+        cd cijoe && cijoe \
+        --config "configs/ramdisk.toml" \
+        --workflow "workflows/test-ramdisk.yaml" \
         --output "test-${{ matrix.container.os }}-${{ matrix.container.ver }}"
 
     - name: CIJOE, upload test-ramdisk-report
@@ -564,7 +561,7 @@ jobs:
       if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
       with:
         name: test-ramdisk-${{ matrix.container.os }}-${{ matrix.container.ver }}
-        path: toolbox/workflow/test-${{ matrix.container.os }}-${{ matrix.container.ver }}/*
+        path: cijoe/test-${{ matrix.container.os }}-${{ matrix.container.ver }}/*
         if-no-files-found: error
 
   #
@@ -638,15 +635,12 @@ jobs:
         name: python-xnvme-pkg
 
     # Setup Python virtual-environment for cijoe and Python xNVMe bindings to run ramdisk testing
-    - name: Setup CIJOE
+    - name: CIJOE, setup pipx environment
       if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
       run: |
-        python3 -m pipx install cijoe --include-deps
-        python3 -m pipx inject cijoe cijoe-pkg-linux
-        python3 -m pipx inject cijoe cijoe-pkg-qemu
-        pushd toolbox/cijoe-pkg-xnvme && make all && popd
+        pushd cijoe && make all && popd
 
-    - name: Check CIJOE
+    - name: CIJOE, check that it is available
       if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
       run: |
         cijoe -r
@@ -828,59 +822,50 @@ jobs:
     - name: pipx, Install
       run: |
         python3 -m pip uninstall pytest cijoe cijoe-pkg-xnvme cijoe-pkg-linux cijoe-pkg-qemu cijoe-pkg-example -y
-        python3 -m pip install pytest
         python3 -m pip list
         python3 -m pip install pipx
         python3 -m pipx ensurepath
 
     - name: CIJOE, setup pipx environment
       run: |
-        python3 -m pipx install cijoe --include-deps
-        python3 -m pipx inject cijoe cijoe-pkg-linux
-        python3 -m pipx inject cijoe cijoe-pkg-qemu
-        pushd toolbox/cijoe-pkg-xnvme && make all && popd
+        pushd cijoe && make all && popd
 
-    - name: CIJOE, check that it works
+    - name: CIJOE, check that it is available
       run: |
         cijoe -r
 
-    # cd'ing into 'toolbox/workflow' to auto-collect the non-packaged github-specific configs and
+    # cd'ing into 'cijoe' to auto-collect the non-packaged github-specific configs and
     # workflows.
-    #
-    # In case non-cijoe commands needs to be run in guest, then the following could be used
-    # eval "$(ssh-agent -s)"
-    # chmod 600 toolbox/workflow/keys/guest_key
-    # ssh-add toolbox/workflow/keys/guest_key
-    - name: CIJOE, run provision.workflow
+    - name: CIJOE, run provision.yaml
       run: |
-        cd toolbox/workflow && cijoe \
-        --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.config" \
-        --workflow "provision.workflow" \
+        cd cijoe && cijoe \
+        --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
+        --workflow "workflows/provision.yaml" \
         --output "provision-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
-    - name: CIJOE, run test.workflow
+    - name: CIJOE, run test.yaml
       run: |
-        cd toolbox/workflow && cijoe \
-        --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.config" \
-        --workflow "test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.workflow" \
+        cd cijoe && cijoe \
+        --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
+        --workflow "workflows/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.yaml" \
         --output "test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
     - name: CIJOE, result-log-dump on error
       if: failure()
-      run: find toolbox/workflow/ -name "*.output" | xargs cat
+      run: find cijoe -name "*.output" | xargs cat
 
     - name: CIJOE, upload workflow-report-provision
       uses: actions/upload-artifact@v3.1.1
       if: always()
       with:
         name: provision-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
-        path: toolbox/workflow/provision-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/*
+        path: cijoe/provision-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/*
         if-no-files-found: error
 
     - name: CIJOE, compress workflow-report-test
       if: always()
       run: |
-        tar czf test-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.tar.gz toolbox/workflow/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/* 
+        tar czf test-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.tar.gz cijoe/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/* 
 
     - name: CIJOE, upload workflow-report-test
       uses: actions/upload-artifact@v3.1.1
@@ -951,29 +936,25 @@ jobs:
     - name: pipx, Install
       run: |
         python3 -m pip uninstall pytest cijoe cijoe-pkg-xnvme cijoe-pkg-linux cijoe-pkg-qemu cijoe-pkg-example -y
-        python3 -m pip install pytest
         python3 -m pip list
         python3 -m pip install pipx
         python3 -m pipx ensurepath
 
     - name: CIJOE, setup pipx environment
       run: |
-        python3 -m pipx install cijoe --include-deps
-        python3 -m pipx inject cijoe cijoe-pkg-linux
-        python3 -m pipx inject cijoe cijoe-pkg-qemu
-        pushd toolbox/cijoe-pkg-xnvme && make all && popd
+        pushd cijoe && make all && popd
 
-    - name: CIJOE, check that it works
+    - name: CIJOE, check that it is available
       run: |
         cijoe -r
 
-    # cd'ing into 'toolbox/workflow' to auto-collect the non-packaged github-specific configs and
+    # cd'ing into 'cijoe' to auto-collect the non-packaged github-specific configs and
     # workflows.
     - name: Provision and generate documentation
       run: |
-        cd toolbox/workflow && cijoe \
-        --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.config" \
-        --workflow "docgen.workflow" \
+        cd cijoe && cijoe \
+        --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
+        --workflow "workflows/docgen.yaml" \
         --output "docgen-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
     - name: Checkout site
@@ -988,7 +969,7 @@ jobs:
 
     - name: Add docgen to site
       run: |
-        cp toolbox/workflow/docgen-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/artifacts/docs.tar.gz .
+        cp cijoe/docgen-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/artifacts/docs.tar.gz .
         tar xzf docs.tar.gz
         ./docs/autogen/dest.py --docs html --site site --ref "${{ github.ref }}"
 
@@ -1006,5 +987,5 @@ jobs:
       if: always()
       with:
         name: docgen-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
-        path: toolbox/workflow/docgen-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/*
+        path: cijoe/docgen-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/*
         if-no-files-found: error

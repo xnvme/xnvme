@@ -11,6 +11,10 @@ Files: docs/*
 Copyright: Samsung Electronics Co., Ltd
 License: BSD-3-Clause
 
+Files: cijoe/*
+Copyright: Samsung Electronics Co., Ltd
+License: BSD-3-Clause
+
 Files: toolbox/*.py
 Copyright: Samsung Electronics Co., Ltd
 License: BSD-3-Clause
