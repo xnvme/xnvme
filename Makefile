@@ -329,7 +329,7 @@ endef
 .PHONY: gen-src-archive
 gen-src-archive:
 	@echo "## xNVMe: make gen-src-archive"
-	$(MESON) setup $(BUILD_DIR) -Dbuild_subprojects=false -Dwith-liburing=false
+	$(MESON) setup $(BUILD_DIR) -Dbuild_subprojects=false -Dwith-liburing=false -Dwith-libvfn=false
 	$(MESON) dist -C $(BUILD_DIR) --include-subprojects --no-tests --formats gztar
 	@echo "## xNVMe: make gen-src-archive [DONE]"
 

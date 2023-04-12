@@ -7,8 +7,9 @@
 # - These commands are executed with sufficient privileges (sudo/root)
 #
 git clone https://github.com/axboe/fio.git
-cd fio
+pushd fio
 git checkout fio-3.34
 ./configure
 make
 make install
+popd

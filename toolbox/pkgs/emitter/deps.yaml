@@ -161,6 +161,14 @@ libs:
       emerge: [sys-libs/liburing]
       zypper: [liburing-devel]
 
+  libvfn:
+    notes: When available; enable the use of the xNVMe libvfn backend
+    ver: 1.0
+    when: [building, running]
+    purpose: {be: [libvfn]}
+    names:
+      src: [libvfn]
+
   libuuid:
     notes: Required by SPDK
     ver: 0.0
@@ -246,6 +254,7 @@ defaults:
       sys: [bash, clang-format, find, git, make, meson, pkg-config, python3, pipx]
     libs:
       sys: [cunit, elftools, libuuid, nasm, ncurses, numactl, openssl, patch]
+      src: [libvfn]
     apps:
       src: [fio]
 
@@ -254,6 +263,7 @@ defaults:
       sys: [bash, clang-format, find, git, make, meson, pkg-config, python3, pipx]
     libs:
       sys: [cunit, elftools, libaio, libuuid, liburing, nasm, ncurses, numactl, openssl, patch]
+      src: [libvfn]
     apps:
       src: [fio]
 
@@ -325,7 +335,7 @@ platforms:
   mng: yum
   drop: [liburing]
   alt:
-    src: [python3, nasm]
+    src: [python3, nasm, libvfn]
     pip: [elftools, meson, ninja, pipx] # Install elftools via pip as Python needs to be installed anyway
   aux: [autoconf, glibc-static, libffi-devel, libtool, unzip, wget, zlib-devel]
 
@@ -341,7 +351,7 @@ platforms:
   mng: dnf
   drop: [clang-format]
   alt:
-    src: [python3, liburing]
+    src: [python3, liburing, libvfn]
     pip: [elftools, meson, ninja, pipx]
   aux: [autoconf, diffutils, gcc, gcc-c++, libffi-devel, libtool, procps, unzip, wget, zlib-devel]
 
@@ -353,7 +363,7 @@ platforms:
   mng: dnf
   drop: [clang-format]
   alt:
-    src: [liburing]
+    src: [liburing, libvfn]
     pip: [elftools, meson, ninja, pipx]
   aux: [autoconf, diffutils, gcc, gcc-c++, libtool, procps, unzip, wget, zlib-devel]
 
@@ -375,7 +385,7 @@ platforms:
   mng: apt
   drop: []
   alt:
-    src: [liburing]
+    src: [liburing, libvfn]
     pip: [meson, ninja, pipx]
   aux: [autoconf, build-essential, libtool]
 
@@ -397,7 +407,7 @@ platforms:
   mng: dnf
   drop: []
   alt:
-    src: [liburing]
+    src: [liburing, libvfn]
   aux: [autoconf, diffutils, g++, gcc, libtool, procps]
 
 - alias: Ubuntu Latest
@@ -418,7 +428,7 @@ platforms:
   mng: apt
   drop: []
   alt:
-    src: [liburing]
+    src: [liburing, libvfn]
     pip: [meson, ninja]
   aux: [autoconf, build-essential, libtool]
 
@@ -461,7 +471,7 @@ platforms:
   mng: zypper
   drop: []
   alt:
-    src: [liburing]
+    src: [liburing, libvfn]
     pip: [meson, ninja, elftools, pipx]
   aux: [autoconf, gcc, gcc-c++, gzip, libtool, tar]
 
