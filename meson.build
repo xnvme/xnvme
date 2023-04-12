@@ -195,12 +195,7 @@ iokit_dep = dependency(
   required: is_darwin
 )
 libvfn_dep = dependency(
-  '_vfn',
-  default_options: [
-    'libnvme=disabled',
-    'docs=disabled',
-    'default_library=static',
-  ],
+  'libvfn',
   required: conf_data.get('XNVME_BE_LINUX_VFIO_ENABLED')
 )
 
