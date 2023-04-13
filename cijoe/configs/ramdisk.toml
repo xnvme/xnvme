@@ -5,6 +5,9 @@ path = "/root/git/xnvme"
 [xnvme.source]
 path = "/tmp/xnvme_source"
 
+[build.compiler]
+bin = "gcc"
+
 [[devices]]
 uri = "2GB"
 nsid = 1

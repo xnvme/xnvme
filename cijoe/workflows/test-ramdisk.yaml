@@ -10,7 +10,12 @@ doc: |
     "ramdisk" backend
 
 steps:
-- name: test
+- name: test_linkandload
+  uses: core.testrunner
+  with:
+    args: '-k linkandload tests'
+
+- name: test_ramdisk
   uses: core.testrunner
   with:
     args: '-k "ramdisk and not hugepage" tests'

@@ -4,3 +4,6 @@ path = "{{ local.env.HOME }}/git/xnvme"
 
 [xnvme.build]
 type = "debug"
+
+[build.compiler]
+bin = "gcc"
