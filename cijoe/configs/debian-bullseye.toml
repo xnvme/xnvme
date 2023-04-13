@@ -9,6 +9,9 @@ port = 4200
 name = "debian"
 version = "bullseye"
 
+[build.compiler]
+bin = "gcc"
+
 # cloudinit:
 # These are used by joe.qemu.wrapper.Guest().cloudinit() and the worklet "qemu.guest_provision" to
 # "provision" a guest with the given OS. That is, boot it up, configure the OS, then shut it down

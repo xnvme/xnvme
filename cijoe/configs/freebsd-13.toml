@@ -9,6 +9,9 @@ port = 4200
 name = "freebsd"
 version = "13"
 
+[build.compiler]
+bin = "clang"
+
 # boot_images:
 # qemu images, could be cloudinit images which have been processed through initialization process
 
