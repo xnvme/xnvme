@@ -33,7 +33,11 @@ zypper --non-interactive install -y --allow-downgrade \
  python3 \
  python3-devel \
  python3-pip \
- python3-pipx \
  python3-pyelftools \
  tar
+
+# Install packages via the Python package-manager (pip)
+python3 -m pip install --upgrade pip
+python3 -m pip install \
+ pipx
 

@@ -449,7 +449,8 @@ platforms:
   os: linux
   mng: zypper
   drop: []
-  alt: {}
+  alt:
+    pip: [pipx]
   aux: [autoconf, gcc, gcc-c++, gzip, libtool, tar]
 
 - alias: openSUSE
