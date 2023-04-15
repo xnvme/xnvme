@@ -7,7 +7,6 @@ pytest.skip(allow_module_level=True, reason="Not implemented")
 
 @xnvme_parametrize(labels=["fdp"], opts=["be", "admin"])
 def test_log_fdp(cijoe, device, be_opts, cli_args):
-
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
         pytest.skip(reason="[admin=block] does not implement fdp log pages")
 
@@ -30,7 +29,6 @@ def test_log_fdp(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["fdp"], opts=["be", "admin"])
 def test_feature_set_fdp_events(cijoe, device, be_opts, cli_args):
-
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
         pytest.skip(reason="[admin=block] does not implement feature-get")
 
@@ -43,7 +41,6 @@ def test_feature_set_fdp_events(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["fdp"], opts=["be", "admin"])
 def test_feature_get_fdp(cijoe, device, be_opts, cli_args):
-
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
         pytest.skip(reason="[admin=block] does not implement feature-get")
 
@@ -60,7 +57,6 @@ def test_feature_get_fdp(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["fdp"], opts=["be", "admin", "sync"])
 def test_ruhs(cijoe, device, be_opts, cli_args):
-
     if be_opts["be"] == "linux" and be_opts["sync"] in ["psync", "block"]:
         pytest.skip(reason="ENOSYS: sync=[psync,block] cannot do mgmt send/receive")
 
@@ -70,7 +66,6 @@ def test_ruhs(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["fdp"], opts=["be", "admin", "sync"])
 def test_write_dir(cijoe, device, be_opts, cli_args):
-
     if be_opts["be"] == "linux" and be_opts["sync"] in ["psync", "block"]:
         pytest.skip(reason="ENOSYS: sync=[psync,block] cannot do write with directives")
 
@@ -83,7 +78,6 @@ def test_write_dir(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["fdp"], opts=["be", "admin", "sync"])
 def test_ruhu(cijoe, device, be_opts, cli_args):
-
     if be_opts["be"] == "linux" and be_opts["sync"] in ["psync", "block"]:
         pytest.skip(reason="ENOSYS: sync=[psync,block] cannot do mgmt send/receive")
 

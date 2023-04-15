@@ -29,7 +29,6 @@ from pathlib import Path
 
 
 def main(args, cijoe, step):
-
     osinfo = cijoe.config.options.get("os", None)
     if not osinfo:
         log.err("cijoe.config.options is missing 'os'")

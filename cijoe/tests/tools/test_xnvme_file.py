@@ -3,7 +3,6 @@ from ..conftest import xnvme_parametrize
 
 @xnvme_parametrize(labels=["file"], opts=["be", "sync"])
 def test_copy_sync(cijoe, device, be_opts, cli_args):
-
     src, dst, iosize = ("/tmp/input.bin", "/tmp/output.bin", 4096)
 
     prep = [

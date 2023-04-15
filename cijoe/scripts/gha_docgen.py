@@ -21,7 +21,6 @@ from pathlib import Path
 
 
 def main(args, cijoe, step):
-
     xnvme_source = step.get("with", {}).get("xnvme_source", "/tmp/xnvme_source")
     if xnvme_source is None:
         log.error(f"invalid step({step})")

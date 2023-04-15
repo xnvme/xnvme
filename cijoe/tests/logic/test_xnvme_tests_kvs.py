@@ -7,7 +7,6 @@ pytest.skip(allow_module_level=True, reason="Not implemented")
 
 @xnvme_parametrize(labels=["kvs"], opts=["be", "admin"])
 def test_kvs_io(cijoe, device, be_opts, cli_args):
-
     if be_opts["sync"] in ["block", "psync"]:
         pytest.skip(reason="Linux Block layer does not support simple-copy")
 

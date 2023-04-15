@@ -4,13 +4,11 @@ from ..conftest import XnvmeDriver, xnvme_parametrize
 
 
 def test_library_info(cijoe):
-
     err, _ = cijoe.run("xnvme library-info")
     assert not err
 
 
 def test_enum(cijoe):
-
     XnvmeDriver.kernel_attach(cijoe)
     err, _ = cijoe.run("xnvme enum")
     assert not err
@@ -22,21 +20,18 @@ def test_enum(cijoe):
 
 @xnvme_parametrize(labels=["fabrics"], opts=["be"])
 def test_enum_fabrics(cijoe, device, be_opts, cli_args):
-
     err, _ = cijoe.run(f"xnvme enum --uri {device['uri']}")
     assert not err
 
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_info(cijoe, device, be_opts, cli_args):
-
     err, _ = cijoe.run(f"xnvme info {cli_args}")
     assert not err
 
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_idfy(cijoe, device, be_opts, cli_args):
-
     err, _ = cijoe.run(
         f"xnvme idfy {cli_args} --cns 0x0 --cntid 0x0 --setid 0x0 --uuid 0x0"
     )
@@ -45,21 +40,18 @@ def test_idfy(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_idfy_ns(cijoe, device, be_opts, cli_args):
-
     err, _ = cijoe.run(f"xnvme idfy-ns {cli_args} --nsid {device['nsid']}")
     assert not err
 
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_idfy_ctrlr(cijoe, device, be_opts, cli_args):
-
     err, _ = cijoe.run(f"xnvme idfy-ctrlr {cli_args}")
     assert not err
 
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_idfy_cs(cijoe, device, be_opts, cli_args):
-
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
         pytest.skip(reason="[admin=block] does not implement idfy-cs")
     if "ramdisk" in device["labels"]:
@@ -71,7 +63,6 @@ def test_idfy_cs(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["nvm"], opts=["be", "admin"])
 def test_format(cijoe, device, be_opts, cli_args):
-
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
         pytest.skip(reason="[admin=block] does not implement format")
     elif be_opts["be"] == "spdk" and "fabrics" in device["labels"]:
@@ -86,7 +77,6 @@ def test_format(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["nvm"], opts=["be", "admin"])
 def test_sanitize(cijoe, device, be_opts, cli_args):
-
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
         pytest.skip(reason="[admin=block] does not implement sanitize")
 
@@ -98,7 +88,6 @@ def test_sanitize(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_log_erri(cijoe, device, be_opts, cli_args):
-
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
         pytest.skip(reason="[admin=block] does not implement error-log")
     if "ramdisk" in device["labels"]:
@@ -110,7 +99,6 @@ def test_log_erri(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_log_health(cijoe, device, be_opts, cli_args):
-
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
         pytest.skip(reason="[admin=block] does not implement health-log")
     if "ramdisk" in device["labels"]:
@@ -126,7 +114,6 @@ def test_log_health(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_log(cijoe, device, be_opts, cli_args):
-
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
         pytest.skip(reason="[admin=block] does not implement get-log")
     if "ramdisk" in device["labels"]:
@@ -143,7 +130,6 @@ def test_log(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_feature_get(cijoe, device, be_opts, cli_args):
-
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
         pytest.skip(reason="[admin=block] does not implement feature-get")
     if "ramdisk" in device["labels"]:
@@ -162,7 +148,6 @@ def test_feature_get(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_feature_set(cijoe, device, be_opts, cli_args):
-
     if "ramdisk" in device["labels"]:
         pytest.skip(reason="[be=ramdisk] does not implement feature-set")
 
@@ -257,7 +242,6 @@ def test_pioc(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_dsm(cijoe, device, be_opts, cli_args):
-
     err, _ = cijoe.run(
         f"xnvme dsm {cli_args} --nsid {device['nsid']} --ad --slba 0 --llb 1"
     )

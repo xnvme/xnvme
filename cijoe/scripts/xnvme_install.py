@@ -16,7 +16,6 @@ from pathlib import Path
 
 
 def main(args, cijoe, step):
-
     conf = cijoe.config.options.get("xnvme", None)
     if not conf:
         return errno.EINVAL
