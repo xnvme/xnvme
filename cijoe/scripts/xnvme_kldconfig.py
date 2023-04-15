@@ -10,7 +10,6 @@ Retargetable: True
 
 
 def main(args, cijoe, step):
-
     osname = cijoe.config.options.get("os", {}).get("name", None)
     if not osname:
         return 0

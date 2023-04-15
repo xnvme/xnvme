@@ -47,7 +47,6 @@ def xnvme_be_opts(options=None, only_labels=[]):
                 for be_admin in opts["admin"]:
                     for be_sync in opts["sync"]:
                         for be_async in opts["async"]:
-
                             for label in opts["label"]:
                                 if only_labels and label not in only_labels:
                                     continue

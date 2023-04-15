@@ -2,14 +2,12 @@ from ..conftest import xnvme_parametrize
 
 
 def test_optional_none(cijoe):
-
     err, _ = cijoe.run("xnvme_tests_cli optional")
     assert not err
 
 
 @xnvme_parametrize(labels=[], opts=["be", "mem", "sync", "async", "admin"])
 def test_optional_all(cijoe, device, be_opts, cli_args):
-
     err, _ = cijoe.run(
         f"xnvme_tests_cli optional "
         f"--be {be_opts['be']} "

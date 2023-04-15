@@ -6,7 +6,6 @@ pytest.skip(allow_module_level=True, reason="Not implemented")
 
 
 def test_enum(cijoe):
-
     XnvmeDriver.kernel_attach(cijoe)
     err, _ = cijoe.run("kvs enum")
     assert not err
@@ -18,21 +17,18 @@ def test_enum(cijoe):
 
 @xnvme_parametrize(labels=["kvs"], opts=["be", "admin"])
 def test_info(cijoe, device, be_opts, cli_args):
-
     err, _ = cijoe.run(f"kvs info {cli_args}")
     assert not err
 
 
 @xnvme_parametrize(labels=["kvs"], opts=["be", "admin"])
 def test_idfy_ns(cijoe, device, be_opts, cli_args):
-
     err, _ = cijoe.run(f"kvs idfy-ns {cli_args} --nsid {device['nsid']}")
     assert not err
 
 
 @xnvme_parametrize(labels=["kvs"], opts=["be", "admin"])
 def test_delete_store_exist(cijoe, device, be_opts, cli_args):
-
     key = "hello"
     val = "world"
 
@@ -51,7 +47,6 @@ def test_delete_store_exist(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["kvs"], opts=["be", "admin"])
 def test_delete_store_list(cijoe, device, be_opts, cli_args):
-
     pairs = [
         ("hello", "world"),
         ("marco", "polo"),
@@ -71,7 +66,6 @@ def test_delete_store_list(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["kvs"], opts=["be", "admin"])
 def test_retrieve(cijoe, device, be_opts, cli_args):
-
     key, val = ("hello", "world")
 
     # This is just to ensure the key is not there
@@ -89,7 +83,6 @@ def test_retrieve(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["kvs"], opts=["be", "admin"])
 def test_store_optional(cijoe, device, be_opts, cli_args):
-
     key = "hello"
     val = "world"
     val_next = "xnvme"
