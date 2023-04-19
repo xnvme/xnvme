@@ -20,7 +20,30 @@ def test_cython_bindings(cijoe, device, be_opts, cli_args):
     }
 
     err, _ = cijoe.run(
-        "python3 -m pytest --pyargs xnvme.cython_bindings -v -s", env=env
+        "python3 -m pytest --pyargs xnvme.cython_bindings -v -s -k 'not TestKeyValue'",
+        env=env,
+    )
+    assert not err
+
+
+@xnvme_parametrize(labels=["kvs"], opts=["be"])
+def test_cython_bindings_kv(cijoe, device, be_opts, cli_args):
+
+    if be_opts["be"] not in ["linux", "spdk"]:
+        pytest.skip(reason=f"Backend not supported: {be_opts['be']}")
+
+    env = {
+        "XNVME_URI": device["uri"],
+        "XNVME_BE": be_opts["be"],
+        "XNVME_DEV_NSID": f"{device['nsid']}",
+        # "XNVME_HUGETLB_PATH": cijoe.config.options.get("hugetlbfs", {}).get(
+        #     "mount_point", ""
+        # ),
+    }
+
+    err, _ = cijoe.run(
+        "python3 -m pytest --pyargs xnvme.cython_bindings -v -s -k 'TestKeyValue'",
+        env=env,
     )
     assert not err
 
