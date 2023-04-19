@@ -25,7 +25,7 @@ math_dep = cc.find_library(
 )
 
 ssl_dep = dependency(
-  is_centos7 ? 'openssl11' : 'openssl', version: '>=1.1.1',
+  is_centos7 ? 'openssl11' : 'openssl', version: '>=1.1',
 )
 
 dlfcn_dep = cc.find_library(
