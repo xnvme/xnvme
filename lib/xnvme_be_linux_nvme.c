@@ -122,7 +122,7 @@ xnvme_be_linux_nvme_map_cpl(struct xnvme_cmd_ctx *ctx, unsigned long ioctl_req, 
 	ctx->cpl.status.val = 0;
 	if (res) {
 		ctx->cpl.status.sc = res & 0xFF;
-		ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
+		ctx->cpl.status.sct = (res >> 8) & 0x7;
 	}
 
 	return 0;
