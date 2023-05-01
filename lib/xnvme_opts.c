@@ -16,6 +16,8 @@ xnvme_opts_default(void)
 
 	opts.rdwr = 1;
 	opts.nsid = 1;
+	opts.admin_timeout = 60000000;
+	opts.command_timeout = 30000000;
 
 	// Value is only applicable if the user also sets opts.create = 1
 	opts.create_mode = S_IRUSR | S_IWUSR;
