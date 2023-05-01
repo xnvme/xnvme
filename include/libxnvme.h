@@ -68,15 +68,17 @@ struct xnvme_opts {
 	struct {
 		uint32_t value : 31;
 		uint32_t given : 1;
-	} css;                 ///< SPDK controller-setup: do command-set-selection
-	uint32_t use_cmb_sqs;  ///< SPDK controller-setup: use controller-memory-buffer for sq
-	uint32_t shm_id;       ///< SPDK multi-processing: shared-memory-id
-	uint32_t main_core;    ///< SPDK multi-processing: main-core
-	const char *core_mask; ///< SPDK multi-processing: core-mask
-	const char *adrfam;    ///< SPDK fabrics: address-family, IPv4/IPv6
-	const char *subnqn;    ///< SPDK fabrics: Subsystem NQN
-	const char *hostnqn;   ///< SPDK fabrics: Host NQN
-	uint32_t spdk_fabrics; ///< Is assigned a value by backend if SPDK uses fabrics
+	} css;                    ///< SPDK controller-setup: do command-set-selection
+	uint32_t use_cmb_sqs;     ///< SPDK controller-setup: use controller-memory-buffer for sq
+	uint32_t shm_id;          ///< SPDK multi-processing: shared-memory-id
+	uint32_t main_core;       ///< SPDK multi-processing: main-core
+	const char *core_mask;    ///< SPDK multi-processing: core-mask
+	const char *adrfam;       ///< SPDK fabrics: address-family, IPv4/IPv6
+	const char *subnqn;       ///< SPDK fabrics: Subsystem NQN
+	const char *hostnqn;      ///< SPDK fabrics: Host NQN
+	uint32_t admin_timeout;   ///< SPDK fabrics: enable admin command timeout
+	uint32_t command_timeout; ///< SPDK fabrics: enable io command timeout
+	uint32_t spdk_fabrics;    ///< Is assigned a value by backend if SPDK uses fabrics
 };
 
 /**

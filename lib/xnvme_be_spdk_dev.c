@@ -26,8 +26,6 @@
 #define XNVME_BE_SPDK_AVLB_TRANSPORTS 3
 
 #define XNVME_BE_SPDK_CREFS_LEN 100
-#define XNVME_BE_SPDK_ADMIN_TIMEOUT 60000000
-#define XNVME_BE_SPDK_COMMAND_TIMEOUT 30000000
 static struct xnvme_be_spdk_ctrlr_ref g_cref[XNVME_BE_SPDK_CREFS_LEN];
 
 /**
@@ -474,8 +472,10 @@ attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid, struct spdk_n
 		XNVME_DEBUG("FAILED: _cref_insert(), err: %d", err);
 		return;
 	}
-	spdk_nvme_ctrlr_register_timeout_callback(ctrlr, XNVME_BE_SPDK_COMMAND_TIMEOUT,
-						  XNVME_BE_SPDK_ADMIN_TIMEOUT, timeout_cb_func, 0);
+	if (opts->command_timeout > 0 && opts->admin_timeout > 0) {
+		spdk_nvme_ctrlr_register_timeout_callback(ctrlr, opts->command_timeout,
+							  opts->admin_timeout, timeout_cb_func, 0);
+	}
 }
 
 void
