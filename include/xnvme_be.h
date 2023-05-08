@@ -7,10 +7,9 @@
 #ifndef WIN32
 #include <paths.h>
 #endif
-#include <libxnvme_pp.h>
+#include <libxnvme.h>
 #include <xnvme.h>
 #include <xnvme_be_registry.h>
-#include <stdbool.h>
 
 #define XNVME_BE_QUEUE_STATE_NBYTES 256
 

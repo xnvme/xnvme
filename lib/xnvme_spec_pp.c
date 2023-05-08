@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <libxnvme_spec_pp.h>
+#include <libxnvme.h>
 
 const char *
 xnvme_spec_adm_opc_str(enum xnvme_spec_adm_opc eval)

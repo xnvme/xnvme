@@ -13,8 +13,6 @@
 extern "C" {
 #endif
 
-#include <libxnvme_util.h>
-
 #define XNVME_IDENT_URI_LEN 384
 
 #define XNVME_IDENT_SCHM_LEN 5
