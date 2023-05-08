@@ -4,8 +4,7 @@
 
 #include <stdio.h>
 #include <errno.h>
-#include <libxnvme_spec.h>
-#include <libxnvme_spec_pp.h>
+#include <libxnvme.h>
 #include <libxnvme_znd.h>
 #include <libxnvmec.h>
 

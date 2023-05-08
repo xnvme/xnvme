@@ -15,6 +15,10 @@ Files: cijoe/*
 Copyright: Samsung Electronics Co., Ltd
 License: BSD-3-Clause
 
+Files: interface/Makefile interface/xnvme.yaml interface/.gitignore
+Copyright: Samsung Electronics Co., Ltd
+License: BSD-3-Clause
+
 Files: toolbox/*.py
 Copyright: Samsung Electronics Co., Ltd
 License: BSD-3-Clause

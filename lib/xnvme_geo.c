@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <libxnvme_pp.h>
+#include <xnvme_geo.h>
 
 static inline const char *
 xnvme_geo_type_str(int type)

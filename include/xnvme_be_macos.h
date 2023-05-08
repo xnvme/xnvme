@@ -4,8 +4,6 @@
 
 #ifndef __INTERNAL_XNVME_BE_MACOS_H
 #define __INTERNAL_XNVME_BE_MACOS_H
-#include <IOKit/IOTypes.h>
-#include <IOKit/storage/nvme/NVMeSMARTLibExternal.h>
 
 /**
  * Internal representation of XNVME_BE_MACOS state

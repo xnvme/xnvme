@@ -5,23 +5,12 @@
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_MACOS_ENABLED
-#include <sys/cdefs.h>
-#include <sys/param.h>
-#include <sys/ioccom.h>
-#include <sys/stat.h>
+#include <CoreFoundation/CoreFoundation.h>
+#include <IOKit/storage/nvme/NVMeSMARTLibExternal.h>
 
-#include <paths.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <errno.h>
 #include <libxnvme_spec_fs.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_macos.h>
-#include <mach/mach_error.h>
-#include <CoreFoundation/CoreFoundation.h>
-#include <IOKit/storage/nvme/NVMeSMARTLibExternal.h>
-#include <sys/syslimits.h>
-#include <fcntl.h>
 
 int
 _gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))

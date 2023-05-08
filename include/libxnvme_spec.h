@@ -39,11 +39,6 @@
 #ifndef __LIBXNVME_SPEC_H
 #define __LIBXNVME_SPEC_H
 
-#include <assert.h>
-#include <stdint.h>
-#include <sys/types.h>
-#include <libxnvme_util.h>
-
 /**
  * NVMe PCIe BAR0 as-a-struct.
  *
