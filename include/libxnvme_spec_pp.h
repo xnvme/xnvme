@@ -8,7 +8,6 @@
 
 #ifndef __LIBXNVME_SPEC_PP_H
 #define __LIBXNVME_SPEC_PP_H
-#include <libxnvme_spec.h>
 
 /**
  * Produces a string representation of the given ::xnvme_spec_adm_opc

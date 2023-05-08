@@ -8,7 +8,6 @@
 
 #ifndef __LIBXNVME_GEO_H
 #define __LIBXNVME_GEO_H
-#include <libxnvme_util.h>
 
 /**
  * Representation of the type of device / geo / namespace

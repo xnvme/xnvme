@@ -5,20 +5,17 @@
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_MACOS_ENABLED
-#include <errno.h>
-#include <fcntl.h>
-#include <dirent.h>
-#include <unistd.h>
+#include <IOKit/IOTypes.h>
+#include <IOKit/storage/nvme/NVMeSMARTLibExternal.h>
+#include <CoreFoundation/CoreFoundation.h>
+#include <libgen.h>
+
 #include <libxnvme_ident.h>
 #include <libxnvme_file.h>
 #include <libxnvme_spec_fs.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_cbi.h>
 #include <xnvme_be_macos.h>
-#include <IOKit/storage/nvme/NVMeSMARTLibExternal.h>
-#include <CoreFoundation/CoreFoundation.h>
-#include <mach/mach_error.h>
-#include <libgen.h>
 
 #ifndef _PATH_DEV_DISK
 #define _PATH_DEV_DISK "/dev/"

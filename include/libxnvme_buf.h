@@ -8,11 +8,60 @@
 
 #ifndef __LIBXNVME_BUF_H
 #define __LIBXNVME_BUF_H
-#include <libxnvme.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * Allocate a buffer for IO with the given device
+ *
+ * The buffer will be aligned to device geometry and DMA allocated if required by the backend for
+ * command payloads
+ *
+ * @note
+ * nbytes must be greater than zero and a multiple of minimal granularity
+ * @note
+ * De-allocate the buffer using xnvme_buf_free()
+ *
+ * @param dev Device handle obtained with xnvme_dev_open()
+ * @param nbytes The size of the allocated buffer in bytes
+ *
+ * @return On success, a pointer to the allocated memory is returned. On error, NULL is returned
+ * and `errno` set to indicate the error.
+ */
+void *
+xnvme_buf_alloc(const struct xnvme_dev *dev, size_t nbytes);
+
+/**
+ * Reallocate a buffer for IO with the given device
+ *
+ * The buffer will be aligned to device geometry and DMA allocated if required by the backend for
+ * IO
+ *
+ * @note
+ * nbytes must be greater than zero and a multiple of minimal granularity
+ * @note
+ * De-allocate the buffer using xnvme_buf_free()
+ *
+ * @param dev Device handle obtained with xnvme_dev_open()
+ * @param buf The buffer to reallocate
+ * @param nbytes The size of the allocated buffer in bytes
+ *
+ * @return On success, a pointer to the allocated memory is returned. On error, NULL is returned
+ * and `errno` set to indicate the error.
+ */
+void *
+xnvme_buf_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes);
+
+/**
+ * Free the given IO buffer allocated with xnvme_buf_alloc()
+ *
+ * @param dev Device handle obtained with xnvme_dev_open()
+ * @param buf Pointer to a buffer allocated with xnvme_buf_alloc()
+ */
+void
+xnvme_buf_free(const struct xnvme_dev *dev, void *buf);
 
 /**
  * Allocate a buffer of physical memory, aligned for IO with the given device

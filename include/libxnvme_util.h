@@ -8,11 +8,6 @@
 
 #ifndef __LIBXNVME_UTIL_H
 #define __LIBXNVME_UTIL_H
-#include <string.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <time.h>
-#include <assert.h>
 
 #define XNVME_UNIVERSAL_SECT_SH 9
 
