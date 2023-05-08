@@ -1105,8 +1105,6 @@ xnvmec_perr(const char *msg, int err)
 void
 xnvmec_usage_sub_long(struct xnvmec *cli, struct xnvmec_sub *sub)
 {
-	int nopts = 0;
-
 	printf("Usage: %s %s ", cli->argv[0], sub->name);
 	for (int oi = 0; oi < XNVMEC_SUB_OPTS_LEN; ++oi) {
 		struct xnvmec_sub_opt *opt = &sub->opts[oi];
@@ -1125,7 +1123,6 @@ xnvmec_usage_sub_long(struct xnvmec *cli, struct xnvmec_sub *sub)
 			continue;
 		}
 		if (opt->type && (opt->type != XNVMEC_POSA)) {
-			++nopts;
 			break;
 		}
 
