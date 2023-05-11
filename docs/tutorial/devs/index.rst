@@ -409,8 +409,6 @@ xNVMe GitHUB actions. You can reproduce what is running on GitHUB by adjusting
 the config-files, and provide the artifacts from the GitHUB action:
 
 * xnvme-core.tar.gz
-* xnvme-cy-bindings.tar.gz
-* xnvme-cy-header.tar.gz
 * xnvme.tar.gz
 
 To do so, then:

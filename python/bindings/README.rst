@@ -2,23 +2,8 @@
  xNVMe Python interfaces
 =========================
 
-**xNVMe** provides three ways to consume the **xNVMe** C API from Python:
-
-#. Python bindings via ctypes
-
-   * Package Name: ``xnvme``
-
-#. A Cython Header
-
-   * Package name: ``xnvme-cy-header``
-
-#. Python bindings via Cython
-
-   * Package name: ``xnvme-cy-bindings``
-
-This package is the second of three offererings. That is, the
-``xnvme-cy-header`` package. Providing the Cython Header ``libxnvme.pxd`` for
-the xNVMe C API.
+xNVMe provides a raw mapping of the C API to Python via ctypes, these are
+referred to as the Python bindings. 
 
 For additional information see:
 

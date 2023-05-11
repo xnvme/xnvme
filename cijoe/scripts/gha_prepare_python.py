@@ -5,12 +5,14 @@ Install xNVMe Python Packages using source-tarball artifacts from GitHUB
 The xNVMe Python packages:
 
 * xnvme-core.tar.gz
-* xnvme-cy-header.tar.gz
-* xnvme-cy-bindings.tar.gz
 
-Are expected to be available in 'step.with.xnvme_source'.
-Additionally, 'step.with.xnvme_source' is expected to the be the root of an extracted
-xNVMe source archive.
+Are expected to be available in 'step.with.xnvme_source'. Additionally,
+'step.with.xnvme_source' is expected to the be the root of an extracted xNVMe
+source archive.
+
+These xNVMe Python package will be injected into a pipx-environment named
+'cijoe', thus making cijoe, pytest, and the xNVMe library within this
+environment.
 
 Step Arguments
 --------------
@@ -36,23 +38,9 @@ def main(args, cijoe, step):
         return errno.EINVAL
 
     commands = [
-        "python3 -m pip install pytest",
-        "python3 -m pip install xnvme-core.tar.gz",
-    ]
-
-    hdr_path = f"{xnvme_source}/python/xnvme-cy-header/xnvme/cython_header/tests/"
-    commands += [
-        "python3 -m pip install xnvme-cy-header.tar.gz",
-        f"cd {hdr_path}; python3 -m pip install -r requirements.txt",
-        f"cd {hdr_path}; python3 setup.py build_ext --inplace",
-        f"cd {hdr_path}; python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v -s",
-    ]
-
-    commands += [
-        "python3 -m pip install -r python/xnvme-cy-bindings/requirements.txt --user",
-        "python3 -m pip install xnvme-cy-bindings.tar.gz --user -vvv --no-build-isolation",
-        "python3 -m pip install -r python/xnvme-cy-bindings/xnvme/cython_bindings/tests/requirements.txt --user",
-        "python3 -m pytest --pyargs xnvme.cython_bindings -k 'test_version' -s",
+        "pipx install cijoe --include-deps",
+        "pipx inject cijoe numpy",
+        "pipx inject cijoe xnvme-core.tar.gz",
     ]
 
     first_err = 0

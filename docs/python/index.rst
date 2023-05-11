@@ -4,35 +4,18 @@
  Python
 ========
 
-**xNVMe** provides three ways to consume the **xNVMe** :ref:`sec-c-api` from
-Python:
+Bindings to the :ref:`sec-c-api` from Python is provided via an interface
+implemented using ctypes_ and distributed via pypi.
 
-#. Python bindings via :ref:`sec-python-ctypes`
-
-   * Package Name: ``xnvme``
-
-#. A :ref:`sec-python-cython` :ref:`sec-python-cython-header`
-
-   * Package name: ``xnvme-cy-header``
-
-#. Python :ref:`sec-python-cython-bindings` via :ref:`sec-python-cython`
-
-   * Package name: ``xnvme-cy-bindings``
-
-They are provided as individual Python namespace packages. This allows the
-separation of the build and installation requirements for the different
-interfaces. Specifically, avoid the requirements of Cython_ if all you need is
-a simple Plain-Python ctypes_ interface.
-
-The interfaces are a work-in-progress, provided as a preview of what can be
-done when integrating with Python. See, section :ref:`sec-python-todo` for a
+The Python interface are a work-in-progress, provided as a preview of what can
+be done when integrating with Python. See, section :ref:`sec-python-todo` for a
 list of known short-comings and areas to improve. Your input on these are most
 welcome along with pull-requests.
 
 .. _sec-python-ctypes:
 
-ctypes
-======
+ctypes "sugar"
+==============
 
 The ctypes_ bindings provides access to the xNVMe C API via ctypes_. If you
 have used ctypes_ before, then you can go right ahead and use these. The only
@@ -48,6 +31,30 @@ the Dynamic loader logic:
 A convenient aspect of the bindings are that Python ctypes_ comes with
 CPython_, that is, with the reference implementation of the Python intepreter.
 When using the ctypes_ bindings, the only other runtime dependency is pytest_.
+
+FAQ
+===
+
+Attribute Error
+---------------
+
+This::
+
+        xnvme.xnvme_dev_get_geo(dev).lba_nbytes
+
+Gives the error::
+
+        AttributeError: 'LP_xnvme_geo' object has no attribute 'lba_nbytes'
+
+One might expect that accessing the above would be possible. However, what the
+error-message conveys is that the above accesses a pointer, not the object, and
+thus, the pointer does not have the attribute ``lba_nbytes``.
+
+Thus, instead do::
+
+        xnvme.xnvme_dev_get_geo(dev).contents.lba_nbytes
+
+This is the Ctypes_ approach to dereferencing pointers.
 
 Install
 -------
@@ -92,40 +99,6 @@ something like this::
 .. note:: In the above example ``sudo -E`` is used. The ``sudo`` is there to
    ensure permission to ``/dev/nvme0n1``, then ``-E`` is there such that the
    **xNVMe** package installed as ``--user`` is available.
-
-.. _sec-python-cython:
-
-Cython
-======
-
-Cython applications, that is, to provide Cython bindings readily available
-such that you don't have to make them in order to use **xNVMe** in your
-Cython code.
-
-Two offerings are available for consuming xNVMe via Cython_:
-
-* ``xnvme-cy-header``, a Cython header (``libxnvme.pxd``)) providing access to
-  the xNVMe C API from Cython
-
-
-.. _sec-python-cython-header:
-
-Header
-------
-
-Brief note on testing the Cython header::
-
-  cd python/xnvme-cy-header/xnvme/cython_mapping/tests/
-  python3 -m pip install -r requirements.txt --user
-  python3 setup.py build_ext --inplace
-  python3 -m pytest --cython-collect test_cython.pyx::test_dummy -v -s
-
-.. _sec-python-cython-bindings:
-
-Bindings
---------
-
-...
 
 .. _sec-python-development:
 
@@ -197,10 +170,6 @@ of when using the Python language bindings.
 * The package-readme ``python/README.rst`` is lacking in proper description and
   pointers to information. This should be improved.
 
-* Currently the Python package does not include the Cython mappings / bindings
-
-  - These should be added
-
 * **testing** The bindings have only been tested on Linux and macOS
 
   - Add testing on Windows
@@ -220,15 +189,9 @@ of when using the Python language bindings.
   output emitted from ``clang2py`` changes order of the generated items. This
   would be nice to fix by submitting a PR to the ctypeslib2_.
 
-* **cython_mapping:** add Cython mappings in ``xnvme.cython_mappings``, ideally
-  these would be "duck-type" compatible with the ``xnvme.ctypes_mapping``. Such
-  that library user can switch between them by simply replace ``import
-  xnvme.ctypes_mapping as capi``.
-
 .. _CPython: https://en.wikipedia.org/wiki/CPython
-.. _Cython: https://cython.org/
 .. _black: https://github.com/psf/black
 .. _ctypes: https://docs.python.org/3/library/ctypes.html
 .. _ctypeslib2: https://github.com/trolldbois/ctypeslib/
-.. _pytest: https://pytest.org/
 .. _pypi: https://pypi.org/
+.. _pytest: https://pytest.org/
