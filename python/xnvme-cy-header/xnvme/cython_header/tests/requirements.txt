@@ -1,5 +1,0 @@
-pytest
-pytest-cython-collect>=0.2
-cython
-xnvme==0.6.0
-setuptools>=40.1 # Introduction of find_namespace_packages

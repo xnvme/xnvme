@@ -3,8 +3,8 @@
 #
 #
 PY ?= python3
-PY_ENV_ACTIVATE = . .build-py-env/bin/activate
-PY_ENV = ${PY_ENV_ACTIVATE} && python
+BUILD_ENV_ACTIVATE = . .build-py-env/bin/activate
+BUILD_ENV = ${BUILD_ENV_ACTIVATE} && python
 WORKSPACE_ROOT ?= ..
 TOOLBOX_DIR?=../../toolbox
 PROJECT_NAME=xnvme
@@ -25,9 +25,9 @@ endef
 	@echo "Creating Python virtual env"
 	@${PY} -m venv .build-py-env
 	@echo "Upgrading pip"
-	@${PY_ENV} -m pip install --upgrade pip
+	@${BUILD_ENV} -m pip install --upgrade pip
 	@echo "Install python dependencies"
-	@${PY_ENV} -m pip install -r requirements.txt
+	@${BUILD_ENV} -m pip install -r requirements.txt
 
 define all-help
 # Do the common task during development of: uninstall clean build install test
@@ -41,18 +41,25 @@ endef
 .PHONY: build
 build: .build-py-env generate-ctypes patch-ctypes
 	@echo "## py: make build-sdist"
-	@${PY_ENV} setup.py sdist
+	@${BUILD_ENV} setup.py sdist
 	@echo "Rename 'xnvme-m.m.p.tar.gz' to 'xnvme-core-m.m.p.tar.gz'"
 	@mv dist/${PROJECT_NAME}-0.6.0.tar.gz dist/${PROJECT_NAME}-core-0.6.0.tar.gz
 	@echo "## py: make build-sdist [DONE]"
+
+define deps-help
+# dependencies via pipx 
+endef
+.PHONY: deps
+deps:
+	@pipx install cijoe --include-deps
 
 define install-help
 # install for current user
 endef
 .PHONY: install
-install:
+install: deps
 	@echo "## py: make install"
-	@${PY} -m pip install dist/xnvme-*.tar.gz --user --break-system-packages
+	@pipx inject cijoe dist/xnvme-*.tar.gz
 	@echo "## py: make install [DONE]"
 
 define uninstall-help
@@ -63,17 +70,8 @@ endef
 .PHONY: uninstall
 uninstall:
 	@echo "## py: make uninstall"
-	@${PY} -m pip uninstall ${PROJECT_NAME} --yes || echo "Cannot uninstall => That is OK"
+	@pipx uninstall cijoe || true
 	@echo "## py: make uninstall [DONE]"
-
-define install-system-help
-# install system-wide
-endef
-.PHONY: install-system
-install-system:
-	@echo "## py: make install-system"
-	@${PY} -m pip install dist/xnvme-*.tar.gz --break-system-packages
-	@echo "## py: make install-system [DONE]"
 
 define test-help
 # Run pytest on tests/
@@ -81,7 +79,7 @@ endef
 .PHONY: test
 test:
 	@echo "## py: make test"
-	@${PY} -m pytest --pyargs xnvme
+	@pytest --pyargs xnvme
 	@echo "## py: make test [DONE]"
 
 define generate-ctypes-help
@@ -91,7 +89,7 @@ endef
 generate-ctypes: .build-py-env
 	@echo "## py: gen"
 	@echo "## py:headers: ${XNVME_CAPI_HEADERS}"
-	@${PY_ENV_ACTIVATE} && clang2py ${XNVME_CAPI_HEADERS} --clang-args="-I../../include -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/usr/include/ " > xnvme/ctypes_bindings/api.py
+	${BUILD_ENV_ACTIVATE} && clang2py ${XNVME_CAPI_HEADERS} --clang-args="-I../../include -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/ -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/Kernel.framework/Versions/A/Headers/" > xnvme/ctypes_bindings/api.py
 	@echo "## Remember to also call 'make patch-ctypes' to fix format"
 	@echo "## py: gen [DONE]"
 
@@ -101,8 +99,8 @@ endef
 .PHONY: patch-ctypes
 patch-ctypes: .build-py-env
 	@echo "## py: gen"
-	@${PY_ENV} auxiliary/patch_ctypes_bindings.py --path xnvme/ctypes_bindings/api.py
-	@${PY_ENV_ACTIVATE} && black xnvme/ctypes_bindings/api.py || echo "could not fix format"
+	@${BUILD_ENV} auxiliary/patch_ctypes_bindings.py --path xnvme/ctypes_bindings/api.py
+	@${BUILD_ENV_ACTIVATE} && black xnvme/ctypes_bindings/api.py || echo "could not fix format"
 	@echo "## py: gen [DONE]"
 
 define clean-help
