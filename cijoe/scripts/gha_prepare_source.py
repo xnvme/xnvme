@@ -5,8 +5,6 @@ Prepare xNVMe source directory using GitHUB Artifacts
 xNVMe GitHUB artifacts:
 
 * xnvme-core.tar.gz
-* xnvme-cy-bindings.tar.gz
-* xnvme-cy-header.tar.gz
 * xnvme.tar.gz
 
 Transfers the above artifacts from step.with.artifacts, to step.with.xnvme_sources and
@@ -36,8 +34,6 @@ def main(args, cijoe, step):
 
     files = [
         "xnvme-core.tar.gz",
-        "xnvme-cy-bindings.tar.gz",
-        "xnvme-cy-header.tar.gz",
         "xnvme.tar.gz",
     ]
     for filename in files:
