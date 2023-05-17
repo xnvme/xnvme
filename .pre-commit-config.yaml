@@ -32,14 +32,14 @@ repos:
 
 # Yaml: intended for the GitHUB Actions .yaml
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.1.0
+  rev: v4.4.0
   hooks:
   - id: check-yaml # pre-commit-hook-yamlfmt only works on valid YAML files
     name: YAML-format-check
     types: [file]
     files: \.(yaml|yml|config|workflow)$
 - repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
-  rev: 0.1.1
+  rev: 0.2.3
   hooks:
   - id: yamlfmt
     name: YAML-format
@@ -54,7 +54,7 @@ repos:
 
 # Python: for all the helpers in toolbox/*
 - repo: https://github.com/psf/black
-  rev: '22.3.0'
+  rev: '23.3.0'
   hooks:
   - id: black
     name: Python-format-black
@@ -68,7 +68,7 @@ repos:
     - '--profile=black'
     - '--line-length=88'
 - repo: https://github.com/pycqa/flake8
-  rev: '5.0.4'
+  rev: '6.0.0'
   hooks:
   - id: flake8
     name: Python-lint-flake8
