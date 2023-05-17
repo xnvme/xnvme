@@ -11,7 +11,6 @@ chars = [
 
 
 def main():
-
     with open("00_make.out") as ofile:
         content = ofile.read()
         for char in chars:
