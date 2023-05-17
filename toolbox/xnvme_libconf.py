@@ -46,7 +46,6 @@ def run(cmd):
     with subprocess.Popen(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="UTF-8"
     ) as proc:
-
         out, err = proc.communicate()
 
         return out, err, proc.returncode

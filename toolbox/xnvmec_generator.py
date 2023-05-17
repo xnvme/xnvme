@@ -271,7 +271,6 @@ def gen_completions(args, tools):
 
     logging.info("Writing scripts to: %r", args.output)
     for tool in tools:
-
         tool_fname = "%s-completions" % tool["name"]
         tool_fpath = os.sep.join([args.output, tool_fname])
 
