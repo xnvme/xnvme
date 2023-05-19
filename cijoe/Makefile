@@ -41,10 +41,6 @@ install:
 	@${PIPX} inject cijoe cijoe-pkg-qemu==v6.1.10
 	@${PIPX} inject cijoe cijoe-pkg-linux==v0.9.7
 	@${PIPX} inject cijoe cijoe-pkg-fio==v0.9.7
-#	@${PIPX} install git+https://github.com/refenv/cijoe.git@main --include-deps
-#	@${PIPX} inject cijoe git+https://github.com/refenv/cijoe-pkg-qemu.git@main
-#	@${PIPX} inject cijoe git+https://github.com/refenv/cijoe-pkg-linux.git@main
-#	@${PIPX} inject cijoe git+https://github.com/refenv/cijoe-pkg-fio.git@main
 	@echo "## ${PROJECT_NAME}: make install [DONE]"
 
 define uninstall-help
