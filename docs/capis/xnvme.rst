@@ -206,6 +206,22 @@ xnvme_buf_free
 .. doxygenfunction:: xnvme_buf_free
 
 
+.. _sec-c-api-xnvme-func-xnvme_mem_map:
+
+xnvme_mem_map
+---------------
+
+.. doxygenfunction:: xnvme_mem_map
+
+
+.. _sec-c-api-xnvme-func-xnvme_mem_unmap:
+
+xnvme_mem_unmap
+--------------
+
+.. doxygenfunction:: xnvme_mem_unmap
+
+
 .. _sec-c-api-xnvme-func-xnvme_buf_phys_alloc:
 
 xnvme_buf_phys_alloc

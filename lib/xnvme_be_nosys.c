@@ -129,6 +129,21 @@ xnvme_be_nosys_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *XNVM
 }
 
 int
+xnvme_be_nosys_mem_map(const struct xnvme_dev *XNVME_UNUSED(dev), void *XNVME_UNUSED(vaddr),
+		       size_t XNVME_UNUSED(nbytes), uint64_t *XNVME_UNUSED(phys))
+{
+	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");
+	errno = ENOSYS;
+	return -errno;
+}
+
+void
+xnvme_be_nosys_mem_unmap(const struct xnvme_dev *XNVME_UNUSED(dev), void *XNVME_UNUSED(buf))
+{
+	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");
+}
+
+int
 xnvme_be_nosys_enumerate(const char *XNVME_UNUSED(sys_uri), struct xnvme_opts *XNVME_UNUSED(opts),
 			 xnvme_enumerate_cb XNVME_UNUSED(cb_func), void *XNVME_UNUSED(cb_args))
 {

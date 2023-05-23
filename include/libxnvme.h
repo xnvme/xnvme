@@ -36,6 +36,7 @@ extern "C" {
 #include "libxnvme_dev.h"
 #include "libxnvme_be.h"
 #include "libxnvme_buf.h"
+#include "libxnvme_mem.h"
 #include "libxnvme_geo.h"
 #include "libxnvme_ident.h"
 #include "libxnvme_queue.h"
