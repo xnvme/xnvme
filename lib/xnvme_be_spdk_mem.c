@@ -63,10 +63,14 @@ struct xnvme_be_mem g_xnvme_be_spdk_mem = {
 	.buf_realloc = xnvme_be_spdk_buf_realloc,
 	.buf_free = xnvme_be_spdk_buf_free,
 	.buf_vtophys = xnvme_be_spdk_buf_vtophys,
+	.mem_map = xnvme_be_nosys_mem_map,
+	.mem_unmap = xnvme_be_nosys_mem_unmap,
 #else
 	.buf_alloc = xnvme_be_nosys_buf_alloc,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
 	.buf_free = xnvme_be_nosys_buf_free,
 	.buf_vtophys = xnvme_be_nosys_buf_vtophys,
+	.mem_map = xnvme_be_nosys_mem_map,
+	.mem_unmap = xnvme_be_nosys_mem_unmap,
 #endif
 };

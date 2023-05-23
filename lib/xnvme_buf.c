@@ -257,3 +257,15 @@ xnvme_buf_diff_pr(const void *expected, const void *actual, size_t nbytes, int X
 	printf("  nbytes: %zu\n", nbytes);
 	printf("  nbytes_diff: %zu\n", diff);
 }
+
+int
+xnvme_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
+{
+	return dev->be.mem.mem_map(dev, vaddr, nbytes, NULL);
+}
+
+void
+xnvme_mem_unmap(const struct xnvme_dev *dev, void *buf)
+{
+	return dev->be.mem.mem_unmap(dev, buf);
+}

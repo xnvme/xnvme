@@ -60,6 +60,12 @@ void
 xnvme_be_nosys_buf_free(const struct xnvme_dev *dev, void *buf);
 
 int
+xnvme_be_nosys_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, uint64_t *phys);
+
+void
+xnvme_be_nosys_mem_unmap(const struct xnvme_dev *dev, void *buf);
+
+int
 xnvme_be_nosys_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
 			 void *cb_args);
 

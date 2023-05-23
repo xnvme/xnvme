@@ -71,6 +71,45 @@ xnvme_be_vfio_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *XNVME
 	errno = ENOSYS;
 	return -ENOSYS;
 }
+
+int
+xnvme_be_vfio_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, uint64_t *phys)
+{
+	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
+	struct vfio_container *vfio = state->ctrl->pci.dev.vfio;
+	int err;
+
+	XNVME_DEBUG("xnvme_be_vfio_mem_map(%p, %p)", dev, vaddr);
+
+	if (!ALIGNED(((uintptr_t)vaddr | nbytes), __VFN_PAGESIZE)) {
+		XNVME_DEBUG("FAILED: nbytes not page aligned\n");
+		errno = EINVAL;
+		return -EINVAL;
+	}
+
+	XNVME_DEBUG("vfio_map_vaddr(%p, %p, %ld, NULL)", vfio, vaddr, nbytes);
+	err = vfio_map_vaddr(vfio, vaddr, nbytes, phys);
+	if (err) {
+		XNVME_DEBUG("FAILED: vfio_map_vaddr(): %s\n", strerror(errno));
+		return errno;
+	}
+
+	return 0;
+}
+
+void
+xnvme_be_vfio_mem_unmap(const struct xnvme_dev *dev, void *buf)
+{
+	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
+	struct vfio_container *vfio = state->ctrl->pci.dev.vfio;
+
+	XNVME_DEBUG("xnvme_be_vfio_buf_unmap(%p, %p)", dev, buf);
+
+	if (vfio_unmap_vaddr(vfio, buf, NULL)) {
+		XNVME_DEBUG("FAILED: vfio_unmap_vaddr(-, %p): %s\n", buf, strerror(errno));
+	}
+}
+
 #endif
 
 struct xnvme_be_mem g_xnvme_be_vfio_mem = {
@@ -80,10 +119,14 @@ struct xnvme_be_mem g_xnvme_be_vfio_mem = {
 	.buf_realloc = xnvme_be_vfio_buf_realloc,
 	.buf_free = xnvme_be_vfio_buf_free,
 	.buf_vtophys = xnvme_be_vfio_buf_vtophys,
+	.mem_map = xnvme_be_vfio_mem_map,
+	.mem_unmap = xnvme_be_vfio_mem_unmap,
 #else
 	.buf_alloc = xnvme_be_nosys_buf_alloc,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
 	.buf_free = xnvme_be_nosys_buf_free,
 	.buf_vtophys = xnvme_be_nosys_buf_vtophys,
+	.mem_map = xnvme_be_nosys_mem_map,
+	.mem_unmap = xnvme_be_nosys_mem_unmap,
 #endif
 };
