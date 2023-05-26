@@ -105,28 +105,6 @@ int
 xnvmec_buf_from_file(void *buf, size_t nbytes, const char *path);
 
 /**
- * Fill the the given 'cmd' with content of file at 'fpath'
- *
- * @param cmd the command to fill
- * @param fpath path to file
- *
- * @return On success, 0 is returned. On error, negative `errno` is returned.
- */
-int
-xnvmec_cmd_from_file(struct xnvme_spec_cmd *cmd, const char *fpath);
-
-/**
- * Stores the given `cmd` in `fpath`
- *
- * @param cmd the command to store
- * @param fpath path to store content of cmd in
- *
- * @return On success, 0 is returned. On error, negative `errno` is returned.
- */
-int
-xnvmec_cmd_to_file(const struct xnvme_spec_cmd *cmd, const char *fpath);
-
-/**
  * Options are stored in an instance of this structure
  *
  * @struct xnvmec_args
