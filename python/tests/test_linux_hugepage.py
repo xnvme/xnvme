@@ -1,29 +1,129 @@
+"""
+The Linux NVMe driver and its ioctl calls to read and write has a somewhat
+undocumented limitation of 127 "segments". These segments are determined as
+the number of non-contiguous pieces of *physical* memory in a buffer.
+
+If you allocate 1GB with malloc, you'll get contiguous *virtual* memory, but
+the physical placement will be determined upon the first write to the allocated
+memory.
+
+The kernel will reject an ioctl with more than 127 of these segments. This means
+you cannot safely assume to transfer more than 127 * page_size of data.
+"""
 import ctypes
+import io
+import mmap
+import os
+import re
+import struct
+from ctypes import byref, pointer
+from itertools import tee
 
 import conftest
 import numpy as np
 import pytest
-import xnvme.cython_bindings as xnvme
-from utils import (
-    BLK_MAX_SEGMENTS,
-    HUGEPAGE_SIZE,
-    NULL,
-    PAGE_SIZE,
-    check_frame_is_hugepage,
-    get_page_frame_numbers,
-    reduce_to_segments,
-)
+import xnvme.ctypes_bindings.api as xnvme
+from conftest import xnvme_parametrize
+from utils import buf_and_view, dev_from_params, xnvme_cmd_ctx_cpl_status
+from xnvme.ctypes_bindings.api import char_pointer_cast
+
+HUGEPAGE_SIZE = 0
+BLK_MAX_SEGMENTS = 128
+PAGE_SIZE = 1 << 12  # 4KB
+NULL = None
+
+pytest.skip("Needs to be ported from Cython to Ctypes", allow_module_level=True)
 
 
-@pytest.mark.skipif(
-    conftest.BACKEND != b"linux", reason="Hugepages are only supported on Linux"
-)
+def reduce_to_segments(page_frame_number_list, length):
+    def pairwise(iterable):
+        """s -> (s0,s1), (s1,s2), (s2, s3), ..."""
+
+        a, b = tee(iterable)
+        next(b, None)
+        return zip(a, b)
+
+    for p1, p2 in pairwise(
+        map(lambda x: x[0] - x[1], zip(page_frame_number_list, range(length)))
+    ):
+        if p1 == p2:
+            continue
+        yield p1
+
+
+def get_hugepagesize():
+    """Retrieves the hugepagesize from /proc"""
+
+    meminfo_path = "/proc/meminfo"
+
+    if os.path.exists(meminfo_path):
+        with open(meminfo_path, "r") as f:
+            match = re.search(r"Hugepagesize:\s*(\d+) kB", f.read())
+            if match:
+                return int(match.groups()[0]) * 1024
+
+    return 0
+
+
+def get_page_frame_numbers(buf, length):
+    # https://www.kernel.org/doc/Documentation/vm/pagemap.txt
+    with open(f"/proc/{os.getpid()}/pagemap", "rb") as f:
+        for n in range(length // PAGE_SIZE):
+            f.seek((buf // PAGE_SIZE + n) * 8)
+            (page_entry,) = struct.unpack("<Q", f.read(8))
+            assert page_entry & (1 << 63), "Page not allocated?"  # PAGEMAP_PRESENT
+            assert not page_entry & (1 << 62), "Page swapped"
+            yield page_entry & 0x007F_FFFF_FFFF_FFFF  # PAGEMAP_PFN
+
+
+def check_frame_is_hugepage(page_frame_number):
+    with open("/proc/kpageflags", "rb") as f:
+        dtype_size = 8  # uint64
+        f.seek(page_frame_number * dtype_size)
+        (kernel_page_flags,) = struct.unpack("<Q", f.read(dtype_size))
+
+        # Bitmasks from: include/uapi/linux/kernel-page-flags.h
+        KPF_HUGE = 17  # Huge Page
+        KPF_THP = 22  # Transparent Huge Page
+
+        if not (kernel_page_flags & (1 << KPF_HUGE)):
+            # The allocation isn't a hugepage!
+            return False
+
+        if kernel_page_flags & (1 << KPF_THP):
+            # Don't use transparent hugepage for this test!
+            return False
+
+    return True
+
+
+@pytest.fixture(autouse=True)
+def prerequisites():
+    """
+    Ensure that:
+
+    * transparent huge-pages are **not** enabled
+    * HUGEPAGE_SIZE is known and non-zero
+
+    In case transparent hugepages are enabled, then disable them by running::
+
+        echo never > /sys/kernel/mm/transparent_hugepage/enabled
+
+    .. todo::
+        A script disabling transparent hugepages should probably run before
+        running these tests
+    """
+
+    with open("/sys/kernel/mm/transparent_hugepage/enabled", "r") as f:
+        assert (
+            f.read() == "always madvise [never]\n"
+        ), "Unexpected state of transparent hugepages"
+
+    HUGEPAGE_SIZE = get_hugepagesize()
+    assert HUGEPAGE_SIZE, "Failed determining HUGEPAGE_SIZE"
+
+
 class TestHugepage:
-    @pytest.fixture(autouse=True)
-    def _prerequisites(self):
-        with open("/sys/kernel/mm/transparent_hugepage/enabled", "r") as f:
-            assert f.read() == "always madvise [never]\n"
-
     @pytest.mark.xnvme_sync(b"nvme")
     @pytest.mark.xnvme_mem(b"posix")
     def test_max_segments_ioctl(self, dev):
@@ -198,3 +298,158 @@ class TestHugepage:
         err = xnvme.xnvme_file_pwrite(ctx, buf, buffer_size, 0)
         cpl = xnvme.xnvme_cmd_ctx_cpl_status(ctx)
         assert not (err or cpl), f"err: 0x{err:x}, cpl: 0x{cpl:x}"
+
+
+@pytest.mark.parametrize(
+    "sync_backend",
+    [
+        pytest.param("nvme", marks=pytest.mark.xnvme_sync(b"nvme")),
+        pytest.param("psync", marks=pytest.mark.xnvme_sync(b"psync")),
+    ],
+)
+@pytest.mark.parametrize(
+    "mem_backend",
+    [
+        pytest.param("hugepage", marks=pytest.mark.xnvme_mem(b"hugepage")),
+        pytest.param("posix", marks=pytest.mark.xnvme_mem(b"posix")),
+    ],
+)
+@pytest.mark.parametrize("pattern", [0b01, 0b11])
+@pytest.mark.parametrize("buffer_size", [PAGE_SIZE, 2 * PAGE_SIZE, HUGEPAGE_SIZE])
+def test_pwrite_pread(
+    dev, autofreed_buffer, buffer_size, sync_backend, mem_backend, pattern
+):
+    if buffer_size == 0:
+        # Hugepage size becomes 0 on unsupported platforms
+        pytest.skip("Unsupported buffer size")
+    if (
+        buffer_size == HUGEPAGE_SIZE
+        and mem_backend == "posix"
+        and sync_backend == "nvme"
+    ):
+        pytest.skip("Unsupported buffer size for backend")
+
+    buf, buf_memview = autofreed_buffer(dev, buffer_size)
+
+    page_frame_number = next(get_page_frame_numbers(buf, buffer_size))
+    if xnvme.xnvme_dev_get_opts(dev).mem == b"hugepage":
+        assert check_frame_is_hugepage(page_frame_number)
+    else:
+        assert not check_frame_is_hugepage(page_frame_number)
+
+    # Write to device with changing bit-pattern
+    for n in range(4):
+        buf_memview[:] = pattern << (2 * n)  # Just some changing bit-pattern
+
+        ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+        err = xnvme.xnvme_file_pwrite(ctx, buf, buffer_size, buffer_size * n)
+        cpl = xnvme.xnvme_cmd_ctx_cpl_status(ctx)
+        assert not (err or cpl), f"err: 0x{err:x}, cpl: 0x{cpl:x}"
+
+    # Read out with regular Python file-read to verify
+    buf_verify = mmap.mmap(-1, buffer_size)
+    # os.O_DIRECT is critical, otherwise, we read invalid page cache data!
+    # We are opening first with os.open to get O_DIRECT, and then converting it
+    # to a regular Python file-object to get context-manager and .readinto()
+    with io.open(
+        os.open(conftest.DEVICE_PATH, os.O_DIRECT | os.O_RDONLY), "rb", buffering=0
+    ) as f:
+        for n in range(4):
+            bit_pattern = pattern << (2 * n)  # Just some changing bit-pattern
+
+            f.seek(buffer_size * n)
+            assert f.readinto(buf_verify) == buffer_size
+            assert np.all(np.frombuffer(buf_verify, dtype=np.uint8) == bit_pattern)
+    buf_verify.close()
+
+    # Read out with xnvme_file_pread to verify
+    for n in range(4):
+        buf_memview[:] = 0
+        ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+        err = xnvme.xnvme_file_pread(ctx, buf, buffer_size, buffer_size * n)
+        cpl = xnvme.xnvme_cmd_ctx_cpl_status(ctx)
+        assert not (err or cpl), f"err: 0x{err:x}, cpl: 0x{cpl:x}"
+
+        bit_pattern = pattern << (2 * n)  # Same bit-pattern as write
+        assert np.all(buf_memview == bit_pattern), np.where(buf_memview != bit_pattern)
+
+
+@pytest.mark.parametrize(
+    "sync_backend",
+    [
+        pytest.param("nvme", marks=pytest.mark.xnvme_sync(b"nvme")),
+        pytest.param("psync", marks=pytest.mark.xnvme_sync(b"psync")),
+    ],
+)
+@pytest.mark.parametrize(
+    "mem_backend",
+    [
+        pytest.param("hugepage", marks=pytest.mark.xnvme_mem(b"hugepage")),
+        pytest.param("posix", marks=pytest.mark.xnvme_mem(b"posix")),
+    ],
+)
+@pytest.mark.parametrize("pattern", [0b01, 0b11])
+@pytest.mark.parametrize("buffer_size", [PAGE_SIZE, 2 * PAGE_SIZE, HUGEPAGE_SIZE])
+def test_nvm_write_read(
+    dev, autofreed_buffer, buffer_size, sync_backend, mem_backend, pattern
+):
+    if buffer_size == 0:
+        # Hugepage size becomes 0 on unsupported platforms
+        pytest.skip("Unsupported buffer size")
+    if (
+        buffer_size == HUGEPAGE_SIZE
+        and mem_backend == "posix"
+        and sync_backend == "nvme"
+    ):
+        pytest.skip("Unsupported buffer size for backend")
+
+    buf, buf_memview = autofreed_buffer(dev, buffer_size)
+
+    page_frame_number = next(get_page_frame_numbers(buf, buffer_size))
+    if xnvme.xnvme_dev_get_opts(dev).mem == b"hugepage":
+        assert check_frame_is_hugepage(page_frame_number)
+    else:
+        assert not check_frame_is_hugepage(page_frame_number)
+
+    lba_nbytes = xnvme.xnvme_dev_get_geo(dev).lba_nbytes
+
+    # Write to device with changing bit-pattern
+    for n in range(4):
+        buf_memview[:] = pattern << (2 * n)  # Just some changing bit-pattern
+
+        ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+        slba = (n * buffer_size) // lba_nbytes
+        nlb = (buffer_size // lba_nbytes) - 1
+        err = xnvme.xnvme_nvm_write(ctx, conftest.DEVICE_NSID, slba, nlb, buf, NULL)
+        cpl = xnvme.xnvme_cmd_ctx_cpl_status(ctx)
+        assert not (err or cpl), f"err: 0x{err:x}, cpl: 0x{cpl:x}"
+
+    # Read out with regular Python file-read to verify
+    buf_verify = mmap.mmap(-1, buffer_size)
+    # os.O_DIRECT is critical, otherwise, we read invalid page cache data!
+    # We are opening first with os.open to get O_DIRECT, and then converting it
+    # to a regular Python file-object to get context-manager and .readinto()
+    with io.open(
+        os.open(conftest.DEVICE_PATH, os.O_DIRECT | os.O_RDONLY), "rb", buffering=0
+    ) as f:
+        for n in range(4):
+            bit_pattern = pattern << (2 * n)  # Just some changing bit-pattern
+
+            f.seek(buffer_size * n)
+            assert f.readinto(buf_verify) == buffer_size
+            assert np.all(np.frombuffer(buf_verify, dtype=np.uint8) == bit_pattern)
+    buf_verify.close()
+
+    # Read out with xnvme_file_pread to verify
+    for n in range(4):
+        buf_memview[:] = 0
+
+        ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+        slba = (n * buffer_size) // lba_nbytes
+        nlb = (buffer_size // lba_nbytes) - 1
+        err = xnvme.xnvme_nvm_read(ctx, conftest.DEVICE_NSID, slba, nlb, buf, NULL)
+        cpl = xnvme.xnvme_cmd_ctx_cpl_status(ctx)
+        assert not (err or cpl), f"err: 0x{err:x}, cpl: 0x{cpl:x}"
+
+        bit_pattern = pattern << (2 * n)  # Same bit-pattern as write
+        assert np.all(buf_memview == bit_pattern), np.where(buf_memview != bit_pattern)
