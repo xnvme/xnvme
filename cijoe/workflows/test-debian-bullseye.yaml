@@ -9,6 +9,12 @@ steps:
 - name: hugetlbfs
   uses: gha_prepare_hugetlbfs
 
+- name: test_python
+  uses: core.testrunner
+  with:
+    args: /tmp/xnvme_source/python/tests -k "not fabrics"
+    run_local: false
+
 - name: test_ramdisk
   uses: core.testrunner
   with:

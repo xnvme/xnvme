@@ -1,69 +1,64 @@
-import os
-import re
-import struct
-from itertools import tee
+"""
+Utilities used with pytest / xnvme-python-bindings
+"""
+import ctypes
 
-import xnvme.cython_bindings as xnvme
-
-NULL = xnvme.xnvme_void_p(0)
-UINT16_MAX = 0xFFFF
-
-PAGE_SIZE = 1 << 12  # 4KB
-
-BLK_MAX_SEGMENTS = 128
-
-HUGEPAGE_SIZE = 0
-meminfo_path = "/proc/meminfo"
-if os.path.exists(meminfo_path):
-    with open(meminfo_path, "r") as f:
-        match = re.search(r"Hugepagesize:\s*(\d+) kB", f.read())
-        if match:
-            HUGEPAGE_SIZE = int(match.groups()[0]) * 1024
+import numpy
+import xnvme.ctypes_bindings as xnvme
+from xnvme.ctypes_bindings.api import char_pointer_cast
 
 
-def pairwise(iterable):
-    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
-    a, b = tee(iterable)
-    next(b, None)
-    return zip(a, b)
+def xnvme_cmd_ctx_cpl_status(ctx):
+    """This function is a 'static inline' in the C API"""
+
+    return ctx.contents.cpl.status.sc or ctx.contents.cpl.status.sct
 
 
-def reduce_to_segments(page_frame_number_list, length):
-    for p1, p2 in pairwise(
-        map(lambda x: x[0] - x[1], zip(page_frame_number_list, range(length)))
-    ):
-        if p1 == p2:
-            continue
-        yield p1
+def pointer_equal(ptr1, ptr2):
+    """Check whether two pointer-types are equal, that is, they point to the same memory"""
+
+    return (
+        ctypes.cast(ptr1, ctypes.c_void_p).value
+        == ctypes.cast(ptr2, ctypes.c_void_p).value
+    )
 
 
-def get_page_frame_numbers(buf, length):
-    # https://www.kernel.org/doc/Documentation/vm/pagemap.txt
-    with open(f"/proc/{os.getpid()}/pagemap", "rb") as f:
-        for n in range(length // PAGE_SIZE):
-            f.seek((buf.void_pointer // PAGE_SIZE + n) * 8)
-            (page_entry,) = struct.unpack("<Q", f.read(8))
-            assert page_entry & (1 << 63), "Page not allocated?"  # PAGEMAP_PRESENT
-            assert not page_entry & (1 << 62), "Page swapped"
-            yield page_entry & 0x007F_FFFF_FFFF_FFFF  # PAGEMAP_PFN
+def dev_from_params(device, be_opts):
+    """
+    Returns a device-handle as described by the given dictionary-parameters
+
+    The structure of the given 'device' and 'be_opts' dicts are as defined by
+    the pytest-fixture named xnvme_parametrize.
+    """
+
+    opts = xnvme.xnvme_opts()
+    xnvme.xnvme_opts_set_defaults(ctypes.byref(opts))
+
+    # Cast Python-strings to char-pointers and assign them to the xnvme_opts
+    for key, val in ((k, v) for k, v in be_opts.items() if k not in ["label"]):
+        setattr(opts, key, char_pointer_cast(val))
+
+    # Directly assign the namespace-identifier value
+    opts.nsid = device["nsid"]
+
+    return xnvme.xnvme_dev_open(char_pointer_cast(device["uri"]), ctypes.byref(opts))
 
 
-def check_frame_is_hugepage(page_frame_number):
-    with open("/proc/kpageflags", "rb") as f:
-        dtype_size = 8  # uint64
-        f.seek(page_frame_number * dtype_size)
-        (kernel_page_flags,) = struct.unpack("<Q", f.read(dtype_size))
+def buf_and_view(dev, buffer_size):
+    """
+    Returns a buffer of the given 'buffer_size' along with a numpy-view
 
-        # Bitmasks from: include/uapi/linux/kernel-page-flags.h
-        KPF_HUGE = 17  # Huge Page
-        KPF_THP = 22  # Transparent Huge Page
+    The view covers the entire buffer and typed as uint8. The buffer is
+    zero-filled via the view. Thus, the pages backing the buffer should be
+    allocated.
+    """
 
-        if not (kernel_page_flags & (1 << KPF_HUGE)):
-            # The allocation isn't a hugepage!
-            return False
+    buf = xnvme.xnvme_buf_alloc(dev, buffer_size)
 
-        if kernel_page_flags & (1 << KPF_THP):
-            # Don't use transparent hugepage for this test!
-            return False
+    view = numpy.ctypeslib.as_array(
+        ctypes.cast(buf, ctypes.POINTER(ctypes.c_uint8)),
+        shape=(buffer_size,),
+    )
+    view[:] = 0  # Zero memory and force page allocation
 
-    return True
+    return buf, view
