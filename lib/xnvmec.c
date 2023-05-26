@@ -968,12 +968,6 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 		.name = "idr",
 		.descr = "If set, hint to use range as an integral unit when reading.",
 	},
-
-	{.opt = XNVMEC_OPT_KV_STORE_COMPRESS,
-	 .vtype = XNVMEC_OPT_VTYPE_NUM,
-	 .name = "compress",
-	 .descr = "KV Store Option to compress value on device"},
-
 	{
 		.opt = XNVMEC_OPT_LSI,
 		.vtype = XNVMEC_OPT_VTYPE_HEX,
@@ -986,13 +980,6 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 		.name = "pid",
 		.descr = "Placement identifier",
 	},
-
-	{
-		.opt = XNVMEC_OPT_KV_VAL,
-		.vtype = XNVMEC_OPT_VTYPE_STR,
-		.name = "value",
-		.descr = "KV Pair Value",
-	},
 	{
 		.opt = XNVMEC_OPT_KV_KEY,
 		.vtype = XNVMEC_OPT_VTYPE_STR,
@@ -1000,10 +987,10 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 		.descr = "KV Pair Key",
 	},
 	{
-		.opt = XNVMEC_OPT_KV_STORE_UPDATE,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
-		.name = "only-update",
-		.descr = "KV Store Option to only update existing",
+		.opt = XNVMEC_OPT_KV_VAL,
+		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.name = "value",
+		.descr = "KV Pair Value",
 	},
 	{
 		.opt = XNVMEC_OPT_KV_STORE_ADD,
@@ -1011,6 +998,13 @@ static struct xnvmec_opt_attr xnvmec_opts[] = {
 		.name = "only-add",
 		.descr = "KV Store Option to only add new KV-Pairs",
 	},
+	{
+		.opt = XNVMEC_OPT_KV_STORE_UPDATE,
+		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.name = "only-update",
+		.descr = "KV Store Option to only update existing",
+	},
+
 	{
 		.opt = XNVMEC_OPT_KV_STORE_COMPRESS,
 		.vtype = XNVMEC_OPT_VTYPE_NUM,
