@@ -2461,9 +2461,9 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_io_mgmt_cmd) == 64, "Incorrect size
 /**
  * KV Command Set opcodes
  *
- * @see TP4015a, Section 2.5, figure X1
+ * @see Key Value Command Set Specification Revision 1.0c, Figure 5
  *
- * @struct xnvme_spec_znd_opc
+ * @struct xnvme_spec_kv_opc
  */
 enum xnvme_spec_kv_opc {
 	XNVME_SPEC_KV_OPC_STORE    = 0x01, ///< XNVME_SPEC_KV_OPC_STORE
@@ -2476,20 +2476,26 @@ enum xnvme_spec_kv_opc {
 /**
  * Command-set specific status codes related to key-value Namespaces
  *
+ * @see Key Value Command Set Specification Revision 1.0c, Figure 4
+ *
  * @enum xnvme_spec_kv_status_code
  */
 enum xnvme_spec_kv_status_code {
-	/// Key-value Command Set
-	XNVME_SPEC_KV_SC_INVALID_VAL_SIZE = 0x85, ///< XNVME_SPEC_KV_SC_INVALID_VAL_SIZE
-	XNVME_SPEC_KV_SC_INVALID_KEY_SIZE = 0x86, ///< XNVME_SPEC_KV_SC_INVALID_KEY_SIZE
-	XNVME_SPEC_KV_SC_KEY_NOT_EXISTS   = 0x87, ///< XNVME_SPEC_KV_SC_KEY_NOT_EXISTS
-	XNVME_SPEC_KV_SC_KEY_EXISTS       = 0x89, ///< XNVME_SPEC_KV_SC_KEY_EXISTS
+	XNVME_SPEC_KV_SC_CAPACITY_EXCEEDED    = 0x81, ///<  XNVME_SPEC_KV_SC_CAPACITY_EXCEEDED
+	XNVME_SPEC_KV_SC_NS_NOT_READY         = 0x82, ///< XNVME_SPEC_KV_SC_NS_NOT_READY
+	XNVME_SPEC_KV_SC_RESERVATION_CONFLICT = 0x83, ///< XNVME_SPEC_KV_SC_RESERVATION_CONFLICT
+	XNVME_SPEC_KV_SC_FORMAT_IN_PROGRESS   = 0x84, ///< XNVME_SPEC_KV_SC_FORMAT_IN_PROGRESS
+	XNVME_SPEC_KV_SC_INVALID_VAL_SIZE     = 0x85, ///< XNVME_SPEC_KV_SC_INVALID_VAL_SIZE
+	XNVME_SPEC_KV_SC_INVALID_KEY_SIZE     = 0x86, ///< XNVME_SPEC_KV_SC_INVALID_KEY_SIZE
+	XNVME_SPEC_KV_SC_KEY_NOT_EXISTS       = 0x87, ///< XNVME_SPEC_KV_SC_KEY_NOT_EXISTS
+	XNVME_SPEC_KV_SC_UNRECOVERED_ERR      = 0x88, ///< XNVME_SPEC_KV_SC_UNRECOVERED_ERR
+	XNVME_SPEC_KV_SC_KEY_EXISTS           = 0x89, ///< XNVME_SPEC_KV_SC_KEY_EXISTS
 };
 
 /**
  * NVMe Command Accessors for the KV Command Set
  *
- * @see TP4015a, Section 5
+ * @see Key Value Command Set Specification Revision 1.0c, Section 3
  *
  * @struct xnvme_spec_kvs_cmd
  */
@@ -2834,8 +2840,9 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_report_hdr) == 64, "Incorrect s
 /**
  * Key Value Command Set KV Format data structure
  *
- * @see TP4015a, Section 3.1
- * @struct xnvme_spec_ksd_idfy_ns
+ * @see Key Value Command Set Specification Revision 1.0c, Figure 40
+ *
+ * @struct xnvme_spec_kvs_idfy_ns_format
  */
 struct xnvme_spec_kvs_idfy_ns_format {
 	uint16_t kml; ///< KV Key Max Length
@@ -2849,8 +2856,9 @@ struct xnvme_spec_kvs_idfy_ns_format {
 /**
  * Key Value Command Set identify namespace data structure
  *
- * @see TP4015a, Section 3.1
- * @struct xnvme_spec_ksd_idfy_ns
+ * @see Key Value Command Set Specification Revision 1.0c, Figure 39
+ *
+ * @struct xnvme_spec_kvs_idfy_ns
  */
 struct xnvme_spec_kvs_idfy_ns {
 	uint64_t nsze; ///< Namespace Size
