@@ -201,7 +201,7 @@ def fabrics_setup(cijoe):
 
     # Start 'nvmf_tgt'
     err, _ = cijoe.run(
-        "(nohup ./nvmf_tgt > foo.out 2> foo.err < /dev/null &)",
+        "(nohup ./nvmf_tgt -m [1] > foo.out 2> foo.err < /dev/null &)",
         cwd=xnvme_path / "subprojects" / "spdk" / "build" / "bin",
     )
     assert not err
@@ -210,9 +210,7 @@ def fabrics_setup(cijoe):
     sleep(2)
 
     # Create transport
-    err, _ = cijoe.run(
-        f"{rpc} nvmf_create_transport -t {trtype} -u 131072 -m 8 -c 8192 -i 524288"
-    )
+    err, _ = cijoe.run(f"{rpc} nvmf_create_transport -t {trtype} -u 16384 -m 8 -c 8192")
     assert not err
 
     count = 1
