@@ -28,7 +28,6 @@ def test_cython_bindings(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["kvs"], opts=["be"])
 def test_cython_bindings_kv(cijoe, device, be_opts, cli_args):
-
     if be_opts["be"] not in ["linux", "spdk"]:
         pytest.skip(reason=f"Backend not supported: {be_opts['be']}")
 
