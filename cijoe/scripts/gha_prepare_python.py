@@ -32,12 +32,18 @@ import logging as log
 def main(args, cijoe, step):
     """Transfer artifacts"""
 
+    osname = cijoe.config.options.get("os", {}).get("name", "")
+    if osname not in ["debian"]:
+        log.info("skip python setup")
+        return 0
+
     xnvme_source = step.get("with", {}).get("xnvme_source", "/tmp/xnvme_source")
     if xnvme_source is None:
         log.error(f"invalid step({step})")
         return errno.EINVAL
 
     commands = [
+        "pipx ensurepath",
         "pipx install cijoe --include-deps",
         "pipx inject cijoe numpy",
         "pipx inject cijoe xnvme-core.tar.gz",
