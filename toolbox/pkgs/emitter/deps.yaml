@@ -1,5 +1,5 @@
 ---
-tools:
+deps:
   bash:
     notes: This is needed by the GitHUB Action CI
     ver: 0.0
@@ -97,7 +97,6 @@ tools:
       pkg: [py39-pipx]
       zypper: [python3-pipx]
 
-libs:
   cunit:
     notes: Required by SPDK
     ver: 0.0
@@ -200,12 +199,12 @@ libs:
     when: [building]
     purpose: {be: [spdk]}
     names:
+      default: [numactl]
       apt: [libnuma-dev]
       apk: [numactl-dev]
       emerge: [sys-process/numactl]
       yum: [numactl-devel]
       dnf: [numactl-devel]
-      pacman: [numactl]
       zypper: [libnuma-devel]
 
   ncurses:
@@ -225,11 +224,11 @@ libs:
     when: [building]
     purpose: {be: [spdk]}
     names:
+      default: [openssl]
       apk: [openssl-dev]
       apt: [libssl-dev, openssl]
       dnf: [openssl-devel]
       emerge: [dev-libs/openssl]
-      pkg: [openssl]
       yum: [openssl-devel, openssl11-devel]
       zypper: [libopenssl-devel]
 
@@ -250,36 +249,31 @@ apps:
 # (sys), or an explicit package-manager (pip)
 defaults:
   freebsd:
-    tools:
-      sys: [bash, clang-format, find, git, make, meson, pkg-config, python3, pipx]
-    libs:
-      sys: [cunit, elftools, libuuid, nasm, ncurses, numactl, openssl, patch]
-      src: [libvfn]
+    deps:
+    - [sys, [bash, clang-format, cunit, elftools, find, git, libuuid, make, meson, nasm, ncurses, numactl, openssl, patch,
+        pipx, pkg-config, python3]]
     apps:
-      src: [fio]
+    - [src, [fio]]
 
   linux:
-    tools:
-      sys: [bash, clang-format, find, git, make, meson, pkg-config, python3, pipx]
-    libs:
-      sys: [cunit, elftools, libaio, libuuid, liburing, nasm, ncurses, numactl, openssl, patch]
-      src: [libvfn]
+    deps:
+    - [sys, [bash, cunit, clang-format, elftools, find, git, libaio, liburing, libuuid, make, meson, nasm, ncurses, numactl,
+        openssl, patch, pipx, pkg-config, python3]]
+    - [src, [libvfn]]
     apps:
-      src: [fio]
+    - [src, [fio]]
 
   macos:
-    tools:
-      sys: [clang-format, git, python3, meson, pkg-config, pipx]
-    libs: {}
+    deps:
+    - [sys, [clang-format, git, meson, pipx, pkg-config, python3]]
     apps:
-      src: [fio]
+    - [src, [fio]]
 
   windows:
-    tools:
-      sys: [bash, find, git, make, meson, pkg-config, python3]
-    libs: {}
+    deps:
+    - [sys, [bash, find, git, make, meson, pkg-config, python3]]
     apps:
-      src: [fio]
+    - [src, [fio]]
 
 platforms:
 - alias: Alpine Linux
@@ -295,19 +289,12 @@ platforms:
   ver: [latest]
   os: linux
   mng: apk
-  drop: [elftools]
+  drop: [elftools, libvfn]
   alt:
-    pip: [pipx]
-    src: [liburing]
+  - [pip, [pipx]]
+  - [src, [liburing]]
   aux:
-  - bsd-compat-headers
-  - build-base
-  - coreutils
-  - gawk
-  - linux-headers
-  - musl-dev
-  - perl
-  - util-linux-dev
+  - [sys, [bsd-compat-headers, build-base, coreutils, gawk, linux-headers, musl-dev, perl, util-linux-dev]]
 
 - alias: Arch Linux
   notes: |
@@ -320,8 +307,9 @@ platforms:
   os: linux
   mng: pacman
   drop: []
-  alt: {}
-  aux: [base-devel, libutil-linux]
+  alt: []
+  aux:
+  - [sys, [base-devel, libutil-linux]]
 
 - alias: CentOS
   notes: |
@@ -335,9 +323,11 @@ platforms:
   mng: yum
   drop: [liburing]
   alt:
-    src: [python3, nasm, libvfn]
-    pip: [elftools, meson, ninja, pipx] # Install elftools via pip as Python needs to be installed anyway
-  aux: [autoconf, glibc-static, libffi-devel, libtool, unzip, wget, zlib-devel]
+  - [src, [python3, nasm]]
+  - [pip, [elftools, meson, pipx]] # Install elftools via pip as Python needs to be installed anyway
+  - [src, [libvfn]]
+  aux:
+  - [sys, [autoconf, glibc-static, libffi-devel, libtool, unzip, wget, zlib-devel]]
 
 - alias: CentOS Stream 8
   notes: |
@@ -351,9 +341,11 @@ platforms:
   mng: dnf
   drop: [clang-format]
   alt:
-    src: [python3, liburing, libvfn]
-    pip: [elftools, meson, ninja, pipx]
-  aux: [autoconf, diffutils, gcc, gcc-c++, libffi-devel, libtool, procps, unzip, wget, zlib-devel]
+  - [src, [python3, liburing]]
+  - [pip, [elftools, meson, pipx]]
+  - [src, [libvfn]]
+  aux:
+  - [sys, [autoconf, diffutils, gcc, gcc-c++, libffi-devel, libtool, procps, unzip, wget, zlib-devel]]
 
 - alias: CentOS Stream 9
   notes: ''
@@ -363,9 +355,10 @@ platforms:
   mng: dnf
   drop: [clang-format]
   alt:
-    src: [liburing, libvfn]
-    pip: [elftools, meson, ninja, pipx]
-  aux: [autoconf, diffutils, gcc, gcc-c++, libtool, procps, unzip, wget, zlib-devel]
+  - [pip, [elftools, meson, pipx]]
+  - [src, [liburing, libvfn]]
+  aux:
+  - [sys, [autoconf, diffutils, gcc, gcc-c++, libtool, procps, unzip, wget, zlib-devel]]
 
 - alias: Debian Testing
   notes: ''
@@ -374,8 +367,9 @@ platforms:
   os: linux
   mng: apt
   drop: []
-  alt: {}
-  aux: [autoconf, build-essential, libtool]
+  alt: []
+  aux:
+  - [sys, [autoconf, build-essential, libtool]]
 
 - alias: Debian Stable
   notes: ''
@@ -385,9 +379,10 @@ platforms:
   mng: apt
   drop: []
   alt:
-    src: [liburing, libvfn]
-    pip: [meson, ninja, pipx]
-  aux: [autoconf, build-essential, libtool]
+  - [pip, [meson, pipx]]
+  - [src, [liburing, libvfn]]
+  aux:
+  - [sys, [autoconf, build-essential, libtool]]
 
 - alias: Fedora
   notes: ''
@@ -396,8 +391,9 @@ platforms:
   os: linux
   mng: dnf
   drop: []
-  alt: {}
-  aux: [autoconf, diffutils, g++, gcc, libtool, procps]
+  alt: []
+  aux:
+  - [sys, [autoconf, diffutils, g++, gcc, libtool, procps]]
 
 - alias: Fedora
   notes: ''
@@ -407,8 +403,9 @@ platforms:
   mng: dnf
   drop: []
   alt:
-    src: [liburing, libvfn]
-  aux: [autoconf, diffutils, g++, gcc, libtool, procps]
+  - [src, [liburing]]
+  aux:
+  - [sys, [autoconf, diffutils, g++, gcc, libtool, procps]]
 
 - alias: Ubuntu Latest
   notes: All tools and libraries are available via system package-manager.
@@ -417,8 +414,9 @@ platforms:
   ver: [kinetic]
   mng: apt
   drop: []
-  alt: {}
-  aux: [autoconf, build-essential, libtool]
+  alt: []
+  aux:
+  - [sys, [autoconf, build-essential, libtool]]
 
 - alias: Ubuntu LTS
   notes: Installing liburing from source and meson + ninja via pip
@@ -428,9 +426,10 @@ platforms:
   mng: apt
   drop: []
   alt:
-    src: [liburing, libvfn]
-    pip: [meson, ninja]
-  aux: [autoconf, build-essential, libtool]
+  - [pip, [meson]]
+  - [src, [liburing, libvfn]]
+  aux:
+  - [sys, [autoconf, build-essential, libtool]]
 
 - alias: Gentoo
   notes: |
@@ -449,7 +448,7 @@ platforms:
   # dropping clang-format as it is only available via 'clang' which takes 4hours to build.
   drop: [libuuid, clang-format]
   alt:
-    pip: [pipx]
+  - [pip, [pipx]]
   aux: []
 
 - alias: openSUSE
@@ -460,8 +459,9 @@ platforms:
   mng: zypper
   drop: []
   alt:
-    pip: [pipx]
-  aux: [autoconf, gcc, gcc-c++, gzip, libtool, tar]
+  - [pip, [pipx]]
+  aux:
+  - [sys, [autoconf, gcc, gcc-c++, gzip, libtool, tar]]
 
 - alias: openSUSE
   notes: ''
@@ -471,9 +471,10 @@ platforms:
   mng: zypper
   drop: []
   alt:
-    src: [liburing, libvfn]
-    pip: [meson, ninja, elftools, pipx]
-  aux: [autoconf, gcc, gcc-c++, gzip, libtool, tar]
+  - [pip, [meson, elftools, pipx]]
+  - [src, [liburing, libvfn]]
+  aux:
+  - [sys, [autoconf, gcc, gcc-c++, gzip, libtool, tar]]
 
 - alias: FreeBSD
   notes: Interfaces; libaio, liburing, and libvfn are not supported on FreeBSD.
@@ -482,8 +483,9 @@ platforms:
   os: freebsd
   mng: pkg
   drop: [clang-format]
-  alt: {}
-  aux: [autoconf, automake, libtool, wget]
+  alt: []
+  aux:
+  - [sys, [autoconf, automake, libtool, wget]]
 
 - alias: macOS
   notes: Interfaces; libaio, liburing, libvfn, and SPDK are not supported on macOS.
@@ -493,7 +495,7 @@ platforms:
   mng: brew
   drop: []
   alt:
-    pip: [pipx]
+  - [pip, [pipx]]
   aux: []
 
 - alias: Windows
@@ -507,5 +509,5 @@ platforms:
   os: windows
   mng: choco
   drop: []
-  alt: {}
+  alt: []
   aux: []
