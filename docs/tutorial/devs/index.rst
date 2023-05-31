@@ -248,6 +248,7 @@ not available. Thus, to satisfy those, install::
   sudo apt-get -qy install \
     bc \
     bison \
+    build-essential \
     debhelper \
     flex \
     git \
