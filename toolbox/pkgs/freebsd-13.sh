@@ -20,6 +20,7 @@ pkg install -qy \
  meson \
  nasm \
  ncurses \
+ numactl \
  openssl \
  patch \
  pkgconf \
