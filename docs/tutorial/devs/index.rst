@@ -217,7 +217,7 @@ You can increase the information-level with ``-l``
 argument, the more times you provide the higher the level.
 Try running it with three, that is debug-level::
 
-  cijoe -lll
+  cijoe -ll
 
 In the ``cwd`` then a ``cijoe-output`` is produced, this
 directory holds all information about what was executed.
@@ -239,8 +239,8 @@ a ``.deb`` package::
   # Grab the cijoe-example for linux
   cijoe --example linux
 
-  # Run it with log-level debug (-lll)
-  cijoe -lll
+  # Run it with log-level debug (-ll)
+  cijoe -ll
 
 The above will fail as the required dependencies for building the kernel are
 not available. Thus, to satisfy those, install::
@@ -287,8 +287,8 @@ Run the **cijoe** qemu workflow::
   # Grab the config and workflow example for qemu
   cijoe --example qemu
 
-  # Run it with log-level debug (-lll)
-  cijoe -lll
+  # Run it with log-level debug (-ll)
+  cijoe -ll
 
 Similarly, to how the built failed previously, then it will
 fail here as well, and for the same reason; missing
