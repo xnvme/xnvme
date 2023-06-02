@@ -476,3 +476,20 @@ The ``debian-bullseye-amd64.qcow2`` is created by::
 The ``freebsd-13.1-ksrc-amd64.qcow2`` is created by::
 
   cijoe -c configs/freebsd-13.config -w workflows/bootimg-freebsd-13-amd64.yaml
+
+Remote dev
+==========
+
+Assuming your primary device for development is a something like a
+Chromebook/Macbook, something light-weight and great for reading mail... but
+now you want to fire up your editor and do some development.
+
+Or, your primary system is simply separate from the dev-box for myriad of
+reasons. Then do something like::
+
+  cp configs/debian-bullseye.toml configs/dev-metal.toml
+
+.. note::
+   all configs prefix on the file-name pattern ``dev-*.yml`` are ignored by git.
+
+And then have a look at the 
