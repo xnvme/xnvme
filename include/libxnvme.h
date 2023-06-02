@@ -82,6 +82,12 @@ struct xnvme_opts {
 };
 
 /**
+ * Initialize the given 'opts' with default values
+ */
+void
+xnvme_opts_set_defaults(struct xnvme_opts *opts);
+
+/**
  * Returns an initialized option-struct with default values
  *
  * @return Zero-initialized and with default values where applicable

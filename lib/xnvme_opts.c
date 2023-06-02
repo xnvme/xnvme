@@ -9,18 +9,24 @@
 #include <libxnvme.h>
 #include <libxnvme_pp.h>
 
+void
+xnvme_opts_set_defaults(struct xnvme_opts *opts)
+{
+	opts->rdwr = 1;
+	opts->nsid = 1;
+	opts->admin_timeout = 60000000;
+	opts->command_timeout = 30000000;
+
+	// Value is only applicable if the user also sets opts->create = 1
+	opts->create_mode = S_IRUSR | S_IWUSR;
+}
+
 struct xnvme_opts
 xnvme_opts_default(void)
 {
 	struct xnvme_opts opts = {0};
 
-	opts.rdwr = 1;
-	opts.nsid = 1;
-	opts.admin_timeout = 60000000;
-	opts.command_timeout = 30000000;
-
-	// Value is only applicable if the user also sets opts.create = 1
-	opts.create_mode = S_IRUSR | S_IWUSR;
+	xnvme_opts_set_defaults(&opts);
 
 	return opts;
 }
