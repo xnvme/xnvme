@@ -41,19 +41,19 @@ dnf install -y \
 # - These commands are executed with sufficient privileges (sudo/root)
 #
 git clone https://github.com/OpenMPDK/libvfn.git
-pushd libvfn
+cd libvfn
 git checkout v1.0.0
 meson setup builddir -Dlibnvme="disabled" -Ddocs="disabled" --prefix=/usr
 meson compile -C builddir
 meson install -C builddir
-popd
+cd ..
 
 # Clone, build and install liburing v2.2
 git clone https://github.com/axboe/liburing.git
-pushd liburing
+cd liburing
 git checkout liburing-2.2
 ./configure --libdir=/usr/lib64 --libdevdir=/usr/lib64
 make
 make install
-popd
+cd ..
 

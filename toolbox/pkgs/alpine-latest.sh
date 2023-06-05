@@ -41,10 +41,10 @@ python3 -m pip install \
 
 # Clone, build and install liburing v2.2
 git clone https://github.com/axboe/liburing.git
-pushd liburing
+cd liburing
 git checkout liburing-2.2
 ./configure
 make
 make install
-popd
+cd ..
 
