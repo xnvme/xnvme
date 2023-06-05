@@ -1,10 +1,10 @@
 # Install Python v3.7.12 from source
 wget https://www.python.org/ftp/python/3.7.12/Python-3.7.12.tgz
 tar xzf Python-3.7.12.tgz
-pushd Python-3.7.12
+cd Python-3.7.12
 ./configure --enable-optimizations --enable-shared
 make altinstall -j $(nproc)
-popd
+cd ..
 
 # Setup handling of python3
 ln -s /usr/local/bin/python3.7 /usr/local/bin/python3

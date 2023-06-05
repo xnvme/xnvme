@@ -43,10 +43,10 @@ dnf install -y \
 # - These commands are executed with sufficient privileges (sudo/root)
 #
 git clone https://github.com/OpenMPDK/libvfn.git
-pushd libvfn
+cd libvfn
 git checkout v1.0.0
 meson setup builddir -Dlibnvme="disabled" -Ddocs="disabled" --prefix=/usr
 meson compile -C builddir
 meson install -C builddir
-popd
+cd ..
 
