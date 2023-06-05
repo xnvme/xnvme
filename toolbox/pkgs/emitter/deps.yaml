@@ -250,8 +250,8 @@ apps:
 defaults:
   freebsd:
     deps:
-    - [sys, [bash, clang-format, cunit, elftools, find, git, libuuid, make, meson, nasm, ncurses, numactl, openssl, patch,
-        pipx, pkg-config, python3]]
+    - [sys, [bash, clang-format, cunit, elftools, find, git, libuuid, make, meson, nasm, ncurses, openssl, patch, pipx, pkg-config,
+        python3]]
     apps:
     - [src, [fio]]
 
