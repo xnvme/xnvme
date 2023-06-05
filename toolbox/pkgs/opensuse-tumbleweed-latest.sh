@@ -45,7 +45,7 @@ zypper --non-interactive install -y --allow-downgrade \
 #
 git clone https://github.com/OpenMPDK/libvfn.git
 cd libvfn
-git checkout v1.0.0
+git checkout v2.0.2
 meson setup builddir -Dlibnvme="disabled" -Ddocs="disabled" --prefix=/usr
 meson compile -C builddir
 meson install -C builddir

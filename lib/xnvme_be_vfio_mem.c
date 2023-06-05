@@ -15,7 +15,7 @@ xnvme_be_vfio_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *XN
 {
 	void *vaddr;
 	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
-	struct vfio_state *vfio = &state->ctrl->pci.vfio;
+	struct vfio_container *vfio = state->ctrl->pci.dev.vfio;
 
 	XNVME_DEBUG("xnvme_be_vfio_buf_alloc(%p, %ld)", dev, nbytes);
 
@@ -48,25 +48,12 @@ void
 xnvme_be_vfio_buf_free(const struct xnvme_dev *dev, void *buf)
 {
 	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
-	struct vfio_state *vfio = &state->ctrl->pci.vfio;
-	struct vfio_iommu_mapping *mapping;
+	struct vfio_container *vfio = state->ctrl->pci.dev.vfio;
 	size_t len;
 
 	XNVME_DEBUG("xnvme_be_vfio_buf_free(%p, %p)", dev, buf);
 
-	/*
-	 * munmap() requires the length of the previous memory-mapped area, so
-	 * grab the mapping and store the length.
-	 */
-	mapping = vfio_iommu_find_mapping(&vfio->iommu, buf);
-	if (!mapping) {
-		XNVME_DEBUG("no mapping for %p\n", buf);
-		return;
-	}
-
-	len = mapping->len;
-
-	if (vfio_unmap_vaddr(vfio, buf)) {
+	if (vfio_unmap_vaddr(vfio, buf, &len)) {
 		XNVME_DEBUG("FAILED: vfio_pci_unmap_vaddr(-, %p): %s\n", buf, strerror(errno));
 	}
 

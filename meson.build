@@ -196,6 +196,7 @@ iokit_dep = dependency(
 )
 libvfn_dep = dependency(
   'libvfn',
+  version: '>=2.0.2',
   required: conf_data.get('XNVME_BE_LINUX_VFIO_ENABLED')
 )
 
