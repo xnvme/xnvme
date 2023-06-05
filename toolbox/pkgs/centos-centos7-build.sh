@@ -2,7 +2,7 @@
 # Source in the newer gcc-toolchain before building
 source /opt/rh/devtoolset-8/enable
 
-# configure xNVMe and build dependencies (fio and SPDK, disabling liburing)
+# configure xNVMe without liburing and build meson subprojects(SPDK)
 meson setup builddir -Dwith-liburing=false --prefix=/usr
 
 # build xNVMe

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# configure xNVMe and build dependencies (fio, libvfn, and SPDK)
+# configure xNVMe with SPDK and libvfn disabled
 meson setup builddir -Dwith-spdk=false -Dwith-libvfn=false
 
 # build xNVMe
