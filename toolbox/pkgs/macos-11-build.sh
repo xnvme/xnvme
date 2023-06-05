@@ -3,7 +3,7 @@
 # This is done to avoid appleframework deprecation warnings
 export MACOSX_DEPLOYMENT_TARGET=11.0
 
-# configure xNVMe and build dependencies (fio, libvfn, and SPDK)
+# configure xNVMe
 meson setup builddir
 
 # build xNVMe

@@ -251,7 +251,7 @@ Or, run the commands contained within the script manually:
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../toolbox/pkgs/default-build.sh
+.. literalinclude:: ../../toolbox/pkgs/centos-stream9-build.sh
    :language: bash
    :lines: 2-
 
@@ -393,7 +393,7 @@ Or, run the commands contained within the script manually:
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../toolbox/pkgs/default-build.sh
+.. literalinclude:: ../../toolbox/pkgs/fedora-38-build.sh
    :language: bash
    :lines: 2-
 
@@ -427,7 +427,7 @@ Or, run the commands contained within the script manually:
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../toolbox/pkgs/default-build.sh
+.. literalinclude:: ../../toolbox/pkgs/fedora-37-build.sh
    :language: bash
    :lines: 2-
 
@@ -463,7 +463,7 @@ Or, run the commands contained within the script manually:
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../toolbox/pkgs/default-build.sh
+.. literalinclude:: ../../toolbox/pkgs/fedora-36-build.sh
    :language: bash
    :lines: 2-
 
