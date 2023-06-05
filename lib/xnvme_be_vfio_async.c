@@ -94,7 +94,7 @@ xnvme_be_vfio_queue_poke(struct xnvme_queue *queue, uint32_t max)
 
 int
 xnvme_be_vfio_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
-			   size_t XNVME_UNUSED(mbuf_nbytes))
+			   size_t mbuf_nbytes)
 {
 	struct xnvme_queue_vfio *q = (struct xnvme_queue_vfio *)ctx->async.queue;
 	struct xnvme_be_vfio_state *state = (void *)q->base.dev->be.state;
@@ -122,7 +122,7 @@ xnvme_be_vfio_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 	rq->opaque = ctx;
 
 	if (dbuf) {
-		if (!vfio_iommu_vaddr_to_iova(&state->ctrl->pci.vfio.iommu, dbuf, &iova)) {
+		if (!vfio_map_vaddr(state->ctrl->pci.dev.vfio, dbuf, dbuf_nbytes, &iova)) {
 			XNVME_DEBUG("FAILED: vfio_iommu_vaddr_to_iova()");
 			goto err;
 		}
@@ -131,7 +131,7 @@ xnvme_be_vfio_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 	}
 
 	if (mbuf) {
-		if (!vfio_iommu_vaddr_to_iova(&state->ctrl->pci.vfio.iommu, mbuf, &iova)) {
+		if (!vfio_map_vaddr(state->ctrl->pci.dev.vfio, mbuf, mbuf_nbytes, &iova)) {
 			XNVME_DEBUG("FAILED: vfio_iommu_vaddr_to_iova()");
 			goto err;
 		}

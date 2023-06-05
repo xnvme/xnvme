@@ -12,7 +12,7 @@
 
 int
 xnvme_be_vfio_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
-			  size_t XNVME_UNUSED(mbuf_nbytes))
+			  size_t mbuf_nbytes)
 {
 	struct xnvme_be_vfio_state *state = (void *)ctx->dev->be.state;
 	struct nvme_ctrl *ctrl = state->ctrl;
@@ -44,7 +44,7 @@ xnvme_be_vfio_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nby
 	}
 
 	if (dbuf) {
-		if (!vfio_iommu_vaddr_to_iova(&ctrl->pci.vfio.iommu, dbuf, &iova)) {
+		if (!vfio_map_vaddr(ctrl->pci.dev.vfio, dbuf, dbuf_nbytes, &iova)) {
 			XNVME_DEBUG("FAILED: vfio_iommu_vaddr_to_iova()");
 			ret = -EINVAL;
 			goto out;
@@ -54,7 +54,7 @@ xnvme_be_vfio_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nby
 	}
 
 	if (mbuf) {
-		if (!vfio_iommu_vaddr_to_iova(&state->ctrl->pci.vfio.iommu, mbuf, &iova)) {
+		if (!vfio_map_vaddr(state->ctrl->pci.dev.vfio, mbuf, mbuf_nbytes, &iova)) {
 			XNVME_DEBUG("FAILED: vfio_iommu_vaddr_to_iova()");
 			ret = -EINVAL;
 			goto out;
