@@ -23,34 +23,34 @@ steps:
   uses: gha_prepare_source
   with:
     artifacts: '/tmp/artifacts'
-    xnvme_source: '/tmp/xnvme_source'
+    xnvme_source: '{{ config.xnvme.source.path }}'
 
 - name: build_prep
   uses: xnvme_build_prep
   with:
-    xnvme_source: '/tmp/xnvme_source'
+    xnvme_source: '{{ config.xnvme.source.path }}'
 
 - name: build
   uses: xnvme_build
   with:
-    xnvme_source: '/tmp/xnvme_source'
+    xnvme_source: '{{ config.xnvme.source.path }}'
 
 - name: install
   uses: xnvme_install
   with:
-    xnvme_source: '/tmp/xnvme_source'
+    xnvme_source: '{{ config.xnvme.source.path }}'
 
 - name: gha_prepare_aux
   uses: gha_prepare_aux
   with:
-    xnvme_source: '/tmp/xnvme_source'
+    xnvme_source: '{{ config.xnvme.source.path }}'
 
 - name: gha_prepare_python
   uses: gha_prepare_python
   with:
-    xnvme_source: '/tmp/xnvme_source'
+    xnvme_source: '{{ config.xnvme.source.path }}'
 
 - name: gha_docgen
   uses: gha_docgen
   with:
-    xnvme_source: '/tmp/xnvme_source'
+    xnvme_source: '{{ config.xnvme.source.path }}'

@@ -12,7 +12,7 @@ steps:
 - name: test_python
   uses: core.testrunner
   with:
-    args: /tmp/xnvme_source/python/tests -k "not fabrics"
+    args: '{{ config.xnvme.source.path }}/python/tests -k "not fabrics"'
     run_local: false
 
 - name: test_ramdisk

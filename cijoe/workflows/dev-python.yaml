@@ -23,26 +23,26 @@ steps:
   uses: git_push_checkout
   with:
     repository:
-      remote: guestvm
+      remote: '{{ config.xnvme.repository.sync.remote }}'
+      branch: '{{ config.xnvme.repository.sync.branch }}'
       path:
-        local: /Users/safl/git/xnvme
-        remote: /root/git/xnvme
-      branch: myfeature
+        local: '{{ config.xnvme.repository.path }}'
+        remote: '{{ config.xnvme.repository.sync.remote_path }}'
 
 - name: clean
   uses: xnvme_clean
   with:
-    xnvme_source: /root/git/xnvme
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
 
 - name: build
   uses: xnvme_build
   with:
-    xnvme_source: /root/git/xnvme
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
 
 - name: install
   uses: xnvme_install
   with:
-    xnvme_source: /root/git/xnvme
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
 
 - name: install_libclang
   run: apt-get install -qy libclang-dev
@@ -50,7 +50,7 @@ steps:
 - name: python_build
   uses: xnvme_bindings_py_build
   with:
-    xnvme_source: /root/git/xnvme
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
 
 - name: extra_deps
   run: pipx inject cijoe numpy
@@ -58,5 +58,5 @@ steps:
 - name: python_test
   uses: core.testrunner
   with:
-    args: /root/git/xnvme/python/tests -k "not fabrics"
+    args: '{{ config.xnvme.repository.sync.remote_path }}/python/tests -k "not fabrics"'
     run_local: false
