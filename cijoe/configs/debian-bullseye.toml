@@ -194,7 +194,13 @@ driver_attachment = "kernel"
 
 [xnvme.repository]
 upstream = "https://github.com/OpenMPDK/xNVMe.git"
-path = "/root/git/xnvme"
+path = "{{ local.env.HOME }}/git/xnvme"
+
+# This is utilized by repository syncing during development.
+[xnvme.repository.sync]
+branch = "wip"
+remote = "vm"
+remote_path = "/root/git/xnvme"
 
 [xnvme.source]
 path = "/tmp/xnvme_source"

@@ -2,6 +2,11 @@
 remote = "https://github.com/OpenMPDK/xNVMe.git"
 path = "{{ local.env.HOME }}/git/xnvme"
 
+[xnvme.repository.sync]
+branch = "wip"
+remote = "vm"
+remote_path = "/root/git/xnvme"
+
 [xnvme.build]
 type = "debug"
 
