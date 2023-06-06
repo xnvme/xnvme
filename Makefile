@@ -108,6 +108,18 @@ config-uring:
 	   -Dwith-libvfn=false
 	@echo "## xNVMe: config-uring [DONE]"
 
+define config-libvfn-help
+# Configure Meson to compile xNVMe without: SPDK, and liburing
+endef
+.PHONY: config-libvfn
+config-libvfn:
+	@echo "## xNVMe: config-libvfn"
+	CC=$(CC) CXX=$(CXX) $(MESON) setup $(BUILD_DIR) \
+	   -Dwith-spdk=false \
+	   -Dwith-liburing=false \
+	   -Dwith-libvfn=true
+	@echo "## xNVMe: config-uring [DONE]"
+
 define config-slim-help
 # Configure Meson to compile xNVMe without: SPDK, liburing, and libvfn
 endef
