@@ -6,9 +6,6 @@
  * @headerfile libxnvme_dev.h
  */
 
-#ifndef __LIBXNVME_DEV_H
-#define __LIBXNVME_DEV_H
-
 enum xnvme_enumerate_action {
 	XNVME_ENUMERATE_DEV_KEEP_OPEN = 0x0, ///< Keep device-handle open after callback returns
 	XNVME_ENUMERATE_DEV_CLOSE     = 0x1  ///< Close device-handle when callback returns
@@ -189,5 +186,3 @@ xnvme_dev_open(const char *dev_uri, struct xnvme_opts *opts);
  */
 void
 xnvme_dev_close(struct xnvme_dev *dev);
-
-#endif /* __LIBXNVME_NVM */

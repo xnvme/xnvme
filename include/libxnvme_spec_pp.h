@@ -6,9 +6,6 @@
  * @headerfile libxnvme_spec_pp.h
  */
 
-#ifndef __LIBXNVME_SPEC_PP_H
-#define __LIBXNVME_SPEC_PP_H
-
 /**
  * Produces a string representation of the given ::xnvme_spec_adm_opc
  *
@@ -208,5 +205,3 @@ xnvme_spec_znd_state_str(enum xnvme_spec_znd_state eval);
  */
 const char *
 xnvme_spec_znd_type_str(enum xnvme_spec_znd_type eval);
-
-#endif /* __LIBXNVME_SPEC_PP_H */

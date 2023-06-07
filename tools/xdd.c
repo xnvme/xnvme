@@ -2,14 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <stdio.h>
 #include <errno.h>
-#include <string.h>
-#include <stdlib.h>
-
 #include <libxnvme.h>
-#include <libxnvme_file.h>
-#include <libxnvmec.h>
 
 #define IOSIZE_DEF 4096
 #define QDEPTH_MAX 256

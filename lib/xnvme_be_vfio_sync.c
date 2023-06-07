@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_LINUX_VFIO_ENABLED
-#include <libxnvme_spec_fs.h>
 #include <errno.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_vfio.h>

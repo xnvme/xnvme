@@ -2,10 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <stdio.h>
 #include <errno.h>
 #include <libxnvme.h>
-#include <libxnvmec.h>
 
 static int
 sub_hw_example(struct xnvmec *cli)

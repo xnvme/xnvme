@@ -2,9 +2,6 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
 #include <dirent.h>
 #ifndef WIN32
 #include <paths.h>
@@ -12,10 +9,6 @@
 #include <ctype.h>
 #include <errno.h>
 #include <libxnvme.h>
-#include <libxnvme_spec_fs.h>
-#include <libxnvme_adm.h>
-#include <libxnvme_file.h>
-#include <libxnvme_znd.h>
 #include <xnvme_be.h>
 #include <xnvme_dev.h>
 

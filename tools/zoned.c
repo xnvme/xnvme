@@ -2,17 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <stdlib.h>
-#include <string.h>
 #include <errno.h>
 #include <libxnvme.h>
-#include <libxnvme_ident.h>
-#include <libxnvme_dev.h>
-#include <libxnvme_spec_pp.h>
-#include <libxnvme_adm.h>
-#include <libxnvme_nvm.h>
-#include <libxnvme_znd.h>
-#include <libxnvmec.h>
 
 int
 enumerate_cb(struct xnvme_dev *dev, void *cb_args)

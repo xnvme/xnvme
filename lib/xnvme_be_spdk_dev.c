@@ -2,12 +2,11 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_SPDK_ENABLED
 #include <errno.h>
-#include <libxnvme.h>
-#include <libxnvme_znd.h>
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -19,8 +18,6 @@
 #include <xnvme_queue.h>
 #include <xnvme_be_spdk.h>
 #include <xnvme_dev.h>
-#include <libxnvme_spec.h>
-#include <libxnvme_adm.h>
 
 #define XNVME_BE_SPDK_MAX_PROBE_ATTEMPTS 1
 #define XNVME_BE_SPDK_AVLB_TRANSPORTS 3

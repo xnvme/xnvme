@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <libxnvme_pp.h>
+#include <libxnvme.h>
 #include <xnvme_geo.h>
 
 static inline const char *

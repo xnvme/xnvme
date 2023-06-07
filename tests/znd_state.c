@@ -2,13 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <stdio.h>
 #include <errno.h>
 #include <libxnvme.h>
-#include <libxnvme_spec_pp.h>
-#include <libxnvme_nvm.h>
-#include <libxnvme_znd.h>
-#include <libxnvmec.h>
 
 struct action {
 	enum xnvme_spec_znd_cmd_mgmt_send_action action;

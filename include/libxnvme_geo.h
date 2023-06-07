@@ -6,9 +6,6 @@
  * @headerfile libxnvme_geo.h
  */
 
-#ifndef __LIBXNVME_GEO_H
-#define __LIBXNVME_GEO_H
-
 /**
  * Representation of the type of device / geo / namespace
  *
@@ -52,5 +49,3 @@ struct xnvme_geo {
 	uint8_t _rsvd[7];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_geo) == 64, "Incorrect size")
-
-#endif

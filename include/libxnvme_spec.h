@@ -36,9 +36,6 @@
  * @headerfile libxnvme_spec.h
  */
 
-#ifndef __LIBXNVME_SPEC_H
-#define __LIBXNVME_SPEC_H
-
 /**
  * NVMe PCIe BAR0 as-a-struct.
  *
@@ -3383,5 +3380,3 @@ xnvme_spec_kvs_idfy_ns_fpr(FILE *stream, const struct xnvme_spec_kvs_idfy_ns *id
  */
 int
 xnvme_spec_kvs_idfy_ns_pr(const struct xnvme_spec_kvs_idfy_ns *idfy, int opts);
-
-#endif /* __LIBXNVME_SPEC_H */

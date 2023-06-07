@@ -23,7 +23,6 @@
  * example_dev 192.168.1.1:4472 1
  */
 #include <libxnvme.h>
-#include <libxnvme_pp.h>
 
 int
 main(int argc, char *argv[])

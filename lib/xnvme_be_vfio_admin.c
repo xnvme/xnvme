@@ -5,8 +5,8 @@
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_LINUX_VFIO_ENABLED
-#include <xnvme_dev.h>
 #include <errno.h>
+#include <xnvme_dev.h>
 #include <xnvme_queue.h>
 #include <xnvme_be_vfio.h>
 

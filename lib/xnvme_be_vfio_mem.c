@@ -5,10 +5,10 @@
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_LINUX_VFIO_ENABLED
+#include <errno.h>
+#include <sys/mman.h>
 #include <xnvme_be_vfio.h>
 #include <xnvme_dev.h>
-#include <sys/mman.h>
-#include <errno.h>
 
 void *
 xnvme_be_vfio_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *XNVME_UNUSED(phys))

@@ -6,9 +6,9 @@
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_CBI_ASYNC_THRPOOL_ENABLED
 #include <errno.h>
+#include <pthread.h>
 #include <xnvme_queue.h>
 #include <xnvme_dev.h>
-#include <pthread.h>
 
 // Environment variable used to configure the number of threads in thrpool
 static const char *g_nthreads_env = "XNVME_BE_CBI_ASYNC_THRPOOL_NTHREADS";

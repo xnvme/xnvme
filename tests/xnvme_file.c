@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <errno.h>
-#include <libxnvme_file.h>
-#include <libxnvmec.h>
+#include <libxnvme.h>
 
 int
 test_file_fsync(struct xnvmec *cli)

@@ -2,11 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <stdio.h>
 #include <errno.h>
-#include <libxnvmec.h>
-#include <libxnvme_nvm.h>
-#include <libxnvme_spec_pp.h>
+#include <libxnvme.h>
 
 /**
  * TODO: add a test, scopy-failure, verifying the following completion-behavior:

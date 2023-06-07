@@ -5,14 +5,13 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
+#include <libxnvme.h>
 #include <xnvme_be_linux.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_LINUX_BLOCK_ENABLED
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include <libxnvme_znd.h>
-#include <libxnvme_spec_fs.h>
 #include <xnvme_be_cbi.h>
 #include <xnvme_be_linux.h>
 
