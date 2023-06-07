@@ -4,11 +4,11 @@ system, and deployed for build and test on another/different "remote" system.
 
 Then one needs to transfer the source, or changes to the source, to the remote
 system. This can be done with tools such as rsync and mutagen. However, these
-can cause un-wanted behavior when syncing repository data such as ``.git``.
+can cause unwanted behavior when syncing repository data such as ``.git``.
 
 Ideally, one would execute the required git commands, transferring the changes
 to the remote, however, this can be tedious. Thus, this script, running the
-various commands doing just that.
+various commands, is doing just that.
 
 Here is what is does:
 

@@ -1,23 +1,23 @@
 """
-Install xNVMe Python Packages using source-tarball artifacts from GitHUB
+Install xNVMe Python Package using source-tarball artifacts from GitHUB
 ========================================================================
 
-The xNVMe Python packages:
+The xNVMe Python package:
 
 * xnvme-core.tar.gz
 
-Are expected to be available in 'step.with.xnvme_source'. Additionally,
-'step.with.xnvme_source' is expected to the be the root of an extracted xNVMe
+Is expected to be available in 'step.with.xnvme_source'. Additionally,
+'step.with.xnvme_source' is expected to be the root of an extracted xNVMe
 source archive.
 
-These xNVMe Python package will be injected into a pipx-environment named
-'cijoe', thus making cijoe, pytest, and the xNVMe library within this
+The xNVMe Python package will be injected into a pipx-environment named
+'cijoe', thus making cijoe, pytest, and the xNVMe library available within this
 environment.
 
 Step Arguments
 --------------
 
-step.with.source: The files listed above are expected to be available in
+step.with.source: The file listed above is expected to be available in
 'step.with.source', it is also expected that 'step.with.source' is a directory
 containing the xNVMe source in extracted form. That is the content of the
 xnvme-source-tarball.

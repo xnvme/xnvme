@@ -1,5 +1,5 @@
 """
-This test the cli-tool-examples implemented in Python:
+This tests the cli-tool-examples implemented in Python:
 
     * xpy_enumerate
     * xpy_libconf

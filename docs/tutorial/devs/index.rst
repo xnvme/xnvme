@@ -215,7 +215,7 @@ In case everything is fine, then it will execute silently.
 
 You can increase the information-level with ``-l``
 argument, the more times you provide the higher the level.
-Try running it with three, that is debug-level::
+Try running it with two, that is debug-level::
 
   cijoe -ll
 
@@ -479,11 +479,11 @@ The ``freebsd-13.1-ksrc-amd64.qcow2`` is created by::
 Remote dev
 ==========
 
-Assuming your primary device for development is a something like a
+Assuming your primary device for development is something like a
 Chromebook/Macbook, something light-weight and great for reading mail... but
 now you want to fire up your editor and do some development.
 
-Or, your primary system is simply separate from the dev-box for myriad of
+Or, your primary system is simply separate from the dev-box for a myriad of
 reasons. Then do something like::
 
   cp configs/debian-bullseye.toml configs/dev-metal.toml
