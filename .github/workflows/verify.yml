@@ -472,10 +472,6 @@ jobs:
       run: |
         cijoe -r
 
-    - name: Foo
-      run: |
-        find . -name "*.tar.gz"
-
     - name: Python-bindings (ctypes), install and test
       if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
       run: |
@@ -595,10 +591,6 @@ jobs:
       if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
       run: |
         cijoe -r
-
-    - name: Foo
-      run: |
-        find . -name "*.tar.gz"
 
     - name: Python-bindings (ctypes), install and test
       if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
