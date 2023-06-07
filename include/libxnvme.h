@@ -49,7 +49,10 @@ extern "C" {
 #include "libxnvme_file.h"
 #include "libxnvme_adm.h"
 #include "libxnvme_nvm.h"
+#include "libxnvme_kvs.h"
 #include "libxnvme_znd.h"
+#include "libxnvme_libconf.h"
+#include "libxnvmec.h"
 
 #ifdef __cplusplus
 }
