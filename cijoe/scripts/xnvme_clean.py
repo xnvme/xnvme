@@ -16,7 +16,7 @@ from pathlib import Path
 
 
 def main(args, cijoe, step):
-    """Build xNVMe"""
+    """Clean xNVMe"""
 
     conf = cijoe.config.options.get("xnvme", None)
     if not conf:

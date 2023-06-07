@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Build xNVMe bindings for Python
+Test xNVMe bindings for Python
 ===============================
 
 Step Args
@@ -16,7 +16,7 @@ from pathlib import Path
 
 
 def main(args, cijoe, step):
-    """Build xNVMe"""
+    """Test xNVMe"""
 
     conf = cijoe.config.options.get("xnvme", None)
     if not conf:
