@@ -7,9 +7,9 @@
 Bindings to the :ref:`sec-c-api` from Python is provided via an interface
 implemented using ctypes_ and distributed via pypi.
 
-The Python interface are a work-in-progress, provided as a preview of what can
+The Python interface is a work-in-progress, provided as a preview of what can
 be done when integrating with Python. See, section :ref:`sec-python-todo` for a
-list of known short-comings and areas to improve. Your input on these are most
+list of known shortcomings and areas to improve. Your input on these are most
 welcome along with pull-requests.
 
 .. _sec-python-ctypes:
