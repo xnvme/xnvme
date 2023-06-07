@@ -6,14 +6,6 @@
  * @headerfile libxnvme_adm.h
  */
 
-#ifndef __LIBXNVME_ADM_H
-#define __LIBXNVME_ADM_H
-#include <libxnvme.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * Submit and wait for completion of an NVMe Identify command
  *
@@ -263,8 +255,3 @@ xnvme_adm_dir_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t doper, uint
 int
 xnvme_adm_dir_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t doper, uint32_t dtype,
 		   uint32_t val, void *dbuf, size_t dbuf_nbytes);
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* __LIBXNVME_ADM_H */

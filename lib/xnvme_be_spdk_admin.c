@@ -5,9 +5,9 @@
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_SPDK_ENABLED
-#include <xnvme_dev.h>
-#include <spdk/env.h>
 #include <errno.h>
+#include <spdk/env.h>
+#include <xnvme_dev.h>
 #include <xnvme_queue.h>
 #include <xnvme_be_spdk.h>
 

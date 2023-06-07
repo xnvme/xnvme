@@ -2,10 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <stdio.h>
 #include <errno.h>
-#include <libxnvmec.h>
-#include <libxnvme_dev.h>
+#include <libxnvme.h>
 #include <xnvme_be.h>
 
 #define MAX_LISTINGS 1024

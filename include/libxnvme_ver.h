@@ -6,9 +6,6 @@
  * @headerfile libxnvme_ver.h
  */
 
-#ifndef __LIBXNVME_VER_H
-#define __LIBXNVME_VER_H
-
 /**
  * Produces the "major" version of the library
  *
@@ -53,5 +50,3 @@ xnvme_ver_fpr(FILE *stream, int opts);
  */
 int
 xnvme_ver_pr(int opts);
-
-#endif

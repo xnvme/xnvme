@@ -6,13 +6,6 @@
  * @headerfile libxnvme_ident.h
  */
 
-#ifndef __LIBXNVME_IDENT
-#define __LIBXNVME_IDENT
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define XNVME_IDENT_URI_LEN 384
 
 #define XNVME_IDENT_SCHM_LEN 5
@@ -51,9 +44,3 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_ident) == 704, "Incorrect size")
  */
 int
 xnvme_ident_from_uri(const char *uri, struct xnvme_ident *ident);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* __LIBXNVME_IDENT */

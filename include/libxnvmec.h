@@ -6,18 +6,6 @@
  * @headerfile libxnvmec.h
  */
 
-#ifndef __LIBXNVMEC_H
-#define __LIBXNVMEC_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <libxnvme.h>
-#include <libxnvme_util.h>
-#include <libxnvme_ver.h>
-#include <libxnvme_pp.h>
-
 #define XNVMEC_CORE_OPTS                                                        \
 	{XNVMEC_OPT_ORCH_TITLE, XNVMEC_SKIP}, {XNVMEC_OPT_SUBNQN, XNVMEC_LOPT}, \
 		{XNVMEC_OPT_HOSTNQN, XNVMEC_LOPT},                              \
@@ -595,9 +583,3 @@ xnvmec(struct xnvmec *cli, int argc, char **argv, int opts);
  */
 int
 xnvmec_cli_to_opts(const struct xnvmec *cli, struct xnvme_opts *opts);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* LIBXNVMEC_H */

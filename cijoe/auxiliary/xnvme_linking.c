@@ -1,5 +1,4 @@
 #include <libxnvme.h>
-#include <libxnvme_pp.h>
 
 int
 enum_cb(struct xnvme_dev *dev, void *cb_args)

@@ -5,13 +5,12 @@
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 700
 #endif
+#include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_RAMDISK_ENABLED
 #include <errno.h>
-#include <sys/stat.h>
 #include <unistd.h>
-#include <libxnvme_spec_fs.h>
 #include <xnvme_be_ramdisk.h>
 #include <xnvme_dev.h>
 

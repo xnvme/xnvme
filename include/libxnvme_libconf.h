@@ -9,7 +9,6 @@
 #ifndef __LIBXNVME_LIBCONF_H
 #define __LIBXNVME_LIBCONF_H
 #include <libxnvme.h>
-#include <libxnvme_pp.h>
 
 #ifdef __cplusplus
 extern "C" {

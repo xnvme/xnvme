@@ -6,13 +6,6 @@
  * @headerfile libxnvme_be.h
  */
 
-#ifndef __LIBXNVME_BE_H
-#define __LIBXNVME_BE_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * Representation of xNVMe library backend attributes
  *
@@ -44,9 +37,3 @@ struct xnvme_be_attr_list {
  */
 int
 xnvme_be_attr_list_bundled(struct xnvme_be_attr_list **list);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* __LIBXNVME_BE_H */

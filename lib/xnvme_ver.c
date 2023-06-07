@@ -3,8 +3,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <libxnvme.h>
-#include <libxnvme_pp.h>
-#include <stdio.h>
 
 int
 xnvme_ver_major(void)

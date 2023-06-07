@@ -6,13 +6,6 @@
  * @headerfile libxnvme_buf.h
  */
 
-#ifndef __LIBXNVME_BUF_H
-#define __LIBXNVME_BUF_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * Allocate a buffer for IO with the given device
  *
@@ -149,9 +142,3 @@ xnvme_buf_virt_alloc(size_t alignment, size_t nbytes);
  */
 void
 xnvme_buf_virt_free(void *buf);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* __LIBXNVME_BUF_H */

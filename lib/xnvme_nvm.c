@@ -2,11 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 #include <errno.h>
-#include <libxnvme_nvm.h>
+#include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_dev.h>
 

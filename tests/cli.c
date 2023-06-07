@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <errno.h>
-#include <libxnvmec.h>
+#include <libxnvme.h>
 
 static int
 sub_optional(struct xnvmec *cli)

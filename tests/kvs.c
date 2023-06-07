@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <errno.h>
-#include <libxnvmec.h>
-#include <libxnvme_kvs.h>
+#include <libxnvme.h>
 
 static int
 kvs_io(struct xnvmec *cli)

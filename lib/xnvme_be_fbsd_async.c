@@ -18,7 +18,6 @@
 #include <xnvme_queue.h>
 #include <xnvme_be_fbsd.h>
 #include <xnvme_dev.h>
-#include <libxnvme_spec_fs.h>
 
 struct xnvme_queue_kqueue {
 	struct xnvme_queue_base base;

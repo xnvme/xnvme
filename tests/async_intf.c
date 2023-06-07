@@ -2,11 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <stdio.h>
 #include <errno.h>
 #include <libxnvme.h>
-#include <libxnvme_adm.h>
-#include <libxnvmec.h>
 
 #define XNVME_TESTS_QDEPTH_MAX 512
 #define XNVME_TESTS_NQUEUE_MAX 1024

@@ -7,13 +7,16 @@
  */
 
 #ifndef __LIBXNVME_ZND_H
+/**
+ * This include-guard is here despite header-guards being removed on all other
+ * public API headers. This is because fio is using it and we do not wish to
+ * break fio.
+ */
 #define __LIBXNVME_ZND_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <libxnvme.h>
 
 /**
  * @todo Document this

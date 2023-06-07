@@ -3,20 +3,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #define _XOPEN_SOURCE 700
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <stdio.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <getopt.h>
 #include <limits.h>
-#include <time.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <libxnvmec.h>
+#include <libxnvme.h>
 #include <xnvme_be.h>
-#include <libxnvme_file.h>
 
 #define XNVMEC_SUB_MAXOPTS 64
 
