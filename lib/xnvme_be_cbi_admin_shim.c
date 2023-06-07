@@ -11,7 +11,6 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <libxnvme_spec_fs.h>
 #include <xnvme_be_cbi.h>
 #include <xnvme_dev.h>
 

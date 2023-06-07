@@ -5,9 +5,9 @@
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_SPDK_ENABLED
-#include <xnvme_dev.h>
-#include <spdk/env.h>
 #include <errno.h>
+#include <spdk/env.h>
+#include <xnvme_dev.h>
 
 void *
 xnvme_be_spdk_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)

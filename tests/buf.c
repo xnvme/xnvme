@@ -2,9 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <stdio.h>
 #include <errno.h>
-#include <libxnvmec.h>
+#include <libxnvme.h>
 
 static int
 test_buf_alloc_free(struct xnvmec *cli)

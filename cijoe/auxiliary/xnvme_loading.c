@@ -1,9 +1,5 @@
 #include <dlfcn.h>
 #include <libxnvme.h>
-#include <libxnvme_ident.h>
-#include <libxnvme_pp.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 struct lib {
 	void *handle;

@@ -7,12 +7,12 @@
  * does not flush to the storage device. To achieve the same behavior fcntl(..., F_FULLFSYNC) is
  * needed. To normalize the behavior, this is is applied here for cmd_io() and cmd_iov().
  */
+#include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_MACOS_ENABLED
 #include <errno.h>
 #include <unistd.h>
-#include <libxnvme_spec_fs.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_cbi.h>
 #include <fcntl.h>

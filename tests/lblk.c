@@ -2,13 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <stdbool.h>
-#include <stdio.h>
 #include <errno.h>
-#include <libxnvme_nvm.h>
-#include <libxnvme_spec.h>
-#include <libxnvme_spec_pp.h>
-#include <libxnvmec.h>
+#include <libxnvme.h>
 
 /**
  * Constructs an LBA range if --slba and --elba are not provided by CLI

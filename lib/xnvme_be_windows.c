@@ -5,13 +5,13 @@
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 700
 #endif
+#include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_WINDOWS_ENABLED
 #include <xnvme_be_cbi.h>
 #include <windows.h>
 #include <xnvme_be_windows.h>
-#include <libxnvme_file.h>
 
 #define STATUS_SUCCESS (0x00000000)
 

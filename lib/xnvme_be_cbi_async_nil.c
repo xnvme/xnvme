@@ -11,7 +11,6 @@
 #include <errno.h>
 #include <xnvme_queue.h>
 #include <xnvme_dev.h>
-#include <libxnvme.h>
 
 #define XNVME_BE_CBI_ASYNC_NIL_CTX_DEPTH_MAX 29
 

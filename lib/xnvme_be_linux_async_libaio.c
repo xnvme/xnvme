@@ -5,6 +5,7 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
+#include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
@@ -14,7 +15,6 @@
 #include <xnvme_be_linux.h>
 #include <xnvme_be_linux_libaio.h>
 #include <xnvme_dev.h>
-#include <libxnvme_spec_fs.h>
 
 int
 _linux_libaio_term(struct xnvme_queue *q)

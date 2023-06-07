@@ -2,12 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <errno.h>
-#include <sys/stat.h>
 #include <libxnvme.h>
-#include <libxnvme_pp.h>
 
 void
 xnvme_opts_set_defaults(struct xnvme_opts *opts)

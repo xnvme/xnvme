@@ -6,9 +6,6 @@
  * @headerfile libxnvme_util.h
  */
 
-#ifndef __LIBXNVME_UTIL_H
-#define __LIBXNVME_UTIL_H
-
 #define XNVME_UNIVERSAL_SECT_SH 9
 
 /**
@@ -344,5 +341,3 @@ xnvme_is_pow2(uint32_t val)
 #define XNVME_DEBUG(...)
 #define XNVME_DEBUG_FCALL(x)
 #endif
-
-#endif /* __LIBXNVME_UTIL_H */

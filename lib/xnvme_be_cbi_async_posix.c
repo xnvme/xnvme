@@ -11,7 +11,6 @@
 #include <inttypes.h>
 #include <errno.h>
 #include <aio.h>
-#include <libxnvme_spec_fs.h>
 #include <xnvme_queue.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_cbi.h>

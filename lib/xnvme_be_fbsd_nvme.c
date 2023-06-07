@@ -16,7 +16,6 @@ __FBSDID("$FreeBSD$");
 #include <unistd.h>
 #include <dev/nvme/nvme.h>
 #include <errno.h>
-#include <libxnvme_spec_fs.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_fbsd.h>
 

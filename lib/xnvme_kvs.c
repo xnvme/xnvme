@@ -2,18 +2,11 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 #include <errno.h>
 #include <libxnvme.h>
-#include <libxnvme_spec_pp.h>
-#include <libxnvme_adm.h>
-#include <libxnvme_kvs.h>
 #include <xnvme_be.h>
 #include <xnvme_dev.h>
 #include <xnvme_spec.h>
-#include <libxnvmec.h>
 
 static inline void
 kvs_cmd_set_key(struct xnvme_spec_cmd *cmd, const void *key, uint8_t key_len)

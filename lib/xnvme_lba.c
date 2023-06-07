@@ -3,8 +3,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <libxnvme.h>
-#include <libxnvme_lba.h>
-#include <libxnvme_pp.h>
 
 int
 xnvme_lba_range_fpr(FILE *stream, struct xnvme_lba_range *range, int opts)

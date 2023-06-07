@@ -2,15 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <stdio.h>
 #include <errno.h>
 #include <libxnvme.h>
-#include <libxnvme_pp.h>
-#include <libxnvme_nvm.h>
-#include <libxnvme_lba.h>
-#include <libxnvmec.h>
-#include <libxnvme_util.h>
-#include <time.h>
 
 #define DEFAULT_QD 8
 

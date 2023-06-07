@@ -2,9 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <libxnvme.h>
-#include <stdbool.h>
 #include <errno.h>
+#include <libxnvme.h>
 
 void
 xnvme_prep_adm_log(struct xnvme_cmd_ctx *ctx, uint8_t lid, uint8_t lsp, uint64_t lpo_nbytes,

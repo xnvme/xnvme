@@ -13,7 +13,6 @@
 #ifdef XNVME_BE_CBI_SYNC_PSYNC_ENABLED
 #include <errno.h>
 #include <unistd.h>
-#include <libxnvme_spec_fs.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_cbi.h>
 

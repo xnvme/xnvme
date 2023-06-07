@@ -2,15 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <errno.h>
 #include <libxnvme.h>
-#include <libxnvme_adm.h>
-#include <libxnvme_nvm.h>
-#include <libxnvme_libconf.h>
-#include <libxnvmec.h>
 
 #define SET_EVENT_TYPES ((uint8_t[]){0x0, 0x1, 0x2, 0x3, 0x80, 0x81})
 #define SET_EVENT_BUF_SIZE sizeof(SET_EVENT_TYPES)

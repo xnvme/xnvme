@@ -5,14 +5,6 @@
  *
  * @headerfile libxnvme_kv.h
  */
-#ifndef __LIBXNVME_KV_H
-#define __LIBXNVME_KV_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <libxnvme.h>
 
 enum xnvme_retreive_opts {
 	XNVME_KVS_RETRIEVE_OPT_RETRIEVE_RAW = 1 << 0,
@@ -97,9 +89,3 @@ xnvme_kvs_exist(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, uint8
 int
 xnvme_kvs_list(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, uint8_t key_len,
 	       const void *vbuf, uint32_t vbuf_nbytes);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* __LIBXNVME_KV_H */

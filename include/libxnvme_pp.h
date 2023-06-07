@@ -6,15 +6,6 @@
  * @headerfile libxnvme_pp.h
  */
 
-#ifndef __LIBXNVME_PP_H
-#define __LIBXNVME_PP_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <libxnvme.h>
-
 /**
  * Options for pretty-printer (``*_pr``, ``*_fpr``) functions
  *
@@ -216,9 +207,3 @@ xnvme_cmd_ctx_pr(const struct xnvme_cmd_ctx *ctx, int UNUSED_opts);
  */
 int
 xnvme_opts_pr(const struct xnvme_opts *opts, int pr_opts);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* __LIBXNVME_PP_H */

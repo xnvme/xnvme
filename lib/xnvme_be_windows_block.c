@@ -5,10 +5,10 @@
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 700
 #endif
+#include <libxnvme.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_WINDOWS_ENABLED
-#include <libxnvme_spec.h>
 #include <errno.h>
 #include <windows.h>
 #include <winioctl.h>

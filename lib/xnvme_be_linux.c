@@ -5,6 +5,7 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
+#include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_LINUX_ENABLED
@@ -17,12 +18,6 @@
 #include <sys/stat.h>
 #include <linux/fs.h>
 #include <linux/version.h>
-#include <libxnvme.h>
-#include <libxnvme_be.h>
-#include <libxnvme_file.h>
-#include <libxnvme_spec_fs.h>
-#include <libxnvme_adm.h>
-#include <libxnvme_znd.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_cbi.h>
 #include <xnvme_be_linux.h>

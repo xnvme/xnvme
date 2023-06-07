@@ -6,13 +6,6 @@
  * @headerfile libxnvme_lba.h
  */
 
-#ifndef __LIBXNVME_LBA_H
-#define __LIBXNVME_LBA_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * Representation of a range of logical-block-addresses aka LBAs
  *
@@ -104,9 +97,3 @@ xnvme_lba_range_from_slba_naddrs(struct xnvme_dev *dev, uint64_t slba, uint64_t 
  */
 struct xnvme_lba_range
 xnvme_lba_range_from_zdescr(struct xnvme_dev *dev, struct xnvme_spec_znd_descr *zdescr);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* __LIBXNVME_H */
