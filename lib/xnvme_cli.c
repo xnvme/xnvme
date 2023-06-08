@@ -2059,3 +2059,23 @@ xnvme_cli_enumeration_pp(struct xnvme_cli_enumeration *list, int opts)
 {
 	return xnvme_cli_enumeration_fpp(stdout, list, opts);
 }
+
+uint64_t
+xnvme_cli_timer_start(struct xnvme_cli *cli)
+{
+	cli->timer.start = _xnvme_timer_clock_sample();
+	return cli->timer.start;
+}
+
+uint64_t
+xnvme_cli_timer_stop(struct xnvme_cli *cli)
+{
+	cli->timer.stop = _xnvme_timer_clock_sample();
+	return cli->timer.stop;
+}
+
+void
+xnvme_cli_timer_bw_pr(struct xnvme_cli *cli, const char *prefix, size_t nbytes)
+{
+	xnvme_timer_bw_pr(&cli->timer, prefix, nbytes);
+}
