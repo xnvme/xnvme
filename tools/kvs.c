@@ -92,9 +92,9 @@ cmd_idfy_ns(struct xnvmec *cli)
 
 	if (cli->args.data_output) {
 		xnvmec_pinf("Dumping to: '%s'", cli->args.data_output);
-		err = xnvmec_buf_to_file((char *)idfy, sizeof(*idfy), cli->args.data_output);
+		err = xnvme_buf_to_file((char *)idfy, sizeof(*idfy), cli->args.data_output);
 		if (err) {
-			xnvmec_perr("xnvmec_buf_to_file()", err);
+			xnvmec_perr("xnvme_buf_to_file()", err);
 		}
 	}
 
@@ -140,9 +140,9 @@ cmd_retrieve(struct xnvmec *cli)
 
 	if (cli->args.data_output) {
 		xnvmec_pinf("dumping to: '%s'", cli->args.data_output);
-		err = xnvmec_buf_to_file(dbuf, dbuf_nbytes, cli->args.data_output);
+		err = xnvme_buf_to_file(dbuf, dbuf_nbytes, cli->args.data_output);
 		if (err) {
-			xnvmec_perr("xnvmec_buf_to_file()", err);
+			xnvmec_perr("xnvme_buf_to_file()", err);
 		}
 	} else {
 		xnvmec_pinf("KV Value retrieved: '%s'", dbuf);

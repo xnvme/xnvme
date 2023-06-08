@@ -37,9 +37,9 @@ test_open_zdptr(struct xnvmec *cli)
 		err = -errno;
 		goto exit;
 	}
-	err = xnvmec_buf_fill(zde, zde_nbytes, "anum");
+	err = xnvme_buf_fill(zde, zde_nbytes, "anum");
 	if (err) {
-		xnvmec_perr("xnvmec_buf_fill()", err);
+		xnvmec_perr("xnvme_buf_fill()", err);
 		goto exit;
 	}
 
@@ -113,8 +113,8 @@ test_open_zdptr(struct xnvmec *cli)
 		struct xnvme_spec_znd_descr *descr = XNVME_ZND_REPORT_DESCR(after, zidx);
 		uint8_t *zde_after = XNVME_ZND_REPORT_DEXT(after, zidx);
 
-		if (xnvmec_buf_diff(zde, zde_after, zde_nbytes)) {
-			xnvmec_buf_diff_pr(zde, descr, zde_nbytes, XNVME_PR_DEF);
+		if (xnvme_buf_diff(zde, zde_after, zde_nbytes)) {
+			xnvme_buf_diff_pr(zde, descr, zde_nbytes, XNVME_PR_DEF);
 			err = -EIO;
 			goto exit;
 		}

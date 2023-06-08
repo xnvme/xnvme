@@ -142,3 +142,77 @@ xnvme_buf_virt_alloc(size_t alignment, size_t nbytes);
  */
 void
 xnvme_buf_virt_free(void *buf);
+
+/**
+ * Fills `buf` with content `nbytes` of content
+ *
+ * @param buf Pointer to the buffer to fill
+ * @param content Name of a file, or special "zero", "anum", "rand-k", "rand-t"
+ * @param nbytes Amount of bytes to fill in buf
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ */
+int
+xnvme_buf_fill(void *buf, size_t nbytes, const char *content);
+
+/**
+ * Write zeroes to the first 'nbytes' of 'buf'
+ *
+ * @param buf Pointer to the buffer to fill with zeroes
+ * @param nbytes Amount of bytes to fill with zeroes in buf
+ *
+ * @return Returns the first argument.
+ */
+void *
+xnvme_buf_clear(void *buf, size_t nbytes);
+
+/**
+ * Returns the number of bytes where expected is different from actual
+ *
+ * @param expected Pointer to buffer of "expected" content
+ * @param actual Pointer to buffer to compare to "expected"
+ * @param nbytes Amount of bytes to compare
+ *
+ * @return On success, returns number of bytes that differ
+ */
+size_t
+xnvme_buf_diff(const void *expected, const void *actual, size_t nbytes);
+
+/**
+ * Prints the number and value of bytes where expected is different from actual
+ *
+ * @param expected Pointer to buffer of "expected" content
+ * @param actual Pointer to buffer to compare to "expected"
+ * @param nbytes Amount of bytes to compare
+ * @param opts printer options, see ::xnvme_pr
+ */
+void
+xnvme_buf_diff_pr(const void *expected, const void *actual, size_t nbytes, int opts);
+
+/**
+ * Write content of buffer into file
+ *
+ * - If file exists, then it is truncated / overwritten
+ * - If file does NOT exist, then it is created
+ * - When file is created, permissions are set to user WRITE + READ
+ *
+ * @param buf Pointer to the buffer
+ * @param nbytes Size of buf
+ * @param path Destination where buffer will be dumped to
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ */
+int
+xnvme_buf_to_file(void *buf, size_t nbytes, const char *path);
+
+/**
+ * Read content of file into buffer
+ *
+ * @param buf Pointer to the buffer
+ * @param nbytes Size of buf
+ * @param path Source to read from
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ */
+int
+xnvme_buf_from_file(void *buf, size_t nbytes, const char *path);

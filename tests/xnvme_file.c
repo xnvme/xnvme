@@ -28,7 +28,7 @@ test_file_fsync(struct xnvmec *cli)
 		xnvme_file_close(fh);
 		return -errno;
 	}
-	xnvmec_buf_fill(buf, bytes_per_write, "ascii");
+	xnvme_buf_fill(buf, bytes_per_write, "ascii");
 
 	for (size_t i = 0; i < num_writes; i++) {
 		struct xnvme_cmd_ctx ctx = xnvme_file_get_cmd_ctx(fh);
@@ -75,7 +75,7 @@ file_write_ascii(const char *path, size_t nbytes, struct xnvme_opts *opts)
 		xnvme_file_close(fh);
 		return -errno;
 	}
-	xnvmec_buf_fill(buf, nbytes, "ascii");
+	xnvme_buf_fill(buf, nbytes, "ascii");
 
 	ctx = xnvme_file_get_cmd_ctx(fh);
 	err = xnvme_file_pwrite(&ctx, buf, nbytes, 0);

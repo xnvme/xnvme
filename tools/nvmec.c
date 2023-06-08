@@ -11,9 +11,9 @@ sub_show(struct xnvmec *cli)
 	struct xnvme_spec_cmd cmd = {0};
 	int err;
 
-	err = xnvmec_buf_from_file(&cmd, sizeof(cmd), cli->args.cmd_input);
+	err = xnvme_buf_from_file(&cmd, sizeof(cmd), cli->args.cmd_input);
 	if (err) {
-		xnvmec_perr("xnvmec_buf_from_file()", err);
+		xnvmec_perr("xnvme_buf_from_file()", err);
 		xnvmec_pinf("Error reading: '%s'", cli->args.cmd_input);
 		return err;
 	}
@@ -95,9 +95,9 @@ sub_create(struct xnvmec *cli)
 		}
 	}
 
-	err = xnvmec_buf_to_file(&cmd, sizeof(cmd), cli->args.cmd_output);
+	err = xnvme_buf_to_file(&cmd, sizeof(cmd), cli->args.cmd_output);
 	if (err) {
-		xnvmec_perr("xnvmec_buf_to_file()", err);
+		xnvmec_perr("xnvme_buf_to_file()", err);
 		xnvmec_pinf("Error writing: '%s'", cli->args.cmd_output);
 		return err;
 	}

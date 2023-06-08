@@ -75,8 +75,8 @@ kvs_io(struct xnvmec *cli)
 	xnvmec_pinf("KV Value retrieved: '%s'", rbuf);
 
 	xnvmec_pinf("Comparing wbuf and rbuf");
-	if (xnvmec_buf_diff(dbuf, rbuf, kv_val_nbytes)) {
-		xnvmec_buf_diff_pr(dbuf, rbuf, kv_val_nbytes, XNVME_PR_DEF);
+	if (xnvme_buf_diff(dbuf, rbuf, kv_val_nbytes)) {
+		xnvme_buf_diff_pr(dbuf, rbuf, kv_val_nbytes, XNVME_PR_DEF);
 		goto exit;
 	}
 exit:

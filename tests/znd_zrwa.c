@@ -180,9 +180,9 @@ test_flush(struct xnvmec *cli)
 		xnvmec_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	err = xnvmec_buf_fill(dbuf, dbuf_nbytes, "anum");
+	err = xnvme_buf_fill(dbuf, dbuf_nbytes, "anum");
 	if (err) {
-		xnvmec_perr("xnvmec_buf_fill()", err);
+		xnvmec_perr("xnvme_buf_fill()", err);
 		goto exit;
 	}
 
@@ -284,9 +284,9 @@ test_flush_implicit(struct xnvmec *cli)
 		xnvmec_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	err = xnvmec_buf_fill(dbuf, dbuf_nbytes, "anum");
+	err = xnvme_buf_fill(dbuf, dbuf_nbytes, "anum");
 	if (err) {
-		xnvmec_perr("xnvmec_buf_fill()", err);
+		xnvmec_perr("xnvme_buf_fill()", err);
 		goto exit;
 	}
 
