@@ -29,15 +29,15 @@ xnvmec_copy_io(struct xnvmec *cli)
 		return -errno;
 	}
 
-	err = xnvmec_buf_from_file(buf, file_size, input_path);
+	err = xnvme_buf_from_file(buf, file_size, input_path);
 	if (err) {
 		xnvmec_perr("xnvme_buf_from_file()", errno);
 		goto exit;
 	}
 
-	err = xnvmec_buf_to_file(buf, file_size, output_path);
+	err = xnvme_buf_to_file(buf, file_size, output_path);
 	if (err) {
-		xnvmec_perr("xnvmec_buf_to_file()", errno);
+		xnvmec_perr("xnvme_buf_to_file()", errno);
 		goto exit;
 	}
 
@@ -70,8 +70,8 @@ xnvmec_check_opt_attr(struct xnvmec *XNVME_UNUSED(cli))
 static struct xnvmec_sub g_subs[] = {
 	{
 		"copy-xnvmec",
-		"Copy a file using xnvmec_buf_{to,from}_file",
-		"Copy a file using xnvmec_buf_{to,from}_file",
+		"Copy a file using xnvme_buf_{to,from}_file",
+		"Copy a file using xnvme_buf_{to,from}_file",
 		xnvmec_copy_io,
 		{
 			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
