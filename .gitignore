@@ -48,3 +48,5 @@ subprojects/*
 dist
 selftest_results
 *.egg-info
+# macos
+.DS_Store
