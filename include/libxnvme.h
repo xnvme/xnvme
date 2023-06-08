@@ -52,7 +52,7 @@ extern "C" {
 #include "libxnvme_kvs.h"
 #include "libxnvme_znd.h"
 #include "libxnvme_libconf.h"
-#include "libxnvmec.h"
+#include "libxnvme_cli.h"
 
 #ifdef __cplusplus
 }

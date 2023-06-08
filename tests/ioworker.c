@@ -227,7 +227,7 @@ on_completion(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 	work->stats.ncompletions += 1;
 
 	if (xnvme_cmd_ctx_cpl_status(ctx)) {
-		xnvmec_perr("on_completion()", errno);
+		xnvme_cli_perr("on_completion()", errno);
 		xnvme_cmd_ctx_pr(ctx, XNVME_PR_DEF);
 		goto error;
 	}
@@ -269,14 +269,14 @@ iowork_teardown(struct iowork *work)
 
 	err = xnvme_queue_term(work->queue);
 	if (err) {
-		xnvmec_perr("xnvme_queue_term()", err);
+		xnvme_cli_perr("xnvme_queue_term()", err);
 	}
 
 	return 0;
 }
 
 static int
-iowork_from_cli(struct xnvmec *cli, struct iowork *work)
+iowork_from_cli(struct xnvme_cli *cli, struct iowork *work)
 {
 	int err;
 
@@ -285,8 +285,8 @@ iowork_from_cli(struct xnvmec *cli, struct iowork *work)
 	work->dev = cli->args.dev;
 	work->nsid = xnvme_dev_get_nsid(work->dev);
 	work->geo = xnvme_dev_get_geo(work->dev);
-	work->qdepth = cli->given[XNVMEC_OPT_QDEPTH] ? cli->args.qdepth : QDEPTH_DEF;
-	work->vectored = cli->given[XNVMEC_OPT_VEC_CNT] && cli->args.vec_cnt;
+	work->qdepth = cli->given[XNVME_CLI_OPT_QDEPTH] ? cli->args.qdepth : QDEPTH_DEF;
+	work->vectored = cli->given[XNVME_CLI_OPT_VEC_CNT] && cli->args.vec_cnt;
 	work->vec_cnt = work->vectored ? cli->args.vec_cnt : 1;
 
 	if (((work->qdepth) < 1) || (work->qdepth > QDEPTH_MAX)) {
@@ -381,15 +381,15 @@ static int
 final(struct iowork work, int err)
 {
 	size_t diff;
-	xnvmec_pinf("exit-stats: {submitted: %u, completed: %u, ecount: %u}",
-		    work.stats.nsubmissions, work.stats.ncompletions, work.stats.nerrors);
+	xnvme_cli_pinf("exit-stats: {submitted: %u, completed: %u, ecount: %u}",
+		       work.stats.nsubmissions, work.stats.ncompletions, work.stats.nerrors);
 
 	diff = xnvme_buf_diff(work.wbuf, work.rbuf, work.range.nbytes);
 	iowork_teardown(&work);
 
 	if (err || (work.stats.nerrors) || diff) {
-		xnvmec_pinf("ERR: {err: %d, nerrs: %" PRIu64 ", diff: %" PRIu64 "}", err,
-			    work.stats.nerrors, diff);
+		xnvme_cli_pinf("ERR: {err: %d, nerrs: %" PRIu64 ", diff: %" PRIu64 "}", err,
+			       work.stats.nerrors, diff);
 		return EIO;
 	}
 
@@ -397,7 +397,7 @@ final(struct iowork work, int err)
 }
 
 static int
-test_verify(struct xnvmec *cli)
+test_verify(struct xnvme_cli *cli)
 {
 	struct iowork work;
 	int err;
@@ -420,7 +420,7 @@ test_verify(struct xnvmec *cli)
 		// Fill queue with commands
 		err = start_workers(&work);
 		if (err) {
-			xnvmec_perr("_submit()", err);
+			xnvme_cli_perr("_submit()", err);
 			return final(work, err);
 		}
 
@@ -429,15 +429,16 @@ test_verify(struct xnvmec *cli)
 			int res = xnvme_queue_poke(work.queue, 0);
 			if (res < 0) {
 				err = res;
-				xnvmec_perr("xnvme_queue_poke()", err);
+				xnvme_cli_perr("xnvme_queue_poke()", err);
 				return final(work, err);
 			}
 		}
-		xnvmec_pinf("opc: %d, stats: {submitted: %u, completed: %u, ecount: %u}", work.opc,
-			    work.stats.nsubmissions, work.stats.ncompletions, work.stats.nerrors);
+		xnvme_cli_pinf("opc: %d, stats: {submitted: %u, completed: %u, ecount: %u}",
+			       work.opc, work.stats.nsubmissions, work.stats.ncompletions,
+			       work.stats.nerrors);
 
 		if (work.stats.ncompletions != work.nio) {
-			xnvmec_pinf("FAILED: logic-error; completions != submissions");
+			xnvme_cli_pinf("FAILED: logic-error; completions != submissions");
 			err = EIO;
 			return final(work, err);
 		}
@@ -447,7 +448,7 @@ test_verify(struct xnvmec *cli)
 }
 
 static int
-test_verify_sync(struct xnvmec *cli)
+test_verify_sync(struct xnvme_cli *cli)
 {
 	struct iowork work;
 	int err;
@@ -469,18 +470,18 @@ test_verify_sync(struct xnvmec *cli)
 
 		err = _submit_sync(&work);
 		if (err) {
-			xnvmec_perr("_submit()", err);
+			xnvme_cli_perr("_submit()", err);
 
 			return final(work, err);
 		}
 
-		xnvmec_pinf("opc: %d, stats: {submitted: %u, completed: %u, "
-			    "ecount: %u}",
-			    work.opc, work.stats.nsubmissions, work.stats.ncompletions,
-			    work.stats.nerrors);
+		xnvme_cli_pinf("opc: %d, stats: {submitted: %u, completed: %u, "
+			       "ecount: %u}",
+			       work.opc, work.stats.nsubmissions, work.stats.ncompletions,
+			       work.stats.nerrors);
 
 		if (work.stats.ncompletions != work.nio) {
-			xnvmec_pinf("FAILED: logic-error; completions != submissions");
+			xnvme_cli_pinf("FAILED: logic-error; completions != submissions");
 			err = EIO;
 			return final(work, err);
 		}
@@ -489,20 +490,20 @@ test_verify_sync(struct xnvmec *cli)
 	return final(work, err);
 }
 
-static struct xnvmec_sub g_subs[] = {
+static struct xnvme_cli_sub g_subs[] = {
 	{
 		"verify",
 		"Write, then read and compare",
 		"Write, then read and compare",
 		test_verify,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_VEC_CNT, XNVMEC_LOPT},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_VEC_CNT, XNVME_CLI_LOPT},
 
-			XNVMEC_ASYNC_OPTS,
+			XNVME_CLI_ASYNC_OPTS,
 		},
 	},
 	{
@@ -511,18 +512,18 @@ static struct xnvmec_sub g_subs[] = {
 		"Write, then read and compare",
 		test_verify_sync,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_VEC_CNT, XNVMEC_LOPT},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_VEC_CNT, XNVME_CLI_LOPT},
 
-			XNVMEC_SYNC_OPTS,
+			XNVME_CLI_SYNC_OPTS,
 		},
 	},
 };
 
-static struct xnvmec g_cli = {
+static struct xnvme_cli g_cli = {
 	.title = "Test xNVMe basic buffer alloc/free",
 	.descr_short = "Test xNVMe basic buffer alloc/free",
 	.subs = g_subs,
@@ -532,5 +533,5 @@ static struct xnvmec g_cli = {
 int
 main(int argc, char **argv)
 {
-	return xnvmec(&g_cli, argc, argv, XNVMEC_INIT_DEV_OPEN);
+	return xnvme_cli_run(&g_cli, argc, argv, XNVME_CLI_INIT_DEV_OPEN);
 }

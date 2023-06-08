@@ -13,48 +13,48 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 
-#define XNVMEC_SUB_MAXOPTS 64
+#define XNVME_CLI_SUB_MAXOPTS 64
 
 const char *
-xnvmec_opt_type_str(enum xnvmec_opt_type otype)
+xnvme_cli_opt_type_str(enum xnvme_cli_opt_type otype)
 {
 	switch (otype) {
-	case XNVMEC_POSA:
-		return "XNVMEC_POSA";
-	case XNVMEC_LFLG:
-		return "XNVMEC_LFLG";
-	case XNVMEC_LOPT:
-		return "XNVMEC_LOPT";
-	case XNVMEC_LREQ:
-		return "XNVMEC_LREQ";
-	case XNVMEC_SKIP:
-		return "XNVMEC_SKIP";
+	case XNVME_CLI_POSA:
+		return "XNVME_CLI_POSA";
+	case XNVME_CLI_LFLG:
+		return "XNVME_CLI_LFLG";
+	case XNVME_CLI_LOPT:
+		return "XNVME_CLI_LOPT";
+	case XNVME_CLI_LREQ:
+		return "XNVME_CLI_LREQ";
+	case XNVME_CLI_SKIP:
+		return "XNVME_CLI_SKIP";
 	}
 
-	return "XNVMEC_ENOSYS";
+	return "XNVME_CLI_ENOSYS";
 }
 
 /**
  * Returns the minimum width required for sub-name, should be in the range
- * [0, XNVMEC_SUB_NAME_LEN_MAX]
+ * [0, XNVME_CLI_SUB_NAME_LEN_MAX]
  */
 static inline size_t
-sub_name_wmin(struct xnvmec *cli)
+sub_name_wmin(struct xnvme_cli *cli)
 {
 	size_t wmin = 0;
 
 	for (int i = 0; i < cli->nsubs; ++i) {
 		size_t len = 0;
 
-		len = strnlen(cli->subs[i].name, XNVMEC_SUB_NAME_LEN_MAX);
+		len = strnlen(cli->subs[i].name, XNVME_CLI_SUB_NAME_LEN_MAX);
 		wmin = len > wmin ? len : wmin;
 	}
 
 	return wmin;
 }
 
-struct xnvmec_sub *
-sub_by_name(struct xnvmec *cli, const char *name)
+struct xnvme_cli_sub *
+sub_by_name(struct xnvme_cli *cli, const char *name)
 {
 	for (int i = 0; i < cli->nsubs; ++i) {
 		if (!cli->subs[i].name) {
@@ -70,9 +70,9 @@ sub_by_name(struct xnvmec *cli, const char *name)
 
 // TODO: finish this printer function
 void
-xnvmec_args_pr(struct xnvmec_args *args, int opts)
+xnvme_cli_args_pr(struct xnvme_cli_args *args, int opts)
 {
-	xnvmec_pinf("opts: %d", opts);
+	xnvme_cli_pinf("opts: %d", opts);
 
 	for (int i = 0; i < 16; ++i) {
 		printf("cdw%i: 0x%x\n", i, args->cdw[i]);
@@ -92,760 +92,760 @@ xnvmec_args_pr(struct xnvmec_args *args, int opts)
 }
 
 const char *
-xnvmec_opt_value_type_str(int vtype)
+xnvme_cli_opt_value_type_str(int vtype)
 {
 	switch (vtype) {
-	case XNVMEC_OPT_VTYPE_URI:
+	case XNVME_CLI_OPT_VTYPE_URI:
 		return "uri";
-	case XNVMEC_OPT_VTYPE_NUM:
+	case XNVME_CLI_OPT_VTYPE_NUM:
 		return "NUM";
-	case XNVMEC_OPT_VTYPE_HEX:
+	case XNVME_CLI_OPT_VTYPE_HEX:
 		return "0xNUM";
-	case XNVMEC_OPT_VTYPE_FILE:
+	case XNVME_CLI_OPT_VTYPE_FILE:
 		return "FILE";
-	case XNVMEC_OPT_VTYPE_STR:
+	case XNVME_CLI_OPT_VTYPE_STR:
 		return "STRING";
 	}
 
 	return "ENOSYS";
 }
 
-static struct xnvmec_opt_attr xnvmec_opts[] = {
+static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 	{
-		.opt = XNVMEC_OPT_CDW00,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_CDW00,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "cdw0",
 		.descr = "Command Dword0",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW01,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_CDW01,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "cdw1",
 		.descr = "Command Dword1",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW02,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_CDW02,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "cdw2",
 		.descr = "Command Dword2",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW03,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_CDW03,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "cdw3",
 		.descr = "Command Dword3",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW04,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_CDW04,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "cdw4",
 		.descr = "Command Dword4",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW05,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_CDW05,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "cdw5",
 		.descr = "Command Dword5",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW06,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_CDW06,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "cdw6",
 		.descr = "Command Dword6",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW07,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_CDW07,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "cdw7",
 		.descr = "Command Dword7",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW08,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_CDW08,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "cdw8",
 		.descr = "Command Dword8",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW09,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_CDW09,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "cdw9",
 		.descr = "Command Dword9",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW10,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_CDW10,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "cdw10",
 		.descr = "Command Dword10",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW11,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_CDW11,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "cdw11",
 		.descr = "Command Dword11",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW12,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_CDW12,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "cdw12",
 		.descr = "Command Dword12",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW13,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_CDW13,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "cdw13",
 		.descr = "Command Dword13",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW14,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_CDW14,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "cdw14",
 		.descr = "Command Dword14",
 	},
 	{
-		.opt = XNVMEC_OPT_CDW15,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_CDW15,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "cdw15",
 		.descr = "Command Dword15",
 	},
 	{
-		.opt = XNVMEC_OPT_CMD_INPUT,
-		.vtype = XNVMEC_OPT_VTYPE_FILE,
+		.opt = XNVME_CLI_OPT_CMD_INPUT,
+		.vtype = XNVME_CLI_OPT_VTYPE_FILE,
 		.name = "cmd-input",
 		.descr = "Path to command input-file",
 	},
 	{
-		.opt = XNVMEC_OPT_CMD_OUTPUT,
-		.vtype = XNVMEC_OPT_VTYPE_FILE,
+		.opt = XNVME_CLI_OPT_CMD_OUTPUT,
+		.vtype = XNVME_CLI_OPT_VTYPE_FILE,
 		.name = "cmd-output",
 		.descr = "Path to command output-file",
 	},
 	{
-		.opt = XNVMEC_OPT_DATA_NBYTES,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_DATA_NBYTES,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "data-nbytes",
 		.descr = "Data size in bytes",
 	},
 	{
-		.opt = XNVMEC_OPT_DATA_INPUT,
-		.vtype = XNVMEC_OPT_VTYPE_FILE,
+		.opt = XNVME_CLI_OPT_DATA_INPUT,
+		.vtype = XNVME_CLI_OPT_VTYPE_FILE,
 		.name = "data-input",
 		.descr = "Path to data input-file",
 	},
 	{
-		.opt = XNVMEC_OPT_DATA_OUTPUT,
-		.vtype = XNVMEC_OPT_VTYPE_FILE,
+		.opt = XNVME_CLI_OPT_DATA_OUTPUT,
+		.vtype = XNVME_CLI_OPT_VTYPE_FILE,
 		.name = "data-output",
 		.descr = "Path to data output-file",
 	},
 	{
-		.opt = XNVMEC_OPT_META_NBYTES,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_META_NBYTES,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "meta-nbytes",
 		.descr = "Meta size in bytes",
 	},
 	{
-		.opt = XNVMEC_OPT_META_INPUT,
-		.vtype = XNVMEC_OPT_VTYPE_FILE,
+		.opt = XNVME_CLI_OPT_META_INPUT,
+		.vtype = XNVME_CLI_OPT_VTYPE_FILE,
 		.name = "meta-input",
 		.descr = "Path to meta input-file",
 	},
 	{
-		.opt = XNVMEC_OPT_META_OUTPUT,
-		.vtype = XNVMEC_OPT_VTYPE_FILE,
+		.opt = XNVME_CLI_OPT_META_OUTPUT,
+		.vtype = XNVME_CLI_OPT_VTYPE_FILE,
 		.name = "meta-output",
 		.descr = "Path to meta output-file",
 	},
 	{
-		.opt = XNVMEC_OPT_LBAF,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_LBAF,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "lbaf",
 		.descr = "LBA Format",
 	},
 	{
-		.opt = XNVMEC_OPT_SLBA,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_SLBA,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "slba",
 		.descr = "Start Logical Block Address",
 	},
 	{
-		.opt = XNVMEC_OPT_ELBA,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_ELBA,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "elba",
 		.descr = "End Logical Block Address",
 	},
 	{
-		.opt = XNVMEC_OPT_LBA,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_LBA,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "lba",
 		.descr = "Logical Block Address",
 	},
 	{
-		.opt = XNVMEC_OPT_NLB,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_NLB,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "nlb",
 		.descr = "Number of LBAs (NOTE: zero-based value)",
 	},
 	{
-		.opt = XNVMEC_OPT_LLB,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_LLB,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "llb",
 		.descr = "Length in LBAs (NOTE: one-based value)",
 	},
 	{
-		.opt = XNVMEC_OPT_URI,
-		.vtype = XNVMEC_OPT_VTYPE_URI,
+		.opt = XNVME_CLI_OPT_URI,
+		.vtype = XNVME_CLI_OPT_VTYPE_URI,
 		.name = "uri",
 		.descr = "Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888', "
 			 "'\\\\.\\PhysicalDrive1'",
 	},
 	{
-		.opt = XNVMEC_OPT_SYS_URI,
-		.vtype = XNVMEC_OPT_VTYPE_URI,
+		.opt = XNVME_CLI_OPT_SYS_URI,
+		.vtype = XNVME_CLI_OPT_VTYPE_URI,
 		.name = "uri",
 		.descr = "System URI e.g. '10.9.8.1:8888'",
 	},
 	{
-		.opt = XNVMEC_OPT_SUBNQN,
-		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.opt = XNVME_CLI_OPT_SUBNQN,
+		.vtype = XNVME_CLI_OPT_VTYPE_STR,
 		.name = "subnqn",
 		.descr = "Subsystem NQN of the NVMe over Fabrics endpoint e.g. "
 			 "'nqn.2022-06.io.xnvme:ctrlnode1'",
 	},
 	{
-		.opt = XNVMEC_OPT_HOSTNQN,
-		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.opt = XNVME_CLI_OPT_HOSTNQN,
+		.vtype = XNVME_CLI_OPT_VTYPE_STR,
 		.name = "hostnqn",
 		.descr = "The host NQN to use when connecting to NVMe over Fabrics "
 			 "controllers",
 	},
 	{
-		.opt = XNVMEC_OPT_CNTID,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_CNTID,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "cntid",
 		.descr = "Controller Identifier",
 	},
 	{
-		.opt = XNVMEC_OPT_NSID,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_NSID,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "nsid",
 		.descr = "Namespace Identifier for Command Construction",
 	},
 	{
-		.opt = XNVMEC_OPT_UUID,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_UUID,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "uuid",
 		.descr = "Universally Unique Identifier",
 	},
 	{
-		.opt = XNVMEC_OPT_CNS,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_CNS,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "cns",
 		.descr = "Controller or Namespace Struct",
 	},
 	{
-		.opt = XNVMEC_OPT_CSI,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_CSI,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "csi",
 		.descr = "Command Set Identifier",
 	},
 	{
-		.opt = XNVMEC_OPT_INDEX,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_INDEX,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "index",
 		.descr = "Index",
 	},
 	{
-		.opt = XNVMEC_OPT_SETID,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_SETID,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "setid",
 		.descr = "NVM Set Identifier",
 	},
 	{
-		.opt = XNVMEC_OPT_LPO_NBYTES,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_LPO_NBYTES,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "lpo-nbytes",
 		.descr = "Log-Page Offset (in bytes)",
 	},
 	{
-		.opt = XNVMEC_OPT_LID,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_LID,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "lid",
 		.descr = "Log-page IDentifier",
 	},
 	{
-		.opt = XNVMEC_OPT_LSP,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_LSP,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "lsp",
 		.descr = "Log-SPecific parameters",
 	},
 	{
-		.opt = XNVMEC_OPT_RAE,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_RAE,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "rae",
 		.descr = "Reset Async. Events",
 	},
 	{
-		.opt = XNVMEC_OPT_ZF,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_ZF,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "zf",
 		.descr = "Zone Format",
 	},
 	{
-		.opt = XNVMEC_OPT_SES,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_SES,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "ses",
 		.descr = "Secure Erase setting. No=0x0, UserData=0x1, Cryptographic=0x2",
 	},
 	{
-		.opt = XNVMEC_OPT_SEL,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_SEL,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "sel",
 		.descr = "current=0x0, default=0x1, saved=0x2, supported=0x3",
 	},
 	{
-		.opt = XNVMEC_OPT_MSET,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_MSET,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "mset",
 		.descr = "Metadata settings. Off=0x0, On=0x1",
 	},
 	{
-		.opt = XNVMEC_OPT_AUSE,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_AUSE,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "ause",
 		.descr = "AUSE?",
 	},
 	{
-		.opt = XNVMEC_OPT_OVRPAT,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_OVRPAT,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "ovrpat",
 		.descr = "Overwrite Pattern",
 	},
 	{
-		.opt = XNVMEC_OPT_OWPASS,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_OWPASS,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "owpass",
 		.descr = "Overwrite Passes",
 	},
 	{
-		.opt = XNVMEC_OPT_OIPBP,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_OIPBP,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "oipbp",
 		.descr = "Overwrite Inverse Bit Pattern",
 	},
 	{
-		.opt = XNVMEC_OPT_NODAS,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_NODAS,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "nodas",
 		.descr = "Nodas?",
 	},
 	{
-		.opt = XNVMEC_OPT_ACTION,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_ACTION,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "action",
 		.descr = "Command action",
 	},
 	{
-		.opt = XNVMEC_OPT_ZRMS,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_ZRMS,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "zrms",
 		.descr = "Zone Resource Management",
 	},
 	{
-		.opt = XNVMEC_OPT_PI,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_PI,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "pi",
 		.descr = "Protection Information. Off=0x0, Type1/2/3=0x1/0x2/0x3",
 	},
 	{
-		.opt = XNVMEC_OPT_PIL,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_PIL,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "pil",
 		.descr = "Protection Information Location. Last=0x0, First=0x1",
 	},
 	{
-		.opt = XNVMEC_OPT_FID,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_FID,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "fid",
 		.descr = "Feature Identifier",
 	},
 	{
-		.opt = XNVMEC_OPT_FEAT,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_FEAT,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "feat",
 		.descr = "Feature e.g. cdw12 content",
 	},
 	{
-		.opt = XNVMEC_OPT_OPCODE,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_OPCODE,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "opcode",
 		.descr = "Command opcode",
 	},
 	{
-		.opt = XNVMEC_OPT_FLAGS,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_FLAGS,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "flags",
 		.descr = "Command flags",
 	},
 	{
-		.opt = XNVMEC_OPT_ALL,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_ALL,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "all",
 		.descr = "Select / Affect all",
 	},
 	{
-		.opt = XNVMEC_OPT_SEED,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_SEED,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "seed",
 		.descr = "Use given 'NUM' as random seed",
 	},
 	{
-		.opt = XNVMEC_OPT_LIMIT,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_LIMIT,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "limit",
 		.descr = "Restrict amount to 'NUM'",
 	},
 	{
-		.opt = XNVMEC_OPT_IOSIZE,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_IOSIZE,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "iosize",
 		.descr = "Use given 'NUM' as bs/iosize",
 	},
 	{
-		.opt = XNVMEC_OPT_QDEPTH,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_QDEPTH,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "qdepth",
 		.descr = "Use given 'NUM' as queue max capacity",
 	},
 	{
-		.opt = XNVMEC_OPT_DIRECT,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_DIRECT,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "direct",
 		.descr = "Bypass layers",
 	},
 	{
-		.opt = XNVMEC_OPT_COUNT,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_COUNT,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "count",
 		.descr = "Use given 'NUM' as count",
 	},
 	{
-		.opt = XNVMEC_OPT_OFFSET,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_OFFSET,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "offset",
 		.descr = "Use given 'NUM' as offset",
 	},
 	{
-		.opt = XNVMEC_OPT_CLEAR,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_CLEAR,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "clear",
 		.descr = "Clear something...",
 	},
 	{
-		.opt = XNVMEC_OPT_STATUS,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_STATUS,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "status",
 		.descr = "Provide command state",
 	},
 	{
-		.opt = XNVMEC_OPT_SAVE,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_SAVE,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "save",
 		.descr = "Save",
 	},
 	{
-		.opt = XNVMEC_OPT_RESET,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_RESET,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "reset",
 		.descr = "Reset controller",
 	},
 	{
-		.opt = XNVMEC_OPT_VERBOSE,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_VERBOSE,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "verbose",
 		.descr = "Increase output info",
 	},
 	{
-		.opt = XNVMEC_OPT_HELP,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_HELP,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "help",
 		.descr = "Show usage / help",
 	},
 	{
-		.opt = XNVMEC_OPT_DEV_NSID,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_DEV_NSID,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "dev-nsid",
 		.descr = "Namespace Identifier for Device Handle",
 	},
 	{
-		.opt = XNVMEC_OPT_BE,
-		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.opt = XNVME_CLI_OPT_BE,
+		.vtype = XNVME_CLI_OPT_VTYPE_STR,
 		.name = "be",
 		.descr = "xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'macos', "
 			 "'posix', 'windows'",
 	},
 	{
-		.opt = XNVMEC_OPT_MEM,
-		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.opt = XNVME_CLI_OPT_MEM,
+		.vtype = XNVME_CLI_OPT_VTYPE_STR,
 		.name = "mem",
 		.descr = "xNVMe buffer/memory manager",
 	},
 	{
-		.opt = XNVMEC_OPT_SYNC,
-		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.opt = XNVME_CLI_OPT_SYNC,
+		.vtype = XNVME_CLI_OPT_VTYPE_STR,
 		.name = "sync",
 		.descr = "xNVMe sync. command-interface, e.g. 'nvme', 'block'",
 	},
 	{
-		.opt = XNVMEC_OPT_ASYNC,
-		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.opt = XNVME_CLI_OPT_ASYNC,
+		.vtype = XNVME_CLI_OPT_VTYPE_STR,
 		.name = "async",
 		.descr = "xNVMe async. command-interface, e.g. 'io_uring', 'emu'",
 	},
 	{
-		.opt = XNVMEC_OPT_ADMIN,
-		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.opt = XNVME_CLI_OPT_ADMIN,
+		.vtype = XNVME_CLI_OPT_VTYPE_STR,
 		.name = "admin",
 		.descr = "xNVMe admin. command-interface, e.g. 'nvme', 'block'",
 	},
 	{
-		.opt = XNVMEC_OPT_SHM_ID,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_SHM_ID,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "shm_id",
 		.descr = "For be=spdk, multi-process shared-memory-id",
 	},
 	{
-		.opt = XNVMEC_OPT_MAIN_CORE,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_MAIN_CORE,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "main_core",
 		.descr = "For be=spdk, multi-process main core",
 	},
 	{
-		.opt = XNVMEC_OPT_CORE_MASK,
-		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.opt = XNVME_CLI_OPT_CORE_MASK,
+		.vtype = XNVME_CLI_OPT_VTYPE_STR,
 		.name = "core_mask",
 		.descr = "For be=spdk, multi-process core_mask/cpus",
 	},
 	{
-		.opt = XNVMEC_OPT_USE_CMB_SQS,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_USE_CMB_SQS,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "use_cmb_sqs",
 		.descr = "For be=spdk, use controller-memory-buffer for sqs",
 	},
 	{
-		.opt = XNVMEC_OPT_CSS,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_CSS,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "css",
 		.descr = "For be=spdk, ctrl.config. command-set-selection",
 	},
 	{
-		.opt = XNVMEC_OPT_ADRFAM,
-		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.opt = XNVME_CLI_OPT_ADRFAM,
+		.vtype = XNVME_CLI_OPT_VTYPE_STR,
 		.name = "adrfam",
 		.descr = "For be=spdk, Fabrics Address-Family e.g. IPv4/IPv6",
 	},
 
 	{
-		.opt = XNVMEC_OPT_POLL_IO,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_POLL_IO,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "poll_io",
 		.descr = "For async=io_uring, enable hipri/io-compl.polling",
 	},
 	{
-		.opt = XNVMEC_OPT_POLL_SQ,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_POLL_SQ,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "poll_sq",
 		.descr = "For async=io_uring, enable kernel-side sqthread-poll",
 	},
 	{
-		.opt = XNVMEC_OPT_REGISTER_FILES,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_REGISTER_FILES,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "register_files",
 		.descr = "For async=io_uring, register files",
 	},
 	{
-		.opt = XNVMEC_OPT_REGISTER_BUFFERS,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_REGISTER_BUFFERS,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "register_buffers",
 		.descr = "For async=io_uring, register buffers",
 	},
 	{
-		.opt = XNVMEC_OPT_TRUNCATE,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_TRUNCATE,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "truncate",
 		.descr = "For files; on-open truncate contents",
 	},
 	{
-		.opt = XNVMEC_OPT_RDONLY,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_RDONLY,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "rdonly",
 		.descr = "For files; open read-only",
 	},
 	{
-		.opt = XNVMEC_OPT_WRONLY,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_WRONLY,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "wronly",
 		.descr = "For files; open write-only",
 	},
 	{
-		.opt = XNVMEC_OPT_RDWR,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_RDWR,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "rdwr",
 		.descr = "For files; open for read and write",
 	},
 	{
-		.opt = XNVMEC_OPT_CREATE,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_CREATE,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "create",
 		.descr = "For files; on-open create",
 	},
 	{
-		.opt = XNVMEC_OPT_OFLAGS,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_OFLAGS,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "oflags",
 		.descr = "For files; combination of file-open-flags",
 	},
 
 	{
-		.opt = XNVMEC_OPT_CREATE_MODE,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_CREATE_MODE,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "create_mode",
 		.descr = "For files; create-mode / umask / mode_t in HEX",
 	},
 
 	{
-		.opt = XNVMEC_OPT_VEC_CNT,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_VEC_CNT,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "vec-cnt",
 		.descr = "Number of elements in vectors when doing vectored IOs",
 	},
 
 	{
-		.opt = XNVMEC_OPT_DTYPE,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_DTYPE,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "dtype",
 		.descr = "Directive type; Identify 0x0, Streams 0x1",
 	},
 	{
-		.opt = XNVMEC_OPT_DSPEC,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_DSPEC,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "dspec",
 		.descr = "Directive specification associated with directive type",
 	},
 	{
-		.opt = XNVMEC_OPT_DOPER,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_DOPER,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "doper",
 		.descr = "Directive operation to perform",
 	},
 	{
-		.opt = XNVMEC_OPT_ENDIR,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_ENDIR,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "endir",
 		.descr = "Directive enable/disable; Enable 0x1, Disable 0x0",
 	},
 	{
-		.opt = XNVMEC_OPT_TGTDIR,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_TGTDIR,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "tgtdir",
 		.descr = "Target directive to enable/disable",
 	},
 	{
-		.opt = XNVMEC_OPT_NSR,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_NSR,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "nsr",
 		.descr = "Namespace streams requested",
 	},
 	{
-		.opt = XNVMEC_OPT_POSA_TITLE,
-		.vtype = XNVMEC_OPT_VTYPE_SKIP,
+		.opt = XNVME_CLI_OPT_POSA_TITLE,
+		.vtype = XNVME_CLI_OPT_VTYPE_SKIP,
 		.name = "\nPositional arguments:\n",
 		.descr = "",
 	},
 	{
-		.opt = XNVMEC_OPT_NON_POSA_TITLE,
-		.vtype = XNVMEC_OPT_VTYPE_SKIP,
+		.opt = XNVME_CLI_OPT_NON_POSA_TITLE,
+		.vtype = XNVME_CLI_OPT_VTYPE_SKIP,
 		.name = "\nWhere <args> include:\n",
 		.descr = "",
 	},
 	{
-		.opt = XNVMEC_OPT_ORCH_TITLE,
-		.vtype = XNVMEC_OPT_VTYPE_SKIP,
+		.opt = XNVME_CLI_OPT_ORCH_TITLE,
+		.vtype = XNVME_CLI_OPT_VTYPE_SKIP,
 		.name = "\nWith <args> for backend:\n",
 		.descr = "",
 	},
 
 	{
-		.opt = XNVMEC_OPT_AD,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_AD,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "ad",
 		.descr = "If set, deallocate ranges",
 	},
 	{
-		.opt = XNVMEC_OPT_IDW,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_IDW,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "idw",
 		.descr = "If set, hint to use range as an integral unit when writing.",
 	},
 	{
-		.opt = XNVMEC_OPT_IDR,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_IDR,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "idr",
 		.descr = "If set, hint to use range as an integral unit when reading.",
 	},
 	{
-		.opt = XNVMEC_OPT_LSI,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_LSI,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "lsi",
 		.descr = "Log specific identifier",
 	},
 	{
-		.opt = XNVMEC_OPT_PID,
-		.vtype = XNVMEC_OPT_VTYPE_HEX,
+		.opt = XNVME_CLI_OPT_PID,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "pid",
 		.descr = "Placement identifier",
 	},
 	{
-		.opt = XNVMEC_OPT_KV_KEY,
-		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.opt = XNVME_CLI_OPT_KV_KEY,
+		.vtype = XNVME_CLI_OPT_VTYPE_STR,
 		.name = "key",
 		.descr = "KV Pair Key",
 	},
 	{
-		.opt = XNVMEC_OPT_KV_VAL,
-		.vtype = XNVMEC_OPT_VTYPE_STR,
+		.opt = XNVME_CLI_OPT_KV_VAL,
+		.vtype = XNVME_CLI_OPT_VTYPE_STR,
 		.name = "value",
 		.descr = "KV Pair Value",
 	},
 	{
-		.opt = XNVMEC_OPT_KV_STORE_ADD,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_KV_STORE_ADD,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "only-add",
 		.descr = "KV Store Option to only add new KV-Pairs",
 	},
 	{
-		.opt = XNVMEC_OPT_KV_STORE_UPDATE,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_KV_STORE_UPDATE,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "only-update",
 		.descr = "KV Store Option to only update existing",
 	},
 
 	{
-		.opt = XNVMEC_OPT_KV_STORE_COMPRESS,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_KV_STORE_COMPRESS,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "compress",
 		.descr = "KV Store Option to compress value on device",
 	},
 
 	{
-		.opt = XNVMEC_OPT_END,
-		.vtype = XNVMEC_OPT_VTYPE_NUM,
+		.opt = XNVME_CLI_OPT_END,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "",
 		.descr = "",
 	},
 };
 
-struct xnvmec_opt_attr *
-xnvmec_opt_attr_by_opt(enum xnvmec_opt opt, struct xnvmec_opt_attr *attrs)
+struct xnvme_cli_opt_attr *
+xnvme_cli_opt_attr_by_opt(enum xnvme_cli_opt opt, struct xnvme_cli_opt_attr *attrs)
 {
 	for (int idx = 0; attrs[idx].opt; ++idx) {
 		if (attrs[idx].opt != opt) {
@@ -858,14 +858,14 @@ xnvmec_opt_attr_by_opt(enum xnvmec_opt opt, struct xnvmec_opt_attr *attrs)
 	return NULL;
 }
 
-const struct xnvmec_opt_attr *
-xnvmec_get_opt_attr(enum xnvmec_opt opt)
+const struct xnvme_cli_opt_attr *
+xnvme_cli_get_opt_attr(enum xnvme_cli_opt opt)
 {
-	return xnvmec_opt_attr_by_opt(opt, xnvmec_opts);
+	return xnvme_cli_opt_attr_by_opt(opt, xnvme_cli_opts);
 }
 
-struct xnvmec_opt_attr *
-xnvmec_opt_attr_by_getoptval(int getoptval, struct xnvmec_opt_attr *attrs)
+struct xnvme_cli_opt_attr *
+xnvme_cli_opt_attr_by_getoptval(int getoptval, struct xnvme_cli_opt_attr *attrs)
 {
 	for (int idx = 0; attrs[idx].getoptval; ++idx) {
 		if (attrs[idx].getoptval != getoptval) {
@@ -879,7 +879,7 @@ xnvmec_opt_attr_by_getoptval(int getoptval, struct xnvmec_opt_attr *attrs)
 }
 
 void
-xnvmec_pinf(const char *format, ...)
+xnvme_cli_pinf(const char *format, ...)
 {
 	va_list args;
 	va_start(args, format);
@@ -896,7 +896,7 @@ xnvmec_pinf(const char *format, ...)
 #ifdef WIN32
 #include <windows.h>
 void
-xnvmec_perr(const char *msg, int err)
+xnvme_cli_perr(const char *msg, int err)
 {
 	if (err < 0) {
 		err = err * -1;
@@ -917,7 +917,7 @@ xnvmec_perr(const char *msg, int err)
 }
 #else
 void
-xnvmec_perr(const char *msg, int err)
+xnvme_cli_perr(const char *msg, int err)
 {
 	fprintf(stderr, "# ERR: '%s': {errno: %d, msg: '%s'}\n", msg, err,
 		strerror(err < 0 ? -err : err));
@@ -927,26 +927,26 @@ xnvmec_perr(const char *msg, int err)
 #endif
 
 void
-xnvmec_usage_sub_long(struct xnvmec *cli, struct xnvmec_sub *sub)
+xnvme_cli_usage_sub_long(struct xnvme_cli *cli, struct xnvme_cli_sub *sub)
 {
 	printf("Usage: %s %s ", cli->argv[0], sub->name);
-	for (int oi = 0; oi < XNVMEC_SUB_OPTS_LEN; ++oi) {
-		struct xnvmec_sub_opt *opt = &sub->opts[oi];
-		struct xnvmec_opt_attr *attr = NULL;
+	for (int oi = 0; oi < XNVME_CLI_SUB_OPTS_LEN; ++oi) {
+		struct xnvme_cli_sub_opt *opt = &sub->opts[oi];
+		struct xnvme_cli_opt_attr *attr = NULL;
 
-		if ((opt->opt == XNVMEC_OPT_END) || (opt->opt == XNVMEC_OPT_NONE)) {
+		if ((opt->opt == XNVME_CLI_OPT_END) || (opt->opt == XNVME_CLI_OPT_NONE)) {
 			break;
 		}
 
-		attr = xnvmec_opt_attr_by_opt(opt->opt, xnvmec_opts);
+		attr = xnvme_cli_opt_attr_by_opt(opt->opt, xnvme_cli_opts);
 		if (!attr) {
 			break;
 		}
 
-		if (opt->type && opt->type == XNVMEC_SKIP) {
+		if (opt->type && opt->type == XNVME_CLI_SKIP) {
 			continue;
 		}
-		if (opt->type && (opt->type != XNVMEC_POSA)) {
+		if (opt->type && (opt->type != XNVME_CLI_POSA)) {
 			break;
 		}
 
@@ -959,42 +959,42 @@ xnvmec_usage_sub_long(struct xnvmec *cli, struct xnvmec_sub *sub)
 		printf("\n%s\n", sub->descr_long);
 	}
 
-	for (int oi = 0; oi < XNVMEC_SUB_OPTS_LEN; ++oi) {
-		struct xnvmec_sub_opt *opt = &sub->opts[oi];
-		struct xnvmec_opt_attr *attr = NULL;
+	for (int oi = 0; oi < XNVME_CLI_SUB_OPTS_LEN; ++oi) {
+		struct xnvme_cli_sub_opt *opt = &sub->opts[oi];
+		struct xnvme_cli_opt_attr *attr = NULL;
 		int width = 0;
 
-		if ((opt->opt == XNVMEC_OPT_END) || (opt->opt == XNVMEC_OPT_NONE)) {
+		if ((opt->opt == XNVME_CLI_OPT_END) || (opt->opt == XNVME_CLI_OPT_NONE)) {
 			break;
 		}
 
-		attr = xnvmec_opt_attr_by_opt(opt->opt, xnvmec_opts);
+		attr = xnvme_cli_opt_attr_by_opt(opt->opt, xnvme_cli_opts);
 		if (!attr) {
 			break;
 		}
 
 		printf("  ");
 		switch (opt->type) {
-		case XNVMEC_POSA:
+		case XNVME_CLI_POSA:
 			width = printf("%s", attr->name);
 			break;
-		case XNVMEC_LREQ:
+		case XNVME_CLI_LREQ:
 			width = printf("--%s %s", attr->name,
-				       xnvmec_opt_value_type_str(attr->vtype));
+				       xnvme_cli_opt_value_type_str(attr->vtype));
 			break;
-		case XNVMEC_LOPT:
+		case XNVME_CLI_LOPT:
 			width = printf("[ --%s %s ]", attr->name,
-				       xnvmec_opt_value_type_str(attr->vtype));
+				       xnvme_cli_opt_value_type_str(attr->vtype));
 			break;
-		case XNVMEC_LFLG:
+		case XNVME_CLI_LFLG:
 			width = printf("[ --%s ]", attr->name);
 			break;
-		case XNVMEC_SKIP:
+		case XNVME_CLI_SKIP:
 			width = printf("%s", attr->name);
 			break;
 		}
 
-		if (opt->type != XNVMEC_SKIP) {
+		if (opt->type != XNVME_CLI_SKIP) {
 			printf("%*s; %s", 30 - width, "", attr->descr);
 		}
 		printf("\n");
@@ -1012,9 +1012,9 @@ xnvmec_usage_sub_long(struct xnvmec *cli, struct xnvmec_sub *sub)
 }
 
 void
-xnvmec_usage_sub_short(struct xnvmec_sub *sub, size_t name_width)
+xnvme_cli_usage_sub_short(struct xnvme_cli_sub *sub, size_t name_width)
 {
-	int name_len = strnlen(sub->name, XNVMEC_SUB_NAME_LEN_MAX);
+	int name_len = strnlen(sub->name, XNVME_CLI_SUB_NAME_LEN_MAX);
 	int fill = name_width - name_len;
 
 	printf("  %s%*s | ", sub->name, fill + 1, "");
@@ -1029,7 +1029,7 @@ xnvmec_usage_sub_short(struct xnvmec_sub *sub, size_t name_width)
 }
 
 void
-xnvmec_usage(struct xnvmec *cli)
+xnvme_cli_usage(struct xnvme_cli *cli)
 {
 	if (!cli) {
 		return;
@@ -1048,7 +1048,7 @@ xnvmec_usage(struct xnvmec *cli)
 		}
 
 		for (int si = 0; si < cli->nsubs; ++si) {
-			xnvmec_usage_sub_short(&cli->subs[si], name_width);
+			xnvme_cli_usage_sub_short(&cli->subs[si], name_width);
 		}
 	}
 
@@ -1064,26 +1064,26 @@ xnvmec_usage(struct xnvmec *cli)
 }
 
 int
-xnvmec_assign_arg(struct xnvmec *cli, struct xnvmec_opt_attr *opt_attr, char *arg,
-		  enum xnvmec_opt_type opt_type)
+xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr, char *arg,
+		     enum xnvme_cli_opt_type opt_type)
 {
-	struct xnvmec_args *args = &cli->args;
+	struct xnvme_cli_args *args = &cli->args;
 	char *endptr = NULL;
 	uint64_t num = 0;
 
 	// Check numerical args
-	if (arg && (opt_type != XNVMEC_LFLG)) {
-		int num_base = opt_attr->vtype == XNVMEC_OPT_VTYPE_NUM ? 10 : 16;
+	if (arg && (opt_type != XNVME_CLI_LFLG)) {
+		int num_base = opt_attr->vtype == XNVME_CLI_OPT_VTYPE_NUM ? 10 : 16;
 
 		switch (opt_attr->vtype) {
-		case XNVMEC_OPT_VTYPE_URI:
-		case XNVMEC_OPT_VTYPE_FILE:
-		case XNVMEC_OPT_VTYPE_STR:
-		case XNVMEC_OPT_VTYPE_SKIP:
+		case XNVME_CLI_OPT_VTYPE_URI:
+		case XNVME_CLI_OPT_VTYPE_FILE:
+		case XNVME_CLI_OPT_VTYPE_STR:
+		case XNVME_CLI_OPT_VTYPE_SKIP:
 			break;
 
-		case XNVMEC_OPT_VTYPE_NUM:
-		case XNVMEC_OPT_VTYPE_HEX:
+		case XNVME_CLI_OPT_VTYPE_NUM:
+		case XNVME_CLI_OPT_VTYPE_HEX:
 			errno = 0;
 			num = strtoll(arg, &endptr, num_base);
 			if (errno) {
@@ -1101,387 +1101,389 @@ xnvmec_assign_arg(struct xnvmec *cli, struct xnvmec_opt_attr *opt_attr, char *ar
 	}
 
 	switch (opt_attr->opt) {
-	case XNVMEC_OPT_CDW00:
+	case XNVME_CLI_OPT_CDW00:
 		args->cdw[0] = num;
 		break;
-	case XNVMEC_OPT_CDW01:
+	case XNVME_CLI_OPT_CDW01:
 		args->cdw[1] = num;
 		break;
-	case XNVMEC_OPT_CDW02:
+	case XNVME_CLI_OPT_CDW02:
 		args->cdw[2] = num;
 		break;
-	case XNVMEC_OPT_CDW03:
+	case XNVME_CLI_OPT_CDW03:
 		args->cdw[3] = num;
 		break;
-	case XNVMEC_OPT_CDW04:
+	case XNVME_CLI_OPT_CDW04:
 		args->cdw[4] = num;
 		break;
-	case XNVMEC_OPT_CDW05:
+	case XNVME_CLI_OPT_CDW05:
 		args->cdw[5] = num;
 		break;
-	case XNVMEC_OPT_CDW06:
+	case XNVME_CLI_OPT_CDW06:
 		args->cdw[6] = num;
 		break;
-	case XNVMEC_OPT_CDW07:
+	case XNVME_CLI_OPT_CDW07:
 		args->cdw[7] = num;
 		break;
-	case XNVMEC_OPT_CDW08:
+	case XNVME_CLI_OPT_CDW08:
 		args->cdw[8] = num;
 		break;
-	case XNVMEC_OPT_CDW09:
+	case XNVME_CLI_OPT_CDW09:
 		args->cdw[9] = num;
 		break;
-	case XNVMEC_OPT_CDW10:
+	case XNVME_CLI_OPT_CDW10:
 		args->cdw[10] = num;
 		break;
-	case XNVMEC_OPT_CDW11:
+	case XNVME_CLI_OPT_CDW11:
 		args->cdw[11] = num;
 		break;
-	case XNVMEC_OPT_CDW12:
+	case XNVME_CLI_OPT_CDW12:
 		args->cdw[12] = num;
 		break;
-	case XNVMEC_OPT_CDW13:
+	case XNVME_CLI_OPT_CDW13:
 		args->cdw[13] = num;
 		break;
-	case XNVMEC_OPT_CDW14:
+	case XNVME_CLI_OPT_CDW14:
 		args->cdw[14] = num;
 		break;
-	case XNVMEC_OPT_CDW15:
+	case XNVME_CLI_OPT_CDW15:
 		args->cdw[15] = num;
 		break;
-	case XNVMEC_OPT_CMD_INPUT:
+	case XNVME_CLI_OPT_CMD_INPUT:
 		args->cmd_input = arg ? arg : "INVALID_INPUT";
 		break;
-	case XNVMEC_OPT_CMD_OUTPUT:
+	case XNVME_CLI_OPT_CMD_OUTPUT:
 		args->cmd_output = arg ? arg : "INVALID_INPUT";
 		break;
-	case XNVMEC_OPT_DATA_NBYTES:
+	case XNVME_CLI_OPT_DATA_NBYTES:
 		args->data_nbytes = num;
 		break;
-	case XNVMEC_OPT_DATA_INPUT:
+	case XNVME_CLI_OPT_DATA_INPUT:
 		args->data_input = arg ? arg : "INVALID_INPUT";
 		break;
-	case XNVMEC_OPT_DATA_OUTPUT:
+	case XNVME_CLI_OPT_DATA_OUTPUT:
 		args->data_output = arg ? arg : "INVALID_INPUT";
 		break;
-	case XNVMEC_OPT_META_NBYTES:
+	case XNVME_CLI_OPT_META_NBYTES:
 		args->meta_nbytes = num;
 		break;
-	case XNVMEC_OPT_META_INPUT:
+	case XNVME_CLI_OPT_META_INPUT:
 		args->meta_input = arg ? arg : "INVALID_INPUT";
 		break;
-	case XNVMEC_OPT_META_OUTPUT:
+	case XNVME_CLI_OPT_META_OUTPUT:
 		args->meta_output = arg ? arg : "INVALID_INPUT";
 		break;
-	case XNVMEC_OPT_LBAF:
+	case XNVME_CLI_OPT_LBAF:
 		args->lbaf = num;
 		break;
-	case XNVMEC_OPT_SLBA:
+	case XNVME_CLI_OPT_SLBA:
 		args->slba = num;
 		break;
-	case XNVMEC_OPT_ELBA:
+	case XNVME_CLI_OPT_ELBA:
 		args->elba = num;
 		break;
-	case XNVMEC_OPT_LBA:
+	case XNVME_CLI_OPT_LBA:
 		args->lba = num;
 		break;
-	case XNVMEC_OPT_NLB:
+	case XNVME_CLI_OPT_NLB:
 		args->nlb = num;
 		break;
-	case XNVMEC_OPT_LLB:
+	case XNVME_CLI_OPT_LLB:
 		args->llb = num;
 		break;
-	case XNVMEC_OPT_URI:
+	case XNVME_CLI_OPT_URI:
 		args->uri = arg ? arg : "INVALID_INPUT";
 		break;
-	case XNVMEC_OPT_SYS_URI:
+	case XNVME_CLI_OPT_SYS_URI:
 		args->sys_uri = arg ? arg : "INVALID_INPUT";
 		break;
-	case XNVMEC_OPT_SUBNQN:
+	case XNVME_CLI_OPT_SUBNQN:
 		args->subnqn = arg ? arg : "INVALID_INPUT";
 		break;
-	case XNVMEC_OPT_HOSTNQN:
+	case XNVME_CLI_OPT_HOSTNQN:
 		args->hostnqn = arg ? arg : "INVALID_INPUT";
 		break;
-	case XNVMEC_OPT_UUID:
+	case XNVME_CLI_OPT_UUID:
 		args->uuid = num;
 		break;
-	case XNVMEC_OPT_NSID:
+	case XNVME_CLI_OPT_NSID:
 		args->nsid = num;
 		break;
-	case XNVMEC_OPT_DEV_NSID:
+	case XNVME_CLI_OPT_DEV_NSID:
 		args->dev_nsid = num;
 		break;
-	case XNVMEC_OPT_CNS:
+	case XNVME_CLI_OPT_CNS:
 		args->cns = num;
 		break;
-	case XNVMEC_OPT_CSI:
+	case XNVME_CLI_OPT_CSI:
 		args->csi = num;
 		break;
-	case XNVMEC_OPT_INDEX:
+	case XNVME_CLI_OPT_INDEX:
 		args->index = num;
 		break;
-	case XNVMEC_OPT_SETID:
+	case XNVME_CLI_OPT_SETID:
 		args->setid = num;
 		break;
 
-	case XNVMEC_OPT_CNTID:
+	case XNVME_CLI_OPT_CNTID:
 		args->cntid = num;
 		break;
-	case XNVMEC_OPT_LID:
+	case XNVME_CLI_OPT_LID:
 		args->lid = num;
 		break;
-	case XNVMEC_OPT_LSP:
+	case XNVME_CLI_OPT_LSP:
 		args->lsp = num;
 		break;
-	case XNVMEC_OPT_LPO_NBYTES:
+	case XNVME_CLI_OPT_LPO_NBYTES:
 		args->action = num;
 		break;
-	case XNVMEC_OPT_RAE:
+	case XNVME_CLI_OPT_RAE:
 		args->rae = num;
 		break;
-	case XNVMEC_OPT_CLEAR:
+	case XNVME_CLI_OPT_CLEAR:
 		args->clear = arg ? num : 1;
 		break;
-	case XNVMEC_OPT_ZF:
+	case XNVME_CLI_OPT_ZF:
 		args->zf = num;
 		break;
-	case XNVMEC_OPT_SES:
+	case XNVME_CLI_OPT_SES:
 		args->ses = num;
 		break;
-	case XNVMEC_OPT_SEL:
+	case XNVME_CLI_OPT_SEL:
 		args->sel = num;
 		break;
-	case XNVMEC_OPT_MSET:
+	case XNVME_CLI_OPT_MSET:
 		args->mset = num;
 		break;
-	case XNVMEC_OPT_AUSE:
+	case XNVME_CLI_OPT_AUSE:
 		args->ause = num;
 		break;
-	case XNVMEC_OPT_OVRPAT:
+	case XNVME_CLI_OPT_OVRPAT:
 		args->ovrpat = num;
 		break;
-	case XNVMEC_OPT_OWPASS:
+	case XNVME_CLI_OPT_OWPASS:
 		args->owpass = num;
 		break;
-	case XNVMEC_OPT_OIPBP:
+	case XNVME_CLI_OPT_OIPBP:
 		args->oipbp = num;
 		break;
-	case XNVMEC_OPT_NODAS:
+	case XNVME_CLI_OPT_NODAS:
 		args->nodas = num;
 		break;
 
-	case XNVMEC_OPT_ACTION:
+	case XNVME_CLI_OPT_ACTION:
 		args->action = num;
 		break;
-	case XNVMEC_OPT_ZRMS:
+	case XNVME_CLI_OPT_ZRMS:
 		args->action = num;
 		break;
-	case XNVMEC_OPT_PI:
+	case XNVME_CLI_OPT_PI:
 		args->pi = num;
 		break;
-	case XNVMEC_OPT_PIL:
+	case XNVME_CLI_OPT_PIL:
 		args->pil = num;
 		break;
-	case XNVMEC_OPT_FID:
+	case XNVME_CLI_OPT_FID:
 		args->fid = num;
 		break;
-	case XNVMEC_OPT_FEAT:
+	case XNVME_CLI_OPT_FEAT:
 		args->feat = num;
 		break;
-	case XNVMEC_OPT_SEED:
+	case XNVME_CLI_OPT_SEED:
 		args->seed = num;
 		break;
-	case XNVMEC_OPT_LIMIT:
+	case XNVME_CLI_OPT_LIMIT:
 		args->limit = num;
 		break;
-	case XNVMEC_OPT_IOSIZE:
+	case XNVME_CLI_OPT_IOSIZE:
 		args->iosize = num;
 		break;
-	case XNVMEC_OPT_QDEPTH:
+	case XNVME_CLI_OPT_QDEPTH:
 		args->qdepth = num;
 		break;
-	case XNVMEC_OPT_DIRECT:
+	case XNVME_CLI_OPT_DIRECT:
 		args->direct = arg ? num : 1;
 		break;
 
-	case XNVMEC_OPT_OPCODE:
+	case XNVME_CLI_OPT_OPCODE:
 		args->opcode = num;
 		break;
-	case XNVMEC_OPT_FLAGS:
+	case XNVME_CLI_OPT_FLAGS:
 		args->flags = num;
 		break;
 
-	case XNVMEC_OPT_ALL:
+	case XNVME_CLI_OPT_ALL:
 		args->all = arg ? num : 1;
 		break;
-	case XNVMEC_OPT_STATUS:
+	case XNVME_CLI_OPT_STATUS:
 		args->status = arg ? num : 1;
 		break;
-	case XNVMEC_OPT_SAVE:
+	case XNVME_CLI_OPT_SAVE:
 		args->save = arg ? num : 1;
 		break;
-	case XNVMEC_OPT_RESET:
+	case XNVME_CLI_OPT_RESET:
 		args->reset = arg ? num : 1;
 		break;
-	case XNVMEC_OPT_VERBOSE:
+	case XNVME_CLI_OPT_VERBOSE:
 		args->verbose = arg ? num : 1;
 		break;
-	case XNVMEC_OPT_HELP:
+	case XNVME_CLI_OPT_HELP:
 		args->help = arg ? num : 1;
 		break;
 
-	case XNVMEC_OPT_COUNT:
+	case XNVME_CLI_OPT_COUNT:
 		args->count = arg ? num : 1;
 		break;
-	case XNVMEC_OPT_OFFSET:
+	case XNVME_CLI_OPT_OFFSET:
 		args->offset = arg ? num : 1;
 		break;
 
-	case XNVMEC_OPT_BE:
+	case XNVME_CLI_OPT_BE:
 		args->be = arg ? arg : "INVALID_INPUT";
 		break;
-	case XNVMEC_OPT_MEM:
+	case XNVME_CLI_OPT_MEM:
 		args->mem = arg ? arg : "INVALID_INPUT";
 		break;
-	case XNVMEC_OPT_SYNC:
+	case XNVME_CLI_OPT_SYNC:
 		args->sync = arg ? arg : "INVALID_INPUT";
 		break;
-	case XNVMEC_OPT_ASYNC:
+	case XNVME_CLI_OPT_ASYNC:
 		args->async = arg ? arg : "INVALID_INPUT";
 		break;
-	case XNVMEC_OPT_ADMIN:
+	case XNVME_CLI_OPT_ADMIN:
 		args->admin = arg ? arg : "INVALID_INPUT";
 		break;
 
-	case XNVMEC_OPT_SHM_ID:
+	case XNVME_CLI_OPT_SHM_ID:
 		args->shm_id = num;
 		break;
-	case XNVMEC_OPT_MAIN_CORE:
+	case XNVME_CLI_OPT_MAIN_CORE:
 		args->main_core = arg ? num : 0;
 		break;
-	case XNVMEC_OPT_CORE_MASK:
+	case XNVME_CLI_OPT_CORE_MASK:
 		args->core_mask = arg ? arg : "INVALID_INPUT";
 		break;
-	case XNVMEC_OPT_USE_CMB_SQS:
+	case XNVME_CLI_OPT_USE_CMB_SQS:
 		args->use_cmb_sqs = arg ? num : 0;
 		break;
-	case XNVMEC_OPT_CSS:
+	case XNVME_CLI_OPT_CSS:
 		args->css.value = arg ? num : 0;
 		args->css.given = arg ? 1 : 0;
 		break;
 
-	case XNVMEC_OPT_POLL_IO:
+	case XNVME_CLI_OPT_POLL_IO:
 		args->poll_io = arg ? num : 0;
 		break;
-	case XNVMEC_OPT_POLL_SQ:
+	case XNVME_CLI_OPT_POLL_SQ:
 		args->poll_sq = arg ? num : 0;
 		break;
-	case XNVMEC_OPT_REGISTER_FILES:
+	case XNVME_CLI_OPT_REGISTER_FILES:
 		args->register_files = arg ? num : 0;
 		break;
-	case XNVMEC_OPT_REGISTER_BUFFERS:
+	case XNVME_CLI_OPT_REGISTER_BUFFERS:
 		args->register_buffers = arg ? num : 0;
 		break;
-	case XNVMEC_OPT_TRUNCATE:
+	case XNVME_CLI_OPT_TRUNCATE:
 		args->truncate = arg ? num : 0;
 		break;
-	case XNVMEC_OPT_RDONLY:
+	case XNVME_CLI_OPT_RDONLY:
 		args->rdonly = arg ? num : 0;
 		break;
-	case XNVMEC_OPT_WRONLY:
+	case XNVME_CLI_OPT_WRONLY:
 		args->wronly = arg ? num : 0;
 		break;
-	case XNVMEC_OPT_RDWR:
+	case XNVME_CLI_OPT_RDWR:
 		args->rdwr = arg ? num : 0;
 		break;
-	case XNVMEC_OPT_CREATE:
+	case XNVME_CLI_OPT_CREATE:
 		args->create = arg ? num : 0;
 		break;
-	case XNVMEC_OPT_CREATE_MODE:
+	case XNVME_CLI_OPT_CREATE_MODE:
 		args->create = arg ? num : 0;
 		break;
-	case XNVMEC_OPT_OFLAGS:
+	case XNVME_CLI_OPT_OFLAGS:
 		args->oflags = arg ? num : 0;
 		break;
-	case XNVMEC_OPT_ADRFAM:
+	case XNVME_CLI_OPT_ADRFAM:
 		args->adrfam = arg ? arg : "IPv4";
 		break;
-	case XNVMEC_OPT_VEC_CNT:
+	case XNVME_CLI_OPT_VEC_CNT:
 		args->vec_cnt = arg ? num : 0;
 		break;
-	case XNVMEC_OPT_DTYPE:
+	case XNVME_CLI_OPT_DTYPE:
 		args->dtype = num;
 		break;
-	case XNVMEC_OPT_DSPEC:
+	case XNVME_CLI_OPT_DSPEC:
 		args->dspec = num;
 		break;
-	case XNVMEC_OPT_DOPER:
+	case XNVME_CLI_OPT_DOPER:
 		args->doper = num;
 		break;
-	case XNVMEC_OPT_ENDIR:
+	case XNVME_CLI_OPT_ENDIR:
 		args->endir = num;
 		break;
-	case XNVMEC_OPT_TGTDIR:
+	case XNVME_CLI_OPT_TGTDIR:
 		args->tgtdir = num;
 		break;
-	case XNVMEC_OPT_NSR:
+	case XNVME_CLI_OPT_NSR:
 		args->nsr = num;
 		break;
-	case XNVMEC_OPT_AD:
+	case XNVME_CLI_OPT_AD:
 		args->ad = arg ? num : 1;
 		break;
-	case XNVMEC_OPT_IDW:
+	case XNVME_CLI_OPT_IDW:
 		args->idw = arg ? num : 1;
 		break;
-	case XNVMEC_OPT_IDR:
+	case XNVME_CLI_OPT_IDR:
 		args->idr = arg ? num : 1;
 		break;
-	case XNVMEC_OPT_KV_KEY:
+	case XNVME_CLI_OPT_KV_KEY:
 		if (strlen(arg) > 16) {
-			xnvmec_pinf("KV Key longer than 16 bytes is not supported");
+			xnvme_cli_pinf("KV Key longer than 16 bytes is not supported");
 			errno = EINVAL;
 			return -1;
 		}
 		args->kv_key = arg ? arg : "INVALID_INPUT";
 		break;
-	case XNVMEC_OPT_KV_VAL:
+	case XNVME_CLI_OPT_KV_VAL:
 		if (strlen(arg) > 4096) {
 			errno = EINVAL;
 			return -1;
 		}
 		args->kv_val = arg ? arg : "INVALID_INPUT";
 		break;
-	case XNVMEC_OPT_KV_STORE_UPDATE:
+	case XNVME_CLI_OPT_KV_STORE_UPDATE:
 		if (args->kv_store_add) {
 			errno = EINVAL;
-			xnvmec_perr("--update-only and --add-only are mutually exclusive", errno);
+			xnvme_cli_perr("--update-only and --add-only are mutually exclusive",
+				       errno);
 			return -1;
 		}
 		args->kv_store_update = true;
 		break;
-	case XNVMEC_OPT_KV_STORE_ADD:
+	case XNVME_CLI_OPT_KV_STORE_ADD:
 		if (args->kv_store_update) {
 			errno = EINVAL;
-			xnvmec_perr("--update-only and --add-only are mutually exclusive", errno);
+			xnvme_cli_perr("--update-only and --add-only are mutually exclusive",
+				       errno);
 			return -1;
 		}
 		args->kv_store_add = true;
 		break;
-	case XNVMEC_OPT_KV_STORE_COMPRESS:
+	case XNVME_CLI_OPT_KV_STORE_COMPRESS:
 		args->kv_store_compress = true;
 		break;
-	case XNVMEC_OPT_LSI:
+	case XNVME_CLI_OPT_LSI:
 		args->lsi = num;
 		break;
-	case XNVMEC_OPT_PID:
+	case XNVME_CLI_OPT_PID:
 		args->pid = num;
 		break;
-	case XNVMEC_OPT_POSA_TITLE:
-	case XNVMEC_OPT_NON_POSA_TITLE:
-	case XNVMEC_OPT_ORCH_TITLE:
-	case XNVMEC_OPT_END:
-	case XNVMEC_OPT_NONE:
+	case XNVME_CLI_OPT_POSA_TITLE:
+	case XNVME_CLI_OPT_NON_POSA_TITLE:
+	case XNVME_CLI_OPT_ORCH_TITLE:
+	case XNVME_CLI_OPT_END:
+	case XNVME_CLI_OPT_NONE:
 		errno = EINVAL;
 		XNVME_DEBUG("opt_attr->opt: 0x%x", opt_attr->opt);
 		return -1;
@@ -1492,7 +1494,7 @@ xnvmec_assign_arg(struct xnvmec *cli, struct xnvmec_opt_attr *opt_attr, char *ar
 	return 0;
 }
 
-struct xnvmec_counts {
+struct xnvme_cli_counts {
 	int posa;
 	int lreq;
 	int lopt;
@@ -1504,9 +1506,9 @@ struct xnvmec_counts {
 };
 
 void
-xnvmec_counts_pr(const struct xnvmec_counts *counts)
+xnvme_cli_counts_pr(const struct xnvme_cli_counts *counts)
 {
-	printf("xnvmec_counts:");
+	printf("xnvme_cli_counts:");
 
 	if (!counts) {
 		printf(" ~\n");
@@ -1526,22 +1528,22 @@ xnvmec_counts_pr(const struct xnvmec_counts *counts)
 }
 
 /**
- * Parse at most XNVMEC_SUB_OPTS_LEN arguments
+ * Parse at most XNVME_CLI_SUB_OPTS_LEN arguments
  */
 int
-xnvmec_parse(struct xnvmec *cli)
+xnvme_cli_parse(struct xnvme_cli *cli)
 {
-	struct xnvmec_args *args = &cli->args;
-	struct option long_options[XNVMEC_SUB_OPTS_LEN] = {0};
-	struct xnvmec_opt_attr *pos_args[XNVMEC_SUB_OPTS_LEN] = {0};
-	struct xnvmec_sub *sub;
-	struct xnvmec_counts signature = {0};
-	struct xnvmec_counts parsed = {0};
+	struct xnvme_cli_args *args = &cli->args;
+	struct option long_options[XNVME_CLI_SUB_OPTS_LEN] = {0};
+	struct xnvme_cli_opt_attr *pos_args[XNVME_CLI_SUB_OPTS_LEN] = {0};
+	struct xnvme_cli_sub *sub;
+	struct xnvme_cli_counts signature = {0};
+	struct xnvme_cli_counts parsed = {0};
 
 	const char *sub_name = NULL;
 
 	if (cli->argc < 2) {
-		xnvmec_pinf("Insufficient arguments: no <command> given");
+		xnvme_cli_pinf("Insufficient arguments: no <command> given");
 		errno = EINVAL;
 		return -1;
 	}
@@ -1551,32 +1553,33 @@ xnvmec_parse(struct xnvmec *cli)
 
 	sub = sub_by_name(cli, sub_name);
 	if (!sub) {
-		xnvmec_pinf("%s: invalid command: '%s'", cli->argv[0], sub_name);
+		xnvme_cli_pinf("%s: invalid command: '%s'", cli->argv[0], sub_name);
 		errno = EINVAL;
 		return -1;
 	}
 
 	cli->sub = sub; // Boom!
 
-	// Convert from XNVMEC_OPT to getopt long_options
-	for (int oi = 0; oi < XNVMEC_SUB_OPTS_LEN; ++oi) {
-		struct xnvmec_sub_opt *sub_opt = &sub->opts[oi];
-		struct xnvmec_opt_attr *opt_attr = NULL;
+	// Convert from XNVME_CLI_OPT to getopt long_options
+	for (int oi = 0; oi < XNVME_CLI_SUB_OPTS_LEN; ++oi) {
+		struct xnvme_cli_sub_opt *sub_opt = &sub->opts[oi];
+		struct xnvme_cli_opt_attr *opt_attr = NULL;
 		struct option *lopt = NULL;
 
-		if ((oi + 1) >= (XNVMEC_SUB_MAXOPTS)) {
-			xnvmec_pinf("Invalid arguments: nargs-exceeding '%d'", XNVMEC_SUB_MAXOPTS);
+		if ((oi + 1) >= (XNVME_CLI_SUB_MAXOPTS)) {
+			xnvme_cli_pinf("Invalid arguments: nargs-exceeding '%d'",
+				       XNVME_CLI_SUB_MAXOPTS);
 			errno = EINVAL;
 			return -1;
 		}
 
-		if ((sub_opt->opt == XNVMEC_OPT_END) || (sub_opt->opt == XNVMEC_OPT_NONE)) {
+		if ((sub_opt->opt == XNVME_CLI_OPT_END) || (sub_opt->opt == XNVME_CLI_OPT_NONE)) {
 			break;
 		}
 
-		opt_attr = xnvmec_opt_attr_by_opt(sub_opt->opt, xnvmec_opts);
+		opt_attr = xnvme_cli_opt_attr_by_opt(sub_opt->opt, xnvme_cli_opts);
 		if (!opt_attr) {
-			xnvmec_pinf("Invalid arguments: cannot parse value");
+			xnvme_cli_pinf("Invalid arguments: cannot parse value");
 			errno = EINVAL;
 			return -1;
 		}
@@ -1585,34 +1588,34 @@ xnvmec_parse(struct xnvmec *cli)
 		opt_attr->getoptval = 97 + oi;
 
 		switch (sub_opt->type) {
-		case XNVMEC_LFLG:
+		case XNVME_CLI_LFLG:
 			++signature.lflg;
 			++signature.total_long;
 			break;
-		case XNVMEC_LOPT:
+		case XNVME_CLI_LOPT:
 			++signature.lopt;
 			++signature.total_long;
 			break;
 
-		case XNVMEC_LREQ:
+		case XNVME_CLI_LREQ:
 			++signature.lreq;
 			++signature.total_long;
 			++signature.total_req;
 			break;
 
-		case XNVMEC_POSA:
+		case XNVME_CLI_POSA:
 			++signature.posa;
 			++signature.total_req;
 			break;
-		case XNVMEC_SKIP:
+		case XNVME_CLI_SKIP:
 			continue;
 		}
 		++signature.total;
 
 		switch (sub_opt->type) {
-		case XNVMEC_LFLG:
-		case XNVMEC_LREQ:
-		case XNVMEC_LOPT:
+		case XNVME_CLI_LFLG:
+		case XNVME_CLI_LREQ:
+		case XNVME_CLI_LOPT:
 
 			lopt = &long_options[signature.total_long - 1];
 			lopt->name = opt_attr->name;
@@ -1620,24 +1623,24 @@ xnvmec_parse(struct xnvmec *cli)
 			lopt->val = opt_attr->getoptval;
 
 			lopt->has_arg = required_argument;
-			if (sub_opt->type == XNVMEC_LFLG) {
+			if (sub_opt->type == XNVME_CLI_LFLG) {
 				lopt->has_arg = no_argument;
 			}
 
 			break;
 
-		case XNVMEC_POSA:
+		case XNVME_CLI_POSA:
 			pos_args[signature.posa - 1] = opt_attr;
 			break;
-		case XNVMEC_SKIP:
+		case XNVME_CLI_SKIP:
 			break;
 		}
 	}
 
 	// Parse the long-opts
 	for (int count = 0; count < signature.total_long; ++count) {
-		struct xnvmec_sub_opt *sub_opt = NULL;
-		struct xnvmec_opt_attr *opt_attr = NULL;
+		struct xnvme_cli_sub_opt *sub_opt = NULL;
+		struct xnvme_cli_opt_attr *opt_attr = NULL;
 		int optidx = 0;
 		int ret = 0;
 		int found = 0;
@@ -1648,12 +1651,12 @@ xnvmec_parse(struct xnvmec *cli)
 		}
 
 		// Find the option, and the option-attributes matching the getopt-optionchar/ret
-		for (int oi = 0; oi < XNVMEC_SUB_OPTS_LEN; ++oi) {
+		for (int oi = 0; oi < XNVME_CLI_SUB_OPTS_LEN; ++oi) {
 			sub_opt = &sub->opts[oi];
 
-			opt_attr = xnvmec_opt_attr_by_opt(sub_opt->opt, xnvmec_opts);
+			opt_attr = xnvme_cli_opt_attr_by_opt(sub_opt->opt, xnvme_cli_opts);
 			if (!opt_attr) {
-				xnvmec_pinf("no joy");
+				xnvme_cli_pinf("no joy");
 				errno = EINVAL;
 				return -1;
 			}
@@ -1663,25 +1666,25 @@ xnvmec_parse(struct xnvmec *cli)
 			}
 
 			switch (sub_opt->type) {
-			case XNVMEC_LFLG:
+			case XNVME_CLI_LFLG:
 				++parsed.lflg;
 				break;
 
-			case XNVMEC_LOPT:
+			case XNVME_CLI_LOPT:
 				++parsed.lopt;
 				break;
 
-			case XNVMEC_LREQ:
+			case XNVME_CLI_LREQ:
 				++parsed.lreq;
 				++parsed.total_req;
 				break;
 
-			case XNVMEC_POSA:
+			case XNVME_CLI_POSA:
 				XNVME_DEBUG("Positional out of place");
 				errno = EINVAL;
 				return -1;
 
-			case XNVMEC_SKIP:
+			case XNVME_CLI_SKIP:
 				break;
 			}
 
@@ -1697,9 +1700,9 @@ xnvmec_parse(struct xnvmec *cli)
 			return -1;
 		}
 
-		if (xnvmec_assign_arg(cli, opt_attr, optarg, sub_opt->type)) {
-			XNVME_DEBUG("FAILED: xnvmec_assign_arg()");
-			xnvmec_pinf("invalid argument value(%s)", optarg);
+		if (xnvme_cli_assign_arg(cli, opt_attr, optarg, sub_opt->type)) {
+			XNVME_DEBUG("FAILED: xnvme_cli_assign_arg()");
+			xnvme_cli_pinf("invalid argument value(%s)", optarg);
 			errno = EINVAL;
 			return -1;
 		}
@@ -1717,7 +1720,7 @@ xnvmec_parse(struct xnvmec *cli)
 		int npos_given;
 
 		if (cli->argc < 3) {
-			xnvmec_pinf("Insufficient arguments, see: --help");
+			xnvme_cli_pinf("Insufficient arguments, see: --help");
 			errno = EINVAL;
 			return -1;
 		}
@@ -1725,14 +1728,14 @@ xnvmec_parse(struct xnvmec *cli)
 		npos_given = cli->argc - (optind + 1);
 
 		if (npos_given != signature.posa) {
-			xnvmec_pinf("Insufficient arguments, see: --help");
+			xnvme_cli_pinf("Insufficient arguments, see: --help");
 			errno = EINVAL;
 			return -1;
 		}
 
 		// Skip the sub-command and parse positional arguments
 		for (int pos = 0; pos < signature.posa; ++pos) {
-			struct xnvmec_opt_attr *attr = NULL;
+			struct xnvme_cli_opt_attr *attr = NULL;
 			int idx = pos + (optind + 1);
 
 			if (idx > cli->argc) {
@@ -1741,9 +1744,9 @@ xnvmec_parse(struct xnvmec *cli)
 
 			attr = pos_args[pos];
 
-			if (xnvmec_assign_arg(cli, attr, cli->argv[idx], XNVMEC_POSA)) {
-				XNVME_DEBUG("FAILED: xnvmec_assign_arg()");
-				xnvmec_pinf("invalid argument value(%s)", cli->argv[idx]);
+			if (xnvme_cli_assign_arg(cli, attr, cli->argv[idx], XNVME_CLI_POSA)) {
+				XNVME_DEBUG("FAILED: xnvme_cli_assign_arg()");
+				xnvme_cli_pinf("invalid argument value(%s)", cli->argv[idx]);
 				errno = EINVAL;
 				return -1;
 			}
@@ -1756,7 +1759,7 @@ xnvmec_parse(struct xnvmec *cli)
 
 	// Didn't ask for help and insufficient arguments provided
 	if ((!args->help) && (parsed.total_req < signature.total_req)) {
-		xnvmec_pinf("Insufficient required arguments, see: --help");
+		xnvme_cli_pinf("Insufficient required arguments, see: --help");
 		errno = EINVAL;
 		return -1;
 	}
@@ -1765,13 +1768,13 @@ xnvmec_parse(struct xnvmec *cli)
 }
 
 int
-xnvmec(struct xnvmec *cli, int argc, char **argv, int opts)
+xnvme_cli_run(struct xnvme_cli *cli, int argc, char **argv, int opts)
 {
 	int err = 0;
 
 	if (!cli) {
 		err = -EINVAL;
-		xnvmec_perr("xnvmec(!cli)", err);
+		xnvme_cli_perr("xnvme_cli_run(!cli)", err);
 		return err;
 	}
 
@@ -1783,52 +1786,52 @@ xnvmec(struct xnvmec *cli, int argc, char **argv, int opts)
 	}
 
 	if ((argc < 2) || (!strcmp(argv[1], "--help")) || (!strcmp(argv[1], "-h"))) {
-		xnvmec_usage(cli);
+		xnvme_cli_usage(cli);
 		return 0;
 	}
 
 	for (int i = 0; i < cli->nsubs; ++i) { // We all need help! ;)
-		struct xnvmec_sub *sub = &cli->subs[i];
+		struct xnvme_cli_sub *sub = &cli->subs[i];
 
 		if (!sub->name) {
 			break;
 		}
 
-		for (int oi = 0; oi < XNVMEC_SUB_OPTS_LEN; ++oi) {
-			struct xnvmec_sub_opt *sopt = &sub->opts[oi];
+		for (int oi = 0; oi < XNVME_CLI_SUB_OPTS_LEN; ++oi) {
+			struct xnvme_cli_sub_opt *sopt = &sub->opts[oi];
 
-			if (sopt->opt == XNVMEC_OPT_NONE) {
-				sopt->opt = XNVMEC_OPT_HELP;
-				sopt->type = XNVMEC_LFLG;
+			if (sopt->opt == XNVME_CLI_OPT_NONE) {
+				sopt->opt = XNVME_CLI_OPT_HELP;
+				sopt->type = XNVME_CLI_LFLG;
 				break;
 			}
 		}
 	}
 
-	err = xnvmec_parse(cli);
+	err = xnvme_cli_parse(cli);
 	if (err) {
-		xnvmec_perr("xnvmec()", errno);
+		xnvme_cli_perr("xnvme_cli_run()", errno);
 		return err;
 	}
 
 	// Arguments parsed without any errors
 	if (cli->args.help) {
-		xnvmec_usage_sub_long(cli, cli->sub);
+		xnvme_cli_usage_sub_long(cli, cli->sub);
 		return 0;
 	}
 
-	if ((opts & XNVMEC_INIT_DEV_OPEN) && cli->args.uri) {
+	if ((opts & XNVME_CLI_INIT_DEV_OPEN) && cli->args.uri) {
 		struct xnvme_opts opts = xnvme_opts_default();
 
-		if (xnvmec_cli_to_opts(cli, &opts)) {
-			xnvmec_perr("xnvmec_cli_to_opts()", errno);
+		if (xnvme_cli_to_opts(cli, &opts)) {
+			xnvme_cli_perr("xnvme_cli_to_opts()", errno);
 			return -1;
 		}
 
 		cli->args.dev = xnvme_dev_open(cli->args.uri, &opts);
 		if (!cli->args.dev) {
 			err = -errno;
-			xnvmec_perr("xnvme_dev_open()", err);
+			xnvme_cli_perr("xnvme_dev_open()", err);
 			return -1;
 		}
 		cli->args.geo = xnvme_dev_get_geo(cli->args.dev);
@@ -1836,14 +1839,14 @@ xnvmec(struct xnvmec *cli, int argc, char **argv, int opts)
 
 	err = cli->sub->command(cli);
 	if (err) {
-		xnvmec_perr(cli->sub->name, err);
+		xnvme_cli_perr(cli->sub->name, err);
 	}
 
 	if (cli->args.verbose) {
-		xnvmec_args_pr(&cli->args, 0x0);
+		xnvme_cli_args_pr(&cli->args, 0x0);
 	}
 
-	if ((opts & XNVMEC_INIT_DEV_OPEN) && cli->args.dev) {
+	if ((opts & XNVME_CLI_INIT_DEV_OPEN) && cli->args.dev) {
 		xnvme_dev_close(cli->args.dev);
 	}
 
@@ -1851,58 +1854,60 @@ xnvmec(struct xnvmec *cli, int argc, char **argv, int opts)
 }
 
 int
-xnvmec_cli_to_opts(const struct xnvmec *cli, struct xnvme_opts *opts)
+xnvme_cli_to_opts(const struct xnvme_cli *cli, struct xnvme_opts *opts)
 {
-	opts->be = cli->given[XNVMEC_OPT_BE] ? cli->args.be : opts->be;
-	opts->mem = cli->given[XNVMEC_OPT_MEM] ? cli->args.mem : opts->mem;
-	opts->sync = cli->given[XNVMEC_OPT_SYNC] ? cli->args.sync : opts->sync;
-	opts->async = cli->given[XNVMEC_OPT_ASYNC] ? cli->args.async : opts->async;
-	opts->admin = cli->given[XNVMEC_OPT_ADMIN] ? cli->args.admin : opts->admin;
+	opts->be = cli->given[XNVME_CLI_OPT_BE] ? cli->args.be : opts->be;
+	opts->mem = cli->given[XNVME_CLI_OPT_MEM] ? cli->args.mem : opts->mem;
+	opts->sync = cli->given[XNVME_CLI_OPT_SYNC] ? cli->args.sync : opts->sync;
+	opts->async = cli->given[XNVME_CLI_OPT_ASYNC] ? cli->args.async : opts->async;
+	opts->admin = cli->given[XNVME_CLI_OPT_ADMIN] ? cli->args.admin : opts->admin;
 
-	opts->nsid = cli->given[XNVMEC_OPT_DEV_NSID] ? cli->args.dev_nsid : opts->nsid;
+	opts->nsid = cli->given[XNVME_CLI_OPT_DEV_NSID] ? cli->args.dev_nsid : opts->nsid;
 
-	opts->oflags = cli->given[XNVMEC_OPT_OFLAGS] ? cli->args.oflags : opts->oflags;
-	opts->rdonly = cli->given[XNVMEC_OPT_RDONLY] ? cli->args.rdonly : opts->rdonly;
-	opts->wronly = cli->given[XNVMEC_OPT_WRONLY] ? cli->args.wronly : opts->wronly;
-	opts->rdwr = cli->given[XNVMEC_OPT_RDWR] ? cli->args.rdwr : opts->rdwr;
-	opts->create = cli->given[XNVMEC_OPT_CREATE] ? cli->args.create : opts->create;
-	opts->truncate = cli->given[XNVMEC_OPT_TRUNCATE] ? cli->args.truncate : opts->truncate;
-	opts->direct = cli->given[XNVMEC_OPT_DIRECT] ? cli->args.direct : opts->direct;
+	opts->oflags = cli->given[XNVME_CLI_OPT_OFLAGS] ? cli->args.oflags : opts->oflags;
+	opts->rdonly = cli->given[XNVME_CLI_OPT_RDONLY] ? cli->args.rdonly : opts->rdonly;
+	opts->wronly = cli->given[XNVME_CLI_OPT_WRONLY] ? cli->args.wronly : opts->wronly;
+	opts->rdwr = cli->given[XNVME_CLI_OPT_RDWR] ? cli->args.rdwr : opts->rdwr;
+	opts->create = cli->given[XNVME_CLI_OPT_CREATE] ? cli->args.create : opts->create;
+	opts->truncate = cli->given[XNVME_CLI_OPT_TRUNCATE] ? cli->args.truncate : opts->truncate;
+	opts->direct = cli->given[XNVME_CLI_OPT_DIRECT] ? cli->args.direct : opts->direct;
 
 	opts->create_mode =
-		cli->given[XNVMEC_OPT_CREATE_MODE] ? cli->args.create_mode : opts->create_mode;
+		cli->given[XNVME_CLI_OPT_CREATE_MODE] ? cli->args.create_mode : opts->create_mode;
 
-	opts->poll_io = cli->given[XNVMEC_OPT_POLL_IO] ? cli->args.poll_io : opts->poll_io;
-	opts->poll_sq = cli->given[XNVMEC_OPT_POLL_SQ] ? cli->args.poll_sq : opts->poll_sq;
-	opts->register_files = cli->given[XNVMEC_OPT_REGISTER_FILES] ? cli->args.register_files
-								     : opts->register_files;
-	opts->register_buffers = cli->given[XNVMEC_OPT_REGISTER_BUFFERS]
+	opts->poll_io = cli->given[XNVME_CLI_OPT_POLL_IO] ? cli->args.poll_io : opts->poll_io;
+	opts->poll_sq = cli->given[XNVME_CLI_OPT_POLL_SQ] ? cli->args.poll_sq : opts->poll_sq;
+	opts->register_files = cli->given[XNVME_CLI_OPT_REGISTER_FILES] ? cli->args.register_files
+									: opts->register_files;
+	opts->register_buffers = cli->given[XNVME_CLI_OPT_REGISTER_BUFFERS]
 					 ? cli->args.register_buffers
 					 : opts->register_buffers;
 
-	opts->css.value = cli->given[XNVMEC_OPT_CSS] ? cli->args.css.value : opts->css.value;
-	opts->css.given = cli->given[XNVMEC_OPT_CSS] ? cli->args.css.given : opts->css.given;
+	opts->css.value = cli->given[XNVME_CLI_OPT_CSS] ? cli->args.css.value : opts->css.value;
+	opts->css.given = cli->given[XNVME_CLI_OPT_CSS] ? cli->args.css.given : opts->css.given;
 
 	opts->use_cmb_sqs =
-		cli->given[XNVMEC_OPT_USE_CMB_SQS] ? cli->args.use_cmb_sqs : opts->use_cmb_sqs;
-	opts->shm_id = cli->given[XNVMEC_OPT_SHM_ID] ? cli->args.shm_id : opts->shm_id;
-	opts->main_core = cli->given[XNVMEC_OPT_MAIN_CORE] ? cli->args.main_core : opts->main_core;
-	opts->core_mask = cli->given[XNVMEC_OPT_CORE_MASK] ? cli->args.core_mask : opts->core_mask;
-	opts->adrfam = cli->given[XNVMEC_OPT_ADRFAM] ? cli->args.adrfam : opts->adrfam;
-	opts->subnqn = cli->given[XNVMEC_OPT_SUBNQN] ? cli->args.subnqn : opts->subnqn;
-	opts->hostnqn = cli->given[XNVMEC_OPT_HOSTNQN] ? cli->args.hostnqn : opts->hostnqn;
+		cli->given[XNVME_CLI_OPT_USE_CMB_SQS] ? cli->args.use_cmb_sqs : opts->use_cmb_sqs;
+	opts->shm_id = cli->given[XNVME_CLI_OPT_SHM_ID] ? cli->args.shm_id : opts->shm_id;
+	opts->main_core =
+		cli->given[XNVME_CLI_OPT_MAIN_CORE] ? cli->args.main_core : opts->main_core;
+	opts->core_mask =
+		cli->given[XNVME_CLI_OPT_CORE_MASK] ? cli->args.core_mask : opts->core_mask;
+	opts->adrfam = cli->given[XNVME_CLI_OPT_ADRFAM] ? cli->args.adrfam : opts->adrfam;
+	opts->subnqn = cli->given[XNVME_CLI_OPT_SUBNQN] ? cli->args.subnqn : opts->subnqn;
+	opts->hostnqn = cli->given[XNVME_CLI_OPT_HOSTNQN] ? cli->args.hostnqn : opts->hostnqn;
 
 	return 0;
 }
 
 void
-xnvmec_enumeration_free(struct xnvmec_enumeration *list)
+xnvme_cli_enumeration_free(struct xnvme_cli_enumeration *list)
 {
 	free(list);
 }
 
 int
-xnvmec_enumeration_alloc(struct xnvmec_enumeration **list, uint32_t capacity)
+xnvme_cli_enumeration_alloc(struct xnvme_cli_enumeration **list, uint32_t capacity)
 {
 	*list = malloc(sizeof(**list) + sizeof(*(*list)->entries) * capacity);
 	if (!(*list)) {
@@ -1916,7 +1921,7 @@ xnvmec_enumeration_alloc(struct xnvmec_enumeration **list, uint32_t capacity)
 }
 
 int
-xnvmec_enumeration_append(struct xnvmec_enumeration *list, const struct xnvme_ident *entry)
+xnvme_cli_enumeration_append(struct xnvme_cli_enumeration *list, const struct xnvme_ident *entry)
 {
 	if (!list->capacity) {
 		XNVME_DEBUG("FAILED: syslist->capacity: %u", list->capacity);
@@ -1929,7 +1934,7 @@ xnvmec_enumeration_append(struct xnvmec_enumeration *list, const struct xnvme_id
 }
 
 int
-xnvmec_enumeration_fpr(FILE *stream, struct xnvmec_enumeration *list, int opts)
+xnvme_cli_enumeration_fpr(FILE *stream, struct xnvme_cli_enumeration *list, int opts)
 {
 	int wrtn = 0;
 
@@ -1943,7 +1948,7 @@ xnvmec_enumeration_fpr(FILE *stream, struct xnvmec_enumeration *list, int opts)
 		break;
 	}
 
-	wrtn += fprintf(stream, "xnvmec_enumeration:");
+	wrtn += fprintf(stream, "xnvme_cli_enumeration:");
 
 	if (!list) {
 		wrtn += fprintf(stream, " ~\n");
@@ -1973,9 +1978,9 @@ xnvmec_enumeration_fpr(FILE *stream, struct xnvmec_enumeration *list, int opts)
 }
 
 int
-xnvmec_enumeration_pr(struct xnvmec_enumeration *list, int opts)
+xnvme_cli_enumeration_pr(struct xnvme_cli_enumeration *list, int opts)
 {
-	return xnvmec_enumeration_fpr(stdout, list, opts);
+	return xnvme_cli_enumeration_fpr(stdout, list, opts);
 }
 
 /**
@@ -1984,7 +1989,7 @@ xnvmec_enumeration_pr(struct xnvmec_enumeration *list, int opts)
  * @return Returns 1 it is exist, 0 otherwise.
  */
 static int
-enumeration_has_ident(struct xnvmec_enumeration *list, struct xnvme_ident *ident, uint32_t idx)
+enumeration_has_ident(struct xnvme_cli_enumeration *list, struct xnvme_ident *ident, uint32_t idx)
 {
 	uint32_t bound = XNVME_MIN(list->nentries, idx);
 
@@ -2009,7 +2014,7 @@ enumeration_has_ident(struct xnvmec_enumeration *list, struct xnvme_ident *ident
 }
 
 int
-xnvmec_enumeration_fpp(FILE *stream, struct xnvmec_enumeration *list, int opts)
+xnvme_cli_enumeration_fpp(FILE *stream, struct xnvme_cli_enumeration *list, int opts)
 {
 	int wrtn = 0;
 
@@ -2023,7 +2028,7 @@ xnvmec_enumeration_fpp(FILE *stream, struct xnvmec_enumeration *list, int opts)
 		break;
 	}
 
-	wrtn += fprintf(stream, "xnvmec_enumeration:");
+	wrtn += fprintf(stream, "xnvme_cli_enumeration:");
 
 	if (!list) {
 		wrtn += fprintf(stream, " ~\n");
@@ -2050,7 +2055,7 @@ xnvmec_enumeration_fpp(FILE *stream, struct xnvmec_enumeration *list, int opts)
 }
 
 int
-xnvmec_enumeration_pp(struct xnvmec_enumeration *list, int opts)
+xnvme_cli_enumeration_pp(struct xnvme_cli_enumeration *list, int opts)
 {
-	return xnvmec_enumeration_fpp(stdout, list, opts);
+	return xnvme_cli_enumeration_fpp(stdout, list, opts);
 }

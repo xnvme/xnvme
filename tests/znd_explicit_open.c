@@ -6,7 +6,7 @@
 #include <libxnvme.h>
 
 static int
-test_open_zdptr(struct xnvmec *cli)
+test_open_zdptr(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
@@ -25,7 +25,7 @@ test_open_zdptr(struct xnvmec *cli)
 	int err;
 
 	if (!zde_nbytes) {
-		xnvmec_pinf("Invalid device: zde_nbytes: %d", zde_nbytes);
+		xnvme_cli_pinf("Invalid device: zde_nbytes: %d", zde_nbytes);
 		err = -EINVAL;
 		goto exit;
 	}
@@ -33,31 +33,31 @@ test_open_zdptr(struct xnvmec *cli)
 	// Allocate and fill Zone Descriptor Extension
 	zde = xnvme_buf_alloc(dev, zde_nbytes);
 	if (!zde) {
-		xnvmec_pinf("xnvme_buf_alloc(zde_nbytes)");
+		xnvme_cli_pinf("xnvme_buf_alloc(zde_nbytes)");
 		err = -errno;
 		goto exit;
 	}
 	err = xnvme_buf_fill(zde, zde_nbytes, "anum");
 	if (err) {
-		xnvmec_perr("xnvme_buf_fill()", err);
+		xnvme_cli_perr("xnvme_buf_fill()", err);
 		goto exit;
 	}
 
-	xnvmec_pinf("Retrieving state before EOPEN");
+	xnvme_cli_pinf("Retrieving state before EOPEN");
 
 	before = xnvme_znd_report_from_dev(dev, 0x0, 0, 0);
 	if (!before) {
 		err = -errno;
-		xnvmec_perr("xnvme_znd_report_from_dev()", err);
+		xnvme_cli_perr("xnvme_znd_report_from_dev()", err);
 		goto exit;
 	}
 
-	xnvmec_pinf("Scan for empty and sequential write ctx. zone");
+	xnvme_cli_pinf("Scan for empty and sequential write ctx. zone");
 
 	for (uint64_t idx = 0; idx < before->nentries; ++idx) {
 		struct xnvme_spec_znd_descr *descr = XNVME_ZND_REPORT_DESCR(before, idx);
 
-		if (cli->given[XNVMEC_OPT_SLBA] && (cli->args.lba != descr->zslba)) {
+		if (cli->given[XNVME_CLI_OPT_SLBA] && (cli->args.lba != descr->zslba)) {
 			continue;
 		}
 
@@ -69,40 +69,40 @@ test_open_zdptr(struct xnvmec *cli)
 		}
 	}
 	if (!zslba) {
-		xnvmec_pinf("Could not find a usable zslba...");
+		xnvme_cli_pinf("Could not find a usable zslba...");
 		err = -ENOSPC;
 		goto exit;
 	}
 
-	xnvmec_pinf("Using: {zslba: 0x%016lx, zidx: %zu}", zslba, zidx);
+	xnvme_cli_pinf("Using: {zslba: 0x%016lx, zidx: %zu}", zslba, zidx);
 
-	xnvmec_pinf("Before");
+	xnvme_cli_pinf("Before");
 	xnvme_spec_znd_descr_pr(XNVME_ZND_REPORT_DESCR(before, zidx), XNVME_PR_DEF);
 
 	err = xnvme_znd_mgmt_send(&ctx, nsid, zslba, false, XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET,
 				  0x0, NULL);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvmec_pinf("xnvme_znd_mgmt_send(RESET)");
+		xnvme_cli_pinf("xnvme_znd_mgmt_send(RESET)");
 		err = err ? err : -EIO;
 		goto exit;
 	}
 
-	xnvmec_pinf("Sending MGMT-EOPEN");
+	xnvme_cli_pinf("Sending MGMT-EOPEN");
 
 	err = xnvme_znd_mgmt_send(&ctx, nsid, zslba, false, XNVME_SPEC_ZND_CMD_MGMT_SEND_OPEN, 0x0,
 				  zde);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvmec_pinf("xnvme_cmd_zone_mgmt(OPEN)");
+		xnvme_cli_pinf("xnvme_cmd_zone_mgmt(OPEN)");
 		err = err ? err : -EIO;
 		goto exit;
 	}
 
-	xnvmec_pinf("After");
+	xnvme_cli_pinf("After");
 
 	after = xnvme_znd_report_from_dev(dev, 0x0, 0, 0);
 	if (!after) {
 		err = -errno;
-		xnvmec_perr("xnvme_znd_report_from_dev", err);
+		xnvme_cli_perr("xnvme_znd_report_from_dev", err);
 		goto exit;
 	}
 
@@ -120,13 +120,13 @@ test_open_zdptr(struct xnvmec *cli)
 		}
 
 		if (!descr->za.zdev) {
-			xnvmec_pinf("ERR: !descr->za.zdev");
+			xnvme_cli_pinf("ERR: !descr->za.zdev");
 			err = -EIO;
 			goto exit;
 		}
 
 		if (XNVME_SPEC_ZND_STATE_EOPEN != descr->zs) {
-			xnvmec_pinf("ERR: invalid zc: 0x%x", descr->zs);
+			xnvme_cli_pinf("ERR: invalid zc: 0x%x", descr->zs);
 			err = -EIO;
 			goto exit;
 		}
@@ -142,23 +142,23 @@ exit:
 //
 // Command-Line Interface (CLI) definition
 //
-static struct xnvmec_sub g_subs[] = {
+static struct xnvme_cli_sub g_subs[] = {
 	{
 		"test_open_zdptr",
 		"jazz",
 		"jazz",
 		test_open_zdptr,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_SLBA, XNVME_CLI_LOPT},
 		},
 	},
 };
 
-static struct xnvmec g_cli = {
+static struct xnvme_cli g_cli = {
 	.title = "Test Zoned Reporting and Management",
 	.descr_short = "Test Zoned Reporting and Management",
 	.subs = g_subs,
@@ -168,5 +168,5 @@ static struct xnvmec g_cli = {
 int
 main(int argc, char **argv)
 {
-	return xnvmec(&g_cli, argc, argv, XNVMEC_INIT_DEV_OPEN);
+	return xnvme_cli_run(&g_cli, argc, argv, XNVME_CLI_INIT_DEV_OPEN);
 }

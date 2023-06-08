@@ -28,7 +28,7 @@ cb_func(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 	work->ncompletions += 1;
 
 	if (xnvme_cmd_ctx_cpl_status(ctx)) {
-		xnvmec_perr("cb_func()", errno);
+		xnvme_cli_perr("cb_func()", errno);
 		xnvme_cmd_ctx_pr(ctx, XNVME_PR_DEF);
 		*work->nerrors += 1;
 	} else {
@@ -37,7 +37,7 @@ cb_func(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 		res = xnvme_file_pwrite(&work->dst_ctx, work->buf, ctx->cpl.result,
 					ctx->cmd.nvm.slba - work->start_offset);
 		if (res || xnvme_cmd_ctx_cpl_status(&work->dst_ctx)) {
-			xnvmec_perr("xnvme_file_pwrite(dst)", res);
+			xnvme_cli_perr("xnvme_file_pwrite(dst)", res);
 			xnvme_cmd_ctx_pr(&work->dst_ctx, XNVME_PR_DEF);
 			*work->nerrors += 1;
 		}
@@ -47,7 +47,7 @@ cb_func(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 }
 
 int
-copy_async(struct xnvmec *cli)
+copy_async(struct xnvme_cli *cli)
 {
 	const char *src_uri, *dst_uri;
 	struct xnvme_dev *src_dev, *dst_dev;
@@ -66,29 +66,29 @@ copy_async(struct xnvmec *cli)
 	dst_uri = cli->args.data_output;
 	tbytes = cli->args.data_nbytes;
 
-	iosize = cli->given[XNVMEC_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
+	iosize = cli->given[XNVME_CLI_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
 	if (!iosize) {
 		err = -EINVAL;
-		xnvmec_perr("iosize can't be set to 0", err);
+		xnvme_cli_perr("iosize can't be set to 0", err);
 		return err;
 	}
 
-	qdepth = cli->given[XNVMEC_OPT_QDEPTH] ? cli->args.qdepth : QDEPTH_DEF;
+	qdepth = cli->given[XNVME_CLI_OPT_QDEPTH] ? cli->args.qdepth : QDEPTH_DEF;
 	if (!qdepth) {
 		err = -EINVAL;
-		xnvmec_perr("qdepth can't be set to 0", err);
+		xnvme_cli_perr("qdepth can't be set to 0", err);
 		return err;
 	}
-	start_offset = cli->given[XNVMEC_OPT_OFFSET] ? cli->args.offset : START_OFFSET_DEF;
+	start_offset = cli->given[XNVME_CLI_OPT_OFFSET] ? cli->args.offset : START_OFFSET_DEF;
 
 	src_dev = xnvme_file_open(src_uri, &src_opts);
 	if (src_dev == NULL) {
-		xnvmec_perr("xnvme_file_open(src)", errno);
+		xnvme_cli_perr("xnvme_file_open(src)", errno);
 		return errno;
 	}
 	dst_dev = xnvme_file_open(dst_uri, &dst_opts);
 	if (dst_dev == NULL) {
-		xnvmec_perr("xnvme_file_open(dst)", errno);
+		xnvme_cli_perr("xnvme_file_open(dst)", errno);
 		xnvme_file_close(src_dev);
 		return errno;
 	}
@@ -96,24 +96,24 @@ copy_async(struct xnvmec *cli)
 	buf_nbytes = iosize * qdepth;
 	buf = xnvme_buf_alloc(dst_dev, buf_nbytes);
 	if (!buf) {
-		xnvmec_perr("xnvme_buf_alloc()", errno);
+		xnvme_cli_perr("xnvme_buf_alloc()", errno);
 		goto exit;
 	}
 	xnvme_buf_fill(buf, buf_nbytes, "zero");
 
 	err = xnvme_queue_init(src_dev, qdepth, 0, &queue);
 	if (err) {
-		xnvmec_perr("xnvme_queue_init()", err);
+		xnvme_cli_perr("xnvme_queue_init()", err);
 		goto exit;
 	}
 	xnvme_queue_set_cb(queue, cb_func, &cb_args);
 
-	xnvmec_pinf("copy-async: "
-		    "{src: %s, dst: %s, tbytes: %zu, buf_nbytes: %zu, iosize: %zu, qdepth: %u, "
-		    "start_offset: %zu}",
-		    src_uri, dst_uri, tbytes, buf_nbytes, iosize, qdepth, start_offset);
+	xnvme_cli_pinf("copy-async: "
+		       "{src: %s, dst: %s, tbytes: %zu, buf_nbytes: %zu, iosize: %zu, qdepth: %u, "
+		       "start_offset: %zu}",
+		       src_uri, dst_uri, tbytes, buf_nbytes, iosize, qdepth, start_offset);
 
-	xnvmec_timer_start(cli);
+	xnvme_cli_timer_start(cli);
 
 	for (uint32_t i = 0; i < qdepth; ++i) {
 		struct cb_args *work = &cb_args[i];
@@ -144,7 +144,7 @@ submit:
 			goto submit;
 
 		default:
-			xnvmec_perr("submission-error", err);
+			xnvme_cli_perr("submission-error", err);
 			xnvme_queue_put_cmd_ctx(queue, src_ctx);
 			goto exit;
 		}
@@ -155,12 +155,12 @@ next:
 
 	err = xnvme_queue_drain(queue);
 	if (err < 0) {
-		xnvmec_perr("xnvme_queue_drain()", err);
+		xnvme_cli_perr("xnvme_queue_drain()", err);
 		goto exit;
 	}
 
-	xnvmec_timer_stop(cli);
-	xnvmec_timer_bw_pr(cli, "wall-clock", tbytes);
+	xnvme_cli_timer_stop(cli);
+	xnvme_cli_timer_bw_pr(cli, "wall-clock", tbytes);
 
 exit:
 	for (uint32_t i = 0; i < qdepth; ++i) {
@@ -169,13 +169,13 @@ exit:
 		nsubmissions += work->nsubmissions;
 		ncompletions += work->ncompletions;
 	}
-	xnvmec_pinf("cb_args: {nsubmissions: %zu, ncompletions: %zu, nerrors: %zu}", nsubmissions,
-		    ncompletions, nerrors);
+	xnvme_cli_pinf("cb_args: {nsubmissions: %zu, ncompletions: %zu, nerrors: %zu}",
+		       nsubmissions, ncompletions, nerrors);
 
 	if (queue) {
 		int err_exit = xnvme_queue_term(queue);
 		if (err_exit) {
-			xnvmec_perr("xnvme_queue_term()", err_exit);
+			xnvme_cli_perr("xnvme_queue_term()", err_exit);
 		}
 	}
 
@@ -186,7 +186,7 @@ exit:
 }
 
 int
-copy_sync(struct xnvmec *cli)
+copy_sync(struct xnvme_cli *cli)
 {
 	const char *src_uri, *dst_uri;
 	struct xnvme_dev *src_dev, *dst_dev;
@@ -199,17 +199,17 @@ copy_sync(struct xnvmec *cli)
 	dst_uri = cli->args.data_output;
 	tbytes = cli->args.data_nbytes;
 
-	iosize = cli->given[XNVMEC_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
-	start_offset = cli->given[XNVMEC_OPT_OFFSET] ? cli->args.offset : START_OFFSET_DEF;
+	iosize = cli->given[XNVME_CLI_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
+	start_offset = cli->given[XNVME_CLI_OPT_OFFSET] ? cli->args.offset : START_OFFSET_DEF;
 
 	src_dev = xnvme_file_open(src_uri, &src_opts);
 	if (!src_dev) {
-		xnvmec_perr("xnvme_file_open(src)", errno);
+		xnvme_cli_perr("xnvme_file_open(src)", errno);
 		return errno;
 	}
 	dst_dev = xnvme_file_open(dst_uri, &dst_opts);
 	if (!dst_dev) {
-		xnvmec_perr("xnvme_file_open(dst)", errno);
+		xnvme_cli_perr("xnvme_file_open(dst)", errno);
 		xnvme_file_close(src_dev);
 		return errno;
 	}
@@ -217,16 +217,16 @@ copy_sync(struct xnvmec *cli)
 	buf_nbytes = iosize;
 	buf = xnvme_buf_alloc(dst_dev, buf_nbytes);
 	if (!buf) {
-		xnvmec_perr("xnvme_buf_alloc()", errno);
+		xnvme_cli_perr("xnvme_buf_alloc()", errno);
 		goto exit;
 	}
 	xnvme_buf_fill(buf, buf_nbytes, "zero");
 
-	xnvmec_pinf("copy-sync: {src: %s, dst: %s, tbytes: %zu, buf_nbytes: %zu, iosize: %zu, "
-		    "start_offset: %zu}",
-		    src_uri, dst_uri, tbytes, buf_nbytes, iosize, start_offset);
+	xnvme_cli_pinf("copy-sync: {src: %s, dst: %s, tbytes: %zu, buf_nbytes: %zu, iosize: %zu, "
+		       "start_offset: %zu}",
+		       src_uri, dst_uri, tbytes, buf_nbytes, iosize, start_offset);
 
-	xnvmec_timer_start(cli);
+	xnvme_cli_timer_start(cli);
 
 	for (size_t ofz = start_offset; ofz - start_offset < tbytes; ofz += iosize) {
 		struct xnvme_cmd_ctx src_ctx = xnvme_file_get_cmd_ctx(src_dev);
@@ -236,21 +236,21 @@ copy_sync(struct xnvmec *cli)
 
 		res = xnvme_file_pread(&src_ctx, buf, nbytes, ofz);
 		if (res || xnvme_cmd_ctx_cpl_status(&src_ctx)) {
-			xnvmec_perr("xnvme_file_pread(src)", res);
+			xnvme_cli_perr("xnvme_file_pread(src)", res);
 			xnvme_cmd_ctx_pr(&src_ctx, XNVME_PR_DEF);
 			goto exit;
 		}
 
 		res = xnvme_file_pwrite(&dst_ctx, buf, nbytes, ofz - start_offset);
 		if (res || xnvme_cmd_ctx_cpl_status(&dst_ctx)) {
-			xnvmec_perr("xnvme_file_pwrite(dst)", res);
+			xnvme_cli_perr("xnvme_file_pwrite(dst)", res);
 			xnvme_cmd_ctx_pr(&dst_ctx, XNVME_PR_DEF);
 			goto exit;
 		}
 	}
 
-	xnvmec_timer_stop(cli);
-	xnvmec_timer_bw_pr(cli, "wall-clock", tbytes);
+	xnvme_cli_timer_stop(cli);
+	xnvme_cli_timer_bw_pr(cli, "wall-clock", tbytes);
 
 exit:
 	xnvme_buf_free(dst_dev, buf);
@@ -259,20 +259,20 @@ exit:
 	return 0;
 }
 
-static struct xnvmec_sub g_subs[] = {
+static struct xnvme_cli_sub g_subs[] = {
 	{
 		"sync",
 		"Copy --data-nbytes from --data-input to --data--output",
 		"Copy --data-nbytes from --data-input to --data--output",
 		copy_sync,
 		{
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LREQ},
-			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LREQ},
-			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LREQ},
-			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
-			{XNVMEC_OPT_DIRECT, XNVMEC_LFLG},
-			{XNVMEC_OPT_OFFSET, XNVMEC_LOPT},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_DATA_INPUT, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_DATA_OUTPUT, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_DATA_NBYTES, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_IOSIZE, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_DIRECT, XNVME_CLI_LFLG},
+			{XNVME_CLI_OPT_OFFSET, XNVME_CLI_LOPT},
 		},
 	},
 	{
@@ -281,19 +281,19 @@ static struct xnvmec_sub g_subs[] = {
 		"Copy --data-nbytes from --data-input to --data--output",
 		copy_async,
 		{
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LREQ},
-			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LREQ},
-			{XNVMEC_OPT_DATA_NBYTES, XNVMEC_LREQ},
-			{XNVMEC_OPT_IOSIZE, XNVMEC_LOPT},
-			{XNVMEC_OPT_QDEPTH, XNVMEC_LOPT},
-			{XNVMEC_OPT_DIRECT, XNVMEC_LFLG},
-			{XNVMEC_OPT_OFFSET, XNVMEC_LOPT},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_DATA_INPUT, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_DATA_OUTPUT, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_DATA_NBYTES, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_IOSIZE, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_QDEPTH, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_DIRECT, XNVME_CLI_LFLG},
+			{XNVME_CLI_OPT_OFFSET, XNVME_CLI_LOPT},
 		},
 	},
 };
 
-static struct xnvmec g_cli = {
+static struct xnvme_cli g_cli = {
 	.title = "xNVMe dd - Copy bytes from input to output",
 	.descr_short = "Copy bytes from input to output",
 	.descr_long = "",
@@ -304,5 +304,5 @@ static struct xnvmec g_cli = {
 int
 main(int argc, char **argv)
 {
-	return xnvmec(&g_cli, argc, argv, XNVMEC_INIT_NONE);
+	return xnvme_cli_run(&g_cli, argc, argv, XNVME_CLI_INIT_NONE);
 }
