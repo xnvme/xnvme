@@ -43,7 +43,7 @@ cb_pool(struct xnvme_cmd_ctx *ctx, void *cb_arg)
  * - Teardown
  */
 static int
-sub_async_read(struct xnvmec *cli)
+sub_async_read(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = cli->args.geo;
@@ -57,50 +57,50 @@ sub_async_read(struct xnvmec *cli)
 	size_t buf_nbytes;
 	int err;
 
-	qd = cli->given[XNVMEC_OPT_QDEPTH] ? cli->args.qdepth : DEFAULT_QD;
-	nsid = cli->given[XNVMEC_OPT_NSID] ? cli->args.nsid : xnvme_dev_get_nsid(cli->args.dev);
+	qd = cli->given[XNVME_CLI_OPT_QDEPTH] ? cli->args.qdepth : DEFAULT_QD;
+	nsid = cli->given[XNVME_CLI_OPT_NSID] ? cli->args.nsid : xnvme_dev_get_nsid(cli->args.dev);
 
-	if (cli->given[XNVMEC_OPT_SLBA]) {
+	if (cli->given[XNVME_CLI_OPT_SLBA]) {
 		err = xnvme_znd_descr_from_dev(dev, cli->args.slba, &zone);
 		if (err) {
-			xnvmec_perr("xnvme_znd_descr_from_dev()", -err);
+			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
 		}
 	} else {
 		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_FULL, &zone);
 		if (err) {
-			xnvmec_perr("xnvme_znd_descr_from_dev()", -err);
+			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
 		}
 	}
 
 	buf_nbytes = zone.zcap * geo->lba_nbytes;
 
-	xnvmec_pinf("Allocating and filling buf_nbytes: %zu", buf_nbytes);
+	xnvme_cli_pinf("Allocating and filling buf_nbytes: %zu", buf_nbytes);
 	buf = xnvme_buf_alloc(dev, buf_nbytes);
 	if (!buf) {
 		err = -errno;
-		xnvmec_perr("xnvme_buf_alloc()", err);
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 	err = xnvme_buf_fill(buf, buf_nbytes, "zero");
 	if (err) {
-		xnvmec_perr("xnvme_buf_fill()", err);
+		xnvme_cli_perr("xnvme_buf_fill()", err);
 		goto exit;
 	}
 
-	xnvmec_pinf("Initializing queue and setting default callback function and arguments");
+	xnvme_cli_pinf("Initializing queue and setting default callback function and arguments");
 	err = xnvme_queue_init(dev, qd, 0, &queue);
 	if (err) {
-		xnvmec_perr("xnvme_queue_init()", err);
+		xnvme_cli_perr("xnvme_queue_init()", err);
 		goto exit;
 	}
 	xnvme_queue_set_cb(queue, cb_pool, &cb_args);
 
-	xnvmec_pinf("Read uri: '%s', qd: %d", cli->args.uri, qd);
+	xnvme_cli_pinf("Read uri: '%s', qd: %d", cli->args.uri, qd);
 	xnvme_spec_znd_descr_pr(&zone, XNVME_PR_DEF);
 
-	xnvmec_timer_start(cli);
+	xnvme_cli_timer_start(cli);
 
 	payload = buf;
 	for (uint64_t curs = 0; (curs < zone.zcap) && !cb_args.ecount;) {
@@ -119,7 +119,7 @@ submit:
 			goto submit;
 
 		default:
-			xnvmec_perr("submission-error", EIO);
+			xnvme_cli_perr("submission-error", EIO);
 			goto exit;
 		}
 
@@ -130,36 +130,36 @@ next:
 
 	err = xnvme_queue_drain(queue);
 	if (err < 0) {
-		xnvmec_perr("xnvme_queue_drain()", err);
+		xnvme_cli_perr("xnvme_queue_drain()", err);
 		goto exit;
 	}
 
-	xnvmec_timer_stop(cli);
+	xnvme_cli_timer_stop(cli);
 
 	if (cb_args.ecount) {
 		err = -EIO;
-		xnvmec_perr("got completion errors", err);
+		xnvme_cli_perr("got completion errors", err);
 		goto exit;
 	}
 
-	xnvmec_timer_bw_pr(cli, "Wall-clock", zone.zcap * geo->lba_nbytes);
+	xnvme_cli_timer_bw_pr(cli, "Wall-clock", zone.zcap * geo->lba_nbytes);
 
 	if (cli->args.data_output) {
-		xnvmec_pinf("Dumping nbytes: %zu, to: '%s'", buf_nbytes, cli->args.data_output);
+		xnvme_cli_pinf("Dumping nbytes: %zu, to: '%s'", buf_nbytes, cli->args.data_output);
 		err = xnvme_buf_to_file(buf, buf_nbytes, cli->args.data_output);
 		if (err) {
-			xnvmec_perr("xnvme_buf_to_file()", err);
+			xnvme_cli_perr("xnvme_buf_to_file()", err);
 		}
 	}
 
 exit:
-	xnvmec_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}", cb_args.submitted,
-		    cb_args.completed, cb_args.ecount);
+	xnvme_cli_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}", cb_args.submitted,
+		       cb_args.completed, cb_args.ecount);
 
 	if (queue) {
 		int err_exit = xnvme_queue_term(queue);
 		if (err_exit) {
-			xnvmec_perr("xnvme_queue_term()", err_exit);
+			xnvme_cli_perr("xnvme_queue_term()", err_exit);
 		}
 	}
 	xnvme_buf_free(dev, buf);
@@ -181,7 +181,7 @@ exit:
  * - Teardown
  */
 static int
-sub_async_write(struct xnvmec *cli)
+sub_async_write(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = cli->args.geo;
@@ -195,51 +195,51 @@ sub_async_write(struct xnvmec *cli)
 	size_t buf_nbytes;
 	int err;
 
-	qd = cli->given[XNVMEC_OPT_QDEPTH] ? cli->args.qdepth : DEFAULT_QD;
-	nsid = cli->given[XNVMEC_OPT_NSID] ? cli->args.nsid : xnvme_dev_get_nsid(cli->args.dev);
+	qd = cli->given[XNVME_CLI_OPT_QDEPTH] ? cli->args.qdepth : DEFAULT_QD;
+	nsid = cli->given[XNVME_CLI_OPT_NSID] ? cli->args.nsid : xnvme_dev_get_nsid(cli->args.dev);
 
-	if (cli->given[XNVMEC_OPT_SLBA]) {
+	if (cli->given[XNVME_CLI_OPT_SLBA]) {
 		err = xnvme_znd_descr_from_dev(dev, cli->args.slba, &zone);
 		if (err) {
-			xnvmec_perr("xnvme_znd_descr_from_dev()", -err);
+			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
 		}
 	} else {
 		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
 		if (err) {
-			xnvmec_perr("xnvme_znd_descr_from_dev()", -err);
+			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
 		}
 	}
 
 	buf_nbytes = zone.zcap * geo->lba_nbytes;
 
-	xnvmec_pinf("Allocating and filling buf_nbytes: %zu", buf_nbytes);
+	xnvme_cli_pinf("Allocating and filling buf_nbytes: %zu", buf_nbytes);
 	buf = xnvme_buf_alloc(dev, buf_nbytes);
 	if (!buf) {
 		err = -errno;
-		xnvmec_perr("xnvme_buf_alloc()", err);
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 	err = xnvme_buf_fill(buf, buf_nbytes,
 			     cli->args.data_input ? cli->args.data_input : "anum");
 	if (err) {
-		xnvmec_perr("xnvme_buf_fill()", err);
+		xnvme_cli_perr("xnvme_buf_fill()", err);
 		goto exit;
 	}
 
-	xnvmec_pinf("Initializing async. context + alloc/init requests");
+	xnvme_cli_pinf("Initializing async. context + alloc/init requests");
 	err = xnvme_queue_init(dev, qd, 0, &queue);
 	if (err) {
-		xnvmec_perr("xnvme_queue_init()", err);
+		xnvme_cli_perr("xnvme_queue_init()", err);
 		goto exit;
 	}
 	xnvme_queue_set_cb(queue, cb_pool, &cb_args);
 
-	xnvmec_pinf("Writed uri: '%s', qd: %d", cli->args.uri, qd);
+	xnvme_cli_pinf("Writed uri: '%s', qd: %d", cli->args.uri, qd);
 	xnvme_spec_znd_descr_pr(&zone, XNVME_PR_DEF);
 
-	xnvmec_timer_start(cli);
+	xnvme_cli_timer_start(cli);
 
 	payload = buf;
 	for (uint64_t curs = 0; (curs < zone.zcap) && !cb_args.ecount;) {
@@ -258,7 +258,7 @@ submit:
 			goto submit;
 
 		default:
-			xnvmec_perr("submission-error", EIO);
+			xnvme_cli_perr("submission-error", EIO);
 			goto exit;
 		}
 
@@ -266,7 +266,7 @@ next:
 		// Wait for completion to avoid racing zone.wp
 		err = xnvme_queue_drain(queue);
 		if (err < 0) {
-			xnvmec_perr("xnvme_queue_drain()", err);
+			xnvme_cli_perr("xnvme_queue_drain()", err);
 			goto exit;
 		}
 
@@ -276,28 +276,28 @@ next:
 
 	err = xnvme_queue_drain(queue);
 	if (err < 0) {
-		xnvmec_perr("xnvme_queue_drain()", err);
+		xnvme_cli_perr("xnvme_queue_drain()", err);
 		goto exit;
 	}
 
-	xnvmec_timer_stop(cli);
+	xnvme_cli_timer_stop(cli);
 
 	if (cb_args.ecount) {
 		err = -EIO;
-		xnvmec_perr("got completion errors", err);
+		xnvme_cli_perr("got completion errors", err);
 		goto exit;
 	}
 
-	xnvmec_timer_bw_pr(cli, "Wall-clock", zone.zcap * geo->lba_nbytes);
+	xnvme_cli_timer_bw_pr(cli, "Wall-clock", zone.zcap * geo->lba_nbytes);
 
 exit:
-	xnvmec_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}", cb_args.submitted,
-		    cb_args.completed, cb_args.ecount);
+	xnvme_cli_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}", cb_args.submitted,
+		       cb_args.completed, cb_args.ecount);
 
 	if (queue) {
 		int err_exit = xnvme_queue_term(queue);
 		if (err_exit) {
-			xnvmec_perr("xnvme_queue_term()", err_exit);
+			xnvme_cli_perr("xnvme_queue_term()", err_exit);
 		}
 	}
 	xnvme_buf_free(dev, buf);
@@ -315,7 +315,7 @@ exit:
  * - As well as sending the append commands and consuming their completion
  */
 static int
-sub_async_append(struct xnvmec *cli)
+sub_async_append(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = cli->args.geo;
@@ -329,51 +329,51 @@ sub_async_append(struct xnvmec *cli)
 	size_t buf_nbytes;
 	int err;
 
-	qd = cli->given[XNVMEC_OPT_QDEPTH] ? cli->args.qdepth : DEFAULT_QD;
-	nsid = cli->given[XNVMEC_OPT_NSID] ? cli->args.nsid : xnvme_dev_get_nsid(cli->args.dev);
+	qd = cli->given[XNVME_CLI_OPT_QDEPTH] ? cli->args.qdepth : DEFAULT_QD;
+	nsid = cli->given[XNVME_CLI_OPT_NSID] ? cli->args.nsid : xnvme_dev_get_nsid(cli->args.dev);
 
-	if (cli->given[XNVMEC_OPT_SLBA]) {
+	if (cli->given[XNVME_CLI_OPT_SLBA]) {
 		err = xnvme_znd_descr_from_dev(dev, cli->args.slba, &zone);
 		if (err) {
-			xnvmec_perr("xnvme_znd_descr_from_dev()", -err);
+			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
 		}
 	} else {
 		err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
 		if (err) {
-			xnvmec_perr("xnvme_znd_descr_from_dev()", -err);
+			xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
 			goto exit;
 		}
 	}
 
 	buf_nbytes = zone.zcap * geo->lba_nbytes;
 
-	xnvmec_pinf("Allocating and filling buf_nbytes: %zu", buf_nbytes);
+	xnvme_cli_pinf("Allocating and filling buf_nbytes: %zu", buf_nbytes);
 	buf = xnvme_buf_alloc(dev, buf_nbytes);
 	if (!buf) {
 		err = -errno;
-		xnvmec_perr("xnvme_buf_alloc()", err);
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 	err = xnvme_buf_fill(buf, buf_nbytes,
 			     cli->args.data_input ? cli->args.data_input : "anum");
 	if (err) {
-		xnvmec_perr("xnvme_buf_fill()", err);
+		xnvme_cli_perr("xnvme_buf_fill()", err);
 		goto exit;
 	}
 
-	xnvmec_pinf("Initializing async. context + alloc/init requests");
+	xnvme_cli_pinf("Initializing async. context + alloc/init requests");
 	err = xnvme_queue_init(dev, qd, 0, &queue);
 	if (err) {
-		xnvmec_perr("xnvme_queue_init()", err);
+		xnvme_cli_perr("xnvme_queue_init()", err);
 		goto exit;
 	}
 	xnvme_queue_set_cb(queue, cb_pool, &cb_args);
 
-	xnvmec_pinf("Append uri: '%s', qd: %d", cli->args.uri, qd);
+	xnvme_cli_pinf("Append uri: '%s', qd: %d", cli->args.uri, qd);
 	xnvme_spec_znd_descr_pr(&zone, XNVME_PR_DEF);
 
-	xnvmec_timer_start(cli);
+	xnvme_cli_timer_start(cli);
 
 	payload = buf;
 	for (uint64_t curs = 0; (curs < zone.zcap) && !cb_args.ecount;) {
@@ -392,7 +392,7 @@ submit:
 			goto submit;
 
 		default:
-			xnvmec_perr("submission-error", EIO);
+			xnvme_cli_perr("submission-error", EIO);
 			goto exit;
 		}
 
@@ -403,28 +403,28 @@ next:
 
 	err = xnvme_queue_drain(queue);
 	if (err < 0) {
-		xnvmec_perr("xnvme_queue_drain()", err);
+		xnvme_cli_perr("xnvme_queue_drain()", err);
 		goto exit;
 	}
 
-	xnvmec_timer_stop(cli);
+	xnvme_cli_timer_stop(cli);
 
 	if (cb_args.ecount) {
 		err = -EIO;
-		xnvmec_perr("got completion errors", err);
+		xnvme_cli_perr("got completion errors", err);
 		goto exit;
 	}
 
-	xnvmec_timer_bw_pr(cli, "Wall-clock", zone.zcap * geo->lba_nbytes);
+	xnvme_cli_timer_bw_pr(cli, "Wall-clock", zone.zcap * geo->lba_nbytes);
 
 exit:
-	xnvmec_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}", cb_args.submitted,
-		    cb_args.completed, cb_args.ecount);
+	xnvme_cli_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}", cb_args.submitted,
+		       cb_args.completed, cb_args.ecount);
 
 	if (queue) {
 		int err_exit = xnvme_queue_term(queue);
 		if (err_exit) {
-			xnvmec_perr("xnvme_queue_term()", err_exit);
+			xnvme_cli_perr("xnvme_queue_term()", err_exit);
 		}
 	}
 	xnvme_buf_free(dev, buf);
@@ -436,23 +436,23 @@ exit:
 // Command-Line Interface (CLI) definition
 //
 
-static struct xnvmec_sub g_subs[] = {
+static struct xnvme_cli_sub g_subs[] = {
 	{
 		"read",
 		"Asynchronous Zone Read of an entire Zone",
 		"Asynchronous Zone Read of an entire Zone",
 		sub_async_read,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
-			{XNVMEC_OPT_QDEPTH, XNVMEC_LOPT},
-			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_SLBA, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_QDEPTH, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_DATA_OUTPUT, XNVME_CLI_LOPT},
 
-			XNVMEC_ASYNC_OPTS,
+			XNVME_CLI_ASYNC_OPTS,
 		},
 	},
 	{
@@ -461,16 +461,16 @@ static struct xnvmec_sub g_subs[] = {
 		"Zone asynchronous Write until full",
 		sub_async_write,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
-			{XNVMEC_OPT_QDEPTH, XNVMEC_LOPT},
-			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_SLBA, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_QDEPTH, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_DATA_INPUT, XNVME_CLI_LOPT},
 
-			XNVMEC_ASYNC_OPTS,
+			XNVME_CLI_ASYNC_OPTS,
 		},
 	},
 	{
@@ -479,21 +479,21 @@ static struct xnvmec_sub g_subs[] = {
 		"Zone asynchronous Append until full",
 		sub_async_append,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_SLBA, XNVMEC_LOPT},
-			{XNVMEC_OPT_QDEPTH, XNVMEC_LOPT},
-			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_SLBA, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_QDEPTH, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_DATA_INPUT, XNVME_CLI_LOPT},
 
-			XNVMEC_ASYNC_OPTS,
+			XNVME_CLI_ASYNC_OPTS,
 		},
 	},
 };
 
-static struct xnvmec g_cli = {
+static struct xnvme_cli g_cli = {
 	.title = "Zoned Asynchronous IO Example",
 	.descr_short = "Asynchronous IO: read / write / append, using 4k payload at QD1",
 	.subs = g_subs,
@@ -503,5 +503,5 @@ static struct xnvmec g_cli = {
 int
 main(int argc, char **argv)
 {
-	return xnvmec(&g_cli, argc, argv, XNVMEC_INIT_DEV_OPEN);
+	return xnvme_cli_run(&g_cli, argc, argv, XNVME_CLI_INIT_DEV_OPEN);
 }

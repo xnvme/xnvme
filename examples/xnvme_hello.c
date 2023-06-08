@@ -6,19 +6,19 @@
 #include <libxnvme.h>
 
 static int
-sub_hw_example(struct xnvmec *cli)
+sub_hw_example(struct xnvme_cli *cli)
 {
 	struct xnvme_opts opts = xnvme_opts_default();
 	struct xnvme_dev *dev = NULL;
 
-	if (xnvmec_cli_to_opts(cli, &opts)) {
-		xnvmec_perr("xnvmec_cli_to_opts()", errno);
+	if (xnvme_cli_to_opts(cli, &opts)) {
+		xnvme_cli_perr("xnvme_cli_to_opts()", errno);
 		return -errno;
 	}
 
 	dev = xnvme_dev_open(cli->args.uri, &opts);
 	if (!dev) {
-		xnvmec_perr("xnvme_dev_open()", errno);
+		xnvme_cli_perr("xnvme_dev_open()", errno);
 		return -errno;
 	}
 
@@ -32,22 +32,22 @@ sub_hw_example(struct xnvmec *cli)
 // Command-Line Interface (CLI) definition
 //
 
-static struct xnvmec_sub g_subs[] = {
+static struct xnvme_cli_sub g_subs[] = {
 	{
 		"hw",
 		"Hello-World Example",
 		"Hello-World Example",
 		sub_hw_example,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			XNVMEC_ADMIN_OPTS,
+			XNVME_CLI_ADMIN_OPTS,
 		},
 	},
 };
 
-static struct xnvmec g_cli = {
+static struct xnvme_cli g_cli = {
 	.title = "xNVMe hello-device example",
 	.descr_short = "Open the given device and print its attributes",
 	.subs = g_subs,
@@ -57,5 +57,5 @@ static struct xnvmec g_cli = {
 int
 main(int argc, char **argv)
 {
-	return xnvmec(&g_cli, argc, argv, XNVMEC_INIT_NONE);
+	return xnvme_cli_run(&g_cli, argc, argv, XNVME_CLI_INIT_NONE);
 }

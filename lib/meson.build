@@ -55,11 +55,13 @@ xnvmelib_source = [
   'xnvme_be_windows_mem.c',
   'xnvme_be_windows_nvme.c',
   'xnvme_buf.c',
+  'xnvme_cli.c',
   'xnvme_cmd.c',
   'xnvme_dev.c',
   'xnvme_file.c',
   'xnvme_geo.c',
   'xnvme_ident.c',
+  'xnvme_kvs.c',
   'xnvme_lba.c',
   'xnvme_libconf.c',
   'xnvme_libconf_entries.c',
@@ -71,8 +73,6 @@ xnvmelib_source = [
   'xnvme_spec_pp.c',
   'xnvme_ver.c',
   'xnvme_znd.c',
-  'xnvme_kvs.c',
-  'xnvmec.c'
 ]
 
 xnvmelib_deps = [

@@ -30,23 +30,23 @@ enumerate_cb(struct xnvme_dev *dev, void *cb_args)
 }
 
 static int
-sub_enumerate(struct xnvmec *cli)
+sub_enumerate(struct xnvme_cli *cli)
 {
 	struct xnvme_opts opts = {0};
 	uint32_t ns_count = 0;
 	int err = 0;
 
-	err = xnvmec_cli_to_opts(cli, &opts);
+	err = xnvme_cli_to_opts(cli, &opts);
 	if (err) {
-		xnvmec_perr("xnvmec_cli_to_opts()", err);
+		xnvme_cli_perr("xnvme_cli_to_opts()", err);
 		return err;
 	}
 
-	fprintf(stdout, "xnvmec_enumeration:");
+	fprintf(stdout, "xnvme_cli_enumeration:");
 
 	err = xnvme_enumerate(cli->args.sys_uri, &opts, *enumerate_cb, &ns_count);
 	if (err) {
-		xnvmec_perr("xnvme_enumerate()", err);
+		xnvme_cli_perr("xnvme_enumerate()", err);
 		return err;
 	}
 
@@ -58,7 +58,7 @@ sub_enumerate(struct xnvmec *cli)
 }
 
 static int
-sub_info(struct xnvmec *cli)
+sub_info(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 
@@ -68,7 +68,7 @@ sub_info(struct xnvmec *cli)
 }
 
 static inline int
-sub_idfy(struct xnvmec *cli)
+sub_idfy(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
@@ -76,18 +76,18 @@ sub_idfy(struct xnvmec *cli)
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
 	int err;
 
-	xnvmec_pinf("xnvme_adm_idfy: {nsid: 0x%x}", nsid);
+	xnvme_cli_pinf("xnvme_adm_idfy: {nsid: 0x%x}", nsid);
 
 	idfy = xnvme_buf_alloc(dev, sizeof(*idfy));
 	if (!idfy) {
 		err = -errno;
-		xnvmec_perr("xnvme_buf_alloc()", err);
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 
 	err = xnvme_adm_idfy_ns(&ctx, nsid, idfy);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvmec_perr("xnvme_adm_idfy()", err);
+		xnvme_cli_perr("xnvme_adm_idfy()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -96,10 +96,10 @@ sub_idfy(struct xnvmec *cli)
 	xnvme_spec_idfy_ns_pr(&idfy->ns, XNVME_PR_DEF);
 
 	if (cli->args.data_output) {
-		xnvmec_pinf("Dumping to: '%s'", cli->args.data_output);
+		xnvme_cli_pinf("Dumping to: '%s'", cli->args.data_output);
 		err = xnvme_buf_to_file((char *)idfy, sizeof(*idfy), cli->args.data_output);
 		if (err) {
-			xnvmec_perr("xnvme_buf_to_file()", err);
+			xnvme_cli_perr("xnvme_buf_to_file()", err);
 		}
 	}
 
@@ -110,7 +110,7 @@ exit:
 }
 
 static int
-sub_read(struct xnvmec *cli)
+sub_read(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
@@ -123,49 +123,49 @@ sub_read(struct xnvmec *cli)
 	size_t dbuf_nbytes, mbuf_nbytes;
 	int err;
 
-	if (!cli->given[XNVMEC_OPT_NSID]) {
+	if (!cli->given[XNVME_CLI_OPT_NSID]) {
 		nsid = xnvme_dev_get_nsid(dev);
 	}
 
 	dbuf_nbytes = (nlb + 1) * geo->lba_nbytes;
 	mbuf_nbytes = geo->lba_extended ? 0 : (nlb + 1) * geo->nbytes_oob;
 
-	xnvmec_pinf("Reading nsid: 0x%x, slba: 0x%016lx, nlb: %zu", nsid, slba, nlb);
+	xnvme_cli_pinf("Reading nsid: 0x%x, slba: 0x%016lx, nlb: %zu", nsid, slba, nlb);
 
-	xnvmec_pinf("Alloc/clear dbuf, dbuf_nbytes: %zu", dbuf_nbytes);
+	xnvme_cli_pinf("Alloc/clear dbuf, dbuf_nbytes: %zu", dbuf_nbytes);
 	dbuf = xnvme_buf_alloc(dev, dbuf_nbytes);
 	if (!dbuf) {
 		err = -errno;
-		xnvmec_perr("xnvme_buf_alloc()", err);
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 	memset(dbuf, 0, dbuf_nbytes);
 
 	if (mbuf_nbytes) {
-		xnvmec_pinf("Alloc/clear mbuf, mbuf_nbytes: %zu", mbuf_nbytes);
+		xnvme_cli_pinf("Alloc/clear mbuf, mbuf_nbytes: %zu", mbuf_nbytes);
 		mbuf = xnvme_buf_alloc(dev, mbuf_nbytes);
 		if (!mbuf) {
 			err = -errno;
-			xnvmec_perr("xnvme_buf_alloc()", err);
+			xnvme_cli_perr("xnvme_buf_alloc()", err);
 			goto exit;
 		}
 		memset(mbuf, 0, mbuf_nbytes);
 	}
 
-	xnvmec_pinf("Sending the command...");
+	xnvme_cli_pinf("Sending the command...");
 	err = xnvme_nvm_read(&ctx, nsid, slba, nlb, dbuf, mbuf);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvmec_perr("xnvme_nvm_read()", err);
+		xnvme_cli_perr("xnvme_nvm_read()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}
 
 	if (cli->args.data_output) {
-		xnvmec_pinf("dumping to: '%s'", cli->args.data_output);
+		xnvme_cli_pinf("dumping to: '%s'", cli->args.data_output);
 		err = xnvme_buf_to_file(dbuf, dbuf_nbytes, cli->args.data_output);
 		if (err) {
-			xnvmec_perr("xnvme_buf_to_file()", err);
+			xnvme_cli_perr("xnvme_buf_to_file()", err);
 		}
 	}
 
@@ -177,7 +177,7 @@ exit:
 }
 
 static int
-sub_write(struct xnvmec *cli)
+sub_write(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
@@ -190,48 +190,48 @@ sub_write(struct xnvmec *cli)
 	size_t dbuf_nbytes, mbuf_nbytes;
 	int err;
 
-	if (!cli->given[XNVMEC_OPT_NSID]) {
+	if (!cli->given[XNVME_CLI_OPT_NSID]) {
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
 	dbuf_nbytes = (nlb + 1) * geo->lba_nbytes;
 	mbuf_nbytes = geo->lba_extended ? 0 : (nlb + 1) * geo->nbytes_oob;
 
-	xnvmec_pinf("Writing nsid: 0x%x, slba: 0x%016lx, nlb: %zu", nsid, slba, nlb);
+	xnvme_cli_pinf("Writing nsid: 0x%x, slba: 0x%016lx, nlb: %zu", nsid, slba, nlb);
 
-	xnvmec_pinf("Alloc/fill dbuf, dbuf_nbytes: %zu", dbuf_nbytes);
+	xnvme_cli_pinf("Alloc/fill dbuf, dbuf_nbytes: %zu", dbuf_nbytes);
 	dbuf = xnvme_buf_alloc(dev, dbuf_nbytes);
 	if (!dbuf) {
 		err = -errno;
-		xnvmec_perr("xnvme_buf_alloc()", err);
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 	err = xnvme_buf_fill(dbuf, dbuf_nbytes,
 			     cli->args.data_input ? cli->args.data_input : "anum");
 	if (err) {
-		xnvmec_perr("xnvme_buf_fill()", err);
+		xnvme_cli_perr("xnvme_buf_fill()", err);
 		goto exit;
 	}
 
 	if (mbuf_nbytes) {
-		xnvmec_pinf("Alloc/fill mbuf, mbuf_nbytes: %zu", mbuf_nbytes);
+		xnvme_cli_pinf("Alloc/fill mbuf, mbuf_nbytes: %zu", mbuf_nbytes);
 		mbuf = xnvme_buf_alloc(dev, mbuf_nbytes);
 		if (!mbuf) {
 			err = -errno;
-			xnvmec_perr("xnvme_buf_alloc()", err);
+			xnvme_cli_perr("xnvme_buf_alloc()", err);
 			goto exit;
 		}
 		err = xnvme_buf_fill(mbuf, mbuf_nbytes, "anum");
 		if (err) {
-			xnvmec_perr("xnvme_buf_fill()", err);
+			xnvme_cli_perr("xnvme_buf_fill()", err);
 			goto exit;
 		}
 	}
 
-	xnvmec_pinf("Sending the command...");
+	xnvme_cli_pinf("Sending the command...");
 	err = xnvme_nvm_write(&ctx, nsid, slba, nlb, dbuf, mbuf);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvmec_perr("xnvme_nvm_write()", err);
+		xnvme_cli_perr("xnvme_nvm_write()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -245,7 +245,7 @@ exit:
 }
 
 static int
-sub_write_zeroes(struct xnvmec *cli)
+sub_write_zeroes(struct xnvme_cli *cli)
 {
 	int err = 0;
 	struct xnvme_dev *dev = cli->args.dev;
@@ -256,7 +256,7 @@ sub_write_zeroes(struct xnvmec *cli)
 
 	err = xnvme_nvm_write_zeroes(&ctx, nsid, slba, nlb);
 	if (err) {
-		xnvmec_perr("xnvme_nvm_write_zeroes()", err);
+		xnvme_cli_perr("xnvme_nvm_write_zeroes()", err);
 		goto exit;
 	}
 
@@ -265,7 +265,7 @@ exit:
 }
 
 static int
-sub_write_uncor(struct xnvmec *cli)
+sub_write_uncor(struct xnvme_cli *cli)
 {
 	int err = 0;
 	struct xnvme_dev *dev = cli->args.dev;
@@ -276,7 +276,7 @@ sub_write_uncor(struct xnvmec *cli)
 
 	err = xnvme_nvm_write_uncorrectable(&ctx, nsid, slba, nlb);
 	if (err) {
-		xnvmec_perr("xnvme_nvm_write_uncorrectable()", err);
+		xnvme_cli_perr("xnvme_nvm_write_uncorrectable()", err);
 		goto exit;
 	}
 
@@ -285,7 +285,7 @@ exit:
 }
 
 static int
-sub_dir_send(struct xnvmec *cli)
+sub_dir_send(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
@@ -298,9 +298,10 @@ sub_dir_send(struct xnvmec *cli)
 	uint32_t cdw12 = 0;
 	int err = -EINVAL;
 
-	xnvmec_pinf("cmd_dsend: {nsid: 0x%x, doper:0x%x, dtype: 0x%x, dspec: 0x%x, endir: 0x%x, "
-		    "tgtdir: 0x%x}",
-		    nsid, doper, dtype, dspec, endir, tgtdir);
+	xnvme_cli_pinf(
+		"cmd_dsend: {nsid: 0x%x, doper:0x%x, dtype: 0x%x, dspec: 0x%x, endir: 0x%x, "
+		"tgtdir: 0x%x}",
+		nsid, doper, dtype, dspec, endir, tgtdir);
 
 	switch (dtype) {
 	case XNVME_SPEC_DIR_IDENTIFY:
@@ -308,7 +309,7 @@ sub_dir_send(struct xnvmec *cli)
 			cdw12 = (tgtdir << 8) | endir;
 			break;
 		} else {
-			xnvmec_perr("invalid directive operation for identify directives", err);
+			xnvme_cli_perr("invalid directive operation for identify directives", err);
 			return err;
 		}
 	case XNVME_SPEC_DIR_STREAMS:
@@ -316,18 +317,18 @@ sub_dir_send(struct xnvmec *cli)
 		    (doper == XNVME_SPEC_DSEND_STREAMS_RELRS)) {
 			break;
 		} else {
-			xnvmec_perr("invalid directive operation for stream directives", err);
+			xnvme_cli_perr("invalid directive operation for stream directives", err);
 			return err;
 		}
 	default:
-		xnvmec_perr("invalid directive type", err);
+		xnvme_cli_perr("invalid directive type", err);
 		return err;
 	}
 
 	err = xnvme_adm_dir_send(&ctx, nsid, doper, dtype, dspec, cdw12);
 
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvmec_perr("xnvme_adm_dsend()", err);
+		xnvme_cli_perr("xnvme_adm_dsend()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 	}
@@ -336,7 +337,7 @@ sub_dir_send(struct xnvmec *cli)
 }
 
 static int
-sub_dir_receive(struct xnvmec *cli)
+sub_dir_receive(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
@@ -349,8 +350,8 @@ sub_dir_receive(struct xnvmec *cli)
 	size_t dbuf_nbytes = 0;
 	void *dbuf = NULL;
 
-	xnvmec_pinf("cmd_drecv: {nsid: 0x%x, doper:0x%x, dtype: 0x%x, nsr: 0x%x}", nsid, doper,
-		    dtype, nsr);
+	xnvme_cli_pinf("cmd_drecv: {nsid: 0x%x, doper:0x%x, dtype: 0x%x, nsr: 0x%x}", nsid, doper,
+		       dtype, nsr);
 
 	switch (dtype) {
 	case XNVME_SPEC_DIR_IDENTIFY:
@@ -358,7 +359,7 @@ sub_dir_receive(struct xnvmec *cli)
 			dbuf_nbytes = 4096;
 			break;
 		} else {
-			xnvmec_perr("invalid directive operation for identify directive", err);
+			xnvme_cli_perr("invalid directive operation for identify directive", err);
 			return err;
 		}
 	case XNVME_SPEC_DIR_STREAMS:
@@ -373,12 +374,12 @@ sub_dir_receive(struct xnvmec *cli)
 			cdw12 = nsr & 0xFFFF;
 			break;
 		default:
-			xnvmec_perr("invalid directive operation for streams directive", err);
+			xnvme_cli_perr("invalid directive operation for streams directive", err);
 			return err;
 		}
 		break;
 	default:
-		xnvmec_perr("invalid directive type", err);
+		xnvme_cli_perr("invalid directive type", err);
 		return err;
 	}
 
@@ -386,14 +387,14 @@ sub_dir_receive(struct xnvmec *cli)
 		dbuf = xnvme_buf_alloc(dev, dbuf_nbytes);
 		if (!dbuf) {
 			err = -errno;
-			xnvmec_perr("xnvme_buf_alloc()", err);
+			xnvme_cli_perr("xnvme_buf_alloc()", err);
 			goto exit;
 		}
 	}
 	err = xnvme_adm_dir_recv(&ctx, nsid, doper, dtype, cdw12, dbuf, dbuf_nbytes);
 
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvmec_perr("xnvme_adm_drecv()", err);
+		xnvme_cli_perr("xnvme_adm_drecv()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -406,7 +407,7 @@ sub_dir_receive(struct xnvmec *cli)
 						 XNVME_PR_DEF);
 			break;
 		} else {
-			xnvmec_perr("invalid directive operation for identify directive", err);
+			xnvme_cli_perr("invalid directive operation for identify directive", err);
 			goto exit;
 		}
 	case XNVME_SPEC_DIR_STREAMS:
@@ -424,12 +425,12 @@ sub_dir_receive(struct xnvmec *cli)
 			xnvme_spec_drecv_sar_pr(ar, XNVME_PR_DEF);
 		} break;
 		default:
-			xnvmec_perr("invalid directive operation for streams directive", err);
+			xnvme_cli_perr("invalid directive operation for streams directive", err);
 			goto exit;
 		}
 		break;
 	default:
-		xnvmec_perr("invalid directive type", err);
+		xnvme_cli_perr("invalid directive type", err);
 		goto exit;
 	}
 
@@ -439,7 +440,7 @@ exit:
 }
 
 static int
-sub_write_directive(struct xnvmec *cli)
+sub_write_directive(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
@@ -454,52 +455,52 @@ sub_write_directive(struct xnvmec *cli)
 	size_t dbuf_nbytes, mbuf_nbytes;
 	int err;
 
-	if (!cli->given[XNVMEC_OPT_NSID]) {
+	if (!cli->given[XNVME_CLI_OPT_NSID]) {
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
 	dbuf_nbytes = (nlb + 1) * geo->lba_nbytes;
 	mbuf_nbytes = geo->lba_extended ? 0 : (nlb + 1) * geo->nbytes_oob;
 
-	xnvmec_pinf("Writing nsid: 0x%x, slba: 0x%016lx, nlb: %zu", nsid, slba, nlb);
+	xnvme_cli_pinf("Writing nsid: 0x%x, slba: 0x%016lx, nlb: %zu", nsid, slba, nlb);
 
-	xnvmec_pinf("Alloc/fill dbuf, dbuf_nbytes: %zu", dbuf_nbytes);
+	xnvme_cli_pinf("Alloc/fill dbuf, dbuf_nbytes: %zu", dbuf_nbytes);
 	dbuf = xnvme_buf_alloc(dev, dbuf_nbytes);
 	if (!dbuf) {
 		err = -errno;
-		xnvmec_perr("xnvme_buf_alloc()", err);
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 	err = xnvme_buf_fill(dbuf, dbuf_nbytes,
 			     cli->args.data_input ? cli->args.data_input : "anum");
 	if (err) {
-		xnvmec_perr("xnvme_buf_fill()", err);
+		xnvme_cli_perr("xnvme_buf_fill()", err);
 		goto exit;
 	}
 
 	if (mbuf_nbytes) {
-		xnvmec_pinf("Alloc/fill mbuf, mbuf_nbytes: %zu", mbuf_nbytes);
+		xnvme_cli_pinf("Alloc/fill mbuf, mbuf_nbytes: %zu", mbuf_nbytes);
 		mbuf = xnvme_buf_alloc(dev, mbuf_nbytes);
 		if (!mbuf) {
 			err = -errno;
-			xnvmec_perr("xnvme_buf_alloc()", err);
+			xnvme_cli_perr("xnvme_buf_alloc()", err);
 			goto exit;
 		}
 		err = xnvme_buf_fill(mbuf, mbuf_nbytes, "anum");
 		if (err) {
-			xnvmec_perr("xnvme_buf_fill()", err);
+			xnvme_cli_perr("xnvme_buf_fill()", err);
 			goto exit;
 		}
 	}
 
-	xnvmec_pinf("Preparing and sending the command...");
+	xnvme_cli_pinf("Preparing and sending the command...");
 	xnvme_prep_nvm(&ctx, XNVME_SPEC_NVM_OPC_WRITE, nsid, slba, nlb);
 	ctx.cmd.nvm.dtype = dtype;
 	ctx.cmd.nvm.cdw13.dspec = dspec;
 
 	err = xnvme_cmd_pass(&ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvmec_perr("xnvme_cmd_pass()", err);
+		xnvme_cli_perr("xnvme_cmd_pass()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
@@ -515,18 +516,18 @@ exit:
 //
 // Command-Line Interface (CLI) definition
 //
-static struct xnvmec_sub g_subs[] = {
+static struct xnvme_cli_sub g_subs[] = {
 	{
 		"enum",
 		"Enumerate Logical Block Namespaces on the system",
 		"Enumerate Logical Block Namespaces on the system",
 		sub_enumerate,
 		{
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_SYS_URI, XNVMEC_LOPT},
-			{XNVMEC_OPT_FLAGS, XNVMEC_LOPT},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_SYS_URI, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_FLAGS, XNVME_CLI_LOPT},
 
-			XNVMEC_CORE_OPTS,
+			XNVME_CLI_CORE_OPTS,
 		},
 	},
 	{
@@ -535,10 +536,10 @@ static struct xnvmec_sub g_subs[] = {
 		"Retrieve derived information for the given URI",
 		sub_info,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			XNVMEC_ADMIN_OPTS,
+			XNVME_CLI_ADMIN_OPTS,
 		},
 	},
 	{
@@ -547,14 +548,14 @@ static struct xnvmec_sub g_subs[] = {
 		"Identify the namespace for the given URI",
 		sub_idfy,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_DATA_OUTPUT, XNVME_CLI_LOPT},
 
-			XNVMEC_ADMIN_OPTS,
+			XNVME_CLI_ADMIN_OPTS,
 		},
 	},
 	{
@@ -563,18 +564,18 @@ static struct xnvmec_sub g_subs[] = {
 		"Directive send for the given URI",
 		sub_dir_send,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_DSPEC, XNVMEC_LOPT},
-			{XNVMEC_OPT_DTYPE, XNVMEC_LOPT},
-			{XNVMEC_OPT_DOPER, XNVMEC_LOPT},
-			{XNVMEC_OPT_ENDIR, XNVMEC_LOPT},
-			{XNVMEC_OPT_TGTDIR, XNVMEC_LOPT},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_DSPEC, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_DTYPE, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_DOPER, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_ENDIR, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_TGTDIR, XNVME_CLI_LOPT},
 
-			XNVMEC_ADMIN_OPTS,
+			XNVME_CLI_ADMIN_OPTS,
 		},
 	},
 	{
@@ -583,16 +584,16 @@ static struct xnvmec_sub g_subs[] = {
 		"Directive receive for the given URI",
 		sub_dir_receive,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_DTYPE, XNVMEC_LOPT},
-			{XNVMEC_OPT_DOPER, XNVMEC_LOPT},
-			{XNVMEC_OPT_NSR, XNVMEC_LOPT},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_DTYPE, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_DOPER, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_NSR, XNVME_CLI_LOPT},
 
-			XNVMEC_ADMIN_OPTS,
+			XNVME_CLI_ADMIN_OPTS,
 		},
 	},
 	{
@@ -601,17 +602,17 @@ static struct xnvmec_sub g_subs[] = {
 		"Read data and optionally metadata",
 		sub_read,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
-			{XNVMEC_OPT_NLB, XNVMEC_LREQ},
-			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_LOPT},
-			{XNVMEC_OPT_META_OUTPUT, XNVMEC_LOPT},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_SLBA, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_NLB, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_DATA_OUTPUT, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_META_OUTPUT, XNVME_CLI_LOPT},
 
-			XNVMEC_SYNC_OPTS,
+			XNVME_CLI_SYNC_OPTS,
 		},
 	},
 	{
@@ -620,17 +621,17 @@ static struct xnvmec_sub g_subs[] = {
 		"Writes data and optionally metadata",
 		sub_write,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
-			{XNVMEC_OPT_NLB, XNVMEC_LREQ},
-			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
-			{XNVMEC_OPT_META_INPUT, XNVMEC_LOPT},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_SLBA, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_NLB, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_DATA_INPUT, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_META_INPUT, XNVME_CLI_LOPT},
 
-			XNVMEC_SYNC_OPTS,
+			XNVME_CLI_SYNC_OPTS,
 		},
 	},
 	{
@@ -639,17 +640,17 @@ static struct xnvmec_sub g_subs[] = {
 		"Set a range of logical blocks to zero",
 		sub_write_zeroes,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
-			{XNVMEC_OPT_NLB, XNVMEC_LREQ},
-			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
-			{XNVMEC_OPT_META_INPUT, XNVMEC_LOPT},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_SLBA, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_NLB, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_DATA_INPUT, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_META_INPUT, XNVME_CLI_LOPT},
 
-			XNVMEC_SYNC_OPTS,
+			XNVME_CLI_SYNC_OPTS,
 		},
 	},
 	{
@@ -658,16 +659,16 @@ static struct xnvmec_sub g_subs[] = {
 		"Mark a range of logical blocks as invalid",
 		sub_write_uncor,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
-			{XNVMEC_OPT_NLB, XNVMEC_LREQ},
-			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
-			{XNVMEC_OPT_META_INPUT, XNVMEC_LOPT},
+			{XNVME_CLI_OPT_SLBA, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_NLB, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_DATA_INPUT, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_META_INPUT, XNVME_CLI_LOPT},
 
-			XNVMEC_SYNC_OPTS,
+			XNVME_CLI_SYNC_OPTS,
 		},
 	},
 	{
@@ -676,24 +677,24 @@ static struct xnvmec_sub g_subs[] = {
 		"Writes directive specific data and optionally metadata",
 		sub_write_directive,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_SLBA, XNVMEC_LREQ},
-			{XNVMEC_OPT_NLB, XNVMEC_LREQ},
-			{XNVMEC_OPT_NSID, XNVMEC_LOPT},
-			{XNVMEC_OPT_DATA_INPUT, XNVMEC_LOPT},
-			{XNVMEC_OPT_META_INPUT, XNVMEC_LOPT},
-			{XNVMEC_OPT_DTYPE, XNVMEC_LOPT},
-			{XNVMEC_OPT_DSPEC, XNVMEC_LOPT},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_SLBA, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_NLB, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_DATA_INPUT, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_META_INPUT, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_DTYPE, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_DSPEC, XNVME_CLI_LOPT},
 
-			XNVMEC_SYNC_OPTS,
+			XNVME_CLI_SYNC_OPTS,
 		},
 	},
 };
 
-static struct xnvmec g_cli = {
+static struct xnvme_cli g_cli = {
 	.title = "Logical Block Namespace Utility",
 	.descr_short = "Logical Block Namespace Utility",
 	.descr_long = "",
@@ -704,5 +705,5 @@ static struct xnvmec g_cli = {
 int
 main(int argc, char **argv)
 {
-	return xnvmec(&g_cli, argc, argv, XNVMEC_INIT_DEV_OPEN);
+	return xnvme_cli_run(&g_cli, argc, argv, XNVME_CLI_INIT_DEV_OPEN);
 }

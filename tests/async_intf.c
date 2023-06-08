@@ -9,7 +9,7 @@
 #define XNVME_TESTS_NQUEUE_MAX 1024
 
 static int
-test_init_term(struct xnvmec *cli)
+test_init_term(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	uint64_t count = cli->args.count;
@@ -27,9 +27,9 @@ test_init_term(struct xnvmec *cli)
 		return 1;
 	}
 
-	xnvmec_pinf("count: %zu", count);
-	xnvmec_pinf("qdepth: %zu", qd);
-	xnvmec_pinf("clear: %d", cli->args.clear);
+	xnvme_cli_pinf("count: %zu", count);
+	xnvme_cli_pinf("qdepth: %zu", qd);
+	xnvme_cli_pinf("clear: %d", cli->args.clear);
 
 	if (!cli->args.clear) {
 		// Ask how many queues are supported
@@ -39,7 +39,7 @@ test_init_term(struct xnvmec *cli)
 		err = xnvme_adm_gfeat(&ctx, 0x0, XNVME_SPEC_FEAT_NQUEUES,
 				      XNVME_SPEC_FEAT_SEL_CURRENT, NULL, 0);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvmec_perr("xnvme_adm_gfeat()", err);
+			xnvme_cli_perr("xnvme_adm_gfeat()", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			return err;
@@ -50,8 +50,8 @@ test_init_term(struct xnvmec *cli)
 		xnvme_spec_feat_pr(XNVME_SPEC_FEAT_NQUEUES, feat, XNVME_PR_DEF);
 
 		if (count >= (uint64_t)(feat.nqueues.nsqa + 1)) {
-			xnvmec_pinf("skipping -- count: %zu > (nsqa + 1): %u", count,
-				    feat.nqueues.nsqa);
+			xnvme_cli_pinf("skipping -- count: %zu > (nsqa + 1): %u", count,
+				       feat.nqueues.nsqa);
 			return 0;
 		}
 	}
@@ -97,27 +97,27 @@ exit:
 //
 // Command-Line Interface (CLI) definition
 //
-static struct xnvmec_sub g_subs[] = {
+static struct xnvme_cli_sub g_subs[] = {
 	{
 		"init_term",
 		"Create 'count' contexts with given 'qdepth'",
 		"Create 'count' contexts with given 'qdepth'",
 		test_init_term,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_COUNT, XNVMEC_LREQ},
-			{XNVMEC_OPT_QDEPTH, XNVMEC_LREQ},
-			{XNVMEC_OPT_CLEAR, XNVMEC_LFLG},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_COUNT, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_QDEPTH, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_CLEAR, XNVME_CLI_LFLG},
 
-			XNVMEC_ASYNC_OPTS,
+			XNVME_CLI_ASYNC_OPTS,
 		},
 	},
 };
 
-static struct xnvmec g_cli = {
+static struct xnvme_cli g_cli = {
 	.title = "Test xNVMe Asynchronous Interface",
 	.descr_short = "Test xNVMe Asynchronous Interface",
 	.subs = g_subs,
@@ -127,5 +127,5 @@ static struct xnvmec g_cli = {
 int
 main(int argc, char **argv)
 {
-	return xnvmec(&g_cli, argc, argv, XNVMEC_INIT_DEV_OPEN);
+	return xnvme_cli_run(&g_cli, argc, argv, XNVME_CLI_INIT_DEV_OPEN);
 }
