@@ -18,7 +18,7 @@
  */
 
 static int
-sub_support(struct xnvmec *cli)
+sub_support(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_spec_nvm_idfy_ctrlr *ctrlr;
@@ -28,13 +28,13 @@ sub_support(struct xnvmec *cli)
 	ctrlr = (void *)xnvme_dev_get_ctrlr(dev);
 	if (!ctrlr) {
 		err = -errno;
-		xnvmec_perr("xnvme_dev_get_ctrlr()", -err);
+		xnvme_cli_perr("xnvme_dev_get_ctrlr()", -err);
 		return err;
 	}
 	ns = (void *)xnvme_dev_get_ns(dev);
 	if (!ns) {
 		err = -errno;
-		xnvmec_perr("xnvme_dev_get_ns()", -err);
+		xnvme_cli_perr("xnvme_dev_get_ns()", -err);
 		return err;
 	}
 	xnvme_spec_nvm_idfy_ctrlr_pr(ctrlr, XNVME_PR_DEF);
@@ -42,29 +42,29 @@ sub_support(struct xnvmec *cli)
 
 	if (!ctrlr->oncs.copy) {
 		err = -ENOSYS;
-		xnvmec_perr("!ctrlr->oncs.copy", -err);
+		xnvme_cli_perr("!ctrlr->oncs.copy", -err);
 	}
 	if (!ctrlr->ocfs.copy_fmt0) {
 		err = -ENOSYS;
-		xnvmec_perr("!ctrlr->ocfs.copy_fmt0", -err);
+		xnvme_cli_perr("!ctrlr->ocfs.copy_fmt0", -err);
 	}
 
 	if (!ns->mcl) {
 		err = -ENOSYS;
-		xnvmec_perr("!ns->mcl", -err);
+		xnvme_cli_perr("!ns->mcl", -err);
 	}
 	if (!ns->mssrl) {
 		err = -ENOSYS;
-		xnvmec_perr("!ns->mssrl", -err);
+		xnvme_cli_perr("!ns->mssrl", -err);
 	}
 
-	xnvmec_pinf(err ? "SCC: is NOT supported" : "SCC: LGTM");
+	xnvme_cli_pinf(err ? "SCC: is NOT supported" : "SCC: LGTM");
 
 	return err;
 }
 
 static int
-sub_idfy(struct xnvmec *cli)
+sub_idfy(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_spec_nvm_idfy_ctrlr *ctrlr;
@@ -74,20 +74,20 @@ sub_idfy(struct xnvmec *cli)
 	ctrlr = (void *)xnvme_dev_get_ctrlr(dev);
 	if (!ctrlr) {
 		err = -errno;
-		xnvmec_perr("xnvme_dev_get_ctrlr()", -err);
+		xnvme_cli_perr("xnvme_dev_get_ctrlr()", -err);
 		return err;
 	}
 	ns = (void *)xnvme_dev_get_ns(dev);
 	if (!ns) {
 		err = -errno;
-		xnvmec_perr("xnvme_dev_get_ns()", -err);
+		xnvme_cli_perr("xnvme_dev_get_ns()", -err);
 		return err;
 	}
 
 	xnvme_spec_nvm_idfy_ctrlr_pr(ctrlr, XNVME_PR_DEF);
 	xnvme_spec_nvm_idfy_ns_pr(ns, XNVME_PR_DEF);
 
-	xnvmec_pinf("LGTM");
+	xnvme_cli_pinf("LGTM");
 
 	return 0;
 }
@@ -111,7 +111,7 @@ cb_noop(struct xnvme_cmd_ctx *XNVME_UNUSED(ctx), void *XNVME_UNUSED(cb_arg))
  * NOTE: When 'tlbas' = 0, then assume max.
  */
 static int
-_scopy_helper(struct xnvmec *cli, uint64_t tlbas)
+_scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
@@ -125,32 +125,32 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 	uint8_t nr;
 	int err;
 
-	nsid = cli->given[XNVMEC_OPT_NSID] ? nsid : xnvme_dev_get_nsid(cli->args.dev);
+	nsid = cli->given[XNVME_CLI_OPT_NSID] ? nsid : xnvme_dev_get_nsid(cli->args.dev);
 
 	// Retrieve SCC parameters via idfy-namespace
 	ns = (void *)xnvme_dev_get_ns(dev);
 	if (!ns) {
 		err = -errno;
-		xnvmec_perr("xnvme_dev_get_ns()", -err);
+		xnvme_cli_perr("xnvme_dev_get_ns()", -err);
 		return err;
 	}
 
-	xnvmec_pinf("tlbas: %zu, mcl: %u, msrc: %d, mssrl: %u", tlbas, ns->mcl, ns->msrc + 1,
-		    ns->mssrl);
+	xnvme_cli_pinf("tlbas: %zu, mcl: %u, msrc: %d, mssrl: %u", tlbas, ns->mcl, ns->msrc + 1,
+		       ns->mssrl);
 
 	if (!tlbas) {
 		err = -EINVAL;
-		xnvmec_perr("!tlbas", -err);
+		xnvme_cli_perr("!tlbas", -err);
 		goto exit;
 	}
 	if (tlbas > (uint64_t)ns->mcl) {
 		err = -EINVAL;
-		xnvmec_perr("tlbas > ns.mcl", -err);
+		xnvme_cli_perr("tlbas > ns.mcl", -err);
 		goto exit;
 	}
 	if (tlbas > ((uint64_t)ns->msrc) + 1) {
 		err = -EINVAL;
-		xnvmec_perr("tlbas > ns.msrc", -err);
+		xnvme_cli_perr("tlbas > ns.msrc", -err);
 		goto exit;
 	}
 
@@ -158,7 +158,7 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 	range = xnvme_buf_alloc(dev, sizeof(*range));
 	if (!range) {
 		err = -errno;
-		xnvmec_perr("xnvme_buf_alloc()", err);
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 	memset(range, 0, sizeof(*range));
@@ -168,13 +168,13 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 	dbuf = xnvme_buf_alloc(dev, buf_nbytes);
 	if (!dbuf) {
 		err = -errno;
-		xnvmec_perr("xnvme_buf_alloc()", err);
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 	vbuf = xnvme_buf_alloc(dev, buf_nbytes);
 	if (!vbuf) {
 		err = -errno;
-		xnvmec_perr("xnvme_buf_alloc()", err);
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 	xnvme_buf_fill(dbuf, buf_nbytes, "anum");
@@ -201,7 +201,7 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 		err = xnvme_nvm_write(&ctx, nsid, range->entry[i].slba, range->entry[i].nlb,
 				      dbuf + ofz, NULL);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvmec_perr("xnvme_nvm_write()", err);
+			xnvme_cli_perr("xnvme_nvm_write()", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
@@ -215,26 +215,26 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 
 		err = xnvme_nvm_write(&ctx, nsid, sdlba + i, 0, vbuf + ofz, NULL);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvmec_perr("xnvme_nvm_read()", err);
+			xnvme_cli_perr("xnvme_nvm_read()", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
 		}
 	}
 
-	xnvmec_pinf("Copying:");
+	xnvme_cli_pinf("Copying:");
 	xnvme_spec_nvm_scopy_source_range_pr(range, nr, XNVME_PR_DEF);
 
-	xnvmec_pinf("To:");
+	xnvme_cli_pinf("To:");
 	printf("sdlba: 0x%016" PRIx64 "\n", sdlba);
 
 	if (cli->args.clear) {
 		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 
-		xnvmec_pinf("Using XNVME_CMD_SYNC mode");
+		xnvme_cli_pinf("Using XNVME_CMD_SYNC mode");
 		err = xnvme_nvm_scopy(&ctx, nsid, sdlba, range->entry, nr, copy_fmt);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvmec_perr("xnvme_nvm_scopy()", err);
+			xnvme_cli_perr("xnvme_nvm_scopy()", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
@@ -243,11 +243,11 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 		struct xnvme_queue *queue = NULL;
 
-		xnvmec_pinf("Using XNVME_CMD_ASYNC mode");
+		xnvme_cli_pinf("Using XNVME_CMD_ASYNC mode");
 
 		err = xnvme_queue_init(dev, 2, 0, &queue);
 		if (err) {
-			xnvmec_perr("xnvme_queue_init()", err);
+			xnvme_cli_perr("xnvme_queue_init()", err);
 			goto exit;
 		}
 		ctx.async.queue = queue;
@@ -255,13 +255,13 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 
 		err = xnvme_nvm_scopy(&ctx, nsid, sdlba, range->entry, nr, copy_fmt);
 		if (err) {
-			xnvmec_perr("xnvme_nvm_scopy()", err);
+			xnvme_cli_perr("xnvme_nvm_scopy()", err);
 			xnvme_queue_term(queue);
 			goto exit;
 		}
 		err = xnvme_queue_drain(queue);
 		if (err < 0) {
-			xnvmec_perr("xnvme_queue_drain()", err);
+			xnvme_cli_perr("xnvme_queue_drain()", err);
 			xnvme_queue_term(queue);
 			goto exit;
 		}
@@ -274,7 +274,7 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 
 		err = xnvme_nvm_read(&ctx, nsid, sdlba + i, 0, vbuf + ofz, NULL);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvmec_perr("xnvme_nvm_read()", err);
+			xnvme_cli_perr("xnvme_nvm_read()", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
@@ -286,14 +286,14 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 
 		diff = xnvme_buf_diff(dbuf, vbuf, buf_nbytes);
 		if (diff) {
-			xnvmec_pinf("verification failed, diff: %zu", diff);
+			xnvme_cli_pinf("verification failed, diff: %zu", diff);
 			xnvme_buf_diff_pr(dbuf, vbuf, buf_nbytes, XNVME_PR_DEF);
 			err = -EIO;
 			goto exit;
 		}
 	}
 
-	xnvmec_pinf("LGTM");
+	xnvme_cli_pinf("LGTM");
 
 exit:
 	xnvme_buf_free(dev, range);
@@ -304,19 +304,19 @@ exit:
 }
 
 static int
-sub_scopy(struct xnvmec *cli)
+sub_scopy(struct xnvme_cli *cli)
 {
 	return _scopy_helper(cli, 8);
 }
 
 static int
-sub_scopy_msrc(struct xnvmec *cli)
+sub_scopy_msrc(struct xnvme_cli *cli)
 {
 	struct xnvme_spec_nvm_idfy_ns *ns;
 
 	ns = (void *)xnvme_dev_get_ns(cli->args.dev);
 	if (!ns) {
-		xnvmec_perr("xnvme_dev_get_ns()", errno);
+		xnvme_cli_perr("xnvme_dev_get_ns()", errno);
 		return -errno;
 	}
 
@@ -326,17 +326,17 @@ sub_scopy_msrc(struct xnvmec *cli)
 //
 // Command-Line Interface (CLI) definition
 //
-static struct xnvmec_sub g_subs[] = {
+static struct xnvme_cli_sub g_subs[] = {
 	{
 		"support",
 		"Print id-ctrlr-ONCS bits and check for SCC support",
 		"Print id-ctrlr-ONCS bits and check for SCC support",
 		sub_support,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			XNVMEC_SYNC_OPTS,
+			XNVME_CLI_SYNC_OPTS,
 		},
 	},
 	{
@@ -345,10 +345,10 @@ static struct xnvmec_sub g_subs[] = {
 		"Print SCC related Controller and Namespace identification",
 		sub_idfy,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			XNVMEC_SYNC_OPTS,
+			XNVME_CLI_SYNC_OPTS,
 		},
 	},
 	{
@@ -358,13 +358,13 @@ static struct xnvmec_sub g_subs[] = {
 		"\n\n**NOTE** --clear toggles sync/async command mode",
 		sub_scopy,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_CLEAR, XNVMEC_LFLG},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_CLEAR, XNVME_CLI_LFLG},
 
-			XNVMEC_SYNC_OPTS,
+			XNVME_CLI_SYNC_OPTS,
 		},
 	},
 	{
@@ -374,18 +374,18 @@ static struct xnvmec_sub g_subs[] = {
 		"\n\n**NOTE** --clear toggles sync/async command mode",
 		sub_scopy_msrc,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_CLEAR, XNVMEC_LFLG},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_CLEAR, XNVME_CLI_LFLG},
 
-			XNVMEC_SYNC_OPTS,
+			XNVME_CLI_SYNC_OPTS,
 		},
 	},
 };
 
-static struct xnvmec g_cli = {
+static struct xnvme_cli g_cli = {
 	.title = "Simple-Copy-Command Verification",
 	.descr_short = "Simple-Copy-Command Verification",
 	.subs = g_subs,
@@ -395,5 +395,5 @@ static struct xnvmec g_cli = {
 int
 main(int argc, char **argv)
 {
-	return xnvmec(&g_cli, argc, argv, XNVMEC_INIT_DEV_OPEN);
+	return xnvme_cli_run(&g_cli, argc, argv, XNVME_CLI_INIT_DEV_OPEN);
 }

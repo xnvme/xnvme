@@ -27,13 +27,13 @@ cb_lbacheck(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 	}
 
 	if (ctx->cpl.result != expected) {
-		xnvmec_pinf("ERR: cpl.result: 0x%016lx != 0x%016lx", ctx->cpl.result, expected);
+		xnvme_cli_pinf("ERR: cpl.result: 0x%016lx != 0x%016lx", ctx->cpl.result, expected);
 		cb_args->ecount_offset += 1;
 	}
 }
 
 static int
-cmd_verify(struct xnvmec *cli)
+cmd_verify(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = cli->args.geo;
@@ -47,52 +47,52 @@ cmd_verify(struct xnvmec *cli)
 	void *dbuf = NULL, *vbuf = NULL;
 	int err;
 
-	if (!cli->given[XNVMEC_OPT_NSID]) {
+	if (!cli->given[XNVME_CLI_OPT_NSID]) {
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 	if (cli->args.clear) {
 		err = -EINVAL;
-		xnvmec_perr("This test does not support XNVME_CMD_SYNC", -err);
+		xnvme_cli_perr("This test does not support XNVME_CMD_SYNC", -err);
 		return err;
 	}
 
 	// Find an empty zone
 	err = xnvme_znd_descr_from_dev_in_state(dev, XNVME_SPEC_ZND_STATE_EMPTY, &zone);
 	if (err) {
-		xnvmec_perr("xnvme_znd_descr_from_dev()", -err);
+		xnvme_cli_perr("xnvme_znd_descr_from_dev()", -err);
 		goto exit;
 	}
-	xnvmec_pinf("Using the following zone:");
+	xnvme_cli_pinf("Using the following zone:");
 	xnvme_spec_znd_descr_pr(&zone, XNVME_PR_DEF);
 
 	// Buffers for verification
 	buf_nbytes = zone.zcap * geo->lba_nbytes;
-	xnvmec_pinf("Allocating buffers...");
+	xnvme_cli_pinf("Allocating buffers...");
 	dbuf = xnvme_buf_alloc(dev, buf_nbytes);
 	if (!dbuf) {
 		err = -errno;
-		xnvmec_perr("xnvme_buf_alloc()", err);
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 	vbuf = xnvme_buf_alloc(dev, buf_nbytes);
 	if (!vbuf) {
 		err = -errno;
-		xnvmec_perr("xnvme_buf_alloc()", err);
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 	xnvme_buf_fill(dbuf, buf_nbytes, "anum");
 	xnvme_buf_fill(vbuf, buf_nbytes, "zero");
 
-	xnvmec_pinf("Using XNVME_CMD_ASYNC mode");
+	xnvme_cli_pinf("Using XNVME_CMD_ASYNC mode");
 
-	xnvmec_pinf("Initializing async. context + alloc/init requests");
+	xnvme_cli_pinf("Initializing async. context + alloc/init requests");
 	err = xnvme_queue_init(dev, 2, 0, &queue);
 	if (err) {
-		xnvmec_perr("xnvme_queue_init()", -err);
+		xnvme_cli_perr("xnvme_queue_init()", -err);
 		goto exit;
 	}
 
-	xnvmec_timer_start(cli);
+	xnvme_cli_timer_start(cli);
 
 	cb_args.zslba = zone.zslba;
 
@@ -112,32 +112,32 @@ cmd_verify(struct xnvmec *cli)
 
 		case -EBUSY:
 		case -EAGAIN:
-			xnvmec_perr("is busy, should not be possible!", err);
+			xnvme_cli_perr("is busy, should not be possible!", err);
 			goto exit;
 
 		default:
-			xnvmec_perr("submission-error", EIO);
+			xnvme_cli_perr("submission-error", EIO);
 			goto exit;
 		}
 
 		err = xnvme_queue_drain(queue);
 		if (err < 0) {
-			xnvmec_perr("xnvme_queue_drain()", err);
+			xnvme_cli_perr("xnvme_queue_drain()", err);
 			goto exit;
 		}
 	}
 
-	xnvmec_timer_stop(cli);
-	xnvmec_timer_bw_pr(cli, "Wall-clock", geo->nsect * geo->nbytes);
+	xnvme_cli_timer_stop(cli);
+	xnvme_cli_timer_bw_pr(cli, "Wall-clock", geo->nsect * geo->nbytes);
 
 	if (cb_args.ecount) {
 		err = -EIO;
-		xnvmec_perr("got completion errors", err);
+		xnvme_cli_perr("got completion errors", err);
 		goto exit;
 	}
 	if (cb_args.ecount_offset) {
 		err = -EIO;
-		xnvmec_perr("got offset error in completion-result", err);
+		xnvme_cli_perr("got offset error in completion-result", err);
 		goto exit;
 	}
 
@@ -148,7 +148,7 @@ cmd_verify(struct xnvmec *cli)
 		err = xnvme_nvm_read(&ctx, nsid, zone.zslba + sect, 0,
 				     vbuf + sect * geo->lba_nbytes, NULL);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvmec_perr("xnvme_nvm_read()", err);
+			xnvme_cli_perr("xnvme_nvm_read()", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
@@ -161,23 +161,23 @@ cmd_verify(struct xnvmec *cli)
 
 		diff = xnvme_buf_diff(dbuf, vbuf, buf_nbytes);
 		if (diff) {
-			xnvmec_pinf("verification failed, diff: %zu", diff);
+			xnvme_cli_pinf("verification failed, diff: %zu", diff);
 			xnvme_buf_diff_pr(dbuf, vbuf, buf_nbytes, XNVME_PR_DEF);
 			err = -EIO;
 			goto exit;
 		}
 	}
 
-	xnvmec_pinf("LGTM");
+	xnvme_cli_pinf("LGTM");
 
 exit:
-	xnvmec_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}", cb_args.submitted,
-		    cb_args.completed, cb_args.ecount);
+	xnvme_cli_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}", cb_args.submitted,
+		       cb_args.completed, cb_args.ecount);
 
 	{
 		int err_exit = xnvme_queue_term(queue);
 		if (err_exit) {
-			xnvmec_perr("xnvme_queue_term()", err_exit);
+			xnvme_cli_perr("xnvme_queue_term()", err_exit);
 		}
 	}
 	xnvme_buf_free(dev, dbuf);
@@ -189,25 +189,25 @@ exit:
 //
 // Command-Line Interface (CLI) definition
 //
-static struct xnvmec_sub g_subs[] = {
+static struct xnvme_cli_sub g_subs[] = {
 	{
 		"verify",
 		"Fills a Zone one LBA at a time, checking addr on completion",
 		"Fills a Zone one LBA at a time, checking addr on completion",
 		cmd_verify,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_CLEAR, XNVMEC_LFLG},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_CLEAR, XNVME_CLI_LFLG},
 
-			XNVMEC_ASYNC_OPTS,
+			XNVME_CLI_ASYNC_OPTS,
 		},
 	},
 };
 
-static struct xnvmec g_cli = {
+static struct xnvme_cli g_cli = {
 	.title = "Tests for Zone Append via Async interfaces",
 	.descr_short = "Tests for Zone Append via Async interfaces",
 	.subs = g_subs,
@@ -217,5 +217,5 @@ static struct xnvmec g_cli = {
 int
 main(int argc, char **argv)
 {
-	return xnvmec(&g_cli, argc, argv, XNVMEC_INIT_DEV_OPEN);
+	return xnvme_cli_run(&g_cli, argc, argv, XNVME_CLI_INIT_DEV_OPEN);
 }

@@ -6,37 +6,37 @@
 #include <libxnvme.h>
 
 static int
-test_buf_alloc_free(struct xnvmec *cli)
+test_buf_alloc_free(struct xnvme_cli *cli)
 {
 	uint64_t count = cli->args.count;
 	int nerr = 0;
 
-	xnvmec_pinf("count: %zu", count);
+	xnvme_cli_pinf("count: %zu", count);
 
 	for (uint64_t i = 0; i < count; ++i) {
 		size_t buf_nbytes = 1 << i;
 		void *buf;
 
 		printf("\n");
-		xnvmec_pinf("[alloc/free] i: %zu, buf_nbytes: %zu", i + 1, buf_nbytes);
+		xnvme_cli_pinf("[alloc/free] i: %zu, buf_nbytes: %zu", i + 1, buf_nbytes);
 
 		buf = xnvme_buf_alloc(cli->args.dev, buf_nbytes);
 		if (!buf) {
-			xnvmec_perr("xnvme_buf_alloc()", -errno);
+			xnvme_cli_perr("xnvme_buf_alloc()", -errno);
 			nerr += 1;
 			continue;
 		}
 		xnvme_buf_free(cli->args.dev, buf);
 
-		xnvmec_pinf("buf: %p", buf);
+		xnvme_cli_pinf("buf: %p", buf);
 	}
 
 	printf("\n");
 	if (nerr) {
-		xnvmec_pinf("--={[ Got Errors - see details above ]}=--");
-		xnvmec_pinf("nerr: %d out of count: %zu", nerr, count);
+		xnvme_cli_pinf("--={[ Got Errors - see details above ]}=--");
+		xnvme_cli_pinf("nerr: %d out of count: %zu", nerr, count);
 	} else {
-		xnvmec_pinf("LGMT: xnvme_buf_{alloc,free}");
+		xnvme_cli_pinf("LGMT: xnvme_buf_{alloc,free}");
 	}
 	printf("\n");
 
@@ -44,37 +44,37 @@ test_buf_alloc_free(struct xnvmec *cli)
 }
 
 static int
-test_virt_buf_alloc_free(struct xnvmec *cli)
+test_virt_buf_alloc_free(struct xnvme_cli *cli)
 {
 	uint64_t count = cli->args.count;
 	int nerr = 0;
 
-	xnvmec_pinf("count: %zu", count);
+	xnvme_cli_pinf("count: %zu", count);
 
 	for (uint64_t i = 0; i < count; ++i) {
 		size_t buf_nbytes = 1 << i;
 		void *buf;
 
 		printf("\n");
-		xnvmec_pinf("[alloc/free] i: %zu, buf_nbytes: %zu", i + 1, buf_nbytes);
+		xnvme_cli_pinf("[alloc/free] i: %zu, buf_nbytes: %zu", i + 1, buf_nbytes);
 
 		buf = xnvme_buf_virt_alloc(0x1000, buf_nbytes);
 		if (!buf) {
-			xnvmec_perr("xnvme_buf_alloc()", -errno);
+			xnvme_cli_perr("xnvme_buf_alloc()", -errno);
 			nerr += 1;
 			continue;
 		}
-		xnvmec_pinf("buf: %p", buf);
+		xnvme_cli_pinf("buf: %p", buf);
 
 		xnvme_buf_virt_free(buf);
 	}
 
 	printf("\n");
 	if (nerr) {
-		xnvmec_pinf("--={[ Got Errors - see details above ]}=--");
-		xnvmec_pinf("nerr: %d out of count: %zu", nerr, count);
+		xnvme_cli_pinf("--={[ Got Errors - see details above ]}=--");
+		xnvme_cli_pinf("nerr: %d out of count: %zu", nerr, count);
 	} else {
-		xnvmec_pinf("LGMT: xnvme_buf_virt_{alloc,free}");
+		xnvme_cli_pinf("LGMT: xnvme_buf_virt_{alloc,free}");
 	}
 	printf("\n");
 
@@ -84,20 +84,20 @@ test_virt_buf_alloc_free(struct xnvmec *cli)
 //
 // Command-Line Interface (CLI) definition
 //
-static struct xnvmec_sub g_subs[] = {
+static struct xnvme_cli_sub g_subs[] = {
 	{
 		"buf_alloc_free",
 		"Allocate and free a buffer 'count' times of size [1, 2^count]",
 		"Allocate and free a buffer 'count' times of size [1, 2^count]",
 		test_buf_alloc_free,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_COUNT, XNVMEC_LREQ},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_COUNT, XNVME_CLI_LREQ},
 
-			XNVMEC_ADMIN_OPTS,
+			XNVME_CLI_ADMIN_OPTS,
 		},
 	},
 	{
@@ -106,18 +106,18 @@ static struct xnvmec_sub g_subs[] = {
 		"Allocate and free a buffer 'count' times of size [1, 2^count]",
 		test_virt_buf_alloc_free,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_URI, XNVMEC_POSA},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_COUNT, XNVMEC_LREQ},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_COUNT, XNVME_CLI_LREQ},
 
-			XNVMEC_ADMIN_OPTS,
+			XNVME_CLI_ADMIN_OPTS,
 		},
 	},
 };
 
-static struct xnvmec g_cli = {
+static struct xnvme_cli g_cli = {
 	.title = "Test xNVMe basic buffer alloc/free",
 	.descr_short = "Test xNVMe basic buffer alloc/free",
 	.subs = g_subs,
@@ -127,5 +127,5 @@ static struct xnvmec g_cli = {
 int
 main(int argc, char **argv)
 {
-	return xnvmec(&g_cli, argc, argv, XNVMEC_INIT_DEV_OPEN);
+	return xnvme_cli_run(&g_cli, argc, argv, XNVME_CLI_INIT_DEV_OPEN);
 }

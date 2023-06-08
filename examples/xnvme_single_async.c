@@ -53,13 +53,13 @@ main(int argc, char **argv)
 	int ret = 0, err = 0;
 
 	if (argc < 2) {
-		xnvmec_perr("Usage: %s <ident>", EINVAL);
+		xnvme_cli_perr("Usage: %s <ident>", EINVAL);
 		return 1;
 	}
 
 	dev = xnvme_dev_open(argv[1], &opts);
 	if (!dev) {
-		xnvmec_perr("xnvme_dev_open()", errno);
+		xnvme_cli_perr("xnvme_dev_open()", errno);
 		return 1;
 	}
 	nsid = xnvme_dev_get_nsid(dev);
@@ -67,7 +67,7 @@ main(int argc, char **argv)
 	// Initialize a command-queue
 	ret = xnvme_queue_init(dev, qd, 0, &queue);
 	if (ret) {
-		xnvmec_perr("xnvme_queue_init()", ret);
+		xnvme_cli_perr("xnvme_queue_init()", ret);
 		xnvme_dev_close(dev);
 		return 1;
 	}
@@ -77,10 +77,10 @@ main(int argc, char **argv)
 
 	buf_nbytes = xnvme_dev_get_geo(dev)->nbytes;
 
-	xnvmec_pinf("Allocate a payload-buffer of nbytes: %zu", buf_nbytes);
+	xnvme_cli_pinf("Allocate a payload-buffer of nbytes: %zu", buf_nbytes);
 	buf = xnvme_buf_alloc(dev, buf_nbytes);
 	if (!buf) {
-		xnvmec_perr("xnvme_buf_alloc()", errno);
+		xnvme_cli_perr("xnvme_buf_alloc()", errno);
 		goto exit;
 	}
 	memset(buf, 0, buf_nbytes);
@@ -106,7 +106,7 @@ submit:
 
 		// Submission failed: unexpected error, put the command-context back in the queue
 		default:
-			xnvmec_perr("xnvme_nvm_read()", err);
+			xnvme_cli_perr("xnvme_nvm_read()", err);
 
 			xnvme_queue_put_cmd_ctx(queue, ctx);
 			goto exit;
@@ -118,27 +118,27 @@ next:
 	// Done submitting, wait for all outstanding I/O to complete as we are about to exit
 	ret = xnvme_queue_drain(queue);
 	if (ret < 0) {
-		xnvmec_perr("xnvme_queue_drain()", ret);
+		xnvme_cli_perr("xnvme_queue_drain()", ret);
 		goto exit;
 	}
 
 	// Report if the callback function observed completion-errors
 	if (cb_args.ecount) {
 		ret = ret ? ret : EIO;
-		xnvmec_perr("got completion errors", EIO);
+		xnvme_cli_perr("got completion errors", EIO);
 		goto exit;
 	}
 
-	xnvmec_pinf("Dumping the first 64 bytes of payload-buffer");
+	xnvme_cli_pinf("Dumping the first 64 bytes of payload-buffer");
 	printf("buf[0-63]: '");
 	for (size_t i = 0; i < 64; ++i) {
 		printf("%c", buf[i]);
 	}
-	xnvmec_pinf("'");
+	xnvme_cli_pinf("'");
 
 exit:
-	xnvmec_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}", cb_args.submitted,
-		    cb_args.completed, cb_args.ecount);
+	xnvme_cli_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}", cb_args.submitted,
+		       cb_args.completed, cb_args.ecount);
 
 	xnvme_buf_free(dev, buf);
 	xnvme_queue_term(queue);

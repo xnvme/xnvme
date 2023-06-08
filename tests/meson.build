@@ -14,7 +14,7 @@ tests_source = [
   'scc.c',
   'ioworker.c',
   'xnvme_file.c',
-  'xnvmec.c',
+  'xnvme_cli.c',
   'znd_append.c',
   'znd_explicit_open.c',
   'znd_state.c',

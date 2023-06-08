@@ -6,7 +6,7 @@
 #include <libxnvme.h>
 
 int
-test_file_fsync(struct xnvmec *cli)
+test_file_fsync(struct xnvme_cli *cli)
 {
 	struct xnvme_opts opts = {.create = 1, .wronly = 1};
 	const char *output_path = cli->args.data_output;
@@ -18,13 +18,13 @@ test_file_fsync(struct xnvmec *cli)
 
 	fh = xnvme_file_open(output_path, &opts);
 	if (fh == NULL) {
-		xnvmec_perr("xnvme_file_open()", errno);
+		xnvme_cli_perr("xnvme_file_open()", errno);
 		return -errno;
 	}
 
 	buf = xnvme_buf_alloc(fh, bytes_per_write);
 	if (!buf) {
-		xnvmec_perr("xnvme_buf_alloc()", errno);
+		xnvme_cli_perr("xnvme_buf_alloc()", errno);
 		xnvme_file_close(fh);
 		return -errno;
 	}
@@ -35,13 +35,13 @@ test_file_fsync(struct xnvmec *cli)
 
 		err = xnvme_file_pwrite(&ctx, buf, bytes_per_write, 0);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvmec_perr("xnvme_file_pwrite()", err);
+			xnvme_cli_perr("xnvme_file_pwrite()", err);
 			return err;
 		}
 
 		err = xnvme_file_sync(fh);
 		if (err) {
-			xnvmec_perr("xnvme_file_sync()", err);
+			xnvme_cli_perr("xnvme_file_sync()", err);
 			return err;
 		}
 	}
@@ -65,13 +65,13 @@ file_write_ascii(const char *path, size_t nbytes, struct xnvme_opts *opts)
 
 	fh = xnvme_file_open(path, opts);
 	if (fh == NULL) {
-		xnvmec_perr("xnvme_file_open()", errno);
+		xnvme_cli_perr("xnvme_file_open()", errno);
 		return -errno;
 	}
 
 	buf = xnvme_buf_alloc(fh, nbytes);
 	if (!buf) {
-		xnvmec_perr("xnvme_buf_alloc()", errno);
+		xnvme_cli_perr("xnvme_buf_alloc()", errno);
 		xnvme_file_close(fh);
 		return -errno;
 	}
@@ -80,7 +80,7 @@ file_write_ascii(const char *path, size_t nbytes, struct xnvme_opts *opts)
 	ctx = xnvme_file_get_cmd_ctx(fh);
 	err = xnvme_file_pwrite(&ctx, buf, nbytes, 0);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvmec_perr("xnvme_file_pwrite()", err);
+		xnvme_cli_perr("xnvme_file_pwrite()", err);
 		return err;
 	}
 
@@ -97,7 +97,7 @@ file_write_ascii(const char *path, size_t nbytes, struct xnvme_opts *opts)
  * contains only 64 bytes in the end.
  */
 int
-test_file_trunc(struct xnvmec *cli)
+test_file_trunc(struct xnvme_cli *cli)
 {
 	const char *output_path = cli->args.data_output;
 	size_t init_write_size = 1024, trunc_write_size = 123, tbytes = 0;
@@ -107,20 +107,20 @@ test_file_trunc(struct xnvmec *cli)
 	err = file_write_ascii(output_path, init_write_size,
 			       &(struct xnvme_opts){.create = 1, .wronly = 1, .truncate = 1});
 	if (err) {
-		xnvmec_perr("file_open_write_ascii()", err);
+		xnvme_cli_perr("file_open_write_ascii()", err);
 		return err;
 	}
 
 	err = file_write_ascii(output_path, trunc_write_size,
 			       &(struct xnvme_opts){.create = 1, .wronly = 1, .truncate = 1});
 	if (err) {
-		xnvmec_perr("file_open_write_ascii()", err);
+		xnvme_cli_perr("file_open_write_ascii()", err);
 		return err;
 	}
 
 	fh = xnvme_file_open(output_path, &(struct xnvme_opts){.rdonly = 1});
 	if (fh == NULL) {
-		xnvmec_perr("xnvme_file_open()", err);
+		xnvme_cli_perr("xnvme_file_open()", err);
 		return err;
 	}
 
@@ -136,16 +136,16 @@ test_file_trunc(struct xnvmec *cli)
 	return -EIO;
 }
 
-static struct xnvmec_sub g_subs[] = {
+static struct xnvme_cli_sub g_subs[] = {
 	{
 		"write-fsync",
 		"Write a file and call fsync between writes",
 		"Write a file and call fsync between writes",
 		test_file_fsync,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_DATA_OUTPUT, XNVME_CLI_POSA},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 		},
 	},
 	{
@@ -154,14 +154,14 @@ static struct xnvmec_sub g_subs[] = {
 		"Write a file and then overwrite it using trunc",
 		test_file_trunc,
 		{
-			{XNVMEC_OPT_POSA_TITLE, XNVMEC_SKIP},
-			{XNVMEC_OPT_DATA_OUTPUT, XNVMEC_POSA},
-			{XNVMEC_OPT_NON_POSA_TITLE, XNVMEC_SKIP},
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_DATA_OUTPUT, XNVME_CLI_POSA},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 		},
 	},
 };
 
-static struct xnvmec g_cli = {
+static struct xnvme_cli g_cli = {
 	.title = "xNVMe file - Exercise the xnvme_file API",
 	.descr_short = "Exercise the xnvme_file API",
 	.descr_long = "",
@@ -172,5 +172,5 @@ static struct xnvmec g_cli = {
 int
 main(int argc, char **argv)
 {
-	return xnvmec(&g_cli, argc, argv, XNVMEC_INIT_NONE);
+	return xnvme_cli_run(&g_cli, argc, argv, XNVME_CLI_INIT_NONE);
 }
