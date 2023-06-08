@@ -99,7 +99,7 @@ copy_async(struct xnvmec *cli)
 		xnvmec_perr("xnvme_buf_alloc()", errno);
 		goto exit;
 	}
-	xnvmec_buf_fill(buf, buf_nbytes, "zero");
+	xnvme_buf_fill(buf, buf_nbytes, "zero");
 
 	err = xnvme_queue_init(src_dev, qdepth, 0, &queue);
 	if (err) {
@@ -220,7 +220,7 @@ copy_sync(struct xnvmec *cli)
 		xnvmec_perr("xnvme_buf_alloc()", errno);
 		goto exit;
 	}
-	xnvmec_buf_fill(buf, buf_nbytes, "zero");
+	xnvme_buf_fill(buf, buf_nbytes, "zero");
 
 	xnvmec_pinf("copy-sync: {src: %s, dst: %s, tbytes: %zu, buf_nbytes: %zu, iosize: %zu, "
 		    "start_offset: %zu}",

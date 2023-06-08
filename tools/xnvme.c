@@ -169,9 +169,9 @@ _sub_idfy(struct xnvmec *cli, uint8_t cns, uint16_t cntid, uint8_t nsid, uint16_
 
 	if (cli->args.data_output) {
 		xnvmec_pinf("Dumping to: '%s'", cli->args.data_output);
-		err = xnvmec_buf_to_file((char *)dbuf, dbuf_nbytes, cli->args.data_output);
+		err = xnvme_buf_to_file((char *)dbuf, dbuf_nbytes, cli->args.data_output);
 		if (err) {
-			xnvmec_perr("xnvmec_buf_to_file()", err);
+			xnvmec_perr("xnvme_buf_to_file()", err);
 		}
 	}
 
@@ -562,9 +562,9 @@ sub_log(struct xnvmec *cli)
 	// Generic buf-print and/or dump to file
 	if (cli->args.data_output) {
 		xnvmec_pinf("Dumping to: '%s'", cli->args.data_output);
-		err = xnvmec_buf_to_file(buf, buf_nbytes, cli->args.data_output);
+		err = xnvme_buf_to_file(buf, buf_nbytes, cli->args.data_output);
 		if (err) {
-			xnvmec_perr("xnvmec_buf_to_file()", err);
+			xnvmec_perr("xnvme_buf_to_file()", err);
 		}
 	}
 
@@ -625,9 +625,9 @@ sub_gfeat(struct xnvmec *cli)
 
 	if (cli->args.data_output) {
 		xnvmec_pinf("dumping to: '%s'", cli->args.data_output);
-		err = xnvmec_buf_to_file(dbuf, dbuf_nbytes, cli->args.data_output);
+		err = xnvme_buf_to_file(dbuf, dbuf_nbytes, cli->args.data_output);
 		if (err) {
-			xnvmec_perr("xnvmec_buf_to_file()", err);
+			xnvmec_perr("xnvme_buf_to_file()", err);
 		}
 	}
 
@@ -669,9 +669,9 @@ sub_sfeat(struct xnvmec *cli)
 			xnvmec_perr("xnvme_buf_alloc()", err);
 			goto exit;
 		}
-		err = xnvmec_buf_fill(dbuf, dbuf_nbytes, cli->args.data_input);
+		err = xnvme_buf_fill(dbuf, dbuf_nbytes, cli->args.data_input);
 		if (err) {
-			xnvmec_perr("xnvmec_buf_fill()", err);
+			xnvmec_perr("xnvme_buf_fill()", err);
 			goto exit;
 		}
 	}
@@ -902,9 +902,9 @@ sub_pass(struct xnvmec *cli, int admin)
 
 	xnvmec_pinf("xnvme_cmd_pass(...)");
 
-	err = xnvmec_buf_from_file(&ctx.cmd, sizeof(ctx.cmd), cli->args.cmd_input);
+	err = xnvme_buf_from_file(&ctx.cmd, sizeof(ctx.cmd), cli->args.cmd_input);
 	if (err) {
-		xnvmec_perr("xnvmec_buf_from_file()", err);
+		xnvmec_perr("xnvme_buf_from_file()", err);
 		xnvmec_pinf("Error reading: '%s'", cli->args.cmd_input);
 		goto exit;
 	}
@@ -919,7 +919,7 @@ sub_pass(struct xnvmec *cli, int admin)
 
 		if (cli->args.data_input) {
 			xnvmec_pinf("Reading data(%s)", cli->args.data_input);
-			xnvmec_buf_from_file(data_buf, data_nbytes, cli->args.data_input);
+			xnvme_buf_from_file(data_buf, data_nbytes, cli->args.data_input);
 		}
 	}
 
@@ -933,7 +933,7 @@ sub_pass(struct xnvmec *cli, int admin)
 
 		if (cli->args.meta_input) {
 			xnvmec_pinf("Reading meta(%s)", cli->args.meta_input);
-			xnvmec_buf_from_file(meta_buf, meta_nbytes, cli->args.meta_input);
+			xnvme_buf_from_file(meta_buf, meta_nbytes, cli->args.meta_input);
 		}
 	}
 
@@ -955,16 +955,16 @@ sub_pass(struct xnvmec *cli, int admin)
 
 	if (data_nbytes && cli->args.data_output) {
 		xnvmec_pinf("Dumping data(%s)", cli->args.data_output);
-		err = xnvmec_buf_to_file(data_buf, data_nbytes, cli->args.data_output);
+		err = xnvme_buf_to_file(data_buf, data_nbytes, cli->args.data_output);
 		if (err) {
-			xnvmec_perr("xnvmec_buf_to_file()", err);
+			xnvmec_perr("xnvme_buf_to_file()", err);
 		}
 	}
 	if (meta_nbytes && cli->args.meta_output) {
 		xnvmec_pinf("Dumping meta(%s)", cli->args.meta_output);
-		err = xnvmec_buf_to_file(meta_buf, meta_nbytes, cli->args.meta_output);
+		err = xnvme_buf_to_file(meta_buf, meta_nbytes, cli->args.meta_output);
 		if (err) {
-			xnvmec_perr("xnvmec_buf_to_file()", err);
+			xnvmec_perr("xnvme_buf_to_file()", err);
 		}
 	}
 

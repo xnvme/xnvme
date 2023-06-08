@@ -95,8 +95,8 @@ read_and_compare_lba_range(uint8_t *rbuf, const uint8_t *cbuf, const uint64_t rn
 		}
 
 		read_bytes = r_nlb * geo->lba_nbytes;
-		if (xnvmec_buf_diff(cbuf, rbuf, read_bytes)) {
-			xnvmec_buf_diff_pr(cbuf, rbuf, read_bytes, XNVME_PR_DEF);
+		if (xnvme_buf_diff(cbuf, rbuf, read_bytes)) {
+			xnvme_buf_diff_pr(cbuf, rbuf, read_bytes, XNVME_PR_DEF);
 			err = -EIO;
 			goto exit;
 		}
@@ -176,9 +176,9 @@ sub_io(struct xnvmec *cli)
 	}
 
 	xnvmec_pinf("Writing payload scattered within LBA range [slba,elba]");
-	err = xnvmec_buf_fill(wbuf, buf_nbytes, "anum");
+	err = xnvme_buf_fill(wbuf, buf_nbytes, "anum");
 	if (err) {
-		xnvmec_perr("xnvmec_buf_fill()", err);
+		xnvmec_perr("xnvme_buf_fill()", err);
 		goto exit;
 	}
 
@@ -199,7 +199,7 @@ sub_io(struct xnvmec *cli)
 
 	xnvmec_pinf("Read scattered payload within LBA range [slba,elba]");
 
-	xnvmec_buf_clear(rbuf, buf_nbytes);
+	xnvme_buf_clear(rbuf, buf_nbytes);
 	for (uint64_t count = 0; count < mdts_naddr; ++count) {
 		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 		size_t rbuf_ofz = count * geo->lba_nbytes;
@@ -216,8 +216,8 @@ sub_io(struct xnvmec *cli)
 	}
 
 	xnvmec_pinf("Comparing wbuf and rbuf");
-	if (xnvmec_buf_diff(wbuf, rbuf, buf_nbytes)) {
-		xnvmec_buf_diff_pr(wbuf, rbuf, buf_nbytes, XNVME_PR_DEF);
+	if (xnvme_buf_diff(wbuf, rbuf, buf_nbytes)) {
+		xnvme_buf_diff_pr(wbuf, rbuf, buf_nbytes, XNVME_PR_DEF);
 		goto exit;
 	}
 
@@ -301,7 +301,7 @@ test_scopy(struct xnvmec *cli)
 	}
 
 	xnvmec_pinf("Writing payload scattered within LBA range [slba,elba]");
-	xnvmec_buf_fill(wbuf, buf_nbytes, "anum");
+	xnvme_buf_fill(wbuf, buf_nbytes, "anum");
 	for (uint64_t count = 0; count < xfer_naddr; ++count) {
 		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 		size_t wbuf_ofz = count * geo->lba_nbytes;
@@ -345,8 +345,8 @@ test_scopy(struct xnvmec *cli)
 		}
 
 		xnvmec_pinf("Comparing wbuf and rbuf");
-		if (xnvmec_buf_diff(wbuf, rbuf, buf_nbytes)) {
-			xnvmec_buf_diff_pr(wbuf, rbuf, buf_nbytes, XNVME_PR_DEF);
+		if (xnvme_buf_diff(wbuf, rbuf, buf_nbytes)) {
+			xnvme_buf_diff_pr(wbuf, rbuf, buf_nbytes, XNVME_PR_DEF);
 			err = -EIO;
 			goto exit;
 		}
@@ -399,7 +399,7 @@ test_write_zeroes(struct xnvmec *cli)
 	}
 	xnvmec_pinf("Written bytes %ld with !", written_bytes);
 
-	xnvmec_buf_clear(rbuf, buf_nbytes);
+	xnvme_buf_clear(rbuf, buf_nbytes);
 	err = read_and_compare_lba_range(rbuf, wbuf, rng_slba, nlb, mdts_naddr, geo, dev, nsid,
 					 &compared_bytes);
 	if (err) {
@@ -423,7 +423,7 @@ test_write_zeroes(struct xnvmec *cli)
 
 	// Set the rbuf to != 0 so we know that we read zeroes
 	memset(rbuf, 'a', buf_nbytes);
-	xnvmec_buf_clear(wbuf, buf_nbytes);
+	xnvme_buf_clear(wbuf, buf_nbytes);
 	err = read_and_compare_lba_range(rbuf, wbuf, rng_slba, nlb, mdts_naddr, geo, dev, nsid,
 					 &compared_bytes);
 	if (err) {
@@ -477,7 +477,7 @@ test_write_uncorrectable(struct xnvmec *cli)
 		goto exit;
 	}
 
-	xnvmec_buf_clear(rbuf, buf_nbytes);
+	xnvme_buf_clear(rbuf, buf_nbytes);
 	err = read_and_compare_lba_range(rbuf, wbuf, rng_slba, nlb, mdts_naddr, geo, dev, nsid,
 					 &compared_bytes);
 	if (err) {

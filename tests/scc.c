@@ -177,8 +177,8 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 		xnvmec_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	xnvmec_buf_fill(dbuf, buf_nbytes, "anum");
-	xnvmec_buf_fill(vbuf, buf_nbytes, "zero");
+	xnvme_buf_fill(dbuf, buf_nbytes, "anum");
+	xnvme_buf_fill(vbuf, buf_nbytes, "zero");
 
 	// TODO: Currently, only a single entry is added per row, construct the
 	// range in fancier ways, that is, distributed different over the
@@ -284,10 +284,10 @@ _scopy_helper(struct xnvmec *cli, uint64_t tlbas)
 	{
 		size_t diff;
 
-		diff = xnvmec_buf_diff(dbuf, vbuf, buf_nbytes);
+		diff = xnvme_buf_diff(dbuf, vbuf, buf_nbytes);
 		if (diff) {
 			xnvmec_pinf("verification failed, diff: %zu", diff);
-			xnvmec_buf_diff_pr(dbuf, vbuf, buf_nbytes, XNVME_PR_DEF);
+			xnvme_buf_diff_pr(dbuf, vbuf, buf_nbytes, XNVME_PR_DEF);
 			err = -EIO;
 			goto exit;
 		}
