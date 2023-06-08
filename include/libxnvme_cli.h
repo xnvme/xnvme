@@ -478,25 +478,14 @@ xnvme_cli_enumeration_pp(struct xnvme_cli_enumeration *list, int opts);
 int
 xnvme_cli_enumeration_pr(struct xnvme_cli_enumeration *list, int opts);
 
-static inline uint64_t
-xnvme_cli_timer_start(struct xnvme_cli *cli)
-{
-	cli->timer.start = _xnvme_timer_clock_sample();
-	return cli->timer.start;
-}
+uint64_t
+xnvme_cli_timer_start(struct xnvme_cli *cli);
 
-static inline uint64_t
-xnvme_cli_timer_stop(struct xnvme_cli *cli)
-{
-	cli->timer.stop = _xnvme_timer_clock_sample();
-	return cli->timer.stop;
-}
+uint64_t
+xnvme_cli_timer_stop(struct xnvme_cli *cli);
 
-static inline void
-xnvme_cli_timer_bw_pr(struct xnvme_cli *cli, const char *prefix, size_t nbytes)
-{
-	xnvme_timer_bw_pr(&cli->timer, prefix, nbytes);
-}
+void
+xnvme_cli_timer_bw_pr(struct xnvme_cli *cli, const char *prefix, size_t nbytes);
 
 void
 xnvme_cli_pinf(const char *format, ...);
