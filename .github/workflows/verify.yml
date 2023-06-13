@@ -626,11 +626,13 @@ jobs:
         rm xnvme*.tar.gz
 
     - name: Install build-requirements
+      shell: cmd
       run: |
         cmd.exe /c "echo %cd%"
         cmd.exe /c "toolbox\pkgs\${{ matrix.runner.os }}-${{ matrix.runner.ver }}.bat"
 
     - name: Build!
+      shell: cmd
       run: |
         cmd.exe /c "build.bat"
 
