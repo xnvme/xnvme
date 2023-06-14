@@ -118,6 +118,38 @@ xnvme_spec_idfy_cns
 .. doxygenenum:: xnvme_spec_idfy_cns
 
 
+.. _sec-c-api-xnvme_spec-enum-xnvme_spec_io_mgmt_recv_mo:
+
+xnvme_spec_io_mgmt_recv_mo
+--------------------------
+
+.. doxygenenum:: xnvme_spec_io_mgmt_recv_mo
+
+
+.. _sec-c-api-xnvme_spec-enum-xnvme_spec_io_mgmt_send_mo:
+
+xnvme_spec_io_mgmt_send_mo
+--------------------------
+
+.. doxygenenum:: xnvme_spec_io_mgmt_send_mo
+
+
+.. _sec-c-api-xnvme_spec-enum-xnvme_spec_kv_opc:
+
+xnvme_spec_kv_opc
+-----------------
+
+.. doxygenenum:: xnvme_spec_kv_opc
+
+
+.. _sec-c-api-xnvme_spec-enum-xnvme_spec_kv_status_code:
+
+xnvme_spec_kv_status_code
+-------------------------
+
+.. doxygenenum:: xnvme_spec_kv_status_code
+
+
 .. _sec-c-api-xnvme_spec-enum-xnvme_spec_log_lpi:
 
 xnvme_spec_log_lpi
@@ -156,6 +188,14 @@ xnvme_spec_sgl_descriptor_subtype
 ---------------------------------
 
 .. doxygenenum:: xnvme_spec_sgl_descriptor_subtype
+
+
+.. _sec-c-api-xnvme_spec-enum-xnvme_spec_status_code:
+
+xnvme_spec_status_code
+----------------------
+
+.. doxygenenum:: xnvme_spec_status_code
 
 
 .. _sec-c-api-xnvme_spec-enum-xnvme_spec_status_code_type:
@@ -415,6 +455,46 @@ xnvme_spec_dsm_range
    :undoc-members:
 
 
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_fdp_conf_desc:
+
+xnvme_spec_fdp_conf_desc
+------------------------
+
+.. doxygenstruct:: xnvme_spec_fdp_conf_desc
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_fdp_event:
+
+xnvme_spec_fdp_event
+--------------------
+
+.. doxygenstruct:: xnvme_spec_fdp_event
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_fdp_event_desc:
+
+xnvme_spec_fdp_event_desc
+-------------------------
+
+.. doxygenstruct:: xnvme_spec_fdp_event_desc
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_fdp_event_media_reallocated:
+
+xnvme_spec_fdp_event_media_reallocated
+--------------------------------------
+
+.. doxygenstruct:: xnvme_spec_fdp_event_media_reallocated
+   :members:
+   :undoc-members:
+
+
 .. _sec-c-api-xnvme_spec-struct-xnvme_spec_feat:
 
 xnvme_spec_feat
@@ -495,6 +575,76 @@ xnvme_spec_idfy_ns
    :undoc-members:
 
 
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_io_mgmt_cmd:
+
+xnvme_spec_io_mgmt_cmd
+----------------------
+
+.. doxygenstruct:: xnvme_spec_io_mgmt_cmd
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_io_mgmt_recv_cmd:
+
+xnvme_spec_io_mgmt_recv_cmd
+---------------------------
+
+.. doxygenstruct:: xnvme_spec_io_mgmt_recv_cmd
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_io_mgmt_send_cmd:
+
+xnvme_spec_io_mgmt_send_cmd
+---------------------------
+
+.. doxygenstruct:: xnvme_spec_io_mgmt_send_cmd
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_kvs_cmd:
+
+xnvme_spec_kvs_cmd
+------------------
+
+.. doxygenstruct:: xnvme_spec_kvs_cmd
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_kvs_idfy:
+
+xnvme_spec_kvs_idfy
+-------------------
+
+.. doxygenstruct:: xnvme_spec_kvs_idfy
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_kvs_idfy_ns:
+
+xnvme_spec_kvs_idfy_ns
+----------------------
+
+.. doxygenstruct:: xnvme_spec_kvs_idfy_ns
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_kvs_idfy_ns_format:
+
+xnvme_spec_kvs_idfy_ns_format
+-----------------------------
+
+.. doxygenstruct:: xnvme_spec_kvs_idfy_ns_format
+   :members:
+   :undoc-members:
+
+
 .. _sec-c-api-xnvme_spec-struct-xnvme_spec_lbaf:
 
 xnvme_spec_lbaf
@@ -515,12 +665,52 @@ xnvme_spec_log_erri_entry
    :undoc-members:
 
 
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_log_fdp_conf:
+
+xnvme_spec_log_fdp_conf
+-----------------------
+
+.. doxygenstruct:: xnvme_spec_log_fdp_conf
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_log_fdp_events:
+
+xnvme_spec_log_fdp_events
+-------------------------
+
+.. doxygenstruct:: xnvme_spec_log_fdp_events
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_log_fdp_stats:
+
+xnvme_spec_log_fdp_stats
+------------------------
+
+.. doxygenstruct:: xnvme_spec_log_fdp_stats
+   :members:
+   :undoc-members:
+
+
 .. _sec-c-api-xnvme_spec-struct-xnvme_spec_log_health_entry:
 
 xnvme_spec_log_health_entry
 ---------------------------
 
 .. doxygenstruct:: xnvme_spec_log_health_entry
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_log_ruhu:
+
+xnvme_spec_log_ruhu
+-------------------
+
+.. doxygenstruct:: xnvme_spec_log_ruhu
    :members:
    :undoc-members:
 
@@ -621,6 +811,46 @@ xnvme_spec_power_state
 ----------------------
 
 .. doxygenstruct:: xnvme_spec_power_state
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_ruh_desc:
+
+xnvme_spec_ruh_desc
+-------------------
+
+.. doxygenstruct:: xnvme_spec_ruh_desc
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_ruhs:
+
+xnvme_spec_ruhs
+---------------
+
+.. doxygenstruct:: xnvme_spec_ruhs
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_ruhs_desc:
+
+xnvme_spec_ruhs_desc
+--------------------
+
+.. doxygenstruct:: xnvme_spec_ruhs_desc
+   :members:
+   :undoc-members:
+
+
+.. _sec-c-api-xnvme_spec-struct-xnvme_spec_ruhu_desc:
+
+xnvme_spec_ruhu_desc
+--------------------
+
+.. doxygenstruct:: xnvme_spec_ruhu_desc
    :members:
    :undoc-members:
 
@@ -846,6 +1076,14 @@ xnvme_spec_drecv_srp_pr
 .. doxygenfunction:: xnvme_spec_drecv_srp_pr
 
 
+.. _sec-c-api-xnvme_spec-func-xnvme_spec_feat_fdp_events_pr:
+
+xnvme_spec_feat_fdp_events_pr
+-----------------------------
+
+.. doxygenfunction:: xnvme_spec_feat_fdp_events_pr
+
+
 .. _sec-c-api-xnvme_spec-func-xnvme_spec_feat_fpr:
 
 xnvme_spec_feat_fpr
@@ -950,6 +1188,22 @@ xnvme_spec_idfy_ns_pr
 .. doxygenfunction:: xnvme_spec_idfy_ns_pr
 
 
+.. _sec-c-api-xnvme_spec-func-xnvme_spec_kvs_idfy_ns_fpr:
+
+xnvme_spec_kvs_idfy_ns_fpr
+--------------------------
+
+.. doxygenfunction:: xnvme_spec_kvs_idfy_ns_fpr
+
+
+.. _sec-c-api-xnvme_spec-func-xnvme_spec_kvs_idfy_ns_pr:
+
+xnvme_spec_kvs_idfy_ns_pr
+-------------------------
+
+.. doxygenfunction:: xnvme_spec_kvs_idfy_ns_pr
+
+
 .. _sec-c-api-xnvme_spec-func-xnvme_spec_log_erri_fpr:
 
 xnvme_spec_log_erri_fpr
@@ -964,6 +1218,30 @@ xnvme_spec_log_erri_pr
 ----------------------
 
 .. doxygenfunction:: xnvme_spec_log_erri_pr
+
+
+.. _sec-c-api-xnvme_spec-func-xnvme_spec_log_fdp_conf_pr:
+
+xnvme_spec_log_fdp_conf_pr
+--------------------------
+
+.. doxygenfunction:: xnvme_spec_log_fdp_conf_pr
+
+
+.. _sec-c-api-xnvme_spec-func-xnvme_spec_log_fdp_events_pr:
+
+xnvme_spec_log_fdp_events_pr
+----------------------------
+
+.. doxygenfunction:: xnvme_spec_log_fdp_events_pr
+
+
+.. _sec-c-api-xnvme_spec-func-xnvme_spec_log_fdp_stats_pr:
+
+xnvme_spec_log_fdp_stats_pr
+---------------------------
+
+.. doxygenfunction:: xnvme_spec_log_fdp_stats_pr
 
 
 .. _sec-c-api-xnvme_spec-func-xnvme_spec_log_health_fpr:
@@ -988,6 +1266,14 @@ xnvme_spec_log_lpi_str
 ----------------------
 
 .. doxygenfunction:: xnvme_spec_log_lpi_str
+
+
+.. _sec-c-api-xnvme_spec-func-xnvme_spec_log_ruhu_pr:
+
+xnvme_spec_log_ruhu_pr
+----------------------
+
+.. doxygenfunction:: xnvme_spec_log_ruhu_pr
 
 
 .. _sec-c-api-xnvme_spec-func-xnvme_spec_nvm_cmd_cpl_sc_str:
@@ -1068,6 +1354,14 @@ xnvme_spec_psdt_str
 -------------------
 
 .. doxygenfunction:: xnvme_spec_psdt_str
+
+
+.. _sec-c-api-xnvme_spec-func-xnvme_spec_ruhs_pr:
+
+xnvme_spec_ruhs_pr
+------------------
+
+.. doxygenfunction:: xnvme_spec_ruhs_pr
 
 
 .. _sec-c-api-xnvme_spec-func-xnvme_spec_sgl_descriptor_subtype_str:

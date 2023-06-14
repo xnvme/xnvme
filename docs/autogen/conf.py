@@ -20,7 +20,7 @@ exclude_patterns = ["autogen"]
 source_suffix = ".rst"
 master_doc = "index"
 project = "xNVMe"
-copyright = "2022, xNVMe"
+copyright = "2023, xNVMe"
 version = xnvme_ver(os.path.join("..", "..", "meson.build"))
 release = xnvme_ver(os.path.join("..", "..", "meson.build"))
 
