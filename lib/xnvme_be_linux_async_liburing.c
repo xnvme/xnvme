@@ -122,6 +122,10 @@ xnvme_be_linux_liburing_init(struct xnvme_queue *q, int opts)
 		return -err;
 	}
 
+	if (getenv("XNVME_QUEUE_BATCHING")) {
+		queue->batching = 1;
+	}
+
 	//
 	// Ring-initialization
 	//
@@ -243,6 +247,14 @@ xnvme_be_linux_liburing_poke(struct xnvme_queue *q, uint32_t max)
 	max = max ? max : queue->base.outstanding;
 	max = max > queue->base.outstanding ? queue->base.outstanding : max;
 
+	if (queue->batching) {
+		int err = io_uring_submit(&queue->ring);
+		if (err < 0) {
+			XNVME_DEBUG("io_uring_submit, err: %d", err);
+			return err;
+		}
+	}
+
 	completed = 0;
 	for (uint32_t i = 0; i < max; i++) {
 		err = io_uring_peek_cqe(&queue->ring, &cqe);
@@ -276,6 +288,7 @@ xnvme_be_linux_liburing_poke(struct xnvme_queue *q, uint32_t max)
 		io_uring_cqe_seen(&queue->ring, cqe);
 
 		ctx->async.cb(ctx, ctx->async.cb_arg);
+
 		completed++;
 	}
 
@@ -338,12 +351,17 @@ xnvme_be_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	sqe->user_data = (unsigned long)ctx;
 	// sqe->__pad2[0] = sqe->__pad2[1] = sqe->__pad2[2] = 0;
 
+	if (queue->batching) {
+		goto exit;
+	}
+
 	err = io_uring_submit(&queue->ring);
 	if (err < 0) {
 		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opcode, err);
 		return err;
 	}
 
+exit:
 	queue->base.outstanding += 1;
 
 	return 0;
@@ -405,12 +423,17 @@ xnvme_be_linux_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, s
 
 	io_uring_sqe_set_data(sqe, ctx);
 
+	if (queue->batching) {
+		goto exit;
+	}
+
 	err = io_uring_submit(&queue->ring);
 	if (err < 0) {
 		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opcode, err);
 		return err;
 	}
 
+exit:
 	queue->base.outstanding += 1;
 
 	return 0;
