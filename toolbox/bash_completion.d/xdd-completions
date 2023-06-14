@@ -2,7 +2,8 @@
 #
 # Bash completion script for the `xdd` CLI
 #
-# Copyright (C) Samsung Electronics Co., Ltd
+# SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+#
 # SPDX-License-Identifier: BSD-3-Clause
 
 _xdd_completions()

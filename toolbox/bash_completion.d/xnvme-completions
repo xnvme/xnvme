@@ -2,7 +2,8 @@
 #
 # Bash completion script for the `xnvme` CLI
 #
-# Copyright (C) Samsung Electronics Co., Ltd
+# SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+#
 # SPDX-License-Identifier: BSD-3-Clause
 
 _xnvme_completions()
@@ -15,7 +16,7 @@ _xnvme_completions()
 
     # Complete sub-commands
     if [[ $COMP_CWORD < 2 ]]; then
-        COMPREPLY+=( $( compgen -W 'list enum info idfy idfy-ns idfy-ctrlr idfy-cs log log-erri log-health feature-get feature-set format sanitize pioc padc library-info dsm --help' -- $cur ) )
+        COMPREPLY+=( $( compgen -W 'list enum info idfy idfy-ns idfy-ctrlr idfy-cs log log-erri log-health log-fdp-config log-ruhu log-fdp-stats log-fdp-events feature-get feature-set set-fdp-events format sanitize fdp-ruhs fdp-ruhu pioc padc library-info dsm --help' -- $cur ) )
         return 0
     fi
 
@@ -69,12 +70,32 @@ _xnvme_completions()
         opts+="--nsid --data-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
+    "log-fdp-config")
+        opts+="--nsid --data-nbytes --data-output --lsi --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        ;;
+
+    "log-ruhu")
+        opts+="--nsid --data-output --limit --lsi --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        ;;
+
+    "log-fdp-stats")
+        opts+="--nsid --data-output --lsi --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        ;;
+
+    "log-fdp-events")
+        opts+="--nsid --limit --data-output --lsi --lsp --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        ;;
+
     "feature-get")
-        opts+="--fid --nsid --sel --data-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        opts+="--fid --nsid --sel --cdw11 --data-output --data-nbytes --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "feature-set")
-        opts+="--fid --feat --nsid --save --data-input --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        opts+="--fid --feat --nsid --save --cdw12 --data-input --data-nbytes --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        ;;
+
+    "set-fdp-events")
+        opts+="--fid --feat --nsid --save --cdw12 --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "format")
@@ -83,6 +104,14 @@ _xnvme_completions()
 
     "sanitize")
         opts+="--subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        ;;
+
+    "fdp-ruhs")
+        opts+="--nsid --limit --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        ;;
+
+    "fdp-ruhu")
+        opts+="--nsid --pid --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "pioc")

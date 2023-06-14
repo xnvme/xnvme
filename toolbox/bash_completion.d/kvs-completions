@@ -1,0 +1,71 @@
+# kvs completion                           -*- shell-script -*-
+#
+# Bash completion script for the `kvs` CLI
+#
+# SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+_kvs_completions()
+{
+    local cur=${COMP_WORDS[COMP_CWORD]}
+    local sub=""
+    local opts=""
+
+    COMPREPLY=()
+
+    # Complete sub-commands
+    if [[ $COMP_CWORD < 2 ]]; then
+        COMPREPLY+=( $( compgen -W 'enum idfy-ns retrieve store delete exist list --help' -- $cur ) )
+        return 0
+    fi
+
+    # Complete sub-command arguments
+
+    sub=${COMP_WORDS[1]}
+
+    if [[ "$sub" != "enum" ]]; then
+        opts+="/dev/nvme* "
+    fi
+
+    case "$sub" in
+    
+    "enum")
+        opts+="--uri --flags --dev-nsid --be --admin --sync --help"
+        ;;
+
+    "idfy-ns")
+        opts+="--nsid --dev-nsid --be --admin --sync --help"
+        ;;
+
+    "retrieve")
+        opts+="--nsid --key --data-output --dev-nsid --be --admin --sync --help"
+        ;;
+
+    "store")
+        opts+="--nsid --key --value --only-update --only-add --compress --dev-nsid --be --admin --sync --help"
+        ;;
+
+    "delete")
+        opts+="--nsid --key --dev-nsid --be --admin --sync --help"
+        ;;
+
+    "exist")
+        opts+="--nsid --key --dev-nsid --be --admin --sync --help"
+        ;;
+
+    "list")
+        opts+="--nsid --key --dev-nsid --be --admin --sync --help"
+        ;;
+
+    esac
+
+    COMPREPLY+=( $( compgen -W "$opts" -- $cur ) )
+
+    return 0
+}
+
+#
+complete -o nosort -F _kvs_completions kvs
+
+# ex: filetype=sh
