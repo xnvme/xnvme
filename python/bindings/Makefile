@@ -43,7 +43,7 @@ build: .build-py-env generate-ctypes patch-ctypes
 	@echo "## py: make build-sdist"
 	@${BUILD_ENV} setup.py sdist
 	@echo "Rename 'xnvme-m.m.p.tar.gz' to 'xnvme-core-m.m.p.tar.gz'"
-	@mv dist/${PROJECT_NAME}-0.6.0.tar.gz dist/${PROJECT_NAME}-core-0.6.0.tar.gz
+	@mv dist/${PROJECT_NAME}-0.7.0.tar.gz dist/${PROJECT_NAME}-core-0.7.0.tar.gz
 	@echo "## py: make build-sdist [DONE]"
 
 define deps-help
