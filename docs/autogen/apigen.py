@@ -157,18 +157,24 @@ def main(args):
 
     namespaces = [
         "xnvme_adm",
+        "xnvme_buf",
+        "xnvme_cli",
+        "xnvme_cmd",
         "xnvme_dev",
         "xnvme_file",
         "xnvme_geo",
         "xnvme_ident",
+        "xnvme_kvs",
+        "xnvme_lba",
         "xnvme_libconf",
+        "xnvme_mem",
         "xnvme_nvm",
         "xnvme_opts",
+        "xnvme_queue",
         "xnvme_spec",
         "xnvme_util",
         "xnvme_ver",
         "xnvme_znd",
-        "xnvmec",
         "xnvme",
     ]
 

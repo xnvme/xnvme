@@ -1,4 +1,4 @@
-.. _sec-tutorials-devs:
+.. _sec-tutorials-devs-linux:
 
 Linux Dev. Environment
 ======================
@@ -29,7 +29,7 @@ minimal fuss and maximum foss :)
   * Built from source
   * Testing package
 
-.. _sec-tutorials-devs-pm:
+.. _sec-tutorials-devs-linux-pm:
 
 Physical Machine
 ----------------
@@ -64,7 +64,7 @@ This physical machine will be referred to as ``box01``.
    the OS device when the devices are entirely separate.
 
 
-.. _sec-tutorials-devs-os:
+.. _sec-tutorials-devs-linux-os:
 
 Operating System
 ----------------
@@ -123,7 +123,7 @@ vfio/iommu should be enabled along with a couple of user-limit tweaks.
 Have a look at the :ref:`sec-gs-system-config-userspace-config` section for the
 details on this.
 
-.. _sec-tutorials-devs-homedir:
+.. _sec-tutorials-devs-linux-homedir:
 
 Homedir
 -------
@@ -153,7 +153,7 @@ The directories are used for the following:
 **images**
   A place to store VM "boot-images", such as cloud-init enabled images.
 
-.. _sec-tutorials-devs-screen:
+.. _sec-tutorials-devs-linux-screen:
 
 Screen + http.server
 --------------------
@@ -182,7 +182,7 @@ And attach to them using their ``<name>``::
 
   screen -r <name>
 
-.. _sec-tutorials-devs-cijoe:
+.. _sec-tutorials-devs-linux-cijoe:
 
 CIJOE
 -----
@@ -224,7 +224,7 @@ directory holds all information about what was executed.
 Have a look at the generated report at
 ``cijoe-output/report.html``.
 
-.. _sec-tutorials-devs-customkernel:
+.. _sec-tutorials-devs-linux-customkernel:
 
 Linux Kernel
 ------------
@@ -265,7 +265,7 @@ You can install them by running::
 
   sudo dpkg -i ~/artifacts/linux/*.deb
 
-.. _sec-tutorials-devs-qemu:
+.. _sec-tutorials-devs-linux-qemu:
 
 Qemu
 ----
@@ -477,7 +477,7 @@ The ``freebsd-13.1-ksrc-amd64.qcow2`` is created by::
   cijoe -c configs/freebsd-13.config -w workflows/bootimg-freebsd-13-amd64.yaml
 
 Remote dev
-==========
+----------
 
 Assuming your primary device for development is something like a
 Chromebook/Macbook, something light-weight and great for reading mail... but
@@ -491,4 +491,8 @@ reasons. Then do something like::
 .. note::
    all configs prefix on the file-name pattern ``dev-*.yml`` are ignored by git.
 
-And then have a look at the 
+Open up ``configs/dev-metal.toml`` and adjust it to your physical machine. That
+is, change the ssh-login information, change the list of devices, paths to
+binaries etc. Once you have done that, then go ahead and run::
+
+  cijoe -c configs/dev-metal.toml -w dev-sync-and-build.yaml

@@ -6,7 +6,7 @@ DOCS_DIR?=../
 
 VENV_NAME = venv
 VENV = . ${VENV_NAME}/bin/activate && 
-PYTHON = ${VENV} python
+PYTHON = ${VENV} python3
 
 default: docs docs-view-html
 
@@ -29,7 +29,7 @@ configure: clean
 .PHONY: apis
 apis:
 	cd $(SOURCE_DIR) && make tags-xnvme-public
-	python3 apigen.py --tags $(SOURCE_DIR)/tags --output $(DOCS_DIR)/capis
+	${PYTHON} apigen.py --tags $(SOURCE_DIR)/tags --output $(DOCS_DIR)/capis
 
 .PHONY: commands
 commands:

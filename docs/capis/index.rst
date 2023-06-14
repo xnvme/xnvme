@@ -31,14 +31,14 @@ command-set provided by Zoned Namespaces.
 
 The :ref:`sec-c-api-xnvme_znd-header` is available for inspection in its raw form.
 
-**xnvmec**
+**xnvme_cli**
 
-The :ref:`sec-c-api-xnvmec` API provides functionality to create
+The :ref:`sec-c-api-xnvme_cli` API provides functionality to create
 command-line-interfaces for **xNVMe** related applications. The **xNVMe**
 examples, tools, and tests use the library to provide a coherent command-line
 interface with bash-completion-scripts and man-pages.
 
-The :ref:`sec-c-api-xnvmec-header` is available for inspection in its raw
+The :ref:`sec-c-api-xnvme_cli-header` is available for inspection in its raw
 form.
 
 .. toctree::
@@ -48,12 +48,18 @@ form.
    xnvme_ident
    xnvme_opts
    xnvme_file
+   xnvme_cmd
+   xnvme_adm
    xnvme_nvm
    xnvme_znd
-   xnvme_adm
+   xnvme_lba
+   xnvme_kvs
    xnvme_dev
    xnvme_geo
+   xnvme_buf
+   xnvme_mem
+   xnvme_queue
    xnvme_spec
    xnvme_libconf
    xnvme_ver
-   xnvmec
+   xnvme_cli
