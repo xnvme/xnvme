@@ -19,6 +19,7 @@ feedback on your `pull-request`_ or ask questions.
    contributing-process.rst
    contributing-toolbox.rst
    contributing-conventions.rst
+   contributing-branches.rst
 
 .. _Discord: https://discord.com/invite/XCbBX9DmKf
 .. _Fork: https://github.com/OpenMPDK/xNVMe/fork

@@ -60,6 +60,22 @@ xnvme_nvm_dsm
 .. doxygenfunction:: xnvme_nvm_dsm
 
 
+.. _sec-c-api-xnvme_nvm-func-xnvme_nvm_mgmt_recv:
+
+xnvme_nvm_mgmt_recv
+-------------------
+
+.. doxygenfunction:: xnvme_nvm_mgmt_recv
+
+
+.. _sec-c-api-xnvme_nvm-func-xnvme_nvm_mgmt_send:
+
+xnvme_nvm_mgmt_send
+-------------------
+
+.. doxygenfunction:: xnvme_nvm_mgmt_send
+
+
 .. _sec-c-api-xnvme_nvm-func-xnvme_nvm_read:
 
 xnvme_nvm_read

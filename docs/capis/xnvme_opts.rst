@@ -6,6 +6,16 @@
 
 
 
+.. _sec-c-api-xnvme_opts-header:
+
+Header
+======
+
+.. literalinclude:: ../../include/libxnvme_opts.h
+   :language: c
+
+
+
 .. _sec-c-api-xnvme_opts-enum:
 
 Enums
@@ -50,4 +60,12 @@ xnvme_opts_pr
 -------------
 
 .. doxygenfunction:: xnvme_opts_pr
+
+
+.. _sec-c-api-xnvme_opts-func-xnvme_opts_set_defaults:
+
+xnvme_opts_set_defaults
+-----------------------
+
+.. doxygenfunction:: xnvme_opts_set_defaults
 
