@@ -16,8 +16,9 @@ struct xnvme_queue_liburing {
 
 	uint8_t poll_io;
 	uint8_t poll_sq;
+	uint8_t sop;
 
-	uint8_t _rsvd[14];
+	uint8_t _rsvd[13];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_liburing) == XNVME_BE_QUEUE_STATE_NBYTES,
 		    "Incorrect size")
