@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <libxnvme.h>
-#include <libxnvme_pp.h>
 
 int
 main(int argc, char **argv)
