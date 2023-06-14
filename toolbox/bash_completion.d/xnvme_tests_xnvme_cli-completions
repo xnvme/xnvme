@@ -1,12 +1,12 @@
-# nvmec completion                           -*- shell-script -*-
+# xnvme_tests_xnvme_cli completion                           -*- shell-script -*-
 #
-# Bash completion script for the `nvmec` CLI
+# Bash completion script for the `xnvme_tests_xnvme_cli` CLI
 #
 # SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-_nvmec_completions()
+_xnvme_tests_xnvme_cli_completions()
 {
     local cur=${COMP_WORDS[COMP_CWORD]}
     local sub=""
@@ -16,7 +16,7 @@ _nvmec_completions()
 
     # Complete sub-commands
     if [[ $COMP_CWORD < 2 ]]; then
-        COMPREPLY+=( $( compgen -W 'show create --help' -- $cur ) )
+        COMPREPLY+=( $( compgen -W 'copy-xnvme_cli_run check-opt-attr --help' -- $cur ) )
         return 0
     fi
 
@@ -30,12 +30,12 @@ _nvmec_completions()
 
     case "$sub" in
     
-    "show")
-        opts+="--cmd-input --help"
+    "copy-xnvme_cli_run")
+        opts+="--help"
         ;;
 
-    "create")
-        opts+="--cmd-output --cdw0 --cdw1 --cdw2 --cdw3 --cdw4 --cdw4 --cdw5 --cdw6 --cdw7 --cdw8 --cdw9 --cdw10 --cdw11 --cdw12 --cdw13 --cdw14 --cdw15 --opcode --nsid --help"
+    "check-opt-attr")
+        opts+="--help"
         ;;
 
     esac
@@ -46,6 +46,6 @@ _nvmec_completions()
 }
 
 #
-complete -o nosort -F _nvmec_completions nvmec
+complete -o nosort -F _xnvme_tests_xnvme_cli_completions xnvme_tests_xnvme_cli
 
 # ex: filetype=sh
