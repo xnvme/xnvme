@@ -147,6 +147,20 @@ Connect to the exported fabrics endpoint using **nvme-cli**:
 Or, by running the script:
 ``${XNVME_REPOS}/docs/tutorial/fabrics/fabrics_initiator_nvmecli.sh``
 
+Solving performance issues
+--------------------------
+
+The performance of NVMe-over-Fabrics should be similar to the performance of NVMe-over-PCIe.
+If the NVMe-over-Fabrics setup is not performing as expected, there are a couple of things to try.
+
+First, if the **initiator** and **target** are the same machine, e.g., if the localhost IP is used, then it is important for performance that the **initiator** and **target** processes are on separate CPU cores. This can typically be achieved by using ``taskset`` or passing the commandline option ``--cpumask`` to fio or the SPDK nvmf_tgt app. If the processes are on same CPU core it can lead to CPU congestion.
+
+If the **initiator** and **target** are on different machines, then the bandwidth of their network interfaces can be a limiting factor. As such, it is advisable to use the fastest possible network interfaces. Additonally, if the machines are connected directly, that is, not through a switch or similar, then performance can also be improved by adjusting the MTU of the network cards to be as high as supported.
+This can be done by using this command: ``ip link set dev ${NETWORK_INTERFACE} mtu ${DESIRED_MTU}``.
+
+If it is not possible to saturate the device with the available network card, the I/O bandwidth can be increased through latency hiding by using a greater block size and/or io-depth. 
+
+
 .. _SPDK-NVMe-oF: https://spdk.io/doc/nvmf.html
 .. _transports: https://nvmexpress.org/developers/nvme-transport-specifications/
 .. _NVMe-oF: https://nvmexpress.org/developers/nvme-transport-specifications/
