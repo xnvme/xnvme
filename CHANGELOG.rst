@@ -18,6 +18,52 @@ Known Issues
 
 See the file named ``ISSUES`` in the root of the repository.
 
+v0.7.0
+------
+
+This release got a whole lot bigger than it ought to. Aiming for more
+frequent releases in the future. A bunch of changes to API,
+implementation, and even the license.
+
+Regarding the license. For compatibility with GPL-licensed software.
+That is, consumption of xNVMe from GPL-licences software, then xNVMe is
+changed from APACHE to BSD-3-Clause. To better determine the license,
+the project has aligned with the golden practice of REUSE-compliance
+(https://reuse.software/).
+
+* API
+  * Refactored to provide a single "entry-point" header
+  * Headers no longer include other headers (except for the entry-point)
+  * Renamed the command-line api from xnvmec to xnvme_cli
+
+* API / Command-Sets
+  * Support for FDP and DSM
+  * Support for Key-Value SSDs
+
+* Backends
+  * The POSIX backend is replaced by CBI -- Common Backend Implementation
+  * Instead of "POSIX" then a handful of commonly useful implementations
+    are provided, being "strictly" POSIX was an impractical restriction,
+    such as lacking support for features which are provided on modern
+    operating systems but not defined by POSIX.
+
+* Backends: FreeBSD
+  * Support for kqueue based aio
+
+* Backends: SPDK
+  * Now has options to control Admin and I/O command timeout
+  * Removed patches no longer needed (available upstream)
+
+* Backends: vfio
+  * Removed as subproject and instead links "properly" with the
+    system-provided libvfn
+
+* tools
+  * switched fio from "external" to "internal" / "upstream" fio engine
+
+For additional details then please have a look at the commit-history,
+the v0.7.0 related issue on GitHUB and PR.
+
 v0.6.0
 ------
 
