@@ -446,15 +446,17 @@ def find_binaries():
     builddir = Path(__file__).parent.parent / "builddir"
 
     bins = []
-    for path in sorted(builddir.rglob("xnvme_*")):
-        if path.stem.startswith("xnvme_single"):
-            continue
-        if path.stem.startswith("xnvme_dev"):
-            continue
-        if path.stem.startswith("xnvme_enum"):
-            continue
-        if path.is_file() and path.stat().st_mode & os.X_OK:
-            bins.append(path.name)
+
+    for folder in ["examples", "tests", "tools"]:
+        for path in sorted((builddir / folder).rglob("*")):
+            if path.stem.startswith("xnvme_single"):
+                continue
+            if path.stem.startswith("xnvme_dev"):
+                continue
+            if path.stem.startswith("xnvme_enum"):
+                continue
+            if path.is_file() and path.stat().st_mode & os.X_OK:
+                bins.append(path.name)
 
     return bins
 
@@ -514,8 +516,9 @@ def main(args):
         logging.info("Parsing tool: %r", tool)
 
         tsig = parse_tool_sig(tool)
-        if not tsig["snames"]:
+        if not tsig or not tsig.get("snames", None):
             logging.error("failed parsing snames from tool: '%s'", tool)
+            continue
 
         tools.append(tsig)
 
