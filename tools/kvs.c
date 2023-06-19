@@ -319,6 +319,8 @@ static struct xnvme_cli_sub g_subs[] = {
 	 "Enumerate Logical Block Namespaces on the system",
 	 cmd_enumerate,
 	 {
+		 {XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+
 		 {XNVME_CLI_OPT_SYS_URI, XNVME_CLI_LOPT},
 		 {XNVME_CLI_OPT_FLAGS, XNVME_CLI_LOPT},
 
@@ -332,6 +334,8 @@ static struct xnvme_cli_sub g_subs[] = {
 	 "KV Command Set specific identify-controller",
 	 cmd_idfy_ns,
 	 {
+		 {XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+
 		 {XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 		 {XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
 
@@ -345,6 +349,8 @@ static struct xnvme_cli_sub g_subs[] = {
 	 "Execute a KV Retrieve Command",
 	 cmd_retrieve,
 	 {
+		 {XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+
 		 {XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 		 {XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
 		 {XNVME_CLI_OPT_KV_KEY, XNVME_CLI_LREQ},
@@ -360,6 +366,8 @@ static struct xnvme_cli_sub g_subs[] = {
 	 "Execute a KV Store Command",
 	 cmd_store,
 	 {
+		 {XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+
 		 {XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 		 {XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
 		 {XNVME_CLI_OPT_KV_KEY, XNVME_CLI_LREQ},
@@ -379,6 +387,8 @@ static struct xnvme_cli_sub g_subs[] = {
 	 "Execute a KV Delete Command",
 	 cmd_delete,
 	 {
+		 {XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+
 		 {XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 		 {XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
 		 {XNVME_CLI_OPT_KV_KEY, XNVME_CLI_LREQ},
@@ -393,6 +403,8 @@ static struct xnvme_cli_sub g_subs[] = {
 	 "Execute a KV Exist Command",
 	 cmd_exist,
 	 {
+		 {XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+
 		 {XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 		 {XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
 		 {XNVME_CLI_OPT_KV_KEY, XNVME_CLI_LREQ},
@@ -407,6 +419,8 @@ static struct xnvme_cli_sub g_subs[] = {
 	 "Execute a KV List Command",
 	 cmd_list,
 	 {
+		 {XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+
 		 {XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 		 {XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
 		 {XNVME_CLI_OPT_KV_KEY, XNVME_CLI_LREQ},
