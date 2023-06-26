@@ -4,11 +4,11 @@ Prepare xNVMe source directory using GitHUB Artifacts
 
 xNVMe GitHUB artifacts:
 
-* xnvme-core.tar.gz
-* xnvme.tar.gz
+* xnvme-src.tar.gz
+* xnvme-py-sdist.tar.gz
 
-Transfers the above artifacts from step.with.artifacts, to step.with.xnvme_sources and
-extracts the content of xnvme.tar.gz
+Transfers the above artifacts from step.with.artifacts, to
+step.with.xnvme_sources and extracts the content of xnvme.tar.gz
 
 Step Arguments
 --------------
@@ -28,28 +28,27 @@ def main(args, cijoe, step):
     artifacts = step.get("with", {}).get("artifacts", "/tmp/artifacts")
     xnvme_source = step.get("with", {}).get("xnvme_source", "/tmp/xnvme_source")
 
-    err, _ = cijoe.run(f"mkdir {xnvme_source}")
+    err, _ = cijoe.run(f"mkdir -p {xnvme_source}")
     if err:
         return err
 
-    files = [
-        "xnvme-core.tar.gz",
-        "xnvme.tar.gz",
-    ]
-    for filename in files:
-        cijoe.put(f"{artifacts}/{filename}", f"{xnvme_source}/{filename}")
+    for filename in ["xnvme-src.tar.gz", "xnvme-py-sdist.tar.gz"]:
+        cijoe.put(
+            f"{artifacts}/{filename}",
+            f"{xnvme_source}/{filename}",
+        )
 
     commands = [
         f"ls -lh {xnvme_source}",
-        "tar xzf xnvme.tar.gz --strip 1",
-        "rm xnvme.tar.gz",
+        "tar xzf xnvme-src.tar.gz --strip 1",
+        "rm xnvme-src.tar.gz",
         "df -h",
         "ls -lh",
     ]
 
     first_err = 0
     for command in commands:
-        err, _ = cijoe.run(command, cwd=xnvme_source)
+        err, _ = cijoe.run(command, cwd=f"{xnvme_source}")
         if err:
             log.error(f"cmd({command}), err({err})")
             first_err = first_err if first_err else err

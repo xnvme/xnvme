@@ -358,8 +358,8 @@ gen-artifacts: gen-src-archive
 	@cd python/bindings && make clean build
 	@mkdir -p /tmp/artifacts
 	@ls -l /tmp/artifacts
-	@cp builddir/meson-dist/xnvme-$(PROJECT_VER).tar.gz /tmp/artifacts/xnvme.tar.gz
-	@cp python/bindings/dist/xnvme-core-$(PROJECT_VER).tar.gz /tmp/artifacts/xnvme-core.tar.gz
+	@cp builddir/meson-dist/xnvme-$(PROJECT_VER).tar.gz /tmp/artifacts/xnvme-src.tar.gz
+	@cp python/bindings/dist/xnvme-$(PROJECT_VER).tar.gz /tmp/artifacts/xnvme-py-sdist.tar.gz
 	@ls -l /tmp/artifacts
 	@echo "## xNVMe: make gen-artifacts [DONE]"
 

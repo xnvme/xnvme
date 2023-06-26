@@ -70,11 +70,15 @@ jobs:
       run: |
         make clean gen-src-archive
 
+    - name: Rename to un-versioned xnvme-src.tar.gz
+      run: |
+        mv builddir/meson-dist/xnvme-0.7.0.tar.gz builddir/meson-dist/xnvme-src.tar.gz
+
     - name: Upload source archive
       uses: actions/upload-artifact@v3.1.1
       with:
-        name: archive-src
-        path: builddir/meson-dist/*.tar.gz
+        name: xnvme-src-archive
+        path: builddir/meson-dist/xnvme-src.tar.gz
         if-no-files-found: error
 
   #
@@ -103,15 +107,14 @@ jobs:
     container: ghcr.io/xnvme/xnvme-deps-citools-latest:next
 
     steps:
-    - name: Retrieve the source-archive
+    - name: Retrieve the xNVMe source archive
       uses: actions/download-artifact@v3.0.1
       with:
-        name: archive-src
-
-    - name: Extract the full-source-archive
+        name: xnvme-src-archive
+    - name: Extract, and then remove, the xNVMe source archive
       run: |
-        tar xzf xnvme*.tar.gz --strip 1
-        rm xnvme*.tar.gz
+        tar xzf xnvme-src.tar.gz --strip 1
+        rm xnvme-src.tar.gz
 
     - name: Build xNVMe
       run: make
@@ -134,14 +137,14 @@ jobs:
     container: ghcr.io/xnvme/xnvme-deps-citools-latest:next
 
     steps:
-    - name: Retrieve the source-archive
+    - name: Retrieve the xNVMe source archive
       uses: actions/download-artifact@v3.0.1
       with:
-        name: archive-src
-    - name: Extract the full-source-archive
+        name: xnvme-src-archive
+    - name: Extract, and then remove, the xNVMe source archive
       run: |
-        tar xzf xnvme*.tar.gz --strip 1
-        rm xnvme*.tar.gz
+        tar xzf xnvme-src.tar.gz --strip 1
+        rm xnvme-src.tar.gz
 
     - name: Run config-debug
       run: scan-build make config-debug
@@ -168,14 +171,14 @@ jobs:
     container: debian:bullseye
 
     steps:
-    - name: Retrieve the source-archive
+    - name: Retrieve the xNVMe source archive
       uses: actions/download-artifact@v3.0.1
       with:
-        name: archive-src
-    - name: Extract the full-source-archive
+        name: xnvme-src-archive
+    - name: Extract, and then remove, the xNVMe source archive
       run: |
-        tar xzf xnvme*.tar.gz --strip 1
-        rm xnvme*.tar.gz
+        tar xzf xnvme-src.tar.gz --strip 1
+        rm xnvme-src.tar.gz
 
     - name: Install build-requirements
       run: source toolbox/pkgs/debian-bullseye.sh
@@ -211,14 +214,14 @@ jobs:
       PROJECT_NAME: "xNVMe"
 
     steps:
-    - name: Retrieve the source-archive
+    - name: Retrieve the xNVMe source archive
       uses: actions/download-artifact@v3.0.1
       with:
-        name: archive-src
-    - name: Extract the full-source-archive
+        name: xnvme-src-archive
+    - name: Extract, and then remove, the xNVMe source archive
       run: |
-        tar xzf xnvme*.tar.gz --strip 1
-        rm xnvme*.tar.gz
+        tar xzf xnvme-src.tar.gz --strip 1
+        rm xnvme-src.tar.gz
 
     - name: xNVMe, install build-requirements
       run: |
@@ -287,14 +290,14 @@ jobs:
       fail-fast: false
 
     steps:
-    - name: Retrieve the source-archive
+    - name: Retrieve the xNVMe source archive
       uses: actions/download-artifact@v3.0.1
       with:
-        name: archive-src
-    - name: Extract the full-source-archive
+        name: xnvme-src-archive
+    - name: Extract, and then remove, the xNVMe source archive
       run: |
-        tar xzf xnvme*.tar.gz --strip 1
-        rm xnvme*.tar.gz
+        tar xzf xnvme-src.tar.gz --strip 1
+        rm xnvme-src.tar.gz
 
     - name: Python sdist-packages, system-package deps.
       run: |
@@ -310,12 +313,16 @@ jobs:
       run: |
         find python/ -name *tar.gz
 
+    - name: Rename
+      run: |
+        mv python/bindings/dist/xnvme-*.*.*.tar.gz python/bindings/dist/xnvme-py-sdist.tar.gz
+
     - name: Python sdist-packages, upload bindings
       uses: actions/upload-artifact@v3.1.1
       with:
-        name: python-xnvme-pkg
+        name: xnvme-py-sdist
         path: |
-          python/bindings/dist/xnvme-core-*.tar.gz
+          python/bindings/dist/xnvme-py-sdist.tar.gz
         if-no-files-found: error
 
   #
@@ -361,14 +368,14 @@ jobs:
       if: contains(matrix.container.os, 'opensuse')
       run: zypper --non-interactive install -y tar gzip
 
-    - name: Retrieve the source-archive
+    - name: Retrieve the xNVMe source archive
       uses: actions/download-artifact@v3.0.1
       with:
-        name: archive-src
-    - name: Extract the full-source-archive
+        name: xnvme-src-archive
+    - name: Extract, and then remove, the xNVMe source archive
       run: |
-        tar xzf xnvme*.tar.gz --strip 1
-        rm xnvme*.tar.gz
+        tar xzf xnvme-src.tar.gz --strip 1
+        rm xnvme-src.tar.gz
 
     - name: Configure, Build, and Install
       env:
@@ -420,10 +427,14 @@ jobs:
         python3 -m pipx --version
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-    - name: Retrieve the xNVMe Python sdist-packages
+    - name: Retrieve, the xNVMe Python sdist package
       uses: actions/download-artifact@v3.0.1
       with:
-        name: python-xnvme-pkg
+        name: xnvme-py-sdist
+    - name: Move, the xNVMe Python sdist package
+      run: |
+        mkdir -p /tmp/artifacts
+        mv xnvme-py-sdist.tar.gz /tmp/artifacts/.
 
     # Setup Python virtual-environment for cijoe and Python xNVMe bindings to run ramdisk testing
     - name: CIJOE, setup pipx environment
@@ -439,7 +450,7 @@ jobs:
     - name: Python-bindings (ctypes), install and test
       if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
       run: |
-        python3 -m pipx inject cijoe ./xnvme-core-*.tar.gz
+        python3 -m pipx inject cijoe /tmp/artifacts/xnvme-py-sdist.tar.gz
         pytest --pyargs xnvme.ctypes_bindings
 
     #
@@ -493,14 +504,14 @@ jobs:
         - {os: 'macos', ver: '13'}
 
     steps:
-    - name: Retrieve the source-archive
+    - name: Retrieve the xNVMe source archive
       uses: actions/download-artifact@v3.0.1
       with:
-        name: archive-src
-    - name: Extract the full-source-archive
+        name: xnvme-src-archive
+    - name: Extract, and then remove, the xNVMe source archive
       run: |
-        tar xzf xnvme*.tar.gz --strip 1
-        rm xnvme*.tar.gz
+        tar xzf xnvme-src.tar.gz --strip 1
+        rm xnvme-src.tar.gz
 
     - name: Install build-requirements
       run: |
@@ -541,10 +552,14 @@ jobs:
         python3 -c "import platform; print(platform.system()); print(platform.uname())"
         python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
 
-    - name: Retrieve the xNVMe Python sdist-packages
+    - name: Retrieve, the xNVMe Python sdist package
       uses: actions/download-artifact@v3.0.1
       with:
-        name: python-xnvme-pkg
+        name: xnvme-py-sdist
+    - name: Move, the xNVMe Python sdist package
+      run: |
+        mkdir -p /tmp/artifacts
+        mv xnvme-py-sdist.tar.gz /tmp/artifacts/.
 
     # Setup Python virtual-environment for cijoe and Python xNVMe bindings to run ramdisk testing
     - name: CIJOE, setup pipx environment
@@ -560,7 +575,7 @@ jobs:
     - name: Python-bindings (ctypes), install and test
       if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
       run: |
-        python3 -m pipx inject cijoe ./xnvme-core-*.tar.gz
+        python3 -m pipx inject cijoe /tmp/artifacts/xnvme-py-sdist.tar.gz
         pytest --pyargs xnvme.ctypes_bindings
 
   #
@@ -580,14 +595,14 @@ jobs:
         - {os: 'windows', ver: '2022'}
 
     steps:
-    - name: Retrieve the source-archive
+    - name: Retrieve the xNVMe source archive
       uses: actions/download-artifact@v3.0.1
       with:
-        name: archive-src
-    - name: Extract the full-source-archive
+        name: xnvme-src-archive
+    - name: Extract, and then remove, the xNVMe source archive
       run: |
-        tar xzf xnvme*.tar.gz --strip 1
-        rm xnvme*.tar.gz
+        tar xzf xnvme-src.tar.gz --strip 1
+        rm xnvme-src.tar.gz
 
     - name: Install build-requirements
       shell: cmd
@@ -657,32 +672,32 @@ jobs:
       run: |
         pkill -f qemu || true
         rm -r $HOME/guests || true
+        rm -r /tmp/artifacts || true
+        mkdir -p /tmp/artifacts || true
         rm -rf *
         ls -lh
 
-    - name: Container-prep, get the full-source-archive
+    - name: Retrieve the xNVMe source archive
       uses: actions/download-artifact@v3.0.1
       with:
-        name: archive-src
-    - name: Container-prep, extract the full-source-archive
+        name: xnvme-src-archive
+    - name: Extract, and then move, the xNVMe source archive
       run: |
-        tar xzf xnvme*.tar.gz --strip 1
+        tar xzf xnvme-src.tar.gz --strip 1
+        mv xnvme-src.tar.gz /tmp/artifacts/.
+
+    - name: Retrieve, the xNVMe Python sdist package
+      uses: actions/download-artifact@v3.0.1
+      with:
+        name: xnvme-py-sdist
+    - name: Move, the xNVMe Python sdist package
+      run: |
+        find .
+        mv xnvme-py-sdist.tar.gz /tmp/artifacts/.
+
+    - name: Prep, environment GITHUB_PATH
+      run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-    - name: Retrieve the xNVMe Python Packages (prebuilt sdist)
-      uses: actions/download-artifact@v3.0.1
-      with:
-        name: python-xnvme-pkg
-
-    - name: Move source-archives to /tmp/artifacts
-      run: |
-        ls -lh
-        find . -name "*.tar.gz"
-        find /tmp -name "*.tar.gz"
-        rm -r /tmp/artifacts || true
-        mkdir /tmp/artifacts
-        mv xnvme-core-*.tar.gz /tmp/artifacts/xnvme-core.tar.gz
-        mv xnvme-*.*.*.tar.gz /tmp/artifacts/xnvme.tar.gz
         find /tmp/artifacts -name "*.tar.gz"
 
     - name: Install python-venv on Bullseye
@@ -775,16 +790,19 @@ jobs:
     - name: Container-prep, get the full-source-archive
       uses: actions/download-artifact@v3.0.1
       with:
-        name: archive-src
+        name: xnvme-src-archive
     - name: Container-prep, extract the full-source-archive
       run: |
-        tar xzf xnvme*.tar.gz --strip 1
+        tar xzf xnvme-src.tar.gz --strip 1
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-    - name: Retrieve the xNVMe Python Packages (prebuilt sdist)
+    - name: Retrieve, the xNVMe Python sdist package
       uses: actions/download-artifact@v3.0.1
       with:
-        name: python-xnvme-pkg
+        name: xnvme-py-sdist
+    - name: Move, the xNVMe Python sdist package
+      run: |
+        find .
 
     - name: Move source-archives to /tmp/artifacts
       run: |
@@ -793,8 +811,7 @@ jobs:
         find /tmp -name "*.tar.gz"
         rm -r /tmp/artifacts || true
         mkdir /tmp/artifacts
-        mv xnvme-core-*.tar.gz /tmp/artifacts/xnvme-core.tar.gz
-        mv xnvme-*.*.*.tar.gz /tmp/artifacts/xnvme.tar.gz
+        mv xnvme-*.tar.gz /tmp/artifacts/.
         find /tmp/artifacts -name "*.tar.gz"
 
     - name: Install python-venv on Bullseye
