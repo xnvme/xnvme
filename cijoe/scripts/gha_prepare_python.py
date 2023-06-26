@@ -4,7 +4,7 @@ Install xNVMe Python Package using source-tarball artifacts from GitHUB
 
 The xNVMe Python package:
 
-* xnvme-core.tar.gz
+* artifacts/xnvme-py-sdist.tar.gz
 
 Is expected to be available in 'step.with.xnvme_source'. Additionally,
 'step.with.xnvme_source' is expected to be the root of an extracted xNVMe
@@ -62,7 +62,9 @@ def main(args, cijoe, step):
         "pipx ensurepath",
         "pipx install cijoe --include-deps",
         "pipx inject cijoe numpy",
-        "pipx inject cijoe xnvme-core.tar.gz",
+        "pipx inject cijoe xnvme-py-sdist.tar.gz",
+        "cijoe --version",
+        "pytest --version",
     ]
 
     first_err = 0

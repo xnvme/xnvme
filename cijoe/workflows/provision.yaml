@@ -6,8 +6,8 @@ doc: |
 
   On "local" the folder "/tmp/artifacts", must contain
 
-  * xnvme-core.tar.gz
-  * xnvme.tar.gz
+  * xnvme-src.tar.gz
+  * xnvme-py-sdist.tar.gz
 
   These will be transferred to the guest, and unpacked in "/tmp/xnvme_source", then built and
   installed.
