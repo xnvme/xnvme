@@ -275,44 +275,6 @@ jobs:
         "https://scan.coverity.com/builds?project=${PROJECT_NAME}"
 
   #
-  # dockerize the xNVMe source archive, that is, produce a docker-image which is:
-  #
-  # * Based on 'ghcr.io/xnvme/xnvme-qemu:latest' (from GitHUB ContainerRegistory)
-  #   - E.g. Debian Bullseye + qemu with latest NVMe emulation features
-  # * Contains the content of the xNVMe source-archive
-  # * Published on GitHUB CR
-  #
-  # TODO: Redo this, currently unused
-  #
-  # dockerize-source:
-  #   needs: source-archive
-  #   runs-on: ubuntu-latest
-  #   if: ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job == 'all') || (github.event.inputs.job ==
-  #     'dockerize-source')))
-  #   steps:
-  #   - name: Retrieve the source-archive
-  #     uses: actions/download-artifact@v3.0.1
-  #     with:
-  #       name: archive-src
-  #   - name: Create a docker context
-  #     run: |
-  #       mkdir -p /tmp/dockerize/xnvme
-  #       tar xzf xnvme*.tar.gz --strip 1 -C /tmp/dockerize/xnvme
-  #       tar xzf xnvme*.tar.gz --strip 1
-  #       rm xnvme*.tar.gz
-  #   - name: Log into docker registry
-  #     run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-  #   - name: Dockerize bin
-  #     run: |
-  #       TAG=${GITHUB_SHA::8}
-  #       docker build \
-  #         -t refenv/xnvme:latest \
-  #         -t refenv/xnvme:${TAG} \
-  #         -f toolbox/Dockerfile /tmp/dockerize
-  #   - name: Push Docker image
-  #     run: docker push refenv/xnvme
-
-  #
   # Build xNVMe Python packages
   #
   build-python:
