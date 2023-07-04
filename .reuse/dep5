@@ -43,10 +43,6 @@ Files: toolbox/cijoe-pkg-xnvme/*
 Copyright: Samsung Electronics Co., Ltd
 License: BSD-3-Clause
 
-Files: third-party/windows/getopt/*/*
-Copyright: 2015 Koji Takami
-License: MIT
-
 Files: python/*
 Copyright: Samsung Electronics Co., Ltd
 License: BSD-3-Clause
