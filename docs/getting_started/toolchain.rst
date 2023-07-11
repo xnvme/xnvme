@@ -863,7 +863,9 @@ Windows (2022)
 --------------
 
 
-From an elevated command-prompt, then invoke the batch-script::
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as eleveted command prompt), by executing the commands below. You can
+run this on administrator command prompt of the **xNVMe** by invoking::
 
   call xnvme\toolbox\pkgs\windows-2022.bat
 
@@ -874,9 +876,9 @@ Or, run the commands contained within the script manually:
 
 
 
-Then go ahead and configure, build and install using ``meson``:
+Then go ahead and configure, build and install using helper batch script ``build.bat``:
 
-.. literalinclude:: ../../toolbox/pkgs/default-build.sh
+.. literalinclude:: build_windows.rst
    :language: bash
    :lines: 2-
 
@@ -896,20 +898,22 @@ Windows (2019)
 --------------
 
 
-From an elevated command-prompt, then invoke the batch-script::
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as eleveted privileges command prompt), by executing the commands below. You can
+run this on administrator command prompt of the **xNVMe** by invoking::
 
-  call xnvme\toolbox\pkgs\windows-2019.bat
+  call xnvme\toolbox\pkgs\windows-2022.bat
 
 Or, run the commands contained within the script manually:
 
-.. literalinclude:: ../../toolbox/pkgs/windows-2019.bat
+.. literalinclude:: ../../toolbox/pkgs/windows-2022.bat
    :language: batch
 
 
 
-Then go ahead and configure, build and install using ``meson``:
+Then go ahead and configure, build and install using helper batch script ``build.bat``:
 
-.. literalinclude:: ../../toolbox/pkgs/default-build.sh
+.. literalinclude:: build_windows.rst
    :language: bash
    :lines: 2-
 
