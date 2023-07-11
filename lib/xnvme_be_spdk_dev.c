@@ -424,8 +424,13 @@ probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
 }
 
 static void
+#ifdef XNVME_DEBUG_ENABLED
 timeout_cb_func(void *XNVME_UNUSED(cb_arg), struct spdk_nvme_ctrlr *ctrlr,
 		struct spdk_nvme_qpair *qpair, uint16_t cid)
+#else
+timeout_cb_func(void *XNVME_UNUSED(cb_arg), struct spdk_nvme_ctrlr *ctrlr,
+		struct spdk_nvme_qpair *XNVME_UNUSED(qpair), uint16_t XNVME_UNUSED(cid))
+#endif
 {
 	XNVME_DEBUG("FAILED: timeout reached cid=%d qpair=%p\n", cid, qpair);
 	spdk_nvme_ctrlr_fail(ctrlr);
