@@ -51,7 +51,7 @@ _be_windows_nvme_storage_property(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t 
 	PVOID buffer = NULL;
 	ULONG buff_len;
 	ULONG ret_len;
-	DWORD ioctl;
+	DWORD ioctl = 0;
 	PSTORAGE_PROPERTY_QUERY query = NULL;
 	PSTORAGE_PROTOCOL_SPECIFIC_DATA protocol_data = NULL;
 	PSTORAGE_PROTOCOL_DATA_DESCRIPTOR protocol_data_descr = NULL;

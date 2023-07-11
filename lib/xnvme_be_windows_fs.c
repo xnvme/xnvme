@@ -103,7 +103,7 @@ xnvme_be_windows_sync_fs_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t db
 	}
 
 	ctx->cpl.result = res;
-	if (res < 0) {
+	if (res <= 0) {
 		XNVME_DEBUG("FAILED: {ReadFile,WriteFile,FlushFileBuffers}(), err: %d", err);
 		ctx->cpl.result = 0;
 		ctx->cpl.status.sc = err;
