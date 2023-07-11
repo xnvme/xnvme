@@ -5,14 +5,14 @@
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 700
 #endif
+#ifdef XNVME_BE_WINDOWS_ASYNC_ENABLED
+#define NTDDI_VERSION NTDDI_WIN10_CO
+#define _WIN32_WINNT NTDDI_WIN10_CO
+#endif
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_WINDOWS_ASYNC_ENABLED
-#define NTDDI_VERSION NTDDI_WIN10_CO
-#define _WIN32_WINNT NTDDI_WIN10_CO
-#define _UNICODE
-#define UNICODE
 #include <ntstatus.h>
 #define WIN32_NO_STATUS
 #include <Windows.h>
