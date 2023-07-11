@@ -1,0 +1,1 @@
+xnvme.exe info \\.\PhysicalDrive0

@@ -4,7 +4,7 @@
   build.bat
 
   # config: only configure xNVMe
-  build.bat
+  build.bat config
 
   # config: debug only configure xNVMe
   build.bat config-debug
@@ -13,4 +13,4 @@
   build.bat install
 
   # uninstall xNVMe
-  build.bat uninstall
+  # build.bat uninstall

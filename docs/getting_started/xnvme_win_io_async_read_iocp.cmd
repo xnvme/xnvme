@@ -1,0 +1,1 @@
+xnvme_io_async read \\.\PhysicalDrive0 --slba 0x0 --qdepth 1 --async iocp
