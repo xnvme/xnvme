@@ -37,6 +37,8 @@ endforeach
 cc = meson.get_compiler('c')
 cc_flags = [
   '-Wno-missing-braces',
+  '-Wno-cast-function-type',
+  '-Wno-strict-aliasing'
 ]
 add_project_arguments(
   cc.get_supported_arguments(cc_flags),

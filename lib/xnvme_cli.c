@@ -911,7 +911,7 @@ xnvme_cli_perr(const char *msg, int err)
 		fprintf(stderr, "# ERR: '%s': {error code: %d, msg: '%s'}\n", msg, err,
 			err_msg_buff);
 	} else {
-		fprintf(stderr, "# ERR: Format message failed:  {error code: %d}\n",
+		fprintf(stderr, "# ERR: Format message failed:  {error code: %ld}\n",
 			GetLastError());
 	}
 }

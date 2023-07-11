@@ -252,7 +252,8 @@ xnvme_buf_diff_pr(const void *expected, const void *actual, size_t nbytes, int X
 		}
 
 		++diff;
-		printf("    - {byte: '%06lu', expected: 0x%x, actual: 0x%x)\n", i, exp[i], act[i]);
+		printf("    - {byte: '%06llu', expected: 0x%x, actual: 0x%x)\n", i, exp[i],
+		       act[i]);
 	}
 	printf("  nbytes: %zu\n", nbytes);
 	printf("  nbytes_diff: %zu\n", diff);
