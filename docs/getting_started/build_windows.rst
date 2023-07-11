@@ -3,5 +3,14 @@
   # build: auto-configure xNVMe, build third-party libraries, and xNVMe itself
   build.bat
 
-  # In case you want to enable debugging then use the following instead
-  # build.bat debug
+  # config: only configure xNVMe
+  build.bat
+
+  # config: debug only configure xNVMe
+  build.bat config-debug
+
+  # install xNVMe
+  build.bat install
+
+  # uninstall xNVMe
+  build.bat uninstall
