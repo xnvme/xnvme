@@ -188,10 +188,8 @@ def main(args):
     """Entry point"""
 
     args.guards = {
-        "fio": None,
         "spdk": "XNVME_BE_SPDK_ENABLED",
         "libnvme": "XNVME_BE_LINUX_ENABLED",
-        "libvfn": "XNVME_BE_LINUX_VFIO_ENABLED",
     }
 
     try:
