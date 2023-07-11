@@ -1,0 +1,33 @@
+xnvme_dev:
+  xnvme_ident:
+    uri: 'C:\README.md'
+    dtype: 0x4
+    nsid: 0x1
+    csi: 0x1f
+    subnqn: ''
+  xnvme_be:
+    admin: {id: 'file'}
+    sync: {id: 'file'}
+    async: {id: 'iocp'}
+    attr: {name: 'windows'}
+  xnvme_opts:
+    be: 'windows'
+    mem: 'windows'
+    dev: 'FIX-ID-VS-MIXIN-NAME'
+    admin: 'file'
+    sync: 'file'
+    async: 'iocp'
+    oflags: 0x4
+  xnvme_geo:
+    type: XNVME_GEO_CONVENTIONAL
+    npugrp: 1
+    npunit: 1
+    nzone: 1
+    nsect: 1
+    nbytes: 1
+    nbytes_oob: 0
+    tbytes: 2382
+    mdts_nbytes: 65024
+    lba_nbytes: 512
+    lba_extended: 0
+    ssw: 9

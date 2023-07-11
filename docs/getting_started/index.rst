@@ -372,6 +372,126 @@ filepaths::
 
 .. _sec-building-example:
 
+Windows Kernel
+--------------
+
+Windows 10 or later version is currently preferred as it has all the features
+which **xNVMe** utilizes. This section also gives you a brief overview of the
+different I/O paths and APIs which the **xNVMe** API unifies access to.
+
+NVMe Driver and IOCTLs
+~~~~~~~~~~~~~~~~~~~~~~
+
+The default for **xNVMe** is to communicate with devices via the operating
+system NVMe driver IOCTLs, specifically on Windows the following are used:
+
+* ``IOCTL_STORAGE_QUERY_PROPERTY``
+* ``IOCTL_STORAGE_SET_PROPERTY``
+* ``IOCTL_STORAGE_REINITIALIZE_MEDIA``
+* ``IOCTL_SCSI_PASS_THROUGH_DIRECT``
+
+You can check that this interface is behaving as expected by running:
+
+.. literalinclude:: xnvme_win_info_default.cmd
+   :language: bash
+
+Which should yield output equivalent to:
+
+.. literalinclude:: xnvme_win_info_default.out
+   :language: bash
+   :lines: 1-12
+
+This tells you that **xNVMe** can communicate with the given device identifier
+and it informs you that it utilizes **nvme_ioctl** for synchronous command
+execution and it uses **iocp** for asynchronous command execution. This method
+can be used for raw devices via **\\.\PhysicalDrive<disk number>** device path.
+
+NVMe Driver and Regular File
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**xNVMe** can communicate with File System mounted devices via the operating
+system generic APIs like **ReadFile** and **WriteFile** operations. This method
+can be used to do operation on Regular Files.
+
+You can check that this interface is behaving as expected by running:
+
+.. literalinclude:: xnvme_win_info_fs.cmd
+   :language: bash
+
+Which should yield output equivalent to:
+
+.. literalinclude:: xnvme_win_info_fs.out
+   :language: bash
+   :lines: 1-12
+
+This tells you that **xNVMe** can communicate with the given regular file
+and it informs you that it utilizes **nvme_ioctl** for synchronous command
+execution and it uses **iocp** for asynchronous command execution. This method
+can be used for file operations via **<driver name>:\<file name>** path.
+
+Async I/O via ``iocp``
+~~~~~~~~~~~~~~~~~~~~~~
+
+When AIO is available then the NVMe NVM Commands for **read** and **write** are
+sent over the Windows IOCP interface. Doing so improves command-throughput at
+higher queue-depths when compared to sending the command via the NVMe driver
+ioctl().
+
+One can explicitly tell **xNVMe** to utilize ``iocp`` for async I/O by
+encoding it in the device identifier, like so:
+
+.. literalinclude:: xnvme_win_io_async_read_iocp.cmd
+   :language: bash
+
+Yielding the output:
+
+.. literalinclude:: xnvme_win_io_async_read_iocp.out
+   :language: bash
+   :lines: 1-12
+
+
+Async I/O via ``iocp-th``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Similar to ``iocp`` interface, only difference is separate poller is used
+to fetch the completed IOs.
+
+One can explicitly tell **xNVMe** to utilize ``iocp-th`` for async I/O by
+encoding it in the device identifier, like so:
+
+.. literalinclude:: xnvme_win_io_async_read_iocp_th.cmd
+   :language: bash
+
+Yielding the output:
+
+.. literalinclude:: xnvme_win_io_async_read_iocp_th.out
+   :language: bash
+   :lines: 1-12
+
+Async I/O via ``io_ring``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+**xNVMe** utilizes the Windows **io_ring** interface, its support for
+feature-probing the **io_ring** interface and the **io_ring** opcodes:
+
+When available, then **xNVMe** can send the **ioring** specific request using
+**IORING_HANDLE_REF** and **IORING_BUFFER_REF** structure for **read** via
+the Windows **io_ring** interface. Doing so improves command-throughput at
+all io-depths when compared to sending the command via NVMe Driver IOCTLs.
+
+One can explicitly tell **xNVMe** to utilize ``io_ring`` for async I/O by
+encoding it in the device identifier, like so:
+
+.. literalinclude:: xnvme_win_io_async_read_io_ring.cmd
+   :language: bash
+
+Yielding the output:
+
+.. literalinclude:: xnvme_win_io_async_read_io_ring.out
+   :language: bash
+   :lines: 1-12
+
+
 Building an xNVMe Program
 =========================
 
