@@ -35,7 +35,7 @@ SNIPPETS = {
         "   if is_loaded:\n"
         "       return\n"
         "\n"
-        '   print("FAILED: library is not loadable; perhaps install xNVMe?")\n'
+        '   print("FAILED: library is not loadable; perhaps set XNVME_LIBRARY_PATH to point to the library?")\n'
         "   sys.exit(1)\n"
     ),
 }
