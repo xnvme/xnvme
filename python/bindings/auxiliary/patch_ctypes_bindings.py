@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import os
+import textwrap
 
 
 def parse_args():
@@ -21,22 +22,32 @@ def parse_args():
 
 
 SNIPPETS = {
-    "import": ("import ctypes\n" "import sys\n" "\n" "from . import library_loader"),
-    "loader": (
-        "_libraries['xnvme'] = library_loader.load()\n"
-        "is_loaded = _libraries['xnvme'] is not None\n"
-        "_libraries['xnvme'] = _libraries['xnvme' ]"
-        " if _libraries['xnvme'] else FunctionFactoryStub()"
+    "import": textwrap.dedent(
+        """\
+        import ctypes
+        import sys
+
+        from . import library_loader
+    """
     ),
-    "guard": (
-        "def guard_unloadable():\n"
-        '   """Print error and do sys.exit(1) when library is not loadable"""\n'
-        "\n"
-        "   if is_loaded:\n"
-        "       return\n"
-        "\n"
-        '   print("FAILED: library is not loadable; perhaps set XNVME_LIBRARY_PATH to point to the library?")\n'
-        "   sys.exit(1)\n"
+    "loader": textwrap.dedent(
+        """\
+        _libraries['xnvme'] = library_loader.load()
+        is_loaded = _libraries['xnvme'] is not None
+        _libraries['xnvme'] = _libraries['xnvme' ] if _libraries['xnvme'] else FunctionFactoryStub()
+    """
+    ),
+    "guard": textwrap.dedent(
+        '''\
+        def guard_unloadable():
+            """Print error and do sys.exit(1) when library is not loadable"""
+
+            if is_loaded:
+                return
+
+            print("FAILED: library is not loadable; perhaps set XNVME_LIBRARY_PATH to point to the library?")
+            sys.exit(1)
+    '''
     ),
 }
 
