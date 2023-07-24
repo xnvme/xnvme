@@ -40,7 +40,7 @@ def search_paths():
             ext = SHARED_EXT.get(platform.system().lower(), "so")
 
             yield os.path.join(proc.stdout.decode("utf-8").strip(), f"libxnvme.{ext}")
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, FileNotFoundError):
         pass
 
 
