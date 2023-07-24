@@ -47,6 +47,13 @@ def search_paths():
 def load():
     """Dynamically load the xNVMe shared library"""
 
+    path = os.getenv("XNVME_LIBRARY_PATH", None)
+    if path:
+        try:
+            return ctypes.CDLL(path)
+        except OSError:
+            pass
+
     for spath in search_paths():
         try:
             lib = ctypes.CDLL(spath)
