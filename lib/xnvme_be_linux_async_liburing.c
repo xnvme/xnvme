@@ -235,39 +235,27 @@ int
 xnvme_be_linux_liburing_poke(struct xnvme_queue *q, uint32_t max)
 {
 	struct xnvme_queue_liburing *queue = (void *)q;
-	struct io_uring_cqe *cqes[XNVME_QUEUE_IOU_CQE_BATCH_MAX];
+	struct io_uring_cqe *cqe;
+	struct xnvme_cmd_ctx *ctx;
 	unsigned completed;
+	int err;
 
 	max = max ? max : queue->base.outstanding;
 	max = max > queue->base.outstanding ? queue->base.outstanding : max;
-	max = max > XNVME_QUEUE_IOU_CQE_BATCH_MAX ? XNVME_QUEUE_IOU_CQE_BATCH_MAX : max;
 
-	if (queue->poll_io) {
-		int ret;
-
-		ret = io_uring_wait_cqe(&queue->ring, &cqes[0]);
-		if (ret) {
-			XNVME_DEBUG("FAILED: foo");
-			return ret;
+	completed = 0;
+	for (uint32_t i = 0; i < max; i++) {
+		err = io_uring_peek_cqe(&queue->ring, &cqe);
+		if (err < 0) {
+			return err;
 		}
-		completed = 1;
-	} else {
-		if (!queue->poll_sq) {
-			int ret;
 
-			ret = io_uring_wait_cqe_nr(&queue->ring, cqes, max);
-			if (ret) {
-				XNVME_DEBUG("FAILED: foo");
-				return ret;
-			}
+		if (cqe == NULL) {
+			return completed;
 		}
-		completed = io_uring_peek_batch_cqe(&queue->ring, cqes, max);
-	}
-	for (unsigned i = 0; i < completed; ++i) {
-		struct io_uring_cqe *cqe = cqes[i];
-		struct xnvme_cmd_ctx *ctx;
 
 		ctx = io_uring_cqe_get_data(cqe);
+
 		if (!ctx) {
 			XNVME_DEBUG("-{[THIS SHOULD NOT HAPPEN]}-");
 			XNVME_DEBUG("cqe->user_data is NULL! => NO REQ!");
@@ -283,16 +271,12 @@ xnvme_be_linux_liburing_poke(struct xnvme_queue *q, uint32_t max)
 			ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
 		}
 
-		ctx->async.cb(ctx, ctx->async.cb_arg);
-	};
+		queue->base.outstanding--;
 
-	if (completed) {
-		if (queue->poll_io) {
-			io_uring_cqe_seen(&queue->ring, cqes[0]);
-		} else {
-			io_uring_cq_advance(&queue->ring, completed);
-		}
-		queue->base.outstanding -= completed;
+		io_uring_cqe_seen(&queue->ring, cqe);
+
+		ctx->async.cb(ctx, ctx->async.cb_arg);
+		completed++;
 	}
 
 	return completed;
