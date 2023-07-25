@@ -416,7 +416,6 @@ jobs:
       fail-fast: false
       matrix:
         runner:
-        - {os: 'windows', ver: '2019'}
         - {os: 'windows', ver: '2022'}
 
     steps:
@@ -469,7 +468,6 @@ jobs:
         set "PATH=%SystemDrive%\tools\msys64\usr\bin;%PATH%"
         set "PATH=%SystemDrive%\tools\msys64\mingw64\bin;%PATH%"
 
-        xnvme.exe enum
         xnvme.exe library-info
 
     - name: Check Python, pip, platform, and sysconfig

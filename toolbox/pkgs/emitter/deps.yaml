@@ -496,7 +496,7 @@ platforms:
     Interfaces; libaio, liburing, libvfn, and SPDK are not supported on
     Windows.
   name: windows
-  ver: [2022, 2019]
+  ver: [2022]
   os: windows
   mng: choco
   drop: []
