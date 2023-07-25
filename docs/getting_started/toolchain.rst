@@ -692,37 +692,3 @@ Then go ahead and configure, build and install using helper batch script ``build
 
 
 
-
-Windows (2019)
---------------
-
-
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as eleveted privileges command prompt), by executing the commands below. You can
-run this on administrator command prompt of the **xNVMe** by invoking::
-
-  call xnvme\toolbox\pkgs\windows-2022.bat
-
-Or, run the commands contained within the script manually:
-
-.. literalinclude:: ../../toolbox/pkgs/windows-2022.bat
-   :language: batch
-
-
-
-Then go ahead and configure, build and install using helper batch script ``build.bat``:
-
-.. literalinclude:: build_windows.rst
-   :language: bash
-   :lines: 2-
-
-
-.. note::
-   In case you see ``.dll`` loader-errors, then check that the environment
-   variable ``PATH`` contains the various library locations of the toolchain.
-   Interfaces; libaio, liburing, libvfn, and SPDK are not supported on
-   Windows.
-
-
-
-
