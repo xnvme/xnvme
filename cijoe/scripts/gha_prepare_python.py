@@ -42,6 +42,22 @@ def main(args, cijoe, step):
         log.error(f"invalid step({step})")
         return errno.EINVAL
 
+    # NOTE: because pipx (specifically the userpath module it uses) only adds
+    # PATH to files read by login-shells, then we cannot use 'pipx ensurepath'
+    # anymore. Issue has been reported here:
+    #
+    # * https://github.com/pypa/pipx/pull/1021
+    # * https://github.com/ofek/userpath/issues/50
+    #
+    # In some scenarios, like pipx via system packages, then older versions
+    # would still work, then it is not a problem, however, a recent pip-install
+    # pipx will fetch the latest userpath and fail.
+    command = "echo 'export PATH=\"$PATH:/root/.local/bin\"' >> .bashrc"
+    err, _ = cijoe.run(command)
+    if err:
+        log.error(f"cmd({command}), err({err})")
+        return err
+
     commands = [
         "pipx ensurepath",
         "pipx install cijoe --include-deps",
