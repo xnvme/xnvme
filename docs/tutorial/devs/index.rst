@@ -69,7 +69,7 @@ This physical machine will be referred to as ``box01``.
 Operating System
 ----------------
 
-Here, the latest **stable** Debian Linux, currently **bullseye** is used
+Here, the latest **stable** Debian Linux, currently **bookworm** is used
 throughout.
 
 * Install it
@@ -100,7 +100,8 @@ And then install a couple of things::
     git \
     htop \
     screen \
-    sudo
+    sudo \
+    vim
 
   # Add odus to sudoers (required to do various things as non-root)
   usermod -aG sudo odus
@@ -189,18 +190,21 @@ CIJOE
 
 Setup ``python3`` and ``pipx``::
 
-  sudo apt-get -qy install python3-pip python3-venv
-  sudo python3 -m pip install pipx
-  sudo python3 -m pipx ensurepath
+  sudo apt-get -qy install \
+    pipx \
+    python3-pip \
+    python3-venv
+  sudo pipx ensurepath
 
 Then install **cijoe** in a ``pipx`` virtual environment::
 
   pipx install cijoe --include-deps
-  pipx inject cijoe cijoe-pkg-qemu
   pipx inject cijoe cijoe-pkg-linux
+  pipx inject cijoe cijoe-pkg-qemu
+  pipx inject cijoe cijoe-pkg-fio
 
-Then logout and back in to reload the environment, the
-addition of ``pipx`` and the ``cijoe`` into ``$PATH``.
+Then logout and back in to reload the environment, the addition of ``pipx`` and
+the ``cijoe`` into ``$PATH``.
 
 Do a trial-run::
 
@@ -229,21 +233,7 @@ Have a look at the generated report at
 Linux Kernel
 ------------
 
-Here are the steps to run the **cijoe** workflow, compiling a custom kernel as
-a ``.deb`` package::
-
-  # Create a workdir for the workflow
-  mkdir -p ~/workdirs/linux
-  cd ~/workdirs/linux
-
-  # Grab the cijoe-example for linux
-  cijoe --example linux
-
-  # Run it with log-level debug (-ll)
-  cijoe -ll
-
-The above will fail as the required dependencies for building the kernel are
-not available. Thus, to satisfy those, install::
+Install prerequisites::
 
   sudo apt-get -qy install \
     bc \
@@ -254,7 +244,21 @@ not available. Thus, to satisfy those, install::
     git \
     libelf-dev \
     libssl-dev \
+    pahole \
     rsync
+
+Then run the **cijoe** workflow, compiling a custom kernel as a ``.deb``
+package::
+
+  # Create a workdir for the workflow
+  mkdir -p ~/workdirs/linux
+  cd ~/workdirs/linux
+
+  # Grab the cijoe-example for linux
+  cijoe --example linux
+
+  # Run it with logging (-l)
+  cijoe -l
 
 Then re-run the command above. It should now succeed, after which you can
 collect the artifacts of interest::
@@ -269,6 +273,22 @@ You can install them by running::
 
 Qemu
 ----
+
+Install prerequisites::
+
+  # Packages for building qemu
+  sudo apt-get -qy install \
+    meson \
+    libattr1-dev \
+    libcap-ng-dev \
+    libglib2.0-dev \
+    libpixman-1-dev \
+    libslirp-dev \
+    pkg-config
+
+  # Packages for cloud-init
+  sudo apt-get -qy install \
+    cloud-image-utils
 
 Checkout qemu::
 
@@ -288,26 +308,8 @@ Run the **cijoe** qemu workflow::
   # Grab the config and workflow example for qemu
   cijoe --example qemu
 
-  # Run it with log-level debug (-ll)
-  cijoe -ll
-
-Similarly, to how the built failed previously, then it will
-fail here as well, and for the same reason; missing
-packages. Thus, install the following to fix it::
-
-  # Dependencies to build qemu
-  sudo python3 -m pip install meson ninja
-  sudo apt-get -qy install \
-    libattr1-dev \
-    libcap-ng-dev \
-    libglib2.0-dev \
-    libpixman-1-dev \
-    libslirp-dev \
-    pkg-config
-
-  # Dependencies for cloud-init
-  sudo apt-get -qy install \
-    cloud-image-utils
+  # Run it with log-level debug (-l)
+  cijoe -l
 
 With the packages installed, go back and run the **cijoe** workflow. Have a
 look at the report, it describes what it does, that is, build and install qemu,
@@ -336,32 +338,9 @@ Clone **xNVMe** and checkout the ``next`` branch::
   cd xnvme
   git checkout next
 
-Install dependencies::
+Install prerequisites::
 
-  sudo ./toolbox/pkgs/debian-bullseye.sh
-
-Additionally for development, then ``clang`` and ``clang-format`` are needed.
-Unfortunately, in versions more recent than what is provided in the Debian
-Bullseye repositories.
-
-Install and setup clang by::
-
-  mkdir ~/workdirs/clang
-  cd ~/workdirs/clang
-
-  # Some additional packages
-  sudo apt-get -qy install \
-    gnupg \
-    lsb-release \
-    software-properties-common \
-    wget
-
-  wget https://apt.llvm.org/llvm.sh
-  chmod +x llvm.sh
-  sudo ./llvm.sh 14
-
-  sudo apt-get install clang-format-14
-  sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-14 14
+  sudo ./toolbox/pkgs/debian-bookworm.sh
 
 Build and install **xNVMe**::
 
@@ -408,8 +387,8 @@ The **cijoe** workflows and configurations in this directory are used in the
 xNVMe GitHUB actions. You can reproduce what is running on GitHUB by adjusting
 the config-files, and provide the artifacts from the GitHUB action:
 
-* xnvme-core.tar.gz
-* xnvme.tar.gz
+* xnvme-py-sdist.tar.gz
+* xnvme-src.tar.gz
 
 To do so, then:
 
@@ -420,15 +399,15 @@ To do so, then:
 Then you should be able to run the following::
 
   # Provision and test on Debian Bullseye
-  cijoe -c configs/debian-bullseye.config -w workflows/provision.yaml
-  cijoe -c configs/debian-bullseye.config -w workflows/test-debian-bullseye.yaml
+  cijoe -c configs/debian-bullseye.toml -w workflows/provision.yaml
+  cijoe -c configs/debian-bullseye.toml -w workflows/test-debian-bullseye.yaml
 
   # Provision and test on FreeBSD 13
-  cijoe -c configs/freebsd-13.config -w workflows/provision.yaml
-  cijoe -c configs/freebsd-13.config -w workflows/test-freebsd-13.yaml
+  cijoe -c configs/freebsd-13.toml -w workflows/provision.yaml
+  cijoe -c configs/freebsd-13.toml -w workflows/test-freebsd-13.yaml
 
   # Generate documentation (provisions qemu-guest and generates the docs)
-  cijoe -c configs/debian-bullseye.config -w workflows/docgen.yaml
+  cijoe -c configs/debian-bullseye.toml -w workflows/docgen.yaml
 
 In case you are setting up the test-target using other tools, or just want to
 run pytest directly, then the following two sections describe how to do that.
@@ -440,7 +419,7 @@ Invoke pytest providing a configuration file and an output directory for
 artifacts and captured output::
 
   pytest \
-    --config configs/debian-bullseye.config \
+    --config configs/debian-bullseye.toml \
     --output /tmp/somewhere \
    tests
 
@@ -454,7 +433,7 @@ Provision a qemu-guest
 
 Setup a virtual machine with **xNVMe** installed, and a bunch of NVMe devices configured::
 
-  cijoe -c configs/debian-bullseye.config -w provision.yaml
+  cijoe -c configs/debian-bullseye.toml -w provision.yaml
 
 .. tip::
    It will likely fail with the error::
@@ -462,7 +441,7 @@ Setup a virtual machine with **xNVMe** installed, and a bunch of NVMe devices co
      /bin/sh: 1: /opt/qemu/bin/qemu-system-x86_64: not found
 
    This is because the default configuration is for running on Github. Thus,
-   adjust the file ``configs/debian-bullseye.config`` such that qemu is
+   adjust the file ``configs/debian-bullseye.toml`` such that qemu is
    pointing to ``$HOME``.
 
 Create boot-images
@@ -470,11 +449,11 @@ Create boot-images
 
 The ``debian-bullseye-amd64.qcow2`` is created by::
 
-  cijoe -c configs/debian-bullseye.config -w workflows/bootimg-debian-bullseye-amd64.yaml
+  cijoe -c configs/debian-bullseye.toml -w workflows/bootimg-debian-bullseye-amd64.yaml
 
 The ``freebsd-13.1-ksrc-amd64.qcow2`` is created by::
 
-  cijoe -c configs/freebsd-13.config -w workflows/bootimg-freebsd-13-amd64.yaml
+  cijoe -c configs/freebsd-13.toml -w workflows/bootimg-freebsd-13-amd64.yaml
 
 Remote dev
 ----------
@@ -489,7 +468,7 @@ reasons. Then do something like::
   cp configs/debian-bullseye.toml configs/dev-metal.toml
 
 .. note::
-   all configs prefix on the file-name pattern ``dev-*.yml`` are ignored by git.
+   all configs prefix on the file-name pattern ``dev-*.toml`` are ignored by git.
 
 Open up ``configs/dev-metal.toml`` and adjust it to your physical machine. That
 is, change the ssh-login information, change the list of devices, paths to
