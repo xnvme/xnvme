@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 [wrap-git]
-url = https://github.com/spdk/spdk.git
+url = https://github.com/safl/spdk.git
 revision = v22.05
 patch_directory = spdk-win
 clone-recursive = true
