@@ -11,6 +11,8 @@ on:
     types: [labeled, opened, reopened, synchronize]
     branches:
     - '*'
+  merge_group:
+    types: [checks_requested]
   workflow_dispatch:
     inputs:
       job:
