@@ -33,8 +33,8 @@ for %%i in (%*) do (
 )
 
 set "PATH=%ALLUSERSPROFILE%\chocolatey\bin;%PATH%"
-set "PATH=%SystemDrive%\tools\msys64;%PATH%"
-set "PATH=%SystemDrive%\tools\msys64\mingw64\bin;%PATH%"
+set "PATH=%SystemDrive%\msys64;%PATH%"
+set "PATH=%SystemDrive%\msys64\mingw64\bin;%PATH%"
 
 
 if "%INFO%"=="info" (
