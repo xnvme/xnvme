@@ -12,6 +12,7 @@ on:
     branches:
     - '*'
   merge_group:
+    branches: [next]
     types: [checks_requested]
   workflow_dispatch:
     inputs:
@@ -654,7 +655,7 @@ jobs:
     needs: [source-archive, source-format-check, build-python]
     runs-on: self-hosted
     if: (((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job == 'all') || (github.event.inputs.job ==
-      'build-and-test'))) || contains(github.event.pull_request.labels.*.name, 'pr-ready-for-test'))
+      'build-and-test'))) || (github.event_name == 'merge_group'))
 
     strategy:
       fail-fast: false
