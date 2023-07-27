@@ -8,11 +8,10 @@ on:
     tags:
     - '*'
   pull_request:
-    types: [labeled, opened, reopened, synchronize]
+    types: [opened, reopened, synchronize]
     branches:
     - '*'
   merge_group:
-    branches: [next]
     types: [checks_requested]
   workflow_dispatch:
     inputs:
@@ -53,7 +52,6 @@ jobs:
   source-archive:
     runs-on: ubuntu-20.04
     container: ghcr.io/xnvme/xnvme-deps-alpine-latest:next
-    if: ((github.event.action != 'labeled') || (github.event.action == 'labeled') && (github.event.label.name == 'pr-ready-for-test'))
 
     steps:
     - name: Grab source
@@ -655,7 +653,7 @@ jobs:
     needs: [source-archive, source-format-check, build-python]
     runs-on: self-hosted
     if: (((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job == 'all') || (github.event.inputs.job ==
-      'build-and-test'))) || (github.event_name == 'merge_group'))
+      'build-and-test'))) || contains(github.ref_name, 'gh-readonly-queue'))
 
     strategy:
       fail-fast: false
