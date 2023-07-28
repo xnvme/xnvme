@@ -3,14 +3,11 @@ name: verify
 
 on:
   push:
-    branches:
-    - '*'
-    tags:
-    - '*'
+    branches: [main, next]
+    tags: ['v*']
   pull_request:
     types: [opened, reopened, synchronize]
-    branches:
-    - '*'
+    branches: [next]
   merge_group:
     types: [checks_requested]
   workflow_dispatch:
@@ -18,17 +15,10 @@ on:
       job:
         description: 'Job'
         required: true
-        default: all
+        default: docgen
         type: choice
         options:
-        - all
         - analyze
-        - analyze-codeql
-        - analyze-coverity
-        - build
-        - build-linux
-        - build-windows
-        - build-macos
         - build-and-test
         - docgen
 
@@ -134,6 +124,7 @@ jobs:
     needs: source-archive
     runs-on: ubuntu-latest
     container: ghcr.io/xnvme/xnvme-deps-citools-latest:next
+    if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'analyze'))
 
     steps:
     - name: Retrieve the xNVMe source archive
@@ -165,9 +156,8 @@ jobs:
   analyze-codeql:
     needs: source-archive
     runs-on: ubuntu-latest
-    if: ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job == 'all') || contains('analyze-codeql', github.event.inputs.job)))
-
     container: debian:bullseye
+    if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'analyze'))
 
     steps:
     - name: Retrieve the xNVMe source archive
@@ -203,8 +193,7 @@ jobs:
   analyze-coverity:
     needs: source-archive
     runs-on: ubuntu-latest
-    if: ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job == 'all') || contains('analyze-coverity',
-      github.event.inputs.job)))
+    if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'analyze'))
 
     container: debian:buster
     env:
@@ -282,8 +271,6 @@ jobs:
   build-python:
     needs: source-archive
     runs-on: ubuntu-latest
-    if: ((github.event_name == 'pull_request') || ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job
-      == 'all') || contains('build-linux', github.event.inputs.job) || contains('docgen', github.event.inputs.job))))
     container: ghcr.io/xnvme/xnvme-deps-debian-bullseye:next
     strategy:
       fail-fast: false
@@ -330,8 +317,7 @@ jobs:
   build-linux:
     needs: [source-archive, source-format-check, build-python]
     runs-on: ubuntu-latest
-    if: ((github.event_name == 'pull_request') || ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job
-      == 'all') || contains('build-linux', github.event.inputs.job))))
+    if: contains('merge_group push pull_request', github.event_name)
 
     strategy:
       fail-fast: false
@@ -491,8 +477,7 @@ jobs:
   build-macos:
     needs: [source-archive, source-format-check, build-python]
     runs-on: ${{ matrix.runner.os }}-${{ matrix.runner.ver }}
-    if: ((github.event_name == 'pull_request') || ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job
-      == 'all') || contains('build-macos', github.event.inputs.job))))
+    if: contains('merge_group push pull_request', github.event_name)
 
     strategy:
       fail-fast: false
@@ -583,8 +568,7 @@ jobs:
   build-windows:
     needs: [source-archive, source-format-check]
     runs-on: ${{ matrix.runner.os }}-${{ matrix.runner.ver }}
-    if: ((github.event_name == 'pull_request') || ((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job
-      == 'all') || contains('build-windows', github.event.inputs.job))))
+    if: contains('merge_group push pull_request', github.event_name)
 
     strategy:
       fail-fast: false
@@ -652,8 +636,9 @@ jobs:
   build-and-test:
     needs: [source-archive, source-format-check, build-python]
     runs-on: self-hosted
-    if: (((github.event_name == 'workflow_dispatch') && ((github.event.inputs.job == 'all') || (github.event.inputs.job ==
-      'build-and-test'))) || contains(github.ref_name, 'gh-readonly-queue'))
+
+    if: (contains('merge_group push', github.event_name) || ((github.event_name == 'workflow_dispatch') || ((github.event_name
+      == 'workflow_dispatch') && (github.event.inputs.job == 'build-and-test'))))
 
     strategy:
       fail-fast: false
@@ -768,7 +753,7 @@ jobs:
   docgen:
     needs: [source-archive, source-format-check, build-python]
     runs-on: self-hosted
-    if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen'))
+    if: ((github.event_name == 'push') || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen')))
 
     strategy:
       fail-fast: false
