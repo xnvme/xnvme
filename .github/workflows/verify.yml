@@ -118,154 +118,6 @@ jobs:
       run: make gen-man-pages
 
   #
-  # Code-analysis using scan-build
-  #
-  analyze-scan-build:
-    needs: source-archive
-    runs-on: ubuntu-latest
-    container: ghcr.io/xnvme/xnvme-deps-citools-latest:next
-    if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'analyze'))
-
-    steps:
-    - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v3.0.1
-      with:
-        name: xnvme-src-archive
-    - name: Extract, and then remove, the xNVMe source archive
-      run: |
-        tar xzf xnvme-src.tar.gz --strip 1
-        rm xnvme-src.tar.gz
-
-    - name: Run config-debug
-      run: scan-build make config-debug
-
-    - name: Run scan-build
-      run: scan-build --exclude subprojects -o /tmp/scan-build-report make
-
-    - name: Upload scan-build report
-      uses: actions/upload-artifact@v3.1.1
-      if: always()
-      with:
-        name: scan-build-report
-        path: /tmp/scan-build-report/*
-        if-no-files-found: error
-
-  #
-  # Code-analysis using GitHUB CodeQL
-  #
-  analyze-codeql:
-    needs: source-archive
-    runs-on: ubuntu-latest
-    container: debian:bullseye
-    if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'analyze'))
-
-    steps:
-    - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v3.0.1
-      with:
-        name: xnvme-src-archive
-    - name: Extract, and then remove, the xNVMe source archive
-      run: |
-        tar xzf xnvme-src.tar.gz --strip 1
-        rm xnvme-src.tar.gz
-
-    - name: Install build-requirements
-      run: source toolbox/pkgs/debian-bullseye.sh
-
-    - name: Configure, the build
-      run: make config
-
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v1
-      with:
-        languages: 'cpp'
-        config-file: ./.github/codeql/codeql-config.yml
-
-    - name: Build
-      run: make -j $(nproc)
-
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v1
-
-  #
-  # Code-analysis using Coverity
-  #
-  analyze-coverity:
-    needs: source-archive
-    runs-on: ubuntu-latest
-    if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'analyze'))
-
-    container: debian:buster
-    env:
-      COVERITY_TGZ_PATH: "/tmp/cov-analysis-linux64.tar.gz"
-      COVERITY_ROOT: "/tmp/cov-analysis-linux64"
-      PROJECT_NAME: "xNVMe"
-
-    steps:
-    - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v3.0.1
-      with:
-        name: xnvme-src-archive
-    - name: Extract, and then remove, the xNVMe source archive
-      run: |
-        tar xzf xnvme-src.tar.gz --strip 1
-        rm xnvme-src.tar.gz
-
-    - name: xNVMe, install build-requirements
-      run: |
-        source toolbox/pkgs/debian-buster.sh
-
-    - name: xNVMe, configure the build
-      run: |
-        make config
-
-    - name: xNVMe, dump the compile-commands and machine
-      run: |
-        cat /proc/cpuinfo || true
-        cat build/compile_commands.json || true
-
-    - name: Project, define version env. var.
-      run: |
-        PROJECT_VERSION=$(python3 toolbox/xnvme_ver.py --path meson.build)
-        echo "PROJECT_VERSION=${PROJECT_VERSION}" >> $GITHUB_ENV
-
-    - name: Coverity, install requirements
-      run: |
-        apt-get install -qy wget curl
-
-    - name: Coverity, download
-      run: |
-        wget -q https://scan.coverity.com/download/cxx/linux64 \
-         --post-data "token=${{ secrets.COVERITY_SCAN_TOKEN }}&project=${PROJECT_NAME}" \
-         -O ${COVERITY_TGZ_PATH}
-
-    - name: Coverity, unpack
-      run: |
-        mkdir -p "${COVERITY_ROOT}"
-        tar xzf "${COVERITY_TGZ_PATH}" --strip 1 -C "${COVERITY_ROOT}"
-
-    - name: Coverity, configure compiler/gcc
-      run: |
-        export PATH="${COVERITY_ROOT}/bin:$PATH"
-        cov-configure --gcc
-
-    - name: Coverity, build xNVMe
-      run: |
-        export PATH="${COVERITY_ROOT}/bin:$PATH"
-        make clean config
-        cov-build --dir cov-int make
-
-    - name: Coverity, submit results for analysis
-      run: |
-        tar czvf "${PROJECT_NAME}_cov.tgz" cov-int
-        curl --form token=${{ secrets.COVERITY_SCAN_TOKEN }} \
-        --form email=${{ secrets.COVERITY_SCAN_EMAIL }} \
-        --form file=@${PROJECT_NAME}_cov.tgz \
-        --form version="v${PROJECT_VERSION}" \
-        --form description="xNVMe libraries and tools for NVMe" \
-        "https://scan.coverity.com/builds?project=${PROJECT_NAME}"
-
-  #
   # Build xNVMe Python packages
   #
   build-python:
@@ -744,12 +596,29 @@ jobs:
         path: test-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.tar.gz
         if-no-files-found: error
 
-  # This is a lot of effort to generate documentation, however, it ensures that command-line
-  # utilities, build-examples, commands-output of various kinds are up-to-date.
-  # It pushes branches to: docs/<branch>
-  # It pushes tags to: docs/<tag>
-  # and to: docs/latest
-  # The event only triggers on manual request via 'workflow_dispatch'
+
+  #
+  # Documentation: generate documentation and deploy it to githubpages (xnvme.io)
+  #
+  # This is triggered upon:
+  #
+  # * push of branches and tags
+  # * manual 'workflow_dispatch'
+  #
+  # When triggered on push to branch, then the documentation is deployed to:
+  #
+  #   githubpages/docs/<branch>
+  #
+  # For example: githubpages/docs/next
+  #
+  # When triggered on push of tag, then the documentation is deployed to:
+  #
+  #   githubpages/docs/<tag>
+  #   githubpages/docs/latest
+  #
+  # For example: githubpages/docs/v0.5.0
+  # Note that latest is always populated when pushing as tag. It is assumed
+  # that tags are used exclusively for releases
   docgen:
     needs: [source-archive, source-format-check, build-python]
     runs-on: self-hosted
@@ -858,3 +727,155 @@ jobs:
         name: docgen-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
         path: cijoe/docgen-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/*
         if-no-files-found: error
+
+  #
+  # All of the following "analysis" jobs only trigger on 'workflow_dispatch'
+  #
+
+  #
+  # Code-analysis using scan-build
+  #
+  analyze-scan-build:
+    needs: source-archive
+    runs-on: ubuntu-latest
+    container: ghcr.io/xnvme/xnvme-deps-citools-latest:next
+    if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'analyze'))
+
+    steps:
+    - name: Retrieve the xNVMe source archive
+      uses: actions/download-artifact@v3.0.1
+      with:
+        name: xnvme-src-archive
+    - name: Extract, and then remove, the xNVMe source archive
+      run: |
+        tar xzf xnvme-src.tar.gz --strip 1
+        rm xnvme-src.tar.gz
+
+    - name: Run config-debug
+      run: scan-build make config-debug
+
+    - name: Run scan-build
+      run: scan-build --exclude subprojects -o /tmp/scan-build-report make
+
+    - name: Upload scan-build report
+      uses: actions/upload-artifact@v3.1.1
+      if: always()
+      with:
+        name: scan-build-report
+        path: /tmp/scan-build-report/*
+        if-no-files-found: error
+
+  #
+  # Code-analysis using GitHUB CodeQL
+  #
+  analyze-codeql:
+    needs: source-archive
+    runs-on: ubuntu-latest
+    container: debian:bullseye
+    if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'analyze'))
+
+    steps:
+    - name: Retrieve the xNVMe source archive
+      uses: actions/download-artifact@v3.0.1
+      with:
+        name: xnvme-src-archive
+    - name: Extract, and then remove, the xNVMe source archive
+      run: |
+        tar xzf xnvme-src.tar.gz --strip 1
+        rm xnvme-src.tar.gz
+
+    - name: Install build-requirements
+      run: source toolbox/pkgs/debian-bullseye.sh
+
+    - name: Configure, the build
+      run: make config
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v1
+      with:
+        languages: 'cpp'
+        config-file: ./.github/codeql/codeql-config.yml
+
+    - name: Build
+      run: make -j $(nproc)
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v1
+
+  #
+  # Code-analysis using Coverity
+  #
+  analyze-coverity:
+    needs: source-archive
+    runs-on: ubuntu-latest
+    if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'analyze'))
+
+    container: debian:buster
+    env:
+      COVERITY_TGZ_PATH: "/tmp/cov-analysis-linux64.tar.gz"
+      COVERITY_ROOT: "/tmp/cov-analysis-linux64"
+      PROJECT_NAME: "xNVMe"
+
+    steps:
+    - name: Retrieve the xNVMe source archive
+      uses: actions/download-artifact@v3.0.1
+      with:
+        name: xnvme-src-archive
+    - name: Extract, and then remove, the xNVMe source archive
+      run: |
+        tar xzf xnvme-src.tar.gz --strip 1
+        rm xnvme-src.tar.gz
+
+    - name: xNVMe, install build-requirements
+      run: |
+        source toolbox/pkgs/debian-buster.sh
+
+    - name: xNVMe, configure the build
+      run: |
+        make config
+
+    - name: xNVMe, dump the compile-commands and machine
+      run: |
+        cat /proc/cpuinfo || true
+        cat build/compile_commands.json || true
+
+    - name: Project, define version env. var.
+      run: |
+        PROJECT_VERSION=$(python3 toolbox/xnvme_ver.py --path meson.build)
+        echo "PROJECT_VERSION=${PROJECT_VERSION}" >> $GITHUB_ENV
+
+    - name: Coverity, install requirements
+      run: |
+        apt-get install -qy wget curl
+
+    - name: Coverity, download
+      run: |
+        wget -q https://scan.coverity.com/download/cxx/linux64 \
+         --post-data "token=${{ secrets.COVERITY_SCAN_TOKEN }}&project=${PROJECT_NAME}" \
+         -O ${COVERITY_TGZ_PATH}
+
+    - name: Coverity, unpack
+      run: |
+        mkdir -p "${COVERITY_ROOT}"
+        tar xzf "${COVERITY_TGZ_PATH}" --strip 1 -C "${COVERITY_ROOT}"
+
+    - name: Coverity, configure compiler/gcc
+      run: |
+        export PATH="${COVERITY_ROOT}/bin:$PATH"
+        cov-configure --gcc
+
+    - name: Coverity, build xNVMe
+      run: |
+        export PATH="${COVERITY_ROOT}/bin:$PATH"
+        make clean config
+        cov-build --dir cov-int make
+
+    - name: Coverity, submit results for analysis
+      run: |
+        tar czvf "${PROJECT_NAME}_cov.tgz" cov-int
+        curl --form token=${{ secrets.COVERITY_SCAN_TOKEN }} \
+        --form email=${{ secrets.COVERITY_SCAN_EMAIL }} \
+        --form file=@${PROJECT_NAME}_cov.tgz \
+        --form version="v${PROJECT_VERSION}" \
+        --form description="xNVMe libraries and tools for NVMe" \
+        "https://scan.coverity.com/builds?project=${PROJECT_NAME}"
