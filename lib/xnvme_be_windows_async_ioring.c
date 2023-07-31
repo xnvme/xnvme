@@ -6,8 +6,8 @@
 #define _XOPEN_SOURCE 700
 #endif
 #ifdef XNVME_BE_WINDOWS_ASYNC_ENABLED
-#define NTDDI_VERSION NTDDI_WIN10_CO
-#define _WIN32_WINNT NTDDI_WIN10_CO
+#define NTDDI_VERSION NTDDI_WIN10_NI
+#define _WIN32_WINNT NTDDI_WIN10_NI
 #endif
 #include <libxnvme.h>
 #include <xnvme_be.h>
@@ -48,7 +48,7 @@ xnvme_be_windows_ioring_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 	create_ioring_ptr create_ioring_procadd =
 		(create_ioring_ptr)GetProcAddress(queue->lib_module, "CreateIoRing");
 
-	err = (create_ioring_procadd)(IORING_VERSION_1, flags, MAX_IORING_SQ, MAX_IORING_CQ,
+	err = (create_ioring_procadd)(IORING_VERSION_3, flags, MAX_IORING_SQ, MAX_IORING_CQ,
 				      &queue->ring_handle);
 	if (err < 0) {
 		XNVME_DEBUG("Failed creating IO ring handle: 0x%x\n", err);
@@ -138,6 +138,9 @@ xnvme_be_windows_ioring_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	build_ioring_readfile_ptr build_ioring_readfile_procadd =
 		(build_ioring_readfile_ptr)GetProcAddress(queue->lib_module,
 							  "BuildIoRingReadFile");
+	build_ioring_writefile_ptr build_ioring_writefile_procadd =
+		(build_ioring_writefile_ptr)GetProcAddress(queue->lib_module,
+							   "BuildIoRingWriteFile");
 	submit_ioring_ptr submit_ioring_procadd =
 		(submit_ioring_ptr)GetProcAddress(queue->lib_module, "SubmitIoRing");
 
@@ -151,6 +154,8 @@ xnvme_be_windows_ioring_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 		return -ENOSYS;
 	}
 
+	request_data_file.Handle.Handle = state->async_handle;
+	request_data_buffer.Buffer.Address = dbuf;
 	///< NOTE: opcode-dispatch (io)
 	switch (ctx->cmd.common.opcode) {
 
@@ -158,24 +163,36 @@ xnvme_be_windows_ioring_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 		ssw = queue->base.dev->geo.ssw;
 	/* fall through */
 	case XNVME_SPEC_FS_OPC_READ:
+		err = (build_ioring_readfile_procadd)(queue->ring_handle, request_data_file,
+						      request_data_buffer, dbuf_nbytes,
+						      ctx->cmd.nvm.slba << ssw, (UINT_PTR)ctx,
+						      IOSQE_FLAGS_NONE);
+
+		if (err < 0) {
+			XNVME_DEBUG("Failed building IO ring read file structure: 0x%x\n", err);
+			return err;
+		}
+		break;
+
+	case XNVME_SPEC_NVM_OPC_WRITE:
+		ssw = queue->base.dev->geo.ssw;
+	/* fall through */
+	case XNVME_SPEC_FS_OPC_WRITE:
+		err = (build_ioring_writefile_procadd)(queue->ring_handle, request_data_file,
+						       request_data_buffer, dbuf_nbytes,
+						       ctx->cmd.nvm.slba << ssw,
+						       FILE_WRITE_FLAGS_NONE, (UINT_PTR)ctx,
+						       IOSQE_FLAGS_NONE);
+
+		if (err < 0) {
+			XNVME_DEBUG("Failed building IO ring write file structure: 0x%d\n", err);
+			return err;
+		}
 		break;
 
 	default:
 		XNVME_DEBUG("FAILED: unsupported opcode: %d for async", ctx->cmd.common.opcode);
 		return -ENOSYS;
-	}
-
-	request_data_file.Handle.Handle = state->async_handle;
-	request_data_buffer.Buffer.Address = dbuf;
-
-	err = (build_ioring_readfile_procadd)(queue->ring_handle, request_data_file,
-					      request_data_buffer, dbuf_nbytes,
-					      ctx->cmd.nvm.slba << ssw, (UINT_PTR)ctx,
-					      IOSQE_FLAGS_NONE);
-
-	if (err < 0) {
-		XNVME_DEBUG("Failed building IO ring read file structure: 0x%x\n", err);
-		return err;
 	}
 
 	err = (submit_ioring_procadd)(queue->ring_handle, 0, 0, &submitted_entries);
