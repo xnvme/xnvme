@@ -32,6 +32,12 @@ typedef HRESULT(WINAPI *build_ioring_readfile_ptr)(_In_ HIORING ioRing, IORING_H
 						   UINT32 numberOfBytesToRead, UINT64 fileOffset,
 						   UINT_PTR userData, IORING_SQE_FLAGS flags);
 
+typedef HRESULT(WINAPI *build_ioring_writefile_ptr)(_In_ HIORING ioRing, IORING_HANDLE_REF fileRef,
+						    IORING_BUFFER_REF bufferRef,
+						    UINT32 numberOfBytesToWrite, UINT64 fileOffset,
+						    FILE_WRITE_FLAGS writeFlags, UINT_PTR userData,
+						    IORING_SQE_FLAGS sqeFlags);
+
 typedef HRESULT(WINAPI *submit_ioring_ptr)(_In_ HIORING ioRing, UINT32 waitOperations,
 					   UINT32 milliseconds,
 					   _Out_opt_ UINT32 *submittedEntries);
