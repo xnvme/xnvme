@@ -168,6 +168,14 @@ xnvme_be_nosys_dev_close(struct xnvme_dev *XNVME_UNUSED(dev))
 	return;
 }
 
+int
+xnvme_be_nosys_ctrlr_get_registers(const struct xnvme_dev *XNVME_UNUSED(dev),
+				struct xnvme_spec_ctrlr_bar *XNVME_UNUSED(bar))
+{
+	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");
+	return -ENOSYS;
+}
+
 #define XNVME_BE_NOSYS_ATTR                    \
 	{                                      \
 		.name = "nosys", .enabled = 1, \

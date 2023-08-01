@@ -917,9 +917,11 @@ struct xnvme_be_dev g_xnvme_be_spdk_dev = {
 	.enumerate = xnvme_be_spdk_enumerate,
 	.dev_open = xnvme_be_spdk_dev_open,
 	.dev_close = xnvme_be_spdk_dev_close,
+	.ctrlr_get_registers = xnvme_be_nosys_ctrlr_get_registers,
 #else
 	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_nosys_dev_open,
 	.dev_close = xnvme_be_nosys_dev_close,
+	.ctrlr_get_registers = xnvme_be_nosys_ctrlr_get_registers,
 #endif
 };

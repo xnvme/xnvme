@@ -213,9 +213,11 @@ struct xnvme_be_dev g_xnvme_be_fbsd_dev = {
 	.enumerate = xnvme_be_fbsd_enumerate,
 	.dev_open = xnvme_be_fbsd_dev_open,
 	.dev_close = xnvme_be_fbsd_dev_close,
+	.ctrlr_get_registers = xnvme_be_nosys_ctrlr_get_registers,
 #else
 	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_nosys_dev_open,
 	.dev_close = xnvme_be_nosys_dev_close,
+	.ctrlr_get_registers = xnvme_be_nosys_ctrlr_get_registers,
 #endif
 };
