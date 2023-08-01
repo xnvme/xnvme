@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <rte_log.h>
 #include <spdk/log.h>
+#include <spdk/nvme.h>
 #include <spdk/nvme_spec.h>
 
 #include <xnvme_be.h>
@@ -910,6 +911,18 @@ xnvme_be_spdk_dev_open(struct xnvme_dev *dev)
 
 	return err;
 }
+
+int
+xnvme_be_spdk_ctrlr_get_registers(const struct xnvme_dev *dev,
+				struct xnvme_spec_ctrlr_bar *bar)
+{
+	struct xnvme_be_spdk_state *state = (void *)dev->be.state;
+	struct spdk_nvme_registers *regs = (struct spdk_nvme_registers *)spdk_nvme_ctrlr_get_registers(state->ctrlr);
+	memcpy(bar, regs, sizeof(struct xnvme_spec_ctrlr_bar));
+
+	return 0;
+}
+
 #endif
 
 struct xnvme_be_dev g_xnvme_be_spdk_dev = {
@@ -917,7 +930,7 @@ struct xnvme_be_dev g_xnvme_be_spdk_dev = {
 	.enumerate = xnvme_be_spdk_enumerate,
 	.dev_open = xnvme_be_spdk_dev_open,
 	.dev_close = xnvme_be_spdk_dev_close,
-	.ctrlr_get_registers = xnvme_be_nosys_ctrlr_get_registers,
+	.ctrlr_get_registers = xnvme_be_spdk_ctrlr_get_registers,
 #else
 	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_nosys_dev_open,
