@@ -20,6 +20,10 @@ tests_source = [
   'kvs.c',
 ]
 
+if not is_windows
+  tests_source += ['map.c']
+endif
+
 foreach test_source : tests_source
   executable(
     tests_prefix + fs.stem(test_source),
