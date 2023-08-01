@@ -62,7 +62,7 @@ xnvme_be_nosys_buf_free(const struct xnvme_dev *dev, void *buf);
 int
 xnvme_be_nosys_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, uint64_t *phys);
 
-void
+int
 xnvme_be_nosys_mem_unmap(const struct xnvme_dev *dev, void *buf);
 
 int

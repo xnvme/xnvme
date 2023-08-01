@@ -97,7 +97,7 @@ xnvme_be_vfio_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, u
 	return 0;
 }
 
-void
+int
 xnvme_be_vfio_mem_unmap(const struct xnvme_dev *dev, void *buf)
 {
 	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
@@ -107,7 +107,10 @@ xnvme_be_vfio_mem_unmap(const struct xnvme_dev *dev, void *buf)
 
 	if (vfio_unmap_vaddr(vfio, buf, NULL)) {
 		XNVME_DEBUG("FAILED: vfio_unmap_vaddr(-, %p): %s\n", buf, strerror(errno));
+		return errno;
 	}
+
+	return 0;
 }
 
 #endif
