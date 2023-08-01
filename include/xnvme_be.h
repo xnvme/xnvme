@@ -128,7 +128,7 @@ struct xnvme_be_mem {
 	/**
 	 * Unmap a buffer usable for NVMe commands
 	 */
-	void (*mem_unmap)(const struct xnvme_dev *, void *);
+	int (*mem_unmap)(const struct xnvme_dev *, void *);
 	const char *id;
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_mem) == XNVME_BE_MEM_NBYTES, "Incorrect size")

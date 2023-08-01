@@ -265,7 +265,7 @@ xnvme_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 	return dev->be.mem.mem_map(dev, vaddr, nbytes, NULL);
 }
 
-void
+int
 xnvme_mem_unmap(const struct xnvme_dev *dev, void *buf)
 {
 	return dev->be.mem.mem_unmap(dev, buf);

@@ -27,10 +27,12 @@ int
 xnvme_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes);
 
 /**
- * Unmap the given IO buffer mapped with xnvme_buf_map()
+ * Unmap the given IO buffer mapped with xnvme_mem_map()
  *
  * @param dev Device handle obtained with xnvme_dev_open()
  * @param buf Pointer to a buffer allocated with xnvme_buf_alloc()
+ *
+ * @return On sucess, 0 is returned. On error, negative 'errno' is returned
  */
-void
+int
 xnvme_mem_unmap(const struct xnvme_dev *dev, void *buf);

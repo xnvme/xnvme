@@ -137,10 +137,12 @@ xnvme_be_nosys_mem_map(const struct xnvme_dev *XNVME_UNUSED(dev), void *XNVME_UN
 	return -errno;
 }
 
-void
+int
 xnvme_be_nosys_mem_unmap(const struct xnvme_dev *XNVME_UNUSED(dev), void *XNVME_UNUSED(buf))
 {
 	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");
+	errno = ENOSYS;
+	return -errno;
 }
 
 int
