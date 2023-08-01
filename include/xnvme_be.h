@@ -15,7 +15,7 @@
 #define XNVME_BE_ASYNC_NBYTES  56
 #define XNVME_BE_SYNC_NBYTES   24
 #define XNVME_BE_ADMIN_NBYTES  24
-#define XNVME_BE_DEV_NBYTES    24
+#define XNVME_BE_DEV_NBYTES    32
 #define XNVME_BE_MEM_NBYTES    56
 #define XNVME_BE_ATTR_NBYTES   24
 #define XNVME_BE_STATE_NBYTES  128
@@ -103,6 +103,11 @@ struct xnvme_be_dev {
 	 * Close the given device
 	 */
 	void (*dev_close)(struct xnvme_dev *);
+
+	/*
+	 * Read device controller registers
+	 */
+	int (*ctrlr_get_registers)(const struct xnvme_dev *, struct xnvme_spec_ctrlr_bar *);
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_dev) == XNVME_BE_DEV_NBYTES, "Incorrect size")
 

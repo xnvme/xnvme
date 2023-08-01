@@ -191,3 +191,14 @@ xnvme_dev_alloc(struct xnvme_dev **dev)
 
 	return 0;
 }
+
+int
+xnvme_ctrlr_get_registers(const struct xnvme_dev *dev, struct xnvme_spec_ctrlr_bar *bar)
+{
+	if (!bar) {
+		XNVME_DEBUG("FAILED: bar buffer should be given");
+		return -EINVAL;
+	}
+
+	return dev->be.dev.ctrlr_get_registers(dev, bar);
+}

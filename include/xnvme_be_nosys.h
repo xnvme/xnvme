@@ -79,6 +79,10 @@ xnvme_be_nosys_dev_open(struct xnvme_dev *dev);
 void
 xnvme_be_nosys_dev_close(struct xnvme_dev *dev);
 
+int
+xnvme_be_nosys_ctrlr_get_registers(const struct xnvme_dev *XNVME_UNUSED(dev),
+				   struct xnvme_spec_ctrlr_bar *XNVME_UNUSED(bar));
+
 #define XNVME_BE_NOSYS_ADMIN                                                  \
 	{                                                                     \
 		.cmd_admin  = xnvme_be_nosys_sync_cmd_admin,                  \
@@ -107,7 +111,8 @@ xnvme_be_nosys_dev_close(struct xnvme_dev *dev);
 #define XNVME_BE_NOSYS_DEV                                                                  \
 	{                                                                                   \
 		.enumerate = xnvme_be_nosys_enumerate, .dev_open = xnvme_be_nosys_dev_open, \
-		.dev_close = xnvme_be_nosys_dev_close,                                      \
+		.dev_close           = xnvme_be_nosys_dev_close,                            \
+		.ctrlr_get_registers = xnvme_be_nosys_ctrlr_get_registers,                  \
 	}
 
 #define XNVME_BE_NOSYS                                                      \
