@@ -8,8 +8,6 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]
     branches: [next]
-  merge_group:
-    types: [checks_requested]
   workflow_dispatch:
     inputs:
       job:
@@ -169,7 +167,7 @@ jobs:
   build-linux:
     needs: [source-archive, source-format-check, build-python]
     runs-on: ubuntu-latest
-    if: contains('merge_group push pull_request', github.event_name)
+    if: contains('push pull_request', github.event_name)
 
     strategy:
       fail-fast: false
@@ -329,7 +327,7 @@ jobs:
   build-macos:
     needs: [source-archive, source-format-check, build-python]
     runs-on: ${{ matrix.runner.os }}-${{ matrix.runner.ver }}
-    if: contains('merge_group push pull_request', github.event_name)
+    if: contains('push pull_request', github.event_name)
 
     strategy:
       fail-fast: false
@@ -420,7 +418,7 @@ jobs:
   build-windows:
     needs: [source-archive, source-format-check]
     runs-on: ${{ matrix.runner.os }}-${{ matrix.runner.ver }}
-    if: contains('merge_group push pull_request', github.event_name)
+    if: contains('push pull_request', github.event_name)
 
     strategy:
       fail-fast: false
@@ -489,8 +487,8 @@ jobs:
     needs: [source-archive, source-format-check, build-python]
     runs-on: self-hosted
 
-    if: (contains('merge_group push', github.event_name) || ((github.event_name == 'workflow_dispatch') || ((github.event_name
-      == 'workflow_dispatch') && (github.event.inputs.job == 'build-and-test'))))
+    if: (contains('push pull_request', github.event_name) || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job
+      == 'build-and-test')))
 
     strategy:
       fail-fast: false
