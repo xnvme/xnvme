@@ -6,7 +6,6 @@ fs = import('fs')
 
 tools_source = [
   'lblk.c',
-  'nvmec.c',
   'xdd.c',
   'xnvme.c',
   'xnvme_file.c',
