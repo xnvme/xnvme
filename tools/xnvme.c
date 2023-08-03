@@ -902,11 +902,19 @@ sub_pass(struct xnvme_cli *cli, int admin)
 
 	xnvme_cli_pinf("xnvme_cmd_pass(...)");
 
-	err = xnvme_buf_from_file(&ctx.cmd, sizeof(ctx.cmd), cli->args.cmd_input);
-	if (err) {
-		xnvme_cli_perr("xnvme_buf_from_file()", err);
-		xnvme_cli_pinf("Error reading: '%s'", cli->args.cmd_input);
-		goto exit;
+	for (int i = 0; i < 16; ++i) { // Setup using --cdwXX arguments
+		uint32_t *cdw = (void *)&ctx.cmd;
+
+		if (!cli->given[XNVME_CLI_OPT_CDW00 + i]) {
+			continue;
+		}
+		cdw[i] = cli->args.cdw[i];
+	}
+	if (cli->given[XNVME_CLI_OPT_NSID]) { // Setup opcode and nsid
+		ctx.cmd.common.nsid = cli->args.nsid;
+	}
+	if (cli->given[XNVME_CLI_OPT_OPCODE]) {
+		ctx.cmd.common.opcode = cli->args.opcode;
 	}
 
 	if (data_nbytes) {
@@ -1425,8 +1433,28 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+
+			{XNVME_CLI_OPT_CDW00, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW01, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW02, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW03, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW04, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW04, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW05, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW06, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW07, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW08, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW09, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW10, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW11, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW12, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW13, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW14, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW15, XNVME_CLI_LOPT},
+
+			{XNVME_CLI_OPT_OPCODE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
-			{XNVME_CLI_OPT_CMD_INPUT, XNVME_CLI_LREQ},
+
 			{XNVME_CLI_OPT_DATA_INPUT, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_DATA_OUTPUT, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_DATA_NBYTES, XNVME_CLI_LOPT},
@@ -1447,8 +1475,28 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+
+			{XNVME_CLI_OPT_CDW00, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW01, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW02, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW03, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW04, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW04, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW05, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW06, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW07, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW08, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW09, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW10, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW11, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW12, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW13, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW14, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CDW15, XNVME_CLI_LOPT},
+
+			{XNVME_CLI_OPT_OPCODE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
-			{XNVME_CLI_OPT_CMD_INPUT, XNVME_CLI_LREQ},
+
 			{XNVME_CLI_OPT_DATA_INPUT, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_DATA_OUTPUT, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_DATA_NBYTES, XNVME_CLI_LOPT},

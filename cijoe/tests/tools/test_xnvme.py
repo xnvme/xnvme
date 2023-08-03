@@ -170,7 +170,6 @@ def test_padc(cijoe, device, be_opts, cli_args):
 
     opcode = "0x02"
     cns = "0x1"
-    cmd_path = "/tmp/cmd-out.nvmec"
 
     err, state = cijoe.run(f"xnvme info {cli_args}")
     assert not err
@@ -185,18 +184,8 @@ def test_padc(cijoe, device, be_opts, cli_args):
 
     assert data_nbytes > 0
 
-    err, _ = cijoe.run(f"rm {cmd_path}")
-
     err, _ = cijoe.run(
-        f"nvmec create --opcode {opcode} --cdw10 {cns} --cmd-output {cmd_path}"
-    )
-    assert not err
-
-    err, _ = cijoe.run(f"nvmec show --cmd-input {cmd_path}")
-    assert not err
-
-    err, _ = cijoe.run(
-        f"xnvme padc {cli_args} --cmd-input {cmd_path} --data-nbytes {data_nbytes}"
+        f"xnvme padc {cli_args} --opcode {opcode} --cdw10 {cns} --data-nbytes {data_nbytes}"
     )
     assert not err
 
@@ -206,7 +195,6 @@ def test_pioc(cijoe, device, be_opts, cli_args):
     """Construct and send an I/O command (read)"""
 
     opcode = "0x02"
-    cmd_path = "/tmp/cmd-out.nvmec"
 
     err, state = cijoe.run(f"xnvme info {cli_args}")
     assert not err
@@ -221,21 +209,8 @@ def test_pioc(cijoe, device, be_opts, cli_args):
 
     assert data_nbytes > 0
 
-    err, _ = cijoe.run(f"rm {cmd_path}")
-
     err, _ = cijoe.run(
-        f"nvmec create"
-        f" --opcode {opcode}"
-        f" --nsid {device['nsid']}"
-        f" --cmd-output {cmd_path}"
-    )
-    assert not err
-
-    err, _ = cijoe.run(f"nvmec show --cmd-input {cmd_path}")
-    assert not err
-
-    err, _ = cijoe.run(
-        f"xnvme pioc {cli_args} --cmd-input {cmd_path} --data-nbytes {data_nbytes}"
+        f"xnvme pioc {cli_args} --opcode {opcode} --nsid {device['nsid']} --data-nbytes {data_nbytes}"
     )
     assert not err
 
