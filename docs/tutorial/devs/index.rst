@@ -354,7 +354,7 @@ Check that it is functional::
 
 This should yield output similar to::
 
-  xnvmec_enumeration:
+  xnvme_cli_enumeration:
   - {uri: '/dev/nvme0n1', dtype: 0x2, nsid: 0x1, csi: 0x0, subnqn: ''}
 
 Artifacts

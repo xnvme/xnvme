@@ -74,7 +74,7 @@ C: API
 
   - The source-code for the command-line tools serve as examples of utilizing
     the C API in general and the tools are used during testing
-  - The command-line utilities must use the ``libxnvmec.h`` as this provides a
+  - The command-line utilities must use the ``libxnvme_cli.h`` as this provides a
     common command-line interface, the common-cli is nice as for usability,
     such that all cli-tools use the same arguments, it is also essential for
     instrumentation of not just the logic of the tool but also the library
