@@ -900,8 +900,6 @@ sub_pass(struct xnvme_cli *cli, int admin)
 	size_t meta_nbytes = cli->args.meta_nbytes;
 	int err;
 
-	xnvme_cli_pinf("xnvme_cmd_pass(...)");
-
 	for (int i = 0; i < 16; ++i) { // Setup using --cdwXX arguments
 		uint32_t *cdw = (void *)&ctx.cmd;
 
@@ -926,7 +924,9 @@ sub_pass(struct xnvme_cli *cli, int admin)
 		}
 
 		if (cli->args.data_input) {
-			xnvme_cli_pinf("Reading data(%s)", cli->args.data_input);
+			if (cli->args.verbose) {
+				xnvme_cli_pinf("Loading data-input(%s)", cli->args.data_input);
+			}
 			xnvme_buf_from_file(data_buf, data_nbytes, cli->args.data_input);
 		}
 	}
@@ -940,12 +940,15 @@ sub_pass(struct xnvme_cli *cli, int admin)
 		}
 
 		if (cli->args.meta_input) {
-			xnvme_cli_pinf("Reading meta(%s)", cli->args.meta_input);
+			if (cli->args.verbose) {
+				xnvme_cli_pinf("Loading meta-input(%s)", cli->args.meta_input);
+			}
 			xnvme_buf_from_file(meta_buf, meta_nbytes, cli->args.meta_input);
 		}
 	}
 
 	if (cli->args.verbose) {
+		xnvme_cli_pinf("Submitting ...");
 		xnvme_spec_cmd_pr(&ctx.cmd, XNVME_PR_DEF);
 	}
 
@@ -955,21 +958,28 @@ sub_pass(struct xnvme_cli *cli, int admin)
 		err = xnvme_cmd_pass(&ctx, data_buf, data_nbytes, meta_buf, meta_nbytes);
 	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		xnvme_cli_perr("xnvme_cmd_pass[_admin]()", err);
+		xnvme_cli_perr("Failed xnvme_cmd_pass[_admin]()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 		goto exit;
 	}
+	if (cli->args.verbose) {
+		xnvme_cli_pinf("No submission nor completion errors");
+	}
 
 	if (data_nbytes && cli->args.data_output) {
-		xnvme_cli_pinf("Dumping data(%s)", cli->args.data_output);
+		if (cli->args.verbose) {
+			xnvme_cli_pinf("Dumping data-output(%s)", cli->args.data_output);
+		}
 		err = xnvme_buf_to_file(data_buf, data_nbytes, cli->args.data_output);
 		if (err) {
 			xnvme_cli_perr("xnvme_buf_to_file()", err);
 		}
 	}
 	if (meta_nbytes && cli->args.meta_output) {
-		xnvme_cli_pinf("Dumping meta(%s)", cli->args.meta_output);
+		if (cli->args.verbose) {
+			xnvme_cli_pinf("Dumping meta-output(%s)", cli->args.meta_output);
+		}
 		err = xnvme_buf_to_file(meta_buf, meta_nbytes, cli->args.meta_output);
 		if (err) {
 			xnvme_cli_perr("xnvme_buf_to_file()", err);
@@ -1462,6 +1472,8 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_META_OUTPUT, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_META_NBYTES, XNVME_CLI_LOPT},
 
+			{XNVME_CLI_OPT_VERBOSE, XNVME_CLI_LFLG},
+
 			XNVME_CLI_ADMIN_OPTS,
 		},
 	},
@@ -1503,6 +1515,8 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_META_INPUT, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_META_OUTPUT, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_META_NBYTES, XNVME_CLI_LOPT},
+
+			{XNVME_CLI_OPT_VERBOSE, XNVME_CLI_LFLG},
 
 			XNVME_CLI_ADMIN_OPTS,
 		},
