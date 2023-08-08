@@ -15,7 +15,7 @@
 
 #define XNVME_BE_ASYNC_NBYTES  56
 #define XNVME_BE_SYNC_NBYTES   24
-#define XNVME_BE_ADMIN_NBYTES  16
+#define XNVME_BE_ADMIN_NBYTES  24
 #define XNVME_BE_DEV_NBYTES    24
 #define XNVME_BE_MEM_NBYTES    56
 #define XNVME_BE_ATTR_NBYTES   24
@@ -76,6 +76,14 @@ struct xnvme_be_admin {
 	 * Pass a NVMe Admin Command Through to the device with minimal driver intervention
 	 */
 	int (*cmd_admin)(struct xnvme_cmd_ctx *, void *, size_t, void *, size_t);
+
+	/**
+	 * Pass pseudo admin-commands
+	 *
+	 * That is representation of various operations in NVMe commands, that look
+	 * like but are not actual NVMe commands.
+	 */
+	int (*cmd_pseudo)(struct xnvme_cmd_ctx *, void *, size_t, void *, size_t);
 
 	const char *id;
 };

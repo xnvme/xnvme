@@ -182,7 +182,9 @@ struct xnvme_be_admin g_xnvme_be_cbi_admin_shim = {
 	.id = "file_as_ns",
 #ifdef XNVME_BE_CBI_ADMIN_SHIM_ENABLED
 	.cmd_admin = shim_cmd_admin,
+	.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo,
 #else
 	.cmd_admin = xnvme_be_nosys_sync_cmd_admin,
+	.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo,
 #endif
 };

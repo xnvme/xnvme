@@ -177,7 +177,9 @@ struct xnvme_be_admin g_xnvme_be_windows_admin_block = {
 	.id = "block",
 #ifdef XNVME_BE_WINDOWS_ENABLED
 	.cmd_admin = xnvme_be_windows_block_cmd_admin,
+	.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo,
 #else
 	.cmd_admin = xnvme_be_nosys_sync_cmd_admin,
+	.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo,
 #endif
 };

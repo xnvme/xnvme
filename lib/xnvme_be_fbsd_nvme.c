@@ -126,7 +126,9 @@ struct xnvme_be_admin g_xnvme_be_fbsd_admin_nvme = {
 	.id = "nvme",
 #ifdef XNVME_BE_FBSD_ENABLED
 	.cmd_admin = xnvme_be_fbsd_nvme_admin,
+	.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo,
 #else
 	.cmd_admin = xnvme_be_nosys_sync_cmd_admin,
+	.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo,
 #endif
 };
