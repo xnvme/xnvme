@@ -65,40 +65,35 @@ int
 xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 {
 	struct xnvme_queue_liburing *queue = (void *)q;
-	struct io_uring_cqe *cqes[XNVME_QUEUE_IOU_CQE_BATCH_MAX];
+	struct io_uring_cqe *cqe;
+	struct xnvme_cmd_ctx *ctx;
 	unsigned completed;
+	int err;
 
 	max = max ? max : queue->base.outstanding;
 	max = max > queue->base.outstanding ? queue->base.outstanding : max;
-	max = max > XNVME_QUEUE_IOU_CQE_BATCH_MAX ? XNVME_QUEUE_IOU_CQE_BATCH_MAX : max;
 
-	if (queue->poll_io) {
-		int err;
-
-		err = io_uring_wait_cqe(&queue->ring, &cqes[0]);
-		if (err) {
-			XNVME_DEBUG("FAILED: io_uring_wait_cqe(), err: %d", err);
+	if (queue->batching) {
+		int err = io_uring_submit(&queue->ring);
+		if (err < 0) {
+			XNVME_DEBUG("io_uring_submit, err: %d", err);
 			return err;
 		}
-		completed = 1;
-	} else {
-		if (!queue->poll_sq) {
-			int err;
-
-			err = io_uring_wait_cqe_nr(&queue->ring, cqes, max);
-			if (err) {
-				XNVME_DEBUG("FAILED: io_uring_wait_cqe_nr(), err: %d", err);
-				return err;
-			}
-		}
-		completed = io_uring_peek_batch_cqe(&queue->ring, cqes, max);
 	}
-	for (unsigned i = 0; i < completed; ++i) {
-		struct io_uring_cqe *cqe = cqes[i];
-		struct xnvme_cmd_ctx *ctx;
-		int err;
+
+	completed = 0;
+	for (uint32_t i = 0; i < max; i++) {
+		err = io_uring_peek_cqe(&queue->ring, &cqe);
+		if (err < 0) {
+			return err;
+		}
+
+		if (cqe == NULL) {
+			return completed;
+		}
 
 		ctx = io_uring_cqe_get_data(cqe);
+
 		if (!ctx) {
 			XNVME_DEBUG("-{[THIS SHOULD NOT HAPPEN]}-");
 			XNVME_DEBUG("cqe->user_data is NULL! => NO REQ!");
@@ -108,26 +103,26 @@ xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 		}
 
 		ctx->cpl.result = cqe->big_cqe[0];
+
 		/** IO64-quirky-handling: this is also for NVME_URING_CMD_IO_VEC */
 		err = xnvme_be_linux_nvme_map_cpl(ctx, NVME_URING_CMD_IO, cqe->res);
 		if (err) {
 			XNVME_DEBUG("FAILED: xnvme_be_linux_nvme_map_cpl(), err: %d", err);
 			return err;
 		}
-		ctx->async.cb(ctx, ctx->async.cb_arg);
-	};
 
-	if (completed) {
-		if (queue->poll_io) {
-			io_uring_cqe_seen(&queue->ring, cqes[0]);
-		} else {
-			io_uring_cq_advance(&queue->ring, completed);
-		}
-		queue->base.outstanding -= completed;
+		queue->base.outstanding--;
+
+		io_uring_cqe_seen(&queue->ring, cqe);
+
+		ctx->async.cb(ctx, ctx->async.cb_arg);
+
+		completed++;
 	}
 
 	return completed;
 }
+
 #else
 int
 xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
@@ -176,12 +171,17 @@ xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 
 	memcpy(&sqe->addr3, &ctx->cmd.common, 64);
 
+	if (queue->batching) {
+		goto exit;
+	}
+
 	err = io_uring_submit(&queue->ring);
 	if (err < 0) {
 		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opcode, err);
 		return err;
 	}
 
+exit:
 	queue->base.outstanding += 1;
 
 	return 0;
@@ -236,12 +236,17 @@ xnvme_be_linux_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dv
 
 	memcpy(&sqe->addr3, &ctx->cmd.common, 64);
 
+	if (queue->batching) {
+		goto exit;
+	}
+
 	err = io_uring_submit(&queue->ring);
 	if (err < 0) {
 		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opcode, err);
 		return err;
 	}
 
+exit:
 	queue->base.outstanding += 1;
 
 	return 0;
