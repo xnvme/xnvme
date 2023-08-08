@@ -2986,11 +2986,9 @@ xnvme_spec_ruhs_pr(const struct xnvme_spec_ruhs *ruhs, int limit, int opts);
  * Prints the given :;xnvme_spec_idfy_ns to the given output stream
  *
  * @param stream output stream used for printing
- * Prints the given :;xnvme_spec_idfy_ns to the given output stream
- *
- * @param stream output stream used for printing
  * @param idfy pointer to structure to print
  * @param opts printer options, see ::xnvme_pr
+ *
  * @return On success, the number of characters printed is returned.
  */
 int

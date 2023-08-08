@@ -25,6 +25,7 @@ enum xnvme_store_opts {
  * @param key_len KV Key size in bytes
  * @param vbuf pointer to Host Buffer
  * @param vbuf_nbytes Host Buffer size in bytes
+ * @param opt Retrieve options, see ::xnvme_retrieve_opts
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
@@ -41,6 +42,7 @@ xnvme_kvs_retrieve(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, ui
  * @param key_len KV Key size in bytes
  * @param vbuf pointer to data payload
  * @param vbuf_nbytes data payload size in bytes
+ * @param opt Store-options, see ::xnvme_store_opts
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
