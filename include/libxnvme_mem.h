@@ -20,7 +20,6 @@
  * @param dev Device handle obtained with xnvme_dev_open()
  * @param vaddr Pointer to start of virtual memory to use as mapped memory
  * @param nbytes The number of bytes to map, starting at vaddr
- * @param phys Pointer to physical address e.g. pointer to an iova
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned
  */
