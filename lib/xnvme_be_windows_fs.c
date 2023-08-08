@@ -296,7 +296,9 @@ struct xnvme_be_admin g_xnvme_be_windows_admin_fs = {
 	.id = "file",
 #ifdef XNVME_BE_WINDOWS_FS_ENABLED
 	.cmd_admin = xnvme_be_windows_fs_cmd_admin,
+	.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo,
 #else
 	.cmd_admin = xnvme_be_nosys_sync_cmd_admin,
+	.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo,
 #endif
 };

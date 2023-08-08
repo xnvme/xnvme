@@ -36,6 +36,15 @@ xnvme_be_nosys_sync_cmd_admin(struct xnvme_cmd_ctx *XNVME_UNUSED(ctx), void *XNV
 }
 
 int
+xnvme_be_nosys_sync_cmd_pseudo(struct xnvme_cmd_ctx *XNVME_UNUSED(ctx), void *XNVME_UNUSED(dbuf),
+			       size_t XNVME_UNUSED(dbuf_nbytes), void *XNVME_UNUSED(mbuf),
+			       size_t XNVME_UNUSED(mbuf_nbytes))
+{
+	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");
+	return -ENOSYS;
+}
+
+int
 xnvme_be_nosys_sync_supported(struct xnvme_dev *XNVME_UNUSED(dev), uint32_t XNVME_UNUSED(opts))
 {
 	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");

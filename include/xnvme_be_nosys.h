@@ -21,6 +21,10 @@ xnvme_be_nosys_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf
 			      void *mbuf, size_t mbuf_nbytes);
 
 int
+xnvme_be_nosys_sync_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
+			       void *mbuf, size_t mbuf_nbytes);
+
+int
 xnvme_be_nosys_sync_supported(struct xnvme_dev *dev, uint32_t opts);
 
 int
@@ -75,9 +79,10 @@ xnvme_be_nosys_dev_open(struct xnvme_dev *dev);
 void
 xnvme_be_nosys_dev_close(struct xnvme_dev *dev);
 
-#define XNVME_BE_NOSYS_ADMIN                                                \
-	{                                                                   \
-		.cmd_admin = xnvme_be_nosys_sync_cmd_admin, .id = "ENOSYS", \
+#define XNVME_BE_NOSYS_ADMIN                                                  \
+	{                                                                     \
+		.cmd_admin  = xnvme_be_nosys_sync_cmd_admin,                  \
+		.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo, .id = "ENOSYS", \
 	}
 
 #define XNVME_BE_NOSYS_SYNC                                                                   \
