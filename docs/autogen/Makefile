@@ -34,7 +34,7 @@ apis:
 .PHONY: commands
 commands:
 	@echo "# commands"
-	${VENV} kmdo $(DOCS_DIR)/getting_started
+	${VENV} kmdo $(DOCS_DIR)/getting_started --exclude "win"
 	${VENV} kmdo $(DOCS_DIR)/capis
 	${VENV} kmdo $(DOCS_DIR)/examples
 	${VENV} kmdo $(DOCS_DIR)/tools

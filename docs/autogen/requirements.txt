@@ -1,7 +1,7 @@
 breathe
 docutils==0.17
 Jinja2==3.0.3
-kmdo
+kmdo==1.0.6
 sphinx==3.0.0
 sphinx_rtd_theme
 sphinxcontrib-bibtex
