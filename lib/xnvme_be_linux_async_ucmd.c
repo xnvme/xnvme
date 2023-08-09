@@ -84,16 +84,13 @@ xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 	completed = 0;
 	for (uint32_t i = 0; i < max; i++) {
 		err = io_uring_peek_cqe(&queue->ring, &cqe);
-		if (err < 0) {
-			return err;
-		}
-
-		if (cqe == NULL) {
+		if (err == -EAGAIN) {
 			return completed;
 		}
 
 		ctx = io_uring_cqe_get_data(cqe);
 
+#ifdef XNVME_DEBUG_ENABLED
 		if (!ctx) {
 			XNVME_DEBUG("-{[THIS SHOULD NOT HAPPEN]}-");
 			XNVME_DEBUG("cqe->user_data is NULL! => NO REQ!");
@@ -101,6 +98,7 @@ xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 			XNVME_DEBUG("cqe->flags: %u", cqe->flags);
 			return -EIO;
 		}
+#endif
 
 		ctx->cpl.result = cqe->big_cqe[0];
 
