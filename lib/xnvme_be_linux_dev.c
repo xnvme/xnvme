@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
 #include <linux/fs.h>
 #include <linux/version.h>
 #include <xnvme_dev.h>
@@ -330,6 +331,44 @@ xnvme_be_linux_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enu
 
 	return 0;
 }
+
+int
+xnvme_be_linux_ctrlr_get_registers(const struct xnvme_dev *dev, struct xnvme_spec_ctrlr_bar *bar)
+{
+	const struct xnvme_ident *ident = &dev->ident;
+	char path[512];
+	void *membase;
+	int fd;
+
+	if (ident->dtype == XNVME_DEV_TYPE_NVME_NAMESPACE) {
+		snprintf(path, sizeof(path), "/sys/block/%s/device/device/resource0",
+			 basename(ident->uri));
+	} else if (!strncmp(basename(ident->uri), "nvme", 4)) {
+		snprintf(path, sizeof(path), "/sys/class/nvme/%s/device/resource0",
+			 basename(ident->uri));
+	} else {
+		return -1;
+	}
+
+	fd = open(path, O_RDONLY);
+	if (fd < 0) {
+		return -1;
+	}
+
+	membase = mmap(NULL, getpagesize(), PROT_READ, MAP_SHARED, fd, 0);
+	if (membase == MAP_FAILED) {
+		membase = NULL;
+		close(fd);
+		return -1;
+	} else {
+		memcpy(bar, membase, sizeof(struct xnvme_spec_ctrlr_bar));
+		munmap(bar, getpagesize());
+	}
+
+	close(fd);
+
+	return 0;
+}
 #endif
 
 struct xnvme_be_dev g_xnvme_be_dev_linux = {
@@ -337,7 +376,7 @@ struct xnvme_be_dev g_xnvme_be_dev_linux = {
 	.enumerate = xnvme_be_linux_enumerate,
 	.dev_open = xnvme_be_linux_dev_open,
 	.dev_close = xnvme_be_linux_dev_close,
-	.ctrlr_get_registers = xnvme_be_nosys_ctrlr_get_registers,
+	.ctrlr_get_registers = xnvme_be_linux_ctrlr_get_registers,
 #else
 	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_nosys_dev_open,
