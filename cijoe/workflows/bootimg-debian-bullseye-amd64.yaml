@@ -13,7 +13,7 @@ steps:
   uses: qemu.guest_kill
 
 - name: guest_cloudinit
-  uses: qemu.guest_cloudinit
+  uses: qemu.guest_init_using_cloudinit
 
 - name: guest_firstboot
   uses: qemu.guest_start_nvme

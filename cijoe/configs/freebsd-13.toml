@@ -12,64 +12,49 @@ version = "13"
 [build.compiler]
 bin = "clang"
 
-# boot_images:
-# qemu images, could be cloudinit images which have been processed through initialization process
+# Used by: qemu.build.py
+[qemu.repository]
+upstream = "https://github.com/qemu/qemu.git"
+path = "{{ local.env.HOME }}/git/qemu"
+tag = "v8.0.0"
 
-# Use this when running the boot-img workflow, download, unpack and convert the "basic-ci" image to
-# qcow2 and place it in the boot_images folder
-#  freebsd:
-#    url: "https://download.freebsd.org/releases/CI-IMAGES/13.1-RELEASE/amd64/Latest/FreeBSD-13.1-RELEASE-amd64-BASIC-CI.raw.xz"
-#    img: "{{ local.env.HOME}}/images/boot_images/FreeBSD-13.1-RELEASE-amd64-BASIC-CI.qcow2"
-[boot_images.freebsd]
-url = "https://refenv.fra1.digitaloceanspaces.com/boot_images/freebsd-13.1-ksrc-amd64.qcow2"
-img = "{{ local.env.HOME}}/images/boot_images/freebsd-13.1-ksrc-amd64.qcow2"
+# Used by: qemu.build.py
+[qemu.build]
+prefix = "{{ local.env.HOME }}/opt/qemu"
 
 [qemu]
 #system_bin = "{{ local.env.HOME }}/opt/qemu/bin/qemu-system-x86_64"
 system_bin = "/opt/qemu/bin/qemu-system-x86_64"
 img_bin = "qemu-img"
+default_guest = "freebsd_13"
 
-[qemu.repository]
-upstream = "https://github.com/qemu/qemu.git"
-path = "{{ local.env.HOME }}/git/qemu"
-tag = "v7.1.0"
+# Used by: qemu.guest_start.py and qemu.guest_kill.py
+[qemu.guests.freebsd_13]
+path = "{{ local.env.HOME }}/guests/freebsd-13-amd64"
 
-[qemu.build]
-prefix = "{{ local.env.HOME }}/opt/qemu"
+# Keyword arguments: joined onto the form: "-cpu host -smp 4 -m 4" etc.
+system_args.kwa = {cpu = "host", smp = 4, m = "6G", accel = "kvm"}
 
-[qemu.guests.freebsd]
-path = "{{ local.env.HOME }}/guests/freebsd-amd64"
-boot_img = "freebsd"
-cloudinit = "freebsd"
+# Raw arguments: passed without modification to qemu-system-{arch}
+system_args.raw = """\
+-M "type=q35,kernel_irqchip=split" \
+-device "intel-iommu,pt=on,intremap=on" \
+"""
 
-# This string is appended to the end of the qemu-system command-line, a wildcard for whatever
-# you need. You can also consider writing a worklet to serve your needs. See the
-# "qemu.guest_start" and "qemu.guest_start_nvme" worklets for reference.
-extra_args = ""
+# Managed arguments: expands into longer incantations
+system_args.tcp_forward = {host = 4200, guest = 22}
+#system_args.host_share = "{{ local.env.HOME }}/git"
 
-# Plain qemu-system arguments (-cpu, -machine, -smp, etc), the sub-keys are
-# e.g. "-machine type=..."
-[qemu.guests.freebsd.system_args]
-cpu = "host"
-smp = 4
-m = "6G"
-device = "intel-iommu,pt=on,intremap=on"
+# Used by: qemu.guest_init_using_bootimage.py
+init_using_bootimage.url = "https://refenv.fra1.digitaloceanspaces.com/boot_images/freebsd-13.1-ksrc-amd64.qcow2"
+init_using_bootimage.img = "{{ local.env.HOME }}/images/boot_images/freebsd-13-amd64.qcow2"
 
-[qemu.guests.freebsd.system_args.machine]
-type = "q35,kernel_irqchip=split,accel=kvm"
-
-## Fancy Arguments
-#
-# host_share: enables the the guest to mount a directory from the host by running:
-# "mount -t 9p -o trans=virtio hostshare foo -oversion=9p2000.L"
-#[qemu.guests.freebsd.fancy]
-#host_share = "{{ local.env.HOME }}/git"
-
-# tcp_forward: enables the host access to the 'guest' port via the 'host' port.
-# Useful for doing things like SSH-ing into the guest
-[qemu.guests.freebsd.fancy.tcp_forward]
-host = 4200
-guest = 22
+# Used by: qemu.guest_init_using_cloudinit
+init_using_cloudinit.url = "https://refenv.fra1.digitaloceanspaces.com/freebsd13-ufs-ksrc.qcow2"
+init_using_cloudinit.img = "{{ local.env.HOME}}/images/cloudinit/freebsd13-ufs-ksrc.qcow2"
+init_using_cloudinit.meta = "{{ resources.auxiliary['qemu.cloudinit-freebsd-meta'] }}"
+init_using_cloudinit.user = "{{ resources.auxiliary['qemu.cloudinit-freebsd-user'] }}"
+#init_using_cloudinit.pubkey = "keys/guest_key.pub"
 
 [[devices]]
 uri = "/dev/nvme0ns1"
