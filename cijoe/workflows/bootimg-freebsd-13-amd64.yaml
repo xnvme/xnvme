@@ -36,7 +36,7 @@ steps:
   uses: qemu.guest_kill
 
 - name: initialize
-  uses: qemu.guest_bootimg
+  uses: qemu.guest_init_using_bootimage
 
 - name: start
   uses: qemu.guest_start_nvme

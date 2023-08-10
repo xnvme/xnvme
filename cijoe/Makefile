@@ -38,7 +38,7 @@ endef
 install:
 	@echo "## ${PROJECT_NAME}: make install"
 	@${PIPX} install cijoe==v0.9.26 --include-deps
-	@${PIPX} inject cijoe cijoe-pkg-qemu==v6.1.11
+	@${PIPX} inject cijoe cijoe-pkg-qemu==v6.1.15
 	@${PIPX} inject cijoe cijoe-pkg-linux==v0.9.7
 	@${PIPX} inject cijoe cijoe-pkg-fio==v0.9.7
 	@echo "## ${PROJECT_NAME}: make install [DONE]"
