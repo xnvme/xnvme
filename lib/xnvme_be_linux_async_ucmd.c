@@ -158,9 +158,6 @@ xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 	sqe->fd = queue->poll_sq ? 0 : state->fd;
 	sqe->user_data = (unsigned long)ctx;
 
-	if (queue->poll_io) {
-		ctx->cmd.common.fuse = 1;
-	}
 	ctx->cmd.common.dptr.lnx_ioctl.data = (uint64_t)dbuf;
 	ctx->cmd.common.dptr.lnx_ioctl.data_len = dbuf_nbytes;
 
@@ -223,9 +220,6 @@ xnvme_be_linux_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dv
 	sqe->fd = queue->poll_sq ? 0 : state->fd;
 	sqe->user_data = (unsigned long)ctx;
 
-	if (queue->poll_io) {
-		ctx->cmd.common.fuse = 1;
-	}
 	ctx->cmd.common.dptr.lnx_ioctl.data = (uint64_t)dvec;
 	ctx->cmd.common.dptr.lnx_ioctl.data_len = dvec_cnt;
 
