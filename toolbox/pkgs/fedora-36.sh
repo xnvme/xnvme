@@ -31,7 +31,8 @@ dnf install -y \
  procps \
  python3-devel \
  python3-pip \
- python3-pyelftools
+ python3-pyelftools \
+ zlib-devel
 
 #
 # Clone, build and install libvfn
