@@ -145,7 +145,7 @@ xnvme_be_attr_list_bundled(struct xnvme_be_attr_list **list)
 {
 	const size_t list_nbytes = sizeof(**list) + g_xnvme_be_count * sizeof((*list)->item[0]);
 
-	*list = malloc(list_nbytes);
+	*list = xnvme_buf_virt_alloc(512, list_nbytes);
 	if (!*list) {
 		return -1;
 	}

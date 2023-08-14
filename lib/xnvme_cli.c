@@ -1903,13 +1903,13 @@ xnvme_cli_to_opts(const struct xnvme_cli *cli, struct xnvme_opts *opts)
 void
 xnvme_cli_enumeration_free(struct xnvme_cli_enumeration *list)
 {
-	free(list);
+	xnvme_buf_virt_free(list);
 }
 
 int
 xnvme_cli_enumeration_alloc(struct xnvme_cli_enumeration **list, uint32_t capacity)
 {
-	*list = malloc(sizeof(**list) + sizeof(*(*list)->entries) * capacity);
+	*list = xnvme_buf_virt_alloc(512, sizeof(**list) + sizeof(*(*list)->entries) * capacity);
 	if (!(*list)) {
 		XNVME_DEBUG("FAILED: malloc(list + entry * cap(%" PRIu32 "))", capacity);
 		return -errno;
