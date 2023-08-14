@@ -468,6 +468,7 @@ jobs:
         set "PATH=%SystemDrive%\msys64\usr\bin;%PATH%"
         set "PATH=%SystemDrive%\msys64\mingw64\bin;%PATH%"
 
+        xnvme.exe library-info
         xnvme.exe enum
 
     - name: Check Python, pip, platform, and sysconfig

@@ -70,7 +70,7 @@ sub_listing(struct xnvme_cli *cli)
 	xnvme_cli_enumeration_pp(listing, XNVME_PR_DEF);
 
 exit:
-	free(listing);
+	xnvme_buf_virt_free(listing);
 
 	return err;
 }
@@ -1025,7 +1025,8 @@ sub_library_info(struct xnvme_cli *XNVME_UNUSED(cli))
 
 	xnvme_be_attr_list_pr(list, XNVME_PR_DEF);
 
-	free(list);
+	// free(list);
+	xnvme_buf_virt_free(list);
 
 exit:
 	return err;
