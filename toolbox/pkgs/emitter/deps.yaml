@@ -19,13 +19,6 @@ deps:
       pacman: [clang] # Arch/pacman does not provide a "smaller" package
       zypper: [clang-tools]
 
-  find:
-    notes: Required by the xNVMe build-system to apply patches to subprojects
-    ver: 0.0
-    when: [building]
-    names:
-      default: [findutils] # dnf, zypper
-
   git:
     notes: For retrieving the xNVMe source and revision-control when developing
     ver: 2.20
@@ -52,13 +45,6 @@ deps:
       emerge: [dev-util/meson]
       pip: [meson, ninja]
       pipx: [meson, ninja]
-
-  patch:
-    notes: Required by the xNVMe build-system to apply patches to subprojects
-    ver: 0.0
-    when: [building]
-    names:
-      default: [patch] # dnf, yum, zypper
 
   pkg-config:
     notes: Find libraries which xNVMe depends upon and provide a simple means for other projects to find xNVMe
@@ -268,16 +254,15 @@ apps:
 defaults:
   freebsd:
     deps:
-    - [sys, [bash, clang-format, cunit, elftools, find, git, libuuid, make, meson, nasm, ncurses, openssl, patch, pipx, pkg-config,
-        python3]]
+    - [sys, [bash, clang-format, cunit, elftools, git, libuuid, make, meson, nasm, ncurses, openssl, pipx, pkg-config, python3]]
     - [src, [dpdk, spdk]]
     apps:
     - [src, [fio]]
 
   linux:
     deps:
-    - [sys, [bash, cunit, clang-format, elftools, find, git, libaio, liburing, libuuid, make, meson, nasm, ncurses, numactl,
-        openssl, patch, pipx, pkg-config, python3]]
+    - [sys, [bash, cunit, clang-format, elftools, git, libaio, liburing, libuuid, make, meson, nasm, ncurses, numactl, openssl,
+        pipx, pkg-config, python3]]
     - [src, [libvfn, dpdk, spdk]]
     apps:
     - [src, [fio]]

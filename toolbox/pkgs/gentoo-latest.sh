@@ -21,9 +21,7 @@ emerge \
  dev-util/meson \
  dev-util/pkgconf \
  dev-vcs/git \
- findutils \
  make \
- patch \
  sys-libs/liburing \
  sys-libs/ncurses \
  sys-process/numactl

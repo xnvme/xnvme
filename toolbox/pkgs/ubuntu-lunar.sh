@@ -19,7 +19,6 @@ apt-get -qy install \
  bash \
  build-essential \
  clang-format \
- findutils \
  git \
  libaio-dev \
  libcunit1-dev \
@@ -32,7 +31,6 @@ apt-get -qy install \
  meson \
  nasm \
  openssl \
- patch \
  pipx \
  pkg-config \
  python3 \

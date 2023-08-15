@@ -14,7 +14,6 @@ zypper --non-interactive install -y --allow-downgrade \
  bash \
  clang-tools \
  cunit-devel \
- findutils \
  gcc \
  gcc-c++ \
  git \
@@ -29,7 +28,6 @@ zypper --non-interactive install -y --allow-downgrade \
  meson \
  nasm \
  ncurses \
- patch \
  pkg-config \
  python3 \
  python3-devel \

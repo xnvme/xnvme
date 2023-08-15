@@ -13,7 +13,6 @@ pkg install -qy \
  cunit \
  devel/py-pyelftools \
  e2fsprogs-libuuid \
- findutils \
  git \
  gmake \
  libtool \
@@ -21,7 +20,6 @@ pkg install -qy \
  nasm \
  ncurses \
  openssl \
- patch \
  pkgconf \
  py39-pipx \
  python3 \

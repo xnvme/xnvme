@@ -15,7 +15,6 @@ dnf install -y \
  autoconf \
  bash \
  diffutils \
- findutils \
  gcc \
  gcc-c++ \
  git \
@@ -27,7 +26,6 @@ dnf install -y \
  ncurses \
  numactl-devel \
  openssl-devel \
- patch \
  pkgconfig \
  procps \
  python3-devel \

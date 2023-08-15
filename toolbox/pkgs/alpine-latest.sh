@@ -13,7 +13,6 @@ apk add \
  clang15-extra-tools \
  coreutils \
  cunit \
- findutils \
  gawk \
  git \
  libaio-dev \
@@ -27,7 +26,6 @@ apk add \
  ncurses \
  numactl-dev \
  openssl-dev \
- patch \
  perl \
  pkgconf \
  py3-pip \

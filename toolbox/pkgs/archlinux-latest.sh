@@ -12,7 +12,6 @@ pacman -S --noconfirm \
  bash \
  clang \
  cunit \
- findutils \
  git \
  libaio \
  liburing \
@@ -23,7 +22,6 @@ pacman -S --noconfirm \
  ncurses \
  numactl \
  openssl \
- patch \
  pkg-config \
  python-pip \
  python-pipx \

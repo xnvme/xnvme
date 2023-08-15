@@ -12,7 +12,6 @@ dnf install -y \
  bash \
  clang-tools-extra \
  diffutils \
- findutils \
  g++ \
  gcc \
  git \
@@ -27,7 +26,6 @@ dnf install -y \
  ncurses \
  numactl-devel \
  openssl-devel \
- patch \
  pipx \
  pkgconfig \
  procps \
