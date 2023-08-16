@@ -6,6 +6,7 @@
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_MACOS_ENABLED
+#include <mach/mach_error.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <IOKit/storage/nvme/NVMeSMARTLibExternal.h>
 
