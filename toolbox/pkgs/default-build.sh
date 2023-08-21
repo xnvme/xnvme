@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # configure xNVMe
-meson setup builddir
+meson setup builddir --prefix=/usr
 
 # build xNVMe
 meson compile -C builddir
