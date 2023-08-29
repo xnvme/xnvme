@@ -33,6 +33,7 @@ zypper --non-interactive install -y --allow-downgrade \
  python3 \
  python3-devel \
  python3-pip \
+ python3-pipx \
  python3-pyelftools \
  tar
 
@@ -50,9 +51,4 @@ meson setup builddir -Dlibnvme="disabled" -Ddocs="disabled" --prefix=/usr
 meson compile -C builddir
 meson install -C builddir
 cd ..
-
-# Install packages via the Python package-manager (pip)
-python3 -m pip install --upgrade pip
-python3 -m pip install \
- pipx
 
