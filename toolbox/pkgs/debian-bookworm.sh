@@ -18,7 +18,7 @@ apt-get -qy install \
  autoconf \
  bash \
  build-essential \
- clang-format-14 \
+ clang-format \
  findutils \
  git \
  libaio-dev \
