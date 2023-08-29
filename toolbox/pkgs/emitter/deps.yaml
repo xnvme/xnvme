@@ -394,7 +394,7 @@ platforms:
   drop: []
   alt: []
   aux:
-  - [sys, [autoconf, diffutils, g++, gcc, libtool, procps]]
+  - [sys, [autoconf, diffutils, g++, gcc, libtool, procps, zlib-devel]]
 
 - alias: Fedora
   notes: ''
@@ -406,7 +406,7 @@ platforms:
   alt:
   - [src, [liburing]]
   aux:
-  - [sys, [autoconf, diffutils, g++, gcc, libtool, procps]]
+  - [sys, [autoconf, diffutils, g++, gcc, libtool, procps, zlib-devel]]
 
 - alias: Ubuntu Latest
   notes: All tools and libraries are available via system package-manager.
