@@ -179,9 +179,9 @@ jobs:
         - {os: 'archlinux', dh: 'archlinux', ver: 'latest'}
         - {os: 'centos', dh: 'tgagor/centos', ver: 'stream9'}
         - {os: 'centos', dh: 'tgagor/centos', ver: 'stream8'}
+        - {os: 'debian', dh: 'debian', ver: 'trixie'}
         - {os: 'debian', dh: 'debian', ver: 'bookworm'}
         - {os: 'debian', dh: 'debian', ver: 'bullseye'}
-        - {os: 'debian', dh: 'debian', ver: 'buster'}
         - {os: 'fedora', dh: 'fedora', ver: '38'}
         - {os: 'fedora', dh: 'fedora', ver: '37'}
         - {os: 'fedora', dh: 'fedora', ver: '36'}
