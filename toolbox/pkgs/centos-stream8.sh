@@ -44,19 +44,19 @@ make
 make install
 cd ..
 
-# Install Python v3.7.12 from source
-wget https://www.python.org/ftp/python/3.7.12/Python-3.7.12.tgz
-tar xzf Python-3.7.12.tgz
-cd Python-3.7.12
+# Install Python v3.8.18 from source
+wget https://www.python.org/ftp/python/3.8.18/Python-3.8.18.tgz
+tar xzf Python-3.8.18.tgz
+cd Python-3.8.18
 ./configure --enable-optimizations --enable-shared
 make altinstall -j $(nproc)
 cd ..
 
 # Setup handling of python3
-ln -s /usr/local/bin/python3.7 /usr/local/bin/python3
+ln -s /usr/local/bin/python3.8 /usr/local/bin/python3
 hash -d python3 || true
 
-# Avoid error with "libpython3.7m.so.1.0: cannot open shared object file: No such file or directory"
+# Avoid error with "libpython*so.1.0: cannot open shared object file: No such file or directory"
 ldconfig /usr/local/lib
 
 # Install packages via the Python package-manager (pip)

@@ -74,7 +74,7 @@ deps:
 
   python3:
     notes: Required by Meson, xNVMe toolbox-scripts, and xNVMe Python bindings
-    ver: 3.7
+    ver: 3.8
     when: [building, running]
     names:
       default: [python3]
