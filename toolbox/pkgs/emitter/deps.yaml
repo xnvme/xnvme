@@ -346,6 +346,18 @@ platforms:
 - alias: Debian Testing
   notes: ''
   name: debian
+  ver: [trixie]
+  os: linux
+  mng: apt
+  drop: []
+  alt: []
+  aux:
+  - [sys, [autoconf, build-essential, libtool]]
+
+
+- alias: Debian Stable
+  notes: ''
+  name: debian
   ver: [bookworm]
   os: linux
   mng: apt
@@ -354,10 +366,11 @@ platforms:
   aux:
   - [sys, [autoconf, build-essential, libtool]]
 
-- alias: Debian Stable
+
+- alias: Debian Oldstable
   notes: ''
   name: debian
-  ver: [bullseye, buster]
+  ver: [bullseye]
   os: linux
   mng: apt
   drop: []

@@ -219,8 +219,44 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-Debian Testing (bookworm)
--------------------------
+Debian Testing (trixie)
+-----------------------
+
+
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
+
+  sudo ./xnvme/toolbox/pkgs/debian-trixie.sh
+
+Or, run the commands contained within the script manually:
+
+.. literalinclude:: ../../toolbox/pkgs/debian-trixie.sh
+   :language: bash
+   :lines: 8-
+
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-debian-trixie:next``. This Docker-image contains
+   all the software described above.
+
+
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../toolbox/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
+
+
+
+
+
+
+
+
+Debian Stable (bookworm)
+------------------------
 
 
 Install the required toolchain and libraries, with sufficient system privileges
@@ -255,8 +291,8 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-Debian Stable (bullseye)
-------------------------
+Debian Oldstable (bullseye)
+---------------------------
 
 
 Install the required toolchain and libraries, with sufficient system privileges
@@ -274,40 +310,6 @@ Or, run the commands contained within the script manually:
 .. note::
    A Docker-image is provided via ``ghcr.io``, specifically
    ``ghcr.io/xnvme/xnvme-deps-debian-bullseye:next``. This Docker-image contains
-   all the software described above.
-
-
-
-Then go ahead and configure, build and install using ``meson``:
-
-.. literalinclude:: ../../toolbox/pkgs/default-build.sh
-   :language: bash
-   :lines: 2-
-
-
-
-
-
-
-Debian Stable (buster)
-----------------------
-
-
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
-
-  sudo ./xnvme/toolbox/pkgs/debian-buster.sh
-
-Or, run the commands contained within the script manually:
-
-.. literalinclude:: ../../toolbox/pkgs/debian-buster.sh
-   :language: bash
-   :lines: 8-
-
-.. note::
-   A Docker-image is provided via ``ghcr.io``, specifically
-   ``ghcr.io/xnvme/xnvme-deps-debian-buster:next``. This Docker-image contains
    all the software described above.
 
 
