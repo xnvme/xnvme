@@ -10,6 +10,7 @@ zypper --non-interactive refresh
 # Install packages via the system package-manager (zypper)
 zypper --non-interactive install -y --allow-downgrade \
  autoconf \
+ awk \
  bash \
  clang-tools \
  cunit-devel \

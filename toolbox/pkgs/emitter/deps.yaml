@@ -456,7 +456,7 @@ platforms:
   drop: []
   alt: []
   aux:
-  - [sys, [autoconf, gcc, gcc-c++, gzip, libtool, tar]]
+  - [sys, [autoconf, gcc, gcc-c++, gzip, libtool, tar, awk]]
 
 - alias: openSUSE
   notes: ''
