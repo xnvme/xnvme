@@ -312,24 +312,6 @@ platforms:
   aux:
   - [sys, [base-devel, libutil-linux]]
 
-- alias: CentOS
-  notes: |
-    The legacy distribution, does not support ``async=io_uring``  and
-    ``async=io_uring_cmd``, as both kernel and libc are too old to support it.
-    User-space NVMe-drivers (SPDK and libvfn) are the way forward for efficient
-    here.
-  name: centos
-  ver: [centos7]
-  os: linux
-  mng: yum
-  drop: [liburing]
-  alt:
-  - [src, [python3, nasm]]
-  - [pip, [elftools, meson, pipx]] # Install elftools via pip as Python needs to be installed anyway
-  - [src, [libvfn]]
-  aux:
-  - [sys, [autoconf, glibc-static, libffi-devel, libtool, unzip, wget, zlib-devel]]
-
 - alias: CentOS Stream 8
   notes: |
     The build is configured to install with ``--prefix=/usr`` this is
