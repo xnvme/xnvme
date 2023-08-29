@@ -454,8 +454,7 @@ platforms:
   os: linux
   mng: zypper
   drop: []
-  alt:
-  - [pip, [pipx]]
+  alt: []
   aux:
   - [sys, [autoconf, gcc, gcc-c++, gzip, libtool, tar]]
 
