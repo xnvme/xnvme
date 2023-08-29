@@ -117,6 +117,7 @@ deps:
     purpose: {be: [spdk, vfio]}
     names:
       apt: [python3-pyelftools]
+      apk: [py3-elftools]
       default: [pyelftools]
       dnf: [python3-pyelftools]
       emerge: [dev-python/pyelftools]
