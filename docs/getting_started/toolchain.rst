@@ -433,25 +433,25 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-Ubuntu Latest (kinetic)
------------------------
+Ubuntu Latest (lunar)
+---------------------
 
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
 run this from the root of the **xNVMe** by invoking::
 
-  sudo ./xnvme/toolbox/pkgs/ubuntu-kinetic.sh
+  sudo ./xnvme/toolbox/pkgs/ubuntu-lunar.sh
 
 Or, run the commands contained within the script manually:
 
-.. literalinclude:: ../../toolbox/pkgs/ubuntu-kinetic.sh
+.. literalinclude:: ../../toolbox/pkgs/ubuntu-lunar.sh
    :language: bash
    :lines: 8-
 
 .. note::
    A Docker-image is provided via ``ghcr.io``, specifically
-   ``ghcr.io/xnvme/xnvme-deps-ubuntu-kinetic:next``. This Docker-image contains
+   ``ghcr.io/xnvme/xnvme-deps-ubuntu-lunar:next``. This Docker-image contains
    all the software described above.
 
 
