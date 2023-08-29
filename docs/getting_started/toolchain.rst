@@ -140,49 +140,6 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-CentOS (centos7)
-----------------
-
-
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
-
-  sudo ./xnvme/toolbox/pkgs/centos-centos7.sh
-
-Or, run the commands contained within the script manually:
-
-.. literalinclude:: ../../toolbox/pkgs/centos-centos7.sh
-   :language: bash
-   :lines: 8-
-
-.. note::
-   A Docker-image is provided via ``ghcr.io``, specifically
-   ``ghcr.io/xnvme/xnvme-deps-centos-centos7:next``. This Docker-image contains
-   all the software described above.
-
-
-
-Then go ahead and configure, build and install using ``meson``:
-
-.. literalinclude:: ../../toolbox/pkgs/centos-centos7-build.sh
-   :language: bash
-   :lines: 2-
-
-
-.. note::
-   The legacy distribution, does not support ``async=io_uring``  and
-   ``async=io_uring_cmd``, as both kernel and libc are too old to support it.
-   User-space NVMe-drivers (SPDK and libvfn) are the way forward for efficient
-   here.
-
-
-
-
-
-
-
-
 CentOS Stream 8 (stream8)
 -------------------------
 
@@ -778,6 +735,43 @@ Then go ahead and configure, build and install using ``meson``:
    Interfaces; libaio, liburing, and libvfn are not supported on FreeBSD.
 
 
+
+
+
+
+
+macOS (13)
+----------
+
+
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
+
+  sudo ./xnvme/toolbox/pkgs/macos-13.sh
+
+Or, run the commands contained within the script manually:
+
+.. literalinclude:: ../../toolbox/pkgs/macos-13.sh
+   :language: bash
+   :lines: 8-
+
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-macos-13:next``. This Docker-image contains
+   all the software described above.
+
+
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../toolbox/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
+
+
+.. note::
+   Interfaces; libaio, liburing, libvfn, and SPDK are not supported on macOS.
 
 
 
