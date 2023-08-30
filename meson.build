@@ -6,7 +6,7 @@ project(
   'xnvme',
   'c',
   version: '0.7.0',
-  license: 'APACHE',
+  license: 'BSD-3-Clause',
   default_options: [
     'c_std=gnu11',
     'warning_level=2',
