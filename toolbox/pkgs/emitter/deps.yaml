@@ -157,6 +157,7 @@ deps:
     names:
       default: [liburing]
       apt: [liburing-dev]
+      apk: [liburing-dev]
       dnf: [liburing, liburing-devel]
       emerge: [sys-libs/liburing]
       zypper: [liburing-devel]
@@ -289,10 +290,9 @@ platforms:
   ver: [latest]
   os: linux
   mng: apk
-  drop: [elftools, libvfn]
+  drop: [elftools]
   alt:
   - [pip, [pipx]]
-  - [src, [liburing]]
   aux:
   - [sys, [bsd-compat-headers, build-base, coreutils, gawk, linux-headers, musl-dev, perl, util-linux-dev]]
 
