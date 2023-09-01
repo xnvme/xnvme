@@ -192,7 +192,6 @@ deps:
     names:
       default: [nasm]
       emerge: [dev-lang/nasm]
-      src: [nasm]
 
   numactl:
     notes: Required by SPDK
