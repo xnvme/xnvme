@@ -114,8 +114,14 @@ def emit_scripts(templates):
     """Emit shell scripts for each platform"""
 
     for platform, ver, apps, deps in load_deps_transformed():
-        shell = "batch" if platform["os"] in ["windows"] else "shell"
-        suffix = ".bat" if shell == "batch" else ".sh"
+        shell = "bash"
+        suffix = ".sh"
+        if platform["os"] in ["windows"]:
+            shell = "batch"
+            suffix = ".bat"
+        elif platform["os"] in ["freebsd"]:
+            shell = "tcsh"
+
         ident = f"{platform['name']}-{ver}"
         script_filename = Path(__file__).parent.with_name(ident + suffix)
 

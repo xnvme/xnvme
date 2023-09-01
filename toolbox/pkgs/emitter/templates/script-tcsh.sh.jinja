@@ -1,0 +1,6 @@
+#!/bin/tcsh
+# Query the linker version
+ld -v || true
+
+# Query the (g)libc version
+ldd --version || true
