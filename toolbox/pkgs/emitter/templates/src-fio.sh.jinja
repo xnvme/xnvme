@@ -1,15 +1,16 @@
 #
-# Clone, build and install fio v3.34 with the xNVMe I/O engine
+# Clone, build, configure, and install fio v3.34 with the xNVMe I/O engine
 #
 # Assumptions:
 #
 # - xNVMe is installed on the system (the fio build-system picks up xNVMe)
 # - These commands are executed with sufficient privileges (sudo/root)
 #
-git clone https://github.com/axboe/fio.git
-cd fio
+git clone https://github.com/axboe/fio.git toolbox/third-party/fio/repository
+
+pushd toolbox/third-party/fio/repository
 git checkout fio-3.34
 ./configure
-make
+make -j
 make install
-cd ..
+popd
