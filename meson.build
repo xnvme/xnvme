@@ -148,8 +148,6 @@ endif
 # Scripts
 subdir('toolbox')
 
-tb_library_bundler = files('toolbox'/'library_bundler.py')
-
 #
 # Third-party dependencies
 #
