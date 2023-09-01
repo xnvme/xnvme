@@ -39,10 +39,6 @@ Files: toolbox/workflow/*
 Copyright: Samsung Electronics Co., Ltd
 License: BSD-3-Clause
 
-Files: toolbox/cijoe-pkg-xnvme/*
-Copyright: Samsung Electronics Co., Ltd
-License: BSD-3-Clause
-
 Files: python/*
 Copyright: Samsung Electronics Co., Ltd
 License: BSD-3-Clause
