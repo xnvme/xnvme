@@ -108,7 +108,7 @@ conf = configure_file(
 )
 conf_inc = [ include_directories('.') ]
 if is_windows
-  conf_inc += [ include_directories('third-party'/'windows') ]
+  conf_inc += [ include_directories('toolbox' / 'third-party' / 'windows') ]
 endif
 
 rpm_conf = configuration_data()
