@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/tcsh
 # Query the linker version
 ld -v || true
 

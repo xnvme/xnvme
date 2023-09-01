@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # Query the linker version
 ld -v || true
 
