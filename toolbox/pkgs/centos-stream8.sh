@@ -36,21 +36,41 @@ dnf install -y \
  zlib-devel
 
 # Clone, build and install liburing v2.2
-git clone https://github.com/axboe/liburing.git
-cd liburing
+#
+# Assumptions:
+#
+# - Dependencies for building liburing are met (system packages etc.)
+# - Commands are executed with sufficient privileges (sudo/root)
+#
+git clone https://github.com/axboe/liburing.git toolbox/third-party/liburing/repository
+
+pushd toolbox/third-party/liburing/repository
 git checkout liburing-2.2
 ./configure --libdir=/usr/lib64 --libdevdir=/usr/lib64
 make
 make install
-cd ..
+popd
 
-# Install Python v3.8.18 from source
+#
+# Download, configure, and install Python v3.8.18
+#
+# Assumptions:
+#
+# - Dependencies for building Python3 are met (system packages etc.)
+# - Commands are executed with sufficient privileges (sudo/root)
+#
+# Download and extract
+pushd /tmp
 wget https://www.python.org/ftp/python/3.8.18/Python-3.8.18.tgz
 tar xzf Python-3.8.18.tgz
-cd Python-3.8.18
+popd
+mv /tmp/Python-3.8.18 toolbox/third-party/python3/src
+
+# Configure and build
+pushd toolbox/third-party/python3/src
 ./configure --enable-optimizations --enable-shared
 make altinstall -j $(nproc)
-cd ..
+popd
 
 # Setup handling of python3
 ln -s /usr/local/bin/python3.8 /usr/local/bin/python3
@@ -72,13 +92,15 @@ python3 -m pip install \
 #
 # Assumptions:
 #
-# - These commands are executed with sufficient privileges (sudo/root)
+# - Dependencies for building libvfn are met (system packages etc.)
+# - Commands are executed with sufficient privileges (sudo/root)
 #
-git clone https://github.com/OpenMPDK/libvfn.git
-cd libvfn
+git clone https://github.com/OpenMPDK/libvfn.git toolbox/third-party/libvfn/repository
+
+pushd toolbox/third-party/libvfn/repository
 git checkout v2.0.2
 meson setup builddir -Dlibnvme="disabled" -Ddocs="disabled" --prefix=/usr
 meson compile -C builddir
 meson install -C builddir
-cd ..
+popd
 
