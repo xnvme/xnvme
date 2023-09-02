@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-fs = import('fs')
-
 tests_prefix = 'xnvme_tests_'
 tests_source = [
   'async_intf.c',

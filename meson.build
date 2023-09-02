@@ -19,6 +19,7 @@ project(
   meson_version: '>=0.58'
 )
 pconf = import('pkgconfig')
+fs = import('fs')
 
 #
 # Pre-flight check, operating system and compiler arguments

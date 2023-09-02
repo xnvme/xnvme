@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-fs = import('fs')
-
 tools_source = [
   'lblk.c',
   'xdd.c',
