@@ -85,10 +85,26 @@ conf_data.set('XNVME_BE_LINUX_ENABLED', is_linux)
 conf_data.set('XNVME_BE_LINUX_BLOCK_ENABLED', is_linux ? cc.has_header('linux/blkzoned.h') : false)
 conf_data.set('XNVME_BE_LINUX_BLOCK_ZONED_ENABLED', is_linux ? cc.has_header('linux/blkzoned.h') : false)
 
-conf_data.set('XNVME_BE_LINUX_LIBAIO_ENABLED', is_linux and get_option('with-libaio'))
-conf_data.set('XNVME_BE_LINUX_LIBURING_ENABLED', is_linux and get_option('with-liburing'))
+aio_dep = cc.find_library(
+  'aio',
+  has_headers: ['libaio.h'],
+  required: get_option('with-libaio'),
+)
+conf_data.set('XNVME_BE_LINUX_LIBAIO_ENABLED', aio_dep.found())
 
-conf_data.set('XNVME_BE_LINUX_VFIO_ENABLED', is_linux and get_option('with-libvfn'))
+uring_dep = dependency(
+  'liburing',
+  version: '>=2.2',
+  required: get_option('with-liburing'),
+)
+conf_data.set('XNVME_BE_LINUX_LIBURING_ENABLED', uring_dep.found())
+
+libvfn_dep = dependency(
+  'libvfn',
+  version: '>=2.0.2',
+  required: get_option('with-libvfn')
+)
+conf_data.set('XNVME_BE_LINUX_VFIO_ENABLED', libvfn_dep.found())
 
 conf_data.set('XNVME_BE_MACOS_ENABLED', is_darwin)
 
@@ -164,21 +180,6 @@ if not cc.has_function('clock_gettime', prefix: '#include <time.h>', dependencie
   error('clock_gettime not found')
 endif
 
-aio_dep = cc.find_library(
-  'aio',
-  has_headers: ['libaio.h'],
-  required: conf_data.get('XNVME_BE_LINUX_LIBAIO_ENABLED'),
-)
-
-uring_dep = dependency(
-  'liburing',
-  version: '>=2.2',
-  required: false,
-)
-if conf_data.get('XNVME_BE_LINUX_LIBURING_ENABLED') and not uring_dep.found()
-  error('missing liburing >= 2.2; install it or point PKG_CONFIG_PATH to where it is located')
-endif
-
 spdk_dep = dependency(
   '_spdk',
   required: conf_data.get('XNVME_BE_SPDK_ENABLED')
@@ -193,11 +194,6 @@ iokit_dep = dependency(
   'appleframeworks',
   modules: 'IOKit',
   required: is_darwin
-)
-libvfn_dep = dependency(
-  'libvfn',
-  version: '>=2.0.2',
-  required: conf_data.get('XNVME_BE_LINUX_VFIO_ENABLED')
 )
 
 # Headers

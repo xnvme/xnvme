@@ -103,9 +103,9 @@ endef
 config-uring:
 	@echo "## xNVMe: config-uring"
 	CC=$(CC) CXX=$(CXX) $(MESON) setup $(BUILD_DIR) \
-	   -Dwith-spdk=false \
-	   -Dwith-liburing=true \
-	   -Dwith-libvfn=false
+	   -Dwith-spdk=disabled \
+	   -Dwith-liburing=enabled \
+	   -Dwith-libvfn=disabled
 	@echo "## xNVMe: config-uring [DONE]"
 
 define config-libvfn-help
@@ -115,9 +115,9 @@ endef
 config-libvfn:
 	@echo "## xNVMe: config-libvfn"
 	CC=$(CC) CXX=$(CXX) $(MESON) setup $(BUILD_DIR) \
-	   -Dwith-spdk=false \
-	   -Dwith-liburing=false \
-	   -Dwith-libvfn=true
+	   -Dwith-spdk=disabled \
+	   -Dwith-liburing=disabled \
+	   -Dwith-libvfn=enabled
 	@echo "## xNVMe: config-uring [DONE]"
 
 define config-slim-help
@@ -127,9 +127,9 @@ endef
 config-slim:
 	@echo "## xNVMe: make config-slim"
 	CC=$(CC) CXX=$(CXX) $(MESON) setup $(BUILD_DIR) \
-	   -Dwith-spdk=false \
-	   -Dwith-liburing=false \
-	   -Dwith-libvfn=false
+	   -Dwith-spdk=disabled \
+	   -Dwith-liburing=disabled \
+	   -Dwith-libvfn=disabled
 	@echo "## xNVMe: make config-slim [DONE]"
 
 define docker-help
@@ -341,7 +341,7 @@ endef
 .PHONY: gen-src-archive
 gen-src-archive:
 	@echo "## xNVMe: make gen-src-archive"
-	$(MESON) setup $(BUILD_DIR) -Dbuild_subprojects=false -Dwith-liburing=false -Dwith-libvfn=false
+	$(MESON) setup $(BUILD_DIR) -Dbuild_subprojects=false -Dwith-liburing=disabled -Dwith-libvfn=disabled
 	$(MESON) dist -C $(BUILD_DIR) --include-subprojects --no-tests --formats gztar
 	@echo "## xNVMe: make gen-src-archive [DONE]"
 
