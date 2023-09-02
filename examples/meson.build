@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-fs = import('fs')
-
 examples_source = [
   'xnvme_dev.c',
   'xnvme_enum.c',
