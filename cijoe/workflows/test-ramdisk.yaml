@@ -18,4 +18,4 @@ steps:
 - name: test_ramdisk
   uses: core.testrunner
   with:
-    args: '-k "ramdisk and not hugepage" tests'
+    args: '-k "ramdisk and not hugepage or xnvme_library_info" tests'
