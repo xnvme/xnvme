@@ -5,41 +5,44 @@ ld -v || true
 # Query the (g)libc version
 ldd --version || true
 
-zypper --non-interactive refresh
+# This repo has CUnit-devel + meson
+dnf install -y 'dnf-command(config-manager)'
+dnf config-manager --set-enabled ol9_codeready_builder
 
-# Install packages via the system package-manager (zypper)
-zypper --non-interactive install -y --allow-downgrade \
+# Install packages via the system package-manager (dnf)
+dnf install -y \
+ CUnit-devel \
  autoconf \
  bash \
- clang-tools \
- cunit-devel \
+ clang-tools-extra \
+ diffutils \
  findutils \
  gcc \
  gcc-c++ \
  git \
- gzip \
  libaio-devel \
- libnuma-devel \
- libopenssl-devel \
  libtool \
  libuuid-devel \
  make \
+ meson \
  nasm \
  ncurses \
+ numactl-devel \
+ openssl-devel \
  patch \
- pkg-config \
- python3 \
+ pkgconfig \
+ procps \
  python3-devel \
  python3-pip \
- tar
+ python3-pyelftools \
+ unzip \
+ wget \
+ zlib-devel
 
 # Install packages via the Python package-manager (pip)
 python3 -m pip install --upgrade pip
 python3 -m pip install \
- meson \
- ninja \
- pipx \
- pyelftools
+ pipx
 
 # Clone, build and install liburing v2.2
 #
