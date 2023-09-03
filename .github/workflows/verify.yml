@@ -271,17 +271,17 @@ jobs:
 
     # Setup Python virtual-environment for cijoe and Python xNVMe bindings to run ramdisk testing
     - name: CIJOE, setup pipx environment
-      if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
+      if: (!contains('focal', matrix.container.ver))
       run: |
         pushd cijoe && make all && popd
 
     - name: CIJOE, check that it is available
-      if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
+      if: (!contains('focal', matrix.container.ver))
       run: |
         cijoe -r
 
     - name: Python-bindings (ctypes), install and test
-      if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
+      if: (!contains('focal', matrix.container.ver))
       run: |
         python3 -m pipx inject cijoe /tmp/artifacts/xnvme-py-sdist.tar.gz
         pytest --pyargs xnvme.ctypes_bindings
@@ -292,7 +292,7 @@ jobs:
     # Skipping on distros with too old gcc/clang to build fio, and too old a Python to run cijoe (requires 3.9)
     #
     - name: Install fio
-      if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
+      if: (!contains('focal', matrix.container.ver))
       run: |
         cd /tmp
         git clone https://github.com/axboe/fio.git
@@ -303,8 +303,7 @@ jobs:
         make install
 
     - name: CIJOE, run test-ramdisk.yaml
-      if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
-      continue-on-error: true
+      if: (!contains('focal', matrix.container.ver))
       run: |
         cd cijoe && cijoe \
         --config "configs/ramdisk.toml" \
@@ -312,13 +311,12 @@ jobs:
         --output "test-${{ matrix.container.os }}-${{ matrix.container.ver }}"
 
     - name: CIJOE, upload test-ramdisk-report
+      if: always() && (!contains('focal', matrix.container.ver))
       uses: actions/upload-artifact@v3.1.1
-      if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
       with:
         name: test-ramdisk-${{ matrix.container.os }}-${{ matrix.container.ver }}
         path: cijoe/test-${{ matrix.container.os }}-${{ matrix.container.ver }}/*
         if-no-files-found: error
-
   #
   # Build on macOS
   #
