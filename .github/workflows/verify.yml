@@ -393,17 +393,14 @@ jobs:
 
     # Setup Python virtual-environment for cijoe and Python xNVMe bindings to run ramdisk testing
     - name: CIJOE, setup pipx environment
-      if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
       run: |
         pushd cijoe && make all && popd
 
     - name: CIJOE, check that it is available
-      if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
       run: |
         cijoe -r
 
     - name: Python-bindings (ctypes), install and test
-      if: (!contains('centos7 opensuse buster focal 15.4 15.3 gentoo stream8', matrix.container.ver))
       run: |
         python3 -m pipx inject cijoe /tmp/artifacts/xnvme-py-sdist.tar.gz
         pytest --pyargs xnvme.ctypes_bindings
