@@ -123,6 +123,7 @@ deps:
       emerge: [dev-python/pyelftools]
       pacman: [python-pyelftools]
       pip: [pyelftools]
+      pipx: [pyelftools]
       pkg: [devel/py-pyelftools]
       yum: [python-pyelftools]
       zypper: [python3-pyelftools]
@@ -311,23 +312,32 @@ platforms:
   aux:
   - [sys, [base-devel, libutil-linux]]
 
-- alias: CentOS Stream 8
-  notes: |
-    The build is configured to install with ``--prefix=/usr`` this is
-    intentional such the the ``pkg-config`` files end up in the default search
-    path on the system. If you do not want this, then remove ``--prefix=/usr``
-    and adjust your ``$PKG_CONFIG_PATH`` accordingly.
-  name: centos
-  ver: [stream8]
+- alias: Oracle Linux 9
+  notes: ''
+  name: oraclelinux
+  ver: ['9']
   os: linux
   mng: dnf
-  drop: [clang-format]
+  drop: []
   alt:
-  - [src, [python3, liburing]]
-  - [pip, [elftools, meson, pipx]]
-  - [src, [libvfn]]
+  - [pip, [pipx]]
+  - [src, [liburing, libvfn]]
   aux:
-  - [sys, [autoconf, diffutils, gcc, gcc-c++, libffi-devel, libtool, procps, unzip, wget, zlib-devel]]
+  - [sys, [autoconf, diffutils, gcc, gcc-c++, libtool, procps, unzip, wget, zlib-devel]]
+
+
+- alias: Rocky Linux 9.2
+  notes: ''
+  name: rockylinux
+  ver: ['9.2']
+  os: linux
+  mng: dnf
+  drop: []
+  alt:
+  - [pip, [pipx]]
+  - [src, [liburing, libvfn]]
+  aux:
+  - [sys, [autoconf, diffutils, gcc, gcc-c++, libtool, procps, unzip, wget, zlib-devel]]
 
 - alias: CentOS Stream 9
   notes: ''
@@ -456,19 +466,6 @@ platforms:
   alt: []
   aux:
   - [sys, [autoconf, gcc, gcc-c++, gzip, libtool, tar, awk]]
-
-- alias: openSUSE
-  notes: ''
-  name: opensuse
-  ver: ['leap-15.4', 'leap-15.3']
-  os: linux
-  mng: zypper
-  drop: []
-  alt:
-  - [pip, [meson, elftools, pipx]]
-  - [src, [liburing, libvfn]]
-  aux:
-  - [sys, [autoconf, gcc, gcc-c++, gzip, libtool, tar]]
 
 - alias: FreeBSD
   notes: Interfaces; libaio, liburing, and libvfn are not supported on FreeBSD.

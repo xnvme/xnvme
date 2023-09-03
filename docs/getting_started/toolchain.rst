@@ -140,41 +140,70 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-CentOS Stream 8 (stream8)
--------------------------
+Oracle Linux 9 (9)
+------------------
 
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
 run this from the root of the **xNVMe** by invoking::
 
-  sudo ./xnvme/toolbox/pkgs/centos-stream8.sh
+  sudo ./xnvme/toolbox/pkgs/oraclelinux-9.sh
 
 Or, run the commands contained within the script manually:
 
-.. literalinclude:: ../../toolbox/pkgs/centos-stream8.sh
+.. literalinclude:: ../../toolbox/pkgs/oraclelinux-9.sh
    :language: bash
    :lines: 8-
 
 .. note::
    A Docker-image is provided via ``ghcr.io``, specifically
-   ``ghcr.io/xnvme/xnvme-deps-centos-stream8:next``. This Docker-image contains
+   ``ghcr.io/xnvme/xnvme-deps-oraclelinux-9:next``. This Docker-image contains
    all the software described above.
 
 
 
 Then go ahead and configure, build and install using ``meson``:
 
-.. literalinclude:: ../../toolbox/pkgs/centos-stream8-build.sh
+.. literalinclude:: ../../toolbox/pkgs/oraclelinux-9-build.sh
    :language: bash
    :lines: 2-
 
 
+
+
+
+
+
+
+Rocky Linux 9.2 (9.2)
+---------------------
+
+
+Install the required toolchain and libraries, with sufficient system privileges
+(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
+run this from the root of the **xNVMe** by invoking::
+
+  sudo ./xnvme/toolbox/pkgs/rockylinux-9.2.sh
+
+Or, run the commands contained within the script manually:
+
+.. literalinclude:: ../../toolbox/pkgs/rockylinux-9.2.sh
+   :language: bash
+   :lines: 8-
+
 .. note::
-   The build is configured to install with ``--prefix=/usr`` this is
-   intentional such the the ``pkg-config`` files end up in the default search
-   path on the system. If you do not want this, then remove ``--prefix=/usr``
-   and adjust your ``$PKG_CONFIG_PATH`` accordingly.
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-rockylinux-9.2:next``. This Docker-image contains
+   all the software described above.
+
+
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../toolbox/pkgs/rockylinux-9.2-build.sh
+   :language: bash
+   :lines: 2-
 
 
 
@@ -626,76 +655,6 @@ Then go ahead and configure, build and install using ``meson``:
 
 .. note::
    All tools and libraries are available via system package-manager.
-
-
-
-
-
-
-
-openSUSE (leap-15.4)
---------------------
-
-
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
-
-  sudo ./xnvme/toolbox/pkgs/opensuse-leap-15.4.sh
-
-Or, run the commands contained within the script manually:
-
-.. literalinclude:: ../../toolbox/pkgs/opensuse-leap-15.4.sh
-   :language: bash
-   :lines: 8-
-
-.. note::
-   A Docker-image is provided via ``ghcr.io``, specifically
-   ``ghcr.io/xnvme/xnvme-deps-opensuse-leap-15.4:next``. This Docker-image contains
-   all the software described above.
-
-
-
-Then go ahead and configure, build and install using ``meson``:
-
-.. literalinclude:: ../../toolbox/pkgs/default-build.sh
-   :language: bash
-   :lines: 2-
-
-
-
-
-
-
-openSUSE (leap-15.3)
---------------------
-
-
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
-
-  sudo ./xnvme/toolbox/pkgs/opensuse-leap-15.3.sh
-
-Or, run the commands contained within the script manually:
-
-.. literalinclude:: ../../toolbox/pkgs/opensuse-leap-15.3.sh
-   :language: bash
-   :lines: 8-
-
-.. note::
-   A Docker-image is provided via ``ghcr.io``, specifically
-   ``ghcr.io/xnvme/xnvme-deps-opensuse-leap-15.3:next``. This Docker-image contains
-   all the software described above.
-
-
-
-Then go ahead and configure, build and install using ``meson``:
-
-.. literalinclude:: ../../toolbox/pkgs/default-build.sh
-   :language: bash
-   :lines: 2-
-
 
 
 

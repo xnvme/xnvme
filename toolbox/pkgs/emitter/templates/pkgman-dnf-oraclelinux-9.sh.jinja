@@ -1,6 +1,6 @@
-# This repos has CUnit-devel
-dnf install -y 'dnf-command(config-manager)' || true
-dnf config-manager --set-enabled powertools || true
+# This repo has CUnit-devel + meson
+dnf install -y 'dnf-command(config-manager)'
+dnf config-manager --set-enabled ol9_codeready_builder
 
 # Install packages via the system package-manager (dnf)
 dnf install -y \
