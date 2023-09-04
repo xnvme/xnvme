@@ -14,7 +14,7 @@ steps:
   uses: qemu.guest_init_using_bootimage
 
 - name: start
-  uses: qemu.guest_start_nvme
+  uses: xnvme_guest_start_nvme
 
 - name: sysinfo
   uses: linux.sysinfo
