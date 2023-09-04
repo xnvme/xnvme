@@ -47,13 +47,8 @@ installed from source.
 Package-managers: apk, pkg, dnf, yum, pacman, apt, aptitude, apt-get, pkg,
 choco, brew.
 
-
-
-
-
 Alpine Linux (latest)
 ---------------------
-
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
@@ -71,8 +66,6 @@ Or, run the commands contained within the script manually:
    A Docker-image is provided via ``ghcr.io``, specifically
    ``ghcr.io/xnvme/xnvme-deps-alpine-latest:next``. This Docker-image contains
    all the software described above.
-
-
 
 Then go ahead and configure, build and install using ``meson``:
 
@@ -92,14 +85,8 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-
-
-
-
-
 Arch Linux (latest)
 -------------------
-
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
@@ -118,8 +105,6 @@ Or, run the commands contained within the script manually:
    ``ghcr.io/xnvme/xnvme-deps-archlinux-latest:next``. This Docker-image contains
    all the software described above.
 
-
-
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/archlinux-latest-build.sh
@@ -135,14 +120,8 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-
-
-
-
-
 Oracle Linux 9 (9)
 ------------------
-
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
@@ -161,8 +140,6 @@ Or, run the commands contained within the script manually:
    ``ghcr.io/xnvme/xnvme-deps-oraclelinux-9:next``. This Docker-image contains
    all the software described above.
 
-
-
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/oraclelinux-9-build.sh
@@ -171,14 +148,8 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-
-
-
-
-
 Rocky Linux 9.2 (9.2)
 ---------------------
-
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
@@ -197,8 +168,6 @@ Or, run the commands contained within the script manually:
    ``ghcr.io/xnvme/xnvme-deps-rockylinux-9.2:next``. This Docker-image contains
    all the software described above.
 
-
-
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/rockylinux-9.2-build.sh
@@ -207,14 +176,8 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-
-
-
-
-
 CentOS Stream 9 (stream9)
 -------------------------
-
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
@@ -233,8 +196,6 @@ Or, run the commands contained within the script manually:
    ``ghcr.io/xnvme/xnvme-deps-centos-stream9:next``. This Docker-image contains
    all the software described above.
 
-
-
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/centos-stream9-build.sh
@@ -243,14 +204,8 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-
-
-
-
-
 Debian Testing (trixie)
 -----------------------
-
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
@@ -269,8 +224,6 @@ Or, run the commands contained within the script manually:
    ``ghcr.io/xnvme/xnvme-deps-debian-trixie:next``. This Docker-image contains
    all the software described above.
 
-
-
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/default-build.sh
@@ -279,14 +232,8 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-
-
-
-
-
 Debian Stable (bookworm)
 ------------------------
-
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
@@ -305,8 +252,6 @@ Or, run the commands contained within the script manually:
    ``ghcr.io/xnvme/xnvme-deps-debian-bookworm:next``. This Docker-image contains
    all the software described above.
 
-
-
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/default-build.sh
@@ -315,14 +260,8 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-
-
-
-
-
 Debian Oldstable (bullseye)
 ---------------------------
-
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
@@ -341,8 +280,6 @@ Or, run the commands contained within the script manually:
    ``ghcr.io/xnvme/xnvme-deps-debian-bullseye:next``. This Docker-image contains
    all the software described above.
 
-
-
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/default-build.sh
@@ -351,14 +288,8 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-
-
-
-
-
 Fedora (38)
 -----------
-
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
@@ -377,8 +308,6 @@ Or, run the commands contained within the script manually:
    ``ghcr.io/xnvme/xnvme-deps-fedora-38:next``. This Docker-image contains
    all the software described above.
 
-
-
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/fedora-38-build.sh
@@ -387,12 +316,8 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-
-
-
 Fedora (37)
 -----------
-
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
@@ -411,8 +336,6 @@ Or, run the commands contained within the script manually:
    ``ghcr.io/xnvme/xnvme-deps-fedora-37:next``. This Docker-image contains
    all the software described above.
 
-
-
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/fedora-37-build.sh
@@ -421,14 +344,8 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-
-
-
-
-
 Fedora (36)
 -----------
-
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
@@ -447,8 +364,6 @@ Or, run the commands contained within the script manually:
    ``ghcr.io/xnvme/xnvme-deps-fedora-36:next``. This Docker-image contains
    all the software described above.
 
-
-
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/fedora-36-build.sh
@@ -457,14 +372,8 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-
-
-
-
-
 Ubuntu Latest (lunar)
 ---------------------
-
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
@@ -483,8 +392,6 @@ Or, run the commands contained within the script manually:
    ``ghcr.io/xnvme/xnvme-deps-ubuntu-lunar:next``. This Docker-image contains
    all the software described above.
 
-
-
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/default-build.sh
@@ -496,14 +403,8 @@ Then go ahead and configure, build and install using ``meson``:
    All tools and libraries are available via system package-manager.
 
 
-
-
-
-
-
 Ubuntu LTS (jammy)
 ------------------
-
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
@@ -522,8 +423,6 @@ Or, run the commands contained within the script manually:
    ``ghcr.io/xnvme/xnvme-deps-ubuntu-jammy:next``. This Docker-image contains
    all the software described above.
 
-
-
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/default-build.sh
@@ -535,12 +434,8 @@ Then go ahead and configure, build and install using ``meson``:
    Installing liburing from source and meson + ninja via pip
 
 
-
-
-
 Ubuntu LTS (focal)
 ------------------
-
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
@@ -559,8 +454,6 @@ Or, run the commands contained within the script manually:
    ``ghcr.io/xnvme/xnvme-deps-ubuntu-focal:next``. This Docker-image contains
    all the software described above.
 
-
-
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/default-build.sh
@@ -572,14 +465,8 @@ Then go ahead and configure, build and install using ``meson``:
    Installing liburing from source and meson + ninja via pip
 
 
-
-
-
-
-
 Gentoo (latest)
 ---------------
-
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
@@ -597,8 +484,6 @@ Or, run the commands contained within the script manually:
    A Docker-image is provided via ``ghcr.io``, specifically
    ``ghcr.io/xnvme/xnvme-deps-gentoo-latest:next``. This Docker-image contains
    all the software described above.
-
-
 
 Then go ahead and configure, build and install using ``meson``:
 
@@ -618,14 +503,8 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-
-
-
-
-
 openSUSE (tumbleweed-latest)
 ----------------------------
-
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
@@ -644,8 +523,6 @@ Or, run the commands contained within the script manually:
    ``ghcr.io/xnvme/xnvme-deps-opensuse-tumbleweed-latest:next``. This Docker-image contains
    all the software described above.
 
-
-
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/default-build.sh
@@ -657,14 +534,8 @@ Then go ahead and configure, build and install using ``meson``:
    All tools and libraries are available via system package-manager.
 
 
-
-
-
-
-
 FreeBSD (13)
 ------------
-
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
@@ -683,8 +554,6 @@ Or, run the commands contained within the script manually:
    ``ghcr.io/xnvme/xnvme-deps-freebsd-13:next``. This Docker-image contains
    all the software described above.
 
-
-
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/default-build.sh
@@ -696,14 +565,8 @@ Then go ahead and configure, build and install using ``meson``:
    Interfaces; libaio, liburing, and libvfn are not supported on FreeBSD.
 
 
-
-
-
-
-
 macOS (13)
 ----------
-
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
@@ -722,8 +585,6 @@ Or, run the commands contained within the script manually:
    ``ghcr.io/xnvme/xnvme-deps-macos-13:next``. This Docker-image contains
    all the software described above.
 
-
-
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/default-build.sh
@@ -735,12 +596,8 @@ Then go ahead and configure, build and install using ``meson``:
    Interfaces; libaio, liburing, libvfn, and SPDK are not supported on macOS.
 
 
-
-
-
 macOS (12)
 ----------
-
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
@@ -759,8 +616,6 @@ Or, run the commands contained within the script manually:
    ``ghcr.io/xnvme/xnvme-deps-macos-12:next``. This Docker-image contains
    all the software described above.
 
-
-
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/macos-12-build.sh
@@ -772,12 +627,8 @@ Then go ahead and configure, build and install using ``meson``:
    Interfaces; libaio, liburing, libvfn, and SPDK are not supported on macOS.
 
 
-
-
-
 macOS (11)
 ----------
-
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
@@ -796,8 +647,6 @@ Or, run the commands contained within the script manually:
    ``ghcr.io/xnvme/xnvme-deps-macos-11:next``. This Docker-image contains
    all the software described above.
 
-
-
 Then go ahead and configure, build and install using ``meson``:
 
 .. literalinclude:: ../../toolbox/pkgs/macos-11-build.sh
@@ -807,11 +656,6 @@ Then go ahead and configure, build and install using ``meson``:
 
 .. note::
    Interfaces; libaio, liburing, libvfn, and SPDK are not supported on macOS.
-
-
-
-
-
 
 
 Windows (2022)

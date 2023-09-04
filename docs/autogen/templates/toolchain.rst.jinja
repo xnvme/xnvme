@@ -47,10 +47,10 @@ installed from source.
 Package-managers: apk, pkg, dnf, yum, pacman, apt, aptitude, apt-get, pkg,
 choco, brew.
 
-{% for platform in platforms %}
-{% for ver in platform.ver %}
-{% set ident="%s-%s" % (platform.name, ver) %}
-{% set title="%s (%s)" % (platform.alias, ver) %}
+{% for platform in platforms -%}
+{%- for ver in platform.ver -%}
+{%- set ident="%s-%s" % (platform.name, ver) -%}
+{%- set title="%s (%s)" % (platform.alias, ver) -%}
 {{ title }}
 {% for _ in  title %}-{% endfor %}
 
@@ -64,7 +64,7 @@ Or, run the commands contained within the script manually:
 .. literalinclude:: ../../toolbox/pkgs/{{ platform.name }}-{{ ver }}.bat
    :language: batch
 
-{% else %}
+{%- else -%}
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
 run this from the root of the **xNVMe** by invoking::
@@ -82,7 +82,7 @@ Or, run the commands contained within the script manually:
    ``ghcr.io/xnvme/xnvme-deps-{{ ident }}:next``. This Docker-image contains
    all the software described above.
 
-{% endif %}
+{% endif -%}
 
 Then go ahead and configure, build and install using ``meson``:
 
@@ -95,5 +95,5 @@ Then go ahead and configure, build and install using ``meson``:
    {{ platform.notes | indent(width=3) }}
 {% endif %}
 
-{% endfor %}
-{% endfor %}
+{% endfor -%}
+{%- endfor -%}
