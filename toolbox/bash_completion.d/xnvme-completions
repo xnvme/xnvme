@@ -115,11 +115,11 @@ _xnvme_completions()
         ;;
 
     "pioc")
-        opts+="--nsid --cmd-input --data-input --data-output --data-nbytes --meta-input --meta-output --meta-nbytes --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        opts+="--cdw0 --cdw1 --cdw2 --cdw3 --cdw4 --cdw4 --cdw5 --cdw6 --cdw7 --cdw8 --cdw9 --cdw10 --cdw11 --cdw12 --cdw13 --cdw14 --cdw15 --opcode --nsid --data-input --data-output --data-nbytes --meta-input --meta-output --meta-nbytes --verbose --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "padc")
-        opts+="--nsid --cmd-input --data-input --data-output --data-nbytes --meta-input --meta-output --meta-nbytes --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        opts+="--cdw0 --cdw1 --cdw2 --cdw3 --cdw4 --cdw4 --cdw5 --cdw6 --cdw7 --cdw8 --cdw9 --cdw10 --cdw11 --cdw12 --cdw13 --cdw14 --cdw15 --opcode --nsid --data-input --data-output --data-nbytes --meta-input --meta-output --meta-nbytes --verbose --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "library-info")
