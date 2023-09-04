@@ -71,15 +71,26 @@ conf_data.set('XNVME_BE_CBI_ADMIN_SHIM_ENABLED', get_option('cbi_admin_shim'))
 conf_data.set('XNVME_BE_CBI_ASYNC_EMU_ENABLED', get_option('cbi_async_emu'))
 conf_data.set('XNVME_BE_CBI_ASYNC_NIL_ENABLED', get_option('cbi_async_nil'))
 conf_data.set('XNVME_BE_CBI_ASYNC_POSIX_ENABLED', get_option('cbi_async_posix') and (is_linux or is_freebsd or is_darwin))
-conf_data.set('XNVME_BE_CBI_ASYNC_THRPOOL_ENABLED', get_option('cbi_async_thrpool'))
+
+thread_dep = dependency(
+  'threads',
+  required: get_option('cbi_async_thrpool'),
+)
+conf_data.set('XNVME_BE_CBI_ASYNC_THRPOOL_ENABLED', thread_dep.found())
+
 conf_data.set('XNVME_BE_CBI_MEM_POSIX_ENABLED', get_option('cbi_mem_posix') and (is_linux or is_freebsd or is_darwin))
 conf_data.set('XNVME_BE_CBI_SYNC_PSYNC_ENABLED', get_option('cbi_sync_psync') and (is_linux or is_freebsd or is_darwin))
 
 conf_data.set('XNVME_BE_RAMDISK_ENABLED', get_option('be_ramdisk'))
 
-conf_data.set('XNVME_BE_WINDOWS_ENABLED', is_windows)
-conf_data.set('XNVME_BE_WINDOWS_FS_ENABLED', is_windows)
-conf_data.set('XNVME_BE_WINDOWS_ASYNC_ENABLED', is_windows)
+setupapi_dep = cc.find_library(
+  'setupapi',
+  has_headers: ['setupapi.h'],
+  required: is_windows,
+)
+conf_data.set('XNVME_BE_WINDOWS_ENABLED', setupapi_dep.found())
+conf_data.set('XNVME_BE_WINDOWS_FS_ENABLED', conf_data.get('XNVME_BE_WINDOWS_ENABLED'))
+conf_data.set('XNVME_BE_WINDOWS_ASYNC_ENABLED', conf_data.get('XNVME_BE_WINDOWS_ENABLED'))
 
 conf_data.set('XNVME_BE_LINUX_ENABLED', is_linux)
 conf_data.set('XNVME_BE_LINUX_BLOCK_ENABLED', is_linux ? cc.has_header('linux/blkzoned.h') : false)
@@ -106,7 +117,17 @@ libvfn_dep = dependency(
 )
 conf_data.set('XNVME_BE_LINUX_VFIO_ENABLED', libvfn_dep.found())
 
-conf_data.set('XNVME_BE_MACOS_ENABLED', is_darwin)
+corefoundation_dep = dependency(
+  'appleframeworks',
+  modules: 'CoreFoundation',
+  required: is_darwin
+)
+iokit_dep = dependency(
+  'appleframeworks',
+  modules: 'IOKit',
+  required: is_darwin
+)
+conf_data.set('XNVME_BE_MACOS_ENABLED', corefoundation_dep.found() and iokit_dep.found())
 
 conf_data.set('XNVME_BE_FBSD_ENABLED', is_freebsd)
 
@@ -164,16 +185,7 @@ endif
 # Scripts
 subdir('toolbox')
 
-#
-# Third-party dependencies
-#
-thread_dep = dependency('threads')
-
-setupapi_dep = cc.find_library(
-  'setupapi',
-  has_headers: ['setupapi.h'],
-  required: conf_data.get('XNVME_BE_WINDOWS_ENABLED'),
-)
+# Misc. third-party dependencies
 
 rt_dep = cc.find_library('rt', required: is_darwin ? false : (is_linux or is_freebsd))
 if not cc.has_function('clock_gettime', prefix: '#include <time.h>', dependencies: rt_dep)
@@ -183,17 +195,6 @@ endif
 spdk_dep = dependency(
   '_spdk',
   required: conf_data.get('XNVME_BE_SPDK_ENABLED')
-)
-
-corefoundation_dep = dependency(
-  'appleframeworks',
-  modules: 'CoreFoundation',
-  required: is_darwin
-)
-iokit_dep = dependency(
-  'appleframeworks',
-  modules: 'IOKit',
-  required: is_darwin
 )
 
 # Headers
