@@ -4,7 +4,6 @@
 
 install_data('kvs-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
 install_data('lblk-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
-install_data('nvmec-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
 install_data('xdd-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
 install_data('xnvme-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
 install_data('xnvme_file-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
@@ -17,6 +16,7 @@ install_data('xnvme_tests_enum-completions', install_dir: bash_completion_dep.ge
 install_data('xnvme_tests_ioworker-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
 install_data('xnvme_tests_kvs-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
 install_data('xnvme_tests_lblk-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
+install_data('xnvme_tests_map-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
 install_data('xnvme_tests_scc-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
 install_data('xnvme_tests_xnvme_cli-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
 install_data('xnvme_tests_xnvme_file-completions', install_dir: bash_completion_dep.get_variable('completionsdir'))
