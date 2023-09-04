@@ -18,6 +18,39 @@ Known Issues
 
 See the file named ``ISSUES`` in the root of the repository.
 
+v0.7.1
+------
+
+* API
+  - Introduced memory-mapping API (libxnvme_mem.h), that is, when the user
+    manages memory and thus does not want to use xnvme_buf_alloc() as doing so
+    would introduce bounce-buffers.
+
+* CLI
+  - The passthru cli-interfaces now use --cdwXY arguments instead of
+    "command-files", this alignes with nvme-cli and is arguably simpler
+
+* Backends: Linux
+  - Performance improvments in io_uring and io_uring_cmd backends due to the
+    addition batching via delayed submission
+  - Performance improvements to libaio due to the addition of the "ring-hack"
+
+* Backends: Windows
+  - Support added for writing via "ioring" on Windows, previously only batched
+    reads were possible via this interface.
+
+* Infrastructure; github-actions, docker-images, third-party etc. bump the
+  reference toolchain platforms, that is
+  - Debian is now Trixie, Bookworm and Bullseye.
+  - Ubuntu is now Lunar, Jammy and Focal
+  - Added Rocky Linux 9.2
+  - Added Oracle Linux 9.
+  - Dropped CentOS 7
+  - Dropped CentOS Stream 8
+  - Dropped openSUSE Leap 15.3 and 15.4, Tumbleweed remains
+
+* Removal of a bunch of deprecated files and code. General *cleanup*.
+
 v0.7.0
 ------
 
