@@ -93,43 +93,21 @@ endef
 .PHONY: config-debug
 config-debug:
 	@echo "## xNVMe: make config-debug"
-	CC=$(CC) CXX=$(CXX) $(MESON) setup $(BUILD_DIR) --buildtype=debug
+	CC=$(CC) CXX=$(CXX) $(MESON) setup $(BUILD_DIR) \
+		 --buildtype=debug
 	@echo "## xNVMe: make config-debug [DONE]"
 
-define config-uring-help
-# Configure Meson to compile xNVMe without: SPDK, and libvfn
-endef
-.PHONY: config-uring
-config-uring:
-	@echo "## xNVMe: config-uring"
-	CC=$(CC) CXX=$(CXX) $(MESON) setup $(BUILD_DIR) \
-	   -Dwith-spdk=disabled \
-	   -Dwith-liburing=enabled \
-	   -Dwith-libvfn=disabled
-	@echo "## xNVMe: config-uring [DONE]"
-
-define config-libvfn-help
-# Configure Meson to compile xNVMe without: SPDK, and liburing
-endef
-.PHONY: config-libvfn
-config-libvfn:
-	@echo "## xNVMe: config-libvfn"
-	CC=$(CC) CXX=$(CXX) $(MESON) setup $(BUILD_DIR) \
-	   -Dwith-spdk=disabled \
-	   -Dwith-liburing=disabled \
-	   -Dwith-libvfn=enabled
-	@echo "## xNVMe: config-uring [DONE]"
-
 define config-slim-help
-# Configure Meson to compile xNVMe without: SPDK, liburing, and libvfn
+# Configure Meson to compile xNVMe without any third-party libraries
 endef
 .PHONY: config-slim
 config-slim:
 	@echo "## xNVMe: make config-slim"
 	CC=$(CC) CXX=$(CXX) $(MESON) setup $(BUILD_DIR) \
-	   -Dwith-spdk=disabled \
-	   -Dwith-liburing=disabled \
-	   -Dwith-libvfn=disabled
+	   -Dwith-spdk=false \
+		 -Dwith-liburing=disabled \
+		 -Dwith-libvfn=disabled \
+		 -Dwith-libaio=disabled
 	@echo "## xNVMe: make config-slim [DONE]"
 
 define docker-help
