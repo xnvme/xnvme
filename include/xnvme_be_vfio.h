@@ -15,13 +15,11 @@
 struct xnvme_be_vfio_state {
 	struct nvme_ctrl *ctrl;
 	unsigned long long qidmap; // Queue identifier bit map
-	uint queue_id;             // Next queue id to be created on ctrl
 
-	struct nvme_sq *sq_sync;   // Submission queue for synchronous IOs
-	struct nvme_cq *cq_sync;   // Completion queue for synchronous IOs
-	struct nvme_cqe *cqe_sync; // Completion queue entry for synchronous IOs
+	struct nvme_sq *sq_sync; // Submission queue for synchronous IOs
+	struct nvme_cq *cq_sync; // Completion queue for synchronous IOs
 
-	uint8_t _rsvd[78];
+	uint8_t _rsvd[94];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_vfio_state) == XNVME_BE_STATE_NBYTES, "Incorrect size")
 
