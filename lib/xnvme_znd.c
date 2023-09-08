@@ -471,16 +471,16 @@ xnvme_znd_report_fpr(FILE *stream, const struct xnvme_znd_report *report, int fl
 	wrtn += fprintf(stream, "  report_nbytes: %" PRIu64 "\n", report->report_nbytes);
 	wrtn += fprintf(stream, "  entries_nbytes: %" PRIu64 "\n", report->entries_nbytes);
 
-	wrtn += fprintf(stream, "  zd_nbytes: %d\n", report->zd_nbytes);
-	wrtn += fprintf(stream, "  zdext_nbytes: %d\n", report->zdext_nbytes);
+	wrtn += fprintf(stream, "  zd_nbytes: %" PRIu32 "\n", report->zd_nbytes);
+	wrtn += fprintf(stream, "  zdext_nbytes: %" PRIu32 "\n", report->zdext_nbytes);
 	wrtn += fprintf(stream, "  zrent_nbytes: %" PRIu64 "\n", report->zrent_nbytes);
 
 	wrtn += fprintf(stream, "  zslba: 0x%016" PRIx64 "\n", report->zslba);
 	wrtn += fprintf(stream, "  zelba: 0x%016" PRIx64 "\n", report->zelba);
 
 	wrtn += fprintf(stream, "  nzones: %" PRIu64 "\n", report->nzones);
-	wrtn += fprintf(stream, "  nentries: %u\n", report->nentries);
-	wrtn += fprintf(stream, "  extended: %u\n", report->extended);
+	wrtn += fprintf(stream, "  nentries: %" PRIu32 "\n", report->nentries);
+	wrtn += fprintf(stream, "  extended: %" PRIu8 "\n", report->extended);
 
 	wrtn += fprintf(stream, "  entries:");
 

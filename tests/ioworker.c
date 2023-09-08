@@ -93,14 +93,14 @@ iowork_pp(struct iowork *work)
 	}
 
 	printf("\n");
-	printf("  io.nbytes: %zu\n", work->io.nbytes);
-	printf("  io.naddr: %zu\n", work->io.naddr);
+	printf("  io.nbytes: %" PRIu64 "\n", work->io.nbytes);
+	printf("  io.naddr: %" PRIu64 "\n", work->io.naddr);
 	printf("  vectored: %d\n", work->vectored);
-	printf("  nworkers: %d\n", work->nworkers);
+	printf("  nworkers: %" PRIu32 "\n", work->nworkers);
 	printf("  range.nbytes: %" PRIu64 "\n", work->range.nbytes);
 	printf("  range.naddr: %" PRIu64 "\n", work->range.naddr);
-	printf("  range.slba: %u\n", work->range.slba);
-	printf("  range.elba: %u\n", work->range.elba);
+	printf("  range.slba: %" PRIu32 "\n", work->range.slba);
+	printf("  range.elba: %" PRIu32 "\n", work->range.elba);
 	printf("  nio: %" PRIu64 "\n", work->nio);
 
 	return 0;

@@ -75,20 +75,20 @@ xnvme_cli_args_pr(struct xnvme_cli_args *args, int opts)
 	xnvme_cli_pinf("opts: %d", opts);
 
 	for (int i = 0; i < 16; ++i) {
-		printf("cdw%i: 0x%x\n", i, args->cdw[i]);
+		printf("cdw%i: 0x%" PRIx32 "\n", i, args->cdw[i]);
 	}
 
 	printf("uri: '%s'\n", args->uri);
 	printf("sys_uri: '%s'\n", args->sys_uri);
 
-	printf("fid: 0x%x\n", args->fid);
-	printf("feat: 0x%x\n", args->feat);
+	printf("fid: 0x%" PRIx32 "\n", args->fid);
+	printf("feat: 0x%" PRIx32 "\n", args->feat);
 
-	printf("status: %d\n", args->status);
-	printf("save: %d\n", args->save);
-	printf("reset: %d\n", args->reset);
-	printf("verbose: %d\n", args->verbose);
-	printf("help: %d\n", args->help);
+	printf("status: %" PRIu32 "\n", args->status);
+	printf("save: %" PRIu32 "\n", args->save);
+	printf("reset: %" PRIu32 "\n", args->reset);
+	printf("verbose: %" PRIu32 "\n", args->verbose);
+	printf("help: %" PRIu32 "\n", args->help);
 }
 
 const char *
@@ -1911,7 +1911,7 @@ xnvme_cli_enumeration_alloc(struct xnvme_cli_enumeration **list, uint32_t capaci
 {
 	*list = malloc(sizeof(**list) + sizeof(*(*list)->entries) * capacity);
 	if (!(*list)) {
-		XNVME_DEBUG("FAILED: malloc(list + entry * cap(%u))", capacity);
+		XNVME_DEBUG("FAILED: malloc(list + entry * cap(%" PRIu32 "))", capacity);
 		return -errno;
 	}
 	(*list)->capacity = capacity;
@@ -1924,7 +1924,7 @@ int
 xnvme_cli_enumeration_append(struct xnvme_cli_enumeration *list, const struct xnvme_ident *entry)
 {
 	if (!list->capacity) {
-		XNVME_DEBUG("FAILED: syslist->capacity: %u", list->capacity);
+		XNVME_DEBUG("FAILED: syslist->capacity: %" PRIu32, list->capacity);
 		return -ENOMEM;
 	}
 	list->entries[(list->nentries)++] = *entry;
@@ -1956,8 +1956,8 @@ xnvme_cli_enumeration_fpr(FILE *stream, struct xnvme_cli_enumeration *list, int 
 	}
 
 	wrtn += fprintf(stream, "\n");
-	wrtn += fprintf(stream, "  capacity: %u\n", list->capacity);
-	wrtn += fprintf(stream, "  nentries: %u\n", list->nentries);
+	wrtn += fprintf(stream, "  capacity: %" PRIu32 "\n", list->capacity);
+	wrtn += fprintf(stream, "  nentries: %" PRIu32 "\n", list->nentries);
 	wrtn += fprintf(stream, "  entries:");
 
 	if (!list->nentries) {

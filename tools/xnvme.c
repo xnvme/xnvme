@@ -304,7 +304,7 @@ sub_log_erri(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	printf("# %d error log page entries:\n", log_nentries);
+	printf("# %" PRIu32 " error log page entries:\n", log_nentries);
 	xnvme_spec_log_erri_pr(log, log_nentries, XNVME_PR_DEF);
 
 exit:
@@ -403,7 +403,7 @@ sub_log_ruhu(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	printf("# %d reclaim unit handle usage:\n", limit);
+	printf("# %" PRIu32 " reclaim unit handle usage:\n", limit);
 	xnvme_spec_log_ruhu_pr(log, limit, XNVME_PR_DEF);
 
 exit:
@@ -499,7 +499,7 @@ sub_log_fdp_events(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	printf("# %d fdp events log page entries:\n", limit);
+	printf("# %" PRIu32 " fdp events log page entries:\n", limit);
 	xnvme_spec_log_fdp_events_pr(log, limit, XNVME_PR_DEF);
 
 exit:
@@ -839,7 +839,7 @@ sub_ruhs(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	printf("# %d reclaim unit handle status:\n", limit);
+	printf("# %" PRIu32 " reclaim unit handle status:\n", limit);
 	xnvme_spec_ruhs_pr(ruhs, limit, XNVME_PR_DEF);
 
 exit:
