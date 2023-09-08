@@ -53,35 +53,39 @@ xnvme_opts_yaml(FILE *stream, const struct xnvme_opts *opts, int indent, const c
 	wrtn += fprintf(stream, "%*sasync: '%s'%s", indent, "", opts->async, sep);
 	wrtn += fprintf(stream, "%*sadmin: '%s'%s", indent, "", opts->admin, sep);
 
-	wrtn += fprintf(stream, "%*snsid: 0x%x%s", indent, "", opts->nsid, sep);
+	wrtn += fprintf(stream, "%*snsid: 0x%" PRIx32 "%s", indent, "", opts->nsid, sep);
 
-	wrtn += fprintf(stream, "%*soflags: 0x%x%s", indent, "", opts->oflags, sep);
-	wrtn += fprintf(stream, "%*srdonly: %d%s", indent, "", opts->rdonly, sep);
-	wrtn += fprintf(stream, "%*swronly: %d%s", indent, "", opts->wronly, sep);
-	wrtn += fprintf(stream, "%*srdwr: %d%s", indent, "", opts->rdwr, sep);
-	wrtn += fprintf(stream, "%*screate: %d%s", indent, "", opts->create, sep);
-	wrtn += fprintf(stream, "%*struncate: %d%s", indent, "", opts->truncate, sep);
-	wrtn += fprintf(stream, "%*sdirect: %d%s", indent, "", opts->direct, sep);
+	wrtn += fprintf(stream, "%*soflags: 0x%" PRIx32 "%s", indent, "", opts->oflags, sep);
+	wrtn += fprintf(stream, "%*srdonly: %" PRIu32 "%s", indent, "", opts->rdonly, sep);
+	wrtn += fprintf(stream, "%*swronly: %" PRIu32 "%s", indent, "", opts->wronly, sep);
+	wrtn += fprintf(stream, "%*srdwr: %" PRIu32 "%s", indent, "", opts->rdwr, sep);
+	wrtn += fprintf(stream, "%*screate: %" PRIu32 "%s", indent, "", opts->create, sep);
+	wrtn += fprintf(stream, "%*struncate: %" PRIu32 "%s", indent, "", opts->truncate, sep);
+	wrtn += fprintf(stream, "%*sdirect: %" PRIu32 "%s", indent, "", opts->direct, sep);
 
-	wrtn += fprintf(stream, "%*screate_mode: 0x%x%s", indent, "", opts->create_mode, sep);
-
-	wrtn += fprintf(stream, "%*spoll_io: %d%s", indent, "", opts->poll_io, sep);
-	wrtn += fprintf(stream, "%*spoll_sq: %d%s", indent, "", opts->poll_sq, sep);
-	wrtn += fprintf(stream, "%*sregister_files: %d%s", indent, "", opts->register_files, sep);
-	wrtn += fprintf(stream, "%*sregister_buffers: %d%s", indent, "", opts->register_buffers,
+	wrtn += fprintf(stream, "%*screate_mode: 0x%" PRIx32 "%s", indent, "", opts->create_mode,
 			sep);
 
-	wrtn += fprintf(stream, "%*scss.given: %d%s", indent, "", opts->css.given, sep);
-	wrtn += fprintf(stream, "%*scss.value: 0x%x%s", indent, "", opts->css.value, sep);
+	wrtn += fprintf(stream, "%*spoll_io: %" PRIu8 "%s", indent, "", opts->poll_io, sep);
+	wrtn += fprintf(stream, "%*spoll_sq: %" PRIu8 "%s", indent, "", opts->poll_sq, sep);
+	wrtn += fprintf(stream, "%*sregister_files: %" PRIu8 "%s", indent, "",
+			opts->register_files, sep);
+	wrtn += fprintf(stream, "%*sregister_buffers: %" PRIu8 "%s", indent, "",
+			opts->register_buffers, sep);
 
-	wrtn += fprintf(stream, "%*suse_cmb_sqs: 0x%x%s", indent, "", opts->use_cmb_sqs, sep);
-	wrtn += fprintf(stream, "%*sshm_id: 0x%x%s", indent, "", opts->shm_id, sep);
-	wrtn += fprintf(stream, "%*smain_core: 0x%x%s", indent, "", opts->main_core, sep);
+	wrtn += fprintf(stream, "%*scss.given: %" PRIu32 "%s", indent, "", opts->css.given, sep);
+	wrtn += fprintf(stream, "%*scss.value: 0x%" PRIx32 "%s", indent, "", opts->css.value, sep);
+
+	wrtn += fprintf(stream, "%*suse_cmb_sqs: 0x%" PRIx32 "%s", indent, "", opts->use_cmb_sqs,
+			sep);
+	wrtn += fprintf(stream, "%*sshm_id: 0x%" PRIx32 "%s", indent, "", opts->shm_id, sep);
+	wrtn += fprintf(stream, "%*smain_core: 0x%" PRIx32 "%s", indent, "", opts->main_core, sep);
 
 	wrtn += fprintf(stream, "%*score_mask: '%s'%s", indent, "", opts->core_mask, sep);
 	wrtn += fprintf(stream, "%*sadrfam: '%s'%s", indent, "", opts->adrfam, sep);
 
-	wrtn += fprintf(stream, "%*sspdk_fabrics: 0x%x%s", indent, "", opts->spdk_fabrics, sep);
+	wrtn += fprintf(stream, "%*sspdk_fabrics: 0x%" PRIx32 "%s", indent, "", opts->spdk_fabrics,
+			sep);
 
 	return wrtn;
 }

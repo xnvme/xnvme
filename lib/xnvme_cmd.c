@@ -19,8 +19,8 @@ xnvme_cmd_ctx_pr(const struct xnvme_cmd_ctx *ctx, int XNVME_UNUSED(opts))
 		return;
 	}
 
-	printf("{cdw0: 0x%x, sc: 0x%x, sct: 0x%x}\n", ctx->cpl.cdw0, ctx->cpl.status.sc,
-	       ctx->cpl.status.sct);
+	printf("{cdw0: 0x%" PRIx32 ", sc: 0x%" PRIx16 ", sct: 0x%" PRIx16 "}\n", ctx->cpl.cdw0,
+	       ctx->cpl.status.sc, ctx->cpl.status.sct);
 }
 
 void

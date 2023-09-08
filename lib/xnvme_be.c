@@ -123,7 +123,7 @@ xnvme_lba_fprn(FILE *stream, const uint64_t *lba, uint16_t nlb, enum xnvme_pr op
 
 	wrtn += fprintf(stream, "\n");
 
-	wrtn += fprintf(stream, "nlbas: %d\n", nlb);
+	wrtn += fprintf(stream, "nlbas: %" PRIu16 "\n", nlb);
 	wrtn += fprintf(stream, "lbas:\n");
 	for (unsigned int i = 0; i < nlb; ++i) {
 		wrtn += fprintf(stream, "  - ");
@@ -175,7 +175,7 @@ xnvme_be_attr_fpr(FILE *stream, const struct xnvme_be_attr *attr, int opts)
 	}
 
 	wrtn += fprintf(stream, "name: '%s'\n", attr->name);
-	wrtn += fprintf(stream, "    enabled: %d\n", attr->enabled);
+	wrtn += fprintf(stream, "    enabled: %" PRIu8 "\n", attr->enabled);
 
 	return wrtn;
 }
@@ -203,7 +203,7 @@ xnvme_be_attr_list_fpr(FILE *stream, const struct xnvme_be_attr_list *list, int 
 
 	wrtn += fprintf(stream, "xnvme_be_attr_list:\n");
 	wrtn += fprintf(stream, "  count: %d\n", list->count);
-	wrtn += fprintf(stream, "  capacity: %d\n", list->capacity);
+	wrtn += fprintf(stream, "  capacity: %" PRIu32 "\n", list->capacity);
 	wrtn += fprintf(stream, "  items:");
 
 	if (!list->count) {

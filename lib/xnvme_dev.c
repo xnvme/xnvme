@@ -46,7 +46,7 @@ xnvme_dev_fpr(FILE *stream, const struct xnvme_dev *dev, int opts)
 	wrtn += fprintf(stream, "    admin: '%s'\n", dev->opts.admin);
 	wrtn += fprintf(stream, "    sync: '%s'\n", dev->opts.sync);
 	wrtn += fprintf(stream, "    async: '%s'\n", dev->opts.async);
-	wrtn += fprintf(stream, "    oflags: 0x%x\n", dev->opts.oflags);
+	wrtn += fprintf(stream, "    oflags: 0x%" PRIx32 "\n", dev->opts.oflags);
 
 	wrtn += xnvme_geo_yaml(stream, &dev->geo, 2, "\n", 1);
 	wrtn += fprintf(stream, "\n");

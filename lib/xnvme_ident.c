@@ -44,9 +44,9 @@ xnvme_ident_yaml(FILE *stream, const struct xnvme_ident *ident, int indent, cons
 	}
 
 	wrtn += fprintf(stream, "%*suri: '%s'%s", indent, "", ident->uri, sep);
-	wrtn += fprintf(stream, "%*sdtype: 0x%x%s", indent, "", ident->dtype, sep);
-	wrtn += fprintf(stream, "%*snsid: 0x%x%s", indent, "", ident->nsid, sep);
-	wrtn += fprintf(stream, "%*scsi: 0x%x%s", indent, "", ident->csi, sep);
+	wrtn += fprintf(stream, "%*sdtype: 0x%" PRIx32 "%s", indent, "", ident->dtype, sep);
+	wrtn += fprintf(stream, "%*snsid: 0x%" PRIx32 "%s", indent, "", ident->nsid, sep);
+	wrtn += fprintf(stream, "%*scsi: 0x%" PRIx8 "%s", indent, "", ident->csi, sep);
 
 	wrtn += fprintf(stream, "%*ssubnqn: '%s'", indent, "", ident->subnqn);
 

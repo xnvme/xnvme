@@ -53,7 +53,8 @@ xnvme_be_windows_uapi_ver_fpr(FILE *stream, enum xnvme_pr opts)
 	}
 
 	RTL_OSVERSIONINFOW info = _be_windows_get_os_version();
-	wrtn += fprintf(stream, "WINDOWS;WINDOWS_VERSION_CODE-UAPI/%lu.%lu (%lu) ",
+	wrtn += fprintf(stream,
+			"WINDOWS;WINDOWS_VERSION_CODE-UAPI/%" PRIu64 "." PRIu64 " (%" PRIu64 ") ",
 			info.dwMajorVersion, info.dwMinorVersion, info.dwBuildNumber);
 
 	return wrtn;

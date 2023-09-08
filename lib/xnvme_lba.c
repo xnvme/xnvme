@@ -29,10 +29,10 @@ xnvme_lba_range_fpr(FILE *stream, struct xnvme_lba_range *range, int opts)
 
 	wrtn += fprintf(stream, "  slba: 0x%016" PRIx64 "\n", range->slba);
 	wrtn += fprintf(stream, "  elba: 0x%016" PRIx64 "\n", range->elba);
-	wrtn += fprintf(stream, "  naddrs: %u\n", range->naddrs);
+	wrtn += fprintf(stream, "  naddrs: %" PRIu32 "\n", range->naddrs);
 	wrtn += fprintf(stream, "  nbytes: %" PRIu64 "\n", range->nbytes);
-	wrtn += fprintf(stream, "  attr: { is_zones: %d, is_valid: %d}\n", range->attr.is_zoned,
-			range->attr.is_valid);
+	wrtn += fprintf(stream, "  attr: { is_zones: %" PRIu32 ", is_valid: %" PRIu32 "}\n",
+			range->attr.is_zoned, range->attr.is_valid);
 
 	return wrtn;
 }
