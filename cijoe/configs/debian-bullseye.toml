@@ -164,6 +164,12 @@ labels = [ "dev", "fabrics", "zns" ]
 driver_attachment = "userspace"
 
 [[devices]]
+uri = "127.0.0.1:4420"
+nsid = 3
+labels = [ "dev", "fabrics", "kvs" ]
+driver_attachment = "userspace"
+
+[[devices]]
 uri = "/tmp/xnvme-testfile.bin"
 nsid = 1
 labels = [ "file" ]
