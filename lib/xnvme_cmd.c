@@ -100,3 +100,15 @@ xnvme_cmd_pass_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, 
 
 	return ctx->dev->be.admin.cmd_admin(ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
 }
+
+int
+xnvme_cmd_pass_pseudo(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+		      size_t mbuf_nbytes)
+{
+	if (ctx->opts & XNVME_CMD_ASYNC) {
+		XNVME_DEBUG("FAILED: PSEUDO-Commands are always sync.");
+		return -EINVAL;
+	}
+
+	return ctx->dev->be.admin.cmd_pseudo(ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
+}
