@@ -5,12 +5,3 @@ edition = "2021"
 description = "Safe and idiomatic xNVMe-bindings built on top of xnvme-sys. NOTE: This is a crate-namespace-reservation"
 license = "BSD-3-Clause"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-xnvme-sys = { path = "../xnvme-sys" }
-anyhow = "1"
-thiserror = "1"
-derive_builder = "0.12"
-const-str = "0.5.3"
-clap = { version = "4", features = [ "derive" ] }
-
