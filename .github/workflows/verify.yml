@@ -83,6 +83,10 @@ jobs:
       run: |
         git config --global --add safe.directory $(pwd)
 
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+
     - name: Run pre-commit
       run: pre-commit run --all-files
 
@@ -115,6 +119,45 @@ jobs:
 
     - name: Run make gen-man-pages
       run: make gen-man-pages
+
+  build-rust:
+    needs: source-archive
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/xnvme/xnvme-deps-debian-bookworm:next
+
+    steps:
+    - name: Retrieve the xNVMe source archive
+      uses: actions/download-artifact@v3.0.1
+      with:
+        name: xnvme-src-archive
+    - name: Extract, and then remove, the xNVMe source archive
+      run: |
+        tar xzf xnvme-src.tar.gz --strip 1
+        rm xnvme-src.tar.gz
+
+    - name: Configure, Build, and Install
+      run: |
+        source toolbox/pkgs/debian-bookworm.sh
+        apt-get install -qy curl libclang-dev
+        source toolbox/pkgs/default-build.sh
+
+    - name: Execute 'xnvme library-info'
+      run: xnvme library-info
+
+    - name: Install xNVMe
+      run: make install
+
+    - name: ldconfig
+      run: ldconfig
+
+    - uses: dtolnay/rust-toolchain@stable
+
+    - name: Rust, generate and build bindings
+      run: cargo build --release --manifest-path rust/Cargo.toml
+
+    - name: Rust, run example
+      run: cargo run --manifest-path rust/Cargo.toml
 
   #
   # Build xNVMe Python packages

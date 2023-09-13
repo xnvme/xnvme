@@ -75,3 +75,18 @@ repos:
     args:
     - --extend-ignore=E203,F401,F811,E501
     exclude: (ctypes_mapping\/api\.py)$
+
+# Rust tools
+- repo: https://github.com/doublify/pre-commit-rust
+  rev: v1.0
+  hooks:
+  - id: fmt
+    name: Rust-fmt-xnvme
+    args: ['--verbose', '--manifest-path', 'rust/xnvme/Cargo.toml', '--']
+
+- repo: https://github.com/doublify/pre-commit-rust
+  rev: v1.0
+  hooks:
+  - id: fmt
+    name: Rust-fmt-xnvme-sys
+    args: ['--verbose', '--manifest-path', 'rust/xnvme-sys/Cargo.toml', '--']
