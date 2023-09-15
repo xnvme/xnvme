@@ -17,6 +17,7 @@ dnf install -y \
  gcc \
  git \
  libaio-devel \
+ libarchive-devel \
  libtool \
  liburing \
  liburing-devel \
