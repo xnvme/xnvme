@@ -11,6 +11,7 @@ echo "export LDFLAGS=\"-ltinfo -lncurses\""
 
 emerge-webrsync
 emerge \
+ app-arch/libarchive \
  bash \
  dev-lang/nasm \
  dev-libs/libaio \

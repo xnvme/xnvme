@@ -20,6 +20,7 @@ dnf install -y \
  gcc-c++ \
  git \
  libaio-devel \
+ libarchive-devel \
  libtool \
  libuuid-devel \
  make \

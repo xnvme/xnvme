@@ -97,6 +97,20 @@ deps:
       pkg: [py39-pipx]
       zypper: [python3-pipx]
 
+  archive:
+    notes: Required by DPDK 23.03 and thereby for SPDK 23.05
+    ver: 0.0
+    when: [building, running]
+    purpose: {be: [spdk]}
+    names:
+      default: [libarchive-dev]
+      pacman: [libarchive]
+      emerge: [app-arch/libarchive]
+      dnf: [libarchive-devel]
+      yum: [libarchive-devel]
+      zypper: [libarchive-devel]
+      pkg: [archivers/libarchive]
+
   cunit:
     notes: Required by SPDK
     ver: 0.0
@@ -259,8 +273,8 @@ defaults:
 
   linux:
     deps:
-    - [sys, [bash, cunit, clang-format, elftools, find, git, libaio, liburing, libuuid, make, meson, nasm, ncurses, numactl,
-        openssl, patch, pipx, pkg-config, python3]]
+    - [sys, [archive, bash, cunit, clang-format, elftools, find, git, libaio, liburing, libuuid, make, meson, nasm, ncurses,
+        numactl, openssl, patch, pipx, pkg-config, python3]]
     - [src, [libvfn]]
     apps:
     - [src, [fio]]
