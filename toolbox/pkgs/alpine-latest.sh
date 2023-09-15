@@ -17,6 +17,7 @@ apk add \
  gawk \
  git \
  libaio-dev \
+ libarchive-dev \
  liburing-dev \
  libuuid \
  linux-headers \

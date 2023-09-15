@@ -15,6 +15,7 @@ pacman -S --noconfirm \
  findutils \
  git \
  libaio \
+ libarchive \
  liburing \
  libutil-linux \
  make \

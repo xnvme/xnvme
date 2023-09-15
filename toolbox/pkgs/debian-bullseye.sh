@@ -22,6 +22,7 @@ apt-get -qy install \
  findutils \
  git \
  libaio-dev \
+ libarchive-dev \
  libcunit1-dev \
  libncurses5-dev \
  libnuma-dev \

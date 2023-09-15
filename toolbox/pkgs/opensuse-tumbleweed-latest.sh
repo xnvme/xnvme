@@ -20,6 +20,7 @@ zypper --non-interactive install -y --allow-downgrade \
  git \
  gzip \
  libaio-devel \
+ libarchive-devel \
  libnuma-devel \
  libopenssl-devel \
  libtool \
