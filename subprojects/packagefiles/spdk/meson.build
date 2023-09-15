@@ -1,7 +1,7 @@
 project(
   'spdk',
   'c',
-  version: '22.09',
+  version: '23.05',
 )
 fs = import('fs')
 
@@ -53,6 +53,11 @@ elf_dep = cc.find_library(
   'elf',
   has_headers: ['sys/elf_common.h'],
   required: is_freebsd,
+)
+
+archive_dep = cc.find_library(
+  'archive',
+  has_headers: ['archive.h'],
 )
 
 if get_option('build_subprojects') and not fs.exists('build')
@@ -124,7 +129,7 @@ isal_libnames = get_option('build_subprojects') ? [
   'isal',
 ] : []
 
-spdk_deps = [dlfcn_dep, math_dep, numa_dep, uuid_dep, ssl_dep, ssl_dep, execinfo_dep, elf_dep,]
+spdk_deps = [dlfcn_dep, math_dep, numa_dep, uuid_dep, ssl_dep, ssl_dep, execinfo_dep, elf_dep, archive_dep,]
 
 spdk_paths = []
 foreach libname : spdk_libnames + dpdk_libnames + isal_libnames
