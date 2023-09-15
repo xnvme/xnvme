@@ -1,0 +1,48 @@
+From d36c82874a101bcd6ae86a52bed888cea69a41c2 Mon Sep 17 00:00:00 2001
+From: Karl Bonde Torp <k.torp@samsung.com>
+Date: Tue, 12 Sep 2023 08:16:44 +0200
+Subject: [PATCH 5/7] nvmf: Support adding KV NS to nvmf_tgt
+
+Currently `nvme_ns_has_supported_iocs_specific_data()` and
+`nvme_disk_create` stand in the way
+of adding KV namespaces to a subsystem via the `nvmf_tgt` app.
+
+With this patch, that is no longer the case
+
+Signed-off-by: Karl Bonde Torp <k.torp@samsung.com>
+---
+ lib/nvme/nvme_ns.c           | 2 ++
+ module/bdev/nvme/bdev_nvme.c | 4 ++++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/lib/nvme/nvme_ns.c b/lib/nvme/nvme_ns.c
+index 03f7a0253..81b02a780 100644
+--- a/lib/nvme/nvme_ns.c
++++ b/lib/nvme/nvme_ns.c
+@@ -492,6 +492,8 @@ nvme_ns_has_supported_iocs_specific_data(struct spdk_nvme_ns *ns)
+ 		return false;
+ 	case SPDK_NVME_CSI_ZNS:
+ 		return true;
++	case SPDK_NVME_CSI_KV:
++		return false;
+ 	default:
+ 		SPDK_WARNLOG("Unsupported CSI: %u for NSID: %u\n", ns->csi, ns->id);
+ 		return false;
+diff --git a/module/bdev/nvme/bdev_nvme.c b/module/bdev/nvme/bdev_nvme.c
+index 510bdd89c..6a7eab974 100644
+--- a/module/bdev/nvme/bdev_nvme.c
++++ b/module/bdev/nvme/bdev_nvme.c
+@@ -3905,6 +3905,10 @@ nvme_disk_create(struct spdk_bdev *disk, const char *base_name,
+ 		disk->max_open_zones = spdk_nvme_zns_ns_get_max_open_zones(ns);
+ 		disk->max_active_zones = spdk_nvme_zns_ns_get_max_active_zones(ns);
+ 		break;
++	case SPDK_NVME_CSI_KV:
++		disk->product_name = "NVMe KV disk";
++		disk->kv = true;
++		break;
+ 	default:
+ 		SPDK_ERRLOG("unsupported CSI: %u\n", csi);
+ 		return -ENOTSUP;
+-- 
+2.42.0
+

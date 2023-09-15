@@ -1,0 +1,88 @@
+From ea0cfa580e9d3fc6adb073cec717a451a2409532 Mon Sep 17 00:00:00 2001
+From: Karl Bonde Torp <k.torp@samsung.com>
+Date: Tue, 19 Sep 2023 10:08:29 +0200
+Subject: [PATCH 4/7] lib/bdev: Add spdk_bdev_is_kv() to bdev interface
+
+This patch is needed to enable KV passthru on fabrics, specifically to
+set the correct csi when the namespace is added to nvmf/subsystem.
+
+spdk_bdev_is_kv() will allow user to check if a
+bdev is a kv bdev.
+
+Signed-off-by: Karl Bonde Torp <k.torp@samsung.com>
+---
+ include/spdk/bdev.h        | 8 ++++++++
+ include/spdk/bdev_module.h | 5 +++++
+ lib/bdev/bdev.c            | 6 ++++++
+ lib/nvmf/ctrlr.c           | 3 +++
+ 4 files changed, 22 insertions(+)
+
+diff --git a/include/spdk/bdev.h b/include/spdk/bdev.h
+index 07a9a42b9..1e6bf6f15 100644
+--- a/include/spdk/bdev.h
++++ b/include/spdk/bdev.h
+@@ -638,6 +638,14 @@ bool spdk_bdev_is_md_interleaved(const struct spdk_bdev *bdev);
+  */
+ bool spdk_bdev_is_md_separate(const struct spdk_bdev *bdev);
+ 
++/**
++ * Checks if bdev supports KV namespace semantics.
++ *
++ * \param bdev Block device to query.
++ * \return true if device supports KV namespace semantics.
++ */
++bool spdk_bdev_is_kv(const struct spdk_bdev *bdev);
++
+ /**
+  * Checks if bdev supports zoned namespace semantics.
+  *
+diff --git a/include/spdk/bdev_module.h b/include/spdk/bdev_module.h
+index f480b50cc..ad89f642d 100644
+--- a/include/spdk/bdev_module.h
++++ b/include/spdk/bdev_module.h
+@@ -552,6 +552,11 @@ struct spdk_bdev {
+ 	 */
+ 	uint32_t dif_check_flags;
+ 
++	/**
++	 * Specify whether bdev is kv device.
++	 */
++	bool kv;
++
+ 	/**
+ 	 * Specify whether bdev is zoned device.
+ 	 */
+diff --git a/lib/bdev/bdev.c b/lib/bdev/bdev.c
+index 3218c7aa6..cf5514628 100644
+--- a/lib/bdev/bdev.c
++++ b/lib/bdev/bdev.c
+@@ -4637,6 +4637,12 @@ spdk_bdev_is_md_separate(const struct spdk_bdev *bdev)
+ 	return (bdev->md_len != 0) && !bdev->md_interleave;
+ }
+ 
++bool
++spdk_bdev_is_kv(const struct spdk_bdev *bdev)
++{
++	return bdev->kv;
++}
++
+ bool
+ spdk_bdev_is_zoned(const struct spdk_bdev *bdev)
+ {
+diff --git a/lib/nvmf/ctrlr.c b/lib/nvmf/ctrlr.c
+index 24898ca4e..de836cbe9 100644
+--- a/lib/nvmf/ctrlr.c
++++ b/lib/nvmf/ctrlr.c
+@@ -3085,6 +3085,9 @@ nvmf_ctrlr_identify_iocs(struct spdk_nvmf_ctrlr *ctrlr,
+ 		if (spdk_bdev_is_zoned(ns->bdev)) {
+ 			vector->zns = 1;
+ 		}
++		if (spdk_bdev_is_kv(ns->bdev)){
++			vector->kv = 1;
++		}
+ 	}
+ 
+ 	rsp->status.sct = SPDK_NVME_SCT_GENERIC;
+-- 
+2.42.0
+
