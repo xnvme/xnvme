@@ -1,0 +1,46 @@
+From 2bb724162596d09002a62d1af0f304767732867f Mon Sep 17 00:00:00 2001
+From: Karl Bonde Torp <k.torp@samsung.com>
+Date: Mon, 25 Sep 2023 15:59:24 +0200
+Subject: [PATCH 7/7] lib/nvmf: Add identify_*_iocs passthru for KV
+
+Signed-off-by: Karl Bonde Torp <k.torp@samsung.com>
+---
+ lib/nvmf/ctrlr.c | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/lib/nvmf/ctrlr.c b/lib/nvmf/ctrlr.c
+index 4ce430b74..3fad552ba 100644
+--- a/lib/nvmf/ctrlr.c
++++ b/lib/nvmf/ctrlr.c
+@@ -55,6 +55,7 @@ static struct spdk_nvmf_custom_admin_cmd g_nvmf_custom_admin_cmd_hdlrs[SPDK_NVME
+ 
+ static void _nvmf_request_complete(void *ctx);
+ int nvmf_passthru_admin_cmd_for_ctrlr(struct spdk_nvmf_request *req, struct spdk_nvmf_ctrlr *ctrlr);
++static int nvmf_passthru_admin_cmd(struct spdk_nvmf_request *req);
+ 
+ static inline void
+ nvmf_invalid_connect_response(struct spdk_nvmf_fabric_connect_rsp *rsp,
+@@ -3145,10 +3146,18 @@ nvmf_ctrlr_identify(struct spdk_nvmf_request *req)
+ 				tmpbuf, req->length);
+ 		break;
+ 	case SPDK_NVME_IDENTIFY_NS_IOCS:
+-		ret = spdk_nvmf_ns_identify_iocs_specific(ctrlr, cmd, rsp, (void *)&tmpbuf, req->length);
++		if (cmd->cdw11_bits.identify.csi == SPDK_NVME_CSI_KV) {
++			ret = nvmf_passthru_admin_cmd(req);
++		} else {
++			ret = spdk_nvmf_ns_identify_iocs_specific(ctrlr, cmd, rsp, (void *)&tmpbuf, req->length);
++		}
+ 		break;
+ 	case SPDK_NVME_IDENTIFY_CTRLR_IOCS:
+-		ret = spdk_nvmf_ctrlr_identify_iocs_specific(ctrlr, cmd, rsp, (void *)&tmpbuf, req->length);
++		if (cmd->cdw11_bits.identify.csi == SPDK_NVME_CSI_KV) {
++			ret = nvmf_passthru_admin_cmd_for_ctrlr(req, ctrlr);
++		} else {
++			ret = spdk_nvmf_ctrlr_identify_iocs_specific(ctrlr, cmd, rsp, (void *)&tmpbuf, req->length);
++		}
+ 		break;
+ 	case SPDK_NVME_IDENTIFY_IOCS:
+ 		ret = nvmf_ctrlr_identify_iocs(ctrlr, cmd, rsp, (void *)&tmpbuf, req->length);
+-- 
+2.42.0
+
