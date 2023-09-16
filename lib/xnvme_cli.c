@@ -698,12 +698,6 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.name = "create",
 		.descr = "For files; on-open create",
 	},
-	{
-		.opt = XNVME_CLI_OPT_OFLAGS,
-		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
-		.name = "oflags",
-		.descr = "For files; combination of file-open-flags",
-	},
 
 	{
 		.opt = XNVME_CLI_OPT_CREATE_MODE,
@@ -1401,9 +1395,6 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 	case XNVME_CLI_OPT_CREATE_MODE:
 		args->create_mode = arg ? num : 0;
 		break;
-	case XNVME_CLI_OPT_OFLAGS:
-		args->oflags = arg ? num : 0;
-		break;
 	case XNVME_CLI_OPT_ADRFAM:
 		args->adrfam = arg ? arg : "IPv4";
 		break;
@@ -1864,7 +1855,6 @@ xnvme_cli_to_opts(const struct xnvme_cli *cli, struct xnvme_opts *opts)
 
 	opts->nsid = cli->given[XNVME_CLI_OPT_DEV_NSID] ? cli->args.dev_nsid : opts->nsid;
 
-	opts->oflags = cli->given[XNVME_CLI_OPT_OFLAGS] ? cli->args.oflags : opts->oflags;
 	opts->rdonly = cli->given[XNVME_CLI_OPT_RDONLY] ? cli->args.rdonly : opts->rdonly;
 	opts->wronly = cli->given[XNVME_CLI_OPT_WRONLY] ? cli->args.wronly : opts->wronly;
 	opts->rdwr = cli->given[XNVME_CLI_OPT_RDWR] ? cli->args.rdwr : opts->rdwr;

@@ -55,7 +55,6 @@ xnvme_opts_yaml(FILE *stream, const struct xnvme_opts *opts, int indent, const c
 
 	wrtn += fprintf(stream, "%*snsid: 0x%" PRIx32 "%s", indent, "", opts->nsid, sep);
 
-	wrtn += fprintf(stream, "%*soflags: 0x%" PRIx32 "%s", indent, "", opts->oflags, sep);
 	wrtn += fprintf(stream, "%*srdonly: %" PRIu32 "%s", indent, "", opts->rdonly, sep);
 	wrtn += fprintf(stream, "%*swronly: %" PRIu32 "%s", indent, "", opts->wronly, sep);
 	wrtn += fprintf(stream, "%*srdwr: %" PRIu32 "%s", indent, "", opts->rdwr, sep);

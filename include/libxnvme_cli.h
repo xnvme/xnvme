@@ -122,10 +122,7 @@ struct xnvme_cli_args {
 	uint32_t main_core;
 	const char *core_mask;
 
-	struct {
-		uint32_t value : 31;
-		uint32_t given : 1;
-	} css; ///< SPDK controller-setup: do command-set-selection
+	struct xnvme_opts_css css; ///< SPDK controller-setup: do command-set-selection
 
 	uint32_t use_cmb_sqs;
 	const char *adrfam;
@@ -141,7 +138,6 @@ struct xnvme_cli_args {
 	uint32_t rdwr;
 	uint32_t create;
 	uint32_t create_mode;
-	uint32_t oflags;
 
 	uint32_t nr;
 	uint32_t ad;
@@ -291,8 +287,6 @@ enum xnvme_cli_opt {
 
 	XNVME_CLI_OPT_CREATE      = 92, ///< XNVME_CLI_OPT_CREATE
 	XNVME_CLI_OPT_CREATE_MODE = 93, ///< XNVME_CLI_OPT_CREATE_MODE
-
-	XNVME_CLI_OPT_OFLAGS = 94, ///< XNVME_CLI_OPT_OFLAGS
 
 	XNVME_CLI_OPT_ADRFAM   = 95, ///< XNVME_CLI_OPT_ADRFAM
 	XNVME_CLI_OPT_DEV_NSID = 96, ///< XNVME_CLI_OPT_DEV_NSID
