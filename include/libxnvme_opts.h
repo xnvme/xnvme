@@ -6,6 +6,11 @@
  * @headerfile libxnvme_adm.h
  */
 
+struct xnvme_opts_css {
+	uint32_t value;
+	uint32_t given;
+};
+
 /**
  * xNVMe options
  *
@@ -38,10 +43,7 @@ struct xnvme_opts {
 	uint8_t poll_sq;          ///< io_uring: enable sqthread-polling
 	uint8_t register_files;   ///< io_uring: enable file-regirations
 	uint8_t register_buffers; ///< io_uring: enable buffer-registration
-	struct {
-		uint32_t value : 31;
-		uint32_t given : 1;
-	} css;                    ///< SPDK controller-setup: do command-set-selection
+	struct xnvme_opts_css css;       ///< SPDK controller-setup: do command-set-selection
 	uint32_t use_cmb_sqs;     ///< SPDK controller-setup: use controller-memory-buffer for sq
 	uint32_t shm_id;          ///< SPDK multi-processing: shared-memory-id
 	uint32_t main_core;       ///< SPDK multi-processing: main-core
