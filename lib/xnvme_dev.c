@@ -46,7 +46,6 @@ xnvme_dev_fpr(FILE *stream, const struct xnvme_dev *dev, int opts)
 	wrtn += fprintf(stream, "    admin: '%s'\n", dev->opts.admin);
 	wrtn += fprintf(stream, "    sync: '%s'\n", dev->opts.sync);
 	wrtn += fprintf(stream, "    async: '%s'\n", dev->opts.async);
-	wrtn += fprintf(stream, "    oflags: 0x%" PRIx32 "\n", dev->opts.oflags);
 
 	wrtn += xnvme_geo_yaml(stream, &dev->geo, 2, "\n", 1);
 	wrtn += fprintf(stream, "\n");
@@ -136,7 +135,7 @@ xnvme_dev_open(const char *dev_uri, struct xnvme_opts *opts)
 	if (!opts) { ///< Set defaults when none are given
 		opts = &opts_default;
 	}
-	if (!opts->oflags) { ///< Set a default open-mode
+	if (!(opts->rdonly | opts->wronly | opts->rdwr)) { ///< Set a default open-mode
 		opts->rdwr = opts_default.rdwr;
 	}
 	if (opts->create && !opts->create_mode) { ///< Set a default umask/mode_t/create-mode
