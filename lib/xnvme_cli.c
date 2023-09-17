@@ -1399,7 +1399,7 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 		args->create = arg ? num : 0;
 		break;
 	case XNVME_CLI_OPT_CREATE_MODE:
-		args->create = arg ? num : 0;
+		args->create_mode = arg ? num : 0;
 		break;
 	case XNVME_CLI_OPT_OFLAGS:
 		args->oflags = arg ? num : 0;
