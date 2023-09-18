@@ -4,7 +4,7 @@
 
 [wrap-git]
 url = https://github.com/spdk/spdk.git
-revision = v22.09
+revision = v23.01
 patch_directory = spdk
 clone-recursive = true
 
