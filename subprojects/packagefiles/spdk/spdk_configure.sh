@@ -1,5 +1,8 @@
 #!/usr/bin/env sh
 ./configure \
+  --disable-tests \
+  --disable-unit-tests \
+  --disable-examples \
   --disable-apps \
   --without-crypto \
   --without-fuse \
@@ -7,12 +10,11 @@
   --without-iscsi-initiator \
   --without-nvme-cuse \
   --without-ocf \
-  --without-pmdk \
   --without-rbd \
-  --without-reduce \
   --without-shared \
   --without-uring \
   --without-usdt \
   --without-vhost \
   --without-vtune \
-  --without-virtio
+  --without-virtio \
+  --without-xnvme

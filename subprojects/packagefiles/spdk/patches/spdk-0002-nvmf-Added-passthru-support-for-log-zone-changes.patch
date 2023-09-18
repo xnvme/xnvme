@@ -1,4 +1,4 @@
-From dab4fb2ea1a40b27c80a885d34b63a5ec350bcb4 Mon Sep 17 00:00:00 2001
+From 80a6a56b2665a592b2815e27fb6a14d88ed8af3d Mon Sep 17 00:00:00 2001
 From: "Ivan L. Picoli" <i.picoli@samsung.com>
 Date: Tue, 18 Aug 2020 17:31:37 +0200
 Subject: [PATCH 2/2] nvmf: Added passthru support for log zone changes
@@ -10,10 +10,10 @@ Signed-off-by: Ivan L. Picoli <i.picoli@samsung.com>
  2 files changed, 13 insertions(+)
 
 diff --git a/include/spdk/nvme_spec.h b/include/spdk/nvme_spec.h
-index 68bd9615d..1f2d09112 100644
+index 1b77243ef..877a5a6d1 100644
 --- a/include/spdk/nvme_spec.h
 +++ b/include/spdk/nvme_spec.h
-@@ -2990,6 +2990,9 @@ enum spdk_nvme_log_page {
+@@ -3043,6 +3043,9 @@ enum spdk_nvme_log_page {
  
  	/* 0x81-0xBF - I/O command set specific */
  
@@ -24,10 +24,10 @@ index 68bd9615d..1f2d09112 100644
  	SPDK_NVME_LOG_VENDOR_SPECIFIC_START	= 0xc0,
  	SPDK_NVME_LOG_VENDOR_SPECIFIC_END	= 0xff,
 diff --git a/lib/nvmf/ctrlr.c b/lib/nvmf/ctrlr.c
-index 665862ae1..b0d131052 100644
+index c7a8610f2..aecf19bcd 100644
 --- a/lib/nvmf/ctrlr.c
 +++ b/lib/nvmf/ctrlr.c
-@@ -453,6 +453,7 @@ nvmf_ctrlr_create(struct spdk_nvmf_subsystem *subsystem,
+@@ -532,6 +532,7 @@ nvmf_ctrlr_create(struct spdk_nvmf_subsystem *subsystem,
  	spdk_thread_send_msg(subsystem->thread, _nvmf_subsystem_add_ctrlr, req);
  
  	spdk_nvmf_set_passthru_admin_cmd(SPDK_NVME_OPC_IDENTIFY, 1);
@@ -35,7 +35,7 @@ index 665862ae1..b0d131052 100644
  
  	return ctrlr;
  err_listener:
-@@ -3407,6 +3408,15 @@ nvmf_ctrlr_process_admin_cmd(struct spdk_nvmf_request *req)
+@@ -3596,6 +3597,15 @@ nvmf_ctrlr_process_admin_cmd(struct spdk_nvmf_request *req)
  			}
  		}
  
@@ -52,5 +52,5 @@ index 665862ae1..b0d131052 100644
  		if (rc >= SPDK_NVMF_REQUEST_EXEC_STATUS_COMPLETE) {
  			/* The handler took care of this command */
 -- 
-2.37.3
+2.42.0
 
