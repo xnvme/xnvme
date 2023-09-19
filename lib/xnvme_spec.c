@@ -43,7 +43,7 @@ xnvme_spec_log_health_fpr(FILE *stream, const struct xnvme_spec_log_health_entry
 
 	wrtn += fprintf(stream, "\n");
 	wrtn += fprintf(stream, "  crit_warn: %" PRIu8 "\n", log->crit_warn);
-	wrtn += fprintf(stream, "  comp_temp: %" PRIu16 "\n", log->comp_temp - 273u);
+	wrtn += fprintf(stream, "  comp_temp: %d\n", log->comp_temp - 273u);
 	wrtn += fprintf(stream, "  avail_spare: %" PRIu8 "\n", log->avail_spare);
 	wrtn += fprintf(stream, "  avail_spare_thresh: %" PRIu8 "\n", log->avail_spare_thresh);
 	wrtn += fprintf(stream, "  pct_used: %" PRIu8 "\n", log->pct_used);
@@ -66,7 +66,7 @@ xnvme_spec_log_health_fpr(FILE *stream, const struct xnvme_spec_log_health_entry
 	wrtn += fprintf(stream, "  warn_comp_temp_time: %" PRIu32 "\n", log->warn_comp_temp_time);
 	wrtn += fprintf(stream, "  crit_comp_temp_time: %" PRIu32 "\n", log->crit_comp_temp_time);
 	for (int i = 0; i < 8; ++i) {
-		wrtn += fprintf(stream, "  temp_sens%u: %" PRIu16 "\n", i + 1,
+		wrtn += fprintf(stream, "  temp_sens%u: %d\n", i + 1,
 				log->temp_sens[i] ? log->temp_sens[i] - 273u : 0);
 	}
 	wrtn += fprintf(stream, "  tmt1tc: %" PRIu32 "\n", log->tmt1tc);
@@ -970,7 +970,7 @@ xnvme_spec_nvm_scopy_source_range_fpr(FILE *stream,
 	}
 
 	wrtn += fprintf(stream, "\n");
-	wrtn += fprintf(stream, "  nranges: %" PRIu8 "\n", nr + 1);
+	wrtn += fprintf(stream, "  nranges: %" PRIu8 "\n", (uint8_t)(nr + 1));
 	wrtn += fprintf(stream, "  nr: %" PRIu8 "\n", nr);
 	wrtn += fprintf(stream, "  entries:\n");
 
