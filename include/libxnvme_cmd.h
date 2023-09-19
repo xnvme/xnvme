@@ -7,23 +7,26 @@
  */
 
 /**
+ * Attributes for asynchronous command-contexts
+ *
+ * @struct xnvme_cmd_ctx_async
+ */
+struct xnvme_cmd_ctx_async {
+	struct xnvme_queue *queue; ///< Queue used for command processing
+	xnvme_queue_cb cb;         ///< User defined callback function
+	void *cb_arg;              ///< User defined callback function arguments
+};
+
+/**
  * The xNVMe Command Context
  *
  * @struct xnvme_cmd_ctx
  */
 struct xnvme_cmd_ctx {
-	struct xnvme_spec_cmd cmd; ///< Command to be processed
-	struct xnvme_spec_cpl cpl; ///< Completion result from processing
-
-	struct xnvme_dev *dev; ///< Device associated with the command
-
-	///< Fields for command option: XNVME_CMD_ASYNC
-	struct {
-		struct xnvme_queue *queue; ///< Queue used for command processing
-		xnvme_queue_cb cb;         ///< User defined callback function
-		void *cb_arg;              ///< User defined callback function arguments
-	} async;
-
+	struct xnvme_spec_cmd cmd;        ///< Command to be processed
+	struct xnvme_spec_cpl cpl;        ///< Completion result from processing
+	struct xnvme_dev *dev;            ///< Device associated with the command
+	struct xnvme_cmd_ctx_async async; ///< Fields for command option: XNVME_CMD_ASYNC
 	///< Field containing command-options, the field is initialized by helper-functions
 	uint32_t opts;
 
