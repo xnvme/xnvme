@@ -6,6 +6,11 @@
  * @headerfile libxnvme_lba.h
  */
 
+struct xnvme_lba_range_attr {
+	bool is_zoned; ///< Whether the range covers a zone [zslba, zslba + cap]
+	bool is_valid; ///< Whether the range is valid
+};
+
 /**
  * Representation of a range of logical-block-addresses aka LBAs
  *
@@ -16,12 +21,7 @@ struct xnvme_lba_range {
 	uint64_t elba;   ///< Range end-LBA; ends at and includes this address
 	uint32_t naddrs; ///< Number of addresses in range [slba, elba]
 	uint64_t nbytes; ///< Number of bytes covered by [slba, elba]
-
-	struct {
-		uint32_t is_zoned : 1; ///< Whether the range covers a zone [zslba, zslba + cap]
-		uint32_t is_valid : 1; ///< Whether the range is valid
-		uint32_t rsvd     : 30;
-	} attr;
+	struct xnvme_lba_range_attr attr;
 };
 
 /**
