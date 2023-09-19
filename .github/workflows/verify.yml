@@ -448,6 +448,34 @@ jobs:
         python3 -m pipx inject cijoe /tmp/artifacts/xnvme-py-sdist.tar.gz
         pytest --pyargs xnvme.ctypes_bindings
 
+    #
+    # Ramdisk testing
+    #
+    - name: Install fio
+      run: |
+        cd /tmp
+        git clone https://github.com/axboe/fio.git
+        cd fio
+        git checkout fio-3.35
+        ./configure
+        make
+
+    - name: CIJOE, run test-ramdisk.yaml
+      run: |
+        cd cijoe && cijoe \
+        --config "configs/ramdisk-macos.toml" \
+        --workflow "workflows/test-ramdisk.yaml" \
+        --output "test-${{ matrix.runner.os }}-${{ matrix.runner.ver }}"
+
+    - name: CIJOE, upload test-ramdisk-report
+      if: always()
+      uses: actions/upload-artifact@v3.1.1
+      with:
+        name: test-ramdisk-${{ matrix.runner.os }}-${{ matrix.runner.ver }}
+        path: cijoe/test-${{ matrix.runner.os }}-${{ matrix.runner.ver }}/*
+        if-no-files-found: error
+
+
   #
   # Build on Windows
   #
