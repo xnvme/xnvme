@@ -1075,6 +1075,54 @@ exit:
 	return err;
 }
 
+static int
+subsystem_reset(struct xnvme_cli *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	int err;
+
+	err = xnvme_subsystem_reset(dev);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		xnvme_cli_perr("xnvme_subsystem_reset()", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int
+ctrlr_reset(struct xnvme_cli *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	int err;
+
+	err = xnvme_controller_reset(dev);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		xnvme_cli_perr("xnvme_controller_reset()", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int
+ns_rescan(struct xnvme_cli *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	int err;
+
+	err = xnvme_namespace_rescan(dev);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		xnvme_cli_perr("xnvme_namespace_rescan()", err);
+		return err;
+	}
+
+	return 0;
+}
+
 //
 // Command-Line Interface (CLI) definition
 //
@@ -1547,6 +1595,42 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_IDR, XNVME_CLI_LFLG},
 			{XNVME_CLI_OPT_SLBA, XNVME_CLI_LREQ},
 			{XNVME_CLI_OPT_LLB, XNVME_CLI_LREQ},
+
+			XNVME_CLI_ADMIN_OPTS,
+		},
+	},
+	{
+		"subsystem-reset",
+		"Resets the subsystem",
+		"Resets the subsystem",
+		subsystem_reset,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+
+			XNVME_CLI_ADMIN_OPTS,
+		},
+	},
+	{
+		"ctrlr-reset",
+		"Resets the controller",
+		"Resets the controller",
+		ctrlr_reset,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+
+			XNVME_CLI_ADMIN_OPTS,
+		},
+	},
+	{
+		"ns-rescan",
+		"Rescans the nvme namespaces",
+		"Rescans the nvme namespaces",
+		ns_rescan,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
 			XNVME_CLI_ADMIN_OPTS,
 		},
