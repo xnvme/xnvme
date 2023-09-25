@@ -1,0 +1,102 @@
+From 1eb77dd3b90414025b205d7b71892aa674560005 Mon Sep 17 00:00:00 2001
+From: Jim Harris <jim.harris@samsung.com>
+Date: Fri, 22 Sep 2023 10:50:49 -0700
+Subject: [PATCH 3/7] nvmf: add nvmf_passthru_admin_cmd_for_ctrlr
+
+This is a helper function to enable sending admin
+cmds that target a controller rather than a
+namespace. In this case the cmd's nsid will not
+be valid for looking up a bdev, but we need to send
+it through a bdev since there is no controller
+entity in the bdev layer. It will just send it
+through the first namespace on the controller.
+
+This function will be used in upcoming patch, so
+for now do not mark it static to avoid unused
+warnings, we will add it when it gets used in next
+patch.
+
+Signed-off-by: Jim Harris <jim.harris@samsung.com>
+Change-Id: I1d723a928f9e32bc7361028fe7820a52b21151d7
+---
+ lib/nvmf/ctrlr.c | 43 ++++++++++++++++++++++++++++++++++---------
+ 1 file changed, 34 insertions(+), 9 deletions(-)
+
+diff --git a/lib/nvmf/ctrlr.c b/lib/nvmf/ctrlr.c
+index e9ace373c..24898ca4e 100644
+--- a/lib/nvmf/ctrlr.c
++++ b/lib/nvmf/ctrlr.c
+@@ -54,6 +54,7 @@ struct spdk_nvmf_custom_admin_cmd {
+ static struct spdk_nvmf_custom_admin_cmd g_nvmf_custom_admin_cmd_hdlrs[SPDK_NVME_MAX_OPC + 1];
+ 
+ static void _nvmf_request_complete(void *ctx);
++int nvmf_passthru_admin_cmd_for_ctrlr(struct spdk_nvmf_request *req, struct spdk_nvmf_ctrlr *ctrlr);
+ 
+ static inline void
+ nvmf_invalid_connect_response(struct spdk_nvmf_fabric_connect_rsp *rsp,
+@@ -4681,22 +4682,14 @@ spdk_nvmf_set_custom_admin_cmd_hdlr(uint8_t opc, spdk_nvmf_custom_cmd_hdlr hdlr)
+ }
+ 
+ static int
+-nvmf_passthru_admin_cmd(struct spdk_nvmf_request *req)
++nvmf_passthru_admin_cmd_for_bdev_nsid(struct spdk_nvmf_request *req, uint32_t bdev_nsid)
+ {
+ 	struct spdk_bdev *bdev;
+ 	struct spdk_bdev_desc *desc;
+ 	struct spdk_io_channel *ch;
+-	struct spdk_nvme_cmd *cmd = spdk_nvmf_request_get_cmd(req);
+ 	struct spdk_nvme_cpl *response = spdk_nvmf_request_get_response(req);
+-	uint32_t bdev_nsid;
+ 	int rc;
+ 
+-	if (g_nvmf_custom_admin_cmd_hdlrs[cmd->opc].nsid == 0) {
+-		bdev_nsid = cmd->nsid;
+-	} else {
+-		bdev_nsid = g_nvmf_custom_admin_cmd_hdlrs[cmd->opc].nsid;
+-	}
+-
+ 	rc = spdk_nvmf_request_get_bdev(bdev_nsid, req, &bdev, &desc, &ch);
+ 	if (rc) {
+ 		response->status.sct = SPDK_NVME_SCT_GENERIC;
+@@ -4706,6 +4699,38 @@ nvmf_passthru_admin_cmd(struct spdk_nvmf_request *req)
+ 	return spdk_nvmf_bdev_ctrlr_nvme_passthru_admin(bdev, desc, ch, req, NULL);
+ }
+ 
++static int
++nvmf_passthru_admin_cmd(struct spdk_nvmf_request *req)
++{
++	struct spdk_nvme_cmd *cmd = spdk_nvmf_request_get_cmd(req);
++	uint32_t bdev_nsid;
++
++	if (g_nvmf_custom_admin_cmd_hdlrs[cmd->opc].nsid != 0) {
++		bdev_nsid = g_nvmf_custom_admin_cmd_hdlrs[cmd->opc].nsid;
++	} else {
++		bdev_nsid = cmd->nsid;
++	}
++
++	return nvmf_passthru_admin_cmd_for_bdev_nsid(req, bdev_nsid);
++}
++
++int
++nvmf_passthru_admin_cmd_for_ctrlr(struct spdk_nvmf_request *req, struct spdk_nvmf_ctrlr *ctrlr)
++{
++	struct spdk_nvme_cpl *response = spdk_nvmf_request_get_response(req);
++	struct spdk_nvmf_ns *ns;
++
++	ns = spdk_nvmf_subsystem_get_first_ns(ctrlr->subsys);
++	if (ns == NULL) {
++		/* Is there a better sc to use here? */
++		response->status.sct = SPDK_NVME_SCT_GENERIC;
++		response->status.sc = SPDK_NVME_SC_INVALID_NAMESPACE_OR_FORMAT;
++		return SPDK_NVMF_REQUEST_EXEC_STATUS_COMPLETE;
++	}
++
++	return nvmf_passthru_admin_cmd_for_bdev_nsid(req, ns->nsid);
++}
++
+ void
+ spdk_nvmf_set_passthru_admin_cmd(uint8_t opc, uint32_t forward_nsid)
+ {
+-- 
+2.42.0
+

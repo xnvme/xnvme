@@ -1,0 +1,39 @@
+From a7de509a84a29484741312f15ba05f9575dc6a36 Mon Sep 17 00:00:00 2001
+From: Jim Harris <jim.harris@samsung.com>
+Date: Mon, 25 Sep 2023 09:15:30 -0700
+Subject: [PATCH 1/7] nvme: add struct spdk_nvme_iocs_vector definition
+
+This is needed to support IDENTIFY_IOCS (cns 1Ch).
+
+Signed-off-by: Jim Harris <jim.harris@samsung.com>
+Change-Id: I878d88a8ff1fc741ed59f797bdc1907f2f3f3f2c
+---
+ include/spdk/nvme_spec.h | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/include/spdk/nvme_spec.h b/include/spdk/nvme_spec.h
+index 8900022a2..98397e9e0 100644
+--- a/include/spdk/nvme_spec.h
++++ b/include/spdk/nvme_spec.h
+@@ -3018,6 +3018,18 @@ struct spdk_nvme_zns_ns_data {
+ };
+ SPDK_STATIC_ASSERT(sizeof(struct spdk_nvme_zns_ns_data) == 4096, "Incorrect size");
+ 
++/**
++ * IO command set vector for IDENTIFY_IOCS
++ */
++struct spdk_nvme_iocs_vector {
++	uint8_t	nvm  : 1;
++	uint8_t	kv   : 1;
++	uint8_t	zns  : 1;
++	uint8_t	rsvd : 5;
++	uint8_t	rsvd2[7];
++};
++SPDK_STATIC_ASSERT(sizeof(struct spdk_nvme_iocs_vector) == 8, "Incorrect size");
++
+ /**
+  * Deallocated logical block features - read value
+  */
+-- 
+2.42.0
+
