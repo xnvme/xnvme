@@ -1,0 +1,91 @@
+From 95bccec939d57732d1cadeea1c7faa0f52409d30 Mon Sep 17 00:00:00 2001
+From: Jim Harris <jim.harris@samsung.com>
+Date: Mon, 25 Sep 2023 09:08:31 -0700
+Subject: [PATCH 2/7] nvmf: add IDENTIFY_IOCS (cns 1Ch) emulation
+
+Linux kernel sends IDENTIFY CNS 0x1C to check if
+ZNS (or KV) command sets are supported, so add this
+emulation in the nvmf target code.
+
+Currently it just checks namespaces that are currently
+attached to the subsystem, and doesn't account for case
+where namespaces are attached later.  But existing
+ZNS code in nvmf layer already takes this same approach
+for other fields. In the future we may want to consider
+RPCs for the subsystem that explicitly enable certain
+command sets even if there are not yet any namespaces
+attached that support those command sets.
+
+Signed-off-by: Jim Harris <jim.harris@samsung.com>
+Change-Id: Ia91f89d8df0b40b4ccf95d11418a58551a32c26b
+---
+ lib/nvmf/ctrlr.c | 46 ++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 46 insertions(+)
+
+diff --git a/lib/nvmf/ctrlr.c b/lib/nvmf/ctrlr.c
+index 84800509e..e9ace373c 100644
+--- a/lib/nvmf/ctrlr.c
++++ b/lib/nvmf/ctrlr.c
+@@ -3048,6 +3048,49 @@ nvmf_ctrlr_identify_ns_id_descriptor_list(
+ 	return SPDK_NVMF_REQUEST_EXEC_STATUS_COMPLETE;
+ }
+ 
++static int
++nvmf_ctrlr_identify_iocs(struct spdk_nvmf_ctrlr *ctrlr,
++			 struct spdk_nvme_cmd *cmd,
++			 struct spdk_nvme_cpl *rsp,
++			 void *cdata, size_t cdata_size)
++{
++	struct spdk_nvme_iocs_vector *vector;
++	struct spdk_nvmf_ns *ns;
++
++	if (cdata_size < sizeof(struct spdk_nvme_iocs_vector)) {
++		rsp->status.sct = SPDK_NVME_SCT_GENERIC;
++		rsp->status.sc = SPDK_NVME_SC_INVALID_FIELD;
++		return SPDK_NVMF_REQUEST_EXEC_STATUS_COMPLETE;
++	}
++
++	/* For now we only support this command sent to the current
++	 * controller.
++	 */
++	if (cmd->cdw10_bits.identify.cntid != 0xFFFF &&
++	    cmd->cdw10_bits.identify.cntid != ctrlr->cntlid) {
++		rsp->status.sct = SPDK_NVME_SCT_GENERIC;
++		rsp->status.sc = SPDK_NVME_SC_INVALID_FIELD;
++		return SPDK_NVMF_REQUEST_EXEC_STATUS_COMPLETE;
++	}
++	memset(cdata, 0, cdata_size);
++
++	vector = cdata;
++	vector->nvm = 1;
++	for (ns = spdk_nvmf_subsystem_get_first_ns(ctrlr->subsys); ns != NULL;
++	     ns = spdk_nvmf_subsystem_get_next_ns(ctrlr->subsys, ns)) {
++		if (ns->bdev == NULL) {
++			continue;
++		}
++		if (spdk_bdev_is_zoned(ns->bdev)) {
++			vector->zns = 1;
++		}
++	}
++
++	rsp->status.sct = SPDK_NVME_SCT_GENERIC;
++	rsp->status.sc = SPDK_NVME_SC_SUCCESS;
++	return SPDK_NVMF_REQUEST_EXEC_STATUS_COMPLETE;
++}
++
+ static int
+ nvmf_ctrlr_identify(struct spdk_nvmf_request *req)
+ {
+@@ -3103,6 +3146,9 @@ nvmf_ctrlr_identify(struct spdk_nvmf_request *req)
+ 	case SPDK_NVME_IDENTIFY_CTRLR_IOCS:
+ 		ret = spdk_nvmf_ctrlr_identify_iocs_specific(ctrlr, cmd, rsp, (void *)&tmpbuf, req->length);
+ 		break;
++	case SPDK_NVME_IDENTIFY_IOCS:
++		ret = nvmf_ctrlr_identify_iocs(ctrlr, cmd, rsp, (void *)&tmpbuf, req->length);
++		break;
+ 	default:
+ 		goto invalid_cns;
+ 	}
+-- 
+2.42.0
+
