@@ -1379,10 +1379,10 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_ctrlr) == 4096, "Incorrect siz
 struct xnvme_spec_cs_vector {
 	union {
 		struct {
-			uint64_t nvm   : 1;
-			uint64_t rsvd1 : 1;
-			uint64_t zns   : 1;
-			uint64_t rsvd  : 61;
+			uint64_t nvm  : 1;
+			uint64_t kv   : 1;
+			uint64_t zns  : 1;
+			uint64_t rsvd : 61;
 		};
 		uint64_t val;
 	};
