@@ -708,6 +708,7 @@ xnvme_spec_idfy_cs_fpr(FILE *stream, const struct xnvme_spec_idfy_cs *idfy, int 
 		wrtn += fprintf(stream, "iocsci: %d, ", i);
 		wrtn += fprintf(stream, "val: 0x%" PRIx64 ", ", iocscv->val);
 		wrtn += fprintf(stream, "nvm: %d, ", iocscv->nvm);
+		wrtn += fprintf(stream, "kv: %d, ", iocscv->kv);
 		wrtn += fprintf(stream, "zns: %d", iocscv->zns);
 		wrtn += fprintf(stream, " }");
 
