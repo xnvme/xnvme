@@ -1,0 +1,130 @@
+From d287ca5a625568c5f4b77d07431e45e14016e253 Mon Sep 17 00:00:00 2001
+From: "Szulik, Maciej" <maciej.szulik@intel.com>
+Date: Wed, 29 Mar 2023 12:37:51 +0200
+Subject: [PATCH] lib/nvme: restore spdk_nvme_ctrlr_get_registers
+
+This function was intended to be deleted as unused, however it can be
+useful for debug and test capabilities.
+
+Its declaration was left in header file, so just adding implementation
+for PCIE and VFIO USER transports.
+
+Signed-off-by: Szulik, Maciej <maciej.szulik@intel.com>
+Change-Id: I670acb53c2f88a844525a0ecea27143b055f117b
+Reviewed-on: https://review.spdk.io/gerrit/c/spdk/spdk/+/17400
+Tested-by: SPDK CI Jenkins <sys_sgci@intel.com>
+Reviewed-by: Ben Walker <benjamin.walker@intel.com>
+Reviewed-by: Jim Harris <james.r.harris@intel.com>
+Community-CI: Mellanox Build Bot
+Reviewed-by: Aleksey Marchuk <alexeymar@nvidia.com>
+---
+ include/spdk/nvme.h       |  2 ++
+ lib/nvme/nvme_pcie.c      |  9 +++++++++
+ lib/nvme/nvme_transport.c | 12 ++++++++++++
+ lib/nvme/nvme_vfio_user.c |  9 +++++++++
+ lib/nvme/spdk_nvme.map    |  1 +
+ 5 files changed, 33 insertions(+)
+
+diff --git a/include/spdk/nvme.h b/include/spdk/nvme.h
+index 4157292da..110571eb9 100644
+--- a/include/spdk/nvme.h
++++ b/include/spdk/nvme.h
+@@ -3982,6 +3982,8 @@ struct spdk_nvme_transport_ops {
+ 	int (*ctrlr_get_memory_domains)(const struct spdk_nvme_ctrlr *ctrlr,
+ 					struct spdk_memory_domain **domains,
+ 					int array_size);
++
++	volatile struct spdk_nvme_registers *(*ctrlr_get_registers)(struct spdk_nvme_ctrlr *ctrlr);
+ };
+ 
+ /**
+diff --git a/lib/nvme/nvme_pcie.c b/lib/nvme/nvme_pcie.c
+index 14f563532..3330425c2 100644
+--- a/lib/nvme/nvme_pcie.c
++++ b/lib/nvme/nvme_pcie.c
+@@ -178,6 +178,14 @@ nvme_pcie_reg_addr(struct spdk_nvme_ctrlr *ctrlr, uint32_t offset)
+ 	return (volatile void *)((uintptr_t)pctrlr->regs + offset);
+ }
+ 
++static volatile struct spdk_nvme_registers *
++nvme_pcie_ctrlr_get_registers(struct spdk_nvme_ctrlr *ctrlr)
++{
++	struct nvme_pcie_ctrlr *pctrlr = nvme_pcie_ctrlr(ctrlr);
++
++	return pctrlr->regs;
++}
++
+ static int
+ nvme_pcie_ctrlr_set_reg_4(struct spdk_nvme_ctrlr *ctrlr, uint32_t offset, uint32_t value)
+ {
+@@ -1130,6 +1138,7 @@ const struct spdk_nvme_transport_ops pcie_ops = {
+ 	.ctrlr_destruct = nvme_pcie_ctrlr_destruct,
+ 	.ctrlr_enable = nvme_pcie_ctrlr_enable,
+ 
++	.ctrlr_get_registers = nvme_pcie_ctrlr_get_registers,
+ 	.ctrlr_set_reg_4 = nvme_pcie_ctrlr_set_reg_4,
+ 	.ctrlr_set_reg_8 = nvme_pcie_ctrlr_set_reg_8,
+ 	.ctrlr_get_reg_4 = nvme_pcie_ctrlr_get_reg_4,
+diff --git a/lib/nvme/nvme_transport.c b/lib/nvme/nvme_transport.c
+index e8e91acc2..f1325c5f4 100644
+--- a/lib/nvme/nvme_transport.c
++++ b/lib/nvme/nvme_transport.c
+@@ -801,3 +801,15 @@ enum spdk_nvme_transport_type nvme_transport_get_trtype(const struct spdk_nvme_t
+ {
+ 	return transport->ops.type;
+ }
++
++volatile struct spdk_nvme_registers *
++spdk_nvme_ctrlr_get_registers(struct spdk_nvme_ctrlr *ctrlr)
++{
++	const struct spdk_nvme_transport *transport = nvme_get_transport(ctrlr->trid.trstring);
++
++	if (transport->ops.ctrlr_get_registers) {
++		return transport->ops.ctrlr_get_registers(ctrlr);
++	}
++
++	return NULL;
++}
+\ No newline at end of file
+diff --git a/lib/nvme/nvme_vfio_user.c b/lib/nvme/nvme_vfio_user.c
+index c52b8d4ef..e942f8572 100644
+--- a/lib/nvme/nvme_vfio_user.c
++++ b/lib/nvme/nvme_vfio_user.c
+@@ -60,6 +60,14 @@ nvme_vfio_ctrlr(struct spdk_nvme_ctrlr *ctrlr)
+ 	return SPDK_CONTAINEROF(pctrlr, struct nvme_vfio_ctrlr, pctrlr);
+ }
+ 
++static volatile struct spdk_nvme_registers *
++nvme_vfio_ctrlr_get_registers(struct spdk_nvme_ctrlr *ctrlr)
++{
++	struct nvme_vfio_ctrlr *vctrlr = nvme_vfio_ctrlr(ctrlr);
++
++	return vctrlr->pctrlr.regs;
++}
++
+ static int
+ nvme_vfio_ctrlr_set_reg_4(struct spdk_nvme_ctrlr *ctrlr, uint32_t offset, uint32_t value)
+ {
+@@ -346,6 +354,7 @@ const struct spdk_nvme_transport_ops vfio_ops = {
+ 	.ctrlr_destruct = nvme_vfio_ctrlr_destruct,
+ 	.ctrlr_enable = nvme_vfio_ctrlr_enable,
+ 
++	.ctrlr_get_registers = nvme_vfio_ctrlr_get_registers,
+ 	.ctrlr_set_reg_4 = nvme_vfio_ctrlr_set_reg_4,
+ 	.ctrlr_set_reg_8 = nvme_vfio_ctrlr_set_reg_8,
+ 	.ctrlr_get_reg_4 = nvme_vfio_ctrlr_get_reg_4,
+diff --git a/lib/nvme/spdk_nvme.map b/lib/nvme/spdk_nvme.map
+index f4522aa31..f3bbaa898 100644
+--- a/lib/nvme/spdk_nvme.map
++++ b/lib/nvme/spdk_nvme.map
+@@ -114,6 +114,7 @@
+ 	spdk_nvme_ctrlr_set_remove_cb;
+ 	spdk_nvme_ctrlr_get_memory_domains;
+ 	spdk_nvme_ctrlr_get_discovery_log_page;
++	spdk_nvme_ctrlr_get_registers;
+ 
+ 	spdk_nvme_poll_group_create;
+ 	spdk_nvme_poll_group_add;
+-- 
+2.39.1
+
