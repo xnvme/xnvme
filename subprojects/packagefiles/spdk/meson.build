@@ -59,7 +59,11 @@ if get_option('build_subprojects') and not fs.exists('build')
   message('Patching ..')
   run_command('spdk_patches.sh', capture: true, check: true)
   message('Configuring ..')
-  run_command('spdk_configure.sh', capture: true, check: true)
+  if get_option('buildtype') == 'debug'
+     run_command('spdk_configure_debug.sh', capture: true, check: true)
+  else
+    run_command('spdk_configure.sh', capture: true, check: true)
+  endif
 endif
 if get_option('build_subprojects') and not fs.exists('build' / 'lib' / 'src' / 'spdk_nvme.a')
   cpu_count = run_command([
