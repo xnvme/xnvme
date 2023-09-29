@@ -1,0 +1,51 @@
+---
+doc: |
+  Provision a guest using git repos
+
+  The guest is created based of the "bootimg" in the config.
+
+  The config must include the desired branch/tag of the xNVMe repo. 
+
+steps:
+- name: kill
+  uses: qemu.guest_kill
+
+- name: initialize
+  uses: qemu.guest_init_using_bootimage
+
+- name: start
+  uses: xnvme_guest_start_nvme
+
+- name: check
+  run: |
+    hostname
+
+- name: prep_xnvme
+  run: |
+    # git clone https://github.com/SOME_FORK/xNVMe.git /tmp/xnvme_source
+    git clone https://github.com/OpenMPDK/xNVMe.git /tmp/xnvme_source
+    cd /tmp/xnvme_source && git checkout next
+
+- name: build_prep
+  uses: xnvme_build_prep
+  with:
+    xnvme_source: '/tmp/xnvme_source'
+
+- name: build
+  run: |
+    # Beware using buildtype=debug will cause tests to freeze - but it is useful for manual debugging
+    # This is because the debug output slows paramiko down to a halt
+    # cd /tmp/xnvme_source && meson setup builddir --buildtype=debug
+    cd /tmp/xnvme_source && meson setup builddir
+    cd /tmp/xnvme_source && meson compile -C builddir
+    cd /tmp/xnvme_source && cat builddir/meson-logs/meson-log.txt
+
+- name: install
+  uses: xnvme_install
+  with:
+    xnvme_source: '/tmp/xnvme_source'
+
+- name: gha_prepare_aux
+  uses: gha_prepare_aux
+  with:
+    xnvme_source: '/tmp/xnvme_source'
