@@ -96,7 +96,9 @@ _linux_libaio_poke(struct xnvme_queue *q, uint32_t max)
 	} else {
 		uint32_t current = ring->head;
 
-		for (completed = 0; completed < max; completed++) {
+		// Casting max to int is safe here because
+		// max <= queue->base.outstanding < 4096
+		for (completed = 0; completed < (int)max; completed++) {
 			if (current == ring->tail) {
 				break;
 			}
