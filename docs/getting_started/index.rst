@@ -406,6 +406,18 @@ and it informs you that it utilizes **nvme_ioctl** for synchronous command
 execution and it uses **iocp** for asynchronous command execution. This method
 can be used for raw devices via **\\.\PhysicalDrive<disk number>** device path.
 
+Below mentioned commands are currently supported by **xNVMe** using IOCTL path:
+
+* ``Admin Commands``
+   * ``Get Log Page``
+   * ``Identify``
+   * ``Get Feature``
+   * ``Format NVM``
+
+* ``I/O Commands``
+   * ``Read``
+   * ``Write``
+
 NVMe Driver and Regular File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -473,9 +485,9 @@ Async I/O via ``io_ring``
 feature-probing the **io_ring** interface and the **io_ring** opcodes:
 
 When available, then **xNVMe** can send the **io_ring** specific request using
-**IORING_HANDLE_REF** and **IORING_BUFFER_REF** structure for **read** via the
-Windows **io_ring** interface. Doing so improves command-throughput at all
-io-depths when compared to sending the command via NVMe Driver IOCTLs.
+**IORING_HANDLE_REF** and **IORING_BUFFER_REF** structure for **read** and
+**write** via Windows **io_ring** interface. Doing so improves command-throughput
+at all io-depths when compared to sending the command via NVMe Driver IOCTLs.
 
 One can explicitly tell **xNVMe** to utilize ``io_ring`` for async I/O by
 encoding it in the device identifier, like so:
@@ -489,6 +501,60 @@ Yielding the output:
    :language: bash
    :lines: 1-12
 
+
+Building SPDK backend on Windows
+--------------------------------
+
+**SPDK** can be used as a backend for **xNVMe**, to leverage this interface
+first user need to compile the **SPDK** as a subproject with **xNVMe** its
+depend on Windows Platform Development Kit (WPDK) that help to enables
+applications based on the Storage Performance Development Kit (SPDK) to
+build and run as native Windows executables.
+
+Prerequisite’s to compile the ``SPDK``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Refer below mentioned script and link to install the dependencies packages,
+
+* MinGW cross compiler and libraries
+   this can be installed by running below script,
+
+   .. literalinclude:: ../../toolbox/pkgs/windows-2022.bat
+      :language: batch
+
+* `Windows Subsystem of Linux (WSL)`_
+
+.. Windows Subsystem of Linux (WSL): https://github.com/wpdk/wpdk/blob/master/doc/wsl.md
+
+Compilation and Installation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Configure, build and install using helper batch script ``build.bat``:
+
+.. literalinclude:: build_windows.rst
+   :language: bash
+   :lines: 2-
+
+Runtime Prerequisite’s
+~~~~~~~~~~~~~~~~~~~~~~
+
+Refer below mentioned DPDK links to resolve runtime dependencies,
+
+* `Grant Lock pages in memory Privilege`_
+
+.. Grant Lock pages in memory Privilege: https://doc.dpdk.org/guides/windows_gsg/run_apps.html#grant-lock-pages-in-memory-privilege
+
+* `Download DPDK kmods-driver`_
+
+.. DPDK kmods-driver: https://git.dpdk.org/dpdk-kmods
+
+* `Install virt2phys`_
+
+.. Install virt2phys: https://doc.dpdk.org/guides/windows_gsg/run_apps.html#virt2phys
+
+* `Install NetUIO`_
+
+.. Install NetUIO: https://doc.dpdk.org/guides/windows_gsg/run_apps.html#NetUIO
 
 Building an xNVMe Program
 =========================
