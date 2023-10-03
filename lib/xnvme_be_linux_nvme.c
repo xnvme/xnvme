@@ -14,6 +14,7 @@
 #include <linux/nvme_ioctl.h>
 #include <xnvme_be_linux.h>
 #include <xnvme_be_linux_nvme.h>
+#include <xnvme_spec.h>
 
 #ifdef XNVME_DEBUG_ENABLED
 static const char *
@@ -284,6 +285,41 @@ xnvme_be_linux_nvme_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf
 }
 
 int
+xnvme_be_linux_nvme_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf),
+			       size_t XNVME_UNUSED(dbuf_nbytes), void *XNVME_UNUSED(mbuf),
+			       size_t XNVME_UNUSED(mbuf_nbytes))
+{
+	struct xnvme_be_linux_state *state = (void *)ctx->dev->be.state;
+	int ioctl_req;
+	int err;
+
+	switch (ctx->cmd.common.opcode) {
+	case XNVME_SPEC_PSEUDO_OPC_SUBSYSTEM_RESET:
+		ioctl_req = NVME_IOCTL_SUBSYS_RESET;
+		break;
+
+	case XNVME_SPEC_PSEUDO_OPC_CONTROLLER_RESET:
+		ioctl_req = NVME_IOCTL_RESET;
+		break;
+
+	case XNVME_SPEC_PSEUDO_OPC_NAMESPACE_RESCAN:
+		ioctl_req = NVME_IOCTL_RESCAN;
+		break;
+	default:
+		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);
+		return -ENOSYS;
+	}
+
+	err = ioctl(state->fd, ioctl_req);
+	if (err < 0) {
+		XNVME_DEBUG("FAILED: ioctl() err: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
+int
 xnvme_be_linux_nvme_dev_nsid(struct xnvme_dev *dev)
 {
 	struct xnvme_be_linux_state *state = (void *)dev->be.state;
@@ -315,7 +351,7 @@ struct xnvme_be_admin g_xnvme_be_linux_admin_nvme = {
 	.id = "nvme",
 #ifdef XNVME_BE_LINUX_ENABLED
 	.cmd_admin = xnvme_be_linux_nvme_cmd_admin,
-	.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo,
+	.cmd_pseudo = xnvme_be_linux_nvme_cmd_pseudo,
 #else
 	.cmd_admin = xnvme_be_nosys_sync_cmd_admin,
 	.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo,
