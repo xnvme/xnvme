@@ -236,3 +236,42 @@ def test_dsm(cijoe, device, be_opts, cli_args):
         f"xnvme dsm {cli_args} --nsid {device['nsid']} --ad --idw --idr --slba 0 --llb 1"
     )
     assert not err
+
+
+# For these three tests we request a device with labels 'ctrlr'
+@xnvme_parametrize(labels=["ctrlr"], opts=["be", "admin"])
+def test_subsystem_reset(cijoe, device, be_opts, cli_args):
+    if be_opts["be"] == "vfio":
+        pytest.skip(reason="[be=vfio] does not support pseudo commands")
+
+    err, _ = cijoe.run(
+        f"xnvme subsystem-reset {device['uri']} --be {be_opts['be']} --admin {be_opts['admin']}"
+    )
+
+    assert not err
+
+
+@xnvme_parametrize(labels=["ctrlr"], opts=["be", "admin"])
+def test_ctrlr_reset(cijoe, device, be_opts, cli_args):
+    if be_opts["be"] == "vfio":
+        pytest.skip(reason="[be=vfio] does not support pseudo commands")
+
+    err, _ = cijoe.run(
+        f"xnvme ctrlr-reset {device['uri']} --be {be_opts['be']} --admin {be_opts['admin']}"
+    )
+
+    assert not err
+
+
+@xnvme_parametrize(labels=["ctrlr"], opts=["be", "admin"])
+def test_namespace_rescan(cijoe, device, be_opts, cli_args):
+    if be_opts["be"] == "vfio":
+        pytest.skip(reason="[be=vfio] does not support pseudo commands")
+    if be_opts["be"] == "spdk":
+        pytest.skip(reason="[be=spdk] does not support namespace rescan")
+
+    err, _ = cijoe.run(
+        f"xnvme ns-rescan {device['uri']} --be {be_opts['be']} --admin {be_opts['admin']}"
+    )
+
+    assert not err
