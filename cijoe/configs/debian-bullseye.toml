@@ -70,7 +70,7 @@ driver_attachment = "kernel"
 [[devices]]
 uri = "0000:03:00.0"
 nsid = 1
-labels = [ "dev", "pcie", "nvm", "scc", "write_zeroes" ]
+labels = [ "dev", "pcie", "nvm", "scc", "write_zeroes", "ctrlr" ]
 driver_attachment = "userspace"
 
 [[devices]]
@@ -144,6 +144,12 @@ uri = "0000:06:00.0"
 nsid = 1
 labels = [ "dev", "pcie", "nvm", "scc", "fdp" ]
 driver_attachment = "userspace"
+
+[[devices]]
+uri = "/dev/nvme0"
+nsid = 0
+labels = [ "ctrlr", "cdev"]
+driver_attachment = "kernel"
 
 [[devices]]
 uri = "127.0.0.1:4420"
