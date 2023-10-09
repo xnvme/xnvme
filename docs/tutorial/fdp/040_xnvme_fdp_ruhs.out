@@ -1,0 +1,6 @@
+xnvme_spec_ruhs:
+  nruhsd: 3
+  - ruhs_desc[0] : { pi: 0 ruhi: 1 earutr: 0 ruamw: 16042}
+  - ruhs_desc[1] : { pi: 1 ruhi: 2 earutr: 0 ruamw: 16043}
+  - ruhs_desc[2] : { pi: 2 ruhi: 3 earutr: 0 ruamw: 16043}
+  - ruhs_desc[3] : { pi: 0 ruhi: 0 earutr: 0 ruamw: 0}

@@ -1,0 +1,2 @@
+cmd_gfeat: {nsid: 0x1, fid: 0x1d, sel: 0x0}
+feat: { fdpe: 1, fdpci: 0 }

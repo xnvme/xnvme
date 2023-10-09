@@ -1,0 +1,8 @@
+cmd_gfeat: {nsid: 0x1, fid: 0x1e, sel: 0x0}
+nevents: 6 }
+{ type: 0, event enabled: 1 }
+{ type: 0x1, event enabled: 1 }
+{ type: 0x2, event enabled: 1 }
+{ type: 0x3, event enabled: 1 }
+{ type: 0x80, event enabled: 0 }
+{ type: 0x81, event enabled: 0 }
