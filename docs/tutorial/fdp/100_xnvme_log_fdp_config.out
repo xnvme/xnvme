@@ -1,0 +1,23 @@
+xnvme_spec_log_fdp_conf:
+  ncfg: 0
+  version: 0
+  size: 112
+  config_desc: 0
+  ds: 96
+  fdp attributes: {    rgif: 0    fdpvwc: 0    fdpcv: 1    val: 0x80  }
+  vss: 0
+  nrg: 1
+  nruh: 8
+  maxpids: 127
+  nns: 256
+  runs: 100663296
+  erutl: 0
+   - ruht[0]: 1
+   - ruht[1]: 1
+   - ruht[2]: 1
+   - ruht[3]: 1
+   - ruht[4]: 1
+   - ruht[5]: 1
+   - ruht[6]: 1
+   - ruht[7]: 1
+

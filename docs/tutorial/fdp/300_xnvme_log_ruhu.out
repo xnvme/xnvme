@@ -1,0 +1,6 @@
+xnvme_spec_log_ruhu:
+  nruh: 8
+  - ruhu_desc[0]:  0
+  - ruhu_desc[1]:  0x1
+  - ruhu_desc[2]:  0x1
+  - ruhu_desc[3]:  0x1
