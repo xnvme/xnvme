@@ -52,6 +52,7 @@ Contents:
    tutorial/index.rst
    python/index.rst
    contributing/index.rst
+   ci/index.rst
 
 Indices and tables
 ==================
