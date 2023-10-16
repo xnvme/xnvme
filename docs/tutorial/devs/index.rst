@@ -101,8 +101,7 @@ And then install a couple of things:
 
   # Switch to root
   su -
-  apt-get -qy update
-  apt-get -qy install \
+  apt-get -qy update && apt-get -qy install \
     git \
     htop \
     screen \
@@ -211,6 +210,7 @@ Setup ``python3`` and ``pipx``:
     pipx \
     python3-pip \
     python3-venv
+  sudo apt-get remove -qy python3-pytest
   sudo pipx ensurepath
 
 Then install **cijoe** in a ``pipx`` virtual environment:
@@ -250,6 +250,17 @@ In the ``cwd`` then a ``cijoe-output`` is produced, this
 directory holds all information about what was executed.
 Have a look at the generated report at
 ``cijoe-output/report.html``.
+
+.. note::
+   In case you see failures, then inspect the ``RUNLOG`` in the report, this
+   usually tells you exactly what went wrong.
+
+.. note::
+   Make sure that ``pytest`` is not installed system-wide by running ``which
+   pytest``. In case it says ``/usr/bin/pytest``, then it is not using the
+   ``pytest`` provided with the **CIJOE** module. Thus, uninstall it using
+   ``apt-get remove python3-pytest``.
+
 
 .. _sec-tutorials-devs-linux-customkernel:
 
