@@ -144,8 +144,11 @@ xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 
 		err = xnvme_be_linux_nvme_dev_nsid(dev);
 		if (err < 1) {
-			XNVME_DEBUG("INFO: open() : retrieving nsid, got: %x", err);
-			break;
+			if (strncmp(basename(dev->ident.uri), "nvme", 4)) {
+				XNVME_DEBUG("INFO: open() : retrieving nsid, got: %x", err);
+				break;
+			}
+			err = 0;
 		}
 
 		XNVME_DEBUG("INFO: open() : char-device-file: NVMe ioctl() with async. emulation");
