@@ -134,7 +134,7 @@ details on this.
 Homedir
 -------
 
-Regardeless of whether you are using **box** directly as ``root``, or using the
+Regardless of whether you are using the **box** directly as ``root``, or using the
 ``odus`` user, then setup the ``$HOME`` directory like so:
 
 .. code-block:: bash
@@ -271,6 +271,7 @@ Install prerequisites:
 
 .. code-block:: bash
 
+  # Essentials for building the kernel
   sudo apt-get -qy install \
     bc \
     bison \
@@ -282,6 +283,17 @@ Install prerequisites:
     libssl-dev \
     pahole \
     rsync
+
+  # A couple of extra libraries and tools
+  sudo apt-get -qy install \
+    libncurses-dev \
+    linux-cpupower \
+    python3-cpuinfo
+
+.. note::
+   ``libnurses-dev`` is needed for ``make menuconfig``. ``linux-cpupower``
+   provides a cli-tool ``cpupower`` that let's you control the Linux CPU
+   governor, useful for performance evaluation.
 
 Then run the **cijoe** workflow, compiling a custom kernel as a ``.deb``
 package:
