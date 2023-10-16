@@ -83,15 +83,21 @@ throughout.
 
 * Setup networking
 
-And make sure it is accessible from your "main" development machine::
+And make sure it is accessible from your "main" development machine:
+
+.. code-block:: bash
 
   ssh-copy-id odus@box01
 
-Log into the machine::
+Log into the machine:
+
+.. code-block:: bash
 
   ssh odus@box01
 
-And then install a couple of things::
+And then install a couple of things:
+
+.. code-block:: bash
 
   # Switch to root
   su -
@@ -129,7 +135,10 @@ details on this.
 Homedir
 -------
 
-Create a directory structure in the ``$HOME`` directory::
+Regardeless of whether you are using **box** directly as ``root``, or using the
+``odus`` user, then setup the ``$HOME`` directory like so:
+
+.. code-block:: bash
 
   mkdir $HOME/{artifacts,git,workdirs,guests,images}
 
@@ -164,7 +173,9 @@ combination thereof. Then having access to misc. files, and specifically, to
 things like **cijoe** output / reports. Is very convenient.
 
 With minimal fuss, then this is achievable with a combinaion of ``screen`` and
-Python::
+Python:
+
+.. code-block:: bash
 
   cd ~/workdirs
   screen -d -m python3 -m http.server
@@ -175,11 +186,15 @@ The above starts a webserver, serving the content of the ``cwd`` where
 The ``screen -d -m`` part, creates a screen-session and detaches from it. Thus,
 it continues executing even if you disconnect.
 
-You can see the running screen-sessions with::
+You can see the running screen-sessions with:
+
+.. code-block:: bash
 
   screen -list
 
-And attach to them using their ``<name>``::
+And attach to them using their ``<name>``:
+
+.. code-block:: bash
 
   screen -r <name>
 
@@ -188,7 +203,9 @@ And attach to them using their ``<name>``::
 CIJOE
 -----
 
-Setup ``python3`` and ``pipx``::
+Setup ``python3`` and ``pipx``:
+
+.. code-block:: bash
 
   sudo apt-get -qy install \
     pipx \
@@ -196,7 +213,9 @@ Setup ``python3`` and ``pipx``::
     python3-venv
   sudo pipx ensurepath
 
-Then install **cijoe** in a ``pipx`` virtual environment::
+Then install **cijoe** in a ``pipx`` virtual environment:
+
+.. code-block:: bash
 
   pipx install cijoe --include-deps
   pipx inject cijoe cijoe-pkg-linux
@@ -206,7 +225,9 @@ Then install **cijoe** in a ``pipx`` virtual environment::
 Then logout and back in to reload the environment, the addition of ``pipx`` and
 the ``cijoe`` into ``$PATH``.
 
-Do a trial-run::
+Do a trial-run:
+
+.. code-block:: bash
 
   # Create a workdir
   mkdir -p ~/workdirs/cijoe
@@ -219,7 +240,9 @@ In case everything is fine, then it will execute silently.
 
 You can increase the information-level with ``-l``
 argument, the more times you provide the higher the level.
-Try running it with two, that is debug-level::
+Try running it with two, that is debug-level:
+
+.. code-block:: bash
 
   cijoe -ll
 
@@ -233,7 +256,9 @@ Have a look at the generated report at
 Linux Kernel
 ------------
 
-Install prerequisites::
+Install prerequisites:
+
+.. code-block:: bash
 
   sudo apt-get -qy install \
     bc \
@@ -248,7 +273,9 @@ Install prerequisites::
     rsync
 
 Then run the **cijoe** workflow, compiling a custom kernel as a ``.deb``
-package::
+package:
+
+.. code-block:: bash
 
   # Create a workdir for the workflow
   mkdir -p ~/workdirs/linux
@@ -261,11 +288,15 @@ package::
   cijoe -l
 
 Then re-run the command above. It should now succeed, after which you can
-collect the artifacts of interest::
+collect the artifacts of interest:
+
+.. code-block:: bash
 
   cp -r cijoe-output/artifacts/linux ~/artifacts/
 
-You can install them by running::
+You can install them by running:
+
+.. code-block:: bash
 
   sudo dpkg -i ~/artifacts/linux/*.deb
 
@@ -274,7 +305,9 @@ You can install them by running::
 Qemu
 ----
 
-Install prerequisites::
+Install prerequisites:
+
+.. code-block:: bash
 
   # Packages for building qemu
   sudo apt-get -qy install \
@@ -290,7 +323,9 @@ Install prerequisites::
   sudo apt-get -qy install \
     cloud-image-utils
 
-Checkout qemu::
+Checkout qemu:
+
+.. code-block:: bash
 
   cd ~/git
   git clone https://github.com/OpenMPDK/qemu --recursive
@@ -298,12 +333,16 @@ Checkout qemu::
   git checkout for-xnvme
   git submodule update --init --recursive
 
-Create a work-directory::
+Create a work-directory:
+
+.. code-block:: bash
 
   mkdir -p ~/workdirs/qemu
   cd ~/workdirs/qemu
 
-Run the **cijoe** qemu workflow::
+Run the **cijoe** qemu workflow:
+
+.. code-block:: bash
 
   # Grab the config and workflow example for qemu
   cijoe --example qemu
@@ -331,28 +370,38 @@ xNVMe
 clone, build, and install
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Clone **xNVMe** and checkout the ``next`` branch::
+Clone **xNVMe** and checkout the ``next`` branch:
+
+.. code-block:: bash
 
   cd ~/git
   git clone https://github.com/OpenMPDK/xNVMe.git xnvme
   cd xnvme
   git checkout next
 
-Install prerequisites::
+Install prerequisites:
+
+.. code-block:: bash
 
   sudo ./toolbox/pkgs/debian-bookworm.sh
 
-Build and install **xNVMe**::
+Build and install **xNVMe**:
+
+.. code-block:: bash
 
   cd ~/git/xnvme
   make
   sudo make install
 
-Check that it is functional::
+Check that it is functional:
+
+.. code-block:: bash
 
   sudo xnvme enum
 
-This should yield output similar to::
+This should yield output similar to:
+
+.. code-block:: bash
 
   xnvme_cli_enumeration:
   - {uri: '/dev/nvme0n1', dtype: 0x2, nsid: 0x1, csi: 0x0, subnqn: ''}
@@ -360,7 +409,9 @@ This should yield output similar to::
 Artifacts
 ~~~~~~~~~
 
-Produce a set of **artifacts**::
+Produce a set of **artifacts**:
+
+.. code-block:: bash
 
   cd ~/git/xnvme
   make clobber gen-artifacts
@@ -396,7 +447,9 @@ To do so, then:
 * Change ``qemu.system_bin`` to point to your qemu-system-binary (qemu 7+)
 * Add the SSH-key(``keys/guest_key``) to your SSH-agent.
 
-Then you should be able to run the following::
+Then you should be able to run the following:
+
+.. code-block:: bash
 
   # Provision and test on Debian Bullseye
   cijoe -c configs/debian-bullseye.toml -w workflows/provision.yaml
@@ -416,7 +469,9 @@ Running pytest from the repository
 ----------------------------------
 
 Invoke pytest providing a configuration file and an output directory for
-artifacts and captured output::
+artifacts and captured output:
+
+.. code-block:: bash
 
   pytest \
     --config configs/debian-bullseye.toml \
@@ -431,7 +486,9 @@ configurations etc.
 Provision a qemu-guest
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Setup a virtual machine with **xNVMe** installed, and a bunch of NVMe devices configured::
+Setup a virtual machine with **xNVMe** installed, and a bunch of NVMe devices configured:
+
+.. code-block:: bash
 
   cijoe -c configs/debian-bullseye.toml -w provision.yaml
 
@@ -447,11 +504,15 @@ Setup a virtual machine with **xNVMe** installed, and a bunch of NVMe devices co
 Create boot-images
 ~~~~~~~~~~~~~~~~~~
 
-The ``debian-bullseye-amd64.qcow2`` is created by::
+The ``debian-bullseye-amd64.qcow2`` is created by:
+
+.. code-block:: bash
 
   cijoe -c configs/debian-bullseye.toml -w workflows/bootimg-debian-bullseye-amd64.yaml
 
-The ``freebsd-13.1-ksrc-amd64.qcow2`` is created by::
+The ``freebsd-13.1-ksrc-amd64.qcow2`` is created by:
+
+.. code-block:: bash
 
   cijoe -c configs/freebsd-13.toml -w workflows/bootimg-freebsd-13-amd64.yaml
 
@@ -463,7 +524,9 @@ Chromebook/Macbook, something light-weight and great for reading mail... but
 now you want to fire up your editor and do some development.
 
 Or, your primary system is simply separate from the dev-box for a myriad of
-reasons. Then do something like::
+reasons. Then do something like:
+
+.. code-block:: bash
 
   cp configs/debian-bullseye.toml configs/dev-metal.toml
 
@@ -472,6 +535,8 @@ reasons. Then do something like::
 
 Open up ``configs/dev-metal.toml`` and adjust it to your physical machine. That
 is, change the ssh-login information, change the list of devices, paths to
-binaries etc. Once you have done that, then go ahead and run::
+binaries etc. Once you have done that, then go ahead and run:
+
+.. code-block:: bash
 
   cijoe -c configs/dev-metal.toml -w dev-sync-and-build.yaml
