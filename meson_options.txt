@@ -19,6 +19,4 @@ option('tools', type: 'boolean', value: true)
 
 option('build_subprojects', type : 'boolean', value : true, yield : true)
 
-option('enable-ysnp', type: 'boolean', value: true)
-
 option('force_completions', type: 'boolean', value: false, description: 'Install bash-completions at the default location if bash-completion is not available on the system')

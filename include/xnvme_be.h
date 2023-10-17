@@ -8,7 +8,6 @@
 #include <paths.h>
 #endif
 #include <libxnvme.h>
-#include <xnvme.h>
 #include <xnvme_be_registry.h>
 
 #define XNVME_BE_QUEUE_STATE_NBYTES 256
