@@ -65,7 +65,7 @@ xnvme_be_vfio_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nby
 
 	nvme_rq_exec(rq, (union nvme_cmd *)&ctx->cmd);
 
-	if (nvme_rq_poll(rq, &ctx->cpl)) {
+	if (nvme_rq_spin(rq, (struct nvme_cqe *)&ctx->cpl)) {
 		ret = -errno;
 	}
 

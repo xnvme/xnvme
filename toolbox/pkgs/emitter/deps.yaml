@@ -179,7 +179,7 @@ deps:
 
   libvfn:
     notes: When available; enable the use of the xNVMe libvfn backend
-    ver: 1.0
+    ver: 3.0.0
     when: [building, running]
     purpose: {be: [libvfn]}
     names:
