@@ -144,7 +144,7 @@ _xnvme_be_vfio_create_ioqpair(struct xnvme_be_vfio_state *state, int qd, int fla
 
 	// nvme queue capacity must be one larger than the requested capacity
 	// since only n-1 slots in an NVMe queue may be used
-	err = nvme_create_ioqpair(state->ctrl, qid, qd + 1, flags);
+	err = nvme_create_ioqpair(state->ctrl, qid, qd + 1, -1, flags);
 	if (err) {
 		return -errno;
 	}

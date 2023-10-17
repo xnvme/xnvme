@@ -59,7 +59,7 @@ xnvme_be_vfio_queue_poke(struct xnvme_queue *queue, uint32_t max)
 		max = queue->base.outstanding;
 	}
 
-	nvme_sq_run(q->sq);
+	nvme_sq_update_tail(q->sq);
 
 	do {
 		struct xnvme_cmd_ctx *ctx;

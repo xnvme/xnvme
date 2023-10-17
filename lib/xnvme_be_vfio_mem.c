@@ -14,21 +14,20 @@ void *
 xnvme_be_vfio_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *XNVME_UNUSED(phys))
 {
 	void *vaddr;
+	ssize_t len;
 	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
 	struct vfio_container *vfio = state->ctrl->pci.dev.vfio;
 
 	XNVME_DEBUG("xnvme_be_vfio_buf_alloc(%p, %ld)", dev, nbytes);
 
-	nbytes = ALIGN_UP(nbytes, __VFN_PAGESIZE);
-
-	vaddr = mmap(NULL, nbytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
-	if (vaddr == MAP_FAILED) {
-		XNVME_DEBUG("FAILED: mmap(): %s\n", strerror(errno));
+	len = pgmap(&vaddr, nbytes);
+	if (len < 0) {
+		XNVME_DEBUG("FAILED: pgmap(): %s\n", strerror(errno));
 		return NULL;
 	}
 
-	XNVME_DEBUG("vfio_map_vaddr(%p, %p, %ld, NULL)", vfio, vaddr, nbytes);
-	if (vfio_map_vaddr(vfio, vaddr, nbytes, NULL)) {
+	XNVME_DEBUG("vfio_map_vaddr(%p, %p, %ld, NULL)", vfio, vaddr, len);
+	if (vfio_map_vaddr(vfio, vaddr, len, NULL)) {
 		XNVME_DEBUG("FAILED: vfio_map_vaddr(): %s\n", strerror(errno));
 		return NULL;
 	}
