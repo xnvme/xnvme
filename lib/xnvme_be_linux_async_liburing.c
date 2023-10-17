@@ -122,8 +122,9 @@ xnvme_be_linux_liburing_init(struct xnvme_queue *q, int opts)
 		return -err;
 	}
 
-	if (getenv("XNVME_QUEUE_BATCHING")) {
-		queue->batching = 1;
+	queue->batching = 1;
+	if (getenv("XNVME_QUEUE_BATCHING_OFF")) {
+		queue->batching = 0;
 	}
 
 	//
