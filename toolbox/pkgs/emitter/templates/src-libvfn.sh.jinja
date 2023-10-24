@@ -10,7 +10,7 @@ git clone https://github.com/OpenMPDK/libvfn.git toolbox/third-party/libvfn/repo
 
 pushd toolbox/third-party/libvfn/repository
 git checkout v3.0.0-rc1
-meson setup builddir -Dlibnvme="disabled" -Ddocs="disabled" --prefix=/usr
+meson setup builddir -Dlibnvme="disabled" -Ddocs="disabled" --buildtype=release --prefix=/usr
 meson compile -C builddir
 meson install -C builddir
 popd
