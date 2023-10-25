@@ -122,7 +122,7 @@ xnvme_be_vfio_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 	rq->opaque = ctx;
 
 	if (dbuf) {
-		if (!vfio_map_vaddr(state->ctrl->pci.dev.vfio, dbuf, dbuf_nbytes, &iova)) {
+		if (vfio_map_vaddr(state->ctrl->pci.dev.vfio, dbuf, dbuf_nbytes, &iova)) {
 			XNVME_DEBUG("FAILED: vfio_iommu_vaddr_to_iova()");
 			goto err;
 		}
@@ -131,7 +131,7 @@ xnvme_be_vfio_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 	}
 
 	if (mbuf) {
-		if (!vfio_map_vaddr(state->ctrl->pci.dev.vfio, mbuf, mbuf_nbytes, &iova)) {
+		if (vfio_map_vaddr(state->ctrl->pci.dev.vfio, mbuf, mbuf_nbytes, &iova)) {
 			XNVME_DEBUG("FAILED: vfio_iommu_vaddr_to_iova()");
 			goto err;
 		}
