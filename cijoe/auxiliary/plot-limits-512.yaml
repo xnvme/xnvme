@@ -1,0 +1,6 @@
+---
+# Limits on plots, this is to ensure that different plots are visually comparable
+barplot:
+  y_lim: [0, 195000]
+lineplot:
+  y_lim: [0, 2750000]

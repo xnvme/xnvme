@@ -41,6 +41,9 @@ install:
 	@${PIPX} inject cijoe cijoe-pkg-qemu==v6.1.15
 	@${PIPX} inject cijoe cijoe-pkg-linux==v0.9.7
 	@${PIPX} inject cijoe cijoe-pkg-fio==v0.9.7
+	@${PIPX} inject cijoe matplotlib
+	@${PIPX} inject cijoe numpy
+	@${PIPX} install rst2pdf
 	@echo "## ${PROJECT_NAME}: make install [DONE]"
 
 define uninstall-help
