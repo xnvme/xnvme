@@ -17,7 +17,7 @@ on:
         type: choice
         options:
         - analyze
-        - build-and-test
+        - verify
         - docgen
 
 defaults:
@@ -481,12 +481,12 @@ jobs:
   #
   # Build and test xNVMe
   #
-  build-and-test:
+  verify:
     needs: [source-archive, source-format-check, build-python]
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux, x64, verify]
 
     if: (contains('push pull_request', github.event_name) || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job
-      == 'build-and-test')))
+      == 'verify')))
 
     strategy:
       fail-fast: false
@@ -617,7 +617,7 @@ jobs:
   # that tags are used exclusively for releases
   docgen:
     needs: [source-archive, source-format-check, build-python]
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux, verify]
     if: ((github.event_name == 'push') || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen')))
 
     strategy:
