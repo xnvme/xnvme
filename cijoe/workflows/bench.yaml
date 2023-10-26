@@ -1,0 +1,77 @@
+---
+doc: |
+  Environment prep, benchmark run, result plotting, and report gen.
+  =================================================================
+
+  Environment preparation consists of
+
+  * Retrieving and updating repositories for liburing, xnvme, fio, and SPDK
+  * Configure, build and install liburing, xnvme, fio, and SPDK
+  * Generate bdev-configs for all CIJOE "duts"
+
+  The comparison and plots consists of
+
+    * bandwidth in KiB / seconds
+    * latency is mean and in nano-seconds
+    * IOPS are 'raw' / base-unit
+
+  The above in a bar-plot at iodepth=1, and a line-plot as a function of iodepth.
+
+  See Artifacts for the generated plots
+
+steps:
+
+- name: sysinfo
+  uses: linux.sysinfo
+
+- name: repository
+  uses: core.repository_prep
+
+- name: liburing
+  uses: liburing_build
+
+- name: xnvme_build
+  uses: xnvme_build
+
+- name: xnvme_install
+  uses: xnvme_install
+
+- name: fio
+  uses: fio_build
+
+- name: spdk
+  uses: spdk_build_modded
+
+- name: bdev_confs
+  uses: spdk_bdev_confs_generator
+  with:
+    bdev_confs: /opt/bdev_confs
+
+- name: prep
+  run: |
+    xnvme-driver || true
+    xnvme-driver reset || true
+
+# This is needed whenever io_uring and io_uring_cmd is used, hmm, bdevperf will
+# probably need something special here...
+- name: linux_nvme
+  uses: linux_prepare_nvme
+
+- name: bench
+  uses: bdevperf
+  with:
+    bdev_confs: /opt/bdev_confs
+    repetitions: 1
+    iosizes: ['4096']
+    iodepths: [1, 2, 4, 8, 16, 32, 64]
+    ndevices: 8
+
+- name: plot
+  uses: bench_plotter
+  with:
+    tool: bdevperf
+    legends: auxiliary/plot-legends.yaml
+    limits: auxiliary/plot-limits-4k.yaml
+
+- name: performance_report
+  uses: bench_reporter

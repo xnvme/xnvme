@@ -25,6 +25,8 @@ def main(args, cijoe, step):
     xnvme_source = step.get("with", {}).get("xnvme_source", conf["repository"]["path"])
 
     commands = [
+        "git rev-parse --short HEAD || true",
+        "rm -r builddir || true",
         "meson setup builddir",
         "meson compile -C builddir",
         "cat builddir/meson-logs/meson-log.txt",

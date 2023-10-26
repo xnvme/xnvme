@@ -1,0 +1,92 @@
+---
+# Reference implementations
+libaio-reference:
+  legend: 'libaio ($\bf{reference}$)'
+  color: "#084594"
+  marker: "s" # square
+  hatch: "."
+
+io_uring-reference:
+  legend: 'io_uring ($\bf{reference}$)'
+  color: "#2171b5"
+  marker: "v" # triangle_down
+  hatch: "."
+
+io_uring_cmd-reference:
+  legend: 'io_uring_cmd ($\bf{reference}$)'
+  color: "#2171b5"
+  marker: "P" # plus
+  hatch: "."
+
+# xNVMe implementations
+libaio-xnvme:
+  legend: 'libaio ($\bf{xnvme}$)'
+  color: "#005a32"
+  marker: "p" # pentagon
+  hatch: "."
+
+libaio-bdev_xnvme:
+  legend: 'libaio ($\bf{bdev\_xnvme}$)'
+  color: "#297373"
+  marker: "X" # cross
+  hatch: "O"
+
+libaio-bdev_xnvme_conserve_cpu:
+  legend: 'libaio ($\bf{bdev\_xnvme}$) +conserve'
+  color: "#E9D758"
+  marker: "X" # cross
+  hatch: "O"
+
+io_uring-xnvme:
+  legend: 'io_uring ($\bf{xnvme}$)'
+  color: "#41ab5d"
+  marker: "*" # star
+  hatch: "."
+
+io_uring-bdev_xnvme:
+  legend: 'uring $\bf{bdev\_xnvme}$'
+  color: "#297373"
+  marker: "h" # hexagon1
+  hatch: "O"
+
+io_uring-bdev_xnvme_conserve_cpu:
+  legend: 'uring $\bf{bdev\_xnvme}$ +conserve'
+  color: "#E9D758"
+  marker: "h" # hexagon1
+  hatch: "O"
+
+io_uring_cmd-xnvme:
+  legend: 'io_uring_cmd ($\bf{xnvme}$)'
+  color: "#74c476"
+  marker: "H" # hexagon2
+  hatch: "."
+
+io_uring_cmd-bdev_xnvme:
+  legend: 'ucmd $\bf{bdev\_xnvme}$'
+  color: "#297373"
+  marker: "o" # circle
+  hatch: "O"
+io_uring_cmd-bdev_xnvme_conserve_cpu:
+  legend: 'ucmd $\bf{bdev\_xnvme}$ +conserve'
+  color: "#E9D758"
+  marker: "o" # circle
+  hatch: "O"
+
+# SPDK bdev implementations
+libaio-bdev_aio:
+  legend: 'libaio ($\bf{bdev\_aio}$)'
+  color: "#4a1486"
+  marker: "D" # diamond
+  hatch: "O"
+
+io_uring-bdev_uring:
+  legend: 'uring $\bf{bdev\_uring}$'
+  color: "#807dba"
+  marker: "d" # thin_diamond
+  hatch: "O"
+
+ioctl-xnvme:
+  legend: 'ioctl ($\bf{xnvme}$)'
+  color: "#807dba"
+  marker: "d" # thin_diamond
+  hatch: "O"
