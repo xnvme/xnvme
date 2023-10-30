@@ -1,0 +1,477 @@
+From 04431f6a2d6f461d67f12ca67dc313f992ef9121 Mon Sep 17 00:00:00 2001
+From: Karl Bonde Torp <k.torp@samsung.com>
+Date: Mon, 30 Oct 2023 14:35:43 +0100
+Subject: [PATCH] [PATCH] nvme: add iovec passthru
+
+This is used for sending big passthru commands, like Report Zones, over nvmf.
+
+Change-Id: I83188367e0266e093faadd49cdb2e051eae71829
+Signed-off-by: Karl Bonde Torp <k.torp@samsung.com>
+---
+ include/spdk/bdev.h                           | 35 +++++++++
+ include/spdk/bdev_module.h                    |  6 ++
+ include/spdk/nvme.h                           | 78 ++++++++++++++-----
+ lib/bdev/bdev.c                               | 48 ++++++++++++
+ lib/bdev/spdk_bdev.map                        |  1 +
+ lib/nvme/nvme_ctrlr_cmd.c                     | 38 +++++++++
+ lib/nvme/spdk_nvme.map                        |  1 +
+ lib/nvmf/ctrlr_bdev.c                         |  6 +-
+ module/bdev/nvme/bdev_nvme.c                  | 49 ++++++++++++
+ .../lib/bdev/nvme/bdev_nvme.c/bdev_nvme_ut.c  |  7 ++
+ .../lib/nvmf/ctrlr_bdev.c/ctrlr_bdev_ut.c     | 15 ++--
+ 11 files changed, 254 insertions(+), 30 deletions(-)
+
+diff --git a/include/spdk/bdev.h b/include/spdk/bdev.h
+index 1060796f4..509c655f6 100644
+--- a/include/spdk/bdev.h
++++ b/include/spdk/bdev.h
+@@ -142,6 +142,7 @@ enum spdk_bdev_io_type {
+ 	SPDK_BDEV_IO_TYPE_COMPARE,
+ 	SPDK_BDEV_IO_TYPE_COMPARE_AND_WRITE,
+ 	SPDK_BDEV_IO_TYPE_ABORT,
++	SPDK_BDEV_IO_TYPE_NVME_IOV_MD,
+ 	SPDK_BDEV_NUM_IO_TYPES /* Keep last */
+ };
+ 
+@@ -1680,6 +1681,40 @@ int spdk_bdev_nvme_io_passthru_md(struct spdk_bdev_desc *bdev_desc,
+ 				  void *buf, size_t nbytes, void *md_buf, size_t md_len,
+ 				  spdk_bdev_io_completion_cb cb, void *cb_arg);
+ 
++/**
++
++ * Submit an NVMe I/O command to the bdev. This passes directly through
++ * the block layer to the device. Support for NVMe passthru is optional,
++ * indicated by calling spdk_bdev_io_type_supported().
++ *
++ * \ingroup bdev_io_submit_functions
++ *
++ * The namespace id (nsid) will be populated automatically.
++ *
++ * \param bdev_desc Block device descriptor
++ * \param ch I/O channel. Obtained by calling spdk_bdev_get_io_channel().
++ * \param cmd The raw NVMe command. Must be in the NVM command set.
++ * \param iov A scatter gather list of buffers for the command to use.
++ * \param iovcnt The number of elements in iov.
++ * \param nbytes The number of bytes to transfer. The total size of the buffers in iov must be greater than or equal to this size.
++ * \param md_buf Meta data buffer to written from.
++ * \param md_len md_buf size to transfer. md_buf must be greater than or equal to this size.
++ * \param cb Called when the request is complete.
++ * \param cb_arg Argument passed to cb.
++ *
++ * \return 0 on success. On success, the callback will always
++ * be called (even if the request ultimately failed). Return
++ * negated errno on failure, in which case the callback will not be called.
++ *   * -ENOMEM - spdk_bdev_io buffer cannot be allocated
++ *   * -EBADF - desc not open for writing
++ */
++int spdk_bdev_nvme_iov_passthru_md(struct spdk_bdev_desc *desc,
++				   struct spdk_io_channel *ch,
++				   const struct spdk_nvme_cmd *cmd,
++				   struct iovec *iov, int iovcnt,
++				   size_t nbytes, void *md_buf, size_t md_len,
++				   spdk_bdev_io_completion_cb cb, void *cb_arg);
++
+ /**
+  * Free an I/O request. This should only be called after the completion callback
+  * for the I/O has been called and notifies the bdev layer that memory may now
+diff --git a/include/spdk/bdev_module.h b/include/spdk/bdev_module.h
+index 2deeb2d08..d4a6ed0ea 100644
+--- a/include/spdk/bdev_module.h
++++ b/include/spdk/bdev_module.h
+@@ -652,6 +652,12 @@ struct spdk_bdev_io {
+ 			/* The NVMe command to execute */
+ 			struct spdk_nvme_cmd cmd;
+ 
++			/* For SG buffer cases, array of iovecs to transfer. */
++			struct iovec *iovs;
++
++			/* For SG buffer cases, number of iovecs in iovec array. */
++			int iovcnt;
++
+ 			/* The data buffer to transfer */
+ 			void *buf;
+ 
+diff --git a/include/spdk/nvme.h b/include/spdk/nvme.h
+index 4157292da..85e64444a 100644
+--- a/include/spdk/nvme.h
++++ b/include/spdk/nvme.h
+@@ -1791,6 +1791,63 @@ int spdk_nvme_ctrlr_cmd_io_raw_with_md(struct spdk_nvme_ctrlr *ctrlr,
+ 				       void *buf, uint32_t len, void *md_buf,
+ 				       spdk_nvme_cmd_cb cb_fn, void *cb_arg);
+ 
++/**
++ * Restart the SGL walk to the specified offset when the command has scattered
++ * payloads.
++ *
++ * \param cb_arg Argument passed to readv/writev.
++ * \param offset Offset for SGL.
++ */
++typedef void (*spdk_nvme_req_reset_sgl_cb)(void *cb_arg, uint32_t offset);
++
++/**
++ * Fill out *address and *length with the current SGL entry and advance to the
++ * next entry for the next time the callback is invoked.
++ *
++ * The described segment must be physically contiguous.
++ *
++ * \param cb_arg Argument passed to readv/writev.
++ * \param address Virtual address of this segment, a value of UINT64_MAX
++ * means the segment should be described via Bit Bucket SGL.
++ * \param length Length of this physical segment.
++ */
++typedef int (*spdk_nvme_req_next_sge_cb)(void *cb_arg, void **address,
++		uint32_t *length);
++
++/**
++ * Send the given NVM I/O command with metadata to the NVMe controller.
++ *
++ * This is a low level interface for submitting I/O commands directly. Prefer
++ * the spdk_nvme_ns_cmd_* functions instead. The validity of the command will
++ * not be checked!
++ *
++ * The command is submitted to a qpair allocated by  spdk_nvme_ctrlr_alloc_io_qpair().
++ * The user must ensure that only one thread submits I/O on a given qpair at any
++ * given time.
++ *
++ * \param ctrlr Opaque handle to NVMe controller.
++ * \param qpair I/O qpair to submit command.
++ * \param cmd NVM I/O command to submit.
++ * \param len Size of buffer.
++ * \param md_buf Virtual memory address of a single physically contiguous metadata buffer.
++ * \param cb_fn Callback function invoked when the I/O command completes.
++ * \param cb_arg Argument passed to callback function.
++ * \param reset_sgl_fn Callback function to reset scattered payload.
++ * \param next_sge_fn Callback function to iterate each scattered payload memory segment.
++ *
++ * \return 0 if successfully submitted, negated errnos on the following error
++ conditions:
++ * -ENOMEM: The request cannot be allocated.
++ * -ENXIO: The qpair is failed at the transport level.
++ */
++int spdk_nvme_ctrlr_cmd_iov_raw_with_md(struct spdk_nvme_ctrlr *ctrlr,
++					struct spdk_nvme_qpair *qpair,
++					struct spdk_nvme_cmd *cmd, uint32_t len,
++					void *md_buf, spdk_nvme_cmd_cb cb_fn,
++					void *cb_arg,
++					spdk_nvme_req_reset_sgl_cb reset_sgl_fn,
++					spdk_nvme_req_next_sge_cb next_sge_fn);
++
+ /**
+  * Process any outstanding completions for I/O submitted on a queue pair.
+  *
+@@ -2945,27 +3002,6 @@ uint32_t spdk_nvme_ns_get_ana_group_id(const struct spdk_nvme_ns *ns);
+  */
+ enum spdk_nvme_ana_state spdk_nvme_ns_get_ana_state(const struct spdk_nvme_ns *ns);
+ 
+-/**
+- * Restart the SGL walk to the specified offset when the command has scattered payloads.
+- *
+- * \param cb_arg Argument passed to readv/writev.
+- * \param offset Offset for SGL.
+- */
+-typedef void (*spdk_nvme_req_reset_sgl_cb)(void *cb_arg, uint32_t offset);
+-
+-/**
+- * Fill out *address and *length with the current SGL entry and advance to the next
+- * entry for the next time the callback is invoked.
+- *
+- * The described segment must be physically contiguous.
+- *
+- * \param cb_arg Argument passed to readv/writev.
+- * \param address Virtual address of this segment, a value of UINT64_MAX
+- * means the segment should be described via Bit Bucket SGL.
+- * \param length Length of this physical segment.
+- */
+-typedef int (*spdk_nvme_req_next_sge_cb)(void *cb_arg, void **address, uint32_t *length);
+-
+ /**
+  * Submit a write I/O to the specified NVMe namespace.
+  *
+diff --git a/lib/bdev/bdev.c b/lib/bdev/bdev.c
+index 2f7c491ac..27e6e24b0 100644
+--- a/lib/bdev/bdev.c
++++ b/lib/bdev/bdev.c
+@@ -5424,6 +5424,54 @@ spdk_bdev_nvme_io_passthru_md(struct spdk_bdev_desc *desc, struct spdk_io_channe
+ 	return 0;
+ }
+ 
++int
++spdk_bdev_nvme_iov_passthru_md(struct spdk_bdev_desc *desc,
++			       struct spdk_io_channel *ch,
++			       const struct spdk_nvme_cmd *cmd,
++			       struct iovec *iov, int iovcnt, size_t nbytes,
++			       void *md_buf, size_t md_len,
++			       spdk_bdev_io_completion_cb cb, void *cb_arg)
++{
++	struct spdk_bdev *bdev = spdk_bdev_desc_get_bdev(desc);
++	struct spdk_bdev_io *bdev_io;
++	struct spdk_bdev_channel *channel = __io_ch_to_bdev_ch(ch);
++
++	if (!desc->write) {
++		/*
++		 * Do not try to parse the NVMe command - we could maybe use bits in the opcode
++		 * to easily determine if the command is a read or write, but for now just
++		 * do not allow io_passthru with a read-only descriptor.
++		 */
++		return -EBADF;
++	}
++
++	if (md_buf && spdk_unlikely(!bdev_io_type_supported(bdev, SPDK_BDEV_IO_TYPE_NVME_IO_MD))) {
++		return -ENOTSUP;
++	} else if (spdk_unlikely(!bdev_io_type_supported(bdev, SPDK_BDEV_IO_TYPE_NVME_IO))) {
++		return -ENOTSUP;
++	}
++
++	bdev_io = bdev_channel_get_io(channel);
++	if (!bdev_io) {
++		return -ENOMEM;
++	}
++
++	bdev_io->internal.ch = channel;
++	bdev_io->internal.desc = desc;
++	bdev_io->type = SPDK_BDEV_IO_TYPE_NVME_IOV_MD;
++	bdev_io->u.nvme_passthru.cmd = *cmd;
++	bdev_io->u.nvme_passthru.iovs = iov;
++	bdev_io->u.nvme_passthru.iovcnt = iovcnt;
++	bdev_io->u.nvme_passthru.nbytes = nbytes;
++	bdev_io->u.nvme_passthru.md_buf = md_buf;
++	bdev_io->u.nvme_passthru.md_len = md_len;
++
++	bdev_io_init(bdev_io, bdev, cb_arg, cb);
++
++	bdev_io_submit(bdev_io);
++	return 0;
++}
++
+ static void bdev_abort_retry(void *ctx);
+ static void bdev_abort(struct spdk_bdev_io *parent_io);
+ 
+diff --git a/lib/bdev/spdk_bdev.map b/lib/bdev/spdk_bdev.map
+index 203a392be..56f7d657f 100644
+--- a/lib/bdev/spdk_bdev.map
++++ b/lib/bdev/spdk_bdev.map
+@@ -82,6 +82,7 @@
+ 	spdk_bdev_nvme_admin_passthru;
+ 	spdk_bdev_nvme_io_passthru;
+ 	spdk_bdev_nvme_io_passthru_md;
++	spdk_bdev_nvme_iov_passthru_md;
+ 	spdk_bdev_free_io;
+ 	spdk_bdev_queue_io_wait;
+ 	spdk_bdev_get_io_stat;
+diff --git a/lib/nvme/nvme_ctrlr_cmd.c b/lib/nvme/nvme_ctrlr_cmd.c
+index c9512052b..2fd3bb723 100644
+--- a/lib/nvme/nvme_ctrlr_cmd.c
++++ b/lib/nvme/nvme_ctrlr_cmd.c
+@@ -110,6 +110,44 @@ spdk_nvme_ctrlr_cmd_io_raw_with_md(struct spdk_nvme_ctrlr *ctrlr,
+ 	return nvme_qpair_submit_request(qpair, req);
+ }
+ 
++int
++spdk_nvme_ctrlr_cmd_iov_raw_with_md(struct spdk_nvme_ctrlr *ctrlr,
++				    struct spdk_nvme_qpair *qpair,
++				    struct spdk_nvme_cmd *cmd,
++				    uint32_t len, void *md_buf,
++				    spdk_nvme_cmd_cb cb_fn, void *cb_arg,
++				    spdk_nvme_req_reset_sgl_cb reset_sgl_fn,
++				    spdk_nvme_req_next_sge_cb next_sge_fn)
++{
++	struct nvme_request *req;
++	struct nvme_payload payload;
++	uint32_t md_len = 0;
++
++	if (reset_sgl_fn == NULL || next_sge_fn == NULL) {
++		return -EINVAL;
++	}
++
++	payload = NVME_PAYLOAD_SGL(reset_sgl_fn, next_sge_fn, cb_arg, md_buf);
++
++	/* Calculate metadata length */
++	if (md_buf) {
++		struct spdk_nvme_ns *ns = spdk_nvme_ctrlr_get_ns(ctrlr, cmd->nsid);
++
++		assert(ns != NULL);
++		assert(ns->sector_size != 0);
++		md_len = len / ns->sector_size * ns->md_size;
++	}
++
++	req = nvme_allocate_request(qpair, &payload, len, md_len, cb_fn, cb_arg);
++	if (req == NULL) {
++		return -ENOMEM;
++	}
++
++	memcpy(&req->cmd, cmd, sizeof(req->cmd));
++
++	return nvme_qpair_submit_request(qpair, req);
++}
++
+ int
+ spdk_nvme_ctrlr_cmd_admin_raw(struct spdk_nvme_ctrlr *ctrlr,
+ 			      struct spdk_nvme_cmd *cmd,
+diff --git a/lib/nvme/spdk_nvme.map b/lib/nvme/spdk_nvme.map
+index f4522aa31..5458ef7ae 100644
+--- a/lib/nvme/spdk_nvme.map
++++ b/lib/nvme/spdk_nvme.map
+@@ -74,6 +74,7 @@
+ 	spdk_nvme_ctrlr_io_cmd_raw_no_payload_build;
+ 	spdk_nvme_ctrlr_cmd_io_raw;
+ 	spdk_nvme_ctrlr_cmd_io_raw_with_md;
++	spdk_nvme_ctrlr_cmd_iov_raw_with_md;
+ 	spdk_nvme_ctrlr_cmd_admin_raw;
+ 	spdk_nvme_ctrlr_process_admin_completions;
+ 	spdk_nvme_ctrlr_get_ns;
+diff --git a/lib/nvmf/ctrlr_bdev.c b/lib/nvmf/ctrlr_bdev.c
+index 9e755fa1d..3bc046724 100644
+--- a/lib/nvmf/ctrlr_bdev.c
++++ b/lib/nvmf/ctrlr_bdev.c
+@@ -686,8 +686,10 @@ nvmf_bdev_ctrlr_nvme_passthru_io(struct spdk_bdev *bdev, struct spdk_bdev_desc *
+ {
+ 	int rc;
+ 
+-	rc = spdk_bdev_nvme_io_passthru(desc, ch, &req->cmd->nvme_cmd, req->data, req->length,
+-					nvmf_bdev_ctrlr_complete_cmd, req);
++	rc = spdk_bdev_nvme_iov_passthru_md(desc, ch, &req->cmd->nvme_cmd, req->iov, req->iovcnt,
++					    req->length, NULL, 0, nvmf_bdev_ctrlr_complete_cmd, req);
++
++
+ 	if (spdk_unlikely(rc)) {
+ 		if (rc == -ENOMEM) {
+ 			nvmf_bdev_ctrl_queue_io(req, bdev, ch, nvmf_ctrlr_process_io_cmd_resubmit, req);
+diff --git a/module/bdev/nvme/bdev_nvme.c b/module/bdev/nvme/bdev_nvme.c
+index 0110694c9..e054f6639 100644
+--- a/module/bdev/nvme/bdev_nvme.c
++++ b/module/bdev/nvme/bdev_nvme.c
+@@ -196,6 +196,9 @@ static int bdev_nvme_io_passthru(struct nvme_bdev_io *bio, struct spdk_nvme_cmd
+ 				 void *buf, size_t nbytes);
+ static int bdev_nvme_io_passthru_md(struct nvme_bdev_io *bio, struct spdk_nvme_cmd *cmd,
+ 				    void *buf, size_t nbytes, void *md_buf, size_t md_len);
++static int bdev_nvme_iov_passthru_md(struct nvme_bdev_io *bio, struct spdk_nvme_cmd *cmd,
++				     struct iovec *iov, int iovcnt, size_t nbytes,
++				     void *md_buf, size_t md_len);
+ static void bdev_nvme_abort(struct nvme_bdev_channel *nbdev_ch,
+ 			    struct nvme_bdev_io *bio, struct nvme_bdev_io *bio_to_abort);
+ static void bdev_nvme_reset_io(struct nvme_bdev_channel *nbdev_ch, struct nvme_bdev_io *bio);
+@@ -2190,6 +2193,15 @@ bdev_nvme_submit_request(struct spdk_io_channel *ch, struct spdk_bdev_io *bdev_i
+ 					      bdev_io->u.nvme_passthru.md_buf,
+ 					      bdev_io->u.nvme_passthru.md_len);
+ 		break;
++	case SPDK_BDEV_IO_TYPE_NVME_IOV_MD:
++		rc = bdev_nvme_iov_passthru_md(nbdev_io,
++					       &bdev_io->u.nvme_passthru.cmd,
++					       bdev_io->u.nvme_passthru.iovs,
++					       bdev_io->u.nvme_passthru.iovcnt,
++					       bdev_io->u.nvme_passthru.nbytes,
++					       bdev_io->u.nvme_passthru.md_buf,
++					       bdev_io->u.nvme_passthru.md_len);
++		break;
+ 	case SPDK_BDEV_IO_TYPE_ABORT:
+ 		nbdev_io->io_path = NULL;
+ 		nbdev_io_to_abort = (struct nvme_bdev_io *)bdev_io->u.abort.bio_to_abort->driver_ctx;
+@@ -6408,6 +6420,43 @@ bdev_nvme_io_passthru_md(struct nvme_bdev_io *bio, struct spdk_nvme_cmd *cmd,
+ 			(uint32_t)nbytes, md_buf, bdev_nvme_queued_done, bio);
+ }
+ 
++static int
++bdev_nvme_iov_passthru_md(struct nvme_bdev_io *bio,
++			  struct spdk_nvme_cmd *cmd, struct iovec *iov, int iovcnt,
++			  size_t nbytes, void *md_buf, size_t md_len)
++{
++	struct spdk_nvme_ns *ns = bio->io_path->nvme_ns->ns;
++	struct spdk_nvme_qpair *qpair = bio->io_path->qpair->qpair;
++	size_t nr_sectors = nbytes / spdk_nvme_ns_get_extended_sector_size(ns);
++	uint32_t max_xfer_size = spdk_nvme_ns_get_max_io_xfer_size(ns);
++	struct spdk_nvme_ctrlr *ctrlr = spdk_nvme_ns_get_ctrlr(ns);
++
++	bio->iovs = iov;
++	bio->iovcnt = iovcnt;
++	bio->iovpos = 0;
++	bio->iov_offset = 0;
++
++	if (nbytes > max_xfer_size) {
++		SPDK_ERRLOG("nbytes is greater than MDTS %" PRIu32 ".\n", max_xfer_size);
++		return -EINVAL;
++	}
++
++	if (md_len != nr_sectors * spdk_nvme_ns_get_md_size(ns)) {
++		SPDK_ERRLOG("invalid meta data buffer size\n");
++		return -EINVAL;
++	}
++
++	/*
++	 * Each NVMe bdev is a specific namespace, and all NVMe I/O commands
++	 * require a nsid, so fill it out automatically.
++	 */
++	cmd->nsid = spdk_nvme_ns_get_id(ns);
++
++	return spdk_nvme_ctrlr_cmd_iov_raw_with_md(
++		       ctrlr, qpair, cmd, (uint32_t)nbytes, md_buf, bdev_nvme_queued_done, bio,
++		       bdev_nvme_queued_reset_sgl, bdev_nvme_queued_next_sge);
++}
++
+ static void
+ bdev_nvme_abort(struct nvme_bdev_channel *nbdev_ch, struct nvme_bdev_io *bio,
+ 		struct nvme_bdev_io *bio_to_abort)
+diff --git a/test/unit/lib/bdev/nvme/bdev_nvme.c/bdev_nvme_ut.c b/test/unit/lib/bdev/nvme/bdev_nvme.c/bdev_nvme_ut.c
+index fc049e088..6b6cb3359 100644
+--- a/test/unit/lib/bdev/nvme/bdev_nvme.c/bdev_nvme_ut.c
++++ b/test/unit/lib/bdev/nvme/bdev_nvme.c/bdev_nvme_ut.c
+@@ -127,6 +127,13 @@ DEFINE_STUB(spdk_nvme_ctrlr_cmd_io_raw_with_md, int, (struct spdk_nvme_ctrlr *ct
+ 		struct spdk_nvme_qpair *qpair, struct spdk_nvme_cmd *cmd, void *buf,
+ 		uint32_t len, void *md_buf, spdk_nvme_cmd_cb cb_fn, void *cb_arg), 0);
+ 
++DEFINE_STUB(spdk_nvme_ctrlr_cmd_iov_raw_with_md, int, (
++		    struct spdk_nvme_ctrlr *ctrlr, struct spdk_nvme_qpair *qpair,
++		    struct spdk_nvme_cmd *cmd, uint32_t len, void *md_buf,
++		    spdk_nvme_cmd_cb cb_fn, void *cb_arg,
++		    spdk_nvme_req_reset_sgl_cb reset_sgl_fn,
++		    spdk_nvme_req_next_sge_cb next_sge_fn), 0);
++
+ DEFINE_STUB(spdk_nvme_cuse_get_ctrlr_name, int, (struct spdk_nvme_ctrlr *ctrlr, char *name,
+ 		size_t *size), 0);
+ 
+diff --git a/test/unit/lib/nvmf/ctrlr_bdev.c/ctrlr_bdev_ut.c b/test/unit/lib/nvmf/ctrlr_bdev.c/ctrlr_bdev_ut.c
+index 1a06aa56a..825fcfe2b 100644
+--- a/test/unit/lib/nvmf/ctrlr_bdev.c/ctrlr_bdev_ut.c
++++ b/test/unit/lib/nvmf/ctrlr_bdev.c/ctrlr_bdev_ut.c
+@@ -205,10 +205,11 @@ DEFINE_STUB(spdk_bdev_write_zeroes_blocks, int,
+ 	     spdk_bdev_io_completion_cb cb, void *cb_arg),
+ 	    0);
+ 
+-DEFINE_STUB(spdk_bdev_nvme_io_passthru, int,
+-	    (struct spdk_bdev_desc *desc, struct spdk_io_channel *ch,
+-	     const struct spdk_nvme_cmd *cmd, void *buf, size_t nbytes,
+-	     spdk_bdev_io_completion_cb cb, void *cb_arg),
++DEFINE_STUB(spdk_bdev_nvme_iov_passthru_md, int, (
++		    struct spdk_bdev_desc *desc, struct spdk_io_channel *ch,
++		    const struct spdk_nvme_cmd *cmd, struct iovec *iov, int iovcnt,
++		    size_t nbytes, void *md_buf, size_t md_len,
++		    spdk_bdev_io_completion_cb cb, void *cb_arg),
+ 	    0);
+ 
+ DEFINE_STUB_V(spdk_bdev_free_io, (struct spdk_bdev_io *bdev_io));
+@@ -819,7 +820,7 @@ test_nvmf_bdev_ctrlr_nvme_passthru(void)
+ 
+ 	/* NVME_IO not supported */
+ 	memset(&rsp, 0, sizeof(rsp));
+-	MOCK_SET(spdk_bdev_nvme_io_passthru, -ENOTSUP);
++	MOCK_SET(spdk_bdev_nvme_iov_passthru_md, -ENOTSUP);
+ 	rc = nvmf_bdev_ctrlr_nvme_passthru_io(&bdev, desc, &ch, &req);
+ 	CU_ASSERT(rc == SPDK_NVMF_REQUEST_EXEC_STATUS_COMPLETE);
+ 	CU_ASSERT(rsp.nvme_cpl.status.sct == SPDK_NVME_SCT_GENERIC);
+@@ -828,12 +829,12 @@ test_nvmf_bdev_ctrlr_nvme_passthru(void)
+ 
+ 	/* NVME_IO no channel - queue IO */
+ 	memset(&rsp, 0, sizeof(rsp));
+-	MOCK_SET(spdk_bdev_nvme_io_passthru, -ENOMEM);
++	MOCK_SET(spdk_bdev_nvme_iov_passthru_md, -ENOMEM);
+ 	rc = nvmf_bdev_ctrlr_nvme_passthru_io(&bdev, desc, &ch, &req);
+ 	CU_ASSERT(rc == SPDK_NVMF_REQUEST_EXEC_STATUS_ASYNCHRONOUS);
+ 	CU_ASSERT(group.stat.pending_bdev_io == 1);
+ 
+-	MOCK_SET(spdk_bdev_nvme_io_passthru, 0);
++	MOCK_SET(spdk_bdev_nvme_iov_passthru_md, 0);
+ 
+ 	/* NVME_ADMIN success */
+ 	memset(&rsp, 0, sizeof(rsp));
+-- 
+2.42.1
+
