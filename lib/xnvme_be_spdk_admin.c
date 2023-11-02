@@ -9,6 +9,7 @@
 #include <spdk/env.h>
 #include <xnvme_dev.h>
 #include <xnvme_queue.h>
+#include <xnvme_spec.h>
 #include <xnvme_be_spdk.h>
 
 static void
@@ -71,13 +72,41 @@ xnvme_be_spdk_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_
 
 	return 0;
 }
+
+int
+xnvme_be_spdk_sync_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf),
+			      size_t XNVME_UNUSED(dbuf_nbytes), void *XNVME_UNUSED(mbuf),
+			      size_t XNVME_UNUSED(mbuf_nbytes))
+{
+	int err = 0;
+	struct xnvme_be_spdk_state *state = (void *)ctx->dev->be.state;
+
+	switch (ctx->cmd.common.opcode) {
+	case XNVME_SPEC_PSEUDO_OPC_SUBSYSTEM_RESET:
+		err = spdk_nvme_ctrlr_reset_subsystem(state->ctrlr);
+		break;
+
+	case XNVME_SPEC_PSEUDO_OPC_CONTROLLER_RESET:
+		err = spdk_nvme_ctrlr_reset(state->ctrlr);
+		break;
+
+	case XNVME_SPEC_PSEUDO_OPC_NAMESPACE_RESCAN:
+		err = -ENOSYS;
+	}
+
+	if (err < 0) {
+		XNVME_DEBUG("FAILED: xnvme_be_spdk_sync_cmd_pseudo(), err: %s", strerror(err));
+	}
+
+	return err;
+}
 #endif
 
 struct xnvme_be_admin g_xnvme_be_spdk_admin = {
 	.id = "nvme",
 #ifdef XNVME_BE_SPDK_ENABLED
 	.cmd_admin = xnvme_be_spdk_sync_cmd_admin,
-	.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo,
+	.cmd_pseudo = xnvme_be_spdk_sync_cmd_pseudo,
 #else
 	.cmd_admin = xnvme_be_nosys_sync_cmd_admin,
 	.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo,
