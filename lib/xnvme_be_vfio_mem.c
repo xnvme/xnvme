@@ -54,6 +54,7 @@ xnvme_be_vfio_buf_free(const struct xnvme_dev *dev, void *buf)
 
 	if (vfio_unmap_vaddr(vfio, buf, &len)) {
 		XNVME_DEBUG("FAILED: vfio_pci_unmap_vaddr(-, %p): %s\n", buf, strerror(errno));
+		return;
 	}
 
 	if (munmap(buf, len)) {
