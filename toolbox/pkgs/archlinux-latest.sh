@@ -44,7 +44,7 @@ pacman -S --noconfirm \
 git clone https://github.com/OpenMPDK/libvfn.git toolbox/third-party/libvfn/repository
 
 pushd toolbox/third-party/libvfn/repository
-git checkout v3.0.0-rc1
+git checkout v3.0.0-rc2
 meson setup builddir -Dlibnvme="disabled" -Ddocs="disabled" --buildtype=release --prefix=/usr
 meson compile -C builddir
 meson install -C builddir
