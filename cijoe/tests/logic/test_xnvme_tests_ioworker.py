@@ -17,8 +17,6 @@ def test_verify_sync(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "sync", "async", "admin"])
 def test_verify_iovec(cijoe, device, be_opts, cli_args):
-    if be_opts["be"] == "spdk":
-        pytest.skip(reason="[be=spdk] does not implement iovec")
     if be_opts["be"] == "vfio":
         pytest.skip(reason="[be=vfio] does not implement iovec")
     if be_opts["async"] == "posix":
@@ -34,8 +32,6 @@ def test_verify_iovec(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "sync", "admin"])
 def test_verify_sync_iovec(cijoe, device, be_opts, cli_args):
-    if be_opts["be"] == "spdk":
-        pytest.skip(reason="[be=spdk] does not implement iovec")
     if be_opts["be"] == "vfio":
         pytest.skip(reason="[be=vfio] does not implement iovec")
     if be_opts["be"] == "linux" and be_opts["sync"] == "psync":
@@ -61,8 +57,6 @@ def test_verify_sync_direct(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "sync", "async", "admin"])
 def test_verify_iovec_direct(cijoe, device, be_opts, cli_args):
-    if be_opts["be"] == "spdk":
-        pytest.skip(reason="[be=spdk] does not implement iovec")
     if be_opts["be"] == "vfio":
         pytest.skip(reason="[be=vfio] does not implement iovec")
     if be_opts["async"] == "posix":
@@ -78,8 +72,6 @@ def test_verify_iovec_direct(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "sync", "admin"])
 def test_verify_sync_iovec_direct(cijoe, device, be_opts, cli_args):
-    if be_opts["be"] == "spdk":
-        pytest.skip(reason="[be=spdk] does not implement iovec")
     if be_opts["be"] == "vfio":
         pytest.skip(reason="[be=vfio] does not implement iovec")
     if be_opts["be"] == "linux" and be_opts["sync"] == "psync":
