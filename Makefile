@@ -113,7 +113,8 @@ config-slim:
 	   -Dwith-spdk=false \
 		 -Dwith-liburing=disabled \
 		 -Dwith-libvfn=disabled \
-		 -Dwith-libaio=disabled
+		 -Dwith-libaio=disabled \
+		 -Dwith-libisal=disabled
 	@echo "## xNVMe: make config-slim [DONE]"
 
 define docker-help

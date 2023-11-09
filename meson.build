@@ -121,6 +121,13 @@ libvfn_dep = dependency(
 )
 conf_data.set('XNVME_BE_LINUX_VFIO_ENABLED', libvfn_dep.found())
 
+isal_dep = dependency(
+  'libisal',
+  version: '>=2.30',
+  required: get_option('with-isal'),
+)
+conf_data.set('XNVME_BE_LINUX_LIBISAL_ENABLED', isal_dep.found())
+
 corefoundation_dep = dependency(
   'appleframeworks',
   modules: 'CoreFoundation',
