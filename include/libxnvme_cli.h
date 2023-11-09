@@ -160,6 +160,11 @@ struct xnvme_cli_args {
 	bool kv_store_add;
 	bool kv_store_update;
 	bool kv_store_compress;
+
+	bool pract;
+	uint8_t prchk;
+	uint32_t apptag;
+	uint32_t apptag_mask;
 };
 
 void
@@ -322,7 +327,12 @@ enum xnvme_cli_opt {
 	XNVME_CLI_OPT_KV_STORE_ADD      = 118, ///< XNVME_CLI_OPT_KV_STORE_ADD
 	XNVME_CLI_OPT_KV_STORE_COMPRESS = 119, ///< XNVME_CLI_OPT_KV_STORE_COMPRESS
 
-	XNVME_CLI_OPT_END = 120, ///< XNVME_CLI_OPT_END
+	XNVME_CLI_OPT_PRACT       = 120, ///< XNVME_CLI_OPT_PRACT
+	XNVME_CLI_OPT_PRCHK       = 121, ///< XNVME_CLI_OPT_PRCHK
+	XNVME_CLI_OPT_APPTAG      = 122, ///< XNVME_CLI_OPT_APPTAG
+	XNVME_CLI_OPT_APPTAG_MASK = 123, ///< XNVME_CLI_OPT_APPTAG_MASK
+					 //
+	XNVME_CLI_OPT_END = 124,         ///< XNVME_CLI_OPT_END
 };
 
 /**
