@@ -6,6 +6,20 @@
 
 #include <libxnvme.h>
 
+/*
+ * Use Intelligent Storage Acceleration Library for line speed CRC
+ */
+
+#ifdef XNVME_BE_LINUX_LIBISAL_ENABLED
+#include <isa-l/crc.h>
+
+uint16_t
+xnvme_crc16_t10dif(uint16_t init_crc, const void *buf, size_t len)
+{
+	return (crc16_t10dif(init_crc, buf, len));
+}
+
+#else
 static const uint16_t crc_table_fast[16][256] = {
 	{0x0000u, 0x8BB7u, 0x9CD9u, 0x176Eu, 0xB205u, 0x39B2u, 0x2EDCu, 0xA56Bu, 0xEFBDu, 0x640Au,
 	 0x7364u, 0xF8D3u, 0x5DB8u, 0xD60Fu, 0xC161u, 0x4AD6u, 0x54CDu, 0xDF7Au, 0xC814u, 0x43A3u,
@@ -463,6 +477,7 @@ xnvme_crc16_t10dif(uint16_t init_crc, const void *buf, size_t len)
 {
 	return (crc16_table_t10dif(init_crc, buf, len));
 }
+#endif
 
 static const uint64_t crc64_refl_table[256] = {
 	0x0000000000000000ULL, 0x7f6ef0c830358979ULL, 0xfedde190606b12f2ULL,

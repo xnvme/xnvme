@@ -84,6 +84,7 @@ xnvmelib_deps = [
   rpcrt4_dep,
   corefoundation_dep,
   iokit_dep,
+  isal_dep,
   libvfn_dep,
   uring_dep,
   aio_dep,
