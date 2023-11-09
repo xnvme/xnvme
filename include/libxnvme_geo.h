@@ -46,6 +46,10 @@ struct xnvme_geo {
 	uint32_t lba_nbytes;  ///< Size of an LBA in bytes
 	uint8_t lba_extended; ///< Extended LBA: 1=Supported, 0=Not-Supported
 
-	uint8_t _rsvd[7];
+	uint8_t pi_type;   ///< Protection Information Type
+	uint8_t pi_loc;    ///< PI location in metadata: 1=Start, 0=End
+	uint8_t pi_format; ///< Protection Information Format
+
+	uint8_t _rsvd[4];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_geo) == 64, "Incorrect size")

@@ -54,7 +54,11 @@ xnvme_geo_yaml(FILE *stream, const struct xnvme_geo *geo, int indent, const char
 	wrtn += fprintf(stream, "%*slba_extended: %" PRIu8 "%s", indent, "", geo->lba_extended,
 			sep);
 
-	wrtn += fprintf(stream, "%*sssw: %" PRIu64, indent, "", geo->ssw);
+	wrtn += fprintf(stream, "%*sssw: %" PRIu64 "%s", indent, "", geo->ssw, sep);
+
+	wrtn += fprintf(stream, "%*spi_type: %u%s", indent, "", geo->pi_type, sep);
+	wrtn += fprintf(stream, "%*spi_loc: %u%s", indent, "", geo->pi_loc, sep);
+	wrtn += fprintf(stream, "%*spi_format: %u", indent, "", geo->pi_format);
 
 	return wrtn;
 }
