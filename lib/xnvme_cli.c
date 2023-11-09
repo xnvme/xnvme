@@ -831,6 +831,31 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 	},
 
 	{
+		.opt = XNVME_CLI_OPT_PRACT,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
+		.name = "pract",
+		.descr = "Protection Information Action",
+	},
+	{
+		.opt = XNVME_CLI_OPT_PRCHK,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
+		.name = "prchk",
+		.descr = "Protection Information Check",
+	},
+	{
+		.opt = XNVME_CLI_OPT_APPTAG,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
+		.name = "apptag",
+		.descr = "Application Tag",
+	},
+	{
+		.opt = XNVME_CLI_OPT_APPTAG_MASK,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
+		.name = "apptag_mask",
+		.descr = "Application Tag Mask",
+	},
+
+	{
 		.opt = XNVME_CLI_OPT_END,
 		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "",
@@ -1469,6 +1494,23 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 		break;
 	case XNVME_CLI_OPT_PID:
 		args->pid = num;
+		break;
+	case XNVME_CLI_OPT_PRACT:
+		args->pract = true;
+		break;
+	case XNVME_CLI_OPT_PRCHK:
+		args->prchk = num;
+		if (args->prchk > 7) {
+			errno = EINVAL;
+			xnvme_cli_perr("only 3 bits can be set for PI check", errno);
+			return -1;
+		}
+		break;
+	case XNVME_CLI_OPT_APPTAG:
+		args->apptag = num;
+		break;
+	case XNVME_CLI_OPT_APPTAG_MASK:
+		args->apptag_mask = num;
 		break;
 	case XNVME_CLI_OPT_POSA_TITLE:
 	case XNVME_CLI_OPT_NON_POSA_TITLE:
