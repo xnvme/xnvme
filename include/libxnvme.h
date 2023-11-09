@@ -55,6 +55,7 @@ extern "C" {
 #include "libxnvme_topology.h"
 #include "libxnvme_libconf.h"
 #include "libxnvme_cli.h"
+#include "libxnvme_pi.h"
 
 #ifdef __cplusplus
 }
