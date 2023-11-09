@@ -42,11 +42,15 @@ _zoned_geometry(struct xnvme_dev *dev)
 	return 0;
 }
 
-static int
+// TODO: select LBAF correctly, instead of the first
+static inline int
 _conventional_geometry(struct xnvme_dev *dev)
 {
+	const struct xnvme_spec_idfy_ctrlr *ctrlr = (void *)xnvme_dev_get_ctrlr(dev);
 	const struct xnvme_spec_idfy_ns *nvm = (void *)xnvme_dev_get_ns(dev);
 	const struct xnvme_spec_lbaf *lbaf = &nvm->lbaf[nvm->flbas.format];
+	struct xnvme_spec_nvm_idfy_ns_iocs *nns = (void *)xnvme_dev_get_ns_css(dev);
+	struct xnvme_spec_elbaf *elbaf = &nns->elbaf[nvm->flbas.format];
 	struct xnvme_geo *geo = &dev->geo;
 
 	geo->type = XNVME_GEO_CONVENTIONAL;
@@ -63,6 +67,17 @@ _conventional_geometry(struct xnvme_dev *dev)
 	geo->lba_extended = nvm->flbas.extended && lbaf->ms;
 	if (geo->lba_extended) {
 		geo->lba_nbytes += geo->nbytes_oob;
+	}
+
+	geo->pi_type = nvm->dps.pit;
+
+	if (geo->pi_type) {
+		geo->pi_format = XNVME_SPEC_NVM_NS_16B_GUARD;
+		geo->pi_loc = nvm->dps.md_start;
+	}
+
+	if (ctrlr->ctratt.extended_lba_formats && geo->pi_type) {
+		geo->pi_format = elbaf->pif;
 	}
 
 	return 0;
