@@ -74,6 +74,7 @@ xnvmelib_source = [
   'xnvme_topology.c',
   'xnvme_ver.c',
   'xnvme_znd.c',
+  'xnvme_crc.c',
 ]
 
 xnvmelib_deps = [
