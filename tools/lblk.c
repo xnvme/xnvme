@@ -547,6 +547,177 @@ exit:
 	return err;
 }
 
+static int
+sub_write_read_pi(struct xnvme_cli *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_pi_ctx pi_ctx;
+	const struct xnvme_geo *geo = cli->args.geo;
+	const uint64_t slba = cli->args.slba;
+	const size_t nlb = cli->args.nlb;
+	uint32_t nsid = cli->args.nsid;
+	const uint32_t apptag = cli->args.apptag;
+	const uint32_t apptag_mask = cli->args.apptag_mask;
+	const uint8_t prchk = cli->args.prchk;
+	bool pract = cli->args.pract;
+	uint32_t block_size;
+
+	void *dbuf = NULL, *mbuf = NULL;
+	size_t dbuf_nbytes, mbuf_nbytes;
+	int err;
+
+	if (!cli->given[XNVME_CLI_OPT_NSID]) {
+		nsid = xnvme_dev_get_nsid(cli->args.dev);
+	}
+
+	if (pract && geo->pi_type) {
+		if (geo->nbytes_oob == xnvme_pi_size(geo->pi_format)) {
+			if (geo->lba_extended) {
+				dbuf_nbytes = (nlb + 1) * (geo->lba_nbytes - geo->nbytes_oob);
+				block_size = geo->lba_nbytes - geo->nbytes_oob;
+			} else {
+				dbuf_nbytes = (nlb + 1) * geo->lba_nbytes;
+				block_size = geo->lba_nbytes;
+			}
+			mbuf_nbytes = 0;
+		} else {
+			dbuf_nbytes = (nlb + 1) * geo->lba_nbytes;
+			mbuf_nbytes = geo->lba_extended ? 0 : (nlb + 1) * geo->nbytes_oob;
+			block_size = geo->lba_nbytes;
+		}
+	} else {
+		dbuf_nbytes = (nlb + 1) * geo->lba_nbytes;
+		block_size = geo->lba_nbytes;
+		mbuf_nbytes = geo->lba_extended ? 0 : (nlb + 1) * geo->nbytes_oob;
+	}
+
+	xnvme_cli_pinf("Writing nsid: 0x%x, slba: 0x%016lx, nlb: %zu, pract: %zu, prchk: 0x%x, "
+		       "apptag: 0x%x, apptag_mask: 0x%x",
+		       nsid, slba, nlb, pract, prchk, apptag, apptag_mask);
+
+	xnvme_cli_pinf("Alloc/fill dbuf, dbuf_nbytes: %zu", dbuf_nbytes);
+	dbuf = xnvme_buf_alloc(dev, dbuf_nbytes);
+	if (!dbuf) {
+		err = -errno;
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
+		goto exit;
+	}
+	err = xnvme_buf_fill(dbuf, dbuf_nbytes,
+			     cli->args.data_input ? cli->args.data_input : "anum");
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_fill()", err);
+		goto exit;
+	}
+
+	if (mbuf_nbytes) {
+		xnvme_cli_pinf("Alloc/fill mbuf, mbuf_nbytes: %zu", mbuf_nbytes);
+		mbuf = xnvme_buf_alloc(dev, mbuf_nbytes);
+		if (!mbuf) {
+			err = -errno;
+			xnvme_cli_perr("xnvme_buf_alloc()", err);
+			goto exit;
+		}
+		err = xnvme_buf_fill(mbuf, mbuf_nbytes, "anum");
+		if (err) {
+			xnvme_cli_perr("xnvme_buf_fill()", err);
+			goto exit;
+		}
+	}
+
+	if (!pract) {
+		err = xnvme_pi_ctx_init(&pi_ctx, block_size, geo->nbytes_oob, geo->lba_extended,
+					geo->pi_loc, geo->pi_type, prchk, slba, apptag_mask,
+					apptag, geo->pi_format);
+		if (err) {
+			xnvme_cli_perr("xnvme_pi_ctx_init()", err);
+			err = err ? err : -EIO;
+			goto exit;
+		}
+	}
+
+	if (!pract) {
+		xnvme_pi_generate(&pi_ctx, dbuf, mbuf, nlb + 1);
+	}
+
+	xnvme_prep_nvm(&ctx, XNVME_SPEC_NVM_OPC_WRITE, nsid, slba, nlb);
+	ctx.cmd.nvm.prinfo = (pract << 3 | prchk);
+
+	switch (geo->pi_type) {
+	case XNVME_PI_TYPE1:
+	case XNVME_PI_TYPE2:
+		switch (geo->pi_format) {
+		case XNVME_SPEC_NVM_NS_16B_GUARD:
+			if (prchk & XNVME_PI_FLAGS_REFTAG_CHECK) {
+				ctx.cmd.nvm.ilbrt = (uint32_t)slba;
+			}
+			break;
+		case XNVME_SPEC_NVM_NS_64B_GUARD:
+			if (prchk & XNVME_PI_FLAGS_REFTAG_CHECK) {
+				ctx.cmd.nvm.ilbrt = (uint32_t)slba;
+				ctx.cmd.common.cdw03 = ((slba >> 32) & 0xffff);
+			}
+			break;
+		default:
+			break;
+		}
+		if (prchk & XNVME_PI_FLAGS_APPTAG_CHECK) {
+			ctx.cmd.nvm.lbat = apptag;
+			ctx.cmd.nvm.lbatm = apptag_mask;
+		}
+		break;
+	case XNVME_PI_TYPE3:
+		if (prchk & XNVME_PI_FLAGS_APPTAG_CHECK) {
+			ctx.cmd.nvm.lbat = apptag;
+			ctx.cmd.nvm.lbatm = apptag_mask;
+		}
+		break;
+	case XNVME_PI_DISABLE:
+		break;
+	}
+
+	xnvme_cli_pinf("Sending the command...");
+	err = xnvme_cmd_pass(&ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		xnvme_cli_perr("xnvme_cmd_pass()", err);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+		err = err ? err : -EIO;
+		goto exit;
+	}
+
+	memset(dbuf, 0, dbuf_nbytes);
+
+	if (mbuf_nbytes) {
+		memset(mbuf, 0, mbuf_nbytes);
+	}
+
+	xnvme_prep_nvm(&ctx, XNVME_SPEC_NVM_OPC_READ, nsid, slba, nlb);
+
+	xnvme_cli_pinf("Sending the command...");
+	err = xnvme_cmd_pass(&ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		xnvme_cli_perr("xnvme_cmd_pass()", err);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+		err = err ? err : -EIO;
+		goto exit;
+	}
+
+	if (!pract) {
+		err = xnvme_pi_verify(&pi_ctx, dbuf, mbuf, nlb + 1);
+		if (err) {
+			xnvme_cli_perr("xnvme_pi_verify()", err);
+			err = err ? err : -EIO;
+			goto exit;
+		}
+	}
+
+exit:
+	xnvme_buf_free(dev, dbuf);
+	xnvme_buf_free(dev, mbuf);
+
+	return err;
+}
+
 //
 // Command-Line Interface (CLI) definition
 //
@@ -722,6 +893,29 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_META_INPUT, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_DTYPE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_DSPEC, XNVME_CLI_LOPT},
+
+			XNVME_CLI_SYNC_OPTS,
+		},
+	},
+	{
+		"write-read-pi",
+		"Writes and then read with protection information",
+		"Writes and then read with protection information",
+		sub_write_read_pi,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_SLBA, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_NLB, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_PRACT, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_PRCHK, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_APPTAG, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_APPTAG_MASK, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_DATA_INPUT, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_META_INPUT, XNVME_CLI_LOPT},
 
 			XNVME_CLI_SYNC_OPTS,
 		},

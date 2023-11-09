@@ -45,3 +45,16 @@ def test_write_uncor(cijoe, device, be_opts, cli_args):
 def test_write_zeroes(cijoe, device, be_opts, cli_args):
     err, _ = cijoe.run(f"lblk write-zeros {cli_args} --slba 0x0 --nlb 0")
     assert not err
+
+
+@xnvme_parametrize(labels=["write_read_pi"], opts=["be", "admin"])
+def test_write_read_pi(cijoe, device, be_opts, cli_args):
+    err, _ = cijoe.run(
+        f"lblk write-read-pi {cli_args} --slba 0x0 --nlb 0 --pract 1 --prchk 0x5"
+    )
+    assert not err
+
+    err, _ = cijoe.run(
+        f"lblk write-read-pi {cli_args} --slba 0x0 --nlb 4 --prchk 0x7 --apptag 0x1234 --apptag_mask 0xFFFF"
+    )
+    assert not err
