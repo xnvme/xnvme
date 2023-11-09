@@ -734,6 +734,79 @@ struct xnvme_spec_idfy_ns {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_ns) == 4096, "Incorrect size")
 
+struct xnvme_pif {
+	union {
+		struct {
+			uint16_t guard;
+			uint16_t app_tag;
+			uint32_t stor_ref_space;
+		} g16;
+		struct {
+			uint64_t guard;
+			uint16_t app_tag;
+			uint16_t stor_ref_space_p1;
+			uint32_t stor_ref_space_p2;
+		} g64;
+	};
+};
+XNVME_STATIC_ASSERT(XNVME_SIZEOF_MEMBER(struct xnvme_pif, g16) == 8, "Incorrect size");
+XNVME_STATIC_ASSERT(XNVME_SIZEOF_MEMBER(struct xnvme_pif, g64) == 16, "Incorrect size");
+
+/**
+ * @enum xnvme_spec_nvm_ns_pif
+ */
+enum xnvme_spec_nvm_ns_pif {
+	// 16 bit guard protection information
+	XNVME_SPEC_NVM_NS_16B_GUARD = 0x0,
+	// 32 bit guard protection information
+	XNVME_SPEC_NVM_NS_32B_GUARD = 0x1,
+	// 64 bit guard protection information
+	XNVME_SPEC_NVM_NS_64B_GUARD = 0x2,
+};
+
+/**
+ * @struct xnvme_spec_elbaf
+ */
+struct xnvme_spec_elbaf {
+	uint32_t sts  : 7; ///< storage tag size
+	uint32_t pif  : 2; ///< protection information format
+	uint32_t rsvd : 23;
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_elbaf) == 4, "Incorrect size")
+
+/**
+ * Representation of NVMe completion result for NVM command set I/O command set
+ * specific Identify Namespace
+ *
+ * That is, for opcode XNVME_SPEC_OPC_IDFY(0x06) with XNVME_SPEC_IDFY_NS_IOCS(0x05)
+ *
+ * @struct xnvme_spec_nvm_idfy_ns_iocs
+ */
+struct xnvme_spec_nvm_idfy_ns_iocs {
+	uint64_t lbstm; ///< Logical block storage tag mask
+
+	/** Protection information capabilities */
+	union {
+		struct {
+			/** 16b guard protection information storage tag mask */
+			uint8_t gpistm    : 1;
+
+			/** 16b guard protection information storage tag support */
+			uint8_t gpists    : 1;
+
+			uint8_t reserved1 : 6;
+		};
+		uint8_t val;
+	} pic;
+
+	uint8_t reserved9[3];
+
+	struct xnvme_spec_elbaf elbaf[64];
+
+	uint8_t reserved268[3828];
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_idfy_ns_iocs) == 4096, "Incorrect size")
+
 #define XNVME_SPEC_CTRLR_SN_LEN 20
 #define XNVME_SPEC_CTRLR_MN_LEN 40
 #define XNVME_SPEC_CTRLR_FR_LEN 8

@@ -109,6 +109,8 @@
 		(val & (1ULL << 3) ? '1' : '0'), (val & (1ULL << 2) ? '1' : '0'), \
 		(val & (1ULL << 1) ? '1' : '0'), (val & (1ULL << 0) ? '1' : '0')
 
+#define XNVME_SIZEOF_MEMBER(type, member) (sizeof(((type *)0)->member))
+
 static inline uint64_t
 XNVME_ILOG2(uint64_t x)
 {
