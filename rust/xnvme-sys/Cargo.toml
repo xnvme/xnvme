@@ -1,6 +1,6 @@
 [package]
 name = "xnvme-sys"
-version = "0.7.1"
+version = "0.7.2"
 edition = "2021"
 description = "Raw/direct/unsafe bindings to the xNVMe C Library."
 license = "BSD-3-Clause"
@@ -14,4 +14,4 @@ system-deps = "6"
 bindgen = "0.63.0"
 
 [package.metadata.system-deps]
-xnvme = "0.7.1"
+xnvme = "0.7.2"
