@@ -18,6 +18,81 @@ Known Issues
 
 See the file named ``ISSUES`` in the root of the repository.
 
+v0.7.2
+------
+
+* API Refactoring
+
+  - refactor(api): hoist inline-struct 'xnvme_opts.css'
+  - refactor(api)!: hoist "xnvme_opts.oflags" and drop int-version
+  - refactor(api): hoist and define xnvme_cmd_ctx_async
+  - refactor(api): hoist and define xnvme_lba_range_attr
+
+* Backends: libvfn/vfio
+
+  - Fix use of the libvfn API (memory-mapping)
+	- Bumping of the libvfn to libvfn 3.0.0-rc2, bumped to support
+    eventfd-notification and fix errors with memory-mapping
+
+* Backend: SPDK
+
+  - feat(build/spdk): add libarchive dependency
+  - feat(build/spdk): bump to v23.09
+
+* Backends: Windows
+
+  - Added support for SPDK in Windows via WPDK
+
+Backend: linux / liburing
+
+  - feat(be/liburing): turn on batching by default
+
+* Feature: Pseudo-commands
+
+	- Backend interface expanded with "pseudo-commands", this is to unify aspects
+    which are not command-encapsulated; reading controller-registers, resetting
+    subsystems etc.
+	- api: add xnvme_subsystem_reset() / xnvme_controller_reset() /
+    xnvme_namespace_rescan(), these construct "pseudo-commands" to instruct the
+    backend to e.g. reset.
+
+* Rust
+
+  - xNVMe now has experimental Rust bindings via crate 'xnvme-sys'
+  - feat(rust/xnvme-sys): add bindgen-emitted wrapper for libxnvme
+  - feat(rust/xnvme_sys): add simplest example of call via bindings
+  - feat(git/ignore): add 'rust/target' to ignore
+  - feat(pcf,gha): add build of Rust crates
+
+
+* Misc. Fixes
+
+  - fix: format-strings (use PRI-macros instead of e.g. lu-specifiers)
+  - fix(cli,enum): use xnvme_buf_virt_{alloc|free}() instead of malloc/free
+  - fix: use zu format-specifier for size_t
+  - fix(cli): change assignment for create_mode
+  - fix(spec): adjust format-specifier for comp_temp
+  - fix(be/libaio): remove comparison warning 
+  - refactor(toolbox/xnvmec_generator): emit to subfolders
+  - refactor(build/manpages)!: only install manpages for installed binaries
+  - refactor(build/completions)!: only install completions for installed binaries
+  - fix(meson/options): remove unused option shared_library
+  - fix(meson/options): remove unused option enable-ysnp
+  - fix(toolbox/pkgs): build libvfn as release
+
+* Build
+
+  - Cleanup helper targets
+
+* cijoe
+
+  - feat(cijoe): add workflow for provisioning via git
+
+* Documentation
+
+  - Added Tutorial for FDP
+  - Added Overview of the xNVMe CI environment
+
 v0.7.1
 ------
 
