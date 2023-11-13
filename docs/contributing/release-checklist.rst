@@ -62,4 +62,12 @@ release are integrated on ``next`` and all tests are passing. Then:
 
 * Publish the Python package
 
+  - We wish to publish the Python package that have been utilized for testing
+    and provided as artifact for the release. Thus, download and rename it,
+    then upload it.
+  - Rename: ``xnvme-py-sdist.tar.gz xnvme-X.Y.Z.tar.gz``
+  - Upload: ``twine upload xnvme-X.Y.Z.tar.gz``
+
 * Publish the Rust crate
+
+  - Upload: ``cd rust/xnvme-sys && cargo publish``
