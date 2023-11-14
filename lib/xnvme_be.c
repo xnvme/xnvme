@@ -330,7 +330,19 @@ _kvs_geometry(struct xnvme_dev *dev)
 	return 0;
 }
 
-// TODO: add proper handling of NVMe controllers
+static inline int
+_controller_geometry(struct xnvme_dev *dev)
+{
+	struct xnvme_geo *geo = &dev->geo;
+
+	memset(geo, 0, sizeof(*geo));
+	geo->type = XNVME_GEO_UNKNOWN;
+
+	///< note: mdts is setup in derive-geometry, so this function does nothing
+
+	return 0;
+}
+
 int
 xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 {
@@ -338,8 +350,7 @@ xnvme_be_dev_derive_geometry(struct xnvme_dev *dev)
 
 	switch (dev->ident.dtype) {
 	case XNVME_DEV_TYPE_NVME_CONTROLLER:
-		XNVME_DEBUG("FAILED: not supported");
-		return -ENOSYS;
+		return _controller_geometry(dev);
 
 	case XNVME_DEV_TYPE_FS_FILE:
 		return _fs_geometry(dev);
