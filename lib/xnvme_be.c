@@ -457,6 +457,14 @@ xnvme_be_dev_idfy(struct xnvme_dev *dev)
 		XNVME_DEBUG("FAILED: xnvme_adm_idfy_ctrlr(), err: %d", err);
 		goto exit;
 	}
+	// Store idfy-ctrlr in device instance
+	memcpy(&dev->id.ctrlr, idfy_ctrlr, sizeof(*idfy_ctrlr));
+	// Store subnqn in device-identifier
+	memcpy(dev->ident.subnqn, idfy_ctrlr->ctrlr.subnqn, sizeof(dev->ident.subnqn));
+
+	if (dev->ident.dtype == XNVME_DEV_TYPE_NVME_CONTROLLER) {
+		goto exit;
+	}
 
 	// Retrieve idfy-ns
 	memset(idfy_ns, 0, sizeof(*idfy_ns));
@@ -467,12 +475,7 @@ xnvme_be_dev_idfy(struct xnvme_dev *dev)
 		XNVME_DEBUG("FAILED: xnvme_adm_idfy_ns(), err: %d", err);
 		goto exit;
 	}
-
-	// Store subnqn in device-identifier
-	memcpy(dev->ident.subnqn, idfy_ctrlr->ctrlr.subnqn, sizeof(dev->ident.subnqn));
-
-	// Store idfy-ctrlr and idfy-ns in device instance
-	memcpy(&dev->id.ctrlr, idfy_ctrlr, sizeof(*idfy_ctrlr));
+	// Store idfy-ns in device instance
 	memcpy(&dev->id.ns, idfy_ns, sizeof(*idfy_ns));
 
 	//
