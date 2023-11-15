@@ -205,3 +205,9 @@ xnvme_spec_znd_state_str(enum xnvme_spec_znd_state eval);
  */
 const char *
 xnvme_spec_znd_type_str(enum xnvme_spec_znd_type eval);
+
+int
+xnvme_spec_ctrlr_bar_fpr(FILE *stream, struct xnvme_spec_ctrlr_bar *bar, int opts);
+
+int
+xnvme_spec_ctrlr_bar_pp(struct xnvme_spec_ctrlr_bar *bar, int opts);
