@@ -1076,6 +1076,25 @@ exit:
 }
 
 static int
+show_regs(struct xnvme_cli *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_spec_ctrlr_bar bar = {0};
+	int err;
+
+	err = xnvme_controller_get_registers(dev, &bar);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		xnvme_cli_perr("xnvme_controller_get_registers()", err);
+		return err;
+	}
+
+	xnvme_spec_ctrlr_bar_pp(&bar, XNVME_PR_DEF);
+
+	return 0;
+}
+
+static int
 subsystem_reset(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
@@ -1604,6 +1623,18 @@ static struct xnvme_cli_sub g_subs[] = {
 		"Resets the subsystem",
 		"Resets the subsystem",
 		subsystem_reset,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+
+			XNVME_CLI_ADMIN_OPTS,
+		},
+	},
+	{
+		"show-regs",
+		"Show controller-registers",
+		"Show controller-registers",
+		show_regs,
 		{
 			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
