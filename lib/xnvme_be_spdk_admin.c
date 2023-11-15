@@ -74,28 +74,32 @@ xnvme_be_spdk_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_
 }
 
 int
-xnvme_be_spdk_sync_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf),
-			      size_t XNVME_UNUSED(dbuf_nbytes), void *XNVME_UNUSED(mbuf),
-			      size_t XNVME_UNUSED(mbuf_nbytes))
+xnvme_be_spdk_sync_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
+			      void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	struct xnvme_be_spdk_state *state = (void *)ctx->dev->be.state;
-	int err;
 
 	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_PSEUDO_OPC_SUBSYSTEM_RESET:
-		err = spdk_nvme_ctrlr_reset_subsystem(state->ctrlr);
-		break;
+	case XNVME_SPEC_PSEUDO_OPC_SHOW_REGS:
+		if (dbuf_nbytes != sizeof(struct xnvme_spec_ctrlr_bar)) {
+			XNVME_DEBUG(
+				"FAILED: dbuf_nbytes(%zu) != sizeof(struct xnvme_spec_ctrlr_bar)",
+				dbuf_nbytes);
+			return -EINVAL;
+		}
+		memcpy(dbuf, (void *)spdk_nvme_ctrlr_get_registers(state->ctrlr), dbuf_nbytes);
+		return 0;
 
 	case XNVME_SPEC_PSEUDO_OPC_CONTROLLER_RESET:
-		err = spdk_nvme_ctrlr_reset(state->ctrlr);
-		break;
+		return spdk_nvme_ctrlr_reset(state->ctrlr);
+
+	case XNVME_SPEC_PSEUDO_OPC_SUBSYSTEM_RESET:
+		return spdk_nvme_ctrlr_reset_subsystem(state->ctrlr);
 
 	default:
 		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);
 		return -ENOSYS;
 	}
-
-	return err;
 }
 #endif
 
