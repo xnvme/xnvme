@@ -65,3 +65,22 @@ xnvme_namespace_rescan(struct xnvme_dev *dev)
 
 	return -ENOSYS;
 }
+
+int
+xnvme_controller_get_registers(struct xnvme_dev *dev, struct xnvme_spec_ctrlr_bar *bar)
+{
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	int err;
+
+	ctx.cmd.common.opcode = XNVME_SPEC_PSEUDO_OPC_SHOW_REGS;
+
+	err = xnvme_cmd_pass_pseudo(&ctx, bar, sizeof(*bar), NULL, 0x0);
+	if (err) {
+		return err;
+	}
+	if (xnvme_cmd_ctx_cpl_status(&ctx)) {
+		return -ctx.cpl.status.sc;
+	}
+
+	return 0;
+}
