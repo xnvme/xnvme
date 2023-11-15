@@ -421,3 +421,62 @@ xnvme_spec_znd_type_str(enum xnvme_spec_znd_type eval)
 
 	return "ENOSYS";
 }
+
+int
+xnvme_spec_ctrlr_bar_fpr(FILE *stream, struct xnvme_spec_ctrlr_bar *bar, int opts)
+{
+	int wrtn = 0;
+
+	switch (opts) {
+	case XNVME_PR_TERSE:
+		wrtn += fprintf(stream, "# ENOSYS: opts(%x)", opts);
+		return wrtn;
+
+	case XNVME_PR_DEF:
+	case XNVME_PR_YAML:
+		break;
+	}
+
+	wrtn += fprintf(stream, "xnvme_spec_ctrlr_bar:");
+	if (!bar) {
+		wrtn += fprintf(stream, "~\n");
+		return wrtn;
+	}
+
+	wrtn += fprintf(stream, "\n");
+
+	wrtn += fprintf(stream, "  cap: 0x%016" PRIx64 "\n", bar->cap);
+	wrtn += fprintf(stream, "  vs: %" PRIu32 "\n", bar->vs);
+	wrtn += fprintf(stream, "  intms: %" PRIu32 "\n", bar->intms);
+	wrtn += fprintf(stream, "  intmc: %" PRIu32 "\n", bar->intmc);
+	wrtn += fprintf(stream, "  cc: %" PRIu32 "\n", bar->cc);
+	wrtn += fprintf(stream, "  csts: %" PRIu32 "\n", bar->csts);
+	wrtn += fprintf(stream, "  nssr: %" PRIu32 "\n", bar->nssr);
+	wrtn += fprintf(stream, "  aqa: %" PRIu32 "\n", bar->aqa);
+
+	wrtn += fprintf(stream, "  asq: %" PRIu64 "\n", bar->asq);
+	wrtn += fprintf(stream, "  acq: %" PRIu64 "\n", bar->acq);
+
+	wrtn += fprintf(stream, "  cmbloc: %" PRIu32 "\n", bar->cmbloc);
+	wrtn += fprintf(stream, "  cmbsz: %" PRIu32 "\n", bar->cmbsz);
+	wrtn += fprintf(stream, "  bpinfo: %" PRIu32 "\n", bar->bpinfo);
+	wrtn += fprintf(stream, "  bprsel: %" PRIu32 "\n", bar->bprsel);
+	wrtn += fprintf(stream, "  bpmbl: %" PRIu64 "\n", bar->bpmbl);
+	wrtn += fprintf(stream, "  cmbmsc: %" PRIu64 "\n", bar->cmbmsc);
+	wrtn += fprintf(stream, "  cmbsts: %" PRIu32 "\n", bar->cmbsts);
+	wrtn += fprintf(stream, "  pmrcap: %" PRIu32 "\n", bar->pmrcap);
+	wrtn += fprintf(stream, "  pmrctl: %" PRIu32 "\n", bar->pmrctl);
+	wrtn += fprintf(stream, "  pmrsts: %" PRIu32 "\n", bar->pmrsts);
+	wrtn += fprintf(stream, "  pmrebs: %" PRIu32 "\n", bar->pmrebs);
+	wrtn += fprintf(stream, "  pmrswtp: %" PRIu32 "\n", bar->pmrswtp);
+	wrtn += fprintf(stream, "  pmrmscl: %" PRIu32 "\n", bar->pmrmscl);
+	wrtn += fprintf(stream, "  pmrmscu: %" PRIu32 "\n", bar->pmrmscu);
+
+	return wrtn;
+}
+
+int
+xnvme_spec_ctrlr_bar_pp(struct xnvme_spec_ctrlr_bar *bar, int opts)
+{
+	return xnvme_spec_ctrlr_bar_fpr(stdout, bar, opts);
+}
