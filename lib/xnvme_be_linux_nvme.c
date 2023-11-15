@@ -10,8 +10,11 @@
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_LINUX_ENABLED
 #include <errno.h>
-#include <sys/ioctl.h>
+#include <fcntl.h>
 #include <linux/nvme_ioctl.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <unistd.h>
 #include <xnvme_be_linux.h>
 #include <xnvme_be_linux_nvme.h>
 #include <xnvme_spec.h>
@@ -164,6 +167,54 @@ ioctl_wrap(struct xnvme_dev *dev, unsigned long ioctl_req, struct xnvme_cmd_ctx 
 	return -EIO;
 }
 
+int
+_controller_get_registers(const struct xnvme_dev *dev, void *dbuf, size_t dbuf_nbytes)
+{
+	const struct xnvme_ident *ident = &dev->ident;
+	char path[512] = {0};
+	void *membase;
+	int err = 0;
+	int fd;
+
+	switch (ident->dtype) {
+	case XNVME_DEV_TYPE_NVME_NAMESPACE:
+		snprintf(path, sizeof(path), "/sys/block/%s/device/device/resource0",
+			 basename(ident->uri));
+		break;
+
+	case XNVME_DEV_TYPE_NVME_CONTROLLER:
+		snprintf(path, sizeof(path), "/sys/class/nvme/%s/device/resource0",
+			 basename(ident->uri));
+		break;
+
+	default:
+		XNVME_DEBUG("FAILED: dev is not an NVMe controller nor namespace");
+		return -EINVAL;
+	}
+
+	fd = open(path, O_RDONLY | O_SYNC);
+	if (fd < 0) {
+		err = -errno;
+		XNVME_DEBUG("FAILED: open('%s') got err: %d", path, err);
+		return err;
+	}
+
+	membase = mmap(NULL, getpagesize(), PROT_READ, MAP_SHARED, fd, 0);
+	if (membase == MAP_FAILED) {
+		err = -errno;
+
+		XNVME_DEBUG("FAILED: mmap(), got err: %d", err);
+		goto exit;
+	}
+	memcpy(dbuf, membase, dbuf_nbytes);
+	munmap(membase, getpagesize());
+
+exit:
+	close(fd);
+
+	return err;
+}
+
 #ifdef NVME_IOCTL_IO64_CMD_VEC
 int
 xnvme_be_linux_nvme_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
@@ -285,21 +336,29 @@ xnvme_be_linux_nvme_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf
 }
 
 int
-xnvme_be_linux_nvme_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf),
-			       size_t XNVME_UNUSED(dbuf_nbytes), void *XNVME_UNUSED(mbuf),
-			       size_t XNVME_UNUSED(mbuf_nbytes))
+xnvme_be_linux_nvme_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
+			       void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	struct xnvme_be_linux_state *state = (void *)ctx->dev->be.state;
 	int ioctl_req;
 	int err;
 
 	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_PSEUDO_OPC_SUBSYSTEM_RESET:
-		ioctl_req = NVME_IOCTL_SUBSYS_RESET;
-		break;
+	case XNVME_SPEC_PSEUDO_OPC_SHOW_REGS:
+		if (dbuf_nbytes != sizeof(struct xnvme_spec_ctrlr_bar)) {
+			XNVME_DEBUG(
+				"FAILED: dbuf_nbytes(%zu) != sizeof(struct xnvme_spec_ctrlr_bar)",
+				dbuf_nbytes);
+			return -EINVAL;
+		}
+		return _controller_get_registers(ctx->dev, dbuf, dbuf_nbytes);
 
 	case XNVME_SPEC_PSEUDO_OPC_CONTROLLER_RESET:
 		ioctl_req = NVME_IOCTL_RESET;
+		break;
+
+	case XNVME_SPEC_PSEUDO_OPC_SUBSYSTEM_RESET:
+		ioctl_req = NVME_IOCTL_SUBSYS_RESET;
 		break;
 
 	case XNVME_SPEC_PSEUDO_OPC_NAMESPACE_RESCAN:
