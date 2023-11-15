@@ -238,7 +238,36 @@ def test_dsm(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-# For these three tests we request a device with labels 'ctrlr'
+# For these four tests we request a device with labels 'ctrlr'
+@xnvme_parametrize(labels=["ctrlr"], opts=["be", "admin"])
+def test_show_regs(cijoe, device, be_opts, cli_args):
+    """
+    The 'xnvme show-regs' is expected to fail when the kernel config has
+    CONFIG_IO_STRICT_DEVMEM=y. When this test is running, we do not know what
+    the state of this kernel config-option is, thus we check for it, and adjust
+    the test-expectation accordingly.
+    """
+
+    if be_opts["be"] == "vfio":
+        pytest.skip(reason="[be=vfio] does not support pseudo commands")
+
+    err, _ = cijoe.run(
+        f"xnvme show-regs {device['uri']} --be {be_opts['be']} --admin {be_opts['admin']}"
+    )
+
+    expect_error = False
+    if be_opts["be"] in ["linux"] and be_opts["admin"] in ["nvme"]:
+        _, state = cijoe.run(
+            "cat /boot/config-$(uname -r) | grep CONFIG_IO_STRICT_DEVMEM"
+        )
+        expect_error = "CONFIG_IO_STRICT_DEVMEM=y" in state.output()
+
+    if expect_error:
+        assert err, "Expected error, however, it did not"
+    else:
+        assert not err, "Expected it to work, however, it did not"
+
+
 @xnvme_parametrize(labels=["ctrlr"], opts=["be", "admin"])
 def test_subsystem_reset(cijoe, device, be_opts, cli_args):
     if be_opts["be"] == "vfio":
