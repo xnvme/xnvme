@@ -52,6 +52,23 @@ meson compile -C builddir
 meson install -C builddir
 popd
 
+#
+# Clone, build and install libisal
+#
+# Assumptions:
+#
+# - Commands are executed with sufficient privileges (sudo/root)
+#
+git clone https://github.com/intel/isa-l.git toolbox/third-party/libisal/repository
+
+pushd toolbox/third-party/libisal/repository
+git checkout v2.30.0
+./autogen.sh
+./configure --prefix=/usr --libdir=/usr/lib64
+make
+make install
+popd
+
 # Clone, build and install liburing v2.2
 #
 # Assumptions:

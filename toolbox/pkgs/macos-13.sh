@@ -16,6 +16,7 @@ if make --version | grep i386-apple; then
   brew install make
 fi
 
+isa-l --version && echo "Installed" || brew install isa-l --overwrite || echo "Failed installing"
 meson --version && echo "Installed" || brew install meson --overwrite || echo "Failed installing"
 pkg-config --version && echo "Installed" || brew install pkg-config --overwrite || echo "Failed installing"
 python3 --version && echo "Installed" || brew install python3 --overwrite || echo "Failed installing"

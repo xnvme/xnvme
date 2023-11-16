@@ -164,6 +164,15 @@ deps:
       yum: [libffi-devel]
       dnf: [libffi-devel]
 
+  libisal:
+    notes: libisal is required for PI support
+    ver: 0.0
+    when: [building, running]
+    names:
+      default: [isa-l]
+      apt: [libisal-dev]
+      emerge: [dev-libs/isa-l]
+
   liburing:
     notes: When available; enables the use of the Linux io_uring and io_uring_cmd interfaces
     ver: 2.2
@@ -266,22 +275,22 @@ apps:
 defaults:
   freebsd:
     deps:
-    - [sys, [bash, clang-format, cunit, elftools, find, git, libuuid, make, meson, nasm, ncurses, openssl, patch, pipx, pkg-config,
-        python3]]
+    - [sys, [bash, clang-format, cunit, elftools, find, git, libisal, libuuid, make, meson, nasm, ncurses, openssl, patch,
+        pipx, pkg-config, python3]]
     apps:
     - [src, [fio]]
 
   linux:
     deps:
-    - [sys, [archive, bash, cunit, clang-format, elftools, find, git, libaio, liburing, libuuid, make, meson, nasm, ncurses,
-        numactl, openssl, patch, pipx, pkg-config, python3]]
+    - [sys, [archive, bash, cunit, clang-format, elftools, find, git, libaio, libisal, liburing, libuuid, make, meson, nasm,
+        ncurses, numactl, openssl, patch, pipx, pkg-config, python3]]
     - [src, [libvfn]]
     apps:
     - [src, [fio]]
 
   macos:
     deps:
-    - [sys, [clang-format, git, meson, pipx, pkg-config, python3, make]]
+    - [sys, [clang-format, git, libisal, meson, pipx, pkg-config, python3, make]]
     apps:
     - [src, [fio]]
 
@@ -305,7 +314,7 @@ platforms:
   ver: [latest]
   os: linux
   mng: apk
-  drop: [elftools]
+  drop: [elftools, libisal]
   alt:
   - [pip, [pipx]]
   aux:
@@ -322,7 +331,8 @@ platforms:
   os: linux
   mng: pacman
   drop: []
-  alt: []
+  alt:
+  - [src, [libisal]]
   aux:
   - [sys, [base-devel, libutil-linux]]
 
@@ -335,7 +345,7 @@ platforms:
   drop: []
   alt:
   - [pip, [pipx]]
-  - [src, [liburing, libvfn]]
+  - [src, [libisal, liburing, libvfn]]
   aux:
   - [sys, [autoconf, diffutils, gcc, gcc-c++, libtool, procps, unzip, wget, zlib-devel]]
 
@@ -349,7 +359,7 @@ platforms:
   drop: []
   alt:
   - [pip, [pipx]]
-  - [src, [liburing, libvfn]]
+  - [src, [libisal, liburing, libvfn]]
   aux:
   - [sys, [autoconf, diffutils, gcc, gcc-c++, libtool, procps, unzip, wget, zlib-devel]]
 
@@ -362,7 +372,7 @@ platforms:
   drop: [clang-format]
   alt:
   - [pip, [elftools, meson, pipx]]
-  - [src, [liburing, libvfn]]
+  - [src, [libisal, liburing, libvfn]]
   aux:
   - [sys, [autoconf, diffutils, gcc, gcc-c++, libtool, procps, unzip, wget, zlib-devel]]
 
@@ -410,7 +420,8 @@ platforms:
   os: linux
   mng: dnf
   drop: []
-  alt: []
+  alt:
+  - [src, [libisal]]
   aux:
   - [sys, [autoconf, diffutils, g++, gcc, libtool, procps, zlib-devel]]
 
@@ -422,7 +433,7 @@ platforms:
   mng: dnf
   drop: []
   alt:
-  - [src, [liburing]]
+  - [src, [libisal, liburing]]
   aux:
   - [sys, [autoconf, diffutils, g++, gcc, libtool, procps, zlib-devel]]
 
@@ -477,7 +488,8 @@ platforms:
   os: linux
   mng: zypper
   drop: []
-  alt: []
+  alt:
+  - [src, [libisal]]
   aux:
   - [sys, [autoconf, gcc, gcc-c++, gzip, libtool, tar, awk]]
 

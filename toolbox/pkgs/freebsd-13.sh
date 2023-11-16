@@ -16,6 +16,7 @@ pkg install -qy \
  findutils \
  git \
  gmake \
+ isa-l \
  libtool \
  meson \
  nasm \
