@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: xNVMe
 Upstream-Contact: Simon A. F. Lund <os@safl.dk>
-Source: https://xnvme.io/
+Source: https://github.com/OpenMPDK/xNVMe
 
 Files: .github/codeql/codeql-config.yml .github/workflows/verify.yml .pre-commit-config.yaml meson_options.txt xnvme.spec.in
 Copyright: Samsung Electronics Co., Ltd
