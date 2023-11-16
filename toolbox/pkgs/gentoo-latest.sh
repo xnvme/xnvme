@@ -14,6 +14,7 @@ emerge \
  app-arch/libarchive \
  bash \
  dev-lang/nasm \
+ dev-libs/isa-l \
  dev-libs/libaio \
  dev-libs/openssl \
  dev-python/pip \

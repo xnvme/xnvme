@@ -24,6 +24,7 @@ apt-get -qy install \
  libaio-dev \
  libarchive-dev \
  libcunit1-dev \
+ libisal-dev \
  libncurses5-dev \
  libnuma-dev \
  libssl-dev \
