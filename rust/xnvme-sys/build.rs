@@ -13,6 +13,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         header_path.clear();
         header_path.clone_from(include_path);
         header_path.push("libxnvme.h");
+
+        if header_path.exists() {
+            break;
+        }
     }
 
     if !header_path.exists() {
