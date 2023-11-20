@@ -10,12 +10,12 @@ The following people have contributed to the implementation of xNVMe.
 
 ## Contributors to the current release
 
-* Ankit Kumar <ankit.kumar@samsung.com>
 * Karl Bonde Torp <k.torp@samsung.com>
-* Klaus Jensen <k.jensen@samsung.com>
-* Mads Ynddal <m.ynddal@samsung.com>
+* Minsik Jeon <hmi.jeon@samsung.com>
 * Rishabh Shukla <rishabh.sh@samsung.com>
 * Simon A. F. Lund <simon.lund@samsung.com>
+* Steven Seungcheol Lee <sc108.lee@samsung.com>
+* Vikash Kumar <vikash.k5@samsung.com>
 
 ## Contributors to previous releases
 
