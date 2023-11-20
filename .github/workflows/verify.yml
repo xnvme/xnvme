@@ -60,7 +60,7 @@ jobs:
 
     - name: Rename to un-versioned xnvme-src.tar.gz
       run: |
-        mv builddir/meson-dist/xnvme-0.7.2.tar.gz builddir/meson-dist/xnvme-src.tar.gz
+        mv builddir/meson-dist/xnvme-0.7.3.tar.gz builddir/meson-dist/xnvme-src.tar.gz
 
     - name: Upload source archive
       uses: actions/upload-artifact@v3.1.1
