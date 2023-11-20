@@ -5,7 +5,7 @@
 project(
   'xnvme',
   'c',
-  version: '0.7.2',
+  version: '0.7.3',
   license: 'BSD-3-Clause',
   default_options: [
     'c_std=gnu11',
