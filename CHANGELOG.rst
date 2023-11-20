@@ -18,6 +18,32 @@ Known Issues
 
 See the file named ``ISSUES`` in the root of the repository.
 
+v0.7.3
+------
+
+* Pseudo Commands
+
+  - Encapsulation of functionality not NVMe-spec defined, yet common for
+    drivers etc. encapsulated for backend-handling as "pseudo-commands" these
+    are
+
+    - xnvme_controller_reset()
+    - xnvme_controller_get_registers()
+    - xnvme_namespace_rescan()
+    - xnvme_subsystem_reset()
+
+  - Implemented in the SPDK and Linux backends
+  - Usage via cli-tools is available
+
+* Controller Handles
+
+  - Having device-handles to NVMe-controllers is a necessity for e.g. reading
+    controller-registers as provided via xnvme_controller_get_registers()
+
+* Backend: SPDK
+
+  - Support for the KV Command-Set over NVMe/TCP
+
 v0.7.2
 ------
 
