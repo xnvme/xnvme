@@ -91,11 +91,11 @@ xnvme_nvm_write_uncorrectable(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t
 }
 
 int
-xnvme_nvm_write_zeroes(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t sdlba, uint16_t nlb)
+xnvme_nvm_write_zeroes(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint16_t nlb)
 {
 	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE_ZEROES;
 	ctx->cmd.common.nsid = nsid;
-	ctx->cmd.write_zeroes.slba = sdlba;
+	ctx->cmd.write_zeroes.slba = slba;
 	ctx->cmd.write_zeroes.nlb = nlb;
 
 	return xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
