@@ -70,4 +70,6 @@ release are integrated on ``next`` and all tests are passing. Then:
 
 * Publish the Rust crate
 
+  - Create an API token on https://crates.io
+  - Set up credentials locally ``cargo login``
   - Upload: ``cd rust/xnvme-sys && cargo publish``
