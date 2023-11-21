@@ -12,6 +12,8 @@
 #include <xnvme_be.h>
 #include <xnvme_queue.h>
 
+#define XNVME_BE_VFIO_NQUEUES_MAX 64
+
 struct xnvme_be_vfio_state {
 	struct nvme_ctrl *ctrl;
 	unsigned long long qidmap; // Queue identifier bit map
@@ -19,7 +21,9 @@ struct xnvme_be_vfio_state {
 	struct nvme_sq *sq_sync; // Submission queue for synchronous IOs
 	struct nvme_cq *cq_sync; // Completion queue for synchronous IOs
 
-	uint8_t _rsvd[94];
+	int *efds; // Completion event FDs
+	int nefds; // Number of completion event FDs
+	uint8_t _rvds[82];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_vfio_state) == XNVME_BE_STATE_NBYTES, "Incorrect size")
 

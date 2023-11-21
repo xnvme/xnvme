@@ -12,7 +12,7 @@
 
 #define XNVME_BE_QUEUE_STATE_NBYTES 256
 
-#define XNVME_BE_ASYNC_NBYTES  56
+#define XNVME_BE_ASYNC_NBYTES  64
 #define XNVME_BE_SYNC_NBYTES   24
 #define XNVME_BE_ADMIN_NBYTES  24
 #define XNVME_BE_DEV_NBYTES    24
@@ -45,6 +45,9 @@ struct xnvme_be_async {
 
 	// Close resources allocated for the underlying backend's io path
 	int (*term)(struct xnvme_queue *);
+
+	// Provide the completion event FD for the queue
+	int (*get_completion_fd)(struct xnvme_queue *);
 
 	// Check if the backend is supported in the current environment
 	const char *id;

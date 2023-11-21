@@ -211,6 +211,7 @@ struct xnvme_be_async g_xnvme_be_cbi_async_posix = {
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = posix_init,
 	.term = posix_term,
+	.get_completion_fd = xnvme_be_nosys_queue_get_completion_fd,
 #else
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
@@ -218,5 +219,6 @@ struct xnvme_be_async g_xnvme_be_cbi_async_posix = {
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_nosys_queue_init,
 	.term = xnvme_be_nosys_queue_term,
+	.get_completion_fd = xnvme_be_nosys_queue_get_completion_fd,
 #endif
 };

@@ -123,3 +123,11 @@ xnvme_queue_wait
 
 .. doxygenfunction:: xnvme_queue_wait
 
+
+.. _sec-c-api-xnvme_queue-func-xnvme_queue_get_completion_fd:
+
+xnvme_queue_get_completion_fd
+----------------
+
+.. doxygenfunction:: xnvme_queue_get_completion_fd
+

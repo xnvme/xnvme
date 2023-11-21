@@ -8,6 +8,7 @@ examples_source = [
   'xnvme_hello.c',
   'xnvme_io_async.c',
   'xnvme_single_async.c',
+  'xnvme_single_async_efd.c',
   'xnvme_single_sync.c',
   'zoned_io_async.c',
   'zoned_io_sync.c',

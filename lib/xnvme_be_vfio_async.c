@@ -9,6 +9,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_queue.h>
 #include <xnvme_be_vfio.h>
+#include <sys/eventfd.h>
 
 struct xnvme_queue_vfio {
 	struct xnvme_queue_base base;
@@ -150,6 +151,34 @@ err:
 	return -EINVAL;
 }
 
+int
+xnvme_be_vfio_queue_get_completion_fd(struct xnvme_queue *queue)
+{
+	struct xnvme_queue_vfio *q = (struct xnvme_queue_vfio *)queue;
+	struct xnvme_be_vfio_state *state = (void *)q->base.dev->be.state;
+	int efd;
+
+	if (state->efds[q->id] != -1) {
+		return state->efds[q->id];
+	}
+
+	efd = eventfd(0, EFD_CLOEXEC);
+	if (efd < 0) {
+		XNVME_DEBUG("FAILED: failed to create eventfd");
+		return -errno;
+	}
+
+	state->efds[q->id] = efd;
+
+	if (vfio_set_irq(&state->ctrl->pci.dev, state->efds, state->nefds)) {
+		XNVME_DEBUG("FAILED: failed to set irqs");
+		close(efd);
+		return -errno;
+	}
+
+	return efd;
+}
+
 #endif
 
 struct xnvme_be_async g_xnvme_be_vfio_async = {
@@ -161,6 +190,7 @@ struct xnvme_be_async g_xnvme_be_vfio_async = {
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_vfio_queue_init,
 	.term = xnvme_be_vfio_queue_term,
+	.get_completion_fd = xnvme_be_vfio_queue_get_completion_fd,
 #else
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
@@ -168,5 +198,6 @@ struct xnvme_be_async g_xnvme_be_vfio_async = {
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_nosys_queue_init,
 	.term = xnvme_be_nosys_queue_term,
+	.get_completion_fd = xnvme_be_nosys_queue_get_completion_fd,
 #endif
 };
