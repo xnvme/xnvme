@@ -46,9 +46,6 @@ add_project_arguments(
   language: 'c'
 )
 
-prog_python = import('python').find_installation('python3')
-message('python.language_version:', prog_python.language_version())
-
 xnvmelib_libdir = get_option('libdir')
 
 #
