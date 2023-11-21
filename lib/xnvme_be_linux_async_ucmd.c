@@ -140,11 +140,6 @@ xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 	struct io_uring_sqe *sqe = NULL;
 	int err = 0;
 
-	if (mbuf || mbuf_nbytes) {
-		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
-		return -ENOSYS;
-	}
-
 	sqe = io_uring_get_sqe(&queue->ring);
 	if (!sqe) {
 		return -EAGAIN;
@@ -195,17 +190,12 @@ xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 int
 xnvme_be_linux_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
 			size_t XNVME_UNUSED(dvec_nbytes), struct iovec *mvec, size_t mvec_cnt,
-			size_t mvec_nbytes)
+			size_t XNVME_UNUSED(mvec_nbytes))
 {
 	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
 	struct io_uring_sqe *sqe = NULL;
 	int err = 0;
-
-	if (mvec || mvec_cnt || mvec_nbytes) {
-		XNVME_DEBUG("FAILED: mvec or mvec_cnt or mvec_nbytes provided");
-		return -ENOSYS;
-	}
 
 	sqe = io_uring_get_sqe(&queue->ring);
 	if (!sqe) {
