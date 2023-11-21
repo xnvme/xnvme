@@ -153,3 +153,14 @@ typedef void (*xnvme_queue_cb)(struct xnvme_cmd_ctx *ctx, void *opaque);
  */
 int
 xnvme_queue_set_cb(struct xnvme_queue *queue, xnvme_queue_cb cb, void *cb_arg);
+
+/**
+ * Get the completion event fd on the given ::xnvme_queue
+ *
+ * @param queue Pointer to the ::xnvme_queue to query for outstanding commands
+ *
+ * @return On success, an eventfd() file descriptor is returned. On error, negative `errno`
+ * is returned.
+ */
+int
+xnvme_queue_get_completion_fd(struct xnvme_queue *queue);

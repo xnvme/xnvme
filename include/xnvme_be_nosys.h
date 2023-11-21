@@ -47,6 +47,9 @@ int
 xnvme_be_nosys_queue_term(struct xnvme_queue *queue);
 
 int
+xnvme_be_nosys_queue_get_completion_fd(struct xnvme_queue *queue);
+
+int
 xnvme_be_nosys_queue_supported(struct xnvme_dev *dev, uint32_t opts);
 
 void *
@@ -89,11 +92,12 @@ xnvme_be_nosys_dev_close(struct xnvme_dev *dev);
 		.id = "ENOSYS",                                                               \
 	}
 
-#define XNVME_BE_NOSYS_QUEUE                                                              \
-	{                                                                                 \
-		.cmd_io = xnvme_be_nosys_queue_cmd_io, .poke = xnvme_be_nosys_queue_poke, \
-		.wait = xnvme_be_nosys_queue_wait, .init = xnvme_be_nosys_queue_init,     \
-		.term = xnvme_be_nosys_queue_term, .id = "ENOSYS",                        \
+#define XNVME_BE_NOSYS_QUEUE                                                                 \
+	{                                                                                    \
+		.cmd_io = xnvme_be_nosys_queue_cmd_io, .poke = xnvme_be_nosys_queue_poke,    \
+		.wait = xnvme_be_nosys_queue_wait, .init = xnvme_be_nosys_queue_init,        \
+		.term              = xnvme_be_nosys_queue_term,                              \
+		.get_completion_fd = xnvme_be_nosys_queue_get_completion_fd, .id = "ENOSYS", \
 	}
 
 #define XNVME_BE_NOSYS_MEM                                                                        \

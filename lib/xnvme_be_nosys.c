@@ -105,6 +105,13 @@ xnvme_be_nosys_queue_term(struct xnvme_queue *XNVME_UNUSED(queue))
 	return -ENOSYS;
 }
 
+int
+xnvme_be_nosys_queue_get_completion_fd(struct xnvme_queue *XNVME_UNUSED(queue))
+{
+	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");
+	return -ENOSYS;
+}
+
 void *
 xnvme_be_nosys_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t XNVME_UNUSED(nbytes),
 			 uint64_t *XNVME_UNUSED(phys))

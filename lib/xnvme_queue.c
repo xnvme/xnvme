@@ -168,3 +168,9 @@ xnvme_queue_put_cmd_ctx(struct xnvme_queue *queue, struct xnvme_cmd_ctx *ctx)
 
 	return 0;
 }
+
+int
+xnvme_queue_get_completion_fd(struct xnvme_queue *queue)
+{
+	return queue->base.dev->be.async.get_completion_fd(queue);
+}
