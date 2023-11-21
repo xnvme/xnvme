@@ -9,4 +9,6 @@ xNVMe Maintainers
 
 The following people maintain the xNVMe project.
 
-* Simon A. F. Lund, <simon.lund@samsung.com>
+* Ankit Kumar <ankit.kumar@samsung.com>, Co-Maintainer
+* Karl Bonde Torp <k.torp@samsung.com>, Co-Maintainer
+* Simon A. F. Lund <simon.lund@samsung.com>, Lead Maintainer
