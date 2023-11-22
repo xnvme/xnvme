@@ -1,0 +1,25 @@
+default: (g=0): rw=randwrite, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=xnvme, iodepth=1
+fio-3.36-19-gbdf99
+Starting 1 thread
+
+default: (groupid=0, jobs=1): err= 0: pid=1088: Thu Nov 23 02:34:37 2023
+  write: IOPS=36.6k, BW=143MiB/s (150MB/s)(2048KiB/14msec); 0 zone resets
+    slat (nsec): min=210, max=1260, avg=269.17, stdev=78.41
+    clat (usec): min=20, max=102, avg=26.01, stdev= 4.46
+     lat (usec): min=20, max=103, avg=26.28, stdev= 4.50
+    clat percentiles (usec):
+     |  1.00th=[   21],  5.00th=[   21], 10.00th=[   22], 20.00th=[   22],
+     | 30.00th=[   27], 40.00th=[   27], 50.00th=[   28], 60.00th=[   28],
+     | 70.00th=[   28], 80.00th=[   28], 90.00th=[   28], 95.00th=[   29],
+     | 99.00th=[   35], 99.50th=[   38], 99.90th=[  103], 99.95th=[  103],
+     | 99.99th=[  103]
+  lat (usec)   : 50=99.80%, 250=0.20%
+  cpu          : usr=53.85%, sys=23.08%, ctx=0, majf=0, minf=0
+  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued rwts: total=0,512,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=1
+
+Run status group 0 (all jobs):
+  WRITE: bw=143MiB/s (150MB/s), 143MiB/s-143MiB/s (150MB/s-150MB/s), io=2048KiB (2097kB), run=14-14msec
