@@ -165,15 +165,49 @@ The command should produce output similar to:
 .. literalinclude:: 050_xnvme_fdp_ruhu.out
    :language: bash
 
-xnvme ioengine
---------------
+FIO xnvme ioengine
+------------------
 
 FIO's xNVMe ioengine provides FDP support since the 3.35 release.
-For more information on the FDP specific options you can look at:
-https://github.com/axboe/fio/blob/master/HOWTO.rst
+This support is only there with nvme character device i.e. ``/dev/ng0n1``
+and with userspace drivers such as ``spdk``.
+Since the kernel support is limited to nvme character device, you can only use
+the **FDP** functionality with ``xnvme_sync=nvme`` or
+``xnvme_async=io_uring_cmd`` backends.
+
+To enable the **FDP** mode, you will have to specify fio option ``fdp=1``.
+
+Two additional optional **FDP** specific fio options can be specified.
+These are:
+
+``fdp_pli=x,y,..`` This can be used to specify index or comma separated
+indicies of placement identifiers. The index or indicies refer to the
+placement identifiers from reclaim unit handle status command. If you don't
+specify this option, fio will use all the available placement identifiers
+from reclaim unit handle status command.
+
+``fdp_pli_select=str`` You can specify ``random`` or ``roundrobin`` as the
+string literal. This tells fio which placement identifer to select next after
+every write operation. If you don't specify this option, fio will round robin
+over the available placement identifers.
 
 Have a look at example configuration file at:
 https://github.com/axboe/fio/blob/master/examples/xnvme-fdp.fio
+
+This configuration tells fio to use placement identifers present at index 4
+and 5 in reclaim unit handle usage command. By default we are using round
+robin mechanism for selecting the next placement identifier.
+
+Using the above mentioned configuration, you can run the fio command like
+this:
+
+.. literalinclude:: 001_xnvme_fdp_fio.cmd
+   :language: bash
+
+The command should produce output similar to:
+
+.. literalinclude:: 001_xnvme_fdp_fio.out
+   :language: bash
 
 .. note:: If you see no output, then try running it as super-user or via
    ``sudo``
