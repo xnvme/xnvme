@@ -26,7 +26,7 @@ struct xnvme_cmd_ctx_entry {
 
 	uint32_t opts;
 
-	uint8_t be_rsvd[4];
+	uint32_t id;
 
 	SLIST_ENTRY(xnvme_cmd_ctx_entry) link;
 };
