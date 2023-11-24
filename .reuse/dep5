@@ -3,50 +3,18 @@ Upstream-Name: xNVMe
 Upstream-Contact: Simon A. F. Lund <os@safl.dk>
 Source: https://github.com/OpenMPDK/xNVMe
 
-Files: .github/codeql/codeql-config.yml .github/workflows/verify.yml .pre-commit-config.yaml meson_options.txt xnvme.spec.in
+Files: *
 Copyright: Samsung Electronics Co., Ltd
 License: BSD-3-Clause
 
-Files: docs/*
-Copyright: Samsung Electronics Co., Ltd
+Files: lib/xnvme_be_fbsd_async.c
+Copyright: 2023 Fedor Uporov <fuporov.vstack@gmail.com>
 License: BSD-3-Clause
 
-Files: cijoe/*
-Copyright: Samsung Electronics Co., Ltd
-License: BSD-3-Clause
-
-Files: interface/Makefile interface/xnvme.yaml interface/.gitignore
-Copyright: Samsung Electronics Co., Ltd
-License: BSD-3-Clause
-
-Files: toolbox/*.py
-Copyright: Samsung Electronics Co., Ltd
-License: BSD-3-Clause
-
-Files: toolbox/pkgs/emitter/*
-Copyright: Samsung Electronics Co., Ltd
-License: BSD-3-Clause
-
-Files: toolbox/pkgs/*.bat toolbox/pkgs/*.sh
-Copyright: Samsung Electronics Co., Ltd
+Files: toolbox/third-party/windows/sys/queue.h
+Copyright: 1991, 1993, The Regents of the University of California.
 License: BSD-3-Clause
 
 Files: toolbox/xnvme-driver.sh
 Copyright: 2016 Intel Corporation
-License: BSD-3-Clause
-
-Files: toolbox/workflow/*
-Copyright: Samsung Electronics Co., Ltd
-License: BSD-3-Clause
-
-Files: python/*
-Copyright: Samsung Electronics Co., Ltd
-License: BSD-3-Clause
-
-Files: rust/*
-Copyright: Samsung Electronics Co., Ltd
-License: BSD-3-Clause
-
-Files: man/*
-Copyright: Samsung Electronics Co., Ltd
 License: BSD-3-Clause
