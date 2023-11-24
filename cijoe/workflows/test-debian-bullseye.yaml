@@ -33,4 +33,4 @@ steps:
 - name: test_fabrics
   uses: core.testrunner
   with:
-    args: '-k "fabrics and not ioworker" tests'
+    args: '-k "fabrics" tests'
