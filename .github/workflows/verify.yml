@@ -38,6 +38,40 @@ jobs:
   # the xNVMe CI pipeline itself, thus users will know that the archive should be and run on the
   # systems tested in the GitHUB CI workflow
   #
+  source-archive-with-subprojects:
+    runs-on: ubuntu-20.04
+    container: ghcr.io/xnvme/xnvme-deps-alpine-latest:next
+
+    steps:
+    - name: Grab source
+      uses: actions/checkout@v4
+    - name: Add repos to git-config safe.directory
+      run: |
+        git config --global --add safe.directory $(pwd)
+
+    - name: Check repository...
+      run: |
+        ls -lha
+        git status
+
+    - name: Generate Source Archive with subprojects
+      run: |
+        make clean gen-src-archive-with-subprojects
+
+    - name: Rename to un-versioned xnvme-src.tar.gz
+      run: |
+        mv builddir/meson-dist/xnvme-0.7.3.tar.gz builddir/meson-dist/xnvme-src.tar.gz
+        mv builddir/meson-dist/xnvme-0.7.3.tar.gz.sha256sum builddir/meson-dist/xnvme-src.tar.gz.sha256sum
+
+    - name: Upload source archive
+      uses: actions/upload-artifact@v3.1.1
+      with:
+        name: xnvme-src-archive-with-subprojects
+        path: |
+          builddir/meson-dist/xnvme-src.tar.gz.sha256sum
+          builddir/meson-dist/xnvme-src.tar.gz
+        if-no-files-found: error
+
   source-archive:
     runs-on: ubuntu-20.04
     container: ghcr.io/xnvme/xnvme-deps-alpine-latest:next
@@ -54,19 +88,22 @@ jobs:
         ls -lha
         git status
 
-    - name: Generate Full Source Archive
+    - name: Generate Source Archive with subprojects
       run: |
         make clean gen-src-archive
 
     - name: Rename to un-versioned xnvme-src.tar.gz
       run: |
         mv builddir/meson-dist/xnvme-0.7.3.tar.gz builddir/meson-dist/xnvme-src.tar.gz
+        mv builddir/meson-dist/xnvme-0.7.3.tar.gz.sha256sum builddir/meson-dist/xnvme-src.tar.gz.sha256sum
 
     - name: Upload source archive
       uses: actions/upload-artifact@v3.1.1
       with:
         name: xnvme-src-archive
-        path: builddir/meson-dist/xnvme-src.tar.gz
+        path: |
+          builddir/meson-dist/xnvme-src.tar.gz.sha256sum
+          builddir/meson-dist/xnvme-src.tar.gz
         if-no-files-found: error
 
   #
@@ -94,7 +131,7 @@ jobs:
   # Ensure that bash completions and man pages can be generated without error
   #
   test-gen-targets:
-    needs: source-archive
+    needs: source-archive-with-subprojects
     runs-on: ubuntu-latest
     container: ghcr.io/xnvme/xnvme-deps-citools-latest:next
 
@@ -102,7 +139,7 @@ jobs:
     - name: Retrieve the xNVMe source archive
       uses: actions/download-artifact@v3.0.1
       with:
-        name: xnvme-src-archive
+        name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
       run: |
         tar xzf xnvme-src.tar.gz --strip 1
@@ -121,7 +158,7 @@ jobs:
       run: make gen-man-pages
 
   build-rust:
-    needs: source-archive
+    needs: source-archive-with-subprojects
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/xnvme/xnvme-deps-debian-bookworm:next
@@ -130,7 +167,7 @@ jobs:
     - name: Retrieve the xNVMe source archive
       uses: actions/download-artifact@v3.0.1
       with:
-        name: xnvme-src-archive
+        name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
       run: |
         tar xzf xnvme-src.tar.gz --strip 1
@@ -163,7 +200,7 @@ jobs:
   # Build xNVMe Python packages
   #
   build-python:
-    needs: source-archive
+    needs: source-archive-with-subprojects
     runs-on: ubuntu-latest
     container: ghcr.io/xnvme/xnvme-deps-debian-bullseye:next
     strategy:
@@ -173,7 +210,7 @@ jobs:
     - name: Retrieve the xNVMe source archive
       uses: actions/download-artifact@v3.0.1
       with:
-        name: xnvme-src-archive
+        name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
       run: |
         tar xzf xnvme-src.tar.gz --strip 1
@@ -209,7 +246,7 @@ jobs:
   # Build on Linux using different Linux distributions
   #
   build-linux:
-    needs: [source-archive, source-format-check, build-python]
+    needs: [source-archive-with-subprojects, source-format-check, build-python]
     runs-on: ubuntu-latest
     if: contains('push pull_request', github.event_name)
 
@@ -247,7 +284,7 @@ jobs:
     - name: Retrieve the xNVMe source archive
       uses: actions/download-artifact@v3.0.1
       with:
-        name: xnvme-src-archive
+        name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
       run: |
         tar xzf xnvme-src.tar.gz --strip 1
@@ -364,7 +401,7 @@ jobs:
   # Build on macOS
   #
   build-macos:
-    needs: [source-archive, source-format-check, build-python]
+    needs: [source-archive-with-subprojects, source-format-check, build-python]
     runs-on: ${{ matrix.runner.os }}-${{ matrix.runner.ver }}
     if: contains('push pull_request', github.event_name)
 
@@ -380,7 +417,7 @@ jobs:
     - name: Retrieve the xNVMe source archive
       uses: actions/download-artifact@v3.0.1
       with:
-        name: xnvme-src-archive
+        name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
       run: |
         tar xzf xnvme-src.tar.gz --strip 1
@@ -484,7 +521,7 @@ jobs:
   # Build on Windows
   #
   build-windows:
-    needs: [source-archive, source-format-check]
+    needs: [source-archive-with-subprojects, source-format-check]
     runs-on: ${{ matrix.runner.os }}-${{ matrix.runner.ver }}
     if: contains('push pull_request', github.event_name)
 
@@ -498,7 +535,7 @@ jobs:
     - name: Retrieve the xNVMe source archive
       uses: actions/download-artifact@v3.0.1
       with:
-        name: xnvme-src-archive
+        name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
       run: |
         tar xzf xnvme-src.tar.gz --strip 1
@@ -558,7 +595,7 @@ jobs:
   # Build and test xNVMe
   #
   verify:
-    needs: [source-archive, source-format-check, build-python]
+    needs: [source-archive-with-subprojects, source-format-check, build-python]
     runs-on: [self-hosted, linux, x64, verify]
 
     if: (contains('push pull_request', github.event_name) || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job
@@ -588,7 +625,7 @@ jobs:
     - name: Retrieve the xNVMe source archive
       uses: actions/download-artifact@v3.0.1
       with:
-        name: xnvme-src-archive
+        name: xnvme-src-archive-with-subprojects
     - name: Extract, and then move, the xNVMe source archive
       run: |
         tar xzf xnvme-src.tar.gz --strip 1
@@ -672,7 +709,7 @@ jobs:
   # Build and run performance test of xNVMe
   #
   bench:
-    needs: [source-archive, source-format-check, build-python]
+    needs: [source-archive-with-subprojects, source-format-check, build-python]
     runs-on: [self-hosted, linux, ARM64, bench, intel]
 
     if: (contains('push', github.event_name) || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job ==
@@ -698,7 +735,7 @@ jobs:
     - name: Retrieve the xNVMe source archive
       uses: actions/download-artifact@v3.0.1
       with:
-        name: xnvme-src-archive
+        name: xnvme-src-archive-with-subprojects
     - name: Extract, and then move, the xNVMe source archive
       run: |
         tar xzf xnvme-src.tar.gz --strip 1
@@ -762,7 +799,7 @@ jobs:
   # Note that latest is always populated when pushing as tag. It is assumed
   # that tags are used exclusively for releases
   docgen:
-    needs: [source-archive, source-format-check, build-python]
+    needs: [source-archive-with-subprojects, source-format-check, build-python]
     runs-on: [self-hosted, linux, verify]
     if: ((github.event_name == 'push') || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen')))
 
@@ -782,11 +819,11 @@ jobs:
         rm -rf *
         ls -lh
 
-    - name: Container-prep, get the full-source-archive
+    - name: Container-prep, get the full-source-archive-with-subprojects
       uses: actions/download-artifact@v3.0.1
       with:
-        name: xnvme-src-archive
-    - name: Container-prep, extract the full-source-archive
+        name: xnvme-src-archive-with-subprojects
+    - name: Container-prep, extract the full-source-archive-with-subprojects
       run: |
         tar xzf xnvme-src.tar.gz --strip 1
         echo "$HOME/.local/bin" >> $GITHUB_PATH
@@ -878,7 +915,7 @@ jobs:
   # Code-analysis using scan-build
   #
   analyze-scan-build:
-    needs: source-archive
+    needs: source-archive-with-subprojects
     runs-on: ubuntu-latest
     container: ghcr.io/xnvme/xnvme-deps-citools-latest:next
     if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'analyze'))
@@ -887,7 +924,7 @@ jobs:
     - name: Retrieve the xNVMe source archive
       uses: actions/download-artifact@v3.0.1
       with:
-        name: xnvme-src-archive
+        name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
       run: |
         tar xzf xnvme-src.tar.gz --strip 1
@@ -911,7 +948,7 @@ jobs:
   # Code-analysis using GitHUB CodeQL
   #
   analyze-codeql:
-    needs: source-archive
+    needs: source-archive-with-subprojects
     runs-on: ubuntu-latest
     container: debian:bullseye
     if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'analyze'))
@@ -920,7 +957,7 @@ jobs:
     - name: Retrieve the xNVMe source archive
       uses: actions/download-artifact@v3.0.1
       with:
-        name: xnvme-src-archive
+        name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
       run: |
         tar xzf xnvme-src.tar.gz --strip 1
@@ -948,7 +985,7 @@ jobs:
   # Code-analysis using Coverity
   #
   analyze-coverity:
-    needs: source-archive
+    needs: source-archive-with-subprojects
     runs-on: ubuntu-latest
     if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'analyze'))
 
@@ -962,7 +999,7 @@ jobs:
     - name: Retrieve the xNVMe source archive
       uses: actions/download-artifact@v3.0.1
       with:
-        name: xnvme-src-archive
+        name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
       run: |
         tar xzf xnvme-src.tar.gz --strip 1
