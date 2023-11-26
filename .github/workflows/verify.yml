@@ -44,7 +44,7 @@ jobs:
 
     steps:
     - name: Grab source
-      uses: actions/checkout@v3.6.0
+      uses: actions/checkout@v4
     - name: Add repos to git-config safe.directory
       run: |
         git config --global --add safe.directory $(pwd)
@@ -78,7 +78,7 @@ jobs:
 
     steps:
     - name: Grab source
-      uses: actions/checkout@v3.6.0
+      uses: actions/checkout@v4
     - name: Add repos to git-config safe.directory
       run: |
         git config --global --add safe.directory $(pwd)
@@ -838,7 +838,7 @@ jobs:
         --output "docgen-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
     - name: Checkout site
-      uses: actions/checkout@v3.6.0
+      uses: actions/checkout@v4
       with:
         repository: "xnvme/xnvme.github.io"
         token: ${{ secrets.DOCS_PAT }}
