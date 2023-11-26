@@ -314,14 +314,24 @@ gen-libconf:
 	@echo "## xNVMe: make gen-libconf [DONE]"
 
 define gen-src-archive-help
-# Helper-target to produce full-source archive
+# Produce a source-archive (.tar.gz) without subproject-source
 endef
 .PHONY: gen-src-archive
 gen-src-archive:
 	@echo "## xNVMe: make gen-src-archive"
 	$(MESON) setup $(BUILD_DIR) -Dbuild_subprojects=false -Dwith-liburing=disabled -Dwith-libvfn=disabled
-	$(MESON) dist -C $(BUILD_DIR) --include-subprojects --no-tests --formats gztar
+	$(MESON) dist -C $(BUILD_DIR) --no-tests --formats gztar
 	@echo "## xNVMe: make gen-src-archive [DONE]"
+
+define gen-src-archive-with-subprojects-help
+# Produce a source-archive (.tar.gz) with subproject-source
+endef
+.PHONY: gen-src-archive-with-subprojects
+gen-src-archive-with-subprojects:
+	@echo "## xNVMe: make gen-src-archive-with-subprojects"
+	$(MESON) setup $(BUILD_DIR) -Dbuild_subprojects=false -Dwith-liburing=disabled -Dwith-libvfn=disabled
+	$(MESON) dist -C $(BUILD_DIR) --no-tests --formats gztar --include-subprojects
+	@echo "## xNVMe: make gen-src-archive-with-subprojects [DONE]"
 
 define gen-artifacts-help
 # Generate artifacts in "/tmp/artifacts" for local guest provisoning
@@ -331,7 +341,7 @@ define gen-artifacts-help
 # provides the means to perform local provisioning without downloading files.
 endef
 .PHONY: gen-artifacts
-gen-artifacts: gen-src-archive
+gen-artifacts: gen-src-archive-with-subprojects
 	@echo "## xNVMe: make gen-artifacts"
 	@cd python/bindings && make clean build
 	@mkdir -p /tmp/artifacts
