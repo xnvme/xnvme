@@ -235,8 +235,7 @@ xnvme_be_fbsd_kqueue_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 
 int
 xnvme_be_fbsd_kqueue_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-			     size_t XNVME_UNUSED(dvec_nbytes), struct iovec *mvec, size_t mvec_cnt,
-			     size_t mvec_nbytes)
+			     size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_queue_kqueue *queue = (void *)ctx->async.queue;
 	struct xnvme_be_fbsd_state *state = (void *)queue->base.dev->be.state;
@@ -249,7 +248,8 @@ xnvme_be_fbsd_kqueue_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size
 		XNVME_DEBUG("FAILED: queue is full");
 		return -EBUSY;
 	}
-	if (mvec || mvec_cnt || mvec_nbytes) {
+
+	if (mbuf || mbuf_nbytes) {
 		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
 		return -ENOSYS;
 	}

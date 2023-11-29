@@ -25,7 +25,6 @@ struct qpair_entry {
 	uint32_t data_nbytes;
 	uint32_t data_vec_cnt;
 	uint32_t meta_nbytes;
-	uint32_t meta_vec_cnt;
 	uint32_t is_vectored;
 
 	STAILQ_ENTRY(qpair_entry) link;
@@ -126,8 +125,7 @@ emu_poke(struct xnvme_queue *q, uint32_t max)
 		err = entry->is_vectored
 			      ? queue->base.dev->be.sync.cmd_iov(
 					entry->ctx, entry->data, entry->data_vec_cnt,
-					entry->data_nbytes, entry->meta, entry->meta_vec_cnt,
-					entry->meta_nbytes)
+					entry->data_nbytes, entry->meta, entry->meta_nbytes)
 			      : queue->base.dev->be.sync.cmd_io(entry->ctx, entry->data,
 								entry->data_nbytes, entry->meta,
 								entry->meta_nbytes);
@@ -173,7 +171,6 @@ emu_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf
 	entry->data_vec_cnt = 0;
 	entry->meta = mbuf;
 	entry->meta_nbytes = mbuf_nbytes;
-	entry->meta_vec_cnt = 0;
 	entry->is_vectored = false;
 
 	STAILQ_INSERT_TAIL(&qp->sq, entry, link);
@@ -185,7 +182,7 @@ emu_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf
 
 static inline int
 emu_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, size_t dvec_nbytes,
-	    struct iovec *mvec, size_t mvec_cnt, size_t mvec_nbytes)
+	    void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_queue_emu *queue = (void *)ctx->async.queue;
 	struct qpair *qp = queue->qp;
@@ -205,9 +202,8 @@ emu_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, size
 	entry->data = dvec;
 	entry->data_nbytes = dvec_nbytes;
 	entry->data_vec_cnt = dvec_cnt;
-	entry->meta = mvec;
-	entry->meta_nbytes = mvec_nbytes;
-	entry->meta_vec_cnt = mvec_cnt;
+	entry->meta = mbuf;
+	entry->meta_nbytes = mbuf_nbytes;
 	entry->is_vectored = true;
 
 	STAILQ_INSERT_TAIL(&qp->sq, entry, link);

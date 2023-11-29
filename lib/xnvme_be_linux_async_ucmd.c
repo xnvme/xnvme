@@ -189,8 +189,7 @@ xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 #ifdef NVME_URING_CMD_IO_VEC
 int
 xnvme_be_linux_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-			size_t XNVME_UNUSED(dvec_nbytes), struct iovec *mvec, size_t mvec_cnt,
-			size_t XNVME_UNUSED(mvec_nbytes))
+			size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
@@ -213,8 +212,8 @@ xnvme_be_linux_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dv
 	ctx->cmd.common.dptr.lnx_ioctl.data = (uint64_t)dvec;
 	ctx->cmd.common.dptr.lnx_ioctl.data_len = dvec_cnt;
 
-	ctx->cmd.common.mptr = (uint64_t)mvec;
-	ctx->cmd.common.dptr.lnx_ioctl.metadata_len = mvec_cnt;
+	ctx->cmd.common.mptr = (uint64_t)mbuf;
+	ctx->cmd.common.dptr.lnx_ioctl.metadata_len = mbuf_nbytes;
 
 	memcpy(&sqe->addr3, &ctx->cmd.common, 64);
 
@@ -236,12 +235,10 @@ exit:
 #else
 int
 xnvme_be_linux_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-			size_t dvec_nbytes, struct iovec *mvec, size_t mvec_cnt,
-			size_t mvec_nbytes)
+			size_t dvec_nbytes, void *mbuf, size_t mbuf_nbytes)
 {
 	XNVME_DEBUG("FAILED: not supported, built on system without NVME_URING_CMD_IO_VEC");
-	return xnvme_be_nosys_queue_cmd_iov(ctx, dvec, dvec_cnt, dvec_nbytes, mvec, mvec_cnt,
-					    mvec_nbytes);
+	return xnvme_be_nosys_queue_cmd_iov(ctx, dvec, dvec_cnt, dvec_nbytes, mbuf, mbuf_nbytes);
 }
 #endif
 #endif

@@ -230,9 +230,9 @@ dump_sync_iovec(struct xnvme_cli *cli)
 			nbytes += iov_len;
 		}
 
-		res = xnvme_cmd_passv(&ctx, dvec, ndvec, nbytes, NULL, 0, 0);
+		res = xnvme_cmd_pass_iov(&ctx, dvec, ndvec, nbytes, NULL, 0);
 		if (res || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_cmd_passv(fh)", res);
+			xnvme_cli_perr("xnvme_cmd_pass_iov(fh)", res);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			goto exit;
 		}
@@ -419,7 +419,7 @@ dump_async_iovec(struct xnvme_cli *cli)
 		}
 
 submit:
-		res = xnvme_cmd_passv(ctx, dvec, ndvec, nbytes, NULL, 0, 0);
+		res = xnvme_cmd_pass_iov(ctx, dvec, ndvec, nbytes, NULL, 0);
 		switch (res) {
 		case 0:
 			cb_args.nsubmissions += 1;
