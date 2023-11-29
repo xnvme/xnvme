@@ -131,7 +131,7 @@ def run(cmd, cmd_input=None, cwd=None):
     """Run the given 'cmd' and return (stdout, stderr, returncode)"""
 
     with Popen(
-        " ".join(cmd) if cwd else cmd,
+        " ".join(cmd),
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -328,11 +328,12 @@ def emit_manpage_sub(tool, sub):
         .replace("${sponsor}", "Samsung")
     )
 
+    title = "-".join([tool["name"].upper(), sub["name"].upper()])
     manpage, err, rcode = run(
         [
             "txt2man",
             "-t",
-            "-".join([tool["name"].upper(), sub["name"].upper()]),
+            title,
             "-v",
             "xNVMe",
             "-s",
@@ -346,7 +347,7 @@ def emit_manpage_sub(tool, sub):
         logging.error("FAILED: txt2man; %s, %d", err, rcode)
         return None
 
-    return manpage
+    return manpage, txtpage
 
 
 def emit_manpage_main(tool):
@@ -378,11 +379,12 @@ def emit_manpage_main(tool):
         )
     )
 
+    title = tool["name"].upper()
     manpage, err, rcode = run(
         [
             "txt2man",
             "-t",
-            tool["name"].upper(),
+            title,
             "-v",
             "xNVMe",
             "-s",
@@ -396,7 +398,7 @@ def emit_manpage_main(tool):
         logging.error("FAILED: txt2man; '%s', rcode:%s", err, rcode)
         return None
 
-    return manpage
+    return manpage, txtpage
 
 
 def gen_manpage(args, folders):
@@ -408,29 +410,37 @@ def gen_manpage(args, folders):
         logging.info("Writing man pages to: %r", args.output)
         for tool in tools:
             tool_fname = "%s.1" % tool["name"]
-            tool_fpath = os.sep.join([args.output, folder, tool_fname])
+            tool_fpath = Path(args.output) / folder / tool_fname
+            tool_fpath_txt = Path("/tmp") / f"{tool_fname}.txt"
 
-            logging.info("Generating for %r at %r", tool["name"], tool_fpath)
+            logging.info(f"Generating for {tool['name']} at {tool_fpath}")
 
-            manpage = emit_manpage_main(tool)
+            manpage, txtpage = emit_manpage_main(tool)
             if manpage is None:
                 return 1
 
-            with open(tool_fpath, "w") as tfd:
+            with tool_fpath.open("w") as tfd:
                 tfd.write(manpage)
+
+            with tool_fpath_txt.open("w") as txt:
+                txt.write(txtpage)
 
             meson.append(MESON_MAN_INSTALL.format(manpage=tool_fname))
 
             for sname in tool["snames"]:
                 sub = tool["subs"][sname]
                 sub_fname = "%s-%s.1" % (tool["name"], sub["name"])
-                sub_fpath = os.sep.join([args.output, folder, sub_fname])
+                sub_fpath = Path(args.output) / folder / sub_fname
+                sub_fpath_txt = Path("/tmp") / f"{sub_fname}.txt"
 
                 logging.info("Generating '%s'", sub_fpath)
 
-                manpage = emit_manpage_sub(tool, sub)
-                with open(sub_fpath, "w") as mfd:
+                manpage, txtpage = emit_manpage_sub(tool, sub)
+                with sub_fpath.open("w") as mfd:
                     mfd.write(manpage)
+
+                with sub_fpath_txt.open("w") as txt:
+                    txt.write(txtpage)
 
                 meson.append(MESON_MAN_INSTALL.format(manpage=sub_fname))
 
