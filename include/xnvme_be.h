@@ -32,8 +32,7 @@ struct xnvme_be_async {
 	int (*cmd_io)(struct xnvme_cmd_ctx *, void *, size_t, void *, size_t);
 
 	// Submit a vectored async io command to be processed on the backend's io path
-	int (*cmd_iov)(struct xnvme_cmd_ctx *, struct iovec *, size_t, size_t, struct iovec *,
-		       size_t, size_t);
+	int (*cmd_iov)(struct xnvme_cmd_ctx *, struct iovec *, size_t, size_t, void *, size_t);
 
 	// Non-blocking reaping of up to `max` io completions
 	int (*poke)(struct xnvme_queue *, uint32_t);
@@ -63,8 +62,7 @@ struct xnvme_be_sync {
 	 * Pass a vectored NVMe I/O Command Through to the device with minimal
 	 * driver intervention
 	 */
-	int (*cmd_iov)(struct xnvme_cmd_ctx *, struct iovec *, size_t, size_t, struct iovec *,
-		       size_t, size_t);
+	int (*cmd_iov)(struct xnvme_cmd_ctx *, struct iovec *, size_t, size_t, void *, size_t);
 
 	const char *id;
 };

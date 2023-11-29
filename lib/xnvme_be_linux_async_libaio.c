@@ -200,8 +200,7 @@ _linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, 
 
 static int
 _linux_libaio_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-		      size_t XNVME_UNUSED(dvec_nbytes), struct iovec *mvec, size_t mvec_cnt,
-		      size_t mvec_nbytes)
+		      size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_queue_libaio *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
@@ -214,7 +213,7 @@ _linux_libaio_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec
 		XNVME_DEBUG("FAILED: queue is full");
 		return -EBUSY;
 	}
-	if (mvec || mvec_cnt || mvec_nbytes) {
+	if (mbuf || mbuf_nbytes) {
 		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
 		return -ENOSYS;
 	}

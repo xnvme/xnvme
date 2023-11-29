@@ -119,8 +119,8 @@ _submit(struct iowork *work, struct ioworker *worker, struct xnvme_cmd_ctx *ctx)
 		}
 
 submitv:
-		err = xnvme_cmd_passv(ctx, worker->vec, worker->vec_cnt, work->io.nbytes, NULL, 0,
-				      0);
+		err = xnvme_cmd_pass_iov(ctx, worker->vec, worker->vec_cnt, work->io.nbytes, NULL,
+					 0);
 		switch (err) {
 		case 0:
 			work->stats.nsubmissions += 1;
@@ -132,7 +132,7 @@ submitv:
 			goto submitv;
 
 		default:
-			XNVME_DEBUG("FAILED: xnvme_cmd_passv(), err: %d", err);
+			XNVME_DEBUG("FAILED: xnvme_cmd_pass_iov(), err: %d", err);
 			work->stats.nerrors += 1;
 			xnvme_queue_put_cmd_ctx(work->queue, ctx);
 			return err;
@@ -183,10 +183,10 @@ _submit_sync(struct iowork *work)
 			}
 
 			ctx.cmd.nvm.slba = work->range.slba + i * work->vec_cnt;
-			err = xnvme_cmd_passv(&ctx, worker->vec, worker->vec_cnt, work->io.nbytes,
-					      NULL, 0, 0);
+			err = xnvme_cmd_pass_iov(&ctx, worker->vec, worker->vec_cnt,
+						 work->io.nbytes, NULL, 0);
 			if (err) {
-				XNVME_DEBUG("FAILED: xnvme_cmd_passv(), err: %d", err);
+				XNVME_DEBUG("FAILED: xnvme_cmd_pass_iov(), err: %d", err);
 				return err;
 			} else {
 				work->stats.nsubmissions += 1;

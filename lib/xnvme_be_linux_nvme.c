@@ -218,8 +218,7 @@ exit:
 #ifdef NVME_IOCTL_IO64_CMD_VEC
 int
 xnvme_be_linux_nvme_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-			    size_t XNVME_UNUSED(dvec_nbytes), struct iovec *mvec, size_t mvec_cnt,
-			    size_t XNVME_UNUSED(mvec_nbytes))
+			    size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
 	struct nvme_passthru_cmd64 *kcmd = (void *)ctx;
 	int err;
@@ -241,8 +240,8 @@ xnvme_be_linux_nvme_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_
 
 	kcmd->addr = (uint64_t)dvec;
 	kcmd->vec_cnt = dvec_cnt;
-	kcmd->metadata = (uint64_t)mvec;
-	kcmd->metadata_len = mvec_cnt;
+	kcmd->metadata = (uint64_t)mbuf;
+	kcmd->metadata_len = mbuf_nbytes;
 
 	err = ioctl_wrap(ctx->dev, NVME_IOCTL_IO64_CMD_VEC, ctx);
 	if (err) {
@@ -256,8 +255,8 @@ xnvme_be_linux_nvme_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_
 int
 xnvme_be_linux_nvme_cmd_iov(struct xnvme_cmd_ctx *XNVME_UNUSED(ctx),
 			    struct iovec *XNVME_UNUSED(dvec), size_t XNVME_UNUSED(dvec_cnt),
-			    size_t XNVME_UNUSED(dvec_nbytes), struct iovec *XNVME_UNUSED(mvec),
-			    size_t XNVME_UNUSED(mvec_cnt), size_t XNVME_UNUSED(mvec_nbytes))
+			    size_t XNVME_UNUSED(dvec_nbytes), void *XNVME_UNUSED(mbuf),
+			    size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	XNVME_DEBUG("FAILED: NVME_IOCTL_IO64_CMD_VEC; ENOSYS");
 	return -ENOSYS;

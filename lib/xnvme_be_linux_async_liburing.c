@@ -327,8 +327,7 @@ exit:
 
 int
 xnvme_be_linux_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-				size_t XNVME_UNUSED(dvec_nbytes), struct iovec *mvec,
-				size_t mvec_cnt, size_t mvec_nbytes)
+				size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
@@ -343,7 +342,7 @@ xnvme_be_linux_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, s
 		return -EBUSY;
 	}
 
-	if (mvec || mvec_cnt || mvec_nbytes) {
+	if (mbuf || mbuf_nbytes) {
 		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
 		return -ENOSYS;
 	}

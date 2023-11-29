@@ -70,6 +70,26 @@ int
 xnvme_cmd_passv(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, size_t dvec_nbytes,
 		struct iovec *mvec, size_t mvec_cnt, size_t mvec_nbytes)
 {
+	void *mbuf = NULL;
+
+	if (mvec_cnt > 1) {
+		XNVME_DEBUG("FAILED: mvec_cnt must be at most 1");
+		return -EINVAL;
+	}
+
+	if (mvec) {
+		mbuf = mvec[0].iov_base;
+	}
+
+	XNVME_DEBUG("NOTE: This function will be deprecated in the future - use "
+		    "xnvme_cmd_pass_iov() instead");
+	return xnvme_cmd_pass_iov(ctx, dvec, dvec_cnt, dvec_nbytes, mbuf, mvec_nbytes);
+}
+
+int
+xnvme_cmd_pass_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+		   size_t dvec_nbytes, void *mbuf, size_t mbuf_nbytes)
+{
 	const int cmd_opts = ctx->opts & XNVME_CMD_MASK;
 
 	switch (cmd_opts & XNVME_CMD_MASK_IOMD) {
@@ -78,11 +98,11 @@ xnvme_cmd_passv(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, 
 			XNVME_DEBUG("FAILED: queue is full; returning -EBUSY");
 			return -EBUSY;
 		}
-		return ctx->dev->be.async.cmd_iov(ctx, dvec, dvec_cnt, dvec_nbytes, mvec, mvec_cnt,
-						  mvec_nbytes);
+		return ctx->dev->be.async.cmd_iov(ctx, dvec, dvec_cnt, dvec_nbytes, mbuf,
+						  mbuf_nbytes);
 	case XNVME_CMD_SYNC:
-		return ctx->dev->be.sync.cmd_iov(ctx, dvec, dvec_cnt, dvec_nbytes, mvec, mvec_cnt,
-						 mvec_nbytes);
+		return ctx->dev->be.sync.cmd_iov(ctx, dvec, dvec_cnt, dvec_nbytes, mbuf,
+						 mbuf_nbytes);
 	default:
 		XNVME_DEBUG("FAILED: command-mode not provided");
 		return -EINVAL;

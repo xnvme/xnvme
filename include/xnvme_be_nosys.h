@@ -13,8 +13,7 @@ xnvme_be_nosys_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 
 int
 xnvme_be_nosys_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-			    size_t dvec_nbytes, struct iovec *mvec, size_t mvec_cnt,
-			    size_t mvec_nbytes);
+			    size_t dvec_nbytes, void *mbuf, size_t mbuf_nbytes);
 
 int
 xnvme_be_nosys_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
@@ -33,8 +32,7 @@ xnvme_be_nosys_queue_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 
 int
 xnvme_be_nosys_queue_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-			     size_t dvec_nbytes, struct iovec *mvec, size_t mvec_cnt,
-			     size_t mvec_nbytes);
+			     size_t dvec_nbytes, void *mbuf, size_t mbuf_nbytes);
 
 int
 xnvme_be_nosys_queue_poke(struct xnvme_queue *queue, uint32_t max);
