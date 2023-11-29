@@ -1058,3 +1058,46 @@ jobs:
         --form version="v${PROJECT_VERSION}" \
         --form description="xNVMe libraries and tools for NVMe" \
         "https://scan.coverity.com/builds?project=${PROJECT_NAME}"
+
+  packaging-debian:
+    needs: source-archive
+    runs-on: ubuntu-latest
+    container: ghcr.io/xnvme/xnvme-deps-debian-packaging:main
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: Info
+      run: |
+        echo "Current branch is ${{ github.base_ref }}"
+        echo "Current tag is ${{ github.ref }}"
+
+    - name: Retrieve the xNVMe source archive
+      uses: actions/download-artifact@v3.0.1
+      with:
+        name: xnvme-src-archive
+
+    - name: Retrieve the xNVMe Debian package repository by branch
+      run: |
+        git clone https://salsa.debian.org/safl/xnvme.git debpkg
+        git -C debpkg checkout ${{ github.base_ref }}
+
+    - name: Prep
+      run: |
+        mv xnvme-src.tar.gz debpkg/input/xnvme-0.7.3.tar.gz
+
+    - name: Build
+      run: |
+        cd debpkg && make
+
+    - name: Upload debian packages
+      uses: actions/upload-artifact@v3.1.1
+      with:
+        name: packages-debian
+        path: |
+          debpkg/builddir/libxnvme*.deb
+          debpkg/builddir/xnvme-cli*.deb
+          debpkg/builddir/xnvme-full*.deb
+          debpkg/builddir/*.dsc
+          debpkg/builddir/*.buildinfo
+          debpkg/builddir/*.changes
+        if-no-files-found: error
