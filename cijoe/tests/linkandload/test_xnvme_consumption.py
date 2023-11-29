@@ -35,12 +35,11 @@ def prep_sources(cijoe):
 def list_libraries(cijoe):
     """Returns a list of Paths to xNVMe libraries"""
 
-    suffix = {
-        ".so": "shared",
-        ".dylib": "shared",
-        ".dll": "shared",
-        ".a": "static",
-    }
+    def libtype(path: Path):
+        if path.name.endswith(".a"):
+            return "static"
+        else:
+            return "shared"
 
     err, state = cijoe.run("pkg-config xnvme --variable=libdir")
     assert not err
@@ -56,7 +55,7 @@ def list_libraries(cijoe):
         if "libxnvme" in Path(line.strip()).stem
     ]
 
-    return {suffix[lib.suffix]: lib for lib in paths}
+    return {libtype(lib): lib for lib in paths}
 
 
 def test_library_consumption(cijoe):
