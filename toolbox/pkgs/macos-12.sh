@@ -11,6 +11,10 @@ export MACOSX_DEPLOYMENT_TARGET=11.0
 # Install packages via brew, assuming that brew is: installed, updated, and upgraded
 clang-format --version && echo "Installed" || brew install clang-format
 git --version && echo "Installed" || brew install git
+if make --version | grep i386-apple; then
+  brew install make
+fi
+
 meson --version && echo "Installed" || brew install meson
 pkg-config --version && echo "Installed" || brew install pkg-config
 python3 --version && echo "Installed" || brew install python3
