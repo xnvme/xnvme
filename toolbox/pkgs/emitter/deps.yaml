@@ -281,7 +281,7 @@ defaults:
 
   macos:
     deps:
-    - [sys, [clang-format, git, meson, pipx, pkg-config, python3]]
+    - [sys, [clang-format, git, meson, pipx, pkg-config, python3, make]]
     apps:
     - [src, [fio]]
 

@@ -340,7 +340,7 @@ jobs:
         cd /tmp
         git clone https://github.com/axboe/fio.git
         cd fio
-        git checkout fio-3.34
+        git checkout fio-3.35
         ./configure --prefix=/opt/fio
         make -j $(nproc)
         make install
@@ -389,6 +389,10 @@ jobs:
     - name: Install build-requirements
       run: |
         source toolbox/pkgs/${{ matrix.runner.os }}-${{ matrix.runner.ver }}.sh || true
+
+    - name: Prep, environment GITHUB_PATH
+      run: |
+        echo "/opt/homebrew/opt/make/libexec/gnubin" >> $GITHUB_PATH
 
     - name: Configure, Build, and Install
       env:
@@ -458,7 +462,7 @@ jobs:
         cd fio
         git checkout fio-3.35
         ./configure
-        make
+        gmake -j
 
     - name: CIJOE, run test-ramdisk.yaml
       run: |
