@@ -1,0 +1,52 @@
+NAME
+  xnvme-driver - unbind Kernel NVMe driver from devices and bind to vfio / uio
+SYNOPSIS
+  xnvme-driver <command>
+DESCRIPTION
+  Allocate hugepages and bind NVMe, I/OAT, VMD and Virtio devices to a generic
+  VFIO kernel driver. If VFIO is not available on the system then UIO is used
+  as fall back.. NVMe and Virtio devices with active mountpoints will be
+  ignored. All hugepage operations use default hugepage size on the system
+  (hugepagesz).
+COMMANDS
+  config  Default mode. Allocate hugepages and bind PCI devices.
+
+  reset   Rebind PCI devices back to their original drivers.
+          Hugepage memory size will remain unchanged.
+
+  help    Print this help message.
+
+ENVIRONMENT VARIABLES
+
+  HUGEMEM           Size of hugepage memory to allocate (in MB). 2048 by
+                    default. For NUMA systems, the hugepages will be evenly
+                    distributed between CPU nodes
+
+  NRHUGE            Number of hugepages to allocate.
+                    This variable overwrites HUGEMEM.
+
+  HUGENODE          Specific NUMA node to allocate hugepages on. To allocate
+                    hugepages on multiple nodes run this script once for each
+                    node.
+
+  PCI_BLACKLIST     See PCI_WHITELIST
+
+  PCI_WHITELIST     Whitespace separated list of PCI devices (NVMe, I/OAT, VMD,
+                    Virtio). Each device must be specified as a full PCI
+                    address. E.g. PCI_WHITELIST="0000:01:00.0 0000:02:00.0" To
+                    blacklist all PCI devices use a non-valid address. E.g.
+                    PCI_WHITELIST="none" If PCI_WHITELIST and PCI_BLACKLIST are
+                    empty or unset, all PCI devices will be bound. Each device
+                    in PCI_BLACKLIST will be ignored (driver won't be changed).
+                    PCI_BLACKLIST has precedence over PCI_WHITELIST.
+
+  TARGET_USER       User that will own hugepage mountpoint directory and vfio
+                    groups. By default the current user will be used.
+
+  DRIVER_OVERRIDE   Disable automatic vfio-pci/uio_pci_generic selection and
+                    forcefully bind devices to the given driver. E.g.
+                    DRIVER_OVERRIDE=uio_pci_generic or
+                    DRIVER_OVERRIDE=/home/public/dpdk/build/kmod/igb_uio.ko
+
+SEE ALSO
+  Full documentation at: <https://xnvme.io/>
