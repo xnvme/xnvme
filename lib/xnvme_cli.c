@@ -608,6 +608,12 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "xNVMe admin. command-interface, e.g. 'nvme', 'block'",
 	},
 	{
+		.opt = XNVME_CLI_OPT_DEV,
+		.vtype = XNVME_CLI_OPT_VTYPE_STR,
+		.name = "dev",
+		.descr = "xNVMe dev interface, e.g. 'nvme'",
+	},
+	{
 		.opt = XNVME_CLI_OPT_SHM_ID,
 		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "shm_id",
@@ -1347,6 +1353,9 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 	case XNVME_CLI_OPT_ADMIN:
 		args->admin = arg ? arg : "INVALID_INPUT";
 		break;
+	case XNVME_CLI_OPT_DEV:
+		args->dev = arg ? arg : "INVALID_INPUT";
+		break;
 
 	case XNVME_CLI_OPT_SHM_ID:
 		args->shm_id = num;
@@ -1852,6 +1861,7 @@ xnvme_cli_to_opts(const struct xnvme_cli *cli, struct xnvme_opts *opts)
 	opts->sync = cli->given[XNVME_CLI_OPT_SYNC] ? cli->args.sync : opts->sync;
 	opts->async = cli->given[XNVME_CLI_OPT_ASYNC] ? cli->args.async : opts->async;
 	opts->admin = cli->given[XNVME_CLI_OPT_ADMIN] ? cli->args.admin : opts->admin;
+	opts->dev = cli->given[XNVME_CLI_OPT_DEV] ? cli->args.dev : opts->dev;
 
 	opts->nsid = cli->given[XNVME_CLI_OPT_DEV_NSID] ? cli->args.dev_nsid : opts->nsid;
 
