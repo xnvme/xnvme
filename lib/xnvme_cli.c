@@ -1819,13 +1819,13 @@ xnvme_cli_run(struct xnvme_cli *cli, int argc, char **argv, int opts)
 			return -1;
 		}
 
-		cli->args.dev = xnvme_dev_open(cli->args.uri, &opts);
-		if (!cli->args.dev) {
+		cli->args.device = xnvme_dev_open(cli->args.uri, &opts);
+		if (!cli->args.device) {
 			err = -errno;
 			xnvme_cli_perr("xnvme_dev_open()", err);
 			return -1;
 		}
-		cli->args.geo = xnvme_dev_get_geo(cli->args.dev);
+		cli->args.geo = xnvme_dev_get_geo(cli->args.device);
 	}
 
 	err = cli->sub->command(cli);
@@ -1837,8 +1837,8 @@ xnvme_cli_run(struct xnvme_cli *cli, int argc, char **argv, int opts)
 		xnvme_cli_args_pr(&cli->args, 0x0);
 	}
 
-	if ((opts & XNVME_CLI_INIT_DEV_OPEN) && cli->args.dev) {
-		xnvme_dev_close(cli->args.dev);
+	if ((opts & XNVME_CLI_INIT_DEV_OPEN) && cli->args.device) {
+		xnvme_dev_close(cli->args.device);
 	}
 
 	return err ? 1 : 0;

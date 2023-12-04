@@ -32,7 +32,7 @@
  * @struct xnvme_cli_args
  */
 struct xnvme_cli_args {
-	struct xnvme_dev *dev;       ///< Created
+	struct xnvme_dev *device;    ///< Created
 	const struct xnvme_geo *geo; ///< Created
 
 	const char *uri;
