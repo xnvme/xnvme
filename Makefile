@@ -66,6 +66,8 @@ BUILD_DIR?=builddir
 TOOLBOX_DIR?=toolbox
 PROJECT_VER = $$( python3 $(TOOLBOX_DIR)/xnvme_ver.py --path meson.build )
 
+ALLOW_DIRTY ?= 0
+
 define default-help
 # invoke: 'make info', 'make tags', 'make git-setup', 'make config' and 'make build'
 #
@@ -320,7 +322,11 @@ endef
 gen-src-archive:
 	@echo "## xNVMe: make gen-src-archive"
 	$(MESON) setup $(BUILD_DIR) -Dbuild_subprojects=false -Dwith-liburing=disabled -Dwith-libvfn=disabled
-	$(MESON) dist -C $(BUILD_DIR) --no-tests --formats gztar
+	@if [ $(ALLOW_DIRTY) -eq 1 ]; then \
+		$(MESON) dist -C $(BUILD_DIR) --no-tests --formats gztar --allow-dirty; \
+	else \
+		$(MESON) dist -C $(BUILD_DIR) --no-tests --formats gztar; \
+	fi
 	@echo "## xNVMe: make gen-src-archive [DONE]"
 
 define gen-src-archive-with-subprojects-help
