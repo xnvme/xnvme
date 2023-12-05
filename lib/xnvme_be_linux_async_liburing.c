@@ -24,13 +24,6 @@
 #define IORING_SETUP_SINGLE_ISSUER (1U << 12)
 #endif
 
-static int g_linux_liburing_required[] = {
-	IORING_OP_READV,       IORING_OP_WRITEV, IORING_OP_READ_FIXED,
-	IORING_OP_WRITE_FIXED, IORING_OP_READ,   IORING_OP_WRITE,
-};
-static int g_linux_liburing_nrequired =
-	sizeof g_linux_liburing_required / sizeof(*g_linux_liburing_required);
-
 static struct sqpoll_wq {
 	pthread_mutex_t mutex;
 	struct io_uring ring;
@@ -42,40 +35,6 @@ static struct sqpoll_wq {
 	.is_initialized = false,
 	.refcount = 0,
 };
-
-/**
- * Check whether the Kernel supports the io_uring features used by xNVMe
- *
- * @return On success, 0 is returned. On error, negative errno is returned,
- * specifically -ENOSYS;
- */
-static int
-_linux_liburing_supported(struct xnvme_dev *XNVME_UNUSED(dev), uint32_t XNVME_UNUSED(opts))
-{
-	struct io_uring_probe *probe;
-	int err = 0;
-
-	probe = io_uring_get_probe();
-	if (!probe) {
-		XNVME_DEBUG("FAILED: io_uring_get_probe()");
-		err = -ENOSYS;
-		goto exit;
-	}
-
-	for (int i = 0; i < g_linux_liburing_nrequired; ++i) {
-		if (!io_uring_opcode_supported(probe, g_linux_liburing_required[i])) {
-			err = -ENOSYS;
-			XNVME_DEBUG("FAILED: Kernel does not support opc: %d",
-				    g_linux_liburing_required[i]);
-			goto exit;
-		}
-	}
-
-exit:
-	free(probe);
-
-	return err ? 0 : 1;
-}
 
 static int
 _init_retry(unsigned entries, struct io_uring *ring, struct io_uring_params *p)
