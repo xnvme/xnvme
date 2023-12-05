@@ -25,9 +25,9 @@ struct huge_alloc {
 };
 
 SLIST_HEAD(huge_alloc_slist, huge_alloc);
-struct huge_alloc_slist huge_alloc_head;
+static struct huge_alloc_slist huge_alloc_head;
 
-size_t
+static size_t
 get_hugepage_size()
 {
 	FILE *fp;
@@ -49,7 +49,7 @@ get_hugepage_size()
 	return 0;
 }
 
-bool
+static bool
 verify_hugetlbfs_path(char *path)
 {
 	char line[PATH_MAX];

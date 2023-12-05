@@ -19,7 +19,7 @@
 #include <linux/blkzoned.h>
 #endif
 
-int
+static int
 _sysfs_path_to_buf(const char *path, char *buf, int buf_len)
 {
 	FILE *fp;
@@ -411,7 +411,7 @@ xnvme_be_linux_block_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 	}
 }
 
-int
+static int
 _idfy_ctrlr(struct xnvme_dev *dev, void *dbuf)
 {
 	struct xnvme_spec_idfy_ctrlr *ctrlr = dbuf;
@@ -431,7 +431,7 @@ _idfy_ctrlr(struct xnvme_dev *dev, void *dbuf)
 	return 0;
 }
 
-int
+static int
 _idfy_ns_iocs(struct xnvme_dev *dev, void *dbuf)
 {
 	struct xnvme_spec_znd_idfy_ns *zns = dbuf;
@@ -468,7 +468,7 @@ _idfy_ns_iocs(struct xnvme_dev *dev, void *dbuf)
 	return 0;
 }
 
-int
+static int
 _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 {
 	struct xnvme_spec_idfy_ns *ns = dbuf;
@@ -501,7 +501,7 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 	return 0;
 }
 
-int
+static int
 _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf)
 {
 	struct xnvme_spec_znd_idfy_ctrlr *zctrlr = dbuf;
@@ -555,7 +555,7 @@ failed:
 	return 1;
 }
 
-int
+static int
 _gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 {
 	struct xnvme_spec_feat feat = {0};

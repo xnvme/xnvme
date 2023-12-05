@@ -13,7 +13,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_macos.h>
 
-int
+static int
 _gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 {
 	struct xnvme_spec_feat feat = {0};

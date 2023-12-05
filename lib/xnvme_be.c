@@ -322,7 +322,7 @@ _fs_geometry(struct xnvme_dev *dev)
 	return 0;
 }
 
-int
+static int
 _kvs_geometry(struct xnvme_dev *dev)
 {
 	struct xnvme_geo *geo = &dev->geo;

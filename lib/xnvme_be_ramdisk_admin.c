@@ -129,7 +129,7 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf)
 	return 1;
 }
 
-int
+static int
 _ramdisk_gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 {
 	struct xnvme_spec_feat feat = {0};
@@ -149,7 +149,7 @@ _ramdisk_gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 	return 0;
 }
 
-int
+static int
 _xnvme_be_ramdisk_admin_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf,
 				  size_t XNVME_UNUSED(dbuf_nbytes), void *XNVME_UNUSED(mbuf),
 				  size_t XNVME_UNUSED(mbuf_nbytes))

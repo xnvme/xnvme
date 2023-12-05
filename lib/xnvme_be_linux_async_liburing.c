@@ -28,7 +28,7 @@ static int g_linux_liburing_required[] = {
 	IORING_OP_READV,       IORING_OP_WRITEV, IORING_OP_READ_FIXED,
 	IORING_OP_WRITE_FIXED, IORING_OP_READ,   IORING_OP_WRITE,
 };
-int g_linux_liburing_nrequired =
+static int g_linux_liburing_nrequired =
 	sizeof g_linux_liburing_required / sizeof(*g_linux_liburing_required);
 
 static struct sqpoll_wq {
@@ -49,7 +49,7 @@ static struct sqpoll_wq {
  * @return On success, 0 is returned. On error, negative errno is returned,
  * specifically -ENOSYS;
  */
-int
+static int
 _linux_liburing_supported(struct xnvme_dev *XNVME_UNUSED(dev), uint32_t XNVME_UNUSED(opts))
 {
 	struct io_uring_probe *probe;
@@ -77,7 +77,7 @@ exit:
 	return err ? 0 : 1;
 }
 
-int
+static int
 _init_retry(unsigned entries, struct io_uring *ring, struct io_uring_params *p)
 {
 	int err;
