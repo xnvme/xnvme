@@ -97,6 +97,7 @@ xnvmelib_shared = shared_library(
   'xnvme',
   xnvmelib_source,
   dependencies: xnvmelib_deps,
+  link_args: link_args_hardening,
   include_directories: [conf_inc, xnvme_inc],
   install_dir: xnvmelib_libdir,
   install: true,

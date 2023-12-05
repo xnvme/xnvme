@@ -18,6 +18,7 @@ project(
   ],
   meson_version: '>=0.58'
 )
+
 pconf = import('pkgconfig')
 fs = import('fs')
 
@@ -34,7 +35,6 @@ foreach sys : system_support
     set_variable('is_' + sys, system == sys)
 endforeach
 
-
 cc = meson.get_compiler('c')
 cc_flags = [
   '-Wno-missing-braces',
@@ -45,6 +45,13 @@ add_project_arguments(
   cc.get_supported_arguments(cc_flags),
   language: 'c'
 )
+
+add_project_arguments('-Db_pie='+ get_option('hardening').to_string(), language: 'c')
+
+link_args_hardening = get_option('hardening') ? cc.get_supported_arguments([
+  '-znow',
+  '-zrelro',
+]) : []
 
 xnvmelib_libdir = get_option('libdir')
 

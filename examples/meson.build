@@ -19,6 +19,7 @@ foreach example_source : examples_source
     example_source,
     include_directories: [conf_inc, xnvme_inc],
     link_with: xnvmelib_static,
+    link_args: link_args_hardening,
     install: true,
   )
 endforeach
