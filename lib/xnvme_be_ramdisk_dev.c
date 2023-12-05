@@ -34,7 +34,7 @@ xnvme_be_ramdisk_dev_close(struct xnvme_dev *dev)
 }
 
 size_t
-_xnvme_be_ramdisk_dev_get_size(struct xnvme_dev *dev)
+xnvme_be_ramdisk_dev_get_size(struct xnvme_dev *dev)
 {
 	const struct xnvme_ident *ident = &dev->ident;
 	char *gb_marker;
@@ -55,7 +55,7 @@ xnvme_be_ramdisk_dev_open(struct xnvme_dev *dev)
 	struct xnvme_opts *opts = &dev->opts;
 	int err;
 
-	size_t ramdisk_size = _xnvme_be_ramdisk_dev_get_size(dev);
+	size_t ramdisk_size = xnvme_be_ramdisk_dev_get_size(dev);
 	if (!ramdisk_size) {
 		return -EINVAL;
 	}

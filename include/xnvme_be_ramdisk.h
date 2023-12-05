@@ -16,7 +16,7 @@ int
 xnvme_be_ramdisk_supported(struct xnvme_dev *dev, uint32_t opts);
 
 size_t
-_xnvme_be_ramdisk_dev_get_size(struct xnvme_dev *dev);
+xnvme_be_ramdisk_dev_get_size(struct xnvme_dev *dev);
 
 extern struct xnvme_be_admin g_xnvme_be_ramdisk_admin;
 extern struct xnvme_be_sync g_xnvme_be_ramdisk_sync;
