@@ -38,7 +38,7 @@ _idfy_ns_iocs_fs(struct xnvme_dev *dev, void *dbuf)
 {
 	struct xnvme_spec_fs_idfy_ns *ns = dbuf;
 
-	size_t ramdisk_size = _xnvme_be_ramdisk_dev_get_size(dev);
+	size_t ramdisk_size = xnvme_be_ramdisk_dev_get_size(dev);
 	if (!ramdisk_size) {
 		return -1;
 	}
@@ -70,7 +70,7 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 	size_t ramdisk_size;
 	const size_t lba_size = 512;
 
-	ramdisk_size = _xnvme_be_ramdisk_dev_get_size(dev);
+	ramdisk_size = xnvme_be_ramdisk_dev_get_size(dev);
 	if (!ramdisk_size) {
 		return -1;
 	}
