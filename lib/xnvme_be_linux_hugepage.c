@@ -59,6 +59,7 @@ verify_hugetlbfs_path(char *path)
 	fp = fopen("/proc/mounts", "r");
 
 	strncpy(search_str, path, sizeof(search_str) - 1);
+	search_str[PATH_MAX - 1] = '\0';
 	strncat(search_str, " hugetlbfs", sizeof(search_str) - strlen(search_str) - 1);
 
 	while (fgets(line, sizeof(line), fp)) {
