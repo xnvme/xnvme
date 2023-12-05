@@ -167,7 +167,7 @@ ioctl_wrap(struct xnvme_dev *dev, unsigned long ioctl_req, struct xnvme_cmd_ctx 
 	return -EIO;
 }
 
-int
+static int
 _controller_get_registers(const struct xnvme_dev *dev, void *dbuf, size_t dbuf_nbytes)
 {
 	const struct xnvme_ident *ident = &dev->ident;

@@ -53,7 +53,7 @@ sub_name_wmin(struct xnvme_cli *cli)
 	return wmin;
 }
 
-struct xnvme_cli_sub *
+static struct xnvme_cli_sub *
 sub_by_name(struct xnvme_cli *cli, const char *name)
 {
 	for (int i = 0; i < cli->nsubs; ++i) {

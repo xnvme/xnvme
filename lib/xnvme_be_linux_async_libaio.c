@@ -33,7 +33,7 @@ struct xnvme_aio_ring {
 
 #define XNVME_AIO_RING_MAGIC 0xa10a10a1
 
-int
+static int
 _linux_libaio_term(struct xnvme_queue *q)
 {
 	struct xnvme_queue_libaio *queue = (void *)q;
@@ -49,7 +49,7 @@ _linux_libaio_term(struct xnvme_queue *q)
 	return 0;
 }
 
-int
+static int
 _linux_libaio_init(struct xnvme_queue *q, int opts)
 {
 	struct xnvme_queue_libaio *queue = (void *)q;
@@ -70,7 +70,7 @@ _linux_libaio_init(struct xnvme_queue *q, int opts)
 	return 0;
 }
 
-int
+static int
 _linux_libaio_poke(struct xnvme_queue *q, uint32_t max)
 {
 	struct xnvme_queue_libaio *queue = (void *)q;
@@ -143,7 +143,7 @@ _linux_libaio_poke(struct xnvme_queue *q, uint32_t max)
 	return completed;
 }
 
-int
+static int
 _linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 		     size_t mbuf_nbytes)
 {
@@ -198,7 +198,7 @@ _linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, 
 	return err;
 }
 
-int
+static int
 _linux_libaio_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
 		      size_t XNVME_UNUSED(dvec_nbytes), struct iovec *mvec, size_t mvec_cnt,
 		      size_t mvec_nbytes)
