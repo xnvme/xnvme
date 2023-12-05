@@ -30,6 +30,7 @@ foreach test_source : tests_source
     test_source,
     include_directories: [conf_inc, xnvme_inc],
     link_with: xnvmelib_static,
+    link_args: link_args_hardening,
     install: true,
   )
 endforeach
