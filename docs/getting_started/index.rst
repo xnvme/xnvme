@@ -604,23 +604,19 @@ You can pass the arguments above to your compiler, or using pkg-config like so:
   transports will work, as **ctors** will be "linked-out", and **xNVMe** will
   give you errors such as **device not found**.
 
-Also, **xNVMe** provides three different libraries, two static, and a shared
+Also, **xNVMe** provides two different libraries, a static, and a shared
 library as well. Here is what the different libraries are intended for:
 
-* ``libxnvme.a``, this is static library version of **xNVMe** and it comes with
-  **batteries included**, that is, all the third-party libraries are bundled
-  within the static library ``libxnvme.a``. Thus you only need to link with
-  **xNVMe**, as described above, and need not worry about linking with SPDK,
-  liburing etc.
-* ``libxnvme-static.a``, this is the same as ``libxnvme.a`` except it does
+* ``libxnvme.a``, this is static library version of **xNVMe** except it does
   **not** come with **batteries included**, so you have to manually link with
   SPDK, liburing, etc.
-* ``libxnvme-shared.so``, this is the shared library version of **xNVMe**, this
-  also does **not** come with **batteries included**, so when linking with, or
-  dynamically loading, the shared library version of **xNVMe** then you also
-  have to link or load the third-party dependencies.
+* ``libxnvme.so``, this is the shared library version of **xNVMe** and it comes
+  with **batteries included**, that is, all the third-party libraries are bundled
+  within the shared library ``libxnvme.so``. Thus you only need to link with
+  **xNVMe**, as described above, and need not worry about linking with SPDK,
+  liburing etc.
 
-Using ``libxnvme.a`` is the preferred way to consume **xNVMe** as it comes with
+Using ``libxnvme.so`` is the preferred way to consume **xNVMe** as it comes with
 the correct version of the various third-party libraries and provides for
 a simpler link-target.
 
