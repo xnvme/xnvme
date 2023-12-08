@@ -13,8 +13,6 @@ project(
     'buildtype=release',
     'default_library=both',
     'b_staticpic=true'
-# This seems broken on Windows
-#    'b_lto=true',
   ],
   meson_version: '>=0.58'
 )
@@ -46,6 +44,7 @@ add_project_arguments(
   language: 'c'
 )
 
+add_project_arguments('-Db_lto='+ (not is_windows).to_string(), language: 'c')
 add_project_arguments('-Db_pie='+ get_option('hardening').to_string(), language: 'c')
 
 link_args_hardening = get_option('hardening') ? cc.get_supported_arguments([
