@@ -4,6 +4,8 @@
 
 #include <errno.h>
 #include <libxnvme.h>
+#include <unistd.h>
+#include <xnvme_dev.h>
 
 /**
  * Constructs an LBA range if --slba and --elba are not provided by CLI
@@ -405,6 +407,62 @@ exit:
 	return err;
 }
 
+/**
+ * For each LBA format:
+ * Format namespace
+ * Send idfy-ns command
+ * Verify that namespace reports the correct format index
+ */
+static int
+test_format(struct xnvme_cli *cli)
+{
+	int err;
+	struct xnvme_dev *dev = cli->args.dev;
+	uint32_t nsid = xnvme_dev_get_nsid(dev);
+
+	struct xnvme_spec_idfy_ns *ns = (struct xnvme_spec_idfy_ns *)xnvme_dev_get_ns(dev);
+	struct xnvme_spec_idfy_ns *new_ns = xnvme_buf_alloc(dev, sizeof(*ns));
+
+	xnvme_cli_pinf("Number of LBA Formats: %u", ns->nlbaf + 1);
+	// nlbaf is zero-based
+	for (int i = 0; i <= ns->nlbaf; ++i) {
+		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+		xnvme_cli_pinf("Formatting device to format: %d", i);
+		err = xnvme_adm_format(&ctx, nsid, i, 0, 0, 0, 0, 0);
+		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+			xnvme_cli_perr("xnvme_adm_format()", err);
+			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+			err = err ? err : -EIO;
+		}
+
+		err = xnvme_adm_idfy_ns(&ctx, nsid, (struct xnvme_spec_idfy *)new_ns);
+		if (err) {
+			xnvme_cli_perr("xnvme_adm_idfy_ns()", err);
+			return err;
+		}
+
+		// Expected format
+		struct xnvme_spec_lbaf lbaf = ns->lbaf[i];
+
+		xnvme_cli_pinf("Verifying format...");
+		if (ns->nlbaf >= 16) {
+			assert(((new_ns->flbas.extended << 4) & new_ns->flbas.format) == i);
+		} else {
+			assert(new_ns->flbas.format == i);
+		}
+
+		if (lbaf.ms) {
+			assert(new_ns->flbas.format_msb == 0);
+		}
+
+		xnvme_cli_pinf("Formatting successful!");
+	}
+
+	xnvme_buf_free(dev, new_ns);
+
+	return err;
+}
+
 //
 // Command-Line Interface (CLI) definition
 //
@@ -421,7 +479,6 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_SLBA, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_ELBA, XNVME_CLI_LOPT},
-
 			XNVME_CLI_SYNC_OPTS,
 		},
 	},
@@ -456,6 +513,21 @@ static struct xnvme_cli_sub g_subs[] = {
 
 			XNVME_CLI_SYNC_OPTS,
 		},
+	},
+	{
+		"lba_format",
+		"Verification of each LBA format",
+		"Verification of each LBA format",
+		test_format,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+
+			XNVME_CLI_SYNC_OPTS,
+		},
+
 	}};
 
 static struct xnvme_cli g_cli = {
