@@ -15,14 +15,19 @@
 #include <xnvme_be_ramdisk.h>
 
 int
-xnvme_be_ramdisk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
-			     void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
+xnvme_be_ramdisk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			     size_t mbuf_nbytes)
 {
 	struct xnvme_be_ramdisk_state *state = (void *)ctx->dev->be.state;
 	struct xnvme_spec_nvm_scopy_fmt_zero *ranges = dbuf;
 	size_t sdlba_offset = 0;
 	const uint64_t ssw = ctx->dev->geo.ssw;
 	char *offset = state->ramdisk;
+
+	if (mbuf || mbuf_nbytes) {
+		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
+		return -ENOTSUP;
+	}
 
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
@@ -75,12 +80,16 @@ xnvme_be_ramdisk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_
 
 int
 xnvme_be_ramdisk_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-			      size_t XNVME_UNUSED(dvec_nbytes), void *XNVME_UNUSED(mbuf),
-			      size_t XNVME_UNUSED(mbuf_nbytes))
+			      size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_be_ramdisk_state *state = (void *)ctx->dev->be.state;
 	const uint64_t ssw = ctx->dev->geo.ssw;
 	char *offset = state->ramdisk;
+
+	if (mbuf || mbuf_nbytes) {
+		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
+		return -ENOTSUP;
+	}
 
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
