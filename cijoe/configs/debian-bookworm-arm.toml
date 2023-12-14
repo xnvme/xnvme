@@ -1,0 +1,238 @@
+# The SSH options are passed verbatim to paramiko; see https://www.paramiko.org/
+[transport.ssh]
+username = "root"
+password = "root"
+hostname = "localhost"
+port = 4200
+
+[os]
+name = "debian"
+version = "bookworm"
+
+[build.compiler]
+bin = "gcc"
+
+[qemu.repository]
+upstream = "https://github.com/qemu/qemu.git"
+path = "{{ local.env.HOME }}/git/qemu"
+tag = "v7.1.0"
+
+# Used by: qemu.build.py
+[qemu.build]
+prefix = "{{ local.env.HOME }}/opt/qemu"
+
+[qemu]
+# system_bin = "{{ local.env.HOME }}/opt/qemu/bin/qemu-system-aarch64"
+system_bin = "/opt/qemu/bin/qemu-system-aarch64"
+img_bin = "qemu-img"
+default_guest = "bookworm_arm64"
+
+# Used by: qemu.guest_start.py and qemu.guest_kill.py
+[qemu.guests.bookworm_arm64]
+path = "{{ local.env.HOME }}/guests/debian-bookworm-arm64"
+
+# Keyword arguments: joined onto the form: "-cpu host -smp 4 -m 4" etc.
+system_args.kwa = {cpu = "host", smp = 4, m = "6G", accel = "hvf"}
+
+# Raw arguments: passed without modification to qemu-system-{arch}
+system_args.raw = """\
+-M "virt" \
+-drive "file={{ local.env.HOME }}/opt/qemu/share/qemu/edk2-aarch64-code.fd,format=raw,if=pflash,readonly=on" \
+"""
+
+# Managed arguments: expands into longer incantations
+system_args.tcp_forward = {host = 4200, guest = 22}
+#system_args.host_share = "{{ local.env.HOME }}/git"
+
+# Used by: qemu.guest_init_using_bootimage.py
+init_using_bootimage.url = "https://refenv.fra1.digitaloceanspaces.com/boot_images/debian-bookworm-arm64.qcow2"
+init_using_bootimage.img = "{{ local.env.HOME }}/images/boot_images/debian-bookworm-arm64.qcow2"
+
+# Used by: qemu.guest_init_using_cloudinit
+init_using_cloudinit.url = "https://cloud.debian.org/images/cloud/bookworm/daily/latest/debian-12-generic-arm64-daily.qcow2"
+init_using_cloudinit.img = "{{ local.env.HOME }}/images/cloudinit/debian-12-generic-arm64-daily.qcow2"
+init_using_cloudinit.meta = "{{ resources.auxiliary['qemu.cloudinit-debian-meta'] }}"
+init_using_cloudinit.user = "{{ resources.auxiliary['qemu.cloudinit-debian-user-arm64'] }}"
+#pubkey = "keys/guest_key.pub"
+
+[[devices]]
+uri = "/dev/nvme0n1"
+nsid = 1
+labels = [ "dev", "bdev", "nvm", "scc", "write_zeroes" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "/dev/ng0n1"
+nsid = 1
+labels = [ "dev", "cdev", "nvm", "scc", "write_zeroes" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:03:00.0"
+nsid = 1
+labels = [ "dev", "pcie", "nvm", "scc", "write_zeroes", "ctrlr" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "/dev/nvme0n2"
+nsid = 2
+labels = [ "dev", "bdev", "zns", "zrwa" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "/dev/ng0n2"
+nsid = 2
+labels = [ "dev", "cdev", "zns", "zrwa" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:03:00.0"
+nsid = 2
+labels = [ "dev", "pcie", "zns", "zrwa" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "/dev/ng0n3"
+nsid = 3
+labels = [ "dev", "cdev", "kvs" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:03:00.0"
+nsid = 3
+labels = [ "dev", "pcie", "kvs" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "/dev/nvme1n1"
+nsid = 1
+labels = [ "dev", "bdev", "nvm", "scc", "write_zeroes" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "/dev/ng1n1"
+nsid = 1
+labels = [ "dev", "cdev", "nvm", "scc", "write_zeroes" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:04:00.0"
+nsid = 1
+labels = [ "dev", "pcie", "nvm", "scc", "write_zeroes" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "/dev/nvme2n1"
+nsid = 1
+labels = [ "dev", "bdev", "nvm", "scc", "large_mdts" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "/dev/nvme3n1"
+nsid = 1
+labels = [ "dev", "bdev", "nvm", "scc", "fdp" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "/dev/ng3n1"
+nsid = 1
+labels = [ "dev", "cdev", "nvm", "scc", "fdp" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:06:00.0"
+nsid = 1
+labels = [ "dev", "pcie", "nvm", "scc", "fdp" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "/dev/nvme0"
+nsid = 0
+labels = [ "ctrlr", "cdev"]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "127.0.0.1:4420"
+nsid = 1
+labels = [ "dev", "fabrics", "nvm", "write_zeroes" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "127.0.0.1:4420"
+nsid = 2
+labels = [ "dev", "fabrics", "zns" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "127.0.0.1:4420"
+nsid = 3
+labels = [ "dev", "fabrics", "kvs" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "/tmp/xnvme-testfile.bin"
+nsid = 1
+labels = [ "file" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "2GB"
+nsid = 1
+labels = [ "dev", "bdev", "nvm", "ramdisk", "write_zeroes" ]
+driver_attachment = "kernel"
+
+[xnvme.repository]
+upstream = "https://github.com/OpenMPDK/xNVMe.git"
+path = "{{ local.env.HOME }}/git/xnvme"
+
+# This is utilized by repository syncing during development.
+[xnvme.repository.sync]
+branch = "wip"
+remote = "vm"
+remote_path = "/root/git/xnvme"
+
+[xnvme.source]
+path = "/tmp/xnvme_source"
+
+[xnvme.build]
+type = "debug"
+
+[hugetlbfs]
+mount_point = "/mnt/huge"
+nr_hugepages = "128"
+
+[fio]
+bin = "/opt/fio/bin/fio"
+
+[fio.repository]
+upstream = "https://github.com/axboe/fio.git"
+path = "/root/git/fio"
+tag = "fio-3.34"
+
+[fio.build]
+prefix = "/opt/fio"
+
+[fio.engines.libaio]
+type = "builtin"
+
+[fio.engines.io_uring]
+type = "builtin"
+
+[fio.engines.io_uring_cmd]
+type = "builtin"
+
+[fio.engines.xnvme]
+type = "builtin"
+
+[fio.engines.spdk_nvme]
+path = "/opt/aux/spdk_nvme"
+type = "external_preload"
+
+[fio.engines.spdk_bdev]
+path = "/opt/aux/spdk_bdev"
+type = "external_preload"
+
+[linux.repository]
+remote = "https://github.com/linux/linux.git"
+path = "{{ local.env.HOME }}/git/linux"
+tag = "v5.19"
