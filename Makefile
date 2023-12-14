@@ -384,11 +384,12 @@ gen-man-pages:
 	@echo "## xNVMe: make gen-man-pages [DONE]"
 
 define tags-help
-# Helper-target to produce tags
+# Helper-target to produce tags and compile-commands
 endef
 .PHONY: tags
 tags:
 	@echo "## xNVMe: make tags"
+	@if [ -d "$(BUILD_DIR)" ]; then cp $(BUILD_DIR)/compile_commands.json .; fi;
 	@$(CTAGS) * --languages=C -h=".c.h" -R --exclude=$(BUILD_DIR) \
 		include \
 		lib \

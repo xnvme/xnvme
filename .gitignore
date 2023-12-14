@@ -26,6 +26,7 @@ builddir
 docs/build
 docs/autogen/enumerate_example
 docs/tutorial/dynamic_loading/enumerate_example
+compile_commands.json
 cscope.out
 tags
 cmake-build-debug/
