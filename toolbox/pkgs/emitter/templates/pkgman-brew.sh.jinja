@@ -1,5 +1,6 @@
 # This is done to avoid appleframework deprecation warnings
 export MACOSX_DEPLOYMENT_TARGET=11.0
+export HOMEBREW_NO_AUTO_UPDATE=1
 
 # Install packages via brew, assuming that brew is: installed, updated, and upgraded
 {%- for dep in deps %}
@@ -8,6 +9,6 @@ if make --version | grep i386-apple; then
   brew install make
 fi
 {% else %}
-{{ dep }} --version && echo "Installed" || brew install {{ dep }} 
+{{ dep }} --version && echo "Installed" || brew install {{ dep }} --overwrite || echo "Failed installing"
 {%- endif %}
 {%- endfor %}
