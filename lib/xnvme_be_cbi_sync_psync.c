@@ -18,12 +18,18 @@
 
 int
 xnvme_be_cbi_sync_psync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
-			       void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
+			       void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_be_cbi_state *state = (void *)ctx->dev->be.state;
 	const uint64_t ssw = ctx->dev->geo.ssw;
 	ssize_t res;
 	uint8_t sc;
+
+	if (mbuf || mbuf_nbytes) {
+		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
+		sc = res = ENOTSUP;
+		goto exit;
+	}
 
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
@@ -54,6 +60,7 @@ xnvme_be_cbi_sync_psync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 		break;
 	}
 
+exit:
 	ctx->cpl.result = res;
 	if (sc) {
 		XNVME_DEBUG("FAILED: OPC(%d){pread,pwrite,fsync}(), errno: %d",
@@ -69,13 +76,18 @@ xnvme_be_cbi_sync_psync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 
 int
 xnvme_be_cbi_sync_psync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-				size_t dvec_nbytes, void *XNVME_UNUSED(mbuf),
-				size_t XNVME_UNUSED(mbuf_nbytes))
+				size_t dvec_nbytes, void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_be_cbi_state *state = (void *)ctx->dev->be.state;
 	const uint64_t ssw = ctx->dev->geo.ssw;
 	ssize_t res;
 	uint8_t sc;
+
+	if (mbuf || mbuf_nbytes) {
+		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
+		sc = res = ENOTSUP;
+		goto exit;
+	}
 
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
@@ -109,6 +121,7 @@ xnvme_be_cbi_sync_psync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, s
 		break;
 	}
 
+exit:
 	ctx->cpl.result = res;
 	if (sc) {
 		XNVME_DEBUG("FAILED: OPC(%d){pread,pwrite,fsync}(), errno: %d",

@@ -51,12 +51,17 @@ xnvme_be_fbsd_nvme_get_nsid_and_ctrlr_fd(int fd, uint32_t *nsid, int *ctrlr_fd)
 }
 
 int
-xnvme_be_fbsd_nvme_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
-		      void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
+xnvme_be_fbsd_nvme_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+		      size_t mbuf_nbytes)
 {
 	struct xnvme_be_fbsd_state *state = (void *)ctx->dev->be.state;
 	struct nvme_pt_command ptc = {0};
 	int err;
+
+	if (mbuf || mbuf_nbytes) {
+		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
+		return -ENOTSUP;
+	}
 
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_FS_OPC_READ:
