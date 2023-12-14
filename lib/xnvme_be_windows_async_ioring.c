@@ -151,7 +151,7 @@ xnvme_be_windows_ioring_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 
 	if (mbuf || mbuf_nbytes) {
 		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
-		return -ENOSYS;
+		return -ENOTSUP;
 	}
 
 	request_data_file.Handle.Handle = state->async_handle;

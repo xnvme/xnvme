@@ -172,7 +172,7 @@ xnvme_be_fbsd_kqueue_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 
 	if (mbuf || mbuf_nbytes) {
 		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
-		return -ENOSYS;
+		return -ENOTSUP;
 	}
 
 	req = TAILQ_FIRST(&queue->reqs_ready);
@@ -251,7 +251,7 @@ xnvme_be_fbsd_kqueue_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size
 
 	if (mbuf || mbuf_nbytes) {
 		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
-		return -ENOSYS;
+		return -ENOTSUP;
 	}
 
 	req = TAILQ_FIRST(&queue->reqs_ready);

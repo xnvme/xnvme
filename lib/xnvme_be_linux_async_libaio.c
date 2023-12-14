@@ -156,7 +156,7 @@ _linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, 
 
 	if (mbuf || mbuf_nbytes) {
 		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
-		return -ENOSYS;
+		return -ENOTSUP;
 	}
 
 	///< Convert the NVMe command/sqe to an Linux aio io-control-block
@@ -215,7 +215,7 @@ _linux_libaio_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec
 	}
 	if (mbuf || mbuf_nbytes) {
 		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
-		return -ENOSYS;
+		return -ENOTSUP;
 	}
 
 	///< Convert the NVMe command/sqe to an Linux aio io-control-block
