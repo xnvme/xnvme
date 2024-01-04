@@ -268,7 +268,6 @@ _zoned_geometry(struct xnvme_dev *dev)
 	return 0;
 }
 
-// TODO: select LBAF correctly, instead of the first
 static inline int
 _conventional_geometry(struct xnvme_dev *dev)
 {
