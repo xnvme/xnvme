@@ -248,12 +248,6 @@ int
 xnvme_be_pr(const struct xnvme_be *be, enum xnvme_pr opts);
 
 int
-xnvme_be_dev_derive_geometry(struct xnvme_dev *dev);
-
-int
-xnvme_be_dev_idfy(struct xnvme_dev *dev);
-
-int
 xnvme_ident_yaml(FILE *stream, const struct xnvme_ident *ident, int indent, const char *sep,
 		 int head);
 

@@ -904,18 +904,6 @@ xnvme_be_spdk_dev_open(struct xnvme_dev *dev)
 		XNVME_DEBUG("FAILED: xnvme_be_spdk_state_init()");
 		return err;
 	}
-	err = xnvme_be_dev_idfy(dev);
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_be_spdk_dev_idfy()");
-		xnvme_be_spdk_state_term((void *)dev->be.state);
-		return err;
-	}
-	err = xnvme_be_dev_derive_geometry(dev);
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_be_dev_derive_geometry()");
-		xnvme_be_spdk_state_term((void *)dev->be.state);
-		return err;
-	}
 
 	return err;
 }

@@ -243,20 +243,6 @@ xnvme_be_vfio_dev_open(struct xnvme_dev *dev)
 	dev->ident.csi = XNVME_SPEC_CSI_NVM;
 	dev->ident.nsid = dev->opts.nsid;
 
-	err = xnvme_be_dev_idfy(dev);
-	if (err) {
-		XNVME_DEBUG("FAILED: open() : xnvme_be_dev_idfy()");
-		// _be_linux_state_term((void *)dev->be.state);
-		free(state->efds);
-		return err;
-	}
-	err = xnvme_be_dev_derive_geometry(dev);
-	if (err) {
-		XNVME_DEBUG("FAILED: open() : xnvme_be_dev_derive_geometry()");
-		free(state->efds);
-		return err;
-	}
-
 	return 0;
 }
 
