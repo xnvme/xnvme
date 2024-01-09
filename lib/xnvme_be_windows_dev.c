@@ -213,24 +213,6 @@ xnvme_be_windows_dev_open(struct xnvme_dev *dev)
 		return -EINVAL;
 	}
 
-	err = xnvme_be_dev_idfy(dev);
-	if (err) {
-		XNVME_DEBUG("FAILED: open() : xnvme_be_dev_idfy()");
-		_be_windows_state_term((void *)dev->be.state);
-		return err;
-	}
-	err = xnvme_be_dev_derive_geometry(dev);
-	if (err) {
-		XNVME_DEBUG("FAILED: open() : xnvme_be_dev_derive_geometry()");
-		_be_windows_state_term((void *)dev->be.state);
-		return err;
-	}
-
-	// TODO: consider this. Due to Kernel-segment constraint force mdts down
-	if ((dev->geo.mdts_nbytes / dev->geo.lba_nbytes) > 127) {
-		dev->geo.mdts_nbytes = dev->geo.lba_nbytes * 127;
-	}
-
 	XNVME_DEBUG("INFO: --- open() : OK ---");
 
 	return 0;

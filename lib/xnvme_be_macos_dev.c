@@ -212,7 +212,6 @@ xnvme_be_macos_dev_open(struct xnvme_dev *dev)
 	struct xnvme_be_macos_state *state = (void *)dev->be.state;
 	struct xnvme_opts *opts = &dev->opts;
 	int flags = xnvme_file_opts_to_macos(opts);
-	int err;
 	io_object_t ioservice_device;
 	IONVMeSMARTInterface **nvme_smart_interface;
 	IOCFPlugInInterface **plugin_interface;
@@ -262,17 +261,6 @@ xnvme_be_macos_dev_open(struct xnvme_dev *dev)
 		dev->ident.nsid = 1;
 		dev->ident.dtype = XNVME_DEV_TYPE_FS_FILE;
 		dev->ident.csi = XNVME_SPEC_CSI_FS;
-	}
-
-	err = xnvme_be_dev_idfy(dev);
-	if (err) {
-		XNVME_DEBUG("FAILED: open() : xnvme_be_dev_idfy");
-		return -EINVAL;
-	}
-	err = xnvme_be_dev_derive_geometry(dev);
-	if (err) {
-		XNVME_DEBUG("FAILED: open() : xnvme_be_dev_derive_geometry()");
-		return err;
 	}
 
 	return 0;

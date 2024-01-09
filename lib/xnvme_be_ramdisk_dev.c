@@ -53,7 +53,6 @@ xnvme_be_ramdisk_dev_open(struct xnvme_dev *dev)
 {
 	struct xnvme_be_ramdisk_state *state = (void *)dev->be.state;
 	struct xnvme_opts *opts = &dev->opts;
-	int err;
 
 	size_t ramdisk_size = xnvme_be_ramdisk_dev_get_size(dev);
 	if (!ramdisk_size) {
@@ -80,19 +79,6 @@ xnvme_be_ramdisk_dev_open(struct xnvme_dev *dev)
 	dev->ident.dtype = XNVME_DEV_TYPE_RAMDISK;
 	dev->ident.csi = XNVME_SPEC_CSI_NVM;
 	dev->ident.nsid = 1;
-
-	err = xnvme_be_dev_idfy(dev);
-	if (err) {
-		XNVME_DEBUG("FAILED: open() : xnvme_be_dev_idfy()");
-		xnvme_be_ramdisk_dev_close(dev);
-		return -EINVAL;
-	}
-	err = xnvme_be_dev_derive_geometry(dev);
-	if (err) {
-		XNVME_DEBUG("FAILED: open() : xnvme_be_dev_derive_geometry()");
-		xnvme_be_ramdisk_dev_close(dev);
-		return err;
-	}
 
 	return 0;
 }
