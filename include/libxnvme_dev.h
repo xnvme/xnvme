@@ -47,6 +47,21 @@ xnvme_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb
 		void *cb_args);
 
 /**
+ * Derive the geometry of the given device
+ *
+ * This is done through a sequence of NVMe controller-register-reads,
+ * identify-controller/namespace commands, sysfs-probes, and ioctl()/stat()/
+ * fstat() system calls. The system-interface and methods utilized are
+ * backend-specific.
+ *
+ * @param dev Device handle obtained with xnvme_dev_open()
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ */
+int
+xnvme_dev_derive_geo(struct xnvme_dev *dev);
+
+/**
  * Returns the geometry of the given device
  *
  * @param dev Device handle obtained with xnvme_dev_open()
