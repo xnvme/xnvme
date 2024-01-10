@@ -8,13 +8,13 @@
 #include <xnvme_dev.h>
 
 int
-xnvme_adm_format(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t lbaf, uint8_t zf, uint8_t mset,
-		 uint8_t ses, uint8_t pi, uint8_t pil)
+xnvme_adm_format(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t lbafl, uint8_t lbafu,
+		 uint8_t mset, uint8_t ses, uint8_t pi, uint8_t pil)
 {
 	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_FMT;
 	ctx->cmd.common.nsid = nsid;
-	ctx->cmd.format.lbaf = lbaf;
-	ctx->cmd.format.zf = zf;
+	ctx->cmd.format.lbafl = lbafl;
+	ctx->cmd.format.lbafu = lbafu;
 	ctx->cmd.format.mset = mset;
 	ctx->cmd.format.pi = pi;
 	ctx->cmd.format.pil = pil;
