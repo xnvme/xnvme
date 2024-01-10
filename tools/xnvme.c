@@ -755,8 +755,8 @@ sub_format(struct xnvme_cli *cli)
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 	uint32_t nsid = cli->args.nsid;
-	uint8_t lbaf = cli->args.lbaf;
-	uint8_t zf = cli->args.zf;
+	uint8_t lbafl = cli->args.lbafl;
+	uint8_t lbafu = cli->args.lbafu;
 	uint8_t mset = cli->args.mset;
 	uint8_t ses = cli->args.ses;
 	uint8_t pi = cli->args.pi;
@@ -767,11 +767,11 @@ sub_format(struct xnvme_cli *cli)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
-	xnvme_cli_pinf("xnvme_adm_format: {nsid: 0x%08x, lbaf: 0x%x, zf: 0x%x, "
+	xnvme_cli_pinf("xnvme_adm_format: {nsid: 0x%08x, lbafl: 0x%x, lbafu: 0x%x, "
 		       "mset: 0x%x, ses: 0x%x, pi: 0x%x, pil: 0x%x}",
-		       nsid, lbaf, zf, mset, ses, pi, pil);
+		       nsid, lbafl, lbafu, mset, ses, pi, pil);
 
-	err = xnvme_adm_format(&ctx, nsid, lbaf, zf, mset, ses, pi, pil);
+	err = xnvme_adm_format(&ctx, nsid, lbafl, lbafu, mset, ses, pi, pil);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_perr("xnvme_adm_format()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
@@ -1454,8 +1454,8 @@ static struct xnvme_cli_sub g_subs[] = {
 
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
-			{XNVME_CLI_OPT_LBAF, XNVME_CLI_LOPT},
-			{XNVME_CLI_OPT_ZF, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_LBAFL, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_LBAFU, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_MSET, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_SES, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_PI, XNVME_CLI_LOPT},

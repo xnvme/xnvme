@@ -52,7 +52,7 @@ struct xnvme_cli_args {
 
 	uint32_t cdw[16];
 
-	uint64_t lbaf;
+	uint64_t lbafl;
 	uint64_t lba;
 	uint32_t llb;
 	uint32_t nlb;
@@ -73,7 +73,7 @@ struct xnvme_cli_args {
 	uint64_t lpo_nbytes;
 	uint32_t rae;
 	uint32_t clear;
-	uint32_t zf;
+	uint32_t lbafu;
 	uint32_t ses;
 	uint32_t sel;
 	uint32_t mset;
@@ -201,11 +201,11 @@ enum xnvme_cli_opt {
 	XNVME_CLI_OPT_META_INPUT  = 23, ///< XNVME_CLI_OPT_META_INPUT
 	XNVME_CLI_OPT_META_OUTPUT = 24, ///< XNVME_CLI_OPT_META_OUTPUT
 
-	XNVME_CLI_OPT_LBAF = 25, ///< XNVME_CLI_OPT_LBAF
-	XNVME_CLI_OPT_SLBA = 26, ///< XNVME_CLI_OPT_SLBA
-	XNVME_CLI_OPT_ELBA = 27, ///< XNVME_CLI_OPT_ELBA
-	XNVME_CLI_OPT_LBA  = 28, ///< XNVME_CLI_OPT_LBA
-	XNVME_CLI_OPT_NLB  = 29, ///< XNVME_CLI_OPT_NLB
+	XNVME_CLI_OPT_LBAFL = 25, ///< XNVME_CLI_OPT_LBAFL
+	XNVME_CLI_OPT_SLBA  = 26, ///< XNVME_CLI_OPT_SLBA
+	XNVME_CLI_OPT_ELBA  = 27, ///< XNVME_CLI_OPT_ELBA
+	XNVME_CLI_OPT_LBA   = 28, ///< XNVME_CLI_OPT_LBA
+	XNVME_CLI_OPT_NLB   = 29, ///< XNVME_CLI_OPT_NLB
 
 	XNVME_CLI_OPT_URI     = 30, ///< XNVME_CLI_OPT_URI
 	XNVME_CLI_OPT_SYS_URI = 31, ///< XNVME_CLI_OPT_SYS_URI
@@ -222,7 +222,7 @@ enum xnvme_cli_opt {
 	XNVME_CLI_OPT_LPO_NBYTES = 41, ///< XNVME_CLI_OPT_LPO_NBYTES
 	XNVME_CLI_OPT_RAE        = 42, ///< XNVME_CLI_OPT_RAE
 	XNVME_CLI_OPT_CLEAR      = 43, ///< XNVME_CLI_OPT_CLEAR
-	XNVME_CLI_OPT_ZF         = 44, ///< XNVME_CLI_OPT_ZF
+	XNVME_CLI_OPT_LBAFU      = 44, ///< XNVME_CLI_OPT_LBAFU
 	XNVME_CLI_OPT_SES        = 45, ///< XNVME_CLI_OPT_SES
 	XNVME_CLI_OPT_SEL        = 46, ///< XNVME_CLI_OPT_SEL
 	XNVME_CLI_OPT_MSET       = 47, ///< XNVME_CLI_OPT_MSET
