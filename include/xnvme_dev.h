@@ -6,6 +6,7 @@
 #define __INTERNAL_XNVME_DEV_H
 
 #include <libxnvme.h>
+#include <stdbool.h>
 #include <xnvme_be.h>
 
 enum xnvme_dev_type {
@@ -22,7 +23,9 @@ struct xnvme_dev {
 	struct xnvme_be be;       ///< Backend interface
 	struct xnvme_ident ident; ///< Device identifier
 
-	uint8_t _pad[4];
+	uint8_t _pad[2];
+	bool attempted_dev_idfy;
+	bool attempted_derive_geo;
 
 	struct {
 		struct xnvme_spec_idfy_ctrlr ctrlr; ///< NVMe id-ctrlr
