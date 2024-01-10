@@ -1860,13 +1860,13 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_sanitize) == 64, "Incorrect siz
 struct xnvme_spec_cmd_format {
 	uint32_t cdw00_09[10]; ///< Command dword 0 to 9
 
-	uint32_t lbaf : 4; ///< The format to use
-	uint32_t mset : 1; ///< Meta-data settings
-	uint32_t pi   : 3; ///< Protection Information
-	uint32_t pil  : 1; ///< Protection Information Loc.
-	uint32_t ses  : 3; ///< Secure Erase Settings
-	uint32_t zf   : 2; ///< TBD: Zone Format
-	uint32_t rsvd : 18;
+	uint32_t lbafl : 4; ///< Least significant 4 bits of LBA Format Index
+	uint32_t mset  : 1; ///< Meta-data settings
+	uint32_t pi    : 3; ///< Protection Information
+	uint32_t pil   : 1; ///< Protection Information Loc.
+	uint32_t ses   : 3; ///< Secure Erase Settings
+	uint32_t lbafu : 2; ///< Most significant 2 bits of LBA Format Index
+	uint32_t rsvd  : 18;
 
 	uint32_t cdw11_15[5]; ///< Command dword 11 to 15
 };

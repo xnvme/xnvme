@@ -256,10 +256,10 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "Path to meta output-file",
 	},
 	{
-		.opt = XNVME_CLI_OPT_LBAF,
+		.opt = XNVME_CLI_OPT_LBAFL,
 		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
-		.name = "lbaf",
-		.descr = "LBA Format",
+		.name = "lbafl",
+		.descr = "Least significant 4 bits of LBA Format Index",
 	},
 	{
 		.opt = XNVME_CLI_OPT_SLBA,
@@ -385,10 +385,10 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "Reset Async. Events",
 	},
 	{
-		.opt = XNVME_CLI_OPT_ZF,
+		.opt = XNVME_CLI_OPT_LBAFU,
 		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
-		.name = "zf",
-		.descr = "Zone Format",
+		.name = "lbafu",
+		.descr = "Most significant 2 bits of LBA Format Index",
 	},
 	{
 		.opt = XNVME_CLI_OPT_SES,
@@ -1167,8 +1167,8 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 	case XNVME_CLI_OPT_META_OUTPUT:
 		args->meta_output = arg ? arg : "INVALID_INPUT";
 		break;
-	case XNVME_CLI_OPT_LBAF:
-		args->lbaf = num;
+	case XNVME_CLI_OPT_LBAFL:
+		args->lbafl = num;
 		break;
 	case XNVME_CLI_OPT_SLBA:
 		args->slba = num;
@@ -1237,8 +1237,8 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 	case XNVME_CLI_OPT_CLEAR:
 		args->clear = arg ? num : 1;
 		break;
-	case XNVME_CLI_OPT_ZF:
-		args->zf = num;
+	case XNVME_CLI_OPT_LBAFU:
+		args->lbafu = num;
 		break;
 	case XNVME_CLI_OPT_SES:
 		args->ses = num;
