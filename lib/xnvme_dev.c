@@ -124,6 +124,7 @@ _dev_idfy(struct xnvme_dev *dev)
 	struct xnvme_spec_idfy *idfy_ctrlr = NULL, *idfy_ns = NULL;
 	int err;
 
+	dev->attempted_dev_idfy = true;
 	//
 	// Identify controller and namespace
 	//
@@ -274,6 +275,8 @@ xnvme_dev_derive_geo(struct xnvme_dev *dev)
 {
 	struct xnvme_geo *geo = &dev->geo;
 	int err;
+
+	dev->attempted_derive_geo = true;
 
 	err = _dev_idfy(dev);
 	if (err) {
@@ -426,48 +429,73 @@ xnvme_dev_pr(const struct xnvme_dev *dev, int opts)
 const struct xnvme_geo *
 xnvme_dev_get_geo(const struct xnvme_dev *dev)
 {
+	if ((!dev->attempted_derive_geo) && xnvme_dev_derive_geo((struct xnvme_dev *)dev)) {
+		XNVME_DEBUG("FAILED: xnvme_dev_derive_geo()");
+	}
+
 	return &dev->geo;
 }
 
 const struct xnvme_spec_idfy_ctrlr *
 xnvme_dev_get_ctrlr(const struct xnvme_dev *dev)
 {
+	if ((!dev->attempted_dev_idfy) && _dev_idfy((struct xnvme_dev *)dev)) {
+		XNVME_DEBUG("FAILED: open() : _dev_idfy()");
+	}
 	return &dev->id.ctrlr;
 }
 
 const struct xnvme_spec_idfy_ctrlr *
 xnvme_dev_get_ctrlr_css(const struct xnvme_dev *dev)
 {
+	if ((!dev->attempted_dev_idfy) && _dev_idfy((struct xnvme_dev *)dev)) {
+		XNVME_DEBUG("FAILED: open() : _dev_idfy()");
+	}
 	return &dev->idcss.ctrlr;
 }
 
 const struct xnvme_spec_idfy_ns *
 xnvme_dev_get_ns(const struct xnvme_dev *dev)
 {
+	if ((!dev->attempted_dev_idfy) && _dev_idfy((struct xnvme_dev *)dev)) {
+		XNVME_DEBUG("FAILED: open() : _dev_idfy()");
+	}
 	return &dev->id.ns;
 }
 
 const struct xnvme_spec_idfy_ns *
 xnvme_dev_get_ns_css(const struct xnvme_dev *dev)
 {
+	if ((!dev->attempted_dev_idfy) && _dev_idfy((struct xnvme_dev *)dev)) {
+		XNVME_DEBUG("FAILED: open() : _dev_idfy()");
+	}
 	return &dev->idcss.ns;
 }
 
 uint32_t
 xnvme_dev_get_nsid(const struct xnvme_dev *dev)
 {
+	if ((!dev->attempted_dev_idfy) && _dev_idfy((struct xnvme_dev *)dev)) {
+		XNVME_DEBUG("FAILED: open() : _dev_idfy()");
+	}
 	return dev->ident.nsid;
 }
 
 uint8_t
 xnvme_dev_get_csi(const struct xnvme_dev *dev)
 {
+	if ((!dev->attempted_dev_idfy) && _dev_idfy((struct xnvme_dev *)dev)) {
+		XNVME_DEBUG("FAILED: open() : _dev_idfy()");
+	}
 	return dev->ident.csi;
 }
 
 const struct xnvme_ident *
 xnvme_dev_get_ident(const struct xnvme_dev *dev)
 {
+	if ((!dev->attempted_dev_idfy) && _dev_idfy((struct xnvme_dev *)dev)) {
+		XNVME_DEBUG("FAILED: open() : _dev_idfy()");
+	}
 	return &dev->ident;
 }
 
@@ -526,14 +554,6 @@ xnvme_dev_open(const char *dev_uri, struct xnvme_opts *opts)
 		XNVME_DEBUG("FAILED: failed opening uri: %s", dev_uri);
 		errno = -err;
 		free(dev);
-		return NULL;
-	}
-
-	err = xnvme_dev_derive_geo(dev);
-	if (err) {
-		errno = -err;
-		XNVME_DEBUG("FAILED: open() : xnvme_dev_derive_geo()");
-		xnvme_dev_close(dev);
 		return NULL;
 	}
 
