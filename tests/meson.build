@@ -7,6 +7,7 @@ tests_source = [
   'async_intf.c',
   'buf.c',
   'cli.c',
+  'copy.c',
   'enum.c',
   'lblk.c',
   'scc.c',
