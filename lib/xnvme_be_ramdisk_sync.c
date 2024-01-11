@@ -19,6 +19,8 @@ xnvme_be_ramdisk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_
 			     void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	struct xnvme_be_ramdisk_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_spec_nvm_scopy_fmt_zero *ranges = dbuf;
+	size_t sdlba_offset = 0;
 	const uint64_t ssw = ctx->dev->geo.ssw;
 	char *offset = state->ramdisk;
 
@@ -42,6 +44,17 @@ xnvme_be_ramdisk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_
 
 	case XNVME_SPEC_FS_OPC_READ:
 		memcpy(dbuf, offset + ctx->cmd.nvm.slba, dbuf_nbytes);
+		break;
+
+	case XNVME_SPEC_NVM_OPC_SCOPY:
+
+		for (int i = 0; i <= ctx->cmd.scopy.nr; i++) {
+			char *dest = offset + sdlba_offset + (ctx->cmd.scopy.sdlba << ssw);
+			char *src = offset + (ranges[i].slba << ssw);
+			size_t nbytes = (ranges[i].nlb + 1) * ctx->dev->geo.lba_nbytes;
+			memcpy(dest, src, nbytes);
+			sdlba_offset += nbytes;
+		}
 		break;
 
 	case XNVME_SPEC_NVM_OPC_FLUSH:

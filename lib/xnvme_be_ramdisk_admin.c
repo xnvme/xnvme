@@ -57,9 +57,11 @@ static int
 _idfy_ctrlr(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 {
 	struct xnvme_spec_idfy_ctrlr *ctrlr = dbuf;
-
+	struct xnvme_spec_nvm_idfy_ctrlr *nvm_ctrlr = dbuf;
 	ctrlr->mdts = 0;
+	ctrlr->oncs.copy = 1;
 
+	nvm_ctrlr->ocfs.copy_fmt0 = 1;
 	return 0;
 }
 
@@ -85,6 +87,10 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 	ns->lbaf[0].ms = 0;
 	ns->lbaf[0].ds = XNVME_ILOG2(lba_size);
 	ns->lbaf[0].rp = 0;
+
+	ns->mcl = 128;
+	ns->mssrl = 128;
+	ns->msrc = 127;
 
 	return 0;
 }
