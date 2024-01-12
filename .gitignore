@@ -37,6 +37,8 @@ build-win/
 build-win-tmp/
 out/
 .vs/
+.vscode/
+.gdb_history
 *.exe
 *.lib
 *.vcxproj.*
