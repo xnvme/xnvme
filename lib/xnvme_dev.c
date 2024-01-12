@@ -17,25 +17,17 @@ _zoned_geometry(struct xnvme_dev *dev)
 	struct xnvme_spec_znd_idfy_ns *zns = (void *)xnvme_dev_get_ns_css(dev);
 	struct xnvme_spec_znd_idfy_lbafe *lbafe = &zns->lbafe[nvm->flbas.format];
 	struct xnvme_geo *geo = &dev->geo;
-	uint64_t nzones;
-	int err;
 
 	if (!zns->lbafe[0].zsze) {
 		XNVME_DEBUG("FAILED: !zns.lbafe[0].zsze");
 		return -EINVAL;
 	}
 
-	err = xnvme_znd_stat(dev, XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL, &nzones);
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_znd_mgmt_recv()");
-		return err;
-	}
-
 	geo->type = XNVME_GEO_ZONED;
 
 	geo->npugrp = 1;
 	geo->npunit = 1;
-	geo->nzone = nzones;
+	geo->nzone = nvm->nsze / lbafe->zsze;
 	geo->nsect = lbafe->zsze;
 
 	geo->nbytes = 2 << (lbaf->ds - 1);
