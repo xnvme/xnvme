@@ -50,6 +50,7 @@ endef
 .PHONY: deps
 deps:
 	@pipx install cijoe --include-deps
+	@pipx inject cijoe numpy
 
 define install-help
 # install for current user
