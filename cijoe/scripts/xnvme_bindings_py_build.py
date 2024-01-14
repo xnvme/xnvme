@@ -30,6 +30,7 @@ def main(args, cijoe, step):
         "make uninstall",
         "make clean",
         "make build",
+        "make deps",
         "make install",
         "make test",
     ]
