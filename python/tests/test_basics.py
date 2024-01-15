@@ -70,10 +70,11 @@ def test_ident(cijoe, device, be_opts, cli_args):
 
     dev = xnvme.xnvme_dev_open(char_pointer_cast(device["uri"]), byref(opts))
     assert dev, xnvme.xnvme_dev_pr(dev, xnvme.XNVME_PR_DEF)
-    xnvme.xnvme_dev_close(dev)
 
     ident = xnvme.xnvme_dev_get_ident(dev)
     assert ident.contents.nsid == device["nsid"]
+
+    xnvme.xnvme_dev_close(dev)
 
 
 @xnvme_parametrize(labels=["dev"], opts=["be"])
