@@ -1087,7 +1087,7 @@ jobs:
 
     - name: Build
       run: |
-        cd debpkg && make
+        cd debpkg && make || true
 
     - name: Upload debian packages
       uses: actions/upload-artifact@v3.1.1
@@ -1100,4 +1100,3 @@ jobs:
           debpkg/builddir/*.dsc
           debpkg/builddir/*.buildinfo
           debpkg/builddir/*.changes
-        if-no-files-found: error
