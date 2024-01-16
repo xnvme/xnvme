@@ -30,6 +30,12 @@ xnvme_queue_term(struct xnvme_queue *queue)
 	return err;
 }
 
+static void
+callback_noop(struct xnvme_cmd_ctx *XNVME_UNUSED(ctx), void *XNVME_UNUSED(cb_arg))
+{
+	return;
+}
+
 int
 xnvme_queue_init(struct xnvme_dev *dev, uint16_t capacity, int opts, struct xnvme_queue **queue)
 {
@@ -60,7 +66,7 @@ xnvme_queue_init(struct xnvme_dev *dev, uint16_t capacity, int opts, struct xnvm
 	for (uint32_t i = 0; i <= (*queue)->base.capacity; ++i) {
 		(*queue)->pool_storage[i].dev = dev;
 		(*queue)->pool_storage[i].async.queue = *queue;
-		(*queue)->pool_storage[i].async.cb = NULL;
+		(*queue)->pool_storage[i].async.cb = callback_noop;
 		(*queue)->pool_storage[i].async.cb_arg = NULL;
 		(*queue)->pool_storage[i].opts = XNVME_CMD_ASYNC;
 
