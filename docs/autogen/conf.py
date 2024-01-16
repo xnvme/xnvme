@@ -11,6 +11,7 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.imgmath",
     #    'sphinxcontrib.bibtex',
+    "sphinxcontrib.jquery",
     "breathe",
 ]
 
@@ -30,8 +31,9 @@ if not on_rtd:
     import sphinx_rtd_theme
 
     html_theme = "sphinx_rtd_theme"
-    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+    html_theme_path = [sphinx_rtd_theme.get_html_theme_path(), '_themes']
 
+print(f"ON_RTD: {on_rtd} : {html_theme_path}")
 html_theme_options = {"analytics_id": "UA-159785887-1"}
 html_static_path = [os.path.join("..", "_static")]
 
