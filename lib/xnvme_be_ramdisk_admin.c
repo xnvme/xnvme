@@ -60,6 +60,7 @@ _idfy_ctrlr(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 	struct xnvme_spec_nvm_idfy_ctrlr *nvm_ctrlr = dbuf;
 	ctrlr->mdts = 0;
 	ctrlr->oncs.copy = 1;
+	ctrlr->oncs.write_zeroes = 1;
 
 	nvm_ctrlr->ocfs.copy_fmt0 = 1;
 	return 0;
