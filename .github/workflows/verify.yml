@@ -152,7 +152,7 @@ jobs:
         rm xnvme-src.tar.gz
 
     - name: Build xNVMe
-      run: make
+      run: make common
 
     - name: Install xNVMe
       run: make install

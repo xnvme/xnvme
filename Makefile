@@ -69,16 +69,20 @@ PROJECT_VER = $$( python3 $(TOOLBOX_DIR)/xnvme_ver.py --path meson.build )
 ALLOW_DIRTY ?= 0
 
 define default-help
-# invoke: 'make info', 'make tags', 'make git-setup', 'make config' and 'make build'
-#
-# The default behavior when invoking 'make', that is, dump out info relevant to the system,
-# generate ctags, setup git-hoooks, configure the meson-build and start compiling
+# invoke: 'make help'
 endef
 .PHONY: default
-default: info tags git-setup
-	@echo "## xNVMe: make default"
-	@if [ ! -d "$(BUILD_DIR)" ]; then $(MAKE) config; fi;
-	$(MAKE) build
+default: help
+
+define common-help
+# invokes: make info git-setup clean config build tags
+#
+# The common behavior when invoking 'make', that is, dump out info relevant to
+# the system, generate ctags, setup git-hoooks, configure the meson-build and
+# start compiling
+endef
+.PHONY: common
+common: info tags git-setup clean config build
 
 define config-help
 # Configure Meson
