@@ -4,7 +4,7 @@ SOURCE_DIR?=../../
 CONFIG_DIR?=./
 DOCS_DIR?=../
 
-VENV_NAME = venv
+VENV_NAME = .venv
 VENV = . ${VENV_NAME}/bin/activate && 
 PYTHON = ${VENV} python3
 
@@ -12,10 +12,12 @@ default: docs docs-view-html
 
 .PHONY: deps
 deps:
-	python3 -m venv venv
-# The PYTHONPATH is needed such that we can call the 'xnvme_ver.py' script
+#	python3 -m venv $(VENV_NAME)
+	pipx install poetry
+	poetry install --no-root
 	echo "export PYTHONPATH=${PYTHONPATH}:${PWD}/$(SOURCE_DIR)/toolbox" >> ${VENV_NAME}/bin/activate
-	${PYTHON} -m pip install -r requirements.txt
+
+# The PYTHONPATH is needed such that we can call the 'xnvme_ver.py' script
 
 .PHONY: clean
 clean:
