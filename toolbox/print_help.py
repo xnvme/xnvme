@@ -85,6 +85,10 @@ def print_help(args):
                 f"  make help-verbose  {SEP} Verbose target descriptions",
                 f"  make [target]      {SEP} Invoke the given 'target'",
                 " ",
+                "Example:",
+                " ",
+                "  make common && sudo make install",
+                " ",
                 "Targets:",
                 " ",
             ]

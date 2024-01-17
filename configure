@@ -8,19 +8,21 @@ trap 'echo -e "\n\nThis is not a configure-script\n\n" >&2' ERR
 
 echo ""
 cat << EOF
-===================================================================================================
-                        ---==={[ This is NOT a configure-script ]}=--
-===================================================================================================
+================================================================================
+                 ---==={[ This is NOT a configure-script ]}=--
+================================================================================
 
- This file is just here for the those with the habit of grabbing the project sources and running:
+ This file is just here for the those with the habit of grabbing a projects
+ sources and running:
 
- ./configure
- make
- make install
+  ./configure
+  make
+  make install
 
- If you are reading this, then you are one of those people, so this is here to inform you that
- xNVMe has switched build-system to meson. Documentation on building xNVMe and getting-started is
- available in the online docs and in the repository:
+ If you are reading this, then you are one of those people, so this is here
+ to inform you that xNVMe has switched build-system to meson. Documentation on
+ building xNVMe and getting-started is available in the online docs and in the
+ repository:
 
  * https://xnvme.io/docs/latest/getting_started/index.html
  * docs/getting_started/index.rst
@@ -29,20 +31,21 @@ cat << EOF
 
  * https://mesonbuild.com/Commands.html#setup
 
- However, even though the build-system is now meson, then a 'Makefile' is still here, it is mostly
- useful for xNVMe developers as it has a bunch of recipies for various invocations of the
- helper-scripts provided in "toolbox/" as well as short-hands for invoking meson.
+ However, even though the build-system is now meson, then a 'Makefile' is still
+ here, it is mostly useful for xNVMe developers as it has a bunch of recipies
+ for various invocations of the helper-scripts provided in "toolbox/" as well as
+ short-hands for invoking meson. Have a look at:
 
- But since you might already have invoked this script, then we will just go ahead and check the
- meson-version and do a default build-configuration.
+  make help
+  make help-verbose
 
-===================================================================================================
-                        ---==={[ This is NOT a configure-script ]}=--
-===================================================================================================
+ for more information.
+
+================================================================================
+                 ---==={[ This is NOT a configure-script ]}=--
+================================================================================
 EOF
 
 meson --version || (printf "\n** Please install 'meson' **\n" && exit 1)
-
-meson setup builddir
 
 exit 0
