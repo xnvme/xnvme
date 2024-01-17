@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "autogen"
+version = "0.7.3"
+description = ""
+authors = ["Morten B. Rasmussen <m.rasmussen@samsung.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+sphinx = "^7.2.6"
+sphinx-rtd-theme = "^2.0.0"
+sphinxcontrib-bibtex = "^2.6.2"
+kmdo = "1.0.6"
+jinja2 = "3.0.3"
+docutils = "0.20.1"
+breathe = "^4.35.0"
+sphinxcontrib-jquery = "^4.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
