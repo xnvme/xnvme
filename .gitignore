@@ -25,6 +25,7 @@ build
 builddir
 docs/build
 docs/autogen/enumerate_example
+docs/autogen/html
 docs/tutorial/dynamic_loading/enumerate_example
 compile_commands.json
 cscope.out
