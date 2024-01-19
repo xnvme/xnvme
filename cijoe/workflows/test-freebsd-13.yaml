@@ -4,12 +4,12 @@ doc: |
 
 steps:
 - name: sysinfo
-  uses: xnvme_freebsd_sysinfo
+  uses: freebsd_sysinfo
 
 - name: kldconfig
   uses: xnvme_kldconfig
   with:
-    xnvme_source: '/tmp/xnvme_source'
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
 
 - name: test
   uses: core.testrunner

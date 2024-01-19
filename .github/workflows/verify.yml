@@ -359,7 +359,7 @@ jobs:
     - name: CIJOE, setup pipx environment
       if: (!contains('focal', matrix.container.ver))
       run: |
-        pushd cijoe && make all && popd
+        make cijoe
 
     - name: CIJOE, check that it is available
       if: (!contains('focal', matrix.container.ver))
@@ -377,16 +377,22 @@ jobs:
     #
     # Skipping on distros with too old gcc/clang to build fio, and too old a Python to run cijoe (requires 3.9)
     #
-    - name: Install fio
+    - name: CIJOE, install fio
       if: (!contains('focal', matrix.container.ver))
       run: |
-        cd /tmp
-        git clone https://github.com/axboe/fio.git
-        cd fio
-        git checkout fio-3.35
-        ./configure --prefix=/opt/fio
-        make -j $(nproc)
-        make install
+        cd cijoe && cijoe \
+        --config "configs/ramdisk.toml" \
+        --workflow "workflows/provision-using-tgz.yaml" \
+        --output "prep-fio-${{ matrix.container.os }}-${{ matrix.container.ver }}" \
+        fio_prep
+
+    - name: CIJOE, upload prep-fio
+      if: always() && (!contains('focal', matrix.container.ver))
+      uses: actions/upload-artifact@v3.1.1
+      with:
+        name: prep-fio-${{ matrix.container.os }}-${{ matrix.container.ver }}
+        path: cijoe/prep-fio-${{ matrix.container.os }}-${{ matrix.container.ver }}/*
+        if-no-files-found: error
 
     - name: CIJOE, run test-ramdisk.yaml
       if: (!contains('focal', matrix.container.ver))
@@ -484,7 +490,7 @@ jobs:
     # Setup Python virtual-environment for cijoe and Python xNVMe bindings to run ramdisk testing
     - name: CIJOE, setup pipx environment
       run: |
-        pushd cijoe && make all && popd
+        make cijoe
 
     - name: CIJOE, check that it is available
       run: |
@@ -500,12 +506,11 @@ jobs:
     #
     - name: Install fio
       run: |
-        cd /tmp
-        git clone https://github.com/axboe/fio.git
-        cd fio
-        git checkout fio-3.35
-        ./configure
-        gmake -j
+        git clone https://github.com/axboe/fio.git /tmp/fio
+        cd /tmp/fio
+        git checkout fio-3.36
+        git rev-parse --short HEAD
+        gmake
 
     - name: CIJOE, run test-ramdisk.yaml
       run: |
@@ -521,7 +526,6 @@ jobs:
         name: test-ramdisk-${{ matrix.runner.os }}-${{ matrix.runner.ver }}
         path: cijoe/test-${{ matrix.runner.os }}-${{ matrix.runner.ver }}/*
         if-no-files-found: error
-
 
   #
   # Build on Windows
@@ -664,7 +668,7 @@ jobs:
 
     - name: CIJOE, setup pipx environment
       run: |
-        pushd cijoe && make all && popd
+        make cijoe
 
     - name: CIJOE, check that it is available
       run: |
@@ -672,11 +676,11 @@ jobs:
 
     # cd'ing into 'cijoe' to auto-collect the non-packaged github-specific configs and
     # workflows.
-    - name: CIJOE, run provision.yaml
+    - name: CIJOE, run provision-using-tgz.yaml
       run: |
         cd cijoe && cijoe \
         --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
-        --workflow "workflows/provision.yaml" \
+        --workflow "workflows/provision-using-tgz.yaml" \
         --output "provision-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
     - name: CIJOE, run test.yaml
@@ -759,7 +763,7 @@ jobs:
 
     - name: CIJOE, setup pipx environment
       run: |
-        pushd cijoe && make all && popd
+        make cijoe
 
     - name: CIJOE, run bench
       run: |
@@ -866,7 +870,7 @@ jobs:
 
     - name: CIJOE, setup pipx environment
       run: |
-        pushd cijoe && make all && popd
+        make cijoe
 
     - name: CIJOE, check that it is available
       run: |
@@ -874,7 +878,14 @@ jobs:
 
     # cd'ing into 'cijoe' to auto-collect the non-packaged github-specific configs and
     # workflows.
-    - name: Provision and generate documentation
+    - name: CIJOE, run provision-using-tgz.yaml
+      run: |
+        cd cijoe && cijoe \
+        --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
+        --workflow "workflows/provision-using-tgz.yaml" \
+        --output "provision-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
+
+    - name: CIJOE, generate documentation
       run: |
         cd cijoe && cijoe \
         --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \

@@ -37,7 +37,7 @@ steps:
   uses: xnvme_install
 
 - name: fio
-  uses: fio_build
+  uses: fio_prep
 
 - name: spdk
   uses: spdk_build_modded
@@ -54,8 +54,8 @@ steps:
 
 # This is needed whenever io_uring and io_uring_cmd is used, hmm, bdevperf will
 # probably need something special here...
-- name: linux_nvme
-  uses: linux_prepare_nvme
+- name: linux_nvme_prep
+  uses: linux_nvme_prep
 
 - name: bench
   uses: bdevperf

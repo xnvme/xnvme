@@ -26,7 +26,14 @@ def main(args, cijoe, step):
         step.get("with", {}).get("xnvme_source", conf["repository"]["path"])
     )
 
-    commands = [
+    commands = []
+
+    err, _ = cijoe.run("apt-get --version")
+    if not err:
+        commands += ["apt-get install libclang-dev -qy"]
+
+    commands += [
+        "pipx ensurepath",
         "make uninstall",
         "make clean",
         "make build",

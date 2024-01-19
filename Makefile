@@ -69,13 +69,13 @@ PROJECT_VER = $$( python3 $(TOOLBOX_DIR)/xnvme_ver.py --path meson.build )
 ALLOW_DIRTY ?= 0
 
 define default-help
-# invoke: 'make help'
+# Invoke: 'make help'
 endef
 .PHONY: default
 default: help
 
 define common-help
-# invokes: make info git-setup clean config build tags
+# Invokes: make info git-setup clean config build tags
 #
 # The common behavior when invoking 'make', that is, dump out info relevant to
 # the system, generate ctags, setup git-hoooks, configure the meson-build and
@@ -117,7 +117,7 @@ config-slim:
 	@echo "## xNVMe: make config-slim [DONE]"
 
 define docker-help
-# drop into a docker instance with the repository bind-mounted at /tmp/xnvme
+# Drop into a docker instance with the repository bind-mounted at /tmp/xnvme
 endef
 .PHONY: docker
 docker:
@@ -126,13 +126,226 @@ docker:
 	@echo "## xNVME: docker [DONE]"
 
 define docker-privileged-help
-# drop into a privileged docker instance with the repository bind-mounted at /tmp/xnvme
+# Drop into a privileged docker instance with the repository bind-mounted at /tmp/xnvme
 endef
 .PHONY: docker-privileged
 docker-privileged:
 	@echo "## xNVMe: docker-privileged"
 	@docker run -it --privileged -w /tmp/xnvme --mount type=bind,source="$(shell pwd)",target=/tmp/xnvme ghcr.io/xnvme/xnvme-qemu:latest bash
 	@echo "## xNVME: docker-privileged [DONE]"
+
+define cijoe-help
+# Setup a CIJOE environment for Linux development, documentation, and testing
+endef
+.PHONY: cijoe
+cijoe:
+	@echo "## xNVMe: cijoe"
+	@pipx install cijoe==v0.9.29 --include-deps
+	@pipx inject cijoe cijoe-pkg-qemu==v6.1.15
+	@pipx inject cijoe cijoe-pkg-linux==v0.9.7
+	@pipx inject cijoe cijoe-pkg-fio==v0.9.7
+	@pipx inject cijoe matplotlib
+	@pipx inject cijoe numpy
+	@pipx install rst2pdf
+	@mkdir -p ~/.config/cijoe
+	@[ -e ~/.config/cijoe/cijoe-config.toml ] || cp cijoe/configs/debian-bullseye.toml ~/.config/cijoe/cijoe-config.toml
+	@echo ""
+	@echo ""
+	@echo "                     !!!! READ THIS !!!!"
+	@echo ""
+	@echo ""
+	@echo " --={[ Edit the config at ~/.config/cijoe/cijoe-config.toml ]}=-- "
+	@echo ""
+	@echo ""
+	@echo "                     !!!! READ THIS !!!!"
+	@echo ""
+	@echo ""
+	@echo "## xNVME: cijoe [DONE]"
+
+define cijoe-guest-setup-xnvme-using-tgz-help
+# Create and start a qemu-guest, then setup xNVMe within the guest using tgz
+endef
+.PHONY: cijoe-guest-setup-xnvme-using-tgz
+cijoe-guest-setup-xnvme-using-tgz:
+	@echo "## xNVMe: cijoe-guest-setup-xnvme-using-tgz"
+	@cd cijoe && cijoe -w workflows/provision-using-tgz.yaml -l
+	@echo "## xNVME: cijoe-guest-setup-xnvme-using-tgz [DONE]"
+
+define cijoe-guest-setup-xnvme-using-git-help
+# Create and start a qemu-guest, then setup xNVMe within the guest using git
+endef
+.PHONY: cijoe-guest-setup-xnvme-using-git
+cijoe-guest-setup-xnvme-using-git:
+	@echo "## xNVMe: cijoe-guest-setup-xnvme-using-git"
+	@cd cijoe && cijoe -w workflows/provision-using-git.yaml -l
+	@echo "## xNVME: cijoe-guest-setup-xnvme-using-git [DONE]"
+
+define cijoe-guest-setup-blank-help
+# Create and start a qemu-guest
+endef
+.PHONY: cijoe-guest-setup-blank
+cijoe-guest-setup-blank:
+	@echo "## xNVMe: cijoe-guest-setup-blank"
+	@cd cijoe && cijoe -w workflows/provision-using-git.yaml -l \
+		guest_kill \
+		guest_init \
+		guest_start \
+		guest_check
+	@echo "## xNVME: cijoe-guest-setup-blank [DONE]"
+
+define cijoe-guest-start-help
+# Start the qemu-guest -- assumes a qemu-guest has been setup
+endef
+.PHONY: cijoe-guest-start
+cijoe-guest-start:
+	@echo "## xNVMe: cijoe-guest-start"
+	@cd cijoe && cijoe -w workflows/provision-using-git.yaml -l \
+		guest_start \
+		guest_check
+	@echo "## xNVMe: cijoe-guest-start [DONE]"
+
+define cijoe-guest-stop-help
+# Stop the qemu-guest -- assumes a qemu-guest has been setup
+endef
+.PHONY: cijoe-guest-stop
+cijoe-guest-stop:
+	@echo "## xNVMe: cijoe-guest-stop"
+	@cd cijoe && cijoe -w workflows/provision-using-git.yaml -l \
+		guest_kill
+	@echo "## xNVMe: cijoe-guest-stop [DONE]"
+
+define cijoe-setup-xnvme-using-git-help
+# Synchronize xNVMe source using git, then setup xNVMe
+endef
+.PHONY: cijoe-setup-xnvme-using-git
+cijoe-setup-xnvme-using-git:
+	@echo "## xNVMe: cijoe-setup-xnvme-using-git"
+	@cd cijoe && cijoe -w workflows/provision-using-git.yaml -l \
+		xnvme_source_sync \
+		xnvme_build_prep \
+		xnvme_build \
+		xnvme_install \
+		xnvme_aux_prep \
+		xnvme_bindings_py_build \
+		fio_prep
+	@echo "## xNVME: cijoe-setup-xnvme-using-git [DONE]"
+	
+define cijoe-setup-xnvme-using-tgz-help
+# Synchronize xNVMe source using tgz, then setup xNVMe
+endef
+.PHONY: cijoe-setup-xnvme-using-tgz
+cijoe-setup-xnvme-using-tgz:
+	@echo "## xNVMe: cijoe-setup-xnvme-using-tgz"
+	@cd cijoe && cijoe -w workflows/provision-using-tgz.yaml -l \
+		xnvme_source_sync \
+		xnvme_build_prep \
+		xnvme_build \
+		xnvme_install \
+		xnvme_aux_prep \
+		xnvme_bindings_py_install_tgz \
+		fio_prep
+	@echo "## xNVME: cijoe-setup-xnvme-using-tgz [DONE]"
+
+define cijoe-sync-git-help
+# Synchronize xNVMe source using git
+endef
+.PHONY: cijoe-sync-git
+cijoe-sync-git:
+	@echo "## xNVMe: cijoe-sync-git"
+	@cd cijoe && cijoe -w workflows/provision-using-git.yaml -l \
+		xnvme_source_sync
+	@echo "## xNVME: cijoe-sync-git [DONE]"
+
+define cijoe-sync-tgz-help
+# Synchronize xNVMe source using tgz
+endef
+.PHONY: cijoe-sync-tgz
+cijoe-sync-tgz:
+	@echo "## xNVMe: cijoe-sync-tgz"
+	@cd cijoe && cijoe -w workflows/provision-using-tgz.yaml -l \
+		xnvme_source_sync
+	@echo "## xNVME: cijoe-sync-tgz [DONE]"
+
+define cijoe-do-docgen-help
+# Generate documentation with command execution / output generation
+endef
+.PHONY: cijoe-do-docgen
+cijoe-do-docgen:
+	@echo "## xNVMe: cijoe-do-docgen"
+	@cd cijoe && cijoe -w workflows/docgen.yaml -l
+	@echo "## xNVME: cijoe-do-docgen [DONE]"
+
+define cijoe-do-selftest-help
+# Run the cijoe selftest, this is useful after setting up cijoe
+endef
+.PHONY: cijoe-do-selftest
+cijoe-do-selftest:
+	@echo "## xNVMe: cijoe-do-selftest"
+	@cd cijoe && pytest tests/selftest --config configs/default-config.toml
+	@echo "## xNVME: cijoe-do-selftest [DONE]"
+
+define cijoe-do-test-linux-help
+# Run the testsuite for Linux -- assumes a provisioned qemu-guest
+endef
+.PHONY: cijoe-do-test-linux
+cijoe-do-test-linux:
+	@echo "## xNVMe: cijoe-do-test-linux"
+	@cd cijoe && cijoe -w workflows/test-debian-bullseye.yaml -l 
+	@echo "## xNVME: cijoe-do-test-linux [DONE]"
+
+define cijoe-do-test-freebsd-help
+# Run the testsuite for FreeBSD -- assumes a provisioned qemu-guest
+endef
+.PHONY: cijoe-do-test-freebsd
+cijoe-do-test-freebsd:
+	@echo "## xNVMe: cijoe-do-test-freebsd"
+	@cd cijoe && cijoe -w workflows/test-freebsd-13.yaml -l 
+	@echo "## xNVME: cijoe-do-test-freebsd [DONE]"
+
+define cijoe-do-benchmark-scale-help
+# Run the scalability benchmark
+endef
+.PHONY: cijoe-do-benchmark-scale
+cijoe-do-benchmark-scale:
+	@echo "## xNVMe: cijoe-do-benchmark-scale"
+	@cd cijoe && cijoe -w workflows/bench.yaml -l
+	@echo "## xNVME: cijoe-do-benchmark-scale [DONE]"
+
+define cijoe-do-bootimage-debian-bullseye-amd64-help
+# Create a Debian Linux - amd64 - bootable system image for a qemu-guest
+endef
+.PHONY: cijoe-do-bootimage-debian-bullseye-amd64
+cijoe-do-bootimage-debian-bullseye-amd64:
+	@echo "## xNVMe: cijoe-do-bootimage-debian-bullseye-amd64"
+	@cd cijoe && cijoe -w workflows/bootimg-debian-bullseye-amd64.yaml -l
+	@echo "## xNVME: cijoe-do-bootimage-debian-bullseye-amd64 [DONE]"
+
+define cijoe-do-bootimage-freebsd-amd64-help
+# Create a FreeBSD - amd64 - bootable system image for a qemu-guest
+endef
+.PHONY: cijoe-do-bootimage-freebsd-amd64
+cijoe-do-bootimage-freebsd-amd64:
+	@echo "## xNVMe: cijoe-do-bootimage-freebsd-amd64"
+	@cd cijoe && cijoe -w workflows/bootimg-freebsd-13-amd64.yaml -l
+	@echo "## xNVME: cijoe-do-bootimage-freebsd-amd64 [DONE]"
+
+define cijoe-do-linux-kdebs-help
+# Build a custom Linux kernel as installable packages (.deb)
+endef
+.PHONY: cijoe-do-linux-kdebs
+cijoe-do-linux-kdebs:
+	@echo "## xNVMe: cijoe-do-linux-kdebs"
+	@cd cijoe && cijoe -w workflows/build-kdebs.yaml -l
+	@echo "## xNVME: cijoe-do-linux-kdebs [DONE]"
+
+define cijoe-report-help
+# Produce a report for the latest cijoe state (cijoe/cijoe-output)
+endef
+.PHONY: cijoe-report
+cijoe-report:
+	@echo "## xNVMe: cijoe-report"
+	@cd cijoe && cijoe -p
+	@echo "## xNVME: cijoe-report [DONE]"
 
 define git-setup-help
 # Do git config for: 'core.hooksPath' and 'blame.ignoreRevsFile'
@@ -145,7 +358,7 @@ git-setup:
 	@echo "## xNVMe: git-setup [DONE]"
 
 define format-help
-# run code format (style, code-conventions and language-integrity) on staged changes
+# Run code format (style, code-conventions and language-integrity) on staged changes
 endef
 .PHONY: format
 format:
@@ -154,7 +367,7 @@ format:
 	@echo "## xNVME: format [DONE]"
 
 define format-all-help
-# run code format (style, code-conventions and language-integrity) on staged and committed changes
+# Run code format (style, code-conventions and language-integrity) on staged and committed changes
 endef
 .PHONY: format-all
 format-all:
@@ -434,7 +647,7 @@ _require_builddir:
 	fi
 
 define clobber-help
-# invoke 'make clean' and: remove subproject builds, git-clean and git-checkout .
+# Invoke 'make clean' and: remove subproject builds, git-clean and git-checkout .
 #
 # This is intended as a way to clearing out the repository for any old "build-debris",
 # take care that you have stashed/commit any of your local changes as anything unstaged

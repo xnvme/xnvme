@@ -4,11 +4,8 @@ path = "{{ local.env.HOME }}/git/xnvme"
 
 [xnvme.repository.sync]
 branch = "wip"
-remote = "vm"
+remote = "guest"
 remote_path = "/root/git/xnvme"
-
-[xnvme.source]
-path = "/tmp/xnvme_source"
 
 [build.compiler]
 bin = "gcc"
@@ -20,15 +17,16 @@ labels = [ "dev", "bdev", "nvm", "ramdisk", "scc" ]
 driver_attachment = "kernel"
 
 [fio]
-bin = "/opt/fio/bin/fio"
+bin = "fio"
+
+# Uncomment this to configure the build of fio with --prefix
+#[fio.build]
+#prefix = "/opt/fio"
 
 [fio.repository]
-upstream = "https://github.com/axboe/fio.git"
+remote = "https://github.com/axboe/fio.git"
 path = "/root/git/fio"
-tag = "fio-3.34"
-
-[fio.build]
-prefix = "/opt/fio"
+tag = "fio-3.36"
 
 [fio.engines.libaio]
 type = "builtin"

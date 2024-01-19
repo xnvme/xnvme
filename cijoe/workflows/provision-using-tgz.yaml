@@ -1,0 +1,66 @@
+---
+doc: |
+  Provision a qemu guest with multiple NVMe controllers and namespaces
+
+  The operating system is defined by the bootable system-image in the cijoe
+  config-section qemu.guests.GUEST_NAME, specifically 
+  init_using_bootimage.url
+  init_using_bootimage.img
+
+  On "local" the folder "/tmp/artifacts", must contain
+
+  * xnvme-src.tar.gz
+  * xnvme-py-sdist.tar.gz
+
+  These will be transferred to the guest, and unpacked in "/tmp/xnvme_source",
+  then built and installed.
+
+steps:
+- name: guest_kill
+  uses: qemu.guest_kill
+
+- name: guest_init
+  uses: qemu.guest_init_using_bootimage
+
+- name: guest_start
+  uses: xnvme_guest_start_nvme
+
+- name: guest_check
+  run: |
+    hostname
+
+- name: xnvme_source_sync
+  uses: xnvme_source_from_tgz
+  with:
+    artifacts: '/tmp/artifacts'
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
+
+- name: xnvme_build_prep
+  uses: xnvme_build_prep
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
+
+- name: xnvme_build
+  uses: xnvme_build
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
+
+- name: xnvme_install
+  uses: xnvme_install
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
+
+- name: xnvme_aux_prep
+  uses: xnvme_aux_prep
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
+
+- name: xnvme_bindings_py_install_tgz
+  uses: xnvme_bindings_py_install_tgz
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
+
+- name: fio_prep
+  uses: fio_prep
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'

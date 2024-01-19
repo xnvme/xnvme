@@ -1,56 +1,10 @@
 ---
 doc: |
-  Initialize guest for documentation generation and then generate the documentation
-
-  * Build and install xNVMe from source
-  * Build and install xNVMe Python packages from source
-  * Prepare custom fio in /opt/custom_fio along with external engines
+  Generate documentation with example-commands executed
 
 steps:
-- name: kill
-  uses: qemu.guest_kill
-
-- name: initialize
-  uses: qemu.guest_init_using_bootimage
-
-- name: start
-  uses: xnvme_guest_start_nvme
-
-- name: sysinfo
-  uses: linux.sysinfo
-
-- name: gha_prepare_source
-  uses: gha_prepare_source
+- name: docgen
+  uses: xnvme_docgen
   with:
-    artifacts: '/tmp/artifacts'
-    xnvme_source: '{{ config.xnvme.source.path }}'
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
 
-- name: build_prep
-  uses: xnvme_build_prep
-  with:
-    xnvme_source: '{{ config.xnvme.source.path }}'
-
-- name: build
-  uses: xnvme_build
-  with:
-    xnvme_source: '{{ config.xnvme.source.path }}'
-
-- name: install
-  uses: xnvme_install
-  with:
-    xnvme_source: '{{ config.xnvme.source.path }}'
-
-- name: gha_prepare_aux
-  uses: gha_prepare_aux
-  with:
-    xnvme_source: '{{ config.xnvme.source.path }}'
-
-- name: gha_prepare_python
-  uses: gha_prepare_python
-  with:
-    xnvme_source: '{{ config.xnvme.source.path }}'
-
-- name: gha_docgen
-  uses: gha_docgen
-  with:
-    xnvme_source: '{{ config.xnvme.source.path }}'

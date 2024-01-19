@@ -165,7 +165,7 @@ def fabrics_setup(cijoe):
     if not xnvme_conf:
         return errno.EINVAL
 
-    xnvme_path = Path(xnvme_conf["source"]["path"])
+    xnvme_path = Path(xnvme_conf["repository"]["sync"]["remote_path"])
     rpc = xnvme_path / "subprojects" / "spdk" / "scripts" / "rpc.py"
     ip = "127.0.0.1"
     port = "4420"

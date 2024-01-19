@@ -30,7 +30,7 @@ import logging as log
 
 
 def main(args, cijoe, step):
-    """Transfer artifacts"""
+    """Setup cijoe pipx-env with numpy and xNVMe Python bindings injected"""
 
     osname = cijoe.config.options.get("os", {}).get("name", "")
     if osname not in ["debian"]:

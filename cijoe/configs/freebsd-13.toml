@@ -14,7 +14,7 @@ bin = "clang"
 
 # Used by: qemu.build.py
 [qemu.repository]
-upstream = "https://github.com/qemu/qemu.git"
+remote = "https://github.com/qemu/qemu.git"
 path = "{{ local.env.HOME }}/git/qemu"
 tag = "v8.0.0"
 
@@ -89,22 +89,20 @@ branch = "wip"
 remote = "vm"
 remote_path = "/root/git/xnvme"
 
-[xnvme.source]
-path = "/tmp/xnvme_source"
-
 [xnvme.build]
 type = "debug"
 
 [fio]
-bin = "/opt/fio/bin/fio"
+bin = "fio"
+
+# Uncomment this to configure the build of fio with --prefix
+#[fio.build]
+#prefix = "/opt/fio"
 
 [fio.repository]
-upstream = "https://github.com/axboe/fio.git"
+remote = "https://github.com/axboe/fio.git"
 path = "/root/git/fio"
-tag = "fio-3.34"
-
-[fio.build]
-prefix = "/opt/fio"
+tag = "fio-3.36"
 
 [fio.engines.libaio]
 type = "builtin"

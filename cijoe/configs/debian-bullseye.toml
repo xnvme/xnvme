@@ -13,7 +13,7 @@ version = "bullseye"
 bin = "gcc"
 
 [qemu.repository]
-upstream = "https://github.com/qemu/qemu.git"
+remote = "https://github.com/qemu/qemu.git"
 path = "{{ local.env.HOME }}/git/qemu"
 tag = "v7.1.0"
 
@@ -182,17 +182,14 @@ labels = [ "dev", "bdev", "nvm", "ramdisk", "write_zeroes" ]
 driver_attachment = "kernel"
 
 [xnvme.repository]
-upstream = "https://github.com/OpenMPDK/xNVMe.git"
+remote = "https://github.com/OpenMPDK/xNVMe.git"
 path = "{{ local.env.HOME }}/git/xnvme"
 
 # This is utilized by repository syncing during development.
 [xnvme.repository.sync]
 branch = "wip"
-remote = "vm"
+remote_alias = "guest"
 remote_path = "/root/git/xnvme"
-
-[xnvme.source]
-path = "/tmp/xnvme_source"
 
 [xnvme.build]
 type = "debug"
@@ -202,15 +199,16 @@ mount_point = "/mnt/huge"
 nr_hugepages = "128"
 
 [fio]
-bin = "/opt/fio/bin/fio"
+bin = "fio"
+
+# Uncomment this to configure the build of fio with --prefix
+#[fio.build]
+#prefix = "/opt/fio"
 
 [fio.repository]
-upstream = "https://github.com/axboe/fio.git"
+remote = "https://github.com/axboe/fio.git"
 path = "/root/git/fio"
-tag = "fio-3.34"
-
-[fio.build]
-prefix = "/opt/fio"
+tag = "fio-3.36"
 
 [fio.engines.libaio]
 type = "builtin"
