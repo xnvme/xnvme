@@ -801,7 +801,8 @@ jobs:
   docgen:
     needs: [source-archive-with-subprojects, source-format-check, build-python]
     runs-on: [self-hosted, linux, verify]
-    if: ((github.event_name == 'push') || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen')))
+    if: ((github.event_name == 'push') || (github.event_name == 'pull_request') || ((github.event_name == 'workflow_dispatch')
+      && (github.event.inputs.job == 'docgen')))
 
     strategy:
       fail-fast: false
@@ -875,6 +876,7 @@ jobs:
         --output "docgen-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
     - name: Checkout site
+      if: ((github.event_name == 'push') || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen')))
       uses: actions/checkout@v4
       with:
         repository: "xnvme/xnvme.github.io"
@@ -885,12 +887,14 @@ jobs:
         git config --global --add safe.directory $(pwd)/site
 
     - name: Add docgen to site
+      if: ((github.event_name == 'push') || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen')))
       run: |
         cp cijoe/docgen-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/artifacts/docs.tar.gz .
         tar xzf docs.tar.gz
         ./docs/autogen/dest.py --docs html --site site --ref "${{ github.ref }}"
 
     - name: Push site-changes
+      if: ((github.event_name == 'push') || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen')))
       run: |
         cd site
         git config --global user.name 'GitHUB Service'
