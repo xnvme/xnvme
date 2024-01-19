@@ -12,6 +12,7 @@ tests_source = [
   'lblk.c',
   'scc.c',
   'ioworker.c',
+  'metadata.c',
   'xnvme_file.c',
   'xnvme_cli.c',
   'znd_append.c',
