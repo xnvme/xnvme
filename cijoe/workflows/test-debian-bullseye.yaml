@@ -7,12 +7,12 @@ steps:
   uses: linux.sysinfo
 
 - name: hugetlbfs
-  uses: gha_prepare_hugetlbfs
+  uses: linux_setup_hugetlbfs
 
 - name: test_python
   uses: core.testrunner
   with:
-    args: '{{ config.xnvme.source.path }}/python/tests -k "not fabrics and not vfio"'
+    args: '{{ config.xnvme.repository.sync.remote_path }}/python/tests -k "not fabrics and not vfio"'
     run_local: false
 
 - name: test_ramdisk

@@ -251,7 +251,7 @@ deps:
 apps:
   fio:
     notes: The flexible I/O tester (fio), supports xNVMe when fio is built from source
-    ver: 3.33
+    ver: 3.36
     when: [running]
     names:
       src: [fio]

@@ -28,6 +28,10 @@ def main(args, cijoe, step):
     artifacts = step.get("with", {}).get("artifacts", "/tmp/artifacts")
     xnvme_source = step.get("with", {}).get("xnvme_source", "/tmp/xnvme_source")
 
+    _, _ = cijoe.run(
+        f'[ -d "{xnvme_source}" ] && mv "{xnvme_source}" "{xnvme_source}-$(date +%Y%m%d%H%M%S)" || true'
+    )
+
     err, _ = cijoe.run(f"mkdir -p {xnvme_source}")
     if err:
         return err
