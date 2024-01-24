@@ -1,0 +1,72 @@
+[transport.ssh]
+hostname = "perf-lat-linux.home.arpa"
+port = 22
+username = "root"
+
+[os]
+name = "debian"
+version = "bookworm"
+
+[liburing.repository]
+remote = "https://github.com/axboe/liburing.git"
+path = "/root/git/liburing"
+tag = "liburing-2.4"
+
+[xnvme.repository]
+remote = "https://github.com/OpenMPDK/xNVMe.git"
+path = "/root/git/xnvme"
+branch = "next"
+
+[xnvme.build]
+type = "debug"
+
+[spdk.repository]
+remote = "https://github.com/xnvme/spdk-for-ci.git"
+path = "/root/git/spdk"
+tag = "xnvme-next"
+
+[spdk.build]
+prefix = "/opt/spdk"
+
+[fio]
+bin = "/opt/fio/bin/fio"
+
+[fio.repository]
+remote = "https://github.com/axboe/fio.git"
+path = "/root/git/fio"
+tag = "fio-3.34"
+
+[fio.build]
+prefix = "/opt/fio"
+
+[fio.engines]
+libaio = {type = "builtin"}
+io_uring = {type = "builtin"}
+io_uring_cmd = {type = "builtin"}
+xnvme = {type = "builtin"}
+spdk_nvme = {type = "external_preload", path = "/root/git/spdk/build/fio/spdk_nvme"}
+spdk_bdev = {type = "external_preload", path = "/root/git/spdk/build/fio/spdk_bdev"}
+
+[[devices]]
+uri = "/dev/nvme0n1"
+nsid = 1
+labels = [ "dev", "bdev", "nvm"]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "/dev/ng0n1"
+nsid = 1
+labels = [ "dev", "cdev", "nvm"]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:03:00.0"
+nsid = 1
+labels = [ "dev", "pcie", "nvm"]
+driver_attachment = "userspace"
+
+[[duts]]
+pcie = "0000:03:00.0"
+os = "0n1"
+sn = "PHBT718003QR016D"
+label = "INTELM1016G"
