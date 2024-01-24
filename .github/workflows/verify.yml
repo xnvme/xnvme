@@ -120,9 +120,15 @@ jobs:
       run: |
         git config --global --add safe.directory $(pwd)
 
-    - uses: actions-rs/toolchain@v1
+    - name: Install curl
+      run: |
+        apt-get update -qy
+        apt-get install -qy curl
+
+    - uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: stable
+        components: clippy, rustfmt
 
     - name: Run pre-commit
       run: pre-commit run --all-files
