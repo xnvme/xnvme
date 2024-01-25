@@ -1,0 +1,4 @@
+---
+# Limits on plots, this is to ensure that different plots are visually comparable
+lineplot:
+  y_lim: [0, 400000]
