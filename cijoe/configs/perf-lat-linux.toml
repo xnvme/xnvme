@@ -2,6 +2,7 @@
 hostname = "perf-lat-linux.home.arpa"
 port = 22
 username = "root"
+password = "root"
 
 [os]
 name = "debian"
@@ -34,32 +35,46 @@ bin = "/opt/fio/bin/fio"
 [fio.repository]
 remote = "https://github.com/axboe/fio.git"
 path = "/root/git/fio"
-tag = "fio-3.34"
+tag = "fio-3.36"
 
 [fio.build]
 prefix = "/opt/fio"
 
 [fio.engines]
-libaio = {type = "builtin"}
-io_uring = {type = "builtin"}
-io_uring_cmd = {type = "builtin"}
-xnvme = {type = "builtin"}
-spdk_nvme = {type = "external_preload", path = "/root/git/spdk/build/fio/spdk_nvme"}
-spdk_bdev = {type = "external_preload", path = "/root/git/spdk/build/fio/spdk_bdev"}
+libaio = {type = "builtin", device="bdev"} # Kernel
+posixaio = {type = "builtin", device="bdev"} # Userspace
 
-[[devices]]
+io_uring = {type = "builtin", device="bdev"} # Kernel
+io_uring_cmd = {type = "builtin", device = "cdev"} # Kernel
+
+null = {type = "builtin", device="bdev"}
+
+spdk_nvme = {type = "external_preload", path = "/root/git/spdk/build/fio/spdk_nvme", fio_path="/opt/spdk_fio/bin/fio", device="pcie"} # Userspace
+spdk_bdev = {type = "external_preload", path = "/root/git/spdk/build/fio/spdk_bdev", fio_path="/opt/spdk_fio/bin/fio", device="pcie"} # Userspace
+
+xnvme_libaio = {type = "builtin", be = "libaio", device="pcie"} # Userspace
+xnvme_posixaio = {type = "builtin", be = "posix", device = "bdev"} # Userspace
+xnvme_io_uring = {type = "builtin", be = "io_uring", device = "bdev"} # Userspace
+xnvme_io_uring_cmd = {type = "builtin", be = "io_uring_cmd", device="pcie"} # Userspace
+xnvme_spdk = {type = "builtin", be = "spdk", device="pcie"} # Userspace
+xnvme_null = {type = "builtin", be = "nil", device="bdev"} # Userspace
+
+[[devices]] # IO Uring/ libaio/ posixaio
+key = "bdev"
 uri = "/dev/nvme0n1"
 nsid = 1
 labels = [ "dev", "bdev", "nvm"]
 driver_attachment = "kernel"
 
-[[devices]]
+[[devices]] # IO_Uring_cmd
+key = "cdev"
 uri = "/dev/ng0n1"
 nsid = 1
 labels = [ "dev", "cdev", "nvm"]
 driver_attachment = "kernel"
 
-[[devices]]
+[[devices]] # SPDK libvfn
+key = "pcie"
 uri = "0000:03:00.0"
 nsid = 1
 labels = [ "dev", "pcie", "nvm"]

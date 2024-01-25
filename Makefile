@@ -321,6 +321,16 @@ cijoe-do-benchmark-scale:
 	@cd cijoe && cijoe -w workflows/bench.yaml -l
 	@echo "## xNVME: cijoe-do-benchmark-scale [DONE]"
 
+define cijoe-do-benchmark-latency-help
+# Run the latency benchmark
+endef
+.PHONY: cijoe-do-benchmark-latency
+cijoe-do-benchmark-latency:
+	@echo "## xNVMe: cijoe-do-benchmark-latency"
+	@cd cijoe && cijoe -w workflows/benchmark_latency.yaml -l
+	@echo "## xNVME: cijoe-do-benchmark-latency [DONE]"
+
+
 define cijoe-do-bootimage-debian-bullseye-amd64-help
 # Create a Debian Linux - amd64 - bootable system image for a qemu-guest
 endef
