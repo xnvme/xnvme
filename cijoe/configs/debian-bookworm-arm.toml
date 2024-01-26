@@ -234,6 +234,6 @@ path = "/opt/aux/spdk_bdev"
 type = "external_preload"
 
 [linux.repository]
-remote = "https://github.com/linux/linux.git"
+remote = "https://github.com/torvalds/linux.git"
 path = "{{ local.env.HOME }}/git/linux"
-tag = "v5.19"
+tag = "v6.7"
