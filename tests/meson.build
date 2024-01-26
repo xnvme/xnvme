@@ -8,17 +8,18 @@ tests_source = [
   'buf.c',
   'cli.c',
   'copy.c',
+  'delay_identification.c',
   'enum.c',
+  'ioworker.c',
+  'kvs.c',
   'lblk.c',
   'scc.c',
-  'ioworker.c',
-  'xnvme_file.c',
   'xnvme_cli.c',
+  'xnvme_file.c',
   'znd_append.c',
   'znd_explicit_open.c',
   'znd_state.c',
   'znd_zrwa.c',
-  'kvs.c',
 ]
 
 if not is_windows
