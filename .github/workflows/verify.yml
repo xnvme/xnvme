@@ -64,7 +64,7 @@ jobs:
         mv builddir/meson-dist/xnvme-0.7.3.tar.gz.sha256sum builddir/meson-dist/xnvme-src.tar.gz.sha256sum
 
     - name: Upload source archive
-      uses: actions/upload-artifact@v3.1.1
+      uses: actions/upload-artifact@v4.3.0
       with:
         name: xnvme-src-archive-with-subprojects
         path: |
@@ -98,7 +98,7 @@ jobs:
         mv builddir/meson-dist/xnvme-0.7.3.tar.gz.sha256sum builddir/meson-dist/xnvme-src.tar.gz.sha256sum
 
     - name: Upload source archive
-      uses: actions/upload-artifact@v3.1.1
+      uses: actions/upload-artifact@v4.3.0
       with:
         name: xnvme-src-archive
         path: |
@@ -143,7 +143,7 @@ jobs:
 
     steps:
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v3.0.1
+      uses: actions/download-artifact@v4.1.1
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
@@ -171,7 +171,7 @@ jobs:
 
     steps:
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v3.0.1
+      uses: actions/download-artifact@v4.1.1
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
@@ -214,7 +214,7 @@ jobs:
 
     steps:
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v3.0.1
+      uses: actions/download-artifact@v4.1.1
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
@@ -241,7 +241,7 @@ jobs:
         mv python/bindings/dist/xnvme-*.*.*.tar.gz python/bindings/dist/xnvme-py-sdist.tar.gz
 
     - name: Python sdist-packages, upload bindings
-      uses: actions/upload-artifact@v3.1.1
+      uses: actions/upload-artifact@v4.3.0
       with:
         name: xnvme-py-sdist
         path: |
@@ -288,7 +288,7 @@ jobs:
       run: zypper --non-interactive install -y tar gzip
 
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v3.0.1
+      uses: actions/download-artifact@v4.1.1
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
@@ -347,7 +347,7 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - name: Retrieve, the xNVMe Python sdist package
-      uses: actions/download-artifact@v3.0.1
+      uses: actions/download-artifact@v4.1.1
       with:
         name: xnvme-py-sdist
     - name: Move, the xNVMe Python sdist package
@@ -388,7 +388,7 @@ jobs:
 
     - name: CIJOE, upload prep-fio
       if: always() && (!contains('focal', matrix.container.ver))
-      uses: actions/upload-artifact@v3.1.1
+      uses: actions/upload-artifact@v4.3.0
       with:
         name: prep-fio-${{ matrix.container.os }}-${{ matrix.container.ver }}
         path: cijoe/prep-fio-${{ matrix.container.os }}-${{ matrix.container.ver }}/*
@@ -404,7 +404,7 @@ jobs:
 
     - name: CIJOE, upload test-ramdisk-report
       if: always() && (!contains('focal', matrix.container.ver))
-      uses: actions/upload-artifact@v3.1.1
+      uses: actions/upload-artifact@v4.3.0
       with:
         name: test-ramdisk-${{ matrix.container.os }}-${{ matrix.container.ver }}
         path: cijoe/test-${{ matrix.container.os }}-${{ matrix.container.ver }}/*
@@ -427,7 +427,7 @@ jobs:
 
     steps:
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v3.0.1
+      uses: actions/download-artifact@v4.1.1
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
@@ -479,7 +479,7 @@ jobs:
         python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
 
     - name: Retrieve, the xNVMe Python sdist package
-      uses: actions/download-artifact@v3.0.1
+      uses: actions/download-artifact@v4.1.1
       with:
         name: xnvme-py-sdist
     - name: Move, the xNVMe Python sdist package
@@ -521,7 +521,7 @@ jobs:
 
     - name: CIJOE, upload test-ramdisk-report
       if: always()
-      uses: actions/upload-artifact@v3.1.1
+      uses: actions/upload-artifact@v4.3.0
       with:
         name: test-ramdisk-${{ matrix.runner.os }}-${{ matrix.runner.ver }}
         path: cijoe/test-${{ matrix.runner.os }}-${{ matrix.runner.ver }}/*
@@ -543,7 +543,7 @@ jobs:
 
     steps:
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v3.0.1
+      uses: actions/download-artifact@v4.1.1
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
@@ -633,7 +633,7 @@ jobs:
         ls -lh
 
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v3.0.1
+      uses: actions/download-artifact@v4.1.1
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then move, the xNVMe source archive
@@ -642,7 +642,7 @@ jobs:
         mv xnvme-src.tar.gz /tmp/artifacts/.
 
     - name: Retrieve, the xNVMe Python sdist package
-      uses: actions/download-artifact@v3.0.1
+      uses: actions/download-artifact@v4.1.1
       with:
         name: xnvme-py-sdist
     - name: Move, the xNVMe Python sdist package
@@ -695,7 +695,7 @@ jobs:
       run: find cijoe -name "*.output" | xargs cat
 
     - name: CIJOE, upload workflow-report-provision
-      uses: actions/upload-artifact@v3.1.1
+      uses: actions/upload-artifact@v4.3.0
       if: always()
       with:
         name: provision-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
@@ -708,7 +708,7 @@ jobs:
         tar czf test-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.tar.gz cijoe/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/* 
 
     - name: CIJOE, upload workflow-report-test
-      uses: actions/upload-artifact@v3.1.1
+      uses: actions/upload-artifact@v4.3.0
       if: always()
       with:
         name: test-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
@@ -743,7 +743,7 @@ jobs:
         ls -lh
 
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v3.0.1
+      uses: actions/download-artifact@v4.1.1
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then move, the xNVMe source archive
@@ -779,7 +779,7 @@ jobs:
         tar czf bench-results.tar.gz cijoe/bench-results/* 
 
     - name: CIJOE, upload workflow-report-test
-      uses: actions/upload-artifact@v3.1.1
+      uses: actions/upload-artifact@v4.3.0
       if: always()
       with:
         name: bench-results
@@ -831,7 +831,7 @@ jobs:
         ls -lh
 
     - name: Container-prep, get the full-source-archive-with-subprojects
-      uses: actions/download-artifact@v3.0.1
+      uses: actions/download-artifact@v4.1.1
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Container-prep, extract the full-source-archive-with-subprojects
@@ -840,7 +840,7 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - name: Retrieve, the xNVMe Python sdist package
-      uses: actions/download-artifact@v3.0.1
+      uses: actions/download-artifact@v4.1.1
       with:
         name: xnvme-py-sdist
     - name: Move, the xNVMe Python sdist package
@@ -921,7 +921,7 @@ jobs:
         git push
 
     - name: CIJOE, upload report-docgen
-      uses: actions/upload-artifact@v3.1.1
+      uses: actions/upload-artifact@v4.3.0
       if: always()
       with:
         name: docgen-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
@@ -943,7 +943,7 @@ jobs:
 
     steps:
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v3.0.1
+      uses: actions/download-artifact@v4.1.1
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
@@ -958,7 +958,7 @@ jobs:
       run: scan-build --exclude subprojects -o /tmp/scan-build-report make
 
     - name: Upload scan-build report
-      uses: actions/upload-artifact@v3.1.1
+      uses: actions/upload-artifact@v4.3.0
       if: always()
       with:
         name: scan-build-report
@@ -976,7 +976,7 @@ jobs:
 
     steps:
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v3.0.1
+      uses: actions/download-artifact@v4.1.1
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
@@ -1018,7 +1018,7 @@ jobs:
 
     steps:
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v3.0.1
+      uses: actions/download-artifact@v4.1.1
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
@@ -1093,7 +1093,7 @@ jobs:
         echo "Current tag is ${{ github.ref }}"
 
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v3.0.1
+      uses: actions/download-artifact@v4.1.1
       with:
         name: xnvme-src-archive
 
@@ -1111,7 +1111,7 @@ jobs:
         cd debpkg && make || true
 
     - name: Upload debian packages
-      uses: actions/upload-artifact@v3.1.1
+      uses: actions/upload-artifact@v4.3.0
       with:
         name: packages-debian
         path: |
