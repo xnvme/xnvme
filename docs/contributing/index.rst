@@ -22,6 +22,7 @@ feedback on your `pull-request`_ or ask questions.
    contributing-branches.rst
    packaging/index.rst
    release-checklist.rst
+   assumptions.rst
 
 .. _Discord: https://discord.com/invite/XCbBX9DmKf
 .. _Fork: https://github.com/OpenMPDK/xNVMe/fork
