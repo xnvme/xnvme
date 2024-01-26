@@ -14,31 +14,44 @@ Flexible Data-Placement (FDP), Zoned Namespaces (ZNS), and Key-Value SSDs (KV).
 The documentation is provided as a means to setup development environment with
 minimal fuss and maximum foss :)
 
-* Custom Linux kernel
+* xNVMe
 
   * Built from source
-  * Installed via ``.deb``
+  * Testing package
+
+* CIJOE
+
+  * Scripts and utilities for development, testing, and maintenance
 
 * Custom Qemu
 
   * Built from source
   * Latest NVMe emulation features
 
-* xNVMe
+* Custom Linux kernel
 
   * Built from source
-  * Testing package
+  * Installed via ``.deb``
 
 .. _sec-tutorials-devs-linux-pm:
 
 Physical Machine
 ----------------
 
-It is assumes that you have a physisical machine with NVMe storage available,
-and that you can utilize it destructively. By desctructively, what is meant, is
-that any data can and will be lost.
+It is assumed that you have a physisical machine with NVMe storage available,
+and that you can utilize it destructively. That is, that any data can and will
+be lost when using the NVMe devices for testing.
 
-Most machines will do for common development and testing, throughout an machine
+Qemu is utilized extensively during testing to verify NVMe functionality of
+NVM, ZNS, KV, FDP, etc. that is NVMe features not readiliy available in HW
+is emulated via qemu. Thus, a physical machine is attractive reduce build and
+runtime.
+
+It is of course possible to do nested-virtualization, however, it is often
+impractical as I/O get orders of magnitudes slower which less than ideal during
+build.
+
+Most machines will do for common development and testing, throughout a machine
 with the following traits are used:
 
 * An x86 64-bit CPU
@@ -105,8 +118,12 @@ And then install a couple of things:
     git \
     htop \
     screen \
+    pipx \
     sudo \
     vim
+
+  # Make sure that cli-tools installed with pipx are available
+  pipx ensurepath
 
   # Add odus to sudoers (required to do various things as non-root)
   usermod -aG sudo odus
@@ -199,28 +216,80 @@ And attach to them using their ``<name>``:
 
 .. _sec-tutorials-devs-linux-cijoe:
 
-CIJOE
+xNVMe
 -----
 
-Setup ``python3`` and ``pipx``:
+Clone, build, and install **xNVMe** and checkout the ``next`` branch:
 
 .. code-block:: bash
 
-  sudo apt-get -qy install \
-    pipx \
-    python3-pip \
-    python3-venv
-  sudo apt-get remove -qy python3-pytest
-  sudo pipx ensurepath
+  cd ~/git
+  git clone https://github.com/OpenMPDK/xNVMe.git xnvme
+  cd xnvme
+  git checkout next
 
-Then install **cijoe** in a ``pipx`` virtual environment:
+Install prerequisites:
 
 .. code-block:: bash
 
-  pipx install cijoe --include-deps
-  pipx inject cijoe cijoe-pkg-linux
-  pipx inject cijoe cijoe-pkg-qemu
-  pipx inject cijoe cijoe-pkg-fio
+  sudo ./toolbox/pkgs/debian-bookworm.sh
+
+Build and install **xNVMe**:
+
+.. code-block:: bash
+
+  cd ~/git/xnvme
+  make
+  sudo make install
+
+Check that it is functional:
+
+.. code-block:: bash
+
+  sudo xnvme enum
+
+This should yield output similar to:
+
+.. code-block:: bash
+
+  xnvme_cli_enumeration:
+  - {uri: '/dev/nvme0n1', dtype: 0x2, nsid: 0x1, csi: 0x0, subnqn: ''}
+
+cijoe
+-----
+
+Setup by running the following in the root of the **xNVMe** repository:
+
+.. code-block:: bash
+
+  cd ~/git/xnvme
+  make cijoe
+
+This will install **cijoe** along with a couple of **cijoe-packages** for
+Linux, qemu, and fio. After installation, then a configuation file is added at
+``~/.config/cijoe/cijoe-config.toml``. You need to adjust this to match your
+system, look specifically for these entries:
+
+.. code-block:: bash
+
+  [qemu]
+  # system_bin = "{{ local.env.HOME }}/opt/qemu/bin/qemu-system-aarch64"
+  system_bin = "/opt/qemu/bin/qemu-system-aarch64"
+  img_bin = "qemu-img"
+  default_guest = "bookworm_arm64"
+
+  [xnvme.repository]
+  upstream = "https://github.com/OpenMPDK/xNVMe.git"
+  path = "{{ local.env.HOME }}/git/xnvme"
+
+  # This is utilized by repository syncing during development.
+  [xnvme.repository.sync]
+  branch = "wip"
+  remote = "guest"
+  remote_path = "/root/git/xnvme"
+
+In general, ensure paths to repositories, binaries, etc. match your local system
+and the remote system you are using.
 
 Then logout and back in to reload the environment, the addition of ``pipx`` and
 the ``cijoe`` into ``$PATH``.
@@ -261,6 +330,30 @@ Have a look at the generated report at
    ``pytest`` provided with the **CIJOE** module. Thus, uninstall it using
    ``apt-get remove python3-pytest``.
 
+Artifacts
+~~~~~~~~~
+
+Produce a set of **artifacts**:
+
+.. code-block:: bash
+
+  cd ~/git/xnvme
+  make clobber gen-artifacts
+
+  # Keep them handy if need be
+  cp -r /tmp/artifacts ~/artifacts/xnvme
+
+.. warning::
+   The ``make clobber`` removes any unstaged changes and removes subprojects.
+   This is done to ensure an entirely "clean" repository. Thus, make sure that
+   you have commit your changes.
+   The ``make clobber`` is required for ``make gen-artifacts``, as it will
+   otherwise include side-effects from previous builds.
+
+.. note::
+   The artifacts produces by ``make gen-artifacts`` are output to
+   ``/tmp/artifacts``. There are **cijoe** workflows, expecting to be available
+   at that location, specifically the **provision** workflow.
 
 .. _sec-tutorials-devs-linux-customkernel:
 
@@ -373,9 +466,9 @@ Run the **cijoe** qemu workflow:
   # Run it with log-level debug (-l)
   cijoe -l
 
-With the packages installed, go back and run the **cijoe** workflow. Have a
-look at the report, it describes what it does, that is, build and install qemu,
-spin up a vm using a cloud-init-enabled Debian image, ssh into it.
+With the packages installed, go back and run the **cijoe** workflow. Have a look
+at the report, it describes what it does, that is, build and install qemu, spin
+up a vm using a cloud-init-enabled Debian image, ssh into it.
 
 .. tip::
    In case you get errors such as::
@@ -387,72 +480,53 @@ spin up a vm using a cloud-init-enabled Debian image, ssh into it.
    disabled in the BIOS of the physical machine. Have a look
    at ``dmesg`` it might proide messages supporting this.
 
-xNVMe
------
+Setup qemu-guest / virtual machine for testing
+----------------------------------------------
 
-clone, build, and install
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Now that you have qemu built and installed. You can use it to emulate NVMe
+devices in the guest for testing. The **xNVMe** ``Makefile`` has a bunch of
+helper-targets to do this. That is, spinning up the guest, synchronizing your
+**xNVMe** git repository changes into the qemu-guest, building, installing, and
+running tests.
 
-Clone **xNVMe** and checkout the ``next`` branch:
-
-.. code-block:: bash
-
-  cd ~/git
-  git clone https://github.com/OpenMPDK/xNVMe.git xnvme
-  cd xnvme
-  git checkout next
-
-Install prerequisites:
+Test Linux
+~~~~~~~~~~
 
 .. code-block:: bash
 
-  sudo ./toolbox/pkgs/debian-bookworm.sh
+  # Create a cijoe-config for a qemu-guest with Debian Bullseye
+  cp cijoe/configs/debian-bullseye.toml ~/.config/cijoe/cijoe-config.toml
 
-Build and install **xNVMe**:
+  # Provision the machine
+  make cijoe-guest-setup-xnvme-using-git
 
-.. code-block:: bash
+  # Run the test
+  make cijoe-do-test-linux
 
-  cd ~/git/xnvme
-  make
-  sudo make install
+Generate documentation in Linux
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Check that it is functional:
-
-.. code-block:: bash
-
-  sudo xnvme enum
-
-This should yield output similar to:
+You can reuse qemu-guest created in the previous section to generate the
+documentation.
 
 .. code-block:: bash
 
-  xnvme_cli_enumeration:
-  - {uri: '/dev/nvme0n1', dtype: 0x2, nsid: 0x1, csi: 0x0, subnqn: ''}
+  make cijoe-do-docgen
 
-Artifacts
-~~~~~~~~~
-
-Produce a set of **artifacts**:
+Test FreeBSD
+~~~~~~~~~~~~
 
 .. code-block:: bash
 
-  cd ~/git/xnvme
-  make clobber gen-artifacts
+  # Create a cijoe-config for a qemu-guest with FreeBSD
+  cp cijoe/configs/debian-bullseye.toml ~/.config/cijoe/cijoe-config.toml
 
-  # Keep them handy if need be
-  cp -r /tmp/artifacts ~/artifacts/xnvme
+  # Provision the machine
+  make cijoe-guest-setup-xnvme-using-git
 
-.. warning::
-   The ``make clobber`` removes any unstaged changes and removes subprojects.
-   This is done to ensure an entirely "clean" repository. Thus, make sure that
-   you have commit your changes.
-   The ``make clobber`` is required for ``make gen-artifacts``, as it will
-   otherwise include side-effects from previous builds.
-
-.. note::
-   The artifacts produces by ``make gen-artifacts`` are output to
-   ``/tmp/artifacts``. There are **cijoe** workflows, expecting to be available
-   at that location, specifically the **provision** workflow.
+  # Run the test
+  make cijoe-do-test-freebsd
+  
 
 Reproduce GitHUB Actions locally
 --------------------------------
@@ -464,26 +538,44 @@ the config-files, and provide the artifacts from the GitHUB action:
 * xnvme-py-sdist.tar.gz
 * xnvme-src.tar.gz
 
-To do so, then:
+Then, place the artifacts in ``/tmp/artifacts``.
 
-* Place the artifacts in ``/tmp/artifacts``
-* Change ``qemu.system_bin`` to point to your qemu-system-binary (qemu 7+)
-* Add the SSH-key(``keys/guest_key``) to your SSH-agent.
+Test Linux
+~~~~~~~~~~
 
-Then you should be able to run the following:
+Then you should be able to run the following to test **Linux**:
 
 .. code-block:: bash
 
   # Provision and test on Debian Bullseye
-  cijoe -c configs/debian-bullseye.toml -w workflows/provision.yaml
-  cijoe -c configs/debian-bullseye.toml -w workflows/test-debian-bullseye.yaml
+  cp cijoe/configs/debian-bullseye.toml ~/.config/cijoe/cijoe-config.toml
+  # Edit the cijoe-config, then run
+
+  make cijoe-guest-setup-using-tgz
+  make cijoe-do-test-linux
+
+Test FreeBSD
+~~~~~~~~~~~~
+
+Then you should be able to run the following to test xNVMe on **FreeBSD**:
+  
+.. code-block:: bash
 
   # Provision and test on FreeBSD 13
-  cijoe -c configs/freebsd-13.toml -w workflows/provision.yaml
-  cijoe -c configs/freebsd-13.toml -w workflows/test-freebsd-13.yaml
+  cp cijoe/configs/freebsd-13.toml ~/.config/cijoe/cijoe-config.toml
+
+  make cijoe-guest-setup-using-tgz
+  make cijoe-do-test-freebsd
+
+Generate docs
+~~~~~~~~~~~~~
+
+And generate documentation:
+
+.. code-block:: bash
 
   # Generate documentation (provisions qemu-guest and generates the docs)
-  cijoe -c configs/debian-bullseye.toml -w workflows/docgen.yaml
+  make cijoe-do-docgen
 
 In case you are setting up the test-target using other tools, or just want to
 run pytest directly, then the following two sections describe how to do that.
@@ -509,7 +601,8 @@ configurations etc.
 Provision a qemu-guest
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Setup a virtual machine with **xNVMe** installed, and a bunch of NVMe devices configured:
+Setup a virtual machine with **xNVMe** installed, and a bunch of NVMe devices
+configured:
 
 .. code-block:: bash
 
@@ -542,24 +635,30 @@ The ``freebsd-13.1-ksrc-amd64.qcow2`` is created by:
 Remote dev
 ----------
 
-Assuming your primary device for development is something like a
-Chromebook/Macbook, something light-weight and great for reading mail... but
-now you want to fire up your editor and do some development.
+Assuming your primary device for development is something like a Chromebook/
+Macbook, something light-weight and great for reading mail... but now you want
+to fire up your editor and do some development.
 
 Or, your primary system is simply separate from the dev-box for a myriad of
-reasons. Then do something like:
+reasons. Then, have a look at the existing **cijoe** configuration files in
+``cijoe/configs/*.toml``, copy one that mathes your intended system, e.g.
+use the configuration file for the qemu-guest as a starting point for a
+configuration file for another physical machine:
 
 .. code-block:: bash
 
-  cp configs/debian-bullseye.toml configs/dev-metal.toml
+  cp configs/debian-bullseye.toml ~/.config/cijoe/cijoe-config.toml
 
-.. note::
-   all configs prefix on the file-name pattern ``dev-*.toml`` are ignored by git.
-
-Open up ``configs/dev-metal.toml`` and adjust it to your physical machine. That
-is, change the ssh-login information, change the list of devices, paths to
-binaries etc. Once you have done that, then go ahead and run:
+Open up ``~/.config/cijoe/cijoe-config.toml`` and adjust it to your physical
+machine. That is, change the ssh-login information, change the list of devices,
+paths to binaries etc. Once you have done that, then go ahead and run:
 
 .. code-block:: bash
 
-  cijoe -c configs/dev-metal.toml -w dev-sync-and-build.yaml
+  # Synchronize your local git with the repos on the remote physical machine
+  make cijoe-sync-git
+
+  # Build and install xNVMe on the remote end
+  make cijoe-setup-xnvme-using-git
+
+You can do any of the **cijoe** things like the above.
