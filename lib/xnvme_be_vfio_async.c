@@ -47,6 +47,10 @@ xnvme_be_vfio_queue_term(struct xnvme_queue *q)
 {
 	struct xnvme_queue_vfio *queue = (struct xnvme_queue_vfio *)q;
 	struct xnvme_be_vfio_state *state = (void *)queue->base.dev->be.state;
+	if (state->efds[queue->id] != -1) {
+		close(state->efds[queue->id]);
+		state->efds[queue->id] = -1;
+	}
 	return _xnvme_be_vfio_delete_ioqpair(state, queue->id);
 }
 
