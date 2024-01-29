@@ -146,7 +146,7 @@ static int
 test_flush(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	const struct xnvme_geo *geo = cli->args.geo;
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	struct xnvme_spec_znd_idfy_ns *zns = (void *)xnvme_dev_get_ns_css(dev);
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
 	struct xnvme_spec_znd_descr zone = {0};
@@ -157,6 +157,15 @@ test_flush(struct xnvme_cli *cli)
 
 	uint64_t zrwa_naddr = zns->zrwafg;
 	int err;
+
+	switch (geo->type) {
+	case XNVME_GEO_CONVENTIONAL:
+	case XNVME_GEO_ZONED:
+		break;
+	default:
+		XNVME_DEBUG("FAILED: not nvm / zns, got; %d", geo->type);
+		return -EINVAL;
+	}
 
 	if (cli->given[XNVME_CLI_OPT_SLBA]) {
 		err = xnvme_znd_descr_from_dev(dev, cli->args.slba, &zone);
@@ -249,7 +258,7 @@ static int
 test_flush_implicit(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	const struct xnvme_geo *geo = cli->args.geo;
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	struct xnvme_spec_znd_idfy_ns *zns = (void *)xnvme_dev_get_ns_css(dev);
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
 	struct xnvme_spec_znd_descr zone = {0};
@@ -261,6 +270,15 @@ test_flush_implicit(struct xnvme_cli *cli)
 	// uint64_t zrwa_naddr = zns->zrwas;
 	uint64_t zrwa_naddr = zns->zrwafg + 1;
 	int err;
+
+	switch (geo->type) {
+	case XNVME_GEO_CONVENTIONAL:
+	case XNVME_GEO_ZONED:
+		break;
+	default:
+		XNVME_DEBUG("FAILED: not nvm / zns, got; %d", geo->type);
+		return -EINVAL;
+	}
 
 	if (cli->given[XNVME_CLI_OPT_SLBA]) {
 		err = xnvme_znd_descr_from_dev(dev, cli->args.slba, &zone);

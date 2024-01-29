@@ -49,6 +49,15 @@ xnvme_lba_range_from_slba_naddrs(struct xnvme_dev *dev, uint64_t slba, uint64_t 
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	struct xnvme_lba_range rng = {0};
 
+	switch (geo->type) {
+	case XNVME_GEO_ZONED:
+	case XNVME_GEO_CONVENTIONAL:
+		break;
+	default:
+		XNVME_DEBUG("FAILED: not nvm / zns, got; %d", geo->type);
+		return rng;
+	}
+
 	if (!naddrs) {
 		XNVME_DEBUG("FAILED: !naddrs => the range must be non-empty");
 		return rng;
@@ -81,6 +90,15 @@ xnvme_lba_range_from_offset_nbytes(struct xnvme_dev *dev, uint64_t offset, uint6
 {
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	struct xnvme_lba_range rng = {0};
+
+	switch (geo->type) {
+	case XNVME_GEO_ZONED:
+	case XNVME_GEO_CONVENTIONAL:
+		break;
+	default:
+		XNVME_DEBUG("FAILED: not nvm / zns, got; %d", geo->type);
+		return rng;
+	}
 
 	if (offset % geo->nbytes) {
 		XNVME_DEBUG("FAILED: offset: %" PRIu64 ", does not align to lba-width: %u", offset,

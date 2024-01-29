@@ -21,6 +21,10 @@ xnvme_cli_copy_io(struct xnvme_cli *cli)
 		return -errno;
 	}
 	file_size = xnvme_dev_get_geo(fh)->tbytes;
+	if (!file_size) {
+		xnvme_cli_pinf("ERR: Nothing to copy, filesize: %d", file_size);
+		return -EINVAL;
+	}
 
 	buf = xnvme_buf_alloc(fh, file_size);
 	if (!buf) {

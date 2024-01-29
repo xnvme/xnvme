@@ -36,7 +36,7 @@ static int
 cmd_verify(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	const struct xnvme_geo *geo = cli->args.geo;
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	uint32_t nsid = cli->args.nsid;
 	struct xnvme_spec_znd_descr zone = {0};
 
@@ -47,6 +47,14 @@ cmd_verify(struct xnvme_cli *cli)
 	void *dbuf = NULL, *vbuf = NULL;
 	int err;
 
+	switch (geo->type) {
+	case XNVME_GEO_CONVENTIONAL:
+	case XNVME_GEO_ZONED:
+		break;
+	default:
+		XNVME_DEBUG("FAILED: not nvm / zns, got; %d", geo->type);
+		return -EINVAL;
+	}
 	if (!cli->given[XNVME_CLI_OPT_NSID]) {
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}

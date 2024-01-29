@@ -116,11 +116,16 @@ _lzbd_zone_capacity(struct blk_zone_report *XNVME_UNUSED(hdr), struct blk_zone *
 static int
 _lzbd_zone_mgmt_send(struct xnvme_cmd_ctx *ctx)
 {
-	struct xnvme_be_linux_state *state = (void *)ctx->dev->be.state;
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(ctx->dev);
+	struct xnvme_be_linux_state *state = (void *)ctx->dev->be.state;
 	const uint64_t zone_nbytes = geo->nsect * geo->nbytes;
 	struct blk_zone_range zr = {0};
 	int err;
+
+	if (geo->type != XNVME_GEO_ZONED) {
+		XNVME_DEBUG("FAILED: device is not zoned, got; %d", geo->type);
+		return -EINVAL;
+	}
 
 	zr.sector = ctx->cmd.znd.mgmt_send.slba << (ctx->dev->geo.ssw - LINUX_BLOCK_SSW);
 	zr.nr_sectors = zone_nbytes >> LINUX_BLOCK_SSW;
@@ -308,6 +313,10 @@ _lzbd_zone_mgmt_recv(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 	uint32_t dbuf_nzones;
 	int err;
 
+	if (geo->type != XNVME_GEO_ZONED) {
+		XNVME_DEBUG("FAILED: device is not zoned, got; %d", geo->type);
+		return -EINVAL;
+	}
 	if (dbuf_nbytes < sizeof(*nvme_rprt)) {
 		XNVME_DEBUG("FAILED: dbuf_nbytes: %zu < hdr", dbuf_nbytes);
 		return -EINVAL;
