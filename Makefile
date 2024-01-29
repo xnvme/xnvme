@@ -125,6 +125,15 @@ docker:
 	@docker run -it -w /tmp/xnvme --mount type=bind,source="$(shell pwd)",target=/tmp/xnvme ghcr.io/xnvme/xnvme-deps-debian-bookworm:next bash
 	@echo "## xNVME: docker [DONE]"
 
+define docs-help
+# Build docs (without command-execution) and open them
+endef
+.PHONY: docs
+docs:
+	@echo "## xNVMe: make docs"
+	cd docs/autogen && make
+	@echo "## xNVMe: make docs [DONE]"
+
 define docker-privileged-help
 # Drop into a privileged docker instance with the repository bind-mounted at /tmp/xnvme
 endef
