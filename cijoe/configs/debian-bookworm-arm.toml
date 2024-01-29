@@ -210,9 +210,6 @@ remote = "https://github.com/axboe/fio.git"
 path = "/root/git/fio"
 tag = "fio-3.36"
 
-[fio.build]
-prefix = "/opt/fio"
-
 [fio.engines.libaio]
 type = "builtin"
 
