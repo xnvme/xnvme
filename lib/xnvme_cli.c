@@ -1825,7 +1825,6 @@ xnvme_cli_run(struct xnvme_cli *cli, int argc, char **argv, int opts)
 			xnvme_cli_perr("xnvme_dev_open()", err);
 			return -1;
 		}
-		cli->args.geo = xnvme_dev_get_geo(cli->args.dev);
 	}
 
 	err = cli->sub->command(cli);

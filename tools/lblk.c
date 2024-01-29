@@ -113,8 +113,8 @@ static int
 sub_read(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
-	const struct xnvme_geo *geo = cli->args.geo;
 	const uint64_t slba = cli->args.slba;
 	const size_t nlb = cli->args.nlb;
 	uint8_t nsid = cli->args.nsid;
@@ -122,6 +122,15 @@ sub_read(struct xnvme_cli *cli)
 	void *dbuf = NULL, *mbuf = NULL;
 	size_t dbuf_nbytes, mbuf_nbytes;
 	int err;
+
+	switch (geo->type) {
+	case XNVME_GEO_ZONED:
+	case XNVME_GEO_CONVENTIONAL:
+		break;
+	default:
+		XNVME_DEBUG("FAILED: not nvm / zns, got; %d", geo->type);
+		return -EINVAL;
+	}
 
 	if (!cli->given[XNVME_CLI_OPT_NSID]) {
 		nsid = xnvme_dev_get_nsid(dev);
@@ -180,8 +189,8 @@ static int
 sub_write(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
-	const struct xnvme_geo *geo = cli->args.geo;
 	const uint64_t slba = cli->args.slba;
 	const size_t nlb = cli->args.nlb;
 	uint32_t nsid = cli->args.nsid;
@@ -189,6 +198,15 @@ sub_write(struct xnvme_cli *cli)
 	void *dbuf = NULL, *mbuf = NULL;
 	size_t dbuf_nbytes, mbuf_nbytes;
 	int err;
+
+	switch (geo->type) {
+	case XNVME_GEO_ZONED:
+	case XNVME_GEO_CONVENTIONAL:
+		break;
+	default:
+		XNVME_DEBUG("FAILED: not nvm / zns, got; %d", geo->type);
+		return -EINVAL;
+	}
 
 	if (!cli->given[XNVME_CLI_OPT_NSID]) {
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
@@ -443,8 +461,8 @@ static int
 sub_write_directive(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
-	const struct xnvme_geo *geo = cli->args.geo;
 	const uint64_t slba = cli->args.slba;
 	const size_t nlb = cli->args.nlb;
 	uint32_t nsid = cli->args.nsid;
@@ -454,6 +472,15 @@ sub_write_directive(struct xnvme_cli *cli)
 	void *dbuf = NULL, *mbuf = NULL;
 	size_t dbuf_nbytes, mbuf_nbytes;
 	int err;
+
+	switch (geo->type) {
+	case XNVME_GEO_ZONED:
+	case XNVME_GEO_CONVENTIONAL:
+		break;
+	default:
+		XNVME_DEBUG("FAILED: not nvm / zns, got; %d", geo->type);
+		return -EINVAL;
+	}
 
 	if (!cli->given[XNVME_CLI_OPT_NSID]) {
 		nsid = xnvme_dev_get_nsid(cli->args.dev);

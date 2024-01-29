@@ -18,7 +18,7 @@ boilerplate(struct xnvme_cli *cli, uint8_t **wbuf, uint8_t **rbuf, size_t *buf_n
 	    uint64_t *mdts_naddr, uint32_t *nsid, uint64_t *rng_slba, uint64_t *rng_elba)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	const struct xnvme_geo *geo = cli->args.geo;
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	uint64_t rng_naddr;
 	int err;
 
@@ -152,7 +152,7 @@ static int
 sub_io(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	const struct xnvme_geo *geo = cli->args.geo;
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	uint32_t nsid;
 	uint64_t rng_slba, rng_elba, mdts_naddr;
 	size_t buf_nbytes;
@@ -160,6 +160,14 @@ sub_io(struct xnvme_cli *cli)
 	int err;
 	uint64_t written_bytes = 0;
 
+	switch (geo->type) {
+	case XNVME_GEO_CONVENTIONAL:
+	case XNVME_GEO_ZONED:
+		break;
+	default:
+		XNVME_DEBUG("FAILED: not nvm / zns, got; %d", geo->type);
+		return -EINVAL;
+	}
 	err = boilerplate(cli, &wbuf, &rbuf, &buf_nbytes, &mdts_naddr, &nsid, &rng_slba,
 			  &rng_elba);
 	if (err) {
@@ -242,7 +250,7 @@ static int
 test_write_zeroes(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	const struct xnvme_geo *geo = cli->args.geo;
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	uint32_t nsid;
 	uint64_t rng_slba, rng_elba, mdts_naddr, nlb;
 	size_t buf_nbytes;
@@ -251,6 +259,14 @@ test_write_zeroes(struct xnvme_cli *cli)
 	uint64_t compared_bytes = 0;
 	uint64_t written_bytes = 0;
 
+	switch (geo->type) {
+	case XNVME_GEO_CONVENTIONAL:
+	case XNVME_GEO_ZONED:
+		break;
+	default:
+		XNVME_DEBUG("FAILED: not nvm / zns, got; %d", geo->type);
+		return -EINVAL;
+	}
 	err = boilerplate(cli, &wbuf, &rbuf, &buf_nbytes, &mdts_naddr, &nsid, &rng_slba,
 			  &rng_elba);
 	nlb = rng_elba - rng_slba;
@@ -319,7 +335,7 @@ static int
 test_write_uncorrectable(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	const struct xnvme_geo *geo = cli->args.geo;
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	uint32_t nsid;
 	uint64_t rng_slba, rng_elba, mdts_naddr, nlb;
 	size_t buf_nbytes;
@@ -329,6 +345,14 @@ test_write_uncorrectable(struct xnvme_cli *cli)
 	uint64_t written_bytes = 0;
 	bool entered_uncorrectable_loop = false;
 
+	switch (geo->type) {
+	case XNVME_GEO_CONVENTIONAL:
+	case XNVME_GEO_ZONED:
+		break;
+	default:
+		XNVME_DEBUG("FAILED: not nvm / zns, got; %d", geo->type);
+		return -EINVAL;
+	}
 	err = boilerplate(cli, &wbuf, &rbuf, &buf_nbytes, &mdts_naddr, &nsid, &rng_slba,
 			  &rng_elba);
 	nlb = rng_elba - rng_slba;

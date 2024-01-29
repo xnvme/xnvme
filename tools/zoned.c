@@ -159,14 +159,20 @@ static int
 cmd_report(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	uint64_t zslba = cli->args.slba;
 	uint64_t limit = cli->args.limit;
 
 	struct xnvme_znd_report *report = NULL;
 	int err;
 
+	if (geo->type != XNVME_GEO_ZONED) {
+		XNVME_DEBUG("FAILED: not zns, got; %d", geo->type);
+		return EINVAL;
+	}
+
 	xnvme_cli_pinf("Zone Information Report for lba: 0x%016lx, limit: %zu", zslba,
-		       limit ? limit : cli->args.geo->nzone);
+		       limit ? limit : geo->nzone);
 
 	report = xnvme_znd_report_from_dev(dev, zslba, limit, 0);
 	if (!report) {
@@ -280,7 +286,7 @@ cmd_read(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
-	const struct xnvme_geo *geo = cli->args.geo;
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	const uint64_t slba = cli->args.slba;
 	const size_t nlb = cli->args.nlb;
 	uint8_t nsid = cli->args.nsid;
@@ -289,6 +295,14 @@ cmd_read(struct xnvme_cli *cli)
 	size_t dbuf_nbytes, mbuf_nbytes;
 	int err;
 
+	switch (geo->type) {
+	case XNVME_GEO_CONVENTIONAL:
+	case XNVME_GEO_ZONED:
+		break;
+	default:
+		XNVME_DEBUG("FAILED: not nvm / zns, got; %d", geo->type);
+		return -EINVAL;
+	}
 	if (!cli->given[XNVME_CLI_OPT_NSID]) {
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
@@ -347,7 +361,7 @@ cmd_write(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
-	const struct xnvme_geo *geo = cli->args.geo;
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	const uint64_t slba = cli->args.slba;
 	const size_t nlb = cli->args.nlb;
 	uint32_t nsid = cli->args.nsid;
@@ -356,6 +370,14 @@ cmd_write(struct xnvme_cli *cli)
 	size_t dbuf_nbytes, mbuf_nbytes;
 	int err;
 
+	switch (geo->type) {
+	case XNVME_GEO_CONVENTIONAL:
+	case XNVME_GEO_ZONED:
+		break;
+	default:
+		XNVME_DEBUG("FAILED: not nvm / zns, got; %d", geo->type);
+		return -EINVAL;
+	}
 	if (!cli->given[XNVME_CLI_OPT_NSID]) {
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
@@ -415,15 +437,20 @@ cmd_append(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	uint64_t nsid = cli->args.nsid;
 	const uint64_t zslba = cli->args.slba;
 	uint16_t nlb = cli->args.nlb;
-
-	size_t dbuf_nbytes = (size_t)cli->args.geo->nbytes * (size_t)(nlb + 1);
-	char *dbuf = NULL;
-
+	size_t dbuf_nbytes;
+	char *dbuf;
 	int err;
 
+	if (geo->type != XNVME_GEO_ZONED) {
+		XNVME_DEBUG("FAILED: not zns, got; %d", geo->type);
+		return EINVAL;
+	}
+
+	dbuf_nbytes = (size_t)geo->nbytes * (size_t)(nlb + 1);
 	if (!cli->given[XNVME_CLI_OPT_NSID]) {
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}

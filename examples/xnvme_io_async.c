@@ -45,7 +45,7 @@ static int
 sub_async_read(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	const struct xnvme_geo *geo = cli->args.geo;
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	struct xnvme_lba_range rng = {0};
 	uint32_t nsid, qd;
 
@@ -54,6 +54,11 @@ sub_async_read(struct xnvme_cli *cli)
 
 	char *buf = NULL, *payload = NULL;
 	int err;
+
+	if (geo->type != XNVME_GEO_CONVENTIONAL) {
+		XNVME_DEBUG("FAILED: not nvm, got; %d", geo->type);
+		return EINVAL;
+	}
 
 	qd = cli->given[XNVME_CLI_OPT_QDEPTH] ? cli->args.qdepth : DEFAULT_QD;
 	nsid = cli->given[XNVME_CLI_OPT_NSID] ? cli->args.nsid : xnvme_dev_get_nsid(dev);
@@ -173,7 +178,7 @@ static int
 sub_async_write(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	const struct xnvme_geo *geo = cli->args.geo;
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	struct xnvme_lba_range rng = {0};
 	uint32_t nsid, qd;
 
@@ -182,6 +187,11 @@ sub_async_write(struct xnvme_cli *cli)
 
 	char *buf = NULL, *payload = NULL;
 	int err;
+
+	if (geo->type != XNVME_GEO_CONVENTIONAL) {
+		XNVME_DEBUG("FAILED: not nvm, got; %d", geo->type);
+		return EINVAL;
+	}
 
 	qd = cli->given[XNVME_CLI_OPT_QDEPTH] ? cli->args.qdepth : DEFAULT_QD;
 	nsid = cli->given[XNVME_CLI_OPT_NSID] ? cli->args.nsid : xnvme_dev_get_nsid(cli->args.dev);

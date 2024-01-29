@@ -29,6 +29,12 @@ znd_report_init(struct xnvme_dev *dev, uint64_t slba, size_t limit, uint8_t exte
 	size_t report_nbytes;
 	struct xnvme_znd_report *report;
 
+	if (geo->type != XNVME_GEO_ZONED) {
+		XNVME_DEBUG("FAILED: device is not zoned, got; %d", geo->type);
+		errno = EINVAL;
+		return NULL;
+	}
+
 	if (extended && (!zdext_nbytes)) {
 		XNVME_DEBUG("FAILED: device does not support extended report");
 		errno = ENOSYS;
@@ -103,6 +109,12 @@ xnvme_znd_report_from_dev(struct xnvme_dev *dev, uint64_t slba, size_t limit, ui
 	enum xnvme_spec_znd_cmd_mgmt_recv_action action;
 
 	int err;
+
+	if (geo->type != XNVME_GEO_ZONED) {
+		XNVME_DEBUG("FAILED: device is not zoned, got; %d", geo->type);
+		errno = EINVAL;
+		return NULL;
+	}
 
 	report = znd_report_init(dev, slba, limit, extended);
 	if (!report) {
@@ -514,7 +526,7 @@ xnvme_znd_dev_get_ctrlr(struct xnvme_dev *dev)
 	struct xnvme_spec_znd_idfy_ctrlr *zctrlr;
 
 	if (geo->type != XNVME_GEO_ZONED) {
-		XNVME_DEBUG("FAILED: device is not zoned");
+		XNVME_DEBUG("FAILED: device is not zoned, got; %d", geo->type);
 		errno = EINVAL;
 		return NULL;
 	}
@@ -535,7 +547,7 @@ xnvme_znd_dev_get_ns(struct xnvme_dev *dev)
 	struct xnvme_spec_znd_idfy_ns *zns;
 
 	if (geo->type != XNVME_GEO_ZONED) {
-		XNVME_DEBUG("FAILED: device is not zoned");
+		XNVME_DEBUG("FAILED: device is not zoned, got; %d", geo->type);
 		errno = EINVAL;
 		return NULL;
 	}

@@ -22,7 +22,7 @@ static int
 test_copy(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	const struct xnvme_geo *geo = cli->args.geo;
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	uint32_t nsid;
 	struct xnvme_cmd_ctx ctx = {0};
 
@@ -30,6 +30,16 @@ test_copy(struct xnvme_cli *cli)
 	struct xnvme_spec_nvm_scopy_source_range *source_range = NULL;
 	uint64_t xfer_naddr, xfer_nbytes, sdlba, slba;
 	int err;
+
+	switch (geo->type) {
+	case XNVME_GEO_CONVENTIONAL:
+	case XNVME_GEO_ZONED:
+		break;
+	default:
+		XNVME_DEBUG("FAILED: not nvm / zns, got; %d", geo->type);
+		return -EINVAL;
+	}
+
 	xnvme_dev_pr(dev, XNVME_PR_DEF);
 
 	xfer_naddr = XNVME_MIN(geo->mdts_nbytes / geo->lba_nbytes, 128);

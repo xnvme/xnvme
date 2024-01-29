@@ -127,6 +127,15 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 
 	nsid = cli->given[XNVME_CLI_OPT_NSID] ? nsid : xnvme_dev_get_nsid(cli->args.dev);
 
+	switch (geo->type) {
+	case XNVME_GEO_ZONED:
+	case XNVME_GEO_CONVENTIONAL:
+		break;
+	default:
+		XNVME_DEBUG("FAILED: not nvm / zns, got; %d", geo->type);
+		return -EINVAL;
+	}
+
 	// Retrieve SCC parameters via idfy-namespace
 	ns = (void *)xnvme_dev_get_ns(dev);
 	if (!ns) {
