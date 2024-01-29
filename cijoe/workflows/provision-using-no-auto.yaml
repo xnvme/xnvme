@@ -1,0 +1,68 @@
+---
+doc: |
+  Development workflow usable locally and currently in use by xNVMe CI
+
+  * guest_{kill,init,start,check}: Provision a qemu guest with multiple NVMe
+    controllers and namespaces You can also use this workflow to run against a
+    physical machine, when doing so, then simply skip the steps named 'guest_*'
+
+  * xnvme_{sync,clean,build,install}: Synchronize local git-branch with remote,
+    then configure, build and install it
+
+  The operating system is defined by the bootable system-image in the cijoe
+  config-section qemu.guests.GUEST_NAME, specifically 
+  init_using_bootimage.url
+  init_using_bootimage.img
+
+steps:
+- name: guest_kill
+  uses: qemu.guest_kill
+
+- name: guest_init
+  uses: qemu.guest_init_using_bootimage
+
+- name: guest_start
+  uses: xnvme_guest_start_nvme
+
+- name: guest_check
+  run: |
+    hostname
+
+- name: xnvme_source_sync
+  run: |
+    git clone {{ config.xnvme.repository.remote }} {{ config.xnvme.repository.sync.remote_path }}
+    cd {{ config.xnvme.repository.sync.remote_path }} && git checkout {{ config.xnvme.repository.sync.branch }}
+
+- name: xnvme_build_prep
+  uses: xnvme_build_prep
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
+
+- name: xnvme_build
+  run: |
+    # Beware using buildtype=debug will cause tests to freeze - but it is useful for manual debugging
+    # This is because the debug output slows paramiko down to a halt
+    # cd {{ config.xnvme.repository.sync.remote_path }} && meson setup builddir --buildtype=debug
+    cd {{ config.xnvme.repository.sync.remote_path }} && meson setup builddir
+    cd {{ config.xnvme.repository.sync.remote_path }} && meson compile -C builddir
+    cd {{ config.xnvme.repository.sync.remote_path }} && cat builddir/meson-logs/meson-log.txt
+
+- name: xnvme_install
+  uses: xnvme_install
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
+
+- name: xnvme_aux_prep
+  uses: xnvme_aux_prep
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
+
+- name: xnvme_bindings_py_build
+  uses: xnvme_bindings_py_build
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
+
+- name: fio_prep
+  uses: fio_prep
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
