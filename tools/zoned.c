@@ -61,6 +61,13 @@ static int
 cmd_info(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
+	int err;
+
+	err = xnvme_dev_derive_geo(dev);
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_dev_derive_geo(), err: %d", err);
+		return err;
+	}
 
 	xnvme_dev_pr(dev, XNVME_PR_DEF);
 
