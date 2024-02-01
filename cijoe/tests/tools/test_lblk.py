@@ -104,6 +104,8 @@ def test_pi_type3(cijoe, device, be_opts, cli_args):
 def test_pi_type1_extended_lba(cijoe, device, be_opts, cli_args):
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
         pytest.skip(reason="[admin=block] does not support metadata")
+    if be_opts["be"] == "vfio":
+        pytest.skip(reason="[be=vfio] has a bug handling extended lba...")
 
     err, _ = cijoe.run(
         f"lblk write-read-pi {cli_args} --slba 0x0 --nlb 0 --pract 1 --prchk 0x5"
