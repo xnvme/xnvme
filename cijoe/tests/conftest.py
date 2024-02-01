@@ -72,6 +72,16 @@ def xnvme_be_opts(options=None, only_labels=[]):
     return [dict(item) for item in filtered]
 
 
+def cijoe_config_get_all_devices(labels):
+    """Returns the 'device-dict' from every device in 'cijoe_cfg' with the given 'label'"""
+    devices = []
+    for device in pytest.cijoe_instance.config.options.get("devices", []):
+        if not (set(labels) - set(device["labels"])):
+            devices.append(device)
+
+    return devices
+
+
 def cijoe_config_get_device(labels):
     """Returns the 'device-dict' from 'devices' in 'cijoe_cfg' with the given 'label'"""
 
@@ -179,12 +189,10 @@ def fabrics_setup(cijoe):
         err, _ = cijoe.run(f"modprobe {module}")
         assert not err
 
-    # Get pcie ids and subnqn
-    err, state = cijoe.run("xnvme enum")
-    assert not err
-
-    # Get pairs of pcie id and subnqn -> might contain dublicates hence we cast to a set
-    devices = set(re.findall(r"{uri: '(.*)'.* subnqn: '(.*)'}", state.output()))
+    # Get pairs of pcie id and subnqn -> might contain dublicates we use a set
+    devices = set()
+    for device in cijoe_config_get_all_devices(["fabrics"]):
+        devices.add((device["pcie_id"], device["subnqn"]))
 
     if not os.path.exists(
         xnvme_path / "subprojects" / "spdk" / "build" / "bin" / "nvmf_tgt"
