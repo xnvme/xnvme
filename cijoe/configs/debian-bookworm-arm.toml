@@ -243,18 +243,24 @@ driver_attachment = "kernel"
 
 [[devices]]
 uri = "127.0.0.1:4420"
+pcie_id = "0000:03:00.0"
+subnqn = "nqn.2019-08.org.qemu:deadbeef"
 nsid = 1
 labels = [ "dev", "fabrics", "nvm", "write_zeroes" ]
 driver_attachment = "userspace"
 
 [[devices]]
 uri = "127.0.0.1:4420"
+pcie_id = "0000:03:00.0"
+subnqn = "nqn.2019-08.org.qemu:deadbeef"
 nsid = 2
 labels = [ "dev", "fabrics", "zns" ]
 driver_attachment = "userspace"
 
 [[devices]]
 uri = "127.0.0.1:4420"
+pcie_id = "0000:03:00.0"
+subnqn = "nqn.2019-08.org.qemu:deadbeef"
 nsid = 3
 labels = [ "dev", "fabrics", "kvs" ]
 driver_attachment = "userspace"

@@ -553,7 +553,7 @@ sub_write_read_pi(struct xnvme_cli *cli)
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 	struct xnvme_pi_ctx pi_ctx;
-	const struct xnvme_geo *geo = cli->args.geo;
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	const uint64_t slba = cli->args.slba;
 	const size_t nlb = cli->args.nlb;
 	uint32_t nsid = cli->args.nsid;
