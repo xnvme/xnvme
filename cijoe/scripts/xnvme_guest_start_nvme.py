@@ -212,6 +212,46 @@ def qemu_nvme_args(nvme_img_root):
     nvme += qemu_nvme_dev_fdp
     drives.append(drv_fdp)
 
+    #
+    # Nvme4 - Controller with PI enabled
+    #
+
+    controller_id5 = "nvme4"
+    controller_bus5 = "pcie_downstream_port5"
+    controller_slot5 = 5
+    nvme += controller(
+        controller_id5, "feebdaed", 7, controller_bus5, upstream_bus, controller_slot5
+    )
+
+    # Nvme4n1 - NVM namespace with PI type 1
+    drv_pi1, qemu_nvme_dev_pi1 = namespace(controller_id5, 1, {"ms": 8, "pi": 1})
+    nvme += qemu_nvme_dev_pi1
+    drives.append(drv_pi1)
+
+    # Nvme4n2 - NVM namespace with PI type 2
+    drv_pi2, qemu_nvme_dev_pi2 = namespace(controller_id5, 2, {"ms": 8, "pi": 2})
+    nvme += qemu_nvme_dev_pi2
+    drives.append(drv_pi2)
+
+    # Nvme4n3 - NVM namespace with PI type 3
+    drv_pi3, qemu_nvme_dev_pi3 = namespace(controller_id5, 3, {"ms": 8, "pi": 3})
+    nvme += qemu_nvme_dev_pi3
+    drives.append(drv_pi3)
+
+    # Nvme4n4 - NVM namespace with PI type 1 and extended LBA
+    drv_pi1_ex, qemu_nvme_dev_pi1_ex = namespace(
+        controller_id5, 4, {"ms": 8, "mset": 1, "pi": 1}
+    )
+    nvme += qemu_nvme_dev_pi1_ex
+    drives.append(drv_pi1_ex)
+
+    # Nvme4n5 - NVM namespace with PI type 1 and PIF 2
+    drv_pi1_pif2, qemu_nvme_dev_pi1_pif2 = namespace(
+        controller_id5, 5, {"ms": 16, "pi": 1, "pif": 2}
+    )
+    nvme += qemu_nvme_dev_pi1_pif2
+    drives.append(drv_pi1_pif2)
+
     return drives, nvme
 
 
