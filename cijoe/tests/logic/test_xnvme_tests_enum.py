@@ -8,7 +8,12 @@ def test_open(cijoe, device, be_opts, cli_args):
     if be_opts["be"] == "ramdisk":
         pytest.skip(reason="[be=ramdisk] does not support enumeration")
 
-    err, _ = cijoe.run(f"xnvme_tests_enum open --count 4 --be {be_opts['be']}")
+    if "fabrics" in device["labels"]:
+        err, _ = cijoe.run(
+            f"xnvme_tests_enum open --uri {device['uri']} --count 4 --be {be_opts['be']}"
+        )
+    else:
+        err, _ = cijoe.run(f"xnvme_tests_enum open --count 4 --be {be_opts['be']}")
     assert not err
 
 
@@ -27,7 +32,12 @@ def test_multi(cijoe, device, be_opts, cli_args):
     if be_opts["be"] == "ramdisk":
         pytest.skip(reason="[be=ramdisk] does not support enumeration")
 
-    err, _ = cijoe.run(f"xnvme_tests_enum multi --count 4 --be {be_opts['be']}")
+    if "fabrics" in device["labels"]:
+        err, _ = cijoe.run(
+            f"xnvme_tests_enum multi --uri {device['uri']} --count 4 --be {be_opts['be']}"
+        )
+    else:
+        err, _ = cijoe.run(f"xnvme_tests_enum multi --count 4 --be {be_opts['be']}")
     assert not err
 
 
