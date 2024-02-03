@@ -16,7 +16,7 @@ _lblk_completions()
 
     # Complete sub-commands
     if [[ $COMP_CWORD < 2 ]]; then
-        COMPREPLY+=( $( compgen -W 'enum info idfy dir-send dir-receive read write write-zeros write-uncor write-dir --help' -- $cur ) )
+        COMPREPLY+=( $( compgen -W 'enum info idfy dir-send dir-receive read write write-zeros write-uncor write-dir write-read-pi --help' -- $cur ) )
         return 0
     fi
 
@@ -68,6 +68,10 @@ _lblk_completions()
 
     "write-dir")
         opts+="--slba --nlb --nsid --data-input --meta-input --dtype --dspec --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
+        ;;
+
+    "write-read-pi")
+        opts+="--slba --nlb --nsid --pract --prchk --apptag --apptag_mask --data-input --meta-input --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     esac

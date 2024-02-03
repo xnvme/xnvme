@@ -1,12 +1,12 @@
-# xnvme_tests_lblk completion                           -*- shell-script -*-
+# xnvme_tests_copy completion                           -*- shell-script -*-
 #
-# Bash completion script for the `xnvme_tests_lblk` CLI
+# Bash completion script for the `xnvme_tests_copy` CLI
 #
 # SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-_xnvme_tests_lblk_completions()
+_xnvme_tests_copy_completions()
 {
     local cur=${COMP_WORDS[COMP_CWORD]}
     local sub=""
@@ -16,7 +16,7 @@ _xnvme_tests_lblk_completions()
 
     # Complete sub-commands
     if [[ $COMP_CWORD < 2 ]]; then
-        COMPREPLY+=( $( compgen -W 'io write_zeroes write_uncorrectable --help' -- $cur ) )
+        COMPREPLY+=( $( compgen -W 'copy --help' -- $cur ) )
         return 0
     fi
 
@@ -30,15 +30,7 @@ _xnvme_tests_lblk_completions()
 
     case "$sub" in
     
-    "io")
-        opts+="--slba --elba --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
-        ;;
-
-    "write_zeroes")
-        opts+="--slba --elba --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
-        ;;
-
-    "write_uncorrectable")
+    "copy")
         opts+="--slba --elba --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
@@ -50,6 +42,6 @@ _xnvme_tests_lblk_completions()
 }
 
 #
-complete -o nosort -F _xnvme_tests_lblk_completions xnvme_tests_lblk
+complete -o nosort -F _xnvme_tests_copy_completions xnvme_tests_copy
 
 # ex: filetype=sh

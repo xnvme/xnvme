@@ -99,7 +99,7 @@ _xnvme_completions()
         ;;
 
     "format")
-        opts+="--nsid --lbaf --zf --mset --ses --pi --pil --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        opts+="--nsid --lbafl --lbafu --mset --ses --pi --pil --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "sanitize")
