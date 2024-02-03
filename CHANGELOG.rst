@@ -18,6 +18,26 @@ Known Issues
 
 See the file named ``ISSUES`` in the root of the repository.
 
+v0.7.4
+------
+
+A lot of minor fixes, reduction of technical debt, and fixes in preperation for
+Debian packaging. See the commits for details.
+
+* Packaging, see subsection "packaging" in the Contributor section of the docs
+
+* feat: Delayed identification, upon xnvme_dev_open() then a device was
+  "identified" and its geometry "derived", this is dropped in favor of "adhoc" /
+  "implicit" action when the data is requested.
+
+* feat: The SPDK backend now supports iovec payloads
+
+* feat: end-to-end data-protection is now available with helpers in the public
+  API
+
+* feat: Support for completion-notification via eventfd() by using helper
+  function xnvme_queue_get_completion_fd()
+
 v0.7.3
 ------
 
