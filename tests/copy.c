@@ -16,19 +16,20 @@
  *
  *  Constraints:
  *  Abide to mdts constraint
- *  Abite to COPY format zero max entries
+ *  Abide to COPY format zero max entries
  */
 static int
 test_copy(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
+	const struct xnvme_spec_idfy_ns *ns = xnvme_dev_get_ns(dev);
 	uint32_t nsid;
 	struct xnvme_cmd_ctx ctx = {0};
 
 	char *wbuf = NULL, *rbuf = NULL;
-	struct xnvme_spec_nvm_scopy_source_range *source_range = NULL;
-	uint64_t xfer_naddr, xfer_nbytes, sdlba, slba;
+	struct xnvme_spec_nvm_scopy_fmt_zero *source_range = NULL;
+	uint64_t nlb, nbytes, sdlba, slba;
 	int err;
 
 	switch (geo->type) {
@@ -42,26 +43,60 @@ test_copy(struct xnvme_cli *cli)
 
 	xnvme_dev_pr(dev, XNVME_PR_DEF);
 
-	xfer_naddr = XNVME_MIN(geo->mdts_nbytes / geo->lba_nbytes, 128);
-	xfer_nbytes = xfer_naddr * geo->lba_nbytes;
-	slba = 0x0;
-	sdlba = slba + xfer_naddr;
+	if (cli->given[XNVME_CLI_OPT_NLB]) {
+		nlb = cli->args.nlb + 1; // NOTE nlb is zero-based
+		if (nlb > ns->mssrl) {
+			xnvme_cli_pinf("Failed: nlb > ns->mssrl");
+			return -EINVAL;
+		}
+	} else {
+		nlb = ns->mssrl;
+	}
 
-	wbuf = xnvme_buf_alloc(dev, xfer_nbytes);
+	nbytes = nlb * geo->lba_nbytes;
+	if (nbytes > geo->mdts_nbytes) {
+		xnvme_cli_pinf("nbytes > mdts_nbytes -> limiting nlb to mdts_nbytes / lba_nbytes");
+		nlb = geo->mdts_nbytes / geo->lba_nbytes;
+		nbytes = geo->mdts_nbytes;
+	}
+
+	slba = cli->given[XNVME_CLI_OPT_SLBA] ? cli->args.slba : 0x0;
+
+	if (cli->given[XNVME_CLI_OPT_SDLBA]) {
+		sdlba = cli->args.sdlba;
+		// Make sure there's no overlap between src and dest
+		// Because nlb is incremented by 1 above, slba + nlb == sdlba is legal
+		if (slba < sdlba && slba + nlb > sdlba) {
+			xnvme_cli_pinf("Overlap between src and dest: slba < sdlba && slba + nlb "
+				       "> sdlba");
+			return -EINVAL;
+		} else if (slba > sdlba && sdlba + nlb < slba) {
+			xnvme_cli_pinf("Overlap between src and dest: slba > sdlba && sdlba + nlb "
+				       "< slba");
+			return -EINVAL;
+		} else if (slba == sdlba) {
+			xnvme_cli_pinf("Overlap between src and dest: slba == sdlba");
+			return -EINVAL;
+		}
+	} else {
+		sdlba = slba + nlb;
+	}
+
+	wbuf = xnvme_buf_alloc(dev, nbytes);
 	if (!wbuf) {
 		err = errno;
 		XNVME_DEBUG("Failed: allocating write buffer");
 		goto exit;
 	}
-	xnvme_buf_fill(wbuf, xfer_nbytes, "anum");
+	xnvme_buf_fill(wbuf, nbytes, "anum");
 
-	rbuf = xnvme_buf_alloc(dev, xfer_nbytes);
+	rbuf = xnvme_buf_alloc(dev, nbytes);
 	if (!rbuf) {
 		err = errno;
 		XNVME_DEBUG("Failed: allocating read buffer");
 		goto exit;
 	}
-	xnvme_buf_fill(rbuf, xfer_nbytes, "0");
+	xnvme_buf_fill(rbuf, nbytes, "0");
 
 	source_range = xnvme_buf_alloc(dev, sizeof(*source_range));
 	if (!source_range) {
@@ -69,14 +104,14 @@ test_copy(struct xnvme_cli *cli)
 		XNVME_DEBUG("Failed: allocating range buffer");
 		goto exit;
 	}
-	source_range->entry[0].slba = slba;
-	source_range->entry[0].nlb = xfer_naddr - 1;
+	source_range->slba = slba;
+	source_range->nlb = nlb - 1;
 
 	// Write data to the buffer
 	nsid = xnvme_dev_get_nsid(dev);
 	ctx = xnvme_cmd_ctx_from_dev(dev);
 
-	err = xnvme_nvm_write(&ctx, nsid, slba, (xfer_naddr - 1), wbuf, NULL);
+	err = xnvme_nvm_write(&ctx, nsid, slba, (nlb - 1), wbuf, NULL);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_pinf("xnvme_nvm_write(): "
 			       "{err: 0x%x, slba: 0x%016lx}",
@@ -86,8 +121,7 @@ test_copy(struct xnvme_cli *cli)
 	}
 
 	// Copy LBA's
-	err = xnvme_nvm_scopy(&ctx, nsid, sdlba, source_range->entry, xfer_naddr - 1,
-			      XNVME_NVM_SCOPY_FMT_ZERO);
+	err = xnvme_nvm_scopy(&ctx, nsid, sdlba, source_range, 0, XNVME_NVM_SCOPY_FMT_ZERO);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_pinf("xnvme_nvm_copy(): "
 			       "{err: 0x%x, slba: 0x%016lx}",
@@ -97,7 +131,7 @@ test_copy(struct xnvme_cli *cli)
 	}
 
 	// Read back LBA's
-	err = xnvme_nvm_read(&ctx, nsid, sdlba, xfer_naddr - 1, rbuf, NULL);
+	err = xnvme_nvm_read(&ctx, nsid, sdlba, nlb - 1, rbuf, NULL);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_pinf("xnvme_nvm_read(): "
 			       "{err: 0x%x, slba: 0x%016lx}",
@@ -108,8 +142,8 @@ test_copy(struct xnvme_cli *cli)
 
 	// Compare LBA's
 	xnvme_cli_pinf("Comparing wbuf and rbuf");
-	if (xnvme_buf_diff(wbuf, rbuf, xfer_nbytes)) {
-		xnvme_buf_diff_pr(wbuf, rbuf, xfer_nbytes, XNVME_PR_DEF);
+	if (xnvme_buf_diff(wbuf, rbuf, nbytes)) {
+		xnvme_buf_diff_pr(wbuf, rbuf, nbytes, XNVME_PR_DEF);
 		err = -EIO;
 		goto exit;
 	}
@@ -136,7 +170,8 @@ static struct xnvme_cli_sub g_subs[] = {
 
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_SLBA, XNVME_CLI_LOPT},
-			{XNVME_CLI_OPT_ELBA, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_NLB, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_SDLBA, XNVME_CLI_LOPT},
 
 			XNVME_CLI_SYNC_OPTS,
 		},
