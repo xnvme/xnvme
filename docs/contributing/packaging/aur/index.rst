@@ -9,9 +9,8 @@ To update the pkg::
   git clone https://aur.archlinux.org/xnvme.git
   cd xnvme
 
-Edit ``PKGBUILD`` -- update ``pkgver``, ``md5sums``, then::
+Edit ``PKGBUILD`` -- update ``pkgver`` and ``sha256sums`` then::
 
-  updpkgsums
   makepkg --printsrcinfo > .SRCINFO
   git add PKGBUILD
   git add .SRCINFO
