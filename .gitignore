@@ -19,6 +19,7 @@ scripts/source-format.log*
 *.egg-info
 *~
 .cache
+.clangd
 .idea
 /*.patch
 build
