@@ -854,7 +854,12 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.name = "apptag_mask",
 		.descr = "Application Tag Mask",
 	},
-
+	{
+		.opt = XNVME_CLI_OPT_SDLBA,
+		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
+		.name = "sdlba",
+		.descr = "Starting Destination Logical Block Address",
+	},
 	{
 		.opt = XNVME_CLI_OPT_END,
 		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
@@ -1511,6 +1516,9 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 		break;
 	case XNVME_CLI_OPT_APPTAG_MASK:
 		args->apptag_mask = num;
+		break;
+	case XNVME_CLI_OPT_SDLBA:
+		args->sdlba = num;
 		break;
 	case XNVME_CLI_OPT_POSA_TITLE:
 	case XNVME_CLI_OPT_NON_POSA_TITLE:
