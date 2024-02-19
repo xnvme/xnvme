@@ -42,7 +42,6 @@ struct xnvme_cli_args {
 
 	const char *cmd_input;
 	const char *cmd_output;
-
 	size_t data_nbytes;
 	const char *data_input;
 	const char *data_output;
@@ -165,6 +164,8 @@ struct xnvme_cli_args {
 	uint8_t prchk;
 	uint32_t apptag;
 	uint32_t apptag_mask;
+
+	uint64_t sdlba;
 };
 
 void
@@ -331,8 +332,9 @@ enum xnvme_cli_opt {
 	XNVME_CLI_OPT_PRCHK       = 121, ///< XNVME_CLI_OPT_PRCHK
 	XNVME_CLI_OPT_APPTAG      = 122, ///< XNVME_CLI_OPT_APPTAG
 	XNVME_CLI_OPT_APPTAG_MASK = 123, ///< XNVME_CLI_OPT_APPTAG_MASK
-					 //
-	XNVME_CLI_OPT_END = 124,         ///< XNVME_CLI_OPT_END
+
+	XNVME_CLI_OPT_SDLBA = 124,
+	XNVME_CLI_OPT_END   = 125, ///< XNVME_CLI_OPT_END
 };
 
 /**
