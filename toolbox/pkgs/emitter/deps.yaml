@@ -49,7 +49,7 @@ deps:
     when: [building]
     names:
       default: [meson] # apt, apk, pacman, dnf, zypper
-      emerge: [dev-util/meson]
+      emerge: [dev-build/meson]
       pip: [meson, ninja]
       pipx: [meson, ninja]
 
