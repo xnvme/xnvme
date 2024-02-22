@@ -13,6 +13,7 @@ emerge-webrsync
 emerge \
  app-arch/libarchive \
  bash \
+ dev-build/meson \
  dev-lang/nasm \
  dev-libs/isa-l \
  dev-libs/libaio \
@@ -20,7 +21,6 @@ emerge \
  dev-python/pip \
  dev-python/pyelftools \
  dev-util/cunit \
- dev-util/meson \
  dev-util/pkgconf \
  dev-vcs/git \
  findutils \
