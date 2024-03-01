@@ -179,8 +179,8 @@ static struct xnvme_cli_sub g_subs[] = {
 };
 
 static struct xnvme_cli g_cli = {
-	.title = "Basic LBLK Test Verification",
-	.descr_short = "Basic LBLK Test Verification",
+	.title = "Basic Copy Test Verification",
+	.descr_short = "Basic Copy Test Verification",
 	.subs = g_subs,
 	.nsubs = sizeof g_subs / sizeof(*g_subs),
 };
