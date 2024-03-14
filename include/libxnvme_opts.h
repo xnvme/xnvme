@@ -7,8 +7,8 @@
  */
 
 struct xnvme_opts_css {
-	uint32_t value;
-	uint32_t given;
+	uint32_t value : 31;
+	uint32_t given : 1;
 };
 
 /**
