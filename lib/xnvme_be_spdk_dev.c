@@ -288,6 +288,11 @@ _xnvme_be_spdk_ident_to_trid(const struct xnvme_ident *ident, struct xnvme_opts 
 
 	memset(trid, 0, sizeof(*trid));
 
+	// For TCP, RDMA, FC and CUSTOM transport types, prevent assertion 0,
+	// failure in spdk_nvme_trid_populate_transport().
+	// TODO: See if there is a better way to fix this.
+	trid->trtype = trtype;
+
 	switch (trtype) {
 	case SPDK_NVME_TRANSPORT_PCIE:
 		sprintf(trid_str, "trtype:%s traddr:%s", spdk_nvme_transport_id_trtype_str(trtype),
