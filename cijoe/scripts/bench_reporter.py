@@ -53,7 +53,11 @@ def main(args, cijoe, step):
     # Read the cover-template, populate it, then store it in the artifacts directory
     with (templates_path / "cover.jinja2.tmpl").open() as template:
         with cover_path.open("w") as cover:
-            cover.write(template.read().replace("INSERT_DATE", "1st of January 2024"))
+            cover.write(
+                template.read().replace(
+                    "INSERT_DATE", date.today().strftime("%d %B %Y")
+                )
+            )
 
     # Read the report-template, populate it, then store it in the artifacts directory
     with (templates_path / "bench.jinja2.rst").open() as template:
