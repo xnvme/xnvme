@@ -168,18 +168,15 @@ storage-paths are from the HW-roofline.
 Results
 =======
 
-.. raw:: pdf
-
-   PageBreak
+The line plots, in this section, display the relationship between iodepth on the x-axis and
+IOPS (Input/Output Operations Per Second) on the y-axis, illustrating how IOPS
+performance varies with different iodepth values.
 
 libaio
 ------
 
 Comparing ``bdev_xnvme``, with ``io_mechanism=libaio``, to ``bdev_aio``.
 
-The line plot below displays the relationship between iodepth on the x-axis and
-IOPS (Input/Output Operations Per Second) on the y-axis, illustrating how IOPS
-performance varies with different iodepth values.
 
 .. image:: bdevperf_lineplot_libaio.png
    :align: center
@@ -198,9 +195,6 @@ io_uring
 
 Comparing ``bdev_xnvme``, using ``io_mechanism=io_uring``, to ``bdev_uring``.
 
-The line plot below displays the relationship between iodepth on the x-axis and
-IOPS (Input/Output Operations Per Second) on the y-axis, illustrating how IOPS
-performance varies with different iodepth values.
 
 .. image:: bdevperf_lineplot_io_uring.png
    :align: center
@@ -215,16 +209,12 @@ distinct advantage.
 io_uring_cmd
 ------------
 
-For this, there is no reference bdev-implementation, thus, the graph stands alone.
+For ``io_uring_cmd``, there is no reference bdev-implementation, thus ``bdev_xnvme``, using ``io_mechanism=io_uring_cmd``, stands alone.
 
-The line plot below displays the relationship between iodepth on the x-axis and
-IOPS (Input/Output Operations Per Second) on the y-axis, illustrating how IOPS
-performance varies with different iodepth values.
 
 .. image:: bdevperf_lineplot_io_uring_cmd.png
    :align: center
    :width: 100%
 
-In the graph, the line representing io_uring_cmd shows a modest but clear
-advantage over the other datasets, indicating that io_uring_cmd provides a
-somewhat improved IOPS performance in this scenario.
+Comparing this graph to the graphs for ``libaio`` and ``io_uring``, ``io_uring_cmd`` shows a modest but clear
+advantage over the others, indicating that ``io_uring_cmd`` provides an improved IOPS performance in this scenario.
