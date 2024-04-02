@@ -83,7 +83,7 @@ if get_option('build_subprojects') and not fs.exists('build' / 'lib' / 'src' / '
   is_platform_generic = target_machine.cpu_family() == 'aarch64' and run_command([
     import('python').find_installation('python3'),
     '-c',
-    'print(open("/sys/devices/system/cpu/cpu0/regs/identification/midr_el1").read().strip() == "0x00000000610f0000")'
+    'print(open("/sys/devices/system/cpu/cpu0/regs/identification/midr_el1").read().strip() in ["", "0x00000000610f0000"])'
     ],
     check: true,
   ).stdout().strip() == 'True'
