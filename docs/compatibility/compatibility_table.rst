@@ -11,20 +11,20 @@ xNVMe compatibility
     * - Command
       - Ramdisk
     * - Compare
-      - ✗
+      - ✓
     * - Copy
       - ✓
     * - Dataset Management
       - ✗
     * - Flush
       - ✗
+    * - Read
+      - ✓
     * - Verify
       - ✗
     * - Write
-      - ✗
-    * - Wrote Uncorrectable
+      - ✓
+    * - Write Uncorrectable
       - ✗
     * - Write Zeroes
-      - ✗
-    * - Read
-      - ✗ 
+      - ✓
