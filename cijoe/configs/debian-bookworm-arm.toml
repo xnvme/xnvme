@@ -32,11 +32,11 @@ default_guest = "bookworm_arm64"
 path = "{{ local.env.HOME }}/guests/debian-bookworm-arm64"
 
 # Keyword arguments: joined onto the form: "-cpu host -smp 4 -m 4" etc.
-system_args.kwa = {cpu = "host", smp = 4, m = "6G", accel = "hvf"}
+system_args.kwa = {cpu = "host", smp = 4, m = "6G"}
 
 # Raw arguments: passed without modification to qemu-system-{arch}
 system_args.raw = """\
--M "virt" \
+-M "virt,accel=hvf,iommu=smmuv3,gic-version=3" \
 -drive "file={{ local.env.HOME }}/opt/qemu/share/qemu/edk2-aarch64-code.fd,format=raw,if=pflash,readonly=on" \
 """
 
