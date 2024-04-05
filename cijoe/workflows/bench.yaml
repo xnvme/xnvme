@@ -24,6 +24,9 @@ steps:
 - name: sysinfo
   uses: linux.sysinfo
 
+- name: hardware
+  run: lshw
+
 - name: repository
   uses: core.repository_prep
 

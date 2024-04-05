@@ -94,29 +94,32 @@ storage abstraction layer for the SPDK bdev abstraction.
 Test Setup
 ==========
 
-.. note:: **TODO**: Write some prose here.
+.. list-table:: Software / Hardware setup
+   :widths: 25 75
+   :header-rows: 1
+
+   * - Item
+     - Description
+   * - **Operating System**
+     - {{ linux_version }}
+   * - **Kernel**
+     - {{ kernel_version }}
+   * - **Motherboard**
+     - {{ motherboard }}
+   * - **CPU**
+     - {{ cpu }}
+   * - **Memory**
+     - {% for bank in ram %}
+       * {{bank}}
+      {% endfor %}   
+   * - **Drives under test**
+     - {% for name, device in drives.items() %}
+       * {{name}}: {{device}}
+      {% endfor %}
 
 .. raw:: pdf
 
    PageBreak
-
-Software
---------
-
-.. note::
-   **TODO**: Populate this section using the artifacts produces and data collected by
-   **CIJOE**, that is, the output from ``cat /boot/cmdline``, ``uname``,
-   ``dmesg``, ``/etc/os-release``.
-
-.. raw:: pdf
-
-   PageBreak
-
-Hardware
---------
-
-.. note::
-   **TODO**: Populate this section using the artifacts produces by CIJOE, that is, the ``lshw``.
 
 BIOS
 ----
