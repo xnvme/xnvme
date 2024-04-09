@@ -403,6 +403,8 @@ xnvme_spec_ruhs_fpr(FILE *stream, const struct xnvme_spec_ruhs *ruhs, int limit,
 		return wrtn;
 	}
 
+	limit = limit > ruhs->nruhsd ? ruhs->nruhsd : limit;
+
 	wrtn += fprintf(stream, "  nruhsd: %" PRIu16 "\n", ruhs->nruhsd);
 
 	for (int i = 0; i < limit; ++i) {
