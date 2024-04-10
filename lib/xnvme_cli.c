@@ -1265,7 +1265,7 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 		args->rae = num;
 		break;
 	case XNVME_CLI_OPT_CLEAR:
-		args->clear = arg ? num : 1;
+		args->clear = true;
 		break;
 	case XNVME_CLI_OPT_LBAFU:
 		args->lbafu = num;
@@ -1326,7 +1326,7 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 		args->qdepth = num;
 		break;
 	case XNVME_CLI_OPT_DIRECT:
-		args->direct = arg ? num : 1;
+		args->direct = 1;
 		break;
 
 	case XNVME_CLI_OPT_OPCODE:
@@ -1337,19 +1337,19 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 		break;
 
 	case XNVME_CLI_OPT_ALL:
-		args->all = arg ? num : 1;
+		args->all = 1;
 		break;
 	case XNVME_CLI_OPT_STATUS:
 		args->status = arg ? num : 1;
 		break;
 	case XNVME_CLI_OPT_SAVE:
-		args->save = arg ? num : 1;
+		args->save = 1;
 		break;
 	case XNVME_CLI_OPT_RESET:
 		args->reset = arg ? num : 1;
 		break;
 	case XNVME_CLI_OPT_VERBOSE:
-		args->verbose = arg ? num : 1;
+		args->verbose = true;
 		break;
 	case XNVME_CLI_OPT_HELP:
 		args->help = arg ? num : 1;
@@ -1450,13 +1450,13 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 		args->nsr = num;
 		break;
 	case XNVME_CLI_OPT_AD:
-		args->ad = arg ? num : 1;
+		args->ad = true;
 		break;
 	case XNVME_CLI_OPT_IDW:
-		args->idw = arg ? num : 1;
+		args->idw = true;
 		break;
 	case XNVME_CLI_OPT_IDR:
-		args->idr = arg ? num : 1;
+		args->idr = true;
 		break;
 	case XNVME_CLI_OPT_KV_KEY:
 		if (strlen(arg) > 16) {
