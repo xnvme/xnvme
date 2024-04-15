@@ -433,6 +433,15 @@ install: _require_builddir
 	$(MESON) install -C $(BUILD_DIR)
 	@echo "## xNVMe: make install [DONE]"
 
+define test-help
+# Test xNVMe with Meson
+endef
+.PHONY: test
+test: _require_builddir
+	@echo "## xNVMe: make test"
+	$(MESON) test -C $(BUILD_DIR)
+	@echo "## xNVMe: make test [DONE]"
+
 define uninstall-help
 # Uninstall xNVMe with Meson
 endef
