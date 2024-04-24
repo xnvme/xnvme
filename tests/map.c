@@ -7,8 +7,6 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#define ALIGN_UP(x, a) (((x) + (a)-1) & ~((a)-1))
-
 static int
 test_mem_map_unmap(struct xnvme_cli *cli)
 {
@@ -27,7 +25,7 @@ test_mem_map_unmap(struct xnvme_cli *cli)
 		xnvme_cli_pinf("[map/unmap] i: %zu, buf_nbytes: %zu", i + 1, buf_nbytes);
 
 		page_size = sysconf(_SC_PAGESIZE);
-		buf_nbytes = ALIGN_UP(buf_nbytes, page_size);
+		buf_nbytes = (buf_nbytes + page_size - 1) & ~(page_size - 1);
 
 		buf = mmap(NULL, buf_nbytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS,
 			   0, 0);
