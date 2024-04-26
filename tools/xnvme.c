@@ -197,8 +197,21 @@ sub_idfy(struct xnvme_cli *cli)
 	uint16_t nvmsetid = cli->args.setid;
 	uint8_t uuid = cli->args.uuid;
 
-	if (!cli->given[XNVME_CLI_OPT_NSID]) {
-		nsid = xnvme_dev_get_nsid(cli->args.dev);
+	switch (cns) {
+	case XNVME_SPEC_IDFY_NS:
+	case XNVME_SPEC_IDFY_NSLIST:
+	case XNVME_SPEC_IDFY_NSDSCR:
+	case XNVME_SPEC_IDFY_NS_IOCS:
+	case XNVME_SPEC_IDFY_NSLIST_IOCS:
+	case XNVME_SPEC_IDFY_NSLIST_ALLOC:
+	case XNVME_SPEC_IDFY_NS_ALLOC:
+	case XNVME_SPEC_IDFY_CTRLR_NS:
+	case XNVME_SPEC_IDFY_NSLIST_ALLOC_IOCS:
+	case XNVME_SPEC_IDFY_NS_ALLOC_IOCS:
+		// Only add nsid if needed
+		if (!cli->given[XNVME_CLI_OPT_NSID]) {
+			nsid = xnvme_dev_get_nsid(cli->args.dev);
+		}
 	}
 
 	return _sub_idfy(cli, cns, cntid, nsid, nvmsetid, uuid);
