@@ -379,7 +379,7 @@ _spdk_setup_controller_opts(struct xnvme_opts *opts, const struct spdk_nvme_tran
 	case SPDK_NVME_TRANSPORT_RDMA:
 		ctrlr_opts->header_digest = 1;
 		ctrlr_opts->data_digest = 1;
-		ctrlr_opts->keep_alive_timeout_ms = 0;
+		ctrlr_opts->keep_alive_timeout_ms = opts->keep_alive_timeout_ms;
 		if (opts->hostnqn) {
 			strncpy(ctrlr_opts->hostnqn, opts->hostnqn, SPDK_NVMF_NQN_MAX_LEN);
 		}

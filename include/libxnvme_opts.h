@@ -48,6 +48,7 @@ struct xnvme_opts {
 	uint32_t admin_timeout;    ///< SPDK fabrics: enable admin command timeout
 	uint32_t command_timeout;  ///< SPDK fabrics: enable io command timeout
 	uint32_t spdk_fabrics;     ///< Is assigned a value by backend if SPDK uses fabrics
+	uint32_t keep_alive_timeout_ms; ///< SPDK fabrics: set keep alive timeout
 };
 
 /**
