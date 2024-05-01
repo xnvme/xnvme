@@ -28,6 +28,8 @@ tag = "xnvme-next"
 
 [spdk.build]
 prefix = "/opt/spdk"
+spdk_json_conf = "/opt/bdev_confs/bdev_nvme_spdk_nvme__1.conf"
+filename = "bdev_nvme_spdk_nvme_device0n1n1"
 
 [fio]
 bin = "/opt/fio/bin/fio"
@@ -49,15 +51,15 @@ io_uring_cmd = {type = "builtin", device = "cdev"} # Kernel
 
 null = {type = "builtin", device = "bdev"}
 
-spdk_nvme = {type = "external_preload", path = "/root/git/spdk/build/fio/spdk_nvme", fio_path = "/opt/spdk_fio/bin/fio", device = "pcie"} # Userspace
-spdk_bdev = {type = "external_preload", path = "/root/git/spdk/build/fio/spdk_bdev", fio_path = "/opt/spdk_fio/bin/fio", device = "pcie"} # Userspace
+spdk_nvme = {type = "external_preload", path = "/root/git/spdk/build/fio/spdk_nvme", fio_path = "/opt/fio/bin/fio", device = "pcie"} # Userspace
+spdk_bdev = {type = "external_preload", path = "/root/git/spdk/build/fio/spdk_bdev", fio_path = "/opt/fio/bin/fio", device = "pcie"} # Userspace
 
-xnvme_libaio = {type = "builtin", be = "libaio", device = "bdev"} # Kernel
-xnvme_posixaio = {type = "builtin", be = "posix", device = "bdev"} # Kernel
-xnvme_io_uring = {type = "builtin", be = "io_uring", device = "bdev"} # Kernel
-xnvme_io_uring_cmd = {type = "builtin", be = "io_uring_cmd", device = "cdev"} # Kernel
-xnvme_spdk = {type = "builtin", be = "spdk", device = "pcie"} # Userspace
-xnvme_null = {type = "builtin", be = "nil", device = "bdev"} # Kernel
+xnvme_libaio = {type = "builtin", be = "linux", async = "libaio", device = "bdev"} # Kernel
+xnvme_posixaio = {type = "builtin", be = "linux", async = "posix", device = "bdev"} # Kernel
+xnvme_io_uring = {type = "builtin", be = "linux", async = "io_uring", device = "bdev"} # Kernel
+xnvme_io_uring_cmd = {type = "builtin", be = "linux", async = "io_uring_cmd", device = "cdev"} # Kernel
+xnvme_spdk = {type = "builtin", be = "spdk", async = "nvme", device = "pcie"} # Userspace
+xnvme_null = {type = "builtin", be = "linux", async = "nil", device = "bdev"} # Kernel
 
 [[devices]] # IO Uring/ libaio/ posixaio
 key = "bdev"

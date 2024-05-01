@@ -124,21 +124,23 @@ class UserSpaceEngine(Engine):
 @dataclass
 class XnvmeKernelEngine(KernelEngine):
     be: str
+    async_: str
     name: str
     device: Device
     cijoe: Cijoe
 
     @property
     def name_id(self) -> str:
-        return f"{self.name}_{self.be}"
+        return f"{self.name}_{self.async_}"
 
     def extra_args(self) -> Dict[str, str]:
-        return {"-xnvme_be": "linux", "-xnvme_async": f"{self.be}"}
+        return {"-xnvme_be": f"{self.be}", "-xnvme_async": f"{self.async_}"}
 
 
 @dataclass
 class XnvmeUserSpaceEngine(UserSpaceEngine):
     be: str
+    async_: str
     name: str
     device: Device
     cijoe: Cijoe
@@ -175,7 +177,7 @@ class XnvmeSPDK(XnvmeUserSpaceEngine):
     def extra_args(self) -> Dict[str, str]:
         return {
             "-xnvme_be": f"{self.be}",
-            "-xnvme_async": "nvme",
+            "-xnvme_async": f"{self.async_}",
             "-xnvme_dev_nsid": str(self.device.nsid),
         }
 
@@ -205,14 +207,19 @@ class IOURingCmdEngine(KernelEngine):
 
 @dataclass
 class BdevExternalPreloader(ExternalPreloader):
-    # TODO: This should absolutely not be hardcoded
     def extra_args(self) -> Dict[str, str]:
-        return {"-spdk_json_conf": "/opt/bdev_confs/bdev_nvme_spdk_nvme__1.conf"}
+        spdk_json_conf = (
+            self.cijoe.config.options.get("spdk", {})
+            .get("build", {})
+            .get("spdk_json_conf")
+        )
+        return {"-spdk_json_conf": f"{spdk_json_conf}"}
 
-    # TODO: This should absolutely not be hardcoded
     @property
     def filename(self) -> str:
-        return "bdev_nvme_spdk_nvme_device0n1n1"
+        return (
+            self.cijoe.config.options.get("spdk", {}).get("build", {}).get("filename")
+        )
 
 
 def determine_engine(
@@ -237,24 +244,52 @@ def determine_engine(
         return KernelEngine(name="posixaio", device=device, cijoe=cijoe)
     elif engine_identifier == Engines.XNVME_IO_URING.value:
         return XnvmeKernelEngine(
-            name="xnvme", device=device, cijoe=cijoe, be=definition["be"]
+            name="xnvme",
+            device=device,
+            cijoe=cijoe,
+            be=definition["be"],
+            async_=definition["async"],
         )
     elif engine_identifier == Engines.XNVME_IO_URING_CMD.value:
         return XnvmeIOURingCMD(
-            name="xnvme", device=device, cijoe=cijoe, be=definition["be"]
+            name="xnvme",
+            device=device,
+            cijoe=cijoe,
+            be=definition["be"],
+            async_=definition["async"],
         )
     elif engine_identifier == Engines.XNVME_LIBAIO.value:
         return XnvmeKernelEngine(
-            name="xnvme", device=device, cijoe=cijoe, be=definition["be"]
+            name="xnvme",
+            device=device,
+            cijoe=cijoe,
+            be=definition["be"],
+            async_=definition["async"],
         )
     elif engine_identifier == Engines.XNVME_POSIXAIO.value:
         return XnvmeKernelEngine(
-            name="xnvme", device=device, cijoe=cijoe, be=definition["be"]
+            name="xnvme",
+            device=device,
+            cijoe=cijoe,
+            be=definition["be"],
+            async_=definition["async"],
         )
     elif engine_identifier == Engines.XNVME_SPDK.value:
-        return XnvmeSPDK(name="xnvme", device=device, cijoe=cijoe, be=definition["be"])
+        return XnvmeSPDK(
+            name="xnvme",
+            device=device,
+            cijoe=cijoe,
+            be=definition["be"],
+            async_=definition["async"],
+        )
     elif engine_identifier == Engines.XNVME_NULL.value:
-        return XnvmeNullEngine(name="xnvme", device=device, cijoe=cijoe, be="nil")
+        return XnvmeNullEngine(
+            name="xnvme",
+            device=device,
+            cijoe=cijoe,
+            be=definition["be"],
+            async_=definition["async"],
+        )
     elif engine_identifier == Engines.SPDK_NVME.value:
         return ExternalPreloader(
             name="spdk",
