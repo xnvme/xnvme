@@ -1,0 +1,35 @@
+---
+doc: |
+  Benchmark latency run, result plotting, and report gen.
+  =================================================================
+
+  The comparison and plots consists of
+
+    * bandwidth in KiB / seconds
+    * latency is mean and in nano-seconds
+    * IOPS are 'raw' / base-unit
+
+  The above in a bar-plot at iodepth=1, and a line-plot as a function of iodepth.
+
+  See Artifacts for the generated plots
+
+steps:
+
+- name: benchmark
+  uses: fio_latency
+  with:
+    repetitions: 1
+    io_sizes: ['4096']
+    io_depths: [1, 2, 4, 8, 16]
+    ndevices: 8
+
+- name: plot
+  uses: latency_plotter
+  with:
+    tool: fio
+    legends: auxiliary/plot-latency-legends.yaml
+    limits: auxiliary/plot-latency-limits.yaml
+
+- name: latency_report
+  uses: latency_reporter
+
