@@ -772,6 +772,12 @@ jobs:
       run: |
         make cijoe
 
+    - name: CIJOE, run provisioning
+      run: |
+        cd cijoe && cijoe \
+        --config "configs/bench-intel.toml" \
+        --workflow "workflows/benchmark-provisioning-linux.yaml"
+
     - name: CIJOE, run bench
       run: |
         rm -rf cijoe/bench-results
