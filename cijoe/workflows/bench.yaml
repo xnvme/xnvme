@@ -1,13 +1,7 @@
 ---
 doc: |
-  Environment prep, benchmark run, result plotting, and report gen.
+  Benchmark run, result plotting, and report gen.
   =================================================================
-
-  Environment preparation consists of
-
-  * Retrieving and updating repositories for liburing, xnvme, fio, and SPDK
-  * Configure, build and install liburing, xnvme, fio, and SPDK
-  * Generate bdev-configs for all CIJOE "duts"
 
   The comparison and plots consists of
 
@@ -26,39 +20,6 @@ steps:
 
 - name: hardware
   run: lshw
-
-- name: repository
-  uses: core.repository_prep
-
-- name: liburing
-  uses: liburing_build
-
-- name: xnvme_build
-  uses: xnvme_build
-
-- name: xnvme_install
-  uses: xnvme_install
-
-- name: fio
-  uses: fio_prep
-
-- name: spdk
-  uses: spdk_build_modded
-
-- name: bdev_confs
-  uses: spdk_bdev_confs_generator
-  with:
-    bdev_confs: /opt/bdev_confs
-
-- name: prep
-  run: |
-    xnvme-driver || true
-    xnvme-driver reset || true
-
-# This is needed whenever io_uring and io_uring_cmd is used, hmm, bdevperf will
-# probably need something special here...
-- name: linux_nvme_prep
-  uses: linux_nvme_prep
 
 - name: bench
   uses: bdevperf
