@@ -1,0 +1,71 @@
+[transport.ssh]
+hostname = "perf-lat-fbsd.home.arpa"
+port = 22
+username = "root"
+password = "root"
+
+[os]
+name = "freebsd"
+version = "13"
+
+[xnvme.repository]
+remote = "https://github.com/xnvme/xnvme.git"
+path = "/root/git/xnvme"
+branch = "next"
+
+[xnvme.build]
+type = "debug"
+
+[spdk.repository]
+remote = "https://github.com/xnvme/spdk-for-ci.git"
+path = "/root/git/spdk"
+tag = "xnvme-next"
+
+[spdk.build]
+prefix = "/opt/spdk"
+spdk_json_conf = "/opt/bdev_confs/bdev_nvme_spdk_nvme__1.conf"
+filename = "bdev_nvme_spdk_nvme_device0n1n1"
+
+[fio]
+bin = "/opt/fio/bin/fio"
+
+[fio.repository]
+remote = "https://github.com/axboe/fio.git"
+path = "/root/git/fio"
+tag = "fio-3.36"
+
+[fio.build]
+prefix = "/opt/fio"
+
+[fio.engines]
+posixaio = {type = "builtin", device = "bdev"} # Kernel
+
+null = {type = "builtin", device = "bdev"}
+
+spdk_nvme = {type = "external_preload", path = "/root/git/spdk/build/fio/spdk_nvme", fio_path = "/opt/fio/bin/fio", device = "pcie"} # Userspace
+spdk_bdev = {type = "external_preload", path = "/root/git/spdk/build/fio/spdk_bdev", fio_path = "/opt/fio/bin/fio", device = "pcie"} # Userspace
+
+xnvme_kqueue = {type = "builtin", be = "fbsd", async = "kqueue", device = "bdev"} # Kernel
+xnvme_posixaio = {type = "builtin", be = "fbsd", async = "posix", device = "bdev"} # Kernel
+xnvme_spdk = {type = "builtin", be = "spdk", async = "nvme", device = "pcie"} # Userspace
+xnvme_null = {type = "builtin", be = "fbsd", async = "nil", device = "bdev"} # Kernel
+  
+[[devices]] # IO Uring/ libaio/ posixaio
+key = "bdev"
+uri = "/dev/nvme0ns1"
+nsid = 1
+labels = ["dev", "bdev", "nvm"]
+driver_attachment = "kernel"
+
+[[devices]] # SPDK libvfn
+key = "pcie"
+uri = "0000:03:00.0"
+nsid = 1
+labels = ["dev", "pcie", "nvm"]
+driver_attachment = "userspace"
+
+[[duts]]
+pcie = "0000:03:00.0"
+os = "0n1"
+sn = "PHBT718003QR016D"
+label = "INTELM1016G"

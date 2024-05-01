@@ -1,0 +1,59 @@
+---
+doc: |
+  Environment prep for FreeBSD
+  =================================================================
+
+  Environment preparation consists of
+
+  * Retrieving and updating repositories for xnvme, fio, and SPDK
+  * Configure, build and install xnvme, fio, and SPDK
+  * Generate bdev-configs for all CIJOE "duts"
+
+  Preamble
+  =================================================================
+
+  To be able to run this, on the machine you need to run the 
+  toolbox/pkgs/freebsd-13.sh script to install the dependencies.
+
+
+steps:
+
+- name: sysinfo
+  uses: freebsd_sysinfo
+
+- name: repository
+  uses: core.repository_prep
+
+- name: remove_spdk
+  run: |-
+    cd {{ config.xnvme.repository.path }} && gmake clean-subprojects
+
+- name: xnvme_build
+  uses: xnvme_build
+
+- name: xnvme_install
+  uses: xnvme_install
+
+- name: ldconfig
+  run: ldconfig
+
+- name: fio
+  uses: fio_prep
+
+- name: spdk
+  uses: spdk_build_modded_freebsd
+
+- name: bdev_confs
+  uses: spdk_bdev_confs_generator
+  with:
+    bdev_confs: /opt/bdev_confs
+
+- name: kldconfig
+  uses: xnvme_kldconfig
+  with:
+    xnvme_source: '{{ config.xnvme.repository.path }}'
+
+- name: prep
+  run: |-
+    xnvme-driver || true
+    xnvme-driver reset || true
