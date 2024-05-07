@@ -62,6 +62,7 @@ class Engines(Enum):
     SPDK_BDEV = "spdk_bdev"
     XNVME_IO_URING = "xnvme_io_uring"
     XNVME_IO_URING_CMD = "xnvme_io_uring_cmd"
+    XNVME_KQUEUE = "xnvme_kqueue"
     XNVME_LIBAIO = "xnvme_libaio"
     XNVME_POSIXAIO = "xnvme_posixaio"
     XNVME_NULL = "xnvme_null"
@@ -71,6 +72,7 @@ class Engines(Enum):
 @dataclass
 class Engine:
     name: str
+    group: str
     device: Device
     cijoe: Cijoe
 
@@ -123,11 +125,12 @@ class UserSpaceEngine(Engine):
 
 @dataclass
 class XnvmeKernelEngine(KernelEngine):
-    be: str
-    async_: str
     name: str
+    group: str
     device: Device
     cijoe: Cijoe
+    be: str
+    async_: str
 
     @property
     def name_id(self) -> str:
@@ -139,20 +142,22 @@ class XnvmeKernelEngine(KernelEngine):
 
 @dataclass
 class XnvmeUserSpaceEngine(UserSpaceEngine):
-    be: str
-    async_: str
     name: str
+    group: str
     device: Device
     cijoe: Cijoe
+    be: str
+    async_: str
 
 
 @dataclass
 class ExternalPreloader(UserSpaceEngine):
-    path: Path
-    fio_bin: Path
     name: str
+    group: str
     device: Device
     cijoe: Cijoe
+    path: Path
+    fio_bin: Path
 
     def env(self) -> Dict[str, str]:
         return {"LD_PRELOAD": f"{self.path}"}
@@ -231,81 +236,41 @@ def determine_engine(
     device = list(
         filter(lambda device: device.key == definition["device"], devices)
     ).pop()
+    name = engine_identifier
+    group = definition["group"]
+    if "xnvme" in engine_identifier:
+        name = "xnvme"
+        be = definition["be"]
+        async_ = definition["async"]
+        engine_args = [name, group, device, cijoe, be, async_]
+    elif "spdk" in engine_identifier:
+        path = Path(definition["path"])
+        fio_bin = Path(definition["fio_path"])
+        if "spdk_nvme" == engine_identifier:
+            name = "spdk"
+        engine_args = [name, group, device, cijoe, path, fio_bin]
+    else:
+        engine_args = [name, group, device, cijoe]
 
-    if engine_identifier == Engines.NULL.value:
-        return KernelEngine(name="null", device=device, cijoe=cijoe)
-    elif engine_identifier == Engines.IO_URING.value:
-        return KernelEngine(name="io_uring", device=device, cijoe=cijoe)
-    elif engine_identifier == Engines.IO_URING_CMD.value:
-        return IOURingCmdEngine(name="io_uring_cmd", device=device, cijoe=cijoe)
-    elif engine_identifier == Engines.LIBAIO.value:
-        return KernelEngine(name="libaio", device=device, cijoe=cijoe)
-    elif engine_identifier == Engines.POSIXAIO.value:
-        return KernelEngine(name="posixaio", device=device, cijoe=cijoe)
-    elif engine_identifier == Engines.XNVME_IO_URING.value:
-        return XnvmeKernelEngine(
-            name="xnvme",
-            device=device,
-            cijoe=cijoe,
-            be=definition["be"],
-            async_=definition["async"],
-        )
-    elif engine_identifier == Engines.XNVME_IO_URING_CMD.value:
-        return XnvmeIOURingCMD(
-            name="xnvme",
-            device=device,
-            cijoe=cijoe,
-            be=definition["be"],
-            async_=definition["async"],
-        )
-    elif engine_identifier == Engines.XNVME_LIBAIO.value:
-        return XnvmeKernelEngine(
-            name="xnvme",
-            device=device,
-            cijoe=cijoe,
-            be=definition["be"],
-            async_=definition["async"],
-        )
-    elif engine_identifier == Engines.XNVME_POSIXAIO.value:
-        return XnvmeKernelEngine(
-            name="xnvme",
-            device=device,
-            cijoe=cijoe,
-            be=definition["be"],
-            async_=definition["async"],
-        )
-    elif engine_identifier == Engines.XNVME_SPDK.value:
-        return XnvmeSPDK(
-            name="xnvme",
-            device=device,
-            cijoe=cijoe,
-            be=definition["be"],
-            async_=definition["async"],
-        )
-    elif engine_identifier == Engines.XNVME_NULL.value:
-        return XnvmeNullEngine(
-            name="xnvme",
-            device=device,
-            cijoe=cijoe,
-            be=definition["be"],
-            async_=definition["async"],
-        )
-    elif engine_identifier == Engines.SPDK_NVME.value:
-        return ExternalPreloader(
-            name="spdk",
-            path=Path(definition["path"]),
-            fio_bin=Path(definition["fio_path"]),
-            device=device,
-            cijoe=cijoe,
-        )
-    elif engine_identifier == Engines.SPDK_BDEV.value:
-        return BdevExternalPreloader(
-            name="spdk_bdev",
-            path=Path(definition["path"]),
-            fio_bin=Path(definition["fio_path"]),
-            device=device,
-            cijoe=cijoe,
-        )
+    id2engine = {
+        Engines.NULL.value: KernelEngine,
+        Engines.IO_URING.value: KernelEngine,
+        Engines.LIBAIO.value: KernelEngine,
+        Engines.POSIXAIO.value: KernelEngine,
+        Engines.IO_URING_CMD.value: IOURingCmdEngine,
+        Engines.XNVME_IO_URING.value: XnvmeKernelEngine,
+        Engines.XNVME_KQUEUE.value: XnvmeKernelEngine,
+        Engines.XNVME_LIBAIO.value: XnvmeKernelEngine,
+        Engines.XNVME_POSIXAIO.value: XnvmeKernelEngine,
+        Engines.XNVME_IO_URING_CMD.value: XnvmeIOURingCMD,
+        Engines.XNVME_SPDK.value: XnvmeSPDK,
+        Engines.XNVME_NULL.value: XnvmeNullEngine,
+        Engines.SPDK_NVME.value: ExternalPreloader,
+        Engines.SPDK_BDEV.value: BdevExternalPreloader,
+    }
+
+    if engine_identifier in id2engine:
+        return id2engine[engine_identifier](*engine_args)
     else:
         raise ValueError(
             f"Case match not exhaustive for engine value: {engine_identifier}"
@@ -386,7 +351,8 @@ def main(args, cijoe: Cijoe, step: Dict[str, Any]):
 
             output_path = (
                 artifacts / f"fio-output_BS={bs}_IODEPTH={io_depth}_"
-                f"LABEL={engine.name_id}_{repetitions}.txt"
+                f"LABEL={engine.name_id}_{repetitions}_"
+                f"GROUP={engine.group}.txt"
             )
 
             # Run fio
