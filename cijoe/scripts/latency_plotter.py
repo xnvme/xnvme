@@ -22,6 +22,7 @@ import json
 import logging as log
 import os
 import traceback
+from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List
 
@@ -156,7 +157,16 @@ def data_as_a_function_of(data, x="iodepth", y="iops") -> Data:
 
         if ident not in samples:
             label = context["name"]
-            samples[ident] = {"xs": [], "ys": [], "ident": ident, "label": label}
+            groups = [
+                x.split("=")[1] for x in context["stem"].split("_") if "GROUP" in x
+            ]
+            samples[ident] = {
+                "xs": [],
+                "ys": [],
+                "ident": ident,
+                "label": label,
+                "group": groups[0],
+            }
 
         samples[ident]["xs"].append(context[x])
         samples[ident]["ys"].append(metrics[y])
@@ -175,7 +185,16 @@ def data_as_fixed(data, x="iodepth", y="iops", xval=None):
 
         if ident not in samples:
             label = context["name"]
-            samples[ident] = {"xs": [], "ys": [], "ident": ident, "label": label}
+            groups = [
+                x.split("=")[1] for x in context["stem"].split("_") if "GROUP" in x
+            ]
+            samples[ident] = {
+                "xs": [],
+                "ys": [],
+                "ident": ident,
+                "label": label,
+                "group": groups[0],
+            }
 
         samples[ident]["xs"].append(context[x])
         samples[ident]["ys"].append(metrics[y])
@@ -195,20 +214,17 @@ def plot_attributes_from_step(step):
     }
 
 
-def build_plot_groups(data: Data, groups: List[str]):
-    """Group the `data` in context of the `groups` list
+def build_plot_groups(data: Data):
+    """Group the `data`
 
     TODO: This functions logic is not sound, it depends on the ordering of the `groups`
     list. The issue presents itself when a partial match on a label occurs.
     """
-    grouped = {x: {} for x in groups}
+
+    grouped = defaultdict(dict)
 
     for ident, samples in data.items():
-        for group in groups:
-            if f"{group}" not in samples["label"]:
-                continue
-            grouped[group][ident] = samples
-            break
+        grouped[samples["group"]][ident] = samples
     return grouped
 
 
@@ -226,13 +242,12 @@ def line_plot(args, cijoe, step):
 
     plot_attributes = plot_attributes_from_step(step)
 
-    groups = ["io_uring_cmd", "io_uring", "posix", "libaio", "spdk", "null"]
     x = "iodepth"
     y = "lat"
 
     data = data_as_a_function_of(data, x, y)
 
-    grouped = build_plot_groups(data, groups)
+    grouped = build_plot_groups(data)
 
     for group, dset in grouped.items():
         plt.clf()

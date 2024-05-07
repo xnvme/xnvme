@@ -43,23 +43,23 @@ tag = "fio-3.36"
 prefix = "/opt/fio"
 
 [fio.engines]
-libaio = {type = "builtin", device = "bdev"} # Kernel
-posixaio = {type = "builtin", device = "bdev"} # Kernel
+libaio = {type = "builtin", group = "libaio", device = "bdev"} # Kernel
+posixaio = {type = "builtin", group = "posixaio", device = "bdev"} # Userspace
 
-io_uring = {type = "builtin", device = "bdev"} # Kernel
-io_uring_cmd = {type = "builtin", device = "cdev"} # Kernel
+io_uring = {type = "builtin", group = "io_uring", device = "bdev"} # Kernel
+io_uring_cmd = {type = "builtin", group = "io_uring_cmd", device = "cdev"} # Kernel
 
-null = {type = "builtin", device = "bdev"}
+null = {type = "builtin", group = "null", device = "bdev"}
 
-spdk_nvme = {type = "external_preload", path = "/root/git/spdk/build/fio/spdk_nvme", fio_path = "/opt/fio/bin/fio", device = "pcie"} # Userspace
-spdk_bdev = {type = "external_preload", path = "/root/git/spdk/build/fio/spdk_bdev", fio_path = "/opt/fio/bin/fio", device = "pcie"} # Userspace
+spdk_nvme = {type = "external_preload", group = "spdk", path = "/root/git/spdk/build/fio/spdk_nvme", fio_path = "/opt/fio/bin/fio", device = "pcie"} # Userspace
+spdk_bdev = {type = "external_preload", group = "spdk", path = "/root/git/spdk/build/fio/spdk_bdev", fio_path = "/opt/fio/bin/fio", device = "pcie"} # Userspace
 
-xnvme_libaio = {type = "builtin", be = "linux", async = "libaio", device = "bdev"} # Kernel
-xnvme_posixaio = {type = "builtin", be = "linux", async = "posix", device = "bdev"} # Kernel
-xnvme_io_uring = {type = "builtin", be = "linux", async = "io_uring", device = "bdev"} # Kernel
-xnvme_io_uring_cmd = {type = "builtin", be = "linux", async = "io_uring_cmd", device = "cdev"} # Kernel
-xnvme_spdk = {type = "builtin", be = "spdk", async = "nvme", device = "pcie"} # Userspace
-xnvme_null = {type = "builtin", be = "linux", async = "nil", device = "bdev"} # Kernel
+xnvme_libaio = {type = "builtin", group = "libaio", be = "linux", async = "libaio", device = "bdev"} # Kernel
+xnvme_posixaio = {type = "builtin", group = "posixaio", be = "linux", async = "posix", device = "bdev"} # Kernel
+xnvme_io_uring = {type = "builtin", group = "io_uring", be = "linux", async = "io_uring", device = "bdev"} # Kernel
+xnvme_io_uring_cmd = {type = "builtin", group = "io_uring_cmd", be = "linux", async = "io_uring_cmd", device = "cdev"} # Kernel
+xnvme_spdk = {type = "builtin", group = "spdk", be = "spdk", async = "nvme", device = "pcie"} # Userspace
+xnvme_null = {type = "builtin", group = "null", be = "linux", async = "nil", device = "bdev"} # Kernel
 
 [[devices]] # IO Uring/ libaio/ posixaio
 key = "bdev"
