@@ -138,75 +138,17 @@ Results
 
 .. raw:: pdf
 
+{% for plot in plots %}
+
    PageBreak
 
-libaio
+{{plot.title}}
 ------
 
-
-.. image:: fio_lineplot_libaio.png
-   :align: center
-   :width: 100%
-
-
-.. raw:: pdf
-
-   PageBreak
-
-io_uring
---------
-
-.. image:: fio_lineplot_io_uring.png
-   :align: center
-   :width: 100%
-
-
-.. raw:: pdf
-
-   PageBreak
-
-io_uring_cmd
-------------
-
-
-.. image:: fio_lineplot_io_uring_cmd.png
+.. image:: {{plot.png}}
    :align: center
    :width: 100%
 
 .. raw:: pdf
 
-   PageBreak
-
-posixaio
-------
-
-
-.. image:: fio_lineplot_posix.png
-   :align: center
-   :width: 100%
-
-
-.. raw:: pdf
-
-   PageBreak
-
-null
-------
-
-
-.. image:: fio_lineplot_null.png
-   :align: center
-   :width: 100%
-
-
-.. raw:: pdf
-
-   PageBreak
-
-
-spdk
-----
-
-.. image:: fio_lineplot_spdk.png
-   :align: center
-   :width: 100%
+{% endfor %}

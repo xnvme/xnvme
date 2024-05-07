@@ -18,6 +18,8 @@ from datetime import date
 from pathlib import Path
 from shutil import copyfile
 
+import jinja2
+
 
 def main(args, cijoe, step):
     """Primary entry-point"""
@@ -61,9 +63,15 @@ def main(args, cijoe, step):
             )
 
     # Read the report-template, populate it, then store it in the artifacts directory
-    with (templates_path / "latency.jinja2.rst").open() as template:
-        with body_path.open("w") as body:
-            body.write(template.read())
+    template_loader = jinja2.FileSystemLoader(templates_path)
+    template_env = jinja2.Environment(loader=template_loader)
+    template = template_env.get_template("latency.jinja2.rst")
+    with body_path.open("w") as body:
+        plots = [
+            {"title": p.name[13:-4], "png": p.name} for p in plot_path.glob("*.png")
+        ]
+        tmpl = template.render({"plots": plots})
+        body.write(tmpl)
 
     err, _ = cijoe.run_local(
         f"rst2pdf {body_path}"
