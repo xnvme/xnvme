@@ -9,6 +9,9 @@ port = 4200
 name = "freebsd"
 version = "13"
 
+[cijoe.run]
+shell = "csh"
+
 [build.compiler]
 bin = "clang"
 

@@ -8,6 +8,9 @@ password = "root"
 name = "freebsd"
 version = "13"
 
+[cijoe.run]
+shell = "csh"
+
 [xnvme.repository]
 remote = "https://github.com/xnvme/xnvme.git"
 path = "/root/git/xnvme"
