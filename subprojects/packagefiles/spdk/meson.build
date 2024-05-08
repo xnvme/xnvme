@@ -1,7 +1,7 @@
 project(
   'spdk',
   'c',
-  version: '23.09',
+  version: '24.01',
 )
 fs = import('fs')
 
@@ -121,6 +121,7 @@ endif
 
 dpdk_libnames = get_option('build_subprojects') ? [
   'rte_eal',
+  'rte_log',
   'rte_telemetry',
   'rte_bus_pci',
   'rte_pci',

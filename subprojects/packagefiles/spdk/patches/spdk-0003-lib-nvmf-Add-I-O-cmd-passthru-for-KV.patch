@@ -1,7 +1,7 @@
-From dfaf4d79b4f581b549db79aef05919ccbf53a92f Mon Sep 17 00:00:00 2001
+From f55f6d672b0ffff718c23b267b137c34d197c8d9 Mon Sep 17 00:00:00 2001
 From: Karl Bonde Torp <k.torp@samsung.com>
 Date: Fri, 15 Sep 2023 10:10:25 +0200
-Subject: [PATCH 6/7] lib/nvmf: Add I/O cmd passthru for KV
+Subject: [PATCH 3/4] lib/nvmf: Add I/O cmd passthru for KV
 
 This enables support for I/O cmds for KV namespaces over fabrics, by
 forcing the use of nvmf_bdev_ctrlr_nvme_passthru_io() if the CSI is KV.
@@ -13,7 +13,7 @@ Signed-off-by: Karl Bonde Torp <k.torp@samsung.com>
  2 files changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/lib/nvmf/ctrlr.c b/lib/nvmf/ctrlr.c
-index de836cbe9..4ce430b74 100644
+index eb585a00c..1288e77bd 100644
 --- a/lib/nvmf/ctrlr.c
 +++ b/lib/nvmf/ctrlr.c
 @@ -345,7 +345,7 @@ nvmf_subsys_has_multi_iocs(struct spdk_nvmf_subsystem *subsystem)
@@ -25,7 +25,7 @@ index de836cbe9..4ce430b74 100644
  			return true;
  		}
  	}
-@@ -4303,6 +4303,8 @@ nvmf_ctrlr_process_io_cmd(struct spdk_nvmf_request *req)
+@@ -4336,6 +4336,8 @@ nvmf_ctrlr_process_io_cmd(struct spdk_nvmf_request *req)
  	if (spdk_nvmf_request_using_zcopy(req)) {
  		assert(req->zcopy_phase == NVMF_ZCOPY_PHASE_INIT);
  		return nvmf_bdev_ctrlr_zcopy_start(bdev, desc, ch, req);
@@ -35,10 +35,10 @@ index de836cbe9..4ce430b74 100644
  		switch (cmd->opc) {
  		case SPDK_NVME_OPC_READ:
 diff --git a/lib/nvmf/subsystem.c b/lib/nvmf/subsystem.c
-index c4165b383..5b448bc94 100644
+index b93257262..31ebfd5d0 100644
 --- a/lib/nvmf/subsystem.c
 +++ b/lib/nvmf/subsystem.c
-@@ -1724,6 +1724,11 @@ spdk_nvmf_subsystem_add_ns_ext(struct spdk_nvmf_subsystem *subsystem, const char
+@@ -1841,6 +1841,11 @@ spdk_nvmf_subsystem_add_ns_ext(struct spdk_nvmf_subsystem *subsystem, const char
  		subsystem->max_zone_append_size_kib = max_zone_append_size_kib;
  	}
  
@@ -51,5 +51,5 @@ index c4165b383..5b448bc94 100644
  	ns->subsystem = subsystem;
  	subsystem->ns[opts.nsid - 1] = ns;
 -- 
-2.42.0
+2.44.0
 
