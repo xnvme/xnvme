@@ -76,6 +76,8 @@ Run!
 This should conclude the getting started guide of **xNVMe**, go ahead and
 explore the :ref:`sec-tools` and :ref:`sec-api`.
 
-Should **xNVMe** or your system still be misbehaving, then take a look in the
-:ref:`sec-gs-troubleshooting` section or reach out by raising an issue_, start an
-asynchronous discussion_, or go to Discord_ for synchronous interaction.
+Should **xNVMe** or your system still be misbehaving, then take
+a look in the :ref:`sec-gs-troubleshooting` section or reach
+out by raising an :xref-github-xnvme-issues:`issue<>`, start an
+asynchronous :xref-github-xnvme-discussions:`discussions<>`, or go
+to :xref-discord-xnvme:`Discord<>` for synchronous interaction.

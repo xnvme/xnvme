@@ -6,9 +6,6 @@
  API
 #####
 
-C 
-=
-
 For didactic purposes the **xNVMe** API can be broken into two parts: the :ref:`sec-api-c-core` API and the :ref:`sec-api-c-extended` API.
 
 The :ref:`sec-api-c-core` API should be the starting point for anyone new to **xNVMe** and storage programming in general.

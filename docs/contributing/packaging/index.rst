@@ -5,7 +5,7 @@ Packaging
 
 A couple of notes/pointers on the packaging of **xNVMe** for Linux
 distributions, FreeBSD, Windows, Python, and Rust. For the most recent changes,
-see the `GitHUB Issue Tracker`_.
+see the :xref-github-xnvme-issues:`GitHUB Issue Tracker<389>`.
 
 * Alpine Linux (``apk``)
 
@@ -21,9 +21,7 @@ see the `GitHUB Issue Tracker`_.
 
 * Debian Linux (``.deb`` / ``apt``)
 
-  - See: https://mentors.debian.net/package/xnvme/
-
-  - See: https://github.com/safl/xnvme-debpkg
+  - See: https://salsa.debian.org/safl/xnvme
 
   - This is a work-in-progress
 
@@ -46,7 +44,3 @@ see the `GitHUB Issue Tracker`_.
    brew/index.rst
    debian/index.rst
    windows/index.rst
-
-
-.. _salsa: https://github.com/Homebrew/homebrew-core
-.. _GitHUB Issue Tracker: https://github.com/OpenMPDK/xNVMe/issues/389

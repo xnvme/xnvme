@@ -63,18 +63,3 @@ https://mesonbuild.com/Cross-compilation.html
 
 for details
 
-.. _issue: https://github.com/OpenMPDK/xNVMe/issues
-
-.. _discussion: https://github.com/OpenMPDK/xNVMe/discussions
-
-.. _Discord: https://discord.com/invite/XCbBX9DmKf
-
-.. _vfio: https://www.kernel.org/doc/Documentation/vfio.txt
-
-.. _uio: https://www.kernel.org/doc/html/v4.14/driver-api/uio-howto.html
-
-.. _Chocolatey: https://chocolatey.org/
-
-.. _MinGW: https://www.mingw-w64.org/
-
-.. _Homebrew: https://brew.sh/

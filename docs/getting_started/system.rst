@@ -173,20 +173,22 @@ Yielding the output:
 User Space
 ----------
 
-Linux provides the **Userspace I/O** (`uio`_) and **Virtual Function I/O**
-`vfio`_ frameworks to write user space I/O drivers. Both interfaces work by
-binding a given device to an in-kernel stub-driver. The stub-driver in turn
-exposes device-memory and device-interrupts to user space. Thus enabling the
-implementation of device drivers entirely in user space.
+Linux provides the **Userspace I/O** ( :xref-linux-uio:`uio<>` ) and 
+**Virtual Function I/O** :xref-linux-vfio:`vfio<>` frameworks to write user
+space I/ O drivers. Both interfaces work by binding a given device to an
+in-kernel stub-driver. The stub-driver in turn exposes device-memory and
+device-interrupts to user space. Thus enabling the implementation of device
+drivers entirely in user space.
 
 Although Linux provides a capable NVMe Driver with flexible IOCTLs, then a user
 space NVMe driver serves those who seek the lowest possible per-command
 processing overhead or wants full control over NVMe command construction,
 including command-payloads.
 
-Fortunately, you do not need to go and write an user space NVMe driver since a
-highly efficient, mature and well-maintained driver already exists. Namely, the
-NVMe driver provided by the **Storage Platform Development Kit** (_`SPDK`).
+Fortunately, you do not need to go and write an user space NVMe driver
+since a highly efficient, mature and well-maintained driver already exists.
+Namely, the NVMe driver provided by the **Storage Platform Development Kit**
+(:xref-spdk:`SPDK<>`).
 
 Another great fortune is that **xNVMe** bundles the SPDK NVMe Driver with the
 **xNVMe** library. So, if you have built and installed **xNVMe** then the
@@ -458,9 +460,7 @@ Refer below mentioned script and link to install the dependencies packages,
    .. literalinclude:: ../../toolbox/pkgs/windows-2022.bat
       :language: batch
 
-* `Windows Subsystem of Linux (WSL)`_
-
-.. Windows Subsystem of Linux (WSL): https://github.com/wpdk/wpdk/blob/master/doc/wsl.md
+* :xref-windows-wsl:`Windows Subsystem of Linux (WSL)<>`
 
 Compilation and Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -471,24 +471,16 @@ Compilation and Installation
    :language: bash
    :lines: 2-
 
-Runtime Prerequisite’s
-~~~~~~~~~~~~~~~~~~~~~~
+Runtime Prerequisites
+~~~~~~~~~~~~~~~~~~~~~
 
-Refer below mentioned DPDK links to resolve runtime dependencies,
+Refer to the DPDK links listed below to resolve runtime dependencies:
 
-* `Grant Lock pages in memory Privilege`_
+* :xref-dpdk-guide-lock-pages:`Grant Lock pages in memory Privilege<>`
 
-.. Grant Lock pages in memory Privilege: https://doc.dpdk.org/guides/windows_gsg/run_apps.html#grant-lock-pages-in-memory-privilege
+* :xref-dpdk-guide-install-kmods:`Download DPDK kmods-driver<>`
 
-* `Download DPDK kmods-driver`_
+* :xref-dpdk-guide-install-virt2phys:`Install virt2phys<>`
 
-.. DPDK kmods-driver: https://git.dpdk.org/dpdk-kmods
-
-* `Install virt2phys`_
-
-.. Install virt2phys: https://doc.dpdk.org/guides/windows_gsg/run_apps.html#virt2phys
-
-* `Install NetUIO`_
-
-.. Install NetUIO: https://doc.dpdk.org/guides/windows_gsg/run_apps.html#NetUIO
+* :xref-dpdk-guide-install-netuio:`Install NetUIO<>`
 

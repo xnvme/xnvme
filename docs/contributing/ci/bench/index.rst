@@ -25,7 +25,8 @@ bifrost
 
 The physical hardware resources utilized for benchmarking reside in an isolated
 network, only traffic allowed in is via a WireGuard VPN. Taking care of these
-firewall and VPN tasks is a `Netgate 1100`_ running **pfSense+**.
+firewall and VPN tasks is a :xref-fw-netgate-1100:`Netgate 1100<>` running
+**pfSense+**.
 
 The following is setup:
 
@@ -33,7 +34,8 @@ The following is setup:
 * DHCP Server with mac-address based IP assignment
 * WireGuard Enabled
 
-See the `Netgate 1100 Manual`_ for details on how to configures this.
+See the :xref-fw-netgate-1100-manual:`Netgate 1100 Manual<>` for details on how
+to configures this.
 
 bench-intel
 -----------
@@ -56,8 +58,9 @@ bench-intel
 bench-intel-pikvm
 -----------------
 
-This running PiKVM_ on a `Raspberry Pi 4b`_ with the `PiKVM V3 HAT`_, for setup
-notes see `PiKVM V3 HAT Config Notes`_.
+This running :xref-sbc-pikvm:`PiKVM<>` on a **Raspberry Pi 4b**
+with the :xref-sbc-pikvm-v3-hat:`PiKVM V3 HAT<>`, for setup notes
+see :xref-sbc-pikvm-v3-hat-notes:`PiKVM V3 HAT Config Notes<>`.
 
 bench-amd
 ---------
@@ -85,8 +88,8 @@ bench-amd-pikvm
 runner-rockpi-01
 ----------------
 
-This is a `Rock PI 4b`_ with a 512GB NVMe SSD attached.
-It is running `Armbian`_ / Bookworm.
+This is a :xref-sbc-rockpi4b:`Rock PI 4b<>` with a 512GB NVMe SSD attached. It
+is running :xref-distro-armbian:`Armbian<>` / Bookworm.
 
 Add a user for the github action runner, named ``ghr``:
 
@@ -223,13 +226,3 @@ And when needing to update:
 	# Remove the runner
 	for RUNNER_NAME in $RUNNERS; do pushd "runner-for-${RUNNER_NAME}"; ./config.sh remove --token ${TOKEN}; popd; done;
 
-
-.. _Armbian: https://www.armbian.com/
-.. _Netgate 1100: https://shop.netgate.com/products/1100-pfsense
-.. _Netgate 1100 Manual: https://docs.netgate.com/pfsense/en/latest/solutions/sg-1100/
-.. _Rock Pi 4b: https://rockpi.org/rockpi4
-
-.. _PiKVM: https://pikvm.org/
-.. _PiKVM V3 HAT: https://docs.pikvm.org/v3/
-.. _PiKVM V3 HAT Config Notes: https://safl.dk/notebook/pikvm/
-.. _Raspberry Pi 4b: https://www.raspberrypi.com/products/raspberry-pi-4-model-b/
