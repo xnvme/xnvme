@@ -77,7 +77,7 @@ is clean from any artifacts left behind by previous build failures::
 
   make clobber
 
-And then go back to the :ref:`sec-building` and follow the steps there.
+And then go back to the :ref:`sec-gs-building` and follow the steps there.
 
 .. note::
    When running ``make clobber`` then everything not comitted is "lost". Thus,
