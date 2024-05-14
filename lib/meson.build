@@ -95,13 +95,18 @@ xnvmelib_deps = [
   spdk_win_dep
 ]
 
+mapfile = 'libxnvme.map'
+# Version script is not supported by the linker on OSX
+version_script = is_darwin ? '' : '-Wl,--version-script=@0@/@1@'.format(meson.current_source_dir(), mapfile)
+
 # We always build both the shared and static libraries
 xnvmelib_shared = shared_library(
   'xnvme',
   xnvmelib_source,
   version: meson.project_version(),
   dependencies: xnvmelib_deps,
-  link_args: link_args_hardening,
+  link_args: link_args_hardening + [version_script],
+  link_depends: mapfile,
   include_directories: [conf_inc, xnvme_inc],
   install_dir: xnvmelib_libdir,
   install: true,
