@@ -4,14 +4,18 @@
  Contributing
 ==============
 
-**xNVMe** is hosted on `GitHUB`_ where you can raise `issues`_, start
-`discussions`_, or set up a `pull-request`_ for contributing your changes.
+**xNVMe** is hosted on :xref-github-xnvme:`GitHub<>`
+where you can raise :xref-github-xnvme-issues:`issue<>`,
+start :xref-github-xnvme-discussions:`discussions<>`, or set up
+a :xref-github-xnvme-prs:`pull-request<>` for contributing your changes.
+
 This page contains information related to the latter. Specifically, the
 :ref:`sec-contributing-process` is of relevance to you and the
 :ref:`sec-contributing-toolbox` available for development.
 
-In addition to `GitHUB`_ then you can join `Discord`_, there you can ping for
-feedback on your `pull-request`_ or ask questions.
+In addition to :xref-github-xnvme:`GitHub<>` then you can
+join :xref-discord-xnvme:`Discord<>`, there you can ping for feedback on
+your :xref-github-xnvme-prs:`pull-request<>` or ask questions.
 
 .. toctree::
    :hidden:

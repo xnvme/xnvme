@@ -35,8 +35,8 @@ apis:
 
 .PHONY: clean-apis
 clean-apis:
-	rm -f $(DOCS_DIR)/capis/core/xnvme*
-	rm -f $(DOCS_DIR)/capis/extended/xnvme*
+	rm -f $(DOCS_DIR)/api/core/xnvme*
+	rm -f $(DOCS_DIR)/api/extended/xnvme*
 
 
 .PHONY: commands
@@ -61,6 +61,7 @@ doxy-view:
 sphinx:
 	mkdir -p $(BUILD_DIR)/html
 	${PYTHON} -m sphinx -E -b html -c $(CONFIG_DIR) $(DOCS_DIR) $(BUILD_DIR)/html
+	${PYTHON} -m sphinx -b linkcheck -c $(CONFIG_DIR) $(DOCS_DIR) $(BUILD_DIR)/html
 
 # Produce the sphinx stuff (without commands)
 .PHONY: docs

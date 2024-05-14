@@ -4,10 +4,11 @@
  NVMe-over-Fabrics
 ===================
 
-NVMe supports multiple transports_, **PCIe** for locally attached devices,
-**TCP** and **RDMA** (iWRAP, InifiniBand, RoCE) for access over a networked
-fabric. The use of NVMe over a networked fabrics is defined by the NVMe-oF_
-specfication and often referred to a NVMe-over-Fabrics or just **fabrics**.
+NVMe supports multiple memory and message-based transports. **PCIe** for
+locally attached devices, **TCP** and **RDMA** (iWRAP, InifiniBand, RoCE) for
+access over a networked fabric. The use of NVMe over a networked fabrics is
+defined by the :xref-nvme-specs:`NVMe specifications<>` and often referred to a
+NVMe-over-Fabrics or just **fabrics**.
 
 In a fabrics setup, one machine typically has a bunch of NVMe devices attached
 via PCIe, these are then **exported** aka made accessible over a networked
@@ -107,8 +108,9 @@ Or, by running the script:
 ``${XNVME_REPOS}/docs/tutorial/fabrics/fabrics_target_spdk.sh``
 
 .. note:: For additional documentation on the setup of fabrics using SPDK, then
-   consult the SPDK documentation on SPDK-NVMe-oF_, it has more details and
-   pointers on SPDK specifics and a nice description of the ``NQN`` definition.
+   consult the SPDK documentation on :xref-spdk-nvmeof:`SPDK-NVMe-oF<>`, it has
+   more details and pointers on SPDK specifics and a nice description of the
+   ``NQN`` definition.
 
 Initiator Setup
 ===============
@@ -160,7 +162,3 @@ This can be done by using this command: ``ip link set dev ${NETWORK_INTERFACE} m
 
 If it is not possible to saturate the device with the available network card, the I/O bandwidth can be increased through latency hiding by using a greater block size and/or io-depth. 
 
-
-.. _SPDK-NVMe-oF: https://spdk.io/doc/nvmf.html
-.. _transports: https://nvmexpress.org/developers/nvme-transport-specifications/
-.. _NVMe-oF: https://nvmexpress.org/developers/nvme-transport-specifications/

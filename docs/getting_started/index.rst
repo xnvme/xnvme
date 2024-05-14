@@ -11,9 +11,10 @@ here.  Needlessly, this section will have subsections that you can skip and
 revisit only in case you find **xNVMe**, or the system you are running on, to
 be misbehaving.
 
-If you have read through, and still have questions, then please raise an
-issue_, start an asynchronous discussion_, or go to Discord_ for synchronous
-interaction.
+If you have read through, and still have questions, then
+please raise an :xref-github-xnvme-issues:`issue<>`, start an
+asynchronous :xref-github-xnvme-discussions:`discussions<>`, or go
+to :xref-discord-xnvme:`Discord<>` for synchronous interaction.
 
 The task of getting started with **xNVMe** will take you through
 :ref:`sec-gs-building` with a companion section on :ref:`sec-building-toolchain`
