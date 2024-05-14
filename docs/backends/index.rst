@@ -53,6 +53,36 @@ The valid combinations of interfaces and backends are listed below:
 +----------------------------+----------+-----------+---------+----------+-------------+---------+
 
 
+xNVMe compatibility
+===================
+
+
+.. list-table:: xNVMe compatibility of NVMe command table
+    :widths: 80 30
+    :header-rows: 1
+
+    * - Command
+      - Ramdisk
+    * - Compare
+      - ✓
+    * - Copy
+      - ✓
+    * - Dataset Management
+      - ✗
+    * - Flush
+      - ✗
+    * - Read
+      - ✓
+    * - Verify
+      - ✗
+    * - Write
+      - ✓
+    * - Write Uncorrectable
+      - ✗
+    * - Write Zeroes
+      - ✓
+
+
 Appendix
 --------
 
@@ -63,8 +93,8 @@ Appendix
 .. toctree::
    :hidden:
 
-   xnvme_be_fbsd
    xnvme_be_linux
+   xnvme_be_fbsd
    xnvme_be_spdk/index
-   xnvme_be_intf
    xnvme_be_windows
+   xnvme_be_intf
