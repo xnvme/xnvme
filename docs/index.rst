@@ -46,7 +46,7 @@ engine is provided, supporting **conventional** NVMe devices, as well as
 **Zoned** devices.
 
 Jump right into the :ref:`sec-getting-started` and with the basics in place you
-can explore the :ref:`sec-tools` and the :ref:`sec-c-api`.
+can explore the :ref:`sec-tools` and the :ref:`sec-api`.
 
 Contents:
 
@@ -57,11 +57,9 @@ Contents:
    getting_started/index.rst
    backends/index.rst
    tools/index.rst
-   material/index.rst
-   capis/index.rst
-   examples/index.rst
+   api/index.rst
    tutorial/index.rst
-   python/index.rst
+   material/index.rst
    contributing/index.rst
 
 Indices and tables

@@ -5,11 +5,11 @@
 ===========================
 
 In this seciton, you will find two examples of dynamically loading the
-**xNVMe** shared library and via it utilize the :ref:`sec-c-api` along with
+**xNVMe** shared library and via it utilize the :ref:`sec-api-c` along with
 notes on common pitfalls when doing so.
 
 The example code demonstrates how to utilize
-:ref:`sec-c-api-xnvme-func-xnvme_enumerate` with callback function, callback
+:ref:`sec-api-c-xnvme_dev-func-xnvme_enumerate` with callback function, callback
 arguments and associated data-structures and API functions. The example will
 first be presented in C and then in Python.
 

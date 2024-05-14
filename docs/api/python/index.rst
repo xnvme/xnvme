@@ -4,7 +4,7 @@
  Python
 ========
 
-Bindings to the :ref:`sec-c-api` from Python is provided via an interface
+Bindings to the :ref:`sec-api-c` from Python is provided via an interface
 implemented using ctypes_ and distributed via pypi.
 
 The Python interface is a work-in-progress, provided as a preview of what can
@@ -65,8 +65,8 @@ Before installing, then ensure that the following system dependencies are met:
 * **xNVMe** installed on your system
 * ``pkg-config`` installed and able to locate **xNVMe** on your system
 
-See, the :ref:`sec-building` on how to build and install xNVMe. With the above
-then you can go ahead and install the bindings using ``pip``::
+See, the :ref:`sec-gs-building` on how to build and install xNVMe. With the
+above then you can go ahead and install the bindings using ``pip``::
 
   # install: for the current user
   python3 -m pip install xnvme --user

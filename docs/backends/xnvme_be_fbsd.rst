@@ -28,4 +28,4 @@ that instead.
 
 In this case, the backend will transform such errors into the NVMe equivalent.
 See the documentation on
-:ref:`xnvme_cmd_ctx <sec-c-api-xnvme-struct-xnvme_cmd_ctx>`.
+:ref:`xnvme_cmd_ctx <sec-api-c-xnvme_cmd-struct-xnvme_cmd_ctx>`.

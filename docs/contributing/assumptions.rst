@@ -12,9 +12,9 @@ herein, then this document must be updated as well as part of the change-set.
 The device handle contract
 ==========================
 
-Device handles are opaque pointers of type :c:struct:`struct
-xnvme_dev`. Device handles are obtained via the public **xNVMe**
-API call :c:func:`xnvme_dev_open()`, and released via a call
+Device handles are opaque pointers of type :c:struct:`xnvme_dev`.
+Device handles are obtained via the public **xNVMe** API
+call :c:func:`xnvme_dev_open()`, and released via a call
 to :c:func:`xnvme_dev_close()`.
 
 The entities involved in the implementation of this and their individual

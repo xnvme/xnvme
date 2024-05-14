@@ -1,4 +1,4 @@
-.. _sec-c-api-{{ ns }}:
+.. _sec-api-c-{{ ns }}:
 
 ===={% for _ in range(ns|length) %}={% endfor %}===
  lib{{ ns }}.h
@@ -6,13 +6,13 @@
 
 
 {% if show_enums %}
-.. _sec-c-api-{{ ns }}-enum:
+.. _sec-api-c-{{ ns }}-enum:
 
 Enums
 =====
 
 {% for symb in api.enum %}
-.. _sec-c-api-{{ ns }}-enum-{{ symb }}:
+.. _sec-api-c-{{ ns }}-enum-{{ symb }}:
 
 {{ symb }}
 {% for _ in range(symb|length) %}-{% endfor %}
@@ -22,14 +22,14 @@ Enums
 {% endfor %}
 {% endif %}
 
-.. _sec-c-api-{{ ns }}-struct:
+.. _sec-api-c-{{ ns }}-struct:
 
 {% if show_structs %}
 Structs
 =======
 
 {% for symb in api.struct %}
-.. _sec-c-api-{{ ns }}-struct-{{ symb }}:
+.. _sec-api-c-{{ ns }}-struct-{{ symb }}:
 
 {{ symb }}
 {% for _ in range(symb|length) %}-{% endfor %}
@@ -42,13 +42,13 @@ Structs
 {% endif %}
 
 {% if show_funcs %}
-.. _sec-c-api-{{ ns }}-func:
+.. _sec-api-c-{{ ns }}-func:
 
 Functions
 =========
 
 {% for symb in api.func %}
-.. _sec-c-api-{{ ns }}-func-{{ symb }}:
+.. _sec-api-c-{{ ns }}-func-{{ symb }}:
 
 {{ symb }}
 {% for _ in range(symb|length) %}-{% endfor %}
@@ -60,7 +60,7 @@ Functions
 
 {% if show_header %}
 
-.. _sec-c-api-{{ ns }}-header:
+.. _sec-api-c-{{ ns }}-header:
 
 Header
 ======

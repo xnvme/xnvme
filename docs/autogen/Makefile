@@ -31,7 +31,7 @@ configure: clean
 .PHONY: apis
 apis:
 	cd $(SOURCE_DIR) && make tags-xnvme-public
-	${PYTHON} apigen.py --tags $(SOURCE_DIR)/tags --output $(DOCS_DIR)/capis
+	${PYTHON} apigen.py --tags $(SOURCE_DIR)/tags --output $(DOCS_DIR)/api
 
 .PHONY: clean-apis
 clean-apis:

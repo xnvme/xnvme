@@ -74,8 +74,8 @@ Run!
    :language: bash
 
 This should conclude the getting started guide of **xNVMe**, go ahead and
-explore the :ref:`sec-tools`, :ref:`sec-c-api`, and :ref:`sec-examples`.
+explore the :ref:`sec-tools` and :ref:`sec-api`.
 
 Should **xNVMe** or your system still be misbehaving, then take a look in the
-:ref:`sec-troubleshooting` section or reach out by raising an issue_, start an
+:ref:`sec-gs-troubleshooting` section or reach out by raising an issue_, start an
 asynchronous discussion_, or go to Discord_ for synchronous interaction.

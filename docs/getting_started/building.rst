@@ -33,4 +33,4 @@ can inspect ``meson_options.txt`` which contains build-options specific to
 following :ref:`sec-building-config`.
 
 Otherwise, with a successfully built and installed **xNVMe**, then jump to
-:ref:`sec-gs-system-config` and :ref:`sec-building-example`.
+:ref:`sec-gs-system-config` and :ref:`sec-gs-building-example`.
