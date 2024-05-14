@@ -55,6 +55,7 @@ Contents:
    :includehidden:
 
    getting_started/index.rst
+   backends/index.rst
    tools/index.rst
    material/index.rst
    capis/index.rst
@@ -62,7 +63,6 @@ Contents:
    tutorial/index.rst
    python/index.rst
    contributing/index.rst
-   compatibility/index.rst
 
 Indices and tables
 ==================
