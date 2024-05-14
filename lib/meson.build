@@ -100,7 +100,7 @@ mapfile = 'libxnvme.map'
 version_script = is_darwin ? '' : '-Wl,--version-script=@0@/@1@'.format(meson.current_source_dir(), mapfile)
 
 # We always build both the shared and static libraries
-xnvmelib_shared = shared_library(
+xnvmelib = library(
   'xnvme',
   xnvmelib_source,
   version: meson.project_version(),
@@ -112,21 +112,11 @@ xnvmelib_shared = shared_library(
   install: true,
 )
 
-xnvmelib_static = static_library(
-  'xnvme',
-  xnvmelib_source,
-  dependencies: xnvmelib_deps,
-  include_directories: [conf_inc, xnvme_inc],
-  install_dir: xnvmelib_libdir,
-  install: true,
-)
-
 
 # pkg-config -- describing how to consume the xNVMe library
 pconf.generate(
-  xnvmelib_shared,
+  xnvmelib,
   install_dir: is_freebsd ? 'libdata/pkgconfig' : xnvmelib_libdir + '/pkgconfig',
-  libraries_private: xnvmelib_deps,
   version: meson.project_version(),
   variables: [
     'datadir=' + get_option('prefix') / get_option('datadir') / meson.project_name()
