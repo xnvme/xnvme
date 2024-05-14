@@ -56,6 +56,7 @@ Contents:
 
    getting_started/index.rst
    tools/index.rst
+   material/index.rst
    capis/index.rst
    examples/index.rst
    tutorial/index.rst

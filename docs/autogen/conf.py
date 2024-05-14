@@ -44,6 +44,9 @@ html_theme_options = {
     "navigation_depth": 4,
     "navbar_align": "left",
     "header_links_before_dropdown": 7,
+    "secondary_sidebar_items": {
+        "material/index": [],
+    },
     "show_prev_next": False,
     "icon_links": [
         {
@@ -60,6 +63,8 @@ html_theme_options = {
     ],
 }
 
+html_sidebars = {
+    "material/index": [],
 }
 
 html_context = {
