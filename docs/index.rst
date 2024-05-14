@@ -63,7 +63,6 @@ Contents:
    python/index.rst
    contributing/index.rst
    compatibility/index.rst
-   ci/index.rst
 
 Indices and tables
 ==================
