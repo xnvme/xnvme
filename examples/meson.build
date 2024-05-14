@@ -19,8 +19,9 @@ foreach example_source : examples_source
     fs.stem(example_source),
     example_source,
     include_directories: [conf_inc, xnvme_inc],
-    link_with: xnvmelib_static,
+    link_with: xnvmelib,
     link_args: link_args_hardening,
+    install_rpath: xnvmelib_libdir,
     install: true,
   )
 endforeach
