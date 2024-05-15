@@ -90,7 +90,6 @@ various **CI** jobs.
    :hidden:
    :includehidden:
 
-   build/index.rst
    bench/index.rst
    verify/index.rst
 
