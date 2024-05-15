@@ -95,6 +95,7 @@ html_theme = "pydata_sphinx_theme"
 
 html_theme_options = {
     "navigation_depth": 4,
+    "navigation_with_keys": False,
     "navbar_align": "left",
     "header_links_before_dropdown": 7,
     "secondary_sidebar_items": {
