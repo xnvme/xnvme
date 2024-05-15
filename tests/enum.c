@@ -4,7 +4,6 @@
 
 #include <errno.h>
 #include <libxnvme.h>
-#include <xnvme_be.h>
 
 #define MAX_LISTINGS 1024
 #define MAX_HANDLES 1024
@@ -162,11 +161,7 @@ exit:
 	return nerr ? -errno : 0;
 }
 
-// This is identical to g_xnvme_be_registry
-static struct xnvme_be *g_xnvme_be_test_registry[] = {
-	&xnvme_be_spdk,    &xnvme_be_linux,   &xnvme_be_fbsd, &xnvme_be_macos,
-	&xnvme_be_windows, &xnvme_be_ramdisk, &xnvme_be_vfio, NULL,
-};
+#define N_BACKENDS 7
 
 struct backend_cb_args {
 	int err;
@@ -194,42 +189,21 @@ backend_cb(struct xnvme_dev *dev, void *cb_args)
 static int
 test_enum_backend(struct xnvme_cli *cli)
 {
-	struct xnvme_opts opts = {0};
+	struct xnvme_opts opts = xnvme_opts_default();
 	struct backend_cb_args cb_args = {0};
+	char *backends[N_BACKENDS] = {"spdk",    "linux",   "fbsd", "macos",
+				      "windows", "ramdisk", "vfio"};
 	int err;
 
-	err = xnvme_cli_to_opts(cli, &opts);
-	if (err) {
-		xnvme_cli_perr("xnvme_cli_to_opts()", err);
-		return err;
-	}
+	for (int i = 0; i < N_BACKENDS; ++i) {
 
-	for (int i = 0; g_xnvme_be_test_registry[i]; ++i) {
-		struct xnvme_be be = *g_xnvme_be_test_registry[i];
+		opts.be = backends[i];
+		strncpy(cb_args.expected, backends[i], 1023);
 
-		if (!be.attr.enabled) {
-			XNVME_DEBUG("INFO: skipping be: '%s'; !enabled", be.attr.name);
-			continue;
-		}
-
-		enum xnvme_be_mixin_type mtype = XNVME_BE_DEV;
-
-		for (uint64_t j = 0; (j < be.nobjs); ++j) {
-			const struct xnvme_be_mixin *mixin = &be.objs[j];
-
-			if (mixin->mtype != mtype) {
-				continue;
-			}
-
-			be.dev = *mixin->dev;
-		}
-
-		strncpy(cb_args.expected, be.attr.name, 1023);
-
-		err = be.dev.enumerate(cli->args.sys_uri, &opts, backend_cb, &cb_args);
+		err = xnvme_enumerate(cli->args.sys_uri, &opts, backend_cb, &cb_args);
 		if (err) {
-			XNVME_DEBUG("FAILED: %s->enumerate(...), err: '%s', i: %d",
-				    g_xnvme_be_test_registry[i]->attr.name, strerror(-err), i);
+			XNVME_DEBUG("FAILED: %s->enumerate(...), err: '%s', i: %d", backends[i],
+				    strerror(-err), i);
 		}
 
 		if (cb_args.err) {
