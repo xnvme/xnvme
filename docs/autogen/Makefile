@@ -43,8 +43,6 @@ clean-apis:
 commands:
 	@echo "# commands"
 	${VENV} kmdo $(DOCS_DIR)/getting_started --exclude "win"
-	${VENV} kmdo $(DOCS_DIR)/capis
-	${VENV} kmdo $(DOCS_DIR)/examples
 	${VENV} kmdo $(DOCS_DIR)/tools
 	${VENV} kmdo $(DOCS_DIR)/tutorial
 
