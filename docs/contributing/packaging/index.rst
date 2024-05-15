@@ -42,5 +42,4 @@ see the :xref-github-xnvme-issues:`GitHUB Issue Tracker<389>`.
 
    aur/index.rst
    brew/index.rst
-   debian/index.rst
    windows/index.rst
