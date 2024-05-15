@@ -63,5 +63,10 @@ docs: clean deps configure doxy apis sphinx
 	@echo "# DONE"
 
 .PHONY: docs-view-html
-docs-view-html:
-	@xdg-open $(BUILD_DIR)/html/index.html || open $(BUILD_DIR)/html/index.html &
+docs-view-html: serve
+	@xdg-open http://localhost:8888/ || open http://localhost:8888 || echo "Failed launching browser"
+
+.PHONY: serve
+serve:
+	@screen -S xnvmedocs -X kill || echo "Could not kill server, probably not running"
+	@cd $(BUILD_DIR)/html && screen -S xnvmedocs -d -m python3 -m http.server 8888
