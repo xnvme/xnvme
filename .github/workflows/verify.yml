@@ -157,6 +157,12 @@ jobs:
     - name: Install xNVMe
       run: make install
 
+    - name: ldconfig
+      run: ldconfig
+
+    - name: Execute 'xnvme library-info'
+      run: xnvme library-info
+
     - name: Run make gen-bash-completions
       run: make gen-bash-completions
 
@@ -179,20 +185,20 @@ jobs:
         tar xzf xnvme-src.tar.gz --strip 1
         rm xnvme-src.tar.gz
 
-    - name: Configure, Build, and Install
-      run: |
-        source toolbox/pkgs/debian-bookworm.sh
-        apt-get install -qy curl libclang-dev
-        source toolbox/pkgs/default-build.sh
+    - name: Install dependencies
+      run: apt-get install -qy curl libclang-dev
 
-    - name: Execute 'xnvme library-info'
-      run: xnvme library-info
+    - name: Build xNVMe
+      run: make common
 
     - name: Install xNVMe
       run: make install
 
     - name: ldconfig
       run: ldconfig
+
+    - name: Execute 'xnvme library-info'
+      run: xnvme library-info
 
     - uses: dtolnay/rust-toolchain@stable
 
