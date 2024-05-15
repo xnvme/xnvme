@@ -51,10 +51,6 @@ doxy:
 	mkdir -p $(BUILD_DIR)/doxy
 	doxygen doxy.cfg
 
-.PHONY: doxy-view
-doxy-view:
-	xdg-open $(BUILD_DIR)/doxy/html/index.html || open $(BUILD_DIR)/doxy/html/index.html &
-
 .PHONY: sphinx
 sphinx:
 	mkdir -p $(BUILD_DIR)/html
