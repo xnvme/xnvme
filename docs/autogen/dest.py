@@ -1,4 +1,56 @@
 #!/usr/bin/env python3
+"""
+    This script organizes the website and documentation for xnvme.io
+
+    When running ``make`` inside of ``<xnvme_repository>/docs/autogen/`` then an
+    instance of the website / documentation is emitted at::
+
+        <xnvme_repository>/docs/autogen/builddir/html
+
+    This path is given to the script via ``<args.docs>`.
+
+    The documention/website lives in a repository dedicated to GitHUB pages, a path
+    to this repository is given to the script via ``<args.site>``.
+
+    The intent of the organization is two-fold:
+
+    * Provide a preview of website/documentation of the current state of the 'next'
+      branch, as well as other in-development branches
+
+    * Keep a bit of history on the project documentation available online, e.g. for
+      those not on the latest release.
+
+    Supported refs. are on the form:
+
+        refs/heads/<branch_name>
+        refs/tags/<tag_name>
+
+    The organization is as follows, for all refs, then the folder ``<args.docs>`` is
+    renamed to ``<args.ref>`` and is placed in ``<args.site>/docs/<args.ref>``, here are
+    a couple of examples::
+
+        <args.site>/docs/main
+        <args.site>/docs/next
+        <args.site>/docs/v1.2.3
+
+    This is the archive/history part of the organization. The latest version of the
+    website and documentation lives in the root of ``<args.site>``:
+
+        <args.site>/.
+
+    In addition to the things emitted by sphinx-doc, then there are a couple of files
+    specific to GitHub pages, things like ``.nojekyll``, a README.md and stuff like
+    that, these files and the folder ``docs`` are recorded in a ``KEEPLIST``.
+
+    This organization is done by:
+
+    * Removing everything in ``<args.site>`` that is not in KEEPLIST
+    * Copy ``<args.docs>`` to ``<args.site>/docs/<args.ref>``
+    * Copy ``<args.site>/docs/main/.`` to ``<args.site>/.``
+
+    It is left to another script to commit / push the GitHUB pages repository.
+"""
+
 import argparse
 import shutil
 import sys
@@ -15,11 +67,11 @@ KEEPLIST = [
 
 
 def parse_args():
-    """Parse command-line arguments for cij_extractor"""
+    """Parse command-line arguments for docs destination script"""
 
     # Parse the Command-Line
     prsr = argparse.ArgumentParser(
-        description="cij_extractor - CIJOE Test data extractor",
+        description="xNVMe documentation organizer",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     prsr.add_argument(
