@@ -4,6 +4,15 @@ import shutil
 import sys
 from pathlib import Path
 
+KEEPLIST = [
+    "CNAME",
+    "docs",
+    "favicon.ico",
+    ".git",
+    ".nojekyll",
+    "README.md",
+]
+
 
 def parse_args():
     """Parse command-line arguments for cij_extractor"""
@@ -31,6 +40,19 @@ def parse_args():
     return args
 
 
+def remove_except(path, keep):
+    """
+    Remove all files and folders in the given 'path' except for those named in 'keep'
+    """
+
+    for item in path.iterdir():
+        if item.name not in keep:
+            if item.is_file() or item.is_symlink():
+                item.unlink()
+            elif item.is_dir():
+                shutil.rmtree(item)
+
+
 def main(args):
     """
     Add the given 'args.docs' to 'args.site/docs/<ref>'
@@ -38,6 +60,7 @@ def main(args):
     In both cases existing docs are removed
     """
 
+    # Verify the given ref matches assumptions
     is_tag = "tags" in args.ref
     is_branch = "heads" in args.ref
     if not (is_tag or is_branch):
@@ -49,7 +72,18 @@ def main(args):
 
     ref = "-".join(args.ref.split("/")[2:])
 
-    ref_path = Path(args.site) / "docs" / ref
+    # Setup paths
+    args.docs = args.docs.resolve()
+    args.site = args.site.resolve()
+
+    ref_path = args.site / "docs" / ref
+    main_path = args.site / "docs" / "main" / "."
+    root_path = args.site / "."
+
+    # Clean the github-pages repository
+    remove_except(args.site, KEEPLIST)
+
+    # Add 'ref' to preview / archive
     if ref_path.exists():
         print(f"Removing: '{ref_path}'")
         shutil.rmtree(ref_path)
@@ -57,16 +91,9 @@ def main(args):
     print(f"Copying from: '{args.docs}' to '{ref_path}'")
     shutil.copytree(args.docs, ref_path)
 
-    if not is_tag:
-        return 0
-
-    latest_path = Path(args.site) / "docs" / "latest"
-    if latest_path.exists():
-        print(f"Removing: '{latest_path}'")
-        shutil.rmtree(latest_path)
-
-    print(f"Copying from: '{args.docs}' to '{latest_path}'")
-    shutil.copytree(args.docs, latest_path)
+    # Add 'main' to root
+    print(f"Copying from: '{main_path}' to '{root_path}'")
+    shutil.copytree(main_path, root_path, dirs_exist_ok=True)
 
     return 0
 
