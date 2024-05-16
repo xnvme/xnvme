@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import argparse
-import os
 import shutil
 import sys
+from pathlib import Path
 
 
 def parse_args():
@@ -14,14 +14,18 @@ def parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     prsr.add_argument(
-        "--docs", help="Path SphinxDoc generated HTML", default=os.getcwd()
+        "--docs",
+        help="Path to SphinxDoc generated HTML",
+        default=Path.cwd(),
+        type=Path,
     )
     prsr.add_argument(
         "--site",
         help="Path to xNVMe.io GitHUB Repository",
-        default=os.getcwd(),
+        type=Path,
+        default=Path.cwd(),
     )
-    prsr.add_argument("--ref", help="xNVMe repository reference", default=os.getcwd())
+    prsr.add_argument("--ref", help="xNVMe repository reference")
     args = prsr.parse_args()
 
     return args
@@ -45,8 +49,8 @@ def main(args):
 
     ref = "-".join(args.ref.split("/")[2:])
 
-    ref_path = os.path.join(args.site, "docs", ref)
-    if os.path.exists(ref_path):
+    ref_path = Path(args.site) / "docs" / ref
+    if ref_path.exists():
         print(f"Removing: '{ref_path}'")
         shutil.rmtree(ref_path)
 
@@ -56,8 +60,8 @@ def main(args):
     if not is_tag:
         return 0
 
-    latest_path = os.path.join(args.site, "docs", "latest")
-    if os.path.exists(latest_path):
+    latest_path = Path(args.site) / "docs" / "latest"
+    if latest_path.exists():
         print(f"Removing: '{latest_path}'")
         shutil.rmtree(latest_path)
 
