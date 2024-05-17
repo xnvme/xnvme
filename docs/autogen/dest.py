@@ -46,12 +46,20 @@
 
     * Removing everything in ``<args.site>`` that is not in KEEPLIST
     * Copy ``<args.docs>`` to ``<args.site>/docs/<args.ref>``
-    * Copy ``<args.site>/docs/main/.`` to ``<args.site>/.``
+    * Copy ``<args.site>/docs/<args.current>/.`` to ``<args.site>/.``
+    * Emit a PyData versions.json docs in ``<args.site>``
+      - Note that the script organizes instances of the documentation that are not
+        exposed in the PyData versions.json
+      - The instances of the documentation that are exposed in the PyData versions.json
+        are named as a version-tag (vMAJOR.MINOR.PATCH), or;
+        ``current`` and ``next``
 
     It is left to another script to commit / push the GitHUB pages repository.
 """
 
 import argparse
+import json
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -64,6 +72,8 @@ KEEPLIST = [
     ".nojekyll",
     "README.md",
 ]
+
+REGEX_VERSION_TAG = r"v(\d+)\.(\d+)\.(\d+)"
 
 
 def parse_args():
@@ -87,6 +97,12 @@ def parse_args():
         default=Path.cwd(),
     )
     prsr.add_argument("--ref", help="xNVMe repository reference")
+    prsr.add_argument(
+        "--current",
+        help="The instance from docs/ to place in site-root",
+        type=str,
+        default="main",
+    )
     args = prsr.parse_args()
 
     return args
@@ -103,6 +119,64 @@ def remove_except(path, keep):
                 item.unlink()
             elif item.is_dir():
                 shutil.rmtree(item)
+
+
+def gen_versions(path: Path, current: str):
+    """Returns a dict compatible with the Pydata versions-format"""
+
+    def version_key(name):
+        """
+        Here is a brief example on the ordering provided by this function:
+
+        current
+        feature-a
+        feature-b
+        next
+        visual
+        xperiment
+        v1.2.3
+        v0.1.2
+        v0.0.1
+
+        In other words; branch names before tags, tags in descending order, and tags are
+        assumed to be on the form: vMAJOR.MINOR.PATCH.
+        """
+
+        match = re.match(REGEX_VERSION_TAG, name)
+        if match:
+            return (1, -int(match.group(1)), -int(match.group(2)), -int(match.group(3)))
+        return (0, name)
+
+    branch_names = ["current", "next"]  # Only include these branch-names
+    versions = [
+        {
+            "name": f"{current}",
+            "version": f"{current}",
+            "url": "https://xnvme.io/",
+            "preferred": True,
+        },
+    ]
+
+    for name in sorted((d.name for d in path.iterdir()), key=version_key):
+        if not (re.match(REGEX_VERSION_TAG, name) or name in branch_names):
+            continue
+
+        versions.append(
+            {
+                "name": f"{name}",
+                "version": f"{name}",
+                "url": f"/docs/{name}",
+            }
+        )
+
+    return versions
+
+
+def dict_to_path(data: dict, path: Path):
+    """Write the given dict to file path"""
+
+    with path.open(mode="w", encoding="utf-8") as file:
+        json.dump(data, file, indent=4, ensure_ascii=False)
 
 
 def main(args):
@@ -129,7 +203,7 @@ def main(args):
     args.site = args.site.resolve()
 
     ref_path = args.site / "docs" / ref
-    main_path = args.site / "docs" / "main" / "."
+    cur_path = args.site / "docs" / args.current / "."
     root_path = args.site / "."
 
     # Clean the github-pages repository
@@ -143,9 +217,13 @@ def main(args):
     print(f"Copying from: '{args.docs}' to '{ref_path}'")
     shutil.copytree(args.docs, ref_path)
 
-    # Add 'main' to root
-    print(f"Copying from: '{main_path}' to '{root_path}'")
-    shutil.copytree(main_path, root_path, dirs_exist_ok=True)
+    # Add the "current" site
+    print(f"Copying from: '{cur_path}' to '{root_path}'")
+    shutil.copytree(cur_path, root_path, dirs_exist_ok=True)
+
+    # Dump the versions
+    data = gen_versions(args.site / "docs", args.current)
+    dict_to_path(data, args.site / "versions.json")
 
     return 0
 
