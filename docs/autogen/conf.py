@@ -97,6 +97,7 @@ html_theme_options = {
     "navigation_depth": 4,
     "navigation_with_keys": False,
     "navbar_align": "left",
+    "navbar_end": ["version-switcher"],
     "header_links_before_dropdown": 7,
     "secondary_sidebar_items": {
         "material/index": [],
@@ -115,6 +116,10 @@ html_theme_options = {
             "icon": "fa-brands fa-discord",
         },
     ],
+    "switcher": {
+        "json_url": "/versions.json",
+        "version_match": "current",
+    },
 }
 
 html_sidebars = {
