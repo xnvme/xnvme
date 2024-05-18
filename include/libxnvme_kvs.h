@@ -6,10 +6,16 @@
  * @headerfile libxnvme_kv.h
  */
 
-enum xnvme_retreive_opts {
+/**
+ * @enum xnvme_retrieve_opts
+ */
+enum xnvme_retrieve_opts {
 	XNVME_KVS_RETRIEVE_OPT_RETRIEVE_RAW = 1 << 0,
 };
 
+/**
+ * @enum xnvme_store_opts
+ */
 enum xnvme_store_opts {
 	XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_NOT_EXISTS = 1 << 0,
 	XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_EXISTS     = 1 << 1,
