@@ -437,7 +437,6 @@ Yielding the output:
 
 .. literalinclude:: xnvme_win_io_async_read_io_ring.out
    :language: bash
-   :lines: 1-12
 
 
 Building SPDK backend on Windows
