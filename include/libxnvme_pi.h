@@ -77,11 +77,9 @@ xnvme_pi_ctx_init(struct xnvme_pi_ctx *ctx, uint32_t block_size, uint32_t md_siz
  * Generate and fill Protection information part of metadata
  *
  * @param ctx Pointer to ::xnvme_pi_ctx
- * @param dbuf Pointer to data-payload
- * @param mbuf Pointer to meta-payload
+ * @param data_buf Pointer to data-payload
+ * @param md_buf Pointer to meta-payload
  * @param num_blocks Number of logical blocks
- *
- * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 void
 xnvme_pi_generate(struct xnvme_pi_ctx *ctx, uint8_t *data_buf, uint8_t *md_buf,
@@ -91,8 +89,8 @@ xnvme_pi_generate(struct xnvme_pi_ctx *ctx, uint8_t *data_buf, uint8_t *md_buf,
  * Verify the protection information content of metadata
  *
  * @param ctx Pointer to ::xnvme_pi_ctx
- * @param dbuf Pointer to data-payload
- * @param mbuf Pointer to meta-payload
+ * @param data_buf Pointer to data-payload
+ * @param md_buf Pointer to meta-payload
  * @param num_blocks Number of logical blocks
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
