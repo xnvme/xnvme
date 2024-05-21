@@ -1,7 +1,7 @@
 .. code-block:: bash
 
   # Clone the xNVMe repos into the folder 'xnvme'
-  git clone https://github.com/OpenMPDK/xNVMe.git xnvme
+  git clone https://github.com/xnvme/xnvme.git xnvme
 
 .. note:: The xNVMe build-system uses ``meson/ninja`` and its
    subproject-feature with wraps, dependencies such as fio, libvfn, and SPDK

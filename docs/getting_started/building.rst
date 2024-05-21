@@ -4,7 +4,7 @@ Building xNVMe
 ==============
 
 **xNVMe** builds and runs on Linux, FreeBSD and Windows. First, retrieve the
-**xNVMe** repository from  `GitHUB <https://github.com/OpenMPDK/xNVMe>`_:
+**xNVMe** repository from  `GitHUB <https://github.com/xnvme/xnvme>`_:
 
 .. include:: clone.rst
 

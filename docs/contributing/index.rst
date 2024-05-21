@@ -30,12 +30,12 @@ your :xref-github-xnvme-prs:`pull-request<>` or ask questions.
    assumptions.rst
 
 .. _Discord: https://discord.com/invite/XCbBX9DmKf
-.. _Fork: https://github.com/OpenMPDK/xNVMe/fork
-.. _GitHUB: https://github.com/OpenMPDK/xNVMe/issues
-.. _discussions: https://github.com/OpenMPDK/xNVMe/discussions
+.. _Fork: https://github.com/xnvme/xnvme/fork
+.. _GitHUB: https://github.com/xnvme/xnvme/issues
+.. _discussions: https://github.com/xnvme/xnvme/discussions
 .. _git-hooks: https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks
-.. _issues: https://github.com/OpenMPDK/xNVMe/issues
+.. _issues: https://github.com/xnvme/xnvme/issues
 .. _meson: https://mesonbuild.com/
 .. _pre-commit: https://pre-commit.com/
-.. _pull-request: https://github.com/OpenMPDK/xNVMe/pulls
+.. _pull-request: https://github.com/xnvme/xnvme/pulls
 .. _DCO: https://developercertificate.org/

@@ -22,7 +22,7 @@ The main logical infrastructure component for the **xNVMe** **CI** is `GitHUB
 Actions`_ (**GHA**). **GHA** handles **events** occuring on the following
 repositories:
 
-* https://github.com/OpenMPDK/xNVMe/
+* https://github.com/xnvme/xnvme/
 * https://github.com/xnvme/xnvme.github.io
 * https://github.com/xnvme/xnvme-docker
 * https://github.com/xnvme/dpdk-windows-drivers
@@ -93,7 +93,7 @@ various **CI** jobs.
    bench/index.rst
    verify/index.rst
 
-.. _CIJOE in xNVMe: https://github.com/OpenMPDK/xNVMe/tree/main/cijoe
+.. _CIJOE in xNVMe: https://github.com/xnvme/xnvme/tree/main/cijoe
 .. _CIJOE: https://cijoe.readthedocs.io
 .. _GitHUB Actions: https://github.com/features/actions
 .. _xnvme.io via GitHUB-pages: https://github.com/xnvme/xnvme.github.io
