@@ -800,21 +800,25 @@ jobs:
   #
   # * push of branches and tags
   # * manual 'workflow_dispatch'
+  # * pull-request changes, thus, we can catch whether a PR breaks documentation
   #
-  # When triggered on push to branch, then the documentation is deployed to:
+  # When triggered by 'push' or 'workflow_dispatch', then the documentation is
+  # deployed to:
   #
-  #   githubpages/docs/<branch>
+  #   githubpages/docs/<github.ref>
   #
-  # For example: githubpages/docs/next
+  # A couple of examples:
   #
-  # When triggered on push of tag, then the documentation is deployed to:
+  # * githubpages/docs/next
+  # * githubpages/docs/current
+  # * githubpages/docs/foo
+  # * githubpages/docs/v1.2.3
+  # * githubpages/docs/v1.2.4
   #
-  #   githubpages/docs/<tag>
-  #   githubpages/docs/latest
+  # Thus, upon push/dispatch then the archive/history is updated
+  # The root of the site is always synced with githubpages/docs/current in case
+  # there are no changes to "docs/current", then there is nothing to commit
   #
-  # For example: githubpages/docs/v0.5.0
-  # Note that latest is always populated when pushing as tag. It is assumed
-  # that tags are used exclusively for releases
   docgen:
     needs: [source-archive-with-subprojects, source-format-check, build-python]
     runs-on: [self-hosted, linux, verify]
@@ -910,12 +914,16 @@ jobs:
       run: |
         git config --global --add safe.directory $(pwd)/site
 
-    - name: Add docgen to site
+    - name: Extract the website
       if: ((github.event_name == 'push') || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen')))
       run: |
         cp cijoe/docgen-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/artifacts/docs.tar.gz .
         tar xzf docs.tar.gz
-        ./docs/autogen/dest.py --docs html --site site --ref "${{ github.ref }}"
+
+    - name: Update site repository
+      if: ((github.event_name == 'push') || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen')))
+      run: |
+        ./docs/autogen/dest.py --docs html --site site --ref "${{ github.ref }}" --current current
 
     - name: Push site-changes
       if: ((github.event_name == 'push') || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen')))
