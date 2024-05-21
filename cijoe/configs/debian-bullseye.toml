@@ -278,7 +278,7 @@ labels = [ "dev", "bdev", "nvm", "ramdisk", "write_zeroes" ]
 driver_attachment = "kernel"
 
 [xnvme.repository]
-remote = "https://github.com/OpenMPDK/xNVMe.git"
+remote = "https://github.com/xnvme/xnvme.git"
 path = "{{ local.env.HOME }}/git/xnvme"
 
 # This is utilized by repository syncing during development.

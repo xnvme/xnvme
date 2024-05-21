@@ -13,6 +13,6 @@ For additional information see:
 * The ``docs/python/`` folder in the repository_ on any outstanding pull-requests_.
 
 .. _docs: https://xnvme.io/docs/latest/python
-.. _next: https://github.com/OpenMPDK/xNVMe/tree/next
-.. _repository: https://github.com/OpenMPDK/xNVMe
-.. _pull-requests: https://github.com/OpenMPDK/xNVMe/pulls
+.. _next: https://github.com/xnvme/xnvme/tree/next
+.. _repository: https://github.com/xnvme/xnvme
+.. _pull-requests: https://github.com/xnvme/xnvme/pulls
