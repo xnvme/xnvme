@@ -94,6 +94,13 @@ The valid combinations of interfaces and backends are listed below:
      - no
      - **yes**
      - no
+   * - Driverkit (MacVFN)
+     - no
+     - no
+     - no
+     - **yes**
+     - no
+     - no
    * - I/O Control Ports
      - no
      - no
