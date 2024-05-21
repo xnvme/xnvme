@@ -83,8 +83,6 @@ xnvme_nvm_write_zeroes(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, 
  * @param nsid Namespace Identifier
  * @param slba The LBA to start the write at
  * @param nlb Number of LBAs to be written. NOTE: nlb is a zero-based value
- *
- * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 void
 xnvme_prep_nvm(struct xnvme_cmd_ctx *ctx, uint8_t opcode, uint32_t nsid, uint64_t slba,
