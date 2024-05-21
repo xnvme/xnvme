@@ -29,5 +29,3 @@ Branches
    ``rc`` is integrated on ``next``
    ``next`` is integrated on ``main``
    ``main`` is tagged with the version-number (``vX.Y.Z``)
-
-``docker`` Consumed by GitHUB Actions producing xNVMe docker images
