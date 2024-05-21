@@ -34,7 +34,7 @@ Then we create twelve runners:
     export RUNNER_COUNT=12
     export RUNNERS=$(seq -f "runner-for-verify-%02g" 1 ${RUNNER_COUNT})
     export RUNNER_USER=ghr
-    export URL=https://github.com/OpenMPDK/xNVMe
+    export URL=https://github.com/xnvme/xnvme
     export TOKEN={SUPER_SECRET}
 
 With the above defined, then you can execute these:

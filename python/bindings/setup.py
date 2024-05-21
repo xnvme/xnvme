@@ -15,9 +15,9 @@ setuptools.setup(
     author_email="os@safl.dk",
     description="xNVMe Cython and ctypes language-bindings for Python",
     long_description=long_description,
-    url="https://github.com/OpenMPDK/xNVMe",
+    url="https://github.com/xnvme/xnvme",
     project_urls={
-        "Bug Tracker": "https://github.com/OpenMPDK/xNVMe/issues",
+        "Bug Tracker": "https://github.com/xnvme/xnvme/issues",
     },
     license="Apache License, Version 2.0",
     classifiers=[

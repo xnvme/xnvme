@@ -14,7 +14,7 @@ path = "/root/git/liburing"
 tag = "liburing-2.4"
 
 [xnvme.repository]
-remote = "https://github.com/OpenMPDK/xNVMe.git"
+remote = "https://github.com/xnvme/xnvme.git"
 path = "/root/git/xnvme"
 branch = "next"
 

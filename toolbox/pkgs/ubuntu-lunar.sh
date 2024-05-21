@@ -51,7 +51,7 @@ apt-get -qy install \
 # - Dependencies for building libvfn are met (system packages etc.)
 # - Commands are executed with sufficient privileges (sudo/root)
 #
-git clone https://github.com/OpenMPDK/libvfn.git toolbox/third-party/libvfn/repository
+git clone https://github.com/SamsungDS/libvfn.git toolbox/third-party/libvfn/repository
 
 pushd toolbox/third-party/libvfn/repository
 git checkout v3.0.1
