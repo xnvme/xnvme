@@ -14,6 +14,12 @@ Branches
 ``next`` Staging / integration
    This is where GitHUB pull-requests should point to.
 
+``current`` Website updates
+   This is based off ``main`` and only contains changes to the website /
+   documentation, that is, to ensure that the website by default serves
+   documentation for the latest release, however, with the option of changing
+   the rest of the documentation around that release.
+
 ``rc`` Release candidate prepping
    This provides the "maintenance" changes when no more
    features are going in, this includes:
@@ -21,7 +27,7 @@ Branches
    version-bump
    man-pages
    bash-completions
-   documentation-generation (API and Command output)
+   documentation-generation (API and Command output) - integrate ``current``
    CHANGELOG.rst
    CONTRIBUTORS.md
 
