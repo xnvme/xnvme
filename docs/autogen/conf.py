@@ -126,3 +126,5 @@ html_context = {
 }
 
 html_show_sourcelink = False
+
+linkcheck_report_timeouts_as_broken = False
