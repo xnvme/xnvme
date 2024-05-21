@@ -60,6 +60,7 @@ release are integrated on ``next`` and all tests are passing. Then:
   - Add the artifacts generated on the **tag** (src-archive,
     test-verify-results, Python sdist)
   - Make sure that the source-archives follow this convention:
+
    * ``xnvme-0.7.4.tar.gz`` - Source archive without subprojects
    * ``xnvme-fat-0.7.4.tar.gz`` - Full source archive including SPDK sources
 
