@@ -14,7 +14,7 @@ Branches
 ``next`` Staging / integration
    This is where GitHUB pull-requests should point to.
 
-``current`` Website updates
+``docs`` Website updates
    This is based off ``main`` and only contains changes to the website /
    documentation, that is, to ensure that the website by default serves
    documentation for the latest release, however, with the option of changing

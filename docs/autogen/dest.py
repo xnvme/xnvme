@@ -14,8 +14,9 @@
 
     The intent of the organization is two-fold:
 
-    * Provide a preview of website/documentation of the current state of the 'next'
-      branch, as well as other in-development branches
+    * Provide a preview of website/documentation of the 'next' branch / release, other
+      in-development branches are not available via version-switcher, however,
+      they can be pointed to manually e.g. https://xnvme.io/en/feature-a
 
     * Keep a bit of history on the project documentation available online, e.g. for
       those not on the latest release.
@@ -26,15 +27,16 @@
         refs/tags/<tag_name>
 
     The organization is as follows, for all refs, then the folder ``<args.docs>`` is
-    renamed to ``<args.ref>`` and is placed in ``<args.site>/docs/<args.ref>``, here are
+    renamed to ``<args.ref>`` and is placed in ``<args.site>/en/<args.ref>``, here are
     a couple of examples::
 
-        <args.site>/docs/main
-        <args.site>/docs/next
-        <args.site>/docs/v1.2.3
+        <args.site>/en/main
+        <args.site>/en/docs
+        <args.site>/en/next
+        <args.site>/en/v1.2.3
 
-    This is the archive/history part of the organization. The latest version of the
-    website and documentation lives in the root of ``<args.site>``:
+    Handling of "docs" and version-tags (vX.Y.Z) is special, these are copied to
+    the ``<args.site>``:
 
         <args.site>/.
 
@@ -45,18 +47,18 @@
     This organization is done by:
 
     * Removing everything in ``<args.site>`` that is not in KEEPLIST
-    * Copy ``<args.docs>`` to ``<args.site>/docs/<args.ref>``
-    * Copy ``<args.site>/docs/<args.current>/.`` to ``<args.site>/.``
+    * Copy ``<args.docs>`` to ``<args.site>/en/<args.ref>``
+
     * Emit a PyData versions.json docs in ``<args.site>``
       - Note that the script organizes instances of the documentation that are not
         exposed in the PyData versions.json
       - The instances of the documentation that are exposed in the PyData versions.json
-        are named as a version-tag (vMAJOR.MINOR.PATCH), or;
-        ``current`` and ``next``
+        are named as a version-tag (vMAJOR.MINOR.PATCH), or ``next``
+      - The preferred version is set to the latest version
+      - Updates to 'docs' will update the latest / preferred version
 
     It is left to another script to commit / push the GitHUB pages repository.
 """
-
 import argparse
 import json
 import re
@@ -66,9 +68,10 @@ from pathlib import Path
 
 KEEPLIST = [
     "CNAME",
-    "docs",
+    "en",
     "favicon.ico",
     ".git",
+    "_history",
     ".nojekyll",
     "README.md",
 ]
@@ -86,34 +89,36 @@ def parse_args():
     )
     prsr.add_argument(
         "--docs",
-        help="Path to SphinxDoc generated HTML",
+        help="Path to sphinx-doc instance to add to website",
         default=Path.cwd(),
         type=Path,
     )
     prsr.add_argument(
         "--site",
-        help="Path to xNVMe.io GitHUB Repository",
+        help="Path to GitHub Pages Repository for the website",
         type=Path,
         default=Path.cwd(),
     )
-    prsr.add_argument("--ref", help="xNVMe repository reference")
     prsr.add_argument(
-        "--current",
-        help="The instance from docs/ to place in site-root",
-        type=str,
-        default="main",
+        "--ref",
+        help="xNVMe repository reference (e.g. refs/heads/docs or refs/tags/v1.2.3)",
+    )
+    prsr.add_argument(
+        "--url", help="Base URL for versions.json", type=str, default="https://xnvme.io"
     )
     args = prsr.parse_args()
+    args.docs = args.docs.resolve()
+    args.site = args.site.resolve()
 
     return args
 
 
-def remove_except(path, keep):
+def remove_except(args, keep):
     """
-    Remove all files and folders in the given 'path' except for those named in 'keep'
+    Remove all files and folders in 'args.site' except for those named in 'keep'
     """
 
-    for item in path.iterdir():
+    for item in (args.site).iterdir():
         if item.name not in keep:
             if item.is_file() or item.is_symlink():
                 item.unlink()
@@ -121,109 +126,97 @@ def remove_except(path, keep):
                 shutil.rmtree(item)
 
 
-def gen_versions(path: Path, current: str):
-    """Returns a dict compatible with the Pydata versions-format"""
+def emit_versions(args):
+    """
+    Emits a versions.json in the root of args.site
 
-    def version_key(name):
-        """
-        Here is a brief example on the ordering provided by this function:
+    Conventions
+    ===========
 
-        current
-        feature-a
-        feature-b
-        next
-        visual
-        xperiment
-        v1.2.3
-        v0.1.2
-        v0.0.1
+    * The preferred version is always set to be the latest version
+    """
 
-        In other words; branch names before tags, tags in descending order, and tags are
-        assumed to be on the form: vMAJOR.MINOR.PATCH.
-        """
+    dirs = (re.match(REGEX_VERSION_TAG, d.name) for d in (args.site / "en").iterdir())
+    matches = ((d.group(1), d.group(2), d.group(3)) for d in dirs if d)
+    semvers = [".".join(semver) for semver in sorted(matches, reverse=True)]
+    latest = semvers[0]
 
-        match = re.match(REGEX_VERSION_TAG, name)
-        if match:
-            return (1, -int(match.group(1)), -int(match.group(2)), -int(match.group(3)))
-        return (0, name)
-
-    branch_names = ["current", "next"]  # Only include these branch-names
     versions = [
         {
-            "name": f"{current}",
-            "version": f"{current}",
-            "url": "https://xnvme.io/",
-            "preferred": True,
-        },
+            "name": "next",
+            "url": f"{args.url}/en/next",
+        }
     ]
+    for semver in semvers:
+        version = {
+            "version": f"v{semver}",
+            "name": f"v{semver}",
+            "url": f"{args.url}/en/v{semver}",
+        }
+        if semver == latest:
+            version["preferred"] = True
+            version["name"] = f"v{latest} (latest)"
+            version["url"] = f"{args.url}/"
 
-    for name in sorted((d.name for d in path.iterdir()), key=version_key):
-        if not (re.match(REGEX_VERSION_TAG, name) or name in branch_names):
-            continue
+        versions.append(version)
 
-        versions.append(
-            {
-                "name": f"{name}",
-                "version": f"{name}",
-                "url": f"/docs/{name}",
-            }
-        )
+    with (args.site / "versions.json").open(mode="w", encoding="utf-8") as file:
+        json.dump(versions, file, indent=4, ensure_ascii=False)
 
-    return versions
-
-
-def dict_to_path(data: dict, path: Path):
-    """Write the given dict to file path"""
-
-    with path.open(mode="w", encoding="utf-8") as file:
-        json.dump(data, file, indent=4, ensure_ascii=False)
+    return latest
 
 
-def main(args):
+def check_ref(args):
     """
-    Add the given 'args.docs' to 'args.site/docs/<ref>'
-    For tags also add to 'args.site/docs/latest'
-    In both cases existing docs are removed
+    Verify that args.ref matches assumptions.
+    When matching, then return the short-name, when it does not, then return None.
     """
 
-    # Verify the given ref matches assumptions
     is_tag = "tags" in args.ref
     is_branch = "heads" in args.ref
     if not (is_tag or is_branch):
         print(f"Failed: ref('{args.ref}') is neither tag nor branch")
-        return 1
+        return None
     if "/" not in args.ref or len(args.ref.split("/")) < 3:
         print(f"Failed: ref('{args.ref}') has unexpected format")
+        return None
+
+    return "-".join(args.ref.split("/")[2:])
+
+
+def main(args):
+    """
+    Add the given 'args.docs' to 'args.site/en/<ref>'
+    For tags also add to 'args.site/en/latest'
+    In both cases existing docs are removed
+    """
+
+    ref = check_ref(args)
+    if not ref:
         return 1
 
-    ref = "-".join(args.ref.split("/")[2:])
-
-    # Setup paths
-    args.docs = args.docs.resolve()
-    args.site = args.site.resolve()
-
-    ref_path = args.site / "docs" / ref
-    cur_path = args.site / "docs" / args.current / "."
-    root_path = args.site / "."
-
     # Clean the github-pages repository
-    remove_except(args.site, KEEPLIST)
+    remove_except(args, KEEPLIST)
 
-    # Add 'ref' to preview / archive
+    # Remove existing instance named 'ref'
+    ref_path = args.site / "en" / ref
     if ref_path.exists():
         print(f"Removing: '{ref_path}'")
         shutil.rmtree(ref_path)
 
+    # Add 'ref' instance to site
     print(f"Copying from: '{args.docs}' to '{ref_path}'")
-    shutil.copytree(args.docs, ref_path)
+    shutil.copytree(args.docs, args.site / "en" / ref)
 
-    # Add the "current" site
-    print(f"Copying from: '{cur_path}' to '{root_path}'")
-    shutil.copytree(cur_path, root_path, dirs_exist_ok=True)
+    # Add 'versions.json' and return the latest version
+    latest = emit_versions(args)
 
-    # Dump the versions
-    data = gen_versions(args.site / "docs", args.current)
-    dict_to_path(data, args.site / "versions.json")
+    print(ref, f"v{latest}")
+
+    # Update the site-root
+    if ref == "docs" or ref == f"v{latest}":
+        print(f"Copying from: '{ref}' to '{args.site}'")
+        shutil.copytree(ref_path, args.site / ".", dirs_exist_ok=True)
 
     return 0
 
