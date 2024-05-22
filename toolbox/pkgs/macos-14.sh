@@ -18,11 +18,7 @@ if make --version | grep i386-apple; then
 fi
 
 meson --version && echo "Installed" || brew install meson --overwrite || echo "Failed installing"
+pipx --version && echo "Installed" || brew install pipx --overwrite || echo "Failed installing"
 pkg-config --version && echo "Installed" || brew install pkg-config --overwrite || echo "Failed installing"
 python3 --version && echo "Installed" || brew install python3 --overwrite || echo "Failed installing"
-
-# Install packages via the Python package-manager (pip)
-python3 -m pip install --upgrade pip
-python3 -m pip install \
- pipx
 

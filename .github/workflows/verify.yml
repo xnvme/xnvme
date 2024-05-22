@@ -427,9 +427,9 @@ jobs:
       fail-fast: false
       matrix:
         runner:
-        - {os: 'macos', ver: '11'}
         - {os: 'macos', ver: '12'}
         - {os: 'macos', ver: '13'}
+        - {os: 'macos', ver: '14'}
 
     steps:
     - name: Retrieve the xNVMe source archive
@@ -504,7 +504,7 @@ jobs:
 
     - name: Python-bindings (ctypes), install and test
       run: |
-        python3 -m pipx inject cijoe /tmp/artifacts/xnvme-py-sdist.tar.gz
+        pipx inject cijoe /tmp/artifacts/xnvme-py-sdist.tar.gz
         pytest --pyargs xnvme.ctypes_bindings
 
     #
