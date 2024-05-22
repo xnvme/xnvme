@@ -3,7 +3,7 @@ name: verify
 
 on:
   push:
-    branches: [main, next]
+    branches: [main, next, docs]
     tags: ['v*']
   pull_request:
     types: [opened, reopened, synchronize, labeled]
@@ -923,7 +923,7 @@ jobs:
     - name: Update site repository
       if: ((github.event_name == 'push') || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen')))
       run: |
-        ./docs/autogen/dest.py --docs html --site site --ref "${{ github.ref }}" --current current
+        ./docs/autogen/dest.py --docs html --site site --ref "${{ github.ref }}"
 
     - name: Push site-changes
       if: ((github.event_name == 'push') || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen')))

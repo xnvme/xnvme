@@ -20,8 +20,9 @@ source_suffix = ".rst"
 master_doc = "index"
 project = "xNVMe"
 copyright = "2024, xNVMe"
-version = xnvme_ver(os.path.join("..", "..", "meson.build"))
-release = xnvme_ver(os.path.join("..", "..", "meson.build"))
+
+version = "v" + xnvme_ver(os.path.join("..", "..", "meson.build"))
+release = version
 
 extlinks = {
     "xref-xnvme": ("https://xnvme.io/%s", None),
@@ -117,9 +118,11 @@ html_theme_options = {
         },
     ],
     "switcher": {
-        "json_url": "/versions.json",
-        "version_match": "current",
+        "json_url": "https://xnvme.io/versions.json",
+        "version_match": version,
     },
+    "show_version_warning_banner": True,
+    "check_switcher": False,
 }
 
 html_sidebars = {
