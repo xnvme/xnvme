@@ -507,12 +507,11 @@ platforms:
 - alias: macOS
   notes: Interfaces; libaio, liburing, libvfn, and SPDK are not supported on macOS.
   name: macos
-  ver: [13, 12, 11]
+  ver: [14, 13, 12]
   os: macos
   mng: brew
   drop: []
-  alt:
-  - [pip, [pipx]]
+  alt: []
   aux: []
 
 - alias: Windows
