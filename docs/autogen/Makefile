@@ -55,11 +55,14 @@ doxy:
 sphinx:
 	mkdir -p $(BUILD_DIR)/html
 	${PYTHON} -m sphinx -E -b html -c $(CONFIG_DIR) $(DOCS_DIR) $(BUILD_DIR)/html
+
+.PHONY: linkcheck
+linkcheck:
 	${PYTHON} -m sphinx -b linkcheck -c $(CONFIG_DIR) $(DOCS_DIR) $(BUILD_DIR)/html
 
 # Produce the sphinx stuff (without commands)
 .PHONY: docs
-docs: clean deps configure doxy apis sphinx
+docs: clean deps configure doxy apis sphinx linkcheck
 	@echo "# DONE"
 
 .PHONY: docs-view-html
