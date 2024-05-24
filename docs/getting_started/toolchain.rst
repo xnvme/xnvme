@@ -28,9 +28,7 @@ simply build without io_uring-support.
 
 The preferred toolchain is **gcc** and the following sections describe how to
 install it and required libraries on a set of popular Linux Distributions,
-FreeBSD, MacOS, and Windows. If you wish to use a different toolchain then see
-the :ref:`sec-building-custom-toolchain`, on how to instrument the build-system
-using a compiler other than **gcc**.
+FreeBSD, MacOS, and Windows.
 
 In the following sections, the system package-manager is used whenever possible
 to install the toolchain and libraries. However, on some Linux distribution
