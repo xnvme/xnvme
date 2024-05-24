@@ -47,7 +47,7 @@ release are integrated on ``next`` and all tests are passing. Then:
   - Setup a PR of ``next`` onto ``main``
   - Review the PR
   - Wait for tests to finalize / pass
-  - Double-check the generated docs at https://xnvme.io/docs/next
+  - Double-check the generated docs at https://xnvme.io/en/next
 
 * Tag ``main`` as ``vX.Y.Z`` and push the tag
 
