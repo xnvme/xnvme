@@ -27,6 +27,6 @@ prerequisites, followed by a section describing runtime requirements in
    :maxdepth: 2
 
    building.rst
-   toolchain.rst
    example.rst
    troubleshooting.rst
+   toolchain.rst
