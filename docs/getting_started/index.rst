@@ -28,6 +28,5 @@ prerequisites, followed by a section describing runtime requirements in
 
    building.rst
    toolchain.rst
-   system.rst
    example.rst
    troubleshooting.rst

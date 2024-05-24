@@ -1,0 +1,43 @@
+# xNVMe Library Information
+ver: {major: 0, minor: 4, patch: 0}
+xnvme_libconf:
+  - '3p: fio;git-describe:fio-3.30'
+  - '3p: liburing;git-describe:liburing-2.1-460-g4633a2d0'
+  - '3p: spdk;git-describe:v21.10;+patches'
+  - 'conf: XNVME_BE_LINUX_ENABLED'
+  - 'conf: XNVME_BE_LINUX_BLOCK_ENABLED'
+  - 'conf: XNVME_BE_LINUX_BLOCK_ZONED_ENABLED'
+  - 'conf: XNVME_BE_LINUX_LIBAIO_ENABLED'
+  - 'conf: XNVME_BE_LINUX_LIBURING_ENABLED'
+  - 'conf: XNVME_BE_POSIX_ENABLED'
+  - 'conf: XNVME_BE_SPDK_ENABLED'
+  - 'conf: XNVME_BE_SPDK_TRANSPORT_PCIE_ENABLED'
+  - 'conf: XNVME_BE_SPDK_TRANSPORT_TCP_ENABLED'
+  - 'conf: XNVME_BE_SPDK_TRANSPORT_RDMA_ENABLED'
+  - 'conf: XNVME_BE_SPDK_TRANSPORT_FC_ENABLED'
+  - 'conf: XNVME_BE_ASYNC_ENABLED'
+  - 'conf: XNVME_BE_ASYNC_EMU_ENABLED'
+  - 'conf: XNVME_BE_ASYNC_THRPOOL_ENABLED'
+  - '3p: linux;LINUX_VERSION_CODE-UAPI/330332-5.10.92'
+  - '3p: NVME_IOCTL_IO64_CMD'
+  - '3p: NVME_IOCTL_ADMIN64_CMD'
+xnvme_be_attr_list:
+  count: 5
+  capacity: 5
+  items:
+  - name: 'spdk'
+    enabled: 1
+
+  - name: 'linux'
+    enabled: 1
+
+  - name: 'fbsd'
+    enabled: 0
+
+  - name: 'posix'
+    enabled: 1
+
+  - name: 'windows'
+    enabled: 0
+
+
