@@ -1,0 +1,1 @@
+dmesg | grep "DMAR: IOMMU"

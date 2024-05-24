@@ -1,7 +1,7 @@
 .. _sec-gs-system-config:
 
-Backends and System Config
-==========================
+System Config
+=============
 
 **xNVMe** relies on certain Operating System Kernel features and infrastructure
 that must be available and correctly configured. This subsection goes through

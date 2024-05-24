@@ -1,0 +1,43 @@
+
+
+
+
+
+
+xnvme_dev:
+  xnvme_ident:
+    uri: '/dev/nullb0'
+    dtype: 0x3
+    nsid: 0x1
+    csi: 0x1f
+  xnvme_be:
+    admin: {id: 'block'}
+    sync: {id: 'block'}
+    async: {id: 'emu'}
+    attr: {name: 'linux'}
+  xnvme_opts:
+    be: 'linux'
+    mem: 'FIX-ID-VS-MIXIN-NAME'
+    dev: 'FIX-ID-VS-MIXIN-NAME'
+    admin: 'block'
+    sync: 'block'
+    async: 'emu'
+    oflags: 0x4
+  xnvme_geo:
+    type: XNVME_GEO_CONVENTIONAL
+    npugrp: 1
+    npunit: 1
+    nzone: 1
+    nsect: 524288000
+    nbytes: 512
+    nbytes_oob: 0
+    tbytes: 268435456000
+    mdts_nbytes: 65024
+    lba_nbytes: 512
+    lba_extended: 0
+    ssw: 9
+
+
+
+
+
