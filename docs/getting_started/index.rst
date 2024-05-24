@@ -31,4 +31,3 @@ prerequisites, followed by a section describing runtime requirements in
    system.rst
    example.rst
    troubleshooting.rst
-   build_custom.rst

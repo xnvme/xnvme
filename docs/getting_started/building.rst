@@ -29,8 +29,6 @@ In case you want to customize the build, e.g. install into a different location
 etc. then this is all handled by `meson built-in options
 <https://mesonbuild.com/Builtin-options.html>`_, in addition to those, then you
 can inspect ``meson_options.txt`` which contains build-options specific to
-**xNVMe**. For examples of customizing the build then have a look at the
-following :ref:`sec-building-config`.
-
+**xNVMe**.
 Otherwise, with a successfully built and installed **xNVMe**, then jump to
 :ref:`sec-gs-system-config` and :ref:`sec-gs-building-example`.

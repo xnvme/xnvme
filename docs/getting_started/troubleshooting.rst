@@ -110,6 +110,3 @@ missing definition in **musl** leading to this error message::
 As a work-around, then disable ``io_uring`` support::
 
   meson setup builddir -Dwith-liburing=false
-
-See more details on changing the default build-configuration of **xNVMe** in
-the section :ref:`sec-building-config`.
