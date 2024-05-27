@@ -44,18 +44,18 @@ xnvme_be_vfio_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nby
 	}
 
 	if (dbuf) {
-		if (vfio_map_vaddr(ctrl->pci.dev.vfio, dbuf, dbuf_nbytes, &iova)) {
-			XNVME_DEBUG("FAILED: vfio_iommu_vaddr_to_iova()");
+		if (iommu_map_vaddr(ctrl->pci.dev.ctx, dbuf, dbuf_nbytes, &iova, 0)) {
+			XNVME_DEBUG("FAILED: iommu_map_vaddr()");
 			ret = -EINVAL;
 			goto out;
 		}
 
-		nvme_rq_map_prp(rq, (union nvme_cmd *)&ctx->cmd, iova, dbuf_nbytes);
+		nvme_rq_map_prp(ctrl, rq, (union nvme_cmd *)&ctx->cmd, iova, dbuf_nbytes);
 	}
 
 	if (mbuf) {
-		if (vfio_map_vaddr(state->ctrl->pci.dev.vfio, mbuf, mbuf_nbytes, &iova)) {
-			XNVME_DEBUG("FAILED: vfio_iommu_vaddr_to_iova()");
+		if (iommu_map_vaddr(ctrl->pci.dev.ctx, mbuf, mbuf_nbytes, &iova, 0)) {
+			XNVME_DEBUG("FAILED: iommu_map_vaddr()");
 			ret = -EINVAL;
 			goto out;
 		}
