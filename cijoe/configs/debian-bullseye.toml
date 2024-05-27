@@ -128,6 +128,18 @@ labels = [ "dev", "bdev", "nvm", "scc", "large_mdts" ]
 driver_attachment = "kernel"
 
 [[devices]]
+uri = "/dev/ng2n1"
+nsid = 1
+labels = [ "dev", "cdev", "nvm", "scc", "large_mdts" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:05:00.0"
+nsid = 1
+labels = [ "dev", "pcie", "nvm", "scc", "large_mdts" ]
+driver_attachment = "userspace"
+
+[[devices]]
 uri = "/dev/nvme3n1"
 nsid = 1
 labels = [ "dev", "bdev", "nvm", "scc", "fdp" ]
