@@ -27,6 +27,8 @@ def test_support(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["zrwa"], opts=["be", "admin", "sync"])
 def test_open_with_zrwa(cijoe, device, be_opts, cli_args):
+    if be_opts["be"] == "fbsd":
+        pytest.skip(reason="Freebsd kernel doesn't support zns")
     if be_opts["be"] == "linux" and be_opts["sync"] in ["psync", "block"]:
         pytest.skip(reason="ENOSYS: sync=[psync,block] cannot do mgmt send/receive")
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
@@ -38,6 +40,8 @@ def test_open_with_zrwa(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["zrwa"], opts=["be", "admin", "sync"])
 def test_open_without_zrwa(cijoe, device, be_opts, cli_args):
+    if be_opts["be"] == "fbsd":
+        pytest.skip(reason="Freebsd kernel doesn't support zns")
     if be_opts["be"] == "linux" and be_opts["sync"] in ["psync", "block"]:
         pytest.skip(reason="ENOSYS: sync=[psync,block] cannot do mgmt send/receive")
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
@@ -49,6 +53,8 @@ def test_open_without_zrwa(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["zrwa"], opts=["be", "admin", "sync"])
 def test_flush(cijoe, device, be_opts, cli_args):
+    if be_opts["be"] == "fbsd":
+        pytest.skip(reason="Freebsd kernel doesn't support zns")
     if be_opts["be"] == "linux" and be_opts["sync"] in ["psync", "block"]:
         pytest.skip(reason="ENOSYS: sync=[psync,block] cannot do mgmt send/receive")
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
@@ -60,6 +66,8 @@ def test_flush(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["zrwa"], opts=["be", "admin", "sync"])
 def test_flush_explicit(cijoe, device, be_opts, cli_args):
+    if be_opts["be"] == "fbsd":
+        pytest.skip(reason="Freebsd kernel doesn't support zns")
     if be_opts["be"] == "linux" and be_opts["sync"] in ["psync", "block"]:
         pytest.skip(reason="ENOSYS: sync=[psync,block] cannot do mgmt send/receive")
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
@@ -71,6 +79,8 @@ def test_flush_explicit(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["zrwa"], opts=["be", "admin", "sync"])
 def test_flush_implicit(cijoe, device, be_opts, cli_args):
+    if be_opts["be"] == "fbsd":
+        pytest.skip(reason="Freebsd kernel doesn't support zns")
     if be_opts["be"] == "linux" and be_opts["sync"] in ["psync", "block"]:
         pytest.skip(reason="ENOSYS: sync=[psync,block] cannot do mgmt send/receive")
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:

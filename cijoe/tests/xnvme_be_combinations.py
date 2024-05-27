@@ -89,17 +89,7 @@ def get_combinations():
         },
     ]
 
-    combos["freebsd"].append(
-        {
-            "be": ["spdk"],
-            "mem": ["spdk"],
-            "async": ["nvme"],
-            "sync": ["nvme"],
-            "admin": ["nvme"],
-            "label": ["pcie"],
-        },
-    )
-    combos["freebsd"].append(
+    combos["freebsd"] = [
         {
             "be": ["fbsd"],
             "mem": ["posix"],
@@ -108,6 +98,24 @@ def get_combinations():
             "admin": ["nvme"],
             "label": ["bdev"],
         },
-    )
+        # Ramdisk
+        {
+            "be": ["ramdisk"],
+            "admin": ["ramdisk"],
+            "async": ["emu", "thrpool"],
+            "mem": ["posix"],
+            "sync": ["ramdisk"],
+            "label": ["bdev", "ramdisk"],
+        },
+        # User-space NVMe-driver
+        {
+            "be": ["spdk"],
+            "mem": ["spdk"],
+            "async": ["nvme"],
+            "sync": ["nvme"],
+            "admin": ["nvme"],
+            "label": ["pcie"],
+        },
+    ]
 
     return combos

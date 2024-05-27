@@ -23,5 +23,8 @@ def test_write_zeroes(cijoe, device, be_opts, cli_args):
     if be_opts["be"] == "linux" and be_opts["sync"] in ["block", "psync"]:
         pytest.skip(reason=f"Not supported: write_zeroes via {be_opts['sync']}")
 
+    if be_opts["be"] == "fbsd" and be_opts["sync"] in ["psync"]:
+        pytest.skip(reason=f"Not supported: write_zeroes via {be_opts['sync']}")
+
     err, _ = cijoe.run(f"xnvme_tests_lblk write_zeroes {cli_args}")
     assert not err

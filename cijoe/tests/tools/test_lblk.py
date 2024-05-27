@@ -70,6 +70,9 @@ def test_pi_type1(cijoe, device, be_opts, cli_args):
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
         pytest.skip(reason="[admin=block] does not support metadata")
 
+    if be_opts["be"] == "fbsd" and be_opts["admin"] in ["nvme"]:
+        pytest.skip(reason="[admin=nvme] does not support metadata")
+
     err, _ = cijoe.run(
         f"lblk write-read-pi {cli_args} --slba 0x0 --nlb 0 --pract 1 --prchk 0x5"
     )
@@ -86,6 +89,9 @@ def test_pi_type2(cijoe, device, be_opts, cli_args):
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
         pytest.skip(reason="[admin=block] does not support metadata")
 
+    if be_opts["be"] == "fbsd" and be_opts["admin"] in ["nvme"]:
+        pytest.skip(reason="[admin=nvme] does not support metadata")
+
     err, _ = cijoe.run(
         f"lblk write-read-pi {cli_args} --slba 0x0 --nlb 0 --pract 1 --prchk 0x5"
     )
@@ -101,6 +107,9 @@ def test_pi_type2(cijoe, device, be_opts, cli_args):
 def test_pi_type3(cijoe, device, be_opts, cli_args):
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
         pytest.skip(reason="[admin=block] does not support metadata")
+
+    if be_opts["be"] == "fbsd" and be_opts["admin"] in ["nvme"]:
+        pytest.skip(reason="[admin=nvme] does not support metadata")
 
     # For PI type 3 prchk 0bxx1 is invalid
     # Thus using prchk 0b100
@@ -136,6 +145,9 @@ def test_pi_type1_extended_lba(cijoe, device, be_opts, cli_args):
 def test_pi1_pif2(cijoe, device, be_opts, cli_args):
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
         pytest.skip(reason="[admin=block] does not support metadata")
+
+    if be_opts["be"] == "fbsd" and be_opts["admin"] in ["nvme"]:
+        pytest.skip(reason="[admin=nvme] does not support metadata")
 
     err, _ = cijoe.run(
         f"lblk write-read-pi {cli_args} --slba 0x0 --nlb 0 --pract 1 --prchk 0x5"
