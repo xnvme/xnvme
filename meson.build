@@ -142,8 +142,8 @@ conf_data.set('XNVME_BE_MACOS_ENABLED', corefoundation_dep.found() and iokit_dep
 
 conf_data.set('XNVME_BE_FBSD_ENABLED', is_freebsd)
 
-conf_data.set('XNVME_BE_SPDK_ENABLED', (is_linux or is_freebsd or is_windows) and get_option('with-spdk'))
-conf_data.set('XNVME_BE_SPDK_TRANSPORT_PCIE_ENABLED', (is_linux or is_freebsd or is_windows) and get_option('with-spdk'))
+conf_data.set('XNVME_BE_SPDK_ENABLED', (is_linux or is_freebsd) and get_option('with-spdk'))
+conf_data.set('XNVME_BE_SPDK_TRANSPORT_PCIE_ENABLED', (is_linux or is_freebsd) and get_option('with-spdk'))
 conf_data.set('XNVME_BE_SPDK_TRANSPORT_TCP_ENABLED', (is_linux or is_freebsd) and get_option('with-spdk'))
 conf_data.set('XNVME_BE_SPDK_TRANSPORT_RDMA_ENABLED', (is_linux or is_freebsd) and get_option('with-spdk'))
 conf_data.set('XNVME_BE_SPDK_TRANSPORT_FC_ENABLED', (is_linux or is_freebsd) and get_option('with-spdk'))
@@ -203,23 +203,6 @@ subdir('toolbox')
 
 # Misc. third-party dependencies
 
-Ws2_32_dep = cc.find_library(
-  'Ws2_32',
-  has_headers: ['winsock2.h'],
-  required: is_windows and conf_data.get('XNVME_BE_SPDK_ENABLED'),
-)
-
-dbghelp_dep = cc.find_library(
-  'dbghelp',
-  has_headers: ['dbghelp.h'],
-  required: is_windows and conf_data.get('XNVME_BE_SPDK_ENABLED'),
-)
-
-rpcrt4_dep = cc.find_library(
-  'rpcrt4',
-  required: is_windows and conf_data.get('XNVME_BE_SPDK_ENABLED'),
-)
-
 rt_dep = cc.find_library('rt', required: is_darwin ? false : (is_linux or is_freebsd))
 if not cc.has_function('clock_gettime', prefix: '#include <time.h>', dependencies: rt_dep)
   error('clock_gettime not found')
@@ -227,15 +210,7 @@ endif
 
 spdk_dep = dependency(
   '_spdk',
-  required: (is_windows ? false : true) and conf_data.get('XNVME_BE_SPDK_ENABLED')
-)
-wpdk_dep = dependency(
-  'wpdk',
-  required: is_windows and conf_data.get('XNVME_BE_SPDK_ENABLED')
-)
-spdk_win_dep = dependency(
-  'spdk-win',
-  required: is_windows and conf_data.get('XNVME_BE_SPDK_ENABLED')
+  required: conf_data.get('XNVME_BE_SPDK_ENABLED')
 )
 
 # Headers

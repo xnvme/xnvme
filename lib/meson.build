@@ -80,9 +80,6 @@ xnvmelib_source = [
 
 xnvmelib_deps = [
   setupapi_dep,
-  Ws2_32_dep,
-  dbghelp_dep,
-  rpcrt4_dep,
   corefoundation_dep,
   iokit_dep,
   isal_dep,
@@ -92,7 +89,6 @@ xnvmelib_deps = [
   spdk_dep,
   thread_dep,
   rt_dep,
-  spdk_win_dep
 ]
 
 mapfile = 'libxnvme.map'

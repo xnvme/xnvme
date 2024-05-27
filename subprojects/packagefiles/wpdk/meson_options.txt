@@ -1,5 +1,0 @@
-option('build_subprojects', type : 'boolean', value : true,
-    yield : true)
-
-option('machine', type: 'string', value: 'native',
-	yield: true, description: 'set the target machine type')
