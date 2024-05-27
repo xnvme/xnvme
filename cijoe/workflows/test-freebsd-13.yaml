@@ -11,8 +11,20 @@ steps:
   with:
     xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
 
-- name: test
+- name: test_ramdisk
   uses: core.testrunner
   with:
-    args: 'tests'
+    args: '-k "ramdisk" tests'
+    random-order: false
+
+- name: test_os
+  uses: core.testrunner
+  with:
+    args: '-k "(not ramdisk) and (not pcie) and (not fabrics)" tests'
+    random-order: false
+
+- name: test_pcie
+  uses: core.testrunner
+  with:
+    args: '-k "pcie" tests'
     random-order: false

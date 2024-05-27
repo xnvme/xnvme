@@ -36,6 +36,8 @@ def test_idfy_ns(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["zns"], opts=["be", "admin", "sync"])
 def test_append(cijoe, device, be_opts, cli_args):
+    if be_opts["be"] == "fbsd":
+        pytest.skip(reason="Freebsd kernel doesn't support zns")
     if be_opts["be"] == "linux" and be_opts["sync"] in ["psync", "block"]:
         pytest.skip(reason="ENOSYS: sync=[psync,block] cannot do mgmt send/receive")
 
@@ -56,6 +58,8 @@ def test_append(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["zns"], opts=["be", "admin", "sync"])
 def test_report_all(cijoe, device, be_opts, cli_args):
+    if be_opts["be"] == "fbsd":
+        pytest.skip(reason="Freebsd kernel doesn't support zns")
     if be_opts["be"] == "linux" and be_opts["sync"] in ["psync"]:
         pytest.skip(reason="ENOSYS: psync(pwrite/pread) cannot do mgmt send/receive")
 
@@ -65,6 +69,8 @@ def test_report_all(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["zns"], opts=["be", "admin", "sync"])
 def test_report_limit(cijoe, device, be_opts, cli_args):
+    if be_opts["be"] == "fbsd":
+        pytest.skip(reason="Freebsd kernel doesn't support zns")
     if be_opts["be"] == "linux" and be_opts["sync"] in ["psync"]:
         pytest.skip(reason="ENOSYS: psync(pwrite/pread) cannot do mgmt send/receive")
 
@@ -74,6 +80,8 @@ def test_report_limit(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["zns"], opts=["be", "admin", "sync"])
 def test_report_single(cijoe, device, be_opts, cli_args):
+    if be_opts["be"] == "fbsd":
+        pytest.skip(reason="Freebsd kernel doesn't support zns")
     if be_opts["be"] == "linux" and be_opts["sync"] in ["psync"]:
         pytest.skip(reason="ENOSYS: psync(pwrite/pread) cannot do mgmt send/receive")
 
@@ -83,6 +91,8 @@ def test_report_single(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["zns"], opts=["be", "admin", "sync"])
 def test_report_some(cijoe, device, be_opts, cli_args):
+    if be_opts["be"] == "fbsd":
+        pytest.skip(reason="Freebsd kernel doesn't support zns")
     if be_opts["be"] == "linux" and be_opts["sync"] in ["psync"]:
         pytest.skip(reason="ENOSYS: psync(pwrite/pread) cannot do mgmt send/receive")
 
@@ -101,6 +111,8 @@ def test_read(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["zns"], opts=["be", "admin", "sync"])
 def test_reset_report_write_report(cijoe, device, be_opts, cli_args):
+    if be_opts["be"] == "fbsd":
+        pytest.skip(reason="Freebsd kernel doesn't support zns")
     if be_opts["be"] == "linux" and be_opts["sync"] in ["psync", "block"]:
         pytest.skip(reason="ENOSYS: sync=[psync,block] cannot do mgmt send/receive")
 
@@ -123,6 +135,8 @@ def test_reset_report_write_report(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["zns"], opts=["be", "admin", "sync"])
 def test_reset_open_report(cijoe, device, be_opts, cli_args):
+    if be_opts["be"] == "fbsd":
+        pytest.skip(reason="Freebsd kernel doesn't support zns")
     if be_opts["be"] == "linux" and be_opts["sync"] in ["psync", "block"]:
         pytest.skip(reason="ENOSYS: sync=[psync,block] cannot do mgmt send/receive")
 
