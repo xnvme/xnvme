@@ -59,19 +59,6 @@ extlinks = {
     ),
     "xref-spdk": ("https://spdk.io/%s", None),
     "xref-spdk-nvmeof": ("https://spdk.io/doc/nvmf.html%s", None),
-    "xref-dpdk-guide-lock-pages": (
-        "https://doc.dpdk.org/guides/windows_gsg/run_apps.html#grant-lock-pages-in-memory-privilege%s",
-        None,
-    ),
-    "xref-dpdk-guide-install-virt2phys": (
-        "https://doc.dpdk.org/guides/windows_gsg/run_apps.html#virt2phys%s",
-        None,
-    ),
-    "xref-dpdk-guide-install-netuio": (
-        "https://doc.dpdk.org/guides/windows_gsg/run_apps.html#netuio%s",
-        None,
-    ),
-    "xref-dpdk-guide-install-kmods": ("https://git.dpdk.org/dpdk-kmods%s", None),
     "xref-nvme-specs": ("https://nvmexpress.org/specifications/%s", None),
     "xref-": ("", None),
 }
