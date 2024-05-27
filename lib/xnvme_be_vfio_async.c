@@ -157,6 +157,60 @@ err:
 }
 
 int
+xnvme_be_vfio_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+			    size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
+{
+	struct xnvme_queue_vfio *q = (struct xnvme_queue_vfio *)ctx->async.queue;
+	struct xnvme_be_vfio_state *state = (void *)q->base.dev->be.state;
+	struct nvme_ctrl *ctrl = state->ctrl;
+	struct nvme_rq *rq;
+	uint64_t iova;
+
+	if (q->base.outstanding == q->base.capacity) {
+		XNVME_DEBUG("FAILED: queue is full");
+		return -EBUSY;
+	}
+
+	switch (ctx->cmd.common.opcode) {
+	case XNVME_SPEC_FS_OPC_READ:
+		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
+		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
+		break;
+
+	case XNVME_SPEC_FS_OPC_WRITE:
+		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
+		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
+		break;
+	}
+
+	rq = nvme_rq_acquire(q->sq);
+	rq->opaque = ctx;
+
+	if (dvec) {
+		nvme_rq_mapv(ctrl, rq, (union nvme_cmd *)&ctx->cmd, dvec, dvec_cnt);
+	}
+
+	if (mbuf) {
+		if (iommu_map_vaddr(ctrl->pci.dev.ctx, mbuf, mbuf_nbytes, &iova, 0)) {
+			XNVME_DEBUG("FAILED: iommu_map_vaddr()");
+			goto err;
+		}
+
+		ctx->cmd.common.mptr = iova;
+	}
+
+	nvme_rq_exec(rq, (union nvme_cmd *)&ctx->cmd);
+
+	q->base.outstanding += 1;
+
+	return 0;
+
+err:
+	nvme_rq_release(rq);
+	return -EINVAL;
+}
+
+int
 xnvme_be_vfio_queue_get_completion_fd(struct xnvme_queue *queue)
 {
 	struct xnvme_queue_vfio *q = (struct xnvme_queue_vfio *)queue;
@@ -190,7 +244,7 @@ struct xnvme_be_async g_xnvme_be_vfio_async = {
 	.id = "nvme",
 #ifdef XNVME_BE_LINUX_VFIO_ENABLED
 	.cmd_io = xnvme_be_vfio_async_cmd_io,
-	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
+	.cmd_iov = xnvme_be_vfio_async_cmd_iov,
 	.poke = xnvme_be_vfio_queue_poke,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_vfio_queue_init,
