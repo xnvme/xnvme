@@ -116,7 +116,7 @@ conf_data.set('XNVME_BE_LINUX_LIBURING_ENABLED', uring_dep.found())
 
 libvfn_dep = dependency(
   'libvfn',
-  version: '>=3.0.0',
+  version: '>=4.0.0',
   required: get_option('with-libvfn')
 )
 conf_data.set('XNVME_BE_LINUX_VFIO_ENABLED', libvfn_dep.found())

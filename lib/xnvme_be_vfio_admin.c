@@ -21,7 +21,7 @@ xnvme_be_vfio_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_
 
 	dbuf_nbytes = ALIGN_UP(dbuf_nbytes, 4096);
 
-	if (nvme_oneshot(ctrl, ctrl->adminq.sq, cmd, dbuf, dbuf_nbytes, cqe)) {
+	if (nvme_admin(ctrl, cmd, dbuf, dbuf_nbytes, cqe)) {
 		XNVME_DEBUG("FAILED: nvme_oneshot()");
 		return -errno;
 	}
