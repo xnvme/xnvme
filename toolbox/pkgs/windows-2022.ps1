@@ -1,3 +1,9 @@
+# Check if the script is run with Administrator privileges
+if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    Write-Host "$($MyInvocation.MyCommand.Name) must be run with Administrator privileges"
+    exit 1
+}
+
 # Setup PATH for this session
 $env:PATH = "$env:ALLUSERSPROFILE\chocolatey\bin;$env:PATH"
 $env:PATH = "$env:SystemDrive\tools\msys64\mingw64\bin;$env:PATH"
@@ -31,3 +37,4 @@ foreach ($tool in $tools) {
         Write-Host "$tool is installed."
     }
 }
+
