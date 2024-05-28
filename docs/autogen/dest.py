@@ -210,13 +210,13 @@ def main(args):
 
     # Add 'versions.json' and return the latest version
     latest = emit_versions(args)
+    latest_path = args.site / "en" / f"v{latest}"
 
-    print(ref, f"v{latest}")
-
-    # Update the site-root
-    if ref == "docs" or ref == f"v{latest}":
-        print(f"Copying from: '{ref}' to '{args.site}'")
-        shutil.copytree(ref_path, args.site / ".", dirs_exist_ok=True)
+    # Insert site at the web-root
+    print(f"Copying from: '{ref}' to '{args.site}'")
+    shutil.copytree(
+        ref_path if ref == "docs" else latest_path, args.site / ".", dirs_exist_ok=True
+    )
 
     return 0
 
