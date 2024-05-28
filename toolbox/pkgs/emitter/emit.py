@@ -117,8 +117,8 @@ def emit_scripts(templates):
         shell = "bash"
         suffix = ".sh"
         if platform["os"] in ["windows"]:
-            shell = "batch"
-            suffix = ".bat"
+            shell = "powershell"
+            suffix = ".ps1"
         elif platform["os"] in ["freebsd"]:
             shell = "tcsh"
 
