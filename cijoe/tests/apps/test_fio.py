@@ -43,8 +43,6 @@ def test_fio_engine_iov(cijoe, device, be_opts, cli_args):
     The construction of the fio-invocation is done in 'cijoe.fio.wrapper.fio_fancy'
     """
 
-    if be_opts["be"] == "vfio":
-        pytest.skip(reason="[be=vfio] does not implement iovec")
     if be_opts["async"] == "posix":
         pytest.skip(reason="[async=posix] does not implement iovec")
     if be_opts["be"] == "linux" and be_opts["sync"] == "psync":
