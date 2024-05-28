@@ -416,24 +416,11 @@ platforms:
 - alias: Fedora
   notes: ''
   name: fedora
-  ver: [38, 37]
+  ver: [41, 40, 39]
   os: linux
   mng: dnf
   drop: []
-  alt:
-  - [src, [libisal]]
-  aux:
-  - [sys, [autoconf, diffutils, g++, gcc, libtool, procps, zlib-devel]]
-
-- alias: Fedora
-  notes: ''
-  name: fedora
-  ver: [36]
-  os: linux
-  mng: dnf
-  drop: []
-  alt:
-  - [src, [libisal, liburing]]
+  alt: []
   aux:
   - [sys, [autoconf, diffutils, g++, gcc, libtool, procps, zlib-devel]]
 
