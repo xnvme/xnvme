@@ -93,8 +93,8 @@ xnvme_be_windows_dev_open(struct xnvme_dev *dev)
 
 	int flags = xnvme_file_opts_to_win(opts);
 
-	XNVME_DEBUG("INFO: open() : opts->oflags: 0x%x, flags: 0x%x, opts->create_mode: 0x%x",
-		    opts->oflags, flags, opts->create_mode);
+	XNVME_DEBUG("INFO: open() : flags: 0x%x, opts->create_mode: 0x%x", flags,
+		    opts->create_mode);
 
 	state->fd = _open(ident->uri, flags, opts->create_mode);
 	if (state->fd < 0) {

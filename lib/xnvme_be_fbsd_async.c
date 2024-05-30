@@ -121,7 +121,6 @@ xnvme_be_fbsd_kqueue_poke(struct xnvme_queue *q, uint32_t max)
 		if (!req) {
 			XNVME_DEBUG("-{[THIS SHOULD NOT HAPPEN]}-");
 			XNVME_DEBUG("event->data is NULL! => NO REQ!");
-			XNVME_DEBUG("event->res: %ld", ev->res);
 			XNVME_DEBUG("unprocessed events might remain");
 
 			queue->base.outstanding -= 1;
