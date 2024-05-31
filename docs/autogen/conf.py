@@ -73,6 +73,7 @@ extlinks = {
     ),
     "xref-dpdk-guide-install-kmods": ("https://git.dpdk.org/dpdk-kmods%s", None),
     "xref-nvme-specs": ("https://nvmexpress.org/specifications/%s", None),
+    "xref-conventional-commits": ("https://www.conventionalcommits.org/%s", None),
     "xref-": ("", None),
 }
 
