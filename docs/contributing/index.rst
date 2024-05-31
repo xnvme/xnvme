@@ -1,8 +1,8 @@
 .. _sec-contributing:
 
-==============
+##############
  Contributing
-==============
+##############
 
 **xNVMe** is hosted on :xref-github-xnvme:`GitHub<>`
 where you can raise :xref-github-xnvme-issues:`issue<>`,
