@@ -60,6 +60,7 @@ extlinks = {
     "xref-spdk": ("https://spdk.io/%s", None),
     "xref-spdk-nvmeof": ("https://spdk.io/doc/nvmf.html%s", None),
     "xref-nvme-specs": ("https://nvmexpress.org/specifications/%s", None),
+    "xref-conventional-commits": ("https://www.conventionalcommits.org/%s", None),
     "xref-": ("", None),
 }
 
