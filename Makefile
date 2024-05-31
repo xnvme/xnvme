@@ -150,7 +150,7 @@ endef
 .PHONY: cijoe
 cijoe:
 	@echo "## xNVMe: cijoe"
-	@pipx install cijoe==v0.9.29 --include-deps
+	@pipx install cijoe==v0.9.30 --include-deps --force
 	@pipx inject cijoe cijoe-pkg-qemu==v6.1.15
 	@pipx inject cijoe cijoe-pkg-linux==v0.9.7
 	@pipx inject cijoe cijoe-pkg-fio==v0.9.7
