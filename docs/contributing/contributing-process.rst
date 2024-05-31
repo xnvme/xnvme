@@ -1,7 +1,7 @@
 .. _sec-contributing-process:
 
 Contribution Process
-====================
+####################
 
 * `Fork`_ the **xNVMe** repository on `GitHUB`_
 
@@ -13,8 +13,8 @@ Contribution Process
 * The CI will trigger as you create the PR and re-triggered upon update
 
   - The default CI-jobs consists of running style/linters and building xNVMe
-  - When ready for integration it will be marked ``pr-ready-for-test`` and a
-    larger suite of functional tests are triggered
+  - Average time for a full functional verification run is about 40min
+  - One manual CI-job is triggered via the label ``bench``
 
 * Go over the :ref:`sec-contributing-process-pr-checklist` and re-iterate on
   your pull-request / changes
@@ -22,7 +22,7 @@ Contribution Process
 .. _sec-contributing-process-pr-checklist:
 
 Pull-Request Checklist
-----------------------
+======================
 
 Please check your pull-request for the following:
 
@@ -45,7 +45,10 @@ Please check your pull-request for the following:
 .. _sec-contributing-process-commit-messages:
 
 Commit Messages
----------------
+===============
+
+Messages must follow the :xref-conventional-commits:`Conventional Commits<>`
+specification. And in addition, for readability:
 
 1. The first line is subject/title
 
@@ -53,18 +56,10 @@ Commit Messages
    - Lower-case is preferred
    - Do **not** end with a punctuation
    - Use the **imperative mood** e.g. ``add`` rather than ``added``/``adds``
-   - Prefix with the component(s) e.g. ``component: ...``
-
-     - If the commit touches the API (``libxnvme*.h``), then prefix with
-       ``api:``
-     - If the commit touches a backend, then prefix with specific backend e.g.
-       ``be/linux: ...``
-     - If the commit touches a "core" component, then prefix that, e.g.
-       ``buf: ...``, ``ident: ...``
-     - In case of multiple components, then separate with a comma e.g.
-       ``ident,be/linux: ...```
-
-   - **Example**: ``be/libaio: add spin-while-waiting for opts.poll_io``
+   - A couple of examples:
+    - ``feat(be/ramdisk): add support for compare``
+    - ``feat(build): bump libvfn to v4.0.1``
+    - ``refactor(docs): move toolchain section down after troubleshooting``
 
 2. Then an empty line.
 
@@ -81,8 +76,8 @@ Commit Messages
    - By adding ``Signed-off-by``, you indicate that you agree to the `DCO`_
 
 Take a look at the commit history (``git log --follow <files>``), for the files
-you are changing, that should give you an idea of the "component" prefix(es) as
-well as the other items on the list above.
+you are changing, that should give you an idea of the "component" as well as the
+other items on the list above.
 
 .. _Discord: https://discord.com/invite/XCbBX9DmKf
 .. _Fork: https://github.com/xnvme/xnvme/fork
