@@ -551,9 +551,9 @@ enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
 		    struct spdk_nvme_ctrlr *ctrlr, const struct spdk_nvme_ctrlr_opts *ctrlr_opts)
 {
 	struct xnvme_be_spdk_enumerate_ctx *ectx = cb_ctx;
-	const int num_ns = spdk_nvme_ctrlr_get_num_ns(ctrlr);
 
-	for (int nsid = 1; nsid <= num_ns; ++nsid) {
+	for (int nsid = spdk_nvme_ctrlr_get_first_active_ns(ctrlr); nsid;
+	     nsid = spdk_nvme_ctrlr_get_next_active_ns(ctrlr, nsid)) {
 		struct xnvme_opts opts = *ectx->opts;
 		struct xnvme_ident ident = {0};
 		struct xnvme_dev *dev = NULL;
@@ -572,10 +572,7 @@ enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
 		}
 		ns = spdk_nvme_ctrlr_get_ns(ctrlr, nsid);
 		if (!ns) {
-			continue;
-		}
-		if (!spdk_nvme_ns_is_active(ns)) {
-			XNVME_DEBUG("FAILED: skipping inactive nsid: %d", nsid);
+			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_ns(), for nsid: %d", nsid);
 			continue;
 		}
 		if (!spdk_nvme_ns_get_data(ns)) {
@@ -617,7 +614,7 @@ enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
 
 		dev = xnvme_dev_open(ident.uri, &opts);
 		if (!dev) {
-			XNVME_DEBUG("FAILED: xnvme_dev_open()%d", errno);
+			XNVME_DEBUG("FAILED: xnvme_dev_open(), err: %d", errno);
 			return;
 		}
 		if (ectx->enumerate_cb(dev, ectx->cb_args)) {
