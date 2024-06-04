@@ -4,7 +4,7 @@ import logging as log
 def main(args, cijoe, step):
     commands = [
         "sysctl -a hw",
-        "dmesg | grep memory",
+        "(dmesg | grep memory) || true",
         "lspci || true",
     ]
     first_err = 0
