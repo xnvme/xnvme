@@ -5,7 +5,6 @@ import pytest
 from ..conftest import xnvme_cli_args, xnvme_parametrize
 
 
-@pytest.mark.skip(reason="This is broken, hangs forever")
 def test_enum(cijoe):
     err, _ = cijoe.run("zoned enum")
     assert not err
