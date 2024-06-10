@@ -1,13 +1,20 @@
 # Setup PATH for this session
-$env:PATH = "$env:ALLUSERSPROFILE\chocolatey\bin;$env:PATH"
-$env:PATH = "$env:SystemDrive\tools\msys64\mingw64\bin;$env:PATH"
-$env:PATH = "$env:SystemDrive\tools\msys64;$env:PATH"
-$env:PATH = "$env:SystemDrive\tools\msys64\usr\lib;$env:PATH"
-$env:PATH = "$env:SystemDrive\tools\msys64\usr\bin;$env:PATH"
+$env:PATH = "$env:PATH;$env:ALLUSERSPROFILE\chocolatey\bin"
+$env:PATH = "$env:PATH;$env:SystemDrive\tools\msys64\mingw64\bin"
+$env:PATH = "$env:PATH;$env:SystemDrive\tools\msys64\usr\bin"
+$env:PATH = "$env:PATH;$env:SystemDrive\tools\msys64\usr\lib"
+$env:PATH = "$env:PATH;$env:SystemDrive\tools\msys64"
 
 # Persist the changed PATH for future sessions
 $persist_path = $env:PATH
 Set-ItemProperty -Path "HKCU:\Environment" -Name "PATH" -Value $persist_path
+
+# Setup PKG_CONFIG_PATH for this session
+$env:PKG_CONFIG_PATH = "$env:PKG_CONFIG_PATH;$env:SystemDrive\tools\msys64\usr\lib\pkgconfig"
+
+# Persist the changed PKG_CONFIG_PATH for future sessions
+$persist_path = $env:PKG_CONFIG_PATH
+Set-ItemProperty -Path "HKCU:\Environment" -Name "PKG_CONFIG_PATH" -Value $persist_path
 
 # Set execution policy to allow script execution
 Set-ExecutionPolicy Bypass -Scope Process -Force
