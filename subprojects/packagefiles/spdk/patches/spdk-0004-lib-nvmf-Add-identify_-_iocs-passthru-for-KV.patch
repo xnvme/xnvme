@@ -1,4 +1,4 @@
-From 98949e7bbe035bd829c2cd3a0a51c26ed0f56dba Mon Sep 17 00:00:00 2001
+From 2d74adffa39c3aa342756474fc716c07328d264e Mon Sep 17 00:00:00 2001
 From: Karl Bonde Torp <k.torp@samsung.com>
 Date: Mon, 25 Sep 2023 15:59:24 +0200
 Subject: [PATCH 4/4] lib/nvmf: Add identify_*_iocs passthru for KV
@@ -9,7 +9,7 @@ Signed-off-by: Karl Bonde Torp <k.torp@samsung.com>
  1 file changed, 11 insertions(+), 2 deletions(-)
 
 diff --git a/lib/nvmf/ctrlr.c b/lib/nvmf/ctrlr.c
-index 1288e77bd..97020575b 100644
+index c0c137f84..0762ce1d8 100644
 --- a/lib/nvmf/ctrlr.c
 +++ b/lib/nvmf/ctrlr.c
 @@ -55,6 +55,7 @@ static struct spdk_nvmf_custom_admin_cmd g_nvmf_custom_admin_cmd_hdlrs[SPDK_NVME
@@ -20,7 +20,7 @@ index 1288e77bd..97020575b 100644
  
  static inline void
  nvmf_invalid_connect_response(struct spdk_nvmf_fabric_connect_rsp *rsp,
-@@ -3176,10 +3177,18 @@ nvmf_ctrlr_identify(struct spdk_nvmf_request *req)
+@@ -3248,10 +3249,18 @@ nvmf_ctrlr_identify(struct spdk_nvmf_request *req)
  				tmpbuf, req->length);
  		break;
  	case SPDK_NVME_IDENTIFY_NS_IOCS:

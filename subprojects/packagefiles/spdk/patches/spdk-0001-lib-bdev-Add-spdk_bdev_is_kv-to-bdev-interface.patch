@@ -1,4 +1,4 @@
-From c63e4157923080d62b283bd51241174b5e943dc0 Mon Sep 17 00:00:00 2001
+From e70052dbb79411c36cc1be0ae3f71a09f7355915 Mon Sep 17 00:00:00 2001
 From: Karl Bonde Torp <k.torp@samsung.com>
 Date: Tue, 19 Sep 2023 10:08:29 +0200
 Subject: [PATCH 1/4] lib/bdev: Add spdk_bdev_is_kv() to bdev interface
@@ -18,10 +18,10 @@ Signed-off-by: Karl Bonde Torp <k.torp@samsung.com>
  4 files changed, 22 insertions(+)
 
 diff --git a/include/spdk/bdev.h b/include/spdk/bdev.h
-index 02fc06590..a1f78d355 100644
+index aa28b505d..6544171df 100644
 --- a/include/spdk/bdev.h
 +++ b/include/spdk/bdev.h
-@@ -687,6 +687,14 @@ bool spdk_bdev_is_md_interleaved(const struct spdk_bdev *bdev);
+@@ -746,6 +746,14 @@ bool spdk_bdev_is_md_interleaved(const struct spdk_bdev *bdev);
   */
  bool spdk_bdev_is_md_separate(const struct spdk_bdev *bdev);
  
@@ -37,10 +37,10 @@ index 02fc06590..a1f78d355 100644
   * Checks if bdev supports zoned namespace semantics.
   *
 diff --git a/include/spdk/bdev_module.h b/include/spdk/bdev_module.h
-index b5dd04bb4..92a1ae5f1 100644
+index 4ca3feeb9..8ffdd3b80 100644
 --- a/include/spdk/bdev_module.h
 +++ b/include/spdk/bdev_module.h
-@@ -558,6 +558,11 @@ struct spdk_bdev {
+@@ -563,6 +563,11 @@ struct spdk_bdev {
  	 */
  	uint32_t dif_check_flags;
  
@@ -53,10 +53,10 @@ index b5dd04bb4..92a1ae5f1 100644
  	 * Specify whether bdev is zoned device.
  	 */
 diff --git a/lib/bdev/bdev.c b/lib/bdev/bdev.c
-index 8daa452f0..e0008fd32 100644
+index 88d01d4ee..cecc7a74e 100644
 --- a/lib/bdev/bdev.c
 +++ b/lib/bdev/bdev.c
-@@ -4777,6 +4777,12 @@ spdk_bdev_is_md_separate(const struct spdk_bdev *bdev)
+@@ -4809,6 +4809,12 @@ spdk_bdev_is_md_separate(const struct spdk_bdev *bdev)
  	return (bdev->md_len != 0) && !bdev->md_interleave;
  }
  
@@ -70,10 +70,10 @@ index 8daa452f0..e0008fd32 100644
  spdk_bdev_is_zoned(const struct spdk_bdev *bdev)
  {
 diff --git a/lib/nvmf/ctrlr.c b/lib/nvmf/ctrlr.c
-index 5931303f0..eb585a00c 100644
+index e78cf1a30..c5adba1bc 100644
 --- a/lib/nvmf/ctrlr.c
 +++ b/lib/nvmf/ctrlr.c
-@@ -3116,6 +3116,9 @@ nvmf_ctrlr_identify_iocs(struct spdk_nvmf_ctrlr *ctrlr,
+@@ -3188,6 +3188,9 @@ nvmf_ctrlr_identify_iocs(struct spdk_nvmf_ctrlr *ctrlr,
  		if (spdk_bdev_is_zoned(ns->bdev)) {
  			vector->zns = 1;
  		}
