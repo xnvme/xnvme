@@ -1,7 +1,7 @@
 project(
   'spdk',
   'c',
-  version: '24.01',
+  version: '24.05',
 )
 fs = import('fs')
 
@@ -112,7 +112,9 @@ spdk_libnames = get_option('build_subprojects') ? [
   'spdk_jsonrpc',
   'spdk_json',
   'spdk_util',
-  'spdk_log'
+  'spdk_log',
+  'spdk_dma',
+  'spdk_keyring'
 ] : []
 
 if get_option('build_subprojects') and host_machine.system() != 'freebsd'

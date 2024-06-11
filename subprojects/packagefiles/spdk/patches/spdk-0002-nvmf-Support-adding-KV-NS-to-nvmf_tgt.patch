@@ -1,4 +1,4 @@
-From b098eb7ddc8803d506a8636a6fe968e55ad00807 Mon Sep 17 00:00:00 2001
+From 07e8c86d555654c05c7763991a6724cd154b7c77 Mon Sep 17 00:00:00 2001
 From: Karl Bonde Torp <k.torp@samsung.com>
 Date: Tue, 12 Sep 2023 08:16:44 +0200
 Subject: [PATCH 2/4] nvmf: Support adding KV NS to nvmf_tgt
@@ -29,10 +29,10 @@ index db9e5dc6d..ec21ced1e 100644
  		SPDK_WARNLOG("Unsupported CSI: %u for NSID: %u\n", ns->csi, ns->id);
  		return false;
 diff --git a/module/bdev/nvme/bdev_nvme.c b/module/bdev/nvme/bdev_nvme.c
-index 9cfd473e2..d84f1fe53 100644
+index 37b2bccf6..d6f49a9eb 100644
 --- a/module/bdev/nvme/bdev_nvme.c
 +++ b/module/bdev/nvme/bdev_nvme.c
-@@ -4013,6 +4013,10 @@ nvme_disk_create(struct spdk_bdev *disk, const char *base_name,
+@@ -4118,6 +4118,10 @@ nvme_disk_create(struct spdk_bdev *disk, const char *base_name,
  		disk->max_open_zones = spdk_nvme_zns_ns_get_max_open_zones(ns);
  		disk->max_active_zones = spdk_nvme_zns_ns_get_max_active_zones(ns);
  		break;

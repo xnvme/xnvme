@@ -1,4 +1,4 @@
-From f55f6d672b0ffff718c23b267b137c34d197c8d9 Mon Sep 17 00:00:00 2001
+From c7c8622c386791ea3115a7e9145cbb8e1f00b62e Mon Sep 17 00:00:00 2001
 From: Karl Bonde Torp <k.torp@samsung.com>
 Date: Fri, 15 Sep 2023 10:10:25 +0200
 Subject: [PATCH 3/4] lib/nvmf: Add I/O cmd passthru for KV
@@ -13,10 +13,10 @@ Signed-off-by: Karl Bonde Torp <k.torp@samsung.com>
  2 files changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/lib/nvmf/ctrlr.c b/lib/nvmf/ctrlr.c
-index eb585a00c..1288e77bd 100644
+index c5adba1bc..c0c137f84 100644
 --- a/lib/nvmf/ctrlr.c
 +++ b/lib/nvmf/ctrlr.c
-@@ -345,7 +345,7 @@ nvmf_subsys_has_multi_iocs(struct spdk_nvmf_subsystem *subsystem)
+@@ -401,7 +401,7 @@ nvmf_subsys_has_multi_iocs(struct spdk_nvmf_subsystem *subsystem)
  
  	for (i = 0; i < subsystem->max_nsid; i++) {
  		ns = subsystem->ns[i];
@@ -25,7 +25,7 @@ index eb585a00c..1288e77bd 100644
  			return true;
  		}
  	}
-@@ -4336,6 +4336,8 @@ nvmf_ctrlr_process_io_cmd(struct spdk_nvmf_request *req)
+@@ -4400,6 +4400,8 @@ nvmf_ctrlr_process_io_cmd(struct spdk_nvmf_request *req)
  	if (spdk_nvmf_request_using_zcopy(req)) {
  		assert(req->zcopy_phase == NVMF_ZCOPY_PHASE_INIT);
  		return nvmf_bdev_ctrlr_zcopy_start(bdev, desc, ch, req);
@@ -35,11 +35,11 @@ index eb585a00c..1288e77bd 100644
  		switch (cmd->opc) {
  		case SPDK_NVME_OPC_READ:
 diff --git a/lib/nvmf/subsystem.c b/lib/nvmf/subsystem.c
-index b93257262..31ebfd5d0 100644
+index 07340b89c..fd1280b96 100644
 --- a/lib/nvmf/subsystem.c
 +++ b/lib/nvmf/subsystem.c
-@@ -1841,6 +1841,11 @@ spdk_nvmf_subsystem_add_ns_ext(struct spdk_nvmf_subsystem *subsystem, const char
- 		subsystem->max_zone_append_size_kib = max_zone_append_size_kib;
+@@ -2141,6 +2141,11 @@ spdk_nvmf_subsystem_add_ns_ext(struct spdk_nvmf_subsystem *subsystem, const char
+ 		}
  	}
  
 +	if (spdk_bdev_is_kv(ns->bdev)) {
