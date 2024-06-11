@@ -298,6 +298,20 @@ jobs:
         tar xzf xnvme-src.tar.gz --strip 1
         rm xnvme-src.tar.gz
 
+    - name: Configure with and build with debug enabled (without spdk)
+      if: ${{ contains(matrix.container.os, 'alpine') }}
+      run: |
+        meson setup builddir --buildtype=debug -Dwith-spdk=false
+        meson compile -C builddir
+        make clean # prepare for building without debug
+
+    - name: Configure with debug enabled
+      if: ${{ ! contains(matrix.container.os, 'alpine') }}
+      run: |
+        meson setup builddir --buildtype=debug
+        meson compile -C builddir
+        make clean # prepare for building without debug
+
     - name: Configure, Build, and Install
       env:
         BSCRIPT_DEF: toolbox/pkgs/default-build.sh
@@ -411,6 +425,7 @@ jobs:
         name: test-ramdisk-${{ matrix.container.os }}-${{ matrix.container.ver }}
         path: cijoe/test-${{ matrix.container.os }}-${{ matrix.container.ver }}/*
         if-no-files-found: error
+
   #
   # Build on macOS
   #
@@ -444,6 +459,12 @@ jobs:
     - name: Prep, environment GITHUB_PATH
       run: |
         echo "/opt/homebrew/opt/make/libexec/gnubin" >> $GITHUB_PATH
+
+    - name: Configure and build with debug enabled
+      run: |
+        meson setup builddir --buildtype=debug
+        meson compile -C builddir
+        make clean # prepare for building without debug
 
     - name: Configure, Build, and Install
       env:
@@ -574,6 +595,12 @@ jobs:
       run: |
         Set-ExecutionPolicy Bypass -Scope Process -Force
         .\toolbox\pkgs\windows-2022.ps1
+
+    - name: Configure and build with debug enabled
+      run: |
+        meson setup builddir --buildtype=debug
+        meson compile -C builddir
+        make clean # prepare for building without debug
 
     - name: Build!
       run: |
