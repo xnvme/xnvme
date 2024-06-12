@@ -82,7 +82,7 @@ struct xnvme_cli_args {
 	uint32_t oipbp;
 	uint32_t nodas;
 
-	uint32_t action;
+	uint32_t sanact;
 	uint32_t zsa;
 
 	uint32_t pi;
@@ -238,7 +238,7 @@ enum xnvme_cli_opt {
 	XNVME_CLI_OPT_OIPBP      = 51, ///< XNVME_CLI_OPT_OIPBP
 	XNVME_CLI_OPT_NODAS      = 52, ///< XNVME_CLI_OPT_NODAS
 
-	XNVME_CLI_OPT_ACTION = 53, ///< XNVME_CLI_OPT_ACTION
+	XNVME_CLI_OPT_SANACT = 53, ///< XNVME_CLI_OPT_SANACT
 	XNVME_CLI_OPT_ZSA    = 54, ///< XNVME_CLI_OPT_ZSA
 
 	XNVME_CLI_OPT_PI  = 55, ///< XNVME_CLI_OPT_PI
