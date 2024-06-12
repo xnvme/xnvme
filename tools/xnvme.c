@@ -1479,12 +1479,19 @@ static struct xnvme_cli_sub g_subs[] = {
 	},
 	{
 		"sanitize",
-		"Sanitize...",
-		"Sanitize...",
+		"Start a Sanitize Operation",
+		"Start a Sanitize Operation",
 		sub_sanitize,
 		{
 			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+
+			{XNVME_CLI_OPT_SANACT, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_AUSE, XNVME_CLI_LFLG},
+			{XNVME_CLI_OPT_OVRPAT, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_OWPASS, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_OIPBP, XNVME_CLI_LFLG},
+			{XNVME_CLI_OPT_NODAS, XNVME_CLI_LFLG},
 
 			XNVME_CLI_ADMIN_OPTS,
 		},
