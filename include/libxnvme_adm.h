@@ -220,8 +220,8 @@ xnvme_adm_format(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t lbaf, uint8_t
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
-xnvme_nvm_sanitize(struct xnvme_cmd_ctx *ctx, uint8_t sanact, uint8_t ause, uint32_t ovrpat,
-		   uint8_t owpass, uint8_t oipbp, uint8_t nodas);
+xnvme_nvm_sanitize(struct xnvme_cmd_ctx *ctx, uint8_t sanact, bool ause, uint32_t ovrpat,
+		   uint8_t owpass, bool oipbp, bool nodas);
 
 /**
  * Submit and wait for completion of directive send command
