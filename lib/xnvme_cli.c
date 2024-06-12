@@ -1260,7 +1260,7 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 		args->lsp = num;
 		break;
 	case XNVME_CLI_OPT_LPO_NBYTES:
-		args->action = num;
+		args->lpo_nbytes = num;
 		break;
 	case XNVME_CLI_OPT_RAE:
 		args->rae = num;
