@@ -439,10 +439,11 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "Nodas?",
 	},
 	{
-		.opt = XNVME_CLI_OPT_ACTION,
+		.opt = XNVME_CLI_OPT_SANACT,
 		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
-		.name = "action",
-		.descr = "Command action",
+		.name = "sanact",
+		.descr = "Sanatize action: Exit Failure Mode=0x1, Block Erase=0x2, Overwrite=0x3, "
+			 "Crypto Erase=0x4",
 	},
 	{
 		.opt = XNVME_CLI_OPT_ZSA,
@@ -1295,9 +1296,8 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 	case XNVME_CLI_OPT_NODAS:
 		args->nodas = num;
 		break;
-
-	case XNVME_CLI_OPT_ACTION:
-		args->action = num;
+	case XNVME_CLI_OPT_SANACT:
+		args->sanact = num;
 		break;
 	case XNVME_CLI_OPT_ZSA:
 		args->zsa = num;

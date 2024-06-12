@@ -799,7 +799,7 @@ sub_sanitize(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
-	uint8_t sanact = cli->args.action;
+	uint8_t sanact = cli->args.sanact;
 	uint8_t ause = cli->args.ause;
 	uint32_t ovrpat = cli->args.ovrpat;
 	uint8_t owpass = cli->args.owpass;
