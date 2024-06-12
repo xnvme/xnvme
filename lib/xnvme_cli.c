@@ -412,7 +412,7 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.opt = XNVME_CLI_OPT_AUSE,
 		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "ause",
-		.descr = "AUSE?",
+		.descr = "Allow Unrestricted Sanatize Exit",
 	},
 	{
 		.opt = XNVME_CLI_OPT_OVRPAT,
@@ -424,19 +424,19 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.opt = XNVME_CLI_OPT_OWPASS,
 		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "owpass",
-		.descr = "Overwrite Passes",
+		.descr = "Overwrite Pass Count",
 	},
 	{
 		.opt = XNVME_CLI_OPT_OIPBP,
 		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "oipbp",
-		.descr = "Overwrite Inverse Bit Pattern",
+		.descr = "Overwrite Invert Pattern Between Passes",
 	},
 	{
 		.opt = XNVME_CLI_OPT_NODAS,
 		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "nodas",
-		.descr = "Nodas?",
+		.descr = "No-Deallocate After Sanitize",
 	},
 	{
 		.opt = XNVME_CLI_OPT_SANACT,

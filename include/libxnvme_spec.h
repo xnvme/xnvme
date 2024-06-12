@@ -1880,10 +1880,10 @@ struct xnvme_spec_cmd_sanitize {
 	uint32_t cdw00_09[10]; ///< Command dword 0 to 9
 
 	uint32_t sanact : 3; ///< Sanitize Action
-	uint32_t ause   : 1; ///< Allow unrestr. San. Exit
+	uint32_t ause   : 1; ///< Allow Unrestricted Sanatize Exit
 	uint32_t owpass : 4; ///< Overwrite Pass Count
-	uint32_t oipbp  : 1; ///< Overwrite Invert
-	uint32_t nodas  : 1; ///< NoDeallocate after Sanitize
+	uint32_t oipbp  : 1; ///< Overwrite Invert Pattern Between Passes
+	uint32_t nodas  : 1; ///< No-Deallocate After Sanitize
 	uint32_t rsvd   : 22;
 
 	uint32_t ovrpat; ///< Overwrite Pattern
