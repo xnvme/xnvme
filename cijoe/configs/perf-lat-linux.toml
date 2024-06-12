@@ -1,4 +1,4 @@
-[transport.ssh]
+[cijoe.transport.ssh]
 hostname = "perf-lat-linux.home.arpa"
 port = 22
 username = "root"

@@ -1,4 +1,4 @@
-[transport.ssh]
+[cijoe.transport.ssh]
 hostname = "bench-amd.home.arpa"
 port = 22
 username = "root"

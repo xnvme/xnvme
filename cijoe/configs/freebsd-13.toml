@@ -1,5 +1,5 @@
 # The SSH options are passed verbatim to paramiko; see https://www.paramiko.org/
-[transport.ssh]
+[cijoe.transport.ssh]
 username = "root"
 password = ""
 hostname = "localhost"
