@@ -800,11 +800,11 @@ sub_sanitize(struct xnvme_cli *cli)
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 	uint8_t sanact = cli->args.sanact;
-	uint8_t ause = cli->args.ause;
+	bool ause = cli->args.ause;
 	uint32_t ovrpat = cli->args.ovrpat;
 	uint8_t owpass = cli->args.owpass;
-	uint8_t oipbp = cli->args.oipbp;
-	uint8_t nodas = cli->args.nodas;
+	bool oipbp = cli->args.oipbp;
+	bool nodas = cli->args.nodas;
 	int err;
 
 	xnvme_cli_pinf("xnvme_nvm_sanitize: {sanact: 0x%x, ause: 0x%x, "

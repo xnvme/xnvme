@@ -1282,7 +1282,7 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 		args->mset = num;
 		break;
 	case XNVME_CLI_OPT_AUSE:
-		args->ause = num;
+		args->ause = true;
 		break;
 	case XNVME_CLI_OPT_OVRPAT:
 		args->ovrpat = num;
@@ -1291,10 +1291,10 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 		args->owpass = num;
 		break;
 	case XNVME_CLI_OPT_OIPBP:
-		args->oipbp = num;
+		args->oipbp = true;
 		break;
 	case XNVME_CLI_OPT_NODAS:
-		args->nodas = num;
+		args->nodas = true;
 		break;
 	case XNVME_CLI_OPT_SANACT:
 		args->sanact = num;

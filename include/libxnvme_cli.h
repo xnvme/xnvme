@@ -76,11 +76,11 @@ struct xnvme_cli_args {
 	uint32_t ses;
 	uint32_t sel;
 	uint32_t mset;
-	uint32_t ause;
+	bool ause;
 	uint32_t ovrpat;
 	uint32_t owpass;
-	uint32_t oipbp;
-	uint32_t nodas;
+	bool oipbp;
+	bool nodas;
 
 	uint32_t sanact;
 	uint32_t zsa;

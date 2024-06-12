@@ -24,8 +24,8 @@ xnvme_adm_format(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t lbafl, uint8_
 }
 
 int
-xnvme_nvm_sanitize(struct xnvme_cmd_ctx *ctx, uint8_t sanact, uint8_t ause, uint32_t ovrpat,
-		   uint8_t owpass, uint8_t oipbp, uint8_t nodas)
+xnvme_nvm_sanitize(struct xnvme_cmd_ctx *ctx, uint8_t sanact, bool ause, uint32_t ovrpat,
+		   uint8_t owpass, bool oipbp, bool nodas)
 {
 	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_SANITIZE;
 	ctx->cmd.sanitize.sanact = sanact;
