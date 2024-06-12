@@ -23,18 +23,29 @@ care of the need to switch branch remotely.
 
 
 def git_remote_from_config(cijoe, remote_path):
-    """Returns git-remote URI using configuration transport.ssh"""
+    """Returns git-remote URI using configuration cijoe.transport.ssh"""
 
     hostname = (
-        cijoe.config.options.get("transport", {}).get("ssh", {}).get("hostname", {})
+        cijoe.config.options.get("cijoe", {})
+        .get("transport", {})
+        .get("ssh", {})
+        .get("hostname", {})
     )
     if not hostname:
         return None
 
     username = (
-        cijoe.config.options.get("transport", {}).get("ssh", {}).get("username", {})
+        cijoe.config.options.get("cijoe", {})
+        .get("transport", {})
+        .get("ssh", {})
+        .get("username", {})
     )
-    port = cijoe.config.options.get("transport", {}).get("ssh", {}).get("port", {})
+    port = (
+        cijoe.config.options.get("cijoe", {})
+        .get("transport", {})
+        .get("ssh", {})
+        .get("port", {})
+    )
 
     remote = "ssh://"
     if username:
