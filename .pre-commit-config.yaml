@@ -26,13 +26,13 @@ repos:
 
 # REUSE-software compliance check
 - repo: https://github.com/fsfe/reuse-tool
-  rev: v1.1.2
+  rev: v3.1.0a1
   hooks:
   - id: reuse
 
 # Yaml: intended for the GitHUB Actions .yaml
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.4.0
+  rev: v4.6.0
   hooks:
   - id: check-yaml # pre-commit-hook-yamlfmt only works on valid YAML files
     name: YAML-format-check
@@ -54,12 +54,12 @@ repos:
 
 # Python: for all the helpers in toolbox/*
 - repo: https://github.com/psf/black
-  rev: '23.3.0'
+  rev: '24.4.2'
   hooks:
   - id: black
     name: Python-format-black
 - repo: https://github.com/pycqa/isort
-  rev: '5.12.0'
+  rev: '5.13.2'
   hooks:
   # Available args: https://pycqa.github.io/isort/docs/configuration/options.html
   - id: isort
@@ -68,7 +68,7 @@ repos:
     - '--profile=black'
     - '--line-length=88'
 - repo: https://github.com/pycqa/flake8
-  rev: '6.0.0'
+  rev: '7.0.0'
   hooks:
   - id: flake8
     name: Python-lint-flake8

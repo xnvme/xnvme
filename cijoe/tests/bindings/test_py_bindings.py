@@ -5,6 +5,7 @@ This tests the cli-tool-examples implemented in Python:
     * xpy_libconf
     * xpy_dev_open
 """
+
 import pytest
 
 from ..conftest import xnvme_parametrize

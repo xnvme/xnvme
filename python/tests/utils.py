@@ -1,6 +1,7 @@
 """
 Utilities used with pytest / xnvme-python-bindings
 """
+
 import ctypes
 
 import numpy

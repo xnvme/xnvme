@@ -267,10 +267,10 @@ def main(args, cijoe, step):
 
     # Check that the backing-storage exists, create them if they do not
     for drive in drives:
-        err, _ = cijoe.run_local(f"[ -f { drive['file'] } ]")
+        err, _ = cijoe.run_local(f"[ -f {drive['file']} ]")
         if err:
             guest.image_create(drive["file"], drive["format"], drive_size)
-        err, _ = cijoe.run_local(f"[ -f { drive['file'] } ]")
+        err, _ = cijoe.run_local(f"[ -f {drive['file']} ]")
 
     err = guest.start(extra_args=nvme_args)
     if err:

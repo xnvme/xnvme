@@ -149,9 +149,11 @@ def main(args, cijoe, step):
                 [
                     f"{iopath['bdev_name']}",
                     f"{iopath['io_mechanism']}",
-                    "conserve_cpu"
-                    if "xnvme" in iopath_label and iopath["conserve_cpu"]
-                    else "",
+                    (
+                        "conserve_cpu"
+                        if "xnvme" in iopath_label and iopath["conserve_cpu"]
+                        else ""
+                    ),
                     f"{count}.conf",
                 ]
             )

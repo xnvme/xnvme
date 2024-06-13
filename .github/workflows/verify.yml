@@ -110,8 +110,8 @@ jobs:
   # Check source-format using pre-commit
   #
   source-format-check:
-    runs-on: ubuntu-latest
-    container: ghcr.io/xnvme/xnvme-deps-citools-latest:next
+    runs-on: ubuntu-24.04
+    container: ghcr.io/xnvme/xnvme-deps-fedora-citools:next
 
     steps:
     - name: Grab source
@@ -119,11 +119,6 @@ jobs:
     - name: Add repos to git-config safe.directory
       run: |
         git config --global --add safe.directory $(pwd)
-
-    - name: Install curl
-      run: |
-        apt-get update -qy
-        apt-get install -qy curl
 
     - uses: dtolnay/rust-toolchain@stable
       with:
