@@ -123,7 +123,7 @@ endef
 .PHONY: docker
 docker:
 	@echo "## xNVMe: docker"
-	@docker run -it -w /tmp/xnvme --mount type=bind,source="$(shell pwd)",target=/tmp/xnvme ghcr.io/xnvme/xnvme-deps-debian-bookworm:next bash
+	@docker run -it -w /tmp/xnvme --mount type=bind,source="$(shell pwd)",target=/tmp/xnvme ghcr.io/xnvme/xnvme-deps-fedora-citools:next bash
 	@echo "## xNVME: docker [DONE]"
 
 define docs-help
