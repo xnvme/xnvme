@@ -568,6 +568,11 @@ xnvme_dev_open(const char *dev_uri, struct xnvme_opts *opts)
 	struct xnvme_dev *dev = NULL;
 	int err;
 
+	if (!dev_uri) { ///< Ensure a dev_uri is given
+		errno = EINVAL;
+		return NULL;
+	}
+
 	if (!opts) { ///< Set defaults when none are given
 		opts = &opts_default;
 	}
