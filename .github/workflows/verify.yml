@@ -276,7 +276,8 @@ jobs:
         - {os: 'debian', dh: 'debian', ver: 'trixie'}
         - {os: 'fedora', dh: 'fedora', ver: '39'}
         - {os: 'fedora', dh: 'fedora', ver: '40'}
-        - {os: 'fedora', dh: 'fedora', ver: '41'}
+        # Skipping fedora-41 due to broken libffi
+        #- {os: 'fedora', dh: 'fedora', ver: '41'}
         - {os: 'gentoo', dh: 'gentoo/stage3', ver: 'latest'}
         - {os: 'opensuse-tumbleweed', dh: 'opensuse/tumbleweed', ver: 'latest'}
         - {os: 'oraclelinux', dh: 'oraclelinux', ver: '9'}
