@@ -8,6 +8,7 @@ This tests whether:
 It does so by compiling programs and running them, and additionally, checking
 the size of the result binraries.
 """
+
 from pathlib import Path
 
 from cijoe.core.resources import get_resources

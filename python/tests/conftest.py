@@ -13,6 +13,7 @@
     specific testcase, e.g. specific to the parametrization. This relies on the pytest
     feature "indirect parametrization".
 """
+
 import errno
 import logging as log
 import os.path

@@ -8,6 +8,7 @@
 
     This is useful since usage of the library handle can have multiple entry points.
 """
+
 import ctypes
 import ctypes.util
 import os
