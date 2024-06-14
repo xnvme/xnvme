@@ -651,6 +651,7 @@ jobs:
       matrix:
         guest:
         - {os: 'freebsd', ver: '13'}
+        - {os: 'freebsd', ver: '14'}
         - {os: 'debian', ver: 'bullseye'}
 
     container:
