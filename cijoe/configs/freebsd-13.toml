@@ -233,7 +233,7 @@ path = "{{ local.env.HOME }}/git/xnvme"
 
 [xnvme.repository.sync]
 branch = "wip"
-remote = "vm"
+remote_alias = "guest"
 remote_path = "/root/git/xnvme"
 
 [xnvme.build]
