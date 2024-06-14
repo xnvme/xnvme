@@ -15,7 +15,7 @@ described in section :ref:`sec-contributing-toolbox-precommit`.
 Makefile helper
 ---------------
 
-As described in :ref:`sec-getting-started`,  **xNVMe** uses the `Meson`_
+As described in :ref:`sec-gs`,  **xNVMe** uses the `Meson`_
 build-system, however, during development usage of the
 :ref:`sec-contributing-toolbox` is invoked via ``make`` based on the
 ``Makefile`` in the root of the **xNVMe** repository.

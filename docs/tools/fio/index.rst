@@ -16,7 +16,7 @@ However, the introduction above is well recommended read.
 Enabling the xNVMe engine
 -------------------------
 
-First, consult the :ref:`sec-getting-started` section, to build and install
+First, consult the :ref:`sec-gs` section, to build and install
 **xNVMe**. Then go ahead and build and install `fio`_ from source:
 
 .. literalinclude:: ../../../toolbox/pkgs/emitter/templates/src-fio.sh.jinja

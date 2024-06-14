@@ -1,2 +1,0 @@
-chmod +x hello
-./hello

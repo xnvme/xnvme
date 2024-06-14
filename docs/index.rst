@@ -45,8 +45,8 @@ To evaluate the performance of abstractions introduced by ``xNVMe`` a Fio IO
 engine is provided, supporting **conventional** NVMe devices, as well as
 **Zoned** devices.
 
-Jump right into the :ref:`sec-getting-started` and with the basics in place you
-can explore the :ref:`sec-tools` and the :ref:`sec-api`.
+Jump right into the :ref:`sec-gs` and with the basics in place you can explore
+the :ref:`sec-tools` and the :ref:`sec-api`.
 
 Contents:
 

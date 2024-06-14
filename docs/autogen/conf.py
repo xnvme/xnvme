@@ -31,6 +31,8 @@ extlinks = {
         None,
     ),
     "xref-xnvme": ("https://xnvme.io/%s", None),
+    "xref-xnvme-rust-xnvme-sys": ("https://crates.io/crates/xnvme-sys/%s", None),
+    "xref-xnvme-python": ("https://pypi.org/project/xnvme/%s", None),
     "xref-xnvme-repository-dir": ("https://github.com/xnvme/xnvme/tree/main/%s", None),
     "xref-fio-repository-file": ("https://github.com/axboe/fio/blob/master/%s", None),
     "xref-spdk-repository-file": ("https://github.com/spdk/spdk/tree/master/%s", None),

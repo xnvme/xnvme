@@ -48,7 +48,7 @@ is available on the system in ``/dev/nvme0n1`` and it has PCIe identifier
 
 It is assumed that both the **initiator**, as well as the **target**, are
 running Debian Linux / Bullseye and that **xNVMe** is installed according to
-the :ref:`sec-getting-started` section. Additonally, the **xNVMe** source repos
+the :ref:`sec-gs` section. Additonally, the **xNVMe** source repos
 is available at ``${XNVME_REPOS}``.
 
 When running the commands/scripts in the following sections, then it is assumed
@@ -94,7 +94,7 @@ Exporting Targets using SPDK
 ----------------------------
 
 Assuming that you have build and installed **xNVMe** as described in the
-:ref:`sec-getting-started` section, then you have the **xNVMe** repository
+:ref:`sec-gs` section, then you have the **xNVMe** repository
 available. We will be using the **SPDK** subproject from it, as it is already
 build and available for use.
 
