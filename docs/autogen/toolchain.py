@@ -32,9 +32,8 @@ def main():
     ).get_template("toolchain.rst.jinja")
 
     toolbox_path = Path(__file__).parent.parent.parent / "toolbox"
-    docs_path = Path(__file__).parent.parent
     ypath = toolbox_path / "pkgs" / "emitter" / DEP_PATH
-    gspath = docs_path / "getting_started" / "toolchain.rst"
+    docs_path = Path(__file__).parent.parent / "toolchain"
 
     content = None
     with ypath.resolve().open("r") as dpath:
@@ -45,8 +44,33 @@ def main():
         build_scripts[bs.stem.replace("-build", "")] = bs
     content["build_scripts"] = build_scripts
 
-    with gspath.resolve().open("w") as file:
-        file.write(template.render(content))
+    platforms = {}
+    for platform in content["platforms"]:
+        osname = platform["os"]
+        if osname not in platforms:
+            platforms[osname] = []
+        platforms[osname].append(platform)
+
+    osnames = {
+        "linux": "Linux",
+        "freebsd": "FreeBSD",
+        "macos": "macOS",
+        "windows": "Windows",
+    }
+
+    for oslabel, osname in osnames.items():
+        section_dir = docs_path / oslabel
+        section_file = section_dir / "index.rst"
+
+        data = {
+            "platforms": platforms.get(oslabel),
+            "oslabel": oslabel,
+            "osname": osname,
+        }
+
+        section_dir.mkdir(exist_ok=True)
+        with section_file.open("w") as file:
+            file.write(template.render(data))
 
 
 if __name__ == "__main__":

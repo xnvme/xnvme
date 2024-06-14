@@ -55,6 +55,7 @@ Contents:
    :includehidden:
 
    getting_started/index.rst
+   toolchain/index.rst
    backends/index.rst
    tools/index.rst
    api/index.rst
