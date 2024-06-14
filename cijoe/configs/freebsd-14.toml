@@ -1,0 +1,272 @@
+# The SSH options are passed verbatim to paramiko; see https://www.paramiko.org/
+[cijoe.transport.ssh]
+username = "root"
+password = ""
+hostname = "localhost"
+port = 4200
+
+[os]
+name = "freebsd"
+version = "14"
+
+[cijoe.run]
+shell = "csh"
+
+[build.compiler]
+bin = "clang"
+
+# Used by: qemu.build.py
+[qemu.repository]
+remote = "https://github.com/qemu/qemu.git"
+path = "{{ local.env.HOME }}/git/qemu"
+tag = "v8.0.0"
+
+# Used by: qemu.build.py
+[qemu.build]
+prefix = "{{ local.env.HOME }}/opt/qemu"
+
+[qemu]
+#system_bin = "{{ local.env.HOME }}/opt/qemu/bin/qemu-system-x86_64"
+system_bin = "/opt/qemu/bin/qemu-system-x86_64"
+img_bin = "qemu-img"
+default_guest = "freebsd_14"
+
+# Used by: qemu.guest_start.py and qemu.guest_kill.py
+[qemu.guests.freebsd_14]
+path = "{{ local.env.HOME }}/guests/freebsd-14-amd64"
+
+# Keyword arguments: joined onto the form: "-cpu host -smp 4 -m 4" etc.
+system_args.kwa = {cpu = "host", smp = 4, m = "12G", accel = "kvm"}
+
+# Raw arguments: passed without modification to qemu-system-{arch}
+system_args.raw = """\
+-M "type=q35,kernel_irqchip=split" \
+-device "intel-iommu,pt=on,intremap=on" \
+"""
+
+# Managed arguments: expands into longer incantations
+system_args.tcp_forward = {host = 4200, guest = 22}
+#system_args.host_share = "{{ local.env.HOME }}/git"
+
+# Used by: qemu.guest_init_using_bootimage.py
+init_using_bootimage.url = "https://refenv.fra1.digitaloceanspaces.com/boot_images/freebsd-14.1-ksrc-amd64.qcow2"
+init_using_bootimage.img = "{{ local.env.HOME }}/images/boot_images/freebsd-14.1-ksrc-amd64.qcow2"
+
+# Used by: qemu.guest_init_using_cloudinit
+init_using_cloudinit.url = "https://refenv.fra1.digitaloceanspaces.com/boot_images/freebsd-14.1-ksrc-amd64.qcow2"
+init_using_cloudinit.img = "{{ local.env.HOME}}/images/cloudinit/freebsd-14.1-ksrc-amd64.qcow2"
+init_using_cloudinit.meta = "{{ resources.auxiliary['qemu.cloudinit-freebsd-meta'] }}"
+init_using_cloudinit.user = "{{ resources.auxiliary['qemu.cloudinit-freebsd-user'] }}"
+#init_using_cloudinit.pubkey = "keys/guest_key.pub"
+
+[[devices]]
+uri = "/dev/nvme0ns1"
+nsid = 1
+labels = [ "dev", "bdev", "nvm", "scc", "write_zeroes" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:03:00.0"
+nsid = 1
+labels = [ "dev", "pcie", "nvm", "scc", "write_zeroes", "ctrlr" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "/dev/nvme0ns2"
+nsid = 2
+labels = [ "dev", "bdev", "zns", "zrwa" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:03:00.0"
+nsid = 2
+labels = [ "dev", "pcie", "zns", "zrwa" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "/dev/nvme0ns3"
+nsid = 3
+labels = [ "dev", "cdev", "kvs" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:03:00.0"
+nsid = 3
+labels = [ "dev", "pcie", "kvs" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "/dev/nvme1ns1"
+nsid = 1
+labels = [ "dev", "bdev", "nvm", "scc", "write_zeroes" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:04:00.0"
+nsid = 1
+labels = [ "dev", "pcie", "nvm", "scc", "write_zeroes" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "/dev/nvme2n1"
+nsid = 1
+labels = [ "dev", "bdev", "nvm", "scc", "large_mdts" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "/dev/nvme3ns1"
+nsid = 1
+labels = [ "dev", "bdev", "nvm", "scc", "fdp" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:06:00.0"
+nsid = 1
+labels = [ "dev", "pcie", "nvm", "scc", "fdp" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "/dev/nvme4ns1"
+nsid = 1
+labels = [ "dev", "bdev", "nvm", "pi1"]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:07:00.0"
+nsid = 1
+labels = [ "dev", "pcie", "nvm", "pi1"]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "/dev/nvme4ns2"
+nsid = 2
+labels = [ "dev", "bdev", "nvm", "pi2"]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:07:00.0"
+nsid = 2
+labels = [ "dev", "pcie", "nvm", "pi2"]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "/dev/nvme4ns3"
+nsid = 3
+labels = [ "dev", "bdev", "nvm", "pi3"]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:07:00.0"
+nsid = 3
+labels = [ "dev", "pcie", "nvm", "pi3"]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "/dev/nvme4ns4"
+nsid = 4
+labels = [ "dev", "bdev", "nvm", "pi1_ex"]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:07:00.0"
+nsid = 4
+labels = [ "dev", "pcie", "nvm", "pi1_ex"]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "/dev/nvme4ns5"
+nsid = 5
+labels = [ "dev", "bdev", "nvm", "pi1_pif2"]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:07:00.0"
+nsid = 5
+labels = [ "dev", "pcie", "nvm", "pi1_pif2"]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "/dev/nvme0"
+nsid = 0
+labels = [ "ctrlr", "cdev"]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "127.0.0.1:4420"
+pcie_id = "0000:03:00.0"
+subnqn = "nqn.2019-08.org.qemu:deadbeef"
+nsid = 1
+labels = [ "dev", "fabrics", "nvm", "write_zeroes" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "127.0.0.1:4420"
+pcie_id = "0000:03:00.0"
+subnqn = "nqn.2019-08.org.qemu:deadbeef"
+nsid = 2
+labels = [ "dev", "fabrics", "zns" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "127.0.0.1:4420"
+pcie_id = "0000:03:00.0"
+subnqn = "nqn.2019-08.org.qemu:deadbeef"
+nsid = 3
+labels = [ "dev", "fabrics", "kvs" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "/tmp/xnvme-testfile.bin"
+nsid = 1
+labels = [ "file" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "2GB"
+nsid = 1
+labels = [ "dev", "bdev", "nvm", "ramdisk", "write_zeroes" ]
+driver_attachment = "kernel"
+
+[xnvme.repository]
+remote = "https://github.com/xnvme/xnvme.git"
+path = "{{ local.env.HOME }}/git/xnvme"
+
+[xnvme.repository.sync]
+branch = "wip"
+remote_alias = "guest"
+remote_path = "/root/git/xnvme"
+
+[xnvme.build]
+type = "debug"
+
+[fio]
+bin = "fio"
+
+# Uncomment this to configure the build of fio with --prefix
+#[fio.build]
+#prefix = "/opt/fio"
+
+[fio.repository]
+remote = "https://github.com/axboe/fio.git"
+path = "/root/git/fio"
+tag = "fio-3.36"
+
+[fio.engines.libaio]
+type = "builtin"
+
+[fio.engines.io_uring]
+type = "builtin"
+
+[fio.engines.io_uring_cmd]
+type = "builtin"
+
+[fio.engines.xnvme]
+type = "builtin"
+
+[fio.engines.spdk_nvme]
+path = "/opt/aux/spdk_nvme"
+type = "external_preload"
+
+[fio.engines.spdk_bdev]
+path = "/opt/aux/spdk_bdev"
+type = "external_preload"
