@@ -25,10 +25,3 @@ Instrumentation
 ---------------
 
 ...
-
-
-.. toctree::
-   :maxdepth: 2
-   :hidden:
-
-   nvme.rst

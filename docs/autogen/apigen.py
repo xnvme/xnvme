@@ -20,6 +20,55 @@ DECLARATIONS = {
 }  # type: dict
 
 
+NAMESPACES = {
+    "core": set(
+        [
+            "xnvme_buf",
+            "xnvme_cmd",
+            "xnvme_dev",
+            "xnvme_geo",
+            "xnvme_ident",
+            "xnvme_mem",
+            "xnvme_opts",
+            "xnvme_queue",
+        ]
+    ),
+    "nvme": set(
+        [
+            "xnvme_adm",
+            "xnvme_kvs",
+            "xnvme_nvm",
+            "xnvme_pi",
+            "xnvme_spec",
+            "xnvme_spec_fs",
+            "xnvme_spec_pp",
+            "xnvme_topology",
+            "xnvme_znd",
+        ]
+    ),
+    "file": set(
+        [
+            "xnvme_file",
+        ]
+    ),
+    "cli": set(
+        [
+            "xnvme_cli",
+        ]
+    ),
+    "util": set(
+        [
+            "xnvme_be",
+            "xnvme_lba",
+            "xnvme_libconf",
+            "xnvme_pp",
+            "xnvme_util",
+            "xnvme_ver",
+        ]
+    ),
+}
+
+
 def expand_path(path):
     """Expands variables from the given path and turns it into absolute path"""
 
@@ -139,7 +188,7 @@ def emit(namespace, api):
             "ns": namespace,
             "api": api,
             "show_header": os.path.exists(
-                os.path.join("..", "..", "include", f"lib{namespace}.h")
+                os.path.join("..", "..", "..", "include", f"lib{namespace}.h")
             ),
             "show_enums": api["enum"],
             "show_structs": api["struct"],
@@ -155,9 +204,11 @@ def main(args):
 
     syms = symbols(args)
 
-    core_namespaces = set(
-        ["xnvme_adm", "xnvme_buf", "xnvme_cmd", "xnvme_dev", "xnvme_nvm", "xnvme_queue"]
-    )
+    def namespace_to_prefix(namespace):
+        for prefix, namespaces in NAMESPACES.items():
+            if namespace in namespaces:
+                return prefix
+        return None
 
     pps = {}
     for namespace, val in syms.items():
@@ -166,11 +217,11 @@ def main(args):
     for namespace, val in syms.items():
         logging.info("namespace: %r", namespace)
 
-        prefix = "extended"
-        if namespace in core_namespaces:
-            prefix = "core"
+        prefix = namespace_to_prefix(namespace)
+        if prefix is None:
+            logging.error("no prefix match")
 
-        rst_fpath = os.path.join(args.output, prefix, "%s.rst" % namespace)
+        rst_fpath = os.path.join(args.output, "c", prefix, "%s.rst" % namespace)
         rst = emit(namespace, val)
 
         with open(rst_fpath, "w") as rfd:

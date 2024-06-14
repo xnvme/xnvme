@@ -9,15 +9,28 @@ only makes use of the :xref-spdk:`SPDK<>` user-space NVMe driver. That is, the
 reactor, threading-model, and application-framework of **SPDK** is not used
 by **xNVMe**.
 
-Note, that **SPDK** in turn makes use of **xNVMe**, via the **bdev_xnvme**.
-
 .. _sec-backends-spdk-identifiers:
 
 Device Identifiers
 ------------------
 
-Since devices are no longer available in ``/dev``, then the PCI ids are used,
-such as ``0000:03:00.0``, e.g. using the CLI:
+When using user-space NVMe-drivers, such as the SPDK NVMe PMD
+(poll-mode-driver), then the operating-system kernel NVMe driver is "detached"
+and the device bound to ``vfio-pci``` or ``uio-generic```. Thus, the
+device-files in ``/ dev/``, such as ``/dev/nvme0n1`` are not available. Devices
+are instead identified by their PCI id (``0000:03:00.0```), and namespace
+identifier.
+
+This information is retrievable via ``xnvme enum``:
+
+.. literalinclude:: 400_xnvme_enum.cmd
+   :language: bash
+
+.. literalinclude:: 400_xnvme_enum.out
+   :language: bash
+
+This information is usable via the the cli, such as here:
+
 
 .. literalinclude:: 115_xnvme_info.cmd
    :language: bash
@@ -25,22 +38,9 @@ such as ``0000:03:00.0``, e.g. using the CLI:
 And using the API it would be similar to::
 
   ...
-  struct xnvme_dev *dev = xnvme_dev_open("0000:01:00.0", opts);
+  struct xnvme_dev *dev = xnvme_dev_open("0000:03:00.0", opts);
   ...
 
-Since the Kernel NVMe driver is unbound from the device, then the kernel no
-longer know that the PCIe device is an NVMe device, thus, it no longer lives in
-Linux devfs, that is, no longer available in ``/dev`` as e.g. ``/dev/nvme0n1``.
-
-Instead of the filepath in devfs, then you use PCI ids and xNVMe options.
-
-As always, use the ``xnvme`` cli tool to enumerate devices:
-
-.. literalinclude:: 400_xnvme_enum.cmd
-   :language: bash
-
-.. literalinclude:: 400_xnvme_enum.out
-   :language: bash
 
 Notice that multiple URIs using the same PCI id but with different **xNVMe**
 ``?opts=<val>``. This is provided as a means to tell **xNVMe** that you want to
@@ -53,33 +53,6 @@ use the NVMe controller at ``0000:03:00.0`` and the namespace identified by
 .. literalinclude:: 410_xnvme_info.out
    :language: bash
 
-
-Similarly, when using the API, then you would use these URIs instead of
-filepaths::
-
-  ...
-  struct xnvme_dev *dev = xnvme_dev_open("pci:0000:01:00.0?nsid=1");
-  ...
-
-
-No devices found
-~~~~~~~~~~~~~~~~
-
-When running ``xnvme enum`` and the output-listing is empty, then there are no
-devices. When running with ``vfio-pci``, this can occur when your devices are
-sharing iommu-group with other devices which are still bound to in-kernel
-drivers. This could be NICs, GPUs or other kinds of peripherals.
-
-The division of devices into groups is not something that can be easily
-switched, but you can try to manually unbind the other devices in the iommu
-group from their kernel drivers.
-
-If that is not an option then you can try to re-organize your physical
-connectivity of deviecs, e.g. move devices around.
-
-Lastly you can try using ``uio_pci_generic`` instead, this can most easily be
-done by disabling iommu by adding the kernel option: ``iommu=off`` to the
-kernel command-line and rebooting.
 
 .. _sec-backends-spdk-instrumentation:
 
@@ -165,8 +138,6 @@ Should output similar to:
 
 .. literalinclude:: 120_xnvme_driver_reset.out
    :language: bash
-
-.. _sec-backends-spdk-identifiers:
 
 .. _sec-backends-spdk-vfio:
 
@@ -259,6 +230,25 @@ After doing this, then inspecting the configuration should output::
   /sys/devices/system/node/node0/hugepages/hugepages-2048kB/nr_hugepages:4096
   /sys/devices/system/node/node0/hugepages/hugepages-2048kB/surplus_hugepages:0
 
+
+No devices found
+~~~~~~~~~~~~~~~~
+
+When running ``xnvme enum`` and the output-listing is empty, then there are no
+devices. When running with ``vfio-pci``, this can occur when your devices are
+sharing iommu-group with other devices which are still bound to in-kernel
+drivers. This could be NICs, GPUs or other kinds of peripherals.
+
+The division of devices into groups is not something that can be easily
+switched, but you can try to manually unbind the other devices in the iommu
+group from their kernel drivers.
+
+If that is not an option then you can try to re-organize your physical
+connectivity of deviecs, e.g. move devices around.
+
+Lastly you can try using ``uio_pci_generic`` instead, this can most easily be
+done by disabling iommu by adding the kernel option: ``iommu=off`` to the
+kernel command-line and rebooting.
 
 .. _sec-backends-spdk-config-userspace:
 
