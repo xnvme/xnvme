@@ -445,10 +445,11 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "Command action",
 	},
 	{
-		.opt = XNVME_CLI_OPT_ZRMS,
+		.opt = XNVME_CLI_OPT_ZSA,
 		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
-		.name = "zrms",
-		.descr = "Zone Resource Management",
+		.name = "zsa",
+		.descr = "Zone Send Action: Close=0x1, Finish=0x2, Open=0x3, Reset=0x4, "
+			 "Offline=0x5, Zone Descriptor Extension=0x10",
 	},
 	{
 		.opt = XNVME_CLI_OPT_PI,
@@ -1298,8 +1299,8 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 	case XNVME_CLI_OPT_ACTION:
 		args->action = num;
 		break;
-	case XNVME_CLI_OPT_ZRMS:
-		args->action = num;
+	case XNVME_CLI_OPT_ZSA:
+		args->zsa = num;
 		break;
 	case XNVME_CLI_OPT_PI:
 		args->pi = num;

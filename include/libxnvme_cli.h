@@ -83,7 +83,7 @@ struct xnvme_cli_args {
 	uint32_t nodas;
 
 	uint32_t action;
-	uint32_t zrms;
+	uint32_t zsa;
 
 	uint32_t pi;
 	uint32_t pil;
@@ -239,7 +239,7 @@ enum xnvme_cli_opt {
 	XNVME_CLI_OPT_NODAS      = 52, ///< XNVME_CLI_OPT_NODAS
 
 	XNVME_CLI_OPT_ACTION = 53, ///< XNVME_CLI_OPT_ACTION
-	XNVME_CLI_OPT_ZRMS   = 54, ///< XNVME_CLI_OPT_ZRMS
+	XNVME_CLI_OPT_ZSA    = 54, ///< XNVME_CLI_OPT_ZSA
 
 	XNVME_CLI_OPT_PI  = 55, ///< XNVME_CLI_OPT_PI
 	XNVME_CLI_OPT_PIL = 56, ///< XNVME_CLI_OPT_PIL
