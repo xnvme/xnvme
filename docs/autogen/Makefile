@@ -62,7 +62,7 @@ linkcheck:
 
 # Produce the sphinx stuff (without commands)
 .PHONY: docs
-docs: clean deps configure doxy apis sphinx linkcheck
+docs: clean deps configure doxy apis sphinx
 	@echo "# DONE"
 
 .PHONY: docs-view-html
