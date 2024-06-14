@@ -494,7 +494,7 @@ exit:
 }
 
 static int
-_cmd_mgmt(struct xnvme_cli *cli, uint8_t action)
+_cmd_mgmt(struct xnvme_cli *cli, uint8_t zsa)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
@@ -513,10 +513,10 @@ _cmd_mgmt(struct xnvme_cli *cli, uint8_t action)
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
 	}
 
-	xnvme_cli_pinf("MGMT: zslba: 0x%016lx, action: 0x%x, str: %s", zslba, action,
-		       xnvme_spec_znd_cmd_mgmt_send_action_str(action));
+	xnvme_cli_pinf("MGMT: zslba: 0x%016lx, zsa: 0x%x, str: %s", zslba, zsa,
+		       xnvme_spec_znd_cmd_mgmt_send_action_str(zsa));
 
-	if ((action == XNVME_SPEC_ZND_CMD_MGMT_SEND_DESCRIPTOR) && cli->args.data_input) {
+	if ((zsa == XNVME_SPEC_ZND_CMD_MGMT_SEND_DESCRIPTOR) && cli->args.data_input) {
 		xnvme_cli_pinf("Allocating dbuf");
 		dbuf = xnvme_buf_alloc(dev, dbuf_nbytes);
 		if (!dbuf) {
@@ -532,7 +532,7 @@ _cmd_mgmt(struct xnvme_cli *cli, uint8_t action)
 		}
 	}
 
-	err = xnvme_znd_mgmt_send(&ctx, nsid, zslba, select_all, action, 0x0, dbuf);
+	err = xnvme_znd_mgmt_send(&ctx, nsid, zslba, select_all, zsa, 0x0, dbuf);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_perr("xnvme_znd_mgmt_send()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
@@ -549,7 +549,7 @@ exit:
 static int
 cmd_mgmt(struct xnvme_cli *cli)
 {
-	return _cmd_mgmt(cli, cli->args.action);
+	return _cmd_mgmt(cli, cli->args.zsa);
 }
 
 static int
@@ -797,7 +797,7 @@ static struct xnvme_cli_sub g_subs[] = {
 
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_SLBA, XNVME_CLI_LREQ},
-			{XNVME_CLI_OPT_ACTION, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_ZSA, XNVME_CLI_LREQ},
 			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_ALL, XNVME_CLI_LFLG},
 
