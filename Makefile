@@ -114,7 +114,7 @@ config-slim:
 		 -Dwith-liburing=disabled \
 		 -Dwith-libvfn=disabled \
 		 -Dwith-libaio=disabled \
-		 -Dwith-libisal=disabled
+		 -Dwith-isal=disabled
 	@echo "## xNVMe: make config-slim [DONE]"
 
 define docker-help
