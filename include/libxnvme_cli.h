@@ -71,7 +71,7 @@ struct xnvme_cli_args {
 	uint32_t lsp;
 	uint64_t lpo_nbytes;
 	uint32_t rae;
-	uint32_t clear;
+	bool clear;
 	uint32_t lbafu;
 	uint32_t ses;
 	uint32_t sel;
@@ -94,7 +94,7 @@ struct xnvme_cli_args {
 	uint32_t seed;
 	uint32_t iosize;
 	uint32_t qdepth;
-	uint32_t direct;
+	bool direct;
 	uint32_t limit;
 
 	uint64_t count;
@@ -102,12 +102,12 @@ struct xnvme_cli_args {
 
 	uint64_t opcode;
 	uint64_t flags;
-	uint64_t all;
+	bool all;
 
 	uint32_t status;
-	uint32_t save;
+	bool save;
 	uint32_t reset;
-	uint32_t verbose;
+	bool verbose;
 	uint32_t help;
 
 	const char *be;
@@ -138,9 +138,9 @@ struct xnvme_cli_args {
 	uint32_t create_mode;
 
 	uint32_t nr;
-	uint32_t ad;
-	uint32_t idw;
-	uint32_t idr;
+	bool ad;
+	bool idw;
+	bool idr;
 
 	uint32_t vec_cnt;
 
