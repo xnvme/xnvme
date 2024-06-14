@@ -143,8 +143,8 @@ And then install a couple of things:
 Additionally, in order to prepare the system for user-space NVMe drivers, then
 vfio/iommu should be enabled along with a couple of user-limit tweaks.
 
-Have a look at the :ref:`sec-gs-system-config-userspace-config` section for the
-details on this.
+Have a look at the :ref:`sec-backends-spdk-config` section for the details on
+this.
 
 .. _sec-tutorials-devs-linux-homedir:
 

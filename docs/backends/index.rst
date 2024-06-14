@@ -4,98 +4,202 @@
  Backends
 ==========
 
-``xNVMe`` hides the implementation of operating system interaction from the
-user. That is, the implementation of the ``xnvme_*`` **C API**, is delegated at
-runtime to a backend implementation.
+Below is a list of backends and the system interfaces and libraries
+they encapsulate. These backends implement the :ref:`sec-backends-intf`
+within the **xNVMe** library, offering a unified interface through the
+**xNVMe** :ref:`sec-api`. This enables you to switch between system interfaces,
+libraries, and drivers at runtime without altering your application logic.
 
-Devices are associated with a backend when they are "opened" via a device
-identifier on the such as::
+While **xNVMe** abstracts these differences, it's still important to understand
+specifics related to your platform, system interfaces, and supporting libraries.
+Each section covers the following topics.
 
-  /dev/nvme0n1
-  /dev/nvme0ns1
-  0000:01:00.0
-  \\.\PhysicalDrive1
+Device identification
+   The schema for identifying devices differ across platforms and interfaces,
+   such as naming conventions for NVMe device files can be as different
+   as ``/dev/nvme0n1``, ``/dev/ng0n1``, ``/dev/nvme0ns1``, ``disk4``, ``\
+   \. \PhysicalDevice2`` and PCI device handles for user-space devices
+   ``0000:02:00.0`` and NVMe/TCP endpoints ``172.10.10.10:4420``.
+   
+System configuration
+   This is mostly conserned with the setup and use of OS kernel bypassing
+   interfaces such as the user-space NVMe drivers provided by ``SPDK/NVMe``
+   and ``libvfn``
 
-The library can inform you which backend is in affect, e.g.:
-
-.. literalinclude:: xnvme_be_cli.cmd
-   :language: bash
-
-.. literalinclude:: xnvme_be_cli.out
-   :language: bash
+Backend instrumentation
+   On a given platform multiple interface can be available, the **xNVMe**
+   library makes a runtime decision on which interface to use when talking to
+   your device. You can overrule the library decision, however, to do so, you
+   need to know what the available options are, what they are named and what
+   they offer.
 
 The valid combinations of interfaces and backends are listed below:
 
-+----------------------------+-------------------------------------------------------------------+
-|                            | Backends                                                          |
-+----------------------------+----------+-----------+---------+----------+-------------+---------+
-| Async interfaces           | ``fbsd`` | ``linux`` | libvfn  | ``spdk`` | ``windows`` | ``mac`` |
-+============================+==========+===========+=========+==========+=============+=========+
-| io_uring                   | no       | **yes**   | no      | no       | no          | no      |
-+----------------------------+----------+-----------+---------+----------+-------------+---------+
-| io_uring_cmd               | no       | **yes**   | no      | no       | no          | no      |
-+----------------------------+----------+-----------+---------+----------+-------------+---------+
-| libaio                     | no       | **yes**   | no      | no       | no          | no      |
-+----------------------------+----------+-----------+---------+----------+-------------+---------+
-| kqueue                     | **yes**  | no        | no      | no       | no          | no      |
-+----------------------------+----------+-----------+---------+----------+-------------+---------+
-| POSIX aio                  | **yes**  | **yes**   | no      | no       | no          | **yes** |
-+----------------------------+----------+-----------+---------+----------+-------------+---------+
-| NVMe Driver (vfio-pci)     | no       | no        | **yes** | **yes**  | no          | no      |
-+----------------------------+----------+-----------+---------+----------+-------------+---------+
-| NVMe Driver (uio-generic)  | no       | no        | no      | **yes**  | no          | no      |
-+----------------------------+----------+-----------+---------+----------+-------------+---------+
-| emu                        | **yes**  | **yes**   | **yes** | **yes**  | **yes**     | **yes** |
-+----------------------------+----------+-----------+---------+----------+-------------+---------+
-| thrpool                    | **yes**  | **yes**   | **yes** | **yes**  | **yes**     | **yes** |
-+----------------------------+----------+-----------+---------+----------+-------------+---------+
-| nil                        | **yes**  | **yes**   | **yes** | **yes**  | **yes**     | **yes** |
-+----------------------------+----------+-----------+---------+----------+-------------+---------+
+.. list-table:: Asynchronous I/O
+   :header-rows: 1
+   :widths: 20 20 20 20 10 10 10
 
+   * - 
+     - :ref:`sec-backends-linux`
+     - :ref:`sec-backends-freebsd`
+     - :ref:`sec-backends-windows`
+     - :ref:`sec-backends-macos`
+     - :ref:`sec-backends-spdk`
+     - :ref:`sec-backends-libvfn`
+   * - io_uring
+     - **yes**
+     - no
+     - no
+     - no
+     - no
+     - no
+   * - io_uring command (ucmd)
+     - **yes**
+     - no
+     - no
+     - no
+     - no
+     - no
+   * - libaio
+     - **yes**
+     - no
+     - no
+     - no
+     - no
+     - no
+   * - kqueue
+     - no
+     - **yes**
+     - no
+     - no
+     - no
+     - no
+   * - POSIX aio
+     - **yes**
+     - **yes**
+     - no
+     - **yes**
+     - no
+     - no
+   * - NVMe Driver (vfio-pci)
+     - no
+     - no
+     - no
+     - no
+     - **yes**
+     - **yes**
+   * - NVMe Driver (uio-generic)
+     - no
+     - no
+     - no
+     - no
+     - **yes**
+     - no
+   * - I/O Control Ports (iocp)
+     - no
+     - no
+     - **yes**
+     - no
+     - no
+     - no
+   * - I/O Ring (io_ring)
+     - no
+     - no
+     - **yes**
+     - no
+     - no
+     - no
+   * - emu
+     - **yes**
+     - **yes**
+     - **yes**
+     - **yes**
+     - **yes**
+     - **yes**
+   * - thrpool
+     - **yes**
+     - **yes**
+     - **yes**
+     - **yes**
+     - **yes**
+     - **yes**
+   * - nil
+     - **yes**
+     - **yes**
+     - **yes**
+     - **yes**
+     - **yes**
+     - **yes**
 
-xNVMe compatibility
-===================
+.. list-table:: Synchronous I/O and Administrative Commands
+   :header-rows: 1
+   :widths: 20 20 20 20 10 10 10
 
+   * - 
+     - :ref:`sec-backends-linux`
+     - :ref:`sec-backends-freebsd`
+     - :ref:`sec-backends-windows`
+     - :ref:`sec-backends-macos`
+     - :ref:`sec-backends-spdk`
+     - :ref:`sec-backends-libvfn`
+   * - psync
+     - **yes**
+     - **yes**
+     - **yes**
+     - **yes**
+     - no
+     - no
+   * - Block-Layer ioctl()
+     - **yes**
+     - no
+     - **yes**
+     - no
+     - no
+     - no
+   * - NVMe/Driver ioctl()
+     - **yes**
+     - **yes**
+     - **yes**
+     - no
+     - no
+     - no
 
-.. list-table:: xNVMe compatibility of NVMe command table
-    :widths: 80 30
-    :header-rows: 1
+.. list-table:: Memory interfaces
+   :header-rows: 1
+   :widths: 20 20 20 20 10 10 10
 
-    * - Command
-      - Ramdisk
-    * - Compare
-      - ✓
-    * - Copy
-      - ✓
-    * - Dataset Management
-      - ✗
-    * - Flush
-      - ✗
-    * - Read
-      - ✓
-    * - Verify
-      - ✗
-    * - Write
-      - ✓
-    * - Write Uncorrectable
-      - ✗
-    * - Write Zeroes
-      - ✓
+   * - 
+     - :ref:`sec-backends-linux`
+     - :ref:`sec-backends-freebsd`
+     - :ref:`sec-backends-windows`
+     - :ref:`sec-backends-macos`
+     - :ref:`sec-backends-spdk`
+     - :ref:`sec-backends-libvfn`
+   * - libc
+     - **yes**
+     - **yes**
+     - **yes**
+     - **yes**
+     - **yes**
+     - **yes**
+   * - hugepages
+     - **yes**
+     - no
+     - no
+     - no
+     - no
+     - no
 
-
-Appendix
---------
-
-[1] http://www.cs.cmu.edu/~riedel/ftp/SIO/API/cmu-cs-96-193.pdf
-[2] https://www.nextplatform.com/2017/09/11/whats-bad-posix-io/
-[3] https://blog.linuxplumbersconf.org/2009/slides/Anthony-Liguori-qemu-block.pdf
 
 .. toctree::
+   :maxdepth: 2
    :hidden:
 
-   xnvme_be_linux
-   xnvme_be_fbsd
-   xnvme_be_spdk/index
-   xnvme_be_windows
-   xnvme_be_intf
-   system
+   linux/index.rst
+   freebsd/index.rst
+   macos/index.rst
+   windows/index.rst
+   spdk/index.rst
+   libvfn/index.rst
+   common/index.rst
+   common/interface/index.rst

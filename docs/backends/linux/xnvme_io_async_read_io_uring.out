@@ -1,0 +1,12 @@
+# Allocating and filling buf of nbytes: 4096
+# Initializing queue and setting default callback function and arguments
+# Read uri: '/dev/nvme0n1', qd: 1
+xnvme_lba_range:
+  slba: 0x0000000000000000
+  elba: 0x0000000000000000
+  naddrs: 1
+  nbytes: 4096
+  attr: { is_zones: 0, is_valid: 1}
+wall-clock: {elapsed: 0.0000, mib: 0.00, mib_sec: 325.17}
+# cb_args: {submitted: 1, completed: 1, ecount: 0}
+

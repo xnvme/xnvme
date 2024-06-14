@@ -1,0 +1,4 @@
+xnvme_enumeration:
+  - {uri: '0000:03:00.0', dtype: 0x2, nsid: 0x1, csi: 0x0}
+  - {uri: '0000:03:00.0', dtype: 0x2, nsid: 0x2, csi: 0x2}
+
