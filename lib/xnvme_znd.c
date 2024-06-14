@@ -388,8 +388,8 @@ xnvme_znd_log_changes_from_dev(struct xnvme_dev *dev)
 
 int
 xnvme_znd_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, bool select_all,
-		    enum xnvme_spec_znd_cmd_mgmt_send_action action,
-		    enum xnvme_spec_znd_mgmt_send_action_so action_so, void *dbuf)
+		    enum xnvme_spec_znd_cmd_mgmt_send_action zsa,
+		    enum xnvme_spec_znd_mgmt_send_action_so zsaso, void *dbuf)
 {
 	uint32_t dbuf_nbytes = 0;
 
@@ -397,8 +397,8 @@ xnvme_znd_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, bo
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.znd.mgmt_send.slba = zslba;
 	ctx->cmd.znd.mgmt_send.select_all = select_all;
-	ctx->cmd.znd.mgmt_send.zsa = action;
-	ctx->cmd.znd.mgmt_send.zsaso = action_so;
+	ctx->cmd.znd.mgmt_send.zsa = zsa;
+	ctx->cmd.znd.mgmt_send.zsaso = zsaso;
 
 	if (dbuf) {
 		struct xnvme_spec_idfy_ns *nvm = (void *)xnvme_dev_get_ns(ctx->dev);
@@ -412,16 +412,16 @@ xnvme_znd_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, bo
 
 int
 xnvme_znd_mgmt_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba,
-		    enum xnvme_spec_znd_cmd_mgmt_recv_action action,
-		    enum xnvme_spec_znd_cmd_mgmt_recv_action_sf sf, uint8_t partial, void *dbuf,
+		    enum xnvme_spec_znd_cmd_mgmt_recv_action zra,
+		    enum xnvme_spec_znd_cmd_mgmt_recv_action_sf zrasf, uint8_t partial, void *dbuf,
 		    uint32_t dbuf_nbytes)
 {
 	ctx->cmd.common.opcode = XNVME_SPEC_ZND_OPC_MGMT_RECV;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.znd.mgmt_recv.slba = slba;
 	ctx->cmd.znd.mgmt_recv.ndwords = (dbuf_nbytes >> 2) - 1;
-	ctx->cmd.znd.mgmt_recv.zra = action;
-	ctx->cmd.znd.mgmt_recv.zrasf = sf;
+	ctx->cmd.znd.mgmt_recv.zra = zra;
+	ctx->cmd.znd.mgmt_recv.zrasf = zrasf;
 	ctx->cmd.znd.mgmt_recv.partial = partial;
 
 	return xnvme_cmd_pass(ctx, dbuf, dbuf_nbytes, NULL, 0);
