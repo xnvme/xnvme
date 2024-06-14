@@ -65,7 +65,7 @@ Before installing, then ensure that the following system dependencies are met:
 * **xNVMe** installed on your system
 * ``pkg-config`` installed and able to locate **xNVMe** on your system
 
-See, the :ref:`sec-gs-building` on how to build and install xNVMe. With the
+See, the :ref:`sec-gs-build` on how to build and install xNVMe. With the
 above then you can go ahead and install the bindings using ``pip``::
 
   # install: for the current user
