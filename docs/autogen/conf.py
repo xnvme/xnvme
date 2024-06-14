@@ -9,7 +9,8 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx.ext.todo",
     "sphinx.ext.imgmath",
-    #    'sphinxcontrib.bibtex',
+    "sphinx_copybutton",
+    "sphinx_tabs.tabs",
     "sphinxcontrib.jquery",
     "breathe",
 ]
@@ -25,7 +26,14 @@ version = "v" + xnvme_ver(os.path.join("..", "..", "meson.build"))
 release = version
 
 extlinks = {
+    "xref-pkg-config-site": (
+        "https://www.freedesktop.org/wiki/Software/pkg-config/%s",
+        None,
+    ),
     "xref-xnvme": ("https://xnvme.io/%s", None),
+    "xref-xnvme-repository-dir": ("https://github.com/xnvme/xnvme/tree/main/%s", None),
+    "xref-fio-repository-file": ("https://github.com/axboe/fio/blob/master/%s", None),
+    "xref-spdk-repository-file": ("https://github.com/spdk/spdk/tree/master/%s", None),
     "xref-github-xnvme": ("https://github.com/xnvme/xnvme/%s", None),
     "xref-github-xnvme-issues": ("https://github.com/xnvme/xnvme/issues/%s", None),
     "xref-github-xnvme-prs": ("https://github.com/xnvme/xnvme/pulls/%s", None),
@@ -34,6 +42,11 @@ extlinks = {
         None,
     ),
     "xref-discord-xnvme": ("https://discord.com/invite/XCbBX9DmKf%s", None),
+    "xref-meson": ("https://mesonbuild.com/%s", None),
+    "xref-meson-options-builtin": (
+        "https://mesonbuild.com/Builtin-options.html%s",
+        None,
+    ),
     "xref-linux-vfio": ("https://www.kernel.org/doc/Documentation/vfio.txt%s", None),
     "xref-linux-uio": (
         "https://www.kernel.org/doc/html/v4.14/driver-api/uio-howto.html%s",
@@ -83,12 +96,15 @@ html_theme_options = {"analytics_id": "UA-159785887-1"}
 html_theme = "pydata_sphinx_theme"
 
 html_theme_options = {
+    "collapse_navigation": False,
     "navigation_depth": 4,
     "navigation_with_keys": False,
     "navbar_align": "left",
     "navbar_end": ["version-switcher"],
-    "header_links_before_dropdown": 7,
+    "header_links_before_dropdown": 8,
     "secondary_sidebar_items": {
+        "**": ["page-toc"],
+        "index": [],
         "material/index": [],
     },
     "show_prev_next": False,
@@ -114,6 +130,7 @@ html_theme_options = {
 }
 
 html_sidebars = {
+    "getting_started/index": [],
     "material/index": [],
 }
 

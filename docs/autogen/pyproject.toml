@@ -15,6 +15,8 @@ docutils = "0.20.1"
 breathe = "^4.35.0"
 sphinxcontrib-jquery = "^4.1"
 pydata-sphinx-theme = "^0.15.2"
+sphinx-copybutton = "0.5.2"
+sphinx-tabs = "^3.4.5"
 
 [build-system]
 requires = ["poetry-core"]
