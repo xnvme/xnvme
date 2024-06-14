@@ -57,6 +57,7 @@ specification. And in addition, for readability:
    - Do **not** end with a punctuation
    - Use the **imperative mood** e.g. ``add`` rather than ``added``/``adds``
    - A couple of examples:
+
     - ``feat(be/ramdisk): add support for compare``
     - ``feat(build): bump libvfn to v4.0.1``
     - ``refactor(docs): move toolchain section down after troubleshooting``
