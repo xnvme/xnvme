@@ -423,6 +423,7 @@ xnvme_dev_derive_geo(struct xnvme_dev *dev)
 int
 xnvme_dev_fpr(FILE *stream, const struct xnvme_dev *dev, int opts)
 {
+	const struct xnvme_geo *geo;
 	int wrtn = 0;
 
 	switch (opts) {
@@ -441,6 +442,7 @@ xnvme_dev_fpr(FILE *stream, const struct xnvme_dev *dev, int opts)
 		wrtn += fprintf(stream, " ~\n");
 		return wrtn;
 	}
+	geo = xnvme_dev_get_geo(dev);
 
 	wrtn += fprintf(stream, "\n");
 
@@ -458,7 +460,7 @@ xnvme_dev_fpr(FILE *stream, const struct xnvme_dev *dev, int opts)
 	wrtn += fprintf(stream, "    sync: '%s'\n", dev->opts.sync);
 	wrtn += fprintf(stream, "    async: '%s'\n", dev->opts.async);
 
-	wrtn += xnvme_geo_yaml(stream, &dev->geo, 2, "\n", 1);
+	wrtn += xnvme_geo_yaml(stream, geo, 2, "\n", 1);
 	wrtn += fprintf(stream, "\n");
 
 	return wrtn;
