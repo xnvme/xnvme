@@ -157,13 +157,9 @@ class ExternalPreloader(UserSpaceEngine):
     device: Device
     cijoe: Cijoe
     path: Path
-    fio_bin: Path
 
     def env(self) -> Dict[str, str]:
         return {"LD_PRELOAD": f"{self.path}"}
-
-    def binary(self, bin: str) -> str:
-        return f"{self.fio_bin}"
 
     @property
     def filename(self) -> str:
@@ -245,10 +241,9 @@ def determine_engine(
         engine_args = [name, group, device, cijoe, be, async_]
     elif "spdk" in engine_identifier:
         path = Path(definition["path"])
-        fio_bin = Path(definition["fio_path"])
         if "spdk_nvme" == engine_identifier:
             name = "spdk"
-        engine_args = [name, group, device, cijoe, path, fio_bin]
+        engine_args = [name, group, device, cijoe, path]
     else:
         engine_args = [name, group, device, cijoe]
 

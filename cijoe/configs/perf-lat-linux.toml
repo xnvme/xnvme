@@ -51,8 +51,8 @@ io_uring_cmd = {type = "builtin", group = "io_uring_cmd", device = "cdev"} # Ker
 
 null = {type = "builtin", group = "null", device = "bdev"}
 
-spdk_nvme = {type = "external_preload", group = "spdk", path = "/root/git/spdk/build/fio/spdk_nvme", fio_path = "/opt/fio/bin/fio", device = "pcie"} # Userspace
-spdk_bdev = {type = "external_preload", group = "spdk", path = "/root/git/spdk/build/fio/spdk_bdev", fio_path = "/opt/fio/bin/fio", device = "pcie"} # Userspace
+spdk_nvme = {type = "external_preload", group = "spdk", path = "/root/git/spdk/build/fio/spdk_nvme", device = "pcie"} # Userspace
+spdk_bdev = {type = "external_preload", group = "spdk", path = "/root/git/spdk/build/fio/spdk_bdev", device = "pcie"} # Userspace
 
 xnvme_libaio = {type = "builtin", group = "libaio", be = "linux", async = "libaio", device = "bdev"} # Kernel
 xnvme_posixaio = {type = "builtin", group = "posixaio", be = "linux", async = "posix", device = "bdev"} # Kernel
