@@ -108,6 +108,7 @@ html_theme_options = {
         "material/index": [],
     },
     "show_prev_next": False,
+    "show_nav_level": 2,
     "icon_links": [
         {
             "name": "GitHub",
