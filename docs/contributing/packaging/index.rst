@@ -19,6 +19,10 @@ see the :xref-github-xnvme-issues:`GitHUB Issue Tracker<389>`.
 
   - See: https://formulae.brew.sh/formula/xnvme
 
+* Conda
+
+  - See: h
+
 * Debian Linux (``.deb`` / ``apt``)
 
   - See: https://salsa.debian.org/safl/xnvme

@@ -1255,3 +1255,48 @@ jobs:
           debpkg/builddir/*.dsc
           debpkg/builddir/*.buildinfo
           debpkg/builddir/*.changes
+
+  packaging-conda:
+    needs: source-archive
+    if: github.event_name == 'pull_request'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+    - name: Set up Miniconda
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        auto-update-conda: true
+        miniconda-version: "latest"
+    - name: Info
+      run: |
+        echo "Current branch is ${{ github.base_ref }}"
+        echo "Current tag is ${{ github.ref }}"      
+
+    - name: Retrieve the xNVMe source archive
+      uses: actions/download-artifact@v4.1.1
+      with:
+        name: xnvme-src-archive
+
+    - name: Retrieve the xNVMe Conda package repository and prep. src.
+      run: |
+        git clone https://github.com/xnvme/xnvme-conda.git condapkg
+        mv xnvme-src.tar.gz condapkg/xnvme-src.tar.gz
+
+    - name: Setup Conda environment
+      run: |
+        cd condapkg
+        make environment
+
+    - name: Build the Conda package
+      run: |
+        cd condapkg
+        make xnvme-sys-local-src
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: xnvme-conda-${{ runner.os }}-${{ runner.arch }}
+        path: ${{ github.workspace }}/condapkg/builddir
