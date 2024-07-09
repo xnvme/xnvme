@@ -23,6 +23,9 @@ steps:
     io_depths: [1, 2, 4, 8, 16]
     ndevices: 8
 
+- name: normalize
+  uses: benchmark_normalize
+
 - name: plot
   uses: latency_plotter
   with:

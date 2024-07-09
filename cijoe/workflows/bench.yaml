@@ -30,6 +30,11 @@ steps:
     iodepths: [1, 2, 4, 8, 16, 32, 64]
     ndevices: 8
 
+- name: normalize
+  uses: benchmark_normalize
+  with:
+    tool: bdevperf
+
 - name: plot
   uses: bench_plotter
   with:
