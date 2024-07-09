@@ -16,7 +16,7 @@ xNVMe: cross-platform libraries and tools for NVMe devices
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 [![REUSE status](https://api.reuse.software/badge/github.com/OpenMPDK/xNVMe)](https://api.reuse.software/info/github.com/OpenMPDK/xNVMe)
 
-See: https://xnvme.io/docs for documentation
+See: https://xnvme.io/ for documentation
 
 - xNVMe, base NVMe specification (1.4) available as library and CLI `xnvme`
   - Memory Management
