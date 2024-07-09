@@ -6,6 +6,7 @@ password = "root"
 
 [os]
 name = "debian"
+prettyname = "Linux"
 version = "bookworm"
 
 [liburing.repository]

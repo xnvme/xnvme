@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Produce a performance report
+Produce a latency report
 ============================
 
 Create it for the current results or overwrite via step-args.
@@ -39,35 +39,36 @@ def main(args, cijoe, step):
     body_path = report_path / "report.rst"
     style_path = report_path / "style.yaml"
     pdf_path = report_path / "latency.pdf"
-    logo_path = report_path / "xnvme.png"
 
     # Can be from a different run / results
     prefix_path = Path(step.get("with", {}).get("path", cijoe.output_path)).resolve()
     plot_path = prefix_path / "artifacts"
 
-    report_path.mkdir(parents=False, exist_ok=False)
+    report_path.mkdir(parents=False, exist_ok=True)
 
     # Fill 'report_path' with files needed to produce the .pdf
     copyfile(templates_path / "style.yaml", style_path, follow_symlinks=False)
-    copyfile(templates_path / "xnvme.png", logo_path, follow_symlinks=False)
 
     # Copy graphs from results/artifacts into 'report_path'
     for png_path in plot_path.glob("*.png"):
         print(png_path)
         copyfile(png_path, report_path / png_path.name)
 
-    # Read the cover-template, populate it, then store it in the artifacts directory
-    with (templates_path / "cover.jinja2.tmpl").open() as template:
-        with cover_path.open("w") as cover:
-            cover.write(
-                template.read().replace(
-                    "INSERT_DATE", date.today().strftime("%d %B %Y")
-                )
-            )
+    title = step.get("with", {}).get("report_title", "xNVMe")
+    subtitle = step.get("with", {}).get("report_subtitle", "Report")
 
-    # Read the report-template, populate it, then store it in the artifacts directory
     template_loader = jinja2.FileSystemLoader(templates_path)
     template_env = jinja2.Environment(loader=template_loader)
+
+    # info for methodology section
+    ioengines = cijoe.config.options.get("fio", {}).get("engines", {})
+    iosizes = step.get("with", {}).get("iosizes", [])
+    iodepths = step.get("with", {}).get("iodepths", [])
+    fio = {
+        "iosizes": iosizes,
+        "iodepths": iodepths,
+        "ioengines": [{"name": e} for e in ioengines],
+    }
 
     # plots for variable IO size and IO depths
     plot_paths = plot_path.glob("fio_*plot_scalability*.png")
@@ -98,6 +99,9 @@ def main(args, cijoe, step):
         body.write(
             template.render(
                 {
+                    "title": title,
+                    "subtitle": subtitle,
+                    "fio": fio,
                     "plots": plot_groups,
                     "qd1_plot": qd1_plot,
                 }

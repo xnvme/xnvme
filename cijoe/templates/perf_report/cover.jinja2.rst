@@ -9,17 +9,17 @@
 
 .. class:: title
 
-`xNVMe`_ in `SPDK`_
+{{title}}
 
 .. class:: subtitle
 
-Performance Report
+{{subtitle}}
 
 .. class:: body
 
 Performed the:
 
-* INSERT_DATE
+* {{date}}
 
 by the **xNVMe Automation Infrastructure** which consists of
 
@@ -31,10 +31,11 @@ with **acknowledgements** to:
 * Simon A. F. Lund
 * Karl Bonde Torp
 * Jim Harris
+* Morten Rasmussen
+* Nadja Brix Koch
 
-For questions to, and discussion of, the `xNVMe`_ in `SPDK`_ performance
-report, please find the acknowledged parties in the **xNVMe** discord
-and **SPDK** Slack channels.
+For questions to, and discussion of, the report, please find the acknowledged 
+parties in the **xNVMe** discord and **SPDK** Slack channels.
 
 .. raw:: pdf
 

@@ -13,25 +13,37 @@ pageTemplates:
     showHeader: true
     showFooter: true
 styles:
-- - title
-  - fontName: Verdana
+  title:
+    fontName: Verdana
     fontSize: 42
-- - thin
-  - parent: bodytext
+  thin:
+    parent: bodytext
     width: 65%
     alignment: TA_JUSTIFY
     hyphenation: true
     language: es_ES
-- - right
-  - parent: bodytext
+  right:
+    parent: bodytext
     alignment: right
-- - centered
-  - parent: bodytext
+  centered:
+    parent: bodytext
     alignment: center
-- - headertable
-  - parent: table
+  headertable:
+    parent: table
     colWidths:
     - 20%
     - 60%
     - 20%
     commands: []
+  bullet-list:
+    parent: bodytext
+    spaceBefore: 2
+    spaceAfter: 7
+  bullet-list-item:
+    parent: bodytext
+    spaceBefore: 0
+    alignment: left
+  tablebullet:
+    parent: bullet-list
+    spaceBefore: -3
+    spaceAfter: 4

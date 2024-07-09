@@ -6,6 +6,7 @@ password = "root"
 
 [os]
 name = "freebsd"
+prettyname = "FreeBSD"
 version = "13"
 
 [cijoe.run]

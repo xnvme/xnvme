@@ -15,11 +15,8 @@ doc: |
 
 steps:
 
-- name: sysinfo
-  uses: linux.sysinfo
-
-- name: hardware
-  run: lshw
+- name: sysinfo_report
+  uses: sysinfo_report
 
 - name: bench
   uses: bdevperf
@@ -43,6 +40,14 @@ steps:
     limits: auxiliary/plot-limits-4k.yaml
     styles: auxiliary/plot-styles.yaml
 
+- name: report_templates
+  uses: reporter_templates
+  with:
+    report_title: "xNVMe in SPDK"
+    report_subtitle: "Performance Report"
 
-- name: performance_report
+- name: report
   uses: bench_reporter
+  with:
+    report_title: "xNVMe in SPDK"
+    report_subtitle: "Performance Report"

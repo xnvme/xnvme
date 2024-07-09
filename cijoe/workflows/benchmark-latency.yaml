@@ -14,6 +14,8 @@ doc: |
   See Artifacts for the generated plots and report.
 
 steps:
+- name: sysinfo_report
+  uses: sysinfo_report
 
 - name: benchmark
   uses: fio_latency
@@ -37,6 +39,17 @@ steps:
     iosizes: *iosizes
     iodepths: *iodepths
 
-- name: latency_report
+- name: report_templates
+  uses: reporter_templates
+  with:
+    report_title: "xNVMe on {{ config.os.prettyname }}"
+    report_subtitle: "Latency Report"
+
+- name: report
   uses: latency_reporter
+  with:
+    report_title: "xNVMe on {{ config.os.prettyname }}"
+    report_subtitle: "Latency Report"
+    iosizes: *iosizes
+    iodepths: *iodepths
 
