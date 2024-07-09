@@ -7,11 +7,11 @@ doc: |
 
     * bandwidth in KiB / seconds
     * latency is mean and in nano-seconds
-    * IOPS are 'raw' / base-unit
 
-  The above in a bar-plot at iodepth=1, and a line-plot as a function of iodepth.
+  The above in a bar-plot at iodepth=1 and iosize=4096, and bar-plots as a 
+  function of iodepth and iosize.
 
-  See Artifacts for the generated plots
+  See Artifacts for the generated plots and report.
 
 steps:
 

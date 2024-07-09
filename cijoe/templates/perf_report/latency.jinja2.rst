@@ -160,3 +160,12 @@ Below is the latency in nanoseconds with IO depth 1 and varying IO sizes.
    :width: 70%
 
 {% endfor %}
+
+Latency at IO depth 1
+========================
+
+I/O latency when accessing the NVMe SSD with or without xNVMe.
+
+.. image:: {{qd1_plot}}
+   :align: center
+   :width: 100%

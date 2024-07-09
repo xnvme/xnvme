@@ -196,7 +196,9 @@ def create_plots(args, cijoe, step):
         )
 
         os.makedirs(artifacts, exist_ok=True)
-        plt.savefig(artifacts / f"fio_barplot_GROUP={group}_TYPE=iodepth.png")
+        plt.savefig(
+            artifacts / f"fio_barplot_scalability_GROUP={group}_TYPE=iodepth.png"
+        )
 
     for group in all_groups:
         dset = data_as_a_function_of(
@@ -211,7 +213,23 @@ def create_plots(args, cijoe, step):
         )
 
         os.makedirs(artifacts, exist_ok=True)
-        plt.savefig(artifacts / f"fio_barplot_GROUP={group}_TYPE=iosize.png")
+        plt.savefig(
+            artifacts / f"fio_barplot_scalability_GROUP={group}_TYPE=iosize.png"
+        )
+
+    # Create a plot, showing the overhead of xNVMe at queue depth = 1
+    dset = data_as_a_function_of(
+        data,
+        x="iodepth",
+        y=y,
+        filter=lambda item: item["ctx"]["group"] != "null"
+        and item["ctx"]["iodepth"] == 1
+        and item["ctx"]["iosize"] == 4096,
+    )
+    draw_bar_plot(dset, plot_attributes)
+
+    os.makedirs(artifacts, exist_ok=True)
+    plt.savefig(artifacts / "fio_barplot_qd1.png")
 
     return 0
 
