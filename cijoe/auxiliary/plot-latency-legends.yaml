@@ -1,85 +1,42 @@
 ---
 libaio:
   legend: 'libaio'
-  color: "#005a32"
-  marker: "p" # pentagon
-  hatch: "."
 
 io_uring:
   legend: 'io_uring'
-  color: "#297373"
-  marker: "X" # cross
-  hatch: "O"
 
 io_uring_cmd:
   legend: 'io_uring_cmd'
-  color: "#E9D758"
-  marker: "X" # cross
-  hatch: "O"
 
 posixaio:
   legend: 'posixaio'
-  color: "#41ab5d"
-  marker: "*" # star
-  hatch: "."
 
 spdk:
   legend: 'spdk(nvme)'
-  color: "#297373"
-  marker: "h" # hexagon1
-  hatch: "O"
 
 spdk_bdev:
   legend: 'spdk(bdev)'
-  color: "#E9D758"
-  marker: "h" # hexagon1
-  hatch: "O"
 
 xnvme_spdk:
   legend: 'xnvme(spdk)'
-  color: "#74c476"
-  marker: "H" # hexagon2
-  hatch: "."
 
 xnvme_libaio:
   legend: 'xnvme(libaio)'
-  color: "#74c476"
-  marker: "H" # hexagon2
-  hatch: "."
 
 xnvme_io_uring:
   legend: 'xnvme(io_uring)'
-  color: "#74c476"
-  marker: "H" # hexagon2
-  hatch: "."
 
 xnvme_io_uring_cmd:
   legend: 'xnvme(io_uring_cmd)'
-  color: "#74d476"
-  marker: "H" # hexagon2
-  hatch: "."
 
 xnvme_posix:
   legend: 'xnvme(posix)'
-  color: "#31fb5d"
-  marker: "*" # star
-  hatch: "."
 
 xnvme_kqueue:
   legend: 'xnvme(kqueue)'
-  color: "#74d476"
-  marker: "H" # hexagon2
-  hatch: "."
 
 xnvme_null:
   legend: 'xnvme(nil)'
-  color: "#297373"
-  marker: "*" # star
-  hatch: "."
 
 "null":
   legend: 'null'
-  color: "#E9D758"
-  marker: "H" # hexagon2
-  hatch: "."
-

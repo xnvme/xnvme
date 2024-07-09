@@ -138,17 +138,25 @@ Results
 
 .. raw:: pdf
 
-{% for plot in plots %}
-
-   PageBreak
-
-{{plot.title}}
-------
-
-.. image:: {{plot.png}}
-   :align: center
-   :width: 100%
+{% for group, group_plots in plots.items() %}
 
 .. raw:: pdf
+   
+   FrameBreak 300
+
+{{group}}
+---------
+
+Below is the latency in nanoseconds with IO size 4096 and varying IO depths.
+
+.. image:: {{ group_plots["iodepth"] }}
+   :align: center
+   :width: 70%
+
+Below is the latency in nanoseconds with IO depth 1 and varying IO sizes.
+
+.. image:: {{ group_plots["iosize"] }}
+   :align: center
+   :width: 70%
 
 {% endfor %}

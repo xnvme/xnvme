@@ -14,11 +14,16 @@ Retargetable: True
 ------------------
 """
 import errno
+import logging as log
+import re
+from collections import defaultdict
 from datetime import date
 from pathlib import Path
 from shutil import copyfile
 
 import jinja2
+
+PLOT_PATH_REGEX = r".*_GROUP=(?P<group>.+)_TYPE=(?P<type>.+)\.png"
 
 
 def main(args, cijoe, step):
@@ -37,10 +42,8 @@ def main(args, cijoe, step):
     logo_path = report_path / "xnvme.png"
 
     # Can be from a different run / results
-    plot_path = (
-        Path(step.get("with", {}).get("path", cijoe.output_path)).resolve()
-        / "artifacts"
-    )
+    prefix_path = Path(step.get("with", {}).get("path", cijoe.output_path)).resolve()
+    plot_path = prefix_path / "artifacts"
 
     report_path.mkdir(parents=False, exist_ok=False)
 
@@ -65,13 +68,27 @@ def main(args, cijoe, step):
     # Read the report-template, populate it, then store it in the artifacts directory
     template_loader = jinja2.FileSystemLoader(templates_path)
     template_env = jinja2.Environment(loader=template_loader)
+
+    # plots for variable IO size and IO depths
+    plot_paths = plot_path.glob("fio_*plot*.png")
+
+    def path_to_object(path_path):
+        match = re.match(PLOT_PATH_REGEX, path_path.name)
+        return {
+            "path": path_path.name,
+            "group": match.group("group"),
+            "type": match.group("type"),
+        }
+
+    plots = map(path_to_object, plot_paths)
+    plot_groups = defaultdict(dict)
+    for plot in plots:
+        plot_groups[plot["group"]][plot["type"]] = plot["path"]
+
+    # Read the report-template, populate it, then store it in the artifacts directory
     template = template_env.get_template("latency.jinja2.rst")
     with body_path.open("w") as body:
-        plots = [
-            {"title": p.name[13:-4], "png": p.name} for p in plot_path.glob("*.png")
-        ]
-        tmpl = template.render({"plots": plots})
-        body.write(tmpl)
+        body.write(template.render({"plots": plot_groups}))
 
     err, _ = cijoe.run_local(
         f"rst2pdf {body_path}"

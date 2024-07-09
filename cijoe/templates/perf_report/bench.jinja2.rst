@@ -181,7 +181,7 @@ libaio
 Comparing ``bdev_xnvme``, with ``io_mechanism=libaio``, to ``bdev_aio``.
 
 
-.. image:: bdevperf_lineplot_libaio.png
+.. image:: bdevperf_barplot_libaio.png
    :align: center
    :width: 100%
 
@@ -199,7 +199,7 @@ io_uring
 Comparing ``bdev_xnvme``, using ``io_mechanism=io_uring``, to ``bdev_uring``.
 
 
-.. image:: bdevperf_lineplot_io_uring.png
+.. image:: bdevperf_barplot_io_uring.png
    :align: center
    :width: 100%
 
@@ -215,7 +215,7 @@ io_uring_cmd
 For ``io_uring_cmd``, there is no reference bdev-implementation, thus ``bdev_xnvme``, using ``io_mechanism=io_uring_cmd``, stands alone.
 
 
-.. image:: bdevperf_lineplot_io_uring_cmd.png
+.. image:: bdevperf_barplot_io_uring_cmd.png
    :align: center
    :width: 100%
 

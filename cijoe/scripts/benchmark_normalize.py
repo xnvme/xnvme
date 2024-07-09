@@ -41,11 +41,11 @@ JSON_DUMP = {"indent": 4}
 
 FIO_COMPOUND_FILENAME = "fio-output-compound.json"
 FIO_OUTPUT_NORMALIZED_FILENAME = "fio-output-normalized.json"
-FIO_STEM_REGEX = r"fio-output_IOSIZE=(?P<iosize>\d+)_IODEPTH=(?P<iodepth>\d+)_LABEL=(?P<label>.+)_GROUP=(?P<group>.+)_\d+"
+FIO_STEM_REGEX = r"fio-output_IOSIZE=(?P<iosize>\d+)_IODEPTH=(?P<iodepth>\d+)_LABEL=(?P<label>.+)_GROUP=(?P<group>.+)"
 
 BDEVPERF_OUTPUT_PREFIX = "bdevperf-output_"
 BDEVPERF_OUTPUT_NORMALIZED_FILENAME = "bdevperf-output-normalized.json"
-OUTPUT_REGEX = r".*BS=(?P<bs>.*)_IODEPTH=(?P<iodepth>\d+)_LABEL=(?P<label>.*)_\d+.txt"
+OUTPUT_REGEX = r".*BS=(?P<bs>.*)_IODEPTH=(?P<iodepth>\d+)_LABEL=(?P<label>.*)_GROUP=(?P<group>.*)_\d+.txt"
 LINE_REGEX = r".*Total\s+\:\s+(?P<iops>\d+\.\d+)\s+\s+(?P<bwps>\d+\.\d+)\s+\d+\.\d+\s+\d+\.\d+\s+(?P<lat>\d+\.\d+).*"
 
 
@@ -79,11 +79,10 @@ def extract_bdevperf(args, cijoe, step):
 
             for ctx in ["iodepth", "bs"]:
                 sample["ctx"][ctx] = int(match.group(ctx))
-            for ctx in ["label"]:
+            for ctx in ["label", "group"]:
                 sample["ctx"][ctx] = match.group(ctx)
             sample["ctx"]["name"] = sample["ctx"]["label"]
             sample["ctx"]["iosize"] = sample["ctx"]["bs"]
-            sample["ctx"]["group"] = ""
 
             for line in ofile.readlines():
                 metrics = re.match(LINE_REGEX, line)

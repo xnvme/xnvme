@@ -5,6 +5,7 @@
     Will either keep blocksize or io depth size variable.
 
 """
+import ast
 import logging as log
 import os
 import shutil
@@ -229,9 +230,7 @@ def determine_engine(
     devices: List[Device],
     cijoe: Cijoe,
 ) -> Engine:
-    device = list(
-        filter(lambda device: device.key == definition["device"], devices)
-    ).pop()
+    device = next(d for d in devices if d.key == definition["device"])
     name = engine_identifier
     group = definition["group"]
     if "xnvme" in engine_identifier:
@@ -281,10 +280,8 @@ class FIO:
     rw: str
     size: str
     bs: str
-    repetitions: str
-    numjobs: str
     output_format: str
-    io_depth: str
+    iodepth: str
     time_based: str
     runtime: str
     eta_newline: str
@@ -302,8 +299,7 @@ class FIO:
             f"--rw={self.rw}",
             f"--size={self.size}",
             f"--bs={self.bs}",
-            f"--iodepth={self.io_depth}",
-            f"--numjobs={self.repetitions}",
+            f"--iodepth={self.iodepth}",
             f"--output-format={self.output_format}",
             f"--time_based={self.time_based}",
             "--group_reporting",
@@ -324,10 +320,7 @@ class FIO:
 
 def main(args, cijoe: Cijoe, step: Dict[str, Any]):
     fio_bin = cijoe.config.options.get("fio", {}).get("bin")
-    repetitions = step.get("with", {}).get("repetitions", 1)
-
-    io_sizes = step.get("with", {}).get("io_sizes", [])
-    io_depths = step.get("with", {}).get("io_depths", [])
+    runs = step.get("with", {}).get("runs", [])
     io_engines: CijoeEngines = cijoe.config.options.get("fio", {}).get("engines")
     devices: List[Device] = list(determine_devices(cijoe.config.options.get("devices")))
 
@@ -336,50 +329,67 @@ def main(args, cijoe: Cijoe, step: Dict[str, Any]):
 
     err = 0
     try:
-        for (
-            (eng, setup),
-            bs,
-            io_depth,
-        ) in product(io_engines.items(), io_sizes, io_depths):
-            engine = determine_engine(eng, setup, devices, cijoe)
-            engine.prepare()
-
-            output_path = (
-                artifacts / f"fio-output_BS={bs}_IODEPTH={io_depth}_"
-                f"LABEL={engine.name_id}_{repetitions}_"
-                f"GROUP={engine.group}.txt"
+        for i, run in enumerate(runs):
+            iosizes = run["iosizes"]
+            iodepths = run["iodepths"]
+            combinations = list(product(io_engines.items(), iosizes, iodepths))
+            print(
+                f"run {i+1}/{len(runs)}:",
+                "{",
+                f"'iosizes': {iosizes}",
+                f"'iodepths': {iodepths}",
+                f"'engines': {list(io_engines.keys())}",
+                "}",
             )
+            print(f"0% completed (0/{len(combinations)})", end="\r")
 
-            # Run fio
-            fio = FIO(
-                bin=fio_bin,
-                engine=engine,
-                devices=devices,
-                name=f"{engine.name_id}",
-                rw="randread",
-                size=LATENCY_TEST_SIZE,
-                bs=bs,
-                repetitions=repetitions,
-                io_depth=io_depth,
-                numjobs=repetitions,
-                output_format="json",
-                time_based="1",
-                runtime="10",
-                eta_newline="1",
-                ramp_time="5",
-                norandommap="1",
-                thread="1",
-            )
-            cmd = " ".join(fio.cmd())
+            for j, (
+                (eng, setup),
+                iosize,
+                iodepth,
+            ) in enumerate(combinations):
+                engine = determine_engine(eng, setup, devices, cijoe)
+                engine.prepare()
 
-            log.info(f"Executing the command: {cmd}")
+                output_path = (
+                    artifacts / f"fio-output_IOSIZE={iosize}_IODEPTH={iodepth}_"
+                    f"LABEL={engine.name_id}_"
+                    f"GROUP={engine.group}.txt"
+                )
 
-            err, state = cijoe.run(cmd, env=fio.env())
-            if err:
-                log.error(f"failed: {state}")
+                # Run fio
+                fio = FIO(
+                    bin=fio_bin,
+                    engine=engine,
+                    devices=devices,
+                    name=f"{engine.name_id}",
+                    rw="randread",
+                    size=LATENCY_TEST_SIZE,
+                    bs=iosize,
+                    iodepth=iodepth,
+                    output_format="json",
+                    time_based="1",
+                    runtime="10",
+                    eta_newline="1",
+                    ramp_time="5",
+                    norandommap="1",
+                    thread="1",
+                )
+                cmd = " ".join(fio.cmd())
 
-            # Save the output to a file in artifacts directory
-            shutil.copyfile(state.output_fpath, output_path)
+                log.info(f"Executing the command: {cmd}")
+
+                err, state = cijoe.run(cmd, env=fio.env())
+                if err:
+                    log.error(f"failed: {state}")
+
+                print(
+                    f"{(j+1)/len(combinations)*100:.0f}% completed ({j+1}/{len(combinations)})",
+                    end="\r",
+                )
+
+                # Save the output to a file in artifacts directory
+                shutil.copyfile(state.output_fpath, output_path)
 
     except Exception as exc:
         assert exc.__traceback__
