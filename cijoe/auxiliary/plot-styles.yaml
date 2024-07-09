@@ -1,0 +1,33 @@
+---
+# There are purposefully not the same amount of markers and 
+# hatches as there are colours. When creating plots, we can
+# use the same colours multiple times with different markers
+# and hatches.
+
+colors:
+- "#2B7B9B"   # blue
+- "#C70039"   # red
+- "#ADD45C"   # green
+- "#FFC302"   # yellow
+- "#511849"   # purple
+- "#03BAAD"   # turquoise
+- "#FF5733"   # red orange
+- "#3D3D6B"   # dark blue
+
+markers:
+- "o"   # large circle
+- "s"   # square
+- "D"   # diamond
+- "*"   # star
+- "X"   # cross
+- "p"   # pentagon
+- "P"   # plus
+
+hatches:
+- "/"   # diagonal stripes positive
+- "."   # dots
+- "x"   # diagonal grid
+- "O"   # large circles
+- "\\"   # diagonal stripes negative
+- "-"   # horizontal lines
+- "+"   # grid

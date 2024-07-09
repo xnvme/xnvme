@@ -64,16 +64,18 @@ def main(args, cijoe, step):
         for bs, iodepth, (label, params), rep in product(
             iosizes, iodepths, iopaths.items(), range(repetitions)
         ):
+            io_mechanism = params["io_mechanism"]
+
             bdevperf_output_path = (
                 artifacts
-                / f"bdevperf-output_BS={bs}_IODEPTH={iodepth}_LABEL={label}_{rep}.txt"
+                / f"bdevperf-output_BS={bs}_IODEPTH={iodepth}_LABEL={label}_GROUP={io_mechanism}_{rep}.txt"
             )
 
             # Create a spdk-configuration file and transfer it
             spdk_conf_path = Path(bdev_confs) / "_".join(
                 [
                     params["bdev_name"],
-                    params["io_mechanism"],
+                    io_mechanism,
                     "conserve_cpu" if "conserve_cpu" in label else "",
                     f"{ndevices}.conf",
                 ]

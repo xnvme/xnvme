@@ -41,6 +41,8 @@ steps:
     tool: bdevperf
     legends: auxiliary/plot-legends.yaml
     limits: auxiliary/plot-limits-4k.yaml
+    styles: auxiliary/plot-styles.yaml
+
 
 - name: performance_report
   uses: bench_reporter
