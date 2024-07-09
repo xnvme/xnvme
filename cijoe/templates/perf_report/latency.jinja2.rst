@@ -7,7 +7,7 @@
    ###Title### - ###Section###
 
 ====================================
- xNVMe in SPDK - Latency Report
+ {{title}} - {{subtitle}}
 ====================================
 
 .. contents:: Table of Contents
@@ -24,45 +24,16 @@ This report is of interest for those curious about:
 
 * Storage Abstraction Layer overhead and encapsulation
 
-  - The efficient Linux interfaces (``io_uring`` and ``io_uring_cmd``)
-  - The legacy Linux interfaces (``libaio``)
+  - Kernelspace storage interfaces
+  - Userspace storage interfaces
   - And how these can be encapsulated with minimal overhead with **xNVMe**
 
 * The xNVMe project
 
-  - The integration of xNVMe in SPDK via ``bdev_xnvme``
-  - Efficiency of ``bdev_xnvme`` compared to ``bdev_uring`` / ``bdev_aio`` / ``bdev_nvme``
+For the report a bit of background on **xNVMe** is needed, as such, 
+this will be provided in the following section.
 
-For the report a bit of background on **xNVMe** is needed, as such, this will be provided in the following section.
-
-What is xNVMe?
---------------
-
-**xNVMe** is a low-level storage abstraction layer. It is designed for
-convenient use of NVMe devices, however, not limited to these. At its core
-**xNVMe** provides an API operating on **commands**, that is, their
-construction, subsmission, and completion. This can be in a synchronous / blocking
-manner, or asynchronously / non-blocking via **queues**.
-
-This **foundational** abstraction based on **commands**, encapsulates the
-command-transport and semantics usually tied to storage interfaces.
-
-That is, with **xNVMe** there is no assumption that the commands are
-read/write commands.
-
-By decomposing the storage interface in this manner, then any API such as the
-blocking ``preadv/pwritev`` system calls, the asynchrous
-``io_uring``/``io_uring_cmd`` system interface, or the rich **NVMe** commands
-and IO queue pairs, can be represented.
-
-And so they are. The API provided by **xNVMe** has implementations on top of:
-``libaio``, ``POSIX aio``, ``io_uring``, ``io_uring_cmd``, **SPDK
-NVMe driver**, **libvfn NVMe driver**, OS ioctl() interfaces, thread pools, and
-async. emulation.
-
-As such, **xNVMe** provides the encapsulation of the storage interfaces of
-operating system provided abstractions, user space NVMe drivers, storage system
-interfaces, and storage system APIs.
+.. include:: xnvme.rst
 
 Purpose
 -------
@@ -72,61 +43,89 @@ With a storage abstraction layer such as **xNVMe** a natural question is:
 ..
 
   What is the cost in **performance** for a system when using **xNVMe**
-  as the storage abstraction layer? 
+  as the storage abstraction layer?
 
 The purpose of this report is to answer the above question. To do so, we first
-qualify that by performance we will refer to the metric of IO Operations per
-Second (IOPS) on a single saturated CPU.
+qualify that by performance we will refer to the metric of latency (in nanoseconds)
+on a single CPU. Lower latency means better performance.
 
-Thus, in case **xNVMe** has negative impact on IOPS, then we wish to quantity
-how many. And in general, then we wish to compare the effect on achieved IOPS
-rate relatively.
-
-That is, comparing the IOPS with and without using **xNVMe** as the
-storage abstraction layer for the SPDK bdev abstraction.
-
+In this report, we will compare the latency with and without using **xNVMe**
+as the storage abstraction layer. In case **xNVMe** has a negative impact on 
+performance, we wish to quantify this impact. 
 
 .. raw:: pdf
 
    PageBreak
 
 
-Test Setup
-==========
-
-.. note:: **TODO**: Write some prose here.
+.. include:: testsetup.rst
 
 .. raw:: pdf
 
    PageBreak
 
-Software
---------
-
-.. note::
-   **TODO**: Populate this section using the artifacts produces and data collected by
-   **CIJOE**, that is, the output from ``cat /boot/cmdline``, ``uname``,
-   ``dmesg``, ``/etc/os-release``.
-
-.. raw:: pdf
-
-   PageBreak
-
-Hardware
---------
-
-.. note::
-   **TODO**: Populate this section using the artifacts produces by CIJOE, that is, the ``lshw``.
-
-BIOS
-----
-
-.. note::
-   **TODO**: Add BIOS name and version and describe settings changed from the default.
 
 Methodology
 ===========
 
+We run ``fio`` for a set of IO engines with varying IO depths and IO sizes. In each 
+experiment, one of the two variables is kept constant while varying the other.
+Specifically, the variables of the runs are:
+
+.. list-table:: 
+   :widths: 10 45 45
+   :header-rows: 1
+
+   * - Run
+     - IO sizes
+     - IO depths
+   * - 1
+     - 4096
+     - 
+       .. class:: tablebullet
+       {% for depth in fio.iodepths %}
+       * {{depth}}
+       {% endfor %}
+   * - 2
+     - 
+       .. class:: tablebullet
+       {% for size in fio.iosizes %}
+       * {{size}}
+       {% endfor %}
+     - 1
+
+The purpose is to see how increasing IO depth and IO size affect the latency of the 
+engine. 
+
+For each (``io_engine``, (``io_size``, ``io_depth``)) in the product of IO engines and runs, 
+where a run is a product of the IO sizes and IO depths in the table above, we run fio with 
+the parameters below, where the ``engine_name`` is derived from the ``io_engine``.
+
+{% block code %}
+   ``fio 
+   --name=<engine_name> 
+   --filename=<device>
+   --ioengine=<io_engine>
+   --direct=1
+   --rw=randread
+   --size=1G
+   --bs=<io_size>
+   --iodepth=<io_depth>
+   --output-format=json
+   --time_based=1
+   --group_reporting
+   --runtime=10
+   --eta-newline=1
+   --ramp_time=5
+   --norandommap=1
+   --thread=1``
+{% endblock %}
+
+The engines used in this experiment are:
+
+{% for engine in fio.ioengines %}
+* {{engine.name}}
+{% endfor %}
 
 
 .. raw:: pdf
