@@ -155,8 +155,6 @@ endif
 
 conf_data.set('XNVME_BE_FBSD_ENABLED', is_freebsd)
 
-conf_data.set('XNVME_BE_ASYNC_ENABLED', true)
-
 conf = configure_file(
   configuration : conf_data,
   output : 'xnvme_config.h',
