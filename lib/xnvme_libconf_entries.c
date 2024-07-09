@@ -84,8 +84,5 @@ const char *xnvme_libconf[] = {
 #ifdef XNVME_BE_SPDK_TRANSPORT_FC_ENABLED
 	"conf: XNVME_BE_SPDK_TRANSPORT_FC_ENABLED",
 #endif
-#ifdef XNVME_BE_ASYNC_ENABLED
-	"conf: XNVME_BE_ASYNC_ENABLED",
-#endif
 	0, ///< For array-termination
 };
