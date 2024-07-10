@@ -189,8 +189,7 @@ on notes on system configuration and runtime instrumentation of the library
 backends.
 
 Should you not find the answers you are looking here, then please
-reach out by raising an :xref-github-xnvme-issues:`issue<>`, start
-an asynchronous :xref-github-xnvme-discussions:`discussions<>`, or go
+reach out by raising an :xref-github-xnvme-issues:`issue<>` or go
 to :xref-discord-xnvme:`Discord<>` for synchronous interaction.
 
 Build Errors
