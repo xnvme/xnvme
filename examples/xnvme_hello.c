@@ -12,7 +12,7 @@ main(int argc, char **argv)
 	struct xnvme_dev *dev;
 
 	if (argc < 2) {
-		xnvme_cli_perr("Usage: %s <ident>", EINVAL);
+		xnvme_cli_perr("Usage: %s <identifer>", EINVAL);
 		return 1;
 	}
 
@@ -22,6 +22,9 @@ main(int argc, char **argv)
 		return 1;
 	}
 
+	if (xnvme_dev_derive_geo(dev)) {
+		printf("Failed deriving geometry, check your permissions.");
+	}
 	xnvme_dev_pr(dev, XNVME_PR_DEF);
 	xnvme_dev_close(dev);
 
