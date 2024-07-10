@@ -204,10 +204,10 @@ def main(args):
 
     syms = symbols(args)
 
-    def namespace_to_prefix(namespace):
-        for prefix, namespaces in NAMESPACES.items():
+    def namespace_to_section(namespace):
+        for section, namespaces in NAMESPACES.items():
             if namespace in namespaces:
-                return prefix
+                return section
         return None
 
     pps = {}
@@ -217,11 +217,14 @@ def main(args):
     for namespace, val in syms.items():
         logging.info("namespace: %r", namespace)
 
-        prefix = namespace_to_prefix(namespace)
-        if prefix is None:
-            logging.error("no prefix match")
+        section = namespace_to_section(namespace)
+        if section is None:
+            logging.error(
+                f"no section for namespace({namespace}); add it to apigen.NAMESPACES"
+            )
+            return 1
 
-        rst_fpath = os.path.join(args.output, "c", prefix, "%s.rst" % namespace)
+        rst_fpath = os.path.join(args.output, "c", section, "%s.rst" % namespace)
         rst = emit(namespace, val)
 
         with open(rst_fpath, "w") as rfd:
