@@ -336,7 +336,7 @@ platforms:
   aux:
   - [sys, [base-devel, libutil-linux]]
 
-- alias: Oracle Linux 9
+- alias: Oracle Linux
   notes: ''
   name: oraclelinux
   ver: ['9']
@@ -350,7 +350,7 @@ platforms:
   - [sys, [autoconf, diffutils, gcc, gcc-c++, libtool, procps, unzip, wget, zlib-devel]]
 
 
-- alias: Rocky Linux 9.2
+- alias: Rocky Linux
   notes: ''
   name: rockylinux
   ver: ['9.2']
