@@ -75,8 +75,9 @@ in **C** to perform the following tasks with an NVMe device: open the device,
 probe and retrieve device information, print device information, and finally
 close the device.
 
-.. literalinclude:: hello.c
+.. literalinclude:: ../../examples/xnvme_hello.c
    :language: c
+   :lines: 5-
 
 Additional examples of using the **xNVMe** C API can be found in the **xNVMe**
 repository. This includes explicit :xref-xnvme-repository-dir:`example<examples>`
