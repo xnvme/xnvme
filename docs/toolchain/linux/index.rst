@@ -76,8 +76,8 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-Oracle Linux 9 (9)
-~~~~~~~~~~~~~~~~~~
+Oracle Linux (9)
+~~~~~~~~~~~~~~~~
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
@@ -104,8 +104,8 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-Rocky Linux 9.2 (9.2)
-~~~~~~~~~~~~~~~~~~~~~
+Rocky Linux (9.2)
+~~~~~~~~~~~~~~~~~
 
 Install the required toolchain and libraries, with sufficient system privileges
 (e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
