@@ -48,7 +48,6 @@ meson install -C builddir
 popd
 
 # Install packages via the Python package-manager (pip)
-python3 -m pip install --break-system-packages --upgrade pip
 python3 -m pip install --break-system-packages \
  pipx
 
