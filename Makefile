@@ -110,7 +110,7 @@ endef
 config-slim:
 	@echo "## xNVMe: make config-slim"
 	CC=$(CC) CXX=$(CXX) $(MESON) setup $(BUILD_DIR) \
-	   -Dwith-spdk=false \
+	   -Dwith-spdk=disabled \
 		 -Dwith-liburing=disabled \
 		 -Dwith-libvfn=disabled \
 		 -Dwith-libaio=disabled \

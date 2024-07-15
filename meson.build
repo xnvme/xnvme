@@ -128,6 +128,14 @@ isal_dep = dependency(
 )
 conf_data.set('XNVME_BE_LINUX_LIBISAL_ENABLED', isal_dep.found())
 
+spdk_proj = subproject('spdk', required: get_option('with-spdk'))
+spdk_dep = spdk_proj.found() ? spdk_proj.get_variable('spdk_dep') : dependency('', required: false)
+conf_data.set('XNVME_BE_SPDK_ENABLED', spdk_dep.found())
+conf_data.set('XNVME_BE_SPDK_TRANSPORT_PCIE_ENABLED', spdk_dep.found())
+conf_data.set('XNVME_BE_SPDK_TRANSPORT_TCP_ENABLED', spdk_dep.found())
+conf_data.set('XNVME_BE_SPDK_TRANSPORT_RDMA_ENABLED', spdk_dep.found())
+conf_data.set('XNVME_BE_SPDK_TRANSPORT_FC_ENABLED', spdk_dep.found())
+
 corefoundation_dep = dependency(
   'appleframeworks',
   modules: 'CoreFoundation',
@@ -140,13 +148,12 @@ iokit_dep = dependency(
 )
 conf_data.set('XNVME_BE_MACOS_ENABLED', corefoundation_dep.found() and iokit_dep.found())
 
-conf_data.set('XNVME_BE_FBSD_ENABLED', is_freebsd)
+rt_dep = cc.find_library('rt', required: is_darwin ? false : (is_linux or is_freebsd))
+if not cc.has_function('clock_gettime', prefix: '#include <time.h>', dependencies: rt_dep)
+  error('clock_gettime not found')
+endif
 
-conf_data.set('XNVME_BE_SPDK_ENABLED', (is_linux or is_freebsd) and get_option('with-spdk'))
-conf_data.set('XNVME_BE_SPDK_TRANSPORT_PCIE_ENABLED', (is_linux or is_freebsd) and get_option('with-spdk'))
-conf_data.set('XNVME_BE_SPDK_TRANSPORT_TCP_ENABLED', (is_linux or is_freebsd) and get_option('with-spdk'))
-conf_data.set('XNVME_BE_SPDK_TRANSPORT_RDMA_ENABLED', (is_linux or is_freebsd) and get_option('with-spdk'))
-conf_data.set('XNVME_BE_SPDK_TRANSPORT_FC_ENABLED', (is_linux or is_freebsd) and get_option('with-spdk'))
+conf_data.set('XNVME_BE_FBSD_ENABLED', is_freebsd)
 
 conf_data.set('XNVME_BE_ASYNC_ENABLED', true)
 
@@ -200,18 +207,6 @@ endif
 
 # Scripts
 subdir('toolbox')
-
-# Misc. third-party dependencies
-
-rt_dep = cc.find_library('rt', required: is_darwin ? false : (is_linux or is_freebsd))
-if not cc.has_function('clock_gettime', prefix: '#include <time.h>', dependencies: rt_dep)
-  error('clock_gettime not found')
-endif
-
-spdk_dep = dependency(
-  '_spdk',
-  required: conf_data.get('XNVME_BE_SPDK_ENABLED')
-)
 
 # Headers
 subdir('include')

@@ -7,6 +7,3 @@ url = https://github.com/spdk/spdk.git
 revision = v24.05
 patch_directory = spdk
 clone-recursive = true
-
-[provide]
-_spdk = spdk_dep
