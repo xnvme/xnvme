@@ -277,7 +277,7 @@ def main(args, cijoe, step):
         log.error(f"guest.start() : err({err})")
         return err
 
-    started = guest.is_up()
+    started = guest.is_up(timeout=240)
     if not started:
         log.error("guest.is_up() : False")
         return errno.EAGAIN
