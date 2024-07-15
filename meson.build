@@ -170,7 +170,7 @@ configure_file(
 )
 
 # Provide configuration via header-file 'xnvme_config.h'
-add_global_arguments(['-include', 'xnvme_config.h'], language: 'c')
+add_project_arguments(['-include', 'xnvme_config.h'], language: 'c')
 
 # bash-completions: run the Makefile target 'make gen-bash-completions' to update the completions
 bash_completion_dep = dependency(
