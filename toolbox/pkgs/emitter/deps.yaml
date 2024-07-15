@@ -94,7 +94,7 @@ deps:
       default: [pipx] # apt, pip, dnf
       pacman: [python-pipx]
       pip: [pipx]
-      pkg: [py39-pipx]
+      pkg: [devel/py-pipx]
       zypper: [python3-pipx]
 
   archive:

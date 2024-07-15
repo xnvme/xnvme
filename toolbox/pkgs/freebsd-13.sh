@@ -11,6 +11,7 @@ pkg install -qy \
  automake \
  bash \
  cunit \
+ devel/py-pipx \
  devel/py-pyelftools \
  e2fsprogs-libuuid \
  findutils \
@@ -24,7 +25,6 @@ pkg install -qy \
  openssl \
  patch \
  pkgconf \
- py39-pipx \
  python3 \
  wget
 
