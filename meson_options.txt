@@ -2,7 +2,7 @@ option('with-libaio', type: 'feature', value: 'auto')
 option('with-liburing', type: 'feature', value: 'auto')
 option('with-libvfn', type: 'feature', value: 'auto')
 option('with-isal', type: 'feature', value: 'auto')
-option('with-spdk', type: 'boolean', value: true)
+option('with-spdk', type: 'feature', value: 'auto')
 
 option('be_ramdisk', type: 'boolean', value: true)
 

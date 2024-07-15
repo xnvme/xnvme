@@ -262,7 +262,7 @@ jobs:
       matrix:
         container:
         # Using an alpine container which is the same as upstream but with bash
-        # alpine: SPDK not supported, --with-spdk=false
+        # alpine: SPDK not supported, --with-spdk=disabled
         - {os: 'alpine', dh: 'refenv/alpine-bash', ver: 'latest'}
         - {os: 'archlinux', dh: 'archlinux', ver: 'latest'}
         - {os: 'centos', dh: 'tgagor/centos', ver: 'stream9'}
@@ -301,7 +301,7 @@ jobs:
     - name: Configure with and build with debug enabled (without spdk)
       if: ${{ contains(matrix.container.os, 'alpine') }}
       run: |
-        meson setup builddir --buildtype=debug -Dwith-spdk=false
+        meson setup builddir --buildtype=debug -Dwith-spdk=disabled
         meson compile -C builddir
         make clean # prepare for building without debug
 

@@ -99,7 +99,7 @@ to musl standard library not being entirely compatible with **GLIBC** /
 The SPDK backend does not build on due to re-definition of ``STAILQ_*``
 macros. As a work-around, then disable the SPDK backend::
 
-  meson setup builddir -Dwith-spdk=false
+  meson setup builddir -Dwith-spdk=disabled
 
 The Linux backend support for ``io_uring`` fails on **Alpine Linux** due to a
 missing definition in **musl** leading to this error message::

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # configure xNVMe with SPDK and libvfn disabled
-meson setup builddir -Dwith-spdk=false
+meson setup builddir -Dwith-spdk=disabled
 
 # build xNVMe
 meson compile -C builddir
