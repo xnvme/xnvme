@@ -21,9 +21,9 @@ branch = "next"
 type = "debug"
 
 [spdk.repository]
-remote = "https://github.com/xnvme/spdk-for-ci.git"
+remote = "https://github.com/spdk/spdk"
 path = "/root/git/spdk"
-tag = "xnvme-next"
+tag = "v24.05"
 
 [spdk.build]
 prefix = "/opt/spdk"
