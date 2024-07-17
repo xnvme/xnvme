@@ -123,7 +123,6 @@ libaio
 
 Comparing ``bdev_xnvme``, with ``io_mechanism=libaio``, to ``bdev_aio``.
 
-
 .. image:: bdevperf_barplot_libaio.png
    :align: center
    :width: 100%
@@ -152,6 +151,11 @@ reference implementation. However, when IO-polling is enabled
 (``conserve_cpu=0``), there's a noticeable boost in IOPS, showcasing its
 distinct advantage.
 
+
+.. raw:: pdf
+
+   PageBreak
+
 io_uring_cmd
 ------------
 
@@ -164,3 +168,17 @@ For ``io_uring_cmd``, there is no reference bdev-implementation, thus ``bdev_xnv
 
 Comparing this graph to the graphs for ``libaio`` and ``io_uring``, ``io_uring_cmd`` shows a modest but clear
 advantage over the others, indicating that ``io_uring_cmd`` provides an improved IOPS performance in this scenario.
+
+.. raw:: pdf
+
+   PageBreak
+
+Latency at IO depth 1
+=====================
+
+I/O latency when accessing the NVMe SSD.
+
+.. image:: bdevperf_barplot_qd1.png
+   :align: center
+   :width: 100%
+

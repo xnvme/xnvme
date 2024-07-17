@@ -39,14 +39,17 @@ from cijoe.fio.wrapper import dict_from_fio_output_file
 
 JSON_DUMP = {"indent": 4}
 
+OUTPUT_NORMALIZED_FILENAME = "benchmark-output-normalized.json"
+
 FIO_COMPOUND_FILENAME = "fio-output-compound.json"
-FIO_OUTPUT_NORMALIZED_FILENAME = "fio-output-normalized.json"
 FIO_STEM_REGEX = r"fio-output_IOSIZE=(?P<iosize>\d+)_IODEPTH=(?P<iodepth>\d+)_LABEL=(?P<label>.+)_GROUP=(?P<group>.+)"
 
 BDEVPERF_OUTPUT_PREFIX = "bdevperf-output_"
-BDEVPERF_OUTPUT_NORMALIZED_FILENAME = "bdevperf-output-normalized.json"
 OUTPUT_REGEX = r".*BS=(?P<bs>.*)_IODEPTH=(?P<iodepth>\d+)_LABEL=(?P<label>.*)_GROUP=(?P<group>.*)_\d+.txt"
-LINE_REGEX = r".*Total\s+\:\s+(?P<iops>\d+\.\d+)\s+\s+(?P<bwps>\d+\.\d+)\s+\d+\.\d+\s+\d+\.\d+\s+(?P<lat>\d+\.\d+).*"
+# format of line is:
+#         IOPS       MiB/s    Fail/s  TO/s  Average  min    max
+# Total : 507668.17  1983.08  0.00    0.00  15.65    10.31  8453.95
+LINE_REGEX = r".*Total\s+\:\s+(?P<iops>\d+\.\d+)\s+(?P<bwps>\d+\.\d+)\s+\d+\.\d+\s+\d+\.\d+\s+(?P<lat>\d+\.\d+).*"
 
 
 def extract_bdevperf(args, cijoe, step):
@@ -81,13 +84,15 @@ def extract_bdevperf(args, cijoe, step):
                 sample["ctx"][ctx] = int(match.group(ctx))
             for ctx in ["label", "group"]:
                 sample["ctx"][ctx] = match.group(ctx)
-            sample["ctx"]["name"] = sample["ctx"]["label"]
+            sample["ctx"]["name"] = (
+                sample["ctx"]["label"].split("-")[1].replace("conserve_cpu", "cc")
+            )
             sample["ctx"]["iosize"] = sample["ctx"]["bs"]
 
             for line in ofile.readlines():
                 metrics = re.match(LINE_REGEX, line)
                 if metrics:
-                    for metric in ["iops", "bwps"]:
+                    for metric in ["iops", "bwps", "lat"]:
                         sample[metric] = float(metrics.group(metric))
 
             m = hashlib.md5()
@@ -107,7 +112,7 @@ def extract_bdevperf(args, cijoe, step):
 
     artifacts = args.output / "artifacts"
 
-    with (artifacts / BDEVPERF_OUTPUT_NORMALIZED_FILENAME).open("w") as jfd:
+    with (artifacts / OUTPUT_NORMALIZED_FILENAME).open("w") as jfd:
         json.dump(collection, jfd, **JSON_DUMP)
 
     return 0
@@ -219,7 +224,7 @@ def normalize(args, cijoe, step):
 
     collection = [contextualize(results, stem) for stem, results in compound.items()]
 
-    with compound_path.with_name(FIO_OUTPUT_NORMALIZED_FILENAME).open("w") as jfd:
+    with compound_path.with_name(OUTPUT_NORMALIZED_FILENAME).open("w") as jfd:
         json.dump(collection, jfd, **JSON_DUMP)
 
     return 0
