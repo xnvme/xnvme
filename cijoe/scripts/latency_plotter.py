@@ -29,7 +29,7 @@ from typing import Dict, List
 import matplotlib.pyplot as plt
 from cijoe.core.resources import dict_from_yamlfile
 
-FIO_OUTPUT_NORMALIZED_FILENAME = "fio-output-normalized.json"
+OUTPUT_NORMALIZED_FILENAME = "benchmark-output-normalized.json"
 
 PLOT_SCALE = 1.3
 
@@ -78,7 +78,7 @@ def get_plot_attributes(step):
     }
 
 
-def draw_bar_plot(data, plot_attributes, xlabel=None, y_limit=None):
+def draw_bar_plot(data, plot_attributes, xlabel=None, ylabel=None, y_limit=None):
     colors = plot_attributes["styles"].get("colors", ["#000000"])
     hatches = plot_attributes["styles"].get("hatches", ["."])
     width = 0.20
@@ -89,7 +89,16 @@ def draw_bar_plot(data, plot_attributes, xlabel=None, y_limit=None):
     num_bars = len(data.items()) - 1
     if is_grouped:
         x_ticks = dict()
-        x_tick_info = dict([(group, [groups.index(group), 0]) for group in groups])
+
+        # fiddly stuff to get groups of uneven sizes to have even space between them
+        group_sizes = [
+            (len(list(filter(lambda item: item["group"] == group, data.values()))) + 1)
+            * width
+            for group in groups
+        ]
+        x_tick_info = dict(
+            [(group, [sum(group_sizes[:i]), 0]) for i, group in enumerate(groups)]
+        )
     else:
         unique_x_values = map(lambda xy: xy[0], list(data.values())[0]["xys"])
         x_ticks = dict(
@@ -105,6 +114,7 @@ def draw_bar_plot(data, plot_attributes, xlabel=None, y_limit=None):
         y_limit = max_y_value * PLOT_SCALE
 
     plt.clf()
+    fig, ax = plt.subplots()
 
     multiplier = 0
 
@@ -127,7 +137,7 @@ def draw_bar_plot(data, plot_attributes, xlabel=None, y_limit=None):
             offset = width * multiplier
             plotted_x = [x + offset for x in range(len(xs))]
 
-        bar = plt.bar(
+        bar = ax.bar(
             plotted_x,
             ys,
             width,
@@ -135,11 +145,33 @@ def draw_bar_plot(data, plot_attributes, xlabel=None, y_limit=None):
             color=colors[i % len(colors)],
             hatch=hatches[i % len(hatches)],
         )
-        plt.bar_label(bar, fmt=lambda i: f"{i:,.0f}", padding=3, rotation=90)
+        ax.bar_label(bar, fmt=lambda i: f"{i:,.0f}", padding=3, rotation=90)
         multiplier += 1
 
     if is_grouped:
-        plt.subplots_adjust(bottom=0.2)
+        fig.subplots_adjust(bottom=0.25)
+
+        # add group names at the top of the plot
+        group_ticks = list(
+            map(
+                lambda group: group[0] + (group[1] - 1) / 2 * width,
+                x_tick_info.values(),
+            )
+        )
+        group_labels = x_tick_info.keys()
+        group_axis = ax.secondary_xaxis(location=1)
+        group_axis.set_xticks(group_ticks, labels=group_labels)
+        group_axis.tick_params("x", length=0)
+
+        # add separators between the groups
+        group_separators = [
+            sum(group_sizes[:i]) - width for i in range(1, len(group_sizes))
+        ]
+        for tick in group_separators:
+            plt.vlines(x=tick, ymin=0, ymax=y_limit, ls=":", lw=1, colors="k")
+        group_axis = ax.secondary_xaxis(location=1)
+        group_axis.set_xticks(group_separators, labels=[])
+        group_axis.tick_params("x", length=15, grid_ls=":")
     else:
         plt.legend(
             bbox_to_anchor=(0, 0.95, 1, 0.2),
@@ -150,17 +182,18 @@ def draw_bar_plot(data, plot_attributes, xlabel=None, y_limit=None):
         )
 
     if xlabel:
-        plt.xlabel(xlabel)
+        ax.set_xlabel(xlabel)
+    if ylabel:
+        ax.set_ylabel(ylabel)
 
-    plt.xticks(
+    ax.set_xticks(
         list(x_ticks.values()),
         list(x_ticks.keys()),
         rotation=50 if is_grouped else 0,
         ha="right" if is_grouped else "center",
     )
 
-    plt.ylabel("nanoseconds")
-    plt.ylim([0, y_limit])
+    ax.set_ylim([0, y_limit])
 
 
 def create_plots(args, cijoe, step):
@@ -169,7 +202,7 @@ def create_plots(args, cijoe, step):
         return errno.EINVAL
     artifacts = args.output / "artifacts"
 
-    search_for = FIO_OUTPUT_NORMALIZED_FILENAME
+    search_for = OUTPUT_NORMALIZED_FILENAME
 
     path = next(Path(search).rglob(search_for))
     with path.open() as jfd:
@@ -192,7 +225,11 @@ def create_plots(args, cijoe, step):
             and item["ctx"]["iosize"] == 4096,
         )
         draw_bar_plot(
-            dset, plot_attributes, xlabel="iodepth", y_limit=max_y * PLOT_SCALE
+            dset,
+            plot_attributes,
+            xlabel="iodepth",
+            ylabel="nanoseconds",
+            y_limit=max_y * PLOT_SCALE,
         )
 
         os.makedirs(artifacts, exist_ok=True)
@@ -209,7 +246,11 @@ def create_plots(args, cijoe, step):
             and item["ctx"]["iodepth"] == 1,
         )
         draw_bar_plot(
-            dset, plot_attributes, xlabel="iosize", y_limit=max_y * PLOT_SCALE
+            dset,
+            plot_attributes,
+            xlabel="iosize",
+            ylabel="nanoseconds",
+            y_limit=max_y * PLOT_SCALE,
         )
 
         os.makedirs(artifacts, exist_ok=True)
@@ -226,7 +267,7 @@ def create_plots(args, cijoe, step):
         and item["ctx"]["iodepth"] == 1
         and item["ctx"]["iosize"] == 4096,
     )
-    draw_bar_plot(dset, plot_attributes)
+    draw_bar_plot(dset, plot_attributes, ylabel="nanoseconds")
 
     os.makedirs(artifacts, exist_ok=True)
     plt.savefig(artifacts / "fio_barplot_qd1.png")
