@@ -93,7 +93,13 @@ xnvmelib_deps = [
 
 mapfile = 'libxnvme.map'
 # Version script is not supported by the linker on OSX
-version_script = is_darwin ? '' : '-Wl,--version-script=@0@/@1@'.format(meson.current_source_dir(), mapfile)
+# Use --undefined-version to avoid errors with linkers that have --no-undefined-version by default,
+# i.e. ld.lld on newer FreeBSD
+version_script = is_darwin ? [] : ['-Wl,--version-script=@0@/@1@'.format(meson.current_source_dir(), mapfile)]
+
+if is_freebsd
+  version_script += '-Wl,--undefined-version'
+endif
 
 # We always build both the shared and static libraries
 xnvmelib = library(
@@ -101,7 +107,7 @@ xnvmelib = library(
   xnvmelib_source,
   version: meson.project_version(),
   dependencies: xnvmelib_deps,
-  link_args: link_args_hardening + [version_script],
+  link_args: link_args_hardening + version_script,
   link_depends: mapfile,
   include_directories: [conf_inc, xnvme_inc],
   install_dir: xnvmelib_libdir,
