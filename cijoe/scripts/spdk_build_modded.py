@@ -54,7 +54,6 @@ def main(args, cijoe, step):
     commands = [
         "make clean || true",
         "git clean -dfx",
-        "git pull --rebase",
         "git rev-parse --short HEAD",
         "git status",
         "git submodule deinit -f .",
