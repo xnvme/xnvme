@@ -35,6 +35,36 @@ styles:
     - 60%
     - 20%
     commands: []
+  picturetable:
+    parent: table
+    commands:
+    - - VALIGN
+      - - 0
+        - 0
+      - - -1
+        - -1
+      - TOP
+    - - INNERGRID
+      - - 0
+        - 0
+      - - -1
+        - -1
+      - 0.25
+      - white
+    - - ROWBACKGROUNDS
+      - - 0
+        - 0
+      - - -1
+        - -1
+      - - white
+        - white
+    - - BOX
+      - - 0
+        - 0
+      - - -1
+        - -1
+      - 0.25
+      - white
   bullet-list:
     parent: bodytext
     spaceBefore: 2

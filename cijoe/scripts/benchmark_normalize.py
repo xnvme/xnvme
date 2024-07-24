@@ -45,11 +45,17 @@ FIO_COMPOUND_FILENAME = "fio-output-compound.json"
 FIO_STEM_REGEX = r"fio-output_IOSIZE=(?P<iosize>\d+)_IODEPTH=(?P<iodepth>\d+)_LABEL=(?P<label>.+)_GROUP=(?P<group>.+)"
 
 BDEVPERF_OUTPUT_PREFIX = "bdevperf-output_"
+LINUXPERF_OUTPUT_PREFIX = "linuxperf-output_"
 OUTPUT_REGEX = r".*BS=(?P<bs>.*)_IODEPTH=(?P<iodepth>\d+)_LABEL=(?P<label>.*)_GROUP=(?P<group>.*)_\d+.txt"
 # format of line is:
 #         IOPS       MiB/s    Fail/s  TO/s  Average  min    max
 # Total : 507668.17  1983.08  0.00    0.00  15.65    10.31  8453.95
-LINE_REGEX = r".*Total\s+\:\s+(?P<iops>\d+\.\d+)\s+(?P<bwps>\d+\.\d+)\s+\d+\.\d+\s+\d+\.\d+\s+(?P<lat>\d+\.\d+).*"
+TOTAL_PERF_LINE_REGEX = r"Total\s+\:\s+(?P<iops>\d+\.\d+)\s+(?P<bwps>\d+\.\d+)\s+\d+\.\d+\s+\d+\.\d+\s+(?P<lat>\d+\.\d+).*"
+
+# format of the line is:
+# Children      Self  Command    Shared Object  Symbol
+#   44.20%     0.17%  reactor_1  bdevperf       [.] bdev_xnvme_poll
+LINUXPERF_LINE_REGEX = r"\s*(?P<cpu>\d+\.\d+)%.*bdev_.*_poll\n"
 
 
 def extract_bdevperf(args, cijoe, step):
@@ -65,12 +71,37 @@ def extract_bdevperf(args, cijoe, step):
     if not search:
         return errno.EINVAL
 
+    artifacts = args.output / "artifacts"
+
     collection = []
 
     search = Path(search)
-    for path in search.rglob(f"{BDEVPERF_OUTPUT_PREFIX}*.txt"):
-        with path.open() as ofile:
-            match = re.match(OUTPUT_REGEX, str(path))
+    for bdevperf_path in search.rglob(f"{BDEVPERF_OUTPUT_PREFIX}*.txt"):
+        linuxperf_path = bdevperf_path.with_name(
+            bdevperf_path.name.replace(BDEVPERF_OUTPUT_PREFIX, LINUXPERF_OUTPUT_PREFIX)
+        )
+
+        cpu = 0
+
+        with (linuxperf_path).open() as ofile:
+            file_content = ofile.read()
+            matches = re.findall(LINUXPERF_LINE_REGEX, file_content)
+            if len(matches) != 2:
+                log.warning(
+                    f"Unexpected amount of CPU usage percentages (expected 2) in {linuxperf_path.name}: {matches}"
+                )
+                if len(matches) < 2:
+                    log.error(
+                        "Too few CPU usage percentages, needs at least 2, one for each core."
+                    )
+                    return errno.EINVAL
+                matches = matches[0:2]
+
+            for match in matches:
+                cpu += float(match)
+
+        with bdevperf_path.open() as ofile:
+            match = re.match(OUTPUT_REGEX, str(bdevperf_path))
 
             sample = {
                 "ctx": {},
@@ -78,6 +109,7 @@ def extract_bdevperf(args, cijoe, step):
                 "bwps": 0,
                 "lat": 0,
                 "stddev": 0,
+                "cpu": cpu,  # in %
             }
 
             for ctx in ["iodepth", "bs"]:
@@ -89,11 +121,12 @@ def extract_bdevperf(args, cijoe, step):
             )
             sample["ctx"]["iosize"] = sample["ctx"]["bs"]
 
-            for line in ofile.readlines():
-                metrics = re.match(LINE_REGEX, line)
-                if metrics:
-                    for metric in ["iops", "bwps", "lat"]:
-                        sample[metric] = float(metrics.group(metric))
+            file_content = ofile.read()
+
+            perf_match = re.search(TOTAL_PERF_LINE_REGEX, file_content)
+            if perf_match:
+                for metric in ["iops", "bwps", "lat"]:
+                    sample[metric] = float(perf_match.group(metric))
 
             m = hashlib.md5()
             m.update(
@@ -109,8 +142,6 @@ def extract_bdevperf(args, cijoe, step):
             )
 
             collection.append((str(m.hexdigest()), sample))
-
-    artifacts = args.output / "artifacts"
 
     with (artifacts / OUTPUT_NORMALIZED_FILENAME).open("w") as jfd:
         json.dump(collection, jfd, **JSON_DUMP)
@@ -196,6 +227,7 @@ def normalize(args, cijoe, step):
             "bwps": to_base_unit(job["read"]["bw_mean"], "KiB"),
             "lat": job["read"]["lat_ns"]["mean"],
             "stddev": to_base_unit(job["read"]["lat_ns"]["stddev"], ""),
+            "cpu": 0,  # in %
         }
 
         m = hashlib.md5()
