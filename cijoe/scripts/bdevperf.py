@@ -66,9 +66,9 @@ def main(args, cijoe, step):
         ):
             io_mechanism = params["io_mechanism"]
 
-            bdevperf_output_path = (
-                artifacts
-                / f"bdevperf-output_BS={bs}_IODEPTH={iodepth}_LABEL={label}_GROUP={io_mechanism}_{rep}.txt"
+            linuxperf_output_filename = f"linuxperf-output_BS={bs}_IODEPTH={iodepth}_LABEL={label}_GROUP={io_mechanism}_{rep}.txt"
+            bdevperf_output_path = artifacts / (
+                f"bdevperf-output_BS={bs}_IODEPTH={iodepth}_LABEL={label}_GROUP={io_mechanism}_{rep}.txt"
             )
 
             # Create a spdk-configuration file and transfer it
@@ -85,6 +85,8 @@ def main(args, cijoe, step):
 
             # Run bdevperf
             command = [
+                "perf record --call-graph dwarf",
+                f"-o {linuxperf_output_filename}",
                 "/root/git/spdk/build/examples/bdevperf",
                 f"--json {spdk_conf_path}",
                 f"-q {iodepth}",
@@ -99,6 +101,22 @@ def main(args, cijoe, step):
 
             # Save the bdevperf output to a file in artifacts directory
             shutil.copyfile(state.output_fpath, bdevperf_output_path)
+
+            command = [
+                f"perf report -i {linuxperf_output_filename}",
+                "--symbol-filter=bdev",
+                "--stdio",
+                "--call-graph=none",
+            ]
+            err, state = cijoe.run(" ".join(command), env=env)
+            if err:
+                log.error(f"failed: {state}")
+
+            # Save the linuxperf output to a file in artifacts directory
+            shutil.copyfile(state.output_fpath, artifacts / linuxperf_output_filename)
+
+            # remove file from server
+            err, state = cijoe.run(f"rm {linuxperf_output_filename}", env=env)
 
     except Exception as exc:
         log.error(f"Something failed({exc})")

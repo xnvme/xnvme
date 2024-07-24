@@ -227,28 +227,46 @@ def create_plots(args, cijoe, step):
     plot_attributes = plot_attributes_from_step(step)
 
     x = "iodepth"
-    y = "iops"
 
-    max_y = max(map(lambda item: item[1][y], data))
+    max_y_iops = max(map(lambda item: item[1]["iops"], data))
     all_groups = set(map(lambda item: item[1]["ctx"]["group"], data))
 
     # Create a plot for each group, showing the scalability of the xNVMe overhead
+    # and the memory and cpu usage
     for group in all_groups:
+        # Create plot with iodepth on the x-axis and iops on the y-axis
         dset = data_as_a_function_of(
-            data, x, y, lambda item: item["ctx"]["group"] == group
+            data, x, "iops", lambda item: item["ctx"]["group"] == group
         )
         draw_bar_plot(
-            dset, plot_attributes, xlabel=x, ylabel="iops", y_limit=max_y * PLOT_SCALE
+            dset,
+            plot_attributes,
+            xlabel=x,
+            ylabel="iops",
+            y_limit=max_y_iops * PLOT_SCALE,
         )
-
         os.makedirs(artifacts, exist_ok=True)
-        plt.savefig(artifacts / f"{tool}_barplot_{group}.png")
+        plt.savefig(artifacts / f"{tool}_iops_barplot_{group}.png")
 
-    # Create a plot, showing the overhead of xNVMe at queue depth = 1
+        # Create plot with iodepth on the x-axis and cpu utilization on the y-axis
+        dset = data_as_a_function_of(
+            data, x, "cpu", lambda item: item["ctx"]["group"] == group
+        )
+        draw_bar_plot(
+            dset,
+            plot_attributes,
+            xlabel=x,
+            ylabel="percent",
+            y_limit=200,
+        )
+        os.makedirs(artifacts, exist_ok=True)
+        plt.savefig(artifacts / f"{tool}_cpu_barplot_{group}.png")
+
+    # Create a plot, showing the overhead of xNVMe at iodepth = 1
     dset = data_as_a_function_of(
         data,
-        x=x,
-        y="lat",
+        x,
+        "lat",
         filter=lambda item: item["ctx"]["group"] != "null"
         and item["ctx"]["iodepth"] == 1
         and item["ctx"]["iosize"] == 4096,
