@@ -246,7 +246,7 @@ xnvme_be_macos_dev_open(struct xnvme_dev *dev)
 			dev->be.admin = g_xnvme_be_macos_admin;
 		}
 		if (!opts->sync) {
-			dev->be.sync = g_xnvme_be_cbi_sync_psync;
+			dev->be.sync = g_xnvme_be_macos_sync_psync;
 		}
 		if (!opts->async) {
 			dev->be.async = g_xnvme_be_cbi_async_emu;
