@@ -21,6 +21,13 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_macos[] = {
 
 	{
 		.mtype = XNVME_BE_ASYNC,
+		.name = "emu",
+		.descr = "Use emulated asynchronous I/O",
+		.async = &g_xnvme_be_cbi_async_emu,
+		.check_support = xnvme_be_supported,
+	},
+	{
+		.mtype = XNVME_BE_ASYNC,
 		.name = "thrpool",
 		.descr = "Use thread pool for Asynchronous I/O",
 		.async = &g_xnvme_be_cbi_async_thrpool,
