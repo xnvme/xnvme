@@ -3,41 +3,47 @@
 FreeBSD
 =======
 
-.. _sec-backends-freebsd-identifiers:
-
-Device Identifiers
-------------------
-
-FreeBSD expose NVMe devices via the following device-files:
-
-* ``/dev/nvme{ctrlr_id}``, NVMe Controller device node
-* ``/dev/nvme{ctrlr_id}ns{ns_id}``, NVMe Namespace as device node
-* ``/dev/nda{num}``, NVMe Namespace as storage device node
-* ``/dev/nvd{num}``, NVMe Namespace as disk drive
-
-For details see the following man-pages::
-
-  nvme, nda, nvd, pci, disk, and nvmecontrol
-
-The FreeBSD backend uses synchronous ``ioctl`` calls to have the kernel perform
-NVMe commands.
-
 .. _sec-backends-freebsd-configuration:
 
 System Configuration
 --------------------
 
-... notes on io_uring support kernel versions on mainline kernel.
+To use the FreeBSD backend you need to be running FreeBSD. xNVMe is likely to
+work on multiple different versions of FreeBSD, however to ensure compatibility
+we recommend using a version listed in the :ref:`sec-toolchain` section.
+
+.. _sec-backends-freebsd-identification:
+
+Device Identification
+---------------------
+
+FreeBSD exposes NVMe devices as files using the following naming schemes:
+
+``/dev/nvme{ctrlr_id}``
+   **NVMe** Controller device node
+
+``/dev/nvme{ctrlr_id}ns{ns_id}``
+   **NVMe** Namespace as device node
+
+``/dev/nda{num}``
+   **NVMe** Namespace as storage device node
+
+``/dev/nvd{num}``
+   **NVMe** Namespace as disk drive
+
+For details see the man-pages for ``nvme``, ``nda``, ``nvd``, ``pci``, ``disk``,
+and ``nvmecontrol``.
 
 .. _sec-backends-freebsd-instrumentation:
 
-Instrumentation
----------------
+Backend Instrumentation
+-----------------------
 
-The backend identifier for the Linux backend is: ``linux``. The Linux backend
-encapsulate the interfaces below, some of these are **mix-ins** from the
-**Common-Backend Implementations** for these, links point to descriptions in the
-CBI section. For the Linux-specific, descriptions are available in subsection.
+The backend identifier for the FreeBSD backend is: ``fbsd``. The FreeBSD backend
+encapsulates the interfaces below. Some of these are **mix-ins** from the
+**Common-Backend Implementations**. For these, links point to descriptions in
+the CBI section. For the FreeBSD-specific interfaces, descriptions are available in the
+corresponding subsections.
 
 * Memory Allocators
 
@@ -46,7 +52,7 @@ CBI section. For the Linux-specific, descriptions are available in subsection.
 
 * Asynchronous Interfaces
 
-  - ``kqueue``, add link to section here
+  - ``kqueue``, Use kqueue based aio for Asynchronous I/O
   - ``posix``, add link to CBI
   - ``emu``, add link to CBI
   - ``thrpool``, add link to CBI
@@ -57,14 +63,13 @@ CBI section. For the Linux-specific, descriptions are available in subsection.
   - ``nvme``, Use FreeBSD NVMe Driver ioctl() for synchronous I/O
   - ``psync``, Use pread()/write() for synchronous I/O
 
+* Admin Interfaces
+
+  - ``nvme``, Use FreeBSD NVMe Driver ioctl() for admin commands
+
 * Device Interfaces
 
-  - ``linux``, Use Linux file/dev handles and enumerate NVMe devices
-
-By default the Linux backend will use ``emu`` for async. emulation wrapping
-around the synchronous Linux ``nvme`` driver ioctl-interface. This is done as
-it has the broadest command-support. For effiency, one can tap into using the
-``io_uring`` and ``io_uring_cmd``.
+  - ``fbsd``, Use FreeBSD file/dev handles and enumerate NVMe devices
 
 .. toctree::
    :maxdepth: 2
