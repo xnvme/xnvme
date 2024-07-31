@@ -3,42 +3,57 @@
 Linux
 =====
 
-...
+.. _sec-backends-linux-configuration:
 
-Device Identifiers
-------------------
+System Configuration
+--------------------
 
-Linux exposes storage devices as device files using the following naming schemes.
+To use the Linux backend you need to be running a Linux distribution. xNVMe
+is likely to work on most Linux distributions, however to ensure compatibility
+we recommend using one of the distributions listed in the :ref:`sec-toolchain`
+section.
+
+To use the async. interfaces ``libaio``, ``io_uring``, and ``io_uring_cmd``
+they need to be enabled in the Linux Kernel. You can check for support by
+running the command ``cat /boot/config-$(uname -r)``. If the output includes
+``CONFIG_AIO=y`` and ``CONFIG_IO_URING=y``, then there is support for ``libaio``
+and ``io_uring``, respectively. Note, it is slightly more complicated to
+check whether ``io_uring_cmd`` is supported. In general, you can assume it is
+supported if your kernel version is 5.19 or newer and ``io_uring`` is supported.
+
+.. _sec-backends-linux-identification:
+
+Device Identification
+---------------------
+
+Linux exposes storage devices as files using the following naming schemes:
 
 ``/dev/nvme{ctrlr_num}``
-   **NVMe** Controllers as character device
+   **NVMe** Controller as character device
   
 ``/dev/nvme{ctrlr_num}n{namespace_num}``
    **NVMe** Namespace as block device (Command-Sets: NVM, ZNS)
   
 ``/dev/ng{ctrlr_num}n{namespace_num}``
-   **NVMe** Namespace as characater device (Command-sets: Key-Value, ZNS-nonpo2, etc.)
+   **NVMe** Namespace as character device (Command-sets: Key-Value, ZNS-nonpo2, etc.)
   
 ``/dev/sd{a-z}``
-   Block device representing multiple devivces: **SCSI**, **SATA**,
+   Block device representing multiple devices: **SCSI**, **SATA**,
    **USB**-Sticks, etc.
   
 ``/dev/hd{a-z}``
    **IDE** Drives (Harddisk, CD/DVD Drives)
 
-System Configuration
---------------------
+.. _sec-backends-linux-instrumentation:
 
-... notes on io_uring support kernel versions on mainline kernel.
-
-
-Instrumentation
----------------
+Backend Instrumentation
+-----------------------
 
 The backend identifier for the Linux backend is: ``linux``. The Linux backend
-encapsulate the interfaces below, some of these are **mix-ins** from the
-**Common-Backend Implementations** for these, links point to descriptions in the
-CBI section. For the Linux-specific, descriptions are available in subsection.
+encapsulates the interfaces below. Some of these are **mix-ins** from the
+**Common-Backend Implementations**. For these, links point to descriptions in
+the CBI section. For the Linux-specific interfaces, descriptions are available
+in the corresponding subsection.
 
 * Memory Allocators
 
@@ -48,9 +63,9 @@ CBI section. For the Linux-specific, descriptions are available in subsection.
 
 * Asynchronous Interfaces
 
-  - ``libaio``, Linux Asynchronous IO.
-  - ``io_uring``, the efficient Linux IO interface, io_uring.
-  - ``io_uring_cmd``, the efficient Linux IO interface, io_uring.
+  - ``libaio``, Use Linux aio for Asynchronous I/O
+  - ``io_uring``, Use Linux io_uring for Asynchronous I/O
+  - ``io_uring_cmd``, Use Linux io_uring passthru command for Asynchronous I/O
   - ``emu``, add link to CBI
   - ``posix``, add link to CBI
   - ``thrpool``, add link to CBI
@@ -64,6 +79,7 @@ CBI section. For the Linux-specific, descriptions are available in subsection.
 
 * Admin Interfaces
 
+  - ``nvme``, Use Linux NVMe Driver ioctl() for admin commands
   - ``block``, Use Linux Block Layer ioctl() and sysfs for admin commands
 
 * Device Interfaces
