@@ -10,28 +10,27 @@ within the **xNVMe** library, offering a unified interface through the
 **xNVMe** :ref:`sec-api`. This enables you to switch between system interfaces,
 libraries, and drivers at runtime without altering your application logic.
 
-While **xNVMe** abstracts these differences, it's still important to understand
-specifics related to your platform, system interfaces, and supporting libraries.
-Each section covers the following topics.
+While **xNVMe** abstracts away most differences, it's still important to
+understand the specifics related to your platform, system interfaces, and
+supporting libraries. For each backend we will cover the following topics:
+System configuration, device identification, and backend instrumentation.
 
-Device identification
-   The schema for identifying devices differ across platforms and interfaces,
-   such as naming conventions for NVMe device files can be as different
-   as ``/dev/nvme0n1``, ``/dev/ng0n1``, ``/dev/nvme0ns1``, ``disk4``, ``\
-   \. \PhysicalDevice2`` and PCI device handles for user-space devices
-   ``0000:02:00.0`` and NVMe/TCP endpoints ``172.10.10.10:4420``.
-   
-System configuration
-   This is mostly conserned with the setup and use of OS kernel bypassing
-   interfaces such as the user-space NVMe drivers provided by ``SPDK/NVMe``
-   and ``libvfn``
+System Configuration
+   Some backends or I/O interfaces require you to configure your system in
+   a certain way to use them. Examples include using a specific OS kernel or
+   running a script to attach or detach devices.
 
-Backend instrumentation
-   On a given platform multiple interface can be available, the **xNVMe**
-   library makes a runtime decision on which interface to use when talking to
-   your device. You can overrule the library decision, however, to do so, you
-   need to know what the available options are, what they are named and what
-   they offer.
+Device Identification
+   The schema for identifying devices differ across platforms and
+   interfaces. Varying from file device handles, e.g. ``/dev/nvme0n1``, to
+   PCI device handles, e.g. ``0000:02:00.0``, and NVMe/TCP endpoints, e.g.
+   ``172.10.10.10:4420``.
+
+Backend Instrumentation
+   On a given platform multiple interface may be available. At runtime,
+   the **xNVMe** library makes a decision on which interface to use. You
+   can overrule this decision, however, to do so, you need to know what the
+   available options are, what they are named, and what they offer.
 
 The valid combinations of interfaces and backends are listed below:
 
@@ -53,7 +52,7 @@ The valid combinations of interfaces and backends are listed below:
      - no
      - no
      - no
-   * - io_uring command (ucmd)
+   * - io_uring passthru
      - **yes**
      - no
      - no
@@ -95,14 +94,14 @@ The valid combinations of interfaces and backends are listed below:
      - no
      - **yes**
      - no
-   * - I/O Control Ports (iocp)
+   * - I/O Control Ports
      - no
      - no
      - **yes**
      - no
      - no
      - no
-   * - I/O Ring (io_ring)
+   * - I/O Ring
      - no
      - no
      - **yes**
@@ -131,7 +130,7 @@ The valid combinations of interfaces and backends are listed below:
      - **yes**
      - **yes**
 
-.. list-table:: Synchronous I/O and Administrative Commands
+.. list-table:: Synchronous I/O and Admin Commands
    :header-rows: 1
    :widths: 20 20 20 20 10 10 10
 
@@ -156,12 +155,26 @@ The valid combinations of interfaces and backends are listed below:
      - no
      - no
      - no
-   * - NVMe/Driver ioctl()
+   * - NVMe Driver ioctl()
      - **yes**
      - **yes**
      - **yes**
      - no
      - no
+     - no
+   * - NVMe Driver (vfio-pci)
+     - no
+     - no
+     - no
+     - no
+     - **yes**
+     - **yes**
+   * - NVMe Driver (uio-generic)
+     - no
+     - no
+     - no
+     - no
+     - **yes**
      - no
 
 .. list-table:: Memory interfaces
