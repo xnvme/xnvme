@@ -18,7 +18,7 @@ from typing import Any, Dict, Iterator, List, Optional
 
 from cijoe.core.command import Cijoe
 
-LATENCY_TEST_SIZE: str = "1G"
+LATENCY_TEST_SIZE: str = "100%"
 LATENCY_TEST_ROOT_DIR: Path = Path("/tmp/")
 
 CijoeEngines = Dict[str, Dict[str, str]]
@@ -284,7 +284,6 @@ class FIO:
     iodepth: str
     time_based: str
     runtime: str
-    eta_newline: str
     ramp_time: str
     norandommap: str
     thread: str
@@ -302,9 +301,7 @@ class FIO:
             f"--iodepth={self.iodepth}",
             f"--output-format={self.output_format}",
             f"--time_based={self.time_based}",
-            "--group_reporting",
             f"--runtime={self.runtime}",
-            f"--eta-newline={self.eta_newline}",
             f"--ramp_time={self.ramp_time}",
             f"--norandommap={self.norandommap}",
             f"--thread={self.thread}",
@@ -364,13 +361,12 @@ def main(args, cijoe: Cijoe, step: Dict[str, Any]):
                     devices=devices,
                     name=f"{engine.name_id}",
                     rw="randread",
-                    size=LATENCY_TEST_SIZE,
+                    size=LATENCY_TEST_SIZE if engine.group != "null" else "1G",
                     bs=iosize,
                     iodepth=iodepth,
                     output_format="json",
                     time_based="1",
                     runtime="10",
-                    eta_newline="1",
                     ramp_time="5",
                     norandommap="1",
                     thread="1",
