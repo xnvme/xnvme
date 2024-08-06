@@ -15,3 +15,4 @@ In the future, more tutorials will be added with the purpose of introducing the 
    devs/index.rst
    dynamic_loading/index.rst
    fabrics/index.rst
+   bdev_xnvme/index.rst
