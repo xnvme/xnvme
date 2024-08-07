@@ -52,10 +52,10 @@ integration of changes / contributions:
 
 * Build issues
 
-  - On a rich collection of Linux Distributions
-  - macOS 12, 13
-  - Windows 2022
-
+  - Build with debug enabled and disabled
+  - Detect linking issues with both the static and shared library
+  - Tested on every OS listed in the :ref:`sec-toolchain` section
+  
 * Functional regressions
 
   - Running logical tests exercising all code-paths
