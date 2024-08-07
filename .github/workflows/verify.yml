@@ -662,7 +662,8 @@ jobs:
     - name: Runnner-prep, clean up self-hosted left-overs
       run: |
         pkill -f qemu || true
-        rm -r $HOME/guests || true
+        rm -rf $HOME/guests 
+        rm -rf $HOME/images 
         rm -r /tmp/artifacts || true
         mkdir -p /tmp/artifacts || true
         rm -rf *
@@ -958,6 +959,8 @@ jobs:
     steps:
     - name: Runnner-prep, clean up self-hosted left-overs
       run: |
+        rm -rf $HOME/guests 
+        rm -rf $HOME/images 
         rm -rf *
         ls -lh
 
