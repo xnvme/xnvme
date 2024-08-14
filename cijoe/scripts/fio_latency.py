@@ -61,6 +61,10 @@ class Engines(Enum):
     NIL = "nil"
     SPDK_NVME = "spdk_nvme"
     SPDK_BDEV = "spdk_bdev"
+    WINDOWSAIO = "windowsaio"
+    XNVME_IORING = "xnvme_ioring"
+    XNVME_IOCP = "xnvme_iocp"
+    XNVME_IOCPTH = "xnvme_iocpth"
     XNVME_IO_URING = "xnvme_io_uring"
     XNVME_IO_URING_CMD = "xnvme_io_uring_cmd"
     XNVME_KQUEUE = "xnvme_kqueue"
@@ -138,7 +142,7 @@ class XnvmeKernelEngine(KernelEngine):
         return f"{self.name}_{self.async_}"
 
     def extra_args(self) -> Dict[str, str]:
-        return {"-xnvme_be": f"{self.be}", "-xnvme_async": f"{self.async_}"}
+        return {"--xnvme_be": f"{self.be}", "--xnvme_async": f"{self.async_}"}
 
 
 @dataclass
@@ -178,9 +182,9 @@ class XnvmeNullEngine(XnvmeKernelEngine):
 class XnvmeSPDK(XnvmeUserSpaceEngine):
     def extra_args(self) -> Dict[str, str]:
         return {
-            "-xnvme_be": f"{self.be}",
-            "-xnvme_async": f"{self.async_}",
-            "-xnvme_dev_nsid": str(self.device.nsid),
+            "--xnvme_be": f"{self.be}",
+            "--xnvme_async": f"{self.async_}",
+            "--xnvme_dev_nsid": str(self.device.nsid),
         }
 
     @property
@@ -215,7 +219,7 @@ class BdevExternalPreloader(ExternalPreloader):
             .get("build", {})
             .get("spdk_json_conf")
         )
-        return {"-spdk_json_conf": f"{spdk_json_conf}"}
+        return {"--spdk_json_conf": f"{spdk_json_conf}"}
 
     @property
     def filename(self) -> str:
@@ -261,6 +265,10 @@ def determine_engine(
         Engines.XNVME_NULL.value: XnvmeNullEngine,
         Engines.SPDK_NVME.value: ExternalPreloader,
         Engines.SPDK_BDEV.value: BdevExternalPreloader,
+        Engines.XNVME_IORING.value: XnvmeKernelEngine,
+        Engines.XNVME_IOCP.value: XnvmeKernelEngine,
+        Engines.XNVME_IOCPTH.value: XnvmeKernelEngine,
+        Engines.WINDOWSAIO.value: KernelEngine,
     }
 
     if engine_identifier in id2engine:
@@ -288,11 +296,15 @@ class FIO:
     norandommap: str
     thread: str
 
-    def cmd(self) -> List[str]:
-        return [
+    def cmd(self, os_name) -> List[str]:
+        args = [
             f"{self.binary}",
             f"--name={self.name}",
-            f'--filename="{self.engine.filename}"',
+            (
+                f"--filename={self.engine.filename}"
+                if os_name == "windows"
+                else f'--filename="{self.engine.filename}"'
+            ),
             f"--ioengine={self.engine.name}",
             f"--direct={self.engine.direct}",
             f"--rw={self.rw}",
@@ -305,7 +317,15 @@ class FIO:
             f"--ramp_time={self.ramp_time}",
             f"--norandommap={self.norandommap}",
             f"--thread={self.thread}",
-        ] + [f'-{flag}="{value}"' for flag, value in self.engine.extra_args().items()]
+        ]
+
+        extra_args = self.engine.extra_args().items()
+        if os_name == "windows":
+            args += [f"{flag}={value}" for flag, value in extra_args]
+        else:
+            args += [f'{flag}="{value}"' for flag, value in extra_args]
+
+        return args
 
     def env(self) -> Dict[str, str]:
         return self.engine.env()
@@ -320,6 +340,7 @@ def main(args, cijoe: Cijoe, step: Dict[str, Any]):
     runs = step.get("with", {}).get("runs", [])
     io_engines: CijoeEngines = cijoe.config.options.get("fio", {}).get("engines")
     devices: List[Device] = list(determine_devices(cijoe.config.options.get("devices")))
+    os_name = cijoe.config.options.get("os", {}).get("name", "")
 
     artifacts = Path(args.output) / "artifacts"
     os.makedirs(str(artifacts), exist_ok=True)
@@ -346,7 +367,8 @@ def main(args, cijoe: Cijoe, step: Dict[str, Any]):
                 iodepth,
             ) in enumerate(combinations):
                 engine = determine_engine(eng, setup, devices, cijoe)
-                engine.prepare()
+                if os_name != "windows":
+                    engine.prepare()
 
                 output_path = (
                     artifacts / f"fio-output_IOSIZE={iosize}_IODEPTH={iodepth}_"
@@ -361,7 +383,11 @@ def main(args, cijoe: Cijoe, step: Dict[str, Any]):
                     devices=devices,
                     name=f"{engine.name_id}",
                     rw="randread",
-                    size=LATENCY_TEST_SIZE if engine.group != "null" else "1G",
+                    size=(
+                        LATENCY_TEST_SIZE
+                        if engine.group not in ["null", "windowsaio"]
+                        else "1G"
+                    ),
                     bs=iosize,
                     iodepth=iodepth,
                     output_format="json",
@@ -371,7 +397,7 @@ def main(args, cijoe: Cijoe, step: Dict[str, Any]):
                     norandommap="1",
                     thread="1",
                 )
-                cmd = " ".join(fio.cmd())
+                cmd = " ".join(fio.cmd(os_name))
 
                 log.info(f"Executing the command: {cmd}")
 

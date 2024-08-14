@@ -40,3 +40,16 @@ xnvme_null:
 
 "null":
   legend: 'null'
+
+# Windows
+xnvme_io_ring:
+  legend: 'xnvme(ioring)'
+
+xnvme_iocp:
+  legend: 'xnvme(iocp)'
+
+xnvme_iocp_th:
+  legend: 'xnvme(iocp_th)'
+
+windowsaio:
+  legend: 'windowsaio'
