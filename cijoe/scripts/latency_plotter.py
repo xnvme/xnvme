@@ -118,7 +118,12 @@ def draw_bar_plot(data, plot_attributes, xlabel=None, ylabel=None, y_limit=None)
 
     multiplier = 0
 
-    for i, samples in enumerate(data.values()):
+    # Sort to ensure engines will get the same colours across
+    # different plots
+    datavalues = list(data.values())
+    datavalues.sort(key=lambda samples: samples["label"])
+
+    for i, samples in enumerate(datavalues):
         label = samples["label"]
         attrs = plot_attributes["legends"].get(label, None)
         if attrs is None:
