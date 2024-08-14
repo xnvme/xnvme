@@ -185,7 +185,7 @@ def read_os_windows(cijoe) -> Tuple[int, Tuple[str, str]]:
     operating_system = ""
     kernel = ""
 
-    err, state = cijoe.run('systeminfo | findstr /B /C:"OS Name" /B /C:"OS Version"')
+    err, state = cijoe.run('systeminfo | grep "^OS"')
     if err:
         log.error(f"failed(systeminfo): err({err})")
         return err, None
@@ -201,7 +201,7 @@ def read_os_windows(cijoe) -> Tuple[int, Tuple[str, str]]:
     return 0, (operating_system, kernel)
 
 
-def read_hardware_pwsh(cijoe) -> HardwareSpec | int:
+def read_hardware_windows(cijoe) -> HardwareSpec | int:
     CS_PROCESSORS = "CsProcessors"
     CS_MANUFACTURER = "CsManufacturer"
     CS_MODEL = "CsModel"
@@ -214,9 +214,7 @@ def read_hardware_pwsh(cijoe) -> HardwareSpec | int:
         model = ""
         cpu = ""
 
-        err, state = cijoe.run(
-            f'get-computerinfo | findstr /B /C:"{CS_PROCESSORS}" /B /C:"{CS_MANUFACTURER}" /B /C:"{CS_MODEL}"'
-        )
+        err, state = cijoe.run('powershell "get-computerinfo"')
         if err:
             log.error(f"failed(get-computerinfo): err({err})")
             return err, None
@@ -230,6 +228,11 @@ def read_hardware_pwsh(cijoe) -> HardwareSpec | int:
                 manufacturer = line.replace(CS_MANUFACTURER, "").strip()[1:].strip()
             elif CS_MODEL in line:
                 model = line.replace(CS_MODEL, "").strip()[1:].strip()
+
+            # if all values have been found, break the loop
+            if len(manufacturer) and len(model) and len(cpu):
+                break
+
         return 0, (f"{manufacturer} {model}", cpu)
 
     def get_memory() -> Tuple[int, str]:
@@ -237,9 +240,7 @@ def read_hardware_pwsh(cijoe) -> HardwareSpec | int:
         capacity = ""
         formfactor = ""
 
-        err, state = cijoe.run(
-            f'get-wmiobject Win32_PhysicalMemory | findstr /B /C:"{SPEED}" /B /C:"{FORMFACTOR}"'
-        )
+        err, state = cijoe.run('powershell "get-wmiobject Win32_PhysicalMemory"')
         if err:
             log.error(f"failed(Get-WmiObject Win32_PhysicalMemory): err({err})")
             return err, None
@@ -280,7 +281,13 @@ def read_hardware_pwsh(cijoe) -> HardwareSpec | int:
                 formfactor = line.replace(FORMFACTOR, "").strip()[1:].strip()
                 formfactor = formfactor2name.get(formfactor, "Unknown")
 
-        err, state = cijoe.run(f'systeminfo | findstr /B /C:"{CAPACITY}"')
+            # if all values have been found, break the loop
+            if len(speed) and len(formfactor):
+                break
+
+        err, state = cijoe.run(
+            f'powershell "systeminfo | findstr /B /C:\\"{CAPACITY}\\""'
+        )
         if err:
             log.error(f"failed(systeminfo): err({err})")
             return err, None
@@ -302,7 +309,9 @@ def read_hardware_pwsh(cijoe) -> HardwareSpec | int:
     def get_drives() -> Tuple[int, Dict[str, str]]:
         drives = {}
 
-        err, state = cijoe.run("get-disk | format-table Number, FriendlyName")
+        err, state = cijoe.run(
+            'powershell "get-disk | format-table Number, FriendlyName"'
+        )
         if err:
             log.error(f"failed(get-disk): err({err})")
             return err, None
@@ -346,24 +355,21 @@ def main(args, cijoe, step):
     bios_version = ""
 
     shell = cijoe.config.options.get("cijoe", {}).get("run", {}).get("shell", "sh")
+    os = cijoe.config.options.get("os", {}).get("name", "")
 
-    if shell in ["cmd", "pwsh"]:
+    if os == "windows":
         err, os = read_os_windows(cijoe)
         if err:
             return err
-
         operating_system, kernel = os
 
-        if shell == "pwsh":
-            err, hardware = read_hardware_pwsh(cijoe)
-            if err:
-                return err
-            motherboard, cpu, memory, drives = hardware
-        else:
-            log.info("Reading hardware for Windows cmd not supported.")
+        err, hardware = read_hardware_windows(cijoe)
+        if err:
+            return err
+        motherboard, cpu, memory, drives = hardware
 
         # Get BIOS info
-        err, state = cijoe.run("wmic bios get biosversion")
+        err, state = cijoe.run('powershell "wmic bios get biosversion"')
         if err:
             log.error(f"failed(wmic bios get biosversion); err({err})")
             return err

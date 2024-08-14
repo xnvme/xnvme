@@ -23,14 +23,14 @@ def main(args, cijoe, step):
     xnvme_source = step.get("with", {}).get("xnvme_source", conf["repository"]["path"])
 
     commands = [
-        "cd builddir && meson compile",
-        "cd builddir && meson install",
-        "cd builddir && meson --internal uninstall",
-        "cd builddir && meson install",
-        "cat builddir/meson-logs/meson-log.txt",
+        "meson compile",
+        "meson install",
+        "meson --internal uninstall",
+        "meson install",
+        "cat meson-logs/meson-log.txt",
     ]
     for cmd in commands:
-        err, _ = cijoe.run(cmd, cwd=xnvme_source)
+        err, _ = cijoe.run(cmd, cwd=f"{xnvme_source}/builddir")
         if err:
             return err
 

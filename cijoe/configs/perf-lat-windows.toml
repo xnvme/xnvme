@@ -1,0 +1,52 @@
+[cijoe.transport.ssh]
+hostname = "perf-lat-win.home.arpa"
+port = 22
+username = "root"
+password = "root"
+
+[os]
+name = "windows"
+prettyname = "Windows"
+version = "11"
+
+[cijoe.run]
+shell = "bash"
+
+[xnvme.repository]
+remote = "https://github.com/xnvme/xnvme.git"
+path = "C:/Users/root/git/xnvme"
+branch = "next"
+
+[xnvme.build]
+type = "debug"
+
+[fio]
+bin = "C:/Users/root/git/fio/fio.exe"
+
+[fio.repository]
+remote = "https://github.com/axboe/fio.git"
+path = "C:/Users/root/git/fio"
+tag = "fio-3.36"
+
+[fio.engines]
+
+null = {type = "builtin", group = "null", device = "bdev"}
+windowsaio = {type = "builtin", group = "windowsaio", device = "bdev"}
+
+xnvme_null = {type = "builtin", group = "null", be = "windows", async = "nil", device = "bdev"}
+xnvme_ioring = {type = "builtin", group = "windowsaio", be = "windows", async = "io_ring", device = "bdev"}
+xnvme_iocp = {type = "builtin", group = "windowsaio", be = "windows", async = "iocp", device = "bdev"}
+xnvme_iocpth = {type = "builtin", group = "windowsaio", be = "windows", async = "iocp_th", device = "bdev"}
+  
+[[devices]] 
+key = "bdev"
+uri = "\\\\.\\PhysicalDrive1" # backslashes need to be escaped
+nsid = 1
+labels = ["dev", "bdev", "nvm"]
+driver_attachment = "kernel"
+
+[[duts]]
+pcie = "0000:03:00.0"
+os = "0n1"
+sn = "PHBT718003QR016D"
+label = "INTELM1016G"

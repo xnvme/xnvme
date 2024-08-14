@@ -23,11 +23,16 @@ def main(args, cijoe, step):
         return errno.EINVAL
 
     xnvme_source = step.get("with", {}).get("xnvme_source", conf["repository"]["path"])
+    os_name = cijoe.config.options.get("os", {}).get("name", "")
 
     commands = [
         "git rev-parse --short HEAD || true",
         "rm -r builddir || true",
-        "meson setup builddir",
+        (
+            'meson setup builddir --prefix "C:/tools/msys64/usr" --default-library=static'
+            if os_name == "windows"
+            else "meson setup builddir"
+        ),
         "meson compile -C builddir",
         "cat builddir/meson-logs/meson-log.txt",
     ]

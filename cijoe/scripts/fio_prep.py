@@ -19,8 +19,9 @@ def main(args, cijoe, step):
     if not repos:
         return 1
 
-    err, _ = cijoe.run("gmake --version")
-    make = "make" if err else "gmake"
+    shell = cijoe.config.options.get("cijoe", {}).get("run", {}).get("shell", "sh")
+
+    make = "gmake" if shell == "csh" else "make"
 
     commands = [
         (f"git clone {repos['remote']} {repos['path']} || true", "/tmp"),
