@@ -30,6 +30,8 @@ def main(args, cijoe, step):
     commands = [
         "./toolbox/pkgs/docgen.sh",
         "cd docs/autogen && make deps",
+        "xnvme-driver",  # enforce deterministic mapping of pcie to kernel namespaces
+        "xnvme-driver reset",  # i.e. 0000:03:000 always becomes nvme0n*
         "xnvme enum",
         "xnvme library-info",
         "pkg-config xnvme --variable=libdir",
