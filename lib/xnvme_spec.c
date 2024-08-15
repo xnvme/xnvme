@@ -83,6 +83,57 @@ xnvme_spec_log_health_pr(const struct xnvme_spec_log_health_entry *log, int opts
 	return xnvme_spec_log_health_fpr(stdout, log, opts);
 }
 
+int
+xnvme_spec_log_sanitize_fpr(FILE *stream, const struct xnvme_spec_log_sanitize_entry *log,
+			    int opts)
+{
+	int wrtn = 0;
+
+	switch (opts) {
+	case XNVME_PR_TERSE:
+		wrtn += fprintf(stream, "# ENOSYS: opts(0x%x)", opts);
+		return wrtn;
+
+	case XNVME_PR_DEF:
+	case XNVME_PR_YAML:
+		break;
+	}
+	wrtn += fprintf(stream, "xnvme_spec_log_sanitize_entry:");
+
+	if (!log) {
+		wrtn += fprintf(stream, " ~\n");
+		return wrtn;
+	}
+
+	wrtn += fprintf(stream, "\n");
+	wrtn += fprintf(stream, "  sanitize progress: %" PRIu16 "\n", log->sprog);
+	wrtn += fprintf(stream, "  sanitize status: %" PRIu16 "\n", log->sstat.val);
+	wrtn += fprintf(stream, "  sanitize command dw10: %" PRIu32 "\n", log->scdw10);
+	wrtn += fprintf(stream, "  est. time for overwrite: %" PRIu32 "\n", log->eto);
+	wrtn += fprintf(stream, "  est. time for block erase: %" PRIu32 "\n", log->etbe);
+	wrtn += fprintf(stream, "  est. time for crypto erase: %" PRIu32 "\n", log->etce);
+	wrtn += fprintf(stream,
+			"  est. time for overwrite with no-dealloc media modification: %" PRIu32
+			"\n",
+			log->etodmm);
+	wrtn += fprintf(stream,
+			"  est. time for block erase with no-dealloc media modification: %" PRIu32
+			"\n",
+			log->etbenmm);
+	wrtn += fprintf(stream,
+			"  est. time for crypto erase with no-dealloc media modification: %" PRIu32
+			"\n",
+			log->etcenmm);
+	wrtn += fprintf(stream, "  sanitize state information: %" PRIu8 "\n", log->ssi);
+	return wrtn;
+}
+
+int
+xnvme_spec_log_sanitize_pr(const struct xnvme_spec_log_sanitize_entry *log, int opts)
+{
+	return xnvme_spec_log_sanitize_fpr(stdout, log, opts);
+}
+
 static inline int
 log_erri_entry_fpr_yaml(FILE *stream, const struct xnvme_spec_log_erri_entry *entry, int indent,
 			const char *sep)

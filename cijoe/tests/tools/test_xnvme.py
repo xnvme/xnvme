@@ -75,14 +75,20 @@ def test_format(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-@xnvme_parametrize(labels=["nvm"], opts=["be", "admin"])
+@xnvme_parametrize(labels=["nvm", "sanitize"], opts=["be", "admin"])
 def test_sanitize(cijoe, device, be_opts, cli_args):
     if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
         pytest.skip(reason="[admin=block] does not implement sanitize")
+    if "ramdisk" in device["labels"]:
+        pytest.skip(reason="[be=ramdisk] does not implement sanitize")
 
-    pytest.skip(reason="TODO: always fails. Investigate.")
+    err, _ = cijoe.run(f"xnvme sanitize --sanact 0x2 {cli_args}")
 
-    err, _ = cijoe.run(f"xnvme sanitize {cli_args}")
+    assert not err
+
+    # Get log sanitize status log page
+    err, _ = cijoe.run(f"xnvme log-sanitize {cli_args} --nsid {device['nsid']}")
+
     assert not err
 
 

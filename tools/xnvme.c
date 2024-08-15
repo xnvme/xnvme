@@ -329,6 +329,47 @@ exit:
 }
 
 static int
+sub_log_sanitize(struct xnvme_cli *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	uint32_t nsid = cli->args.nsid;
+
+	struct xnvme_spec_log_sanitize_entry *log = NULL;
+	const size_t log_nbytes = sizeof(*log);
+	int err;
+
+	if (!cli->given[XNVME_CLI_OPT_NSID]) {
+		nsid = xnvme_dev_get_nsid(cli->args.dev);
+	}
+
+	xnvme_cli_pinf("Allocating and clearing buffer...");
+	log = xnvme_buf_alloc(dev, log_nbytes);
+	if (!log) {
+		err = -errno;
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
+		goto exit;
+	}
+	memset(log, 0, log_nbytes);
+
+	xnvme_cli_pinf("Retrieving Sanitize log page ...");
+	err = xnvme_adm_log(&ctx, XNVME_SPEC_LOG_SANITIZE, 0x0, 0, nsid, 0, log, log_nbytes);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		xnvme_cli_perr("xnvme_adm_log(XNVME_SPEC_LOG_SANITIZE)", err);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+		err = err ? err : -EIO;
+		goto exit;
+	}
+
+	xnvme_spec_log_sanitize_pr(log, XNVME_PR_DEF);
+
+exit:
+	xnvme_buf_free(dev, log);
+
+	return err;
+}
+
+static int
 sub_log_fdp_config(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
@@ -1296,6 +1337,22 @@ static struct xnvme_cli_sub g_subs[] = {
 		"Retrieve the S.M.A.R.T. / Health information log",
 		"Retrieve and print log",
 		sub_log_health,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_DATA_OUTPUT, XNVME_CLI_LOPT},
+
+			XNVME_CLI_ADMIN_OPTS,
+		},
+	},
+	{
+		"log-sanitize",
+		"Retrieve the Sanitize Status log",
+		"Retrieve and print log",
+		sub_log_sanitize,
 		{
 			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},

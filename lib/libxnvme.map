@@ -215,6 +215,7 @@
 		xnvme_spec_status;
 		xnvme_spec_cpl;
 		xnvme_spec_log_health_entry;
+		xnvme_spec_log_sanitize_entry;
 		xnvme_spec_log_erri_entry;
 		xnvme_spec_ruh_desc;
 		xnvme_spec_fdp_conf_desc;
@@ -319,6 +320,8 @@
 		xnvme_spec_kvs_idfy;
 		xnvme_spec_log_health_fpr;
 		xnvme_spec_log_health_pr;
+		xnvme_spec_log_sanitize_fpr;
+		xnvme_spec_log_sanitize_pr;
 		xnvme_spec_log_erri_fpr;
 		xnvme_spec_log_erri_pr;
 		xnvme_spec_log_fdp_conf_pr;
