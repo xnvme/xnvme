@@ -843,6 +843,7 @@ jobs:
         guest:
         - {os: 'freebsd', labels: [self-hosted, X64, perf-lat, perf-lat-fbsd]}
         - {os: 'linux', labels: [self-hosted, X64, perf-lat, perf-lat-linux]}
+        - {os: 'windows', labels: [self-hosted, X64, perf-lat, perf-lat-win]}
     runs-on: ${{ matrix.guest.labels }}
 
     container:
