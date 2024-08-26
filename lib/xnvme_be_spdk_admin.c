@@ -22,7 +22,6 @@ cmd_sync_cb(void *cb_arg, const struct spdk_nvme_cpl *cpl)
 	*completed = 1;
 }
 
-// TODO: consider whether 'opts' should be used for anything here...
 static inline int
 cmd_admin_submit(struct spdk_nvme_ctrlr *ctrlr, struct xnvme_cmd_ctx *ctx, void *dbuf,
 		 uint32_t dbuf_nbytes, void *mbuf, uint32_t mbuf_nbytes, spdk_nvme_cmd_cb cb_fn,

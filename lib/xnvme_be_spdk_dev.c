@@ -632,14 +632,6 @@ enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
 	}
 }
 
-/**
- * TODO
- *
- * - Fix size of trid_str
- * - Make use of '?addrfam' for TCP  + RDMA transport when available in sys_uri
- * - Add enumerate FC / construction of identifiers
- * - Consider how to support enumerating custom transports
- */
 int
 xnvme_be_spdk_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
 			void *cb_args)
