@@ -17,9 +17,6 @@
 #include <xnvme_be_linux_liburing.h>
 #include <xnvme_be_linux.h>
 
-// TODO: replace this with liburing 0.7 barriers
-#define _linux_liburing_barrier() __asm__ __volatile__("" ::: "memory")
-
 #ifndef IORING_SETUP_SINGLE_ISSUER
 #define IORING_SETUP_SINGLE_ISSUER (1U << 12)
 #endif
