@@ -47,8 +47,6 @@ submit_ioc(struct spdk_nvme_ctrlr *ctrlr, struct spdk_nvme_qpair *qpair, struct 
 						  dbuf, dbuf_nbytes, mbuf, cb_fn, cb_arg);
 }
 
-// TODO: consider whether 'mbuf_nbytes' is needed here
-// TODO: consider whether 'opts' is needed here
 int
 xnvme_be_spdk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			  size_t XNVME_UNUSED(mbuf_nbytes))
