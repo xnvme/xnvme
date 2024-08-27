@@ -13,6 +13,9 @@
 #ifdef XNVME_BE_LINUX_ENABLED
 #include <xnvme_be_linux.h>
 #endif
+#ifdef XNVME_BE_WINDOWS_ENABLED
+#include <xnvme_be_windows.h>
+#endif
 
 static struct xnvme_be_mixin g_xnvme_be_mixin_ramdisk[] = {
 #ifdef XNVME_BE_CBI_MEM_POSIX_ENABLED
@@ -30,6 +33,15 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_ramdisk[] = {
 		.name = "hugepage",
 		.descr = "Allocate buffers using hugepages via mmap on hugetlbfs",
 		.mem = &g_xnvme_be_linux_mem_hugepage,
+		.check_support = xnvme_be_supported,
+	},
+#endif
+#ifdef XNVME_BE_WINDOWS_ENABLED
+	{
+		.mtype = XNVME_BE_MEM,
+		.name = "windows",
+		.descr = "Use Windows memory allocator",
+		.mem = &g_xnvme_be_windows_mem,
 		.check_support = xnvme_be_supported,
 	},
 #endif
