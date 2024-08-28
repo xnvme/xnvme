@@ -201,6 +201,10 @@ xnvme_path_nvme_filter(const struct dirent *d)
 		if (stat(path, &bd)) {
 			return 0;
 		}
+		if (sscanf(d->d_name, "nvme%d", &ctrl) == 1 && S_ISCHR(bd.st_mode)) {
+			// accept ctrlr handles like nvme0
+			return 1;
+		}
 		if (!S_ISBLK(bd.st_mode)) {
 			return 0;
 		}
@@ -248,8 +252,6 @@ xnvme_path_ng_filter(const struct dirent *d)
  * that dir, then instead /sys/block/ is scanned under the assumption that
  * block-devices with "nvme" in them are NVMe devices with namespaces attached
  *
- * TODO: add enumeration of NS vs CTRLR, actually, replace this with the libnvme
- * topology functions
  */
 int
 xnvme_be_linux_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
@@ -266,7 +268,7 @@ xnvme_be_linux_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enu
 	struct xnvme_opts tmp_opts = *opts;
 	tmp_opts.be = xnvme_be_linux.attr.name;
 
-	nns = scandir("/sys/block", &ns, xnvme_path_nvme_filter, alphasort);
+	nns = scandir("/dev", &ns, xnvme_path_nvme_filter, alphasort);
 	for (int ni = 0; ni < nns; ++ni) {
 		char uri[XNVME_IDENT_URI_LEN] = {0};
 		struct xnvme_dev *dev = NULL;
