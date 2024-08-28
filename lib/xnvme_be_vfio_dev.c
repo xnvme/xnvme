@@ -228,9 +228,6 @@ xnvme_be_vfio_dev_open(struct xnvme_dev *dev)
 		state->sq_sync = &state->ctrl->sq[qpid];
 		state->cq_sync = &state->ctrl->cq[qpid];
 
-		// TODO: ctrl->config will contain the actual number of queues
-		// created (zero-based)
-
 		err = _vfio_cref_insert(&dev->ident, ctrl);
 		if (err) {
 			XNVME_DEBUG("FAILED: _cref_insert()");
@@ -250,9 +247,7 @@ void
 xnvme_be_vfio_dev_close(struct xnvme_dev *dev)
 {
 	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
-	// TODO: this should work, but I'm getting errors from libvfio's
-	// nvme_init when attempting to initialize the device again. Not sure
-	// if the error is in my or libvfio's code.
+
 	if (_vfio_cref_deref(state->ctrl)) {
 		XNVME_DEBUG("FAILED: _vfio_cref_deref()");
 	}
