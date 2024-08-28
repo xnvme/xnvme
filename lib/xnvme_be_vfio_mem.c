@@ -63,13 +63,17 @@ xnvme_be_vfio_buf_free(const struct xnvme_dev *dev, void *buf)
 }
 
 int
-xnvme_be_vfio_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *XNVME_UNUSED(buf),
-			  uint64_t *XNVME_UNUSED(phys))
+xnvme_be_vfio_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys)
 {
-	// TODO: should this thing just map *buf to the iommu, i.e. same as is
-	// being done in `xnvme_be_vfio_buf_alloc` using `vfio_pci_dma_map()`?
-	errno = ENOSYS;
-	return -ENOSYS;
+	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
+	struct iommu_ctx *ctx = state->ctrl->pci.dev.ctx;
+
+	if (iommu_translate_vaddr(ctx, buf, phys)) {
+		XNVME_DEBUG("FAILED: iommu_translate_vaddr(-, %p): %s\n", buf, strerror(errno));
+		return -EIO;
+	}
+
+	return 0;
 }
 
 int
