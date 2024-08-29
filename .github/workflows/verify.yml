@@ -220,6 +220,7 @@ jobs:
       uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-src-archive-with-subprojects
+
     - name: Extract, and then remove, the xNVMe source archive
       run: |
         tar xzf xnvme-src.tar.gz --strip 1
@@ -295,6 +296,7 @@ jobs:
       uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-src-archive-with-subprojects
+
     - name: Extract, and then remove, the xNVMe source archive
       run: |
         tar xzf xnvme-src.tar.gz --strip 1
@@ -368,6 +370,7 @@ jobs:
       uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-py-sdist
+
     - name: Move, the xNVMe Python sdist package
       run: |
         mkdir -p /tmp/artifacts
@@ -451,6 +454,7 @@ jobs:
       uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-src-archive-with-subprojects
+
     - name: Extract, and then remove, the xNVMe source archive
       run: |
         tar xzf xnvme-src.tar.gz --strip 1
@@ -509,6 +513,7 @@ jobs:
       uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-py-sdist
+
     - name: Move, the xNVMe Python sdist package
       run: |
         mkdir -p /tmp/artifacts
@@ -559,12 +564,12 @@ jobs:
   # Build on Windows
   #
   build-windows:
-    needs: [source-archive-with-subprojects, source-format-check]
+    needs: [source-archive-with-subprojects, source-format-check, build-python]
     runs-on: ${{ matrix.runner.os }}-${{ matrix.runner.ver }}
     if: contains('push pull_request', github.event_name)
     defaults:
       run:
-        shell: powershell
+        shell: bash
 
     strategy:
       fail-fast: false
@@ -583,6 +588,7 @@ jobs:
         echo %SystemDrive%\tools\msys64\usr\bin>> %GITHUB_PATH%
 
     - name: Show paths
+      shell: powershell
       run: |
         echo $env:Path
 
@@ -590,6 +596,7 @@ jobs:
       uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-src-archive-with-subprojects
+
     - name: Extract, and then remove, the xNVMe source archive
       shell: bash
       run: |
@@ -597,19 +604,22 @@ jobs:
         rm xnvme-src.tar.gz
 
     - name: Install build-requirements
+      shell: powershell
       run: |
         Set-ExecutionPolicy Bypass -Scope Process -Force
         .\toolbox\pkgs\windows-2022.ps1
 
     - name: Configure and build with debug enabled
+      shell: bash
       run: |
         meson setup builddir --buildtype=debug
         meson compile -C builddir
         make clean # prepare for building without debug
 
     - name: Build!
+      shell: powershell
       run: |
-        meson setup builddir --prefix "$env:SystemDrive\tools\msys64\usr"
+        meson setup builddir --prefix "$env:SystemDrive\tools\msys64\usr" --default-library=static
         meson compile -C builddir
 
     - name: meson-log-dump
@@ -629,9 +639,21 @@ jobs:
         meson install -C builddir
 
     - name: Execute xnvme commands
+      shell: powershell
       run: |
         xnvme.exe library-info
         xnvme.exe enum
+
+    - name: Check pkg-config
+      shell: bash
+      run: |
+        pkg-config xnvme --libs
+        pkg-config xnvme --variable=datadir
+        pkg-config xnvme --variable=includedir
+        pkg-config xnvme --variable=libdir
+        pkg-config xnvme --variable=pcfiledir
+        pkg-config xnvme --variable=prefix
+        ls -lh $(pkg-config xnvme --variable=libdir) | grep xnvme
 
     - name: Check Python, pip, platform, and sysconfig
       shell: bash
@@ -640,6 +662,55 @@ jobs:
         python3 -m pip --version
         python3 -c "import platform; print(platform.system()); print(platform.uname())"
         python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
+
+    - name: Retrieve, the xNVMe Python sdist package
+      uses: actions/download-artifact@v4.1.1
+      with:
+        name: xnvme-py-sdist
+
+    - name: Move, the xNVMe Python sdist package
+      shell: powershell
+      run: |
+        New-Item -ItemType Directory -Force -Path C:\tmp\artifacts
+        Move-Item -Path xnvme-py-sdist.tar.gz -Destination C:\tmp\artifacts\xnvme-py-sdist.tar.gz
+
+    # Setup Python virtual-environment for cijoe and Python xNVMe bindings to run ramdisk testing
+    - name: CIJOE, setup pipx environment
+      run: |
+        make cijoe
+
+    - name: CIJOE, check that it is available
+      run: |
+        cijoe -r
+
+    #
+    # Ramdisk testing
+    #
+    - name: Install fio
+      shell: bash
+      run: |
+        rm -rf C:/tmp/fio
+        git clone https://github.com/axboe/fio.git C:/tmp/fio
+        cd C:/tmp/fio
+        git checkout fio-3.36
+        git rev-parse --short HEAD
+        make
+
+    - name: CIJOE, run test-ramdisk-windows.yaml
+      shell: bash
+      run: |
+        cd cijoe; cijoe \
+        --config "configs/ramdisk-windows.toml" \
+        --workflow "workflows/test-ramdisk-windows.yaml" \
+        --output "test-${{ matrix.runner.os }}-${{ matrix.runner.ver }}"
+
+    - name: CIJOE, upload test-ramdisk-report
+      if: always()
+      uses: actions/upload-artifact@v4.3.0
+      with:
+        name: test-ramdisk-${{ matrix.runner.os }}-${{ matrix.runner.ver }}
+        path: cijoe/test-${{ matrix.runner.os }}-${{ matrix.runner.ver }}/*
+        if-no-files-found: error
 
   #
   # Build and test xNVMe
