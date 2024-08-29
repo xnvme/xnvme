@@ -1,0 +1,42 @@
+[os]
+name = "windows"
+
+[cijoe.run]
+shell_bin = "C:/tools/msys64/usr/bin/bash.exe"
+
+[build.compiler]
+bin = "gcc"
+
+[[devices]]
+uri = "2GB"
+nsid = 1
+labels = [ "dev", "bdev", "nvm", "ramdisk", "scc" ]
+driver_attachment = "kernel"
+
+[fio]
+bin = "C:/tmp/fio/fio.exe"
+
+[fio.repository]
+remote = "https://github.com/axboe/fio.git"
+path = "C:/tmp/fio"
+tag = "fio-3.36"
+
+[fio.engines.libaio]
+type = "builtin"
+
+[fio.engines.io_uring]
+type = "builtin"
+
+[fio.engines.io_uring_cmd]
+type = "builtin"
+
+[fio.engines.xnvme]
+type = "builtin"
+
+[fio.engines.spdk_nvme]
+path = "/opt/aux/spdk_nvme"
+type = "external_preload"
+
+[fio.engines.spdk_bdev]
+path = "/opt/aux/spdk_bdev"
+type = "external_preload"

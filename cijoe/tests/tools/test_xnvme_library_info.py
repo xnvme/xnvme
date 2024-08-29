@@ -16,7 +16,10 @@ def grab_sysinfo(cijoe):
 def test_library_info_has_spdk(cijoe):
     info = grab_sysinfo(cijoe)
 
-    if "darwin" not in info["os"]:
+    is_macos = "darwin" in info["os"]
+    is_windows = "msys_nt" in info["os"]
+
+    if not (is_macos or is_windows):
         if "alpine" in info["rel"]:
             pytest.skip("SPDK does not support Alpine Linux; skipping")
             return

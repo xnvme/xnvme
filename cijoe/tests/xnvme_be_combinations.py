@@ -118,4 +118,33 @@ def get_combinations():
         },
     ]
 
+    combos["windows"] = [
+        {
+            "be": ["windows"],
+            "mem": ["windows"],
+            "async": ["emu", "thrpool", "iocp", "iocp_th", "ioring"],
+            "sync": ["nvme"],
+            "admin": ["nvme", "block"],
+            "label": ["bdev"],
+        },
+        # Ramdisk
+        {
+            "be": ["ramdisk"],
+            "admin": ["ramdisk"],
+            "async": ["emu", "thrpool"],
+            "mem": ["windows"],
+            "sync": ["ramdisk"],
+            "label": ["bdev", "ramdisk"],
+        },
+        # File-based I/O
+        {
+            "be": ["windows"],
+            "admin": ["file"],
+            "async": ["emu", "thrpool"],
+            "mem": ["windows"],
+            "sync": ["file"],
+            "label": ["file"],
+        },
+    ]
+
     return combos
