@@ -148,11 +148,6 @@ iokit_dep = dependency(
 )
 conf_data.set('XNVME_BE_MACOS_ENABLED', corefoundation_dep.found() and iokit_dep.found())
 
-rt_dep = cc.find_library('rt', required: is_darwin ? false : (is_linux or is_freebsd))
-if not cc.has_function('clock_gettime', prefix: '#include <time.h>', dependencies: rt_dep)
-  error('clock_gettime not found')
-endif
-
 conf_data.set('XNVME_BE_FBSD_ENABLED', is_freebsd)
 
 conf = configure_file(

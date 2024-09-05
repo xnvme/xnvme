@@ -88,7 +88,6 @@ xnvmelib_deps = [
   aio_dep,
   spdk_dep,
   thread_dep,
-  rt_dep,
 ]
 
 mapfile = 'libxnvme.map'
