@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-install_man('xnvme_hello-hw.1')
-install_man('xnvme_hello.1')
 install_man('xnvme_io_async-read.1')
 install_man('xnvme_io_async-write.1')
 install_man('xnvme_io_async.1')
