@@ -18,6 +18,83 @@ Known Issues
 
 See the file named ``ISSUES`` in the root of the repository.
 
+v0.7.5
+------
+
+For details, then see the commit-messages, for highlights see below.
+
+* API Extensions
+
+  - Add helper `xnvme_nvm_compare()`
+
+    - Plus emulation via ramdisk
+
+* API Refactoring
+
+  These are the changes you need to account for if you are using the following
+  functions defined in the public xNVMe API:
+
+  - `xnvme_nvm_sanitize()`: arguments 'oipbp' and 'nodas' are now `bool`
+  - `xnvme_znd_mgmt_recv()`: argument renamed from 'action' to `zra`
+  - `xnvme_znd_mgmt_send()`: argument renamed from 'action_so' to `zsaso`
+  - `xnvme_cli_args`
+  
+    - `{clear,direct,all,save,verbose,ad,idw,idr}*`: changed to `bool`
+    - `action` renamed to `sanact`
+    - `zrms` renamed to `zsa`
+    
+  - `xnvme_pi_generate`
+  
+    - `dbuf` renamed to `data_buf`
+    - `mbuf` renamed to `md_buf`
+
+  - Renamed `enum xnvme_retreive_opts` to `enum xnvme_retrieve_opts`
+
+* Backends
+
+  - The vfio backend now support iovec payloads
+
+* Library
+
+  - A version-script now controls library symbols, effectively preventing symbol
+    leakage from linked libraries.
+  - The build no longer fails when SPDK dependencies are not satisfied
+  
+    - Instead of failing the build, the SPDK backend is disabled.
+    - SPDK is still "special" in the sense that xNVMe builds and links a patched
+      version. However, the default behavior now is to disable the SPDK backend
+      instead of failing the build when transient dependencies are missing.
+      This is a much nicer behavior for users who simply grab xNVMe to consume
+      `io_uring` command and NVMe driver ioctl interfaces.
+
+  - Replaced custom shared/static library logic with default Meson handling
+
+    - The default is to build both the static and shared libraries.
+    - The tools, examples, and tests are by default linked with the shared
+      version of the library.
+    - To build only a single version, use '--default-library' specifying either
+      'static' or 'shared'.
+
+* Infrastructure
+
+  - The ramdisk workflow is now running on macOS.
+  - Expanded automated performance evaluation to include Windows and FreeBSD.
+  - Latency report
+  
+    - Overhead per command evaluated on Linux, FreeBSD, and Windows.
+    - Uses `fio`.
+    
+  - Scalability report
+  
+    - Single-core peak performance when using xNVMe via SPDK/bdev_xnvme.
+
+* Documentation
+
+  - The Sphinx-doc project theme now uses the (in)famous PyData Sphinx-theme.
+  - Major overhaul: the documentation and xNVMe website are now unified as a
+    Sphinx-doc project.
+  - A complete rewrite of the getting-started, toolchain, and API sections.
+
 v0.7.4
 ------
 
