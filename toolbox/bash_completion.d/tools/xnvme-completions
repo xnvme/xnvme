@@ -103,7 +103,7 @@ _xnvme_completions()
         ;;
 
     "sanitize")
-        opts+="--subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        opts+="--sanact --ause --ovrpat --owpass --oipbp --nodas --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "fdp-ruhs")

@@ -83,7 +83,7 @@ _zoned_completions()
         ;;
 
     "mgmt")
-        opts+="--slba --action --nsid --all --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
+        opts+="--slba --zsa --nsid --all --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "report")

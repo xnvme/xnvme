@@ -5,6 +5,7 @@
 install_data('xnvme_tests_async_intf-completions', install_dir: bash_completions_dir)
 install_data('xnvme_tests_buf-completions', install_dir: bash_completions_dir)
 install_data('xnvme_tests_cli-completions', install_dir: bash_completions_dir)
+install_data('xnvme_tests_compare-completions', install_dir: bash_completions_dir)
 install_data('xnvme_tests_copy-completions', install_dir: bash_completions_dir)
 install_data('xnvme_tests_delay_identification-completions', install_dir: bash_completions_dir)
 install_data('xnvme_tests_enum-completions', install_dir: bash_completions_dir)

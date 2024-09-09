@@ -1,12 +1,12 @@
-# xnvme_tests_copy completion                           -*- shell-script -*-
+# xnvme_tests_compare completion                           -*- shell-script -*-
 #
-# Bash completion script for the `xnvme_tests_copy` CLI
+# Bash completion script for the `xnvme_tests_compare` CLI
 #
 # SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-_xnvme_tests_copy_completions()
+_xnvme_tests_compare_completions()
 {
     local cur=${COMP_WORDS[COMP_CWORD]}
     local sub=""
@@ -16,7 +16,7 @@ _xnvme_tests_copy_completions()
 
     # Complete sub-commands
     if [[ $COMP_CWORD < 2 ]]; then
-        COMPREPLY+=( $( compgen -W 'copy --help' -- $cur ) )
+        COMPREPLY+=( $( compgen -W 'compare --help' -- $cur ) )
         return 0
     fi
 
@@ -30,8 +30,8 @@ _xnvme_tests_copy_completions()
 
     case "$sub" in
     
-    "copy")
-        opts+="--slba --nlb --sdlba --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
+    "compare")
+        opts+="--slba --nlb --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     esac
@@ -42,6 +42,6 @@ _xnvme_tests_copy_completions()
 }
 
 #
-complete -o nosort -F _xnvme_tests_copy_completions xnvme_tests_copy
+complete -o nosort -F _xnvme_tests_compare_completions xnvme_tests_compare
 
 # ex: filetype=sh
