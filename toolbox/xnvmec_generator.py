@@ -465,6 +465,8 @@ def find_binaries(folder):
             continue
         if path.stem.startswith("xnvme_enum"):
             continue
+        if path.stem.startswith("xnvme_hello"):
+            continue
         if path.is_file() and path.stat().st_mode & os.X_OK:
             bins.append(path.name)
 
