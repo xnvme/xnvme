@@ -7,14 +7,14 @@ SPDX-License-Identifier: BSD-3-Clause
 ![xNVMe Logo](/docs/_static/xnvme-logo-medium.png)
 
 xNVMe: cross-platform libraries and tools for NVMe devices
-============================================================
+==========================================================
 
-[![CI](https://github.com/OpenMPDK/xNVMe/workflows/linux-binaries-test/badge.svg)](https://github.com/OpenMPDK/xNVMe/actions/)
-[![CI](https://github.com/OpenMPDK/xNVMe/workflows/linux-build-test/badge.svg)](https://github.com/OpenMPDK/xNVMe/actions/)
-[![CI](https://github.com/OpenMPDK/xNVMe/workflows/style/badge.svg)](https://github.com/OpenMPDK/xNVMe/actions/)
+[![CI](https://github.com/xnvme/xnvme/workflows/linux-binaries-test/badge.svg)](https://github.com/xnvme/xnvme/actions/)
+[![CI](https://github.com/xnvme/xnvme/workflows/linux-build-test/badge.svg)](https://github.com/xnvme/xnvme/actions/)
+[![CI](https://github.com/xnvme/xnvme/workflows/style/badge.svg)](https://github.com/xnvme/xnvme/actions/)
 [![Coverity](https://scan.coverity.com/projects/xNVMe/badge.svg)](https://scan.coverity.com/projects/xNVMe)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
-[![REUSE status](https://api.reuse.software/badge/github.com/OpenMPDK/xNVMe)](https://api.reuse.software/info/github.com/OpenMPDK/xNVMe)
+[![REUSE status](https://api.reuse.software/badge/github.com/xnvme/xnvme)](https://api.reuse.software/info/github.com/xnvme/xnvme)
 
 See: https://xnvme.io/ for documentation
 
@@ -47,6 +47,6 @@ requests are most welcome. See, CONTRIBUTORS.md for a list of contributors to th
 previous versions of xNVMe. For a contributor-guidelines then have a look at the online
 documentation:
 
-* Web: https://xnvme.io/docs/latest/contributing/
+* Web: https://xnvme.io/contributing/
 
 * Join us on Discord: https://discord.gg/XCbBX9DmKf
