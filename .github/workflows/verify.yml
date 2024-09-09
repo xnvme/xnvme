@@ -138,7 +138,7 @@ jobs:
 
     steps:
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.1
+      uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
@@ -172,7 +172,7 @@ jobs:
 
     steps:
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.1
+      uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
@@ -215,7 +215,7 @@ jobs:
 
     steps:
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.1
+      uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
@@ -290,7 +290,7 @@ jobs:
       run: zypper --non-interactive install -y tar gzip
 
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.1
+      uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
@@ -363,7 +363,7 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - name: Retrieve, the xNVMe Python sdist package
-      uses: actions/download-artifact@v4.1.1
+      uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-py-sdist
     - name: Move, the xNVMe Python sdist package
@@ -444,7 +444,7 @@ jobs:
 
     steps:
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.1
+      uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
@@ -502,7 +502,7 @@ jobs:
         python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
 
     - name: Retrieve, the xNVMe Python sdist package
-      uses: actions/download-artifact@v4.1.1
+      uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-py-sdist
     - name: Move, the xNVMe Python sdist package
@@ -582,7 +582,7 @@ jobs:
         echo $env:Path
 
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.1
+      uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
@@ -670,7 +670,7 @@ jobs:
         ls -lh
 
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.1
+      uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then move, the xNVMe source archive
@@ -679,7 +679,7 @@ jobs:
         mv xnvme-src.tar.gz /tmp/artifacts/.
 
     - name: Retrieve, the xNVMe Python sdist package
-      uses: actions/download-artifact@v4.1.1
+      uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-py-sdist
     - name: Move, the xNVMe Python sdist package
@@ -780,7 +780,7 @@ jobs:
         ls -lh
 
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.1
+      uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then move, the xNVMe source archive
@@ -860,7 +860,7 @@ jobs:
         rm -rf *
         ls -lh
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.1
+      uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then move, the xNVMe source archive
@@ -966,7 +966,7 @@ jobs:
         ls -lh
 
     - name: Container-prep, get the full-source-archive-with-subprojects
-      uses: actions/download-artifact@v4.1.1
+      uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Container-prep, extract the full-source-archive-with-subprojects
@@ -975,7 +975,7 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - name: Retrieve, the xNVMe Python sdist package
-      uses: actions/download-artifact@v4.1.1
+      uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-py-sdist
     - name: Move, the xNVMe Python sdist package
@@ -1082,7 +1082,7 @@ jobs:
 
     steps:
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.1
+      uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
@@ -1115,7 +1115,7 @@ jobs:
 
     steps:
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.1
+      uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
@@ -1157,7 +1157,7 @@ jobs:
 
     steps:
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.1
+      uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-src-archive-with-subprojects
     - name: Extract, and then remove, the xNVMe source archive
@@ -1232,7 +1232,7 @@ jobs:
         echo "Current tag is ${{ github.ref }}"
 
     - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.1
+      uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-src-archive
 
