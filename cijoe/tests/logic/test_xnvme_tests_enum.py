@@ -7,6 +7,8 @@ from ..conftest import XnvmeDriver, xnvme_parametrize
 def test_open(cijoe, device, be_opts, cli_args):
     if be_opts["be"] == "ramdisk":
         pytest.skip(reason="[be=ramdisk] does not support enumeration")
+    if be_opts["be"] == "driverkit":
+        pytest.skip(reason="[be=ramdisk] does not support repeatedly enumerating")
 
     if "fabrics" in device["labels"]:
         err, _ = cijoe.run(
@@ -23,6 +25,8 @@ def test_multi(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[be=spdk] does not support repeatedly enumerating")
     if be_opts["be"] == "ramdisk":
         pytest.skip(reason="[be=ramdisk] does not support enumeration")
+    if be_opts["be"] == "driverkit":
+        pytest.skip(reason="[be=ramdisk] does not support repeatedly enumerating")
 
     if "fabrics" in device["labels"]:
         err, _ = cijoe.run(

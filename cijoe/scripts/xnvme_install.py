@@ -20,7 +20,11 @@ def main(args, cijoe, step):
     if not conf:
         return errno.EINVAL
 
-    xnvme_source = step.get("with", {}).get("xnvme_source", conf["repository"]["path"])
+    xnvme_source = step.get("with", {}).get(
+        "xnvme_source", conf.get("repository", {}).get("path", None)
+    )
+    if not xnvme_source:
+        return errno.EINVAL
 
     commands = [
         "meson compile",

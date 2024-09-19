@@ -20,8 +20,9 @@ def main(args, cijoe, step):
         return 1
 
     shell = cijoe.config.options.get("cijoe", {}).get("run", {}).get("shell", "sh")
+    os_name = cijoe.config.options.get("os", {}).get("name", "")
 
-    make = "gmake" if shell == "csh" else "make"
+    make = "gmake" if shell == "csh" or os_name == "macos" else "make"
 
     commands = [
         (f"git clone {repos['remote']} {repos['path']} || true", "/tmp"),
@@ -38,8 +39,12 @@ def main(args, cijoe, step):
 
     commands += [
         (f"{make}", repos["path"]),
-        (f"{make} install", repos["path"]),
     ]
+
+    if os_name != "macos":
+        commands += [
+            (f"{make} install", repos["path"]),
+        ]
 
     for cmd, cwd in commands:
         err, _ = cijoe.run(cmd, cwd=cwd)
