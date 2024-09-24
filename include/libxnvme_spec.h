@@ -146,6 +146,8 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cpl) == 16, "Incorrect size")
  * NVMe get-log-page entry for error information
  *
  * NVMe 1.4: Figure 194
+ * NVMe 1.4c: Figure 198
+ * NVMe 2.0 : Figure 208
  *
  * NOTE: using __attribute__((packed))__ as GCC does not like "uint16_t ct"
  * for some reason. Without the packing it becomes 2 bytes larger
@@ -184,6 +186,30 @@ struct __attribute__((packed)) xnvme_spec_log_health_entry {
 	uint8_t rsvd[280];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_log_health_entry) == 512, "Incorrect size")
+
+
+/**
+ * NVMe get-log-page entry for sanitize status information
+ *
+ * NVMe 1.4c - Figure 242
+ *
+ * @struct xnvme_spec_log_sanitize_status_entry
+ */
+
+struct __attribute__((packed)) xnvme_spec_log_sanitize_status_entry {
+	uint16_t sprog;         ///< Sanitize Progress 
+	uint16_t sstat;         ///< Sanitize Status : Bits 0:2 contain the status of the most recent sanitize operation
+                                ///< 000b - Never Sanitized, 001b - Operation Successful, 010b - In Progress, 011b - Failed, 100b - success 
+        uint32_t scdw10;        ///< Sanitize Command Dword 10 Information
+        uint32_t etfo;          ///< Estimated Time for Overwrite
+        uint32_t etfbe;         ///< Estimated Time for Block Erase
+        uint32_t etfce;         ///< Estimated Time for Crypto Erase
+        uint32_t etfownmm;      ///< Estimated Time for Overwrite with No-Deallocate Media Modification
+        uint32_t etfbewnmm;     ///< Estimated Time for Block Erase with No-Deallocate Media Modification
+        uint32_t etfcewnmm;     ///< Estimated Time for Crypto Erase With No-Deallocate Media Modification 
+        uint8_t rsvd[480];
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_log_sanitize_status_entry) == 512, "Incorrect size")
 
 /**
  * NVMe get-log-page entry for error information
@@ -406,6 +432,7 @@ enum xnvme_spec_log_lpi {
 	XNVME_SPEC_LOG_FDPRUHU   = 0x21, ///< XNVME_SPEC_LOG_FDPRUHU
 	XNVME_SPEC_LOG_FDPSTATS  = 0x22, ///< XNVME_SPEC_LOG_FDPSTATS
 	XNVME_SPEC_LOG_FDPEVENTS = 0x23, ///< XNVME_SPEC_LOG_FDPEVENTS
+        XNVME_SPEC_LOG_SANITIZE  = 0x81, ///< XNVME_SPEC_LOG_SANITIZE
 };
 
 /**
@@ -3005,6 +3032,17 @@ xnvme_spec_log_erri_fpr(FILE *stream, const struct xnvme_spec_log_erri_entry *lo
  */
 int
 xnvme_spec_log_erri_pr(const struct xnvme_spec_log_erri_entry *log, int limit, int opts);
+
+/**
+ * Prints the given :;xnvme_spec_log_sanitize_status_entry to stdout
+ *
+ * @param log
+ * @param limit
+ * @param opts printer options, see ::xnvme_pr
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_log_sanitize_pr(const struct xnvme_spec_log_sanitize_status_entry *log, int opts);
 
 /**
  * Prints the given :;xnvme_spec_log_fdp_conf to stdout
