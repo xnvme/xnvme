@@ -181,7 +181,9 @@ jobs:
         rm xnvme-src.tar.gz
 
     - name: Install dependencies
-      run: apt-get install -qy curl libclang-dev
+      run: |
+        apt-get update -qy
+        apt-get install -qy curl libclang-dev
 
     - name: Build xNVMe
       run: make common
