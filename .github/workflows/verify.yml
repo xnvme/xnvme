@@ -759,7 +759,7 @@ jobs:
   #
   bench:
     needs: [source-archive-with-subprojects, source-format-check, build-python]
-    runs-on: [self-hosted, linux, ARM64, bench, intel]
+    runs-on: [self-hosted, linux, X64, bench, intel]
 
     if: (contains('push', github.event_name) || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job ==
       'bench')) || ((github.event_name == 'pull_request') && contains(github.event.pull_request.labels.*.name, 'bench')))
