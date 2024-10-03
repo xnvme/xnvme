@@ -62,133 +62,133 @@ init_using_cloudinit.user = "{{ resources.auxiliary['qemu.cloudinit-freebsd-user
 [[devices]]
 uri = "/dev/nvme0ns1"
 nsid = 1
-labels = [ "dev", "bdev", "nvm", "scc", "write_zeroes" ]
+labels = [ "dev", "bdev", "nvm", "scc", "write_zeroes", "log_health_ns", "idfy_cs" ]
 driver_attachment = "kernel"
 
 [[devices]]
 uri = "0000:03:00.0"
 nsid = 1
-labels = [ "dev", "pcie", "nvm", "scc", "write_zeroes", "ctrlr" ]
+labels = [ "dev", "pcie", "nvm", "scc", "write_zeroes", "ctrlr", "log_health_ns", "idfy_cs" ]
 driver_attachment = "userspace"
 
 [[devices]]
 uri = "/dev/nvme0ns2"
 nsid = 2
-labels = [ "dev", "bdev", "zns", "zrwa" ]
+labels = [ "dev", "bdev", "zns", "zrwa", "log_health_ns", "idfy_cs" ]
 driver_attachment = "kernel"
 
 [[devices]]
 uri = "0000:03:00.0"
 nsid = 2
-labels = [ "dev", "pcie", "zns", "zrwa" ]
+labels = [ "dev", "pcie", "zns", "zrwa", "log_health_ns", "idfy_cs" ]
 driver_attachment = "userspace"
 
 [[devices]]
 uri = "/dev/nvme0ns3"
 nsid = 3
-labels = [ "dev", "cdev", "kvs" ]
+labels = [ "dev", "cdev", "kvs", "log_health_ns", "idfy_cs" ]
 driver_attachment = "kernel"
 
 [[devices]]
 uri = "0000:03:00.0"
 nsid = 3
-labels = [ "dev", "pcie", "kvs" ]
+labels = [ "dev", "pcie", "kvs", "log_health_ns", "idfy_cs" ]
 driver_attachment = "userspace"
 
 [[devices]]
 uri = "/dev/nvme1ns1"
 nsid = 1
-labels = [ "dev", "bdev", "nvm", "scc", "write_zeroes" ]
+labels = [ "dev", "bdev", "nvm", "scc", "write_zeroes", "log_health_ns", "idfy_cs" ]
 driver_attachment = "kernel"
 
 [[devices]]
 uri = "0000:04:00.0"
 nsid = 1
-labels = [ "dev", "pcie", "nvm", "scc", "write_zeroes" ]
+labels = [ "dev", "pcie", "nvm", "scc", "write_zeroes", "log_health_ns", "idfy_cs" ]
 driver_attachment = "userspace"
 
 [[devices]]
 uri = "/dev/nvme2n1"
 nsid = 1
-labels = [ "dev", "bdev", "nvm", "scc", "large_mdts" ]
+labels = [ "dev", "bdev", "nvm", "scc", "large_mdts", "log_health_ns", "idfy_cs" ]
 driver_attachment = "kernel"
 
 [[devices]]
 uri = "/dev/nvme3ns1"
 nsid = 1
-labels = [ "dev", "bdev", "nvm", "scc", "fdp" ]
+labels = [ "dev", "bdev", "nvm", "scc", "fdp", "log_health_ns", "idfy_cs" ]
 driver_attachment = "kernel"
 
 [[devices]]
 uri = "0000:06:00.0"
 nsid = 1
-labels = [ "dev", "pcie", "nvm", "scc", "fdp" ]
+labels = [ "dev", "pcie", "nvm", "scc", "fdp", "log_health_ns", "idfy_cs" ]
 driver_attachment = "userspace"
 
 [[devices]]
 uri = "/dev/nvme4ns1"
 nsid = 1
-labels = [ "dev", "bdev", "nvm", "pi1"]
+labels = [ "dev", "bdev", "nvm", "pi1", "log_health_ns", "idfy_cs" ]
 driver_attachment = "kernel"
 
 [[devices]]
 uri = "0000:07:00.0"
 nsid = 1
-labels = [ "dev", "pcie", "nvm", "pi1"]
+labels = [ "dev", "pcie", "nvm", "pi1", "log_health_ns", "idfy_cs" ]
 driver_attachment = "userspace"
 
 [[devices]]
 uri = "/dev/nvme4ns2"
 nsid = 2
-labels = [ "dev", "bdev", "nvm", "pi2"]
+labels = [ "dev", "bdev", "nvm", "pi2", "log_health_ns", "idfy_cs" ]
 driver_attachment = "kernel"
 
 [[devices]]
 uri = "0000:07:00.0"
 nsid = 2
-labels = [ "dev", "pcie", "nvm", "pi2"]
+labels = [ "dev", "pcie", "nvm", "pi2", "log_health_ns", "idfy_cs" ]
 driver_attachment = "userspace"
 
 [[devices]]
 uri = "/dev/nvme4ns3"
 nsid = 3
-labels = [ "dev", "bdev", "nvm", "pi3"]
+labels = [ "dev", "bdev", "nvm", "pi3", "log_health_ns", "idfy_cs" ]
 driver_attachment = "kernel"
 
 [[devices]]
 uri = "0000:07:00.0"
 nsid = 3
-labels = [ "dev", "pcie", "nvm", "pi3"]
+labels = [ "dev", "pcie", "nvm", "pi3", "log_health_ns", "idfy_cs" ]
 driver_attachment = "userspace"
 
 [[devices]]
 uri = "/dev/nvme4ns4"
 nsid = 4
-labels = [ "dev", "bdev", "nvm", "pi1_ex"]
+labels = [ "dev", "bdev", "nvm", "pi1_ex", "log_health_ns", "idfy_cs" ]
 driver_attachment = "kernel"
 
 [[devices]]
 uri = "0000:07:00.0"
 nsid = 4
-labels = [ "dev", "pcie", "nvm", "pi1_ex"]
+labels = [ "dev", "pcie", "nvm", "pi1_ex", "log_health_ns", "idfy_cs" ]
 driver_attachment = "userspace"
 
 [[devices]]
 uri = "/dev/nvme4ns5"
 nsid = 5
-labels = [ "dev", "bdev", "nvm", "pi1_pif2"]
+labels = [ "dev", "bdev", "nvm", "pi1_pif2", "log_health_ns", "idfy_cs" ]
 driver_attachment = "kernel"
 
 [[devices]]
 uri = "0000:07:00.0"
 nsid = 5
-labels = [ "dev", "pcie", "nvm", "pi1_pif2"]
+labels = [ "dev", "pcie", "nvm", "pi1_pif2", "log_health_ns", "idfy_cs" ]
 driver_attachment = "userspace"
 
 [[devices]]
 uri = "/dev/nvme0"
 nsid = 0
-labels = [ "ctrlr", "cdev"]
+labels = [ "ctrlr", "cdev", "log_health_ns", "idfy_cs" ]
 driver_attachment = "kernel"
 
 [[devices]]
@@ -196,7 +196,7 @@ uri = "127.0.0.1:4420"
 pcie_id = "0000:03:00.0"
 subnqn = "nqn.2019-08.org.qemu:deadbeef"
 nsid = 1
-labels = [ "dev", "fabrics", "nvm", "write_zeroes" ]
+labels = [ "dev", "fabrics", "nvm", "write_zeroes", "log_health_ns", "idfy_cs" ]
 driver_attachment = "userspace"
 
 [[devices]]
@@ -204,7 +204,7 @@ uri = "127.0.0.1:4420"
 pcie_id = "0000:03:00.0"
 subnqn = "nqn.2019-08.org.qemu:deadbeef"
 nsid = 2
-labels = [ "dev", "fabrics", "zns" ]
+labels = [ "dev", "fabrics", "zns", "log_health_ns", "idfy_cs" ]
 driver_attachment = "userspace"
 
 [[devices]]
@@ -212,19 +212,19 @@ uri = "127.0.0.1:4420"
 pcie_id = "0000:03:00.0"
 subnqn = "nqn.2019-08.org.qemu:deadbeef"
 nsid = 3
-labels = [ "dev", "fabrics", "kvs" ]
+labels = [ "dev", "fabrics", "kvs", "log_health_ns", "idfy_cs" ]
 driver_attachment = "userspace"
 
 [[devices]]
 uri = "/tmp/xnvme-testfile.bin"
 nsid = 1
-labels = [ "file" ]
+labels = [ "file", "log_health_ns", "idfy_cs" ]
 driver_attachment = "kernel"
 
 [[devices]]
 uri = "2GB"
 nsid = 1
-labels = [ "dev", "bdev", "nvm", "ramdisk", "write_zeroes" ]
+labels = [ "dev", "bdev", "nvm", "ramdisk", "write_zeroes", "log_health_ns", "idfy_cs" ]
 driver_attachment = "kernel"
 
 [xnvme.repository]
