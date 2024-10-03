@@ -93,7 +93,7 @@ def test_log_erri(cijoe, device, be_opts, cli_args):
     if "ramdisk" in device["labels"]:
         pytest.skip(reason="[be=ramdisk] does not implement error-log")
 
-    err, _ = cijoe.run(f"xnvme log-erri {cli_args} --nsid {device['nsid']}")
+    err, _ = cijoe.run(f"xnvme log-erri {cli_args}")
     assert not err
 
 
