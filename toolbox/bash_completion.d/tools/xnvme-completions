@@ -63,7 +63,7 @@ _xnvme_completions()
         ;;
 
     "log-erri")
-        opts+="--nsid --limit --data-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        opts+="--limit --data-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
         ;;
 
     "log-health")

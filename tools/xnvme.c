@@ -169,7 +169,7 @@ _sub_idfy(struct xnvme_cli *cli, uint8_t cns, uint16_t cntid, uint8_t nsid, uint
 	default:
 		xnvme_cli_pinf("No pretty-printer for the given "
 			       "cns(0%x0)\n"
-			       "Use -o to dump the result to file",
+			       "Use --data-output to dump the result to file",
 			       cns);
 		break;
 	}
@@ -288,16 +288,11 @@ sub_log_erri(struct xnvme_cli *cli)
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 	uint32_t limit = cli->args.limit;
-	uint32_t nsid = cli->args.nsid;
 
 	struct xnvme_spec_log_erri_entry *log = NULL;
 	uint32_t log_nentries = 0;
 	uint32_t log_nbytes = 0;
 	int err;
-
-	if (!cli->given[XNVME_CLI_OPT_NSID]) {
-		nsid = xnvme_dev_get_nsid(cli->args.dev);
-	}
 
 	// NOTE: The Error Log Page Entries (elpe) is a zero-based value
 	log_nentries = (uint32_t)xnvme_dev_get_ctrlr(dev)->elpe + 1;
@@ -316,7 +311,7 @@ sub_log_erri(struct xnvme_cli *cli)
 	memset(log, 0, log_nbytes);
 
 	xnvme_cli_pinf("Retrieving error-info-log ...");
-	err = xnvme_adm_log(&ctx, XNVME_SPEC_LOG_ERRI, 0x0, 0x0, nsid, 0, log, log_nbytes);
+	err = xnvme_adm_log(&ctx, XNVME_SPEC_LOG_ERRI, 0x0, 0x0, 0xFFFFFFFF, 0, log, log_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_perr("xnvme_adm_log(XNVME_SPEC_LOG_ERRI)", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
@@ -1301,7 +1296,6 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
-			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_LIMIT, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_DATA_OUTPUT, XNVME_CLI_LOPT},
 
