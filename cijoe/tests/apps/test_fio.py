@@ -12,7 +12,7 @@ def test_fio_engine(cijoe, device, be_opts, cli_args):
     The construction of the fio-invocation is done in 'cijoe.fio.wrapper.fio_fancy'
     """
 
-    fio_output_fpath = Path("/tmp/fio-output.txt")
+    fio_output_fpath = Path("tmp" / "fio-output.txt")
 
     size = "64M"
     # size = "1G"
