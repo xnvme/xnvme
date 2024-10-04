@@ -755,6 +755,134 @@ jobs:
         if-no-files-found: error
 
   #
+  # Build and test xNVMe on macOS
+  #
+  verify-macos:
+    needs: [source-archive-with-subprojects, source-format-check, build-python]
+    runs-on: [self-hosted, macos, arm64, verify]
+
+    if: (contains('push pull_request', github.event_name) || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job
+      == 'verify')))
+
+    strategy:
+      fail-fast: false
+      matrix:
+        guest:
+        - {os: 'macos', ver: 'sonoma'}
+
+    container:
+      image: debian:bookworm
+      options: --privileged
+
+    steps:
+    - name: hostname
+      run: |
+        hostname
+
+    - name: Runner-prep, clean up self-hosted left-overs
+      run: |
+        pkill -f qemu || true
+        rm -r $HOME/guests || true
+        rm -r /tmp/artifacts || true
+        mkdir -p /tmp/artifacts || true
+        rm -rf *
+        ls -lh
+
+    - name: Retrieve the xNVMe source archive
+      uses: actions/download-artifact@v4.1.7
+      with:
+        name: xnvme-src-archive-with-subprojects
+
+    - name: Extract, and then move, the xNVMe source archive
+      run: |
+        tar xzf xnvme-src.tar.gz --strip 1
+        mv xnvme-src.tar.gz /tmp/artifacts/.
+
+    - name: Retrieve, the xNVMe Python sdist package
+      uses: actions/download-artifact@v4.1.7
+      with:
+        name: xnvme-py-sdist
+
+    - name: Move the xNVMe Python sdist package
+      run: |
+        mv xnvme-py-sdist.tar.gz /tmp/artifacts/.
+
+    - name: Prep, environment GITHUB_PATH
+      run: |
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: Packages, Debian Bookworm
+      run: |
+        apt-get -qy update
+        apt-get -qy upgrade
+        apt-get -qy install python3 python3-dev python3-venv pipx git make gcc fontconfig sshpass
+        pipx ensurepath 
+
+    - name: CIJOE, setup pipx environment
+      run: |
+        make cijoe
+
+    - name: CIJOE, check that it is available
+      run: |
+        cijoe -r
+
+    # cd'ing into 'cijoe' to auto-collect the non-packaged github-specific configs and
+    # workflows.
+    - name: CIJOE, run macvfn-provision.yaml
+      run: |
+        cd cijoe && cijoe \
+        --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
+        --workflow "workflows/macvfn-provision.yaml" \
+        --output "provision-macvfn"
+
+    - name: CIJOE, run provision-remote-using-tgz.yaml
+      run: |
+        cd cijoe && cijoe \
+        --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
+        --workflow "workflows/provision-remote-using-tgz.yaml" \
+        --output "provision-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
+
+    - name: CIJOE, run test.yaml
+      run: |
+        cd cijoe && cijoe \
+        --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
+        --workflow "workflows/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.yaml" \
+        --output "test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
+
+    - name: CIJOE, result-log-dump on error
+      if: failure()
+      run: find cijoe -name "*.output" | xargs cat
+
+    - name: CIJOE, upload workflow-report-provision-macvfn
+      uses: actions/upload-artifact@v4.3.0
+      if: always()
+      with:
+        name: provision-macvfn-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
+        path: cijoe/provision-macvfn/*
+        if-no-files-found: error
+
+    - name: CIJOE, upload workflow-report-provision
+      uses: actions/upload-artifact@v4.3.0
+      if: always()
+      with:
+        name: provision-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
+        path: cijoe/provision-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/*
+        if-no-files-found: error
+
+    - name: CIJOE, compress workflow-report-test
+      if: always()
+      run: |
+        tar czf test-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.tar.gz cijoe/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/* 
+
+    - name: CIJOE, upload workflow-report-test
+      uses: actions/upload-artifact@v4.3.0
+      if: always()
+      with:
+        name: test-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
+        path: test-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.tar.gz
+        if-no-files-found: error
+
+  #
   # Build and run performance test of xNVMe
   #
   bench:
