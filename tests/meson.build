@@ -77,7 +77,7 @@ foreach test_source, tests_args : tests
     include_directories: [conf_inc, xnvme_inc],
     link_with: xnvmelib,
     link_args: link_args_hardening,
-    install_rpath: xnvmelib_libdir,
+    install_rpath: xnvmelib_rpath,
     install: true,
   )
   foreach test_args : tests_args

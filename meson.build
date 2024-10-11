@@ -53,6 +53,7 @@ link_args_hardening = get_option('hardening') ? cc.get_supported_arguments([
 ]) : []
 
 xnvmelib_libdir = get_option('libdir')
+xnvmelib_rpath = get_option('prefix') + '/' + xnvmelib_libdir
 
 #
 # The project itself
