@@ -49,7 +49,7 @@ foreach source, tests : tools
     include_directories: [conf_inc, xnvme_inc],
     link_args: link_args_hardening,
     link_with: xnvmelib,
-    install_rpath: xnvmelib_libdir,
+    install_rpath: xnvmelib_rpath,
     install: true,
   )
   foreach test : tests

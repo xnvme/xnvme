@@ -21,7 +21,7 @@ foreach example_source : examples_source
     include_directories: [conf_inc, xnvme_inc],
     link_with: xnvmelib,
     link_args: link_args_hardening,
-    install_rpath: xnvmelib_libdir,
+    install_rpath: xnvmelib_rpath,
     install: true,
   )
 endforeach
