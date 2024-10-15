@@ -402,6 +402,7 @@ jobs:
         --config "configs/ramdisk.toml" \
         --workflow "workflows/provision-using-tgz.yaml" \
         --output "prep-fio-${{ matrix.container.os }}-${{ matrix.container.ver }}" \
+        --monitor \
         fio_prep
 
     - name: CIJOE, upload prep-fio
@@ -418,6 +419,7 @@ jobs:
         cd cijoe && cijoe \
         --config "configs/ramdisk.toml" \
         --workflow "workflows/test-ramdisk.yaml" \
+        --monitor \
         --output "test-${{ matrix.container.os }}-${{ matrix.container.ver }}"
 
     - name: CIJOE, upload test-ramdisk-report
@@ -542,6 +544,7 @@ jobs:
         cd cijoe && cijoe \
         --config "configs/ramdisk-macos.toml" \
         --workflow "workflows/test-ramdisk-macos.yaml" \
+        --monitor \
         --output "test-${{ matrix.runner.os }}-${{ matrix.runner.ver }}"
 
     - name: CIJOE, upload test-ramdisk-report
@@ -720,6 +723,7 @@ jobs:
         cd cijoe && cijoe \
         --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
         --workflow "workflows/provision-using-tgz.yaml" \
+        --monitor \
         --output "provision-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
     - name: CIJOE, run test.yaml
@@ -727,6 +731,7 @@ jobs:
         cd cijoe && cijoe \
         --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
         --workflow "workflows/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.yaml" \
+        --monitor \
         --output "test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
     - name: CIJOE, result-log-dump on error
@@ -822,7 +827,8 @@ jobs:
         cd cijoe && cijoe \
         --config "configs/bench-intel.toml" \
         --workflow "workflows/benchmark-provisioning-linux.yaml" \
-        --output "benchmark-provisioning"
+        --output "benchmark-provisioning" \
+        --monitor
 
     - name: CIJOE, run bench
       run: |
@@ -830,6 +836,7 @@ jobs:
         cd cijoe && cijoe \
         --config "configs/bench-intel.toml" \
         --workflow "workflows/bench.yaml" \
+        --monitor \
         --output "bench-results"
 
     - name: CIJOE, compress xnvme-provisioning
@@ -944,6 +951,7 @@ jobs:
         cd cijoe && cijoe \
         --config "configs/perf-lat-${{ matrix.guest.os }}.toml" \
         --workflow "workflows/benchmark-provisioning-${{ matrix.guest.os }}.yaml" \
+        --monitor \
         --output "latency-${{ matrix.guest.os }}-provisioning"
 
     - name: CIJOE, run benchmark latency
@@ -952,6 +960,7 @@ jobs:
         cd cijoe && cijoe \
         --config "configs/perf-lat-${{ matrix.guest.os }}.toml" \
         --workflow "workflows/benchmark-latency.yaml" \
+        --monitor \
         --output "latency-${{ matrix.guest.os }}-results"
 
     - name: CIJOE, compress xnvme-${{ matrix.guest.os }}-provisioning
@@ -1096,6 +1105,7 @@ jobs:
         cd cijoe && cijoe \
         --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
         --workflow "workflows/provision-using-tgz.yaml" \
+        --monitor \
         --output "provision-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
     - name: CIJOE, generate documentation
@@ -1103,6 +1113,7 @@ jobs:
         cd cijoe && cijoe \
         --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
         --workflow "workflows/docgen.yaml" \
+        --monitor \
         --output "docgen-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
     - name: Checkout site
