@@ -1,15 +1,12 @@
-#!/usr/bin/env python3
 """
 Report templates
-============================
+================
 
-Create the general templates for the xNVMe reports.
+Helper functions for creating xNVMe reports
 
 """
-import errno
+
 import json
-import logging as log
-import re
 from datetime import date
 from pathlib import Path
 from shutil import copyfile
@@ -17,47 +14,65 @@ from shutil import copyfile
 import jinja2
 
 
-def main(args, cijoe, step):
-    """Primary entry-point"""
+def copy_graphs(report_path: Path, artifacts: Path):
+    # Copy graphs from results/artifacts into 'report_path'
+    for png_path in artifacts.glob("*.png"):
+        print(png_path)
+        copyfile(png_path, report_path / png_path.name)
 
-    templates_path = Path(
-        step.get("with", {}).get("templates", Path.cwd() / "templates" / "perf_report")
-    ).resolve()
 
-    # Files emitted by this script
-    report_path = cijoe.output_path / "artifacts" / "perf_report"
+def create_stylesheet(templates_path: Path, report_path: Path):
+    style_path = report_path / "style.yaml"
+    copyfile(templates_path / "style.yaml", style_path, follow_symlinks=False)
+
+    return style_path
+
+
+def create_xnvme_cover(
+    templates_path: Path, report_path: Path, title: str, subtitle: str
+):
     cover_path = report_path / "cover.tmpl"
-    xnvme_path = report_path / "xnvme.rst"
-    testsetup_path = report_path / "testsetup.rst"
     logo_path = report_path / "xnvme.png"
 
-    # Can be from a different run / results
-    prefix_path = Path(step.get("with", {}).get("path", cijoe.output_path)).resolve()
-    sysinfo_path = prefix_path / "artifacts" / "sysinfo.json"
-    biosinfo_path = prefix_path / "artifacts" / "biosinfo.json"
-
-    report_path.mkdir(parents=False, exist_ok=True)
-
-    # Fill 'report_path' with files needed to produce the .pdf
+    # Copy the template logo to the 'report_path'
     copyfile(templates_path / "xnvme.png", logo_path, follow_symlinks=False)
 
     template_loader = jinja2.FileSystemLoader(templates_path)
     template_env = jinja2.Environment(loader=template_loader)
 
     # Read the cover-template, populate it, then store it in the artifacts directory
-    title = step.get("with", {}).get("report_title", "xNVMe")
-    subtitle = step.get("with", {}).get("report_subtitle", "Report")
     template = template_env.get_template("cover.jinja2.rst")
     with cover_path.open("w") as cover:
         today = date.today().strftime("%d %B %Y")
         tmpl = template.render({"title": title, "subtitle": subtitle, "date": today})
         cover.write(tmpl)
 
+    return cover_path
+
+
+def create_xnvme_info(templates_path: Path, report_path: Path):
+    xnvme_path = report_path / "xnvme.rst"
+
+    template_loader = jinja2.FileSystemLoader(templates_path)
+    template_env = jinja2.Environment(loader=template_loader)
+
     # Read the template with the description of xNVMe, then store it in the artifacts directory
     template = template_env.get_template("xnvme.jinja2.rst")
     with xnvme_path.open("w") as xnvme_desc:
         tmpl = template.render()
         xnvme_desc.write(tmpl)
+
+    return xnvme_path
+
+
+def create_test_setup(templates_path: Path, report_path: Path, artifacts: Path):
+    testsetup_path = report_path / "testsetup.rst"
+
+    sysinfo_path = artifacts / "sysinfo.json"
+    biosinfo_path = artifacts / "biosinfo.json"
+
+    template_loader = jinja2.FileSystemLoader(templates_path)
+    template_env = jinja2.Environment(loader=template_loader)
 
     # Read the template with the test setup, then store it in the artifacts directory
     sysinfo = json.load(open(sysinfo_path))
@@ -79,4 +94,4 @@ def main(args, cijoe, step):
         )
         testsetup.write(tmpl)
 
-    return 0
+    return testsetup_path

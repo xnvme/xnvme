@@ -45,12 +45,6 @@ steps:
     limits: auxiliary/plot-limits-4k.yaml
     styles: auxiliary/plot-styles.yaml
 
-- name: report_templates
-  uses: reporter_templates
-  with:
-    report_title: "xNVMe in SPDK"
-    report_subtitle: "Performance Report"
-
 - name: report
   uses: bench_reporter
   with:
