@@ -23,18 +23,6 @@ steps:
 - name: liburing
   uses: liburing_build
 
-- name: xnvme_build
-  uses: xnvme_build
-
-- name: xnvme_install
-  uses: xnvme_install
-
-- name: ldconfig
-  run: ldconfig
-
-- name: fio
-  uses: fio_prep
-
 - name: spdk
   uses: spdk_build_modded
 
