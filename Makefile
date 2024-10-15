@@ -232,7 +232,7 @@ cijoe-setup-xnvme-using-git:
 		xnvme_build_prep \
 		xnvme_build \
 		xnvme_install \
-		xnvme_aux_prep \
+		ldconfig \
 		xnvme_bindings_py_build \
 		fio_prep
 	@echo "## xNVME: cijoe-setup-xnvme-using-git [DONE]"
@@ -248,7 +248,7 @@ cijoe-setup-xnvme-using-tgz:
 		xnvme_build_prep \
 		xnvme_build \
 		xnvme_install \
-		xnvme_aux_prep \
+		ldconfig \
 		xnvme_bindings_py_install_tgz \
 		fio_prep
 	@echo "## xNVME: cijoe-setup-xnvme-using-tgz [DONE]"
