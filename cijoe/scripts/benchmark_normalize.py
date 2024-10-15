@@ -195,6 +195,7 @@ def normalize(args, cijoe, step):
 
         context = {
             "name": options["name"],
+            "label": options["name"],
             "timestamp": fio_output["timestamp"],
             "ioengine": options["ioengine"],
             "iosize": int(options["bs"]),

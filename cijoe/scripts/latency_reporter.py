@@ -17,11 +17,16 @@ import errno
 import logging as log
 import re
 from collections import defaultdict
-from datetime import date
 from pathlib import Path
-from shutil import copyfile
 
 import jinja2
+from reporter import (
+    copy_graphs,
+    create_stylesheet,
+    create_test_setup,
+    create_xnvme_cover,
+    create_xnvme_info,
+)
 
 PLOT_PATH_REGEX = r".*_GROUP=(?P<group>.+)_TYPE=(?P<type>.+)\.png"
 
@@ -32,30 +37,24 @@ def main(args, cijoe, step):
     templates_path = Path(
         step.get("with", {}).get("templates", Path.cwd() / "templates" / "perf_report")
     ).resolve()
-
-    # Files emitted by this script
-    report_path = cijoe.output_path / "artifacts" / "perf_report"
-    cover_path = report_path / "cover.tmpl"
-    body_path = report_path / "report.rst"
-    style_path = report_path / "style.yaml"
-    pdf_path = report_path / "latency.pdf"
-
-    # Can be from a different run / results
-    prefix_path = Path(step.get("with", {}).get("path", cijoe.output_path)).resolve()
-    plot_path = prefix_path / "artifacts"
-
-    report_path.mkdir(parents=False, exist_ok=True)
-
-    # Fill 'report_path' with files needed to produce the .pdf
-    copyfile(templates_path / "style.yaml", style_path, follow_symlinks=False)
-
-    # Copy graphs from results/artifacts into 'report_path'
-    for png_path in plot_path.glob("*.png"):
-        print(png_path)
-        copyfile(png_path, report_path / png_path.name)
+    search_path = Path(step.get("with", {}).get("path", cijoe.output_path)).resolve()
+    artifacts = search_path / "artifacts"
 
     title = step.get("with", {}).get("report_title", "xNVMe")
-    subtitle = step.get("with", {}).get("report_subtitle", "Report")
+    subtitle = step.get("with", {}).get("report_subtitle", "Latency Report")
+
+    report_path = cijoe.output_path / "artifacts" / "perf_report"
+    report_path.mkdir(parents=False, exist_ok=True)
+
+    # Files emitted by this script
+    body_path = report_path / "report.rst"
+    pdf_path = report_path / "latency.pdf"
+    style_path = create_stylesheet(templates_path, report_path)
+    cover_path = create_xnvme_cover(templates_path, report_path, title, subtitle)
+    create_xnvme_info(templates_path, report_path)
+    create_test_setup(templates_path, report_path, artifacts)
+
+    copy_graphs(report_path, artifacts)
 
     template_loader = jinja2.FileSystemLoader(templates_path)
     template_env = jinja2.Environment(loader=template_loader)
@@ -71,7 +70,7 @@ def main(args, cijoe, step):
     }
 
     # plots for variable IO size and IO depths
-    plot_paths = plot_path.glob("fio_*plot_scalability*.png")
+    plot_paths = artifacts.glob("fio_*plot_scalability*.png")
 
     def path_to_object(path_path):
         match = re.match(PLOT_PATH_REGEX, path_path.name)
@@ -87,7 +86,7 @@ def main(args, cijoe, step):
         plot_groups[plot["group"]][plot["type"]] = plot["path"]
 
     # plot for IO depth 1
-    qd1_pngs = list(plot_path.glob("fio_*qd1*.png"))
+    qd1_pngs = list(artifacts.glob("fio_*qd1*.png"))
     if len(qd1_pngs) != 1:
         log.error(f"Unexpected paths: {qd1_pngs}")
         return errno.EINVAL
