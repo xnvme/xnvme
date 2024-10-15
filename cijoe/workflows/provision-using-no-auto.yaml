@@ -52,10 +52,8 @@ steps:
   with:
     xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
 
-- name: xnvme_aux_prep
-  uses: xnvme_aux_prep
-  with:
-    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
+- name: ldconfig
+  run: ldconfig /usr/local/lib/ || true
 
 - name: xnvme_bindings_py_build
   uses: xnvme_bindings_py_build
