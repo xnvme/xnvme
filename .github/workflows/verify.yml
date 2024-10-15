@@ -785,13 +785,16 @@ jobs:
       uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-src-archive-with-subprojects
+
     - name: Extract, and then move, the xNVMe source archive
       run: |
         tar xzf xnvme-src.tar.gz --strip 1
+        mv xnvme-src.tar.gz /tmp/artifacts/.
 
     - name: Prep, environment GITHUB_PATH
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
+        find /tmp/artifacts -name "*.tar.gz"
 
     - name: Packages, Debian Bookworm
       run: |
@@ -804,11 +807,22 @@ jobs:
       run: |
         make cijoe
 
-    - name: CIJOE, run provisioning
+    - name: CIJOE, provision xnvme from tgz
+      run: |
+        rm -rf cijoe/xnvme-provisioning
+        cd cijoe && cijoe \
+        --config "configs/bench-intel.toml" \
+        --workflow "workflows/provision-using-tgz.yaml" \
+        --output "xnvme-provisioning" \
+        xnvme_source_sync xnvme_build_prep xnvme_build \
+        xnvme_install ldconfig fio_prep
+
+    - name: CIJOE, run benchmark provisioning
       run: |
         cd cijoe && cijoe \
         --config "configs/bench-intel.toml" \
-        --workflow "workflows/benchmark-provisioning-linux.yaml"
+        --workflow "workflows/benchmark-provisioning-linux.yaml" \
+        --output "benchmark-provisioning"
 
     - name: CIJOE, run bench
       run: |
@@ -817,6 +831,32 @@ jobs:
         --config "configs/bench-intel.toml" \
         --workflow "workflows/bench.yaml" \
         --output "bench-results"
+
+    - name: CIJOE, compress xnvme-provisioning
+      if: always()
+      run: |
+        tar czf xnvme-provisioning.tar.gz cijoe/xnvme-provisioning/* 
+
+    - name: CIJOE, upload xnvme-provisioning
+      uses: actions/upload-artifact@v4.3.0
+      if: always()
+      with:
+        name: bench-xnvme-provisioning
+        path: xnvme-provisioning.tar.gz
+        if-no-files-found: error
+
+    - name: CIJOE, compress benchmark-provisioning
+      if: always()
+      run: |
+        tar czf benchmark-provisioning.tar.gz cijoe/benchmark-provisioning/* 
+
+    - name: CIJOE, upload benchmark-provisioning
+      uses: actions/upload-artifact@v4.3.0
+      if: always()
+      with:
+        name: bench-provisioning
+        path: benchmark-provisioning.tar.gz
+        if-no-files-found: error
 
     - name: CIJOE, compress workflow-report-bench
       if: always()
@@ -861,32 +901,51 @@ jobs:
         mkdir -p /tmp/artifacts || true
         rm -rf *
         ls -lh
+
     - name: Retrieve the xNVMe source archive
       uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-src-archive-with-subprojects
+
     - name: Extract, and then move, the xNVMe source archive
       run: |
         tar xzf xnvme-src.tar.gz --strip 1
+        mv xnvme-src.tar.gz /tmp/artifacts/.
+
     - name: Prep, environment GITHUB_PATH
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
+        find /tmp/artifacts -name "*.tar.gz"
+
     - name: Packages, Debian Bookworm
       run: |
         apt-get -qy update
         apt-get -qy upgrade
         apt-get -qy install python3 python3-dev python3-venv pipx git make gcc fontconfig
         pipx ensurepath
+
     - name: CIJOE, setup pipx environment
       run: |
         make cijoe
-    - name: CIJOE, run provisioning
+
+    - name: CIJOE, provision xnvme from tgz
+      run: |
+        rm -rf cijoe/xnvme-${{ matrix.guest.os }}-provisioning
+        cd cijoe && cijoe \
+        --config "configs/perf-lat-${{ matrix.guest.os }}.toml" \
+        --workflow "workflows/provision-using-tgz.yaml" \
+        --output "xnvme-${{ matrix.guest.os }}-provisioning" \
+        xnvme_source_sync xnvme_build_prep xnvme_build \
+        xnvme_install ldconfig fio_prep
+
+    - name: CIJOE, run benchmark provisioning
       run: |
         rm -rf cijoe/latency-${{ matrix.guest.os }}-provisioning
         cd cijoe && cijoe \
         --config "configs/perf-lat-${{ matrix.guest.os }}.toml" \
         --workflow "workflows/benchmark-provisioning-${{ matrix.guest.os }}.yaml" \
         --output "latency-${{ matrix.guest.os }}-provisioning"
+
     - name: CIJOE, run benchmark latency
       run: |
         rm -rf cijoe/latency-${{ matrix.guest.os }}-results
@@ -894,22 +953,39 @@ jobs:
         --config "configs/perf-lat-${{ matrix.guest.os }}.toml" \
         --workflow "workflows/benchmark-latency.yaml" \
         --output "latency-${{ matrix.guest.os }}-results"
-    - name: CIJOE, compress workflow-report-latency-${{ matrix.guest.os }}-provisioning
+
+    - name: CIJOE, compress xnvme-${{ matrix.guest.os }}-provisioning
+      if: always()
+      run: |
+        tar czf xnvme-${{ matrix.guest.os }}-provisioning.tar.gz cijoe/xnvme-${{ matrix.guest.os }}-provisioning/* 
+
+    - name: CIJOE, upload xnvme-${{ matrix.guest.os }}-provisioning
+      uses: actions/upload-artifact@v4.3.0
+      if: always()
+      with:
+        name: latency-${{ matrix.guest.os }}-xnvme-provisioning
+        path: xnvme-${{ matrix.guest.os }}-provisioning.tar.gz
+        if-no-files-found: error
+
+    - name: CIJOE, compress latency-${{ matrix.guest.os }}-provisioning
       if: always()
       run: |
         tar czf latency-${{ matrix.guest.os }}-provisioning.tar.gz cijoe/latency-${{ matrix.guest.os }}-provisioning/* 
-    - name: CIJOE, upload workflow-report-latency-${{ matrix.guest.os }}-provisioning
+
+    - name: CIJOE, upload latency-${{ matrix.guest.os }}-provisioning
       uses: actions/upload-artifact@v4.3.0
       if: always()
       with:
         name: latency-${{ matrix.guest.os }}-provisioning
         path: latency-${{ matrix.guest.os }}-provisioning.tar.gz
         if-no-files-found: error
-    - name: CIJOE, compress workflow-report-latency-${{ matrix.guest.os }}-results
+
+    - name: CIJOE, compress latency-${{ matrix.guest.os }}-results
       if: always()
       run: |
         tar czf latency-${{ matrix.guest.os }}-results.tar.gz cijoe/latency-${{ matrix.guest.os }}-results/* 
-    - name: CIJOE, upload workflow-report-latency-${{ matrix.guest.os }}-results
+
+    - name: CIJOE, upload latency-${{ matrix.guest.os }}-results
       uses: actions/upload-artifact@v4.3.0
       if: always()
       with:

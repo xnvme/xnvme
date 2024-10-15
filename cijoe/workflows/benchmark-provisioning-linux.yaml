@@ -5,9 +5,15 @@ doc: |
 
   Environment preparation consists of
 
-  * Retrieving and updating repositories for liburing, xnvme, fio, and SPDK
-  * Configure, build and install liburing, xnvme, fio, and SPDK
+  * Retrieving and updating repositories for liburing and SPDK
+  * Configure, build and install liburing and SPDK
   * Generate bdev-configs for all CIJOE "duts"
+
+  Preamble
+  =================================================================
+
+  This workflow assumes that xNVMe has already been provisioned
+  on the target machine.
 
 steps:
 
@@ -22,18 +28,6 @@ steps:
 
 - name: liburing
   uses: liburing_build
-
-- name: xnvme_build
-  uses: xnvme_build
-
-- name: xnvme_install
-  uses: xnvme_install
-
-- name: ldconfig
-  run: ldconfig
-
-- name: fio
-  uses: fio_prep
 
 - name: spdk
   uses: spdk_build_modded

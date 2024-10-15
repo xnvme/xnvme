@@ -19,8 +19,23 @@ def main(args, cijoe, step):
     if not repos:
         return 1
 
-    shell = cijoe.config.options.get("cijoe", {}).get("run", {}).get("shell", "sh")
+    os_name = cijoe.config.options.get("os", {}).get("name", "")
 
+    if os_name == "windows":
+        commands = fio_commands_windows(repos)
+    else:
+        commands = fio_commands(cijoe, repos)
+
+    for cmd, cwd in commands:
+        err, _ = cijoe.run(cmd, cwd=cwd)
+        if err:
+            return err
+
+    return err
+
+
+def fio_commands(cijoe, repos):
+    shell = cijoe.config.options.get("cijoe", {}).get("run", {}).get("shell", "sh")
     make = "gmake" if shell == "csh" else "make"
 
     commands = [
@@ -41,9 +56,16 @@ def main(args, cijoe, step):
         (f"{make} install", repos["path"]),
     ]
 
-    for cmd, cwd in commands:
-        err, _ = cijoe.run(cmd, cwd=cwd)
-        if err:
-            return err
+    return commands
 
-    return err
+
+def fio_commands_windows(repos):
+    commands = [
+        (f"git clone {repos['remote']} {repos['path']} || true", "/tmp"),
+        ("git clean -fdX", repos["path"]),
+        (f"git checkout {repos['tag']} || true", repos["path"]),
+        ("git rev-parse --short HEAD || true", repos["path"]),
+        ("make", repos["path"]),
+    ]
+
+    return commands

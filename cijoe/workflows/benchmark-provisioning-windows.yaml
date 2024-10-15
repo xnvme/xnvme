@@ -5,29 +5,15 @@ doc: |
 
   Environment preparation consists of
 
-  * Retrieving and updating repositories for xnvme, and fio
-  * Configure, build and install xnvme, and fio
-  * Generate bdev-configs for all CIJOE "duts"
+  * Nothing for Windows.
+
+  Preamble
+  =================================================================
+
+  This workflow assumes that xNVMe has already been provisioned
+  on the target machine.
 
 
 steps:
-
 - name: sysinfo
   uses: sysinfo_report
-
-- name: repository
-  uses: core.repository_prep
-
-- name: xnvme_build
-  uses: xnvme_build
-
-- name: xnvme_install
-  uses: xnvme_install
-
-- name: fio
-  uses: fio_prep_windows
-
-- name: kldconfig
-  uses: xnvme_kldconfig
-  with:
-    xnvme_source: '{{ config.xnvme.repository.path }}'

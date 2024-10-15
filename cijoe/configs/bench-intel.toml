@@ -22,7 +22,7 @@ branch = "next"
 [xnvme.repository.sync]
 branch = "wip"
 remote_alias = "guest"
-remote_path = "/root/git/xnvme"
+remote_path = "/tmp/xnvme"
 
 [xnvme.build]
 type = "debug"
