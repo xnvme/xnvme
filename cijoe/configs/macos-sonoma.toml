@@ -1,0 +1,54 @@
+[cijoe.transport.ssh]
+hostname = "10.20.30.140"
+port = 22
+username = "root"
+password = "root"
+
+[os]
+name = "macos"
+version = "14"
+
+[cijoe.run]
+shell = "zsh"
+
+[macvfn.repository]
+remote = "https://github.com/samsungds/macvfn.git"
+path = "/users/odus/git/macvfn"
+
+[xnvme.repository]
+remote = "https://github.com/xnvme/xnvme.git"
+path = "/users/odus/git/xnvme"
+branch = "next"
+
+[xnvme.repository.sync]
+path = "/tmp/xnvme"
+
+[xnvme.build]
+type = "debug"
+
+[fio]
+bin = "/users/odus/git/fio/fio"
+
+# Uncomment this to configure the build of fio with --prefix
+#[fio.build]
+#prefix = "/opt/fio"
+
+[fio.repository]
+remote = "https://github.com/axboe/fio.git"
+path = "/users/odus/git/fio"
+tag = "fio-3.36"
+
+[fio.engines]
+xnvme = {type = "builtin"}
+
+[[devices]]
+uri = "MacVFN-PHBT813406FQ016D"
+nsid = 1
+labels = [ "macvfn", "pcie", "dev", "nvm" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "2GB"
+nsid = 1
+labels = [ "dev", "bdev", "nvm", "ramdisk", "scc" ]
+driver_attachment = "kernel"

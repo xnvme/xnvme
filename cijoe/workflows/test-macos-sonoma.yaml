@@ -1,0 +1,19 @@
+---
+doc: |
+  Test xNVMe on MacOS
+
+steps:
+- name: sysinfo
+  run: |
+    system_profiler SPSoftwareDataType SPHardwareDataType
+
+- name: test_ramdisk
+  uses: core.testrunner
+  with:
+    args: '-k "ramdisk and not compare or xnvme_library_info" tests'
+
+- name: test_pcie
+  uses: core.testrunner
+  with:
+    args: '-k "pcie and not compare" tests'
+    random-order: false

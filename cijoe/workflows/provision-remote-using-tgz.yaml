@@ -1,0 +1,55 @@
+---
+doc: |
+  Provision a remote machine with multiple NVMe controllers and namespaces
+
+  On "local" the folder "/tmp/artifacts", must contain
+
+  * xnvme-src.tar.gz
+  * xnvme-py-sdist.tar.gz
+
+  These will be transferred to the machine, and unpacked in "/tmp/xnvme_source",
+  then built and installed.
+
+steps:
+- name: hostname
+  run: |
+    hostname
+
+- name: repository
+  uses: core.repository_prep
+
+- name: xnvme_source_sync
+  uses: xnvme_source_from_tgz
+  with:
+    artifacts: '/tmp/artifacts'
+    xnvme_source: '{{ config.xnvme.repository.sync.path }}'
+
+- name: xnvme_build_prep
+  uses: xnvme_build_prep
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.path }}'
+
+- name: xnvme_build
+  uses: xnvme_build
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.path }}'
+
+- name: xnvme_install
+  uses: xnvme_install
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.path }}'
+
+- name: xnvme_aux_prep
+  uses: xnvme_aux_prep
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.path }}'
+
+- name: xnvme_bindings_py_install_tgz
+  uses: xnvme_bindings_py_install_tgz
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.path }}'
+
+- name: fio_prep
+  uses: fio_prep
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.path }}'
