@@ -40,9 +40,14 @@ def main(args, cijoe, step):
 
     xnvme_source = step.get("with", {}).get("xnvme_source", conf["repository"]["path"])
 
-    err, _ = cijoe.run(
-        f"./toolbox/pkgs/{osinfo['name']}-{osinfo['version']}.sh", cwd=xnvme_source
-    )
+    if osinfo["name"] == "windows":
+        err, _ = cijoe.run(
+            "powershell -c './toolbox/pkgs/windows-2022.ps1'", cwd=xnvme_source
+        )
+    else:
+        err, _ = cijoe.run(
+            f"./toolbox/pkgs/{osinfo['name']}-{osinfo['version']}.sh", cwd=xnvme_source
+        )
     if err:
         return err
 

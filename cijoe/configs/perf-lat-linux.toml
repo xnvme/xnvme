@@ -22,6 +22,9 @@ branch = "next"
 [xnvme.build]
 type = "debug"
 
+[xnvme.repository.sync]
+remote_path = "/tmp/xnvme"
+
 [spdk.repository]
 remote = "https://github.com/spdk/spdk"
 path = "/root/git/spdk"
