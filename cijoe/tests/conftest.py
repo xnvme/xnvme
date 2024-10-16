@@ -226,12 +226,12 @@ def fabrics_setup(cijoe):
     # Create subsystems, attach controllers and add listener
     for pcie_id, subnqn in devices:
         err, _ = cijoe.run(
-            f"{rpc} nvmf_create_subsystem {subnqn} -a -s SPDK0000000000000{count} -d Controller{count}"
+            f"{rpc} nvmf_create_subsystem {subnqn} -a -s SPDK0000000000000{count} -d Controller{count} -p"
         )
         assert not err
 
         err, state = cijoe.run(
-            f"{rpc} bdev_nvme_attach_controller -b nvme{count} -t PCIe -a {pcie_id}"
+            f"{rpc} bdev_nvme_attach_controller -b nvme{count} -t PCIe -a {pcie_id} -U"
         )
         assert not err
 
