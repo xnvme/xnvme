@@ -39,12 +39,6 @@ steps:
     iosizes: *iosizes
     iodepths: *iodepths
 
-- name: report_templates
-  uses: reporter_templates
-  with:
-    report_title: "xNVMe on {{ config.os.prettyname }}"
-    report_subtitle: "Latency Report"
-
 - name: report
   uses: latency_reporter
   with:
