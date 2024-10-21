@@ -68,7 +68,7 @@ xnvme_be_vfio_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys
 	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
 	struct iommu_ctx *ctx = state->ctrl->pci.dev.ctx;
 
-	if (iommu_translate_vaddr(ctx, buf, phys)) {
+	if (!iommu_translate_vaddr(ctx, buf, phys)) {
 		XNVME_DEBUG("FAILED: iommu_translate_vaddr(-, %p): %s\n", buf, strerror(errno));
 		return -EIO;
 	}
