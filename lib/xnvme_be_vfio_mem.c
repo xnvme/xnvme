@@ -10,6 +10,25 @@
 #include <xnvme_be_vfio.h>
 #include <xnvme_dev.h>
 
+void
+xnvme_be_vfio_buf_free(const struct xnvme_dev *dev, void *buf)
+{
+	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
+	struct iommu_ctx *ctx = state->ctrl->pci.dev.ctx;
+	size_t len;
+
+	XNVME_DEBUG("xnvme_be_vfio_buf_free(%p, %p)", dev, buf);
+
+	if (iommu_unmap_vaddr(ctx, buf, &len)) {
+		XNVME_DEBUG("FAILED: iommu_unmap_vaddr(-, %p): %s\n", buf, strerror(errno));
+		return;
+	}
+
+	if (munmap(buf, len)) {
+		XNVME_DEBUG("FAILED: munmap(%p, %zu): %s\n", buf, len, strerror(errno));
+	}
+}
+
 void *
 xnvme_be_vfio_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *XNVME_UNUSED(phys))
 {
@@ -41,25 +60,6 @@ xnvme_be_vfio_buf_realloc(const struct xnvme_dev *XNVME_UNUSED(dev), void *XNVME
 {
 	errno = ENOSYS;
 	return NULL;
-}
-
-void
-xnvme_be_vfio_buf_free(const struct xnvme_dev *dev, void *buf)
-{
-	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
-	struct iommu_ctx *ctx = state->ctrl->pci.dev.ctx;
-	size_t len;
-
-	XNVME_DEBUG("xnvme_be_vfio_buf_free(%p, %p)", dev, buf);
-
-	if (iommu_unmap_vaddr(ctx, buf, &len)) {
-		XNVME_DEBUG("FAILED: iommu_unmap_vaddr(-, %p): %s\n", buf, strerror(errno));
-		return;
-	}
-
-	if (munmap(buf, len)) {
-		XNVME_DEBUG("FAILED: munmap(%p, %zu): %s\n", buf, len, strerror(errno));
-	}
 }
 
 int
