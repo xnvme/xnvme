@@ -30,7 +30,7 @@ xnvme_be_vfio_buf_free(const struct xnvme_dev *dev, void *buf)
 }
 
 void *
-xnvme_be_vfio_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *XNVME_UNUSED(phys))
+xnvme_be_vfio_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
 {
 	void *vaddr;
 	ssize_t len;
@@ -48,6 +48,12 @@ xnvme_be_vfio_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *XN
 	XNVME_DEBUG("iommu_map_vaddr(%p, %p, %ld, NULL)", ctx, vaddr, len);
 	if (iommu_map_vaddr(ctx, vaddr, len, NULL, 0)) {
 		XNVME_DEBUG("FAILED: iommu_map_vaddr(): %s\n", strerror(errno));
+		return NULL;
+	}
+
+	if (phys && !iommu_translate_vaddr(ctx, vaddr, phys)) {
+		XNVME_DEBUG("FAILED: iommu_translate_vaddr(-, %p): %s\n", vaddr, strerror(errno));
+		xnvme_be_vfio_buf_free(dev, vaddr);
 		return NULL;
 	}
 
