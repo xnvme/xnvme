@@ -18,6 +18,11 @@ steps:
 - name: sysinfo_report
   uses: sysinfo_report
 
+- name: enable_poll_queues
+  run: |
+    rmmod nvme
+    modprobe nvme poll_queues=1
+
 - name: bench
   uses: bdevperf
   with:
