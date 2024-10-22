@@ -23,6 +23,8 @@ def test_verify_iovec(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[be=linux] and [sync=psync] does not implement iovec")
     if be_opts["be"] == "fbsd" and be_opts["sync"] == "nvme":
         pytest.skip(reason="[be=fbsd] and [sync=nvme] does not implement iovec")
+    if be_opts["be"] == "driverkit":
+        pytest.skip(reason="[be=driverkit] does not implement iovec")
 
     err, _ = cijoe.run(f"xnvme_tests_ioworker verify {cli_args} --vec-cnt 4")
     assert not err
@@ -34,6 +36,8 @@ def test_verify_sync_iovec(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[be=linux] and [sync=psync] does not implement iovec")
     if be_opts["be"] == "fbsd" and be_opts["sync"] == "nvme":
         pytest.skip(reason="[be=fbsd] and [sync=nvme] does not implement iovec")
+    if be_opts["be"] == "driverkit":
+        pytest.skip(reason="[be=driverkit] does not implement iovec")
 
     err, _ = cijoe.run(f"xnvme_tests_ioworker verify-sync {cli_args} --vec-cnt 4")
     assert not err
@@ -59,6 +63,8 @@ def test_verify_iovec_direct(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[be=linux] and [sync=psync] does not implement iovec")
     if be_opts["be"] == "fbsd" and be_opts["sync"] == "nvme":
         pytest.skip(reason="[be=fbsd] and [sync=nvme] does not implement iovec")
+    if be_opts["be"] == "driverkit":
+        pytest.skip(reason="[be=driverkit] does not implement iovec")
 
     err, _ = cijoe.run(f"xnvme_tests_ioworker verify {cli_args} --vec-cnt 4 --direct 1")
     assert not err
@@ -70,6 +76,8 @@ def test_verify_sync_iovec_direct(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[be=linux] and [sync=psync] does not implement iovec")
     if be_opts["be"] == "fbsd" and be_opts["sync"] == "nvme":
         pytest.skip(reason="[be=fbsd] and [sync=nvme] does not implement iovec")
+    if be_opts["be"] == "driverkit":
+        pytest.skip(reason="[be=driverkit] does not implement iovec")
 
     err, _ = cijoe.run(
         f"xnvme_tests_ioworker verify-sync {cli_args} --vec-cnt 4 --direct 1"

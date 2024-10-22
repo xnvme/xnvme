@@ -1,0 +1,15 @@
+---
+doc: |
+  Build and install MacVFN on a macOS machine.
+  Requires that System Integrity Protection is disabled.
+
+steps:
+- name: hostname
+  run: |
+    hostname
+
+- name: repository
+  uses: core.repository_prep
+
+- name: macvfn
+  uses: macvfn_build_and_install

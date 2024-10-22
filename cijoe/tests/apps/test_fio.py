@@ -49,6 +49,8 @@ def test_fio_engine_iov(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[be=linux] and [sync=psync] does not implement iovec")
     if be_opts["be"] == "fbsd" and be_opts["sync"] == "nvme":
         pytest.skip(reason="[be=fbsd] and [sync=nvme] does not implement iovec")
+    if be_opts["be"] == "driverkit":
+        pytest.skip(reason="[be=driverkit] does not implement iovec")
 
     fio_output_fpath = Path("/tmp/fio-output.txt")
 

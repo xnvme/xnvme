@@ -4,11 +4,12 @@
 
 project(
   'xnvme',
-  'c',
+  'c', 'cpp',
   version: '0.7.5',
   license: 'BSD-3-Clause',
   default_options: [
     'c_std=gnu11',
+    'cpp_std=gnu++11',
     'warning_level=2',
     'buildtype=release',
     'default_library=both',
@@ -39,9 +40,22 @@ cc_flags = [
   '-Wno-cast-function-type',
   '-Wno-strict-aliasing'
 ]
+
+cpp = meson.get_compiler('cpp')
+cpp_flags = [
+  '-Wno-missing-braces',
+  '-Wno-cast-function-type',
+  '-Wno-strict-aliasing'
+]
+
 add_project_arguments(
   cc.get_supported_arguments(cc_flags),
   language: 'c'
+)
+
+add_project_arguments(
+  cpp.get_supported_arguments(cpp_flags),
+  language: 'cpp'
 )
 
 add_project_arguments('-Db_lto='+ (not is_windows).to_string(), language: 'c')
@@ -147,7 +161,11 @@ iokit_dep = dependency(
   modules: 'IOKit',
   required: is_darwin
 )
-conf_data.set('XNVME_BE_MACOS_ENABLED', corefoundation_dep.found() and iokit_dep.found())
+stdcpp_dep = cc.find_library(
+  'stdc++',
+  required: is_darwin
+)
+conf_data.set('XNVME_BE_MACOS_ENABLED', corefoundation_dep.found() and iokit_dep.found() and stdcpp_dep.found())
 
 rt_dep = cc.find_library('rt', required: is_darwin ? false : (is_linux or is_freebsd))
 if not cc.has_function('clock_gettime', prefix: '#include <time.h>', dependencies: rt_dep)
@@ -177,6 +195,7 @@ configure_file(
 
 # Provide configuration via header-file 'xnvme_config.h'
 add_project_arguments(['-include', 'xnvme_config.h'], language: 'c')
+add_project_arguments(['-include', 'xnvme_config.h'], language: 'cpp')
 
 # bash-completions: run the Makefile target 'make gen-bash-completions' to update the completions
 bash_completion_dep = dependency(
@@ -218,7 +237,7 @@ subdir('lib')
 if get_option('tests')
   subdir('tests')
   subdir('man/tests')
-  if install_completions 
+  if install_completions
      subdir('toolbox/bash_completion.d/tests')
   endif
 endif
