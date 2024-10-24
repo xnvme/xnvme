@@ -1,0 +1,46 @@
+/**
+ * {{ meta.project | lower }}; Command Preparation API Implementation
+ *
+ * TODO
+ * ====
+ *
+ * - use bit-mask and shift instead of relying on compiler-bitfields
+ *   - code-generator knows widths and offset, can directly mask/shift instead
+ *     of relying on macros
+ * - add use of little-endian types
+ * - add use of little-endian conversion
+ * - fix generation of struct to support assignment of bit-fields
+ */
+#include <stdbool.h>
+#include <stdint.h>
+#include <libnvme_core.h>
+
+{% for entity in data %}
+int
+{{ entity.sym }}_prep(void *cmd_buf, 
+{%- for param in entity.ant["params"] -%}
+        {{ param.ant.typ }} {{ param.sym }}
+        {% if not loop.last %},{% endif %}
+{%- endfor -%}
+)
+{
+        struct {{ entity.sym }} *cmd = cmd_buf; 
+
+        cmd->opc = {{ "0x%x" % entity.ant.opc }};
+
+{% for member in entity.members if member.ant.chosen -%}
+{% if member.cls in ["bitfield"] -%}
+        cmd->{{ member.sym }}.raw = \
+        {% for bits in member.members if bits.ant.chosen -%}
+        (({{ bits.sym }} & {{ bits.ant.mask }}) << {{ bits.ant.sd }})
+        {% if not loop.last %}|{% endif %}
+        {%- endfor -%}
+        ;
+{%- else -%}
+        cmd->{{ member.sym }} = {{ member.sym }};
+{%- endif %}
+{%- endfor %}
+
+        return 0;
+}
+{% endfor %}
