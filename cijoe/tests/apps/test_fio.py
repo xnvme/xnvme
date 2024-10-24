@@ -11,8 +11,8 @@ def test_fio_engine(cijoe, device, be_opts, cli_args):
     """
     The construction of the fio-invocation is done in 'cijoe.fio.wrapper.fio_fancy'
     """
-
-    fio_output_fpath = Path("/tmp/fio-output.txt")
+    is_windows = be_opts["mem"] == "windows" or be_opts["be"] == "windows"
+    fio_output_fpath = Path("C:/tmp" if is_windows else "/tmp") / "fio-output.txt"
 
     size = "64M"
     # size = "1G"
@@ -50,7 +50,8 @@ def test_fio_engine_iov(cijoe, device, be_opts, cli_args):
     if be_opts["be"] == "fbsd" and be_opts["sync"] == "nvme":
         pytest.skip(reason="[be=fbsd] and [sync=nvme] does not implement iovec")
 
-    fio_output_fpath = Path("/tmp/fio-output.txt")
+    is_windows = be_opts["mem"] == "windows" or be_opts["be"] == "windows"
+    fio_output_fpath = Path("C:/tmp" if is_windows else "/tmp") / "fio-output.txt"
 
     size = "64M"
     # size = "1G"
