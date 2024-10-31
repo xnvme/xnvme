@@ -1117,6 +1117,11 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 				errno = EINVAL;
 				return -1;
 			}
+			if (*endptr != '\0') {
+				XNVME_DEBUG("FAILED: strtoll(), invalid number: %s", arg);
+				errno = EINVAL;
+				return -1;
+			}
 			if (arg == endptr) {
 				XNVME_DEBUG("FAILED: strtoll(), no num. !");
 				errno = EINVAL;
