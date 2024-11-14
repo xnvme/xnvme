@@ -1,0 +1,108 @@
+[cijoe.transport.ssh]
+hostname = "verify-debian.home.arpa"
+port = 22
+username = "root"
+password = "root"
+
+[os]
+name = "debian"
+version = "bookworm"
+
+[liburing.repository]
+remote = "https://github.com/axboe/liburing.git"
+path = "/root/git/liburing"
+tag = "liburing-2.4"
+
+[xnvme.repository]
+remote = "https://github.com/xnvme/xnvme.git"
+path = "/root/git/xnvme"
+branch = "next"
+
+# This is utilized by provision using tgz
+[xnvme.repository.sync]
+remote_path = "/tmp/xnvme"
+
+[xnvme.build]
+type = "debug"
+
+[spdk.repository]
+remote = "https://github.com/xnvme/spdk-for-ci.git"
+path = "/root/git/spdk"
+tag = "xnvme-next"
+
+[spdk.build]
+prefix = "/opt/spdk"
+
+[fio]
+bin = "fio"
+
+[fio.repository]
+remote = "https://github.com/axboe/fio.git"
+path = "/root/git/fio"
+tag = "fio-3.38"
+
+[fio.engines]
+libaio = {type = "builtin"}
+io_uring = {type = "builtin"}
+io_uring_cmd = {type = "builtin"}
+xnvme = {type = "builtin"}
+spdk_nvme = {type = "external_preload", path = "/root/git/spdk/build/fio/spdk_nvme"}
+spdk_bdev = {type = "external_preload", path = "/root/git/spdk/build/fio/spdk_bdev"}
+
+[hugetlbfs]
+mount_point = "/mnt/huge"
+nr_hugepages = "4096"
+
+[[devices]]
+uri = "/dev/nvme0n1"
+nsid = 1
+labels = [ "dev", "bdev", "nvm", "nosgl" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "/dev/nvme1n1"
+nsid = 1
+labels = [ "dev", "bdev", "nvm", "nosgl" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "/dev/nvme2n1"
+nsid = 1
+labels = [ "dev", "bdev", "nvm", "nosgl" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "/dev/ng0n1"
+nsid = 1
+labels = [ "dev", "cdev", "nvm", "nosgl" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "/dev/ng1n1"
+nsid = 1
+labels = [ "dev", "cdev", "nvm", "nosgl" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "/dev/ng2n1"
+nsid = 1
+labels = [ "dev", "cdev", "nvm", "nosgl" ]
+driver_attachment = "kernel"
+
+[[devices]]
+uri = "0000:41:00.0"
+nsid = 1
+labels = [ "dev", "pcie", "nvm", "nosgl" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "0000:42:00.0"
+nsid = 1
+labels = [ "dev", "pcie", "nvm", "nosgl" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "0000:43:00.0"
+nsid = 1
+labels = [ "dev", "pcie", "nvm", "nosgl" ]
+driver_attachment = "userspace"

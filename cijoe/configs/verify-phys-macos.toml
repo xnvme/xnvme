@@ -1,11 +1,11 @@
 [cijoe.transport.ssh]
-hostname = "10.20.30.140"
+hostname = "verify-macos.home.arpa"
 port = 22
 username = "root"
 password = "root"
 
 [cijoe.transport.nonroot]
-hostname = "10.20.30.140"
+hostname = "verify-macos.home.arpa"
 port = 22
 username = "nonroot"
 password = "nonroot"

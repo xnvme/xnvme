@@ -27,7 +27,11 @@ def test_verify_iovec(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[be=driverkit] does not implement iovec")
 
     err, _ = cijoe.run(f"xnvme_tests_ioworker verify {cli_args} --vec-cnt 4")
-    assert not err
+
+    if be_opts["be"] == "spdk" and "nosgl" in device["labels"]:
+        assert err
+    else:
+        assert not err
 
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "sync", "admin"])
@@ -40,7 +44,11 @@ def test_verify_sync_iovec(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[be=driverkit] does not implement iovec")
 
     err, _ = cijoe.run(f"xnvme_tests_ioworker verify-sync {cli_args} --vec-cnt 4")
-    assert not err
+
+    if be_opts["be"] == "spdk" and "nosgl" in device["labels"]:
+        assert err
+    else:
+        assert not err
 
 
 @xnvme_parametrize(labels=["bdev"], opts=["be", "sync", "async", "admin"])
@@ -67,7 +75,11 @@ def test_verify_iovec_direct(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[be=driverkit] does not implement iovec")
 
     err, _ = cijoe.run(f"xnvme_tests_ioworker verify {cli_args} --vec-cnt 4 --direct 1")
-    assert not err
+
+    if be_opts["be"] == "spdk" and "nosgl" in device["labels"]:
+        assert err
+    else:
+        assert not err
 
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "sync", "admin"])
@@ -82,4 +94,8 @@ def test_verify_sync_iovec_direct(cijoe, device, be_opts, cli_args):
     err, _ = cijoe.run(
         f"xnvme_tests_ioworker verify-sync {cli_args} --vec-cnt 4 --direct 1"
     )
-    assert not err
+
+    if be_opts["be"] == "spdk" and "nosgl" in device["labels"]:
+        assert err
+    else:
+        assert not err

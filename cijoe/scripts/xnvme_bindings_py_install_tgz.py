@@ -53,11 +53,18 @@ def main(args, cijoe, step):
     # In some scenarios, like pipx via system packages, then older versions
     # would still work, then it is not a problem, however, a recent pip-install
     # pipx will fetch the latest userpath and fail.
-    command = "echo 'export PATH=\"$PATH:/root/.local/bin\"' >> .bashrc"
-    err, _ = cijoe.run(command)
+    command = "echo $PATH"
+    err, state = cijoe.run(command)
     if err:
         log.error(f"cmd({command}), err({err})")
         return err
+
+    if "/root/.local/bin" not in state.output():
+        command = "echo 'export PATH=\"$PATH:/root/.local/bin\"' >> .bashrc"
+        err, _ = cijoe.run(command)
+        if err:
+            log.error(f"cmd({command}), err({err})")
+            return err
 
     commands = [
         "pipx ensurepath",

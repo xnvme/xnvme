@@ -840,11 +840,11 @@ jobs:
         if-no-files-found: error
 
   #
-  # Build and test xNVMe on macOS
+  # Build and test xNVMe on physical machines
   #
-  verify-macos:
+  verify-physical:
     needs: [source-archive-with-subprojects, source-format-check, build-python]
-    runs-on: [self-hosted, macos, arm64, verify]
+    runs-on: ${{ matrix.guest.labels }}
 
     if: (contains('push pull_request', github.event_name) || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job
       == 'verify')))
@@ -853,7 +853,8 @@ jobs:
       fail-fast: false
       matrix:
         guest:
-        - {os: 'macos', ver: 'sonoma'}
+        - {os: 'debian', ver: 'bookworm', hostname: 'verify-phys-linux', labels: [self-hosted, linux, X64, amd, verify]}
+        - {os: 'macos', ver: 'sonoma', hostname: 'verify-phys-macos', labels: [self-hosted, macos, arm64, verify]}
 
     container:
       image: debian:bookworm
@@ -895,6 +896,7 @@ jobs:
     - name: Prep, environment GITHUB_PATH
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
+        find /tmp/artifacts -name "*.tar.gz"
 
     - name: Packages, Debian Bookworm
       run: |
@@ -914,10 +916,11 @@ jobs:
     # cd'ing into 'cijoe' to auto-collect the non-packaged github-specific configs and
     # workflows.
     - name: CIJOE, run macvfn-provision.yaml
+      if: matrix.guest.os == 'macos'
       run: |
         cd cijoe && cijoe \
         --monitor \
-        --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
+        --config "configs/${{ matrix.guest.hostname }}.toml" \
         --workflow "workflows/macvfn-provision.yaml" \
         --output "provision-macvfn"
 
@@ -925,9 +928,9 @@ jobs:
       run: |
         cd cijoe && cijoe \
         --monitor \
-        --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
+        --config "configs/${{ matrix.guest.hostname }}.toml" \
         --workflow "workflows/provision-using-tgz.yaml" \
-        --output "provision-${{ matrix.guest.os }}-${{ matrix.guest.ver }}" \
+        --output "provision-${{ matrix.guest.hostname }}" \
         xnvme_source_sync xnvme_build_prep xnvme_build xnvme_install \
         ldconfig xnvme_bindings_py_install_tgz fio_prep
 
@@ -935,9 +938,9 @@ jobs:
       run: |
         cd cijoe && cijoe \
         --monitor \
-        --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
+        --config "configs/${{ matrix.guest.hostname }}.toml" \
         --workflow "workflows/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.yaml" \
-        --output "test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
+        --output "test-${{ matrix.guest.hostname }}"
 
     - name: CIJOE, result-log-dump on error
       if: failure()
@@ -945,9 +948,9 @@ jobs:
 
     - name: CIJOE, upload workflow-report-provision-macvfn
       uses: actions/upload-artifact@v4.3.0
-      if: always()
+      if: matrix.guest.os == 'macos' && always()
       with:
-        name: provision-macvfn-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
+        name: provision-macvfn-results-${{ matrix.guest.hostname }}
         path: cijoe/provision-macvfn/*
         if-no-files-found: error
 
@@ -955,21 +958,21 @@ jobs:
       uses: actions/upload-artifact@v4.3.0
       if: always()
       with:
-        name: provision-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
-        path: cijoe/provision-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/*
+        name: provision-results-${{ matrix.guest.hostname }}
+        path: cijoe/provision-${{ matrix.guest.hostname }}/*
         if-no-files-found: error
 
     - name: CIJOE, compress workflow-report-test
       if: always()
       run: |
-        tar czf test-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.tar.gz cijoe/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/* 
+        tar czf test-results-${{ matrix.guest.hostname }}.tar.gz cijoe/test-${{ matrix.guest.hostname }}/* 
 
     - name: CIJOE, upload workflow-report-test
       uses: actions/upload-artifact@v4.3.0
       if: always()
       with:
-        name: test-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}
-        path: test-results-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.tar.gz
+        name: test-results-${{ matrix.guest.hostname }}
+        path: test-results-${{ matrix.guest.hostname }}.tar.gz
         if-no-files-found: error
 
   #
