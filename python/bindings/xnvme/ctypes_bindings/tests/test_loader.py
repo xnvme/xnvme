@@ -22,5 +22,5 @@ def test_ctypes_bindings_are_callable():
     """Verifies that at at least one function is callable"""
 
     assert xnvme.xnvme_libconf_pr(
-        xnvme.XNVME_PR_DEF
+        xnvme.xnvme_libconf_get(), xnvme.XNVME_PR_DEF
     ), "Function-call failed; possibly missing or incompatible library"

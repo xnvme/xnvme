@@ -15,35 +15,44 @@ extern "C" {
 #endif
 
 /**
- * Array of strings related to the configuration of xNVMe
- * These include:
- * Version-strings for libraries bundled with xNVMe
- * Enabled flags at compilation
+ * A collection of strings describing the build-options and linkage of the xNVMe library
  *
- * @see libxnvme_libconf.h
+ * @struct xnvme_libconf
  */
-extern const char *xnvme_libconf[];
+struct xnvme_libconf {
+	const char **entries;
+};
+
+/**
+ * Returns a ::xnvme_libconf
+ *
+ * @return Pointer to a ::xnvme_libconf
+ */
+const struct xnvme_libconf *
+xnvme_libconf_get(void);
 
 /**
  * Prints the given array of version-strings to the given output stream
  *
- * @param stream output stream used for printing
- * @param opts printer options, see ::xnvme_pr
+ * @param stream Output stream used for printing
+ * @param libconf Pointer to the ::xnvme_libconf to print
+ * @param opts Printer options, see ::xnvme_pr
  *
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_libconf_fpr(FILE *stream, enum xnvme_pr opts);
+xnvme_libconf_fpr(FILE *stream, const struct xnvme_libconf *libconf, enum xnvme_pr opts);
 
 /**
  * Prints the given array of version-strings to stdout
  *
- * @param opts printer options, see ::xnvme_pr
+ * @param libconf Pointer to the ::xnvme_libconf to print
+ * @param opts Printer options, see ::xnvme_pr
  *
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_libconf_pr(enum xnvme_pr opts);
+xnvme_libconf_pr(const struct xnvme_libconf *libconf, enum xnvme_pr opts);
 
 #ifdef __cplusplus
 }

@@ -9,9 +9,16 @@
 #ifdef XNVME_BE_LINUX_ENABLED
 #include <linux/nvme_ioctl.h>
 #endif
+#include "xnvme_libconf_entries.c"
+
+const struct xnvme_libconf *
+xnvme_libconf_get(void)
+{
+	return &g_libconf;
+}
 
 int
-xnvme_libconf_fpr(FILE *stream, enum xnvme_pr opts)
+xnvme_libconf_fpr(FILE *stream, const struct xnvme_libconf *libconf, enum xnvme_pr opts)
 {
 	int wrtn = 0;
 
@@ -28,37 +35,27 @@ xnvme_libconf_fpr(FILE *stream, enum xnvme_pr opts)
 	wrtn += fprintf(stream, "xnvme_libconf:");
 
 	wrtn += fprintf(stream, "\n");
-	for (int i = 0; xnvme_libconf[i]; ++i) {
-		fprintf(stream, "  - '%s'\n", xnvme_libconf[i]);
+	wrtn += fprintf(stream, "  entries:\n");
+	for (int i = 0; libconf->entries[i]; ++i) {
+		fprintf(stream, "  - '%s'\n", libconf->entries[i]);
 	}
 
-	// TODO: this is kinda hackish... a better means for backends to provide
-	// various introspective information should be provided
-	wrtn += fprintf(stream, "  - '3p: ");
 #ifdef XNVME_BE_WINDOWS_ENABLED
+	wrtn += fprintf(stream, "  - '3p: ");
 	wrtn += xnvme_be_windows_uapi_ver_fpr(stream, XNVME_PR_DEF);
-#endif
-#ifdef XNVME_BE_LINUX_ENABLED
-	wrtn += xnvme_be_linux_uapi_ver_fpr(stream, XNVME_PR_DEF);
-#endif
 	wrtn += fprintf(stream, "'\n");
+#endif
 #ifdef XNVME_BE_LINUX_ENABLED
-#ifdef NVME_IOCTL_IO64_CMD
-	wrtn += fprintf(stream, "  - '3p: NVME_IOCTL_IO64_CMD'\n");
-#endif
-#ifdef NVME_IOCTL_IO64_CMD_VEC
-	wrtn += fprintf(stream, "  - '3p: NVME_IOCTL_IO64_CMD_VEC'\n");
-#endif
-#ifdef NVME_IOCTL_ADMIN64_CMD
-	wrtn += fprintf(stream, "  - '3p: NVME_IOCTL_ADMIN64_CMD'\n");
-#endif
+	wrtn += fprintf(stream, "  - '3p: ");
+	wrtn += xnvme_be_linux_uapi_ver_fpr(stream, XNVME_PR_DEF);
+	wrtn += fprintf(stream, "'\n");
 #endif
 
 	return wrtn;
 }
 
 int
-xnvme_libconf_pr(enum xnvme_pr opts)
+xnvme_libconf_pr(const struct xnvme_libconf *libconf, enum xnvme_pr opts)
 {
-	return xnvme_libconf_fpr(stdout, opts);
+	return xnvme_libconf_fpr(stdout, libconf, opts);
 }

@@ -70,7 +70,6 @@ xnvmelib_source = [
   'xnvme_kvs.c',
   'xnvme_lba.c',
   'xnvme_libconf.c',
-  'xnvme_libconf_entries.c',
   'xnvme_nvm.c',
   'xnvme_opts.c',
   'xnvme_queue.c',

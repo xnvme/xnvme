@@ -137,7 +137,7 @@
 		xnvme_lba_range_from_zdescr;
 
 		# libxnvme_libconf.h
-		xnvme_libconf;
+		xnvme_libconf_get;
 		xnvme_libconf_fpr;
 		xnvme_libconf_pr;
 

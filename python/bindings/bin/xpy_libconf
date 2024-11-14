@@ -9,7 +9,7 @@ xnvme.guard_unloadable()
 def main():
     """Print xNVMe library information"""
 
-    xnvme.xnvme_libconf_pr(xnvme.XNVME_PR_DEF)
+    xnvme.xnvme_libconf_pr(xnvme.xnvme_libconf.get(), xnvme.XNVME_PR_DEF)
 
     return 0
 

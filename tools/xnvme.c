@@ -1030,7 +1030,7 @@ sub_library_info(struct xnvme_cli *XNVME_UNUSED(cli))
 	xnvme_ver_pr(XNVME_PR_DEF);
 
 	printf("\n");
-	xnvme_libconf_pr(XNVME_PR_DEF);
+	xnvme_libconf_pr(xnvme_libconf_get(), XNVME_PR_DEF);
 
 	err = xnvme_be_attr_list_bundled(&list);
 	if (err) {

@@ -19,7 +19,7 @@ def test_xnvme_ver_fpr():
 
 
 def test_libconf():
-    count = xnvme.xnvme_libconf_pr(xnvme.XNVME_PR_DEF)
+    count = xnvme.xnvme_libconf_pr(xnvme.xnvme_libconf_get(), xnvme.XNVME_PR_DEF)
     assert count, "libconf file-stream is empty!"
 
 
