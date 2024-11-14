@@ -63,7 +63,7 @@ def main(args, cijoe, step):
         "pipx ensurepath",
         "pipx install cijoe==v0.9.34 --include-deps",
         "pipx inject cijoe numpy",
-        "pipx inject cijoe xnvme-py-sdist.tar.gz",
+        "pipx inject cijoe ./xnvme-py-sdist.tar.gz",
         "cijoe --version",
         "pytest --version",
     ]
