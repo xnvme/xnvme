@@ -376,7 +376,7 @@ xnvme_pi_verify(struct xnvme_pi_ctx *ctx, uint8_t *data_buf, uint8_t *md_buf, ui
 			_guard = xnvme_pi_get_guard(pif, ctx->pi_format);
 			if (_guard != guard) {
 				XNVME_DEBUG("Failed to compare Guard: LBA=%" PRIu64 ","
-					    "  Expected=%lx, Actual=%lx\n",
+					    "  Expected=%" PRIx64 ", Actual=%" PRIx64,
 					    ref_tag, _guard, guard);
 				return -1;
 			}

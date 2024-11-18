@@ -107,7 +107,7 @@ _windows_async_iocp_poke(struct xnvme_queue *q, uint32_t max)
 		ret = GetQueuedCompletionStatus(queue->iocp_handle, &byte_count, &comp_key,
 						&overlapped, 0);
 		if (!ret || overlapped == NULL) {
-			XNVME_DEBUG("INFO: ret: %d, overlapped: %p", overlapped);
+			XNVME_DEBUG("INFO: ret: %d, overlapped: %p", ret, overlapped);
 			return completed;
 		}
 		req = CONTAINING_RECORD(overlapped, struct _ov_request, o);

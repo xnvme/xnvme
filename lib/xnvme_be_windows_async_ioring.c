@@ -36,7 +36,7 @@ xnvme_be_windows_ioring_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 
 	if (!handle) {
 		err = GetLastError();
-		XNVME_DEBUG("Failed creating IO ring handle: 0x%x\n", err);
+		XNVME_DEBUG("Failed creating IO ring handle: %" PRId32, err);
 		return err;
 	}
 
@@ -51,7 +51,7 @@ xnvme_be_windows_ioring_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 	err = (create_ioring_procadd)(IORING_VERSION_3, flags, MAX_IORING_SQ, MAX_IORING_CQ,
 				      &queue->ring_handle);
 	if (err < 0) {
-		XNVME_DEBUG("Failed creating IO ring handle: 0x%x\n", err);
+		XNVME_DEBUG("Failed creating IO ring handle: %" PRId32, err);
 		return err;
 	}
 
@@ -169,7 +169,8 @@ xnvme_be_windows_ioring_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 						      IOSQE_FLAGS_NONE);
 
 		if (err < 0) {
-			XNVME_DEBUG("Failed building IO ring read file structure: 0x%x\n", err);
+			XNVME_DEBUG("Failed building IO ring read file structure: 0x%" PRIx32,
+				    err);
 			return err;
 		}
 		break;
@@ -191,13 +192,15 @@ xnvme_be_windows_ioring_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: unsupported opcode: %d for async", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: unsupported opcode: 0x%" PRIx16 " for async",
+			    ctx->cmd.common.opcode);
 		return -ENOSYS;
 	}
 
 	err = (submit_ioring_procadd)(queue->ring_handle, 0, 0, &submitted_entries);
 	if (err < 0) {
-		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opcode, err);
+		XNVME_DEBUG("io_uring_submit(0x%" PRIx16 "), err: %d", ctx->cmd.common.opcode,
+			    err);
 		return err;
 	}
 
