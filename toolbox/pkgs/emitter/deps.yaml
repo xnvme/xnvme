@@ -494,7 +494,7 @@ platforms:
 - alias: macOS
   notes: Interfaces; libaio, liburing, libvfn, and SPDK are not supported on macOS.
   name: macos
-  ver: [14, 13, 12]
+  ver: [15, 14, 13]
   os: macos
   mng: brew
   drop: []
