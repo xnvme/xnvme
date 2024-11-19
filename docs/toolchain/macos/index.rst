@@ -6,9 +6,12 @@ macOS
 macOS (15)
 ~~~~~~~~~~
 
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
 
   sudo ./xnvme/toolbox/pkgs/macos-15.sh
 
@@ -37,9 +40,12 @@ Then go ahead and configure, build and install using ``meson``:
 macOS (14)
 ~~~~~~~~~~
 
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
 
   sudo ./xnvme/toolbox/pkgs/macos-14.sh
 
@@ -68,9 +74,12 @@ Then go ahead and configure, build and install using ``meson``:
 macOS (13)
 ~~~~~~~~~~
 
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
 
   sudo ./xnvme/toolbox/pkgs/macos-13.sh
 

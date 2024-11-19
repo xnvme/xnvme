@@ -6,9 +6,12 @@ Linux
 Alpine Linux (latest)
 ~~~~~~~~~~~~~~~~~~~~~
 
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
 
   sudo ./xnvme/toolbox/pkgs/alpine-latest.sh
 
@@ -44,9 +47,12 @@ Then go ahead and configure, build and install using ``meson``:
 Arch Linux (latest)
 ~~~~~~~~~~~~~~~~~~~
 
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
 
   sudo ./xnvme/toolbox/pkgs/archlinux-latest.sh
 
@@ -79,9 +85,12 @@ Then go ahead and configure, build and install using ``meson``:
 Oracle Linux (9)
 ~~~~~~~~~~~~~~~~
 
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
 
   sudo ./xnvme/toolbox/pkgs/oraclelinux-9.sh
 
@@ -107,9 +116,12 @@ Then go ahead and configure, build and install using ``meson``:
 Rocky Linux (9.2)
 ~~~~~~~~~~~~~~~~~
 
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
 
   sudo ./xnvme/toolbox/pkgs/rockylinux-9.2.sh
 
@@ -135,9 +147,12 @@ Then go ahead and configure, build and install using ``meson``:
 CentOS Stream 9 (stream9)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
 
   sudo ./xnvme/toolbox/pkgs/centos-stream9.sh
 
@@ -163,9 +178,12 @@ Then go ahead and configure, build and install using ``meson``:
 Debian Testing (trixie)
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
 
   sudo ./xnvme/toolbox/pkgs/debian-trixie.sh
 
@@ -191,9 +209,12 @@ Then go ahead and configure, build and install using ``meson``:
 Debian Stable (bookworm)
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
 
   sudo ./xnvme/toolbox/pkgs/debian-bookworm.sh
 
@@ -219,9 +240,12 @@ Then go ahead and configure, build and install using ``meson``:
 Debian Oldstable (bullseye)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
 
   sudo ./xnvme/toolbox/pkgs/debian-bullseye.sh
 
@@ -247,9 +271,12 @@ Then go ahead and configure, build and install using ``meson``:
 Fedora (41)
 ~~~~~~~~~~~
 
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
 
   sudo ./xnvme/toolbox/pkgs/fedora-41.sh
 
@@ -275,9 +302,12 @@ Then go ahead and configure, build and install using ``meson``:
 Fedora (40)
 ~~~~~~~~~~~
 
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
 
   sudo ./xnvme/toolbox/pkgs/fedora-40.sh
 
@@ -303,9 +333,12 @@ Then go ahead and configure, build and install using ``meson``:
 Fedora (39)
 ~~~~~~~~~~~
 
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
 
   sudo ./xnvme/toolbox/pkgs/fedora-39.sh
 
@@ -331,9 +364,12 @@ Then go ahead and configure, build and install using ``meson``:
 Ubuntu Latest (lunar)
 ~~~~~~~~~~~~~~~~~~~~~
 
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
 
   sudo ./xnvme/toolbox/pkgs/ubuntu-lunar.sh
 
@@ -362,9 +398,12 @@ Then go ahead and configure, build and install using ``meson``:
 Ubuntu LTS (jammy)
 ~~~~~~~~~~~~~~~~~~
 
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
 
   sudo ./xnvme/toolbox/pkgs/ubuntu-jammy.sh
 
@@ -393,9 +432,12 @@ Then go ahead and configure, build and install using ``meson``:
 Ubuntu LTS (focal)
 ~~~~~~~~~~~~~~~~~~
 
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
 
   sudo ./xnvme/toolbox/pkgs/ubuntu-focal.sh
 
@@ -424,9 +466,12 @@ Then go ahead and configure, build and install using ``meson``:
 Gentoo (latest)
 ~~~~~~~~~~~~~~~
 
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
 
   sudo ./xnvme/toolbox/pkgs/gentoo-latest.sh
 
@@ -462,9 +507,12 @@ Then go ahead and configure, build and install using ``meson``:
 openSUSE (tumbleweed-latest)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Install the required toolchain and libraries, with sufficient system privileges
-(e.g. as ``root`` or with ``sudo``), by executing the commands below. You can
-run this from the root of the **xNVMe** by invoking::
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
 
   sudo ./xnvme/toolbox/pkgs/opensuse-tumbleweed-latest.sh
 
