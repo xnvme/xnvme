@@ -591,6 +591,7 @@ jobs:
         echo %SystemDrive%\tools\msys64>> %GITHUB_PATH%
         echo %SystemDrive%\tools\msys64\usr\lib>> %GITHUB_PATH%
         echo %SystemDrive%\tools\msys64\usr\bin>> %GITHUB_PATH%
+        echo PKG_CONFIG_PATH=%SystemDrive%/tools/msys64/usr/lib/pkgconfig;%SystemDrive%\tools\msys64\usr\lib\pkgconfig >> %GITHUB_ENV%
 
     - name: Show paths
       shell: powershell
