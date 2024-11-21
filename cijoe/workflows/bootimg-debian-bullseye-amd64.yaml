@@ -30,10 +30,20 @@ steps:
     apt-get -qy install aptitude
     aptitude -q -y -f install git
 
-- name: linux_install_kdebs
-  uses: linux.transfer_and_install_kdebs
+- name: xnvme_source_sync
+  uses: xnvme_source_from_tgz
   with:
-    local_kdebs_dir: "_kdebs"
+    artifacts: '/tmp/artifacts'
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
+
+- name: xnvme_build_prep
+  uses: xnvme_build_prep
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
+
+- name: remove_source
+  run: |
+    rm -rf {{ config.xnvme.repository.sync.remote_path }}
 
 - name: guest_grub_default
   run: |
@@ -44,3 +54,8 @@ steps:
 
 - name: guest_info
   uses: linux.sysinfo
+
+- name: guest_shutdown
+  run: |
+    sync
+    systemctl poweroff
