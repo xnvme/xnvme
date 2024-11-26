@@ -16,6 +16,7 @@ apt-get -qy --no-install-recommends install apt-utils
 apt-get -qy autoclean
 apt-get -qy install \
  autoconf \
+ automake \
  bash \
  build-essential \
  clang-format \
