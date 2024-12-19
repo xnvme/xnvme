@@ -62,29 +62,6 @@ This running :xref-sbc-pikvm:`PiKVM<>` on a **Raspberry Pi 4b**
 with the :xref-sbc-pikvm-v3-hat:`PiKVM V3 HAT<>`, for setup notes
 see :xref-sbc-pikvm-v3-hat-notes:`PiKVM V3 HAT Config Notes<>`.
 
-bench-amd
----------
-
-.. list-table:: Hardware Specs. for ``bench-amd``
-   :widths: 30 15 15 40
-   :header-rows: 1
-
-   * - CPU
-     - Memory
-     - Motherboard
-     - NVMe Devices
-   * - AMD Ryzen Threadripper 1900X 8-Core
-     - 32 GB (4x CMK32GX4M4B3200C16)
-     - ASRock X399 Phantom Gaming 6
-     - - 8x MEMPEK1W016GA
-       - 2x MEMPEK1J016GAL
-
-bench-amd-pikvm
----------------
-
-...
-
-
 runner-rockpi-01
 ----------------
 

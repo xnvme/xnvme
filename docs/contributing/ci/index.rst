@@ -91,7 +91,6 @@ various **CI** jobs.
    :includehidden:
 
    bench/index.rst
-   verify/index.rst
 
 .. _CIJOE in xNVMe: https://github.com/xnvme/xnvme/tree/main/cijoe
 .. _CIJOE: https://cijoe.readthedocs.io
