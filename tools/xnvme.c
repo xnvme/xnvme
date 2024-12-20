@@ -1492,7 +1492,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_LIMIT, XNVME_CLI_LREQ},
 
-			XNVME_CLI_ADMIN_OPTS,
+			XNVME_CLI_SYNC_OPTS,
 		},
 	},
 	{
@@ -1508,7 +1508,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_PID, XNVME_CLI_LREQ},
 
-			XNVME_CLI_ADMIN_OPTS,
+			XNVME_CLI_SYNC_OPTS,
 		},
 	},
 	{
