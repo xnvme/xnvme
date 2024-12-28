@@ -37,7 +37,7 @@ def test_multi(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-@xnvme_parametrize(labels=["dev"], opts=["be"])
+@xnvme_parametrize(labels=["dev"], opts=[])
 def test_backend(cijoe, device, be_opts, cli_args):
     err, _ = cijoe.run("xnvme_tests_enum backend")
     assert not err
