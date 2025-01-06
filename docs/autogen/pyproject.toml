@@ -7,7 +7,6 @@ authors = ["Morten B. Rasmussen <m.rasmussen@samsung.com>"]
 [tool.poetry.dependencies]
 python = "^3.9"
 sphinx = "^7.3.7"
-sphinx-rtd-theme = "^2.0.0"
 sphinxcontrib-bibtex = "^2.6.2"
 kmdo = "1.0.6"
 jinja2 = "3.0.3"
