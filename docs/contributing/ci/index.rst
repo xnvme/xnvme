@@ -18,7 +18,7 @@ utilized for the **xNVMe** **CI** is illustrated below.
 Infrastructure
 ##############
 
-The main logical infrastructure component for the **xNVMe** **CI** is `GitHUB
+The main logical infrastructure component for the **xNVMe** **CI** is `GitHub
 Actions`_ (**GHA**). **GHA** handles **events** occuring on the following
 repositories:
 
@@ -61,6 +61,7 @@ integration of changes / contributions:
   - Running logical tests exercising all code-paths
   - Using a naive "ramdisk" backend
   - Using emulated NVMe devices via qemu
+  - Using physical machines
 
 In addition to cathing issues, then the CI is also utilized for:
 
@@ -72,7 +73,7 @@ In addition to cathing issues, then the CI is also utilized for:
 
 * Statically Analyze the C code-base
 
-  - CodeQL via GitHUB
+  - CodeQL via GitHub
   - Coverity
 
 * Produce and deploy documentation
@@ -80,7 +81,7 @@ In addition to cathing issues, then the CI is also utilized for:
   - Run all example commands (``.cmd`` files) and collect their output in
     ``.out`` files
   - Render the Sphinx-doc documentation as **HTML**
-  - Upload rendered documentation to `xnvme.io via GitHUB-pages`_
+  - Upload rendered documentation to `xnvme.io via GitHub-pages`_
 
 These following sections provide system-setup notes and other details for the
 various **CI** jobs.
@@ -90,10 +91,11 @@ various **CI** jobs.
    :hidden:
    :includehidden:
 
+   runners/index.rst
    bench/index.rst
    verify/index.rst
 
 .. _CIJOE in xNVMe: https://github.com/xnvme/xnvme/tree/main/cijoe
 .. _CIJOE: https://cijoe.readthedocs.io
-.. _GitHUB Actions: https://github.com/features/actions
-.. _xnvme.io via GitHUB-pages: https://github.com/xnvme/xnvme.github.io
+.. _GitHub Actions: https://github.com/features/actions
+.. _xnvme.io via GitHub-pages: https://github.com/xnvme/xnvme.github.io
