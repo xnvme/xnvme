@@ -545,7 +545,7 @@ jobs:
       run: |
         git clone https://github.com/axboe/fio.git /tmp/fio
         cd /tmp/fio
-        git checkout fio-3.36
+        git checkout fio-3.38
         git rev-parse --short HEAD
         gmake
 
@@ -698,7 +698,7 @@ jobs:
         rm -rf C:/tmp/fio
         git clone https://github.com/axboe/fio.git C:/tmp/fio
         cd C:/tmp/fio
-        git checkout fio-3.36
+        git checkout fio-3.38
         git rev-parse --short HEAD
         make
 

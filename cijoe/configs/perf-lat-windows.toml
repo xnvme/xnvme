@@ -29,7 +29,7 @@ bin = "C:/Users/root/git/fio/fio.exe"
 [fio.repository]
 remote = "https://github.com/axboe/fio.git"
 path = "C:/Users/root/git/fio"
-tag = "fio-3.36"
+tag = "fio-3.38"
 
 [fio.engines]
 

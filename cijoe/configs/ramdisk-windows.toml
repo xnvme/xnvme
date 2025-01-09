@@ -19,7 +19,7 @@ bin = "C:/tmp/fio/fio.exe"
 [fio.repository]
 remote = "https://github.com/axboe/fio.git"
 path = "C:/tmp/fio"
-tag = "fio-3.36"
+tag = "fio-3.38"
 
 [fio.engines.libaio]
 type = "builtin"
