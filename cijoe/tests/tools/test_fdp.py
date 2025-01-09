@@ -60,7 +60,7 @@ def test_ruhs(cijoe, device, be_opts, cli_args):
     if be_opts["be"] == "fbsd" and be_opts["sync"] in ["psync"]:
         pytest.skip(reason="ENOSYS: sync=[psync] cannot do mgmt send/receive")
 
-    err, _ = cijoe.run(f"xnvme fdp-ruhs {cli_args} --limit 256")
+    err, _ = cijoe.run(f"xnvme fdp-ruhs {cli_args} --limit 128")
     assert not err
 
 
