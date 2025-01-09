@@ -17,8 +17,9 @@ struct xnvme_queue_liburing {
 	uint8_t poll_io;
 	uint8_t poll_sq;
 	uint8_t batching;
+	int efd; // Completion event FD
 
-	uint8_t _rsvd[13];
+	uint8_t _rsvd[5];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_liburing) == XNVME_BE_QUEUE_STATE_NBYTES,
 		    "Incorrect size")
@@ -41,5 +42,8 @@ xnvme_be_linux_liburing_init(struct xnvme_queue *queue, int opts);
 
 int
 xnvme_be_linux_liburing_term(struct xnvme_queue *queue);
+
+int
+xnvme_be_linux_liburing_get_completion_fd(struct xnvme_queue *queue);
 
 #endif /* __INTERNAL_XNVME_BE_LINUX_LIBURING_H */

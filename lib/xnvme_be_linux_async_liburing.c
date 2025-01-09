@@ -12,6 +12,8 @@
 #include <pthread.h>
 #include <errno.h>
 #include <liburing.h>
+#include <sys/eventfd.h>
+#include <unistd.h>
 #include <xnvme_queue.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_linux_liburing.h>
@@ -77,6 +79,8 @@ xnvme_be_linux_liburing_init(struct xnvme_queue *q, int opts)
 		XNVME_DEBUG("FAILED: lock(g_sqpoll_wq.mutex), err: %d", err);
 		return -err;
 	}
+
+	queue->efd = -1;
 
 	queue->batching = 1;
 	if (getenv("XNVME_QUEUE_BATCHING_OFF")) {
@@ -177,6 +181,13 @@ xnvme_be_linux_liburing_term(struct xnvme_queue *q)
 	if (queue->poll_sq) {
 		io_uring_unregister_files(&queue->ring);
 	}
+
+	if (queue->efd != -1) {
+		io_uring_unregister_eventfd(&queue->ring);
+		close(queue->efd);
+		queue->efd = -1;
+	}
+
 	io_uring_queue_exit(&queue->ring);
 
 	if (queue->poll_sq && g_sqpoll_wq.is_initialized && (!(--g_sqpoll_wq.refcount))) {
@@ -392,6 +403,42 @@ exit:
 
 	return 0;
 }
+
+int
+xnvme_be_linux_liburing_get_completion_fd(struct xnvme_queue *queue)
+{
+	struct xnvme_queue_liburing *q = (struct xnvme_queue_liburing *)queue;
+	int efd, err;
+
+	if (q->efd != -1) {
+		return q->efd;
+	}
+
+	if (q->base.outstanding) {
+		XNVME_DEBUG("FAILED: outstanding I/O found when getting completion_fd");
+		return -EBUSY;
+	}
+
+	efd = eventfd(0, EFD_CLOEXEC);
+	if (efd < 0) {
+		XNVME_DEBUG("FAILED: failed to create eventfd");
+		return -errno;
+	}
+
+	q->efd = efd;
+
+	if (io_uring_register_eventfd(&q->ring, efd)) {
+		XNVME_DEBUG("FAILED: failed to register eventfd");
+		close(efd);
+		return -errno;
+	}
+
+	q->batching = 0;
+	XNVME_DEBUG("Completion FD enabled, submission on poke (batching) disabled");
+
+	return efd;
+}
+
 #endif
 
 struct xnvme_be_async g_xnvme_be_linux_async_liburing = {
@@ -403,7 +450,7 @@ struct xnvme_be_async g_xnvme_be_linux_async_liburing = {
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_linux_liburing_init,
 	.term = xnvme_be_linux_liburing_term,
-	.get_completion_fd = xnvme_be_nosys_queue_get_completion_fd,
+	.get_completion_fd = xnvme_be_linux_liburing_get_completion_fd,
 #else
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
