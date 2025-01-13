@@ -365,9 +365,29 @@ xnvme_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb
 		}
 
 		err = be.dev.enumerate(sys_uri, opts, cb_func, cb_args);
-		if (err) {
+		switch (err) {
+		case 0:
+			break;
+		case -ENOSYS:
+			// fail silently if the error is ENOSYS,
+			// unless the user asks for a specific backend
+			if (opts->be) {
+				XNVME_DEBUG("FAILED: Requested backend (%s) doesn't support "
+					    "enumeration, err: '%s'",
+					    g_xnvme_be_registry[i]->attr.name, strerror(-err));
+				return err;
+			}
+			break;
+		case -ESRCH:
+			if (!strcmp("spdk", be.attr.name)) {
+				XNVME_DEBUG("WARNING: SPDK could not be initialized");
+				break;
+			}
+			// !! FALLTHROUGH !!
+		default:
 			XNVME_DEBUG("FAILED: %s->enumerate(...), err: '%s', i: %d",
 				    g_xnvme_be_registry[i]->attr.name, strerror(-err), i);
+			return err;
 		}
 	}
 
