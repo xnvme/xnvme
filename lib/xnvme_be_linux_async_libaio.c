@@ -12,6 +12,8 @@
 #include <errno.h>
 #include <libaio.h>
 #include <stdatomic.h>
+#include <sys/eventfd.h>
+#include <unistd.h>
 #include <xnvme_queue.h>
 #include <xnvme_be_linux.h>
 #include <xnvme_be_linux_libaio.h>
@@ -43,6 +45,11 @@ _linux_libaio_term(struct xnvme_queue *q)
 		return -EINVAL;
 	}
 
+	if (queue->efd != -1) {
+		close(queue->efd);
+		queue->efd = -1;
+	}
+
 	io_destroy(queue->aio_ctx);
 	free(queue->aio_events);
 
@@ -60,6 +67,8 @@ _linux_libaio_init(struct xnvme_queue *q, int opts)
 
 	queue->aio_ctx = 0;
 	queue->aio_events = calloc(queue->base.capacity, sizeof(struct io_event));
+
+	queue->efd = -1;
 
 	err = io_queue_init(queue->base.capacity, &queue->aio_ctx);
 	if (err) {
@@ -187,6 +196,10 @@ _linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, 
 
 	iocb->data = (unsigned long *)ctx;
 
+	if (queue->efd != -1) {
+		io_set_eventfd(iocb, queue->efd);
+	}
+
 	err = io_submit(queue->aio_ctx, 1, &iocb);
 	if (err == 1) {
 		ctx->async.queue->base.outstanding += 1;
@@ -244,6 +257,10 @@ _linux_libaio_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec
 		return -ENOSYS;
 	}
 
+	if (queue->efd != -1) {
+		io_set_eventfd(iocb, queue->efd);
+	}
+
 	iocb->data = (unsigned long *)ctx;
 
 	err = io_submit(queue->aio_ctx, 1, &iocb);
@@ -256,6 +273,28 @@ _linux_libaio_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec
 
 	return err;
 }
+
+int
+_linux_libaio_get_completion_fd(struct xnvme_queue *queue)
+{
+	struct xnvme_queue_libaio *q = (struct xnvme_queue_libaio *)queue;
+	int efd;
+
+	if (q->efd != -1) {
+		return q->efd;
+	}
+
+	efd = eventfd(0, EFD_CLOEXEC);
+	if (efd < 0) {
+		XNVME_DEBUG("FAILED: failed to create eventfd");
+		return -errno;
+	}
+
+	q->efd = efd;
+
+	return efd;
+}
+
 #endif
 
 struct xnvme_be_async g_xnvme_be_linux_async_libaio = {
@@ -264,7 +303,7 @@ struct xnvme_be_async g_xnvme_be_linux_async_libaio = {
 	.cmd_io = _linux_libaio_cmd_io,
 	.cmd_iov = _linux_libaio_cmd_iov,
 	.poke = _linux_libaio_poke,
-	.wait = xnvme_be_nosys_queue_wait,
+	.wait = _linux_libaio_get_completion_fd,
 	.init = _linux_libaio_init,
 	.term = _linux_libaio_term,
 	.get_completion_fd = xnvme_be_nosys_queue_get_completion_fd,

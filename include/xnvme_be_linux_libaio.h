@@ -13,7 +13,9 @@ struct xnvme_queue_libaio {
 	struct io_event *aio_events;
 
 	uint8_t poll_io;
-	uint8_t rsvd[212];
+	int efd; // Completion event FD
+
+	uint8_t rsvd[204];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_libaio) == XNVME_BE_QUEUE_STATE_NBYTES,
 		    "Incorrect size")
