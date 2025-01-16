@@ -287,7 +287,7 @@ jobs:
         - {os: 'rockylinux', dh: 'rockylinux', ver: '9.2'}
         - {os: 'ubuntu', dh: 'ubuntu', ver: 'focal'}
         - {os: 'ubuntu', dh: 'ubuntu', ver: 'jammy'}
-        - {os: 'ubuntu', dh: 'ubuntu', ver: 'lunar'}
+        - {os: 'ubuntu', dh: 'ubuntu', ver: 'oracular'}
 
     container:
       image: ghcr.io/xnvme/xnvme-deps-${{ matrix.container.os }}-${{ matrix.container.ver }}:next

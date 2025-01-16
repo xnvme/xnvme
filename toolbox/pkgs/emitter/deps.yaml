@@ -428,7 +428,7 @@ platforms:
   notes: All tools and libraries are available via system package-manager.
   os: linux
   name: ubuntu
-  ver: [lunar]
+  ver: [oracular]
   mng: apt
   drop: []
   alt: []
