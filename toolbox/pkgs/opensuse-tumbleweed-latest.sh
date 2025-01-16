@@ -51,7 +51,7 @@ zypper --non-interactive install -y --allow-downgrade \
 git clone https://github.com/SamsungDS/libvfn.git toolbox/third-party/libvfn/repository
 
 pushd toolbox/third-party/libvfn/repository
-git checkout v5.0.0
+git checkout v5.1.0
 meson setup builddir -Dlibnvme="disabled" -Ddocs="disabled" --buildtype=release --prefix=/usr
 meson compile -C builddir
 meson install -C builddir
