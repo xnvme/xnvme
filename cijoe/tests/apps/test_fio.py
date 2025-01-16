@@ -19,7 +19,7 @@ def test_fio_engine(cijoe, device, be_opts, cli_args):
 
     env = {}
 
-    hugepage_path = cijoe.config.options.get("hugetlbfs", {}).get("mount_point", "")
+    hugepage_path = cijoe.getconf("hugetlbfs.mount_point", "")
     if hugepage_path:
         env["XNVME_HUGETLB_PATH"] = hugepage_path
 
@@ -60,7 +60,7 @@ def test_fio_engine_iov(cijoe, device, be_opts, cli_args):
 
     env = {}
 
-    hugepage_path = cijoe.config.options.get("hugetlbfs", {}).get("mount_point", "")
+    hugepage_path = cijoe.getconf("hugetlbfs.mount_point", "")
     if hugepage_path:
         env["XNVME_HUGETLB_PATH"] = hugepage_path
 
@@ -98,7 +98,7 @@ def test_fio_engine_zns(cijoe, device, be_opts, cli_args):
 
     env = {}
 
-    hugepage_path = cijoe.config.options.get("hugetlbfs", {}).get("mount_point", "")
+    hugepage_path = cijoe.getconf("hugetlbfs.mount_point", "")
     if hugepage_path:
         env["XNVME_HUGETLB_PATH"] = hugepage_path
 
@@ -134,7 +134,7 @@ def test_fio_engine_fdp(cijoe, device, be_opts, cli_args):
 
     env = {}
 
-    hugepage_path = cijoe.config.options.get("hugetlbfs", {}).get("mount_point", "")
+    hugepage_path = cijoe.getconf("hugetlbfs.mount_point", "")
     if hugepage_path:
         env["XNVME_HUGETLB_PATH"] = hugepage_path
 
