@@ -1,15 +1,15 @@
 from pathlib import Path
 
 import pytest
-from cijoe.fio.wrapper import fio_fancy
 
 from ..conftest import xnvme_parametrize
+from .fio_fancy import fio_fancy
 
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin", "sync", "async", "mem"])
 def test_fio_engine(cijoe, device, be_opts, cli_args):
     """
-    The construction of the fio-invocation is done in 'cijoe.fio.wrapper.fio_fancy'
+    The construction of the fio-invocation is done in 'fio_fancy'
     """
     is_windows = be_opts["mem"] == "windows" or be_opts["be"] == "windows"
     fio_output_fpath = Path("C:/tmp" if is_windows else "/tmp") / "fio-output.txt"
@@ -40,7 +40,7 @@ def test_fio_engine(cijoe, device, be_opts, cli_args):
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin", "sync", "async", "mem"])
 def test_fio_engine_iov(cijoe, device, be_opts, cli_args):
     """
-    The construction of the fio-invocation is done in 'cijoe.fio.wrapper.fio_fancy'
+    The construction of the fio-invocation is done in 'fio_fancy'
     """
 
     if be_opts["async"] == "posix":
@@ -81,7 +81,7 @@ def test_fio_engine_iov(cijoe, device, be_opts, cli_args):
 @xnvme_parametrize(labels=["zns", "bdev"], opts=["be", "admin", "sync", "async", "mem"])
 def test_fio_engine_zns(cijoe, device, be_opts, cli_args):
     """
-    The construction of the fio-invocation is done in 'cijoe.fio.wrapper.fio_fancy'
+    The construction of the fio-invocation is done in 'fio_fancy'
     """
     if be_opts["be"] == "fbsd":
         pytest.skip(reason="Freebsd kernel doesn't support zns")
@@ -119,7 +119,7 @@ def test_fio_engine_zns(cijoe, device, be_opts, cli_args):
 @xnvme_parametrize(labels=["fdp"], opts=["be", "admin", "sync", "async", "mem"])
 def test_fio_engine_fdp(cijoe, device, be_opts, cli_args):
     """
-    The construction of the fio-invocation is done in 'cijoe.fio.wrapper.fio_fancy'
+    The construction of the fio-invocation is done in 'fio_fancy'
     """
     if be_opts["be"] == "linux" and "cdev" not in device["labels"]:
         pytest.skip(reason="FIO requires a char device with [be=linux]")
