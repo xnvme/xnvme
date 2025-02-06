@@ -34,8 +34,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 from cijoe.core.analyser import to_base_unit
-from cijoe.core.resources import dict_from_yamlfile
-from cijoe.fio.wrapper import dict_from_fio_output_file
 
 JSON_DUMP = {"indent": 4}
 
@@ -147,6 +145,33 @@ def extract_bdevperf(args, cijoe, step):
         json.dump(collection, jfd, **JSON_DUMP)
 
     return 0
+
+
+def dict_from_fio_output_file(fpath: Path) -> dict:
+    """
+    The JSON output produced by fio comes mixed with non-JSON output, this function
+    attempts to extract the JSON part, parse it and return the JSON-document as a dict.
+
+    On error, an empty dict is returned.
+    """
+
+    lines = []
+
+    with fpath.open() as fio_output:
+        do_append = False
+        for line in fio_output:
+            if line.startswith("{"):
+                do_append = True
+
+            if do_append:
+                lines.append(line)
+
+            if line.startswith("}"):
+                break
+    try:
+        return json.loads("".join(lines))
+    except json.decoder.JSONDecodeError:
+        return {}
 
 
 def extract(args, cijoe, step):
