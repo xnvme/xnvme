@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <libxnvme.h>
+#include <libxnvme_buf.h>
 
 #define SET_EVENT_TYPES ((uint8_t[]){0x0, 0x1, 0x2, 0x3, 0x80, 0x81})
 #define SET_EVENT_BUF_SIZE sizeof(SET_EVENT_TYPES)
@@ -275,6 +276,47 @@ sub_log_health(struct xnvme_cli *cli)
 	}
 
 	xnvme_spec_log_health_pr(log, XNVME_PR_DEF);
+
+exit:
+	xnvme_buf_free(dev, log);
+
+	return err;
+}
+
+static int
+sub_log_sanitize_status(struct xnvme_cli *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	uint32_t nsid = cli->args.nsid;
+
+	struct xnvme_spec_log_sanitize_status_entry *log = NULL;
+	const size_t log_nbytes = sizeof(*log);
+	int err;
+
+	if (!cli->given[XNVME_CLI_OPT_NSID]) {
+		nsid = xnvme_dev_get_nsid(cli->args.dev);
+	}
+
+	xnvme_cli_pinf("Allocating and clearing buffer...");
+	log = xnvme_buf_alloc(dev, log_nbytes);
+	if (!log) {
+		err = -errno;
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
+		goto exit;
+	}
+	memset(log, 0, log_nbytes);
+
+	xnvme_cli_pinf("Retrieving Sanitize log page ...");
+	err = xnvme_adm_log(&ctx, XNVME_SPEC_LOG_SANITIZE, 0x0, 0, nsid, 0, log, log_nbytes);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		xnvme_cli_perr("xnvme_adm_log(XNVME_SPEC_LOG_SANITIZE)", err);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+		err = err ? err : -EIO;
+		goto exit;
+	}
+
+	xnvme_spec_log_sanitize_pr(log, XNVME_PR_DEF);
 
 exit:
 	xnvme_buf_free(dev, log);
@@ -794,9 +836,9 @@ sub_sanitize(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
-	uint8_t sanact = cli->args.sanact;
+	uint8_t sanact = 0x2; // cli->args.action;
 	bool ause = cli->args.ause;
-	uint32_t ovrpat = cli->args.ovrpat;
+	uint32_t ovrpat = 0xff; // cli->args.ovrpat;
 	uint8_t owpass = cli->args.owpass;
 	bool oipbp = cli->args.oipbp;
 	bool nodas = cli->args.nodas;
@@ -810,6 +852,45 @@ sub_sanitize(struct xnvme_cli *cli)
 	err = xnvme_nvm_sanitize(&ctx, sanact, ause, ovrpat, owpass, oipbp, nodas);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_perr("xnvme_nvm_sanitize()", err);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+		err = err ? err : -EIO;
+	}
+
+	return err;
+}
+
+static int
+sub_firmware_download(struct xnvme_cli *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+//	char *filepath = cli->args.cmd_input;
+	int err;
+
+	xnvme_cli_pinf("xnvme_nvm_firmware_download: {filepath: %s}", "/Users/komalsangale/Desktop/DextInitialCode/BitbucketRepos/pgrd_xnvme/FW/B.bin");
+
+	err = xnvme_nvm_firmware_download(&ctx, "/Users/komalsangale/Desktop/DextInitialCode/BitbucketRepos/pgrd_xnvme/FW/B.bin");
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		xnvme_cli_perr("xnvme_nvm_firmware_download()", err);
+		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
+		err = err ? err : -EIO;
+	}
+
+	return err;
+}
+
+static int
+sub_firmware_commit(struct xnvme_cli *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	int err;
+
+	xnvme_cli_pinf("xnvme_nvm_firmware_commit: {fs: 0x0, ca: 0x1, bpid: 0x1}");
+
+	err = xnvme_nvm_firmware_commit(&ctx);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		xnvme_cli_perr("xnvme_nvm_firmware_commit()", err);
 		xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 		err = err ? err : -EIO;
 	}
@@ -1308,6 +1389,22 @@ static struct xnvme_cli_sub g_subs[] = {
 		},
 	},
 	{
+		"log-sanitize",
+		"Retrieve the Sanitize information log",
+		"Retrieve and print log",
+                sub_log_sanitize_status,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_NSID, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_DATA_OUTPUT, XNVME_CLI_LOPT},
+
+			XNVME_CLI_ADMIN_OPTS,
+		},
+	},
+	{
 		"log-fdp-config",
 		"Retrieve the FDP configurations log",
 		"Retrieve and print log",
@@ -1476,6 +1573,29 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_OIPBP, XNVME_CLI_LFLG},
 			{XNVME_CLI_OPT_NODAS, XNVME_CLI_LFLG},
 
+			XNVME_CLI_ADMIN_OPTS,
+		},
+	},
+	{
+		"firmware-download",
+		"Update the firmware",
+		"Update Firmware",
+		sub_firmware_download,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+			//{XNVME_CLI_OPT_CMD_INPUT, XNVME_CLI_LOPT},
+			XNVME_CLI_ADMIN_OPTS,
+		},
+	},
+	{
+		"firmware-commit",
+		"Commit Firmware",
+		"Commit Firmware",
+		sub_firmware_commit,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 			XNVME_CLI_ADMIN_OPTS,
 		},
 	},

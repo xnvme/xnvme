@@ -224,6 +224,38 @@ xnvme_nvm_sanitize(struct xnvme_cmd_ctx *ctx, uint8_t sanact, bool ause, uint32_
 		   uint8_t owpass, bool oipbp, bool nodas);
 
 /**
+ * Submit and wait for completion of an Sanitize command
+ *
+ * @todo consider timeout, reset, and need for library/dev re-initialization
+ *
+ * @note Success of this function only means that the sanitize *command*
+ * succeeded and that the sanitize *operation* has started.
+ *
+ * @param ctx Pointer to ::xnvme_cmd_ctx
+ * @param filePath :: FilePath of the firmware which needs to be updated
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ */
+int
+xnvme_nvm_firmware_download(struct xnvme_cmd_ctx *ctx, char* filePath);
+
+/**
+ * Submit and wait for completion of an Sanitize command
+ *
+ * @todo consider timeout, reset, and need for library/dev re-initialization
+ *
+ * @note Success of this function only means that the sanitize *command*
+ * succeeded and that the sanitize *operation* has started.
+ *
+ * @param ctx Pointer to ::xnvme_cmd_ctx
+ * @param filePath :: FilePath of the firmware which needs to be updated
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ */
+int
+xnvme_nvm_firmware_commit(struct xnvme_cmd_ctx *ctx);
+
+/**
  * Submit and wait for completion of directive send command
  *
  * @param ctx Pointer to ::xnvme_cmd_ctx

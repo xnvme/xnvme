@@ -145,7 +145,9 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cpl) == 16, "Incorrect size")
 /**
  * NVMe get-log-page entry for error information
  *
- * NVMe 1.4: Figure 194
+ * NVMe 1.4 : Figure 194
+ * NVMe 1.4c: Figure 198
+ * NVMe 2.0 : Figure 208
  *
  * NOTE: using __attribute__((packed))__ as GCC does not like "uint16_t ct"
  * for some reason. Without the packing it becomes 2 bytes larger
@@ -184,6 +186,29 @@ struct __attribute__((packed)) xnvme_spec_log_health_entry {
 	uint8_t rsvd[280];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_log_health_entry) == 512, "Incorrect size")
+
+/**
+ * NVMe get-log-page entry for sanitize status information
+ *
+ * NVMe 1.4c - Figure 242
+ *
+ * @struct xnvme_spec_log_sanitize_status_entry
+ */
+
+struct __attribute__((packed)) xnvme_spec_log_sanitize_status_entry {
+	uint16_t sprog;         ///< Sanitize Progress
+	uint16_t sstat;         ///< Sanitize Status : Bits 0:2 contain the status of the most recent sanitize operation
+                                ///< 000b - Never Sanitized, 001b - Operation Successful, 010b - In Progress, 011b - Failed, 100b - success
+        uint32_t scdw10;        ///< Sanitize Command Dword 10 Information
+        uint32_t etfo;          ///< Estimated Time for Overwrite
+        uint32_t etfbe;         ///< Estimated Time for Block Erase
+        uint32_t etfce;         ///< Estimated Time for Crypto Erase
+        uint32_t etfownmm;      ///< Estimated Time for Overwrite with No-Deallocate Media Modification
+        uint32_t etfbewnmm;     ///< Estimated Time for Block Erase with No-Deallocate Media Modification
+        uint32_t etfcewnmm;     ///< Estimated Time for Crypto Erase With No-Deallocate Media Modification
+        uint8_t rsvd[480];
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_log_sanitize_status_entry) == 512, "Incorrect size")
 
 /**
  * NVMe get-log-page entry for error information
@@ -406,6 +431,7 @@ enum xnvme_spec_log_lpi {
 	XNVME_SPEC_LOG_FDPRUHU   = 0x21, ///< XNVME_SPEC_LOG_FDPRUHU
 	XNVME_SPEC_LOG_FDPSTATS  = 0x22, ///< XNVME_SPEC_LOG_FDPSTATS
 	XNVME_SPEC_LOG_FDPEVENTS = 0x23, ///< XNVME_SPEC_LOG_FDPEVENTS
+	XNVME_SPEC_LOG_SANITIZE  = 0x81, ///< XNVME_SPEC_LOG_SANITIZE
 };
 
 /**
@@ -1495,6 +1521,10 @@ enum xnvme_spec_nvm_opc {
 	XNVME_SPEC_NVM_OPC_WRITE_ZEROES        = 0x08, ///< XNVME_SPEC_NVM_OPC_WRITE_ZEROES
 	XNVME_SPEC_NVM_OPC_DATASET_MANAGEMENT  = 0x09, ///< XNVME_SPEC_NVM_OPC_DATASET_MANAGEMENT
 
+//vikram
+	XNVME_SPEC_NVM_OPC_FIRMWARE_COMMIT         = 0x10, ///< XNVME_SPEC_NVM_OPC_FIRMWARE_COMMIT
+	XNVME_SPEC_NVM_OPC_FIRMWARE_IMAGE_DOWNLOAD = 0x11, ///< XNVME_SPEC_NVM_OPC_FIRMWARE_IMAGE_DOWNLOAD
+
 	XNVME_SPEC_NVM_OPC_SCOPY        = 0x19, ///< XNVME_SPEC_NVM_OPC_SCOPY
 	XNVME_SPEC_NVM_OPC_IO_MGMT_RECV = 0x12, ///< XNVME_SPEC_NVM_OPC_IO_MGMT
 	XNVME_SPEC_NVM_OPC_IO_MGMT_SEND = 0x1D, ///< XNVME_SPEC_NVM_OPC_IO_MGMT_SEND
@@ -1891,6 +1921,36 @@ struct xnvme_spec_cmd_sanitize {
 	uint32_t cdw12_15[4]; ///< Command dword 12 to 15
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_sanitize) == 64, "Incorrect size")
+
+/**
+ * NVMe Command Accessor for the Firmware Image Download command
+ *
+ * @struct xnvme_spec_cmd_firmware_image_download
+ */
+struct xnvme_spec_cmd_firmware_image_download {
+	uint32_t cdw00_05[06]; ///< Command dword 0 to 5
+        /* cdw 06-09: */       ///< DPTR -- data pointer
+        uint32_t dptr[4];      // Data Pointer
+	uint32_t numbd;        // Number of Dwords
+	uint32_t offst;        // Offset
+	uint32_t cdw12_15[4];  ///< Command dword 12 to 15
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_firmware_image_download) == 64, "Incorrect size")
+
+/**
+ * NVMe Command Accessor for the Firmware Image Commit command
+ *
+ * @struct xnvme_spec_cmd_firmware_image_commit
+ */
+struct xnvme_spec_cmd_firmware_image_commit {
+	uint32_t cdw00_09[10]; ///< Command dword 0 to 5
+	uint32_t fs:3;         // Firmware Slot
+	uint32_t ca:3;         // Commit Action
+	uint32_t rsvd:25;      // Reserved
+	uint32_t bpid:1;       // Boot Partition
+	uint32_t cdw11_15[5];  ///< Command dword 12 to 15
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_firmware_image_commit) == 64, "Incorrect size")
 
 /**
  * NVMe Command Accessor for the NVM-format command
@@ -2617,6 +2677,8 @@ struct xnvme_spec_cmd {
 		struct xnvme_spec_io_mgmt_cmd mgmt;
 		struct xnvme_spec_kvs_cmd kvs;
 		struct xnvme_spec_nvm_compare compare;
+                struct xnvme_spec_cmd_firmware_image_download firmware_image_download;
+                struct xnvme_spec_cmd_firmware_image_commit firmware_image_commit;
 	};
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd) == 64, "Incorrect size")
@@ -3005,6 +3067,17 @@ xnvme_spec_log_erri_fpr(FILE *stream, const struct xnvme_spec_log_erri_entry *lo
  */
 int
 xnvme_spec_log_erri_pr(const struct xnvme_spec_log_erri_entry *log, int limit, int opts);
+
+/**
+ * Prints the given :;xnvme_spec_log_sanitize_status_entry to stdout
+ *
+ * @param log
+ * @param limit
+ * @param opts printer options, see ::xnvme_pr
+ * @return On success, the number of characters printed is returned.
+ */
+int
+xnvme_spec_log_sanitize_pr(const struct xnvme_spec_log_sanitize_status_entry *log, int opts);
 
 /**
  * Prints the given :;xnvme_spec_log_fdp_conf to stdout
