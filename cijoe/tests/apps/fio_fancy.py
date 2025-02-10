@@ -42,8 +42,6 @@ import logging as log
 import os
 from pathlib import Path
 
-from cijoe.fio.wrapper import fio
-
 JOBS = {
     "compare": {
         "name": "compare",
@@ -196,6 +194,22 @@ def setup_output(param, env, output_fpath):
 
     param["output-format"] = "normal,json"
     param["output"] = f"{output_fpath}"
+
+
+def fio(cijoe, parameters="", env={}):
+    """
+    Invoke 'fio' using binary at `'cijoe.config.options.fio.bin`', with the given
+    parameters and environment variables (``env``)
+
+    @returns err, state
+    """
+
+    fio_bin = cijoe.getconf("fio.bin")
+    if not fio_bin:
+        log.error("missing config: fio.bin")
+        return 1, None
+
+    return cijoe.run(f"{fio_bin} {parameters}", env=env)
 
 
 def fio_fancy(
