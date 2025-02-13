@@ -5,7 +5,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_LINUX_VFIO_ENABLED
+#ifdef XNVME_BE_VFIO_ENABLED
 #include <xnvme_dev.h>
 #include <xnvme_queue.h>
 #include <xnvme_be_vfio.h>
@@ -242,7 +242,7 @@ xnvme_be_vfio_queue_get_completion_fd(struct xnvme_queue *queue)
 
 struct xnvme_be_async g_xnvme_be_vfio_async = {
 	.id = "nvme",
-#ifdef XNVME_BE_LINUX_VFIO_ENABLED
+#ifdef XNVME_BE_VFIO_ENABLED
 	.cmd_io = xnvme_be_vfio_async_cmd_io,
 	.cmd_iov = xnvme_be_vfio_async_cmd_iov,
 	.poke = xnvme_be_vfio_queue_poke,

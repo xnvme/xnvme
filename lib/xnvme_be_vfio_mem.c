@@ -4,7 +4,7 @@
 
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_LINUX_VFIO_ENABLED
+#ifdef XNVME_BE_VFIO_ENABLED
 #include <errno.h>
 #include <sys/mman.h>
 #include <xnvme_be_vfio.h>
@@ -127,7 +127,7 @@ xnvme_be_vfio_mem_unmap(const struct xnvme_dev *dev, void *buf)
 
 struct xnvme_be_mem g_xnvme_be_vfio_mem = {
 	.id = "libvfn",
-#ifdef XNVME_BE_LINUX_VFIO_ENABLED
+#ifdef XNVME_BE_VFIO_ENABLED
 	.buf_alloc = xnvme_be_vfio_buf_alloc,
 	.buf_realloc = xnvme_be_vfio_buf_realloc,
 	.buf_free = xnvme_be_vfio_buf_free,

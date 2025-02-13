@@ -5,7 +5,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_LINUX_VFIO_ENABLED
+#ifdef XNVME_BE_VFIO_ENABLED
 #include <xnvme_dev.h>
 #include <xnvme_be_vfio.h>
 
@@ -259,7 +259,7 @@ xnvme_be_vfio_dev_close(struct xnvme_dev *dev)
 #endif
 
 struct xnvme_be_dev g_xnvme_be_vfio_dev = {
-#ifdef XNVME_BE_LINUX_VFIO_ENABLED
+#ifdef XNVME_BE_VFIO_ENABLED
 	.enumerate = xnvme_be_vfio_enumerate,
 	.dev_open = xnvme_be_vfio_dev_open,
 	.dev_close = xnvme_be_vfio_dev_close,

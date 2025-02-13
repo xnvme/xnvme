@@ -5,7 +5,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_LINUX_VFIO_ENABLED
+#ifdef XNVME_BE_VFIO_ENABLED
 #include <errno.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_vfio.h>
@@ -126,7 +126,7 @@ out:
 
 struct xnvme_be_sync g_xnvme_be_vfio_sync = {
 	.id = "nvme",
-#ifdef XNVME_BE_LINUX_VFIO_ENABLED
+#ifdef XNVME_BE_VFIO_ENABLED
 	.cmd_io = xnvme_be_vfio_sync_cmd_io,
 	.cmd_iov = xnvme_be_vfio_sync_cmd_iov,
 #else

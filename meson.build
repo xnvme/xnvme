@@ -121,7 +121,7 @@ libvfn_dep = dependency(
   version: '>=5.1.0',
   required: get_option('with-libvfn')
 )
-conf_data.set('XNVME_BE_LINUX_VFIO_ENABLED', libvfn_dep.found())
+conf_data.set('XNVME_BE_VFIO_ENABLED', libvfn_dep.found())
 
 isal_dep = dependency(
   'libisal',

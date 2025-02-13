@@ -4,7 +4,7 @@
 
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_LINUX_VFIO_ENABLED
+#ifdef XNVME_BE_VFIO_ENABLED
 #include <xnvme_be_vfio.h>
 
 struct xnvme_be_mixin g_xnvme_be_mixin_vfio[] = {
@@ -59,12 +59,12 @@ struct xnvme_be xnvme_be_vfio = {
 	.attr =
 		{
 			.name = "vfio",
-#ifdef XNVME_BE_LINUX_VFIO_ENABLED
+#ifdef XNVME_BE_VFIO_ENABLED
 			.enabled = 1,
 #endif
 		},
 	.state = {0},
-#ifdef XNVME_BE_LINUX_VFIO_ENABLED
+#ifdef XNVME_BE_VFIO_ENABLED
 	.nobjs = sizeof g_xnvme_be_mixin_vfio / sizeof *g_xnvme_be_mixin_vfio,
 	.objs = g_xnvme_be_mixin_vfio,
 #endif
