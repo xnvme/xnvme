@@ -120,14 +120,6 @@ _vfio_cref_deref(struct nvme_ctrl *ctrlr)
 }
 
 int
-xnvme_be_vfio_enumerate(const char *XNVME_UNUSED(sys_uri), struct xnvme_opts *XNVME_UNUSED(opts),
-			xnvme_enumerate_cb XNVME_UNUSED(cb_func), void *XNVME_UNUSED(cb_args))
-{
-	XNVME_DEBUG("xnvme_be_vfio_enumerate()");
-	return -ENOSYS;
-}
-
-int
 _xnvme_be_vfio_create_ioqpair(struct xnvme_be_vfio_state *state, int qd, int flags)
 {
 	unsigned int qid = __builtin_ffsll(state->qidmap);
@@ -260,7 +252,7 @@ xnvme_be_vfio_dev_close(struct xnvme_dev *dev)
 
 struct xnvme_be_dev g_xnvme_be_vfio_dev = {
 #ifdef XNVME_BE_VFIO_ENABLED
-	.enumerate = xnvme_be_vfio_enumerate,
+	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_vfio_dev_open,
 	.dev_close = xnvme_be_vfio_dev_close,
 #else

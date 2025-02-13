@@ -60,14 +60,6 @@ xnvme_be_vfio_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *ph
 	return vaddr;
 }
 
-void *
-xnvme_be_vfio_buf_realloc(const struct xnvme_dev *XNVME_UNUSED(dev), void *XNVME_UNUSED(buf),
-			  size_t XNVME_UNUSED(nbytes), uint64_t *XNVME_UNUSED(phys))
-{
-	errno = ENOSYS;
-	return NULL;
-}
-
 int
 xnvme_be_vfio_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys)
 {
@@ -129,7 +121,7 @@ struct xnvme_be_mem g_xnvme_be_vfio_mem = {
 	.id = "libvfn",
 #ifdef XNVME_BE_VFIO_ENABLED
 	.buf_alloc = xnvme_be_vfio_buf_alloc,
-	.buf_realloc = xnvme_be_vfio_buf_realloc,
+	.buf_realloc = xnvme_be_nosys_buf_realloc,
 	.buf_free = xnvme_be_vfio_buf_free,
 	.buf_vtophys = xnvme_be_vfio_buf_vtophys,
 	.mem_map = xnvme_be_vfio_mem_map,
