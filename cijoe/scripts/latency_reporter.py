@@ -20,6 +20,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import jinja2
+from cijoe.core.resources import dict_from_yamlfile
 from reporter import (
     copy_graphs,
     create_stylesheet,
@@ -61,11 +62,14 @@ def main(args, cijoe, step):
 
     # info for methodology section
     ioengines = cijoe.config.options.get("fio", {}).get("engines", {})
-    iosizes = step.get("with", {}).get("iosizes", [])
-    iodepths = step.get("with", {}).get("iodepths", [])
+
+    runs_aux_path = step.get("with", {}).get("runs", None)
+    if not runs_aux_path:
+        log.error("Missing path to auxiliary file describing the runs")
+    runs = dict_from_yamlfile(Path(runs_aux_path))
     fio = {
-        "iosizes": iosizes,
-        "iodepths": iodepths,
+        "iosizes": runs["iosizes"],
+        "iodepths": runs["iodepths"],
         "ioengines": [{"name": e} for e in ioengines],
     }
 
