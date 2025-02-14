@@ -408,7 +408,7 @@ int
 xnvme_be_linux_liburing_get_completion_fd(struct xnvme_queue *queue)
 {
 	struct xnvme_queue_liburing *q = (struct xnvme_queue_liburing *)queue;
-	int efd, err;
+	int efd;
 
 	if (q->efd != -1) {
 		return q->efd;
