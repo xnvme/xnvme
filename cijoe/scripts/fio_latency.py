@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional
 
 from cijoe.core.command import Cijoe
+from cijoe.core.resources import dict_from_yamlfile
 
 LATENCY_TEST_SIZE: str = "100%"
 LATENCY_TEST_ROOT_DIR: Path = Path("/tmp/")
@@ -337,7 +338,12 @@ class FIO:
 
 def main(args, cijoe: Cijoe, step: Dict[str, Any]):
     fio_bin = cijoe.config.options.get("fio", {}).get("bin")
-    runs = step.get("with", {}).get("runs", [])
+
+    runs_aux_path = step.get("with", {}).get("runs", None)
+    if not runs_aux_path:
+        log.error("Missing path to auxiliary file describing the runs")
+    runs = dict_from_yamlfile(Path(runs_aux_path))["runs"]
+
     io_engines: CijoeEngines = cijoe.config.options.get("fio", {}).get("engines")
     devices: List[Device] = list(determine_devices(cijoe.config.options.get("devices")))
     os_name = cijoe.config.options.get("os", {}).get("name", "")

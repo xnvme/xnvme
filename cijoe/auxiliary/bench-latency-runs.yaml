@@ -1,0 +1,8 @@
+---
+iodepths: &iodepths [1, 2, 4, 8, 16]
+iosizes: &iosizes [512, 1024, 2048, 4096, 8192, 16384, 32768, 65536]
+runs:
+- iosizes: [4096]
+  iodepths: *iodepths
+- iosizes: *iosizes
+  iodepths: [1]
