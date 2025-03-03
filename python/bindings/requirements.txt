@@ -1,6 +1,6 @@
 # For ctypes-bindings
 black
 clang>=11,<=14.0.6
-ctypeslib2
+ctypeslib2==2.3.4
 # All
 pytest
