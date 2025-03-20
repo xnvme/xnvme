@@ -24,9 +24,15 @@ Retargetable: false
 """
 import errno
 import logging as log
+from argparse import ArgumentParser
 from pathlib import Path
 
 from cijoe.qemu.wrapper import Guest
+
+
+def add_args(parser: ArgumentParser):
+    parser.add_argument("--nvme_img_root", type=str, default=None)
+    parser.add_argument("--guest_name", type=str, default=None)
 
 
 def qemu_nvme_args(nvme_img_root):
@@ -255,13 +261,18 @@ def qemu_nvme_args(nvme_img_root):
     return drives, nvme
 
 
-def main(args, cijoe, step):
+def main(args, cijoe):
     """Start a qemu guest"""
 
     drive_size = "8G"
-    guest = Guest(cijoe, cijoe.config)
+    guest_name = args.guest_name or cijoe.getconf("qemu.default_guest")
+    if not guest_name:
+        log.error("missing config value(qemu.guest_name)")
+        return 1
 
-    nvme_img_root = Path(step.get("with", {}).get("nvme_img_root", guest.guest_path))
+    guest = Guest(cijoe, cijoe.config, guest_name)
+
+    nvme_img_root = Path(args.nvme_img_root or guest.guest_path)
 
     drives, nvme_args = qemu_nvme_args(nvme_img_root)
 

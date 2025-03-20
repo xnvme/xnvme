@@ -21,6 +21,7 @@ import json
 import logging as log
 import os
 import traceback
+from argparse import ArgumentParser
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -29,12 +30,19 @@ from plotter import (
     PLOT_SCALE,
     data_as_a_function_of,
     draw_bar_plot,
-    plot_attributes_from_step,
+    plot_attributes_from_args,
 )
 
 
-def create_plots(args, cijoe, step):
-    search = step.get("with", {}).get("path", args.output)
+def add_args(parser: ArgumentParser):
+    parser.add_argument("--path", type=str, default=None)
+    parser.add_argument("--limits", type=str, default="plot-limits.yaml")
+    parser.add_argument("--legends", type=str, default="plot-legends.yaml")
+    parser.add_argument("--styles", type=str, default="plot-styles.yaml")
+
+
+def create_plots(args):
+    search = args.path or args.output
     if not search:
         return errno.EINVAL
     artifacts = args.output / "artifacts"
@@ -45,7 +53,7 @@ def create_plots(args, cijoe, step):
     with path.open() as jfd:
         data = json.load(jfd)
 
-    plot_attributes = plot_attributes_from_step(step)
+    plot_attributes = plot_attributes_from_args(args)
 
     y = "lat"
 
@@ -112,9 +120,9 @@ def create_plots(args, cijoe, step):
     return 0
 
 
-def main(args, cijoe, step):
+def main(args, cijoe):
     try:
-        err = create_plots(args, cijoe, step)
+        err = create_plots(args)
         if err:
             return err
     except Exception as exc:

@@ -11,26 +11,36 @@ Retargetable: False
 
 It is intended to be run "locally" since, currently the collection of the generated
 .debs are not retrieved via cijoe.get(), doing so would make it retargetable.
-
-Worklet arguments
------------------
-
-with.localversion
 """
 
+from argparse import ArgumentParser, _StoreAction
 from pathlib import Path
 
 
-def main(args, cijoe, step):
+def add_args(parser: ArgumentParser):
+    class StringToBoolAction(_StoreAction):
+        def __call__(self, parser, namespace, values, option_string=None):
+            setattr(namespace, self.dest, values == "true")
+
+    parser.add_argument(
+        "--run_local",
+        choices=["true", "false"],
+        default=True,
+        action=StringToBoolAction,
+    )
+    parser.add_argument("--localversion", type=int, default=0)
+
+
+def main(args, cijoe):
     """Configure, build and collect the build-artifacts"""
 
-    repos = Path(cijoe.config.options["linux"]["repository"]["path"]).resolve()
+    repos = Path(cijoe.getconf("linux.repository.path")).resolve()
     err, _ = cijoe.run(f"[ -d {repos} ]")
     if err:
         return err
 
-    localversion = step.get("with", {}).get("localversion", "custom")
-    run_local = step.get("with", {}).get("run_local", True)
+    localversion = args.localversion
+    run_local = args.run_local
     run = cijoe.run_local if run_local else cijoe.run
 
     commands = [

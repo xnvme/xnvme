@@ -18,7 +18,7 @@ import errno
 import logging as log
 
 
-def main(args, cijoe, step):
+def main(args, cijoe):
     """Setup hugetlbfs"""
 
     nr_hugepages = cijoe.getconf("hugetlbfs.nr_hugepages", 128)

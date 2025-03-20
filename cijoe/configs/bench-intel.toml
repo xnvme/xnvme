@@ -246,3 +246,7 @@ pcie = "0000:0a:00.0"
 os = "7n1"
 sn = "S5GXNX0T875423K"
 label = "980PRO_1TB"
+
+[qemu]
+default_guest = ""
+default_systemimage = ""

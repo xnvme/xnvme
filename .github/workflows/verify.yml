@@ -406,12 +406,10 @@ jobs:
     - name: CIJOE, install fio
       if: (!contains('focal', matrix.container.ver))
       run: |
-        cd cijoe && cijoe \
+        cd cijoe && cijoe fio_prep \
         --monitor \
         --config "configs/ramdisk.toml" \
-        --workflow "workflows/provision-using-tgz.yaml" \
-        --output "prep-fio-${{ matrix.container.os }}-${{ matrix.container.ver }}" \
-        fio_prep
+        --output "prep-fio-${{ matrix.container.os }}-${{ matrix.container.ver }}"
 
     - name: CIJOE, upload prep-fio
       if: always() && (!contains('focal', matrix.container.ver))
@@ -424,10 +422,9 @@ jobs:
     - name: CIJOE, run test-ramdisk.yaml
       if: (!contains('focal', matrix.container.ver))
       run: |
-        cd cijoe && cijoe \
+        cd cijoe && cijoe "workflows/test-ramdisk.yaml" \
         --monitor \
         --config "configs/ramdisk.toml" \
-        --workflow "workflows/test-ramdisk.yaml" \
         --output "test-${{ matrix.container.os }}-${{ matrix.container.ver }}"
 
     - name: CIJOE, upload test-ramdisk-report
@@ -551,10 +548,9 @@ jobs:
 
     - name: CIJOE, run test-ramdisk.yaml
       run: |
-        cd cijoe && cijoe \
+        cd cijoe && cijoe "workflows/test-ramdisk-macos.yaml" \
         --monitor \
         --config "configs/ramdisk-macos.toml" \
-        --workflow "workflows/test-ramdisk-macos.yaml" \
         --output "test-${{ matrix.runner.os }}-${{ matrix.runner.ver }}"
 
     - name: CIJOE, upload test-ramdisk-report
@@ -705,10 +701,9 @@ jobs:
     - name: CIJOE, run test-ramdisk-windows.yaml
       shell: bash
       run: |
-        cd cijoe; cijoe \
+        cd cijoe; cijoe "workflows/test-ramdisk-windows.yaml" \
         --monitor \
         --config "configs/ramdisk-windows.toml" \
-        --workflow "workflows/test-ramdisk-windows.yaml" \
         --output "test-${{ matrix.runner.os }}-${{ matrix.runner.ver }}"
 
     - name: CIJOE, upload test-ramdisk-report
@@ -800,18 +795,16 @@ jobs:
     # workflows.
     - name: CIJOE, run provision-using-tgz.yaml
       run: |
-        cd cijoe && cijoe \
+        cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
         --monitor \
         --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
-        --workflow "workflows/provision-using-tgz.yaml" \
         --output "provision-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
     - name: CIJOE, run test.yaml
       run: |
-        cd cijoe && cijoe \
+        cd cijoe && cijoe "workflows/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.yaml" \
         --monitor \
         --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
-        --workflow "workflows/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.yaml" \
         --output "test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
     - name: CIJOE, result-log-dump on error
@@ -918,28 +911,25 @@ jobs:
     - name: CIJOE, run macvfn-provision.yaml
       if: matrix.guest.os == 'macos'
       run: |
-        cd cijoe && cijoe \
+        cd cijoe && cijoe "workflows/macvfn-provision.yaml" \
         --monitor \
         --config "configs/${{ matrix.guest.hostname }}.toml" \
-        --workflow "workflows/macvfn-provision.yaml" \
-        --output "provision-macvfn"
+        --output "provision-macvfn" \
 
     - name: CIJOE, run provision-using-tgz.yaml
       run: |
-        cd cijoe && cijoe \
+        cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
         --monitor \
         --config "configs/${{ matrix.guest.hostname }}.toml" \
-        --workflow "workflows/provision-using-tgz.yaml" \
         --output "provision-${{ matrix.guest.hostname }}" \
         xnvme_source_sync xnvme_build_prep xnvme_build xnvme_install \
         ldconfig xnvme_bindings_py_install_tgz fio_prep
 
     - name: CIJOE, run test.yaml
       run: |
-        cd cijoe && cijoe \
+        cd cijoe && cijoe "workflows/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.yaml" \
         --monitor \
         --config "configs/${{ matrix.guest.hostname }}.toml" \
-        --workflow "workflows/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.yaml" \
         --output "test-${{ matrix.guest.hostname }}"
 
     - name: CIJOE, result-log-dump on error
@@ -1031,29 +1021,26 @@ jobs:
     - name: CIJOE, provision xnvme from tgz
       run: |
         rm -rf cijoe/xnvme-provisioning
-        cd cijoe && cijoe \
-        --monitor \
+        cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
+        --monitor  \
         --config "configs/bench-intel.toml" \
-        --workflow "workflows/provision-using-tgz.yaml" \
         --output "xnvme-provisioning" \
         xnvme_source_sync xnvme_build_prep xnvme_build \
         xnvme_install ldconfig fio_prep
 
     - name: CIJOE, run benchmark provisioning
       run: |
-        cd cijoe && cijoe \
+        cd cijoe && cijoe "workflows/benchmark-provisioning-linux.yaml" \
         --monitor \
         --config "configs/bench-intel.toml" \
-        --workflow "workflows/benchmark-provisioning-linux.yaml" \
         --output "benchmark-provisioning"
 
     - name: CIJOE, run bench
       run: |
         rm -rf cijoe/bench-results
-        cd cijoe && cijoe \
+        cd cijoe && cijoe "workflows/bench.yaml" \
         --monitor \
         --config "configs/bench-intel.toml" \
-        --workflow "workflows/bench.yaml" \
         --output "bench-results"
 
     - name: CIJOE, compress xnvme-provisioning
@@ -1155,30 +1142,26 @@ jobs:
     - name: CIJOE, provision xnvme from tgz
       run: |
         rm -rf cijoe/xnvme-${{ matrix.guest.os }}-provisioning
-        cd cijoe && cijoe \
-        --monitor \
+        cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
+        --monitor  \
         --config "configs/perf-lat-${{ matrix.guest.os }}.toml" \
-        --workflow "workflows/provision-using-tgz.yaml" \
         --output "xnvme-${{ matrix.guest.os }}-provisioning" \
-        xnvme_source_sync xnvme_build_prep xnvme_build \
-        xnvme_install ldconfig fio_prep
+        xnvme_source_sync xnvme_build_prep xnvme_build xnvme_install ldconfig fio_prep
 
     - name: CIJOE, run benchmark provisioning
       run: |
         rm -rf cijoe/latency-${{ matrix.guest.os }}-provisioning
-        cd cijoe && cijoe \
+        cd cijoe && cijoe "workflows/benchmark-provisioning-${{ matrix.guest.os }}.yaml" \
         --monitor \
         --config "configs/perf-lat-${{ matrix.guest.os }}.toml" \
-        --workflow "workflows/benchmark-provisioning-${{ matrix.guest.os }}.yaml" \
         --output "latency-${{ matrix.guest.os }}-provisioning"
 
     - name: CIJOE, run benchmark latency
       run: |
         rm -rf cijoe/latency-${{ matrix.guest.os }}-results
-        cd cijoe && cijoe \
+        cd cijoe && cijoe "workflows/benchmark-latency.yaml" \
         --monitor \
         --config "configs/perf-lat-${{ matrix.guest.os }}.toml" \
-        --workflow "workflows/benchmark-latency.yaml" \
         --output "latency-${{ matrix.guest.os }}-results"
 
     - name: CIJOE, compress xnvme-${{ matrix.guest.os }}-provisioning
@@ -1322,18 +1305,16 @@ jobs:
     # workflows.
     - name: CIJOE, run provision-using-tgz.yaml
       run: |
-        cd cijoe && cijoe \
+        cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
         --monitor \
         --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
-        --workflow "workflows/provision-using-tgz.yaml" \
         --output "provision-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
     - name: CIJOE, generate documentation
       run: |
-        cd cijoe && cijoe \
+        cd cijoe && cijoe "workflows/docgen.yaml" \
         --monitor \
         --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
-        --workflow "workflows/docgen.yaml" \
         --output "docgen-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
     - name: Checkout site

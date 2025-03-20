@@ -12,31 +12,30 @@ Needs an ``os`` key describing the operating system by name and version, example
       name: 'debian'
       version: 'bullseye'
 
-Step Arguments
---------------
-
-Requires a 'xnvme_source' pointing to the root of the xnvme source
-
-    with:
-      xnvme_source: '/tmp/xnvme_source'
-
 Retargetable: True
 ------------------
 """
 import errno
 import logging as log
-from pathlib import Path
+from argparse import ArgumentParser
 
 
-def main(args, cijoe, step):
+def add_args(parser: ArgumentParser):
+    parser.add_argument(
+        "--xnvme_source",
+        type=str,
+        default=None,
+        help="path to xNVMe source (default: config.xnvme.repository.path)",
+    )
+
+
+def main(args, cijoe):
     osinfo = cijoe.getconf("os", None)
     if not osinfo:
-        log.err("cijoe.config.options is missing 'os'")
+        log.err("missing config value(os)")
         return errno.EINVAL
 
-    xnvme_source = step.get("with", {}).get(
-        "xnvme_source", cijoe.getconf("xnvme.repository.path", None)
-    )
+    xnvme_source = args.xnvme_source or cijoe.getconf("xnvme.repository.path", None)
     if not xnvme_source:
         return errno.EINVAL
 

@@ -3,26 +3,27 @@
 Build xNVMe bindings for Python
 ===============================
 
-Step Args
----------
-
-step.with.xnvme_source:  path to xNVMe source (default: config.options.repository.path)
-
 Retargetable: True
 ------------------
 """
 import errno
+from argparse import ArgumentParser
 from pathlib import Path
 
 
-def main(args, cijoe, step):
+def add_args(parser: ArgumentParser):
+    parser.add_argument(
+        "--xnvme_source",
+        type=str,
+        default=None,
+        help="path to xNVMe source (default: config.xnvme.repository.path)",
+    )
+
+
+def main(args, cijoe):
     """Build xNVMe"""
 
-    xnvme_source = Path(
-        step.get("with", {}).get(
-            "xnvme_source", cijoe.getconf("xnvme.repository.path", None)
-        )
-    )
+    xnvme_source = args.xnvme_source or cijoe.getconf("xnvme.repository.path", None)
     if not xnvme_source:
         return errno.EINVAL
 

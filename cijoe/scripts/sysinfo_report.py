@@ -343,7 +343,7 @@ def read_hardware_windows(cijoe) -> HardwareSpec | int:
     return 0, (motherboard, cpu, memory, drives)
 
 
-def main(args, cijoe, step):
+def main(args, cijoe):
     operating_system = ""
     kernel = ""
     motherboard = ""

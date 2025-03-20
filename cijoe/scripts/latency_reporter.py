@@ -5,17 +5,13 @@ Produce a latency report
 
 Create it for the current results or overwrite via step-args.
 
-Step Args
----------
-
-step.with.xnvme_source:  path to xNVMe source (default: config.options.repository.path)
-
 Retargetable: True
 ------------------
 """
 import errno
 import logging as log
 import re
+from argparse import ArgumentParser
 from collections import defaultdict
 from pathlib import Path
 
@@ -32,17 +28,30 @@ from reporter import (
 PLOT_PATH_REGEX = r".*_GROUP=(?P<group>.+)_TYPE=(?P<type>.+)\.png"
 
 
-def main(args, cijoe, step):
+def add_args(parser: ArgumentParser):
+    parser.add_argument(
+        "--runs",
+        type=Path,
+        default=None,
+        help="Path to a yaml file, describing the iodepths, iosizes and runs for the latency benchmark",
+    )
+    parser.add_argument(
+        "--templates", type=Path, default=Path.cwd() / "templates" / "perf_report"
+    )
+    parser.add_argument("--path", type=str, default=None)
+    parser.add_argument("--report_title", type=str, default="xNVMe")
+    parser.add_argument("--report_subtitle", type=str, default="Latency Report")
+
+
+def main(args, cijoe):
     """Primary entry-point"""
 
-    templates_path = Path(
-        step.get("with", {}).get("templates", Path.cwd() / "templates" / "perf_report")
-    ).resolve()
-    search_path = Path(step.get("with", {}).get("path", cijoe.output_path)).resolve()
+    templates_path = args.templates.resolve()
+    search_path = Path(args.path or cijoe.output_path).resolve()
     artifacts = search_path / "artifacts"
 
-    title = step.get("with", {}).get("report_title", "xNVMe")
-    subtitle = step.get("with", {}).get("report_subtitle", "Latency Report")
+    title = args.report_title
+    subtitle = args.report_subtitle
 
     report_path = cijoe.output_path / "artifacts" / "perf_report"
     report_path.mkdir(parents=False, exist_ok=True)
@@ -63,10 +72,10 @@ def main(args, cijoe, step):
     # info for methodology section
     ioengines = cijoe.getconf("fio.engines", {})
 
-    runs_aux_path = step.get("with", {}).get("runs", None)
-    if not runs_aux_path:
+    if not args.runs:
         log.error("Missing path to auxiliary file describing the runs")
-    runs = dict_from_yamlfile(Path(runs_aux_path))
+    runs = dict_from_yamlfile(Path(args.runs))
+
     fio = {
         "iosizes": runs["iosizes"],
         "iodepths": runs["iodepths"],

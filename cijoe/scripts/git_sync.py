@@ -21,16 +21,27 @@ With the above, then git is utilized for syncing, and the cijoe-scripting takes
 care of the need to switch branch remotely.
 """
 
+import logging as log
+from argparse import ArgumentParser
+
+
+def add_args(parser: ArgumentParser):
+    parser.add_argument("--upstream", type=str, required=True)
+    parser.add_argument("--branch", type=str, required=True)
+    parser.add_argument("--remote_alias", type=str, required=True)
+    parser.add_argument("--local_path", type=str, required=True)
+    parser.add_argument("--remote_path", type=str, required=True)
+
 
 def git_remote_from_config(cijoe, remote_path):
     """Returns git-remote URI using configuration cijoe.transport.ssh"""
 
-    hostname = cijoe.getconf("cijoe.transport.ssh.hostname", {})
+    hostname = cijoe.getconf("cijoe.transport.ssh.hostname", None)
     if not hostname:
         return None
 
-    username = cijoe.getconf("cijoe.transport.ssh.username", {})
-    port = cijoe.getconf("cijoe.transport.ssh.port", {})
+    username = cijoe.getconf("cijoe.transport.ssh.username", None)
+    port = cijoe.getconf("cijoe.transport.ssh.port", None)
 
     remote = "ssh://"
     if username:
@@ -43,18 +54,22 @@ def git_remote_from_config(cijoe, remote_path):
     return remote
 
 
-def main(args, cijoe, step):
+def main(args, cijoe):
     """Entry point"""
 
-    repos = step.get("with", {}).get("repository", {})
+    if any(
+        arg not in args
+        for arg in ["upstream", "branch", "remote_alias", "local_path", "remote_path"]
+    ):
+        log.error("missing script arguments")
 
-    local_path = repos.get("path", {}).get("local", "")
+    local_path = args.local_path
 
-    upstream = repos.get("upstream", "")
-    branch = repos.get("branch", "")
+    upstream = args.upstream
+    branch = args.branch
 
-    remote_path = repos.get("path", {}).get("remote", "")
-    remote_alias = repos.get("remote_alias", "")
+    remote_path = args.remote_path
+    remote_alias = args.remote_alias
     remote_url = git_remote_from_config(cijoe, remote_path)
     if not remote_url:
         return 1

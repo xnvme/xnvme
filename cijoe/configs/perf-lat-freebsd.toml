@@ -76,3 +76,7 @@ pcie = "0000:03:00.0"
 os = "0n1"
 sn = "PHBT718003QR016D"
 label = "INTELM1016G"
+
+[qemu]
+default_guest = ""
+default_systemimage = ""

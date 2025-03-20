@@ -5,7 +5,7 @@ Load the NVMe driver with poll-queues and setup misc. block-device options
 from pathlib import Path
 
 
-def main(args, cijoe, step):
+def main(args, cijoe):
     err, _ = cijoe.run("modprobe -r nvme && modprobe nvme poll_queues=1")
     if err:
         return err

@@ -1,26 +1,25 @@
 #!/usr/bin/env python3
 """
 Build SPDK from source
-=======================
-
-Step Args
----------
-
-step.with.spdk_source:  path to SPDK source (default: config.options.repository.path)
+======================
 
 Retargetable: True
 ------------------
 """
 import errno
-from pathlib import Path
+from argparse import ArgumentParser
 
 
-def main(args, cijoe, step):
+def add_args(parser: ArgumentParser):
+    parser.add_argument(
+        "--spdk_source", type=str, default=None, help="path to SPDK source"
+    )
+
+
+def main(args, cijoe):
     """Build SPDK"""
 
-    spdk_source = step.get("with", {}).get(
-        "spdk_source", cijoe.getconf("spdk.repository.path", None)
-    )
+    spdk_source = args.spdk_source or cijoe.getconf("spdk.repository.path", None)
     if not spdk_source:
         return errno.EINVAL
 

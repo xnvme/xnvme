@@ -58,3 +58,7 @@ uri = "2GB"
 nsid = 1
 labels = [ "dev", "bdev", "nvm", "ramdisk", "scc" ]
 driver_attachment = "kernel"
+
+[qemu]
+default_guest = ""
+default_systemimage = ""

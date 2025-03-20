@@ -17,12 +17,19 @@ doc: |
 steps:
 - name: guest_kill
   uses: qemu.guest_kill
+  with:
+    guest_name: "{{ config.qemu.default_guest }}"
 
-- name: guest_init
-  uses: qemu.guest_init_using_bootimage
+- name: guest_initialize
+  uses: qemu.guest_initialize
+  with:
+    guest_name: "{{ config.qemu.default_guest }}"
+    system_image_name: "{{ config.qemu.default_systemimage }}"
 
 - name: guest_start
   uses: xnvme_guest_start_nvme
+  with:
+    guest_name: "{{ config.qemu.default_guest }}"
 
 - name: guest_check
   run: |
@@ -31,13 +38,11 @@ steps:
 - name: xnvme_source_sync
   uses: git_sync
   with:
-    repository:
-      upstream: '{{ config.xnvme.repository.remote }}'
-      branch: '{{ config.xnvme.repository.sync.branch }}'
-      remote_alias: '{{ config.xnvme.repository.sync.remote_alias }}'
-      path:
-        local: '{{ config.xnvme.repository.path }}'
-        remote: '{{ config.xnvme.repository.sync.remote_path }}'
+    upstream: '{{ config.xnvme.repository.remote }}'
+    branch: '{{ config.xnvme.repository.sync.branch }}'
+    remote_alias: '{{ config.xnvme.repository.sync.remote_alias }}'
+    local_path: '{{ config.xnvme.repository.path }}'
+    remote_path: '{{ config.xnvme.repository.sync.remote_path }}'
 
 - name: xnvme_build_prep
   uses: xnvme_build_prep
@@ -64,5 +69,3 @@ steps:
 
 - name: fio_prep
   uses: fio_prep
-  with:
-    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'

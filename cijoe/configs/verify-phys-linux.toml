@@ -106,3 +106,7 @@ uri = "0000:43:00.0"
 nsid = 1
 labels = [ "dev", "pcie", "nvm", "nosgl" ]
 driver_attachment = "userspace"
+
+[qemu]
+default_guest = ""
+default_systemimage = ""

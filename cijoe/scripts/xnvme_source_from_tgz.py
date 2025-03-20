@@ -10,24 +10,34 @@ xNVMe GitHUB artifacts:
 Transfers the above artifacts from step.with.artifacts, to
 step.with.xnvme_sources and extracts the content of xnvme.tar.gz
 
-Step Arguments
---------------
-
-step.with.artifacts: path to where the GitHUB artifacts are located locally
-step.with.xnvme_source: path to where the GitHUB artifacts should transferred to
-
 Retargetable: True
 ------------------
 """
 
 import logging as log
+from argparse import ArgumentParser
 
 
-def main(args, cijoe, step):
+def add_args(parser: ArgumentParser):
+    parser.add_argument(
+        "--artifacts",
+        type=str,
+        default="/tmp/artifacts",
+        help="path to where the GitHub artifacts are located locally",
+    )
+    parser.add_argument(
+        "--xnvme_source",
+        type=str,
+        default="/tmp/xnvme_source",
+        help="path to where the GitHUB artifacts should transferred to",
+    )
+
+
+def main(args, cijoe):
     """Transfer artifacts"""
 
-    artifacts = step.get("with", {}).get("artifacts", "/tmp/artifacts")
-    xnvme_source = step.get("with", {}).get("xnvme_source", "/tmp/xnvme_source")
+    artifacts = args.artifacts
+    xnvme_source = args.xnvme_source
 
     _, _ = cijoe.run(
         f'[ -d "{xnvme_source}" ] && mv "{xnvme_source}" "{xnvme_source}-$(date +%Y%m%d%H%M%S)" || true'
