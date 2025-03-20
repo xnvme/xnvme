@@ -28,7 +28,6 @@ steps:
 - name: plot
   uses: latency_plotter
   with:
-    tool: fio
     legends: auxiliary/plot-latency-legends.yaml
     limits: auxiliary/plot-latency-limits.yaml
     styles: auxiliary/plot-styles.yaml

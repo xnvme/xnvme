@@ -3,8 +3,6 @@
 Helper functions for plotting benchmark graphs
 ==============================================
 
-
-
 .. note::
     This uses matplotlib and numpy for plotting
 """
@@ -50,12 +48,12 @@ def data_as_a_function_of(data, x="iodepth", y="iops", filter=lambda _: True) ->
     return samples
 
 
-def plot_attributes_from_step(step):
-    """Load plot-attributes using paths in step"""
+def plot_attributes_from_args(args):
+    """Load plot-attributes using paths in args"""
 
-    limits_path = Path(step.get("with", {}).get("limits", "plot-limits.yaml"))
-    legends_path = Path(step.get("with", {}).get("legends", "plot-legends.yaml"))
-    styles_path = Path(step.get("with", {}).get("styles", "plot-styles.yaml"))
+    limits_path = Path(args.limits)
+    legends_path = Path(args.legends)
+    styles_path = Path(args.styles)
 
     return {
         "limits": dict_from_yamlfile(limits_path),

@@ -26,6 +26,7 @@ import json
 import logging as log
 import os
 import traceback
+from argparse import ArgumentParser
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -34,25 +35,33 @@ from plotter import (
     PLOT_SCALE,
     data_as_a_function_of,
     draw_bar_plot,
-    plot_attributes_from_step,
+    plot_attributes_from_args,
 )
 
 
-def create_plots(args, cijoe, step):
-    search = step.get("with", {}).get("path", args.output)
+def add_args(parser: ArgumentParser):
+    parser.add_argument("--path", type=Path, default=None)
+    parser.add_argument("--tool", choices=["bdevperf", "fio"], default="fio")
+    parser.add_argument("--limits", type=str, default="plot-limits.yaml")
+    parser.add_argument("--legends", type=str, default="plot-legends.yaml")
+    parser.add_argument("--styles", type=str, default="plot-styles.yaml")
+
+
+def create_plots(args, cijoe):
+    search = args.path or args.output
     if not search:
         return errno.EINVAL
     artifacts = args.output / "artifacts"
     os.makedirs(artifacts, exist_ok=True)
 
-    tool = step.get("with", {}).get("tool", "fio")
+    tool = args.tool
     search_for = OUTPUT_NORMALIZED_FILENAME
 
     path = next(Path(search).rglob(search_for))
     with path.open() as jfd:
         data = json.load(jfd)
 
-    plot_attributes = plot_attributes_from_step(step)
+    plot_attributes = plot_attributes_from_args(args)
 
     x = "iodepth"
 
@@ -104,9 +113,9 @@ def create_plots(args, cijoe, step):
     return 0
 
 
-def main(args, cijoe, step):
+def main(args, cijoe):
     try:
-        err = create_plots(args, cijoe, step)
+        err = create_plots(args, cijoe)
         if err:
             return err
     except Exception as exc:

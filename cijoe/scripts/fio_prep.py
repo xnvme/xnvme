@@ -12,7 +12,7 @@ Retargetable: True
 """
 
 
-def main(args, cijoe, step):
+def main(args, cijoe):
     """Configure, build and install fio in 'config.options.fio.build.prefix'"""
 
     repos = cijoe.getconf("fio.repository", {})

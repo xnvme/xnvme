@@ -26,14 +26,18 @@ tag = "v8.0.0"
 prefix = "{{ local.env.HOME }}/opt/qemu"
 
 [qemu]
-#system_bin = "{{ local.env.HOME }}/opt/qemu/bin/qemu-system-x86_64"
-system_bin = "/opt/qemu/bin/qemu-system-x86_64"
 img_bin = "qemu-img"
 default_guest = "freebsd_13"
+default_systemimage = "freebsd-13-x86_64"
+
+[qemu.systems.x86_64]
+#bin = "{{ local.env.HOME }}/opt/qemu/bin/qemu-system-x86_64"
+bin = "/opt/qemu/bin/qemu-system-x86_64"
 
 # Used by: qemu.guest_start.py and qemu.guest_kill.py
 [qemu.guests.freebsd_13]
 path = "{{ local.env.HOME }}/guests/freebsd-13-amd64"
+system_label = "x86_64"
 
 # Keyword arguments: joined onto the form: "-cpu host -smp 4 -m 4" etc.
 system_args.kwa = {cpu = "host", smp = 4, m = "12G", accel = "kvm"}
@@ -48,16 +52,18 @@ system_args.raw = """\
 system_args.tcp_forward = {host = 4200, guest = 22}
 #system_args.host_share = "{{ local.env.HOME }}/git"
 
-# Used by: qemu.guest_init_using_bootimage.py
-init_using_bootimage.url = "https://refenv.fra1.digitaloceanspaces.com/boot_images/freebsd-13.1-ksrc-amd64.qcow2"
-init_using_bootimage.img = "{{ local.env.HOME }}/images/boot_images/freebsd-13-amd64.qcow2"
+[system-imaging.images.freebsd-13-x86_64]
+system_label = "x86_64"
 
-# Used by: qemu.guest_init_using_cloudinit
-init_using_cloudinit.url = "https://refenv.fra1.digitaloceanspaces.com/freebsd13-ufs-ksrc.qcow2"
-init_using_cloudinit.img = "{{ local.env.HOME}}/images/cloudinit/freebsd13-ufs-ksrc.qcow2"
-init_using_cloudinit.meta = "{{ resources.auxiliary['qemu.cloudinit-freebsd-meta'] }}"
-init_using_cloudinit.user = "{{ resources.auxiliary['qemu.cloudinit-freebsd-user'] }}"
-#init_using_cloudinit.pubkey = "keys/guest_key.pub"
+cloud.url = "https://refenv.fra1.digitaloceanspaces.com/freebsd13-ufs-ksrc.qcow2"
+cloud.path = "{{ local.env.HOME}}/images/cloudinit/freebsd13-ufs-ksrc.qcow2"
+cloud.metadata_path = "{{ resources.auxiliary['cloudinit-freebsd-meta'] }}"
+cloud.userdata_path = "{{ resources.auxiliary['cloudinit-freebsd-user'] }}"
+
+disk.url = "https://refenv.fra1.digitaloceanspaces.com/boot_images/freebsd-13.1-ksrc-amd64.qcow2"
+disk.path = "{{ local.env.HOME }}/images/boot_images/freebsd-13-amd64.qcow2"
+
+#pubkey = "keys/guest_key.pub"
 
 [[devices]]
 uri = "/dev/nvme0ns1"

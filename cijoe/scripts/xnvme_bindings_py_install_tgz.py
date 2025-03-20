@@ -14,23 +14,25 @@ The xNVMe Python package will be injected into a pipx-environment named
 'cijoe', thus making cijoe, pytest, and the xNVMe library available within this
 environment.
 
-Step Arguments
---------------
-
-step.with.source: The file listed above is expected to be available in
-'step.with.source', it is also expected that 'step.with.source' is a directory
-containing the xNVMe source in extracted form. That is the content of the
-xnvme-source-tarball.
-
 Retargetable: True
 ------------------
 """
 
 import errno
 import logging as log
+from argparse import ArgumentParser
 
 
-def main(args, cijoe, step):
+def add_args(parser: ArgumentParser):
+    parser.add_argument(
+        "--xnvme_source",
+        type=str,
+        default="/tmp/xnvme_source",
+        help="path to xNVMe source",
+    )
+
+
+def main(args, cijoe):
     """Setup cijoe pipx-env with numpy and xNVMe Python bindings injected"""
 
     osname = cijoe.getconf("os.name", "")
@@ -38,10 +40,7 @@ def main(args, cijoe, step):
         log.info("skip python setup")
         return 0
 
-    xnvme_source = step.get("with", {}).get("xnvme_source", "/tmp/xnvme_source")
-    if xnvme_source is None:
-        log.error(f"invalid step({step})")
-        return errno.EINVAL
+    xnvme_source = args.xnvme_source
 
     # NOTE: because pipx (specifically the userpath module it uses) only adds
     # PATH to files read by login-shells, then we cannot use 'pipx ensurepath'

@@ -16,4 +16,4 @@ steps:
   uses: core.testrunner
   with:
     args: '-k "pcie and not compare" tests'
-    random-order: false
+    random_order: false

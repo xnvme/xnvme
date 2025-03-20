@@ -1,7 +1,7 @@
 import logging as log
 
 
-def main(args, cijoe, step):
+def main(args, cijoe):
     commands = [
         "sysctl -a hw",
         "(dmesg | grep memory) || true",

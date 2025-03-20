@@ -29,11 +29,18 @@ import os
 import pprint
 import re
 import traceback
+from argparse import ArgumentParser
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 from cijoe.core.analyser import to_base_unit
+
+
+def add_args(parser: ArgumentParser):
+    parser.add_argument("--path", type=Path, default=None)
+    parser.add_argument("--tool", choices=["bdevperf", "fio"], default="fio")
+
 
 JSON_DUMP = {"indent": 4}
 
@@ -56,7 +63,7 @@ TOTAL_PERF_LINE_REGEX = r"Total\s+\:\s+(?P<iops>\d+\.\d+)\s+(?P<bwps>\d+\.\d+)\s
 LINUXPERF_LINE_REGEX = r"\s*(?P<cpu>\d+\.\d+)%.*bdev_.*_poll\n"
 
 
-def extract_bdevperf(args, cijoe, step):
+def extract_bdevperf(args):
     """
     Traverse 'args.output' for 'bdevperf-output_*.txt' files, and create:
 
@@ -65,7 +72,7 @@ def extract_bdevperf(args, cijoe, step):
       JSON-documents with the file.stem as key.
     """
 
-    search = step.get("with", {}).get("path", args.output)
+    search = args.path or args.output
     if not search:
         return errno.EINVAL
 
@@ -174,7 +181,7 @@ def dict_from_fio_output_file(fpath: Path) -> dict:
         return {}
 
 
-def extract(args, cijoe, step):
+def extract(args):
     """
     Traverse 'args.output' for 'fio-output_*.txt' files, and create:
 
@@ -183,7 +190,7 @@ def extract(args, cijoe, step):
       JSON-documents with the file.stem as key.
     """
 
-    search = step.get("with", {}).get("path", args.output)
+    search = args.path or args.output
     if not search:
         return errno.EINVAL
 
@@ -206,7 +213,7 @@ def extract(args, cijoe, step):
     return 0
 
 
-def normalize(args, cijoe, step):
+def normalize(args):
     """Transform the "compound" fio output into series of 'normalized' data"""
 
     def contextualize(fio_output: dict, stem) -> dict:
@@ -288,9 +295,9 @@ def normalize(args, cijoe, step):
     return 0
 
 
-def main(args, cijoe, step):
+def main(args, cijoe):
     try:
-        tool = step.get("with", {}).get("tool", "fio")
+        tool = args.tool
         if tool == "fio":
             funcs = [extract, normalize]
         elif tool == "bdevperf":
@@ -300,7 +307,7 @@ def main(args, cijoe, step):
             return errno.EINVAL
 
         for func in funcs:
-            err = func(args, cijoe, step)
+            err = func(args)
             if err:
                 return err
     except Exception as exc:

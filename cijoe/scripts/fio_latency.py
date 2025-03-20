@@ -10,6 +10,7 @@ import logging as log
 import os
 import shutil
 import traceback
+from argparse import ArgumentParser
 from dataclasses import dataclass
 from enum import Enum
 from itertools import product
@@ -24,6 +25,15 @@ LATENCY_TEST_ROOT_DIR: Path = Path("/tmp/")
 
 CijoeEngines = Dict[str, Dict[str, str]]
 CijoeDevices = List[Dict[str, str | int | List[str]]]
+
+
+def add_args(parser: ArgumentParser):
+    parser.add_argument(
+        "--runs",
+        type=Path,
+        default=None,
+        help="Path to a yaml file, describing the iodepths, iosizes and runs for the latency benchmark",
+    )
 
 
 @dataclass
@@ -330,13 +340,12 @@ class FIO:
         return self.engine.binary(self.bin)
 
 
-def main(args, cijoe: Cijoe, step: Dict[str, Any]):
+def main(args, cijoe: Cijoe):
     fio_bin = cijoe.getconf("fio.bin")
 
-    runs_aux_path = step.get("with", {}).get("runs", None)
-    if not runs_aux_path:
+    if not args.runs:
         log.error("Missing path to auxiliary file describing the runs")
-    runs = dict_from_yamlfile(Path(runs_aux_path))["runs"]
+    runs = dict_from_yamlfile(Path(args.runs))["runs"]
 
     io_engines: CijoeEngines = cijoe.getconf("fio.engines")
     devices: List[Device] = list(determine_devices(cijoe.getconf("devices")))

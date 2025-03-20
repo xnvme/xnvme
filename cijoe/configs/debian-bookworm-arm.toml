@@ -22,14 +22,18 @@ tag = "v7.1.0"
 prefix = "{{ local.env.HOME }}/opt/qemu"
 
 [qemu]
-# system_bin = "{{ local.env.HOME }}/opt/qemu/bin/qemu-system-aarch64"
-system_bin = "/opt/qemu/bin/qemu-system-aarch64"
 img_bin = "qemu-img"
 default_guest = "bookworm_arm64"
+default_systemimage = "debian-12-aarch64"
+
+[qemu.systems.aarch64]
+# bin = "{{ local.env.HOME }}/opt/qemu/bin/qemu-system-aarch64"
+bin = "/opt/qemu/bin/qemu-system-aarch64"
 
 # Used by: qemu.guest_start.py and qemu.guest_kill.py
 [qemu.guests.bookworm_arm64]
 path = "{{ local.env.HOME }}/guests/debian-bookworm-arm64"
+system_label = "aarch64"
 
 # Keyword arguments: joined onto the form: "-cpu host -smp 4 -m 4" etc.
 system_args.kwa = {cpu = "host", smp = 4, m = "6G"}
@@ -44,15 +48,17 @@ system_args.raw = """\
 system_args.tcp_forward = {host = 4200, guest = 22}
 #system_args.host_share = "{{ local.env.HOME }}/git"
 
-# Used by: qemu.guest_init_using_bootimage.py
-init_using_bootimage.url = "https://refenv.fra1.digitaloceanspaces.com/boot_images/debian-bookworm-arm64.qcow2"
-init_using_bootimage.img = "{{ local.env.HOME }}/images/boot_images/debian-bookworm-arm64.qcow2"
+[system-imaging.images.debian-12-aarch64]
+system_label = "aarch64"
 
-# Used by: qemu.guest_init_using_cloudinit
-init_using_cloudinit.url = "https://cloud.debian.org/images/cloud/bookworm/daily/latest/debian-12-generic-arm64-daily.qcow2"
-init_using_cloudinit.img = "{{ local.env.HOME }}/images/cloudinit/debian-12-generic-arm64-daily.qcow2"
-init_using_cloudinit.meta = "{{ resources.auxiliary['qemu.cloudinit-debian-meta'] }}"
-init_using_cloudinit.user = "{{ resources.auxiliary['qemu.cloudinit-debian-user-arm64'] }}"
+cloud.url = "https://cloud.debian.org/images/cloud/bookworm/daily/latest/debian-12-generic-arm64-daily.qcow2"
+cloud.path = "{{ local.env.HOME }}/images/cloudinit/debian-12-generic-arm64-daily.qcow2"
+cloud.metadata_path = "{{ resources.auxiliary['cloudinit-debian-meta'] }}"
+cloud.userdata_path = "{{ resources.auxiliary['cloudinit-debian-user-arm64'] }}"
+
+disk.url = "https://refenv.fra1.digitaloceanspaces.com/boot_images/debian-bookworm-arm64.qcow2"
+disk.path = "{{ local.env.HOME }}/images/boot_images/debian-bookworm-arm64.qcow2"
+
 #pubkey = "keys/guest_key.pub"
 
 [[devices]]

@@ -24,19 +24,20 @@ The files are created locally in:
 
 and then transferred to:
 
-    step.args.bdev_confs
+    args.bdev_confs
 
 By default this is "/tmp/bdev_confs"
 """
-import argparse
 import copy
 import json
 import logging as log
 import os
-import pprint
-from pathlib import Path
+from argparse import ArgumentParser
 
-from cijoe.core.resources import dict_from_yamlfile
+
+def add_args(parser: ArgumentParser):
+    parser.add_argument("--bdev_confs", type=str, default="/tmp")
+
 
 IOPATHS = {
     "driver": {
@@ -93,13 +94,13 @@ IOPATHS = {
 }
 
 
-def main(args, cijoe, step):
+def main(args, cijoe):
     duts = copy.deepcopy(cijoe.getconf("duts", []))
     if not duts:
         log.error("Missing 'duts' section in CIJOE configuration file")
         return 1
 
-    bdev_confs = step.get("with", {}).get("bdev_confs", "/tmp")
+    bdev_confs = args.bdev_confs
 
     output_dir = cijoe.output_path / "artifacts" / "bdev_confs"
 

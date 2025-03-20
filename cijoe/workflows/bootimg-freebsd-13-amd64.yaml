@@ -32,14 +32,21 @@ doc: |
   * Upload it to DigitalOcean
 
 steps:
-- name: kill
+- name: guest_kill
   uses: qemu.guest_kill
+  with:
+    guest_name: freebsd_13
 
-- name: initialize
-  uses: qemu.guest_init_using_bootimage
+- name: guest_initialize
+  uses: qemu.guest_initialize
+  with:
+    guest_name: freebsd_13
+    system_image_name: freebsd-13-x86_64
 
-- name: start
+- name: guest_start
   uses: xnvme_guest_start_nvme
+  with:
+    guest_name: freebsd_13
 
 - name: check
   run: |

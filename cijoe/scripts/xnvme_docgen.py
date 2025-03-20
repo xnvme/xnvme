@@ -4,28 +4,27 @@ Prepare for documentation generation
 
 Install requirements/dependencies, check binaries and library paths
 
-Step Arguments
---------------
-
-step.with.xnvme_source: The files listed above are expected to be available in
-'step.with.xnvme_source', it is also expected that 'step.with.xnvme_source' is a directory
-containing the xNVMe source in extracted form. That is the content of the
-xnvme-source-tarball.
-
 Retargetable: True
 ------------------
 """
 
 import errno
 import logging as log
+from argparse import ArgumentParser
 from pathlib import Path
 
 
-def main(args, cijoe, step):
-    xnvme_source = step.get("with", {}).get("xnvme_source", "/tmp/xnvme_source")
-    if xnvme_source is None:
-        log.error(f"invalid step({step})")
-        return errno.EINVAL
+def add_args(parser: ArgumentParser):
+    parser.add_argument(
+        "--xnvme_source",
+        type=str,
+        default="/tmp/xnvme_source",
+        help="path to xNVMe source, expected to contain the requirements and dependencies for docgen.",
+    )
+
+
+def main(args, cijoe):
+    xnvme_source = args.xnvme_source
 
     commands = [
         "./toolbox/pkgs/docgen.sh",

@@ -150,7 +150,7 @@ endef
 .PHONY: cijoe
 cijoe:
 	@echo "## xNVMe: cijoe"
-	@pipx install cijoe==v0.9.44 --include-deps --force
+	@pipx install cijoe==v0.9.52 --include-deps --force
 	@pipx inject cijoe matplotlib
 	@pipx inject cijoe numpy
 	@pipx install rst2pdf
@@ -175,7 +175,7 @@ endef
 .PHONY: cijoe-guest-setup-xnvme-using-tgz
 cijoe-guest-setup-xnvme-using-tgz:
 	@echo "## xNVMe: cijoe-guest-setup-xnvme-using-tgz"
-	@cd cijoe && cijoe -w workflows/provision-using-tgz.yaml -l
+	@cd cijoe && cijoe workflows/provision-using-tgz.yaml -l
 	@echo "## xNVME: cijoe-guest-setup-xnvme-using-tgz [DONE]"
 
 define cijoe-guest-setup-xnvme-using-git-help
@@ -184,7 +184,7 @@ endef
 .PHONY: cijoe-guest-setup-xnvme-using-git
 cijoe-guest-setup-xnvme-using-git:
 	@echo "## xNVMe: cijoe-guest-setup-xnvme-using-git"
-	@cd cijoe && cijoe -w workflows/provision-using-git.yaml -l
+	@cd cijoe && cijoe workflows/provision-using-git.yaml -l
 	@echo "## xNVME: cijoe-guest-setup-xnvme-using-git [DONE]"
 
 define cijoe-guest-setup-blank-help
@@ -193,7 +193,7 @@ endef
 .PHONY: cijoe-guest-setup-blank
 cijoe-guest-setup-blank:
 	@echo "## xNVMe: cijoe-guest-setup-blank"
-	@cd cijoe && cijoe -w workflows/provision-using-git.yaml -l \
+	@cd cijoe && cijoe workflows/provision-using-git.yaml -l \
 		guest_kill \
 		guest_init \
 		guest_start \
@@ -206,7 +206,7 @@ endef
 .PHONY: cijoe-guest-start
 cijoe-guest-start:
 	@echo "## xNVMe: cijoe-guest-start"
-	@cd cijoe && cijoe -w workflows/provision-using-git.yaml -l \
+	@cd cijoe && cijoe workflows/provision-using-git.yaml -l \
 		guest_start \
 		guest_check
 	@echo "## xNVMe: cijoe-guest-start [DONE]"
@@ -217,7 +217,7 @@ endef
 .PHONY: cijoe-guest-stop
 cijoe-guest-stop:
 	@echo "## xNVMe: cijoe-guest-stop"
-	@cd cijoe && cijoe -w workflows/provision-using-git.yaml -l \
+	@cd cijoe && cijoe workflows/provision-using-git.yaml -l \
 		guest_kill
 	@echo "## xNVMe: cijoe-guest-stop [DONE]"
 
@@ -227,7 +227,7 @@ endef
 .PHONY: cijoe-setup-xnvme-using-git
 cijoe-setup-xnvme-using-git:
 	@echo "## xNVMe: cijoe-setup-xnvme-using-git"
-	@cd cijoe && cijoe -w workflows/provision-using-git.yaml -l \
+	@cd cijoe && cijoe workflows/provision-using-git.yaml -l \
 		xnvme_source_sync \
 		xnvme_build_prep \
 		xnvme_build \
@@ -243,7 +243,7 @@ endef
 .PHONY: cijoe-setup-xnvme-using-tgz
 cijoe-setup-xnvme-using-tgz:
 	@echo "## xNVMe: cijoe-setup-xnvme-using-tgz"
-	@cd cijoe && cijoe -w workflows/provision-using-tgz.yaml -l \
+	@cd cijoe && cijoe workflows/provision-using-tgz.yaml -l \
 		xnvme_source_sync \
 		xnvme_build_prep \
 		xnvme_build \
@@ -259,7 +259,7 @@ endef
 .PHONY: cijoe-sync-git
 cijoe-sync-git:
 	@echo "## xNVMe: cijoe-sync-git"
-	@cd cijoe && cijoe -w workflows/provision-using-git.yaml -l \
+	@cd cijoe && cijoe workflows/provision-using-git.yaml -l \
 		xnvme_source_sync
 	@echo "## xNVME: cijoe-sync-git [DONE]"
 
@@ -269,7 +269,7 @@ endef
 .PHONY: cijoe-sync-tgz
 cijoe-sync-tgz:
 	@echo "## xNVMe: cijoe-sync-tgz"
-	@cd cijoe && cijoe -w workflows/provision-using-tgz.yaml -l \
+	@cd cijoe && cijoe workflows/provision-using-tgz.yaml -l \
 		xnvme_source_sync
 	@echo "## xNVME: cijoe-sync-tgz [DONE]"
 
@@ -279,7 +279,7 @@ endef
 .PHONY: cijoe-do-docgen
 cijoe-do-docgen:
 	@echo "## xNVMe: cijoe-do-docgen"
-	@cd cijoe && cijoe -w workflows/docgen.yaml -l
+	@cd cijoe && cijoe workflows/docgen.yaml -l
 	@echo "## xNVME: cijoe-do-docgen [DONE]"
 
 define cijoe-do-selftest-help
@@ -297,7 +297,7 @@ endef
 .PHONY: cijoe-do-test-linux
 cijoe-do-test-linux:
 	@echo "## xNVMe: cijoe-do-test-linux"
-	@cd cijoe && cijoe -w workflows/test-debian-bullseye.yaml -l 
+	@cd cijoe && cijoe workflows/test-debian-bullseye.yaml -l 
 	@echo "## xNVME: cijoe-do-test-linux [DONE]"
 
 define cijoe-do-test-freebsd-help
@@ -306,7 +306,7 @@ endef
 .PHONY: cijoe-do-test-freebsd
 cijoe-do-test-freebsd:
 	@echo "## xNVMe: cijoe-do-test-freebsd"
-	@cd cijoe && cijoe -w workflows/test-freebsd-13.yaml -l 
+	@cd cijoe && cijoe workflows/test-freebsd-13.yaml -l 
 	@echo "## xNVME: cijoe-do-test-freebsd [DONE]"
 
 define cijoe-do-benchmark-scale-help
@@ -315,7 +315,7 @@ endef
 .PHONY: cijoe-do-benchmark-scale
 cijoe-do-benchmark-scale:
 	@echo "## xNVMe: cijoe-do-benchmark-scale"
-	@cd cijoe && cijoe -w workflows/bench.yaml -l
+	@cd cijoe && cijoe workflows/bench.yaml -l
 	@echo "## xNVME: cijoe-do-benchmark-scale [DONE]"
 
 define cijoe-do-benchmark-latency-help
@@ -324,7 +324,7 @@ endef
 .PHONY: cijoe-do-benchmark-latency
 cijoe-do-benchmark-latency:
 	@echo "## xNVMe: cijoe-do-benchmark-latency"
-	@cd cijoe && cijoe -w workflows/benchmark_latency.yaml -l
+	@cd cijoe && cijoe workflows/benchmark_latency.yaml -l
 	@echo "## xNVME: cijoe-do-benchmark-latency [DONE]"
 
 
@@ -334,7 +334,7 @@ endef
 .PHONY: cijoe-do-bootimage-debian-bullseye-amd64
 cijoe-do-bootimage-debian-bullseye-amd64:
 	@echo "## xNVMe: cijoe-do-bootimage-debian-bullseye-amd64"
-	@cd cijoe && cijoe -w workflows/bootimg-debian-bullseye-amd64.yaml -l
+	@cd cijoe && cijoe workflows/bootimg-debian-bullseye-amd64.yaml -l
 	@echo "## xNVME: cijoe-do-bootimage-debian-bullseye-amd64 [DONE]"
 
 define cijoe-do-bootimage-freebsd-amd64-help
@@ -343,7 +343,7 @@ endef
 .PHONY: cijoe-do-bootimage-freebsd-amd64
 cijoe-do-bootimage-freebsd-amd64:
 	@echo "## xNVMe: cijoe-do-bootimage-freebsd-amd64"
-	@cd cijoe && cijoe -w workflows/bootimg-freebsd-13-amd64.yaml -l
+	@cd cijoe && cijoe workflows/bootimg-freebsd-13-amd64.yaml -l
 	@echo "## xNVME: cijoe-do-bootimage-freebsd-amd64 [DONE]"
 
 define cijoe-do-linux-kdebs-help
@@ -352,7 +352,7 @@ endef
 .PHONY: cijoe-do-linux-kdebs
 cijoe-do-linux-kdebs:
 	@echo "## xNVMe: cijoe-do-linux-kdebs"
-	@cd cijoe && cijoe -w workflows/build-kdebs.yaml -l
+	@cd cijoe && cijoe workflows/build-kdebs.yaml -l
 	@echo "## xNVME: cijoe-do-linux-kdebs [DONE]"
 
 define cijoe-report-help

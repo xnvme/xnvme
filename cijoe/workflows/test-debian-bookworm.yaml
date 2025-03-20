@@ -14,16 +14,16 @@ steps:
   with:
     args: '{{ config.xnvme.repository.sync.remote_path }}/python/tests -s -k "not fabrics and not vfio"'
     run_local: false
-    random-order: false
+    random_order: false
 
 - name: test_os
   uses: core.testrunner
   with:
     args: '-k "(not pcie) and (not compare) and (not format)" tests'
-    random-order: false
+    random_order: false
 
 - name: test_pcie
   uses: core.testrunner
   with:
     args: '-k "pcie and (not compare) and (not format)" tests'
-    random-order: false
+    random_order: false

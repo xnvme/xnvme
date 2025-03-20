@@ -5,14 +5,10 @@ Produce a report
 
 Create it for the current results or overwrite via step-args.
 
-Step Args
----------
-
-step.with.xnvme_source:  path to xNVMe source (default: config.options.repository.path)
-
 Retargetable: True
 ------------------
 """
+from argparse import ArgumentParser
 from pathlib import Path
 
 import jinja2
@@ -25,16 +21,23 @@ from reporter import (
 )
 
 
-def main(args, cijoe, step):
+def add_args(parser: ArgumentParser):
+    parser.add_argument(
+        "--templates", type=Path, default=Path.cwd() / "templates" / "perf_report"
+    )
+    parser.add_argument("--path", type=str, default=None)
+    parser.add_argument("--report_title", type=str, default="xNVMe")
+    parser.add_argument("--report_subtitle", type=str, default="Benchmark Report")
+
+
+def main(args, cijoe):
     """Primary entry-point"""
-    templates_path = Path(
-        step.get("with", {}).get("templates", Path.cwd() / "templates" / "perf_report")
-    ).resolve()
-    search_path = Path(step.get("with", {}).get("path", cijoe.output_path)).resolve()
+    templates_path = args.templates.resolve()
+    search_path = Path(args.path or cijoe.output_path).resolve()
     artifacts = search_path / "artifacts"
 
-    title = step.get("with", {}).get("report_title", "xNVMe")
-    subtitle = step.get("with", {}).get("report_subtitle", "Benchmark Report")
+    title = args.report_title
+    subtitle = args.report_subtitle
 
     report_path = cijoe.output_path / "artifacts" / "perf_report"
     report_path.mkdir(parents=False, exist_ok=True)

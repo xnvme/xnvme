@@ -1,0 +1,24 @@
+#cloud-config
+disable_root: False
+ssh_pwauth: True
+package_update: true
+package_upgrade: true
+packages:
+- fio
+- htop
+- nvme-cli
+- pciutils
+write_files:
+- path: /etc/ssh/sshd_config
+  content: |
+    PermitRootLogin yes
+    PermitEmptyPasswords yes
+runcmd:
+  - [pw, usermod, root, -w, none]
+  - [sed, -E, -i.bak, 's/auth[[:space:]]+required[[:space:]]+pam_unix\.so[[:space:]]+no_warn[[:space:]]+try_first_pass/& nullok/', /etc/pam.d/sshd]
+final_message: "The system is finally up, after $UPTIME seconds"
+power_state:
+  mode: poweroff
+  message: So long and thanks for all the fish
+  timeout: 30
+  condition: True

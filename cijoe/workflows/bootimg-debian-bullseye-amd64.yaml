@@ -11,12 +11,19 @@ doc: |
 steps:
 - name: guest_kill
   uses: qemu.guest_kill
+  with:
+    guest_name: bullseye_amd64
 
-- name: guest_cloudinit
-  uses: qemu.guest_init_using_cloudinit
+- name: guest_initialize
+  uses: qemu.guest_initialize
+  with:
+    guest_name: bullseye_amd64
+    system_image_name: debian-11-x86_64
 
-- name: guest_firstboot
+- name: guest_start
   uses: xnvme_guest_start_nvme
+  with:
+    guest_name: bullseye_amd64
 
 - name: guest_check
   run: |

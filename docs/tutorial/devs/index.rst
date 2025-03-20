@@ -273,10 +273,12 @@ system, look specifically for these entries:
 .. code-block:: bash
 
   [qemu]
-  # system_bin = "{{ local.env.HOME }}/opt/qemu/bin/qemu-system-aarch64"
-  system_bin = "/opt/qemu/bin/qemu-system-aarch64"
   img_bin = "qemu-img"
   default_guest = "bookworm_arm64"
+
+  [qemu.systems.aarch64]
+  # bin = "{{ local.env.HOME }}/opt/qemu/bin/qemu-system-aarch64"
+  bin = "/opt/qemu/bin/qemu-system-aarch64"
 
   [xnvme.repository]
   upstream = "https://github.com/OpenMPDK/xNVMe.git"
@@ -606,7 +608,7 @@ configured:
 
 .. code-block:: bash
 
-  cijoe -c configs/debian-bullseye.toml -w provision.yaml
+  cijoe -c configs/debian-bullseye.toml provision.yaml
 
 .. tip::
    It will likely fail with the error::
@@ -624,13 +626,13 @@ The ``debian-bullseye-amd64.qcow2`` is created by:
 
 .. code-block:: bash
 
-  cijoe -c configs/debian-bullseye.toml -w workflows/bootimg-debian-bullseye-amd64.yaml
+  cijoe -c configs/debian-bullseye.toml workflows/bootimg-debian-bullseye-amd64.yaml
 
 The ``freebsd-13.1-ksrc-amd64.qcow2`` is created by:
 
 .. code-block:: bash
 
-  cijoe -c configs/freebsd-13.toml -w workflows/bootimg-freebsd-13-amd64.yaml
+  cijoe -c configs/freebsd-13.toml workflows/bootimg-freebsd-13-amd64.yaml
 
 Remote dev
 ----------

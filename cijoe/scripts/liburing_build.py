@@ -3,22 +3,26 @@
 Build liburing from source
 ==========================
 
-Step Args
----------
-
 Retargetable: True
 ------------------
 """
 import errno
+from argparse import ArgumentParser
 from pathlib import Path
 
 
-def main(args, cijoe, step):
+def add_args(parser: ArgumentParser):
+    parser.add_argument("--liburing_source", type=str, default=None)
+
+
+def main(args, cijoe):
     """Build liburing"""
 
-    liburing_source = step.get("with", {}).get(
-        "liburing_source", cijoe.getconf("liburing.repository.path", None)
+    liburing_source = args.liburing_source or cijoe.getconf(
+        "liburing.repository.path", None
     )
+    if not liburing_source:
+        return errno.EINVAL
 
     commands = [
         "unlink /usr/lib/liburing.so || true",

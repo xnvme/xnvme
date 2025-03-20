@@ -8,17 +8,26 @@ import logging as log
 import os
 import shutil
 import traceback
+from argparse import ArgumentParser
 from itertools import product
 from pathlib import Path
 
 
-def main(args, cijoe, step):
-    repetitions = step.get("with", {}).get("repetitions", 3)
-    iosizes = step.get("with", {}).get("iosizes", ["4K"])
-    iodepths = step.get("with", {}).get("iodepths", [1, 2, 4, 8])
+def add_args(parser: ArgumentParser):
+    parser.add_argument("--repetitions", type=int, default=3)
+    parser.add_argument("--iosizes", type=str, default=[], nargs="+")
+    parser.add_argument("--iodepths", type=int, default=[], nargs="+")
+    parser.add_argument("--ndevices", type=int, default=1)
+    parser.add_argument("--bdev_confs", type=str, default="/tmp")
 
-    ndevices = str(step.get("with", {}).get("ndevices", "1"))
-    bdev_confs = step.get("with", {}).get("bdev_confs", "/tmp")
+
+def main(args, cijoe):
+    repetitions = args.repetitions
+    iosizes = args.iosizes or ["4K"]
+    iodepths = args.iodepths or [1, 2, 4, 8]
+
+    ndevices = args.ndevices
+    bdev_confs = args.bdev_confs
 
     iopaths = {
         "io_uring_cmd-bdev_xnvme": {

@@ -15,7 +15,7 @@ import errno
 import logging as log
 
 
-def main(args, cijoe, step):
+def main(args, cijoe):
     """Build and install MacVFN"""
 
     username = cijoe.getconf("cijoe.transport.nonroot", None)
