@@ -253,7 +253,8 @@ sub_log_health(struct xnvme_cli *cli)
 	int err;
 
 	if (!cli->given[XNVME_CLI_OPT_NSID]) {
-		nsid = xnvme_dev_get_nsid(cli->args.dev);
+		// Perform log-health on controller as the default
+		nsid = 0xFFFFFFFF;
 	}
 
 	xnvme_cli_pinf("Allocating and clearing buffer...");
