@@ -14,7 +14,6 @@ Retargetable: True
 ------------------
 """
 
-import errno
 import logging as log
 
 

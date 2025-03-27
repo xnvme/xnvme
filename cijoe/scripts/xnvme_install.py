@@ -8,7 +8,6 @@ Retargetable: True
 """
 import errno
 from argparse import ArgumentParser
-from pathlib import Path
 
 
 def add_args(parser: ArgumentParser):
