@@ -25,15 +25,11 @@ import errno
 import hashlib
 import json
 import logging as log
-import os
-import pprint
 import re
 import traceback
 from argparse import ArgumentParser
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
 from cijoe.core.analyser import to_base_unit
 
 

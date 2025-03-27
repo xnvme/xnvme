@@ -5,7 +5,6 @@
     Will either keep blocksize or io depth size variable.
 
 """
-import ast
 import logging as log
 import os
 import shutil
@@ -15,7 +14,7 @@ from dataclasses import dataclass
 from enum import Enum
 from itertools import product
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Dict, Iterator, List
 
 from cijoe.core.command import Cijoe
 from cijoe.core.resources import dict_from_yamlfile

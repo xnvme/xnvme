@@ -8,7 +8,6 @@ Retargetable: True
 ------------------
 """
 
-import errno
 import logging as log
 from argparse import ArgumentParser
 from pathlib import Path
