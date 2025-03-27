@@ -18,15 +18,14 @@ from pathlib import Path
 def main(args, cijoe, step):
     """Build SPDK"""
 
-    spdk = cijoe.config.options.get("spdk", None)
-    if not spdk:
+    spdk_source = step.get("with", {}).get(
+        "spdk_source", cijoe.getconf("spdk.repository.path", None)
+    )
+    if not spdk_source:
         return errno.EINVAL
 
-    fio_repos = cijoe.config.options.get("fio", {}).get("repository")
-    # liburing_repos = cijoe.config.options.get("liburing", {}).get("repository")
-
-    spdk_source = step.get("with", {}).get("spdk_source", spdk["repository"]["path"])
-    spdk_prefix = spdk.get("build", {}).get("prefix", None)
+    fio_repos = cijoe.getconf("fio.repository", None)
+    spdk_prefix = cijoe.getconf("spdk.build.prefix", None)
 
     configure = " ".join(
         [

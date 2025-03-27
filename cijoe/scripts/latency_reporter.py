@@ -61,7 +61,7 @@ def main(args, cijoe, step):
     template_env = jinja2.Environment(loader=template_loader)
 
     # info for methodology section
-    ioengines = cijoe.config.options.get("fio", {}).get("engines", {})
+    ioengines = cijoe.getconf("fio.engines", {})
 
     runs_aux_path = step.get("with", {}).get("runs", None)
     if not runs_aux_path:

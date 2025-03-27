@@ -24,13 +24,12 @@ def main(args, cijoe, step):
             "Missing non-root user transport from config. MacVFN must be installed without root access."
         )
 
-    conf = cijoe.config.options.get("macvfn", {})
-    macvfn_source = conf.get("repository", {}).get("path", None)
+    macvfn_source = cijoe.getconf("macvfn.repository.path", None)
     if not macvfn_source:
         log.error("Missing path to MacVFN source.")
         return errno.EINVAL
 
-    os_name = cijoe.config.options.get("os", {}).get("name", "")
+    os_name = cijoe.getconf("os.name", "")
     if os_name != "macos":
         log.error(f"OS requirement: MacOS - was {os_name}")
         return errno.EINVAL

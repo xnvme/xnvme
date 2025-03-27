@@ -30,7 +30,7 @@ from .xnvme_be_combinations import get_combinations
 def xnvme_be_opts(options=None, only_labels=[]):
     """Produce a list of "sensible" backend configurations"""
 
-    osname = pytest.cijoe_instance.config.options.get("os", {}).get("name", "linux")
+    osname = pytest.cijoe_instance.getconf("os.name", "linux")
     if osname == "debian":
         osname = "linux"
 
@@ -76,7 +76,7 @@ def xnvme_be_opts(options=None, only_labels=[]):
 def cijoe_config_get_all_devices(labels):
     """Returns the 'device-dict' from every device in 'cijoe_cfg' with the given 'label'"""
     devices = []
-    for device in pytest.cijoe_instance.config.options.get("devices", []):
+    for device in pytest.cijoe_instance.getconf("devices", []):
         if not (set(labels) - set(device["labels"])):
             devices.append(device)
 
@@ -86,7 +86,7 @@ def cijoe_config_get_all_devices(labels):
 def cijoe_config_get_device(labels):
     """Returns the 'device-dict' from 'devices' in 'cijoe_cfg' with the given 'label'"""
 
-    for device in pytest.cijoe_instance.config.options.get("devices", []):
+    for device in pytest.cijoe_instance.getconf("devices", []):
         if not (set(labels) - set(device["labels"])):
             return device
 
@@ -172,11 +172,11 @@ def xnvme_setup(labels=[], opts=[]):
 
 def fabrics_setup(cijoe):
     """Setup fabrics"""
-    xnvme_conf = cijoe.config.options.get("xnvme", None)
-    if not xnvme_conf:
+    xnvme_conf_path = cijoe.getconf("xnvme.repository.sync.remote_path", None)
+    if not xnvme_conf_path:
         return errno.EINVAL
 
-    xnvme_path = Path(xnvme_conf["repository"]["sync"]["remote_path"])
+    xnvme_path = Path(xnvme_conf_path)
     rpc = xnvme_path / "subprojects" / "spdk" / "scripts" / "rpc.py"
     ip = "127.0.0.1"
     port = "4420"

@@ -21,10 +21,8 @@ import logging as log
 def main(args, cijoe, step):
     """Setup hugetlbfs"""
 
-    nr_hugepages = cijoe.config.options.get("hugetlbfs", {}).get("nr_hugepages", 128)
-    mount_point = cijoe.config.options.get("hugetlbfs", {}).get(
-        "mount_point", "/mnt/huge"
-    )
+    nr_hugepages = cijoe.getconf("hugetlbfs.nr_hugepages", 128)
+    mount_point = cijoe.getconf("hugetlbfs.mount_point", "/mnt/huge")
 
     commands = [
         f"echo {nr_hugepages} > /proc/sys/vm/nr_hugepages",

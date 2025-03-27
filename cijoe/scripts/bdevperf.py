@@ -4,7 +4,6 @@
 
     Toggling the "conserve_cpu" flag for 'bdev_xnvme'
 """
-import json
 import logging as log
 import os
 import shutil

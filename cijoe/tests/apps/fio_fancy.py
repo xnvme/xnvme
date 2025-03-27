@@ -101,9 +101,7 @@ def setup_ioengine(param, env, engine_name, cijoe, device, xnvme_opts, spdk_opts
     @returns env, param
     """
 
-    engine = (
-        cijoe.config.options.get("fio", {}).get("engines", {}).get(engine_name, None)
-    )
+    engine = cijoe.getconf(f"fio.engines.{engine_name}", None)
     if engine is None:
         log.error(f"fio.engine({engine_name}) not in configuration")
         return False

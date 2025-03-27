@@ -16,12 +16,8 @@ from pathlib import Path
 def main(args, cijoe, step):
     """Build liburing"""
 
-    conf = cijoe.config.options.get("liburing", None)
-    if not conf:
-        return errno.EINVAL
-
     liburing_source = step.get("with", {}).get(
-        "liburing_source", conf["repository"]["path"]
+        "liburing_source", cijoe.getconf("liburing.repository.path", None)
     )
 
     commands = [

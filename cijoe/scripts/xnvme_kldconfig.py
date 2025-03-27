@@ -10,7 +10,7 @@ Retargetable: True
 
 
 def main(args, cijoe, step):
-    osname = cijoe.config.options.get("os", {}).get("name", None)
+    osname = cijoe.getconf("os.name", None)
     if not osname:
         return 0
     if osname != "freebsd":

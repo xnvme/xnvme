@@ -15,11 +15,11 @@ Retargetable: True
 def main(args, cijoe, step):
     """Configure, build and install fio in 'config.options.fio.build.prefix'"""
 
-    repos = cijoe.config.options.get("fio", {}).get("repository", {})
+    repos = cijoe.getconf("fio.repository", {})
     if not repos:
         return 1
 
-    os_name = cijoe.config.options.get("os", {}).get("name", "")
+    os_name = cijoe.getconf("os.name", "")
 
     if os_name == "windows":
         commands = fio_commands_windows(repos)
@@ -35,8 +35,8 @@ def main(args, cijoe, step):
 
 
 def fio_commands(cijoe, repos):
-    shell = cijoe.config.options.get("cijoe", {}).get("run", {}).get("shell", "sh")
-    os_name = cijoe.config.options.get("os", {}).get("name", "")
+    shell = cijoe.getconf("cijoe.run.shell", "sh")
+    os_name = cijoe.getconf("os.name", "")
 
     make = "gmake" if shell == "csh" or os_name == "macos" else "make"
 
@@ -47,7 +47,7 @@ def fio_commands(cijoe, repos):
         (f"{make} clean", repos["path"]),
     ]
 
-    prefix = cijoe.config.options.get("fio", {}).get("build", {}).get("prefix", {})
+    prefix = cijoe.getconf("fio.build.prefix", {})
     if prefix:
         commands += [
             (f"./configure --prefix={prefix}", repos["path"]),

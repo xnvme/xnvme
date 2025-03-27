@@ -18,13 +18,13 @@ from pathlib import Path
 def main(args, cijoe, step):
     """Build xNVMe"""
 
-    conf = cijoe.config.options.get("xnvme", None)
-    if not conf:
-        return errno.EINVAL
-
     xnvme_source = Path(
-        step.get("with", {}).get("xnvme_source", conf["repository"]["path"])
+        step.get("with", {}).get(
+            "xnvme_source", cijoe.getconf("xnvme.repository.path", None)
+        )
     )
+    if not xnvme_source:
+        return errno.EINVAL
 
     commands = []
 

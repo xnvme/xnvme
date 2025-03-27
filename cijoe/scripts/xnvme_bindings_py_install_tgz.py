@@ -33,7 +33,7 @@ import logging as log
 def main(args, cijoe, step):
     """Setup cijoe pipx-env with numpy and xNVMe Python bindings injected"""
 
-    osname = cijoe.config.options.get("os", {}).get("name", "")
+    osname = cijoe.getconf("os.name", "")
     if osname not in ["debian"]:
         log.info("skip python setup")
         return 0
