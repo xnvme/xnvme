@@ -215,18 +215,12 @@ class IOURingCmdEngine(KernelEngine):
 @dataclass
 class BdevExternalPreloader(ExternalPreloader):
     def extra_args(self) -> Dict[str, str]:
-        spdk_json_conf = (
-            self.cijoe.config.options.get("spdk", {})
-            .get("build", {})
-            .get("spdk_json_conf")
-        )
+        spdk_json_conf = self.cijoe.getconf("spdk.build.spdk_json_conf")
         return {"--spdk_json_conf": f"{spdk_json_conf}"}
 
     @property
     def filename(self) -> str:
-        return (
-            self.cijoe.config.options.get("spdk", {}).get("build", {}).get("filename")
-        )
+        return self.cijoe.getconf("spdk.build.filename")
 
 
 def determine_engine(
@@ -337,16 +331,16 @@ class FIO:
 
 
 def main(args, cijoe: Cijoe, step: Dict[str, Any]):
-    fio_bin = cijoe.config.options.get("fio", {}).get("bin")
+    fio_bin = cijoe.getconf("fio.bin")
 
     runs_aux_path = step.get("with", {}).get("runs", None)
     if not runs_aux_path:
         log.error("Missing path to auxiliary file describing the runs")
     runs = dict_from_yamlfile(Path(runs_aux_path))["runs"]
 
-    io_engines: CijoeEngines = cijoe.config.options.get("fio", {}).get("engines")
-    devices: List[Device] = list(determine_devices(cijoe.config.options.get("devices")))
-    os_name = cijoe.config.options.get("os", {}).get("name", "")
+    io_engines: CijoeEngines = cijoe.getconf("fio.engines")
+    devices: List[Device] = list(determine_devices(cijoe.getconf("devices")))
+    os_name = cijoe.getconf("os.name", "")
 
     artifacts = Path(args.output) / "artifacts"
     os.makedirs(str(artifacts), exist_ok=True)

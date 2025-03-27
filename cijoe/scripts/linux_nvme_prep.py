@@ -13,7 +13,7 @@ def main(args, cijoe, step):
     for path in sorted(
         [
             Path(dev["uri"]).name
-            for dev in cijoe.config.options.get("devices")
+            for dev in cijoe.getconf("devices")
             if "bdev" in dev["labels"]
         ]
     ):

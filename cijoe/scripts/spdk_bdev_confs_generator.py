@@ -94,7 +94,7 @@ IOPATHS = {
 
 
 def main(args, cijoe, step):
-    duts = copy.deepcopy(cijoe.config.options.get("duts", []))
+    duts = copy.deepcopy(cijoe.getconf("duts", []))
     if not duts:
         log.error("Missing 'duts' section in CIJOE configuration file")
         return 1

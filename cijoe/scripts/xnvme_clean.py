@@ -18,11 +18,11 @@ from pathlib import Path
 def main(args, cijoe, step):
     """Clean xNVMe"""
 
-    conf = cijoe.config.options.get("xnvme", None)
-    if not conf:
+    xnvme_source = step.get("with", {}).get(
+        "xnvme_source", cijoe.getconf("xnvme.repository.path", None)
+    )
+    if not xnvme_source:
         return errno.EINVAL
-
-    xnvme_source = step.get("with", {}).get("xnvme_source", conf["repository"]["path"])
 
     commands = [
         "make clean",

@@ -354,8 +354,8 @@ def main(args, cijoe, step):
     bios = ""
     bios_version = ""
 
-    shell = cijoe.config.options.get("cijoe", {}).get("run", {}).get("shell", "sh")
-    os = cijoe.config.options.get("os", {}).get("name", "")
+    shell = cijoe.getconf("cijoe.run.shell", "sh")
+    os = cijoe.getconf("os.name", "")
 
     if os == "windows":
         err, os = read_os_windows(cijoe)

@@ -64,9 +64,7 @@ def test_library_consumption(cijoe):
     Verify that xNVMe is consumable via dynamic loading, shared linking, static linking
     """
 
-    compiler = (
-        cijoe.config.options.get("build", {}).get("compiler", {}).get("bin", "gcc")
-    )
+    compiler = cijoe.getconf("build.compiler.bin", "gcc")
 
     usages = [
         ("shared", "loading", "pkg-config xnvme --cflags"),

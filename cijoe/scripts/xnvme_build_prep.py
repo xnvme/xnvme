@@ -29,17 +29,13 @@ from pathlib import Path
 
 
 def main(args, cijoe, step):
-    osinfo = cijoe.config.options.get("os", None)
+    osinfo = cijoe.getconf("os", None)
     if not osinfo:
         log.err("cijoe.config.options is missing 'os'")
         return errno.EINVAL
 
-    conf = cijoe.config.options.get("xnvme", None)
-    if not conf:
-        return errno.EINVAL
-
     xnvme_source = step.get("with", {}).get(
-        "xnvme_source", conf.get("repository", {}).get("path", None)
+        "xnvme_source", cijoe.getconf("xnvme.repository.path", None)
     )
     if not xnvme_source:
         return errno.EINVAL
