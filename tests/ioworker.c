@@ -314,7 +314,7 @@ iowork_from_cli(struct xnvme_cli *cli, struct iowork *work)
 	work->wbuf = xnvme_buf_alloc(cli->args.dev, work->range.nbytes);
 	if (!work->wbuf) {
 		err = -errno;
-		XNVME_DEBUG("FAILED: xnvme_buf_alloc(data), err: %d", errno);
+		XNVME_DEBUG("FAILED: xnvme_buf_alloc(wbuf), err: %d", errno);
 		goto failed;
 	}
 
@@ -327,11 +327,11 @@ iowork_from_cli(struct xnvme_cli *cli, struct iowork *work)
 	work->rbuf = xnvme_buf_alloc(cli->args.dev, work->range.nbytes);
 	if (!work->rbuf) {
 		err = -errno;
-		XNVME_DEBUG("FAILED: xnvme_buf_alloc(buf), err: %d", errno);
+		XNVME_DEBUG("FAILED: xnvme_buf_alloc(rbuf), err: %d", errno);
 		goto failed;
 	}
 
-	err = xnvme_buf_fill(work->rbuf, work->io.nbytes, "zero");
+	err = xnvme_buf_fill(work->rbuf, work->range.nbytes, "zero");
 	if (err) {
 		XNVME_DEBUG("FAILED: xnvme_buf_fill(), err: %d", err);
 		goto failed;
