@@ -60,49 +60,13 @@ labels = [ "dev", "bdev", "nvm", "nosgl" ]
 driver_attachment = "kernel"
 
 [[devices]]
-uri = "/dev/nvme1n1"
-nsid = 1
-labels = [ "dev", "bdev", "nvm", "nosgl" ]
-driver_attachment = "kernel"
-
-[[devices]]
-uri = "/dev/nvme2n1"
-nsid = 1
-labels = [ "dev", "bdev", "nvm", "nosgl" ]
-driver_attachment = "kernel"
-
-[[devices]]
 uri = "/dev/ng0n1"
 nsid = 1
 labels = [ "dev", "cdev", "nvm", "nosgl" ]
 driver_attachment = "kernel"
 
 [[devices]]
-uri = "/dev/ng1n1"
-nsid = 1
-labels = [ "dev", "cdev", "nvm", "nosgl" ]
-driver_attachment = "kernel"
-
-[[devices]]
-uri = "/dev/ng2n1"
-nsid = 1
-labels = [ "dev", "cdev", "nvm", "nosgl" ]
-driver_attachment = "kernel"
-
-[[devices]]
 uri = "0000:41:00.0"
-nsid = 1
-labels = [ "dev", "pcie", "nvm", "nosgl" ]
-driver_attachment = "userspace"
-
-[[devices]]
-uri = "0000:42:00.0"
-nsid = 1
-labels = [ "dev", "pcie", "nvm", "nosgl" ]
-driver_attachment = "userspace"
-
-[[devices]]
-uri = "0000:43:00.0"
 nsid = 1
 labels = [ "dev", "pcie", "nvm", "nosgl" ]
 driver_attachment = "userspace"
