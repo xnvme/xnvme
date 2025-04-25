@@ -39,7 +39,7 @@ jobs:
   # systems tested in the GitHUB CI workflow
   #
   source-archive-with-subprojects:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     container: ghcr.io/xnvme/xnvme-deps-alpine-latest:next
 
     steps:
@@ -74,7 +74,7 @@ jobs:
         if-no-files-found: error
 
   source-archive:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     container: ghcr.io/xnvme/xnvme-deps-alpine-latest:next
 
     steps:
@@ -112,7 +112,7 @@ jobs:
   # Check source-format using pre-commit
   #
   source-format-check:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     container: ghcr.io/xnvme/xnvme-deps-fedora-citools:next
 
     steps:
