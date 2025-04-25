@@ -18,8 +18,12 @@ def callback_func(dev, cb_args):
     return xnvme.XNVME_ENUMERATE_DEV_CLOSE
 
 
-def test_enum():
+@xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
+def test_enum(device, be_opts, cli_args):
     """Verify that returned some devices"""
+
+    if "spdk" == be_opts["be"]:
+        pytest.skip("SPDK does not support enumeration on physical devices")
 
     global DEVICE_COUNT
     DEVICE_COUNT = 0
