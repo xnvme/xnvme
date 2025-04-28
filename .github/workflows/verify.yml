@@ -576,7 +576,7 @@ jobs:
       fail-fast: false
       matrix:
         runner:
-        - {os: 'windows', ver: '2022'}
+        - {os: 'windows', ver: '2025'}
 
     steps:
     - name: Setup paths
