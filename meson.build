@@ -181,6 +181,9 @@ conf = configure_file(
   output : 'xnvme_config.h',
 )
 conf_inc = [ include_directories('.') ]
+if is_linux
+  conf_inc += [ include_directories('toolbox' / 'third-party' / 'linux') ]
+endif
 if is_windows
   conf_inc += [ include_directories('toolbox' / 'third-party' / 'windows') ]
 endif
