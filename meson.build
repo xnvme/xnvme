@@ -12,7 +12,8 @@ project(
     'warning_level=2',
     'buildtype=release',
     'default_library=both',
-    'b_staticpic=true'
+    'b_staticpic=true',
+    'b_ndebug=if-release',
   ],
   meson_version: '>=0.58'
 )
