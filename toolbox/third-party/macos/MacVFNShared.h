@@ -32,7 +32,10 @@ typedef struct {
 
     uint64_t dbuf_nbytes;
     uint64_t dbuf_offset;
-    uint64_t dbuf_token;
+    union {
+        uint64_t dbuf_token;
+        uint64_t dbuf_iova;
+    };
 
     uint64_t mbuf_nbytes;
     uint64_t mbuf_offset;

@@ -20,7 +20,7 @@ xnvme_be_macos_driverkit_enumerate(const char *sys_uri, struct xnvme_opts *opts,
 				   xnvme_enumerate_cb cb_func, void *cb_args)
 {
 	XNVME_DEBUG("INFO: xnvme_be_macos_driverkit_enumerate()");
-	CFMutableDictionaryRef matching_dict = IOServiceMatching("IOUserService");
+	CFMutableDictionaryRef matching_dict;
 	struct xnvme_opts tmp_opts = *opts;
 	io_iterator_t iterator;
 	kern_return_t ret;
@@ -33,43 +33,47 @@ xnvme_be_macos_driverkit_enumerate(const char *sys_uri, struct xnvme_opts *opts,
 		return -ENOSYS;
 	}
 
-	ret = IOServiceGetMatchingServices(kIOMasterPortDefault, matching_dict, &iterator);
-	if (ret != kIOReturnSuccess || !iterator) {
-		XNVME_DEBUG("FAILED: IOServiceGetMatchingServices(); ret(0x%08x), '%s'", ret,
-			    mach_error_string(ret));
+	const char *service_classes[] = {"IOUserBlockStorageDevice", "IOUserService"};
+	for (int i = 0; i < 2; ++i) {
+		matching_dict = IOServiceMatching(service_classes[i]);
 
-		return -ENODEV;
-	}
-
-	tmp_opts.be = xnvme_be_macos_driverkit.attr.name;
-	tmp_opts.nsid = 1;
-
-	while (true) {
-		dev = NULL;
-		memset(&uri, 0, XNVME_IDENT_URI_LEN);
-		service = IOIteratorNext(iterator);
-
-		if (!service) {
-			break;
-		}
-
-		ret = IORegistryEntryGetName(service, uri);
-		if (strncmp("MacVFN-", uri, 7)) {
+		ret = IOServiceGetMatchingServices(kIOMasterPortDefault, matching_dict, &iterator);
+		if (ret != kIOReturnSuccess || !iterator) {
+			XNVME_DEBUG("FAILED: IOServiceGetMatchingServices(%s); ret(0x%08x), '%s'",
+				    service_classes[i], ret, mach_error_string(ret));
 			continue;
 		}
-		XNVME_DEBUG("INFO: MacVFN uri matched: %s", uri);
 
-		dev = xnvme_dev_open(uri, &tmp_opts);
-		if (!dev) {
-			XNVME_DEBUG("INFO: xnvme_dev_open(): %d", errno);
-			return -errno;
+		tmp_opts.be = xnvme_be_macos_driverkit.attr.name;
+		tmp_opts.nsid = 1;
+
+		while (true) {
+			dev = NULL;
+			memset(&uri, 0, XNVME_IDENT_URI_LEN);
+			service = IOIteratorNext(iterator);
+
+			if (!service) {
+				break;
+			}
+
+			ret = IORegistryEntryGetName(service, uri);
+			if (strncmp("MacVFN-", uri, 7)) {
+				continue;
+			}
+			XNVME_DEBUG("INFO: MacVFN uri matched: %s", uri);
+
+			dev = xnvme_dev_open(uri, &tmp_opts);
+			if (!dev) {
+				XNVME_DEBUG("INFO: xnvme_dev_open(): %d", errno);
+				return -errno;
+			}
+			if (cb_func(dev, cb_args)) {
+				xnvme_dev_close(dev);
+			}
 		}
-		if (cb_func(dev, cb_args)) {
-			xnvme_dev_close(dev);
-		}
+
+		IOObjectRelease(iterator);
 	}
-
-	IOObjectRelease(iterator);
 
 	return 0;
 }
