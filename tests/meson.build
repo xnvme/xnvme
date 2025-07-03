@@ -64,6 +64,7 @@ tests = {
   'znd_explicit_open.c': [],
   'znd_state.c': [],
   'znd_zrwa.c': [],
+  'async_limbo.c': [],
 }
 
 if not is_windows
