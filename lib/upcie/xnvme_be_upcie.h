@@ -12,6 +12,14 @@
 #define _UPCIE_WITH_NVME
 #include <upcie/upcie.h>
 
+struct xnvme_queue_upcie {
+	struct xnvme_queue_base base;
+	struct nvme_qpair qpair;
+	uint8_t _rvds[168];
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_upcie) == XNVME_BE_QUEUE_STATE_NBYTES,
+		    "Incorrect size")
+
 /**
  * Shared controller state, one per physical controller, managed by cref.
  */
