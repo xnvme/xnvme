@@ -16,7 +16,7 @@ xnvme_queue_term(struct xnvme_queue *queue)
 	int err;
 
 	if (!queue) {
-		XNVME_DEBUG("FAILED: !dev");
+		XNVME_DEBUG("FAILED: !queue");
 		return -EINVAL;
 	}
 
