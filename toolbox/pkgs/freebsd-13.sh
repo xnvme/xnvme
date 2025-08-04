@@ -13,7 +13,7 @@ pkg install -qy \
  cunit \
  devel/py-pipx \
  devel/py-pyelftools \
- e2fsprogs-libuuid \
+ libuuid \
  findutils \
  git \
  gmake \
