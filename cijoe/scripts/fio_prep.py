@@ -71,7 +71,7 @@ def fio_commands_windows(repos):
         ("git clean -fdX", repos["path"]),
         (f"git checkout {repos['tag']} || true", repos["path"]),
         ("git rev-parse --short HEAD || true", repos["path"]),
-        ("make", repos["path"]),
+        ("make CFLAGS='-O0'", repos["path"]),
     ]
 
     return commands
