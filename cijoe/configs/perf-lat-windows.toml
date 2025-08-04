@@ -29,7 +29,8 @@ bin = "C:/Users/root/git/fio/fio.exe"
 [fio.repository]
 remote = "https://github.com/axboe/fio.git"
 path = "C:/Users/root/git/fio"
-tag = "fio-3.38"
+# tag = "fio-3.38"
+tag = "7037b833e175aae32900b73bf597aad08c1d8472" # windows: drop nanosleep and clock_gettime
 
 [fio.engines]
 
