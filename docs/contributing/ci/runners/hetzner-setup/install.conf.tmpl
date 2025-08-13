@@ -1,0 +1,17 @@
+#
+# Hetzner installimage config for Debian Bookworm on AX42
+#
+DRIVE1 /dev/nvme0n1
+
+SWRAID 0
+
+PART /boot/efi esp 256M
+PART /boot ext3 1024M
+PART swap swap 31G
+PART / ext4 all
+
+USE_KERNEL_MODE_SETTING yes
+
+IMAGE /root/images/Debian-1211-bookworm-amd64-base.tar.gz
+
+HOSTNAME xnvme-ci-hetzner-bookworm-amd64-__HOSTNUMBER__

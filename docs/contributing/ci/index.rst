@@ -92,6 +92,7 @@ various **CI** jobs.
    :includehidden:
 
    runners/index.rst
+   runners/hetzner-setup/index.rst
    bench/index.rst
    verify/index.rst
 
