@@ -1,0 +1,12 @@
+[Unit]
+Description=Bind PCI devices to vfio-pci after vfio-pci is loaded
+After=systemd-modules-load.service
+Requires=systemd-modules-load.service
+ConditionPathExists=/sys/module/vfio_pci
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /root/git/upcie/scripts/devbind.py --bind vfio-pci
+
+[Install]
+WantedBy=multi-user.target
