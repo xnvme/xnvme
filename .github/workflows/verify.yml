@@ -27,56 +27,28 @@ defaults:
 
 jobs:
   #
-  # Produce a "full" source-archive, that is, xNVMe and source from subprojects
+  # Produce a source-archive (with and without subprojects)
   #
-  # This is done for multiple reasons:
+  # with-subprojects
+  # 
+  #   To provide an artifact consisting of xNVMe and dependent projects for
+  #   CI to consume as well as users in environments with no network access, a
+  #   one-stop shop
   #
-  # * To provide a CI-artifact consisting of xNVMe and dependent projects for software-packagers
-  # to consume, as well as users in environments with no network access, a one-stop shop
+  # without-subprojects
+  # 
+  #   Primarily for system-package maintainers, for these then the dependencies
+  #   are solved via the package-manager and related packages that may or
+  #   may not be available, and thus, no "bundled" dependencies. Also, for
+  #   minimalistic users, that does not need the external deps of e.g. SPDK
+  #   and libvfn.
   #
-  # * For use in the xNVMe CI pipeline, the source-archive provided to others is tested and used by
-  # the xNVMe CI pipeline itself, thus users will know that the archive should be and run on the
-  # systems tested in the GitHUB CI workflow
-  #
-  source-archive-with-subprojects:
-    runs-on: ubuntu-latest
-    container: ghcr.io/xnvme/xnvme-deps-alpine-latest:next
-
-    steps:
-    - name: Grab source
-      uses: actions/checkout@v4
-
-    - name: Add repos to git-config safe.directory
-      run: |
-        git config --global --add safe.directory $(pwd)
-
-    - name: Check repository...
-      run: |
-        ls -lha
-        git status
-
-    - name: Generate Source Archive with subprojects
-      run: |
-        make clean gen-src-archive-with-subprojects
-
-    - name: Rename to un-versioned xnvme-src.tar.gz
-      run: |
-        mv builddir/meson-dist/xnvme-0.7.5.tar.gz builddir/meson-dist/xnvme-src.tar.gz
-        mv builddir/meson-dist/xnvme-0.7.5.tar.gz.sha256sum builddir/meson-dist/xnvme-src.tar.gz.sha256sum
-
-    - name: Upload source archive
-      uses: actions/upload-artifact@v4.3.0
-      with:
-        name: xnvme-src-archive-with-subprojects
-        path: |
-          builddir/meson-dist/xnvme-src.tar.gz.sha256sum
-          builddir/meson-dist/xnvme-src.tar.gz
-        if-no-files-found: error
-
   source-archive:
     runs-on: ubuntu-latest
     container: ghcr.io/xnvme/xnvme-deps-alpine-latest:next
-
+    strategy:
+      matrix:
+        variant: [with-subprojects, without-subprojects]
     steps:
     - name: Grab source
       uses: actions/checkout@v4
@@ -90,9 +62,13 @@ jobs:
         ls -lha
         git status
 
-    - name: Generate Source Archive with subprojects
+    - name: Generate Source Archive
       run: |
-        make clean gen-src-archive
+        if [ "${{ matrix.variant }}" = "with-subprojects" ]; then
+          make clean gen-src-archive-with-subprojects
+        else
+          make clean gen-src-archive
+        fi
 
     - name: Rename to un-versioned xnvme-src.tar.gz
       run: |
@@ -102,7 +78,7 @@ jobs:
     - name: Upload source archive
       uses: actions/upload-artifact@v4.3.0
       with:
-        name: xnvme-src-archive
+        name: xnvme-src-archive${{ matrix.variant == 'with-subprojects' && '-with-subprojects' || '' }}
         path: |
           builddir/meson-dist/xnvme-src.tar.gz.sha256sum
           builddir/meson-dist/xnvme-src.tar.gz
@@ -135,7 +111,7 @@ jobs:
   # Ensure that bash completions and man pages can be generated without error
   #
   test-gen-targets:
-    needs: source-archive-with-subprojects
+    needs: source-archive
     runs-on: ubuntu-latest
     container: ghcr.io/xnvme/xnvme-deps-citools-latest:next
 
@@ -169,7 +145,7 @@ jobs:
       run: make gen-man-pages
 
   build-rust:
-    needs: source-archive-with-subprojects
+    needs: source-archive
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/xnvme/xnvme-deps-debian-bookworm:next
@@ -214,7 +190,7 @@ jobs:
   # Build xNVMe Python packages
   #
   build-python:
-    needs: source-archive-with-subprojects
+    needs: source-archive
     runs-on: ubuntu-latest
     container: ghcr.io/xnvme/xnvme-deps-debian-bullseye:next
     strategy:
@@ -261,10 +237,9 @@ jobs:
   # Build on Linux using different Linux distributions
   #
   build-linux:
-    needs: [source-archive-with-subprojects, source-format-check, build-python]
+    needs: [source-archive, source-format-check, build-python]
     runs-on: ubuntu-latest
     if: contains('push pull_request', github.event_name)
-
     strategy:
       fail-fast: false
       matrix:
@@ -439,7 +414,7 @@ jobs:
   # Build on macOS
   #
   build-macos:
-    needs: [source-archive-with-subprojects, source-format-check, build-python]
+    needs: [source-archive, source-format-check, build-python]
     runs-on: ${{ matrix.runner.os }}-${{ matrix.runner.ver }}
     if: contains('push pull_request', github.event_name)
 
@@ -565,7 +540,7 @@ jobs:
   # Build on Windows
   #
   build-windows:
-    needs: [source-archive-with-subprojects, source-format-check, build-python]
+    needs: [source-archive, source-format-check, build-python]
     runs-on: ${{ matrix.runner.os }}-${{ matrix.runner.ver }}
     if: contains('push pull_request', github.event_name)
     defaults:
@@ -720,7 +695,7 @@ jobs:
   # Build and test xNVMe
   #
   verify:
-    needs: [source-archive-with-subprojects, source-format-check, build-python]
+    needs: [source-archive, source-format-check, build-python]
     runs-on: ubuntu-latest
 
     if: (contains('push pull_request', github.event_name) || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job
@@ -838,7 +813,7 @@ jobs:
   # Build and test xNVMe on physical machines
   #
   verify-physical:
-    needs: [source-archive-with-subprojects, source-format-check, build-python]
+    needs: [source-archive, source-format-check, build-python]
     runs-on: ${{ matrix.guest.labels }}
 
     if: (contains('push pull_request', github.event_name) || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job
@@ -971,7 +946,7 @@ jobs:
   # Build and run performance test of xNVMe
   #
   bench:
-    needs: [source-archive-with-subprojects, source-format-check, build-python]
+    needs: [source-archive, source-format-check, build-python]
     runs-on: [self-hosted, linux, X64, bench, intel]
 
     if: (contains('push', github.event_name) || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job ==
@@ -1088,7 +1063,7 @@ jobs:
   # Build and run fio latency test of xNVMe
   #
   fio-latency:
-    needs: [source-archive-with-subprojects, source-format-check, build-python]
+    needs: [source-archive, source-format-check, build-python]
     if: (contains('push', github.event_name) || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job ==
       'bench')) || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'bench')))
 
@@ -1232,7 +1207,7 @@ jobs:
   # there are no changes to "docs/current", then there is nothing to commit
   #
   docgen:
-    needs: [source-archive-with-subprojects, source-format-check, build-python]
+    needs: [source-archive, source-format-check, build-python]
     runs-on: ubuntu-latest
     if: ((github.event_name == 'push') || (github.event_name == 'pull_request') || ((github.event_name == 'workflow_dispatch')
       && (github.event.inputs.job == 'docgen')))
@@ -1368,7 +1343,7 @@ jobs:
   # Code-analysis using scan-build
   #
   analyze-scan-build:
-    needs: source-archive-with-subprojects
+    needs: source-archive
     runs-on: ubuntu-latest
     container: ghcr.io/xnvme/xnvme-deps-citools-latest:next
     if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'analyze'))
@@ -1402,7 +1377,7 @@ jobs:
   # Code-analysis using GitHUB CodeQL
   #
   analyze-codeql:
-    needs: source-archive-with-subprojects
+    needs: source-archive
     runs-on: ubuntu-latest
     container: debian:bullseye
     if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'analyze'))
@@ -1440,7 +1415,7 @@ jobs:
   # Code-analysis using Coverity
   #
   analyze-coverity:
-    needs: source-archive-with-subprojects
+    needs: source-archive
     runs-on: ubuntu-latest
     if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'analyze'))
 
