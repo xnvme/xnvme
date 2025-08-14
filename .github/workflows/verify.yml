@@ -116,15 +116,11 @@ jobs:
     container: ghcr.io/xnvme/xnvme-deps-citools-latest:next
 
     steps:
-    - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.7
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
       with:
         name: xnvme-src-archive-with-subprojects
-
-    - name: Extract, and then remove, the xNVMe source archive
-      run: |
-        tar xzf xnvme-src.tar.gz --strip 1
-        rm xnvme-src.tar.gz
 
     - name: Build xNVMe
       run: make common
@@ -151,15 +147,11 @@ jobs:
       image: ghcr.io/xnvme/xnvme-deps-debian-bookworm:next
 
     steps:
-    - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.7
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
       with:
         name: xnvme-src-archive-with-subprojects
-
-    - name: Extract, and then remove, the xNVMe source archive
-      run: |
-        tar xzf xnvme-src.tar.gz --strip 1
-        rm xnvme-src.tar.gz
 
     - name: Install dependencies
       run: |
@@ -197,15 +189,11 @@ jobs:
       fail-fast: false
 
     steps:
-    - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.7
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
       with:
         name: xnvme-src-archive-with-subprojects
-
-    - name: Extract, and then remove, the xNVMe source archive
-      run: |
-        tar xzf xnvme-src.tar.gz --strip 1
-        rm xnvme-src.tar.gz
 
     - name: Python sdist-packages, system-package deps.
       run: |
@@ -272,15 +260,11 @@ jobs:
       if: contains(matrix.container.os, 'opensuse')
       run: zypper --non-interactive install -y tar gzip
 
-    - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.7
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
       with:
         name: xnvme-src-archive-with-subprojects
-
-    - name: Extract, and then remove, the xNVMe source archive
-      run: |
-        tar xzf xnvme-src.tar.gz --strip 1
-        rm xnvme-src.tar.gz
 
     - name: Configure with and build with debug enabled (without spdk)
       if: ${{ contains(matrix.container.os, 'alpine') }}
@@ -346,15 +330,11 @@ jobs:
         python3 -m pipx --version
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-    - name: Retrieve, the xNVMe Python sdist package
+    - name: Retrieve the xNVMe Python sdist package
       uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-py-sdist
-
-    - name: Move, the xNVMe Python sdist package
-      run: |
-        mkdir -p /tmp/artifacts
-        mv xnvme-py-sdist.tar.gz /tmp/artifacts/.
+        path: ${{ steps.source.outputs.directory }}
 
     # Setup Python virtual-environment for cijoe and Python xNVMe bindings to run ramdisk testing
     - name: CIJOE, setup pipx environment
@@ -370,7 +350,7 @@ jobs:
     - name: Python-bindings (ctypes), install and test
       if: (!contains('focal', matrix.container.ver))
       run: |
-        python3 -m pipx inject cijoe /tmp/artifacts/xnvme-py-sdist.tar.gz
+        python3 -m pipx inject cijoe "${{ steps.source.outputs.directory }}/xnvme-py-sdist.tar.gz"
         pytest --pyargs xnvme.ctypes_bindings
 
     #
@@ -427,15 +407,11 @@ jobs:
         - {os: 'macos', ver: '15'}
 
     steps:
-    - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.7
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
       with:
         name: xnvme-src-archive-with-subprojects
-
-    - name: Extract, and then remove, the xNVMe source archive
-      run: |
-        tar xzf xnvme-src.tar.gz --strip 1
-        rm xnvme-src.tar.gz
 
     - name: Install build-requirements
       run: |
@@ -486,15 +462,11 @@ jobs:
         python3 -c "import platform; print(platform.system()); print(platform.uname())"
         python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
 
-    - name: Retrieve, the xNVMe Python sdist package
+    - name: Retrieve the xNVMe Python sdist package
       uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-py-sdist
-
-    - name: Move, the xNVMe Python sdist package
-      run: |
-        mkdir -p /tmp/artifacts
-        mv xnvme-py-sdist.tar.gz /tmp/artifacts/.
+        path: ${{ steps.source.outputs.directory }}
 
     # Setup Python virtual-environment for cijoe and Python xNVMe bindings to run ramdisk testing
     - name: CIJOE, setup pipx environment
@@ -507,7 +479,7 @@ jobs:
 
     - name: Python-bindings (ctypes), install and test
       run: |
-        pipx inject cijoe /tmp/artifacts/xnvme-py-sdist.tar.gz
+        pipx inject cijoe "${{ steps.source.outputs.directory }}/xnvme-py-sdist.tar.gz"
         pytest --pyargs xnvme.ctypes_bindings
 
     #
@@ -569,16 +541,11 @@ jobs:
       run: |
         echo $env:Path
 
-    - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.7
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
       with:
         name: xnvme-src-archive-with-subprojects
-
-    - name: Extract, and then remove, the xNVMe source archive
-      shell: bash
-      run: |
-        tar xzf xnvme-src.tar.gz --strip 1
-        rm xnvme-src.tar.gz
 
     - name: Install build-requirements
       shell: powershell
@@ -640,16 +607,11 @@ jobs:
         python3 -c "import platform; print(platform.system()); print(platform.uname())"
         python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
 
-    - name: Retrieve, the xNVMe Python sdist package
-      uses: actions/download-artifact@v4.1.1
+    - name: Retrieve the xNVMe Python sdist package
+      uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-py-sdist
-
-    - name: Move, the xNVMe Python sdist package
-      shell: powershell
-      run: |
-        New-Item -ItemType Directory -Force -Path C:\tmp\artifacts
-        Move-Item -Path xnvme-py-sdist.tar.gz -Destination C:\tmp\artifacts\xnvme-py-sdist.tar.gz
+        path: ${{ steps.source.outputs.directory }}
 
     # Setup Python virtual-environment for cijoe and Python xNVMe bindings to run ramdisk testing
     - name: CIJOE, setup pipx environment
@@ -720,34 +682,27 @@ jobs:
         rm -rf $HOME/guests 
         rm -rf $HOME/images 
         rm -r /tmp/artifacts || true
-        mkdir -p /tmp/artifacts || true
+        rm -r artifacts || true
         rm -rf *
         ls -lh
 
-    - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.7
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
       with:
         name: xnvme-src-archive-with-subprojects
 
-    - name: Extract, and then move, the xNVMe source archive
-      run: |
-        tar xzf xnvme-src.tar.gz --strip 1
-        mv xnvme-src.tar.gz /tmp/artifacts/.
-
-    - name: Retrieve, the xNVMe Python sdist package
+    - name: Retrieve the xNVMe Python sdist package
       uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-py-sdist
-
-    - name: Move, the xNVMe Python sdist package
-      run: |
-        find .
-        mv xnvme-py-sdist.tar.gz /tmp/artifacts/.
+        path: ${{ steps.source.outputs.directory }}
 
     - name: Prep, environment GITHUB_PATH
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-        find /tmp/artifacts -name "*.tar.gz"
+        cp -r ${{ steps.source.outputs.directory }} /tmp/artifacts
+        find /tmp/artifacts
 
     - name: Install python-venv on Bullseye
       run: |
@@ -840,33 +795,26 @@ jobs:
         pkill -f qemu || true
         rm -r $HOME/guests || true
         rm -r /tmp/artifacts || true
-        mkdir -p /tmp/artifacts || true
         rm -rf *
         ls -lh
 
-    - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.7
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
       with:
         name: xnvme-src-archive-with-subprojects
 
-    - name: Extract, and then move, the xNVMe source archive
-      run: |
-        tar xzf xnvme-src.tar.gz --strip 1
-        mv xnvme-src.tar.gz /tmp/artifacts/.
-
-    - name: Retrieve, the xNVMe Python sdist package
+    - name: Retrieve the xNVMe Python sdist package
       uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-py-sdist
-
-    - name: Move the xNVMe Python sdist package
-      run: |
-        mv xnvme-py-sdist.tar.gz /tmp/artifacts/.
+        path: ${{ steps.source.outputs.directory }}
 
     - name: Prep, environment GITHUB_PATH
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-        find /tmp/artifacts -name "*.tar.gz"
+        cp -r ${{ steps.source.outputs.directory }} /tmp/artifacts
+        find /tmp/artifacts
 
     - name: Packages, Debian Bookworm
       run: |
@@ -965,23 +913,19 @@ jobs:
         pkill -f qemu || true
         rm -r $HOME/guests || true
         rm -r /tmp/artifacts || true
-        mkdir -p /tmp/artifacts || true
         rm -rf *
         ls -lh
 
-    - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.7
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
       with:
         name: xnvme-src-archive-with-subprojects
-
-    - name: Extract, and then move, the xNVMe source archive
-      run: |
-        tar xzf xnvme-src.tar.gz --strip 1
-        mv xnvme-src.tar.gz /tmp/artifacts/.
 
     - name: Prep, environment GITHUB_PATH
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
+        cp -r ${{ steps.source.outputs.directory }} /tmp/artifacts
         find /tmp/artifacts -name "*.tar.gz"
 
     - name: Packages, Debian Bookworm
@@ -1086,24 +1030,20 @@ jobs:
         pkill -f qemu || true
         rm -r $HOME/guests || true
         rm -r /tmp/artifacts || true
-        mkdir -p /tmp/artifacts || true
         rm -rf *
         ls -lh
 
-    - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.7
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
       with:
         name: xnvme-src-archive-with-subprojects
-
-    - name: Extract, and then move, the xNVMe source archive
-      run: |
-        tar xzf xnvme-src.tar.gz --strip 1
-        mv xnvme-src.tar.gz /tmp/artifacts/.
 
     - name: Prep, environment GITHUB_PATH
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-        find /tmp/artifacts -name "*.tar.gz"
+        cp -r ${{ steps.source.outputs.directory }} /tmp/artifacts
+        find /tmp/artifacts
 
     - name: Packages, Debian Bookworm
       run: |
@@ -1230,24 +1170,21 @@ jobs:
         rm -rf *
         ls -lh
 
-    - name: Container-prep, get the full-source-archive-with-subprojects
-      uses: actions/download-artifact@v4.1.7
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
       with:
         name: xnvme-src-archive-with-subprojects
 
-    - name: Container-prep, extract the full-source-archive-with-subprojects
+    - name: Container-prep
       run: |
-        tar xzf xnvme-src.tar.gz --strip 1
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-    - name: Retrieve, the xNVMe Python sdist package
+    - name: Retrieve the xNVMe Python sdist package
       uses: actions/download-artifact@v4.1.7
       with:
         name: xnvme-py-sdist
-
-    - name: Move, the xNVMe Python sdist package
-      run: |
-        find .
+        path: ${{ steps.source.outputs.directory }}
 
     - name: Move source-archives to /tmp/artifacts
       run: |
@@ -1255,8 +1192,7 @@ jobs:
         find . -name "*.tar.gz"
         find /tmp -name "*.tar.gz"
         rm -r /tmp/artifacts || true
-        mkdir /tmp/artifacts
-        mv xnvme-*.tar.gz /tmp/artifacts/.
+        cp -r ${{ steps.source.outputs.directory }} /tmp/artifacts
         find /tmp/artifacts -name "*.tar.gz"
 
     - name: Install python-venv on Bullseye
@@ -1349,15 +1285,11 @@ jobs:
     if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'analyze'))
 
     steps:
-    - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.7
+    - name: Retrieve, unpack, and remove the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
       with:
         name: xnvme-src-archive-with-subprojects
-
-    - name: Extract, and then remove, the xNVMe source archive
-      run: |
-        tar xzf xnvme-src.tar.gz --strip 1
-        rm xnvme-src.tar.gz
 
     - name: Run config-debug
       run: scan-build make config-debug
@@ -1383,15 +1315,11 @@ jobs:
     if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'analyze'))
 
     steps:
-    - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.7
+    - name: Retrieve, unpack, and remove the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
       with:
         name: xnvme-src-archive-with-subprojects
-
-    - name: Extract, and then remove, the xNVMe source archive
-      run: |
-        tar xzf xnvme-src.tar.gz --strip 1
-        rm xnvme-src.tar.gz
 
     - name: Install build-requirements
       run: source toolbox/pkgs/debian-bullseye.sh
@@ -1426,15 +1354,11 @@ jobs:
       PROJECT_NAME: "xNVMe"
 
     steps:
-    - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.7
+    - name: Retrieve, unpack, and remove the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
       with:
         name: xnvme-src-archive-with-subprojects
-
-    - name: Extract, and then remove, the xNVMe source archive
-      run: |
-        tar xzf xnvme-src.tar.gz --strip 1
-        rm xnvme-src.tar.gz
 
     - name: xNVMe, install build-requirements
       run: |
@@ -1502,8 +1426,9 @@ jobs:
         echo "Current branch is ${{ github.base_ref }}"
         echo "Current tag is ${{ github.ref }}"
 
-    - name: Retrieve the xNVMe source archive
-      uses: actions/download-artifact@v4.1.7
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
       with:
         name: xnvme-src-archive
 
@@ -1514,7 +1439,7 @@ jobs:
 
     - name: Prep
       run: |
-        mv xnvme-src.tar.gz debpkg/input/xnvme-0.7.5.tar.gz
+        cp ${{ steps.source.outputs.src_tgz }} debpkg/input/xnvme-0.7.5.tar.gz
 
     - name: Build
       run: |
@@ -1531,3 +1456,4 @@ jobs:
           debpkg/builddir/*.dsc
           debpkg/builddir/*.buildinfo
           debpkg/builddir/*.changes
+
