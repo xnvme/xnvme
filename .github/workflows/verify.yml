@@ -676,15 +676,7 @@ jobs:
       options: --privileged
 
     steps:
-    - name: Runner-prep, clean up self-hosted left-overs
-      run: |
-        pkill -f qemu || true
-        rm -rf $HOME/guests 
-        rm -rf $HOME/images 
-        rm -r /tmp/artifacts || true
-        rm -r artifacts || true
-        rm -rf *
-        ls -lh
+    - uses: xnvme/actions/.github/actions/cleanup@main
 
     - name: Retrieve and unpack the xNVMe source archive
       uses: xnvme/actions/.github/actions/setup-source@main
@@ -786,17 +778,7 @@ jobs:
       options: --privileged
 
     steps:
-    - name: hostname
-      run: |
-        hostname
-
-    - name: Runner-prep, clean up self-hosted left-overs
-      run: |
-        pkill -f qemu || true
-        rm -r $HOME/guests || true
-        rm -r /tmp/artifacts || true
-        rm -rf *
-        ls -lh
+    - uses: xnvme/actions/.github/actions/cleanup@main
 
     - name: Retrieve and unpack the xNVMe source archive
       uses: xnvme/actions/.github/actions/setup-source@main
@@ -908,13 +890,7 @@ jobs:
       options: --privileged
 
     steps:
-    - name: Runner-prep, clean up self-hosted left-overs
-      run: |
-        pkill -f qemu || true
-        rm -r $HOME/guests || true
-        rm -r /tmp/artifacts || true
-        rm -rf *
-        ls -lh
+    - uses: xnvme/actions/.github/actions/cleanup@main
 
     - name: Retrieve and unpack the xNVMe source archive
       uses: xnvme/actions/.github/actions/setup-source@main
@@ -1025,13 +1001,7 @@ jobs:
       options: --privileged
 
     steps:
-    - name: Runner-prep, clean up self-hosted left-overs
-      run: |
-        pkill -f qemu || true
-        rm -r $HOME/guests || true
-        rm -r /tmp/artifacts || true
-        rm -rf *
-        ls -lh
+    - uses: xnvme/actions/.github/actions/cleanup@main
 
     - name: Retrieve and unpack the xNVMe source archive
       uses: xnvme/actions/.github/actions/setup-source@main
@@ -1163,12 +1133,7 @@ jobs:
       options: --privileged
 
     steps:
-    - name: Runner-prep, clean up self-hosted left-overs
-      run: |
-        rm -rf $HOME/guests 
-        rm -rf $HOME/images 
-        rm -rf *
-        ls -lh
+    - uses: xnvme/actions/.github/actions/cleanup@main
 
     - name: Retrieve and unpack the xNVMe source archive
       uses: xnvme/actions/.github/actions/setup-source@main
