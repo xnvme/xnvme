@@ -409,7 +409,8 @@ def main(args, cijoe: Cijoe):
 
                 log.info(f"Executing the command: {cmd}")
 
-                err, state = cijoe.run(cmd, env=fio.env())
+                env_prefix = " ".join([f"{k}={v}" for k, v in fio.env().items()])
+                err, state = cijoe.run(f"{env_prefix} {cmd}")
                 if err:
                     log.error(f"failed: {state}")
 
