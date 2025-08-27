@@ -1,9 +1,48 @@
 #!/usr/bin/env python
 """
-    Run fio latency test
+Use fio for Latency Evaluation of xNVMe
+=======================================
 
-    Will either keep blocksize or io depth size variable.
+This script runs ``fio`` using various I/O engines. Its primary task is to correctly
+parameterize ``fio`` for the specific requirements of each engine. It performs
+random-read operations with parameters tailored for latency evaluation.
 
+Each engine is executed with the appropriate parameter set, varying ``iodepth`` and
+``iosize`` according to a YAML input file, for example::
+
+    ---
+    iodepths: &iodepths [1, 2, 4, 8, 16]
+    iosizes: &iosizes [512, 1024, 2048, 4096, 8192, 16384, 32768, 65536]
+    runs:
+      - iosizes: [4096]
+        iodepths: *iodepths
+      - iosizes: *iosizes
+        iodepths: [1]
+
+In this example, ``fio`` is invoked in two runs, each using different combinations of
+``iosizes`` and ``iodepths``. These combinations are used later when processing the
+resulting output files.
+
+Caveat
+======
+
+``fio`` supports several methods for using external I/O engines. One common method
+uses ``LD_PRELOAD``::
+
+    LD_PRELOAD=/tmp/spdk/build/fio/spdk_nvme fio --ioengine=spdk ...
+
+Alternatively, the engine can be specified directly::
+
+    fio --ioengine=external:/tmp/spdk/build/fio/spdk_nvme
+
+The analysis and plotting scripts rely on the ``LD_PRELOAD`` method, as it yields
+engine names consistent with built-in engines.
+
+.. note::
+
+   As of FreeBSD 14, the default shell for ``root`` changed from ``csh`` to ``sh``.
+   This breaks the use of ``setenv`` in ``cijoe.run(env={})``. As a workaround,
+   environment variables are set manually when constructing the ``fio`` command.
 """
 import logging as log
 import os
