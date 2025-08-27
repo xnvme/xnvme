@@ -1,0 +1,98 @@
+---
+doc: |
+  Provision a qemu guest with vfio-pci passthru
+
+  The operating system is defined by the bootable system-image in the cijoe
+  config-section qemu.guests.GUEST_NAME, specifically 
+  init_using_bootimage.url
+  init_using_bootimage.img
+
+  On "local" the folder "/tmp/artifacts", must contain
+
+  * xnvme-src.tar.gz
+  * xnvme-py-sdist.tar.gz
+
+  These will be transferred to the guest, and unpacked in "/tmp/xnvme_source",
+  then built and installed.
+
+steps:
+- name: guest_kill
+  uses: qemu.guest_kill
+  with:
+    guest_name: "{{ config.qemu.default_guest }}"
+
+- name: guest_initialize
+  uses: qemu.guest_initialize
+  with:
+    guest_name: "{{ config.qemu.default_guest }}"
+    system_image_name: "{{ config.qemu.default_systemimage }}"
+
+- name: guest_start
+  uses: qemu.guest_start
+  with:
+    guest_name: "{{ config.qemu.default_guest }}"
+
+- name: guest_check
+  run: |
+    hostname
+
+- name: packages_extra
+  run: |
+    apt-get install -qy dmidecode patchelf || true
+    pkg install -y dmidecode patchelf || true
+
+- name: xnvme_source_sync
+  uses: xnvme_source_from_tgz
+  with:
+    artifacts: '/tmp/artifacts'
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
+
+- name: xnvme_build_prep
+  uses: xnvme_build_prep
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
+
+- name: xnvme_build
+  uses: xnvme_build
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
+
+- name: xnvme_install
+  uses: xnvme_install
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
+
+- name: ldconfig
+  run: |
+    ldconfig /usr/local/lib/ || true
+
+- name: xnvme_bindings_py_install_tgz
+  uses: xnvme_bindings_py_install_tgz
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
+
+- name: fio_prep
+  uses: fio_prep
+
+- name: spdk_source
+  run: |
+    cp -r {{ config.xnvme.repository.sync.remote_path }}/subprojects/spdk /tmp/spdk
+
+- name: spdk_fio_plugin
+  uses: spdk_fio_plugin
+  with:
+    spdk_source: /tmp/spdk
+
+- name: spdk_kmod_freebsd
+  run: |
+    kldconfig -i -m -vv /tmp/spdk/dpdk/build/kmod || true
+
+- name: bdev_confs
+  uses: spdk_bdev_confs_generator
+  with:
+    bdev_confs: /opt/bdev_confs
+
+- name: prep_driver
+  run: |
+    xnvme-driver || true
+    xnvme-driver reset || true

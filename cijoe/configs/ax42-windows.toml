@@ -1,0 +1,154 @@
+# The SSH options are passed verbatim to paramiko; see
+# https://www.paramiko.org/ This is common CIJOE infrastructure
+#
+# Used by: cijoe.run() / cijoe.get() / cijoe.put()
+[cijoe.transport.qemu_guest]
+username = "root"
+password = "root"
+hostname = "localhost"
+port = 4200
+
+[os]
+name = "debian"
+version = "bookworm"
+prettyname = "Linux"
+
+[build.compiler]
+bin = "gcc"
+
+[cijoe.workflow]
+fail_fast=true
+
+# Used by: the qemu.*.py scripts
+[qemu]
+img_bin = "qemu-img"
+default_guest = "generic-bios-kvm-x86_64"
+default_systemimage = "debian-12-x86_64"
+
+# Used by: qemu.build.py
+[qemu.build]
+prefix = "{{ local.env.HOME }}/opt/qemu"
+
+[qemu.systems.x86_64]
+bin = "/opt/qemu/bin/qemu-system-x86_64"
+
+# Used by: qemu.guest_initialize.py, qemu.guest_start.py, and qemu.guest_kill.py
+[qemu.guests.generic-bios-kvm-x86_64]
+path = "{{ local.env.HOME }}/guests/generic-bios-kvm-x86_64"
+
+# Label of the qemu-system emulerator to use; see "qemu.systems"
+system_label = "x86_64"
+
+# Keyword arguments: joined onto the form: "-cpu host -smp 4 -m 4" etc.
+system_args.kwa = {cpu = "host", smp = 6, m = "32G", accel = "kvm"}
+
+# Raw arguments: passed without modification to qemu-system-{arch}
+system_args.raw = """\
+-M "type=q35,kernel_irqchip=split" \
+-device pcie-root-port,id=rp_nvme,chassis=2,slot=2 \
+-device vfio-pci,host=0000:02:00.0,bus=rp_nvme
+"""
+
+# Managed arguments: expands into longer incantations
+system_args.tcp_forward = {host = 4200, guest = 22}
+
+[system-imaging.images.debian-12-x86_64]
+system_label = "x86_64"
+
+cloud.url = "https://cloud.debian.org/images/cloud/bookworm/daily/latest/debian-12-generic-amd64-daily.qcow2"
+cloud.path = "{{ local.env.HOME }}/system_imaging/cloud/debian-12-generic-amd64-daily.qcow2"
+cloud.metadata_path = "{{ resources.auxiliary['system_imaging.cloudinit-linux-common-metadata'] }}"
+cloud.userdata_path = "{{ resources.auxiliary['system_imaging.cloudinit-linux-common-userdata'] }}"
+
+disk.path = "{{ local.env.HOME }}/system_imaging/disk/debian-12-x86_64.qcow2"
+disk.url = "https://cijoe-system-imaging.s3.eu-central-003.backblazeb2.com/disk/debian-12-x86_64.qcow2"
+disk.url_checksum = "https://cijoe-system-imaging.s3.eu-central-003.backblazeb2.com/disk/debian-12-x86_64.qcow2"
+
+[[devices]]
+key = "bdev"
+uri = "/dev/nvme0n1"
+nsid = 1
+labels = [ "dev", "bdev", "nvm" ]
+driver_attachment = "kernel"
+
+[[devices]]
+key = "cdev"
+uri = "/dev/ng0n1"
+nsid = 1
+labels = [ "dev", "cdev", "nvm" ]
+driver_attachment = "kernel"
+
+[[devices]]
+key = "pcie"
+uri = "0000:00:01.0"
+nsid = 1
+labels = ["dev", "pcie", "nvm"]
+driver_attachment = "userspace"
+
+[[duts]]
+pcie = "0000:01:00.0"
+os = "0n1"
+sn = "XXXXXXXXXXXXXXXX"
+label = "SAMSUNG990PRO2TB"
+
+[hugetlbfs]
+mount_point = "/mnt/huge"
+nr_hugepages = "128"
+
+[xnvme.repository]
+remote = "https://github.com/xnvme/xnvme.git"
+path = "/root/git/xnvme"
+branch = "next"
+
+[xnvme.repository.sync]
+branch = "wip"
+remote_alias = "guest"
+remote_path = "/tmp/xnvme"
+
+[xnvme.build]
+type = "debug"
+
+[liburing.repository]
+remote = "https://github.com/axboe/liburing.git"
+path = "/root/git/liburing"
+tag = "liburing-2.4"
+
+[spdk.repository]
+remote = "https://github.com/spdk/spdk"
+path = "/root/git/spdk"
+tag = "v24.05"
+
+[spdk.build]
+prefix = "/opt/spdk"
+spdk_json_conf = "/opt/bdev_confs/bdev_nvme_spdk_nvme__1.conf"
+filename = "bdev_nvme_spdk_nvme_device0n1n1"
+
+[fio]
+bin = "/opt/fio/bin/fio"
+
+[fio.repository]
+remote = "https://github.com/axboe/fio.git"
+path = "/root/git/fio"
+tag = "fio-3.38"
+
+[fio.build]
+prefix = "/opt/fio"
+
+[fio.engines]
+libaio = {type = "builtin", group = "libaio", device = "bdev"} # Kernel
+posixaio = {type = "builtin", group = "posixaio", device = "bdev"} # Userspace
+
+io_uring = {type = "builtin", group = "io_uring", device = "bdev"} # Kernel
+io_uring_cmd = {type = "builtin", group = "io_uring_cmd", device = "cdev"} # Kernel
+
+null = {type = "builtin", group = "null", device = "bdev"}
+
+spdk_nvme = {type = "external_preload", group = "spdk", path = "/root/git/spdk/build/fio/spdk_nvme", device = "pcie"} # Userspace
+spdk_bdev = {type = "external_preload", group = "spdk", path = "/root/git/spdk/build/fio/spdk_bdev", device = "pcie"} # Userspace
+
+xnvme_libaio = {type = "builtin", group = "libaio", be = "linux", async = "libaio", device = "bdev"} # Kernel
+xnvme_posixaio = {type = "builtin", group = "posixaio", be = "linux", async = "posix", device = "bdev"} # Kernel
+xnvme_io_uring = {type = "builtin", group = "io_uring", be = "linux", async = "io_uring", device = "bdev"} # Kernel
+xnvme_io_uring_cmd = {type = "builtin", group = "io_uring_cmd", be = "linux", async = "io_uring_cmd", device = "cdev"} # Kernel
+xnvme_spdk = {type = "builtin", group = "spdk", be = "spdk", async = "nvme", device = "pcie"} # Userspace
+xnvme_null = {type = "builtin", group = "null", be = "linux", async = "nil", device = "bdev"} # Kernel

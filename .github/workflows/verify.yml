@@ -991,8 +991,6 @@ jobs:
       fail-fast: false
       matrix:
         guest:
-        - {os: 'freebsd', labels: [self-hosted, X64, perf-lat, perf-lat-fbsd]}
-        - {os: 'linux', labels: [self-hosted, X64, perf-lat, perf-lat-linux]}
         - {os: 'windows', labels: [self-hosted, X64, perf-lat, perf-lat-win]}
     runs-on: ${{ matrix.guest.labels }}
 
@@ -1088,6 +1086,76 @@ jobs:
       with:
         name: latency-${{ matrix.guest.os }}-results
         path: latency-${{ matrix.guest.os }}-results.tar.gz
+        if-no-files-found: error
+
+  benchmark-latency:
+    needs: [source-archive, source-format-check, build-python]
+    if: (contains('push', github.event_name) || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job ==
+      'bench')) || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'bench')))
+
+    strategy:
+      fail-fast: false
+      matrix:
+        guest:
+        - {os: 'linux', labels: [self-hosted, linux, amd64, maas]}
+        - {os: 'freebsd', labels: [self-hosted, linux, amd64, maas]}
+
+    runs-on: ${{ matrix.guest.labels }}
+
+    steps:
+    - uses: xnvme/actions/.github/actions/cleanup@main
+
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
+      with:
+        name: xnvme-src-archive-with-subprojects
+
+    - name: Retrieve the xNVMe Python sdist package
+      uses: actions/download-artifact@v4.1.7
+      with:
+        name: xnvme-py-sdist
+        path: ${{ steps.source.outputs.directory }}
+
+    - name: Prep, environment GITHUB_PATH
+      run: |
+        cp -r ${{ steps.source.outputs.directory }} /tmp/artifacts
+        find /tmp/artifacts
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: CIJOE, setup pipx environment
+      run: |
+        make cijoe
+        cijoe --version
+
+    - name: CIJOE, provision xnvme from tgz
+      run: |
+        cd cijoe && cijoe \
+        "workflows/provision-maas-using-tgz.yaml" \
+        --monitor  \
+        --config "configs/ax42-${{ matrix.guest.os }}.toml" \
+        --output "latency-${{ matrix.guest.os }}-provision-xnvme"
+
+    - name: CIJOE, run latency benchmark
+      run: |
+        rm -rf cijoe/latency-${{ matrix.guest.os }}-results
+        cd cijoe && cijoe "workflows/benchmark-latency.yaml" \
+        --monitor \
+        --config "configs/ax42-${{ matrix.guest.os }}.toml" \
+        --output "latency-${{ matrix.guest.os }}-benchmark"
+
+    - name: CIJOE, archive latency-${{ matrix.guest.os }}-reports
+      if: always()
+      run: |
+        tar czf latency-${{ matrix.guest.os }}-reports.tar.gz \
+          cijoe/latency-${{ matrix.guest.os }}-*
+
+    - name: CIJOE, upload latency-${{ matrix.guest.os }}-reports
+      uses: actions/upload-artifact@v4.6.2
+      if: always()
+      with:
+        name: latency-${{ matrix.guest.os }}-reports
+        path: latency-${{ matrix.guest.os }}-reports.tar.gz
         if-no-files-found: error
 
   #
