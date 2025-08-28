@@ -66,6 +66,11 @@ steps:
   run: |
     ldconfig /usr/local/lib/ || true
 
+# remove native pytest before installing cijoe
+- name: remove_pytest
+  run: |
+    apt-get remove -qy python3-pytest || true
+
 - name: xnvme_bindings_py_install_tgz
   uses: xnvme_bindings_py_install_tgz
   with:

@@ -770,7 +770,6 @@ jobs:
       fail-fast: false
       matrix:
         guest:
-        - {os: 'debian', ver: 'bookworm', hostname: 'verify-phys-linux', labels: [self-hosted, linux, X64, amd, verify]}
         - {os: 'macos', ver: 'sonoma', hostname: 'verify-phys-macos', labels: [self-hosted, macos, arm64, verify]}
 
     container:
@@ -798,20 +797,17 @@ jobs:
         cp -r ${{ steps.source.outputs.directory }} /tmp/artifacts
         find /tmp/artifacts
 
-    - name: Packages, Debian Bookworm
+    - name: Packages
       run: |
         apt-get -qy update
         apt-get -qy upgrade
         apt-get -qy install python3 python3-dev python3-venv pipx git make gcc fontconfig sshpass
-        pipx ensurepath 
+        pipx ensurepath
 
     - name: CIJOE, setup pipx environment
       run: |
         make cijoe
-
-    - name: CIJOE, check that it is available
-      run: |
-        cijoe -r
+        cijoe --version
 
     # cd'ing into 'cijoe' to auto-collect the non-packaged github-specific configs and
     # workflows.
@@ -821,9 +817,9 @@ jobs:
         cd cijoe && cijoe "workflows/macvfn-provision.yaml" \
         --monitor \
         --config "configs/${{ matrix.guest.hostname }}.toml" \
-        --output "provision-macvfn" \
+        --output "provision-macvfn"
 
-    - name: CIJOE, run provision-using-tgz.yaml
+    - name: CIJOE, run provisioning
       run: |
         cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
         --monitor \
@@ -832,7 +828,7 @@ jobs:
         xnvme_source_sync xnvme_build_prep xnvme_build xnvme_install \
         ldconfig xnvme_bindings_py_install_tgz fio_prep
 
-    - name: CIJOE, run test.yaml
+    - name: CIJOE, run tests
       run: |
         cd cijoe && cijoe "workflows/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.yaml" \
         --monitor \
@@ -871,6 +867,85 @@ jobs:
         name: test-results-${{ matrix.guest.hostname }}
         path: test-results-${{ matrix.guest.hostname }}.tar.gz
         if-no-files-found: error
+
+  #
+  # Build and test xNVMe on physical hardware on MaaS
+  #
+  verify-maas:
+    needs: [source-archive, source-format-check, build-python]
+    runs-on: ${{ matrix.guest.labels }}
+
+    if: (contains('push pull_request', github.event_name) || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job
+      == 'verify')))
+
+    strategy:
+      fail-fast: false
+      matrix:
+        guest:
+        - {os: 'debian', ver: 'bookworm', hostname: 'ax42-linux', labels: [self-hosted, linux, amd64, maas]}
+
+    steps:
+    - uses: xnvme/actions/.github/actions/cleanup@main
+
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
+      with:
+        name: xnvme-src-archive-with-subprojects
+
+    - name: Retrieve the xNVMe Python sdist package
+      uses: actions/download-artifact@v4.1.7
+      with:
+        name: xnvme-py-sdist
+        path: ${{ steps.source.outputs.directory }}
+
+    - name: Prep, environment GITHUB_PATH
+      run: |
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        cp -r ${{ steps.source.outputs.directory }} /tmp/artifacts
+        find /tmp/artifacts
+
+    - name: CIJOE, setup pipx environment
+      run: |
+        make cijoe
+        cijoe --version
+
+    - name: CIJOE, run provisioning
+      run: |
+        cd cijoe && cijoe \
+        "workflows/provision-maas-using-tgz.yaml" \
+        --monitor \
+        --config "configs/${{ matrix.guest.hostname }}.toml" \
+        --config "configs/${{ matrix.guest.hostname }}-testing.toml" \
+        --output "verify-${{ matrix.guest.hostname }}-provision"
+
+    - name: CIJOE, run tests
+      run: |
+        cd cijoe && cijoe \
+        workflows/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.yaml \
+        --monitor \
+        --config "configs/${{ matrix.guest.hostname }}.toml" \
+        --config "configs/${{ matrix.guest.hostname }}-testing.toml" \
+        --output "verify-${{ matrix.guest.hostname }}-test-results"
+
+    - name: CIJOE, result-log-dump on error
+      if: failure()
+      run: find cijoe -name "*.output" | xargs cat
+
+    - name: CIJOE, compress workflow-report-test
+      if: always()
+      run: |
+        tar czf verify-${{ matrix.guest.hostname }}-reports.tar.gz \
+          cijoe/verify-${{ matrix.guest.hostname }}-* 
+
+    - name: CIJOE, upload workflow-report-test
+      uses: actions/upload-artifact@v4.3.0
+      if: always()
+      with:
+        name: verify-${{ matrix.guest.hostname }}-reports
+        path: verify-${{ matrix.guest.hostname }}-reports.tar.gz
+        if-no-files-found: error
+
 
   #
   # Build and run performance test of xNVMe
