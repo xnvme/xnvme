@@ -1,0 +1,53 @@
+# Used by: the qemu.*.py scripts
+[qemu]
+img_bin = "qemu-img"
+default_guest = "generic-bios-kvm-x86_64"
+default_systemimage = "debian-12-x86_64"
+
+# Used by: qemu.build.py
+[qemu.build]
+prefix = "{{ local.env.HOME }}/opt/qemu"
+
+[qemu.systems.x86_64]
+bin = "/opt/qemu/bin/qemu-system-x86_64"
+
+# Used by: qemu.guest_initialize.py, qemu.guest_start.py, and qemu.guest_kill.py
+[qemu.guests.generic-bios-kvm-x86_64]
+path = "{{ local.env.HOME }}/guests/generic-bios-kvm-x86_64"
+
+# Label of the qemu-system emulerator to use; see "qemu.systems"
+system_label = "x86_64"
+
+# Keyword arguments: joined onto the form: "-cpu host -smp 4 -m 4" etc.
+system_args.kwa = {cpu = "host", smp = 6, m = "32G", accel = "kvm"}
+
+# Raw arguments: passed without modification to qemu-system-{arch}
+system_args.raw = """\
+-M "type=q35,kernel_irqchip=split" \
+-device intel-iommu,intremap=on,caching-mode=on \
+-device pcie-root-port,id=rp_nvme,chassis=2,slot=2 \
+-device vfio-pci,host=0000:02:00.0,bus=rp_nvme
+"""
+
+# Managed arguments: expands into longer incantations
+system_args.tcp_forward = {host = 4200, guest = 22}
+#system_args.host_share = "{{ local.env.HOME }}/git"
+
+[fio]
+bin = "/opt/fio/bin/fio"
+
+[fio.repository]
+remote = "https://github.com/axboe/fio.git"
+path = "/root/git/fio"
+tag = "fio-3.38"
+
+[fio.build]
+prefix = "/opt/fio"
+
+[fio.engines]
+libaio = {type = "builtin"}
+io_uring = {type = "builtin"}
+io_uring_cmd = {type = "builtin"}
+spdk_nvme = {type = "external_preload", path = "/root/git/spdk/build/fio/spdk_nvme"}
+spdk_bdev = {type = "external_preload", path = "/root/git/spdk/build/fio/spdk_bdev"}
+xnvme = {type = "builtin"}

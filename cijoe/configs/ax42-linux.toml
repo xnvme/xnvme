@@ -69,21 +69,21 @@ disk.url_checksum = "https://cijoe-system-imaging.s3.eu-central-003.backblazeb2.
 key = "bdev"
 uri = "/dev/nvme0n1"
 nsid = 1
-labels = [ "dev", "bdev", "nvm" ]
+labels = [ "dev", "bdev", "nvm", "nosgl" ]
 driver_attachment = "kernel"
 
 [[devices]]
 key = "cdev"
 uri = "/dev/ng0n1"
 nsid = 1
-labels = [ "dev", "cdev", "nvm" ]
+labels = [ "dev", "cdev", "nvm", "nosgl" ]
 driver_attachment = "kernel"
 
 [[devices]]
 key = "pcie"
 uri = "0000:01:00.0"
 nsid = 1
-labels = ["dev", "pcie", "nvm"]
+labels = ["dev", "pcie", "nvm", "nosgl" ]
 driver_attachment = "userspace"
 
 [[duts]]
