@@ -102,6 +102,8 @@ xnvmelib_deps = [
   rt_dep,
 ]
 
+subdir('upcie')
+
 mapfile = 'libxnvme.map'
 # Version script is not supported by the linker on OSX
 # Use --undefined-version to avoid errors with linkers that have --no-undefined-version by default,
@@ -124,7 +126,6 @@ xnvmelib = library(
   install_dir: xnvmelib_libdir,
   install: true,
 )
-
 
 # pkg-config -- describing how to consume the xNVMe library
 pconf.generate(

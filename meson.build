@@ -96,6 +96,7 @@ conf_data.set('XNVME_BE_CBI_MEM_POSIX_ENABLED', get_option('cbi_mem_posix') and 
 conf_data.set('XNVME_BE_CBI_SYNC_PSYNC_ENABLED', get_option('cbi_sync_psync') and (is_linux or is_freebsd or is_darwin))
 
 conf_data.set('XNVME_BE_RAMDISK_ENABLED', get_option('be_ramdisk'))
+conf_data.set('XNVME_BE_UPCIE_ENABLED', get_option('be_upcie') and is_linux)
 
 setupapi_dep = cc.find_library(
   'setupapi',
