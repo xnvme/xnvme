@@ -17,6 +17,11 @@ extern const struct xnvme_be_config g_xnvme_be_spdk;
 extern const struct xnvme_be_config g_xnvme_be_vfio;
 #endif
 
+/* uPCIe */
+#ifdef XNVME_BE_UPCIE_ENABLED
+extern const struct xnvme_be_config g_xnvme_be_upcie;
+#endif
+
 /* Linux */
 #ifdef XNVME_PLATFORM_LINUX_ENABLED
 extern const struct xnvme_be_config g_xnvme_be_linux_emu_nvme;
