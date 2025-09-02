@@ -9,9 +9,12 @@ hostname = "localhost"
 port = 4200
 
 [os]
-name = "debian"
-version = "bookworm"
-prettyname = "Linux"
+name = "windows"
+version = "11"
+prettyname = "Windows"
+
+[cijoe.run]
+shell = "bash"
 
 [build.compiler]
 bin = "gcc"
@@ -23,7 +26,7 @@ fail_fast=true
 [qemu]
 img_bin = "qemu-img"
 default_guest = "generic-bios-kvm-x86_64"
-default_systemimage = "debian-12-x86_64"
+default_systemimage = "windows-11"
 
 # Used by: qemu.build.py
 [qemu.build]
@@ -44,7 +47,15 @@ system_args.kwa = {cpu = "host", smp = 6, m = "32G", accel = "kvm"}
 
 # Raw arguments: passed without modification to qemu-system-{arch}
 system_args.raw = """\
--M "type=q35,kernel_irqchip=split" \
+-drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.ms.fd \
+-drive if=pflash,format=raw,file={{ local.env.HOME }}/system_imaging/fd/win11_VARS.fd \
+-blockdev driver=qcow2,node-name=boot,file.driver=file,file.filename={{ local.env.HOME }}/guests/generic-bios-kvm-x86_64/boot2.img \
+-device ide-hd,drive=boot \
+-drive file={{ local.env.HOME }}/system_imaging/iso/virtio-win.iso,media=cdrom \
+-M q35,kernel_irqchip=split \
+-chardev socket,id=chrtpm,path={{ local.env.HOME }}/guests/generic-bios-kvm-x86_64/swtpm.sock \
+-tpmdev emulator,id=tpm0,chardev=chrtpm \
+-device tpm-tis,tpmdev=tpm0 \
 -device pcie-root-port,id=rp_nvme,chassis=2,slot=2 \
 -device vfio-pci,host=0000:02:00.0,bus=rp_nvme
 """
@@ -52,38 +63,24 @@ system_args.raw = """\
 # Managed arguments: expands into longer incantations
 system_args.tcp_forward = {host = 4200, guest = 22}
 
-[system-imaging.images.debian-12-x86_64]
+[system-imaging.images.windows-11]
 system_label = "x86_64"
 
-cloud.url = "https://cloud.debian.org/images/cloud/bookworm/daily/latest/debian-12-generic-amd64-daily.qcow2"
-cloud.path = "{{ local.env.HOME }}/system_imaging/cloud/debian-12-generic-amd64-daily.qcow2"
-cloud.metadata_path = "{{ resources.auxiliary['system_imaging.cloudinit-linux-common-metadata'] }}"
-cloud.userdata_path = "{{ resources.auxiliary['system_imaging.cloudinit-linux-common-userdata'] }}"
+# cloud.url = "https://cloud.debian.org/images/cloud/bookworm/daily/latest/debian-12-generic-amd64-daily.qcow2"
+# cloud.path = "{{ local.env.HOME }}/system_imaging/cloud/debian-12-generic-amd64-daily.qcow2"
+# cloud.metadata_path = "{{ resources.auxiliary['system_imaging.cloudinit-linux-common-metadata'] }}"
+# cloud.userdata_path = "{{ resources.auxiliary['system_imaging.cloudinit-linux-common-userdata'] }}"
 
-disk.path = "{{ local.env.HOME }}/system_imaging/disk/debian-12-x86_64.qcow2"
-disk.url = "https://cijoe-system-imaging.s3.eu-central-003.backblazeb2.com/disk/debian-12-x86_64.qcow2"
-disk.url_checksum = "https://cijoe-system-imaging.s3.eu-central-003.backblazeb2.com/disk/debian-12-x86_64.qcow2"
+disk.path = "{{ local.env.HOME }}/system_imaging/disk/win11.qcow2"
+# disk.url = "https://cijoe-system-imaging.s3.eu-central-003.backblazeb2.com/disk/debian-12-x86_64.qcow2"
+# disk.url_checksum = "https://cijoe-system-imaging.s3.eu-central-003.backblazeb2.com/disk/debian-12-x86_64.qcow2"
 
 [[devices]]
 key = "bdev"
-uri = "/dev/nvme0n1"
+uri = "\\\\.\\PhysicalDrive1" # backslashes need to be escaped
 nsid = 1
 labels = [ "dev", "bdev", "nvm" ]
 driver_attachment = "kernel"
-
-[[devices]]
-key = "cdev"
-uri = "/dev/ng0n1"
-nsid = 1
-labels = [ "dev", "cdev", "nvm" ]
-driver_attachment = "kernel"
-
-[[devices]]
-key = "pcie"
-uri = "0000:00:01.0"
-nsid = 1
-labels = ["dev", "pcie", "nvm"]
-driver_attachment = "userspace"
 
 [[duts]]
 pcie = "0000:01:00.0"
@@ -91,64 +88,33 @@ os = "0n1"
 sn = "XXXXXXXXXXXXXXXX"
 label = "SAMSUNG990PRO2TB"
 
-[hugetlbfs]
-mount_point = "/mnt/huge"
-nr_hugepages = "128"
-
 [xnvme.repository]
 remote = "https://github.com/xnvme/xnvme.git"
-path = "/root/git/xnvme"
+path = "C:/Users/odus/git/xnvme"
 branch = "next"
 
 [xnvme.repository.sync]
 branch = "wip"
 remote_alias = "guest"
-remote_path = "/tmp/xnvme"
+remote_path = "C:/Users/odus/tmp/xnvme"
 
 [xnvme.build]
 type = "debug"
 
-[liburing.repository]
-remote = "https://github.com/axboe/liburing.git"
-path = "/root/git/liburing"
-tag = "liburing-2.4"
-
-[spdk.repository]
-remote = "https://github.com/spdk/spdk"
-path = "/root/git/spdk"
-tag = "v24.05"
-
-[spdk.build]
-prefix = "/opt/spdk"
-spdk_json_conf = "/opt/bdev_confs/bdev_nvme_spdk_nvme__1.conf"
-filename = "bdev_nvme_spdk_nvme_device0n1n1"
-
 [fio]
-bin = "/opt/fio/bin/fio"
+bin = "C:/Users/odus/git/fio/fio.exe"
 
 [fio.repository]
 remote = "https://github.com/axboe/fio.git"
-path = "/root/git/fio"
-tag = "fio-3.38"
-
-[fio.build]
-prefix = "/opt/fio"
+path = "C:/Users/odus/git/fio"
+# tag = "fio-3.38"
+tag = "7037b833e175aae32900b73bf597aad08c1d8472" # windows: drop nanosleep and clock_gettime
 
 [fio.engines]
-libaio = {type = "builtin", group = "libaio", device = "bdev"} # Kernel
-posixaio = {type = "builtin", group = "posixaio", device = "bdev"} # Userspace
-
-io_uring = {type = "builtin", group = "io_uring", device = "bdev"} # Kernel
-io_uring_cmd = {type = "builtin", group = "io_uring_cmd", device = "cdev"} # Kernel
-
 null = {type = "builtin", group = "null", device = "bdev"}
+windowsaio = {type = "builtin", group = "windowsaio", device = "bdev"}
 
-spdk_nvme = {type = "external_preload", group = "spdk", path = "/root/git/spdk/build/fio/spdk_nvme", device = "pcie"} # Userspace
-spdk_bdev = {type = "external_preload", group = "spdk", path = "/root/git/spdk/build/fio/spdk_bdev", device = "pcie"} # Userspace
-
-xnvme_libaio = {type = "builtin", group = "libaio", be = "linux", async = "libaio", device = "bdev"} # Kernel
-xnvme_posixaio = {type = "builtin", group = "posixaio", be = "linux", async = "posix", device = "bdev"} # Kernel
-xnvme_io_uring = {type = "builtin", group = "io_uring", be = "linux", async = "io_uring", device = "bdev"} # Kernel
-xnvme_io_uring_cmd = {type = "builtin", group = "io_uring_cmd", be = "linux", async = "io_uring_cmd", device = "cdev"} # Kernel
-xnvme_spdk = {type = "builtin", group = "spdk", be = "spdk", async = "nvme", device = "pcie"} # Userspace
-xnvme_null = {type = "builtin", group = "null", be = "linux", async = "nil", device = "bdev"} # Kernel
+xnvme_null = {type = "builtin", group = "null", be = "windows", async = "nil", device = "bdev"}
+xnvme_ioring = {type = "builtin", group = "windowsaio", be = "windows", async = "io_ring", device = "bdev"}
+xnvme_iocp = {type = "builtin", group = "windowsaio", be = "windows", async = "iocp", device = "bdev"}
+xnvme_iocpth = {type = "builtin", group = "windowsaio", be = "windows", async = "iocp_th", device = "bdev"}
