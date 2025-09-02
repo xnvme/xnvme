@@ -300,7 +300,7 @@ def read_hardware_windows(cijoe) -> HardwareSpec | int:
             .split()
         )
         if "MB" in capacity:
-            capacity = int(capacity[0]) // 1000
+            capacity = int(capacity[0].replace(",", "")) // 1000
         elif "GB" in capacity:
             capacity = capacity[0]
 

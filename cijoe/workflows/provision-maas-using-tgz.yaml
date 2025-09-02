@@ -27,6 +27,16 @@ steps:
     guest_name: "{{ config.qemu.default_guest }}"
     system_image_name: "{{ config.qemu.default_systemimage }}"
 
+- name: windows_qemu_prep
+  uses: windows_qemu_prep
+  with:
+    guest_name: "{{ config.qemu.default_guest }}"
+
+- name: windows_guest_start
+  uses: windows_qemu_guest_start
+  with:
+    guest_name: "{{ config.qemu.default_guest }}"
+
 - name: guest_start
   uses: qemu.guest_start
   with:
