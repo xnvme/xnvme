@@ -712,7 +712,7 @@ jobs:
 
     - name: pipx, Install
       run: |
-        python3 -m pip uninstall pytest cijoe cijoe-pkg-xnvme cijoe-pkg-linux cijoe-pkg-qemu cijoe-pkg-example -y
+        python3 -m pip uninstall pytest cijoe -y
         python3 -m pip list
         python3 -m pip install pipx
         python3 -m pipx ensurepath
@@ -1168,7 +1168,7 @@ jobs:
 
     - name: pipx, Install
       run: |
-        python3 -m pip uninstall pytest cijoe cijoe-pkg-xnvme cijoe-pkg-linux cijoe-pkg-qemu cijoe-pkg-example -y
+        python3 -m pip uninstall pytest cijoe -y
         python3 -m pip list
         python3 -m pip install pipx
         python3 -m pipx ensurepath
