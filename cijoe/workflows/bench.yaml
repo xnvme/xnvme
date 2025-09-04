@@ -29,8 +29,9 @@ steps:
     bdev_confs: /opt/bdev_confs
     repetitions: 1
     iosizes: ['4096']
-    iodepths: [1, 2, 4, 8, 16, 32, 64]
-    ndevices: 8
+    iodepths: [1, 8, 16, 32]
+    #iodepths: [1, 2, 4, 8, 16, 32, 64]
+    ndevices: 1
 
 - name: normalize
   uses: benchmark_normalize
