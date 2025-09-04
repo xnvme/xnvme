@@ -938,7 +938,7 @@ jobs:
   #
   # Build and run performance test of xNVMe
   #
-  benchmark-scalability:
+  benchmark-bdev_xnvme:
     needs: [source-archive, source-format-check, build-python]
     runs-on: [self-hosted, linux, X64, bench, intel]
 
