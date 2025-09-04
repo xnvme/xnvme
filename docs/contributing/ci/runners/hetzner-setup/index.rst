@@ -144,3 +144,10 @@ Now install the service, making it available upon reboot etc.::
 	sudo ./svc.sh status
 
 It should now be ready to process jobs.
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :includehidden:
+
+   ../windows-vm/index.rst
