@@ -30,11 +30,12 @@ This report is of interest for those curious about:
 
 * The xNVMe project
 
-  - The integration of xNVMe in SPDK via ``bdev_xnvme``
-  - Efficiency of ``bdev_xnvme`` compared to ``bdev_uring`` / ``bdev_aio`` / ``bdev_nvme``
+  - The integration of **xNVMe** in **SPDK** via ``bdev_xnvme``
+  - Efficiency of ``bdev_xnvme`` compared to ``bdev_uring`` / ``bdev_aio``
+  - Efficiency of ``io_uring_cmd`` provided via ``bdev_xnvme``
 
-For the report a bit of background on **xNVMe** is needed, as such, this will be provided 
-in the following section.
+For the report a bit of background on **xNVMe** is needed, as such, this will be
+provided in the following section.
 
 .. include:: xnvme.rst
 
@@ -73,13 +74,13 @@ how much.
 SSD Preconditioning
 -------------------
 
-We are interested in examing relative performance of
-storage abstraction layers, for this we are exclusively issuing read commands. No
-write commands are sent to the devices. This is to avoid the effects of device-side
-garbage collection, write buffer flushes etc.
+We are interested in examing relative performance of storage abstraction layers,
+for this we are exclusively issuing read commands. No write commands are sent
+to the devices. This is to avoid the effects of device-side garbage collection,
+write buffer flushes etc.
 
-Thus, currently, no preconditioning is done, since without issuing write commands, we
-mitigate black box effects of device-side logic.
+Thus, currently, no preconditioning is done, since without issuing write
+commands, we mitigate black box effects of device-side logic.
 
 .. raw:: pdf
 
@@ -92,27 +93,30 @@ Establish roofline:
 
 * Maximum achievable IOPS rate possible with the given hardware.
 
-  - Hardware SPECs 8M IOPS
-
-* Maximum achievable IOPS rate of ``bdev_nvme``
-
-  - Established by measuring rates obtained with ``bdevperf``
-
-* Maximum achievable IOPS rate of ``io_uring`` and ``io_uring_cmd``
-
-  - Established by measuring rates achieved with ``t/io_uring``
+  - Hardware SPECs 800K IOPS
 
 * Measure the IOPS rate of ``bdev_xnvme``, ``bdev_aio``, and ``bdev_uring``
 
-With all the above, we can observe/compare how far the different IO
-storage-paths are from the HW-roofline.
+This experiment evaluates how closely different bdev implementations,
+utilizing the same I/O storage paths, approach the hardware roofline.
+It compares their relative performance and observes CPU utilization
+in the process. CPU utilization is of particular interest, as
+``bdev_xnvme`` provides an option to trade idle CPU for increased IOPS
+via the ``conserve_cpu`` flag.
+
+The device is not expected to be the initial bottleneck; at low I/O
+depths, 800K IOPS are unlikely to be achieved. However, this level is
+eventually reached when using ``io_uring`` paths, whereas
+interrupt-driven paths are not expected to exceed 500K IOPS.
+
+Finally, ``bdev_xnvme`` provides a unique I/O path: ``io_uring_cmd``.
+This path is included for comparison as well.
 
 CPU usage
 ---------
-We use the Linux ``perf`` tool to record the events of running
-``bdevperf``. With ``perf report``, we find the CPU usage of the 
-``bdev`` polling on the two cores. The usage is summed to gain the 
-total CPU usage in percent.
+We use the Linux ``perf`` tool to record the events of running ``bdevperf``.
+With ``perf report``, we find the CPU usage of the  ``bdev`` polling on the two
+cores. The usage is summed to gain the  total CPU usage in percent.
 
 
 .. raw:: pdf
