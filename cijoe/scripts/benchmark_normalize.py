@@ -87,16 +87,15 @@ def extract_bdevperf(args):
         with (linuxperf_path).open() as ofile:
             file_content = ofile.read()
             matches = re.findall(LINUXPERF_LINE_REGEX, file_content)
+            print(matches)
             if len(matches) != 2:
                 log.warning(
                     f"Unexpected amount of CPU usage percentages (expected 2) in {linuxperf_path.name}: {matches}"
                 )
                 if len(matches) < 2:
-                    log.error(
+                    log.warning(
                         "Too few CPU usage percentages, needs at least 2, one for each core."
                     )
-                    return errno.EINVAL
-                matches = matches[0:2]
 
             for match in matches:
                 cpu += float(match)
