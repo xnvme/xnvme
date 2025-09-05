@@ -54,6 +54,30 @@ apt-get install -y \
     texinfo \
     uuid-dev
 
+# For windows guests and libvirt / virt-manager use
+apt-get install -y \
+  qemu-system  \
+  qemu-utils  \
+  libvirt-daemon-system  \
+  libvirt-clients  \
+  virtinst  \
+  bridge-utils  \
+  ovmf  \
+  libguestfs-tools  \
+  dnsmasq-base \
+  swtpm \
+  swtpm-tools
+
+# For reduced variability
+apt-get install -y \
+    linux-cpupower \
+    linux-perf \
+    lm-sensors
+
+# For SPDK target-app
+apt-get install -y \
+    python3-pyelftools
+
 # For producing reports with rst2pdf
 apt-get install -y \
     fontconfig
