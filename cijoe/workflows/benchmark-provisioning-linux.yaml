@@ -46,3 +46,7 @@ steps:
 # probably need something special here...
 - name: linux_nvme_prep
   uses: linux_nvme_prep
+
+- name: install_linux_perf
+  run: |
+    apt-get install -y linux-perf
