@@ -56,17 +56,6 @@ system_args.raw = """\
 system_args.tcp_forward = {host = 4200, guest = 22}
 #system_args.host_share = "{{ local.env.HOME }}/git"
 
-[system-imaging.images.freebsd-14-x86_64]
-system_label = "x86_64"
-
-cloud.url = "https://refenv.fra1.digitaloceanspaces.com/boot_images/freebsd-14.1-ksrc-amd64.qcow2"
-cloud.path = "{{ local.env.HOME}}/images/cloudinit/freebsd-14.1-ksrc-amd64.qcow2"
-cloud.metadata_path = "{{ resources.auxiliary['cloudinit-freebsd-meta'] }}"
-cloud.userdata_path = "{{ resources.auxiliary['cloudinit-freebsd-user'] }}"
-
-disk.url = "https://refenv.fra1.digitaloceanspaces.com/boot_images/freebsd-14.1-ksrc-amd64.qcow2"
-disk.path = "{{ local.env.HOME }}/images/boot_images/freebsd-14.1-ksrc-amd64.qcow2"
-
 [xnvme.repository]
 remote = "https://github.com/xnvme/xnvme.git"
 path = "/root/git/xnvme"

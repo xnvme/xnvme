@@ -53,18 +53,6 @@ system_args.raw = """\
 system_args.tcp_forward = {host = 4200, guest = 22}
 #system_args.host_share = "{{ local.env.HOME }}/git"
 
-[system-imaging.images.debian-12-x86_64]
-system_label = "x86_64"
-
-cloud.url = "https://cloud.debian.org/images/cloud/bookworm/daily/latest/debian-12-generic-amd64-daily.qcow2"
-cloud.path = "{{ local.env.HOME }}/system_imaging/cloud/debian-12-generic-amd64-daily.qcow2"
-cloud.metadata_path = "{{ resources.auxiliary['system_imaging.cloudinit-linux-common-metadata'] }}"
-cloud.userdata_path = "{{ resources.auxiliary['system_imaging.cloudinit-linux-common-userdata'] }}"
-
-disk.path = "{{ local.env.HOME }}/system_imaging/disk/debian-12-x86_64.qcow2"
-disk.url = "https://cijoe-system-imaging.s3.eu-central-003.backblazeb2.com/disk/debian-12-x86_64.qcow2"
-disk.url_checksum = "https://cijoe-system-imaging.s3.eu-central-003.backblazeb2.com/disk/debian-12-x86_64.qcow2"
-
 [[devices]]
 key = "bdev"
 uri = "/dev/nvme0n1"
