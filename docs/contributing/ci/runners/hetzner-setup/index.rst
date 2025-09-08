@@ -92,6 +92,12 @@ run the following to fetch the scripts and config files::
    will be utilized to construct the hostname using the naming convention
    described above.
 
+.. warning::
+
+   The ssh-key utilized via the rescue system is added to ``authorized_keys``.
+   Since it is not possible to **SSH** into the box as ``root`` with
+   login/password, then only the owner of the key will be able to login.
+
 The system will reboot after the above commands execute without error. The
 contents of the ``hetzner-setup`` folder are copied into the system and will be
 available after reboot. Once the system is up, SSH into it as root and run::
@@ -110,10 +116,20 @@ you must manually retrieve it from the private Hetzner Storage Box. The
 ``postinstall.sh`` script has already prepared everything needed to launch
 a Windows guest, including UEFI, OVMF, and TPM support.
 
-Download the image using the command below, replacing ``<username>`` with your
-Storage Box username::
+Download the image using the command below, replacing your username with your
+Storage Box ``<USERNAME>``::
 
-  scp <username>@<username>.your-storagebox.de:/win11.qcow2 /home/ghr/system_imaging/disk/
+  export HSB_USERNAME=<USERNAME>
+
+  # Download the Windows image from Hetzner Storage Box
+  wget \
+    --http-user ${HSB_USERNAME} \
+    --ask-password \
+    --directory-prefix /home/ghr/system_imaging/disk/ \
+    https://${HSB_USERNAME}.your-storagebox.de/win11.qcow2
+
+  # Ensure access
+  chown -R ghr:ghr /home/ghr/system_imaging/disk/
 
 Once the image is in place, the system is ready to receive jobs from GitHub.
 The next section explains how to install the runner.
@@ -121,7 +137,7 @@ The next section explains how to install the runner.
 .. note::
 
    The Windows guest image is 64 GB in size. Downloading it takes approximately
-   20 minutes.
+   10 minutes.
 
 
 Runner Registration
