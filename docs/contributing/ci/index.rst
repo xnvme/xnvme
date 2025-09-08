@@ -13,6 +13,10 @@ utilized for the **xNVMe** **CI** is illustrated below.
 
    xNVMe **CI** environments and resources
 
+The above figure is outdated, as **bench** and **verify** have been migrated
+to a MaaS provider and are no longer on-premises. However, one system remains
+on-prem because no MaaS provider currently offers a suitable replacement.
+
 .. _sec-ci-infrastructure:
 
 Infrastructure
@@ -91,10 +95,9 @@ various **CI** jobs.
    :hidden:
    :includehidden:
 
-   runners/index.rst
    runners/hetzner-setup/index.rst
-   bench/index.rst
-   verify/index.rst
+   runners/onpremise/index.rst
+   misc/index.rst
 
 .. _CIJOE in xNVMe: https://github.com/xnvme/xnvme/tree/main/cijoe
 .. _CIJOE: https://cijoe.readthedocs.io
