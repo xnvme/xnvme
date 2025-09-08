@@ -227,7 +227,8 @@ jobs:
   build-linux:
     needs: [source-archive, source-format-check, build-python]
     runs-on: ubuntu-latest
-    if: contains('push pull_request', github.event_name)
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+
     strategy:
       fail-fast: false
       matrix:
@@ -394,7 +395,7 @@ jobs:
   build-macos:
     needs: [source-archive, source-format-check, build-python]
     runs-on: ${{ matrix.runner.os }}-${{ matrix.runner.ver }}
-    if: contains('push pull_request', github.event_name)
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
 
     strategy:
       fail-fast: false
@@ -518,7 +519,8 @@ jobs:
   build-windows:
     needs: [source-archive, source-format-check, build-python]
     runs-on: ${{ matrix.runner.os }}-${{ matrix.runner.ver }}
-    if: contains('push pull_request', github.event_name)
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+
     defaults:
       run:
         shell: bash
@@ -669,9 +671,8 @@ jobs:
   verify:
     needs: [source-archive, source-format-check, build-python]
     runs-on: ubuntu-latest
-
-    if: (contains('push pull_request', github.event_name) || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job
-      == 'verify')))
+    if: github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.job == 'verify')
 
     strategy:
       fail-fast: false
@@ -765,9 +766,8 @@ jobs:
   verify-physical:
     needs: [source-archive, source-format-check, build-python]
     runs-on: ${{ matrix.guest.labels }}
-
-    if: (contains('push pull_request', github.event_name) || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job
-      == 'verify')))
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name,
+      'maas')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'verify')
 
     strategy:
       fail-fast: false
@@ -862,9 +862,8 @@ jobs:
   verify-maas:
     needs: [source-archive, source-format-check, build-python]
     runs-on: ${{ matrix.guest.labels }}
-
-    if: (contains('push pull_request', github.event_name) || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job
-      == 'verify')))
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name,
+      'maas')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'verify')
 
     strategy:
       fail-fast: false
@@ -940,9 +939,9 @@ jobs:
   #
   benchmark-bdev_xnvme:
     needs: [source-archive, source-format-check, build-python]
-    if: (contains('push', github.event_name) || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job ==
-      'bench')) || ((github.event_name == 'pull_request') && contains(github.event.pull_request.labels.*.name, 'bench')))
     runs-on: [self-hosted, linux, amd64, maas]
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name,
+      'maas')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'bench')
 
     steps:
     - uses: xnvme/actions/.github/actions/cleanup@main
@@ -1014,8 +1013,8 @@ jobs:
   #
   benchmark-latency:
     needs: [source-archive, source-format-check, build-python]
-    if: (contains('push', github.event_name) || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job ==
-      'bench')) || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'bench')))
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name,
+      'maas')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'bench')
 
     strategy:
       fail-fast: false
@@ -1113,8 +1112,8 @@ jobs:
   docgen:
     needs: [source-archive, source-format-check, build-python]
     runs-on: ubuntu-latest
-    if: ((github.event_name == 'push') || (github.event_name == 'pull_request') || ((github.event_name == 'workflow_dispatch')
-      && (github.event.inputs.job == 'docgen')))
+    if: github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.job == 'docgen')
 
     strategy:
       fail-fast: false
@@ -1241,7 +1240,7 @@ jobs:
     needs: source-archive
     runs-on: ubuntu-latest
     container: ghcr.io/xnvme/xnvme-deps-citools-latest:next
-    if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'analyze'))
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'analyze'
 
     steps:
     - name: Retrieve, unpack, and remove the xNVMe source archive
@@ -1271,7 +1270,7 @@ jobs:
     needs: source-archive
     runs-on: ubuntu-latest
     container: debian:bullseye
-    if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'analyze'))
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'analyze'
 
     steps:
     - name: Retrieve, unpack, and remove the xNVMe source archive
@@ -1304,7 +1303,7 @@ jobs:
   analyze-coverity:
     needs: source-archive
     runs-on: ubuntu-latest
-    if: ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'analyze'))
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'analyze'
 
     container: debian:buster
     env:
