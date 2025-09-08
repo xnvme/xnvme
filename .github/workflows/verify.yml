@@ -1186,7 +1186,7 @@ jobs:
         cd cijoe && cijoe "workflows/docgen.yaml" \
         --monitor \
         --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
-        --output "${{ github.job }}-{{ matrix.guest.os }}-${{ matrix.guest.ver }}-docgen"
+        --output "${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-docs"
 
     - name: CIJOE, upload report-docgen
       uses: actions/upload-artifact@v4.3.0
@@ -1211,7 +1211,8 @@ jobs:
     - name: Extract the website
       if: ((github.event_name == 'push') || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen')))
       run: |
-        cp cijoe/docgen-${{ matrix.guest.os }}-${{ matrix.guest.ver }}/artifacts/docs.tar.gz .
+        find cijoe
+        cp cijoe/${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-docs/artifacts/docs.tar.gz .
         tar xzf docs.tar.gz
 
     - name: Update site repository
