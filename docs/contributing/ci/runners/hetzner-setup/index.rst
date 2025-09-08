@@ -102,6 +102,28 @@ available after reboot. Once the system is up, SSH into it as root and run::
 
 Once this has finished, then you can start using the system.
 
+Windows Guest Image
+===================
+
+Unlike the other guests, the Windows image cannot be distributed. Therefore,
+you must manually retrieve it from the private Hetzner Storage Box. The
+``postinstall.sh`` script has already prepared everything needed to launch
+a Windows guest, including UEFI, OVMF, and TPM support.
+
+Download the image using the command below, replacing ``<username>`` with your
+Storage Box username::
+
+  scp <username>@<username>.your-storagebox.de:/win11.qcow2 /home/ghr/system_imaging/disk/
+
+Once the image is in place, the system is ready to receive jobs from GitHub.
+The next section explains how to install the runner.
+
+.. note::
+
+   The Windows guest image is 64 GB in size. Downloading it takes approximately
+   20 minutes.
+
+
 Runner Registration
 -------------------
 
