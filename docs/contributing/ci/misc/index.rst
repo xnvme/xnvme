@@ -1,13 +1,30 @@
+.. _sec-ci-misc:
+
+Misc.
+=====
+
+These are misc. notes useful in the maintenance of xNVMe/CI.
+
 .. _sec-ci-runners-hetzner-windowsvm:
 
-Virtual Machines with Windows
-=============================
+Create a Windows image using virt-manager
+-----------------------------------------
 
-Windows are not provided as a downloadable image, and we must build and provide our own
-``qcow2`` images for running virtual machines with Windows in qemu.
+Windows are not provided as a downloadable image, and we must build and provide
+our own ``qcow2`` images for running virtual machines with Windows in qemu.
+The currently used Windows image is stored in a Hetzner Storage box. Notes on
+re-creating / updating it, are provided here.
 
 Prerequisites
--------------
+~~~~~~~~~~~~~
+
+It is assumed here that you have the following systems available to you:
+
+host
+    A Linux server that you have remote access to
+
+devbox
+    A MacBook as your workstation with virt-manager installed.
 
 On the host machine, install the necessary packages:
 
@@ -29,11 +46,8 @@ On the host machine, install the necessary packages:
 
 And download a `Windows 11 Disk Image`_ to the ``/var/lib/libvirt/images`` directory.
 
-On your development machine, install `virt-manager`_ and create a connection to the
-host machine through the interface.
-
-Creating a ``qcow2`` Image
---------------------------
+On your **devbox**, install `virt-manager`_ and create a connection to the host
+machine through the interface.
 
 Install the Virtual Machine
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -211,14 +225,14 @@ Upload the qcow image to the Hetzner storage box.
   scp /var/lib/libvirt/images/<qcow image> <storage-box url>:~/win11.qcow2
 
 
-Starting QEMU with qcow2 image
-------------------------------
+Using the image
+~~~~~~~~~~~~~~~
 
-Assuming you want to run qemu as user ``ghr`` with home directory ``/home/ghr``. This
-might be necessary to setup as ``root``.
+Assuming you want to run qemu as user ``ghr`` with home directory ``/home/ghr``.
+This might be necessary to setup as ``root``.
 
-Setup home directory
-~~~~~~~~~~~~~~~~~~~~
+on-host: setup home directory
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Create subdirectories:
 
@@ -242,7 +256,6 @@ Get the qcow2 image:
 .. code-block:: bash
 
   scp <storage-box url>:~/win11.qcow2 /home/ghr/system_imaging/disk
-    
 
 Get drivers:
 

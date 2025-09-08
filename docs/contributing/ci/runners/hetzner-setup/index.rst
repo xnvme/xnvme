@@ -103,7 +103,7 @@ available after reboot. Once the system is up, SSH into it as root and run::
 Once this has finished, then you can start using the system.
 
 Windows Guest Image
-===================
+-------------------
 
 Unlike the other guests, the Windows image cannot be distributed. Therefore,
 you must manually retrieve it from the private Hetzner Storage Box. The
@@ -166,10 +166,3 @@ Now install the service, making it available upon reboot etc.::
 	sudo ./svc.sh status
 
 It should now be ready to process jobs.
-
-.. toctree::
-   :maxdepth: 2
-   :hidden:
-   :includehidden:
-
-   ../windows-vm/index.rst
