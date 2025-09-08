@@ -48,19 +48,6 @@ system_args.raw = """\
 system_args.tcp_forward = {host = 4200, guest = 22}
 #system_args.host_share = "{{ local.env.HOME }}/git"
 
-[system-imaging.images.debian-12-aarch64]
-system_label = "aarch64"
-
-cloud.url = "https://cloud.debian.org/images/cloud/bookworm/daily/latest/debian-12-generic-arm64-daily.qcow2"
-cloud.path = "{{ local.env.HOME }}/images/cloudinit/debian-12-generic-arm64-daily.qcow2"
-cloud.metadata_path = "{{ resources.auxiliary['cloudinit-debian-meta'] }}"
-cloud.userdata_path = "{{ resources.auxiliary['cloudinit-debian-user-arm64'] }}"
-
-disk.url = "https://refenv.fra1.digitaloceanspaces.com/boot_images/debian-bookworm-arm64.qcow2"
-disk.path = "{{ local.env.HOME }}/images/boot_images/debian-bookworm-arm64.qcow2"
-
-#pubkey = "keys/guest_key.pub"
-
 [[devices]]
 uri = "/dev/nvme0n1"
 nsid = 1
