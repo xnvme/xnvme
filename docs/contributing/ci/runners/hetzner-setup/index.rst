@@ -181,4 +181,12 @@ Now install the service, making it available upon reboot etc.::
 	sudo ./svc.sh start
 	sudo ./svc.sh status
 
+Then, fix permissions needed to run qemu with ``vfio-pci```::
+
+	sudo ./svc.sh stop
+	sudo sed -i '/^\[Service\]/a LimitMEMLOCK=infinity' /etc/systemd/system/actions.runner.*.service
+	sudo systemctl daemon-reload
+	sudo ./svc.sh start
+	sudo ./svc.sh status
+
 It should now be ready to process jobs.
