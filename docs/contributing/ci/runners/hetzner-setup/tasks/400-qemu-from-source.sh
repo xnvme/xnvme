@@ -20,7 +20,6 @@ cd build
   --disable-gtk \
   --disable-sdl \
   --disable-spice \
-  --disable-vnc \
   --disable-curses \
   --disable-xen \
   --disable-smartcard \
