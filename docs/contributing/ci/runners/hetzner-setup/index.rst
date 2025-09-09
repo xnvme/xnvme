@@ -102,8 +102,14 @@ The system will reboot after the above commands execute without error. The
 contents of the ``hetzner-setup`` folder are copied into the system and will be
 available after reboot. Once the system is up, SSH into it as root and run::
 
+	# Run post-install tasks (user-configuration, system setup etc.)
 	cd hetzner-setup
 	./postinstall.sh
+
+	# Set password for the ghr user
+	passwd ghr
+
+	# Then reboot
 	reboot
 
 Once this has finished, then you can start using the system.
