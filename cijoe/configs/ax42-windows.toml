@@ -95,8 +95,7 @@ bin = "C:/Users/odus/git/fio/fio.exe"
 [fio.repository]
 remote = "https://github.com/axboe/fio.git"
 path = "C:/Users/odus/git/fio"
-# tag = "fio-3.38"
-tag = "7037b833e175aae32900b73bf597aad08c1d8472" # windows: drop nanosleep and clock_gettime
+tag = "fio-3.41"
 
 [fio.engines]
 null = {type = "builtin", group = "null", device = "bdev"}
