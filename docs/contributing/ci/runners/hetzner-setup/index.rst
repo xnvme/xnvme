@@ -100,19 +100,27 @@ run the following to fetch the scripts and config files::
 
 The system will reboot after the above commands execute without error. The
 contents of the ``hetzner-setup`` folder are copied into the system and will be
-available after reboot. Once the system is up, SSH into it as root and run::
+available after reboot.
 
-	# Run post-install tasks (user-configuration, system setup etc.)
-	cd hetzner-setup
-	./postinstall.sh
+Post-Install
+------------
 
-	# Set password for the ghr user
-	passwd ghr
+Once the system is up, **SSH** into it as ``root`` and run::
 
-	# Then reboot
-	reboot
+    # Run post-install tasks (user configuration, system setup, etc.)
+    cd hetzner-setup
+    ./postinstall.sh
 
-Once this has finished, then you can start using the system.
+    # Set password for the 'ghr' user
+    passwd ghr
+
+After this, complete the following tasks:
+
+- Retrieve the Windows guest image
+- Set up the GitHub Runner
+- Reboot the system
+
+Details are provided in the following sections.
 
 Windows Guest Image
 -------------------
@@ -152,7 +160,6 @@ Runner Registration
 Switch to the ``ghr`` user::
 
 	su - ghr
-	cd actions-runner
 
 Setup env. vars. for config::
 
@@ -167,6 +174,7 @@ Setup env. vars. for config::
 
 Then run::
 
+	cd actions-runner
 	./config.sh --unattended \
 		--url ${URL} \
 		--token ${TOKEN} \
@@ -180,19 +188,13 @@ Then run::
    Currently, there is a ``1:1:1`` relationship between ``Host:Runner:Guest``.
    If this changes, adjust the runner name accordingly in the command above.
 
-Now install the service, making it available upon reboot etc.::
+Install the runner with permission to use ``vfio-pci```::
 
+	# Install the service
 	sudo ./svc.sh install ghr
-	sudo ./svc.sh status
-	sudo ./svc.sh start
-	sudo ./svc.sh status
-
-Then, fix permissions needed to run qemu with ``vfio-pci```::
-
-	sudo ./svc.sh stop
 	sudo sed -i '/^\[Service\]/a LimitMEMLOCK=infinity' /etc/systemd/system/actions.runner.*.service
 	sudo systemctl daemon-reload
-	sudo ./svc.sh start
 	sudo ./svc.sh status
 
-It should now be ready to process jobs.
+Do not start the service at this point, to avoid it getting a CI job. Instead,
+``reboot`` the system to ensure that it boots and services start as expected.
