@@ -911,7 +911,7 @@ jobs:
     - name: CIJOE, run tests
       run: |
         cd cijoe && cijoe \
-        workflows/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.yaml \
+        workflows/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-maas.yaml \
         --monitor \
         --config "configs/${{ matrix.guest.hostname }}.toml" \
         --config "configs/${{ matrix.guest.hostname }}-testing.toml" \

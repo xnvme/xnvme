@@ -1,0 +1,22 @@
+---
+doc: |
+  Test xNVMe on Linux
+
+steps:
+- name: sysinfo
+  uses: linux.sysinfo
+
+- name: hugetlbfs
+  uses: linux_setup_hugetlbfs
+
+- name: test_os
+  uses: core.testrunner
+  with:
+    args: '-k "(not pcie) and (not compare) and (not format)" tests'
+    random_order: false
+
+- name: test_pcie
+  uses: core.testrunner
+  with:
+    args: '-k "pcie and (not compare) and (not format)" tests'
+    random_order: false
