@@ -120,7 +120,22 @@ After this, complete the following tasks:
 - Set up the GitHub Runner
 - Reboot the system
 
-Details are provided in the following sections.
+Details are provided in the following sections. When running those commands,
+then start by switching to the ``ghr`` user::
+
+	su - ghr
+
+Then set the following variables::
+
+	export HSB_USERNAME=<LOOK_IN_HETZNER_CONSOLE>
+	export TOKEN=<LOOK_IN_GITHUB_SETTINGS>
+	export URL=https://github.com/xnvme/xnvme
+
+.. note::
+
+   You find the **TOKEN** in the GitHub web interface when adding a new runner
+   under ``Settings / Runners / New self-hosted runner``.
+
 
 Windows Guest Image
 -------------------
@@ -133,17 +148,12 @@ a Windows guest, including UEFI, OVMF, and TPM support.
 Download the image using the command below, replacing your username with your
 Storage Box ``<USERNAME>``::
 
-  export HSB_USERNAME=<USERNAME>
-
   # Download the Windows image from Hetzner Storage Box
   wget \
     --http-user ${HSB_USERNAME} \
     --ask-password \
     --directory-prefix /home/ghr/system_imaging/disk/ \
     https://${HSB_USERNAME}.your-storagebox.de/win11.qcow2
-
-  # Ensure access
-  chown -R ghr:ghr /home/ghr/system_imaging/disk/
 
 Once the image is in place, the system is ready to receive jobs from GitHub.
 The next section explains how to install the runner.
@@ -157,24 +167,9 @@ The next section explains how to install the runner.
 Runner Registration
 -------------------
 
-Switch to the ``ghr`` user::
-
-	su - ghr
-
-Setup env. vars. for config::
-
-	export RUNNER_USER=ghr
-	export URL=https://github.com/xnvme/xnvme
-	export TOKEN={SUPER_SECRET}
-
-.. note::
-
-   You find the **TOKEN** in the GitHub web interface when adding a new runner
-   under ``Settings / Runners / New self-hosted runner``.
-
 Then run::
 
-	cd actions-runner
+	cd ~/actions-runner
 	./config.sh --unattended \
 		--url ${URL} \
 		--token ${TOKEN} \
@@ -188,7 +183,7 @@ Then run::
    Currently, there is a ``1:1:1`` relationship between ``Host:Runner:Guest``.
    If this changes, adjust the runner name accordingly in the command above.
 
-Install the runner with permission to use ``vfio-pci```::
+Install the runner with permission to use ``vfio-pci``::
 
 	# Install the service
 	sudo ./svc.sh install ghr
