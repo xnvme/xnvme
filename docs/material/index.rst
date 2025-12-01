@@ -13,6 +13,75 @@ A brief overview of xNVMe related presentations
 
       <div class="col-lg-4">
         <div class="card" style="width: 18rem;">
+          <a href="/_static/ocp25.pdf">
+            <img src="/_static/ocp.png" class="card-img-top" alt="Accelerator-integrated Storage I/O - Conference DEMO">
+          </a>
+          <div class="card-body">
+            <h5 class="card-title">Accelerator-integrated Storage I/O - Conference DEMO</h5>
+            <h6 class="card-subtitle mb-2 text-muted">
+              Presentation and demo given at the OCP Global Summit 2025
+            </h6>
+            <p class="card-text"></p>
+          </div>
+          <ul class="list-group list-group-flush">
+          
+            <li class="list-group-item">
+            <a href="/_static/ocp25.pdf">
+              <i class="fas fa-file-pdf"></i> Presentation slides
+            </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card" style="width: 18rem;">
+          <a href="/_static/fms25.pdf">
+            <img src="/_static/fms.png" class="card-img-top" alt="Feeding the Beast: Bridging NVMe Storage and GPUs while Preserving File Semantics">
+          </a>
+          <div class="card-body">
+            <h5 class="card-title">Feeding the Beast: Bridging NVMe Storage and GPUs while Preserving File Semantics</h5>
+            <h6 class="card-subtitle mb-2 text-muted">
+              Presentation given at the Future of Memory and Storage 2025 conference in the open-ecosystems track.
+            </h6>
+            <p class="card-text"></p>
+          </div>
+          <ul class="list-group list-group-flush">
+          
+            <li class="list-group-item">
+            <a href="/_static/fms25.pdf">
+              <i class="fas fa-file-pdf"></i> Presentation slides
+            </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card" style="width: 18rem;">
+          <a href="https://arxiv.org/pdf/2411.06980"> 
+            <img src="/_static/xnvme-logo-medium.png" class="card-img-top" alt="xNVMe: Unleashing Storage Hardware-Software Co-design">
+          </a>
+          <div class="card-body">
+            <h5 class="card-title">xNVMe: Unleashing Storage Hardware-Software Co-design</h5>
+            <h6 class="card-subtitle mb-2 text-muted">
+              Short-paper providing an update on the direction of xNVMe
+            </h6>
+            <p class="card-text"></p>
+          </div>
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+            <a href="https://arxiv.org/pdf/2411.06980">
+              <i class="fas fa-file-pdf"></i> Paper
+            </a>
+            </li>      
+
+          </ul>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card" style="width: 18rem;">
           <a href="/_static/xnvme-intro.pdf">
             <img src="/_static/xnvme-logo-medium.png" class="card-img-top" alt="xNVMe intro">
           </a>
@@ -35,6 +104,35 @@ A brief overview of xNVMe related presentations
 
       <div class="col-lg-4">
         <div class="card" style="width: 18rem;">
+          <a href="https://www.usenix.org/conference/fast24/presentation/joshi">
+            <img src="/_static/fast24.png" class="card-img-top" alt="Fast '24">
+          </a>
+          <div class="card-body">
+            <h5 class="card-title">Fast '24</h5>
+            <h6 class="card-subtitle mb-2 text-muted">
+              22nd USENIX Conference on File and Storage Technologies.
+              This one is not about xNVMe itself, but rather on the <b>io_uring_cmd</b> interface which xNVMe encapsulates.</h6>
+            <p class="card-text"></p>
+          </div>
+
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+            <a href="https://www.usenix.org/system/files/fast24-joshi.pdf">
+              <i class="fas fa-file-pdf"></i> Paper
+            </a>
+            </li>
+            <li class="list-group-item">
+              <a href="https://www.youtube.com/watch?v=cJ6J2z46FTA">
+               <i class="fas fa-play-circle"></i> Presentation video
+              </a>
+            </li>
+          </ul>
+
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card" style="width: 18rem;">
           <a href="https://storagedeveloper.org/events/agenda/session/553">
             <img src="/_static/sdc23.png" class="card-img-top" alt="SDC '23">
           </a>
@@ -52,6 +150,27 @@ A brief overview of xNVMe related presentations
             </li>
             <li class="list-group-item">
               <a href="https://youtu.be/Y7A3dPpdjNs?si=10vre9thPxLm1Y93">
+               <i class="fas fa-play-circle"></i> Presentation video
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card" style="width: 18rem;">
+          <a href="https://spdk.io/news/2022/11/21/us_virtual_forum_presentations/">
+            <img src="/_static/spdk.png" class="card-img-top" alt="SPDK US Virtual Forum '22">
+          </a>
+          <div class="card-body">
+            <h5 class="card-title">SPDK US Virtual Forum '22</h5>
+            <h6 class="card-subtitle mb-2 text-muted">The integration of the xNVMe bdev in SPDK with io_uring_cmd support.</h6>
+            <p class="card-text"></p>
+          </div>
+          <ul class="list-group list-group-flush">
+
+            <li class="list-group-item">
+              <a href="https://www.youtube.com/watch?v=aYALmcP6PDU">
                <i class="fas fa-play-circle"></i> Presentation video
               </a>
             </li>
@@ -112,7 +231,6 @@ A brief overview of xNVMe related presentations
           </ul>
         </div>
       </div>
-
 
       <div class="col-lg-4">
         <div class="card" style="width: 18rem;">
