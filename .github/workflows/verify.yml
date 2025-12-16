@@ -401,7 +401,6 @@ jobs:
       fail-fast: false
       matrix:
         runner:
-        - {os: 'macos', ver: '13'}
         - {os: 'macos', ver: '14'}
         - {os: 'macos', ver: '15'}
 
