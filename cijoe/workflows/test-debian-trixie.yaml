@@ -30,13 +30,13 @@ steps:
 - name: test_os
   uses: core.testrunner
   with:
-    args: '-k "(not ramdisk) and (not pcie) and (not fabrics)" tests'
+    args: '-k "(not ramdisk) and (not pcie) and (not upcie) and (not fabrics)" tests'
     random_order: false
 
 - name: test_pcie
   uses: core.testrunner
   with:
-    args: '-k "pcie and not test_mem_map_unmap" tests'
+    args: '-k "pcie and not upcie and not test_mem_map_unmap" tests'
     random_order: false
 
 - name: test_fabrics
