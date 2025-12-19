@@ -693,6 +693,7 @@ jobs:
         - {os: 'freebsd', ver: '14'}
         #- {os: 'freebsd', ver: '15'}
         - {os: 'debian', ver: 'trixie'}
+        - {os: 'debian', ver: 'trixie-noiommu'}
 
     container:
       image: ghcr.io/xnvme/xnvme-qemu:latest

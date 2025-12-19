@@ -137,6 +137,14 @@ def get_backend_configurations():
             "mem": ["spdk"],
             "label": ["fabrics"],
         },
+        {
+            "be": ["upcie"],
+            "mem": ["upcie"],
+            "async": ["upcie"],
+            "sync": ["upcie"],
+            "admin": ["upcie"],
+            "label": ["pcie"],
+        },
         # Ramdisk
         {
             "be": ["ramdisk_emu"],

@@ -378,6 +378,8 @@ def test_show_regs(cijoe, device, be_opts, cli_args):
 def test_subsystem_reset(cijoe, device, be_opts, cli_args):
     if be_opts["admin"] == "libvfn":
         pytest.skip(reason="[be=libvfn] does not support pseudo commands")
+    if be_opts["admin"] == "upcie":
+        pytest.skip(reason="[be=upcie] does not support subsystem-reset")
 
     err, _ = cijoe.run(
         f"xnvme subsystem-reset {device['uri']} --be {be_opts['be']} --admin {be_opts['admin']}"
@@ -394,6 +396,8 @@ def test_subsystem_reset(cijoe, device, be_opts, cli_args):
 def test_ctrlr_reset(cijoe, device, be_opts, cli_args):
     if be_opts["admin"] == "libvfn":
         pytest.skip(reason="[be=libvfn] does not support pseudo commands")
+    if be_opts["admin"] == "upcie":
+        pytest.skip(reason="[be=upcie] does not support controller-reset")
 
     err, _ = cijoe.run(
         f"xnvme ctrlr-reset {device['uri']} --be {be_opts['be']} --admin {be_opts['admin']}"

@@ -1,0 +1,21 @@
+---
+doc: |
+  Test xNVMe uPCIe backend on Linux without IOMMU
+
+steps:
+- name: sysinfo
+  uses: linux.sysinfo
+
+- name: enumerate
+  run: |
+    which xnvme && xnvme enum || true
+    for d in /sys/class/nvme/nvme*; do echo "$(basename $d): $(cat $d/address) $(cat $d/serial)"; done
+
+- name: hugepages
+  uses: linux_setup_hugepages
+
+- name: test_upcie
+  uses: core.testrunner
+  with:
+    args: '-k "(upcie or spdk) and not fabrics" tests'
+    random_order: false
