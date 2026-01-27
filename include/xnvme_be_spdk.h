@@ -38,15 +38,6 @@ XNVME_STATIC_ASSERT(sizeof(struct spdk_nvme_ctrlr_data) == sizeof(struct xnvme_s
 XNVME_STATIC_ASSERT(sizeof(struct spdk_nvme_ns_data) == sizeof(struct xnvme_spec_idfy_ns),
 		    "Incorrect size")
 
-/**
- * Wrapping the SPDK controller with reference count
- */
-struct xnvme_be_spdk_ctrlr_ref {
-	struct spdk_nvme_ctrlr *ctrlr; ///< Pointer to attached controller
-	int refcount;                  ///< # of refs. to 'ctrlr'
-	char uri[XNVME_IDENT_URI_LEN + 1];
-};
-
 struct xnvme_be_spdk_state {
 	union {
 		pthread_mutex_t qpair_lock; ///< LOCK for SYNC IO commands
