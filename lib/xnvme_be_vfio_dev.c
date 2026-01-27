@@ -8,115 +8,14 @@
 #ifdef XNVME_BE_VFIO_ENABLED
 #include <xnvme_dev.h>
 #include <xnvme_be_vfio.h>
+#include <xnvme_be_cref.h>
 
-/*
- * Wrapper with reference count for the vfio controller
- */
-struct xnvme_be_vfio_ctrlr_ref {
-	struct nvme_ctrl *ctrlr; ///< Pointer to attached controller
-	int refcount;            ///< # of refs. to 'ctrlr'
-	char uri[XNVME_IDENT_URI_LEN + 1];
-};
-
-#define XNVME_BE_VFIO_CREFS_LEN 100
-
-static struct xnvme_be_vfio_ctrlr_ref g_cref[XNVME_BE_VFIO_CREFS_LEN];
-
-/**
- * Retrieve an already opened controller with the given ident.
- *
- * @return Returns a pointer to the cref on success. When no cref is found,
- * NULL is returned.
- */
-static struct nvme_ctrl *
-_vfio_cref_lookup(struct xnvme_ident *id)
-{
-	for (int i = 0; i < XNVME_BE_VFIO_CREFS_LEN; ++i) {
-		if (strncmp(g_cref[i].uri, id->uri, XNVME_IDENT_URI_LEN - 1)) {
-			continue;
-		}
-		if (!g_cref[i].ctrlr) {
-			XNVME_DEBUG("FAILED: corrupted ctrlr in cref");
-			return NULL;
-		}
-		if (g_cref[i].refcount < 1) {
-			XNVME_DEBUG("FAILED: corrupted refcount");
-			return NULL;
-		}
-
-		g_cref[i].refcount += 1;
-
-		return g_cref[i].ctrlr;
-	}
-
-	return NULL;
-}
-
-/**
- * Insert the given controller. It must be opened before insertion.
- *
- * @return Returns 0 on success. On error, negated ``errno`` is returned.
- */
 static int
-_vfio_cref_insert(struct xnvme_ident *ident, struct nvme_ctrl *ctrlr)
+_vfio_ctrlr_destructor(void *ctrlr)
 {
-	if (!ctrlr) {
-		XNVME_DEBUG("FAILED: !ctrlr");
-		return -EINVAL;
-	}
+	nvme_close((struct nvme_ctrl *)ctrlr);
 
-	for (int i = 0; i < XNVME_BE_VFIO_CREFS_LEN; ++i) {
-		if (g_cref[i].refcount) {
-			continue;
-		}
-
-		g_cref[i].ctrlr = ctrlr;
-		g_cref[i].refcount += 1;
-		strncpy(g_cref[i].uri, ident->uri, XNVME_IDENT_URI_LEN);
-
-		return 0;
-	}
-
-	return -ENOMEM;
-}
-
-/**
- * Decrease the refcount by one for the given controller.
- *
- * @return Returns 0 on success. On error, negated ``errno`` is returned.
- *
- */
-int
-_vfio_cref_deref(struct nvme_ctrl *ctrlr)
-{
-	if (!ctrlr) {
-		XNVME_DEBUG("FAILED: !ctrlr");
-		return -EINVAL;
-	}
-
-	for (int i = 0; i < XNVME_BE_VFIO_CREFS_LEN; ++i) {
-		if (g_cref[i].ctrlr != ctrlr) {
-			continue;
-		}
-
-		if (g_cref[i].refcount < 1) {
-			XNVME_DEBUG("FAILED: invalid refcount: %d", g_cref[i].refcount);
-			return -EINVAL;
-		}
-
-		g_cref[i].refcount -= 1;
-
-		if (g_cref[i].refcount == 0) {
-			XNVME_DEBUG("INFO: refcount: %d => detaching", g_cref[i].refcount);
-			nvme_close(ctrlr);
-			memset(&g_cref[i], 0, sizeof(g_cref[i]));
-		}
-
-		return 0;
-	}
-
-	XNVME_DEBUG("FAILED: no tracking for %p", (void *)ctrlr);
-	return -EINVAL;
+	return 0;
 }
 
 int
@@ -166,7 +65,7 @@ xnvme_be_vfio_dev_open(struct xnvme_dev *dev)
 	int qpid;
 	int err;
 
-	ctrl = _vfio_cref_lookup(&dev->ident);
+	ctrl = xnvme_be_cref_lookup(dev->ident.uri);
 	if (!ctrl) {
 		struct nvme_ctrl_opts ctrl_opts = {
 			.nsqr = XNVME_BE_VFIO_NQUEUES_MAX - 1,
@@ -220,9 +119,10 @@ xnvme_be_vfio_dev_open(struct xnvme_dev *dev)
 		state->sq_sync = &state->ctrl->sq[qpid];
 		state->cq_sync = &state->ctrl->cq[qpid];
 
-		err = _vfio_cref_insert(&dev->ident, ctrl);
+		err = xnvme_be_cref_insert(dev->ident.uri, xnvme_be_vfio.attr.name, ctrl,
+					   _vfio_ctrlr_destructor);
 		if (err) {
-			XNVME_DEBUG("FAILED: _cref_insert()");
+			XNVME_DEBUG("FAILED: xnvme_be_cref_insert()");
 			free(state->efds);
 			return err;
 		}
@@ -240,8 +140,8 @@ xnvme_be_vfio_dev_close(struct xnvme_dev *dev)
 {
 	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
 
-	if (_vfio_cref_deref(state->ctrl)) {
-		XNVME_DEBUG("FAILED: _vfio_cref_deref()");
+	if (xnvme_be_cref_deref(state->ctrl, XNVME_BE_CREF_DESTROY_IMMEDIATE)) {
+		XNVME_DEBUG("FAILED: xnvme_be_cref_deref()");
 	}
 	if (state->efds) {
 		free(state->efds);

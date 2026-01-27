@@ -11,6 +11,7 @@ xnvmelib_source = [
   'xnvme_be_cbi_async_posix.c',
   'xnvme_be_cbi_async_thrpool.c',
   'xnvme_be_cbi_mem_posix.c',
+  'xnvme_be_cref.c',
   'xnvme_be_cbi_sync_psync.c',
   'xnvme_be_fbsd.c',
   'xnvme_be_fbsd_async.c',
