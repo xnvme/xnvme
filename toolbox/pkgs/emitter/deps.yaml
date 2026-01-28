@@ -337,7 +337,19 @@ platforms:
   aux:
   - [sys, [base-devel, libutil-linux]]
 
-- alias: Oracle Linux
+- alias: Oracle Linux 10
+  notes: ''
+  name: oraclelinux
+  ver: ['10']
+  os: linux
+  mng: dnf
+  drop: []
+  alt:
+  - [src, [libisal, libvfn]]
+  aux:
+  - [sys, [autoconf, diffutils, gcc, gcc-c++, libtool, procps, unzip, wget, zlib-devel]]
+
+- alias: Oracle Linux 9
   notes: ''
   name: oraclelinux
   ver: ['9']
@@ -345,22 +357,43 @@ platforms:
   mng: dnf
   drop: []
   alt:
-  - [pip, [pipx]]
-  - [src, [libisal, liburing, libvfn]]
+  - [src, [libisal, libvfn]]
   aux:
   - [sys, [autoconf, diffutils, gcc, gcc-c++, libtool, procps, unzip, wget, zlib-devel]]
 
-
-- alias: Rocky Linux
+- alias: Rocky Linux 9
   notes: ''
   name: rockylinux
-  ver: ['9.2']
+  ver: ['9.7']
   os: linux
   mng: dnf
   drop: []
   alt:
-  - [pip, [pipx]]
-  - [src, [libisal, liburing, libvfn]]
+  - [src, [libisal, libvfn]]
+  aux:
+  - [sys, [autoconf, diffutils, gcc, gcc-c++, libtool, procps, unzip, wget, zlib-devel]]
+
+- alias: Rocky Linux 10
+  notes: ''
+  name: rockylinux
+  ver: ['10.1']
+  os: linux
+  mng: dnf
+  drop: []
+  alt:
+  - [src, [libisal, libvfn]]
+  aux:
+  - [sys, [autoconf, diffutils, gcc, gcc-c++, libtool, procps, unzip, wget, zlib-devel]]
+
+- alias: CentOS Stream 10
+  notes: ''
+  name: centos
+  ver: [stream10]
+  os: linux
+  mng: dnf
+  drop: [clang-format]
+  alt:
+  - [src, [libisal, libvfn]]
   aux:
   - [sys, [autoconf, diffutils, gcc, gcc-c++, libtool, procps, unzip, wget, zlib-devel]]
 
@@ -372,8 +405,7 @@ platforms:
   mng: dnf
   drop: [clang-format]
   alt:
-  - [pip, [elftools, meson, pipx]]
-  - [src, [libisal, liburing, libvfn]]
+  - [src, [libisal, libvfn]]
   aux:
   - [sys, [autoconf, diffutils, gcc, gcc-c++, libtool, procps, unzip, wget, zlib-devel]]
 

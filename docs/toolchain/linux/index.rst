@@ -82,8 +82,39 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-Oracle Linux (9)
-~~~~~~~~~~~~~~~~
+Oracle Linux 10 (10)
+~~~~~~~~~~~~~~~~~~~~
+
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
+
+  sudo ./xnvme/toolbox/pkgs/oraclelinux-10.sh
+
+Or, run the commands contained within the script manually:
+
+.. literalinclude:: ../../../toolbox/pkgs/oraclelinux-10.sh
+   :language: bash
+   :lines: 8-
+
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-oraclelinux-10:next``. This Docker-image contains
+   all the software described above.
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../../toolbox/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
+
+
+
+Oracle Linux 9 (9)
+~~~~~~~~~~~~~~~~~~
 
 Install the required toolchain and libraries by running the package installation
 script  provided with the **xNVMe** repository, as shown below. Ensure that you
@@ -113,8 +144,8 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-Rocky Linux (9.2)
-~~~~~~~~~~~~~~~~~
+Rocky Linux 9 (9.7)
+~~~~~~~~~~~~~~~~~~~
 
 Install the required toolchain and libraries by running the package installation
 script  provided with the **xNVMe** repository, as shown below. Ensure that you
@@ -123,17 +154,79 @@ have sufficient system privileges when doing so (e.g., run as ``root`` or with
 
 .. code-block:: bash
 
-  sudo ./xnvme/toolbox/pkgs/rockylinux-9.2.sh
+  sudo ./xnvme/toolbox/pkgs/rockylinux-9.7.sh
 
 Or, run the commands contained within the script manually:
 
-.. literalinclude:: ../../../toolbox/pkgs/rockylinux-9.2.sh
+.. literalinclude:: ../../../toolbox/pkgs/rockylinux-9.7.sh
    :language: bash
    :lines: 8-
 
 .. note::
    A Docker-image is provided via ``ghcr.io``, specifically
-   ``ghcr.io/xnvme/xnvme-deps-rockylinux-9.2:next``. This Docker-image contains
+   ``ghcr.io/xnvme/xnvme-deps-rockylinux-9.7:next``. This Docker-image contains
+   all the software described above.
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../../toolbox/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
+
+
+
+Rocky Linux 10 (10.1)
+~~~~~~~~~~~~~~~~~~~~~
+
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
+
+  sudo ./xnvme/toolbox/pkgs/rockylinux-10.1.sh
+
+Or, run the commands contained within the script manually:
+
+.. literalinclude:: ../../../toolbox/pkgs/rockylinux-10.1.sh
+   :language: bash
+   :lines: 8-
+
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-rockylinux-10.1:next``. This Docker-image contains
+   all the software described above.
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../../toolbox/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
+
+
+
+CentOS Stream 10 (stream10)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
+
+  sudo ./xnvme/toolbox/pkgs/centos-stream10.sh
+
+Or, run the commands contained within the script manually:
+
+.. literalinclude:: ../../../toolbox/pkgs/centos-stream10.sh
+   :language: bash
+   :lines: 8-
+
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-centos-stream10:next``. This Docker-image contains
    all the software described above.
 
 Then go ahead and configure, build and install using ``meson``:

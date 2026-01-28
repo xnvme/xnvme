@@ -1,6 +1,9 @@
-# This repo has CUnit-devel + meson
-dnf install -y 'dnf-command(config-manager)'
+# Enable CRB repo for development packages
+dnf install -y dnf-plugins-core
 dnf config-manager --set-enabled ol9_codeready_builder
+
+# Enable EPEL for additional packages (e.g. pipx)
+dnf install -y oracle-epel-release-el9
 
 # Install packages via the system package-manager (dnf)
 dnf install -y \

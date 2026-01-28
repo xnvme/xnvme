@@ -237,7 +237,8 @@ jobs:
         # alpine: SPDK not supported, --with-spdk=disabled
         - {os: 'alpine', dh: 'refenv/alpine-bash', ver: 'latest'}
         - {os: 'archlinux', dh: 'archlinux', ver: 'latest'}
-        - {os: 'centos', dh: 'tgagor/centos', ver: 'stream9'}
+        - {os: 'centos', dh: 'quay.io/centos/centos', ver: 'stream9'}
+        - {os: 'centos', dh: 'quay.io/centos/centos', ver: 'stream10'}
         - {os: 'debian', dh: 'debian', ver: 'bookworm'}
         - {os: 'debian', dh: 'debian', ver: 'forky'}
         - {os: 'debian', dh: 'debian', ver: 'trixie'}
@@ -246,7 +247,8 @@ jobs:
         - {os: 'gentoo', dh: 'gentoo/stage3', ver: 'latest'}
         - {os: 'opensuse-tumbleweed', dh: 'opensuse/tumbleweed', ver: 'latest'}
         - {os: 'oraclelinux', dh: 'oraclelinux', ver: '9'}
-        - {os: 'rockylinux', dh: 'rockylinux', ver: '9.2'}
+        - {os: 'oraclelinux', dh: 'oraclelinux', ver: '10'}
+        - {os: 'rockylinux', dh: 'rockylinux/rockylinux', ver: '9.7'}
         - {os: 'ubuntu', dh: 'ubuntu', ver: 'jammy'}
         - {os: 'ubuntu', dh: 'ubuntu', ver: 'noble'}
         - {os: 'ubuntu', dh: 'ubuntu', ver: 'questing'}
