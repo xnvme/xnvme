@@ -5,16 +5,18 @@ ld -v || true
 # Query the (g)libc version
 ldd --version || true
 
-# This repo has CUnit-devel + meson
+# Enable CRB repo for development packages
 dnf install -y 'dnf-command(config-manager)'
 dnf config-manager --set-enabled crb
+
+# Enable EPEL for additional packages
+dnf install -y epel-release
 
 # Install packages via the system package-manager (dnf)
 dnf install -y \
  CUnit-devel \
  autoconf \
  bash \
- clang-tools-extra \
  diffutils \
  findutils \
  gcc \
@@ -23,6 +25,8 @@ dnf install -y \
  libaio-devel \
  libarchive-devel \
  libtool \
+ liburing \
+ liburing-devel \
  libuuid-devel \
  make \
  meson \
@@ -31,6 +35,7 @@ dnf install -y \
  numactl-devel \
  openssl-devel \
  patch \
+ pipx \
  pkgconfig \
  procps \
  python3-devel \
@@ -39,11 +44,6 @@ dnf install -y \
  unzip \
  wget \
  zlib-devel
-
-# Install packages via the Python package-manager (pip)
-python3 -m pip install --upgrade pip
-python3 -m pip install \
- pipx
 
 #
 # Clone, build and install libisal
@@ -58,22 +58,6 @@ pushd toolbox/third-party/libisal/repository
 git checkout v2.30.0
 ./autogen.sh
 ./configure --prefix=/usr --libdir=/usr/lib64
-make
-make install
-popd
-
-# Clone, build and install liburing v2.2
-#
-# Assumptions:
-#
-# - Dependencies for building liburing are met (system packages etc.)
-# - Commands are executed with sufficient privileges (sudo/root)
-#
-git clone https://github.com/axboe/liburing.git toolbox/third-party/liburing/repository
-
-pushd toolbox/third-party/liburing/repository
-git checkout liburing-2.2
-./configure --libdir=/usr/lib64 --libdevdir=/usr/lib64
 make
 make install
 popd

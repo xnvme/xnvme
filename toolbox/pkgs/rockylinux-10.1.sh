@@ -6,11 +6,11 @@ ld -v || true
 ldd --version || true
 
 # Enable CRB repo for development packages
-dnf install -y dnf-plugins-core
-dnf config-manager --set-enabled ol9_codeready_builder
+dnf install -y 'dnf-command(config-manager)'
+dnf config-manager --set-enabled crb
 
-# Enable EPEL for additional packages (e.g. pipx)
-dnf install -y oracle-epel-release-el9
+# Enable EPEL for additional packages
+dnf install -y epel-release
 
 # Install packages via the system package-manager (dnf)
 dnf install -y \
