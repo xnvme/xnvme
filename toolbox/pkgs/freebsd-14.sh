@@ -13,12 +13,12 @@ pkg install -qy \
  cunit \
  devel/py-pipx \
  devel/py-pyelftools \
- e2fsprogs-libuuid \
  findutils \
  git \
  gmake \
  isa-l \
  libtool \
+ libuuid \
  meson \
  nasm \
  ncurses \

@@ -206,7 +206,7 @@ deps:
       dnf: [libuuid-devel]
       emerge: [sys-libs/libuuid]
       pacman: [util-linux-libs]
-      pkg: [e2fsprogs-libuuid]
+      pkg: [libuuid]
       yum: [libuuid-devel]
       zypper: [libuuid-devel]
 
