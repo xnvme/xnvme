@@ -5,6 +5,9 @@ ld -v || true
 # Query the (g)libc version
 ldd --version || true
 
+# Upgrade existing packages to avoid library version mismatches
+pkg upgrade -qy
+
 # Install packages via the system package-manager (pkg)
 pkg install -qy \
  autoconf \
