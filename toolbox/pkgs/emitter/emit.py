@@ -9,6 +9,7 @@ Refactor:
 * "sys" to "pkg"
 """
 import copy
+import os
 from pathlib import Path
 from pprint import pprint
 
@@ -157,6 +158,8 @@ def emit_scripts(templates):
 
         with script_filename.resolve().open("w") as script:
             script.write(lines)
+        if suffix == ".sh":
+            os.chmod(script_filename, 0o755)
 
 
 def main():
