@@ -29,7 +29,9 @@ apt-get -qy install \
  libnuma-dev \
  libssl-dev \
  libtool \
+ liburing-dev \
  make \
+ meson \
  nasm \
  openssl \
  patch \
@@ -40,28 +42,6 @@ apt-get -qy install \
  python3-pyelftools \
  python3-venv \
  uuid-dev
-
-# Install packages via the Python package-manager (pip)
-python3 -m pip install --upgrade pip
-python3 -m pip install \
- meson \
- ninja
-
-# Clone, build and install liburing v2.2
-#
-# Assumptions:
-#
-# - Dependencies for building liburing are met (system packages etc.)
-# - Commands are executed with sufficient privileges (sudo/root)
-#
-git clone https://github.com/axboe/liburing.git toolbox/third-party/liburing/repository
-
-pushd toolbox/third-party/liburing/repository
-git checkout liburing-2.2
-./configure
-make
-make install
-popd
 
 #
 # Clone, build and install libvfn

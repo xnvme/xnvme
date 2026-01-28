@@ -239,19 +239,17 @@ jobs:
         - {os: 'archlinux', dh: 'archlinux', ver: 'latest'}
         - {os: 'centos', dh: 'tgagor/centos', ver: 'stream9'}
         - {os: 'debian', dh: 'debian', ver: 'bookworm'}
-        - {os: 'debian', dh: 'debian', ver: 'bullseye'}
+        - {os: 'debian', dh: 'debian', ver: 'forky'}
         - {os: 'debian', dh: 'debian', ver: 'trixie'}
-        - {os: 'fedora', dh: 'fedora', ver: '39'}
-        - {os: 'fedora', dh: 'fedora', ver: '40'}
-        # Skipping fedora-41 due to broken libffi
-        #- {os: 'fedora', dh: 'fedora', ver: '41'}
+        - {os: 'fedora', dh: 'fedora', ver: '42'}
+        - {os: 'fedora', dh: 'fedora', ver: '43'}
         - {os: 'gentoo', dh: 'gentoo/stage3', ver: 'latest'}
         - {os: 'opensuse-tumbleweed', dh: 'opensuse/tumbleweed', ver: 'latest'}
         - {os: 'oraclelinux', dh: 'oraclelinux', ver: '9'}
         - {os: 'rockylinux', dh: 'rockylinux', ver: '9.2'}
-        - {os: 'ubuntu', dh: 'ubuntu', ver: 'focal'}
         - {os: 'ubuntu', dh: 'ubuntu', ver: 'jammy'}
-        - {os: 'ubuntu', dh: 'ubuntu', ver: 'oracular'}
+        - {os: 'ubuntu', dh: 'ubuntu', ver: 'noble'}
+        - {os: 'ubuntu', dh: 'ubuntu', ver: 'questing'}
 
     container:
       image: ghcr.io/xnvme/xnvme-deps-${{ matrix.container.os }}-${{ matrix.container.ver }}:next
@@ -676,8 +674,8 @@ jobs:
       fail-fast: false
       matrix:
         guest:
-        - {os: 'freebsd', ver: '13'}
         - {os: 'freebsd', ver: '14'}
+        #- {os: 'freebsd', ver: '15'}
         - {os: 'debian', ver: 'bullseye'}
 
     container:
