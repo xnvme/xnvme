@@ -175,8 +175,8 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-Debian Testing (trixie)
-~~~~~~~~~~~~~~~~~~~~~~~
+Debian Stable (trixie)
+~~~~~~~~~~~~~~~~~~~~~~
 
 Install the required toolchain and libraries by running the package installation
 script  provided with the **xNVMe** repository, as shown below. Ensure that you
@@ -206,8 +206,8 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-Debian Stable (bookworm)
-~~~~~~~~~~~~~~~~~~~~~~~~
+Debian Oldstable (bookworm)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Install the required toolchain and libraries by running the package installation
 script  provided with the **xNVMe** repository, as shown below. Ensure that you
@@ -237,8 +237,8 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-Debian Oldstable (bullseye)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Debian Oldoldstable (bullseye)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Install the required toolchain and libraries by running the package installation
 script  provided with the **xNVMe** repository, as shown below. Ensure that you
@@ -268,8 +268,8 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-Fedora (41)
-~~~~~~~~~~~
+Debian Testing (forky)
+~~~~~~~~~~~~~~~~~~~~~~
 
 Install the required toolchain and libraries by running the package installation
 script  provided with the **xNVMe** repository, as shown below. Ensure that you
@@ -278,17 +278,17 @@ have sufficient system privileges when doing so (e.g., run as ``root`` or with
 
 .. code-block:: bash
 
-  sudo ./xnvme/toolbox/pkgs/fedora-41.sh
+  sudo ./xnvme/toolbox/pkgs/debian-forky.sh
 
 Or, run the commands contained within the script manually:
 
-.. literalinclude:: ../../../toolbox/pkgs/fedora-41.sh
+.. literalinclude:: ../../../toolbox/pkgs/debian-forky.sh
    :language: bash
    :lines: 8-
 
 .. note::
    A Docker-image is provided via ``ghcr.io``, specifically
-   ``ghcr.io/xnvme/xnvme-deps-fedora-41:next``. This Docker-image contains
+   ``ghcr.io/xnvme/xnvme-deps-debian-forky:next``. This Docker-image contains
    all the software described above.
 
 Then go ahead and configure, build and install using ``meson``:
@@ -299,7 +299,7 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-Fedora (40)
+Fedora (43)
 ~~~~~~~~~~~
 
 Install the required toolchain and libraries by running the package installation
@@ -309,17 +309,17 @@ have sufficient system privileges when doing so (e.g., run as ``root`` or with
 
 .. code-block:: bash
 
-  sudo ./xnvme/toolbox/pkgs/fedora-40.sh
+  sudo ./xnvme/toolbox/pkgs/fedora-43.sh
 
 Or, run the commands contained within the script manually:
 
-.. literalinclude:: ../../../toolbox/pkgs/fedora-40.sh
+.. literalinclude:: ../../../toolbox/pkgs/fedora-43.sh
    :language: bash
    :lines: 8-
 
 .. note::
    A Docker-image is provided via ``ghcr.io``, specifically
-   ``ghcr.io/xnvme/xnvme-deps-fedora-40:next``. This Docker-image contains
+   ``ghcr.io/xnvme/xnvme-deps-fedora-43:next``. This Docker-image contains
    all the software described above.
 
 Then go ahead and configure, build and install using ``meson``:
@@ -330,7 +330,7 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-Fedora (39)
+Fedora (42)
 ~~~~~~~~~~~
 
 Install the required toolchain and libraries by running the package installation
@@ -340,17 +340,17 @@ have sufficient system privileges when doing so (e.g., run as ``root`` or with
 
 .. code-block:: bash
 
-  sudo ./xnvme/toolbox/pkgs/fedora-39.sh
+  sudo ./xnvme/toolbox/pkgs/fedora-42.sh
 
 Or, run the commands contained within the script manually:
 
-.. literalinclude:: ../../../toolbox/pkgs/fedora-39.sh
+.. literalinclude:: ../../../toolbox/pkgs/fedora-42.sh
    :language: bash
    :lines: 8-
 
 .. note::
    A Docker-image is provided via ``ghcr.io``, specifically
-   ``ghcr.io/xnvme/xnvme-deps-fedora-39:next``. This Docker-image contains
+   ``ghcr.io/xnvme/xnvme-deps-fedora-42:next``. This Docker-image contains
    all the software described above.
 
 Then go ahead and configure, build and install using ``meson``:
@@ -361,8 +361,8 @@ Then go ahead and configure, build and install using ``meson``:
 
 
 
-Ubuntu Latest (lunar)
-~~~~~~~~~~~~~~~~~~~~~
+Ubuntu Latest (questing)
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 Install the required toolchain and libraries by running the package installation
 script  provided with the **xNVMe** repository, as shown below. Ensure that you
@@ -371,17 +371,17 @@ have sufficient system privileges when doing so (e.g., run as ``root`` or with
 
 .. code-block:: bash
 
-  sudo ./xnvme/toolbox/pkgs/ubuntu-lunar.sh
+  sudo ./xnvme/toolbox/pkgs/ubuntu-questing.sh
 
 Or, run the commands contained within the script manually:
 
-.. literalinclude:: ../../../toolbox/pkgs/ubuntu-lunar.sh
+.. literalinclude:: ../../../toolbox/pkgs/ubuntu-questing.sh
    :language: bash
    :lines: 8-
 
 .. note::
    A Docker-image is provided via ``ghcr.io``, specifically
-   ``ghcr.io/xnvme/xnvme-deps-ubuntu-lunar:next``. This Docker-image contains
+   ``ghcr.io/xnvme/xnvme-deps-ubuntu-questing:next``. This Docker-image contains
    all the software described above.
 
 Then go ahead and configure, build and install using ``meson``:
@@ -395,8 +395,42 @@ Then go ahead and configure, build and install using ``meson``:
    All tools and libraries are available via system package-manager.
 
 
-Ubuntu LTS (jammy)
+Ubuntu LTS (noble)
 ~~~~~~~~~~~~~~~~~~
+
+Install the required toolchain and libraries by running the package installation
+script  provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as ``root`` or with
+``sudo``):
+
+.. code-block:: bash
+
+  sudo ./xnvme/toolbox/pkgs/ubuntu-noble.sh
+
+Or, run the commands contained within the script manually:
+
+.. literalinclude:: ../../../toolbox/pkgs/ubuntu-noble.sh
+   :language: bash
+   :lines: 8-
+
+.. note::
+   A Docker-image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme-deps-ubuntu-noble:next``. This Docker-image contains
+   all the software described above.
+
+Then go ahead and configure, build and install using ``meson``:
+
+.. literalinclude:: ../../../toolbox/pkgs/default-build.sh
+   :language: bash
+   :lines: 2-
+
+
+.. note::
+   All tools and libraries are available via system package-manager.
+
+
+Ubuntu LTS (Old) (jammy)
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 Install the required toolchain and libraries by running the package installation
 script  provided with the **xNVMe** repository, as shown below. Ensure that you
@@ -416,40 +450,6 @@ Or, run the commands contained within the script manually:
 .. note::
    A Docker-image is provided via ``ghcr.io``, specifically
    ``ghcr.io/xnvme/xnvme-deps-ubuntu-jammy:next``. This Docker-image contains
-   all the software described above.
-
-Then go ahead and configure, build and install using ``meson``:
-
-.. literalinclude:: ../../../toolbox/pkgs/default-build.sh
-   :language: bash
-   :lines: 2-
-
-
-.. note::
-   Installing liburing from source and meson + ninja via pip
-
-
-Ubuntu LTS (focal)
-~~~~~~~~~~~~~~~~~~
-
-Install the required toolchain and libraries by running the package installation
-script  provided with the **xNVMe** repository, as shown below. Ensure that you
-have sufficient system privileges when doing so (e.g., run as ``root`` or with
-``sudo``):
-
-.. code-block:: bash
-
-  sudo ./xnvme/toolbox/pkgs/ubuntu-focal.sh
-
-Or, run the commands contained within the script manually:
-
-.. literalinclude:: ../../../toolbox/pkgs/ubuntu-focal.sh
-   :language: bash
-   :lines: 8-
-
-.. note::
-   A Docker-image is provided via ``ghcr.io``, specifically
-   ``ghcr.io/xnvme/xnvme-deps-ubuntu-focal:next``. This Docker-image contains
    all the software described above.
 
 Then go ahead and configure, build and install using ``meson``:

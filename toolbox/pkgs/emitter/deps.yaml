@@ -59,6 +59,7 @@ deps:
     when: [building]
     names:
       default: [patch] # dnf, yum, zypper
+      emerge: [sys-devel/patch]
 
   pkg-config:
     notes: Find libraries which xNVMe depends upon and provide a simple means for other projects to find xNVMe
@@ -376,7 +377,7 @@ platforms:
   aux:
   - [sys, [autoconf, diffutils, gcc, gcc-c++, libtool, procps, unzip, wget, zlib-devel]]
 
-- alias: Debian Testing
+- alias: Debian Stable
   notes: ''
   name: debian
   ver: [trixie]
@@ -388,7 +389,7 @@ platforms:
   - [sys, [autoconf, build-essential, libtool]]
 
 
-- alias: Debian Stable
+- alias: Debian Oldstable
   notes: ''
   name: debian
   ver: [bookworm]
@@ -399,8 +400,7 @@ platforms:
   aux:
   - [sys, [autoconf, build-essential, libtool]]
 
-
-- alias: Debian Oldstable
+- alias: Debian Oldoldstable
   notes: ''
   name: debian
   ver: [bullseye]
@@ -413,10 +413,21 @@ platforms:
   aux:
   - [sys, [autoconf, build-essential, libtool]]
 
+- alias: Debian Testing
+  notes: ''
+  name: debian
+  ver: [forky]
+  os: linux
+  mng: apt
+  drop: []
+  alt: []
+  aux:
+  - [sys, [autoconf, build-essential, libtool]]
+
 - alias: Fedora
   notes: ''
   name: fedora
-  ver: [41, 40, 39]
+  ver: [43, 42]
   os: linux
   mng: dnf
   drop: []
@@ -428,7 +439,7 @@ platforms:
   notes: All tools and libraries are available via system package-manager.
   os: linux
   name: ubuntu
-  ver: [oracular]
+  ver: [questing]
   mng: apt
   drop: []
   alt: []
@@ -436,9 +447,20 @@ platforms:
   - [sys, [autoconf, build-essential, libtool]]
 
 - alias: Ubuntu LTS
+  notes: All tools and libraries are available via system package-manager.
+  name: ubuntu
+  ver: [noble]
+  os: linux
+  mng: apt
+  drop: []
+  alt: []
+  aux:
+  - [sys, [autoconf, build-essential, libtool]]
+
+- alias: Ubuntu LTS (Old)
   notes: Installing liburing from source and meson + ninja via pip
   name: ubuntu
-  ver: [jammy, focal]
+  ver: [jammy]
   os: linux
   mng: apt
   drop: []
@@ -483,7 +505,7 @@ platforms:
 - alias: FreeBSD
   notes: Interfaces; libaio, liburing, and libvfn are not supported on FreeBSD.
   name: freebsd
-  ver: [13, 14]
+  ver: [14, 15]
   os: freebsd
   mng: pkg
   drop: [clang-format]
@@ -494,7 +516,7 @@ platforms:
 - alias: macOS
   notes: Interfaces; libaio, liburing, libvfn, and SPDK are not supported on macOS.
   name: macos
-  ver: [15, 14, 13]
+  ver: [15, 14]
   os: macos
   mng: brew
   drop: []

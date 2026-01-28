@@ -25,7 +25,7 @@ emerge \
  dev-vcs/git \
  findutils \
  make \
- patch \
+ sys-devel/patch \
  sys-libs/liburing \
  sys-libs/ncurses \
  sys-process/numactl
