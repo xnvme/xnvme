@@ -1,0 +1,57 @@
+(sec-api-c-{{ ns }})=
+# lib{{ ns }}.h
+
+{% if show_enums %}
+(sec-api-c-{{ ns }}-enum)=
+## Enums
+
+{% for symb in api.enum %}
+(sec-api-c-{{ ns }}-enum-{{ symb }})=
+### {{ symb }}
+
+```{doxygenenum} {{ symb }}
+```
+
+{% endfor %}
+{% endif %}
+
+(sec-api-c-{{ ns }}-struct)=
+{% if show_structs %}
+## Structs
+
+{% for symb in api.struct %}
+(sec-api-c-{{ ns }}-struct-{{ symb }})=
+### {{ symb }}
+
+```{doxygenstruct} {{ symb }}
+:members:
+:undoc-members:
+```
+
+{% endfor %}
+{% endif %}
+
+{% if show_funcs %}
+(sec-api-c-{{ ns }}-func)=
+## Functions
+
+{% for symb in api.func %}
+(sec-api-c-{{ ns }}-func-{{ symb }})=
+### {{ symb }}
+
+```{doxygenfunction} {{ symb }}
+```
+
+{% endfor %}
+{% endif %}
+
+{% if show_header %}
+
+(sec-api-c-{{ ns }}-header)=
+## Header
+
+```{literalinclude} ../../../../include/lib{{ ns }}.h
+:language: c
+```
+
+{% endif %}
