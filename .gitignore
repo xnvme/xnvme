@@ -24,12 +24,8 @@ scripts/source-format.log*
 /*.patch
 build
 builddir
-docs/build
-docs/autogen/enumerate_example
-docs/autogen/html
-docs/capis/xnvme*
-docs/capis/core/xnvme*
-docs/capis/extended/xnvme*
+docs/builddir
+docs/api/c/*/xnvme_*.md
 docs/tutorial/dynamic_loading/enumerate_example
 compile_commands.json
 cscope.out

@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
 #
-# xNVMe documentation build configuration file, created by sphinx-quickstart
-import os
+# xNVMe documentation build configuration file
+import sys
+from pathlib import Path
 
-from xnvme_ver import xnvme_ver
+# Add toolbox to Python path so we can import xnvme_ver
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root / "toolbox"))
+
+from xnvme_ver import xnvme_ver  # noqa: E402
 
 extensions = [
     "sphinx.ext.extlinks",
@@ -13,17 +18,32 @@ extensions = [
     "sphinx_tabs.tabs",
     "sphinxcontrib.jquery",
     "breathe",
+    "myst_parser",
 ]
 
-exclude_patterns = ["autogen"]
+exclude_patterns = ["autogen", "tooling", "builddir"]
 
-source_suffix = ".rst"
+# Support both RST and Markdown (MyST)
+source_suffix = {
+    ".rst": "restructuredtext",
+    ".md": "markdown",
+}
+
 master_doc = "index"
 project = "xNVMe"
 copyright = "2024, xNVMe"
 
-version = "v" + xnvme_ver(os.path.join("..", "..", "meson.build"))
+version = "v" + xnvme_ver(str(project_root / "meson.build"))
 release = version
+
+# MyST configuration
+myst_enable_extensions = [
+    "colon_fence",
+    "deflist",
+    "fieldlist",
+    "substitution",
+]
+myst_heading_anchors = 3
 
 extlinks = {
     "xref-pkg-config-site": (
@@ -83,18 +103,17 @@ extlinks = {
 pygments_style = "sphinx"
 
 html_css_files = ["theme_overrides.css"]
-html_static_path = [os.path.join("..", "_static")]
+html_static_path = ["_static"]
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = "xnvmedoc"
 
-breathe_projects = {project: os.path.join("builddir", "doxy", "xml")}
+# Breathe configuration for Doxygen integration
+breathe_projects = {project: str(Path(__file__).parent / "builddir" / "doxy" / "xml")}
 breathe_default_project = project
 breathe_domain_by_extension = {"h": "c"}
 
-html_logo = "../_static/xnvme.svg"
-
-html_theme_options = {"analytics_id": "UA-159785887-1"}
+html_logo = "_static/xnvme.svg"
 
 html_theme = "pydata_sphinx_theme"
 
