@@ -1155,17 +1155,6 @@ jobs:
         cp -r ${{ steps.source.outputs.directory }} /tmp/artifacts
         find /tmp/artifacts -name "*.tar.gz"
 
-    - name: Install python-venv on Bullseye
-      run: |
-        apt-get install -qy python3-venv
-
-    - name: pipx, Install
-      run: |
-        python3 -m pip uninstall pytest cijoe -y
-        python3 -m pip list
-        python3 -m pip install pipx
-        python3 -m pipx ensurepath
-
     - name: CIJOE, setup pipx environment
       run: |
         make cijoe
@@ -1221,7 +1210,8 @@ jobs:
     - name: Update site repository
       if: ((github.event_name == 'push') || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen')))
       run: |
-        ./docs/autogen/dest.py --docs html --site site --ref "${{ github.ref }}"
+        pipx install docs/tooling
+        xnvme-docs-dest --docs html --site site --ref "${{ github.ref }}"
 
     - name: Push site-changes
       if: ((github.event_name == 'push') || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen')))

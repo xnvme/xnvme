@@ -1,5 +1,5 @@
 # Build, link and make the example executable
-gcc ../getting_started/hello.c  $(pkg-config --libs xnvme) -o hello
+gcc ../examples/xnvme_hello.c  $(pkg-config --libs xnvme) -o hello
 chmod +x hello
 
 # Run it
