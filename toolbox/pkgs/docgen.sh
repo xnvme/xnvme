@@ -14,8 +14,10 @@ apt-get -qy autoclean
 apt-get -qy install \
         bash \
         doxygen \
-        universal-ctags \
         git \
         graphviz \
+        pipx \
         pkg-config \
         python3 \
+        python3-pip \
+        universal-ctags
