@@ -85,12 +85,8 @@ def main(args, cijoe):
 
     # Commands to run locally (docs tooling)
     local_commands = [
-        "pipx install docs/tooling",
-        "make tags-xnvme-public",
-        "mkdir -p docs/builddir/doxy",
-        "cd docs/tooling && doxygen doxy.cfg",
-        "xnvme-docs-apigen --tags tags --output docs/api",
-        "xnvme-docs-build-html",
+        "pipx install --force docs/tooling",
+        "make docs",
         "cd docs/builddir/ && tar -czf docs.tar.gz html/.",
     ]
 
