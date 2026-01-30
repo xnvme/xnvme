@@ -127,12 +127,17 @@ docker:
 	@echo "## xNVME: docker [DONE]"
 
 define docs-help
-# Build docs (without command-execution) and open them
+# Build docs using the new tooling (ctags, doxygen, apigen, toolchain, sphinx)
 endef
 .PHONY: docs
-docs:
+docs: tags-xnvme-public
 	@echo "## xNVMe: make docs"
-	cd docs/autogen && make
+	xnvme-docs-clean
+	mkdir -p docs/builddir/doxy
+	cd docs/tooling && doxygen doxy.cfg
+	xnvme-docs-apigen --tags tags --output docs/api
+	xnvme-docs-toolchain
+	xnvme-docs-build-html
 	@echo "## xNVMe: make docs [DONE]"
 
 define docker-privileged-help
