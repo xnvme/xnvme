@@ -20,15 +20,15 @@ doc: |
 
   This script assumes that the bootimg config has the basic ci image, it can be retrieve
 
-  * wget https://download.freebsd.org/releases/CI-IMAGES/14.1-RELEASE/amd64/Latest/FreeBSD-14.1-RELEASE-amd64-BASIC-CI.raw.xz
-  * xz --decompress FreeBSD-14.1-RELEASE-amd64-BASIC-CI.raw.xz
-  * qemu-img convert FreeBSD-14.1-RELEASE-amd64-BASIC-CI.raw FreeBSD-14.1-RELEASE-amd64-BASIC-CI.qcow2 -O qcow2
+  * wget https://download.freebsd.org/releases/CI-IMAGES/14.3-RELEASE/amd64/Latest/FreeBSD-14.3-RELEASE-amd64-BASIC-CI.raw.xz
+  * xz --decompress FreeBSD-14.3-RELEASE-amd64-BASIC-CI.raw.xz
+  * qemu-img convert FreeBSD-14.3-RELEASE-amd64-BASIC-CI.raw FreeBSD-14.3-RELEASE-amd64-BASIC-CI.qcow2 -O qcow2
 
   After creating, then
 
   * Shut down the guest
   * Convert the image (with compression)
-    - qemu-img convert boot.img /tmp/freebsd-14.1-ksrc-amd64.qcow2 -O qcow2 -c
+    - qemu-img convert boot.img /tmp/freebsd-14.3-ksrc-amd64.qcow2 -O qcow2 -c
   * Upload it to DigitalOcean
 
 steps:
@@ -77,7 +77,7 @@ steps:
 
 - name: kernel_source
   run: |
-    fetch https://download.freebsd.org/releases/amd64/14.1-RELEASE/src.txz
+    fetch https://download.freebsd.org/releases/amd64/14.3-RELEASE/src.txz
     tar xzfp src.txz -C /
     rm src.txz || true
     pkg clean -ay
