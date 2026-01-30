@@ -150,7 +150,7 @@ endef
 .PHONY: cijoe
 cijoe:
 	@echo "## xNVMe: cijoe"
-	@pipx install cijoe==v0.9.52 --include-deps --force
+	@pipx install cijoe==v0.9.58 --include-deps --force
 	@pipx inject cijoe matplotlib
 	@pipx inject cijoe numpy
 	@pipx install rst2pdf
