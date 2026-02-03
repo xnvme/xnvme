@@ -14,7 +14,7 @@ xnvme_dev:
   xnvme_opts:
     be: 'macos'
     mem: 'posix'
-    dev: 'FIX-ID-VS-MIXIN-NAME'
+    dev: 'macos'
     admin: 'nvme'
     sync: 'psync'
     async: 'emu'

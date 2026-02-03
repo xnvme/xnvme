@@ -5,7 +5,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 #include <errno.h>
 #include <xnvme_be_macos_driverkit.h>
 #include <mach/mach_error.h>
@@ -201,7 +201,7 @@ xnvme_be_macos_driverkit_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, siz
 #endif
 
 struct xnvme_be_async g_xnvme_be_macos_driverkit_async = {
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 	.cmd_io = xnvme_be_macos_driverkit_async_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
 	.poke = xnvme_be_macos_driverkit_queue_poke,

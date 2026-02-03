@@ -14,7 +14,7 @@ xnvme_dev:
   xnvme_opts:
     be: 'fbsd'
     mem: 'posix'
-    dev: 'FIX-ID-VS-MIXIN-NAME'
+    dev: 'freebsd'
     admin: 'nvme'
     sync: 'nvme'
     async: 'emu'

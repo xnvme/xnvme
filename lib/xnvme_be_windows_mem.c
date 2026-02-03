@@ -7,7 +7,7 @@
 #endif
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_WINDOWS_ENABLED
+#ifdef XNVME_PLATFORM_WINDOWS_ENABLED
 #include <errno.h>
 #include <windows.h>
 #include <xnvme_dev.h>
@@ -90,7 +90,7 @@ xnvme_be_windows_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *XN
 
 struct xnvme_be_mem g_xnvme_be_windows_mem = {
 	.id = "windows",
-#ifdef XNVME_BE_WINDOWS_ENABLED
+#ifdef XNVME_PLATFORM_WINDOWS_ENABLED
 	.buf_alloc = xnvme_be_windows_buf_alloc,
 	.buf_realloc = xnvme_be_windows_buf_realloc,
 	.buf_free = xnvme_be_windows_buf_free,

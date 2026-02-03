@@ -4,7 +4,7 @@
 
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 #include <IOKit/storage/nvme/NVMeSMARTLibExternal.h>
 
 #include <xnvme_be_cbi.h>
@@ -75,12 +75,12 @@ struct xnvme_be xnvme_be_macos = {
 	.sync = XNVME_BE_NOSYS_SYNC,
 	.attr =
 		{
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 			.enabled = 1,
 #endif
 			.name = "macos",
 		},
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 	.nobjs = sizeof g_xnvme_be_mixin_macos / sizeof *g_xnvme_be_mixin_macos,
 	.objs = g_xnvme_be_mixin_macos,
 #endif

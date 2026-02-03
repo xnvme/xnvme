@@ -5,7 +5,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 #include <mach/mach_error.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <IOKit/storage/nvme/NVMeSMARTLibExternal.h>
@@ -79,7 +79,7 @@ xnvme_be_macos_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 
 struct xnvme_be_admin g_xnvme_be_macos_admin = {
 	.id = "nvme",
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 	.cmd_admin = xnvme_be_macos_admin,
 	.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo,
 #else

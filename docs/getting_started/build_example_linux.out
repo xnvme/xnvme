@@ -14,7 +14,7 @@ xnvme_dev:
   xnvme_opts:
     be: 'linux'
     mem: 'posix'
-    dev: 'FIX-ID-VS-MIXIN-NAME'
+    dev: 'linux'
     admin: 'nvme'
     sync: 'nvme'
     async: 'emu'

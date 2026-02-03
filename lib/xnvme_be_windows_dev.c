@@ -8,7 +8,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_WINDOWS_ENABLED
+#ifdef XNVME_PLATFORM_WINDOWS_ENABLED
 #include <tchar.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -354,7 +354,7 @@ xnvme_be_windows_enumerate(const char *sys_uri, struct xnvme_opts *opts,
 #endif
 
 struct xnvme_be_dev g_xnvme_be_dev_windows = {
-#ifdef XNVME_BE_WINDOWS_ENABLED
+#ifdef XNVME_PLATFORM_WINDOWS_ENABLED
 	.enumerate = xnvme_be_windows_enumerate,
 	.dev_open = xnvme_be_windows_dev_open,
 	.dev_close = xnvme_be_windows_dev_close,

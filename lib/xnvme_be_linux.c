@@ -8,7 +8,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_LINUX_ENABLED
+#ifdef XNVME_PLATFORM_LINUX_ENABLED
 #include <errno.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -196,13 +196,13 @@ struct xnvme_be xnvme_be_linux = {
 	.dev = XNVME_BE_NOSYS_DEV,
 	.attr =
 		{
-#ifdef XNVME_BE_LINUX_ENABLED
+#ifdef XNVME_PLATFORM_LINUX_ENABLED
 			.enabled = 1,
 #endif
 			.name = "linux",
 		},
 	.state = {0},
-#ifdef XNVME_BE_LINUX_ENABLED
+#ifdef XNVME_PLATFORM_LINUX_ENABLED
 	.nobjs = sizeof g_xnvme_be_mixin_linux / sizeof *g_xnvme_be_mixin_linux,
 	.objs = g_xnvme_be_mixin_linux,
 #endif

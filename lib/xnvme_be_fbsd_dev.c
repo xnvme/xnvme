@@ -4,7 +4,7 @@
 
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_FBSD_ENABLED
+#ifdef XNVME_PLATFORM_FREEBSD_ENABLED
 #include <errno.h>
 #include <fcntl.h>
 #include <dirent.h>
@@ -197,7 +197,7 @@ xnvme_be_fbsd_dev_open(struct xnvme_dev *dev)
 #endif
 
 struct xnvme_be_dev g_xnvme_be_fbsd_dev = {
-#ifdef XNVME_BE_FBSD_ENABLED
+#ifdef XNVME_PLATFORM_FREEBSD_ENABLED
 	.enumerate = xnvme_be_fbsd_enumerate,
 	.dev_open = xnvme_be_fbsd_dev_open,
 	.dev_close = xnvme_be_fbsd_dev_close,

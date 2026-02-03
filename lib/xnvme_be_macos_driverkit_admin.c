@@ -5,7 +5,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 #include <xnvme_be_macos_driverkit.h>
 #include <mach/mach_error.h>
 #include <errno.h>
@@ -60,7 +60,7 @@ xnvme_be_macos_driverkit_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 #endif
 
 struct xnvme_be_admin g_xnvme_be_macos_driverkit_admin = {
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 	.cmd_admin = xnvme_be_macos_driverkit_admin,
 #else
 	.cmd_admin = xnvme_be_nosys_sync_cmd_admin,

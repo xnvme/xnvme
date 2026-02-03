@@ -13,7 +13,7 @@ xnvme_dev:
   xnvme_opts:
     be: 'windows'
     mem: 'windows'
-    dev: 'FIX-ID-VS-MIXIN-NAME'
+    dev: 'windows'
     admin: 'nvme'
     sync: 'nvme'
     async: 'iocp'

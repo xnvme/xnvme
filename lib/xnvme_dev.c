@@ -5,11 +5,12 @@
 #include <errno.h>
 #include <libxnvme.h>
 #include <xnvme_be.h>
+#include <xnvme_platform.h>
 #include <xnvme_cmd.h>
 #include <xnvme_dev.h>
 #include <xnvme_geo.h>
 
-#ifdef XNVME_BE_LINUX_ENABLED
+#ifdef XNVME_PLATFORM_LINUX_ENABLED
 /**
  * Read a queue attribute from sysfs for the NVMe namespace associated with the given device
  *
@@ -473,7 +474,7 @@ xnvme_dev_derive_geo(struct xnvme_dev *dev)
 
 	// TODO: add zamdts
 
-#ifdef XNVME_BE_LINUX_ENABLED
+#ifdef XNVME_PLATFORM_LINUX_ENABLED
 	/** Cap MDTS to kernel queue max_segments for Linux NVMe ioctl passthrough **/
 	if ((!strncmp(dev->be.attr.name, "linux", 5)) && (!strncmp(dev->be.sync.id, "nvme", 4))) {
 		uint32_t max_seg = 32;
@@ -681,7 +682,7 @@ xnvme_dev_open(const char *dev_uri, struct xnvme_opts *opts)
 		return NULL;
 	}
 
-	err = xnvme_be_factory(dev, opts);
+	err = g_xnvme_platform->dev_open(dev, opts);
 	if (err) {
 		XNVME_DEBUG("FAILED: failed opening uri: %s", dev_uri);
 		errno = -err;

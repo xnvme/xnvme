@@ -5,7 +5,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 #include <mach/mach_error.h>
 #include <IOKit/IOTypes.h>
 #include <IOKit/storage/nvme/NVMeSMARTLibExternal.h>
@@ -268,7 +268,7 @@ xnvme_be_macos_dev_open(struct xnvme_dev *dev)
 #endif
 
 struct xnvme_be_dev g_xnvme_be_macos_dev = {
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 	.enumerate = xnvme_be_macos_enumerate,
 	.dev_open = xnvme_be_macos_dev_open,
 	.dev_close = xnvme_be_macos_dev_close,

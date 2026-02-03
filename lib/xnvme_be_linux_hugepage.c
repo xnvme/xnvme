@@ -4,7 +4,7 @@
 
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_LINUX_ENABLED
+#ifdef XNVME_PLATFORM_LINUX_ENABLED
 #include <xnvme_dev.h>
 #include <errno.h>
 
@@ -174,7 +174,7 @@ xnvme_be_linux_mem_hugepage_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), 
 
 struct xnvme_be_mem g_xnvme_be_linux_mem_hugepage = {
 	.id = "hugepage",
-#ifdef XNVME_BE_LINUX_ENABLED
+#ifdef XNVME_PLATFORM_LINUX_ENABLED
 	.buf_alloc = xnvme_be_linux_mem_hugepage_buf_alloc,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
 	.buf_free = xnvme_be_linux_mem_hugepage_buf_free,

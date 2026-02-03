@@ -5,7 +5,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 #include <xnvme_be_macos_driverkit.h>
 #include <xnvme_dev.h>
 
@@ -87,7 +87,7 @@ cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf, si
 #endif
 
 struct xnvme_be_sync g_xnvme_be_macos_driverkit_sync = {
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 	.cmd_io = cmd_io,
 	.cmd_iov = xnvme_be_nosys_sync_cmd_iov,
 #else
