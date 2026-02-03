@@ -10,10 +10,10 @@
 #ifdef XNVME_BE_RAMDISK_ENABLED
 #include <xnvme_be_ramdisk.h>
 #include <xnvme_be_cbi.h>
-#ifdef XNVME_BE_LINUX_ENABLED
+#ifdef XNVME_PLATFORM_LINUX_ENABLED
 #include <xnvme_be_linux.h>
 #endif
-#ifdef XNVME_BE_WINDOWS_ENABLED
+#ifdef XNVME_PLATFORM_WINDOWS_ENABLED
 #include <xnvme_be_windows.h>
 #endif
 
@@ -27,7 +27,7 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_ramdisk[] = {
 		.check_support = xnvme_be_supported,
 	},
 #endif
-#ifdef XNVME_BE_LINUX_ENABLED
+#ifdef XNVME_PLATFORM_LINUX_ENABLED
 	{
 		.mtype = XNVME_BE_MEM,
 		.name = "hugepage",
@@ -36,7 +36,7 @@ static struct xnvme_be_mixin g_xnvme_be_mixin_ramdisk[] = {
 		.check_support = xnvme_be_supported,
 	},
 #endif
-#ifdef XNVME_BE_WINDOWS_ENABLED
+#ifdef XNVME_PLATFORM_WINDOWS_ENABLED
 	{
 		.mtype = XNVME_BE_MEM,
 		.name = "windows",

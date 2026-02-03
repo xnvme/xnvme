@@ -8,7 +8,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_WINDOWS_ENABLED
+#ifdef XNVME_PLATFORM_WINDOWS_ENABLED
 #include <xnvme_be_cbi.h>
 #include <windows.h>
 #include <xnvme_be_windows.h>
@@ -220,11 +220,11 @@ struct xnvme_be xnvme_be_windows = {
 	.attr =
 		{
 			.name = "windows",
-#ifdef XNVME_BE_WINDOWS_ENABLED
+#ifdef XNVME_PLATFORM_WINDOWS_ENABLED
 			.enabled = 1,
 #endif
 		},
-#ifdef XNVME_BE_WINDOWS_ENABLED
+#ifdef XNVME_PLATFORM_WINDOWS_ENABLED
 	.nobjs = sizeof g_xnvme_be_mixin_windows / sizeof *g_xnvme_be_mixin_windows,
 	.objs = g_xnvme_be_mixin_windows,
 #endif

@@ -102,11 +102,11 @@ setupapi_dep = cc.find_library(
   has_headers: ['setupapi.h'],
   required: is_windows,
 )
-conf_data.set('XNVME_BE_WINDOWS_ENABLED', setupapi_dep.found())
-conf_data.set('XNVME_BE_WINDOWS_FS_ENABLED', conf_data.get('XNVME_BE_WINDOWS_ENABLED'))
-conf_data.set('XNVME_BE_WINDOWS_ASYNC_ENABLED', conf_data.get('XNVME_BE_WINDOWS_ENABLED'))
+conf_data.set('XNVME_PLATFORM_WINDOWS_ENABLED', setupapi_dep.found())
+conf_data.set('XNVME_BE_WINDOWS_FS_ENABLED', conf_data.get('XNVME_PLATFORM_WINDOWS_ENABLED'))
+conf_data.set('XNVME_BE_WINDOWS_ASYNC_ENABLED', conf_data.get('XNVME_PLATFORM_WINDOWS_ENABLED'))
 
-conf_data.set('XNVME_BE_LINUX_ENABLED', is_linux)
+conf_data.set('XNVME_PLATFORM_LINUX_ENABLED', is_linux)
 conf_data.set('XNVME_BE_LINUX_BLOCK_ENABLED', is_linux ? cc.has_header('linux/blkzoned.h') : false)
 conf_data.set('XNVME_BE_LINUX_BLOCK_ZONED_ENABLED', is_linux ? cc.has_header('linux/blkzoned.h') : false)
 
@@ -160,14 +160,14 @@ iokit_dep = dependency(
   modules: 'IOKit',
   required: is_darwin
 )
-conf_data.set('XNVME_BE_MACOS_ENABLED', corefoundation_dep.found() and iokit_dep.found())
+conf_data.set('XNVME_PLATFORM_MACOS_ENABLED', corefoundation_dep.found() and iokit_dep.found())
 
 rt_dep = cc.find_library('rt', required: is_darwin ? false : (is_linux or is_freebsd))
 if not cc.has_function('clock_gettime', prefix: '#include <time.h>', dependencies: rt_dep)
   error('clock_gettime not found')
 endif
 
-conf_data.set('XNVME_BE_FBSD_ENABLED', is_freebsd)
+conf_data.set('XNVME_PLATFORM_FREEBSD_ENABLED', is_freebsd)
 
 conf_data.set('XNVME_PTHREAD_SETAFFINITY_NP_ENABLED', cc.has_function(
     'pthread_setaffinity_np',

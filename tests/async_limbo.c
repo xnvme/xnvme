@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
 //
 // SPDX-License-Identifier: BSD-3-Clause
-#ifdef XNVME_BE_LINUX_ENABLED
+#ifdef XNVME_PLATFORM_LINUX_ENABLED
 #include <errno.h>
 #include <libxnvme.h>
 #include <signal.h>

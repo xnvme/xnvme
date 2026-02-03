@@ -10,7 +10,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 #include <errno.h>
 #include <unistd.h>
 #include <xnvme_dev.h>
@@ -90,7 +90,7 @@ cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, size_t d
 
 struct xnvme_be_sync g_xnvme_be_macos_sync_psync = {
 	.id = "macos",
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 	.cmd_io = cmd_io,
 	.cmd_iov = cmd_iov,
 #else

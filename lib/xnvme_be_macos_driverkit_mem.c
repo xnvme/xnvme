@@ -5,7 +5,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 #include <xnvme_be_macos_driverkit.h>
 
 #include <mach/mach_error.h>
@@ -93,7 +93,7 @@ xnvme_be_macos_driverkit_buf_free(const struct xnvme_dev *dev, void *buf)
 #endif
 
 struct xnvme_be_mem g_xnvme_be_macos_driverkit_mem = {
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 	.buf_alloc = xnvme_be_macos_driverkit_buf_alloc,
 	.buf_vtophys = xnvme_be_nosys_buf_vtophys,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,

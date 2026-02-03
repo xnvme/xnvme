@@ -9,7 +9,7 @@
 #endif
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_FBSD_ENABLED
+#ifdef XNVME_PLATFORM_FREEBSD_ENABLED
 #include <errno.h>
 #include <unistd.h>
 #include <signal.h>
@@ -314,7 +314,7 @@ xnvme_be_fbsd_kqueue_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size
 
 struct xnvme_be_async g_xnvme_be_fbsd_async = {
 	.id = "kqueue",
-#ifdef XNVME_BE_FBSD_ENABLED
+#ifdef XNVME_PLATFORM_FREEBSD_ENABLED
 	.cmd_io = xnvme_be_fbsd_kqueue_cmd_io,
 	.cmd_iov = xnvme_be_fbsd_kqueue_cmd_iov,
 	.poke = xnvme_be_fbsd_kqueue_poke,

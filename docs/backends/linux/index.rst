@@ -118,7 +118,7 @@ question, you can experiment by using the ``xnvme`` cli-tool. Such as:
       xnvme_opts:
         be: 'linux'
         mem: 'posix'
-        dev: 'FIX-ID-VS-MIXIN-NAME'
+        dev: 'linux'
         admin: 'block'
         sync: 'block'
         async: 'emu'

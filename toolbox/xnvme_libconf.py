@@ -204,7 +204,7 @@ def main(args):
 
     args.guards = {
         "spdk": "XNVME_BE_SPDK_ENABLED",
-        "libnvme": "XNVME_BE_LINUX_ENABLED",
+        "libnvme": "XNVME_PLATFORM_LINUX_ENABLED",
     }
 
     try:

@@ -8,7 +8,7 @@
 #include <libxnvme.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_WINDOWS_ENABLED
+#ifdef XNVME_PLATFORM_WINDOWS_ENABLED
 #include <errno.h>
 #include <windows.h>
 #include <winioctl.h>
@@ -175,7 +175,7 @@ xnvme_be_windows_block_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf,
 
 struct xnvme_be_admin g_xnvme_be_windows_admin_block = {
 	.id = "block",
-#ifdef XNVME_BE_WINDOWS_ENABLED
+#ifdef XNVME_PLATFORM_WINDOWS_ENABLED
 	.cmd_admin = xnvme_be_windows_block_cmd_admin,
 	.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo,
 #else

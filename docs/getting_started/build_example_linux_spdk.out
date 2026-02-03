@@ -19,7 +19,7 @@ xnvme_dev:
   xnvme_opts:
     be: 'spdk'
     mem: 'spdk'
-    dev: 'FIX-ID-VS-MIXIN-NAME'
+    dev: 'linux'
     admin: 'nvme'
     sync: 'nvme'
     async: 'nvme'

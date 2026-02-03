@@ -4,7 +4,7 @@
 
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_FBSD_ENABLED
+#ifdef XNVME_PLATFORM_FREEBSD_ENABLED
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 #include <sys/param.h>
@@ -118,7 +118,7 @@ xnvme_be_fbsd_nvme_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyt
 
 struct xnvme_be_sync g_xnvme_be_fbsd_sync_nvme = {
 	.id = "nvme",
-#ifdef XNVME_BE_FBSD_ENABLED
+#ifdef XNVME_PLATFORM_FREEBSD_ENABLED
 	.cmd_io = xnvme_be_fbsd_nvme_io,
 	.cmd_iov = xnvme_be_nosys_sync_cmd_iov,
 #else
@@ -129,7 +129,7 @@ struct xnvme_be_sync g_xnvme_be_fbsd_sync_nvme = {
 
 struct xnvme_be_admin g_xnvme_be_fbsd_admin_nvme = {
 	.id = "nvme",
-#ifdef XNVME_BE_FBSD_ENABLED
+#ifdef XNVME_PLATFORM_FREEBSD_ENABLED
 	.cmd_admin = xnvme_be_fbsd_nvme_admin,
 	.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo,
 #else

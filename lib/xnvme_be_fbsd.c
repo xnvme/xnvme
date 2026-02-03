@@ -7,7 +7,7 @@
 #endif
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_FBSD_ENABLED
+#ifdef XNVME_PLATFORM_FREEBSD_ENABLED
 #include <xnvme_be_cbi.h>
 #include <xnvme_be_fbsd.h>
 
@@ -98,12 +98,12 @@ struct xnvme_be xnvme_be_fbsd = {
 	.sync = XNVME_BE_NOSYS_SYNC,
 	.attr =
 		{
-#ifdef XNVME_BE_FBSD_ENABLED
+#ifdef XNVME_PLATFORM_FREEBSD_ENABLED
 			.enabled = 1,
 #endif
 			.name = "fbsd",
 		},
-#ifdef XNVME_BE_FBSD_ENABLED
+#ifdef XNVME_PLATFORM_FREEBSD_ENABLED
 	.nobjs = sizeof g_xnvme_be_mixin_fbsd / sizeof *g_xnvme_be_mixin_fbsd,
 	.objs = g_xnvme_be_mixin_fbsd,
 #endif

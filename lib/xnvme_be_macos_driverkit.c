@@ -4,7 +4,7 @@
 
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 
 #include <xnvme_be_cbi.h>
 #include <xnvme_be_macos_driverkit.h>
@@ -67,12 +67,12 @@ struct xnvme_be xnvme_be_macos_driverkit = {
 	.sync = XNVME_BE_NOSYS_SYNC,
 	.attr =
 		{
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 			.enabled = 1,
 #endif
 			.name = "driverkit",
 		},
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 	.nobjs =
 		sizeof g_xnvme_be_mixin_macos_driverkit / sizeof *g_xnvme_be_mixin_macos_driverkit,
 	.objs = g_xnvme_be_mixin_macos_driverkit,

@@ -15,8 +15,8 @@ xnvme_dev:
     attr: {name: 'spdk'}
   xnvme_opts:
     be: 'spdk'
-    mem: 'FIX-ID-VS-MIXIN-NAME'
-    dev: 'FIX-ID-VS-MIXIN-NAME'
+    mem: 'spdk'
+    dev: 'linux'
     admin: 'nvme'
     sync: 'nvme'
     async: 'nvme'

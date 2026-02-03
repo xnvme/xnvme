@@ -11,8 +11,8 @@ xnvme_dev:
     attr: {name: 'linux'}
   xnvme_opts:
     be: 'linux'
-    mem: 'FIX-ID-VS-MIXIN-NAME'
-    dev: 'FIX-ID-VS-MIXIN-NAME'
+    mem: 'posix'
+    dev: 'linux'
     admin: 'nvme'
     sync: 'nvme'
     async: 'emu'

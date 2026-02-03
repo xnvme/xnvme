@@ -2,14 +2,14 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 #include <xnvme_be_macos_driverkit.h>
 #endif
 
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 #include <mach/mach_error.h>
 #include <CoreFoundation/CoreFoundation.h>
 
@@ -223,7 +223,7 @@ xnvme_be_macos_driverkit_dev_open(struct xnvme_dev *dev)
 #endif
 
 struct xnvme_be_dev g_xnvme_be_macos_driverkit_dev = {
-#ifdef XNVME_BE_MACOS_ENABLED
+#ifdef XNVME_PLATFORM_MACOS_ENABLED
 	.enumerate = xnvme_be_macos_driverkit_enumerate,
 	.dev_open = xnvme_be_macos_driverkit_dev_open,
 	.dev_close = xnvme_be_macos_driverkit_dev_close,

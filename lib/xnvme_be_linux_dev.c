@@ -8,7 +8,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_LINUX_ENABLED
+#ifdef XNVME_PLATFORM_LINUX_ENABLED
 #include <errno.h>
 #include <dirent.h>
 #include <paths.h>
@@ -311,7 +311,7 @@ xnvme_be_linux_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enu
 #endif
 
 struct xnvme_be_dev g_xnvme_be_dev_linux = {
-#ifdef XNVME_BE_LINUX_ENABLED
+#ifdef XNVME_PLATFORM_LINUX_ENABLED
 	.enumerate = xnvme_be_linux_enumerate,
 	.dev_open = xnvme_be_linux_dev_open,
 	.dev_close = xnvme_be_linux_dev_close,

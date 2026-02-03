@@ -6,7 +6,7 @@
 #include <libxnvme_libconf.h>
 #include <xnvme_be_linux.h>
 #include <xnvme_be_windows.h>
-#ifdef XNVME_BE_LINUX_ENABLED
+#ifdef XNVME_PLATFORM_LINUX_ENABLED
 #include <linux/nvme_ioctl.h>
 #endif
 #include "xnvme_libconf_entries.c"
@@ -40,12 +40,12 @@ xnvme_libconf_fpr(FILE *stream, const struct xnvme_libconf *libconf, enum xnvme_
 		fprintf(stream, "  - '%s'\n", libconf->entries[i]);
 	}
 
-#ifdef XNVME_BE_WINDOWS_ENABLED
+#ifdef XNVME_PLATFORM_WINDOWS_ENABLED
 	wrtn += fprintf(stream, "  - '3p: ");
 	wrtn += xnvme_be_windows_uapi_ver_fpr(stream, XNVME_PR_DEF);
 	wrtn += fprintf(stream, "'\n");
 #endif
-#ifdef XNVME_BE_LINUX_ENABLED
+#ifdef XNVME_PLATFORM_LINUX_ENABLED
 	wrtn += fprintf(stream, "  - '3p: ");
 	wrtn += xnvme_be_linux_uapi_ver_fpr(stream, XNVME_PR_DEF);
 	wrtn += fprintf(stream, "'\n");
