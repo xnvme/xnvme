@@ -81,6 +81,10 @@ xnvme_file_sync(struct xnvme_dev *fh);
  * Returns a synchronous command-context for the given file-handle
  *
  * @note For asynchronous I/O, see the ::xnvme_queue interface and ::xnvme_cmd_ctx_from_queue
+ *
+ * @param fh File handle obtained with xnvme_file_open()
+ *
+ * @return A command context (::xnvme_cmd_ctx) for the given file handle
  */
 struct xnvme_cmd_ctx
 xnvme_file_get_cmd_ctx(struct xnvme_dev *fh);

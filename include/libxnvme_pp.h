@@ -96,6 +96,8 @@ xnvme_lba_pr(uint64_t lba, enum xnvme_pr opts);
  * @param lba Pointer to an array of LBAs to print
  * @param nlb Number of LBAs to print from the given list
  * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned.
  */
 int
 xnvme_lba_fprn(FILE *stream, const uint64_t *lba, uint16_t nlb, enum xnvme_pr opts);
@@ -114,6 +116,14 @@ xnvme_lba_prn(const uint64_t *lba, uint16_t nlb, enum xnvme_pr opts);
 
 /**
  * Writes a YAML-representation of the given 'ident' to stream
+ *
+ * @param stream output stream used for printing
+ * @param ident pointer to the ::xnvme_ident to print
+ * @param indent indentation level
+ * @param sep separator string
+ * @param head whether to print the header
+ *
+ * @return On success, the number of characters printed is returned.
  */
 int
 xnvme_ident_yaml(FILE *stream, const struct xnvme_ident *ident, int indent, const char *sep,

@@ -54,6 +54,8 @@ xnvme_nvm_write(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint16_
  * @param nsid Namespace Identifier
  * @param slba The Starting Destination LBA
  * @param nlb Number Of Logical Blocks
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
 xnvme_nvm_write_uncorrectable(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba,

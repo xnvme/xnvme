@@ -19,27 +19,40 @@ extern "C" {
 #endif
 
 /**
- * @todo Document this
- * @todo Provide a generic xnvme_dev_get_ns_csi instead of this
- * @param dev
- * @return
+ * Returns the Zoned Namespace Command Set specific Identify Namespace data structure
+ *
+ * @note This is specific to the Zoned Namespace Command Set
+ * @note A generic xnvme_dev_get_ns_csi may be provided in a future version
+ *
+ * @param dev Device handle obtained with xnvme_dev_open()
+ *
+ * @return On success, pointer to the Zoned Namespace Identify Namespace structure. On error, NULL
+ * is returned and `errno` set to indicate the error.
  */
 const struct xnvme_spec_znd_idfy_ns *
 xnvme_znd_dev_get_ns(struct xnvme_dev *dev);
 
 /**
- * @todo Document this
- * @todo Provide a generic xnvme_dev_get_ctrlr_csi instead of this
- * @param dev
- * @return
+ * Returns the Zoned Namespace Command Set specific Identify Controller data structure
+ *
+ * @note This is specific to the Zoned Namespace Command Set
+ * @note A generic xnvme_dev_get_ctrlr_csi may be provided in a future version
+ *
+ * @param dev Device handle obtained with xnvme_dev_open()
+ *
+ * @return On success, pointer to the Zoned Namespace Identify Controller structure. On error, NULL
+ * is returned and `errno` set to indicate the error.
  */
 const struct xnvme_spec_znd_idfy_ctrlr *
 xnvme_znd_dev_get_ctrlr(struct xnvme_dev *dev);
 
 /**
- * @todo Document this
- * @param dev
- * @return
+ * Returns the Zoned Namespace LBA Format Extension for the given device
+ *
+ * @param dev Device handle obtained with xnvme_dev_open()
+ *
+ * @return On success, pointer to the LBA Format Extension structure. On error, NULL is returned
+ * and `errno` set to indicate the error.
  */
 const struct xnvme_spec_znd_idfy_lbafe *
 xnvme_znd_dev_get_lbafe(struct xnvme_dev *dev);

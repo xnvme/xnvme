@@ -219,6 +219,10 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_be) == XNVME_BE_NBYTES, "Incorrect size"
 
 /**
  * Resolve the name of the given backend identifier
+ *
+ * @param bid Backend identifier
+ *
+ * @return On success, pointer to the backend name string. On error, NULL is returned.
  */
 const char *
 xnvme_be_id2name(int bid);
@@ -234,6 +238,11 @@ xnvme_be_name2id(const char *bname);
 
 /**
  * Instantiate a backend instance for the given device
+ *
+ * @param dev Device handle obtained with xnvme_dev_open()
+ * @param opts Options for the backend initialization
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
 xnvme_be_factory(struct xnvme_dev *dev, struct xnvme_opts *opts);
