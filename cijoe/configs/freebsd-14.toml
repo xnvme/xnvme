@@ -31,8 +31,7 @@ default_guest = "freebsd_14"
 default_systemimage = "freebsd-14-x86_64"
 
 [qemu.systems.x86_64]
-#bin = "{{ local.env.HOME }}/opt/qemu/bin/qemu-system-x86_64"
-bin = "/opt/qemu/bin/qemu-system-x86_64"
+bin = "qemu-system-x86_64"
 
 # Used by: qemu.guest_start.py and qemu.guest_kill.py
 [qemu.guests.freebsd_14]

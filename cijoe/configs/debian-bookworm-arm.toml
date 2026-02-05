@@ -27,8 +27,7 @@ default_guest = "bookworm_arm64"
 default_systemimage = "debian-12-aarch64"
 
 [qemu.systems.aarch64]
-# bin = "{{ local.env.HOME }}/opt/qemu/bin/qemu-system-aarch64"
-bin = "/opt/qemu/bin/qemu-system-aarch64"
+bin = "qemu-system-aarch64"
 
 # Used by: qemu.guest_start.py and qemu.guest_kill.py
 [qemu.guests.bookworm_arm64]

@@ -33,7 +33,7 @@ default_systemimage = "windows-11"
 prefix = "{{ local.env.HOME }}/opt/qemu"
 
 [qemu.systems.x86_64]
-bin = "/opt/qemu/bin/qemu-system-x86_64"
+bin = "qemu-system-x86_64"
 
 # Used by: qemu.guest_initialize.py, qemu.guest_start.py, and qemu.guest_kill.py
 [qemu.guests.generic-bios-kvm-x86_64]
