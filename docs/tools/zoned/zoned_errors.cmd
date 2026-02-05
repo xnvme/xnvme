@@ -1,1 +1,1 @@
-zoned errors /dev/nvme0n2
+zoned errors /dev/nvme1n1

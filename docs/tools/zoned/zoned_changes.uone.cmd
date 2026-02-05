@@ -1,1 +1,1 @@
-zoned changes /dev/nvme0n2
+zoned changes /dev/nvme1n1
