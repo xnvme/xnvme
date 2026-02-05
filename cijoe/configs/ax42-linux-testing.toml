@@ -2,7 +2,7 @@
 [qemu]
 img_bin = "qemu-img"
 default_guest = "generic-bios-kvm-x86_64"
-default_systemimage = "debian-12-x86_64"
+default_systemimage = "debian-13-x86_64"
 
 # Used by: qemu.build.py
 [qemu.build]

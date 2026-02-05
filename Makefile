@@ -160,7 +160,7 @@ cijoe:
 	@pipx inject cijoe numpy
 	@pipx install rst2pdf
 	@mkdir -p ~/.config/cijoe
-	@[ -e ~/.config/cijoe/cijoe-config.toml ] || cp cijoe/configs/debian-bullseye.toml ~/.config/cijoe/cijoe-config.toml
+	@[ -e ~/.config/cijoe/cijoe-config.toml ] || cp cijoe/configs/debian-trixie.toml ~/.config/cijoe/cijoe-config.toml
 	@echo ""
 	@echo ""
 	@echo "                     !!!! READ THIS !!!!"
@@ -182,7 +182,7 @@ cijoe-guest-setup-xnvme-using-tgz:
 	@echo "## xNVMe: cijoe-guest-setup-xnvme-using-tgz"
 	cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
 		--monitor \
-		--config "configs/debian-bullseye.toml" \
+		--config "configs/debian-trixie.toml" \
 		--config "configs/system_imaging.toml"
 	@echo "## xNVME: cijoe-guest-setup-xnvme-using-tgz [DONE]"
 
@@ -194,7 +194,7 @@ cijoe-guest-setup-xnvme-using-git:
 	@echo "## xNVMe: cijoe-guest-setup-xnvme-using-git"
 	cd cijoe && cijoe "workflows/provision-using-git.yaml" \
 		--monitor \
-		--config "configs/debian-bullseye.toml" \
+		--config "configs/debian-trixie.toml" \
 		--config "configs/system_imaging.toml"
 	@echo "## xNVME: cijoe-guest-setup-xnvme-using-git [DONE]"
 
@@ -206,7 +206,7 @@ cijoe-guest-setup-blank:
 	@echo "## xNVMe: cijoe-guest-setup-blank"
 	cd cijoe && cijoe "workflows/provision-using-git.yaml" \
 		--monitor \
-		--config "configs/debian-bullseye.toml" \
+		--config "configs/debian-trixie.toml" \
 		--config "configs/system_imaging.toml" \
 		guest_kill \
 		guest_initialize \
@@ -222,7 +222,7 @@ cijoe-guest-start:
 	@echo "## xNVMe: cijoe-guest-start"
 	cd cijoe && cijoe "workflows/provision-using-git.yaml" \
 		--monitor \
-		--config "configs/debian-bullseye.toml" \
+		--config "configs/debian-trixie.toml" \
 		--config "configs/system_imaging.toml" \
 		guest_start \
 		guest_check
@@ -236,7 +236,7 @@ cijoe-guest-stop:
 	@echo "## xNVMe: cijoe-guest-stop"
 	cd cijoe && cijoe "workflows/provision-using-git.yaml" \
 		--monitor \
-		--config "configs/debian-bullseye.toml" \
+		--config "configs/debian-trixie.toml" \
 		--config "configs/system_imaging.toml" \
 		guest_kill
 	@echo "## xNVMe: cijoe-guest-stop [DONE]"
@@ -249,7 +249,7 @@ cijoe-setup-xnvme-using-git:
 	@echo "## xNVMe: cijoe-setup-xnvme-using-git"
 	@cd cijoe && cijoe workflows/provision-using-git.yaml \
 		--monitor \
-		--config "configs/debian-bullseye.toml" \
+		--config "configs/debian-trixie.toml" \
 		-l \
 		xnvme_source_sync \
 		xnvme_build_prep \
@@ -268,7 +268,7 @@ cijoe-setup-xnvme-using-tgz:
 	@echo "## xNVMe: cijoe-setup-xnvme-using-tgz"
 	@cd cijoe && cijoe workflows/provision-using-tgz.yaml \
 		--monitor \
-		--config "configs/debian-bullseye.toml" \
+		--config "configs/debian-trixie.toml" \
 		-l \
 		xnvme_source_sync \
 		xnvme_build_prep \
@@ -287,7 +287,7 @@ cijoe-sync-git:
 	@echo "## xNVMe: cijoe-sync-git"
 	@cd cijoe && cijoe workflows/provision-using-git.yaml \
 		--monitor \
-		--config "configs/debian-bullseye.toml" \
+		--config "configs/debian-trixie.toml" \
 		-l \
 		xnvme_source_sync
 	@echo "## xNVME: cijoe-sync-git [DONE]"
@@ -300,7 +300,7 @@ cijoe-sync-tgz:
 	@echo "## xNVMe: cijoe-sync-tgz"
 	@cd cijoe && cijoe workflows/provision-using-tgz.yaml \
 		--monitor \
-		--config "configs/debian-bullseye.toml" \
+		--config "configs/debian-trixie.toml" \
 		-l \
 		xnvme_source_sync
 	@echo "## xNVME: cijoe-sync-tgz [DONE]"
@@ -313,7 +313,7 @@ cijoe-do-docgen:
 	@echo "## xNVMe: cijoe-do-docgen"
 	@cd cijoe && cijoe workflows/docgen.yaml \
 		--monitor \
-		--config "configs/debian-bullseye.toml" \
+		--config "configs/debian-trixie.toml" \
 		-l
 	@echo "## xNVME: cijoe-do-docgen [DONE]"
 
@@ -332,9 +332,9 @@ endef
 .PHONY: cijoe-do-test-linux
 cijoe-do-test-linux:
 	@echo "## xNVMe: cijoe-do-test-linux"
-	@cd cijoe && cijoe workflows/test-debian-bullseye.yaml \
+	@cd cijoe && cijoe workflows/test-debian-trixie.yaml \
 		--monitor \
-		--config "configs/debian-bullseye.toml" \
+		--config "configs/debian-trixie.toml" \
 		-l
 	@echo "## xNVME: cijoe-do-test-linux [DONE]"
 
@@ -358,7 +358,7 @@ cijoe-do-benchmark-scale:
 	@echo "## xNVMe: cijoe-do-benchmark-scale"
 	@cd cijoe && cijoe workflows/bench.yaml \
 		--monitor \
-		--config "configs/debian-bullseye.toml" \
+		--config "configs/debian-trixie.toml" \
 		-l
 	@echo "## xNVME: cijoe-do-benchmark-scale [DONE]"
 
@@ -370,23 +370,23 @@ cijoe-do-benchmark-latency:
 	@echo "## xNVMe: cijoe-do-benchmark-latency"
 	@cd cijoe && cijoe workflows/benchmark-latency.yaml \
 		--monitor \
-		--config "configs/debian-bullseye.toml" \
+		--config "configs/debian-trixie.toml" \
 		-l
 	@echo "## xNVME: cijoe-do-benchmark-latency [DONE]"
 
 
-define cijoe-do-bootimage-debian-bullseye-amd64-help
-# Create a Debian Linux - amd64 - bootable system image for a qemu-guest
+define cijoe-do-bootimage-debian-trixie-amd64-help
+# Create a Debian Trixie - amd64 - bootable system image for a qemu-guest
 endef
-.PHONY: cijoe-do-bootimage-debian-bullseye-amd64
-cijoe-do-bootimage-debian-bullseye-amd64:
-	@echo "## xNVMe: cijoe-do-bootimage-debian-bullseye-amd64"
-	@cd cijoe && cijoe workflows/bootimg-debian-bullseye-amd64.yaml \
+.PHONY: cijoe-do-bootimage-debian-trixie-amd64
+cijoe-do-bootimage-debian-trixie-amd64:
+	@echo "## xNVMe: cijoe-do-bootimage-debian-trixie-amd64"
+	@cd cijoe && cijoe workflows/bootimg-debian-trixie-amd64.yaml \
 		--monitor \
-		--config "configs/debian-bullseye.toml" \
+		--config "configs/debian-trixie.toml" \
 		--config "configs/system_imaging.toml" \
 		-l
-	@echo "## xNVME: cijoe-do-bootimage-debian-bullseye-amd64 [DONE]"
+	@echo "## xNVME: cijoe-do-bootimage-debian-trixie-amd64 [DONE]"
 
 define cijoe-do-bootimage-freebsd-amd64-help
 # Create a FreeBSD - amd64 - bootable system image for a qemu-guest
@@ -409,7 +409,7 @@ cijoe-do-linux-kdebs:
 	@echo "## xNVMe: cijoe-do-linux-kdebs"
 	@cd cijoe && cijoe workflows/build-kdebs.yaml \
 		--monitor \
-		--config "configs/debian-bullseye.toml" \
+		--config "configs/debian-trixie.toml" \
 		-l
 	@echo "## xNVME: cijoe-do-linux-kdebs [DONE]"
 

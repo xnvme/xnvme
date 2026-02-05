@@ -7,7 +7,7 @@ port = 4200
 
 [os]
 name = "debian"
-version = "bullseye"
+version = "trixie"
 
 [build.compiler]
 bin = "gcc"
@@ -15,7 +15,7 @@ bin = "gcc"
 [qemu.repository]
 remote = "https://github.com/qemu/qemu.git"
 path = "{{ local.env.HOME }}/git/qemu"
-tag = "v7.1.0"
+tag = "v9.0.0"
 
 # Used by: qemu.build.py
 [qemu.build]
@@ -23,16 +23,16 @@ prefix = "{{ local.env.HOME }}/opt/qemu"
 
 [qemu]
 img_bin = "qemu-img"
-default_guest = "bullseye_amd64"
-default_systemimage = "debian-11-x86_64"
+default_guest = "trixie_amd64"
+default_systemimage = "debian-13-x86_64"
 
 [qemu.systems.x86_64]
 #bin = "{{ local.env.HOME }}/opt/qemu/bin/qemu-system-x86_64"
 bin = "qemu-system-x86_64"
 
 # Used by: qemu.guest_start.py and qemu.guest_kill.py
-[qemu.guests.bullseye_amd64]
-path = "{{ local.env.HOME }}/guests/debian-bullseye-amd64"
+[qemu.guests.trixie_amd64]
+path = "{{ local.env.HOME }}/guests/debian-trixie-amd64"
 system_label = "x86_64"
 
 # Keyword arguments: joined onto the form: "-cpu host -smp 4 -m 4" etc.
@@ -334,4 +334,4 @@ type = "external_preload"
 [linux.repository]
 remote = "https://github.com/torvalds/linux.git"
 path = "{{ local.env.HOME }}/git/linux"
-tag = "v6.7"
+tag = "v6.12"

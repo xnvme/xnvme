@@ -1,29 +1,28 @@
 ---
 doc: |
-  Create a Debian Bullseye boot.img using a cloud-init image and Linux kernel .deb packages
+  Create a Debian Trixie boot.img using a cloud-init image and Linux kernel .deb packages
 
   After creating, then
   * Shut down the guest
   * Convert the image (with compression)
-    - qemu-img convert boot.img /tmp/debian-bullseye-amd64.qcow2 -O qcow2 -c
+    - qemu-img convert boot.img /tmp/debian-trixie-amd64.qcow2 -O qcow2 -c
   * Upload it to DigitalOcean
 
 steps:
 - name: guest_kill
   uses: qemu.guest_kill
   with:
-    guest_name: bullseye_amd64
+    guest_name: trixie_amd64
 
 - name: guest_initialize
-  uses: qemu.guest_initialize
+  uses: system_imaging.diskimage_from_cloudimage
   with:
-    guest_name: bullseye_amd64
-    system_image_name: debian-11-x86_64
+    pattern: "debian-13-x86_64"
 
 - name: guest_start
   uses: xnvme_guest_start_nvme
   with:
-    guest_name: bullseye_amd64
+    guest_name: trixie_amd64
 
 - name: guest_check
   run: |

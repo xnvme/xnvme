@@ -85,16 +85,29 @@ def main(args):
 
     # The entities in the 'skiplist' are names of 'static inline' function and thus
     # unavailable via the shared library, when writing the modified ctypes_bindings to
-    # file we skip writing them.
+    # file we skip writing them. We also need to handle try/except blocks that wrap
+    # these functions - if we skip the function, we need to insert 'pass' to avoid
+    # empty try blocks.
     skiplist = ["xnvme_cmd_ctx_set_cb", "xnvme_cmd_ctx_cpl_status"]
 
     with open(path, "w") as pfile:
-        for line in code.splitlines():
+        lines = code.splitlines()
+        i = 0
+        while i < len(lines):
+            line = lines[i]
             if [x for x in skiplist if x in line]:
+                # Check if previous line was 'try:' - if so, insert 'pass'
+                # to keep the try/except block valid
+                if i > 0 and lines[i - 1].strip() == "try:":
+                    indent = len(line) - len(line.lstrip())
+                    pfile.write(" " * indent + "pass\n")
+                # Skip only this line (the one with the skiplist item)
+                i += 1
                 continue
 
             pfile.write(line)
             pfile.write("\n")
+            i += 1
 
 
 if __name__ == "__main__":

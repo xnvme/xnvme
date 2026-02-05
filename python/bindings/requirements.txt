@@ -1,6 +1,8 @@
 # For ctypes-bindings
 black
-clang>=11,<=14.0.6
-ctypeslib2==2.3.4
+# clang version must match system libclang (e.g., clang==19.1.7 for llvm-19)
+clang>=11
+ctypeslib2>=2.4.0
+setuptools
 # All
 pytest

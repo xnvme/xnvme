@@ -32,13 +32,10 @@ def add_args(parser: ArgumentParser):
 def main(args, cijoe):
     # Commands to run on remote/guest (only kmdo - needs NVMe devices)
     remote_commands = [
-        # Disable backports repo (no longer available for oldoldstable Bullseye)
-        "sed -i '/bullseye-backports/d' /etc/apt/sources.list",
         "apt-get update -qy",
-        "apt-get install -qy bash build-essential git pkg-config python3 python3-pip python3-venv",
-        "python3 -m pip install --user pipx",
-        "python3 -m pipx ensurepath",
-        "python3 -m pipx install kmdo",
+        "apt-get install -qy bash build-essential git pkg-config python3 python3-venv pipx",
+        "pipx ensurepath",
+        "pipx install kmdo",
         # Ensure deterministic device naming before capturing command outputs
         "xnvme-driver",
         "xnvme-driver reset",

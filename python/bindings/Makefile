@@ -5,6 +5,17 @@
 PY ?= python3
 BUILD_ENV_ACTIVATE = . .build-py-env/bin/activate
 BUILD_ENV = ${BUILD_ENV_ACTIVATE} && python
+
+# Auto-detect libclang path for Linux
+LIBCLANG_PATH := $(shell \
+	for d in /usr/lib/llvm-*/lib /usr/lib64/llvm*/lib /usr/local/lib; do \
+		if [ -d "$$d" ] && ls "$$d"/libclang*.so* >/dev/null 2>&1; then \
+			echo "$$d"; break; \
+		fi; \
+	done)
+ifneq ($(LIBCLANG_PATH),)
+export LIBCLANG_LIBRARY_PATH := $(LIBCLANG_PATH)
+endif
 WORKSPACE_ROOT ?= ..
 TOOLBOX_DIR?=../../toolbox
 PROJECT_NAME=xnvme
@@ -28,6 +39,15 @@ endef
 	@${BUILD_ENV} -m pip install --upgrade pip
 	@echo "Install python dependencies"
 	@${BUILD_ENV} -m pip install -r requirements.txt
+	@echo "Install clang Python package matching system libclang"
+	@LLVM_VER=$$(echo "${LIBCLANG_SO}" | grep -oP 'llvm-\K[0-9]+' || \
+		ls -d /usr/lib/llvm-*/lib/libclang*.so.1 2>/dev/null | sort -V | tail -1 | grep -oP 'llvm-\K[0-9]+'); \
+	if [ -n "$$LLVM_VER" ]; then \
+		echo "Detected LLVM version: $$LLVM_VER (from libclang)"; \
+		${BUILD_ENV} -m pip install "clang>=$$LLVM_VER,<$$((LLVM_VER+1))" 2>/dev/null || \
+		${BUILD_ENV} -m pip install "clang==$$LLVM_VER.1.7" 2>/dev/null || \
+		echo "Warning: Could not install matching clang version"; \
+	fi
 
 define all-help
 # Do the common task during development of: uninstall clean build install test
@@ -84,11 +104,30 @@ test:
 define generate-ctypes-help
 # Generate definitions (xnvme_ctypes.header) from xNVMe public C API headers
 endef
+# Detect libclang library for clang2py (Linux)
+LIBCLANG_SO := $(shell ls /usr/lib/llvm-*/lib/libclang*.so.1 2>/dev/null | sort -V | tail -1)
+
+# Platform-specific clang args
+ifeq ($(shell uname -s),Darwin)
+CLANG_EXTRA_ARGS := -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/ -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/Kernel.framework/Versions/A/Headers/
+else
+CLANG_EXTRA_ARGS :=
+endif
+
 .PHONY: generate-ctypes
 generate-ctypes: .build-py-env
 	@echo "## py: gen"
 	@echo "## py:headers: ${XNVME_CAPI_HEADERS}"
-	${BUILD_ENV_ACTIVATE} && clang2py ${XNVME_CAPI_HEADERS} --clang-args="-I../../include -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/ -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/Kernel.framework/Versions/A/Headers/" > xnvme/ctypes_bindings/api.py
+ifeq ($(LIBCLANG_SO),)
+	${BUILD_ENV_ACTIVATE} && clang2py ${XNVME_CAPI_HEADERS} --clang-args="-I../../include ${CLANG_EXTRA_ARGS}" > xnvme/ctypes_bindings/api.py
+else
+	${BUILD_ENV_ACTIVATE} && python3 -c "\
+from clang.cindex import Config; \
+Config.set_library_file('${LIBCLANG_SO}'); \
+from ctypeslib.clang2py import main; \
+import sys; sys.argv = ['clang2py'] + '${XNVME_CAPI_HEADERS}'.split() + ['--clang-args=-I../../include ${CLANG_EXTRA_ARGS}']; \
+main()" > xnvme/ctypes_bindings/api.py
+endif
 	@echo "## Remember to also call 'make patch-ctypes' to fix format"
 	@echo "## py: gen [DONE]"
 
