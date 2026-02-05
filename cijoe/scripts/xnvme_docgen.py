@@ -39,8 +39,12 @@ def main(args, cijoe):
         # Ensure deterministic device naming before capturing command outputs
         "xnvme-driver",
         "xnvme-driver reset",
+        "udevadm settle",  # Wait for device nodes to be created
         "ldconfig",
         "sync; echo 1 > /proc/sys/vm/drop_caches",
+        # Debug: show available NVMe devices
+        "ls -la /dev/nvme* /dev/ng* 2>/dev/null || echo 'No NVMe devices found'",
+        "xnvme enum",
         # Capture command outputs with kmdo (run from docs/ for correct relative paths)
         "cd docs && kmdo getting_started --exclude build_",
         "cd docs && kmdo tools",
