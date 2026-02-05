@@ -3,21 +3,23 @@
 Start a qemu-guest with NVMe devices
 ====================================
 
-This creates a configuration, which on a recent Linux installation would be
-something like:
+This creates a configuration with one namespace per controller to avoid
+Linux kernel namespace ordering issues. On a recent Linux installation:
 
 * /dev/ng0n1 -- nvm
-* /dev/ng0n2 -- zns
-* /dev/ng0n3 -- kv
+* /dev/ng1n1 -- zns
+* /dev/ng2n1 -- kv
+* /dev/ng3n1 -- nvm (fabrics testing)
+* /dev/ng4n1 -- nvm (large mdts)
+* /dev/ng5n1 -- fdp
+* /dev/ng6n1 -- pi type 1
+* /dev/ng7n1 -- pi type 2
+* /dev/ng8n1 -- pi type 3
+* /dev/ng9n1 -- pi type 1, extended LBA
+* /dev/ng10n1 -- pi type 1, pif 2
 
-* /dev/ng1n1 -- nvm
-
-* /dev/ng2n1 -- nvm (large mdts)
-* /dev/ng3n1 -- fdp-enabled subsystem and nvm namespace
-
-Using the the 'ng' device-handle, as it is always available, whereas 'nvme' are
-only for block-devices. Regardless, the above is just to illustrate one
-possible "appearance" of the devices in Linux.
+Using the 'ng' device-handle, as it is always available, whereas 'nvme' are
+only for block-devices.
 
 Retargetable: false
 -------------------
@@ -104,13 +106,11 @@ def qemu_nvme_args(nvme_img_root, features=None):
             ",".join(["nvme-subsys"] + [f"{k}={v}" for k, v in args.items()]),
         ]
 
-    def controller(
-        id, serial, mdts, downstream_bus, upstream_bus, controller_slot, subsystem=None
-    ):
+    def controller(id, serial, mdts, root_port, slot, subsystem=None):
         args = {
             "id": id,
             "serial": serial,
-            "bus": downstream_bus,
+            "bus": root_port,
             "mdts": mdts,
             "ioeventfd": "on",
         }
@@ -119,7 +119,7 @@ def qemu_nvme_args(nvme_img_root, features=None):
 
         return [
             "-device",
-            f"xio3130-downstream,id={downstream_bus},bus={upstream_bus},chassis=2,slot={controller_slot}",
+            f"pcie-root-port,id={root_port},chassis={slot},slot={slot}",
             "-device",
             ",".join(["nvme"] + [f"{k}={v}" for k, v in args.items()]),
         ]
@@ -157,13 +157,12 @@ def qemu_nvme_args(nvme_img_root, features=None):
         ]
 
     # =========================================================================
-    # Feature flags - ZNS/FDP/PI are standard QEMU features (always enabled),
-    # KV requires QEMU patches (auto-detected)
+    # Feature flags — auto-detected from QEMU binary
     # =========================================================================
-    ENABLE_ZNS = True  # Zoned Namespaces - standard since QEMU 6.0
-    ENABLE_KV = features.get("kv", False)  # Key-Value - requires QEMU patches
-    ENABLE_FDP = True  # Flexible Data Placement - standard since QEMU 8.0
-    ENABLE_PI = True  # Protection Information - standard QEMU feature
+    ENABLE_ZNS = features.get("zns", False)  # since QEMU 6.0
+    ENABLE_KV = features.get("kv", False)  # requires patches
+    ENABLE_FDP = features.get("fdp", False)  # since QEMU 8.0
+    ENABLE_PI = features.get("pi", False)  # standard feature
 
     # =========================================================================
     # NVMe Configuration - comment out lines to disable controllers/namespaces
@@ -183,46 +182,69 @@ def qemu_nvme_args(nvme_img_root, features=None):
         "zoned.numzrwa": 256,
     }
     fdp_subsys = (
-        "subsys0",
+        "beef0005",
         {"fdp": "on", "fdp.nruh": "8", "fdp.nrg": "32", "fdp.runs": "40960"},
     )
 
-    # Build nvme0 namespaces based on feature flags
-    nvme0_namespaces = [(1, {})]  # NVM always included
-    if ENABLE_ZNS:
-        nvme0_namespaces.append((2, zns_attrs))
-    if ENABLE_KV:
-        nvme0_namespaces.append((3, {"kv": "on"}))
-
-    # Build nvme4 (PI) namespaces
-    nvme4_namespaces = []
-    if ENABLE_PI:
-        nvme4_namespaces = [
-            (1, {"ms": 8, "pi": 1}),  # PI type 1
-            (2, {"ms": 8, "pi": 2}),  # PI type 2
-            (3, {"ms": 8, "pi": 3}),  # PI type 3
-            (4, {"ms": 8, "mset": 1, "pi": 1}),  # PI type 1, extended LBA
-            (5, {"ms": 16, "pi": 1, "pif": 2}),  # PI type 1, PIF 2
-        ]
+    # =========================================================================
+    # NVMe Configuration - one namespace per controller to avoid Linux kernel
+    # namespace ordering issues. Each controller gets a single namespace.
+    # =========================================================================
 
     nvme_config = [
-        # nvme0: Functional verification (NVM, ZNS, KV)
-        ("nvme0", "deadbeef", 7, 1, None, nvme0_namespaces),
-        # nvme1: Fabrics testing
-        ("nvme1", "adcdbeef", 7, 2, None, [(1, {})]),
-        # nvme2: Large MDTS
-        ("nvme2", "beefcace", 7, 3, None, [(1, {})]),
+        # nvme0: NVM
+        ("nvme0", "beef0000", 7, 1, None, [(1, {})]),
     ]
 
-    # Add FDP controller if enabled
+    slot = 2  # Track slot numbers for additional controllers
+
+    # nvme1: ZNS
+    if ENABLE_ZNS:
+        nvme_config.append(("nvme1", "beef0001", 7, slot, None, [(1, zns_attrs)]))
+        slot += 1
+
+    # nvme2: KV
+    if ENABLE_KV:
+        nvme_config.append(("nvme2", "beef0002", 7, slot, None, [(1, {"kv": "on"})]))
+        slot += 1
+
+    # nvme3: NVM (fabrics testing)
+    nvme_config.append(("nvme3", "beef0003", 7, slot, None, [(1, {})]))
+    slot += 1
+
+    # nvme4: NVM (large MDTS)
+    nvme_config.append(("nvme4", "beef0004", 0, slot, None, [(1, {})]))
+    slot += 1
+
+    # nvme5: FDP
     if ENABLE_FDP:
         nvme_config.append(
-            ("nvme3", "beefcace", 7, 4, fdp_subsys, [(1, {"fdp.ruhs": "'0;5;6;7'"})])
+            ("nvme5", "beef0005", 7, slot, fdp_subsys, [(1, {"fdp.ruhs": "'0;5;6;7'"})])
         )
+        slot += 1
 
-    # Add PI controller if enabled
+    # nvme6-10: PI namespaces (one per controller)
     if ENABLE_PI:
-        nvme_config.append(("nvme4", "feebdaed", 7, 5, None, nvme4_namespaces))
+        nvme_config.append(
+            ("nvme6", "beef0006", 7, slot, None, [(1, {"ms": 8, "pi": 1})])
+        )
+        slot += 1
+        nvme_config.append(
+            ("nvme7", "beef0007", 7, slot, None, [(1, {"ms": 8, "pi": 2})])
+        )
+        slot += 1
+        nvme_config.append(
+            ("nvme8", "beef0008", 7, slot, None, [(1, {"ms": 8, "pi": 3})])
+        )
+        slot += 1
+        nvme_config.append(
+            ("nvme9", "beef0009", 7, slot, None, [(1, {"ms": 8, "mset": 1, "pi": 1})])
+        )
+        slot += 1
+        nvme_config.append(
+            ("nvme10", "beef0010", 7, slot, None, [(1, {"ms": 16, "pi": 1, "pif": 2})])
+        )
+        slot += 1
 
     # =========================================================================
     # Build QEMU arguments from configuration
@@ -230,10 +252,6 @@ def qemu_nvme_args(nvme_img_root, features=None):
 
     drives = []
     nvme = []
-    nvme += ["-device", "pcie-root-port,id=pcie_root_port1,chassis=1,slot=1"]
-
-    upstream_bus = "pcie_upstream_port1"
-    nvme += ["-device", f"x3130-upstream,id={upstream_bus},bus=pcie_root_port1"]
 
     created_subsys = set()
     for ctrl_id, serial, mdts, slot, subsys, namespaces in nvme_config:
@@ -245,11 +263,9 @@ def qemu_nvme_args(nvme_img_root, features=None):
                 nvme += subsystem(subsys_id, aux=subsys_attrs)
                 created_subsys.add(subsys_id)
 
-        # Create controller
-        ctrl_bus = f"pcie_downstream_port{slot}"
-        nvme += controller(
-            ctrl_id, serial, mdts, ctrl_bus, upstream_bus, slot, subsys_id
-        )
+        # Create controller on its own root port
+        root_port = f"pcie_root_port{slot}"
+        nvme += controller(ctrl_id, serial, mdts, root_port, slot, subsys_id)
 
         # Create namespaces
         for nsid, ns_attrs in namespaces:

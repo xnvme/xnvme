@@ -1,1 +1,1 @@
-zoned info /dev/nvme0n2
+zoned info /dev/nvme1n1

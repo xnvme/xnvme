@@ -6,4 +6,4 @@ chmod +x hello
 sudo xnvme-driver
 
 # Run it
-sudo ./hello 0000:05:00.0
+sudo ./hello 0000:03:00.0

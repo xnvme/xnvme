@@ -1,1 +1,1 @@
-zoned report /dev/nvme0n2
+zoned report /dev/nvme1n1
