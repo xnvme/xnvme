@@ -14,7 +14,7 @@ RUN apt-get -qy update && \
 
 WORKDIR xnvme
 
-RUN bash toolbox/pkgs/debian-bullseye.sh
+RUN bash toolbox/pkgs/debian-trixie.sh
 
 RUN meson setup builddir -Dwith-spdk=disabled && \
 	make && \

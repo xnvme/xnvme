@@ -432,19 +432,6 @@ platforms:
   aux:
   - [sys, [autoconf, build-essential, libtool]]
 
-- alias: Debian Oldoldstable
-  notes: ''
-  name: debian
-  ver: [bullseye]
-  os: linux
-  mng: apt
-  drop: []
-  alt:
-  - [pip, [meson, pipx]]
-  - [src, [liburing, libvfn]]
-  aux:
-  - [sys, [autoconf, build-essential, libtool]]
-
 - alias: Debian Testing
   notes: ''
   name: debian

@@ -143,7 +143,7 @@ jobs:
     needs: source-archive
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/xnvme/xnvme-deps-debian-bookworm:next
+      image: ghcr.io/xnvme/xnvme-deps-debian-trixie:next
 
     steps:
     - name: Retrieve and unpack the xNVMe source archive
@@ -155,7 +155,7 @@ jobs:
     - name: Install dependencies
       run: |
         apt-get update -qy
-        apt-get install -qy curl libclang-dev
+        apt-get install -qy curl libclang-17-dev
 
     - name: Build xNVMe
       run: make common
@@ -183,7 +183,7 @@ jobs:
   build-python:
     needs: source-archive
     runs-on: ubuntu-latest
-    container: ghcr.io/xnvme/xnvme-deps-debian-bullseye:next
+    container: ghcr.io/xnvme/xnvme-deps-debian-trixie:next
     strategy:
       fail-fast: false
 
@@ -196,7 +196,7 @@ jobs:
 
     - name: Python sdist-packages, system-package deps.
       run: |
-        apt-get install -qy libclang-13-dev
+        apt-get install -qy libclang-17-dev
 
     - name: Python sdist-packages, build bindings
       run: |
@@ -677,7 +677,7 @@ jobs:
         guest:
         - {os: 'freebsd', ver: '14'}
         #- {os: 'freebsd', ver: '15'}
-        - {os: 'debian', ver: 'bullseye'}
+        - {os: 'debian', ver: 'trixie'}
 
     container:
       image: ghcr.io/xnvme/xnvme-qemu:latest
@@ -763,7 +763,7 @@ jobs:
         - {os: 'macos', ver: 'sonoma', hostname: 'verify-phys-macos', labels: [self-hosted, macos, verify]}
 
     container:
-      image: debian:bookworm
+      image: debian:trixie
       options: --privileged
 
     steps:
@@ -856,7 +856,7 @@ jobs:
       fail-fast: false
       matrix:
         guest:
-        - {os: 'debian', ver: 'bookworm', hostname: 'ax42-linux', labels: [self-hosted, linux, amd64, maas]}
+        - {os: 'debian', ver: 'trixie', hostname: 'ax42-linux', labels: [self-hosted, linux, amd64, maas]}
 
     steps:
     - uses: xnvme/actions/.github/actions/cleanup@main
@@ -1110,7 +1110,7 @@ jobs:
       fail-fast: false
       matrix:
         guest:
-        - {os: 'debian', ver: 'bullseye'}
+        - {os: 'debian', ver: 'trixie'}
 
     container:
       image: ghcr.io/xnvme/xnvme-qemu:latest

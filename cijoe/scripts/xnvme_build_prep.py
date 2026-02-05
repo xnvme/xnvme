@@ -10,7 +10,7 @@ Needs an ``os`` key describing the operating system by name and version, example
 
     os:
       name: 'debian'
-      version: 'bullseye'
+      version: 'trixie'
 
 Retargetable: True
 ------------------

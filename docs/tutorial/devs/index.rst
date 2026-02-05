@@ -496,8 +496,8 @@ Test Linux
 
 .. code-block:: bash
 
-  # Create a cijoe-config for a qemu-guest with Debian Bullseye
-  cp cijoe/configs/debian-bullseye.toml ~/.config/cijoe/cijoe-config.toml
+  # Create a cijoe-config for a qemu-guest with Debian Trixie
+  cp cijoe/configs/debian-trixie.toml ~/.config/cijoe/cijoe-config.toml
 
   # Provision the machine
   make cijoe-guest-setup-xnvme-using-git
@@ -521,7 +521,7 @@ Test FreeBSD
 .. code-block:: bash
 
   # Create a cijoe-config for a qemu-guest with FreeBSD
-  cp cijoe/configs/debian-bullseye.toml ~/.config/cijoe/cijoe-config.toml
+  cp cijoe/configs/debian-trixie.toml ~/.config/cijoe/cijoe-config.toml
 
   # Provision the machine
   make cijoe-guest-setup-xnvme-using-git
@@ -549,8 +549,8 @@ Then you should be able to run the following to test **Linux**:
 
 .. code-block:: bash
 
-  # Provision and test on Debian Bullseye
-  cp cijoe/configs/debian-bullseye.toml ~/.config/cijoe/cijoe-config.toml
+  # Provision and test on Debian Trixie
+  cp cijoe/configs/debian-trixie.toml ~/.config/cijoe/cijoe-config.toml
   # Edit the cijoe-config, then run
 
   make cijoe-guest-setup-using-tgz
@@ -591,7 +591,7 @@ artifacts and captured output:
 .. code-block:: bash
 
   pytest \
-    --config configs/debian-bullseye.toml \
+    --config configs/debian-trixie.toml \
     --output /tmp/somewhere \
    tests
 
@@ -608,7 +608,7 @@ configured:
 
 .. code-block:: bash
 
-  cijoe -c configs/debian-bullseye.toml provision.yaml
+  cijoe -c configs/debian-trixie.toml provision.yaml
 
 .. tip::
    It will likely fail with the error::
@@ -616,17 +616,17 @@ configured:
      /bin/sh: 1: /opt/qemu/bin/qemu-system-x86_64: not found
 
    This is because the default configuration is for running on Github. Thus,
-   adjust the file ``configs/debian-bullseye.toml`` such that qemu is
+   adjust the file ``configs/debian-trixie.toml`` such that qemu is
    pointing to ``$HOME``.
 
 Create boot-images
 ~~~~~~~~~~~~~~~~~~
 
-The ``debian-bullseye-amd64.qcow2`` is created by:
+The ``debian-trixie-amd64.qcow2`` is created by:
 
 .. code-block:: bash
 
-  cijoe -c configs/debian-bullseye.toml workflows/bootimg-debian-bullseye-amd64.yaml
+  cijoe -c configs/debian-trixie.toml workflows/bootimg-debian-trixie-amd64.yaml
 
 The ``freebsd-13.1-ksrc-amd64.qcow2`` is created by:
 
@@ -649,7 +649,7 @@ configuration file for another physical machine:
 
 .. code-block:: bash
 
-  cp configs/debian-bullseye.toml ~/.config/cijoe/cijoe-config.toml
+  cp configs/debian-trixie.toml ~/.config/cijoe/cijoe-config.toml
 
 Open up ``~/.config/cijoe/cijoe-config.toml`` and adjust it to your physical
 machine. That is, change the ssh-login information, change the list of devices,
