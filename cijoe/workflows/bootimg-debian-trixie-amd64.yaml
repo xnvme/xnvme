@@ -36,6 +36,14 @@ steps:
     apt-get -qy install aptitude
     aptitude -q -y -f install git
 
+- name: system_security_limits
+  run: |
+    echo "*    soft memlock unlimited" > /etc/security/limits.d/99-xnvme.conf
+    echo "*    hard memlock unlimited" >> /etc/security/limits.d/99-xnvme.conf
+    echo "root soft memlock unlimited" >> /etc/security/limits.d/99-xnvme.conf
+    echo "root hard memlock unlimited" >> /etc/security/limits.d/99-xnvme.conf
+    ls /etc/security/limits.d
+
 - name: xnvme_source_sync
   uses: xnvme_source_from_tgz
   with:
