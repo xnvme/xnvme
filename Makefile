@@ -156,8 +156,8 @@ endef
 cijoe:
 	@echo "## xNVMe: cijoe"
 	@pipx install cijoe==v0.9.58 --include-deps --force
-	@pipx inject cijoe matplotlib
-	@pipx inject cijoe numpy
+	@pipx inject cijoe matplotlib --force
+	@pipx inject cijoe numpy --force
 	@pipx install rst2pdf
 	@mkdir -p ~/.config/cijoe
 	@[ -e ~/.config/cijoe/cijoe-config.toml ] || cp cijoe/configs/debian-trixie.toml ~/.config/cijoe/cijoe-config.toml
