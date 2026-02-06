@@ -242,7 +242,7 @@ class XnvmeSPDK(XnvmeUserSpaceEngine):
 
     @property
     def filename(self) -> str:
-        return self.device.uri.replace(":", "\:")  # noqa: W605
+        return self.device.uri.replace(":", r"\:")
 
 
 @dataclass
