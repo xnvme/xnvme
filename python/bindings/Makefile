@@ -19,7 +19,7 @@ endif
 WORKSPACE_ROOT ?= ..
 TOOLBOX_DIR?=../../toolbox
 PROJECT_NAME=xnvme
-XNVME_CAPI_HEADERS=$(shell ls ../../include/libxnvme* | grep -v util | grep -v libxnvmec)
+XNVME_CAPI_HEADERS=../../include/libxnvme.h $(shell ls ../../include/libxnvme_*.h | grep -v util | grep -v libxnvmec)
 
 define default-help
 # invoke: 'make uninstall', 'make install'
