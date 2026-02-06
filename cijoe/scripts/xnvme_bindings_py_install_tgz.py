@@ -66,9 +66,9 @@ def main(args, cijoe):
 
     commands = [
         "pipx ensurepath",
-        "pipx install cijoe==v0.9.58 --include-deps",
-        "pipx inject cijoe numpy",
-        "pipx inject cijoe ./xnvme-py-sdist.tar.gz",
+        "pipx install cijoe==v0.9.58 --include-deps --force",
+        "pipx inject cijoe numpy --force",
+        "pipx inject cijoe ./xnvme-py-sdist.tar.gz --force",
         "cijoe --version",
         "pytest --version",
     ]

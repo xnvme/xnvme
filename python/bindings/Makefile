@@ -69,8 +69,8 @@ define deps-help
 endef
 .PHONY: deps
 deps:
-	@pipx install cijoe --include-deps
-	@pipx inject cijoe numpy
+	@pipx install cijoe==v0.9.58 --include-deps --force
+	@pipx inject cijoe numpy --force
 
 define install-help
 # install for current user
@@ -78,7 +78,7 @@ endef
 .PHONY: install
 install: deps
 	@echo "## py: make install"
-	@pipx inject cijoe dist/xnvme-*.tar.gz
+	@pipx inject cijoe dist/xnvme-*.tar.gz --force
 	@echo "## py: make install [DONE]"
 
 define uninstall-help
