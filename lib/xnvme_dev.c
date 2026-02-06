@@ -9,6 +9,69 @@
 #include <xnvme_dev.h>
 #include <xnvme_geo.h>
 
+#ifdef XNVME_BE_LINUX_ENABLED
+/**
+ * Read a queue attribute from sysfs for the NVMe namespace associated with the given device
+ *
+ * Uses /sys/class/nvme/<ctrl>/<ctrl>n<ns>/queue/<attr> which exists for all NVMe
+ * namespaces, including those without a block device (e.g. KV namespaces).
+ *
+ * @returns On success, 0 is returned. On error, negative errno is returned.
+ */
+static int
+_linux_queue_attr(struct xnvme_dev *dev, const char *attr, uint32_t *val)
+{
+	char path[512];
+	char *bname;
+	FILE *fp;
+	unsigned long rval = 0;
+	int ctrl = 0;
+	int ns = 0;
+	int len;
+
+	bname = strrchr(dev->ident.uri, '/');
+	if (!bname || strlen(bname) < 2) {
+		XNVME_DEBUG("FAILED: invalid uri '%s'", dev->ident.uri);
+		return -EINVAL;
+	}
+	bname++;
+
+	if ((sscanf(bname, "nvme%dn%d", &ctrl, &ns) != 2) &&
+	    (sscanf(bname, "ng%dn%d", &ctrl, &ns) != 2)) {
+		XNVME_DEBUG("FAILED: parsing ctrl/ns from '%s'", bname);
+		return -EINVAL;
+	}
+
+	len = snprintf(path, sizeof(path), "/sys/class/nvme/nvme%d/nvme%dn%d/queue/%s", ctrl, ctrl,
+		       ns, attr);
+	if (len < 0) {
+		XNVME_DEBUG("FAILED: snprintf(), err: %d", len);
+		return len;
+	}
+	if ((size_t)len >= sizeof(path)) {
+		XNVME_DEBUG("FAILED: path truncated for '%s'", bname);
+		return -EINVAL;
+	}
+
+	fp = fopen(path, "r");
+	if (!fp) {
+		XNVME_DEBUG("FAILED: fopen('%s'), err: %d", path, -errno);
+		return -errno;
+	}
+
+	if (fscanf(fp, "%lu", &rval) != 1) {
+		XNVME_DEBUG("FAILED: fscanf('%s')", path);
+		fclose(fp);
+		return -EIO;
+	}
+	fclose(fp);
+
+	*val = rval;
+
+	return 0;
+}
+#endif
+
 static int
 _zoned_geometry(struct xnvme_dev *dev)
 {
@@ -410,11 +473,32 @@ xnvme_dev_derive_geo(struct xnvme_dev *dev)
 
 	// TODO: add zamdts
 
-	/** quirk: Linux kernel max-segments potentially less than mdts **/
-	if ((!strncmp(dev->be.attr.name, "linux", 5)) && (!strncmp(dev->be.sync.id, "nvme", 4)) &&
-	    (dev->geo.lba_nbytes) && ((dev->geo.mdts_nbytes / dev->geo.lba_nbytes) > 127)) {
-		dev->geo.mdts_nbytes = dev->geo.lba_nbytes * 127;
+#ifdef XNVME_BE_LINUX_ENABLED
+	/** Cap MDTS to kernel queue max_segments for Linux NVMe ioctl passthrough **/
+	if ((!strncmp(dev->be.attr.name, "linux", 5)) && (!strncmp(dev->be.sync.id, "nvme", 4))) {
+		uint32_t max_seg = 32;
+		uint32_t phys_blk = 512;
+		uint32_t max_xfer;
+		int err;
+
+		err = _linux_queue_attr(dev, "max_segments", &max_seg);
+		if (err) {
+			XNVME_DEBUG("FAILED: reading max_segments; err: %d; using default: %u",
+				    err, max_seg);
+		}
+		err = _linux_queue_attr(dev, "physical_block_size", &phys_blk);
+		if (err) {
+			XNVME_DEBUG("FAILED: reading physical_block_size; err: %d; using default: "
+				    "%u",
+				    err, phys_blk);
+		}
+
+		max_xfer = (max_seg - 1) * phys_blk;
+		if (dev->geo.mdts_nbytes > max_xfer) {
+			dev->geo.mdts_nbytes = max_xfer;
+		}
 	}
+#endif
 
 	return 0;
 }
