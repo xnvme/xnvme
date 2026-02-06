@@ -6,6 +6,11 @@ steps:
 - name: sysinfo
   uses: linux.sysinfo
 
+- name: enumerate
+  run: |
+    which xnvme && xnvme enum || true
+    for d in /sys/class/nvme/nvme*; do echo "$(basename $d): $(cat $d/address) $(cat $d/serial)"; done
+
 - name: hugetlbfs
   uses: linux_setup_hugetlbfs
 
