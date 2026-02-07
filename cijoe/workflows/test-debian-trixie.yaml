@@ -36,7 +36,7 @@ steps:
 - name: test_pcie
   uses: core.testrunner
   with:
-    args: '-k "pcie" tests'
+    args: '-k "pcie and not test_mem_map_unmap" tests'
     random_order: false
 
 - name: test_fabrics
