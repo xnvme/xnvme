@@ -296,6 +296,10 @@ def test_subsystem_reset(cijoe, device, be_opts, cli_args):
 
     assert not err
 
+    # Full driver unbind/rebind cycle to recover from subsystem reset
+    XnvmeDriver.kernel_detach(cijoe)
+    XnvmeDriver.kernel_attach(cijoe)
+
 
 @xnvme_parametrize(labels=["ctrlr"], opts=["be", "admin"])
 def test_ctrlr_reset(cijoe, device, be_opts, cli_args):
