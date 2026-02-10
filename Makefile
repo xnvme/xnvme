@@ -123,7 +123,7 @@ endef
 .PHONY: docker
 docker:
 	@echo "## xNVMe: docker"
-	@docker run -it -w /tmp/xnvme --mount type=bind,source="$(shell pwd)",target=/tmp/xnvme ghcr.io/xnvme/xnvme-deps-fedora-citools:next bash
+	docker run -it -w /tmp/xnvme --mount type=bind,source="$(shell pwd)",target=/tmp/xnvme ghcr.io/xnvme/xnvme-deps-fedora-citools:next bash
 	@echo "## xNVME: docker [DONE]"
 
 define docs-help
@@ -146,7 +146,7 @@ endef
 .PHONY: docker-privileged
 docker-privileged:
 	@echo "## xNVMe: docker-privileged"
-	@docker run -it --privileged -w /tmp/xnvme --mount type=bind,source="$(shell pwd)",target=/tmp/xnvme ghcr.io/xnvme/xnvme-qemu:latest bash
+	docker run -it --privileged -w /tmp/xnvme --mount type=bind,source="$(shell pwd)",target=/tmp/xnvme ghcr.io/xnvme/xnvme-qemu:latest bash
 	@echo "## xNVME: docker-privileged [DONE]"
 
 define cijoe-help
@@ -155,11 +155,11 @@ endef
 .PHONY: cijoe
 cijoe:
 	@echo "## xNVMe: cijoe"
-	@pipx install cijoe==v0.9.58 --include-deps --force
-	@pipx inject cijoe matplotlib --force
-	@pipx inject cijoe numpy --force
-	@pipx install rst2pdf
-	@mkdir -p ~/.config/cijoe
+	pipx install cijoe==v0.9.58 --include-deps --force
+	pipx inject cijoe matplotlib --force
+	pipx inject cijoe numpy --force
+	pipx install rst2pdf
+	mkdir -p ~/.config/cijoe
 	@[ -e ~/.config/cijoe/cijoe-config.toml ] || cp cijoe/configs/debian-trixie.toml ~/.config/cijoe/cijoe-config.toml
 	@echo ""
 	@echo ""
@@ -247,7 +247,7 @@ endef
 .PHONY: cijoe-setup-xnvme-using-git
 cijoe-setup-xnvme-using-git:
 	@echo "## xNVMe: cijoe-setup-xnvme-using-git"
-	@cd cijoe && cijoe workflows/provision-using-git.yaml \
+	cd cijoe && cijoe workflows/provision-using-git.yaml \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
 		-l \
@@ -266,7 +266,7 @@ endef
 .PHONY: cijoe-setup-xnvme-using-tgz
 cijoe-setup-xnvme-using-tgz:
 	@echo "## xNVMe: cijoe-setup-xnvme-using-tgz"
-	@cd cijoe && cijoe workflows/provision-using-tgz.yaml \
+	cd cijoe && cijoe workflows/provision-using-tgz.yaml \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
 		-l \
@@ -285,7 +285,7 @@ endef
 .PHONY: cijoe-sync-git
 cijoe-sync-git:
 	@echo "## xNVMe: cijoe-sync-git"
-	@cd cijoe && cijoe workflows/provision-using-git.yaml \
+	cd cijoe && cijoe workflows/provision-using-git.yaml \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
 		-l \
@@ -298,7 +298,7 @@ endef
 .PHONY: cijoe-sync-tgz
 cijoe-sync-tgz:
 	@echo "## xNVMe: cijoe-sync-tgz"
-	@cd cijoe && cijoe workflows/provision-using-tgz.yaml \
+	cd cijoe && cijoe workflows/provision-using-tgz.yaml \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
 		-l \
@@ -311,7 +311,7 @@ endef
 .PHONY: cijoe-do-docgen
 cijoe-do-docgen:
 	@echo "## xNVMe: cijoe-do-docgen"
-	@cd cijoe && cijoe workflows/docgen.yaml \
+	cd cijoe && cijoe workflows/docgen.yaml \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
 		-l
@@ -323,7 +323,7 @@ endef
 .PHONY: cijoe-do-selftest
 cijoe-do-selftest:
 	@echo "## xNVMe: cijoe-do-selftest"
-	@cd cijoe && pytest tests/selftest --config configs/default-config.toml
+	cd cijoe && pytest tests/selftest --config configs/default-config.toml
 	@echo "## xNVME: cijoe-do-selftest [DONE]"
 
 define cijoe-do-test-linux-help
@@ -332,7 +332,7 @@ endef
 .PHONY: cijoe-do-test-linux
 cijoe-do-test-linux:
 	@echo "## xNVMe: cijoe-do-test-linux"
-	@cd cijoe && cijoe workflows/test-debian-trixie.yaml \
+	cd cijoe && cijoe workflows/test-debian-trixie.yaml \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
 		-l
@@ -344,7 +344,7 @@ endef
 .PHONY: cijoe-do-test-freebsd
 cijoe-do-test-freebsd:
 	@echo "## xNVMe: cijoe-do-test-freebsd"
-	@cd cijoe && cijoe workflows/test-freebsd-13.yaml \
+	cd cijoe && cijoe workflows/test-freebsd-13.yaml \
 		--monitor \
 		--config "configs/freebsd-13.toml" \
 		-l
@@ -356,7 +356,7 @@ endef
 .PHONY: cijoe-do-benchmark-scale
 cijoe-do-benchmark-scale:
 	@echo "## xNVMe: cijoe-do-benchmark-scale"
-	@cd cijoe && cijoe workflows/bench.yaml \
+	cd cijoe && cijoe workflows/bench.yaml \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
 		-l
@@ -368,7 +368,7 @@ endef
 .PHONY: cijoe-do-benchmark-latency
 cijoe-do-benchmark-latency:
 	@echo "## xNVMe: cijoe-do-benchmark-latency"
-	@cd cijoe && cijoe workflows/benchmark-latency.yaml \
+	cd cijoe && cijoe workflows/benchmark-latency.yaml \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
 		-l
@@ -381,7 +381,7 @@ endef
 .PHONY: cijoe-do-bootimage-debian-trixie-amd64
 cijoe-do-bootimage-debian-trixie-amd64:
 	@echo "## xNVMe: cijoe-do-bootimage-debian-trixie-amd64"
-	@cd cijoe && cijoe workflows/bootimg-debian-trixie-amd64.yaml \
+	cd cijoe && cijoe workflows/bootimg-debian-trixie-amd64.yaml \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
 		--config "configs/system_imaging.toml" \
@@ -394,7 +394,7 @@ endef
 .PHONY: cijoe-do-bootimage-freebsd-amd64
 cijoe-do-bootimage-freebsd-amd64:
 	@echo "## xNVMe: cijoe-do-bootimage-freebsd-amd64"
-	@cd cijoe && cijoe workflows/bootimg-freebsd-13-amd64.yaml \
+	cd cijoe && cijoe workflows/bootimg-freebsd-13-amd64.yaml \
 		--monitor \
 		--config "configs/freebsd-13.toml" \
 		--config "configs/system_imaging.toml" \
@@ -407,7 +407,7 @@ endef
 .PHONY: cijoe-do-linux-kdebs
 cijoe-do-linux-kdebs:
 	@echo "## xNVMe: cijoe-do-linux-kdebs"
-	@cd cijoe && cijoe workflows/build-kdebs.yaml \
+	cd cijoe && cijoe workflows/build-kdebs.yaml \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
 		-l
@@ -419,7 +419,7 @@ endef
 .PHONY: cijoe-report
 cijoe-report:
 	@echo "## xNVMe: cijoe-report"
-	@cd cijoe && cijoe -p
+	cd cijoe && cijoe -p
 	@echo "## xNVME: cijoe-report [DONE]"
 
 define git-setup-help
@@ -428,7 +428,7 @@ endef
 .PHONY: git-setup
 git-setup:
 	@echo "## xNVMe: git-setup"
-	@./$(TOOLBOX_DIR)/pre-commit-check.sh;
+	./$(TOOLBOX_DIR)/pre-commit-check.sh;
 	$(GIT) config blame.ignoreRevsFile .git-blame-ignore-revs || true
 	@echo "## xNVMe: git-setup [DONE]"
 
@@ -438,7 +438,7 @@ endef
 .PHONY: format
 format:
 	@echo "## xNVMe: format"
-	@pre-commit run
+	pre-commit run
 	@echo "## xNVME: format [DONE]"
 
 define format-all-help
@@ -447,7 +447,7 @@ endef
 .PHONY: format-all
 format-all:
 	@echo "## xNVMe: format-all"
-	@pre-commit run --all-files
+	pre-commit run --all-files
 	@echo "## xNVME: format-all [DONE]"
 
 define info-help
@@ -527,7 +527,7 @@ build-deb: _require_builddir
 		--workdir $(BUILD_DIR)/meson-dist/deb \
 		--output $(BUILD_DIR)/meson-dist/xnvme.deb
 	@echo "## xNVMe: make-deb [DONE]; find it here:"
-	@find $(BUILD_DIR)/meson-dist/ -name '*.deb'
+	find $(BUILD_DIR)/meson-dist/ -name '*.deb'
 
 define install-deb-help
 # Install the binary DEB package created with: make build-deb
@@ -564,7 +564,7 @@ build-rpm: _require_builddir
 	gzip -f -9 xnvme.tar
 	rpmbuild -ta xnvme.tar.gz -v --define "_topdir $(shell pwd)/${BUILD_DIR}/meson-dist" --define "_prefix /usr/local"
 	@echo "## xNVMe: make build-rpm [DONE]; find it here:"
-	@find $(BUILD_DIR)/meson-dist/ -name '*.rpm'
+	find $(BUILD_DIR)/meson-dist/ -name '*.rpm'
 
 define install-rpm-help
 # Install the binary RPM package created with: make build-rpm
@@ -603,7 +603,7 @@ endef
 .PHONY: clean-subprojects
 clean-subprojects:
 	@echo "## xNVMe: make clean-subprojects"
-	@if [ -d "subprojects/spdk" ] && [ ${PLATFORM_ID} != 'Darwin' ]; then cd subprojects/spdk &&$(MAKE) clean; fi;
+	if [ -d "subprojects/spdk" ] && [ ${PLATFORM_ID} != 'Darwin' ]; then cd subprojects/spdk &&$(MAKE) clean; fi;
 	rm -fr $(BUILD_DIR) || true
 	@echo "## xNVMe: make clean-subprojects [DONE]"
 
@@ -623,7 +623,7 @@ endef
 gen-src-archive:
 	@echo "## xNVMe: make gen-src-archive"
 	$(MESON) setup $(BUILD_DIR) -Dbuild_subprojects=false -Dwith-liburing=disabled -Dwith-libvfn=disabled
-	@if [ $(ALLOW_DIRTY) -eq 1 ]; then \
+	if [ $(ALLOW_DIRTY) -eq 1 ]; then \
 		$(MESON) dist -C $(BUILD_DIR) --no-tests --formats gztar --allow-dirty; \
 	else \
 		$(MESON) dist -C $(BUILD_DIR) --no-tests --formats gztar; \
@@ -650,12 +650,12 @@ endef
 .PHONY: gen-artifacts
 gen-artifacts: gen-src-archive-with-subprojects
 	@echo "## xNVMe: make gen-artifacts"
-	@cd python/bindings && make clean build
-	@mkdir -p /tmp/artifacts
-	@ls -l /tmp/artifacts
-	@cp builddir/meson-dist/xnvme-$(PROJECT_VER).tar.gz /tmp/artifacts/xnvme-src.tar.gz
-	@cp python/bindings/dist/xnvme-$(PROJECT_VER).tar.gz /tmp/artifacts/xnvme-py-sdist.tar.gz
-	@ls -l /tmp/artifacts
+	cd python/bindings && make clean build
+	mkdir -p /tmp/artifacts
+	ls -l /tmp/artifacts
+	cp builddir/meson-dist/xnvme-$(PROJECT_VER).tar.gz /tmp/artifacts/xnvme-src.tar.gz
+	cp python/bindings/dist/xnvme-$(PROJECT_VER).tar.gz /tmp/artifacts/xnvme-py-sdist.tar.gz
+	ls -l /tmp/artifacts
 	@echo "## xNVMe: make gen-artifacts [DONE]"
 
 define gen-bash-completions-help
@@ -690,8 +690,8 @@ endef
 .PHONY: tags
 tags:
 	@echo "## xNVMe: make tags"
-	@if [ -d "$(BUILD_DIR)" ]; then cp $(BUILD_DIR)/compile_commands.json .; fi;
-	@$(CTAGS) * --languages=C -h=".c.h" -R --exclude=$(BUILD_DIR) \
+	if [ -d "$(BUILD_DIR)" ]; then cp $(BUILD_DIR)/compile_commands.json .; fi;
+	$(CTAGS) * --languages=C -h=".c.h" -R --exclude=$(BUILD_DIR) \
 		include \
 		lib \
 		tools \
@@ -707,7 +707,7 @@ endef
 .PHONY: tags-xnvme-public
 tags-xnvme-public:
 	@echo "## xNVMe: make tags-xnvme-public"
-	@$(CTAGS) --c-kinds=dfpgs -R include/lib*.h || true
+	$(CTAGS) --c-kinds=dfpgs -R include/lib*.h || true
 	@echo "## xNVMe: make tags-xnvme-public [DONE]"
 
 define _require_builddir-help
@@ -740,11 +740,11 @@ endef
 .PHONY: clobber
 clobber: clean
 	@echo "## xNVMe: clobber"
-	@git clean -dfx
-	@git clean -dfX
-	@git checkout .
-	@rm -rf subprojects/libvfn || true
-	@rm -rf subprojects/spdk || true
+	git clean -dfx
+	git clean -dfX
+	git checkout .
+	rm -rf subprojects/libvfn || true
+	rm -rf subprojects/spdk || true
 	@echo "## xNVMe: clobber [DONE]"
 
 
