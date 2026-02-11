@@ -27,49 +27,69 @@ def test_enum_fabrics(cijoe, device, be_opts, cli_args):
 @xnvme_parametrize(labels=["pcie"], opts=["be"])
 def test_scan(cijoe, device, be_opts, cli_args):
     """
-    Verify that xnvme_scan() discovers the expected number of controllers.
-    """
-    osname = pytest.cijoe_instance.getconf("os.name", "linux")
-    if osname in ["macos", "windows"]:
-        pytest.skip(reason=f"xnvme_scan() not implemented on {osname}")
+    Verify that xnvme_scan() discovers devices.
 
+    On Linux/FreeBSD: discovers controllers (dtype: 0x1) and tests both
+    kernel-attached and kernel-detached states.
+    On Windows/macOS: discovers namespaces (dtype: 0x2) only in attached state.
+    """
     from ..conftest import cijoe_config_get_all_devices
 
-    # Get expected controller count from config
+    osname = pytest.cijoe_instance.getconf("os.name", "linux")
     pcie_devices = cijoe_config_get_all_devices(["pcie"])
-    expected_controllers = len(pcie_devices)
+    expected_count = len(pcie_devices)
 
-    XnvmeDriver.kernel_attach(cijoe)
-    err, state = cijoe.run("xnvme scan")
-    assert not err
+    if osname in ["linux", "freebsd", "debian"]:
+        XnvmeDriver.kernel_attach(cijoe)
+        err, state = cijoe.run("xnvme scan")
+        assert not err
 
-    # Parse output to count discovered controllers (dtype: 0x1)
-    output = state.output()
-    lines = [
-        line.strip() for line in output.split("\n") if line.strip().startswith("- {")
-    ]
-    scan_controllers = sum(1 for line in lines if "dtype: 0x1" in line)
+        # Count discovered controllers (dtype: 0x1)
+        output = state.output()
+        lines = [
+            line.strip()
+            for line in output.split("\n")
+            if line.strip().startswith("- {")
+        ]
+        scan_count = sum(1 for line in lines if "dtype: 0x1" in line)
 
-    if expected_controllers > 0:
-        assert (
-            scan_controllers == expected_controllers
-        ), f"Expected {expected_controllers} controllers, found {scan_controllers}"
+        if expected_count > 0:
+            assert (
+                scan_count == expected_count
+            ), f"Expected {expected_count} controllers, found {scan_count}"
 
-    XnvmeDriver.kernel_detach(cijoe)
-    err, state = cijoe.run("xnvme scan")
-    assert not err
+        XnvmeDriver.kernel_detach(cijoe)
+        err, state = cijoe.run("xnvme scan")
+        assert not err
 
-    # Verify controllers are still found when detached
-    output = state.output()
-    lines = [
-        line.strip() for line in output.split("\n") if line.strip().startswith("- {")
-    ]
-    scan_controllers = sum(1 for line in lines if "dtype: 0x1" in line)
+        # Verify controllers are still found when detached
+        output = state.output()
+        lines = [
+            line.strip()
+            for line in output.split("\n")
+            if line.strip().startswith("- {")
+        ]
+        scan_count = sum(1 for line in lines if "dtype: 0x1" in line)
 
-    if expected_controllers > 0:
-        assert (
-            scan_controllers == expected_controllers
-        ), f"Expected {expected_controllers} controllers (detached), found {scan_controllers}"
+        if expected_count > 0:
+            assert (
+                scan_count == expected_count
+            ), f"Expected {expected_count} controllers (detached), found {scan_count}"
+    else:
+        # Windows/macOS: scan reports namespaces (dtype: 0x2), no detach test
+        err, state = cijoe.run("xnvme scan")
+        assert not err
+
+        output = state.output()
+        lines = [
+            line.strip()
+            for line in output.split("\n")
+            if line.strip().startswith("- {")
+        ]
+        scan_count = sum(1 for line in lines if "dtype: 0x2" in line)
+
+        if expected_count > 0:
+            assert scan_count > 0, "Expected at least one namespace from scan"
 
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
