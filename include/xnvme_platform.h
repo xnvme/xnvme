@@ -62,10 +62,14 @@ int
 xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts);
 
 /**
- * Shared enumerate implementation - iterates platform->backends, calls each driver's enumerate
+ * Shared enumerate implementation using scan + dev_open
  *
- * @param sys_uri System URI filter (NULL for all devices)
- * @param opts Options for driver filtering (may be NULL for defaults)
+ * When sys_uri is NULL, uses platform scan to discover local devices, opens each,
+ * and invokes the callback. When sys_uri is provided (fabrics), delegates to the
+ * first backend that implements enumerate.
+ *
+ * @param sys_uri NULL for local devices, or fabrics URI for discovery
+ * @param opts Options for dev_open (may be NULL for defaults)
  * @param cb_func Callback invoked for each opened device
  * @param cb_args User-provided arguments passed to callback
  *

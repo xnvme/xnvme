@@ -15,69 +15,6 @@
 
 #include <xnvme_dev.h>
 
-int
-xnvme_be_macos_driverkit_enumerate(const char *sys_uri, struct xnvme_opts *opts,
-				   xnvme_enumerate_cb cb_func, void *cb_args)
-{
-	XNVME_DEBUG("INFO: xnvme_be_macos_driverkit_enumerate()");
-	CFMutableDictionaryRef matching_dict;
-	struct xnvme_opts tmp_opts = *opts;
-	io_iterator_t iterator;
-	kern_return_t ret;
-	io_service_t service;
-	struct xnvme_dev *dev;
-	char uri[XNVME_IDENT_URI_LEN];
-
-	if (sys_uri) {
-		XNVME_DEBUG("FAILED: sys_uri: %s is not supported", sys_uri);
-		return -ENOSYS;
-	}
-
-	const char *service_classes[] = {"IOUserBlockStorageDevice", "IOUserService"};
-	for (int i = 0; i < 2; ++i) {
-		matching_dict = IOServiceMatching(service_classes[i]);
-
-		ret = IOServiceGetMatchingServices(kIOMasterPortDefault, matching_dict, &iterator);
-		if (ret != kIOReturnSuccess || !iterator) {
-			XNVME_DEBUG("FAILED: IOServiceGetMatchingServices(%s); ret(0x%08x), '%s'",
-				    service_classes[i], ret, mach_error_string(ret));
-			continue;
-		}
-
-		tmp_opts.be = xnvme_be_macos_driverkit.attr.name;
-		tmp_opts.nsid = 1;
-
-		while (true) {
-			dev = NULL;
-			memset(&uri, 0, XNVME_IDENT_URI_LEN);
-			service = IOIteratorNext(iterator);
-
-			if (!service) {
-				break;
-			}
-
-			ret = IORegistryEntryGetName(service, uri);
-			if (strncmp("MacVFN-", uri, 7)) {
-				continue;
-			}
-			XNVME_DEBUG("INFO: MacVFN uri matched: %s", uri);
-
-			dev = xnvme_dev_open(uri, &tmp_opts);
-			if (!dev) {
-				XNVME_DEBUG("INFO: xnvme_dev_open(): %d", errno);
-				return -errno;
-			}
-			if (cb_func(dev, cb_args)) {
-				xnvme_dev_close(dev);
-			}
-		}
-
-		IOObjectRelease(iterator);
-	}
-
-	return 0;
-}
-
 void
 xnvme_be_macos_driverkit_dev_close(struct xnvme_dev *dev)
 {
@@ -224,7 +161,7 @@ xnvme_be_macos_driverkit_dev_open(struct xnvme_dev *dev)
 
 struct xnvme_be_dev g_xnvme_be_macos_driverkit_dev = {
 #ifdef XNVME_PLATFORM_MACOS_ENABLED
-	.enumerate = xnvme_be_macos_driverkit_enumerate,
+	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_macos_driverkit_dev_open,
 	.dev_close = xnvme_be_macos_driverkit_dev_close,
 #else

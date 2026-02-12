@@ -116,47 +116,6 @@ _is_disk_nvme(io_object_t ioservice_device)
 	return 0;
 }
 
-int
-xnvme_be_macos_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
-			 void *cb_args)
-{
-	if (sys_uri) {
-		XNVME_DEBUG("FAILED: sys_uri: %s is not supported", sys_uri);
-		return -ENOSYS;
-	}
-
-	struct xnvme_opts tmp_opts = *opts;
-	tmp_opts.be = xnvme_be_macos.attr.name;
-
-	for (int nid = 0; nid < 256; nid++) {
-		char path[128] = {0};
-		char disk_id[128] = {0};
-		char uri[XNVME_IDENT_URI_LEN] = {0};
-		struct xnvme_dev *dev;
-
-		// Enumerate 'disk' devices
-		snprintf(disk_id, 127, "%s%d", _DISK_PREFIX, nid);
-		snprintf(path, 127, "%s%s", _PATH_DEV_DISK, disk_id);
-
-		if (access(path, F_OK)) {
-			continue;
-		}
-
-		snprintf(uri, XNVME_IDENT_URI_LEN - 1, "%s", path);
-
-		dev = xnvme_dev_open(uri, &tmp_opts);
-		if (!dev) {
-			XNVME_DEBUG("xnvme_dev_open(): %d", errno);
-			continue;
-		}
-		if (cb_func(dev, cb_args)) {
-			xnvme_dev_close(dev);
-		}
-	}
-
-	return 0;
-}
-
 void
 xnvme_be_macos_state_term(struct xnvme_be_macos_state *state)
 {
@@ -269,7 +228,7 @@ xnvme_be_macos_dev_open(struct xnvme_dev *dev)
 
 struct xnvme_be_dev g_xnvme_be_macos_dev = {
 #ifdef XNVME_PLATFORM_MACOS_ENABLED
-	.enumerate = xnvme_be_macos_enumerate,
+	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_macos_dev_open,
 	.dev_close = xnvme_be_macos_dev_close,
 #else
