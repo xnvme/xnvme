@@ -4,8 +4,10 @@
 
 #include <errno.h>
 #include <stddef.h>
+#include <string.h>
 #include <libxnvme.h>
 #include <xnvme_be.h>
+#include <xnvme_be_nosys.h>
 #include <xnvme_dev.h>
 #include <xnvme_platform.h>
 
@@ -160,65 +162,148 @@ xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 	return err ? err : -ENXIO;
 }
 
+struct enumerate_scan_ctx {
+	struct xnvme_opts *opts;
+	xnvme_enumerate_cb cb_func;
+	void *cb_args;
+};
+
+/**
+ * Open controller with nsid=0, send Identify Active Namespace List,
+ * then open each namespace and invoke cb_func.
+ */
+static int
+enumerate_controller(const char *uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
+		     void *cb_args)
+{
+	struct xnvme_opts ctrl_opts = *opts;
+	struct xnvme_dev *ctrl_dev;
+	struct xnvme_spec_idfy *idfy_buf;
+	struct xnvme_cmd_ctx ctx;
+	uint32_t *nslist;
+	int err;
+
+	ctrl_opts.nsid = 0;
+	ctrl_dev = xnvme_dev_open(uri, &ctrl_opts);
+	if (!ctrl_dev) {
+		XNVME_DEBUG("FAILED: xnvme_dev_open(%s) for controller", uri);
+		return -errno;
+	}
+
+	idfy_buf = xnvme_buf_alloc(ctrl_dev, sizeof(*idfy_buf));
+	if (!idfy_buf) {
+		XNVME_DEBUG("FAILED: xnvme_buf_alloc()");
+		xnvme_dev_close(ctrl_dev);
+		return -ENOMEM;
+	}
+	memset(idfy_buf, 0, sizeof(*idfy_buf));
+
+	ctx = xnvme_cmd_ctx_from_dev(ctrl_dev);
+	err = xnvme_adm_idfy(&ctx, XNVME_SPEC_IDFY_NSLIST, 0, 0, 0, 0, idfy_buf);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		XNVME_DEBUG("FAILED: Identify Active NS List, err: %d", err);
+		xnvme_buf_free(ctrl_dev, idfy_buf);
+		xnvme_dev_close(ctrl_dev);
+		return err ? err : -EIO;
+	}
+
+	nslist = (uint32_t *)idfy_buf;
+	for (int i = 0; i < 1024 && nslist[i]; ++i) {
+		struct xnvme_opts ns_opts = *opts;
+		struct xnvme_dev *ns_dev;
+
+		ns_opts.nsid = nslist[i];
+
+		ns_dev = xnvme_dev_open(uri, &ns_opts);
+		if (!ns_dev) {
+			XNVME_DEBUG("FAILED: xnvme_dev_open(%s, nsid=%u)", uri, nslist[i]);
+			continue;
+		}
+
+		if (cb_func(ns_dev, cb_args)) {
+			xnvme_dev_close(ns_dev);
+		}
+	}
+
+	xnvme_buf_free(ctrl_dev, idfy_buf);
+	xnvme_dev_close(ctrl_dev);
+	return 0;
+}
+
+/**
+ * Returns true when the controller is bound to the kernel NVMe driver.
+ * Scan reports namespace idents for these, so enumerate handles them via
+ * dev_open. Named "nvme" on both Linux and FreeBSD.
+ */
+static int
+is_kernel_nvme_driver(const char *kernel_driver)
+{
+	return !strcmp(kernel_driver, "nvme");
+}
+
+static int
+enumerate_scan_cb(const struct xnvme_ident *ident, void *cb_args)
+{
+	struct enumerate_scan_ctx *ctx = cb_args;
+
+	/**
+	 * Controllers bound to the kernel NVMe driver are skipped — scan
+	 * reports their namespace idents separately and those are handled
+	 * via dev_open below. Controllers NOT on the kernel driver (e.g.
+	 * vfio-pci, nic_uio, uio_pci_generic) have no /dev/ namespace
+	 * idents, so open the controller and iterate namespaces via Identify.
+	 */
+	if (ident->dtype == XNVME_DEV_TYPE_NVME_CONTROLLER) {
+		if (!is_kernel_nvme_driver(ident->kernel_driver)) {
+			enumerate_controller(ident->uri, ctx->opts, ctx->cb_func, ctx->cb_args);
+		}
+		return 0;
+	}
+
+	{
+		struct xnvme_opts opts = *ctx->opts;
+		struct xnvme_dev *dev;
+
+		if (!opts.nsid) {
+			opts.nsid = ident->nsid ? ident->nsid : 1;
+		}
+
+		dev = xnvme_dev_open(ident->uri, &opts);
+		if (!dev) {
+			XNVME_DEBUG("FAILED: xnvme_dev_open(%s)", ident->uri);
+			return 0;
+		}
+
+		if (ctx->cb_func(dev, ctx->cb_args)) {
+			xnvme_dev_close(dev);
+		}
+	}
+
+	return 0;
+}
+
 int
 xnvme_platform_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
 			 void *cb_args)
 {
 	struct xnvme_opts opts_default = xnvme_opts_default();
-	int err;
 
 	if (!opts) {
 		opts = &opts_default;
 	}
 
-	for (int i = 0; g_xnvme_platform->backends[i]; ++i) {
-		struct xnvme_be be = *g_xnvme_platform->backends[i];
+	if (!sys_uri) {
+		struct enumerate_scan_ctx ctx = {
+			.opts = opts,
+			.cb_func = cb_func,
+			.cb_args = cb_args,
+		};
 
-		if (!be.attr.enabled) {
-			XNVME_DEBUG("INFO: skipping be: '%s'; !enabled", be.attr.name);
-			continue;
-		}
-
-		if (opts && (opts->be) && strcmp(opts->be, be.attr.name)) {
-			// skip if opts->be != be.attr.name
-			continue;
-		}
-
-		err = be_setup(&be, XNVME_BE_DEV, NULL);
-		if (err < 0) {
-			XNVME_DEBUG("FAILED: be_setup(); err: %d", err);
-			continue;
-		}
-
-		err = be.dev.enumerate(sys_uri, opts, cb_func, cb_args);
-		switch (err) {
-		case 0:
-			break;
-		case -ENOSYS:
-			// fail silently if the error is ENOSYS,
-			// unless the user asks for a specific backend
-			if (opts->be) {
-				XNVME_DEBUG("FAILED: Requested backend (%s) doesn't support "
-					    "enumeration, err: '%s'",
-					    g_xnvme_platform->backends[i]->attr.name,
-					    strerror(-err));
-				return err;
-			}
-			break;
-		case -ESRCH:
-			if (!strcmp("spdk", be.attr.name)) {
-				XNVME_DEBUG("WARNING: SPDK could not be initialized");
-				break;
-			}
-			// !! FALLTHROUGH !!
-		default:
-			XNVME_DEBUG("FAILED: %s->enumerate(...), err: '%s', i: %d",
-				    g_xnvme_platform->backends[i]->attr.name, strerror(-err), i);
-			return err;
-		}
+		return g_xnvme_platform->scan(NULL, opts, enumerate_scan_cb, &ctx);
 	}
 
-	return 0;
+	/** Fabrics / explicit sys_uri: delegate directly to enumerate_controller */
+	return enumerate_controller(sys_uri, opts, cb_func, cb_args);
 }
 
 int

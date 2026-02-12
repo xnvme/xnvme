@@ -569,11 +569,11 @@ xnvme_be_spdk_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enum
 		}
 		if (sscanf(ident.uri, "%[^:]:%d", addr, &port) != 2) {
 			XNVME_DEBUG("FAILED: malformed sys_uri: %s", sys_uri);
-
 			return -EINVAL;
 		}
 	}
-	XNVME_DEBUG("INFO: addr: %s, port: %d", addr, port);
+	XNVME_DEBUG("INFO: sys_uri: %s, addr: %s, port: %d", sys_uri ? sys_uri : "(null)", addr,
+		    port);
 
 	struct xnvme_opts tmp_opts = *opts;
 	tmp_opts.be = xnvme_be_spdk.attr.name;
