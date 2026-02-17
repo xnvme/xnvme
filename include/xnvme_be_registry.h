@@ -21,6 +21,9 @@ extern const struct xnvme_be_config g_xnvme_be_vfio;
 #ifdef XNVME_BE_UPCIE_ENABLED
 extern const struct xnvme_be_config g_xnvme_be_upcie;
 #endif
+#ifdef XNVME_BE_UPCIE_CUDA_ENABLED
+extern const struct xnvme_be_config g_xnvme_be_upcie_cuda;
+#endif
 
 /* Linux */
 #ifdef XNVME_PLATFORM_LINUX_ENABLED
