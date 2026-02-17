@@ -56,4 +56,24 @@ extern struct xnvme_be_sync g_xnvme_be_upcie_sync;
 extern struct xnvme_be_async g_xnvme_be_upcie_async;
 extern struct xnvme_be_dev g_xnvme_be_upcie_dev;
 
+// Used by xnvme_be_upcie_cuda_dev.c
+void
+xnvme_be_upcie_dev_close(struct xnvme_dev *dev);
+int
+xnvme_be_upcie_dev_open(struct xnvme_dev *dev);
+int
+xnvme_be_upcie_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
+			 void *cb_args);
+void *
+xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev);
+int
+xnvme_be_upcie_ctrlr_term(void *handle);
+
+// Used by xnvme_be_upcie_cuda_async.c
+int
+xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int opts);
+int
+xnvme_be_upcie_queue_term(struct xnvme_queue *queue);
+int
+xnvme_be_upcie_queue_poke(struct xnvme_queue *queue, uint32_t max);
 #endif /* __INTERNAL_XNVME_BE_UPCIE */

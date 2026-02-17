@@ -126,7 +126,7 @@ _pci_enable_bus_master(const char *bdf)
  * opens the NVMe controller and creates a sync qpair. The returned handle is
  * stored in cref and written to dev->be.state[0] by the platform.
  */
-static void *
+void *
 xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 {
 	struct xnvme_be_upcie_ctrlr *ctrlr;
@@ -185,7 +185,7 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 	return ctrlr;
 }
 
-static int
+int
 xnvme_be_upcie_ctrlr_term(void *handle)
 {
 	struct xnvme_be_upcie_ctrlr *ctrlr = handle;

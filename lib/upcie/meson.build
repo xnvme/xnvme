@@ -3,11 +3,17 @@
 
 xnvmelib_upcie_source = files(
   'xnvme_be_upcie_admin.c',
+  'xnvme_be_upcie_cuda_admin.c',
   'xnvme_be_upcie_async.c',
+  'xnvme_be_upcie_cuda_async.c',
   'xnvme_be_upcie.c',
+  'xnvme_be_upcie_cuda.c',
   'xnvme_be_upcie_dev.c',
+  'xnvme_be_upcie_cuda_dev.c',
   'xnvme_be_upcie_mem.c',
+  'xnvme_be_upcie_cuda_mem.c',
   'xnvme_be_upcie_sync.c',
+  'xnvme_be_upcie_cuda_sync.c',
 )
 xnvmelib_source += xnvmelib_upcie_source
 
