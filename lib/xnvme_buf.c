@@ -94,6 +94,13 @@ xnvme_buf_clear(void *buf, size_t nbytes)
 	return 0;
 }
 
+int
+xnvme_buf_memcpy(void *dst, const void *src, size_t nbytes)
+{
+	memcpy(dst, src, nbytes);
+	return 0;
+}
+
 /**
  * Helper function writing/reading given buf to/from file. When mode has
  * O_WRONLY, the given buffer is written to file, otherwise, it is read.
