@@ -175,6 +175,18 @@ int
 xnvme_buf_clear(void *buf, size_t nbytes);
 
 /**
+ * Copy 'nbytes' from 'src' to 'dst'
+ *
+ * @param dst Pointer to the destination buffer
+ * @param src Pointer to the source buffer
+ * @param nbytes Amount of bytes to copy
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ */
+int
+xnvme_buf_memcpy(void *dst, const void *src, size_t nbytes);
+
+/**
  * Compare two buffers and count the number of differing bytes.
  *
  * @param expected Pointer to buffer containing the expected data
