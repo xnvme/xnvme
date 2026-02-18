@@ -103,7 +103,7 @@ xnvme_be_spdk_sync_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf
 #endif
 
 struct xnvme_be_admin g_xnvme_be_spdk_admin = {
-	.id = "nvme",
+	.id = "spdk",
 #ifdef XNVME_BE_SPDK_ENABLED
 	.cmd_admin = xnvme_be_spdk_sync_cmd_admin,
 	.cmd_pseudo = xnvme_be_spdk_sync_cmd_pseudo,
