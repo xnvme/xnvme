@@ -64,11 +64,11 @@ def get_combinations():
         },
         # User-space NVMe-driver
         {
-            "be": ["vfio"],
-            "mem": ["vfio"],
-            "async": ["vfio"],
-            "sync": ["vfio"],
-            "admin": ["vfio"],
+            "be": ["libvfn"],
+            "mem": ["libvfn"],
+            "async": ["libvfn"],
+            "sync": ["libvfn"],
+            "admin": ["libvfn"],
             "label": ["pcie"],
         },
         {

@@ -252,8 +252,8 @@ test_enum_backend(struct xnvme_cli *cli)
 {
 	struct xnvme_opts opts = xnvme_opts_default();
 	struct backend_cb_args cb_args = {0};
-	char *backends[N_BACKENDS] = {"spdk",    "linux",   "fbsd", "macos",
-				      "windows", "ramdisk", "vfio"};
+	char *backends[N_BACKENDS] = {"spdk",    "linux",   "fbsd",  "macos",
+				      "windows", "ramdisk", "libvfn"};
 	int err;
 
 	for (int i = 0; i < N_BACKENDS; ++i) {

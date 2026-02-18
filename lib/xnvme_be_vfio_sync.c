@@ -125,7 +125,7 @@ out:
 #endif
 
 struct xnvme_be_sync g_xnvme_be_vfio_sync = {
-	.id = "nvme",
+	.id = "libvfn",
 #ifdef XNVME_BE_VFIO_ENABLED
 	.cmd_io = xnvme_be_vfio_sync_cmd_io,
 	.cmd_iov = xnvme_be_vfio_sync_cmd_iov,
