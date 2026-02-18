@@ -10,9 +10,6 @@
 #define LINUX_BLOCK_SSW 9
 #endif
 
-#define XNVME_LINUX_CTRLR_SCAN _PATH_DEV "nvme%1u%[^\n]"
-#define XNVME_LINUX_NS_SCAN    _PATH_DEV "nvme%1un%1u%[^\n]"
-
 #define XNVME_LINUX_CTRLR_FMT _PATH_DEV "nvme%1u"
 #define XNVME_LINUX_NS_FMT    _PATH_DEV "nvme%1un%1u"
 
