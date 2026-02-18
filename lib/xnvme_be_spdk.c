@@ -18,7 +18,7 @@ struct xnvme_be_mixin g_xnvme_be_mixin_spdk[] = {
 
 	{
 		.mtype = XNVME_BE_ASYNC,
-		.name = "nvme",
+		.name = "spdk",
 		.descr = "Use the SPDK NVMe driver",
 		.async = &g_xnvme_be_spdk_async,
 		.check_support = xnvme_be_supported,
@@ -26,7 +26,7 @@ struct xnvme_be_mixin g_xnvme_be_mixin_spdk[] = {
 
 	{
 		.mtype = XNVME_BE_SYNC,
-		.name = "nvme",
+		.name = "spdk",
 		.descr = "Use the SPDK NVMe driver",
 		.sync = &g_xnvme_be_spdk_sync,
 		.check_support = xnvme_be_supported,
@@ -34,7 +34,7 @@ struct xnvme_be_mixin g_xnvme_be_mixin_spdk[] = {
 
 	{
 		.mtype = XNVME_BE_ADMIN,
-		.name = "nvme",
+		.name = "spdk",
 		.descr = "Use the SPDK NVMe driver",
 		.admin = &g_xnvme_be_spdk_admin,
 		.check_support = xnvme_be_supported,
@@ -42,7 +42,7 @@ struct xnvme_be_mixin g_xnvme_be_mixin_spdk[] = {
 
 	{
 		.mtype = XNVME_BE_DEV,
-		.name = "nvme",
+		.name = "spdk",
 		.descr = "Use the SPDK NVMe driver",
 		.dev = &g_xnvme_be_spdk_dev,
 		.check_support = xnvme_be_supported,

@@ -139,5 +139,5 @@ xnvme_libaio = {type = "builtin", group = "libaio", be = "linux", async = "libai
 xnvme_posixaio = {type = "builtin", group = "posixaio", be = "linux", async = "posix", device = "bdev"} # Kernel
 xnvme_io_uring = {type = "builtin", group = "io_uring", be = "linux", async = "io_uring", device = "bdev"} # Kernel
 xnvme_io_uring_cmd = {type = "builtin", group = "io_uring_cmd", be = "linux", async = "io_uring_cmd", device = "cdev"} # Kernel
-xnvme_spdk = {type = "builtin", group = "spdk", be = "spdk", async = "nvme", device = "pcie"} # Userspace
+xnvme_spdk = {type = "builtin", group = "spdk", be = "spdk", async = "spdk", device = "pcie"} # Userspace
 xnvme_null = {type = "builtin", group = "null", be = "linux", async = "nil", device = "bdev"} # Kernel

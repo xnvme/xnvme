@@ -105,7 +105,7 @@ spdk_bdev = {type = "external_preload", group = "spdk", path = "/tmp/spdk/build/
 
 xnvme_kqueue = {type = "builtin", group = "posixaio", be = "fbsd", async = "kqueue", device = "bdev"} # Kernel
 xnvme_posixaio = {type = "builtin", group = "posixaio", be = "fbsd", async = "posix", device = "bdev"} # Kernel
-xnvme_spdk = {type = "builtin", group = "spdk", be = "spdk", async = "nvme", device = "pcie"} # Userspace
+xnvme_spdk = {type = "builtin", group = "spdk", be = "spdk", async = "spdk", device = "pcie"} # Userspace
 xnvme_null = {type = "builtin", group = "null", be = "fbsd", async = "nil", device = "bdev"} # Kernel
 
 [[devices]] # OS Managed

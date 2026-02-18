@@ -70,17 +70,17 @@ def get_combinations():
         {
             "be": ["spdk"],
             "mem": ["spdk"],
-            "async": ["nvme"],
-            "sync": ["nvme"],
-            "admin": ["nvme"],
+            "async": ["spdk"],
+            "sync": ["spdk"],
+            "admin": ["spdk"],
             "label": ["pcie"],
         },
         {
             "be": ["spdk"],
             "mem": ["spdk"],
-            "async": ["nvme"],
-            "sync": ["nvme"],
-            "admin": ["nvme"],
+            "async": ["spdk"],
+            "sync": ["spdk"],
+            "admin": ["spdk"],
             "label": ["fabrics"],
         },
     ]
@@ -107,9 +107,9 @@ def get_combinations():
         {
             "be": ["spdk"],
             "mem": ["spdk"],
-            "async": ["nvme"],
-            "sync": ["nvme"],
-            "admin": ["nvme"],
+            "async": ["spdk"],
+            "sync": ["spdk"],
+            "admin": ["spdk"],
             "label": ["pcie"],
         },
     ]

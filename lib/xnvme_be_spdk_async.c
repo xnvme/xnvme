@@ -236,7 +236,7 @@ xnvme_be_spdk_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_
 #endif
 
 struct xnvme_be_async g_xnvme_be_spdk_async = {
-	.id = "nvme",
+	.id = "spdk",
 #ifdef XNVME_BE_SPDK_ENABLED
 	.cmd_io = xnvme_be_spdk_async_cmd_io,
 	.cmd_iov = xnvme_be_spdk_async_cmd_iov,
