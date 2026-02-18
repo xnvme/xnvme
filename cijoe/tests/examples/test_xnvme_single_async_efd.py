@@ -5,7 +5,7 @@ from ..conftest import xnvme_parametrize
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin", "async"])
 def test_read(cijoe, device, be_opts, cli_args):
-    if be_opts["be"] not in ["vfio", "linux"]:
+    if be_opts["be"] not in ["libvfn", "linux"]:
         pytest.skip(reason=f"[be={be_opts['be']}] Eventfd not supported")
     if be_opts["be"] in ["linux"] and be_opts["async"] not in [
         "libaio",

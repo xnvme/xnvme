@@ -31,7 +31,7 @@ xnvme_be_vfio_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_
 #endif
 
 struct xnvme_be_admin g_xnvme_be_vfio_admin = {
-	.id = "nvme",
+	.id = "libvfn",
 #ifdef XNVME_BE_VFIO_ENABLED
 	.cmd_admin = xnvme_be_vfio_sync_cmd_admin,
 	.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo,

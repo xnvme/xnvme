@@ -17,7 +17,7 @@ steps:
 - name: test_python
   uses: core.testrunner
   with:
-    args: '{{ config.xnvme.repository.sync.remote_path }}/python/tests -k "not fabrics and not vfio and not test_list"'
+    args: '{{ config.xnvme.repository.sync.remote_path }}/python/tests -k "not fabrics and not libvfn and not test_list"'
     run_local: false
     random_order: false
 

@@ -10,7 +10,7 @@
 struct xnvme_be_mixin g_xnvme_be_mixin_vfio[] = {
 	{
 		.mtype = XNVME_BE_MEM,
-		.name = "vfio",
+		.name = "libvfn",
 		.descr = "Use libc malloc()/free() with sysconf for alignment",
 		.mem = &g_xnvme_be_vfio_mem,
 		.check_support = xnvme_be_supported,
@@ -18,32 +18,32 @@ struct xnvme_be_mixin g_xnvme_be_mixin_vfio[] = {
 
 	{
 		.mtype = XNVME_BE_ASYNC,
-		.name = "vfio",
-		.descr = "Use the VFIO NVMe driver",
+		.name = "libvfn",
+		.descr = "Use the libvfn NVMe driver",
 		.async = &g_xnvme_be_vfio_async,
 		.check_support = xnvme_be_supported,
 	},
 
 	{
 		.mtype = XNVME_BE_SYNC,
-		.name = "vfio",
-		.descr = "Use the VFIO NVMe driver",
+		.name = "libvfn",
+		.descr = "Use the libvfn NVMe driver",
 		.sync = &g_xnvme_be_vfio_sync,
 		.check_support = xnvme_be_supported,
 	},
 
 	{
 		.mtype = XNVME_BE_ADMIN,
-		.name = "vfio",
-		.descr = "Use the VFIO NVMe driver",
+		.name = "libvfn",
+		.descr = "Use the libvfn NVMe driver",
 		.admin = &g_xnvme_be_vfio_admin,
 		.check_support = xnvme_be_supported,
 	},
 
 	{
 		.mtype = XNVME_BE_DEV,
-		.name = "vfio",
-		.descr = "Use the VFIO NVMe driver",
+		.name = "libvfn",
+		.descr = "Use the libvfn NVMe driver",
 		.dev = &g_xnvme_be_vfio_dev,
 		.check_support = xnvme_be_supported,
 	},
@@ -58,7 +58,7 @@ struct xnvme_be xnvme_be_vfio = {
 	.dev = XNVME_BE_NOSYS_DEV,
 	.attr =
 		{
-			.name = "vfio",
+			.name = "libvfn",
 #ifdef XNVME_BE_VFIO_ENABLED
 			.enabled = 1,
 #endif
