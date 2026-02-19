@@ -38,6 +38,11 @@ xnvme_be_spdk_queue_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 	qopts.io_queue_size = XNVME_MAX(queue->base.capacity, qopts.io_queue_size);
 	qopts.io_queue_requests = qopts.io_queue_size * 2;
 
+	qopts.delay_cmd_submit = true;
+	if (getenv("XNVME_QUEUE_BATCHING_OFF")) {
+		qopts.delay_cmd_submit = false;
+	}
+
 	queue->qpair = spdk_nvme_ctrlr_alloc_io_qpair(state->ctrlr, &qopts, sizeof(qopts));
 	if (!queue->qpair) {
 		XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_alloc_io_qpair()");
