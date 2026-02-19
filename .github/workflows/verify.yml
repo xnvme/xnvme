@@ -374,11 +374,19 @@ jobs:
         --config "configs/ramdisk.toml" \
         --output "${{ github.job }}-${{ matrix.container.os }}-${{ matrix.container.ver }}-test-ramdisk"
 
+    - name: CIJOE, upload report.html
+      if: always() && (!contains('focal', matrix.container.ver))
+      uses: actions/upload-artifact@v4.3.0
+      with:
+        name: ${{ github.job }}-${{ matrix.container.os }}-${{ matrix.container.ver }}-report-html
+        path: cijoe/${{ github.job }}-${{ matrix.container.os }}-${{ matrix.container.ver }}-*/report.html
+        if-no-files-found: warn
+
     - name: CIJOE, archive build-${{ matrix.container.os }}-${{ matrix.container.ver }}-reports
       if: always() && (!contains('focal', matrix.container.ver))
       run: |
         tar czf ${{ github.job }}-${{ matrix.container.os }}-${{ matrix.container.ver }}-reports.tar.gz \
-          cijoe/${{ github.job }}-${{ matrix.container.os }}-${{ matrix.container.ver }}-* 
+          cijoe/${{ github.job }}-${{ matrix.container.os }}-${{ matrix.container.ver }}-*
 
     - name: CIJOE, upload build-${{ matrix.container.os }}-${{ matrix.container.ver }}-reports
       if: always() && (!contains('focal', matrix.container.ver))
@@ -497,11 +505,19 @@ jobs:
         --config "configs/ramdisk-macos.toml" \
         --output "${{ github.job }}-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-test-ramdisk"
 
+    - name: CIJOE, upload report.html
+      if: always()
+      uses: actions/upload-artifact@v4.3.0
+      with:
+        name: ${{ github.job }}-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-report-html
+        path: cijoe/${{ github.job }}-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-*/report.html
+        if-no-files-found: warn
+
     - name: CIJOE, archive build-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-reports
       if: always()
       run: |
         tar czf ${{ github.job }}-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-reports.tar.gz \
-          cijoe/${{ github.job }}-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-* 
+          cijoe/${{ github.job }}-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-*
 
     - name: CIJOE, upload build-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-reports
       uses: actions/upload-artifact@v4.3.0
@@ -648,11 +664,19 @@ jobs:
         --config "configs/ramdisk-windows.toml" \
         --output "${{ github.job }}-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-test-ramdisk"
 
+    - name: CIJOE, upload report.html
+      if: always()
+      uses: actions/upload-artifact@v4.3.0
+      with:
+        name: ${{ github.job }}-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-report-html
+        path: cijoe/${{ github.job }}-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-*/report.html
+        if-no-files-found: warn
+
     - name: CIJOE, archive build-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-reports
       if: always()
       run: |
         tar czf ${{ github.job }}-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-reports.tar.gz \
-          cijoe/${{ github.job }}-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-* 
+          cijoe/${{ github.job }}-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-*
 
     - name: CIJOE, upload build-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-reports
       uses: actions/upload-artifact@v4.3.0
@@ -733,11 +757,19 @@ jobs:
       if: failure()
       run: find cijoe -name "*.output" | xargs cat
 
+    - name: CIJOE, upload report.html
+      if: always()
+      uses: actions/upload-artifact@v4.3.0
+      with:
+        name: ${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-report-html
+        path: cijoe/${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-*/report.html
+        if-no-files-found: warn
+
     - name: CIJOE, archive verify-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-reports
       if: always()
       run: |
         tar czf ${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-reports.tar.gz \
-          cijoe/${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-* 
+          cijoe/${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-*
 
     - name: CIJOE, upload verify-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-reports
       uses: actions/upload-artifact@v4.3.0
@@ -829,11 +861,19 @@ jobs:
       if: failure()
       run: find cijoe -name "*.output" | xargs cat
 
+    - name: CIJOE, upload report.html
+      if: always()
+      uses: actions/upload-artifact@v4.3.0
+      with:
+        name: ${{ github.job }}-${{ matrix.guest.hostname }}-report-html
+        path: cijoe/${{ github.job }}-${{ matrix.guest.hostname }}-*/report.html
+        if-no-files-found: warn
+
     - name: CIJOE, archive verify-${{ matrix.guest.hostname }}-reports
       if: always()
       run: |
         tar czf ${{ github.job }}-${{ matrix.guest.hostname }}-reports.tar.gz \
-          cijoe/${{ github.job }}-${{ matrix.guest.hostname }}-* 
+          cijoe/${{ github.job }}-${{ matrix.guest.hostname }}-*
 
     - name: CIJOE, upload verify-${{ matrix.guest.hostname }}-reports
       uses: actions/upload-artifact@v4.3.0
@@ -907,11 +947,19 @@ jobs:
       if: failure()
       run: find cijoe -name "*.output" | xargs cat
 
+    - name: CIJOE, upload report.html
+      if: always()
+      uses: actions/upload-artifact@v4.3.0
+      with:
+        name: ${{ github.job }}-${{ matrix.guest.hostname }}-report-html
+        path: cijoe/${{ github.job }}-${{ matrix.guest.hostname }}-*/report.html
+        if-no-files-found: warn
+
     - name: CIJOE, archive verify-${{ matrix.guest.hostname }}-reports
       if: always()
       run: |
         tar czf ${{ github.job }}-${{ matrix.guest.hostname }}-reports.tar.gz \
-          cijoe/${{ github.job }}-${{ matrix.guest.hostname }}-* 
+          cijoe/${{ github.job }}-${{ matrix.guest.hostname }}-*
 
     - name: CIJOE, upload verify-${{ matrix.guest.hostname }}-reports
       uses: actions/upload-artifact@v4.3.0
@@ -984,11 +1032,19 @@ jobs:
         --config "configs/ax42-linux-testing.toml" \
         --output "${{ github.job }}-results"
 
+    - name: CIJOE, upload report.html
+      if: always()
+      uses: actions/upload-artifact@v4.3.0
+      with:
+        name: ${{ github.job }}-report-html
+        path: cijoe/${{ github.job }}-*/report.html
+        if-no-files-found: warn
+
     - name: CIJOE, archive benchmark-bdev_xnvme-reports
       if: always()
       run: |
         tar czf ${{ github.job }}-reports.tar.gz \
-          cijoe/${{ github.job }}-* 
+          cijoe/${{ github.job }}-*
 
     - name: CIJOE, upload benchmark-bdev_xnvme-reports
       uses: actions/upload-artifact@v4.3.0
@@ -1059,6 +1115,14 @@ jobs:
         --monitor \
         --config "configs/ax42-${{ matrix.guest.os }}.toml" \
         --output "${{ github.job }}-${{ matrix.guest.os }}-benchmark"
+
+    - name: CIJOE, upload report.html
+      if: always()
+      uses: actions/upload-artifact@v4.3.0
+      with:
+        name: ${{ github.job }}-${{ matrix.guest.os }}-report-html
+        path: cijoe/${{ github.job }}-${{ matrix.guest.os }}-*/report.html
+        if-no-files-found: warn
 
     - name: CIJOE, archive latency-${{ matrix.guest.os }}-reports
       if: always()
