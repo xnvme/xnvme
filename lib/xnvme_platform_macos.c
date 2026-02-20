@@ -15,7 +15,43 @@
 #include <IOKit/IOKitLib.h>
 #include <IOKit/storage/nvme/NVMeSMARTLibExternal.h>
 #include <CoreFoundation/CoreFoundation.h>
+#include <sys/stat.h>
+#include <xnvme_be.h>
 #include <xnvme_dev.h>
+
+static uint32_t
+xnvme_platform_macos_classify(const char *uri)
+{
+	struct stat st;
+
+	if (!stat(uri, &st)) {
+		if (S_ISREG(st.st_mode)) {
+			return XNVME_BE_CAP_FILE;
+		}
+		if (S_ISBLK(st.st_mode)) {
+			return XNVME_BE_CAP_BDEV;
+		}
+		if (S_ISCHR(st.st_mode)) {
+			return XNVME_BE_CAP_BDEV;
+		}
+		return 0;
+	}
+
+	{
+		size_t len = strlen(uri);
+
+		if (len >= 2 && !strcmp(uri + len - 2, "GB")) {
+			return XNVME_BE_CAP_RAMDISK;
+		}
+	}
+
+	/* MacVFN DriverKit service names */
+	if (!strncmp(uri, "MacVFN-", 7)) {
+		return XNVME_BE_CAP_NVME_PCIE;
+	}
+
+	return 0;
+}
 
 static int
 xnvme_platform_macos_scan(const char *sys_uri, struct xnvme_opts *XNVME_UNUSED(opts),
@@ -135,6 +171,7 @@ xnvme_platform_macos_scan(const char *sys_uri, struct xnvme_opts *XNVME_UNUSED(o
 
 struct xnvme_platform g_xnvme_platform_macos = {
 	.name = "macos",
+	.classify = xnvme_platform_macos_classify,
 	.backends =
 		(const struct xnvme_be_config *const[]){
 			&g_xnvme_be_macos_emu,

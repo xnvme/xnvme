@@ -13,7 +13,31 @@
 #include <initguid.h>
 #include <windows.h>
 #include <Setupapi.h>
+#include <xnvme_be.h>
 #include <xnvme_dev.h>
+
+static uint32_t
+xnvme_platform_windows_classify(const char *uri)
+{
+	size_t len;
+
+	/* Windows device handles: \\.\PhysicalDriveN, \\.\ScsiN: */
+	if (!strncmp(uri, "\\\\.\\", 4)) {
+		return XNVME_BE_CAP_BDEV;
+	}
+
+	len = strlen(uri);
+	if (len >= 2 && !strcmp(uri + len - 2, "GB")) {
+		return XNVME_BE_CAP_RAMDISK;
+	}
+
+	/* Assume anything else is a file path */
+	if (len > 0) {
+		return XNVME_BE_CAP_FILE;
+	}
+
+	return 0;
+}
 
 static int
 xnvme_platform_windows_scan(const char *sys_uri, struct xnvme_opts *XNVME_UNUSED(opts),
@@ -99,6 +123,7 @@ xnvme_platform_windows_scan(const char *sys_uri, struct xnvme_opts *XNVME_UNUSED
 
 struct xnvme_platform g_xnvme_platform_windows = {
 	.name = "windows",
+	.classify = xnvme_platform_windows_classify,
 	.backends =
 		(const struct xnvme_be_config *const[]){
 			&g_xnvme_be_windows_emu_nvme,

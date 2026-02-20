@@ -5,6 +5,8 @@
 #ifndef __INTERNAL_XNVME_PLATFORM_H
 #define __INTERNAL_XNVME_PLATFORM_H
 
+#include <stdint.h>
+
 struct xnvme_be_config;
 struct xnvme_dev;
 struct xnvme_opts;
@@ -41,6 +43,8 @@ struct xnvme_platform {
 	const char *name; /**< Platform name (e.g., "linux", "freebsd") */
 	const struct xnvme_be_config *const
 		*backends; /**< NULL-terminated flat array of config pointers */
+
+	uint32_t (*classify)(const char *uri); /**< Classify URI into xnvme_be_cap */
 
 	int (*dev_open)(struct xnvme_dev *dev, struct xnvme_opts *opts);
 	int (*scan)(const char *sys_uri, struct xnvme_opts *opts, xnvme_scan_cb cb_func,
