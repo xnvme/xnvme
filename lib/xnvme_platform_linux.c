@@ -19,6 +19,8 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <upcie/pci.h>
+#include <sys/stat.h>
+#include <xnvme_be.h>
 #include <xnvme_dev.h>
 
 static uint32_t
@@ -337,6 +339,7 @@ xnvme_platform_linux_scan(const char *sys_uri, struct xnvme_opts *XNVME_UNUSED(o
 
 struct xnvme_platform g_xnvme_platform_linux = {
 	.name = "linux",
+	.classify = xnvme_platform_linux_classify,
 	.backends =
 		(const struct xnvme_be_config *const[]){
 #ifdef XNVME_BE_SPDK_ENABLED

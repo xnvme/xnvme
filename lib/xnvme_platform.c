@@ -26,7 +26,16 @@ struct xnvme_platform *g_xnvme_platform =
 int
 xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 {
+	int be_opts = opts && (opts->async || opts->sync || opts->admin);
+	uint32_t uri_cap = 0;
 	int err = 0;
+
+	if (!be_opts && g_xnvme_platform->classify) {
+		uri_cap = g_xnvme_platform->classify(dev->ident.uri);
+	}
+
+	XNVME_DEBUG("INFO: uri='%s' classified cap=0x%x be_opts=%d", dev->ident.uri, uri_cap,
+		    be_opts);
 
 	for (int i = 0; g_xnvme_platform->backends[i]; ++i) {
 		const struct xnvme_be_config *cfg = g_xnvme_platform->backends[i];
@@ -42,6 +51,11 @@ xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 			continue;
 		}
 		if (opts && opts->admin && strcmp(opts->admin, cfg->admin->id)) {
+			continue;
+		}
+		if (uri_cap && cfg->attr.caps && !(cfg->attr.caps & uri_cap)) {
+			XNVME_DEBUG("INFO: skipping config '%s'; caps 0x%x vs uri 0x%x",
+				    cfg->attr.descr, cfg->attr.caps, uri_cap);
 			continue;
 		}
 		be.async = *cfg->async;
@@ -72,12 +86,11 @@ xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 		dev->be = be;
 		dev->opts = *opts;
 
-		XNVME_DEBUG("INFO: trying config: be='%s' async='%s' sync='%s'", cfg->attr.name,
+		XNVME_DEBUG("INFO: selected config: be='%s' async='%s' sync='%s'", cfg->attr.name,
 			    cfg->async->id, cfg->sync->id);
 
 		err = be.dev.dev_open(dev);
-		switch (err < 0 ? -err : err) {
-		case 0:
+		if (!err) {
 			XNVME_DEBUG("INFO: obtained device handle");
 			dev->opts.be = be.attr.name;
 			dev->opts.admin = dev->be.admin.id;
@@ -86,15 +99,19 @@ xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 			dev->opts.mem = dev->be.mem.id;
 			dev->opts.dev = g_xnvme_platform->name;
 			return 0;
-
-		case EPERM:
-			XNVME_DEBUG("FAILED: permission-error; failed and stop trying");
-			return err;
-
-		default:
-			XNVME_DEBUG("INFO: skipping config due to err: %d", err);
-			break;
 		}
+		if (err == -EPERM || err == EPERM) {
+			XNVME_DEBUG("FAILED: permission-error; stop trying");
+			return err;
+		}
+
+		/* When caps matched, this was the right config -- return its error */
+		if (uri_cap && cfg->attr.caps) {
+			XNVME_DEBUG("FAILED: caps-matched config returned err: %d", err);
+			return err;
+		}
+
+		XNVME_DEBUG("INFO: skipping config due to err: %d", err);
 	}
 
 	XNVME_DEBUG("FAILED: no config for uri: '%s'", dev->ident.uri);

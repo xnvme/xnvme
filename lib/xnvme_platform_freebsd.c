@@ -16,7 +16,55 @@
 #include <string.h>
 #include <sys/pciio.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <xnvme_be.h>
 #include <xnvme_dev.h>
+
+static uint32_t
+xnvme_platform_fbsd_classify(const char *uri)
+{
+	struct stat st;
+
+	if (!stat(uri, &st)) {
+		if (S_ISREG(st.st_mode)) {
+			return XNVME_BE_CAP_FILE;
+		}
+		if (S_ISCHR(st.st_mode)) {
+			const char *base = strrchr(uri, '/');
+
+			base = base ? base + 1 : uri;
+			if (!strncmp(base, "nvme", 4)) {
+				return XNVME_BE_CAP_NVME_CDEV;
+			}
+			return 0;
+		}
+		return 0;
+	}
+
+	{
+		size_t len = strlen(uri);
+
+		if (len >= 2 && !strcmp(uri + len - 2, "GB")) {
+			return XNVME_BE_CAP_RAMDISK;
+		}
+	}
+
+	/* PCI BDF pattern: DDDD:DD:DD.D */
+	{
+		unsigned domain, bus, dev, func;
+
+		if (sscanf(uri, "%x:%x:%x.%u", &domain, &bus, &dev, &func) == 4) {
+			return XNVME_BE_CAP_NVME_PCIE;
+		}
+	}
+
+	/* Fabrics address:port */
+	if (strchr(uri, ':')) {
+		return XNVME_BE_CAP_NVME_TCP;
+	}
+
+	return 0;
+}
 
 struct xnvme_fbsd_scan_args {
 	xnvme_scan_cb cb_func;
@@ -208,6 +256,7 @@ out:
 
 struct xnvme_platform g_xnvme_platform_freebsd = {
 	.name = "freebsd",
+	.classify = xnvme_platform_fbsd_classify,
 	.backends =
 		(const struct xnvme_be_config *const[]){
 #ifdef XNVME_BE_SPDK_ENABLED
