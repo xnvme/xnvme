@@ -46,8 +46,15 @@ add_project_arguments(
   language: 'c'
 )
 
-add_project_arguments('-Db_lto='+ (not is_windows).to_string(), language: 'c')
-add_project_arguments('-Db_pie='+ get_option('hardening').to_string(), language: 'c')
+if not is_windows
+  add_project_arguments('-flto', language: 'c')
+  add_project_link_arguments('-flto', language: 'c')
+endif
+
+if get_option('hardening')
+  add_project_arguments('-fpie', language: 'c')
+  add_project_link_arguments('-pie', language: 'c')
+endif
 
 link_args_hardening = get_option('hardening') ? cc.get_supported_arguments([
   '-znow',
