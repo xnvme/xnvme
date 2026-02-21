@@ -4,7 +4,7 @@
  Material
 ###########
 
-A brief overview of xNVMe related presentations
+A brief overview of **xNVMe** related presentations
 
 .. raw:: html
 
@@ -63,9 +63,9 @@ A brief overview of xNVMe related presentations
             <img src="/_static/xnvme-logo-medium.png" class="card-img-top" alt="xNVMe: Unleashing Storage Hardware-Software Co-design">
           </a>
           <div class="card-body">
-            <h5 class="card-title">xNVMe: Unleashing Storage Hardware-Software Co-design</h5>
+            <h5 class="card-title"><b>xNVMe</b>: Unleashing Storage Hardware-Software Co-design</h5>
             <h6 class="card-subtitle mb-2 text-muted">
-              Short-paper providing an update on the direction of xNVMe
+              Short-paper providing an update on the direction of <b>xNVMe</b>
             </h6>
             <p class="card-text"></p>
           </div>
@@ -86,9 +86,9 @@ A brief overview of xNVMe related presentations
             <img src="/_static/xnvme-logo-medium.png" class="card-img-top" alt="xNVMe intro">
           </a>
           <div class="card-body">
-            <h5 class="card-title">xNVMe introduction</h5>
+            <h5 class="card-title"><b>xNVMe</b> introduction</h5>
             <h6 class="card-subtitle mb-2 text-muted">
-              Slides providing a general introduction to xNVMe.
+              Slides providing a general introduction to <b>xNVMe</b>.
             </h6>
             <p class="card-text"></p>
           </div>
@@ -111,7 +111,7 @@ A brief overview of xNVMe related presentations
             <h5 class="card-title">Fast '24</h5>
             <h6 class="card-subtitle mb-2 text-muted">
               22nd USENIX Conference on File and Storage Technologies.
-              This one is not about xNVMe itself, but rather on the <b>io_uring_cmd</b> interface which xNVMe encapsulates.</h6>
+              This one is not about <b>xNVMe</b> itself, but rather on the <b>io_uring_cmd</b> interface which <b>xNVMe</b> encapsulates.</h6>
             <p class="card-text"></p>
           </div>
 
@@ -164,7 +164,7 @@ A brief overview of xNVMe related presentations
           </a>
           <div class="card-body">
             <h5 class="card-title">SPDK US Virtual Forum '22</h5>
-            <h6 class="card-subtitle mb-2 text-muted">The integration of the xNVMe bdev in SPDK with io_uring_cmd support.</h6>
+            <h6 class="card-subtitle mb-2 text-muted">The integration of the <b>xNVMe</b> bdev in SPDK with io_uring_cmd support.</h6>
             <p class="card-text"></p>
           </div>
           <ul class="list-group list-group-flush">

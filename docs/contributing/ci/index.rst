@@ -8,10 +8,10 @@ An overview of the environments and the virtual, and physical resources
 utilized for the **xNVMe** **CI** is illustrated below.
 
 .. figure:: ../../_static/xnvme-ci-overview.png
-   :alt: xNVMe CI Resource Overview
+   :alt: **xNVMe** CI Resource Overview
    :align: center
 
-   xNVMe **CI** environments and resources
+   **xNVMe** **CI** environments and resources
 
 The above figure is outdated, as **bench** and **verify** have been migrated
 to a MaaS provider and are no longer on-premises. However, one system remains
@@ -69,11 +69,11 @@ integration of changes / contributions:
 
 In addition to cathing issues, then the CI is also utilized for:
 
-* Benchmarking of xNVMe
+* Benchmarking of **xNVMe**
 
   - Using physical machines
   - Measure peak IOPS for a single physical CPU core
-  - Specifically for the integration of xNVMe in SPDK (``bdev_xnvme``)
+  - Specifically for the integration of **xNVMe** in SPDK (``bdev_xnvme``)
 
 * Statically Analyze the C code-base
 

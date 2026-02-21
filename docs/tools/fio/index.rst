@@ -23,7 +23,7 @@ First, consult the :ref:`sec-gs` section, to build and install
    :language: bash
 
 That is all there is to it. The `fio`_ build-system will automatically detect that
-xNVMe is installed on the system, link with it, and thereby enable the xNVMe
+**xNVMe** is installed on the system, link with it, and thereby enable the **xNVMe**
 I/O engine.
 
 .. note::
@@ -82,7 +82,7 @@ NVMe devices formatted with extended-LBA
 
 Details follow.
 
-To support extended-lba initial work has been done in xNVMe, however, further
+To support extended-lba initial work has been done in **xNVMe**, however, further
 work is probably need for this to trickle up to the `fio`_ I/O engine, also, in
 the io-engine ``>> ssw`` are used which does not account for extended LBA.
 
@@ -91,7 +91,7 @@ History
 
 Previously, then the **xNVMe** IO engine was external. That meant that the
 engine was built externally from the built of `fio`_ itself, and the
-source-code for the engine was provided with xNVMe.
+source-code for the engine was provided with **xNVMe**.
 
 From fio-v3.32, then **xNVMe** IO engine became available as an "internal"
 engine i upstream `fio`_. That meant that the engine was built along with the

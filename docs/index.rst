@@ -56,7 +56,7 @@ Contents:
 
    getting_started/index.rst
    toolchain/index.rst
-   backends/index.rst
+   background/index
    tools/index.rst
    api/index.rst
    tutorial/index.rst

@@ -14,7 +14,7 @@ Flexible Data-Placement (FDP), Zoned Namespaces (ZNS), and Key-Value SSDs (KV).
 The documentation is provided as a means to setup development environment with
 minimal fuss and maximum foss :)
 
-* xNVMe
+* **xNVMe**
 
   * Built from source
   * Testing package
@@ -582,7 +582,7 @@ artifacts and captured output:
 
 The ``--config`` is needed to inform pytest about the environment you are
 running in such as which devices it can use for testing. The information is
-utilized by pytest to, among other things, do parametrization for xNVMe backend
+utilized by pytest to, among other things, do parametrization for **xNVMe** backend
 configurations etc.
 
 Provision a qemu-guest
@@ -645,7 +645,7 @@ paths to binaries etc. Once you have done that, then go ahead and run:
   # Synchronize your local git with the repos on the remote physical machine
   make cijoe-sync-git
 
-  # Build and install xNVMe on the remote end
+  # Build and install **xNVMe** on the remote end
   make cijoe-setup-xnvme-using-git
 
 You can do any of the **cijoe** things like the above.

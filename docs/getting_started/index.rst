@@ -224,8 +224,8 @@ Missing dependencies / toolchain
 * You are missing dependencies, see the :ref:`sec-toolchain` for
   installing these on FreeBSD and a handful of different Linux Distributions
 
-Once you have the full source of xNVMe, third-party library dependencies, and
-setup the toolchain then run the following to ensure that the xNVMe repository
+Once you have the full source of **xNVMe**, third-party library dependencies, and
+setup the toolchain then run the following to ensure that the **xNVMe** repository
 is clean from any artifacts left behind by previous build failures::
 
   make clobber

@@ -12,7 +12,7 @@ Contribution Process
 
 * The CI will trigger as you create the PR and re-triggered upon update
 
-  - The default CI-jobs consists of running style/linters and building xNVMe
+  - The default CI-jobs consists of running style/linters and building **xNVMe**
   - Average time for a full functional verification run is about 40min
   - One manual CI-job is triggered via the label ``bench``
 

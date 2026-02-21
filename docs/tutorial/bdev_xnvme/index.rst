@@ -3,15 +3,15 @@
 xNVMe in SPDK (``bdev_xnvme``)
 ==============================
 
-The xNVMe bdev module issues I/O to the underlying NVMe devices through various I/O 
+The **xNVMe** bdev module issues I/O to the underlying NVMe devices through various I/O 
 mechanisms such as libaio, io_uring, Asynchronous IOCTL using io_uring passthrough, 
 POSIX aio, emulated aio etc.
 
-The user needs to configure SPDK to include xNVMe support:
+The user needs to configure SPDK to include **xNVMe** support:
 
 ``configure --with-xnvme``
 
-To create a xNVMe bdev with given filename, bdev name and I/O mechanism use the 
+To create a **xNVMe** bdev with given filename, bdev name and I/O mechanism use the 
 bdev_xnvme_create RPC.
 
 ``rpc.py bdev_xnvme_create /dev/ng0n1 bdev_ng0n1 io_uring_cmd``
@@ -38,7 +38,7 @@ Feature comparison
   * -
     - SPDK: ``bdev_nvme.c``
     - SPDK: ``bdev_xnvme.c``
-    - xNVMe
+    - **xNVMe**
   * - Flush
     - ✓
     - 

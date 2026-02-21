@@ -6,10 +6,9 @@
 
 ## System Configuration
 
-To use the Linux backend you need to be running a Linux distribution. xNVMe
-is likely to work on most Linux distributions, however to ensure compatibility
-we recommend using one of the distributions listed in the {ref}`sec-toolchain`
-section.
+Linux is one of several supported platforms. **xNVMe** is likely to work on most
+Linux distributions, however to ensure compatibility we recommend using one of
+the distributions listed in the {ref}`sec-toolchain` section.
 
 To use the async. interfaces `libaio`, `io_uring`, and `io_uring_cmd`
 they need to be enabled in the Linux Kernel. You can check for support by
@@ -43,10 +42,10 @@ Linux exposes storage devices as files using the following naming schemes:
 
 (sec-platforms-linux-instrumentation)=
 
-## Backend Instrumentation
+## Backend Configs
 
-The backend identifier for the Linux backend is: `linux`. The Linux backend
-encapsulates the interfaces below. Some of these are **cross-platform
+The Linux platform provides the following backend configs. Some of these use
+**cross-platform
 implementations** from the **Common Backend Implementations** (CBI). For these,
 links point to descriptions in the CBI section. For the Linux-specific
 interfaces, descriptions are available in the corresponding subsection.
@@ -92,9 +91,9 @@ interfaces, descriptions are available in the corresponding subsection.
 
   - `linux`, Use Linux file/dev handles and enumerate NVMe devices
 
-By default the Linux backend will use `emu` for async. emulation wrapping
+By default the Linux platform will use `emu` for async. emulation wrapping
 around the synchronous Linux `nvme` driver ioctl-interface. This is done as
-it has the broadest command-support. For effiency, one can tap into using the
+it has the broadest command-support. For efficiency, one can tap into using the
 `io_uring` and `io_uring_cmd`.
 
 ### Examples
@@ -115,12 +114,14 @@ question, you can experiment by using the `xnvme` cli-tool. Such as:
         csi: 0x1f
         subnqn: ''
       xnvme_be:
+        dev: {id: 'linux'}
         admin: {id: 'block'}
         sync: {id: 'block'}
         async: {id: 'emu'}
-        attr: {name: 'linux'}
+        mem: {id: 'posix'}
+        attr: {name: 'emu_bdev', descr: 'Emulated async with block layer', caps: 0x6}
       xnvme_opts:
-        be: 'linux'
+        be: 'emu_bdev'
         mem: 'posix'
         dev: 'linux'
         admin: 'block'

@@ -1,7 +1,7 @@
 Conventions
 ===========
 
-A brief overview of conventions used for the xNVMe C codebase.
+A brief overview of conventions used for the **xNVMe** C codebase.
 
 C: format
 ---------
@@ -66,7 +66,7 @@ C: API
 * Be minimal with definitions in the public API
 
   - E.g. the 'sys/queue.h' was removed from the public API as it gave several
-    head-aches when building xNVMe on multiple platforms. However, internally,
+    head-aches when building **xNVMe** on multiple platforms. However, internally,
     specifically in backend implementations, assumptions can be made on the
     availability of certain headers and their general availability
 
