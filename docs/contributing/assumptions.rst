@@ -47,8 +47,8 @@ In other words, the **backend factory** chooses the first **backend** capable
 of returning a system interface specific device handle and the system interface
 specific handle produced by the **backend**.
 
-The entities described above are those involved in the setup of a xNVMe
-device handle. The xNVMe device handle is opaque, that is the details of its
+The entities described above are those involved in the setup of a **xNVMe**
+device handle. The **xNVMe** device handle is opaque, that is the details of its
 representation is hidden from the user. Thus, functions are provided to retrieve
 data about a given device handle.
 

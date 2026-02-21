@@ -3,7 +3,7 @@
 Misc.
 =====
 
-These are misc. notes useful in the maintenance of xNVMe/CI.
+These are misc. notes useful in the maintenance of **xNVMe**/CI.
 
 .. _sec-ci-runners-hetzner-windowsvm:
 
@@ -111,9 +111,9 @@ Look and feel (optional):
 
 - I usually also personalise it by changing the layout of the progress bar and start menu.
 
-xNVMe provisioning:
+**xNVMe** provisioning:
 
-- Download `windows-2022.ps1`_ from xNVMe GitHub repository.
+- Download `windows-2022.ps1`_ from **xNVMe** GitHub repository.
 
 - Open a Terminal as Administrator.
 

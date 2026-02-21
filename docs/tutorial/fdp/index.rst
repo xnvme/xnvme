@@ -5,10 +5,10 @@
 =========================
 
 In this section, you will find a guide on **FDP** aka Flexible Data Placement
-support in xNVMe.
+support in **xNVMe**.
 This will guide you with examples of all the supported **FDP** log pages,
 Set/Get features, and I/O management commands. This will also cover the Write
-command with hints from the perspective of FIO's xNVMe ioengine.
+command with hints from the perspective of FIO's **xNVMe** ioengine.
 
 Concepts and Prelude
 --------------------
@@ -97,7 +97,7 @@ are Flexible Data Placement which controls operation of FDP capability in the
 specified Endurance Group, and FDP Events which controls if a controller
 generates FDP Events associated with a specific Reclaim Unit Handle.
 
-xNVMe does not support Namespace Management commands. Thus we cannot enable or
+**xNVMe** does not support Namespace Management commands. Thus we cannot enable or
 disable **FDP** by sending Set Feature command to the Endurance Group, as it
 requires deletion of all namespaces in that Endurance Group. However you can
 check the FDP capability by sending a Get Feature command. The command can be
@@ -168,7 +168,7 @@ The command should produce output similar to:
 FIO xnvme ioengine
 ------------------
 
-FIO's xNVMe ioengine provides FDP support since the 3.35 release.
+FIO's **xNVMe** ioengine provides FDP support since the 3.35 release.
 This support is only there with nvme character device i.e. ``/dev/ng0n1``
 and with userspace drivers such as ``spdk``.
 Since the kernel support is limited to nvme character device, you can only use

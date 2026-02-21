@@ -1,6 +1,6 @@
 # xNVMe Documentation Tooling
 
-This directory contains the build tooling for xNVMe documentation.
+This directory contains the build tooling for **xNVMe** documentation.
 
 ## System Requirements
 

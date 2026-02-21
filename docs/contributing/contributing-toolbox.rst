@@ -37,7 +37,7 @@ To reproduce the CI test suite locally using Docker, see
 Pre-commit / Git-hooks
 ----------------------
 
-xNVMe utilizes the `pre-commit`_ framework for wrapping various code-format and
+**xNVMe** utilizes the `pre-commit`_ framework for wrapping various code-format and
 linters tools. You can enable it to run via `git-hooks`_ or invoke it manually
 via the :ref:`sec-contributing-toolbox-mkhelper` e.g.::
 

@@ -7,7 +7,7 @@ xnvme-sys
 ---------
 
 The :xref-xnvme-rust-xnvme-sys:`xnvme-sys<>` crate provides low-level bindings
-to the xNVMe library, enabling efficient and direct interaction with NVMe
+to the **xNVMe** library, enabling efficient and direct interaction with NVMe
 devices in Rust. It facilitates the integration of **xNVMe's** capabilities for
 cross-platform NVMe management, focusing on performance and ease of use. The
 crate includes interfaces and functions necessary for developers to control NVMe

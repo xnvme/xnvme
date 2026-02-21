@@ -19,7 +19,7 @@ bottom you will find notes on the initial creation of the formula. Do this:
     git fetch <your_fork>
     git checkout -b xnvme_update master
 
-    # Edit the xNVMe formula
+    # Edit the **xNVMe** formula
     brew edit xnvme
 
     # Test it

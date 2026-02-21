@@ -17,7 +17,7 @@ welcome along with pull-requests.
 ctypes "sugar"
 ==============
 
-The ctypes_ bindings provides access to the xNVMe C API via ctypes_. If you
+The ctypes_ bindings provides access to the **xNVMe** C API via ctypes_. If you
 have used ctypes_ before, then you can go right ahead and use these. The only
 thing added as an augmentation of what ctypes_ provides is an improvement of
 the Dynamic loader logic:
@@ -65,7 +65,7 @@ Before installing, then ensure that the following system dependencies are met:
 * **xNVMe** installed on your system
 * ``pkg-config`` installed and able to locate **xNVMe** on your system
 
-See, the :ref:`sec-gs-build` on how to build and install xNVMe. With the
+See, the :ref:`sec-gs-build` on how to build and install **xNVMe**. With the
 above then you can go ahead and install the bindings using ``pip``::
 
   # install: for the current user
@@ -177,7 +177,7 @@ of when using the Python language bindings.
 
 * **RECONSIDER:** The auto-generated ctypes-mapping has prefixes for e.g.
   ``union_`` and ``struct_``, the patcher removes these. This works for the
-  xNVMe C API since there are no collisions, however, in the general case it
+  **xNVMe** C API since there are no collisions, however, in the general case it
   would break. So, reconsider which is the preferable form for a "raw C API
   mapping".
 

@@ -1,8 +1,8 @@
 .. _sec-dynamic-loading:
 
-===========================
+==========================
  Dynamically loading xNVMe
-===========================
+==========================
 
 In this seciton, you will find two examples of dynamically loading the
 **xNVMe** shared library and via it utilize the :ref:`sec-api-c` along with
@@ -49,7 +49,7 @@ The should produce output similar to:
    :language: bash
 
 .. note:: ``pkg-config`` is used to locate where the shared-library. Make sure
-   you have it and xNVMe installed on the system or just provide an absolute
+   you have it and **xNVMe** installed on the system or just provide an absolute
    path to ``libxnvme-shared.so``.
 
 .. note:: If you see no output, then try running it as super-user or via
