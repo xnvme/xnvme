@@ -14,7 +14,7 @@ void
 xnvme_be_vfio_buf_free(const struct xnvme_dev *dev, void *buf)
 {
 	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
-	struct iommu_ctx *ctx = state->ctrl->pci.dev.ctx;
+	struct iommu_ctx *ctx = state->ctrlr->ctrl->pci.dev.ctx;
 	size_t len;
 
 	XNVME_DEBUG("xnvme_be_vfio_buf_free(%p, %p)", dev, buf);
@@ -35,7 +35,7 @@ xnvme_be_vfio_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *ph
 	void *vaddr;
 	ssize_t len;
 	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
-	struct iommu_ctx *ctx = state->ctrl->pci.dev.ctx;
+	struct iommu_ctx *ctx = state->ctrlr->ctrl->pci.dev.ctx;
 
 	XNVME_DEBUG("xnvme_be_vfio_buf_alloc(%p, %ld)", dev, nbytes);
 
@@ -64,7 +64,7 @@ int
 xnvme_be_vfio_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys)
 {
 	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
-	struct iommu_ctx *ctx = state->ctrl->pci.dev.ctx;
+	struct iommu_ctx *ctx = state->ctrlr->ctrl->pci.dev.ctx;
 
 	if (!iommu_translate_vaddr(ctx, buf, phys)) {
 		XNVME_DEBUG("FAILED: iommu_translate_vaddr(-, %p): %s\n", buf, strerror(errno));
@@ -78,7 +78,7 @@ int
 xnvme_be_vfio_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, uint64_t *phys)
 {
 	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
-	struct iommu_ctx *ctx = state->ctrl->pci.dev.ctx;
+	struct iommu_ctx *ctx = state->ctrlr->ctrl->pci.dev.ctx;
 	int err;
 
 	XNVME_DEBUG("xnvme_be_vfio_mem_map(%p, %p)", dev, vaddr);
@@ -103,7 +103,7 @@ int
 xnvme_be_vfio_mem_unmap(const struct xnvme_dev *dev, void *buf)
 {
 	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
-	struct iommu_ctx *ctx = state->ctrl->pci.dev.ctx;
+	struct iommu_ctx *ctx = state->ctrlr->ctrl->pci.dev.ctx;
 
 	XNVME_DEBUG("xnvme_be_vfio_buf_unmap(%p, %p)", dev, buf);
 

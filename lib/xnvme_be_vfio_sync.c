@@ -15,7 +15,7 @@ xnvme_be_vfio_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nby
 			  size_t mbuf_nbytes)
 {
 	struct xnvme_be_vfio_state *state = (void *)ctx->dev->be.state;
-	struct nvme_ctrl *ctrl = state->ctrl;
+	struct nvme_ctrl *ctrl = state->ctrlr->ctrl;
 	struct nvme_rq *rq;
 	uint64_t iova;
 	int ret = 0;
@@ -32,7 +32,7 @@ xnvme_be_vfio_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nby
 		break;
 	}
 
-	rq = nvme_rq_acquire(state->sq_sync);
+	rq = nvme_rq_acquire(state->ctrlr->sq_sync);
 	if (!rq) {
 		return -errno;
 	}
@@ -74,7 +74,7 @@ xnvme_be_vfio_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t
 			   size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_be_vfio_state *state = (void *)ctx->dev->be.state;
-	struct nvme_ctrl *ctrl = state->ctrl;
+	struct nvme_ctrl *ctrl = state->ctrlr->ctrl;
 	struct nvme_rq *rq;
 	uint64_t iova;
 	int ret = 0;
@@ -91,7 +91,7 @@ xnvme_be_vfio_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t
 		break;
 	}
 
-	rq = nvme_rq_acquire(state->sq_sync);
+	rq = nvme_rq_acquire(state->ctrlr->sq_sync);
 	if (!rq) {
 		return -errno;
 	}

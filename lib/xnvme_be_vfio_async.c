@@ -35,8 +35,8 @@ xnvme_be_vfio_queue_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 		XNVME_DEBUG("FAILED: nvme_create_ioqpair(); err: %d", qpid);
 		return qpid;
 	}
-	queue->sq = &state->ctrl->sq[qpid];
-	queue->cq = &state->ctrl->cq[qpid];
+	queue->sq = &state->ctrlr->ctrl->sq[qpid];
+	queue->cq = &state->ctrlr->ctrl->cq[qpid];
 	queue->id = qpid;
 
 	return 0;
@@ -47,9 +47,9 @@ xnvme_be_vfio_queue_term(struct xnvme_queue *q)
 {
 	struct xnvme_queue_vfio *queue = (struct xnvme_queue_vfio *)q;
 	struct xnvme_be_vfio_state *state = (void *)queue->base.dev->be.state;
-	if (state->efds[queue->id] != -1) {
-		close(state->efds[queue->id]);
-		state->efds[queue->id] = -1;
+	if (state->ctrlr->efds[queue->id] != -1) {
+		close(state->ctrlr->efds[queue->id]);
+		state->ctrlr->efds[queue->id] = -1;
 	}
 	return _xnvme_be_vfio_delete_ioqpair(state, queue->id);
 }
@@ -103,7 +103,7 @@ xnvme_be_vfio_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 {
 	struct xnvme_queue_vfio *q = (struct xnvme_queue_vfio *)ctx->async.queue;
 	struct xnvme_be_vfio_state *state = (void *)q->base.dev->be.state;
-	struct nvme_ctrl *ctrl = state->ctrl;
+	struct nvme_ctrl *ctrl = state->ctrlr->ctrl;
 	struct nvme_rq *rq;
 	uint64_t iova;
 
@@ -162,7 +162,7 @@ xnvme_be_vfio_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_
 {
 	struct xnvme_queue_vfio *q = (struct xnvme_queue_vfio *)ctx->async.queue;
 	struct xnvme_be_vfio_state *state = (void *)q->base.dev->be.state;
-	struct nvme_ctrl *ctrl = state->ctrl;
+	struct nvme_ctrl *ctrl = state->ctrlr->ctrl;
 	struct nvme_rq *rq;
 	uint64_t iova;
 
@@ -217,8 +217,8 @@ xnvme_be_vfio_queue_get_completion_fd(struct xnvme_queue *queue)
 	struct xnvme_be_vfio_state *state = (void *)q->base.dev->be.state;
 	int efd;
 
-	if (state->efds[q->id] != -1) {
-		return state->efds[q->id];
+	if (state->ctrlr->efds[q->id] != -1) {
+		return state->ctrlr->efds[q->id];
 	}
 
 	efd = eventfd(0, EFD_CLOEXEC);
@@ -227,9 +227,9 @@ xnvme_be_vfio_queue_get_completion_fd(struct xnvme_queue *queue)
 		return -errno;
 	}
 
-	state->efds[q->id] = efd;
+	state->ctrlr->efds[q->id] = efd;
 
-	if (vfio_set_irq(&state->ctrl->pci.dev, state->efds, state->nefds)) {
+	if (vfio_set_irq(&state->ctrlr->ctrl->pci.dev, state->ctrlr->efds, state->ctrlr->nefds)) {
 		XNVME_DEBUG("FAILED: failed to set irqs");
 		close(efd);
 		return -errno;
