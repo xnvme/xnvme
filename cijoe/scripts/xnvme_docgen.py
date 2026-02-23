@@ -32,8 +32,9 @@ def add_args(parser: ArgumentParser):
 def main(args, cijoe):
     # Commands to run on remote/guest (only kmdo - needs NVMe devices)
     remote_commands = [
-        "apt-get update -qy",
-        "apt-get install -qy bash build-essential git pkg-config python3 python3-venv pipx",
+        "systemctl stop unattended-upgrades 2>/dev/null; systemctl disable unattended-upgrades 2>/dev/null; apt-get -qy remove unattended-upgrades || true",
+        "apt-get -qy -o DPkg::Lock::Timeout=120 update",
+        "apt-get -qy -o DPkg::Lock::Timeout=120 install bash build-essential git pkg-config python3 python3-venv pipx",
         "pipx ensurepath",
         "pipx install kmdo",
         # Ensure deterministic device naming before capturing command outputs
