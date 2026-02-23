@@ -365,6 +365,7 @@ jobs:
         --monitor \
         --config "configs/ramdisk.toml" \
         --config "configs/fio.toml" \
+        --config "configs/xnvme.toml" \
         --output "${{ github.job }}-${{ matrix.container.os }}-${{ matrix.container.ver }}-prep-fio"
 
     - name: CIJOE, run test-ramdisk.yaml
@@ -374,6 +375,7 @@ jobs:
         --monitor \
         --config "configs/ramdisk.toml" \
         --config "configs/fio.toml" \
+        --config "configs/xnvme.toml" \
         --output "${{ github.job }}-${{ matrix.container.os }}-${{ matrix.container.ver }}-test-ramdisk"
 
     - name: CIJOE, upload report.html
@@ -505,6 +507,7 @@ jobs:
         cd cijoe && cijoe "workflows/test-ramdisk-macos.yaml" \
         --monitor \
         --config "configs/ramdisk-macos.toml" \
+        --config "configs/xnvme.toml" \
         --output "${{ github.job }}-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-test-ramdisk"
 
     - name: CIJOE, upload report.html
@@ -746,6 +749,7 @@ jobs:
         --monitor \
         --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
         --config "configs/fio.toml" \
+        --config "configs/xnvme.toml" \
         --config "configs/system_imaging.toml" \
         --output "${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-provision"
 
@@ -755,6 +759,7 @@ jobs:
         --monitor \
         --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
         --config "configs/fio.toml" \
+        --config "configs/xnvme.toml" \
         --output "${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-test-results"
 
     - name: CIJOE, result-log-dump on error
@@ -1228,6 +1233,7 @@ jobs:
         --monitor \
         --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
         --config "configs/fio.toml" \
+        --config "configs/xnvme.toml" \
         --config "configs/system_imaging.toml" \
         --output "${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-provision"
 
@@ -1237,6 +1243,7 @@ jobs:
         --monitor \
         --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
         --config "configs/fio.toml" \
+        --config "configs/xnvme.toml" \
         --output "${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-docs"
 
     - name: CIJOE, upload report-docgen

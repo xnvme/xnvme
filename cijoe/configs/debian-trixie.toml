@@ -285,19 +285,6 @@ nsid = 1
 labels = [ "dev", "bdev", "nvm", "ramdisk", "write_zeroes", "log_health_ns", "idfy_cs" ]
 driver_attachment = "kernel"
 
-[xnvme.repository]
-remote = "https://github.com/xnvme/xnvme.git"
-path = "{{ local.env.HOME }}/git/xnvme"
-
-# This is utilized by repository syncing during development.
-[xnvme.repository.sync]
-branch = "wip"
-remote_alias = "guest"
-remote_path = "/root/git/xnvme"
-
-[xnvme.build]
-type = "debug"
-
 [hugetlbfs]
 mount_point = "/mnt/huge"
 nr_hugepages = "128"
