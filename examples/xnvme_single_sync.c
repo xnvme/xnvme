@@ -43,7 +43,7 @@ main(int argc, char **argv)
 		xnvme_cli_perr("xnvme_buf_alloc()", errno);
 		goto exit;
 	}
-	memset(buf, 0, buf_nbytes);
+	xnvme_buf_clear(buf, buf_nbytes);
 
 	// This block would typically be a loop as more than a single command would be submitted
 	{

@@ -170,7 +170,7 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	memset(range, 0, sizeof(*range));
+	xnvme_buf_clear(range, sizeof(*range));
 
 	// Buffers for verification
 	buf_nbytes = tlbas * geo->lba_nbytes;
