@@ -176,6 +176,11 @@ xnvme_buf_fill(void *buf, size_t nbytes, const char *content)
 {
 	uint8_t *cbuf = buf;
 
+	if (strlen(content) == 1) {
+		memset(cbuf, content[0], nbytes);
+		return 0;
+	}
+
 	if (!strncmp(content, "anum", 4)) {
 		for (size_t i = 0; i < nbytes; ++i) {
 			cbuf[i] = (i % 26) + 65;
