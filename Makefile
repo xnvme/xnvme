@@ -117,15 +117,6 @@ config-slim:
 		 -Dwith-isal=disabled
 	@echo "## xNVMe: make config-slim [DONE]"
 
-define docker-help
-# Drop into a docker instance with the repository bind-mounted at /tmp/xnvme
-endef
-.PHONY: docker
-docker:
-	@echo "## xNVMe: docker"
-	docker run -it -w /tmp/xnvme --mount type=bind,source="$(shell pwd)",target=/tmp/xnvme ghcr.io/xnvme/xnvme-deps-fedora-citools:next bash
-	@echo "## xNVME: docker [DONE]"
-
 define docs-help
 # Build docs using the new tooling (ctags, doxygen, apigen, toolchain, sphinx)
 endef
@@ -140,14 +131,15 @@ docs: tags-xnvme-public
 	xnvme-docs-build-html
 	@echo "## xNVMe: make docs [DONE]"
 
-define docker-privileged-help
+define docker-help
 # Drop into a privileged docker instance with the repository bind-mounted at /tmp/xnvme
 endef
-.PHONY: docker-privileged
-docker-privileged:
-	@echo "## xNVMe: docker-privileged"
-	docker run -it --privileged -w /tmp/xnvme --mount type=bind,source="$(shell pwd)",target=/tmp/xnvme ghcr.io/xnvme/xnvme-qemu:latest bash
-	@echo "## xNVME: docker-privileged [DONE]"
+.PHONY: docker
+docker:
+	@echo "## xNVMe: docker"
+	mkdir -p /tmp/artifacts
+	docker run -it --privileged -w /tmp/xnvme --mount type=bind,source="$(shell pwd)",target=/tmp/xnvme --mount type=bind,source=/tmp/artifacts,target=/tmp/artifacts ghcr.io/xnvme/xnvme-qemu:latest bash
+	@echo "## xNVME: docker [DONE]"
 
 define cijoe-help
 # Setup a CIJOE environment for Linux development, documentation, and testing
@@ -309,20 +301,6 @@ cijoe-sync-tgz:
 		xnvme_source_sync
 	@echo "## xNVME: cijoe-sync-tgz [DONE]"
 
-define cijoe-do-docgen-help
-# Generate documentation with command execution / output generation
-endef
-.PHONY: cijoe-do-docgen
-cijoe-do-docgen:
-	@echo "## xNVMe: cijoe-do-docgen"
-	cd cijoe && cijoe workflows/docgen.yaml \
-		--monitor \
-		--config "configs/debian-trixie.toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
-		-l
-	@echo "## xNVME: cijoe-do-docgen [DONE]"
-
 define cijoe-do-selftest-help
 # Run the cijoe selftest, this is useful after setting up cijoe
 endef
@@ -331,35 +309,6 @@ cijoe-do-selftest:
 	@echo "## xNVMe: cijoe-do-selftest"
 	cd cijoe && pytest tests/selftest --config configs/default-config.toml --config configs/xnvme.toml
 	@echo "## xNVME: cijoe-do-selftest [DONE]"
-
-define cijoe-do-benchmark-scale-help
-# Run the scalability benchmark
-endef
-.PHONY: cijoe-do-benchmark-scale
-cijoe-do-benchmark-scale:
-	@echo "## xNVMe: cijoe-do-benchmark-scale"
-	cd cijoe && cijoe workflows/bench.yaml \
-		--monitor \
-		--config "configs/debian-trixie.toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
-		-l
-	@echo "## xNVME: cijoe-do-benchmark-scale [DONE]"
-
-define cijoe-do-benchmark-latency-help
-# Run the latency benchmark
-endef
-.PHONY: cijoe-do-benchmark-latency
-cijoe-do-benchmark-latency:
-	@echo "## xNVMe: cijoe-do-benchmark-latency"
-	cd cijoe && cijoe workflows/benchmark-latency.yaml \
-		--monitor \
-		--config "configs/debian-trixie.toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
-		-l
-	@echo "## xNVME: cijoe-do-benchmark-latency [DONE]"
-
 
 define cijoe-do-bootimage-debian-trixie-amd64-help
 # Create a Debian Trixie - amd64 - bootable system image for a qemu-guest
@@ -513,6 +462,7 @@ verify-ramdisk:
 define verify-guest-help
 # Provision a QEMU guest and run the CIJOE test suite for it
 #
+# Requires: A custom QEMU environment (run: make docker)
 # Requires: GUEST=<os>-<ver> (e.g. GUEST=debian-trixie)
 # Optional: CIJOE_OUTPUT=<prefix> for CI artifact naming
 endef
@@ -557,6 +507,55 @@ verify-guest:
 		--config "configs/xnvme.toml" \
 		$(if $(CIJOE_OUTPUT),--output "$(CIJOE_OUTPUT)-test-results")
 	@echo "## xNVMe: make verify-guest [DONE]"
+
+define docgen-guest-help
+# Provision a QEMU guest and generate documentation
+#
+# Requires: A custom QEMU environment (run: make docker)
+# Requires: GUEST=<os>-<ver> (e.g. GUEST=debian-trixie)
+# Optional: CIJOE_OUTPUT=<prefix> for CI artifact naming
+endef
+.PHONY: docgen-guest
+docgen-guest:
+	@if [ -z "$(GUEST)" ]; then \
+		echo ""; \
+		echo "+=============================================+"; \
+		echo "                                               "; \
+		echo " ERR: GUEST is not set                         "; \
+		echo "                                               "; \
+		echo " Usage: make docgen-guest GUEST=debian-trixie  "; \
+		echo "                                               "; \
+		echo "+=============================================+"; \
+		echo ""; \
+		false; \
+	fi
+	@echo "## xNVMe: make docgen-guest GUEST=$(GUEST)"
+	@if [ ! -f /tmp/artifacts/xnvme-src.tar.gz ]; then \
+		echo ""; \
+		echo "+=============================================+"; \
+		echo "                                               "; \
+		echo " ERR: /tmp/artifacts/xnvme-src.tar.gz missing  "; \
+		echo "                                               "; \
+		echo " Run: make gen-artifacts ALLOW_DIRTY=1         "; \
+		echo "                                               "; \
+		echo "+=============================================+"; \
+		echo ""; \
+		false; \
+	fi
+	cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
+		--monitor \
+		--config "configs/$(GUEST).toml" \
+		--config "configs/fio.toml" \
+		--config "configs/xnvme.toml" \
+		--config "configs/system_imaging.toml" \
+		$(if $(CIJOE_OUTPUT),--output "$(CIJOE_OUTPUT)-provision")
+	cd cijoe && cijoe "workflows/docgen.yaml" \
+		--monitor \
+		--config "configs/$(GUEST).toml" \
+		--config "configs/fio.toml" \
+		--config "configs/xnvme.toml" \
+		$(if $(CIJOE_OUTPUT),--output "$(CIJOE_OUTPUT)-docs")
+	@echo "## xNVMe: make docgen-guest [DONE]"
 
 define install-help
 # Install xNVMe with Meson
