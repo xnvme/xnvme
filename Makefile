@@ -513,6 +513,45 @@ build: info _require_builddir
 	$(MESON) compile -C $(BUILD_DIR)
 	@echo "## xNVMe: make build [DONE]"
 
+define verify-ramdisk-help
+# Build, install, prepare fio, and run the CIJOE ramdisk test suite
+endef
+.PHONY: verify-ramdisk
+verify-ramdisk:
+	@if [ "$$(id -u)" -ne 0 ]; then \
+		echo ""; \
+		echo "+=============================================+"; \
+		echo "                                               "; \
+		echo " ERR: 'make verify-ramdisk' requires root      "; \
+		echo "                                               "; \
+		echo " This target assumes a CI environment running  "; \
+		echo " as root. Run it in CI or as root locally.     "; \
+		echo "                                               "; \
+		echo "+=============================================+"; \
+		echo ""; \
+		false; \
+	fi
+	@echo "## xNVMe: make verify-ramdisk"
+	@if [ ! -d "$(BUILD_DIR)" ]; then \
+		CC=$(CC) CXX=$(CXX) $(MESON) setup $(BUILD_DIR); \
+	fi
+	$(MESON) compile -C $(BUILD_DIR)
+	$(MESON) install -C $(BUILD_DIR)
+	ldconfig || true
+	cd cijoe && cijoe fio_prep \
+		--monitor \
+		--config "configs/ramdisk.toml" \
+		--config "configs/fio.toml" \
+		--config "configs/xnvme.toml" \
+		$(if $(CIJOE_OUTPUT),--output "$(CIJOE_OUTPUT)-prep-fio")
+	cd cijoe && cijoe "workflows/test-ramdisk.yaml" \
+		--monitor \
+		--config "configs/ramdisk.toml" \
+		--config "configs/fio.toml" \
+		--config "configs/xnvme.toml" \
+		$(if $(CIJOE_OUTPUT),--output "$(CIJOE_OUTPUT)-test-ramdisk")
+	@echo "## xNVMe: make verify-ramdisk [DONE]"
+
 define install-help
 # Install xNVMe with Meson
 endef
