@@ -725,26 +725,8 @@ jobs:
       run: |
         cijoe -r
 
-    # cd'ing into 'cijoe' to auto-collect the non-packaged github-specific configs and
-    # workflows.
-    - name: CIJOE, run provision-using-tgz.yaml
-      run: |
-        cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
-        --monitor \
-        --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
-        --config "configs/fio.toml" \
-        --config "configs/xnvme.toml" \
-        --config "configs/system_imaging.toml" \
-        --output "${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-provision"
-
-    - name: CIJOE, run test.yaml
-      run: |
-        cd cijoe && cijoe "workflows/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.yaml" \
-        --monitor \
-        --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
-        --config "configs/fio.toml" \
-        --config "configs/xnvme.toml" \
-        --output "${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-test-results"
+    - name: CIJOE, provision and test guest
+      run: make verify-guest GUEST="${{ matrix.guest.os }}-${{ matrix.guest.ver }}" CIJOE_OUTPUT="${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
     - name: CIJOE, result-log-dump on error
       if: failure()

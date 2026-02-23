@@ -174,20 +174,6 @@ cijoe:
 	@echo ""
 	@echo "## xNVME: cijoe [DONE]"
 
-define cijoe-guest-setup-xnvme-using-tgz-help
-# Create and start a qemu-guest, then setup xNVMe within the guest using tgz
-endef
-.PHONY: cijoe-guest-setup-xnvme-using-tgz
-cijoe-guest-setup-xnvme-using-tgz:
-	@echo "## xNVMe: cijoe-guest-setup-xnvme-using-tgz"
-	cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
-		--monitor \
-		--config "configs/debian-trixie.toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
-		--config "configs/system_imaging.toml"
-	@echo "## xNVME: cijoe-guest-setup-xnvme-using-tgz [DONE]"
-
 define cijoe-guest-setup-xnvme-using-git-help
 # Create and start a qemu-guest, then setup xNVMe within the guest using git
 endef
@@ -345,34 +331,6 @@ cijoe-do-selftest:
 	@echo "## xNVMe: cijoe-do-selftest"
 	cd cijoe && pytest tests/selftest --config configs/default-config.toml --config configs/xnvme.toml
 	@echo "## xNVME: cijoe-do-selftest [DONE]"
-
-define cijoe-do-test-linux-help
-# Run the testsuite for Linux -- assumes a provisioned qemu-guest
-endef
-.PHONY: cijoe-do-test-linux
-cijoe-do-test-linux:
-	@echo "## xNVMe: cijoe-do-test-linux"
-	cd cijoe && cijoe workflows/test-debian-trixie.yaml \
-		--monitor \
-		--config "configs/debian-trixie.toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
-		-l
-	@echo "## xNVME: cijoe-do-test-linux [DONE]"
-
-define cijoe-do-test-freebsd-help
-# Run the testsuite for FreeBSD -- assumes a provisioned qemu-guest
-endef
-.PHONY: cijoe-do-test-freebsd
-cijoe-do-test-freebsd:
-	@echo "## xNVMe: cijoe-do-test-freebsd"
-	cd cijoe && cijoe workflows/test-freebsd-13.yaml \
-		--monitor \
-		--config "configs/freebsd-13.toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
-		-l
-	@echo "## xNVME: cijoe-do-test-freebsd [DONE]"
 
 define cijoe-do-benchmark-scale-help
 # Run the scalability benchmark
@@ -551,6 +509,54 @@ verify-ramdisk:
 		--config "configs/xnvme.toml" \
 		$(if $(CIJOE_OUTPUT),--output "$(CIJOE_OUTPUT)-test-ramdisk")
 	@echo "## xNVMe: make verify-ramdisk [DONE]"
+
+define verify-guest-help
+# Provision a QEMU guest and run the CIJOE test suite for it
+#
+# Requires: GUEST=<os>-<ver> (e.g. GUEST=debian-trixie)
+# Optional: CIJOE_OUTPUT=<prefix> for CI artifact naming
+endef
+.PHONY: verify-guest
+verify-guest:
+	@if [ -z "$(GUEST)" ]; then \
+		echo ""; \
+		echo "+=============================================+"; \
+		echo "                                               "; \
+		echo " ERR: GUEST is not set                         "; \
+		echo "                                               "; \
+		echo " Usage: make verify-guest GUEST=debian-trixie  "; \
+		echo "                                               "; \
+		echo "+=============================================+"; \
+		echo ""; \
+		false; \
+	fi
+	@echo "## xNVMe: make verify-guest GUEST=$(GUEST)"
+	@if [ ! -f /tmp/artifacts/xnvme-src.tar.gz ]; then \
+		echo ""; \
+		echo "+=============================================+"; \
+		echo "                                               "; \
+		echo " ERR: /tmp/artifacts/xnvme-src.tar.gz missing  "; \
+		echo "                                               "; \
+		echo " Run: make gen-artifacts ALLOW_DIRTY=1         "; \
+		echo "                                               "; \
+		echo "+=============================================+"; \
+		echo ""; \
+		false; \
+	fi
+	cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
+		--monitor \
+		--config "configs/$(GUEST).toml" \
+		--config "configs/fio.toml" \
+		--config "configs/xnvme.toml" \
+		--config "configs/system_imaging.toml" \
+		$(if $(CIJOE_OUTPUT),--output "$(CIJOE_OUTPUT)-provision")
+	cd cijoe && cijoe "workflows/test-$(GUEST).yaml" \
+		--monitor \
+		--config "configs/$(GUEST).toml" \
+		--config "configs/fio.toml" \
+		--config "configs/xnvme.toml" \
+		$(if $(CIJOE_OUTPUT),--output "$(CIJOE_OUTPUT)-test-results")
+	@echo "## xNVMe: make verify-guest [DONE]"
 
 define install-help
 # Install xNVMe with Meson
