@@ -358,25 +358,9 @@ jobs:
     #
     # Skipping on distros with too old gcc/clang to build fio, and too old a Python to run cijoe (requires 3.9)
     #
-    - name: CIJOE, install fio
+    - name: CIJOE, run ramdisk verification
       if: (!contains('focal', matrix.container.ver))
-      run: |
-        cd cijoe && cijoe fio_prep \
-        --monitor \
-        --config "configs/ramdisk.toml" \
-        --config "configs/fio.toml" \
-        --config "configs/xnvme.toml" \
-        --output "${{ github.job }}-${{ matrix.container.os }}-${{ matrix.container.ver }}-prep-fio"
-
-    - name: CIJOE, run test-ramdisk.yaml
-      if: (!contains('focal', matrix.container.ver))
-      run: |
-        cd cijoe && cijoe "workflows/test-ramdisk.yaml" \
-        --monitor \
-        --config "configs/ramdisk.toml" \
-        --config "configs/fio.toml" \
-        --config "configs/xnvme.toml" \
-        --output "${{ github.job }}-${{ matrix.container.os }}-${{ matrix.container.ver }}-test-ramdisk"
+      run: make verify-ramdisk CIJOE_OUTPUT="${{ github.job }}-${{ matrix.container.os }}-${{ matrix.container.ver }}"
 
     - name: CIJOE, upload report.html
       if: always() && (!contains('focal', matrix.container.ver))
