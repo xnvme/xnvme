@@ -508,12 +508,9 @@ Test Linux
 Generate documentation in Linux
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can reuse qemu-guest created in the previous section to generate the
-documentation.
-
-.. code-block:: bash
-
-  make cijoe-do-docgen
+You can reuse the qemu-guest created in the previous section to generate the
+documentation. See the :ref:`sec-tutorials-devs-linux-reproduce-ci` section for
+using ``make docgen-guest`` inside the Docker container.
 
 Test FreeBSD
 ~~~~~~~~~~~~
@@ -530,54 +527,42 @@ Test FreeBSD
   make cijoe-do-test-freebsd
   
 
+.. _sec-tutorials-devs-linux-reproduce-ci:
+
 Reproduce GitHUB Actions locally
 --------------------------------
 
-The **cijoe** workflows and configurations in this directory are used in the
-xNVMe GitHUB actions. You can reproduce what is running on GitHUB by adjusting
-the config-files, and provide the artifacts from the GitHUB action:
+The CI test suite can be reproduced locally using Docker. The
+``make docker`` target provides a privileged container with a custom QEMU
+build that includes NVMe device emulation.
 
-* xnvme-py-sdist.tar.gz
-* xnvme-src.tar.gz
-
-Then, place the artifacts in ``/tmp/artifacts``.
-
-Test Linux
-~~~~~~~~~~
-
-Then you should be able to run the following to test **Linux**:
+1. Build the source artifacts on your host:
 
 .. code-block:: bash
 
-  # Provision and test on Debian Trixie
-  cp cijoe/configs/debian-trixie.toml ~/.config/cijoe/cijoe-config.toml
-  # Edit the cijoe-config, then run
+  make gen-artifacts ALLOW_DIRTY=1
 
-  make cijoe-guest-setup-using-tgz
-  make cijoe-do-test-linux
-
-Test FreeBSD
-~~~~~~~~~~~~
-
-Then you should be able to run the following to test xNVMe on **FreeBSD**:
-  
-.. code-block:: bash
-
-  # Provision and test on FreeBSD 13
-  cp cijoe/configs/freebsd-13.toml ~/.config/cijoe/cijoe-config.toml
-
-  make cijoe-guest-setup-using-tgz
-  make cijoe-do-test-freebsd
-
-Generate docs
-~~~~~~~~~~~~~
-
-And generate documentation:
+2. Drop into the Docker container:
 
 .. code-block:: bash
 
-  # Generate documentation (provisions qemu-guest and generates the docs)
-  make cijoe-do-docgen
+  make docker
+
+The container bind-mounts the repository at ``/tmp/xnvme`` and
+``/tmp/artifacts``, so the artifacts from step 1 are available inside.
+
+3. Inside the container, set up CIJOE and run the desired target:
+
+.. code-block:: bash
+
+  # Install CIJOE
+  make cijoe
+
+  # Test on Debian Trixie
+  make verify-guest GUEST=debian-trixie
+
+  # Or generate documentation
+  make docgen-guest GUEST=debian-trixie
 
 In case you are setting up the test-target using other tools, or just want to
 run pytest directly, then the following two sections describe how to do that.

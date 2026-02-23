@@ -26,6 +26,12 @@ provides a brief description of what is available:
 .. literalinclude:: make.out
    :language: bash
 
+Local Testing
+-------------
+
+To reproduce the CI test suite locally using Docker, see
+:ref:`sec-tutorials-devs-linux-reproduce-ci`.
+
 .. _sec-contributing-toolbox-precommit:
 
 Pre-commit / Git-hooks
