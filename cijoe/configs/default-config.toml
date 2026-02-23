@@ -1,14 +1,2 @@
-[xnvme.repository]
-remote = "https://github.com/xnvme/xnvme.git"
-path = "{{ local.env.HOME }}/git/xnvme"
-
-[xnvme.repository.sync]
-branch = "wip"
-remote = "guest"
-remote_path = "/root/git/xnvme"
-
-[xnvme.build]
-type = "debug"
-
 [build.compiler]
 bin = "gcc"
