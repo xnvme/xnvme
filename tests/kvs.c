@@ -65,7 +65,7 @@ kvs_io(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	memset(rbuf, 0, kv_val_nbytes);
+	xnvme_buf_clear(rbuf, kv_val_nbytes);
 
 	xnvme_cli_pinf("Sending xnvme_kvs_retrieve command");
 	err = xnvme_kvs_retrieve(&ctx, nsid, kv_key, kv_key_nbytes, rbuf, kv_val_nbytes, 0);

@@ -46,7 +46,7 @@ sub_async_read(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	memset(buf, 0, buf_nbytes);
+	xnvme_buf_clear(buf, buf_nbytes);
 
 	completion_fd = xnvme_queue_get_completion_fd(queue);
 	if (completion_fd <= 0) {
