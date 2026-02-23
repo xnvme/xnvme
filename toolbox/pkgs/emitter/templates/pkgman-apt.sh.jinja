@@ -1,7 +1,9 @@
 # Unattended update, upgrade, and install
 export DEBIAN_FRONTEND=noninteractive
 export DEBIAN_PRIORITY=critical
-apt-get -qy update
+# Stop unattended-upgrades to avoid dpkg lock contention
+systemctl stop unattended-upgrades 2>/dev/null || true
+apt-get -qy -o DPkg::Lock::Timeout=120 update
 apt-get -qy \
   -o "Dpkg::Options::=--force-confdef" \
   -o "Dpkg::Options::=--force-confold" upgrade
