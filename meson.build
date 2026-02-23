@@ -169,6 +169,13 @@ endif
 
 conf_data.set('XNVME_BE_FBSD_ENABLED', is_freebsd)
 
+conf_data.set('XNVME_PTHREAD_SETAFFINITY_NP_ENABLED', cc.has_function(
+    'pthread_setaffinity_np',
+    prefix: '#define _GNU_SOURCE\n#include <pthread.h>',
+    dependencies: thread_dep)
+)
+conf_data.set('XNVME_RAND_R_ENABLED', cc.has_function('rand_r'))
+
 conf = configure_file(
   configuration : conf_data,
   output : 'xnvme_config.h',
