@@ -1,0 +1,31 @@
+[fio]
+bin = "fio"
+
+# Uncomment this to configure the build of fio with --prefix
+#[fio.build]
+#prefix = "/opt/fio"
+
+[fio.repository]
+remote = "https://github.com/axboe/fio.git"
+path = "/root/git/fio"
+tag = "fio-3.38"
+
+[fio.engines.libaio]
+type = "builtin"
+
+[fio.engines.io_uring]
+type = "builtin"
+
+[fio.engines.io_uring_cmd]
+type = "builtin"
+
+[fio.engines.xnvme]
+type = "builtin"
+
+[fio.engines.spdk_nvme]
+path = "/opt/aux/spdk_nvme"
+type = "external_preload"
+
+[fio.engines.spdk_bdev]
+path = "/opt/aux/spdk_bdev"
+type = "external_preload"

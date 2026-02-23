@@ -183,6 +183,7 @@ cijoe-guest-setup-xnvme-using-tgz:
 	cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
+		--config "configs/fio.toml" \
 		--config "configs/system_imaging.toml"
 	@echo "## xNVME: cijoe-guest-setup-xnvme-using-tgz [DONE]"
 
@@ -195,6 +196,7 @@ cijoe-guest-setup-xnvme-using-git:
 	cd cijoe && cijoe "workflows/provision-using-git.yaml" \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
+		--config "configs/fio.toml" \
 		--config "configs/system_imaging.toml"
 	@echo "## xNVME: cijoe-guest-setup-xnvme-using-git [DONE]"
 
@@ -207,6 +209,7 @@ cijoe-guest-setup-blank:
 	cd cijoe && cijoe "workflows/provision-using-git.yaml" \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
+		--config "configs/fio.toml" \
 		--config "configs/system_imaging.toml" \
 		guest_kill \
 		guest_initialize \
@@ -223,6 +226,7 @@ cijoe-guest-start:
 	cd cijoe && cijoe "workflows/provision-using-git.yaml" \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
+		--config "configs/fio.toml" \
 		--config "configs/system_imaging.toml" \
 		guest_start \
 		guest_check
@@ -237,6 +241,7 @@ cijoe-guest-stop:
 	cd cijoe && cijoe "workflows/provision-using-git.yaml" \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
+		--config "configs/fio.toml" \
 		--config "configs/system_imaging.toml" \
 		guest_kill
 	@echo "## xNVMe: cijoe-guest-stop [DONE]"
@@ -250,6 +255,7 @@ cijoe-setup-xnvme-using-git:
 	cd cijoe && cijoe workflows/provision-using-git.yaml \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
+		--config "configs/fio.toml" \
 		-l \
 		xnvme_source_sync \
 		xnvme_build_prep \
@@ -269,6 +275,7 @@ cijoe-setup-xnvme-using-tgz:
 	cd cijoe && cijoe workflows/provision-using-tgz.yaml \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
+		--config "configs/fio.toml" \
 		-l \
 		xnvme_source_sync \
 		xnvme_build_prep \
@@ -288,6 +295,7 @@ cijoe-sync-git:
 	cd cijoe && cijoe workflows/provision-using-git.yaml \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
+		--config "configs/fio.toml" \
 		-l \
 		xnvme_source_sync
 	@echo "## xNVME: cijoe-sync-git [DONE]"
@@ -301,6 +309,7 @@ cijoe-sync-tgz:
 	cd cijoe && cijoe workflows/provision-using-tgz.yaml \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
+		--config "configs/fio.toml" \
 		-l \
 		xnvme_source_sync
 	@echo "## xNVME: cijoe-sync-tgz [DONE]"
@@ -314,6 +323,7 @@ cijoe-do-docgen:
 	cd cijoe && cijoe workflows/docgen.yaml \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
+		--config "configs/fio.toml" \
 		-l
 	@echo "## xNVME: cijoe-do-docgen [DONE]"
 
@@ -335,6 +345,7 @@ cijoe-do-test-linux:
 	cd cijoe && cijoe workflows/test-debian-trixie.yaml \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
+		--config "configs/fio.toml" \
 		-l
 	@echo "## xNVME: cijoe-do-test-linux [DONE]"
 
@@ -347,6 +358,7 @@ cijoe-do-test-freebsd:
 	cd cijoe && cijoe workflows/test-freebsd-13.yaml \
 		--monitor \
 		--config "configs/freebsd-13.toml" \
+		--config "configs/fio.toml" \
 		-l
 	@echo "## xNVME: cijoe-do-test-freebsd [DONE]"
 
@@ -359,6 +371,7 @@ cijoe-do-benchmark-scale:
 	cd cijoe && cijoe workflows/bench.yaml \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
+		--config "configs/fio.toml" \
 		-l
 	@echo "## xNVME: cijoe-do-benchmark-scale [DONE]"
 
@@ -371,6 +384,7 @@ cijoe-do-benchmark-latency:
 	cd cijoe && cijoe workflows/benchmark-latency.yaml \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
+		--config "configs/fio.toml" \
 		-l
 	@echo "## xNVME: cijoe-do-benchmark-latency [DONE]"
 
@@ -384,6 +398,7 @@ cijoe-do-bootimage-debian-trixie-amd64:
 	cd cijoe && cijoe workflows/bootimg-debian-trixie-amd64.yaml \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
+		--config "configs/fio.toml" \
 		--config "configs/system_imaging.toml" \
 		-l
 	@echo "## xNVME: cijoe-do-bootimage-debian-trixie-amd64 [DONE]"
@@ -397,6 +412,7 @@ cijoe-do-bootimage-freebsd-amd64:
 	cd cijoe && cijoe workflows/bootimg-freebsd-13-amd64.yaml \
 		--monitor \
 		--config "configs/freebsd-13.toml" \
+		--config "configs/fio.toml" \
 		--config "configs/system_imaging.toml" \
 		-l
 	@echo "## xNVME: cijoe-do-bootimage-freebsd-amd64 [DONE]"
@@ -410,6 +426,7 @@ cijoe-do-linux-kdebs:
 	cd cijoe && cijoe workflows/build-kdebs.yaml \
 		--monitor \
 		--config "configs/debian-trixie.toml" \
+		--config "configs/fio.toml" \
 		-l
 	@echo "## xNVME: cijoe-do-linux-kdebs [DONE]"
 

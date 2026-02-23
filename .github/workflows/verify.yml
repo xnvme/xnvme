@@ -364,6 +364,7 @@ jobs:
         cd cijoe && cijoe fio_prep \
         --monitor \
         --config "configs/ramdisk.toml" \
+        --config "configs/fio.toml" \
         --output "${{ github.job }}-${{ matrix.container.os }}-${{ matrix.container.ver }}-prep-fio"
 
     - name: CIJOE, run test-ramdisk.yaml
@@ -372,6 +373,7 @@ jobs:
         cd cijoe && cijoe "workflows/test-ramdisk.yaml" \
         --monitor \
         --config "configs/ramdisk.toml" \
+        --config "configs/fio.toml" \
         --output "${{ github.job }}-${{ matrix.container.os }}-${{ matrix.container.ver }}-test-ramdisk"
 
     - name: CIJOE, upload report.html
@@ -743,6 +745,7 @@ jobs:
         cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
         --monitor \
         --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
+        --config "configs/fio.toml" \
         --config "configs/system_imaging.toml" \
         --output "${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-provision"
 
@@ -751,6 +754,7 @@ jobs:
         cd cijoe && cijoe "workflows/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.yaml" \
         --monitor \
         --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
+        --config "configs/fio.toml" \
         --output "${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-test-results"
 
     - name: CIJOE, result-log-dump on error
@@ -1223,6 +1227,7 @@ jobs:
         cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
         --monitor \
         --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
+        --config "configs/fio.toml" \
         --config "configs/system_imaging.toml" \
         --output "${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-provision"
 
@@ -1231,6 +1236,7 @@ jobs:
         cd cijoe && cijoe "workflows/docgen.yaml" \
         --monitor \
         --config "configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml" \
+        --config "configs/fio.toml" \
         --output "${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-docs"
 
     - name: CIJOE, upload report-docgen
