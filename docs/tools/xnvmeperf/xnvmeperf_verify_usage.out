@@ -1,0 +1,24 @@
+Usage: xnvmeperf verify [<args>]
+
+For each device: writes --count sequential IOs with a per-LBA pattern,
+then reads them back and compares against the expected data.
+Device URIs are given as positional arguments at the end, e.g.:
+  xnvmeperf verify [options] <uri0> [uri1 ...]
+
+Where <args> include:
+
+  --iosize NUM                  ; Use given 'NUM' as bs/iosize
+  --count NUM                   ; Use given 'NUM' as count
+
+With <args> for backend:
+
+  [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'macos', 'posix', 'windows'
+  [ --async STRING ]            ; xNVMe async. command-interface, e.g. 'io_uring', 'emu'
+  [ --direct ]                  ; Bypass layers
+  [ --poll_io NUM ]             ; For async=io_uring, enable hipri/io-compl.polling
+  [ --poll_sq NUM ]             ; For async=io_uring, enable kernel-side sqthread-poll
+
+See 'xnvmeperf --help' for other commands
+
+xnvmeperf - NVMe async IO benchmark -- ver: {major: 0, minor: 7, patch: 5}
+

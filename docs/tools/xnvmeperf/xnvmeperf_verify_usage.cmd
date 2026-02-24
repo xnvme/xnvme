@@ -1,0 +1,1 @@
+xnvmeperf verify --help
