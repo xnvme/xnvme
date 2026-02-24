@@ -17,12 +17,6 @@ def test_fio_engine(cijoe, device, be_opts, cli_args):
     size = "64M"
     # size = "1G"
 
-    env = {}
-
-    hugepage_path = cijoe.getconf("hugetlbfs.mount_point", "")
-    if hugepage_path:
-        env["XNVME_HUGETLB_PATH"] = hugepage_path
-
     err, _ = fio_fancy(
         cijoe,
         fio_output_fpath,
@@ -32,7 +26,6 @@ def test_fio_engine(cijoe, device, be_opts, cli_args):
         be_opts,
         {},
         {"size": size},
-        env=env,
     )
     assert not err
 
@@ -58,12 +51,6 @@ def test_fio_engine_iov(cijoe, device, be_opts, cli_args):
     size = "64M"
     # size = "1G"
 
-    env = {}
-
-    hugepage_path = cijoe.getconf("hugetlbfs.mount_point", "")
-    if hugepage_path:
-        env["XNVME_HUGETLB_PATH"] = hugepage_path
-
     err, _ = fio_fancy(
         cijoe,
         fio_output_fpath,
@@ -73,7 +60,6 @@ def test_fio_engine_iov(cijoe, device, be_opts, cli_args):
         be_opts,
         {},
         {"size": size, "xnvme_iovec": 1},
-        env=env,
     )
     assert not err
 
@@ -96,12 +82,6 @@ def test_fio_engine_zns(cijoe, device, be_opts, cli_args):
     size = "64M"
     # size = "1G"
 
-    env = {}
-
-    hugepage_path = cijoe.getconf("hugetlbfs.mount_point", "")
-    if hugepage_path:
-        env["XNVME_HUGETLB_PATH"] = hugepage_path
-
     err, _ = fio_fancy(
         cijoe,
         fio_output_fpath,
@@ -111,7 +91,6 @@ def test_fio_engine_zns(cijoe, device, be_opts, cli_args):
         be_opts,
         {},
         {"size": size, "zonemode": "zbd"},
-        env=env,
     )
     assert not err
 
@@ -132,12 +111,6 @@ def test_fio_engine_fdp(cijoe, device, be_opts, cli_args):
     size = "64M"
     # size = "1G"
 
-    env = {}
-
-    hugepage_path = cijoe.getconf("hugetlbfs.mount_point", "")
-    if hugepage_path:
-        env["XNVME_HUGETLB_PATH"] = hugepage_path
-
     err, _ = fio_fancy(
         cijoe,
         fio_output_fpath,
@@ -147,6 +120,5 @@ def test_fio_engine_fdp(cijoe, device, be_opts, cli_args):
         be_opts,
         {},
         {"size": size, "fdp": 1, "fdp_pli": "4,5"},
-        env=env,
     )
     assert not err

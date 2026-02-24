@@ -7,135 +7,118 @@
 #ifdef XNVME_PLATFORM_LINUX_ENABLED
 #include <xnvme_dev.h>
 #include <errno.h>
+#include <stdlib.h>
+#include <string.h>
 
+#include <assert.h>
 #include <fcntl.h>
-#include <sys/mman.h>
-#include <unistd.h>
+#include <inttypes.h>
 #include <stdio.h>
-#include <sys/queue.h>
-#include <linux/limits.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/syscall.h>
+#include <linux/memfd.h>
+#include <unistd.h>
 
-struct huge_alloc {
-	char path[PATH_MAX];
-	int fd;
-	void *addr;
-	size_t len;
+#include <upcie/debug.h>
+#include <upcie/hostmem.h>
+#include <upcie/hostmem_config.h>
+#include <upcie/hostmem_hugepage.h>
+#include <upcie/hostmem_heap.h>
+#include <upcie/hostmem_dma.h>
 
-	SLIST_ENTRY(huge_alloc) link;
-};
+#define XNVME_HUGEPAGE_HEAP_SIZE_DEFAULT (256 * 1024 * 1024)
 
-SLIST_HEAD(huge_alloc_slist, huge_alloc);
-static struct huge_alloc_slist huge_alloc_head;
+static struct hostmem_config g_hugepage_config;
+static struct hostmem_heap g_hugepage_heap;
+static int g_hugepage_initialized;
 
-static size_t
-get_hugepage_size()
+static int
+_hugepage_heap_init(void)
 {
-	FILE *fp;
-	char line[128] = {'\0'};
-	size_t hugepage_size = 0;
+	size_t heap_size = XNVME_HUGEPAGE_HEAP_SIZE_DEFAULT;
+	const char *env_val;
+	int err;
 
-	fp = fopen("/proc/meminfo", "r");
+	err = hostmem_config_init(&g_hugepage_config);
+	if (err) {
+		XNVME_DEBUG("FAILED: hostmem_config_init(), err: %d", err);
+		return err;
+	}
 
-	while (fgets(line, 128, fp)) {
-		if (sscanf(line, "Hugepagesize: %16lu kB", &hugepage_size)) {
-			XNVME_DEBUG("Hugepage size: %lu kB", hugepage_size);
-			fclose(fp);
-			return hugepage_size * 1024;
+	env_val = getenv("XNVME_HUGEPAGE_BACKEND");
+	if (env_val) {
+		if (!strcmp(env_val, "memfd")) {
+			g_hugepage_config.backend = HOSTMEM_BACKEND_MEMFD;
+		} else if (!strcmp(env_val, "hugetlbfs")) {
+			g_hugepage_config.backend = HOSTMEM_BACKEND_HUGETLBFS;
+		} else {
+			XNVME_DEBUG("WARNING: unknown XNVME_HUGEPAGE_BACKEND='%s'", env_val);
 		}
 	}
-	fclose(fp);
 
-	XNVME_DEBUG("Unable to find hugepage size");
-	return 0;
-}
+	env_val = getenv("XNVME_HUGETLB_PATH");
+	if (env_val) {
+		strncpy(g_hugepage_config.hugetlb_path, env_val,
+			sizeof(g_hugepage_config.hugetlb_path) - 1);
+		g_hugepage_config.hugetlb_path[sizeof(g_hugepage_config.hugetlb_path) - 1] = '\0';
+		g_hugepage_config.backend = HOSTMEM_BACKEND_HUGETLBFS;
+	}
 
-static bool
-verify_hugetlbfs_path(char *path)
-{
-	char line[PATH_MAX];
-	char search_str[PATH_MAX];
-	FILE *fp;
-
-	fp = fopen("/proc/mounts", "r");
-
-	strncpy(search_str, path, sizeof(search_str) - 1);
-	search_str[PATH_MAX - 1] = '\0';
-	strncat(search_str, " hugetlbfs", sizeof(search_str) - strlen(search_str) - 1);
-
-	while (fgets(line, sizeof(line), fp)) {
-		if (strstr(line, search_str)) {
-			fclose(fp);
-			return 1;
+	env_val = getenv("XNVME_HUGEPAGE_HEAP_SIZE");
+	if (env_val) {
+		heap_size = strtoull(env_val, NULL, 0);
+		if (!heap_size) {
+			heap_size = XNVME_HUGEPAGE_HEAP_SIZE_DEFAULT;
 		}
 	}
-	fclose(fp);
+
+	if (g_hugepage_config.hugepgsz) {
+		heap_size = ((heap_size + g_hugepage_config.hugepgsz - 1) /
+			     g_hugepage_config.hugepgsz) *
+			    g_hugepage_config.hugepgsz;
+	}
+
+	err = hostmem_heap_init(&g_hugepage_heap, heap_size, &g_hugepage_config);
+	if (err) {
+		XNVME_DEBUG("FAILED: hostmem_heap_init(), err: %d", err);
+		return err;
+	}
+
+	g_hugepage_initialized = 1;
+
 	return 0;
 }
 
 void *
 xnvme_be_linux_mem_hugepage_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t nbytes,
-				      uint64_t *XNVME_UNUSED(phys))
+				      uint64_t *phys)
 {
 	void *buf;
-	int hugepage_fd;
-	struct huge_alloc *entry;
-	size_t hugepage_size;
-	char *env_hugepage_path;
-	char hugepage_path[PATH_MAX] = {'\0'};
+	int err;
 
-	env_hugepage_path = getenv("XNVME_HUGETLB_PATH");
-	if (env_hugepage_path == NULL) {
-		XNVME_DEBUG("ERROR: XNVME_HUGETLB_PATH env var not defined");
+	if (!g_hugepage_initialized) {
+		err = _hugepage_heap_init();
+		if (err) {
+			errno = -err;
+			return NULL;
+		}
+	}
+
+	buf = hostmem_dma_malloc(&g_hugepage_heap, nbytes);
+	if (!buf) {
 		errno = ENOMEM;
 		return NULL;
 	}
 
-	strncpy(hugepage_path, env_hugepage_path, sizeof(hugepage_path) - 1);
-
-	if (!verify_hugetlbfs_path(hugepage_path)) {
-		XNVME_DEBUG("WARNING: Hugetlbfs is not mounted at: %s", hugepage_path);
+	if (phys) {
+		err = hostmem_heap_block_virt_to_phys(&g_hugepage_heap, buf, phys);
+		if (err) {
+			hostmem_dma_free(&g_hugepage_heap, buf);
+			errno = -err;
+			return NULL;
+		}
 	}
-
-	hugepage_size = get_hugepage_size();
-	if (!hugepage_size) {
-		XNVME_DEBUG("Hugepage size not valid: %lu", hugepage_size);
-		errno = ENOMEM;
-		return NULL;
-	}
-
-	// nbytes has to be a multiple of alignment. Therefore, we round up to the nearest
-	// multiple.
-	nbytes = (1 + ((nbytes - 1) / hugepage_size)) * (hugepage_size);
-
-	// Map a Huge page
-	strncat(hugepage_path, "/xnvme_XXXXXX", sizeof(hugepage_path) - strlen(hugepage_path) - 1);
-	hugepage_fd = mkstemp(hugepage_path);
-	if (hugepage_fd == -1) {
-		XNVME_DEBUG("Failed to open hugepage file. %s", hugepage_path);
-		errno = ENOMEM;
-		return NULL;
-	}
-
-	if (ftruncate(hugepage_fd, nbytes)) {
-		XNVME_DEBUG("Failed to truncate hugepage file. %s, %lu", hugepage_path, nbytes);
-		perror("hugetlb ftruncate()");
-		return NULL;
-	}
-
-	buf = mmap(NULL, nbytes, PROT_READ | PROT_WRITE, MAP_SHARED, hugepage_fd, 0);
-	if (buf == MAP_FAILED) {
-		XNVME_DEBUG("mmap failed on hugepage file");
-		return NULL;
-	}
-
-	// Appending allocated hugepage to linked-list for use during free
-	entry = malloc(sizeof(struct huge_alloc));
-	entry->fd = hugepage_fd;
-	strncpy(entry->path, hugepage_path, sizeof(entry->path) - 1);
-	entry->path[sizeof(entry->path) - 1] = '\0';
-	entry->addr = buf;
-	entry->len = nbytes;
-	SLIST_INSERT_HEAD(&huge_alloc_head, entry, link);
 
 	return buf;
 }
@@ -143,31 +126,18 @@ xnvme_be_linux_mem_hugepage_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev),
 void
 xnvme_be_linux_mem_hugepage_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
 {
-	struct huge_alloc *entry;
-
 	if (!buf) {
 		return;
 	}
 
-	// Iterate through linked-list to find the entry from *buf
-	entry = SLIST_FIRST(&huge_alloc_head);
-	while (entry != NULL) {
-		if (entry->addr == buf) {
-			break;
-		}
-		entry = SLIST_NEXT(entry, link);
-	}
+	hostmem_dma_free(&g_hugepage_heap, buf);
+}
 
-	if (!entry) {
-		XNVME_DEBUG("huge_alloc_table_reset: Entry %p not found!", buf);
-	}
-
-	// Clean up all the files, buffers etc. for the hugepage
-	munmap(buf, entry->len);
-	close(entry->fd);
-	remove(entry->path);
-	SLIST_REMOVE(&huge_alloc_head, entry, huge_alloc, link);
-	free(entry);
+int
+xnvme_be_linux_mem_hugepage_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf,
+					uint64_t *phys)
+{
+	return hostmem_heap_block_virt_to_phys(&g_hugepage_heap, buf, phys);
 }
 
 #endif
@@ -178,7 +148,7 @@ struct xnvme_be_mem g_xnvme_be_linux_mem_hugepage = {
 	.buf_alloc = xnvme_be_linux_mem_hugepage_buf_alloc,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
 	.buf_free = xnvme_be_linux_mem_hugepage_buf_free,
-	.buf_vtophys = xnvme_be_nosys_buf_vtophys,
+	.buf_vtophys = xnvme_be_linux_mem_hugepage_buf_vtophys,
 	.mem_map = xnvme_be_nosys_mem_map,
 	.mem_unmap = xnvme_be_nosys_mem_unmap,
 #else

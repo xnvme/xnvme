@@ -44,6 +44,48 @@ test_buf_alloc_free(struct xnvme_cli *cli)
 }
 
 static int
+test_buf_vtophys(struct xnvme_cli *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	size_t buf_nbytes = 4096;
+	uint64_t phys = 0;
+	void *buf;
+	int err;
+
+	buf = xnvme_buf_alloc(dev, buf_nbytes);
+	if (!buf) {
+		xnvme_cli_perr("xnvme_buf_alloc()", -errno);
+		return -errno;
+	}
+
+	err = xnvme_buf_vtophys(dev, buf, &phys);
+	if (err == -ENOSYS) {
+		xnvme_cli_pinf("SKIP: buf_vtophys not supported by this mem backend");
+		xnvme_buf_free(dev, buf);
+		return 0;
+	}
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_vtophys()", err);
+		xnvme_buf_free(dev, buf);
+		return err;
+	}
+
+	xnvme_cli_pinf("buf: %p, phys: 0x%" PRIx64, buf, phys);
+
+	if (!phys) {
+		xnvme_cli_pinf("FAILED: phys == 0");
+		xnvme_buf_free(dev, buf);
+		return -EINVAL;
+	}
+
+	xnvme_buf_free(dev, buf);
+
+	xnvme_cli_pinf("LGMT: xnvme_buf_vtophys");
+
+	return 0;
+}
+
+static int
 test_virt_buf_alloc_free(struct xnvme_cli *cli)
 {
 	uint64_t count = cli->args.count;
@@ -96,6 +138,20 @@ static struct xnvme_cli_sub g_subs[] = {
 
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_COUNT, XNVME_CLI_LREQ},
+
+			XNVME_CLI_ADMIN_OPTS,
+		},
+	},
+	{
+		"buf_vtophys",
+		"Allocate a buffer and resolve its physical address",
+		"Allocate a buffer and resolve its physical address",
+		test_buf_vtophys,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 
 			XNVME_CLI_ADMIN_OPTS,
 		},
