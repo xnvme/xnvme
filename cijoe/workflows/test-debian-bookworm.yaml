@@ -6,8 +6,8 @@ steps:
 - name: sysinfo
   uses: linux.sysinfo
 
-- name: hugetlbfs
-  uses: linux_setup_hugetlbfs
+- name: hugepages
+  uses: linux_setup_hugepages
 
 - name: test_python
   uses: core.testrunner
