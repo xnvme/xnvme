@@ -44,7 +44,7 @@ xnvme_be_macos_driverkit_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	cmd.backend_opaque = (uint64_t)ctx;
 
 	output_cnt = sizeof(NvmeSubmitCmd);
-	ret = IOConnectCallStructMethod(state->device_connection, NVME_ONESHOT, &cmd,
+	ret = IOConnectCallStructMethod(state->ctrlr->device_connection, NVME_ONESHOT, &cmd,
 					sizeof(NvmeSubmitCmd), &cmd_return, &output_cnt);
 	if (ret != kIOReturnSuccess) {
 		XNVME_DEBUG("FAILED: IOConnectCallStructMethod(NVME_ONESHOT); "

@@ -12,20 +12,26 @@
 struct buffer;
 
 /**
- * Internal representation of XNVME_BE_MACOS_DRIVERKIT state
- *
- * NOTE: When changing this struct, ensure compatibility with 'struct xnvme_be_cbi_state'
+ * Shared controller state, one per physical controller, managed by cref.
  */
-struct xnvme_be_macos_driverkit_state {
+struct xnvme_be_macos_driverkit_ctrlr {
 	io_service_t device_service;
 	io_connect_t device_connection;
 	uint64_t qidmap;
+};
+
+/**
+ * Per-device state embedded in xnvme_dev.be.state.
+ * The first field (ctrlr) is the cref handle written by the platform.
+ */
+struct xnvme_be_macos_driverkit_state {
+	struct xnvme_be_macos_driverkit_ctrlr *ctrlr; ///< Shared controller (first for platform)
 
 	uint64_t qid_sync;
 
 	struct buffer *buffers;
 
-	uint8_t _rsvd[96];
+	uint8_t _rsvd[104];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_macos_driverkit_state) == XNVME_BE_STATE_NBYTES,
 		    "Incorrect size")

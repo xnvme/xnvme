@@ -43,8 +43,8 @@ xnvme_be_macos_driverkit_queue_init(struct xnvme_queue *_queue, int XNVME_UNUSED
 	}
 	q->id = qpid;
 
-	res = IOConnectMapMemory64(state->device_connection, 1 << 16 | qpid, mach_task_self(),
-				   &addr, &size, kIOMapAnywhere);
+	res = IOConnectMapMemory64(state->ctrlr->device_connection, 1 << 16 | qpid,
+				   mach_task_self(), &addr, &size, kIOMapAnywhere);
 	XNVME_DEBUG("INFO: IOConnectMapMemory64(); returned: %x, %s", res, mach_error_string(res));
 	if (res != kIOReturnSuccess) {
 		XNVME_DEBUG("FAILED: IOConnectMapMemory64(); "
@@ -55,8 +55,8 @@ xnvme_be_macos_driverkit_queue_init(struct xnvme_queue *_queue, int XNVME_UNUSED
 	q->sq_queue = (RingQueue *)addr;
 
 	size = 0;
-	res = IOConnectMapMemory64(state->device_connection, qpid, mach_task_self(), &addr, &size,
-				   kIOMapAnywhere);
+	res = IOConnectMapMemory64(state->ctrlr->device_connection, qpid, mach_task_self(), &addr,
+				   &size, kIOMapAnywhere);
 	XNVME_DEBUG("INFO: IOConnectMapMemory64(); returned: %x, %s", res, mach_error_string(res));
 	if (res != kIOReturnSuccess) {
 		XNVME_DEBUG("FAILED: IOConnectMapMemory64(); "
@@ -101,7 +101,8 @@ xnvme_be_macos_driverkit_queue_poke(struct xnvme_queue *queue, uint32_t XNVME_UN
 	kern_return_t ret;
 	struct xnvme_cmd_ctx *ctx;
 
-	ret = IOConnectCallScalarMethod(state->device_connection, NVME_POKE, qid, 2, NULL, 0);
+	ret = IOConnectCallScalarMethod(state->ctrlr->device_connection, NVME_POKE, qid, 2, NULL,
+					0);
 	if (ret != kIOReturnSuccess) {
 		XNVME_DEBUG("FAILED: IOConnectCallScalarMethod(); ret(0x%x), msg(%s)", ret,
 			    mach_error_string(ret));
