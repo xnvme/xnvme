@@ -43,8 +43,8 @@ xnvme_be_macos_driverkit_buf_alloc(const struct xnvme_dev *dev, size_t nbytes,
 	buf[1] = (uint64_t)ptr; // Our token for the memory reference
 
 	XNVME_DEBUG("INFO: buf token: %llx", (uint64_t)ptr);
-	kern_return_t ret = IOConnectCallStructMethod(state->device_connection, NVME_ALLOC_BUFFER,
-						      ptr, nbytes, NULL, 0);
+	kern_return_t ret = IOConnectCallStructMethod(state->ctrlr->device_connection,
+						      NVME_ALLOC_BUFFER, ptr, nbytes, NULL, 0);
 	if (ret != kIOReturnSuccess) {
 		XNVME_DEBUG("FAILED: IOConnectCallStructMethod(NVME_ALLOC_BUFFER); "
 			    "ret(0x%08x), '%s'",
@@ -78,7 +78,7 @@ xnvme_be_macos_driverkit_buf_free(const struct xnvme_dev *dev, void *buf)
 	}
 
 	XNVME_DEBUG("INFO: buf token: %llx", (uint64_t)_buf->vaddr);
-	ret = IOConnectCallStructMethod(state->device_connection, NVME_DEALLOC_BUFFER,
+	ret = IOConnectCallStructMethod(state->ctrlr->device_connection, NVME_DEALLOC_BUFFER,
 					&_buf->vaddr, sizeof(_buf->vaddr), NULL, &_output_cnt);
 	if (ret != kIOReturnSuccess) {
 		XNVME_DEBUG("FAILED: IOConnectCallStructMethod(NVME_DEALLOC_BUFFER); "
