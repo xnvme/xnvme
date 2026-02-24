@@ -863,6 +863,24 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "Starting Destination Logical Block Address",
 	},
 	{
+		.opt = XNVME_CLI_OPT_RUNTIME,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
+		.name = "runtime",
+		.descr = "Run for 'NUM' seconds",
+	},
+	{
+		.opt = XNVME_CLI_OPT_IOPATTERN,
+		.vtype = XNVME_CLI_OPT_VTYPE_STR,
+		.name = "iopattern",
+		.descr = "IO pattern (read, write, randread, randwrite)",
+	},
+	{
+		.opt = XNVME_CLI_OPT_CPUMASK,
+		.vtype = XNVME_CLI_OPT_VTYPE_STR,
+		.name = "cpumask",
+		.descr = "Hex CPU bitmask for thread pinning (e.g. 0x3)",
+	},
+	{
 		.opt = XNVME_CLI_OPT_END,
 		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "",
@@ -1525,6 +1543,15 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 		break;
 	case XNVME_CLI_OPT_SDLBA:
 		args->sdlba = num;
+		break;
+	case XNVME_CLI_OPT_RUNTIME:
+		args->runtime = num;
+		break;
+	case XNVME_CLI_OPT_IOPATTERN:
+		args->iopattern = arg ? arg : "INVALID_INPUT";
+		break;
+	case XNVME_CLI_OPT_CPUMASK:
+		args->cpumask = arg ? arg : "INVALID_INPUT";
 		break;
 	case XNVME_CLI_OPT_POSA_TITLE:
 	case XNVME_CLI_OPT_NON_POSA_TITLE:
