@@ -166,6 +166,10 @@ struct xnvme_cli_args {
 	uint32_t apptag_mask;
 
 	uint64_t sdlba;
+
+	uint32_t runtime;
+	const char *iopattern;
+	const char *cpumask;
 };
 
 void
@@ -334,7 +338,12 @@ enum xnvme_cli_opt {
 	XNVME_CLI_OPT_APPTAG_MASK = 123, ///< XNVME_CLI_OPT_APPTAG_MASK
 
 	XNVME_CLI_OPT_SDLBA = 124,
-	XNVME_CLI_OPT_END   = 125, ///< XNVME_CLI_OPT_END
+
+	XNVME_CLI_OPT_RUNTIME   = 125, ///< XNVME_CLI_OPT_RUNTIME
+	XNVME_CLI_OPT_IOPATTERN = 126, ///< XNVME_CLI_OPT_IOPATTERN
+	XNVME_CLI_OPT_CPUMASK   = 127, ///< XNVME_CLI_OPT_CPUMASK
+
+	XNVME_CLI_OPT_END = 128, ///< XNVME_CLI_OPT_END
 };
 
 /**
