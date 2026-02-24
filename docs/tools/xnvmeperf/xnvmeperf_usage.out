@@ -1,0 +1,11 @@
+Usage: xnvmeperf <command> [<args>]
+
+Where <command> is one of:
+
+  run              | Run a benchmark against the given devices
+  verify           | Verify data integrity by writing and reading back a known pattern
+
+See 'xnvmeperf <command> --help' for the description of [<args>]
+
+xnvmeperf - NVMe async IO benchmark -- ver: {major: 0, minor: 7, patch: 5}
+

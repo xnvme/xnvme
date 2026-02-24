@@ -1,0 +1,27 @@
+Usage: xnvmeperf run [<args>]
+
+Run a time-bounded async IO benchmark against one or more NVMe devices.
+Devices are distributed across CPU threads pinned by --cpumask.
+Device URIs are given as positional arguments at the end, e.g.:
+  xnvmeperf run [options] <uri0> [uri1 ...]
+
+Where <args> include:
+
+  --iopattern STRING            ; IO pattern (read, write, randread, randwrite, verify)
+  --qdepth NUM                  ; Use given 'NUM' as queue max capacity
+  --iosize NUM                  ; Use given 'NUM' as bs/iosize
+  --runtime NUM                 ; Run for 'NUM' seconds
+  --cpumask STRING              ; Hex CPU bitmask for thread pinning (e.g. 0x3)
+
+With <args> for backend:
+
+  [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'macos', 'posix', 'windows'
+  [ --async STRING ]            ; xNVMe async. command-interface, e.g. 'io_uring', 'emu'
+  [ --direct ]                  ; Bypass layers
+  [ --poll_io NUM ]             ; For async=io_uring, enable hipri/io-compl.polling
+  [ --poll_sq NUM ]             ; For async=io_uring, enable kernel-side sqthread-poll
+
+See 'xnvmeperf --help' for other commands
+
+xnvmeperf - NVMe async IO benchmark -- ver: {major: 0, minor: 7, patch: 5}
+

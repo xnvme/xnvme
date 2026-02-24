@@ -7,8 +7,8 @@
 Navigate the menu on the left for descriptions and usage examples of the
 different command-line tools provided with **xNVMe**.
 
-In a addition to the cli tools, then a performance tool is provided in the form
-of a :ref:`sec-tools-fio`.
+In addition to the cli tools, performance tools are provided in the form of
+:ref:`sec-tools-fio` and :ref:`sec-tools-xnvmeperf`.
 
 .. toctree::
    :hidden:
@@ -19,3 +19,4 @@ of a :ref:`sec-tools-fio`.
    xdd/index
    file/index
    fio/index
+   xnvmeperf/index
