@@ -62,7 +62,7 @@ xnvme_be_pr(const struct xnvme_be *be, enum xnvme_pr opts)
 }
 
 int
-xnvme_be_registry_fpr(FILE *stream, enum xnvme_pr XNVME_UNUSED(opts))
+xnvme_be_attr_list_fpr(FILE *stream, enum xnvme_pr XNVME_UNUSED(opts))
 {
 	int wrtn = 0;
 
@@ -91,9 +91,21 @@ xnvme_be_registry_fpr(FILE *stream, enum xnvme_pr XNVME_UNUSED(opts))
 }
 
 int
-xnvme_be_registry_pr(enum xnvme_pr opts)
+xnvme_be_attr_list_pr(enum xnvme_pr opts)
 {
-	return xnvme_be_registry_fpr(stdout, opts);
+	return xnvme_be_attr_list_fpr(stdout, opts);
+}
+
+const struct xnvme_be_attr *
+xnvme_be_attr_get(int idx)
+{
+	for (int i = 0; g_xnvme_platform->backends[i]; ++i) {
+		if (i == idx) {
+			return &g_xnvme_platform->backends[i]->attr;
+		}
+	}
+
+	return NULL;
 }
 
 int

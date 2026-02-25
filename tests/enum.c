@@ -256,14 +256,19 @@ test_enum_backend(struct xnvme_cli *cli)
 				      "windows", "ramdisk", "libvfn"};
 	int err;
 
-	for (int i = 0; i < N_BACKENDS; ++i) {
+	for (int i = 0;; ++i) {
+		const struct xnvme_be_attr *attr = xnvme_be_attr_get(i);
 
-		opts.be = backends[i];
-		strncpy(cb_args.expected, backends[i], 1023);
+		if (!attr) {
+			break;
+		}
+
+		opts.be = attr->name;
+		strncpy(cb_args.expected, attr->name, 1023);
 
 		err = xnvme_enumerate(cli->args.sys_uri, &opts, backend_cb, &cb_args);
 		if (err) {
-			XNVME_DEBUG("FAILED: %s->enumerate(...), err: '%s', i: %d", backends[i],
+			XNVME_DEBUG("FAILED: %s->enumerate(...), err: '%s', i: %d", attr->name,
 				    strerror(-err), i);
 		}
 

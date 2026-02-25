@@ -1118,7 +1118,7 @@ sub_library_info(struct xnvme_cli *XNVME_UNUSED(cli))
 	xnvme_libconf_pr(xnvme_libconf_get(), XNVME_PR_DEF);
 	printf("\n");
 
-	xnvme_be_registry_pr(XNVME_PR_DEF);
+	xnvme_be_attr_list_pr(XNVME_PR_DEF);
 	printf("\n");
 
 	return 0;

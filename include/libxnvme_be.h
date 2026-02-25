@@ -43,7 +43,7 @@ int
 xnvme_be_attr_pr(const struct xnvme_be_attr *attr, int opts);
 
 /**
- * Prints platform name and available drivers to the given output stream
+ * Prints attributes of backend configurations to the given output stream
  *
  * @param stream output stream used for printing
  * @param opts printer options, see ::xnvme_pr
@@ -51,14 +51,24 @@ xnvme_be_attr_pr(const struct xnvme_be_attr *attr, int opts);
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_be_registry_fpr(FILE *stream, enum xnvme_pr opts);
+xnvme_be_attr_list_fpr(FILE *stream, enum xnvme_pr opts);
 
 /**
- * Prints platform name and available drivers to stdout
+ * Prints attributes of backend configurations to stdout
  *
  * @param opts printer options, see ::xnvme_pr
  *
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_be_registry_pr(enum xnvme_pr opts);
+xnvme_be_attr_list_pr(enum xnvme_pr opts);
+
+/**
+ * Returns the backend attribute at the given index
+ *
+ * @param idx Index into the list of backend configurations
+ *
+ * @return Pointer to the attribute, NULL when idx is past the end
+ */
+const struct xnvme_be_attr *
+xnvme_be_attr_get(int idx);
