@@ -27,6 +27,8 @@ xnvme_cli_opt_type_str(enum xnvme_cli_opt_type otype)
 		return "XNVME_CLI_LOPT";
 	case XNVME_CLI_LREQ:
 		return "XNVME_CLI_LREQ";
+	case XNVME_CLI_POSN:
+		return "XNVME_CLI_POSN";
 	case XNVME_CLI_SKIP:
 		return "XNVME_CLI_SKIP";
 	}
@@ -990,7 +992,13 @@ xnvme_cli_usage_sub_long(struct xnvme_cli *cli, struct xnvme_cli_sub *sub)
 		if (opt->type && opt->type == XNVME_CLI_SKIP) {
 			continue;
 		}
-		if (opt->type && (opt->type != XNVME_CLI_POSA)) {
+
+		if (opt->type && opt->type == XNVME_CLI_POSN) {
+			printf("[<%s>...] ", attr->name);
+			break;
+		}
+
+		if (opt->type && opt->type != XNVME_CLI_POSA) {
 			break;
 		}
 
@@ -1021,6 +1029,9 @@ xnvme_cli_usage_sub_long(struct xnvme_cli *cli, struct xnvme_cli_sub *sub)
 		switch (opt->type) {
 		case XNVME_CLI_POSA:
 			width = printf("%s", attr->name);
+			break;
+		case XNVME_CLI_POSN:
+			width = printf("[%s ...]", attr->name);
 			break;
 		case XNVME_CLI_LREQ:
 			width = printf("--%s %s", attr->name,
@@ -1570,6 +1581,7 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 
 struct xnvme_cli_counts {
 	int posa;
+	int posn;
 	int lreq;
 	int lopt;
 	int lflg;
@@ -1591,6 +1603,7 @@ xnvme_cli_counts_pr(const struct xnvme_cli_counts *counts)
 
 	printf("\n");
 	printf("  posa: %d", counts->posa);
+	printf("  posn: %d", counts->posn);
 	printf("  lreq: %d", counts->lreq);
 	printf("  lopt: %d", counts->lopt);
 	printf("  lflg: %d", counts->lflg);
@@ -1610,6 +1623,7 @@ xnvme_cli_parse(struct xnvme_cli *cli)
 	struct xnvme_cli_args *args = &cli->args;
 	struct option long_options[XNVME_CLI_SUB_OPTS_LEN] = {0};
 	struct xnvme_cli_opt_attr *pos_args[XNVME_CLI_SUB_OPTS_LEN] = {0};
+	struct xnvme_cli_opt_attr *posn_attr = NULL;
 	struct xnvme_cli_sub *sub;
 	struct xnvme_cli_counts signature = {0};
 	struct xnvme_cli_counts parsed = {0};
@@ -1678,9 +1692,26 @@ xnvme_cli_parse(struct xnvme_cli *cli)
 			break;
 
 		case XNVME_CLI_POSA:
+			if (signature.posn) {
+				xnvme_cli_pinf("Invalid CLI definition: cannot have "
+					       "XNVME_CLI_POSA after XNVME_CLI_POSN");
+				errno = EINVAL;
+				return -1;
+			}
 			++signature.posa;
 			++signature.total_req;
 			break;
+
+		case XNVME_CLI_POSN:
+			if (signature.posn) {
+				xnvme_cli_pinf("Invalid CLI definition: cannot have multiple "
+					       "XNVME_CLI_POSN");
+				errno = EINVAL;
+				return -1;
+			}
+			++signature.posn;
+			posn_attr = opt_attr;
+			continue;
 		case XNVME_CLI_SKIP:
 			continue;
 		}
@@ -1706,6 +1737,7 @@ xnvme_cli_parse(struct xnvme_cli *cli)
 		case XNVME_CLI_POSA:
 			pos_args[signature.posa - 1] = opt_attr;
 			break;
+		case XNVME_CLI_POSN: // never happens
 		case XNVME_CLI_SKIP:
 			break;
 		}
@@ -1754,6 +1786,7 @@ xnvme_cli_parse(struct xnvme_cli *cli)
 				break;
 
 			case XNVME_CLI_POSA:
+			case XNVME_CLI_POSN:
 				XNVME_DEBUG("Positional out of place");
 				errno = EINVAL;
 				return -1;
@@ -1790,33 +1823,25 @@ xnvme_cli_parse(struct xnvme_cli *cli)
 	// of argv
 
 	// Parse positional arguments
-	if (signature.posa) {
-		int npos_given;
+	if (signature.posa || signature.posn) {
+		int npos_given = cli->argc - (optind + 1);
 
-		if (cli->argc < 3) {
+		if (npos_given < signature.posa) {
 			xnvme_cli_pinf("Insufficient arguments, see: --help");
 			errno = EINVAL;
 			return -1;
 		}
 
-		npos_given = cli->argc - (optind + 1);
-
-		if (npos_given != signature.posa) {
-			xnvme_cli_pinf("Insufficient arguments, see: --help");
+		if (!signature.posn && (npos_given != signature.posa)) {
+			xnvme_cli_pinf("Too many positional arguments, see: --help");
 			errno = EINVAL;
 			return -1;
 		}
 
-		// Skip the sub-command and parse positional arguments
+		// Skip the sub-command and parse POSA arguments
 		for (int pos = 0; pos < signature.posa; ++pos) {
-			struct xnvme_cli_opt_attr *attr = NULL;
+			struct xnvme_cli_opt_attr *attr = pos_args[pos];
 			int idx = pos + (optind + 1);
-
-			if (idx > cli->argc) {
-				break;
-			}
-
-			attr = pos_args[pos];
 
 			if (xnvme_cli_assign_arg(cli, attr, cli->argv[idx], XNVME_CLI_POSA)) {
 				XNVME_DEBUG("FAILED: xnvme_cli_assign_arg()");
@@ -1828,6 +1853,19 @@ xnvme_cli_parse(struct xnvme_cli *cli)
 			++parsed.posa;
 			++parsed.total_req;
 			++parsed.total;
+		}
+
+		// Collect remaining args into posn
+		if (signature.posn && posn_attr) {
+			int nposn = npos_given - signature.posa;
+
+			args->posn =
+				nposn > 0 ? (const char **)&cli->argv[optind + 1 + signature.posa]
+					  : NULL;
+			args->posn_count = nposn;
+			if (nposn > 0) {
+				cli->given[posn_attr->opt] = 1;
+			}
 		}
 	}
 
