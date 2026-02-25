@@ -170,6 +170,9 @@ struct xnvme_cli_args {
 	uint32_t runtime;
 	const char *iopattern;
 	const char *cpumask;
+
+	const char **posn; //< Remaining positional args (points into argv)
+	int posn_count;    ///< Number of remaining positional args
 };
 
 void
@@ -351,6 +354,7 @@ enum xnvme_cli_opt {
  * XNVME_CLI_LOPT: ./cli --arg 0x0; optionally provide a value
  * XNVME_CLI_LREQ: ./cli --arg 0x0; require providing a value
  * XNVME_CLI_POSA: ./cli arg1 arg2; required, ordered, and provides a value
+ * XNVME_CLI_POSN: ./cli arg1a arg1b; optional, ordered, and provides zero or more values
  * XNVME_CLI_SKIP: ; This argument is used for formatting etc.
  *
  * @enum xnvme_cli_opt_type
@@ -361,6 +365,7 @@ enum xnvme_cli_opt_type {
 	XNVME_CLI_LOPT = 0x3, ///< XNVME_CLI_LOPT
 	XNVME_CLI_LREQ = 0x4, ///< XNVME_CLI_LREQ
 	XNVME_CLI_SKIP = 0x5, ///< XNVME_CLI_SKIP
+	XNVME_CLI_POSN = 0x6, ///< XNVME_CLI_POSN
 };
 
 enum xnvme_cli_opt_value_type {
