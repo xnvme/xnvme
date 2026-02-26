@@ -197,7 +197,7 @@ enumerate_controller(const char *uri, struct xnvme_opts *opts, xnvme_enumerate_c
 		xnvme_dev_close(ctrl_dev);
 		return -ENOMEM;
 	}
-	memset(idfy_buf, 0, sizeof(*idfy_buf));
+	xnvme_buf_clear(idfy_buf, sizeof(*idfy_buf));
 
 	ctx = xnvme_cmd_ctx_from_dev(ctrl_dev);
 	err = xnvme_adm_idfy(&ctx, XNVME_SPEC_IDFY_NSLIST, 0, 0, 0, 0, idfy_buf);
