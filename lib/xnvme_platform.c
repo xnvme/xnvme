@@ -24,23 +24,195 @@ struct xnvme_platform *g_xnvme_platform =
 #error "No platform enabled. Define one of XNVME_PLATFORM_{LINUX,FREEBSD,MACOS,WINDOWS}_ENABLED"
 #endif
 
+/**
+ * Resolve the memory backend for a backend config, applying user overrides.
+ *
+ * When the user requests a specific memory backend via opts->mem and it differs
+ * from the config default, search the config's mem_overrides list for a match.
+ *
+ * @param be Backend instance to update with the resolved memory backend
+ * @param cfg Backend config providing default and override memory backends
+ * @param opts User options, may request a specific memory backend via opts->mem
+ *
+ * @return 0 on success (default matches or override found), -1 when no match
+ */
+static int
+_dev_open_resolve_mem(struct xnvme_be *be, const struct xnvme_be_config *cfg,
+		      const struct xnvme_opts *opts)
+{
+	if (!opts || !opts->mem || !strcmp(opts->mem, cfg->mem->id)) {
+		return 0;
+	}
+
+	if (cfg->mem_overrides) {
+		for (int j = 0; cfg->mem_overrides[j]; ++j) {
+			if (!strcmp(cfg->mem_overrides[j]->id, opts->mem)) {
+				be->mem = *cfg->mem_overrides[j];
+				return 0;
+			}
+		}
+	}
+
+	XNVME_DEBUG("INFO: skipping config; no mem override '%s'", opts->mem);
+	return -1;
+}
+
+/**
+ * Initialize a controller reference for the device, reusing an existing one
+ * or creating a new one via ctrlr_init.
+ *
+ * Looks up an existing cref for the URI and config name. When none exists,
+ * checks for conflicts with other backend configs, initializes a new controller,
+ * and inserts it into the cref table. On success, stores the controller
+ * pointer in be->state[0].
+ *
+ * @param dev Device being opened
+ * @param be Backend instance with dev operations
+ * @param cfg Backend config for cref keying
+ *
+ * @return 0 on success, negative errno on failure
+ */
+static int
+_dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnvme_be_config *cfg)
+{
+	void *ctrlr = NULL;
+	int cref_inserted = 0;
+	int err;
+
+	if (!be->dev.ctrlr_init) {
+		return 0;
+	}
+
+	ctrlr = xnvme_be_cref_lookup(dev->ident.uri, cfg->attr.name);
+	if (ctrlr) {
+		((void **)be->state)[0] = ctrlr;
+		return 0;
+	}
+
+	{
+		void *conflict = xnvme_be_cref_lookup(dev->ident.uri, NULL);
+
+		if (conflict) {
+			xnvme_be_cref_deref(conflict, XNVME_BE_CREF_NONE);
+			XNVME_DEBUG("FAILED: uri '%s' claimed by another backend config",
+				    dev->ident.uri);
+			return -EBUSY;
+		}
+	}
+
+	ctrlr = be->dev.ctrlr_init(dev);
+	if (!ctrlr) {
+		XNVME_DEBUG("FAILED: ctrlr_init for uri '%s'", dev->ident.uri);
+		return errno ? -errno : -EIO;
+	}
+
+	err = xnvme_be_cref_insert(dev->ident.uri, cfg->attr.name, ctrlr, be->dev.ctrlr_term);
+	if (err) {
+		XNVME_DEBUG("FAILED: cref_insert for uri '%s'", dev->ident.uri);
+		be->dev.ctrlr_term(ctrlr);
+		return err;
+	}
+	cref_inserted = 1;
+
+	((void **)be->state)[0] = ctrlr;
+
+	err = be->dev.dev_open(dev);
+	if (err && cref_inserted) {
+		xnvme_be_cref_deref(ctrlr, XNVME_BE_CREF_DESTROY_IMMEDIATE);
+	}
+
+	return err;
+}
+
+/**
+ * Attempt to open a device using a specific backend config.
+ *
+ * Instantiates the backend from the config, resolves memory backend overrides,
+ * initializes controller references if needed, and calls dev_open. On success,
+ * backfills opts with the selected backend names.
+ *
+ * @param dev Device to open
+ * @param cfg Backend config to try
+ * @param opts User-provided options
+ *
+ * @return 0 on success, negative errno on failure
+ */
+static int
+_dev_open_try_config(struct xnvme_dev *dev, const struct xnvme_be_config *cfg,
+		     struct xnvme_opts *opts)
+{
+	struct xnvme_be be = {0};
+	int err;
+
+	be.async = *cfg->async;
+	be.sync = *cfg->sync;
+	be.admin = *cfg->admin;
+	be.dev = *cfg->dev;
+	be.mem = *cfg->mem;
+	be.attr = cfg->attr;
+
+	if (_dev_open_resolve_mem(&be, cfg, opts)) {
+		return -EINVAL;
+	}
+
+	dev->be = be;
+	dev->opts = *opts;
+
+	XNVME_DEBUG("INFO: selected config: be='%s' async='%s' sync='%s'", cfg->attr.name,
+		    cfg->async->id, cfg->sync->id);
+
+	err = _dev_open_init_cref(dev, &dev->be, cfg);
+	if (err) {
+		return err;
+	}
+
+	if (!dev->be.dev.ctrlr_init) {
+		err = dev->be.dev.dev_open(dev);
+		if (err) {
+			return err;
+		}
+	}
+
+	XNVME_DEBUG("INFO: obtained device handle");
+	dev->opts.be = dev->be.attr.name;
+	dev->opts.admin = dev->be.admin.id;
+	dev->opts.sync = dev->be.sync.id;
+	dev->opts.async = dev->be.async.id;
+	dev->opts.mem = dev->be.mem.id;
+	dev->opts.dev = g_xnvme_platform->name;
+
+	return 0;
+}
+
+/**
+ * Open a device by iterating platform backend configs until one succeeds.
+ *
+ * Classifies the URI to determine device capabilities, then tries each
+ * registered backend config that matches the user-provided backend options.
+ * Stops on the first successful open, on permission errors, or when a
+ * caps-matched config fails.
+ *
+ * @param dev Device to open, with ident.uri already set
+ * @param opts User-provided options for backend selection
+ *
+ * @return 0 on success, negative errno on failure (-ENXIO when no config matches)
+ */
 int
 xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 {
-	int be_opts = opts && (opts->async || opts->sync || opts->admin);
+	int has_backend_opts = opts && (opts->async || opts->sync || opts->admin);
 	uint32_t uri_cap = 0;
 	int err = 0;
 
-	if (!be_opts && g_xnvme_platform->classify) {
+	if (!has_backend_opts && g_xnvme_platform->classify) {
 		uri_cap = g_xnvme_platform->classify(dev->ident.uri);
 	}
 
-	XNVME_DEBUG("INFO: uri='%s' classified cap=0x%x be_opts=%d", dev->ident.uri, uri_cap,
-		    be_opts);
+	XNVME_DEBUG("INFO: uri='%s' classified cap=0x%x has_backend_opts=%d", dev->ident.uri,
+		    uri_cap, has_backend_opts);
 
 	for (int i = 0; g_xnvme_platform->backends[i]; ++i) {
 		const struct xnvme_be_config *cfg = g_xnvme_platform->backends[i];
-		struct xnvme_be be = {0};
 
 		if (opts && opts->be && strcmp(opts->be, cfg->attr.name) &&
 		    strcmp(opts->be, g_xnvme_platform->name)) {
@@ -60,96 +232,17 @@ xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 				    cfg->attr.descr, cfg->attr.caps, uri_cap);
 			continue;
 		}
-		be.async = *cfg->async;
-		be.sync = *cfg->sync;
-		be.admin = *cfg->admin;
-		be.dev = *cfg->dev;
-		be.mem = *cfg->mem;
-		be.attr = cfg->attr;
 
-		if (opts && opts->mem && strcmp(opts->mem, cfg->mem->id)) {
-			const struct xnvme_be_mem *mem_override = NULL;
-
-			if (cfg->mem_overrides) {
-				for (int j = 0; cfg->mem_overrides[j]; ++j) {
-					if (!strcmp(cfg->mem_overrides[j]->id, opts->mem)) {
-						mem_override = cfg->mem_overrides[j];
-						break;
-					}
-				}
-			}
-			if (!mem_override) {
-				XNVME_DEBUG("INFO: skipping config; no mem '%s'", opts->mem);
-				continue;
-			}
-			be.mem = *mem_override;
+		err = _dev_open_try_config(dev, cfg, opts);
+		if (!err) {
+			return 0;
 		}
 
-		dev->be = be;
-		dev->opts = *opts;
-
-		XNVME_DEBUG("INFO: selected config: be='%s' async='%s' sync='%s'", cfg->attr.name,
-			    cfg->async->id, cfg->sync->id);
-
-		{
-			void *ctrlr = NULL;
-			int cref_inserted = 0;
-
-			if (be.dev.ctrlr_init) {
-				ctrlr = xnvme_be_cref_lookup(dev->ident.uri, cfg->attr.name);
-				if (!ctrlr) {
-					void *conflict =
-						xnvme_be_cref_lookup(dev->ident.uri, NULL);
-					if (conflict) {
-						xnvme_be_cref_deref(conflict, XNVME_BE_CREF_NONE);
-						XNVME_DEBUG("FAILED: uri '%s' claimed by "
-							    "another driver",
-							    dev->ident.uri);
-						err = -EBUSY;
-						goto next_config;
-					}
-					ctrlr = be.dev.ctrlr_init(dev);
-					if (!ctrlr) {
-						XNVME_DEBUG("INFO: ctrlr_init failed");
-						err = -errno ? -errno : -EIO;
-						goto next_config;
-					}
-					err = xnvme_be_cref_insert(dev->ident.uri, cfg->attr.name,
-								   ctrlr, be.dev.ctrlr_term);
-					if (err) {
-						XNVME_DEBUG("FAILED: cref_insert");
-						be.dev.ctrlr_term(ctrlr);
-						goto next_config;
-					}
-					cref_inserted = 1;
-				}
-				((void **)dev->be.state)[0] = ctrlr;
-			}
-
-			err = be.dev.dev_open(dev);
-			if (!err) {
-				XNVME_DEBUG("INFO: obtained device handle");
-				dev->opts.be = be.attr.name;
-				dev->opts.admin = dev->be.admin.id;
-				dev->opts.sync = dev->be.sync.id;
-				dev->opts.async = dev->be.async.id;
-				dev->opts.mem = dev->be.mem.id;
-				dev->opts.dev = g_xnvme_platform->name;
-				return 0;
-			}
-
-			if (cref_inserted) {
-				xnvme_be_cref_deref(ctrlr, XNVME_BE_CREF_DESTROY_IMMEDIATE);
-			}
-		}
-
-next_config:
 		if (err == -EPERM || err == EPERM) {
 			XNVME_DEBUG("FAILED: permission-error; stop trying");
 			return err;
 		}
 
-		/* When caps matched, this was the right config -- return its error */
 		if (uri_cap && cfg->attr.caps) {
 			XNVME_DEBUG("FAILED: caps-matched config returned err: %d", err);
 			return err;
@@ -283,6 +376,20 @@ enumerate_scan_cb(const struct xnvme_ident *ident, void *cb_args)
 	return 0;
 }
 
+/**
+ * Enumerate devices on the platform, opening each and invoking cb_func.
+ *
+ * When sys_uri is NULL, scans all local devices via the platform scan callback.
+ * When sys_uri is provided (e.g. for fabrics), delegates directly to
+ * enumerate_controller to iterate namespaces on the target controller.
+ *
+ * @param sys_uri System URI to enumerate, or NULL for local scan
+ * @param opts Options for backend selection, or NULL for defaults
+ * @param cb_func Callback invoked for each successfully opened device
+ * @param cb_args Opaque argument passed through to cb_func
+ *
+ * @return 0 on success, negative errno on failure
+ */
 int
 xnvme_platform_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
 			 void *cb_args)
