@@ -209,7 +209,7 @@ _dev_idfy_csi(struct xnvme_dev *dev, struct xnvme_spec_idfy *idfy_ns,
 
 	struct xnvme_spec_znd_idfy_ns *zns = (void *)idfy_ns;
 
-	memset(idfy_ctrlr, 0, sizeof(*idfy_ctrlr));
+	xnvme_buf_clear(idfy_ctrlr, sizeof(*idfy_ctrlr));
 	ctx = xnvme_cmd_ctx_from_dev(dev);
 	err = xnvme_adm_idfy_ctrlr_csi(&ctx, XNVME_SPEC_CSI_ZONED, idfy_ctrlr);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
@@ -217,7 +217,7 @@ _dev_idfy_csi(struct xnvme_dev *dev, struct xnvme_spec_idfy *idfy_ns,
 		goto not_zns;
 	}
 
-	memset(idfy_ns, 0, sizeof(*idfy_ns));
+	xnvme_buf_clear(idfy_ns, sizeof(*idfy_ns));
 	ctx = xnvme_cmd_ctx_from_dev(dev);
 	err = xnvme_adm_idfy_ns_csi(&ctx, dev->ident.nsid, XNVME_SPEC_CSI_ZONED, idfy_ns);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
@@ -244,7 +244,7 @@ not_zns:
 	struct xnvme_spec_fs_idfy_ctrlr *fs_ctrlr = (void *)idfy_ctrlr;
 	struct xnvme_spec_fs_idfy_ns *fs_ns = (void *)idfy_ns;
 
-	memset(idfy_ctrlr, 0, sizeof(*idfy_ctrlr));
+	xnvme_buf_clear(idfy_ctrlr, sizeof(*idfy_ctrlr));
 	ctx = xnvme_cmd_ctx_from_dev(dev);
 	err = xnvme_adm_idfy_ctrlr_csi(&ctx, XNVME_SPEC_CSI_FS, idfy_ctrlr);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
@@ -256,7 +256,7 @@ not_zns:
 		goto not_fs;
 	}
 
-	memset(idfy_ns, 0, sizeof(*idfy_ns));
+	xnvme_buf_clear(idfy_ns, sizeof(*idfy_ns));
 	ctx = xnvme_cmd_ctx_from_dev(dev);
 	err = xnvme_adm_idfy_ns_csi(&ctx, dev->ident.nsid, XNVME_SPEC_CSI_FS, idfy_ns);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
@@ -280,7 +280,7 @@ not_fs:
 
 	// Attempt to identify NVM
 
-	memset(idfy_ctrlr, 0, sizeof(*idfy_ctrlr));
+	xnvme_buf_clear(idfy_ctrlr, sizeof(*idfy_ctrlr));
 	ctx = xnvme_cmd_ctx_from_dev(dev);
 	err = xnvme_adm_idfy_ctrlr_csi(&ctx, XNVME_SPEC_CSI_NVM, idfy_ctrlr);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
@@ -288,7 +288,7 @@ not_fs:
 		goto not_nvm;
 	}
 
-	memset(idfy_ns, 0, sizeof(*idfy_ns));
+	xnvme_buf_clear(idfy_ns, sizeof(*idfy_ns));
 	ctx = xnvme_cmd_ctx_from_dev(dev);
 	err = xnvme_adm_idfy_ns_csi(&ctx, dev->ident.nsid, XNVME_SPEC_CSI_NVM, idfy_ns);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
@@ -335,7 +335,7 @@ _dev_idfy(struct xnvme_dev *dev)
 	}
 
 	// Retrieve idfy-ctrlr
-	memset(idfy_ctrlr, 0, sizeof(*idfy_ctrlr));
+	xnvme_buf_clear(idfy_ctrlr, sizeof(*idfy_ctrlr));
 	ctx = xnvme_cmd_ctx_from_dev(dev);
 	err = xnvme_adm_idfy_ctrlr(&ctx, idfy_ctrlr);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
@@ -353,7 +353,7 @@ _dev_idfy(struct xnvme_dev *dev)
 	}
 
 	// Retrieve idfy-ns
-	memset(idfy_ns, 0, sizeof(*idfy_ns));
+	xnvme_buf_clear(idfy_ns, sizeof(*idfy_ns));
 	ctx = xnvme_cmd_ctx_from_dev(dev);
 	err = xnvme_adm_idfy_ns(&ctx, dev->ident.nsid, idfy_ns);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
