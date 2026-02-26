@@ -137,8 +137,25 @@ xnvme_buf_virt_free(void *buf);
 /**
  * Fills `buf` with content `nbytes` of content
  *
+ * The behaviour of this function changes according to the value of content.
+ *
+ * If content is a single character, the buffer will be filled with nbytes
+ * repetitions of this character.
+ * NOTE: Make sure the argument uses string notation, e.g., "!". Giving a pointer
+ * to a char won't work.
+ *
+ * If content is a file name, the buffer will be filled with nbytes of the
+ * content of this file.
+ *
+ * If content == "zero", the buffer will be filled with 0s
+ * If content == "anum", the buffer will be filled with ASCII characters in order
+ * If content == "rand-k", the buffer will be filled with ASCII characters
+ * randomly sampled with `srand(time(NULL))`
+ * If content == "rand-t", the buffer will be filled with ASCII characters
+ * randomly sampled with `srand(0)`
+ *
  * @param buf Pointer to the buffer to fill
- * @param content A single char, name of a file, or special "zero", "anum", "rand-k", "rand-t"
+ * @param content A single character, name of a file, or special "zero", "anum", "rand-k", "rand-t"
  * @param nbytes Amount of bytes to fill in buf
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
