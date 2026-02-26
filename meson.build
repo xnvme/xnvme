@@ -15,7 +15,7 @@ project(
     'b_staticpic=true',
     'b_ndebug=if-release',
   ],
-  meson_version: '>=0.58'
+  meson_version: '>=0.59'
 )
 
 pconf = import('pkgconfig')
@@ -97,6 +97,14 @@ conf_data.set('XNVME_BE_CBI_SYNC_PSYNC_ENABLED', get_option('cbi_sync_psync') an
 
 conf_data.set('XNVME_BE_RAMDISK_ENABLED', get_option('be_ramdisk'))
 conf_data.set('XNVME_BE_UPCIE_ENABLED', get_option('be_upcie') and is_linux)
+
+cuda_dep = dependency(
+  'cuda',
+  version: '12.8',
+  modules: ['cuda'],
+  required: get_option('with-cuda'),
+)
+conf_data.set('XNVME_CUDA_ENABLED', cuda_dep.found() and get_option('with-cuda').allowed())
 
 setupapi_dep = cc.find_library(
   'setupapi',

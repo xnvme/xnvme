@@ -101,6 +101,7 @@ xnvmelib_deps = [
   spdk_dep,
   thread_dep,
   rt_dep,
+  cuda_dep,
 ]
 
 subdir('upcie')
