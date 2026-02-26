@@ -108,15 +108,14 @@ exit:
 }
 
 static int
-fill_lba_range_and_write_buffer_with_character(uint8_t *wbuf, size_t buf_nbytes, uint64_t rng_slba,
-					       uint64_t rng_elba, uint64_t mdts_naddr,
-					       struct xnvme_dev *dev, const struct xnvme_geo *geo,
-					       uint32_t nsid, char character,
-					       uint64_t *written_bytes)
+fill_lba_range_and_write_buffer_with_pattern(uint8_t *wbuf, size_t buf_nbytes, uint64_t rng_slba,
+					     uint64_t rng_elba, uint64_t mdts_naddr,
+					     struct xnvme_dev *dev, const struct xnvme_geo *geo,
+					     uint32_t nsid, char *pattern, uint64_t *written_bytes)
 {
 	int err;
 
-	memset(wbuf, character, buf_nbytes);
+	xnvme_buf_fill(wbuf, buf_nbytes, pattern);
 
 	*written_bytes = 0;
 	for (uint64_t slba = rng_slba; slba <= rng_elba; slba += mdts_naddr) {
@@ -176,11 +175,11 @@ sub_io(struct xnvme_cli *cli)
 	}
 
 	xnvme_cli_pinf("Writing '!' to LBA range [slba,elba]");
-	err = fill_lba_range_and_write_buffer_with_character(wbuf, buf_nbytes, rng_slba, rng_elba,
-							     mdts_naddr, dev, geo, nsid, '!',
-							     &written_bytes);
+	err = fill_lba_range_and_write_buffer_with_pattern(wbuf, buf_nbytes, rng_slba, rng_elba,
+							   mdts_naddr, dev, geo, nsid, "!",
+							   &written_bytes);
 	if (err) {
-		xnvme_cli_perr("fill_lba_range_and_write_buffer_with_character()", err);
+		xnvme_cli_perr("fill_lba_range_and_write_buffer_with_pattern()", err);
 		goto exit;
 	}
 
@@ -275,11 +274,11 @@ test_write_zeroes(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	err = fill_lba_range_and_write_buffer_with_character(wbuf, buf_nbytes, rng_slba, rng_elba,
-							     mdts_naddr, dev, geo, nsid, '!',
-							     &written_bytes);
+	err = fill_lba_range_and_write_buffer_with_pattern(wbuf, buf_nbytes, rng_slba, rng_elba,
+							   mdts_naddr, dev, geo, nsid, "!",
+							   &written_bytes);
 	if (err) {
-		xnvme_cli_perr("fill_lba_range_and_write_buffer_with_character()", err);
+		xnvme_cli_perr("fill_lba_range_and_write_buffer_with_pattern()", err);
 		goto exit;
 	}
 	xnvme_cli_pinf("Written bytes %ld with !", written_bytes);
@@ -307,7 +306,7 @@ test_write_zeroes(struct xnvme_cli *cli)
 	xnvme_cli_pinf("Wrote zeroes to LBA range [%ld,%ld]", rng_slba, rng_elba);
 
 	// Set the rbuf to != 0 so we know that we read zeroes
-	memset(rbuf, 'a', buf_nbytes);
+	xnvme_buf_fill(rbuf, buf_nbytes, "a");
 	xnvme_buf_clear(wbuf, buf_nbytes);
 	err = read_and_compare_lba_range(rbuf, wbuf, rng_slba, nlb, mdts_naddr, geo, dev, nsid,
 					 &compared_bytes);
@@ -362,11 +361,11 @@ test_write_uncorrectable(struct xnvme_cli *cli)
 	}
 
 	/* Fill lbas with '!' */
-	err = fill_lba_range_and_write_buffer_with_character(wbuf, buf_nbytes, rng_slba, rng_elba,
-							     mdts_naddr, dev, geo, nsid, '!',
-							     &written_bytes);
+	err = fill_lba_range_and_write_buffer_with_pattern(wbuf, buf_nbytes, rng_slba, rng_elba,
+							   mdts_naddr, dev, geo, nsid, "!",
+							   &written_bytes);
 	if (err) {
-		xnvme_cli_perr("fill_lba_range_and_write_buffer_with_character()", err);
+		xnvme_cli_perr("fill_lba_range_and_write_buffer_with_pattern()", err);
 		goto exit;
 	}
 
@@ -414,11 +413,11 @@ test_write_uncorrectable(struct xnvme_cli *cli)
 exit:
 	if (entered_uncorrectable_loop) {
 		xnvme_cli_pinf("Writing zeros to lba range to reset unocrrectable bit");
-		int recover_err = fill_lba_range_and_write_buffer_with_character(
-			wbuf, buf_nbytes, rng_slba, rng_elba, mdts_naddr, dev, geo, nsid, 0,
+		int recover_err = fill_lba_range_and_write_buffer_with_pattern(
+			wbuf, buf_nbytes, rng_slba, rng_elba, mdts_naddr, dev, geo, nsid, "zero",
 			&written_bytes);
 		if (recover_err) {
-			xnvme_cli_perr("fill_lba_range_and_write_buffer_with_character()",
+			xnvme_cli_perr("fill_lba_range_and_write_buffer_with_pattern()",
 				       recover_err);
 		}
 	}
