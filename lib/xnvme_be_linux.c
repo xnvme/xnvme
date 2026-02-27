@@ -71,7 +71,7 @@ const struct xnvme_be_config g_xnvme_be_linux_emu_nvme = {
 		},
 	.attr =
 		{
-			.name = "linux",
+			.name = "emu",
 			.descr = "Emulated async with NVMe ioctl",
 			.caps = XNVME_BE_CAP_NVME_CDEV | XNVME_BE_CAP_NVME_BDEV,
 		},
@@ -91,7 +91,7 @@ const struct xnvme_be_config g_xnvme_be_linux_emu_block = {
 		},
 	.attr =
 		{
-			.name = "linux",
+			.name = "emu_bdev",
 			.descr = "Emulated async with block layer",
 			.caps = XNVME_BE_CAP_NVME_BDEV | XNVME_BE_CAP_BDEV,
 		},
@@ -112,7 +112,7 @@ const struct xnvme_be_config g_xnvme_be_linux_ucmd_nvme = {
 		},
 	.attr =
 		{
-			.name = "linux",
+			.name = "io_uring_cmd",
 			.descr = "io_uring passthru with NVMe ioctl",
 			.caps = XNVME_BE_CAP_NVME_CDEV | XNVME_BE_CAP_NVME_BDEV,
 		},
@@ -131,7 +131,7 @@ const struct xnvme_be_config g_xnvme_be_linux_iou_nvme = {
 		},
 	.attr =
 		{
-			.name = "linux",
+			.name = "io_uring",
 			.descr = "io_uring with NVMe ioctl",
 			.caps = XNVME_BE_CAP_NVME_CDEV | XNVME_BE_CAP_NVME_BDEV,
 		},
@@ -152,7 +152,7 @@ const struct xnvme_be_config g_xnvme_be_linux_iou_block = {
 		},
 	.attr =
 		{
-			.name = "linux",
+			.name = "io_uring_bdev",
 			.descr = "io_uring with block layer",
 			.caps = XNVME_BE_CAP_NVME_BDEV | XNVME_BE_CAP_BDEV,
 		},
@@ -173,7 +173,7 @@ const struct xnvme_be_config g_xnvme_be_linux_aio_nvme = {
 		},
 	.attr =
 		{
-			.name = "linux",
+			.name = "libaio",
 			.descr = "libaio with NVMe ioctl",
 			.caps = XNVME_BE_CAP_NVME_CDEV | XNVME_BE_CAP_NVME_BDEV,
 		},
@@ -194,7 +194,7 @@ const struct xnvme_be_config g_xnvme_be_linux_aio_block = {
 		},
 	.attr =
 		{
-			.name = "linux",
+			.name = "libaio_bdev",
 			.descr = "libaio with block layer",
 			.caps = XNVME_BE_CAP_NVME_BDEV | XNVME_BE_CAP_BDEV,
 		},
@@ -215,7 +215,7 @@ const struct xnvme_be_config g_xnvme_be_linux_posix_nvme = {
 		},
 	.attr =
 		{
-			.name = "linux",
+			.name = "posix",
 			.descr = "POSIX aio with NVMe ioctl",
 			.caps = XNVME_BE_CAP_NVME_CDEV | XNVME_BE_CAP_NVME_BDEV,
 		},
@@ -235,7 +235,7 @@ const struct xnvme_be_config g_xnvme_be_linux_thrpool_nvme = {
 		},
 	.attr =
 		{
-			.name = "linux",
+			.name = "thrpool",
 			.descr = "Thread pool with NVMe ioctl",
 			.caps = XNVME_BE_CAP_NVME_CDEV | XNVME_BE_CAP_NVME_BDEV,
 		},
@@ -255,7 +255,7 @@ const struct xnvme_be_config g_xnvme_be_linux_thrpool_block = {
 		},
 	.attr =
 		{
-			.name = "linux",
+			.name = "thrpool_bdev",
 			.descr = "Thread pool with block layer",
 			.caps = XNVME_BE_CAP_NVME_BDEV | XNVME_BE_CAP_BDEV,
 		},
@@ -275,7 +275,7 @@ const struct xnvme_be_config g_xnvme_be_linux_nil_nvme = {
 		},
 	.attr =
 		{
-			.name = "linux",
+			.name = "nil",
 			.descr = "Nil async with NVMe ioctl",
 			.caps = XNVME_BE_CAP_NVME_CDEV | XNVME_BE_CAP_NVME_BDEV,
 		},
@@ -294,7 +294,7 @@ const struct xnvme_be_config g_xnvme_be_linux_emu_file = {
 		},
 	.attr =
 		{
-			.name = "linux",
+			.name = "emu_file",
 			.descr = "Emulated async with file I/O",
 			.caps = XNVME_BE_CAP_FILE,
 		},
@@ -313,7 +313,7 @@ const struct xnvme_be_config g_xnvme_be_linux_thrpool_file = {
 		},
 	.attr =
 		{
-			.name = "linux",
+			.name = "thrpool_file",
 			.descr = "Thread pool with file I/O",
 			.caps = XNVME_BE_CAP_FILE,
 		},
@@ -333,7 +333,7 @@ const struct xnvme_be_config g_xnvme_be_linux_iou_file = {
 		},
 	.attr =
 		{
-			.name = "linux",
+			.name = "io_uring_file",
 			.descr = "io_uring with file I/O",
 			.caps = XNVME_BE_CAP_FILE,
 		},
@@ -354,7 +354,7 @@ const struct xnvme_be_config g_xnvme_be_linux_aio_file = {
 		},
 	.attr =
 		{
-			.name = "linux",
+			.name = "libaio_file",
 			.descr = "libaio with file I/O",
 			.caps = XNVME_BE_CAP_FILE,
 		},

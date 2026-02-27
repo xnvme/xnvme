@@ -6,7 +6,7 @@ def get_combinations():
     combos["linux"] = [
         # NVMe char device
         {
-            "be": ["linux"],
+            "be": ["io_uring_cmd"],
             "async": ["io_uring_cmd"],
             "sync": ["nvme"],
             "admin": ["nvme"],
@@ -15,7 +15,7 @@ def get_combinations():
         },
         # NVMe block device
         {
-            "be": ["linux"],
+            "be": ["io_uring"],
             "async": ["io_uring"],
             "sync": ["nvme"],
             "admin": ["nvme"],
@@ -23,7 +23,7 @@ def get_combinations():
             "label": ["bdev"],
         },
         {
-            "be": ["linux"],
+            "be": ["libaio"],
             "async": ["libaio"],
             "sync": ["nvme"],
             "admin": ["nvme"],
@@ -31,7 +31,7 @@ def get_combinations():
             "label": ["bdev"],
         },
         {
-            "be": ["linux"],
+            "be": ["thrpool"],
             "async": ["thrpool"],
             "sync": ["nvme"],
             "admin": ["nvme"],
@@ -39,7 +39,7 @@ def get_combinations():
             "label": ["bdev"],
         },
         {
-            "be": ["linux"],
+            "be": ["emu"],
             "async": ["emu"],
             "sync": ["nvme"],
             "admin": ["nvme"],
@@ -48,7 +48,7 @@ def get_combinations():
         },
         # Generic block device
         {
-            "be": ["linux"],
+            "be": ["io_uring_bdev"],
             "async": ["io_uring"],
             "sync": ["block"],
             "admin": ["block"],
@@ -56,7 +56,7 @@ def get_combinations():
             "label": ["bdev"],
         },
         {
-            "be": ["linux"],
+            "be": ["libaio_bdev"],
             "async": ["libaio"],
             "sync": ["block"],
             "admin": ["block"],
@@ -64,7 +64,7 @@ def get_combinations():
             "label": ["bdev"],
         },
         {
-            "be": ["linux"],
+            "be": ["thrpool_bdev"],
             "async": ["thrpool"],
             "sync": ["block"],
             "admin": ["block"],
@@ -72,7 +72,7 @@ def get_combinations():
             "label": ["bdev"],
         },
         {
-            "be": ["linux"],
+            "be": ["emu_bdev"],
             "async": ["emu"],
             "sync": ["block"],
             "admin": ["block"],
@@ -81,7 +81,7 @@ def get_combinations():
         },
         # File
         {
-            "be": ["linux"],
+            "be": ["io_uring_file"],
             "async": ["io_uring"],
             "sync": ["psync"],
             "admin": ["file_as_ns"],
@@ -89,7 +89,7 @@ def get_combinations():
             "label": ["file"],
         },
         {
-            "be": ["linux"],
+            "be": ["libaio_file"],
             "async": ["libaio"],
             "sync": ["psync"],
             "admin": ["file_as_ns"],
@@ -97,7 +97,7 @@ def get_combinations():
             "label": ["file"],
         },
         {
-            "be": ["linux"],
+            "be": ["thrpool_file"],
             "async": ["thrpool"],
             "sync": ["psync"],
             "admin": ["file_as_ns"],
@@ -105,7 +105,7 @@ def get_combinations():
             "label": ["file"],
         },
         {
-            "be": ["linux"],
+            "be": ["emu_file"],
             "async": ["emu"],
             "sync": ["psync"],
             "admin": ["file_as_ns"],
@@ -139,8 +139,16 @@ def get_combinations():
         },
         # Ramdisk
         {
-            "be": ["ramdisk"],
-            "async": ["emu", "thrpool"],
+            "be": ["ramdisk_emu"],
+            "async": ["emu"],
+            "sync": ["ramdisk"],
+            "admin": ["ramdisk"],
+            "mem": ["posix", "hugepage"],
+            "label": ["bdev", "ramdisk"],
+        },
+        {
+            "be": ["ramdisk_thrpool"],
+            "async": ["thrpool"],
             "sync": ["ramdisk"],
             "admin": ["ramdisk"],
             "mem": ["posix", "hugepage"],
@@ -151,7 +159,7 @@ def get_combinations():
     combos["freebsd"] = [
         # NVMe device
         {
-            "be": ["fbsd"],
+            "be": ["kqueue"],
             "async": ["kqueue"],
             "sync": ["nvme"],
             "admin": ["nvme"],
@@ -159,7 +167,7 @@ def get_combinations():
             "label": ["bdev"],
         },
         {
-            "be": ["fbsd"],
+            "be": ["thrpool"],
             "async": ["thrpool"],
             "sync": ["nvme"],
             "admin": ["nvme"],
@@ -167,7 +175,7 @@ def get_combinations():
             "label": ["bdev"],
         },
         {
-            "be": ["fbsd"],
+            "be": ["emu"],
             "async": ["emu"],
             "sync": ["nvme"],
             "admin": ["nvme"],
@@ -185,8 +193,16 @@ def get_combinations():
         },
         # Ramdisk
         {
-            "be": ["ramdisk"],
-            "async": ["emu", "thrpool"],
+            "be": ["ramdisk_emu"],
+            "async": ["emu"],
+            "sync": ["ramdisk"],
+            "admin": ["ramdisk"],
+            "mem": ["posix"],
+            "label": ["bdev", "ramdisk"],
+        },
+        {
+            "be": ["ramdisk_thrpool"],
+            "async": ["thrpool"],
             "sync": ["ramdisk"],
             "admin": ["ramdisk"],
             "mem": ["posix"],
@@ -197,7 +213,7 @@ def get_combinations():
     combos["windows"] = [
         # Block device
         {
-            "be": ["windows"],
+            "be": ["iocp"],
             "async": ["iocp"],
             "sync": ["nvme"],
             "admin": ["nvme"],
@@ -205,7 +221,7 @@ def get_combinations():
             "label": ["bdev"],
         },
         {
-            "be": ["windows"],
+            "be": ["iocp_th"],
             "async": ["iocp_th"],
             "sync": ["nvme"],
             "admin": ["nvme"],
@@ -213,7 +229,7 @@ def get_combinations():
             "label": ["bdev"],
         },
         {
-            "be": ["windows"],
+            "be": ["ioring"],
             "async": ["ioring"],
             "sync": ["nvme"],
             "admin": ["nvme"],
@@ -221,7 +237,7 @@ def get_combinations():
             "label": ["bdev"],
         },
         {
-            "be": ["windows"],
+            "be": ["thrpool"],
             "async": ["thrpool"],
             "sync": ["nvme"],
             "admin": ["nvme"],
@@ -229,7 +245,7 @@ def get_combinations():
             "label": ["bdev"],
         },
         {
-            "be": ["windows"],
+            "be": ["emu"],
             "async": ["emu"],
             "sync": ["nvme"],
             "admin": ["nvme"],
@@ -238,7 +254,7 @@ def get_combinations():
         },
         # File
         {
-            "be": ["windows"],
+            "be": ["thrpool_file"],
             "async": ["thrpool"],
             "sync": ["psync"],
             "admin": ["file_as_ns"],
@@ -246,8 +262,8 @@ def get_combinations():
             "label": ["file"],
         },
         {
-            "be": ["windows"],
-            "async": ["emu"],
+            "be": ["iocp_file"],
+            "async": ["iocp"],
             "sync": ["psync"],
             "admin": ["file_as_ns"],
             "mem": ["windows"],
@@ -255,8 +271,16 @@ def get_combinations():
         },
         # Ramdisk
         {
-            "be": ["ramdisk"],
-            "async": ["emu", "thrpool"],
+            "be": ["ramdisk_emu"],
+            "async": ["emu"],
+            "sync": ["ramdisk"],
+            "admin": ["ramdisk"],
+            "mem": ["windows"],
+            "label": ["bdev", "ramdisk"],
+        },
+        {
+            "be": ["ramdisk_thrpool"],
+            "async": ["thrpool"],
             "sync": ["ramdisk"],
             "admin": ["ramdisk"],
             "mem": ["windows"],
@@ -275,7 +299,7 @@ def get_combinations():
             "label": ["macvfn", "pcie"],
         },
         {
-            "be": ["driverkit"],
+            "be": ["driverkit_emu"],
             "async": ["emu"],
             "sync": ["driverkit"],
             "admin": ["driverkit"],
@@ -284,8 +308,16 @@ def get_combinations():
         },
         # Ramdisk
         {
-            "be": ["ramdisk"],
-            "async": ["emu", "thrpool"],
+            "be": ["ramdisk_emu"],
+            "async": ["emu"],
+            "sync": ["ramdisk"],
+            "admin": ["ramdisk"],
+            "mem": ["posix"],
+            "label": ["bdev", "ramdisk"],
+        },
+        {
+            "be": ["ramdisk_thrpool"],
+            "async": ["thrpool"],
             "sync": ["ramdisk"],
             "admin": ["ramdisk"],
             "mem": ["posix"],

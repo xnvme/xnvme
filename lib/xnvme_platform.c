@@ -41,7 +41,8 @@ xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 		const struct xnvme_be_config *cfg = g_xnvme_platform->backends[i];
 		struct xnvme_be be = {0};
 
-		if (opts && opts->be && strcmp(opts->be, cfg->attr.name)) {
+		if (opts && opts->be && strcmp(opts->be, cfg->attr.name) &&
+		    strcmp(opts->be, g_xnvme_platform->name)) {
 			continue;
 		}
 		if (opts && opts->async && strcmp(opts->async, cfg->async->id)) {

@@ -222,8 +222,6 @@ test_enum_keep_open(struct xnvme_cli *cli)
 	return 0;
 }
 
-#define N_BACKENDS 7
-
 struct backend_cb_args {
 	int err;
 	char expected[1024];
@@ -252,8 +250,6 @@ test_enum_backend(struct xnvme_cli *cli)
 {
 	struct xnvme_opts opts = xnvme_opts_default();
 	struct backend_cb_args cb_args = {0};
-	char *backends[N_BACKENDS] = {"spdk",    "linux",   "fbsd",  "macos",
-				      "windows", "ramdisk", "libvfn"};
 	int err;
 
 	for (int i = 0;; ++i) {
@@ -262,7 +258,6 @@ test_enum_backend(struct xnvme_cli *cli)
 		if (!attr) {
 			break;
 		}
-
 		opts.be = attr->name;
 		strncpy(cb_args.expected, attr->name, 1023);
 

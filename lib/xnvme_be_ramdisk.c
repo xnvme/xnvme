@@ -52,7 +52,7 @@ const struct xnvme_be_config g_xnvme_be_ramdisk_thrpool = {
 	.mem = XNVME_BE_RAMDISK_MEM,
 	XNVME_BE_RAMDISK_MEM_OVERRIDES.attr =
 		{
-			.name = "ramdisk",
+			.name = "ramdisk_thrpool",
 			.descr = "Ramdisk with thread pool",
 			.caps = XNVME_BE_CAP_RAMDISK,
 		},
@@ -66,7 +66,7 @@ const struct xnvme_be_config g_xnvme_be_ramdisk_emu = {
 	.mem = XNVME_BE_RAMDISK_MEM,
 	XNVME_BE_RAMDISK_MEM_OVERRIDES.attr =
 		{
-			.name = "ramdisk",
+			.name = "ramdisk_emu",
 			.descr = "Ramdisk with emulated async",
 			.caps = XNVME_BE_CAP_RAMDISK,
 		},

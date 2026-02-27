@@ -68,23 +68,16 @@ xnvme_be_attr_list_fpr(FILE *stream, enum xnvme_pr XNVME_UNUSED(opts))
 
 	wrtn += fprintf(stream, "xnvme_platform:\n");
 	wrtn += fprintf(stream, "  name: '%s'\n", g_xnvme_platform->name);
-	wrtn += fprintf(stream, "  drivers:\n");
+	wrtn += fprintf(stream, "  backends:\n");
 	for (int i = 0; g_xnvme_platform->backends[i]; ++i) {
-		const struct xnvme_be_attr *attr = &g_xnvme_platform->backends[i]->attr;
-		int seen = 0;
+		const struct xnvme_be_config *cfg = g_xnvme_platform->backends[i];
+		const struct xnvme_be_attr *attr = &cfg->attr;
 
-		for (int j = 0; j < i; ++j) {
-			if (!strcmp(g_xnvme_platform->backends[j]->attr.name, attr->name)) {
-				seen = 1;
-				break;
-			}
-		}
-		if (seen) {
-			continue;
-		}
-
-		wrtn += fprintf(stream, "  - {name: '%s', descr: '%s', caps: 0x%x}\n",
-				attr->name, attr->descr ? attr->descr : "", attr->caps,
+		wrtn += fprintf(stream,
+				"  - {name: '%s', async: '%s', sync: '%s', admin: '%s',"
+				" descr: '%s', caps: 0x%x}\n",
+				attr->name, cfg->async->id, cfg->sync->id, cfg->admin->id,
+				attr->descr ? attr->descr : "", attr->caps);
 	}
 
 	return wrtn;

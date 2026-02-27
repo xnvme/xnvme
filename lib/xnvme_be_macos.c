@@ -17,7 +17,7 @@ const struct xnvme_be_config g_xnvme_be_macos_emu = {
 	.mem = &g_xnvme_be_cbi_mem_posix,
 	.attr =
 		{
-			.name = "macos",
+			.name = "emu",
 			.descr = "Emulated async with macOS SMART",
 			.caps = XNVME_BE_CAP_BDEV,
 		},
@@ -31,7 +31,7 @@ const struct xnvme_be_config g_xnvme_be_macos_thrpool = {
 	.mem = &g_xnvme_be_cbi_mem_posix,
 	.attr =
 		{
-			.name = "macos",
+			.name = "thrpool",
 			.descr = "Thread pool with macOS SMART",
 			.caps = XNVME_BE_CAP_BDEV,
 		},
@@ -45,7 +45,7 @@ const struct xnvme_be_config g_xnvme_be_macos_posix = {
 	.mem = &g_xnvme_be_cbi_mem_posix,
 	.attr =
 		{
-			.name = "macos",
+			.name = "posix",
 			.descr = "POSIX aio with macOS SMART",
 			.caps = XNVME_BE_CAP_BDEV,
 		},

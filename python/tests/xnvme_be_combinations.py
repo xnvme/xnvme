@@ -10,57 +10,120 @@ def get_combinations():
     combos["linux"] = [
         # Ramdisk
         {
-            "be": ["ramdisk"],
+            "be": ["ramdisk_emu"],
             "admin": ["ramdisk"],
-            "async": ["emu", "thrpool"],
+            "async": ["emu"],
+            "mem": ["posix", "hugepage"],
+            "sync": ["ramdisk"],
+            "label": ["bdev", "ramdisk"],
+        },
+        {
+            "be": ["ramdisk_thrpool"],
+            "admin": ["ramdisk"],
+            "async": ["thrpool"],
             "mem": ["posix", "hugepage"],
             "sync": ["ramdisk"],
             "label": ["bdev", "ramdisk"],
         },
         # File-based I/O
         {
-            "be": ["linux"],
+            "be": ["emu_file"],
             "admin": ["file_as_ns"],
-            "async": ["emu", "thrpool"],
+            "async": ["emu"],
             "mem": ["posix", "hugepage"],
             "sync": ["psync"],
             "label": ["file"],
         },
-        # Pseudo-async I/O to block-devices e.g. (/dev/nvme0n1)
         {
-            "be": ["linux"],
-            "admin": ["nvme", "block"],
-            "async": ["emu", "thrpool"],
+            "be": ["thrpool_file"],
+            "admin": ["file_as_ns"],
+            "async": ["thrpool"],
             "mem": ["posix", "hugepage"],
-            "sync": ["nvme", "psync", "block"],
-            "label": ["bdev"],
+            "sync": ["psync"],
+            "label": ["file"],
         },
-        # Actual async I/O to block-devices e.g. (/dev/nvme0n1)
+        # NVMe char device
         {
-            "be": ["linux"],
-            "admin": ["nvme", "block"],
-            "async": ["posix", "libaio", "io_uring"],
-            "mem": ["posix", "hugepage"],
-            "sync": ["nvme"],
-            "label": ["bdev"],
-        },
-        # Pseudo-async I/O to char-devices e.g. (/dev/ng0n1)
-        {
-            "be": ["linux"],
+            "be": ["io_uring_cmd"],
             "admin": ["nvme"],
-            "async": ["emu", "thrpool"],
-            "mem": ["posix", "hugepage"],
-            "sync": ["nvme"],
-            "label": ["cdev"],
-        },
-        # Actual async I/O to via char-devices e.g. (/dev/ng0n1)
-        {
-            "be": ["linux"],
-            "mem": ["posix", "hugepage"],
-            "sync": ["nvme"],
             "async": ["io_uring_cmd"],
-            "admin": ["nvme"],
+            "mem": ["posix", "hugepage"],
+            "sync": ["nvme"],
             "label": ["cdev"],
+        },
+        # NVMe block device (admin=nvme, sync=nvme)
+        {
+            "be": ["emu"],
+            "admin": ["nvme"],
+            "async": ["emu"],
+            "mem": ["posix", "hugepage"],
+            "sync": ["nvme"],
+            "label": ["bdev"],
+        },
+        {
+            "be": ["thrpool"],
+            "admin": ["nvme"],
+            "async": ["thrpool"],
+            "mem": ["posix", "hugepage"],
+            "sync": ["nvme"],
+            "label": ["bdev"],
+        },
+        {
+            "be": ["posix"],
+            "admin": ["nvme"],
+            "async": ["posix"],
+            "mem": ["posix", "hugepage"],
+            "sync": ["nvme"],
+            "label": ["bdev"],
+        },
+        {
+            "be": ["io_uring"],
+            "admin": ["nvme"],
+            "async": ["io_uring"],
+            "mem": ["posix", "hugepage"],
+            "sync": ["nvme"],
+            "label": ["bdev"],
+        },
+        {
+            "be": ["libaio"],
+            "admin": ["nvme"],
+            "async": ["libaio"],
+            "mem": ["posix", "hugepage"],
+            "sync": ["nvme"],
+            "label": ["bdev"],
+        },
+        # Generic block device (admin=block, sync=block)
+        {
+            "be": ["emu_bdev"],
+            "admin": ["block"],
+            "async": ["emu"],
+            "mem": ["posix", "hugepage"],
+            "sync": ["block"],
+            "label": ["bdev"],
+        },
+        {
+            "be": ["thrpool_bdev"],
+            "admin": ["block"],
+            "async": ["thrpool"],
+            "mem": ["posix", "hugepage"],
+            "sync": ["block"],
+            "label": ["bdev"],
+        },
+        {
+            "be": ["io_uring_bdev"],
+            "admin": ["block"],
+            "async": ["io_uring"],
+            "mem": ["posix", "hugepage"],
+            "sync": ["block"],
+            "label": ["bdev"],
+        },
+        {
+            "be": ["libaio_bdev"],
+            "admin": ["block"],
+            "async": ["libaio"],
+            "mem": ["posix", "hugepage"],
+            "sync": ["block"],
+            "label": ["bdev"],
         },
         # User-space NVMe-driver
         {
@@ -89,7 +152,39 @@ def get_combinations():
         },
     ]
 
-    combos["freebsd"].append(
+    combos["freebsd"] = [
+        {
+            "be": ["kqueue"],
+            "mem": ["posix"],
+            "async": ["kqueue"],
+            "sync": ["nvme"],
+            "admin": ["nvme"],
+            "label": ["bdev"],
+        },
+        {
+            "be": ["thrpool"],
+            "mem": ["posix"],
+            "async": ["thrpool"],
+            "sync": ["nvme"],
+            "admin": ["nvme"],
+            "label": ["bdev"],
+        },
+        {
+            "be": ["emu"],
+            "mem": ["posix"],
+            "async": ["emu"],
+            "sync": ["nvme"],
+            "admin": ["nvme"],
+            "label": ["bdev"],
+        },
+        {
+            "be": ["posix"],
+            "mem": ["posix"],
+            "async": ["posix"],
+            "sync": ["nvme"],
+            "admin": ["nvme"],
+            "label": ["bdev"],
+        },
         {
             "be": ["spdk"],
             "mem": ["spdk"],
@@ -98,16 +193,6 @@ def get_combinations():
             "admin": ["spdk"],
             "label": ["pcie"],
         },
-    )
-    combos["freebsd"].append(
-        {
-            "be": ["fbsd"],
-            "mem": ["posix"],
-            "async": ["emu", "posix", "thrpool", "kqueue"],
-            "sync": ["psync", "nvme"],
-            "admin": ["nvme"],
-            "label": ["bdev"],
-        },
-    )
+    ]
 
     return combos
