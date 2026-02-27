@@ -106,6 +106,12 @@ labels = [ "dev", "bdev", "nvm", "scc", "large_mdts", "log_health_ns", "idfy_cs"
 driver_attachment = "kernel"
 
 [[devices]]
+uri = "0000:05:00.0"
+nsid = 1
+labels = [ "dev", "pcie", "nvm", "scc", "large_mdts", "log_health_ns", "idfy_cs" ]
+driver_attachment = "userspace"
+
+[[devices]]
 uri = "/dev/nvme3ns1"
 nsid = 1
 labels = [ "dev", "bdev", "nvm", "scc", "fdp", "log_health_ns", "idfy_cs" ]
