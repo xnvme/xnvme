@@ -362,6 +362,9 @@ class FIO:
             f"--thread={self.thread}",
         ]
 
+        if os_name == "windows":
+            args.append("--clocksource=gettimeofday")
+
         extra_args = self.engine.extra_args().items()
         if os_name == "windows":
             args += [f"{flag}={value}" for flag, value in extra_args]

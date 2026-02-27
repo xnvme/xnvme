@@ -233,6 +233,10 @@ def fio_fancy(
     setup_ioengine(param, job_env, engine_name, cijoe, device, xnvme_opts, spdk_opts)
     setup_output(param, job_env, output_fpath)
 
+    osname = cijoe.getconf("os.name", "linux")
+    if osname == "windows":
+        param["clocksource"] = "gettimeofday"
+
     param.update(aux)
 
     parameters = " ".join([f'--{key}="{val}"' for key, val in param.items()])
