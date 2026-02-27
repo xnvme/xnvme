@@ -374,19 +374,22 @@ attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid, struct spdk_n
 
 	XNVME_DEBUG("INFO: nsid: %d", opts->nsid);
 
-	ns = spdk_nvme_ctrlr_get_ns(ctrlr, opts->nsid);
-	if (!ns) {
-		XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_ns(0x%x)", opts->nsid);
-		spdk_nvme_detach(ctrlr);
-		return;
-	}
-	if (!spdk_nvme_ns_is_active(ns)) {
-		XNVME_DEBUG("FAILED: !spdk_nvme_ns_is_active(opts->nsid:0x%x)", opts->nsid);
-		spdk_nvme_detach(ctrlr);
-		return;
+	if (opts->nsid) {
+		ns = spdk_nvme_ctrlr_get_ns(ctrlr, opts->nsid);
+		if (!ns) {
+			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_ns(0x%x)", opts->nsid);
+			spdk_nvme_detach(ctrlr);
+			return;
+		}
+		if (!spdk_nvme_ns_is_active(ns)) {
+			XNVME_DEBUG("FAILED: !spdk_nvme_ns_is_active(opts->nsid:0x%x)",
+				    opts->nsid);
+			spdk_nvme_detach(ctrlr);
+			return;
+		}
+		state->ns = ns;
 	}
 
-	state->ns = ns;
 	state->ctrlr = ctrlr;
 	state->attached = 1;
 	opts->spdk_fabrics = trid->trtype > SPDK_NVME_TRANSPORT_PCIE;
@@ -672,11 +675,6 @@ xnvme_be_spdk_state_init(struct xnvme_dev *dev)
 	struct spdk_env_opts env_opts = {0};
 	int err;
 
-	if (!dev->opts.nsid) {
-		XNVME_DEBUG("FAILED: dev->opts.nsid: %d, ", dev->opts.nsid);
-		return -EINVAL;
-	}
-
 	spdk_env_opts_init(&env_opts);
 
 	if (dev->opts.core_mask) {
@@ -724,23 +722,28 @@ xnvme_be_spdk_state_init(struct xnvme_dev *dev)
 			return -EBUSY;
 		}
 
-		ns = spdk_nvme_ctrlr_get_ns(state->ctrlr, dev->opts.nsid);
-		if (!ns) {
-			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_ns(0x%x)", dev->opts.nsid);
-			if (xnvme_be_cref_deref(state->ctrlr, XNVME_BE_CREF_DESTROY_IMMEDIATE)) {
-				XNVME_DEBUG("FAILED: xnvme_be_cref_deref");
+		if (dev->opts.nsid) {
+			ns = spdk_nvme_ctrlr_get_ns(state->ctrlr, dev->opts.nsid);
+			if (!ns) {
+				XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_ns(0x%x)",
+					    dev->opts.nsid);
+				if (xnvme_be_cref_deref(state->ctrlr,
+							XNVME_BE_CREF_DESTROY_IMMEDIATE)) {
+					XNVME_DEBUG("FAILED: xnvme_be_cref_deref");
+				}
+				return -EBUSY;
 			}
-			return -EBUSY;
-		}
-		if (!spdk_nvme_ns_is_active(ns)) {
-			XNVME_DEBUG("FAILED: !spdk_nvme_ns_is_active(nsid:0x%x)", dev->opts.nsid);
-			if (xnvme_be_cref_deref(state->ctrlr, XNVME_BE_CREF_DESTROY_IMMEDIATE)) {
-				XNVME_DEBUG("FAILED: xnvme_be_cref_deref");
+			if (!spdk_nvme_ns_is_active(ns)) {
+				XNVME_DEBUG("FAILED: !spdk_nvme_ns_is_active(nsid:0x%x)",
+					    dev->opts.nsid);
+				if (xnvme_be_cref_deref(state->ctrlr,
+							XNVME_BE_CREF_DESTROY_IMMEDIATE)) {
+					XNVME_DEBUG("FAILED: xnvme_be_cref_deref");
+				}
+				return -EBUSY;
 			}
-			return -EBUSY;
+			state->ns = ns;
 		}
-
-		state->ns = ns;
 		state->attached = 1;
 		XNVME_DEBUG("INFO: re-using previously attached controller");
 	}
@@ -774,8 +777,11 @@ xnvme_be_spdk_state_init(struct xnvme_dev *dev)
 		}
 	}
 
-	dev->ident.dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
-	dev->ident.csi = spdk_nvme_ns_get_csi(state->ns);
+	dev->ident.dtype =
+		dev->opts.nsid ? XNVME_DEV_TYPE_NVME_NAMESPACE : XNVME_DEV_TYPE_NVME_CONTROLLER;
+	if (state->ns) {
+		dev->ident.csi = spdk_nvme_ns_get_csi(state->ns);
+	}
 	dev->ident.nsid = dev->opts.nsid;
 
 	// Setup IO qpair lock for SYNC commands
