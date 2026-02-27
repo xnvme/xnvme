@@ -50,7 +50,9 @@ jobs:
         variant: [with-subprojects, without-subprojects]
     steps:
     - name: Grab source
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
     - name: Add repos to git-config safe.directory
       run: |
@@ -92,7 +94,7 @@ jobs:
 
     steps:
     - name: Grab source
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Add repos to git-config safe.directory
       run: |
@@ -1212,7 +1214,7 @@ jobs:
 
     - name: Checkout site
       if: ((github.event_name == 'push') || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen')))
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: "xnvme/xnvme.github.io"
         token: ${{ secrets.DOCS_PAT }}
