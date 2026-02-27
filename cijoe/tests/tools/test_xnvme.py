@@ -92,10 +92,31 @@ def test_scan(cijoe, device, be_opts, cli_args):
             assert scan_count > 0, "Expected at least one namespace from scan"
 
 
-@xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
+@xnvme_parametrize(labels=["dev"], opts=["be", "admin", "sync", "async"])
 def test_info(cijoe, device, be_opts, cli_args):
-    err, _ = cijoe.run(f"xnvme info {cli_args}")
+    err, state = cijoe.run(f"xnvme info {cli_args}")
     assert not err
+
+    output = state.output()
+
+    # Parse resolved mixin ids from xnvme_be section
+    resolved = {}
+    for line in output.split("\n"):
+        line = line.strip()
+        for key in ["admin", "sync", "async"]:
+            if line.startswith(f"{key}: {{id: '"):
+                resolved[key] = line.split("'")[1]
+        if line.startswith("attr: {name: '"):
+            resolved["be"] = line.split("'")[1]
+
+    # Verify each user-specified opt matches the resolved value
+    for key in ["be", "admin", "sync", "async"]:
+        if key in be_opts:
+            assert key in resolved, f"'{key}' not found in xnvme info output"
+            assert resolved[key] == be_opts[key], (
+                f"Mismatch for '{key}': requested '{be_opts[key]}', "
+                f"resolved '{resolved[key]}'"
+            )
 
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
