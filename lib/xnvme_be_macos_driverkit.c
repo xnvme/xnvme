@@ -68,9 +68,9 @@ struct xnvme_be xnvme_be_macos_driverkit = {
 	.attr =
 		{
 #ifdef XNVME_PLATFORM_MACOS_ENABLED
-			.enabled = 1,
 #endif
 			.name = "driverkit",
+			.descr = "macOS DriverKit userspace NVMe",
 		},
 #ifdef XNVME_PLATFORM_MACOS_ENABLED
 	.nobjs =

@@ -197,9 +197,9 @@ struct xnvme_be xnvme_be_linux = {
 	.attr =
 		{
 #ifdef XNVME_PLATFORM_LINUX_ENABLED
-			.enabled = 1,
 #endif
 			.name = "linux",
+			.descr = "Linux kernel NVMe/block/file I/O",
 		},
 	.state = {0},
 #ifdef XNVME_PLATFORM_LINUX_ENABLED

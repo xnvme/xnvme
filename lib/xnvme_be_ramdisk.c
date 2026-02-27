@@ -105,8 +105,8 @@ struct xnvme_be xnvme_be_ramdisk = {
 	.attr =
 		{
 			.name = "ramdisk",
+			.descr = "In-memory virtual NVMe device",
 #ifdef XNVME_BE_RAMDISK_ENABLED
-			.enabled = 1,
 #endif
 		},
 #ifdef XNVME_BE_RAMDISK_ENABLED

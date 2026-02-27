@@ -99,9 +99,9 @@ struct xnvme_be xnvme_be_fbsd = {
 	.attr =
 		{
 #ifdef XNVME_PLATFORM_FREEBSD_ENABLED
-			.enabled = 1,
 #endif
 			.name = "fbsd",
+			.descr = "FreeBSD kernel NVMe I/O",
 		},
 #ifdef XNVME_PLATFORM_FREEBSD_ENABLED
 	.nobjs = sizeof g_xnvme_be_mixin_fbsd / sizeof *g_xnvme_be_mixin_fbsd,

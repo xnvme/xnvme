@@ -76,9 +76,9 @@ struct xnvme_be xnvme_be_macos = {
 	.attr =
 		{
 #ifdef XNVME_PLATFORM_MACOS_ENABLED
-			.enabled = 1,
 #endif
 			.name = "macos",
+			.descr = "macOS NVMe SMART interface",
 		},
 #ifdef XNVME_PLATFORM_MACOS_ENABLED
 	.nobjs = sizeof g_xnvme_be_mixin_macos / sizeof *g_xnvme_be_mixin_macos,

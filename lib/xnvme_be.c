@@ -28,7 +28,8 @@ xnvme_be_yaml(FILE *stream, const struct xnvme_be *be, int indent, const char *s
 	wrtn += fprintf(stream, "%*ssync: {id: '%s'}%s", indent, "", be->sync.id, sep);
 	wrtn += fprintf(stream, "%*sasync: {id: '%s'}%s", indent, "", be->async.id, sep);
 	wrtn += fprintf(stream, "%*smem: {id: '%s'}%s", indent, "", be->mem.id, sep);
-	wrtn += fprintf(stream, "%*sattr: {name: '%s'}", indent, "", be->attr.name);
+	wrtn += fprintf(stream, "%*sattr: {name: '%s', descr: '%s', caps: 0x%x}", indent, "",
+			be->attr.name, be->attr.descr ? be->attr.descr : "", be->attr.caps);
 
 	return wrtn;
 }
@@ -71,8 +72,8 @@ xnvme_be_registry_fpr(FILE *stream, enum xnvme_pr XNVME_UNUSED(opts))
 	for (int i = 0; g_xnvme_platform->backends[i]; ++i) {
 		struct xnvme_be *be = g_xnvme_platform->backends[i];
 
-		wrtn += fprintf(stream, "  - {name: '%s', enabled: %d}\n", be->attr.name,
-				be->attr.enabled);
+		wrtn += fprintf(stream, "  - {name: '%s', descr: '%s', caps: 0x%x}\n",
+				be->attr.name, be->attr.descr ? be->attr.descr : "", be->attr.caps,
 	}
 
 	return wrtn;
@@ -166,7 +167,8 @@ xnvme_be_attr_fpr(FILE *stream, const struct xnvme_be_attr *attr, int opts)
 	}
 
 	wrtn += fprintf(stream, "name: '%s'\n", attr->name);
-	wrtn += fprintf(stream, "    enabled: %" PRIu8 "\n", attr->enabled);
+	wrtn += fprintf(stream, "    descr: '%s'\n", attr->descr ? attr->descr : "");
+	wrtn += fprintf(stream, "    caps: 0x%x\n", attr->caps);
 
 	return wrtn;
 }

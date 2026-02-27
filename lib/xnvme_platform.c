@@ -103,10 +103,6 @@ xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 		int setup = 0;
 		XNVME_DEBUG("INFO: checking be: '%s'", be.attr.name);
 
-		if (!be.attr.enabled) {
-			XNVME_DEBUG("INFO: skipping be: '%s'; !enabled", be.attr.name);
-			continue;
-		}
 		if (opts && (opts->be) && strcmp(opts->be, be.attr.name)) {
 			XNVME_DEBUG("INFO: skipping be: '%s' != '%s'", be.attr.name, opts->be);
 			continue;
