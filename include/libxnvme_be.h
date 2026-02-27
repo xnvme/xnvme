@@ -12,11 +12,11 @@
  * @struct xnvme_be_attr
  */
 struct xnvme_be_attr {
-	const char *name; ///< Backend name
+	const char *name;  ///< Backend name
+	const char *descr; ///< Human-readable description
+	uint32_t caps;     ///< Bitmask of xnvme_be_cap (0 = legacy/mixin-based)
 
-	uint8_t enabled; ///< Whether the backend is 'enabled'
-
-	uint8_t _rsvd[15];
+	uint8_t _rsvd[4];
 };
 
 /**

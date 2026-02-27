@@ -220,8 +220,8 @@ struct xnvme_be xnvme_be_windows = {
 	.attr =
 		{
 			.name = "windows",
+			.descr = "Windows kernel NVMe/block I/O",
 #ifdef XNVME_PLATFORM_WINDOWS_ENABLED
-			.enabled = 1,
 #endif
 		},
 #ifdef XNVME_PLATFORM_WINDOWS_ENABLED

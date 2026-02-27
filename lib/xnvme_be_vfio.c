@@ -59,8 +59,8 @@ struct xnvme_be xnvme_be_vfio = {
 	.attr =
 		{
 			.name = "libvfn",
+			.descr = "libvfn/VFIO userspace NVMe driver",
 #ifdef XNVME_BE_VFIO_ENABLED
-			.enabled = 1,
 #endif
 		},
 	.state = {0},

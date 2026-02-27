@@ -59,8 +59,8 @@ struct xnvme_be xnvme_be_spdk = {
 	.attr =
 		{
 			.name = "spdk",
+			.descr = "SPDK userspace NVMe driver",
 #ifdef XNVME_BE_SPDK_ENABLED
-			.enabled = 1,
 #endif
 		},
 #ifdef XNVME_BE_SPDK_ENABLED
