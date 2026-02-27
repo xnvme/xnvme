@@ -14,7 +14,7 @@
 #define XNVME_BE_ASYNC_NBYTES 64
 #define XNVME_BE_SYNC_NBYTES  24
 #define XNVME_BE_ADMIN_NBYTES 24
-#define XNVME_BE_DEV_NBYTES   32
+#define XNVME_BE_DEV_NBYTES   48
 #define XNVME_BE_MEM_NBYTES   56
 #define XNVME_BE_ATTR_NBYTES  24
 #define XNVME_BE_STATE_NBYTES 128
@@ -104,6 +104,20 @@ struct xnvme_be_dev {
 	void (*dev_close)(struct xnvme_dev *);
 
 	const char *id;
+
+	/**
+	 * Initialize the controller for a userspace driver.
+	 * Returns an opaque controller handle, or NULL on failure.
+	 * NULL pointer means the backend does not use platform-managed cref.
+	 */
+	void *(*ctrlr_init)(struct xnvme_dev *);
+
+	/**
+	 * Terminate the controller for a userspace driver.
+	 * Called by the cref destructor when the refcount reaches zero.
+	 * Returns 0 on success, negative errno on error.
+	 */
+	int (*ctrlr_term)(void *ctrlr);
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_dev) == XNVME_BE_DEV_NBYTES, "Incorrect size")
 

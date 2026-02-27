@@ -111,12 +111,14 @@ xnvme_be_nosys_dev_close(struct xnvme_dev *dev);
 		.buf_free    = xnvme_be_nosys_buf_free,    \
 	}
 
-#define XNVME_BE_NOSYS_DEV                             \
-	{                                              \
-		.enumerate = xnvme_be_nosys_enumerate, \
-		.dev_open  = xnvme_be_nosys_dev_open,  \
-		.dev_close = xnvme_be_nosys_dev_close, \
-		.id        = "nosys",                  \
+#define XNVME_BE_NOSYS_DEV                              \
+	{                                               \
+		.enumerate  = xnvme_be_nosys_enumerate, \
+		.dev_open   = xnvme_be_nosys_dev_open,  \
+		.dev_close  = xnvme_be_nosys_dev_close, \
+		.id         = "nosys",                  \
+		.ctrlr_init = NULL,                     \
+		.ctrlr_term = NULL,                     \
 	}
 
 #endif /* __INTERNAL_XNVME_BE_NOSYS_H */

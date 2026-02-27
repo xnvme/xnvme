@@ -8,40 +8,31 @@
 #ifdef XNVME_BE_VFIO_ENABLED
 #include <xnvme_dev.h>
 #include <xnvme_be_vfio.h>
-#include <xnvme_be_registry.h>
-#include <xnvme_be_cref.h>
-
-static int
-_vfio_ctrlr_destructor(void *ctrlr)
-{
-	nvme_close((struct nvme_ctrl *)ctrlr);
-
-	return 0;
-}
 
 int
 _xnvme_be_vfio_create_ioqpair(struct xnvme_be_vfio_state *state, int qd, int flags)
 {
-	unsigned int qid = __builtin_ffsll(state->qidmap);
+	struct xnvme_be_vfio_ctrlr *ctrlr = state->ctrlr;
+	unsigned int qid = __builtin_ffsll(ctrlr->qidmap);
 	int err;
 
 	if (qid < 2) {
-		XNVME_DEBUG("no free queue identifiers\n");
+		XNVME_DEBUG("FAILED: no free queue identifiers");
 		return -EBUSY;
 	}
 
 	qid--;
 
-	XNVME_DEBUG("nvme_create_ioqpair(%p, %d, %d, %d)", state->ctrl, qid, qd + 1, flags);
+	XNVME_DEBUG("nvme_create_ioqpair(%p, %d, %d, %d)", ctrlr->ctrl, qid, qd + 1, flags);
 
 	// nvme queue capacity must be one larger than the requested capacity
 	// since only n-1 slots in an NVMe queue may be used
-	err = nvme_create_ioqpair(state->ctrl, qid, qd + 1, qid, flags);
+	err = nvme_create_ioqpair(ctrlr->ctrl, qid, qd + 1, qid, flags);
 	if (err) {
 		return -errno;
 	}
 
-	state->qidmap &= ~(1ULL << qid);
+	ctrlr->qidmap &= ~(1ULL << qid);
 
 	return qid;
 }
@@ -49,11 +40,113 @@ _xnvme_be_vfio_create_ioqpair(struct xnvme_be_vfio_state *state, int qd, int fla
 int
 _xnvme_be_vfio_delete_ioqpair(struct xnvme_be_vfio_state *state, unsigned int qid)
 {
-	if (nvme_delete_ioqpair(state->ctrl, qid)) {
+	struct xnvme_be_vfio_ctrlr *ctrlr = state->ctrlr;
+
+	if (nvme_delete_ioqpair(ctrlr->ctrl, qid)) {
 		return -errno;
 	}
 
-	state->qidmap |= 1ULL << qid;
+	ctrlr->qidmap |= 1ULL << qid;
+
+	return 0;
+}
+
+/**
+ * Initialize the VFIO/libvfn controller.
+ *
+ * Allocates a shared xnvme_be_vfio_ctrlr, initializes the NVMe controller,
+ * sets up IRQs and event FDs. The returned handle is stored in cref and
+ * written to dev->be.state[0] by the platform.
+ */
+static void *
+xnvme_be_vfio_ctrlr_init(struct xnvme_dev *dev)
+{
+	struct nvme_ctrl_opts ctrl_opts = {
+		.nsqr = XNVME_BE_VFIO_NQUEUES_MAX - 1,
+		.ncqr = XNVME_BE_VFIO_NQUEUES_MAX - 1,
+	};
+	struct xnvme_be_vfio_ctrlr *ctrlr;
+	struct nvme_ctrl *ctrl;
+
+	ctrlr = calloc(1, sizeof(*ctrlr));
+	if (!ctrlr) {
+		XNVME_DEBUG("FAILED: calloc(ctrlr)");
+		return NULL;
+	}
+
+	ctrl = calloc(1, sizeof(*ctrl));
+	if (!ctrl) {
+		XNVME_DEBUG("FAILED: calloc(ctrl)");
+		free(ctrlr);
+		return NULL;
+	}
+	if (nvme_init(ctrl, dev->ident.uri, &ctrl_opts)) {
+		XNVME_DEBUG("FAILED: initializing nvme device: %d", errno);
+		free(ctrl);
+		free(ctrlr);
+		return NULL;
+	}
+
+	ctrlr->ctrl = ctrl;
+	ctrlr->qidmap = -1 & ~0x1;
+
+	if (ctrl->pci.dev.irq_info.count < 2) {
+		XNVME_DEBUG("FAILED: no interrupt vector");
+		goto fail;
+	}
+
+	ctrlr->nefds = XNVME_MIN(XNVME_BE_VFIO_NQUEUES_MAX, ctrl->pci.dev.irq_info.count);
+
+	ctrlr->efds = calloc(ctrlr->nefds, sizeof(int));
+	if (!ctrlr->efds) {
+		XNVME_DEBUG("FAILED: calloc(efds)");
+		goto fail;
+	}
+
+	for (int i = 0; i < ctrlr->nefds; i++) {
+		ctrlr->efds[i] = -1;
+	}
+
+	if (vfio_set_irq(&ctrl->pci.dev, ctrlr->efds, ctrlr->nefds)) {
+		XNVME_DEBUG("FAILED: vfio set irqs");
+	}
+
+	{
+		struct xnvme_be_vfio_state tmp_state = {.ctrlr = ctrlr};
+		int qpid;
+
+		qpid = _xnvme_be_vfio_create_ioqpair(&tmp_state, 31, 0x0);
+		if (qpid < 0) {
+			XNVME_DEBUG("FAILED: creating sync qpair: %d", qpid);
+			goto fail_efds;
+		}
+		ctrlr->sq_sync = &ctrl->sq[qpid];
+		ctrlr->cq_sync = &ctrl->cq[qpid];
+	}
+
+	return ctrlr;
+
+fail_efds:
+	free(ctrlr->efds);
+
+fail:
+	nvme_close(ctrl);
+	free(ctrlr);
+	return NULL;
+}
+
+static int
+xnvme_be_vfio_ctrlr_term(void *handle)
+{
+	struct xnvme_be_vfio_ctrlr *ctrlr = handle;
+
+	if (ctrlr->sq_sync) {
+		nvme_delete_ioqpair(ctrlr->ctrl, ctrlr->sq_sync->id);
+	}
+
+	free(ctrlr->efds);
+	nvme_close(ctrlr->ctrl);
+	free(ctrlr);
 
 	return 0;
 }
@@ -61,74 +154,6 @@ _xnvme_be_vfio_delete_ioqpair(struct xnvme_be_vfio_state *state, unsigned int qi
 int
 xnvme_be_vfio_dev_open(struct xnvme_dev *dev)
 {
-	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
-	struct nvme_ctrl *ctrl;
-	int qpid;
-	int err;
-
-	ctrl = xnvme_be_cref_lookup(dev->ident.uri);
-	if (!ctrl) {
-		struct nvme_ctrl_opts ctrl_opts = {
-			.nsqr = XNVME_BE_VFIO_NQUEUES_MAX - 1,
-			.ncqr = XNVME_BE_VFIO_NQUEUES_MAX - 1,
-		};
-
-		ctrl = calloc(1, sizeof(struct nvme_ctrl));
-		if (!ctrl) {
-			XNVME_DEBUG("FAILED: calloc()");
-			return -ENOMEM;
-		}
-		err = nvme_init(ctrl, dev->ident.uri, &ctrl_opts);
-		if (err) {
-			XNVME_DEBUG("FAILED: initializing nvme device: %d", errno);
-			return -errno;
-		}
-
-		state->ctrl = ctrl;
-		state->qidmap = -1 & ~0x1;
-
-		if (state->ctrl->pci.dev.irq_info.count < 2) {
-			XNVME_DEBUG("FAILED: no interrupt vector");
-			return -ENOSYS;
-		}
-
-		state->nefds =
-			XNVME_MIN(XNVME_BE_VFIO_NQUEUES_MAX, state->ctrl->pci.dev.irq_info.count);
-
-		state->efds = calloc(state->nefds, sizeof(int));
-		if (!state->efds) {
-			XNVME_DEBUG("FAILED: calloc()");
-			return -ENOMEM;
-		}
-
-		for (int i = 0; i < state->nefds; i++) {
-			state->efds[i] = -1;
-		}
-
-		if (vfio_set_irq(&state->ctrl->pci.dev, state->efds, state->nefds)) {
-			XNVME_DEBUG("FAILED: vfio set irqs");
-		}
-
-		// create queues for sync backend requests
-		qpid = _xnvme_be_vfio_create_ioqpair(state, 31, 0x0);
-
-		if (qpid < 0) {
-			XNVME_DEBUG("FAILED: initializing qpairs for sync IO: %d", err);
-			free(state->efds);
-			return -errno;
-		}
-		state->sq_sync = &state->ctrl->sq[qpid];
-		state->cq_sync = &state->ctrl->cq[qpid];
-
-		err = xnvme_be_cref_insert(dev->ident.uri, g_xnvme_be_vfio.attr.name, ctrl,
-					   _vfio_ctrlr_destructor);
-		if (err) {
-			XNVME_DEBUG("FAILED: xnvme_be_cref_insert()");
-			free(state->efds);
-			return err;
-		}
-	}
-
 	dev->ident.dtype =
 		dev->opts.nsid ? XNVME_DEV_TYPE_NVME_NAMESPACE : XNVME_DEV_TYPE_NVME_CONTROLLER;
 	dev->ident.csi = XNVME_SPEC_CSI_NVM;
@@ -140,14 +165,7 @@ xnvme_be_vfio_dev_open(struct xnvme_dev *dev)
 void
 xnvme_be_vfio_dev_close(struct xnvme_dev *dev)
 {
-	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
-
-	if (xnvme_be_cref_deref(state->ctrl, XNVME_BE_CREF_DESTROY_IMMEDIATE)) {
-		XNVME_DEBUG("FAILED: xnvme_be_cref_deref()");
-	}
-	if (state->efds) {
-		free(state->efds);
-	}
+	(void)dev;
 }
 
 #endif
@@ -158,10 +176,14 @@ struct xnvme_be_dev g_xnvme_be_vfio_dev = {
 	.dev_open = xnvme_be_vfio_dev_open,
 	.dev_close = xnvme_be_vfio_dev_close,
 	.id = "libvfn",
+	.ctrlr_init = xnvme_be_vfio_ctrlr_init,
+	.ctrlr_term = xnvme_be_vfio_ctrlr_term,
 #else
 	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_nosys_dev_open,
 	.dev_close = xnvme_be_nosys_dev_close,
 	.id = "nosys",
+	.ctrlr_init = NULL,
+	.ctrlr_term = NULL,
 #endif
 };
