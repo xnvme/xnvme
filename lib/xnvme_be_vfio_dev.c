@@ -156,9 +156,11 @@ struct xnvme_be_dev g_xnvme_be_vfio_dev = {
 	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_vfio_dev_open,
 	.dev_close = xnvme_be_vfio_dev_close,
+	.id = "libvfn",
 #else
 	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_nosys_dev_open,
 	.dev_close = xnvme_be_nosys_dev_close,
+	.id = "nosys",
 #endif
 };

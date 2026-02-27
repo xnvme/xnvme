@@ -23,13 +23,11 @@ xnvme_be_yaml(FILE *stream, const struct xnvme_be *be, int indent, const char *s
 		wrtn += fprintf(stream, "\n");
 	}
 
-	/*
 	wrtn += fprintf(stream, "%*sdev: {id: '%s'}%s", indent, "", be->dev.id, sep);
-	wrtn += fprintf(stream, "%*smem: {id: '%s'}%s", indent, "", be->mem.id, sep);
-	*/
 	wrtn += fprintf(stream, "%*sadmin: {id: '%s'}%s", indent, "", be->admin.id, sep);
 	wrtn += fprintf(stream, "%*ssync: {id: '%s'}%s", indent, "", be->sync.id, sep);
 	wrtn += fprintf(stream, "%*sasync: {id: '%s'}%s", indent, "", be->async.id, sep);
+	wrtn += fprintf(stream, "%*smem: {id: '%s'}%s", indent, "", be->mem.id, sep);
 	wrtn += fprintf(stream, "%*sattr: {name: '%s'}", indent, "", be->attr.name);
 
 	return wrtn;

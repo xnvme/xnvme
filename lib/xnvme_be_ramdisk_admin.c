@@ -175,7 +175,7 @@ _xnvme_be_ramdisk_admin_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf,
 #endif
 
 struct xnvme_be_admin g_xnvme_be_ramdisk_admin = {
-	.id = "ramdisk_as_ns",
+	.id = "ramdisk",
 #ifdef XNVME_BE_RAMDISK_ENABLED
 	.cmd_admin = _xnvme_be_ramdisk_admin_cmd_admin,
 	.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo,
