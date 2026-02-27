@@ -565,7 +565,8 @@ xnvme_be_spdk_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enum
 			return -EINVAL;
 		}
 		if (sscanf(ident.uri, "%[^:]:%d", addr, &port) != 2) {
-			XNVME_DEBUG("FAILED: invalid sys_uri: %s", sys_uri);
+			XNVME_DEBUG("FAILED: malformed sys_uri: %s", sys_uri);
+
 			return -EINVAL;
 		}
 	}

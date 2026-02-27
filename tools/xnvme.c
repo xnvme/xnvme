@@ -104,6 +104,52 @@ sub_enumerate(struct xnvme_cli *cli)
 }
 
 static int
+scan_cb(const struct xnvme_ident *ident, void *cb_args)
+{
+	uint32_t *count_ref = cb_args;
+
+	if (*count_ref == 0) {
+		fprintf(stdout, "\n");
+	}
+
+	fprintf(stdout, "  - {");
+	xnvme_ident_yaml(stdout, ident, 0, ", ", 0);
+	fprintf(stdout, "}\n");
+
+	*count_ref = *count_ref + 1;
+
+	return 0;
+}
+
+static int
+sub_scan(struct xnvme_cli *cli)
+{
+	struct xnvme_opts opts = {0};
+	uint32_t count = 0;
+	int err = 0;
+
+	err = xnvme_cli_to_opts(cli, &opts);
+	if (err) {
+		xnvme_cli_perr("xnvme_cli_to_opts()", err);
+		return err;
+	}
+
+	fprintf(stdout, "xnvme_scan:");
+
+	err = xnvme_scan(cli->args.sys_uri, &opts, scan_cb, &count);
+	if (err) {
+		xnvme_cli_perr("xnvme_scan()", err);
+		return err;
+	}
+
+	if (count == 0) {
+		fprintf(stdout, " ~\n");
+	}
+
+	return 0;
+}
+
+static int
 sub_info(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
@@ -1210,6 +1256,19 @@ static struct xnvme_cli_sub g_subs[] = {
 		"Enumerate devices on the system",
 		"Enumerate devices on the system",
 		sub_enumerate,
+		{
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_SYS_URI, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_FLAGS, XNVME_CLI_LOPT},
+
+			XNVME_CLI_CORE_OPTS,
+		},
+	},
+	{
+		"scan",
+		"Scan for devices without opening them",
+		"Scan for devices without opening them",
+		sub_scan,
 		{
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_SYS_URI, XNVME_CLI_LOPT},

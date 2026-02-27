@@ -208,6 +208,10 @@
 		xnvme_queue_set_cb;
 		xnvme_queue_get_completion_fd;
 
+		# libxnvme_scan.h
+		xnvme_scan_cb;
+		xnvme_scan;
+
 		# libxnvme_spec.h
 		xnvme_spec_ctrlr_bar;
 		xnvme_spec_status_code_type;

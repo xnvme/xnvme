@@ -8,6 +8,17 @@
 struct xnvme_be;
 struct xnvme_dev;
 struct xnvme_opts;
+struct xnvme_ident;
+
+/**
+ * Callback function for xnvme_scan()
+ *
+ * @param ident Device identifier with URI and backend binding
+ * @param cb_args User-provided callback arguments
+ *
+ * @return Return 0 to continue scanning, non-zero to stop.
+ */
+typedef int (*xnvme_scan_cb)(const struct xnvme_ident *ident, void *cb_args);
 
 /**
  * Callback function for xnvme_enumerate()
@@ -31,6 +42,8 @@ struct xnvme_platform {
 	struct xnvme_be **backends; /**< NULL-terminated array of available backends */
 
 	int (*dev_open)(struct xnvme_dev *dev, struct xnvme_opts *opts);
+	int (*scan)(const char *sys_uri, struct xnvme_opts *opts, xnvme_scan_cb cb_func,
+		    void *cb_args);
 	int (*enumerate)(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
 			 void *cb_args);
 };
