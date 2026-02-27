@@ -222,6 +222,12 @@ xnvme_platform_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enu
 }
 
 int
+xnvme_scan(const char *sys_uri, struct xnvme_opts *opts, xnvme_scan_cb cb_func, void *cb_args)
+{
+	return g_xnvme_platform->scan(sys_uri, opts, cb_func, cb_args);
+}
+
+int
 xnvme_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
 		void *cb_args)
 {

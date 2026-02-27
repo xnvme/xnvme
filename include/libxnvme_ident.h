@@ -22,7 +22,8 @@ struct xnvme_ident {
 	uint32_t nsid;
 	uint8_t csi;
 
-	uint8_t rsvd[55];
+	char kernel_driver[32];
+	uint8_t rsvd[23];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_ident) == 704, "Incorrect size")
 

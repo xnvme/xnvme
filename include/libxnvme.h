@@ -40,6 +40,7 @@ extern "C" {
 #include "libxnvme_mem.h"
 #include "libxnvme_geo.h"
 #include "libxnvme_ident.h"
+#include "libxnvme_scan.h"
 #include "libxnvme_queue.h"
 #include "libxnvme_spec.h"
 #include "libxnvme_spec_fs.h"
