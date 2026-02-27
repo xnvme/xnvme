@@ -29,7 +29,7 @@ const struct xnvme_be_config g_xnvme_be_driverkit_emu = {
 	.mem = &g_xnvme_be_macos_driverkit_mem,
 	.attr =
 		{
-			.name = "driverkit",
+			.name = "driverkit_emu",
 			.descr = "DriverKit with emulated async",
 			.caps = XNVME_BE_CAP_NVME_PCIE,
 		},

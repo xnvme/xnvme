@@ -108,7 +108,7 @@ const struct xnvme_be_config g_xnvme_be_windows_emu_nvme = {
 	.mem = &g_xnvme_be_windows_mem,
 	.attr =
 		{
-			.name = "windows",
+			.name = "emu",
 			.descr = "Emulated async with NVMe ioctl",
 			.caps = XNVME_BE_CAP_BDEV,
 		},
@@ -122,7 +122,7 @@ const struct xnvme_be_config g_xnvme_be_windows_thrpool_nvme = {
 	.mem = &g_xnvme_be_windows_mem,
 	.attr =
 		{
-			.name = "windows",
+			.name = "thrpool",
 			.descr = "Thread pool with NVMe ioctl",
 			.caps = XNVME_BE_CAP_BDEV,
 		},
@@ -136,7 +136,7 @@ const struct xnvme_be_config g_xnvme_be_windows_iocp_nvme = {
 	.mem = &g_xnvme_be_windows_mem,
 	.attr =
 		{
-			.name = "windows",
+			.name = "iocp",
 			.descr = "IOCP with NVMe ioctl",
 			.caps = XNVME_BE_CAP_BDEV,
 		},
@@ -150,7 +150,7 @@ const struct xnvme_be_config g_xnvme_be_windows_iocp_th_nvme = {
 	.mem = &g_xnvme_be_windows_mem,
 	.attr =
 		{
-			.name = "windows",
+			.name = "iocp_th",
 			.descr = "IOCP threaded with NVMe ioctl",
 			.caps = XNVME_BE_CAP_BDEV,
 		},
@@ -164,7 +164,7 @@ const struct xnvme_be_config g_xnvme_be_windows_ioring_nvme = {
 	.mem = &g_xnvme_be_windows_mem,
 	.attr =
 		{
-			.name = "windows",
+			.name = "ioring",
 			.descr = "IoRing with NVMe ioctl",
 			.caps = XNVME_BE_CAP_BDEV,
 		},
@@ -178,7 +178,7 @@ const struct xnvme_be_config g_xnvme_be_windows_nil_nvme = {
 	.mem = &g_xnvme_be_windows_mem,
 	.attr =
 		{
-			.name = "windows",
+			.name = "nil",
 			.descr = "Nil async with NVMe ioctl",
 			.caps = XNVME_BE_CAP_BDEV,
 		},
@@ -193,7 +193,7 @@ const struct xnvme_be_config g_xnvme_be_windows_iocp_fs = {
 	.mem = &g_xnvme_be_windows_mem,
 	.attr =
 		{
-			.name = "windows",
+			.name = "iocp_file",
 			.descr = "IOCP with file system APIs",
 			.caps = XNVME_BE_CAP_FILE,
 		},
@@ -207,7 +207,7 @@ const struct xnvme_be_config g_xnvme_be_windows_thrpool_fs = {
 	.mem = &g_xnvme_be_windows_mem,
 	.attr =
 		{
-			.name = "windows",
+			.name = "thrpool_file",
 			.descr = "Thread pool with file system APIs",
 			.caps = XNVME_BE_CAP_FILE,
 		},

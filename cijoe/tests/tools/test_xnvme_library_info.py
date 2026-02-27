@@ -66,3 +66,52 @@ def test_library_info_has_libvfn(cijoe):
         assert "XNVME_BE_VFIO_ENABLED" in state.output()
     else:
         pytest.skip("Not Linux, so skipping libvfn/vfio check")
+
+
+def test_library_info_has_all_combos(cijoe):
+    """Verify every combo in get_backend_configurations() exists in library-info"""
+    from ..xnvme_be_combinations import get_backend_configurations
+
+    info = grab_sysinfo(cijoe)
+
+    if "linux" in info["os"]:
+        os_key = "linux"
+    elif "freebsd" in info["os"]:
+        os_key = "freebsd"
+    elif "darwin" in info["os"]:
+        os_key = "macos"
+    elif "msys_nt" in info["os"]:
+        os_key = "windows"
+    else:
+        pytest.skip(f"Unknown OS: {info['os']}")
+        return
+
+    err, state = cijoe.run("xnvme library-info")
+    assert not err
+
+    output = state.output()
+
+    # Optional backends that depend on compile-time flags
+    optional = {
+        "spdk": "XNVME_BE_SPDK_ENABLED",
+        "libvfn": "XNVME_BE_VFIO_ENABLED",
+        "io_uring": "XNVME_BE_LINUX_LIBURING_ENABLED",
+        "io_uring_cmd": "XNVME_BE_LINUX_LIBURING_ENABLED",
+        "io_uring_bdev": "XNVME_BE_LINUX_LIBURING_ENABLED",
+        "io_uring_file": "XNVME_BE_LINUX_LIBURING_ENABLED",
+        "libaio": "XNVME_BE_LINUX_LIBAIO_ENABLED",
+        "libaio_bdev": "XNVME_BE_LINUX_LIBAIO_ENABLED",
+        "libaio_file": "XNVME_BE_LINUX_LIBAIO_ENABLED",
+    }
+
+    combos = get_backend_configurations()
+    missing = []
+    for combo in combos.get(os_key, []):
+        be_name = combo["be"][0]
+        # Skip optional backends not compiled in
+        if be_name in optional and optional[be_name] not in output:
+            continue
+        if f"name: '{be_name}'" not in output:
+            missing.append(be_name)
+
+    assert not missing, f"Backend configs missing from library-info: {missing}"

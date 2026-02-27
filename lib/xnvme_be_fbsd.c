@@ -18,7 +18,7 @@ const struct xnvme_be_config g_xnvme_be_fbsd_kqueue_nvme = {
 	.mem = &g_xnvme_be_cbi_mem_posix,
 	.attr =
 		{
-			.name = "fbsd",
+			.name = "kqueue",
 			.descr = "kqueue with NVMe ioctl",
 			.caps = XNVME_BE_CAP_NVME_CDEV,
 		},
@@ -32,7 +32,7 @@ const struct xnvme_be_config g_xnvme_be_fbsd_kqueue_psync = {
 	.mem = &g_xnvme_be_cbi_mem_posix,
 	.attr =
 		{
-			.name = "fbsd",
+			.name = "kqueue_file",
 			.descr = "kqueue with POSIX sync",
 			.caps = XNVME_BE_CAP_NVME_CDEV | XNVME_BE_CAP_FILE,
 		},
@@ -46,7 +46,7 @@ const struct xnvme_be_config g_xnvme_be_fbsd_posix_nvme = {
 	.mem = &g_xnvme_be_cbi_mem_posix,
 	.attr =
 		{
-			.name = "fbsd",
+			.name = "posix",
 			.descr = "POSIX aio with NVMe ioctl",
 			.caps = XNVME_BE_CAP_NVME_CDEV,
 		},
@@ -60,7 +60,7 @@ const struct xnvme_be_config g_xnvme_be_fbsd_thrpool_nvme = {
 	.mem = &g_xnvme_be_cbi_mem_posix,
 	.attr =
 		{
-			.name = "fbsd",
+			.name = "thrpool",
 			.descr = "Thread pool with NVMe ioctl",
 			.caps = XNVME_BE_CAP_NVME_CDEV,
 		},
@@ -74,7 +74,7 @@ const struct xnvme_be_config g_xnvme_be_fbsd_emu_nvme = {
 	.mem = &g_xnvme_be_cbi_mem_posix,
 	.attr =
 		{
-			.name = "fbsd",
+			.name = "emu",
 			.descr = "Emulated async with NVMe ioctl",
 			.caps = XNVME_BE_CAP_NVME_CDEV,
 		},
@@ -88,7 +88,7 @@ const struct xnvme_be_config g_xnvme_be_fbsd_nil_nvme = {
 	.mem = &g_xnvme_be_cbi_mem_posix,
 	.attr =
 		{
-			.name = "fbsd",
+			.name = "nil",
 			.descr = "Nil async with NVMe ioctl",
 			.caps = XNVME_BE_CAP_NVME_CDEV,
 		},
