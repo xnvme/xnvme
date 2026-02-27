@@ -209,10 +209,21 @@ out:
 struct xnvme_platform g_xnvme_platform_freebsd = {
 	.name = "freebsd",
 	.backends =
-		(struct xnvme_be *[]){
-			&xnvme_be_spdk,
-			&xnvme_be_fbsd,
-			&xnvme_be_ramdisk,
+		(const struct xnvme_be_config *const[]){
+#ifdef XNVME_BE_SPDK_ENABLED
+			&g_xnvme_be_spdk,
+#endif
+			&g_xnvme_be_fbsd_kqueue_nvme,
+			&g_xnvme_be_fbsd_kqueue_psync,
+			&g_xnvme_be_fbsd_posix_nvme,
+			&g_xnvme_be_fbsd_thrpool_nvme,
+			&g_xnvme_be_fbsd_emu_nvme,
+			&g_xnvme_be_fbsd_nil_nvme,
+#ifdef XNVME_BE_RAMDISK_ENABLED
+			&g_xnvme_be_ramdisk_nil,
+			&g_xnvme_be_ramdisk_thrpool,
+			&g_xnvme_be_ramdisk_emu,
+#endif
 			NULL,
 		},
 	.dev_open = xnvme_platform_dev_open,

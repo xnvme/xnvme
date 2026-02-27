@@ -5,8 +5,6 @@
 #ifndef __INTERNAL_XNVME_BE_NOSYS_H
 #define __INTERNAL_XNVME_BE_NOSYS_H
 
-extern struct xnvme_be xnvme_be_nosys;
-
 int
 xnvme_be_nosys_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			   size_t mbuf_nbytes);
@@ -119,19 +117,6 @@ xnvme_be_nosys_dev_close(struct xnvme_dev *dev);
 		.dev_open  = xnvme_be_nosys_dev_open,  \
 		.dev_close = xnvme_be_nosys_dev_close, \
 		.id        = "nosys",                  \
-	}
-
-#define XNVME_BE_NOSYS                            \
-	{                                         \
-		.admin = XNVME_BE_NOSYS_ADMIN,    \
-		.sync  = XNVME_BE_NOSYS_SYNC,     \
-		.async = XNVME_BE_NOSYS_QUEUE,    \
-		.mem   = XNVME_BE_NOSYS_MEM,      \
-		.dev   = XNVME_BE_NOSYS_DEV,      \
-		.attr =                           \
-			{                         \
-				.name = "ENOSYS", \
-			},                        \
 	}
 
 #endif /* __INTERNAL_XNVME_BE_NOSYS_H */

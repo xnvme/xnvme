@@ -136,10 +136,17 @@ xnvme_platform_macos_scan(const char *sys_uri, struct xnvme_opts *XNVME_UNUSED(o
 struct xnvme_platform g_xnvme_platform_macos = {
 	.name = "macos",
 	.backends =
-		(struct xnvme_be *[]){
-			&xnvme_be_macos,
-			&xnvme_be_macos_driverkit,
-			&xnvme_be_ramdisk,
+		(const struct xnvme_be_config *const[]){
+			&g_xnvme_be_macos_emu,
+			&g_xnvme_be_macos_thrpool,
+			&g_xnvme_be_macos_posix,
+			&g_xnvme_be_driverkit_native,
+			&g_xnvme_be_driverkit_emu,
+#ifdef XNVME_BE_RAMDISK_ENABLED
+			&g_xnvme_be_ramdisk_nil,
+			&g_xnvme_be_ramdisk_thrpool,
+			&g_xnvme_be_ramdisk_emu,
+#endif
 			NULL,
 		},
 	.dev_open = xnvme_platform_dev_open,

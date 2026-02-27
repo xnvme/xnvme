@@ -25,9 +25,6 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_liburing) == XNVME_BE_QUEUE_STATE_
 		    "Incorrect size")
 
 int
-xnvme_be_linux_liburing_check_support(void);
-
-int
 xnvme_be_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 			       void *mbuf, size_t mbuf_nbytes);
 

@@ -68,12 +68,23 @@ xnvme_be_registry_fpr(FILE *stream, enum xnvme_pr XNVME_UNUSED(opts))
 
 	wrtn += fprintf(stream, "xnvme_platform:\n");
 	wrtn += fprintf(stream, "  name: '%s'\n", g_xnvme_platform->name);
-	wrtn += fprintf(stream, "  backends:\n");
+	wrtn += fprintf(stream, "  drivers:\n");
 	for (int i = 0; g_xnvme_platform->backends[i]; ++i) {
-		struct xnvme_be *be = g_xnvme_platform->backends[i];
+		const struct xnvme_be_attr *attr = &g_xnvme_platform->backends[i]->attr;
+		int seen = 0;
+
+		for (int j = 0; j < i; ++j) {
+			if (!strcmp(g_xnvme_platform->backends[j]->attr.name, attr->name)) {
+				seen = 1;
+				break;
+			}
+		}
+		if (seen) {
+			continue;
+		}
 
 		wrtn += fprintf(stream, "  - {name: '%s', descr: '%s', caps: 0x%x}\n",
-				be->attr.name, be->attr.descr ? be->attr.descr : "", be->attr.caps,
+				attr->name, attr->descr ? attr->descr : "", attr->caps,
 	}
 
 	return wrtn;

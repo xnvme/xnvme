@@ -183,18 +183,3 @@ xnvme_be_nosys_dev_close(struct xnvme_dev *XNVME_UNUSED(dev))
 	errno = ENOSYS;
 	return;
 }
-
-#define XNVME_BE_NOSYS_ATTR                 \
-	{                                   \
-		.name = "nosys",            \
-		.descr = "Not implemented", \
-	}
-
-struct xnvme_be xnvme_be_nosys = {
-	.sync = XNVME_BE_NOSYS_SYNC,
-	.async = XNVME_BE_NOSYS_QUEUE,
-	.mem = XNVME_BE_NOSYS_MEM,
-	.dev = XNVME_BE_NOSYS_DEV,
-	.attr = XNVME_BE_NOSYS_ATTR,
-	.state = {0},
-};

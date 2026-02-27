@@ -100,9 +100,22 @@ xnvme_platform_windows_scan(const char *sys_uri, struct xnvme_opts *XNVME_UNUSED
 struct xnvme_platform g_xnvme_platform_windows = {
 	.name = "windows",
 	.backends =
-		(struct xnvme_be *[]){
-			&xnvme_be_windows,
-			&xnvme_be_ramdisk,
+		(const struct xnvme_be_config *const[]){
+			&g_xnvme_be_windows_emu_nvme,
+			&g_xnvme_be_windows_thrpool_nvme,
+			&g_xnvme_be_windows_iocp_nvme,
+			&g_xnvme_be_windows_iocp_th_nvme,
+			&g_xnvme_be_windows_ioring_nvme,
+			&g_xnvme_be_windows_nil_nvme,
+#ifdef XNVME_BE_WINDOWS_FS_ENABLED
+			&g_xnvme_be_windows_iocp_fs,
+			&g_xnvme_be_windows_thrpool_fs,
+#endif
+#ifdef XNVME_BE_RAMDISK_ENABLED
+			&g_xnvme_be_ramdisk_nil,
+			&g_xnvme_be_ramdisk_thrpool,
+			&g_xnvme_be_ramdisk_emu,
+#endif
 			NULL,
 		},
 	.dev_open = xnvme_platform_dev_open,

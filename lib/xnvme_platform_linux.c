@@ -338,11 +338,51 @@ xnvme_platform_linux_scan(const char *sys_uri, struct xnvme_opts *XNVME_UNUSED(o
 struct xnvme_platform g_xnvme_platform_linux = {
 	.name = "linux",
 	.backends =
-		(struct xnvme_be *[]){
-			&xnvme_be_spdk,
-			&xnvme_be_vfio,
-			&xnvme_be_linux,
-			&xnvme_be_ramdisk,
+		(const struct xnvme_be_config *const[]){
+#ifdef XNVME_BE_SPDK_ENABLED
+			&g_xnvme_be_spdk,
+#endif
+#ifdef XNVME_BE_VFIO_ENABLED
+			&g_xnvme_be_vfio,
+#endif
+			&g_xnvme_be_linux_emu_nvme,
+#ifdef XNVME_BE_LINUX_BLOCK_ENABLED
+			&g_xnvme_be_linux_emu_block,
+#endif
+#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
+			&g_xnvme_be_linux_ucmd_nvme,
+			&g_xnvme_be_linux_iou_nvme,
+#endif
+#if defined(XNVME_BE_LINUX_LIBURING_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
+			&g_xnvme_be_linux_iou_block,
+#endif
+#ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
+			&g_xnvme_be_linux_aio_nvme,
+#endif
+#if defined(XNVME_BE_LINUX_LIBAIO_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
+			&g_xnvme_be_linux_aio_block,
+#endif
+#ifdef XNVME_BE_CBI_ASYNC_POSIX_ENABLED
+			&g_xnvme_be_linux_posix_nvme,
+#endif
+			&g_xnvme_be_linux_thrpool_nvme,
+#ifdef XNVME_BE_LINUX_BLOCK_ENABLED
+			&g_xnvme_be_linux_thrpool_block,
+#endif
+			&g_xnvme_be_linux_nil_nvme,
+			&g_xnvme_be_linux_emu_file,
+			&g_xnvme_be_linux_thrpool_file,
+#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
+			&g_xnvme_be_linux_iou_file,
+#endif
+#ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
+			&g_xnvme_be_linux_aio_file,
+#endif
+#ifdef XNVME_BE_RAMDISK_ENABLED
+			&g_xnvme_be_ramdisk_nil,
+			&g_xnvme_be_ramdisk_thrpool,
+			&g_xnvme_be_ramdisk_emu,
+#endif
 			NULL,
 		},
 	.dev_open = xnvme_platform_dev_open,

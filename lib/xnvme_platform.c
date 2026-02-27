@@ -7,7 +7,6 @@
 #include <string.h>
 #include <libxnvme.h>
 #include <xnvme_be.h>
-#include <xnvme_be_nosys.h>
 #include <xnvme_dev.h>
 #include <xnvme_platform.h>
 
@@ -24,111 +23,57 @@ struct xnvme_platform *g_xnvme_platform =
 #error "No platform enabled. Define one of XNVME_PLATFORM_{LINUX,FREEBSD,MACOS,WINDOWS}_ENABLED"
 #endif
 
-/**
- * Set up mixin of 'be' of the given 'mtype' and matching 'opts' when provided
- */
-static int
-be_setup(struct xnvme_be *be, enum xnvme_be_mixin_type mtype, struct xnvme_opts *opts)
-{
-	for (uint64_t j = 0; (j < be->nobjs); ++j) {
-		const struct xnvme_be_mixin *mixin = &be->objs[j];
-
-		if (mixin->mtype != mtype) {
-			continue;
-		}
-
-		switch (mtype) {
-		case XNVME_BE_ASYNC:
-			if ((opts) && (opts->async) && strcmp(opts->async, mixin->name)) {
-				XNVME_DEBUG("INFO: skipping async: '%s' != '%s'", mixin->name,
-					    opts->async);
-				continue;
-			}
-			be->async = *mixin->async;
-			break;
-
-		case XNVME_BE_SYNC:
-			if ((opts) && (opts->sync) && strcmp(opts->sync, mixin->name)) {
-				XNVME_DEBUG("INFO: skipping sync: '%s' != '%s'", mixin->name,
-					    opts->sync);
-				continue;
-			}
-			be->sync = *mixin->sync;
-			break;
-
-		case XNVME_BE_ADMIN:
-			if ((opts) && (opts->admin) && strcmp(opts->admin, mixin->name)) {
-				XNVME_DEBUG("INFO: skipping admin: '%s' != '%s'", mixin->name,
-					    opts->admin);
-				continue;
-			}
-			be->admin = *mixin->admin;
-			break;
-
-		case XNVME_BE_DEV:
-			be->dev = *mixin->dev;
-			break;
-
-		case XNVME_BE_MEM:
-			if ((opts) && (opts->mem) && strcmp(opts->mem, mixin->name)) {
-				XNVME_DEBUG("INFO: skipping mem: '%s' != '%s'", mixin->name,
-					    opts->mem);
-				continue;
-			}
-			be->mem = *mixin->mem;
-			break;
-
-		case XNVME_BE_ATTR:
-		case XNVME_BE_END:
-			XNVME_DEBUG("FAILED: attr | end");
-			return -EINVAL;
-		}
-
-		return mtype;
-	}
-
-	XNVME_DEBUG("FAILED: be: '%s' has no matching mixin of mtype: %x, mtype_key: '%s'",
-		    be->attr.name, mtype, xnvme_be_mixin_key(mtype));
-
-	return -ENOSYS;
-}
-
 int
 xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 {
 	int err = 0;
 
 	for (int i = 0; g_xnvme_platform->backends[i]; ++i) {
-		struct xnvme_be be = *g_xnvme_platform->backends[i];
-		int setup = 0;
-		XNVME_DEBUG("INFO: checking be: '%s'", be.attr.name);
+		const struct xnvme_be_config *cfg = g_xnvme_platform->backends[i];
+		struct xnvme_be be = {0};
 
-		if (opts && (opts->be) && strcmp(opts->be, be.attr.name)) {
-			XNVME_DEBUG("INFO: skipping be: '%s' != '%s'", be.attr.name, opts->be);
+		if (opts && opts->be && strcmp(opts->be, cfg->attr.name)) {
 			continue;
 		}
+		if (opts && opts->async && strcmp(opts->async, cfg->async->id)) {
+			continue;
+		}
+		if (opts && opts->sync && strcmp(opts->sync, cfg->sync->id)) {
+			continue;
+		}
+		if (opts && opts->admin && strcmp(opts->admin, cfg->admin->id)) {
+			continue;
+		}
+		be.async = *cfg->async;
+		be.sync = *cfg->sync;
+		be.admin = *cfg->admin;
+		be.dev = *cfg->dev;
+		be.mem = *cfg->mem;
+		be.attr = cfg->attr;
 
-		for (int j = 0; j < 5; ++j) {
-			int mtype = 1 << j;
+		if (opts && opts->mem && strcmp(opts->mem, cfg->mem->id)) {
+			const struct xnvme_be_mem *mem_override = NULL;
 
-			err = be_setup(&be, mtype, opts);
-			if (err < 0) {
-				XNVME_DEBUG("FAILED: be_setup(%s); err: %d", be.attr.name, err);
+			if (cfg->mem_overrides) {
+				for (int j = 0; cfg->mem_overrides[j]; ++j) {
+					if (!strcmp(cfg->mem_overrides[j]->id, opts->mem)) {
+						mem_override = cfg->mem_overrides[j];
+						break;
+					}
+				}
+			}
+			if (!mem_override) {
+				XNVME_DEBUG("INFO: skipping config; no mem '%s'", opts->mem);
 				continue;
 			}
-
-			setup |= err;
-		}
-
-		if (setup != XNVME_BE_CONFIGURED) {
-			XNVME_DEBUG("INFO: !configured be(%s); err: %d", be.attr.name, err);
-			continue;
+			be.mem = *mem_override;
 		}
 
 		dev->be = be;
 		dev->opts = *opts;
 
-		XNVME_DEBUG("INFO: obtained backend instance be: '%s'", be.attr.name);
+		XNVME_DEBUG("INFO: trying config: be='%s' async='%s' sync='%s'", cfg->attr.name,
+			    cfg->async->id, cfg->sync->id);
 
 		err = be.dev.dev_open(dev);
 		switch (err < 0 ? -err : err) {
@@ -139,7 +84,6 @@ xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 			dev->opts.sync = dev->be.sync.id;
 			dev->opts.async = dev->be.async.id;
 			dev->opts.mem = dev->be.mem.id;
-
 			dev->opts.dev = g_xnvme_platform->name;
 			return 0;
 
@@ -148,12 +92,12 @@ xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 			return err;
 
 		default:
-			XNVME_DEBUG("INFO: skipping backend due to err: %d", err);
+			XNVME_DEBUG("INFO: skipping config due to err: %d", err);
 			break;
 		}
 	}
 
-	XNVME_DEBUG("FAILED: no backend for uri: '%s'", dev->ident.uri);
+	XNVME_DEBUG("FAILED: no config for uri: '%s'", dev->ident.uri);
 
 	return err ? err : -ENXIO;
 }

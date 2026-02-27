@@ -7,7 +7,6 @@
 #endif
 #include <libxnvme.h>
 #include <xnvme_be.h>
-#include <xnvme_be_nosys.h>
 #ifdef XNVME_PLATFORM_WINDOWS_ENABLED
 #include <xnvme_be_cbi.h>
 #include <windows.h>
@@ -101,131 +100,118 @@ xnvme_file_attributes_opts_to_windows(struct xnvme_opts *opts)
 	return flags;
 }
 
-static struct xnvme_be_mixin g_xnvme_be_mixin_windows[] = {
-	{
-		.mtype = XNVME_BE_MEM,
-		.name = "windows",
-		.descr = "Use Windows memory allocator",
-		.mem = &g_xnvme_be_windows_mem,
-		.check_support = xnvme_be_supported,
-	},
-
-	{
-		.mtype = XNVME_BE_ASYNC,
-		.name = "emu",
-		.descr = "Use emulated asynchronous I/O",
-		.async = &g_xnvme_be_cbi_async_emu,
-		.check_support = xnvme_be_supported,
-	},
-
-	{
-		.mtype = XNVME_BE_ASYNC,
-		.name = "thrpool",
-		.descr = "Use thread pool for Asynchronous I/O",
-		.async = &g_xnvme_be_cbi_async_thrpool,
-		.check_support = xnvme_be_supported,
-	},
-
-	{
-		.mtype = XNVME_BE_ASYNC,
-		.name = "iocp",
-		.descr = "Use Windows readfile/writefile with overlapped(iocp) for Asynchronous "
-			 "I/O",
-		.async = &g_xnvme_be_windows_async_iocp,
-		.check_support = xnvme_be_supported,
-	},
-
-	{
-		.mtype = XNVME_BE_ASYNC,
-		.name = "iocp_th",
-		.descr = "Use Windows readfile/writefile with thread based overlapped(iocp) for "
-			 "Asynchronous I/O",
-		.async = &g_xnvme_be_windows_async_iocp_th,
-		.check_support = xnvme_be_supported,
-	},
-
-	{
-		.mtype = XNVME_BE_ASYNC,
-		.name = "io_ring",
-		.descr = "Use Windows io_ring for Asynchronous I/O",
-		.async = &g_xnvme_be_windows_async_ioring,
-		.check_support = xnvme_be_supported,
-	},
-
-	{
-		.mtype = XNVME_BE_ASYNC,
-		.name = "nil",
-		.descr = "Use nil-io; For introspective perf. evaluation",
-		.async = &g_xnvme_be_cbi_async_nil,
-		.check_support = xnvme_be_supported,
-	},
-
-	{
-		.mtype = XNVME_BE_SYNC,
-		.name = "nvme",
-		.descr = "Use Windows NVMe Driver ioctl() for synchronous I/O",
-		.sync = &g_xnvme_be_windows_sync_nvme,
-		.check_support = xnvme_be_supported,
-	},
-
-	{
-		.mtype = XNVME_BE_ADMIN,
-		.name = "nvme",
-		.descr = "Use Windows NVMe Driver ioctl() for admin commands",
-		.admin = &g_xnvme_be_windows_admin_nvme,
-		.check_support = xnvme_be_supported,
-	},
-
-	{
-		.mtype = XNVME_BE_ADMIN,
-		.name = "block",
-		.descr = "Use Windows NVMe Driver ioctl() for admin commands",
-		.admin = &g_xnvme_be_windows_admin_block,
-		.check_support = xnvme_be_supported,
-	},
-
-#ifdef XNVME_BE_WINDOWS_FS_ENABLED
-	{
-		.mtype = XNVME_BE_SYNC,
-		.name = "file",
-		.descr = "Use Windows File System APIs and readfile()/writefile() for I/O",
-		.sync = &g_xnvme_be_windows_sync_fs,
-		.check_support = xnvme_be_supported,
-	},
-	{
-		.mtype = XNVME_BE_ADMIN,
-		.name = "file",
-		.descr = "Use Windows File System APIs for admin commands",
-		.admin = &g_xnvme_be_windows_admin_fs,
-		.check_support = xnvme_be_supported,
-	},
-#endif
-
-	{
-		.mtype = XNVME_BE_DEV,
-		.name = "windows",
-		.descr = "Use Windows file/dev handles and enumerate NVMe devices",
-		.dev = &g_xnvme_be_dev_windows,
-		.check_support = xnvme_be_supported,
-	},
-};
-#endif
-
-struct xnvme_be xnvme_be_windows = {
-	.mem = XNVME_BE_NOSYS_MEM,
-	.admin = XNVME_BE_NOSYS_ADMIN,
-	.sync = XNVME_BE_NOSYS_SYNC,
-	.async = XNVME_BE_NOSYS_QUEUE,
-	.dev = XNVME_BE_NOSYS_DEV,
+const struct xnvme_be_config g_xnvme_be_windows_emu_nvme = {
+	.async = &g_xnvme_be_cbi_async_emu,
+	.sync = &g_xnvme_be_windows_sync_nvme,
+	.admin = &g_xnvme_be_windows_admin_nvme,
+	.dev = &g_xnvme_be_dev_windows,
+	.mem = &g_xnvme_be_windows_mem,
 	.attr =
 		{
 			.name = "windows",
-			.descr = "Windows kernel NVMe/block I/O",
-#ifdef XNVME_PLATFORM_WINDOWS_ENABLED
-#endif
+			.descr = "Emulated async with NVMe ioctl",
+			.caps = XNVME_BE_CAP_BDEV,
 		},
-#ifdef XNVME_PLATFORM_WINDOWS_ENABLED
-	.nobjs = sizeof g_xnvme_be_mixin_windows / sizeof *g_xnvme_be_mixin_windows,
-	.objs = g_xnvme_be_mixin_windows,
-#endif
 };
+
+const struct xnvme_be_config g_xnvme_be_windows_thrpool_nvme = {
+	.async = &g_xnvme_be_cbi_async_thrpool,
+	.sync = &g_xnvme_be_windows_sync_nvme,
+	.admin = &g_xnvme_be_windows_admin_nvme,
+	.dev = &g_xnvme_be_dev_windows,
+	.mem = &g_xnvme_be_windows_mem,
+	.attr =
+		{
+			.name = "windows",
+			.descr = "Thread pool with NVMe ioctl",
+			.caps = XNVME_BE_CAP_BDEV,
+		},
+};
+
+const struct xnvme_be_config g_xnvme_be_windows_iocp_nvme = {
+	.async = &g_xnvme_be_windows_async_iocp,
+	.sync = &g_xnvme_be_windows_sync_nvme,
+	.admin = &g_xnvme_be_windows_admin_nvme,
+	.dev = &g_xnvme_be_dev_windows,
+	.mem = &g_xnvme_be_windows_mem,
+	.attr =
+		{
+			.name = "windows",
+			.descr = "IOCP with NVMe ioctl",
+			.caps = XNVME_BE_CAP_BDEV,
+		},
+};
+
+const struct xnvme_be_config g_xnvme_be_windows_iocp_th_nvme = {
+	.async = &g_xnvme_be_windows_async_iocp_th,
+	.sync = &g_xnvme_be_windows_sync_nvme,
+	.admin = &g_xnvme_be_windows_admin_nvme,
+	.dev = &g_xnvme_be_dev_windows,
+	.mem = &g_xnvme_be_windows_mem,
+	.attr =
+		{
+			.name = "windows",
+			.descr = "IOCP threaded with NVMe ioctl",
+			.caps = XNVME_BE_CAP_BDEV,
+		},
+};
+
+const struct xnvme_be_config g_xnvme_be_windows_ioring_nvme = {
+	.async = &g_xnvme_be_windows_async_ioring,
+	.sync = &g_xnvme_be_windows_sync_nvme,
+	.admin = &g_xnvme_be_windows_admin_nvme,
+	.dev = &g_xnvme_be_dev_windows,
+	.mem = &g_xnvme_be_windows_mem,
+	.attr =
+		{
+			.name = "windows",
+			.descr = "IoRing with NVMe ioctl",
+			.caps = XNVME_BE_CAP_BDEV,
+		},
+};
+
+const struct xnvme_be_config g_xnvme_be_windows_nil_nvme = {
+	.async = &g_xnvme_be_cbi_async_nil,
+	.sync = &g_xnvme_be_windows_sync_nvme,
+	.admin = &g_xnvme_be_windows_admin_nvme,
+	.dev = &g_xnvme_be_dev_windows,
+	.mem = &g_xnvme_be_windows_mem,
+	.attr =
+		{
+			.name = "windows",
+			.descr = "Nil async with NVMe ioctl",
+			.caps = XNVME_BE_CAP_BDEV,
+		},
+};
+
+#ifdef XNVME_BE_WINDOWS_FS_ENABLED
+const struct xnvme_be_config g_xnvme_be_windows_iocp_fs = {
+	.async = &g_xnvme_be_windows_async_iocp,
+	.sync = &g_xnvme_be_windows_sync_fs,
+	.admin = &g_xnvme_be_windows_admin_fs,
+	.dev = &g_xnvme_be_dev_windows,
+	.mem = &g_xnvme_be_windows_mem,
+	.attr =
+		{
+			.name = "windows",
+			.descr = "IOCP with file system APIs",
+			.caps = XNVME_BE_CAP_FILE,
+		},
+};
+
+const struct xnvme_be_config g_xnvme_be_windows_thrpool_fs = {
+	.async = &g_xnvme_be_cbi_async_thrpool,
+	.sync = &g_xnvme_be_windows_sync_fs,
+	.admin = &g_xnvme_be_windows_admin_fs,
+	.dev = &g_xnvme_be_dev_windows,
+	.mem = &g_xnvme_be_windows_mem,
+	.attr =
+		{
+			.name = "windows",
+			.descr = "Thread pool with file system APIs",
+			.caps = XNVME_BE_CAP_FILE,
+		},
+};
+#endif
+
+#endif
