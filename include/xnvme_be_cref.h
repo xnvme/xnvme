@@ -17,14 +17,15 @@ enum xnvme_be_cref_flags {
 };
 
 /**
- * Lookup a controller by @uri and increment its refcount
+ * Lookup a controller by @uri and @be_name, and increment its refcount
  *
  * @param uri Device URI to match against
+ * @param be_name Backend name to match (pointer equality), or NULL for any
  *
  * @return On success, the controller handle. On error, NULL.
  */
 void *
-xnvme_be_cref_lookup(const char *uri);
+xnvme_be_cref_lookup(const char *uri, const char *be_name);
 
 /**
  * Insert a new controller entry with refcount=1

@@ -17,9 +17,12 @@ struct xnvme_be_cref_entry {
 static struct xnvme_be_cref_entry g_cref_table[XNVME_BE_CREF_MAX_ENTRIES];
 
 static int
-_entry_matches(const struct xnvme_be_cref_entry *entry, const char *uri)
+_entry_matches(const struct xnvme_be_cref_entry *entry, const char *uri, const char *be_name)
 {
 	if (strncmp(entry->uri, uri, XNVME_IDENT_URI_LEN)) {
+		return 0;
+	}
+	if (be_name && (!entry->be_name || strcmp(entry->be_name, be_name))) {
 		return 0;
 	}
 
@@ -27,13 +30,13 @@ _entry_matches(const struct xnvme_be_cref_entry *entry, const char *uri)
 }
 
 void *
-xnvme_be_cref_lookup(const char *uri)
+xnvme_be_cref_lookup(const char *uri, const char *be_name)
 {
 	for (int i = 0; i < XNVME_BE_CREF_MAX_ENTRIES; ++i) {
 		if (!g_cref_table[i].ctrlr) {
 			continue;
 		}
-		if (!_entry_matches(&g_cref_table[i], uri)) {
+		if (!_entry_matches(&g_cref_table[i], uri, be_name)) {
 			continue;
 		}
 		if (g_cref_table[i].refcount < 1) {
@@ -90,7 +93,7 @@ xnvme_be_cref_ref(const char *uri, const char *be_name, void *ctrlr,
 			}
 			continue;
 		}
-		if (!_entry_matches(&g_cref_table[i], uri)) {
+		if (!_entry_matches(&g_cref_table[i], uri, be_name)) {
 			continue;
 		}
 		if (g_cref_table[i].refcount < 0) {
@@ -178,7 +181,8 @@ xnvme_be_cref_cleanup(const char *be_name)
 			continue;
 		}
 
-		if (g_cref_table[i].be_name != be_name) {
+		if (!be_name != !g_cref_table[i].be_name ||
+		    (be_name && strcmp(g_cref_table[i].be_name, be_name))) {
 			continue;
 		}
 

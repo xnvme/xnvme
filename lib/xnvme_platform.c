@@ -7,6 +7,7 @@
 #include <string.h>
 #include <libxnvme.h>
 #include <xnvme_be.h>
+#include <xnvme_be_cref.h>
 #include <xnvme_dev.h>
 #include <xnvme_platform.h>
 
@@ -90,17 +91,59 @@ xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 		XNVME_DEBUG("INFO: selected config: be='%s' async='%s' sync='%s'", cfg->attr.name,
 			    cfg->async->id, cfg->sync->id);
 
-		err = be.dev.dev_open(dev);
-		if (!err) {
-			XNVME_DEBUG("INFO: obtained device handle");
-			dev->opts.be = be.attr.name;
-			dev->opts.admin = dev->be.admin.id;
-			dev->opts.sync = dev->be.sync.id;
-			dev->opts.async = dev->be.async.id;
-			dev->opts.mem = dev->be.mem.id;
-			dev->opts.dev = g_xnvme_platform->name;
-			return 0;
+		{
+			void *ctrlr = NULL;
+			int cref_inserted = 0;
+
+			if (be.dev.ctrlr_init) {
+				ctrlr = xnvme_be_cref_lookup(dev->ident.uri, cfg->attr.name);
+				if (!ctrlr) {
+					void *conflict =
+						xnvme_be_cref_lookup(dev->ident.uri, NULL);
+					if (conflict) {
+						xnvme_be_cref_deref(conflict, XNVME_BE_CREF_NONE);
+						XNVME_DEBUG("FAILED: uri '%s' claimed by "
+							    "another driver",
+							    dev->ident.uri);
+						err = -EBUSY;
+						goto next_config;
+					}
+					ctrlr = be.dev.ctrlr_init(dev);
+					if (!ctrlr) {
+						XNVME_DEBUG("INFO: ctrlr_init failed");
+						err = -errno ? -errno : -EIO;
+						goto next_config;
+					}
+					err = xnvme_be_cref_insert(dev->ident.uri, cfg->attr.name,
+								   ctrlr, be.dev.ctrlr_term);
+					if (err) {
+						XNVME_DEBUG("FAILED: cref_insert");
+						be.dev.ctrlr_term(ctrlr);
+						goto next_config;
+					}
+					cref_inserted = 1;
+				}
+				((void **)dev->be.state)[0] = ctrlr;
+			}
+
+			err = be.dev.dev_open(dev);
+			if (!err) {
+				XNVME_DEBUG("INFO: obtained device handle");
+				dev->opts.be = be.attr.name;
+				dev->opts.admin = dev->be.admin.id;
+				dev->opts.sync = dev->be.sync.id;
+				dev->opts.async = dev->be.async.id;
+				dev->opts.mem = dev->be.mem.id;
+				dev->opts.dev = g_xnvme_platform->name;
+				return 0;
+			}
+
+			if (cref_inserted) {
+				xnvme_be_cref_deref(ctrlr, XNVME_BE_CREF_DESTROY_IMMEDIATE);
+			}
 		}
+
+next_config:
 		if (err == -EPERM || err == EPERM) {
 			XNVME_DEBUG("FAILED: permission-error; stop trying");
 			return err;
