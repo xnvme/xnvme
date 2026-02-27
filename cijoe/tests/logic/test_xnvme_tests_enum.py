@@ -7,11 +7,6 @@ from ..conftest import XnvmeDriver, xnvme_parametrize
 def test_open(cijoe, device, be_opts, cli_args):
     if be_opts["admin"] == "ramdisk":
         pytest.skip(reason=f"[be={be_opts['be']}] does not support enumeration")
-    if be_opts["admin"] == "driverkit":
-        pytest.skip(
-            reason="[admin=driverkit] does not support repeatedly opening devices"
-        )
-
     if "fabrics" in device["labels"]:
         err, _ = cijoe.run(
             f"xnvme_tests_enum open --uri {device['uri']} --count 4 --be {be_opts['be']}"
