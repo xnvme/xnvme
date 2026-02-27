@@ -11,7 +11,7 @@ def test_io(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["write_uncor"], opts=["be", "admin", "sync"])
 def test_write_uncorrectable(cijoe, device, be_opts, cli_args):
-    if be_opts["be"] == "linux" and be_opts["sync"] in ["block", "psync"]:
+    if be_opts["sync"] in ["block", "psync"]:
         pytest.skip(reason=f"Not supported: write_uncor via {be_opts['sync']}")
 
     err, _ = cijoe.run(f"xnvme_tests_lblk write_uncorrectable {cli_args}")
@@ -20,10 +20,7 @@ def test_write_uncorrectable(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["write_zeroes"], opts=["be", "admin", "sync"])
 def test_write_zeroes(cijoe, device, be_opts, cli_args):
-    if be_opts["be"] == "linux" and be_opts["sync"] in ["block", "psync"]:
-        pytest.skip(reason=f"Not supported: write_zeroes via {be_opts['sync']}")
-
-    if be_opts["be"] == "fbsd" and be_opts["sync"] in ["psync"]:
+    if be_opts["sync"] in ["block", "psync"]:
         pytest.skip(reason=f"Not supported: write_zeroes via {be_opts['sync']}")
 
     err, _ = cijoe.run(f"xnvme_tests_lblk write_zeroes {cli_args}")

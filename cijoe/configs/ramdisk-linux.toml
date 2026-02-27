@@ -1,3 +1,6 @@
+[os]
+name = "linux"
+
 [build.compiler]
 bin = "gcc"
 

@@ -1,13 +1,17 @@
 import pytest
 
-from ..conftest import xnvme_parametrize
+from ..conftest import get_osname, xnvme_parametrize
 
 
 @xnvme_parametrize(labels=["zns"], opts=["be", "admin", "sync"])
 def test_write(cijoe, device, be_opts, cli_args):
-    if be_opts["be"] == "fbsd":
+    if get_osname() == "freebsd" and be_opts["be"] not in [
+        "spdk",
+        "ramdisk_emu",
+        "ramdisk_thrpool",
+    ]:
         pytest.skip(reason="Freebsd kernel doesn't support zns")
-    if be_opts["be"] == "linux" and be_opts["sync"] in ["psync"]:
+    if be_opts["sync"] == "psync":
         pytest.skip(reason="psync(pread/write) does not support mgmt. send/receive")
 
     err, _ = cijoe.run(f"zoned_io_sync write {cli_args}")
@@ -16,7 +20,11 @@ def test_write(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["zns"], opts=["be", "admin", "sync"])
 def test_append(cijoe, device, be_opts, cli_args):
-    if be_opts["be"] == "fbsd":
+    if get_osname() == "freebsd" and be_opts["be"] not in [
+        "spdk",
+        "ramdisk_emu",
+        "ramdisk_thrpool",
+    ]:
         pytest.skip(reason="Freebsd kernel doesn't support zns")
     if be_opts["admin"] in ["block"]:
         pytest.skip(reason="Linux Block layer does not support append")
@@ -29,9 +37,13 @@ def test_append(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["zns"], opts=["be", "admin", "sync"])
 def test_read(cijoe, device, be_opts, cli_args):
-    if be_opts["be"] == "fbsd":
+    if get_osname() == "freebsd" and be_opts["be"] not in [
+        "spdk",
+        "ramdisk_emu",
+        "ramdisk_thrpool",
+    ]:
         pytest.skip(reason="Freebsd kernel doesn't support zns")
-    if be_opts["be"] == "linux" and be_opts["sync"] in ["psync"]:
+    if be_opts["sync"] == "psync":
         pytest.skip(reason="psync(pread/write) does not support mgmt. send/receive")
 
     err, _ = cijoe.run(f"zoned_io_sync read {cli_args}")

@@ -1,4 +1,4 @@
-def get_combinations():
+def get_backend_configurations():
     """Return all sensible backend configurations matching driver presets"""
 
     combos = {"linux": [], "freebsd": [], "windows": [], "macos": []}

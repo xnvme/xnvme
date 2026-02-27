@@ -447,13 +447,13 @@ verify-ramdisk:
 	ldconfig || true
 	cd cijoe && cijoe fio_prep \
 		--monitor \
-		--config "configs/ramdisk.toml" \
+		--config "configs/ramdisk-linux.toml" \
 		--config "configs/fio.toml" \
 		--config "configs/xnvme.toml" \
 		$(if $(CIJOE_OUTPUT),--output "$(CIJOE_OUTPUT)-prep-fio")
 	cd cijoe && cijoe "workflows/test-ramdisk.yaml" \
 		--monitor \
-		--config "configs/ramdisk.toml" \
+		--config "configs/ramdisk-linux.toml" \
 		--config "configs/fio.toml" \
 		--config "configs/xnvme.toml" \
 		$(if $(CIJOE_OUTPUT),--output "$(CIJOE_OUTPUT)-test-ramdisk")
