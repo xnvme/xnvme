@@ -128,7 +128,8 @@ xnvme_be_vfio_dev_open(struct xnvme_dev *dev)
 		}
 	}
 
-	dev->ident.dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
+	dev->ident.dtype =
+		dev->opts.nsid ? XNVME_DEV_TYPE_NVME_NAMESPACE : XNVME_DEV_TYPE_NVME_CONTROLLER;
 	dev->ident.csi = XNVME_SPEC_CSI_NVM;
 	dev->ident.nsid = dev->opts.nsid;
 

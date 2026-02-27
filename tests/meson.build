@@ -28,6 +28,7 @@ tests = {
     ['no args', ['copy', '1GB']],
     ['slba=0 sdlba=8', ['copy', '1GB', '--slba', '0', '--nlb', '7', '--sdlba', '8']],
     ['slba=8 sdlba=0', ['copy', '1GB', '--slba', '8', '--nlb', '7', '--sdlba', '0']]],
+  'ctrlr.c': [],
   'delay_identification.c': [
     ['open', ['open', '1GB']]
   ],
