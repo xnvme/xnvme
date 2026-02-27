@@ -5,10 +5,12 @@ from ..conftest import XnvmeDriver, xnvme_parametrize
 
 @xnvme_parametrize(labels=["dev"], opts=["be"])
 def test_open(cijoe, device, be_opts, cli_args):
-    if be_opts["be"] in ["ramdisk"]:
+    if be_opts["admin"] == "ramdisk":
         pytest.skip(reason=f"[be={be_opts['be']}] does not support enumeration")
-    if be_opts["be"] == "driverkit":
-        pytest.skip(reason="[be=driverkit] does not support repeatedly opening devices")
+    if be_opts["admin"] == "driverkit":
+        pytest.skip(
+            reason="[admin=driverkit] does not support repeatedly opening devices"
+        )
 
     if "fabrics" in device["labels"]:
         err, _ = cijoe.run(
@@ -21,7 +23,7 @@ def test_open(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=["be"])
 def test_keep_open(cijoe, device, be_opts, cli_args):
-    if be_opts["be"] in ["ramdisk"]:
+    if be_opts["admin"] == "ramdisk":
         pytest.skip(reason=f"[be={be_opts['be']}] does not support enumeration")
 
     if "fabrics" in device["labels"]:
@@ -35,9 +37,9 @@ def test_keep_open(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=["be"])
 def test_multi(cijoe, device, be_opts, cli_args):
-    if be_opts["be"] in ["ramdisk"]:
+    if be_opts["admin"] == "ramdisk":
         pytest.skip(reason=f"[be={be_opts['be']}] does not support enumeration")
-    if be_opts["be"] in ["driverkit", "spdk"]:
+    if be_opts["admin"] in ["driverkit", "spdk"]:
         pytest.skip(
             reason=f"[be={be_opts['be']}] does not support repeatedly enumerating"
         )

@@ -1,6 +1,6 @@
 import pytest
 
-from ..conftest import XnvmeDriver, xnvme_parametrize
+from ..conftest import XnvmeDriver, get_osname, xnvme_parametrize
 
 
 def test_enum(cijoe):
@@ -67,10 +67,10 @@ def test_write_zeroes(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["pi1"], opts=["be", "admin"])
 def test_pi_type1(cijoe, device, be_opts, cli_args):
-    if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
+    if be_opts["admin"] == "block":
         pytest.skip(reason="[admin=block] does not support metadata")
 
-    if be_opts["be"] == "fbsd" and be_opts["admin"] in ["nvme"]:
+    if get_osname() == "freebsd" and be_opts["admin"] == "nvme":
         pytest.skip(reason="[admin=nvme] does not support metadata")
 
     err, _ = cijoe.run(
@@ -86,10 +86,10 @@ def test_pi_type1(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["pi2"], opts=["be", "admin"])
 def test_pi_type2(cijoe, device, be_opts, cli_args):
-    if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
+    if be_opts["admin"] == "block":
         pytest.skip(reason="[admin=block] does not support metadata")
 
-    if be_opts["be"] == "fbsd" and be_opts["admin"] in ["nvme"]:
+    if get_osname() == "freebsd" and be_opts["admin"] == "nvme":
         pytest.skip(reason="[admin=nvme] does not support metadata")
 
     err, _ = cijoe.run(
@@ -105,10 +105,10 @@ def test_pi_type2(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["pi3"], opts=["be", "admin"])
 def test_pi_type3(cijoe, device, be_opts, cli_args):
-    if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
+    if be_opts["admin"] == "block":
         pytest.skip(reason="[admin=block] does not support metadata")
 
-    if be_opts["be"] == "fbsd" and be_opts["admin"] in ["nvme"]:
+    if get_osname() == "freebsd" and be_opts["admin"] == "nvme":
         pytest.skip(reason="[admin=nvme] does not support metadata")
 
     # For PI type 3 prchk 0bxx1 is invalid
@@ -127,7 +127,7 @@ def test_pi_type3(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["pi1_ex"], opts=["be", "admin"])
 def test_pi_type1_extended_lba(cijoe, device, be_opts, cli_args):
-    if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
+    if be_opts["admin"] == "block":
         pytest.skip(reason="[admin=block] does not support metadata")
 
     err, _ = cijoe.run(
@@ -143,10 +143,10 @@ def test_pi_type1_extended_lba(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["pi1_pif2"], opts=["be", "admin"])
 def test_pi1_pif2(cijoe, device, be_opts, cli_args):
-    if be_opts["be"] == "linux" and be_opts["admin"] in ["block"]:
+    if be_opts["admin"] == "block":
         pytest.skip(reason="[admin=block] does not support metadata")
 
-    if be_opts["be"] == "fbsd" and be_opts["admin"] in ["nvme"]:
+    if get_osname() == "freebsd" and be_opts["admin"] == "nvme":
         pytest.skip(reason="[admin=nvme] does not support metadata")
 
     err, _ = cijoe.run(

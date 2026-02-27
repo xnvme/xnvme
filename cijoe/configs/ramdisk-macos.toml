@@ -1,3 +1,6 @@
+[os]
+name = "macos"
+
 [build.compiler]
 bin = "gcc"
 

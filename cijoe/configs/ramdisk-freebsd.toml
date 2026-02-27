@@ -1,0 +1,11 @@
+[os]
+name = "freebsd"
+
+[build.compiler]
+bin = "clang"
+
+[[devices]]
+uri = "2GB"
+nsid = 1
+labels = [ "dev", "bdev", "nvm", "ramdisk", "scc", "log_health_ns", "idfy_cs" ]
+driver_attachment = "kernel"

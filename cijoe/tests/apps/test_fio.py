@@ -2,8 +2,12 @@ from pathlib import Path
 
 import pytest
 
-from ..conftest import xnvme_parametrize
+from ..conftest import get_osname, xnvme_parametrize
 from .fio_fancy import fio_fancy
+
+FIO_OUTPUT_FPATH = (
+    Path("C:/tmp" if get_osname() == "windows" else "/tmp") / "fio-output.txt"
+)
 
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin", "sync", "async", "mem"])
@@ -11,15 +15,12 @@ def test_fio_engine(cijoe, device, be_opts, cli_args):
     """
     The construction of the fio-invocation is done in 'fio_fancy'
     """
-    is_windows = be_opts["mem"] == "windows" or be_opts["be"] == "windows"
-    fio_output_fpath = Path("C:/tmp" if is_windows else "/tmp") / "fio-output.txt"
-
     size = "64M"
     # size = "1G"
 
     err, _ = fio_fancy(
         cijoe,
-        fio_output_fpath,
+        FIO_OUTPUT_FPATH,
         "verify",
         "xnvme",
         device,
@@ -38,22 +39,19 @@ def test_fio_engine_iov(cijoe, device, be_opts, cli_args):
 
     if be_opts["async"] == "posix":
         pytest.skip(reason="[async=posix] does not implement iovec")
-    if be_opts["be"] == "linux" and be_opts["sync"] == "psync":
-        pytest.skip(reason="[be=linux] and [sync=psync] does not implement iovec")
-    if be_opts["be"] == "fbsd" and be_opts["sync"] == "nvme":
-        pytest.skip(reason="[be=fbsd] and [sync=nvme] does not implement iovec")
-    if be_opts["be"] == "driverkit":
-        pytest.skip(reason="[be=driverkit] does not implement iovec")
-
-    is_windows = be_opts["mem"] == "windows" or be_opts["be"] == "windows"
-    fio_output_fpath = Path("C:/tmp" if is_windows else "/tmp") / "fio-output.txt"
+    if be_opts["sync"] == "psync":
+        pytest.skip(reason="[sync=psync] does not implement iovec")
+    if get_osname() == "freebsd" and be_opts["sync"] == "nvme":
+        pytest.skip(reason="[sync=nvme] on FreeBSD does not implement iovec")
+    if be_opts["admin"] == "driverkit":
+        pytest.skip(reason="[admin=driverkit] does not implement iovec")
 
     size = "64M"
     # size = "1G"
 
     err, _ = fio_fancy(
         cijoe,
-        fio_output_fpath,
+        FIO_OUTPUT_FPATH,
         "verify",
         "xnvme",
         device,
@@ -69,22 +67,23 @@ def test_fio_engine_zns(cijoe, device, be_opts, cli_args):
     """
     The construction of the fio-invocation is done in 'fio_fancy'
     """
-    if be_opts["be"] == "fbsd":
+    if get_osname() == "freebsd" and be_opts["be"] not in [
+        "spdk",
+        "ramdisk_emu",
+        "ramdisk_thrpool",
+    ]:
         pytest.skip(reason="Freebsd kernel doesn't support zns")
-    if be_opts["be"] == "linux" and be_opts["sync"] in ["psync", "block"]:
+    if be_opts["sync"] in ["psync", "block"]:
         pytest.skip(reason="[sync=psync,block] does not support mgmt. send/receive")
-    if be_opts["be"] == "linux" and be_opts["async"] in ["thrpool"]:
+    if be_opts["async"] == "thrpool":
         pytest.skip(reason="[async=thrpool] gives Zone Invalid Write")
-
-    is_windows = be_opts["mem"] == "windows" or be_opts["be"] == "windows"
-    fio_output_fpath = Path("C:/tmp" if is_windows else "/tmp") / "fio-output.txt"
 
     size = "64M"
     # size = "1G"
 
     err, _ = fio_fancy(
         cijoe,
-        fio_output_fpath,
+        FIO_OUTPUT_FPATH,
         "verify",
         "xnvme",
         device,
@@ -100,20 +99,17 @@ def test_fio_engine_fdp(cijoe, device, be_opts, cli_args):
     """
     The construction of the fio-invocation is done in 'fio_fancy'
     """
-    if be_opts["be"] == "linux" and "cdev" not in device["labels"]:
-        pytest.skip(reason="FIO requires a char device with [be=linux]")
-    if be_opts["be"] == "fbsd" and be_opts["sync"] in ["psync"]:
+    if "cdev" not in device["labels"]:
+        pytest.skip(reason="FIO requires a char device")
+    if be_opts["sync"] == "psync":
         pytest.skip(reason="[sync=psync] cannot do write with directives")
-
-    is_windows = be_opts["mem"] == "windows" or be_opts["be"] == "windows"
-    fio_output_fpath = Path("C:/tmp" if is_windows else "/tmp") / "fio-output.txt"
 
     size = "64M"
     # size = "1G"
 
     err, _ = fio_fancy(
         cijoe,
-        fio_output_fpath,
+        FIO_OUTPUT_FPATH,
         "verify",
         "xnvme",
         device,

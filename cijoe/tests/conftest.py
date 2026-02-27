@@ -24,22 +24,28 @@ from time import sleep
 
 import pytest
 
-from .xnvme_be_combinations import get_combinations
+from .xnvme_be_combinations import get_backend_configurations
+
+
+def get_osname():
+    """Return normalized OS name from CIJOE config"""
+    osname = pytest.cijoe_instance.getconf("os.name", "linux")
+    if osname == "debian":
+        osname = "linux"
+    return osname
 
 
 def xnvme_be_opts(options=None, only_labels=[]):
     """Produce a list of "sensible" backend configurations"""
 
-    osname = pytest.cijoe_instance.getconf("os.name", "linux")
-    if osname == "debian":
-        osname = "linux"
+    osname = get_osname()
 
     if options is None:
         options = ["be", "mem", "sync", "async", "admin", "label"]
     if "label" not in options:
         options.append("label")
 
-    combinations = get_combinations()
+    combinations = get_backend_configurations()
 
     all_configs = []
     for opts in combinations[osname]:
@@ -64,13 +70,15 @@ def xnvme_be_opts(options=None, only_labels=[]):
                             )
 
     filtered = []
+    seen = []
     for cfg in all_configs:
-        item = [(key, val) for (key, val) in cfg.items() if key in options]
-        if item not in filtered:
-            filtered.append(item)
-    filtered.sort()
+        key = [(k, v) for k, v in cfg.items() if k in options]
+        if key not in seen:
+            seen.append(key)
+            filtered.append(cfg)
+    filtered.sort(key=lambda d: [(k, v) for k, v in d.items() if k in options])
 
-    return [dict(item) for item in filtered]
+    return filtered
 
 
 def cijoe_config_get_all_devices(labels):
@@ -143,7 +151,8 @@ def xnvme_setup(labels=[], opts=[]):
 
         paramid = f"uri={dstr},{bstr}"
 
-        cli_args = xnvme_cli_args(device, be_opts)
+        cli_opts = {k: v for k, v in be_opts.items() if k in opts}
+        cli_args = xnvme_cli_args(device, cli_opts)
 
         if device is None:
             parametrization.append(
