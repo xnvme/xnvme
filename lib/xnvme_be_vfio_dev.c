@@ -8,6 +8,7 @@
 #ifdef XNVME_BE_VFIO_ENABLED
 #include <xnvme_dev.h>
 #include <xnvme_be_vfio.h>
+#include <xnvme_be_registry.h>
 #include <xnvme_be_cref.h>
 
 static int
@@ -119,7 +120,7 @@ xnvme_be_vfio_dev_open(struct xnvme_dev *dev)
 		state->sq_sync = &state->ctrl->sq[qpid];
 		state->cq_sync = &state->ctrl->cq[qpid];
 
-		err = xnvme_be_cref_insert(dev->ident.uri, xnvme_be_vfio.attr.name, ctrl,
+		err = xnvme_be_cref_insert(dev->ident.uri, g_xnvme_be_vfio.attr.name, ctrl,
 					   _vfio_ctrlr_destructor);
 		if (err) {
 			XNVME_DEBUG("FAILED: xnvme_be_cref_insert()");

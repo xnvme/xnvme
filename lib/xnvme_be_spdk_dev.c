@@ -17,6 +17,7 @@
 #include <xnvme_be.h>
 #include <xnvme_queue.h>
 #include <xnvme_be_spdk.h>
+#include <xnvme_be_registry.h>
 #include <xnvme_be_cref.h>
 #include <xnvme_dev.h>
 
@@ -394,7 +395,7 @@ attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid, struct spdk_n
 	state->attached = 1;
 	opts->spdk_fabrics = trid->trtype > SPDK_NVME_TRANSPORT_PCIE;
 
-	if (!xnvme_be_cref_ref(dev->ident.uri, xnvme_be_spdk.attr.name, state->ctrlr,
+	if (!xnvme_be_cref_ref(dev->ident.uri, g_xnvme_be_spdk.attr.name, state->ctrlr,
 			       _spdk_ctrlr_destructor)) {
 		XNVME_DEBUG("FAILED: xnvme_be_cref_ref()");
 		return;
@@ -526,7 +527,7 @@ enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
 		}
 
 		// Save the reference to ctrlr so it can be reused when we call xnvme_dev_open()
-		if (!xnvme_be_cref_ref(ident.uri, xnvme_be_spdk.attr.name, ctrlr,
+		if (!xnvme_be_cref_ref(ident.uri, g_xnvme_be_spdk.attr.name, ctrlr,
 				       _spdk_ctrlr_destructor)) {
 			XNVME_DEBUG("FAILED: xnvme_be_cref_ref()");
 			return;
@@ -546,7 +547,7 @@ enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
 		}
 	}
 
-	xnvme_be_cref_cleanup(xnvme_be_spdk.attr.name);
+	xnvme_be_cref_cleanup(g_xnvme_be_spdk.attr.name);
 }
 
 int
@@ -576,7 +577,7 @@ xnvme_be_spdk_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enum
 		    port);
 
 	struct xnvme_opts tmp_opts = *opts;
-	tmp_opts.be = xnvme_be_spdk.attr.name;
+	tmp_opts.be = g_xnvme_be_spdk.attr.name;
 
 	ectx.opts = &tmp_opts;
 	ectx.enumerate_cb = cb_func;
@@ -690,7 +691,7 @@ xnvme_be_spdk_state_init(struct xnvme_dev *dev)
 		return err;
 	}
 
-	state->ctrlr = xnvme_be_cref_ref(dev->ident.uri, xnvme_be_spdk.attr.name, NULL,
+	state->ctrlr = xnvme_be_cref_ref(dev->ident.uri, g_xnvme_be_spdk.attr.name, NULL,
 					 _spdk_ctrlr_destructor);
 	if (state->ctrlr) {
 		struct spdk_nvme_ns *ns;

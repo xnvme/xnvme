@@ -7,7 +7,6 @@
 #endif
 #include <libxnvme.h>
 #include <xnvme_be.h>
-#include <xnvme_be_nosys.h>
 #ifdef XNVME_PLATFORM_LINUX_ENABLED
 #include <errno.h>
 #include <dirent.h>
@@ -59,127 +58,309 @@ xnvme_file_opts_to_linux(struct xnvme_opts *opts)
 	return flags;
 }
 
-static struct xnvme_be_mixin g_xnvme_be_mixin_linux[] = {
-	{
-		.mtype = XNVME_BE_MEM,
-		.name = "posix",
-		.descr = "Use C11 lib malloc/free with sysconf for alignment",
-		.mem = &g_xnvme_be_cbi_mem_posix,
-		.check_support = xnvme_be_supported,
-	},
-	{
-		.mtype = XNVME_BE_MEM,
-		.name = "hugepage",
-		.descr = "Allocate buffers using hugepages via mmap on hugetlbfs",
-		.mem = &g_xnvme_be_linux_mem_hugepage,
-		.check_support = xnvme_be_supported,
-	},
-
-	{
-		.mtype = XNVME_BE_ASYNC,
-		.name = "emu",
-		.descr = "Use emulated asynchronous I/O",
-		.async = &g_xnvme_be_cbi_async_emu,
-		.check_support = xnvme_be_supported,
-	},
-#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
-	{
-		.mtype = XNVME_BE_ASYNC,
-		.name = "io_uring",
-		.descr = "Use Linux io_uring/liburing for Asynchronous I/O",
-		.async = &g_xnvme_be_linux_async_liburing,
-		.check_support = xnvme_be_supported,
-	},
-	{
-		.mtype = XNVME_BE_ASYNC,
-		.name = "io_uring_cmd",
-		.descr = "Use Linux io_uring passthru command for Asynchronous I/O",
-		.async = &g_xnvme_be_linux_async_ucmd,
-		.check_support = xnvme_be_supported,
-	},
-#endif
-#ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
-	{
-		.mtype = XNVME_BE_ASYNC,
-		.name = "libaio",
-		.descr = "Use Linux aio for Asynchronous I/O",
-		.async = &g_xnvme_be_linux_async_libaio,
-		.check_support = xnvme_be_supported,
-	},
-#endif
-#ifdef XNVME_BE_CBI_ASYNC_POSIX_ENABLED
-	{
-		.mtype = XNVME_BE_ASYNC,
-		.name = "posix",
-		.descr = "Use POSIX aio for Asynchronous I/O",
-		.async = &g_xnvme_be_cbi_async_posix,
-		.check_support = xnvme_be_supported,
-	},
-#endif
-	{
-		.mtype = XNVME_BE_ASYNC,
-		.name = "thrpool",
-		.descr = "Use thread pool for Asynchronous I/O",
-		.async = &g_xnvme_be_cbi_async_thrpool,
-		.check_support = xnvme_be_supported,
-	},
-	{
-		.mtype = XNVME_BE_ASYNC,
-		.name = "nil",
-		.descr = "Use nil-io; For introspective perf. evaluation",
-		.async = &g_xnvme_be_cbi_async_nil,
-		.check_support = xnvme_be_supported,
-	},
-
-	{
-		.mtype = XNVME_BE_SYNC,
-		.name = "nvme",
-		.descr = "Use Linux NVMe Driver ioctl() for synchronous I/O",
-		.sync = &g_xnvme_be_linux_sync_nvme,
-		.check_support = xnvme_be_supported,
-	},
-	{
-		.mtype = XNVME_BE_SYNC,
-		.name = "psync",
-		.descr = "Use pread()/write() for synchronous I/O",
-		.sync = &g_xnvme_be_cbi_sync_psync,
-		.check_support = xnvme_be_supported,
-	},
-
-	{
-		.mtype = XNVME_BE_ADMIN,
-		.name = "nvme",
-		.descr = "Use Linux NVMe Driver ioctl() for admin commands",
-		.admin = &g_xnvme_be_linux_admin_nvme,
-		.check_support = xnvme_be_supported,
-	},
-#ifdef XNVME_BE_LINUX_BLOCK_ENABLED
-	{
-		.mtype = XNVME_BE_SYNC,
-		.name = "block",
-		.descr = "Use Linux Block Layer ioctl() and pread()/pwrite() for I/O",
-		.sync = &g_xnvme_be_linux_sync_block,
-		.check_support = xnvme_be_supported,
-	},
-	{
-		.mtype = XNVME_BE_ADMIN,
-		.name = "block",
-		.descr = "Use Linux Block Layer ioctl() and sysfs for admin commands",
-		.admin = &g_xnvme_be_linux_admin_block,
-		.check_support = xnvme_be_supported,
-	},
-#endif
-
-	{
-		.mtype = XNVME_BE_DEV,
-		.name = "linux",
-		.descr = "Use Linux file/dev handles and enumerate NVMe devices",
-		.dev = &g_xnvme_be_dev_linux,
-		.check_support = xnvme_be_supported,
-	},
+const struct xnvme_be_config g_xnvme_be_linux_emu_nvme = {
+	.async = &g_xnvme_be_cbi_async_emu,
+	.sync = &g_xnvme_be_linux_sync_nvme,
+	.admin = &g_xnvme_be_linux_admin_nvme,
+	.dev = &g_xnvme_be_dev_linux,
+	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem_overrides =
+		(const struct xnvme_be_mem *const[]){
+			&g_xnvme_be_linux_mem_hugepage,
+			NULL,
+		},
+	.attr =
+		{
+			.name = "linux",
+			.descr = "Emulated async with NVMe ioctl",
+			.caps = XNVME_BE_CAP_NVME_CDEV | XNVME_BE_CAP_NVME_BDEV,
+		},
 };
-// static const int
-// g_xnvme_be_mixin_linux_nobjs = sizeof g_xnvme_be_mixin_linux / sizeof * g_xnvme_be_mixin_linux;
+
+#ifdef XNVME_BE_LINUX_BLOCK_ENABLED
+const struct xnvme_be_config g_xnvme_be_linux_emu_block = {
+	.async = &g_xnvme_be_cbi_async_emu,
+	.sync = &g_xnvme_be_linux_sync_block,
+	.admin = &g_xnvme_be_linux_admin_block,
+	.dev = &g_xnvme_be_dev_linux,
+	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem_overrides =
+		(const struct xnvme_be_mem *const[]){
+			&g_xnvme_be_linux_mem_hugepage,
+			NULL,
+		},
+	.attr =
+		{
+			.name = "linux",
+			.descr = "Emulated async with block layer",
+			.caps = XNVME_BE_CAP_NVME_BDEV | XNVME_BE_CAP_BDEV,
+		},
+};
+#endif
+
+#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
+const struct xnvme_be_config g_xnvme_be_linux_ucmd_nvme = {
+	.async = &g_xnvme_be_linux_async_ucmd,
+	.sync = &g_xnvme_be_linux_sync_nvme,
+	.admin = &g_xnvme_be_linux_admin_nvme,
+	.dev = &g_xnvme_be_dev_linux,
+	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem_overrides =
+		(const struct xnvme_be_mem *const[]){
+			&g_xnvme_be_linux_mem_hugepage,
+			NULL,
+		},
+	.attr =
+		{
+			.name = "linux",
+			.descr = "io_uring passthru with NVMe ioctl",
+			.caps = XNVME_BE_CAP_NVME_CDEV | XNVME_BE_CAP_NVME_BDEV,
+		},
+};
+
+const struct xnvme_be_config g_xnvme_be_linux_iou_nvme = {
+	.async = &g_xnvme_be_linux_async_liburing,
+	.sync = &g_xnvme_be_linux_sync_nvme,
+	.admin = &g_xnvme_be_linux_admin_nvme,
+	.dev = &g_xnvme_be_dev_linux,
+	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem_overrides =
+		(const struct xnvme_be_mem *const[]){
+			&g_xnvme_be_linux_mem_hugepage,
+			NULL,
+		},
+	.attr =
+		{
+			.name = "linux",
+			.descr = "io_uring with NVMe ioctl",
+			.caps = XNVME_BE_CAP_NVME_CDEV | XNVME_BE_CAP_NVME_BDEV,
+		},
+};
+#endif /* XNVME_BE_LINUX_LIBURING_ENABLED */
+
+#if defined(XNVME_BE_LINUX_LIBURING_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
+const struct xnvme_be_config g_xnvme_be_linux_iou_block = {
+	.async = &g_xnvme_be_linux_async_liburing,
+	.sync = &g_xnvme_be_linux_sync_block,
+	.admin = &g_xnvme_be_linux_admin_block,
+	.dev = &g_xnvme_be_dev_linux,
+	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem_overrides =
+		(const struct xnvme_be_mem *const[]){
+			&g_xnvme_be_linux_mem_hugepage,
+			NULL,
+		},
+	.attr =
+		{
+			.name = "linux",
+			.descr = "io_uring with block layer",
+			.caps = XNVME_BE_CAP_NVME_BDEV | XNVME_BE_CAP_BDEV,
+		},
+};
+#endif
+
+#ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
+const struct xnvme_be_config g_xnvme_be_linux_aio_nvme = {
+	.async = &g_xnvme_be_linux_async_libaio,
+	.sync = &g_xnvme_be_linux_sync_nvme,
+	.admin = &g_xnvme_be_linux_admin_nvme,
+	.dev = &g_xnvme_be_dev_linux,
+	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem_overrides =
+		(const struct xnvme_be_mem *const[]){
+			&g_xnvme_be_linux_mem_hugepage,
+			NULL,
+		},
+	.attr =
+		{
+			.name = "linux",
+			.descr = "libaio with NVMe ioctl",
+			.caps = XNVME_BE_CAP_NVME_CDEV | XNVME_BE_CAP_NVME_BDEV,
+		},
+};
+#endif
+
+#if defined(XNVME_BE_LINUX_LIBAIO_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
+const struct xnvme_be_config g_xnvme_be_linux_aio_block = {
+	.async = &g_xnvme_be_linux_async_libaio,
+	.sync = &g_xnvme_be_linux_sync_block,
+	.admin = &g_xnvme_be_linux_admin_block,
+	.dev = &g_xnvme_be_dev_linux,
+	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem_overrides =
+		(const struct xnvme_be_mem *const[]){
+			&g_xnvme_be_linux_mem_hugepage,
+			NULL,
+		},
+	.attr =
+		{
+			.name = "linux",
+			.descr = "libaio with block layer",
+			.caps = XNVME_BE_CAP_NVME_BDEV | XNVME_BE_CAP_BDEV,
+		},
+};
+#endif
+
+#ifdef XNVME_BE_CBI_ASYNC_POSIX_ENABLED
+const struct xnvme_be_config g_xnvme_be_linux_posix_nvme = {
+	.async = &g_xnvme_be_cbi_async_posix,
+	.sync = &g_xnvme_be_linux_sync_nvme,
+	.admin = &g_xnvme_be_linux_admin_nvme,
+	.dev = &g_xnvme_be_dev_linux,
+	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem_overrides =
+		(const struct xnvme_be_mem *const[]){
+			&g_xnvme_be_linux_mem_hugepage,
+			NULL,
+		},
+	.attr =
+		{
+			.name = "linux",
+			.descr = "POSIX aio with NVMe ioctl",
+			.caps = XNVME_BE_CAP_NVME_CDEV | XNVME_BE_CAP_NVME_BDEV,
+		},
+};
+#endif
+
+const struct xnvme_be_config g_xnvme_be_linux_thrpool_nvme = {
+	.async = &g_xnvme_be_cbi_async_thrpool,
+	.sync = &g_xnvme_be_linux_sync_nvme,
+	.admin = &g_xnvme_be_linux_admin_nvme,
+	.dev = &g_xnvme_be_dev_linux,
+	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem_overrides =
+		(const struct xnvme_be_mem *const[]){
+			&g_xnvme_be_linux_mem_hugepage,
+			NULL,
+		},
+	.attr =
+		{
+			.name = "linux",
+			.descr = "Thread pool with NVMe ioctl",
+			.caps = XNVME_BE_CAP_NVME_CDEV | XNVME_BE_CAP_NVME_BDEV,
+		},
+};
+
+#ifdef XNVME_BE_LINUX_BLOCK_ENABLED
+const struct xnvme_be_config g_xnvme_be_linux_thrpool_block = {
+	.async = &g_xnvme_be_cbi_async_thrpool,
+	.sync = &g_xnvme_be_linux_sync_block,
+	.admin = &g_xnvme_be_linux_admin_block,
+	.dev = &g_xnvme_be_dev_linux,
+	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem_overrides =
+		(const struct xnvme_be_mem *const[]){
+			&g_xnvme_be_linux_mem_hugepage,
+			NULL,
+		},
+	.attr =
+		{
+			.name = "linux",
+			.descr = "Thread pool with block layer",
+			.caps = XNVME_BE_CAP_NVME_BDEV | XNVME_BE_CAP_BDEV,
+		},
+};
+#endif
+
+const struct xnvme_be_config g_xnvme_be_linux_nil_nvme = {
+	.async = &g_xnvme_be_cbi_async_nil,
+	.sync = &g_xnvme_be_linux_sync_nvme,
+	.admin = &g_xnvme_be_linux_admin_nvme,
+	.dev = &g_xnvme_be_dev_linux,
+	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem_overrides =
+		(const struct xnvme_be_mem *const[]){
+			&g_xnvme_be_linux_mem_hugepage,
+			NULL,
+		},
+	.attr =
+		{
+			.name = "linux",
+			.descr = "Nil async with NVMe ioctl",
+			.caps = XNVME_BE_CAP_NVME_CDEV | XNVME_BE_CAP_NVME_BDEV,
+		},
+};
+
+const struct xnvme_be_config g_xnvme_be_linux_emu_file = {
+	.async = &g_xnvme_be_cbi_async_emu,
+	.sync = &g_xnvme_be_cbi_sync_psync,
+	.admin = &g_xnvme_be_cbi_admin_shim,
+	.dev = &g_xnvme_be_dev_linux,
+	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem_overrides =
+		(const struct xnvme_be_mem *const[]){
+			&g_xnvme_be_linux_mem_hugepage,
+			NULL,
+		},
+	.attr =
+		{
+			.name = "linux",
+			.descr = "Emulated async with file I/O",
+			.caps = XNVME_BE_CAP_FILE,
+		},
+};
+
+const struct xnvme_be_config g_xnvme_be_linux_thrpool_file = {
+	.async = &g_xnvme_be_cbi_async_thrpool,
+	.sync = &g_xnvme_be_cbi_sync_psync,
+	.admin = &g_xnvme_be_cbi_admin_shim,
+	.dev = &g_xnvme_be_dev_linux,
+	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem_overrides =
+		(const struct xnvme_be_mem *const[]){
+			&g_xnvme_be_linux_mem_hugepage,
+			NULL,
+		},
+	.attr =
+		{
+			.name = "linux",
+			.descr = "Thread pool with file I/O",
+			.caps = XNVME_BE_CAP_FILE,
+		},
+};
+
+#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
+const struct xnvme_be_config g_xnvme_be_linux_iou_file = {
+	.async = &g_xnvme_be_linux_async_liburing,
+	.sync = &g_xnvme_be_cbi_sync_psync,
+	.admin = &g_xnvme_be_cbi_admin_shim,
+	.dev = &g_xnvme_be_dev_linux,
+	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem_overrides =
+		(const struct xnvme_be_mem *const[]){
+			&g_xnvme_be_linux_mem_hugepage,
+			NULL,
+		},
+	.attr =
+		{
+			.name = "linux",
+			.descr = "io_uring with file I/O",
+			.caps = XNVME_BE_CAP_FILE,
+		},
+};
+#endif
+
+#ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
+const struct xnvme_be_config g_xnvme_be_linux_aio_file = {
+	.async = &g_xnvme_be_linux_async_libaio,
+	.sync = &g_xnvme_be_cbi_sync_psync,
+	.admin = &g_xnvme_be_cbi_admin_shim,
+	.dev = &g_xnvme_be_dev_linux,
+	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem_overrides =
+		(const struct xnvme_be_mem *const[]){
+			&g_xnvme_be_linux_mem_hugepage,
+			NULL,
+		},
+	.attr =
+		{
+			.name = "linux",
+			.descr = "libaio with file I/O",
+			.caps = XNVME_BE_CAP_FILE,
+		},
+};
+#endif
+
 #else
 int
 xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr XNVME_UNUSED(opts))
@@ -187,23 +368,3 @@ xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr XNVME_UNUSED(opts))
 	return fprintf(stream, "linux;LINUX_VERSION_CODE-UAPI/NOSYS\n");
 }
 #endif
-
-struct xnvme_be xnvme_be_linux = {
-	.mem = XNVME_BE_NOSYS_MEM,
-	.admin = XNVME_BE_NOSYS_ADMIN,
-	.sync = XNVME_BE_NOSYS_SYNC,
-	.async = XNVME_BE_NOSYS_QUEUE,
-	.dev = XNVME_BE_NOSYS_DEV,
-	.attr =
-		{
-#ifdef XNVME_PLATFORM_LINUX_ENABLED
-#endif
-			.name = "linux",
-			.descr = "Linux kernel NVMe/block/file I/O",
-		},
-	.state = {0},
-#ifdef XNVME_PLATFORM_LINUX_ENABLED
-	.nobjs = sizeof g_xnvme_be_mixin_linux / sizeof *g_xnvme_be_mixin_linux,
-	.objs = g_xnvme_be_mixin_linux,
-#endif
-};

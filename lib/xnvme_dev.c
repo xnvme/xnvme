@@ -476,7 +476,7 @@ xnvme_dev_derive_geo(struct xnvme_dev *dev)
 
 #ifdef XNVME_PLATFORM_LINUX_ENABLED
 	/** Cap MDTS to kernel queue max_segments for Linux NVMe ioctl passthrough **/
-	if ((!strncmp(dev->be.attr.name, "linux", 5)) && (!strncmp(dev->be.sync.id, "nvme", 4))) {
+	if (!strncmp(dev->be.sync.id, "nvme", 4)) {
 		uint32_t max_seg = 32;
 		uint32_t phys_blk = 512;
 		uint32_t max_xfer;

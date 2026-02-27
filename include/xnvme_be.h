@@ -8,22 +8,20 @@
 #include <paths.h>
 #endif
 #include <libxnvme.h>
-#include <xnvme_be_registry.h>
 
 #define XNVME_BE_QUEUE_STATE_NBYTES 256
 
-#define XNVME_BE_ASYNC_NBYTES  64
-#define XNVME_BE_SYNC_NBYTES   24
-#define XNVME_BE_ADMIN_NBYTES  24
-#define XNVME_BE_DEV_NBYTES    32
-#define XNVME_BE_MEM_NBYTES    56
-#define XNVME_BE_ATTR_NBYTES   24
-#define XNVME_BE_STATE_NBYTES  128
-#define XNVME_BE_MIXINS_NBYTES 16
+#define XNVME_BE_ASYNC_NBYTES 64
+#define XNVME_BE_SYNC_NBYTES  24
+#define XNVME_BE_ADMIN_NBYTES 24
+#define XNVME_BE_DEV_NBYTES   32
+#define XNVME_BE_MEM_NBYTES   56
+#define XNVME_BE_ATTR_NBYTES  24
+#define XNVME_BE_STATE_NBYTES 128
 #define XNVME_BE_NBYTES                                                         \
 	(XNVME_BE_ASYNC_NBYTES + XNVME_BE_SYNC_NBYTES + XNVME_BE_ADMIN_NBYTES + \
 	 XNVME_BE_DEV_NBYTES + XNVME_BE_MEM_NBYTES + XNVME_BE_ATTR_NBYTES +     \
-	 XNVME_BE_STATE_NBYTES + XNVME_BE_MIXINS_NBYTES)
+	 XNVME_BE_STATE_NBYTES)
 
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_attr) == XNVME_BE_ATTR_NBYTES, "Incorrect size");
 
@@ -158,59 +156,22 @@ enum xnvme_be_cap {
 };
 
 /**
- * Backend function-interface
+ * Pre-populated backend configuration
+ *
+ * Complete "recipe" for populating a struct xnvme_be instance.
+ * Used by monolithic backends (SPDK, libvfn) that have exactly one
+ * implementation per interface type, eliminating mixin lookup.
  */
-enum xnvme_be_mixin_type {
-	XNVME_BE_MEM   = 0x1 << 0,
-	XNVME_BE_ADMIN = 0x1 << 1,
-	XNVME_BE_SYNC  = 0x1 << 2,
-	XNVME_BE_ASYNC = 0x1 << 3,
-	XNVME_BE_DEV   = 0x1 << 4,
-	XNVME_BE_ATTR  = 0x1 << 5,
-	XNVME_BE_END   = 0x1 << 6
+struct xnvme_be_config {
+	const struct xnvme_be_async *async;
+	const struct xnvme_be_sync *sync;
+	const struct xnvme_be_admin *admin;
+	const struct xnvme_be_dev *dev;
+	const struct xnvme_be_mem *mem;
+	const struct xnvme_be_mem *const
+		*mem_overrides; ///< NULL-terminated overrides (may be NULL)
+	struct xnvme_be_attr attr;
 };
-#define XNVME_BE_CONFIGURED \
-	(XNVME_BE_ADMIN | XNVME_BE_DEV | XNVME_BE_MEM | XNVME_BE_SYNC | XNVME_BE_ASYNC)
-
-static inline const char *
-xnvme_be_mixin_key(enum xnvme_be_mixin_type mtype)
-{
-	switch (mtype) {
-	case XNVME_BE_ASYNC:
-		return "async";
-	case XNVME_BE_SYNC:
-		return "sync";
-	case XNVME_BE_ADMIN:
-		return "admin";
-	case XNVME_BE_DEV:
-		return "dev";
-	case XNVME_BE_ATTR:
-		return "attr";
-	case XNVME_BE_MEM:
-		return "mem";
-	case XNVME_BE_END:
-		return "end";
-	}
-
-	return "enosys";
-}
-
-struct xnvme_be_mixin {
-	enum xnvme_be_mixin_type mtype;
-	const char *name;
-	const char *descr;
-	union {
-		struct xnvme_be_async *async;
-		struct xnvme_be_sync *sync;
-		struct xnvme_be_admin *admin;
-		struct xnvme_be_mem *mem;
-		struct xnvme_be_dev *dev;
-		void *obj;
-	};
-	int (*check_support)(struct xnvme_dev *, uint32_t);
-};
-
-#define XNVME_BE_MIXIN_NAME_LEN 32
 
 /**
  * Backend interface consisting of functions, attributes and instance state
@@ -223,9 +184,6 @@ struct xnvme_be {
 	struct xnvme_be_attr attr;            ///< Backend Attributes
 	struct xnvme_be_mem mem;              ///< Memory Management interface
 	uint8_t state[XNVME_BE_STATE_NBYTES]; ///< Backend instance state
-
-	struct xnvme_be_mixin *objs;
-	uint64_t nobjs;
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be) == XNVME_BE_NBYTES, "Incorrect size")
 
@@ -260,11 +218,5 @@ xnvme_be_pr(const struct xnvme_be *be, enum xnvme_pr opts);
 int
 xnvme_ident_yaml(FILE *stream, const struct xnvme_ident *ident, int indent, const char *sep,
 		 int head);
-
-static inline int
-xnvme_be_supported(struct xnvme_dev *XNVME_UNUSED(dev), uint32_t XNVME_UNUSED(opts))
-{
-	return 1;
-}
 
 #endif /* __INTERNAL_XNVME_BE_H */

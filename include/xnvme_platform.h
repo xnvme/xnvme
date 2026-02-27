@@ -5,7 +5,7 @@
 #ifndef __INTERNAL_XNVME_PLATFORM_H
 #define __INTERNAL_XNVME_PLATFORM_H
 
-struct xnvme_be;
+struct xnvme_be_config;
 struct xnvme_dev;
 struct xnvme_opts;
 struct xnvme_ident;
@@ -38,8 +38,9 @@ typedef int (*xnvme_enumerate_cb)(struct xnvme_dev *dev, void *cb_args);
  * at compile-time based on the target OS.
  */
 struct xnvme_platform {
-	const char *name;          /**< Platform name (e.g., "linux", "freebsd") */
-	struct xnvme_be **backends; /**< NULL-terminated array of available backends */
+	const char *name; /**< Platform name (e.g., "linux", "freebsd") */
+	const struct xnvme_be_config *const
+		*backends; /**< NULL-terminated flat array of config pointers */
 
 	int (*dev_open)(struct xnvme_dev *dev, struct xnvme_opts *opts);
 	int (*scan)(const char *sys_uri, struct xnvme_opts *opts, xnvme_scan_cb cb_func,
@@ -49,7 +50,7 @@ struct xnvme_platform {
 };
 
 /**
- * Shared dev_open implementation - iterates platform->backends, sets up mixins, opens device
+ * Shared dev_open implementation - iterates platform->backends configs, opens device
  *
  * All platforms use this unless they need custom backend selection logic.
  *
