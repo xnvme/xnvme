@@ -34,7 +34,7 @@ def test_keep_open(cijoe, device, be_opts, cli_args):
 def test_multi(cijoe, device, be_opts, cli_args):
     if be_opts["admin"] == "ramdisk":
         pytest.skip(reason=f"[be={be_opts['be']}] does not support enumeration")
-    if be_opts["admin"] in ["driverkit", "spdk"]:
+    if be_opts["admin"] in ["spdk"]:
         pytest.skip(
             reason=f"[be={be_opts['be']}] does not support repeatedly enumerating"
         )
