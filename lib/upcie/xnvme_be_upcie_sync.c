@@ -10,8 +10,8 @@
 #include <xnvme_be_upcie.h>
 
 int
-xnvme_be_upcie_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
-			   void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
+xnvme_be_upcie_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			   size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	struct xnvme_be_upcie_state *state = (void *)ctx->dev->be.state;
 	struct nvme_controller *ctrl = state->ctrlr->ctrl;
@@ -27,6 +27,10 @@ xnvme_be_upcie_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
 		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
 		break;
+	}
+
+	if (mbuf) {
+		ctx->cmd.common.mptr = hostmem_dma_v2p(&g_upcie_rte.heap, mbuf);
 	}
 
 	if (dbuf) {
