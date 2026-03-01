@@ -104,8 +104,8 @@ xnvme_be_upcie_queue_poke(struct xnvme_queue *queue, uint32_t max)
 }
 
 int
-xnvme_be_upcie_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
-			    void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
+xnvme_be_upcie_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			    size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	struct xnvme_queue_upcie *upcie_queue = (struct xnvme_queue_upcie *)ctx->async.queue;
 	struct nvme_command *cmd = (struct nvme_command *)&ctx->cmd;
@@ -141,6 +141,10 @@ xnvme_be_upcie_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 	if (dbuf) {
 		nvme_request_prep_command_prps_contig(req, &g_upcie_rte.heap, dbuf, dbuf_nbytes,
 						      cmd);
+	}
+
+	if (mbuf) {
+		cmd->mptr = hostmem_dma_v2p(&g_upcie_rte.heap, mbuf);
 	}
 
 	err = nvme_qpair_enqueue(&upcie_queue->qpair, cmd);
