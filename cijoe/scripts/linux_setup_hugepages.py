@@ -34,4 +34,12 @@ def main(args, cijoe):
             log.error(f"cmd({command}), err({err})")
             first_err = first_err if first_err else err
 
+    debug_files = [
+        "/proc/sys/vm/nr_hugepages",
+        "/proc/meminfo",
+        "/sys/kernel/mm/transparent_hugepage/enabled",
+    ]
+    for path in debug_files:
+        cijoe.run(f"cat {path}")
+
     return first_err
