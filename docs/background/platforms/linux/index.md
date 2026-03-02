@@ -90,6 +90,8 @@ interfaces, descriptions are available in the corresponding subsection.
 * Device Interfaces
 
   - `linux`, Use Linux file/dev handles and enumerate NVMe devices
+  - `upcie`, User-space NVMe driver via direct PCIe BAR access and
+    hugepage-based DMA. See {ref}`sec-backends-upcie`.
 
 By default the Linux platform will use `emu` for async. emulation wrapping
 around the synchronous Linux `nvme` driver ioctl-interface. This is done as
