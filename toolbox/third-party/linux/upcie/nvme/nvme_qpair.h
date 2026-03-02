@@ -25,7 +25,7 @@
  * See also: nvme_qid.h for queue ID (qid) management.
  *
  * @file nvme_qpair.h
- * @version 0.3.2
+ * @version 0.4.0
  */
 
 struct nvme_qpair {
@@ -277,6 +277,61 @@ nvme_qpair_submit_sync_contig_prps(struct nvme_qpair *qp, struct hostmem_heap *h
 	cmd->cid = req->cid;
 
 	nvme_request_prep_command_prps_contig(req, heap, dbuf, dbuf_nbytes, cmd);
+
+	err = nvme_qpair_enqueue(qp, cmd);
+	if (err) {
+		return -err;
+	}
+
+	nvme_qpair_sqdb_update(qp);
+
+	err = nvme_qpair_reap_cpl(qp, timeout_us, cpl);
+	if (err) {
+		return -err;
+	}
+
+	nvme_request_free(qp->rpool, cpl->cid);
+
+	if (cpl->status & 0x1FE) {
+		err = -EIO;
+	}
+
+	return err;
+}
+
+/**
+ * Submits a command with an iovec PRP payload, waits for completion, and populates `cpl`.
+ *
+ * This is intended for synchronous I/O commands using scatter-gather buffers.
+ * The function prepares the PRP entries automatically using the provided `heap` and `dvec`,
+ * sets up the command, submits it on the given qpair, and waits for completion.
+ *
+ * @param qp          Pointer to the submission queue pair.
+ * @param heap        Pointer to the host memory heap used for resolving physical addresses.
+ * @param dvec        Array of iovec structures describing the data segments.
+ * @param dvec_cnt    Number of elements in the dvec array.
+ * @param cmd         Pointer to the command to submit; `cid` will be assigned and PRPs set.
+ * @param timeout_us  Timeout in microseconds to wait for command completion.
+ * @param cpl         Pointer to a completion structure to receive the result.
+ *
+ * @return On success 0 is returned. On error, negative errno is returned to indicate the error.
+ */
+static inline int
+nvme_qpair_submit_sync_iov_prps(struct nvme_qpair *qp, struct hostmem_heap *heap,
+				struct iovec *dvec, size_t dvec_cnt, struct nvme_command *cmd,
+				int timeout_us, struct nvme_completion *cpl)
+{
+	struct nvme_request *req;
+	int err;
+
+	req = nvme_request_alloc(qp->rpool);
+	if (!req) {
+		UPCIE_DEBUG("FAILED: nvme_request_alloc(); errno(%d)", errno);
+		return -errno;
+	}
+	cmd->cid = req->cid;
+
+	nvme_request_prep_command_prps_iov(req, heap, dvec, dvec_cnt, cmd);
 
 	err = nvme_qpair_enqueue(qp, cmd);
 	if (err) {

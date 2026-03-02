@@ -58,7 +58,7 @@
  * also gains access to those physical addresses—without needing CAP_SYS_ADMIN.
  *
  * @file hostmem_hugepage.h
- * @version 0.3.2
+ * @version 0.4.0
  */
 
 struct hostmem_hugepage {
@@ -105,6 +105,10 @@ hostmem_hugepage_free(struct hostmem_hugepage *hugepage)
 		munmap(hugepage->virt, hugepage->size);
 	}
 
+	if (hugepage->fd >= 0) {
+		close(hugepage->fd);
+	}
+
 	if (HOSTMEM_BACKEND_HUGETLBFS == hugepage->config->backend) {
 		unlink(hugepage->path);
 	}
@@ -140,7 +144,7 @@ hostmem_hugepage_alloc(size_t size, struct hostmem_hugepage *hugepage,
 		hugepage->fd =
 			hostmem_internal_memfd_create("hostmem", hugepage->config->memfd_flags);
 		if (hugepage->fd < 0) {
-			UPCIE_DEBUG("FAILED: memfd_create(); errno(%errno)", errno);
+			UPCIE_DEBUG("FAILED: memfd_create(); errno(%d)", errno);
 			return -errno;
 		}
 

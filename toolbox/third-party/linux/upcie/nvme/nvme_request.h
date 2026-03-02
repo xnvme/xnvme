@@ -24,7 +24,7 @@
  * The stack implementation has an upper-bound of NVME_REQUEST_POOL_LEN elements.
  *
  * @file nvme_request.h
- * @version 0.3.2
+ * @version 0.4.0
  */
 
 #define NVME_REQUEST_POOL_LEN 1024
@@ -176,7 +176,7 @@ static inline void
 nvme_request_prep_command_prps_contig(struct nvme_request *request, struct hostmem_heap *heap,
 				      void *dbuf, size_t dbuf_nbytes, struct nvme_command *cmd)
 {
-	const uint64_t npages = dbuf_nbytes >> heap->config->pagesize_shift;
+	const uint64_t npages = (dbuf_nbytes + heap->config->pagesize - 1) >> heap->config->pagesize_shift;
 	const uint64_t pagesize = heap->config->pagesize;
 
 	/* Chaining is not supported, thus assert that the given dbuf fits. */
@@ -196,5 +196,60 @@ nvme_request_prep_command_prps_contig(struct nvme_request *request, struct hostm
 
 			prp_list[i - 1] = cmd->prp1 + (i << heap->config->pagesize_shift);
 		}
+	}
+}
+
+/**
+ * Prepare the PRP list for a command with an iovec (scatter-gather) data buffer.
+ *
+ * This function initializes the Physical Region Page (PRP) entries in the given NVMe command
+ * (`cmd`) using the provided request and an array of iovec entries. Each iovec entry is assumed to
+ * be page-aligned and allocated from the given `heap`.
+ *
+ * Caveats
+ * -------
+ *
+ * - Each iovec base must be page-aligned and allocated from `heap`.
+ * - Does *not* support PRP list chaining; only a single list page is constructed.
+ *
+ * @param request Pointer to the NVMe request context used for tracking and metadata.
+ * @param heap Pointer to the hostmemory heap that iovec buffers are allocated within.
+ * @param dvec Array of iovec structures describing the data segments.
+ * @param dvec_cnt Number of elements in the dvec array.
+ * @param cmd Pointer to the NVMe command to be prepared with PRP entries.
+ */
+static inline void
+nvme_request_prep_command_prps_iov(struct nvme_request *request, struct hostmem_heap *heap,
+				   struct iovec *dvec, size_t dvec_cnt, struct nvme_command *cmd)
+{
+	const uint64_t pagesize = heap->config->pagesize;
+	uint64_t *prp_list = request->prp;
+	size_t prp_idx = 0;
+
+	cmd->prp1 = hostmem_dma_v2p(heap, dvec[0].iov_base);
+
+	for (size_t i = 0; i < dvec_cnt; ++i) {
+		uint8_t *base = dvec[i].iov_base;
+		size_t remaining = dvec[i].iov_len;
+		size_t offset = 0;
+
+		/* Skip the first page of the first iovec — it is PRP1 */
+		if (i == 0) {
+			offset = pagesize;
+			remaining = (remaining > pagesize) ? remaining - pagesize : 0;
+		}
+
+		while (remaining > 0) {
+			prp_list[prp_idx++] = hostmem_dma_v2p(heap, base + offset);
+
+			offset += pagesize;
+			remaining = (remaining > pagesize) ? remaining - pagesize : 0;
+		}
+	}
+
+	if (prp_idx == 1) {
+		cmd->prp2 = prp_list[0];
+	} else if (prp_idx > 1) {
+		cmd->prp2 = request->prp_addr;
 	}
 }
