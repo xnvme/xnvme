@@ -23,7 +23,7 @@
  * pci_func_bar.region`), obtained via UIO, VFIO, or similar mechanisms.
  *
  * @file mmio.h
- * @version 0.3.2
+ * @version 0.4.0
  */
 
 /**

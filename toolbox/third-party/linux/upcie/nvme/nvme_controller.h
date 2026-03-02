@@ -9,7 +9,7 @@
  * including BAR-space mappings, controller registers, and values derived from register content.
  *
  * @file nvme_controller.h
- * @version 0.3.2
+ * @version 0.4.0
  */
 
 /**
@@ -44,6 +44,7 @@ nvme_controller_close(struct nvme_controller *ctrlr)
 static inline int
 nvme_controller_open(struct nvme_controller *ctrlr, const char *bdf, struct hostmem_heap *heap)
 {
+	uint64_t cap;
 	void *bar0;
 	int err;
 
@@ -72,7 +73,8 @@ nvme_controller_open(struct nvme_controller *ctrlr, const char *bdf, struct host
 	}
 	bar0 = ctrlr->func.bars[0].region;
 
-	ctrlr->timeout_ms = nvme_reg_cap_get_to(nvme_mmio_cap_read(bar0)) * 500;
+	cap = nvme_mmio_cap_read(bar0);
+	ctrlr->timeout_ms = nvme_reg_cap_get_to(cap) * 500;
 
 	nvme_mmio_cc_disable(bar0);
 
@@ -92,8 +94,10 @@ nvme_controller_open(struct nvme_controller *ctrlr, const char *bdf, struct host
 			   hostmem_dma_v2p(heap, ctrlr->aq.cq), ctrlr->aq.depth);
 
 	{
+		uint32_t css = (nvme_reg_cap_get_css(cap) & (1 << 6)) ? 0x6 : 0x0;
 		uint32_t cc = 0;
-		cc = nvme_reg_cc_set_css(cc, 0x0);
+
+		cc = nvme_reg_cc_set_css(cc, css);
 		cc = nvme_reg_cc_set_shn(cc, 0x0);
 		cc = nvme_reg_cc_set_mps(cc, 0x0);
 		cc = nvme_reg_cc_set_ams(cc, 0x0);
