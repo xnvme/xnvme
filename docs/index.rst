@@ -27,7 +27,8 @@ size and introducing the concept of a device geometry.
 The foundation is as such fairly low-level, sitting right on top of a NVMe
 driver. The actual NVMe driver being used by ``libxnvme`` is re-targetable and
 can be any one of the GNU/Linux Kernel NVMe driver via ``libaio``, ``IOCTLs``,
-and ``io_uring``, the SPDK NVMe driver, or your own custom NVMe driver.
+and ``io_uring``, the SPDK NVMe driver, the uPCIe NVMe driver, or your own
+custom NVMe driver.
 
 As such, ``libxnvme`` provides a unifying ``C API`` for NVMe tool builders,
 application developers, and for anyone wanting their host-defined software to

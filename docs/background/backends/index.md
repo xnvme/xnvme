@@ -34,34 +34,34 @@ Backend Config Selection
 
 The valid combinations of interfaces and platforms are listed below:
 
-|  | {ref}`sec-platforms-linux` | {ref}`sec-platforms-freebsd` | {ref}`sec-platforms-windows` | {ref}`sec-platforms-macos` | {ref}`sec-backends-spdk` | {ref}`sec-backends-libvfn` |
-|---|---|---|---|---|---|---|
-| io_uring | **yes** | no | no | no | no | no |
-| io_uring passthru | **yes** | no | no | no | no | no |
-| libaio | **yes** | no | no | no | no | no |
-| kqueue | no | **yes** | no | no | no | no |
-| POSIX aio | **yes** | **yes** | no | **yes** | no | no |
-| NVMe Driver (vfio-pci) | no | no | no | no | **yes** | **yes** |
-| NVMe Driver (uio-generic) | no | no | no | no | **yes** | no |
-| Driverkit (MacVFN) | no | no | no | **yes** | no | no |
-| I/O Control Ports | no | no | **yes** | no | no | no |
-| I/O Ring | no | no | **yes** | no | no | no |
-| emu | **yes** | **yes** | **yes** | **yes** | **yes** | **yes** |
-| thrpool | **yes** | **yes** | **yes** | **yes** | **yes** | **yes** |
-| nil | **yes** | **yes** | **yes** | **yes** | **yes** | **yes** |
+|  | {ref}`sec-platforms-linux` | {ref}`sec-platforms-freebsd` | {ref}`sec-platforms-windows` | {ref}`sec-platforms-macos` | {ref}`sec-backends-spdk` | {ref}`sec-backends-libvfn` | {ref}`sec-backends-upcie` |
+|---|---|---|---|---|---|---|---|
+| io_uring | **yes** | no | no | no | no | no | no |
+| io_uring passthru | **yes** | no | no | no | no | no | no |
+| libaio | **yes** | no | no | no | no | no | no |
+| kqueue | no | **yes** | no | no | no | no | no |
+| POSIX aio | **yes** | **yes** | no | **yes** | no | no | no |
+| NVMe Driver (vfio-pci) | no | no | no | no | **yes** | **yes** | no |
+| NVMe Driver (uio-generic) | no | no | no | no | **yes** | no | **yes** |
+| Driverkit (MacVFN) | no | no | no | **yes** | no | no | no |
+| I/O Control Ports | no | no | **yes** | no | no | no | no |
+| I/O Ring | no | no | **yes** | no | no | no | no |
+| emu | **yes** | **yes** | **yes** | **yes** | **yes** | **yes** | **yes** |
+| thrpool | **yes** | **yes** | **yes** | **yes** | **yes** | **yes** | **yes** |
+| nil | **yes** | **yes** | **yes** | **yes** | **yes** | **yes** | **yes** |
 
-|  | {ref}`sec-platforms-linux` | {ref}`sec-platforms-freebsd` | {ref}`sec-platforms-windows` | {ref}`sec-platforms-macos` | {ref}`sec-backends-spdk` | {ref}`sec-backends-libvfn` |
-|---|---|---|---|---|---|---|
-| psync | **yes** | **yes** | **yes** | **yes** | no | no |
-| Block-Layer ioctl() | **yes** | no | **yes** | no | no | no |
-| NVMe Driver ioctl() | **yes** | **yes** | **yes** | no | no | no |
-| NVMe Driver (vfio-pci) | no | no | no | no | **yes** | **yes** |
-| NVMe Driver (uio-generic) | no | no | no | no | **yes** | no |
+|  | {ref}`sec-platforms-linux` | {ref}`sec-platforms-freebsd` | {ref}`sec-platforms-windows` | {ref}`sec-platforms-macos` | {ref}`sec-backends-spdk` | {ref}`sec-backends-libvfn` | {ref}`sec-backends-upcie` |
+|---|---|---|---|---|---|---|---|
+| psync | **yes** | **yes** | **yes** | **yes** | no | no | no |
+| Block-Layer ioctl() | **yes** | no | **yes** | no | no | no | no |
+| NVMe Driver ioctl() | **yes** | **yes** | **yes** | no | no | no | no |
+| NVMe Driver (vfio-pci) | no | no | no | no | **yes** | **yes** | no |
+| NVMe Driver (uio-generic) | no | no | no | no | **yes** | no | **yes** |
 
-|  | {ref}`sec-platforms-linux` | {ref}`sec-platforms-freebsd` | {ref}`sec-platforms-windows` | {ref}`sec-platforms-macos` | {ref}`sec-backends-spdk` | {ref}`sec-backends-libvfn` |
-|---|---|---|---|---|---|---|
-| libc | **yes** | **yes** | **yes** | **yes** | **yes** | **yes** |
-| hugepages | **yes** | no | no | no | no | no |
+|  | {ref}`sec-platforms-linux` | {ref}`sec-platforms-freebsd` | {ref}`sec-platforms-windows` | {ref}`sec-platforms-macos` | {ref}`sec-backends-spdk` | {ref}`sec-backends-libvfn` | {ref}`sec-backends-upcie` |
+|---|---|---|---|---|---|---|---|
+| libc | **yes** | **yes** | **yes** | **yes** | **yes** | **yes** | no |
+| hugepages | **yes** | no | no | no | no | no | **yes** |
 
 
 ```{toctree}
@@ -70,6 +70,7 @@ The valid combinations of interfaces and platforms are listed below:
 
 spdk/index
 libvfn/index
+upcie/index
 xnvme_be_macos
 common/index
 common/interface/index
