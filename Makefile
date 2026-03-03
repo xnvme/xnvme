@@ -340,20 +340,6 @@ cijoe-do-bootimage-freebsd-amd64:
 		-l
 	@echo "## xNVME: cijoe-do-bootimage-freebsd-amd64 [DONE]"
 
-define cijoe-do-linux-kdebs-help
-# Build a custom Linux kernel as installable packages (.deb)
-endef
-.PHONY: cijoe-do-linux-kdebs
-cijoe-do-linux-kdebs:
-	@echo "## xNVMe: cijoe-do-linux-kdebs"
-	cd cijoe && cijoe workflows/build-kdebs.yaml \
-		--monitor \
-		--config "configs/debian-trixie.toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
-		-l
-	@echo "## xNVME: cijoe-do-linux-kdebs [DONE]"
-
 define cijoe-report-help
 # Produce a report for the latest cijoe state (cijoe/cijoe-output)
 endef
