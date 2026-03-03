@@ -270,40 +270,40 @@ static int
 enumerate_controller(const char *uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
 		     void *cb_args)
 {
-	struct xnvme_opts ctrl_opts = *opts;
-	struct xnvme_dev *ctrl_dev;
+	struct xnvme_opts ctrlr_opts = *opts;
+	struct xnvme_dev *ctrlr_dev;
 	struct xnvme_spec_idfy *idfy_buf;
 	struct xnvme_cmd_ctx ctx;
 	uint32_t *nslist;
 	int err;
 
-	ctrl_opts.nsid = 0;
-	ctrl_dev = xnvme_dev_open(uri, &ctrl_opts);
-	if (!ctrl_dev) {
+	ctrlr_opts.nsid = 0;
+	ctrlr_dev = xnvme_dev_open(uri, &ctrlr_opts);
+	if (!ctrlr_dev) {
 		XNVME_DEBUG("FAILED: xnvme_dev_open(%s) for controller", uri);
 		return -errno;
 	}
 
-	idfy_buf = xnvme_buf_alloc(ctrl_dev, sizeof(*idfy_buf));
+	idfy_buf = xnvme_buf_alloc(ctrlr_dev, sizeof(*idfy_buf));
 	if (!idfy_buf) {
 		XNVME_DEBUG("FAILED: xnvme_buf_alloc()");
-		xnvme_dev_close(ctrl_dev);
+		xnvme_dev_close(ctrlr_dev);
 		return -ENOMEM;
 	}
 
 	err = xnvme_buf_clear(idfy_buf, sizeof(*idfy_buf));
 	if (err) {
 		XNVME_DEBUG("FAILED: xnvme_buf_clear(), err: %d", err);
-		xnvme_buf_free(ctrl_dev, idfy_buf);
+		xnvme_buf_free(ctrlr_dev, idfy_buf);
 		return err;
 	}
 
-	ctx = xnvme_cmd_ctx_from_dev(ctrl_dev);
+	ctx = xnvme_cmd_ctx_from_dev(ctrlr_dev);
 	err = xnvme_adm_idfy(&ctx, XNVME_SPEC_IDFY_NSLIST, 0, 0, 0, 0, idfy_buf);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("FAILED: Identify Active NS List, err: %d", err);
-		xnvme_buf_free(ctrl_dev, idfy_buf);
-		xnvme_dev_close(ctrl_dev);
+		xnvme_buf_free(ctrlr_dev, idfy_buf);
+		xnvme_dev_close(ctrlr_dev);
 		return err ? err : -EIO;
 	}
 
@@ -325,8 +325,8 @@ enumerate_controller(const char *uri, struct xnvme_opts *opts, xnvme_enumerate_c
 		}
 	}
 
-	xnvme_buf_free(ctrl_dev, idfy_buf);
-	xnvme_dev_close(ctrl_dev);
+	xnvme_buf_free(ctrlr_dev, idfy_buf);
+	xnvme_dev_close(ctrlr_dev);
 	return 0;
 }
 
