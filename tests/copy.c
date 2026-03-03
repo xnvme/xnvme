@@ -89,7 +89,12 @@ test_copy(struct xnvme_cli *cli)
 		XNVME_DEBUG("Failed: allocating write buffer");
 		goto exit;
 	}
-	xnvme_buf_fill(wbuf, nbytes, "anum");
+
+	err = xnvme_buf_fill(wbuf, nbytes, "anum");
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_fill()", err);
+		goto exit;
+	}
 
 	rbuf = xnvme_buf_alloc(dev, nbytes);
 	if (!rbuf) {
@@ -97,7 +102,12 @@ test_copy(struct xnvme_cli *cli)
 		XNVME_DEBUG("Failed: allocating read buffer");
 		goto exit;
 	}
-	xnvme_buf_fill(rbuf, nbytes, "0");
+
+	err = xnvme_buf_fill(rbuf, nbytes, "0");
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_fill()", err);
+		goto exit;
+	}
 
 	source_range = xnvme_buf_alloc(dev, sizeof(*source_range));
 	if (!source_range) {

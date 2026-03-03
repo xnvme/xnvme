@@ -126,7 +126,11 @@ fill_lba_range_and_write_buffer_with_pattern(uint8_t *wbuf, size_t buf_nbytes, u
 {
 	int err;
 
-	xnvme_buf_fill(wbuf, buf_nbytes, pattern);
+	err = xnvme_buf_fill(wbuf, buf_nbytes, pattern);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_fill()", err);
+		goto exit;
+	}
 
 	*written_bytes = 0;
 	for (uint64_t slba = rng_slba; slba <= rng_elba; slba += mdts_naddr) {
@@ -338,7 +342,11 @@ test_write_zeroes(struct xnvme_cli *cli)
 	xnvme_cli_pinf("Wrote zeroes to LBA range [%ld,%ld]", rng_slba, rng_elba);
 
 	// Set the rbuf to != 0 so we know that we read zeroes
-	xnvme_buf_fill(rbuf, buf_nbytes, "a");
+	err = xnvme_buf_fill(rbuf, buf_nbytes, "a");
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_fill()", err);
+		goto exit;
+	}
 
 	err = xnvme_buf_clear(wbuf, buf_nbytes);
 	if (err) {

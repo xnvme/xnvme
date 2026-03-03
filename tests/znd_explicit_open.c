@@ -38,6 +38,7 @@ test_open_zdptr(struct xnvme_cli *cli)
 		err = -errno;
 		goto exit;
 	}
+
 	err = xnvme_buf_fill(zde, zde_nbytes, "anum");
 	if (err) {
 		xnvme_cli_perr("xnvme_buf_fill()", err);

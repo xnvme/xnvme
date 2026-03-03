@@ -30,7 +30,12 @@ test_file_fsync(struct xnvme_cli *cli)
 		xnvme_file_close(fh);
 		return err;
 	}
-	xnvme_buf_fill(buf, bytes_per_write, "anum");
+
+	err = xnvme_buf_fill(buf, bytes_per_write, "anum");
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_fill()", err);
+		goto exit;
+	}
 
 	for (size_t i = 0; i < num_writes; i++) {
 		struct xnvme_cmd_ctx ctx = xnvme_file_get_cmd_ctx(fh);
@@ -80,7 +85,12 @@ file_write_ascii(const char *path, size_t nbytes, struct xnvme_opts *opts)
 		xnvme_file_close(fh);
 		return err;
 	}
-	xnvme_buf_fill(buf, nbytes, "anum");
+
+	err = xnvme_buf_fill(buf, nbytes, "anum");
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_fill()", err);
+		goto exit;
+	}
 
 	ctx = xnvme_file_get_cmd_ctx(fh);
 	err = xnvme_file_pwrite(&ctx, buf, nbytes, 0);

@@ -280,7 +280,11 @@ iowork_from_cli(struct xnvme_cli *cli, struct iowork *work)
 {
 	int err;
 
-	xnvme_buf_fill(work, sizeof(*work), "zero");
+	err = xnvme_buf_fill(work, sizeof(*work), "zero");
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_buf_fill(), err: %d", err);
+		return err;
+	}
 
 	work->dev = cli->args.dev;
 	work->nsid = xnvme_dev_get_nsid(work->dev);
@@ -313,7 +317,12 @@ iowork_from_cli(struct xnvme_cli *cli, struct iowork *work)
 		XNVME_DEBUG("FAILED: xnvme_buf_alloc(data), err: %d", errno);
 		goto failed;
 	}
-	xnvme_buf_fill(work->wbuf, work->range.nbytes, "rand-t");
+
+	err = xnvme_buf_fill(work->wbuf, work->range.nbytes, "rand-t");
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_buf_fill(), err: %d", err);
+		goto failed;
+	}
 
 	work->rbuf = xnvme_buf_alloc(cli->args.dev, work->range.nbytes);
 	if (!work->rbuf) {
@@ -321,7 +330,12 @@ iowork_from_cli(struct xnvme_cli *cli, struct iowork *work)
 		XNVME_DEBUG("FAILED: xnvme_buf_alloc(buf), err: %d", errno);
 		goto failed;
 	}
-	xnvme_buf_fill(work->rbuf, work->io.nbytes, "zero");
+
+	err = xnvme_buf_fill(work->rbuf, work->io.nbytes, "zero");
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_buf_fill(), err: %d", err);
+		goto failed;
+	}
 
 	err = xnvme_queue_init(work->dev, work->qdepth * 2, 0, &work->queue);
 	if (err) {
@@ -347,7 +361,12 @@ iowork_from_cli(struct xnvme_cli *cli, struct iowork *work)
 			XNVME_DEBUG("FAILED: xnvme_buf_alloc(vec), err: %d", errno);
 			goto failed;
 		}
-		xnvme_buf_fill(worker->vec, sizeof(*worker->vec) * worker->vec_cnt, "zero");
+
+		err = xnvme_buf_fill(worker->vec, sizeof(*worker->vec) * worker->vec_cnt, "zero");
+		if (err) {
+			XNVME_DEBUG("FAILED: xnvme_buf_fill(), err: %d", err);
+			goto failed;
+		}
 	}
 
 	return 0;

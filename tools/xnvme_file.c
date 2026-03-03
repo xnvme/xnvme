@@ -141,7 +141,12 @@ dump_sync(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	xnvme_buf_fill(buf, buf_nbytes, "anum");
+
+	err = xnvme_buf_fill(buf, buf_nbytes, "anum");
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_fill()", err);
+		goto exit;
+	}
 
 	xnvme_cli_pinf("dump-sync: {fpath: %s, tbytes: %zu, buf_nbytes: %zu iosize: %zu}", fpath,
 		       tbytes, buf_nbytes, iosize);
@@ -207,7 +212,12 @@ dump_sync_iovec(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	xnvme_buf_fill(buf, buf_nbytes, "anum");
+
+	err = xnvme_buf_fill(buf, buf_nbytes, "anum");
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_fill()", err);
+		goto exit;
+	}
 
 	xnvme_cli_pinf("dump-sync-iovec: {fpath: %s, tbytes: %zu, buf_nbytes: %zu iosize: %zu}",
 		       fpath, tbytes, buf_nbytes, iosize);
@@ -285,7 +295,12 @@ dump_async(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	xnvme_buf_fill(buf, buf_nbytes, "anum");
+
+	err = xnvme_buf_fill(buf, buf_nbytes, "anum");
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_fill()", err);
+		goto exit;
+	}
 
 	err = xnvme_queue_init(fh, qdepth, 0, &queue);
 	if (err) {
@@ -390,7 +405,12 @@ dump_async_iovec(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	xnvme_buf_fill(buf, buf_nbytes, "anum");
+
+	err = xnvme_buf_fill(buf, buf_nbytes, "anum");
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_fill()", err);
+		goto exit;
+	}
 
 	err = xnvme_queue_init(fh, qdepth, 0, &queue);
 	if (err) {
@@ -484,7 +504,11 @@ load_sync(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	xnvme_buf_fill(buf, buf_nbytes, "zero");
+
+	err = xnvme_buf_fill(buf, buf_nbytes, "zero");
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_fill()", err);
+	}
 
 	xnvme_cli_pinf("load-sync: {fpath: %s, tbytes: %zu, buf_nbytes: %zu iosize: %zu}", fpath,
 		       tbytes, buf_nbytes, iosize);
@@ -547,7 +571,12 @@ load_async(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	xnvme_buf_fill(buf, buf_nbytes, "zero");
+
+	err = xnvme_buf_fill(buf, buf_nbytes, "zero");
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_fill()", err);
+		goto exit;
+	}
 
 	err = xnvme_queue_init(fh, qdepth, 0, &queue);
 	if (err) {
@@ -649,7 +678,12 @@ copy_file_sync(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	xnvme_buf_fill(buf, buf_nbytes, "zero");
+
+	err = xnvme_buf_fill(buf, buf_nbytes, "zero");
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_fill()", err);
+		goto exit;
+	}
 
 	xnvme_cli_pinf("copy-sync: {src: %s, dst: %s, tbytes: %zu, buf_nbytes: %zu, iosize: %zu",
 		       src_fpath, dst_fpath, tbytes, buf_nbytes, iosize);
@@ -741,7 +775,12 @@ copy_file_async(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	xnvme_buf_fill(buf, buf_nbytes, "zero");
+
+	err = xnvme_buf_fill(buf, buf_nbytes, "zero");
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_fill()", err);
+		goto exit;
+	}
 
 	err = xnvme_queue_init(src_fh, qdepth, 0, &queue);
 	if (err) {

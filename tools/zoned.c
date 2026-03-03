@@ -411,6 +411,7 @@ cmd_write(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
+
 	err = xnvme_buf_fill(dbuf, dbuf_nbytes,
 			     cli->args.data_input ? cli->args.data_input : "anum");
 	if (err) {
@@ -426,6 +427,7 @@ cmd_write(struct xnvme_cli *cli)
 			xnvme_cli_perr("xnvme_buf_alloc()", err);
 			goto exit;
 		}
+
 		err = xnvme_buf_fill(mbuf, mbuf_nbytes, "anum");
 		if (err) {
 			xnvme_cli_perr("xnvme_buf_fill()", err);
@@ -481,6 +483,7 @@ cmd_append(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
+
 	err = xnvme_buf_fill(dbuf, dbuf_nbytes, "anum");
 	if (err) {
 		xnvme_cli_perr("xnvme_buf_fill()", err);
@@ -534,6 +537,7 @@ _cmd_mgmt(struct xnvme_cli *cli, uint8_t zsa)
 			xnvme_cli_perr("xnvme_buf_alloc()", err);
 			goto exit;
 		}
+
 		err = xnvme_buf_fill(dbuf, dbuf_nbytes,
 				     cli->args.data_input ? cli->args.data_input : "anum");
 		if (err) {

@@ -327,7 +327,12 @@ thread_fn(void *arg)
 			xnvme_cli_perr("Failed: xnvme_buf_alloc()", err);
 			goto exit;
 		}
-		xnvme_buf_fill(job->buf, args->iosize, "anum");
+
+		err = xnvme_buf_fill(job->buf, args->iosize, "anum");
+		if (err) {
+			xnvme_cli_perr("Failed: xnvme_buf_fill()", err);
+			goto exit;
+		}
 	}
 
 	xnvme_timer_start(&timer);
@@ -629,18 +634,24 @@ failed_pthread_close:
  * @param slba    Starting LBA of the first sector in the buffer
  * @param nlb     Number of logical blocks in the buffer
  */
-static void
+static int
 fill_pattern(void *buf, size_t nbytes, uint64_t slba, uint16_t nlb)
 {
 	size_t lba_size = nbytes / nlb;
+	int err;
 
 	for (uint16_t i = 0; i < nlb; i++) {
 		uint8_t *p = (uint8_t *)buf + i * lba_size;
 		uint64_t lba = slba + i;
 
-		xnvme_buf_fill(p, lba_size, "anum");
+		err = xnvme_buf_fill(p, lba_size, "anum");
+		if (err) {
+			xnvme_cli_perr("xnvme_buf_fill()", err);
+			return err;
+		}
 		memcpy(p, &lba, sizeof(lba));
 	}
+	return 0;
 }
 
 /**
@@ -707,7 +718,12 @@ xnvmeperf_verify(struct xnvmeperf_args *args)
 		for (int i = 0; i < nios; i++) {
 			uint64_t slba = job.offset;
 
-			fill_pattern(write_buf, args->iosize, slba, job.nlb);
+			err = fill_pattern(write_buf, args->iosize, slba, job.nlb);
+			if (err) {
+				fprintf(stderr, "Failed: fill_pattern() at IO %d, err: %d\n", i,
+					err);
+				break;
+			}
 
 			struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(job.queue);
 			while (!ctx) {
@@ -777,7 +793,13 @@ xnvmeperf_verify(struct xnvmeperf_args *args)
 				xnvme_queue_poke(job.queue, 0);
 			}
 
-			fill_pattern(expect_buf, args->iosize, slba, job.nlb);
+			err = fill_pattern(expect_buf, args->iosize, slba, job.nlb);
+			if (err) {
+				fprintf(stderr, "Failed: fill_pattern() at IO %d, err: %d\n", i,
+					err);
+				break;
+			}
+
 			err = xnvme_buf_diff(expect_buf, read_buf, args->iosize, &diff);
 			if (err) {
 				fprintf(stderr, "Failed: xnvme_buf_diff() at IO %d, err: %d\n", i,
