@@ -88,8 +88,18 @@ cmd_verify(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	xnvme_buf_fill(dbuf, buf_nbytes, "anum");
-	xnvme_buf_fill(vbuf, buf_nbytes, "zero");
+
+	err = xnvme_buf_fill(dbuf, buf_nbytes, "anum");
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_fill()", err);
+		goto exit;
+	}
+
+	err = xnvme_buf_fill(vbuf, buf_nbytes, "zero");
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_fill()", err);
+		goto exit;
+	}
 
 	xnvme_cli_pinf("Using XNVME_CMD_ASYNC mode");
 

@@ -51,7 +51,12 @@ test_compare(struct xnvme_cli *cli)
 		XNVME_DEBUG("Failed: allocating write buffer");
 		goto exit;
 	}
-	xnvme_buf_fill(buf, nbytes, "anum");
+
+	err = xnvme_buf_fill(buf, nbytes, "anum");
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_fill()", err);
+		goto exit;
+	}
 
 	// Write data to the buffer
 	nsid = xnvme_dev_get_nsid(dev);

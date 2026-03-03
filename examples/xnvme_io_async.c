@@ -78,6 +78,7 @@ sub_async_read(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
+
 	err = xnvme_buf_fill(buf, rng.nbytes, "zero");
 	if (err) {
 		xnvme_cli_perr("xnvme_buf_fill()", err);
@@ -211,6 +212,7 @@ sub_async_write(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
+
 	err = xnvme_buf_fill(buf, rng.nbytes,
 			     cli->args.data_input ? cli->args.data_input : "anum");
 	if (err) {

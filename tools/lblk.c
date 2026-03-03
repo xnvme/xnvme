@@ -241,6 +241,7 @@ sub_write(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
+
 	err = xnvme_buf_fill(dbuf, dbuf_nbytes,
 			     cli->args.data_input ? cli->args.data_input : "anum");
 	if (err) {
@@ -256,6 +257,7 @@ sub_write(struct xnvme_cli *cli)
 			xnvme_cli_perr("xnvme_buf_alloc()", err);
 			goto exit;
 		}
+
 		err = xnvme_buf_fill(mbuf, mbuf_nbytes, "anum");
 		if (err) {
 			xnvme_cli_perr("xnvme_buf_fill()", err);
@@ -515,6 +517,7 @@ sub_write_directive(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
+
 	err = xnvme_buf_fill(dbuf, dbuf_nbytes,
 			     cli->args.data_input ? cli->args.data_input : "anum");
 	if (err) {
@@ -530,6 +533,7 @@ sub_write_directive(struct xnvme_cli *cli)
 			xnvme_cli_perr("xnvme_buf_alloc()", err);
 			goto exit;
 		}
+
 		err = xnvme_buf_fill(mbuf, mbuf_nbytes, "anum");
 		if (err) {
 			xnvme_cli_perr("xnvme_buf_fill()", err);
@@ -613,6 +617,7 @@ sub_write_read_pi(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
+
 	err = xnvme_buf_fill(dbuf, dbuf_nbytes,
 			     cli->args.data_input ? cli->args.data_input : "anum");
 	if (err) {
@@ -628,6 +633,7 @@ sub_write_read_pi(struct xnvme_cli *cli)
 			xnvme_cli_perr("xnvme_buf_alloc()", err);
 			goto exit;
 		}
+
 		err = xnvme_buf_fill(mbuf, mbuf_nbytes, "anum");
 		if (err) {
 			xnvme_cli_perr("xnvme_buf_fill()", err);
@@ -775,6 +781,7 @@ sub_compare(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
+
 	err = xnvme_buf_fill(dbuf, dbuf_nbytes,
 			     cli->args.data_input ? cli->args.data_input : "anum");
 	if (err) {
@@ -790,6 +797,7 @@ sub_compare(struct xnvme_cli *cli)
 			xnvme_cli_perr("xnvme_buf_alloc()", err);
 			goto exit;
 		}
+
 		err = xnvme_buf_fill(mbuf, mbuf_nbytes,
 				     cli->args.meta_input ? cli->args.meta_input : "anum");
 		if (err) {
