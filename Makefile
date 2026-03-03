@@ -301,15 +301,6 @@ cijoe-sync-tgz:
 		xnvme_source_sync
 	@echo "## xNVME: cijoe-sync-tgz [DONE]"
 
-define cijoe-do-selftest-help
-# Run the cijoe selftest, this is useful after setting up cijoe
-endef
-.PHONY: cijoe-do-selftest
-cijoe-do-selftest:
-	@echo "## xNVMe: cijoe-do-selftest"
-	cd cijoe && pytest tests/selftest --config configs/default-config.toml --config configs/xnvme.toml
-	@echo "## xNVME: cijoe-do-selftest [DONE]"
-
 define cijoe-do-bootimage-debian-trixie-amd64-help
 # Create a Debian Trixie - amd64 - bootable system image for a qemu-guest
 endef
