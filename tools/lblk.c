@@ -155,7 +155,12 @@ sub_read(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	xnvme_buf_clear(dbuf, dbuf_nbytes);
+
+	err = xnvme_buf_clear(dbuf, dbuf_nbytes);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_clear()", err);
+		goto exit;
+	}
 
 	if (mbuf_nbytes) {
 		xnvme_cli_pinf("Alloc/clear mbuf, mbuf_nbytes: %zu", mbuf_nbytes);
@@ -165,7 +170,12 @@ sub_read(struct xnvme_cli *cli)
 			xnvme_cli_perr("xnvme_buf_alloc()", err);
 			goto exit;
 		}
-		xnvme_buf_clear(mbuf, mbuf_nbytes);
+
+		err = xnvme_buf_clear(mbuf, mbuf_nbytes);
+		if (err) {
+			xnvme_cli_perr("xnvme_buf_clear()", err);
+			goto exit;
+		}
 	}
 
 	xnvme_cli_pinf("Sending the command...");
@@ -685,10 +695,18 @@ sub_write_read_pi(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	xnvme_buf_clear(dbuf, dbuf_nbytes);
+	err = xnvme_buf_clear(dbuf, dbuf_nbytes);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_clear()", err);
+		goto exit;
+	}
 
 	if (mbuf_nbytes) {
-		xnvme_buf_clear(mbuf, mbuf_nbytes);
+		err = xnvme_buf_clear(mbuf, mbuf_nbytes);
+		if (err) {
+			xnvme_cli_perr("xnvme_buf_clear()", err);
+			goto exit;
+		}
 	}
 
 	xnvme_prep_nvm(&ctx, XNVME_SPEC_NVM_OPC_READ, nsid, slba, nlb);

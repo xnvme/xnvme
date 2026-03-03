@@ -126,7 +126,12 @@ cmd_retrieve(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	xnvme_buf_clear(dbuf, dbuf_nbytes);
+
+	err = xnvme_buf_clear(dbuf, dbuf_nbytes);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_clear()", err);
+		goto exit;
+	}
 
 	xnvme_cli_pinf("Sending xnvme_kvs_retrieve command");
 	err = xnvme_kvs_retrieve(&ctx, nsid, cli->args.kv_key, strlen(cli->args.kv_key), dbuf,
@@ -278,7 +283,12 @@ cmd_list(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	xnvme_buf_clear(dbuf, dbuf_nbytes);
+
+	err = xnvme_buf_clear(dbuf, dbuf_nbytes);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_clear()", err);
+		goto exit;
+	}
 
 	XNVME_DEBUG("Sending xnvme_kvs_list command");
 

@@ -87,10 +87,11 @@ xnvme_buf_free(const struct xnvme_dev *dev, void *buf)
 	xnvme_buf_phys_free(dev, buf);
 }
 
-void *
+int
 xnvme_buf_clear(void *buf, size_t nbytes)
 {
-	return memset(buf, 0, nbytes);
+	memset(buf, 0, nbytes);
+	return 0;
 }
 
 /**
@@ -208,9 +209,7 @@ xnvme_buf_fill(void *buf, size_t nbytes, const char *content)
 	}
 
 	if (!strncmp(content, "zero", 4)) {
-		xnvme_buf_clear(buf, nbytes);
-
-		return 0;
+		return xnvme_buf_clear(buf, nbytes);
 	}
 
 	return xnvme_buf_from_file(buf, nbytes, content);

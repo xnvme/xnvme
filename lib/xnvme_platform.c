@@ -290,7 +290,13 @@ enumerate_controller(const char *uri, struct xnvme_opts *opts, xnvme_enumerate_c
 		xnvme_dev_close(ctrl_dev);
 		return -ENOMEM;
 	}
-	xnvme_buf_clear(idfy_buf, sizeof(*idfy_buf));
+
+	err = xnvme_buf_clear(idfy_buf, sizeof(*idfy_buf));
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_buf_clear(), err: %d", err);
+		xnvme_buf_free(ctrl_dev, idfy_buf);
+		return err;
+	}
 
 	ctx = xnvme_cmd_ctx_from_dev(ctrl_dev);
 	err = xnvme_adm_idfy(&ctx, XNVME_SPEC_IDFY_NSLIST, 0, 0, 0, 0, idfy_buf);
