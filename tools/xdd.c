@@ -194,6 +194,7 @@ copy_sync(struct xnvme_cli *cli)
 	struct xnvme_opts dst_opts = {.wronly = 1, .create = 1, .direct = cli->args.direct};
 	size_t buf_nbytes, tbytes, iosize, start_offset;
 	char *buf = NULL;
+	int err;
 
 	src_uri = cli->args.data_input;
 	dst_uri = cli->args.data_output;
@@ -204,20 +205,23 @@ copy_sync(struct xnvme_cli *cli)
 
 	src_dev = xnvme_file_open(src_uri, &src_opts);
 	if (!src_dev) {
-		xnvme_cli_perr("xnvme_file_open(src)", errno);
-		return errno;
+		err = -errno;
+		xnvme_cli_perr("xnvme_file_open(src)", err);
+		return err;
 	}
 	dst_dev = xnvme_file_open(dst_uri, &dst_opts);
 	if (!dst_dev) {
-		xnvme_cli_perr("xnvme_file_open(dst)", errno);
+		err = -errno;
+		xnvme_cli_perr("xnvme_file_open(dst)", err);
 		xnvme_file_close(src_dev);
-		return errno;
+		return err;
 	}
 
 	buf_nbytes = iosize;
 	buf = xnvme_buf_alloc(dst_dev, buf_nbytes);
 	if (!buf) {
-		xnvme_cli_perr("xnvme_buf_alloc()", errno);
+		err = -errno;
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 	xnvme_buf_fill(buf, buf_nbytes, "zero");
@@ -232,18 +236,19 @@ copy_sync(struct xnvme_cli *cli)
 		struct xnvme_cmd_ctx src_ctx = xnvme_file_get_cmd_ctx(src_dev);
 		struct xnvme_cmd_ctx dst_ctx = xnvme_file_get_cmd_ctx(dst_dev);
 		size_t nbytes = XNVME_MIN_U64(iosize, tbytes - (ofz - start_offset));
-		ssize_t res;
 
-		res = xnvme_file_pread(&src_ctx, buf, nbytes, ofz);
-		if (res || xnvme_cmd_ctx_cpl_status(&src_ctx)) {
-			xnvme_cli_perr("xnvme_file_pread(src)", res);
+		err = xnvme_file_pread(&src_ctx, buf, nbytes, ofz);
+		if (err || xnvme_cmd_ctx_cpl_status(&src_ctx)) {
+			err = err ? err : -EIO;
+			xnvme_cli_perr("xnvme_file_pread(src)", err);
 			xnvme_cmd_ctx_pr(&src_ctx, XNVME_PR_DEF);
 			goto exit;
 		}
 
-		res = xnvme_file_pwrite(&dst_ctx, buf, nbytes, ofz - start_offset);
-		if (res || xnvme_cmd_ctx_cpl_status(&dst_ctx)) {
-			xnvme_cli_perr("xnvme_file_pwrite(dst)", res);
+		err = xnvme_file_pwrite(&dst_ctx, buf, nbytes, ofz - start_offset);
+		if (err || xnvme_cmd_ctx_cpl_status(&dst_ctx)) {
+			err = err ? err : -EIO;
+			xnvme_cli_perr("xnvme_file_pwrite(dst)", err);
 			xnvme_cmd_ctx_pr(&dst_ctx, XNVME_PR_DEF);
 			goto exit;
 		}
@@ -256,7 +261,7 @@ exit:
 	xnvme_buf_free(dst_dev, buf);
 	xnvme_file_close(src_dev);
 	xnvme_file_close(dst_dev);
-	return 0;
+	return err;
 }
 
 static struct xnvme_cli_sub g_subs[] = {
