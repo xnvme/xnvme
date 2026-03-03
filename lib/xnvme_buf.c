@@ -215,25 +215,24 @@ xnvme_buf_fill(void *buf, size_t nbytes, const char *content)
 	return xnvme_buf_from_file(buf, nbytes, content);
 }
 
-size_t
-xnvme_buf_diff(const void *expected, const void *actual, size_t nbytes)
+int
+xnvme_buf_diff(const void *expected, const void *actual, size_t nbytes, size_t *diff)
 {
 	const uint8_t *exp = expected;
 	const uint8_t *act = actual;
-	size_t diff = 0;
 
 	for (size_t i = 0; i < nbytes; ++i) {
 		if (exp[i] == act[i]) {
 			continue;
 		}
 
-		++diff;
+		*diff += 1;
 	}
 
-	return diff;
+	return 0;
 }
 
-void
+int
 xnvme_buf_diff_pr(const void *expected, const void *actual, size_t nbytes, int XNVME_UNUSED(opts))
 {
 	const uint8_t *exp = expected;
@@ -253,6 +252,7 @@ xnvme_buf_diff_pr(const void *expected, const void *actual, size_t nbytes, int X
 	}
 	printf("  nbytes: %zu\n", nbytes);
 	printf("  nbytes_diff: %zu\n", diff);
+	return 0;
 }
 
 int

@@ -380,11 +380,15 @@ start_workers(struct iowork *work)
 static int
 final(struct iowork work, int err)
 {
-	size_t diff;
+	size_t diff = 0;
+	int _err;
 	xnvme_cli_pinf("exit-stats: {submitted: %u, completed: %u, ecount: %u}",
 		       work.stats.nsubmissions, work.stats.ncompletions, work.stats.nerrors);
 
-	diff = xnvme_buf_diff(work.wbuf, work.rbuf, work.range.nbytes);
+	_err = xnvme_buf_diff(work.wbuf, work.rbuf, work.range.nbytes, &diff);
+	if (_err) {
+		xnvme_cli_perr("xnvme_buf_diff()", _err);
+	}
 	iowork_teardown(&work);
 
 	if (err || (work.stats.nerrors) || diff) {

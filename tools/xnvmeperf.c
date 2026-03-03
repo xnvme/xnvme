@@ -746,6 +746,7 @@ xnvmeperf_verify(struct xnvmeperf_args *args)
 
 		for (int i = 0; i < nios; i++) {
 			uint64_t slba;
+			size_t diff = 0;
 
 			err = xnvme_buf_clear(read_buf, args->iosize);
 			if (err) {
@@ -777,7 +778,13 @@ xnvmeperf_verify(struct xnvmeperf_args *args)
 			}
 
 			fill_pattern(expect_buf, args->iosize, slba, job.nlb);
-			if (xnvme_buf_diff(expect_buf, read_buf, args->iosize) != 0) {
+			err = xnvme_buf_diff(expect_buf, read_buf, args->iosize, &diff);
+			if (err) {
+				fprintf(stderr, "Failed: xnvme_buf_diff() at IO %d, err: %d\n", i,
+					err);
+				break;
+			}
+			if (diff) {
 				fprintf(stderr, "  MISMATCH at slba=%lu (IO %d)\n",
 					(unsigned long)slba, i);
 				mismatches++;
