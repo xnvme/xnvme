@@ -188,7 +188,11 @@ cmd_store(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	memcpy(dbuf, cli->args.kv_val, dbuf_nbytes);
+	err = xnvme_buf_memcpy(dbuf, cli->args.kv_val, dbuf_nbytes);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_memcpy()", err);
+		goto exit;
+	}
 
 	err = xnvme_kvs_store(&ctx, nsid, cli->args.kv_key, strlen(cli->args.kv_key), dbuf,
 			      dbuf_nbytes, opt);

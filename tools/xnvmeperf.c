@@ -649,7 +649,12 @@ fill_pattern(void *buf, size_t nbytes, uint64_t slba, uint16_t nlb)
 			xnvme_cli_perr("xnvme_buf_fill()", err);
 			return err;
 		}
-		memcpy(p, &lba, sizeof(lba));
+
+		err = xnvme_buf_memcpy(p, &lba, sizeof(lba));
+		if (err) {
+			xnvme_cli_perr("xnvme_buf_memcpy()", err);
+			return err;
+		}
 	}
 	return 0;
 }

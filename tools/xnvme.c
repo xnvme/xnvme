@@ -864,7 +864,11 @@ sub_set_fdp_events(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	memcpy(dbuf, SET_EVENT_TYPES, SET_EVENT_BUF_SIZE);
+	err = xnvme_buf_memcpy(dbuf, SET_EVENT_TYPES, SET_EVENT_BUF_SIZE);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_memcpy()", err);
+		goto exit;
+	}
 
 	xnvme_cli_pinf("cmd_sfeat: {nsid: 0%x, fid: 0x%x, save: 0x%x, feat: 0x%x, cdw12: 0x%x}",
 		       nsid, fid, save, feat, cdw12);
@@ -1019,7 +1023,12 @@ sub_ruhu(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	memcpy(pid_list, &pi, npids * 2);
+
+	err = xnvme_buf_memcpy(pid_list, &pi, npids * 2);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_memcpy()", err);
+		goto exit;
+	}
 
 	xnvme_cli_pinf("Updating ruh ...");
 	err = xnvme_nvm_mgmt_send(&ctx, nsid, XNVME_SPEC_IO_MGMT_SEND_RUHU, npids - 1, pid_list,
