@@ -747,7 +747,12 @@ xnvmeperf_verify(struct xnvmeperf_args *args)
 		for (int i = 0; i < nios; i++) {
 			uint64_t slba;
 
-			xnvme_buf_clear(read_buf, args->iosize);
+			err = xnvme_buf_clear(read_buf, args->iosize);
+			if (err) {
+				fprintf(stderr, "Failed: xnvme_buf_clear() at IO %d, err: %d\n", i,
+					err);
+				break;
+			}
 
 			struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(job.queue);
 			while (!ctx) {

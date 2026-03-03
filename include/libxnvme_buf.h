@@ -169,9 +169,9 @@ xnvme_buf_fill(void *buf, size_t nbytes, const char *content);
  * @param buf Pointer to the buffer to fill with zeroes
  * @param nbytes Amount of bytes to fill with zeroes in buf
  *
- * @return Returns the first argument.
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
-void *
+int
 xnvme_buf_clear(void *buf, size_t nbytes);
 
 /**

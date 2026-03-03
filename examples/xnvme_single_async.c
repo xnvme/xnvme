@@ -75,7 +75,12 @@ main(int argc, char **argv)
 		xnvme_cli_perr("xnvme_buf_alloc()", errno);
 		goto exit;
 	}
-	xnvme_buf_clear(buf, buf_nbytes);
+
+	err = xnvme_buf_clear(buf, buf_nbytes);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_clear()", err);
+		goto exit;
+	}
 
 	// This block would typically be a loop as more than a single command would be submitted
 	{

@@ -310,7 +310,12 @@ sub_log_health(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	xnvme_buf_clear(log, log_nbytes);
+
+	err = xnvme_buf_clear(log, log_nbytes);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_clear()", err);
+		goto exit;
+	}
 
 	xnvme_cli_pinf("Retrieving SMART / health log page ...");
 	err = xnvme_adm_log(&ctx, XNVME_SPEC_LOG_HEALTH, 0x0, 0, nsid, 0, log, log_nbytes);
@@ -355,7 +360,12 @@ sub_log_erri(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	xnvme_buf_clear(log, log_nbytes);
+
+	err = xnvme_buf_clear(log, log_nbytes);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_clear()", err);
+		goto exit;
+	}
 
 	xnvme_cli_pinf("Retrieving error-info-log ...");
 	err = xnvme_adm_log(&ctx, XNVME_SPEC_LOG_ERRI, 0x0, 0x0, 0xFFFFFFFF, 0, log, log_nbytes);
@@ -397,7 +407,12 @@ sub_log_sanitize(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	xnvme_buf_clear(log, log_nbytes);
+
+	err = xnvme_buf_clear(log, log_nbytes);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_clear()", err);
+		goto exit;
+	}
 
 	xnvme_cli_pinf("Retrieving Sanitize log page ...");
 	err = xnvme_adm_log(&ctx, XNVME_SPEC_LOG_SANITIZE, 0x0, 0, nsid, 0, log, log_nbytes);
@@ -445,7 +460,12 @@ sub_log_fdp_config(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	xnvme_buf_clear(log, log_nbytes);
+
+	err = xnvme_buf_clear(log, log_nbytes);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_clear()", err);
+		goto exit;
+	}
 
 	xnvme_prep_adm_log(&ctx, XNVME_SPEC_LOG_FDPCONF, 0x0, 0, nsid, 0, log_nbytes);
 	ctx.cmd.log.lsi = egi;
@@ -492,7 +512,12 @@ sub_log_ruhu(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	xnvme_buf_clear(log, log_nbytes);
+
+	err = xnvme_buf_clear(log, log_nbytes);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_clear()", err);
+		goto exit;
+	}
 
 	xnvme_cli_pinf("Retrieving ruhu-log ...");
 	xnvme_prep_adm_log(&ctx, XNVME_SPEC_LOG_FDPRUHU, 0x0, 0, nsid, 0, log_nbytes);
@@ -539,7 +564,12 @@ sub_log_fdp_stats(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	xnvme_buf_clear(log, log_nbytes);
+
+	err = xnvme_buf_clear(log, log_nbytes);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_clear()", err);
+		goto exit;
+	}
 
 	xnvme_prep_adm_log(&ctx, XNVME_SPEC_LOG_FDPSTATS, 0x0, 0, nsid, 0, log_nbytes);
 	ctx.cmd.log.lsi = egi;
@@ -587,7 +617,12 @@ sub_log_fdp_events(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	xnvme_buf_clear(log, log_nbytes);
+
+	err = xnvme_buf_clear(log, log_nbytes);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_clear()", err);
+		goto exit;
+	}
 
 	xnvme_cli_pinf("Retrieving fdp-events-log ...");
 	xnvme_prep_adm_log(&ctx, XNVME_SPEC_LOG_FDPEVENTS, 0x0, 0, nsid, 0, log_nbytes);
@@ -701,7 +736,12 @@ sub_gfeat(struct xnvme_cli *cli)
 			xnvme_cli_perr("xnvme_buf_alloc()", err);
 			goto exit;
 		}
-		xnvme_buf_clear(dbuf, dbuf_nbytes);
+
+		err = xnvme_buf_clear(dbuf, dbuf_nbytes);
+		if (err) {
+			xnvme_cli_perr("xnvme_buf_clear()", err);
+			goto exit;
+		}
 	}
 
 	xnvme_cli_pinf("cmd_gfeat: {nsid: 0x%x, fid: 0x%x, sel: 0x%x}", nsid, fid, sel);
@@ -930,7 +970,12 @@ sub_ruhs(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
-	xnvme_buf_clear(ruhs, ruhs_nbytes);
+
+	err = xnvme_buf_clear(ruhs, ruhs_nbytes);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_clear()", err);
+		goto exit;
+	}
 
 	xnvme_cli_pinf("Retrieving ruhs ...");
 	err = xnvme_nvm_mgmt_recv(&ctx, nsid, XNVME_SPEC_IO_MGMT_RECV_RUHS, 0, ruhs, ruhs_nbytes);
