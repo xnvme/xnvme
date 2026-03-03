@@ -331,15 +331,6 @@ cijoe-do-bootimage-freebsd-amd64:
 		-l
 	@echo "## xNVME: cijoe-do-bootimage-freebsd-amd64 [DONE]"
 
-define cijoe-report-help
-# Produce a report for the latest cijoe state (cijoe/cijoe-output)
-endef
-.PHONY: cijoe-report
-cijoe-report:
-	@echo "## xNVMe: cijoe-report"
-	cd cijoe && cijoe -p
-	@echo "## xNVME: cijoe-report [DONE]"
-
 define git-setup-help
 # Do git config for: 'core.hooksPath' and 'blame.ignoreRevsFile'
 endef
