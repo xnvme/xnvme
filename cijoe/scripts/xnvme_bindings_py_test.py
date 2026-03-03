@@ -8,6 +8,7 @@ Retargetable: True
 """
 import errno
 from argparse import ArgumentParser
+from pathlib import Path
 
 
 def add_args(parser: ArgumentParser):
@@ -26,7 +27,9 @@ def main(args, cijoe):
     if not xnvme_source:
         return errno.EINVAL
 
-    err, _ = cijoe.run("pytest test_buf.py", cwd=xnvme_source / "python" / "tests")
+    err, _ = cijoe.run(
+        "pytest test_buf.py", cwd=str(Path(xnvme_source) / "python" / "tests")
+    )
     if err:
         return err
 

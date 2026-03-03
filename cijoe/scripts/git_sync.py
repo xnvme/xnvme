@@ -34,14 +34,15 @@ def add_args(parser: ArgumentParser):
 
 
 def git_remote_from_config(cijoe, remote_path):
-    """Returns git-remote URI using configuration cijoe.transport.ssh"""
+    """Returns git-remote URI and SSH config using configuration cijoe.transport.ssh"""
 
     hostname = cijoe.getconf("cijoe.transport.ssh.hostname", None)
     if not hostname:
-        return None
+        return None, {}
 
     username = cijoe.getconf("cijoe.transport.ssh.username", None)
     port = cijoe.getconf("cijoe.transport.ssh.port", None)
+    password = cijoe.getconf("cijoe.transport.ssh.password", None)
 
     remote = "ssh://"
     if username:
@@ -51,7 +52,9 @@ def git_remote_from_config(cijoe, remote_path):
         remote += f":{port}"
     remote += f"{remote_path}"
 
-    return remote
+    ssh_conf = {"password": password, "port": port}
+
+    return remote, ssh_conf
 
 
 def main(args, cijoe):
@@ -70,9 +73,20 @@ def main(args, cijoe):
 
     remote_path = args.remote_path
     remote_alias = args.remote_alias
-    remote_url = git_remote_from_config(cijoe, remote_path)
+    remote_url, ssh_conf = git_remote_from_config(cijoe, remote_path)
     if not remote_url:
         return 1
+
+    # Build GIT_SSH_COMMAND so git push uses the config credentials
+    ssh_cmd_parts = ["ssh", "-o", "StrictHostKeyChecking=no"]
+    if ssh_conf.get("port"):
+        ssh_cmd_parts += ["-p", str(ssh_conf["port"])]
+    ssh_cmd = " ".join(ssh_cmd_parts)
+    if ssh_conf.get("password"):
+        password = ssh_conf["password"]
+        push_prefix = f'SSHPASS="{password}" GIT_SSH_COMMAND="sshpass -e {ssh_cmd}"'
+    else:
+        push_prefix = f'GIT_SSH_COMMAND="{ssh_cmd}"'
 
     # Remotely: clone repository from upstream
     err, _ = cijoe.run(f'[ -d "{remote_path}/.git" ]')
@@ -110,6 +124,13 @@ def main(args, cijoe):
             if "nothing to commit" in state.output():
                 continue
             return err
+
+    # Locally: push to remote using config credentials
+    err, state = cijoe.run_local(
+        f"{push_prefix} git push {remote_alias} HEAD:{branch} -f", cwd=local_path
+    )
+    if err:
+        return err
 
     err, _ = cijoe.run(f"git checkout {branch}", cwd=remote_path)
     if err:
