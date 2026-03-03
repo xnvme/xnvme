@@ -17,6 +17,7 @@ kvs_io(struct xnvme_cli *cli)
 	void *rbuf = NULL;
 	uint8_t kv_key_nbytes = 0;
 	size_t kv_val_nbytes = 0;
+	size_t diff = 0;
 	int err;
 
 	if (cli->given[XNVME_CLI_OPT_KV_KEY]) {
@@ -84,8 +85,18 @@ kvs_io(struct xnvme_cli *cli)
 	xnvme_cli_pinf("KV Value retrieved: '%s'", rbuf);
 
 	xnvme_cli_pinf("Comparing wbuf and rbuf");
-	if (xnvme_buf_diff(dbuf, rbuf, kv_val_nbytes)) {
-		xnvme_buf_diff_pr(dbuf, rbuf, kv_val_nbytes, XNVME_PR_DEF);
+	err = xnvme_buf_diff(dbuf, rbuf, kv_val_nbytes, &diff);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_diff()", err);
+		goto exit;
+	}
+	if (diff) {
+		err = xnvme_buf_diff_pr(dbuf, rbuf, kv_val_nbytes, XNVME_PR_DEF);
+		if (err) {
+			xnvme_cli_perr("xnvme_buf_diff_pr()", err);
+			goto exit;
+		}
+		err = -EIO;
 		goto exit;
 	}
 exit:

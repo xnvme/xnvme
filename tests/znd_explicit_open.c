@@ -125,6 +125,7 @@ test_open_zdptr(struct xnvme_cli *cli)
 
 	{
 		void *zde_after;
+		size_t diff = 0;
 
 		// Verification
 		err = xnvme_znd_report_get_descr(after, zidx, &descr, &zde_after);
@@ -134,8 +135,18 @@ test_open_zdptr(struct xnvme_cli *cli)
 			return err;
 		}
 
-		if (xnvme_buf_diff(zde, zde_after, zde_nbytes)) {
-			xnvme_buf_diff_pr(zde, descr, zde_nbytes, XNVME_PR_DEF);
+		err = xnvme_buf_diff(zde, zde_after, zde_nbytes, &diff);
+		if (err) {
+			xnvme_cli_perr("xnvme_buf_diff()", err);
+			goto exit;
+		}
+
+		if (diff) {
+			err = xnvme_buf_diff_pr(zde, descr, zde_nbytes, XNVME_PR_DEF);
+			if (err) {
+				xnvme_cli_perr("xnvme_buf_diff_pr()", err);
+				goto exit;
+			}
 			err = -EIO;
 			goto exit;
 		}

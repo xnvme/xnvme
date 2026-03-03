@@ -175,16 +175,17 @@ int
 xnvme_buf_clear(void *buf, size_t nbytes);
 
 /**
- * Returns the number of bytes where expected is different from actual
+ * Compare two buffers and count the number of differing bytes.
  *
- * @param expected Pointer to buffer of "expected" content
- * @param actual Pointer to buffer to compare to "expected"
- * @param nbytes Amount of bytes to compare
+ * @param expected Pointer to buffer containing the expected data
+ * @param actual Pointer to buffer to compare against the expected data
+ * @param nbytes Number of bytes to compare
+ * @param diff Output pointer storing the number of differing bytes
  *
- * @return On success, returns number of bytes that differ
+ * @return 0 on success, negative `errno` on error.
  */
-size_t
-xnvme_buf_diff(const void *expected, const void *actual, size_t nbytes);
+int
+xnvme_buf_diff(const void *expected, const void *actual, size_t nbytes, size_t *diff);
 
 /**
  * Prints the number and value of bytes where expected is different from actual
@@ -193,8 +194,10 @@ xnvme_buf_diff(const void *expected, const void *actual, size_t nbytes);
  * @param actual Pointer to buffer to compare to "expected"
  * @param nbytes Amount of bytes to compare
  * @param opts printer options, see ::xnvme_pr
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
-void
+int
 xnvme_buf_diff_pr(const void *expected, const void *actual, size_t nbytes, int opts);
 
 /**

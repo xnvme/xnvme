@@ -30,6 +30,7 @@ test_copy(struct xnvme_cli *cli)
 	char *wbuf = NULL, *rbuf = NULL;
 	struct xnvme_spec_nvm_scopy_fmt_zero *source_range = NULL;
 	uint64_t nlb, nbytes, sdlba, slba;
+	size_t diff = 0;
 	int err;
 
 	switch (geo->type) {
@@ -142,8 +143,17 @@ test_copy(struct xnvme_cli *cli)
 
 	// Compare LBA's
 	xnvme_cli_pinf("Comparing wbuf and rbuf");
-	if (xnvme_buf_diff(wbuf, rbuf, nbytes)) {
-		xnvme_buf_diff_pr(wbuf, rbuf, nbytes, XNVME_PR_DEF);
+	err = xnvme_buf_diff(wbuf, rbuf, nbytes, &diff);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_diff()", err);
+		goto exit;
+	}
+	if (diff) {
+		err = xnvme_buf_diff_pr(wbuf, rbuf, nbytes, XNVME_PR_DEF);
+		if (err) {
+			xnvme_cli_perr("xnvme_buf_diff_pr()", err);
+			goto exit;
+		}
 		err = -EIO;
 		goto exit;
 	}

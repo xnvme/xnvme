@@ -296,12 +296,20 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 	}
 
 	{
-		size_t diff;
+		size_t diff = 0;
 
-		diff = xnvme_buf_diff(dbuf, vbuf, buf_nbytes);
+		err = xnvme_buf_diff(dbuf, vbuf, buf_nbytes, &diff);
+		if (err) {
+			xnvme_cli_perr("xnvme_buf_diff()", err);
+			goto exit;
+		}
 		if (diff) {
 			xnvme_cli_pinf("verification failed, diff: %zu", diff);
-			xnvme_buf_diff_pr(dbuf, vbuf, buf_nbytes, XNVME_PR_DEF);
+			err = xnvme_buf_diff_pr(dbuf, vbuf, buf_nbytes, XNVME_PR_DEF);
+			if (err) {
+				xnvme_cli_perr("xnvme_buf_diff_pr()", err);
+				goto exit;
+			}
 			err = -EIO;
 			goto exit;
 		}

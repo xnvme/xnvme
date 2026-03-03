@@ -78,6 +78,7 @@ read_and_compare_lba_range(uint8_t *rbuf, const uint8_t *cbuf, const uint64_t rn
 {
 	int err = 0;
 	uint64_t read_bytes = 0;
+	size_t diff = 0;
 	*compared_bytes = 0;
 	xnvme_cli_pinf("Reading and comparing in LBA range [%ld,%ld]", rng_slba, rng_slba + nlb);
 
@@ -95,8 +96,18 @@ read_and_compare_lba_range(uint8_t *rbuf, const uint8_t *cbuf, const uint64_t rn
 		}
 
 		read_bytes = r_nlb * geo->lba_nbytes;
-		if (xnvme_buf_diff(cbuf, rbuf, read_bytes)) {
-			xnvme_buf_diff_pr(cbuf, rbuf, read_bytes, XNVME_PR_DEF);
+
+		err = xnvme_buf_diff(cbuf, rbuf, read_bytes, &diff);
+		if (err) {
+			xnvme_cli_perr("xnvme_buf_diff()", err);
+			goto exit;
+		}
+		if (diff) {
+			err = xnvme_buf_diff_pr(cbuf, rbuf, read_bytes, XNVME_PR_DEF);
+			if (err) {
+				xnvme_cli_perr("xnvme_buf_diff_pr()", err);
+				goto exit;
+			}
 			err = -EIO;
 			goto exit;
 		}
@@ -158,6 +169,7 @@ sub_io(struct xnvme_cli *cli)
 	uint8_t *wbuf = NULL, *rbuf = NULL;
 	int err;
 	uint64_t written_bytes = 0;
+	size_t diff = 0;
 
 	switch (geo->type) {
 	case XNVME_GEO_CONVENTIONAL:
@@ -229,8 +241,18 @@ sub_io(struct xnvme_cli *cli)
 	}
 
 	xnvme_cli_pinf("Comparing wbuf and rbuf");
-	if (xnvme_buf_diff(wbuf, rbuf, buf_nbytes)) {
-		xnvme_buf_diff_pr(wbuf, rbuf, buf_nbytes, XNVME_PR_DEF);
+	err = xnvme_buf_diff(wbuf, rbuf, buf_nbytes, &diff);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_diff()", err);
+		goto exit;
+	}
+	if (diff) {
+		err = xnvme_buf_diff_pr(wbuf, rbuf, buf_nbytes, XNVME_PR_DEF);
+		if (err) {
+			xnvme_cli_perr("xnvme_buf_diff_pr()", err);
+			goto exit;
+		}
+		err = -EIO;
 		goto exit;
 	}
 
