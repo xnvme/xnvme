@@ -179,9 +179,14 @@ xnvme_znd_report_from_dev(struct xnvme_dev *dev, uint64_t slba, size_t limit, ui
 		}
 
 		// Skip the header and copy the remainder
-		memcpy(report->storage + ((zslba - slba) / geo->nsect) * report->zrent_nbytes,
-		       ((uint8_t *)dbuf) + sizeof(struct xnvme_spec_znd_report_hdr),
-		       report->zrent_nbytes * nentries);
+		err = xnvme_buf_memcpy(
+			report->storage + ((zslba - slba) / geo->nsect) * report->zrent_nbytes,
+			((uint8_t *)dbuf) + sizeof(struct xnvme_spec_znd_report_hdr),
+			report->zrent_nbytes * nentries);
+		if (err) {
+			XNVME_DEBUG("FAILED: xnvme_buf_memcpy(), err: %d", err);
+			break;
+		}
 
 		zslba += nentries * geo->nsect;
 	}
@@ -278,7 +283,11 @@ xnvme_znd_descr_from_dev(struct xnvme_dev *dev, uint64_t slba, struct xnvme_spec
 		err = -EIO;
 		goto exit;
 	}
-	memcpy(zdescr, dbuf + sizeof(*hdr), sizeof(*zdescr));
+	err = xnvme_buf_memcpy(zdescr, dbuf + sizeof(*hdr), sizeof(*zdescr));
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_buf_memcpy(zdescr), err: %d", err);
+		goto exit;
+	}
 
 exit:
 	xnvme_buf_free(dev, dbuf);
@@ -348,7 +357,11 @@ xnvme_znd_descr_from_dev_in_state(struct xnvme_dev *dev, enum xnvme_spec_znd_sta
 		err = -EIO;
 		goto exit;
 	}
-	memcpy(zdescr, dbuf + sizeof(*hdr), sizeof(*zdescr));
+	err = xnvme_buf_memcpy(zdescr, dbuf + sizeof(*hdr), sizeof(*zdescr));
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_buf_memcpy(zdescr), err: %d", err);
+		goto exit;
+	}
 
 exit:
 	xnvme_buf_free(dev, dbuf);

@@ -48,7 +48,11 @@ kvs_io(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	memcpy(dbuf, kv_val, kv_val_nbytes);
+	err = xnvme_buf_memcpy(dbuf, kv_val, kv_val_nbytes);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_memcpy()", err);
+		goto exit;
+	}
 
 	err = xnvme_kvs_store(&ctx, nsid, kv_key, kv_key_nbytes, dbuf, kv_val_nbytes, 0);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
