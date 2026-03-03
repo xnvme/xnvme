@@ -18,15 +18,17 @@ test_file_fsync(struct xnvme_cli *cli)
 
 	fh = xnvme_file_open(output_path, &opts);
 	if (fh == NULL) {
-		xnvme_cli_perr("xnvme_file_open()", errno);
-		return -errno;
+		err = -errno;
+		xnvme_cli_perr("xnvme_file_open()", err);
+		return err;
 	}
 
 	buf = xnvme_buf_alloc(fh, bytes_per_write);
 	if (!buf) {
-		xnvme_cli_perr("xnvme_buf_alloc()", errno);
+		err = -errno;
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		xnvme_file_close(fh);
-		return -errno;
+		return err;
 	}
 	xnvme_buf_fill(buf, bytes_per_write, "anum");
 
@@ -35,20 +37,21 @@ test_file_fsync(struct xnvme_cli *cli)
 
 		err = xnvme_file_pwrite(&ctx, buf, bytes_per_write, 0);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+			err = err ? err : -EIO;
 			xnvme_cli_perr("xnvme_file_pwrite()", err);
-			return err;
+			goto exit;
 		}
 
 		err = xnvme_file_sync(fh);
 		if (err) {
 			xnvme_cli_perr("xnvme_file_sync()", err);
-			return err;
+			goto exit;
 		}
 	}
-
+exit:
 	xnvme_buf_free(fh, buf);
 	xnvme_file_close(fh);
-	return 0;
+	return err;
 }
 
 /**
@@ -65,28 +68,32 @@ file_write_ascii(const char *path, size_t nbytes, struct xnvme_opts *opts)
 
 	fh = xnvme_file_open(path, opts);
 	if (fh == NULL) {
-		xnvme_cli_perr("xnvme_file_open()", errno);
-		return -errno;
+		err = -errno;
+		xnvme_cli_perr("xnvme_file_open()", err);
+		return err;
 	}
 
 	buf = xnvme_buf_alloc(fh, nbytes);
 	if (!buf) {
-		xnvme_cli_perr("xnvme_buf_alloc()", errno);
+		err = -errno;
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		xnvme_file_close(fh);
-		return -errno;
+		return err;
 	}
 	xnvme_buf_fill(buf, nbytes, "anum");
 
 	ctx = xnvme_file_get_cmd_ctx(fh);
 	err = xnvme_file_pwrite(&ctx, buf, nbytes, 0);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		err = err ? err : -EIO;
 		xnvme_cli_perr("xnvme_file_pwrite()", err);
-		return err;
+		goto exit;
 	}
 
+exit:
 	xnvme_buf_free(fh, buf);
 	xnvme_file_close(fh);
-	return 0;
+	return err;
 }
 
 /**

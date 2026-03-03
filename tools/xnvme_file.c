@@ -121,21 +121,24 @@ dump_sync(struct xnvme_cli *cli)
 	const char *fpath;
 	size_t buf_nbytes, tbytes, iosize;
 	char *buf;
+	int err;
 
 	fpath = cli->args.data_output;
 	iosize = cli->given[XNVME_CLI_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
 
 	fh = xnvme_file_open(fpath, &opts);
 	if (!fh) {
-		xnvme_cli_perr("xnvme_file_open(fh)", errno);
-		return errno;
+		err = -errno;
+		xnvme_cli_perr("xnvme_file_open(fh)", err);
+		return err;
 	}
 	tbytes = cli->args.data_nbytes;
 
 	buf_nbytes = tbytes;
 	buf = xnvme_buf_alloc(fh, buf_nbytes);
 	if (!buf) {
-		xnvme_cli_perr("xnvme_buf_alloc()", errno);
+		err = -errno;
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 	xnvme_buf_fill(buf, buf_nbytes, "anum");
@@ -148,11 +151,11 @@ dump_sync(struct xnvme_cli *cli)
 	for (size_t ofz = 0; ofz < tbytes; ofz += iosize) {
 		struct xnvme_cmd_ctx ctx = xnvme_file_get_cmd_ctx(fh);
 		size_t nbytes = XNVME_MIN_U64(iosize, tbytes - ofz);
-		ssize_t res;
 
-		res = xnvme_file_pwrite(&ctx, buf + ofz, nbytes, ofz);
-		if (res || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_file_pwrite(fh)", res);
+		err = xnvme_file_pwrite(&ctx, buf + ofz, nbytes, ofz);
+		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+			err = err ? err : -EIO;
+			xnvme_cli_perr("xnvme_file_pwrite(fh)", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			goto exit;
 		}
@@ -164,7 +167,7 @@ dump_sync(struct xnvme_cli *cli)
 exit:
 	xnvme_buf_free(fh, buf);
 	xnvme_file_close(fh);
-	return 0;
+	return err;
 }
 
 int
@@ -183,14 +186,16 @@ dump_sync_iovec(struct xnvme_cli *cli)
 	size_t ofz = 0;
 	int dvec_cnt = cli->args.vec_cnt;
 	char *buf;
+	int err;
 
 	fpath = cli->args.data_output;
 	iosize = cli->given[XNVME_CLI_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
 
 	fh = xnvme_file_open(fpath, &opts);
 	if (!fh) {
-		xnvme_cli_perr("xnvme_file_open(fh)", errno);
-		return errno;
+		err = -errno;
+		xnvme_cli_perr("xnvme_file_open(fh)", err);
+		return err;
 	}
 	tbytes = cli->args.data_nbytes;
 	tbytes_left = tbytes;
@@ -198,7 +203,8 @@ dump_sync_iovec(struct xnvme_cli *cli)
 	buf_nbytes = tbytes;
 	buf = xnvme_buf_alloc(fh, buf_nbytes);
 	if (!buf) {
-		xnvme_cli_perr("xnvme_buf_alloc()", errno);
+		err = -errno;
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 	xnvme_buf_fill(buf, buf_nbytes, "anum");
@@ -218,7 +224,6 @@ dump_sync_iovec(struct xnvme_cli *cli)
 	for (int i = 0; i < nios; i++) {
 		struct iovec dvec[dvec_cnt];
 		int ndvec = XNVME_MIN_U64(dvec_cnt, (tbytes_left + iosize - 1) / iosize);
-		int res;
 		size_t nbytes = 0;
 
 		for (int k = 0; k < ndvec; k++) {
@@ -230,9 +235,10 @@ dump_sync_iovec(struct xnvme_cli *cli)
 			nbytes += iov_len;
 		}
 
-		res = xnvme_cmd_pass_iov(&ctx, dvec, ndvec, nbytes, NULL, 0);
-		if (res || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_cmd_pass_iov(fh)", res);
+		err = xnvme_cmd_pass_iov(&ctx, dvec, ndvec, nbytes, NULL, 0);
+		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+			err = err ? err : -EIO;
+			xnvme_cli_perr("xnvme_cmd_pass_iov(fh)", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			goto exit;
 		}
@@ -244,7 +250,7 @@ dump_sync_iovec(struct xnvme_cli *cli)
 exit:
 	xnvme_buf_free(fh, buf);
 	xnvme_file_close(fh);
-	return 0;
+	return err;
 }
 
 int
@@ -266,15 +272,17 @@ dump_async(struct xnvme_cli *cli)
 
 	fh = xnvme_file_open(fpath, &opts);
 	if (fh == NULL) {
-		xnvme_cli_perr("xnvme_file_open(fh)", errno);
-		return errno;
+		err = -errno;
+		xnvme_cli_perr("xnvme_file_open(fh)", err);
+		return err;
 	}
 	tbytes = cli->args.data_nbytes;
 
 	buf_nbytes = tbytes;
 	buf = xnvme_buf_alloc(fh, buf_nbytes);
 	if (!buf) {
-		xnvme_cli_perr("xnvme_buf_alloc()", errno);
+		err = -errno;
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 	xnvme_buf_fill(buf, buf_nbytes, "anum");
@@ -295,11 +303,10 @@ dump_async(struct xnvme_cli *cli)
 	for (size_t ofz = 0; (ofz < tbytes) && !cb_args.nerrors;) {
 		struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(queue);
 		size_t nbytes = XNVME_MIN_U64(iosize, tbytes - ofz);
-		ssize_t res;
 
 submit:
-		res = xnvme_file_pwrite(ctx, buf + ofz, nbytes, ofz);
-		switch (res) {
+		err = xnvme_file_pwrite(ctx, buf + ofz, nbytes, ofz);
+		switch (err) {
 		case 0:
 			cb_args.nsubmissions += 1;
 			goto next;
@@ -340,7 +347,7 @@ exit:
 
 	xnvme_buf_free(fh, buf);
 	xnvme_file_close(fh);
-	return 0;
+	return err;
 }
 
 int
@@ -369,8 +376,9 @@ dump_async_iovec(struct xnvme_cli *cli)
 
 	fh = xnvme_file_open(fpath, &opts);
 	if (!fh) {
-		xnvme_cli_perr("xnvme_file_open(fh)", errno);
-		return errno;
+		err = -errno;
+		xnvme_cli_perr("xnvme_file_open(fh)", err);
+		return err;
 	}
 	tbytes = cli->args.data_nbytes;
 	tbytes_left = tbytes;
@@ -378,7 +386,8 @@ dump_async_iovec(struct xnvme_cli *cli)
 	buf_nbytes = tbytes;
 	buf = xnvme_buf_alloc(fh, buf_nbytes);
 	if (!buf) {
-		xnvme_cli_perr("xnvme_buf_alloc()", errno);
+		err = -errno;
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 	xnvme_buf_fill(buf, buf_nbytes, "anum");
@@ -402,7 +411,6 @@ dump_async_iovec(struct xnvme_cli *cli)
 		struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(queue);
 		struct iovec dvec[dvec_cnt];
 		int ndvec = XNVME_MIN_U64(dvec_cnt, (tbytes_left + iosize - 1) / iosize);
-		int res;
 		size_t nbytes = 0;
 
 		ctx->cmd.common.nsid = xnvme_dev_get_nsid(ctx->dev);
@@ -419,8 +427,8 @@ dump_async_iovec(struct xnvme_cli *cli)
 		}
 
 submit:
-		res = xnvme_cmd_pass_iov(ctx, dvec, ndvec, nbytes, NULL, 0);
-		switch (res) {
+		err = xnvme_cmd_pass_iov(ctx, dvec, ndvec, nbytes, NULL, 0);
+		switch (err) {
 		case 0:
 			cb_args.nsubmissions += 1;
 			continue;
@@ -445,7 +453,7 @@ submit:
 exit:
 	xnvme_buf_free(fh, buf);
 	xnvme_file_close(fh);
-	return 0;
+	return err;
 }
 
 int
@@ -456,21 +464,24 @@ load_sync(struct xnvme_cli *cli)
 	const char *fpath;
 	size_t buf_nbytes, tbytes, iosize;
 	char *buf;
+	int err;
 
 	fpath = cli->args.data_input;
 	iosize = cli->given[XNVME_CLI_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
 
 	fh = xnvme_file_open(fpath, &opts);
 	if (!fh) {
-		xnvme_cli_perr("xnvme_file_open(fh)", errno);
-		return errno;
+		err = -errno;
+		xnvme_cli_perr("xnvme_file_open(fh)", err);
+		return err;
 	}
 	tbytes = xnvme_dev_get_geo(fh)->tbytes;
 
 	buf_nbytes = tbytes;
 	buf = xnvme_buf_alloc(fh, buf_nbytes);
 	if (!buf) {
-		xnvme_cli_perr("xnvme_buf_alloc()", errno);
+		err = -errno;
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 	xnvme_buf_fill(buf, buf_nbytes, "zero");
@@ -483,11 +494,11 @@ load_sync(struct xnvme_cli *cli)
 	for (size_t ofz = 0; ofz < tbytes; ofz += iosize) {
 		struct xnvme_cmd_ctx ctx = xnvme_file_get_cmd_ctx(fh);
 		size_t nbytes = XNVME_MIN_U64(iosize, tbytes - ofz);
-		ssize_t res;
 
-		res = xnvme_file_pread(&ctx, buf + ofz, nbytes, ofz);
-		if (res || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_file_pread(fh)", res);
+		err = xnvme_file_pread(&ctx, buf + ofz, nbytes, ofz);
+		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+			err = err ? err : -EIO;
+			xnvme_cli_perr("xnvme_file_pread(fh)", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			goto exit;
 		}
@@ -500,7 +511,7 @@ exit:
 	xnvme_buf_free(fh, buf);
 	xnvme_file_close(fh);
 
-	return 0;
+	return err;
 }
 
 int
@@ -523,15 +534,17 @@ load_async(struct xnvme_cli *cli)
 
 	fh = xnvme_file_open(fpath, &opts);
 	if (fh == NULL) {
-		xnvme_cli_perr("xnvme_file_open(fh)", errno);
-		return errno;
+		err = -errno;
+		xnvme_cli_perr("xnvme_file_open(fh)", err);
+		return err;
 	}
 	tbytes = xnvme_dev_get_geo(fh)->tbytes;
 
 	buf_nbytes = tbytes;
 	buf = xnvme_buf_alloc(fh, buf_nbytes);
 	if (!buf) {
-		xnvme_cli_perr("xnvme_buf_alloc()", errno);
+		err = -errno;
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 	xnvme_buf_fill(buf, buf_nbytes, "zero");
@@ -552,11 +565,10 @@ load_async(struct xnvme_cli *cli)
 	for (size_t ofz = 0; (ofz < tbytes) && !cb_args.nerrors;) {
 		struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(queue);
 		size_t nbytes = XNVME_MIN_U64(iosize, tbytes - ofz);
-		ssize_t res;
 
 submit:
-		res = xnvme_file_pread(ctx, buf + ofz, nbytes, ofz);
-		switch (res) {
+		err = xnvme_file_pread(ctx, buf + ofz, nbytes, ofz);
+		switch (err) {
 		case 0:
 			cb_args.nsubmissions += 1;
 			goto next;
@@ -598,7 +610,7 @@ exit:
 	xnvme_buf_free(fh, buf);
 	xnvme_file_close(fh);
 
-	return 0;
+	return err;
 }
 
 int
@@ -610,6 +622,7 @@ copy_file_sync(struct xnvme_cli *cli)
 	const char *src_fpath, *dst_fpath;
 	size_t buf_nbytes, tbytes, iosize;
 	char *buf = NULL;
+	int err;
 
 	src_fpath = cli->args.data_input;
 	dst_fpath = cli->args.data_output;
@@ -617,12 +630,14 @@ copy_file_sync(struct xnvme_cli *cli)
 
 	src_fh = xnvme_file_open(src_fpath, &src_opts);
 	if (src_fh == NULL) {
-		xnvme_cli_perr("xnvme_file_open(src)", errno);
-		return errno;
+		err = -errno;
+		xnvme_cli_perr("xnvme_file_open(src)", err);
+		return err;
 	}
 	dst_fh = xnvme_file_open(dst_fpath, &dst_opts);
 	if (dst_fh == NULL) {
-		xnvme_cli_perr("xnvme_file_open(dst)", errno);
+		err = -errno;
+		xnvme_cli_perr("xnvme_file_open(dst)", err);
 		goto exit;
 	}
 	tbytes = xnvme_dev_get_geo(src_fh)->tbytes;
@@ -630,7 +645,8 @@ copy_file_sync(struct xnvme_cli *cli)
 	buf_nbytes = iosize;
 	buf = xnvme_buf_alloc(src_fh, buf_nbytes);
 	if (!buf) {
-		xnvme_cli_perr("xnvme_buf_alloc()", errno);
+		err = -errno;
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 	xnvme_buf_fill(buf, buf_nbytes, "zero");
@@ -644,18 +660,19 @@ copy_file_sync(struct xnvme_cli *cli)
 		struct xnvme_cmd_ctx src_ctx = xnvme_file_get_cmd_ctx(src_fh);
 		struct xnvme_cmd_ctx dst_ctx = xnvme_file_get_cmd_ctx(dst_fh);
 		size_t nbytes = XNVME_MIN_U64(iosize, tbytes - ofz);
-		ssize_t res;
 
-		res = xnvme_file_pread(&src_ctx, buf, nbytes, ofz);
-		if (res || xnvme_cmd_ctx_cpl_status(&src_ctx)) {
-			xnvme_cli_perr("xnvme_file_pread(src)", res);
+		err = xnvme_file_pread(&src_ctx, buf, nbytes, ofz);
+		if (err || xnvme_cmd_ctx_cpl_status(&src_ctx)) {
+			err = err ? err : -EIO;
+			xnvme_cli_perr("xnvme_file_pread(src)", err);
 			xnvme_cmd_ctx_pr(&src_ctx, XNVME_PR_DEF);
 			goto exit;
 		}
 
-		res = xnvme_file_pwrite(&dst_ctx, buf, nbytes, ofz);
-		if (res || xnvme_cmd_ctx_cpl_status(&dst_ctx)) {
-			xnvme_cli_perr("xnvme_file_pwrite(dst)", res);
+		err = xnvme_file_pwrite(&dst_ctx, buf, nbytes, ofz);
+		if (err || xnvme_cmd_ctx_cpl_status(&dst_ctx)) {
+			err = err ? err : -EIO;
+			xnvme_cli_perr("xnvme_file_pwrite(dst)", err);
 			xnvme_cmd_ctx_pr(&dst_ctx, XNVME_PR_DEF);
 			goto exit;
 		}
@@ -668,7 +685,7 @@ exit:
 	xnvme_buf_free(src_fh, buf);
 	xnvme_file_close(src_fh);
 	xnvme_file_close(dst_fh);
-	return 0;
+	return err;
 }
 
 int
@@ -705,12 +722,14 @@ copy_file_async(struct xnvme_cli *cli)
 
 	src_fh = xnvme_file_open(src_fpath, &src_opts);
 	if (src_fh == NULL) {
-		xnvme_cli_perr("xnvme_file_open(src)", errno);
-		return errno;
+		err = -errno;
+		xnvme_cli_perr("xnvme_file_open(src)", err);
+		return err;
 	}
 	dst_fh = xnvme_file_open(dst_fpath, &dst_opts);
 	if (dst_fh == NULL) {
-		xnvme_cli_perr("xnvme_file_open(dst)", errno);
+		err = -errno;
+		xnvme_cli_perr("xnvme_file_open(dst)", err);
 		goto exit;
 	}
 	tbytes = xnvme_dev_get_geo(src_fh)->tbytes;
@@ -718,7 +737,8 @@ copy_file_async(struct xnvme_cli *cli)
 	buf_nbytes = iosize * qdepth;
 	buf = xnvme_buf_alloc(src_fh, buf_nbytes);
 	if (!buf) {
-		xnvme_cli_perr("xnvme_buf_alloc()", errno);
+		err = -errno;
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 	xnvme_buf_fill(buf, buf_nbytes, "zero");
@@ -748,13 +768,12 @@ copy_file_async(struct xnvme_cli *cli)
 		struct cb_args_copy *work = &cb_args_copy[(ofz / iosize) % qdepth];
 		struct xnvme_cmd_ctx *src_ctx = xnvme_cmd_ctx_from_queue(queue);
 		size_t nbytes = XNVME_MIN_U64(iosize, tbytes - ofz);
-		ssize_t res;
 
 		src_ctx->async.cb_arg = work;
 
 submit:
-		res = xnvme_file_pread(src_ctx, work->buf, nbytes, ofz);
-		switch (res) {
+		err = xnvme_file_pread(src_ctx, work->buf, nbytes, ofz);
+		switch (err) {
 		case 0:
 			work->nsubmissions += 1;
 			goto next;
@@ -803,7 +822,7 @@ exit:
 	xnvme_buf_free(src_fh, buf);
 	xnvme_file_close(src_fh);
 	xnvme_file_close(dst_fh);
-	return 0;
+	return err;
 }
 
 static struct xnvme_cli_sub g_subs[] = {
