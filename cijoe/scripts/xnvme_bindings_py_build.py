@@ -8,6 +8,7 @@ Retargetable: True
 """
 import errno
 from argparse import ArgumentParser
+from pathlib import Path
 
 
 def add_args(parser: ArgumentParser):
@@ -42,7 +43,7 @@ def main(args, cijoe):
         "make test",
     ]
     for cmd in commands:
-        err, _ = cijoe.run(cmd, cwd=xnvme_source / "python" / "bindings")
+        err, _ = cijoe.run(cmd, cwd=str(Path(xnvme_source) / "python" / "bindings"))
         if err:
             return err
 

@@ -5,10 +5,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    Removes '.git' from subprojects
+    Removes '.git' and SPDK build artifacts from subprojects
 
     This script is intended to be added with 'meson.add_dist_script()', to cleanup the
-    subprojects, that is, remove the '.git'.
+    subprojects, that is, remove the '.git' directories and SPDK build artifacts
+    (build/ directory and mk/config.mk) that contain host-specific absolute paths.
 """
 import argparse
 import os
@@ -45,11 +46,26 @@ def main(args):
         print("ERR: path: '{path}' looks bad".format(path=args.path))
         return 1
 
-    for root, dnames, _ in os.walk(args.path):
-        for dname in dnames:
+    for root, dnames, fnames in os.walk(args.path, topdown=True):
+        for dname in dnames[:]:
             path = os.path.join(root, dname)
-            if dname == ".git" and "builddir" in path and "subprojects" in path:
+            if "builddir" not in path or "subprojects" not in path:
+                continue
+            if dname == ".git":
                 shutil.rmtree(path)
+                dnames.remove(dname)
+            elif dname == "build" and os.path.join(os.sep, "spdk", "build") in path:
+                shutil.rmtree(path)
+                dnames.remove(dname)
+        for fname in fnames:
+            path = os.path.join(root, fname)
+            if "builddir" not in path or "subprojects" not in path:
+                continue
+            if (
+                fname == "config.mk"
+                and os.path.join(os.sep, "spdk", "mk", "config.mk") in path
+            ):
+                os.remove(path)
 
     return 0
 

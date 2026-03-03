@@ -64,6 +64,7 @@ export MACOSX_DEPLOYMENT_TARGET=11.0
 
 BUILD_DIR?=builddir
 TOOLBOX_DIR?=toolbox
+CIJOE_GUEST_FILE := cijoe/current.guest
 PROJECT_VER = $$( python3 $(TOOLBOX_DIR)/xnvme_ver.py --path meson.build )
 
 ALLOW_DIRTY ?= 0
@@ -141,126 +142,106 @@ docker:
 	docker run -it --privileged -w /tmp/xnvme --mount type=bind,source="$(shell pwd)",target=/tmp/xnvme --mount type=bind,source=/tmp/artifacts,target=/tmp/artifacts ghcr.io/xnvme/xnvme-qemu:latest bash
 	@echo "## xNVME: docker [DONE]"
 
-define cijoe-help
-# Setup a CIJOE environment for Linux development, documentation, and testing
+define cijoe-install-help
+# Install CIJOE and dependencies via pipx (used by CI and guest-env)
 endef
-.PHONY: cijoe
-cijoe:
-	@echo "## xNVMe: cijoe"
+.PHONY: cijoe-install
+cijoe-install:
+	@echo "## xNVMe: cijoe-install"
 	pipx install cijoe==v0.9.58 --include-deps --force
 	pipx inject cijoe matplotlib --force
 	pipx inject cijoe numpy --force
 	pipx install rst2pdf
-	mkdir -p ~/.config/cijoe
-	@[ -e ~/.config/cijoe/cijoe-config.toml ] || cp cijoe/configs/debian-trixie.toml ~/.config/cijoe/cijoe-config.toml
-	@echo ""
-	@echo ""
-	@echo "                     !!!! READ THIS !!!!"
-	@echo ""
-	@echo ""
-	@echo " --={[ Edit the config at ~/.config/cijoe/cijoe-config.toml ]}=-- "
-	@echo ""
-	@echo ""
-	@echo "                     !!!! READ THIS !!!!"
-	@echo ""
-	@echo ""
-	@echo "## xNVME: cijoe [DONE]"
+	@echo "## xNVMe: cijoe-install [DONE]"
 
-define cijoe-guest-setup-xnvme-using-git-help
-# Create and start a qemu-guest, then setup xNVMe within the guest using git
+define guest-env-help
+# Setup guest environment: install CIJOE, check QEMU, select guest
 endef
-.PHONY: cijoe-guest-setup-xnvme-using-git
-cijoe-guest-setup-xnvme-using-git:
-	@echo "## xNVMe: cijoe-guest-setup-xnvme-using-git"
-	cd cijoe && cijoe "workflows/provision-using-git.yaml" \
-		--monitor \
-		--config "configs/debian-trixie.toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
-		--config "configs/system_imaging.toml"
-	@echo "## xNVME: cijoe-guest-setup-xnvme-using-git [DONE]"
+.PHONY: guest-env
+guest-env: cijoe-install
+	@echo "## xNVMe: guest-env"
+	@python3 $(TOOLBOX_DIR)/dev_setup_check.py
+	@python3 $(TOOLBOX_DIR)/guest_select.py cijoe/
+	@echo "## xNVMe: guest-env [DONE]"
 
-define cijoe-guest-setup-blank-help
-# Create and start a qemu-guest
+define guest-select-help
+# Interactive menu to select the active QEMU guest (or pipe: echo debian-trixie | make guest-select)
 endef
-.PHONY: cijoe-guest-setup-blank
-cijoe-guest-setup-blank:
-	@echo "## xNVMe: cijoe-guest-setup-blank"
-	cd cijoe && cijoe "workflows/provision-using-git.yaml" \
+.PHONY: guest-select
+guest-select:
+	@python3 $(TOOLBOX_DIR)/guest_select.py cijoe/
+
+define guest-start-help
+# Kill, initialize, and start the QEMU guest (reads from cijoe/current.guest)
+endef
+.PHONY: guest-start
+guest-start:
+	@if [ ! -f "$(CIJOE_GUEST_FILE)" ]; then \
+		echo ""; \
+		echo "+=============================================+"; \
+		echo "                                               "; \
+		echo " ERR: No guest selected                        "; \
+		echo "                                               "; \
+		echo " Run: make guest-select                        "; \
+		echo "                                               "; \
+		echo "+=============================================+"; \
+		echo ""; \
+		false; \
+	fi
+	$(eval GUEST := $(shell cat $(CIJOE_GUEST_FILE)))
+	@echo "## xNVMe: guest-start ($(GUEST))"
+	cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
 		--monitor \
-		--config "configs/debian-trixie.toml" \
+		--config "configs/$(GUEST).toml" \
 		--config "configs/fio.toml" \
 		--config "configs/xnvme.toml" \
 		--config "configs/system_imaging.toml" \
+		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-guest-start,cijoe-output-guest-start)" \
 		guest_kill \
 		guest_initialize \
 		guest_start \
 		guest_check
-	@echo "## xNVME: cijoe-guest-setup-blank [DONE]"
+	@echo "## xNVMe: guest-start [DONE]"
 
-define cijoe-guest-start-help
-# Start the qemu-guest -- assumes a qemu-guest has been setup
+define guest-provision-help
+# Sync source, build, and install xNVMe inside the guest (reads from cijoe/current.guest)
+#
+# Requires: /tmp/artifacts/xnvme-src.tar.gz (run: make gen-artifacts ALLOW_DIRTY=1)
 endef
-.PHONY: cijoe-guest-start
-cijoe-guest-start:
-	@echo "## xNVMe: cijoe-guest-start"
-	cd cijoe && cijoe "workflows/provision-using-git.yaml" \
+.PHONY: guest-provision
+guest-provision:
+	@if [ ! -f "$(CIJOE_GUEST_FILE)" ]; then \
+		echo ""; \
+		echo "+=============================================+"; \
+		echo "                                               "; \
+		echo " ERR: No guest selected                        "; \
+		echo "                                               "; \
+		echo " Run: make guest-select                        "; \
+		echo "                                               "; \
+		echo "+=============================================+"; \
+		echo ""; \
+		false; \
+	fi
+	$(eval GUEST := $(shell cat $(CIJOE_GUEST_FILE)))
+	@if [ ! -f /tmp/artifacts/xnvme-src.tar.gz ]; then \
+		echo ""; \
+		echo "+=============================================+"; \
+		echo "                                               "; \
+		echo " ERR: /tmp/artifacts/xnvme-src.tar.gz missing  "; \
+		echo "                                               "; \
+		echo " Run: make gen-artifacts ALLOW_DIRTY=1         "; \
+		echo "                                               "; \
+		echo "+=============================================+"; \
+		echo ""; \
+		false; \
+	fi
+	@echo "## xNVMe: guest-provision ($(GUEST))"
+	cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
 		--monitor \
-		--config "configs/debian-trixie.toml" \
+		--config "configs/$(GUEST).toml" \
 		--config "configs/fio.toml" \
 		--config "configs/xnvme.toml" \
-		--config "configs/system_imaging.toml" \
-		guest_start \
-		guest_check
-	@echo "## xNVMe: cijoe-guest-start [DONE]"
-
-define cijoe-guest-stop-help
-# Stop the qemu-guest -- assumes a qemu-guest has been setup
-endef
-.PHONY: cijoe-guest-stop
-cijoe-guest-stop:
-	@echo "## xNVMe: cijoe-guest-stop"
-	cd cijoe && cijoe "workflows/provision-using-git.yaml" \
-		--monitor \
-		--config "configs/debian-trixie.toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
-		--config "configs/system_imaging.toml" \
-		guest_kill
-	@echo "## xNVMe: cijoe-guest-stop [DONE]"
-
-define cijoe-setup-xnvme-using-git-help
-# Synchronize xNVMe source using git, then setup xNVMe
-endef
-.PHONY: cijoe-setup-xnvme-using-git
-cijoe-setup-xnvme-using-git:
-	@echo "## xNVMe: cijoe-setup-xnvme-using-git"
-	cd cijoe && cijoe workflows/provision-using-git.yaml \
-		--monitor \
-		--config "configs/debian-trixie.toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
-		-l \
-		xnvme_source_sync \
-		xnvme_build_prep \
-		xnvme_build \
-		xnvme_install \
-		ldconfig \
-		xnvme_bindings_py_build \
-		fio_prep
-	@echo "## xNVME: cijoe-setup-xnvme-using-git [DONE]"
-
-define cijoe-setup-xnvme-using-tgz-help
-# Synchronize xNVMe source using tgz, then setup xNVMe
-endef
-.PHONY: cijoe-setup-xnvme-using-tgz
-cijoe-setup-xnvme-using-tgz:
-	@echo "## xNVMe: cijoe-setup-xnvme-using-tgz"
-	cd cijoe && cijoe workflows/provision-using-tgz.yaml \
-		--monitor \
-		--config "configs/debian-trixie.toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
+		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-guest-provision,cijoe-output-guest-provision)" \
 		-l \
 		xnvme_source_sync \
 		xnvme_build_prep \
@@ -269,37 +250,65 @@ cijoe-setup-xnvme-using-tgz:
 		ldconfig \
 		xnvme_bindings_py_install_tgz \
 		fio_prep
-	@echo "## xNVME: cijoe-setup-xnvme-using-tgz [DONE]"
+	@echo "## xNVMe: guest-provision [DONE]"
 
-define cijoe-sync-git-help
-# Synchronize xNVMe source using git
+define guest-test-help
+# Run the CIJOE test workflow for the selected guest (reads from cijoe/current.guest)
+#
+# Optional: CIJOE_OUTPUT=<prefix> for CI artifact naming
 endef
-.PHONY: cijoe-sync-git
-cijoe-sync-git:
-	@echo "## xNVMe: cijoe-sync-git"
-	cd cijoe && cijoe workflows/provision-using-git.yaml \
+.PHONY: guest-test
+guest-test:
+	@if [ ! -f "$(CIJOE_GUEST_FILE)" ]; then \
+		echo ""; \
+		echo "+=============================================+"; \
+		echo "                                               "; \
+		echo " ERR: No guest selected                        "; \
+		echo "                                               "; \
+		echo " Run: make guest-select                        "; \
+		echo "                                               "; \
+		echo "+=============================================+"; \
+		echo ""; \
+		false; \
+	fi
+	$(eval GUEST := $(shell cat $(CIJOE_GUEST_FILE)))
+	@echo "## xNVMe: guest-test ($(GUEST))"
+	cd cijoe && cijoe "workflows/test-$(GUEST).yaml" \
 		--monitor \
-		--config "configs/debian-trixie.toml" \
+		--config "configs/$(GUEST).toml" \
 		--config "configs/fio.toml" \
 		--config "configs/xnvme.toml" \
-		-l \
-		xnvme_source_sync
-	@echo "## xNVME: cijoe-sync-git [DONE]"
+		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-test-results,cijoe-output-guest-test)"
+	@echo "## xNVMe: guest-test [DONE]"
 
-define cijoe-sync-tgz-help
-# Synchronize xNVMe source using tgz
+define guest-stop-help
+# Stop (kill) the QEMU guest (reads from cijoe/current.guest)
 endef
-.PHONY: cijoe-sync-tgz
-cijoe-sync-tgz:
-	@echo "## xNVMe: cijoe-sync-tgz"
-	cd cijoe && cijoe workflows/provision-using-tgz.yaml \
+.PHONY: guest-stop
+guest-stop:
+	@if [ ! -f "$(CIJOE_GUEST_FILE)" ]; then \
+		echo ""; \
+		echo "+=============================================+"; \
+		echo "                                               "; \
+		echo " ERR: No guest selected                        "; \
+		echo "                                               "; \
+		echo " Run: make guest-select                        "; \
+		echo "                                               "; \
+		echo "+=============================================+"; \
+		echo ""; \
+		false; \
+	fi
+	$(eval GUEST := $(shell cat $(CIJOE_GUEST_FILE)))
+	@echo "## xNVMe: guest-stop ($(GUEST))"
+	cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
 		--monitor \
-		--config "configs/debian-trixie.toml" \
+		--config "configs/$(GUEST).toml" \
 		--config "configs/fio.toml" \
 		--config "configs/xnvme.toml" \
-		-l \
-		xnvme_source_sync
-	@echo "## xNVME: cijoe-sync-tgz [DONE]"
+		--config "configs/system_imaging.toml" \
+		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-guest-stop,cijoe-output-guest-stop)" \
+		guest_kill
+	@echo "## xNVMe: guest-stop [DONE]"
 
 define cijoe-do-bootimage-debian-trixie-amd64-help
 # Create a Debian Trixie - amd64 - bootable system image for a qemu-guest
@@ -428,27 +437,15 @@ verify-ramdisk:
 	@echo "## xNVMe: make verify-ramdisk [DONE]"
 
 define verify-guest-help
-# Provision a QEMU guest and run the CIJOE test suite for it
+# Chain: guest-start + guest-provision + guest-test (reads from cijoe/current.guest)
 #
 # Requires: A custom QEMU environment (run: make docker)
-# Requires: GUEST=<os>-<ver> (e.g. GUEST=debian-trixie)
+# Requires: Guest selected via 'make guest-select'
+# Requires: /tmp/artifacts/xnvme-src.tar.gz (run: make gen-artifacts ALLOW_DIRTY=1)
 # Optional: CIJOE_OUTPUT=<prefix> for CI artifact naming
 endef
 .PHONY: verify-guest
 verify-guest:
-	@if [ -z "$(GUEST)" ]; then \
-		echo ""; \
-		echo "+=============================================+"; \
-		echo "                                               "; \
-		echo " ERR: GUEST is not set                         "; \
-		echo "                                               "; \
-		echo " Usage: make verify-guest GUEST=debian-trixie  "; \
-		echo "                                               "; \
-		echo "+=============================================+"; \
-		echo ""; \
-		false; \
-	fi
-	@echo "## xNVMe: make verify-guest GUEST=$(GUEST)"
 	@if [ ! -f /tmp/artifacts/xnvme-src.tar.gz ]; then \
 		echo ""; \
 		echo "+=============================================+"; \
@@ -461,69 +458,27 @@ verify-guest:
 		echo ""; \
 		false; \
 	fi
-	cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
-		--monitor \
-		--config "configs/$(GUEST).toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
-		--config "configs/system_imaging.toml" \
-		$(if $(CIJOE_OUTPUT),--output "$(CIJOE_OUTPUT)-provision")
-	cd cijoe && cijoe "workflows/test-$(GUEST).yaml" \
-		--monitor \
-		--config "configs/$(GUEST).toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
-		$(if $(CIJOE_OUTPUT),--output "$(CIJOE_OUTPUT)-test-results")
-	@echo "## xNVMe: make verify-guest [DONE]"
+	$(MAKE) guest-start guest-provision guest-test
 
 define docgen-guest-help
-# Provision a QEMU guest and generate documentation
+# Provision a QEMU guest and generate documentation (reads from cijoe/current.guest)
 #
 # Requires: A custom QEMU environment (run: make docker)
-# Requires: GUEST=<os>-<ver> (e.g. GUEST=debian-trixie)
+# Requires: Guest selected via 'make guest-select'
+# Requires: /tmp/artifacts/xnvme-src.tar.gz (run: make gen-artifacts ALLOW_DIRTY=1)
 # Optional: CIJOE_OUTPUT=<prefix> for CI artifact naming
 endef
 .PHONY: docgen-guest
-docgen-guest:
-	@if [ -z "$(GUEST)" ]; then \
-		echo ""; \
-		echo "+=============================================+"; \
-		echo "                                               "; \
-		echo " ERR: GUEST is not set                         "; \
-		echo "                                               "; \
-		echo " Usage: make docgen-guest GUEST=debian-trixie  "; \
-		echo "                                               "; \
-		echo "+=============================================+"; \
-		echo ""; \
-		false; \
-	fi
-	@echo "## xNVMe: make docgen-guest GUEST=$(GUEST)"
-	@if [ ! -f /tmp/artifacts/xnvme-src.tar.gz ]; then \
-		echo ""; \
-		echo "+=============================================+"; \
-		echo "                                               "; \
-		echo " ERR: /tmp/artifacts/xnvme-src.tar.gz missing  "; \
-		echo "                                               "; \
-		echo " Run: make gen-artifacts ALLOW_DIRTY=1         "; \
-		echo "                                               "; \
-		echo "+=============================================+"; \
-		echo ""; \
-		false; \
-	fi
-	cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
-		--monitor \
-		--config "configs/$(GUEST).toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
-		--config "configs/system_imaging.toml" \
-		$(if $(CIJOE_OUTPUT),--output "$(CIJOE_OUTPUT)-provision")
+docgen-guest: guest-start guest-provision
+	$(eval GUEST := $(shell cat $(CIJOE_GUEST_FILE)))
+	@echo "## xNVMe: docgen-guest ($(GUEST))"
 	cd cijoe && cijoe "workflows/docgen.yaml" \
 		--monitor \
 		--config "configs/$(GUEST).toml" \
 		--config "configs/fio.toml" \
 		--config "configs/xnvme.toml" \
-		$(if $(CIJOE_OUTPUT),--output "$(CIJOE_OUTPUT)-docs")
-	@echo "## xNVMe: make docgen-guest [DONE]"
+		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-docs,cijoe-output-docgen)"
+	@echo "## xNVMe: docgen-guest [DONE]"
 
 define install-help
 # Install xNVMe with Meson
@@ -683,22 +638,23 @@ endef
 gen-src-archive-with-subprojects:
 	@echo "## xNVMe: make gen-src-archive-with-subprojects"
 	$(MESON) setup $(BUILD_DIR) -Dbuild_subprojects=false -Dwith-liburing=disabled -Dwith-libvfn=disabled
-	$(MESON) dist -C $(BUILD_DIR) --no-tests --formats gztar --include-subprojects
+	if [ $(ALLOW_DIRTY) -eq 1 ]; then \
+		$(MESON) dist -C $(BUILD_DIR) --no-tests --formats gztar --include-subprojects --allow-dirty; \
+	else \
+		$(MESON) dist -C $(BUILD_DIR) --no-tests --formats gztar --include-subprojects; \
+	fi
 	@echo "## xNVMe: make gen-src-archive-with-subprojects [DONE]"
 
 define gen-artifacts-help
-# Generate artifacts in "/tmp/artifacts" for local guest provisoning
+# Generate artifacts in "/tmp/artifacts" for local guest provisioning
 #
-# This is a helper to produce the set of files used by toolbox/workflows/provision.workflow
-# The set of files would usually be downloaded from the CI build-artifacts, however, this helper
-# provides the means to perform local provisioning without downloading files.
+# Optional: ALLOW_DIRTY=1 to allow uncommitted changes
 endef
 .PHONY: gen-artifacts
 gen-artifacts: gen-src-archive-with-subprojects
 	@echo "## xNVMe: make gen-artifacts"
 	cd python/bindings && make clean build
 	mkdir -p /tmp/artifacts
-	ls -l /tmp/artifacts
 	cp builddir/meson-dist/xnvme-$(PROJECT_VER).tar.gz /tmp/artifacts/xnvme-src.tar.gz
 	cp python/bindings/dist/xnvme-$(PROJECT_VER).tar.gz /tmp/artifacts/xnvme-py-sdist.tar.gz
 	ls -l /tmp/artifacts

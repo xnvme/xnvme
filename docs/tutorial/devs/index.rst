@@ -263,68 +263,20 @@ Setup by running the following in the root of the **xNVMe** repository:
 .. code-block:: bash
 
   cd ~/git/xnvme
-  make cijoe
+  make guest-env
 
-This will install **cijoe** along with a couple of **cijoe-packages** for
-Linux, qemu, and fio. After installation, then a configuation file is added at
-``~/.config/cijoe/cijoe-config.toml``. You need to adjust this to match your
-system, look specifically for these entries:
+This will:
 
-.. code-block:: bash
+1. Install **cijoe** along with dependencies for Linux, qemu, and fio
+2. Check that QEMU and KVM are available
+3. Present an interactive menu to select a guest (e.g. ``debian-trixie``,
+   ``freebsd-14``)
 
-  [qemu]
-  img_bin = "qemu-img"
-  default_guest = "bookworm_arm64"
-
-  [qemu.systems.aarch64]
-  # bin = "{{ local.env.HOME }}/opt/qemu/bin/qemu-system-aarch64"
-  bin = "/opt/qemu/bin/qemu-system-aarch64"
-
-  [xnvme.repository]
-  upstream = "https://github.com/OpenMPDK/xNVMe.git"
-  path = "{{ local.env.HOME }}/git/xnvme"
-
-  # This is utilized by repository syncing during development.
-  [xnvme.repository.sync]
-  branch = "wip"
-  remote = "guest"
-  remote_path = "/root/git/xnvme"
-
-In general, ensure paths to repositories, binaries, etc. match your local system
-and the remote system you are using.
+The selected guest is stored in ``cijoe/current.guest`` and used by all
+subsequent ``make guest-*`` targets.
 
 Then logout and back in to reload the environment, the addition of ``pipx`` and
 the ``cijoe`` into ``$PATH``.
-
-Do a trial-run:
-
-.. code-block:: bash
-
-  # Create a workdir
-  mkdir -p ~/workdirs/cijoe
-  cd ~/workdirs/cijoe
-
-  # Create a default configuration and workflow
-  cijoe --example core
-
-In case everything is fine, then it will execute silently.
-
-You can increase the information-level with ``-l``
-argument, the more times you provide the higher the level.
-Try running it with two, that is debug-level:
-
-.. code-block:: bash
-
-  cijoe -ll
-
-In the ``cwd`` then a ``cijoe-output`` is produced, this
-directory holds all information about what was executed.
-Have a look at the generated report at
-``cijoe-output/report.html``.
-
-.. note::
-   In case you see failures, then inspect the ``RUNLOG`` in the report, this
-   usually tells you exactly what went wrong.
 
 .. note::
    Make sure that ``pytest`` is not installed system-wide by running ``which
@@ -446,7 +398,7 @@ Checkout qemu:
 .. code-block:: bash
 
   cd ~/git
-  git clone https://github.com/OpenMPDK/qemu --recursive
+  git clone https://github.com/SamsungDS/qemu.git --recursive
   cd qemu
   git checkout for-xnvme
   git submodule update --init --recursive
@@ -491,41 +443,33 @@ helper-targets to do this. That is, spinning up the guest, synchronizing your
 **xNVMe** git repository changes into the qemu-guest, building, installing, and
 running tests.
 
-Test Linux
-~~~~~~~~~~
+The ``make guest-env`` target will present an interactive menu to select the
+guest OS (e.g. ``debian-trixie``, ``freebsd-14``). The same workflow applies
+regardless of which guest you choose:
 
 .. code-block:: bash
 
-  # Create a cijoe-config for a qemu-guest with Debian Trixie
-  cp cijoe/configs/debian-trixie.toml ~/.config/cijoe/cijoe-config.toml
+  # One-time setup: install CIJOE and select a guest
+  make guest-env
 
-  # Provision the machine
-  make cijoe-guest-setup-xnvme-using-git
+  # Build source artifacts and run the full test cycle
+  make gen-artifacts ALLOW_DIRTY=1 && make verify-guest
 
-  # Run the test
-  make cijoe-do-test-linux
+  # Or run stages individually:
+  make guest-start          # start the guest
+  make guest-provision   # sync source, build, install
+  make guest-test        # run the test suite
 
-Generate documentation in Linux
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To switch to a different guest, run ``make guest-select``.
 
-You can reuse the qemu-guest created in the previous section to generate the
-documentation. See the :ref:`sec-tutorials-devs-linux-reproduce-ci` section for
-using ``make docgen-guest`` inside the Docker container.
+Generate documentation
+~~~~~~~~~~~~~~~~~~~~~~
 
-Test FreeBSD
-~~~~~~~~~~~~
+You can reuse the qemu-guest to generate the documentation. See the
+:ref:`sec-tutorials-devs-linux-reproduce-ci` section for using
+``make docgen-guest`` inside the Docker container.
 
-.. code-block:: bash
 
-  # Create a cijoe-config for a qemu-guest with FreeBSD
-  cp cijoe/configs/debian-trixie.toml ~/.config/cijoe/cijoe-config.toml
-
-  # Provision the machine
-  make cijoe-guest-setup-xnvme-using-git
-
-  # Run the test
-  make cijoe-do-test-freebsd
-  
 
 .. _sec-tutorials-devs-linux-reproduce-ci:
 
@@ -551,18 +495,18 @@ build that includes NVMe device emulation.
 The container bind-mounts the repository at ``/tmp/xnvme`` and
 ``/tmp/artifacts``, so the artifacts from step 1 are available inside.
 
-3. Inside the container, set up CIJOE and run the desired target:
+3. Inside the container, set up CIJOE, select a guest, and run tests:
 
 .. code-block:: bash
 
-  # Install CIJOE
-  make cijoe
+  # Install CIJOE and select guest
+  echo debian-trixie | make guest-env
 
-  # Test on Debian Trixie
-  make verify-guest GUEST=debian-trixie
+  # Test
+  make verify-guest
 
   # Or generate documentation
-  make docgen-guest GUEST=debian-trixie
+  make docgen-guest
 
 In case you are setting up the test-target using other tools, or just want to
 run pytest directly, then the following two sections describe how to do that.
@@ -642,10 +586,10 @@ paths to binaries etc. Once you have done that, then go ahead and run:
 
 .. code-block:: bash
 
-  # Synchronize your local git with the repos on the remote physical machine
-  make cijoe-sync-git
+  # Sync source, build, and install xNVMe on the remote end
+  make guest-provision
 
-  # Build and install **xNVMe** on the remote end
-  make cijoe-setup-xnvme-using-git
+  # Run the test suite
+  make guest-test
 
-You can do any of the **cijoe** things like the above.
+You can do any of the ``make guest-*`` things like the above.
