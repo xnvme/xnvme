@@ -26,7 +26,7 @@ repos:
 
 # REUSE-software compliance check
 - repo: https://github.com/fsfe/reuse-tool
-  rev: v3.1.0a1
+  rev: v6.2.0
   hooks:
   - id: reuse
 

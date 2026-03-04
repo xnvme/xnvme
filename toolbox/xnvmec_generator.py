@@ -147,6 +147,7 @@ def run(cmd, cmd_input=None, cwd=None):
         return out.decode("utf-8"), err.decode("utf-8"), rcode
 
 
+# REUSE-IgnoreStart
 def emit_meson_build(args, folder, meson_file):
     """Emit a meson.build file"""
     with open(os.sep.join([args.output, folder, "meson.build"]), "w") as mfd:
@@ -155,6 +156,9 @@ def emit_meson_build(args, folder, meson_file):
         mfd.write("# SPDX-License-Identifier: BSD-3-Clause\n")
         mfd.write("\n")
         mfd.write("\n".join(meson_file))
+
+
+# REUSE-IgnoreEnd
 
 
 def parse_tool_sub_sig(tsig, sname):
