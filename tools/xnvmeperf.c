@@ -279,6 +279,56 @@ setup_job(struct xnvmeperf_job *job, struct xnvme_dev *dev, struct xnvmeperf_arg
 	return 0;
 }
 
+static void
+thread_term(struct xnvmeperf_thread *thread)
+{
+	for (int i = 0; i < thread->ndevs; i++) {
+		struct xnvmeperf_job *job = &thread->jobs[i];
+
+		if (job->buf) {
+			xnvme_buf_free(job->dev, job->buf);
+		}
+		if (job->queue) {
+			xnvme_queue_term(job->queue);
+		}
+	}
+	free(thread->jobs);
+}
+
+static int
+thread_init(struct xnvmeperf_thread *thread, struct xnvmeperf_args *args)
+{
+	int err;
+
+	thread->njobs = thread->ndevs;
+	thread->jobs = calloc(thread->ndevs, sizeof(struct xnvmeperf_job));
+	if (!thread->jobs) {
+		err = -errno;
+		xnvme_cli_perr("Failed: calloc() for jobs", err);
+		return err;
+	}
+
+	for (int i = 0; i < thread->ndevs; i++) {
+		struct xnvmeperf_job *job = &thread->jobs[i];
+
+		err = setup_job(job, thread->devs[i], args,
+				(unsigned int)(thread->cpu * 1000 + i));
+		if (err) {
+			xnvme_cli_perr("Failed: setup_job()", err);
+			return err;
+		}
+
+		job->buf = xnvme_buf_alloc(job->dev, args->iosize);
+		if (!job->buf) {
+			err = -errno;
+			xnvme_cli_perr("Failed: xnvme_buf_alloc()", err);
+			return err;
+		}
+	}
+
+	return err;
+}
+
 /**
  * Per-CPU benchmark thread; runs IO against the devices assigned to this thread.
  *
@@ -303,35 +353,13 @@ thread_fn(void *arg)
 		fprintf(stderr, "Warning: failed to pin thread to CPU %d\n", thread->cpu);
 	}
 
-	thread->njobs = thread->ndevs;
-	thread->jobs = calloc(thread->ndevs, sizeof(struct xnvmeperf_job));
-	if (!thread->jobs) {
-		err = -errno;
-		xnvme_cli_perr("Failed: calloc() for jobs", err);
-		return NULL;
-	}
-
 	for (int i = 0; i < thread->ndevs; i++) {
 		struct xnvmeperf_job *job = &thread->jobs[i];
-
-		err = setup_job(job, thread->devs[i], args,
-				(unsigned int)(thread->cpu * 1000 + i));
-		if (err) {
-			xnvme_cli_perr("Failed: setup_job()", err);
-			goto exit;
-		}
-
-		job->buf = xnvme_buf_alloc(job->dev, args->iosize);
-		if (!job->buf) {
-			err = -errno;
-			xnvme_cli_perr("Failed: xnvme_buf_alloc()", err);
-			goto exit;
-		}
 
 		err = xnvme_buf_fill(job->buf, args->iosize, "anum");
 		if (err) {
 			xnvme_cli_perr("Failed: xnvme_buf_fill()", err);
-			goto exit;
+			return NULL;
 		}
 	}
 
@@ -388,18 +416,6 @@ thread_fn(void *arg)
 
 	xnvme_timer_stop(&timer);
 	thread->elapsed = xnvme_timer_elapsed_secs(&timer);
-
-exit:
-	for (int i = 0; i < thread->ndevs; i++) {
-		struct xnvmeperf_job *job = &thread->jobs[i];
-
-		if (job->buf) {
-			xnvme_buf_free(job->dev, job->buf);
-		}
-		if (job->queue) {
-			xnvme_queue_term(job->queue);
-		}
-	}
 
 	return NULL;
 }
@@ -568,6 +584,14 @@ xnvmeperf_run(struct xnvmeperf_args *args)
 		threads[i].devs = &devs[start];
 		threads[i].dev_uris = &args->dev_uris[start];
 
+		err = thread_init(&threads[i], args);
+		if (err) {
+			fprintf(stderr, "Failed: thread_init() for thread: %d, err: %d\n", i, err);
+			goto close_devs;
+		}
+	}
+
+	for (int i = 0; i < args->ncpus; i++) {
 		err = pthread_create(&tids[i], NULL, thread_fn, &threads[i]);
 		if (err) {
 			xnvme_cli_perr("Failed: pthread_create()", err);
@@ -583,7 +607,7 @@ xnvmeperf_run(struct xnvmeperf_args *args)
 	print_results(threads, args);
 
 	for (int i = 0; i < args->ncpus; i++) {
-		free(threads[i].jobs);
+		thread_term(&threads[i]);
 	}
 
 close_devs:
