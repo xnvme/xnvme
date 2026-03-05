@@ -72,6 +72,7 @@ xnvmelib_source = [
   'xnvme_dev.c',
   'xnvme_file.c',
   'xnvme_geo.c',
+  'xnvme_host_buf.c',
   'xnvme_ident.c',
   'xnvme_kvs.c',
   'xnvme_lba.c',

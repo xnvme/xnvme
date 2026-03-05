@@ -8,6 +8,7 @@
 #include <libxnvme.h>
 #include <xnvme_dev.h>
 #include <xnvme_be.h>
+#include <xnvme_host_buf.h>
 
 void *
 xnvme_buf_virt_alloc(size_t alignment, size_t nbytes)
@@ -90,15 +91,13 @@ xnvme_buf_free(const struct xnvme_dev *dev, void *buf)
 int
 xnvme_buf_clear(void *buf, size_t nbytes)
 {
-	memset(buf, 0, nbytes);
-	return 0;
+	return xnvme_host_buf_clear(buf, nbytes);
 }
 
 int
 xnvme_buf_memcpy(void *dst, const void *src, size_t nbytes)
 {
-	memcpy(dst, src, nbytes);
-	return 0;
+	return xnvme_host_buf_memcpy(dst, src, nbytes);
 }
 
 /**
@@ -182,84 +181,20 @@ xnvme_buf_to_file(void *buf, size_t nbytes, const char *path)
 int
 xnvme_buf_fill(void *buf, size_t nbytes, const char *content)
 {
-	uint8_t *cbuf = buf;
-
-	if (strlen(content) == 1) {
-		memset(cbuf, content[0], nbytes);
-		return 0;
-	}
-
-	if (!strncmp(content, "anum", 4)) {
-		for (size_t i = 0; i < nbytes; ++i) {
-			cbuf[i] = (i % 26) + 65;
-		}
-
-		return 0;
-	}
-
-	if (!strncmp(content, "rand-t", 6)) {
-		srand(time(NULL));
-		for (size_t i = 0; i < nbytes; ++i) {
-			cbuf[i] = (rand() % 26) + 65;
-		}
-
-		return 0;
-	}
-
-	if (!strncmp(content, "rand-k", 6)) {
-		srand(0);
-		for (size_t i = 0; i < nbytes; ++i) {
-			cbuf[i] = (rand() % 26) + 65;
-		}
-
-		return 0;
-	}
-
-	if (!strncmp(content, "zero", 4)) {
-		return xnvme_buf_clear(buf, nbytes);
-	}
-
-	return xnvme_buf_from_file(buf, nbytes, content);
+	return xnvme_host_buf_fill(buf, nbytes, content);
 }
 
 int
 xnvme_buf_diff(const void *expected, const void *actual, size_t nbytes, size_t *diff)
 {
-	const uint8_t *exp = expected;
-	const uint8_t *act = actual;
-
-	for (size_t i = 0; i < nbytes; ++i) {
-		if (exp[i] == act[i]) {
-			continue;
-		}
-
-		*diff += 1;
-	}
-
-	return 0;
+	return xnvme_host_buf_diff(expected, actual, nbytes, diff, false);
 }
 
 int
 xnvme_buf_diff_pr(const void *expected, const void *actual, size_t nbytes, int XNVME_UNUSED(opts))
 {
-	const uint8_t *exp = expected;
-	const uint8_t *act = actual;
 	size_t diff = 0;
-
-	printf("comparison:\n");
-	printf("  diffs:\n");
-	for (size_t i = 0; i < nbytes; ++i) {
-		if (exp[i] == act[i]) {
-			continue;
-		}
-
-		++diff;
-		printf("    - {byte: '%06zu', expected: 0x%" PRIx8 ", actual: 0x%" PRIx8 ")\n", i,
-		       exp[i], act[i]);
-	}
-	printf("  nbytes: %zu\n", nbytes);
-	printf("  nbytes_diff: %zu\n", diff);
-	return 0;
+	return xnvme_host_buf_diff(expected, actual, nbytes, &diff, true);
 }
 
 int
