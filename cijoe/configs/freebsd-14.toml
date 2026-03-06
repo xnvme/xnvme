@@ -39,7 +39,7 @@ path = "{{ local.env.HOME }}/guests/freebsd-14-amd64"
 system_label = "x86_64"
 
 # Keyword arguments: joined onto the form: "-cpu host -smp 4 -m 4" etc.
-system_args.kwa = {cpu = "host", smp = 4, m = "12G", accel = "kvm"}
+system_args.kwa = {cpu = "host", smp = 4, m = "16G", accel = "kvm"}
 
 # Raw arguments: passed without modification to qemu-system-{arch}
 system_args.raw = """\
