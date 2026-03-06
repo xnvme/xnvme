@@ -306,7 +306,10 @@ class XnvmeDriver(object):
             else:
                 XnvmeDriver.IS_FABRICS_UP = False
 
-        cijoe.run("xnvme-driver")
+        err, _ = cijoe.run("xnvme-driver")
+        if err:
+            cijoe.run("dmesg | tail -n20")
+
         XnvmeDriver.IS_KERNEL_ATTACHED = False
 
     @staticmethod
@@ -320,7 +323,10 @@ class XnvmeDriver(object):
             else:
                 XnvmeDriver.IS_FABRICS_UP = False
 
-        cijoe.run("xnvme-driver reset")
+        err, _ = cijoe.run("xnvme-driver reset")
+        if err:
+            cijoe.run("dmesg | tail -n20")
+
         XnvmeDriver.IS_KERNEL_ATTACHED = True
 
     @staticmethod
