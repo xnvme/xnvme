@@ -427,23 +427,6 @@ dev_close_fn(void *arg)
 	return NULL;
 }
 
-static const char *
-iopattern_name(enum iopattern p)
-{
-	switch (p) {
-	case IOPATTERN_READ:
-		return "read";
-	case IOPATTERN_WRITE:
-		return "write";
-	case IOPATTERN_RANDREAD:
-		return "randread";
-	case IOPATTERN_RANDWRITE:
-		return "randwrite";
-	default:
-		return "unknown";
-	}
-}
-
 static void
 print_results(struct xnvmeperf_thread *threads, struct xnvmeperf_args *args)
 {
@@ -458,8 +441,7 @@ print_results(struct xnvmeperf_thread *threads, struct xnvmeperf_args *args)
 
 	printf("\n");
 	printf("====================================================================\n");
-	printf(" xnvmeperf: pattern=%s, iosize=%u, qdepth=%u, time=%.2fs\n",
-	       iopattern_name(args->pattern), args->iosize, args->qdepth, elapsed);
+	printf(" xnvmeperf (elapsed: %.2fs)\n", elapsed);
 	printf("====================================================================\n");
 	printf(" %-20s  %6s  %12s %10s %8s\n", "Device", "CPUs", "IOPS", "MiB/s", "Failed");
 
@@ -499,7 +481,7 @@ print_results(struct xnvmeperf_thread *threads, struct xnvmeperf_args *args)
 		total_failed += failed;
 	}
 
-	printf("------------------------------------------------------------\n");
+	printf("--------------------------------------------------------------------\n");
 	printf(" %-29s %12.2f %10.2f %8lu\n", "Total:", (double)total_completed / elapsed,
 	       ((double)total_completed * (double)args->iosize) / (elapsed * 1024.0 * 1024.0),
 	       (unsigned long)total_failed);
@@ -934,6 +916,31 @@ sub_run(struct xnvme_cli *cli)
 
 	args.opts = xnvme_opts_default();
 	xnvme_cli_to_opts(cli, &args.opts);
+
+	printf("Running xnvmeperf with arguments:\n");
+
+	printf("- Devices: [");
+	for (int i = 0; i < args.ndevs; i++) {
+		if (i) {
+			printf(", ");
+		}
+		printf("%s", args.dev_uris[i]);
+	}
+	printf("] (total: %d)\n", args.ndevs);
+
+	printf("- CPUs: [");
+	for (int i = 0; i < args.ncpus; i++) {
+		if (i) {
+			printf(", ");
+		}
+		printf("%d", args.cpus[i]);
+	}
+	printf("] (total: %d)\n", args.ncpus);
+
+	printf("- io pattern: %d (%s)\n", args.pattern, cli->args.iopattern);
+	printf("- queue depth: %d\n", args.qdepth);
+	printf("- io size: %d\n", args.iosize);
+	printf("- runtime: %d\n", args.time);
 
 	err = xnvmeperf_run(&args);
 
