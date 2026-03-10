@@ -93,24 +93,63 @@ pin_to_cpu(int cpu)
 #endif
 }
 
+// Returns the integer value of a hexadecimal digit character.
+static int
+hex_digit_val(char c)
+{
+	if (c >= '0' && c <= '9') {
+		return c - '0';
+	}
+	if (c >= 'a' && c <= 'f') {
+		return c - 'a' + 10;
+	}
+	return c - 'A' + 10;
+}
+
 static int
 parse_cpumask(const char *hex, int **cpus_out, int *ncpus_out)
 {
-	char *endptr;
-	unsigned long mask;
-	unsigned long tmp;
-	int count = 0, err;
+	int len, count = 0, err;
 	int *cpus;
+	bool nonzero = false;
 
-	mask = strtoul(hex, &endptr, 16);
-	if (*endptr != '\0' || endptr == hex || mask == 0) {
+	len = strlen(hex);
+
+	if (len > 1 && (!memcmp(hex, "0x", 2) || !memcmp(hex, "0X", 2))) {
+		hex += 2;
+		len -= 2;
+	}
+
+	if (len == 0) {
 		err = -EINVAL;
 		xnvme_cli_perr("Error: --cpumask must be a non-zero hex value", err);
 		return err;
 	}
 
-	for (tmp = mask; tmp; tmp >>= 1) {
-		count += tmp & 1;
+	for (int i = 0; i < len; i++) {
+		char c = hex[i];
+		if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') ||
+		      (c >= 'A' && c <= 'F'))) {
+			err = -EINVAL;
+			xnvme_cli_perr("Error: --cpumask must be a non-zero hex value", err);
+			return err;
+		}
+		if (c != '0') {
+			nonzero = true;
+		}
+	}
+	if (!nonzero) {
+		err = -EINVAL;
+		xnvme_cli_perr("Error: --cpumask must be a non-zero hex value", err);
+		return err;
+	}
+
+	// Count set bits across all hex digits
+	for (int i = 0; i < len; i++) {
+		int value = hex_digit_val(hex[i]);
+		for (int b = 0; b < 4; b++) {
+			count += (value >> b) & 1;
+		}
 	}
 
 	cpus = malloc(sizeof(int) * count);
@@ -118,10 +157,15 @@ parse_cpumask(const char *hex, int **cpus_out, int *ncpus_out)
 		return -errno;
 	}
 
+	// Extract CPU indices; rightmost digit = lowest bits
 	count = 0;
-	for (int i = 0; mask; i++, mask >>= 1) {
-		if (mask & 1) {
-			cpus[count++] = i;
+	for (int i = len - 1; i >= 0; i--) {
+		int value = hex_digit_val(hex[i]);
+		int bit_offset = (len - 1 - i) * 4;
+		for (int b = 0; b < 4; b++) {
+			if ((value >> b) & 1) {
+				cpus[count++] = bit_offset + b;
+			}
 		}
 	}
 
