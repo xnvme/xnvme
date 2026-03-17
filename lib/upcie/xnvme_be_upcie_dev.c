@@ -216,8 +216,8 @@ xnvme_be_upcie_dev_open(struct xnvme_dev *dev)
 	return 0;
 }
 
-int
-instantiate(struct pci_func *func, void *callback_arg)
+static int
+_instantiate(struct pci_func *func, void *callback_arg)
 {
 	struct xnvme_be_upcie_enumerate_context *ectx = callback_arg;
 	struct xnvme_opts opts = *ectx->opts;
@@ -259,7 +259,7 @@ xnvme_be_upcie_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enu
 	ectx.cb_func = cb_func;
 	ectx.cb_args = cb_args;
 
-	err = pci_scan(instantiate, &ectx);
+	err = pci_scan(_instantiate, &ectx);
 	if (err) {
 		perror("pci_scan()");
 	}
