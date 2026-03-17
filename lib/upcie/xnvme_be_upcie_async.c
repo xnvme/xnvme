@@ -150,6 +150,7 @@ xnvme_be_upcie_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 	err = nvme_qpair_enqueue(&upcie_queue->qpair, cmd);
 	if (err) {
 		XNVME_DEBUG("FAILED: nvme_qpair_enqueue();");
+		nvme_request_free(upcie_queue->qpair.rpool, req->cid);
 		return err;
 	}
 
@@ -205,6 +206,7 @@ xnvme_be_upcie_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size
 	err = nvme_qpair_enqueue(&upcie_queue->qpair, cmd);
 	if (err) {
 		XNVME_DEBUG("FAILED: nvme_qpair_enqueue();");
+		nvme_request_free(upcie_queue->qpair.rpool, req->cid);
 		return err;
 	}
 
