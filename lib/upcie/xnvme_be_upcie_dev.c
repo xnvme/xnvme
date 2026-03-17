@@ -149,12 +149,14 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 	ctrlr = calloc(1, sizeof(*ctrlr));
 	if (!ctrlr) {
 		XNVME_DEBUG("FAILED: calloc(ctrlr)");
+		errno = ENOMEM;
 		return NULL;
 	}
 
 	ctrlr->ctrl = calloc(1, sizeof(*ctrlr->ctrl));
 	if (!ctrlr->ctrl) {
 		XNVME_DEBUG("FAILED: calloc(ctrl)");
+		errno = ENOMEM;
 		free(ctrlr);
 		return NULL;
 	}
