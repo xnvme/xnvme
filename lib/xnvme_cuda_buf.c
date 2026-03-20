@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifdef XNVME_CUDA_ENABLED
+#ifdef XNVME_BE_UPCIE_CUDA_ENABLED
 #include <cuda_runtime.h>
 #include <libxnvme.h>
 #include <xnvme_host_buf.h>
