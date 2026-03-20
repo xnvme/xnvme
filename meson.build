@@ -104,7 +104,7 @@ cuda_dep = dependency(
   modules: ['cuda'],
   required: get_option('with-cuda'),
 )
-conf_data.set('XNVME_CUDA_ENABLED', cuda_dep.found() and get_option('with-cuda').allowed())
+conf_data.set('XNVME_BE_UPCIE_CUDA_ENABLED', get_option('be_upcie') and is_linux and cuda_dep.found() and get_option('with-cuda').allowed())
 
 setupapi_dep = cc.find_library(
   'setupapi',
