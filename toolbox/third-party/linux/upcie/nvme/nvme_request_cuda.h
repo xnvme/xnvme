@@ -46,7 +46,7 @@ nvme_request_prep_command_prps_contig_cuda(struct nvme_request *request, struct 
 	} else if (npages == 2) {
 		cmd->prp2 = cmd->prp1 + pagesize;
 	} else {
-		uint64_t *prp_list = request->prp;
+		uint64_t *prp_list = (uint64_t *)request->prp;
 
 		cmd->prp2 = request->prp_addr;
 		for (uint64_t i = 1; i < npages; ++i) {
@@ -79,13 +79,13 @@ nvme_request_prep_command_prps_iov_cuda(struct nvme_request *request, struct cud
 				   	struct iovec *dvec, size_t dvec_cnt, struct nvme_command *cmd)
 {
 	const uint64_t pagesize = heap->config->pagesize;
-	uint64_t *prp_list = request->prp;
+	uint64_t *prp_list = (uint64_t *)request->prp;
 	size_t prp_idx = 0;
 
 	cmd->prp1 = cudamem_heap_block_vtp(heap, dvec[0].iov_base);
 
 	for (size_t i = 0; i < dvec_cnt; ++i) {
-		uint8_t *base = dvec[i].iov_base;
+		uint8_t *base = (uint8_t *)dvec[i].iov_base;
 		size_t remaining = dvec[i].iov_len;
 		size_t offset = 0;
 
