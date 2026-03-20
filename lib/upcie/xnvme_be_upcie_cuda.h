@@ -10,6 +10,10 @@
 #include <xnvme_be_upcie.h>
 #include <upcie/upcie_cuda.h>
 
+struct xnvme_cuda_queue {
+	struct nvme_qpair_cuda qpair;
+};
+
 /**
  * State used across multiple instances of controllers/namespaces
  */
