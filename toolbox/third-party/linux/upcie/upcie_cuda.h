@@ -30,6 +30,8 @@ extern "C" {
 // CUDA uPCIe NVMe libraries
 #ifdef _UPCIE_WITH_NVME
 #include <upcie/nvme/nvme_request_cuda.h>
+#include <upcie/nvme/nvme_qpair_cuda.h>
+#include <upcie/nvme/nvme_controller_cuda.h>
 #endif
 
 #ifdef __cplusplus
