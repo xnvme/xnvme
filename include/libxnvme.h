@@ -57,6 +57,7 @@ extern "C" {
 #include "libxnvme_libconf.h"
 #include "libxnvme_cli.h"
 #include "libxnvme_pi.h"
+#include "libxnvme_cuda.h"
 
 #ifdef __cplusplus
 }

@@ -208,6 +208,10 @@
 		xnvme_queue_set_cb;
 		xnvme_queue_get_completion_fd;
 
+		# libxnvme_cuda.h
+		xnvme_cuda_queue_create;
+		xnvme_cuda_queue_destroy;
+
 		# libxnvme_scan.h
 		xnvme_scan_cb;
 		xnvme_scan;
