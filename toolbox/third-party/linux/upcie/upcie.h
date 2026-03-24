@@ -31,7 +31,7 @@
  *   #include <upcie/upcie.h>
  *
  * @file upcie.h
- * @version 0.4.0
+ * @version 0.4.2
  */
 #ifndef UPCIE_H
 #define UPCIE_H
@@ -69,6 +69,7 @@ extern "C" {
 #include <upcie/debug.h>
 #include <upcie/barriers.h>
 #include <upcie/bitfield.h>
+#include <upcie/dmabuf.h>
 #include <upcie/hostmem.h>
 #include <upcie/hostmem_config.h>
 #include <upcie/hostmem_hugepage.h>

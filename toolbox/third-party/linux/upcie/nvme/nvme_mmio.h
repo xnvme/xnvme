@@ -18,7 +18,7 @@
  * only the minimal required field to be changed, and that other fields remain unmodified.
  *
  * @file nvme_mmio.h
- * @version 0.4.0
+ * @version 0.4.2
  */
 
 #define NVME_REG_CAP 0x00
@@ -452,7 +452,7 @@ nvme_reg_cc_set_en(uint32_t cc, uint8_t val)
 }
 
 /**
- * Set the I/O Command Set Selected (CSS) field (bits 4–7)
+ * Set the I/O Command Set Selected (CSS) field (bits 4–6)
  */
 static inline uint32_t
 nvme_reg_cc_set_css(uint32_t cc, uint8_t val)

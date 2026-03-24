@@ -31,7 +31,7 @@
  * The above is the essential modeling of the isolation-level of memory among devices.
  *
  * @file vfioctl.h
- * @version 0.4.0
+ * @version 0.4.2
  */
 struct vfio_group {
 	int fd;
@@ -143,12 +143,12 @@ vfio_group_open(int id, struct vfio_group *group)
 }
 
 static inline int
-vfio_group_get_status(struct vfio_group *group, struct vfio_group_status *status)
+vfio_group_get_status(struct vfio_group *group)
 {
-	memset(&group->status, 0, sizeof(*status));
-	group->status.argsz = sizeof(*status);
+	memset(&group->status, 0, sizeof(group->status));
+	group->status.argsz = sizeof(group->status);
 
-	return ioctl(group->fd, VFIO_GROUP_GET_STATUS, status);
+	return ioctl(group->fd, VFIO_GROUP_GET_STATUS, &group->status);
 }
 
 static inline int

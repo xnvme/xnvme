@@ -17,7 +17,7 @@
  *   and pci_region_write64
  *
  * @file pci.h
- * @version 0.4.0
+ * @version 0.4.2
  */
 #define PCI_BDF_LEN 12
 #define PCI_NBARS 6
@@ -274,6 +274,8 @@ pci_bar_map(const char *bdf, uint8_t id, struct pci_func_bar *bar)
 	bar->region = mmap(NULL, bar->size, PROT_READ | PROT_WRITE, MAP_SHARED, bar->fd, 0x0);
 	if (MAP_FAILED == bar->region) {
 		close(bar->fd);
+		bar->fd = -1;
+		bar->region = NULL;
 		return -errno;
 	}
 
