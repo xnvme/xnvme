@@ -9,7 +9,7 @@
  * including BAR-space mappings, controller registers, and values derived from register content.
  *
  * @file nvme_controller.h
- * @version 0.4.0
+ * @version 0.4.2
  */
 
 /**
@@ -33,9 +33,18 @@ struct nvme_controller {
 static inline void
 nvme_controller_close(struct nvme_controller *ctrlr)
 {
-	hostmem_dma_free(ctrlr->heap, ctrlr->buf);
+	if (ctrlr->aq.rpool) {
+		nvme_qpair_term(&ctrlr->aq);
+		memset(&ctrlr->aq, 0, sizeof(ctrlr->aq));
+	}
+
+	if (ctrlr->buf) {
+		hostmem_dma_free(ctrlr->heap, ctrlr->buf);
+		ctrlr->buf = NULL;
+	}
+
 	pci_func_close(&ctrlr->func);
-	memset(ctrlr, 0, sizeof(*memset));
+	memset(ctrlr, 0, sizeof(*ctrlr));
 }
 
 /**
@@ -142,7 +151,7 @@ nvme_controller_create_io_qpair(struct nvme_controller *ctrlr, struct nvme_qpair
 	err = nvme_qpair_init(qpair, qid, depth, ctrlr->func.bars[0].region, ctrlr->heap);
 	if (err) {
 		UPCIE_DEBUG("FAILED: nvme_qpair_init(); err(%d)\n", err);
-		nvme_qid_free(ctrlr->qids, depth);
+		nvme_qid_free(ctrlr->qids, qid);
 
 		return err;
 	}

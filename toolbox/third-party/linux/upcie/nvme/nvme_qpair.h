@@ -25,7 +25,7 @@
  * See also: nvme_qid.h for queue ID (qid) management.
  *
  * @file nvme_qpair.h
- * @version 0.4.0
+ * @version 0.4.2
  */
 
 struct nvme_qpair {
@@ -75,17 +75,16 @@ nvme_qpair_init(struct nvme_qpair *qp, uint32_t qid, uint16_t depth, uint8_t *ba
 	qp->depth = depth;
 	qp->phase = 1;
 
-	// qp->sq = hostmem_dma_malloc(1024 * ctrlr->iosqes_nbytes);
-	qp->sq = hostmem_dma_malloc(qp->heap, nbytes);
+	qp->sq = hostmem_dma_alloc_array(qp->heap, 1, nbytes);
 	if (!qp->sq) {
-		UPCIE_DEBUG("FAILED: hostmem_dma_malloc(sq); errno(%d)\n", errno);
+		UPCIE_DEBUG("FAILED: hostmem_dma_alloc_array(sq); errno(%d)", errno);
 		return -errno;
 	}
 	memset(qp->sq, 0, nbytes);
 
-	qp->cq = hostmem_dma_malloc(qp->heap, nbytes);
+	qp->cq = hostmem_dma_alloc_array(qp->heap, 1, nbytes);
 	if (!qp->cq) {
-		UPCIE_DEBUG("FAILED: hostmem_dma_malloc(cq); errno(%d)\n", errno);
+		UPCIE_DEBUG("FAILED: hostmem_dma_alloc_array(cq); errno(%d)", errno);
 		hostmem_dma_free(qp->heap, qp->sq);
 		return -errno;
 	}
@@ -118,16 +117,16 @@ nvme_qpair_init(struct nvme_qpair *qp, uint32_t qid, uint16_t depth, uint8_t *ba
  *
  * @param qp A queue-pair as represented by 'struct nvme_qp'
  * @param cpl Completion when one is reaped
- * @param timeout_us Timeout in microseconds
+ * @param timeout_ms Timeout in milliseconds
  *
  * @return Pointer to a valid completion, or NULL on timeout.
  */
 static inline int
-nvme_qpair_reap_cpl(struct nvme_qpair *qp, int timeout_us, struct nvme_completion *cpl)
+nvme_qpair_reap_cpl(struct nvme_qpair *qp, int timeout_ms, struct nvme_completion *cpl)
 {
 	struct nvme_completion *cq = qp->cq;
 
-	for (int i = 0; i < timeout_us; ++i) {
+	for (int i = 0; i < timeout_ms; ++i) {
 		struct nvme_completion *cqe = &cq[qp->head];
 
 		if ((cqe->cid < 0xFFFF) && ((cqe->status & 0x1) == qp->phase)) {
@@ -204,13 +203,13 @@ nvme_qpair_enqueue(struct nvme_qpair *qp, struct nvme_command *cmd)
  *
  * @param qp         Pointer to the submission queue pair.
  * @param cmd        Pointer to the command to submit; `cid` will be assigned.
- * @param timeout_us Timeout in microseconds to wait for command completion.
+ * @param timeout_ms Timeout in milliseconds to wait for command completion.
  * @param cpl        Pointer to a completion structure to receive the result.
  *
  * @return On success 0 is returned. On error, negative errno is returned to indicate the error.
  */
 static inline int
-nvme_qpair_submit_sync(struct nvme_qpair *qp, struct nvme_command *cmd, int timeout_us,
+nvme_qpair_submit_sync(struct nvme_qpair *qp, struct nvme_command *cmd, int timeout_ms,
 		       struct nvme_completion *cpl)
 {
 	struct nvme_request *req;
@@ -230,12 +229,12 @@ nvme_qpair_submit_sync(struct nvme_qpair *qp, struct nvme_command *cmd, int time
 
 	nvme_qpair_sqdb_update(qp);
 
-	err = nvme_qpair_reap_cpl(qp, timeout_us, cpl);
+	err = nvme_qpair_reap_cpl(qp, timeout_ms, cpl);
 	if (err) {
 		return -err;
 	}
 
-	nvme_request_free(qp->rpool, cpl->cid);
+	nvme_request_free(qp->rpool, req->cid);
 
 	if (cpl->status & 0x1FE) {
 		err = -EIO;
@@ -256,14 +255,14 @@ nvme_qpair_submit_sync(struct nvme_qpair *qp, struct nvme_command *cmd, int time
  * @param dbuf        Pointer to the data buffer to be described via PRPs.
  * @param dbuf_nbytes Size of the data buffer in bytes.
  * @param cmd         Pointer to the command to submit; `cid` will be assigned and PRPs set.
- * @param timeout_us  Timeout in microseconds to wait for command completion.
+ * @param timeout_ms  Timeout in milliseconds to wait for command completion.
  * @param cpl         Pointer to a completion structure to receive the result.
  *
  * @return On success 0 is returned. On error, negative errno is returned to indicate the error.
  */
 static inline int
 nvme_qpair_submit_sync_contig_prps(struct nvme_qpair *qp, struct hostmem_heap *heap, void *dbuf,
-				   size_t dbuf_nbytes, struct nvme_command *cmd, int timeout_us,
+				   size_t dbuf_nbytes, struct nvme_command *cmd, int timeout_ms,
 				   struct nvme_completion *cpl)
 {
 	struct nvme_request *req;
@@ -285,12 +284,12 @@ nvme_qpair_submit_sync_contig_prps(struct nvme_qpair *qp, struct hostmem_heap *h
 
 	nvme_qpair_sqdb_update(qp);
 
-	err = nvme_qpair_reap_cpl(qp, timeout_us, cpl);
+	err = nvme_qpair_reap_cpl(qp, timeout_ms, cpl);
 	if (err) {
 		return -err;
 	}
 
-	nvme_request_free(qp->rpool, cpl->cid);
+	nvme_request_free(qp->rpool, req->cid);
 
 	if (cpl->status & 0x1FE) {
 		err = -EIO;
@@ -311,7 +310,7 @@ nvme_qpair_submit_sync_contig_prps(struct nvme_qpair *qp, struct hostmem_heap *h
  * @param dvec        Array of iovec structures describing the data segments.
  * @param dvec_cnt    Number of elements in the dvec array.
  * @param cmd         Pointer to the command to submit; `cid` will be assigned and PRPs set.
- * @param timeout_us  Timeout in microseconds to wait for command completion.
+ * @param timeout_ms  Timeout in milliseconds to wait for command completion.
  * @param cpl         Pointer to a completion structure to receive the result.
  *
  * @return On success 0 is returned. On error, negative errno is returned to indicate the error.
@@ -319,7 +318,7 @@ nvme_qpair_submit_sync_contig_prps(struct nvme_qpair *qp, struct hostmem_heap *h
 static inline int
 nvme_qpair_submit_sync_iov_prps(struct nvme_qpair *qp, struct hostmem_heap *heap,
 				struct iovec *dvec, size_t dvec_cnt, struct nvme_command *cmd,
-				int timeout_us, struct nvme_completion *cpl)
+				int timeout_ms, struct nvme_completion *cpl)
 {
 	struct nvme_request *req;
 	int err;
@@ -340,12 +339,12 @@ nvme_qpair_submit_sync_iov_prps(struct nvme_qpair *qp, struct hostmem_heap *heap
 
 	nvme_qpair_sqdb_update(qp);
 
-	err = nvme_qpair_reap_cpl(qp, timeout_us, cpl);
+	err = nvme_qpair_reap_cpl(qp, timeout_ms, cpl);
 	if (err) {
 		return -err;
 	}
 
-	nvme_request_free(qp->rpool, cpl->cid);
+	nvme_request_free(qp->rpool, req->cid);
 
 	if (cpl->status & 0x1FE) {
 		err = -EIO;

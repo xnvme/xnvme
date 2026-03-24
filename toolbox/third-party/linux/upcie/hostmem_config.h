@@ -75,7 +75,7 @@ hostmem_config_init(struct hostmem_config *config)
 	const char *env;
 	int err;
 
-	sprintf(config->hugetlb_path, "/mnt/huge");
+	snprintf(config->hugetlb_path, sizeof(config->hugetlb_path), "/mnt/huge");
 	config->pagesize = getpagesize();
 	config->pagesize_shift = upcie_util_shift_from_size(config->pagesize);
 

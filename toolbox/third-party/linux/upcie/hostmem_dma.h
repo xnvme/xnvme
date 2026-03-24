@@ -47,7 +47,7 @@
  *   - Sub-hugepage contiguity enforcement
  *
  * @file hostmem_dma.h
- * @version 0.4.0
+ * @version 0.4.2
  */
 
 /**
@@ -69,7 +69,7 @@ hostmem_dma_free(struct hostmem_heap *heap, void *ptr)
  * @param size Number of bytes to allocate. Passing `size=0` is considered invalid-input by
  *             hostmem_dma_malloc().
  * @return On success, a pointer to the allocated memory is returned. On error, NULL is returned
- *         and `errno` set to indicate the error. or NULL on failure.
+ *         and `errno` set to indicate the error.
  */
 static inline void *
 hostmem_dma_malloc(struct hostmem_heap *heap, size_t size)
@@ -93,6 +93,30 @@ static inline void *
 hostmem_dma_malloc_aligned(struct hostmem_heap *heap, size_t size, size_t alignment)
 {
 	return hostmem_heap_block_alloc_aligned(heap, size, alignment);
+}
+
+/**
+ * Allocate `elem_count * elem_size` bytes of DMA-capable memory
+ * 
+ * If `elem_count * elem_size` is larger than the size of a hugepage, `elem_size` must be a divisor of the
+ * hugepage size.
+ *
+ * @param elem_count Number of elements to allocate. Passing `elem_count=0` is considered invalid-input by
+ *                   hostmem_dma_alloc_array().
+ * @param elem_size Number of bytes to allocate per element. Passing `elem_size=0` is considered invalid-
+ *                  input by hostmem_dma_alloc_array().
+ * @return On success, a pointer to the allocated memory is returned. On error, NULL is returned
+ *         and `errno` set to indicate the error.
+ */
+static inline void *
+hostmem_dma_alloc_array(struct hostmem_heap *heap, size_t elem_count, size_t elem_size)
+{
+	if (!elem_size || !elem_count) {
+		errno = EINVAL;
+		return NULL;
+	}
+
+	return hostmem_heap_block_alloc_array(heap, elem_count, elem_size);
 }
 
 /**
