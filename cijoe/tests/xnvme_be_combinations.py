@@ -145,6 +145,14 @@ def get_backend_configurations():
             "admin": ["upcie"],
             "label": ["pcie"],
         },
+        {
+            "be": ["upcie-cuda"],
+            "mem": ["upcie-cuda"],
+            "async": ["upcie-cuda"],
+            "sync": ["upcie-cuda"],
+            "admin": ["upcie-cuda"],
+            "label": ["cuda"],
+        },
         # Ramdisk
         {
             "be": ["ramdisk_emu"],

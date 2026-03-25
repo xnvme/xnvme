@@ -1,0 +1,20 @@
+---
+doc: |
+  Test xNVMe uPCIe CUDA P2P backend on Linux
+
+steps:
+- name: sysinfo
+  uses: linux.sysinfo
+
+- name: nvidia-memory
+  run: |
+    nvidia-smi -q -d memory || true
+
+- name: hugepages
+  uses: linux_setup_hugepages
+
+- name: test_upcie_cuda
+  uses: core.testrunner
+  with:
+    args: '-k "cuda and not fabrics" tests'
+    random_order: false
