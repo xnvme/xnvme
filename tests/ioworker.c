@@ -261,7 +261,7 @@ iowork_teardown(struct iowork *work)
 	int err;
 
 	for (uint32_t i = 0; i < work->nworkers; ++i) {
-		xnvme_buf_free(work->dev, work->workers[i].vec);
+		free(work->workers[i].vec);
 	}
 
 	xnvme_buf_free(work->dev, work->rbuf);
@@ -355,10 +355,10 @@ iowork_from_cli(struct xnvme_cli *cli, struct iowork *work)
 		worker->range = work->range;
 
 		worker->vec_cnt = work->vec_cnt;
-		worker->vec = xnvme_buf_alloc(work->dev, sizeof(*worker->vec) * worker->vec_cnt);
+		worker->vec = malloc(sizeof(*worker->vec) * worker->vec_cnt);
 		if (!worker->vec) {
 			err = -errno;
-			XNVME_DEBUG("FAILED: xnvme_buf_alloc(vec), err: %d", errno);
+			XNVME_DEBUG("FAILED: malloc(vec), err: %d", errno);
 			goto failed;
 		}
 
