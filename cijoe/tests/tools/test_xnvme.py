@@ -121,6 +121,8 @@ def test_info(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_idfy(cijoe, device, be_opts, cli_args):
+    if be_opts["mem"] == "upcie-cuda":
+        pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
     err, _ = cijoe.run(
         f"xnvme idfy {cli_args} --cns 0x0 --cntid 0x0 --setid 0x0 --uuid 0x0"
     )
@@ -129,12 +131,16 @@ def test_idfy(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_idfy_ns(cijoe, device, be_opts, cli_args):
+    if be_opts["mem"] == "upcie-cuda":
+        pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
     err, _ = cijoe.run(f"xnvme idfy-ns {cli_args} --nsid {device['nsid']}")
     assert not err
 
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_idfy_ctrlr(cijoe, device, be_opts, cli_args):
+    if be_opts["mem"] == "upcie-cuda":
+        pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
     err, _ = cijoe.run(f"xnvme idfy-ctrlr {cli_args}")
     assert not err
 
@@ -183,6 +189,8 @@ def test_sanitize(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_log_erri(cijoe, device, be_opts, cli_args):
+    if be_opts["mem"] == "upcie-cuda":
+        pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
     if be_opts["admin"] == "block":
         pytest.skip(reason="[admin=block] does not implement error-log")
     if be_opts["admin"] == "ramdisk":
@@ -194,6 +202,8 @@ def test_log_erri(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_log_health_controller(cijoe, device, be_opts, cli_args):
+    if be_opts["mem"] == "upcie-cuda":
+        pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
     if be_opts["admin"] == "block":
         pytest.skip(reason="[admin=block] does not implement health-log")
     if be_opts["admin"] == "ramdisk":
@@ -216,6 +226,8 @@ def test_log_health_namespace(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_log(cijoe, device, be_opts, cli_args):
+    if be_opts["mem"] == "upcie-cuda":
+        pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
     if be_opts["admin"] == "block":
         pytest.skip(reason="[admin=block] does not implement get-log")
     if be_opts["admin"] == "ramdisk":
@@ -323,6 +335,8 @@ def test_pioc(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_dsm(cijoe, device, be_opts, cli_args):
+    if be_opts["mem"] == "upcie-cuda":
+        pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
     err, _ = cijoe.run(
         f"xnvme dsm {cli_args} --nsid {device['nsid']} --ad --slba 0 --llb 1"
     )
