@@ -15,6 +15,11 @@ def test_fio_engine(cijoe, device, be_opts, cli_args):
     """
     The construction of the fio-invocation is done in 'fio_fancy'
     """
+    if be_opts["mem"] == "upcie-cuda":
+        pytest.skip(
+            reason="[mem=upcie-cuda] fio xNVMe ioengine does not support CUDA memory"
+        )
+
     size = "64M"
     # size = "1G"
 
@@ -45,6 +50,10 @@ def test_fio_engine_iov(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[sync=nvme] on FreeBSD does not implement iovec")
     if be_opts["admin"] == "driverkit":
         pytest.skip(reason="[admin=driverkit] does not implement iovec")
+    if be_opts["mem"] == "upcie-cuda":
+        pytest.skip(
+            reason="[mem=upcie-cuda] fio xNVMe ioengine does not support CUDA memory"
+        )
 
     size = "64M"
     # size = "1G"
