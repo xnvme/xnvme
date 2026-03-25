@@ -67,6 +67,28 @@ the host hugepage runtime (256 MiB) used to hold NVMe control structures. Follow
 the hugepage setup steps in {ref}`sec-backends-upcie-host` before opening an
 **upcie-cuda** device.
 
+(sec-backends-upcie-cuda-validation)=
+
+## Validation
+
+The cijoe workflow ``test-gpu.yaml`` exercises the **upcie-cuda** backend
+against a PCIe NVMe device. Devices must be tagged with the ``cuda`` label in
+your cijoe configuration:
+
+```toml
+[[devices]]
+uri = "0000:xx:00.0"
+nsid = 1
+labels = ["dev", "pcie", "nvm", "cuda"]
+driver_attachment = "userspace"
+```
+
+Run the workflow with:
+
+```bash
+cd cijoe && cijoe workflows/test-gpu.yaml --config configs/<your-config>.toml
+```
+
 (sec-backends-upcie-cuda-limitations)=
 
 ## Limitations
