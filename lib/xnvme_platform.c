@@ -11,6 +11,8 @@
 #include <xnvme_dev.h>
 #include <xnvme_platform.h>
 
+#define XNVME_MAX_NS_LIST_SIZE 1024
+
 struct xnvme_platform *g_xnvme_platform =
 #if defined(XNVME_PLATFORM_LINUX_ENABLED)
 	&g_xnvme_platform_linux;
@@ -274,7 +276,8 @@ enumerate_controller(const char *uri, struct xnvme_opts *opts, xnvme_enumerate_c
 	struct xnvme_dev *ctrlr_dev;
 	struct xnvme_spec_idfy *idfy_buf;
 	struct xnvme_cmd_ctx ctx;
-	uint32_t *nslist;
+	uint32_t nslist[XNVME_MAX_NS_LIST_SIZE];
+	size_t buf_size;
 	int err;
 
 	ctrlr_opts.nsid = 0;
@@ -284,14 +287,15 @@ enumerate_controller(const char *uri, struct xnvme_opts *opts, xnvme_enumerate_c
 		return -errno;
 	}
 
-	idfy_buf = xnvme_buf_alloc(ctrlr_dev, sizeof(*idfy_buf));
+	buf_size = sizeof(*idfy_buf);
+	idfy_buf = xnvme_buf_alloc(ctrlr_dev, buf_size);
 	if (!idfy_buf) {
 		XNVME_DEBUG("FAILED: xnvme_buf_alloc()");
 		xnvme_dev_close(ctrlr_dev);
 		return -ENOMEM;
 	}
 
-	err = xnvme_buf_clear(idfy_buf, sizeof(*idfy_buf));
+	err = xnvme_buf_clear(idfy_buf, buf_size);
 	if (err) {
 		XNVME_DEBUG("FAILED: xnvme_buf_clear(), err: %d", err);
 		xnvme_buf_free(ctrlr_dev, idfy_buf);
@@ -307,8 +311,13 @@ enumerate_controller(const char *uri, struct xnvme_opts *opts, xnvme_enumerate_c
 		return err ? err : -EIO;
 	}
 
-	nslist = (uint32_t *)idfy_buf;
-	for (int i = 0; i < 1024 && nslist[i]; ++i) {
+	// Copy data out of IO buffer, since this can be CUDA memory
+	err = xnvme_buf_memcpy(nslist, idfy_buf, buf_size);
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_buf_memcpy(), err: %d", err);
+		goto exit;
+	}
+	for (int i = 0; i < XNVME_MAX_NS_LIST_SIZE && nslist[i]; ++i) {
 		struct xnvme_opts ns_opts = *opts;
 		struct xnvme_dev *ns_dev;
 
@@ -325,6 +334,7 @@ enumerate_controller(const char *uri, struct xnvme_opts *opts, xnvme_enumerate_c
 		}
 	}
 
+exit:
 	xnvme_buf_free(ctrlr_dev, idfy_buf);
 	xnvme_dev_close(ctrlr_dev);
 	return 0;
