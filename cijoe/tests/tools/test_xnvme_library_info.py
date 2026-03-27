@@ -103,6 +103,7 @@ def test_library_info_has_all_combos(cijoe):
         "libaio_bdev": "XNVME_BE_LINUX_LIBAIO_ENABLED",
         "libaio_file": "XNVME_BE_LINUX_LIBAIO_ENABLED",
         "upcie": "XNVME_BE_UPCIE_ENABLED",
+        "upcie-cuda": "XNVME_BE_UPCIE_CUDA_ENABLED",
     }
 
     combos = get_backend_configurations()
