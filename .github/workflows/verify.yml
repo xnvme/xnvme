@@ -352,7 +352,7 @@ jobs:
     - name: Python-bindings (ctypes), install and test
       if: (!contains('focal', matrix.container.ver))
       run: |
-        python3 -m pipx inject cijoe "${{ steps.source.outputs.directory }}/xnvme-py-sdist.tar.gz" --force
+        python3 -m pipx inject xnvme-cijoe "${{ steps.source.outputs.directory }}/xnvme-py-sdist.tar.gz" --force
         pytest --pyargs xnvme.ctypes_bindings
 
     #
@@ -474,7 +474,7 @@ jobs:
 
     - name: Python-bindings (ctypes), install and test
       run: |
-        pipx inject cijoe "${{ steps.source.outputs.directory }}/xnvme-py-sdist.tar.gz" --force
+        pipx inject xnvme-cijoe "${{ steps.source.outputs.directory }}/xnvme-py-sdist.tar.gz" --force
         pytest --pyargs xnvme.ctypes_bindings
 
     #
