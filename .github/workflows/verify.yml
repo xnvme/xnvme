@@ -260,7 +260,7 @@ jobs:
     steps:
     - name: Container-preparation, openSUSE does not have tar and gzip...
       if: contains(matrix.container.os, 'opensuse')
-      run: zypper --non-interactive install -y tar gzip
+      run: zypper --non-interactive --no-refresh install -y tar gzip
 
     - name: Retrieve and unpack the xNVMe source archive
       uses: xnvme/actions/.github/actions/setup-source@main
