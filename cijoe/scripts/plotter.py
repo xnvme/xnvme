@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Dict, List
 
 import matplotlib.pyplot as plt
+
 from cijoe.core.resources import dict_from_yamlfile
 
 OUTPUT_NORMALIZED_FILENAME = "benchmark-output-normalized.json"

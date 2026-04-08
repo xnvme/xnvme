@@ -16,7 +16,6 @@ from collections import defaultdict
 from pathlib import Path
 
 import jinja2
-from cijoe.core.resources import dict_from_yamlfile
 from reporter import (
     copy_graphs,
     create_stylesheet,
@@ -24,6 +23,8 @@ from reporter import (
     create_xnvme_cover,
     create_xnvme_info,
 )
+
+from cijoe.core.resources import dict_from_yamlfile
 
 PLOT_PATH_REGEX = r".*_GROUP=(?P<group>.+)_TYPE=(?P<type>.+)\.png"
 
