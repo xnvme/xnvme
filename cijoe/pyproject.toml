@@ -1,0 +1,19 @@
+[project]
+name = "xnvme-cijoe"
+version = "0.7.5"
+description = "CIJOE environment for xNVMe"
+requires-python = ">=3.9"
+
+dependencies = [
+    "cijoe==0.9.58",
+    "matplotlib",
+    "numpy",
+    "rst2pdf",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = []

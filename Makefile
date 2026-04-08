@@ -148,10 +148,7 @@ endef
 .PHONY: cijoe-install
 cijoe-install:
 	@echo "## xNVMe: cijoe-install"
-	pipx install cijoe==v0.9.58 --include-deps --force
-	pipx inject cijoe matplotlib --force
-	pipx inject cijoe numpy --force
-	pipx install rst2pdf
+	pipx install cijoe/ --include-deps --force
 	@echo "## xNVMe: cijoe-install [DONE]"
 
 define guest-env-help
