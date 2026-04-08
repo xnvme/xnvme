@@ -135,12 +135,10 @@ The engines used in this experiment are:
 Results
 =======
 
-.. raw:: pdf
-
 {% for group, group_plots in plots.items() %}
 
 .. raw:: pdf
-   
+
    FrameBreak 300
 
 {{group}}
