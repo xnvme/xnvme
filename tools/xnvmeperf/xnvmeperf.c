@@ -485,7 +485,7 @@ print_run_args(struct xnvmeperf_args *args, const char *pattern)
 /**
  * Print a performance results table.
  *
- * @param title    Header string (e.g. "xnvmeperf" or "xnvmeperf gpu-run")
+ * @param title    Header string (e.g. "xnvmeperf" or "xnvmeperf cuda-run")
  * @param elapsed  Elapsed time in seconds
  * @param uris     Device URI strings
  * @param ndevs    Number of devices
@@ -1007,6 +1007,71 @@ next_dev:
 	return err;
 }
 
+static int
+xnvmeperf_cuda_run(struct xnvmeperf_args *args)
+{
+	struct xnvme_dev **devs;
+	uint64_t *rounds_per_dev, *failed_per_dev;
+	double elapsed_s;
+	float elapsed_ms = 0;
+	int err;
+
+	devs = calloc(args->ndevs, sizeof(*devs));
+	if (!devs) {
+		err = -errno;
+		xnvme_cli_perr("Failed: calloc() for devs", err);
+		return err;
+	}
+
+	err = xnvmeperf_open_devs(args, devs);
+	if (err) {
+		free(devs);
+		return err;
+	}
+
+	rounds_per_dev = calloc(args->ndevs, sizeof(*rounds_per_dev));
+	failed_per_dev = calloc(args->ndevs, sizeof(*failed_per_dev));
+
+	if (!rounds_per_dev || !failed_per_dev) {
+		err = -ENOMEM;
+		xnvme_cli_perr("Failed: calloc()", err);
+		free(rounds_per_dev);
+		free(failed_per_dev);
+		goto close_devs;
+	}
+
+	err = xnvmeperf_cuda_run_io(devs, args, rounds_per_dev, failed_per_dev, &elapsed_ms);
+	if (err) {
+		xnvme_cli_perr("Failed: xnvmeperf_cuda_run_io()", err);
+		free(rounds_per_dev);
+		free(failed_per_dev);
+		goto close_devs;
+	}
+
+	elapsed_s = elapsed_ms / 1000.0;
+	{
+		double iops[args->ndevs], mibps[args->ndevs];
+
+		for (int i = 0; i < args->ndevs; i++) {
+			double total_ios = (double)rounds_per_dev[i] * args->qdepth;
+			iops[i] = total_ios / elapsed_s;
+			mibps[i] = (total_ios * args->iosize) / (elapsed_s * 1024.0 * 1024.0);
+		}
+		print_perf_results("xnvmeperf cuda-run", elapsed_s, args->dev_uris, args->ndevs,
+				   iops, mibps, failed_per_dev, NULL);
+	}
+
+	free(rounds_per_dev);
+	free(failed_per_dev);
+
+close_devs:
+	for (int i = 0; i < args->ndevs; i++) {
+		xnvme_dev_close(devs[i]);
+	}
+	free(devs);
+	return err;
+}
+
 static enum iopattern
 str_to_iopattern(const char *name)
 {
@@ -1155,6 +1220,31 @@ sub_verify(struct xnvme_cli *cli)
 	return xnvmeperf_verify(&args);
 }
 
+static int
+sub_cuda_run(struct xnvme_cli *cli)
+{
+	struct xnvmeperf_args args = {0};
+	int err;
+
+	err = parse_run_args(cli, &args);
+	if (err) {
+		return err;
+	}
+
+	if (!args.opts.be) {
+		args.opts.be = "upcie-cuda";
+	} else if (strcmp(args.opts.be, "upcie-cuda") != 0) {
+		err = -EINVAL;
+		fprintf(stderr, "Error: cuda-run requires --be upcie-cuda, got '%s': err(%d)\n",
+			args.opts.be, err);
+		return err;
+	}
+
+	print_run_args(&args, cli->args.iopattern);
+
+	return xnvmeperf_cuda_run(&args);
+}
+
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"run",
@@ -1196,6 +1286,26 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_DIRECT, XNVME_CLI_LFLG},
 			{XNVME_CLI_OPT_POLL_IO, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_POLL_SQ, XNVME_CLI_LOPT},
+		},
+	},
+	{
+		"cuda-run",
+		"Run a GPU benchmark against the given devices (requires upcie-cuda backend)",
+		"Run a time-bounded GPU NVMe I/O benchmark against one or more devices.\n"
+		"All devices run in parallel: one CUDA block per queue, all queues launched\n"
+		"in a single kernel. All devices must use the same LBA size.",
+		sub_cuda_run,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSN},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_IOPATTERN, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_NQUEUES, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_QDEPTH, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_IOSIZE, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_RUNTIME, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_ORCH_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
 		},
 	},
 };
