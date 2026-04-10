@@ -215,6 +215,9 @@ configure_file(
 
 # Provide configuration via header-file 'xnvme_config.h'
 add_project_arguments(['-include', 'xnvme_config.h'], language: 'c')
+if cuda_dep.found()
+  add_project_arguments(['-include', 'xnvme_config.h'], language: 'cuda')
+endif
 
 # bash-completions: run the Makefile target 'make gen-bash-completions' to update the completions
 bash_completion_dep = dependency(
