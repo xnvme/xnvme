@@ -106,6 +106,8 @@ cd cijoe && cijoe workflows/test-gpu.yaml --config configs/<your-config>.toml
 
 ## Limitations
 
+- **No `vfio-pci` support.** The CUDA backend currently supports the
+  non-IOMMU user-space driver path only.
 - **GPU 0 only.** The CUDA context and heap are always created on CUDA device
   0. Multiple GPU support is not implemented.
 - **1 GiB heap.** The CUDA heap is fixed at 1 GiB. Allocations beyond this
@@ -118,4 +120,3 @@ cd cijoe && cijoe workflows/test-gpu.yaml --config configs/<your-config>.toml
 - **No memory mapping** (`mem_map` / `mem_unmap`). These return `ENOSYS`.
 - **No pseudo commands.** Show registers, controller reset, subsystem reset,
   and namespace rescan all return `ENOSYS`.
-

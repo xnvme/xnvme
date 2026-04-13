@@ -107,7 +107,27 @@ void *
 xnvme_be_upcie_cuda_ctrlr_init(struct xnvme_dev *dev)
 {
 	struct xnvme_be_upcie_ctrlr *ctrlr;
+	char driver_name[sizeof(dev->ident.kernel_driver)] = {0};
 	int err;
+
+	err = xnvme_be_upcie_get_driver_name(dev->ident.uri, driver_name, sizeof(driver_name));
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_be_upcie_get_driver_name(%s); err(%d)", dev->ident.uri,
+			    err);
+		errno = -err;
+		return NULL;
+	}
+	snprintf(dev->ident.kernel_driver, sizeof(dev->ident.kernel_driver), "%s", driver_name);
+
+	if (!strcmp(driver_name, "vfio-pci")) {
+		XNVME_DEBUG("FAILED: upcie-cuda does not support vfio-pci");
+		errno = ENOTSUP;
+		return NULL;
+	} else if (strcmp(driver_name, "uio_pci_generic")) {
+		XNVME_DEBUG("FAILED: unsupported driver '%s'", driver_name);
+		errno = ENOTSUP;
+		return NULL;
+	}
 
 	err = _cuda_rte_init();
 	if (err) {
