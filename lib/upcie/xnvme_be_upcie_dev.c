@@ -6,6 +6,7 @@
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_UPCIE_ENABLED
+#include <limits.h>
 #include <stdatomic.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_upcie.h>
@@ -17,6 +18,31 @@ struct xnvme_be_upcie_enumerate_context {
 	xnvme_enumerate_cb cb_func;
 	void *cb_args;
 };
+
+int
+xnvme_be_upcie_get_driver_name(const char *bdf, char *driver_name, size_t driver_name_len)
+{
+	char path[PATH_MAX] = {0};
+	char link[PATH_MAX] = {0};
+	ssize_t nbytes;
+	char *base;
+
+	snprintf(path, sizeof(path), "/sys/bus/pci/devices/%s/driver", bdf);
+
+	nbytes = readlink(path, link, sizeof(link) - 1);
+	if (nbytes < 0) {
+		return -errno;
+	}
+
+	base = strrchr(link, '/');
+	if (!base || !base[1]) {
+		return -EINVAL;
+	}
+
+	snprintf(driver_name, driver_name_len, "%s", base + 1);
+
+	return 0;
+}
 
 /**
  * Terminate the uPCIe runtime-environment
@@ -130,6 +156,7 @@ void *
 xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 {
 	struct xnvme_be_upcie_ctrlr *ctrlr;
+	char driver_name[sizeof(dev->ident.kernel_driver)] = {0};
 	int err;
 
 	err = _rte_init();
@@ -161,9 +188,33 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 		return NULL;
 	}
 
-	err = nvme_controller_open(ctrlr->ctrl, dev->ident.uri, &g_upcie_rte.heap);
+	err = xnvme_be_upcie_get_driver_name(dev->ident.uri, driver_name, sizeof(driver_name));
 	if (err) {
-		XNVME_DEBUG("FAILED: nvme_controller_open(%s)", dev->ident.uri);
+		XNVME_DEBUG("FAILED: xnvme_be_upcie_get_driver_name(%s); err(%d)", dev->ident.uri,
+			    err);
+		errno = -err;
+		free(ctrlr->ctrl);
+		free(ctrlr);
+		return NULL;
+	}
+	snprintf(dev->ident.kernel_driver, sizeof(dev->ident.kernel_driver), "%s", driver_name);
+
+	if (!strcmp(driver_name, "vfio-pci")) {
+		ctrlr->backend = NVME_BACKEND_VFIO;
+		err = nvme_controller_open_vfio(ctrlr->ctrl, &ctrlr->vfio, dev->ident.uri,
+						&g_upcie_rte.heap);
+	} else if (!strcmp(driver_name, "uio_pci_generic")) {
+		ctrlr->backend = NVME_BACKEND_SYSFS;
+		err = nvme_controller_open(ctrlr->ctrl, dev->ident.uri, &g_upcie_rte.heap);
+	} else {
+		XNVME_DEBUG("FAILED: unsupported driver '%s'", driver_name);
+		err = -ENOTSUP;
+	}
+	if (err) {
+		XNVME_DEBUG("FAILED: %s(%s)",
+			    ctrlr->backend == NVME_BACKEND_VFIO ? "nvme_controller_open_vfio"
+								: "nvme_controller_open",
+			    dev->ident.uri);
 		errno = -err;
 		free(ctrlr->ctrl);
 		free(ctrlr);
@@ -174,7 +225,11 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 	if (err) {
 		XNVME_DEBUG("FAILED: nvme_controller_create_io_qpair(%d)", err);
 		errno = -err;
-		nvme_controller_close(ctrlr->ctrl);
+		if (ctrlr->backend == NVME_BACKEND_VFIO) {
+			nvme_controller_close_vfio(ctrlr->ctrl, &ctrlr->vfio);
+		} else {
+			nvme_controller_close(ctrlr->ctrl);
+		}
 		free(ctrlr->ctrl);
 		free(ctrlr);
 		return NULL;
@@ -191,7 +246,11 @@ xnvme_be_upcie_ctrlr_term(void *handle)
 	struct xnvme_be_upcie_ctrlr *ctrlr = handle;
 
 	nvme_qpair_term(&ctrlr->sync);
-	nvme_controller_close(ctrlr->ctrl);
+	if (ctrlr->backend == NVME_BACKEND_VFIO) {
+		nvme_controller_close_vfio(ctrlr->ctrl, &ctrlr->vfio);
+	} else {
+		nvme_controller_close(ctrlr->ctrl);
+	}
 	free(ctrlr->ctrl);
 	free(ctrlr);
 

@@ -20,12 +20,19 @@ struct xnvme_queue_upcie {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_upcie) == XNVME_BE_QUEUE_STATE_NBYTES,
 		    "Incorrect size")
 
+enum nvme_backend {
+	NVME_BACKEND_SYSFS = 0,
+	NVME_BACKEND_VFIO,
+};
+
 /**
  * Shared controller state, one per physical controller, managed by cref.
  */
 struct xnvme_be_upcie_ctrlr {
 	struct nvme_controller *ctrl;
 	struct nvme_qpair sync; ///< Shared submission/completion queue for synchronous IOs
+	struct vfio_ctx vfio;
+	enum nvme_backend backend;
 };
 
 /**
@@ -55,6 +62,9 @@ extern struct xnvme_be_admin g_xnvme_be_upcie_admin;
 extern struct xnvme_be_sync g_xnvme_be_upcie_sync;
 extern struct xnvme_be_async g_xnvme_be_upcie_async;
 extern struct xnvme_be_dev g_xnvme_be_upcie_dev;
+
+int
+xnvme_be_upcie_get_driver_name(const char *bdf, char *driver_name, size_t driver_name_len);
 
 // Used by xnvme_be_upcie_cuda_dev.c
 void
