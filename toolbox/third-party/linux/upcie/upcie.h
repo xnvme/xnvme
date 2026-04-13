@@ -48,6 +48,7 @@ extern "C" {
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
+#include <limits.h>
 #include <linux/memfd.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -87,6 +88,7 @@ extern "C" {
 #include <upcie/nvme/nvme_qid.h>
 #include <upcie/nvme/nvme_qpair.h>
 #include <upcie/nvme/nvme_controller.h>
+#include <upcie/nvme/nvme_controller_vfio.h>
 #endif
 
 #ifdef __cplusplus
