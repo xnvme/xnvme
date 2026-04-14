@@ -25,6 +25,7 @@ struct xnvmeperf_args {
 	uint32_t iosize;
 	uint32_t time;
 	uint32_t count;
+	uint32_t nqueues;
 	enum iopattern pattern;
 	struct xnvme_opts opts;
 };
@@ -49,11 +50,11 @@ struct xnvmeperf_job {
 struct xnvmeperf_thread {
 	int cpu;
 	int njobs;
+	int job_start;
 	struct xnvmeperf_job *jobs;
 	struct xnvmeperf_args *args;
 	double elapsed;
 	struct xnvme_dev **devs;
-	const char **dev_uris;
 	int ndevs;
 };
 
@@ -355,8 +356,8 @@ thread_init(struct xnvmeperf_thread *thread, struct xnvmeperf_args *args)
 	for (int i = 0; i < thread->ndevs; i++) {
 		struct xnvmeperf_job *job = &thread->jobs[i];
 
-		err = setup_job(job, thread->devs[i], args,
-				(unsigned int)(thread->cpu * 1000 + i));
+		err = setup_job(job, thread->devs[(thread->job_start + i) / (int)args->nqueues],
+				args, (unsigned int)(thread->cpu * 1000 + i));
 		if (err) {
 			xnvme_cli_perr("Failed: setup_job()", err);
 			return err;
@@ -498,7 +499,9 @@ print_results(struct xnvmeperf_thread *threads, struct xnvmeperf_args *args)
 			struct xnvmeperf_thread *thread = &threads[t];
 
 			for (int j = 0; j < thread->njobs; j++) {
-				if (strcmp(thread->dev_uris[j], args->dev_uris[d]) != 0) {
+				if (strcmp(args->dev_uris[(thread->job_start + j) /
+							  (int)args->nqueues],
+					   args->dev_uris[d]) != 0) {
 					continue;
 				}
 
@@ -589,9 +592,8 @@ xnvmeperf_run(struct xnvmeperf_args *args)
 {
 	struct xnvmeperf_thread *threads;
 	struct xnvme_dev **devs;
-	pthread_t *tids;
-	pthread_t *close_tids;
-	int err = 0;
+	pthread_t *tids, *close_tids;
+	int total_jobs, err;
 
 	// Pre-open all devices, as they can only be opened once.
 	devs = calloc(args->ndevs, sizeof(*devs));
@@ -607,6 +609,20 @@ xnvmeperf_run(struct xnvmeperf_args *args)
 		return err;
 	}
 
+	total_jobs = args->ndevs * (int)args->nqueues;
+
+	// Underprovisioning: more threads than queues means threads would share a
+	// queue, which is not safe. Require at least one queue per thread.
+	if (args->ncpus > total_jobs) {
+		fprintf(stderr,
+			"Error: --cpumask specifies %d threads but only %d queue(s) "
+			"(%d device(s) x %d queue(s) each); "
+			"increase --nqueues so every thread has its own queue\n",
+			args->ncpus, total_jobs, args->ndevs, args->nqueues);
+		err = -EINVAL;
+		goto close_devs;
+	}
+
 	threads = calloc(args->ncpus, sizeof(*threads));
 	tids = calloc(args->ncpus, sizeof(*tids));
 	if (!threads || !tids) {
@@ -615,25 +631,19 @@ xnvmeperf_run(struct xnvmeperf_args *args)
 		goto close_devs;
 	}
 
+	// Distribute job slots evenly across threads; overflow goes to the first
+	// few threads one slot at a time.
 	for (int i = 0; i < args->ncpus; i++) {
-		int start, count;
-
-		if (args->ndevs >= args->ncpus) {
-			int base = args->ndevs / args->ncpus;
-			int extra = args->ndevs % args->ncpus;
-
-			start = i * base + (i < extra ? i : extra);
-			count = base + (i < extra ? 1 : 0);
-		} else {
-			start = i % args->ndevs;
-			count = 1;
-		}
+		int base = total_jobs / args->ncpus;
+		int extra = total_jobs % args->ncpus;
+		int start = i * base + (i < extra ? i : extra);
+		int count = base + (i < extra ? 1 : 0);
 
 		threads[i].cpu = args->cpus[i];
 		threads[i].args = args;
 		threads[i].ndevs = count;
-		threads[i].devs = &devs[start];
-		threads[i].dev_uris = &args->dev_uris[start];
+		threads[i].job_start = start;
+		threads[i].devs = devs;
 
 		err = thread_init(&threads[i], args);
 		if (err) {
@@ -1013,6 +1023,8 @@ parse_run_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 		return err;
 	}
 
+	args->nqueues = cli->args.nqueues ? cli->args.nqueues : 1;
+
 	return err;
 }
 
@@ -1054,6 +1066,7 @@ sub_run(struct xnvme_cli *cli)
 	printf("] (total: %d)\n", args.ncpus);
 
 	printf("- io pattern: %d (%s)\n", args.pattern, cli->args.iopattern);
+	printf("- queues per device: %u\n", args.nqueues);
 	printf("- queue depth: %d\n", args.qdepth);
 	printf("- io size: %d\n", args.iosize);
 	printf("- runtime: %d\n", args.time);
@@ -1099,6 +1112,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_URI, XNVME_CLI_POSN},
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_IOPATTERN, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_NQUEUES, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_QDEPTH, XNVME_CLI_LREQ},
 			{XNVME_CLI_OPT_IOSIZE, XNVME_CLI_LREQ},
 			{XNVME_CLI_OPT_RUNTIME, XNVME_CLI_LREQ},

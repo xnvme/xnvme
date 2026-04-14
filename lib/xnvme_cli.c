@@ -883,6 +883,12 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "Hex CPU bitmask for thread pinning (e.g. 0x3)",
 	},
 	{
+		.opt = XNVME_CLI_OPT_NQUEUES,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
+		.name = "nqueues",
+		.descr = "Number of queues per device",
+	},
+	{
 		.opt = XNVME_CLI_OPT_END,
 		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "",
@@ -1563,6 +1569,9 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 		break;
 	case XNVME_CLI_OPT_CPUMASK:
 		args->cpumask = arg ? arg : "INVALID_INPUT";
+		break;
+	case XNVME_CLI_OPT_NQUEUES:
+		args->nqueues = num;
 		break;
 	case XNVME_CLI_OPT_POSA_TITLE:
 	case XNVME_CLI_OPT_NON_POSA_TITLE:
