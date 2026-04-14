@@ -473,10 +473,98 @@ dev_close_fn(void *arg)
 }
 
 static void
+print_run_args(struct xnvmeperf_args *args, const char *pattern)
+{
+	printf("Running xnvmeperf with arguments:\n");
+	printf("- Devices: [");
+	for (int i = 0; i < args->ndevs; i++) {
+		if (i) {
+			printf(", ");
+		}
+		printf("%s", args->dev_uris[i]);
+	}
+	printf("] (total: %d)\n", args->ndevs);
+	printf("- io pattern: %s\n", pattern);
+	printf("- queues per device: %u\n", args->nqueues);
+	printf("- queue depth: %u\n", args->qdepth);
+	printf("- io size: %u\n", args->iosize);
+	printf("- runtime: %u\n", args->time);
+
+	if (args->ncpus) {
+		printf("- CPUs: [");
+		for (int i = 0; i < args->ncpus; i++) {
+			if (i) {
+				printf(", ");
+			}
+			printf("%d", args->cpus[i]);
+		}
+		printf("] (total: %d)\n", args->ncpus);
+	}
+}
+
+/**
+ * Print a performance results table.
+ *
+ * @param title    Header string (e.g. "xnvmeperf" or "xnvmeperf gpu-run")
+ * @param elapsed  Elapsed time in seconds
+ * @param uris     Device URI strings
+ * @param ndevs    Number of devices
+ * @param iops     Per-device IOPS
+ * @param mibps    Per-device throughput in MiB/s
+ * @param failed   Per-device failed I/O count
+ * @param cpus     Per-device CPU strings, or NULL to omit the CPUs column
+ */
+static void
+print_perf_results(const char *title, double elapsed, const char **uris, int ndevs,
+		   const double *iops, const double *mibps, const uint64_t *failed,
+		   const char **cpus)
+{
+	double total_iops = 0, total_mibps = 0;
+	uint64_t total_failed = 0;
+
+	printf("\n");
+	printf("====================================================================\n");
+	printf(" %s (elapsed: %.2fs)\n", title, elapsed);
+	printf("====================================================================\n");
+	if (cpus) {
+		printf(" %-20s  %6s  %12s %10s %8s\n", "Device", "CPUs", "IOPS", "MiB/s",
+		       "Failed");
+	} else {
+		printf(" %-20s  %12s %10s %8s\n", "Device", "IOPS", "MiB/s", "Failed");
+	}
+
+	for (int d = 0; d < ndevs; d++) {
+		if (cpus) {
+			printf(" %-20s  %6s  %12.2f %10.2f %8lu\n", uris[d], cpus[d], iops[d],
+			       mibps[d], (unsigned long)failed[d]);
+		} else {
+			printf(" %-20s  %12.2f %10.2f %8lu\n", uris[d], iops[d], mibps[d],
+			       (unsigned long)failed[d]);
+		}
+
+		total_iops += iops[d];
+		total_mibps += mibps[d];
+		total_failed += failed[d];
+	}
+
+	printf("--------------------------------------------------------------------\n");
+	if (cpus) {
+		printf(" %-29s %12.2f %10.2f %8lu\n", "Total:", total_iops, total_mibps,
+		       (unsigned long)total_failed);
+	} else {
+		printf(" %-21s %12.2f %10.2f %8lu\n", "Total:", total_iops, total_mibps,
+		       (unsigned long)total_failed);
+	}
+	printf("====================================================================\n");
+}
+
+static void
 print_results(struct xnvmeperf_thread *threads, struct xnvmeperf_args *args)
 {
-	uint64_t total_completed = 0, total_failed = 0;
-	double elapsed = 0;
+	double *iops, *mibps, elapsed = 0;
+	uint64_t *failed;
+	char **cpus_bufs;
+	const char **cpus;
 
 	for (int t = 0; t < args->ncpus; t++) {
 		if (threads[t].elapsed > elapsed) {
@@ -484,16 +572,23 @@ print_results(struct xnvmeperf_thread *threads, struct xnvmeperf_args *args)
 		}
 	}
 
-	printf("\n");
-	printf("====================================================================\n");
-	printf(" xnvmeperf (elapsed: %.2fs)\n", elapsed);
-	printf("====================================================================\n");
-	printf(" %-20s  %6s  %12s %10s %8s\n", "Device", "CPUs", "IOPS", "MiB/s", "Failed");
+	iops = calloc(args->ndevs, sizeof(*iops));
+	mibps = calloc(args->ndevs, sizeof(*mibps));
+	failed = calloc(args->ndevs, sizeof(*failed));
+	cpus_bufs = calloc(args->ndevs, sizeof(*cpus_bufs));
+	cpus = calloc(args->ndevs, sizeof(*cpus));
+	if (!iops || !mibps || !failed || !cpus_bufs || !cpus) {
+		goto done;
+	}
 
 	for (int d = 0; d < args->ndevs; d++) {
-		uint64_t completed = 0, failed = 0;
-		char cpus[256] = {0};
+		uint64_t completed = 0;
 		int cpus_len = 0;
+
+		cpus_bufs[d] = calloc(256, 1);
+		if (!cpus_bufs[d]) {
+			goto done;
+		}
 
 		for (int t = 0; t < args->ncpus; t++) {
 			struct xnvmeperf_thread *thread = &threads[t];
@@ -506,33 +601,37 @@ print_results(struct xnvmeperf_thread *threads, struct xnvmeperf_args *args)
 				}
 
 				completed += thread->jobs[j].io_completed;
-				failed += thread->jobs[j].io_failed;
+				failed[d] += thread->jobs[j].io_failed;
 
 				if (cpus_len > 0) {
-					cpus_len += snprintf(cpus + cpus_len,
-							     sizeof(cpus) - cpus_len, ",");
+					cpus_len += snprintf(cpus_bufs[d] + cpus_len,
+							     256 - cpus_len, ",");
 				}
-				cpus_len += snprintf(cpus + cpus_len, sizeof(cpus) - cpus_len,
-						     "%d", thread->cpu);
+				cpus_len += snprintf(cpus_bufs[d] + cpus_len, 256 - cpus_len, "%d",
+						     thread->cpu);
 			}
 		}
 
-		double iops = (double)completed / elapsed;
-		double mibps =
+		iops[d] = (double)completed / elapsed;
+		mibps[d] =
 			((double)completed * (double)args->iosize) / (elapsed * 1024.0 * 1024.0);
-
-		printf(" %-20s  %6s  %12.2f %10.2f %8lu\n", args->dev_uris[d], cpus, iops, mibps,
-		       (unsigned long)failed);
-
-		total_completed += completed;
-		total_failed += failed;
+		cpus[d] = cpus_bufs[d];
 	}
 
-	printf("--------------------------------------------------------------------\n");
-	printf(" %-29s %12.2f %10.2f %8lu\n", "Total:", (double)total_completed / elapsed,
-	       ((double)total_completed * (double)args->iosize) / (elapsed * 1024.0 * 1024.0),
-	       (unsigned long)total_failed);
-	printf("====================================================================\n");
+	print_perf_results("xnvmeperf", elapsed, args->dev_uris, args->ndevs, iops, mibps, failed,
+			   cpus);
+
+done:
+	if (cpus_bufs) {
+		for (int i = 0; i < args->ndevs; i++) {
+			free(cpus_bufs[i]);
+		}
+	}
+	free(cpus_bufs);
+	free(cpus);
+	free(failed);
+	free(mibps);
+	free(iops);
 }
 
 /**
@@ -1045,31 +1144,7 @@ sub_run(struct xnvme_cli *cli)
 		return err;
 	}
 
-	printf("Running xnvmeperf with arguments:\n");
-
-	printf("- Devices: [");
-	for (int i = 0; i < args.ndevs; i++) {
-		if (i) {
-			printf(", ");
-		}
-		printf("%s", args.dev_uris[i]);
-	}
-	printf("] (total: %d)\n", args.ndevs);
-
-	printf("- CPUs: [");
-	for (int i = 0; i < args.ncpus; i++) {
-		if (i) {
-			printf(", ");
-		}
-		printf("%d", args.cpus[i]);
-	}
-	printf("] (total: %d)\n", args.ncpus);
-
-	printf("- io pattern: %d (%s)\n", args.pattern, cli->args.iopattern);
-	printf("- queues per device: %u\n", args.nqueues);
-	printf("- queue depth: %d\n", args.qdepth);
-	printf("- io size: %d\n", args.iosize);
-	printf("- runtime: %d\n", args.time);
+	print_run_args(&args, cli->args.iopattern);
 
 	err = xnvmeperf_run(&args);
 	free(args.cpus);
