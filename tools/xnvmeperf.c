@@ -939,55 +939,99 @@ str_to_iopattern(const char *name)
 	return 0;
 }
 
+/**
+ * Parse the subset of CLI arguments common to all sub-commands: devices, iosize, and opts.
+ *
+ * @return 0 on success, negative errno on validation failure
+ */
+static int
+parse_common_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
+{
+	int err = 0;
+
+	args->ndevs = cli->args.posn_count;
+	if (args->ndevs <= 0) {
+		err = -EINVAL;
+		xnvme_cli_perr("Error: at least one device URI is required", err);
+		return err;
+	}
+	args->dev_uris = cli->args.posn;
+
+	args->iosize = cli->args.iosize;
+	if (!args->iosize || !xnvme_is_pow2(args->iosize)) {
+		err = -EINVAL;
+		xnvme_cli_perr("Error: --iosize must be a power of 2", err);
+		return err;
+	}
+
+	args->opts = xnvme_opts_default();
+	xnvme_cli_to_opts(cli, &args->opts);
+	return err;
+}
+
+/**
+ * Parse the full set of run sub-command arguments into @p args.
+ * Calls parse_common_args() then adds iopattern, qdepth, and runtime.
+ * Does not parse cpumask or nqueues; those are the caller's responsibility.
+ *
+ * @return 0 on success, negative errno on validation failure
+ */
+static int
+parse_run_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
+{
+	int err = 0;
+
+	err = parse_common_args(cli, args);
+	if (err) {
+		return err;
+	}
+
+	if (!cli->args.iopattern) {
+		err = -EINVAL;
+		xnvme_cli_perr("Error: --iopattern is required", err);
+		return err;
+	}
+	args->pattern = str_to_iopattern(cli->args.iopattern);
+	if (!args->pattern) {
+		err = -EINVAL;
+		fprintf(stderr, "Error: unknown iopattern '%s': err(%d)\n", cli->args.iopattern,
+			err);
+		return err;
+	}
+
+	args->qdepth = cli->args.qdepth;
+	if (!args->qdepth || !xnvme_is_pow2(args->qdepth)) {
+		err = -EINVAL;
+		xnvme_cli_perr("Error: --qdepth must be a power of 2", err);
+		return err;
+	}
+
+	args->time = cli->args.runtime;
+	if (!args->time) {
+		err = -EINVAL;
+		xnvme_cli_perr("Error: --time must be a positive integer", err);
+		return err;
+	}
+
+	return err;
+}
+
 static int
 sub_run(struct xnvme_cli *cli)
 {
 	struct xnvmeperf_args args = {0};
-	int err = 0;
+	int err;
 
-	args.ndevs = cli->args.posn_count;
-	if (args.ndevs <= 0) {
-		fprintf(stderr, "Error: at least one device URI is required\n");
-		return -EINVAL;
+	err = parse_run_args(cli, &args);
+	if (err) {
+		return err;
 	}
-	args.dev_uris = cli->args.posn;
 
 	err = parse_cpumask(cli->args.cpumask, &args.cpus, &args.ncpus);
 	if (err) {
 		xnvme_cli_perr("Failed: parse_cpumask()", err);
 		return err;
 	}
-
-	args.pattern = str_to_iopattern(cli->args.iopattern);
-	if (!args.pattern) {
-		fprintf(stderr, "Error: unknown iopattern '%s'\n", cli->args.iopattern);
-		err = -EINVAL;
-		goto free_cpus;
-	}
-
-	args.qdepth = cli->args.qdepth;
-	if (!args.qdepth || !xnvme_is_pow2(args.qdepth)) {
-		fprintf(stderr, "Error: --qdepth must be a power of 2\n");
-		err = -EINVAL;
-		goto free_cpus;
-	}
-
-	args.iosize = cli->args.iosize;
-	if (!args.iosize || !xnvme_is_pow2(args.iosize)) {
-		fprintf(stderr, "Error: --iosize must be a power of 2\n");
-		err = -EINVAL;
-		goto free_cpus;
-	}
-
-	args.time = cli->args.runtime;
-	if (!args.time) {
-		fprintf(stderr, "Error: --time must be a positive integer\n");
-		err = -EINVAL;
-		goto free_cpus;
-	}
-
-	args.opts = xnvme_opts_default();
-	xnvme_cli_to_opts(cli, &args.opts);
 
 	printf("Running xnvmeperf with arguments:\n");
 
@@ -1015,8 +1059,6 @@ sub_run(struct xnvme_cli *cli)
 	printf("- runtime: %d\n", args.time);
 
 	err = xnvmeperf_run(&args);
-
-free_cpus:
 	free(args.cpus);
 	return err;
 }
@@ -1027,18 +1069,8 @@ sub_verify(struct xnvme_cli *cli)
 	struct xnvmeperf_args args = {0};
 	int err;
 
-	args.ndevs = cli->args.posn_count;
-	if (args.ndevs <= 0) {
-		err = -EINVAL;
-		xnvme_cli_perr("Error: at least one device URI is required", err);
-		return err;
-	}
-	args.dev_uris = cli->args.posn;
-
-	args.iosize = cli->args.iosize;
-	if (!args.iosize || !xnvme_is_pow2(args.iosize)) {
-		err = -EINVAL;
-		xnvme_cli_perr("Error: --iosize must be a power of 2", err);
+	err = parse_common_args(cli, &args);
+	if (err) {
 		return err;
 	}
 
@@ -1051,8 +1083,6 @@ sub_verify(struct xnvme_cli *cli)
 
 	args.qdepth = 1;
 	args.pattern = IOPATTERN_VERIFY;
-	args.opts = xnvme_opts_default();
-	xnvme_cli_to_opts(cli, &args.opts);
 
 	return xnvmeperf_verify(&args);
 }
