@@ -533,6 +533,48 @@ print_results(struct xnvmeperf_thread *threads, struct xnvmeperf_args *args)
 }
 
 /**
+ * Open all devices in args and derive their geometry.
+ *
+ * devs must be a calloc'd array of args->ndevs null-initialised pointers.
+ * On failure all successfully opened devices are closed and their entries
+ * are set to NULL.
+ *
+ * @param args  Benchmark arguments with dev_uris, ndevs, and opts
+ * @param devs  Caller-allocated array of ndevs device pointers (zero-initialised)
+ * @return 0 on success, negative errno on error
+ */
+static int
+xnvmeperf_open_devs(struct xnvmeperf_args *args, struct xnvme_dev **devs)
+{
+	int err;
+
+	for (int i = 0; i < args->ndevs; i++) {
+		devs[i] = xnvme_dev_open(args->dev_uris[i], &args->opts);
+		if (!devs[i]) {
+			err = -errno;
+			fprintf(stderr, "Failed: xnvme_dev_open(%s): err(%d)\n", args->dev_uris[i],
+				err);
+			goto close;
+		}
+		err = xnvme_dev_derive_geo(devs[i]);
+		if (err) {
+			xnvme_cli_perr("Failed: xnvme_dev_derive_geo()", err);
+			goto close;
+		}
+	}
+	return 0;
+
+close:
+	for (int i = 0; i < args->ndevs; i++) {
+		if (devs[i]) {
+			xnvme_dev_close(devs[i]);
+			devs[i] = NULL;
+		}
+	}
+	return err;
+}
+
+/**
  * Runs a multi-threaded benchmark against all configured devices.
  *
  * Opens all devices, distributes them across CPU threads, and runs a
@@ -559,27 +601,10 @@ xnvmeperf_run(struct xnvmeperf_args *args)
 		return err;
 	}
 
-	for (int i = 0; i < args->ndevs; i++) {
-		devs[i] = xnvme_dev_open(args->dev_uris[i], &args->opts);
-		if (!devs[i]) {
-			err = -errno;
-			fprintf(stderr, "Failed: xnvme_dev_open(%s): err(%d)\n", args->dev_uris[i],
-				err);
-			for (int j = 0; j < i; j++) {
-				xnvme_dev_close(devs[j]);
-			}
-			free(devs);
-			return err;
-		}
-		err = xnvme_dev_derive_geo(devs[i]);
-		if (err) {
-			xnvme_cli_perr("Failed: xnvme_dev_derive_geo()", err);
-			for (int j = 0; j <= i; j++) {
-				xnvme_dev_close(devs[j]);
-			}
-			free(devs);
-			return err;
-		}
+	err = xnvmeperf_open_devs(args, devs);
+	if (err) {
+		free(devs);
+		return err;
 	}
 
 	threads = calloc(args->ncpus, sizeof(*threads));
@@ -722,31 +747,30 @@ fill_pattern(void *buf, size_t nbytes, uint64_t slba, uint16_t nlb)
 static int
 xnvmeperf_verify(struct xnvmeperf_args *args)
 {
+	struct xnvme_dev **devs;
 	int nios = (int)args->count;
-	int err = 0;
+	int err;
 
 	printf("\nxnvmeperf verify: iosize=%u, nios=%d\n", args->iosize, nios);
 	printf("====================================================================\n");
 
+	devs = calloc(args->ndevs, sizeof(*devs));
+	if (!devs) {
+		return -ENOMEM;
+	}
+
+	err = xnvmeperf_open_devs(args, devs);
+	if (err) {
+		free(devs);
+		return err;
+	}
+
+	err = 0;
 	for (int d = 0; d < args->ndevs; d++) {
-		struct xnvme_dev *dev;
+		struct xnvme_dev *dev = devs[d];
 		struct xnvmeperf_job job = {0};
 		void *write_buf = NULL, *read_buf = NULL, *expect_buf = NULL;
 		uint64_t mismatches = 0;
-
-		dev = xnvme_dev_open(args->dev_uris[d], &args->opts);
-		if (!dev) {
-			err = -errno;
-			fprintf(stderr, "Failed: xnvme_dev_open(%s): err(%d)\n", args->dev_uris[d],
-				err);
-			continue;
-		}
-
-		err = xnvme_dev_derive_geo(dev);
-		if (err) {
-			xnvme_cli_perr("Failed: xnvme_dev_derive_geo()", err);
-			goto next_dev;
-		}
 
 		err = setup_job(&job, dev, args, 1);
 		if (err) {
@@ -883,10 +907,14 @@ next_dev:
 		if (job.queue) {
 			xnvme_queue_term(job.queue);
 		}
-		xnvme_dev_close(dev);
 	}
 
 	printf("====================================================================\n");
+
+	for (int i = 0; i < args->ndevs; i++) {
+		xnvme_dev_close(devs[i]);
+	}
+	free(devs);
 	return err;
 }
 
