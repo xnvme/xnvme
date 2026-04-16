@@ -24,6 +24,13 @@ repos:
     files: \.c$
     exclude: xnvme_fioe.c$
 
+  - id: clang-format
+    name: C-format-cuda
+    language: system
+    entry: toolbox/pcf_clang_format.py
+    args: ["--style-file", "toolbox/clang-format-c"]
+    files: \.cu$
+
 # REUSE-software compliance check
 - repo: https://github.com/fsfe/reuse-tool
   rev: v6.2.0
