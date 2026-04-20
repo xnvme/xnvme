@@ -8,27 +8,7 @@
 
 #include <libxnvme.h>
 
-enum iopattern {
-	IOPATTERN_READ = 1,
-	IOPATTERN_WRITE = 2,
-	IOPATTERN_RANDREAD = 3,
-	IOPATTERN_RANDWRITE = 4,
-	IOPATTERN_VERIFY = 5, ///< Used for verify subcommand
-};
-
-struct xnvmeperf_args {
-	int ndevs;
-	const char **dev_uris;
-	int ncpus;
-	int *cpus;
-	uint32_t qdepth;
-	uint32_t iosize;
-	uint32_t time;
-	uint32_t count;
-	uint32_t nqueues;
-	enum iopattern pattern;
-	struct xnvme_opts opts;
-};
+#include "xnvmeperf.h"
 
 struct xnvmeperf_job {
 	struct xnvme_dev *dev;
@@ -818,7 +798,7 @@ failed_pthread_close:
  * @param slba    Starting LBA of the first sector in the buffer
  * @param nlb     Number of logical blocks in the buffer
  */
-static int
+int
 fill_pattern(void *buf, size_t nbytes, uint64_t slba, uint16_t nlb)
 {
 	size_t lba_size = nbytes / nlb;
