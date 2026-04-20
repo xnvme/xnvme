@@ -696,3 +696,213 @@ cleanup:
 	free(h_qps);
 	return err;
 }
+
+/**
+ * Issues one NVMe I/O per thread. All threads in a block must enter together
+ * because xnvme_cuda_cmd_io() contains a __syncthreads() internally.
+ */
+__global__ static void
+xnvmeperf_cuda_kernel_verify_round(struct xnvme_cuda_queue **qps, struct xnvme_spec_cmd *cmds,
+				   int *out_err)
+{
+	const size_t bid = blockIdx.x;
+	const size_t tid = threadIdx.x;
+	const size_t qdepth = blockDim.x;
+	struct xnvme_spec_cmd cmd = cmds[bid * qdepth + tid];
+
+	out_err[bid * qdepth + tid] = xnvme_cuda_cmd_io(qps[bid], &cmd, tid, qdepth);
+}
+
+static int
+verify_dispatch(struct xnvme_cuda_queue **d_qps, struct xnvme_spec_cmd *h_cmds,
+		struct xnvme_spec_cmd *d_cmds, int *d_errs, int *h_errs, uint32_t nqueues,
+		uint32_t qdepth, const char *phase)
+{
+	uint32_t total = nqueues * qdepth;
+	cudaError_t cerr;
+
+	cerr = cudaMemcpy(d_cmds, h_cmds, total * sizeof(*d_cmds), cudaMemcpyHostToDevice);
+	if (cerr) {
+		fprintf(stderr, "Failed: cudaMemcpy(): %s\n", cudaGetErrorString(cerr));
+		return (int)cerr;
+	}
+
+	xnvmeperf_cuda_kernel_verify_round<<<nqueues, qdepth>>>(d_qps, d_cmds, d_errs);
+	cerr = cuda_sync_check();
+	if (cerr) {
+		return (int)cerr;
+	}
+
+	cerr = cudaMemcpy(h_errs, d_errs, total * sizeof(*h_errs), cudaMemcpyDeviceToHost);
+	if (cerr) {
+		fprintf(stderr, "Failed: cudaMemcpy(): %s\n", cudaGetErrorString(cerr));
+		return (int)cerr;
+	}
+
+	for (uint32_t i = 0; i < total; i++) {
+		if (h_errs[i]) {
+			fprintf(stderr, "%s failure at slot %u: err(%d)\n", phase, i, h_errs[i]);
+			return h_errs[i];
+		}
+	}
+
+	return 0;
+}
+
+extern "C" int
+xnvmeperf_cuda_verify_io(struct xnvme_dev **devs, const struct xnvmeperf_args *args)
+{
+	struct xnvme_cuda_queue **h_qps, **d_qps = NULL;
+	struct xnvme_spec_cmd *h_cmds, *d_cmds = NULL;
+	void ***bufs, ***prp_bufs;
+	void *cmp_buf;
+	uint32_t threads_per_dev, total_threads, total_queues;
+	uint16_t nlbas;
+	int *h_errs, *d_errs = NULL;
+	cudaError_t cerr;
+	int err = 0;
+
+	err = xnvmeperf_cuda_validate_lba(devs, args);
+	if (err) {
+		return err;
+	}
+
+	nlbas = (uint16_t)(args->iosize / xnvme_dev_get_geo(devs[0])->lba_nbytes);
+	threads_per_dev = args->nqueues * args->qdepth;
+	total_threads = (uint32_t)args->ndevs * threads_per_dev;
+	total_queues = (uint32_t)args->ndevs * args->nqueues;
+
+	h_qps = (struct xnvme_cuda_queue **)calloc(total_queues, sizeof(*h_qps));
+	h_cmds = (struct xnvme_spec_cmd *)calloc(total_threads, sizeof(*h_cmds));
+	bufs = (void ***)calloc(total_queues, sizeof(*bufs));
+	prp_bufs = (void ***)calloc(total_queues, sizeof(*prp_bufs));
+	h_errs = (int *)malloc(total_threads * sizeof(*h_errs));
+	cmp_buf = malloc(args->iosize);
+
+	if (!h_qps || !h_cmds || !bufs || !prp_bufs || !h_errs || !cmp_buf) {
+		err = -ENOMEM;
+		xnvme_cli_perr("Failed: calloc()", err);
+		goto cleanup;
+	}
+
+	err = xnvmeperf_cuda_setup(devs, args->ndevs, args->iosize, args->qdepth, args->nqueues,
+				   h_qps, bufs, prp_bufs, NULL);
+	if (err) {
+		xnvme_cli_perr("Failed: xnvmeperf_cuda_setup()", err);
+		goto cleanup;
+	}
+
+	err = xnvmeperf_cuda_build_cmds(devs, args->ndevs, args->iosize, args->qdepth,
+					XNVME_SPEC_NVM_OPC_WRITE, args->nqueues, bufs, prp_bufs,
+					h_cmds);
+	if (err) {
+		xnvme_cli_perr("Failed: xnvmeperf_cuda_build_cmds()", err);
+		goto cleanup;
+	}
+
+	cerr = cuda_upload((void **)&d_qps, h_qps, total_queues * sizeof(*d_qps));
+	if (cerr) {
+		err = (int)cerr;
+		goto cleanup;
+	}
+
+	cerr = cudaMalloc(&d_cmds, total_threads * sizeof(*d_cmds));
+	if (cerr) {
+		err = (int)cerr;
+		fprintf(stderr, "Failed: cudaMalloc(): %s\n", cudaGetErrorString(cerr));
+		goto cleanup;
+	}
+
+	cerr = cudaMalloc(&d_errs, total_threads * sizeof(*d_errs));
+	if (cerr) {
+		err = (int)cerr;
+		fprintf(stderr, "Failed: cudaMalloc(): %s\n", cudaGetErrorString(cerr));
+		goto cleanup;
+	}
+
+	/* Write: stamp each thread's LBA range with a unique pattern */
+	for (uint32_t idx = 0; idx < total_threads; idx++) {
+		h_cmds[idx].nvm.slba = (uint64_t)idx * nlbas;
+		err = fill_pattern(bufs[idx / args->qdepth][idx % args->qdepth], args->iosize,
+				   h_cmds[idx].nvm.slba, nlbas);
+		if (err) {
+			xnvme_cli_perr("Failed: fill_pattern()", err);
+			goto cleanup;
+		}
+	}
+
+	err = verify_dispatch(d_qps, h_cmds, d_cmds, d_errs, h_errs, total_queues, args->qdepth,
+			      "write");
+	if (err) {
+		xnvme_cli_perr("Failed: verify_dispatch(write)", err);
+		goto cleanup;
+	}
+
+	/* Read back through the same GPU queue path */
+	for (uint32_t idx = 0; idx < total_threads; idx++)
+		h_cmds[idx].common.opcode = XNVME_SPEC_NVM_OPC_READ;
+
+	err = verify_dispatch(d_qps, h_cmds, d_cmds, d_errs, h_errs, total_queues, args->qdepth,
+			      "read");
+	if (err) {
+		xnvme_cli_perr("Failed: verify_dispatch(read)", err);
+		goto cleanup;
+	}
+
+	/* Compare read-back data against expected pattern, report per device */
+	for (int d = 0; d < args->ndevs; d++) {
+		uint64_t mismatches = 0;
+		uint32_t base = (uint32_t)d * threads_per_dev;
+
+		for (uint32_t i = 0; i < threads_per_dev; i++) {
+			uint32_t idx = base + i;
+			uint32_t q = i / args->qdepth;
+			uint32_t t = i % args->qdepth;
+			size_t diff = 0;
+
+			err = fill_pattern(cmp_buf, args->iosize, h_cmds[idx].nvm.slba, nlbas);
+			if (err) {
+				fprintf(stderr,
+					"Failed: fill_pattern() for dev=%s q=%u t=%u, err: %d\n",
+					args->dev_uris[d], q, t, err);
+				goto cleanup;
+			}
+			err = xnvme_buf_diff(cmp_buf, bufs[(uint32_t)d * args->nqueues + q][t],
+					     args->iosize, &diff);
+			if (err) {
+				fprintf(stderr,
+					"Failed: xnvme_buf_diff() for dev=%s q=%u t=%u, err: %d\n",
+					args->dev_uris[d], q, t, err);
+				goto cleanup;
+			}
+
+			if (diff) {
+				fprintf(stderr, "  MISMATCH at dev=%s q=%u t=%u slba=%lu\n",
+					args->dev_uris[d], q, t,
+					(unsigned long)h_cmds[idx].nvm.slba);
+				mismatches++;
+			}
+		}
+
+		printf(" %-20s  verified %u IOs, %lu mismatches\n", args->dev_uris[d],
+		       threads_per_dev, mismatches);
+
+		if (mismatches) {
+			err = -EIO;
+		}
+	}
+
+cleanup:
+	cudaFree(d_errs);
+	cudaFree(d_cmds);
+	cudaFree(d_qps);
+	xnvmeperf_cuda_cleanup(devs, args->ndevs, args->nqueues, args->qdepth, h_qps, bufs,
+			       prp_bufs);
+	free(bufs);
+	free(prp_bufs);
+	free(h_cmds);
+	free(h_qps);
+	free(h_errs);
+	free(cmp_buf);
+	return err;
+}

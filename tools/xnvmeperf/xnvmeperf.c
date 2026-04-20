@@ -1072,6 +1072,43 @@ close_devs:
 	return err;
 }
 
+static int
+xnvmeperf_cuda_verify(struct xnvmeperf_args *args)
+{
+	struct xnvme_dev **devs;
+	int err;
+
+	devs = calloc(args->ndevs, sizeof(*devs));
+	if (!devs) {
+		err = -errno;
+		xnvme_cli_perr("Failed: calloc() for devs", err);
+		return err;
+	}
+
+	err = xnvmeperf_open_devs(args, devs);
+	if (err) {
+		free(devs);
+		return err;
+	}
+
+	printf("\nxnvmeperf cuda-verify: iosize: %u, qdepth: %u, nqueues: %u\n", args->iosize,
+	       args->qdepth, args->nqueues);
+	printf("====================================================================\n");
+
+	err = xnvmeperf_cuda_verify_io(devs, args);
+	if (err) {
+		xnvme_cli_perr("Failed: xnvmeperf_cuda_verify_io()", err);
+	}
+
+	printf("====================================================================\n");
+
+	for (int i = 0; i < args->ndevs; i++) {
+		xnvme_dev_close(devs[i]);
+	}
+	free(devs);
+	return err;
+}
+
 static enum iopattern
 str_to_iopattern(const char *name)
 {
@@ -1245,6 +1282,38 @@ sub_cuda_run(struct xnvme_cli *cli)
 	return xnvmeperf_cuda_run(&args);
 }
 
+static int
+sub_cuda_verify(struct xnvme_cli *cli)
+{
+	struct xnvmeperf_args args = {0};
+	int err;
+
+	err = parse_common_args(cli, &args);
+	if (err) {
+		return err;
+	}
+
+	if (!args.opts.be) {
+		args.opts.be = "upcie-cuda";
+	} else if (strcmp(args.opts.be, "upcie-cuda") != 0) {
+		err = -EINVAL;
+		fprintf(stderr, "Error: cuda-verify requires --be upcie-cuda, got '%s': err(%d)\n",
+			args.opts.be, err);
+		return err;
+	}
+
+	args.qdepth = cli->args.qdepth;
+	if (!args.qdepth || !xnvme_is_pow2(args.qdepth)) {
+		err = -EINVAL;
+		xnvme_cli_perr("Error: --qdepth must be a power of 2", err);
+		return err;
+	}
+
+	args.nqueues = cli->args.nqueues ? cli->args.nqueues : 1;
+
+	return xnvmeperf_cuda_verify(&args);
+}
+
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"run",
@@ -1304,6 +1373,24 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_QDEPTH, XNVME_CLI_LREQ},
 			{XNVME_CLI_OPT_IOSIZE, XNVME_CLI_LREQ},
 			{XNVME_CLI_OPT_RUNTIME, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_ORCH_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
+		},
+	},
+	{
+		"cuda-verify",
+		"Verify GPU NVMe I/O data integrity (requires upcie-cuda backend)",
+		"Write an LBA-stamped pattern to each device through GPU queues and read\n"
+		"it back, verifying that the data matches. Uses the same queue topology\n"
+		"as cuda-run so results are directly comparable.",
+		sub_cuda_verify,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSN},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_IOSIZE, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_NQUEUES, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_QDEPTH, XNVME_CLI_LREQ},
 			{XNVME_CLI_OPT_ORCH_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
 		},
