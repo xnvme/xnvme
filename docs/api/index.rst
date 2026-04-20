@@ -53,6 +53,11 @@ practical :ref:`sec-api-c-examples`.
   and convenience functions for general applicability, such as ``XNVME_DEBUG``,
   wall-clock timers, library introspection for version and capabilities, etc.
 
+:ref:`sec-api-c-gpu`
+  Host-side queue management and device-side helpers for submitting NVMe
+  commands directly from CUDA kernels, available with the ``upcie-cuda``
+  backend.
+
 In addition to navigating the **API** documentation via the navigation bars on
 the left and right, the search box is a useful way to quickly look up a function
 from the API. Additionally, the code uses doxygen-compatible descriptions for

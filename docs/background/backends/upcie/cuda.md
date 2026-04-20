@@ -67,6 +67,14 @@ the host hugepage runtime (256 MiB) used to hold NVMe control structures. Follow
 the hugepage setup steps in {ref}`sec-backends-upcie-host` before opening an
 **upcie-cuda** device.
 
+(sec-backends-upcie-cuda-gpu)=
+
+## GPU-Resident Queue API
+
+The **upcie-cuda** backend supports GPU-resident NVMe queue pairs via the
+`libxnvme_cuda` API. See {ref}`sec-api-c-gpu` for the full API reference,
+including host-side setup, CUDA kernel dispatch, and queue depth semantics.
+
 (sec-backends-upcie-cuda-validation)=
 
 ## Validation
