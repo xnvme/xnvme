@@ -58,6 +58,9 @@ NAMESPACES: dict[str, set[str]] = {
         "xnvme_util",
         "xnvme_ver",
     },
+    "gpu": {
+        "xnvme_cuda",
+    },
 }
 
 
