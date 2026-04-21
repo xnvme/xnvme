@@ -1,0 +1,24 @@
+Usage: xnvmeperf cuda-verify [<uri>...] [<args>]
+
+Write an LBA-stamped pattern to each device through GPU queues and read
+it back, verifying that the data matches. Uses the same queue topology
+as cuda-run so results are directly comparable.
+
+Positional arguments:
+
+  [uri ...]                     ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888', '\\.\PhysicalDrive1'
+
+Where <args> include:
+
+  --iosize NUM                  ; Use given 'NUM' as bs/iosize
+  [ --nqueues NUM ]             ; Number of queues per device
+  --qdepth NUM                  ; Use given 'NUM' as queue max capacity
+
+With <args> for backend:
+
+  [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'macos', 'posix', 'windows'
+  [ --help ]                    ; Show usage / help
+
+See 'xnvmeperf --help' for other commands
+
+xnvmeperf - NVMe async IO benchmark -- ver: {major: 0, minor: 7, patch: 5}
