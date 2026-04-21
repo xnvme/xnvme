@@ -436,3 +436,52 @@ cudamem_heap_block_vtp(struct cudamem_heap *heap, void *virt)
 
 	return heap->phys_lut[page_idx] + in_page_offset;
 }
+
+/**
+ * An externally mapped CUDA buffer registered via xnvme_mem_map()
+ *
+ * Unlike heap-allocated buffers, mapped buffers are allocated by the caller
+ * (e.g. via cudaMalloc) and their physical addresses are resolved on demand
+ * through the dma-buf interface.
+ */
+struct cudamem_mapping {
+	uint64_t vaddr;
+	size_t size;
+	struct dmabuf dmabuf;
+	size_t nphys;
+	uint64_t *phys_lut;
+	struct cudamem_config *config;
+	struct cudamem_mapping *next;
+};
+
+/**
+ * Resolve a GPU virtual address to its physical address
+ *
+ * Checks the heap first (fast path), then falls back to the linked list of
+ * externally mapped regions. Returns 0 on failure (caller should check).
+ */
+static inline uint64_t
+cudamem_vtp(struct cudamem_heap *heap, struct cudamem_mapping *mappings, void *virt)
+{
+	uint64_t vaddr = (uint64_t)virt;
+
+	// Fast path: check heap range
+	if (vaddr >= heap->vaddr && vaddr < heap->vaddr + heap->size) {
+		return cudamem_heap_block_vtp(heap, virt);
+	}
+
+	// Slow path: check mapped regions
+	for (struct cudamem_mapping *m = mappings; m; m = m->next) {
+		if (vaddr >= m->vaddr && vaddr < m->vaddr + m->size) {
+			size_t offset = vaddr - m->vaddr;
+			size_t page_idx = offset / m->config->device_pagesize;
+			size_t in_page_offset = offset % m->config->device_pagesize;
+
+			assert(page_idx < m->nphys);
+			return m->phys_lut[page_idx] + in_page_offset;
+		}
+	}
+
+	assert(0 && "cudamem_vtp: address not in heap or any mapping");
+	return 0;
+}

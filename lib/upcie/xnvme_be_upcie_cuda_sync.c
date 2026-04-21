@@ -42,7 +42,8 @@ xnvme_be_upcie_cuda_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t db
 	cmd->cid = req->cid;
 
 	if (dbuf) {
-		nvme_request_prep_command_prps_contig_cuda(req, &g_upcie_cuda_rte.cuda_heap, dbuf,
+		nvme_request_prep_command_prps_contig_cuda(req, &g_upcie_cuda_rte.cuda_heap,
+							   g_upcie_cuda_rte.mappings, dbuf,
 							   dbuf_nbytes, cmd);
 	}
 
@@ -109,7 +110,8 @@ xnvme_be_upcie_cuda_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, 
 	cmd->cid = req->cid;
 
 	if (dvec) {
-		nvme_request_prep_command_prps_iov_cuda(req, &g_upcie_cuda_rte.cuda_heap, dvec,
+		nvme_request_prep_command_prps_iov_cuda(req, &g_upcie_cuda_rte.cuda_heap,
+							g_upcie_cuda_rte.mappings, dvec,
 							dvec_cnt, cmd);
 	}
 

@@ -30,7 +30,8 @@ xnvme_be_upcie_cuda_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t
 	cmd->cid = req->cid;
 
 	if (dbuf) {
-		nvme_request_prep_command_prps_contig_cuda(req, &g_upcie_cuda_rte.cuda_heap, dbuf,
+		nvme_request_prep_command_prps_contig_cuda(req, &g_upcie_cuda_rte.cuda_heap,
+							   g_upcie_cuda_rte.mappings, dbuf,
 							   dbuf_nbytes, cmd);
 	}
 

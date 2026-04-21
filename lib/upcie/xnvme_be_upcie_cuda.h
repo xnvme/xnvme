@@ -18,6 +18,7 @@ struct xnvme_be_upcie_cuda_rte {
 	struct cudamem_config cuda_config;
 	struct cudamem_heap cuda_heap;
 	int is_initialized;
+	struct cudamem_mapping *mappings;
 };
 
 extern struct xnvme_be_upcie_cuda_rte g_upcie_cuda_rte;

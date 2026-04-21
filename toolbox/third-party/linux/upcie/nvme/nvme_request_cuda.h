@@ -17,20 +17,25 @@
  * It sets up the PRP1 and PRP2 fields in the command to describe the physical memory backing the
  * `data` buffer, allowing the NVMe controller to access the buffer during command execution.
  *
+ * The buffer may reside in the heap (allocated via xnvme_buf_alloc) or in an
+ * externally mapped region (registered via xnvme_mem_map). Physical addresses
+ * are resolved per page to support non-contiguous mappings.
+ *
  * Caveats
  * -------
  *
- * - Assumes that the memory backing `dbuf` in `heap` is physically contiguous.
  * - Does *not* support PRP list chaining; only a single list page is constructed.
  *
  * @param request Pointer to the NVMe request context used for tracking and metadata.
- * @param heap Pointer to the CUDA memory heap that dbuf is allocated within.
+ * @param heap Pointer to the CUDA memory heap.
+ * @param mappings Linked list of externally mapped CUDA regions (may be NULL).
  * @param dbuf Pointer to the contiguous data buffer to be described by PRPs.
  * @param dbuf_nbytes Size in bytes of the data buffer.
  * @param cmd Pointer to the NVMe command to be prepared with PRP entries.
  */
 static inline void
 nvme_request_prep_command_prps_contig_cuda(struct nvme_request *request, struct cudamem_heap *heap,
+                                           struct cudamem_mapping *mappings,
                                            void *dbuf, size_t dbuf_nbytes, struct nvme_command *cmd)
 {
 	const uint64_t npages = (dbuf_nbytes + heap->config->pagesize - 1) >> heap->config->pagesize_shift;
@@ -39,18 +44,19 @@ nvme_request_prep_command_prps_contig_cuda(struct nvme_request *request, struct 
 	/* Chaining is not supported, thus assert that the given dbuf fits. */
 	assert(npages <= 1 + 512);
 
-	cmd->prp1 = cudamem_heap_block_vtp(heap, dbuf);
+	cmd->prp1 = cudamem_vtp(heap, mappings, dbuf);
 
 	if (npages == 1) {
 		return;
 	} else if (npages == 2) {
-		cmd->prp2 = cmd->prp1 + pagesize;
+		cmd->prp2 = cudamem_vtp(heap, mappings, (uint8_t *)dbuf + pagesize);
 	} else {
 		uint64_t *prp_list = request->prp;
 
 		cmd->prp2 = request->prp_addr;
 		for (uint64_t i = 1; i < npages; ++i) {
-			prp_list[i - 1] = cmd->prp1 + (i << heap->config->pagesize_shift);
+			prp_list[i - 1] = cudamem_vtp(heap, mappings,
+						      (uint8_t *)dbuf + (i * pagesize));
 		}
 	}
 }
@@ -60,29 +66,31 @@ nvme_request_prep_command_prps_contig_cuda(struct nvme_request *request, struct 
  *
  * This function initializes the Physical Region Page (PRP) entries in the given NVMe command
  * (`cmd`) using the provided request and an array of iovec entries. Each iovec entry is assumed to
- * be page-aligned and allocated from the given `heap`.
+ * be page-aligned and allocated from the heap or an externally mapped region.
  *
  * Caveats
  * -------
  *
- * - Each iovec base must be page-aligned and allocated from `heap`.
+ * - Each iovec base must be page-aligned.
  * - Does *not* support PRP list chaining; only a single list page is constructed.
  *
  * @param request Pointer to the NVMe request context used for tracking and metadata.
- * @param heap Pointer to the CUDA heap that iovec buffers are allocated within.
+ * @param heap Pointer to the CUDA memory heap.
+ * @param mappings Linked list of externally mapped CUDA regions (may be NULL).
  * @param dvec Array of iovec structures describing the data segments.
  * @param dvec_cnt Number of elements in the dvec array.
  * @param cmd Pointer to the NVMe command to be prepared with PRP entries.
  */
 static inline void
 nvme_request_prep_command_prps_iov_cuda(struct nvme_request *request, struct cudamem_heap *heap,
+                                        struct cudamem_mapping *mappings,
 				   	struct iovec *dvec, size_t dvec_cnt, struct nvme_command *cmd)
 {
 	const uint64_t pagesize = heap->config->pagesize;
 	uint64_t *prp_list = request->prp;
 	size_t prp_idx = 0;
 
-	cmd->prp1 = cudamem_heap_block_vtp(heap, dvec[0].iov_base);
+	cmd->prp1 = cudamem_vtp(heap, mappings, dvec[0].iov_base);
 
 	for (size_t i = 0; i < dvec_cnt; ++i) {
 		uint8_t *base = dvec[i].iov_base;
@@ -96,7 +104,7 @@ nvme_request_prep_command_prps_iov_cuda(struct nvme_request *request, struct cud
 		}
 
 		while (remaining > 0) {
-			prp_list[prp_idx++] = cudamem_heap_block_vtp(heap, base + offset);
+			prp_list[prp_idx++] = cudamem_vtp(heap, mappings, base + offset);
 
 			offset += pagesize;
 			remaining = (remaining > pagesize) ? remaining - pagesize : 0;
