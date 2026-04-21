@@ -1,0 +1,26 @@
+Usage: xnvmeperf cuda-run [<uri>...] [<args>]
+
+Run a time-bounded GPU NVMe I/O benchmark against one or more devices.
+All devices run in parallel: one CUDA block per queue, all queues launched
+in a single kernel. All devices must use the same LBA size.
+
+Positional arguments:
+
+  [uri ...]                     ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888', '\\.\PhysicalDrive1'
+
+Where <args> include:
+
+  --iopattern STRING            ; IO pattern (read, write, randread, randwrite)
+  [ --nqueues NUM ]             ; Number of queues per device
+  --qdepth NUM                  ; Use given 'NUM' as queue max capacity
+  --iosize NUM                  ; Use given 'NUM' as bs/iosize
+  --runtime NUM                 ; Run for 'NUM' seconds
+
+With <args> for backend:
+
+  [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'macos', 'posix', 'windows'
+  [ --help ]                    ; Show usage / help
+
+See 'xnvmeperf --help' for other commands
+
+xnvmeperf - NVMe async IO benchmark -- ver: {major: 0, minor: 7, patch: 5}

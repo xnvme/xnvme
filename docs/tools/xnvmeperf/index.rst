@@ -5,8 +5,13 @@ xnvmeperf
 
 **xnvmeperf** is a multi-threaded async I/O benchmark for NVMe devices. It
 runs a time-bounded async I/O loop and reports per-device and aggregate IOPS
-and throughput. A ``verify`` subcommand is also provided to check data integrity
-by writing a known per-LBA pattern and reading it back.
+and throughput. A ``verify`` subcommand checks data integrity by writing a known
+per-LBA pattern and reading it back.
+
+When built with CUDA support (``XNVME_BE_UPCIE_CUDA_ENABLED``), two additional
+subcommands are available: ``cuda-run`` and ``cuda-verify``. These run NVMe I/O
+directly from CUDA kernels via the :ref:`sec-backends-upcie-cuda` backend, bypassing
+the host I/O path entirely.
 
 .. literalinclude:: xnvmeperf_usage.out
    :language: bash
@@ -48,3 +53,51 @@ mismatches and I/O errors per device.
 Example::
 
    xnvmeperf verify --iosize 4096 --count 256 /dev/nvme0n1
+
+``cuda-run`` — GPU benchmark
+============================
+
+.. seealso::
+
+   :ref:`sec-backends-upcie-cuda`
+      Backend setup, system configuration, and memory architecture.
+
+   :ref:`sec-api-c-gpu`
+      The ``libxnvme_cuda`` API used to create queues and dispatch commands
+      from CUDA kernels.
+
+Requires the ``upcie-cuda`` backend. All queues across all devices are driven
+by a single CUDA kernel: each CUDA block owns one NVMe queue and each thread
+within the block owns one queue slot, so ``--qdepth`` threads submit and reap
+commands in lock-step. The grid has ``ndevs × --queues`` blocks in total.
+
+Both ``--qdepth`` and ``--iosize`` must be powers of 2. Supported patterns are
+``read``, ``write``, ``randread``, and ``randwrite``.
+
+.. literalinclude:: xnvmeperf_cuda_run_usage.out
+   :language: bash
+
+Example — sequential read, four queues of depth 32 on two devices::
+
+   xnvmeperf cuda-run --iopattern read --queues 4 --qdepth 32 --iosize 4096 \
+       --runtime 10 --be upcie-cuda 0000:01:00.0 0000:02:00.0
+
+Example — random write, single queue::
+
+   xnvmeperf cuda-run --iopattern randwrite --qdepth 64 --iosize 4096 \
+       --runtime 10 --be upcie-cuda 0000:01:00.0
+
+``cuda-verify`` — GPU data integrity check
+==========================================
+
+Uses the same queue topology as ``cuda-run``. For each queue slot the kernel
+writes a unique LBA-stamped pattern, then reads it back on the host and
+compares against the expected data. This is intended to confirm that
+``cuda-run`` results reflect correct I/O rather than silent data corruption.
+
+.. literalinclude:: xnvmeperf_cuda_verify_usage.out
+   :language: bash
+
+Example::
+
+   xnvmeperf cuda-verify --iosize 4096 --qdepth 32 --be upcie-cuda 0000:01:00.0
