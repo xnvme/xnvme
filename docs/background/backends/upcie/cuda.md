@@ -2,6 +2,11 @@
 
 # uPCIe CUDA
 
+```{warning}
+This backend requires a custom Linux kernel patch that is not yet upstream.
+See {ref}`sec-backends-upcie-cuda-kernel` for details.
+```
+
 The **upcie-cuda** backend enables direct **PCIe peer-to-peer (P2P)** data
 transfers between the NVMe device and the GPU, with I/O buffers allocated from
 a heap backed by **CUDA device memory**.
