@@ -19,6 +19,7 @@ _cuda_rte_term(void)
 		return;
 	}
 
+	cudamem_mapping_clear(&g_upcie_cuda_rte.mappings);
 	cudamem_heap_term(&g_upcie_cuda_rte.cuda_heap);
 	cuCtxDestroy(g_upcie_cuda_rte.cu_ctx);
 

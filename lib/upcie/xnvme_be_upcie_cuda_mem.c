@@ -37,7 +37,40 @@ int
 xnvme_be_upcie_cuda_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf,
 				uint64_t *phys)
 {
-	return cudamem_heap_block_virt_to_phys(&g_upcie_cuda_rte.cuda_heap, buf, phys);
+	struct cudamem_heap *heap = &g_upcie_cuda_rte.cuda_heap;
+
+	if (cudamem_heap_contains(heap, buf)) {
+		return cudamem_heap_block_virt_to_phys(heap, buf, phys);
+	}
+
+	return cudamem_mapping_virt_to_phys(g_upcie_cuda_rte.mappings, buf, phys);
+}
+
+int
+xnvme_be_upcie_cuda_mem_map(const struct xnvme_dev *XNVME_UNUSED(dev), void *vaddr, size_t nbytes,
+			    uint64_t *phys)
+{
+	struct cudamem_mapping *m;
+	int err;
+
+	err = cudamem_mapping_add(&g_upcie_cuda_rte.mappings, vaddr, nbytes,
+				  &g_upcie_cuda_rte.cuda_config, &m);
+	if (err) {
+		XNVME_DEBUG("FAILED: cudamem_mapping_add(), err: %d", err);
+		return err;
+	}
+
+	if (phys) {
+		*phys = m->phys_lut[0];
+	}
+
+	return 0;
+}
+
+int
+xnvme_be_upcie_cuda_mem_unmap(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
+{
+	return cudamem_mapping_remove(&g_upcie_cuda_rte.mappings, buf);
 }
 
 #endif
@@ -49,8 +82,8 @@ struct xnvme_be_mem g_xnvme_be_upcie_cuda_mem = {
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
 	.buf_free = xnvme_be_upcie_cuda_buf_free,
 	.buf_vtophys = xnvme_be_upcie_cuda_buf_vtophys,
-	.mem_map = xnvme_be_nosys_mem_map,
-	.mem_unmap = xnvme_be_nosys_mem_unmap,
+	.mem_map = xnvme_be_upcie_cuda_mem_map,
+	.mem_unmap = xnvme_be_upcie_cuda_mem_unmap,
 #else
 	.buf_alloc = xnvme_be_nosys_buf_alloc,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
