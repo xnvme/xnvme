@@ -378,6 +378,19 @@ cudamem_heap_block_alloc(struct cudamem_heap *heap, size_t size)
 }
 
 /**
+ * Test whether a virtual address falls inside the given heap's range.
+ *
+ * @return 1 if `virt` is inside the heap, 0 otherwise.
+ */
+static inline int
+cudamem_heap_contains(struct cudamem_heap *heap, void *virt)
+{
+	uint64_t vaddr = (uint64_t)virt;
+
+	return heap && vaddr >= heap->vaddr && vaddr < heap->vaddr + heap->size;
+}
+
+/**
  * Calculate the physical address of a block on the given heap
  */
 static inline int

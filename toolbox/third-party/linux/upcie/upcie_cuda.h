@@ -26,6 +26,7 @@ extern "C" {
 #include <upcie/cudamem_config.h>
 #include <upcie/cudamem_heap.h>
 #include <upcie/cudamem_dma.h>
+#include <upcie/cudamem_mapping.h>
 
 // CUDA uPCIe NVMe libraries
 #ifdef _UPCIE_WITH_NVME
