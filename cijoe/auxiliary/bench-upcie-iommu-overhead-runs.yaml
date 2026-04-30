@@ -1,0 +1,13 @@
+---
+runtime: 10
+repeat: 3
+cpumask: "0x1"
+workload_pause: 5
+
+workloads:
+- pattern: randread
+  iosizes: [4096]
+  iodepths: [1, 2, 4, 8, 16, 32]
+- pattern: read
+  iosizes: [131072]
+  iodepths: [1, 2, 4, 8, 16, 32]

@@ -1,0 +1,33 @@
+---
+doc: |
+  Collect uPCIe IOMMU overhead benchmark inputs using xnvmeperf.
+
+  This workflow measures one driver in the current boot configuration. A full
+  comparison requires two benchmark runs and one report run:
+  1. boot with IOMMU off and collect uio_pci_generic
+  2. boot with IOMMU on and collect vfio-pci
+  3. run report-upcie-iommu-overhead.yaml to compare both outputs
+
+  VFIO example:
+  cijoe --config configs/default-config.toml
+        --config configs/upcie-iommu-overhead-vfio.toml
+        --output cijoe-output-upcie-vfio
+        workflows/benchmark-upcie-iommu-overhead.yaml
+
+  UIO example:
+  cijoe --config configs/default-config.toml
+        --config configs/upcie-iommu-overhead-uio.toml
+        --output cijoe-output-upcie-uio
+        workflows/benchmark-upcie-iommu-overhead.yaml
+
+steps:
+- name: sysinfo_report
+  uses: sysinfo_report
+
+- name: benchmark
+  uses: upcie_iommu_overhead
+  with:
+    runs: auxiliary/bench-upcie-iommu-overhead-runs.yaml
+
+- name: normalize
+  uses: upcie_iommu_overhead_normalize
