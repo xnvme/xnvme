@@ -1,0 +1,3 @@
+[upcie_iommu_overhead.compare]
+uio_output = "cijoe-output-upcie-uio"
+vfio_output = "cijoe-output-upcie-vfio"

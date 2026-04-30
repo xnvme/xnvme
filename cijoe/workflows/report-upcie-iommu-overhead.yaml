@@ -1,0 +1,33 @@
+---
+doc: |
+  Compare and report uPCIe IOMMU overhead benchmark outputs.
+
+  This workflow is the final step of a three-step measurement flow. It expects
+  two output directories produced by benchmark-upcie-iommu-overhead.yaml:
+  one from an IOMMU-off uio_pci_generic run and one from an IOMMU-on vfio-pci
+  run.
+
+  Example:
+  cijoe --config configs/default-config.toml
+        --config configs/upcie-iommu-overhead-report.toml
+        --output cijoe-output-upcie-iommu-report
+        workflows/report-upcie-iommu-overhead.yaml
+
+steps:
+- name: sysinfo_report
+  uses: sysinfo_report
+
+- name: compare
+  uses: upcie_iommu_overhead_compare
+  with:
+    runs: auxiliary/bench-upcie-iommu-overhead-runs.yaml
+
+- name: plot
+  uses: upcie_iommu_overhead_plotter
+
+- name: report
+  uses: upcie_iommu_overhead_reporter
+  with:
+    runs: auxiliary/bench-upcie-iommu-overhead-runs.yaml
+    report_title: "xNVMe uPCIe"
+    report_subtitle: "IOMMU Overhead Report"
