@@ -1,6 +1,6 @@
 ---
 doc: |
-  Collect uPCIe IOMMU overhead benchmark inputs using xnvmeperf.
+  Collect uPCIe IOMMU overhead benchmark inputs using xnvmeperf and fio.
 
   This workflow measures one driver in the current boot configuration. A full
   comparison requires two benchmark runs and one report run:

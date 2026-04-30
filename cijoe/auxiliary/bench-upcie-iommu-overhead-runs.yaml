@@ -2,6 +2,8 @@
 runtime: 10
 repeat: 3
 cpumask: "0x1"
+fio_ramp_time: 5
+fio_size: "100%"
 workload_pause: 5
 
 workloads:

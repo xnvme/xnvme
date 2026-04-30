@@ -26,6 +26,12 @@ from reporter import (
 from cijoe.core.resources import dict_from_yamlfile
 
 COMPARISON_JSON = "upcie-iommu-overhead-comparison.json"
+PLOT_PATH_REGEX = r".*_RW=(?P<rw>.+)_IOSIZE=(?P<iosize>\d+)_TYPE=(?P<type>.+)\.png"
+TAIL_LATENCIES = [
+    ("p99_9", "P99.9"),
+    ("p99_99", "P99.99"),
+    ("p99_999", "P99.999"),
+]
 
 
 def add_args(parser: ArgumentParser):
@@ -54,31 +60,48 @@ def load_comparison(search):
 def format_items(items):
     rows = []
     for item in items:
-        rows.append(
-            {
-                "rw": item["ctx"]["rw"],
-                "iosize": item["ctx"]["iosize"],
-                "iodepth": item["ctx"]["iodepth"],
-                "uio_iops": f"{item['uio']['iops']:.2f}",
-                "vfio_iops": f"{item['vfio']['iops']:.2f}",
-                "delta_pct": f"{item['delta_pct']:.2f}",
-                "uio_cv": f"{item['uio']['iops_cv']:.2f}",
-                "vfio_cv": f"{item['vfio']['iops_cv']:.2f}",
-            }
-        )
+        row = {
+            "rw": item["ctx"]["rw"],
+            "iosize": item["ctx"]["iosize"],
+            "iodepth": item["ctx"]["iodepth"],
+            "throughput_runner": "xnvmeperf",
+            "latency_runner": "fio",
+            "uio_iops": f"{item['uio']['iops']:.2f}",
+            "vfio_iops": f"{item['vfio']['iops']:.2f}",
+            "delta_pct": f"{item['delta_pct']:.2f}",
+            "uio_fio_iops": f"{item['uio']['fio_iops']:.2f}",
+            "vfio_fio_iops": f"{item['vfio']['fio_iops']:.2f}",
+            "fio_delta_pct": f"{item['fio_delta_pct']:.2f}",
+            "uio_fio_cv": f"{item['uio']['fio_iops_cv']:.2f}",
+            "vfio_fio_cv": f"{item['vfio']['fio_iops_cv']:.2f}",
+            "uio_lat_us": f"{item['uio']['lat_ns'] / 1000.0:.2f}",
+            "vfio_lat_us": f"{item['vfio']['lat_ns'] / 1000.0:.2f}",
+            "lat_delta_pct": f"{item['lat_delta_pct']:.2f}",
+            "uio_cv": f"{item['uio']['iops_cv']:.2f}",
+            "vfio_cv": f"{item['vfio']['iops_cv']:.2f}",
+        }
+        for percentile, _ in TAIL_LATENCIES:
+            row[f"uio_{percentile}_us"] = (
+                f"{item['uio']['tail_lat_ns'][percentile] / 1000.0:.2f}"
+            )
+            row[f"vfio_{percentile}_us"] = (
+                f"{item['vfio']['tail_lat_ns'][percentile] / 1000.0:.2f}"
+            )
+            row[f"{percentile}_delta_pct"] = (
+                f"{item['tail_lat_delta_pct'][percentile]:.2f}"
+            )
+        rows.append(row)
     return rows
 
 
 def plot_groups(artifacts):
     groups = defaultdict(dict)
     for path in artifacts.glob("upcie_iommu_overhead_RW=*_IOSIZE=*_TYPE=*.png"):
-        parts = dict(
-            part.split("=", 1)
-            for part in path.stem.removeprefix("upcie_iommu_overhead_").split("_")
-            if "=" in part
-        )
-        key = (parts["RW"], parts["IOSIZE"])
-        groups[key][parts["TYPE"]] = path.name
+        match = re.match(PLOT_PATH_REGEX, path.name)
+        if not match:
+            continue
+        key = (match.group("rw"), match.group("iosize"))
+        groups[key][match.group("type")] = path.name
     return groups
 
 
@@ -99,6 +122,28 @@ def workload_matrix(runs_path):
     return matrix
 
 
+def report_sections(plots, rows):
+    grouped_rows = defaultdict(list)
+    for row in rows:
+        grouped_rows[(row["rw"], str(row["iosize"]))].append(row)
+
+    sections = []
+    for key, group_plots in sorted(plots.items(), key=lambda item: item[0]):
+        group_rows = sorted(
+            grouped_rows.get(key, []),
+            key=lambda row: int(row["iodepth"]),
+        )
+        sections.append(
+            {
+                "rw": key[0],
+                "iosize": key[1],
+                "plots": group_plots,
+                "rows": group_rows,
+            }
+        )
+    return sections
+
+
 def main(args, cijoe):
     try:
         templates_path = args.templates.resolve()
@@ -106,6 +151,8 @@ def main(args, cijoe):
         artifacts = search_path / "artifacts"
 
         report_path = cijoe.output_path / "artifacts" / "perf_report"
+        if report_path.exists():
+            shutil.rmtree(report_path)
         report_path.mkdir(parents=False, exist_ok=True)
 
         body_path = report_path / "report.rst"
@@ -122,6 +169,7 @@ def main(args, cijoe):
         rows = format_items(comparison["items"])
         plots = plot_groups(artifacts)
         workloads = workload_matrix(args.runs)
+        sections = report_sections(plots, rows)
 
         template_loader = jinja2.FileSystemLoader(templates_path)
         template_env = jinja2.Environment(loader=template_loader)
@@ -137,6 +185,8 @@ def main(args, cijoe):
                         "rows": rows,
                         "plots": plots,
                         "workloads": workloads,
+                        "sections": sections,
+                        "tail_latencies": TAIL_LATENCIES,
                     }
                 )
             )

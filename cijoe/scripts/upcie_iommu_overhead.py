@@ -20,10 +20,13 @@ from pathlib import Path
 from cijoe.core.resources import dict_from_yamlfile
 
 GROUP = "upcie-iommu-overhead"
+FIO_PERCENTILE_LIST = "99.9:99.99:99.999"
 RUN_DEFAULTS = {
     "runtime": 10,
     "repeat": 3,
     "cpumask": "0x1",
+    "fio_ramp_time": 5,
+    "fio_size": "100%",
     "workload_pause": 5,
 }
 IOMMU_ENABLED_PATTERNS = [
@@ -68,6 +71,26 @@ def repo_path(cijoe):
 
 def q(value):
     return shlex.quote(str(value))
+
+
+def cpumask_to_cpu_list(cpumask):
+    mask = int(str(cpumask), 0)
+    if mask <= 0:
+        raise ValueError("cpumask must be a non-zero integer")
+
+    bit = 0
+    cpus = []
+    while mask:
+        if mask & 1:
+            cpus.append(str(bit))
+        mask >>= 1
+        bit += 1
+
+    return ",".join(cpus)
+
+
+def cpumask_to_cpu_count(cpumask):
+    return len(cpumask_to_cpu_list(cpumask).split(","))
 
 
 def resolve_bin(cijoe, name, default):
@@ -190,16 +213,56 @@ def xnvmeperf_cmd(cijoe, runs, xnvmeperf_bin, device, pattern, iosize, iodepth):
     )
 
 
+def fio_cmd(cijoe, runs, fio_bin, device, nsid, pattern, iosize, iodepth):
+    runtime = int(runconf(runs, "runtime"))
+    ramp_time = int(runconf(runs, "fio_ramp_time"))
+    size = runconf(runs, "fio_size")
+    cpumask = runconf(runs, "cpumask")
+    fio_device = str(device).replace(":", r"\:")
+
+    return " ".join(
+        [
+            f"sudo {q(fio_bin)}",
+            "--name=upcie-iommu-overhead",
+            f"--filename={q(fio_device)}",
+            "--ioengine=xnvme",
+            "--xnvme_be=upcie",
+            f"--xnvme_dev_nsid={q(nsid)}",
+            "--thread=1",
+            "--direct=1",
+            f"--rw={q(pattern)}",
+            f"--size={q(size)}",
+            f"--bs={q(iosize)}",
+            f"--iodepth={q(iodepth)}",
+            "--time_based=1",
+            f"--runtime={q(runtime)}",
+            f"--ramp_time={q(ramp_time)}",
+            "--norandommap=1",
+            "--group_reporting=1",
+            "--output-format=json",
+            f"--percentile_list={FIO_PERCENTILE_LIST}",
+            f"--numjobs={cpumask_to_cpu_count(cpumask)}",
+            f"--cpus_allowed={q(cpumask_to_cpu_list(cpumask))}",
+            "--cpus_allowed_policy=split",
+        ]
+    )
+
+
 def write_metadata(artifacts, runs, driver, device, nsid, runs_path):
     meta_path = artifacts / "upcie-iommu-overhead-meta.txt"
+    cpumask = runconf(runs, "cpumask")
     values = {
         "driver": driver,
         "device": device,
         "nsid": nsid,
-        "runner": "xnvmeperf",
+        "runners": "xnvmeperf,fio",
         "runtime": runconf(runs, "runtime"),
         "repeat": runconf(runs, "repeat"),
-        "cpumask": runconf(runs, "cpumask"),
+        "cpumask": cpumask,
+        "fio_numjobs": cpumask_to_cpu_count(cpumask),
+        "fio_cpus_allowed": cpumask_to_cpu_list(cpumask),
+        "fio_ramp_time": runconf(runs, "fio_ramp_time"),
+        "fio_size": runconf(runs, "fio_size"),
         "workload_pause": runconf(runs, "workload_pause"),
         "runs": runs_path,
     }
@@ -214,6 +277,7 @@ def prune_artifacts(artifacts):
     # reuses one. Keep reruns from mixing old raw inputs with new normalized data.
     for pattern in [
         "xnvmeperf-output_*.txt",
+        "fio-output_*.txt",
         "dmesg-iommu_*.txt",
         "xnvme-info_*.txt",
     ]:
@@ -245,6 +309,7 @@ def main(args, cijoe):
     xnvmeperf_bin = resolve_bin(
         cijoe, "xnvmeperf", "builddir/tools/xnvmeperf/xnvmeperf"
     )
+    fio_bin = conf(cijoe, "bins.fio", cijoe.getconf("fio.bin", "fio"))
     driver_script = resolve_bin(cijoe, "driver_script", "toolbox/xnvme-driver.sh")
 
     err = 0
@@ -272,7 +337,8 @@ def main(args, cijoe):
         if err:
             return err
 
-        combinations = len(cases) * repeat
+        runners = ["xnvmeperf", "fio"]
+        combinations = len(cases) * repeat * len(runners)
         completed = 0
         print(
             "run:",
@@ -280,6 +346,7 @@ def main(args, cijoe):
             f"'driver': '{driver}'",
             f"'workloads': {len(cases)}",
             f"'repeat': {repeat}",
+            f"'runners': {runners}",
             "}",
         )
         print_progress(f"0% completed (0/{combinations})")
@@ -292,7 +359,7 @@ def main(args, cijoe):
                 )
                 print_progress(
                     f"{completed / combinations * 100:.0f}% completed "
-                    f"({completed}/{combinations}); running {workload}"
+                    f"({completed}/{combinations}); running xnvmeperf {workload}"
                 )
 
                 output_path = artifacts / (
@@ -309,7 +376,28 @@ def main(args, cijoe):
                 completed += 1
                 print_progress(
                     f"{completed / combinations * 100:.0f}% completed "
-                    f"({completed}/{combinations}); finished {workload}"
+                    f"({completed}/{combinations}); finished xnvmeperf {workload}"
+                )
+
+                print_progress(
+                    f"{completed / combinations * 100:.0f}% completed "
+                    f"({completed}/{combinations}); running fio {workload}"
+                )
+                output_path = artifacts / (
+                    f"fio-output_IOSIZE={iosize}_IODEPTH={iodepth}_"
+                    f"LABEL={driver}_GROUP={GROUP}_RW={pattern}_REP={rep}.txt"
+                )
+                cmd = fio_cmd(
+                    cijoe, runs, fio_bin, device, nsid, pattern, iosize, iodepth
+                )
+                err = run_and_copy(cijoe, cmd, output_path)
+                if err:
+                    return err
+
+                completed += 1
+                print_progress(
+                    f"{completed / combinations * 100:.0f}% completed "
+                    f"({completed}/{combinations}); finished fio {workload}"
                 )
 
             if workload_pause > 0 and case_idx < len(cases):

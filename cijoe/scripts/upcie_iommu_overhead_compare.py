@@ -18,6 +18,7 @@ OUTPUT_NORMALIZED_FILENAME = "benchmark-output-normalized.json"
 COMPARISON_JSON = "upcie-iommu-overhead-comparison.json"
 COMPARISON_CSV = "upcie-iommu-overhead-comparison.csv"
 JSON_DUMP = {"indent": 4}
+TAIL_LATENCIES = ["p99_9", "p99_99", "p99_999"]
 
 
 def add_args(parser: ArgumentParser):
@@ -69,6 +70,41 @@ def pct_delta(base, value):
     return (value - base) / base * 100.0
 
 
+def metric_latency_ns(metrics):
+    ctx = metrics.get("ctx", {})
+    if ctx.get("latency_source") != "fio.lat_ns.mean":
+        raise ValueError(f"missing fio latency source for {ctx}")
+
+    lat = float(metrics.get("lat", 0))
+    if lat <= 0:
+        raise ValueError(f"missing fio latency for {ctx}")
+    return lat
+
+
+def metric_tail_latency_ns(metrics):
+    ctx = metrics.get("ctx", {})
+    if ctx.get("tail_latency_source") != "fio.clat_ns.percentile":
+        raise ValueError(f"missing fio tail latency source for {ctx}")
+
+    values = metrics.get("tail_lat_ns", {})
+    missing = [name for name in TAIL_LATENCIES if float(values.get(name, 0)) <= 0]
+    if missing:
+        raise ValueError(f"missing fio tail latency {missing} for {ctx}")
+
+    return {name: float(values[name]) for name in TAIL_LATENCIES}
+
+
+def metric_fio_iops(metrics):
+    ctx = metrics.get("ctx", {})
+    if ctx.get("throughput_source") != "fio.iops":
+        raise ValueError(f"missing fio metrics for {ctx}")
+
+    iops = float(metrics.get("fio_iops", 0))
+    if iops <= 0:
+        raise ValueError(f"missing fio iops for {ctx}")
+    return iops
+
+
 def compare(args, cijoe):
     uio_output = args.uio_output or cijoe.getconf(
         "upcie_iommu_overhead.compare.uio_output", None
@@ -93,6 +129,12 @@ def compare(args, cijoe):
         rw, iosize, iodepth = key
         uio_metrics = uio[key]
         vfio_metrics = vfio[key]
+        uio_lat_ns = metric_latency_ns(uio_metrics)
+        vfio_lat_ns = metric_latency_ns(vfio_metrics)
+        uio_tail_lat_ns = metric_tail_latency_ns(uio_metrics)
+        vfio_tail_lat_ns = metric_tail_latency_ns(vfio_metrics)
+        uio_fio_iops = metric_fio_iops(uio_metrics)
+        vfio_fio_iops = metric_fio_iops(vfio_metrics)
 
         items.append(
             {
@@ -106,19 +148,45 @@ def compare(args, cijoe):
                     "driver": uio_metrics["ctx"].get("driver", "uio_pci_generic"),
                     "iops": uio_metrics["iops"],
                     "bwps": uio_metrics["bwps"],
+                    "fio_iops": uio_fio_iops,
+                    "fio_bwps": uio_metrics.get("fio_bwps", 0),
+                    "fio_iops_stddev": uio_metrics.get("fio_iops_stddev", 0),
+                    "fio_iops_cv": uio_metrics.get("fio_iops_cv", 0),
+                    "lat_ns": uio_lat_ns,
                     "repeat": uio_metrics["ctx"].get("repeat", 1),
                     "iops_stddev": uio_metrics.get("stddev", 0),
                     "iops_cv": uio_metrics.get("iops_cv", 0),
+                    "lat_stddev_ns": uio_metrics.get("lat_stddev", 0),
+                    "lat_cv": uio_metrics.get("lat_cv", 0),
+                    "tail_lat_ns": uio_tail_lat_ns,
+                    "tail_lat_stddev_ns": uio_metrics.get("tail_lat_stddev_ns", {}),
+                    "tail_lat_cv": uio_metrics.get("tail_lat_cv", {}),
                 },
                 "vfio": {
                     "driver": vfio_metrics["ctx"].get("driver", "vfio-pci"),
                     "iops": vfio_metrics["iops"],
                     "bwps": vfio_metrics["bwps"],
+                    "fio_iops": vfio_fio_iops,
+                    "fio_bwps": vfio_metrics.get("fio_bwps", 0),
+                    "fio_iops_stddev": vfio_metrics.get("fio_iops_stddev", 0),
+                    "fio_iops_cv": vfio_metrics.get("fio_iops_cv", 0),
+                    "lat_ns": vfio_lat_ns,
                     "repeat": vfio_metrics["ctx"].get("repeat", 1),
                     "iops_stddev": vfio_metrics.get("stddev", 0),
                     "iops_cv": vfio_metrics.get("iops_cv", 0),
+                    "lat_stddev_ns": vfio_metrics.get("lat_stddev", 0),
+                    "lat_cv": vfio_metrics.get("lat_cv", 0),
+                    "tail_lat_ns": vfio_tail_lat_ns,
+                    "tail_lat_stddev_ns": vfio_metrics.get("tail_lat_stddev_ns", {}),
+                    "tail_lat_cv": vfio_metrics.get("tail_lat_cv", {}),
                 },
                 "delta_pct": pct_delta(uio_metrics["iops"], vfio_metrics["iops"]),
+                "fio_delta_pct": pct_delta(uio_fio_iops, vfio_fio_iops),
+                "lat_delta_pct": pct_delta(uio_lat_ns, vfio_lat_ns),
+                "tail_lat_delta_pct": {
+                    name: pct_delta(uio_tail_lat_ns[name], vfio_tail_lat_ns[name])
+                    for name in TAIL_LATENCIES
+                },
             }
         )
 
@@ -145,8 +213,25 @@ def compare(args, cijoe):
             "uio_iops",
             "vfio_iops",
             "delta_pct",
+            "uio_fio_iops",
+            "vfio_fio_iops",
+            "fio_delta_pct",
+            "uio_lat_ns",
+            "vfio_lat_ns",
+            "lat_delta_pct",
+            "uio_p99_9_ns",
+            "vfio_p99_9_ns",
+            "p99_9_delta_pct",
+            "uio_p99_99_ns",
+            "vfio_p99_99_ns",
+            "p99_99_delta_pct",
+            "uio_p99_999_ns",
+            "vfio_p99_999_ns",
+            "p99_999_delta_pct",
             "uio_cv",
             "vfio_cv",
+            "uio_fio_cv",
+            "vfio_fio_cv",
         ]
         writer = csv.DictWriter(cfd, fieldnames=fieldnames)
         writer.writeheader()
@@ -159,8 +244,25 @@ def compare(args, cijoe):
                     "uio_iops": f"{item['uio']['iops']:.6f}",
                     "vfio_iops": f"{item['vfio']['iops']:.6f}",
                     "delta_pct": f"{item['delta_pct']:.6f}",
+                    "uio_fio_iops": f"{item['uio']['fio_iops']:.6f}",
+                    "vfio_fio_iops": f"{item['vfio']['fio_iops']:.6f}",
+                    "fio_delta_pct": f"{item['fio_delta_pct']:.6f}",
+                    "uio_lat_ns": f"{item['uio']['lat_ns']:.6f}",
+                    "vfio_lat_ns": f"{item['vfio']['lat_ns']:.6f}",
+                    "lat_delta_pct": f"{item['lat_delta_pct']:.6f}",
+                    "uio_p99_9_ns": f"{item['uio']['tail_lat_ns']['p99_9']:.6f}",
+                    "vfio_p99_9_ns": f"{item['vfio']['tail_lat_ns']['p99_9']:.6f}",
+                    "p99_9_delta_pct": f"{item['tail_lat_delta_pct']['p99_9']:.6f}",
+                    "uio_p99_99_ns": f"{item['uio']['tail_lat_ns']['p99_99']:.6f}",
+                    "vfio_p99_99_ns": f"{item['vfio']['tail_lat_ns']['p99_99']:.6f}",
+                    "p99_99_delta_pct": f"{item['tail_lat_delta_pct']['p99_99']:.6f}",
+                    "uio_p99_999_ns": f"{item['uio']['tail_lat_ns']['p99_999']:.6f}",
+                    "vfio_p99_999_ns": f"{item['vfio']['tail_lat_ns']['p99_999']:.6f}",
+                    "p99_999_delta_pct": f"{item['tail_lat_delta_pct']['p99_999']:.6f}",
                     "uio_cv": f"{item['uio']['iops_cv']:.6f}",
                     "vfio_cv": f"{item['vfio']['iops_cv']:.6f}",
+                    "uio_fio_cv": f"{item['uio']['fio_iops_cv']:.6f}",
+                    "vfio_fio_cv": f"{item['vfio']['fio_iops_cv']:.6f}",
                 }
             )
 
