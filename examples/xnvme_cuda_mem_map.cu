@@ -98,7 +98,7 @@ main(int argc, char **argv)
 	}
 
 	/*
-	 * vtophys resolves through the registered mapping's phys_lut; one
+	 * vtophys resolves through the mapping registry's chunk LUT; one
 	 * lookup per LBA, no contiguity assumption.
 	 */
 	for (size_t i = 0; i < qdepth; i++) {

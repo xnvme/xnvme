@@ -43,25 +43,29 @@ xnvme_be_upcie_cuda_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void 
 		return cudamem_heap_block_virt_to_phys(heap, buf, phys);
 	}
 
-	return cudamem_mapping_virt_to_phys(g_upcie_cuda_rte.mappings, buf, phys);
+	return cudamem_mapping_virt_to_phys(&g_upcie_cuda_rte.mappings, buf, phys);
 }
 
 int
 xnvme_be_upcie_cuda_mem_map(const struct xnvme_dev *XNVME_UNUSED(dev), void *vaddr, size_t nbytes,
 			    uint64_t *phys)
 {
-	struct cudamem_mapping *m;
 	int err;
 
-	err = cudamem_mapping_add(&g_upcie_cuda_rte.mappings, vaddr, nbytes,
-				  &g_upcie_cuda_rte.cuda_config, &m);
+	err = cudamem_mapping_add(&g_upcie_cuda_rte.mappings, &g_upcie_cuda_rte.cuda_config, vaddr,
+				  nbytes, NULL);
 	if (err) {
 		XNVME_DEBUG("FAILED: cudamem_mapping_add(), err: %d", err);
 		return err;
 	}
 
 	if (phys) {
-		*phys = m->phys_lut[0];
+		err = cudamem_mapping_virt_to_phys(&g_upcie_cuda_rte.mappings, vaddr, phys);
+		if (err) {
+			XNVME_DEBUG("FAILED: cudamem_mapping_virt_to_phys(), err: %d", err);
+			cudamem_mapping_remove(&g_upcie_cuda_rte.mappings, vaddr);
+			return err;
+		}
 	}
 
 	return 0;

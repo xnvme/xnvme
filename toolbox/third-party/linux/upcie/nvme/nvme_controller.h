@@ -83,6 +83,7 @@ nvme_controller_open(struct nvme_controller *ctrlr, const char *bdf, struct host
 	bar0 = ctrlr->func.bars[0].region;
 
 	cap = nvme_mmio_cap_read(bar0);
+	// CAP.TO is encoded in units of 500 ms.
 	ctrlr->timeout_ms = nvme_reg_cap_get_to(cap) * 500;
 
 	nvme_mmio_cc_disable(bar0);
