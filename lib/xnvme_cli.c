@@ -889,6 +889,12 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "Number of queues per device",
 	},
 	{
+		.opt = XNVME_CLI_OPT_ALT_BE,
+		.vtype = XNVME_CLI_OPT_VTYPE_STR,
+		.name = "alt-be",
+		.descr = "Alternate xNVMe backend for dual-backend operations",
+	},
+	{
 		.opt = XNVME_CLI_OPT_END,
 		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "",
@@ -1405,6 +1411,9 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 
 	case XNVME_CLI_OPT_BE:
 		args->be = arg ? arg : "INVALID_INPUT";
+		break;
+	case XNVME_CLI_OPT_ALT_BE:
+		args->alt_be = arg ? arg : "INVALID_INPUT";
 		break;
 	case XNVME_CLI_OPT_MEM:
 		args->mem = arg ? arg : "INVALID_INPUT";
