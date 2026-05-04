@@ -111,6 +111,7 @@ struct xnvme_cli_args {
 	uint32_t help;
 
 	const char *be;
+	const char *alt_be;
 	const char *mem;
 	const char *sync;
 	const char *async;
@@ -351,7 +352,9 @@ enum xnvme_cli_opt {
 
 	XNVME_CLI_OPT_IOVA_MODE = 129, ///< XNVME_CLI_OPT_IOVA_MODE
 
-	XNVME_CLI_OPT_END = 130, ///< XNVME_CLI_OPT_END
+	XNVME_CLI_OPT_ALT_BE = 130, ///< XNVME_CLI_OPT_ALT_BE
+
+	XNVME_CLI_OPT_END = 131, ///< XNVME_CLI_OPT_END
 };
 
 /**
