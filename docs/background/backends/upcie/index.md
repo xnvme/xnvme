@@ -40,9 +40,8 @@ devices to uio_pci_generic or vfio-pci:
 xnvme-driver
 ```
 
-For the host-memory backend, bind devices to `uio_pci_generic` for the legacy
-path or `vfio-pci` for the IOMMU-backed path. The `upcie-cuda` backend still
-requires the non-VFIO path.
+**upcie** supports both `uio_pci_generic` (no-IOMMU path) and `vfio-pci`
+(IOMMU-backed path). **upcie-cuda** requires the non-VFIO path.
 
 ### Privileges
 
@@ -53,6 +52,32 @@ requires the non-VFIO path.
 2. Accessing VFIO device nodes and writing PCI config space via sysfs to
    enable Bus Master when needed.
 
+(sec-backends-upcie-dual)=
+
+## Dual-Backend Operation
+
+The same PCIe device can be opened simultaneously with both **upcie** and
+**upcie-cuda**. This lets one handle send I/O through host-memory buffers while
+another sends I/O through GPU device-memory buffers, both going to the same NVMe
+controller. Opening order does not matter; the controller is torn down only when
+the last handle across both backends is closed. Attempting to open the same URI
+with an unrelated backend while either uPCIe backend holds it returns `-EBUSY`.
+
+Before opening both handles, complete the system configuration for each backend:
+hugepages for {ref}`sec-backends-upcie-host` and the additional CUDA and kernel
+requirements for {ref}`sec-backends-upcie-cuda`.
+
+### Example
+
+```c
+struct xnvme_opts host_opts = xnvme_opts_default();
+struct xnvme_opts cuda_opts = xnvme_opts_default();
+host_opts.be = "upcie";
+cuda_opts.be = "upcie-cuda";
+
+struct xnvme_dev *host_dev = xnvme_dev_open("0000:03:00.0", &host_opts);
+struct xnvme_dev *cuda_dev = xnvme_dev_open("0000:03:00.0", &cuda_opts);
+```
 
 ```{toctree}
 :maxdepth: 1
