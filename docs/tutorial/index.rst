@@ -14,5 +14,6 @@ In the future, more tutorials will be added with the purpose of introducing the 
    fdp/index.rst
    devs/index.rst
    dynamic_loading/index.rst
+   codegen/index.rst
    fabrics/index.rst
    bdev_xnvme/index.rst

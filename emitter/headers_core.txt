@@ -1,0 +1,12 @@
+libxnvme_opts.h
+libxnvme_dev.h
+libxnvme_be.h
+libxnvme_buf.h
+libxnvme_mem.h
+libxnvme_geo.h
+libxnvme_ident.h
+libxnvme_queue.h
+libxnvme_cmd.h
+libxnvme_ver.h
+libxnvme_topology.h
+libxnvme_libconf.h

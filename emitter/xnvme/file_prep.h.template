@@ -1,0 +1,28 @@
+/**
+ * {{ meta.project | lower }}; Command Preparation API
+ *
+ * ------------------------------------------------------------------------------------------------
+ * @file lib{{ meta.prefix }}_prep.h
+ * ------------------------------------------------------------------------------------------------
+ * NOTE: This file is created using yace: https://github.com/safl/yace
+ */
+
+{% for entity in data %}
+/**
+ * {{ entity.doc }} - Command Preparation
+ *
+{%- for param in entity.ant.params %}
+ * @param {{ param.sym }} {{ param.doc }}
+{%- endfor %}
+ *
+ * @return On success 0 is returned. On error, -errno is
+ * returned.
+ */
+int
+{{ entity.sym }}_prep(void *cmd_buf, 
+{%- for param in entity.ant.params -%}
+{{ param.ant.typ }} {{ param.ant.sym }}
+{% if not loop.last %},{% endif %}
+{%- endfor -%}
+);
+{% endfor %}
