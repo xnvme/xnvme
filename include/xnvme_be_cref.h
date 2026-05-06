@@ -45,24 +45,6 @@ xnvme_be_cref_insert(const char *uri, const char *be_name, void *ctrlr,
 		     xnvme_be_cref_destructor_fn destructor);
 
 /**
- * Combined lookup-or-insert
- *
- * If an entry with matching @uri exists, increment its refcount and return the
- * stored handle. Otherwise, if @ctrlr is non-NULL, insert it with refcount=1
- * and associate it with @be_name and @destructor.
- *
- * @param uri Device URI to match or insert
- * @param be_name Backend name pointer, stored for filtering in xnvme_be_cref_cleanup()
- * @param ctrlr Controller handle to insert if no match is found, may be NULL for lookup-only
- * @param destructor Callback invoked to destroy the controller when refcount reaches zero
- *
- * @return On success, the controller handle. On error, NULL.
- */
-void *
-xnvme_be_cref_ref(const char *uri, const char *be_name, void *ctrlr,
-		  xnvme_be_cref_destructor_fn destructor);
-
-/**
  * Decrement the refcount for the given controller
  *
  * If the refcount reaches zero and XNVME_BE_CREF_DESTROY_IMMEDIATE is set,
