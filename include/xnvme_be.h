@@ -14,7 +14,7 @@
 #define XNVME_BE_ASYNC_NBYTES 64
 #define XNVME_BE_SYNC_NBYTES  24
 #define XNVME_BE_ADMIN_NBYTES 24
-#define XNVME_BE_DEV_NBYTES   48
+#define XNVME_BE_DEV_NBYTES   40
 #define XNVME_BE_MEM_NBYTES   56
 #define XNVME_BE_ATTR_NBYTES  24
 #define XNVME_BE_STATE_NBYTES 128
@@ -88,11 +88,6 @@ struct xnvme_be_admin {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_admin) == XNVME_BE_ADMIN_NBYTES, "Incorrect size")
 
 struct xnvme_be_dev {
-	/**
-	 * enumerate devices on/at the given 'sys_uri' when NULL local devices
-	 */
-	int (*enumerate)(const char *, struct xnvme_opts *, xnvme_enumerate_cb, void *);
-
 	/**
 	 * Construct a device from the given identifier
 	 */

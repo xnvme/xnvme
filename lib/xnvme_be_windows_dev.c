@@ -238,12 +238,10 @@ xnvme_be_windows_dev_close(struct xnvme_dev *dev)
 
 struct xnvme_be_dev g_xnvme_be_dev_windows = {
 #ifdef XNVME_PLATFORM_WINDOWS_ENABLED
-	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_windows_dev_open,
 	.dev_close = xnvme_be_windows_dev_close,
 	.id = "windows",
 #else
-	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_nosys_dev_open,
 	.dev_close = xnvme_be_nosys_dev_close,
 	.id = "nosys",
