@@ -39,20 +39,21 @@ XNVME_STATIC_ASSERT(sizeof(struct spdk_nvme_ns_data) == sizeof(struct xnvme_spec
 		    "Incorrect size")
 
 struct xnvme_be_spdk_state {
-	union {
-		pthread_mutex_t qpair_lock; ///< LOCK for SYNC IO commands
-		uint8_t _fill[64];
-	};
-	struct spdk_nvme_qpair *qpair; ///< QPAIR for SYNC IO commands
-
-	struct spdk_nvme_ctrlr *ctrlr; ///< Pointer to attached controller
+	struct spdk_nvme_ctrlr *ctrlr; ///< Pointer to attached controller (must be first: platform
+				       ///< stores ctrlr at state[0])
 	struct spdk_nvme_ns *ns;       ///< Pointer to associated namespace
+	struct spdk_nvme_qpair *qpair; ///< QPAIR for SYNC IO commands
 
 	uint8_t attached;
 
 	uint8_t _rsvd[7];
 
 	struct xnvme_be_spdk_iov_payload payload;
+
+	union {
+		pthread_mutex_t qpair_lock; ///< LOCK for SYNC IO commands
+		uint8_t _fill[64];
+	};
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_spdk_state) == XNVME_BE_STATE_NBYTES, "Incorrect size")
 
