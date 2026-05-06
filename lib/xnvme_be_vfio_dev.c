@@ -172,14 +172,12 @@ xnvme_be_vfio_dev_close(struct xnvme_dev *dev)
 
 struct xnvme_be_dev g_xnvme_be_vfio_dev = {
 #ifdef XNVME_BE_VFIO_ENABLED
-	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_vfio_dev_open,
 	.dev_close = xnvme_be_vfio_dev_close,
 	.id = "libvfn",
 	.ctrlr_init = xnvme_be_vfio_ctrlr_init,
 	.ctrlr_term = xnvme_be_vfio_ctrlr_term,
 #else
-	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_nosys_dev_open,
 	.dev_close = xnvme_be_nosys_dev_close,
 	.id = "nosys",
