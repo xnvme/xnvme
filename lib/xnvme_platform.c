@@ -82,7 +82,7 @@ _dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnv
 	int err;
 
 	if (!be->dev.ctrlr_init) {
-		return 0;
+		return be->dev.dev_open(dev);
 	}
 
 	ctrlr = xnvme_be_cref_lookup(dev->ident.uri, cfg->attr.name);
@@ -166,13 +166,6 @@ _dev_open_try_config(struct xnvme_dev *dev, const struct xnvme_be_config *cfg,
 	err = _dev_open_init_cref(dev, &dev->be, cfg);
 	if (err) {
 		return err;
-	}
-
-	if (!dev->be.dev.ctrlr_init) {
-		err = dev->be.dev.dev_open(dev);
-		if (err) {
-			return err;
-		}
 	}
 
 	XNVME_DEBUG("INFO: obtained device handle");
