@@ -23,10 +23,8 @@ iowork_stats_reset(struct iowork_stats *stats)
 
 struct iowork_range {
 	uint32_t slba;   ///< First LBA of the range
-	uint32_t elba;   ///< Last LBA of the range
 	uint64_t nbytes; ///< Number of bytes in range
 	uint64_t naddr;  ///< Number of addresses (count-from-1)
-	uint64_t nlb;    ///< Number of LBAs (count-from-0)
 };
 
 /**
@@ -66,11 +64,7 @@ struct iowork {
 
 	char *wbuf;
 	char *rbuf;
-
-	struct {
-		char *data;
-		uint64_t slba;
-	} cur;
+	char *buf;
 
 	int vectored; ///< Whether or not the vectored I/O path is used
 	int vec_cnt;
@@ -102,7 +96,6 @@ iowork_pp(struct iowork *work)
 	printf("  range.nbytes: %" PRIu64 "\n", work->range.nbytes);
 	printf("  range.naddr: %" PRIu64 "\n", work->range.naddr);
 	printf("  range.slba: %" PRIu32 "\n", work->range.slba);
-	printf("  range.elba: %" PRIu32 "\n", work->range.elba);
 	printf("  nio: %" PRIu64 "\n", work->nio);
 
 	return 0;
@@ -114,9 +107,8 @@ _submit(struct iowork *work, struct ioworker *worker, struct xnvme_cmd_ctx *ctx)
 	int err;
 	if (work->vectored) {
 		for (int j = 0; j < work->vec_cnt; ++j) {
-			work->cur.slba = ctx->cmd.nvm.slba + j * (work->io.nlb + 1);
-			worker->vec[j].iov_base =
-				work->cur.data + work->cur.slba * work->geo->lba_nbytes;
+			uint64_t vec_slba = ctx->cmd.nvm.slba + j * (work->io.nlb + 1);
+			worker->vec[j].iov_base = work->buf + vec_slba * work->geo->lba_nbytes;
 			worker->vec[j].iov_len = (work->io.nlb + 1) * work->geo->lba_nbytes;
 		}
 
@@ -140,8 +132,7 @@ submitv:
 			return err;
 		}
 	} else {
-		work->cur.slba = ctx->cmd.nvm.slba;
-		void *dbuf = work->cur.data + work->cur.slba * work->geo->lba_nbytes;
+		void *dbuf = work->buf + ctx->cmd.nvm.slba * work->geo->lba_nbytes;
 		size_t dbuf_nbytes = work->io.nbytes;
 submit:
 		err = xnvme_cmd_pass(ctx, dbuf, dbuf_nbytes, NULL, 0);
@@ -174,17 +165,16 @@ _submit_sync(struct iowork *work)
 	ctx.cmd.common.nsid = work->nsid;
 	ctx.cmd.common.opcode = work->opc;
 	ctx.cmd.nvm.nlb = work->io.naddr - 1;
-	work->cur.slba = work->range.slba;
+	ctx.cmd.nvm.slba = work->range.slba;
 
 	if (work->vectored) {
 		for (uint64_t i = 0; i < work->nio; ++i) {
-			ctx.cmd.nvm.slba = work->cur.slba;
 			for (int j = 0; j < work->vec_cnt; ++j) {
+				uint64_t vec_slba = ctx.cmd.nvm.slba + j * (work->io.nlb + 1);
 				worker->vec[j].iov_base =
-					work->cur.data + work->cur.slba * work->geo->lba_nbytes;
+					work->buf + vec_slba * work->geo->lba_nbytes;
 				worker->vec[j].iov_len =
 					(work->io.nlb + 1) * work->geo->lba_nbytes;
-				work->cur.slba += work->io.nlb + 1;
 			}
 
 			err = xnvme_cmd_pass_iov(&ctx, worker->vec, worker->vec_cnt,
@@ -195,12 +185,12 @@ _submit_sync(struct iowork *work)
 			} else {
 				work->stats.nsubmissions += 1;
 				work->stats.ncompletions += 1;
+				ctx.cmd.nvm.slba += work->io.naddr;
 			}
 		}
 	} else {
 		for (uint64_t i = 0; i < work->nio; ++i) {
-			ctx.cmd.nvm.slba = work->cur.slba;
-			void *dbuf = work->cur.data + work->cur.slba * work->geo->lba_nbytes;
+			void *dbuf = work->buf + ctx.cmd.nvm.slba * work->geo->lba_nbytes;
 			size_t dbuf_nbytes = work->io.nbytes;
 			err = xnvme_cmd_pass(&ctx, dbuf, dbuf_nbytes, NULL, 0);
 			if (err) {
@@ -209,7 +199,7 @@ _submit_sync(struct iowork *work)
 			} else {
 				work->stats.nsubmissions += 1;
 				work->stats.ncompletions += 1;
-				work->cur.slba += work->io.nlb + 1;
+				ctx.cmd.nvm.slba += work->io.naddr;
 			}
 		}
 	}
@@ -236,7 +226,10 @@ on_completion(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 		goto error;
 	}
 
-	if (work->cur.slba + work->io.naddr > work->range.elba) {
+	// Workers interleave, each striding by 'nworkers * io.naddr'; stop this worker when its
+	// next I/O would fall outside the range.
+	if (ctx->cmd.nvm.slba + (work->nworkers + 1) * work->io.naddr >
+	    work->range.slba + work->range.naddr) {
 		xnvme_queue_put_cmd_ctx(work->queue, ctx);
 		return;
 	}
@@ -245,7 +238,7 @@ on_completion(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 	ctx->cmd.common.nsid = work->nsid;
 	ctx->cmd.common.opcode = work->opc;
 	ctx->cmd.nvm.nlb = work->io.naddr - 1;
-	ctx->cmd.nvm.slba = work->cur.slba + (work->io.nlb + 1);
+	ctx->cmd.nvm.slba += work->nworkers * work->io.naddr;
 
 	_submit(work, worker, ctx);
 
@@ -306,16 +299,15 @@ iowork_from_cli(struct xnvme_cli *cli, struct iowork *work)
 	work->io.nbytes = work->vec_cnt * (work->io.nlb + 1) * work->geo->lba_nbytes;
 	work->io.naddr = work->vec_cnt * (work->io.nlb + 1);
 
-	if (!work->io.naddr || work->range.naddr % work->io.naddr) {
-		XNVME_DEBUG("FAILED: io.naddr must divide range.naddr");
-		return -EINVAL;
-	}
-
 	// work->range.nbytes = 1 << 27;
 	work->range.nbytes = 1 << 24;
 	work->range.naddr = work->range.nbytes / work->geo->lba_nbytes;
 	work->range.slba = 0;
-	work->range.elba = work->range.slba + work->range.naddr - 1;
+
+	if (!work->io.naddr || work->range.naddr % work->io.naddr) {
+		XNVME_DEBUG("FAILED: io.naddr must divide range.naddr");
+		return -EINVAL;
+	}
 
 	work->nio = work->range.naddr / work->io.naddr;
 	work->nworkers = work->nio > work->qdepth ? work->qdepth : work->nio;
@@ -446,7 +438,7 @@ test_verify(struct xnvme_cli *cli)
 	for (int i = 0; i < 2; i++) {
 
 		iowork_stats_reset(&work.stats);
-		work.cur.data = i ? work.rbuf : work.wbuf;
+		work.buf = i ? work.rbuf : work.wbuf;
 		work.opc = i ? XNVME_SPEC_NVM_OPC_READ : XNVME_SPEC_NVM_OPC_WRITE;
 
 		// Fill queue with commands
@@ -497,7 +489,7 @@ test_verify_sync(struct xnvme_cli *cli)
 	for (int i = 0; i < 2; i++) {
 
 		iowork_stats_reset(&work.stats);
-		work.cur.data = i ? work.rbuf : work.wbuf;
+		work.buf = i ? work.rbuf : work.wbuf;
 		work.opc = i ? XNVME_SPEC_NVM_OPC_READ : XNVME_SPEC_NVM_OPC_WRITE;
 
 		err = _submit_sync(&work);
