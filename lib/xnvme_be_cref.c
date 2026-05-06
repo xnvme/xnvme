@@ -6,14 +6,6 @@
 #include <errno.h>
 #include <xnvme_be_cref.h>
 
-struct xnvme_be_cref_entry {
-	void *ctrlr;
-	xnvme_be_cref_destructor_fn destructor;
-	const char *be_name;
-	int refcount;
-	char uri[XNVME_IDENT_URI_LEN + 1];
-};
-
 static struct xnvme_be_cref_entry g_cref_table[XNVME_BE_CREF_MAX_ENTRIES];
 
 static int
@@ -29,14 +21,14 @@ _entry_matches(const struct xnvme_be_cref_entry *entry, const char *uri, const c
 	return 1;
 }
 
-void *
-xnvme_be_cref_lookup(const char *uri, const char *be_name)
+const struct xnvme_be_cref_entry *
+xnvme_be_cref_lookup(const char *uri)
 {
 	for (int i = 0; i < XNVME_BE_CREF_MAX_ENTRIES; ++i) {
 		if (!g_cref_table[i].ctrlr) {
 			continue;
 		}
-		if (!_entry_matches(&g_cref_table[i], uri, be_name)) {
+		if (strncmp(g_cref_table[i].uri, uri, XNVME_IDENT_URI_LEN)) {
 			continue;
 		}
 		if (g_cref_table[i].refcount < 1) {
@@ -46,7 +38,7 @@ xnvme_be_cref_lookup(const char *uri, const char *be_name)
 
 		g_cref_table[i].refcount += 1;
 
-		return g_cref_table[i].ctrlr;
+		return &g_cref_table[i];
 	}
 
 	return NULL;
