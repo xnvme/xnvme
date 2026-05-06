@@ -96,7 +96,11 @@ _dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnv
 		}
 
 		((void **)be->state)[0] = ctrlr;
-		return 0;
+		err = be->dev.dev_open(dev);
+		if (err) {
+			xnvme_be_cref_deref(ctrlr, XNVME_BE_CREF_DESTROY_IMMEDIATE);
+		}
+		return err;
 	}
 
 	ctrlr = be->dev.ctrlr_init(dev);
