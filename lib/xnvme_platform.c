@@ -78,6 +78,7 @@ static int
 _dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnvme_be_config *cfg)
 {
 	void *ctrlr = NULL;
+	const char *be_name = "";
 	int cref_inserted = 0;
 	int err;
 
@@ -85,21 +86,17 @@ _dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnv
 		return 0;
 	}
 
-	ctrlr = xnvme_be_cref_lookup(dev->ident.uri, cfg->attr.name);
+	ctrlr = xnvme_be_cref_lookup(dev->ident.uri, &be_name);
 	if (ctrlr) {
-		((void **)be->state)[0] = ctrlr;
-		return 0;
-	}
-
-	{
-		void *conflict = xnvme_be_cref_lookup(dev->ident.uri, NULL);
-
-		if (conflict) {
-			xnvme_be_cref_deref(conflict, XNVME_BE_CREF_NONE);
+		if (strcmp(be_name, cfg->attr.name)) {
+			xnvme_be_cref_deref(ctrlr, XNVME_BE_CREF_NONE);
 			XNVME_DEBUG("FAILED: uri '%s' claimed by another backend config",
 				    dev->ident.uri);
 			return -EBUSY;
 		}
+
+		((void **)be->state)[0] = ctrlr;
+		return 0;
 	}
 
 	ctrlr = be->dev.ctrlr_init(dev);

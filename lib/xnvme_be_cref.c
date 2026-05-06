@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <libxnvme.h>
 #include <string.h>
 #include <errno.h>
 #include <xnvme_be_cref.h>
@@ -30,13 +31,13 @@ _entry_matches(const struct xnvme_be_cref_entry *entry, const char *uri, const c
 }
 
 void *
-xnvme_be_cref_lookup(const char *uri, const char *be_name)
+xnvme_be_cref_lookup(const char *uri, const char **be_name)
 {
 	for (int i = 0; i < XNVME_BE_CREF_MAX_ENTRIES; ++i) {
 		if (!g_cref_table[i].ctrlr) {
 			continue;
 		}
-		if (!_entry_matches(&g_cref_table[i], uri, be_name)) {
+		if (strncmp(g_cref_table[i].uri, uri, XNVME_IDENT_URI_LEN)) {
 			continue;
 		}
 		if (g_cref_table[i].refcount < 1) {
@@ -45,6 +46,10 @@ xnvme_be_cref_lookup(const char *uri, const char *be_name)
 		}
 
 		g_cref_table[i].refcount += 1;
+
+		if (be_name) {
+			*be_name = g_cref_table[i].be_name;
+		}
 
 		return g_cref_table[i].ctrlr;
 	}
