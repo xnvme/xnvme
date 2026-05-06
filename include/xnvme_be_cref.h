@@ -16,16 +16,20 @@ enum xnvme_be_cref_flags {
 	XNVME_BE_CREF_DESTROY_IMMEDIATE = 0x1,
 };
 
+struct xnvme_be_cref {
+	void *ctrlr;
+	const char *be_name;
+};
+
 /**
  * Lookup a controller by @uri and @be_name, and increment its refcount
  *
  * @param uri Device URI to match against
- * @param be_name Backend name to match (pointer equality), or NULL for any
  *
- * @return On success, the controller handle. On error, NULL.
+ * @return On success, the controller reference. On error, NULL.
  */
-void *
-xnvme_be_cref_lookup(const char *uri, const char *be_name);
+struct xnvme_be_cref *
+xnvme_be_cref_lookup(const char *uri);
 
 /**
  * Insert a new controller entry with refcount=1

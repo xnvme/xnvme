@@ -7,9 +7,8 @@
 #include <xnvme_be_cref.h>
 
 struct xnvme_be_cref_entry {
-	void *ctrlr;
+	struct xnvme_be_cref cref;
 	xnvme_be_cref_destructor_fn destructor;
-	const char *be_name;
 	int refcount;
 	char uri[XNVME_IDENT_URI_LEN + 1];
 };
@@ -22,21 +21,21 @@ _entry_matches(const struct xnvme_be_cref_entry *entry, const char *uri, const c
 	if (strncmp(entry->uri, uri, XNVME_IDENT_URI_LEN)) {
 		return 0;
 	}
-	if (be_name && (!entry->be_name || strcmp(entry->be_name, be_name))) {
+	if (be_name && (!entry->cref.be_name || strcmp(entry->cref.be_name, be_name))) {
 		return 0;
 	}
 
 	return 1;
 }
 
-void *
-xnvme_be_cref_lookup(const char *uri, const char *be_name)
+struct xnvme_be_cref *
+xnvme_be_cref_lookup(const char *uri)
 {
 	for (int i = 0; i < XNVME_BE_CREF_MAX_ENTRIES; ++i) {
-		if (!g_cref_table[i].ctrlr) {
+		if (!g_cref_table[i].cref.ctrlr) {
 			continue;
 		}
-		if (!_entry_matches(&g_cref_table[i], uri, be_name)) {
+		if (strncmp(g_cref_table[i].uri, uri, XNVME_IDENT_URI_LEN)) {
 			continue;
 		}
 		if (g_cref_table[i].refcount < 1) {
@@ -46,7 +45,7 @@ xnvme_be_cref_lookup(const char *uri, const char *be_name)
 
 		g_cref_table[i].refcount += 1;
 
-		return g_cref_table[i].ctrlr;
+		return &g_cref_table[i].cref;
 	}
 
 	return NULL;
@@ -66,9 +65,9 @@ xnvme_be_cref_insert(const char *uri, const char *be_name, void *ctrlr,
 			continue;
 		}
 
-		g_cref_table[i].ctrlr = ctrlr;
+		g_cref_table[i].cref.ctrlr = ctrlr;
 		g_cref_table[i].destructor = destructor;
-		g_cref_table[i].be_name = be_name;
+		g_cref_table[i].cref.be_name = be_name;
 		g_cref_table[i].refcount = 1;
 		strncpy(g_cref_table[i].uri, uri, XNVME_IDENT_URI_LEN);
 		g_cref_table[i].uri[XNVME_IDENT_URI_LEN] = '\0';
@@ -87,7 +86,7 @@ xnvme_be_cref_ref(const char *uri, const char *be_name, void *ctrlr,
 	int free_pos = -1;
 
 	for (int i = 0; i < XNVME_BE_CREF_MAX_ENTRIES; ++i) {
-		if (!g_cref_table[i].ctrlr) {
+		if (!g_cref_table[i].cref.ctrlr) {
 			if (free_pos < 0) {
 				free_pos = i;
 			}
@@ -100,14 +99,14 @@ xnvme_be_cref_ref(const char *uri, const char *be_name, void *ctrlr,
 			XNVME_DEBUG("FAILED: corrupted refcount");
 			return NULL;
 		}
-		if (ctrlr != NULL && ctrlr != g_cref_table[i].ctrlr) {
+		if (ctrlr != NULL && ctrlr != g_cref_table[i].cref.ctrlr) {
 			XNVME_DEBUG("FAILED: multiple ctrlr with same ident");
 			return NULL;
 		}
 
 		g_cref_table[i].refcount += 1;
 
-		return g_cref_table[i].ctrlr;
+		return g_cref_table[i].cref.ctrlr;
 	}
 
 	if (!ctrlr) {
@@ -120,14 +119,14 @@ xnvme_be_cref_ref(const char *uri, const char *be_name, void *ctrlr,
 		return NULL;
 	}
 
-	g_cref_table[free_pos].ctrlr = ctrlr;
+	g_cref_table[free_pos].cref.ctrlr = ctrlr;
 	g_cref_table[free_pos].destructor = destructor;
-	g_cref_table[free_pos].be_name = be_name;
+	g_cref_table[free_pos].cref.be_name = be_name;
 	g_cref_table[free_pos].refcount = 1;
 	strncpy(g_cref_table[free_pos].uri, uri, XNVME_IDENT_URI_LEN);
 	g_cref_table[free_pos].uri[XNVME_IDENT_URI_LEN] = '\0';
 
-	return g_cref_table[free_pos].ctrlr;
+	return g_cref_table[free_pos].cref.ctrlr;
 }
 
 int
@@ -139,7 +138,7 @@ xnvme_be_cref_deref(void *ctrlr, enum xnvme_be_cref_flags flags)
 	}
 
 	for (int i = 0; i < XNVME_BE_CREF_MAX_ENTRIES; ++i) {
-		if (g_cref_table[i].ctrlr != ctrlr) {
+		if (g_cref_table[i].cref.ctrlr != ctrlr) {
 			continue;
 		}
 
@@ -177,12 +176,12 @@ xnvme_be_cref_cleanup(const char *be_name)
 	int ret = 0;
 
 	for (int i = 0; i < XNVME_BE_CREF_MAX_ENTRIES; ++i) {
-		if (!g_cref_table[i].ctrlr) {
+		if (!g_cref_table[i].cref.ctrlr) {
 			continue;
 		}
 
-		if (!be_name != !g_cref_table[i].be_name ||
-		    (be_name && strcmp(g_cref_table[i].be_name, be_name))) {
+		if (!be_name != !g_cref_table[i].cref.be_name ||
+		    (be_name && strcmp(g_cref_table[i].cref.be_name, be_name))) {
 			continue;
 		}
 
@@ -194,7 +193,7 @@ xnvme_be_cref_cleanup(const char *be_name)
 		if (g_cref_table[i].refcount == 0) {
 			XNVME_DEBUG("INFO: refcount: %d => detaching", g_cref_table[i].refcount);
 			if (g_cref_table[i].destructor) {
-				int err = g_cref_table[i].destructor(g_cref_table[i].ctrlr);
+				int err = g_cref_table[i].destructor(g_cref_table[i].cref.ctrlr);
 				if (err) {
 					XNVME_DEBUG("FAILED: destructor(): %d", err);
 					ret = err;
