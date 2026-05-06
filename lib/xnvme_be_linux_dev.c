@@ -189,12 +189,10 @@ xnvme_be_linux_dev_close(struct xnvme_dev *dev)
 
 struct xnvme_be_dev g_xnvme_be_dev_linux = {
 #ifdef XNVME_PLATFORM_LINUX_ENABLED
-	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_linux_dev_open,
 	.dev_close = xnvme_be_linux_dev_close,
 	.id = "linux",
 #else
-	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_nosys_dev_open,
 	.dev_close = xnvme_be_nosys_dev_close,
 	.id = "nosys",

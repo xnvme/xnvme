@@ -71,9 +71,6 @@ void
 xnvme_be_upcie_dev_close(struct xnvme_dev *dev);
 int
 xnvme_be_upcie_dev_open(struct xnvme_dev *dev);
-int
-xnvme_be_upcie_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
-			 void *cb_args);
 void *
 xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev);
 int

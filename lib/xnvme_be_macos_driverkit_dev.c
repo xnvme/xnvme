@@ -202,14 +202,12 @@ xnvme_be_macos_driverkit_dev_open(struct xnvme_dev *dev)
 
 struct xnvme_be_dev g_xnvme_be_macos_driverkit_dev = {
 #ifdef XNVME_PLATFORM_MACOS_ENABLED
-	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_macos_driverkit_dev_open,
 	.dev_close = xnvme_be_macos_driverkit_dev_close,
 	.id = "driverkit",
 	.ctrlr_init = xnvme_be_macos_driverkit_ctrlr_init,
 	.ctrlr_term = xnvme_be_macos_driverkit_ctrlr_term,
 #else
-	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_nosys_dev_open,
 	.dev_close = xnvme_be_nosys_dev_close,
 	.id = "nosys",
