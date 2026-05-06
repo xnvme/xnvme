@@ -78,7 +78,6 @@ static int
 _dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnvme_be_config *cfg)
 {
 	void *ctrlr = NULL;
-	int cref_inserted = 0;
 	int err;
 
 	if (!be->dev.ctrlr_init) {
@@ -87,8 +86,7 @@ _dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnv
 
 	ctrlr = xnvme_be_cref_lookup(dev->ident.uri, cfg->attr.name);
 	if (ctrlr) {
-		((void **)be->state)[0] = ctrlr;
-		return 0;
+		goto ctrlr_ready;
 	}
 
 	{
@@ -114,12 +112,12 @@ _dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnv
 		be->dev.ctrlr_term(ctrlr);
 		return err;
 	}
-	cref_inserted = 1;
 
+ctrlr_ready:
 	((void **)be->state)[0] = ctrlr;
 
 	err = be->dev.dev_open(dev);
-	if (err && cref_inserted) {
+	if (err) {
 		xnvme_be_cref_deref(ctrlr, XNVME_BE_CREF_DESTROY_IMMEDIATE);
 	}
 
