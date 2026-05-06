@@ -52,7 +52,7 @@ xnvme_be_cref_lookup(const char *uri)
 }
 
 int
-xnvme_be_cref_insert(const char *uri, const char *be_name, void *ctrlr,
+xnvme_be_cref_insert(const char *uri, const char *be_name, void *ctrlr, uint32_t be_family,
 		     xnvme_be_cref_destructor_fn destructor)
 {
 	if (!ctrlr) {
@@ -68,6 +68,7 @@ xnvme_be_cref_insert(const char *uri, const char *be_name, void *ctrlr,
 		g_cref_table[i].cref.ctrlr = ctrlr;
 		g_cref_table[i].destructor = destructor;
 		g_cref_table[i].cref.be_name = be_name;
+		g_cref_table[i].cref.be_family = be_family;
 		g_cref_table[i].refcount = 1;
 		strncpy(g_cref_table[i].uri, uri, XNVME_IDENT_URI_LEN);
 		g_cref_table[i].uri[XNVME_IDENT_URI_LEN] = '\0';

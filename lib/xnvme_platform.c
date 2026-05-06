@@ -88,7 +88,7 @@ _dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnv
 
 	cref = xnvme_be_cref_lookup(dev->ident.uri);
 	if (cref) {
-		if (!strcmp(cref->be_name, cfg->attr.name)) {
+		if (!strcmp(cref->be_name, cfg->attr.name) || cfg->attr.family & cref->be_family) {
 			((void **)be->state)[0] = cref->ctrlr;
 			return be->dev.dev_open(dev);
 		}
@@ -104,7 +104,8 @@ _dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnv
 		return errno ? -errno : -EIO;
 	}
 
-	err = xnvme_be_cref_insert(dev->ident.uri, cfg->attr.name, ctrlr, be->dev.ctrlr_term);
+	err = xnvme_be_cref_insert(dev->ident.uri, cfg->attr.name, ctrlr, cfg->attr.family,
+				   be->dev.ctrlr_term);
 	if (err) {
 		XNVME_DEBUG("FAILED: cref_insert for uri '%s'", dev->ident.uri);
 		be->dev.ctrlr_term(ctrlr);

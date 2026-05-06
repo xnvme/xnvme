@@ -7,6 +7,15 @@
  */
 
 /**
+ * Backend family bitmask: backends sharing any bit can coexist on the same device URI.
+ *
+ * @enum xnvme_be_family
+ */
+enum xnvme_be_family {
+	XNVME_BE_FAMILY_UPCIE = 0x1 << 0, ///< uPCIe family (upcie, upcie-cuda)
+};
+
+/**
  * Representation of xNVMe library backend attributes
  *
  * @struct xnvme_be_attr
@@ -15,8 +24,7 @@ struct xnvme_be_attr {
 	const char *name;  ///< Backend name
 	const char *descr; ///< Human-readable description
 	uint32_t caps;     ///< Bitmask of xnvme_be_cap (0 = legacy/mixin-based)
-
-	uint8_t _rsvd[4];
+	uint32_t family;   ///< Bitmask of xnvme_be_family; 0 = no family (exclusive)
 };
 
 /**

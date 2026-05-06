@@ -19,6 +19,7 @@ enum xnvme_be_cref_flags {
 struct xnvme_be_cref {
 	void *ctrlr;
 	const char *be_name;
+	uint32_t be_family;
 };
 
 /**
@@ -40,12 +41,13 @@ xnvme_be_cref_lookup(const char *uri);
  * @param uri Device URI to associate with the controller
  * @param be_name Backend name pointer, used for filtering in xnvme_be_cref_cleanup()
  * @param ctrlr Controller handle to store, must be non-NULL
+ * @param be_family xnvme_be_family bitmask for cross-backend compat lookup; 0 = exclusive
  * @param destructor Callback invoked to destroy the controller when refcount reaches zero
  *
  * @return 0 on success, negative errno on error.
  */
 int
-xnvme_be_cref_insert(const char *uri, const char *be_name, void *ctrlr,
+xnvme_be_cref_insert(const char *uri, const char *be_name, void *ctrlr, uint32_t be_family,
 		     xnvme_be_cref_destructor_fn destructor);
 
 /**
