@@ -44,11 +44,11 @@ int
 xnvme_dev_pr(const struct xnvme_dev *dev, int opts);
 
 /**
- * Signature of callback function used with 'xnvme_enumerate' invoked for each discoved device
+ * Signature of callback function used with 'xnvme_enumerate', invoked for each discovered device
  *
- * The callback function signals whether the device-handle it receives should by closed, that is,
- * backend with invoke 'xnvme_dev_close(), after the callback returns or kept open. In the latter
- * case then it is up to the user to invoke 'xnvme_dev_close()' on the device-handle.
+ * The callback function signals whether the device-handle it receives should be closed, that is,
+ * the platform will invoke 'xnvme_dev_close()' after the callback returns, or kept open. In the
+ * latter case it is up to the user to invoke 'xnvme_dev_close()' on the device-handle.
  *
  * Each signal is represented by the enum #xnvme_enumerate_action, and the values
  * XNVME_ENUMERATE_DEV_KEEP_OPEN or XNVME_ENUMERATE_DEV_CLOSE.
