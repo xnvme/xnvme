@@ -66,11 +66,7 @@ struct iowork {
 
 	char *wbuf;
 	char *rbuf;
-
-	struct {
-		char *data;
-		uint64_t slba;
-	} cur;
+	char *buf;
 
 	int vectored; ///< Whether or not the vectored I/O path is used
 	int vec_cnt;
@@ -94,7 +90,9 @@ iowork_pp(struct iowork *work)
 
 	printf("\n");
 	printf("  io.nbytes: %zu\n", work->io.nbytes);
-	printf("  io.naddr: %zu\n", work->io.naddr);
+	printf("  io.nlb: %zu\n", work->io.nlb);
+	printf("  vec-cnt: %d\n", work->vec_cnt);
+	printf("  io.naddr (vec-cnt * (io.nlb + 1)): %zu\n", work->io.naddr);
 	printf("  vectored: %d\n", work->vectored);
 	printf("  nworkers: %" PRIu32 "\n", work->nworkers);
 	printf("  range.nbytes: %" PRIu64 "\n", work->range.nbytes);
@@ -112,10 +110,9 @@ _submit(struct iowork *work, struct ioworker *worker, struct xnvme_cmd_ctx *ctx)
 	int err;
 	if (work->vectored) {
 		for (int j = 0; j < work->vec_cnt; ++j) {
-			work->cur.slba = ctx->cmd.nvm.slba + j;
-			worker->vec[j].iov_base =
-				work->cur.data + work->cur.slba * work->geo->lba_nbytes;
-			worker->vec[j].iov_len = work->geo->lba_nbytes;
+			uint64_t vec_slba = ctx->cmd.nvm.slba + j * (work->io.nlb + 1);
+			worker->vec[j].iov_base = work->buf + vec_slba * work->geo->lba_nbytes;
+			worker->vec[j].iov_len = (work->io.nlb + 1) * work->geo->lba_nbytes;
 		}
 
 submitv:
@@ -138,8 +135,7 @@ submitv:
 			return err;
 		}
 	} else {
-		work->cur.slba = ctx->cmd.nvm.slba;
-		void *dbuf = work->cur.data + work->cur.slba * work->io.nbytes;
+		void *dbuf = work->buf + ctx->cmd.nvm.slba * work->geo->lba_nbytes;
 		size_t dbuf_nbytes = work->io.nbytes;
 submit:
 		err = xnvme_cmd_pass(ctx, dbuf, dbuf_nbytes, NULL, 0);
@@ -171,18 +167,19 @@ _submit_sync(struct iowork *work)
 	int err;
 	ctx.cmd.common.nsid = work->nsid;
 	ctx.cmd.common.opcode = work->opc;
-	ctx.cmd.nvm.nlb = work->io.nlb;
+	ctx.cmd.nvm.nlb = work->io.naddr - 1;
+	ctx.cmd.nvm.slba = work->range.slba;
 
 	if (work->vectored) {
 		for (uint64_t i = 0; i < work->nio; ++i) {
 			for (int j = 0; j < work->vec_cnt; ++j) {
-				work->cur.slba = work->range.slba + j + i * work->vec_cnt;
+				uint64_t vec_slba = ctx.cmd.nvm.slba + j * (work->io.nlb + 1);
 				worker->vec[j].iov_base =
-					work->cur.data + work->cur.slba * work->geo->lba_nbytes;
-				worker->vec[j].iov_len = work->geo->lba_nbytes;
+					work->buf + vec_slba * work->geo->lba_nbytes;
+				worker->vec[j].iov_len =
+					(work->io.nlb + 1) * work->geo->lba_nbytes;
 			}
 
-			ctx.cmd.nvm.slba = work->range.slba + i * work->vec_cnt;
 			err = xnvme_cmd_pass_iov(&ctx, worker->vec, worker->vec_cnt,
 						 work->io.nbytes, NULL, 0);
 			if (err) {
@@ -191,13 +188,12 @@ _submit_sync(struct iowork *work)
 			} else {
 				work->stats.nsubmissions += 1;
 				work->stats.ncompletions += 1;
+				ctx.cmd.nvm.slba += work->io.naddr;
 			}
 		}
 	} else {
 		for (uint64_t i = 0; i < work->nio; ++i) {
-			work->cur.slba = work->range.slba + i;
-			ctx.cmd.nvm.slba = work->cur.slba;
-			void *dbuf = work->cur.data + work->cur.slba * work->io.nbytes;
+			void *dbuf = work->buf + ctx.cmd.nvm.slba * work->geo->lba_nbytes;
 			size_t dbuf_nbytes = work->io.nbytes;
 			err = xnvme_cmd_pass(&ctx, dbuf, dbuf_nbytes, NULL, 0);
 			if (err) {
@@ -206,6 +202,7 @@ _submit_sync(struct iowork *work)
 			} else {
 				work->stats.nsubmissions += 1;
 				work->stats.ncompletions += 1;
+				ctx.cmd.nvm.slba += work->io.naddr;
 			}
 		}
 	}
@@ -232,7 +229,7 @@ on_completion(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 		goto error;
 	}
 
-	if (work->cur.slba >= work->range.elba) {
+	if (ctx->cmd.nvm.slba + work->io.naddr > work->range.elba) {
 		xnvme_queue_put_cmd_ctx(work->queue, ctx);
 		return;
 	}
@@ -240,8 +237,8 @@ on_completion(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 	// Recreate context
 	ctx->cmd.common.nsid = work->nsid;
 	ctx->cmd.common.opcode = work->opc;
-	ctx->cmd.nvm.nlb = work->io.nlb;
-	ctx->cmd.nvm.slba = ++(work->cur.slba);
+	ctx->cmd.nvm.nlb = work->io.naddr - 1;
+	ctx->cmd.nvm.slba += work->io.naddr;
 
 	_submit(work, worker, ctx);
 
@@ -290,6 +287,7 @@ iowork_from_cli(struct xnvme_cli *cli, struct iowork *work)
 	work->nsid = xnvme_dev_get_nsid(work->dev);
 	work->geo = xnvme_dev_get_geo(work->dev);
 	work->qdepth = cli->given[XNVME_CLI_OPT_QDEPTH] ? cli->args.qdepth : QDEPTH_DEF;
+	work->io.nlb = cli->given[XNVME_CLI_OPT_NLB] ? cli->args.nlb : 0;
 	work->vectored = cli->given[XNVME_CLI_OPT_VEC_CNT] && cli->args.vec_cnt;
 	work->vec_cnt = work->vectored ? cli->args.vec_cnt : 1;
 
@@ -298,9 +296,8 @@ iowork_from_cli(struct xnvme_cli *cli, struct iowork *work)
 		return -EINVAL;
 	}
 
-	work->io.nbytes = work->vec_cnt * work->geo->lba_nbytes;
-	work->io.naddr = work->vec_cnt;
-	work->io.nlb = work->io.naddr - 1;
+	work->io.nbytes = work->vec_cnt * (work->io.nlb + 1) * work->geo->lba_nbytes;
+	work->io.naddr = work->vec_cnt * (work->io.nlb + 1);
 
 	// work->range.nbytes = 1 << 27;
 	work->range.nbytes = 1 << 24;
@@ -314,7 +311,7 @@ iowork_from_cli(struct xnvme_cli *cli, struct iowork *work)
 	work->wbuf = xnvme_buf_alloc(cli->args.dev, work->range.nbytes);
 	if (!work->wbuf) {
 		err = -errno;
-		XNVME_DEBUG("FAILED: xnvme_buf_alloc(data), err: %d", errno);
+		XNVME_DEBUG("FAILED: xnvme_buf_alloc(wbuf), err: %d", errno);
 		goto failed;
 	}
 
@@ -327,11 +324,11 @@ iowork_from_cli(struct xnvme_cli *cli, struct iowork *work)
 	work->rbuf = xnvme_buf_alloc(cli->args.dev, work->range.nbytes);
 	if (!work->rbuf) {
 		err = -errno;
-		XNVME_DEBUG("FAILED: xnvme_buf_alloc(buf), err: %d", errno);
+		XNVME_DEBUG("FAILED: xnvme_buf_alloc(rbuf), err: %d", errno);
 		goto failed;
 	}
 
-	err = xnvme_buf_fill(work->rbuf, work->io.nbytes, "zero");
+	err = xnvme_buf_fill(work->rbuf, work->range.nbytes, "zero");
 	if (err) {
 		XNVME_DEBUG("FAILED: xnvme_buf_fill(), err: %d", err);
 		goto failed;
@@ -385,8 +382,8 @@ start_workers(struct iowork *work)
 		struct ioworker *worker = &work->workers[i];
 		ctx->cmd.common.nsid = work->nsid;
 		ctx->cmd.common.opcode = work->opc;
-		ctx->cmd.nvm.nlb = work->io.nlb;
-		ctx->cmd.nvm.slba = work->range.slba + i * work->vec_cnt;
+		ctx->cmd.nvm.nlb = work->io.naddr - 1;
+		ctx->cmd.nvm.slba = work->range.slba + i * work->io.naddr;
 		ctx->async.cb_arg = worker;
 		err = _submit(work, worker, ctx);
 		if (err) {
@@ -437,7 +434,7 @@ test_verify(struct xnvme_cli *cli)
 	for (int i = 0; i < 2; i++) {
 
 		iowork_stats_reset(&work.stats);
-		work.cur.data = i ? work.rbuf : work.wbuf;
+		work.buf = i ? work.rbuf : work.wbuf;
 		work.opc = i ? XNVME_SPEC_NVM_OPC_READ : XNVME_SPEC_NVM_OPC_WRITE;
 
 		// Fill queue with commands
@@ -488,7 +485,7 @@ test_verify_sync(struct xnvme_cli *cli)
 	for (int i = 0; i < 2; i++) {
 
 		iowork_stats_reset(&work.stats);
-		work.cur.data = i ? work.rbuf : work.wbuf;
+		work.buf = i ? work.rbuf : work.wbuf;
 		work.opc = i ? XNVME_SPEC_NVM_OPC_READ : XNVME_SPEC_NVM_OPC_WRITE;
 
 		err = _submit_sync(&work);
@@ -525,6 +522,7 @@ static struct xnvme_cli_sub g_subs[] = {
 
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_VEC_CNT, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_NLB, XNVME_CLI_LOPT},
 
 			XNVME_CLI_ASYNC_OPTS,
 		},
@@ -540,6 +538,7 @@ static struct xnvme_cli_sub g_subs[] = {
 
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_VEC_CNT, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_NLB, XNVME_CLI_LOPT},
 
 			XNVME_CLI_SYNC_OPTS,
 		},
