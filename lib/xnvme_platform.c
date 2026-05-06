@@ -88,7 +88,7 @@ _dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnv
 	ctrlr = xnvme_be_cref_lookup(dev->ident.uri, cfg->attr.name);
 	if (ctrlr) {
 		((void **)be->state)[0] = ctrlr;
-		return 0;
+		return be->dev.dev_open(dev);
 	}
 
 	{
