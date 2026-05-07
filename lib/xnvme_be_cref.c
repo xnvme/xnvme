@@ -9,7 +9,7 @@
 static struct xnvme_be_cref_entry g_cref_table[XNVME_BE_CREF_MAX_ENTRIES];
 
 const struct xnvme_be_cref_entry *
-xnvme_be_cref_lookup(const char *uri)
+xnvme_be_cref_get(const char *uri)
 {
 	for (int i = 0; i < XNVME_BE_CREF_MAX_ENTRIES; ++i) {
 		if (!g_cref_table[i].ctrlr) {
@@ -60,7 +60,7 @@ xnvme_be_cref_insert(const char *uri, const char *be_name, void *ctrlr,
 }
 
 int
-xnvme_be_cref_deref(void *ctrlr)
+xnvme_be_cref_put(void *ctrlr)
 {
 	if (!ctrlr) {
 		XNVME_DEBUG("FAILED: !ctrlr");

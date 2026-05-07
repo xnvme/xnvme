@@ -791,7 +791,7 @@ xnvme_dev_close(struct xnvme_dev *dev)
 		dev->be.dev.dev_close(dev);
 
 		if (dev->be.dev.ctrlr_term && ctrlr) {
-			xnvme_be_cref_deref(ctrlr);
+			xnvme_be_cref_put(ctrlr);
 		}
 	}
 

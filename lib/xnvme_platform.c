@@ -85,10 +85,10 @@ _dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnv
 		return be->dev.dev_open(dev);
 	}
 
-	cref = xnvme_be_cref_lookup(dev->ident.uri);
+	cref = xnvme_be_cref_get(dev->ident.uri);
 	if (cref) {
 		if (strcmp(cref->be_name, cfg->attr.name)) {
-			xnvme_be_cref_deref(cref->ctrlr);
+			xnvme_be_cref_put(cref->ctrlr);
 			XNVME_DEBUG("FAILED: uri '%s' claimed by another backend config",
 				    dev->ident.uri);
 			return -EBUSY;
@@ -116,7 +116,7 @@ ctrlr_ready:
 
 	err = be->dev.dev_open(dev);
 	if (err) {
-		xnvme_be_cref_deref(ctrlr);
+		xnvme_be_cref_put(ctrlr);
 	}
 
 	return err;
