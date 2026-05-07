@@ -12,6 +12,7 @@ struct xnvme_be_cref_entry {
 	xnvme_be_cref_destructor_fn destructor;
 	const char *be_name;
 	int refcount;
+	int deferred;
 	char uri[XNVME_IDENT_URI_LEN + 1];
 };
 
@@ -54,7 +55,7 @@ xnvme_be_cref_insert(const char *uri, const char *be_name, void *ctrlr,
 	}
 
 	for (int i = 0; i < XNVME_BE_CREF_MAX_ENTRIES; ++i) {
-		if (g_cref_table[i].refcount) {
+		if (g_cref_table[i].ctrlr) {
 			continue;
 		}
 
@@ -73,7 +74,28 @@ xnvme_be_cref_insert(const char *uri, const char *be_name, void *ctrlr,
 }
 
 int
-xnvme_be_cref_deref(void *ctrlr, enum xnvme_be_cref_flags flags)
+xnvme_be_cref_defer(void *ctrlr)
+{
+	if (!ctrlr) {
+		XNVME_DEBUG("FAILED: !ctrlr");
+		return -EINVAL;
+	}
+
+	for (int i = 0; i < XNVME_BE_CREF_MAX_ENTRIES; ++i) {
+		if (g_cref_table[i].ctrlr != ctrlr) {
+			continue;
+		}
+
+		g_cref_table[i].deferred = 1;
+		return 0;
+	}
+
+	XNVME_DEBUG("FAILED: no tracking for %p", ctrlr);
+	return -EINVAL;
+}
+
+int
+xnvme_be_cref_deref(void *ctrlr)
 {
 	if (!ctrlr) {
 		XNVME_DEBUG("FAILED: !ctrlr");
@@ -92,7 +114,7 @@ xnvme_be_cref_deref(void *ctrlr, enum xnvme_be_cref_flags flags)
 
 		g_cref_table[i].refcount -= 1;
 
-		if (g_cref_table[i].refcount == 0 && (flags & XNVME_BE_CREF_DESTROY_IMMEDIATE)) {
+		if (g_cref_table[i].refcount == 0 && !g_cref_table[i].deferred) {
 			int err = 0;
 
 			XNVME_DEBUG("INFO: refcount: %d => detaching", g_cref_table[i].refcount);
@@ -114,7 +136,7 @@ xnvme_be_cref_deref(void *ctrlr, enum xnvme_be_cref_flags flags)
 }
 
 int
-xnvme_be_cref_cleanup(const char *be_name)
+xnvme_be_cref_cleanup(void)
 {
 	int ret = 0;
 
@@ -123,27 +145,20 @@ xnvme_be_cref_cleanup(const char *be_name)
 			continue;
 		}
 
-		if (!be_name != !g_cref_table[i].be_name ||
-		    (be_name && strcmp(g_cref_table[i].be_name, be_name))) {
+		if (g_cref_table[i].refcount != 0) {
+			g_cref_table[i].deferred = 0;
 			continue;
 		}
 
-		if (g_cref_table[i].refcount < 0) {
-			XNVME_DEBUG("FAILED: invalid refcount: %d", g_cref_table[i].refcount);
-			continue;
-		}
-
-		if (g_cref_table[i].refcount == 0) {
-			XNVME_DEBUG("INFO: refcount: %d => detaching", g_cref_table[i].refcount);
-			if (g_cref_table[i].destructor) {
-				int err = g_cref_table[i].destructor(g_cref_table[i].ctrlr);
-				if (err) {
-					XNVME_DEBUG("FAILED: destructor(): %d", err);
-					ret = err;
-				}
+		XNVME_DEBUG("INFO: cleaning up refcount=0 entry for %p", g_cref_table[i].ctrlr);
+		if (g_cref_table[i].destructor) {
+			int err = g_cref_table[i].destructor(g_cref_table[i].ctrlr);
+			if (err) {
+				XNVME_DEBUG("FAILED: destructor(): %d", err);
+				ret = err;
 			}
-			memset(&g_cref_table[i], 0, sizeof(g_cref_table[i]));
 		}
+		memset(&g_cref_table[i], 0, sizeof(g_cref_table[i]));
 	}
 
 	return ret;
