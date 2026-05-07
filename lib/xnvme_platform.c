@@ -293,6 +293,7 @@ enumerate_controller(const char *uri, struct xnvme_opts *opts, xnvme_enumerate_c
 	if (err) {
 		XNVME_DEBUG("FAILED: xnvme_buf_clear(), err: %d", err);
 		xnvme_buf_free(ctrlr_dev, idfy_buf);
+		xnvme_dev_close(ctrlr_dev);
 		return err;
 	}
 
