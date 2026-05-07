@@ -20,13 +20,13 @@ typedef int (*xnvme_be_cref_destructor_fn)(void *ctrlr);
  * @return On success, the controller handle. On error, NULL.
  */
 void *
-xnvme_be_cref_lookup(const char *uri, const char **be_name);
+xnvme_be_cref_get(const char *uri, const char **be_name);
 
 /**
  * Insert a new controller entry with refcount=1
  *
  * Does not check for duplicate URIs. The caller must ensure the URI is not
- * already present, e.g. by calling xnvme_be_cref_lookup() first.
+ * already present, e.g. by calling xnvme_be_cref_get() first.
  *
  * @param uri Device URI to associate with the controller
  * @param be_name Backend name pointer, stored for later matching
@@ -42,7 +42,7 @@ xnvme_be_cref_insert(const char *uri, const char *be_name, void *ctrlr,
 /**
  * Mark the controller as deferred, preventing destruction when refcount reaches zero
  *
- * When deferred, xnvme_be_cref_deref() will leave the entry alive at refcount=0
+ * When deferred, xnvme_be_cref_put() will leave the entry alive at refcount=0
  * rather than calling its destructor. The entry is destroyed by xnvme_be_cref_cleanup().
  *
  * @param ctrlr Controller handle to mark, must be non-NULL
@@ -64,7 +64,7 @@ xnvme_be_cref_defer(void *ctrlr);
  * @return 0 on success, negative errno on error.
  */
 int
-xnvme_be_cref_deref(void *ctrlr);
+xnvme_be_cref_put(void *ctrlr);
 
 /**
  * Destroy all deferred entries with refcount=0, calling each entry's destructor
