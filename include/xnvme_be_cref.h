@@ -33,13 +33,13 @@ struct xnvme_be_cref_entry {
  * @return On a hit, a const pointer to the matched entry. On a miss, NULL.
  */
 const struct xnvme_be_cref_entry *
-xnvme_be_cref_lookup(const char *uri);
+xnvme_be_cref_get(const char *uri);
 
 /**
  * Insert a new controller entry with refcount=1
  *
  * Does not check for duplicate URIs. The caller must ensure the URI is not
- * already present, e.g. by calling xnvme_be_cref_lookup() first.
+ * already present, e.g. by calling xnvme_be_cref_get() first.
  *
  * @param uri Device URI to associate with the controller
  * @param be_name Backend name pointer, stored for later matching
@@ -63,6 +63,6 @@ xnvme_be_cref_insert(const char *uri, const char *be_name, void *ctrlr,
  * @return 0 on success, negative errno on error.
  */
 int
-xnvme_be_cref_deref(void *ctrlr);
+xnvme_be_cref_put(void *ctrlr);
 
 #endif /* __INTERNAL_XNVME_BE_CREF_H */
