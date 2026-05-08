@@ -37,4 +37,14 @@ if conf_data.get('XNVME_BE_UPCIE_CUDA_ENABLED')
     install_rpath: xnvmelib_rpath,
     install: true,
   )
+  executable(
+    'xnvme_cuda_mem_map',
+    'xnvme_cuda_mem_map.cu',
+    include_directories: [conf_inc, xnvme_inc],
+    link_with: xnvmelib,
+    dependencies: [cuda_dep],
+    link_args: link_args_hardening,
+    install_rpath: xnvmelib_rpath,
+    install: true,
+  )
 endif

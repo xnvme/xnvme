@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
-
 /**
  * CUDA NVMe Request Extension
  * ===========================
@@ -31,9 +30,11 @@
  */
 static inline void
 nvme_request_prep_command_prps_contig_cuda(struct nvme_request *request, struct cudamem_heap *heap,
-                                           void *dbuf, size_t dbuf_nbytes, struct nvme_command *cmd)
+					   void *dbuf, size_t dbuf_nbytes,
+					   struct nvme_command *cmd)
 {
-	const uint64_t npages = (dbuf_nbytes + heap->config->pagesize - 1) >> heap->config->pagesize_shift;
+	const uint64_t npages =
+		(dbuf_nbytes + heap->config->pagesize - 1) >> heap->config->pagesize_shift;
 	const uint64_t pagesize = heap->config->pagesize;
 
 	/* Chaining is not supported, thus assert that the given dbuf fits. */
@@ -76,7 +77,8 @@ nvme_request_prep_command_prps_contig_cuda(struct nvme_request *request, struct 
  */
 static inline void
 nvme_request_prep_command_prps_iov_cuda(struct nvme_request *request, struct cudamem_heap *heap,
-				   	struct iovec *dvec, size_t dvec_cnt, struct nvme_command *cmd)
+					struct iovec *dvec, size_t dvec_cnt,
+					struct nvme_command *cmd)
 {
 	const uint64_t pagesize = heap->config->pagesize;
 	uint64_t *prp_list = (uint64_t *)request->prp;
@@ -108,4 +110,146 @@ nvme_request_prep_command_prps_iov_cuda(struct nvme_request *request, struct cud
 	} else if (prp_idx > 1) {
 		cmd->prp2 = request->prp_addr;
 	}
+}
+
+/**
+ * Prepare PRPs for a contiguous CUDA data buffer registered with a mapping
+ * registry.
+ *
+ * The buffer is resolved page-by-page through the registry's chunk cache,
+ * with no contiguity assumption. This variant is for buffers registered via
+ * cudamem_mapping; heap-allocated buffers should use
+ * nvme_request_prep_command_prps_contig_cuda() instead.
+ *
+ * Caveats
+ * -------
+ *
+ * - `dbuf` must be host-page-aligned (NVMe PRP entries past PRP1 must be
+ *   page-aligned per spec); asserted.
+ * - Does *not* support PRP list chaining; only a single list page is constructed.
+ *
+ * @param request Pointer to the NVMe request context used for tracking and metadata.
+ * @param registry Mapping registry to resolve through.
+ * @param config Device memory config (for host page size).
+ * @param dbuf Pointer to the contiguous data buffer to be described by PRPs.
+ * @param dbuf_nbytes Size in bytes of the data buffer.
+ * @param cmd Pointer to the NVMe command to be prepared with PRP entries.
+ * @return 0 on success, -EINVAL if any page of the buffer is unmapped.
+ */
+static inline int
+nvme_request_prep_command_prps_contig_cuda_mapped(struct nvme_request *request,
+						  struct cudamem_mapping_registry *registry,
+						  struct cudamem_config *config, void *dbuf,
+						  size_t dbuf_nbytes, struct nvme_command *cmd)
+{
+	const uint64_t pagesize = config->pagesize;
+	const uint64_t pagesize_shift = config->pagesize_shift;
+	const size_t prp_cap = pagesize / sizeof(uint64_t);
+	const uint64_t npages = (dbuf_nbytes + pagesize - 1) >> pagesize_shift;
+	int err;
+
+	assert(((uintptr_t)dbuf & (pagesize - 1)) == 0);
+
+	if (npages > 1 + prp_cap) {
+		return -EINVAL;
+	}
+
+	err = cudamem_mapping_virt_to_phys(registry, dbuf, &cmd->prp1);
+	if (err) {
+		return err;
+	}
+
+	if (npages == 1) {
+		return 0;
+	}
+	if (npages == 2) {
+		return cudamem_mapping_virt_to_phys(registry, (uint8_t *)dbuf + pagesize,
+						    &cmd->prp2);
+	}
+
+	uint64_t *prp_list = (uint64_t *)request->prp;
+	cmd->prp2 = request->prp_addr;
+	for (uint64_t i = 1; i < npages; ++i) {
+		err = cudamem_mapping_virt_to_phys(
+			registry, (uint8_t *)dbuf + (i << pagesize_shift), &prp_list[i - 1]);
+		if (err) {
+			return err;
+		}
+	}
+	return 0;
+}
+
+/**
+ * Prepare PRPs for a CUDA iovec (scatter-gather) data buffer registered with
+ * a mapping registry.
+ *
+ * Each entry is resolved page-by-page through the registry's chunk cache.
+ * This variant is for iovecs registered via cudamem_mapping; heap-allocated
+ * iovecs should use nvme_request_prep_command_prps_iov_cuda() instead.
+ *
+ * Each `dvec[i].iov_base` must be host-page-aligned (every PRP-list entry
+ * must be page-aligned per NVMe spec); asserted.
+ *
+ * @param request Pointer to the NVMe request context used for tracking and metadata.
+ * @param registry Mapping registry to resolve through.
+ * @param config Device memory config (for host page size).
+ * @param dvec Array of iovec structures describing the data segments.
+ * @param dvec_cnt Number of elements in the dvec array.
+ * @param cmd Pointer to the NVMe command to be prepared with PRP entries.
+ * @return 0 on success, -EINVAL if any iovec cannot be resolved.
+ */
+static inline int
+nvme_request_prep_command_prps_iov_cuda_mapped(struct nvme_request *request,
+					       struct cudamem_mapping_registry *registry,
+					       struct cudamem_config *config, struct iovec *dvec,
+					       size_t dvec_cnt, struct nvme_command *cmd)
+{
+	if (dvec_cnt == 0) {
+		return -EINVAL;
+	}
+
+	const uint64_t pagesize = config->pagesize;
+	const size_t prp_cap = pagesize / sizeof(uint64_t);
+	uint64_t *prp_list = (uint64_t *)request->prp;
+	size_t prp_idx = 0;
+	int err;
+
+	for (size_t i = 0; i < dvec_cnt; ++i) {
+		uint8_t *base = (uint8_t *)dvec[i].iov_base;
+		size_t iov_len = dvec[i].iov_len;
+		size_t offset = 0;
+		size_t remaining = iov_len;
+
+		assert(((uintptr_t)base & (pagesize - 1)) == 0);
+
+		if (i == 0) {
+			err = cudamem_mapping_virt_to_phys(registry, base, &cmd->prp1);
+			if (err) {
+				return err;
+			}
+			offset = pagesize;
+			remaining = (remaining > pagesize) ? remaining - pagesize : 0;
+		}
+
+		while (remaining > 0) {
+			if (prp_idx >= prp_cap) {
+				return -EINVAL;
+			}
+			err = cudamem_mapping_virt_to_phys(registry, base + offset,
+							   &prp_list[prp_idx++]);
+			if (err) {
+				return err;
+			}
+			offset += pagesize;
+			remaining = (remaining > pagesize) ? remaining - pagesize : 0;
+		}
+	}
+
+	if (prp_idx == 1) {
+		cmd->prp2 = prp_list[0];
+	} else if (prp_idx > 1) {
+		cmd->prp2 = request->prp_addr;
+	}
+
+	return 0;
 }

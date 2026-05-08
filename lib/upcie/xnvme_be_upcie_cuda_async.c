@@ -46,8 +46,19 @@ xnvme_be_upcie_cuda_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t d
 	cmd->cid = req->cid;
 
 	if (dbuf) {
-		nvme_request_prep_command_prps_contig_cuda(req, &g_upcie_cuda_rte.cuda_heap, dbuf,
-							   dbuf_nbytes, cmd);
+		if (cudamem_heap_contains(&g_upcie_cuda_rte.cuda_heap, dbuf)) {
+			nvme_request_prep_command_prps_contig_cuda(req, &g_upcie_cuda_rte.cuda_heap,
+								   dbuf, dbuf_nbytes, cmd);
+		} else {
+			err = nvme_request_prep_command_prps_contig_cuda_mapped(
+				req, &g_upcie_cuda_rte.mappings,
+				g_upcie_cuda_rte.cuda_heap.config, dbuf, dbuf_nbytes, cmd);
+			if (err) {
+				XNVME_DEBUG("FAILED: prps_contig_cuda_mapped(); err(%d)", err);
+				nvme_request_free(upcie_queue->qpair.rpool, req->cid);
+				return err;
+			}
+		}
 	}
 
 	if (mbuf) {
@@ -103,8 +114,20 @@ xnvme_be_upcie_cuda_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec,
 	cmd->cid = req->cid;
 
 	if (dvec) {
-		nvme_request_prep_command_prps_iov_cuda(req, &g_upcie_cuda_rte.cuda_heap, dvec,
-							dvec_cnt, cmd);
+		if (dvec_cnt > 0 &&
+		    cudamem_heap_contains(&g_upcie_cuda_rte.cuda_heap, dvec[0].iov_base)) {
+			nvme_request_prep_command_prps_iov_cuda(req, &g_upcie_cuda_rte.cuda_heap,
+								dvec, dvec_cnt, cmd);
+		} else {
+			err = nvme_request_prep_command_prps_iov_cuda_mapped(
+				req, &g_upcie_cuda_rte.mappings,
+				g_upcie_cuda_rte.cuda_heap.config, dvec, dvec_cnt, cmd);
+			if (err) {
+				XNVME_DEBUG("FAILED: prps_iov_cuda_mapped(); err(%d)", err);
+				nvme_request_free(upcie_queue->qpair.rpool, req->cid);
+				return err;
+			}
+		}
 	}
 
 	if (mbuf) {

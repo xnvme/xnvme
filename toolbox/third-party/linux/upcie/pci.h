@@ -249,6 +249,36 @@ pci_bar_unmap(struct pci_func_bar *bar)
 	return 0;
 }
 
+/**
+ * Read the size of PCI BAR `id` for the function at `bdf` from sysfs, without
+ * mapping it. Useful for verifying BAR sizing before mapping or for callers
+ * that only need the size (e.g. to check BAR1 vs device memory size).
+ *
+ * @return 0 on success, negative errno on failure.
+ */
+static inline int
+pci_bar_size(const char *bdf, uint8_t id, size_t *size)
+{
+	struct stat barstat = {0};
+	char path[256] = {0};
+	int err;
+
+	if (!bdf || !size) {
+		return -EINVAL;
+	}
+
+	snprintf(path, sizeof(path), "/sys/bus/pci/devices/%.*s/resource%" PRIu8, PCI_BDF_LEN, bdf,
+		 id);
+
+	err = stat(path, &barstat);
+	if (err) {
+		return -errno;
+	}
+
+	*size = (size_t)barstat.st_size;
+	return 0;
+}
+
 static inline int
 pci_bar_map(const char *bdf, uint8_t id, struct pci_func_bar *bar)
 {

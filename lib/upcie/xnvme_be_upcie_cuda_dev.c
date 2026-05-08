@@ -19,6 +19,7 @@ _cuda_rte_term(void)
 		return;
 	}
 
+	cudamem_mapping_registry_term(&g_upcie_cuda_rte.mappings);
 	cudamem_heap_term(&g_upcie_cuda_rte.cuda_heap);
 	cuCtxDestroy(g_upcie_cuda_rte.cu_ctx);
 
@@ -65,6 +66,15 @@ _cuda_rte_init(void)
 		XNVME_DEBUG("FAILED: cudamem_heap_init(); err(%d)", err);
 		cuCtxDestroy(g_upcie_cuda_rte.cu_ctx);
 		return -ENOMEM;
+	}
+
+	err = cudamem_mapping_registry_init(&g_upcie_cuda_rte.mappings,
+					    &g_upcie_cuda_rte.cuda_config);
+	if (err) {
+		XNVME_DEBUG("FAILED: cudamem_mapping_registry_init(); err(%d)", err);
+		cudamem_heap_term(&g_upcie_cuda_rte.cuda_heap);
+		cuCtxDestroy(g_upcie_cuda_rte.cu_ctx);
+		return err;
 	}
 
 	g_upcie_cuda_rte.is_initialized = 1;
