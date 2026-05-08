@@ -26,13 +26,17 @@ _cuda_rte_term(void)
 }
 
 static int
-_cuda_rte_init(void)
+_cuda_rte_init(size_t heap_size)
 {
 	CUdevice cu_dev;
 	int err;
 
 	if (g_upcie_cuda_rte.is_initialized) {
 		return 0;
+	}
+
+	if (!heap_size) {
+		heap_size = 1024 * 1024 * 1024;
 	}
 
 	err = cuInit(0);
@@ -59,7 +63,7 @@ _cuda_rte_init(void)
 		return err;
 	}
 
-	err = cudamem_heap_init(&g_upcie_cuda_rte.cuda_heap, 1024 * 1024 * 1024,
+	err = cudamem_heap_init(&g_upcie_cuda_rte.cuda_heap, heap_size,
 				&g_upcie_cuda_rte.cuda_config);
 	if (err) {
 		XNVME_DEBUG("FAILED: cudamem_heap_init(); err(%d)", err);
@@ -157,7 +161,7 @@ xnvme_be_upcie_cuda_dev_open(struct xnvme_dev *dev)
 		return err;
 	}
 
-	err = _cuda_rte_init();
+	err = _cuda_rte_init(dev->opts.device_heap_size);
 	if (err) {
 		XNVME_DEBUG("FAILED: _cuda_rte_init(); err(%d)", err);
 		return err;
