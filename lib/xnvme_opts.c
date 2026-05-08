@@ -86,6 +86,10 @@ xnvme_opts_yaml(FILE *stream, const struct xnvme_opts *opts, int indent, const c
 	wrtn += fprintf(stream, "%*sspdk_fabrics: 0x%" PRIx32 "%s", indent, "", opts->spdk_fabrics,
 			sep);
 
+	wrtn += fprintf(stream, "%*shost_heap_size: %zu%s", indent, "", opts->host_heap_size, sep);
+	wrtn += fprintf(stream, "%*sdevice_heap_size: %zu%s", indent, "", opts->device_heap_size,
+			sep);
+
 	return wrtn;
 }
 

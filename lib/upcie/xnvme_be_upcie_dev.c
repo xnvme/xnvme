@@ -63,12 +63,16 @@ _rte_term(void)
  * already initialized, then it exits early.
  */
 static int
-_rte_init(void)
+_rte_init(size_t heap_size)
 {
 	int err;
 
 	if (g_upcie_rte.is_initialized) {
 		return 0;
+	}
+
+	if (!heap_size) {
+		heap_size = 256 * 1024 * 1024;
 	}
 
 	err = hostmem_config_init(&g_upcie_rte.config);
@@ -77,7 +81,11 @@ _rte_init(void)
 		return err;
 	}
 
-	err = hostmem_heap_init(&g_upcie_rte.heap, 256 * 1024 * 1024, &g_upcie_rte.config);
+	// hostmem_heap_init() requires a size that is a whole number of hugepages
+	heap_size = ((heap_size + g_upcie_rte.config.hugepgsz - 1) / g_upcie_rte.config.hugepgsz) *
+		    g_upcie_rte.config.hugepgsz;
+
+	err = hostmem_heap_init(&g_upcie_rte.heap, heap_size, &g_upcie_rte.config);
 	if (err) {
 		XNVME_DEBUG("FAILED: hostmem_heap_init(); err(%d)", err);
 		return err;
@@ -153,7 +161,7 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 	char driver_name[sizeof(dev->ident.kernel_driver)] = {0};
 	int err;
 
-	err = _rte_init();
+	err = _rte_init(dev->opts.host_heap_size);
 	if (err) {
 		XNVME_DEBUG("FAILED: _rte_init()");
 		errno = -err;
