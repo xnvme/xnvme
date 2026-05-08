@@ -83,7 +83,7 @@ _rte_init(void)
 		return err;
 	}
 
-	err = hostmem_heap_init(&g_upcie_rte.heap, 256 * 1024 * 1024, &g_upcie_rte.config);
+	err = hostmem_heap_init(&g_upcie_rte.heap, 1024 * 1024 * 1024, &g_upcie_rte.config);
 	if (err) {
 		XNVME_DEBUG("FAILED: hostmem_heap_init(); err(%d)", err);
 		return err;
