@@ -15,7 +15,12 @@ def test_write(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-@xnvme_parametrize(labels=["zns"], opts=["be", "admin", "async"])
+# admin=[block]: block layer does not support append; async=[io_uring,libaio,posix]: these async backends do not support append
+@xnvme_parametrize(
+    labels=["zns"],
+    opts=["be", "admin", "async"],
+    exclude={"admin": ["block"], "async": ["io_uring", "libaio", "posix"]},
+)
 def test_append(cijoe, device, be_opts, cli_args):
     if get_osname() == "freebsd" and be_opts["be"] not in [
         "spdk",
@@ -23,11 +28,6 @@ def test_append(cijoe, device, be_opts, cli_args):
         "ramdisk_thrpool",
     ]:
         pytest.skip(reason="Freebsd kernel doesn't support zns")
-    if be_opts["admin"] == "block":
-        pytest.skip(reason="Block layer does not support append")
-
-    if be_opts["async"] in ["io_uring", "libaio", "posix"]:
-        pytest.skip(reason="Block-layer async does not support append")
 
     err, _ = cijoe.run(f"zoned_io_async append {cli_args}")
     assert not err

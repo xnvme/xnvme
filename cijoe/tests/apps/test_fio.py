@@ -10,16 +10,16 @@ FIO_OUTPUT_FPATH = (
 )
 
 
-@xnvme_parametrize(labels=["dev"], opts=["be", "admin", "sync", "async", "mem"])
+# mem=[upcie-cuda]: fio engine does not support CUDA memory
+@xnvme_parametrize(
+    labels=["dev"],
+    opts=["be", "admin", "sync", "async", "mem"],
+    exclude={"mem": ["upcie-cuda"]},
+)
 def test_fio_engine(cijoe, device, be_opts, cli_args):
     """
     The construction of the fio-invocation is done in 'fio_fancy'
     """
-    if be_opts["mem"] == "upcie-cuda":
-        pytest.skip(
-            reason="[mem=upcie-cuda] fio xNVMe ioengine does not support CUDA memory"
-        )
-
     size = "64M"
     # size = "1G"
 
@@ -36,24 +36,24 @@ def test_fio_engine(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-@xnvme_parametrize(labels=["dev"], opts=["be", "admin", "sync", "async", "mem"])
+# async=[posix],sync=[psync]: iovec not implemented; admin=[driverkit]: iovec not implemented; mem=[upcie-cuda]: CUDA memory not supported
+@xnvme_parametrize(
+    labels=["dev"],
+    opts=["be", "admin", "sync", "async", "mem"],
+    exclude={
+        "async": ["posix"],
+        "sync": ["psync"],
+        "admin": ["driverkit"],
+        "mem": ["upcie-cuda"],
+    },
+)
 def test_fio_engine_iov(cijoe, device, be_opts, cli_args):
     """
     The construction of the fio-invocation is done in 'fio_fancy'
     """
 
-    if be_opts["async"] == "posix":
-        pytest.skip(reason="[async=posix] does not implement iovec")
-    if be_opts["sync"] == "psync":
-        pytest.skip(reason="[sync=psync] does not implement iovec")
     if get_osname() == "freebsd" and be_opts["sync"] == "nvme":
         pytest.skip(reason="[sync=nvme] on FreeBSD does not implement iovec")
-    if be_opts["admin"] == "driverkit":
-        pytest.skip(reason="[admin=driverkit] does not implement iovec")
-    if be_opts["mem"] == "upcie-cuda":
-        pytest.skip(
-            reason="[mem=upcie-cuda] fio xNVMe ioengine does not support CUDA memory"
-        )
 
     size = "64M"
     # size = "1G"
@@ -71,7 +71,12 @@ def test_fio_engine_iov(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-@xnvme_parametrize(labels=["zns", "bdev"], opts=["be", "admin", "sync", "async", "mem"])
+# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive; async=[thrpool]: thrpool does not support zbd/zns
+@xnvme_parametrize(
+    labels=["zns", "bdev"],
+    opts=["be", "admin", "sync", "async", "mem"],
+    exclude={"sync": ["psync", "block"], "async": ["thrpool"]},
+)
 def test_fio_engine_zns(cijoe, device, be_opts, cli_args):
     """
     The construction of the fio-invocation is done in 'fio_fancy'
@@ -82,10 +87,6 @@ def test_fio_engine_zns(cijoe, device, be_opts, cli_args):
         "ramdisk_thrpool",
     ]:
         pytest.skip(reason="Freebsd kernel doesn't support zns")
-    if be_opts["sync"] in ["psync", "block"]:
-        pytest.skip(reason="[sync=psync,block] does not support mgmt. send/receive")
-    if be_opts["async"] == "thrpool":
-        pytest.skip(reason="[async=thrpool] gives Zone Invalid Write")
 
     size = "64M"
     # size = "1G"
@@ -103,15 +104,18 @@ def test_fio_engine_zns(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-@xnvme_parametrize(labels=["fdp"], opts=["be", "admin", "sync", "async", "mem"])
+# sync=[psync]: ENOSYS, psync cannot do mgmt send/receive
+@xnvme_parametrize(
+    labels=["fdp"],
+    opts=["be", "admin", "sync", "async", "mem"],
+    exclude={"sync": ["psync"]},
+)
 def test_fio_engine_fdp(cijoe, device, be_opts, cli_args):
     """
     The construction of the fio-invocation is done in 'fio_fancy'
     """
     if "cdev" not in device["labels"]:
         pytest.skip(reason="FIO requires a char device")
-    if be_opts["sync"] == "psync":
-        pytest.skip(reason="[sync=psync] cannot do write with directives")
 
     size = "64M"
     # size = "1G"

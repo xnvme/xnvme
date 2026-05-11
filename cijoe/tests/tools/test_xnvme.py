@@ -119,63 +119,66 @@ def test_info(cijoe, device, be_opts, cli_args):
             )
 
 
-@xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
+# mem=[upcie-cuda]: idfy does not support CUDA memory
+@xnvme_parametrize(
+    labels=["dev"], opts=["be", "admin"], exclude={"mem": ["upcie-cuda"]}
+)
 def test_idfy(cijoe, device, be_opts, cli_args):
-    if be_opts["mem"] == "upcie-cuda":
-        pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
     err, _ = cijoe.run(
         f"xnvme idfy {cli_args} --cns 0x0 --cntid 0x0 --setid 0x0 --uuid 0x0"
     )
     assert not err
 
 
-@xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
+# mem=[upcie-cuda]: idfy-ns does not support CUDA memory
+@xnvme_parametrize(
+    labels=["dev"], opts=["be", "admin"], exclude={"mem": ["upcie-cuda"]}
+)
 def test_idfy_ns(cijoe, device, be_opts, cli_args):
-    if be_opts["mem"] == "upcie-cuda":
-        pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
     err, _ = cijoe.run(f"xnvme idfy-ns {cli_args} --nsid {device['nsid']}")
     assert not err
 
 
-@xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
+# mem=[upcie-cuda]: idfy-ctrlr does not support CUDA memory
+@xnvme_parametrize(
+    labels=["dev"], opts=["be", "admin"], exclude={"mem": ["upcie-cuda"]}
+)
 def test_idfy_ctrlr(cijoe, device, be_opts, cli_args):
-    if be_opts["mem"] == "upcie-cuda":
-        pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
     err, _ = cijoe.run(f"xnvme idfy-ctrlr {cli_args}")
     assert not err
 
 
-@xnvme_parametrize(labels=["dev", "idfy_cs"], opts=["be", "admin"])
+# admin=[block,ramdisk]: block/ramdisk backends do not support idfy-cs
+@xnvme_parametrize(
+    labels=["dev", "idfy_cs"],
+    opts=["be", "admin"],
+    exclude={"admin": ["block", "ramdisk"]},
+)
 def test_idfy_cs(cijoe, device, be_opts, cli_args):
-    if be_opts["admin"] == "block":
-        pytest.skip(reason="[admin=block] does not implement idfy-cs")
-    if be_opts["admin"] == "ramdisk":
-        pytest.skip(reason="[be=ramdisk] does not implement idfy-cs")
 
     err, _ = cijoe.run(f"xnvme idfy-cs {cli_args}")
     assert not err
 
 
-@xnvme_parametrize(labels=["nvm"], opts=["be", "admin"])
+# admin=[block,ramdisk]: block/ramdisk backends do not support format
+@xnvme_parametrize(
+    labels=["nvm"], opts=["be", "admin"], exclude={"admin": ["block", "ramdisk"]}
+)
 def test_format(cijoe, device, be_opts, cli_args):
-    if be_opts["admin"] == "block":
-        pytest.skip(reason="[admin=block] does not implement format")
-    elif be_opts["admin"] == "spdk" and "fabrics" in device["labels"]:
+    if be_opts["admin"] == "spdk" and "fabrics" in device["labels"]:
         pytest.skip(reason="spdk fabrics does not support format")
-
-    if be_opts["admin"] == "ramdisk":
-        pytest.skip(reason="[be=ramdisk] does not implement format")
 
     err, _ = cijoe.run(f"xnvme format {cli_args}")
     assert not err
 
 
-@xnvme_parametrize(labels=["nvm", "sanitize"], opts=["be", "admin"])
+# admin=[block,ramdisk]: block/ramdisk backends do not support sanitize
+@xnvme_parametrize(
+    labels=["nvm", "sanitize"],
+    opts=["be", "admin"],
+    exclude={"admin": ["block", "ramdisk"]},
+)
 def test_sanitize(cijoe, device, be_opts, cli_args):
-    if be_opts["admin"] == "block":
-        pytest.skip(reason="[admin=block] does not implement sanitize")
-    if be_opts["admin"] == "ramdisk":
-        pytest.skip(reason="[be=ramdisk] does not implement sanitize")
 
     err, _ = cijoe.run(f"xnvme sanitize --sanact 0x2 {cli_args}")
 
@@ -187,51 +190,49 @@ def test_sanitize(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-@xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
+# mem=[upcie-cuda]: CUDA memory not supported; admin=[block,ramdisk]: block/ramdisk do not expose NVMe log pages
+@xnvme_parametrize(
+    labels=["dev"],
+    opts=["be", "admin"],
+    exclude={"mem": ["upcie-cuda"], "admin": ["block", "ramdisk"]},
+)
 def test_log_erri(cijoe, device, be_opts, cli_args):
-    if be_opts["mem"] == "upcie-cuda":
-        pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
-    if be_opts["admin"] == "block":
-        pytest.skip(reason="[admin=block] does not implement error-log")
-    if be_opts["admin"] == "ramdisk":
-        pytest.skip(reason="[be=ramdisk] does not implement error-log")
 
     err, _ = cijoe.run(f"xnvme log-erri {cli_args}")
     assert not err
 
 
-@xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
+# mem=[upcie-cuda]: CUDA memory not supported; admin=[block,ramdisk]: block/ramdisk do not expose NVMe log pages
+@xnvme_parametrize(
+    labels=["dev"],
+    opts=["be", "admin"],
+    exclude={"mem": ["upcie-cuda"], "admin": ["block", "ramdisk"]},
+)
 def test_log_health_controller(cijoe, device, be_opts, cli_args):
-    if be_opts["mem"] == "upcie-cuda":
-        pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
-    if be_opts["admin"] == "block":
-        pytest.skip(reason="[admin=block] does not implement health-log")
-    if be_opts["admin"] == "ramdisk":
-        pytest.skip(reason="[be=ramdisk] does not implement health-log")
 
     err, _ = cijoe.run(f"xnvme log-health {cli_args} --nsid 0xFFFFFFFF")
     assert not err
 
 
-@xnvme_parametrize(labels=["dev", "log_health_ns"], opts=["be", "admin"])
+# admin=[block,ramdisk]: block/ramdisk do not expose NVMe log pages
+@xnvme_parametrize(
+    labels=["dev", "log_health_ns"],
+    opts=["be", "admin"],
+    exclude={"admin": ["block", "ramdisk"]},
+)
 def test_log_health_namespace(cijoe, device, be_opts, cli_args):
-    if be_opts["admin"] == "block":
-        pytest.skip(reason="[admin=block] does not implement health-log")
-    if be_opts["admin"] == "ramdisk":
-        pytest.skip(reason="[be=ramdisk] does not implement health-log")
 
     err, _ = cijoe.run(f"xnvme log-health {cli_args} --nsid {device['nsid']}")
     assert not err
 
 
-@xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
+# mem=[upcie-cuda]: CUDA memory not supported; admin=[block,ramdisk]: block/ramdisk do not expose NVMe log pages
+@xnvme_parametrize(
+    labels=["dev"],
+    opts=["be", "admin"],
+    exclude={"mem": ["upcie-cuda"], "admin": ["block", "ramdisk"]},
+)
 def test_log(cijoe, device, be_opts, cli_args):
-    if be_opts["mem"] == "upcie-cuda":
-        pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
-    if be_opts["admin"] == "block":
-        pytest.skip(reason="[admin=block] does not implement get-log")
-    if be_opts["admin"] == "ramdisk":
-        pytest.skip(reason="[be=ramdisk] does not implement get-log")
 
     lid, lsp, lpo_nbytes, rae, nbytes, nsid = "0x1", "0x0", 0, 0, 4096, "0xFFFFFFFF"
 
@@ -242,12 +243,11 @@ def test_log(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-@xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
+# admin=[block,ramdisk]: block/ramdisk backends do not support NVMe feature get
+@xnvme_parametrize(
+    labels=["dev"], opts=["be", "admin"], exclude={"admin": ["block", "ramdisk"]}
+)
 def test_feature_get(cijoe, device, be_opts, cli_args):
-    if be_opts["admin"] == "block":
-        pytest.skip(reason="[admin=block] does not implement feature-get")
-    if be_opts["admin"] == "ramdisk":
-        pytest.skip(reason="[be=ramdisk] does not implement feature-get")
 
     for fid, descr in [("0x4", "Temperature threshold"), ("0x5", "Error recovery")]:
         # Get fid without setting select-bit
@@ -260,10 +260,9 @@ def test_feature_get(cijoe, device, be_opts, cli_args):
             assert not err
 
 
-@xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
+# admin=[ramdisk]: ramdisk backend does not support NVMe feature set (block is excluded at runtime via assert err)
+@xnvme_parametrize(labels=["dev"], opts=["be", "admin"], exclude={"admin": ["ramdisk"]})
 def test_feature_set(cijoe, device, be_opts, cli_args):
-    if be_opts["admin"] == "ramdisk":
-        pytest.skip(reason="[be=ramdisk] does not implement feature-set")
 
     err, _ = cijoe.run(f"xnvme feature-set {cli_args} --fid 0x4 --feat 0x1")
 
@@ -273,14 +272,12 @@ def test_feature_set(cijoe, device, be_opts, cli_args):
         assert not err
 
 
-@xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
+# admin=[block,ramdisk]: block/ramdisk backends do not support passthrough admin commands
+@xnvme_parametrize(
+    labels=["dev"], opts=["be", "admin"], exclude={"admin": ["block", "ramdisk"]}
+)
 def test_padc(cijoe, device, be_opts, cli_args):
     """Construct and send an admin command (Get Log Page: Error Information)"""
-
-    if be_opts["admin"] == "block":
-        pytest.skip(reason="[admin=block] does not support admin-passthru")
-    if be_opts["admin"] == "ramdisk":
-        pytest.skip(reason="[be=ramdisk] does not implement this admin-opcode")
 
     # Get Log Page
     opcode = "0x02"
@@ -333,10 +330,11 @@ def test_pioc(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-@xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
+# mem=[upcie-cuda]: DSM does not support CUDA memory
+@xnvme_parametrize(
+    labels=["dev"], opts=["be", "admin"], exclude={"mem": ["upcie-cuda"]}
+)
 def test_dsm(cijoe, device, be_opts, cli_args):
-    if be_opts["mem"] == "upcie-cuda":
-        pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
     err, _ = cijoe.run(
         f"xnvme dsm {cli_args} --nsid {device['nsid']} --ad --slba 0 --llb 1"
     )
@@ -359,7 +357,10 @@ def test_dsm(cijoe, device, be_opts, cli_args):
 
 
 # For these four tests we request a device with labels 'ctrlr'
-@xnvme_parametrize(labels=["ctrlr"], opts=["be", "admin"])
+# admin=[libvfn]: libvfn does not support show-regs
+@xnvme_parametrize(
+    labels=["ctrlr"], opts=["be", "admin"], exclude={"admin": ["libvfn"]}
+)
 def test_show_regs(cijoe, device, be_opts, cli_args):
     """
     The 'xnvme show-regs' is expected to fail when the kernel config has
@@ -367,9 +368,6 @@ def test_show_regs(cijoe, device, be_opts, cli_args):
     the state of this kernel config-option is, thus we check for it, and adjust
     the test-expectation accordingly.
     """
-
-    if be_opts["admin"] == "libvfn":
-        pytest.skip(reason="[be=libvfn] does not support pseudo commands")
 
     err, _ = cijoe.run(
         f"xnvme show-regs {device['uri']} --be {be_opts['be']} --admin {be_opts['admin']}"
@@ -388,12 +386,11 @@ def test_show_regs(cijoe, device, be_opts, cli_args):
         assert not err, "Expected it to work, however, it did not"
 
 
-@xnvme_parametrize(labels=["ctrlr"], opts=["be", "admin"])
+# admin=[libvfn,upcie]: these backends do not support subsystem reset
+@xnvme_parametrize(
+    labels=["ctrlr"], opts=["be", "admin"], exclude={"admin": ["libvfn", "upcie"]}
+)
 def test_subsystem_reset(cijoe, device, be_opts, cli_args):
-    if be_opts["admin"] == "libvfn":
-        pytest.skip(reason="[be=libvfn] does not support pseudo commands")
-    if be_opts["admin"] == "upcie":
-        pytest.skip(reason="[be=upcie] does not support subsystem-reset")
 
     err, state = cijoe.run(
         f"xnvme subsystem-reset {device['uri']} --be {be_opts['be']} --admin {be_opts['admin']}"
@@ -417,12 +414,11 @@ def test_subsystem_reset(cijoe, device, be_opts, cli_args):
     XnvmeDriver.kernel_attach(cijoe)
 
 
-@xnvme_parametrize(labels=["ctrlr"], opts=["be", "admin"])
+# admin=[libvfn,upcie]: these backends do not support controller reset
+@xnvme_parametrize(
+    labels=["ctrlr"], opts=["be", "admin"], exclude={"admin": ["libvfn", "upcie"]}
+)
 def test_ctrlr_reset(cijoe, device, be_opts, cli_args):
-    if be_opts["admin"] == "libvfn":
-        pytest.skip(reason="[be=libvfn] does not support pseudo commands")
-    if be_opts["admin"] == "upcie":
-        pytest.skip(reason="[be=upcie] does not support controller-reset")
 
     err, _ = cijoe.run(
         f"xnvme ctrlr-reset {device['uri']} --be {be_opts['be']} --admin {be_opts['admin']}"
@@ -431,12 +427,11 @@ def test_ctrlr_reset(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-@xnvme_parametrize(labels=["ctrlr"], opts=["be", "admin"])
+# admin=[libvfn,spdk]: these backends do not support namespace rescan
+@xnvme_parametrize(
+    labels=["ctrlr"], opts=["be", "admin"], exclude={"admin": ["libvfn", "spdk"]}
+)
 def test_namespace_rescan(cijoe, device, be_opts, cli_args):
-    if be_opts["admin"] == "libvfn":
-        pytest.skip(reason="[be=libvfn] does not support pseudo commands")
-    if be_opts["admin"] == "spdk":
-        pytest.skip(reason="[admin=spdk] does not support namespace rescan")
 
     err, _ = cijoe.run(
         f"xnvme ns-rescan {device['uri']} --be {be_opts['be']} --admin {be_opts['admin']}"
