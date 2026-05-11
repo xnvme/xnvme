@@ -584,59 +584,58 @@ xnvme_be_spdk_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enum
 	return 0;
 }
 
-static int
-reconnect_ctrlr(struct spdk_nvme_ctrlr *ctrlr)
-{
-	int err;
-	XNVME_DEBUG("WARNING: attempting to reconnect controller");
-	err = spdk_nvme_ctrlr_reset(ctrlr);
-	if (err < 0) {
-		XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_reset, err: %d", err);
-		return -EBUSY;
-	}
-	XNVME_DEBUG("INFO: controller reconnected");
-	return 0;
-}
-
-void
-_identify_cb(void *ctx, const struct spdk_nvme_cpl *cpl)
+static void
+identify_cb(void *ctx, const struct spdk_nvme_cpl *cpl)
 {
 	int *result = (int *)ctx;
 	*result = cpl->status.sc;
 	if (*result != 0) {
-		XNVME_DEBUG("WARNING: bad identify, result: %d", *result);
+		XNVME_DEBUG("WARNING: bad identify, sct: %d, sc: %d", cpl->status.sct,
+			    cpl->status.sc);
 	}
 }
 
-/**
- * See if controller is able to handle a simple admin command if not then the ctrlr is in a bad
- * state
- */
 static int
 verify_ctrlr_ok(struct spdk_nvme_ctrlr *ctrlr)
 {
 	struct spdk_nvme_cmd cmd = {0};
-	int cmd_result = -1;
+	int cmd_result = -1, buf_size = 4096;
+	void *buf;
 	int err;
 
-	int buf_size = 4096;
-	void *buf;
+	err = spdk_nvme_ctrlr_is_failed(ctrlr);
+	if (err) {
+		XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_is_failed()");
+		return -EBUSY;
+	}
+
 	buf = spdk_dma_malloc(buf_size, 0, NULL);
+	if (!buf) {
+		XNVME_DEBUG("FAILED: spdk_dma_malloc()");
+		return -ENOMEM;
+	}
 	cmd.opc = SPDK_NVME_OPC_IDENTIFY;
 	cmd.cdw10_bits.identify.cns = SPDK_NVME_IDENTIFY_CTRLR;
-	spdk_nvme_ctrlr_cmd_admin_raw(ctrlr, &cmd, buf, buf_size, _identify_cb, &cmd_result);
+	err = spdk_nvme_ctrlr_cmd_admin_raw(ctrlr, &cmd, buf, buf_size, identify_cb, &cmd_result);
+	if (err) {
+		XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_cmd_admin_raw(), err: %d", err);
+		goto exit;
+	}
 	while (cmd_result == -1) {
 		err = spdk_nvme_ctrlr_process_admin_completions(ctrlr);
 		if (err < 0) {
-			XNVME_DEBUG(
-				"WARNING: spdk_nvme_ctrlr_process_admin_completions failed, %d",
-				err);
-			cmd_result = err;
-			break;
+			XNVME_DEBUG("WARNING: spdk_nvme_ctrlr_process_admin_completions() failed, "
+				    "err: %d",
+				    err);
+			goto exit;
 		}
 	}
+
+	err = cmd_result;
+
+exit:
 	spdk_dma_free(buf);
-	return cmd_result;
+	return err;
 }
 
 /**
@@ -707,19 +706,9 @@ xnvme_be_spdk_dev_open(struct xnvme_dev *dev)
 	// On cref reuse, state->attached is 0 (fresh state); verify health before setting up a new
 	// qpair. On fresh ctrlr_init, attach_cb sets state->attached=1 and we skip verification.
 	if (!state->attached) {
-		int check = verify_ctrlr_ok(state->ctrlr);
-		if (check < 0) {
-			XNVME_DEBUG("FAILED: verify_ctrlr_ok, err: %d", check);
-		}
-		if (check < 0 || spdk_nvme_ctrlr_is_failed(state->ctrlr)) {
-			if (reconnect_ctrlr(state->ctrlr) < 0) {
-				return -EBUSY;
-			}
-		}
-		err = spdk_nvme_ctrlr_process_admin_completions(state->ctrlr);
-		if (err < 0) {
-			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_process_admin_completions, err: %d",
-				    err);
+		err = verify_ctrlr_ok(state->ctrlr);
+		if (err) {
+			XNVME_DEBUG("FAILED: verify_ctrlr_ok(), err: %d", err);
 			return -EBUSY;
 		}
 	}
