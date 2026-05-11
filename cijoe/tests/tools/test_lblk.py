@@ -19,10 +19,11 @@ def test_info(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-@xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
+# mem=[upcie-cuda]: test does not support CUDA memory
+@xnvme_parametrize(
+    labels=["dev"], opts=["be", "admin"], exclude={"mem": ["upcie-cuda"]}
+)
 def test_idfy(cijoe, device, be_opts, cli_args):
-    if be_opts["mem"] == "upcie-cuda":
-        pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
     err, _ = cijoe.run(f"lblk idfy {cli_args}")
     assert not err
 
@@ -39,10 +40,11 @@ def test_write(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-@xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
+# mem=[upcie-cuda]: test does not support CUDA memory
+@xnvme_parametrize(
+    labels=["dev"], opts=["be", "admin"], exclude={"mem": ["upcie-cuda"]}
+)
 def test_compare(cijoe, device, be_opts, cli_args):
-    if be_opts["mem"] == "upcie-cuda":
-        pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
     src = "/tmp/file.bin"
 
     prep = [
@@ -69,11 +71,9 @@ def test_write_zeroes(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-@xnvme_parametrize(labels=["pi1"], opts=["be", "admin"])
+# admin=[block]: block layer does not support metadata/PI operations
+@xnvme_parametrize(labels=["pi1"], opts=["be", "admin"], exclude={"admin": ["block"]})
 def test_pi_type1(cijoe, device, be_opts, cli_args):
-    if be_opts["admin"] == "block":
-        pytest.skip(reason="[admin=block] does not support metadata")
-
     if get_osname() == "freebsd" and be_opts["admin"] == "nvme":
         pytest.skip(reason="[admin=nvme] does not support metadata")
 
@@ -88,11 +88,9 @@ def test_pi_type1(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-@xnvme_parametrize(labels=["pi2"], opts=["be", "admin"])
+# admin=[block]: block layer does not support metadata/PI operations
+@xnvme_parametrize(labels=["pi2"], opts=["be", "admin"], exclude={"admin": ["block"]})
 def test_pi_type2(cijoe, device, be_opts, cli_args):
-    if be_opts["admin"] == "block":
-        pytest.skip(reason="[admin=block] does not support metadata")
-
     if get_osname() == "freebsd" and be_opts["admin"] == "nvme":
         pytest.skip(reason="[admin=nvme] does not support metadata")
 
@@ -107,11 +105,9 @@ def test_pi_type2(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-@xnvme_parametrize(labels=["pi3"], opts=["be", "admin"])
+# admin=[block]: block layer does not support metadata/PI operations
+@xnvme_parametrize(labels=["pi3"], opts=["be", "admin"], exclude={"admin": ["block"]})
 def test_pi_type3(cijoe, device, be_opts, cli_args):
-    if be_opts["admin"] == "block":
-        pytest.skip(reason="[admin=block] does not support metadata")
-
     if get_osname() == "freebsd" and be_opts["admin"] == "nvme":
         pytest.skip(reason="[admin=nvme] does not support metadata")
 
@@ -129,11 +125,11 @@ def test_pi_type3(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-@xnvme_parametrize(labels=["pi1_ex"], opts=["be", "admin"])
+# admin=[block]: block layer does not support metadata/PI operations
+@xnvme_parametrize(
+    labels=["pi1_ex"], opts=["be", "admin"], exclude={"admin": ["block"]}
+)
 def test_pi_type1_extended_lba(cijoe, device, be_opts, cli_args):
-    if be_opts["admin"] == "block":
-        pytest.skip(reason="[admin=block] does not support metadata")
-
     err, _ = cijoe.run(
         f"lblk write-read-pi {cli_args} --slba 0x0 --nlb 0 --pract 1 --prchk 0x5"
     )
@@ -145,11 +141,11 @@ def test_pi_type1_extended_lba(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-@xnvme_parametrize(labels=["pi1_pif2"], opts=["be", "admin"])
+# admin=[block]: block layer does not support metadata/PI operations
+@xnvme_parametrize(
+    labels=["pi1_pif2"], opts=["be", "admin"], exclude={"admin": ["block"]}
+)
 def test_pi1_pif2(cijoe, device, be_opts, cli_args):
-    if be_opts["admin"] == "block":
-        pytest.skip(reason="[admin=block] does not support metadata")
-
     if get_osname() == "freebsd" and be_opts["admin"] == "nvme":
         pytest.skip(reason="[admin=nvme] does not support metadata")
 

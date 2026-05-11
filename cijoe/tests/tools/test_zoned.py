@@ -32,7 +32,10 @@ def test_idfy_ns(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-@xnvme_parametrize(labels=["zns"], opts=["be", "admin", "sync"])
+# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive
+@xnvme_parametrize(
+    labels=["zns"], opts=["be", "admin", "sync"], exclude={"sync": ["psync", "block"]}
+)
 def test_append(cijoe, device, be_opts, cli_args):
     if get_osname() == "freebsd" and be_opts["be"] not in [
         "spdk",
@@ -40,8 +43,6 @@ def test_append(cijoe, device, be_opts, cli_args):
         "ramdisk_thrpool",
     ]:
         pytest.skip(reason="Freebsd kernel doesn't support zns")
-    if be_opts["sync"] in ["psync", "block"]:
-        pytest.skip(reason="ENOSYS: sync=[psync,block] cannot do mgmt send/receive")
 
     admin_opts = {k: be_opts[k] for k in ["be", "admin"]}
     admin_args = xnvme_cli_args(device, admin_opts)
@@ -57,7 +58,10 @@ def test_append(cijoe, device, be_opts, cli_args):
         assert not err
 
 
-@xnvme_parametrize(labels=["zns"], opts=["be", "admin", "sync"])
+# sync=[psync]: ENOSYS, psync cannot do mgmt send/receive
+@xnvme_parametrize(
+    labels=["zns"], opts=["be", "admin", "sync"], exclude={"sync": ["psync"]}
+)
 def test_report_all(cijoe, device, be_opts, cli_args):
     if get_osname() == "freebsd" and be_opts["be"] not in [
         "spdk",
@@ -65,14 +69,15 @@ def test_report_all(cijoe, device, be_opts, cli_args):
         "ramdisk_thrpool",
     ]:
         pytest.skip(reason="Freebsd kernel doesn't support zns")
-    if be_opts["sync"] == "psync":
-        pytest.skip(reason="ENOSYS: psync(pwrite/pread) cannot do mgmt send/receive")
 
     err, _ = cijoe.run(f"zoned report {cli_args}")
     assert not err
 
 
-@xnvme_parametrize(labels=["zns"], opts=["be", "admin", "sync"])
+# sync=[psync]: ENOSYS, psync cannot do mgmt send/receive
+@xnvme_parametrize(
+    labels=["zns"], opts=["be", "admin", "sync"], exclude={"sync": ["psync"]}
+)
 def test_report_limit(cijoe, device, be_opts, cli_args):
     if get_osname() == "freebsd" and be_opts["be"] not in [
         "spdk",
@@ -80,14 +85,15 @@ def test_report_limit(cijoe, device, be_opts, cli_args):
         "ramdisk_thrpool",
     ]:
         pytest.skip(reason="Freebsd kernel doesn't support zns")
-    if be_opts["sync"] == "psync":
-        pytest.skip(reason="ENOSYS: psync(pwrite/pread) cannot do mgmt send/receive")
 
     err, _ = cijoe.run(f"zoned report {cli_args} --slba 0x0 --limit 1")
     assert not err
 
 
-@xnvme_parametrize(labels=["zns"], opts=["be", "admin", "sync"])
+# sync=[psync]: ENOSYS, psync cannot do mgmt send/receive
+@xnvme_parametrize(
+    labels=["zns"], opts=["be", "admin", "sync"], exclude={"sync": ["psync"]}
+)
 def test_report_single(cijoe, device, be_opts, cli_args):
     if get_osname() == "freebsd" and be_opts["be"] not in [
         "spdk",
@@ -95,14 +101,15 @@ def test_report_single(cijoe, device, be_opts, cli_args):
         "ramdisk_thrpool",
     ]:
         pytest.skip(reason="Freebsd kernel doesn't support zns")
-    if be_opts["sync"] == "psync":
-        pytest.skip(reason="ENOSYS: psync(pwrite/pread) cannot do mgmt send/receive")
 
     err, _ = cijoe.run(f"zoned report {cli_args} --slba 0x26400 --limit 1")
     assert not err
 
 
-@xnvme_parametrize(labels=["zns"], opts=["be", "admin", "sync"])
+# sync=[psync]: ENOSYS, psync cannot do mgmt send/receive
+@xnvme_parametrize(
+    labels=["zns"], opts=["be", "admin", "sync"], exclude={"sync": ["psync"]}
+)
 def test_report_some(cijoe, device, be_opts, cli_args):
     if get_osname() == "freebsd" and be_opts["be"] not in [
         "spdk",
@@ -110,23 +117,25 @@ def test_report_some(cijoe, device, be_opts, cli_args):
         "ramdisk_thrpool",
     ]:
         pytest.skip(reason="Freebsd kernel doesn't support zns")
-    if be_opts["sync"] == "psync":
-        pytest.skip(reason="ENOSYS: psync(pwrite/pread) cannot do mgmt send/receive")
 
     err, _ = cijoe.run(f"zoned report {cli_args} --slba 0x1dc00 --limit 10")
     assert not err
 
 
-@xnvme_parametrize(labels=["zns"], opts=["be", "admin", "sync"])
+# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive
+@xnvme_parametrize(
+    labels=["zns"], opts=["be", "admin", "sync"], exclude={"sync": ["psync", "block"]}
+)
 def test_read(cijoe, device, be_opts, cli_args):
-    if be_opts["sync"] in ["psync", "block"]:
-        pytest.skip(reason="ENOSYS: sync=[psync,block] cannot do mgmt send/receive")
 
     err, _ = cijoe.run(f"zoned read {cli_args} --slba 0x0 --nlb 0")
     assert not err
 
 
-@xnvme_parametrize(labels=["zns"], opts=["be", "admin", "sync"])
+# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive
+@xnvme_parametrize(
+    labels=["zns"], opts=["be", "admin", "sync"], exclude={"sync": ["psync", "block"]}
+)
 def test_reset_report_write_report(cijoe, device, be_opts, cli_args):
     if get_osname() == "freebsd" and be_opts["be"] not in [
         "spdk",
@@ -134,8 +143,6 @@ def test_reset_report_write_report(cijoe, device, be_opts, cli_args):
         "ramdisk_thrpool",
     ]:
         pytest.skip(reason="Freebsd kernel doesn't support zns")
-    if be_opts["sync"] in ["psync", "block"]:
-        pytest.skip(reason="ENOSYS: sync=[psync,block] cannot do mgmt send/receive")
 
     slba = "0x0"
     nlb = "0"
@@ -154,7 +161,10 @@ def test_reset_report_write_report(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-@xnvme_parametrize(labels=["zns"], opts=["be", "admin", "sync"])
+# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive
+@xnvme_parametrize(
+    labels=["zns"], opts=["be", "admin", "sync"], exclude={"sync": ["psync", "block"]}
+)
 def test_reset_open_report(cijoe, device, be_opts, cli_args):
     if get_osname() == "freebsd" and be_opts["be"] not in [
         "spdk",
@@ -162,8 +172,6 @@ def test_reset_open_report(cijoe, device, be_opts, cli_args):
         "ramdisk_thrpool",
     ]:
         pytest.skip(reason="Freebsd kernel doesn't support zns")
-    if be_opts["sync"] in ["psync", "block"]:
-        pytest.skip(reason="ENOSYS: sync=[psync,block] cannot do mgmt send/receive")
 
     slba = "0x0"
     limit = "1"
