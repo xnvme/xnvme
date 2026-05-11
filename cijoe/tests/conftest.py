@@ -133,7 +133,7 @@ def xnvme_cli_args(device, be_opts):
     return " ".join(args)
 
 
-def xnvme_setup(labels=[], opts=[]):
+def xnvme_setup(labels=[], opts=[], exclude={}):
     """Produces a config, yields (device, be_opts, cli_args)"""
 
     parametrization = []
@@ -143,6 +143,9 @@ def xnvme_setup(labels=[], opts=[]):
     )
 
     for be_opts in combinations:
+        if any(be_opts.get(key) in vals for key, vals in exclude.items()):
+            continue
+
         search = labels + be_opts["label"]
         device = cijoe_config_get_device(search)
 
@@ -387,7 +390,7 @@ def device(cijoe, request):
     return request.param
 
 
-def xnvme_parametrize(labels, opts):
+def xnvme_parametrize(labels, opts, exclude={}):
     """
     This decorator provides all the pytest-parametrization magic in one.
 
@@ -409,7 +412,7 @@ def xnvme_parametrize(labels, opts):
     def decorator(fun):
         @pytest.mark.parametrize(
             "device,be_opts,cli_args",
-            xnvme_setup(labels=labels, opts=opts),
+            xnvme_setup(labels=labels, opts=opts, exclude=exclude),
             indirect=["device"],
         )
         @wraps(fun)
