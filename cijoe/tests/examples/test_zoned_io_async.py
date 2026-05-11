@@ -1,45 +1,35 @@
-import pytest
-
-from ..conftest import get_osname, xnvme_parametrize
+from ..conftest import xnvme_parametrize
 
 
-@xnvme_parametrize(labels=["zns"], opts=["be", "admin", "async"])
+# os=[freebsd],be=[kqueue,thrpool,emu]: FreeBSD kernel doesn't support ZNS
+@xnvme_parametrize(
+    labels=["zns"],
+    opts=["be", "admin", "async"],
+    os_exclude={"freebsd": {"be": ["kqueue", "thrpool", "emu"]}},
+)
 def test_write(cijoe, device, be_opts, cli_args):
-    if get_osname() == "freebsd" and be_opts["be"] not in [
-        "spdk",
-        "ramdisk_emu",
-        "ramdisk_thrpool",
-    ]:
-        pytest.skip(reason="Freebsd kernel doesn't support zns")
     err, _ = cijoe.run(f"zoned_io_async write {cli_args}")
     assert not err
 
 
-@xnvme_parametrize(labels=["zns"], opts=["be", "admin", "async"])
+# admin=[block]: block layer does not support append; async=[io_uring,libaio,posix]: these async backends do not support append; os=[freebsd],be=[kqueue,thrpool,emu]: FreeBSD kernel doesn't support ZNS
+@xnvme_parametrize(
+    labels=["zns"],
+    opts=["be", "admin", "async"],
+    exclude={"admin": ["block"], "async": ["io_uring", "libaio", "posix"]},
+    os_exclude={"freebsd": {"be": ["kqueue", "thrpool", "emu"]}},
+)
 def test_append(cijoe, device, be_opts, cli_args):
-    if get_osname() == "freebsd" and be_opts["be"] not in [
-        "spdk",
-        "ramdisk_emu",
-        "ramdisk_thrpool",
-    ]:
-        pytest.skip(reason="Freebsd kernel doesn't support zns")
-    if be_opts["admin"] == "block":
-        pytest.skip(reason="Block layer does not support append")
-
-    if be_opts["async"] in ["io_uring", "libaio", "posix"]:
-        pytest.skip(reason="Block-layer async does not support append")
-
     err, _ = cijoe.run(f"zoned_io_async append {cli_args}")
     assert not err
 
 
-@xnvme_parametrize(labels=["zns"], opts=["be", "admin", "async"])
+# os=[freebsd],be=[kqueue,thrpool,emu]: FreeBSD kernel doesn't support ZNS
+@xnvme_parametrize(
+    labels=["zns"],
+    opts=["be", "admin", "async"],
+    os_exclude={"freebsd": {"be": ["kqueue", "thrpool", "emu"]}},
+)
 def test_read(cijoe, device, be_opts, cli_args):
-    if get_osname() == "freebsd" and be_opts["be"] not in [
-        "spdk",
-        "ramdisk_emu",
-        "ramdisk_thrpool",
-    ]:
-        pytest.skip(reason="Freebsd kernel doesn't support zns")
     err, _ = cijoe.run(f"zoned_io_async read {cli_args}")
     assert not err

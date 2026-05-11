@@ -1,12 +1,10 @@
-import pytest
-
 from ..conftest import xnvme_parametrize
 
 
-@xnvme_parametrize(labels=["dev"], opts=["be", "admin", "sync"])
+# sync=[block,psync]: compare not supported via block/psync
+@xnvme_parametrize(
+    labels=["dev"], opts=["be", "admin", "sync"], exclude={"sync": ["block", "psync"]}
+)
 def test_compare(cijoe, device, be_opts, cli_args):
-    if be_opts["sync"] in ["block", "psync"]:
-        pytest.skip(reason=f"Not supported: compare via {be_opts['sync']}")
-
     err, _ = cijoe.run(f"xnvme_tests_compare compare {cli_args}")
     assert not err
