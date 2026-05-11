@@ -36,7 +36,7 @@ def test_fio_engine(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-# async=[posix],sync=[psync]: iovec not implemented; admin=[driverkit]: iovec not implemented; mem=[upcie-cuda]: CUDA memory not supported
+# async=[posix],sync=[psync]: iovec not implemented; admin=[driverkit]: iovec not implemented; mem=[upcie-cuda]: CUDA memory not supported; os=[freebsd],sync=[nvme]: FreeBSD does not implement iovec
 @xnvme_parametrize(
     labels=["dev"],
     opts=["be", "admin", "sync", "async", "mem"],
@@ -46,14 +46,12 @@ def test_fio_engine(cijoe, device, be_opts, cli_args):
         "admin": ["driverkit"],
         "mem": ["upcie-cuda"],
     },
+    os_exclude={"freebsd": {"sync": ["nvme"]}},
 )
 def test_fio_engine_iov(cijoe, device, be_opts, cli_args):
     """
     The construction of the fio-invocation is done in 'fio_fancy'
     """
-
-    if get_osname() == "freebsd" and be_opts["sync"] == "nvme":
-        pytest.skip(reason="[sync=nvme] on FreeBSD does not implement iovec")
 
     size = "64M"
     # size = "1G"
@@ -71,22 +69,17 @@ def test_fio_engine_iov(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive; async=[thrpool]: thrpool does not support zbd/zns
+# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive; async=[thrpool]: thrpool does not support zbd/zns; os=[freebsd],be=[kqueue,thrpool,emu]: FreeBSD kernel doesn't support ZNS
 @xnvme_parametrize(
     labels=["zns", "bdev"],
     opts=["be", "admin", "sync", "async", "mem"],
     exclude={"sync": ["psync", "block"], "async": ["thrpool"]},
+    os_exclude={"freebsd": {"be": ["kqueue", "thrpool", "emu"]}},
 )
 def test_fio_engine_zns(cijoe, device, be_opts, cli_args):
     """
     The construction of the fio-invocation is done in 'fio_fancy'
     """
-    if get_osname() == "freebsd" and be_opts["be"] not in [
-        "spdk",
-        "ramdisk_emu",
-        "ramdisk_thrpool",
-    ]:
-        pytest.skip(reason="Freebsd kernel doesn't support zns")
 
     size = "64M"
     # size = "1G"

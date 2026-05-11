@@ -1,6 +1,4 @@
-import pytest
-
-from ..conftest import get_osname, xnvme_cli_args, xnvme_parametrize
+from ..conftest import xnvme_cli_args, xnvme_parametrize
 
 
 def test_enum(cijoe):
@@ -32,18 +30,14 @@ def test_idfy_ns(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive
+# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive; os=[freebsd],be=[kqueue,thrpool,emu]: FreeBSD kernel doesn't support ZNS
 @xnvme_parametrize(
-    labels=["zns"], opts=["be", "admin", "sync"], exclude={"sync": ["psync", "block"]}
+    labels=["zns"],
+    opts=["be", "admin", "sync"],
+    exclude={"sync": ["psync", "block"]},
+    os_exclude={"freebsd": {"be": ["kqueue", "thrpool", "emu"]}},
 )
 def test_append(cijoe, device, be_opts, cli_args):
-    if get_osname() == "freebsd" and be_opts["be"] not in [
-        "spdk",
-        "ramdisk_emu",
-        "ramdisk_thrpool",
-    ]:
-        pytest.skip(reason="Freebsd kernel doesn't support zns")
-
     admin_opts = {k: be_opts[k] for k in ["be", "admin"]}
     admin_args = xnvme_cli_args(device, admin_opts)
 
@@ -58,91 +52,74 @@ def test_append(cijoe, device, be_opts, cli_args):
         assert not err
 
 
-# sync=[psync]: ENOSYS, psync cannot do mgmt send/receive
+# sync=[psync]: ENOSYS, psync cannot do mgmt send/receive; os=[freebsd],be=[kqueue,thrpool,emu]: FreeBSD kernel doesn't support ZNS
 @xnvme_parametrize(
-    labels=["zns"], opts=["be", "admin", "sync"], exclude={"sync": ["psync"]}
+    labels=["zns"],
+    opts=["be", "admin", "sync"],
+    exclude={"sync": ["psync"]},
+    os_exclude={"freebsd": {"be": ["kqueue", "thrpool", "emu"]}},
 )
 def test_report_all(cijoe, device, be_opts, cli_args):
-    if get_osname() == "freebsd" and be_opts["be"] not in [
-        "spdk",
-        "ramdisk_emu",
-        "ramdisk_thrpool",
-    ]:
-        pytest.skip(reason="Freebsd kernel doesn't support zns")
-
     err, _ = cijoe.run(f"zoned report {cli_args}")
     assert not err
 
 
-# sync=[psync]: ENOSYS, psync cannot do mgmt send/receive
+# sync=[psync]: ENOSYS, psync cannot do mgmt send/receive; os=[freebsd],be=[kqueue,thrpool,emu]: FreeBSD kernel doesn't support ZNS
 @xnvme_parametrize(
-    labels=["zns"], opts=["be", "admin", "sync"], exclude={"sync": ["psync"]}
+    labels=["zns"],
+    opts=["be", "admin", "sync"],
+    exclude={"sync": ["psync"]},
+    os_exclude={"freebsd": {"be": ["kqueue", "thrpool", "emu"]}},
 )
 def test_report_limit(cijoe, device, be_opts, cli_args):
-    if get_osname() == "freebsd" and be_opts["be"] not in [
-        "spdk",
-        "ramdisk_emu",
-        "ramdisk_thrpool",
-    ]:
-        pytest.skip(reason="Freebsd kernel doesn't support zns")
-
     err, _ = cijoe.run(f"zoned report {cli_args} --slba 0x0 --limit 1")
     assert not err
 
 
-# sync=[psync]: ENOSYS, psync cannot do mgmt send/receive
+# sync=[psync]: ENOSYS, psync cannot do mgmt send/receive; os=[freebsd],be=[kqueue,thrpool,emu]: FreeBSD kernel doesn't support ZNS
 @xnvme_parametrize(
-    labels=["zns"], opts=["be", "admin", "sync"], exclude={"sync": ["psync"]}
+    labels=["zns"],
+    opts=["be", "admin", "sync"],
+    exclude={"sync": ["psync"]},
+    os_exclude={"freebsd": {"be": ["kqueue", "thrpool", "emu"]}},
 )
 def test_report_single(cijoe, device, be_opts, cli_args):
-    if get_osname() == "freebsd" and be_opts["be"] not in [
-        "spdk",
-        "ramdisk_emu",
-        "ramdisk_thrpool",
-    ]:
-        pytest.skip(reason="Freebsd kernel doesn't support zns")
-
     err, _ = cijoe.run(f"zoned report {cli_args} --slba 0x26400 --limit 1")
     assert not err
 
 
-# sync=[psync]: ENOSYS, psync cannot do mgmt send/receive
+# sync=[psync]: ENOSYS, psync cannot do mgmt send/receive; os=[freebsd],be=[kqueue,thrpool,emu]: FreeBSD kernel doesn't support ZNS
 @xnvme_parametrize(
-    labels=["zns"], opts=["be", "admin", "sync"], exclude={"sync": ["psync"]}
+    labels=["zns"],
+    opts=["be", "admin", "sync"],
+    exclude={"sync": ["psync"]},
+    os_exclude={"freebsd": {"be": ["kqueue", "thrpool", "emu"]}},
 )
 def test_report_some(cijoe, device, be_opts, cli_args):
-    if get_osname() == "freebsd" and be_opts["be"] not in [
-        "spdk",
-        "ramdisk_emu",
-        "ramdisk_thrpool",
-    ]:
-        pytest.skip(reason="Freebsd kernel doesn't support zns")
-
     err, _ = cijoe.run(f"zoned report {cli_args} --slba 0x1dc00 --limit 10")
     assert not err
 
 
-# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive
+# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive; os=[freebsd],be=[kqueue,thrpool,emu]: FreeBSD kernel doesn't support ZNS
 @xnvme_parametrize(
-    labels=["zns"], opts=["be", "admin", "sync"], exclude={"sync": ["psync", "block"]}
+    labels=["zns"],
+    opts=["be", "admin", "sync"],
+    exclude={"sync": ["psync", "block"]},
+    os_exclude={"freebsd": {"be": ["kqueue", "thrpool", "emu"]}},
 )
 def test_read(cijoe, device, be_opts, cli_args):
-
     err, _ = cijoe.run(f"zoned read {cli_args} --slba 0x0 --nlb 0")
     assert not err
 
 
-# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive
+# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive; os=[freebsd],be=[kqueue,thrpool,emu]: FreeBSD kernel doesn't support ZNS
 @xnvme_parametrize(
-    labels=["zns"], opts=["be", "admin", "sync"], exclude={"sync": ["psync", "block"]}
+    labels=["zns"],
+    opts=["be", "admin", "sync"],
+    exclude={"sync": ["psync", "block"]},
+    os_exclude={"freebsd": {"be": ["kqueue", "thrpool", "emu"]}},
 )
 def test_reset_report_write_report(cijoe, device, be_opts, cli_args):
-    if get_osname() == "freebsd" and be_opts["be"] not in [
-        "spdk",
-        "ramdisk_emu",
-        "ramdisk_thrpool",
-    ]:
-        pytest.skip(reason="Freebsd kernel doesn't support zns")
 
     slba = "0x0"
     nlb = "0"
@@ -161,17 +138,14 @@ def test_reset_report_write_report(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive
+# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive; os=[freebsd],be=[kqueue,thrpool,emu]: FreeBSD kernel doesn't support ZNS
 @xnvme_parametrize(
-    labels=["zns"], opts=["be", "admin", "sync"], exclude={"sync": ["psync", "block"]}
+    labels=["zns"],
+    opts=["be", "admin", "sync"],
+    exclude={"sync": ["psync", "block"]},
+    os_exclude={"freebsd": {"be": ["kqueue", "thrpool", "emu"]}},
 )
 def test_reset_open_report(cijoe, device, be_opts, cli_args):
-    if get_osname() == "freebsd" and be_opts["be"] not in [
-        "spdk",
-        "ramdisk_emu",
-        "ramdisk_thrpool",
-    ]:
-        pytest.skip(reason="Freebsd kernel doesn't support zns")
 
     slba = "0x0"
     limit = "1"

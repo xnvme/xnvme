@@ -1,6 +1,4 @@
-import pytest
-
-from ..conftest import get_osname, xnvme_parametrize
+from ..conftest import xnvme_parametrize
 
 
 # sync=[psync,block]: ENOSYS, cannot do mgmt send/receive; admin=[block]: same
@@ -25,86 +23,61 @@ def test_support(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive; admin=[block]: same
+# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive; admin=[block]: same; os=[freebsd],be=[kqueue,thrpool,emu]: FreeBSD kernel doesn't support ZNS
 @xnvme_parametrize(
     labels=["zrwa"],
     opts=["be", "admin", "sync"],
     exclude={"sync": ["psync", "block"], "admin": ["block"]},
+    os_exclude={"freebsd": {"be": ["kqueue", "thrpool", "emu"]}},
 )
 def test_open_with_zrwa(cijoe, device, be_opts, cli_args):
-    if get_osname() == "freebsd" and be_opts["be"] not in [
-        "spdk",
-        "ramdisk_emu",
-        "ramdisk_thrpool",
-    ]:
-        pytest.skip(reason="Freebsd kernel doesn't support zns")
     err, _ = cijoe.run(f"xnvme_tests_znd_zrwa open-with-zrwa {cli_args}")
     assert not err
 
 
-# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive; admin=[block]: same
+# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive; admin=[block]: same; os=[freebsd],be=[kqueue,thrpool,emu]: FreeBSD kernel doesn't support ZNS
 @xnvme_parametrize(
     labels=["zrwa"],
     opts=["be", "admin", "sync"],
     exclude={"sync": ["psync", "block"], "admin": ["block"]},
+    os_exclude={"freebsd": {"be": ["kqueue", "thrpool", "emu"]}},
 )
 def test_open_without_zrwa(cijoe, device, be_opts, cli_args):
-    if get_osname() == "freebsd" and be_opts["be"] not in [
-        "spdk",
-        "ramdisk_emu",
-        "ramdisk_thrpool",
-    ]:
-        pytest.skip(reason="Freebsd kernel doesn't support zns")
     err, _ = cijoe.run(f"xnvme_tests_znd_zrwa open-without-zrwa {cli_args}")
     assert not err
 
 
-# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive; admin=[block]: same
+# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive; admin=[block]: same; os=[freebsd],be=[kqueue,thrpool,emu]: FreeBSD kernel doesn't support ZNS
 @xnvme_parametrize(
     labels=["zrwa"],
     opts=["be", "admin", "sync"],
     exclude={"sync": ["psync", "block"], "admin": ["block"]},
+    os_exclude={"freebsd": {"be": ["kqueue", "thrpool", "emu"]}},
 )
 def test_flush(cijoe, device, be_opts, cli_args):
-    if get_osname() == "freebsd" and be_opts["be"] not in [
-        "spdk",
-        "ramdisk_emu",
-        "ramdisk_thrpool",
-    ]:
-        pytest.skip(reason="Freebsd kernel doesn't support zns")
     err, _ = cijoe.run(f"xnvme_tests_znd_zrwa flush {cli_args}")
     assert not err
 
 
-# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive; admin=[block]: same
+# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive; admin=[block]: same; os=[freebsd],be=[kqueue,thrpool,emu]: FreeBSD kernel doesn't support ZNS
 @xnvme_parametrize(
     labels=["zrwa"],
     opts=["be", "admin", "sync"],
     exclude={"sync": ["psync", "block"], "admin": ["block"]},
+    os_exclude={"freebsd": {"be": ["kqueue", "thrpool", "emu"]}},
 )
 def test_flush_explicit(cijoe, device, be_opts, cli_args):
-    if get_osname() == "freebsd" and be_opts["be"] not in [
-        "spdk",
-        "ramdisk_emu",
-        "ramdisk_thrpool",
-    ]:
-        pytest.skip(reason="Freebsd kernel doesn't support zns")
     err, _ = cijoe.run(f"xnvme_tests_znd_zrwa flush-explicit {cli_args}")
     assert not err
 
 
-# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive; admin=[block]: same
+# sync=[psync,block]: ENOSYS, cannot do mgmt send/receive; admin=[block]: same; os=[freebsd],be=[kqueue,thrpool,emu]: FreeBSD kernel doesn't support ZNS
 @xnvme_parametrize(
     labels=["zrwa"],
     opts=["be", "admin", "sync"],
     exclude={"sync": ["psync", "block"], "admin": ["block"]},
+    os_exclude={"freebsd": {"be": ["kqueue", "thrpool", "emu"]}},
 )
 def test_flush_implicit(cijoe, device, be_opts, cli_args):
-    if get_osname() == "freebsd" and be_opts["be"] not in [
-        "spdk",
-        "ramdisk_emu",
-        "ramdisk_thrpool",
-    ]:
-        pytest.skip(reason="Freebsd kernel doesn't support zns")
     err, _ = cijoe.run(f"xnvme_tests_znd_zrwa flush-implicit {cli_args}")
     assert not err
