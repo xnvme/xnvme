@@ -69,10 +69,6 @@ int
 xnvme_be_nosys_mem_unmap(const struct xnvme_dev *dev, void *buf);
 
 int
-xnvme_be_nosys_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
-			 void *cb_args);
-
-int
 xnvme_be_nosys_dev_open(struct xnvme_dev *dev);
 
 void
@@ -113,7 +109,6 @@ xnvme_be_nosys_dev_close(struct xnvme_dev *dev);
 
 #define XNVME_BE_NOSYS_DEV                              \
 	{                                               \
-		.enumerate  = xnvme_be_nosys_enumerate, \
 		.dev_open   = xnvme_be_nosys_dev_open,  \
 		.dev_close  = xnvme_be_nosys_dev_close, \
 		.id         = "nosys",                  \

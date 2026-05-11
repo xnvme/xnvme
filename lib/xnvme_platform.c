@@ -78,28 +78,29 @@ static int
 _dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnvme_be_config *cfg)
 {
 	void *ctrlr = NULL;
+	const char *be_name = "";
 	int cref_inserted = 0;
 	int err;
 
 	if (!be->dev.ctrlr_init) {
-		return 0;
+		return be->dev.dev_open(dev);
 	}
 
-	ctrlr = xnvme_be_cref_lookup(dev->ident.uri, cfg->attr.name);
+	ctrlr = xnvme_be_cref_get(dev->ident.uri, &be_name);
 	if (ctrlr) {
-		((void **)be->state)[0] = ctrlr;
-		return 0;
-	}
-
-	{
-		void *conflict = xnvme_be_cref_lookup(dev->ident.uri, NULL);
-
-		if (conflict) {
-			xnvme_be_cref_deref(conflict, XNVME_BE_CREF_NONE);
+		if (strcmp(be_name, cfg->attr.name)) {
+			xnvme_be_cref_put(ctrlr);
 			XNVME_DEBUG("FAILED: uri '%s' claimed by another backend config",
 				    dev->ident.uri);
 			return -EBUSY;
 		}
+
+		((void **)be->state)[0] = ctrlr;
+		err = be->dev.dev_open(dev);
+		if (err) {
+			xnvme_be_cref_put(ctrlr);
+		}
+		return err;
 	}
 
 	ctrlr = be->dev.ctrlr_init(dev);
@@ -120,7 +121,7 @@ _dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnv
 
 	err = be->dev.dev_open(dev);
 	if (err && cref_inserted) {
-		xnvme_be_cref_deref(ctrlr, XNVME_BE_CREF_DESTROY_IMMEDIATE);
+		xnvme_be_cref_put(ctrlr);
 	}
 
 	return err;
@@ -166,13 +167,6 @@ _dev_open_try_config(struct xnvme_dev *dev, const struct xnvme_be_config *cfg,
 	err = _dev_open_init_cref(dev, &dev->be, cfg);
 	if (err) {
 		return err;
-	}
-
-	if (!dev->be.dev.ctrlr_init) {
-		err = dev->be.dev.dev_open(dev);
-		if (err) {
-			return err;
-		}
 	}
 
 	XNVME_DEBUG("INFO: obtained device handle");
@@ -278,6 +272,7 @@ enumerate_controller(const char *uri, struct xnvme_opts *opts, xnvme_enumerate_c
 	struct xnvme_cmd_ctx ctx;
 	uint32_t nslist[XNVME_MAX_NS_LIST_SIZE];
 	size_t buf_size;
+	void *ctrlr;
 	int err;
 
 	ctrlr_opts.nsid = 0;
@@ -299,6 +294,7 @@ enumerate_controller(const char *uri, struct xnvme_opts *opts, xnvme_enumerate_c
 	if (err) {
 		XNVME_DEBUG("FAILED: xnvme_buf_clear(), err: %d", err);
 		xnvme_buf_free(ctrlr_dev, idfy_buf);
+		xnvme_dev_close(ctrlr_dev);
 		return err;
 	}
 
@@ -336,7 +332,13 @@ enumerate_controller(const char *uri, struct xnvme_opts *opts, xnvme_enumerate_c
 
 exit:
 	xnvme_buf_free(ctrlr_dev, idfy_buf);
+
+	ctrlr = ((void **)ctrlr_dev->be.state)[0];
+	if (ctrlr_dev->be.dev.ctrlr_term && ctrlr) {
+		xnvme_be_cref_defer(ctrlr);
+	}
 	xnvme_dev_close(ctrlr_dev);
+
 	return 0;
 }
 
@@ -411,6 +413,7 @@ xnvme_platform_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enu
 			 void *cb_args)
 {
 	struct xnvme_opts opts_default = xnvme_opts_default();
+	int err;
 
 	if (!opts) {
 		opts = &opts_default;
@@ -423,11 +426,14 @@ xnvme_platform_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enu
 			.cb_args = cb_args,
 		};
 
-		return g_xnvme_platform->scan(NULL, opts, enumerate_scan_cb, &ctx);
+		err = g_xnvme_platform->scan(NULL, opts, enumerate_scan_cb, &ctx);
+	} else {
+		/** Fabrics / explicit sys_uri: delegate directly to enumerate_controller */
+		err = enumerate_controller(sys_uri, opts, cb_func, cb_args);
 	}
 
-	/** Fabrics / explicit sys_uri: delegate directly to enumerate_controller */
-	return enumerate_controller(sys_uri, opts, cb_func, cb_args);
+	xnvme_be_cref_cleanup();
+	return err;
 }
 
 int

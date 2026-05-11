@@ -13,12 +13,6 @@
 
 static _Atomic int g_ctrlr_count;
 
-struct xnvme_be_upcie_enumerate_context {
-	struct xnvme_opts *opts;
-	xnvme_enumerate_cb cb_func;
-	void *cb_args;
-};
-
 int
 xnvme_be_upcie_get_driver_name(const char *bdf, char *driver_name, size_t driver_name_len)
 {
@@ -277,68 +271,16 @@ xnvme_be_upcie_dev_open(struct xnvme_dev *dev)
 	return 0;
 }
 
-static int
-_instantiate(struct pci_func *func, void *callback_arg)
-{
-	struct xnvme_be_upcie_enumerate_context *ectx = callback_arg;
-	struct xnvme_opts opts = *ectx->opts;
-	struct xnvme_dev *dev = NULL;
-
-	if (!(((func->ident.classcode >> 8) & 0xFFFF) == 0x0108)) {
-		return PCI_SCAN_ACTION_RELEASE_FUNC;
-	}
-
-	opts.be = "upcie";
-
-	dev = xnvme_dev_open(func->bdf, &opts);
-	if (!dev) {
-		XNVME_DEBUG("xnvme_dev_open(); errno()")
-		return PCI_SCAN_ACTION_RELEASE_FUNC;
-	}
-
-	if (ectx->cb_func(dev, ectx->cb_args)) {
-		xnvme_dev_close(dev);
-		return PCI_SCAN_ACTION_RELEASE_FUNC;
-	}
-
-	return PCI_SCAN_ACTION_CLAIM_FUNC;
-}
-
-int
-xnvme_be_upcie_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
-			 void *cb_args)
-{
-	struct xnvme_be_upcie_enumerate_context ectx = {0};
-	int err;
-
-	if (sys_uri) {
-		XNVME_DEBUG("FAILED: does not support 'sys_uri'");
-		return -ENOSYS;
-	}
-
-	ectx.opts = opts;
-	ectx.cb_func = cb_func;
-	ectx.cb_args = cb_args;
-
-	err = pci_scan(_instantiate, &ectx);
-	if (err) {
-		perror("pci_scan()");
-	}
-
-	return 0;
-}
 #endif
 
 struct xnvme_be_dev g_xnvme_be_upcie_dev = {
 #ifdef XNVME_BE_UPCIE_ENABLED
-	.enumerate = xnvme_be_upcie_enumerate,
 	.dev_open = xnvme_be_upcie_dev_open,
 	.dev_close = xnvme_be_upcie_dev_close,
 	.id = "upcie",
 	.ctrlr_init = xnvme_be_upcie_ctrlr_init,
 	.ctrlr_term = xnvme_be_upcie_ctrlr_term,
 #else
-	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_nosys_dev_open,
 	.dev_close = xnvme_be_nosys_dev_close,
 	.id = "nosys",

@@ -28,7 +28,8 @@ typedef int (*xnvme_scan_cb)(const struct xnvme_ident *ident, void *cb_args);
  * @param dev Opened device handle (caller must close with xnvme_dev_close())
  * @param cb_args User-provided callback arguments
  *
- * @return On success, 0 is returned. On error, negative `errno` is returned.
+ * @return XNVME_ENUMERATE_DEV_KEEP_OPEN to retain the device handle, or
+ *         XNVME_ENUMERATE_DEV_CLOSE to close it after the callback returns.
  */
 typedef int (*xnvme_enumerate_cb)(struct xnvme_dev *dev, void *cb_args);
 
@@ -70,8 +71,8 @@ xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts);
  * Shared enumerate implementation using scan + dev_open
  *
  * When sys_uri is NULL, uses platform scan to discover local devices, opens each,
- * and invokes the callback. When sys_uri is provided (fabrics), delegates to the
- * first backend that implements enumerate.
+ * and invokes the callback. When sys_uri is provided (fabrics), delegates to
+ * enumerate_controller to iterate namespaces on the target controller.
  *
  * @param sys_uri NULL for local devices, or fabrics URI for discovery
  * @param opts Options for dev_open (may be NULL for defaults)

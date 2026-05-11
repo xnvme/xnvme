@@ -18,24 +18,10 @@
 #include <xnvme_queue.h>
 #include <xnvme_be_spdk.h>
 #include <xnvme_be_registry.h>
-#include <xnvme_be_cref.h>
 #include <xnvme_dev.h>
 
 #define XNVME_BE_SPDK_MAX_PROBE_ATTEMPTS 1
 #define XNVME_BE_SPDK_AVLB_TRANSPORTS 3
-
-static int
-_spdk_ctrlr_destructor(void *ctrlr)
-{
-	int err;
-
-	err = spdk_nvme_detach((struct spdk_nvme_ctrlr *)ctrlr);
-	if (err) {
-		XNVME_DEBUG("FAILED: spdk_nvme_detach()");
-	}
-
-	return err;
-}
 
 static int g_xnvme_be_spdk_transport[] = {
 #ifdef XNVME_BE_SPDK_TRANSPORT_PCIE_ENABLED
@@ -361,8 +347,12 @@ timeout_cb_func(void *XNVME_UNUSED(cb_arg), struct spdk_nvme_ctrlr *ctrlr,
 }
 
 /**
- * Sets up the state{ns, ctrlr, attached} given via the cb_ctx
- * detached if dev->nsid is not a match
+ * Records the attached controller in state so ctrlr_init can return it.
+ *
+ * When nsid is set, rejects controllers that do not have the requested namespace active.
+ * This is needed for NVMe-oF auto-discovery, where SPDK may call attach_cb for both
+ * the discovery controller and the actual NVM subsystem controllers; we must skip the
+ * discovery controller (which has no data namespaces) and wait for the right one.
  */
 static void
 attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid, struct spdk_nvme_ctrlr *ctrlr,
@@ -371,313 +361,133 @@ attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid, struct spdk_n
 	struct xnvme_dev *dev = cb_ctx;
 	struct xnvme_opts *opts = &dev->opts;
 	struct xnvme_be_spdk_state *state = (void *)dev->be.state;
-	struct spdk_nvme_ns *ns = NULL;
 
-	XNVME_DEBUG("INFO: nsid: %d", opts->nsid);
+	if (state->attached) {
+		XNVME_DEBUG("SKIP: Already attached");
+		spdk_nvme_detach(ctrlr);
+		return;
+	}
 
 	if (opts->nsid) {
-		ns = spdk_nvme_ctrlr_get_ns(ctrlr, opts->nsid);
-		if (!ns) {
-			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_ns(0x%x)", opts->nsid);
-			spdk_nvme_detach(ctrlr);
-			return;
-		}
-		if (!spdk_nvme_ns_is_active(ns)) {
-			XNVME_DEBUG("FAILED: !spdk_nvme_ns_is_active(opts->nsid:0x%x)",
+		struct spdk_nvme_ns *ns = spdk_nvme_ctrlr_get_ns(ctrlr, opts->nsid);
+		if (!ns || !spdk_nvme_ns_is_active(ns)) {
+			XNVME_DEBUG("SKIP: nsid 0x%x not found or inactive on this controller",
 				    opts->nsid);
 			spdk_nvme_detach(ctrlr);
 			return;
 		}
-		state->ns = ns;
 	}
 
 	state->ctrlr = ctrlr;
 	state->attached = 1;
 	opts->spdk_fabrics = trid->trtype > SPDK_NVME_TRANSPORT_PCIE;
-
-	if (!xnvme_be_cref_ref(dev->ident.uri, g_xnvme_be_spdk.attr.name, state->ctrlr,
-			       _spdk_ctrlr_destructor)) {
-		XNVME_DEBUG("FAILED: xnvme_be_cref_ref()");
-		return;
-	}
-	if (opts->command_timeout > 0 && opts->admin_timeout > 0) {
-		spdk_nvme_ctrlr_register_timeout_callback(ctrlr, opts->command_timeout,
-							  opts->admin_timeout, timeout_cb_func, 0);
-	}
 }
 
-void
-xnvme_be_spdk_state_term(struct xnvme_be_spdk_state *state)
+static int
+xnvme_be_spdk_ctrlr_term(void *ctrlr)
 {
-	int err;
-
-	if (!state) {
-		return;
-	}
-	if (state->qpair) {
-		spdk_nvme_qp_failure_reason reason;
-		reason = spdk_nvme_qpair_get_failure_reason(state->qpair);
-		if (reason) {
-			// the qpair has already disconnected
-			XNVME_DEBUG("WARNING: qpair in failed state, reason: %d", reason);
-		} else {
-			spdk_nvme_ctrlr_free_io_qpair(state->qpair);
-		}
-		err = pthread_mutex_destroy(&state->qpair_lock);
-		if (err) {
-			printf("UNHANDLED: pthread_mutex_destroy(): '%s'\n", strerror(err));
-		}
-	}
-	err = xnvme_be_cref_deref(state->ctrlr, XNVME_BE_CREF_DESTROY_IMMEDIATE);
+	int err = spdk_nvme_detach((struct spdk_nvme_ctrlr *)ctrlr);
 	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_be_cref_deref():, err: %d", err);
+		XNVME_DEBUG("FAILED: spdk_nvme_detach()");
 	}
+	return err;
 }
 
 void
 xnvme_be_spdk_dev_close(struct xnvme_dev *dev)
 {
+	struct xnvme_be_spdk_state *state = (void *)dev->be.state;
+	spdk_nvme_qp_failure_reason reason;
+	int err;
+
 	if (!dev) {
 		return;
 	}
 
-	xnvme_be_spdk_state_term((void *)dev->be.state);
-	memset(&dev->be, 0, sizeof(dev->be));
-}
+	if (!state->qpair) {
+		return;
+	}
 
-struct xnvme_be_spdk_enumerate_ctx {
-	struct xnvme_opts *opts;
-	xnvme_enumerate_cb enumerate_cb;
-	void *cb_args;
-};
+	reason = spdk_nvme_qpair_get_failure_reason(state->qpair);
+	if (reason) {
+		XNVME_DEBUG("WARNING: qpair in failed state, reason: %d", reason);
+	} else {
+		spdk_nvme_ctrlr_free_io_qpair(state->qpair);
+	}
 
-/**
- * Always attach to supported transports such that `enumerate_probe_cb` can
- * grab namespaces
- *
- * And disable CMB sqs / cqs for now due to shared PMR / CMB
- */
-static bool
-enumerate_probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
-		   struct spdk_nvme_ctrlr_opts *ctrlr_opts)
-{
-	struct xnvme_be_spdk_enumerate_ctx *ectx = cb_ctx;
-	struct xnvme_opts *opts = ectx->opts;
-
-	return _spdk_setup_controller_opts(opts, trid, ctrlr_opts);
+	err = pthread_mutex_destroy(&state->qpair_lock);
+	if (err) {
+		printf("UNHANDLED: pthread_mutex_destroy(): '%s'\n", strerror(err));
+	}
 }
 
 static void
-enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
-		    struct spdk_nvme_ctrlr *ctrlr, const struct spdk_nvme_ctrlr_opts *ctrlr_opts)
-{
-	struct xnvme_be_spdk_enumerate_ctx *ectx = cb_ctx;
-
-	for (int nsid = spdk_nvme_ctrlr_get_first_active_ns(ctrlr); nsid;
-	     nsid = spdk_nvme_ctrlr_get_next_active_ns(ctrlr, nsid)) {
-		struct xnvme_opts opts = *ectx->opts;
-		struct xnvme_ident ident = {0};
-		struct xnvme_dev *dev = NULL;
-		struct spdk_nvme_ns *ns;
-		int err;
-
-		// Option options based on what the driver ended up using
-		// NOTE: we communicate the css via the dev->ident.csi
-		opts.use_cmb_sqs = ctrlr_opts->use_cmb_sqs;
-		opts.nsid = nsid;
-		opts.spdk_fabrics = trid->trtype > SPDK_NVME_TRANSPORT_PCIE;
-
-		if (!spdk_nvme_ctrlr_get_data(ctrlr)) {
-			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_data");
-			continue;
-		}
-		ns = spdk_nvme_ctrlr_get_ns(ctrlr, nsid);
-		if (!ns) {
-			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_ns(), for nsid: %d", nsid);
-			continue;
-		}
-		if (!spdk_nvme_ns_get_data(ns)) {
-			XNVME_DEBUG("FAILED: spdk_nvme_ns_get_data()");
-			continue;
-		}
-
-		ident.dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
-		ident.nsid = nsid;
-		ident.csi = spdk_nvme_ns_get_csi(ns);
-
-		// Namespace looks good, construct xNVMe identifier, and ..
-		switch (trid->trtype) {
-		case SPDK_NVME_TRANSPORT_PCIE:
-			snprintf(ident.uri, sizeof(ident.uri), "%s", trid->traddr);
-			break;
-
-		case SPDK_NVME_TRANSPORT_TCP:
-		case SPDK_NVME_TRANSPORT_RDMA:
-			snprintf(ident.uri, sizeof(ident.uri), "%s:%s", trid->traddr,
-				 trid->trsvcid);
-			break;
-
-		case SPDK_NVME_TRANSPORT_FC:
-		case SPDK_NVME_TRANSPORT_CUSTOM:
-		case SPDK_NVME_TRANSPORT_VFIOUSER:
-		case SPDK_NVME_TRANSPORT_CUSTOM_FABRICS:
-			XNVME_DEBUG("SKIP: ENOSYS trtype: %s",
-				    spdk_nvme_transport_id_trtype_str(trid->trtype));
-			continue;
-		}
-
-		// Save the reference to ctrlr so it can be reused when we call xnvme_dev_open()
-		if (!xnvme_be_cref_ref(ident.uri, g_xnvme_be_spdk.attr.name, ctrlr,
-				       _spdk_ctrlr_destructor)) {
-			XNVME_DEBUG("FAILED: xnvme_be_cref_ref()");
-			return;
-		}
-
-		dev = xnvme_dev_open(ident.uri, &opts);
-		if (!dev) {
-			XNVME_DEBUG("FAILED: xnvme_dev_open(), err: %d", errno);
-			return;
-		}
-		if (ectx->enumerate_cb(dev, ectx->cb_args)) {
-			xnvme_dev_close(dev);
-			err = xnvme_be_cref_deref(ctrlr, XNVME_BE_CREF_NONE);
-			if (err) {
-				XNVME_DEBUG("FAILED: xnvme_be_cref_deref():, err: %d", err);
-			}
-		}
-	}
-
-	xnvme_be_cref_cleanup(g_xnvme_be_spdk.attr.name);
-}
-
-int
-xnvme_be_spdk_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
-			void *cb_args)
-{
-	struct xnvme_be_spdk_enumerate_ctx ectx = {0};
-	char addr[SPDK_NVMF_TRADDR_MAX_LEN + 1] = {0};
-	struct xnvme_ident ident = {0};
-	int port = 0;
-
-	if (_spdk_env_init(NULL)) {
-		XNVME_DEBUG("FAILED: _spdk_env_init()");
-		return -ESRCH;
-	}
-	if (sys_uri) {
-		if (xnvme_ident_from_uri(sys_uri, &ident)) {
-			XNVME_DEBUG("FAILED: ident_from_uri, uri: %s", sys_uri);
-			return -EINVAL;
-		}
-		if (sscanf(ident.uri, "%[^:]:%d", addr, &port) != 2) {
-			XNVME_DEBUG("FAILED: malformed sys_uri: %s", sys_uri);
-			return -EINVAL;
-		}
-	}
-	XNVME_DEBUG("INFO: sys_uri: %s, addr: %s, port: %d", sys_uri ? sys_uri : "(null)", addr,
-		    port);
-
-	struct xnvme_opts tmp_opts = *opts;
-	tmp_opts.be = g_xnvme_be_spdk.attr.name;
-
-	ectx.opts = &tmp_opts;
-	ectx.enumerate_cb = cb_func;
-	ectx.cb_args = cb_args;
-
-	for (int t = 0; t < g_xnvme_be_spdk_ntransport; ++t) {
-		int trtype = g_xnvme_be_spdk_transport[t];
-		struct spdk_nvme_transport_id trid = {0};
-		int err;
-
-		XNVME_DEBUG("INFO: trtype: %s, # %d of %d",
-			    spdk_nvme_transport_id_trtype_str(trtype), t + 1,
-			    g_xnvme_be_spdk_ntransport);
-
-		err = _xnvme_be_spdk_ident_to_trid(&ident, opts, &trid, trtype);
-		if (err) {
-			XNVME_DEBUG("SKIP: !_xnvme_be_spdk_ident_to_trid()");
-			continue;
-		}
-
-		err = spdk_nvme_probe(&trid, &ectx, enumerate_probe_cb, enumerate_attach_cb, NULL);
-		if (err) {
-			XNVME_DEBUG("FAILED: spdk_nvme_probe(), err: %d", err);
-		}
-	}
-
-	return 0;
-}
-
-static int
-reconnect_ctrlr(struct spdk_nvme_ctrlr *ctrlr)
-{
-	int err;
-	XNVME_DEBUG("WARNING: attempting to reconnect controller");
-	err = spdk_nvme_ctrlr_reset(ctrlr);
-	if (err < 0) {
-		XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_reset, err: %d", err);
-		return -EBUSY;
-	}
-	XNVME_DEBUG("INFO: controller reconnected");
-	return 0;
-}
-
-void
-_identify_cb(void *ctx, const struct spdk_nvme_cpl *cpl)
+identify_cb(void *ctx, const struct spdk_nvme_cpl *cpl)
 {
 	int *result = (int *)ctx;
 	*result = cpl->status.sc;
 	if (*result != 0) {
-		XNVME_DEBUG("WARNING: bad identify, result: %d", *result);
+		XNVME_DEBUG("WARNING: bad identify, sct: %d, sc: %d", cpl->status.sct,
+			    cpl->status.sc);
 	}
 }
 
-/**
- * See if controller is able to handle a simple admin command if not then the ctrlr is in a bad
- * state
- */
 static int
 verify_ctrlr_ok(struct spdk_nvme_ctrlr *ctrlr)
 {
 	struct spdk_nvme_cmd cmd = {0};
-	int cmd_result = -1;
+	int cmd_result = -1, buf_size = 4096;
+	void *buf;
 	int err;
 
-	int buf_size = 4096;
-	void *buf;
+	err = spdk_nvme_ctrlr_is_failed(ctrlr);
+	if (err) {
+		XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_is_failed()");
+		return -EBUSY;
+	}
+
 	buf = spdk_dma_malloc(buf_size, 0, NULL);
+	if (!buf) {
+		XNVME_DEBUG("FAILED: spdk_dma_malloc()");
+		return -ENOMEM;
+	}
 	cmd.opc = SPDK_NVME_OPC_IDENTIFY;
 	cmd.cdw10_bits.identify.cns = SPDK_NVME_IDENTIFY_CTRLR;
-	spdk_nvme_ctrlr_cmd_admin_raw(ctrlr, &cmd, buf, buf_size, _identify_cb, &cmd_result);
+	err = spdk_nvme_ctrlr_cmd_admin_raw(ctrlr, &cmd, buf, buf_size, identify_cb, &cmd_result);
+	if (err) {
+		XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_cmd_admin_raw(), err: %d", err);
+		goto exit;
+	}
 	while (cmd_result == -1) {
 		err = spdk_nvme_ctrlr_process_admin_completions(ctrlr);
 		if (err < 0) {
-			XNVME_DEBUG(
-				"WARNING: spdk_nvme_ctrlr_process_admin_completions failed, %d",
-				err);
-			cmd_result = err;
-			break;
+			XNVME_DEBUG("WARNING: spdk_nvme_ctrlr_process_admin_completions() failed, "
+				    "err: %d",
+				    err);
+			goto exit;
 		}
 	}
+
+	err = cmd_result;
+
+exit:
 	spdk_dma_free(buf);
-	return cmd_result;
+	return err;
 }
 
 /**
- * - Parse options from dev->ident
- * - Initialize SPDK environment
- * - Attach to controller matching dev->ident
- * - create sync-io-qpair
- * - create lock protecting sync-io-qpair
+ * Initialize a new SPDK controller for the device URI.
+ *
+ * Inits the SPDK environment, if needed, and probes for a device matching the URI.
  */
-int
-xnvme_be_spdk_state_init(struct xnvme_dev *dev)
+static void *
+xnvme_be_spdk_ctrlr_init(struct xnvme_dev *dev)
 {
 	struct xnvme_be_spdk_state *state = (void *)dev->be.state;
 	struct spdk_env_opts env_opts = {0};
 	int err;
 
 	spdk_env_opts_init(&env_opts);
-
 	if (dev->opts.core_mask) {
 		XNVME_DEBUG("INFO: multi-process setup");
 		env_opts.shm_id = dev->opts.shm_id;
@@ -688,74 +498,15 @@ xnvme_be_spdk_state_init(struct xnvme_dev *dev)
 	err = _spdk_env_init(&env_opts);
 	if (err) {
 		XNVME_DEBUG("FAILED: _spdk_env_init(), err: %d", err);
-		return err;
+		return NULL;
 	}
 
-	state->ctrlr = xnvme_be_cref_ref(dev->ident.uri, g_xnvme_be_spdk.attr.name, NULL,
-					 _spdk_ctrlr_destructor);
-	if (state->ctrlr) {
-		struct spdk_nvme_ns *ns;
-
-		XNVME_DEBUG("INFO: found dev->ident.uri: '%s' via cref_lookup()", dev->ident.uri);
-
-		int err = verify_ctrlr_ok(state->ctrlr);
-		if (err < 0) {
-			XNVME_DEBUG("FAILED: verify_ctrlr_ok, err: %d", err);
-		}
-		if (err || spdk_nvme_ctrlr_is_failed(state->ctrlr)) {
-			err = reconnect_ctrlr(state->ctrlr);
-			if (err < 0) {
-				if (xnvme_be_cref_deref(state->ctrlr,
-							XNVME_BE_CREF_DESTROY_IMMEDIATE)) {
-					XNVME_DEBUG("FAILED: xnvme_be_cref_deref");
-				}
-				return -EBUSY;
-			}
-		}
-
-		err = spdk_nvme_ctrlr_process_admin_completions(state->ctrlr);
-		if (err < 0) {
-			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_process_admin_completions, err: %d",
-				    err);
-			if (xnvme_be_cref_deref(state->ctrlr, XNVME_BE_CREF_DESTROY_IMMEDIATE)) {
-				XNVME_DEBUG("FAILED: xnvme_be_cref_deref");
-			}
-			return -EBUSY;
-		}
-
-		if (dev->opts.nsid) {
-			ns = spdk_nvme_ctrlr_get_ns(state->ctrlr, dev->opts.nsid);
-			if (!ns) {
-				XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_ns(0x%x)",
-					    dev->opts.nsid);
-				if (xnvme_be_cref_deref(state->ctrlr,
-							XNVME_BE_CREF_DESTROY_IMMEDIATE)) {
-					XNVME_DEBUG("FAILED: xnvme_be_cref_deref");
-				}
-				return -EBUSY;
-			}
-			if (!spdk_nvme_ns_is_active(ns)) {
-				XNVME_DEBUG("FAILED: !spdk_nvme_ns_is_active(nsid:0x%x)",
-					    dev->opts.nsid);
-				if (xnvme_be_cref_deref(state->ctrlr,
-							XNVME_BE_CREF_DESTROY_IMMEDIATE)) {
-					XNVME_DEBUG("FAILED: xnvme_be_cref_deref");
-				}
-				return -EBUSY;
-			}
-			state->ns = ns;
-		}
-		state->attached = 1;
-		XNVME_DEBUG("INFO: re-using previously attached controller");
-	}
-
-	// Probe for device matching dev->ident
 	for (int i = 0; !state->attached; ++i) {
 		if (XNVME_BE_SPDK_MAX_PROBE_ATTEMPTS == i) {
 			XNVME_DEBUG("FAILED: max attempts exceeded");
-			return -ENXIO;
+			errno = ENXIO;
+			return NULL;
 		}
-
 		for (int t = 0; t < g_xnvme_be_spdk_ntransport; ++t) {
 			int trtype = g_xnvme_be_spdk_transport[t];
 			struct spdk_nvme_transport_id trid = {0};
@@ -771,62 +522,84 @@ xnvme_be_spdk_state_init(struct xnvme_dev *dev)
 			}
 
 			err = spdk_nvme_probe(&trid, dev, probe_cb, attach_cb, NULL);
-			if ((err) || (!state->attached)) {
+			if (err || !state->attached) {
 				XNVME_DEBUG("FAILED: probe a:%d, e:%d, i:%d", state->attached, err,
 					    i);
 			}
 		}
 	}
 
+	XNVME_DEBUG("INFO: ctrlr_init() OK");
+	return state->ctrlr;
+}
+
+int
+xnvme_be_spdk_dev_open(struct xnvme_dev *dev)
+{
+	struct xnvme_be_spdk_state *state = (void *)dev->be.state;
+	int err;
+
+	// ctrlr is at state->ctrlr, placed there by platform (cref reuse or ctrlr_init).
+	// On cref reuse, state->attached is 0 (fresh state); verify health before setting up a new
+	// qpair. On fresh ctrlr_init, attach_cb sets state->attached=1 and we skip verification.
+	if (!state->attached) {
+		err = verify_ctrlr_ok(state->ctrlr);
+		if (err) {
+			XNVME_DEBUG("FAILED: verify_ctrlr_ok(), err: %d", err);
+			return -EBUSY;
+		}
+	}
+
 	dev->ident.dtype =
 		dev->opts.nsid ? XNVME_DEV_TYPE_NVME_NAMESPACE : XNVME_DEV_TYPE_NVME_CONTROLLER;
-	if (state->ns) {
-		dev->ident.csi = spdk_nvme_ns_get_csi(state->ns);
-	}
 	dev->ident.nsid = dev->opts.nsid;
 
-	// Setup IO qpair lock for SYNC commands
+	if (dev->opts.nsid) {
+		struct spdk_nvme_ns *ns = spdk_nvme_ctrlr_get_ns(state->ctrlr, dev->opts.nsid);
+		if (!ns) {
+			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_ns(0x%x)", dev->opts.nsid);
+			return -EBUSY;
+		}
+		if (!spdk_nvme_ns_is_active(ns)) {
+			XNVME_DEBUG("FAILED: !spdk_nvme_ns_is_active(nsid:0x%x)", dev->opts.nsid);
+			return -EBUSY;
+		}
+		state->ns = ns;
+		dev->ident.csi = spdk_nvme_ns_get_csi(ns);
+	}
+
+	if (dev->opts.command_timeout > 0 && dev->opts.admin_timeout > 0) {
+		spdk_nvme_ctrlr_register_timeout_callback(state->ctrlr, dev->opts.command_timeout,
+							  dev->opts.admin_timeout, timeout_cb_func,
+							  0);
+	}
+
 	err = pthread_mutex_init(&state->qpair_lock, NULL);
 	if (err) {
 		XNVME_DEBUG("FAILED: pthread_mutex_init(): '%s'", strerror(err));
 		return -err;
 	}
 
-	// Setup IO qpair for SYNC commands
 	state->qpair = spdk_nvme_ctrlr_alloc_io_qpair(state->ctrlr, NULL, 0);
 	if (!state->qpair) {
 		XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_alloc_io_qpair()");
+		pthread_mutex_destroy(&state->qpair_lock);
 		return -ENOMEM;
 	}
 
-	XNVME_DEBUG("INFO: open() : OK");
-
+	XNVME_DEBUG("INFO: dev_open() OK");
 	return 0;
-}
-
-int
-xnvme_be_spdk_dev_open(struct xnvme_dev *dev)
-{
-	int err;
-
-	err = xnvme_be_spdk_state_init(dev);
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_be_spdk_state_init()");
-		return err;
-	}
-
-	return err;
 }
 #endif
 
 struct xnvme_be_dev g_xnvme_be_spdk_dev = {
 #ifdef XNVME_BE_SPDK_ENABLED
-	.enumerate = xnvme_be_spdk_enumerate,
 	.dev_open = xnvme_be_spdk_dev_open,
 	.dev_close = xnvme_be_spdk_dev_close,
 	.id = "spdk",
+	.ctrlr_init = xnvme_be_spdk_ctrlr_init,
+	.ctrlr_term = xnvme_be_spdk_ctrlr_term,
 #else
-	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_nosys_dev_open,
 	.dev_close = xnvme_be_nosys_dev_close,
 	.id = "nosys",
