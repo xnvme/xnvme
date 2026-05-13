@@ -195,6 +195,10 @@ conf = configure_file(
 conf_inc = [ include_directories('.') ]
 if is_linux
   conf_inc += [ include_directories('toolbox' / 'third-party' / 'linux') ]
+  install_subdir(
+    'toolbox' / 'third-party' / 'linux' / 'upcie',
+    install_dir: get_option('includedir'),
+  )
 endif
 if is_windows
   conf_inc += [ include_directories('toolbox' / 'third-party' / 'windows') ]
