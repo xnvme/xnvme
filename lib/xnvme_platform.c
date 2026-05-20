@@ -77,29 +77,25 @@ _dev_open_resolve_mem(struct xnvme_be *be, const struct xnvme_be_config *cfg,
 static int
 _dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnvme_be_config *cfg)
 {
+	struct xnvme_be_cref *cref = NULL;
 	void *ctrlr = NULL;
 	int cref_inserted = 0;
 	int err;
 
 	if (!be->dev.ctrlr_init) {
-		return 0;
+		return be->dev.dev_open(dev);
 	}
 
-	ctrlr = xnvme_be_cref_lookup(dev->ident.uri, cfg->attr.name);
-	if (ctrlr) {
-		((void **)be->state)[0] = ctrlr;
-		return 0;
-	}
-
-	{
-		void *conflict = xnvme_be_cref_lookup(dev->ident.uri, NULL);
-
-		if (conflict) {
-			xnvme_be_cref_deref(conflict, XNVME_BE_CREF_NONE);
-			XNVME_DEBUG("FAILED: uri '%s' claimed by another backend config",
-				    dev->ident.uri);
-			return -EBUSY;
+	cref = xnvme_be_cref_lookup(dev->ident.uri);
+	if (cref) {
+		if (!strcmp(cref->be_name, cfg->attr.name) || cfg->attr.family & cref->be_family) {
+			((void **)be->state)[0] = cref->ctrlr;
+			return be->dev.dev_open(dev);
 		}
+
+		xnvme_be_cref_deref(cref->ctrlr, XNVME_BE_CREF_NONE);
+		XNVME_DEBUG("FAILED: uri '%s' claimed by another backend config", dev->ident.uri);
+		return -EBUSY;
 	}
 
 	ctrlr = be->dev.ctrlr_init(dev);
@@ -108,7 +104,8 @@ _dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnv
 		return errno ? -errno : -EIO;
 	}
 
-	err = xnvme_be_cref_insert(dev->ident.uri, cfg->attr.name, ctrlr, be->dev.ctrlr_term);
+	err = xnvme_be_cref_insert(dev->ident.uri, cfg->attr.name, ctrlr, cfg->attr.family,
+				   be->dev.ctrlr_term);
 	if (err) {
 		XNVME_DEBUG("FAILED: cref_insert for uri '%s'", dev->ident.uri);
 		be->dev.ctrlr_term(ctrlr);
@@ -166,13 +163,6 @@ _dev_open_try_config(struct xnvme_dev *dev, const struct xnvme_be_config *cfg,
 	err = _dev_open_init_cref(dev, &dev->be, cfg);
 	if (err) {
 		return err;
-	}
-
-	if (!dev->be.dev.ctrlr_init) {
-		err = dev->be.dev.dev_open(dev);
-		if (err) {
-			return err;
-		}
 	}
 
 	XNVME_DEBUG("INFO: obtained device handle");

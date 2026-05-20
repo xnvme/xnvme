@@ -111,6 +111,7 @@ struct xnvme_cli_args {
 	uint32_t help;
 
 	const char *be;
+	const char *alt_be;
 	const char *mem;
 	const char *sync;
 	const char *async;
@@ -348,7 +349,9 @@ enum xnvme_cli_opt {
 	XNVME_CLI_OPT_CPUMASK   = 127, ///< XNVME_CLI_OPT_CPUMASK
 	XNVME_CLI_OPT_NQUEUES   = 128, ///< XNVME_CLI_OPT_NQUEUES
 
-	XNVME_CLI_OPT_END = 129, ///< XNVME_CLI_OPT_END
+	XNVME_CLI_OPT_ALT_BE = 129, ///< XNVME_CLI_OPT_ALT_BE
+
+	XNVME_CLI_OPT_END = 130, ///< XNVME_CLI_OPT_END
 };
 
 /**

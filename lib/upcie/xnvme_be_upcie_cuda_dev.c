@@ -26,13 +26,17 @@ _cuda_rte_term(void)
 }
 
 static int
-_cuda_rte_init(void)
+_cuda_rte_init(size_t heap_size)
 {
 	CUdevice cu_dev;
 	int err;
 
 	if (g_upcie_cuda_rte.is_initialized) {
 		return 0;
+	}
+
+	if (!heap_size) {
+		heap_size = 1024 * 1024 * 1024;
 	}
 
 	err = cuInit(0);
@@ -59,7 +63,7 @@ _cuda_rte_init(void)
 		return err;
 	}
 
-	err = cudamem_heap_init(&g_upcie_cuda_rte.cuda_heap, 1024 * 1024 * 1024,
+	err = cudamem_heap_init(&g_upcie_cuda_rte.cuda_heap, heap_size,
 				&g_upcie_cuda_rte.cuda_config);
 	if (err) {
 		XNVME_DEBUG("FAILED: cudamem_heap_init(); err(%d)", err);
@@ -72,20 +76,59 @@ _cuda_rte_init(void)
 	return 0;
 }
 
-int
-xnvme_be_upcie_cuda_ctrlr_term(void *handle)
+static int
+_check_driver(struct xnvme_dev *dev)
 {
-	xnvme_be_upcie_ctrlr_term(handle);
+	char driver_name[sizeof(dev->ident.kernel_driver)] = {0};
+	int err;
 
-	if (--g_cuda_ctrlr_count == 0) {
-		_cuda_rte_term();
+	err = xnvme_be_upcie_get_driver_name(dev->ident.uri, driver_name, sizeof(driver_name));
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_be_upcie_get_driver_name(%s); err(%d)", dev->ident.uri,
+			    err);
+		return err;
+	}
+	snprintf(dev->ident.kernel_driver, sizeof(dev->ident.kernel_driver), "%s", driver_name);
+
+	if (strcmp(driver_name, "uio_pci_generic")) {
+		XNVME_DEBUG(
+			"FAILED: unsupported driver '%s', upcie-cuda requires 'uio_pci_generic'",
+			driver_name);
+		return -ENOTSUP;
 	}
 
 	return 0;
 }
 
 /**
- * Initialize a uPCIe CUDA controller.
+ * Initialize the NVMe controller for a uPCIe CUDA device.
+ *
+ * Validates that the device is bound to uio_pci_generic (vfio-pci is not
+ * supported for CUDA P2P DMA) and delegates to xnvme_be_upcie_ctrlr_init,
+ * which opens the NVMe controller and allocates the host hugepage runtime.
+ * CUDA runtime initialization is done in dev_open.
+ */
+void *
+xnvme_be_upcie_cuda_ctrlr_init(struct xnvme_dev *dev)
+{
+	int err;
+	err = _check_driver(dev);
+	if (err) {
+		errno = -err;
+		return NULL;
+	}
+
+	return xnvme_be_upcie_ctrlr_init(dev);
+}
+
+int
+xnvme_be_upcie_cuda_ctrlr_term(void *handle)
+{
+	return xnvme_be_upcie_ctrlr_term(handle);
+}
+
+/**
+ * Open a uPCIe CUDA device handle.
  *
  * Memory layout
  * -------------
@@ -103,51 +146,38 @@ xnvme_be_upcie_cuda_ctrlr_term(void *handle)
  * Consequently, both the host hugepage runtime (256 MiB) and the CUDA heap
  * (1 GiB) are initialized when the first upcie-cuda device is opened.
  */
-void *
-xnvme_be_upcie_cuda_ctrlr_init(struct xnvme_dev *dev)
+static int
+xnvme_be_upcie_cuda_dev_open(struct xnvme_dev *dev)
 {
-	struct xnvme_be_upcie_ctrlr *ctrlr;
-	char driver_name[sizeof(dev->ident.kernel_driver)] = {0};
 	int err;
 
-	err = xnvme_be_upcie_get_driver_name(dev->ident.uri, driver_name, sizeof(driver_name));
+	err = _check_driver(dev);
 	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_be_upcie_get_driver_name(%s); err(%d)", dev->ident.uri,
-			    err);
-		errno = -err;
-		return NULL;
-	}
-	snprintf(dev->ident.kernel_driver, sizeof(dev->ident.kernel_driver), "%s", driver_name);
-
-	if (!strcmp(driver_name, "vfio-pci")) {
-		XNVME_DEBUG("FAILED: upcie-cuda does not support vfio-pci");
-		errno = ENOTSUP;
-		return NULL;
-	} else if (strcmp(driver_name, "uio_pci_generic")) {
-		XNVME_DEBUG("FAILED: unsupported driver '%s'", driver_name);
-		errno = ENOTSUP;
-		return NULL;
+		return err;
 	}
 
-	err = _cuda_rte_init();
+	err = xnvme_be_upcie_dev_open(dev);
+	if (err) {
+		return err;
+	}
+
+	err = _cuda_rte_init(dev->opts.device_heap_size);
 	if (err) {
 		XNVME_DEBUG("FAILED: _cuda_rte_init(); err(%d)", err);
-		errno = -err;
-		return NULL;
+		return err;
 	}
 
-	ctrlr = xnvme_be_upcie_ctrlr_init(dev);
-	if (!ctrlr) {
-		XNVME_DEBUG("FAILED: xnvme_be_upcie_ctrlr_init(); err(%d)", errno);
-		if (g_cuda_ctrlr_count == 0) {
-			_cuda_rte_term();
-		}
-		return NULL;
+	atomic_fetch_add(&g_cuda_ctrlr_count, 1);
+	return 0;
+}
+
+static void
+xnvme_be_upcie_cuda_dev_close(struct xnvme_dev *dev)
+{
+	if (atomic_fetch_sub(&g_cuda_ctrlr_count, 1) == 1) {
+		_cuda_rte_term();
 	}
-
-	g_cuda_ctrlr_count++;
-
-	return ctrlr;
+	xnvme_be_upcie_dev_close(dev);
 }
 
 #endif
@@ -155,8 +185,8 @@ xnvme_be_upcie_cuda_ctrlr_init(struct xnvme_dev *dev)
 struct xnvme_be_dev g_xnvme_be_upcie_cuda_dev = {
 #ifdef XNVME_BE_UPCIE_CUDA_ENABLED
 	.enumerate = xnvme_be_upcie_enumerate,
-	.dev_open = xnvme_be_upcie_dev_open,
-	.dev_close = xnvme_be_upcie_dev_close,
+	.dev_open = xnvme_be_upcie_cuda_dev_open,
+	.dev_close = xnvme_be_upcie_cuda_dev_close,
 	.id = "upcie-cuda",
 	.ctrlr_init = xnvme_be_upcie_cuda_ctrlr_init,
 	.ctrlr_term = xnvme_be_upcie_cuda_ctrlr_term,

@@ -19,6 +19,7 @@ const struct xnvme_be_config g_xnvme_be_upcie = {
 			.name = "upcie",
 			.descr = "uPCIe userspace NVMe driver",
 			.caps = XNVME_BE_CAP_NVME_PCIE,
+			.family = XNVME_BE_FAMILY_UPCIE,
 		},
 };
 
