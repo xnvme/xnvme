@@ -1363,6 +1363,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_DIRECT, XNVME_CLI_LFLG},
 			{XNVME_CLI_OPT_POLL_IO, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_POLL_SQ, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_PROC_ROLE, XNVME_CLI_LOPT},
 		},
 	},
 	{

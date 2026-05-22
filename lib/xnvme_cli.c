@@ -889,6 +889,12 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "Number of queues per device",
 	},
 	{
+		.opt = XNVME_CLI_OPT_PROC_ROLE,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
+		.name = "proc_role",
+		.descr = "Multi-process role: 0=auto, 1=primary, 2=secondary",
+	},
+	{
 		.opt = XNVME_CLI_OPT_END,
 		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "",
@@ -1573,6 +1579,9 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 	case XNVME_CLI_OPT_NQUEUES:
 		args->nqueues = num;
 		break;
+	case XNVME_CLI_OPT_PROC_ROLE:
+		args->proc_role = num;
+		break;
 	case XNVME_CLI_OPT_POSA_TITLE:
 	case XNVME_CLI_OPT_NON_POSA_TITLE:
 	case XNVME_CLI_OPT_ORCH_TITLE:
@@ -2015,6 +2024,9 @@ xnvme_cli_to_opts(const struct xnvme_cli *cli, struct xnvme_opts *opts)
 	opts->adrfam = cli->given[XNVME_CLI_OPT_ADRFAM] ? cli->args.adrfam : opts->adrfam;
 	opts->subnqn = cli->given[XNVME_CLI_OPT_SUBNQN] ? cli->args.subnqn : opts->subnqn;
 	opts->hostnqn = cli->given[XNVME_CLI_OPT_HOSTNQN] ? cli->args.hostnqn : opts->hostnqn;
+
+	opts->proc_role =
+		cli->given[XNVME_CLI_OPT_PROC_ROLE] ? cli->args.proc_role : opts->proc_role;
 
 	return 0;
 }

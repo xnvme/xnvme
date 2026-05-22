@@ -172,6 +172,8 @@ struct xnvme_cli_args {
 	const char *cpumask;
 	uint32_t nqueues;
 
+	enum xnvme_proc_role proc_role;
+
 	const char **posn; //< Remaining positional args (points into argv)
 	int posn_count;    ///< Number of remaining positional args
 };
@@ -348,7 +350,9 @@ enum xnvme_cli_opt {
 	XNVME_CLI_OPT_CPUMASK   = 127, ///< XNVME_CLI_OPT_CPUMASK
 	XNVME_CLI_OPT_NQUEUES   = 128, ///< XNVME_CLI_OPT_NQUEUES
 
-	XNVME_CLI_OPT_END = 129, ///< XNVME_CLI_OPT_END
+	XNVME_CLI_OPT_PROC_ROLE = 129, ///< XNVME_CLI_OPT_PROC_ROLE
+
+	XNVME_CLI_OPT_END = 130, ///< XNVME_CLI_OPT_END
 };
 
 /**

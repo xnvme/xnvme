@@ -86,6 +86,9 @@ xnvme_opts_yaml(FILE *stream, const struct xnvme_opts *opts, int indent, const c
 	wrtn += fprintf(stream, "%*sspdk_fabrics: 0x%" PRIx32 "%s", indent, "", opts->spdk_fabrics,
 			sep);
 
+	wrtn += fprintf(stream, "%*sproc_role: %" PRIu32 "%s", indent, "",
+			(uint32_t)opts->proc_role, sep);
+
 	return wrtn;
 }
 

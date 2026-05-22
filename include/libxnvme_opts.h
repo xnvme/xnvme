@@ -12,6 +12,25 @@ struct xnvme_opts_css {
 };
 
 /**
+ * Process role for multi-process device access
+ *
+ * When multiple processes access the same device, one must take the PRIMARY role to initialize
+ * the hardware and publish shared state. Subsequent processes attach as SECONDARY. Each process
+ * owns and exclusively submits to its own queue pairs; no queues are shared between processes.
+ *
+ * Recovery from a crashed primary is the caller's responsibility. If the primary exits without
+ * calling xnvme_dev_close(), hardware queue state is lost and attached secondaries are left in
+ * an undefined condition.
+ *
+ * @enum xnvme_proc_role
+ */
+enum xnvme_proc_role {
+	XNVME_PROC_SINGLE  = 0, ///< Single-process mode (default). No multi-process coordination.
+	XNVME_PROC_PRIMARY = 1, ///< Initialize hardware and publish shared state for secondaries
+	XNVME_PROC_SECONDARY = 2, ///< Attach to an already-initialized controller
+};
+
+/**
  * xNVMe options
  *
  * @see xnvme_dev_open()
@@ -49,6 +68,7 @@ struct xnvme_opts {
 	uint32_t command_timeout;  ///< SPDK fabrics: enable io command timeout
 	uint32_t spdk_fabrics;     ///< Is assigned a value by backend if SPDK uses fabrics
 	uint32_t keep_alive_timeout_ms; ///< SPDK fabrics: set keep alive timeout
+	enum xnvme_proc_role proc_role; ///< Multi-process: role of this process
 };
 
 /**
