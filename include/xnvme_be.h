@@ -14,7 +14,7 @@
 #define XNVME_BE_ASYNC_NBYTES 64
 #define XNVME_BE_SYNC_NBYTES  24
 #define XNVME_BE_ADMIN_NBYTES 24
-#define XNVME_BE_DEV_NBYTES   40
+#define XNVME_BE_DEV_NBYTES   48
 #define XNVME_BE_MEM_NBYTES   56
 #define XNVME_BE_ATTR_NBYTES  24
 #define XNVME_BE_STATE_NBYTES 128
@@ -113,6 +113,15 @@ struct xnvme_be_dev {
 	 * Returns 0 on success, negative errno on error.
 	 */
 	int (*ctrlr_term)(void *ctrlr);
+
+	/**
+	 * Attach to an already-initialized controller as a secondary process.
+	 * Returns an opaque controller handle on success, or NULL on failure.
+	 * NULL errno == ENOENT signals no primary is running (AUTO role may fall back to
+	 * ctrlr_init). NULL pointer means the backend does not support secondary attachment; the
+	 * platform falls through to ctrlr_init.
+	 */
+	void *(*ctrlr_attach)(struct xnvme_dev *);
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_dev) == XNVME_BE_DEV_NBYTES, "Incorrect size")
 
