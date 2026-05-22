@@ -61,12 +61,12 @@ _dev_open_resolve_mem(struct xnvme_be *be, const struct xnvme_be_config *cfg,
 
 /**
  * Initialize a controller reference for the device, reusing an existing one
- * or creating a new one via ctrlr_init.
+ * or creating a new one via ctrlr_init or ctrlr_attach.
  *
  * Looks up an existing cref for the URI and config name. When none exists,
- * checks for conflicts with other backend configs, initializes a new controller,
- * and inserts it into the cref table. On success, stores the controller
- * pointer in be->state[0].
+ * checks for conflicts with other backend configs, then dispatches to
+ * ctrlr_init (primary) or ctrlr_attach (secondary) based on proc_role.
+ * On success, stores the controller pointer in be->state[0].
  *
  * @param dev Device being opened
  * @param be Backend instance with dev operations
@@ -78,7 +78,7 @@ static int
 _dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnvme_be_config *cfg)
 {
 	const struct xnvme_be_cref_entry *cref;
-	void *ctrlr;
+	void *ctrlr = NULL;
 	int err;
 
 	if (!be->dev.ctrlr_init) {
@@ -103,10 +103,21 @@ _dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnv
 		return -ENOTSUP;
 	}
 
-	ctrlr = be->dev.ctrlr_init(dev);
+	if (dev->opts.proc_role == XNVME_PROC_SECONDARY && be->dev.ctrlr_attach) {
+		ctrlr = be->dev.ctrlr_attach(dev);
+		if (!ctrlr) {
+			XNVME_DEBUG("FAILED: ctrlr_attach for uri '%s'", dev->ident.uri);
+			return errno ? -errno : -EIO;
+		}
+	}
+
 	if (!ctrlr) {
-		XNVME_DEBUG("FAILED: ctrlr_init for uri '%s'", dev->ident.uri);
-		return errno ? -errno : -EIO;
+		errno = 0;
+		ctrlr = be->dev.ctrlr_init(dev);
+		if (!ctrlr) {
+			XNVME_DEBUG("FAILED: ctrlr_init for uri '%s'", dev->ident.uri);
+			return errno ? -errno : -EIO;
+		}
 	}
 
 	err = xnvme_be_cref_insert(dev->ident.uri, cfg->attr.name, ctrlr, be->dev.ctrlr_term);
