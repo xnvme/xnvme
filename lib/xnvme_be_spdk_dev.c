@@ -488,10 +488,15 @@ xnvme_be_spdk_ctrlr_init(struct xnvme_dev *dev)
 	int err;
 
 	spdk_env_opts_init(&env_opts);
-	if (dev->opts.core_mask) {
+
+	if (dev->opts.core_mask || dev->opts.proc_role != XNVME_PROC_SINGLE) {
 		XNVME_DEBUG("INFO: multi-process setup");
+
+		if (dev->opts.core_mask) {
+			env_opts.core_mask = dev->opts.core_mask;
+		}
+
 		env_opts.shm_id = dev->opts.shm_id;
-		env_opts.core_mask = dev->opts.core_mask;
 		env_opts.main_core = dev->opts.main_core;
 	}
 
