@@ -88,15 +88,6 @@ xnvme_be_fbsd_dev_open(struct xnvme_dev *dev)
 		dev->ident.dtype = XNVME_DEV_TYPE_FS_FILE;
 		dev->ident.csi = XNVME_SPEC_CSI_FS;
 		dev->ident.nsid = 1;
-		if (!opts->admin) {
-			dev->be.admin = g_xnvme_be_cbi_admin_shim;
-		}
-		if (!opts->sync) {
-			dev->be.sync = g_xnvme_be_cbi_sync_psync;
-		}
-		if (!opts->async) {
-			dev->be.async = g_xnvme_be_cbi_async_emu;
-		}
 		state->fd.ctrlr = state->fd.ns;
 		break;
 
@@ -105,30 +96,11 @@ xnvme_be_fbsd_dev_open(struct xnvme_dev *dev)
 		dev->ident.dtype = XNVME_DEV_TYPE_BLOCK_DEVICE;
 		dev->ident.csi = XNVME_SPEC_CSI_FS;
 		dev->ident.nsid = 1;
-		if (!opts->admin) {
-			dev->be.admin = g_xnvme_be_cbi_admin_shim;
-		}
-		if (!opts->sync) {
-			dev->be.sync = g_xnvme_be_cbi_sync_psync;
-		}
-		if (!opts->async) {
-			dev->be.async = g_xnvme_be_cbi_async_emu;
-		}
 		state->fd.ctrlr = state->fd.ns;
 		break;
 
 	case S_IFCHR:
 		XNVME_DEBUG("INFO: open() : char-device-file assuming NVMe ctrlr. or ns.");
-
-		if (!opts->admin) {
-			dev->be.admin = g_xnvme_be_fbsd_admin_nvme;
-		}
-		if (!opts->sync) {
-			dev->be.sync = g_xnvme_be_fbsd_sync_nvme;
-		}
-		if (!opts->async) {
-			dev->be.async = g_xnvme_be_cbi_async_emu;
-		}
 
 		if (xnvme_be_fbsd_nvme_get_nsid_and_ctrlr_fd(state->fd.ns, &dev->ident.nsid,
 							     &state->fd.ctrlr)) {
