@@ -81,26 +81,24 @@ xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 		break;
 
 	case S_IFBLK:
+		XNVME_DEBUG("INFO: open() : block-device file");
 		dev->ident.dtype = XNVME_DEV_TYPE_BLOCK_DEVICE;
 		dev->ident.csi = XNVME_SPEC_CSI_FS;
 		dev->ident.nsid = 1;
-		XNVME_DEBUG("INFO: open() : block-device file");
 
 		err = xnvme_be_linux_nvme_dev_nsid(dev);
+		XNVME_DEBUG("INFO: open() : retrieving nsid, got: %x", err);
 		if (err < 1) {
-			XNVME_DEBUG("INFO: open() : retrieving nsid, got: {nsid: %x, err: %d}",
-				    err, err);
 			break;
 		}
 		dev->ident.dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
 		dev->ident.csi = XNVME_SPEC_CSI_NVM;
 		dev->ident.nsid = err;
-		XNVME_DEBUG("INFO: open() : block-device file (is a NVMe namespace)");
 
 		break;
 
 	case S_IFCHR:
-		XNVME_DEBUG("INFO: open() : char-device-file");
+		XNVME_DEBUG("INFO: open() : char-device file");
 
 		err = xnvme_be_linux_nvme_dev_nsid(dev);
 		XNVME_DEBUG("INFO: open() : retrieving nsid, got: %x", err);
