@@ -127,9 +127,15 @@ def emit_versions(site: Path, url: str) -> None:
     Emit a versions.json in the root of site.
 
     Conventions:
-    - ``main`` is listed first and marked as the preferred version, pointing
-      at the site root
-    - Each tagged release is listed as ``vX.Y.Z`` pointing at ``/en/vX.Y.Z``
+    - ``main`` is listed first with ``version: "main"`` so the PyData
+      version-switcher can match against it and render it as a
+      selectable entry.
+    - The latest tagged release is marked ``preferred: true``. PyData
+      uses ``preferred`` to drive the "switch to stable version"
+      warning banner -- non-preferred non-main views (older tags) get
+      the banner; main and the latest tag do not.
+    - Each tagged release is listed as ``vX.Y.Z`` pointing at
+      ``/en/vX.Y.Z``.
 
     Args:
         site: Path to the site directory.
@@ -142,18 +148,19 @@ def emit_versions(site: Path, url: str) -> None:
     versions: list[dict[str, str | bool]] = [
         {
             "name": "main",
+            "version": "main",
             "url": f"{url}/",
-            "preferred": True,
         }
     ]
-    for semver in semvers:
-        versions.append(
-            {
-                "version": f"v{semver}",
-                "name": f"v{semver}",
-                "url": f"{url}/en/v{semver}",
-            }
-        )
+    for index, semver in enumerate(semvers):
+        entry: dict[str, str | bool] = {
+            "version": f"v{semver}",
+            "name": f"v{semver}",
+            "url": f"{url}/en/v{semver}",
+        }
+        if index == 0:
+            entry["preferred"] = True
+        versions.append(entry)
 
     with (site / "versions.json").open(mode="w", encoding="utf-8") as file:
         json.dump(versions, file, indent=4, ensure_ascii=False)

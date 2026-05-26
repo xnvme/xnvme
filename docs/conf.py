@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # xNVMe documentation build configuration file
+import os
 import sys
 from pathlib import Path
 
@@ -35,6 +36,12 @@ copyright = "2024, xNVMe"
 
 version = "v" + xnvme_ver(str(project_root / "meson.build"))
 release = version
+
+# Drive the PyData version-switcher off GITHUB_REF_NAME so a build of
+# ``main`` reports ``version_match = "main"`` and a tag build reports
+# the tag, falling back to the meson version locally.
+_ref_name = os.environ.get("GITHUB_REF_NAME", "")
+_version_match = _ref_name if _ref_name else version
 
 # MyST configuration
 myst_enable_extensions = [
@@ -146,9 +153,9 @@ html_theme_options = {
     ],
     "switcher": {
         "json_url": "https://xnvme.io/versions.json",
-        "version_match": version,
+        "version_match": _version_match,
     },
-    "show_version_warning_banner": True,
+    "show_version_warning_banner": _ref_name != "main",
     "check_switcher": False,
 }
 
