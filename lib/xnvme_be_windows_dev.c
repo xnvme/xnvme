@@ -126,7 +126,6 @@ xnvme_be_windows_dev_open(struct xnvme_dev *dev)
 	dw_creation_mode = xnvme_file_creation_opts_to_windows(opts);
 	access_mode = xnvme_file_access_opts_to_windows(opts);
 	file_attributes |= xnvme_file_attributes_opts_to_windows(opts);
-	// Change {async,sync,admin} based on file unless one was explicitly requested
 	switch (dev_stat.st_mode & S_IFMT) {
 	case S_IFREG:
 		state->sync_handle = CreateFile((LPCSTR)ident->uri, access_mode, share_mode, NULL,
@@ -154,15 +153,6 @@ xnvme_be_windows_dev_open(struct xnvme_dev *dev)
 		dev->ident.dtype = XNVME_DEV_TYPE_FS_FILE;
 		dev->ident.csi = XNVME_SPEC_CSI_FS;
 		dev->ident.nsid = 1;
-		if (!opts->admin) {
-			dev->be.admin = g_xnvme_be_windows_admin_fs;
-		}
-		if (!opts->sync) {
-			dev->be.sync = g_xnvme_be_windows_sync_fs;
-		}
-		if (!opts->async) {
-			dev->be.async = g_xnvme_be_windows_async_iocp;
-		}
 		break;
 
 	case S_IFCHR:
@@ -192,19 +182,12 @@ xnvme_be_windows_dev_open(struct xnvme_dev *dev)
 		dev->ident.csi = XNVME_SPEC_CSI_NVM;
 		// Making the nsid 1 by default
 		dev->ident.nsid = 1;
+		// SCSI/SATA backend configs aren't defined, so route admin to the block
+		// implementation here when the bus type is not NVMe. Remove once/if the
+		// platform exposes dedicated configs for these bus types.
 		dev_type = xnvme_be_windows_get_device_type(state->async_handle);
-		if (!opts->admin) {
-			if (dev_type == BusTypeNvme) {
-				dev->be.admin = g_xnvme_be_windows_admin_nvme;
-			} else if (dev_type == BusTypeScsi || dev_type == BusTypeSata) {
-				dev->be.admin = g_xnvme_be_windows_admin_block;
-			}
-		}
-		if (!opts->sync) {
-			dev->be.sync = g_xnvme_be_windows_sync_nvme;
-		}
-		if (!opts->async) {
-			dev->be.async = g_xnvme_be_windows_async_iocp;
+		if (dev_type == BusTypeScsi || dev_type == BusTypeSata) {
+			dev->be.admin = g_xnvme_be_windows_admin_block;
 		}
 		break;
 
