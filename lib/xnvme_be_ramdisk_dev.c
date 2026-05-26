@@ -52,7 +52,6 @@ int
 xnvme_be_ramdisk_dev_open(struct xnvme_dev *dev)
 {
 	struct xnvme_be_ramdisk_state *state = (void *)dev->be.state;
-	struct xnvme_opts *opts = &dev->opts;
 
 	size_t ramdisk_size = xnvme_be_ramdisk_dev_get_size(dev);
 	if (!ramdisk_size) {
@@ -64,16 +63,6 @@ xnvme_be_ramdisk_dev_open(struct xnvme_dev *dev)
 		XNVME_DEBUG("FAILED: Unable to allocate ramdisk: uri=%s, state->ramdisk=%p",
 			    dev->ident.uri, state->ramdisk);
 		return -errno;
-	}
-
-	if (!opts->admin) {
-		dev->be.admin = g_xnvme_be_ramdisk_admin;
-	}
-	if (!opts->sync) {
-		dev->be.sync = g_xnvme_be_ramdisk_sync;
-	}
-	if (!opts->async) {
-		dev->be.async = g_xnvme_be_cbi_async_thrpool;
 	}
 
 	dev->ident.dtype = XNVME_DEV_TYPE_RAMDISK;
