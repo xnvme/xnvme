@@ -5,13 +5,7 @@ Release Checklist
 
 With every release of **xNVMe**, the following tasks must be ticked off.
 Initially, the window of features are closed, that is, all PRs intended for the
-release are integrated on ``next`` and all tests are passing. Then:
-
-* Create a branch named ``vX.Y.Z-rc1``
-
-  - This must branch off from the ``next`` branch
-  - Push this branch to you fork of **xNVMe** and setup a pull-request to
-    ``next``
+release are integrated on ``main`` and all tests are passing. Then:
 
 * Bump the version-number commit with message ``ver: bump to vX.Y.Z``
 
@@ -27,7 +21,7 @@ release are integrated on ``next`` and all tests are passing. Then:
 
 * Update ``CONTRIBUTORS.rst``
 
-  - Get the list of contributors with: ``git log main..HEAD~1 --pretty=format:"%an <%aE>" | sort | uniq``
+  - Get the list of contributors with: ``git log <previous-tag>..HEAD --pretty=format:"%an <%aE>" | sort | uniq``
   - Update the lists accordingly
   - Commit changes with the message: ``CONTRIBUTORS: update for vX.Y.Z``
 
@@ -36,18 +30,13 @@ release are integrated on ``next`` and all tests are passing. Then:
   - Go over the changes and summarized the different scopes
   - Commit changes with the message: ``CHANGELOG: update for vX.Y.Z``
 
-* Integrate ``vX.Y.Z-rc1`` into ``next``
+* Open a pull-request for the release-prep commits
 
-  - Get review of the PR
-  - Wait for tests to finalize / pass
-  - Merge onto ``next``
-
-* Integrate ``next`` onto ``main``
-
-  - Setup a PR of ``next`` onto ``main``
-  - Review the PR
-  - Wait for tests to finalize / pass
-  - Double-check the generated docs at https://xnvme.io/en/next
+  - The release-prep commits (version bump, man-pages, completions,
+    CONTRIBUTORS, CHANGELOG) go through PR review like any other change
+  - Get review and wait for tests to finalize / pass
+  - Double-check the generated docs at https://xnvme.io/ (served from ``main``)
+  - Merge onto ``main``
 
 * Tag ``main`` as ``vX.Y.Z`` and push the tag
 

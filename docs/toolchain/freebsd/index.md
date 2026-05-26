@@ -21,7 +21,7 @@ Or, run the commands contained within the script manually:
 
 :::{note}
 A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-freebsd-14:next`. This Docker-image contains
+`ghcr.io/xnvme/xnvme-deps-freebsd-14:main`. This Docker-image contains
 all the software described above.
 :::
 
@@ -58,7 +58,7 @@ Or, run the commands contained within the script manually:
 
 :::{note}
 A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-freebsd-15:next`. This Docker-image contains
+`ghcr.io/xnvme/xnvme-deps-freebsd-15:main`. This Docker-image contains
 all the software described above.
 :::
 

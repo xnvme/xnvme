@@ -21,7 +21,7 @@ Or, run the commands contained within the script manually:
 
 :::{note}
 A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-alpine-latest:next`. This Docker-image contains
+`ghcr.io/xnvme/xnvme-deps-alpine-latest:main`. This Docker-image contains
 all the software described above.
 :::
 
@@ -65,7 +65,7 @@ Or, run the commands contained within the script manually:
 
 :::{note}
 A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-archlinux-latest:next`. This Docker-image contains
+`ghcr.io/xnvme/xnvme-deps-archlinux-latest:main`. This Docker-image contains
 all the software described above.
 :::
 
@@ -106,7 +106,7 @@ Or, run the commands contained within the script manually:
 
 :::{note}
 A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-oraclelinux-10:next`. This Docker-image contains
+`ghcr.io/xnvme/xnvme-deps-oraclelinux-10:main`. This Docker-image contains
 all the software described above.
 :::
 
@@ -139,7 +139,7 @@ Or, run the commands contained within the script manually:
 
 :::{note}
 A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-oraclelinux-9:next`. This Docker-image contains
+`ghcr.io/xnvme/xnvme-deps-oraclelinux-9:main`. This Docker-image contains
 all the software described above.
 :::
 
@@ -172,7 +172,7 @@ Or, run the commands contained within the script manually:
 
 :::{note}
 A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-rockylinux-9.7:next`. This Docker-image contains
+`ghcr.io/xnvme/xnvme-deps-rockylinux-9.7:main`. This Docker-image contains
 all the software described above.
 :::
 
@@ -205,7 +205,7 @@ Or, run the commands contained within the script manually:
 
 :::{note}
 A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-rockylinux-10.1:next`. This Docker-image contains
+`ghcr.io/xnvme/xnvme-deps-rockylinux-10.1:main`. This Docker-image contains
 all the software described above.
 :::
 
@@ -238,7 +238,7 @@ Or, run the commands contained within the script manually:
 
 :::{note}
 A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-centos-stream10:next`. This Docker-image contains
+`ghcr.io/xnvme/xnvme-deps-centos-stream10:main`. This Docker-image contains
 all the software described above.
 :::
 
@@ -271,7 +271,7 @@ Or, run the commands contained within the script manually:
 
 :::{note}
 A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-centos-stream9:next`. This Docker-image contains
+`ghcr.io/xnvme/xnvme-deps-centos-stream9:main`. This Docker-image contains
 all the software described above.
 :::
 
@@ -304,7 +304,7 @@ Or, run the commands contained within the script manually:
 
 :::{note}
 A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-debian-trixie:next`. This Docker-image contains
+`ghcr.io/xnvme/xnvme-deps-debian-trixie:main`. This Docker-image contains
 all the software described above.
 :::
 
@@ -337,7 +337,7 @@ Or, run the commands contained within the script manually:
 
 :::{note}
 A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-debian-bookworm:next`. This Docker-image contains
+`ghcr.io/xnvme/xnvme-deps-debian-bookworm:main`. This Docker-image contains
 all the software described above.
 :::
 
@@ -370,7 +370,7 @@ Or, run the commands contained within the script manually:
 
 :::{note}
 A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-debian-forky:next`. This Docker-image contains
+`ghcr.io/xnvme/xnvme-deps-debian-forky:main`. This Docker-image contains
 all the software described above.
 :::
 
@@ -403,7 +403,7 @@ Or, run the commands contained within the script manually:
 
 :::{note}
 A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-fedora-43:next`. This Docker-image contains
+`ghcr.io/xnvme/xnvme-deps-fedora-43:main`. This Docker-image contains
 all the software described above.
 :::
 
@@ -436,7 +436,7 @@ Or, run the commands contained within the script manually:
 
 :::{note}
 A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-fedora-42:next`. This Docker-image contains
+`ghcr.io/xnvme/xnvme-deps-fedora-42:main`. This Docker-image contains
 all the software described above.
 :::
 
@@ -469,7 +469,7 @@ Or, run the commands contained within the script manually:
 
 :::{note}
 A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-ubuntu-questing:next`. This Docker-image contains
+`ghcr.io/xnvme/xnvme-deps-ubuntu-questing:main`. This Docker-image contains
 all the software described above.
 :::
 
@@ -506,7 +506,7 @@ Or, run the commands contained within the script manually:
 
 :::{note}
 A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-ubuntu-noble:next`. This Docker-image contains
+`ghcr.io/xnvme/xnvme-deps-ubuntu-noble:main`. This Docker-image contains
 all the software described above.
 :::
 
@@ -543,7 +543,7 @@ Or, run the commands contained within the script manually:
 
 :::{note}
 A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-ubuntu-jammy:next`. This Docker-image contains
+`ghcr.io/xnvme/xnvme-deps-ubuntu-jammy:main`. This Docker-image contains
 all the software described above.
 :::
 
@@ -580,7 +580,7 @@ Or, run the commands contained within the script manually:
 
 :::{note}
 A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-gentoo-latest:next`. This Docker-image contains
+`ghcr.io/xnvme/xnvme-deps-gentoo-latest:main`. This Docker-image contains
 all the software described above.
 :::
 
@@ -624,7 +624,7 @@ Or, run the commands contained within the script manually:
 
 :::{note}
 A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-opensuse-tumbleweed-latest:next`. This Docker-image contains
+`ghcr.io/xnvme/xnvme-deps-opensuse-tumbleweed-latest:main`. This Docker-image contains
 all the software described above.
 :::
 

@@ -7,7 +7,7 @@ Contribution Process
 
 * Make your changes, push them to your fork and create a `pull-request`_
 
-  - The `pull-request` should target the ``next`` branch
+  - The `pull-request` should target the ``main`` branch
   - For feedback/RFC then set up the `pull-request`_ as a **Draft**
 
 * The CI will trigger as you create the PR and re-triggered upon update
@@ -34,7 +34,7 @@ Please check your pull-request for the following:
 * All commits must have their commit messages formatted according to
   :ref:`sec-contributing-process-commit-messages`
 
-* Commits are rebased on top of ``next``
+* Commits are rebased on top of ``main``
 
 * New functionality is accompanied by tests verifying it
 

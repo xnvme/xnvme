@@ -348,6 +348,6 @@ Test with QEMU:
 
 .. _Windows 11 Disk Image: https://www.microsoft.com/en-us/software-download/windows11
 .. _virt-manager: https://virt-manager.org/
-.. _windows-2022.ps1: https://github.com/xnvme/xnvme/blob/next/toolbox/pkgs/windows-2022.ps1
+.. _windows-2022.ps1: https://github.com/xnvme/xnvme/blob/main/toolbox/pkgs/windows-2022.ps1
 .. _OpenSSH-Win64.zip: https://github.com/PowerShell/Win32-OpenSSH/releases
 .. _VirtIO: https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/
