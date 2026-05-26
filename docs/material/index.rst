@@ -13,6 +13,51 @@ A brief overview of **xNVMe** related presentations
 
       <div class="col-lg-4">
         <div class="card" style="width: 18rem;">
+          <a href="https://www.snia.org/sites/default/files/2026-04/SNIA-SDCAI26-Lund-AiSIO-Orchestrating-Storage-IO-r14.pdf">
+            <img src="/_static/sdcai26.webp" class="card-img-top" alt="AiSIO Orchestrating Storage I/O Across CPUs and Accelerators">
+          </a>
+          <div class="card-body">
+            <h5 class="card-title">AiSIO<br>Orchestrating Storage I/O<br>Across CPUs and Accelerators</h5>
+            <h6 class="card-subtitle mb-2 text-muted">
+              Presentation given at SNIA's Storage Developer Conference AI 2026 (SDC AI '26).
+            </h6>
+            <p class="card-text"></p>
+          </div>
+          <ul class="list-group list-group-flush">
+
+            <li class="list-group-item">
+            <a href="https://www.snia.org/sites/default/files/2026-04/SNIA-SDCAI26-Lund-AiSIO-Orchestrating-Storage-IO-r14.pdf">
+              <i class="fas fa-file-pdf"></i> Presentation slides
+            </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card" style="width: 18rem;">
+          <a href="https://xnvme.io/aisio/">
+            <img src="/_static/xnvme-logo-medium.png" class="card-img-top" alt="AiSIO: Accelerator-integrated Storage I/O - Whitepaper">
+          </a>
+          <div class="card-body">
+            <h5 class="card-title">AiSIO: Accelerator-integrated Storage I/O - Whitepaper</h5>
+            <h6 class="card-subtitle mb-2 text-muted">
+              Accelerator-integrated Storage I/O white-paper in online format.
+            </h6>
+            <p class="card-text"></p>
+          </div>
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+            <a href="https://xnvme.io/aisio/">
+              <i class="fas fa-file-alt"></i> Paper
+            </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card" style="width: 18rem;">
           <a href="/_static/ocp25.pdf">
             <img src="/_static/ocp.png" class="card-img-top" alt="Accelerator-integrated Storage I/O - Conference DEMO">
           </a>
@@ -59,7 +104,51 @@ A brief overview of **xNVMe** related presentations
 
       <div class="col-lg-4">
         <div class="card" style="width: 18rem;">
-          <a href="https://arxiv.org/pdf/2411.06980"> 
+          <a href="https://arxiv.org/pdf/2512.01490">
+            <img src="/_static/xnvme-logo-medium.png" class="card-img-top" alt="DuckDB on xNVMe">
+          </a>
+          <div class="card-body">
+            <h5 class="card-title">DuckDB on <b>xNVMe</b></h5>
+            <h6 class="card-subtitle mb-2 text-muted">
+              Preprint exploring DuckDB direct access to NVMe SSDs via <b>xNVMe</b>, bypassing file system interfaces for asynchronous I/O.
+            </h6>
+            <p class="card-text"></p>
+          </div>
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+            <a href="https://arxiv.org/pdf/2512.01490">
+              <i class="fas fa-file-pdf"></i> Paper
+            </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card" style="width: 18rem;">
+          <a href="https://vldb.org/cidrdb/papers/2026/p6-houlborg.pdf">
+            <img src="/_static/xnvme-logo-medium.png" class="card-img-top" alt="Flexible I/O for Database Management Systems with xNVMe">
+          </a>
+          <div class="card-body">
+            <h5 class="card-title">Flexible I/O for Database Management Systems with <b>xNVMe</b></h5>
+            <h6 class="card-subtitle mb-2 text-muted">
+              CIDR '26 paper integrating <b>xNVMe</b> into DuckDB via a new <b>nvmefs</b> extension; up to 50% lower query times on I/O-intensive workloads.
+            </h6>
+            <p class="card-text"></p>
+          </div>
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+            <a href="https://vldb.org/cidrdb/papers/2026/p6-houlborg.pdf">
+              <i class="fas fa-file-pdf"></i> Paper
+            </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card" style="width: 18rem;">
+          <a href="https://arxiv.org/pdf/2411.06980">
             <img src="/_static/xnvme-logo-medium.png" class="card-img-top" alt="xNVMe: Unleashing Storage Hardware-Software Co-design">
           </a>
           <div class="card-body">
