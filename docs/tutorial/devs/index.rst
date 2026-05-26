@@ -219,14 +219,13 @@ And attach to them using their ``<name>``:
 xNVMe
 -----
 
-Clone, build, and install **xNVMe** and checkout the ``next`` branch:
+Clone, build, and install **xNVMe**:
 
 .. code-block:: bash
 
   cd ~/git
   git clone https://github.com/OpenMPDK/xNVMe.git xnvme
   cd xnvme
-  git checkout next
 
 Install prerequisites:
 

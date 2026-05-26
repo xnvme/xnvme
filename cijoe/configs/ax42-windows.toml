@@ -79,7 +79,7 @@ label = "SAMSUNG990PRO2TB"
 [xnvme.repository]
 remote = "https://github.com/xnvme/xnvme.git"
 path = "C:/Users/odus/git/xnvme"
-branch = "next"
+branch = "main"
 
 [xnvme.repository.sync]
 branch = "wip"

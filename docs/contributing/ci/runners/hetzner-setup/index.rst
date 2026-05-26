@@ -78,8 +78,8 @@ Once it is booted, log into the rescue system for the bare-metal machine, and
 run the following to fetch the scripts and config files::
 
 	# Grab the scripts and files
-	curl -L https://github.com/xnvme/xnvme/archive/refs/heads/next.tar.gz \
-		| tar --strip-components=5 -xz xnvme-next/docs/contributing/ci/runners
+	curl -L https://github.com/xnvme/xnvme/archive/refs/heads/main.tar.gz \
+		| tar --strip-components=5 -xz xnvme-main/docs/contributing/ci/runners
 
 	# Run the install-script (replace XX with the id of the system e.g. 01)
 	cd hetzner-setup

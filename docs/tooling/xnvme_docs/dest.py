@@ -13,12 +13,13 @@ A path to this repository is given to the script via ``--site``.
 
 The intent of the organization is two-fold:
 
-* Provide a preview of website/documentation of the 'next' branch/release.
+* Provide the documentation of the ``main`` branch as the default site at
+  ``https://xnvme.io/``, since ``main`` holds the latest state of xNVMe.
   Other in-development branches are not available via version-switcher,
   however, they can be pointed to manually e.g. https://xnvme.io/en/feature-a
 
 * Keep a bit of history on the project documentation available online,
-  e.g. for those not on the latest release.
+  e.g. for those on an older tagged release.
 
 Supported refs are on the form:
     refs/heads/<branch_name>
@@ -27,12 +28,10 @@ Supported refs are on the form:
 The organization is as follows: for all refs, the folder ``--docs`` is
 renamed to ``--ref`` and placed in ``--site/en/<ref>``. Examples:
     <site>/en/main
-    <site>/en/docs
-    <site>/en/next
     <site>/en/v1.2.3
 
-Handling of "docs" and version-tags (vX.Y.Z) is special. These are copied
-to ``<site>/`` as well.
+The site root (``<site>/``) is a copy of ``<site>/en/main`` so that
+``https://xnvme.io/`` serves the latest state of xNVMe.
 
 In addition to the things emitted by sphinx-doc, there are a couple of files
 specific to GitHub Pages, things like ``.nojekyll``, a README.md, etc.
@@ -44,10 +43,9 @@ This organization is done by:
 3. Emit a PyData versions.json docs in ``--site``
    - Note: The script organizes instances of the documentation that are not
      exposed in the PyData versions.json
-   - The instances exposed are named as a version-tag (vMAJOR.MINOR.PATCH),
-     or ``next``
-   - The preferred version is set to the latest version
-   - Updates to 'docs' will update the latest/preferred version
+   - The instances exposed are ``main`` and each version-tag (vMAJOR.MINOR.PATCH)
+   - The preferred version is ``main``
+4. Copy ``<site>/en/main`` to the site root
 
 It is left to another script to commit/push the GitHub pages repository.
 """
@@ -93,7 +91,7 @@ def parse_args() -> argparse.Namespace:
     )
     prsr.add_argument(
         "--ref",
-        help="xNVMe repository reference (e.g. refs/heads/docs or refs/tags/v1.2.3)",
+        help="xNVMe repository reference (e.g. refs/heads/main or refs/tags/v1.2.3)",
     )
     prsr.add_argument(
         "--url",
@@ -124,48 +122,41 @@ def remove_except(site: Path, keep: list[str]) -> None:
                 shutil.rmtree(item)
 
 
-def emit_versions(site: Path, url: str) -> str:
+def emit_versions(site: Path, url: str) -> None:
     """
     Emit a versions.json in the root of site.
 
     Conventions:
-    - The preferred version is always set to be the latest version
+    - ``main`` is listed first and marked as the preferred version, pointing
+      at the site root
+    - Each tagged release is listed as ``vX.Y.Z`` pointing at ``/en/vX.Y.Z``
 
     Args:
         site: Path to the site directory.
         url: Base URL for the versions.
-
-    Returns:
-        The latest version string.
     """
     dirs = (re.match(REGEX_VERSION_TAG, d.name) for d in (site / "en").iterdir())
     matches = ((d.group(1), d.group(2), d.group(3)) for d in dirs if d)
     semvers = [".".join(semver) for semver in sorted(matches, reverse=True)]
-    latest = semvers[0]
 
     versions: list[dict[str, str | bool]] = [
         {
-            "name": "next",
-            "url": f"{url}/en/next",
+            "name": "main",
+            "url": f"{url}/",
+            "preferred": True,
         }
     ]
     for semver in semvers:
-        version: dict[str, str | bool] = {
-            "version": f"v{semver}",
-            "name": f"v{semver}",
-            "url": f"{url}/en/v{semver}",
-        }
-        if semver == latest:
-            version["preferred"] = True
-            version["name"] = f"v{latest} (latest)"
-            version["url"] = f"{url}/"
-
-        versions.append(version)
+        versions.append(
+            {
+                "version": f"v{semver}",
+                "name": f"v{semver}",
+                "url": f"{url}/en/v{semver}",
+            }
+        )
 
     with (site / "versions.json").open(mode="w", encoding="utf-8") as file:
         json.dump(versions, file, indent=4, ensure_ascii=False)
-
-    return latest
 
 
 def check_ref(ref: str) -> str | None:
@@ -192,10 +183,9 @@ def check_ref(ref: str) -> str | None:
 
 def main() -> int:
     """
-    Add the given '--docs' to '--site/en/<ref>'.
+    Add the given '--docs' to '--site/en/<ref>' and refresh the site root.
 
-    For tags also add to '--site/en/latest'.
-    In both cases existing docs are removed.
+    The site root is always a copy of '<site>/en/main'.
 
     Returns:
         Exit code (0 for success, non-zero for failure).
@@ -219,17 +209,20 @@ def main() -> int:
     print(f"Copying from: '{args.docs}' to '{ref_path}'")
     shutil.copytree(args.docs, args.site / "en" / ref)
 
-    # Add 'versions.json' and return the latest version
-    latest = emit_versions(args.site, args.url)
-    latest_path = args.site / "en" / f"v{latest}"
+    # Emit versions.json
+    emit_versions(args.site, args.url)
 
-    # Insert site at the web-root
-    print(f"Copying from: '{ref}' to '{args.site}'")
-    shutil.copytree(
-        ref_path if ref == "docs" else latest_path,
-        args.site / ".",
-        dirs_exist_ok=True,
-    )
+    # Insert site at the web-root: always 'main'
+    main_path = args.site / "en" / "main"
+    if main_path.exists():
+        print(f"Copying from: '{main_path}' to '{args.site}'")
+        shutil.copytree(
+            main_path,
+            args.site / ".",
+            dirs_exist_ok=True,
+        )
+    else:
+        print(f"Skipping site-root refresh: '{main_path}' does not exist yet")
 
     return 0
 

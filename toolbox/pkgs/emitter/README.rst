@@ -23,5 +23,5 @@ Adjusting to changes:
 Once changes are done, then run the emitter as previously described.
 
 .. note: changes to the scripts do not take effect on the CI until they are
-   merged on the ``next`` branch. This is because docker-images are pre-built
-   based on the content of the scripts on ``next``.
+   merged on the ``main`` branch. This is because docker-images are pre-built
+   based on the content of the scripts on ``main``.

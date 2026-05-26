@@ -3,11 +3,11 @@ name: verify
 
 on:
   push:
-    branches: [main, next, docs]
+    branches: [main]
     tags: ['v*']
   pull_request:
     types: [opened, reopened, synchronize, labeled]
-    branches: [next]
+    branches: [main]
   workflow_dispatch:
     inputs:
       job:
@@ -44,7 +44,7 @@ jobs:
   #
   source-archive:
     runs-on: ubuntu-latest
-    container: ghcr.io/xnvme/xnvme-deps-alpine-latest:next
+    container: ghcr.io/xnvme/xnvme-deps-alpine-latest:main
     strategy:
       matrix:
         variant: [with-subprojects, without-subprojects]
@@ -90,7 +90,7 @@ jobs:
   #
   source-format-check:
     runs-on: ubuntu-latest
-    container: ghcr.io/xnvme/xnvme-deps-fedora-citools:next
+    container: ghcr.io/xnvme/xnvme-deps-fedora-citools:main
 
     steps:
     - name: Grab source
@@ -114,7 +114,7 @@ jobs:
   test-gen-targets:
     needs: source-archive
     runs-on: ubuntu-latest
-    container: ghcr.io/xnvme/xnvme-deps-citools-latest:next
+    container: ghcr.io/xnvme/xnvme-deps-citools-latest:main
 
     steps:
     - name: Retrieve and unpack the xNVMe source archive
@@ -145,7 +145,7 @@ jobs:
     needs: source-archive
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/xnvme/xnvme-deps-debian-trixie:next
+      image: ghcr.io/xnvme/xnvme-deps-debian-trixie:main
 
     steps:
     - name: Retrieve and unpack the xNVMe source archive
@@ -185,7 +185,7 @@ jobs:
   build-python:
     needs: source-archive
     runs-on: ubuntu-latest
-    container: ghcr.io/xnvme/xnvme-deps-debian-trixie:next
+    container: ghcr.io/xnvme/xnvme-deps-debian-trixie:main
     strategy:
       fail-fast: false
 
@@ -255,7 +255,7 @@ jobs:
         - {os: 'ubuntu', dh: 'ubuntu', ver: 'questing'}
 
     container:
-      image: ghcr.io/xnvme/xnvme-deps-${{ matrix.container.os }}-${{ matrix.container.ver }}:next
+      image: ghcr.io/xnvme/xnvme-deps-${{ matrix.container.os }}-${{ matrix.container.ver }}:main
 
     steps:
     - name: Container-preparation, openSUSE does not have tar and gzip...
@@ -1130,19 +1130,17 @@ jobs:
   # When triggered by 'push' or 'workflow_dispatch', then the documentation is
   # deployed to:
   #
-  #   githubpages/docs/<github.ref>
+  #   githubpages/en/<ref>
   #
   # A couple of examples:
   #
-  # * githubpages/docs/next
-  # * githubpages/docs/current
-  # * githubpages/docs/foo
-  # * githubpages/docs/v1.2.3
-  # * githubpages/docs/v1.2.4
+  # * githubpages/en/main
+  # * githubpages/en/v1.2.3
+  # * githubpages/en/v1.2.4
   #
-  # Thus, upon push/dispatch then the archive/history is updated
-  # The root of the site is always synced with githubpages/docs/current in case
-  # there are no changes to "docs/current", then there is nothing to commit
+  # Thus, upon push/dispatch then the archive/history is updated.
+  # The root of the site is always synced with githubpages/en/main, so that
+  # https://xnvme.io/ serves the latest state of xNVMe.
   #
   docgen:
     needs: [source-archive, source-format-check, build-python]

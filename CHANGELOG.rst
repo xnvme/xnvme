@@ -7,9 +7,9 @@ Changelog
 
 The repository is tagged using semantic versioning, e.g. ``v1.2.3``.
 
-The ``next`` branch contains a preview of the upcoming release. The history on
-``next`` is subject to change. Upon release, ``next`` is merged with ``main``
-and  and tagged ``vX.Y.Z``.
+The ``main`` branch contains the latest state of xNVMe, including changes
+intended for the upcoming release. Upon release, ``main`` is tagged
+``vX.Y.Z``.
 
 Changes are described in this file in a section matching the version tag.
 

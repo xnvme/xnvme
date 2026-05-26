@@ -87,7 +87,7 @@ nr_hugepages = "128"
 [xnvme.repository]
 remote = "https://github.com/xnvme/xnvme.git"
 path = "/root/git/xnvme"
-branch = "next"
+branch = "main"
 
 [xnvme.repository.sync]
 branch = "wip"
