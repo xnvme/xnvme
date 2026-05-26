@@ -71,63 +71,34 @@ xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 		return -errno;
 	}
 
-	// Change {async,sync,admin} based on file unless one was explicitly requested
+	// Refine identifier fields based on the underlying file type
 	switch (dev_stat.st_mode & S_IFMT) {
 	case S_IFREG:
 		XNVME_DEBUG("INFO: open() : regular file");
 		dev->ident.dtype = XNVME_DEV_TYPE_FS_FILE;
 		dev->ident.csi = XNVME_SPEC_CSI_FS;
 		dev->ident.nsid = 1;
-		if (!opts->admin) {
-			dev->be.admin = g_xnvme_be_cbi_admin_shim;
-		}
-		if (!opts->sync) {
-			dev->be.sync = g_xnvme_be_cbi_sync_psync;
-		}
-		if (!opts->async) {
-			dev->be.async = g_xnvme_be_cbi_async_emu;
-		}
 		break;
 
 	case S_IFBLK:
+		XNVME_DEBUG("INFO: open() : block-device file");
 		dev->ident.dtype = XNVME_DEV_TYPE_BLOCK_DEVICE;
 		dev->ident.csi = XNVME_SPEC_CSI_FS;
 		dev->ident.nsid = 1;
-		if (!opts->admin) {
-			dev->be.admin = g_xnvme_be_linux_admin_block;
-		}
-		if (!opts->sync) {
-			dev->be.sync = g_xnvme_be_linux_sync_block;
-		}
-		if (!opts->async) {
-			dev->be.async = g_xnvme_be_cbi_async_emu;
-		}
-		XNVME_DEBUG("INFO: open() : block-device file");
 
 		err = xnvme_be_linux_nvme_dev_nsid(dev);
+		XNVME_DEBUG("INFO: open() : retrieving nsid, got: %x", err);
 		if (err < 1) {
-			XNVME_DEBUG("INFO: open() : retrieving nsid, got: {nsid: %x, err: %d}",
-				    err, err);
 			break;
 		}
 		dev->ident.dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
 		dev->ident.csi = XNVME_SPEC_CSI_NVM;
 		dev->ident.nsid = err;
-		if (!opts->admin) {
-			dev->be.admin = g_xnvme_be_linux_admin_nvme;
-		}
-		if (!opts->sync) {
-			dev->be.sync = g_xnvme_be_linux_sync_nvme;
-		}
-		if (!opts->async) {
-			dev->be.async = g_xnvme_be_cbi_async_emu;
-		}
-		XNVME_DEBUG("INFO: open() : block-device file (is a NVMe namespace)");
 
 		break;
 
 	case S_IFCHR:
-		XNVME_DEBUG("INFO: open() : char-device-file");
+		XNVME_DEBUG("INFO: open() : char-device file");
 
 		err = xnvme_be_linux_nvme_dev_nsid(dev);
 		XNVME_DEBUG("INFO: open() : retrieving nsid, got: %x", err);
@@ -143,18 +114,6 @@ xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 			dev->ident.csi = XNVME_SPEC_CSI_NVM;
 			dev->ident.nsid = err;
 		}
-
-		if (!opts->admin) {
-			dev->be.admin = g_xnvme_be_linux_admin_nvme;
-		}
-		if (!opts->sync) {
-			dev->be.sync = g_xnvme_be_linux_sync_nvme;
-		}
-		if (!opts->async) {
-			dev->be.async = g_xnvme_be_cbi_async_emu;
-		}
-
-		XNVME_DEBUG("INFO: open() : char-device-file: NVMe ioctl() with async. emulation");
 
 		break;
 

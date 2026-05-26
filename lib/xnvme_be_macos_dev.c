@@ -200,16 +200,6 @@ xnvme_be_macos_dev_open(struct xnvme_dev *dev)
 		dev->ident.nsid = _get_nvme_ns(ioservice_device);
 		dev->ident.dtype = XNVME_DEV_TYPE_BLOCK_DEVICE;
 		dev->ident.csi = XNVME_SPEC_CSI_NVM;
-
-		if (!opts->admin) {
-			dev->be.admin = g_xnvme_be_macos_admin;
-		}
-		if (!opts->sync) {
-			dev->be.sync = g_xnvme_be_macos_sync_psync;
-		}
-		if (!opts->async) {
-			dev->be.async = g_xnvme_be_cbi_async_emu;
-		}
 	} else {
 		XNVME_DEBUG("non-nvme disks are currently unsupported.");
 		return -ENOTSUP;
