@@ -690,13 +690,16 @@ jobs:
       fail-fast: false
       matrix:
         guest:
-        - {os: 'freebsd', ver: '14'}
-        #- {os: 'freebsd', ver: '15'}
-        - {os: 'debian', ver: 'trixie'}
-        - {os: 'debian', ver: 'trixie-noiommu'}
+        - {os: 'freebsd', ver: '14', container: 'ghcr.io/xnvme/xnvme-qemu:latest'}
+        #- {os: 'freebsd', ver: '15', container: 'ghcr.io/xnvme/xnvme-qemu:latest'}
+        - {os: 'debian', ver: 'trixie', container: 'ghcr.io/safl/nosi/ubuntu-2604-docker:latest'}
+        - {os: 'debian', ver: 'trixie-noiommu', container: 'ghcr.io/safl/nosi/ubuntu-2604-docker:latest'}
 
+    # Debian guests run on the nosi image (upstream QEMU >= 10.1 + cijoe), where
+    # KV is provided by vfu_kvssd over vfio-user. FreeBSD stays on the fork
+    # container until it is migrated separately.
     container:
-      image: ghcr.io/xnvme/xnvme-qemu:latest
+      image: ${{ matrix.guest.container }}
       options: --privileged
 
     steps:
@@ -728,10 +731,45 @@ jobs:
       run: |
         cijoe -r
 
+    - name: Stage nosi guest image
+      if: matrix.guest.os == 'debian'
+      run: |
+        python3 toolbox/stage_nosi_guest.py \
+          cijoe/configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml \
+          cijoe/configs/system_imaging.toml
+
+    # TEMPORARY: build the vfu_kvssd device from a pinned commit so CI runs the
+    # latest device (FLR/reset handling, tracing) instead of the lagging release.
+    - name: Build vfu_kvssd from source (debug)
+      if: matrix.guest.os == 'debian'
+      run: bash toolbox/build_vfu_kvssd.sh
+
     - name: CIJOE, provision and test guest
+      # DIAGNOSTIC (revert): drop the vfio-user-kvssd device to test whether the
+      # guest/QEMU death is caused by the vfio-user mechanism. docgen keeps KV.
+      env:
+        XNVME_GUEST_NO_VFU: "1"
       run: |
         make verify-guest \
           CIJOE_OUTPUT="${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
+
+    - name: Collect vfu_kvssd device log + guest serial console
+      if: always() && matrix.guest.os == 'debian'
+      run: |
+        dst="cijoe/${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
+        echo "::group::vfu_kvssd device log"
+        cat /tmp/vfu_kvssd.log 2>/dev/null || echo "no vfu_kvssd device log"
+        echo "::endgroup::"
+        cp /tmp/vfu_kvssd.log "${dst}-vfu_kvssd.log" 2>/dev/null || true
+        # Guest serial console: shows a guest kernel panic/OOM, and is silent if
+        # QEMU itself died -- which distinguishes a guest crash from a host
+        # vfio-user-pci client crash. Path from configs/debian-trixie*.toml.
+        echo "::group::guest serial console (tail)"
+        tail -c 20000 "$HOME/guests/debian-trixie-amd64/serial.output" 2>/dev/null \
+          || echo "no guest serial output"
+        echo "::endgroup::"
+        cp "$HOME/guests/debian-trixie-amd64/serial.output" "${dst}-serial.output" \
+          2>/dev/null || true
 
     - name: CIJOE, result-log-dump on error
       if: failure()
@@ -1154,8 +1192,10 @@ jobs:
         guest:
         - {os: 'debian', ver: 'trixie'}
 
+    # docgen needs the KV emulation; run on the nosi image (upstream QEMU + cijoe)
+    # with KV provided by vfu_kvssd over vfio-user.
     container:
-      image: ghcr.io/xnvme/xnvme-qemu:latest
+      image: ghcr.io/safl/nosi/ubuntu-2604-docker:latest
       options: --privileged
 
     steps:
@@ -1194,12 +1234,41 @@ jobs:
       run: |
         cijoe -r
 
+    - name: Stage nosi guest image
+      run: |
+        python3 toolbox/stage_nosi_guest.py \
+          cijoe/configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml \
+          cijoe/configs/system_imaging.toml
+
+    # TEMPORARY: build the vfu_kvssd device from a pinned commit so CI runs the
+    # latest device (FLR/reset handling, tracing) instead of the lagging release.
+    - name: Build vfu_kvssd from source (debug)
+      run: bash toolbox/build_vfu_kvssd.sh
+
+    # The nosi container is the host toolchain (qemu+cijoe); it does not carry
+    # xNVMe's doc toolchain that 'make docs' runs locally. Install the system doc
+    # tools (doxygen, universal-ctags, graphviz) and the xnvme-docs-* commands.
+    - name: Install doc toolchain
+      run: |
+        bash toolbox/pkgs/docgen.sh
+        pipx install ./docs/tooling
+
     # cd'ing into 'cijoe' to auto-collect the non-packaged github-specific configs and
     # workflows.
     - name: CIJOE, provision and generate documentation
       run: |
         make docgen-guest \
           CIJOE_OUTPUT="${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
+
+    - name: Collect vfu_kvssd device log
+      if: always()
+      run: |
+        echo "::group::vfu_kvssd device log"
+        cat /tmp/vfu_kvssd.log 2>/dev/null || echo "no vfu_kvssd device log"
+        echo "::endgroup::"
+        cp /tmp/vfu_kvssd.log \
+          "cijoe/${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-vfu_kvssd.log" \
+          2>/dev/null || true
 
     - name: CIJOE, upload report-docgen
       uses: actions/upload-artifact@v4.3.0
