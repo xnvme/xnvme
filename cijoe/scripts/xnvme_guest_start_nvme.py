@@ -26,6 +26,7 @@ Retargetable: false
 """
 import errno
 import logging as log
+import os
 import subprocess
 from argparse import ArgumentParser
 from pathlib import Path
@@ -75,7 +76,7 @@ def add_args(parser: ArgumentParser):
     parser.add_argument("--guest_name", type=str, default=None)
 
 
-def qemu_nvme_args(nvme_img_root, features=None, vfu_socket=None):
+def qemu_nvme_args(nvme_img_root, features=None, vfu_socket=None, no_vfu=False):
     """
     Returns list of drive-args and a string of qemu-arguments
 
@@ -83,6 +84,8 @@ def qemu_nvme_args(nvme_img_root, features=None, vfu_socket=None):
     @param features: Dict of detected QEMU features {kv, zns, fdp, pi}
     @param vfu_socket: When set (and native KV is absent), emit an external
         vfu_kvssd KV device attached over vfio-user, listening on this socket.
+    @param no_vfu: Diagnostic; when set, fill the KV slot with a plain NVM
+        controller instead of the vfio-user device (keeps downstream BDFs fixed).
     @returns drives, args
     """
     if features is None:
@@ -214,6 +217,10 @@ def qemu_nvme_args(nvme_img_root, features=None, vfu_socket=None):
         slot += 1
     elif vfu_socket:
         nvme_config.append(("vfu_kvssd", vfu_socket, None, slot, None, None))
+        slot += 1
+    elif no_vfu:
+        # Diagnostic: plain NVM controller in the KV slot (no vfio-user device).
+        nvme_config.append(("nvme2", "beef0002", 7, slot, None, [(1, {})]))
         slot += 1
 
     # nvme3: NVM (fabrics testing)
@@ -392,9 +399,15 @@ def main(args, cijoe):
     # (the SamsungDS fork), otherwise an external vfu_kvssd device over vfio-user
     # (upstream QEMU >= 10.1), which needs a launched server and a shareable
     # guest-RAM backend.
+    #
+    # Diagnostic: XNVME_GUEST_NO_VFU drops the vfio-user device + memfd backend
+    # entirely (a plain NVM controller fills the KV slot to keep other BDFs
+    # fixed). Used to test whether the guest/QEMU death is caused by the
+    # vfio-user mechanism or by something else in the nosi/upstream-QEMU setup.
+    no_vfu = bool(os.environ.get("XNVME_GUEST_NO_VFU"))
     extra_args = []
     vfu_socket = None
-    if not features.get("kv"):
+    if not features.get("kv") and not no_vfu:
         vfu_socket = setup_vfu_kvssd(cijoe)
     if vfu_socket:
         mem = guest.guest_config.get("system_args", {}).get("kwa", {}).get("m", "6G")
@@ -405,7 +418,7 @@ def main(args, cijoe):
             f"memory-backend-memfd,id=mem0,size={mem},share=on",
         ]
 
-    drives, nvme_args = qemu_nvme_args(nvme_img_root, features, vfu_socket)
+    drives, nvme_args = qemu_nvme_args(nvme_img_root, features, vfu_socket, no_vfu)
     extra_args += nvme_args
 
     # Check that the backing-storage exists, create them if they do not

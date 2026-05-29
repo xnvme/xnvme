@@ -745,6 +745,10 @@ jobs:
       run: bash toolbox/build_vfu_kvssd.sh
 
     - name: CIJOE, provision and test guest
+      # DIAGNOSTIC (revert): drop the vfio-user-kvssd device to test whether the
+      # guest/QEMU death is caused by the vfio-user mechanism. docgen keeps KV.
+      env:
+        XNVME_GUEST_NO_VFU: "1"
       run: |
         make verify-guest \
           CIJOE_OUTPUT="${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
