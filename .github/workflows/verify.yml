@@ -749,14 +749,22 @@ jobs:
         make verify-guest \
           CIJOE_OUTPUT="${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
-    - name: Collect vfu_kvssd device log
+    - name: Collect vfu_kvssd device log + guest serial console
       if: always() && matrix.guest.os == 'debian'
       run: |
+        dst="cijoe/${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
         echo "::group::vfu_kvssd device log"
         cat /tmp/vfu_kvssd.log 2>/dev/null || echo "no vfu_kvssd device log"
         echo "::endgroup::"
-        cp /tmp/vfu_kvssd.log \
-          "cijoe/${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-vfu_kvssd.log" \
+        cp /tmp/vfu_kvssd.log "${dst}-vfu_kvssd.log" 2>/dev/null || true
+        # Guest serial console: shows a guest kernel panic/OOM, and is silent if
+        # QEMU itself died -- which distinguishes a guest crash from a host
+        # vfio-user-pci client crash. Path from configs/debian-trixie*.toml.
+        echo "::group::guest serial console (tail)"
+        tail -c 20000 "$HOME/guests/debian-trixie-amd64/serial.output" 2>/dev/null \
+          || echo "no guest serial output"
+        echo "::endgroup::"
+        cp "$HOME/guests/debian-trixie-amd64/serial.output" "${dst}-serial.output" \
           2>/dev/null || true
 
     - name: CIJOE, result-log-dump on error
