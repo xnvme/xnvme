@@ -162,14 +162,6 @@ xnvme_be_nosys_mem_unmap(const struct xnvme_dev *XNVME_UNUSED(dev), void *XNVME_
 }
 
 int
-xnvme_be_nosys_enumerate(const char *XNVME_UNUSED(sys_uri), struct xnvme_opts *XNVME_UNUSED(opts),
-			 xnvme_enumerate_cb XNVME_UNUSED(cb_func), void *XNVME_UNUSED(cb_args))
-{
-	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");
-	return -ENOSYS;
-}
-
-int
 xnvme_be_nosys_dev_open(struct xnvme_dev *XNVME_UNUSED(dev))
 {
 	XNVME_DEBUG("FAILED: not implemented(possibly intentional)");

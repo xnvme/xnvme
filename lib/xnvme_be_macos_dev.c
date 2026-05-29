@@ -228,12 +228,10 @@ xnvme_be_macos_dev_open(struct xnvme_dev *dev)
 
 struct xnvme_be_dev g_xnvme_be_macos_dev = {
 #ifdef XNVME_PLATFORM_MACOS_ENABLED
-	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_macos_dev_open,
 	.dev_close = xnvme_be_macos_dev_close,
 	.id = "macos",
 #else
-	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_nosys_dev_open,
 	.dev_close = xnvme_be_nosys_dev_close,
 	.id = "nosys",

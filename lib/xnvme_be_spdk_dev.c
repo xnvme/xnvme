@@ -18,7 +18,6 @@
 #include <xnvme_queue.h>
 #include <xnvme_be_spdk.h>
 #include <xnvme_be_registry.h>
-#include <xnvme_be_cref.h>
 #include <xnvme_dev.h>
 
 #define XNVME_BE_SPDK_MAX_PROBE_ATTEMPTS 1
@@ -422,168 +421,6 @@ xnvme_be_spdk_dev_close(struct xnvme_dev *dev)
 	}
 }
 
-struct xnvme_be_spdk_enumerate_ctx {
-	struct xnvme_opts *opts;
-	xnvme_enumerate_cb enumerate_cb;
-	void *cb_args;
-};
-
-/**
- * Always attach to supported transports such that `enumerate_probe_cb` can
- * grab namespaces
- *
- * And disable CMB sqs / cqs for now due to shared PMR / CMB
- */
-static bool
-enumerate_probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
-		   struct spdk_nvme_ctrlr_opts *ctrlr_opts)
-{
-	struct xnvme_be_spdk_enumerate_ctx *ectx = cb_ctx;
-	struct xnvme_opts *opts = ectx->opts;
-
-	return _spdk_setup_controller_opts(opts, trid, ctrlr_opts);
-}
-
-static void
-enumerate_attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid,
-		    struct spdk_nvme_ctrlr *ctrlr, const struct spdk_nvme_ctrlr_opts *ctrlr_opts)
-{
-	struct xnvme_be_spdk_enumerate_ctx *ectx = cb_ctx;
-
-	for (int nsid = spdk_nvme_ctrlr_get_first_active_ns(ctrlr); nsid;
-	     nsid = spdk_nvme_ctrlr_get_next_active_ns(ctrlr, nsid)) {
-		struct xnvme_opts opts = *ectx->opts;
-		struct xnvme_ident ident = {0};
-		struct xnvme_dev *dev = NULL;
-		struct spdk_nvme_ns *ns;
-		int err;
-
-		// Option options based on what the driver ended up using
-		// NOTE: we communicate the css via the dev->ident.csi
-		opts.use_cmb_sqs = ctrlr_opts->use_cmb_sqs;
-		opts.nsid = nsid;
-		opts.spdk_fabrics = trid->trtype > SPDK_NVME_TRANSPORT_PCIE;
-
-		if (!spdk_nvme_ctrlr_get_data(ctrlr)) {
-			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_data");
-			continue;
-		}
-		ns = spdk_nvme_ctrlr_get_ns(ctrlr, nsid);
-		if (!ns) {
-			XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_get_ns(), for nsid: %d", nsid);
-			continue;
-		}
-		if (!spdk_nvme_ns_get_data(ns)) {
-			XNVME_DEBUG("FAILED: spdk_nvme_ns_get_data()");
-			continue;
-		}
-
-		ident.dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
-		ident.nsid = nsid;
-		ident.csi = spdk_nvme_ns_get_csi(ns);
-
-		// Namespace looks good, construct xNVMe identifier, and ..
-		switch (trid->trtype) {
-		case SPDK_NVME_TRANSPORT_PCIE:
-			snprintf(ident.uri, sizeof(ident.uri), "%s", trid->traddr);
-			break;
-
-		case SPDK_NVME_TRANSPORT_TCP:
-		case SPDK_NVME_TRANSPORT_RDMA:
-			snprintf(ident.uri, sizeof(ident.uri), "%s:%s", trid->traddr,
-				 trid->trsvcid);
-			break;
-
-		case SPDK_NVME_TRANSPORT_FC:
-		case SPDK_NVME_TRANSPORT_CUSTOM:
-		case SPDK_NVME_TRANSPORT_VFIOUSER:
-		case SPDK_NVME_TRANSPORT_CUSTOM_FABRICS:
-			XNVME_DEBUG("SKIP: ENOSYS trtype: %s",
-				    spdk_nvme_transport_id_trtype_str(trid->trtype));
-			continue;
-		}
-
-		// Save the reference to ctrlr so it can be reused when we call xnvme_dev_open()
-		if (!xnvme_be_cref_ref(ident.uri, g_xnvme_be_spdk.attr.name, ctrlr,
-				       xnvme_be_spdk_ctrlr_term)) {
-			XNVME_DEBUG("FAILED: xnvme_be_cref_ref()");
-			return;
-		}
-
-		dev = xnvme_dev_open(ident.uri, &opts);
-		if (!dev) {
-			XNVME_DEBUG("FAILED: xnvme_dev_open(), err: %d", errno);
-			return;
-		}
-		if (ectx->enumerate_cb(dev, ectx->cb_args)) {
-			xnvme_dev_close(dev);
-			err = xnvme_be_cref_deref(ctrlr, XNVME_BE_CREF_NONE);
-			if (err) {
-				XNVME_DEBUG("FAILED: xnvme_be_cref_deref():, err: %d", err);
-			}
-		}
-	}
-
-	xnvme_be_cref_cleanup(g_xnvme_be_spdk.attr.name);
-}
-
-int
-xnvme_be_spdk_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
-			void *cb_args)
-{
-	struct xnvme_be_spdk_enumerate_ctx ectx = {0};
-	char addr[SPDK_NVMF_TRADDR_MAX_LEN + 1] = {0};
-	struct xnvme_ident ident = {0};
-	int port = 0;
-
-	if (_spdk_env_init(NULL)) {
-		XNVME_DEBUG("FAILED: _spdk_env_init()");
-		return -ESRCH;
-	}
-	if (sys_uri) {
-		if (xnvme_ident_from_uri(sys_uri, &ident)) {
-			XNVME_DEBUG("FAILED: ident_from_uri, uri: %s", sys_uri);
-			return -EINVAL;
-		}
-		if (sscanf(ident.uri, "%[^:]:%d", addr, &port) != 2) {
-			XNVME_DEBUG("FAILED: malformed sys_uri: %s", sys_uri);
-			return -EINVAL;
-		}
-	}
-	XNVME_DEBUG("INFO: sys_uri: %s, addr: %s, port: %d", sys_uri ? sys_uri : "(null)", addr,
-		    port);
-
-	struct xnvme_opts tmp_opts = *opts;
-	tmp_opts.be = g_xnvme_be_spdk.attr.name;
-
-	ectx.opts = &tmp_opts;
-	ectx.enumerate_cb = cb_func;
-	ectx.cb_args = cb_args;
-
-	for (int t = 0; t < g_xnvme_be_spdk_ntransport; ++t) {
-		int trtype = g_xnvme_be_spdk_transport[t];
-		struct spdk_nvme_transport_id trid = {0};
-		int err;
-
-		XNVME_DEBUG("INFO: trtype: %s, # %d of %d",
-			    spdk_nvme_transport_id_trtype_str(trtype), t + 1,
-			    g_xnvme_be_spdk_ntransport);
-
-		err = _xnvme_be_spdk_ident_to_trid(&ident, opts, &trid, trtype);
-		if (err) {
-			XNVME_DEBUG("SKIP: !_xnvme_be_spdk_ident_to_trid()");
-			continue;
-		}
-
-		err = spdk_nvme_probe(&trid, &ectx, enumerate_probe_cb, enumerate_attach_cb, NULL);
-		if (err) {
-			XNVME_DEBUG("FAILED: spdk_nvme_probe(), err: %d", err);
-		}
-	}
-
-	return 0;
-}
-
 static void
 identify_cb(void *ctx, const struct spdk_nvme_cpl *cpl)
 {
@@ -757,14 +594,12 @@ xnvme_be_spdk_dev_open(struct xnvme_dev *dev)
 
 struct xnvme_be_dev g_xnvme_be_spdk_dev = {
 #ifdef XNVME_BE_SPDK_ENABLED
-	.enumerate = xnvme_be_spdk_enumerate,
 	.dev_open = xnvme_be_spdk_dev_open,
 	.dev_close = xnvme_be_spdk_dev_close,
 	.id = "spdk",
 	.ctrlr_init = xnvme_be_spdk_ctrlr_init,
 	.ctrlr_term = xnvme_be_spdk_ctrlr_term,
 #else
-	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_nosys_dev_open,
 	.dev_close = xnvme_be_nosys_dev_close,
 	.id = "nosys",

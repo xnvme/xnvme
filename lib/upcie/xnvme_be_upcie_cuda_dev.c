@@ -154,14 +154,12 @@ xnvme_be_upcie_cuda_ctrlr_init(struct xnvme_dev *dev)
 
 struct xnvme_be_dev g_xnvme_be_upcie_cuda_dev = {
 #ifdef XNVME_BE_UPCIE_CUDA_ENABLED
-	.enumerate = xnvme_be_upcie_enumerate,
 	.dev_open = xnvme_be_upcie_dev_open,
 	.dev_close = xnvme_be_upcie_dev_close,
 	.id = "upcie-cuda",
 	.ctrlr_init = xnvme_be_upcie_cuda_ctrlr_init,
 	.ctrlr_term = xnvme_be_upcie_cuda_ctrlr_term,
 #else
-	.enumerate = xnvme_be_nosys_enumerate,
 	.dev_open = xnvme_be_nosys_dev_open,
 	.dev_close = xnvme_be_nosys_dev_close,
 #endif
