@@ -343,10 +343,13 @@ def setup_vfu_kvssd(cijoe):
             return None
 
     # Replace any stale server bound to this socket, then launch detached.
+    # VFU_KVSSD_TRACE makes the device log its control/admin/IO path to log_path,
+    # which CI bundles, so a host driver's probe sequence can be inspected.
     cijoe.run_local(f"pkill -f '{binary} -s {socket}' || true")
     cijoe.run_local(f"rm -f {socket}")
     err, _ = cijoe.run_local(
-        f"setsid {binary} -s {socket} > {log_path} 2>&1 < /dev/null & echo started"
+        f"setsid env VFU_KVSSD_TRACE=1 {binary} -s {socket} > {log_path} 2>&1 "
+        "< /dev/null & echo started"
     )
     if err:
         log.error(f"failed to start vfu_kvssd: err({err})")

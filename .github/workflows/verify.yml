@@ -738,10 +738,26 @@ jobs:
           cijoe/configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml \
           cijoe/configs/system_imaging.toml
 
+    # TEMPORARY: build the vfu_kvssd device from a pinned commit so CI runs the
+    # latest device (FLR/reset handling, tracing) instead of the lagging release.
+    - name: Build vfu_kvssd from source (debug)
+      if: matrix.guest.os == 'debian'
+      run: bash toolbox/build_vfu_kvssd.sh
+
     - name: CIJOE, provision and test guest
       run: |
         make verify-guest \
           CIJOE_OUTPUT="${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
+
+    - name: Collect vfu_kvssd device log
+      if: always() && matrix.guest.os == 'debian'
+      run: |
+        echo "::group::vfu_kvssd device log"
+        cat /tmp/vfu_kvssd.log 2>/dev/null || echo "no vfu_kvssd device log"
+        echo "::endgroup::"
+        cp /tmp/vfu_kvssd.log \
+          "cijoe/${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-vfu_kvssd.log" \
+          2>/dev/null || true
 
     - name: CIJOE, result-log-dump on error
       if: failure()
@@ -1212,12 +1228,35 @@ jobs:
           cijoe/configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml \
           cijoe/configs/system_imaging.toml
 
+    # TEMPORARY: build the vfu_kvssd device from a pinned commit so CI runs the
+    # latest device (FLR/reset handling, tracing) instead of the lagging release.
+    - name: Build vfu_kvssd from source (debug)
+      run: bash toolbox/build_vfu_kvssd.sh
+
+    # The nosi container is the host toolchain (qemu+cijoe); it does not carry
+    # xNVMe's doc toolchain that 'make docs' runs locally. Install the system doc
+    # tools (doxygen, universal-ctags, graphviz) and the xnvme-docs-* commands.
+    - name: Install doc toolchain
+      run: |
+        bash toolbox/pkgs/docgen.sh
+        pipx install ./docs/tooling
+
     # cd'ing into 'cijoe' to auto-collect the non-packaged github-specific configs and
     # workflows.
     - name: CIJOE, provision and generate documentation
       run: |
         make docgen-guest \
           CIJOE_OUTPUT="${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
+
+    - name: Collect vfu_kvssd device log
+      if: always()
+      run: |
+        echo "::group::vfu_kvssd device log"
+        cat /tmp/vfu_kvssd.log 2>/dev/null || echo "no vfu_kvssd device log"
+        echo "::endgroup::"
+        cp /tmp/vfu_kvssd.log \
+          "cijoe/${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-vfu_kvssd.log" \
+          2>/dev/null || true
 
     - name: CIJOE, upload report-docgen
       uses: actions/upload-artifact@v4.3.0
