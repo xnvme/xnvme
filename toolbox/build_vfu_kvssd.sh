@@ -17,7 +17,10 @@ set -euo pipefail
 
 DEST="${1:-$HOME/guests/vfu_kvssd}"
 REPO="${VFU_KVSSD_REPO:-https://github.com/safl/vfio-user-kvssd}"
-REF="${VFU_KVSSD_REF:-52cb0e1c578252c704bcc84eb1d05483578acb67}"
+# Track main while the device is being stabilised so pushes to the device repo
+# flow into the next xNVMe CI run without bumping a hash here. Pin a commit/tag
+# (or switch to a release via [kvssd].url) once it is stable.
+REF="${VFU_KVSSD_REF:-main}"
 ZIG_VERSION="${ZIG_VERSION:-0.16.0}"
 
 # The nosi image ships an older zig; build.zig needs the 0.16 module API.
