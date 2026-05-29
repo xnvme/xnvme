@@ -4,6 +4,9 @@ Check QEMU development environment readiness for xNVMe guest workflows.
 
 Checks:
 - qemu-system-x86_64 binary available
+- it can provide the NVMe KV command set: either natively (the SamsungDS fork,
+  'nvme-ns,kv=on') or via an external vfu_kvssd device over vfio-user (upstream
+  QEMU >= 10.1, 'vfio-user-pci')
 - /dev/kvm accessible
 """
 import os
@@ -12,17 +15,17 @@ import subprocess
 import sys
 
 
-def is_custom_qemu(qemu_bin):
-    """Check if the QEMU binary is the custom xNVMe fork (supports KVS, mdts=0)."""
+def qemu_has(qemu_bin, args, needle):
+    """Return True when 'needle' appears in the output of 'qemu_bin args'."""
 
     try:
         result = subprocess.run(
-            [qemu_bin, "-device", "nvme-ns,help"],
+            [qemu_bin, *args],
             capture_output=True,
             text=True,
             timeout=5,
         )
-        return "kv=" in (result.stdout + result.stderr)
+        return needle in (result.stdout + result.stderr)
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         return False
 
@@ -35,15 +38,18 @@ def main():
     # Check qemu-system-x86_64
     qemu = shutil.which("qemu-system-x86_64")
     if qemu:
-        if is_custom_qemu(qemu):
-            print(f"  qemu-system-x86_64: OK (xNVMe fork at {qemu})")
+        if qemu_has(qemu, ["-device", "nvme-ns,help"], "kv="):
+            print(f"  qemu-system-x86_64: OK (native KV, xNVMe fork at {qemu})")
+        elif qemu_has(qemu, ["-device", "help"], "vfio-user-pci"):
+            print(f"  qemu-system-x86_64: OK (upstream + vfio-user at {qemu})")
         else:
-            print(f"  qemu-system-x86_64: WRONG BUILD ({qemu})")
+            print(f"  qemu-system-x86_64: NO KV SUPPORT ({qemu})")
             errors.append(
-                "  Found qemu-system-x86_64 but it is upstream QEMU, not the xNVMe fork.\n"
-                "  The xNVMe fork is required for KVS emulation and mdts=0 support.\n"
+                "  Found qemu-system-x86_64 but it can neither emulate NVMe KV\n"
+                "  natively (no 'nvme-ns,kv=on') nor attach an external vfu_kvssd\n"
+                "  device (no 'vfio-user-pci'; needs upstream QEMU >= 10.1).\n"
                 "  Either:\n"
-                "    a) Run inside the xNVMe Docker environment: make docker\n"
+                "    a) Run inside the nosi Docker environment (QEMU >= 10.1)\n"
                 "    b) Build the xNVMe QEMU fork: https://github.com/SamsungDS/qemu.git (branch: for-xnvme)"
             )
     else:
@@ -51,7 +57,7 @@ def main():
         errors.append(
             "  qemu-system-x86_64 not found.\n"
             "  Either:\n"
-            "    a) Run inside the xNVMe Docker environment: make docker\n"
+            "    a) Run inside the nosi Docker environment (QEMU >= 10.1)\n"
             "    b) Build the xNVMe QEMU fork: https://github.com/SamsungDS/qemu.git (branch: for-xnvme)"
         )
 

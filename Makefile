@@ -197,6 +197,7 @@ guest-start:
 		guest_kill \
 		guest_initialize \
 		guest_start \
+		root_unlock \
 		guest_check
 	@echo "## xNVMe: guest-start [DONE]"
 

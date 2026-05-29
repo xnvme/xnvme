@@ -5,6 +5,16 @@ password = "root"
 hostname = "localhost"
 port = 4200
 
+# Operator account on nosi images (passwordless sudo, SSH password auth on first
+# boot; root is LOCKED by default). Used ONLY by the 'root_unlock' step to open
+# root SSH; every other step uses the default 'ssh' (root) transport unchanged.
+# Inert on the fork-based guest where root SSH already works.
+[cijoe.transport.odus]
+username = "odus"
+password = "odus.321"
+hostname = "localhost"
+port = 4200
+
 [os]
 name = "debian"
 version = "trixie"
@@ -47,6 +57,25 @@ system_args.raw = """\
 # Managed arguments: expands into longer incantations
 system_args.tcp_forward = {host = 4200, guest = 22}
 #system_args.host_share = "{{ local.env.HOME }}/git"
+
+# vfu_kvssd: external NVMe KV device attached over vfio-user. Engaged by
+# xnvme_guest_start_nvme.py only when the QEMU binary lacks native
+# 'nvme-ns,kv=on' (upstream QEMU, not the SamsungDS fork); inert on the fork.
+# The prebuilt static binary is fetched from the release when not present at
+# 'binary'.
+[kvssd]
+binary = "{{ local.env.HOME }}/guests/vfu_kvssd"
+url = "https://github.com/safl/vfio-user-kvssd/releases/download/v0.1.1/vfu_kvssd-0.1.1-x86_64-linux"
+socket = "/tmp/vfu_kvssd.sock"
+
+# nosi guest disk-image (OCI artifact on ghcr): a debian-trixie headless image
+# with qemu+cijoe+devbind/iommu/hugepages preinstalled. toolbox/stage_nosi_guest.py
+# pulls + converts it into the system-imaging disk.path that guest_initialize
+# copies to boot.img. Pin 'digest' for reproducibility; 'tag' is used otherwise.
+[guest_image]
+registry = "ghcr.io"
+repository = "safl/nosi/debian-13-headless"
+tag = "latest"
 
 # =============================================================================
 # Devices - One namespace per controller to avoid Linux kernel ordering issues
