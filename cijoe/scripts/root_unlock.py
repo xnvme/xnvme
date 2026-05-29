@@ -54,6 +54,13 @@ def wait_for_transport(cijoe, transport_name, timeout):
 def main(args, cijoe):
     """Open root SSH over the operator account, then wait for root to be up."""
 
+    # No-op when no operator transport is configured (e.g. the freebsd guest or
+    # the fork-based guest where root SSH already works).
+    transports = cijoe.config.options.get("cijoe", {}).get("transport", {})
+    if args.operator not in transports:
+        log.info(f"no '{args.operator}' transport configured; skipping root unlock")
+        return 0
+
     if not wait_for_transport(cijoe, args.operator, args.timeout):
         log.error(f"operator transport '{args.operator}' did not come up")
         return 1

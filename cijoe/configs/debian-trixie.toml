@@ -68,6 +68,15 @@ binary = "{{ local.env.HOME }}/guests/vfu_kvssd"
 url = "https://github.com/safl/vfio-user-kvssd/releases/download/v0.1.0/vfu_kvssd-x86_64-linux"
 socket = "/tmp/vfu_kvssd.sock"
 
+# nosi guest disk-image (OCI artifact on ghcr): a debian-trixie headless image
+# with qemu+cijoe+devbind/iommu/hugepages preinstalled. toolbox/stage_nosi_guest.py
+# pulls + converts it into the system-imaging disk.path that guest_initialize
+# copies to boot.img. Pin 'digest' for reproducibility; 'tag' is used otherwise.
+[guest_image]
+registry = "ghcr.io"
+repository = "safl/nosi/debian-13-headless"
+tag = "latest"
+
 # =============================================================================
 # Devices - One namespace per controller to avoid Linux kernel ordering issues
 # =============================================================================

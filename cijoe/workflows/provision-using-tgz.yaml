@@ -32,6 +32,12 @@ steps:
   with:
     guest_name: "{{ config.qemu.default_guest }}"
 
+# Open root SSH on nosi guests (root is locked by default; uses the 'odus'
+# operator transport). No-op when no operator transport is configured, e.g. the
+# freebsd guest or the fork-based guest where root SSH already works.
+- name: root_unlock
+  uses: root_unlock
+
 - name: guest_check
   run: |
     hostname
