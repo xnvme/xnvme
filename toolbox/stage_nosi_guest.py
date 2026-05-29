@@ -29,6 +29,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import tomllib
 from pathlib import Path
 
@@ -76,7 +77,20 @@ def main():
     print(f"staging {image_ref} -> {dst}")
 
     with tempfile.TemporaryDirectory() as workdir:
-        subprocess.run(["oras", "pull", image_ref, "-o", workdir], check=True)
+        # Retry: parallel verify/docgen jobs pull this multi-GB blob anonymously
+        # at the same time and ghcr intermittently throttles/resets the transfer.
+        last = None
+        for attempt in range(1, 6):
+            try:
+                subprocess.run(["oras", "pull", image_ref, "-o", workdir], check=True)
+                last = None
+                break
+            except subprocess.CalledProcessError as exc:
+                last = exc
+                print(f"oras pull attempt {attempt}/5 failed; retrying")
+                time.sleep(5 * attempt)
+        if last is not None:
+            raise last
 
         files = [path for path in Path(workdir).rglob("*") if path.is_file()]
         if not files:
