@@ -25,7 +25,6 @@ the destination.
 """
 import gzip
 import os
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -97,20 +96,44 @@ def main():
             raise RuntimeError(f"oras pull produced no files for {image_ref}")
         blob = max(files, key=lambda path: path.stat().st_size)
         print(f"  pulled {blob.name} ({blob.stat().st_size} bytes)")
+        # Drop the sidecar layers (.sha256, report, metadata) before decompressing
+        # so we free their space and only carry the disk blob forward.
+        for path in files:
+            if path != blob:
+                path.unlink(missing_ok=True)
 
         # nosi disk blobs are gzip-compressed raw images; decompress then convert.
+        # Two disk-pressure mitigations on a GHA runner:
+        #   * Write the raw sparsely (most of a fresh disk image is zeros), so
+        #     the on-disk footprint is the used capacity, not the virtual size.
+        #   * Delete the .gz immediately after decompression so the convert
+        #     stage sees only raw + qcow2, not all three at once.
         if blob.suffix == ".gz":
             raw = Path(workdir) / blob.stem
+            block_size = 1 << 20
+            zero_block = b"\0" * block_size
             with gzip.open(blob, "rb") as src, open(raw, "wb") as out:
-                shutil.copyfileobj(src, out, length=1 << 20)
+                while True:
+                    buf = src.read(block_size)
+                    if not buf:
+                        break
+                    if len(buf) == block_size and buf == zero_block:
+                        out.seek(block_size, 1)
+                    else:
+                        out.write(buf)
+                out.truncate()
+            blob.unlink(missing_ok=True)
             convert_in = ["-f", "raw", str(raw)]
         else:
+            raw = None
             convert_in = [str(blob)]
 
         subprocess.run(
             ["qemu-img", "convert", *convert_in, "-O", "qcow2", str(dst)],
             check=True,
         )
+        if raw is not None:
+            raw.unlink(missing_ok=True)
 
     # Headroom for the in-guest xNVMe build; cloud-init growpart grows the rootfs.
     subprocess.run(["qemu-img", "resize", str(dst), "+8G"], check=True)
