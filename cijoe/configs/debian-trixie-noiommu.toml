@@ -75,7 +75,7 @@ socket = "/tmp/vfu_kvssd.sock"
 [guest_image]
 registry = "ghcr.io"
 repository = "safl/nosi/debian-13-headless"
-tag = "latest"
+digest = "sha256:1d463cf8ad8cba45fda85d49b46bed446e6446ee126526614f63bdd44cfc616b"
 
 # =============================================================================
 # Devices - One namespace per controller to avoid Linux kernel ordering issues

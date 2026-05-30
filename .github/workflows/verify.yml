@@ -728,10 +728,31 @@ jobs:
       run: |
         cijoe -r
 
+    # Stay on the fork QEMU container; only swap the guest disk to the nosi
+    # debian-13-headless image so we can validate the nosi guest carries what
+    # verify needs (devbind, hugepages, vfio, kernel cmdline) independently from
+    # the upstream-QEMU question. The fork container does not ship oras, so
+    # install it on demand.
+    - name: Stage nosi guest image
+      if: matrix.guest.os == 'debian'
+      run: |
+        command -v oras >/dev/null 2>&1 || curl -fsSL https://github.com/oras-project/oras/releases/download/v1.2.0/oras_1.2.0_linux_amd64.tar.gz -o /tmp/oras.tgz
+        command -v oras >/dev/null 2>&1 || tar -C /usr/local/bin -xzf /tmp/oras.tgz oras
+        python3 toolbox/stage_nosi_guest.py cijoe/configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml cijoe/configs/system_imaging.toml
+
     - name: CIJOE, provision and test guest
       run: |
         make verify-guest \
           CIJOE_OUTPUT="${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
+
+    - name: Collect guest serial console
+      if: always() && matrix.guest.os == 'debian'
+      run: |
+        dst="cijoe/${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
+        echo "::group::guest serial console (tail)"
+        tail -c 20000 "$HOME/guests/debian-trixie-amd64/serial.output" 2>/dev/null || echo "no guest serial output"
+        echo "::endgroup::"
+        cp "$HOME/guests/debian-trixie-amd64/serial.output" "${dst}-serial.output" 2>/dev/null || true
 
     - name: CIJOE, result-log-dump on error
       if: failure()
