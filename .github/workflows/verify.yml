@@ -925,6 +925,18 @@ jobs:
         make cijoe-install
         cijoe --version
 
+    # Stage the nosi headless debian disk in place of the old Hetzner qcow2
+    # so guest_initialize boots the nosi image. Installs oras into
+    # $HOME/.local/bin on demand (already on PATH from the earlier prep step).
+    - name: Stage nosi guest image
+      run: |
+        if ! command -v oras >/dev/null 2>&1; then
+          curl -fsSL https://github.com/oras-project/oras/releases/download/v1.2.0/oras_1.2.0_linux_amd64.tar.gz -o /tmp/oras.tgz
+          mkdir -p "$HOME/.local/bin"
+          tar -C "$HOME/.local/bin" -xzf /tmp/oras.tgz oras
+        fi
+        python3 toolbox/stage_nosi_guest.py cijoe/configs/${{ matrix.guest.hostname }}.toml cijoe/configs/system_imaging.toml
+
     - name: CIJOE, run provisioning
       run: |
         cd cijoe && cijoe \
@@ -1004,6 +1016,18 @@ jobs:
     - name: CIJOE, setup pipx environment
       run: |
         make cijoe-install
+
+    # Stage the nosi headless debian disk in place of the old Hetzner qcow2
+    # so guest_initialize boots the nosi image. Installs oras into
+    # $HOME/.local/bin on demand (already on PATH from the earlier prep step).
+    - name: Stage nosi guest image
+      run: |
+        if ! command -v oras >/dev/null 2>&1; then
+          curl -fsSL https://github.com/oras-project/oras/releases/download/v1.2.0/oras_1.2.0_linux_amd64.tar.gz -o /tmp/oras.tgz
+          mkdir -p "$HOME/.local/bin"
+          tar -C "$HOME/.local/bin" -xzf /tmp/oras.tgz oras
+        fi
+        python3 toolbox/stage_nosi_guest.py cijoe/configs/ax42-linux.toml cijoe/configs/system_imaging.toml
 
     - name: CIJOE, provision xnvme from tgz
       run: |
@@ -1098,6 +1122,19 @@ jobs:
       run: |
         make cijoe-install
         cijoe --version
+
+    # Stage the nosi headless debian disk in place of the old Hetzner qcow2
+    # so guest_initialize boots the nosi image. Only the linux matrix entry
+    # uses the debian disk; freebsd/windows have their own system images.
+    - name: Stage nosi guest image
+      if: matrix.guest.os == 'linux'
+      run: |
+        if ! command -v oras >/dev/null 2>&1; then
+          curl -fsSL https://github.com/oras-project/oras/releases/download/v1.2.0/oras_1.2.0_linux_amd64.tar.gz -o /tmp/oras.tgz
+          mkdir -p "$HOME/.local/bin"
+          tar -C "$HOME/.local/bin" -xzf /tmp/oras.tgz oras
+        fi
+        python3 toolbox/stage_nosi_guest.py cijoe/configs/ax42-linux.toml cijoe/configs/system_imaging.toml
 
     - name: CIJOE, provision xnvme from tgz
       run: |

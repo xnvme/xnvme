@@ -25,6 +25,15 @@ img_bin = "qemu-img"
 default_guest = "generic-bios-kvm-x86_64"
 default_systemimage = "debian-13-x86_64"
 
+# nosi guest disk-image (OCI artifact on ghcr): a debian-trixie headless image
+# with qemu+cijoe+devbind/iommu/hugepages preinstalled. toolbox/stage_nosi_guest.py
+# pulls + converts it into the system-imaging disk.path that guest_initialize
+# copies to boot.img. Pin 'digest' for reproducibility; 'tag' is used otherwise.
+[guest_image]
+registry = "ghcr.io"
+repository = "safl/nosi/debian-13-headless"
+digest = "sha256:1d463cf8ad8cba45fda85d49b46bed446e6446ee126526614f63bdd44cfc616b"
+
 # Used by: qemu.build.py
 [qemu.build]
 prefix = "{{ local.env.HOME }}/opt/qemu"
