@@ -731,13 +731,11 @@ jobs:
     # Stay on the fork QEMU container; only swap the guest disk to the nosi
     # debian-13-headless image so we can validate the nosi guest carries what
     # verify needs (devbind, hugepages, vfio, kernel cmdline) independently from
-    # the upstream-QEMU question. The fork container does not ship oras, so
-    # install it on demand.
+    # the upstream-QEMU question. stage_nosi_guest.py fetches the blob URL
+    # pinned in the guest config directly via urllib -- no oras CLI needed.
     - name: Stage nosi guest image
       if: matrix.guest.os == 'debian'
       run: |
-        command -v oras >/dev/null 2>&1 || curl -fsSL https://github.com/oras-project/oras/releases/download/v1.2.0/oras_1.2.0_linux_amd64.tar.gz -o /tmp/oras.tgz
-        command -v oras >/dev/null 2>&1 || tar -C /usr/local/bin -xzf /tmp/oras.tgz oras
         python3 toolbox/stage_nosi_guest.py cijoe/configs/${{ matrix.guest.os }}-${{ matrix.guest.ver }}.toml cijoe/configs/system_imaging.toml
 
     - name: CIJOE, provision and test guest
@@ -926,15 +924,10 @@ jobs:
         cijoe --version
 
     # Stage the nosi headless debian disk in place of the old Hetzner qcow2
-    # so guest_initialize boots the nosi image. Installs oras into
-    # $HOME/.local/bin on demand (already on PATH from the earlier prep step).
+    # so guest_initialize boots the nosi image. The script fetches the blob
+    # URL pinned in the guest config directly via urllib -- no oras CLI.
     - name: Stage nosi guest image
       run: |
-        if ! command -v oras >/dev/null 2>&1; then
-          curl -fsSL https://github.com/oras-project/oras/releases/download/v1.2.0/oras_1.2.0_linux_amd64.tar.gz -o /tmp/oras.tgz
-          mkdir -p "$HOME/.local/bin"
-          tar -C "$HOME/.local/bin" -xzf /tmp/oras.tgz oras
-        fi
         python3 toolbox/stage_nosi_guest.py cijoe/configs/${{ matrix.guest.hostname }}.toml cijoe/configs/system_imaging.toml
 
     - name: CIJOE, run provisioning
@@ -1018,15 +1011,10 @@ jobs:
         make cijoe-install
 
     # Stage the nosi headless debian disk in place of the old Hetzner qcow2
-    # so guest_initialize boots the nosi image. Installs oras into
-    # $HOME/.local/bin on demand (already on PATH from the earlier prep step).
+    # so guest_initialize boots the nosi image. The script fetches the blob
+    # URL pinned in the guest config directly via urllib -- no oras CLI.
     - name: Stage nosi guest image
       run: |
-        if ! command -v oras >/dev/null 2>&1; then
-          curl -fsSL https://github.com/oras-project/oras/releases/download/v1.2.0/oras_1.2.0_linux_amd64.tar.gz -o /tmp/oras.tgz
-          mkdir -p "$HOME/.local/bin"
-          tar -C "$HOME/.local/bin" -xzf /tmp/oras.tgz oras
-        fi
         python3 toolbox/stage_nosi_guest.py cijoe/configs/ax42-linux.toml cijoe/configs/system_imaging.toml
 
     - name: CIJOE, provision xnvme from tgz
@@ -1129,11 +1117,6 @@ jobs:
     - name: Stage nosi guest image
       if: matrix.guest.os == 'linux'
       run: |
-        if ! command -v oras >/dev/null 2>&1; then
-          curl -fsSL https://github.com/oras-project/oras/releases/download/v1.2.0/oras_1.2.0_linux_amd64.tar.gz -o /tmp/oras.tgz
-          mkdir -p "$HOME/.local/bin"
-          tar -C "$HOME/.local/bin" -xzf /tmp/oras.tgz oras
-        fi
         python3 toolbox/stage_nosi_guest.py cijoe/configs/ax42-linux.toml cijoe/configs/system_imaging.toml
 
     - name: CIJOE, provision xnvme from tgz

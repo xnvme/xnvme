@@ -2,34 +2,33 @@
 """
 Stage a nosi guest disk-image for the xNVMe guest workflows.
 
-nosi publishes its headless guest disk-images as OCI artifacts on ghcr. The nosi
-container ships 'oras', so this just pulls the artifact with it, decompresses the
-disk blob, and converts it to the qcow2 file that cijoe's 'qemu.guest_initialize'
-expects at 'system-imaging.images.<image>.disk.path' -- guest_initialize then
-copies it to the guest boot.img unchanged.
+The guest config carries a direct URL to the .img.gz blob:
+
+    [guest_image]
+    url = "https://ghcr.io/v2/safl/nosi/debian-13-headless/blobs/sha256:<layer-digest>"
+
+The URL is fetched with stdlib urllib -- no oras CLI required. If the host is
+ghcr.io we mint an anonymous pull-scoped bearer token first (public blobs still
+require auth) and send it as Authorization; for other hosts the request goes
+straight through. The blob is assumed to be gzip-compressed (nosi convention),
+decompressed sparsely, and converted to the qcow2 destination given by
+'system-imaging.images.<image>.disk.path' -- guest_initialize then copies that
+qcow2 to the guest boot.img unchanged.
 
 Usage:
     stage_nosi_guest.py <guest-config.toml> <system_imaging.toml>
-
-The guest config provides a [guest_image] table:
-
-    [guest_image]
-    registry = "ghcr.io"            # optional, default ghcr.io
-    repository = "safl/nosi/debian-13-headless"
-    tag = "latest"                  # used when 'digest' is absent
-    # digest = "sha256:..."         # optional pin (preferred over 'tag')
-
-and either 'qemu.guests.<default_guest>.system_image_name' or
-'qemu.default_systemimage' names the system-imaging entry whose 'disk.path' is
-the destination.
 """
 import gzip
+import json
 import os
 import subprocess
 import sys
 import tempfile
 import time
 import tomllib
+import urllib.error
+import urllib.parse
+import urllib.request
 from pathlib import Path
 
 
@@ -50,6 +49,42 @@ def disk_path(cfg, imaging):
     return Path(expand_home(disk["path"]))
 
 
+def ghcr_anon_auth(url):
+    """Mint an anonymous pull-scoped bearer header for ghcr.io blob URLs.
+
+    Returns {} for non-ghcr URLs (handled by the caller as 'no auth needed').
+    Public blobs on ghcr still 401 without a token; the token endpoint itself
+    is unauthenticated. Scope is derived from the URL's repository segment.
+    """
+
+    parsed = urllib.parse.urlparse(url)
+    if parsed.hostname != "ghcr.io":
+        return {}
+    # Path is "/v2/<repository>/blobs/<digest>"; repository may have slashes.
+    parts = parsed.path.split("/")
+    blob_idx = parts.index("blobs")
+    repository = "/".join(parts[2:blob_idx])
+    token_url = (
+        f"https://ghcr.io/token?service=ghcr.io&scope=repository:{repository}:pull"
+    )
+    with urllib.request.urlopen(token_url) as resp:
+        token = json.load(resp)["token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+def fetch_blob(url, dst_path):
+    """Stream a URL to dst_path, with anonymous ghcr auth when needed."""
+
+    headers = ghcr_anon_auth(url)
+    req = urllib.request.Request(url, headers=headers)
+    with urllib.request.urlopen(req) as resp, open(dst_path, "wb") as out:
+        while True:
+            chunk = resp.read(1 << 20)
+            if not chunk:
+                break
+            out.write(chunk)
+
+
 def main():
     if len(sys.argv) != 3:
         print(f"Usage: {sys.argv[0]} <guest-config.toml> <system_imaging.toml>")
@@ -64,43 +99,34 @@ def main():
     if not guest_image:
         print("config has no [guest_image] table; nothing to stage")
         return 0
-
-    registry = guest_image.get("registry", "ghcr.io")
-    repository = guest_image["repository"]
-    digest = guest_image.get("digest")
-    ref = f"@{digest}" if digest else f":{guest_image.get('tag', 'latest')}"
-    image_ref = f"{registry}/{repository}{ref}"
+    url = guest_image.get("url")
+    if not url:
+        print("config has no [guest_image].url; nothing to stage")
+        return 0
 
     dst = disk_path(cfg, imaging)
     dst.parent.mkdir(parents=True, exist_ok=True)
-    print(f"staging {image_ref} -> {dst}")
+    print(f"staging {url} -> {dst}")
 
     with tempfile.TemporaryDirectory() as workdir:
+        blob = Path(workdir) / "guest.img.gz"
+
         # Retry: parallel verify/docgen jobs pull this multi-GB blob anonymously
         # at the same time and ghcr intermittently throttles/resets the transfer.
         last = None
         for attempt in range(1, 6):
             try:
-                subprocess.run(["oras", "pull", image_ref, "-o", workdir], check=True)
+                fetch_blob(url, blob)
                 last = None
                 break
-            except subprocess.CalledProcessError as exc:
+            except (urllib.error.URLError, OSError) as exc:
                 last = exc
-                print(f"oras pull attempt {attempt}/5 failed; retrying")
+                print(f"download attempt {attempt}/5 failed ({exc}); retrying")
                 time.sleep(5 * attempt)
         if last is not None:
             raise last
 
-        files = [path for path in Path(workdir).rglob("*") if path.is_file()]
-        if not files:
-            raise RuntimeError(f"oras pull produced no files for {image_ref}")
-        blob = max(files, key=lambda path: path.stat().st_size)
-        print(f"  pulled {blob.name} ({blob.stat().st_size} bytes)")
-        # Drop the sidecar layers (.sha256, report, metadata) before decompressing
-        # so we free their space and only carry the disk blob forward.
-        for path in files:
-            if path != blob:
-                path.unlink(missing_ok=True)
+        print(f"  pulled {blob.stat().st_size} bytes")
 
         # nosi disk blobs are gzip-compressed raw images; decompress then convert.
         # Two disk-pressure mitigations on a GHA runner:
@@ -108,32 +134,26 @@ def main():
         #     the on-disk footprint is the used capacity, not the virtual size.
         #   * Delete the .gz immediately after decompression so the convert
         #     stage sees only raw + qcow2, not all three at once.
-        if blob.suffix == ".gz":
-            raw = Path(workdir) / blob.stem
-            block_size = 1 << 20
-            zero_block = b"\0" * block_size
-            with gzip.open(blob, "rb") as src, open(raw, "wb") as out:
-                while True:
-                    buf = src.read(block_size)
-                    if not buf:
-                        break
-                    if len(buf) == block_size and buf == zero_block:
-                        out.seek(block_size, 1)
-                    else:
-                        out.write(buf)
-                out.truncate()
-            blob.unlink(missing_ok=True)
-            convert_in = ["-f", "raw", str(raw)]
-        else:
-            raw = None
-            convert_in = [str(blob)]
+        raw = Path(workdir) / "guest.img"
+        block_size = 1 << 20
+        zero_block = b"\0" * block_size
+        with gzip.open(blob, "rb") as src, open(raw, "wb") as out:
+            while True:
+                buf = src.read(block_size)
+                if not buf:
+                    break
+                if len(buf) == block_size and buf == zero_block:
+                    out.seek(block_size, 1)
+                else:
+                    out.write(buf)
+            out.truncate()
+        blob.unlink(missing_ok=True)
 
         subprocess.run(
-            ["qemu-img", "convert", *convert_in, "-O", "qcow2", str(dst)],
+            ["qemu-img", "convert", "-f", "raw", str(raw), "-O", "qcow2", str(dst)],
             check=True,
         )
-        if raw is not None:
-            raw.unlink(missing_ok=True)
+        raw.unlink(missing_ok=True)
 
     # Headroom for the in-guest xNVMe build; cloud-init growpart grows the rootfs.
     subprocess.run(["qemu-img", "resize", str(dst), "+8G"], check=True)
