@@ -25,6 +25,15 @@ img_bin = "qemu-img"
 default_guest = "generic-bios-kvm-x86_64"
 default_systemimage = "debian-13-x86_64"
 
+# nosi guest disk-image: a debian-trixie headless image with
+# qemu+cijoe+devbind/iommu/hugepages preinstalled. toolbox/stage_nosi_guest.py
+# downloads, decompresses, and converts this directly into the system-imaging
+# disk.path that guest_initialize copies to boot.img. The URL points straight
+# at the .img.gz blob on ghcr's OCI distribution endpoint; the script mints an
+# anonymous bearer token for ghcr, so no oras CLI is needed.
+[guest_image]
+url = "https://ghcr.io/v2/safl/nosi/debian-13-headless/blobs/sha256:1cdbf24c081516500735ce7f3f96e3212a472fb0528276e23c939035791900dc"
+
 # Used by: qemu.build.py
 [qemu.build]
 prefix = "{{ local.env.HOME }}/opt/qemu"

@@ -32,9 +32,33 @@ steps:
   with:
     guest_name: "{{ config.qemu.default_guest }}"
 
+# Open root SSH on nosi guests (root is locked by default; uses the 'odus'
+# operator transport). No-op when no operator transport is configured, e.g. the
+# freebsd guest or the fork-based guest where root SSH already works.
+- name: root_unlock
+  uses: root_unlock
+
 - name: guest_check
   run: |
     hostname
+
+# Diagnostic dump of the guest environment so a userspace-driver failure shows
+# everything we want in one place: effective ulimits (memlock matters for DPDK),
+# userspace PCI modules, hugepages, vfio/uio devices, kernel cmdline. Each line
+# is independent (cijoe runs them via core.cmdrunner), so each carries its own
+# Linux guard; freebsd and other non-Linux guests skip every line.
+- name: env_survey
+  run: |
+    if [ "$(uname -s)" = "Linux" ]; then echo "## ulimit (root session)"; fi
+    if [ "$(uname -s)" = "Linux" ]; then ulimit -a; fi
+    if [ "$(uname -s)" = "Linux" ]; then echo "## /etc/security/limits.d"; cat /etc/security/limits.d/*.conf; fi
+    if [ "$(uname -s)" = "Linux" ]; then echo "## kernel cmdline"; cat /proc/cmdline; fi
+    if [ "$(uname -s)" = "Linux" ]; then echo "## modules: vfio / uio"; lsmod | grep -E '^(vfio|uio)' || true; fi
+    if [ "$(uname -s)" = "Linux" ]; then echo "## hugepages"; cat /proc/sys/vm/nr_hugepages; fi
+    if [ "$(uname -s)" = "Linux" ]; then grep -E 'Huge|^Mem' /proc/meminfo; fi
+    if [ "$(uname -s)" = "Linux" ]; then mount | grep -E 'huge|tmpfs' || true; fi
+    if [ "$(uname -s)" = "Linux" ]; then echo "## /dev/uio* /dev/vfio/*"; ls -l /dev/uio* /dev/vfio 2>/dev/null || true; fi
+    if [ "$(uname -s)" = "Linux" ]; then echo "## nvme PCI bind"; ls -l /sys/bus/pci/drivers/nvme/ /sys/bus/pci/drivers/uio_pci_generic/ /sys/bus/pci/drivers/vfio-pci/ 2>/dev/null || true; fi
 
 - name: xnvme_source_sync
   uses: xnvme_source_from_tgz

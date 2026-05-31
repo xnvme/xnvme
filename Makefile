@@ -197,7 +197,9 @@ guest-start:
 		guest_kill \
 		guest_initialize \
 		guest_start \
-		guest_check
+		root_unlock \
+		guest_check \
+		env_survey
 	@echo "## xNVMe: guest-start [DONE]"
 
 define guest-provision-help
