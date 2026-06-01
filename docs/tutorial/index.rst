@@ -16,3 +16,4 @@ In the future, more tutorials will be added with the purpose of introducing the 
    dynamic_loading/index.rst
    fabrics/index.rst
    bdev_xnvme/index.rst
+   multi_process/index.rst
