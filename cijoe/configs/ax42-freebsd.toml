@@ -2,11 +2,19 @@
 # https://www.paramiko.org/ This is common CIJOE infrastructure
 #
 # Used by: cijoe.run() / cijoe.get() / cijoe.put()
-[cijoe.transport.qemu_guest]
+[cijoe.transport.root]
 hostname = "localhost"
 port = 4200
 username = "root"
-password = ""
+password = "root"
+
+# Operator account on nosi images; used by root_unlock. Inert when root SSH
+# already works (fork-based guest, or pre-unlocked images).
+[cijoe.transport.odus]
+username = "odus"
+password = "odus.321"
+hostname = "localhost"
+port = 4200
 
 [cijoe.run]
 shell = "csh"
@@ -27,6 +35,9 @@ version = "14"
 img_bin = "qemu-img"
 default_guest = "generic-bios-kvm-x86_64"
 default_systemimage = "freebsd-14-x86_64"
+
+[guest_image]
+url = "https://ghcr.io/v2/safl/nosi/freebsd-14-headless/blobs/sha256:ecb5855545c20a47c2829d63e8a6758ff19804b2694a7edfc1c5cb1ad4c8af41"
 
 # Used by: qemu.build.py
 [qemu.build]

@@ -21,6 +21,9 @@ steps:
   with:
     guest_name: "{{ config.qemu.default_guest }}"
 
+- name: stage_nosi_guest
+  uses: stage_nosi_guest
+
 - name: guest_initialize
   uses: qemu.guest_initialize
   with:
@@ -41,6 +44,9 @@ steps:
   uses: qemu.guest_start
   with:
     guest_name: "{{ config.qemu.default_guest }}"
+
+- name: root_unlock
+  uses: root_unlock
 
 - name: guest_check
   run: |
