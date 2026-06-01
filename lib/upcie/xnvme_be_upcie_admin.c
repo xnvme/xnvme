@@ -21,6 +21,11 @@ xnvme_be_upcie_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf
 	struct nvme_completion *cpl = (struct nvme_completion *)&ctx->cpl;
 	int err;
 
+	if (state->ctrlr->shm_fd == -1) {
+		XNVME_DEBUG("FAILED: secondary process cannot issue admin commands");
+		return -ENOTSUP;
+	}
+
 	if (dbuf) {
 		err = nvme_qpair_submit_sync_contig_prps(&ctrl->aq, &g_upcie_rte.heap, dbuf,
 							 dbuf_nbytes, cmd, ctrl->timeout_ms, cpl);

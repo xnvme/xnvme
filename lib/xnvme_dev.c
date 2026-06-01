@@ -375,6 +375,7 @@ _dev_idfy(struct xnvme_dev *dev)
 	int err;
 
 	dev->attempted_dev_idfy = true;
+
 	//
 	// Identify controller and namespace
 	//
@@ -470,10 +471,12 @@ xnvme_dev_derive_geo(struct xnvme_dev *dev)
 
 	dev->attempted_derive_geo = true;
 
-	err = _dev_idfy(dev);
-	if (err) {
-		XNVME_DEBUG("FAILED: identifying device; skipping derive-geo");
-		return err;
+	if (dev->opts.proc_role != XNVME_PROC_SECONDARY) {
+		err = _dev_idfy(dev);
+		if (err) {
+			XNVME_DEBUG("FAILED: identifying device; skipping derive-geo");
+			return err;
+		}
 	}
 
 	switch (dev->ident.dtype) {

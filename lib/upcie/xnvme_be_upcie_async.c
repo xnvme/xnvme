@@ -18,12 +18,36 @@ xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
 {
 	struct xnvme_queue_upcie *upcie_queue = (void *)(queue);
 	struct xnvme_be_upcie_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_upcie_ctrlr *ctrlr = state->ctrlr;
 	int err;
+
+	if (ctrlr->mproc) {
+		uint8_t *bar0 = ctrlr->ctrl->func.bars[0].region;
+		int dstrd = nvme_reg_cap_get_dstrd(nvme_mmio_cap_read(bar0));
+		void *ring_base;
+		int qpid;
+
+		if (ctrlr->shm_fd == -1) {
+			ring_base = ctrlr->imported_hugepage.virt;
+		} else {
+			ring_base = g_upcie_rte.heap.memory.virt;
+		}
+
+		qpid = _upcie_claim_qpair(ctrlr, ring_base, &upcie_queue->qpair);
+		if (qpid < 0) {
+			XNVME_DEBUG("FAILED: _upcie_claim_qpair(); err(%d)", qpid);
+			return qpid;
+		}
+
+		upcie_queue->borrowed_ring = 1;
+
+		return 0;
+	}
 
 	// The spec says that for systems where memory ordering is not guaranteed, then one should
 	// leave room in the queue to avoid races. Thus, we do so here, by allocating one more than
 	// what is needed.
-	err = nvme_controller_create_io_qpair(state->ctrlr->ctrl, &upcie_queue->qpair,
+	err = nvme_controller_create_io_qpair(ctrlr->ctrl, &upcie_queue->qpair,
 					      queue->base.capacity + 1);
 	if (err) {
 		XNVME_DEBUG("FAILED: nvme_controller_create_io_qpair()");
@@ -37,6 +61,13 @@ int
 xnvme_be_upcie_queue_term(struct xnvme_queue *queue)
 {
 	struct xnvme_queue_upcie *upcie_queue = (void *)queue;
+	struct xnvme_be_upcie_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_upcie_ctrlr *ctrlr = state->ctrlr;
+
+	if (ctrlr->mproc) {
+		_upcie_release_qpair(ctrlr, &upcie_queue->qpair);
+		return 0;
+	}
 
 	nvme_qpair_term(&upcie_queue->qpair);
 
