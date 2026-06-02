@@ -395,9 +395,20 @@ def test_subsystem_reset(cijoe, device, be_opts, cli_args):
     if be_opts["admin"] == "upcie":
         pytest.skip(reason="[be=upcie] does not support subsystem-reset")
 
-    err, _ = cijoe.run(
+    err, state = cijoe.run(
         f"xnvme subsystem-reset {device['uri']} --be {be_opts['be']} --admin {be_opts['admin']}"
     )
+
+    # Skip when subsystem-reset isn't available (upstream QEMU CAP.NSSRS=0;
+    # kernel rejects ioctl on the read-only fd). Match on message text since
+    # the underlying errno differs between Linux and FreeBSD.
+    out = state.output()
+    if err and (
+        "'Operation not supported'" in out or "'Operation not permitted'" in out
+    ):
+        pytest.skip(
+            reason="controller subsystem reset unavailable (CAP.NSSRS=0 or kernel ioctl-rw guard)"
+        )
 
     assert not err
 
