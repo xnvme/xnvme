@@ -23,7 +23,8 @@ struct xnvmeperf_job {
 	unsigned int seed;
 	uint64_t io_completed;
 	uint64_t io_failed;
-	uint64_t (*get_slba)(struct xnvmeperf_job *);
+	uint64_t (*peek_slba)(struct xnvmeperf_job *);
+	void (*advance_slba)(struct xnvmeperf_job *);
 	struct xnvmeperf_args *args;
 };
 
@@ -156,20 +157,29 @@ parse_cpumask(const char *hex, int **cpus_out, int *ncpus_out)
 }
 
 /**
- * Returns the next sequential starting LBA and advances job->offset by nlb.
+ * Returns the current sequential starting LBA without advancing.
  *
- * @param job  Job whose offset is advanced
- * @return     Starting LBA before the advance
+ * @param job  Job whose offset is read
+ * @return     The next sequential starting LBA
  */
 static uint64_t
-get_slba_seq(struct xnvmeperf_job *job)
+peek_slba_seq(struct xnvmeperf_job *job)
 {
-	uint64_t slba = job->offset;
+	return job->offset;
+}
+
+/**
+ * Advances the sequential cursor by nlb, wrapping at the end of the device.
+ *
+ * @param job  Job whose offset is advanced
+ */
+static void
+advance_slba_seq(struct xnvmeperf_job *job)
+{
 	job->offset += job->nlb;
 	if (job->offset >= job->nblocks * job->nlb) {
 		job->offset = 0;
 	}
-	return slba;
 }
 
 /**
@@ -181,14 +191,26 @@ get_slba_seq(struct xnvmeperf_job *job)
  * @return     Random nlb-aligned starting LBA
  */
 static uint64_t
-get_slba_rand(struct xnvmeperf_job *job)
+peek_slba_rand(struct xnvmeperf_job *job)
 {
 	uint64_t slba = (rand_r(&job->seed) % job->nblocks) * job->nlb;
 	return slba;
 }
 
 /**
- * Submits a single async IO using the job's get_slba function and buffer.
+ * No-op cursor advance for the random pattern, which holds no position.
+ */
+static void
+advance_slba_noop(struct xnvmeperf_job *job)
+{
+	(void)job;
+}
+
+/**
+ * Submits a single async IO using the job's slba selector and buffer.
+ *
+ * Advances the slba cursor only on a successful submit, so a failed submission
+ * (e.g. -EBUSY) is retried on the same LBA.
  *
  * @param job  Job providing opcode, nsid, nlb, buffer, and slba selector
  * @param ctx  Command context obtained from the job's queue
@@ -197,14 +219,20 @@ get_slba_rand(struct xnvmeperf_job *job)
 static int
 submit_io(struct xnvmeperf_job *job, struct xnvme_cmd_ctx *ctx)
 {
-	uint64_t slba = job->get_slba(job);
+	uint64_t slba = job->peek_slba(job);
+	int err;
 
 	ctx->cmd.common.opcode = job->opcode;
 	ctx->cmd.common.nsid = job->nsid;
 	ctx->cmd.nvm.nlb = job->nlb - 1;
 	ctx->cmd.nvm.slba = slba;
 
-	return xnvme_cmd_pass(ctx, job->buf, (job->nbytes * job->nlb), NULL, 0);
+	err = xnvme_cmd_pass(ctx, job->buf, (job->nbytes * job->nlb), NULL, 0);
+	if (!err) {
+		job->advance_slba(job);
+	}
+
+	return err;
 }
 
 /**
@@ -283,11 +311,13 @@ setup_job(struct xnvmeperf_job *job, struct xnvme_dev *dev, struct xnvmeperf_arg
 	case IOPATTERN_READ:
 	case IOPATTERN_WRITE:
 	case IOPATTERN_VERIFY:
-		job->get_slba = get_slba_seq;
+		job->peek_slba = peek_slba_seq;
+		job->advance_slba = advance_slba_seq;
 		break;
 	case IOPATTERN_RANDREAD:
 	case IOPATTERN_RANDWRITE:
-		job->get_slba = get_slba_rand;
+		job->peek_slba = peek_slba_rand;
+		job->advance_slba = advance_slba_noop;
 		break;
 	default:
 		fprintf(stderr, "Error: Unsupported pattern(%d)", job->args->pattern);
@@ -945,17 +975,14 @@ xnvmeperf_verify(struct xnvmeperf_args *args)
 				ctx = xnvme_queue_get_cmd_ctx(job.queue);
 			}
 
+			slba = job.offset;
+
 			err = submit_io(&job, ctx);
 			if (err) {
 				xnvme_queue_put_cmd_ctx(job.queue, ctx);
 				fprintf(stderr, "Failed: read submit at IO %d\n", i);
 				break;
 			}
-
-			// get_slba_seq advances job.offset by nlb on each call, so recover
-			// the slba that was just submitted rather than capturing it before the
-			// call
-			slba = job.offset - job.nlb;
 
 			while (job.io_completed + job.io_failed < (uint64_t)(i + 1)) {
 				xnvme_queue_poke(job.queue, 0);
