@@ -1,8 +1,4 @@
-import pytest
-
 from ..conftest import xnvme_parametrize
-
-pytest.skip(allow_module_level=True, reason="Not implemented")
 
 
 @xnvme_parametrize(labels=["kvs"], opts=["be", "admin"])

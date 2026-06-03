@@ -27,11 +27,13 @@ def test_libconf():
 def test_dev_open(cijoe, device, be_opts, cli_args):
     """Verify that it is possible to open a device without options"""
 
-    if set(["pcie", "fabrics"]) and set(be_opts["label"]):
+    if {"pcie", "fabrics"} & set(be_opts["label"]):
         pytest.skip("pcie and fabrics require nsid to be set in options.")
 
     dev = xnvme.xnvme_dev_open(char_pointer_cast(device["uri"]), None)
-    assert dev, xnvme.xnvme_dev_pr(dev, xnvme.XNVME_PR_DEF)
+    assert (
+        dev
+    ), f"xnvme_dev_open({device['uri']!r}, be={be_opts.get('be')}) returned NULL"
     xnvme.xnvme_dev_close(dev)
 
 
@@ -39,14 +41,16 @@ def test_dev_open(cijoe, device, be_opts, cli_args):
 def test_dev_open_with_default_opts(cijoe, device, be_opts, cli_args):
     """Verify that it is possible to open a device with default options"""
 
-    if set(["pcie", "fabrics"]) and set(be_opts["label"]):
+    if {"pcie", "fabrics"} & set(be_opts["label"]):
         pytest.skip("pcie and fabrics require nsid to be set in options.")
 
     opts = xnvme.xnvme_opts()
     xnvme.xnvme_opts_set_defaults(byref(opts))
 
     dev = xnvme.xnvme_dev_open(char_pointer_cast(device["uri"]), byref(opts))
-    assert dev, xnvme.xnvme_dev_pr(dev, xnvme.XNVME_PR_DEF)
+    assert (
+        dev
+    ), f"xnvme_dev_open({device['uri']!r}, be={be_opts.get('be')}) returned NULL"
     xnvme.xnvme_dev_close(dev)
 
 
@@ -56,7 +60,9 @@ def test_dev_open_with_opts(cijoe, device, be_opts, cli_args):
 
     dev = dev_from_params(device, be_opts)
 
-    assert dev, xnvme.xnvme_dev_pr(dev, xnvme.XNVME_PR_DEF)
+    assert (
+        dev
+    ), f"xnvme_dev_open({device['uri']!r}, be={be_opts.get('be')}) returned NULL"
     xnvme.xnvme_dev_close(dev)
 
 
@@ -69,7 +75,9 @@ def test_ident(cijoe, device, be_opts, cli_args):
     opts.nsid = device["nsid"]
 
     dev = xnvme.xnvme_dev_open(char_pointer_cast(device["uri"]), byref(opts))
-    assert dev, xnvme.xnvme_dev_pr(dev, xnvme.XNVME_PR_DEF)
+    assert (
+        dev
+    ), f"xnvme_dev_open({device['uri']!r}, be={be_opts.get('be')}) returned NULL"
 
     ident = xnvme.xnvme_dev_get_ident(dev)
     assert ident.contents.nsid == device["nsid"]
@@ -83,7 +91,9 @@ def test_pointers(cijoe, device, be_opts, cli_args):
     xnvme.xnvme_opts_set_defaults(byref(opts))
 
     dev = xnvme.xnvme_dev_open(char_pointer_cast(device["uri"]), byref(opts))
-    assert dev, xnvme.xnvme_dev_pr(dev, xnvme.XNVME_PR_DEF)
+    assert (
+        dev
+    ), f"xnvme_dev_open({device['uri']!r}, be={be_opts.get('be')}) returned NULL"
     xnvme.xnvme_dev_close(dev)
 
     # A random xNVMe object which is easy to create

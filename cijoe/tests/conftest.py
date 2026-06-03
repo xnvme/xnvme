@@ -49,15 +49,14 @@ def xnvme_be_opts(options=None, only_labels=[]):
 
     all_configs = []
     for opts in combinations[osname]:
+        # Skip combinations whose declared labels don't intersect only_labels.
+        if only_labels and not any(lbl in only_labels for lbl in opts["label"]):
+            continue
         for be in opts["be"]:
             for be_mem in opts["mem"]:
                 for be_admin in opts["admin"]:
                     for be_sync in opts["sync"]:
                         for be_async in opts["async"]:
-                            for label in opts["label"]:
-                                if only_labels and label not in only_labels:
-                                    continue
-
                             all_configs.append(
                                 {
                                     "be": be,
