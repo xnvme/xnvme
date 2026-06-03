@@ -27,7 +27,16 @@ from xnvme_be_combinations import get_combinations
 
 
 def xnvme_be_opts(options=None, only_labels=[]):
-    """Produce a list of "sensible" backend configurations"""
+    """Produce a list of "sensible" backend configurations.
+
+    Each returned dict always carries the full xnvme mixin tuple
+    (be/mem/admin/sync/async/label) so callers like ``dev_from_params`` can
+    populate every ``xnvme_opts`` field. ``options`` controls only how the
+    parametrize matrix deduplicates and orders: a test decorated with
+    ``opts=["be"]`` gets one entry per distinct ``be`` value, but each entry
+    still carries the accompanying mem/admin/sync/async resolved from the
+    backend-combinations table.
+    """
 
     osname = pytest.cijoe_instance.config.options.get("os", {}).get("name", "linux")
     if osname == "debian":
@@ -35,6 +44,7 @@ def xnvme_be_opts(options=None, only_labels=[]):
 
     if options is None:
         options = ["be", "mem", "sync", "async", "admin", "label"]
+    options = list(options)
     if "label" not in options:
         options.append("label")
 
@@ -42,15 +52,14 @@ def xnvme_be_opts(options=None, only_labels=[]):
 
     all_configs = []
     for opts in combinations[osname]:
+        # Skip combinations whose declared labels don't intersect only_labels.
+        if only_labels and not any(lbl in only_labels for lbl in opts["label"]):
+            continue
         for be in opts["be"]:
             for be_mem in opts["mem"]:
                 for be_admin in opts["admin"]:
                     for be_sync in opts["sync"]:
                         for be_async in opts["async"]:
-                            for label in opts["label"]:
-                                if only_labels and label not in only_labels:
-                                    continue
-
                             all_configs.append(
                                 {
                                     "be": be,
@@ -62,14 +71,17 @@ def xnvme_be_opts(options=None, only_labels=[]):
                                 }
                             )
 
+    seen = set()
     filtered = []
     for cfg in all_configs:
-        item = [(key, val) for (key, val) in cfg.items() if key in options]
-        if item not in filtered:
-            filtered.append(item)
-    filtered.sort()
+        dedup_key = tuple((k, repr(cfg.get(k, ""))) for k in options)
+        if dedup_key in seen:
+            continue
+        seen.add(dedup_key)
+        filtered.append(cfg)
+    filtered.sort(key=lambda cfg: tuple(repr(cfg.get(k, "")) for k in options))
 
-    return [dict(item) for item in filtered]
+    return filtered
 
 
 def cijoe_config_get_all_devices(labels):
