@@ -423,3 +423,36 @@ def xnvme_parametrize(labels, opts):
         return inner
 
     return decorator
+
+
+# Sort order for pytest_collection_modifyitems. `be` first because backend
+# switches are the expensive operation; the rest tie-break within a backend.
+_BE_KEYS = ("be", "admin", "sync", "async", "mem")
+
+
+def pytest_collection_modifyitems(config, items):
+    """Group all variants for one backend together in the run timeline.
+
+    Sort items by backend config first and test name second so the timeline
+    runs as test_foo[kernel] -> test_bar[kernel] -> ... -> test_foo[spdk]
+    -> test_bar[spdk] -> ..., minimising the number of driver-swap
+    boundaries in the run and clustering failures by backend. Tests without
+    parametrization sort before the parametrized batches with their
+    relative order preserved.
+
+    Linux only. FreeBSD's kqueue async write/verify fails when reordered
+    this way, so leave it at the original collection order.
+    """
+    if get_osname() == "freebsd":
+        return
+
+    def key(item):
+        callspec = getattr(item, "callspec", None)
+        if callspec is None:
+            return ("",) * len(_BE_KEYS) + (item.name,)
+        be_opts = callspec.params.get("be_opts")
+        if not isinstance(be_opts, dict):
+            return ("",) * len(_BE_KEYS) + (item.name,)
+        return tuple(str(be_opts.get(k, "")) for k in _BE_KEYS) + (item.name,)
+
+    items.sort(key=key)
