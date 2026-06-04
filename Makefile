@@ -139,7 +139,7 @@ endef
 docker:
 	@echo "## xNVMe: docker"
 	mkdir -p /tmp/artifacts
-	docker run -it --privileged -w /tmp/xnvme --mount type=bind,source="$(shell pwd)",target=/tmp/xnvme --mount type=bind,source=/tmp/artifacts,target=/tmp/artifacts ghcr.io/xnvme/xnvme-qemu:latest bash
+	docker run -it --privileged -w /tmp/xnvme --mount type=bind,source="$(shell pwd)",target=/tmp/xnvme --mount type=bind,source=/tmp/artifacts,target=/tmp/artifacts ghcr.io/safl/nosi/ubuntu-2604-docker:latest bash
 	@echo "## xNVME: docker [DONE]"
 
 define cijoe-install-help
