@@ -310,36 +310,6 @@ guest-stop:
 		guest_kill
 	@echo "## xNVMe: guest-stop [DONE]"
 
-define cijoe-do-bootimage-debian-trixie-amd64-help
-# Create a Debian Trixie - amd64 - bootable system image for a qemu-guest
-endef
-.PHONY: cijoe-do-bootimage-debian-trixie-amd64
-cijoe-do-bootimage-debian-trixie-amd64:
-	@echo "## xNVMe: cijoe-do-bootimage-debian-trixie-amd64"
-	cd cijoe && cijoe workflows/bootimg-debian-trixie-amd64.yaml \
-		--monitor \
-		--config "configs/debian-trixie.toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
-		--config "configs/system_imaging.toml" \
-		-l
-	@echo "## xNVME: cijoe-do-bootimage-debian-trixie-amd64 [DONE]"
-
-define cijoe-do-bootimage-freebsd-amd64-help
-# Create a FreeBSD - amd64 - bootable system image for a qemu-guest
-endef
-.PHONY: cijoe-do-bootimage-freebsd-amd64
-cijoe-do-bootimage-freebsd-amd64:
-	@echo "## xNVMe: cijoe-do-bootimage-freebsd-amd64"
-	cd cijoe && cijoe workflows/bootimg-freebsd-13-amd64.yaml \
-		--monitor \
-		--config "configs/freebsd-13.toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
-		--config "configs/system_imaging.toml" \
-		-l
-	@echo "## xNVME: cijoe-do-bootimage-freebsd-amd64 [DONE]"
-
 define git-setup-help
 # Do git config for: 'core.hooksPath' and 'blame.ignoreRevsFile'
 endef

@@ -547,21 +547,6 @@ configured:
    adjust the file ``configs/debian-trixie.toml`` such that qemu is
    pointing to ``$HOME``.
 
-Create boot-images
-~~~~~~~~~~~~~~~~~~
-
-The ``debian-trixie-amd64.qcow2`` is created by:
-
-.. code-block:: bash
-
-  cijoe -c configs/debian-trixie.toml workflows/bootimg-debian-trixie-amd64.yaml
-
-The ``freebsd-13.1-ksrc-amd64.qcow2`` is created by:
-
-.. code-block:: bash
-
-  cijoe -c configs/freebsd-13.toml workflows/bootimg-freebsd-13-amd64.yaml
-
 Remote dev
 ----------
 
