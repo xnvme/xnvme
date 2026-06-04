@@ -696,8 +696,10 @@ jobs:
         - {os: 'debian', ver: 'trixie-noiommu'}
 
     container:
-      image: ghcr.io/xnvme/xnvme-qemu:latest
-      options: --privileged
+      image: ghcr.io/safl/nosi/ubuntu-2604-docker:latest
+      # /mnt is the runner's ~70 GiB ephemeral disk; the nosi qcow2 + raw
+      # decompression overflow the container's small overlay otherwise.
+      options: --privileged -v /mnt:/mnt
 
     steps:
     - uses: xnvme/actions/.github/actions/cleanup@main
@@ -728,10 +730,35 @@ jobs:
       run: |
         cijoe -r
 
+    # Land the nosi qcow2 + raw on /mnt instead of / (which is cramped).
+    - name: Stage artifacts on /mnt
+      if: matrix.guest.os == 'debian' || matrix.guest.os == 'freebsd'
+      run: |
+        mkdir -p /mnt/system_imaging
+        ln -s /mnt/system_imaging "$HOME/system_imaging"
+
     - name: CIJOE, provision and test guest
       run: |
         make verify-guest \
           CIJOE_OUTPUT="${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
+
+    - name: Collect guest serial console
+      if: always() && matrix.guest.os == 'debian'
+      run: |
+        dst="cijoe/${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
+        echo "::group::guest serial console (tail)"
+        tail -c 20000 "$HOME/guests/debian-trixie-amd64/serial.output" 2>/dev/null || echo "no guest serial output"
+        echo "::endgroup::"
+        cp "$HOME/guests/debian-trixie-amd64/serial.output" "${dst}-serial.output" 2>/dev/null || true
+
+    - name: Collect vfu_kvssd device log
+      if: always()
+      run: |
+        dst="cijoe/${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
+        echo "::group::vfu_kvssd device log"
+        cat /tmp/vfu_kvssd.log 2>/dev/null || echo "no vfu_kvssd device log"
+        echo "::endgroup::"
+        cp /tmp/vfu_kvssd.log "${dst}-vfu_kvssd.log" 2>/dev/null || true
 
     - name: CIJOE, result-log-dump on error
       if: failure()
@@ -1155,8 +1182,10 @@ jobs:
         - {os: 'debian', ver: 'trixie'}
 
     container:
-      image: ghcr.io/xnvme/xnvme-qemu:latest
-      options: --privileged
+      image: ghcr.io/safl/nosi/ubuntu-2604-docker:latest
+      # /mnt is the runner's ~70 GiB ephemeral disk; the nosi qcow2 + raw
+      # decompression overflow the container's small overlay otherwise.
+      options: --privileged -v /mnt:/mnt
 
     steps:
     - uses: xnvme/actions/.github/actions/cleanup@main
@@ -1194,12 +1223,39 @@ jobs:
       run: |
         cijoe -r
 
+    # Land the nosi qcow2 + raw on /mnt instead of / (same as the verify job).
+    - name: Stage artifacts on /mnt
+      run: |
+        mkdir -p /mnt/system_imaging
+        ln -s /mnt/system_imaging "$HOME/system_imaging"
+
+    # The nosi container ships qemu+cijoe; the doc toolchain comes from here.
+    - name: Install doc toolchain
+      run: |
+        bash toolbox/pkgs/docgen.sh
+        pipx install ./docs/tooling
+
     # cd'ing into 'cijoe' to auto-collect the non-packaged github-specific configs and
     # workflows.
     - name: CIJOE, provision and generate documentation
       run: |
         make docgen-guest \
           CIJOE_OUTPUT="${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
+
+    - name: Collect vfu_kvssd device log + guest serial console
+      if: always()
+      run: |
+        dst="cijoe/${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
+        echo "::group::vfu_kvssd device log"
+        cat /tmp/vfu_kvssd.log 2>/dev/null || echo "no vfu_kvssd device log"
+        echo "::endgroup::"
+        cp /tmp/vfu_kvssd.log "${dst}-vfu_kvssd.log" 2>/dev/null || true
+        echo "::group::guest serial console (tail)"
+        tail -c 20000 "$HOME/guests/debian-trixie-amd64/serial.output" 2>/dev/null \
+          || echo "no guest serial output"
+        echo "::endgroup::"
+        cp "$HOME/guests/debian-trixie-amd64/serial.output" "${dst}-serial.output" \
+          2>/dev/null || true
 
     - name: CIJOE, upload report-docgen
       uses: actions/upload-artifact@v4.3.0

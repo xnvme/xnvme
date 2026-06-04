@@ -21,6 +21,9 @@ steps:
   with:
     guest_name: "{{ config.qemu.default_guest }}"
 
+- name: stage_nosi_guest
+  uses: stage_nosi_guest
+
 - name: guest_initialize
   uses: qemu.guest_initialize
   with:
@@ -31,6 +34,9 @@ steps:
   uses: xnvme_guest_start_nvme
   with:
     guest_name: "{{ config.qemu.default_guest }}"
+
+- name: root_unlock
+  uses: root_unlock
 
 - name: guest_check
   run: |
@@ -59,6 +65,12 @@ steps:
 
 - name: ldconfig
   run: ldconfig /usr/local/lib/ || true
+
+# Reprobe nvme so /dev/nvmeN enumerates in PCI slot order; otherwise vfu_kvssd
+# lands at the wrong index. Runs after xnvme_install for the xnvme-driver tool.
+- name: stabilize_nvme_naming
+  run: |
+    if [ "$(uname -s)" = "Linux" ]; then xnvme-driver && xnvme-driver reset && udevadm settle; fi
 
 - name: xnvme_bindings_py_install_tgz
   uses: xnvme_bindings_py_install_tgz

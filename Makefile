@@ -195,8 +195,10 @@ guest-start:
 		--config "configs/system_imaging.toml" \
 		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-guest-start,cijoe-output-guest-start)" \
 		guest_kill \
+		stage_nosi_guest \
 		guest_initialize \
 		guest_start \
+		root_unlock \
 		guest_check
 	@echo "## xNVMe: guest-start [DONE]"
 
@@ -245,6 +247,7 @@ guest-provision:
 		xnvme_build \
 		xnvme_install \
 		ldconfig \
+		stabilize_nvme_naming \
 		xnvme_bindings_py_install_tgz \
 		fio_prep
 	@echo "## xNVMe: guest-provision [DONE]"
