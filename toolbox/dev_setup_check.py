@@ -1,28 +1,46 @@
 #!/usr/bin/env python3
 """
-Check QEMU development environment readiness for xNVMe guest workflows.
+Inventory the local QEMU environment against what xNVMe's guest workflows need:
 
-Checks:
-- qemu-system-x86_64 binary available
-- /dev/kvm accessible
+- qemu-system-x86_64 >= 10.1 (for the vfio-user-pci device transport)
+- the vfio-user-pci device, used to attach the external vfu_kvssd binary
+  (https://github.com/safl/vfio-user-kvssd) that supplies the NVMe KV
+  command set
+- /dev/kvm for guest acceleration (optional; guests still run without it)
+
+Reports detected versions and capabilities. Exits non-zero only when a hard
+requirement is missing.
 """
 import os
+import re
 import shutil
 import subprocess
 import sys
 
+MIN_QEMU_VERSION = (10, 1)
 
-def is_custom_qemu(qemu_bin):
-    """Check if the QEMU binary is the custom xNVMe fork (supports KVS, mdts=0)."""
+
+def qemu_version(qemu_bin):
+    """Return (major, minor) parsed from `qemu_bin --version`, or None."""
 
     try:
         result = subprocess.run(
-            [qemu_bin, "-device", "nvme-ns,help"],
-            capture_output=True,
-            text=True,
-            timeout=5,
+            [qemu_bin, "--version"], capture_output=True, text=True, timeout=5
         )
-        return "kv=" in (result.stdout + result.stderr)
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        return None
+    match = re.search(r"QEMU emulator version (\d+)\.(\d+)", result.stdout)
+    return (int(match.group(1)), int(match.group(2))) if match else None
+
+
+def qemu_has(qemu_bin, args, needle):
+    """Return True when 'needle' appears in the output of 'qemu_bin args'."""
+
+    try:
+        result = subprocess.run(
+            [qemu_bin, *args], capture_output=True, text=True, timeout=5
+        )
+        return needle in (result.stdout + result.stderr)
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         return False
 
@@ -30,43 +48,50 @@ def is_custom_qemu(qemu_bin):
 def main():
     errors = []
 
-    print("Checking environment...")
+    print("Checking QEMU environment for xNVMe guest workflows...")
+    print()
 
-    # Check qemu-system-x86_64
     qemu = shutil.which("qemu-system-x86_64")
-    if qemu:
-        if is_custom_qemu(qemu):
-            print(f"  qemu-system-x86_64: OK (xNVMe fork at {qemu})")
-        else:
-            print(f"  qemu-system-x86_64: WRONG BUILD ({qemu})")
-            errors.append(
-                "  Found qemu-system-x86_64 but it is upstream QEMU, not the xNVMe fork.\n"
-                "  The xNVMe fork is required for KVS emulation and mdts=0 support.\n"
-                "  Either:\n"
-                "    a) Run inside the xNVMe Docker environment: make docker\n"
-                "    b) Build the xNVMe QEMU fork: https://github.com/SamsungDS/qemu.git (branch: for-xnvme)"
-            )
-    else:
-        print("  qemu-system-x86_64: MISSING")
+    if not qemu:
+        print("qemu-system-x86_64: MISSING")
         errors.append(
-            "  qemu-system-x86_64 not found.\n"
-            "  Either:\n"
-            "    a) Run inside the xNVMe Docker environment: make docker\n"
-            "    b) Build the xNVMe QEMU fork: https://github.com/SamsungDS/qemu.git (branch: for-xnvme)"
+            "qemu-system-x86_64 not found. Need upstream QEMU >= %d.%d.\n"
+            "  a) Run inside the nosi Docker environment: make docker\n"
+            "  b) Build upstream QEMU from source" % MIN_QEMU_VERSION
         )
+    else:
+        version = qemu_version(qemu)
+        version_str = "%d.%d" % version if version else "unknown"
+        print(f"qemu-system-x86_64: {qemu}")
+        print(f"  version: {version_str} (need >= %d.%d)" % MIN_QEMU_VERSION)
+        if version and version < MIN_QEMU_VERSION:
+            errors.append(
+                f"QEMU {version_str} is older than the required "
+                "%d.%d." % MIN_QEMU_VERSION
+            )
 
-    # Check KVM — not fatal, QEMU works without it (just slower)
+        has_vfio_user = qemu_has(qemu, ["-device", "help"], "vfio-user-pci")
+        print(f"  vfio-user-pci device: {'yes' if has_vfio_user else 'NO'}")
+        if not has_vfio_user:
+            errors.append(
+                "QEMU is missing vfio-user-pci. xNVMe attaches the external "
+                "vfu_kvssd device over vfio-user to supply NVMe KV."
+            )
+
+    print()
     if os.path.exists("/dev/kvm"):
         if os.access("/dev/kvm", os.R_OK | os.W_OK):
-            print("  /dev/kvm: OK")
+            print("/dev/kvm: OK (guests will run with KVM acceleration)")
         else:
-            print("  /dev/kvm: NO ACCESS (guests will run without KVM acceleration)")
-            print("    Fix: sudo usermod -aG kvm $USER")
+            print("/dev/kvm: NO ACCESS (guests will run without KVM acceleration)")
+            print("  fix: sudo usermod -aG kvm $USER")
     else:
-        print("  /dev/kvm: MISSING (guests will run without KVM acceleration)")
-        print(
-            "    Fix: enable KVM in your kernel / hypervisor (e.g. nested virtualization)"
-        )
+        print("/dev/kvm: missing (guests will run without KVM acceleration)")
+
+    print()
+    print("vfu_kvssd: fetched at run time from")
+    print("  https://github.com/safl/vfio-user-kvssd/releases")
+    print("  when a cijoe config defines a [kvssd] table.")
 
     if errors:
         print()
@@ -74,8 +99,6 @@ def main():
             print(err)
             print()
         sys.exit(1)
-
-    print()
 
 
 if __name__ == "__main__":
