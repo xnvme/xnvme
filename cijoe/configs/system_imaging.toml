@@ -32,17 +32,6 @@ cloud.userdata_path = "{{ resources.auxiliary['cloudinit-debian-user-arm64'] }}"
 disk.url = "https://u489897-sub1:PublicAccess1!@u489897-sub1.your-storagebox.de/debian-bookworm-arm64.qcow2"
 disk.path = "{{ local.env.HOME }}/system_imaging/disk/debian-bookworm-arm64.qcow2"
 
-[system-imaging.images.freebsd-13-x86_64]
-system_label = "x86_64"
-
-cloud.url = "https://refenv.fra1.digitaloceanspaces.com/freebsd13-ufs-ksrc.qcow2"
-cloud.path = "{{ local.env.HOME}}/system_imaging/cloudinit/freebsd13-ufs-ksrc.qcow2"
-cloud.metadata_path = "{{ resources.auxiliary['cloudinit-freebsd-meta'] }}"
-cloud.userdata_path = "{{ resources.auxiliary['cloudinit-freebsd-user'] }}"
-
-disk.url = "https://u489897-sub1:PublicAccess1!@u489897-sub1.your-storagebox.de/freebsd-13.1-ksrc-amd64.qcow2"
-disk.path = "{{ local.env.HOME }}/system_imaging/disk/freebsd-13-amd64.qcow2"
-
 [system-imaging.images.freebsd-14-x86_64]
 system_label = "x86_64"
 
