@@ -250,9 +250,13 @@ def fabrics_setup(cijoe):
 
 
 def fabrics_teardown(cijoe):
-    """Teardown fabrics"""
-    err, _ = cijoe.run("pkill -f nvmf_tgt")
-    return err
+    """Teardown fabrics by signalling nvmf_tgt when it is running.
+
+    Gate the kill on pgrep so a no-op teardown (nothing to kill) stays
+    quiet instead of reporting pkill's non-zero exit as an error.
+    """
+    cijoe.run("pgrep -f nvmf_tgt && pkill -f nvmf_tgt; true")
+    return 0
 
 
 class XnvmeDriver(object):

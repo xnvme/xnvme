@@ -8,6 +8,7 @@ dependencies = [
     "cijoe==0.9.58",
     "matplotlib",
     "numpy",
+    "pytest-timeout",
     "rst2pdf",
 ]
 

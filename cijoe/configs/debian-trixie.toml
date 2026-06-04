@@ -1,7 +1,15 @@
 # The SSH options are passed verbatim to paramiko; see https://www.paramiko.org/
-[cijoe.transport.ssh]
+[cijoe.transport.root]
 username = "root"
 password = "root"
+hostname = "localhost"
+port = 4200
+
+# Operator account on nosi images; used by root_unlock. Inert when root SSH
+# already works (fork-based guest, or pre-unlocked images).
+[cijoe.transport.odus]
+username = "odus"
+password = "odus.321"
 hostname = "localhost"
 port = 4200
 
@@ -41,12 +49,20 @@ system_args.kwa = {cpu = "host", smp = 4, m = "6G", accel = "kvm"}
 # Raw arguments: passed without modification to qemu-system-{arch}
 system_args.raw = """\
 -M "type=q35,kernel_irqchip=split" \
--device "intel-iommu,pt=on,intremap=on" \
+-device "intel-iommu,pt=on,intremap=on,caching-mode=on" \
 """
 
 # Managed arguments: expands into longer incantations
 system_args.tcp_forward = {host = 4200, guest = 22}
 #system_args.host_share = "{{ local.env.HOME }}/git"
+
+[kvssd]
+binary = "{{ local.env.HOME }}/guests/vfu_kvssd"
+url = "https://github.com/safl/vfio-user-kvssd/releases/download/v0.1.11/vfu_kvssd-0.1.11-x86_64-linux"
+socket = "/tmp/vfu_kvssd.sock"
+
+[guest_image]
+url = "https://ghcr.io/v2/safl/nosi/debian-13-headless/blobs/sha256:1cdbf24c081516500735ce7f3f96e3212a472fb0528276e23c939035791900dc"
 
 # =============================================================================
 # Devices - One namespace per controller to avoid Linux kernel ordering issues
