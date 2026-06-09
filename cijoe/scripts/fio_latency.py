@@ -184,14 +184,13 @@ class XnvmeKernelEngine(KernelEngine):
     device: Device
     cijoe: Cijoe
     be: str
-    async_: str
 
     @property
     def name_id(self) -> str:
-        return f"{self.name}_{self.async_}"
+        return f"{self.name}_{self.be}"
 
     def extra_args(self) -> Dict[str, str]:
-        return {"--xnvme_be": f"{self.be}", "--xnvme_async": f"{self.async_}"}
+        return {"--xnvme_be": f"{self.be}"}
 
 
 @dataclass
@@ -201,7 +200,6 @@ class XnvmeUserSpaceEngine(UserSpaceEngine):
     device: Device
     cijoe: Cijoe
     be: str
-    async_: str
 
 
 @dataclass
@@ -232,7 +230,6 @@ class XnvmeSPDK(XnvmeUserSpaceEngine):
     def extra_args(self) -> Dict[str, str]:
         return {
             "--xnvme_be": f"{self.be}",
-            "--xnvme_async": f"{self.async_}",
             "--xnvme_dev_nsid": str(self.device.nsid),
         }
 
@@ -283,8 +280,7 @@ def determine_engine(
     if "xnvme" in engine_identifier:
         name = "xnvme"
         be = definition["be"]
-        async_ = definition["async"]
-        engine_args = [name, group, device, cijoe, be, async_]
+        engine_args = [name, group, device, cijoe, be]
     elif "spdk" in engine_identifier:
         path = Path(definition["path"])
         if "spdk_nvme" == engine_identifier:

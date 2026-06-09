@@ -42,7 +42,7 @@ xnvme_null:
   legend: 'null'
 
 # Windows
-xnvme_io_ring:
+xnvme_ioring:
   legend: 'xnvme(ioring)'
 
 xnvme_iocp:
