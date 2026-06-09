@@ -255,16 +255,15 @@ struct enumerate_scan_ctx {
 
 /**
  * Open controller with nsid=0, send Identify Active Namespace List,
- * then open each namespace and invoke cb_func.
+ * then open each namespace and invoke ctx->cb_func.
  */
 static int
-enumerate_controller(const char *uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
-		     void *cb_args)
+enumerate_controller(const char *uri, struct enumerate_scan_ctx *ctx)
 {
-	struct xnvme_opts ctrlr_opts = *opts;
+	struct xnvme_opts ctrlr_opts = *ctx->opts;
 	struct xnvme_dev *ctrlr_dev;
 	struct xnvme_spec_idfy *idfy_buf;
-	struct xnvme_cmd_ctx ctx;
+	struct xnvme_cmd_ctx cmd_ctx;
 	uint32_t nslist[XNVME_MAX_NS_LIST_SIZE];
 	size_t buf_size;
 	int err;
@@ -292,9 +291,9 @@ enumerate_controller(const char *uri, struct xnvme_opts *opts, xnvme_enumerate_c
 		return err;
 	}
 
-	ctx = xnvme_cmd_ctx_from_dev(ctrlr_dev);
-	err = xnvme_adm_idfy(&ctx, XNVME_SPEC_IDFY_NSLIST, 0, 0, 0, 0, idfy_buf);
-	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+	cmd_ctx = xnvme_cmd_ctx_from_dev(ctrlr_dev);
+	err = xnvme_adm_idfy(&cmd_ctx, XNVME_SPEC_IDFY_NSLIST, 0, 0, 0, 0, idfy_buf);
+	if (err || xnvme_cmd_ctx_cpl_status(&cmd_ctx)) {
 		XNVME_DEBUG("FAILED: Identify Active NS List, err: %d", err);
 		xnvme_buf_free(ctrlr_dev, idfy_buf);
 		xnvme_dev_close(ctrlr_dev);
@@ -308,7 +307,7 @@ enumerate_controller(const char *uri, struct xnvme_opts *opts, xnvme_enumerate_c
 		goto exit;
 	}
 	for (int i = 0; i < XNVME_MAX_NS_LIST_SIZE && nslist[i]; ++i) {
-		struct xnvme_opts ns_opts = *opts;
+		struct xnvme_opts ns_opts = *ctx->opts;
 		struct xnvme_dev *ns_dev;
 
 		ns_opts.nsid = nslist[i];
@@ -319,7 +318,7 @@ enumerate_controller(const char *uri, struct xnvme_opts *opts, xnvme_enumerate_c
 			continue;
 		}
 
-		if (cb_func(ns_dev, cb_args)) {
+		if (ctx->cb_func(ns_dev, ctx->cb_args)) {
 			xnvme_dev_close(ns_dev);
 		}
 	}
@@ -355,7 +354,7 @@ enumerate_scan_cb(const struct xnvme_ident *ident, void *cb_args)
 	 */
 	if (ident->dtype == XNVME_DEV_TYPE_NVME_CONTROLLER) {
 		if (!is_kernel_nvme_driver(ident->kernel_driver)) {
-			enumerate_controller(ident->uri, ctx->opts, ctx->cb_func, ctx->cb_args);
+			enumerate_controller(ident->uri, ctx);
 		}
 		return 0;
 	}
@@ -406,18 +405,18 @@ xnvme_platform_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enu
 		opts = &opts_default;
 	}
 
-	if (!sys_uri) {
-		struct enumerate_scan_ctx ctx = {
-			.opts = opts,
-			.cb_func = cb_func,
-			.cb_args = cb_args,
-		};
+	struct enumerate_scan_ctx ctx = {
+		.opts = opts,
+		.cb_func = cb_func,
+		.cb_args = cb_args,
+	};
 
+	if (!sys_uri) {
 		return g_xnvme_platform->scan(NULL, opts, enumerate_scan_cb, &ctx);
 	}
 
 	/** Fabrics / explicit sys_uri: delegate directly to enumerate_controller */
-	return enumerate_controller(sys_uri, opts, cb_func, cb_args);
+	return enumerate_controller(sys_uri, &ctx);
 }
 
 int
