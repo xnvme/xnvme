@@ -63,7 +63,9 @@ xnvme_platform_fbsd_classify(const char *uri)
 		return XNVME_BE_CAP_NVME_TCP;
 	}
 
-	return 0;
+	/* A path we could not stat() and which matched nothing else is assumed
+	 * to be a not-yet-created file, e.g. the destination of a copy. */
+	return XNVME_BE_CAP_FILE;
 }
 
 struct xnvme_fbsd_scan_args {
