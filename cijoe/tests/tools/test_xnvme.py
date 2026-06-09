@@ -337,6 +337,8 @@ def test_pioc(cijoe, device, be_opts, cli_args):
 def test_dsm(cijoe, device, be_opts, cli_args):
     if be_opts["mem"] == "upcie-cuda":
         pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
+    if be_opts["admin"] == "block":
+        pytest.skip(reason="[admin=block] does not implement dsm")
     err, _ = cijoe.run(
         f"xnvme dsm {cli_args} --nsid {device['nsid']} --ad --slba 0 --llb 1"
     )

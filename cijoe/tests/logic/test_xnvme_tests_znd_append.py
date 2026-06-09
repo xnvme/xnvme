@@ -11,5 +11,7 @@ def test_verify(cijoe, device, be_opts, cli_args):
         "ramdisk_thrpool",
     ]:
         pytest.skip(reason="Freebsd kernel doesn't support zns")
+    if be_opts["admin"] == "block":
+        pytest.skip(reason="[admin=block] does not implement zone-append")
     err, _ = cijoe.run(f"xnvme_tests_znd_append verify {cli_args}")
     assert not err
