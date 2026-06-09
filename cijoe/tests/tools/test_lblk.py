@@ -43,6 +43,8 @@ def test_write(cijoe, device, be_opts, cli_args):
 def test_compare(cijoe, device, be_opts, cli_args):
     if be_opts["mem"] == "upcie-cuda":
         pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
+    if be_opts["admin"] == "block":
+        pytest.skip(reason="[admin=block] does not implement compare")
     src = "/tmp/file.bin"
 
     prep = [
@@ -65,6 +67,8 @@ def test_write_uncor(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["write_zeroes"], opts=["be", "admin"])
 def test_write_zeroes(cijoe, device, be_opts, cli_args):
+    if be_opts["admin"] == "block":
+        pytest.skip(reason="[admin=block] does not implement write-zeroes")
     err, _ = cijoe.run(f"lblk write-zeros {cli_args} --slba 0x0 --nlb 0")
     assert not err
 
