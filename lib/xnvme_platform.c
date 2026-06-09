@@ -251,11 +251,20 @@ struct enumerate_scan_ctx {
 	struct xnvme_opts *opts;
 	xnvme_enumerate_cb cb_func;
 	void *cb_args;
+	void *anchor;
 };
 
 /**
  * Open controller with nsid=0, send Identify Active Namespace List,
  * then open each namespace and invoke ctx->cb_func.
+ *
+ * On the first enumerated controller (ctx->anchor still NULL), take one extra
+ * reference and store the controller handle in ctx->anchor. The runtime
+ * environment is shared and reference-counted across controllers, so holding
+ * one extra reference keeps it initialized while the remaining controllers are
+ * opened and closed — avoiding a teardown and re-init per controller. The
+ * caller releases the reference with xnvme_be_cref_put() once enumeration
+ * completes.
  */
 static int
 enumerate_controller(const char *uri, struct enumerate_scan_ctx *ctx)
@@ -325,6 +334,14 @@ enumerate_controller(const char *uri, struct enumerate_scan_ctx *ctx)
 
 exit:
 	xnvme_buf_free(ctrlr_dev, idfy_buf);
+
+	if (!ctx->anchor) {
+		const struct xnvme_be_cref_entry *cref = xnvme_be_cref_get(uri);
+
+		if (cref) {
+			ctx->anchor = cref->ctrlr;
+		}
+	}
 	xnvme_dev_close(ctrlr_dev);
 	return 0;
 }
@@ -400,6 +417,7 @@ xnvme_platform_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enu
 			 void *cb_args)
 {
 	struct xnvme_opts opts_default = xnvme_opts_default();
+	int err;
 
 	if (!opts) {
 		opts = &opts_default;
@@ -412,11 +430,18 @@ xnvme_platform_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enu
 	};
 
 	if (!sys_uri) {
-		return g_xnvme_platform->scan(NULL, opts, enumerate_scan_cb, &ctx);
+		err = g_xnvme_platform->scan(NULL, opts, enumerate_scan_cb, &ctx);
+	} else {
+		/** Fabrics / explicit sys_uri: delegate directly to enumerate_controller */
+		err = enumerate_controller(sys_uri, &ctx);
 	}
 
-	/** Fabrics / explicit sys_uri: delegate directly to enumerate_controller */
-	return enumerate_controller(sys_uri, &ctx);
+	/** Release the controller pinned open across enumeration, if any */
+	if (ctx.anchor) {
+		xnvme_be_cref_put(ctx.anchor);
+	}
+
+	return err;
 }
 
 int
