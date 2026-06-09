@@ -114,10 +114,10 @@ null = {type = "builtin", group = "null", device = "bdev"}
 spdk_nvme = {type = "external_preload", group = "spdk", path = "/tmp/spdk/build/fio/spdk_nvme", device = "pcie"} # Userspace
 spdk_bdev = {type = "external_preload", group = "spdk", path = "/tmp/spdk/build/fio/spdk_bdev", device = "pcie"} # Userspace
 
-xnvme_kqueue = {type = "builtin", group = "posixaio", be = "freebsd", async = "kqueue", device = "bdev"} # Kernel
-xnvme_posixaio = {type = "builtin", group = "posixaio", be = "freebsd", async = "posix", device = "bdev"} # Kernel
-xnvme_spdk = {type = "builtin", group = "spdk", be = "spdk", async = "spdk", device = "pcie"} # Userspace
-xnvme_null = {type = "builtin", group = "null", be = "freebsd", async = "nil", device = "bdev"} # Kernel
+xnvme_kqueue = {type = "builtin", group = "posixaio", be = "kqueue", device = "bdev"} # Kernel
+xnvme_posixaio = {type = "builtin", group = "posixaio", be = "posix", device = "bdev"} # Kernel
+xnvme_spdk = {type = "builtin", group = "spdk", be = "spdk", device = "pcie"} # Userspace
+xnvme_null = {type = "builtin", group = "null", be = "nil", device = "bdev"} # Kernel
 
 [[devices]] # OS Managed
 key = "bdev"

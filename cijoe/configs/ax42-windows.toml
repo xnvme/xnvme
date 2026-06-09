@@ -101,7 +101,7 @@ tag = "fio-3.41"
 null = {type = "builtin", group = "null", device = "bdev"}
 windowsaio = {type = "builtin", group = "windowsaio", device = "bdev"}
 
-xnvme_null = {type = "builtin", group = "null", be = "windows", async = "nil", device = "bdev"}
-xnvme_ioring = {type = "builtin", group = "windowsaio", be = "windows", async = "io_ring", device = "bdev"}
-xnvme_iocp = {type = "builtin", group = "windowsaio", be = "windows", async = "iocp", device = "bdev"}
-xnvme_iocpth = {type = "builtin", group = "windowsaio", be = "windows", async = "iocp_th", device = "bdev"}
+xnvme_null = {type = "builtin", group = "null", be = "nil", device = "bdev"}
+xnvme_ioring = {type = "builtin", group = "windowsaio", be = "ioring", device = "bdev"}
+xnvme_iocp = {type = "builtin", group = "windowsaio", be = "iocp", device = "bdev"}
+xnvme_iocpth = {type = "builtin", group = "windowsaio", be = "iocp_th", device = "bdev"}
