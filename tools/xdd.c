@@ -18,6 +18,7 @@ struct cb_args {
 
 	struct xnvme_cmd_ctx dst_ctx;
 	char *buf;
+	int in_use;
 };
 
 static void
@@ -43,6 +44,7 @@ cb_func(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 		}
 	}
 
+	work->in_use = 0;
 	xnvme_queue_put_cmd_ctx(ctx->async.queue, ctx);
 }
 
@@ -129,11 +131,26 @@ copy_async(struct xnvme_cli *cli)
 		work->start_offset = start_offset;
 	}
 	for (size_t ofz = start_offset; (ofz - start_offset < tbytes) && !nerrors;) {
-		struct cb_args *work = &cb_args[((ofz - start_offset) / iosize) % qdepth];
 		struct xnvme_cmd_ctx *src_ctx = xnvme_cmd_ctx_from_queue(queue);
 		size_t nbytes = XNVME_MIN_U64(iosize, tbytes - (ofz - start_offset));
+		struct cb_args *work = NULL;
 		ssize_t res;
 
+		/* Reuse a buffer slot only once its previous read+write has
+		 * completed. Completions may arrive out of order, so select a
+		 * free slot rather than indexing by block number. */
+		while (!work) {
+			for (uint32_t i = 0; i < qdepth; ++i) {
+				if (!cb_args[i].in_use) {
+					work = &cb_args[i];
+					break;
+				}
+			}
+			if (!work) {
+				xnvme_queue_poke(queue, 0);
+			}
+		}
+		work->in_use = 1;
 		src_ctx->async.cb_arg = work;
 
 submit:
