@@ -265,6 +265,7 @@ struct xnvme_platform g_xnvme_platform_freebsd = {
 			&g_xnvme_be_spdk,
 #endif
 			&g_xnvme_be_fbsd_kqueue_nvme,
+			&g_xnvme_be_fbsd_emu_file,
 			&g_xnvme_be_fbsd_kqueue_psync,
 			&g_xnvme_be_fbsd_posix_nvme,
 			&g_xnvme_be_fbsd_thrpool_nvme,
