@@ -45,3 +45,9 @@ steps:
   with:
     args: '-k "fabrics" tests'
     random_order: false
+
+- name: test_mproc
+  uses: core.testrunner
+  with:
+    args: '-k "pcie and not test_mem_map_unmap" tests --proc_role 2'
+    random_order: false

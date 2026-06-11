@@ -26,6 +26,28 @@ import pytest
 
 from .xnvme_be_combinations import get_backend_configurations
 
+_proc_role = 0
+_MPROC_SHM_ID = 1
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--proc_role",
+        type=int,
+        default=0,
+        help="Open devices with the given process role (0=single, 1=primary, 2=secondary)",
+    )
+
+
+def pytest_configure(config):
+    global _proc_role
+    try:
+        _proc_role = config.getoption("--proc_role", default=0)
+    except ValueError:
+        _proc_role = 0
+    if _proc_role == 2:
+        XnvmeDriver.IS_KERNEL_ATTACHED = False
+
 
 def get_osname():
     """Return normalized OS name from CIJOE config"""
@@ -128,6 +150,12 @@ def xnvme_cli_args(device, be_opts):
 
     if be_opts:
         args += [f"--{arg} {val}" for arg, val in be_opts.items() if arg != "label"]
+
+    if _proc_role:
+        args += [f"--proc_role {_proc_role}"]
+
+    if _proc_role == 2 and be_opts and be_opts.get("be") == "spdk":
+        args += [f"--shm_id {_MPROC_SHM_ID}"]
 
     return " ".join(args)
 
@@ -385,6 +413,14 @@ def device(cijoe, request):
     from within the testcase body itself.
     """
     if request.param:
+        if _proc_role == 2:
+            callspec = getattr(request.node, "callspec", None)
+            be_opts = callspec.params.get("be_opts") if callspec else None
+            if be_opts:
+                if be_opts.get("mproc"):
+                    MprocPrimary.start(cijoe, request.param, be_opts["be"])
+                else:
+                    pytest.skip(f"{be_opts.get('be')} does not support multi-process")
         XnvmeDriver.attach(cijoe, request.param)
 
     return request.param
@@ -422,6 +458,53 @@ def xnvme_parametrize(labels, opts):
         return inner
 
     return decorator
+
+
+class MprocPrimary:
+    """
+    Manages the lifecycle of an xnvme_tests_mproc primary daemon.
+
+    Tracks which backend's primary is currently running (similar to
+    XnvmeDriver.IS_KERNEL_ATTACHED) so tests sorted by backend share a single
+    primary per backend without restarting between tests.
+    """
+
+    RUNNING_BE = None
+    CIJOE = None
+
+    @staticmethod
+    def start(cijoe, device, be):
+        if MprocPrimary.RUNNING_BE == be:
+            return
+        MprocPrimary.stop(cijoe)
+        cijoe.run("xnvme-driver")
+        uri = device["uri"]
+        nsid = device["nsid"]
+        shm_arg = f"--shm_id {_MPROC_SHM_ID}" if be == "spdk" else ""
+        cijoe.run(
+            f"nohup xnvme_tests_mproc primary {uri} --be {be} "
+            f"--dev-nsid {nsid} --proc_role 1 {shm_arg} "
+            f"> /tmp/mproc_{be}.out 2>&1 &"
+        )
+        sleep(2)
+        MprocPrimary.RUNNING_BE = be
+        MprocPrimary.CIJOE = cijoe
+
+    @staticmethod
+    def stop(cijoe):
+        if MprocPrimary.RUNNING_BE is None:
+            return
+        cijoe.run("pkill -f xnvme_tests_mproc || true")
+        sleep(1)
+        MprocPrimary.RUNNING_BE = None
+        MprocPrimary.CIJOE = None
+
+
+@pytest.fixture(scope="session", autouse=True)
+def mproc_teardown():
+    yield
+    if MprocPrimary.CIJOE is not None:
+        MprocPrimary.stop(MprocPrimary.CIJOE)
 
 
 # Sort order for pytest_collection_modifyitems. `be` first because backend
