@@ -28,7 +28,9 @@ pacman -S --noconfirm \
  pkg-config \
  python-pip \
  python-pipx \
+ python-jinja \
  python-pyelftools \
+ python-tabulate \
  python-setuptools \
  python3 \
  util-linux-libs

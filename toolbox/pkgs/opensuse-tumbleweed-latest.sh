@@ -36,7 +36,9 @@ zypper --non-interactive install -y --allow-downgrade \
  python3-devel \
  python3-pip \
  python3-pipx \
+ python3-Jinja2 \
  python3-pyelftools \
+ python3-tabulate \
  python3-setuptools \
  tar
 

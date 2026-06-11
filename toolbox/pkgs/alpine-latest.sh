@@ -32,6 +32,8 @@ apk add \
  perl \
  pkgconf \
  py3-pip \
+ py3-jinja2 \
+ py3-tabulate \
  python3 \
  python3-dev \
  util-linux-dev
