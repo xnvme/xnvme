@@ -77,7 +77,7 @@ jobs:
         mv builddir/meson-dist/xnvme-0.7.5.tar.gz.sha256sum builddir/meson-dist/xnvme-src.tar.gz.sha256sum
 
     - name: Upload source archive
-      uses: actions/upload-artifact@v4.3.0
+      uses: actions/upload-artifact@v6.0.0
       with:
         name: xnvme-src-archive${{ matrix.variant == 'with-subprojects' && '-with-subprojects' || '' }}
         path: |
@@ -215,7 +215,7 @@ jobs:
         mv python/bindings/dist/xnvme-*.*.*.tar.gz python/bindings/dist/xnvme-py-sdist.tar.gz
 
     - name: Python sdist-packages, upload bindings
-      uses: actions/upload-artifact@v4.3.0
+      uses: actions/upload-artifact@v6.0.0
       with:
         name: xnvme-py-sdist
         path: |
@@ -333,7 +333,7 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - name: Retrieve the xNVMe Python sdist package
-      uses: actions/download-artifact@v4.1.7
+      uses: actions/download-artifact@v7.0.0
       with:
         name: xnvme-py-sdist
         path: ${{ steps.source.outputs.directory }}
@@ -366,7 +366,7 @@ jobs:
 
     - name: CIJOE, upload report.html
       if: always() && (!contains('focal', matrix.container.ver))
-      uses: actions/upload-artifact@v4.3.0
+      uses: actions/upload-artifact@v6.0.0
       with:
         name: ${{ github.job }}-${{ matrix.container.os }}-${{ matrix.container.ver }}-report-html
         path: cijoe/${{ github.job }}-${{ matrix.container.os }}-${{ matrix.container.ver }}-*/report.html
@@ -380,7 +380,7 @@ jobs:
 
     - name: CIJOE, upload build-${{ matrix.container.os }}-${{ matrix.container.ver }}-reports
       if: always() && (!contains('focal', matrix.container.ver))
-      uses: actions/upload-artifact@v4.3.0
+      uses: actions/upload-artifact@v6.0.0
       with:
         name: ${{ github.job }}-${{ matrix.container.os }}-${{ matrix.container.ver }}-reports
         path: ${{ github.job }}-${{ matrix.container.os }}-${{ matrix.container.ver }}-reports.tar.gz
@@ -458,7 +458,7 @@ jobs:
         python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
 
     - name: Retrieve the xNVMe Python sdist package
-      uses: actions/download-artifact@v4.1.7
+      uses: actions/download-artifact@v7.0.0
       with:
         name: xnvme-py-sdist
         path: ${{ steps.source.outputs.directory }}
@@ -498,7 +498,7 @@ jobs:
 
     - name: CIJOE, upload report.html
       if: always()
-      uses: actions/upload-artifact@v4.3.0
+      uses: actions/upload-artifact@v6.0.0
       with:
         name: ${{ github.job }}-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-report-html
         path: cijoe/${{ github.job }}-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-*/report.html
@@ -511,7 +511,7 @@ jobs:
           cijoe/${{ github.job }}-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-*
 
     - name: CIJOE, upload build-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-reports
-      uses: actions/upload-artifact@v4.3.0
+      uses: actions/upload-artifact@v6.0.0
       if: always()
       with:
         name: ${{ github.job }}-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-reports
@@ -619,7 +619,7 @@ jobs:
         python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
 
     - name: Retrieve the xNVMe Python sdist package
-      uses: actions/download-artifact@v4.1.7
+      uses: actions/download-artifact@v7.0.0
       with:
         name: xnvme-py-sdist
         path: ${{ steps.source.outputs.directory }}
@@ -657,7 +657,7 @@ jobs:
 
     - name: CIJOE, upload report.html
       if: always()
-      uses: actions/upload-artifact@v4.3.0
+      uses: actions/upload-artifact@v6.0.0
       with:
         name: ${{ github.job }}-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-report-html
         path: cijoe/${{ github.job }}-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-*/report.html
@@ -670,7 +670,7 @@ jobs:
           cijoe/${{ github.job }}-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-*
 
     - name: CIJOE, upload build-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-reports
-      uses: actions/upload-artifact@v4.3.0
+      uses: actions/upload-artifact@v6.0.0
       if: always()
       with:
         name: ${{ github.job }}-${{ matrix.runner.os }}-${{ matrix.runner.ver }}-reports
@@ -711,7 +711,7 @@ jobs:
         name: xnvme-src-archive-with-subprojects
 
     - name: Retrieve the xNVMe Python sdist package
-      uses: actions/download-artifact@v4.1.7
+      uses: actions/download-artifact@v7.0.0
       with:
         name: xnvme-py-sdist
         path: ${{ steps.source.outputs.directory }}
@@ -766,7 +766,7 @@ jobs:
 
     - name: CIJOE, upload report.html
       if: always()
-      uses: actions/upload-artifact@v4.3.0
+      uses: actions/upload-artifact@v6.0.0
       with:
         name: ${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-report-html
         path: cijoe/${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-*/report.html
@@ -779,7 +779,7 @@ jobs:
           cijoe/${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-*
 
     - name: CIJOE, upload verify-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-reports
-      uses: actions/upload-artifact@v4.3.0
+      uses: actions/upload-artifact@v6.0.0
       if: always()
       with:
         name: ${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-reports
@@ -815,7 +815,7 @@ jobs:
         name: xnvme-src-archive-with-subprojects
 
     - name: Retrieve the xNVMe Python sdist package
-      uses: actions/download-artifact@v4.1.7
+      uses: actions/download-artifact@v7.0.0
       with:
         name: xnvme-py-sdist
         path: ${{ steps.source.outputs.directory }}
@@ -870,7 +870,7 @@ jobs:
 
     - name: CIJOE, upload report.html
       if: always()
-      uses: actions/upload-artifact@v4.3.0
+      uses: actions/upload-artifact@v6.0.0
       with:
         name: ${{ github.job }}-${{ matrix.guest.hostname }}-report-html
         path: cijoe/${{ github.job }}-${{ matrix.guest.hostname }}-*/report.html
@@ -883,7 +883,7 @@ jobs:
           cijoe/${{ github.job }}-${{ matrix.guest.hostname }}-*
 
     - name: CIJOE, upload verify-${{ matrix.guest.hostname }}-reports
-      uses: actions/upload-artifact@v4.3.0
+      uses: actions/upload-artifact@v6.0.0
       if: always()
       with:
         name: ${{ github.job }}-${{ matrix.guest.hostname }}-reports
@@ -915,7 +915,7 @@ jobs:
         name: xnvme-src-archive-with-subprojects
 
     - name: Retrieve the xNVMe Python sdist package
-      uses: actions/download-artifact@v4.1.7
+      uses: actions/download-artifact@v7.0.0
       with:
         name: xnvme-py-sdist
         path: ${{ steps.source.outputs.directory }}
@@ -956,7 +956,7 @@ jobs:
 
     - name: CIJOE, upload report.html
       if: always()
-      uses: actions/upload-artifact@v4.3.0
+      uses: actions/upload-artifact@v6.0.0
       with:
         name: ${{ github.job }}-${{ matrix.guest.hostname }}-report-html
         path: cijoe/${{ github.job }}-${{ matrix.guest.hostname }}-*/report.html
@@ -969,7 +969,7 @@ jobs:
           cijoe/${{ github.job }}-${{ matrix.guest.hostname }}-*
 
     - name: CIJOE, upload verify-${{ matrix.guest.hostname }}-reports
-      uses: actions/upload-artifact@v4.3.0
+      uses: actions/upload-artifact@v6.0.0
       if: always()
       with:
         name: ${{ github.job }}-${{ matrix.guest.hostname }}-reports
@@ -996,7 +996,7 @@ jobs:
         name: xnvme-src-archive-with-subprojects
 
     - name: Retrieve the xNVMe Python sdist package
-      uses: actions/download-artifact@v4.1.7
+      uses: actions/download-artifact@v7.0.0
       with:
         name: xnvme-py-sdist
         path: ${{ steps.source.outputs.directory }}
@@ -1041,7 +1041,7 @@ jobs:
 
     - name: CIJOE, upload report.html
       if: always()
-      uses: actions/upload-artifact@v4.3.0
+      uses: actions/upload-artifact@v6.0.0
       with:
         name: ${{ github.job }}-report-html
         path: cijoe/${{ github.job }}-*/report.html
@@ -1054,7 +1054,7 @@ jobs:
           cijoe/${{ github.job }}-*
 
     - name: CIJOE, upload benchmark-bdev_xnvme-reports
-      uses: actions/upload-artifact@v4.3.0
+      uses: actions/upload-artifact@v6.0.0
       if: always()
       with:
         name: ${{ github.job }}-reports
@@ -1089,7 +1089,7 @@ jobs:
         name: xnvme-src-archive-with-subprojects
 
     - name: Retrieve the xNVMe Python sdist package
-      uses: actions/download-artifact@v4.1.7
+      uses: actions/download-artifact@v7.0.0
       with:
         name: xnvme-py-sdist
         path: ${{ steps.source.outputs.directory }}
@@ -1125,7 +1125,7 @@ jobs:
 
     - name: CIJOE, upload report.html
       if: always()
-      uses: actions/upload-artifact@v4.3.0
+      uses: actions/upload-artifact@v6.0.0
       with:
         name: ${{ github.job }}-${{ matrix.guest.os }}-report-html
         path: cijoe/${{ github.job }}-${{ matrix.guest.os }}-*/report.html
@@ -1138,7 +1138,7 @@ jobs:
           cijoe/${{ github.job }}-${{ matrix.guest.os }}-*
 
     - name: CIJOE, upload latency-${{ matrix.guest.os }}-reports
-      uses: actions/upload-artifact@v4.6.2
+      uses: actions/upload-artifact@v6.0.0
       if: always()
       with:
         name: ${{ github.job }}-${{ matrix.guest.os }}-reports
@@ -1201,7 +1201,7 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - name: Retrieve the xNVMe Python sdist package
-      uses: actions/download-artifact@v4.1.7
+      uses: actions/download-artifact@v7.0.0
       with:
         name: xnvme-py-sdist
         path: ${{ steps.source.outputs.directory }}
@@ -1258,7 +1258,7 @@ jobs:
           2>/dev/null || true
 
     - name: CIJOE, upload report-docgen
-      uses: actions/upload-artifact@v4.3.0
+      uses: actions/upload-artifact@v6.0.0
       if: always()
       with:
         name: ${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-reports
@@ -1331,7 +1331,7 @@ jobs:
         cd debpkg && make || true
 
     - name: Upload debian packages
-      uses: actions/upload-artifact@v4.3.0
+      uses: actions/upload-artifact@v6.0.0
       with:
         name: packages-debian
         path: |
