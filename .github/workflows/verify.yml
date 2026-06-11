@@ -743,13 +743,14 @@ jobs:
           CIJOE_OUTPUT="${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
     - name: Collect guest serial console
-      if: always() && matrix.guest.os == 'debian'
+      if: always() && (matrix.guest.os == 'debian' || matrix.guest.os == 'freebsd')
       run: |
         dst="cijoe/${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
+        serial="$HOME/guests/${{ matrix.guest.os }}-${{ matrix.guest.ver }}-amd64/serial.output"
         echo "::group::guest serial console (tail)"
-        tail -c 20000 "$HOME/guests/debian-trixie-amd64/serial.output" 2>/dev/null || echo "no guest serial output"
+        tail -c 20000 "$serial" 2>/dev/null || echo "no guest serial output"
         echo "::endgroup::"
-        cp "$HOME/guests/debian-trixie-amd64/serial.output" "${dst}-serial.output" 2>/dev/null || true
+        cp "$serial" "${dst}-serial.output" 2>/dev/null || true
 
     - name: Collect vfu_kvssd device log
       if: always()
