@@ -1,7 +1,7 @@
 project(
   'spdk',
   'c',
-  version: '24.09',
+  version: '25.05.1',
 )
 fs = import('fs')
 
