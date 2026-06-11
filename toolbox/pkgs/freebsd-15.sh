@@ -15,7 +15,9 @@ pkg install -qy \
  bash \
  cunit \
  devel/py-pipx \
+ devel/py-Jinja2 \
  devel/py-pyelftools \
+ devel/py-tabulate \
  findutils \
  git \
  gmake \
