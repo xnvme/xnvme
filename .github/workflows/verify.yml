@@ -90,7 +90,7 @@ jobs:
   #
   source-format-check:
     runs-on: ubuntu-latest
-    container: ghcr.io/xnvme/xnvme-deps-fedora-citools:main
+    container: ghcr.io/xnvme/xnvme-citools-debian-latest:main
 
     steps:
     - name: Grab source
@@ -114,7 +114,7 @@ jobs:
   test-gen-targets:
     needs: source-archive
     runs-on: ubuntu-latest
-    container: ghcr.io/xnvme/xnvme-deps-citools-latest:main
+    container: ghcr.io/xnvme/xnvme-citools-debian-latest:main
 
     steps:
     - name: Retrieve and unpack the xNVMe source archive
@@ -1302,7 +1302,7 @@ jobs:
   packaging-debian:
     needs: source-archive
     runs-on: ubuntu-latest
-    container: ghcr.io/xnvme/xnvme-deps-debian-packaging:main
+    container: ghcr.io/xnvme/xnvme-citools-debian-latest:main
     if: github.event_name == 'pull_request'
 
     steps:
