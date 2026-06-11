@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: "Simon A. F. Lund" <os@safl.dk>
+Date: Thu, 11 Jun 2026 13:00:00 +0200
+Subject: [PATCH] queue: provide TAILQ_REMOVE_CLEAR on FreeBSD
+
+include/spdk/queue.h pulls in include/spdk/queue_extras.h only under
+__linux__, on the premise that FreeBSD's <sys/queue.h> already supplies
+the macros SPDK needs. That stopped being true when lib/nvme/nvme_tcp.c
+started using TAILQ_REMOVE_CLEAR and the new TAILQ_ENTRY *_poll /
+*_timeout entries in upstream commit f108a1f1 ("nvme/tcp: use
+TAILQ_ENTRY_*() instead of needs_poll", May 2025). Those macros are
+SPDK-internal, not in any FreeBSD release, so every FreeBSD build since
+then fails with "undeclared identifier".
+
+We cannot just include queue_extras.h on FreeBSD too -- it redefines
+~50 macros (STAILQ_HEAD, LIST_*, TAILQ_FOREACH_SAFE, QMD_*, ...) that
+FreeBSD's <sys/queue.h> already provides, and the redefinitions
+cascade-conflict. Provide just the missing helpers in queue.h directly,
+under an __FreeBSD__ branch, until SPDK upstream fixes the conditional
+include or moves these helpers into a separate header.
+
+Signed-off-by: Simon A. F. Lund <os@safl.dk>
+---
+ include/spdk/queue.h | 26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+diff --git a/include/spdk/queue.h b/include/spdk/queue.h
+--- a/include/spdk/queue.h
++++ b/include/spdk/queue.h
+@@ -20,6 +20,32 @@
+  */
+ #ifdef __linux__
+ #include "spdk/queue_extras.h"
++#elif defined(__FreeBSD__)
++/*
++ * FreeBSD's <sys/queue.h> provides most of the BSD queue macros natively
++ * but lacks the SPDK-introduced helpers (TAILQ_REMOVE_CLEAR et al.) used
++ * by lib/nvme/nvme_tcp.c since upstream f108a1f1 (May 2025). Including
++ * spdk/queue_extras.h wholesale on FreeBSD would cascade-conflict with
++ * ~50 macros (STAILQ_HEAD, LIST_*, QMD_*, ...) that the system header
++ * already provides. Define just the missing helpers here.
++ */
++#include <assert.h>
++
++#define TAILQ_ENTRY_ENQUEUED(elm, field) \
++	((elm)->field.tqe_prev != NULL)
++
++#define TAILQ_ENTRY_NOT_ENQUEUED(elm, field) \
++	(!TAILQ_ENTRY_ENQUEUED(elm, field))
++
++#define TAILQ_ENTRY_CLEAR(elm, field) do { \
++	assert(TAILQ_ENTRY_ENQUEUED(elm, field)); \
++	(elm)->field.tqe_prev = NULL; \
++} while (0)
++
++#define TAILQ_REMOVE_CLEAR(head, elm, field) do { \
++	TAILQ_REMOVE(head, elm, field); \
++	TAILQ_ENTRY_CLEAR(elm, field); \
++} while (0)
+ #endif
+ 
+ /*
+-- 
+2.34.1
+
