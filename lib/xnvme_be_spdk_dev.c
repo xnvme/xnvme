@@ -114,6 +114,24 @@ xnvme_spdk_choker_off(void)
 	xnvme_stderr_choker(0);
 }
 
+/**
+ * Initialize an spdk_env_opts the way SPDK currently expects callers to.
+ *
+ * Starting with SPDK v26.05, spdk_env_opts_init() preserves the caller's
+ * opts_size rather than setting it to sizeof(*opts); a zero value caps the
+ * effective struct to the smallest historical boundary and silently drops
+ * any newer fields. The size stamp is part of SPDK's forward-compat scheme:
+ * callers declare how much of the struct they understand so the library
+ * does not write past the end. Wrap the size-stamp + init pair so both
+ * call sites state it once and consistently.
+ */
+static inline void
+xnvme_spdk_env_opts_init(struct spdk_env_opts *opts)
+{
+	opts->opts_size = sizeof(*opts);
+	spdk_env_opts_init(opts);
+}
+
 static inline int
 _spdk_env_init(struct spdk_env_opts *opts)
 {
@@ -131,7 +149,7 @@ _spdk_env_init(struct spdk_env_opts *opts)
 	if (!opts) {
 		opts = &_spdk_opts;
 
-		spdk_env_opts_init(opts);
+		xnvme_spdk_env_opts_init(opts);
 		opts->name = "xnvme";
 		opts->shm_id = 0;
 	}
@@ -487,7 +505,7 @@ xnvme_be_spdk_ctrlr_init(struct xnvme_dev *dev)
 	struct spdk_env_opts env_opts = {0};
 	int err;
 
-	spdk_env_opts_init(&env_opts);
+	xnvme_spdk_env_opts_init(&env_opts);
 	if (dev->opts.core_mask) {
 		XNVME_DEBUG("INFO: multi-process setup");
 		env_opts.shm_id = dev->opts.shm_id;
