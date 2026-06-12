@@ -87,7 +87,11 @@ _dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnv
 
 	cref = xnvme_be_cref_get(dev->ident.uri);
 	if (cref) {
-		if (strcmp(cref->be_name, cfg->attr.name)) {
+		// Controller state is keyed by backend name, except that upcie variants
+		// share controller state and accept each other's crefs despite the
+		// inexact name match.
+		if (strcmp(cref->be_name, cfg->attr.name) != 0 &&
+		    !(strstr(cref->be_name, "upcie") && strstr(cfg->attr.name, "upcie"))) {
 			xnvme_be_cref_put(cref->ctrlr);
 			XNVME_DEBUG("FAILED: uri '%s' claimed by another backend config",
 				    dev->ident.uri);
