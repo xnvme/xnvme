@@ -65,7 +65,7 @@ system_args.tcp_forward = {host = 4200, guest = 22}
 
 [[devices]]
 key = "bdev"
-uri = "\\\\.\\PhysicalDrive1" # backslashes need to be escaped
+uri = "//./PhysicalDrive1" # forward slashes survive shell evaluation; \\.\ loses its backslashes
 nsid = 1
 labels = [ "dev", "bdev", "nvm" ]
 driver_attachment = "kernel"
