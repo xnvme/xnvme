@@ -512,6 +512,20 @@ xnvme_be_spdk_ctrlr_init(struct xnvme_dev *dev)
 		env_opts.core_mask = dev->opts.core_mask;
 		env_opts.main_core = dev->opts.main_core;
 	}
+	/* DPDK's IOVA-mode auto-detection cannot see through nested vfio-pci */
+	/* pass-through to the inner guest's DMA mask; setups that hit "IOVA */
+	/* exceeding limits of current DMA mask" need iova_mode='pa'. Honour */
+	/* xnvme_opts.iova_mode first, fall back to XNVME_SPDK_IOVA_MODE so a */
+	/* deployment can flip the mode without touching every caller. */
+	{
+		const char *iova_mode = dev->opts.iova_mode;
+		if (!iova_mode) {
+			iova_mode = getenv("XNVME_SPDK_IOVA_MODE");
+		}
+		if (iova_mode) {
+			env_opts.iova_mode = iova_mode;
+		}
+	}
 
 	err = _spdk_env_init(&env_opts);
 	if (err) {

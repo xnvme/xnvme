@@ -119,6 +119,7 @@ struct xnvme_cli_args {
 	uint64_t shm_id;
 	uint32_t main_core;
 	const char *core_mask;
+	const char *iova_mode;
 
 	struct xnvme_opts_css css; ///< SPDK controller-setup: do command-set-selection
 
@@ -348,7 +349,9 @@ enum xnvme_cli_opt {
 	XNVME_CLI_OPT_CPUMASK   = 127, ///< XNVME_CLI_OPT_CPUMASK
 	XNVME_CLI_OPT_NQUEUES   = 128, ///< XNVME_CLI_OPT_NQUEUES
 
-	XNVME_CLI_OPT_END = 129, ///< XNVME_CLI_OPT_END
+	XNVME_CLI_OPT_IOVA_MODE = 129, ///< XNVME_CLI_OPT_IOVA_MODE
+
+	XNVME_CLI_OPT_END = 130, ///< XNVME_CLI_OPT_END
 };
 
 /**

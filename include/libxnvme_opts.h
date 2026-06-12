@@ -42,6 +42,7 @@ struct xnvme_opts {
 	uint32_t shm_id;           ///< SPDK multi-processing: shared-memory-id
 	uint32_t main_core;        ///< SPDK multi-processing: main-core
 	const char *core_mask;     ///< SPDK multi-processing: core-mask
+	const char *iova_mode;     ///< SPDK env-init: DPDK IOVA mode ("va" or "pa")
 	const char *adrfam;        ///< SPDK fabrics: address-family, IPv4/IPv6
 	const char *subnqn;        ///< SPDK fabrics: Subsystem NQN
 	const char *hostnqn;       ///< SPDK fabrics: Host NQN
