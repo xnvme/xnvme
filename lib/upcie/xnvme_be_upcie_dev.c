@@ -273,79 +273,25 @@ _upcie_release_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_qpair *qp)
 	atomic_fetch_or_explicit(&ctrlr->mproc->qidmap, 1ULL << qp->qid, memory_order_release);
 }
 
-static int
-_upcie_prealloc_queues(struct xnvme_be_upcie_ctrlr *ctrlr, int nqueues, int depth)
-{
-	struct xnvme_be_upcie_mproc *mp = ctrlr->mproc;
-	struct hostmem_heap *heap = &g_upcie_rte.heap;
-	int err;
-
-	ctrlr->preallocated = calloc(nqueues + 1, sizeof(*ctrlr->preallocated));
-	if (!ctrlr->preallocated) {
-		return -ENOMEM;
-	}
-
-	for (int qid = 1; qid <= nqueues; qid++) {
-		struct nvme_qpair *qp = &ctrlr->preallocated[qid];
-
-		err = nvme_controller_create_io_qpair(ctrlr->ctrl, qp, (uint16_t)depth);
-		if (err) {
-			XNVME_DEBUG("FAILED: nvme_controller_create_io_qpair(qid=%d); err(%d)",
-				    qid, err);
-			for (int j = 1; j < qid; j++) {
-				struct nvme_qpair *pqp = &ctrlr->preallocated[j];
-
-				_upcie_send_delete_iosq(ctrlr->ctrl, (uint16_t)j);
-				_upcie_send_delete_iocq(ctrlr->ctrl, (uint16_t)j);
-				hostmem_dma_free(heap, pqp->sq);
-				hostmem_dma_free(heap, pqp->cq);
-			}
-			free(ctrlr->preallocated);
-			ctrlr->preallocated = NULL;
-			return err;
-		}
-
-		/* Pre-allocated queues share ring memory via shm but don't need PRP pools —
-		 * each process allocates its own when claiming via _upcie_claim_qpair.
-		 * Without this, 63 queues × 4 MB/pool = 252 MB exhausts the 256 MB DMA heap. */
-		nvme_request_pool_term_prps(qp->rpool, heap);
-		free(qp->rpool);
-		qp->rpool = NULL;
-
-		mp->queues[qid].qid = (uint32_t)qid;
-		mp->queues[qid].depth = (uint16_t)depth;
-		mp->queues[qid].sq_offset =
-			(uint64_t)((uint8_t *)qp->sq - (uint8_t *)heap->memory.virt);
-		mp->queues[qid].cq_offset =
-			(uint64_t)((uint8_t *)qp->cq - (uint8_t *)heap->memory.virt);
-		mp->queues[qid].sq_tail = 0;
-		mp->queues[qid].cq_head = 0;
-		mp->queues[qid].cq_phase = 1;
-	}
-
-	return 0;
-}
-
 static void
 _upcie_free_preallocated_queues(struct xnvme_be_upcie_ctrlr *ctrlr)
 {
-	struct xnvme_be_upcie_mproc *mproc = ctrlr->mproc;
-	int nqueues = mproc->nqueues;
-
-	for (int qid = 1; qid <= nqueues; qid++) {
+	for (int qid = 1; qid < XNVME_BE_UPCIE_NQUEUES_MAX; qid++) {
 		struct nvme_qpair *qp = &ctrlr->preallocated[qid];
+
+		if (!qp->sq) {
+			continue;
+		}
 
 		_upcie_send_delete_iosq(ctrlr->ctrl, (uint16_t)qid);
 		_upcie_send_delete_iocq(ctrlr->ctrl, (uint16_t)qid);
 
-		if (qp->sq) {
-			if (qp->rpool) {
-				nvme_request_pool_term_prps(qp->rpool, qp->heap);
-				free(qp->rpool);
-			}
-			hostmem_dma_free(qp->heap, qp->sq);
-			hostmem_dma_free(qp->heap, qp->cq);
+		if (qp->rpool) {
+			nvme_request_pool_term_prps(qp->rpool, qp->heap);
+			free(qp->rpool);
 		}
+		hostmem_dma_free(qp->heap, qp->sq);
+		hostmem_dma_free(qp->heap, qp->cq);
 	}
 	free(ctrlr->preallocated);
 	ctrlr->preallocated = NULL;
@@ -358,10 +304,7 @@ _upcie_mproc_primary_init(struct xnvme_dev *dev, struct xnvme_be_upcie_ctrlr *ct
 	struct hostmem_heap *heap = &g_upcie_rte.heap;
 	char shm_name[64];
 	size_t shm_size = sizeof(*mproc);
-	int shm_fd, nqueues, depth, qpid, err;
-
-	nqueues = XNVME_BE_UPCIE_NQUEUES_MAX - 1;
-	depth = XNVME_BE_UPCIE_QUEUE_DEPTH;
+	int shm_fd, err;
 
 	_upcie_shm_name(dev->ident.uri, shm_name, sizeof(shm_name));
 	snprintf(ctrlr->shm_name, sizeof(ctrlr->shm_name), "%s", shm_name);
@@ -389,7 +332,7 @@ _upcie_mproc_primary_init(struct xnvme_dev *dev, struct xnvme_be_upcie_ctrlr *ct
 	}
 
 	memset(mproc, 0, shm_size);
-	mproc->nqueues = nqueues;
+	mproc->nqueues = 0;
 
 	snprintf(mproc->hugepage_path, sizeof(mproc->hugepage_path), "%s", heap->memory.path);
 	mproc->hugepage_size = heap->memory.size;
@@ -409,31 +352,26 @@ _upcie_mproc_primary_init(struct xnvme_dev *dev, struct xnvme_be_upcie_ctrlr *ct
 	ctrlr->mproc = mproc;
 	ctrlr->shm_fd = shm_fd;
 
-	err = _upcie_prealloc_queues(ctrlr, nqueues, depth);
-	if (err) {
-		XNVME_DEBUG("FAILED: _upcie_prealloc_queues(); err(%d)", err);
+	ctrlr->preallocated = calloc(XNVME_BE_UPCIE_NQUEUES_MAX, sizeof(*ctrlr->preallocated));
+	if (!ctrlr->preallocated) {
+		XNVME_DEBUG("FAILED: calloc(preallocated)");
+		err = -ENOMEM;
 		goto failed_munmap;
 	}
 
-	{
-		uint64_t qidmap = 0;
-		for (int i = 1; i <= nqueues; i++) {
-			qidmap |= (1ULL << i);
-		}
-		atomic_store(&mproc->qidmap, qidmap);
-	}
 	atomic_store(&mproc->refcount, 1);
 
-	qpid = _upcie_claim_qpair(ctrlr, heap->memory.virt, &ctrlr->sync);
-	if (qpid < 0) {
-		err = qpid;
-		XNVME_DEBUG("FAILED: claim sync qpair: err(%d)", err);
-		_upcie_free_preallocated_queues(ctrlr);
-		goto failed_munmap;
+	err = nvme_controller_create_io_qpair(ctrlr->ctrl, &ctrlr->sync, 16);
+	if (err) {
+		XNVME_DEBUG("FAILED: nvme_controller_create_io_qpair(%d)", err);
+		goto failed_free_preallocated;
 	}
 
 	return 0;
 
+failed_free_preallocated:
+	free(ctrlr->preallocated);
+	ctrlr->preallocated = NULL;
 failed_munmap:
 	munmap(mproc, shm_size);
 failed_close:
@@ -731,7 +669,7 @@ xnvme_be_upcie_ctrlr_term(void *handle)
 				    attached - 1);
 		}
 
-		_upcie_release_qpair(ctrlr, &ctrlr->sync);
+		nvme_qpair_term(&ctrlr->sync);
 		_upcie_free_preallocated_queues(ctrlr);
 
 		munmap(mproc, sizeof(*mproc));

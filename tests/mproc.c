@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <libxnvme.h>
 
+#define MPROC_QUEUE_DEPTH 256
+
 static volatile sig_atomic_t g_stop;
 
 static void
@@ -17,12 +19,33 @@ on_signal(int XNVME_UNUSED(sig))
 static int
 sub_primary(struct xnvme_cli *cli)
 {
+	struct xnvme_dev *dev = cli->args.dev;
+	uint32_t nqueues = cli->args.nqueues ? cli->args.nqueues : 1;
+	int err;
+
 	signal(SIGTERM, on_signal);
 	signal(SIGINT, on_signal);
 
-	xnvme_cli_pinf("primary: device open at %s, waiting for SIGTERM/SIGINT", cli->args.uri);
+	for (uint32_t i = 0; i < nqueues; i++) {
+		struct xnvme_queue *queue = NULL;
 
-	// Keep process alive, thereby keeping device open until process is killed.
+		err = xnvme_queue_init(dev, MPROC_QUEUE_DEPTH, 0, &queue);
+		if (err) {
+			xnvme_cli_perr("xnvme_queue_init()", err);
+			return err;
+		}
+
+		err = xnvme_queue_term(queue);
+		if (err) {
+			xnvme_cli_perr("xnvme_queue_term()", err);
+			return err;
+		}
+	}
+
+	xnvme_cli_pinf(
+		"primary: device open at %s, pool has %u queue(s), waiting for SIGTERM/SIGINT",
+		cli->args.uri, nqueues);
+
 	while (!g_stop) {
 		sleep(1);
 	}
@@ -41,6 +64,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_NQUEUES, XNVME_CLI_LOPT},
 
 			XNVME_CLI_ADMIN_OPTS,
 		},

@@ -22,15 +22,37 @@ xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
 	int err;
 
 	if (ctrlr->mproc) {
-		uint8_t *bar0 = ctrlr->ctrl->func.bars[0].region;
-		int dstrd = nvme_reg_cap_get_dstrd(nvme_mmio_cap_read(bar0));
-		void *ring_base;
+		void *ring_base = ctrlr->imported_hugepage.virt;
 		int qpid;
 
-		if (ctrlr->shm_fd == -1) {
-			ring_base = ctrlr->imported_hugepage.virt;
-		} else {
-			ring_base = g_upcie_rte.heap.memory.virt;
+		if (ctrlr->shm_fd >= 0) {
+			struct hostmem_heap *heap = &g_upcie_rte.heap;
+			struct xnvme_be_upcie_mproc *mp = ctrlr->mproc;
+			uint32_t qid;
+
+			err = nvme_controller_create_io_qpair(ctrlr->ctrl, &upcie_queue->qpair,
+							      queue->base.capacity + 1);
+			if (err) {
+				XNVME_DEBUG("FAILED: nvme_controller_create_io_qpair()");
+				return err;
+			}
+
+			qid = upcie_queue->qpair.qid;
+			mp->queues[qid].qid = qid;
+			mp->queues[qid].depth = upcie_queue->qpair.depth;
+			mp->queues[qid].sq_offset = (uint64_t)((uint8_t *)upcie_queue->qpair.sq -
+							       (uint8_t *)heap->memory.virt);
+			mp->queues[qid].cq_offset = (uint64_t)((uint8_t *)upcie_queue->qpair.cq -
+							       (uint8_t *)heap->memory.virt);
+			mp->queues[qid].sq_tail = 0;
+			mp->queues[qid].cq_head = 0;
+			mp->queues[qid].cq_phase = 1;
+
+			ctrlr->preallocated[qid] = upcie_queue->qpair;
+			ctrlr->preallocated[qid].rpool = NULL;
+			mp->nqueues++;
+
+			return 0;
 		}
 
 		qpid = _upcie_claim_qpair(ctrlr, ring_base, &upcie_queue->qpair);
