@@ -21,8 +21,10 @@ xnvme_platform_windows_classify(const char *uri)
 {
 	size_t len;
 
-	/* Windows device handles: \\.\PhysicalDriveN, \\.\ScsiN: */
-	if (!strncmp(uri, "\\\\.\\", 4)) {
+	/* Windows device handles: \\.\PhysicalDriveN, \\.\ScsiN:. CreateFile()
+	 * resolves the forward-slash form //./ identically, and it survives
+	 * shell evaluation without escaping, so accept both. */
+	if (!strncmp(uri, "\\\\.\\", 4) || !strncmp(uri, "//./", 4)) {
 		return XNVME_BE_CAP_BDEV;
 	}
 
