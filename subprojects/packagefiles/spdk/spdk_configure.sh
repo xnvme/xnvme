@@ -5,7 +5,6 @@
   --disable-examples \
   --disable-apps \
   --without-crypto \
-  --without-fuse \
   --without-idxd \
   --without-iscsi-initiator \
   --without-nvme-cuse \

@@ -58,8 +58,7 @@ diff --git a/include/spdk/queue.h b/include/spdk/queue.h
 +	TAILQ_ENTRY_CLEAR(elm, field); \
 +} while (0)
  #endif
- 
- /*
--- 
-2.34.1
 
+ /*
+--
+2.34.1

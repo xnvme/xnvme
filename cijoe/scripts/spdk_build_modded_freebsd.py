@@ -33,7 +33,6 @@ def main(args, cijoe):
             # "--enable-lto",
             f"--with-fio={fio_repos['path']}" if fio_repos else "",
             "--without-crypto",
-            "--without-fuse",
             "--without-idxd",
             "--without-iscsi-initiator",
             "--without-nvme-cuse",

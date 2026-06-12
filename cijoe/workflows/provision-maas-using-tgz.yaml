@@ -117,3 +117,12 @@ steps:
   run: |
     xnvme-driver || true
     xnvme-driver reset || true
+
+# The maas guest passes a real NVMe through with vfio-pci. The nested
+# DMA mask doesn't reach SPDK's default IOVA-VA allocations, so DPDK
+# fails with "IOVA exceeding limits of current DMA mask". Force PA on
+# this guest; xnvme picks the value up via XNVME_SPDK_IOVA_MODE in
+# lib/xnvme_be_spdk_dev.c as a fallback when opts.iova_mode is unset.
+- name: set_iova_mode_pa
+  run: |
+    echo "XNVME_SPDK_IOVA_MODE=pa" >> /etc/environment

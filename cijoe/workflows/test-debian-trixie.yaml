@@ -14,6 +14,14 @@ steps:
 - name: hugepages
   uses: linux_setup_hugepages
 
+# Diagnostic: enumerate pcie nvme controllers and probe each via SPDK.
+# Output is captured per-cmd. With a release build SPDK chatter is
+# routed to /dev/null by the choker; for verbose probe output, build
+# xnvme with -Dbuildtype=debug.
+- name: spdk_probe_diag
+  run: |
+    for d in $(lspci -nn -d ::0108 | awk '{print "0000:"$1}'); do echo "--- spdk-probe on $d ---"; xnvme info "$d" --be spdk 2>&1 || true; done || true
+
 - name: test_python
   uses: core.testrunner
   with:

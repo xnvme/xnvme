@@ -1,7 +1,7 @@
 project(
   'spdk',
   'c',
-  version: '25.05.1',
+  version: '26.05',
 )
 fs = import('fs')
 
@@ -130,7 +130,8 @@ dpdk_libnames = get_option('build_subprojects') ? [
   'rte_pci',
   'rte_ring',
   'rte_mempool',
-  'rte_kvargs'
+  'rte_kvargs',
+  'rte_argparse'
 ] : []
 
 isal_libnames = get_option('build_subprojects') ? [
