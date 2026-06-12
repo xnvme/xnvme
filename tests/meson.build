@@ -32,6 +32,7 @@ tests = {
   'delay_identification.c': [
     ['open', ['open', '1GB']]
   ],
+  'dual_be.c': [],
   'enum.c': [
     ['open', ['open', '--count', '4']],
     ['multi', ['multi', '--count', '4']],
