@@ -2,7 +2,7 @@
 #include <libxnvme_libconf.h>
 static const char *g_libconf_strings[] = {
 #ifdef XNVME_BE_SPDK_ENABLED
-	"3p: spdk;git-describe:v24.09",
+	"3p: spdk;git-describe:v26.05",
 #else
 	"spdk;NOSYS",
 #endif

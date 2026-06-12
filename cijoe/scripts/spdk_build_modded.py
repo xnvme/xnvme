@@ -35,7 +35,6 @@ def main(args, cijoe):
             "--with-uring",
             "--with-xnvme",
             "--without-crypto",
-            "--without-fuse",
             "--without-idxd",
             "--without-iscsi-initiator",
             "--without-nvme-cuse",
