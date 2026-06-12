@@ -117,7 +117,8 @@ xnvme_be_windows_dev_open(struct xnvme_dev *dev)
 			_close(state->fd);
 			return -errno;
 		}
-		if (strstr(ident->uri, "\\\\.\\PhysicalDrive")) {
+		if (strstr(ident->uri, "\\\\.\\PhysicalDrive") ||
+		    strstr(ident->uri, "//./PhysicalDrive")) {
 			dev_stat.st_mode = 0x21B6;
 		}
 	}
