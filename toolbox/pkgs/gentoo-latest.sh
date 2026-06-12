@@ -19,7 +19,7 @@ emerge \
  dev-libs/libaio \
  dev-libs/openssl \
  dev-python/pip \
- dev-python/jinja \
+ dev-python/jinja2 \
  dev-python/pyelftools \
  dev-python/tabulate \
  dev-util/cunit \
