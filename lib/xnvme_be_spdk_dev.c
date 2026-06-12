@@ -530,6 +530,29 @@ xnvme_be_spdk_ctrlr_init(struct xnvme_dev *dev)
 	err = _spdk_env_init(&env_opts);
 	if (err) {
 		XNVME_DEBUG("FAILED: _spdk_env_init(), err: %d", err);
+		/* The most common cause is DPDK's IOVA-mode auto-detect picking */
+		/* VA on a host where the effective DMA mask is too narrow */
+		/* (nested vfio-pci pass-through, certain uio_pci_generic */
+		/* setups). Point the user at the three xNVMe knobs that flip */
+		/* the mode to 'pa', so they don't have to dig through SPDK's */
+		/* DPDK output to find the hint. */
+		if (!env_opts.iova_mode || strcmp(env_opts.iova_mode, "pa") != 0) {
+			fprintf(stderr,
+				"xnvme: SPDK environment init failed (err=%d).\n"
+				"       If this is a nested vfio-pci pass-through "
+				"or a narrow-DMA-mask setup (look for 'IOVA "
+				"exceeding limits of current DMA mask' in the "
+				"SPDK output), set iova_mode to 'pa'.\n"
+				"       Three ways, pick whichever fits the call "
+				"path:\n"
+				"         opts: xnvme_opts.iova_mode = \"pa\" "
+				"before xnvme_dev_open()\n"
+				"         cli:  pass --iova-mode pa on the "
+				"xnvme command line\n"
+				"         env:  export "
+				"XNVME_SPDK_IOVA_MODE=pa\n",
+				err);
+		}
 		return NULL;
 	}
 
