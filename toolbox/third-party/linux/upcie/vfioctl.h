@@ -31,7 +31,7 @@
  * The above is the essential modeling of the isolation-level of memory among devices.
  *
  * @file vfioctl.h
- * @version 0.4.2
+ * @version 0.4.3
  */
 struct vfio_group {
 	int fd;
@@ -175,8 +175,11 @@ vfio_device_get_info(int device_fd, struct vfio_device_info *info)
 static inline int
 vfio_device_get_region_info(int device_fd, struct vfio_region_info *region)
 {
+	__u32 index = region->index;
+
 	memset(region, 0, sizeof(*region));
 	region->argsz = sizeof(*region);
+	region->index = index;
 
 	return ioctl(device_fd, VFIO_DEVICE_GET_REGION_INFO, region);
 }

@@ -11,6 +11,8 @@
  * NOTE: This depends on a patch for UDMABUF adding capabilites to import a
  * dma-buf and return the physical addresses to Userspace
  *
+ * @file dmabuf.h
+ * @version 0.4.3
  */
 
 #include <linux/dma-buf.h>

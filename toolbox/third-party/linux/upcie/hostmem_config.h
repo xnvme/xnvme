@@ -1,3 +1,13 @@
+// SPDX-License-Identifier: BSD-3-Clause
+
+/**
+ * Config for Host Memory Hugepages
+ * ================================
+ * 
+ * @file hostmem_config.h
+ * @version 0.4.3
+ */
+
 #ifndef MFD_HUGE_2MB
 #define MFD_HUGE_2MB (21 << 26)
 #endif

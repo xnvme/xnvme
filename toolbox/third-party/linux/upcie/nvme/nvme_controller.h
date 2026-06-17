@@ -9,7 +9,7 @@
  * including BAR-space mappings, controller registers, and values derived from register content.
  *
  * @file nvme_controller.h
- * @version 0.4.2
+ * @version 0.4.3
  */
 
 /**
@@ -125,6 +125,55 @@ nvme_controller_open(struct nvme_controller *ctrlr, const char *bdf, struct host
 	}
 
 	return 0;
+}
+
+/**
+ * Deletes the submission-queue and completion-queue and frees host-side resources.
+ *
+ * Sends Delete I/O SQ and Delete I/O CQ admin commands to the controller, then
+ * releases the host DMA memory and returns the queue ID to the free pool.
+ *
+ * @param ctrlr Pointer to a pre-allocated NVMe controller
+ * @param qpair Pointer to a queue-pair (from nvme_controller_create_io_qpair)
+ *
+ * @return 0 on success, negative errno on error. Resources are freed regardless.
+ */
+static inline int
+nvme_controller_delete_io_qpair(struct nvme_controller *ctrlr, struct nvme_qpair *qpair)
+{
+	uint16_t qid = qpair->qid;
+	int err;
+
+	{
+		struct nvme_command cmd = {0};
+		struct nvme_completion cpl = {0};
+
+		cmd.opc = 0x0; ///< Delete I/O Submission Queue
+		cmd.cdw10 = qid;
+
+		err = nvme_qpair_submit_sync(&ctrlr->aq, &cmd, ctrlr->timeout_ms, &cpl);
+		if (err) {
+			UPCIE_DEBUG("FAILED: nvme_qpair_submit_sync(Delete SQ); err(%d)", err);
+		}
+	}
+
+	{
+		struct nvme_command cmd = {0};
+		struct nvme_completion cpl = {0};
+
+		cmd.opc = 0x4; ///< Delete I/O Completion Queue
+		cmd.cdw10 = qid;
+
+		err = nvme_qpair_submit_sync(&ctrlr->aq, &cmd, ctrlr->timeout_ms, &cpl);
+		if (err) {
+			UPCIE_DEBUG("FAILED: nvme_qpair_submit_sync(Delete CQ); err(%d)", err);
+		}
+	}
+
+	nvme_qpair_term(qpair);
+	nvme_qid_free(ctrlr->qids, qid);
+
+	return err;
 }
 
 /**

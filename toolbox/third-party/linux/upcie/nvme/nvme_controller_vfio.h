@@ -2,6 +2,14 @@
 // Copyright (c) Jaeyoon Choi <j_yoon.choi@samsung.com>
 
 /**
+ * VFIO NVMe Controller Extension
+ * ==============================
+ * 
+ * @file nvme_controller_vfio.h
+ * @version 0.4.3
+ */
+
+/**
  * VFIO state needed to access a single NVMe controller from user space.
  */
 struct vfio_ctx {
@@ -12,6 +20,36 @@ struct vfio_ctx {
 	size_t bar0_size;
 	int iommu_set;
 };
+
+static inline int
+nvme_vfio_pci_bus_master_enable(int device_fd)
+{
+	struct vfio_region_info config = {0};
+	uint16_t cmd;
+	ssize_t ret;
+	int err;
+
+	config.index = VFIO_PCI_CONFIG_REGION_INDEX;
+	err = vfio_device_get_region_info(device_fd, &config);
+	if (err < 0) {
+		return -errno;
+	}
+
+	ret = pread(device_fd, &cmd, sizeof(cmd), config.offset + PCI_COMMAND);
+	if (ret != (ssize_t)sizeof(cmd)) {
+		return ret < 0 ? -errno : -EIO;
+	}
+
+	if (!(cmd & PCI_COMMAND_MASTER)) {
+		cmd |= PCI_COMMAND_MASTER;
+		ret = pwrite(device_fd, &cmd, sizeof(cmd), config.offset + PCI_COMMAND);
+		if (ret != (ssize_t)sizeof(cmd)) {
+			return ret < 0 ? -errno : -EIO;
+		}
+	}
+
+	return 0;
+}
 
 static inline void
 nvme_vfio_ctx_init(struct vfio_ctx *vfio)
@@ -273,6 +311,12 @@ nvme_controller_open_vfio(struct nvme_controller *ctrlr, struct vfio_ctx *vfio, 
 	if (vfio->device_fd < 0) {
 		err = -errno;
 		UPCIE_DEBUG("FAILED: vfio_group_get_device_fd(); errno(%d)", errno);
+		goto fail;
+	}
+
+	err = nvme_vfio_pci_bus_master_enable(vfio->device_fd);
+	if (err) {
+		UPCIE_DEBUG("FAILED: nvme_vfio_pci_bus_master_enable(); err(%d)", err);
 		goto fail;
 	}
 

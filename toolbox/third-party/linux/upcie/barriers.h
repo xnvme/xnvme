@@ -12,7 +12,7 @@
  * Will not compile on other architectures.
  *
  * @file barriers.h
- * @version 0.4.2
+ * @version 0.4.3
  */
 
 #if defined(__x86_64__) || defined(__i386__)

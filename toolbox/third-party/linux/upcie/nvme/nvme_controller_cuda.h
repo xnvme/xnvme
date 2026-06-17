@@ -7,6 +7,9 @@
  * This header extends the functionality defined in the uPCIe NVMe Controller
  * header `upcie/nvme/nvme_controller.h` with functions for CUDA compatible
  * NVMe controllers.
+ * 
+ * @file nvme_controller_cuda.h
+ * @version 0.4.3
  */
 
 
@@ -23,8 +26,9 @@ nvme_controller_cuda_delete_io_qpair(struct nvme_controller *ctrlr,
                                      struct nvme_qpair_cuda *qpair,
                                      struct cudamem_heap *heap)
 {
-	int err;
 	struct nvme_qpair_cuda _qpair = {0};
+	int err;
+
 	err = cuMemcpyDtoH(&_qpair, (CUdeviceptr)qpair, sizeof(_qpair));
 	if (err) {
 		UPCIE_DEBUG("FAILED: cuMemcpyDtoH(device QP -> host QP); CUresult(%d)", err);
