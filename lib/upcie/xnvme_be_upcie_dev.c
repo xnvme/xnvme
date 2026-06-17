@@ -247,7 +247,8 @@ xnvme_be_upcie_ctrlr_term(void *handle)
 {
 	struct xnvme_be_upcie_ctrlr *ctrlr = handle;
 
-	nvme_qpair_term(&ctrlr->sync);
+	nvme_controller_delete_io_qpair(ctrlr->ctrl, &ctrlr->sync);
+
 	if (ctrlr->backend == NVME_BACKEND_VFIO) {
 		nvme_controller_close_vfio(ctrlr->ctrl, &ctrlr->vfio);
 	} else {
