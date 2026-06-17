@@ -162,6 +162,7 @@ enum xnvme_be_cap {
 	XNVME_BE_CAP_NVME_PCIE = 0x1 << 5, ///< NVMe over PCIe (user-space driver)
 	XNVME_BE_CAP_NVME_TCP  = 0x1 << 6, ///< NVMe over TCP (user-space driver)
 	XNVME_BE_CAP_NVME_RDMA = 0x1 << 7, ///< NVMe over RDMA (user-space driver)
+	XNVME_BE_CAP_MPROC     = 0x1 << 8, ///< Multi-process mode
 };
 
 /**
