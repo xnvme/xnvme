@@ -17,7 +17,7 @@ const struct xnvme_be_config g_xnvme_be_spdk = {
 			.name = "spdk",
 			.descr = "SPDK userspace NVMe driver",
 			.caps = XNVME_BE_CAP_NVME_PCIE | XNVME_BE_CAP_NVME_TCP |
-				XNVME_BE_CAP_NVME_RDMA,
+				XNVME_BE_CAP_NVME_RDMA | XNVME_BE_CAP_MPROC,
 		},
 };
 

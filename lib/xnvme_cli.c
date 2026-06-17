@@ -613,9 +613,9 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 	},
 	{
 		.opt = XNVME_CLI_OPT_SHM_ID,
-		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "shm_id",
-		.descr = "For be=spdk, multi-process shared-memory-id",
+		.descr = "For be={spdk,upcie}, multi-process shared-memory-id",
 	},
 	{
 		.opt = XNVME_CLI_OPT_MAIN_CORE,
