@@ -37,8 +37,10 @@ int
 xnvme_be_upcie_queue_term(struct xnvme_queue *queue)
 {
 	struct xnvme_queue_upcie *upcie_queue = (void *)queue;
+	struct xnvme_be_upcie_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_upcie_ctrlr *ctrlr = state->ctrlr;
 
-	nvme_qpair_term(&upcie_queue->qpair);
+	nvme_controller_delete_io_qpair(ctrlr->ctrl, &upcie_queue->qpair);
 
 	return 0;
 }
