@@ -39,7 +39,7 @@ struct xnvme_opts {
 	uint8_t register_buffers;  ///< io_uring: enable buffer-registration
 	struct xnvme_opts_css css; ///< SPDK controller-setup: do command-set-selection
 	uint32_t use_cmb_sqs;      ///< SPDK controller-setup: use controller-memory-buffer for sq
-	uint32_t shm_id;           ///< SPDK multi-processing: shared-memory-id
+	uint32_t shm_id;           ///< shared-memory-id
 	uint32_t main_core;        ///< SPDK: main-core
 	const char *core_mask;     ///< SPDK: core-mask
 	const char *iova_mode;     ///< SPDK env-init: DPDK IOVA mode ("va" or "pa")
