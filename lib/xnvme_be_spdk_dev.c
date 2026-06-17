@@ -506,12 +506,23 @@ xnvme_be_spdk_ctrlr_init(struct xnvme_dev *dev)
 	int err;
 
 	xnvme_spdk_env_opts_init(&env_opts);
-	if (dev->opts.core_mask) {
+
+	// SPDK default for shm_id is -1, so don't overwrite unless given
+	if (dev->opts.shm_id) {
 		XNVME_DEBUG("INFO: multi-process setup");
 		env_opts.shm_id = dev->opts.shm_id;
+	}
+
+	// SPDK default for core_mask is 0x1, so don't overwrite unless given
+	if (dev->opts.core_mask) {
 		env_opts.core_mask = dev->opts.core_mask;
+	}
+
+	// SPDK default for main_core is -1, so don't overwrite unless given
+	if (dev->opts.main_core) {
 		env_opts.main_core = dev->opts.main_core;
 	}
+
 	/* DPDK's IOVA-mode auto-detection cannot see through nested vfio-pci */
 	/* pass-through to the inner guest's DMA mask; setups that hit "IOVA */
 	/* exceeding limits of current DMA mask" need iova_mode='pa'. Honour */

@@ -40,8 +40,8 @@ struct xnvme_opts {
 	struct xnvme_opts_css css; ///< SPDK controller-setup: do command-set-selection
 	uint32_t use_cmb_sqs;      ///< SPDK controller-setup: use controller-memory-buffer for sq
 	uint32_t shm_id;           ///< SPDK multi-processing: shared-memory-id
-	uint32_t main_core;        ///< SPDK multi-processing: main-core
-	const char *core_mask;     ///< SPDK multi-processing: core-mask
+	uint32_t main_core;        ///< SPDK: main-core
+	const char *core_mask;     ///< SPDK: core-mask
 	const char *iova_mode;     ///< SPDK env-init: DPDK IOVA mode ("va" or "pa")
 	const char *adrfam;        ///< SPDK fabrics: address-family, IPv4/IPv6
 	const char *subnqn;        ///< SPDK fabrics: Subsystem NQN
