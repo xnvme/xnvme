@@ -12,6 +12,12 @@
 #define _UPCIE_WITH_NVME
 #include <upcie/upcie.h>
 
+/**
+ * Default heap size used for the host DMA heap (upcie) and the GPU device heap
+ * (upcie-cuda) when xnvme_opts leaves the size unset (0)
+ */
+#define XNVME_BE_UPCIE_DEFAULT_HEAP_SIZE (1024ULL * 1024 * 1024)
+
 struct xnvme_queue_upcie {
 	struct xnvme_queue_base base;
 	struct nvme_qpair qpair;
