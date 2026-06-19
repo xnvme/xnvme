@@ -15,7 +15,7 @@ xnvme_be_cref_get(const char *uri)
 		if (!g_cref_table[i].ctrlr) {
 			continue;
 		}
-		if (strncmp(g_cref_table[i].uri, uri, XNVME_IDENT_URI_LEN)) {
+		if (strcmp(g_cref_table[i].uri, uri)) {
 			continue;
 		}
 		if (g_cref_table[i].refcount < 1) {
