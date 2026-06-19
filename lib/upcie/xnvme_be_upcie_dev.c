@@ -72,7 +72,7 @@ _rte_init(size_t heap_size)
 	}
 
 	if (!heap_size) {
-		heap_size = 256 * 1024 * 1024;
+		heap_size = XNVME_BE_UPCIE_DEFAULT_HEAP_SIZE;
 	}
 
 	err = hostmem_config_init(&g_upcie_rte.config);

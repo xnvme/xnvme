@@ -36,7 +36,7 @@ _cuda_rte_init(size_t heap_size)
 	}
 
 	if (!heap_size) {
-		heap_size = 1024 * 1024 * 1024;
+		heap_size = XNVME_BE_UPCIE_DEFAULT_HEAP_SIZE;
 	}
 
 	err = cuInit(0);
