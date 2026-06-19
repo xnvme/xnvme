@@ -10,6 +10,13 @@
 
 #include "xnvmeperf.h"
 
+/**
+ * Generous per-queue allowance for uPCIe control structures (PRP pools, SQ/CQ
+ * rings, and a share of the admin/sync qpairs). Sized to comfortably overshoot
+ * the real per-queue overhead so the heap math stays simple.
+ */
+#define XNVMEPERF_HEAP_QUEUE_OVERHEAD (16UL << 20)
+
 struct xnvmeperf_job {
 	struct xnvme_dev *dev;
 	struct xnvme_queue *queue;
@@ -1236,6 +1243,32 @@ parse_run_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 	return err;
 }
 
+/**
+ * Derive uPCIe host/device heap sizes from the workload and write them into
+ * args->opts. Deliberately overshoots to keep the estimate simple: every queue
+ * gets a fixed control-structure slab, and data buffers land on the host heap
+ * for the host backends or on the device heap for the CUDA backend (qdepth
+ * buffers per queue vs one reused host buffer).
+ */
+static void
+derive_heap_sizes(struct xnvmeperf_args *args)
+{
+	int is_cuda = args->opts.be && strstr(args->opts.be, "cuda");
+	size_t nq = args->nqueues ? args->nqueues : 1;
+	size_t qd = args->qdepth ? args->qdepth : 1;
+	size_t queues = (size_t)args->ndevs * nq;
+	size_t control = queues * XNVMEPERF_HEAP_QUEUE_OVERHEAD;
+	size_t iosize = args->iosize;
+
+	args->opts.host_heap_size = control + (is_cuda ? 0 : queues * iosize);
+	printf("- host_heap_size: %zu bytes\n", args->opts.host_heap_size);
+
+	if (is_cuda) {
+		args->opts.device_heap_size = control + queues * qd * iosize;
+		printf("- device_heap_size: %zu bytes\n", args->opts.device_heap_size);
+	}
+}
+
 static int
 sub_run(struct xnvme_cli *cli)
 {
@@ -1254,6 +1287,7 @@ sub_run(struct xnvme_cli *cli)
 	}
 
 	print_run_args(&args, cli->args.iopattern);
+	derive_heap_sizes(&args);
 
 	err = xnvmeperf_run(&args);
 	free(args.cpus);
@@ -1281,6 +1315,8 @@ sub_verify(struct xnvme_cli *cli)
 	args.qdepth = 1;
 	args.pattern = IOPATTERN_VERIFY;
 
+	derive_heap_sizes(&args);
+
 	return xnvmeperf_verify(&args);
 }
 
@@ -1305,6 +1341,7 @@ sub_cuda_run(struct xnvme_cli *cli)
 	}
 
 	print_run_args(&args, cli->args.iopattern);
+	derive_heap_sizes(&args);
 
 	return xnvmeperf_cuda_run(&args);
 }
@@ -1337,6 +1374,8 @@ sub_cuda_verify(struct xnvme_cli *cli)
 	}
 
 	args.nqueues = cli->args.nqueues ? cli->args.nqueues : 1;
+
+	derive_heap_sizes(&args);
 
 	return xnvmeperf_cuda_verify(&args);
 }
