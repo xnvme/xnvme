@@ -201,4 +201,177 @@ xnvme_be_upcie_mproc_import_admin_hugepage()
 	return 0;
 }
 
+void
+xnvme_be_upcie_ctrlr_mutex_lock(struct xnvme_be_upcie_ctrlr *ctrlr)
+{
+	struct xnvme_be_upcie_ctrlr_shm *shm = ctrlr->shm;
+
+	if (!shm) {
+		return;
+	}
+
+	pthread_mutex_lock(&shm->aq_mutex);
+
+	ctrlr->ctrl->aq.tail = shm->ctrl.aq.tail;
+	ctrlr->ctrl->aq.tail_last_written = UINT16_MAX;
+	ctrlr->ctrl->aq.head = shm->ctrl.aq.head;
+	ctrlr->ctrl->aq.phase = shm->ctrl.aq.phase;
+}
+
+void
+xnvme_be_upcie_ctrlr_mutex_unlock(struct xnvme_be_upcie_ctrlr *ctrlr)
+{
+	struct xnvme_be_upcie_ctrlr_shm *shm = ctrlr->shm;
+
+	if (!shm) {
+		return;
+	}
+
+	shm->ctrl.aq.tail = ctrlr->ctrl->aq.tail;
+	shm->ctrl.aq.head = ctrlr->ctrl->aq.head;
+	shm->ctrl.aq.phase = ctrlr->ctrl->aq.phase;
+
+	pthread_mutex_unlock(&shm->aq_mutex);
+}
+
+static void
+xnvme_be_upcie_shm_bdf_name(const char *bdf, char *buf, size_t buflen)
+{
+	int i;
+
+	snprintf(buf, buflen, "/xnvme-upcie-%s", bdf);
+	for (i = 1; buf[i]; i++) {
+		if (buf[i] == ':' || buf[i] == '.' || buf[i] == '/') {
+			buf[i] = '-';
+		}
+	}
+}
+
+void
+xnvme_be_upcie_mproc_ctrlr_shm_term(struct xnvme_be_upcie_ctrlr *ctrlr)
+{
+	if (g_upcie_rte.mproc->is_primary) {
+		int attached = atomic_load(&ctrlr->shm->refcount);
+		if (attached > 1) {
+			XNVME_DEBUG("WARNING: terminating controller with %d secondary "
+				    "process(es) still "
+				    "attached",
+				    attached - 1);
+		}
+	}
+
+	atomic_fetch_sub(&ctrlr->shm->refcount, 1);
+
+	if (g_upcie_rte.mproc->is_primary) {
+		pthread_mutex_destroy(&ctrlr->shm->aq_mutex);
+	}
+
+	munmap(ctrlr->shm, sizeof(*ctrlr->shm));
+
+	if (g_upcie_rte.mproc->is_primary) {
+		close(ctrlr->shm_fd);
+		shm_unlink(ctrlr->shm_name);
+		ctrlr->ctrl = NULL; // was a pointer to shared memory, so remove this
+
+		flock(ctrlr->lock_fd, LOCK_UN);
+		close(ctrlr->lock_fd);
+		unlink(ctrlr->lock_name);
+	}
+}
+
+int
+xnvme_be_upcie_mproc_ctrlr_shm_init(struct xnvme_dev *dev, struct xnvme_be_upcie_ctrlr *ctrlr,
+				    char *driver_name)
+{
+	struct xnvme_be_upcie_ctrlr_shm *shm;
+	char shm_name[64];
+	size_t shm_size = sizeof(*shm);
+	int shm_fd, lock_fd, err;
+
+	xnvme_be_upcie_shm_bdf_name(dev->ident.uri, shm_name, sizeof(shm_name));
+
+	/* Use flock to determine whether another primary process has claimed device */
+	snprintf(ctrlr->lock_name, sizeof(ctrlr->lock_name), "/tmp%s-lock", shm_name);
+	ctrlr->lock_fd = -1;
+
+	lock_fd = open(ctrlr->lock_name, O_CREAT | O_RDWR, 0600);
+	if (lock_fd < 0) {
+		err = -errno;
+		XNVME_DEBUG("FAILED: open() with lock_name(%s); err(%d)", ctrlr->lock_name, err);
+		goto failed;
+	}
+
+	err = flock(lock_fd, LOCK_EX | LOCK_NB);
+	if (err) {
+		err = -errno;
+		XNVME_DEBUG("FAILED: flock; err(%d)", err);
+		goto failed;
+	}
+
+	ctrlr->lock_fd = lock_fd;
+	shm_unlink(shm_name);
+
+	shm_fd = shm_open(shm_name, O_CREAT | O_EXCL | O_RDWR, 0600);
+	if (shm_fd < 0) {
+		err = -errno;
+		XNVME_DEBUG("FAILED: shm_open(%s): err(%d)", shm_name, err);
+		goto failed;
+	}
+
+	err = ftruncate(shm_fd, (off_t)shm_size);
+	if (err) {
+		err = -errno;
+		XNVME_DEBUG("FAILED: ftruncate(); err(%d)", err);
+		goto failed;
+	}
+
+	shm = mmap(NULL, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+	if (shm == MAP_FAILED) {
+		err = -errno;
+		XNVME_DEBUG("FAILED: mmap() shm; err(%d)", err);
+		goto failed;
+	}
+
+	memset(shm, 0, shm_size);
+	atomic_store(&shm->refcount, 1);
+	strncpy(shm->driver_name, driver_name, sizeof(shm->driver_name));
+
+	{
+		pthread_mutexattr_t attr;
+
+		pthread_mutexattr_init(&attr);
+		pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
+		pthread_mutexattr_setrobust(&attr, PTHREAD_MUTEX_ROBUST);
+		pthread_mutex_init(&shm->aq_mutex, &attr);
+		pthread_mutexattr_destroy(&attr);
+	}
+
+	ctrlr->ctrl = &shm->ctrl;
+	ctrlr->shm = shm;
+	ctrlr->shm_fd = shm_fd;
+	snprintf(ctrlr->shm_name, sizeof(ctrlr->shm_name), "%s", shm_name);
+
+	return 0;
+
+failed:
+	if (ctrlr->lock_fd >= 0) {
+		flock(ctrlr->lock_fd, LOCK_UN);
+	}
+
+	if (lock_fd >= 0) {
+		close(lock_fd);
+		ctrlr->lock_fd = -1;
+	}
+
+	if (shm_fd >= 0) {
+		close(shm_fd);
+		shm_unlink(shm_name);
+	}
+
+	ctrlr->shm_fd = -1;
+	ctrlr->shm = NULL;
+
+	return err;
+}
+
 #endif
