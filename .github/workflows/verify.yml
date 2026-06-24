@@ -690,10 +690,10 @@ jobs:
       fail-fast: false
       matrix:
         guest:
-        - {os: 'freebsd', ver: '14'}
-        #- {os: 'freebsd', ver: '15'}
-        - {os: 'debian', ver: 'trixie'}
-        - {os: 'debian', ver: 'trixie-noiommu'}
+        - {os: 'freebsd', ver: '14', guest_dir: 'freebsd-14-amd64'}
+        #- {os: 'freebsd', ver: '15', guest_dir: 'freebsd-15-amd64'}
+        - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64'}
+        - {os: 'debian', ver: 'trixie-iommu_disabled', guest_dir: 'debian-trixie-amd64'}
 
     container:
       image: ghcr.io/safl/nosi/ubuntu-2604-docker:latest
@@ -746,7 +746,7 @@ jobs:
       if: always() && (matrix.guest.os == 'debian' || matrix.guest.os == 'freebsd')
       run: |
         dst="cijoe/${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
-        serial="$HOME/guests/${{ matrix.guest.os }}-${{ matrix.guest.ver }}-amd64/serial.output"
+        serial="$HOME/guests/${{ matrix.guest.guest_dir }}/serial.output"
         echo "::group::guest serial console (tail)"
         tail -c 20000 "$serial" 2>/dev/null || echo "no guest serial output"
         echo "::endgroup::"
@@ -904,7 +904,8 @@ jobs:
       fail-fast: false
       matrix:
         guest:
-        - {os: 'debian', ver: 'trixie', hostname: 'ax42-linux', labels: [self-hosted, linux, amd64, maas]}
+        - {os: 'debian', ver: 'trixie-iommu_enabled', transport: 'pcie', hostname: 'ax42-linux', labels: [self-hosted, linux,
+            amd64, maas]}
 
     steps:
     - uses: xnvme/actions/.github/actions/cleanup@main
@@ -945,7 +946,7 @@ jobs:
     - name: CIJOE, run tests
       run: |
         cd cijoe && cijoe \
-        workflows/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}.yaml \
+        workflows/test-${{ matrix.guest.os }}-${{ matrix.guest.ver }}-${{ matrix.guest.transport }}.yaml \
         --monitor \
         --config "configs/${{ matrix.guest.hostname }}.toml" \
         --config "configs/${{ matrix.guest.hostname }}-testing.toml" \
@@ -1180,7 +1181,7 @@ jobs:
       fail-fast: false
       matrix:
         guest:
-        - {os: 'debian', ver: 'trixie'}
+        - {os: 'debian', ver: 'trixie-iommu_enabled'}
 
     container:
       image: ghcr.io/safl/nosi/ubuntu-2604-docker:latest
