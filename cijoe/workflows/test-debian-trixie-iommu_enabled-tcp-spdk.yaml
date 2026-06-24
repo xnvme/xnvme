@@ -1,0 +1,26 @@
+---
+doc: |
+  Test xNVMe over the NVMe TCP transport on Linux (SPDK target)
+
+steps:
+- name: sysinfo
+  uses: linux.sysinfo
+
+- name: hugepages
+  uses: linux_setup_hugepages
+
+- name: nvme_target_start
+  uses: nvme_target_start
+  with:
+    provider: spdk
+
+- name: test_transport_tcp
+  uses: core.testrunner
+  with:
+    args: '-k "fabrics" tests'
+    random_order: false
+
+- name: nvme_target_stop
+  uses: nvme_target_stop
+  with:
+    provider: spdk
