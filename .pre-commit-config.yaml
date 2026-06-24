@@ -31,6 +31,12 @@ repos:
     args: ["--style-file", "toolbox/clang-format-c"]
     files: \.cu$
 
+  - id: commit-msg-ascii-only
+    name: Commit-msg-ASCII-only
+    language: system
+    entry: toolbox/pcm_ascii_only.py
+    stages: [commit-msg]
+
 # REUSE-software compliance check
 - repo: https://github.com/fsfe/reuse-tool
   rev: v6.2.0
