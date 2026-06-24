@@ -14,13 +14,7 @@
     feature "indirect parametrization".
 """
 
-import errno
-import logging as log
-import os.path
-import re
 from functools import wraps
-from pathlib import Path
-from time import sleep
 
 import pytest
 
@@ -178,94 +172,6 @@ def xnvme_setup(labels=[], opts=[]):
     return parametrization
 
 
-def fabrics_setup(cijoe):
-    """Setup fabrics"""
-    xnvme_conf_path = cijoe.getconf("xnvme.repository.sync.remote_path", None)
-    if not xnvme_conf_path:
-        return errno.EINVAL
-
-    xnvme_path = Path(xnvme_conf_path)
-    rpc = xnvme_path / "subprojects" / "spdk" / "scripts" / "rpc.py"
-    ip = "127.0.0.1"
-    port = "4420"
-    trtype = "tcp"
-    adrfam = "ipv4"
-
-    modules = ["nvme", "nvmet", "nvmet_tcp", "nvme_fabrics", "nvme_tcp"]
-
-    # Load modules
-    for module in modules:
-        err, _ = cijoe.run(f"modprobe {module}")
-        assert not err
-
-    # Get pairs of pcie id and subnqn -> might contain dublicates we use a set
-    devices = set()
-    for device in cijoe_config_get_all_devices(["fabrics"]):
-        devices.add((device["pcie_id"], device["subnqn"]))
-
-    if not os.path.exists(
-        xnvme_path / "subprojects" / "spdk" / "build" / "bin" / "nvmf_tgt"
-    ):
-        # Build the SPDK NVMe-oF target-app (nvmf_tgt)
-        err, _ = cijoe.run(
-            "make", cwd=xnvme_path / "subprojects" / "spdk" / "app" / "nvmf_tgt"
-        )
-        assert not err
-    else:
-        # Kill nvmf_tgt if it is already running
-        # We don't care if this fails, probably just means it was not running.
-        cijoe.run("pkill -f nvmf_tgt")
-
-    # Start 'nvmf_tgt'
-    err, _ = cijoe.run(
-        "(nohup ./nvmf_tgt -m [1] > foo.out 2> foo.err < /dev/null &)",
-        cwd=xnvme_path / "subprojects" / "spdk" / "build" / "bin",
-    )
-    assert not err
-
-    # ... and give it two seconds to settle
-    sleep(2)
-
-    # Create transport
-    err, _ = cijoe.run(f"{rpc} nvmf_create_transport -t {trtype} -u 16384 -m 8 -c 8192")
-    assert not err
-
-    count = 1
-    # Create subsystems, attach controllers and add listener
-    for pcie_id, subnqn in devices:
-        err, _ = cijoe.run(
-            f"{rpc} nvmf_create_subsystem {subnqn} -a -s SPDK0000000000000{count} -d Controller{count} -p"
-        )
-        assert not err
-
-        err, state = cijoe.run(
-            f"{rpc} bdev_nvme_attach_controller -b nvme{count} -t PCIe -a {pcie_id} -U"
-        )
-        assert not err
-
-        for namespace in state.output().split():
-            err, _ = cijoe.run(f"{rpc} nvmf_subsystem_add_ns {subnqn} {namespace}")
-            assert not err
-
-        err, _ = cijoe.run(
-            f"{rpc} nvmf_subsystem_add_listener {subnqn} -t {trtype} -a {ip} -s {port} -f {adrfam}"
-        )
-        assert not err
-        count += 1
-
-    return 0
-
-
-def fabrics_teardown(cijoe):
-    """Teardown fabrics by signalling nvmf_tgt when it is running.
-
-    Gate the kill on pgrep so a no-op teardown (nothing to kill) stays
-    quiet instead of reporting pkill's non-zero exit as an error.
-    """
-    cijoe.run("pgrep -f nvmf_tgt && pkill -f nvmf_tgt; true")
-    return 0
-
-
 class XnvmeDriver(object):
     """
     The driver managing for an NVMe device is in Linux attached to one of:
@@ -296,18 +202,10 @@ class XnvmeDriver(object):
     """
 
     IS_KERNEL_ATTACHED = None
-    IS_FABRICS_UP = None
 
     @staticmethod
     def kernel_detach(cijoe):
         """Detach from kernel"""
-
-        if XnvmeDriver.IS_FABRICS_UP in [True, None]:
-            err = fabrics_teardown(cijoe)
-            if err:
-                log.error(f"fabrics teardown failed with error: {err}")
-            else:
-                XnvmeDriver.IS_FABRICS_UP = False
 
         err, _ = cijoe.run("xnvme-driver")
         if err:
@@ -318,13 +216,6 @@ class XnvmeDriver(object):
     @staticmethod
     def kernel_attach(cijoe):
         """Attach to kernel"""
-
-        if XnvmeDriver.IS_FABRICS_UP in [True, None]:
-            err = fabrics_teardown(cijoe)
-            if err:
-                log.error(f"fabrics teardown failed with error: {err}")
-            else:
-                XnvmeDriver.IS_FABRICS_UP = False
 
         err, _ = cijoe.run("xnvme-driver reset")
         if err:
@@ -338,7 +229,6 @@ class XnvmeDriver(object):
 
         needs_kernel = device.get("driver_attachment", "kernel") == "kernel"
         needs_userspace = not needs_kernel
-        needs_fabrics = "fabrics" in device["labels"]
 
         if needs_userspace and XnvmeDriver.IS_KERNEL_ATTACHED in [True, None]:
             XnvmeDriver.kernel_detach(cijoe)
@@ -348,19 +238,6 @@ class XnvmeDriver(object):
             cijoe.run("xnvme enum")
         else:
             cijoe.run('echo "Skipping XnvmeDriver.attach()."')
-
-        if needs_fabrics and XnvmeDriver.IS_FABRICS_UP in [False, None]:
-            err = fabrics_setup(cijoe)
-            if err:
-                log.error(f"fabrics setup failed with error: {err}")
-            else:
-                XnvmeDriver.IS_FABRICS_UP = True
-        elif not needs_fabrics and XnvmeDriver.IS_FABRICS_UP in [True, None]:
-            err = fabrics_teardown(cijoe)
-            if err:
-                log.error(f"fabrics teardown failed with error: {err}")
-            else:
-                XnvmeDriver.IS_FABRICS_UP = False
 
 
 @pytest.fixture

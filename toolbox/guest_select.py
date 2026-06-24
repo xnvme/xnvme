@@ -19,11 +19,15 @@ import os
 import sys
 
 KNOWN_TRANSPORTS = ("pcie", "tcp", "rdma")
+KNOWN_PROVIDERS = ("spdk", "linux")
 
 
 def _workflow_to_guest(stem):
-    """Strip the trailing transport segment, if any, to get the guest name."""
+    """Strip the trailing transport and optional provider segment."""
 
+    parts = stem.rsplit("-", 1)
+    if len(parts) == 2 and parts[1] in KNOWN_PROVIDERS:
+        stem = parts[0]
     parts = stem.rsplit("-", 1)
     if len(parts) == 2 and parts[1] in KNOWN_TRANSPORTS:
         return parts[0]
@@ -102,12 +106,18 @@ def main():
                     break
                 print(f"Invalid choice: {choice}")
     else:
-        # Piped / non-interactive mode
+        # Piped / non-interactive mode. Accept either a canonical guest name
+        # or a workflow-stem-style input (e.g. 'debian-trixie-iommu_enabled-tcp-spdk');
+        # the trailing transport segment is stripped to find the canonical guest.
         selected = sys.stdin.readline().strip()
         if selected not in guests:
-            print(f"ERROR: Unknown guest '{selected}'", file=sys.stderr)
-            print(f"Available: {', '.join(guests)}", file=sys.stderr)
-            sys.exit(1)
+            stripped = _workflow_to_guest(selected)
+            if stripped in guests:
+                selected = stripped
+            else:
+                print(f"ERROR: Unknown guest '{selected}'", file=sys.stderr)
+                print(f"Available: {', '.join(guests)}", file=sys.stderr)
+                sys.exit(1)
 
     with open(guest_file, "w") as f:
         f.write(selected + "\n")

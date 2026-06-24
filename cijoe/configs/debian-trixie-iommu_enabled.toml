@@ -283,6 +283,7 @@ driver_attachment = "kernel"
 uri = "127.0.0.1:4420"
 pcie_id = "0000:04:00.0"
 subnqn = "nqn.2019-08.org.qemu:beef0003"
+device_path = "/dev/nvme3n1"
 nsid = 1
 labels = [ "dev", "fabrics", "nvm", "write_zeroes", "log_health_ns", "idfy_cs" ]
 driver_attachment = "userspace"
@@ -303,7 +304,7 @@ driver_attachment = "kernel"
 
 [hugetlbfs]
 mount_point = "/mnt/huge"
-nr_hugepages = "128"
+nr_hugepages = "1024"
 
 
 [linux.repository]

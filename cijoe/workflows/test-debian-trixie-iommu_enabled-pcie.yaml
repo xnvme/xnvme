@@ -47,9 +47,3 @@ steps:
   with:
     args: '-k "pcie and not upcie and not test_mem_map_unmap" tests'
     random_order: false
-
-- name: test_fabrics
-  uses: core.testrunner
-  with:
-    args: '-k "fabrics" tests'
-    random_order: false

@@ -690,10 +690,13 @@ jobs:
       fail-fast: false
       matrix:
         guest:
-        - {os: 'freebsd', ver: '14', guest_dir: 'freebsd-14-amd64'}
-        #- {os: 'freebsd', ver: '15', guest_dir: 'freebsd-15-amd64'}
-        - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64'}
-        - {os: 'debian', ver: 'trixie-iommu_disabled', guest_dir: 'debian-trixie-amd64'}
+        - {os: 'freebsd', ver: '14', guest_dir: 'freebsd-14-amd64', transport: 'pcie'}
+        #- {os: 'freebsd', ver: '15', guest_dir: 'freebsd-15-amd64', transport: 'pcie'}
+        - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'pcie'}
+        - {os: 'debian', ver: 'trixie-iommu_disabled', guest_dir: 'debian-trixie-amd64', transport: 'pcie'}
+        - {os: 'debian', ver: 'trixie-iommu_enabled-tcp-spdk', guest_dir: 'debian-trixie-amd64', transport: 'tcp-spdk'}
+        # tcp-linux: enabled in follow-up PR.
+        #- {os: 'debian', ver: 'trixie-iommu_enabled-tcp-linux', guest_dir: 'debian-trixie-amd64', transport: 'tcp-linux'}
 
     container:
       image: ghcr.io/safl/nosi/ubuntu-2604-docker:latest
@@ -740,6 +743,7 @@ jobs:
     - name: CIJOE, provision and test guest
       run: |
         make verify-guest \
+          TRANSPORT="${{ matrix.guest.transport }}" \
           CIJOE_OUTPUT="${{ github.job }}-${{ matrix.guest.os }}-${{ matrix.guest.ver }}"
 
     - name: Collect guest serial console
