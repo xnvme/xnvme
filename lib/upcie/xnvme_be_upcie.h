@@ -53,11 +53,22 @@ struct xnvme_be_upcie_state {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_upcie_state) == XNVME_BE_STATE_NBYTES, "Incorrect size")
 
 /**
+ * Multi-process state
+ */
+struct xnvme_be_upcie_mproc {
+	bool is_primary; ///< If true, this process is owner of the shared memory
+
+	char lock_name[64];
+	int lock_fd;
+};
+
+/**
  * State used across multiple instances of controllers/namespaces
  */
 struct xnvme_be_upcie_rte {
 	struct hostmem_config config;
 	struct hostmem_heap heap;
+	struct xnvme_be_upcie_mproc *mproc; ///< will be NULL if not in multi-process mode
 	int is_initialized;
 };
 
@@ -89,4 +100,11 @@ int
 xnvme_be_upcie_queue_term(struct xnvme_queue *queue);
 int
 xnvme_be_upcie_queue_poke(struct xnvme_queue *queue, uint32_t max);
+
+// Used for multi-process mode
+int
+xnvme_be_upcie_mproc_rte_init(int shm_id);
+void
+xnvme_be_upcie_mproc_rte_term();
+
 #endif /* __INTERNAL_XNVME_BE_UPCIE */
