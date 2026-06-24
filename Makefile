@@ -67,6 +67,8 @@ TOOLBOX_DIR?=toolbox
 CIJOE_GUEST_FILE := cijoe/current.guest
 PROJECT_VER = $$( python3 $(TOOLBOX_DIR)/xnvme_ver.py --path meson.build )
 
+TRANSPORT ?= pcie
+
 ALLOW_DIRTY ?= 0
 
 define default-help
@@ -272,8 +274,8 @@ guest-test:
 		false; \
 	fi
 	$(eval GUEST := $(shell cat $(CIJOE_GUEST_FILE)))
-	@echo "## xNVMe: guest-test ($(GUEST))"
-	cd cijoe && cijoe "workflows/test-$(GUEST).yaml" \
+	@echo "## xNVMe: guest-test ($(GUEST), transport=$(TRANSPORT))"
+	cd cijoe && cijoe "workflows/test-$(GUEST)-$(TRANSPORT).yaml" \
 		--monitor \
 		--config "configs/$(GUEST).toml" \
 		--config "configs/fio.toml" \

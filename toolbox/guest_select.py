@@ -6,11 +6,28 @@ Discovers available guests by scanning cijoe/workflows/test-*.yaml and
 verifying a matching cijoe/configs/{guest}.toml exists. Presents an
 interactive numbered menu on TTY, reads from stdin when piped.
 
+Workflow names carry the transport as the trailing segment, e.g.
+'test-debian-trixie-iommu_enabled-pcie.yaml' targets the guest
+'debian-trixie-iommu_enabled'. The trailing transport segment is dropped
+to find the matching config, and multiple workflows backed by the same
+config are deduped so each guest appears once.
+
 Writes the selected guest name to cijoe/current.guest.
 """
 import glob
 import os
 import sys
+
+KNOWN_TRANSPORTS = ("pcie", "tcp", "rdma")
+
+
+def _workflow_to_guest(stem):
+    """Strip the trailing transport segment, if any, to get the guest name."""
+
+    parts = stem.rsplit("-", 1)
+    if len(parts) == 2 and parts[1] in KNOWN_TRANSPORTS:
+        return parts[0]
+    return stem
 
 
 def discover_guests(cijoe_dir):
@@ -19,19 +36,24 @@ def discover_guests(cijoe_dir):
     workflow_pattern = os.path.join(cijoe_dir, "workflows", "test-*.yaml")
     configs_dir = os.path.join(cijoe_dir, "configs")
 
+    seen = set()
     guests = []
     for wf in sorted(glob.glob(workflow_pattern)):
         basename = os.path.basename(wf)
-        # test-debian-trixie.yaml -> debian-trixie
-        guest = basename.removeprefix("test-").removesuffix(".yaml")
+        stem = basename.removeprefix("test-").removesuffix(".yaml")
 
         # Skip ramdisk entries — they aren't qemu guests
-        if "ramdisk" in guest:
+        if "ramdisk" in stem:
+            continue
+
+        guest = _workflow_to_guest(stem)
+        if guest in seen:
             continue
 
         config_path = os.path.join(configs_dir, f"{guest}.toml")
         if os.path.isfile(config_path):
             guests.append(guest)
+            seen.add(guest)
 
     return guests
 
