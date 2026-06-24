@@ -1,0 +1,25 @@
+---
+doc: |
+  Bring up the SPDK NVMe-over-TCP target, probe it, and tear it down.
+
+  Suitable for developer use: invoke individual steps by name, e.g.
+  ``cijoe workflows/transports-tcp-spdk.yaml nvme_target_start`` to bring up
+  the target, and ``cijoe workflows/transports-tcp-spdk.yaml nvme_target_stop``
+  to tear it down. Running the workflow without selecting steps performs the
+  full sequence (start, probe, stop) and is what docgen captures.
+
+steps:
+- name: nvme_target_start
+  uses: nvme_target_start
+  with:
+    provider: spdk
+
+- name: nvme_target_probe
+  uses: nvme_target_probe
+  with:
+    provider: spdk
+
+- name: nvme_target_stop
+  uses: nvme_target_stop
+  with:
+    provider: spdk

@@ -444,6 +444,18 @@ endef
 docgen-guest: guest-start guest-provision
 	$(eval GUEST := $(shell cat $(CIJOE_GUEST_FILE)))
 	@echo "## xNVMe: docgen-guest ($(GUEST))"
+	cd cijoe && cijoe "workflows/transports-tcp-spdk.yaml" \
+		--monitor \
+		--config "configs/$(GUEST).toml" \
+		--config "configs/fio.toml" \
+		--config "configs/xnvme.toml" \
+		--output "cijoe-output-transports-spdk"
+	cd cijoe && cijoe "workflows/transports-tcp-linux.yaml" \
+		--monitor \
+		--config "configs/$(GUEST).toml" \
+		--config "configs/fio.toml" \
+		--config "configs/xnvme.toml" \
+		--output "cijoe-output-transports-linux"
 	cd cijoe && cijoe "workflows/docgen.yaml" \
 		--monitor \
 		--config "configs/$(GUEST).toml" \

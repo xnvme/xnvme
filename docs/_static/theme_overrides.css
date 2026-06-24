@@ -15,3 +15,31 @@
       max-width: 850px;
   }
 }
+
+/* Embedded cijoe run report (used by the NVMe transports tutorial) */
+.cijoe-report {
+  border: 1px solid #c0c4cc;
+  border-radius: 4px;
+  margin: 1.5em 0;
+  background: #fafbfc;
+}
+
+.cijoe-report::before {
+  content: "cijoe report";
+  display: block;
+  background: #eef0f2;
+  border-bottom: 1px solid #c0c4cc;
+  padding: 0.35em 0.75em;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: #444;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.cijoe-report iframe {
+  display: block;
+  width: 100%;
+  height: 700px;
+  border: 0;
+}

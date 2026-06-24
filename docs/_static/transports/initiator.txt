@@ -1,0 +1,3 @@
+xnvme enum --uri 127.0.0.1:4420
+xnvme info 127.0.0.1:4420 --subnqn nqn.2019-08.org.qemu:beef0003
+xnvmeperf run 127.0.0.1:4420 --subnqn nqn.2019-08.org.qemu:beef0003 --iopattern randread --iosize 4096 --qdepth 32 --nqueues 1 --runtime 5 --cpumask 0x4

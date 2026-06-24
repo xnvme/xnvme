@@ -95,10 +95,12 @@ def _start_spdk(args, cijoe):
     nvmf_tgt = spdk_path / "build" / "bin" / "nvmf_tgt"
     nvmf_tgt_src = spdk_path / "app" / "nvmf_tgt"
 
+    # nvme_tcp is the kernel host driver loaded for the initiator-side
+    # `nvme discover` in the probe step; nvmf_tgt itself runs in userspace and
+    # the PCIe device is rebound to vfio-pci by xnvme-driver, so nvmet and
+    # nvmet_tcp are not needed on the SPDK target path.
     drivers = [
-        "modprobe nvme",
-        "modprobe nvmet",
-        "modprobe nvmet_tcp",
+        "modprobe nvme_tcp",
         "xnvme-driver",
     ]
     err, cmd = _run_all(cijoe, drivers)
