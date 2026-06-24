@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 300" width="820" height="300" font-family="system-ui, -apple-system, sans-serif">
+  <rect x="40" y="80" width="180" height="140" rx="8" fill="#dae8fc" stroke="#6c8ebf" stroke-width="2"/>
+  <text x="130" y="140" text-anchor="middle" font-size="20" font-weight="600">Initiator</text>
+  <text x="130" y="166" text-anchor="middle" font-size="14" fill="#555">xNVMe</text>
+
+  <line x1="220" y1="150" x2="400" y2="150" stroke="black" stroke-width="3"/>
+  <rect x="285" y="132" width="50" height="22" fill="white"/>
+  <text x="310" y="148" text-anchor="middle" font-size="16" font-weight="600">TCP</text>
+
+  <rect x="400" y="80" width="180" height="140" rx="8" fill="#d5e8d4" stroke="#82b366" stroke-width="2"/>
+  <text x="490" y="140" text-anchor="middle" font-size="20" font-weight="600">Target</text>
+  <text x="490" y="166" text-anchor="middle" font-size="14" fill="#555">nvmet / nvmf_tgt</text>
+
+  <rect x="620" y="60" width="180" height="200" rx="2" fill="#f5f5f5" stroke="#aaa" stroke-width="1"/>
+  <rect x="640" y="80" width="140" height="28" fill="#5a9a4a" stroke="#3a6e30"/>
+  <rect x="640" y="135" width="140" height="28" fill="#5a9a4a" stroke="#3a6e30"/>
+  <rect x="640" y="190" width="140" height="28" fill="#5a9a4a" stroke="#3a6e30"/>
+
+  <line x1="580" y1="150" x2="640" y2="94" stroke="black" stroke-width="1.5"/>
+  <line x1="580" y1="150" x2="640" y2="149" stroke="black" stroke-width="1.5"/>
+  <line x1="580" y1="150" x2="640" y2="204" stroke="black" stroke-width="1.5"/>
+
+  <text x="710" y="280" text-anchor="middle" font-size="13" fill="#444">PCIe attached NVMe SSDs</text>
+</svg>

@@ -1,10 +1,18 @@
 ---
 doc: |
-  Generate documentation with example-commands executed
+  Generate documentation with example-commands executed.
+
+  This workflow itself only runs the docgen step. The transports tutorial
+  embeds the live cijoe reports produced by the sibling
+  ``transports-tcp-spdk`` and ``transports-tcp-linux`` workflows; their
+  ``report.html`` files are picked up by ``xnvme_docgen`` and dropped into
+  the docs source tree before the local doc build runs. The Makefile target
+  ``docgen-guest`` is what runs the two demo workflows first, then this one.
 
 steps:
 - name: docgen
   uses: xnvme_docgen
   with:
     xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
-
+    transport_report_spdk: 'cijoe-output-transports-spdk/report.html'
+    transport_report_linux: 'cijoe-output-transports-linux/report.html'

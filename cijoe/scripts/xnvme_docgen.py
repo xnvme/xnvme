@@ -10,8 +10,11 @@ Retargetable: True
 """
 
 import logging as log
+import shutil
 from argparse import ArgumentParser
 from pathlib import Path
+
+import yaml
 
 
 def add_args(parser: ArgumentParser):
@@ -26,6 +29,24 @@ def add_args(parser: ArgumentParser):
         type=str,
         default="/tmp/artifacts",
         help="path to xNVMe source locally",
+    )
+    parser.add_argument(
+        "--transport_report_spdk",
+        type=str,
+        default="cijoe-output-transports-spdk/report.html",
+        help=(
+            "path to the SPDK transport demo report.html, relative to the "
+            "cijoe invocation directory; embedded by the transports tutorial"
+        ),
+    )
+    parser.add_argument(
+        "--transport_report_linux",
+        type=str,
+        default="cijoe-output-transports-linux/report.html",
+        help=(
+            "path to the Linux transport demo report.html, relative to the "
+            "cijoe invocation directory; embedded by the transports tutorial"
+        ),
     )
 
 
@@ -72,6 +93,34 @@ def main(args, cijoe):
 
     log.info("Unpacking source...")
     cijoe.run_local("tar -xzf xnvme_source.tar.gz", cwd=args.local_xnvme_source)
+
+    transport_static = Path(args.local_xnvme_source) / "docs" / "_static" / "transports"
+    transport_static.mkdir(parents=True, exist_ok=True)
+    for src, dst_name in (
+        (Path(args.transport_report_spdk), "report-spdk.html"),
+        (Path(args.transport_report_linux), "report-linux.html"),
+    ):
+        if src.is_file():
+            shutil.copy(src, transport_static / dst_name)
+            log.info("Embedded transport report: %s -> %s", src, dst_name)
+        else:
+            log.warning("Missing transport report: %s", src)
+
+    probe_dir = Path(args.transport_report_spdk).parent / "nvme_target_probe"
+    initiator_cmds = []
+    for state_file in sorted(probe_dir.glob("cmd_*.state")):
+        with state_file.open() as f:
+            state = yaml.safe_load(f) or {}
+        cmd = (state.get("cmd") or "").strip()
+        if cmd.startswith(("xnvme ", "xnvmeperf ")):
+            initiator_cmds.append(cmd)
+    if initiator_cmds:
+        (transport_static / "initiator.txt").write_text(
+            "\n".join(initiator_cmds) + "\n"
+        )
+        log.info("Extracted %d initiator commands", len(initiator_cmds))
+    else:
+        log.warning("No initiator commands found in %s", probe_dir)
 
     # Output kmdo capture files for debugging
     log.info("Dumping kmdo capture files (.cmd, .out, .err)...")
