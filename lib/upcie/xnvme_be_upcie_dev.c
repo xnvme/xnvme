@@ -7,8 +7,8 @@
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_UPCIE_ENABLED
 #include <limits.h>
-#include <stdatomic.h>
 #include <sys/file.h>
+#include <sys/stat.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_upcie.h>
 
@@ -95,7 +95,6 @@ _rte_init(struct xnvme_opts *opts)
 		}
 	}
 
-	// hostmem_heap_init() requires a size that is a whole number of hugepages
 	heap_size = ((heap_size + g_upcie_rte.config.hugepgsz - 1) / g_upcie_rte.config.hugepgsz) *
 		    g_upcie_rte.config.hugepgsz;
 
@@ -103,6 +102,46 @@ _rte_init(struct xnvme_opts *opts)
 	if (err) {
 		XNVME_DEBUG("FAILED: hostmem_heap_init(); err(%d)", err);
 		return err;
+	}
+
+	if (g_upcie_rte.mproc) {
+		if (g_upcie_rte.mproc->is_primary) {
+			/* Store hugepage path in shm for secondaries to use for import */
+			struct xnvme_be_upcie_mproc_shm *shm = g_upcie_rte.mproc->shm;
+			char *path = g_upcie_rte.heap.memory.path;
+
+			snprintf(shm->hugepage_path, sizeof(shm->hugepage_path), "%s", path);
+
+			shm->hugepage_base = (uint64_t)g_upcie_rte.heap.memory.virt;
+			atomic_store_explicit(&shm->is_initialized, true, memory_order_release);
+		} else {
+			struct xnvme_be_upcie_mproc_shm *shm = g_upcie_rte.mproc->shm;
+
+			// Wait 1 second for primary to copy hugepage info to shared memory
+			for (int i = 0; i < 1000; i++) {
+				if (atomic_load_explicit(&shm->is_initialized,
+							 memory_order_acquire)) {
+					break;
+				}
+				usleep(1000);
+			}
+
+			if (!atomic_load_explicit(&shm->is_initialized, memory_order_acquire)) {
+				XNVME_DEBUG("FAILED: Timed out while waiting for primary process "
+					    "hugepage "
+					    "information");
+				return -ENOENT;
+			}
+
+			err = xnvme_be_upcie_mproc_import_admin_hugepage();
+			if (err) {
+				XNVME_DEBUG(
+					"FAILED: xnvme_be_upcie_mproc_import_admin_hugepage(); "
+					"err(%d)",
+					err);
+				return err;
+			}
+		}
 	}
 
 	g_upcie_rte.is_initialized = 1;

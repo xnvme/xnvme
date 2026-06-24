@@ -5,6 +5,7 @@
 #ifndef __INTERNAL_XNVME_BE_UPCIE_H
 #define __INTERNAL_XNVME_BE_UPCIE_H
 #include <pthread.h>
+#include <stdatomic.h>
 
 #include <xnvme_be.h>
 #include <xnvme_queue.h>
@@ -53,6 +54,16 @@ struct xnvme_be_upcie_state {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_upcie_state) == XNVME_BE_STATE_NBYTES, "Incorrect size")
 
 /**
+ * Shared information about hugepages
+ */
+struct xnvme_be_upcie_mproc_shm {
+	char hugepage_path[256]; ///< Path to primary's hugepage file
+	uint64_t hugepage_base;  ///< Primary's hugepage virtual base for secondary pointer fixup
+	_Atomic int refcount;    ///< Number of processes currently attached
+	_Atomic bool is_initialized;
+};
+
+/**
  * Multi-process state
  */
 struct xnvme_be_upcie_mproc {
@@ -60,6 +71,12 @@ struct xnvme_be_upcie_mproc {
 
 	char lock_name[64];
 	int lock_fd;
+
+	char shm_name[64];
+	int shm_fd;
+	struct xnvme_be_upcie_mproc_shm *shm;
+
+	struct hostmem_hugepage *primary_hugepage; ///< Imported hugepage for admin queue
 };
 
 /**
@@ -106,5 +123,7 @@ int
 xnvme_be_upcie_mproc_rte_init(int shm_id);
 void
 xnvme_be_upcie_mproc_rte_term();
+int
+xnvme_be_upcie_mproc_import_admin_hugepage();
 
 #endif /* __INTERNAL_XNVME_BE_UPCIE */
