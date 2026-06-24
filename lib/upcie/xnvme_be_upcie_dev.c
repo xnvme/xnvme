@@ -200,6 +200,65 @@ _pci_enable_bus_master(const char *bdf)
 	return 0;
 }
 
+static int
+_initialize_ctrlr(struct xnvme_dev *dev, struct xnvme_be_upcie_ctrlr *ctrlr)
+{
+	char driver_name[sizeof(dev->ident.kernel_driver)] = {0};
+	int err;
+
+	err = xnvme_be_upcie_get_driver_name(dev->ident.uri, driver_name, sizeof(driver_name));
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_be_upcie_get_driver_name(%s); err(%d)", dev->ident.uri,
+			    err);
+		return err;
+	}
+	snprintf(dev->ident.kernel_driver, sizeof(dev->ident.kernel_driver), "%s", driver_name);
+
+	ctrlr->ctrl = calloc(1, sizeof(*ctrlr->ctrl));
+	if (!ctrlr->ctrl) {
+		XNVME_DEBUG("FAILED: calloc(ctrl)");
+		return -ENOMEM;
+	}
+
+	if (!strcmp(driver_name, "vfio-pci")) {
+		ctrlr->backend = NVME_BACKEND_VFIO;
+		err = nvme_controller_open_vfio(ctrlr->ctrl, &ctrlr->vfio, dev->ident.uri,
+						&g_upcie_rte.heap);
+	} else if (!strcmp(driver_name, "uio_pci_generic")) {
+		ctrlr->backend = NVME_BACKEND_SYSFS;
+		err = nvme_controller_open(ctrlr->ctrl, dev->ident.uri, &g_upcie_rte.heap);
+	} else {
+		XNVME_DEBUG("FAILED: unsupported driver '%s'", driver_name);
+		err = -ENOTSUP;
+	}
+	if (err) {
+		XNVME_DEBUG("FAILED: %s(%s)",
+			    ctrlr->backend == NVME_BACKEND_VFIO ? "nvme_controller_open_vfio"
+								: "nvme_controller_open",
+			    dev->ident.uri);
+		goto failed;
+	}
+
+	err = nvme_controller_create_io_qpair(ctrlr->ctrl, &ctrlr->sync, 16);
+	if (err) {
+		XNVME_DEBUG("FAILED: nvme_controller_create_io_qpair(%d)", err);
+		goto failed_close_ctrlr;
+	}
+
+	return 0;
+
+failed_close_ctrlr:
+	if (ctrlr->backend == NVME_BACKEND_VFIO) {
+		nvme_controller_close_vfio(ctrlr->ctrl, &ctrlr->vfio);
+	} else {
+		nvme_controller_close(ctrlr->ctrl);
+	}
+
+failed:
+	free(ctrlr->ctrl);
+	return err;
+}
+
 /**
  * Initialize the uPCIe controller.
  *
@@ -211,7 +270,6 @@ void *
 xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 {
 	struct xnvme_be_upcie_ctrlr *ctrlr;
-	char driver_name[sizeof(dev->ident.kernel_driver)] = {0};
 	int err;
 
 	err = _rte_init(&dev->opts);
@@ -235,51 +293,10 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 		goto failed;
 	}
 
-	ctrlr->ctrl = calloc(1, sizeof(*ctrlr->ctrl));
-	if (!ctrlr->ctrl) {
-		XNVME_DEBUG("FAILED: calloc(ctrl)");
-		errno = ENOMEM;
-		goto failed;
-	}
-
-	err = xnvme_be_upcie_get_driver_name(dev->ident.uri, driver_name, sizeof(driver_name));
+	err = _initialize_ctrlr(dev, ctrlr);
 	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_be_upcie_get_driver_name(%s); err(%d)", dev->ident.uri,
-			    err);
+		XNVME_DEBUG("FAILED: _initialize_ctrlr(); err(%d)", err);
 		errno = -err;
-		goto failed;
-	}
-	snprintf(dev->ident.kernel_driver, sizeof(dev->ident.kernel_driver), "%s", driver_name);
-
-	if (!strcmp(driver_name, "vfio-pci")) {
-		ctrlr->backend = NVME_BACKEND_VFIO;
-		err = nvme_controller_open_vfio(ctrlr->ctrl, &ctrlr->vfio, dev->ident.uri,
-						&g_upcie_rte.heap);
-	} else if (!strcmp(driver_name, "uio_pci_generic")) {
-		ctrlr->backend = NVME_BACKEND_SYSFS;
-		err = nvme_controller_open(ctrlr->ctrl, dev->ident.uri, &g_upcie_rte.heap);
-	} else {
-		XNVME_DEBUG("FAILED: unsupported driver '%s'", driver_name);
-		err = -ENOTSUP;
-	}
-	if (err) {
-		XNVME_DEBUG("FAILED: %s(%s)",
-			    ctrlr->backend == NVME_BACKEND_VFIO ? "nvme_controller_open_vfio"
-								: "nvme_controller_open",
-			    dev->ident.uri);
-		errno = -err;
-		goto failed;
-	}
-
-	err = nvme_controller_create_io_qpair(ctrlr->ctrl, &ctrlr->sync, 16);
-	if (err) {
-		XNVME_DEBUG("FAILED: nvme_controller_create_io_qpair(%d)", err);
-		errno = -err;
-		if (ctrlr->backend == NVME_BACKEND_VFIO) {
-			nvme_controller_close_vfio(ctrlr->ctrl, &ctrlr->vfio);
-		} else {
-			nvme_controller_close(ctrlr->ctrl);
-		}
 		goto failed;
 	}
 
@@ -289,7 +306,6 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 
 failed:
 	if (ctrlr) {
-		free(ctrlr->ctrl);
 		free(ctrlr);
 	}
 
