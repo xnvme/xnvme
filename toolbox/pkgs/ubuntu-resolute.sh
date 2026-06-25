@@ -27,6 +27,7 @@ apt-get -qy install \
  libarchive-dev \
  libcunit1-dev \
  libisal-dev \
+ libjitterentropy3-dev \
  libncurses5-dev \
  libnuma-dev \
  libssl-dev \

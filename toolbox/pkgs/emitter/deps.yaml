@@ -510,7 +510,7 @@ platforms:
   drop: []
   alt: []
   aux:
-  - [sys, [autoconf, build-essential, libtool]]
+  - [sys, [autoconf, build-essential, libjitterentropy3-dev, libtool]]
 
 - alias: Ubuntu LTS (Old)
   notes: All tools and libraries are available via system package-manager.
