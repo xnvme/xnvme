@@ -468,7 +468,7 @@ platforms:
 - alias: Ubuntu LTS
   notes: All tools and libraries are available via system package-manager.
   name: ubuntu
-  ver: [noble]
+  ver: [resolute]
   os: linux
   mng: apt
   drop: []
@@ -477,15 +477,13 @@ platforms:
   - [sys, [autoconf, build-essential, libtool]]
 
 - alias: Ubuntu LTS (Old)
-  notes: Installing liburing from source and meson + ninja via pip
+  notes: All tools and libraries are available via system package-manager.
   name: ubuntu
-  ver: [jammy]
+  ver: [noble]
   os: linux
   mng: apt
   drop: []
-  alt:
-  - [pip, [meson]]
-  - [src, [liburing, libvfn]]
+  alt: []
   aux:
   - [sys, [autoconf, build-essential, libtool]]
 

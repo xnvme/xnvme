@@ -250,9 +250,9 @@ jobs:
         - {os: 'oraclelinux', dh: 'oraclelinux', ver: '9'}
         - {os: 'oraclelinux', dh: 'oraclelinux', ver: '10'}
         - {os: 'rockylinux', dh: 'rockylinux/rockylinux', ver: '9.7'}
-        - {os: 'ubuntu', dh: 'ubuntu', ver: 'jammy'}
         - {os: 'ubuntu', dh: 'ubuntu', ver: 'noble'}
         - {os: 'ubuntu', dh: 'ubuntu', ver: 'questing'}
+        - {os: 'ubuntu', dh: 'ubuntu', ver: 'resolute'}
 
     container:
       image: ghcr.io/xnvme/xnvme-deps-${{ matrix.container.os }}-${{ matrix.container.ver }}:main
