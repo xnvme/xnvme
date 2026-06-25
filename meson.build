@@ -47,8 +47,14 @@ add_project_arguments(
 )
 
 if not is_windows
-  add_project_arguments('-flto', language: 'c')
-  add_project_link_arguments('-flto', language: 'c')
+  # '-flto=auto' lets GCC parallelize LTRANS; falls back to bare '-flto'
+  # for compilers that do not accept the suffix (e.g. clang).
+  flto_args = cc.get_supported_arguments(['-flto=auto'])
+  if flto_args.length() == 0
+    flto_args = ['-flto']
+  endif
+  add_project_arguments(flto_args, language: 'c')
+  add_project_link_arguments(flto_args, language: 'c')
 endif
 
 if get_option('hardening')
