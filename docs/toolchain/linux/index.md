@@ -486,7 +486,44 @@ All tools and libraries are available via system package-manager.
 :::
 
 
-## Ubuntu LTS (noble)
+## Ubuntu LTS (resolute)
+
+Install the required toolchain and libraries by running the package installation
+script provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as `root` or with
+`sudo`):
+
+```bash
+sudo ./xnvme/toolbox/pkgs/ubuntu-resolute.sh
+```
+
+Or, run the commands contained within the script manually:
+
+```{literalinclude} ../../../toolbox/pkgs/ubuntu-resolute.sh
+:language: bash
+:lines: 8-
+```
+
+:::{note}
+A Docker-image is provided via `ghcr.io`, specifically
+`ghcr.io/xnvme/xnvme-deps-ubuntu-resolute:main`. This Docker-image contains
+all the software described above.
+:::
+
+Then go ahead and configure, build and install using `meson`:
+
+```{literalinclude} ../../../toolbox/pkgs/default-build.sh
+:language: bash
+:lines: 2-
+```
+
+
+:::{note}
+All tools and libraries are available via system package-manager.
+:::
+
+
+## Ubuntu LTS (Old) (noble)
 
 Install the required toolchain and libraries by running the package installation
 script provided with the **xNVMe** repository, as shown below. Ensure that you
@@ -520,43 +557,6 @@ Then go ahead and configure, build and install using `meson`:
 
 :::{note}
 All tools and libraries are available via system package-manager.
-:::
-
-
-## Ubuntu LTS (Old) (jammy)
-
-Install the required toolchain and libraries by running the package installation
-script provided with the **xNVMe** repository, as shown below. Ensure that you
-have sufficient system privileges when doing so (e.g., run as `root` or with
-`sudo`):
-
-```bash
-sudo ./xnvme/toolbox/pkgs/ubuntu-jammy.sh
-```
-
-Or, run the commands contained within the script manually:
-
-```{literalinclude} ../../../toolbox/pkgs/ubuntu-jammy.sh
-:language: bash
-:lines: 8-
-```
-
-:::{note}
-A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-ubuntu-jammy:main`. This Docker-image contains
-all the software described above.
-:::
-
-Then go ahead and configure, build and install using `meson`:
-
-```{literalinclude} ../../../toolbox/pkgs/default-build.sh
-:language: bash
-:lines: 2-
-```
-
-
-:::{note}
-Installing liburing from source and meson + ninja via pip
 :::
 
 
