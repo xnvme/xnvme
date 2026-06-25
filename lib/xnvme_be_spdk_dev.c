@@ -180,6 +180,7 @@ _spdk_nvmf_adrfam_str(enum spdk_nvmf_adrfam adrfam)
 	case SPDK_NVMF_ADRFAM_IB:
 	case SPDK_NVMF_ADRFAM_FC:
 	case SPDK_NVMF_ADRFAM_INTRA_HOST:
+	case SPDK_NVMF_ADRFAM_NOT_SPECIFIED:
 		return "";
 	}
 

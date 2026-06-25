@@ -40,10 +40,10 @@ _sysfs_path_to_buf(const char *path, char *buf, int buf_len)
 	return 0;
 }
 
-static char *
+static const char *
 xnvme_path_basename(const char *path)
 {
-	char *bname = strrchr(path, '/');
+	const char *bname = strrchr(path, '/');
 
 	if (bname && (strlen(bname) > 1)) {
 		return bname + 1;
@@ -58,7 +58,7 @@ xnvme_be_linux_sysfs_dev_attr_to_buf(struct xnvme_dev *dev, const char *attr, ch
 {
 	int path_len = 0x1000;
 	char path[path_len];
-	char *bname;
+	const char *bname;
 
 	bname = xnvme_path_basename(dev->ident.uri);
 	if (!bname) {
