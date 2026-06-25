@@ -294,6 +294,7 @@ void *
 xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 {
 	struct xnvme_be_upcie_ctrlr *ctrlr;
+	bool is_owner; // Is this process the owner of the controller?
 	int err;
 
 	err = _rte_init(&dev->opts);
@@ -302,6 +303,8 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 		errno = -err;
 		return NULL;
 	}
+
+	is_owner = !g_upcie_rte.mproc || g_upcie_rte.mproc->is_primary;
 
 	err = _pci_enable_bus_master(dev->ident.uri);
 	if (err) {
@@ -317,9 +320,17 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 		goto failed;
 	}
 
-	err = _initialize_ctrlr(dev, ctrlr);
+	if (is_owner) {
+		err = _initialize_ctrlr(dev, ctrlr);
+	} else {
+		err = xnvme_be_upcie_mproc_ctrlr_shm_attach(dev, ctrlr);
+	}
+
 	if (err) {
-		XNVME_DEBUG("FAILED: _initialize_ctrlr(); err(%d)", err);
+		XNVME_DEBUG("FAILED: %s(); err(%d)",
+			    is_owner ? "_initialize_ctrlr"
+				     : "xnvme_be_upcie_mproc_ctrlr_shm_attach",
+			    err);
 		errno = -err;
 		goto failed;
 	}
@@ -344,13 +355,26 @@ int
 xnvme_be_upcie_ctrlr_term(void *handle)
 {
 	struct xnvme_be_upcie_ctrlr *ctrlr = handle;
+	bool is_owner =
+		!g_upcie_rte.mproc ||
+		g_upcie_rte.mproc->is_primary; // Is this process the owner of the controller?
 
-	nvme_controller_delete_io_qpair(ctrlr->ctrl, &ctrlr->sync);
-
-	if (ctrlr->backend == NVME_BACKEND_VFIO) {
-		nvme_controller_close_vfio(ctrlr->ctrl, &ctrlr->vfio);
+	if (g_upcie_rte.mproc) {
+		xnvme_be_upcie_mproc_create_or_delete_io_qpair(ctrlr, &ctrlr->sync, 0, false);
 	} else {
-		nvme_controller_close(ctrlr->ctrl);
+		nvme_controller_delete_io_qpair(ctrlr->ctrl, &ctrlr->sync);
+	}
+
+	if (is_owner) {
+		if (ctrlr->backend == NVME_BACKEND_VFIO) {
+			nvme_controller_close_vfio(ctrlr->ctrl, &ctrlr->vfio);
+		} else {
+			nvme_controller_close(ctrlr->ctrl);
+		}
+	} else {
+		nvme_request_pool_term_prps(ctrlr->ctrl->aq.rpool, &g_upcie_rte.heap);
+		pci_func_close(&ctrlr->ctrl->func);
+		free(ctrlr->ctrl->aq.rpool);
 	}
 
 	if (g_upcie_rte.mproc) {

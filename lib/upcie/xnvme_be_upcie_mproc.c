@@ -374,4 +374,233 @@ failed:
 	return err;
 }
 
+/**
+ * Attach to an existing controller in shared memory
+ *
+ * Waits (up to ~1s) for the primary to create, size and finish initializing the
+ * shared segment, so starting the primary and secondary concurrently is safe;
+ * if the primary does not become ready within the timeout, attach fails.
+ */
+int
+xnvme_be_upcie_mproc_ctrlr_shm_attach(struct xnvme_dev *dev, struct xnvme_be_upcie_ctrlr *ctrlr)
+{
+	struct xnvme_be_upcie_ctrlr_shm *shm = NULL;
+	char shm_name[64];
+	size_t shm_size = sizeof(*shm);
+	int shm_fd, err;
+
+	ctrlr->shm_fd = -1; // File descripter should not be saved in secondaries
+
+	xnvme_be_upcie_shm_bdf_name(dev->ident.uri, shm_name, sizeof(shm_name));
+
+	// Wait for the primary to create and size the segment. shm_open() can
+	// succeed before the primary has ftruncate()'d it, so mapping and touching
+	// it then would SIGBUS; only proceed once it is at least shm_size bytes.
+	for (int i = 0; i < 1000; i++) {
+		struct stat st;
+
+		shm_fd = shm_open(shm_name, O_RDWR, 0);
+		if (shm_fd >= 0) {
+			err = fstat(shm_fd, &st);
+			if (err) {
+				err = -errno;
+				XNVME_DEBUG("FAILED: fstat(shm); err(%d)", err);
+				goto failed;
+			}
+			if ((size_t)st.st_size >= shm_size) {
+				break;
+			}
+			close(shm_fd);
+			shm_fd = -1;
+		} else if (errno != ENOENT) {
+			err = -errno;
+			XNVME_DEBUG("FAILED: shm_open(%s): err(%d)", shm_name, err);
+			goto failed;
+		}
+
+		usleep(1000);
+	}
+
+	if (shm_fd < 0) {
+		XNVME_DEBUG("FAILED: timed out waiting for primary to create shm(%s)", shm_name);
+		err = -ENOENT;
+		goto failed;
+	}
+
+	shm = mmap(NULL, shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+	if (shm == MAP_FAILED) {
+		err = -errno;
+		XNVME_DEBUG("FAILED: mmap() shm; err(%d)", err);
+		goto failed;
+	}
+
+	close(shm_fd);
+	shm_fd = -1;
+
+	ctrlr->shm = shm;
+	snprintf(ctrlr->shm_name, sizeof(ctrlr->shm_name), "%s", shm_name);
+
+	// Wait for the primary to finish opening the controller before reading any
+	// shared fields; they are undefined until is_initialized is published.
+	for (int i = 0; i < 1000; i++) {
+		if (atomic_load_explicit(&shm->is_initialized, memory_order_acquire)) {
+			break;
+		}
+		usleep(1000);
+	}
+
+	if (!atomic_load_explicit(&shm->is_initialized, memory_order_acquire)) {
+		XNVME_DEBUG("FAILED: timed out waiting for primary controller init");
+		err = -ENOENT;
+		goto failed;
+	}
+
+	if (!strcmp(shm->driver_name, "vfio-pci")) {
+		ctrlr->backend = NVME_BACKEND_VFIO;
+	} else if (!strcmp(shm->driver_name, "uio_pci_generic")) {
+		ctrlr->backend = NVME_BACKEND_SYSFS;
+	} else {
+		XNVME_DEBUG("FAILED: unsupported driver '%s'", shm->driver_name);
+		err = -ENOTSUP;
+		goto failed;
+	}
+
+	ctrlr->ctrl = calloc(1, sizeof(*ctrlr->ctrl));
+	if (!ctrlr->ctrl) {
+		XNVME_DEBUG("FAILED: calloc(ctrl)");
+		err = -ENOMEM;
+		goto failed;
+	}
+
+	ctrlr->ctrl->heap = &g_upcie_rte.heap;
+	ctrlr->ctrl->aq.heap = &g_upcie_rte.heap;
+	ctrlr->ctrl->timeout_ms = shm->ctrl.timeout_ms;
+
+	/* Retrieve BAR0 register mapping (not in shared memory) */
+	{
+		uint8_t *bar0;
+		uint64_t cap;
+		int dstrd;
+
+		err = pci_func_open(dev->ident.uri, &ctrlr->ctrl->func);
+		if (err) {
+			XNVME_DEBUG("FAILED: pci_func_open(%s): %d", dev->ident.uri, err);
+			goto failed;
+		}
+
+		err = pci_bar_map(dev->ident.uri, 0, &ctrlr->ctrl->func.bars[0]);
+		if (err) {
+			XNVME_DEBUG("FAILED: pci_bar_map(%s, BAR0): %d", dev->ident.uri, err);
+			goto failed_close_function;
+		}
+
+		bar0 = ctrlr->ctrl->func.bars[0].region;
+		cap = nvme_mmio_cap_read(bar0);
+		dstrd = nvme_reg_cap_get_dstrd(cap);
+
+		ctrlr->ctrl->aq.sqdb = bar0 + 0x1000;
+		ctrlr->ctrl->aq.cqdb = bar0 + 0x1000 + (1 << (2 + dstrd));
+	}
+
+	/* Import admin queue from shared memory */
+	{
+		uint64_t offset = (uint64_t)g_upcie_rte.mproc->primary_hugepage->virt -
+				  g_upcie_rte.mproc->shm->hugepage_base;
+
+		ctrlr->ctrl->aq.sq = (char *)shm->ctrl.aq.sq + offset;
+		ctrlr->ctrl->aq.cq = (char *)shm->ctrl.aq.cq + offset;
+		ctrlr->ctrl->aq.depth = shm->ctrl.aq.depth;
+		ctrlr->ctrl->aq.phase = shm->ctrl.aq.phase;
+		ctrlr->ctrl->aq.qid = shm->ctrl.aq.qid;
+	}
+
+	/* Allocate local request pool */
+	{
+		ctrlr->ctrl->aq.rpool = calloc(1, sizeof(*ctrlr->ctrl->aq.rpool));
+		if (!ctrlr->ctrl->aq.rpool) {
+			err = -ENOMEM;
+			XNVME_DEBUG("FAILED: calloc(aq.rpool)");
+			goto failed_close_function;
+		}
+		nvme_request_pool_init(ctrlr->ctrl->aq.rpool);
+
+		err = nvme_request_pool_init_prps(ctrlr->ctrl->aq.rpool, &g_upcie_rte.heap);
+		if (err) {
+			err = -errno;
+			XNVME_DEBUG("FAILED: nvme_request_pool_init_prps(aq.rpool); err(%d)", err);
+			goto failed_close_function;
+		}
+	}
+
+	err = xnvme_be_upcie_mproc_create_or_delete_io_qpair(ctrlr, &ctrlr->sync, 16, true);
+	if (err) {
+		XNVME_DEBUG("FAILED: create with "
+			    "xnvme_be_upcie_mproc_create_or_delete_io_qpair(); err(%d)",
+			    err);
+		nvme_request_pool_term_prps(ctrlr->ctrl->aq.rpool, &g_upcie_rte.heap);
+		errno = -err;
+		goto failed_close_function;
+	}
+
+	atomic_fetch_add(&shm->refcount, 1);
+
+	return 0;
+
+failed_close_function:
+	pci_func_close(&ctrlr->ctrl->func);
+
+failed:
+	if (ctrlr->ctrl) {
+		free(ctrlr->ctrl->aq.rpool);
+	}
+
+	free(ctrlr->ctrl);
+	ctrlr->ctrl = NULL;
+
+	if (shm_fd >= 0) {
+		close(shm_fd);
+	}
+
+	if (shm && shm != MAP_FAILED) {
+		munmap(shm, sizeof(*shm));
+	}
+	ctrlr->shm = NULL;
+
+	return err;
+}
+
+/**
+ * Create or delete a queue pair in multi process mode
+ *
+ * Helper function for locking the shared controller mutex, updating the
+ * allocation status of IO queues and creating/deleting a queue pair
+ *
+ * @param ctrlr The backend controller
+ * @param qpair NVMe queue pair to create / delete
+ * @param depth queue depth of the queues, not used if (!create)
+ * @param create if true, creates the qpair, else, deletes the qpair
+ */
+int
+xnvme_be_upcie_mproc_create_or_delete_io_qpair(struct xnvme_be_upcie_ctrlr *ctrlr,
+					       struct nvme_qpair *qpair, uint16_t depth,
+					       bool create)
+{
+	struct xnvme_be_upcie_ctrlr_shm *shm = ctrlr->shm;
+	int err;
+
+	xnvme_be_upcie_ctrlr_mutex_lock(ctrlr);
+	memcpy(ctrlr->ctrl->qids, shm->ctrl.qids, sizeof(ctrlr->ctrl->qids));
+
+	if (create) {
+		err = nvme_controller_create_io_qpair(ctrlr->ctrl, qpair, depth);
+	} else {
+		err = nvme_controller_delete_io_qpair(ctrlr->ctrl, qpair);
+	}
+
+	memcpy(shm->ctrl.qids, ctrlr->ctrl->qids, sizeof(shm->ctrl.qids));
+	xnvme_be_upcie_ctrlr_mutex_unlock(ctrlr);
+
+	return err;
+}
+
 #endif
