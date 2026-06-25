@@ -360,7 +360,22 @@ xnvme_be_upcie_ctrlr_term(void *handle)
 		g_upcie_rte.mproc->is_primary; // Is this process the owner of the controller?
 
 	if (g_upcie_rte.mproc) {
+		if (g_upcie_rte.mproc->is_primary) {
+			int attached = atomic_load(&ctrlr->shm->refcount);
+			if (attached > 1) {
+				XNVME_DEBUG("WARNING: terminating controller with %d secondary "
+					    "process(es) still "
+					    "attached",
+					    attached - 1);
+			}
+		}
+
 		xnvme_be_upcie_mproc_create_or_delete_io_qpair(ctrlr, &ctrlr->sync, 0, false);
+
+		// Manually send qpair deletion commands to NVMe controller to not
+		// free DMA memory that the primary process does not own. Is skipped
+		// automatically if not in multi-process mode.
+		xnvme_be_upcie_mproc_free_all_queues(ctrlr);
 	} else {
 		nvme_controller_delete_io_qpair(ctrlr->ctrl, &ctrlr->sync);
 	}

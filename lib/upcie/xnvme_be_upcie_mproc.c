@@ -248,6 +248,47 @@ xnvme_be_upcie_shm_bdf_name(const char *bdf, char *buf, size_t buflen)
 }
 
 void
+xnvme_be_upcie_mproc_free_all_queues(struct xnvme_be_upcie_ctrlr *ctrlr)
+{
+	struct xnvme_be_upcie_ctrlr_shm *shm = ctrlr->shm;
+	int err;
+
+	if (!g_upcie_rte.mproc || !g_upcie_rte.mproc->is_primary) {
+		XNVME_DEBUG("INFO: xnvme_be_upcie_mproc_free_all_queues() called in non-primary "
+			    "process; skipping");
+		return;
+	}
+
+	xnvme_be_upcie_ctrlr_mutex_lock(ctrlr);
+
+	for (uint16_t qid = 1; qid < NVME_QID_BITMAP_WORDS * BITS_PER_WORD; qid++) {
+		if (nvme_qid_is_allocated(shm->ctrl.qids, qid)) {
+			struct nvme_command cmd = {0};
+			struct nvme_completion cpl = {0};
+			int err;
+
+			cmd.cdw10 = qid;
+
+			cmd.opc = 0x00; ///< Delete I/O Submission Queue
+			err = nvme_qpair_submit_sync(&ctrlr->ctrl->aq, &cmd,
+						     ctrlr->ctrl->timeout_ms, &cpl);
+			if (err) {
+				XNVME_DEBUG("FAILED: nvme_qpair_submit_sync(); err(%d)", err);
+			}
+
+			cmd.opc = 0x04; ///< Delete I/O Completion Queue
+			err = nvme_qpair_submit_sync(&ctrlr->ctrl->aq, &cmd,
+						     ctrlr->ctrl->timeout_ms, &cpl);
+			if (err) {
+				XNVME_DEBUG("FAILED: nvme_qpair_submit_sync(); err(%d)", err);
+			}
+		}
+	}
+
+	xnvme_be_upcie_ctrlr_mutex_unlock(ctrlr);
+}
+
+void
 xnvme_be_upcie_mproc_ctrlr_shm_term(struct xnvme_be_upcie_ctrlr *ctrlr)
 {
 	if (g_upcie_rte.mproc->is_primary) {
