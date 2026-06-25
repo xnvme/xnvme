@@ -40,8 +40,10 @@ apt-get -qy install \
  pipx \
  pkg-config \
  python3 \
+ python3-jinja2 \
  python3-pip \
  python3-pyelftools \
+ python3-tabulate \
  python3-venv \
  uuid-dev
 

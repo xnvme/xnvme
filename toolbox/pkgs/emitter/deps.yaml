@@ -143,6 +143,42 @@ deps:
       yum: [python-pyelftools]
       zypper: [python3-pyelftools]
 
+  jinja2:
+    notes: Required by SPDK 26.05+ scripts/genrpc.py
+    ver: 0.0
+    when: [building]
+    purpose: {be: [spdk]}
+    names:
+      apt: [python3-jinja2]
+      apk: [py3-jinja2]
+      default: [jinja2]
+      dnf: [python3-jinja2]
+      emerge: [dev-python/jinja2]
+      pacman: [python-jinja]
+      pip: [jinja2]
+      pipx: [jinja2]
+      pkg: [devel/py-Jinja2]
+      yum: [python3-jinja2]
+      zypper: [python3-Jinja2]
+
+  tabulate:
+    notes: Required by SPDK 26.05+ scripts/genrpc.py
+    ver: 0.0
+    when: [building]
+    purpose: {be: [spdk]}
+    names:
+      apt: [python3-tabulate]
+      apk: [py3-tabulate]
+      default: [tabulate]
+      dnf: [python3-tabulate]
+      emerge: [dev-python/tabulate]
+      pacman: [python-tabulate]
+      pip: [tabulate]
+      pipx: [tabulate]
+      pkg: [devel/py-tabulate]
+      yum: [python3-tabulate]
+      zypper: [python3-tabulate]
+
   libaio:
     notes: When available, enables the use of the Linux async I/O interface
     ver: 0.3
@@ -276,15 +312,15 @@ apps:
 defaults:
   freebsd:
     deps:
-    - [sys, [bash, clang-format, cunit, elftools, find, git, libisal, libuuid, make, meson, nasm, ncurses, openssl, patch,
-        pipx, pkg-config, python3]]
+    - [sys, [bash, clang-format, cunit, elftools, find, git, jinja2, libisal, libuuid, make, meson, nasm, ncurses, openssl,
+        patch, pipx, pkg-config, python3, tabulate]]
     apps:
     - [src, [fio]]
 
   linux:
     deps:
-    - [sys, [archive, bash, cunit, clang-format, elftools, find, git, libaio, libisal, liburing, libuuid, make, meson, nasm,
-        ncurses, numactl, openssl, patch, pipx, pkg-config, python3]]
+    - [sys, [archive, bash, cunit, clang-format, elftools, find, git, jinja2, libaio, libisal, liburing, libuuid, make, meson,
+        nasm, ncurses, numactl, openssl, patch, pipx, pkg-config, python3, tabulate]]
     - [src, [libvfn]]
     apps:
     - [src, [fio]]

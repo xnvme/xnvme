@@ -14,8 +14,8 @@ pkg install -qy \
  automake \
  bash \
  cunit \
- devel/py-pipx \
  devel/py-Jinja2 \
+ devel/py-pipx \
  devel/py-pyelftools \
  devel/py-tabulate \
  findutils \
