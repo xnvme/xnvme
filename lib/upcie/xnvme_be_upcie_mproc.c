@@ -201,21 +201,82 @@ xnvme_be_upcie_mproc_import_admin_hugepage()
 	return 0;
 }
 
-void
+/**
+ * Recover the shared admin completion queue after a lock holder has crashed
+ *
+ * If a lock holder crashes, there might be unreaped completions in the CQ, which must be drained
+ * from head/phase in shared memory.
+ * Note: The shared head/phase are only published on unlock, so they are never ahead of the
+ * device; draining from the shared head can therefore only reap real or phantom completions, never
+ * skip one.
+ *
+ * Drained completions are discarded (no live waiter remains) and the shared head/phase are
+ * resynced with the device.
+ */
+static void
+_recover_aq(struct xnvme_be_upcie_ctrlr *ctrlr)
+{
+	struct xnvme_be_upcie_ctrlr_shm *shm = ctrlr->shm;
+	struct nvme_qpair *aq = &ctrlr->ctrl->aq;
+	struct nvme_completion *cq = aq->cq;
+	struct nvme_completion *cqe;
+	uint16_t head = shm->ctrl.aq.head;
+	uint8_t phase = shm->ctrl.aq.phase;
+	int drained = 0;
+
+	cqe = &cq[head];
+
+	while ((cqe->cid < 0xFFFF) && ((cqe->status & 0x1) == phase)) {
+		head++;
+		if (head == aq->depth) {
+			head = 0;
+			phase ^= 1;
+		}
+
+		mmio_write32(aq->cqdb, 0, head);
+		drained++;
+
+		cqe = &cq[head];
+	}
+
+	shm->ctrl.aq.head = head;
+	shm->ctrl.aq.phase = phase;
+
+	if (drained) {
+		XNVME_DEBUG("INFO: recovered admin CQ after owner death; drained(%d)", drained);
+	}
+}
+
+int
 xnvme_be_upcie_ctrlr_mutex_lock(struct xnvme_be_upcie_ctrlr *ctrlr)
 {
 	struct xnvme_be_upcie_ctrlr_shm *shm = ctrlr->shm;
+	int err;
 
 	if (!shm) {
-		return;
+		return 0;
 	}
 
-	pthread_mutex_lock(&shm->aq_mutex);
+	err = pthread_mutex_lock(&shm->aq_mutex);
+	if (err == EOWNERDEAD) {
+		// Previous owner died inside the critical section; drain any
+		// completions it left behind and resync before marking consistent.
+		_recover_aq(ctrlr);
+		pthread_mutex_consistent(&shm->aq_mutex);
+	} else if (err == ENOTRECOVERABLE) {
+		XNVME_DEBUG("FAILED: aq_mutex unrecoverable (ENOTRECOVERABLE)");
+		return err;
+	} else if (err) {
+		XNVME_DEBUG("FAILED: pthread_mutex_lock(aq_mutex); err(%d)", err);
+		return err;
+	}
 
 	ctrlr->ctrl->aq.tail = shm->ctrl.aq.tail;
 	ctrlr->ctrl->aq.tail_last_written = UINT16_MAX;
 	ctrlr->ctrl->aq.head = shm->ctrl.aq.head;
 	ctrlr->ctrl->aq.phase = shm->ctrl.aq.phase;
+
+	return 0;
 }
 
 void
@@ -259,7 +320,11 @@ xnvme_be_upcie_mproc_free_all_queues(struct xnvme_be_upcie_ctrlr *ctrlr)
 		return;
 	}
 
-	xnvme_be_upcie_ctrlr_mutex_lock(ctrlr);
+	err = xnvme_be_upcie_ctrlr_mutex_lock(ctrlr);
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_be_upcie_ctrlr_mutex_lock(); err(%d)", err);
+		return;
+	}
 
 	for (uint16_t qid = 1; qid < NVME_QID_BITMAP_WORDS * BITS_PER_WORD; qid++) {
 		if (nvme_qid_is_allocated(shm->ctrl.qids, qid)) {
@@ -629,7 +694,12 @@ xnvme_be_upcie_mproc_create_or_delete_io_qpair(struct xnvme_be_upcie_ctrlr *ctrl
 	struct xnvme_be_upcie_ctrlr_shm *shm = ctrlr->shm;
 	int err;
 
-	xnvme_be_upcie_ctrlr_mutex_lock(ctrlr);
+	err = xnvme_be_upcie_ctrlr_mutex_lock(ctrlr);
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_be_upcie_ctrlr_mutex_lock(); err(%d)", err);
+		return err;
+	}
+
 	memcpy(ctrlr->ctrl->qids, shm->ctrl.qids, sizeof(ctrlr->ctrl->qids));
 
 	if (create) {

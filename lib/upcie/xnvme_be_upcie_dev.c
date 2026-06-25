@@ -248,7 +248,11 @@ _initialize_ctrlr(struct xnvme_dev *dev, struct xnvme_be_upcie_ctrlr *ctrlr)
 		goto failed;
 	}
 
-	xnvme_be_upcie_ctrlr_mutex_lock(ctrlr);
+	err = xnvme_be_upcie_ctrlr_mutex_lock(ctrlr);
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_be_upcie_ctrlr_mutex_lock(); err(%d)", err);
+		goto failed_close_ctrlr;
+	}
 
 	err = nvme_controller_create_io_qpair(ctrlr->ctrl, &ctrlr->sync, 16);
 
