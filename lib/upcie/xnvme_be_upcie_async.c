@@ -18,15 +18,25 @@ xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
 {
 	struct xnvme_queue_upcie *upcie_queue = (void *)(queue);
 	struct xnvme_be_upcie_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_upcie_ctrlr *ctrlr = state->ctrlr;
 	int err;
 
 	// The spec says that for systems where memory ordering is not guaranteed, then one should
 	// leave room in the queue to avoid races. Thus, we do so here, by allocating one more than
 	// what is needed.
-	err = nvme_controller_create_io_qpair(state->ctrlr->ctrl, &upcie_queue->qpair,
-					      queue->base.capacity + 1);
+	if (g_upcie_rte.mproc) {
+		err = xnvme_be_upcie_mproc_create_or_delete_io_qpair(
+			ctrlr, &upcie_queue->qpair, (uint16_t)(queue->base.capacity + 1), true);
+	} else {
+		err = nvme_controller_create_io_qpair(state->ctrlr->ctrl, &upcie_queue->qpair,
+						      queue->base.capacity + 1);
+	}
+
 	if (err) {
-		XNVME_DEBUG("FAILED: nvme_controller_create_io_qpair()");
+		XNVME_DEBUG("FAILED: %s(); err(%d)",
+			    g_upcie_rte.mproc ? "xnvme_be_upcie_mproc_create_or_delete_io_qpair"
+					      : "nvme_controller_create_io_qpair",
+			    err);
 		return err;
 	}
 
@@ -40,7 +50,12 @@ xnvme_be_upcie_queue_term(struct xnvme_queue *queue)
 	struct xnvme_be_upcie_state *state = (void *)queue->base.dev->be.state;
 	struct xnvme_be_upcie_ctrlr *ctrlr = state->ctrlr;
 
-	nvme_controller_delete_io_qpair(ctrlr->ctrl, &upcie_queue->qpair);
+	if (g_upcie_rte.mproc) {
+		xnvme_be_upcie_mproc_create_or_delete_io_qpair(ctrlr, &upcie_queue->qpair, 0,
+							       false);
+	} else {
+		nvme_controller_delete_io_qpair(ctrlr->ctrl, &upcie_queue->qpair);
+	}
 
 	return 0;
 }
