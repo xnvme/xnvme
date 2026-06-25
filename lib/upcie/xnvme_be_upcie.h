@@ -141,7 +141,7 @@ xnvme_be_upcie_mproc_rte_term();
 int
 xnvme_be_upcie_mproc_import_admin_hugepage();
 
-void
+int
 xnvme_be_upcie_ctrlr_mutex_lock(struct xnvme_be_upcie_ctrlr *ctrlr);
 void
 xnvme_be_upcie_ctrlr_mutex_unlock(struct xnvme_be_upcie_ctrlr *ctrlr);
