@@ -149,7 +149,14 @@ xnvme_be_upcie_ctrlr_mutex_unlock(struct xnvme_be_upcie_ctrlr *ctrlr);
 int
 xnvme_be_upcie_mproc_ctrlr_shm_init(struct xnvme_dev *dev, struct xnvme_be_upcie_ctrlr *ctrlr,
 				    char *driver_name);
+int
+xnvme_be_upcie_mproc_ctrlr_shm_attach(struct xnvme_dev *dev, struct xnvme_be_upcie_ctrlr *ctrlr);
 void
 xnvme_be_upcie_mproc_ctrlr_shm_term(struct xnvme_be_upcie_ctrlr *ctrlr);
+
+int
+xnvme_be_upcie_mproc_create_or_delete_io_qpair(struct xnvme_be_upcie_ctrlr *ctrlr,
+					       struct nvme_qpair *qpair, uint16_t depth,
+					       bool create);
 
 #endif /* __INTERNAL_XNVME_BE_UPCIE */
