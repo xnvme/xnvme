@@ -33,13 +33,13 @@ zypper --non-interactive install -y --allow-downgrade \
  patch \
  pkg-config \
  python3 \
+ python3-Jinja2 \
  python3-devel \
  python3-pip \
  python3-pipx \
- python3-Jinja2 \
  python3-pyelftools \
- python3-tabulate \
  python3-setuptools \
+ python3-tabulate \
  tar
 
 #
