@@ -26,12 +26,12 @@ pacman -S --noconfirm \
  openssl \
  patch \
  pkg-config \
+ python-jinja \
  python-pip \
  python-pipx \
- python-jinja \
  python-pyelftools \
- python-tabulate \
  python-setuptools \
+ python-tabulate \
  python3 \
  util-linux-libs
 

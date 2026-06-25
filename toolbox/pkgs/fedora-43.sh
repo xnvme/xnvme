@@ -34,8 +34,8 @@ dnf install -y \
  pkgconfig \
  procps \
  python3-devel \
- python3-pip \
  python3-jinja2 \
+ python3-pip \
  python3-pyelftools \
  python3-tabulate \
  zlib-devel

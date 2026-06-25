@@ -18,8 +18,8 @@ emerge \
  dev-libs/isa-l \
  dev-libs/libaio \
  dev-libs/openssl \
- dev-python/pip \
  dev-python/jinja2 \
+ dev-python/pip \
  dev-python/pyelftools \
  dev-python/tabulate \
  dev-util/cunit \
