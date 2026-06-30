@@ -16,6 +16,10 @@ allocated:
   enabling PCIe peer-to-peer (P2P) transfers directly between the NVMe device
   and the GPU.
 
+Additionally, the host-memory backend supports a **{ref}`sec-backends-upcie-mproc`**
+mode in which several processes share a single NVMe controller via a designated
+primary process.
+
 (sec-backends-upcie-identifiers)=
 
 ## Device Identifiers
@@ -85,4 +89,5 @@ struct xnvme_dev *cuda_dev = xnvme_dev_open("0000:03:00.0", &cuda_opts);
 
 host
 cuda
+mproc
 ```
