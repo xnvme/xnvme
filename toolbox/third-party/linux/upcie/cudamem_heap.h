@@ -16,6 +16,8 @@
  *
  *	nvidia-smi -q -d memory
  *
+ * @file cudamem_heap.h
+ * @version 0.4.4
  */
 
 /**
@@ -375,6 +377,19 @@ static inline void *
 cudamem_heap_block_alloc(struct cudamem_heap *heap, size_t size)
 {
 	return cudamem_heap_block_alloc_aligned(heap, size, heap->config->pagesize);
+}
+
+/**
+ * Test whether a virtual address falls inside the given heap's range.
+ *
+ * @return 1 if `virt` is inside the heap, 0 otherwise.
+ */
+static inline int
+cudamem_heap_contains(struct cudamem_heap *heap, void *virt)
+{
+	uint64_t vaddr = (uint64_t)virt;
+
+	return heap && vaddr >= heap->vaddr && vaddr < heap->vaddr + heap->size;
 }
 
 /**
