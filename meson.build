@@ -106,7 +106,7 @@ conf_data.set('XNVME_BE_UPCIE_ENABLED', get_option('be_upcie') and is_linux)
 
 cuda_dep = dependency(
   'cuda',
-  version: '12.8',
+  version: '>=12.8',
   modules: ['cuda'],
   required: get_option('with-cuda'),
 )

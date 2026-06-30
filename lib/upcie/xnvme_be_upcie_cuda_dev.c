@@ -51,7 +51,13 @@ _cuda_rte_init(size_t heap_size)
 		return -ENODEV;
 	}
 
+	// CUDA 13 redefines cuCtxCreate -> cuCtxCreate_v4, which takes an extra
+	// CUctxCreateParams* (NULL = the old default); CUDA 12 keeps the 3-arg form.
+#if CUDA_VERSION >= 13000
+	err = cuCtxCreate(&g_upcie_cuda_rte.cu_ctx, NULL, 0, cu_dev);
+#else
 	err = cuCtxCreate(&g_upcie_cuda_rte.cu_ctx, 0, cu_dev);
+#endif
 	if (err) {
 		XNVME_DEBUG("FAILED: cuCtxCreate(); err(%d)", err);
 		return -EIO;
