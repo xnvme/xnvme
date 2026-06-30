@@ -71,6 +71,7 @@ tests = {
 
 if not is_windows
   tests += {'map.c': []}
+  tests += {'mproc.c': []}
 endif
 
 foreach test_source, tests_args : tests
