@@ -24,7 +24,7 @@
  * The stack implementation has an upper-bound of NVME_REQUEST_POOL_LEN elements.
  *
  * @file nvme_request.h
- * @version 0.4.2
+ * @version 0.4.4
  */
 
 #define NVME_REQUEST_POOL_LEN 1024
@@ -174,25 +174,30 @@ static inline void
 nvme_request_prep_command_prps_contig(struct nvme_request *request, struct hostmem_heap *heap,
 				      void *dbuf, size_t dbuf_nbytes, struct nvme_command *cmd)
 {
-	const uint64_t npages = (dbuf_nbytes + heap->config->pagesize - 1) >> heap->config->pagesize_shift;
 	const uint64_t pagesize = heap->config->pagesize;
+
+	cmd->prp1 = hostmem_dma_v2p(heap, dbuf);
+
+	/* Only PRP1 may carry a sub-page offset; the page count and every later
+	 * entry are measured from the page floor. ceil((off+nbytes)/pagesize). */
+	const uint64_t page_off = cmd->prp1 & (pagesize - 1);
+	const uint64_t page_base = cmd->prp1 - page_off;
+	const uint64_t npages =
+		(page_off + dbuf_nbytes + pagesize - 1) >> heap->config->pagesize_shift;
 
 	/* Chaining is not supported, thus assert that the given dbuf fits. */
 	assert(npages <= 1 + 512);
 
-	cmd->prp1 = hostmem_dma_v2p(heap, dbuf);
-
 	if (npages == 1) {
 		return;
 	} else if (npages == 2) {
-		cmd->prp2 = hostmem_dma_v2p(heap, dbuf + pagesize);
+		cmd->prp2 = page_base + pagesize;
 	} else {
 		uint64_t *prp_list = request->prp;
 
 		cmd->prp2 = request->prp_addr;
 		for (uint64_t i = 1; i < npages; ++i) {
-
-			prp_list[i - 1] = cmd->prp1 + (i << heap->config->pagesize_shift);
+			prp_list[i - 1] = page_base + (i << heap->config->pagesize_shift);
 		}
 	}
 }

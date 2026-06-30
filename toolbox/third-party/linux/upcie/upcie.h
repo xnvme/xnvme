@@ -31,7 +31,7 @@
  *   #include <upcie/upcie.h>
  *
  * @file upcie.h
- * @version 0.4.2
+ * @version 0.4.4
  */
 #ifndef UPCIE_H
 #define UPCIE_H
@@ -48,7 +48,6 @@ extern "C" {
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
-#include <limits.h>
 #include <linux/memfd.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -64,6 +63,7 @@ extern "C" {
 
 // Linux UAPI
 #include <linux/memfd.h>
+#include <linux/pci_regs.h>
 #include <linux/vfio.h>
 
 // uPCIe libraries

@@ -17,7 +17,7 @@
  *   and pci_region_write64
  *
  * @file pci.h
- * @version 0.4.2
+ * @version 0.4.4
  */
 #define PCI_BDF_LEN 12
 #define PCI_NBARS 6
@@ -246,6 +246,78 @@ pci_bar_unmap(struct pci_func_bar *bar)
 	bar->fd = -1;
 	bar->region = NULL;
 
+	return 0;
+}
+
+/**
+ * Read the size of PCI BAR `id` for the function at `bdf` from sysfs, without
+ * mapping it. Useful for verifying BAR sizing before mapping or for callers
+ * that only need the size (e.g. to check BAR1 vs device memory size).
+ *
+ * @return 0 on success, negative errno on failure.
+ */
+static inline int
+pci_bar_size(const char *bdf, uint8_t id, size_t *size)
+{
+	struct stat barstat = {0};
+	char path[256] = {0};
+	int err;
+
+	if (!bdf || !size) {
+		return -EINVAL;
+	}
+
+	snprintf(path, sizeof(path), "/sys/bus/pci/devices/%.*s/resource%" PRIu8, PCI_BDF_LEN, bdf,
+		 id);
+
+	err = stat(path, &barstat);
+	if (err) {
+		return -errno;
+	}
+
+	*size = (size_t)barstat.st_size;
+	return 0;
+}
+
+/**
+ * Read the size of the largest PCI memory BAR for the function at `bdf`.
+ *
+ * Scans all BARs and returns the largest. Non-existent resourceN entries
+ * (unmapped BARs and the high half of a 64-bit BAR) are skipped.
+ *
+ * @return 0 on success with *size set, negative errno on failure.
+ */
+static inline int
+pci_bar_largest_size(const char *bdf, size_t *size)
+{
+	size_t largest = 0;
+	int found = 0;
+
+	if (!bdf || !size) {
+		return -EINVAL;
+	}
+
+	for (uint8_t id = 0; id < PCI_NBARS; ++id) {
+		size_t bar = 0;
+		int err = pci_bar_size(bdf, id, &bar);
+
+		if (err == -ENOENT) {
+			continue; // unmapped BAR, or high half of a 64-bit BAR
+		}
+		if (err) {
+			return err;
+		}
+		found = 1;
+		if (bar > largest) {
+			largest = bar;
+		}
+	}
+
+	if (!found) {
+		return -ENOENT;
+	}
+
+	*size = largest;
 	return 0;
 }
 
