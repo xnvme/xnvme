@@ -29,6 +29,9 @@
  *
  * You must call cudamem_heap_init() before any allocation and cudamem_heap_term()
  * after all memory has been freed.
+ * 
+ * @file cudamem_dma.h
+ * @version 0.4.4
  */
 
 /**
