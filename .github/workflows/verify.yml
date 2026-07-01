@@ -1129,6 +1129,12 @@ jobs:
         --config "configs/ax42-${{ matrix.guest.os }}.toml" \
         --output "${{ github.job }}-${{ matrix.guest.os }}-benchmark"
 
+    - name: Capture QEMU guest serial output
+      if: always()
+      run: |
+        toolbox/ci/collect-qemu-serial.sh \
+          "cijoe/${{ github.job }}-${{ matrix.guest.os }}-provision-xnvme"
+
     - name: CIJOE, upload report.html
       if: always()
       uses: actions/upload-artifact@v6.0.0
