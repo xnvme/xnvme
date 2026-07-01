@@ -342,6 +342,15 @@ jobs:
     - name: CIJOE, setup pipx environment
       if: (!contains('focal', matrix.container.ver))
       run: |
+        # cijoe requires Python >= 3.10; on RHEL9-family the default is 3.9,
+        # so grab python3.11 from AppStream and steer pipx at it.
+        if ! python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3,10) else 1)'; then
+          if command -v dnf >/dev/null 2>&1; then
+            dnf install -y python3.11 python3.11-pip
+            export PIPX_DEFAULT_PYTHON=/usr/bin/python3.11
+            echo "PIPX_DEFAULT_PYTHON=/usr/bin/python3.11" >> "$GITHUB_ENV"
+          fi
+        fi
         make cijoe-install
 
     - name: CIJOE, check that it is available
