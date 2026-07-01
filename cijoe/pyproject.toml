@@ -5,7 +5,7 @@ description = "CIJOE environment for xNVMe"
 requires-python = ">=3.9"
 
 dependencies = [
-    "cijoe==0.9.58",
+    "cijoe==0.9.60",
     "matplotlib",
     "numpy",
     "pytest-timeout",

@@ -38,9 +38,6 @@ img_bin = "qemu-img"
 default_guest = "freebsd_14"
 default_systemimage = "freebsd-14-x86_64"
 
-[guest_image]
-url = "https://ghcr.io/v2/safl/nosi/freebsd-14-headless/blobs/sha256:e1e9816add8c8587007c1149048c78495e1b98f2bd53cb1cbe8dda165473ade3"
-
 [qemu.systems.x86_64]
 bin = "qemu-system-x86_64"
 
