@@ -61,9 +61,6 @@ binary = "{{ local.env.HOME }}/guests/vfu_kvssd"
 url = "https://github.com/safl/vfio-user-kvssd/releases/download/v0.1.11/vfu_kvssd-0.1.11-x86_64-linux"
 socket = "/tmp/vfu_kvssd.sock"
 
-[guest_image]
-url = "https://ghcr.io/v2/safl/nosi/debian-13-headless/blobs/sha256:1cdbf24c081516500735ce7f3f96e3212a472fb0528276e23c939035791900dc"
-
 # =============================================================================
 # Devices - One namespace per controller to avoid Linux kernel ordering issues
 # =============================================================================

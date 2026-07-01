@@ -36,9 +36,6 @@ img_bin = "qemu-img"
 default_guest = "generic-bios-kvm-x86_64"
 default_systemimage = "freebsd-14-x86_64"
 
-[guest_image]
-url = "https://ghcr.io/v2/safl/nosi/freebsd-14-headless/blobs/sha256:ecb5855545c20a47c2829d63e8a6758ff19804b2694a7edfc1c5cb1ad4c8af41"
-
 # Used by: qemu.build.py
 [qemu.build]
 prefix = "{{ local.env.HOME }}/opt/qemu"

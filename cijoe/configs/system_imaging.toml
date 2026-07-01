@@ -7,7 +7,7 @@ cloud.path = "{{ local.env.HOME }}/system_imaging/cloudinit/debian-13-generic-am
 cloud.metadata_path = "{{ resources.auxiliary['system_imaging.cloudinit-linux-common-metadata'] }}"
 cloud.userdata_path = "{{ resources.auxiliary['system_imaging.cloudinit-linux-common-userdata'] }}"
 
-disk.url = "https://u489897-sub1:PublicAccess1!@u489897-sub1.your-storagebox.de/debian-trixie-amd64.qcow2"
+oras.url = "oras://ghcr.io/safl/nosi/debian-13-headless@sha256:01f4aef4f8232b0f775635e699c344c9a555704b91d24567530584d85df68fb3"
 disk.path = "{{ local.env.HOME }}/system_imaging/disk/debian-trixie-amd64.qcow2"
 
 [system-imaging.images.freebsd-14-x86_64]
@@ -18,7 +18,7 @@ cloud.path = "{{ local.env.HOME}}/system_imaging/cloudinit/freebsd-14.1-ksrc-amd
 cloud.metadata_path = "{{ resources.auxiliary['cloudinit-freebsd-meta'] }}"
 cloud.userdata_path = "{{ resources.auxiliary['cloudinit-freebsd-user'] }}"
 
-disk.url = "https://u489897-sub1:PublicAccess1!@u489897-sub1.your-storagebox.de/freebsd-14.1-ksrc-amd64.qcow2"
+oras.url = "oras://ghcr.io/safl/nosi/freebsd-14-headless@sha256:8b1d6fc18eb8e78c75124a1104248638d2c982acc5175699100224595d9bbcb3"
 disk.path = "{{ local.env.HOME }}/system_imaging/disk/freebsd-14.1-ksrc-amd64.qcow2"
 
 [system-imaging.images.windows-11]

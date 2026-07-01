@@ -22,7 +22,9 @@ steps:
     guest_name: "{{ config.qemu.default_guest }}"
 
 - name: stage_nosi_guest
-  uses: stage_nosi_guest
+  uses: system_imaging.diskimage_from_oras
+  with:
+    pattern: "{{ config.qemu.default_systemimage }}"
 
 - name: guest_initialize
   uses: qemu.guest_initialize
