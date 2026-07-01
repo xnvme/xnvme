@@ -742,12 +742,17 @@ jobs:
       run: |
         cijoe -r
 
-    # Land the nosi qcow2 + raw on /mnt instead of / (which is cramped).
+    # Land the nosi qcow2 and the emulated-NVMe raw backing images on /mnt
+    # instead of / (which is cramped): the guest and its per-controller 8 GiB
+    # raw images live under $HOME/guests and otherwise fill the root disk
+    # mid-test, dropping device writes.
     - name: Stage artifacts on /mnt
       if: matrix.guest.os == 'debian' || matrix.guest.os == 'freebsd'
       run: |
         mkdir -p /mnt/system_imaging
         ln -s /mnt/system_imaging "$HOME/system_imaging"
+        mkdir -p /mnt/guests
+        ln -s /mnt/guests "$HOME/guests"
 
     - name: CIJOE, provision and test guest
       run: |
