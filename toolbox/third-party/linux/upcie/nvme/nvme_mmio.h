@@ -18,7 +18,7 @@
  * only the minimal required field to be changed, and that other fields remain unmodified.
  *
  * @file nvme_mmio.h
- * @version 0.4.4
+ * @version 0.5.0
  */
 
 #define NVME_REG_CAP 0x00

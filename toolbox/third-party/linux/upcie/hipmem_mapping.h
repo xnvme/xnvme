@@ -1,28 +1,26 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 /**
- * Registry of externally-allocated CUDA buffers for NVMe DMA
- * ==========================================================
+ * Registry of externally-allocated GPU buffers for NVMe DMA
+ * =========================================================
  *
- * Where cudamem_heap pre-allocates a single dma-buf-backed range and serves
- * sub-allocations from it, cudamem_mapping registers buffers that the caller
- * already allocated (via cuMemAlloc, cuMemCreate/cuMemMap, or cudaMalloc) and
- * builds a physical address LUT for them via the same dma-buf interface.
+ * Where hipmem_heap pre-allocates a single dma-buf-backed range and serves
+ * sub-allocations from it, hipmem_mapping registers buffers that the caller
+ * already allocated (via hipMalloc or hipMemCreate/hipMemMap) and builds a
+ * physical address LUT for them via the same dma-buf interface.
  *
  * Chunk-cached design
  * -------------------
  *
  * The registry caches one dma-buf per `alloc_granularity`-aligned VA chunk
- * (typically 2 MiB on NVIDIA discrete GPUs, queried via
- * cuMemGetAllocationGranularity at config_init time). Each chunk's BAR1 IOVA
- * window is contiguous (BAR1 page-table large-page guarantee), so each chunk
- * has one `phys_base` (held in `lut_phys[chunk_idx]`), and per-page phys is
- * computed during virt_to_phys as
+ * (the device page size, 4 KiB on AMD, set at config_init time). Each chunk's
+ * BAR1 IOVA window is contiguous, so each chunk has one `phys_base` (held in
+ * `lut_phys[chunk_idx]`), and per-page phys is computed during virt_to_phys as
  *
  *     phys = lut_phys[chunk_idx] + (vaddr & (alloc_granularity - 1))
  *
  * `_add` walks chunks intersecting the floored user range, ref-bumps existing
- * entries, and populates new entries via cuMemGetHandleForAddressRange +
+ * entries, and populates new entries via hipMemGetHandleForAddressRange +
  * dmabuf_attach + dmabuf_get_lut. `_remove` decrements rc and frees the dma-buf
  * when rc reaches zero. Repeated overlapping registrations in the same chunk
  * amortize to one dma-buf cost, and resolve to identical phys for any VA they
@@ -37,7 +35,7 @@
  * -------------------
  *
  * Chunks are indexed directly by chunk_idx = vaddr >> alloc_granularity_shift,
- * over the full user virtual address space (CUDAMEM_MAPPING_VA_BITS, default
+ * over the full user virtual address space (HIPMEM_MAPPING_VA_BITS, default
  * 48). Two parallel arrays cover the chunk_idx range:
  *
  *   lut_phys[chunk_idx] -> uint64_t phys_base (0 == unmapped)
@@ -46,8 +44,9 @@
  * Both are MAP_ANONYMOUS | MAP_PRIVATE | MAP_NORESERVE mmaps. The kernel
  * demand-pages individual host pages on first write, so the physical footprint
  * scales with live chunks rather than virtual capacity. With a 48-bit VA and
- * 2 MiB granularity that is 1 GiB (lut_phys) + 4 GiB (lut_meta) of virtual
- * reservation, but typically a few hundred KiB resident.
+ * the 4 KiB AMD granularity that is a large virtual reservation (2^36 slots:
+ * ~512 GiB lut_phys plus several TiB lut_meta), but typically a few hundred
+ * KiB resident.
  *
  * The split keeps the hot path flat-array-of-u64: `_virt_to_phys` reads
  * `lut_phys[chunk_idx]` only and never touches `lut_meta`.
@@ -55,8 +54,8 @@
  * Caveat: Hardware requirements
  * -----------------------------
  *
- * Same as cudamem_heap: requires a GPU with PCIe P2P DMA support and a BAR1
- * region at least as large as device memory. cudamem_config_init() verifies the
+ * Same as hipmem_heap: requires a GPU with PCIe P2P DMA support and a BAR1
+ * region at least as large as device memory. hipmem_config_init() verifies the
  * BAR1 precondition. Additionally, the chunk-cache assumes the BAR1 page-table
  * maps each alloc_granularity-sized export as one contiguous IOVA range; on
  * hardware violating this, _add returns -EOPNOTSUPP after detecting a
@@ -66,13 +65,13 @@
  * ---------------------------
  *
  * One registry describes one device. Multi-GPU usage requires one
- * cudamem_mapping_registry per GPU (and one cudamem_config, one cudamem_heap
+ * hipmem_mapping_registry per GPU (and one hipmem_config, one hipmem_heap
  * each).
  *
  * Caveat: Virtual address width
  * -----------------------------
  *
- * The LUT capacity assumes user vaddrs fit in CUDAMEM_MAPPING_VA_BITS bits.
+ * The LUT capacity assumes user vaddrs fit in HIPMEM_MAPPING_VA_BITS bits.
  * 48 bits covers x86-64 and ARM64 default page-table widths. Systems with
  * LA57 or 52-bit ARM64 user VA may return vaddrs above this bound; on those
  * systems the constant must be raised at compile time.
@@ -80,13 +79,13 @@
  * Caveat: Virtual memory reservation
  * ----------------------------------
  *
- * The two LUTs reserve 1 GiB (lut_phys) + 4 GiB (lut_meta) of virtual
- * address space at 48-bit VA / 2 MiB granularity. They are MAP_NORESERVE,
- * so no swap is committed and physical RSS scales with live chunks. On
- * systems configured for strict accounting (vm.overcommit_memory=2) or
- * inside cgroups whose memory.max counts virtual reservation, registry_init
+ * At 48-bit VA and the 4 KiB AMD granularity the two LUTs reserve a large
+ * virtual range (~512 GiB lut_phys plus several TiB lut_meta). They are
+ * MAP_NORESERVE, so no swap is committed and physical RSS scales with live
+ * chunks. On systems configured for strict accounting (vm.overcommit_memory=2)
+ * or inside cgroups whose memory.max counts virtual reservation, registry_init
  * may return -ENOMEM. Workarounds are to relax the accounting policy or to
- * lower CUDAMEM_MAPPING_VA_BITS to bound the reservation.
+ * lower HIPMEM_MAPPING_VA_BITS to bound the reservation.
  *
  * Sentinel: lut_phys[idx] == 0
  * ----------------------------
@@ -96,8 +95,8 @@
  * the host bridge into nonzero IOVA space in practice. Code paths that
  * mutate state (`_add`, `_remove`, `_clear`) consult `lut_meta[idx].rc`
  * directly and do not depend on this sentinel.
- * 
- * @file cudamem_mapping.h
+ *
+ * @file hipmem_mapping.h
  * @version 0.5.0
  */
 
@@ -105,7 +104,7 @@
  * Width of the user virtual address space, in bits, used to size the chunk
  * LUTs.
  */
-#define CUDAMEM_MAPPING_VA_BITS 48
+#define HIPMEM_MAPPING_VA_BITS 48
 
 /**
  * Per-chunk cache entry (cold-path only).
@@ -118,7 +117,7 @@
  * The chunk's `phys_base` is held in `lut_phys[chunk_idx]`, not here, so the
  * hot path needs only one LUT load.
  */
-struct cudamem_mapping_chunk_meta {
+struct hipmem_mapping_chunk_meta {
 	uint32_t rc;          ///< Refcount of overlapping registrations
 	struct dmabuf attach; ///< dma-buf attachment (valid when rc > 0)
 };
@@ -129,52 +128,52 @@ struct cudamem_mapping_chunk_meta {
  * Tracks one (vaddr, size) registration so `_remove(vaddr)` can locate the
  * chunks to deref. The chunk LUTs own the dma-bufs, not this struct.
  */
-struct cudamem_mapping_registration {
+struct hipmem_mapping_registration {
 	uint64_t vaddr;                            ///< Virtual address of the registered range
 	size_t size;                               ///< Size of the registered range in bytes
-	struct cudamem_mapping_registration *next; ///< List linkage owned by the registry
+	struct hipmem_mapping_registration *next; ///< List linkage owned by the registry
 };
 
 /**
- * Registry of all registrations for one CUDA device.
+ * Registry of all registrations for one GPU device.
  *
  * Owns two demand-paged LUTs covering the full user VA space at chunk
- * granularity: lut_phys (1 GiB virtual at 48-bit VA / 2 MiB gran) for the hot
- * path and lut_meta (4 GiB virtual at 48-bit VA / 2 MiB gran) for the cold
- * path, plus the linked list of registration metadata.
+ * granularity: lut_phys for the hot path and lut_meta for the cold path, plus
+ * the linked list of registration metadata. At 48-bit VA and 4 KiB granularity
+ * the reservation is large (~512 GiB + several TiB) but MAP_NORESERVE.
  *
- * `gran_shift` and `gran_mask` are derived from `cudamem_config.alloc_granularity`
+ * `gran_shift` and `gran_mask` are derived from `hipmem_config.alloc_granularity`
  * at init time and cached here so the LUT-only paths (`_virt_to_phys`,
  * `_remove`, `_clear`) need no config reference. `_add` still takes the config
- * as a separate argument because chunk population calls into CUDA.
+ * as a separate argument because chunk population calls into HIP.
  */
-struct cudamem_mapping_registry {
+struct hipmem_mapping_registry {
 	int gran_shift;                              ///< alloc_granularity expressed as a power of two
 	uint64_t gran_mask;                          ///< alloc_granularity - 1, for chunk-offset masking
 	size_t lut_capacity;                         ///< Number of slots in each LUT
 	uint64_t *lut_phys;                          ///< chunk_idx -> phys_base; mmap-backed
-	struct cudamem_mapping_chunk_meta *lut_meta; ///< chunk_idx -> meta; mmap-backed
-	struct cudamem_mapping_registration *list;   ///< Owned list of registration metadata
+	struct hipmem_mapping_chunk_meta *lut_meta; ///< chunk_idx -> meta; mmap-backed
+	struct hipmem_mapping_registration *list;   ///< Owned list of registration metadata
 };
 
 /**
  * Initialize a mapping registry for the given config.
  *
  * Reserves two demand-paged virtual ranges (lut_phys and lut_meta), each
- * sized to (1 << CUDAMEM_MAPPING_VA_BITS) / alloc_granularity slots. No
+ * sized to (1 << HIPMEM_MAPPING_VA_BITS) / alloc_granularity slots. No
  * physical memory is committed until chunks are registered.
  *
  * Caches `gran_shift`, `gran_mask`, and `lut_capacity` derived from the
  * config; the registry retains no pointer to the config struct, so the
- * caller is free to discard it after init. `cudamem_mapping_add` takes the
+ * caller is free to discard it after init. `hipmem_mapping_add` takes the
  * config as a separate argument since populating a chunk needs the full
  * config (page size, etc.).
  *
  * @return 0 on success, negative errno on failure.
  */
 static inline int
-cudamem_mapping_registry_init(struct cudamem_mapping_registry *registry,
-			      struct cudamem_config *config)
+hipmem_mapping_registry_init(struct hipmem_mapping_registry *registry,
+			      struct hipmem_config *config)
 {
 	size_t phys_bytes, meta_bytes;
 
@@ -184,7 +183,7 @@ cudamem_mapping_registry_init(struct cudamem_mapping_registry *registry,
 
 	registry->gran_shift = config->alloc_granularity_shift;
 	registry->gran_mask = (uint64_t)config->alloc_granularity - 1;
-	registry->lut_capacity = (1ULL << CUDAMEM_MAPPING_VA_BITS) >> registry->gran_shift;
+	registry->lut_capacity = (1ULL << HIPMEM_MAPPING_VA_BITS) >> registry->gran_shift;
 	registry->list = NULL;
 
 	phys_bytes = registry->lut_capacity * sizeof(*registry->lut_phys);
@@ -218,12 +217,12 @@ cudamem_mapping_registry_init(struct cudamem_mapping_registry *registry,
  * partial unwind paths (where some chunks in the range were never bumped).
  */
 static inline void
-cudamem_mapping_chunk_deref(struct cudamem_mapping_registry *registry, size_t chunk_first,
+hipmem_mapping_chunk_deref(struct hipmem_mapping_registry *registry, size_t chunk_first,
 			    size_t chunk_cnt)
 {
 	for (size_t k = 0; k < chunk_cnt; ++k) {
 		const size_t idx = chunk_first + k;
-		struct cudamem_mapping_chunk_meta *cm = &registry->lut_meta[idx];
+		struct hipmem_mapping_chunk_meta *cm = &registry->lut_meta[idx];
 
 		if (cm->rc == 0) {
 			continue;
@@ -245,9 +244,9 @@ cudamem_mapping_chunk_deref(struct cudamem_mapping_registry *registry, size_t ch
  * stay reserved.
  */
 static inline void
-cudamem_mapping_clear(struct cudamem_mapping_registry *registry)
+hipmem_mapping_clear(struct hipmem_mapping_registry *registry)
 {
-	struct cudamem_mapping_registration *next;
+	struct hipmem_mapping_registration *next;
 
 	if (!registry) {
 		return;
@@ -256,12 +255,12 @@ cudamem_mapping_clear(struct cudamem_mapping_registry *registry)
 	const uint64_t mask = registry->gran_mask;
 	const int gran_shift = registry->gran_shift;
 
-	for (struct cudamem_mapping_registration *m = registry->list; m; m = next) {
+	for (struct hipmem_mapping_registration *m = registry->list; m; m = next) {
 		const size_t chunk_first = (size_t)(m->vaddr >> gran_shift);
 		const size_t chunk_cnt =
 			(size_t)(((m->vaddr & mask) + m->size + mask) >> gran_shift);
 
-		cudamem_mapping_chunk_deref(registry, chunk_first, chunk_cnt);
+		hipmem_mapping_chunk_deref(registry, chunk_first, chunk_cnt);
 
 		next = m->next;
 		free(m);
@@ -274,13 +273,13 @@ cudamem_mapping_clear(struct cudamem_mapping_registry *registry)
  * dma-bufs.
  */
 static inline void
-cudamem_mapping_registry_term(struct cudamem_mapping_registry *registry)
+hipmem_mapping_registry_term(struct hipmem_mapping_registry *registry)
 {
 	if (!registry) {
 		return;
 	}
 
-	cudamem_mapping_clear(registry);
+	hipmem_mapping_clear(registry);
 
 	if (registry->lut_phys) {
 		munmap(registry->lut_phys, registry->lut_capacity * sizeof(*registry->lut_phys));
@@ -294,9 +293,9 @@ cudamem_mapping_registry_term(struct cudamem_mapping_registry *registry)
 }
 
 /**
- * Populate one chunk from CUDA.
+ * Populate one chunk from the GPU.
  *
- * Calls cuMemGetHandleForAddressRange for the chunk's full alloc_granularity
+ * Calls hipMemGetHandleForAddressRange for the chunk's full alloc_granularity
  * extent, attaches the dma-buf, fetches the host-page LUT, verifies that the
  * LUT is contiguous (BAR1 large-page assumption), and returns the chunk's
  * phys_base via *phys_base_out and the attachment via *attach_out. On any
@@ -305,8 +304,8 @@ cudamem_mapping_registry_term(struct cudamem_mapping_registry *registry)
  * @return 0 on success, negative errno on failure.
  */
 static inline int
-cudamem_mapping_chunk_populate(uint64_t *phys_base_out, struct dmabuf *attach_out,
-			       uint64_t chunk_va, struct cudamem_config *config)
+hipmem_mapping_chunk_populate(uint64_t *phys_base_out, struct dmabuf *attach_out,
+			       uint64_t chunk_va, struct hipmem_config *config)
 {
 	const size_t pagesize = (size_t)config->pagesize;
 	const size_t gran = config->alloc_granularity;
@@ -315,17 +314,17 @@ cudamem_mapping_chunk_populate(uint64_t *phys_base_out, struct dmabuf *attach_ou
 	int dmabuf_fd = -1;
 	struct dmabuf attach = {0};
 	int err;
-	CUresult cr;
+	hipError_t cr;
 
 	tmp = calloc(nphys, sizeof(*tmp));
 	if (!tmp) {
 		return -ENOMEM;
 	}
 
-	cr = cuMemGetHandleForAddressRange(&dmabuf_fd, (CUdeviceptr)chunk_va, gran,
-					   CU_MEM_RANGE_HANDLE_TYPE_DMA_BUF_FD, 0);
-	if (cr != CUDA_SUCCESS) {
-		UPCIE_DEBUG("FAILED: cuMemGetHandleForAddressRange(0x%" PRIx64 ", %zu), cr: %d",
+	cr = hipMemGetHandleForAddressRange(&dmabuf_fd, (hipDeviceptr_t)chunk_va, gran,
+					    hipMemRangeHandleTypeDmaBufFd, 0);
+	if (cr != hipSuccess) {
+		UPCIE_DEBUG("FAILED: hipMemGetHandleForAddressRange(0x%" PRIx64 ", %zu), cr: %d",
 			    chunk_va, gran, cr);
 		err = -EIO;
 		goto err_free;
@@ -367,40 +366,40 @@ err_free:
 }
 
 /**
- * Register an externally-allocated CUDA range with the given registry.
+ * Register an externally-allocated GPU range with the given registry.
  *
  * Walks the alloc_granularity-aligned chunks intersecting [vaddr, vaddr +
  * nbytes), ref-bumps existing entries and populates new ones via
- * cuMemGetHandleForAddressRange. Repeated registrations whose floored ranges
+ * hipMemGetHandleForAddressRange. Repeated registrations whose floored ranges
  * overlap reuse the cached dma-buf and resolve to identical phys.
  *
  * `vaddr` and `nbytes` may have arbitrary byte alignment; the chunk cache
  * resolves at byte granularity. Note that downstream consumers may impose
  * stricter alignment, e.g., NVMe PRP construction requires host-page-aligned
- * buffer addresses (asserted in nvme_request_prep_command_prps_*_cuda_mapped).
+ * buffer addresses (asserted in nvme_request_prep_command_prps_*_hip_mapped).
  *
  * `config` must describe the same device the registry was initialized with;
  * it is consulted only to populate new chunks (host page size for the
- * dma-buf LUT and granularity for the CUDA handle range). It is not retained.
+ * dma-buf LUT and granularity for the GPU handle range). It is not retained.
  *
  * If non-NULL, `*out` is set to the newly-allocated registration node on
  * success.
  *
- * NOTE: Set up CUDA Driver (cuInit()) and CUDA Context (cuCtxCreate())
- * before calling this function.
+ * NOTE: The HIP runtime auto-initializes on first use, so no explicit
+ * driver/context setup is required before calling this function.
  *
  * @return 0 on success, negative errno on failure. -EINVAL if the vaddr
  *         range exceeds the LUT's chunk_idx capacity (raise
- *         CUDAMEM_MAPPING_VA_BITS). -EOPNOTSUPP if the BAR1 contiguity
+ *         HIPMEM_MAPPING_VA_BITS). -EOPNOTSUPP if the BAR1 contiguity
  *         assumption is violated for some chunk.
  */
 static inline int
-cudamem_mapping_add(struct cudamem_mapping_registry *registry, struct cudamem_config *config,
-		    void *vaddr, size_t nbytes, struct cudamem_mapping_registration **out)
+hipmem_mapping_add(struct hipmem_mapping_registry *registry, struct hipmem_config *config,
+		    void *vaddr, size_t nbytes, struct hipmem_mapping_registration **out)
 {
 	uint64_t va;
 	size_t chunk_first, chunk_cnt, bumped_cnt = 0;
-	struct cudamem_mapping_registration *m = NULL;
+	struct hipmem_mapping_registration *m = NULL;
 	int err;
 
 	if (!registry || !config || !vaddr || !nbytes) {
@@ -416,7 +415,7 @@ cudamem_mapping_add(struct cudamem_mapping_registry *registry, struct cudamem_co
 
 	if (chunk_first + chunk_cnt > registry->lut_capacity) {
 		UPCIE_DEBUG(
-			"FAILED: vaddr range exceeds LUT capacity; raise CUDAMEM_MAPPING_VA_BITS");
+			"FAILED: vaddr range exceeds LUT capacity; raise HIPMEM_MAPPING_VA_BITS");
 		return -EINVAL;
 	}
 
@@ -429,11 +428,11 @@ cudamem_mapping_add(struct cudamem_mapping_registry *registry, struct cudamem_co
 
 	for (size_t k = 0; k < chunk_cnt; ++k) {
 		const size_t idx = chunk_first + k;
-		struct cudamem_mapping_chunk_meta *cm = &registry->lut_meta[idx];
+		struct hipmem_mapping_chunk_meta *cm = &registry->lut_meta[idx];
 
 		if (cm->rc == 0) {
 			const uint64_t chunk_va = (uint64_t)idx << gran_shift;
-			err = cudamem_mapping_chunk_populate(&registry->lut_phys[idx], &cm->attach,
+			err = hipmem_mapping_chunk_populate(&registry->lut_phys[idx], &cm->attach,
 							     chunk_va, config);
 			if (err) {
 				goto err_unwind;
@@ -452,7 +451,7 @@ cudamem_mapping_add(struct cudamem_mapping_registry *registry, struct cudamem_co
 	return 0;
 
 err_unwind:
-	cudamem_mapping_chunk_deref(registry, chunk_first, bumped_cnt);
+	hipmem_mapping_chunk_deref(registry, chunk_first, bumped_cnt);
 
 	free(m);
 	return err;
@@ -468,7 +467,7 @@ err_unwind:
  * @return 0 on success, -EINVAL if no registration with that vaddr exists.
  */
 static inline int
-cudamem_mapping_remove(struct cudamem_mapping_registry *registry, void *vaddr)
+hipmem_mapping_remove(struct hipmem_mapping_registry *registry, void *vaddr)
 {
 	if (!registry) {
 		return -EINVAL;
@@ -478,14 +477,14 @@ cudamem_mapping_remove(struct cudamem_mapping_registry *registry, void *vaddr)
 	const int gran_shift = registry->gran_shift;
 	const uint64_t mask = registry->gran_mask;
 
-	for (struct cudamem_mapping_registration **prev = &registry->list, *m = registry->list; m;
+	for (struct hipmem_mapping_registration **prev = &registry->list, *m = registry->list; m;
 	     prev = &m->next, m = m->next) {
 		if (m->vaddr == key) {
 			const size_t chunk_first = (size_t)(m->vaddr >> gran_shift);
 			const size_t chunk_cnt =
 				(size_t)(((m->vaddr & mask) + m->size + mask) >> gran_shift);
 
-			cudamem_mapping_chunk_deref(registry, chunk_first, chunk_cnt);
+			hipmem_mapping_chunk_deref(registry, chunk_first, chunk_cnt);
 
 			*prev = m->next;
 			free(m);
@@ -497,14 +496,14 @@ cudamem_mapping_remove(struct cudamem_mapping_registry *registry, void *vaddr)
 }
 
 /**
- * Resolve a CUDA virtual address registered with the registry.
+ * Resolve a GPU virtual address registered with the registry.
  *
  * O(1): one LUT load.
  *
  * @return 0 on success, -EINVAL if `virt` is not in a registered chunk.
  */
 static inline int
-cudamem_mapping_virt_to_phys(struct cudamem_mapping_registry *registry, void *virt, uint64_t *phys)
+hipmem_mapping_virt_to_phys(struct hipmem_mapping_registry *registry, void *virt, uint64_t *phys)
 {
 	if (!registry || !virt || !phys) {
 		return -EINVAL;
