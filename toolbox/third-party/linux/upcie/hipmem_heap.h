@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 /**
- * Heap-based memory allocator backed by the CUDA driver
- * =====================================================
+ * Heap-based memory allocator backed by the HIP/ROCm runtime
+ * ==========================================================
  *
- * This heap implementation uses the CUDA driver to pre-allocate memory and
+ * This heap implementation uses the HIP/ROCm runtime to pre-allocate memory and
  * the dma-buf interface to get the physical addresses.
  * While the heap memory is allocated on the GPU, the freelist is maintained in
  * host memory. This avoids segfaults at the cost of slower alloc/free.
@@ -14,9 +14,10 @@
  * This requires a GPU with support for PCIe P2P DMA and a large BAR1 memory
  * region. To find the size of the BAR1 memory run:
  *
- *	nvidia-smi -q -d memory
+ *	rocm-smi --showmeminfo vram
  *
- * @file cudamem_heap.h
+ *
+ * @file hipmem_heap.h
  * @version 0.5.0
  */
 
@@ -24,24 +25,24 @@
  * A block in the freelist
  *
  * Each block represents a memory segment which can either be free or allocated.
- * The blocks are produced by cudamem_heap_block_alloc() or
- * cudamem_heap_block_alloc_aligned().
+ * The blocks are produced by hipmem_heap_block_alloc() or
+ * hipmem_heap_block_alloc_aligned().
  */
-struct cudamem_heap_block {
+struct hipmem_heap_block {
 	uint64_t vaddr;				///< Virtual address of the underlying memory segment (stored as integer to avoid segfaults)
 	size_t size;				///< Size of the underlying memory segment
 	int free;				///< If free == 1, the block is free and can be allocated
-	struct cudamem_heap_block *next;	///< Pointer to the next element in the freelist
+	struct hipmem_heap_block *next;	///< Pointer to the next element in the freelist
 };
 
 /**
  * A pre-allocated heap providing memory for a buffer-allocator
  */
-struct cudamem_heap {
+struct hipmem_heap {
 	uint64_t vaddr;				///< Virtual address of the beginning of the heap (stored as integer to avoid segfaults)
-	struct cudamem_heap_block *freelist;	///< Pointers to description of free memory in the heap
+	struct hipmem_heap_block *freelist;	///< Pointers to description of free memory in the heap
 	struct dmabuf dmabuf;			///< Representation of a dma-buf
-	struct cudamem_config *config;		///< Device memory configuration (page sizes)
+	struct hipmem_config *config;		///< Device memory configuration (page sizes)
 	size_t size;				///< Size of the heap
 	size_t nphys;				///< Number of device pages backing 'memory' (size / config->device_pagesize)
 	uint64_t *phys_lut;			///< An array of physical addresses; one for each device page in 'memory'
@@ -51,11 +52,11 @@ struct cudamem_heap {
  * Print information about the given heap and each block in its freelist
  */
 static inline int
-cudamem_heap_pp(struct cudamem_heap *heap)
+hipmem_heap_pp(struct hipmem_heap *heap)
 {
 	int wrtn = 0;
 
-	wrtn += printf("cudamem_heap:");
+	wrtn += printf("hipmem_heap:");
 
 	if (!heap) {
 		wrtn += printf(" ~\n");
@@ -74,7 +75,7 @@ cudamem_heap_pp(struct cudamem_heap *heap)
 	}
 
 	wrtn += printf("  freelist:\n");
-	for (struct cudamem_heap_block *block = heap->freelist; block; block = block->next) {
+	for (struct hipmem_heap_block *block = heap->freelist; block; block = block->next) {
 		wrtn += printf("  - {vaddr: 0x%" PRIx64 ", size: %zu, free: %d}\n", block->vaddr, block->size, block->free);
 	}
 
@@ -85,9 +86,9 @@ cudamem_heap_pp(struct cudamem_heap *heap)
  * Free every block in the freelist
  */
 static inline void
-cudamem_heap_empty_freelist(struct cudamem_heap_block *block)
+hipmem_heap_empty_freelist(struct hipmem_heap_block *block)
 {
-	struct cudamem_heap_block *next;
+	struct hipmem_heap_block *next;
 
 	while(block) {
 		next = block->next;
@@ -100,16 +101,16 @@ cudamem_heap_empty_freelist(struct cudamem_heap_block *block)
  * Terminate the given heap, freeing the underlying memory and emptying the freelist
  */
 static inline void
-cudamem_heap_term(struct cudamem_heap *heap)
+hipmem_heap_term(struct hipmem_heap *heap)
 {
 	if (!heap) {
 		return;
 	}
 
 	dmabuf_detach(&heap->dmabuf);
-	cudamem_heap_empty_freelist(heap->freelist);
+	hipmem_heap_empty_freelist(heap->freelist);
 	free(heap->phys_lut);
-	cuMemFree((CUdeviceptr)heap->vaddr);
+	hipFree((void *)heap->vaddr);
 }
 
 
@@ -119,34 +120,42 @@ cudamem_heap_term(struct cudamem_heap *heap)
  * - Pre-allocate a va-space of 'size' bytes backend by GPU page(s)
  * - Setup the LUT / physical address for the va-space
  *
- * NOTE: Set up CUDA Driver (cuInit()) and CUDA Context (cuCtxCreate())
- * before calling this function.
+ * NOTE: The HIP runtime auto-initializes on first use, so no explicit
+ * driver/context setup is required before calling this function.
  *
  * NOTE: 'config' must remain valid for the lifetime of 'heap'.
  *
  */
 static inline int
-cudamem_heap_init(struct cudamem_heap *heap, size_t size, struct cudamem_config *config)
+hipmem_heap_init(struct hipmem_heap *heap, size_t size, struct hipmem_config *config)
 {
-	CUdeviceptr vaddr;
+	void *vaddr;
 	int dmabuf_fd = -1, err;
 
 	if (!heap || !config) {
 		return -EINVAL;
 	}
 
+	// AMD's dma-buf export (hipMemGetHandleForAddressRange) needs the range
+	// 2 MiB-aligned, coarser than the 4 KiB alloc_granularity, so round the heap
+	// size up to 2 MiB; a sub-2-MiB-aligned size is rejected downstream.
+	size = (size + (2 * 1024 * 1024ULL) - 1) & ~((2 * 1024 * 1024ULL) - 1);
+
 	memset(heap, 0, sizeof(*heap));
 	heap->config = config;
 
-	err = cuMemAlloc(&vaddr, size);
+	err = hipMalloc(&vaddr, size);
 	if (err) {
-		UPCIE_DEBUG("FAILED: cuMemAlloc(heap), err: %d", err);
+		UPCIE_DEBUG("FAILED: hipMalloc(heap), err: %d", err);
 		return err;
 	}
 
-	err = cuMemGetHandleForAddressRange(&dmabuf_fd, vaddr, size, CU_MEM_RANGE_HANDLE_TYPE_DMA_BUF_FD, 0);
+	// flags=0: ROCm 7.1 rejects the explicit hipMemRangeFlagDmaBufMappingTypePcie,
+	// and BAR-backed VRAM exports P2P-able without it.
+	err = hipMemGetHandleForAddressRange(&dmabuf_fd, (hipDeviceptr_t)vaddr, size,
+					     hipMemRangeHandleTypeDmaBufFd, 0);
 	if (err) {
-		UPCIE_DEBUG("FAILED: cuMemGetHandleForAddressRange(heap), err: %d", err);
+		UPCIE_DEBUG("FAILED: hipMemGetHandleForAddressRange(heap), err: %d", err);
 		goto error;
 	}
 
@@ -154,7 +163,7 @@ cudamem_heap_init(struct cudamem_heap *heap, size_t size, struct cudamem_config 
 	heap->size = size;
 
 	// Initialize a single free block spanning the entire heap
-	heap->freelist = malloc(sizeof(struct cudamem_heap_block));
+	heap->freelist = malloc(sizeof(struct hipmem_heap_block));
 	if (!heap->freelist) {
 		err = -errno;
 		UPCIE_DEBUG("FAILED: malloc(freelist), errno: %d", err);
@@ -193,7 +202,7 @@ error_after_attach:
 	dmabuf_detach(&heap->dmabuf);
 	free(heap->freelist);
 	free(heap->phys_lut);
-	cuMemFree(vaddr);
+	hipFree(vaddr);
 	return err;
 error:
 	free(heap->freelist);
@@ -201,21 +210,21 @@ error:
 	if (dmabuf_fd >= 0) {
 		close(dmabuf_fd);
 	}
-	cuMemFree(vaddr);
+	hipFree(vaddr);
 	return err;
 }
 
 /**
  * Free a block allocated on the given heap
  *
- * Only blocks allocated by cudamem_heap_block_alloc(), cudamem_heap_block_alloc_aligned(),
- * cudamem_heap_block_alloc_array(), or cudamem_heap_block_alloc_array_aligned() can be freed.
+ * Only blocks allocated by hipmem_heap_block_alloc(), hipmem_heap_block_alloc_aligned(),
+ * hipmem_heap_block_alloc_array(), or hipmem_heap_block_alloc_array_aligned() can be freed.
  */
 static inline void
-cudamem_heap_block_free(struct cudamem_heap *heap, void *ptr)
+hipmem_heap_block_free(struct hipmem_heap *heap, void *ptr)
 {
-	struct cudamem_heap_block *block;
-	struct cudamem_heap_block *tmp;
+	struct hipmem_heap_block *block;
+	struct hipmem_heap_block *tmp;
 	uint64_t vaddr;
 
 	if (!ptr) {
@@ -261,10 +270,10 @@ cudamem_heap_block_free(struct cudamem_heap *heap, void *ptr)
  * from the CPU.
  */
 static inline void *
-cudamem_heap_block_alloc_array_aligned(struct cudamem_heap *heap, size_t elem_count,
+hipmem_heap_block_alloc_array_aligned(struct hipmem_heap *heap, size_t elem_count,
 				       size_t elem_size, size_t alignment)
 {
-	struct cudamem_heap_block *block = heap->freelist;
+	struct hipmem_heap_block *block = heap->freelist;
 	size_t total_size;
 
 	if (elem_count > SIZE_MAX / elem_size) {
@@ -299,7 +308,7 @@ cudamem_heap_block_alloc_array_aligned(struct cudamem_heap *heap, size_t elem_co
 			if (dpage_remaining < total_size && disalignment) {
 				// Not enough room in device page and allocating here would straddle
 				// the device page boundary — insert a skip block to force alignment
-				struct cudamem_heap_block *newblock = malloc(sizeof(struct cudamem_heap_block));
+				struct hipmem_heap_block *newblock = malloc(sizeof(struct hipmem_heap_block));
 				if (!newblock) {
 					UPCIE_DEBUG("FAILED: malloc(newblock), errno: %d", errno);
 					return NULL;
@@ -319,7 +328,7 @@ cudamem_heap_block_alloc_array_aligned(struct cudamem_heap *heap, size_t elem_co
 
 			remaining = block->size - total_size;
 			if (remaining) {
-				struct cudamem_heap_block *newblock = malloc(sizeof(struct cudamem_heap_block));
+				struct hipmem_heap_block *newblock = malloc(sizeof(struct hipmem_heap_block));
 				if (!newblock) {
 					UPCIE_DEBUG("FAILED: malloc(newblock), errno: %d", errno);
 					return NULL;
@@ -349,9 +358,9 @@ cudamem_heap_block_alloc_array_aligned(struct cudamem_heap *heap, size_t elem_co
  * Allocate an array of elements on the given heap aligned to the host page size
  */
 static inline void *
-cudamem_heap_block_alloc_array(struct cudamem_heap *heap, size_t elem_count, size_t elem_size)
+hipmem_heap_block_alloc_array(struct hipmem_heap *heap, size_t elem_count, size_t elem_size)
 {
-	return cudamem_heap_block_alloc_array_aligned(heap, elem_count, elem_size,
+	return hipmem_heap_block_alloc_array_aligned(heap, elem_count, elem_size,
 						      heap->config->pagesize);
 }
 
@@ -359,7 +368,7 @@ cudamem_heap_block_alloc_array(struct cudamem_heap *heap, size_t elem_count, siz
  * Allocate a block on the given heap with a custom alignment
  */
 static inline void *
-cudamem_heap_block_alloc_aligned(struct cudamem_heap *heap, size_t size, size_t alignment)
+hipmem_heap_block_alloc_aligned(struct hipmem_heap *heap, size_t size, size_t alignment)
 {
 	size_t total_size, elem_count, elem_size;
 
@@ -367,16 +376,16 @@ cudamem_heap_block_alloc_aligned(struct cudamem_heap *heap, size_t size, size_t 
 	elem_count = total_size / heap->config->pagesize;
 	elem_size = heap->config->pagesize;
 
-	return cudamem_heap_block_alloc_array_aligned(heap, elem_count, elem_size, alignment);
+	return hipmem_heap_block_alloc_array_aligned(heap, elem_count, elem_size, alignment);
 }
 
 /**
  * Allocate a block on the given heap aligned to the host page size (4KB)
  */
 static inline void *
-cudamem_heap_block_alloc(struct cudamem_heap *heap, size_t size)
+hipmem_heap_block_alloc(struct hipmem_heap *heap, size_t size)
 {
-	return cudamem_heap_block_alloc_aligned(heap, size, heap->config->pagesize);
+	return hipmem_heap_block_alloc_aligned(heap, size, heap->config->pagesize);
 }
 
 /**
@@ -385,7 +394,7 @@ cudamem_heap_block_alloc(struct cudamem_heap *heap, size_t size)
  * @return 1 if `virt` is inside the heap, 0 otherwise.
  */
 static inline int
-cudamem_heap_contains(struct cudamem_heap *heap, void *virt)
+hipmem_heap_contains(struct hipmem_heap *heap, void *virt)
 {
 	uint64_t vaddr = (uint64_t)virt;
 
@@ -396,7 +405,7 @@ cudamem_heap_contains(struct cudamem_heap *heap, void *virt)
  * Calculate the physical address of a block on the given heap
  */
 static inline int
-cudamem_heap_block_virt_to_phys(struct cudamem_heap *heap, void *virt, uint64_t *phys)
+hipmem_heap_block_virt_to_phys(struct hipmem_heap *heap, void *virt, uint64_t *phys)
 {
 	size_t offset, page_idx, in_page_offset;
 	uint64_t vaddr = (uint64_t) virt;
@@ -430,11 +439,11 @@ cudamem_heap_block_virt_to_phys(struct cudamem_heap *heap, void *virt, uint64_t 
 /**
  * Calculate the physical address of a block on the given heap
  *
- * Same as cudamem_buffer_virt_to_phys() but without any error-handling, thus return the phys
+ * Same as hipmem_buffer_virt_to_phys() but without any error-handling, thus return the phys
  * address instead of error
  */
 static inline uint64_t
-cudamem_heap_block_vtp(struct cudamem_heap *heap, void *virt)
+hipmem_heap_block_vtp(struct hipmem_heap *heap, void *virt)
 {
 	size_t offset, page_idx, in_page_offset;
 	uint64_t vaddr = (uint64_t) virt;
