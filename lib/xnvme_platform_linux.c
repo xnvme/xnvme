@@ -356,6 +356,9 @@ struct xnvme_platform g_xnvme_platform_linux = {
 #ifdef XNVME_BE_UPCIE_CUDA_ENABLED
 			&g_xnvme_be_upcie_cuda,
 #endif
+#ifdef XNVME_BE_UPCIE_HIP_ENABLED
+			&g_xnvme_be_upcie_hip,
+#endif
 			&g_xnvme_be_linux_emu_nvme,
 #ifdef XNVME_BE_LINUX_BLOCK_ENABLED
 			&g_xnvme_be_linux_emu_block,
