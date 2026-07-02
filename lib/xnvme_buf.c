@@ -10,6 +10,7 @@
 #include <xnvme_be.h>
 #include <xnvme_host_buf.h>
 #include <xnvme_cuda_buf.h>
+#include <xnvme_hip_buf.h>
 
 void *
 xnvme_buf_virt_alloc(size_t alignment, size_t nbytes)
@@ -96,6 +97,10 @@ xnvme_buf_clear(void *buf, size_t nbytes)
 		return xnvme_cuda_buf_clear(buf, nbytes);
 	}
 
+	if (xnvme_buf_is_hip(buf)) {
+		return xnvme_hip_buf_clear(buf, nbytes);
+	}
+
 	return xnvme_host_buf_clear(buf, nbytes);
 }
 
@@ -104,6 +109,10 @@ xnvme_buf_memcpy(void *dst, const void *src, size_t nbytes)
 {
 	if (xnvme_buf_is_cuda(dst) || xnvme_buf_is_cuda(src)) {
 		return xnvme_cuda_buf_memcpy(dst, src, nbytes);
+	}
+
+	if (xnvme_buf_is_hip(dst) || xnvme_buf_is_hip(src)) {
+		return xnvme_hip_buf_memcpy(dst, src, nbytes);
 	}
 
 	return xnvme_host_buf_memcpy(dst, src, nbytes);
@@ -194,6 +203,10 @@ xnvme_buf_fill(void *buf, size_t nbytes, const char *content)
 		return xnvme_cuda_buf_fill(buf, nbytes, content);
 	}
 
+	if (xnvme_buf_is_hip(buf)) {
+		return xnvme_hip_buf_fill(buf, nbytes, content);
+	}
+
 	return xnvme_host_buf_fill(buf, nbytes, content);
 }
 
@@ -202,6 +215,10 @@ xnvme_buf_diff(const void *expected, const void *actual, size_t nbytes, size_t *
 {
 	if (xnvme_buf_is_cuda(expected) || xnvme_buf_is_cuda(actual)) {
 		return xnvme_cuda_buf_diff(expected, actual, nbytes, diff, false);
+	}
+
+	if (xnvme_buf_is_hip(expected) || xnvme_buf_is_hip(actual)) {
+		return xnvme_hip_buf_diff(expected, actual, nbytes, diff, false);
 	}
 
 	return xnvme_host_buf_diff(expected, actual, nbytes, diff, false);
@@ -213,6 +230,10 @@ xnvme_buf_diff_pr(const void *expected, const void *actual, size_t nbytes, int X
 	size_t diff = 0;
 	if (xnvme_buf_is_cuda(expected) || xnvme_buf_is_cuda(actual)) {
 		return xnvme_cuda_buf_diff(expected, actual, nbytes, &diff, true);
+	}
+
+	if (xnvme_buf_is_hip(expected) || xnvme_buf_is_hip(actual)) {
+		return xnvme_hip_buf_diff(expected, actual, nbytes, &diff, true);
 	}
 
 	return xnvme_host_buf_diff(expected, actual, nbytes, &diff, true);
