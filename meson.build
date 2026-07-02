@@ -103,6 +103,10 @@ conf_data.set('XNVME_BE_CBI_SYNC_PSYNC_ENABLED', get_option('cbi_sync_psync') an
 
 conf_data.set('XNVME_BE_RAMDISK_ENABLED', get_option('be_ramdisk'))
 conf_data.set('XNVME_BE_UPCIE_ENABLED', get_option('be_upcie') and is_linux)
+if get_option('be_upcie') and is_linux
+  # uPCIe vendored headers (dmabuf.h: memfd_create + file sealing) need _GNU_SOURCE
+  add_project_arguments('-D_GNU_SOURCE', language: 'c')
+endif
 
 cuda_dep = dependency(
   'cuda',
@@ -113,6 +117,19 @@ cuda_dep = dependency(
 conf_data.set('XNVME_BE_UPCIE_CUDA_ENABLED', get_option('be_upcie') and is_linux and cuda_dep.found() and get_option('with-cuda').allowed())
 if conf_data.get('XNVME_BE_UPCIE_CUDA_ENABLED')
   add_languages('cuda', required: true, native: false)
+endif
+
+# uPCIe HIP/ROCm backend: AMD GPU device memory via the HIP host API (gcc, no
+# hipcc), linked against libamdhip64. Mirrors the CUDA backend above.
+hip_dep = cc.find_library(
+  'amdhip64',
+  has_headers: ['hip/hip_runtime.h'],
+  header_args: ['-D__HIP_PLATFORM_AMD__'],
+  required: get_option('with-hip'),
+)
+conf_data.set('XNVME_BE_UPCIE_HIP_ENABLED', get_option('be_upcie') and is_linux and hip_dep.found() and get_option('with-hip').allowed())
+if conf_data.get('XNVME_BE_UPCIE_HIP_ENABLED')
+  add_project_arguments('-D__HIP_PLATFORM_AMD__', language: 'c')
 endif
 
 setupapi_dep = cc.find_library(
