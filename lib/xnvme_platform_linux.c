@@ -358,6 +358,7 @@ struct xnvme_platform g_xnvme_platform_linux = {
 #endif
 #ifdef XNVME_BE_UPCIE_HIP_ENABLED
 			&g_xnvme_be_upcie_hip,
+			&g_xnvme_be_upcie_hip_gpuinit,
 #endif
 			&g_xnvme_be_linux_emu_nvme,
 #ifdef XNVME_BE_LINUX_BLOCK_ENABLED

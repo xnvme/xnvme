@@ -26,6 +26,7 @@ extern const struct xnvme_be_config g_xnvme_be_upcie_cuda;
 #endif
 #ifdef XNVME_BE_UPCIE_HIP_ENABLED
 extern const struct xnvme_be_config g_xnvme_be_upcie_hip;
+extern const struct xnvme_be_config g_xnvme_be_upcie_hip_gpuinit;
 #endif
 
 /* Linux */

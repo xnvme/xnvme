@@ -21,6 +21,9 @@ xnvmelib_upcie_source = files(
   'xnvme_be_upcie_hip_dev.c',
   'xnvme_be_upcie_hip_mem.c',
   'xnvme_be_upcie_hip_sync.c',
+  'xnvme_be_upcie_hip_gpuinit.c',
+  'xnvme_be_upcie_hip_gpuinit_async.c',
+  'xnvme_be_upcie_hip_gpuinit_gpu.c',
 )
 xnvmelib_source += xnvmelib_upcie_source
 
