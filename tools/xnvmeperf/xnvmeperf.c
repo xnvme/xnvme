@@ -1,4 +1,6 @@
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #include <errno.h>
 #include <pthread.h>
@@ -415,6 +417,9 @@ thread_fn(void *arg)
 		fprintf(stderr, "Warning: failed to pin thread to CPU %d\n", thread->cpu);
 	}
 
+	// Fill each job buffer with a known pattern. xnvme_buf_fill() routes
+	// transparently to device memory (CUDA/HIP) when the buffer is GPU VRAM,
+	// so the GPU-backend P2P path needs no special-casing here.
 	for (int i = 0; i < thread->ndevs; i++) {
 		struct xnvmeperf_job *job = &thread->jobs[i];
 
@@ -1253,17 +1258,18 @@ parse_run_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 static void
 derive_heap_sizes(struct xnvmeperf_args *args)
 {
-	int is_cuda = args->opts.be && strstr(args->opts.be, "cuda");
+	int is_gpu =
+		args->opts.be && (strstr(args->opts.be, "cuda") || strstr(args->opts.be, "hip"));
 	size_t nq = args->nqueues ? args->nqueues : 1;
 	size_t qd = args->qdepth ? args->qdepth : 1;
 	size_t queues = (size_t)args->ndevs * nq;
 	size_t control = queues * XNVMEPERF_HEAP_QUEUE_OVERHEAD;
 	size_t iosize = args->iosize;
 
-	args->opts.host_heap_size = control + (is_cuda ? 0 : queues * iosize);
+	args->opts.host_heap_size = control + (is_gpu ? 0 : queues * iosize);
 	printf("- host_heap_size: %zu bytes\n", args->opts.host_heap_size);
 
-	if (is_cuda) {
+	if (is_gpu) {
 		args->opts.device_heap_size = control + queues * qd * iosize;
 		printf("- device_heap_size: %zu bytes\n", args->opts.device_heap_size);
 	}
