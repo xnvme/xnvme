@@ -51,7 +51,8 @@ struct xnvme_opts {
 	uint32_t spdk_fabrics;     ///< Is assigned a value by backend if SPDK uses fabrics
 	uint32_t keep_alive_timeout_ms; ///< SPDK fabrics: set keep alive timeout
 	size_t host_heap_size;          ///< upcie: host DMA heap size in bytes (0 = default 1 GiB)
-	size_t device_heap_size; ///< upcie-cuda: GPU device heap size in bytes (0 = default 1 GiB)
+	size_t device_heap_size; ///< upcie-cuda/upcie-hip: GPU device heap size in bytes (0 =
+				 ///< default 1 GiB)
 };
 
 /**
