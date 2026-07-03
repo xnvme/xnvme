@@ -5,7 +5,7 @@
  * ================================
  * 
  * @file hostmem_config.h
- * @version 0.5.0
+ * @version 0.5.1
  */
 
 #ifndef MFD_HUGE_2MB
@@ -25,7 +25,8 @@ struct hostmem_config {
 	int count;
 	int pagesize; ///< Host memory pagesize (not HUGEPAGE size)
 	int pagesize_shift;
-	int hugepgsz; ///< THIS, is the HUGEPAGE size
+	int hugepgsz;       ///< THIS, is the HUGEPAGE size
+	int hugepgsz_shift; ///< hugepgsz expressed as a power of two: hugepgsz == 1 << hugepgsz_shift
 };
 
 static inline int
@@ -48,6 +49,7 @@ hostmem_config_pp(struct hostmem_config *config)
 	wrtn += printf("  pagesize: %d\n", config->pagesize);
 	wrtn += printf("  pagesize_shift: %d\n", config->pagesize_shift);
 	wrtn += printf("  hugepgsz: %d\n", config->hugepgsz);
+	wrtn += printf("  hugepgsz_shift: %d\n", config->hugepgsz_shift);
 
 	return wrtn;
 };
@@ -93,6 +95,7 @@ hostmem_config_init(struct hostmem_config *config)
 	if (err) {
 		return err;
 	}
+	config->hugepgsz_shift = upcie_util_shift_from_size(config->hugepgsz);
 
 	config->memfd_flags = MFD_HUGETLB;
 	if (config->hugepgsz == 2 * 1024 * 1024) {

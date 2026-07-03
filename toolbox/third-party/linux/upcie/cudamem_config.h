@@ -21,7 +21,7 @@
  * cudamem_config (and one cudamem_mapping_registry, one cudamem_heap) per GPU.
  * 
  * @file cudamem_config.h
- * @version 0.5.0
+ * @version 0.5.1
  */
 
 /**
@@ -33,6 +33,7 @@ struct cudamem_config {
 			       ///< pagesize_shift
 	int device_pagesize;   ///< GPU device page size (dma-buf page granularity for cuMemAlloc
 			       ///< memory)
+	int device_pagesize_shift; ///< device_pagesize as a power of two: 1 << device_pagesize_shift
 	size_t device_memsize; ///< Total GPU device memory in bytes (cuDeviceTotalMem)
 	size_t bar1_size;      ///< Size of the GPU's BAR1 region in bytes
 	size_t alloc_granularity;    ///< cuMemAlloc VA reservation unit and BAR1 large-page
@@ -57,6 +58,7 @@ cudamem_config_pp(struct cudamem_config *config)
 	wrtn += printf("  pagesize:                %d\n", config->pagesize);
 	wrtn += printf("  pagesize_shift:          %d\n", config->pagesize_shift);
 	wrtn += printf("  device_pagesize:         %d\n", config->device_pagesize);
+	wrtn += printf("  device_pagesize_shift:   %d\n", config->device_pagesize_shift);
 	wrtn += printf("  device_memsize:          %zu\n", config->device_memsize);
 	wrtn += printf("  bar1_size:               %zu\n", config->bar1_size);
 	wrtn += printf("  alloc_granularity:       %zu\n", config->alloc_granularity);
@@ -114,6 +116,7 @@ cudamem_config_init(struct cudamem_config *config, int gpu_id)
 	config->pagesize = getpagesize();
 	config->pagesize_shift = upcie_util_shift_from_size(config->pagesize);
 	config->device_pagesize = 65536;
+	config->device_pagesize_shift = upcie_util_shift_from_size(config->device_pagesize);
 
 	cr = cuDeviceGet(&dev, gpu_id);
 	if (cr != CUDA_SUCCESS) {

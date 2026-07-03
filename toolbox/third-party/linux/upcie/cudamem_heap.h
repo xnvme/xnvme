@@ -17,7 +17,7 @@
  *	nvidia-smi -q -d memory
  *
  * @file cudamem_heap.h
- * @version 0.5.0
+ * @version 0.5.1
  */
 
 /**
@@ -443,11 +443,11 @@ cudamem_heap_block_vtp(struct cudamem_heap *heap, void *virt)
 	offset = vaddr - heap->vaddr;
 
 	// Determine which page this address falls into
-	page_idx = offset / heap->config->device_pagesize;
+	page_idx = offset >> heap->config->device_pagesize_shift;
 	assert(page_idx < heap->nphys);
 
 	// Offset within that page
-	in_page_offset = offset % heap->config->device_pagesize;
+	in_page_offset = offset & (heap->config->device_pagesize - 1);
 
 	return heap->phys_lut[page_idx] + in_page_offset;
 }

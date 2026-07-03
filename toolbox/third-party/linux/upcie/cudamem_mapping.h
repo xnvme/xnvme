@@ -98,7 +98,7 @@
  * directly and do not depend on this sentinel.
  * 
  * @file cudamem_mapping.h
- * @version 0.5.0
+ * @version 0.5.1
  */
 
 /**
