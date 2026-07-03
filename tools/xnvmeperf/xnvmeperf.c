@@ -1409,6 +1409,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_DIRECT, XNVME_CLI_LFLG},
 			{XNVME_CLI_OPT_POLL_IO, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_POLL_SQ, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_GPU_ID, XNVME_CLI_LOPT},
 		},
 	},
 	{
@@ -1429,6 +1430,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_DIRECT, XNVME_CLI_LFLG},
 			{XNVME_CLI_OPT_POLL_IO, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_POLL_SQ, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_GPU_ID, XNVME_CLI_LOPT},
 		},
 	},
 	{
@@ -1449,6 +1451,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_RUNTIME, XNVME_CLI_LREQ},
 			{XNVME_CLI_OPT_ORCH_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_GPU_ID, XNVME_CLI_LOPT},
 		},
 	},
 	{
@@ -1467,6 +1470,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_QDEPTH, XNVME_CLI_LREQ},
 			{XNVME_CLI_OPT_ORCH_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_GPU_ID, XNVME_CLI_LOPT},
 		},
 	},
 };
