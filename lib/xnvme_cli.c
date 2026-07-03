@@ -636,6 +636,12 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "For be=spdk, DPDK IOVA mode ('va' or 'pa')",
 	},
 	{
+		.opt = XNVME_CLI_OPT_GPU_ID,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
+		.name = "gpu_id",
+		.descr = "For be=upcie-cuda/upcie-hip, GPU ordinal to use",
+	},
+	{
 		.opt = XNVME_CLI_OPT_USE_CMB_SQS,
 		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "use_cmb_sqs",
@@ -1446,6 +1452,9 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 	case XNVME_CLI_OPT_IOVA_MODE:
 		args->iova_mode = arg ? arg : "INVALID_INPUT";
 		break;
+	case XNVME_CLI_OPT_GPU_ID:
+		args->gpu_id = num;
+		break;
 	case XNVME_CLI_OPT_USE_CMB_SQS:
 		args->use_cmb_sqs = arg ? num : 0;
 		break;
@@ -2032,6 +2041,7 @@ xnvme_cli_to_opts(const struct xnvme_cli *cli, struct xnvme_opts *opts)
 		cli->given[XNVME_CLI_OPT_CORE_MASK] ? cli->args.core_mask : opts->core_mask;
 	opts->iova_mode =
 		cli->given[XNVME_CLI_OPT_IOVA_MODE] ? cli->args.iova_mode : opts->iova_mode;
+	opts->gpu_id = cli->given[XNVME_CLI_OPT_GPU_ID] ? cli->args.gpu_id : opts->gpu_id;
 	opts->adrfam = cli->given[XNVME_CLI_OPT_ADRFAM] ? cli->args.adrfam : opts->adrfam;
 	opts->subnqn = cli->given[XNVME_CLI_OPT_SUBNQN] ? cli->args.subnqn : opts->subnqn;
 	opts->hostnqn = cli->given[XNVME_CLI_OPT_HOSTNQN] ? cli->args.hostnqn : opts->hostnqn;
