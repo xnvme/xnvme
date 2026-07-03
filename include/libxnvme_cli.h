@@ -122,6 +122,8 @@ struct xnvme_cli_args {
 	const char *core_mask;
 	const char *iova_mode;
 
+	uint32_t gpu_id; ///< upcie-cuda/upcie-hip: GPU ordinal to use
+
 	struct xnvme_opts_css css; ///< SPDK controller-setup: do command-set-selection
 
 	uint32_t use_cmb_sqs;
@@ -354,7 +356,9 @@ enum xnvme_cli_opt {
 
 	XNVME_CLI_OPT_ALT_BE = 130, ///< XNVME_CLI_OPT_ALT_BE
 
-	XNVME_CLI_OPT_END = 131, ///< XNVME_CLI_OPT_END
+	XNVME_CLI_OPT_GPU_ID = 131, ///< XNVME_CLI_OPT_GPU_ID
+
+	XNVME_CLI_OPT_END = 132, ///< XNVME_CLI_OPT_END
 };
 
 /**
