@@ -9,26 +9,40 @@
  * `upcie/nvme/nvme_request.h` with a CUDA dependent PRP preparation function.
  * 
  * @file nvme_request_cuda.h
- * @version 0.5.0
+ * @version 0.5.1
  */
 
 /**
- * Prepare the PRP list for a command with a contiguous CUDA data buffer.
+ * Re-translate a PRP entry that crosses a device-page boundary.
  *
- * This function initializes the Physical Region Page (PRP) entries in the given NVMe command
- * (`cmd`) using the provided request and a contiguous data buffer (in VA-space).
- * It sets up the PRP1 and PRP2 fields in the command to describe the physical memory backing the
- * `data` buffer, allowing the NVMe controller to access the buffer during command execution.
+ * Kept out-of-line so the rare boundary path does not inline a vtp into the hot
+ * contig builder; the common in-device-page case strides physically from PRP1,
+ * and the inlined stride loop keeps large-I/O builds free of any per-entry call.
+ */
+static inline uint64_t __attribute__((noinline))
+nvme_request_prp_retranslate_cuda(struct cudamem_heap *heap, void *virt)
+{
+	return cudamem_heap_block_vtp(heap, virt);
+}
+
+/**
+ * Prepare the PRP entries for a command with a contiguous CUDA data buffer.
+ *
+ * Describes `dbuf` in the command's PRP1/PRP2 fields, building a PRP list in
+ * `request` when the buffer spans more than two pages, so the controller can
+ * access it while the command is in flight.
  *
  * Caveats
  * -------
  *
- * - Assumes that the memory backing `dbuf` in `heap` is physically contiguous.
- * - Does *not* support PRP list chaining; only a single list page is constructed.
+ * - `dbuf` must be allocated from `heap`.
+ * - `dbuf` must be dword (4-byte) aligned.
+ * - PRP list chaining is not supported: `dbuf` may span at most 513 pages
+ *   (PRP1 plus a single 512-entry PRP list page).
  *
  * @param request Pointer to the NVMe request context used for tracking and metadata.
- * @param heap Pointer to the CUDA memory heap that dbuf is allocated within.
- * @param dbuf Pointer to the contiguous data buffer to be described by PRPs.
+ * @param heap Pointer to the CUDA memory heap that `dbuf` is allocated within.
+ * @param dbuf Pointer to the (virtually) contiguous data buffer to be described by PRPs.
  * @param dbuf_nbytes Size in bytes of the data buffer.
  * @param cmd Pointer to the NVMe command to be prepared with PRP entries.
  */
@@ -41,9 +55,10 @@ nvme_request_prep_command_prps_contig_cuda(struct nvme_request *request, struct 
 	cmd->prp1 = cudamem_heap_block_vtp(heap, dbuf);
 
 	/* Only PRP1 may carry a sub-page offset; the page count and every later
-	 * entry are measured from the page floor. ceil((off+nbytes)/pagesize). */
-	const uint64_t page_off = cmd->prp1 & (pagesize - 1);
-	const uint64_t page_base = cmd->prp1 - page_off;
+	 * entry are measured from the page floor. ceil((off+nbytes)/pagesize). Take
+	 * the offset from the virtual address -- vtp preserves the sub-page offset --
+	 * so the page count and the npages == 1 branch do not wait on the vtp load. */
+	const uint64_t page_off = (uintptr_t)dbuf & (pagesize - 1);
 	const uint64_t npages =
 		(page_off + dbuf_nbytes + pagesize - 1) >> heap->config->pagesize_shift;
 
@@ -52,15 +67,41 @@ nvme_request_prep_command_prps_contig_cuda(struct nvme_request *request, struct 
 
 	if (npages == 1) {
 		return;
-	} else if (npages == 2) {
-		cmd->prp2 = page_base + pagesize;
-	} else {
-		uint64_t *prp_list = (uint64_t *)request->prp;
+	}
 
-		cmd->prp2 = request->prp_addr;
-		for (uint64_t i = 1; i < npages; ++i) {
-			prp_list[i - 1] = page_base + (i << heap->config->pagesize_shift);
+	/* The heap is virtually contiguous but physically contiguous only within a
+	 * device page. Stride PRP entries physically from PRP1 while inside the same
+	 * device page and re-translate when the running address crosses a device-page
+	 * boundary. A buffer that fits within a single device page (the common case)
+	 * never crosses, so this reduces to the stride of a contiguous buffer. */
+	uint8_t *vbase = (uint8_t *)dbuf - page_off;
+	const uint64_t dp_off =
+		((uint64_t)vbase - heap->vaddr) & (heap->config->device_pagesize - 1);
+	uint64_t strides_left =
+		((heap->config->device_pagesize - dp_off) >> heap->config->pagesize_shift) - 1;
+	uint64_t page_phys = cmd->prp1 - page_off;
+
+	if (npages == 2) {
+		cmd->prp2 = strides_left
+				    ? page_phys + pagesize
+				    : nvme_request_prp_retranslate_cuda(heap, vbase + pagesize);
+		return;
+	}
+
+	uint64_t *prp_list = (uint64_t *)request->prp;
+
+	cmd->prp2 = request->prp_addr;
+	for (uint64_t i = 1; i < npages; ++i) {
+		if (strides_left) {
+			page_phys += pagesize;
+			strides_left--;
+		} else {
+			page_phys = nvme_request_prp_retranslate_cuda(
+				heap, vbase + (i << heap->config->pagesize_shift));
+			strides_left =
+				(heap->config->device_pagesize >> heap->config->pagesize_shift) - 1;
 		}
+		prp_list[i - 1] = page_phys;
 	}
 }
 

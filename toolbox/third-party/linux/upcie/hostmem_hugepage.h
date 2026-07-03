@@ -58,7 +58,7 @@
  * also gains access to those physical addresses—without needing CAP_SYS_ADMIN.
  *
  * @file hostmem_hugepage.h
- * @version 0.5.0
+ * @version 0.5.1
  */
 
 struct hostmem_hugepage {

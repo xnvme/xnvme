@@ -47,7 +47,7 @@
  *   - Sub-hugepage contiguity enforcement
  *
  * @file hostmem_dma.h
- * @version 0.5.0
+ * @version 0.5.1
  */
 
 /**
@@ -134,10 +134,10 @@ hostmem_dma_v2p(struct hostmem_heap *heap, void *virt)
 	offset = (char *)virt - (char *)heap->memory.virt;
 
 	// Determine which hugepage this address falls into
-	hpage_idx = offset / heap->config->hugepgsz;
+	hpage_idx = offset >> heap->config->hugepgsz_shift;
 
 	// Offset within that hugepage
-	in_hpage_offset = offset % heap->config->hugepgsz;
+	in_hpage_offset = offset & (heap->config->hugepgsz - 1);
 
 	return heap->phys_lut[hpage_idx] + in_hpage_offset;
 }

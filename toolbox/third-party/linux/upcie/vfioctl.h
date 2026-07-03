@@ -31,7 +31,7 @@
  * The above is the essential modeling of the isolation-level of memory among devices.
  *
  * @file vfioctl.h
- * @version 0.5.0
+ * @version 0.5.1
  */
 struct vfio_group {
 	int fd;

@@ -10,7 +10,7 @@
  * Look to `nvme_qpair_cuda_io()` to see the intended flow of IO function calls.
  * 
  * @file nvme_qpair_cuda.h
- * @version 0.5.0
+ * @version 0.5.1
  */
 
 #ifndef __device__
