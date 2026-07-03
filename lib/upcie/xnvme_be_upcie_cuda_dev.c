@@ -26,7 +26,7 @@ _cuda_rte_term(void)
 }
 
 static int
-_cuda_rte_init(size_t heap_size)
+_cuda_rte_init(size_t heap_size, uint32_t gpu_id)
 {
 	CUdevice cu_dev;
 	int err;
@@ -45,7 +45,7 @@ _cuda_rte_init(size_t heap_size)
 		return -ENODEV;
 	}
 
-	err = cuDeviceGet(&cu_dev, 0); // GPU ID 0
+	err = cuDeviceGet(&cu_dev, gpu_id);
 	if (err) {
 		XNVME_DEBUG("FAILED: cuDeviceGet(); err(%d)", err);
 		return -ENODEV;
@@ -172,7 +172,7 @@ xnvme_be_upcie_cuda_dev_open(struct xnvme_dev *dev)
 		return err;
 	}
 
-	err = _cuda_rte_init(dev->opts.device_heap_size);
+	err = _cuda_rte_init(dev->opts.device_heap_size, dev->opts.gpu_id);
 	if (err) {
 		XNVME_DEBUG("FAILED: _cuda_rte_init(); err(%d)", err);
 		return err;
