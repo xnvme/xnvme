@@ -89,6 +89,7 @@ xnvme_opts_yaml(FILE *stream, const struct xnvme_opts *opts, int indent, const c
 	wrtn += fprintf(stream, "%*shost_heap_size: %zu%s", indent, "", opts->host_heap_size, sep);
 	wrtn += fprintf(stream, "%*sdevice_heap_size: %zu%s", indent, "", opts->device_heap_size,
 			sep);
+	wrtn += fprintf(stream, "%*sgpu_id: %" PRIu32 "%s", indent, "", opts->gpu_id, sep);
 
 	return wrtn;
 }

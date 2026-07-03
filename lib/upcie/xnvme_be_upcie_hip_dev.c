@@ -25,7 +25,7 @@ _hip_rte_term(void)
 }
 
 static int
-_hip_rte_init(size_t heap_size)
+_hip_rte_init(size_t heap_size, uint32_t gpu_id)
 {
 	int err;
 
@@ -43,7 +43,7 @@ _hip_rte_init(size_t heap_size)
 		return -ENODEV;
 	}
 
-	err = hipSetDevice(0); // GPU ID 0
+	err = hipSetDevice(gpu_id);
 	if (err) {
 		XNVME_DEBUG("FAILED: hipSetDevice(); err(%d)", err);
 		return -ENODEV;
@@ -158,7 +158,7 @@ xnvme_be_upcie_hip_dev_open(struct xnvme_dev *dev)
 		return err;
 	}
 
-	err = _hip_rte_init(dev->opts.device_heap_size);
+	err = _hip_rte_init(dev->opts.device_heap_size, dev->opts.gpu_id);
 	if (err) {
 		XNVME_DEBUG("FAILED: _hip_rte_init(); err(%d)", err);
 		return err;

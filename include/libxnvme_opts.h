@@ -53,6 +53,7 @@ struct xnvme_opts {
 	size_t host_heap_size;          ///< upcie: host DMA heap size in bytes (0 = default 1 GiB)
 	size_t device_heap_size; ///< upcie-cuda/upcie-hip: GPU device heap size in bytes (0 =
 				 ///< default 1 GiB)
+	uint32_t gpu_id;         ///< upcie-cuda/upcie-hip: GPU ordinal to use (default 0)
 };
 
 /**
