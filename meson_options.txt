@@ -8,6 +8,7 @@ option('with-hip', type: 'feature', value: 'auto')
 
 option('be_ramdisk', type: 'boolean', value: true)
 option('be_upcie', type: 'boolean', value: true)
+option('be_dmamem', type: 'boolean', value: true)
 
 option('cbi_admin_shim', type: 'boolean', value: true)
 option('cbi_async_emu', type: 'boolean', value: true)

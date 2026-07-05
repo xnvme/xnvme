@@ -108,6 +108,7 @@ xnvmelib_deps = [
 ]
 
 subdir('upcie')
+subdir('dmamem')
 
 mapfile = 'libxnvme.map'
 # Version script is not supported by the linker on OSX

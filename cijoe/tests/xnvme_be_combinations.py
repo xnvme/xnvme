@@ -146,6 +146,14 @@ def get_backend_configurations():
             "label": ["pcie"],
         },
         {
+            "be": ["dmamem"],
+            "mem": ["dmamem"],
+            "async": ["dmamem"],
+            "sync": ["dmamem"],
+            "admin": ["dmamem"],
+            "label": ["pcie"],
+        },
+        {
             "be": ["upcie-cuda"],
             "mem": ["upcie-cuda"],
             "async": ["upcie-cuda"],

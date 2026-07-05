@@ -103,7 +103,8 @@ conf_data.set('XNVME_BE_CBI_SYNC_PSYNC_ENABLED', get_option('cbi_sync_psync') an
 
 conf_data.set('XNVME_BE_RAMDISK_ENABLED', get_option('be_ramdisk'))
 conf_data.set('XNVME_BE_UPCIE_ENABLED', get_option('be_upcie') and is_linux)
-if get_option('be_upcie') and is_linux
+conf_data.set('XNVME_BE_DMAMEM_ENABLED', get_option('be_dmamem') and is_linux)
+if (get_option('be_upcie') or get_option('be_dmamem')) and is_linux
   # uPCIe vendored headers (dmabuf.h: memfd_create + file sealing) need _GNU_SOURCE
   add_project_arguments('-D_GNU_SOURCE', language: 'c')
 endif
