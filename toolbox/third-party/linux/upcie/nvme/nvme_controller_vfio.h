@@ -6,7 +6,7 @@
 /**
  * VFIO NVMe Controller Extension
  * ==============================
- * 
+ *
  * @file nvme_controller_vfio.h
  * @version 0.5.1
  */
@@ -22,36 +22,6 @@ struct vfio_ctx {
 	size_t bar0_size;
 	int iommu_set;
 };
-
-static inline int
-nvme_vfio_pci_bus_master_enable(int device_fd)
-{
-	struct vfio_region_info config = {0};
-	uint16_t cmd;
-	ssize_t ret;
-	int err;
-
-	config.index = VFIO_PCI_CONFIG_REGION_INDEX;
-	err = vfio_device_get_region_info(device_fd, &config);
-	if (err < 0) {
-		return -errno;
-	}
-
-	ret = pread(device_fd, &cmd, sizeof(cmd), config.offset + PCI_COMMAND);
-	if (ret != (ssize_t)sizeof(cmd)) {
-		return ret < 0 ? -errno : -EIO;
-	}
-
-	if (!(cmd & PCI_COMMAND_MASTER)) {
-		cmd |= PCI_COMMAND_MASTER;
-		ret = pwrite(device_fd, &cmd, sizeof(cmd), config.offset + PCI_COMMAND);
-		if (ret != (ssize_t)sizeof(cmd)) {
-			return ret < 0 ? -errno : -EIO;
-		}
-	}
-
-	return 0;
-}
 
 static inline void
 nvme_vfio_ctx_init(struct vfio_ctx *vfio)
@@ -218,7 +188,6 @@ static inline int
 nvme_controller_open_vfio(struct nvme_controller *ctrlr, struct vfio_ctx *vfio, const char *bdf,
 			  struct hostmem_heap *heap)
 {
-	struct vfio_region_info region = {0};
 	int api_version = 0;
 	int group_id = -1;
 	uint64_t cap;
@@ -316,44 +285,14 @@ nvme_controller_open_vfio(struct nvme_controller *ctrlr, struct vfio_ctx *vfio, 
 		goto fail;
 	}
 
-	err = nvme_vfio_pci_bus_master_enable(vfio->device_fd);
+	err = nvme_vfio_pci_acquire_bar0(vfio->device_fd, ctrlr, &vfio->bar0, &vfio->bar0_size);
 	if (err) {
-		UPCIE_DEBUG("FAILED: nvme_vfio_pci_bus_master_enable(); err(%d)", err);
 		goto fail;
 	}
+	bar0 = vfio->bar0;
 
-	region.index = VFIO_PCI_BAR0_REGION_INDEX;
-	err = vfio_device_get_region_info(vfio->device_fd, &region);
-	if (err < 0) {
-		err = -errno;
-		UPCIE_DEBUG("FAILED: vfio_device_get_region_info(); errno(%d)", errno);
-		goto fail;
-	}
-
-	bar0 = vfio_map_region(vfio->device_fd, region.size, region.offset);
-	if (bar0 == MAP_FAILED) {
-		err = -errno;
-		UPCIE_DEBUG("FAILED: vfio_map_region(); errno(%d)", errno);
-		goto fail;
-	}
-
-	vfio->bar0 = bar0;
-	vfio->bar0_size = region.size;
-	ctrlr->func.bars[0].region = bar0;
-	ctrlr->func.bars[0].size = region.size;
-	ctrlr->func.bars[0].id = 0;
-	ctrlr->func.bars[0].fd = vfio->device_fd;
-
-	// Continue with the common NVMe controller initialization
-	cap = nvme_mmio_cap_read(bar0);
-	// CAP.TO is encoded in units of 500 ms.
-	ctrlr->timeout_ms = nvme_reg_cap_get_to(cap) * 500;
-
-	nvme_mmio_cc_disable(bar0);
-
-	err = nvme_mmio_csts_wait_until_not_ready(bar0, ctrlr->timeout_ms);
+	err = nvme_controller_reset_via_bar0(ctrlr, bar0, &cap);
 	if (err) {
-		UPCIE_DEBUG("FAILED: nvme_mmio_csts_wait_until_not_ready(); err(%d)", err);
 		goto fail;
 	}
 
@@ -366,24 +305,8 @@ nvme_controller_open_vfio(struct nvme_controller *ctrlr, struct vfio_ctx *vfio, 
 	nvme_mmio_aq_setup(bar0, hostmem_dma_v2p(heap, ctrlr->aq.sq),
 			   hostmem_dma_v2p(heap, ctrlr->aq.cq), ctrlr->aq.depth);
 
-	{
-		uint32_t css = (nvme_reg_cap_get_css(cap) & (1 << 6)) ? 0x6 : 0x0;
-		uint32_t cc = 0;
-
-		cc = nvme_reg_cc_set_css(cc, css);
-		cc = nvme_reg_cc_set_shn(cc, 0x0);
-		cc = nvme_reg_cc_set_mps(cc, 0x0);
-		cc = nvme_reg_cc_set_ams(cc, 0x0);
-		cc = nvme_reg_cc_set_iosqes(cc, 6);
-		cc = nvme_reg_cc_set_iocqes(cc, 4);
-		cc = nvme_reg_cc_set_en(cc, 0x1);
-
-		nvme_mmio_cc_write(bar0, cc);
-	}
-
-	err = nvme_mmio_csts_wait_until_ready(bar0, ctrlr->timeout_ms);
+	err = nvme_controller_enable_via_bar0(ctrlr, bar0, cap);
 	if (err) {
-		UPCIE_DEBUG("FAILED: nvme_mmio_csts_wait_until_ready(); err(%d)", err);
 		goto fail;
 	}
 
