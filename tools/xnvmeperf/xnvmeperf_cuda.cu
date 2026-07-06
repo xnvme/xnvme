@@ -40,7 +40,7 @@ xnvmeperf_cuda_kernel_seq(struct xnvme_cuda_queue **qps, struct xnvme_spec_cmd *
 		 * all threads in the block make the same exit decision.  Without this,
 		 * warps that observe *stop == 1 would skip xnvme_cuda_cmd_io while
 		 * others still enter it, causing the __syncthreads() inside
-		 * nvme_qpair_cuda_io to deadlock. */
+		 * xnvme_cuda_cmd_io to deadlock. */
 		if (tid == 0) {
 			s_stop = *stop;
 		}
