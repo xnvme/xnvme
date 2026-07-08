@@ -4,20 +4,20 @@
 
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_VFIO_ENABLED
+#ifdef XNVME_BE_LIBVFN_ENABLED
 #include <errno.h>
 #include <sys/mman.h>
-#include <xnvme_be_vfio.h>
+#include <xnvme_be_libvfn.h>
 #include <xnvme_dev.h>
 
 void
-xnvme_be_vfio_buf_free(const struct xnvme_dev *dev, void *buf)
+xnvme_be_libvfn_buf_free(const struct xnvme_dev *dev, void *buf)
 {
-	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
+	struct xnvme_be_libvfn_state *state = (void *)dev->be.state;
 	struct iommu_ctx *ctx = state->ctrlr->ctrl->pci.dev.ctx;
 	size_t len;
 
-	XNVME_DEBUG("xnvme_be_vfio_buf_free(%p, %p)", dev, buf);
+	XNVME_DEBUG("xnvme_be_libvfn_buf_free(%p, %p)", dev, buf);
 
 	if (iommu_unmap_vaddr(ctx, buf, &len)) {
 		XNVME_DEBUG("FAILED: iommu_unmap_vaddr(-, %p): %s\n", buf, strerror(errno));
@@ -30,14 +30,14 @@ xnvme_be_vfio_buf_free(const struct xnvme_dev *dev, void *buf)
 }
 
 void *
-xnvme_be_vfio_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
+xnvme_be_libvfn_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
 {
 	void *vaddr;
 	ssize_t len;
-	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
+	struct xnvme_be_libvfn_state *state = (void *)dev->be.state;
 	struct iommu_ctx *ctx = state->ctrlr->ctrl->pci.dev.ctx;
 
-	XNVME_DEBUG("xnvme_be_vfio_buf_alloc(%p, %ld)", dev, nbytes);
+	XNVME_DEBUG("xnvme_be_libvfn_buf_alloc(%p, %ld)", dev, nbytes);
 
 	len = pgmap(&vaddr, nbytes);
 	if (len < 0) {
@@ -53,7 +53,7 @@ xnvme_be_vfio_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *ph
 
 	if (phys && !iommu_translate_vaddr(ctx, vaddr, phys)) {
 		XNVME_DEBUG("FAILED: iommu_translate_vaddr(-, %p): %s\n", vaddr, strerror(errno));
-		xnvme_be_vfio_buf_free(dev, vaddr);
+		xnvme_be_libvfn_buf_free(dev, vaddr);
 		return NULL;
 	}
 
@@ -61,9 +61,9 @@ xnvme_be_vfio_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *ph
 }
 
 int
-xnvme_be_vfio_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys)
+xnvme_be_libvfn_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys)
 {
-	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
+	struct xnvme_be_libvfn_state *state = (void *)dev->be.state;
 	struct iommu_ctx *ctx = state->ctrlr->ctrl->pci.dev.ctx;
 
 	if (!iommu_translate_vaddr(ctx, buf, phys)) {
@@ -75,13 +75,13 @@ xnvme_be_vfio_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys
 }
 
 int
-xnvme_be_vfio_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, uint64_t *phys)
+xnvme_be_libvfn_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, uint64_t *phys)
 {
-	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
+	struct xnvme_be_libvfn_state *state = (void *)dev->be.state;
 	struct iommu_ctx *ctx = state->ctrlr->ctrl->pci.dev.ctx;
 	int err;
 
-	XNVME_DEBUG("xnvme_be_vfio_mem_map(%p, %p)", dev, vaddr);
+	XNVME_DEBUG("xnvme_be_libvfn_mem_map(%p, %p)", dev, vaddr);
 
 	if (!ALIGNED(((uintptr_t)vaddr | nbytes), __VFN_PAGESIZE)) {
 		XNVME_DEBUG("FAILED: nbytes not page aligned\n");
@@ -100,12 +100,12 @@ xnvme_be_vfio_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, u
 }
 
 int
-xnvme_be_vfio_mem_unmap(const struct xnvme_dev *dev, void *buf)
+xnvme_be_libvfn_mem_unmap(const struct xnvme_dev *dev, void *buf)
 {
-	struct xnvme_be_vfio_state *state = (void *)dev->be.state;
+	struct xnvme_be_libvfn_state *state = (void *)dev->be.state;
 	struct iommu_ctx *ctx = state->ctrlr->ctrl->pci.dev.ctx;
 
-	XNVME_DEBUG("xnvme_be_vfio_buf_unmap(%p, %p)", dev, buf);
+	XNVME_DEBUG("xnvme_be_libvfn_buf_unmap(%p, %p)", dev, buf);
 
 	if (iommu_unmap_vaddr(ctx, buf, NULL)) {
 		XNVME_DEBUG("FAILED: iommu_unmap_vaddr(-, %p): %s\n", buf, strerror(errno));
@@ -117,15 +117,15 @@ xnvme_be_vfio_mem_unmap(const struct xnvme_dev *dev, void *buf)
 
 #endif
 
-struct xnvme_be_mem g_xnvme_be_vfio_mem = {
+struct xnvme_be_mem g_xnvme_be_libvfn_mem = {
 	.id = "libvfn",
-#ifdef XNVME_BE_VFIO_ENABLED
-	.buf_alloc = xnvme_be_vfio_buf_alloc,
+#ifdef XNVME_BE_LIBVFN_ENABLED
+	.buf_alloc = xnvme_be_libvfn_buf_alloc,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
-	.buf_free = xnvme_be_vfio_buf_free,
-	.buf_vtophys = xnvme_be_vfio_buf_vtophys,
-	.mem_map = xnvme_be_vfio_mem_map,
-	.mem_unmap = xnvme_be_vfio_mem_unmap,
+	.buf_free = xnvme_be_libvfn_buf_free,
+	.buf_vtophys = xnvme_be_libvfn_buf_vtophys,
+	.mem_map = xnvme_be_libvfn_mem_map,
+	.mem_unmap = xnvme_be_libvfn_mem_unmap,
 #else
 	.buf_alloc = xnvme_be_nosys_buf_alloc,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,

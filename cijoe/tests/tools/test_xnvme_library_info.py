@@ -63,7 +63,7 @@ def test_library_info_has_libvfn(cijoe):
         err, state = cijoe.run("xnvme library-info")
         assert not err
 
-        assert "XNVME_BE_VFIO_ENABLED" in state.output()
+        assert "XNVME_BE_LIBVFN_ENABLED" in state.output()
     else:
         pytest.skip("Not Linux, so skipping libvfn/vfio check")
 
@@ -94,7 +94,7 @@ def test_library_info_has_all_combos(cijoe):
     # Optional backends that depend on compile-time flags
     optional = {
         "spdk": "XNVME_BE_SPDK_ENABLED",
-        "libvfn": "XNVME_BE_VFIO_ENABLED",
+        "libvfn": "XNVME_BE_LIBVFN_ENABLED",
         "io_uring": "XNVME_BE_LINUX_LIBURING_ENABLED",
         "io_uring_cmd": "XNVME_BE_LINUX_LIBURING_ENABLED",
         "io_uring_bdev": "XNVME_BE_LINUX_LIBURING_ENABLED",
