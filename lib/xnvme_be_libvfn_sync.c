@@ -5,16 +5,16 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_VFIO_ENABLED
+#ifdef XNVME_BE_LIBVFN_ENABLED
 #include <errno.h>
 #include <xnvme_dev.h>
-#include <xnvme_be_vfio.h>
+#include <xnvme_be_libvfn.h>
 
 int
-xnvme_be_vfio_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
-			  size_t mbuf_nbytes)
+xnvme_be_libvfn_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			    size_t mbuf_nbytes)
 {
-	struct xnvme_be_vfio_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_libvfn_state *state = (void *)ctx->dev->be.state;
 	struct nvme_ctrl *ctrl = state->ctrlr->ctrl;
 	struct nvme_rq *rq;
 	uint64_t iova;
@@ -70,10 +70,10 @@ out:
 }
 
 int
-xnvme_be_vfio_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-			   size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
+xnvme_be_libvfn_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+			     size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
-	struct xnvme_be_vfio_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_libvfn_state *state = (void *)ctx->dev->be.state;
 	struct nvme_ctrl *ctrl = state->ctrlr->ctrl;
 	struct nvme_rq *rq;
 	uint64_t iova;
@@ -124,11 +124,11 @@ out:
 
 #endif
 
-struct xnvme_be_sync g_xnvme_be_vfio_sync = {
+struct xnvme_be_sync g_xnvme_be_libvfn_sync = {
 	.id = "libvfn",
-#ifdef XNVME_BE_VFIO_ENABLED
-	.cmd_io = xnvme_be_vfio_sync_cmd_io,
-	.cmd_iov = xnvme_be_vfio_sync_cmd_iov,
+#ifdef XNVME_BE_LIBVFN_ENABLED
+	.cmd_io = xnvme_be_libvfn_sync_cmd_io,
+	.cmd_iov = xnvme_be_libvfn_sync_cmd_iov,
 #else
 	.cmd_io = xnvme_be_nosys_sync_cmd_io,
 	.cmd_iov = xnvme_be_nosys_sync_cmd_iov,

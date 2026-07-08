@@ -347,8 +347,8 @@ struct xnvme_platform g_xnvme_platform_linux = {
 #ifdef XNVME_BE_SPDK_ENABLED
 			&g_xnvme_be_spdk,
 #endif
-#ifdef XNVME_BE_VFIO_ENABLED
-			&g_xnvme_be_vfio,
+#ifdef XNVME_BE_LIBVFN_ENABLED
+			&g_xnvme_be_libvfn,
 #endif
 #ifdef XNVME_BE_UPCIE_ENABLED
 			&g_xnvme_be_upcie,

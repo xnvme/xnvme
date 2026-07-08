@@ -13,8 +13,8 @@ extern const struct xnvme_be_config g_xnvme_be_spdk;
 #endif
 
 /* libvfn/VFIO */
-#ifdef XNVME_BE_VFIO_ENABLED
-extern const struct xnvme_be_config g_xnvme_be_vfio;
+#ifdef XNVME_BE_LIBVFN_ENABLED
+extern const struct xnvme_be_config g_xnvme_be_libvfn;
 #endif
 
 /* uPCIe */

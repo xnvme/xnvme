@@ -5,13 +5,13 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_VFIO_ENABLED
+#ifdef XNVME_BE_LIBVFN_ENABLED
 #include <xnvme_dev.h>
 #include <xnvme_queue.h>
-#include <xnvme_be_vfio.h>
+#include <xnvme_be_libvfn.h>
 #include <sys/eventfd.h>
 
-struct xnvme_queue_vfio {
+struct xnvme_queue_libvfn {
 	struct xnvme_queue_base base;
 
 	struct nvme_sq *sq;
@@ -20,17 +20,17 @@ struct xnvme_queue_vfio {
 
 	uint8_t _rsvd[208];
 };
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_vfio) == XNVME_BE_QUEUE_STATE_NBYTES,
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_libvfn) == XNVME_BE_QUEUE_STATE_NBYTES,
 		    "Incorrect size")
 
 int
-xnvme_be_vfio_queue_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
+xnvme_be_libvfn_queue_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 {
-	struct xnvme_queue_vfio *queue = (struct xnvme_queue_vfio *)q;
-	struct xnvme_be_vfio_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_queue_libvfn *queue = (struct xnvme_queue_libvfn *)q;
+	struct xnvme_be_libvfn_state *state = (void *)queue->base.dev->be.state;
 	int qpid;
 
-	qpid = _xnvme_be_vfio_create_ioqpair(state, queue->base.capacity, 0x0);
+	qpid = _xnvme_be_libvfn_create_ioqpair(state, queue->base.capacity, 0x0);
 	if (qpid < 0) {
 		XNVME_DEBUG("FAILED: nvme_create_ioqpair(); err: %d", qpid);
 		return qpid;
@@ -43,21 +43,21 @@ xnvme_be_vfio_queue_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 }
 
 int
-xnvme_be_vfio_queue_term(struct xnvme_queue *q)
+xnvme_be_libvfn_queue_term(struct xnvme_queue *q)
 {
-	struct xnvme_queue_vfio *queue = (struct xnvme_queue_vfio *)q;
-	struct xnvme_be_vfio_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_queue_libvfn *queue = (struct xnvme_queue_libvfn *)q;
+	struct xnvme_be_libvfn_state *state = (void *)queue->base.dev->be.state;
 	if (state->ctrlr->efds[queue->id] != -1) {
 		close(state->ctrlr->efds[queue->id]);
 		state->ctrlr->efds[queue->id] = -1;
 	}
-	return _xnvme_be_vfio_delete_ioqpair(state, queue->id);
+	return _xnvme_be_libvfn_delete_ioqpair(state, queue->id);
 }
 
 int
-xnvme_be_vfio_queue_poke(struct xnvme_queue *queue, uint32_t max)
+xnvme_be_libvfn_queue_poke(struct xnvme_queue *queue, uint32_t max)
 {
-	struct xnvme_queue_vfio *q = (void *)queue;
+	struct xnvme_queue_libvfn *q = (void *)queue;
 	unsigned int reaped = 0;
 
 	if (!max) {
@@ -98,11 +98,11 @@ xnvme_be_vfio_queue_poke(struct xnvme_queue *queue, uint32_t max)
 }
 
 int
-xnvme_be_vfio_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
-			   size_t mbuf_nbytes)
+xnvme_be_libvfn_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			     size_t mbuf_nbytes)
 {
-	struct xnvme_queue_vfio *q = (struct xnvme_queue_vfio *)ctx->async.queue;
-	struct xnvme_be_vfio_state *state = (void *)q->base.dev->be.state;
+	struct xnvme_queue_libvfn *q = (struct xnvme_queue_libvfn *)ctx->async.queue;
+	struct xnvme_be_libvfn_state *state = (void *)q->base.dev->be.state;
 	struct nvme_ctrl *ctrl = state->ctrlr->ctrl;
 	struct nvme_rq *rq;
 	uint64_t iova;
@@ -157,11 +157,11 @@ err:
 }
 
 int
-xnvme_be_vfio_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-			    size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
+xnvme_be_libvfn_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+			      size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
-	struct xnvme_queue_vfio *q = (struct xnvme_queue_vfio *)ctx->async.queue;
-	struct xnvme_be_vfio_state *state = (void *)q->base.dev->be.state;
+	struct xnvme_queue_libvfn *q = (struct xnvme_queue_libvfn *)ctx->async.queue;
+	struct xnvme_be_libvfn_state *state = (void *)q->base.dev->be.state;
 	struct nvme_ctrl *ctrl = state->ctrlr->ctrl;
 	struct nvme_rq *rq;
 	uint64_t iova;
@@ -211,10 +211,10 @@ err:
 }
 
 int
-xnvme_be_vfio_queue_get_completion_fd(struct xnvme_queue *queue)
+xnvme_be_libvfn_queue_get_completion_fd(struct xnvme_queue *queue)
 {
-	struct xnvme_queue_vfio *q = (struct xnvme_queue_vfio *)queue;
-	struct xnvme_be_vfio_state *state = (void *)q->base.dev->be.state;
+	struct xnvme_queue_libvfn *q = (struct xnvme_queue_libvfn *)queue;
+	struct xnvme_be_libvfn_state *state = (void *)q->base.dev->be.state;
 	int efd;
 
 	if (state->ctrlr->efds[q->id] != -1) {
@@ -240,16 +240,16 @@ xnvme_be_vfio_queue_get_completion_fd(struct xnvme_queue *queue)
 
 #endif
 
-struct xnvme_be_async g_xnvme_be_vfio_async = {
+struct xnvme_be_async g_xnvme_be_libvfn_async = {
 	.id = "libvfn",
-#ifdef XNVME_BE_VFIO_ENABLED
-	.cmd_io = xnvme_be_vfio_async_cmd_io,
-	.cmd_iov = xnvme_be_vfio_async_cmd_iov,
-	.poke = xnvme_be_vfio_queue_poke,
+#ifdef XNVME_BE_LIBVFN_ENABLED
+	.cmd_io = xnvme_be_libvfn_async_cmd_io,
+	.cmd_iov = xnvme_be_libvfn_async_cmd_iov,
+	.poke = xnvme_be_libvfn_queue_poke,
 	.wait = xnvme_be_nosys_queue_wait,
-	.init = xnvme_be_vfio_queue_init,
-	.term = xnvme_be_vfio_queue_term,
-	.get_completion_fd = xnvme_be_vfio_queue_get_completion_fd,
+	.init = xnvme_be_libvfn_queue_init,
+	.term = xnvme_be_libvfn_queue_term,
+	.get_completion_fd = xnvme_be_libvfn_queue_get_completion_fd,
 #else
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,

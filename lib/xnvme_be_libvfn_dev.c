@@ -5,14 +5,14 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_VFIO_ENABLED
+#ifdef XNVME_BE_LIBVFN_ENABLED
 #include <xnvme_dev.h>
-#include <xnvme_be_vfio.h>
+#include <xnvme_be_libvfn.h>
 
 int
-_xnvme_be_vfio_create_ioqpair(struct xnvme_be_vfio_state *state, int qd, int flags)
+_xnvme_be_libvfn_create_ioqpair(struct xnvme_be_libvfn_state *state, int qd, int flags)
 {
-	struct xnvme_be_vfio_ctrlr *ctrlr = state->ctrlr;
+	struct xnvme_be_libvfn_ctrlr *ctrlr = state->ctrlr;
 	unsigned int qid = __builtin_ffsll(ctrlr->qidmap);
 	int err;
 
@@ -38,9 +38,9 @@ _xnvme_be_vfio_create_ioqpair(struct xnvme_be_vfio_state *state, int qd, int fla
 }
 
 int
-_xnvme_be_vfio_delete_ioqpair(struct xnvme_be_vfio_state *state, unsigned int qid)
+_xnvme_be_libvfn_delete_ioqpair(struct xnvme_be_libvfn_state *state, unsigned int qid)
 {
-	struct xnvme_be_vfio_ctrlr *ctrlr = state->ctrlr;
+	struct xnvme_be_libvfn_ctrlr *ctrlr = state->ctrlr;
 
 	if (nvme_delete_ioqpair(ctrlr->ctrl, qid)) {
 		return -errno;
@@ -54,18 +54,18 @@ _xnvme_be_vfio_delete_ioqpair(struct xnvme_be_vfio_state *state, unsigned int qi
 /**
  * Initialize the VFIO/libvfn controller.
  *
- * Allocates a shared xnvme_be_vfio_ctrlr, initializes the NVMe controller,
+ * Allocates a shared xnvme_be_libvfn_ctrlr, initializes the NVMe controller,
  * sets up IRQs and event FDs. The returned handle is stored in cref and
  * written to dev->be.state[0] by the platform.
  */
 static void *
-xnvme_be_vfio_ctrlr_init(struct xnvme_dev *dev)
+xnvme_be_libvfn_ctrlr_init(struct xnvme_dev *dev)
 {
 	struct nvme_ctrl_opts ctrl_opts = {
-		.nsqr = XNVME_BE_VFIO_NQUEUES_MAX - 1,
-		.ncqr = XNVME_BE_VFIO_NQUEUES_MAX - 1,
+		.nsqr = XNVME_BE_LIBVFN_NQUEUES_MAX - 1,
+		.ncqr = XNVME_BE_LIBVFN_NQUEUES_MAX - 1,
 	};
-	struct xnvme_be_vfio_ctrlr *ctrlr;
+	struct xnvme_be_libvfn_ctrlr *ctrlr;
 	struct nvme_ctrl *ctrl;
 
 	ctrlr = calloc(1, sizeof(*ctrlr));
@@ -95,7 +95,7 @@ xnvme_be_vfio_ctrlr_init(struct xnvme_dev *dev)
 		goto fail;
 	}
 
-	ctrlr->nefds = XNVME_MIN(XNVME_BE_VFIO_NQUEUES_MAX, ctrl->pci.dev.irq_info.count);
+	ctrlr->nefds = XNVME_MIN(XNVME_BE_LIBVFN_NQUEUES_MAX, ctrl->pci.dev.irq_info.count);
 
 	ctrlr->efds = calloc(ctrlr->nefds, sizeof(int));
 	if (!ctrlr->efds) {
@@ -112,10 +112,10 @@ xnvme_be_vfio_ctrlr_init(struct xnvme_dev *dev)
 	}
 
 	{
-		struct xnvme_be_vfio_state tmp_state = {.ctrlr = ctrlr};
+		struct xnvme_be_libvfn_state tmp_state = {.ctrlr = ctrlr};
 		int qpid;
 
-		qpid = _xnvme_be_vfio_create_ioqpair(&tmp_state, 31, 0x0);
+		qpid = _xnvme_be_libvfn_create_ioqpair(&tmp_state, 31, 0x0);
 		if (qpid < 0) {
 			XNVME_DEBUG("FAILED: creating sync qpair: %d", qpid);
 			goto fail_efds;
@@ -136,9 +136,9 @@ fail:
 }
 
 static int
-xnvme_be_vfio_ctrlr_term(void *handle)
+xnvme_be_libvfn_ctrlr_term(void *handle)
 {
-	struct xnvme_be_vfio_ctrlr *ctrlr = handle;
+	struct xnvme_be_libvfn_ctrlr *ctrlr = handle;
 
 	if (ctrlr->sq_sync) {
 		nvme_delete_ioqpair(ctrlr->ctrl, ctrlr->sq_sync->id);
@@ -152,7 +152,7 @@ xnvme_be_vfio_ctrlr_term(void *handle)
 }
 
 int
-xnvme_be_vfio_dev_open(struct xnvme_dev *dev)
+xnvme_be_libvfn_dev_open(struct xnvme_dev *dev)
 {
 	dev->ident.dtype =
 		dev->opts.nsid ? XNVME_DEV_TYPE_NVME_NAMESPACE : XNVME_DEV_TYPE_NVME_CONTROLLER;
@@ -163,20 +163,20 @@ xnvme_be_vfio_dev_open(struct xnvme_dev *dev)
 }
 
 void
-xnvme_be_vfio_dev_close(struct xnvme_dev *dev)
+xnvme_be_libvfn_dev_close(struct xnvme_dev *dev)
 {
 	(void)dev;
 }
 
 #endif
 
-struct xnvme_be_dev g_xnvme_be_vfio_dev = {
-#ifdef XNVME_BE_VFIO_ENABLED
-	.dev_open = xnvme_be_vfio_dev_open,
-	.dev_close = xnvme_be_vfio_dev_close,
+struct xnvme_be_dev g_xnvme_be_libvfn_dev = {
+#ifdef XNVME_BE_LIBVFN_ENABLED
+	.dev_open = xnvme_be_libvfn_dev_open,
+	.dev_close = xnvme_be_libvfn_dev_close,
 	.id = "libvfn",
-	.ctrlr_init = xnvme_be_vfio_ctrlr_init,
-	.ctrlr_term = xnvme_be_vfio_ctrlr_term,
+	.ctrlr_init = xnvme_be_libvfn_ctrlr_init,
+	.ctrlr_term = xnvme_be_libvfn_ctrlr_term,
 #else
 	.dev_open = xnvme_be_nosys_dev_open,
 	.dev_close = xnvme_be_nosys_dev_close,
