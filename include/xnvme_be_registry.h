@@ -67,13 +67,13 @@ extern const struct xnvme_be_config g_xnvme_be_linux_aio_file;
 
 /* FreeBSD */
 #ifdef XNVME_PLATFORM_FREEBSD_ENABLED
-extern const struct xnvme_be_config g_xnvme_be_fbsd_kqueue_nvme;
-extern const struct xnvme_be_config g_xnvme_be_fbsd_emu_file;
-extern const struct xnvme_be_config g_xnvme_be_fbsd_kqueue_psync;
-extern const struct xnvme_be_config g_xnvme_be_fbsd_posix_nvme;
-extern const struct xnvme_be_config g_xnvme_be_fbsd_thrpool_nvme;
-extern const struct xnvme_be_config g_xnvme_be_fbsd_emu_nvme;
-extern const struct xnvme_be_config g_xnvme_be_fbsd_nil_nvme;
+extern const struct xnvme_be_config g_xnvme_be_freebsd_kqueue_nvme;
+extern const struct xnvme_be_config g_xnvme_be_freebsd_emu_file;
+extern const struct xnvme_be_config g_xnvme_be_freebsd_kqueue_psync;
+extern const struct xnvme_be_config g_xnvme_be_freebsd_posix_nvme;
+extern const struct xnvme_be_config g_xnvme_be_freebsd_thrpool_nvme;
+extern const struct xnvme_be_config g_xnvme_be_freebsd_emu_nvme;
+extern const struct xnvme_be_config g_xnvme_be_freebsd_nil_nvme;
 #endif
 
 /* macOS */

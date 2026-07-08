@@ -1,0 +1,37 @@
+// SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
+#ifndef __INTERNAL_XNVME_BE_FREEBSD_H
+#define __INTERNAL_XNVME_BE_FREEBSD_H
+
+#define XNVME_BE_FREEBSD_CTRLR_PREFIX "nvme"
+#define XNVME_BE_FREEBSD_NS_PREFIX    "ns"
+
+/**
+ * Internal representation of XNVME_BE_FREEBSD state
+ *
+ * NOTE: When changing this struct, ensure compatibility with 'struct xnvme_be_cbi_state'
+ */
+struct xnvme_be_freebsd_state {
+	struct {
+		int ns;
+		int ctrlr;
+	} fd;
+
+	uint8_t poll_io;
+
+	uint8_t _rsvd[119];
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_freebsd_state) == XNVME_BE_STATE_NBYTES,
+		    "Incorrect size")
+
+int
+xnvme_be_freebsd_nvme_get_nsid_and_ctrlr_fd(int fd, uint32_t *nsid, int *ctrlr_fd);
+
+extern struct xnvme_be_admin g_xnvme_be_freebsd_admin_nvme;
+extern struct xnvme_be_sync g_xnvme_be_freebsd_sync_nvme;
+extern struct xnvme_be_dev g_xnvme_be_freebsd_dev;
+extern struct xnvme_be_async g_xnvme_be_freebsd_async;
+
+#endif /* __INTERNAL_XNVME_BE_FREEBSD */

@@ -11,10 +11,10 @@
 #include <unistd.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_cbi.h>
-#include <xnvme_be_fbsd.h>
+#include <xnvme_be_freebsd.h>
 
 void
-xnvme_be_fbsd_state_term(struct xnvme_be_fbsd_state *state)
+xnvme_be_freebsd_state_term(struct xnvme_be_freebsd_state *state)
 {
 	if (!state) {
 		return;
@@ -29,18 +29,18 @@ xnvme_be_fbsd_state_term(struct xnvme_be_fbsd_state *state)
 }
 
 void
-xnvme_be_fbsd_dev_close(struct xnvme_dev *dev)
+xnvme_be_freebsd_dev_close(struct xnvme_dev *dev)
 {
 	if (!dev) {
 		return;
 	}
 
-	xnvme_be_fbsd_state_term((void *)dev->be.state);
+	xnvme_be_freebsd_state_term((void *)dev->be.state);
 	memset(&dev->be, 0, sizeof(dev->be));
 }
 
 int
-xnvme_file_opts_to_fbsd(struct xnvme_opts *opts)
+xnvme_file_opts_to_freebsd(struct xnvme_opts *opts)
 {
 	int flags = 0;
 
@@ -55,12 +55,12 @@ xnvme_file_opts_to_fbsd(struct xnvme_opts *opts)
 }
 
 int
-xnvme_be_fbsd_dev_open(struct xnvme_dev *dev)
+xnvme_be_freebsd_dev_open(struct xnvme_dev *dev)
 {
-	struct xnvme_be_fbsd_state *state = (void *)dev->be.state;
+	struct xnvme_be_freebsd_state *state = (void *)dev->be.state;
 	const struct xnvme_ident *ident = &dev->ident;
 	struct xnvme_opts *opts = &dev->opts;
-	int flags = xnvme_file_opts_to_fbsd(opts);
+	int flags = xnvme_file_opts_to_freebsd(opts);
 	struct stat dev_stat = {0};
 	int err;
 
@@ -102,8 +102,8 @@ xnvme_be_fbsd_dev_open(struct xnvme_dev *dev)
 	case S_IFCHR:
 		XNVME_DEBUG("INFO: open() : char-device-file assuming NVMe ctrlr. or ns.");
 
-		if (xnvme_be_fbsd_nvme_get_nsid_and_ctrlr_fd(state->fd.ns, &dev->ident.nsid,
-							     &state->fd.ctrlr)) {
+		if (xnvme_be_freebsd_nvme_get_nsid_and_ctrlr_fd(state->fd.ns, &dev->ident.nsid,
+								&state->fd.ctrlr)) {
 			XNVME_DEBUG("INFO: open() : assuming it is an NVMe controller");
 			dev->ident.dtype = XNVME_DEV_TYPE_NVME_CONTROLLER;
 			dev->ident.csi = XNVME_SPEC_CSI_NVM;
@@ -130,10 +130,10 @@ xnvme_be_fbsd_dev_open(struct xnvme_dev *dev)
 }
 #endif
 
-struct xnvme_be_dev g_xnvme_be_fbsd_dev = {
+struct xnvme_be_dev g_xnvme_be_freebsd_dev = {
 #ifdef XNVME_PLATFORM_FREEBSD_ENABLED
-	.dev_open = xnvme_be_fbsd_dev_open,
-	.dev_close = xnvme_be_fbsd_dev_close,
+	.dev_open = xnvme_be_freebsd_dev_open,
+	.dev_close = xnvme_be_freebsd_dev_close,
 	.id = "freebsd",
 #else
 	.dev_open = xnvme_be_nosys_dev_open,

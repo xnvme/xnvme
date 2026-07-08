@@ -584,7 +584,7 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.opt = XNVME_CLI_OPT_BE,
 		.vtype = XNVME_CLI_OPT_VTYPE_STR,
 		.name = "be",
-		.descr = "xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'macos', "
+		.descr = "xNVMe backend, e.g. 'linux', 'spdk', 'freebsd', 'macos', "
 			 "'posix', 'windows'",
 	},
 	{
