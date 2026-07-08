@@ -16,7 +16,7 @@
 #include <aio.h>
 #include <sys/event.h>
 #include <xnvme_queue.h>
-#include <xnvme_be_fbsd.h>
+#include <xnvme_be_freebsd.h>
 #include <xnvme_dev.h>
 
 struct xnvme_queue_kqueue {
@@ -43,7 +43,7 @@ struct kqueue_request {
 };
 
 int
-xnvme_be_fbsd_kqueue_term(struct xnvme_queue *q)
+xnvme_be_freebsd_kqueue_term(struct xnvme_queue *q)
 {
 	struct xnvme_queue_kqueue *queue = (void *)q;
 
@@ -60,10 +60,10 @@ xnvme_be_fbsd_kqueue_term(struct xnvme_queue *q)
 }
 
 int
-xnvme_be_fbsd_kqueue_init(struct xnvme_queue *q, int opts)
+xnvme_be_freebsd_kqueue_init(struct xnvme_queue *q, int opts)
 {
 	struct xnvme_queue_kqueue *queue = (void *)q;
-	struct xnvme_be_fbsd_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_freebsd_state *state = (void *)queue->base.dev->be.state;
 	size_t queue_nbytes = queue->base.capacity * sizeof(struct kqueue_request);
 
 	queue->poll_io = (opts & XNVME_QUEUE_IOPOLL) || state->poll_io;
@@ -91,7 +91,7 @@ xnvme_be_fbsd_kqueue_init(struct xnvme_queue *q, int opts)
 }
 
 int
-xnvme_be_fbsd_kqueue_poke(struct xnvme_queue *q, uint32_t max)
+xnvme_be_freebsd_kqueue_poke(struct xnvme_queue *q, uint32_t max)
 {
 	struct xnvme_queue_kqueue *queue = (void *)q;
 	struct timespec timeout = {.tv_sec = 0, .tv_nsec = queue->poll_io ? 0 : 100000};
@@ -159,11 +159,11 @@ xnvme_be_fbsd_kqueue_poke(struct xnvme_queue *q, uint32_t max)
 }
 
 int
-xnvme_be_fbsd_kqueue_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
-			    size_t mbuf_nbytes)
+xnvme_be_freebsd_kqueue_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
+			       void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_queue_kqueue *queue = (void *)ctx->async.queue;
-	struct xnvme_be_fbsd_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_freebsd_state *state = (void *)queue->base.dev->be.state;
 	const uint64_t ssw = queue->base.dev->geo.ssw;
 	struct kqueue_request *req;
 	struct aiocb *aiocb;
@@ -233,11 +233,11 @@ xnvme_be_fbsd_kqueue_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 }
 
 int
-xnvme_be_fbsd_kqueue_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-			     size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
+xnvme_be_freebsd_kqueue_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+				size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_queue_kqueue *queue = (void *)ctx->async.queue;
-	struct xnvme_be_fbsd_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_freebsd_state *state = (void *)queue->base.dev->be.state;
 	const uint64_t ssw = queue->base.dev->geo.ssw;
 	struct kqueue_request *req;
 	struct aiocb *aiocb;
@@ -312,15 +312,15 @@ xnvme_be_fbsd_kqueue_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size
 }
 #endif
 
-struct xnvme_be_async g_xnvme_be_fbsd_async = {
+struct xnvme_be_async g_xnvme_be_freebsd_async = {
 	.id = "kqueue",
 #ifdef XNVME_PLATFORM_FREEBSD_ENABLED
-	.cmd_io = xnvme_be_fbsd_kqueue_cmd_io,
-	.cmd_iov = xnvme_be_fbsd_kqueue_cmd_iov,
-	.poke = xnvme_be_fbsd_kqueue_poke,
+	.cmd_io = xnvme_be_freebsd_kqueue_cmd_io,
+	.cmd_iov = xnvme_be_freebsd_kqueue_cmd_iov,
+	.poke = xnvme_be_freebsd_kqueue_poke,
 	.wait = xnvme_be_nosys_queue_wait,
-	.init = xnvme_be_fbsd_kqueue_init,
-	.term = xnvme_be_fbsd_kqueue_term,
+	.init = xnvme_be_freebsd_kqueue_init,
+	.term = xnvme_be_freebsd_kqueue_term,
 	.get_completion_fd = xnvme_be_nosys_queue_get_completion_fd,
 #else
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,

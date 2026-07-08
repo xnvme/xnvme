@@ -17,14 +17,14 @@ __FBSDID("$FreeBSD$");
 #include <dev/nvme/nvme.h>
 #include <errno.h>
 #include <xnvme_dev.h>
-#include <xnvme_be_fbsd.h>
+#include <xnvme_be_freebsd.h>
 
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd) == sizeof(struct nvme_command), "Incorrect size")
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cpl) == sizeof(struct nvme_completion),
 		    "Incorrect size")
 
 int
-xnvme_be_fbsd_nvme_get_nsid_and_ctrlr_fd(int fd, uint32_t *nsid, int *ctrlr_fd)
+xnvme_be_freebsd_nvme_get_nsid_and_ctrlr_fd(int fd, uint32_t *nsid, int *ctrlr_fd)
 {
 	struct nvme_get_nsid get_nsid = {0};
 	char ctrlr_path[1024] = {0};
@@ -51,10 +51,10 @@ xnvme_be_fbsd_nvme_get_nsid_and_ctrlr_fd(int fd, uint32_t *nsid, int *ctrlr_fd)
 }
 
 int
-xnvme_be_fbsd_nvme_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
-		      size_t mbuf_nbytes)
+xnvme_be_freebsd_nvme_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			 size_t mbuf_nbytes)
 {
-	struct xnvme_be_fbsd_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_freebsd_state *state = (void *)ctx->dev->be.state;
 	struct nvme_pt_command ptc = {0};
 	int err;
 
@@ -92,10 +92,10 @@ xnvme_be_fbsd_nvme_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 }
 
 int
-xnvme_be_fbsd_nvme_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
-			 void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
+xnvme_be_freebsd_nvme_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
+			    void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
-	struct xnvme_be_fbsd_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_freebsd_state *state = (void *)ctx->dev->be.state;
 	struct nvme_pt_command ptc = {0};
 	int err;
 
@@ -116,10 +116,10 @@ xnvme_be_fbsd_nvme_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyt
 
 #endif
 
-struct xnvme_be_sync g_xnvme_be_fbsd_sync_nvme = {
+struct xnvme_be_sync g_xnvme_be_freebsd_sync_nvme = {
 	.id = "nvme",
 #ifdef XNVME_PLATFORM_FREEBSD_ENABLED
-	.cmd_io = xnvme_be_fbsd_nvme_io,
+	.cmd_io = xnvme_be_freebsd_nvme_io,
 	.cmd_iov = xnvme_be_nosys_sync_cmd_iov,
 #else
 	.cmd_io = xnvme_be_nosys_sync_cmd_io,
@@ -127,10 +127,10 @@ struct xnvme_be_sync g_xnvme_be_fbsd_sync_nvme = {
 #endif
 };
 
-struct xnvme_be_admin g_xnvme_be_fbsd_admin_nvme = {
+struct xnvme_be_admin g_xnvme_be_freebsd_admin_nvme = {
 	.id = "nvme",
 #ifdef XNVME_PLATFORM_FREEBSD_ENABLED
-	.cmd_admin = xnvme_be_fbsd_nvme_admin,
+	.cmd_admin = xnvme_be_freebsd_nvme_admin,
 	.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo,
 #else
 	.cmd_admin = xnvme_be_nosys_sync_cmd_admin,

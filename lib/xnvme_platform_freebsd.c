@@ -21,7 +21,7 @@
 #include <xnvme_dev.h>
 
 static uint32_t
-xnvme_platform_fbsd_classify(const char *uri)
+xnvme_platform_freebsd_classify(const char *uri)
 {
 	struct stat st;
 
@@ -68,7 +68,7 @@ xnvme_platform_fbsd_classify(const char *uri)
 	return XNVME_BE_CAP_FILE;
 }
 
-struct xnvme_fbsd_scan_args {
+struct xnvme_freebsd_scan_args {
 	xnvme_scan_cb cb_func;
 	void *cb_args;
 	int stopped;
@@ -84,7 +84,8 @@ struct xnvme_fbsd_scan_args {
  * @return Non-zero if the callback requested a stop, 0 otherwise
  */
 static int
-_scan_fbsd_report_ctrlr(struct xnvme_fbsd_scan_args *args, const char *bdf, const char *driver)
+_scan_freebsd_report_ctrlr(struct xnvme_freebsd_scan_args *args, const char *bdf,
+			   const char *driver)
 {
 	struct xnvme_ident ident = {.dtype = XNVME_DEV_TYPE_NVME_CONTROLLER};
 
@@ -110,8 +111,8 @@ _scan_fbsd_report_ctrlr(struct xnvme_fbsd_scan_args *args, const char *bdf, cons
  * @return Non-zero if the callback requested a stop, 0 otherwise
  */
 static int
-_scan_fbsd_report_ns(struct xnvme_fbsd_scan_args *args, const char *uri, const char *driver,
-		     uint32_t nsid)
+_scan_freebsd_report_ns(struct xnvme_freebsd_scan_args *args, const char *uri, const char *driver,
+			uint32_t nsid)
 {
 	struct xnvme_ident ident = {.dtype = XNVME_DEV_TYPE_NVME_NAMESPACE, .nsid = nsid};
 
@@ -137,7 +138,7 @@ _scan_fbsd_report_ns(struct xnvme_fbsd_scan_args *args, const char *uri, const c
  * @return Non-zero if the callback requested a stop, 0 otherwise
  */
 static int
-_scan_fbsd_report_namespaces(struct xnvme_fbsd_scan_args *args, int unit, const char *driver)
+_scan_freebsd_report_namespaces(struct xnvme_freebsd_scan_args *args, int unit, const char *driver)
 {
 	char nvme_dir[PATH_MAX] = {0};
 	struct dirent *entry;
@@ -164,7 +165,7 @@ _scan_fbsd_report_namespaces(struct xnvme_fbsd_scan_args *args, int unit, const 
 		}
 
 		snprintf(uri, sizeof(uri), "/dev/%s", entry->d_name);
-		if (_scan_fbsd_report_ns(args, uri, driver, nsid)) {
+		if (_scan_freebsd_report_ns(args, uri, driver, nsid)) {
 			closedir(dir);
 			return 1;
 		}
@@ -175,10 +176,10 @@ _scan_fbsd_report_namespaces(struct xnvme_fbsd_scan_args *args, int unit, const 
 }
 
 static int
-xnvme_platform_fbsd_scan(const char *sys_uri, struct xnvme_opts *XNVME_UNUSED(opts),
-			 xnvme_scan_cb cb_func, void *cb_args)
+xnvme_platform_freebsd_scan(const char *sys_uri, struct xnvme_opts *XNVME_UNUSED(opts),
+			    xnvme_scan_cb cb_func, void *cb_args)
 {
-	struct xnvme_fbsd_scan_args args = {0};
+	struct xnvme_freebsd_scan_args args = {0};
 	struct pci_conf_io pc = {0};
 	struct pci_conf conf[32];
 	int pci_fd;
@@ -238,13 +239,13 @@ xnvme_platform_fbsd_scan(const char *sys_uri, struct xnvme_opts *XNVME_UNUSED(op
 			snprintf(bdf, sizeof(bdf), "%04x:%02x:%02x.%x", p->pc_sel.pc_domain,
 				 p->pc_sel.pc_bus, p->pc_sel.pc_dev, p->pc_sel.pc_func);
 
-			if (_scan_fbsd_report_ctrlr(&args, bdf, driver)) {
+			if (_scan_freebsd_report_ctrlr(&args, bdf, driver)) {
 				goto out;
 			}
 
 			// When bound to the kernel "nvme" driver, discover namespaces
 			if (!strcmp(driver, "nvme")) {
-				if (_scan_fbsd_report_namespaces(&args, p->pd_unit, driver)) {
+				if (_scan_freebsd_report_namespaces(&args, p->pd_unit, driver)) {
 					goto out;
 				}
 			}
@@ -258,19 +259,19 @@ out:
 
 struct xnvme_platform g_xnvme_platform_freebsd = {
 	.name = "freebsd",
-	.classify = xnvme_platform_fbsd_classify,
+	.classify = xnvme_platform_freebsd_classify,
 	.backends =
 		(const struct xnvme_be_config *const[]){
 #ifdef XNVME_BE_SPDK_ENABLED
 			&g_xnvme_be_spdk,
 #endif
-			&g_xnvme_be_fbsd_kqueue_nvme,
-			&g_xnvme_be_fbsd_emu_file,
-			&g_xnvme_be_fbsd_kqueue_psync,
-			&g_xnvme_be_fbsd_posix_nvme,
-			&g_xnvme_be_fbsd_thrpool_nvme,
-			&g_xnvme_be_fbsd_emu_nvme,
-			&g_xnvme_be_fbsd_nil_nvme,
+			&g_xnvme_be_freebsd_kqueue_nvme,
+			&g_xnvme_be_freebsd_emu_file,
+			&g_xnvme_be_freebsd_kqueue_psync,
+			&g_xnvme_be_freebsd_posix_nvme,
+			&g_xnvme_be_freebsd_thrpool_nvme,
+			&g_xnvme_be_freebsd_emu_nvme,
+			&g_xnvme_be_freebsd_nil_nvme,
 #ifdef XNVME_BE_RAMDISK_ENABLED
 			&g_xnvme_be_ramdisk_nil,
 			&g_xnvme_be_ramdisk_thrpool,
@@ -279,7 +280,7 @@ struct xnvme_platform g_xnvme_platform_freebsd = {
 			NULL,
 		},
 	.dev_open = xnvme_platform_dev_open,
-	.scan = xnvme_platform_fbsd_scan,
+	.scan = xnvme_platform_freebsd_scan,
 	.enumerate = xnvme_platform_enumerate,
 };
 #endif
