@@ -172,22 +172,21 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 	if (err) {
 		XNVME_DEBUG("FAILED: _pci_enable_bus_master(%s)", dev->ident.uri);
 		errno = -err;
-		return NULL;
+		goto failed;
 	}
 
 	ctrlr = calloc(1, sizeof(*ctrlr));
 	if (!ctrlr) {
 		XNVME_DEBUG("FAILED: calloc(ctrlr)");
 		errno = ENOMEM;
-		return NULL;
+		goto failed;
 	}
 
 	ctrlr->ctrl = calloc(1, sizeof(*ctrlr->ctrl));
 	if (!ctrlr->ctrl) {
 		XNVME_DEBUG("FAILED: calloc(ctrl)");
 		errno = ENOMEM;
-		free(ctrlr);
-		return NULL;
+		goto failed;
 	}
 
 	err = xnvme_be_upcie_get_driver_name(dev->ident.uri, driver_name, sizeof(driver_name));
@@ -195,9 +194,7 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 		XNVME_DEBUG("FAILED: xnvme_be_upcie_get_driver_name(%s); err(%d)", dev->ident.uri,
 			    err);
 		errno = -err;
-		free(ctrlr->ctrl);
-		free(ctrlr);
-		return NULL;
+		goto failed;
 	}
 	snprintf(dev->ident.kernel_driver, sizeof(dev->ident.kernel_driver), "%s", driver_name);
 
@@ -218,9 +215,7 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 								: "nvme_controller_open",
 			    dev->ident.uri);
 		errno = -err;
-		free(ctrlr->ctrl);
-		free(ctrlr);
-		return NULL;
+		goto failed;
 	}
 
 	err = nvme_controller_create_io_qpair(ctrlr->ctrl, &ctrlr->sync, 16);
@@ -232,14 +227,24 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 		} else {
 			nvme_controller_close(ctrlr->ctrl);
 		}
-		free(ctrlr->ctrl);
-		free(ctrlr);
-		return NULL;
+		goto failed;
 	}
 
 	g_ctrlr_count++;
 
 	return ctrlr;
+
+failed:
+	if (ctrlr) {
+		free(ctrlr->ctrl);
+		free(ctrlr);
+	}
+
+	if (g_ctrlr_count == 0) {
+		_rte_term();
+	}
+
+	return NULL;
 }
 
 int
