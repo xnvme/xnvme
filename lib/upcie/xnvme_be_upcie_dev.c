@@ -7,7 +7,8 @@
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_UPCIE_ENABLED
 #include <limits.h>
-#include <stdatomic.h>
+#include <sys/file.h>
+#include <sys/stat.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_upcie.h>
 
@@ -51,6 +52,10 @@ _rte_term(void)
 		return;
 	}
 
+	if (g_upcie_rte.mproc) {
+		xnvme_be_upcie_mproc_rte_term();
+	}
+
 	hostmem_heap_term(&g_upcie_rte.heap);
 
 	g_upcie_rte.is_initialized = 0;
@@ -63,8 +68,9 @@ _rte_term(void)
  * already initialized, then it exits early.
  */
 static int
-_rte_init(size_t heap_size)
+_rte_init(struct xnvme_opts *opts)
 {
+	size_t heap_size = opts->host_heap_size;
 	int err;
 
 	if (g_upcie_rte.is_initialized) {
@@ -81,7 +87,14 @@ _rte_init(size_t heap_size)
 		return err;
 	}
 
-	// hostmem_heap_init() requires a size that is a whole number of hugepages
+	if (opts->shm_id) {
+		err = xnvme_be_upcie_mproc_rte_init(opts->shm_id);
+		if (err) {
+			XNVME_DEBUG("FAILED: xnvme_be_upcie_mproc_rte_init(); err(%d)", err);
+			return err;
+		}
+	}
+
 	heap_size = ((heap_size + g_upcie_rte.config.hugepgsz - 1) / g_upcie_rte.config.hugepgsz) *
 		    g_upcie_rte.config.hugepgsz;
 
@@ -89,6 +102,46 @@ _rte_init(size_t heap_size)
 	if (err) {
 		XNVME_DEBUG("FAILED: hostmem_heap_init(); err(%d)", err);
 		return err;
+	}
+
+	if (g_upcie_rte.mproc) {
+		if (g_upcie_rte.mproc->is_primary) {
+			/* Store hugepage path in shm for secondaries to use for import */
+			struct xnvme_be_upcie_mproc_shm *shm = g_upcie_rte.mproc->shm;
+			char *path = g_upcie_rte.heap.memory.path;
+
+			snprintf(shm->hugepage_path, sizeof(shm->hugepage_path), "%s", path);
+
+			shm->hugepage_base = (uint64_t)g_upcie_rte.heap.memory.virt;
+			atomic_store_explicit(&shm->is_initialized, true, memory_order_release);
+		} else {
+			struct xnvme_be_upcie_mproc_shm *shm = g_upcie_rte.mproc->shm;
+
+			// Wait 1 second for primary to copy hugepage info to shared memory
+			for (int i = 0; i < 1000; i++) {
+				if (atomic_load_explicit(&shm->is_initialized,
+							 memory_order_acquire)) {
+					break;
+				}
+				usleep(1000);
+			}
+
+			if (!atomic_load_explicit(&shm->is_initialized, memory_order_acquire)) {
+				XNVME_DEBUG("FAILED: Timed out while waiting for primary process "
+					    "hugepage "
+					    "information");
+				return -ENOENT;
+			}
+
+			err = xnvme_be_upcie_mproc_import_admin_hugepage();
+			if (err) {
+				XNVME_DEBUG(
+					"FAILED: xnvme_be_upcie_mproc_import_admin_hugepage(); "
+					"err(%d)",
+					err);
+				return err;
+			}
+		}
 	}
 
 	g_upcie_rte.is_initialized = 1;
@@ -147,56 +200,34 @@ _pci_enable_bus_master(const char *bdf)
 	return 0;
 }
 
-/**
- * Initialize the uPCIe controller.
- *
- * Initializes the runtime environment, allocates a shared xnvme_be_upcie_ctrlr,
- * opens the NVMe controller and creates a sync qpair. The returned handle is
- * stored in cref and written to dev->be.state[0] by the platform.
- */
-void *
-xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
+static int
+_initialize_ctrlr(struct xnvme_dev *dev, struct xnvme_be_upcie_ctrlr *ctrlr)
 {
-	struct xnvme_be_upcie_ctrlr *ctrlr;
 	char driver_name[sizeof(dev->ident.kernel_driver)] = {0};
 	int err;
-
-	err = _rte_init(dev->opts.host_heap_size);
-	if (err) {
-		XNVME_DEBUG("FAILED: _rte_init()");
-		errno = -err;
-		return NULL;
-	}
-
-	err = _pci_enable_bus_master(dev->ident.uri);
-	if (err) {
-		XNVME_DEBUG("FAILED: _pci_enable_bus_master(%s)", dev->ident.uri);
-		errno = -err;
-		goto failed;
-	}
-
-	ctrlr = calloc(1, sizeof(*ctrlr));
-	if (!ctrlr) {
-		XNVME_DEBUG("FAILED: calloc(ctrlr)");
-		errno = ENOMEM;
-		goto failed;
-	}
-
-	ctrlr->ctrl = calloc(1, sizeof(*ctrlr->ctrl));
-	if (!ctrlr->ctrl) {
-		XNVME_DEBUG("FAILED: calloc(ctrl)");
-		errno = ENOMEM;
-		goto failed;
-	}
 
 	err = xnvme_be_upcie_get_driver_name(dev->ident.uri, driver_name, sizeof(driver_name));
 	if (err) {
 		XNVME_DEBUG("FAILED: xnvme_be_upcie_get_driver_name(%s); err(%d)", dev->ident.uri,
 			    err);
-		errno = -err;
-		goto failed;
+		return err;
 	}
 	snprintf(dev->ident.kernel_driver, sizeof(dev->ident.kernel_driver), "%s", driver_name);
+
+	if (g_upcie_rte.mproc) {
+		// ctrlr->ctrl stored in shared memory, so no calloc()
+		err = xnvme_be_upcie_mproc_ctrlr_shm_init(dev, ctrlr, driver_name);
+		if (err) {
+			XNVME_DEBUG("FAILED: xnvme_be_upcie_mproc_ctrlr_shm_init(); err(%d)", err);
+			return err;
+		}
+	} else {
+		ctrlr->ctrl = calloc(1, sizeof(*ctrlr->ctrl));
+		if (!ctrlr->ctrl) {
+			XNVME_DEBUG("FAILED: calloc(ctrl)");
+			return -ENOMEM;
+		}
+	}
 
 	if (!strcmp(driver_name, "vfio-pci")) {
 		ctrlr->backend = NVME_BACKEND_VFIO;
@@ -214,19 +245,97 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 			    ctrlr->backend == NVME_BACKEND_VFIO ? "nvme_controller_open_vfio"
 								: "nvme_controller_open",
 			    dev->ident.uri);
+		goto failed;
+	}
+
+	err = xnvme_be_upcie_ctrlr_mutex_lock(ctrlr);
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_be_upcie_ctrlr_mutex_lock(); err(%d)", err);
+		goto failed_close_ctrlr;
+	}
+
+	err = nvme_controller_create_io_qpair(ctrlr->ctrl, &ctrlr->sync, 16);
+
+	xnvme_be_upcie_ctrlr_mutex_unlock(ctrlr);
+
+	if (err) {
+		XNVME_DEBUG("FAILED: nvme_controller_create_io_qpair(%d)", err);
+		goto failed_close_ctrlr;
+	}
+
+	if (ctrlr->shm) {
+		// Publish the fully-opened controller so secondaries may attach.
+		atomic_store_explicit(&ctrlr->shm->is_initialized, true, memory_order_release);
+	}
+
+	return 0;
+
+failed_close_ctrlr:
+	if (ctrlr->backend == NVME_BACKEND_VFIO) {
+		nvme_controller_close_vfio(ctrlr->ctrl, &ctrlr->vfio);
+	} else {
+		nvme_controller_close(ctrlr->ctrl);
+	}
+
+failed:
+	if (g_upcie_rte.mproc) {
+		xnvme_be_upcie_mproc_ctrlr_shm_term(ctrlr);
+	} else {
+		free(ctrlr->ctrl);
+	}
+
+	return err;
+}
+
+/**
+ * Initialize the uPCIe controller.
+ *
+ * Initializes the runtime environment, allocates a shared xnvme_be_upcie_ctrlr,
+ * opens the NVMe controller and creates a sync qpair. The returned handle is
+ * stored in cref and written to dev->be.state[0] by the platform.
+ */
+void *
+xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
+{
+	struct xnvme_be_upcie_ctrlr *ctrlr;
+	bool is_owner; // Is this process the owner of the controller?
+	int err;
+
+	err = _rte_init(&dev->opts);
+	if (err) {
+		XNVME_DEBUG("FAILED: _rte_init()");
+		errno = -err;
+		return NULL;
+	}
+
+	is_owner = !g_upcie_rte.mproc || g_upcie_rte.mproc->is_primary;
+
+	err = _pci_enable_bus_master(dev->ident.uri);
+	if (err) {
+		XNVME_DEBUG("FAILED: _pci_enable_bus_master(%s)", dev->ident.uri);
 		errno = -err;
 		goto failed;
 	}
 
-	err = nvme_controller_create_io_qpair(ctrlr->ctrl, &ctrlr->sync, 16);
+	ctrlr = calloc(1, sizeof(*ctrlr));
+	if (!ctrlr) {
+		XNVME_DEBUG("FAILED: calloc(ctrlr)");
+		errno = ENOMEM;
+		goto failed;
+	}
+
+	if (is_owner) {
+		err = _initialize_ctrlr(dev, ctrlr);
+	} else {
+		err = xnvme_be_upcie_mproc_ctrlr_shm_attach(dev, ctrlr);
+	}
+
 	if (err) {
-		XNVME_DEBUG("FAILED: nvme_controller_create_io_qpair(%d)", err);
+		XNVME_DEBUG("FAILED: %s(); err(%d)",
+			    is_owner ? "_initialize_ctrlr"
+				     : "xnvme_be_upcie_mproc_ctrlr_shm_attach",
+			    err);
 		errno = -err;
-		if (ctrlr->backend == NVME_BACKEND_VFIO) {
-			nvme_controller_close_vfio(ctrlr->ctrl, &ctrlr->vfio);
-		} else {
-			nvme_controller_close(ctrlr->ctrl);
-		}
 		goto failed;
 	}
 
@@ -236,7 +345,6 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 
 failed:
 	if (ctrlr) {
-		free(ctrlr->ctrl);
 		free(ctrlr);
 	}
 
@@ -251,14 +359,47 @@ int
 xnvme_be_upcie_ctrlr_term(void *handle)
 {
 	struct xnvme_be_upcie_ctrlr *ctrlr = handle;
+	bool is_owner =
+		!g_upcie_rte.mproc ||
+		g_upcie_rte.mproc->is_primary; // Is this process the owner of the controller?
 
-	nvme_controller_delete_io_qpair(ctrlr->ctrl, &ctrlr->sync);
+	if (g_upcie_rte.mproc) {
+		if (g_upcie_rte.mproc->is_primary) {
+			int attached = atomic_load(&ctrlr->shm->refcount);
+			if (attached > 1) {
+				XNVME_DEBUG("WARNING: terminating controller with %d secondary "
+					    "process(es) still "
+					    "attached",
+					    attached - 1);
+			}
+		}
 
-	if (ctrlr->backend == NVME_BACKEND_VFIO) {
-		nvme_controller_close_vfio(ctrlr->ctrl, &ctrlr->vfio);
+		xnvme_be_upcie_mproc_create_or_delete_io_qpair(ctrlr, &ctrlr->sync, 0, false);
+
+		// Manually send qpair deletion commands to NVMe controller to not
+		// free DMA memory that the primary process does not own. Is skipped
+		// automatically if not in multi-process mode.
+		xnvme_be_upcie_mproc_free_all_queues(ctrlr);
 	} else {
-		nvme_controller_close(ctrlr->ctrl);
+		nvme_controller_delete_io_qpair(ctrlr->ctrl, &ctrlr->sync);
 	}
+
+	if (is_owner) {
+		if (ctrlr->backend == NVME_BACKEND_VFIO) {
+			nvme_controller_close_vfio(ctrlr->ctrl, &ctrlr->vfio);
+		} else {
+			nvme_controller_close(ctrlr->ctrl);
+		}
+	} else {
+		nvme_request_pool_term_prps(ctrlr->ctrl->aq.rpool, &g_upcie_rte.heap);
+		pci_func_close(&ctrlr->ctrl->func);
+		free(ctrlr->ctrl->aq.rpool);
+	}
+
+	if (g_upcie_rte.mproc) {
+		xnvme_be_upcie_mproc_ctrlr_shm_term(ctrlr);
+	}
+
 	free(ctrlr->ctrl);
 	free(ctrlr);
 

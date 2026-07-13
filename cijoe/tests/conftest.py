@@ -15,10 +15,32 @@
 """
 
 from functools import wraps
+from time import sleep
 
 import pytest
 
 from .xnvme_be_combinations import get_backend_configurations
+
+_shm_id = 0
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--shm_id",
+        type=int,
+        default=0,
+        help="Open devices with the given shm_id (0 = single process mode)",
+    )
+
+
+def pytest_configure(config):
+    global _shm_id
+    try:
+        _shm_id = config.getoption("--shm_id", default=0)
+    except ValueError:
+        _shm_id = 0
+    if _shm_id > 0:
+        XnvmeDriver.IS_KERNEL_ATTACHED = False
 
 
 def get_osname():
@@ -122,6 +144,9 @@ def xnvme_cli_args(device, be_opts):
 
     if be_opts:
         args += [f"--{arg} {val}" for arg, val in be_opts.items() if arg != "label"]
+
+    if _shm_id > 0:
+        args += [f"--shm_id {_shm_id}"]
 
     return " ".join(args)
 
@@ -262,6 +287,14 @@ def device(cijoe, request):
     from within the testcase body itself.
     """
     if request.param:
+        if _shm_id:
+            callspec = getattr(request.node, "callspec", None)
+            be_opts = callspec.params.get("be_opts") if callspec else None
+            if be_opts:
+                if be_opts.get("mproc"):
+                    MprocPrimary.start(cijoe, request.param, be_opts["be"])
+                else:
+                    pytest.skip(f"{be_opts.get('be')} does not support multi-process")
         XnvmeDriver.attach(cijoe, request.param)
 
     return request.param
@@ -299,6 +332,52 @@ def xnvme_parametrize(labels, opts):
         return inner
 
     return decorator
+
+
+class MprocPrimary:
+    """
+    Manages the lifecycle of an xnvme_tests_mproc primary daemon.
+
+    Tracks which backend's primary is currently running (similar to
+    XnvmeDriver.IS_KERNEL_ATTACHED) so tests sorted by backend share a single
+    primary per backend without restarting between tests.
+    """
+
+    RUNNING_BE = None
+    CIJOE = None
+
+    @staticmethod
+    def start(cijoe, device, be):
+        if MprocPrimary.RUNNING_BE == be:
+            return
+        MprocPrimary.stop(cijoe)
+        cijoe.run("xnvme-driver")
+        uri = device["uri"]
+        nsid = device["nsid"]
+        cijoe.run(
+            f"nohup xnvme_tests_mproc primary {uri} --be {be} "
+            f"--dev-nsid {nsid} --shm_id {_shm_id} "
+            f"> /tmp/mproc_{be}.out 2>&1 &"
+        )
+        sleep(2)
+        MprocPrimary.RUNNING_BE = be
+        MprocPrimary.CIJOE = cijoe
+
+    @staticmethod
+    def stop(cijoe):
+        if MprocPrimary.RUNNING_BE is None:
+            return
+        cijoe.run("pkill -f xnvme_tests_mproc || true")
+        sleep(1)
+        MprocPrimary.RUNNING_BE = None
+        MprocPrimary.CIJOE = None
+
+
+@pytest.fixture(scope="session", autouse=True)
+def mproc_teardown():
+    yield
+    if MprocPrimary.CIJOE is not None:
+        MprocPrimary.stop(MprocPrimary.CIJOE)
 
 
 # Sort order for pytest_collection_modifyitems. `be` first because backend

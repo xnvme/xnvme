@@ -5,6 +5,7 @@
 #ifndef __INTERNAL_XNVME_BE_UPCIE_H
 #define __INTERNAL_XNVME_BE_UPCIE_H
 #include <pthread.h>
+#include <stdatomic.h>
 
 #include <xnvme_be.h>
 #include <xnvme_queue.h>
@@ -31,6 +32,14 @@ enum nvme_backend {
 	NVME_BACKEND_VFIO,
 };
 
+struct xnvme_be_upcie_ctrlr_shm {
+	_Atomic int32_t refcount;    ///< Number of processes currently attached
+	_Atomic bool is_initialized; ///< Set by primary once the controller is fully opened
+	pthread_mutex_t aq_mutex;    ///< Process-shared mutex for admin queue access
+	char driver_name[32];
+	struct nvme_controller ctrl; ///< Embedded controller; pointer fields use primary's VA
+};
+
 /**
  * Shared controller state, one per physical controller, managed by cref.
  */
@@ -39,6 +48,13 @@ struct xnvme_be_upcie_ctrlr {
 	struct nvme_qpair sync; ///< Shared submission/completion queue for synchronous IOs
 	struct vfio_ctx vfio;
 	enum nvme_backend backend;
+
+	char lock_name[64];
+	int lock_fd;
+
+	char shm_name[64];
+	int shm_fd;
+	struct xnvme_be_upcie_ctrlr_shm *shm;
 };
 
 /**
@@ -53,11 +69,38 @@ struct xnvme_be_upcie_state {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_upcie_state) == XNVME_BE_STATE_NBYTES, "Incorrect size")
 
 /**
+ * Shared information about hugepages
+ */
+struct xnvme_be_upcie_mproc_shm {
+	char hugepage_path[256]; ///< Path to primary's hugepage file
+	uint64_t hugepage_base;  ///< Primary's hugepage virtual base for secondary pointer fixup
+	_Atomic int refcount;    ///< Number of processes currently attached
+	_Atomic bool is_initialized;
+};
+
+/**
+ * Multi-process state
+ */
+struct xnvme_be_upcie_mproc {
+	bool is_primary; ///< If true, this process is owner of the shared memory
+
+	char lock_name[64];
+	int lock_fd;
+
+	char shm_name[64];
+	int shm_fd;
+	struct xnvme_be_upcie_mproc_shm *shm;
+
+	struct hostmem_hugepage *primary_hugepage; ///< Imported hugepage for admin queue
+};
+
+/**
  * State used across multiple instances of controllers/namespaces
  */
 struct xnvme_be_upcie_rte {
 	struct hostmem_config config;
 	struct hostmem_heap heap;
+	struct xnvme_be_upcie_mproc *mproc; ///< will be NULL if not in multi-process mode
 	int is_initialized;
 };
 
@@ -89,4 +132,33 @@ int
 xnvme_be_upcie_queue_term(struct xnvme_queue *queue);
 int
 xnvme_be_upcie_queue_poke(struct xnvme_queue *queue, uint32_t max);
+
+// Used for multi-process mode
+int
+xnvme_be_upcie_mproc_rte_init(int shm_id);
+void
+xnvme_be_upcie_mproc_rte_term();
+int
+xnvme_be_upcie_mproc_import_admin_hugepage();
+
+int
+xnvme_be_upcie_ctrlr_mutex_lock(struct xnvme_be_upcie_ctrlr *ctrlr);
+void
+xnvme_be_upcie_ctrlr_mutex_unlock(struct xnvme_be_upcie_ctrlr *ctrlr);
+
+int
+xnvme_be_upcie_mproc_ctrlr_shm_init(struct xnvme_dev *dev, struct xnvme_be_upcie_ctrlr *ctrlr,
+				    char *driver_name);
+int
+xnvme_be_upcie_mproc_ctrlr_shm_attach(struct xnvme_dev *dev, struct xnvme_be_upcie_ctrlr *ctrlr);
+void
+xnvme_be_upcie_mproc_ctrlr_shm_term(struct xnvme_be_upcie_ctrlr *ctrlr);
+void
+xnvme_be_upcie_mproc_free_all_queues(struct xnvme_be_upcie_ctrlr *ctrlr);
+
+int
+xnvme_be_upcie_mproc_create_or_delete_io_qpair(struct xnvme_be_upcie_ctrlr *ctrlr,
+					       struct nvme_qpair *qpair, uint16_t depth,
+					       bool create);
+
 #endif /* __INTERNAL_XNVME_BE_UPCIE */

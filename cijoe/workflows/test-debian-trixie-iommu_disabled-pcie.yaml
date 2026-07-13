@@ -28,3 +28,9 @@ steps:
   with:
     args: '-k "(upcie or spdk) and not fabrics" tests'
     random_order: false
+
+- name: test_mproc
+  uses: core.testrunner
+  with:
+    args: '-k "pcie and not test_mem_map_unmap" tests --shm_id 1'
+    random_order: false
