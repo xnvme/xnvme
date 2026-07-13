@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * @headerfile libxnvme_adm.h
+ * @file libxnvme_opts.h
  */
 
 struct xnvme_opts_css {

@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * @headerfile libxnvme_dev.h
+ * @file libxnvme_dev.h
  */
 
 enum xnvme_enumerate_action {

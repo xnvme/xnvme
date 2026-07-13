@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * @headerfile libxnvme_ident.h
+ * @file libxnvme_ident.h
  */
 
 #define XNVME_IDENT_URI_LEN 384

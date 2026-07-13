@@ -4,7 +4,7 @@
  * Copyright (C) Samsung Electronics Co., Ltd
  * All rights reserved.
  *
- * @headerfile libxnvme_pi.h
+ * @file libxnvme_pi.h
  */
 
 #ifndef __INTERNAL_XNVME_PI_H

@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * @headerfile libxnvme_spec_fs.h
+ * @file libxnvme_spec_fs.h
  */
 
 #ifndef __LIBXNVME_SPEC_FS_H

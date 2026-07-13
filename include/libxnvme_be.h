@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * @headerfile libxnvme_be.h
+ * @file libxnvme_be.h
  */
 
 /**
