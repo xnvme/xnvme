@@ -16,7 +16,7 @@ extern "C" {
 #include <libxnvme.h>
 
 /**
- * Submit, and optionally wait for completion of, a NVMe Read
+ * Submit a NVMe Read command
  *
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  * @param nsid Namespace Identifier
@@ -32,7 +32,7 @@ xnvme_nvm_read(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint16_t
 	       void *mbuf);
 
 /**
- * Submit, and optionally wait for completion of, a NVMe Write
+ * Submit a NVMe Write command
  *
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  * @param nsid Namespace Identifier
@@ -48,7 +48,7 @@ xnvme_nvm_write(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint16_
 		const void *dbuf, const void *mbuf);
 
 /**
- * Submit a write uncorrected command
+ * Submit a NVMe Write Uncorrectable command
  *
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  * @param nsid Namespace Identifier
@@ -60,7 +60,7 @@ xnvme_nvm_write_uncorrectable(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t
 			      uint16_t nlb);
 
 /**
- * Submit a write zeroes command
+ * Submit a NVMe Write Zeroes command
  *
  * @see xnvme_cmd_opts
  *
@@ -92,7 +92,7 @@ xnvme_prep_nvm(struct xnvme_cmd_ctx *ctx, uint8_t opcode, uint32_t nsid, uint64_
 	       uint16_t nlb);
 
 /**
- * Submit, and optionally wait for completion of a NVMe Simple-Copy-Command
+ * Submit a NVMe Simple-Copy command
  *
  * @see xnvme_cmd_opts
  *
@@ -112,7 +112,9 @@ xnvme_nvm_scopy(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t sdlba,
 		enum xnvme_nvm_scopy_fmt copy_fmt);
 
 /**
- * Deallocate or hint at read/write usage of a range.
+ * Submit a NVMe Dataset Management command
+ *
+ * Deallocate or hint at read/write usage of the given ranges.
  *
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  * @param nsid Namespace Identifier
@@ -129,7 +131,7 @@ xnvme_nvm_dsm(struct xnvme_cmd_ctx *ctx, uint32_t nsid, struct xnvme_spec_dsm_ra
 	      uint8_t nr, bool ad, bool idw, bool idr);
 
 /**
- * Submit, and wait for completion of a I/O management receive command
+ * Submit a NVMe I/O Management Receive command
  *
  * @see xnvme_cmd_opts
  *
@@ -147,7 +149,7 @@ xnvme_nvm_mgmt_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t mo, uint16
 		    uint32_t dbuf_nbytes);
 
 /**
- * Submit, and wait for completion of a I/O management send command
+ * Submit a NVMe I/O Management Send command
  *
  * @see xnvme_cmd_opts
  *
@@ -165,7 +167,7 @@ xnvme_nvm_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t mo, uint16
 		    uint32_t dbuf_nbytes);
 
 /**
- * Submit, and optionally wait for completion of, a NVMe Compare
+ * Submit a NVMe Compare command
  *
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  * @param nsid Namespace Identifier

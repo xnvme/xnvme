@@ -102,6 +102,12 @@ xnvme_cmd_ctx_cpl_status(struct xnvme_cmd_ctx *ctx)
 /**
  * Pass an NVMe IO Command through to the device via the given ::xnvme_cmd_ctx
  *
+ * The mode of submission is determined by the command context: a context
+ * obtained via xnvme_cmd_ctx_from_dev() submits synchronously and returns once
+ * the command has completed, whereas a context obtained via
+ * xnvme_cmd_ctx_from_queue() submits asynchronously and returns once the command
+ * has been submitted; its completion is then processed via xnvme_queue_poke().
+ *
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  * @param dbuf pointer to data-payload
  * @param dbuf_nbytes size of data-payload in bytes
