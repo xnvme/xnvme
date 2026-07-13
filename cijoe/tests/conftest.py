@@ -207,7 +207,13 @@ class XnvmeDriver(object):
     def kernel_detach(cijoe):
         """Detach from kernel"""
 
-        err, _ = cijoe.run("xnvme-driver")
+        # 64MB contigmem buffers avoid ENOMEM on FreeBSD's fragmented CI heap;
+        # see toolbox/xnvme-driver.sh.
+        cmd = "xnvme-driver"
+        if get_osname() == "freebsd":
+            cmd = "env CONTIGMEM_BUFSZ=64 " + cmd
+
+        err, _ = cijoe.run(cmd)
         if err:
             cijoe.run("dmesg | tail -n20")
 

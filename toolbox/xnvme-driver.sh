@@ -219,6 +219,11 @@ function usage()
 	echo "                  For NUMA systems, the hugepages will be evenly distributed"
 	echo "                  between CPU nodes"
 	echo "NRHUGE            Number of hugepages to allocate. This variable overwrites HUGEMEM."
+	echo "CONTIGMEM_BUFSZ   FreeBSD only. Size of each contigmem buffer (in MB). 256 by default."
+	echo "                  Sets the ceiling for a single physically-contiguous DMA allocation."
+	echo "                  Smaller buffers are more reliable on a fragmented heap; larger ones"
+	echo "                  allow bigger single allocations. HUGEMEM/CONTIGMEM_BUFSZ must not"
+	echo "                  exceed RTE_CONTIGMEM_MAX_NUM_BUFS (64)."
 	echo "HUGENODE          Specific NUMA node to allocate hugepages on. To allocate"
 	echo "                  hugepages on multiple nodes run this script multiple times -"
 	echo "                  once for each node."
@@ -812,16 +817,24 @@ function configure_freebsd_pci {
 
 function configure_freebsd {
 	configure_freebsd_pci
+
+	# Assemble the contigmem pool from CONTIGMEM_BUFSZ-sized buffers. Smaller
+	# buffers are more reliable on a fragmented heap, where contigmalloc(9) can
+	# fail with ENOMEM for large physically-contiguous runs; the pool size
+	# (HUGEMEM) is unchanged. See usage() for CONTIGMEM_BUFSZ.
+	local bufsz_mb=$CONTIGMEM_BUFSZ
+	local num_buffers=$((HUGEMEM / bufsz_mb))
+
 	# If contigmem is already loaded but the HUGEMEM specified doesn't match the
 	#  previous value, unload contigmem so that we can reload with the new value.
 	if kldstat -q -m contigmem; then
-		if [ $(kenv hw.contigmem.num_buffers) -ne "$((HUGEMEM / 256))" ]; then
+		if [ $(kenv hw.contigmem.num_buffers) -ne "$num_buffers" ]; then
 			kldunload contigmem.ko
 		fi
 	fi
 	if ! kldstat -q -m contigmem; then
-		kenv hw.contigmem.num_buffers=$((HUGEMEM / 256))
-		kenv hw.contigmem.buffer_size=$((256 * 1024 * 1024))
+		kenv hw.contigmem.num_buffers=$num_buffers
+		kenv hw.contigmem.buffer_size=$((bufsz_mb * 1024 * 1024))
 		kldload contigmem.ko
 	fi
 }
@@ -838,6 +851,7 @@ if [ -z "$mode" ]; then
 fi
 
 : ${HUGEMEM:=2048}
+: ${CONTIGMEM_BUFSZ:=256}
 : ${PCI_WHITELIST:=""}
 : ${PCI_BLACKLIST:=""}
 
