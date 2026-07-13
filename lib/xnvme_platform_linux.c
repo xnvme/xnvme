@@ -242,13 +242,18 @@ _scan_pci_report_namespaces(struct xnvme_linux_scan_args *args, const char *bdf,
 		char ns_dir[PATH_MAX] = {0};
 		struct dirent *nsent;
 		DIR *nsdir;
-		int ctrlr;
+		int ctrlr, n;
 
 		if (sscanf(entry->d_name, "nvme%d", &ctrlr) != 1) {
 			continue;
 		}
 
-		snprintf(ns_dir, sizeof(ns_dir), "%s/%s", nvme_dir, entry->d_name);
+		n = snprintf(ns_dir, sizeof(ns_dir), "%s/%s", nvme_dir, entry->d_name);
+		if (n < 0 || (size_t)n >= sizeof(ns_dir)) {
+			XNVME_DEBUG("FAILED: snprintf(ns_dir) for '%s'", entry->d_name);
+			continue;
+		}
+
 		nsdir = opendir(ns_dir);
 		if (!nsdir) {
 			XNVME_DEBUG("FAILED: opendir('%s'), errno: %d", ns_dir, errno);
