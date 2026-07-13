@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * @headerfile libxnvme_geo.h
+ * @file libxnvme_geo.h
  */
 
 /**

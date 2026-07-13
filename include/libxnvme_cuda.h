@@ -10,7 +10,7 @@
  *
  * @note This API is experimental and may change without notice.
  *
- * @headerfile libxnvme_cuda.h
+ * @file libxnvme_cuda.h
  */
 
 #ifndef __LIBXNVME_CUDA_H

@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * @headerfile libxnvme_cli.h
+ * @file libxnvme_cli.h
  */
 
 #define XNVME_CLI_CORE_OPTS                                                                 \

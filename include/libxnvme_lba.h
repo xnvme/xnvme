@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * @headerfile libxnvme_lba.h
+ * @file libxnvme_lba.h
  */
 
 struct xnvme_lba_range_attr {

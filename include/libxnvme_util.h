@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * @headerfile libxnvme_util.h
+ * @file libxnvme_util.h
  */
 
 #define XNVME_UNIVERSAL_SECT_SH 9

@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * @headerfile libxnvme_kv.h
+ * @file libxnvme_kvs.h
  */
 
 /**

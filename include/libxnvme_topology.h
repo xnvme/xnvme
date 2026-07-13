@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * @headerfile libxnvme_topology.h
+ * @file libxnvme_topology.h
  */
 
 struct xnvme_subsystem {
