@@ -271,7 +271,7 @@ struct enumerate_scan_ctx {
  * completes.
  */
 static int
-enumerate_controller(const char *uri, struct enumerate_scan_ctx *ctx)
+enumerate_controller(const char *uri, const char *kernel_driver, struct enumerate_scan_ctx *ctx)
 {
 	struct xnvme_opts ctrlr_opts = *ctx->opts;
 	struct xnvme_dev *ctrlr_dev;
@@ -286,6 +286,11 @@ enumerate_controller(const char *uri, struct enumerate_scan_ctx *ctx)
 	if (!ctrlr_dev) {
 		XNVME_DEBUG("FAILED: xnvme_dev_open(%s) for controller", uri);
 		return -errno;
+	}
+
+	if (kernel_driver) {
+		snprintf(ctrlr_dev->ident.kernel_driver, sizeof(ctrlr_dev->ident.kernel_driver),
+			 "%s", kernel_driver);
 	}
 
 	buf_size = sizeof(*idfy_buf);
@@ -329,6 +334,11 @@ enumerate_controller(const char *uri, struct enumerate_scan_ctx *ctx)
 		if (!ns_dev) {
 			XNVME_DEBUG("FAILED: xnvme_dev_open(%s, nsid=%u)", uri, nslist[i]);
 			continue;
+		}
+
+		if (kernel_driver) {
+			snprintf(ns_dev->ident.kernel_driver, sizeof(ns_dev->ident.kernel_driver),
+				 "%s", kernel_driver);
 		}
 
 		if (ctx->cb_func(ns_dev, ctx->cb_args)) {
@@ -375,7 +385,7 @@ enumerate_scan_cb(const struct xnvme_ident *ident, void *cb_args)
 	 */
 	if (ident->dtype == XNVME_DEV_TYPE_NVME_CONTROLLER) {
 		if (!is_kernel_nvme_driver(ident->kernel_driver)) {
-			enumerate_controller(ident->uri, ctx);
+			enumerate_controller(ident->uri, ident->kernel_driver, ctx);
 		}
 		return 0;
 	}
@@ -393,6 +403,9 @@ enumerate_scan_cb(const struct xnvme_ident *ident, void *cb_args)
 			XNVME_DEBUG("FAILED: xnvme_dev_open(%s)", ident->uri);
 			return 0;
 		}
+
+		snprintf(dev->ident.kernel_driver, sizeof(dev->ident.kernel_driver), "%s",
+			 ident->kernel_driver);
 
 		if (ctx->cb_func(dev, ctx->cb_args)) {
 			xnvme_dev_close(dev);
@@ -437,7 +450,7 @@ xnvme_platform_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enu
 		err = g_xnvme_platform->scan(NULL, opts, enumerate_scan_cb, &ctx);
 	} else {
 		/** Fabrics / explicit sys_uri: delegate directly to enumerate_controller */
-		err = enumerate_controller(sys_uri, &ctx);
+		err = enumerate_controller(sys_uri, NULL, &ctx);
 	}
 
 	/** Release the controller pinned open across enumeration, if any */
