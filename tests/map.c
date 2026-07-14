@@ -38,12 +38,20 @@ test_mem_map_unmap(struct xnvme_cli *cli)
 		if (err) {
 			xnvme_cli_perr("xnvme_mem_map()", -errno);
 			nerr += 1;
+			munmap(buf, buf_nbytes);
 			continue;
 		}
 
 		err = xnvme_mem_unmap(cli->args.dev, buf);
 		if (err) {
 			xnvme_cli_perr("xnvme_mem_unmap()", -errno);
+			nerr += 1;
+			munmap(buf, buf_nbytes);
+			continue;
+		}
+
+		if (munmap(buf, buf_nbytes)) {
+			xnvme_cli_perr("munmap()", -errno);
 			nerr += 1;
 			continue;
 		}
