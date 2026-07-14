@@ -45,5 +45,5 @@ steps:
 - name: test_pcie
   uses: core.testrunner
   with:
-    args: '-k "pcie and not upcie and not test_mem_map_unmap" tests'
+    args: '-k "pcie and not upcie" tests'
     random_order: false
