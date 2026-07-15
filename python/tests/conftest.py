@@ -440,13 +440,7 @@ def pytest_collection_modifyitems(config, items):
     boundaries in the run and clustering failures by backend. Tests without
     parametrization sort before the parametrized batches with their
     relative order preserved.
-
-    Linux only. FreeBSD's kqueue async write/verify fails when reordered
-    this way, so leave it at the original collection order.
     """
-    osname = pytest.cijoe_instance.config.options.get("os", {}).get("name", "linux")
-    if osname == "freebsd":
-        return
 
     def key(item):
         callspec = getattr(item, "callspec", None)
