@@ -129,8 +129,7 @@ xnvme_be_freebsd_kqueue_poke(struct xnvme_queue *q, uint32_t max)
 		}
 
 		err = aio_error(&req->aiocb);
-		if (err == 0)
-			res = aio_return(&req->aiocb);
+		res = aio_return(&req->aiocb);
 
 		ctx = req->ctx;
 		ctx->cpl.result = res;
