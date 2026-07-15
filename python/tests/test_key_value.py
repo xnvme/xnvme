@@ -363,13 +363,13 @@ class TestKeyValue:
 
         def unpack_list_data(list_data):
             num_keys = int(
-                list_data[:4].view(np.uint32)
+                list_data[:4].view(np.uint32)[0]
             )  # First 32 bits define the number of keys
             key_data = list_data[4:]  # The initial key data
             read_keys = []
             for _ in range(num_keys):
                 # Extract key length from data
-                kbuf_nbytes = int(key_data[:2].view(np.uint16))
+                kbuf_nbytes = int(key_data[:2].view(np.uint16)[0])
                 assert kbuf_nbytes <= 16, "Invalid key length"
 
                 # Extract key name from data
