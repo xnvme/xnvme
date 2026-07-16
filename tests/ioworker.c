@@ -229,7 +229,9 @@ on_completion(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 		goto error;
 	}
 
-	if (ctx->cmd.nvm.slba + work->io.naddr > work->range.elba) {
+	// Workers interleave, each striding by 'nworkers * io.naddr'; stop this worker when its
+	// next I/O would fall outside the range.
+	if (ctx->cmd.nvm.slba + (work->nworkers + 1) * work->io.naddr > work->range.naddr) {
 		xnvme_queue_put_cmd_ctx(work->queue, ctx);
 		return;
 	}
@@ -238,7 +240,7 @@ on_completion(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 	ctx->cmd.common.nsid = work->nsid;
 	ctx->cmd.common.opcode = work->opc;
 	ctx->cmd.nvm.nlb = work->io.naddr - 1;
-	ctx->cmd.nvm.slba += work->io.naddr;
+	ctx->cmd.nvm.slba += work->nworkers * work->io.naddr;
 
 	_submit(work, worker, ctx);
 
