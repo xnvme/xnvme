@@ -166,7 +166,18 @@ def test_format(cijoe, device, be_opts, cli_args):
     if be_opts["admin"] == "ramdisk":
         pytest.skip(reason="[be=ramdisk] does not implement format")
 
-    err, _ = cijoe.run(f"xnvme format {cli_args}")
+    # Reformat with the current LBA format to avoid changing the block size.
+    err, state = cijoe.run(f"xnvme idfy-ns {cli_args} --nsid {device['nsid']}")
+    assert not err
+
+    lbafl, lbafu = 0, 0
+    for line in state.output().split("\n"):
+        if "format_lsb:" in line:
+            lbafl = int(line.split(":")[1].strip())
+        elif "format_msb:" in line:
+            lbafu = int(line.split(":")[1].strip())
+
+    err, _ = cijoe.run(f"xnvme format {cli_args} --lbafl {lbafl} --lbafu {lbafu}")
     assert not err
 
 
