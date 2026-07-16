@@ -64,6 +64,10 @@ def test_write_uncor(cijoe, device, be_opts, cli_args):
     err, _ = cijoe.run(f"lblk write-uncor {cli_args} --slba 0x0 --nlb 0")
     assert not err
 
+    # Rewrite the LBA to clear the uncorrectable status
+    err, _ = cijoe.run(f"lblk write {cli_args} --slba 0x0 --nlb 0")
+    assert not err
+
 
 @xnvme_parametrize(labels=["write_zeroes"], opts=["be", "admin"])
 def test_write_zeroes(cijoe, device, be_opts, cli_args):
