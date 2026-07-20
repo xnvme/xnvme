@@ -24,7 +24,7 @@
  * The stack implementation has an upper-bound of NVME_REQUEST_POOL_LEN elements.
  *
  * @file nvme_request.h
- * @version 0.5.1
+ * @version 0.5.2
  */
 
 #define NVME_REQUEST_POOL_LEN 1024
@@ -82,6 +82,68 @@ nvme_request_pool_init_prps(struct nvme_request_pool *pool, struct hostmem_heap 
 		pool->reqs[i].prp_addr = hostmem_dma_v2p(heap, pool->reqs[i].prp);
 	}
 
+	return 0;
+}
+
+/**
+ * Release the PRP-list scratch region held by a dmamem-backed request pool.
+ *
+ * The counterpart to nvme_request_pool_init_prps_dmamem. The caller
+ * provides the same heap and the prp_offset returned by init; the pool
+ * struct itself is caller-owned.
+ */
+static inline void
+nvme_request_pool_term_prps_dmamem(struct nvme_request_pool *pool, struct dmamem_heap *heap,
+				   size_t prp_offset)
+{
+	if (!pool || !pool->prps) {
+		return;
+	}
+	dmamem_heap_free(heap, prp_offset);
+	pool->prps = NULL;
+}
+
+/**
+ * Populate a request pool with per-request PRP-list scratch from a dmamem_heap.
+ *
+ * Sibling of nvme_request_pool_init_prps: same layout (one 4 KiB page
+ * per request, addressed through pool->reqs[i].prp / .prp_addr), but the
+ * scratch region is carved from a single contiguous IOAS-mapped block so
+ * translation is arithmetic rather than a per-page phys_lut walk.
+ *
+ * @param pool           Caller-owned request pool (already nvme_request_pool_init'd).
+ * @param heap           dmamem_heap the scratch region is carved from.
+ * @param prp_offset_out Heap offset of the scratch region, for later term.
+ *
+ * @return 0 on success, negative errno on allocation failure.
+ */
+static inline int
+nvme_request_pool_init_prps_dmamem(struct nvme_request_pool *pool, struct dmamem_heap *heap,
+				   size_t *prp_offset_out)
+{
+	const size_t pagesize = 4096;
+	size_t prp_offset = 0;
+	uint8_t *prps_va;
+	uint64_t prps_iova;
+	int err;
+
+	err = dmamem_heap_alloc_aligned(heap, (size_t)NVME_REQUEST_POOL_LEN * pagesize, pagesize,
+					&prp_offset);
+	if (err) {
+		UPCIE_DEBUG("FAILED: dmamem_heap_alloc_aligned(prps); err(%d)", err);
+		return err;
+	}
+
+	prps_va = dmamem_heap_at_va(heap, prp_offset);
+	prps_iova = dmamem_heap_at_iova(heap, prp_offset);
+
+	pool->prps = prps_va;
+	for (uint16_t i = 0; i < NVME_REQUEST_POOL_LEN; ++i) {
+		pool->reqs[i].prp = prps_va + ((size_t)i * pagesize);
+		pool->reqs[i].prp_addr = prps_iova + ((uint64_t)i * pagesize);
+	}
+
+	*prp_offset_out = prp_offset;
 	return 0;
 }
 
@@ -283,6 +345,169 @@ nvme_request_prep_command_prps_iov(struct nvme_request *request, struct hostmem_
 
 		while (remaining > 0) {
 			prp_list[prp_idx++] = hostmem_dma_v2p(heap, base + offset);
+
+			offset += pagesize;
+			remaining = (remaining > pagesize) ? remaining - pagesize : 0;
+		}
+	}
+
+	if (prp_idx == 1) {
+		cmd->prp2 = prp_list[0];
+	} else if (prp_idx > 1) {
+		cmd->prp2 = request->prp_addr;
+	}
+}
+
+/**
+ * Prepare the PRP entries for a command whose contiguous data buffer
+ * lives inside a dmamem_heap.
+ *
+ * Sibling of nvme_request_prep_command_prps_contig for the dmamem
+ * world. Behaviour depends on the underlying dmamem's translator:
+ *
+ *   ARITHMETIC: the heap sits on one contiguous IOAS mapping, so
+ *   every subsequent page is at prp1 + i * pagesize. Single
+ *   dmamem_va_to_iova at the start; the rest is arithmetic.
+ *
+ *   LUT: pages inside a hugepage still stride physically from prp1,
+ *   but crossing a hugepage boundary requires re-translation. Same
+ *   shape as the hostmem_heap variant above: stride within the
+ *   hugepage, dmamem_va_to_iova (via phys_lut) at each boundary.
+ *
+ * The translator dispatch is one predictable compare; a process
+ * runs one translator for its lifetime, so it predicts perfectly
+ * after warmup.
+ *
+ * Caveats
+ * -------
+ *
+ * - dbuf must be allocated from heap.
+ * - dbuf must be dword (4-byte) aligned.
+ * - PRP list chaining is not supported: dbuf may span at most 513
+ *   pages (PRP1 plus a single 512-entry PRP list page).
+ *
+ * @param request      NVMe request context; the PRP list is written
+ *                     into request->prp with iova request->prp_addr.
+ * @param heap         dmamem_heap that dbuf was carved from.
+ * @param dbuf         Virtually contiguous data buffer.
+ * @param dbuf_nbytes  Size of dbuf in bytes.
+ * @param cmd          Command to populate prp1 (and prp2 / PRP list)
+ *                     on.
+ */
+static inline void
+nvme_request_prep_command_prps_contig_dmamem(struct nvme_request *request,
+					     struct dmamem_heap *heap, void *dbuf,
+					     size_t dbuf_nbytes, struct nvme_command *cmd)
+{
+	const uint64_t pagesize = 4096;
+	const int page_shift = 12;
+	struct dmamem *dmem = heap->dmem;
+	const uint64_t page_off = (uintptr_t)dbuf & (pagesize - 1);
+	const uint64_t npages = (page_off + dbuf_nbytes + pagesize - 1) >> page_shift;
+
+	cmd->prp1 = dmamem_va_to_iova(dmem, dbuf);
+
+	/* Chaining is not supported, thus assert that the given dbuf fits. */
+	assert(npages <= 1 + 512);
+
+	if (npages == 1) {
+		return;
+	}
+
+	if (DMAMEM_XLATE_ARITHMETIC == dmem->translator) {
+		const uint64_t page_iova = cmd->prp1 - page_off;
+
+		if (npages == 2) {
+			cmd->prp2 = page_iova + pagesize;
+			return;
+		}
+
+		uint64_t *prp_list = request->prp;
+
+		cmd->prp2 = request->prp_addr;
+		for (uint64_t i = 1; i < npages; ++i) {
+			prp_list[i - 1] = page_iova + (i << page_shift);
+		}
+		return;
+	}
+
+	/* LUT: stride within the hugepage from prp1; re-translate on
+	 * hugepage boundaries. Buffers that fit inside a single hugepage
+	 * (the common case) never cross, so this reduces to the stride
+	 * of a contiguous buffer. */
+	uint8_t *vbase = (uint8_t *)dbuf - page_off;
+	const uint64_t hp_off =
+		(uint64_t)(vbase - (uint8_t *)dmem->cpu_va) & (dmem->hugepgsz - 1);
+	uint64_t strides_left = ((dmem->hugepgsz - hp_off) >> page_shift) - 1;
+	uint64_t page_phys = cmd->prp1 - page_off;
+
+	if (npages == 2) {
+		cmd->prp2 = strides_left ? page_phys + pagesize
+					 : dmamem_va_to_iova(dmem, vbase + pagesize);
+		return;
+	}
+
+	uint64_t *prp_list = request->prp;
+
+	cmd->prp2 = request->prp_addr;
+	for (uint64_t i = 1; i < npages; ++i) {
+		if (strides_left) {
+			page_phys += pagesize;
+			strides_left--;
+		} else {
+			page_phys = dmamem_va_to_iova(dmem, vbase + (i << page_shift));
+			strides_left = (dmem->hugepgsz >> page_shift) - 1;
+		}
+		prp_list[i - 1] = page_phys;
+	}
+}
+
+/**
+ * Prepare the PRP entries for a command with a scatter-gather data
+ * buffer whose iovec elements live inside a dmamem_heap.
+ *
+ * Sibling of nvme_request_prep_command_prps_iov for the dmamem
+ * world. Each iovec base is translated via dmamem_va_to_iova so
+ * both ARITHMETIC and LUT dmamems work.
+ *
+ * Caveats
+ * -------
+ *
+ * - Each iovec base must be page-aligned and allocated from heap.
+ * - PRP list chaining is not supported; only a single list page is
+ *   constructed.
+ *
+ * @param request   NVMe request context.
+ * @param heap      dmamem_heap the iovec buffers were carved from.
+ * @param dvec      Array of iovec structures.
+ * @param dvec_cnt  Element count of dvec.
+ * @param cmd       Command to populate prp1 (and prp2 / PRP list) on.
+ */
+static inline void
+nvme_request_prep_command_prps_iov_dmamem(struct nvme_request *request,
+					  struct dmamem_heap *heap, struct iovec *dvec,
+					  size_t dvec_cnt, struct nvme_command *cmd)
+{
+	const uint64_t pagesize = 4096;
+	struct dmamem *dmem = heap->dmem;
+	uint64_t *prp_list = request->prp;
+	size_t prp_idx = 0;
+
+	cmd->prp1 = dmamem_va_to_iova(dmem, dvec[0].iov_base);
+
+	for (size_t i = 0; i < dvec_cnt; ++i) {
+		uint8_t *base = dvec[i].iov_base;
+		size_t remaining = dvec[i].iov_len;
+		size_t offset = 0;
+
+		/* Skip the first page of the first iovec — it is PRP1 */
+		if (i == 0) {
+			offset = pagesize;
+			remaining = (remaining > pagesize) ? remaining - pagesize : 0;
+		}
+
+		while (remaining > 0) {
+			prp_list[prp_idx++] = dmamem_va_to_iova(dmem, base + offset);
 
 			offset += pagesize;
 			remaining = (remaining > pagesize) ? remaining - pagesize : 0;

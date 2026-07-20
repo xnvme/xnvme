@@ -36,7 +36,7 @@
  * also gains access to those physical addresses—without needing CAP_SYS_ADMIN.
  *
  * @file hostmem.h
- * @version 0.5.1
+ * @version 0.5.2
  */
 
 /**
@@ -98,7 +98,12 @@ hostmem_heap_term(struct hostmem_heap *heap)
 		return;
 	}
 
-	free(heap->phys_lut);
+	/*
+	 * heap->phys_lut is a borrowed pointer to heap->memory.phys_lut;
+	 * hostmem_hugepage_free releases the backing array.
+	 */
+	heap->phys_lut = NULL;
+	heap->nphys = 0;
 	hostmem_hugepage_free(&heap->memory);
 }
 
@@ -135,19 +140,17 @@ hostmem_heap_init(struct hostmem_heap *heap, size_t size, struct hostmem_config 
 	heap->freelist->free = 1;
 	heap->freelist->next = NULL;
 
-	// Setup the LUT
-	heap->nphys = size / heap->config->hugepgsz;
-	heap->phys_lut = calloc(heap->nphys, sizeof(uint64_t));
-
-	for (size_t i = 0; i < heap->nphys; ++i) {
-		void *vaddr = (char *)heap->memory.virt + i * heap->config->hugepgsz;
-
-		err = hostmem_pagemap_virt_to_phys(vaddr, &heap->phys_lut[i]);
-		if (err) {
-			hostmem_heap_term(heap);
-			return err;
-		}
+	/*
+	 * The LUT is now populated on hostmem_hugepage by hostmem_hugepage_alloc.
+	 * heap->phys_lut is a borrowed pointer for backwards compatibility with
+	 * existing hostmem_dma_v2p callers.
+	 */
+	if (!heap->memory.phys_lut) {
+		hostmem_heap_term(heap);
+		return -EPERM;
 	}
+	heap->nphys = heap->memory.nphys;
+	heap->phys_lut = heap->memory.phys_lut;
 
 	if (heap->memory.phys != heap->phys_lut[0]) {
 		hostmem_heap_term(heap);

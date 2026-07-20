@@ -58,7 +58,7 @@
  * also gains access to those physical addresses—without needing CAP_SYS_ADMIN.
  *
  * @file hostmem_hugepage.h
- * @version 0.5.1
+ * @version 0.5.2
  */
 
 struct hostmem_hugepage {
@@ -68,6 +68,8 @@ struct hostmem_hugepage {
 	uint64_t phys;
 	char path[256];
 	struct hostmem_config *config;
+	size_t nphys;       ///< Number of hugepages backing 'virt'
+	uint64_t *phys_lut; ///< Per-hugepage physical base; NULL when pagemap read is unavailable
 };
 
 static inline int
@@ -100,6 +102,11 @@ hostmem_hugepage_free(struct hostmem_hugepage *hugepage)
 {
 	if (!hugepage)
 		return;
+
+	if (hugepage->phys_lut) {
+		free(hugepage->phys_lut);
+		hugepage->phys_lut = NULL;
+	}
 
 	if (hugepage->virt && hugepage->size) {
 		munmap(hugepage->virt, hugepage->size);
@@ -197,12 +204,42 @@ hostmem_hugepage_alloc(size_t size, struct hostmem_hugepage *hugepage,
 	///< The assumption here is that memset and mlock should lead to pinned pages
 	memset(hugepage->virt, 0, hugepage->size);
 
+	/*
+	 * Best-effort pagemap read: without CAP_SYS_ADMIN we cannot get a PA,
+	 * but arithmetic-translator consumers do not need one. Leave
+	 * hugepage->phys and hugepage->phys_lut at zero / NULL on EPERM; the
+	 * LUT constructors validate that phys_lut is populated at their end.
+	 */
 	err = hostmem_pagemap_virt_to_phys(hugepage->virt, &hugepage->phys);
-	if (err) {
+	if (err && err != -EPERM) {
 		UPCIE_DEBUG("FAILED: hostmem_virt_to_phys(hugepage); err(%d)", err);
 		munmap(hugepage->virt, hugepage->size);
 		close(hugepage->fd);
 		return -ENOMEM;
+	}
+
+	if (!err) {
+		hugepage->nphys = hugepage->size / hugepage->config->hugepgsz;
+		hugepage->phys_lut = calloc(hugepage->nphys, sizeof(uint64_t));
+		if (!hugepage->phys_lut) {
+			munmap(hugepage->virt, hugepage->size);
+			close(hugepage->fd);
+			return -ENOMEM;
+		}
+		for (size_t i = 0; i < hugepage->nphys; ++i) {
+			void *vaddr = (uint8_t *)hugepage->virt + i * hugepage->config->hugepgsz;
+			int lerr = hostmem_pagemap_virt_to_phys(vaddr, &hugepage->phys_lut[i]);
+			if (lerr) {
+				UPCIE_DEBUG("FAILED: hostmem_virt_to_phys(hp[%zu]); err(%d)", i,
+					    lerr);
+				free(hugepage->phys_lut);
+				hugepage->phys_lut = NULL;
+				hugepage->nphys = 0;
+				munmap(hugepage->virt, hugepage->size);
+				close(hugepage->fd);
+				return lerr;
+			}
+		}
 	}
 
 	hugepage->config->count++;

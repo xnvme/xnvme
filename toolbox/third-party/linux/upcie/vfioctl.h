@@ -245,3 +245,73 @@ vfio_device_pci_hot_reset(struct vfio_device *dev, struct vfio_pci_hot_reset *re
 {
 	return ioctl(dev->fd, VFIO_DEVICE_PCI_HOT_RESET, reset);
 }
+
+/**
+ * Export a slice of a vfio-pci device region as a dma-buf fd.
+ *
+ * Wraps VFIO_DEVICE_FEATURE | GET | DMA_BUF. The returned fd is a
+ * regular dma-buf that iommufd's IOMMU_IOAS_MAP_FILE accepts on mainline
+ * 6.19+ because the exporter is vfio-pci (private interconnect via
+ * vfio_pci_dma_buf_iommufd_map).
+ *
+ * @param device_fd    vfio-cdev device fd (see iommufd_device_open).
+ * @param region_index BAR/region index, e.g. VFIO_PCI_BAR1_REGION_INDEX.
+ * @param offset       Offset within the region.
+ * @param length       Length of the slice.
+ * @return dma-buf fd (>= 0) on success, negative errno on failure.
+ */
+#ifdef VFIO_DEVICE_FEATURE_DMA_BUF
+static inline int
+vfio_device_bar_export_dmabuf(int device_fd, uint32_t region_index, uint64_t offset,
+			      uint64_t length)
+{
+	size_t bufsz = sizeof(struct vfio_device_feature) +
+		       sizeof(struct vfio_device_feature_dma_buf) +
+		       sizeof(struct vfio_region_dma_range);
+	struct vfio_device_feature *feat;
+	struct vfio_device_feature_dma_buf *dbuf;
+	struct vfio_region_dma_range *range;
+	int fd_or_err;
+
+	feat = calloc(1, bufsz);
+	if (!feat) {
+		return -ENOMEM;
+	}
+
+	feat->argsz = bufsz;
+	feat->flags = VFIO_DEVICE_FEATURE_GET | VFIO_DEVICE_FEATURE_DMA_BUF;
+
+	dbuf = (struct vfio_device_feature_dma_buf *)feat->data;
+	dbuf->region_index = region_index;
+	dbuf->open_flags = O_RDWR | O_CLOEXEC;
+	dbuf->flags = 0;
+	dbuf->nr_ranges = 1;
+
+	range = &dbuf->dma_ranges[0];
+	range->offset = offset;
+	range->length = length;
+
+	fd_or_err = ioctl(device_fd, VFIO_DEVICE_FEATURE, feat);
+	if (fd_or_err < 0) {
+		fd_or_err = -errno;
+	}
+
+	free(feat);
+	return fd_or_err;
+}
+#else
+// VFIO_DEVICE_FEATURE_DMA_BUF landed in Linux 6.19; on older UAPI headers
+// this stub lets callers link and fail at runtime with a clear -ENOTSUP
+// instead of breaking the build on distros that ship an older linux/vfio.h.
+static inline int
+vfio_device_bar_export_dmabuf(int device_fd, uint32_t region_index, uint64_t offset,
+			      uint64_t length)
+{
+	(void)device_fd;
+	(void)region_index;
+	(void)offset;
+	(void)length;
+
+	return -ENOTSUP;
+}
+#endif

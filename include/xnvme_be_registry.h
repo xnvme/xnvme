@@ -28,6 +28,11 @@ extern const struct xnvme_be_config g_xnvme_be_upcie_cuda;
 extern const struct xnvme_be_config g_xnvme_be_upcie_hip;
 #endif
 
+/* uPCIe iommufd + dmamem */
+#ifdef XNVME_BE_DMAMEM_ENABLED
+extern const struct xnvme_be_config g_xnvme_be_dmamem;
+#endif
+
 /* Linux */
 #ifdef XNVME_PLATFORM_LINUX_ENABLED
 extern const struct xnvme_be_config g_xnvme_be_linux_emu_nvme;
