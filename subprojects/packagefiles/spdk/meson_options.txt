@@ -1,1 +1,2 @@
 option('build_subprojects', type : 'boolean', value : true, yield : true)
+option('with-spdk-rdma', type: 'feature', value: 'auto', yield: true)
