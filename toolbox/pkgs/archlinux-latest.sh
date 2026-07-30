@@ -16,6 +16,8 @@ pacman -S --noconfirm \
  git \
  libaio \
  libarchive \
+ libibverbs \
+ librdmacm \
  liburing \
  libutil-linux \
  make \

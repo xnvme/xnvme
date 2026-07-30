@@ -25,6 +25,8 @@ dnf install -y \
  git \
  libaio-devel \
  libarchive-devel \
+ libibverbs-devel \
+ librdmacm-devel \
  libtool \
  liburing \
  liburing-devel \

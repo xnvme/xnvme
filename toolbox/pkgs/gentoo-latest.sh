@@ -17,6 +17,8 @@ emerge \
  dev-lang/nasm \
  dev-libs/isa-l \
  dev-libs/libaio \
+ dev-libs/libibverbs \
+ dev-libs/librdmacm \
  dev-libs/openssl \
  dev-python/jinja2 \
  dev-python/pip \
