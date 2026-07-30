@@ -21,8 +21,10 @@ zypper --non-interactive install -y --allow-downgrade \
  gzip \
  libaio-devel \
  libarchive-devel \
+ libibverbs-devel \
  libnuma-devel \
  libopenssl-devel \
+ librdmacm-devel \
  libtool \
  liburing-devel \
  libuuid-devel \

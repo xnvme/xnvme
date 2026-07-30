@@ -18,6 +18,8 @@ apk add \
  git \
  libaio-dev \
  libarchive-dev \
+ libibverbs \
+ librdmacm \
  liburing-dev \
  libuuid \
  linux-headers \

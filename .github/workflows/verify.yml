@@ -262,6 +262,12 @@ jobs:
       if: contains(matrix.os, 'opensuse')
       run: zypper --non-interactive --no-refresh install -y tar gzip
 
+    - name: Container-preparation, install build-requirements
+      env:
+        BSCRIPT: toolbox/pkgs/${{ matrix.container.os }}-${{ matrix.container.ver }}.sh
+      run: |
+        if [[ -f "${BSCRIPT}" ]]; then source ${BSCRIPT}; fi
+
     - name: Retrieve and unpack the xNVMe source archive
       uses: xnvme/actions/.github/actions/setup-source@main
       id: source

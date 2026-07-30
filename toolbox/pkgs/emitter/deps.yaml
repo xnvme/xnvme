@@ -294,6 +294,32 @@ deps:
       yum: [openssl-devel, openssl11-devel]
       zypper: [libopenssl-devel]
 
+  libibverbs:
+    notes: Required by SPDK for RDMA support
+    ver: 0.0
+    when: [building]
+    purpose: {be: [spdk], async: [rdma]}
+    names:
+      default: [libibverbs]
+      apt: [libibverbs-dev]
+      dnf: [libibverbs-devel]
+      emerge: [dev-libs/libibverbs]
+      yum: [libibverbs-devel]
+      zypper: [libibverbs-devel]
+
+  librdmacm:
+    notes: Required by SPDK for RDMA support
+    ver: 0.0
+    when: [building]
+    purpose: {be: [spdk], async: [rdma]}
+    names:
+      default: [librdmacm]
+      apt: [librdmacm-dev]
+      dnf: [librdmacm-devel]
+      emerge: [dev-libs/librdmacm]
+      yum: [librdmacm-devel]
+      zypper: [librdmacm-devel]
+
 apps:
   fio:
     notes: The flexible I/O tester (fio), supports xNVMe when fio is built from source
@@ -320,7 +346,7 @@ defaults:
   linux:
     deps:
     - [sys, [archive, bash, cunit, clang-format, elftools, find, git, jinja2, libaio, libisal, liburing, libuuid, make, meson,
-        nasm, ncurses, numactl, openssl, patch, pipx, pkg-config, python3, tabulate]]
+        nasm, ncurses, numactl, openssl, patch, pipx, pkg-config, python3, tabulate, libibverbs, librdmacm]]
     - [src, [libvfn]]
     apps:
     - [src, [fio]]
