@@ -40,6 +40,8 @@ zypper --non-interactive install -y --allow-downgrade \
  python3-pyelftools \
  python3-setuptools \
  python3-tabulate \
+ rdma-core \
+ rdma-core-devel \
  tar
 
 #

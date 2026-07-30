@@ -26,10 +26,12 @@ apt-get -qy install \
  libaio-dev \
  libarchive-dev \
  libcunit1-dev \
+ libibverbs-dev \
  libisal-dev \
  libjitterentropy3-dev \
  libncurses5-dev \
  libnuma-dev \
+ librdmacm-dev \
  libssl-dev \
  libtool \
  liburing-dev \
@@ -46,6 +48,7 @@ apt-get -qy install \
  python3-pyelftools \
  python3-tabulate \
  python3-venv \
+ rdma-core \
  uuid-dev
 
 #
