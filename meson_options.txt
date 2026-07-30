@@ -3,6 +3,7 @@ option('with-liburing', type: 'feature', value: 'auto')
 option('with-libvfn', type: 'feature', value: 'auto')
 option('with-isal', type: 'feature', value: 'auto')
 option('with-spdk', type: 'feature', value: 'auto')
+option('with-spdk-rdma', type: 'feature', value: 'auto', description: 'Enable RDMA support in the SPDK backend')
 option('with-cuda', type: 'feature', value: 'auto')
 option('with-hip', type: 'feature', value: 'auto')
 
