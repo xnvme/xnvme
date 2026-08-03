@@ -160,7 +160,8 @@ _linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, 
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
 	const uint64_t ssw = queue->base.dev->geo.ssw;
 
-	struct iocb *iocb = (void *)&ctx->cmd;
+	struct iocb iocb;
+	struct iocb *iocbs[] = {&iocb};
 	int err;
 
 	if (mbuf || mbuf_nbytes) {
@@ -172,19 +173,19 @@ _linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, 
 	///< NOTE: opcode-dispatch (io)
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
-		io_prep_pwrite(iocb, state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba << ssw);
+		io_prep_pwrite(&iocb, state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba << ssw);
 		break;
 
 	case XNVME_SPEC_NVM_OPC_READ:
-		io_prep_pread(iocb, state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba << ssw);
+		io_prep_pread(&iocb, state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba << ssw);
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
-		io_prep_pwrite(iocb, state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
+		io_prep_pwrite(&iocb, state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
 		break;
 
 	case XNVME_SPEC_FS_OPC_READ:
-		io_prep_pread(iocb, state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
+		io_prep_pread(&iocb, state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
 		break;
 
 		// TODO: determine how to handle fsync
@@ -194,13 +195,13 @@ _linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, 
 		return -ENOSYS;
 	}
 
-	iocb->data = (unsigned long *)ctx;
+	iocb.data = (unsigned long *)ctx;
 
 	if (queue->efd != -1) {
-		io_set_eventfd(iocb, queue->efd);
+		io_set_eventfd(&iocb, queue->efd);
 	}
 
-	err = io_submit(queue->aio_ctx, 1, &iocb);
+	err = io_submit(queue->aio_ctx, 1, iocbs);
 	if (err == 1) {
 		ctx->async.queue->base.outstanding += 1;
 		return 0;
@@ -219,7 +220,8 @@ _linux_libaio_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
 	const uint64_t ssw = queue->base.dev->geo.ssw;
 
-	struct iocb *iocb = (void *)&ctx->cmd;
+	struct iocb iocb;
+	struct iocb *iocbs[] = {&iocb};
 	int err;
 
 	if (queue->base.outstanding == queue->base.capacity) {
@@ -235,19 +237,19 @@ _linux_libaio_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec
 	///< NOTE: opcode-dispatch (io)
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
-		io_prep_pwritev(iocb, state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
+		io_prep_pwritev(&iocb, state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
 		break;
 
 	case XNVME_SPEC_NVM_OPC_READ:
-		io_prep_preadv(iocb, state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
+		io_prep_preadv(&iocb, state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
-		io_prep_pwritev(iocb, state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba);
+		io_prep_pwritev(&iocb, state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba);
 		break;
 
 	case XNVME_SPEC_FS_OPC_READ:
-		io_prep_preadv(iocb, state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba);
+		io_prep_preadv(&iocb, state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba);
 		break;
 
 		// TODO: determine how to handle fsync
@@ -258,12 +260,12 @@ _linux_libaio_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec
 	}
 
 	if (queue->efd != -1) {
-		io_set_eventfd(iocb, queue->efd);
+		io_set_eventfd(&iocb, queue->efd);
 	}
 
-	iocb->data = (unsigned long *)ctx;
+	iocb.data = (unsigned long *)ctx;
 
-	err = io_submit(queue->aio_ctx, 1, &iocb);
+	err = io_submit(queue->aio_ctx, 1, iocbs);
 	if (err == 1) {
 		ctx->async.queue->base.outstanding += 1;
 		return 0;
