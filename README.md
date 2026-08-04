@@ -9,9 +9,7 @@ SPDX-License-Identifier: BSD-3-Clause
 xNVMe: cross-platform libraries and tools for NVMe devices
 ==========================================================
 
-[![CI](https://github.com/xnvme/xnvme/workflows/linux-binaries-test/badge.svg)](https://github.com/xnvme/xnvme/actions/)
-[![CI](https://github.com/xnvme/xnvme/workflows/linux-build-test/badge.svg)](https://github.com/xnvme/xnvme/actions/)
-[![CI](https://github.com/xnvme/xnvme/workflows/style/badge.svg)](https://github.com/xnvme/xnvme/actions/)
+[![CI](https://github.com/xnvme/xnvme/workflows/verify/badge.svg)](https://github.com/xnvme/xnvme/actions/)
 [![Coverity](https://scan.coverity.com/projects/xNVMe/badge.svg)](https://scan.coverity.com/projects/xNVMe)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 [![REUSE status](https://api.reuse.software/badge/github.com/xnvme/xnvme)](https://api.reuse.software/info/github.com/xnvme/xnvme)
