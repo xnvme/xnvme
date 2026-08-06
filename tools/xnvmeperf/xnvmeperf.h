@@ -22,8 +22,8 @@ enum iopattern {
 struct xnvmeperf_args {
 	int ndevs;
 	const char **dev_uris;
-	int ncpus;
-	int *cpus;
+	uint16_t ncpus;
+	uint16_t *cpus;
 	uint32_t qdepth;
 	uint32_t iosize;
 	uint32_t time;
