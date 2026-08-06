@@ -894,6 +894,13 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "Hex CPU bitmask for thread pinning (e.g. 0x3)",
 	},
 	{
+		.opt = XNVME_CLI_OPT_CPULIST,
+		.vtype = XNVME_CLI_OPT_VTYPE_STR,
+		.name = "cpulist",
+		.descr = "Comma-separated list of CPU ids or CPU id ranges for thread pinning "
+			 "(e.g. 0-3,4,6)",
+	},
+	{
 		.opt = XNVME_CLI_OPT_NQUEUES,
 		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "nqueues",
@@ -1196,6 +1203,106 @@ parse_cpumask(struct xnvme_cli_args *args, const char *hex)
 			if ((value >> b) & 1) {
 				args->cpus[count++] = bit_offset + b;
 			}
+		}
+	}
+
+	args->ncpus = count;
+	return 0;
+}
+
+/**
+ * Reads one "<cpu>" or "<first>-<last>" element at the cursor, advancing it
+ * past the element and any separating comma.
+ *
+ * Ids that no CPU corresponds to are not rejected here; they are caught when
+ * the thread fails to pin.
+ */
+static int
+parse_cpulist_elem(const char **cur, uint32_t *first_out, uint32_t *last_out)
+{
+	unsigned long first, last;
+	char *end;
+
+	errno = 0; // strtoul does not modify errno on success, so clear before calling
+	first = strtoul(*cur, &end, 10);
+	if (errno || *cur == end) {
+		XNVME_DEBUG("FAILED: strtoul(), errno: %d, cur: %s", errno, *cur);
+		return -EINVAL;
+	}
+	if (first >= XNVME_CLI_CPU_MAX_ID) {
+		XNVME_DEBUG("ERROR: Parsed CPU(%lu) cannot exceed 1023", first);
+		return -EINVAL;
+	}
+	*cur = end;
+
+	last = first;
+	if (**cur == '-') {
+		*cur += 1;
+		last = strtoul(*cur, &end, 10);
+		if (errno || *cur == end) {
+			XNVME_DEBUG("FAILED: strtoul(), errno: %d, cur: %s", errno, *cur);
+			return -EINVAL;
+		}
+		if (last >= XNVME_CLI_CPU_MAX_ID) {
+			XNVME_DEBUG("ERROR: Parsed CPU(%lu) cannot exceed 1023", last);
+			return -EINVAL;
+		}
+		*cur = end;
+	}
+
+	if (first > last) {
+		// do not allow ranges like 3-1
+		return -EINVAL;
+	}
+
+	if (**cur == ',') {
+		*cur += 1;
+		if (**cur == '\0') {
+			// do not allow trailing commas
+			return -EINVAL;
+		}
+	} else if (**cur != '\0') {
+		return -EINVAL;
+	}
+
+	*first_out = first;
+	*last_out = last;
+	return 0;
+}
+
+static int
+parse_cpulist(struct xnvme_cli_args *args, const char *list)
+{
+	uint64_t seen[(XNVME_CLI_CPU_MAX_ID + 63) / 64] = {0};
+	const char *cur = list;
+	uint32_t first, last;
+	int count = 0, err;
+
+	if (!list || !list[0]) {
+		err = -EINVAL;
+		xnvme_cli_perr("Error: --cpulist must be a non-empty list of CPU ids", err);
+		return err;
+	}
+
+	// Expand each element in the order given
+	while (*cur) {
+		err = parse_cpulist_elem(&cur, &first, &last);
+		if (err) {
+			return err;
+		}
+		// since first and last both a < XNVME_CLI_CPU_MAX_ID, no need to
+		// guard against overflowing the cpus array. Rejecting repeated ids
+		// is what caps the number of writes at XNVME_CLI_CPU_MAX_ID.
+		for (uint32_t cpu = first; cpu <= last; cpu++) {
+			if (seen[cpu / 64] & (1ULL << (cpu % 64))) {
+				err = -EINVAL;
+				xnvme_cli_perr("Error: --cpulist must not repeat CPU ids", err);
+				XNVME_DEBUG("FAILED: CPU(%u) given more than once", cpu);
+				return err;
+			}
+			seen[cpu / 64] |= 1ULL << (cpu % 64);
+
+			args->cpus[count++] = cpu;
 		}
 	}
 
@@ -1657,6 +1764,12 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 		args->iopattern = arg ? arg : "INVALID_INPUT";
 		break;
 	case XNVME_CLI_OPT_CPUMASK:
+		if (cli->given[XNVME_CLI_OPT_CPULIST]) {
+			errno = EINVAL;
+			xnvme_cli_perr("--cpulist and --cpumask are mutually exclusive", errno);
+			return -1;
+		}
+
 		args->cpumask = arg;
 
 		if (args->cpumask) {
@@ -1666,6 +1779,25 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 				return -1;
 			}
 		}
+
+		break;
+	case XNVME_CLI_OPT_CPULIST:
+		if (cli->given[XNVME_CLI_OPT_CPUMASK]) {
+			errno = EINVAL;
+			xnvme_cli_perr("--cpulist and --cpumask are mutually exclusive", errno);
+			return -1;
+		}
+
+		args->cpulist = arg;
+
+		if (args->cpulist) {
+			err = parse_cpulist(args, args->cpulist);
+			if (err) {
+				errno = -err;
+				return -1;
+			}
+		}
+
 		break;
 	case XNVME_CLI_OPT_NQUEUES:
 		args->nqueues = num;

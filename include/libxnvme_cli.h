@@ -177,6 +177,8 @@ struct xnvme_cli_args {
 	const char *iopattern;
 
 	const char *cpumask;
+
+	const char *cpulist;
 	uint16_t cpus[XNVME_CLI_CPU_MAX_ID]; //< Maximum of 1024 pinned CPUs
 	uint16_t ncpus;
 
@@ -364,7 +366,9 @@ enum xnvme_cli_opt {
 
 	XNVME_CLI_OPT_GPU_ID = 131, ///< XNVME_CLI_OPT_GPU_ID
 
-	XNVME_CLI_OPT_END = 132, ///< XNVME_CLI_OPT_END
+	XNVME_CLI_OPT_CPULIST = 132, ///< XNVME_CLI_OPT_CPULIST
+
+	XNVME_CLI_OPT_END = 133, ///< XNVME_CLI_OPT_END
 };
 
 /**

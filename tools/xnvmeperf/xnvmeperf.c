@@ -656,8 +656,8 @@ xnvmeperf_run(struct xnvmeperf_args *args)
 	// queue, which is not safe. Require at least one queue per thread.
 	if (args->ncpus > total_jobs) {
 		fprintf(stderr,
-			"Error: --cpumask specifies %" PRIu16 " threads but only %d queue(s) "
-			"(%d device(s) x %d queue(s) each); "
+			"Error: --cpumask or --cpulist specifies %" PRIu16 " threads but only %d "
+			"queue(s) (%d device(s) x %d queue(s) each); "
 			"increase --nqueues so every thread has its own queue\n",
 			args->ncpus, total_jobs, args->ndevs, args->nqueues);
 		err = -EINVAL;
@@ -1208,6 +1208,12 @@ sub_run(struct xnvme_cli *cli)
 		return err;
 	}
 
+	if (!args.ncpus) {
+		err = -EINVAL;
+		xnvme_cli_perr("Error: Either --cpumask or --cpulist must be given", err);
+		return err;
+	}
+
 	print_run_args(&args, cli->args.iopattern);
 	derive_heap_sizes(&args);
 
@@ -1306,7 +1312,7 @@ static struct xnvme_cli_sub g_subs[] = {
 		"run",
 		"Run a benchmark against the given devices",
 		"Run a time-bounded async IO benchmark against one or more NVMe devices.\n"
-		"Devices are distributed across CPU threads pinned by --cpumask.",
+		"Devices are distributed across CPU threads pinned by --cpumask or --cpulist.",
 		sub_run,
 		{
 			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
@@ -1317,7 +1323,8 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_QDEPTH, XNVME_CLI_LREQ},
 			{XNVME_CLI_OPT_IOSIZE, XNVME_CLI_LREQ},
 			{XNVME_CLI_OPT_RUNTIME, XNVME_CLI_LREQ},
-			{XNVME_CLI_OPT_CPUMASK, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_CPUMASK, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CPULIST, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_ORCH_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_SUBNQN, XNVME_CLI_LOPT},
