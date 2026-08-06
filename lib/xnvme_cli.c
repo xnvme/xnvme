@@ -1141,6 +1141,68 @@ xnvme_cli_usage(struct xnvme_cli *cli)
 	}
 }
 
+/**
+ * Parse a CPU hex mask into a list of CPU ids and save it in args->cpus
+ */
+static int
+parse_cpumask(struct xnvme_cli_args *args, const char *hex)
+{
+	int len, count = 0, err;
+	bool nonzero = false;
+
+	len = strlen(hex);
+
+	if (len > 1 && (!memcmp(hex, "0x", 2) || !memcmp(hex, "0X", 2))) {
+		hex += 2;
+		len -= 2;
+	}
+
+	if (len == 0) {
+		err = -EINVAL;
+		xnvme_cli_perr("Error: --cpumask must be a non-zero hex value", err);
+		return err;
+	}
+
+	if (len > XNVME_CLI_CPU_MAX_ID / 4) {
+		err = -EINVAL;
+		xnvme_cli_perr("Error: --cpumask cannot define a CPU id > 1023", err);
+		return err;
+	}
+
+	for (int i = 0; i < len; i++) {
+		char c = hex[i];
+		if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') ||
+		      (c >= 'A' && c <= 'F'))) {
+			err = -EINVAL;
+			xnvme_cli_perr("Error: --cpumask must be a non-zero hex value", err);
+			return err;
+		}
+		if (c != '0') {
+			nonzero = true;
+		}
+	}
+	if (!nonzero) {
+		err = -EINVAL;
+		xnvme_cli_perr("Error: --cpumask must be a non-zero hex value", err);
+		return err;
+	}
+
+	// Extract CPU indices; rightmost digit = lowest bits
+	count = 0;
+	for (int i = len - 1; i >= 0; i--) {
+		int value = xnvme_hex_digit_val(hex[i]);
+		int bit_offset = (len - 1 - i) * 4;
+		for (int b = 0; b < 4; b++) {
+			if ((value >> b) & 1) {
+				args->cpus[count++] = bit_offset + b;
+			}
+		}
+	}
+
+	args->ncpus = count;
+	return 0;
+}
+
 int
 xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr, char *arg,
 		     enum xnvme_cli_opt_type opt_type)
@@ -1148,6 +1210,7 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 	struct xnvme_cli_args *args = &cli->args;
 	char *endptr = NULL;
 	uint64_t num = 0;
+	int err;
 
 	// Check numerical args
 	if (arg && (opt_type != XNVME_CLI_LFLG)) {
@@ -1594,7 +1657,15 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 		args->iopattern = arg ? arg : "INVALID_INPUT";
 		break;
 	case XNVME_CLI_OPT_CPUMASK:
-		args->cpumask = arg ? arg : "INVALID_INPUT";
+		args->cpumask = arg;
+
+		if (args->cpumask) {
+			err = parse_cpumask(args, args->cpumask);
+			if (err) {
+				errno = -err;
+				return -1;
+			}
+		}
 		break;
 	case XNVME_CLI_OPT_NQUEUES:
 		args->nqueues = num;

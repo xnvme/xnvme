@@ -3,6 +3,7 @@
 #endif
 
 #include <errno.h>
+#include <inttypes.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,7 +39,7 @@ struct xnvmeperf_job {
 };
 
 struct xnvmeperf_thread {
-	int cpu;
+	uint16_t cpu;
 	int njobs;
 	int job_start;
 	struct xnvmeperf_job *jobs;
@@ -82,87 +83,6 @@ pin_to_cpu(int cpu)
 	fprintf(stderr, "Warning: CPU pinning not supported on this platform\n");
 	return 0;
 #endif
-}
-
-// Returns the integer value of a hexadecimal digit character.
-static int
-hex_digit_val(char c)
-{
-	if (c >= '0' && c <= '9') {
-		return c - '0';
-	}
-	if (c >= 'a' && c <= 'f') {
-		return c - 'a' + 10;
-	}
-	return c - 'A' + 10;
-}
-
-static int
-parse_cpumask(const char *hex, int **cpus_out, int *ncpus_out)
-{
-	int len, count = 0, err;
-	int *cpus;
-	bool nonzero = false;
-
-	len = strlen(hex);
-
-	if (len > 1 && (!memcmp(hex, "0x", 2) || !memcmp(hex, "0X", 2))) {
-		hex += 2;
-		len -= 2;
-	}
-
-	if (len == 0) {
-		err = -EINVAL;
-		xnvme_cli_perr("Error: --cpumask must be a non-zero hex value", err);
-		return err;
-	}
-
-	for (int i = 0; i < len; i++) {
-		char c = hex[i];
-		if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') ||
-		      (c >= 'A' && c <= 'F'))) {
-			err = -EINVAL;
-			xnvme_cli_perr("Error: --cpumask must be a non-zero hex value", err);
-			return err;
-		}
-		if (c != '0') {
-			nonzero = true;
-		}
-	}
-	if (!nonzero) {
-		err = -EINVAL;
-		xnvme_cli_perr("Error: --cpumask must be a non-zero hex value", err);
-		return err;
-	}
-
-	// Count set bits across all hex digits
-	for (int i = 0; i < len; i++) {
-		int value = hex_digit_val(hex[i]);
-		for (int b = 0; b < 4; b++) {
-			count += (value >> b) & 1;
-		}
-	}
-
-	cpus = malloc(sizeof(int) * count);
-	if (!cpus) {
-		return -errno;
-	}
-
-	// Extract CPU indices; rightmost digit = lowest bits
-	count = 0;
-	for (int i = len - 1; i >= 0; i--) {
-		int value = hex_digit_val(hex[i]);
-		int bit_offset = (len - 1 - i) * 4;
-		for (int b = 0; b < 4; b++) {
-			if ((value >> b) & 1) {
-				cpus[count++] = bit_offset + b;
-			}
-		}
-	}
-
-	*cpus_out = cpus;
-	*ncpus_out = count;
-	return 0;
 }
 
 /**
@@ -414,7 +334,7 @@ thread_fn(void *arg)
 
 	err = pin_to_cpu(thread->cpu);
 	if (err) {
-		fprintf(stderr, "Warning: failed to pin thread to CPU %d\n", thread->cpu);
+		fprintf(stderr, "Warning: failed to pin thread to CPU %" PRIu16 "\n", thread->cpu);
 	}
 
 	// Fill each job buffer with a known pattern. xnvme_buf_fill() routes
@@ -518,9 +438,9 @@ print_run_args(struct xnvmeperf_args *args, const char *pattern)
 			if (i) {
 				printf(", ");
 			}
-			printf("%d", args->cpus[i]);
+			printf("%" PRIu16, args->cpus[i]);
 		}
-		printf("] (total: %d)\n", args->ncpus);
+		printf("] (total: %" PRIu16 ")\n", args->ncpus);
 	}
 }
 
@@ -629,8 +549,8 @@ print_results(struct xnvmeperf_thread *threads, struct xnvmeperf_args *args)
 					cpus_len += snprintf(cpus_bufs[d] + cpus_len,
 							     256 - cpus_len, ",");
 				}
-				cpus_len += snprintf(cpus_bufs[d] + cpus_len, 256 - cpus_len, "%d",
-						     thread->cpu);
+				cpus_len += snprintf(cpus_bufs[d] + cpus_len, 256 - cpus_len,
+						     "%" PRIu16, thread->cpu);
 			}
 		}
 
@@ -736,7 +656,7 @@ xnvmeperf_run(struct xnvmeperf_args *args)
 	// queue, which is not safe. Require at least one queue per thread.
 	if (args->ncpus > total_jobs) {
 		fprintf(stderr,
-			"Error: --cpumask specifies %d threads but only %d queue(s) "
+			"Error: --cpumask specifies %" PRIu16 " threads but only %d queue(s) "
 			"(%d device(s) x %d queue(s) each); "
 			"increase --nqueues so every thread has its own queue\n",
 			args->ncpus, total_jobs, args->ndevs, args->nqueues);
@@ -879,7 +799,7 @@ static int
 xnvmeperf_verify(struct xnvmeperf_args *args)
 {
 	struct xnvme_dev **devs;
-	int nios = (int)args->count;
+	uint32_t nios = args->count;
 	int err;
 
 	printf("\nxnvmeperf verify: iosize=%u, nios=%d\n", args->iosize, nios);
@@ -1202,7 +1122,6 @@ parse_common_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 /**
  * Parse the full set of run sub-command arguments into @p args.
  * Calls parse_common_args() then adds iopattern, qdepth, and runtime.
- * Does not parse cpumask or nqueues; those are the caller's responsibility.
  *
  * @return 0 on success, negative errno on validation failure
  */
@@ -1245,6 +1164,9 @@ parse_run_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 
 	args->nqueues = cli->args.nqueues ? cli->args.nqueues : 1;
 
+	args->ncpus = cli->args.ncpus;
+	args->cpus = cli->args.cpus;
+
 	return err;
 }
 
@@ -1286,17 +1208,10 @@ sub_run(struct xnvme_cli *cli)
 		return err;
 	}
 
-	err = parse_cpumask(cli->args.cpumask, &args.cpus, &args.ncpus);
-	if (err) {
-		xnvme_cli_perr("Failed: parse_cpumask()", err);
-		return err;
-	}
-
 	print_run_args(&args, cli->args.iopattern);
 	derive_heap_sizes(&args);
 
 	err = xnvmeperf_run(&args);
-	free(args.cpus);
 	return err;
 }
 

@@ -315,6 +315,18 @@ xnvme_is_pow2(uint32_t val)
 	return val && !(val & (val - 1));
 }
 
+static inline int
+xnvme_hex_digit_val(char c)
+{
+	if (c >= '0' && c <= '9') {
+		return c - '0';
+	}
+	if (c >= 'a' && c <= 'f') {
+		return c - 'a' + 10;
+	}
+	return c - 'A' + 10;
+}
+
 #ifdef XNVME_DEBUG_ENABLED
 
 #define XNVME_DEBUG_FCALL(x) x

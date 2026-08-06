@@ -26,6 +26,8 @@
 #define XNVME_CLI_ASYNC_OPTS \
 	XNVME_CLI_SYNC_OPTS, { XNVME_CLI_OPT_ASYNC, XNVME_CLI_LOPT }
 
+#define XNVME_CLI_CPU_MAX_ID 1024
+
 /**
  * Options are stored in an instance of this structure
  *
@@ -173,7 +175,11 @@ struct xnvme_cli_args {
 
 	uint32_t runtime;
 	const char *iopattern;
+
 	const char *cpumask;
+	uint16_t cpus[XNVME_CLI_CPU_MAX_ID]; //< Maximum of 1024 pinned CPUs
+	uint16_t ncpus;
+
 	uint32_t nqueues;
 
 	const char **posn; //< Remaining positional args (points into argv)
