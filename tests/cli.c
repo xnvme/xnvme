@@ -19,6 +19,24 @@ sub_optional(struct xnvme_cli *cli)
 	return err;
 }
 
+static int
+sub_cpuids(struct xnvme_cli *cli)
+{
+	int err = 0;
+
+	xnvme_cli_pinf("cpumask: '%s', given: %d", cli->args.cpumask ? cli->args.cpumask : "NULL",
+		       cli->given[XNVME_CLI_OPT_CPUMASK]);
+	xnvme_cli_pinf("cpulist: '%s', given: %d", cli->args.cpulist ? cli->args.cpulist : "NULL",
+		       cli->given[XNVME_CLI_OPT_CPULIST]);
+
+	xnvme_cli_pinf("ncpus: %d", cli->args.ncpus);
+	for (int i = 0; i < cli->args.ncpus; i++) {
+		xnvme_cli_pinf("cpus[%d]: %d", i, cli->args.cpus[i]);
+	}
+
+	return err;
+}
+
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"optional",
@@ -27,6 +45,16 @@ static struct xnvme_cli_sub g_subs[] = {
 		sub_optional,
 		{
 			XNVME_CLI_ASYNC_OPTS,
+		},
+	},
+	{
+		"cpu-ids",
+		"Command-line arguments for pinning CPUs",
+		"Command-line arguments for pinning CPUs",
+		sub_cpuids,
+		{
+			{XNVME_CLI_OPT_CPUMASK, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CPULIST, XNVME_CLI_LOPT},
 		},
 	},
 };
