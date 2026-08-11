@@ -36,6 +36,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_upcie) == XNVME_BE_QUEUE_STATE_NBY
  */
 enum xnvme_be_upcie_mode {
 	XNVME_BE_UPCIE_MODE_UNSET = 0,
+	XNVME_BE_UPCIE_MODE_VFIO_CDEV,  ///< vfio-cdev + iommufd + memfd
 	XNVME_BE_UPCIE_MODE_UIO_LUT,    ///< uio_pci_generic + hugepages + LUT translator
 	XNVME_BE_UPCIE_MODE_VFIO_TYPE1, ///< vfio-pci + legacy type1 container
 };
@@ -45,6 +46,7 @@ enum xnvme_be_upcie_mode {
  */
 struct xnvme_be_upcie_ctrlr {
 	struct nvme_controller *ctrl;
+	struct nvme_dmamem_vfio_ctx ctx;        ///< vfio-cdev + iommufd state (VFIO_CDEV mode)
 	struct nvme_dmamem_uio_ctx uio_ctx;     ///< pci_bar_map state    (UIO_LUT mode)
 	struct nvme_dmamem_type1_ctx type1_ctx; ///< type1 device fd state (VFIO_TYPE1 mode)
 	struct vfio_group type1_group;          ///< Owned per-controller in VFIO_TYPE1 mode
@@ -75,6 +77,9 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_upcie_state) == XNVME_BE_STATE_NBYTES
  */
 struct xnvme_be_upcie_rte {
 	enum xnvme_be_upcie_mode mode;
+	struct iommufd iommufd; ///< VFIO_CDEV mode
+	int iommufd_alive;      ///< Whether the iommufd handle is open
+	int ioas_alive;         ///< Whether an IOAS is allocated on it
 	struct hostmem_config config;
 	struct hostmem_hugepage hp;
 	struct dmamem dmem;

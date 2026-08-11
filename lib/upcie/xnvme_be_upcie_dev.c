@@ -38,6 +38,68 @@ xnvme_be_upcie_get_driver_name(const char *bdf, char *driver_name, size_t driver
 	return 0;
 }
 
+int
+xnvme_be_upcie_resolve_vfio_cdev(const char *bdf, char *cdev_path, size_t cdev_path_len)
+{
+	char sysfs_path[PATH_MAX] = {0};
+	DIR *dir;
+	struct dirent *ent;
+	int found = 0;
+
+	snprintf(sysfs_path, sizeof(sysfs_path), "/sys/bus/pci/devices/%s/vfio-dev", bdf);
+	dir = opendir(sysfs_path);
+	if (!dir) {
+		return -errno;
+	}
+	while ((ent = readdir(dir))) {
+		if (strncmp(ent->d_name, "vfio", 4) != 0) {
+			continue;
+		}
+		snprintf(cdev_path, cdev_path_len, "/dev/vfio/devices/%s", ent->d_name);
+		found = 1;
+		break;
+	}
+	closedir(dir);
+	return found ? 0 : -ENOENT;
+}
+
+/**
+ * Return non-zero if the target BDF has a vfio-cdev entry, i.e.
+ * /sys/bus/pci/devices/<bdf>/vfio-dev/vfio* exists.
+ */
+static int
+_bdf_has_vfio_cdev(const char *bdf)
+{
+	char sysfs_path[PATH_MAX] = {0};
+	DIR *dir;
+	struct dirent *ent;
+	int found = 0;
+
+	snprintf(sysfs_path, sizeof(sysfs_path), "/sys/bus/pci/devices/%s/vfio-dev", bdf);
+	dir = opendir(sysfs_path);
+	if (!dir) {
+		return 0;
+	}
+	while ((ent = readdir(dir))) {
+		if (strncmp(ent->d_name, "vfio", 4) == 0) {
+			found = 1;
+			break;
+		}
+	}
+	closedir(dir);
+	return found;
+}
+
+/**
+ * Read the kernel driver bound to `bdf` and derive the mode.
+ *
+ * vfio-pci        -> VFIO_CDEV if /dev/iommu and a vfio-cdev entry both
+ *                    exist, otherwise VFIO_TYPE1 (legacy vfio container).
+ *                    Env override: XNVME_UPCIE_VFIO_MODE = iommufd |
+ *                    type1 | auto.
+ * uio_pci_generic -> UIO_LUT (pci_bar_map + hostmem hugepage + LUT).
+ * anything else   -> -ENOTSUP.
+ */
 /**
  * Terminate the uPCIe runtime-environment
  *
@@ -68,9 +130,67 @@ _rte_term(void)
 		g_upcie_rte.type1_container_alive = 0;
 		g_upcie_rte.type1_iommu_set = 0;
 	}
+	if (g_upcie_rte.ioas_alive) {
+		iommufd_destroy(&g_upcie_rte.iommufd, g_upcie_rte.iommufd.ioas_id);
+		g_upcie_rte.ioas_alive = 0;
+	}
+	if (g_upcie_rte.iommufd_alive) {
+		iommufd_close(&g_upcie_rte.iommufd);
+		g_upcie_rte.iommufd_alive = 0;
+	}
 
 	g_upcie_rte.mode = XNVME_BE_UPCIE_MODE_UNSET;
 	g_upcie_rte.is_initialized = 0;
+}
+
+/**
+ * Bring up the RTE in VFIO_CDEV mode.
+ *
+ * /dev/iommu + one IOAS + a hugepage-backed memfd imported via
+ * IOMMU_IOAS_MAP_FILE. All controllers opened afterwards attach into
+ * this same IOAS so their PRPs translate arithmetically off the shared
+ * base_iova.
+ */
+static int
+_rte_init_vfio_cdev(size_t heap_size)
+{
+	size_t hugepgsz = 2ULL * 1024 * 1024;
+	int err;
+
+	/* dmamem_from_memfd requires size to be a multiple of hugepgsz;
+	 * round up so callers (like xnvmeperf) that hand us a page-off
+	 * size don't fail at -EINVAL. */
+	heap_size = ((heap_size + hugepgsz - 1) / hugepgsz) * hugepgsz;
+
+	err = iommufd_open(&g_upcie_rte.iommufd);
+	if (err) {
+		XNVME_DEBUG("FAILED: iommufd_open(); err(%d)", err);
+		return err;
+	}
+	g_upcie_rte.iommufd_alive = 1;
+
+	err = iommufd_ioas_alloc(&g_upcie_rte.iommufd);
+	if (err) {
+		XNVME_DEBUG("FAILED: iommufd_ioas_alloc(); err(%d)", err);
+		return err;
+	}
+	g_upcie_rte.ioas_alive = 1;
+
+	err = dmamem_from_memfd(&g_upcie_rte.dmem, &g_upcie_rte.iommufd, heap_size, hugepgsz);
+	if (err) {
+		XNVME_DEBUG("FAILED: dmamem_from_memfd(); err(%d)", err);
+		return err;
+	}
+	g_upcie_rte.dmem_alive = 1;
+
+	err = dmamem_heap_init(&g_upcie_rte.heap, &g_upcie_rte.dmem, 4096);
+	if (err) {
+		XNVME_DEBUG("FAILED: dmamem_heap_init(); err(%d)", err);
+		return err;
+	}
+	g_upcie_rte.heap_alive = 1;
+
+	return 0;
 }
 
 /**
@@ -187,6 +307,9 @@ _rte_init(enum xnvme_be_upcie_mode mode, size_t heap_size)
 	g_upcie_rte.mode = mode;
 
 	switch (mode) {
+	case XNVME_BE_UPCIE_MODE_VFIO_CDEV:
+		err = _rte_init_vfio_cdev(heap_size);
+		break;
 	case XNVME_BE_UPCIE_MODE_UIO_LUT:
 		err = _rte_init_uio_lut(heap_size);
 		break;
@@ -376,6 +499,9 @@ static void
 _ctrlr_close(struct xnvme_be_upcie_ctrlr *ctrlr)
 {
 	switch (g_upcie_rte.mode) {
+	case XNVME_BE_UPCIE_MODE_VFIO_CDEV:
+		nvme_controller_close_dmamem_vfio(ctrlr->ctrl, &ctrlr->ctx, &g_upcie_rte.heap);
+		break;
 	case XNVME_BE_UPCIE_MODE_UIO_LUT:
 		nvme_controller_close_dmamem_uio(ctrlr->ctrl, &ctrlr->uio_ctx, &g_upcie_rte.heap);
 		break;
@@ -405,6 +531,7 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 	struct xnvme_be_upcie_ctrlr *ctrlr;
 	char driver_name[sizeof(dev->ident.kernel_driver)] = {0};
 	enum xnvme_be_upcie_mode mode = XNVME_BE_UPCIE_MODE_UNSET;
+	char cdev_path[PATH_MAX] = {0};
 	int err;
 
 	err = xnvme_be_upcie_get_driver_name(dev->ident.uri, driver_name, sizeof(driver_name));
@@ -416,10 +543,32 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 	}
 	snprintf(dev->ident.kernel_driver, sizeof(dev->ident.kernel_driver), "%s", driver_name);
 
-	if (!strcmp(driver_name, "vfio-pci")) {
-		mode = XNVME_BE_UPCIE_MODE_VFIO_TYPE1;
-	} else if (!strcmp(driver_name, "uio_pci_generic")) {
+	if (!strcmp(driver_name, "uio_pci_generic")) {
 		mode = XNVME_BE_UPCIE_MODE_UIO_LUT;
+	} else if (!strcmp(driver_name, "vfio-pci")) {
+		const char *override = getenv("XNVME_UPCIE_VFIO_MODE");
+
+		if (override && !strcmp(override, "iommufd")) {
+			mode = XNVME_BE_UPCIE_MODE_VFIO_CDEV;
+		} else if (override && !strcmp(override, "type1")) {
+			mode = XNVME_BE_UPCIE_MODE_VFIO_TYPE1;
+		} else if (access("/dev/iommu", R_OK | W_OK) == 0 &&
+			   _bdf_has_vfio_cdev(dev->ident.uri)) {
+			mode = XNVME_BE_UPCIE_MODE_VFIO_CDEV;
+		} else {
+			mode = XNVME_BE_UPCIE_MODE_VFIO_TYPE1;
+		}
+
+		if (mode == XNVME_BE_UPCIE_MODE_VFIO_CDEV) {
+			err = xnvme_be_upcie_resolve_vfio_cdev(dev->ident.uri, cdev_path,
+							       sizeof(cdev_path));
+			if (err) {
+				XNVME_DEBUG("FAILED: resolve_vfio_cdev(%s); err(%d)",
+					    dev->ident.uri, err);
+				errno = -err;
+				return NULL;
+			}
+		}
 	} else {
 		XNVME_DEBUG("FAILED: unsupported driver '%s'", driver_name);
 		errno = ENOTSUP;
@@ -457,6 +606,11 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 	ctrlr->type1_group.fd = -1;
 
 	switch (g_upcie_rte.mode) {
+	case XNVME_BE_UPCIE_MODE_VFIO_CDEV:
+		err = nvme_controller_open_dmamem_vfio(ctrlr->ctrl, &ctrlr->ctx,
+						       &g_upcie_rte.iommufd, &g_upcie_rte.heap,
+						       cdev_path);
+		break;
 	case XNVME_BE_UPCIE_MODE_UIO_LUT:
 		err = nvme_controller_open_dmamem_uio(ctrlr->ctrl, &ctrlr->uio_ctx,
 						      &g_upcie_rte.heap, dev->ident.uri);
