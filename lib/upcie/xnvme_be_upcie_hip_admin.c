@@ -30,8 +30,8 @@ xnvme_be_upcie_hip_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t 
 	cmd->cid = req->cid;
 
 	if (dbuf) {
-		nvme_request_prep_command_prps_contig_hip(req, &g_upcie_hip_rte.hip_heap, dbuf,
-							  dbuf_nbytes, cmd);
+		nvme_request_prep_command_prps_contig_dmamem(req, &g_upcie_hip_rte.dmem, dbuf,
+							     dbuf_nbytes, cmd);
 	}
 
 	err = nvme_qpair_enqueue(&ctrlr->aq, cmd);

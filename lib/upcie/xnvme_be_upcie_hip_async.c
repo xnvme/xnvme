@@ -46,12 +46,12 @@ xnvme_be_upcie_hip_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t db
 	cmd->cid = req->cid;
 
 	if (dbuf) {
-		nvme_request_prep_command_prps_contig_hip(req, &g_upcie_hip_rte.hip_heap, dbuf,
-							  dbuf_nbytes, cmd);
+		nvme_request_prep_command_prps_contig_dmamem(req, &g_upcie_hip_rte.dmem, dbuf,
+							     dbuf_nbytes, cmd);
 	}
 
 	if (mbuf) {
-		ctx->cmd.common.mptr = hipmem_dma_v2p(&g_upcie_hip_rte.hip_heap, mbuf);
+		ctx->cmd.common.mptr = dmamem_va_to_iova(&g_upcie_hip_rte.dmem, mbuf);
 	}
 
 	err = nvme_qpair_enqueue(&upcie_queue->qpair, cmd);
@@ -103,12 +103,12 @@ xnvme_be_upcie_hip_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, 
 	cmd->cid = req->cid;
 
 	if (dvec) {
-		nvme_request_prep_command_prps_iov_hip(req, &g_upcie_hip_rte.hip_heap, dvec,
-						       dvec_cnt, cmd);
+		nvme_request_prep_command_prps_iov_dmamem(req, &g_upcie_hip_rte.dmem, dvec,
+							  dvec_cnt, cmd);
 	}
 
 	if (mbuf) {
-		ctx->cmd.common.mptr = hipmem_dma_v2p(&g_upcie_hip_rte.hip_heap, mbuf);
+		ctx->cmd.common.mptr = dmamem_va_to_iova(&g_upcie_hip_rte.dmem, mbuf);
 	}
 
 	err = nvme_qpair_enqueue(&upcie_queue->qpair, cmd);
