@@ -31,7 +31,7 @@
  *   #include <upcie/upcie.h>
  *
  * @file upcie.h
- * @version 0.5.1
+ * @version 0.6.0
  */
 #ifndef UPCIE_H
 #define UPCIE_H
@@ -71,14 +71,27 @@ extern "C" {
 #include <upcie/barriers.h>
 #include <upcie/bitfield.h>
 #include <upcie/dmabuf.h>
+/* EXPERIMENTAL: needs the out-of-tree dmabuf-import DKMS module, and compiles
+ * to -ENOTSUP stubs without it. Must follow <upcie/dmabuf.h>. */
+#include <upcie/experimental/dmabuf_import.h>
+/* EXPERIMENTAL: needs the out-of-tree iommu-map-pa DKMS module, and compiles
+ * to -ENOTSUP stubs without it. */
+#include <upcie/experimental/iommu_map_pa.h>
 #include <upcie/hostmem.h>
 #include <upcie/hostmem_config.h>
 #include <upcie/hostmem_hugepage.h>
 #include <upcie/hostmem_heap.h>
 #include <upcie/hostmem_dma.h>
+#include <upcie/vfio_cdev.h>
+#include <upcie/iommufd.h>
 #include <upcie/mmio.h>
 #include <upcie/pci.h>
 #include <upcie/vfioctl.h>
+#include <upcie/dmamem.h>
+#include <upcie/dmamem_memfd.h>
+#include <upcie/dmamem_dmabuf.h>
+#include <upcie/dmamem_hostmem.h>
+#include <upcie/dmamem_heap.h>
 
 // uPCIe NVMe libraries
 #ifdef _UPCIE_WITH_NVME
@@ -88,7 +101,11 @@ extern "C" {
 #include <upcie/nvme/nvme_qid.h>
 #include <upcie/nvme/nvme_qpair.h>
 #include <upcie/nvme/nvme_controller.h>
+#include <upcie/nvme/nvme_controller_vfio_pci.h>
 #include <upcie/nvme/nvme_controller_vfio.h>
+#include <upcie/nvme/nvme_controller_dmamem_vfio.h>
+#include <upcie/nvme/nvme_controller_dmamem_uio.h>
+#include <upcie/nvme/nvme_controller_dmamem_type1.h>
 #endif
 
 #ifdef __cplusplus
