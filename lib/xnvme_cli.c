@@ -297,7 +297,7 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.opt = XNVME_CLI_OPT_URI,
 		.vtype = XNVME_CLI_OPT_VTYPE_URI,
 		.name = "uri",
-		.descr = "Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888', "
+		.descr = "Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1:8888', "
 			 "'\\\\.\\PhysicalDrive1'",
 	},
 	{
@@ -336,7 +336,7 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.opt = XNVME_CLI_OPT_UUID,
 		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "uuid",
-		.descr = "Universally Unique Identifier",
+		.descr = "Universally Unique Identifier Index",
 	},
 	{
 		.opt = XNVME_CLI_OPT_CNS,
@@ -384,7 +384,7 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.opt = XNVME_CLI_OPT_RAE,
 		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "rae",
-		.descr = "Reset Async. Events",
+		.descr = "Retain Async. Events",
 	},
 	{
 		.opt = XNVME_CLI_OPT_LBAFU,
@@ -414,7 +414,7 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.opt = XNVME_CLI_OPT_AUSE,
 		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "ause",
-		.descr = "Allow Unrestricted Sanatize Exit",
+		.descr = "Allow Unrestricted Sanitize Exit",
 	},
 	{
 		.opt = XNVME_CLI_OPT_OVRPAT,
@@ -444,7 +444,7 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.opt = XNVME_CLI_OPT_SANACT,
 		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "sanact",
-		.descr = "Sanatize action: Exit Failure Mode=0x1, Block Erase=0x2, Overwrite=0x3, "
+		.descr = "Sanitize action: Exit Failure Mode=0x1, Block Erase=0x2, Overwrite=0x3, "
 			 "Crypto Erase=0x4",
 	},
 	{
@@ -452,7 +452,7 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "zsa",
 		.descr = "Zone Send Action: Close=0x1, Finish=0x2, Open=0x3, Reset=0x4, "
-			 "Offline=0x5, Zone Descriptor Extension=0x10",
+			 "Offline=0x5, Set Zone Descriptor Extension=0x10, Flush=0x11",
 	},
 	{
 		.opt = XNVME_CLI_OPT_PI,
@@ -476,7 +476,7 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.opt = XNVME_CLI_OPT_FEAT,
 		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "feat",
-		.descr = "Feature e.g. cdw12 content",
+		.descr = "Feature e.g. cdw11 content",
 	},
 	{
 		.opt = XNVME_CLI_OPT_OPCODE,
@@ -584,8 +584,7 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.opt = XNVME_CLI_OPT_BE,
 		.vtype = XNVME_CLI_OPT_VTYPE_STR,
 		.name = "be",
-		.descr = "xNVMe backend, e.g. 'linux', 'spdk', 'freebsd', 'macos', "
-			 "'posix', 'windows'",
+		.descr = "xNVMe backend, e.g. 'spdk', 'libvfn', 'upcie'",
 	},
 	{
 		.opt = XNVME_CLI_OPT_MEM,
@@ -664,7 +663,7 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.opt = XNVME_CLI_OPT_POLL_IO,
 		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "poll_io",
-		.descr = "For async=io_uring, enable hipri/io-compl.polling",
+		.descr = "For async={io_uring,libaio,kqueue}, enable hipri/io-compl.polling",
 	},
 	{
 		.opt = XNVME_CLI_OPT_POLL_SQ,
