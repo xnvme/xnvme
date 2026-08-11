@@ -42,12 +42,12 @@ xnvme_be_upcie_cuda_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t db
 	cmd->cid = req->cid;
 
 	if (dbuf) {
-		nvme_request_prep_command_prps_contig_cuda(req, &g_upcie_cuda_rte.cuda_heap, dbuf,
-							   dbuf_nbytes, cmd);
+		nvme_request_prep_command_prps_contig_dmamem(req, &g_upcie_cuda_rte.dmem, dbuf,
+							     dbuf_nbytes, cmd);
 	}
 
 	if (mbuf) {
-		ctx->cmd.common.mptr = cudamem_dma_v2p(&g_upcie_cuda_rte.cuda_heap, mbuf);
+		ctx->cmd.common.mptr = dmamem_va_to_iova(&g_upcie_cuda_rte.dmem, mbuf);
 	}
 
 	err = nvme_qpair_enqueue(&state->ctrlr->sync, cmd);
@@ -109,12 +109,12 @@ xnvme_be_upcie_cuda_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, 
 	cmd->cid = req->cid;
 
 	if (dvec) {
-		nvme_request_prep_command_prps_iov_cuda(req, &g_upcie_cuda_rte.cuda_heap, dvec,
-							dvec_cnt, cmd);
+		nvme_request_prep_command_prps_iov_dmamem(req, &g_upcie_cuda_rte.dmem, dvec,
+							  dvec_cnt, cmd);
 	}
 
 	if (mbuf) {
-		ctx->cmd.common.mptr = cudamem_dma_v2p(&g_upcie_cuda_rte.cuda_heap, mbuf);
+		ctx->cmd.common.mptr = dmamem_va_to_iova(&g_upcie_cuda_rte.dmem, mbuf);
 	}
 
 	err = nvme_qpair_enqueue(&state->ctrlr->sync, cmd);
