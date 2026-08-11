@@ -9,7 +9,7 @@
  * `upcie/nvme/nvme_request.h` with a CUDA dependent PRP preparation function.
  * 
  * @file nvme_request_cuda.h
- * @version 0.5.1
+ * @version 0.6.0
  */
 
 /**
@@ -45,64 +45,21 @@ nvme_request_prp_retranslate_cuda(struct cudamem_heap *heap, void *virt)
  * @param dbuf Pointer to the (virtually) contiguous data buffer to be described by PRPs.
  * @param dbuf_nbytes Size in bytes of the data buffer.
  * @param cmd Pointer to the NVMe command to be prepared with PRP entries.
+ *
+ * Builds a transient dmamem per call; hot paths should construct one once
+ * and call the _dmamem builder directly.
  */
 static inline void
 nvme_request_prep_command_prps_contig_cuda(struct nvme_request *request, struct cudamem_heap *heap,
                                            void *dbuf, size_t dbuf_nbytes, struct nvme_command *cmd)
 {
-	const uint64_t pagesize = heap->config->pagesize;
+	struct dmamem dmem;
 
-	cmd->prp1 = cudamem_heap_block_vtp(heap, dbuf);
-
-	/* Only PRP1 may carry a sub-page offset; the page count and every later
-	 * entry are measured from the page floor. ceil((off+nbytes)/pagesize). Take
-	 * the offset from the virtual address -- vtp preserves the sub-page offset --
-	 * so the page count and the npages == 1 branch do not wait on the vtp load. */
-	const uint64_t page_off = (uintptr_t)dbuf & (pagesize - 1);
-	const uint64_t npages =
-		(page_off + dbuf_nbytes + pagesize - 1) >> heap->config->pagesize_shift;
-
-	/* Chaining is not supported, thus assert that the given dbuf fits. */
-	assert(npages <= 1 + 512);
-
-	if (npages == 1) {
+	if (dmamem_from_cuda_lut(&dmem, heap)) {
 		return;
 	}
 
-	/* The heap is virtually contiguous but physically contiguous only within a
-	 * device page. Stride PRP entries physically from PRP1 while inside the same
-	 * device page and re-translate when the running address crosses a device-page
-	 * boundary. A buffer that fits within a single device page (the common case)
-	 * never crosses, so this reduces to the stride of a contiguous buffer. */
-	uint8_t *vbase = (uint8_t *)dbuf - page_off;
-	const uint64_t dp_off =
-		((uint64_t)vbase - heap->vaddr) & (heap->config->device_pagesize - 1);
-	uint64_t strides_left =
-		((heap->config->device_pagesize - dp_off) >> heap->config->pagesize_shift) - 1;
-	uint64_t page_phys = cmd->prp1 - page_off;
-
-	if (npages == 2) {
-		cmd->prp2 = strides_left
-				    ? page_phys + pagesize
-				    : nvme_request_prp_retranslate_cuda(heap, vbase + pagesize);
-		return;
-	}
-
-	uint64_t *prp_list = (uint64_t *)request->prp;
-
-	cmd->prp2 = request->prp_addr;
-	for (uint64_t i = 1; i < npages; ++i) {
-		if (strides_left) {
-			page_phys += pagesize;
-			strides_left--;
-		} else {
-			page_phys = nvme_request_prp_retranslate_cuda(
-				heap, vbase + (i << heap->config->pagesize_shift));
-			strides_left =
-				(heap->config->device_pagesize >> heap->config->pagesize_shift) - 1;
-		}
-		prp_list[i - 1] = page_phys;
-	}
+	nvme_request_prep_command_prps_contig_dmamem(request, &dmem, dbuf, dbuf_nbytes, cmd);
 }
 
 /**
@@ -123,41 +80,21 @@ nvme_request_prep_command_prps_contig_cuda(struct nvme_request *request, struct 
  * @param dvec Array of iovec structures describing the data segments.
  * @param dvec_cnt Number of elements in the dvec array.
  * @param cmd Pointer to the NVMe command to be prepared with PRP entries.
+ *
+ * Builds a transient dmamem per call; hot paths should construct one once
+ * and call the _dmamem builder directly.
  */
 static inline void
 nvme_request_prep_command_prps_iov_cuda(struct nvme_request *request, struct cudamem_heap *heap,
-				   	struct iovec *dvec, size_t dvec_cnt, struct nvme_command *cmd)
+                                        struct iovec *dvec, size_t dvec_cnt, struct nvme_command *cmd)
 {
-	const uint64_t pagesize = heap->config->pagesize;
-	uint64_t *prp_list = (uint64_t *)request->prp;
-	size_t prp_idx = 0;
+	struct dmamem dmem;
 
-	cmd->prp1 = cudamem_heap_block_vtp(heap, dvec[0].iov_base);
-
-	for (size_t i = 0; i < dvec_cnt; ++i) {
-		uint8_t *base = (uint8_t *)dvec[i].iov_base;
-		size_t remaining = dvec[i].iov_len;
-		size_t offset = 0;
-
-		/* Skip the first page of the first iovec — it is PRP1 */
-		if (i == 0) {
-			offset = pagesize;
-			remaining = (remaining > pagesize) ? remaining - pagesize : 0;
-		}
-
-		while (remaining > 0) {
-			prp_list[prp_idx++] = cudamem_heap_block_vtp(heap, base + offset);
-
-			offset += pagesize;
-			remaining = (remaining > pagesize) ? remaining - pagesize : 0;
-		}
+	if (dmamem_from_cuda_lut(&dmem, heap)) {
+		return;
 	}
 
-	if (prp_idx == 1) {
-		cmd->prp2 = prp_list[0];
-	} else if (prp_idx > 1) {
-		cmd->prp2 = request->prp_addr;
-	}
+	nvme_request_prep_command_prps_iov_dmamem(request, &dmem, dvec, dvec_cnt, cmd);
 }
 
 /**

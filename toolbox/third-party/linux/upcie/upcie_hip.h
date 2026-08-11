@@ -16,7 +16,7 @@
  * `upcie/upcie_hip_gpuinit.h` to opt into it.
  *
  * @file upcie_hip.h
- * @version 0.5.1
+ * @version 0.6.0
  */
 
 #ifndef HIPUPCIE_H
@@ -42,6 +42,7 @@ extern "C" {
 #include <upcie/hipmem_heap.h>
 #include <upcie/hipmem_dma.h>
 #include <upcie/hipmem_mapping.h>
+#include <upcie/dmamem_hip.h>
 
 // HIP/ROCm uPCIe NVMe libraries
 //

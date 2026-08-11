@@ -9,6 +9,9 @@
  * already allocated (via cuMemAlloc, cuMemCreate/cuMemMap, or cudaMalloc) and
  * builds a physical address LUT for them via the same dma-buf interface.
  *
+ * EXPERIMENTAL dependency: the physical addresses come from the out-of-tree
+ * dmabuf-import DKMS module, see <upcie/experimental/dmabuf_import.h>.
+ *
  * Chunk-cached design
  * -------------------
  *
@@ -23,7 +26,7 @@
  *
  * `_add` walks chunks intersecting the floored user range, ref-bumps existing
  * entries, and populates new entries via cuMemGetHandleForAddressRange +
- * dmabuf_attach + dmabuf_get_lut. `_remove` decrements rc and frees the dma-buf
+ * dmabuf_import_attach + dmabuf_get_lut. `_remove` decrements rc and frees the dma-buf
  * when rc reaches zero. Repeated overlapping registrations in the same chunk
  * amortize to one dma-buf cost, and resolve to identical phys for any VA they
  * share.
@@ -98,7 +101,7 @@
  * directly and do not depend on this sentinel.
  * 
  * @file cudamem_mapping.h
- * @version 0.5.1
+ * @version 0.6.0
  */
 
 /**
@@ -230,7 +233,7 @@ cudamem_mapping_chunk_deref(struct cudamem_mapping_registry *registry, size_t ch
 		}
 		cm->rc--;
 		if (cm->rc == 0) {
-			dmabuf_detach(&cm->attach);
+			dmabuf_import_detach(&cm->attach);
 			memset(&cm->attach, 0, sizeof(cm->attach));
 			registry->lut_phys[idx] = 0;
 		}
@@ -331,9 +334,10 @@ cudamem_mapping_chunk_populate(uint64_t *phys_base_out, struct dmabuf *attach_ou
 		goto err_free;
 	}
 
-	err = dmabuf_attach(dmabuf_fd, &attach);
+	/* NOTE: EXPERIMENTAL dependency, see <upcie/experimental/dmabuf_import.h> */
+	err = dmabuf_import_attach(dmabuf_fd, &attach);
 	if (err) {
-		UPCIE_DEBUG("FAILED: dmabuf_attach(), err: %d", err);
+		UPCIE_DEBUG("FAILED: dmabuf_import_attach(), err: %d", err);
 		close(dmabuf_fd);
 		goto err_free;
 	}
@@ -360,7 +364,7 @@ cudamem_mapping_chunk_populate(uint64_t *phys_base_out, struct dmabuf *attach_ou
 	return 0;
 
 err_detach:
-	dmabuf_detach(&attach);
+	dmabuf_import_detach(&attach);
 err_free:
 	free(tmp);
 	return err;
