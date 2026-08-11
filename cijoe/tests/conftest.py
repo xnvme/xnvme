@@ -15,10 +15,30 @@
 """
 
 from functools import wraps
+from time import sleep
 
 import pytest
 
 from .xnvme_be_combinations import get_backend_configurations
+
+_shm_id = 0
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--shm_id",
+        type=int,
+        default=0,
+        help="Open devices with the given shm_id (0 = single process mode)",
+    )
+
+
+def pytest_configure(config):
+    global _shm_id
+    try:
+        _shm_id = config.getoption("--shm_id", default=0)
+    except ValueError:
+        _shm_id = 0
 
 
 def get_osname():
@@ -27,6 +47,10 @@ def get_osname():
     if osname == "debian":
         osname = "linux"
     return osname
+
+
+def get_shm_id():
+    return _shm_id if _shm_id else None
 
 
 def xnvme_be_opts(options=None, only_labels=[]):
@@ -59,6 +83,7 @@ def xnvme_be_opts(options=None, only_labels=[]):
                                     "sync": be_sync,
                                     "async": be_async,
                                     "label": opts["label"],
+                                    "mproc": opts.get("mproc", False),
                                 }
                             )
 
@@ -123,6 +148,9 @@ def xnvme_cli_args(device, be_opts):
     if be_opts:
         args += [f"--{arg} {val}" for arg, val in be_opts.items() if arg != "label"]
 
+    if _shm_id > 0:
+        args += [f"--shm_id {_shm_id}"]
+
     return " ".join(args)
 
 
@@ -140,7 +168,7 @@ def xnvme_setup(labels=[], opts=[]):
         device = cijoe_config_get_device(search)
 
         dstr = device["uri"] if device else "None"
-        bstr = ",".join([f"{k}={v}" for k, v in be_opts.items()])
+        bstr = ",".join([f"{k}={v}" for k, v in be_opts.items() if k != "mproc"])
 
         paramid = f"uri={dstr},{bstr}"
 
@@ -207,6 +235,10 @@ class XnvmeDriver(object):
     def kernel_detach(cijoe):
         """Detach from kernel"""
 
+        # Rebinding devices and re-allocating hugepages invalidates a running primary,
+        # so tear it down first rather than leaving MprocPrimary with a stale handle.
+        MprocPrimary.stop(cijoe)
+
         # 64MB contigmem buffers avoid ENOMEM on FreeBSD's fragmented CI heap;
         # see toolbox/xnvme-driver.sh.
         cmd = "xnvme-driver"
@@ -222,6 +254,8 @@ class XnvmeDriver(object):
     @staticmethod
     def kernel_attach(cijoe):
         """Attach to kernel"""
+
+        MprocPrimary.stop(cijoe)
 
         err, _ = cijoe.run("xnvme-driver reset")
         if err:
@@ -268,6 +302,14 @@ def device(cijoe, request):
     from within the testcase body itself.
     """
     if request.param:
+        if _shm_id:
+            callspec = getattr(request.node, "callspec", None)
+            be_opts = callspec.params.get("be_opts") if callspec else None
+            if be_opts:
+                if be_opts.get("mproc"):
+                    MprocPrimary.start(cijoe, be_opts["be"])
+                else:
+                    pytest.skip(f"{be_opts.get('be')} does not support multi-process")
         XnvmeDriver.attach(cijoe, request.param)
 
     return request.param
@@ -305,6 +347,88 @@ def xnvme_parametrize(labels, opts):
         return inner
 
     return decorator
+
+
+class MprocPrimary:
+    """
+    Manages the lifecycle of a homi primary daemon.
+
+    A single primary holds every 'pcie' device in the configuration, so it can serve
+    whichever device a testcase asks for, as well as testcases enumerating and opening
+    all of them. Tracks which backend the running primary was started with (similar to
+    XnvmeDriver.IS_KERNEL_ATTACHED), so it is only restarted when the backend changes.
+    """
+
+    RUNNING = None
+    CIJOE = None
+    STOP_TIMEOUT = 30
+
+    @staticmethod
+    def is_running(cijoe):
+        """Returns True when a homi primary is running"""
+
+        # Match on the process name; 'pgrep -f' also matched the shell that cijoe.run()
+        # wraps the command in, so it never detected a failed start
+        err, _ = cijoe.run("pgrep -x homi")
+
+        return not err
+
+    @staticmethod
+    def start(cijoe, be):
+        if MprocPrimary.RUNNING == be:
+            return
+
+        uris = " ".join(d["uri"] for d in cijoe_config_get_all_devices(["pcie"]))
+        if not uris:
+            pytest.skip("Configuration has no device labelled: ['pcie']")
+
+        XnvmeDriver.kernel_detach(cijoe)
+
+        # SPDK backs its DMA memory with files in the hugetlbfs mount and never unlinks
+        # them, since secondaries must be able to map them. As xNVMe does not call
+        # spdk_env_fini(), they outlive the process and keep holding hugepages. Drop them
+        # so the primary starting here does so with a full pool.
+        mount_point = cijoe.getconf("hugetlbfs.mount_point", "/mnt/huge")
+        cijoe.run(f"rm -f {mount_point}/spdk*map_*")
+
+        cijoe.run(
+            f"nohup homi start {uris} --be {be} --shm_id {_shm_id} "
+            f"> /tmp/mproc_{be}.out 2>&1 &"
+        )
+        sleep(2)
+
+        if not MprocPrimary.is_running(cijoe):
+            cijoe.run(f"cat /tmp/mproc_{be}.out")
+            pytest.fail(f"homi primary for be({be}) is not running")
+
+        MprocPrimary.RUNNING = be
+        MprocPrimary.CIJOE = cijoe
+
+    @staticmethod
+    def stop(cijoe):
+        if MprocPrimary.RUNNING is None:
+            return
+
+        MprocPrimary.RUNNING = None
+        MprocPrimary.CIJOE = None
+
+        cijoe.run("pkill -x homi || true")
+
+        # Closing a controller is not instant, and a primary still holding the device
+        # keeps its successor from claiming it, so wait for it to actually be gone
+        for _ in range(MprocPrimary.STOP_TIMEOUT):
+            if not MprocPrimary.is_running(cijoe):
+                break
+            sleep(1)
+        else:
+            pytest.fail("homi primary did not terminate")
+
+
+@pytest.fixture(scope="session", autouse=True)
+def mproc_teardown():
+    yield
+    if MprocPrimary.CIJOE is not None:
+        MprocPrimary.stop(MprocPrimary.CIJOE)
 
 
 # Sort order for pytest_collection_modifyitems. `be` first because backend

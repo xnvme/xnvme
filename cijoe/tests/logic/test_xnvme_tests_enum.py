@@ -1,47 +1,68 @@
 import pytest
 import yaml
 
-from ..conftest import XnvmeDriver, cijoe_config_get_all_devices, xnvme_parametrize
+from ..conftest import (
+    XnvmeDriver,
+    cijoe_config_get_all_devices,
+    get_shm_id,
+    xnvme_parametrize,
+)
 
 
 @xnvme_parametrize(labels=["dev"], opts=["be"])
 def test_open(cijoe, device, be_opts, cli_args):
+    shm_id = get_shm_id()
+    shm_arg = f"--shm_id {shm_id}" if shm_id else ""
+
     if be_opts["admin"] == "ramdisk":
         pytest.skip(reason=f"[be={be_opts['be']}] does not support enumeration")
     if "fabrics" in device["labels"]:
         err, _ = cijoe.run(
-            f"xnvme_tests_enum open --uri {device['uri']} --count 4 --be {be_opts['be']}"
+            f"xnvme_tests_enum open --uri {device['uri']} --count 4"
+            f" --be {be_opts['be']} {shm_arg}"
         )
     else:
-        err, _ = cijoe.run(f"xnvme_tests_enum open --count 4 --be {be_opts['be']}")
+        err, _ = cijoe.run(
+            f"xnvme_tests_enum open --count 4 --be {be_opts['be']} {shm_arg}"
+        )
     assert not err
 
 
 @xnvme_parametrize(labels=["dev"], opts=["be"])
 def test_keep_open(cijoe, device, be_opts, cli_args):
+    shm_id = get_shm_id()
+    shm_arg = f"--shm_id {shm_id}" if shm_id else ""
+
     if be_opts["admin"] == "ramdisk":
         pytest.skip(reason=f"[be={be_opts['be']}] does not support enumeration")
 
     if "fabrics" in device["labels"]:
         err, _ = cijoe.run(
-            f"xnvme_tests_enum keep_open --uri {device['uri']} --be {be_opts['be']}"
+            f"xnvme_tests_enum keep_open --uri {device['uri']}"
+            f" --be {be_opts['be']} {shm_arg}"
         )
     else:
-        err, _ = cijoe.run(f"xnvme_tests_enum keep_open --be {be_opts['be']}")
+        err, _ = cijoe.run(f"xnvme_tests_enum keep_open --be {be_opts['be']} {shm_arg}")
     assert not err
 
 
 @xnvme_parametrize(labels=["dev"], opts=["be"])
 def test_multi(cijoe, device, be_opts, cli_args):
+    shm_id = get_shm_id()
+    shm_arg = f"--shm_id {shm_id}" if shm_id else ""
+
     if be_opts["admin"] == "ramdisk":
         pytest.skip(reason=f"[be={be_opts['be']}] does not support enumeration")
 
     if "fabrics" in device["labels"]:
         err, _ = cijoe.run(
-            f"xnvme_tests_enum multi --uri {device['uri']} --count 4 --be {be_opts['be']}"
+            f"xnvme_tests_enum multi --uri {device['uri']} --count 4"
+            f" --be {be_opts['be']} {shm_arg}"
         )
     else:
-        err, _ = cijoe.run(f"xnvme_tests_enum multi --count 4 --be {be_opts['be']}")
+        err, _ = cijoe.run(
+            f"xnvme_tests_enum multi --count 4 --be {be_opts['be']} {shm_arg}"
+        )
     assert not err
 
 
