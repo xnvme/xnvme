@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from ..conftest import get_osname, xnvme_parametrize
+from ..conftest import get_osname, get_shm_id, xnvme_parametrize
 from .fio_fancy import fio_fancy
 
 FIO_OUTPUT_FPATH = (
@@ -19,6 +19,8 @@ def test_fio_engine(cijoe, device, be_opts, cli_args):
         pytest.skip(
             reason="[mem=upcie-cuda] fio xNVMe ioengine does not support CUDA memory"
         )
+    if get_shm_id():
+        pytest.skip(reason="fio does not support multi-process mode")
 
     size = "64M"
     # size = "1G"
@@ -54,6 +56,8 @@ def test_fio_engine_iov(cijoe, device, be_opts, cli_args):
         pytest.skip(
             reason="[mem=upcie-cuda] fio xNVMe ioengine does not support CUDA memory"
         )
+    if get_shm_id():
+        pytest.skip(reason="fio does not support multi-process mode")
 
     size = "64M"
     # size = "1G"
@@ -86,6 +90,8 @@ def test_fio_engine_zns(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[sync=psync,block] does not support mgmt. send/receive")
     if be_opts["async"] == "thrpool":
         pytest.skip(reason="[async=thrpool] gives Zone Invalid Write")
+    if get_shm_id():
+        pytest.skip(reason="fio does not support multi-process mode")
 
     size = "64M"
     # size = "1G"
@@ -112,6 +118,8 @@ def test_fio_engine_fdp(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="FIO requires a char device")
     if be_opts["sync"] == "psync":
         pytest.skip(reason="[sync=psync] cannot do write with directives")
+    if get_shm_id():
+        pytest.skip(reason="fio does not support multi-process mode")
 
     size = "64M"
     # size = "1G"

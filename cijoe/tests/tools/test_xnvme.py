@@ -1,6 +1,6 @@
 import pytest
 
-from ..conftest import XnvmeDriver, get_osname, xnvme_parametrize
+from ..conftest import XnvmeDriver, get_osname, get_shm_id, xnvme_parametrize
 
 
 def test_library_info(cijoe):
@@ -384,9 +384,7 @@ def test_show_regs(cijoe, device, be_opts, cli_args):
     if be_opts["admin"] == "libvfn":
         pytest.skip(reason="[be=libvfn] does not support pseudo commands")
 
-    err, _ = cijoe.run(
-        f"xnvme show-regs {device['uri']} --be {be_opts['be']} --admin {be_opts['admin']}"
-    )
+    err, _ = cijoe.run(f"xnvme show-regs {cli_args}")
 
     expect_error = False
     if get_osname() == "linux" and be_opts["admin"] == "nvme":
@@ -407,6 +405,8 @@ def test_subsystem_reset(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[be=libvfn] does not support pseudo commands")
     if be_opts["admin"] == "upcie":
         pytest.skip(reason="[be=upcie] does not support subsystem-reset")
+    if get_shm_id():
+        pytest.skip(reason="reset tears down the queues held by the mproc primary")
 
     err, state = cijoe.run(
         f"xnvme subsystem-reset {device['uri']} --be {be_opts['be']} --admin {be_opts['admin']}"
@@ -436,6 +436,8 @@ def test_ctrlr_reset(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[be=libvfn] does not support pseudo commands")
     if be_opts["admin"] == "upcie":
         pytest.skip(reason="[be=upcie] does not support controller-reset")
+    if get_shm_id():
+        pytest.skip(reason="reset tears down the queues held by the mproc primary")
 
     err, _ = cijoe.run(
         f"xnvme ctrlr-reset {device['uri']} --be {be_opts['be']} --admin {be_opts['admin']}"
@@ -451,8 +453,6 @@ def test_namespace_rescan(cijoe, device, be_opts, cli_args):
     if be_opts["admin"] == "spdk":
         pytest.skip(reason="[admin=spdk] does not support namespace rescan")
 
-    err, _ = cijoe.run(
-        f"xnvme ns-rescan {device['uri']} --be {be_opts['be']} --admin {be_opts['admin']}"
-    )
+    err, _ = cijoe.run(f"xnvme ns-rescan {cli_args}")
 
     assert not err

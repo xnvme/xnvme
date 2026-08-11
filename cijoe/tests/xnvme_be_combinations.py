@@ -128,6 +128,7 @@ def get_backend_configurations():
             "admin": ["spdk"],
             "mem": ["spdk"],
             "label": ["pcie"],
+            "mproc": True,
         },
         {
             "be": ["spdk"],
@@ -144,6 +145,7 @@ def get_backend_configurations():
             "sync": ["upcie"],
             "admin": ["upcie"],
             "label": ["pcie"],
+            "mproc": True,
         },
         {
             "be": ["upcie-cuda"],
