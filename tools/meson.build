@@ -4,6 +4,7 @@
 
 tools_source = [
   'lblk.c',
+  'homi.c',
   'xdd.c',
   'xnvme.c',
   'xnvme_file.c',
@@ -11,6 +12,7 @@ tools_source = [
   'kvs.c',
 ]
 tools = {
+  'homi.c': [],
   'kvs.c': [],
   'lblk.c': [
     ['enum', ['enum']],
