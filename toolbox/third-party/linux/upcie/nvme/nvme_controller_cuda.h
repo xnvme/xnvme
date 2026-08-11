@@ -9,7 +9,7 @@
  * NVMe controllers.
  * 
  * @file nvme_controller_cuda.h
- * @version 0.5.1
+ * @version 0.6.0
  */
 
 
@@ -147,19 +147,20 @@ nvme_controller_cuda_create_io_qpair(struct nvme_controller *ctrlr,
 			return err;
 		}
 
-		_qpair.sq = cudamem_heap_block_alloc(heap, nbytes);
+		/* One element: the queue is created Physically Contiguous below. */
+		_qpair.sq = cudamem_dma_alloc_array(heap, 1, nbytes);
 		if (!_qpair.sq) {
 			err = -errno;
-			UPCIE_DEBUG("FAILED: cudamem_heap_block_alloc(sq); errno(%d)", err);
+			UPCIE_DEBUG("FAILED: cudamem_dma_alloc_array(sq); errno(%d)", err);
 			cuMemHostUnregister(_qpair.sqdb);
 			cuMemHostUnregister(_qpair.cqdb);
 			return err;
 		}
 
-		_qpair.cq = cudamem_heap_block_alloc(heap, nbytes);
+		_qpair.cq = cudamem_dma_alloc_array(heap, 1, nbytes);
 		if (!_qpair.cq) {
 			err = -errno;
-			UPCIE_DEBUG("FAILED: cudamem_heap_block_alloc(cq); errno(%d)", err);
+			UPCIE_DEBUG("FAILED: cudamem_dma_alloc_array(cq); errno(%d)", err);
 			cuMemHostUnregister(_qpair.sqdb);
 			cuMemHostUnregister(_qpair.cqdb);
 			cudamem_heap_block_free(heap, _qpair.sq);

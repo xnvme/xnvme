@@ -25,7 +25,7 @@
  * See also: nvme_qid.h for queue ID (qid) management.
  *
  * @file nvme_qpair.h
- * @version 0.5.1
+ * @version 0.6.0
  */
 
 struct nvme_qpair {
