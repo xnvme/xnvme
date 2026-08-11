@@ -21,14 +21,23 @@
 struct xnvme_queue_upcie {
 	struct xnvme_queue_base base;
 	struct nvme_qpair qpair;
-	uint8_t _rvds[168];
+	size_t sq_offset;  ///< Heap offset of the qpair's SQ, for delete
+	size_t cq_offset;  ///< Heap offset of the qpair's CQ, for delete
+	size_t prp_offset; ///< Heap offset of the qpair's per-request PRP scratch, for delete
+	uint8_t _rvds[144];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_upcie) == XNVME_BE_QUEUE_STATE_NBYTES,
 		    "Incorrect size")
 
-enum nvme_backend {
-	NVME_BACKEND_SYSFS = 0,
-	NVME_BACKEND_VFIO,
+/**
+ * How the target is attached, and with it how the DMA heap is wired up.
+ *
+ * Decided at ctrlr_init from the kernel driver bound to the BDF.
+ */
+enum xnvme_be_upcie_mode {
+	XNVME_BE_UPCIE_MODE_UNSET = 0,
+	XNVME_BE_UPCIE_MODE_UIO_LUT,    ///< uio_pci_generic + hugepages + LUT translator
+	XNVME_BE_UPCIE_MODE_VFIO_TYPE1, ///< vfio-pci + legacy type1 container
 };
 
 /**
@@ -36,9 +45,14 @@ enum nvme_backend {
  */
 struct xnvme_be_upcie_ctrlr {
 	struct nvme_controller *ctrl;
+	struct nvme_dmamem_uio_ctx uio_ctx;     ///< pci_bar_map state    (UIO_LUT mode)
+	struct nvme_dmamem_type1_ctx type1_ctx; ///< type1 device fd state (VFIO_TYPE1 mode)
+	struct vfio_group type1_group;          ///< Owned per-controller in VFIO_TYPE1 mode
+	int type1_group_attached;               ///< Whether type1_group is set_container'd
 	struct nvme_qpair sync; ///< Shared submission/completion queue for synchronous IOs
-	struct vfio_ctx vfio;
-	enum nvme_backend backend;
+	size_t sync_sq_offset;  ///< Heap offset of the sync qpair's SQ
+	size_t sync_cq_offset;  ///< Heap offset of the sync qpair's CQ
+	size_t sync_prp_offset; ///< Heap offset of the sync qpair's per-request PRP scratch
 };
 
 /**
@@ -54,10 +68,24 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_upcie_state) == XNVME_BE_STATE_NBYTES
 
 /**
  * State used across multiple instances of controllers/namespaces
+ *
+ * One dmamem_heap regardless of mode, so every controller allocates queues,
+ * PRP scratch and data buffers from the same offset space. It sits on a
+ * hostmem_hugepage whose borrowed phys_lut resolves addresses at submit time.
  */
 struct xnvme_be_upcie_rte {
+	enum xnvme_be_upcie_mode mode;
 	struct hostmem_config config;
-	struct hostmem_heap heap;
+	struct hostmem_hugepage hp;
+	struct dmamem dmem;
+	struct dmamem_heap heap;
+	struct vfio_container
+		type1_container;   ///< VFIO_TYPE1 mode; shared, first ctrlr sets the iommu
+	int type1_container_alive; ///< Whether the container is open
+	int type1_iommu_set;       ///< Whether VFIO_SET_IOMMU has been applied to it
+	int hp_alive;              ///< Whether hp holds an allocation
+	int dmem_alive;            ///< Whether dmem wraps hp
+	int heap_alive;            ///< Whether heap is initialized
 	int is_initialized;
 };
 

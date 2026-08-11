@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+// SPDX-FileCopyrightText: Simon A. F. Lund
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
@@ -9,14 +9,38 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_upcie.h>
 
+static int
+_submit_sync(struct nvme_qpair *qp, struct nvme_command *cmd, uint32_t timeout_ms,
+	     struct nvme_completion *cpl)
+{
+	int err;
+
+	err = nvme_qpair_enqueue(qp, cmd);
+	if (err) {
+		XNVME_DEBUG("FAILED: nvme_qpair_enqueue(); err(%d)", err);
+		return err;
+	}
+	nvme_qpair_sqdb_update(qp);
+
+	err = nvme_qpair_reap_cpl(qp, timeout_ms, cpl);
+	if (err) {
+		XNVME_DEBUG("FAILED: nvme_qpair_reap_cpl(); err(%d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
 int
 xnvme_be_upcie_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			   size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	struct xnvme_be_upcie_state *state = (void *)ctx->dev->be.state;
 	struct nvme_controller *ctrl = state->ctrlr->ctrl;
+	struct nvme_qpair *qp = &state->ctrlr->sync;
 	struct nvme_command *cmd = (struct nvme_command *)&ctx->cmd;
 	struct nvme_completion *cpl = (struct nvme_completion *)&ctx->cpl;
+	struct nvme_request *req;
 	int err;
 
 	switch (ctx->cmd.common.opcode) {
@@ -31,20 +55,27 @@ xnvme_be_upcie_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 		break;
 	}
 
-	if (mbuf) {
-		ctx->cmd.common.mptr = hostmem_dma_v2p(&g_upcie_rte.heap, mbuf);
+	req = nvme_request_alloc(qp->rpool);
+	if (!req) {
+		XNVME_DEBUG("FAILED: nvme_request_alloc(); errno(%d)", errno);
+		return -errno;
 	}
+	req->user = ctx;
+	cmd->cid = req->cid;
 
 	if (dbuf) {
-		err = nvme_qpair_submit_sync_contig_prps(&state->ctrlr->sync, &g_upcie_rte.heap,
-							 dbuf, dbuf_nbytes, cmd, ctrl->timeout_ms,
-							 cpl);
-	} else {
-		err = nvme_qpair_submit_sync(&state->ctrlr->sync, cmd, ctrl->timeout_ms, cpl);
+		nvme_request_prep_command_prps_contig_dmamem(req, &g_upcie_rte.dmem, dbuf,
+							     dbuf_nbytes, cmd);
+	}
+	if (mbuf) {
+		cmd->mptr = dmamem_va_to_iova(&g_upcie_rte.dmem, mbuf);
 	}
 
+	err = _submit_sync(qp, cmd, ctrl->timeout_ms, cpl);
+	nvme_request_free(qp->rpool, req->cid);
+
 	if (err || xnvme_cmd_ctx_cpl_status(ctx)) {
-		XNVME_DEBUG("FAILED: nvme_qpair_submit_sync(); err(%d); sc(%d); sct(%d)", err,
+		XNVME_DEBUG("FAILED: sync_cmd_io(); err(%d); sc(%d); sct(%d)", err,
 			    ctx->cpl.status.sc, ctx->cpl.status.sct);
 		return err;
 	}
@@ -59,8 +90,10 @@ xnvme_be_upcie_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_
 {
 	struct xnvme_be_upcie_state *state = (void *)ctx->dev->be.state;
 	struct nvme_controller *ctrl = state->ctrlr->ctrl;
+	struct nvme_qpair *qp = &state->ctrlr->sync;
 	struct nvme_command *cmd = (struct nvme_command *)&ctx->cmd;
 	struct nvme_completion *cpl = (struct nvme_completion *)&ctx->cpl;
+	struct nvme_request *req;
 	int err;
 
 	switch (ctx->cmd.common.opcode) {
@@ -75,19 +108,27 @@ xnvme_be_upcie_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_
 		break;
 	}
 
-	if (mbuf) {
-		ctx->cmd.common.mptr = hostmem_dma_v2p(&g_upcie_rte.heap, mbuf);
+	req = nvme_request_alloc(qp->rpool);
+	if (!req) {
+		XNVME_DEBUG("FAILED: nvme_request_alloc(); errno(%d)", errno);
+		return -errno;
 	}
+	req->user = ctx;
+	cmd->cid = req->cid;
 
 	if (dvec) {
-		err = nvme_qpair_submit_sync_iov_prps(&state->ctrlr->sync, &g_upcie_rte.heap, dvec,
-						      dvec_cnt, cmd, ctrl->timeout_ms, cpl);
-	} else {
-		err = nvme_qpair_submit_sync(&state->ctrlr->sync, cmd, ctrl->timeout_ms, cpl);
+		nvme_request_prep_command_prps_iov_dmamem(req, &g_upcie_rte.dmem, dvec, dvec_cnt,
+							  cmd);
+	}
+	if (mbuf) {
+		cmd->mptr = dmamem_va_to_iova(&g_upcie_rte.dmem, mbuf);
 	}
 
+	err = _submit_sync(qp, cmd, ctrl->timeout_ms, cpl);
+	nvme_request_free(qp->rpool, req->cid);
+
 	if (err || xnvme_cmd_ctx_cpl_status(ctx)) {
-		XNVME_DEBUG("FAILED: nvme_qpair_submit_sync(); err(%d); sc(%d); sct(%d)", err,
+		XNVME_DEBUG("FAILED: sync_cmd_iov(); err(%d); sc(%d); sct(%d)", err,
 			    ctx->cpl.status.sc, ctx->cpl.status.sct);
 		return err;
 	}

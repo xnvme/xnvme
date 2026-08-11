@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+// SPDX-FileCopyrightText: Simon A. F. Lund
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
@@ -10,23 +10,18 @@
 #include <xnvme_queue.h>
 #include <xnvme_be_upcie.h>
 
-/**
- * Command Queue for asynchronous command submission and completion
- */
 int
 xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
 {
-	struct xnvme_queue_upcie *upcie_queue = (void *)(queue);
+	struct xnvme_queue_upcie *dq = (void *)queue;
 	struct xnvme_be_upcie_state *state = (void *)queue->base.dev->be.state;
 	int err;
 
-	// The spec says that for systems where memory ordering is not guaranteed, then one should
-	// leave room in the queue to avoid races. Thus, we do so here, by allocating one more than
-	// what is needed.
-	err = nvme_controller_create_io_qpair(state->ctrlr->ctrl, &upcie_queue->qpair,
-					      queue->base.capacity + 1);
+	err = nvme_controller_create_io_qpair_dmamem(
+		state->ctrlr->ctrl, &dq->qpair, queue->base.capacity + 1, &g_upcie_rte.heap,
+		&dq->sq_offset, &dq->cq_offset, &dq->prp_offset);
 	if (err) {
-		XNVME_DEBUG("FAILED: nvme_controller_create_io_qpair()");
+		XNVME_DEBUG("FAILED: nvme_controller_create_io_qpair_dmamem(); err(%d)", err);
 		return err;
 	}
 
@@ -36,11 +31,11 @@ xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
 int
 xnvme_be_upcie_queue_term(struct xnvme_queue *queue)
 {
-	struct xnvme_queue_upcie *upcie_queue = (void *)queue;
+	struct xnvme_queue_upcie *dq = (void *)queue;
 	struct xnvme_be_upcie_state *state = (void *)queue->base.dev->be.state;
-	struct xnvme_be_upcie_ctrlr *ctrlr = state->ctrlr;
 
-	nvme_controller_delete_io_qpair(ctrlr->ctrl, &upcie_queue->qpair);
+	nvme_controller_delete_io_qpair_dmamem(state->ctrlr->ctrl, &dq->qpair, &g_upcie_rte.heap,
+					       dq->sq_offset, dq->cq_offset, dq->prp_offset);
 
 	return 0;
 }
@@ -48,9 +43,9 @@ xnvme_be_upcie_queue_term(struct xnvme_queue *queue)
 int
 xnvme_be_upcie_queue_poke(struct xnvme_queue *queue, uint32_t max)
 {
-	struct xnvme_queue_upcie *upcie_queue = (struct xnvme_queue_upcie *)queue;
-	struct nvme_qpair *qp = &upcie_queue->qpair;
-	struct nvme_completion *cq = upcie_queue->qpair.cq;
+	struct xnvme_queue_upcie *dq = (struct xnvme_queue_upcie *)queue;
+	struct nvme_qpair *qp = &dq->qpair;
+	struct nvme_completion *cq = qp->cq;
 	unsigned int reaped = 0;
 
 	if (!max) {
@@ -77,7 +72,6 @@ xnvme_be_upcie_queue_poke(struct xnvme_queue *queue, uint32_t max)
 
 		reaped++;
 
-		// Process the completion...
 		{
 			struct xnvme_cmd_ctx *ctx;
 			struct nvme_request *req;
@@ -109,12 +103,12 @@ int
 xnvme_be_upcie_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			    size_t XNVME_UNUSED(mbuf_nbytes))
 {
-	struct xnvme_queue_upcie *upcie_queue = (struct xnvme_queue_upcie *)ctx->async.queue;
+	struct xnvme_queue_upcie *dq = (struct xnvme_queue_upcie *)ctx->async.queue;
 	struct nvme_command *cmd = (struct nvme_command *)&ctx->cmd;
 	struct nvme_request *req;
 	int err;
 
-	if (upcie_queue->base.outstanding == ctx->async.queue->base.capacity) {
+	if (dq->base.outstanding == ctx->async.queue->base.capacity) {
 		XNVME_DEBUG("FAILED: queue is full");
 		return -EBUSY;
 	}
@@ -131,7 +125,7 @@ xnvme_be_upcie_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 		break;
 	}
 
-	req = nvme_request_alloc(upcie_queue->qpair.rpool);
+	req = nvme_request_alloc(dq->qpair.rpool);
 	if (!req) {
 		XNVME_DEBUG("FAILED: nvme_request_alloc(); errno(%d)", errno);
 		return -errno;
@@ -141,23 +135,21 @@ xnvme_be_upcie_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 	cmd->cid = req->cid;
 
 	if (dbuf) {
-		nvme_request_prep_command_prps_contig(req, &g_upcie_rte.heap, dbuf, dbuf_nbytes,
-						      cmd);
+		nvme_request_prep_command_prps_contig_dmamem(req, &g_upcie_rte.dmem, dbuf,
+							     dbuf_nbytes, cmd);
 	}
-
 	if (mbuf) {
-		cmd->mptr = hostmem_dma_v2p(&g_upcie_rte.heap, mbuf);
+		cmd->mptr = dmamem_va_to_iova(&g_upcie_rte.dmem, mbuf);
 	}
 
-	err = nvme_qpair_enqueue(&upcie_queue->qpair, cmd);
+	err = nvme_qpair_enqueue(&dq->qpair, cmd);
 	if (err) {
-		XNVME_DEBUG("FAILED: nvme_qpair_enqueue();");
-		nvme_request_free(upcie_queue->qpair.rpool, req->cid);
+		XNVME_DEBUG("FAILED: nvme_qpair_enqueue(); err(%d)", err);
+		nvme_request_free(dq->qpair.rpool, req->cid);
 		return err;
 	}
 
-	upcie_queue->base.outstanding += 1;
-
+	dq->base.outstanding += 1;
 	return 0;
 }
 
@@ -166,12 +158,12 @@ xnvme_be_upcie_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size
 			     size_t XNVME_UNUSED(dvec_nbytes), void *mbuf,
 			     size_t XNVME_UNUSED(mbuf_nbytes))
 {
-	struct xnvme_queue_upcie *upcie_queue = (struct xnvme_queue_upcie *)ctx->async.queue;
+	struct xnvme_queue_upcie *dq = (struct xnvme_queue_upcie *)ctx->async.queue;
 	struct nvme_command *cmd = (struct nvme_command *)&ctx->cmd;
 	struct nvme_request *req;
 	int err;
 
-	if (upcie_queue->base.outstanding == ctx->async.queue->base.capacity) {
+	if (dq->base.outstanding == ctx->async.queue->base.capacity) {
 		XNVME_DEBUG("FAILED: queue is full");
 		return -EBUSY;
 	}
@@ -188,7 +180,7 @@ xnvme_be_upcie_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size
 		break;
 	}
 
-	req = nvme_request_alloc(upcie_queue->qpair.rpool);
+	req = nvme_request_alloc(dq->qpair.rpool);
 	if (!req) {
 		XNVME_DEBUG("FAILED: nvme_request_alloc(); errno(%d)", errno);
 		return -errno;
@@ -198,22 +190,21 @@ xnvme_be_upcie_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size
 	cmd->cid = req->cid;
 
 	if (dvec) {
-		nvme_request_prep_command_prps_iov(req, &g_upcie_rte.heap, dvec, dvec_cnt, cmd);
+		nvme_request_prep_command_prps_iov_dmamem(req, &g_upcie_rte.dmem, dvec, dvec_cnt,
+							  cmd);
 	}
-
 	if (mbuf) {
-		cmd->mptr = hostmem_dma_v2p(&g_upcie_rte.heap, mbuf);
+		cmd->mptr = dmamem_va_to_iova(&g_upcie_rte.dmem, mbuf);
 	}
 
-	err = nvme_qpair_enqueue(&upcie_queue->qpair, cmd);
+	err = nvme_qpair_enqueue(&dq->qpair, cmd);
 	if (err) {
-		XNVME_DEBUG("FAILED: nvme_qpair_enqueue();");
-		nvme_request_free(upcie_queue->qpair.rpool, req->cid);
+		XNVME_DEBUG("FAILED: nvme_qpair_enqueue(); err(%d)", err);
+		nvme_request_free(dq->qpair.rpool, req->cid);
 		return err;
 	}
 
-	upcie_queue->base.outstanding += 1;
-
+	dq->base.outstanding += 1;
 	return 0;
 }
 

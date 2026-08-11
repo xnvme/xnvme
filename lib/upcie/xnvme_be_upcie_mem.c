@@ -9,18 +9,35 @@
 #include <xnvme_be_upcie.h>
 #include <xnvme_dev.h>
 
+/**
+ * Allocate a buffer from the RTE's dmamem_heap.
+ *
+ * Offsets into the heap resolve to device addresses through the dmamem
+ * translator, so the same allocation works whichever way the target is
+ * attached; the caller hands the returned VA to the device as a PRP later.
+ */
 void *
 xnvme_be_upcie_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t nbytes, uint64_t *phys)
 {
+	size_t offset = 0;
 	void *buf;
+	int err;
 
-	buf = hostmem_dma_malloc(&g_upcie_rte.heap, nbytes);
-	if (!buf) {
-		errno = ENOMEM;
+	err = dmamem_heap_alloc(&g_upcie_rte.heap, nbytes, &offset);
+	if (err) {
+		errno = -err;
 		return NULL;
 	}
+
+	buf = dmamem_heap_at_va(&g_upcie_rte.heap, offset);
+	if (!buf) {
+		dmamem_heap_free(&g_upcie_rte.heap, offset);
+		errno = EFAULT;
+		return NULL;
+	}
+
 	if (phys) {
-		*phys = hostmem_dma_v2p(&g_upcie_rte.heap, buf);
+		*phys = dmamem_heap_at_iova(&g_upcie_rte.heap, offset);
 	}
 
 	return buf;
@@ -29,13 +46,20 @@ xnvme_be_upcie_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t nbyte
 void
 xnvme_be_upcie_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
 {
-	hostmem_dma_free(&g_upcie_rte.heap, buf);
+	size_t offset;
+
+	if (!buf) {
+		return;
+	}
+	offset = (size_t)((char *)buf - (char *)g_upcie_rte.dmem.cpu_va);
+
+	dmamem_heap_free(&g_upcie_rte.heap, offset);
 }
 
 int
 xnvme_be_upcie_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf, uint64_t *phys)
 {
-	*phys = hostmem_dma_v2p(&g_upcie_rte.heap, buf);
+	*phys = dmamem_va_to_iova(&g_upcie_rte.dmem, buf);
 
 	return 0;
 }
