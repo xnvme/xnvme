@@ -18,5 +18,6 @@ In addition to the cli tools, performance tools are provided in the form of
    zoned/index
    xdd/index
    file/index
+   homi/index
    fio/index
    xnvmeperf/index
