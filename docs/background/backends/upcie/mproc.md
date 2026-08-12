@@ -166,6 +166,10 @@ secondaries are left with admin-queue mapping and controller that may have been
 closed and freed. A clean primary teardown only logs a warning in this case; it
 does not prevent it. Operators must ensure the primary outlives all secondaries.
 
+The {ref}`sec-tools-homi` tool serves this purpose: it opens a set of devices and
+holds them open until signalled, giving the primary role to a process whose only
+job is to outlive the secondaries.
+
 ### No isolation between processes
 
 All participating processes map the controller segment read/write, including the
