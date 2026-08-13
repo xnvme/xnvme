@@ -697,14 +697,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # empty 'steps' field means run everything in cijoe task
         include:
-        - {os: 'freebsd', ver: '14', guest_dir: 'freebsd-14-amd64', transport: 'pcie'}
-        #- {os: 'freebsd', ver: '15', guest_dir: 'freebsd-15-amd64', transport: 'pcie'}
-        - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'pcie'}
-        - {os: 'debian', ver: 'trixie-iommu_disabled', guest_dir: 'debian-trixie-amd64', transport: 'pcie'}
-        - {os: 'debian', ver: 'trixie-iommu_enabled-tcp-spdk', guest_dir: 'debian-trixie-amd64', transport: 'tcp-spdk'}
+        - {os: 'freebsd', ver: '14', guest_dir: 'freebsd-14-amd64', transport: 'pcie', steps: ''}
+        #- {os: 'freebsd', ver: '15', guest_dir: 'freebsd-15-amd64', transport: 'pcie', steps: ''}
+        - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'pcie', steps: 'sysinfo
+            enumerate hugepages spdk_probe_diag test_python test_ramdisk'}
+        - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'pcie', steps: 'sysinfo
+            enumerate hugepages spdk_probe_diag test_os'}
+        - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'pcie', steps: 'sysinfo
+            enumerate hugepages spdk_probe_diag test_pcie'}
+        - {os: 'debian', ver: 'trixie-iommu_disabled', guest_dir: 'debian-trixie-amd64', transport: 'pcie', steps: ''}
+        - {os: 'debian', ver: 'trixie-iommu_enabled-tcp-spdk', guest_dir: 'debian-trixie-amd64', transport: 'tcp-spdk', steps: ''}
         # tcp-linux: enabled in follow-up PR.
-        #- {os: 'debian', ver: 'trixie-iommu_enabled-tcp-linux', guest_dir: 'debian-trixie-amd64', transport: 'tcp-linux'}
+        #- {os: 'debian', ver: 'trixie-iommu_enabled-tcp-linux', guest_dir: 'debian-trixie-amd64', transport: 'tcp-linux', steps: ''}
 
     container:
       image: ghcr.io/safl/nosi/ubuntu-2604-docker:latest
@@ -757,6 +763,7 @@ jobs:
       run: |
         make verify-guest \
           TRANSPORT="${{ matrix.transport }}" \
+          TEST_STEPS="${{ matrix.steps }}" \
           CIJOE_OUTPUT="${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}"
 
     - name: Collect guest serial console
