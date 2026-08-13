@@ -208,6 +208,7 @@ def get_backend_configurations():
             "admin": ["spdk"],
             "mem": ["spdk"],
             "label": ["pcie"],
+            "mproc": True,
         },
         # Ramdisk
         {
