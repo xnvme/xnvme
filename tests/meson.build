@@ -19,6 +19,8 @@ tests = {
   ],
   'cli.c': [
     ['optional', ['optional']],
+    ['numeric', ['numeric', '--nqueues', '4', '--dev-id', '7', '--max-io-bytes', '131072']],
+    ['numeric, not given', ['numeric']],
   ],
   'compare.c': [
     ['no args', ['compare', '1GB']],
