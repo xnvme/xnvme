@@ -13,8 +13,9 @@ Running **homi** puts that responsibility in a process of its own, so the
 processes actually doing I/O can come and go freely as secondaries.
 
 :ref:`sec-backends-upcie-mproc` is only available for the
-:ref:`sec-backends-upcie` and :ref:`sec-backends-spdk` backends. **homi** is
-therefore useful where one of those is built: ``upcie`` on Linux, and ``spdk`` on
+:ref:`sec-backends-upcie` backend and its GPU variants, and for the
+:ref:`sec-backends-spdk` backend. **homi** is therefore useful where one of those
+is built: ``upcie``, ``upcie-cuda`` and ``upcie-hip`` on Linux, and ``spdk`` on
 Linux and FreeBSD. On Windows it exits with ``-ENOTSUP``, since no
 multi-process capable backend is available there. On other platforms it runs, but
 opening a device with a non-zero ``shm_id`` fails with ``-ENOTSUP``.
@@ -67,9 +68,16 @@ Backends
 ========
 
 **homi** works with any backend that advertises the multi-process capability,
-which is ``spdk`` and ``upcie``::
+which is ``spdk``, ``upcie``, ``upcie-cuda`` and ``upcie-hip``::
 
    homi start 0000:03:00.0 --be spdk --shm_id 1
+
+With ``upcie-cuda`` and ``upcie-hip``, **homi** additionally caps the GPU device
+heap at 2 MiB rather than the backend default of 1 GiB. It never allocates data
+buffers, which is all the device heap is used for, so claiming the default would
+take VRAM away from the secondaries::
+
+   homi start 0000:03:00.0 --be upcie-cuda --shm_id 1
 
 .. seealso::
 
