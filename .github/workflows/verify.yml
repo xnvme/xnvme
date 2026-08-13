@@ -688,29 +688,50 @@ jobs:
   #
   # Build and test xNVMe
   #
-  verify:
+  generate-verify-matrix:
     needs: [source-archive, source-format-check, build-python]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.job == 'verify')
+
+    outputs:
+      matrix: ${{ steps.generate.outputs.matrix }}
+
+    env:
+      # Each entry is expanded into one entry per 'test_*' step of the cijoe workflow it
+      # runs, so that the test-steps of a workflow are verified as separate jobs.
+      BASE_MATRIX: |
+        - {os: 'freebsd', ver: '14', guest_dir: 'freebsd-14-amd64', transport: 'pcie'}
+        #- {os: 'freebsd', ver: '15', guest_dir: 'freebsd-15-amd64', transport: 'pcie'}
+        - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'pcie'}
+        - {os: 'debian', ver: 'trixie-iommu_disabled', guest_dir: 'debian-trixie-amd64', transport: 'pcie'}
+        - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'tcp-spdk'}
+        # tcp-linux: enabled in follow-up PR.
+        #- {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'tcp-linux'}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Generate the job-matrix from the cijoe workflows
+      id: generate
+      run: |
+        pip install --quiet pyyaml
+        python3 toolbox/gha_matrix.py <<< "$BASE_MATRIX" >> "$GITHUB_OUTPUT"
+
+    - name: Show the generated job-matrix
+      run: |
+        echo '${{ steps.generate.outputs.matrix }}' | python3 -m json.tool
+
+  verify:
+    name: verify (${{ matrix.os }}, ${{ matrix.ver }}, ${{ matrix.transport }}, ${{ matrix.test }})
+    needs: [generate-verify-matrix, source-archive, source-format-check, build-python]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' &&
       github.event.inputs.job == 'verify')
 
     strategy:
       fail-fast: false
-      matrix:
-        # empty 'steps' field means run everything in cijoe task
-        include:
-        - {os: 'freebsd', ver: '14', guest_dir: 'freebsd-14-amd64', transport: 'pcie', steps: ''}
-        #- {os: 'freebsd', ver: '15', guest_dir: 'freebsd-15-amd64', transport: 'pcie', steps: ''}
-        - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'pcie', steps: 'sysinfo
-            enumerate hugepages spdk_probe_diag test_python test_ramdisk'}
-        - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'pcie', steps: 'sysinfo
-            enumerate hugepages spdk_probe_diag test_os'}
-        - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'pcie', steps: 'sysinfo
-            enumerate hugepages spdk_probe_diag test_pcie'}
-        - {os: 'debian', ver: 'trixie-iommu_disabled', guest_dir: 'debian-trixie-amd64', transport: 'pcie', steps: ''}
-        - {os: 'debian', ver: 'trixie-iommu_enabled-tcp-spdk', guest_dir: 'debian-trixie-amd64', transport: 'tcp-spdk', steps: ''}
-        # tcp-linux: enabled in follow-up PR.
-        #- {os: 'debian', ver: 'trixie-iommu_enabled-tcp-linux', guest_dir: 'debian-trixie-amd64', transport: 'tcp-linux', steps: ''}
+      matrix: ${{ fromJSON(needs.generate-verify-matrix.outputs.matrix) }}
 
     container:
       image: ghcr.io/safl/nosi/ubuntu-2604-docker:latest
@@ -764,12 +785,12 @@ jobs:
         make verify-guest \
           TRANSPORT="${{ matrix.transport }}" \
           TEST_STEPS="${{ matrix.steps }}" \
-          CIJOE_OUTPUT="${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}"
+          CIJOE_OUTPUT="${{ github.job }}-${{ matrix.id }}"
 
     - name: Collect guest serial console
       if: always() && (matrix.os == 'debian' || matrix.os == 'freebsd')
       run: |
-        dst="cijoe/${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}"
+        dst="cijoe/${{ github.job }}-${{ matrix.id }}"
         serial="$HOME/guests/${{ matrix.guest_dir }}/serial.output"
         echo "::group::guest serial console (tail)"
         tail -c 20000 "$serial" 2>/dev/null || echo "no guest serial output"
@@ -779,7 +800,7 @@ jobs:
     - name: Collect vfu_kvssd device log
       if: always()
       run: |
-        dst="cijoe/${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}"
+        dst="cijoe/${{ github.job }}-${{ matrix.id }}"
         echo "::group::vfu_kvssd device log"
         cat /tmp/vfu_kvssd.log 2>/dev/null || echo "no vfu_kvssd device log"
         echo "::endgroup::"
@@ -793,22 +814,22 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v6.0.0
       with:
-        name: ${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-report-html
-        path: cijoe/${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-*/report.html
+        name: ${{ github.job }}-${{ matrix.id }}-report-html
+        path: cijoe/${{ github.job }}-${{ matrix.id }}-*/report.html
         if-no-files-found: warn
 
-    - name: CIJOE, archive verify-${{ matrix.os }}-${{ matrix.ver }}-reports
+    - name: CIJOE, archive verify-${{ matrix.id }}-reports
       if: always()
       run: |
-        tar czf ${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-reports.tar.gz \
-          cijoe/${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-*
+        tar czf ${{ github.job }}-${{ matrix.id }}-reports.tar.gz \
+          cijoe/${{ github.job }}-${{ matrix.id }}-*
 
-    - name: CIJOE, upload verify-${{ matrix.os }}-${{ matrix.ver }}-reports
+    - name: CIJOE, upload verify-${{ matrix.id }}-reports
       uses: actions/upload-artifact@v6.0.0
       if: always()
       with:
-        name: ${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-reports
-        path: ${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-reports.tar.gz
+        name: ${{ github.job }}-${{ matrix.id }}-reports
+        path: ${{ github.job }}-${{ matrix.id }}-reports.tar.gz
         if-no-files-found: error
 
   #
