@@ -15,6 +15,12 @@
 // per device that costs.
 #define HOMI_HEAP_SIZE_PER_DEV (16ULL * 1024 * 1024)
 
+// The GPU backends allocate a device heap for data buffers, which HOMI never allocates
+// from; only the control structures it does need live on the host heap. Claiming the
+// backend default would take a GiB of VRAM away from the secondaries. 2MiB is the dma-buf
+// granularity that AMD requires, so it is the smallest heap both GPU backends accept.
+#define HOMI_DEVICE_HEAP_SIZE (2ULL * 1024 * 1024)
+
 #ifndef XNVME_PLATFORM_WINDOWS_ENABLED
 
 static volatile sig_atomic_t stop = 0;
@@ -119,6 +125,8 @@ sub_start(struct xnvme_cli *cli)
 	// the secondaries HOMI exists to serve.
 	opts.host_heap_size = cli->args.host_heap_size ? cli->args.host_heap_size
 						       : HOMI_HEAP_SIZE_PER_DEV * ndevs;
+	opts.device_heap_size =
+		cli->args.device_heap_size ? cli->args.device_heap_size : HOMI_DEVICE_HEAP_SIZE;
 
 	err = _xnvme_dev_open_all(dev_uris, ndevs, &opts, &devs);
 	if (err) {
@@ -159,9 +167,10 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_URI, XNVME_CLI_POSN},
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_SHM_ID, XNVME_CLI_LREQ},
-			{XNVME_CLI_OPT_HOST_HEAP_SIZE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_ORCH_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_HOST_HEAP_SIZE, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_DEVICE_HEAP_SIZE, XNVME_CLI_LOPT},
 		},
 	},
 };
