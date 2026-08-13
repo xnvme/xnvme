@@ -76,6 +76,18 @@ secondary's mapping by the constant offset between the secondary's import base
 and the primary's published base. PRP entries for a secondary's own commands are
 translated against its private heap, whose physical pages it resolves itself.
 
+### GPU backends
+
+The `upcie-cuda` and `upcie-hip` backends share everything described above: they
+reuse the host backend's controller and queue-pair init/term, and they keep all
+NVMe control structures on the host hugepage heap. Only data buffers live in GPU
+memory, which is allocated from a per-process heap and therefore requires no
+coordination between processes.
+
+The CUDA backend also exposes GPU-resident queue pairs through
+`xnvme_cuda_queue_create()`/`xnvme_cuda_queue_destroy()`. These run under the
+same mutex and shared queue-id bitmap as ordinary queue-pair creation.
+
 (sec-backends-upcie-mproc-startup)=
 ## Startup handshake
 
@@ -191,18 +203,14 @@ startup. Because uPCIe also needs hugepages for its DMA memory, the two cannot
 be expected to share a system, and running uPCIe and SPDK in multi-process
 mode side by side cannot be not guaranteed to work.
 
-### CUDA backend
+### GPU backend doorbell registration
 
-Multi-process mode is **not supported** with the `upcie-cuda` backend. The
-backend does not advertise the multi-process capability, so opening an
-`upcie-cuda` device with a non-zero `shm_id` fails with `-ENOTSUP`.
+`upcie-cuda` registers the I/O queue doorbells of its GPU-resident queue pairs
+with `cuMemHostRegister(..., CU_MEMHOSTREGISTER_IOMEMORY)`. Each process maps
+BAR0 independently, so each registers its own mapping of the doorbell page; this
+has not been exercised across many concurrent processes on the same controller.
 
-The memory model is not the obstacle: `upcie-cuda` keeps all NVMe control
-structures — the admin queue, the I/O submission/completion rings, PRP lists
-and request pools — on the same host hugepage heap that multi-process mode
-shares, and places only data buffers in per-process GPU memory, which is never
-shared between processes. What is missing is serialization: the `upcie-cuda`
-admin path submits to the shared admin queue without taking the per-controller
-admin mutex, so concurrent processes would race on the admin submission ring.
-Enabling multi-process mode for `upcie-cuda` would require serializing its admin
-path under the same mutex used by the host backend.
+Note also that `upcie-cuda` and `upcie-hip` require the device to be bound to
+`uio_pci_generic`. The `vfio-pci` path that the host backend supports is
+rejected before the controller is opened, so it is unavailable in multi-process
+mode with these backends as well.
