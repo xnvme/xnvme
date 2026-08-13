@@ -1,0 +1,9 @@
+Usage: qublk <command> [<args>]
+
+Where <command> is one of:
+
+  run              | Serve a ublk block-device backed by the given xNVMe device
+
+See 'qublk <command> --help' for the description of [<args>]
+
+qublk - ublk server backed by xNVMe -- ver: {major: 0, minor: 7, patch: 5}

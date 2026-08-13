@@ -1,0 +1,23 @@
+Usage: qublk run <uri> [<args>]
+
+Serve a ublk block-device backed by the given xNVMe device
+  
+Positional arguments:
+
+  uri                           ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1:8888', '\\.\PhysicalDrive1'
+  
+Where <args> include:
+
+  [ --qdepth NUM ]              ; Use given 'NUM' as queue max capacity
+  [ --nqueues NUM ]             ; Number of queues per device
+  [ --dev-id NUM ]              ; Use given 'NUM' as device identifier
+  [ --max-io-bytes NUM ]        ; Use given 'NUM' as per-IO buffer size in bytes
+  
+With <args> for backend:
+
+  [ --be STRING ]               ; xNVMe backend, e.g. 'spdk', 'libvfn', 'upcie'
+  [ --help ]                    ; Show usage / help
+
+See 'qublk --help' for other commands
+
+qublk - ublk server backed by xNVMe -- ver: {major: 0, minor: 7, patch: 5}

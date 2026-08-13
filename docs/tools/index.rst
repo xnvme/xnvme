@@ -8,7 +8,8 @@ Navigate the menu on the left for descriptions and usage examples of the
 different command-line tools provided with **xNVMe**.
 
 In addition to the cli tools, performance tools are provided in the form of
-:ref:`sec-tools-fio` and :ref:`sec-tools-xnvmeperf`.
+:ref:`sec-tools-fio` and :ref:`sec-tools-xnvmeperf`, and :ref:`sec-tools-qublk`
+exposes an **xNVMe** device as an ordinary Linux block device.
 
 .. toctree::
    :hidden:
@@ -21,3 +22,4 @@ In addition to the cli tools, performance tools are provided in the form of
    homi/index
    fio/index
    xnvmeperf/index
+   qublk/index
