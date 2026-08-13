@@ -96,6 +96,8 @@ struct xnvme_cli_args {
 	uint32_t seed;
 	uint32_t iosize;
 	uint32_t qdepth;
+	uint32_t dev_id;
+	uint32_t max_io_bytes;
 	bool direct;
 	uint32_t limit;
 
@@ -373,7 +375,11 @@ enum xnvme_cli_opt {
 	XNVME_CLI_OPT_HOST_HEAP_SIZE   = 133, ///< XNVME_CLI_OPT_HOST_HEAP_SIZE
 	XNVME_CLI_OPT_DEVICE_HEAP_SIZE = 134, ///< XNVME_CLI_OPT_DEVICE_HEAP_SIZE
 
-	XNVME_CLI_OPT_END = 135, ///< XNVME_CLI_OPT_END
+	XNVME_CLI_OPT_DEV_ID = 135, ///< XNVME_CLI_OPT_DEV_ID
+
+	XNVME_CLI_OPT_MAX_IO_BYTES = 136, ///< XNVME_CLI_OPT_MAX_IO_BYTES
+
+	XNVME_CLI_OPT_END = 137, ///< XNVME_CLI_OPT_END
 };
 
 /**

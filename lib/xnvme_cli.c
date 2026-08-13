@@ -919,6 +919,18 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "Number of queues per device",
 	},
 	{
+		.opt = XNVME_CLI_OPT_DEV_ID,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
+		.name = "dev-id",
+		.descr = "Use given 'NUM' as device identifier",
+	},
+	{
+		.opt = XNVME_CLI_OPT_MAX_IO_BYTES,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
+		.name = "max-io-bytes",
+		.descr = "Use given 'NUM' as per-IO buffer size in bytes",
+	},
+	{
 		.opt = XNVME_CLI_OPT_ALT_BE,
 		.vtype = XNVME_CLI_OPT_VTYPE_STR,
 		.name = "alt-be",
@@ -1564,6 +1576,12 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 		break;
 	case XNVME_CLI_OPT_QDEPTH:
 		args->qdepth = num;
+		break;
+	case XNVME_CLI_OPT_DEV_ID:
+		args->dev_id = num;
+		break;
+	case XNVME_CLI_OPT_MAX_IO_BYTES:
+		args->max_io_bytes = num;
 		break;
 	case XNVME_CLI_OPT_DIRECT:
 		args->direct = true;
