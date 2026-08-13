@@ -280,7 +280,8 @@ guest-test:
 		--config "configs/$(GUEST).toml" \
 		--config "configs/fio.toml" \
 		--config "configs/xnvme.toml" \
-		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-test-results,cijoe-output-guest-test)"
+		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-test-results,cijoe-output-guest-test)" \
+		$(TEST_STEPS)
 	@echo "## xNVMe: guest-test [DONE]"
 
 define guest-stop-help
