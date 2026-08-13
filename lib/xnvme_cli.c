@@ -623,6 +623,12 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "For be=upcie, host DMA heap size in bytes",
 	},
 	{
+		.opt = XNVME_CLI_OPT_DEVICE_HEAP_SIZE,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
+		.name = "device_heap_size",
+		.descr = "For be={upcie-cuda,upcie-hip}, GPU device heap size in bytes",
+	},
+	{
 		.opt = XNVME_CLI_OPT_MAIN_CORE,
 		.vtype = XNVME_CLI_OPT_VTYPE_HEX,
 		.name = "main_core",
@@ -1621,6 +1627,9 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 	case XNVME_CLI_OPT_HOST_HEAP_SIZE:
 		args->host_heap_size = num;
 		break;
+	case XNVME_CLI_OPT_DEVICE_HEAP_SIZE:
+		args->device_heap_size = num;
+		break;
 	case XNVME_CLI_OPT_MAIN_CORE:
 		args->main_core = arg ? num : 0;
 		break;
@@ -2248,6 +2257,9 @@ xnvme_cli_to_opts(const struct xnvme_cli *cli, struct xnvme_opts *opts)
 	opts->shm_id = cli->given[XNVME_CLI_OPT_SHM_ID] ? cli->args.shm_id : opts->shm_id;
 	opts->host_heap_size = cli->given[XNVME_CLI_OPT_HOST_HEAP_SIZE] ? cli->args.host_heap_size
 									: opts->host_heap_size;
+	opts->device_heap_size = cli->given[XNVME_CLI_OPT_DEVICE_HEAP_SIZE]
+					 ? cli->args.device_heap_size
+					 : opts->device_heap_size;
 	opts->main_core =
 		cli->given[XNVME_CLI_OPT_MAIN_CORE] ? cli->args.main_core : opts->main_core;
 	opts->core_mask =
