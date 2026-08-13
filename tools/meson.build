@@ -62,3 +62,4 @@ foreach source, tests : tools
 endforeach
 
 subdir('xnvmeperf')
+subdir('qublk')
