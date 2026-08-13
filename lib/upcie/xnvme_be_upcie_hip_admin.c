@@ -14,6 +14,7 @@ xnvme_be_upcie_hip_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t 
 				  void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	struct xnvme_be_upcie_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_upcie_ctrlr *be_ctrlr = state->ctrlr;
 	struct nvme_controller *ctrlr = state->ctrlr->ctrl;
 	struct nvme_command *cmd = (struct nvme_command *)&ctx->cmd;
 	struct nvme_completion *cpl = (struct nvme_completion *)&ctx->cpl;
@@ -32,6 +33,16 @@ xnvme_be_upcie_hip_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t 
 	if (dbuf) {
 		nvme_request_prep_command_prps_contig_hip(req, &g_upcie_hip_rte.hip_heap, dbuf,
 							  dbuf_nbytes, cmd);
+	}
+
+	// The admin queue is shared in multi-process mode, and the request pool it draws
+	// command identifiers from is not. Holding the mutex from submission all the way
+	// through reaping keeps a single command in flight, so identifiers cannot collide.
+	err = xnvme_be_upcie_ctrlr_mutex_lock(be_ctrlr);
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_be_upcie_ctrlr_mutex_lock(); err(%d)", err);
+		nvme_request_free(ctrlr->aq.rpool, req->cid);
+		return err;
 	}
 
 	err = nvme_qpair_enqueue(&ctrlr->aq, cmd);
@@ -55,6 +66,7 @@ xnvme_be_upcie_hip_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t 
 	}
 
 exit:
+	xnvme_be_upcie_ctrlr_mutex_unlock(be_ctrlr);
 	nvme_request_free(ctrlr->aq.rpool, req->cid);
 	return err;
 }
