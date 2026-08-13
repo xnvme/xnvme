@@ -154,6 +154,7 @@ def get_backend_configurations():
             "sync": ["upcie-cuda"],
             "admin": ["upcie-cuda"],
             "label": ["cuda"],
+            "mproc": True,
         },
         # Ramdisk
         {
