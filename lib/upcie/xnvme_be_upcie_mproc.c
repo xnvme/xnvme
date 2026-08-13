@@ -676,6 +676,52 @@ failed:
 }
 
 /**
+ * Take the admin-queue mutex and import the shared I/O queue-id bitmap
+ *
+ * Wraps xnvme_be_upcie_ctrlr_mutex_lock() for callers that allocate or release
+ * I/O queue identifiers. In a secondary process ctrlr->ctrl is a process-local
+ * copy of the controller, so the bitmap has to be pulled in from shared memory
+ * before it is consulted. In a primary process, and when not in multi-process
+ * mode, this is a no-op beyond the locking itself.
+ *
+ * @param ctrlr The backend controller
+ *
+ * @return On success, 0 is returned. On error, a non-zero value is returned.
+ */
+int
+xnvme_be_upcie_mproc_qids_lock(struct xnvme_be_upcie_ctrlr *ctrlr)
+{
+	int err;
+
+	err = xnvme_be_upcie_ctrlr_mutex_lock(ctrlr);
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_be_upcie_ctrlr_mutex_lock(); err(%d)", err);
+		return err;
+	}
+
+	if (ctrlr->shm) {
+		memcpy(ctrlr->ctrl->qids, ctrlr->shm->ctrl.qids, sizeof(ctrlr->ctrl->qids));
+	}
+
+	return 0;
+}
+
+/**
+ * Publish the I/O queue-id bitmap and release the admin-queue mutex
+ *
+ * @param ctrlr The backend controller
+ */
+void
+xnvme_be_upcie_mproc_qids_unlock(struct xnvme_be_upcie_ctrlr *ctrlr)
+{
+	if (ctrlr->shm) {
+		memcpy(ctrlr->shm->ctrl.qids, ctrlr->ctrl->qids, sizeof(ctrlr->shm->ctrl.qids));
+	}
+
+	xnvme_be_upcie_ctrlr_mutex_unlock(ctrlr);
+}
+
+/**
  * Create or delete a queue pair in multi process mode
  *
  * Helper function for locking the shared controller mutex, updating the
@@ -691,16 +737,13 @@ xnvme_be_upcie_mproc_create_or_delete_io_qpair(struct xnvme_be_upcie_ctrlr *ctrl
 					       struct nvme_qpair *qpair, uint16_t depth,
 					       bool create)
 {
-	struct xnvme_be_upcie_ctrlr_shm *shm = ctrlr->shm;
 	int err;
 
-	err = xnvme_be_upcie_ctrlr_mutex_lock(ctrlr);
+	err = xnvme_be_upcie_mproc_qids_lock(ctrlr);
 	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_be_upcie_ctrlr_mutex_lock(); err(%d)", err);
+		XNVME_DEBUG("FAILED: xnvme_be_upcie_mproc_qids_lock(); err(%d)", err);
 		return err;
 	}
-
-	memcpy(ctrlr->ctrl->qids, shm->ctrl.qids, sizeof(ctrlr->ctrl->qids));
 
 	if (create) {
 		err = nvme_controller_create_io_qpair(ctrlr->ctrl, qpair, depth);
@@ -708,8 +751,7 @@ xnvme_be_upcie_mproc_create_or_delete_io_qpair(struct xnvme_be_upcie_ctrlr *ctrl
 		err = nvme_controller_delete_io_qpair(ctrlr->ctrl, qpair);
 	}
 
-	memcpy(shm->ctrl.qids, ctrlr->ctrl->qids, sizeof(shm->ctrl.qids));
-	xnvme_be_upcie_ctrlr_mutex_unlock(ctrlr);
+	xnvme_be_upcie_mproc_qids_unlock(ctrlr);
 
 	return err;
 }
