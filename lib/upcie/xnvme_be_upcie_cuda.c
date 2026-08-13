@@ -18,7 +18,7 @@ const struct xnvme_be_config g_xnvme_be_upcie_cuda = {
 		{
 			.name = "upcie-cuda",
 			.descr = "CUDA-based uPCIe userspace NVMe driver",
-			.caps = XNVME_BE_CAP_NVME_PCIE,
+			.caps = XNVME_BE_CAP_NVME_PCIE | XNVME_BE_CAP_MPROC,
 		},
 };
 
