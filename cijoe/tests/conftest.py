@@ -307,7 +307,7 @@ def device(cijoe, request):
             be_opts = callspec.params.get("be_opts") if callspec else None
             if be_opts:
                 if be_opts.get("mproc"):
-                    MprocPrimary.start(cijoe, be_opts["be"])
+                    MprocPrimary.start(cijoe, be_opts["be"], be_opts.get("label"))
                 else:
                     pytest.skip(f"{be_opts.get('be')} does not support multi-process")
         XnvmeDriver.attach(cijoe, request.param)
@@ -353,10 +353,13 @@ class MprocPrimary:
     """
     Manages the lifecycle of a homi primary daemon.
 
-    A single primary holds every 'pcie' device in the configuration, so it can serve
-    whichever device a testcase asks for, as well as testcases enumerating and opening
-    all of them. Tracks which backend the running primary was started with (similar to
-    XnvmeDriver.IS_KERNEL_ATTACHED), so it is only restarted when the backend changes.
+    A single primary holds every device carrying the labels of the backend-configuration
+    under test, so it can serve whichever device a testcase asks for, as well as
+    testcases enumerating and opening all of them. Labels vary per backend; the GPU
+    backends use 'cuda'/'hip' where the host backend uses 'pcie'.
+
+    Tracks the backend and labels the running primary was started with (similar to
+    XnvmeDriver.IS_KERNEL_ATTACHED), so it is only restarted when those change.
     """
 
     RUNNING = None
@@ -385,13 +388,15 @@ class MprocPrimary:
         return not err
 
     @staticmethod
-    def start(cijoe, be):
-        if MprocPrimary.RUNNING == be:
+    def start(cijoe, be, labels=None):
+        labels = labels if labels else ["pcie"]
+
+        if MprocPrimary.RUNNING == (be, tuple(labels)):
             return
 
-        uris = " ".join(d["uri"] for d in cijoe_config_get_all_devices(["pcie"]))
+        uris = " ".join(d["uri"] for d in cijoe_config_get_all_devices(labels))
         if not uris:
-            pytest.skip("Configuration has no device labelled: ['pcie']")
+            pytest.skip(f"Configuration has no device labelled: {labels}")
 
         XnvmeDriver.kernel_detach(cijoe)
 
@@ -423,7 +428,7 @@ class MprocPrimary:
             cijoe.run(f"cat /tmp/mproc_{be}.out")
             pytest.fail(f"homi primary for be({be}) did not become ready")
 
-        MprocPrimary.RUNNING = be
+        MprocPrimary.RUNNING = (be, tuple(labels))
         MprocPrimary.CIJOE = cijoe
 
     @staticmethod
