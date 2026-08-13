@@ -121,6 +121,7 @@ struct xnvme_cli_args {
 
 	uint64_t shm_id;
 	uint64_t host_heap_size;
+	uint64_t device_heap_size;
 	uint32_t main_core;
 	const char *core_mask;
 	const char *iova_mode;
@@ -369,9 +370,10 @@ enum xnvme_cli_opt {
 
 	XNVME_CLI_OPT_CPULIST = 132, ///< XNVME_CLI_OPT_CPULIST
 
-	XNVME_CLI_OPT_HOST_HEAP_SIZE = 133, ///< XNVME_CLI_OPT_HOST_HEAP_SIZE
+	XNVME_CLI_OPT_HOST_HEAP_SIZE   = 133, ///< XNVME_CLI_OPT_HOST_HEAP_SIZE
+	XNVME_CLI_OPT_DEVICE_HEAP_SIZE = 134, ///< XNVME_CLI_OPT_DEVICE_HEAP_SIZE
 
-	XNVME_CLI_OPT_END = 134, ///< XNVME_CLI_OPT_END
+	XNVME_CLI_OPT_END = 135, ///< XNVME_CLI_OPT_END
 };
 
 /**
