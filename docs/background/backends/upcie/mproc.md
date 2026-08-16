@@ -63,7 +63,7 @@ fresh one.
 
 ### Hugepage sharing
 
-Every process allocates it own private DMA heap from its own hugepages. This
+Every process allocates its own private DMA heap from its own hugepages. This
 means that I/O queue pairs and buffers are allocated from a private heap. The
 admin PRP pools are also allocated on the private heap, but the admin queue itself
 is allocated only once on the heap of the primary process. The primary
@@ -201,7 +201,7 @@ out with `-ENOENT`. The timeout is fixed and not currently configurable.
 SPDK's own multi-process mode claims **all** free hugepages on the system at
 startup. Because uPCIe also needs hugepages for its DMA memory, the two cannot
 be expected to share a system, and running uPCIe and SPDK in multi-process
-mode side by side cannot be not guaranteed to work.
+mode side by side is not guaranteed to work.
 
 ### GPU backend doorbell registration
 
