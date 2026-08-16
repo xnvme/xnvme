@@ -397,7 +397,8 @@ xnvme_be_upcie_mproc_ctrlr_shm_init(struct xnvme_dev *dev, struct xnvme_be_upcie
 	xnvme_be_upcie_shm_bdf_name(dev->ident.uri, shm_name, sizeof(shm_name));
 
 	/* Use flock to determine whether another primary process has claimed device */
-	snprintf(ctrlr->lock_name, sizeof(ctrlr->lock_name), "/tmp%s-lock", dev->ident.uri);
+	snprintf(ctrlr->lock_name, sizeof(ctrlr->lock_name), "/tmp/xnvme-upcie-%s-lock",
+		 dev->ident.uri);
 	ctrlr->lock_fd = -1;
 
 	lock_fd = open(ctrlr->lock_name, O_CREAT | O_RDWR, 0600);
