@@ -676,9 +676,10 @@ failed:
  *
  * Wraps xnvme_be_upcie_ctrlr_mutex_lock() for callers that allocate or release
  * I/O queue identifiers. In a secondary process ctrlr->ctrl is a process-local
- * copy of the controller, so the bitmap has to be pulled in from shared memory
- * before it is consulted. In a primary process, and when not in multi-process
- * mode, this is a no-op beyond the locking itself.
+ * copy of the controller and has to see the current bitmap before it is
+ * consulted; in a primary process ctrlr->ctrl points into the shared segment
+ * itself so no import is needed, and outside multi-process mode ctrlr->shm is
+ * NULL, so this is a no-op beyond the locking itself.
  *
  * @param ctrlr The backend controller
  *
@@ -695,7 +696,7 @@ xnvme_be_upcie_mproc_qids_lock(struct xnvme_be_upcie_ctrlr *ctrlr)
 		return err;
 	}
 
-	if (ctrlr->shm) {
+	if (ctrlr->shm && ctrlr->ctrl != &ctrlr->shm->ctrl) {
 		memcpy(ctrlr->ctrl->qids, ctrlr->shm->ctrl.qids, sizeof(ctrlr->ctrl->qids));
 	}
 
@@ -710,7 +711,7 @@ xnvme_be_upcie_mproc_qids_lock(struct xnvme_be_upcie_ctrlr *ctrlr)
 void
 xnvme_be_upcie_mproc_qids_unlock(struct xnvme_be_upcie_ctrlr *ctrlr)
 {
-	if (ctrlr->shm) {
+	if (ctrlr->shm && ctrlr->ctrl != &ctrlr->shm->ctrl) {
 		memcpy(ctrlr->shm->ctrl.qids, ctrlr->ctrl->qids, sizeof(ctrlr->shm->ctrl.qids));
 	}
 
