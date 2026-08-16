@@ -54,6 +54,7 @@ xnvme_be_upcie_mproc_rte_term()
 	}
 
 	free(mproc);
+	g_upcie_rte.mproc = NULL;
 }
 
 int
@@ -195,6 +196,7 @@ xnvme_be_upcie_mproc_import_admin_hugepage()
 	if (err) {
 		XNVME_DEBUG("FAILED: hostmem_hugepage_import(); err(%d)", err);
 		free(g_upcie_rte.mproc->primary_hugepage);
+		g_upcie_rte.mproc->primary_hugepage = NULL;
 		return err;
 	}
 
@@ -392,7 +394,7 @@ xnvme_be_upcie_mproc_ctrlr_shm_init(struct xnvme_dev *dev, struct xnvme_be_upcie
 	struct xnvme_be_upcie_ctrlr_shm *shm;
 	char shm_name[64];
 	size_t shm_size = sizeof(*shm);
-	int shm_fd, lock_fd, err;
+	int shm_fd = -1, lock_fd = -1, err;
 
 	xnvme_be_upcie_shm_bdf_name(dev->ident.uri, shm_name, sizeof(shm_name));
 
