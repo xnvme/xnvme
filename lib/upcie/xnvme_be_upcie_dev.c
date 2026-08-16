@@ -101,7 +101,7 @@ _rte_init(struct xnvme_opts *opts)
 	err = hostmem_heap_init(&g_upcie_rte.heap, heap_size, &g_upcie_rte.config);
 	if (err) {
 		XNVME_DEBUG("FAILED: hostmem_heap_init(); err(%d)", err);
-		return err;
+		goto fail_mproc;
 	}
 
 	if (g_upcie_rte.mproc) {
@@ -130,7 +130,8 @@ _rte_init(struct xnvme_opts *opts)
 				XNVME_DEBUG("FAILED: Timed out while waiting for primary process "
 					    "hugepage "
 					    "information");
-				return -ENOENT;
+				err = -ENOENT;
+				goto fail_heap;
 			}
 
 			err = xnvme_be_upcie_mproc_import_admin_hugepage();
@@ -139,7 +140,7 @@ _rte_init(struct xnvme_opts *opts)
 					"FAILED: xnvme_be_upcie_mproc_import_admin_hugepage(); "
 					"err(%d)",
 					err);
-				return err;
+				goto fail_heap;
 			}
 		}
 	}
@@ -147,6 +148,14 @@ _rte_init(struct xnvme_opts *opts)
 	g_upcie_rte.is_initialized = 1;
 
 	return 0;
+
+fail_heap:
+	hostmem_heap_term(&g_upcie_rte.heap);
+fail_mproc:
+	if (g_upcie_rte.mproc) {
+		xnvme_be_upcie_mproc_rte_term();
+	}
+	return err;
 }
 
 /**
