@@ -220,29 +220,22 @@ _recover_aq(struct xnvme_be_upcie_ctrlr *ctrlr)
 {
 	struct xnvme_be_upcie_ctrlr_shm *shm = ctrlr->shm;
 	struct nvme_qpair *aq = &ctrlr->ctrl->aq;
-	struct nvme_completion *cq = aq->cq;
-	struct nvme_completion *cqe;
-	uint16_t head = shm->ctrl.aq.head;
-	uint8_t phase = shm->ctrl.aq.phase;
+	struct nvme_completion cpl = {0};
 	int drained = 0;
 
-	cqe = &cq[head];
+	// Point the local queue-pair at the shared head/phase; the caller re-syncs it from
+	// shared memory once the mutex is marked consistent, so this is safe to clobber.
+	aq->head = shm->ctrl.aq.head;
+	aq->phase = shm->ctrl.aq.phase;
 
-	while ((cqe->cid < 0xFFFF) && ((cqe->status & 0x1) == phase)) {
-		head++;
-		if (head == aq->depth) {
-			head = 0;
-			phase ^= 1;
-		}
-
-		mmio_write32(aq->cqdb, 0, head);
+	// timeout_ms(1): one poll of the current slot; the drain stops at the first slot the
+	// device has not written, it does not wait for completions still in flight
+	while (!nvme_qpair_reap_cpl(aq, 1, &cpl)) {
 		drained++;
-
-		cqe = &cq[head];
 	}
 
-	shm->ctrl.aq.head = head;
-	shm->ctrl.aq.phase = phase;
+	shm->ctrl.aq.head = aq->head;
+	shm->ctrl.aq.phase = aq->phase;
 
 	if (drained) {
 		XNVME_DEBUG("INFO: recovered admin CQ after owner death; drained(%d)", drained);
