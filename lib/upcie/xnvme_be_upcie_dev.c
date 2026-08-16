@@ -319,11 +319,16 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 
 	is_owner = !g_upcie_rte.mproc || g_upcie_rte.mproc->is_primary;
 
-	err = _pci_enable_bus_master(dev->ident.uri);
-	if (err) {
-		XNVME_DEBUG("FAILED: _pci_enable_bus_master(%s)", dev->ident.uri);
-		errno = -err;
-		goto failed;
+	/* Only the owner writes the PCI Command register; the primary flipped Bus Master
+	 * Enable at open time and a secondary has neither the need nor, in general, the
+	 * privilege to touch it. */
+	if (is_owner) {
+		err = _pci_enable_bus_master(dev->ident.uri);
+		if (err) {
+			XNVME_DEBUG("FAILED: _pci_enable_bus_master(%s)", dev->ident.uri);
+			errno = -err;
+			goto failed;
+		}
 	}
 
 	ctrlr = calloc(1, sizeof(*ctrlr));
