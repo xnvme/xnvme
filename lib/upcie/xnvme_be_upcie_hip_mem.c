@@ -21,7 +21,7 @@ xnvme_be_upcie_hip_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t n
 		return NULL;
 	}
 	if (phys) {
-		*phys = hipmem_dma_v2p(&g_upcie_hip_rte.hip_heap, buf);
+		*phys = dmamem_va_to_iova(&g_upcie_hip_rte.dmem, buf);
 	}
 
 	return buf;
@@ -37,7 +37,9 @@ int
 xnvme_be_upcie_hip_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf,
 			       uint64_t *phys)
 {
-	return hipmem_heap_block_virt_to_phys(&g_upcie_hip_rte.hip_heap, buf, phys);
+	*phys = dmamem_va_to_iova(&g_upcie_hip_rte.dmem, buf);
+
+	return 0;
 }
 
 #endif

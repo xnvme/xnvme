@@ -203,14 +203,19 @@ startup. Because uPCIe also needs hugepages for its DMA memory, the two cannot
 be expected to share a system, and running uPCIe and SPDK in multi-process
 mode side by side is not guaranteed to work.
 
+### Attachment-mode restriction
+
+Multi-process mode requires the device to be bound to `uio_pci_generic`
+(the UIO_LUT attachment mode), which is also what `upcie-cuda` and
+`upcie-hip` require. The `vfio-pci` attachment modes that `--be upcie`
+otherwise supports, described under {ref}`sec-backends-upcie-attachment`,
+hold per-process fds that a secondary cannot inherit, so `_rte_init`
+returns `-ENOTSUP` up front when `opts.shm_id` is set under either of
+them.
+
 ### GPU backend doorbell registration
 
 `upcie-cuda` registers the I/O queue doorbells of its GPU-resident queue pairs
 with `cuMemHostRegister(..., CU_MEMHOSTREGISTER_IOMEMORY)`. Each process maps
 BAR0 independently, so each registers its own mapping of the doorbell page; this
 has not been exercised across many concurrent processes on the same controller.
-
-Note also that `upcie-cuda` and `upcie-hip` require the device to be bound to
-`uio_pci_generic`. The `vfio-pci` path that the host backend supports is
-rejected before the controller is opened, so it is unavailable in multi-process
-mode with these backends as well.

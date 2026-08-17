@@ -21,15 +21,13 @@ struct xnvme_be_upcie_cuda_rte {
 	CUcontext cu_ctx;
 	struct cudamem_config cuda_config;
 	struct cudamem_heap cuda_heap;
+	struct dmamem dmem; ///< cuda_heap wrapped for translation; allocation stays on the heap
 	int is_initialized;
 };
 
 extern struct xnvme_be_upcie_cuda_rte g_upcie_cuda_rte;
 
 extern struct xnvme_be_mem g_xnvme_be_upcie_cuda_mem;
-extern struct xnvme_be_admin g_xnvme_be_upcie_cuda_admin;
-extern struct xnvme_be_sync g_xnvme_be_upcie_cuda_sync;
-extern struct xnvme_be_async g_xnvme_be_upcie_cuda_async;
 extern struct xnvme_be_dev g_xnvme_be_upcie_cuda_dev;
 
 #endif /* XNVME_BE_UPCIE_CUDA_ENABLED */

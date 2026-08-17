@@ -16,15 +16,13 @@
 struct xnvme_be_upcie_hip_rte {
 	struct hipmem_config hip_config;
 	struct hipmem_heap hip_heap;
+	struct dmamem dmem; ///< hip_heap wrapped for translation; allocation stays on the heap
 	int is_initialized;
 };
 
 extern struct xnvme_be_upcie_hip_rte g_upcie_hip_rte;
 
 extern struct xnvme_be_mem g_xnvme_be_upcie_hip_mem;
-extern struct xnvme_be_admin g_xnvme_be_upcie_hip_admin;
-extern struct xnvme_be_sync g_xnvme_be_upcie_hip_sync;
-extern struct xnvme_be_async g_xnvme_be_upcie_hip_async;
 extern struct xnvme_be_dev g_xnvme_be_upcie_hip_dev;
 
 #endif /* XNVME_BE_UPCIE_HIP_ENABLED */

@@ -10,32 +10,27 @@
 #include <xnvme_queue.h>
 #include <xnvme_be_upcie.h>
 
-/**
- * Command Queue for asynchronous command submission and completion
- */
 int
 xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
 {
-	struct xnvme_queue_upcie *upcie_queue = (void *)(queue);
+	struct xnvme_queue_upcie *upcie_queue = (void *)queue;
 	struct xnvme_be_upcie_state *state = (void *)queue->base.dev->be.state;
-	struct xnvme_be_upcie_ctrlr *ctrlr = state->ctrlr;
 	int err;
 
-	// The spec says that for systems where memory ordering is not guaranteed, then one should
-	// leave room in the queue to avoid races. Thus, we do so here, by allocating one more than
-	// what is needed.
 	if (g_upcie_rte.mproc) {
-		err = xnvme_be_upcie_mproc_create_or_delete_io_qpair(
-			ctrlr, &upcie_queue->qpair, (uint16_t)(queue->base.capacity + 1), true);
+		err = xnvme_be_upcie_mproc_create_io_qpair(state->ctrlr, &upcie_queue->qpair,
+							   queue->base.capacity + 1,
+							   &upcie_queue->offsets);
 	} else {
-		err = nvme_controller_create_io_qpair(state->ctrlr->ctrl, &upcie_queue->qpair,
-						      queue->base.capacity + 1);
+		err = nvme_controller_create_io_qpair_dmamem(
+			state->ctrlr->ctrl, &upcie_queue->qpair, queue->base.capacity + 1,
+			&g_upcie_rte.mem.heap, &upcie_queue->offsets.sq, &upcie_queue->offsets.cq,
+			&upcie_queue->offsets.prp);
 	}
-
 	if (err) {
 		XNVME_DEBUG("FAILED: %s(); err(%d)",
-			    g_upcie_rte.mproc ? "xnvme_be_upcie_mproc_create_or_delete_io_qpair"
-					      : "nvme_controller_create_io_qpair",
+			    g_upcie_rte.mproc ? "xnvme_be_upcie_mproc_create_io_qpair"
+					      : "nvme_controller_create_io_qpair_dmamem",
 			    err);
 		return err;
 	}
@@ -48,13 +43,15 @@ xnvme_be_upcie_queue_term(struct xnvme_queue *queue)
 {
 	struct xnvme_queue_upcie *upcie_queue = (void *)queue;
 	struct xnvme_be_upcie_state *state = (void *)queue->base.dev->be.state;
-	struct xnvme_be_upcie_ctrlr *ctrlr = state->ctrlr;
 
 	if (g_upcie_rte.mproc) {
-		xnvme_be_upcie_mproc_create_or_delete_io_qpair(ctrlr, &upcie_queue->qpair, 0,
-							       false);
+		xnvme_be_upcie_mproc_delete_io_qpair(state->ctrlr, &upcie_queue->qpair,
+						     &upcie_queue->offsets);
 	} else {
-		nvme_controller_delete_io_qpair(ctrlr->ctrl, &upcie_queue->qpair);
+		nvme_controller_delete_io_qpair_dmamem(
+			state->ctrlr->ctrl, &upcie_queue->qpair, &g_upcie_rte.mem.heap,
+			upcie_queue->offsets.sq, upcie_queue->offsets.cq,
+			upcie_queue->offsets.prp);
 	}
 
 	return 0;
@@ -65,7 +62,7 @@ xnvme_be_upcie_queue_poke(struct xnvme_queue *queue, uint32_t max)
 {
 	struct xnvme_queue_upcie *upcie_queue = (struct xnvme_queue_upcie *)queue;
 	struct nvme_qpair *qp = &upcie_queue->qpair;
-	struct nvme_completion *cq = upcie_queue->qpair.cq;
+	struct nvme_completion *cq = qp->cq;
 	unsigned int reaped = 0;
 
 	if (!max) {
@@ -92,7 +89,6 @@ xnvme_be_upcie_queue_poke(struct xnvme_queue *queue, uint32_t max)
 
 		reaped++;
 
-		// Process the completion...
 		{
 			struct xnvme_cmd_ctx *ctx;
 			struct nvme_request *req;
@@ -125,6 +121,7 @@ xnvme_be_upcie_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 			    size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	struct xnvme_queue_upcie *upcie_queue = (struct xnvme_queue_upcie *)ctx->async.queue;
+	struct xnvme_be_upcie_state *state = (void *)ctx->dev->be.state;
 	struct nvme_command *cmd = (struct nvme_command *)&ctx->cmd;
 	struct nvme_request *req;
 	int err;
@@ -156,23 +153,21 @@ xnvme_be_upcie_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 	cmd->cid = req->cid;
 
 	if (dbuf) {
-		nvme_request_prep_command_prps_contig(req, &g_upcie_rte.heap, dbuf, dbuf_nbytes,
-						      cmd);
+		nvme_request_prep_command_prps_contig_dmamem(req, state->dmem, dbuf, dbuf_nbytes,
+							     cmd);
 	}
-
 	if (mbuf) {
-		cmd->mptr = hostmem_dma_v2p(&g_upcie_rte.heap, mbuf);
+		cmd->mptr = dmamem_va_to_iova(state->dmem, mbuf);
 	}
 
 	err = nvme_qpair_enqueue(&upcie_queue->qpair, cmd);
 	if (err) {
-		XNVME_DEBUG("FAILED: nvme_qpair_enqueue();");
+		XNVME_DEBUG("FAILED: nvme_qpair_enqueue(); err(%d)", err);
 		nvme_request_free(upcie_queue->qpair.rpool, req->cid);
 		return err;
 	}
 
 	upcie_queue->base.outstanding += 1;
-
 	return 0;
 }
 
@@ -182,6 +177,7 @@ xnvme_be_upcie_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size
 			     size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	struct xnvme_queue_upcie *upcie_queue = (struct xnvme_queue_upcie *)ctx->async.queue;
+	struct xnvme_be_upcie_state *state = (void *)ctx->dev->be.state;
 	struct nvme_command *cmd = (struct nvme_command *)&ctx->cmd;
 	struct nvme_request *req;
 	int err;
@@ -213,22 +209,20 @@ xnvme_be_upcie_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size
 	cmd->cid = req->cid;
 
 	if (dvec) {
-		nvme_request_prep_command_prps_iov(req, &g_upcie_rte.heap, dvec, dvec_cnt, cmd);
+		nvme_request_prep_command_prps_iov_dmamem(req, state->dmem, dvec, dvec_cnt, cmd);
 	}
-
 	if (mbuf) {
-		cmd->mptr = hostmem_dma_v2p(&g_upcie_rte.heap, mbuf);
+		cmd->mptr = dmamem_va_to_iova(state->dmem, mbuf);
 	}
 
 	err = nvme_qpair_enqueue(&upcie_queue->qpair, cmd);
 	if (err) {
-		XNVME_DEBUG("FAILED: nvme_qpair_enqueue();");
+		XNVME_DEBUG("FAILED: nvme_qpair_enqueue(); err(%d)", err);
 		nvme_request_free(upcie_queue->qpair.rpool, req->cid);
 		return err;
 	}
 
 	upcie_queue->base.outstanding += 1;
-
 	return 0;
 }
 
