@@ -21,7 +21,7 @@ xnvme_be_upcie_cuda_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t 
 		return NULL;
 	}
 	if (phys) {
-		*phys = cudamem_dma_v2p(&g_upcie_cuda_rte.cuda_heap, buf);
+		*phys = dmamem_va_to_iova(&g_upcie_cuda_rte.dmem, buf);
 	}
 
 	return buf;
@@ -37,7 +37,9 @@ int
 xnvme_be_upcie_cuda_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf,
 				uint64_t *phys)
 {
-	return cudamem_heap_block_virt_to_phys(&g_upcie_cuda_rte.cuda_heap, buf, phys);
+	*phys = dmamem_va_to_iova(&g_upcie_cuda_rte.dmem, buf);
+
+	return 0;
 }
 
 #endif

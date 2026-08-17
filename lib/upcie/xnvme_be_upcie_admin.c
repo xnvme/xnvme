@@ -20,6 +20,7 @@ xnvme_be_upcie_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf
 	struct nvme_controller *ctrl = state->ctrlr->ctrl;
 	struct nvme_command *cmd = (struct nvme_command *)&ctx->cmd;
 	struct nvme_completion *cpl = (struct nvme_completion *)&ctx->cpl;
+	struct nvme_request *req;
 	int err;
 
 	err = xnvme_be_upcie_ctrlr_mutex_lock(ctrlr);
@@ -28,21 +29,46 @@ xnvme_be_upcie_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf
 		return err;
 	}
 
-	if (dbuf) {
-		err = nvme_qpair_submit_sync_contig_prps(&ctrl->aq, &g_upcie_rte.heap, dbuf,
-							 dbuf_nbytes, cmd, ctrl->timeout_ms, cpl);
-	} else {
-		err = nvme_qpair_submit_sync(&ctrl->aq, cmd, ctrl->timeout_ms, cpl);
-	}
-
-	xnvme_be_upcie_ctrlr_mutex_unlock(ctrlr);
-
-	if (err || xnvme_cmd_ctx_cpl_status(ctx)) {
-		XNVME_DEBUG("FAILED: nvme_submit_sync(); err(%d)", err);
+	req = nvme_request_alloc(ctrl->aq.rpool);
+	if (!req) {
+		XNVME_DEBUG("FAILED: nvme_request_alloc(); errno(%d)", errno);
+		err = -errno;
+		xnvme_be_upcie_ctrlr_mutex_unlock(ctrlr);
 		return err;
 	}
 
-	return 0;
+	req->user = ctx;
+	cmd->cid = req->cid;
+
+	if (dbuf) {
+		nvme_request_prep_command_prps_contig_dmamem(req, state->dmem, dbuf, dbuf_nbytes,
+							     cmd);
+	}
+
+	err = nvme_qpair_enqueue(&ctrl->aq, cmd);
+	if (err) {
+		XNVME_DEBUG("FAILED: nvme_qpair_enqueue(); err(%d)", err);
+		goto exit;
+	}
+
+	nvme_qpair_sqdb_update(&ctrl->aq);
+
+	err = nvme_qpair_reap_cpl(&ctrl->aq, ctrl->timeout_ms, cpl);
+	if (err) {
+		XNVME_DEBUG("FAILED: nvme_qpair_reap_cpl(); err(%d)", err);
+		goto exit;
+	}
+
+	if (xnvme_cmd_ctx_cpl_status(ctx)) {
+		XNVME_DEBUG("FAILED: command; sc(%d); sct(%d)", ctx->cpl.status.sc,
+			    ctx->cpl.status.sct);
+		err = -EIO;
+	}
+
+exit:
+	xnvme_be_upcie_ctrlr_mutex_unlock(ctrlr);
+	nvme_request_free(ctrl->aq.rpool, req->cid);
+	return err;
 }
 
 int

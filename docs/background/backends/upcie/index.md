@@ -45,7 +45,32 @@ xnvme-driver
 ```
 
 **upcie** supports both `uio_pci_generic` (no-IOMMU path) and `vfio-pci`
-(IOMMU-backed path). **upcie-cuda** requires the non-VFIO path.
+(IOMMU-backed path). **upcie-cuda** and **upcie-hip** require the non-VFIO
+path.
+
+(sec-backends-upcie-attachment)=
+
+### Attachment Modes
+
+The attachment mode follows the driver bound to the device, and decides how
+DMA memory is wired up:
+
+`uio_pci_generic`
+: UIO_LUT. BAR mapping plus a hugepage-backed lookup-table translator. The
+  only mode that supports {ref}`sec-backends-upcie-mproc`.
+
+`vfio-pci` with `/dev/iommu`
+: VFIO_CDEV. One iommufd IOAS shared across controllers, memory imported
+  from a hugepage-backed memfd.
+
+`vfio-pci` without `/dev/iommu`
+: VFIO_TYPE1. The legacy vfio container, one per runtime, with the
+  hugepage mapped into it.
+
+Between the two `vfio-pci` modes, the backend prefers VFIO_CDEV when
+`/dev/iommu` is available and the device has a `vfio-dev` entry, falling
+back to VFIO_TYPE1. Setting `XNVME_UPCIE_VFIO_MODE` to `iommufd` or
+`type1` forces the choice.
 
 ### Privileges
 
