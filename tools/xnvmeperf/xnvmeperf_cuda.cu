@@ -576,6 +576,12 @@ xnvmeperf_cuda_validate_lba(struct xnvme_dev **devs, const struct xnvmeperf_args
 		}
 	}
 
+	if (xnvme_dev_get_geo(devs[0])->lba_nbytes == 0) {
+		fprintf(stderr,
+			"Error: device %s reports LBA size 0 (identify likely returned zeros)\n",
+			args->dev_uris[0]);
+		return -EINVAL;
+	}
 	if (args->iosize % xnvme_dev_get_geo(devs[0])->lba_nbytes) {
 		fprintf(stderr, "Error: iosize %u is not a multiple of LBA size %u\n",
 			args->iosize, xnvme_dev_get_geo(devs[0])->lba_nbytes);
