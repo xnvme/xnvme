@@ -73,8 +73,9 @@ jobs:
 
     - name: Rename to un-versioned xnvme-src.tar.gz
       run: |
-        mv builddir/meson-dist/xnvme-0.7.5.tar.gz builddir/meson-dist/xnvme-src.tar.gz
-        mv builddir/meson-dist/xnvme-0.7.5.tar.gz.sha256sum builddir/meson-dist/xnvme-src.tar.gz.sha256sum
+        VER=$(python3 toolbox/xnvme_ver.py --path meson.build)
+        mv builddir/meson-dist/xnvme-${VER}.tar.gz builddir/meson-dist/xnvme-src.tar.gz
+        mv builddir/meson-dist/xnvme-${VER}.tar.gz.sha256sum builddir/meson-dist/xnvme-src.tar.gz.sha256sum
 
     - name: Upload source archive
       uses: actions/upload-artifact@v6.0.0
@@ -1377,7 +1378,11 @@ jobs:
 
     - name: Prep
       run: |
-        cp ${{ steps.source.outputs.src_tgz }} debpkg/input/xnvme-0.7.5.tar.gz
+        # setup-source extracts the archive into the working directory with
+        # --strip-components=1, so the source sits here; its 'directory'
+        # output is where the archive was downloaded, not the source root.
+        VER=$(python3 toolbox/xnvme_ver.py --path meson.build)
+        cp ${{ steps.source.outputs.src_tgz }} debpkg/input/xnvme-${VER}.tar.gz
 
     - name: Build
       run: |
