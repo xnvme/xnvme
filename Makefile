@@ -593,6 +593,20 @@ clean-subprojects:
 	rm -fr $(BUILD_DIR) || true
 	@echo "## xNVMe: make clean-subprojects [DONE]"
 
+define version-help
+# Update the version-number in every file embedding it
+#
+# Optional: VERSION=x.y.z to set it explicitly, otherwise the minor is bumped
+# Optional: DRY_RUN=1 to print what would change without writing it
+endef
+.PHONY: version
+version:
+	@echo "## xNVMe: make version"
+	python3 ./$(TOOLBOX_DIR)/xnvme_ver.py --path meson.build \
+		$(if $(VERSION),--set $(VERSION),--bump minor) \
+		$(if $(filter 1,$(DRY_RUN)),--dry-run)
+	@echo "## xNVMe: make version [DONE]"
+
 define gen-libconf-help
 # Helper-target generating third-party/subproject/os/library-configuration string
 endef
