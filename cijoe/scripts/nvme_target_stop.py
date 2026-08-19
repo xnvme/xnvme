@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Tear down an NVMe TCP transport target
+Tear down an NVMe transport target
 ======================================
 
-Tear down whichever NVMe TCP target was set up by ``nvme_target_start``.
+Tear down whichever NVMe target was set up by ``nvme_target_start``.
 Two providers are supported via ``--nvme-provider``:
 
 * ``spdk`` (default): stop the SPDK ``nvmf_tgt`` process.

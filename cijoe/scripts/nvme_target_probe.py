@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Probe a running NVMe TCP transport target
+Probe a running NVMe transport target
 =========================================
 
 Issue a discovery against a listener brought up by ``nvme_target_start`` and

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Bring up an NVMe TCP transport target
+Bring up an NVMe transport target
 =====================================
 
-Configure an NVMe target listening on a TCP transport. Two providers are
+Configure an NVMe target listening on a transport. Two providers are
 supported via ``--nvme-provider``:
 
 * ``spdk`` (default): use the SPDK ``nvmf_tgt`` application driven through
@@ -39,7 +39,7 @@ def add_args(parser: ArgumentParser):
         "--nvme-trsvcid",
         type=str,
         default="4420",
-        help="Transport service id (TCP port)",
+        help="Transport service id (Port)",
     )
     parser.add_argument(
         "--nvme-trtype",
@@ -76,7 +76,7 @@ def _run_all(cijoe, commands):
 
 
 def _start_spdk(args, cijoe):
-    """Configure the SPDK NVMe TCP target."""
+    """Configure the SPDK NVMe target."""
 
     xnvme_repos = cijoe.getconf("xnvme.repository.sync.remote_path", None)
     if not xnvme_repos:
@@ -96,12 +96,12 @@ def _start_spdk(args, cijoe):
     nvmf_tgt = spdk_path / "build" / "bin" / "nvmf_tgt"
     nvmf_tgt_src = spdk_path / "app" / "nvmf_tgt"
 
-    # nvme_tcp is the kernel host driver loaded for the initiator-side
+    # nvme_tcp/nvme_rdma is the kernel host driver loaded for the initiator-side
     # `nvme discover` in the probe step; nvmf_tgt itself runs in userspace and
     # the PCIe device is rebound to vfio-pci by xnvme-driver, so nvmet and
-    # nvmet_tcp are not needed on the SPDK target path.
+    # nvmet_tcp/nvmet_rdma are not needed on the SPDK target path.
     drivers = [
-        "modprobe nvme_tcp",
+        f"modprobe nvme_{args.nvme_trtype}",
         "xnvme-driver",
     ]
     err, cmd = _run_all(cijoe, drivers)
@@ -133,7 +133,7 @@ def _start_spdk(args, cijoe):
 
 
 def _start_linux(args, cijoe):
-    """Configure the Linux kernel NVMe TCP target through nvmet/configfs."""
+    """Configure the Linux kernel NVMe target through nvmet/configfs."""
 
     device = _get_transport_device(cijoe)
     if not device:
@@ -151,7 +151,7 @@ def _start_linux(args, cijoe):
         "xnvme-driver reset",
         "modprobe nvme",
         "modprobe nvmet",
-        "modprobe nvmet_tcp",
+        f"modprobe nvmet_{args.nvme_trtype}",
     ]
     err, cmd = _run_all(cijoe, drivers)
     if err:
@@ -184,7 +184,7 @@ def _start_linux(args, cijoe):
 
 
 def main(args, cijoe):
-    """Bring up an NVMe TCP target using the selected provider."""
+    """Bring up an NVMe target using the selected provider."""
 
     if args.nvme_provider == "spdk":
         return _start_spdk(args, cijoe)
