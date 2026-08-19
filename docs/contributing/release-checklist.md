@@ -4,9 +4,30 @@
 
 With every release of **xNVMe**, the following tasks must be ticked off.
 Initially, the window of features is closed, that is, all PRs intended for the
-release are integrated on `main` and all tests are passing. Then:
+release are integrated on `main` and all tests are passing. Then work through
+the steps below in order.
 
-## Bump the version-number
+Two things make this checkable rather than merely readable, which matters as
+much for an agent following it as for a person:
+
+`make release-check`
+: Settles the mechanical parts with an exit code rather than a claim: every
+  file embedding the version agrees, the tag is not already taken, the
+  CHANGELOG has a section for the version, CONTRIBUTORS names everyone who
+  has committed since the previous tag, and the tree is clean. Run it after
+  each step below; it is the answer to "did I miss something".
+
+`make version`, `make contributors`, `make gen-man-pages`, `make gen-bash-completions`
+: Do the mechanical edits, so the steps that can be automated are.
+
+What `release-check` deliberately does not settle: whether the man pages and
+completions were regenerated, since neither embeds a version and establishing
+staleness means regenerating them; whether the CHANGELOG section actually
+describes the release rather than merely existing; and everything after the
+tag, which is manual because it cannot be undone. Those stay the releaser's
+judgement.
+
+## Step 1: bump the version-number
 
 The version-number is not derived from the tag, it is written out in several
 files. Rather than editing them by hand, run:
@@ -40,9 +61,11 @@ name reservation on crates.io holding no bindings, so it is versioned
 independently and left alone. `rust/xnvme-sys/Cargo.toml`, which carries the
 actual bindings, tracks xNVMe as above.
 
-Commit the result with the message `ver: bump to vX.Y.Z`.
+Commit the result with the message `ver: bump to vX.Y.Z`. `make release-check`
+should now report the version consistent across every file, and complain only
+about the steps still ahead.
 
-## Update man-pages and Bash completion-scripts
+## Step 2: update man-pages and Bash completion-scripts
 
 * Build and install the version-bumped **xNVMe**
 * Then run: `make gen-man-pages gen-bash-completions`
@@ -50,38 +73,43 @@ Commit the result with the message `ver: bump to vX.Y.Z`.
 * Commit the Bash-completion-scripts with message:
   `feat(toolbox/completions): update for vX.Y.Z`
 
-## Update `CONTRIBUTORS.md`
+## Step 3: update `CONTRIBUTORS.md`
 
-* Get the list of contributors with:
-
-  ```bash
-  git log <previous-tag>..HEAD --pretty=format:"%an <%aE>" | sort | uniq
-  ```
-
-* Update the lists accordingly
+* List who is missing with `make contributors`, which compares the authors
+  since the previous tag against the file and prints only the difference
+* Add them to the current-release list, and move the previous release's
+  entries down
 * Commit changes with the message: `CONTRIBUTORS: update for vX.Y.Z`
 
-## Update `CHANGELOG.rst`
+## Step 4: update `CHANGELOG.rst`
 
-* Go over the changes and summarize the different scopes
+* Go over the changes and summarize the different scopes. `git log
+  <previous-tag>..HEAD --pretty=%s` grouped by scope is a starting point, but
+  the entry is a summary for users, not a list of commits
+* Call out anything that breaks the public API in its own section, since that
+  is what a reader upgrading needs first. Commits marked `!` in their subject
+  are the ones to look for
 * Commit changes with the message: `CHANGELOG: update for vX.Y.Z`
 
 Also check that `ISSUES.rst` still describes the known issues, the changelog
 points at it.
 
-## Open a pull-request for the release-prep commits
+## Step 5: open a pull-request for the release-prep commits
 
-The release-prep commits (version bump, man-pages, completions, CONTRIBUTORS,
-CHANGELOG) go through PR review like any other change, see
-{ref}`sec-contributing-process`.
+`make release-check` should pass before you open it; if it does not, the
+pull-request is not ready. The release-prep commits (version bump, man-pages,
+completions, CONTRIBUTORS, CHANGELOG) then go through review like any other
+change, see {ref}`sec-contributing-process`.
 
 * Get review and wait for tests to finalize / pass
 * Double-check the generated docs at <https://xnvme.io/> (served from `main`)
 * Merge onto `main`
 
-## Tag `main` as `vX.Y.Z`
+## Step 6: tag `main` as `vX.Y.Z`
 
-Tags so far are lightweight tags on the merged CHANGELOG commit:
+From here on nothing can be undone, which is why there is no `make release`
+that would run these for you. Tags so far are lightweight tags on the merged
+CHANGELOG commit:
 
 ```bash
 git tag vX.Y.Z
@@ -90,9 +118,9 @@ git push origin vX.Y.Z
 
 Pushing a `v*` tag triggers the `verify` workflow again, and it is that run
 whose artifacts are attached to the release, so let it finish before
-continuing.
+continuing. Budget about an hour for it.
 
-## Create a release on GitHub
+## Step 7: create a release on GitHub
 
 * Go to the GitHub page and create a release for the tag `vX.Y.Z`
 * Use a title similar to the previous releases
@@ -109,7 +137,7 @@ the tag-run and rename before attaching:
 * `xnvme-src.tar.gz` from `xnvme-src-archive-with-subprojects` becomes
   `xnvme-fat-X.Y.Z.tar.gz`, the full source archive including SPDK sources
 
-## Publish the Python package
+## Step 8: publish the Python package
 
 Publish the same package that was used for testing and provided as a release
 artifact, rather than building a fresh one. Download it, rename it, then upload
@@ -120,13 +148,13 @@ mv xnvme-py-sdist.tar.gz xnvme-X.Y.Z.tar.gz
 twine upload xnvme-X.Y.Z.tar.gz
 ```
 
-## Publish the Rust crate
+## Step 9: publish the Rust crate
 
 * Create an API token on <https://crates.io>
 * Set up credentials locally with `cargo login`
 * Upload: `cd rust/xnvme-sys && cargo publish`
 
-## Downstream packaging
+## Step 10: downstream packaging
 
 The packages listed under {ref}`sec-contributing-packaging` are updated after
 the release is published, since they consume the tagged source-archive and its
