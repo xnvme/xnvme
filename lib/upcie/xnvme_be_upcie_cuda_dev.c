@@ -83,9 +83,10 @@ _cuda_rte_init(size_t heap_size, uint32_t gpu_id)
 		return -ENOMEM;
 	}
 
-	err = dmamem_from_cuda_lut(&g_upcie_cuda_rte.dmem, &g_upcie_cuda_rte.cuda_heap);
+	err = dmamem_from_cuda_registry(&g_upcie_cuda_rte.dmem, &g_upcie_cuda_rte.cuda_heap,
+					xnvme_be_upcie_va_bits());
 	if (err) {
-		XNVME_DEBUG("FAILED: dmamem_from_cuda_lut(); err(%d)", err);
+		XNVME_DEBUG("FAILED: dmamem_from_cuda_registry(); err(%d)", err);
 		cudamem_heap_term(&g_upcie_cuda_rte.cuda_heap);
 		cuCtxDestroy(g_upcie_cuda_rte.cu_ctx);
 		return err;

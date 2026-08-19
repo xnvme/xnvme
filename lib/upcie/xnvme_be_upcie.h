@@ -266,6 +266,15 @@ extern struct xnvme_be_async g_xnvme_be_upcie_async;
 extern struct xnvme_be_dev g_xnvme_be_upcie_dev;
 
 // Attachment: driver probing, mode selection and vfio wiring (xnvme_be_upcie_vfio.c)
+/**
+ * Address-space width the DMA-address table is sized for; 0 for the default.
+ *
+ * Read from XNVME_UPCIE_VA_BITS. See the definition for what it costs and when
+ * lowering it is warranted.
+ */
+int
+xnvme_be_upcie_va_bits(void);
+
 int
 xnvme_be_upcie_get_driver_name(const char *bdf, char *driver_name, size_t driver_name_len);
 
