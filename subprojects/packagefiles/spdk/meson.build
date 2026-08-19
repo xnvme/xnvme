@@ -60,19 +60,18 @@ archive_dep = cc.find_library(
   has_headers: ['archive.h'],
 )
 
-should_have_rdma = get_option('with-spdk-rdma').enabled() and is_linux
 ibverbs_dep = cc.find_library(
   'ibverbs',
   has_headers: ['infiniband/verbs.h'],
-  required: should_have_rdma,
+  required: get_option('with-spdk-rdma'),
 )
 rdmacm_dep = cc.find_library(
   'rdmacm',
   has_headers: ['rdma/rdma_cma.h'],
-  required: should_have_rdma,
+  required: get_option('with-spdk-rdma'),
 )
 
-rdma_support_enabled = ibverbs_dep.found() and rdmacm_dep.found()
+rdma_support_enabled = is_linux and ibverbs_dep.found() and rdmacm_dep.found()
 if rdma_support_enabled
   message('RDMA support enabled')
 else
