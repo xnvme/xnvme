@@ -54,6 +54,12 @@ def add_args(parser: ArgumentParser):
         default="ipv4",
         help="Address family",
     )
+    parser.add_argument(
+        "--transport",
+        type=str,
+        default=None,
+        help="Transport to use for cijoe.run() commands",
+    )
 
 
 def _get_transport_device(cijoe):
@@ -65,11 +71,11 @@ def _get_transport_device(cijoe):
     return None
 
 
-def _run_all(cijoe, commands):
+def _run_all(cijoe, commands, transport):
     """Run commands in order; return (err, failing_cmd) or (0, None)."""
 
     for cmd in commands:
-        err, _ = cijoe.run(cmd)
+        err, _ = cijoe.run(cmd, transport_name=transport)
         if err:
             return err, cmd
     return 0, None
@@ -104,12 +110,12 @@ def _start_spdk(args, cijoe):
         f"modprobe nvme_{args.trtype}",
         "xnvme-driver",
     ]
-    err, cmd = _run_all(cijoe, drivers)
+    err, cmd = _run_all(cijoe, drivers, transport=args.transport)
     if err:
         log.error("FAILED: driver issue: %s (errno=%d)", cmd, err)
         return err
 
-    cijoe.run("pkill -f nvmf_tgt || true")
+    cijoe.run("pkill -f nvmf_tgt || true", transport_name=args.transport)
 
     subsystem = [
         f"test -x {nvmf_tgt} || make -C {nvmf_tgt_src}",
@@ -123,7 +129,7 @@ def _start_spdk(args, cijoe):
         f"{rpc} nvmf_subsystem_add_listener {subnqn} "
         f"-t {args.trtype} -a {args.traddr} -s {args.trsvcid} -f {args.adrfam}",
     ]
-    err, cmd = _run_all(cijoe, subsystem)
+    err, cmd = _run_all(cijoe, subsystem, transport=args.transport)
     if err:
         log.error("FAILED: subsystem creation: %s (errno=%d)", cmd, err)
         return err
@@ -153,7 +159,7 @@ def _start_linux(args, cijoe):
         "modprobe nvmet",
         f"modprobe nvmet_{args.trtype}",
     ]
-    err, cmd = _run_all(cijoe, drivers)
+    err, cmd = _run_all(cijoe, drivers, args.transport)
     if err:
         log.error("FAILED: driver issue: %s (errno=%d)", cmd, err)
         return err
@@ -174,7 +180,7 @@ def _start_linux(args, cijoe):
         f"echo {args.adrfam} > {nvmet}/ports/1/addr_adrfam",
         f"ln -s {nvmet}/subsystems/{subnqn} " f"{nvmet}/ports/1/subsystems/{subnqn}",
     ]
-    err, cmd = _run_all(cijoe, subsystem)
+    err, cmd = _run_all(cijoe, subsystem, args.transport)
     if err:
         log.error("FAILED: subsystem creation: %s (errno=%d)", cmd, err)
         return err

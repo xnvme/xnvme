@@ -25,6 +25,12 @@ def add_args(parser: ArgumentParser):
         default="spdk",
         help="Target provider: SPDK nvmf_tgt or Linux kernel nvmet",
     )
+    parser.add_argument(
+        "--transport",
+        type=str,
+        default=None,
+        help="Transport to use for cijoe.run() commands",
+    )
 
 
 def _get_transport_device(cijoe):
@@ -39,7 +45,9 @@ def _get_transport_device(cijoe):
 def _stop_spdk(args, cijoe):
     """Stop the SPDK ``nvmf_tgt`` process."""
 
-    cijoe.run("pgrep -f nvmf_tgt && pkill -f nvmf_tgt; true")
+    cijoe.run(
+        "pgrep -f nvmf_tgt && pkill -f nvmf_tgt; true", transport_name=args.transport
+    )
     log.info("spdk target down")
     return 0
 
@@ -61,7 +69,7 @@ def _stop_linux(args, cijoe):
         f"rmdir {nvmet}/subsystems/{subnqn}/namespaces/1; true",
         f"rmdir {nvmet}/subsystems/{subnqn}; true",
     ):
-        cijoe.run(cmd)
+        cijoe.run(cmd, transport_name=args.transport)
 
     log.info("linux target down")
     return 0
