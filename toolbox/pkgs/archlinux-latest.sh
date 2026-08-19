@@ -16,8 +16,6 @@ pacman -S --noconfirm \
  git \
  libaio \
  libarchive \
- libibverbs \
- librdmacm \
  liburing \
  libutil-linux \
  make \
@@ -35,6 +33,7 @@ pacman -S --noconfirm \
  python-setuptools \
  python-tabulate \
  python3 \
+ rdma-core-dev \
  util-linux-libs
 
 #

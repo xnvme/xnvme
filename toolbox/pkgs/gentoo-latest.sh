@@ -17,8 +17,6 @@ emerge \
  dev-lang/nasm \
  dev-libs/isa-l \
  dev-libs/libaio \
- dev-libs/libibverbs \
- dev-libs/librdmacm \
  dev-libs/openssl \
  dev-python/jinja2 \
  dev-python/pip \
@@ -29,6 +27,7 @@ emerge \
  dev-vcs/git \
  findutils \
  make \
+ sys-cluster/rdma-core \
  sys-devel/patch \
  sys-libs/liburing \
  sys-libs/ncurses \
