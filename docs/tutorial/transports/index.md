@@ -47,9 +47,10 @@ NVMe driver so its local `/dev/nvmeXn1` can be exported as a `nvmet`
 namespace.
 
 Both providers are driven by the same `nvme_target_start`,
-`nvme_target_probe`, and `nvme_target_stop` cijoe scripts, switched via
-`--nvme-provider`. The initiator side (xNVMe access via TCP URI) is identical
-between the two and is documented below.
+`nvme_target_probe`, and `nvme_target_stop` cijoe scripts; `start` and `stop`
+are switched via `--nvme-provider`, `probe` discovers whichever is listening.
+The initiator side (xNVMe access via a fabrics URI) is identical between the
+two and is documented below.
 
 ```{toctree}
 :hidden:
@@ -58,17 +59,38 @@ spdk/index
 linux/index
 ```
 
-## Shared configuration
+## Script configuration
 
-The three cijoe scripts share the same set of flags:
+`nvme_target_start.py`, `nvme_target_probe.py`, and `nvme_target_stop.py`
+each take their own set of arguments; `--transport-name` is the one all three
+share.
 
-| Argument            | Default       | Description                                  |
-|---------------------|---------------|----------------------------------------------|
-| `--nvme-provider`   | `spdk`        | `spdk` or `linux`.                           |
-| `--nvme-traddr`     | `127.0.0.1`   | Transport address (IP) for the listener.     |
-| `--nvme-trsvcid`    | `4420`        | Transport service id (TCP port).             |
-| `--nvme-trtype`     | `tcp`         | Transport type.                              |
-| `--nvme-adrfam`     | `ipv4`        | Address family.                              |
+`nvme_target_start.py` accepts the following arguments:
+
+| Argument            | Default     | Description                                                        |
+|---------------------|-------------|--------------------------------------------------------------------|
+| `--nvme-provider`   | `spdk`      | `spdk` or `linux`.                                                 |
+| `--nvme-traddr`     | `127.0.0.1` | Transport address (IP) for the listener.                           |
+| `--nvme-trsvcid`    | `4420`      | Transport service id (port); rdma listens on one as well.          |
+| `--nvme-trtype`     | `tcp`       | Transport type.                                                    |
+| `--nvme-adrfam`     | `ipv4`      | Address family.                                                    |
+| `--transport-name`  | None        | CIJOE Transport to use. Defaults to first-found, if not specified. |
+
+`nvme_target_probe.py` accepts the following arguments:
+
+| Argument            | Default     | Description                                                        |
+|---------------------|-------------|--------------------------------------------------------------------|
+| `--nvme-traddr`     | `127.0.0.1` | Transport address (IP) for the listener.                           |
+| `--nvme-trsvcid`    | `4420`      | Transport service id (port); rdma listens on one as well.          |
+| `--nvme-trtype`     | `tcp`       | Transport type.                                                    |
+| `--transport-name`  | None        | CIJOE Transport to use. Defaults to first-found, if not specified. |
+
+`nvme_target_stop.py` accepts the following arguments:
+
+| Argument            | Default     | Description                                                        |
+|---------------------|-------------|--------------------------------------------------------------------|
+| `--nvme-provider`   | `spdk`      | `spdk` or `linux`.                                                 |
+| `--transport-name`  | None        | CIJOE Transport to use. Defaults to first-found, if not specified. |
 
 The PCIe device to export and its subsystem NQN are read from a device
 entry labelled `fabrics` (legacy label name) in the cijoe configuration.
