@@ -54,6 +54,12 @@ def add_args(parser: ArgumentParser):
         default="ipv4",
         help="Address family",
     )
+    parser.add_argument(
+        "--transport-name",
+        type=str,
+        default=None,
+        help="Transport to use for cijoe.run() commands",
+    )
 
 
 def _get_transport_device(cijoe):
@@ -65,11 +71,11 @@ def _get_transport_device(cijoe):
     return None
 
 
-def _run_all(cijoe, commands):
+def _run_all(cijoe, commands, transport_name):
     """Run commands in order; return (err, failing_cmd) or (0, None)."""
 
     for cmd in commands:
-        err, _ = cijoe.run(cmd)
+        err, _ = cijoe.run(cmd, transport_name=transport_name)
         if err:
             return err, cmd
     return 0, None
@@ -100,16 +106,19 @@ def _start_spdk(args, cijoe):
     # `nvme discover` in the probe step; nvmf_tgt itself runs in userspace and
     # the PCIe device is rebound to vfio-pci by xnvme-driver, so nvmet and
     # nvmet_tcp/nvmet_rdma are not needed on the SPDK target path.
+    # RDMA requires kernel modules and supporting software (e.g. libibverbs) to be
+    # installed and configured on both the initiator and target. An error here may
+    # reflect incomplete RDMA setup rather than a fault in this script.
     drivers = [
         f"modprobe nvme_{args.nvme_trtype}",
         "xnvme-driver",
     ]
-    err, cmd = _run_all(cijoe, drivers)
+    err, cmd = _run_all(cijoe, drivers, args.transport_name)
     if err:
         log.error("FAILED: driver issue: %s (errno=%d)", cmd, err)
         return err
 
-    cijoe.run("pkill -f nvmf_tgt || true")
+    cijoe.run("pkill -f nvmf_tgt || true", transport_name=args.transport_name)
 
     subsystem = [
         f"test -x {nvmf_tgt} || make -C {nvmf_tgt_src}",
@@ -123,7 +132,7 @@ def _start_spdk(args, cijoe):
         f"{rpc} nvmf_subsystem_add_listener {subnqn} "
         f"-t {args.nvme_trtype} -a {args.nvme_traddr} -s {args.nvme_trsvcid} -f {args.nvme_adrfam}",
     ]
-    err, cmd = _run_all(cijoe, subsystem)
+    err, cmd = _run_all(cijoe, subsystem, args.transport_name)
     if err:
         log.error("FAILED: subsystem creation: %s (errno=%d)", cmd, err)
         return err
@@ -153,7 +162,7 @@ def _start_linux(args, cijoe):
         "modprobe nvmet",
         f"modprobe nvmet_{args.nvme_trtype}",
     ]
-    err, cmd = _run_all(cijoe, drivers)
+    err, cmd = _run_all(cijoe, drivers, args.transport_name)
     if err:
         log.error("FAILED: driver issue: %s (errno=%d)", cmd, err)
         return err
@@ -174,7 +183,7 @@ def _start_linux(args, cijoe):
         f"echo {args.nvme_adrfam} > {nvmet}/ports/1/addr_adrfam",
         f"ln -s {nvmet}/subsystems/{subnqn} " f"{nvmet}/ports/1/subsystems/{subnqn}",
     ]
-    err, cmd = _run_all(cijoe, subsystem)
+    err, cmd = _run_all(cijoe, subsystem, args.transport_name)
     if err:
         log.error("FAILED: subsystem creation: %s (errno=%d)", cmd, err)
         return err
