@@ -332,7 +332,7 @@ defaults:
   linux:
     deps:
     - [sys, [archive, bash, cunit, clang-format, elftools, find, git, jinja2, libaio, libisal, liburing, libuuid, make, meson,
-        nasm, ncurses, numactl, openssl, patch, pipx, pkg-config, python3, tabulate, rdma-core-devel, ]]
+        nasm, ncurses, numactl, openssl, patch, pipx, pkg-config, python3, tabulate, rdma-core-devel]]
     - [src, [libvfn]]
     apps:
     - [src, [fio]]

@@ -21,10 +21,8 @@ zypper --non-interactive install -y --allow-downgrade \
  gzip \
  libaio-devel \
  libarchive-devel \
- libibverbs-devel \
  libnuma-devel \
  libopenssl-devel \
- librdmacm-devel \
  libtool \
  liburing-devel \
  libuuid-devel \
@@ -42,6 +40,7 @@ zypper --non-interactive install -y --allow-downgrade \
  python3-pyelftools \
  python3-setuptools \
  python3-tabulate \
+ rdma-core-devel \
  tar
 
 #

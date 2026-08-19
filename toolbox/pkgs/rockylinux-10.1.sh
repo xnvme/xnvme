@@ -25,8 +25,6 @@ dnf install -y \
  git \
  libaio-devel \
  libarchive-devel \
- libibverbs-devel \
- librdmacm-devel \
  libtool \
  liburing \
  liburing-devel \
@@ -46,6 +44,7 @@ dnf install -y \
  python3-pip \
  python3-pyelftools \
  python3-tabulate \
+ rdma-core-devel \
  unzip \
  wget \
  zlib-devel

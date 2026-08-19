@@ -18,8 +18,6 @@ apk add \
  git \
  libaio-dev \
  libarchive-dev \
- libibverbs \
- librdmacm \
  liburing-dev \
  libuuid \
  linux-headers \
@@ -38,6 +36,7 @@ apk add \
  py3-tabulate \
  python3 \
  python3-dev \
+ rdma-core-dev \
  util-linux-dev
 
 #
