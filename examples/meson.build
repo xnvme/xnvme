@@ -26,6 +26,19 @@ foreach example_source : examples_source
   )
 endforeach
 
+if conf_data.get('XNVME_BE_UPCIE_HIP_ENABLED')
+  executable(
+    'xnvme_hip_mem_map',
+    'xnvme_hip_mem_map.c',
+    include_directories: [conf_inc, xnvme_inc],
+    link_with: xnvmelib,
+    dependencies: [hip_dep],
+    link_args: link_args_hardening,
+    install_rpath: xnvmelib_rpath,
+    install: true,
+  )
+endif
+
 if conf_data.get('XNVME_BE_UPCIE_CUDA_ENABLED')
   foreach example: ['xnvme_cuda', 'xnvme_cuda_mem_map']
     executable(
