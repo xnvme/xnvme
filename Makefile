@@ -593,6 +593,41 @@ clean-subprojects:
 	rm -fr $(BUILD_DIR) || true
 	@echo "## xNVMe: make clean-subprojects [DONE]"
 
+define release-check-help
+# Check whether the tree is ready to be tagged as a release
+#
+# Answers the mechanical parts of the release checklist with an exit code:
+# version consistency, an unused tag, a CHANGELOG section, CONTRIBUTORS
+# coverage, and a clean tree. Run 'python3 toolbox/release_check.py --help'
+# for what it deliberately does not check.
+endef
+.PHONY: release-check
+release-check:
+	@echo "## xNVMe: make release-check"
+	python3 ./$(TOOLBOX_DIR)/release_check.py --path meson.build
+	@echo "## xNVMe: make release-check [DONE]"
+
+define contributors-help
+# List authors with commits since the previous tag that CONTRIBUTORS.md omits
+endef
+.PHONY: contributors
+contributors:
+	@python3 ./$(TOOLBOX_DIR)/release_check.py --path meson.build --contributors
+
+define version-help
+# Update the version-number in every file embedding it
+#
+# Optional: VERSION=x.y.z to set it explicitly, otherwise the minor is bumped
+# Optional: DRY_RUN=1 to print what would change without writing it
+endef
+.PHONY: version
+version:
+	@echo "## xNVMe: make version"
+	python3 ./$(TOOLBOX_DIR)/xnvme_ver.py --path meson.build \
+		$(if $(VERSION),--set $(VERSION),--bump minor) \
+		$(if $(filter 1,$(DRY_RUN)),--dry-run)
+	@echo "## xNVMe: make version [DONE]"
+
 define gen-libconf-help
 # Helper-target generating third-party/subproject/os/library-configuration string
 endef
