@@ -12,6 +12,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include <liburing.h>
+#include <linux/fs.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
 #include <xnvme_queue.h>
@@ -338,7 +339,12 @@ xnvme_be_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	// NOTE: we only ever register a single file, the raw device, so the
 	// provided index will always be 0
 	sqe->fd = queue->poll_sq ? 0 : state->fd;
-	sqe->rw_flags = 0;
+	// Honour the FUA bit of an NVM write; on a raw block device RWF_DSYNC
+	// makes the kernel issue the write with REQ_FUA. Only for the NVM opcode:
+	// 'fua' is an NVMe command-field, it does not exist for the FS opcodes
+	sqe->rw_flags = (ctx->cmd.common.opcode == XNVME_SPEC_NVM_OPC_WRITE && ctx->cmd.nvm.fua)
+				? RWF_DSYNC
+				: 0;
 	sqe->user_data = (unsigned long)ctx;
 	// sqe->__pad2[0] = sqe->__pad2[1] = sqe->__pad2[2] = 0;
 
@@ -409,6 +415,13 @@ xnvme_be_linux_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, s
 	/* fall through */
 	case XNVME_SPEC_FS_OPC_WRITE:
 		io_uring_prep_writev(sqe, fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
+		if (ctx->cmd.common.opcode == XNVME_SPEC_NVM_OPC_WRITE && ctx->cmd.nvm.fua) {
+			// Honour the FUA bit of an NVM write; on a raw block device
+			// RWF_DSYNC makes the kernel issue the write with REQ_FUA.
+			// Only for the NVM opcode: 'fua' is an NVMe command-field, it
+			// does not exist for the FS opcodes
+			sqe->rw_flags = RWF_DSYNC;
+		}
 		break;
 
 	case XNVME_SPEC_NVM_OPC_READ:

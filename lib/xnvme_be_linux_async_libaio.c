@@ -11,6 +11,7 @@
 #ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
 #include <errno.h>
 #include <libaio.h>
+#include <linux/fs.h>
 #include <stdatomic.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
@@ -199,6 +200,13 @@ _linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, 
 		return -ENOSYS;
 	}
 
+	// Honour the FUA bit of an NVM write; on a raw block device RWF_DSYNC
+	// makes the kernel issue the write with REQ_FUA. Only for the NVM opcode:
+	// 'fua' is an NVMe command-field, it does not exist for the FS opcodes
+	if (ctx->cmd.nvm.fua && ctx->cmd.common.opcode == XNVME_SPEC_NVM_OPC_WRITE) {
+		iocb.aio_rw_flags = RWF_DSYNC;
+	}
+
 	iocb.data = (unsigned long *)ctx;
 
 	if (queue->efd != -1) {
@@ -265,6 +273,13 @@ _linux_libaio_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec
 	default:
 		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);
 		return -ENOSYS;
+	}
+
+	// Honour the FUA bit of an NVM write; on a raw block device RWF_DSYNC
+	// makes the kernel issue the write with REQ_FUA. Only for the NVM opcode:
+	// 'fua' is an NVMe command-field, it does not exist for the FS opcodes
+	if (ctx->cmd.nvm.fua && ctx->cmd.common.opcode == XNVME_SPEC_NVM_OPC_WRITE) {
+		iocb.aio_rw_flags = RWF_DSYNC;
 	}
 
 	if (queue->efd != -1) {
