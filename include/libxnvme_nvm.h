@@ -34,6 +34,20 @@ xnvme_nvm_read(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint16_t
 /**
  * Submit a NVMe Write command
  *
+ * NOTE: fields which are not arguments here, such as 'ctx->cmd.nvm.fua', are
+ * left untouched; set them on the context before calling this. Neither this
+ * function nor ::xnvme_queue_get_cmd_ctx clears them, so a context which is
+ * reused for another command carries them over. Reset it with
+ * ::xnvme_cmd_ctx_clear when that is not intended.
+ *
+ * NOTE: whether 'ctx->cmd.nvm.fua' is honoured is backend-dependent, and it
+ * applies to NVM writes only. Backends passing the command through to an NVMe
+ * device (ioctl, io_uring_cmd, spdk, libvfn, upcie) carry the bit in the
+ * command itself. The Linux io_uring and libaio backends translate it to
+ * RWF_DSYNC, which on a raw block device makes the kernel issue the write
+ * with REQ_FUA. The remaining backends (psync, POSIX-aio, ramdisk, FreeBSD,
+ * Windows, macOS) ignore it.
+ *
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  * @param nsid Namespace Identifier
  * @param slba The LBA to start the write at
@@ -80,6 +94,10 @@ xnvme_nvm_write_zeroes(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, 
  *
  * This populates the command fields in the given context, it does not submit
  * the command. Submit it with e.g. ::xnvme_cmd_pass.
+ *
+ * NOTE: only the fields given as arguments are populated; the remaining ones,
+ * such as 'ctx->cmd.nvm.fua', are left as they were. Reset a reused context
+ * with ::xnvme_cmd_ctx_clear when carrying them over is not intended.
  *
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  * @param opcode Opcode for the NVMe command
