@@ -188,7 +188,11 @@ _linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, 
 		io_prep_pread(&iocb, state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
 		break;
 
-		// TODO: determine how to handle fsync
+	case XNVME_SPEC_NVM_OPC_FLUSH:
+	case XNVME_SPEC_FS_OPC_FLUSH:
+		// NOTE: full fsync, matching the psync backend
+		io_prep_fsync(&iocb, state->fd);
+		break;
 
 	default:
 		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);
@@ -252,7 +256,11 @@ _linux_libaio_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec
 		io_prep_preadv(&iocb, state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba);
 		break;
 
-		// TODO: determine how to handle fsync
+	case XNVME_SPEC_NVM_OPC_FLUSH:
+	case XNVME_SPEC_FS_OPC_FLUSH:
+		// NOTE: full fsync, matching the psync backend
+		io_prep_fsync(&iocb, state->fd);
+		break;
 
 	default:
 		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);
