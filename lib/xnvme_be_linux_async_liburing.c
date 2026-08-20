@@ -294,6 +294,19 @@ xnvme_be_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 		opcode = IORING_OP_READ;
 		break;
 
+	case XNVME_SPEC_NVM_OPC_FLUSH:
+	case XNVME_SPEC_FS_OPC_FLUSH:
+		// NOTE: IORING_OP_FSYNC has no iopoll-handler; on a ring set up with
+		// IORING_SETUP_IOPOLL it would be accepted here and only fail with
+		// -EINVAL at completion-time. Reject it at submission-time instead
+		if (queue->poll_io) {
+			XNVME_DEBUG("FAILED: FLUSH is not supported on an IOPOLL queue");
+			return -ENOSYS;
+		}
+		// NOTE: full fsync, matching the psync backend
+		opcode = IORING_OP_FSYNC;
+		break;
+
 	default:
 		XNVME_DEBUG("FAILED: unsupported opcode: %d for async", ctx->cmd.common.opcode);
 		return -ENOSYS;
@@ -302,6 +315,18 @@ xnvme_be_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	sqe = io_uring_get_sqe(&queue->ring);
 	if (!sqe) {
 		return -EAGAIN;
+	}
+
+	if (opcode == IORING_OP_FSYNC) {
+		// NOTE: the prep-helper zeroes 'addr', 'off', 'len' and 'fsync_flags'.
+		// io_fsync_prep() rejects a non-zero 'addr'; 'off'/'len' would select a
+		// range for vfs_fsync_range(), zero/zero means the entire file
+		io_uring_prep_fsync(sqe, queue->poll_sq ? 0 : state->fd, 0);
+		// NOTE: set after the prep-helper; io_uring_prep_rw() zeroes 'flags'
+		sqe->flags = queue->poll_sq ? IOSQE_FIXED_FILE : 0;
+		sqe->user_data = (unsigned long)ctx;
+
+		goto submit;
 	}
 
 	sqe->opcode = opcode;
@@ -316,6 +341,8 @@ xnvme_be_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	sqe->rw_flags = 0;
 	sqe->user_data = (unsigned long)ctx;
 	// sqe->__pad2[0] = sqe->__pad2[1] = sqe->__pad2[2] = 0;
+
+submit:
 
 	if (queue->batching) {
 		goto exit;
@@ -355,6 +382,16 @@ xnvme_be_linux_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, s
 		return -ENOTSUP;
 	}
 
+	// NOTE: IORING_OP_FSYNC has no iopoll-handler; on a ring set up with
+	// IORING_SETUP_IOPOLL it would be accepted at submission-time and only fail
+	// with -EINVAL at completion-time. Reject it up-front instead, and do so
+	// before acquiring an sqe, such that none is left dangling in the ring
+	if (queue->poll_io && (ctx->cmd.common.opcode == XNVME_SPEC_NVM_OPC_FLUSH ||
+			       ctx->cmd.common.opcode == XNVME_SPEC_FS_OPC_FLUSH)) {
+		XNVME_DEBUG("FAILED: FLUSH is not supported on an IOPOLL queue");
+		return -ENOSYS;
+	}
+
 	sqe = io_uring_get_sqe(&queue->ring);
 	if (!sqe) {
 		return -EAGAIN;
@@ -379,6 +416,17 @@ xnvme_be_linux_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, s
 	/* fall through */
 	case XNVME_SPEC_FS_OPC_READ:
 		io_uring_prep_readv(sqe, fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
+		break;
+
+	case XNVME_SPEC_NVM_OPC_FLUSH:
+	case XNVME_SPEC_FS_OPC_FLUSH:
+		// NOTE: full fsync, matching the psync backend
+		io_uring_prep_fsync(sqe, fd, 0);
+		// NOTE: re-assign after the prep-helper; on liburing versions where
+		// io_uring_prep_rw() zeroes 'flags', the assignment above would be
+		// dropped and an SQPOLL queue would fsync the actual file descriptor
+		// 0 instead of the registered file. Matches the single-buffer path
+		sqe->flags = queue->poll_sq ? IOSQE_FIXED_FILE : 0;
 		break;
 
 	default:
