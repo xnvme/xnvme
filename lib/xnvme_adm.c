@@ -165,6 +165,34 @@ xnvme_adm_gfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint8_t s
 }
 
 int
+xnvme_adm_gfeat_nqueues(struct xnvme_cmd_ctx *ctx, uint32_t *nsq, uint32_t *ncq)
+{
+	struct xnvme_spec_feat feat;
+	int err;
+
+	if (!ctx || !nsq || !ncq) {
+		return -EINVAL;
+	}
+
+	err = xnvme_adm_gfeat(ctx, 0, XNVME_SPEC_FEAT_NQUEUES, XNVME_SPEC_FEAT_SEL_CURRENT, NULL,
+			      0);
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_adm_gfeat(NQUEUES); err(%d)", err);
+		return err;
+	}
+	if (xnvme_cmd_ctx_cpl_status(ctx)) {
+		XNVME_DEBUG("FAILED: gfeat(NQUEUES) refused by the controller");
+		return -EIO;
+	}
+
+	feat.val = ctx->cpl.cdw0;
+	*nsq = feat.nqueues.nsqa + 1;
+	*ncq = feat.nqueues.ncqa + 1;
+
+	return 0;
+}
+
+int
 xnvme_adm_sfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint32_t feat, uint8_t save,
 		const void *dbuf, size_t dbuf_nbytes)
 {

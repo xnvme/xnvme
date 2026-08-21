@@ -157,6 +157,28 @@ xnvme_adm_gfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint8_t s
 		size_t dbuf_nbytes);
 
 /**
+ * Ask the controller how many I/O queues it has allocated
+ *
+ * A helper on top of xnvme_adm_gfeat(), not a one-to-one mapping of it. Get
+ * Features for FID 0x07 answers in cdw0 with NSQA and NCQA, which are
+ * zero-based as queue-allocation fields are throughout the specification. This
+ * transforms them: `nsq` and `ncq` are NSQA + 1 and NCQA + 1, so they are
+ * counts and can be compared with a number of queues directly. A caller that
+ * wants the fields as the controller reported them should issue
+ * xnvme_adm_gfeat() and read cdw0.
+ *
+ * @param ctx Pointer to ::xnvme_cmd_ctx
+ * @param nsq Filled with NSQA + 1, the number of I/O submission queues
+ * @param ncq Filled with NCQA + 1, the number of I/O completion queues
+ *
+ * @return On success, 0 is returned and both counts are filled. On error,
+ *         negative `errno` is returned and neither is written; zero would be a
+ *         plausible answer rather than an absent one.
+ */
+int
+xnvme_adm_gfeat_nqueues(struct xnvme_cmd_ctx *ctx, uint32_t *nsq, uint32_t *ncq);
+
+/**
  * Submit and wait for completion of an NVMe Set Feature (sfeat) command
  *
  * @param ctx Pointer to ::xnvme_cmd_ctx
