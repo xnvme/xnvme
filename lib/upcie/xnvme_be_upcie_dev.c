@@ -590,6 +590,54 @@ xnvme_be_upcie_dev_close(struct xnvme_dev *XNVME_UNUSED(dev))
 {
 }
 
+/**
+ * Publish the controller's I/O queue allocation into the shared segment
+ *
+ * The question is a plain NVMe one and xnvme_dev_nqueues() answers it; what is
+ * uPCIe's business is who may ask and where the answer goes.
+ */
+static void
+_publish_nqueues(struct xnvme_dev *dev, struct xnvme_be_upcie_state *state)
+{
+	struct xnvme_be_upcie_ctrlr_shm *shm = state->ctrlr->mproc.shm;
+	uint32_t nsq, ncq;
+
+	/* Nowhere to publish to outside multi-process mode, and this runs from
+	 * device open, so skipping it keeps an admin command off the path that
+	 * every single-process open takes. Answering the question there needs
+	 * no shared segment: the caller holds the controller itself. */
+	if (!shm) {
+		return;
+	}
+
+	/* Asked once per controller rather than once per open. The queues a
+	 * controller allocated do not change while it is up, and further opens
+	 * against the same controller would otherwise each repeat the command. */
+	if (shm->nsq_max) {
+		return;
+	}
+
+	/* Only whoever brought this controller up may issue admin commands on
+	 * it, and the per-controller lock says who that is: the owner holds it
+	 * for its lifetime, an attaching secondary leaves the descriptor at -1.
+	 * That is a tighter question than the runtime's primary role, which is
+	 * about the shm_id group rather than this controller.
+	 *
+	 * The command itself is serialised by the admin path, which takes the
+	 * process-shared queue mutex around every submission. */
+	if (state->ctrlr->mproc.lock_fd < 0) {
+		return;
+	}
+
+	if (xnvme_dev_nqueues(dev, &nsq, &ncq)) {
+		XNVME_DEBUG("INFO: nqueues unavailable; the ceiling stays unknown");
+		return;
+	}
+
+	shm->nsq_max = nsq;
+	shm->ncq_max = ncq;
+}
+
 int
 xnvme_be_upcie_dev_open(struct xnvme_dev *dev)
 {
@@ -603,6 +651,8 @@ xnvme_be_upcie_dev_open(struct xnvme_dev *dev)
 	/* Data buffers come off the host heap; the GPU backends override this with
 	 * their device heap once their runtime is up. */
 	state->dmem = &g_upcie_rte.mem.dmem;
+
+	_publish_nqueues(dev, state);
 
 	return 0;
 }
