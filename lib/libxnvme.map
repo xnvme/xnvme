@@ -12,6 +12,7 @@
 		xnvme_prep_adm_gfeat;
 		xnvme_prep_adm_sfeat;
 		xnvme_adm_gfeat;
+		xnvme_adm_gfeat_nqueues;
 		xnvme_adm_sfeat;
 		xnvme_adm_format;
 		xnvme_nvm_sanitize;
