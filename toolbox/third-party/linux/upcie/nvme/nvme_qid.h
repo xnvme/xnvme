@@ -61,6 +61,26 @@ nvme_qid_alloc(uint64_t *qid_bitmap, uint16_t qid)
 	return 0;
 }
 
+/**
+ * Count the allocated queue ids, admin queue included
+ */
+static inline uint32_t
+nvme_qid_used(const uint64_t *qid_bitmap)
+{
+	uint32_t used = 0;
+
+	for (int word = 0; word < NVME_QID_BITMAP_WORDS; ++word) {
+		uint64_t w = qid_bitmap[word];
+
+		while (w) {
+			w &= w - 1;
+			used++;
+		}
+	}
+
+	return used;
+}
+
 static inline int
 nvme_qid_bitmap_init(uint64_t *qid_bitmap)
 {
