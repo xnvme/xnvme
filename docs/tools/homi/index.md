@@ -79,6 +79,28 @@ While it runs, other processes attach as secondaries by passing the same
 xnvme info 0000:03:00.0 --be upcie --shm_id 1
 ```
 
+## Running several primaries
+
+A host can run more than one primary, each holding a disjoint set of
+controllers under its own `shm_id`. Secondaries reach the one they want by
+passing the matching id:
+
+```bash
+homi start 0000:03:00.0 0000:04:00.0 --be upcie --shm_id 1
+homi start 0000:05:00.0 0000:06:00.0 --be upcie --shm_id 2
+```
+
+Two things are shared across all of them and have to be budgeted rather than
+assumed. The hugepage pool is one: every process allocates a host heap of its
+own, secondaries included, and a secondary that does not set
+`--host_heap_size` takes the backend default of 1 GiB. Reserve enough
+hugepages for the sum of every heap that will exist at once, not just for the
+primaries.
+
+The controllers are the other. A controller can be held by one primary only,
+so the sets must not overlap; the second primary to claim one fails rather
+than sharing it.
+
 ## Backends
 
 **homi** works with any backend that advertises the multi-process capability,

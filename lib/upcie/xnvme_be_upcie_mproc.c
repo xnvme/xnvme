@@ -2,15 +2,39 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <errno.h>
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_UPCIE_ENABLED
+#include <fcntl.h>
 #include <limits.h>
-#include <sys/file.h>
 #include <sys/stat.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_upcie.h>
+
+/**
+ * Take, test, or drop the runtime role-election lock
+ *
+ * Returns 1 when F_OFD_GETLK finds the lock held, 0 on success, negative errno
+ * on failure. Released when the descriptor closes.
+ */
+static int
+_rte_lock_op(int fd, int cmd, short type)
+{
+	struct flock fl = {
+		.l_type = type,
+		.l_whence = SEEK_SET,
+		.l_start = 0,
+		.l_len = 0,
+	};
+
+	if (fcntl(fd, cmd, &fl)) {
+		return -errno;
+	}
+
+	return ((cmd == F_OFD_GETLK) && (fl.l_type != F_UNLCK)) ? 1 : 0;
+}
 
 void
 xnvme_be_upcie_mproc_rte_term()
@@ -47,7 +71,6 @@ xnvme_be_upcie_mproc_rte_term()
 		}
 
 		if (mproc->lock_fd >= 0) {
-			flock(mproc->lock_fd, LOCK_UN);
 			close(mproc->lock_fd);
 		}
 		unlink(mproc->lock_name);
@@ -55,6 +78,28 @@ xnvme_be_upcie_mproc_rte_term()
 
 	free(mproc);
 	g_upcie_rte.mproc = NULL;
+}
+
+/**
+ * Refuse a segment this build cannot read
+ *
+ * The preceding size check misses a segment whose layout differs at the same
+ * size or larger, which is then read at this build's offsets and quietly
+ * misreported. A zeroed stamp is mid-creation rather than foreign, so it is
+ * worth retrying.
+ */
+static int
+_shm_stamp_check(uint32_t magic, uint32_t version)
+{
+	if (!magic) {
+		return -EAGAIN;
+	}
+
+	if ((magic != XNVME_BE_UPCIE_SHM_MAGIC) || (version != XNVME_BE_UPCIE_SHM_VERSION)) {
+		return -EPROTO;
+	}
+
+	return 0;
 }
 
 int
@@ -73,19 +118,17 @@ xnvme_be_upcie_mproc_rte_init(int shm_id)
 
 	mproc->is_primary = true;
 
-	/* Use flock to determine primary / secondary role */
-
-	snprintf(mproc->lock_name, sizeof(mproc->lock_name), "/tmp/xnvme-upcie-flock-%d", shm_id);
-	mproc->lock_fd = open(mproc->lock_name, O_CREAT | O_RDWR, 0600);
+	snprintf(mproc->lock_name, sizeof(mproc->lock_name), XNVME_BE_UPCIE_RTE_LOCK_FMT, shm_id);
+	mproc->lock_fd = open(mproc->lock_name, O_CREAT | O_RDWR | O_CLOEXEC, 0600);
 	if (mproc->lock_fd < 0) {
 		err = -errno;
 		XNVME_DEBUG("FAILED: open() with lock_name(%s); err(%d)", mproc->lock_name, err);
 		goto failed;
 	}
 
-	err = flock(mproc->lock_fd, LOCK_EX | LOCK_NB);
+	err = _rte_lock_op(mproc->lock_fd, F_OFD_SETLK, F_WRLCK);
 	if (err) {
-		if (errno == EWOULDBLOCK) {
+		if ((err == -EAGAIN) || (err == -EACCES)) {
 			XNVME_DEBUG("INFO: Lock file already claimed, setting role to secondary");
 			close(mproc->lock_fd);
 			mproc->lock_fd = -1;
@@ -93,15 +136,15 @@ xnvme_be_upcie_mproc_rte_init(int shm_id)
 			err = 0;
 			errno = 0;
 		} else {
-			err = -errno;
-			XNVME_DEBUG("FAILED: flock; err(%d)", err);
+			XNVME_DEBUG("FAILED: claiming lock_name(%s); err(%d)", mproc->lock_name,
+				    err);
 			goto failed;
 		}
 	}
 
 	/* Map shared memory for hugepage information */
 
-	snprintf(mproc->shm_name, sizeof(mproc->shm_name), "/xnvme-upcie-shm-%d", shm_id);
+	snprintf(mproc->shm_name, sizeof(mproc->shm_name), XNVME_BE_UPCIE_RTE_SHM_FMT, shm_id);
 	mproc->shm_fd = -1;
 
 	oflag = mproc->is_primary ? O_CREAT | O_EXCL | O_RDWR : O_RDWR;
@@ -146,9 +189,20 @@ xnvme_be_upcie_mproc_rte_init(int shm_id)
 
 	if (mproc->is_primary) {
 		memset(mproc->shm, 0, shm_size);
+		mproc->shm->magic = XNVME_BE_UPCIE_SHM_MAGIC;
+		mproc->shm->version = XNVME_BE_UPCIE_SHM_VERSION;
 		mproc->shm_fd = shm_fd;
 	} else {
 		close(shm_fd);
+
+		err = _shm_stamp_check(mproc->shm->magic, mproc->shm->version);
+		if (err) {
+			UPCIE_DEBUG("FAILED: segment(%s) is not ours; err(%d)", mproc->shm_name,
+				    err);
+			munmap(mproc->shm, shm_size);
+			mproc->shm = NULL;
+			goto failed;
+		}
 	}
 
 	atomic_fetch_add(&mproc->shm->refcount, 1);
@@ -164,7 +218,6 @@ failed_unlink:
 
 failed:
 	if (mproc && mproc->lock_fd >= 0) {
-		flock(mproc->lock_fd, LOCK_UN);
 		close(mproc->lock_fd);
 	}
 
@@ -349,10 +402,78 @@ xnvme_be_upcie_mproc_free_all_queues(struct xnvme_be_upcie_ctrlr *ctrlr)
 	xnvme_be_upcie_ctrlr_mutex_unlock(ctrlr);
 }
 
+/**
+ * Record that this primary holds `uri`, so a probe can enumerate the group
+ *
+ * Only the primary reaches here, from the path that opens a controller, so the
+ * write needs no lock beyond the one already excluding other primaries: the
+ * runtime is a process-wide global and opening devices from several threads at
+ * once is unsupported for reasons older than this.
+ */
+static void
+_ctrlr_register(const char *uri)
+{
+	struct xnvme_be_upcie_mproc_shm *shm;
+	uint32_t nctrlrs;
+
+	if (!g_upcie_rte.mproc || !g_upcie_rte.mproc->shm) {
+		return;
+	}
+	shm = g_upcie_rte.mproc->shm;
+
+	shm->nctrlrs_held++;
+
+	nctrlrs = atomic_load_explicit(&shm->nctrlrs, memory_order_relaxed);
+	if (nctrlrs >= XNVME_MPROC_MAX_CTRLRS) {
+		XNVME_DEBUG("FAILED: no room to record '%s'; probes will not list it", uri);
+		return;
+	}
+
+	snprintf(shm->ctrlrs[nctrlrs], sizeof(shm->ctrlrs[0]), "%s", uri);
+
+	atomic_store_explicit(&shm->nctrlrs, nctrlrs + 1, memory_order_release);
+}
+
+/**
+ * Drop the record for `uri`, compacting so the list stays contiguous
+ */
+static void
+_ctrlr_unregister(const char *uri)
+{
+	struct xnvme_be_upcie_mproc_shm *shm;
+	uint32_t nctrlrs;
+
+	if (!g_upcie_rte.mproc || !g_upcie_rte.mproc->shm) {
+		return;
+	}
+	shm = g_upcie_rte.mproc->shm;
+
+	if (shm->nctrlrs_held) {
+		shm->nctrlrs_held--;
+	}
+
+	nctrlrs = atomic_load_explicit(&shm->nctrlrs, memory_order_relaxed);
+
+	for (uint32_t i = 0; i < nctrlrs; ++i) {
+		if (strcmp(shm->ctrlrs[i], uri)) {
+			continue;
+		}
+
+		atomic_store_explicit(&shm->nctrlrs, nctrlrs - 1, memory_order_release);
+
+		if (i != (nctrlrs - 1)) {
+			memcpy(shm->ctrlrs[i], shm->ctrlrs[nctrlrs - 1], sizeof(shm->ctrlrs[0]));
+		}
+		memset(shm->ctrlrs[nctrlrs - 1], 0, sizeof(shm->ctrlrs[0]));
+		return;
+	}
+}
+
 void
 xnvme_be_upcie_mproc_ctrlr_shm_term(struct xnvme_be_upcie_ctrlr *ctrlr)
 {
 	if (g_upcie_rte.mproc->is_primary) {
+		_ctrlr_unregister(ctrlr->uri);
 		int attached = atomic_load(&ctrlr->mproc.shm->refcount);
 		if (attached > 1) {
 			XNVME_DEBUG("WARNING: terminating controller with %d secondary "
@@ -380,7 +501,6 @@ xnvme_be_upcie_mproc_ctrlr_shm_term(struct xnvme_be_upcie_ctrlr *ctrlr)
 		shm_unlink(ctrlr->mproc.shm_name);
 		ctrlr->ctrl = NULL; // was a pointer to shared memory, so remove this
 
-		flock(ctrlr->mproc.lock_fd, LOCK_UN);
 		close(ctrlr->mproc.lock_fd);
 		unlink(ctrlr->mproc.lock_name);
 	}
@@ -397,12 +517,11 @@ xnvme_be_upcie_mproc_ctrlr_shm_init(struct xnvme_dev *dev, struct xnvme_be_upcie
 
 	xnvme_be_upcie_shm_bdf_name(dev->ident.uri, shm_name, sizeof(shm_name));
 
-	/* Use flock to determine whether another primary process has claimed device */
 	snprintf(ctrlr->mproc.lock_name, sizeof(ctrlr->mproc.lock_name),
 		 "/tmp/xnvme-upcie-%s-lock", dev->ident.uri);
 	ctrlr->mproc.lock_fd = -1;
 
-	lock_fd = open(ctrlr->mproc.lock_name, O_CREAT | O_RDWR, 0600);
+	lock_fd = open(ctrlr->mproc.lock_name, O_CREAT | O_RDWR | O_CLOEXEC, 0600);
 	if (lock_fd < 0) {
 		err = -errno;
 		XNVME_DEBUG("FAILED: open() with lock_name(%s); err(%d)", ctrlr->mproc.lock_name,
@@ -410,10 +529,10 @@ xnvme_be_upcie_mproc_ctrlr_shm_init(struct xnvme_dev *dev, struct xnvme_be_upcie
 		goto failed;
 	}
 
-	err = flock(lock_fd, LOCK_EX | LOCK_NB);
+	err = _rte_lock_op(lock_fd, F_OFD_SETLK, F_WRLCK);
 	if (err) {
-		err = -errno;
-		XNVME_DEBUG("FAILED: flock; err(%d)", err);
+		XNVME_DEBUG("FAILED: claiming lock_name(%s); err(%d)", ctrlr->mproc.lock_name,
+			    err);
 		goto failed;
 	}
 
@@ -442,6 +561,8 @@ xnvme_be_upcie_mproc_ctrlr_shm_init(struct xnvme_dev *dev, struct xnvme_be_upcie
 	}
 
 	memset(shm, 0, shm_size);
+	shm->magic = XNVME_BE_UPCIE_SHM_MAGIC;
+	shm->version = XNVME_BE_UPCIE_SHM_VERSION;
 	atomic_store(&shm->refcount, 1);
 	strncpy(shm->driver_name, driver_name, sizeof(shm->driver_name));
 
@@ -459,14 +580,12 @@ xnvme_be_upcie_mproc_ctrlr_shm_init(struct xnvme_dev *dev, struct xnvme_be_upcie
 	ctrlr->mproc.shm = shm;
 	ctrlr->mproc.shm_fd = shm_fd;
 	snprintf(ctrlr->mproc.shm_name, sizeof(ctrlr->mproc.shm_name), "%s", shm_name);
+	snprintf(ctrlr->uri, sizeof(ctrlr->uri), "%s", dev->ident.uri);
+	_ctrlr_register(ctrlr->uri);
 
 	return 0;
 
 failed:
-	if (ctrlr->mproc.lock_fd >= 0) {
-		flock(ctrlr->mproc.lock_fd, LOCK_UN);
-	}
-
 	if (lock_fd >= 0) {
 		close(lock_fd);
 		ctrlr->mproc.lock_fd = -1;
@@ -546,6 +665,13 @@ xnvme_be_upcie_mproc_ctrlr_shm_attach(struct xnvme_dev *dev, struct xnvme_be_upc
 
 	close(shm_fd);
 	shm_fd = -1;
+
+	err = _shm_stamp_check(shm->magic, shm->version);
+	if (err) {
+		UPCIE_DEBUG("FAILED: segment(%s) is not ours; err(%d)", shm_name, err);
+		munmap(shm, shm_size);
+		goto failed;
+	}
 
 	ctrlr->mproc.shm = shm;
 	snprintf(ctrlr->mproc.shm_name, sizeof(ctrlr->mproc.shm_name), "%s", shm_name);
@@ -786,6 +912,180 @@ xnvme_be_upcie_mproc_delete_io_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct 
 					       offsets->sq, offsets->cq, offsets->prp);
 
 	xnvme_be_upcie_mproc_qids_unlock(ctrlr);
+}
+
+int
+xnvme_mproc_primary_alive(uint32_t shm_id)
+{
+	char path[64];
+	int fd, held;
+
+	snprintf(path, sizeof(path), XNVME_BE_UPCIE_RTE_LOCK_FMT, (int)shm_id);
+
+	fd = open(path, O_RDONLY);
+	if (fd < 0) {
+		return (errno == ENOENT) ? 0 : -errno;
+	}
+
+	held = _rte_lock_op(fd, F_OFD_GETLK, F_WRLCK);
+	close(fd);
+
+	return held;
+}
+
+/**
+ * Read the runtime segment for `shm_id` without attaching to it
+ *
+ * Same discipline as xnvme_mproc_get_ctrlr_info(): mapped read-only, no lock, a
+ * snapshot that may be a moment stale.
+ */
+int
+xnvme_mproc_get_info(uint32_t shm_id, struct xnvme_mproc_info *info)
+{
+	struct xnvme_be_upcie_mproc_shm *shm;
+	char shm_name[64];
+	struct stat st;
+	uint32_t nctrlrs;
+	int shm_fd, err = 0;
+
+	if (!info) {
+		return -EINVAL;
+	}
+
+	snprintf(shm_name, sizeof(shm_name), XNVME_BE_UPCIE_RTE_SHM_FMT, (int)shm_id);
+
+	shm_fd = shm_open(shm_name, O_RDONLY, 0);
+	if (shm_fd < 0) {
+		return -errno;
+	}
+
+	if (fstat(shm_fd, &st)) {
+		err = -errno;
+		close(shm_fd);
+		return err;
+	}
+	if ((size_t)st.st_size < sizeof(*shm)) {
+		UPCIE_DEBUG("FAILED: segment(%s) is %zu bytes, expected at least %zu", shm_name,
+			    (size_t)st.st_size, sizeof(*shm));
+		close(shm_fd);
+		return st.st_size ? -EPROTO : -EAGAIN;
+	}
+
+	shm = mmap(NULL, sizeof(*shm), PROT_READ, MAP_SHARED, shm_fd, 0);
+	close(shm_fd);
+	if (shm == MAP_FAILED) {
+		return -errno;
+	}
+
+	err = _shm_stamp_check(shm->magic, shm->version);
+	if (err) {
+		UPCIE_DEBUG("FAILED: segment(%s) magic(0x%08x) version(%u); err(%d)", shm_name,
+			    shm->magic, shm->version, err);
+		munmap(shm, sizeof(*shm));
+		return err;
+	}
+
+	memset(info, 0, sizeof(*info));
+	info->nattached = (uint32_t)atomic_load(&shm->refcount);
+	nctrlrs = atomic_load_explicit(&shm->nctrlrs, memory_order_acquire);
+	info->nctrlrs = nctrlrs > XNVME_MPROC_MAX_CTRLRS ? XNVME_MPROC_MAX_CTRLRS : nctrlrs;
+	info->nctrlrs_held = shm->nctrlrs_held;
+	for (uint32_t i = 0; i < info->nctrlrs; ++i) {
+		snprintf(info->ctrlrs[i], XNVME_IDENT_URI_LEN, "%s", shm->ctrlrs[i]);
+	}
+
+	munmap(shm, sizeof(*shm));
+
+	return err;
+}
+
+/**
+ * Read the shared controller segment without attaching to it
+ *
+ * Maps the segment read-only and reads a snapshot. No lock is taken: the
+ * counts are advisory, and a monitoring caller that blocked the processes it
+ * is monitoring would be worse than one reporting a value a moment stale.
+ */
+int
+xnvme_mproc_get_ctrlr_info(const char *uri, struct xnvme_mproc_ctrlr_info *info)
+{
+	struct xnvme_be_upcie_ctrlr_shm *shm;
+	char shm_name[64];
+	struct stat st;
+	uint32_t qids_used;
+	int shm_fd, err = 0;
+
+	if (!uri || !info) {
+		return -EINVAL;
+	}
+
+	xnvme_be_upcie_shm_bdf_name(uri, shm_name, sizeof(shm_name));
+
+	shm_fd = shm_open(shm_name, O_RDONLY, 0);
+	if (shm_fd < 0) {
+		return -errno;
+	}
+
+	if (fstat(shm_fd, &st)) {
+		err = -errno;
+		close(shm_fd);
+		return err;
+	}
+	if ((size_t)st.st_size < sizeof(*shm)) {
+		UPCIE_DEBUG("FAILED: segment(%s) is %zu bytes, expected at least %zu", shm_name,
+			    (size_t)st.st_size, sizeof(*shm));
+		close(shm_fd);
+		return st.st_size ? -EPROTO : -EAGAIN;
+	}
+
+	shm = mmap(NULL, sizeof(*shm), PROT_READ, MAP_SHARED, shm_fd, 0);
+	close(shm_fd);
+	if (shm == MAP_FAILED) {
+		return -errno;
+	}
+
+	err = _shm_stamp_check(shm->magic, shm->version);
+	if (err) {
+		UPCIE_DEBUG("FAILED: segment(%s) magic(0x%08x) version(%u); err(%d)", shm_name,
+			    shm->magic, shm->version, err);
+		munmap(shm, sizeof(*shm));
+		return err;
+	}
+
+	memset(info, 0, sizeof(*info));
+	info->nattached = (uint32_t)atomic_load(&shm->refcount);
+	info->initialized = atomic_load(&shm->is_initialized) ? 1 : 0;
+
+	qids_used = nvme_qid_used(shm->ctrl.qids);
+	info->nsq_used = qids_used ? qids_used - 1 : 0;
+	info->ncq_used = info->nsq_used;
+	info->nsq_total = shm->nsq_max;
+	info->ncq_total = shm->ncq_max;
+
+	munmap(shm, sizeof(*shm));
+
+	return err;
+}
+
+#else
+
+int
+xnvme_mproc_primary_alive(uint32_t XNVME_UNUSED(shm_id))
+{
+	return -ENOSYS;
+}
+
+int
+xnvme_mproc_get_info(uint32_t XNVME_UNUSED(shm_id), struct xnvme_mproc_info *XNVME_UNUSED(info))
+{
+	return -ENOSYS;
+}
+
+int
+xnvme_mproc_get_ctrlr_info(const char *XNVME_UNUSED(uri),
+			   struct xnvme_mproc_ctrlr_info *XNVME_UNUSED(info))
+{
+	return -ENOSYS;
 }
 
 #endif

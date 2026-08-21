@@ -15,6 +15,11 @@ Library Version (:ref:`sec-api-c-xnvme_ver`)
   This module provides functionality for introspectively querying the **xNVMe**
   library for version information.
 
+Multi-Process Inspection (:ref:`sec-api-c-xnvme_mproc`)
+  This module allows querying a running multi-process runtime for the
+  controllers it holds and the I/O queue pairs they have taken, reading its
+  shared state directly rather than attaching to it.
+
 Auxiliary Pretty-Printers (:ref:`sec-api-c-xnvme_pp`)
   All structures and enums in the **xNVMe** API have pretty-printers. These
   are usually defined within the namespace/module of the data structure.

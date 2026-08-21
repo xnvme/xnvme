@@ -590,6 +590,39 @@ xnvme_be_upcie_dev_close(struct xnvme_dev *XNVME_UNUSED(dev))
 {
 }
 
+/**
+ * Publish the controller's I/O queue allocation into the shared segment
+ *
+ */
+static void
+_publish_nqueues(struct xnvme_dev *dev, struct xnvme_be_upcie_state *state)
+{
+	struct xnvme_be_upcie_ctrlr_shm *shm = state->ctrlr->mproc.shm;
+	struct xnvme_cmd_ctx ctx;
+	uint32_t nsq, ncq;
+
+	if (!shm) {
+		return;
+	}
+
+	if (shm->nsq_max) {
+		return;
+	}
+
+	if (state->ctrlr->mproc.lock_fd < 0) {
+		return;
+	}
+
+	ctx = xnvme_cmd_ctx_from_dev(dev);
+	if (xnvme_adm_gfeat_nqueues(&ctx, &nsq, &ncq)) {
+		XNVME_DEBUG("INFO: nqueues unavailable; the ceiling stays unknown");
+		return;
+	}
+
+	shm->nsq_max = nsq;
+	shm->ncq_max = ncq;
+}
+
 int
 xnvme_be_upcie_dev_open(struct xnvme_dev *dev)
 {
@@ -603,6 +636,8 @@ xnvme_be_upcie_dev_open(struct xnvme_dev *dev)
 	/* Data buffers come off the host heap; the GPU backends override this with
 	 * their device heap once their runtime is up. */
 	state->dmem = &g_upcie_rte.mem.dmem;
+
+	_publish_nqueues(dev, state);
 
 	return 0;
 }
