@@ -18,7 +18,15 @@ Linux and FreeBSD. On Windows it exits with `-ENOTSUP`, since no
 multi-process capable backend is available there. On other platforms it runs,
 but opening a device with a non-zero `shm_id` fails with `-ENOTSUP`.
 
+```{literalinclude} homi_usage.out
+:language: bash
+```
+
 ## `start` -- Hold devices open
+
+```{literalinclude} homi_start_usage.out
+:language: bash
+```
 
 Opens every device given as a positional argument, then blocks until
 signalled.
@@ -72,6 +80,10 @@ xnvme info 0000:03:00.0 --be upcie --shm_id 1
 ```
 
 ## `status` -- Report whether a primary is running
+
+```{literalinclude} homi_status_usage.out
+:language: bash
+```
 
 Answers whether anything is holding controllers, without opening a device:
 

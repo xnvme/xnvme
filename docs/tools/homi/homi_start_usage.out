@@ -1,0 +1,22 @@
+Usage: homi start [<uri>...] [<args>]
+
+Open the given devices and hold them open
+  
+Positional arguments:
+
+  [uri ...]                     ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1:8888', '\\.\PhysicalDrive1'
+  
+Where <args> include:
+
+  --shm_id NUM                  ; For be={spdk,upcie}, multi-process shared-memory-id
+  
+With <args> for backend:
+
+  [ --be STRING ]               ; xNVMe backend, e.g. 'spdk', 'libvfn', 'upcie'
+  [ --host_heap_size NUM ]      ; For be=upcie, host DMA heap size in bytes
+  [ --device_heap_size NUM ]    ; For be={upcie-cuda,upcie-hip}, GPU device heap size in bytes
+  [ --help ]                    ; Show usage / help
+
+See 'homi --help' for other commands
+
+homi - Host-Orchestrated Multi-process I/O -- ver: {major: 0, minor: 7, patch: 5}
