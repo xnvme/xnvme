@@ -25,7 +25,7 @@
 #define BITS_PER_WORD 64
 
 #define NVME_QID_MAX 0xFFFF
-#define NVME_QID_BITMAP_WORDS (NVME_QID_MAX / BITS_PER_WORD)
+#define NVME_QID_BITMAP_WORDS ((NVME_QID_MAX + BITS_PER_WORD - 1) / BITS_PER_WORD)
 
 static inline int
 nvme_qid_is_allocated(uint64_t *qid_bitmap, uint16_t qid)
