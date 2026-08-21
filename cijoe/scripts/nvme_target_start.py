@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Bring up an NVMe TCP transport target
+Bring up an NVMe transport target
 =====================================
 
-Configure an NVMe target listening on a TCP transport. Two providers are
+Configure an NVMe target listening on a transport. Two providers are
 supported via ``--provider``:
 
 * ``spdk`` (default): use the SPDK ``nvmf_tgt`` application driven through
@@ -39,12 +39,13 @@ def add_args(parser: ArgumentParser):
         "--trsvcid",
         type=str,
         default="4420",
-        help="Transport service id (TCP port)",
+        help="Transport service id (Port)",
     )
     parser.add_argument(
         "--trtype",
         type=str,
         default="tcp",
+        choices=["tcp", "rdma"],
         help="Transport type",
     )
     parser.add_argument(
@@ -52,6 +53,12 @@ def add_args(parser: ArgumentParser):
         type=str,
         default="ipv4",
         help="Address family",
+    )
+    parser.add_argument(
+        "--transport",
+        type=str,
+        default=None,
+        help="Transport to use for cijoe.run() commands",
     )
 
 
@@ -64,18 +71,18 @@ def _get_transport_device(cijoe):
     return None
 
 
-def _run_all(cijoe, commands):
+def _run_all(cijoe, commands, transport):
     """Run commands in order; return (err, failing_cmd) or (0, None)."""
 
     for cmd in commands:
-        err, _ = cijoe.run(cmd)
+        err, _ = cijoe.run(cmd, transport_name=transport)
         if err:
             return err, cmd
     return 0, None
 
 
 def _start_spdk(args, cijoe):
-    """Configure the SPDK NVMe TCP target."""
+    """Configure the SPDK NVMe target."""
 
     xnvme_repos = cijoe.getconf("xnvme.repository.sync.remote_path", None)
     if not xnvme_repos:
@@ -95,20 +102,20 @@ def _start_spdk(args, cijoe):
     nvmf_tgt = spdk_path / "build" / "bin" / "nvmf_tgt"
     nvmf_tgt_src = spdk_path / "app" / "nvmf_tgt"
 
-    # nvme_tcp is the kernel host driver loaded for the initiator-side
+    # nvme_tcp/nvme_rdma is the kernel host driver loaded for the initiator-side
     # `nvme discover` in the probe step; nvmf_tgt itself runs in userspace and
     # the PCIe device is rebound to vfio-pci by xnvme-driver, so nvmet and
-    # nvmet_tcp are not needed on the SPDK target path.
+    # nvmet_tcp/nvmet_rdma are not needed on the SPDK target path.
     drivers = [
-        "modprobe nvme_tcp",
+        f"modprobe nvme_{args.trtype}",
         "xnvme-driver",
     ]
-    err, cmd = _run_all(cijoe, drivers)
+    err, cmd = _run_all(cijoe, drivers, transport=args.transport)
     if err:
         log.error("FAILED: driver issue: %s (errno=%d)", cmd, err)
         return err
 
-    cijoe.run("pkill -f nvmf_tgt || true")
+    cijoe.run("pkill -f nvmf_tgt || true", transport_name=args.transport)
 
     subsystem = [
         f"test -x {nvmf_tgt} || make -C {nvmf_tgt_src}",
@@ -122,7 +129,7 @@ def _start_spdk(args, cijoe):
         f"{rpc} nvmf_subsystem_add_listener {subnqn} "
         f"-t {args.trtype} -a {args.traddr} -s {args.trsvcid} -f {args.adrfam}",
     ]
-    err, cmd = _run_all(cijoe, subsystem)
+    err, cmd = _run_all(cijoe, subsystem, transport=args.transport)
     if err:
         log.error("FAILED: subsystem creation: %s (errno=%d)", cmd, err)
         return err
@@ -132,7 +139,7 @@ def _start_spdk(args, cijoe):
 
 
 def _start_linux(args, cijoe):
-    """Configure the Linux kernel NVMe TCP target through nvmet/configfs."""
+    """Configure the Linux kernel NVMe target through nvmet/configfs."""
 
     device = _get_transport_device(cijoe)
     if not device:
@@ -150,9 +157,9 @@ def _start_linux(args, cijoe):
         "xnvme-driver reset",
         "modprobe nvme",
         "modprobe nvmet",
-        "modprobe nvmet_tcp",
+        f"modprobe nvmet_{args.trtype}",
     ]
-    err, cmd = _run_all(cijoe, drivers)
+    err, cmd = _run_all(cijoe, drivers, args.transport)
     if err:
         log.error("FAILED: driver issue: %s (errno=%d)", cmd, err)
         return err
@@ -173,7 +180,7 @@ def _start_linux(args, cijoe):
         f"echo {args.adrfam} > {nvmet}/ports/1/addr_adrfam",
         f"ln -s {nvmet}/subsystems/{subnqn} " f"{nvmet}/ports/1/subsystems/{subnqn}",
     ]
-    err, cmd = _run_all(cijoe, subsystem)
+    err, cmd = _run_all(cijoe, subsystem, args.transport)
     if err:
         log.error("FAILED: subsystem creation: %s (errno=%d)", cmd, err)
         return err
@@ -183,7 +190,7 @@ def _start_linux(args, cijoe):
 
 
 def main(args, cijoe):
-    """Bring up an NVMe TCP target using the selected provider."""
+    """Bring up an NVMe target using the selected provider."""
 
     if args.provider == "spdk":
         return _start_spdk(args, cijoe)
