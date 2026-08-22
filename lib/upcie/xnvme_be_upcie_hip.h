@@ -16,7 +16,7 @@
 struct xnvme_be_upcie_hip_rte {
 	struct hipmem_config hip_config;
 	struct hipmem_heap hip_heap;
-	struct dmamem dmem; ///< hip_heap wrapped for translation; allocation stays on the heap
+	struct dmamem dmem; ///< Registry wrapped for translation; allocation stays on the heap
 	int is_initialized;
 };
 

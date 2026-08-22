@@ -5,6 +5,8 @@
 #include <errno.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include <libxnvme.h>
 
@@ -156,6 +158,154 @@ sub_start(struct xnvme_cli *XNVME_UNUSED(cli))
 
 #endif
 
+/* Inspection reads the shared state the uPCIe runtime keeps, so it exists only
+ * where that backend does, which is Linux and only when it is built in. The
+ * other multi-process backend, spdk, keeps its bookkeeping somewhere this
+ * cannot read, so 'homi start --be spdk' works on hosts where 'homi status'
+ * refuses. */
+#ifdef XNVME_BE_UPCIE_ENABLED
+
+/**
+ * Emit one YAML sequence entry per controller the runtime reports
+ *
+ * Output is YAML, matching the rest of xNVMe, because the caller is as likely
+ * to be a monitoring loop as a person. Written by hand: a handful of printf
+ * calls is a smaller thing to own than a dependency. Totals are omitted rather
+ * than zeroed when the controller did not report them: absent says unknown,
+ * where zero would say none.
+ *
+ * Sets `*all_up` to whether every listed controller finished coming up, which
+ * is what makes the difference between a primary that exists and one that can
+ * be attached to.
+ */
+static int
+_pr_held_controllers(int shm_id, int *all_up)
+{
+	struct xnvme_mproc_ctrlr_info info;
+	struct xnvme_mproc_info rte;
+	int err;
+
+	*all_up = 0;
+
+	err = xnvme_mproc_get_info((uint32_t)shm_id, &rte);
+	if (err) {
+		return (err == -ENOENT) ? 0 : err;
+	}
+
+	printf("attached: %u\n", rte.nattached);
+	if (rte.nctrlrs_held > rte.nctrlrs) {
+		/* Say so rather than letting a truncated list pass for the
+		 * whole of what is held. */
+		printf("controllers_held: %u\n", rte.nctrlrs_held);
+	}
+
+	*all_up = rte.nctrlrs ? 1 : 0;
+
+	for (uint32_t i = 0; i < rte.nctrlrs; ++i) {
+		if (!i) {
+			printf("controllers:\n");
+		}
+		printf("  - uri: '%s'\n", rte.ctrlrs[i]);
+
+		if (xnvme_mproc_get_ctrlr_info(rte.ctrlrs[i], &info)) {
+			printf("    readable: false\n");
+			*all_up = 0;
+			continue;
+		}
+
+		if (!info.initialized) {
+			*all_up = 0;
+		}
+
+		printf("    readable: true\n");
+		printf("    initialized: %s\n", info.initialized ? "true" : "false");
+		printf("    attached: %u\n", info.nattached);
+		printf("    nsq_used: %u\n", info.nsq_used);
+		printf("    ncq_used: %u\n", info.ncq_used);
+		if (info.nsq_total || info.ncq_total) {
+			printf("    nsq_total: %u\n", info.nsq_total);
+			printf("    ncq_total: %u\n", info.ncq_total);
+		}
+	}
+
+	return (int)rte.nctrlrs;
+}
+
+static int
+sub_status(struct xnvme_cli *cli)
+{
+	const int shm_id = (int)cli->args.shm_id;
+	int running, held, all_up = 0;
+
+	running = xnvme_mproc_primary_alive((uint32_t)shm_id);
+	if (running < 0) {
+		xnvme_cli_perr("Failed probing the runtime", running);
+		return running;
+	}
+
+	printf("shm_id: %d\n", shm_id);
+	printf("primary_running: %s\n", running ? "true" : "false");
+
+	/* The lock and the segment can disagree. A primary that is killed never
+	 * unlinks its segment, so the controllers it recorded outlive it; the
+	 * next primary clears them, but until then they are debris rather than
+	 * a holding. Only the lock says whether anything is actually held, so
+	 * report the recorded list only when it is, and say so when what is
+	 * left is debris. */
+	if (!running) {
+		struct xnvme_mproc_info rte;
+		const int err = xnvme_mproc_get_info((uint32_t)shm_id, &rte);
+
+		/* A segment this build cannot read is debris too, and a
+		 * confusing kind; -EPROTO says one is there and unreadable,
+		 * where -ENOENT says there is none. */
+		printf("stale_segment: %s\n", (!err || (err == -EPROTO)) ? "true" : "false");
+		printf("ready: false\n");
+		printf("controllers: []\n");
+		fflush(stdout);
+
+		/* Non-zero so a unit or script can gate on it; the CLI reports
+		 * the error itself, so do not print a second one here. */
+		return -ENODEV;
+	}
+
+	held = _pr_held_controllers(shm_id, &all_up);
+	if (held < 0) {
+		fflush(stdout);
+		xnvme_cli_perr("Failed listing controllers", held);
+		return held;
+	}
+	if (!held) {
+		printf("controllers: []\n");
+	}
+	printf("ready: %s\n", all_up ? "true" : "false");
+
+	/* The error path below writes to stderr, which is unbuffered; flush so
+	 * the document does not arrive after the complaint about it. */
+	fflush(stdout);
+
+	/* A service manager gating on this wants to know whether a secondary
+	 * could attach now, which holding the role is not enough for: the
+	 * primary takes the lock before its controllers finish coming up. So
+	 * the exit status follows readiness rather than the role, and a poll
+	 * loop can wait on the command alone. */
+	return all_up ? 0 : -EAGAIN;
+}
+
+#else
+
+static int
+sub_status(struct xnvme_cli *XNVME_UNUSED(cli))
+{
+	int err = -ENOTSUP;
+
+	xnvme_cli_perr("Inspection requires the uPCIe backend, which this build lacks", err);
+
+	return err;
+}
+
+#endif
+
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"start",
@@ -171,6 +321,19 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HOST_HEAP_SIZE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_DEVICE_HEAP_SIZE, XNVME_CLI_LOPT},
+		},
+	},
+	{
+		"status",
+		"Report whether a primary is holding devices",
+		"Report whether a primary is holding devices. Reads the state the "
+		"uPCIe runtime keeps, taking no lock and opening no device, so it "
+		"disturbs neither I/O nor a runtime that is starting. Exits "
+		"non-zero until a primary is up and its devices are ready.",
+		sub_status,
+		{
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_SHM_ID, XNVME_CLI_LREQ},
 		},
 	},
 };

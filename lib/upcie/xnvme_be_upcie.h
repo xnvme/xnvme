@@ -52,6 +52,27 @@ enum xnvme_be_upcie_mode {
 };
 
 /**
+ * Identifies a segment as one this build can read.
+ *
+ * A size check alone cannot do it: a segment written by a build whose layout
+ * differs but whose size matches, or grew, is read at this build's offsets and
+ * silently misinterpreted. Bump the version whenever either segment's layout
+ * changes.
+ */
+#define XNVME_BE_UPCIE_SHM_MAGIC   0x49435055 ///< 'UPCI' little-endian
+#define XNVME_BE_UPCIE_SHM_VERSION 1
+
+/**
+ * Names of the runtime's two per-shm_id objects, keyed on shm_id
+ *
+ * Kept here rather than spelled out at each use, so the role-election lock and
+ * the segment have one definition between the code that creates them and the
+ * code that probes them.
+ */
+#define XNVME_BE_UPCIE_RTE_LOCK_FMT "/tmp/xnvme-upcie-lock-%d"
+#define XNVME_BE_UPCIE_RTE_SHM_FMT  "/xnvme-upcie-shm-%d"
+
+/**
  * Per-controller shared segment
  *
  * One per physical controller, created by the primary. Embeds the full
@@ -62,10 +83,14 @@ enum xnvme_be_upcie_mode {
  * primary's published base.
  */
 struct xnvme_be_upcie_ctrlr_shm {
+	uint32_t magic;              ///< XNVME_BE_UPCIE_SHM_MAGIC, written last during setup
+	uint32_t version;            ///< XNVME_BE_UPCIE_SHM_VERSION
 	_Atomic int32_t refcount;    ///< Number of processes currently attached
 	_Atomic bool is_initialized; ///< Set by primary once the controller is fully opened
 	pthread_mutex_t aq_mutex;    ///< Process-shared mutex for admin queue access
 	char driver_name[32];
+	uint32_t nsq_max; ///< I/O submission queues the controller allocated; 0 when unknown
+	uint32_t ncq_max; ///< I/O completion queues the controller allocated; 0 when unknown
 	struct xnvme_be_upcie_qpair_offsets sync_offsets; ///< Heap offsets of the sync qpair
 	struct nvme_controller ctrl; ///< Embedded controller; pointer fields use primary's VA
 };
@@ -103,6 +128,7 @@ struct xnvme_be_upcie_ctrlr_mproc {
  * Shared controller state, one per physical controller, managed by cref.
  */
 struct xnvme_be_upcie_ctrlr {
+	char uri[XNVME_IDENT_URI_LEN]; ///< Identifier this controller was opened from
 	struct nvme_controller *ctrl;
 	struct xnvme_be_upcie_ctrlr_attach attach;
 	struct nvme_qpair sync; ///< Shared submission/completion queue for synchronous IOs
@@ -136,17 +162,41 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_upcie_state) == XNVME_BE_STATE_NBYTES
  * admin queue by a constant VA offset. The refcount is advisory.
  */
 struct xnvme_be_upcie_mproc_shm {
+	uint32_t magic;          ///< XNVME_BE_UPCIE_SHM_MAGIC, written last during setup
+	uint32_t version;        ///< XNVME_BE_UPCIE_SHM_VERSION
 	char hugepage_path[256]; ///< Path to primary's hugepage file
 	uint64_t hugepage_base;  ///< Primary's hugepage virtual base for secondary pointer fixup
 	_Atomic int refcount;    ///< Number of processes currently attached
 	_Atomic bool is_initialized;
+
+	/**
+	 * Controllers the primary holds under this shm_id.
+	 *
+	 * Recorded here because holding them is what being a primary means, and
+	 * because nothing else can answer it: POSIX cannot enumerate shared
+	 * memory objects, and the per-controller segments do not carry the id.
+	 * Keeping it in the segment the runtime already owns means any primary
+	 * is visible, not only ones that remembered to write it down.
+	 *
+	 * Only the primary writes these, from the same path that opens and
+	 * closes controllers.
+	 *
+	 * A reader takes no lock, so nctrlrs is released after the URI bytes it
+	 * covers and acquired before they are read. An entry can still be
+	 * observed mid-rewrite when a controller closes; a probe that cannot
+	 * open the named segment reports it as unreadable rather than trusting
+	 * it.
+	 */
+	_Atomic uint32_t nctrlrs;
+	uint32_t nctrlrs_held; ///< Controllers held, including any beyond the array
+	char ctrlrs[XNVME_MPROC_MAX_CTRLRS][XNVME_IDENT_URI_LEN];
 };
 
 /**
  * Per-process multi-process state
  *
  * Populated by xnvme_be_upcie_mproc_rte_init when opts->shm_id != 0.
- * is_primary is decided by an advisory flock keyed on shm_id.
+ * is_primary is decided by an advisory OFD lock keyed on shm_id.
  */
 struct xnvme_be_upcie_mproc {
 	bool is_primary; ///< If true, this process owns the shared state
@@ -216,6 +266,15 @@ extern struct xnvme_be_async g_xnvme_be_upcie_async;
 extern struct xnvme_be_dev g_xnvme_be_upcie_dev;
 
 // Attachment: driver probing, mode selection and vfio wiring (xnvme_be_upcie_vfio.c)
+/**
+ * Address-space width the DMA-address table is sized for; 0 for the default.
+ *
+ * Read from XNVME_UPCIE_VA_BITS. See the definition for what it costs and when
+ * lowering it is warranted.
+ */
+int
+xnvme_be_upcie_va_bits(void);
+
 int
 xnvme_be_upcie_get_driver_name(const char *bdf, char *driver_name, size_t driver_name_len);
 

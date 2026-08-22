@@ -68,9 +68,10 @@ _hip_rte_init(size_t heap_size, uint32_t gpu_id)
 		return -ENOMEM;
 	}
 
-	err = dmamem_from_hip_lut(&g_upcie_hip_rte.dmem, &g_upcie_hip_rte.hip_heap);
+	err = dmamem_from_hip_registry(&g_upcie_hip_rte.dmem, &g_upcie_hip_rte.hip_heap,
+				       xnvme_be_upcie_va_bits());
 	if (err) {
-		XNVME_DEBUG("FAILED: dmamem_from_hip_lut(); err(%d)", err);
+		XNVME_DEBUG("FAILED: dmamem_from_hip_registry(); err(%d)", err);
 		hipmem_heap_term(&g_upcie_hip_rte.hip_heap);
 		return err;
 	}

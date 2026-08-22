@@ -23,12 +23,21 @@ xnvme info 0000:03:00.0 --be upcie --shm_id 1
 
 ### Role election
 
-Roles are decided with an advisory file lock (`flock`) on a lock file keyed by
-`shm_id` (`/tmp/xnvme-upcie-flock-<shm_id>`):
+Roles are decided with an advisory open-file-description lock (`fcntl` with
+`F_OFD_SETLK`) on a lock file keyed by `shm_id`
+(`/tmp/xnvme-upcie-lock-<shm_id>`):
 
 - The first process to acquire the exclusive, non-blocking lock becomes the
   **primary**. It holds the lock for its entire lifetime.
 - Any process that finds the lock already held becomes a **secondary**.
+
+OFD locks rather than `flock` because `F_OFD_GETLK` can report whether the lock
+is held without acquiring it. That is what lets a monitoring tool ask whether a
+primary is running without perturbing election: a probe that took the lock,
+even for the instant between acquiring and releasing it, would make a process
+electing at that moment see the runtime as claimed and demote itself to a
+secondary that waits for a primary which never arrives. See
+{ref}`sec-tools-homi`.
 
 ### Shared memory segments
 
@@ -52,8 +61,8 @@ Two kinds of POSIX shared-memory segments are used:
 The controller segment is keyed by device BDF, independent of `shm_id`. To stop
 two primaries — for example two processes launched with different `shm_id`s —
 from both driving the same physical controller, the creating primary holds a
-second advisory lock keyed by the BDF (`/tmp/xnvme-upcie-<bdf>-lock`) for as long
-as it owns the controller. A process that cannot acquire this lock fails rather
+second lock of the same kind, keyed by the BDF (`/tmp/xnvme-upcie-<bdf>-lock`),
+for as long as it owns the controller. A process that cannot acquire this lock fails rather
 than creating a conflicting segment.
 
 Because the kernel releases the lock when its holder exits, the controller

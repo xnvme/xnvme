@@ -26,85 +26,13 @@ nvme_request_prp_retranslate_hip(struct hipmem_heap *heap, void *virt)
 }
 
 /**
- * Prepare the PRP entries for a command with a contiguous HIP data buffer.
- *
- * Describes `dbuf` in the command's PRP1/PRP2 fields, building a PRP list in
- * `request` when the buffer spans more than two pages, so the controller can
- * access it while the command is in flight.
- *
- * Caveats
- * -------
- *
- * - `dbuf` must be allocated from `heap`.
- * - `dbuf` must be dword (4-byte) aligned.
- * - PRP list chaining is not supported: `dbuf` may span at most 513 pages
- *   (PRP1 plus a single 512-entry PRP list page).
- *
- * @param request Pointer to the NVMe request context used for tracking and metadata.
- * @param heap Pointer to the HIP memory heap that `dbuf` is allocated within.
- * @param dbuf Pointer to the (virtually) contiguous data buffer to be described by PRPs.
- * @param dbuf_nbytes Size in bytes of the data buffer.
- * @param cmd Pointer to the NVMe command to be prepared with PRP entries.
- *
- * Builds a transient dmamem per call; hot paths should construct one once
- * and call the _dmamem builder directly.
- */
-static inline void
-nvme_request_prep_command_prps_contig_hip(struct nvme_request *request, struct hipmem_heap *heap,
-                                          void *dbuf, size_t dbuf_nbytes, struct nvme_command *cmd)
-{
-	struct dmamem dmem;
-
-	if (dmamem_from_hip_lut(&dmem, heap)) {
-		return;
-	}
-
-	nvme_request_prep_command_prps_contig_dmamem(request, &dmem, dbuf, dbuf_nbytes, cmd);
-}
-
-/**
- * Prepare the PRP list for a command with a HIP iovec (scatter-gather) data buffer.
- *
- * This function initializes the Physical Region Page (PRP) entries in the given NVMe command
- * (`cmd`) using the provided request and an array of iovec entries. Each iovec entry is assumed to
- * be page-aligned and allocated from the given `heap`.
- *
- * Caveats
- * -------
- *
- * - Each iovec base must be page-aligned and allocated from `heap`.
- * - Does *not* support PRP list chaining; only a single list page is constructed.
- *
- * @param request Pointer to the NVMe request context used for tracking and metadata.
- * @param heap Pointer to the HIP heap that iovec buffers are allocated within.
- * @param dvec Array of iovec structures describing the data segments.
- * @param dvec_cnt Number of elements in the dvec array.
- * @param cmd Pointer to the NVMe command to be prepared with PRP entries.
- *
- * Builds a transient dmamem per call; hot paths should construct one once
- * and call the _dmamem builder directly.
- */
-static inline void
-nvme_request_prep_command_prps_iov_hip(struct nvme_request *request, struct hipmem_heap *heap,
-                                       struct iovec *dvec, size_t dvec_cnt, struct nvme_command *cmd)
-{
-	struct dmamem dmem;
-
-	if (dmamem_from_hip_lut(&dmem, heap)) {
-		return;
-	}
-
-	nvme_request_prep_command_prps_iov_dmamem(request, &dmem, dvec, dvec_cnt, cmd);
-}
-
-/**
  * Prepare PRPs for a contiguous HIP data buffer registered with a mapping
  * registry.
  *
  * The buffer is resolved page-by-page through the registry's chunk cache,
  * with no contiguity assumption. This variant is for buffers registered via
  * hipmem_mapping; heap-allocated buffers should use
- * nvme_request_prep_command_prps_contig_hip() instead.
+ * nvme_request_prep_command_prps_contig_dmamem() instead.
  *
  * Caveats
  * -------
@@ -171,7 +99,7 @@ nvme_request_prep_command_prps_contig_hip_mapped(struct nvme_request *request,
  *
  * Each entry is resolved page-by-page through the registry's chunk cache.
  * This variant is for iovecs registered via hipmem_mapping; heap-allocated
- * iovecs should use nvme_request_prep_command_prps_iov_hip() instead.
+ * iovecs should use nvme_request_prep_command_prps_iov_dmamem() instead.
  *
  * Each `dvec[i].iov_base` must be host-page-aligned (every PRP-list entry
  * must be page-aligned per NVMe spec); asserted.

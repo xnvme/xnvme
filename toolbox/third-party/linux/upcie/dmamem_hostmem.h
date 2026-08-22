@@ -10,7 +10,7 @@
  * world needs on top is a single contiguous IOVA mapping over the whole
  * hostmem region so submission computes PRPs as
  * iova = base_iova + (va - hostmem_va); the uio + iommu=pt/off world
- * needs a translator that returns the borrowed phys_lut PA of the
+ * needs a translator that returns the enumerated PA of the
  * hosting hugepage plus the intra-hugepage offset. Both live behind the
  * same dmamem_va_to_iova call, discriminated by the translator field.
  *
@@ -24,9 +24,9 @@
  *   caller-chosen base IOVA (type1 has no "kernel picks" mode).
  *   translator = ARITHMETIC.
  *
- *   dmamem_from_hostmem_lut(...) installs no mapping. Borrows the
- *   hugepage's phys_lut for translation so PRPs are PAs. Used with
- *   uio_pci_generic + iommu=pt/off. translator = LUT.
+ *   dmamem_from_hostmem_registry(...) installs no mapping. Adopts the
+ *   hugepage's per-page addresses into a registry so PRPs are PAs. Used
+ *   with uio_pci_generic + iommu=pt/off. translator = LUT.
  *
  * All three carry owned=0 so dmamem_destroy() only undoes the DMA
  * mapping (or nothing, for the LUT case); the hostmem_hugepage stays
@@ -121,20 +121,28 @@ dmamem_from_hostmem_type1(struct dmamem *dmem, struct vfio_container *container,
 }
 
 /**
- * Wrap an existing hostmem_hugepage as a LUT-translator dmamem.
+ * Wrap an existing hostmem_hugepage as a registry-translating dmamem.
  *
- * For uio_pci_generic + iommu=pt / iommu=off: no IOMMU mapping is
- * installed and DMA addresses are physical, resolved at submission
- * through the hugepage's phys_lut. No ioctl here, nothing for
- * dmamem_destroy to undo; a pure translator adapter over borrowed
- * state. Requires hp->phys_lut != NULL, which means the pagemap read
- * at hostmem_hugepage_alloc time succeeded (i.e. the process has
- * CAP_SYS_ADMIN).
+ * For the uio_pci_generic + iommu=pt/off case, where the device consumes
+ * physical addresses. The hugepage's per-page table is adopted at the hugepage
+ * granularity, so translation is one absolute-indexed load.
+ *
+ * The registry has no populate callback, so it adopts and never discovers:
+ * handing over further host memory with dmamem_register() would mean reading
+ * /proc/self/pagemap for it, which this does not do. That is the one capability
+ * the LUT constructor does not have either.
+ *
+ * `va_bits` bounds the LUT reservation to that much address space; 0 selects
+ * the default, which covers the whole 48-bit user range. Lower it where the
+ * reservation is not affordable, under `ulimit -v` or `vm.overcommit_memory=2`,
+ * bearing in mind that a region mapped above the bound cannot be registered.
+ *
+ * @return 0 on success, negative errno on failure.
  */
 static inline int
-dmamem_from_hostmem_lut(struct dmamem *dmem, struct hostmem_hugepage *hp)
+dmamem_from_hostmem_registry(struct dmamem *dmem, struct hostmem_hugepage *hp, int va_bits)
 {
-	int shift;
+	int shift, err;
 
 	if (!dmem || !hp || !hp->virt || !hp->size || !hp->phys_lut || !hp->config) {
 		return -EINVAL;
@@ -147,15 +155,28 @@ dmamem_from_hostmem_lut(struct dmamem *dmem, struct hostmem_hugepage *hp)
 	}
 
 	memset(dmem, 0, sizeof(*dmem));
+
+	err = dmamem_registry_init(&dmem->registry, hp->config->hugepgsz, va_bits, NULL, NULL,
+				   NULL, NULL);
+	if (err) {
+		UPCIE_DEBUG("FAILED: dmamem_registry_init(); err(%d)", err);
+		return err;
+	}
+
+	err = dmamem_registry_adopt(&dmem->registry, hp->virt, hp->size, hp->phys_lut, shift,
+				    NULL);
+	if (err) {
+		UPCIE_DEBUG("FAILED: dmamem_registry_adopt(); err(%d)", err);
+		dmamem_registry_term(&dmem->registry);
+		return err;
+	}
+
 	dmem->fd = -1;
 	dmem->cpu_va = hp->virt;
 	dmem->base_va = dmem->cpu_va;
 	dmem->size = hp->size;
 	dmem->backing = DMAMEM_BACKING_HOSTMEM;
 	dmem->translator = DMAMEM_XLATE_LUT;
-	dmem->phys_lut = hp->phys_lut;
-	dmem->hugepgsz = hp->config->hugepgsz;
-	dmem->hugepgsz_shift = shift;
 	dmem->owned = 0;
 
 	return 0;

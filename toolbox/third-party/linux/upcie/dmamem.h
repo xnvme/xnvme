@@ -21,7 +21,8 @@
  *   contiguous IOVA range for the whole dmamem. The dmamem stashes
  *   base_iova at construction and the submit path adds. No lookup.
  *
- *   LUT: iova = phys_lut[offset >> hugepgsz_shift] + (offset & mask).
+ *   LUT: iova = lut_phys[va >> gran_shift] + (va & gran_mask), read from
+ *   the registry the dmamem owns.
  *   Used when no IOMMU mapping was installed (uio_pci_generic with
  *   iommu=pt/off) and the device consumes physical addresses directly.
  *   The dmamem stashes a borrowed per-hugepage PA table and reads it on
@@ -80,8 +81,25 @@ enum dmamem_backing {
 enum dmamem_translator {
 	/** iova = base_iova + offset; the IOVA of the installed mapping. */
 	DMAMEM_XLATE_ARITHMETIC = 0x0,
-	/** iova = phys_lut[off >> shift] + (off & mask); an address the device
-	 *  uses directly, no translation installed. */
+	/** iova = lut_phys[va >> gran_shift] + (va & gran_mask); an address the
+	 *  device uses directly, with no translation installed.
+	 *
+	 *  The index is absolute rather than measured from a base, so one
+	 *  dmamem spans every region its registry holds rather than a single
+	 *  contiguous range, and nothing on the fast path distinguishes a
+	 *  buffer from the heap from one the caller registered. The registry
+	 *  owns the table; this names how it is read.
+	 *
+	 *  Resolution is defined for addresses inside a registration. An
+	 *  address in a granule nothing has claimed resolves to 0, which
+	 *  callers treat as an error since no valid target has bus address 0.
+	 *  That makes 0 unrepresentable: a granule genuinely based there, which
+	 *  needs the IOMMU out of the way, cannot be told from an unclaimed
+	 *  one.
+	 *  An address in the unused remainder of a granule claimed by a
+	 *  smaller allocation resolves to a wrong address instead, because
+	 *  the table is indexed per granule and the granule is claimed whole.
+	 *  Use dmamem_registry_contains() where that distinction matters. */
 	DMAMEM_XLATE_LUT = 0x1,
 };
 
@@ -107,9 +125,7 @@ struct dmamem {
 	struct vfio_container *vfio_container; ///< Not owned; caller lifetime. NULL for iommufd and LUT.
 	enum dmamem_backing backing;
 	enum dmamem_translator translator; ///< How offsets resolve to DMA addresses
-	const uint64_t *phys_lut;   ///< Borrowed per-hugepage PA table (LUT only)
-	size_t hugepgsz;            ///< Hugepage size in bytes (LUT only)
-	int hugepgsz_shift;         ///< log2(hugepgsz) (LUT only)
+	struct dmamem_registry registry;   ///< Owned region registry (LUT only)
 	int owned;                  ///< 1: dmamem owns fd + cpu_va; 0: wrapping caller memory
 };
 
@@ -143,9 +159,9 @@ dmamem_pp(struct dmamem *dmem)
 		       : dmem->translator == DMAMEM_XLATE_ARITHMETIC ? "ARITHMETIC"
 								     : "?");
 	if (DMAMEM_XLATE_LUT == dmem->translator) {
-		wrtn += printf("  phys_lut: %p\n", (void *)dmem->phys_lut);
-		wrtn += printf("  hugepgsz: %zu\n", dmem->hugepgsz);
-		wrtn += printf("  hugepgsz_shift: %d\n", dmem->hugepgsz_shift);
+		wrtn += printf("  lut_phys: %p\n", (void *)dmem->registry.lut_phys);
+		wrtn += printf("  granularity: %" PRIu64 "\n", dmem->registry.gran_mask + 1);
+		wrtn += printf("  lut_capacity: %zu\n", dmem->registry.lut_capacity);
 	}
 	wrtn += printf("  owned: %d\n", dmem->owned);
 
@@ -180,12 +196,20 @@ dmamem_lut_pagesize_shift(size_t pagesize)
  * The result is a kernel-assigned IOVA under the ARITHMETIC translator and
  * a physical or bus address under LUT; see enum dmamem_translator.
  */
+/* The two resolvers are mutually recursive: a registry indexes absolutely, so
+ * an offset has to become an address first, while the other translators
+ * measure from the base, so an address has to become an offset first. Each
+ * call takes exactly one of those steps. */
+static inline uint64_t
+dmamem_va_to_iova(struct dmamem *dmem, void *vaddr);
+
 static inline uint64_t
 dmamem_offset_to_iova(struct dmamem *dmem, size_t offset)
 {
 	if (DMAMEM_XLATE_LUT == dmem->translator) {
-		return dmem->phys_lut[offset >> dmem->hugepgsz_shift] +
-		       (offset & (dmem->hugepgsz - 1));
+		/* The table indexes absolutely, so an offset only means
+		 * anything relative to the base this dmamem describes. */
+		return dmamem_va_to_iova(dmem, (char *)dmem->base_va + offset);
 	}
 
 	return dmem->base_iova + offset;
@@ -203,6 +227,35 @@ dmamem_offset_to_iova(struct dmamem *dmem, size_t offset)
 static inline uint64_t
 dmamem_va_to_iova(struct dmamem *dmem, void *vaddr)
 {
+	if (DMAMEM_XLATE_LUT == dmem->translator) {
+		const uint64_t va = (uint64_t)vaddr;
+		uint64_t base;
+
+		/* The LUT spans the whole address space the registry was sized
+		 * for, so a userspace VA is in range by construction; the
+		 * assert is here to catch a registry sized smaller. */
+		assert((va >> dmem->registry.gran_shift) < dmem->registry.lut_capacity);
+
+		base = dmem->registry.lut_phys[va >> dmem->registry.gran_shift];
+
+		/* An address in an unclaimed granule lands on a zeroed slot.
+		 * Nothing valid has bus address zero, so callers read that as
+		 * the error it is rather than building a PRP from a stale
+		 * entry. This catches an unregistered address only when its
+		 * granule is unclaimed; see the translator's documentation.
+		 *
+		 * The wider check below walks the registration list and so
+		 * takes the registry lock, which is why it is an assert rather
+		 * than part of the fast path: a debug build serialises
+		 * translation against registration, and a release build does
+		 * not. It also means a registry callback must not translate,
+		 * since it already holds that lock. */
+		assert(!dmem->registry.list ||
+		       dmamem_registry_contains(&dmem->registry, vaddr, 1));
+
+		return base ? base + (va & dmem->registry.gran_mask) : 0;
+	}
+
 	assert(dmem->base_va);
 	return dmamem_offset_to_iova(dmem, (size_t)((char *)vaddr - (char *)dmem->base_va));
 }
@@ -220,6 +273,10 @@ dmamem_destroy(struct dmamem *dmem)
 {
 	if (!dmem) {
 		return;
+	}
+
+	if (DMAMEM_XLATE_LUT == dmem->translator) {
+		dmamem_registry_term(&dmem->registry);
 	}
 
 	/* At most one owner is ever set (each constructor sets exactly one, or
@@ -251,4 +308,65 @@ dmamem_destroy(struct dmamem *dmem)
 
 	memset(dmem, 0, sizeof(*dmem));
 	dmem->fd = -1;
+}
+
+/**
+ * Hand memory the caller allocated to a registry-translating dmamem.
+ *
+ * The allocation `vaddr` falls inside is made addressable, once, and shared
+ * with any other registration inside it. `vaddr` and `nbytes` may have any
+ * byte alignment; consumers may want more, e.g. NVMe PRP construction wants
+ * host-page-aligned buffers.
+ *
+ * Registering while I/O runs against other buffers is safe: translation reads
+ * one table slot, and this writes only the slots of the allocation being
+ * registered. Registering from two threads at once is not; the caller
+ * serialises that.
+ *
+ * Registration claims whole granules, so an allocation smaller than one, or
+ * one whose base is not granule aligned, is refused with -EOPNOTSUPP. Vendor
+ * allocators hand out sub-granule buffers from inside a single granule, so
+ * registering many small device allocations largely does not work. Note also
+ * that translating an address in the unused remainder of a claimed granule
+ * yields a wrong address rather than an error; do I/O only on ranges that
+ * registered successfully.
+ *
+ * @return 0 on success, -EOPNOTSUPP when the dmamem does not translate through
+ *         a registry, other negative errno on failure.
+ */
+static inline int
+dmamem_register(struct dmamem *dmem, void *vaddr, size_t nbytes)
+{
+	if (!dmem || (DMAMEM_XLATE_LUT != dmem->translator)) {
+		return -EOPNOTSUPP;
+	}
+
+	return dmamem_registry_add(&dmem->registry, vaddr, nbytes, NULL);
+}
+
+/**
+ * Drop a registration made by dmamem_register().
+ *
+ * `vaddr` must be the address that was registered, not one inside the range.
+ * The allocation behind it is released once the last registration referring to
+ * it is gone.
+ *
+ * The caller must quiesce I/O over the range first. Releasing an allocation
+ * tears its mapping down, so a command already submitted against it has the
+ * memory pulled from under it, and the controller will either fault or, with
+ * no IOMMU installed, write to a page the kernel has since reused. That is a
+ * stronger requirement than freeing a heap buffer, where the memory stays
+ * mapped and the damage is confined to the caller's own arena.
+ *
+ * @return 0 on success, -EOPNOTSUPP when the dmamem does not translate through
+ *         a registry, -EINVAL when nothing was registered at `vaddr`.
+ */
+static inline int
+dmamem_unregister(struct dmamem *dmem, void *vaddr)
+{
+	if (!dmem || (DMAMEM_XLATE_LUT != dmem->translator)) {
+		return -EOPNOTSUPP;
+	}
+
+	return dmamem_registry_remove(&dmem->registry, vaddr);
 }

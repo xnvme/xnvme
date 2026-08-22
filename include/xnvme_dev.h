@@ -47,4 +47,26 @@ xnvme_dev_alloc(struct xnvme_dev **dev);
 int
 xnvme_dev_be_init(struct xnvme_dev *dev, struct xnvme_be *be, const char *uri);
 
+/**
+ * Ask the controller how many I/O queues it has allocated
+ *
+ * `nsq` and `ncq` are NSQA + 1 and NCQA + 1, since those are zero-based as
+ * everywhere else they appear in this codebase. The two need not agree, and
+ * the smaller limits queue pairs, so both are given.
+ *
+ * Asks rather than requests: Set Features could negotiate a larger allocation,
+ * but a controller may refuse. Costs an admin command, and the answer does not
+ * change while the controller is up.
+ *
+ * @param dev Device handle obtained with xnvme_dev_open()
+ * @param nsq Filled with NSQA + 1, the number of I/O submission queues
+ * @param ncq Filled with NCQA + 1, the number of I/O completion queues
+ *
+ * @return On success, 0 is returned and both counts are filled. On error,
+ *         negative errno is returned and neither is written; zero would be a
+ *         plausible answer rather than an absent one.
+ */
+int
+xnvme_dev_nqueues(struct xnvme_dev *dev, uint32_t *nsq, uint32_t *ncq);
+
 #endif /* __INTERNAL_XNVME_DEV_H */

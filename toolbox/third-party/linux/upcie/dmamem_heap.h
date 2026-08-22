@@ -120,7 +120,7 @@ dmamem_heap_granule(struct dmamem_heap *heap)
 		return 0;
 	}
 
-	return heap->dmem->hugepgsz;
+	return heap->dmem->registry.gran_mask + 1;
 }
 
 /**
