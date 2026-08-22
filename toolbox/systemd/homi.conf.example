@@ -1,0 +1,17 @@
+# Configuration for one HOMI primary, read by xnvme-homi@.service.
+#
+# Install as /etc/xnvme/homi-<shm_id>.conf, so that /etc/xnvme/homi-1.conf
+# configures the instance started by `systemctl start xnvme-homi@1`.
+
+# Controllers to hold, space separated. These must already be bound to a
+# userspace driver; the unit refuses to start rather than binding them itself.
+HOMI_DEVICES=0000:c1:00.0 0000:c2:00.0 0000:c3:00.0 0000:c4:00.0
+
+# Anything else to pass to `homi start`. The heap defaults are deliberately
+# small, since a primary holds controllers rather than doing I/O, so the usual
+# reason to set anything here is --be.
+#
+#   --be upcie          host memory (default where the driver allows it)
+#   --be upcie-cuda     also brings up a CUDA context and a small device heap
+#   --be upcie-hip      likewise for ROCm
+HOMI_OPTS=--be upcie

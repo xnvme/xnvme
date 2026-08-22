@@ -799,6 +799,37 @@ xnvme_dev_close(struct xnvme_dev *dev)
 }
 
 int
+xnvme_dev_nqueues(struct xnvme_dev *dev, uint32_t *nsq, uint32_t *ncq)
+{
+	struct xnvme_cmd_ctx ctx;
+	struct xnvme_spec_feat feat;
+	int err;
+
+	if (!dev || !nsq || !ncq) {
+		return -EINVAL;
+	}
+
+	ctx = xnvme_cmd_ctx_from_dev(dev);
+
+	err = xnvme_adm_gfeat(&ctx, 0, XNVME_SPEC_FEAT_NQUEUES, XNVME_SPEC_FEAT_SEL_CURRENT, NULL,
+			      0);
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_adm_gfeat(NQUEUES); err(%d)", err);
+		return err;
+	}
+	if (xnvme_cmd_ctx_cpl_status(&ctx)) {
+		XNVME_DEBUG("FAILED: gfeat(NQUEUES) refused by the controller");
+		return -EIO;
+	}
+
+	feat.val = ctx.cpl.cdw0;
+	*nsq = feat.nqueues.nsqa + 1;
+	*ncq = feat.nqueues.ncqa + 1;
+
+	return 0;
+}
+
+int
 xnvme_dev_alloc(struct xnvme_dev **dev)
 {
 	(*dev) = malloc(sizeof(**dev));

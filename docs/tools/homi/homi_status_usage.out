@@ -1,0 +1,12 @@
+Usage: homi status [<args>]
+
+Report whether a primary is holding devices. Reads the state the uPCIe runtime keeps, taking no lock and opening no device, so it disturbs neither I/O nor a runtime that is starting. Exits non-zero until a primary is up and its devices are ready.
+  
+Where <args> include:
+
+  --shm_id NUM                  ; For be={spdk,upcie}, multi-process shared-memory-id
+  [ --help ]                    ; Show usage / help
+
+See 'homi --help' for other commands
+
+homi - Host-Orchestrated Multi-process I/O -- ver: {major: 0, minor: 7, patch: 5}
