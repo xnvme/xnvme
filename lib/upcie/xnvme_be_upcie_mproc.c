@@ -322,8 +322,13 @@ xnvme_be_upcie_mproc_free_all_queues(struct xnvme_be_upcie_ctrlr *ctrlr)
 		return;
 	}
 
-	for (uint16_t qid = 1; qid < NVME_QID_BITMAP_WORDS * BITS_PER_WORD; qid++) {
-		if (nvme_qid_is_allocated(shm->ctrl.qids, qid)) {
+	/* Counted in a wider type than the qid itself: the bitmap spans
+	 * NVME_QID_BITMAP_WORDS * BITS_PER_WORD entries, which can exceed what
+	 * a uint16_t holds, and such a counter would then never reach the bound
+	 * and would wrap instead. Stop at the highest qid the allocator admits,
+	 * which is what the bitmap exists to track. */
+	for (uint32_t qid = 1; qid < NVME_QID_MAX; ++qid) {
+		if (nvme_qid_is_allocated(shm->ctrl.qids, (uint16_t)qid)) {
 			struct nvme_command cmd = {0};
 			struct nvme_completion cpl = {0};
 			int err;
