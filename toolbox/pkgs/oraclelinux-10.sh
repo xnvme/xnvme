@@ -44,6 +44,7 @@ dnf install -y \
  python3-pip \
  python3-pyelftools \
  python3-tabulate \
+ rdma-core-devel \
  unzip \
  wget \
  zlib-devel

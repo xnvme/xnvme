@@ -36,6 +36,7 @@ apk add \
  py3-tabulate \
  python3 \
  python3-dev \
+ rdma-core-dev \
  util-linux-dev
 
 #

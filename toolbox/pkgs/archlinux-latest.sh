@@ -33,6 +33,7 @@ pacman -S --noconfirm \
  python-setuptools \
  python-tabulate \
  python3 \
+ rdma-core-dev \
  util-linux-libs
 
 #
