@@ -7,11 +7,28 @@
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_UPCIE_ENABLED
 #include <limits.h>
+#include <stdlib.h>
 #include <stdatomic.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_upcie.h>
 
 static _Atomic int g_ctrlr_count;
+
+/**
+ * Address-space width the DMA-address table is sized for
+ *
+ * One entry per granule over `1 << va_bits`, so the default of 0, meaning
+ * uPCIe's 47 bits, reserves 512 MiB with 2 MiB hugepages. That is virtual and
+ * demand-paged, but `ulimit -v` refuses it and `vm.overcommit_memory=2` charges
+ * it regardless of MAP_NORESERVE. Lowering it narrows what can be registered.
+ */
+int
+xnvme_be_upcie_va_bits(void)
+{
+	const char *env = getenv("XNVME_UPCIE_VA_BITS");
+
+	return env ? atoi(env) : 0;
+}
 
 /**
  * Terminate the uPCIe runtime-environment
@@ -141,9 +158,10 @@ _rte_init_uio_lut(size_t heap_size)
 	}
 	g_upcie_rte.mem.hp_alive = 1;
 
-	err = dmamem_from_hostmem_lut(&g_upcie_rte.mem.dmem, &g_upcie_rte.mem.hp);
+	err = dmamem_from_hostmem_registry(&g_upcie_rte.mem.dmem, &g_upcie_rte.mem.hp,
+					   xnvme_be_upcie_va_bits());
 	if (err) {
-		XNVME_DEBUG("FAILED: dmamem_from_hostmem_lut(); err(%d) "
+		XNVME_DEBUG("FAILED: dmamem_from_hostmem_registry(); err(%d) "
 			    "(missing CAP_SYS_ADMIN?)",
 			    err);
 		return err;
