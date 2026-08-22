@@ -38,6 +38,10 @@ xnvme_be_upcie_hip_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *
 			       uint64_t *phys)
 {
 	*phys = dmamem_va_to_iova(&g_upcie_hip_rte.dmem, buf);
+	if (!*phys) {
+		XNVME_DEBUG("FAILED: buf(%p) is neither heap nor registered", buf);
+		return -EINVAL;
+	}
 
 	return 0;
 }

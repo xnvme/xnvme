@@ -64,11 +64,21 @@ xnvme_be_upcie_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 	cmd->cid = req->cid;
 
 	if (dbuf) {
-		nvme_request_prep_command_prps_contig_dmamem(req, state->dmem, dbuf, dbuf_nbytes,
-							     cmd);
+		err = nvme_request_prep_command_prps_contig_dmamem(req, state->dmem, dbuf,
+								   dbuf_nbytes, cmd);
+		if (err) {
+			XNVME_DEBUG("FAILED: prps_contig_dmamem(); err(%d)", err);
+			nvme_request_free(qp->rpool, req->cid);
+			return err;
+		}
 	}
 	if (mbuf) {
 		cmd->mptr = dmamem_va_to_iova(state->dmem, mbuf);
+		if ((DMAMEM_XLATE_LUT == state->dmem->translator) && !cmd->mptr) {
+			XNVME_DEBUG("FAILED: mbuf(%p) is not in a registered region", mbuf);
+			nvme_request_free(qp->rpool, req->cid);
+			return -EINVAL;
+		}
 	}
 
 	err = _submit_sync(qp, cmd, ctrl->timeout_ms, cpl);
@@ -117,10 +127,21 @@ xnvme_be_upcie_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_
 	cmd->cid = req->cid;
 
 	if (dvec) {
-		nvme_request_prep_command_prps_iov_dmamem(req, state->dmem, dvec, dvec_cnt, cmd);
+		err = nvme_request_prep_command_prps_iov_dmamem(req, state->dmem, dvec, dvec_cnt,
+								cmd);
+		if (err) {
+			XNVME_DEBUG("FAILED: prps_iov_dmamem(); err(%d)", err);
+			nvme_request_free(qp->rpool, req->cid);
+			return err;
+		}
 	}
 	if (mbuf) {
 		cmd->mptr = dmamem_va_to_iova(state->dmem, mbuf);
+		if ((DMAMEM_XLATE_LUT == state->dmem->translator) && !cmd->mptr) {
+			XNVME_DEBUG("FAILED: mbuf(%p) is not in a registered region", mbuf);
+			nvme_request_free(qp->rpool, req->cid);
+			return -EINVAL;
+		}
 	}
 
 	err = _submit_sync(qp, cmd, ctrl->timeout_ms, cpl);
