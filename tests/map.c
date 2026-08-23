@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <errno.h>
+#include <stdlib.h>
+#include <string.h>
 #include <libxnvme.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -68,6 +70,98 @@ test_mem_map_unmap(struct xnvme_cli *cli)
 	return nerr ? -ENOMEM : 0;
 }
 
+/**
+ * Write one LBA carrying the given metadata buffer
+ *
+ * @return 0 where the controller accepted it, negative errno where the write
+ * was refused, whether by the backend or by the controller.
+ */
+static int
+mptr_write(struct xnvme_dev *dev, void *mbuf)
+{
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	void *dbuf;
+	int err;
+
+	dbuf = xnvme_buf_alloc(dev, geo->lba_nbytes);
+	if (!dbuf) {
+		xnvme_cli_perr("xnvme_buf_alloc()", -errno);
+		return -errno;
+	}
+	memset(dbuf, 0, geo->lba_nbytes);
+
+	err = xnvme_nvm_write(&ctx, xnvme_dev_get_nsid(dev), 0x0, 0, dbuf, mbuf);
+	if (!err && xnvme_cmd_ctx_cpl_status(&ctx)) {
+		err = -EIO;
+	}
+
+	xnvme_buf_free(dev, dbuf);
+
+	return err;
+}
+
+/**
+ * A metadata buffer the runtime was never told about must be refused
+ *
+ * Memory outside the registry translates to zero, so submitting anyway points
+ * the controller at physical address zero, which without an IOMMU is host
+ * memory it may write.
+ *
+ * Writes rather than reads on purpose: without the check a write has the
+ * controller read address zero where a read has it write there.
+ *
+ * The registered buffer goes first as a control. A refusal on its own says
+ * nothing, since a namespace carrying no metadata refuses such a write whatever
+ * buffer it is given, on any backend.
+ */
+static int
+test_mptr_registration(struct xnvme_cli *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
+	size_t mbuf_nbytes = geo->nbytes_oob ? geo->nbytes_oob : 4096;
+	void *mbuf;
+	int err;
+
+	mbuf = xnvme_buf_alloc(dev, mbuf_nbytes);
+	if (!mbuf) {
+		xnvme_cli_perr("xnvme_buf_alloc(mbuf)", -errno);
+		return -errno;
+	}
+
+	err = mptr_write(dev, mbuf);
+	xnvme_buf_free(dev, mbuf);
+
+	if (err) {
+		xnvme_cli_pinf("INCONCLUSIVE: refused with a registered mbuf too, err(%d)", err);
+		xnvme_cli_pinf("the namespace reports nbytes_oob(%u); with none, a write "
+			       "carrying an mptr is refused whatever the buffer is",
+			       geo->nbytes_oob);
+		return -ENOTSUP;
+	}
+
+	/* Deliberately not xnvme_buf_alloc(): the whole point is memory the
+	 * runtime has no record of */
+	mbuf = malloc(mbuf_nbytes);
+	if (!mbuf) {
+		xnvme_cli_perr("malloc()", -errno);
+		return -errno;
+	}
+
+	err = mptr_write(dev, mbuf);
+	free(mbuf);
+
+	if (!err) {
+		xnvme_cli_pinf("FAILED: the command was accepted with an unregistered mbuf");
+		return -EIO;
+	}
+
+	xnvme_cli_pinf("LGTM: accepted with a registered mbuf, refused with err(%d)", err);
+
+	return 0;
+}
+
 //
 // Command-Line Interface (CLI) definition
 //
@@ -85,6 +179,18 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_COUNT, XNVME_CLI_LREQ},
 
 			XNVME_CLI_ADMIN_OPTS,
+		},
+	},
+	{
+		"mptr_registration",
+		"Refuse a metadata buffer the registry has no record of",
+		"Refuse a metadata buffer the registry has no record of",
+		test_mptr_registration,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+
+			XNVME_CLI_ASYNC_OPTS,
 		},
 	},
 };
