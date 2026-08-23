@@ -6,6 +6,9 @@ import yaml
 
 from ..conftest import MprocPrimary, get_shm_id, xnvme_parametrize
 
+# Selection is '-k' against the test id, so the cases taking no device carry
+# 'upcie' in their name to run beside their parametrized siblings.
+
 
 def _require_upcie(cijoe):
     """
@@ -32,9 +35,8 @@ def _status(cijoe, shm_id):
     output = state.output()
     lines = output.split("\n")
 
-    # A debug build logs to stdout before the document starts, so find where the
-    # document begins rather than assuming it is the first line. The CLI also
-    # appends its own error line on failure, which is not part of it either.
+    # A debug build logs before the document starts, and the CLI appends its
+    # own error line after it; neither is part of the document
     start = next((i for i, ln in enumerate(lines) if ln.startswith("shm_id:")), None)
     assert start is not None, f"status emitted no document; output was: {output!r}"
 
@@ -46,13 +48,39 @@ def _status(cijoe, shm_id):
     return err, doc
 
 
-def test_status_without_primary(cijoe):
+def test_upcie_status_refuses_when_absent(cijoe):
+    """
+    A build that cannot inspect says so, rather than reporting nothing found.
+
+    This is the inverse of what every other testcase here skips on, and it is
+    the case the other platforms actually run. 'nothing is running' and 'this
+    build cannot tell you' are different answers, and a caller gating on the
+    exit status has to be able to distinguish them.
+    """
+
+    err, state = cijoe.run("xnvme library-info")
+    assert not err, "could not ask the library what backends it has"
+
+    if "name: 'upcie'" in state.output():
+        pytest.skip(
+            reason="This build has uPCIe; the refusal is what a build without it does"
+        )
+
+    err, state = cijoe.run("homi status --shm_id 4242")
+
+    assert err, "status exits zero on a build that cannot inspect"
+    assert "requires the uPCIe backend" in state.output()
+
+    # A refusal, not an empty document, which would read as 'no primary'
+    assert "shm_id:" not in state.output()
+
+
+def test_upcie_status_without_primary(cijoe):
     """An id no primary claimed reports as absent, and says so in its exit code"""
 
     _require_upcie(cijoe)
 
-    # Well above what the suite hands out, so it cannot collide with a primary
-    # started for another testcase
+    # Well above what the suite hands out, so it cannot collide
     shm_id = 4242
 
     err, doc = _status(cijoe, shm_id)
@@ -85,7 +113,6 @@ def test_status_with_primary(cijoe, device, be_opts, cli_args):
     assert doc["primary_running"] is True
     assert doc["ready"] is True
 
-    # The primary counts itself, and this process attached to run the testcase
     assert doc["attached"] >= 1
 
     assert doc["controllers"], "a running primary reports no controllers"
@@ -98,7 +125,6 @@ def test_status_with_primary(cijoe, device, be_opts, cli_args):
         assert ctrlr["nsq_used"] < 65536, "queue count looks like an unsigned wrap"
         assert ctrlr["ncq_used"] == ctrlr["nsq_used"]
 
-        # Totals are omitted when the controller did not report them
         if "nsq_total" in ctrlr:
             assert ctrlr["nsq_used"] <= ctrlr["nsq_total"]
             assert ctrlr["ncq_used"] <= ctrlr["ncq_total"]
@@ -148,7 +174,6 @@ def test_queue_count_tracks_a_secondary(cijoe, device, be_opts, cli_args):
         f" --runtime 20 --cpulist 0 > /tmp/qcount.out 2>&1 &"
     )
 
-    # The secondary takes a second or two to attach and create its queues
     peak = baseline
     for _ in range(30):
         sleep(1)
@@ -166,7 +191,6 @@ def test_queue_count_tracks_a_secondary(cijoe, device, be_opts, cli_args):
     ), f"expected {baseline} + {nqueues} + 1 for the sync pair, got {peak}"
     assert ctrlr["ncq_used"] == ctrlr["nsq_used"]
 
-    # And released again once it exits
     for _ in range(60):
         sleep(1)
         _, doc = _status(cijoe, shm_id)
@@ -207,8 +231,7 @@ def test_totals_come_from_the_controller(cijoe, device, be_opts, cli_args):
     err, state = cijoe.run(f"xnvme feature-get {cli_args} --fid 0x7 --sel 0")
     assert not err, "could not ask the controller for Number of Queues"
 
-    # The tool prints the raw feature: NSQA and NCQA are zero-based, and the
-    # status totals are those plus one
+    # NSQA and NCQA are zero-based; the totals are those plus one
     m = re.search(r"nsqa:\s*(\d+),\s*ncqa:\s*(\d+)", state.output())
     assert m, f"no nqueues feature in output: {state.output()[-400:]}"
 
@@ -279,8 +302,7 @@ def test_primary_terminates_promptly(cijoe, device, be_opts, cli_args):
 
     assert MprocPrimary.is_running(cijoe), "no primary to stop"
 
-    # Generous next to a teardown that takes about a second, and still far
-    # below the point where a stuck primary would look like a slow one
+    # Generous next to a teardown of about a second
     budget = 15
 
     start = time()
@@ -325,3 +347,81 @@ def test_runtime_objects_are_named_consistently(cijoe, device, be_opts, cli_args
     ]:
         err, _ = cijoe.run(f"test -e {path}")
         assert not err, f"a running primary has no {path}"
+
+
+@xnvme_parametrize(labels=["pcie"], opts=["be"])
+def test_status_reports_a_stale_segment(cijoe, device, be_opts, cli_args):
+    """
+    Debris left by a primary that died reads as debris, not as a live runtime.
+
+    The kernel drops the role lock when its holder exits, but the segment
+    outlives it, so what is on the system afterwards looks exactly like a
+    running primary to anything that only checks for the segment. Telling the
+    two apart is the whole point of reporting them separately: 'stale' is a
+    thing to clean up, 'running' is a thing to attach to.
+    """
+
+    _require_upcie(cijoe)
+
+    shm_id = get_shm_id()
+    if not shm_id:
+        pytest.skip(reason="Requires a multi-process primary; pass --shm_id")
+    if not be_opts["be"].startswith("upcie"):
+        pytest.skip(
+            reason="status reads uPCIe's shared segment; other backends are opaque to it"
+        )
+
+    assert MprocPrimary.is_running(cijoe), "no primary to kill"
+
+    # SIGKILL rather than SIGTERM: the point is a primary that had no chance
+    # to clean up after itself
+    cijoe.run("pkill -9 -x homi")
+    MprocPrimary.forget()
+
+    for _ in range(30):
+        sleep(1)
+        if not MprocPrimary.is_running(cijoe):
+            break
+    else:
+        pytest.fail("the primary survived SIGKILL")
+
+    err, _ = cijoe.run(f"test -e /dev/shm/xnvme-upcie-shm-{shm_id}")
+    assert not err, "the segment did not outlive the primary, so nothing is stale"
+
+    err, doc = _status(cijoe, shm_id)
+
+    assert err, "status exits zero over debris"
+    assert doc["primary_running"] is False
+    assert doc["stale_segment"] is True
+    assert doc["ready"] is False
+    assert doc["controllers"] == []
+
+
+def test_upcie_status_rejects_a_segment_it_cannot_read(cijoe):
+    """
+    A segment that is not one of ours is reported, not parsed.
+
+    Anything may create a POSIX segment under a name, so finding one is not
+    grounds for reading a runtime out of it. Without the stamp check this
+    walks whatever the bytes happen to say, which is a crash at best.
+    """
+
+    _require_upcie(cijoe)
+
+    # Distinct from the id the suite hands out, so a primary cannot be holding it
+    shm_id = 4243
+    seg = f"/dev/shm/xnvme-upcie-shm-{shm_id}"
+
+    # Large enough that the read reaches the stamp rather than stopping short
+    cijoe.run(f"dd if=/dev/urandom of={seg} bs=4096 count=256 2>/dev/null")
+
+    try:
+        err, doc = _status(cijoe, shm_id)
+
+        assert err, "status exits zero over a segment it cannot read"
+        assert doc["primary_running"] is False
+        assert doc["stale_segment"] is True, "unreadable debris reads as no debris"
+        assert doc["ready"] is False
+        assert doc["controllers"] == []
+    finally:
+        cijoe.run(f"rm -f {seg}")

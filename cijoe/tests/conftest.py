@@ -432,6 +432,18 @@ class MprocPrimary:
         MprocPrimary.CIJOE = cijoe
 
     @staticmethod
+    def forget():
+        """
+        Drop the record of a primary that is already gone
+
+        For a testcase that ended the primary itself, where stop() has nothing
+        left to ask for or wait on. The next testcase to want one starts it.
+        """
+
+        MprocPrimary.RUNNING = None
+        MprocPrimary.CIJOE = None
+
+    @staticmethod
     def stop(cijoe):
         if MprocPrimary.RUNNING is None:
             return
