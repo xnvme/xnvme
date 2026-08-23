@@ -63,9 +63,19 @@ enum xnvme_be_upcie_mode {
 
 /**
  * Names of the runtime's two per-shm_id objects, keyed on shm_id
+ *
  */
 #define XNVME_BE_UPCIE_RTE_LOCK_FMT "/tmp/xnvme-upcie-lock-%d"
 #define XNVME_BE_UPCIE_RTE_SHM_FMT  "/xnvme-upcie-shm-%d"
+
+/**
+ * Names of a controller's two objects, keyed on its sanitized BDF
+ *
+ * Sanitized because the key lands in a filesystem path as well as in a POSIX
+ * shm name.
+ */
+#define XNVME_BE_UPCIE_DEV_LOCK_FMT "/tmp/xnvme-upcie-lock-%s"
+#define XNVME_BE_UPCIE_DEV_SHM_FMT  "/xnvme-upcie-shm-%s"
 
 /**
  * Per-controller shared segment

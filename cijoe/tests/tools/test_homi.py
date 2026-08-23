@@ -291,3 +291,37 @@ def test_primary_terminates_promptly(cijoe, device, be_opts, cli_args):
 
     _, doc = _status(cijoe, shm_id)
     assert doc["primary_running"] is False, "status still reports a live primary"
+
+
+@xnvme_parametrize(labels=["pcie"], opts=["be"])
+def test_runtime_objects_are_named_consistently(cijoe, device, be_opts, cli_args):
+    """
+    The four objects a runtime creates follow one naming scheme.
+
+    Documented names are what an operator greps for and what a stale-state
+    cleanup deletes, so a rename that misses one of the four leaves something
+    behind under a name nothing looks for. The BDF-keyed pair also has to
+    survive being both a path and a POSIX shm name, which is why its key
+    carries no ':' or '.'.
+    """
+
+    _require_upcie(cijoe)
+
+    shm_id = get_shm_id()
+    if not shm_id:
+        pytest.skip(reason="Requires a multi-process primary; pass --shm_id")
+    if not be_opts["be"].startswith("upcie"):
+        pytest.skip(
+            reason="status reads uPCIe's shared segment; other backends are opaque to it"
+        )
+
+    key = re.sub(r"[:./]", "-", device["uri"])
+
+    for path in [
+        f"/tmp/xnvme-upcie-lock-{shm_id}",
+        f"/dev/shm/xnvme-upcie-shm-{shm_id}",
+        f"/tmp/xnvme-upcie-lock-{key}",
+        f"/dev/shm/xnvme-upcie-shm-{key}",
+    ]:
+        err, _ = cijoe.run(f"test -e {path}")
+        assert not err, f"a running primary has no {path}"

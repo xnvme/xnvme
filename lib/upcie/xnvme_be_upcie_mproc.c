@@ -344,17 +344,32 @@ xnvme_be_upcie_ctrlr_mutex_unlock(struct xnvme_be_upcie_ctrlr *ctrlr)
 	pthread_mutex_unlock(&shm->aq_mutex);
 }
 
+/**
+ * Turn a BDF into a key usable in both a path and a POSIX shm name
+ *
+ * A shm name may contain no '/' beyond the leading one, and a path keyed on a
+ * raw BDF is at the mercy of what the filesystem makes of ':' and '.'.
+ */
 static void
-xnvme_be_upcie_shm_bdf_name(const char *bdf, char *buf, size_t buflen)
+xnvme_be_upcie_bdf_key(const char *bdf, char *buf, size_t buflen)
 {
 	int i;
 
-	snprintf(buf, buflen, "/xnvme-upcie-%s", bdf);
-	for (i = 1; buf[i]; i++) {
+	snprintf(buf, buflen, "%s", bdf);
+	for (i = 0; buf[i]; i++) {
 		if (buf[i] == ':' || buf[i] == '.' || buf[i] == '/') {
 			buf[i] = '-';
 		}
 	}
+}
+
+static void
+xnvme_be_upcie_shm_bdf_name(const char *bdf, char *buf, size_t buflen)
+{
+	char key[XNVME_IDENT_URI_LEN];
+
+	xnvme_be_upcie_bdf_key(bdf, key, sizeof(key));
+	snprintf(buf, buflen, XNVME_BE_UPCIE_DEV_SHM_FMT, key);
 }
 
 void
@@ -405,10 +420,8 @@ xnvme_be_upcie_mproc_free_all_queues(struct xnvme_be_upcie_ctrlr *ctrlr)
 /**
  * Record that this primary holds `uri`, so a probe can enumerate the group
  *
- * Only the primary reaches here, from the path that opens a controller, so the
- * write needs no lock beyond the one already excluding other primaries: the
- * runtime is a process-wide global and opening devices from several threads at
- * once is unsupported for reasons older than this.
+ * Needs no lock beyond the one already excluding other primaries: opening
+ * devices from several threads is unsupported for reasons older than this.
  */
 static void
 _ctrlr_register(const char *uri)
@@ -511,14 +524,15 @@ xnvme_be_upcie_mproc_ctrlr_shm_init(struct xnvme_dev *dev, struct xnvme_be_upcie
 				    const char *driver_name)
 {
 	struct xnvme_be_upcie_ctrlr_shm *shm;
-	char shm_name[64];
+	char shm_name[64], bdf_key[XNVME_IDENT_URI_LEN];
 	size_t shm_size = sizeof(*shm);
 	int shm_fd = -1, lock_fd = -1, err;
 
 	xnvme_be_upcie_shm_bdf_name(dev->ident.uri, shm_name, sizeof(shm_name));
+	xnvme_be_upcie_bdf_key(dev->ident.uri, bdf_key, sizeof(bdf_key));
 
 	snprintf(ctrlr->mproc.lock_name, sizeof(ctrlr->mproc.lock_name),
-		 "/tmp/xnvme-upcie-%s-lock", dev->ident.uri);
+		 XNVME_BE_UPCIE_DEV_LOCK_FMT, bdf_key);
 	ctrlr->mproc.lock_fd = -1;
 
 	lock_fd = open(ctrlr->mproc.lock_name, O_CREAT | O_RDWR | O_CLOEXEC, 0600);
@@ -936,8 +950,7 @@ xnvme_mproc_primary_alive(uint32_t shm_id)
 /**
  * Read the runtime segment for `shm_id` without attaching to it
  *
- * Same discipline as xnvme_mproc_get_ctrlr_info(): mapped read-only, no lock, a
- * snapshot that may be a moment stale.
+ * Mapped read-only, no lock, a snapshot that may be a moment stale.
  */
 int
 xnvme_mproc_get_info(uint32_t shm_id, struct xnvme_mproc_info *info)
@@ -1002,9 +1015,8 @@ xnvme_mproc_get_info(uint32_t shm_id, struct xnvme_mproc_info *info)
 /**
  * Read the shared controller segment without attaching to it
  *
- * Maps the segment read-only and reads a snapshot. No lock is taken: the
- * counts are advisory, and a monitoring caller that blocked the processes it
- * is monitoring would be worse than one reporting a value a moment stale.
+ * No lock is taken: a monitoring caller that blocked what it monitors would be
+ * worse than one reporting a value a moment stale.
  */
 int
 xnvme_mproc_get_ctrlr_info(const char *uri, struct xnvme_mproc_ctrlr_info *info)

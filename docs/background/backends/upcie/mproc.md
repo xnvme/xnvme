@@ -49,19 +49,24 @@ Two kinds of POSIX shared-memory segments are used:
   memory. A shared `refcount` keeps track of how many processes are attached.
   Terminating a primary process while `refcount > 1` will not block, but instead
   only warn that the state of secondary processes will be corrupted.
-- **Controller segment** (`/xnvme-upcie-<bdf>`) — one per physical controller,
+- **Controller segment** (`/xnvme-upcie-shm-<bdf>`) — one per physical controller,
   created by the primary. It embeds the full `struct nvme_controller`, a robust
   process-shared mutex guarding the admin queue, the bound driver name, an
   attach `refcount`, and an `is_initialized` publication flag. Again, primary
   processes will not be blocked from terminating even if secondary processes are
   still attached.
 
+In both of the BDF-keyed names, `<bdf>` has its `:` and `.` replaced by `-`,
+so `0000:01:00.0` reads as `0000-01-00-0`. The same key has to serve as a
+POSIX shm name and as a path under `/tmp`, and neither is a good place to
+carry the separators a BDF is normally written with.
+
 ### Device ownership
 
 The controller segment is keyed by device BDF, independent of `shm_id`. To stop
 two primaries — for example two processes launched with different `shm_id`s —
 from both driving the same physical controller, the creating primary holds a
-second lock of the same kind, keyed by the BDF (`/tmp/xnvme-upcie-<bdf>-lock`),
+second lock of the same kind, keyed by the BDF (`/tmp/xnvme-upcie-lock-<bdf>`),
 for as long as it owns the controller. A process that cannot acquire this lock fails rather
 than creating a conflicting segment.
 
