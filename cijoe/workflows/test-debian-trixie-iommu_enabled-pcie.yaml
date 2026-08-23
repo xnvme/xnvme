@@ -52,5 +52,5 @@ steps:
   uses: core.testrunner
   with:
     # Excluded from multi-process mode: kvs and dual_be (has no --shm_id)
-    args: '-k "pcie and not (upcie or fabrics or kvs or dual_be)" tests --shm_id 1'
+    args: '-k "pcie and not (upcie or fabrics or kvs or dual_be)" tests --shm_id 42'
     random_order: false
