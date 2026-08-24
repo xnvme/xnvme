@@ -37,7 +37,8 @@
 atomic_int g_xnvme_be_nvmf_ctrlr_id_counter = ATOMIC_VAR_INIT(0);
 extern struct xnvme_be_nvmf_transport g_xnvme_be_nvmf_rdma_transport;
 
-struct xnvme_be_nvmf_transport *g_xnvme_be_nvmf_transports[] = {NULL};
+struct xnvme_be_nvmf_transport *g_xnvme_be_nvmf_transports[] = {&g_xnvme_be_nvmf_rdma_transport,
+								NULL};
 
 static inline int
 xnvme_be_nvmf_ctrlr_create(struct xnvme_be_nvmf_transport *transport,
