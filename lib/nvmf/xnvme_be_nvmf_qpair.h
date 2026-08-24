@@ -108,9 +108,6 @@ xnvme_be_nvmf_qpair_create(struct xnvme_be_nvmf_ctrlr *ctrlr, struct xnvme_be_nv
 			   struct xnvme_be_nvmf_qpair **qpair);
 
 int
-xnvme_be_nvmf_create_qpair(struct xnvme_be_nvmf_ctrlr *ctrlr, uint16_t qid,
-			   struct xnvme_be_nvmf_qpair **qpair);
-int
 xnvme_be_nvmf_connect_qpair(struct xnvme_be_nvmf_qpair *qpair);
 int
 xnvme_be_nvmf_disconnect_qpair(struct xnvme_be_nvmf_qpair *qpair);

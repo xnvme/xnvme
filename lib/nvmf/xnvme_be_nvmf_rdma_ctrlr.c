@@ -56,6 +56,8 @@ _destroy_rdma_controller(struct xnvme_be_nvmf_ctrlr *ctrlr)
 
 static struct xnvme_be_nvmf_ctrlr_ops g_xnvme_be_nvmf_rdma_ctrlr_ops = {
 	.destroy = _destroy_rdma_controller,
+
+	.create_qpair = xnvme_be_nvmf_create_rdma_qpair,
 };
 
 #endif // XNVME_BE_NVMF_ENABLED

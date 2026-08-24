@@ -96,13 +96,13 @@ _destroy_rdma_qpair(struct xnvme_be_nvmf_rdma_qpair *qpair)
 }
 
 int
-_initialize_rdma_qpair(struct xnvme_be_nvmf_ctrlr *ctrlr, uint16_t qid,
+_initialize_rdma_qpair(struct xnvme_be_nvmf_ctrlr *ctrlr, uint16_t qid, int qsize,
 		       struct xnvme_be_nvmf_qpair *qpair)
 {
 	struct xnvme_be_nvmf_rdma_qpair *rdma_qpair = TO_XNVME_NVMF_RDMA_QPAIR(qpair);
 
-	rdma_qpair->qp_init_attr.cap.max_send_wr = 128 + XNVME_NVMF_QPAIR_ASYNC_SEND_RESERVE;
-	rdma_qpair->qp_init_attr.cap.max_recv_wr = 128 + XNVME_NVMF_QPAIR_ASYNC_RECV_RESERVE;
+	rdma_qpair->qp_init_attr.cap.max_send_wr = qsize + XNVME_NVMF_QPAIR_ASYNC_SEND_RESERVE;
+	rdma_qpair->qp_init_attr.cap.max_recv_wr = qsize + XNVME_NVMF_QPAIR_ASYNC_RECV_RESERVE;
 	rdma_qpair->qp_init_attr.cap.max_send_sge = 1;
 	rdma_qpair->qp_init_attr.cap.max_recv_sge = 1;
 	rdma_qpair->qp_init_attr.cap.max_inline_data = NVME_CMD_CAPSULE_SIZE;
@@ -119,8 +119,8 @@ _initialize_rdma_qpair(struct xnvme_be_nvmf_ctrlr *ctrlr, uint16_t qid,
 }
 
 int
-_create_rdma_qpair(struct xnvme_be_nvmf_ctrlr *ctrlr, uint16_t qid,
-		   struct xnvme_be_nvmf_qpair **qpair)
+xnvme_be_nvmf_create_rdma_qpair(struct xnvme_be_nvmf_ctrlr *ctrlr, struct xnvme_be_nvmf_qpair_attr *attr,
+				struct xnvme_be_nvmf_qpair **qpair)
 {
 	struct xnvme_be_nvmf_rdma_qpair *rdma_qpair;
 
@@ -130,7 +130,7 @@ _create_rdma_qpair(struct xnvme_be_nvmf_ctrlr *ctrlr, uint16_t qid,
 		return -ENOMEM;
 	}
 
-	_initialize_rdma_qpair(ctrlr, qid, &rdma_qpair->base);
+	_initialize_rdma_qpair(ctrlr, attr->qid, attr->qsize, &rdma_qpair->base);
 
 	*qpair = &rdma_qpair->base;
 
