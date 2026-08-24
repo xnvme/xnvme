@@ -5,6 +5,7 @@ xnvmelib_nvmf_source = files(
   'xnvme_be_nvmf_qpair.c',
   'xnvme_be_nvmf_rdma.c',
   'xnvme_be_nvmf_rdma_ctrlr.c',
+  'xnvme_be_nvmf_rdma_qpair.c',
   'xnvme_be_nvmf_sync.c',
   'xnvme_be_nvmf.c',
 )

@@ -21,6 +21,14 @@ xnvme_be_nvmf_rdma_on_state_change(struct xnvme_be_nvmf_qpair *qpair,
 
 struct xnvme_be_nvmf_rdma_qpair {
 	struct xnvme_be_nvmf_qpair base;
+	struct rdma_cm_id *cm_id;
+	struct ibv_mr *send_mr;
+	struct ibv_mr *recv_mr;
+	struct ibv_cq *send_cq;
+	struct ibv_cq *recv_cq;
+	void *send_buffer;
+	void *recv_buffer;
+	struct ibv_qp_init_attr qp_init_attr;
 };
 
 struct xnvme_be_nvmf_rdma_ctrlr {
