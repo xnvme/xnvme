@@ -1,0 +1,45 @@
+# xNVMe HOMI server, one instance per control-plane id.
+#
+#   systemctl enable --now xnvme-homi@1
+#
+# reads /etc/xnvme/homi-1.conf and holds the controllers named there so any
+# number of clients can attach with --homi-id 1. See toolbox/systemd/README.md.
+
+[Unit]
+Description=xNVMe HOMI server (homi_id %i)
+# Counted over an interval wide enough to hold three failed cycles of
+# RestartSec each; inside the default ten seconds the limit never trips.
+StartLimitIntervalSec=180
+StartLimitBurst=3
+Documentation=https://xnvme.io/tools/homi/
+# Whatever binds the controllers to a userspace driver and reserves hugepages
+# has to have run. This does neither: it fails with a clear message instead,
+# because guessing at a machine's driver bindings from a unit file is worse
+# than refusing to start.
+After=local-fs.target
+
+[Service]
+Type=exec
+# Deliberately no PrivateTmp: the socket clients connect on lives under /tmp
+# and has to be the same /tmp for every process sharing the homi_id. A private
+# one leaves clients unable to reach the server, so nothing can attach.
+EnvironmentFile=@sysconfdir@/xnvme/homi-%i.conf
+
+# Refuse rather than half-start: without hugepages the runtime cannot allocate
+# its queues, and the failure further in is harder to read than this one.
+ExecStartPre=/bin/sh -c '[ "$(cat /proc/sys/vm/nr_hugepages)" -gt 0 ] || { echo "no hugepages reserved; see @bindir@/xnvme-driver"; exit 1; }'
+
+ExecStart=@bindir@/homi serve --homi-id %i $HOMI_OPTS $HOMI_DEVICES
+
+# Clients lose their controllers if this dies, so come back, but do not
+# spin: a server that cannot start usually cannot start on the next attempt
+# either, and a restart loop hides that.
+Restart=on-failure
+RestartSec=5s
+
+# SIGTERM is what homi serve waits for; it closes the controllers on the way out.
+KillSignal=SIGTERM
+TimeoutStopSec=30s
+
+[Install]
+WantedBy=multi-user.target
