@@ -216,8 +216,15 @@ _disconnect_rdma_controller(struct xnvme_be_nvmf_ctrlr *ctrlr)
 			return err;
 		}
 
+		xnvme_be_nvmf_destroy_qpair(ctrlr->admin_qpair);
+		free(ctrlr->admin_qpair);
+
 		ctrlr->attached = 0;
 	}
+
+	// TODO: This requires proper handling.
+	xnvme_be_nvmf_destroy_qpair(ctrlr->sync_qpair);
+	free(ctrlr->sync_qpair);
 
 	return 0;
 }
