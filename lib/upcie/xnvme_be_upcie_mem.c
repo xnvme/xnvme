@@ -64,6 +64,46 @@ xnvme_be_upcie_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf,
 	return 0;
 }
 
+/**
+ * Register caller memory with a registry-backed dmamem
+ *
+ * Shared by the GPU backends, which differ only in which dmamem the memory
+ * belongs to.
+ *
+ * @return 0 on success, negative errno on failure.
+ */
+int
+xnvme_be_upcie_dmamem_map(struct dmamem *dmem, void *vaddr, size_t nbytes, uint64_t *phys)
+{
+	int err;
+
+	err = dmamem_register(dmem, vaddr, nbytes);
+	if (err) {
+		XNVME_DEBUG("FAILED: dmamem_register(); err(%d)", err);
+		return err;
+	}
+
+	if (phys) {
+		*phys = dmamem_va_to_iova(dmem, vaddr);
+		if (!*phys) {
+			XNVME_DEBUG("FAILED: registered but unresolvable; vaddr(%p)", vaddr);
+			err = dmamem_unregister(dmem, vaddr);
+			if (err) {
+				XNVME_DEBUG("FAILED: dmamem_unregister(); err(%d)", err);
+			}
+			return -EINVAL;
+		}
+	}
+
+	return 0;
+}
+
+int
+xnvme_be_upcie_dmamem_unmap(struct dmamem *dmem, void *vaddr)
+{
+	return dmamem_unregister(dmem, vaddr);
+}
+
 #endif
 
 struct xnvme_be_mem g_xnvme_be_upcie_mem = {

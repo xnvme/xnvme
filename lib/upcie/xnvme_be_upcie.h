@@ -258,6 +258,12 @@ xnvme_be_upcie_ctrlr_term(void *handle);
  * async} in xnvme_be_upcie_{cuda,hip}.c.
  */
 int
+xnvme_be_upcie_dmamem_map(struct dmamem *dmem, void *vaddr, size_t nbytes, uint64_t *phys);
+
+int
+xnvme_be_upcie_dmamem_unmap(struct dmamem *dmem, void *vaddr);
+
+int
 xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int opts);
 int
 xnvme_be_upcie_queue_term(struct xnvme_queue *queue);
