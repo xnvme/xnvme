@@ -22,6 +22,9 @@
 #define XNVME_BE_NVMF_SYNC_QUEUE_ID     1
 #define XNVME_BE_NVMF_IO_QUEUE_ID_START XNVME_BE_NVMF_SYNC_QUEUE_ID
 
+#define NVME_CMD_CAPSULE_SIZE sizeof(struct xnvme_spec_cmd_common)
+#define NVME_CPL_CAPSULE_SIZE sizeof(struct xnvme_spec_cpl)
+
 struct xnvme_be_nvmf_transport_ops {
 	int (*create_ctrlr)(struct xnvme_be_nvmf_ctrlr **ctrlr);
 };
