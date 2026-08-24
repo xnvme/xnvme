@@ -5,6 +5,8 @@
 #include <errno.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include <libxnvme.h>
 
@@ -156,6 +158,127 @@ sub_start(struct xnvme_cli *XNVME_UNUSED(cli))
 
 #endif
 
+/* Reads uPCIe's own state, so 'homi start --be spdk' works on hosts where
+ * 'homi status' refuses */
+#ifdef XNVME_BE_UPCIE_ENABLED
+
+/**
+ * Emit one YAML sequence entry per controller the runtime reports
+ *
+ * Totals are omitted rather than zeroed when the controller did not report
+ * them: absent says unknown, where zero would say none.
+ *
+ * Sets `*all_up` to whether every controller finished coming up, which is the
+ * difference between a primary that exists and one that can be attached to.
+ */
+static int
+_pr_held_controllers(uint32_t shm_id, int *all_up)
+{
+	struct xnvme_mproc_ctrlr_info info;
+	struct xnvme_mproc_info rte;
+	int err;
+
+	*all_up = 0;
+
+	err = xnvme_mproc_get_info(shm_id, &rte);
+	if (err) {
+		return (err == -ENOENT) ? 0 : err;
+	}
+
+	printf("attached: %u\n", rte.nattached);
+	if (rte.nctrlrs_held > rte.nctrlrs) {
+		printf("controllers_held: %u\n", rte.nctrlrs_held);
+	}
+
+	*all_up = rte.nctrlrs ? 1 : 0;
+
+	for (uint32_t i = 0; i < rte.nctrlrs; ++i) {
+		if (!i) {
+			printf("controllers:\n");
+		}
+		printf("  - uri: '%s'\n", rte.ctrlrs[i]);
+
+		if (xnvme_mproc_get_ctrlr_info(rte.ctrlrs[i], &info)) {
+			printf("    readable: false\n");
+			*all_up = 0;
+			continue;
+		}
+
+		if (!info.initialized) {
+			*all_up = 0;
+		}
+
+		printf("    readable: true\n");
+		printf("    initialized: %s\n", info.initialized ? "true" : "false");
+		printf("    attached: %u\n", info.nattached);
+		printf("    nsq_used: %u\n", info.nsq_used);
+		printf("    ncq_used: %u\n", info.ncq_used);
+		if (info.nsq_total || info.ncq_total) {
+			printf("    nsq_total: %u\n", info.nsq_total);
+			printf("    ncq_total: %u\n", info.ncq_total);
+		}
+	}
+
+	return (int)rte.nctrlrs;
+}
+
+static int
+sub_status(struct xnvme_cli *cli)
+{
+	const uint32_t shm_id = cli->args.shm_id;
+	int running, held, all_up = 0;
+
+	running = xnvme_mproc_primary_alive(shm_id);
+	if (running < 0) {
+		xnvme_cli_perr("Failed probing the runtime", running);
+		return running;
+	}
+
+	printf("shm_id: %" PRIu32 "\n", shm_id);
+	printf("primary_running: %s\n", running ? "true" : "false");
+
+	if (!running) {
+		struct xnvme_mproc_info rte;
+		const int err = xnvme_mproc_get_info(shm_id, &rte);
+
+		printf("stale_segment: %s\n", (!err || (err == -EPROTO)) ? "true" : "false");
+		printf("ready: false\n");
+		printf("controllers: []\n");
+		fflush(stdout);
+
+		return -ENODEV;
+	}
+
+	held = _pr_held_controllers(shm_id, &all_up);
+	if (held < 0) {
+		fflush(stdout);
+		xnvme_cli_perr("Failed listing controllers", held);
+		return held;
+	}
+	if (!held) {
+		printf("controllers: []\n");
+	}
+	printf("ready: %s\n", all_up ? "true" : "false");
+
+	fflush(stdout);
+
+	return all_up ? 0 : -EAGAIN;
+}
+
+#else
+
+static int
+sub_status(struct xnvme_cli *XNVME_UNUSED(cli))
+{
+	int err = -ENOTSUP;
+
+	xnvme_cli_perr("Inspection requires the uPCIe backend, which this build lacks", err);
+
+	return err;
+}
+
+#endif
+
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"start",
@@ -171,6 +294,19 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HOST_HEAP_SIZE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_DEVICE_HEAP_SIZE, XNVME_CLI_LOPT},
+		},
+	},
+	{
+		"status",
+		"Report whether a primary is holding devices",
+		"Report whether a primary is holding devices. Reads the state the "
+		"uPCIe runtime keeps, taking no lock and opening no device, so it "
+		"disturbs neither I/O nor a runtime that is starting. Exits "
+		"non-zero until a primary is up and its devices are ready.",
+		sub_status,
+		{
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_SHM_ID, XNVME_CLI_LREQ},
 		},
 	},
 };

@@ -79,6 +79,102 @@ While it runs, other processes attach as secondaries by passing the same
 xnvme info 0000:03:00.0 --be upcie --shm_id 1
 ```
 
+## `status`: Report whether a primary is running
+
+```{literalinclude} homi_status_usage.out
+:language: bash
+```
+
+Answers whether anything is holding controllers, without opening a device:
+
+```bash
+homi status --shm_id 1
+```
+
+It reports whether a primary is holding controllers under that id and, when
+one is, what it holds: how many processes are attached to each controller, how
+many I/O submission and completion queues are in use, and how many the
+controller allocated. It exits zero only when a primary is running and every
+controller it holds has finished coming up, so it can be used as a readiness
+or health check without parsing its output.
+
+It reports on the uPCIe backend only, and exists only where that backend does,
+which is Linux and only when it was built in. Elsewhere the subcommand refuses
+rather than reporting: **homi** itself still runs, since `--be spdk` is
+multi-process capable on other platforms, but its bookkeeping is not somewhere
+this can read. Where uPCIe is present and a runtime belongs to another backend,
+that runtime likewise reads as absent rather than as running.
+
+Output is YAML, matching the rest of xNVMe, since the caller is as likely to
+be a monitoring loop as a person:
+
+```yaml
+shm_id: 9
+primary_running: true
+attached: 3
+controllers:
+  - uri: '0000:03:00.0'
+    readable: true
+    initialized: true
+    attached: 2
+    nsq_used: 6
+    ncq_used: 6
+    nsq_total: 16
+    ncq_total: 16
+ready: true
+```
+
+The top-level `attached` counts the processes sharing the runtime, the primary
+included, so a primary holding controllers for two secondaries reads as three.
+`ready` is what the exit status follows: it is false while a primary holds the
+role but its controllers are still coming up, which is a window a service
+manager would otherwise mistake for being up.
+
+`nsq_used` and `ncq_used` are necessarily equal: a queue pair is created as
+one submission and one completion queue sharing a queue identifier, and the
+identifier is what is tracked. They are reported separately so each reads
+against its own total. The totals are the queues the controller has allocated,
+which need not agree, and the smaller is what limits queue pairs; both are
+given rather than their minimum so it is visible which one binds. They are
+omitted entirely when the controller did not report them, since absent says
+unknown where zero would say none.
+
+What it inspects are two things, neither of which opens a device and neither
+of which takes a lock at all. Whether a primary is alive is asked of the
+library, which owns the role-election lock the primary holds for its lifetime
+and can ask whether it is held without taking it. That distinction matters
+more than it looks: the same lock is what a starting process tests to decide
+whether it is the primary, so a probe that held it even for the moment between
+acquiring and releasing could make that process demote itself to secondary and
+then wait for a primary that never arrives. What the primary holds comes from
+the runtime's shared segment, likewise read through the library rather than by
+reaching into anything.
+
+Two sources are consulted and they can disagree, which is why
+`primary_running` and the controller list are not the same question. A primary
+that is killed never unlinks its segment, so the controllers it recorded
+outlive it. The next primary to claim the id clears them, but until then they
+are debris rather than a holding. Only the lock says whether anything is
+actually held, so the recorded list is reported only when it is, and
+`stale_segment` says when what remains is debris. A segment written by an
+incompatible build counts as debris too, and is reported as such rather than
+being read at this build's offsets: both segments carry a version stamp, and
+one that does not match is refused.
+
+The controllers are recorded there by the library as the primary opens them,
+because holding them is what being a primary means. Recording it anywhere else
+would only describe primaries that remembered to do it, and this way a runtime
+claimed by `xnvmeperf` or by a library consumer is as visible as one claimed
+by `homi`. It also answers a question nothing else can: POSIX cannot
+enumerate shared memory objects, and the per-controller segments do not carry
+the `shm_id`, so without the runtime writing it down the association is
+unrecoverable.
+
+The queue totals are read once when the primary brings a controller up, with
+Get Features (Number of Queues). Set Features would let a driver ask for a
+larger allocation, but the drives tested here reject it, so what is reported
+is the allocation the controller made on its own.
+
 ## Running several primaries
 
 A host can run more than one primary, each holding a disjoint set of

@@ -3,6 +3,7 @@ Usage: homi <command> [<args>]
 Where <command> is one of:
 
   start            | Open the given devices and hold them open
+  status           | Report whether a primary is holding devices
 
 See 'homi <command> --help' for the description of [<args>]
 
