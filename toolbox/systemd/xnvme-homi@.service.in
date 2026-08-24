@@ -1,0 +1,56 @@
+# xNVMe HOMI primary, one instance per shm_id.
+#
+#   systemctl enable --now xnvme-homi@1
+#
+# reads /etc/xnvme/homi-1.conf and holds the controllers named there so any
+# number of secondaries can attach with --shm_id 1. See toolbox/systemd/README.md.
+
+[Unit]
+Description=xNVMe HOMI primary (shm_id %i)
+# The burst has to be counted over an interval wide enough to contain it:
+# each failed cycle costs RestartSec plus up to ten seconds of readiness
+# polling, so with the default ten-second interval three starts never fall
+# inside one and the limit never trips.
+StartLimitIntervalSec=180
+StartLimitBurst=3
+Documentation=https://xnvme.io/tools/homi/
+# Whatever binds the controllers to a userspace driver and reserves hugepages
+# has to have run. This does neither: it fails with a clear message instead,
+# because guessing at a machine's driver bindings from a unit file is worse
+# than refusing to start.
+After=local-fs.target
+
+[Service]
+Type=exec
+# Deliberately no PrivateTmp: the runtime's role lock lives under /tmp and has
+# to be the same /tmp for every process sharing the shm_id. A private one
+# leaves secondaries unable to see the lock the primary holds, so the role
+# election stops meaning anything.
+EnvironmentFile=@sysconfdir@/xnvme/homi-%i.conf
+
+
+# Refuse rather than half-start: without hugepages the runtime cannot allocate
+# its queues, and the failure further in is harder to read than this one.
+ExecStartPre=/bin/sh -c '[ "$(cat /proc/sys/vm/nr_hugepages)" -gt 0 ] || { echo "no hugepages reserved; see @bindir@/xnvme-driver"; exit 1; }'
+
+ExecStart=@bindir@/homi start --shm_id %i $HOMI_OPTS $HOMI_DEVICES
+
+# Type=exec reports started as soon as the process execs, which is before the
+# controllers are up. 'homi status' exits zero only once every controller the
+# primary holds has finished coming up, so polling it is what makes systemctl
+# start return at the point a secondary could actually attach, rather than at
+# the point the process exists.
+ExecStartPost=/bin/sh -c 'for i in $(seq 1 100); do @bindir@/homi status --shm_id %i >/dev/null 2>&1 && exit 0; sleep 0.1; done; echo "primary did not become ready"; exit 1'
+
+# Secondaries lose their controllers if this dies, so come back, but do not
+# spin: a primary that cannot start usually cannot start on the next attempt
+# either, and a restart loop hides that.
+Restart=on-failure
+RestartSec=5s
+
+# SIGTERM is what homi start waits for; it closes the controllers on the way out.
+KillSignal=SIGTERM
+TimeoutStopSec=30s
+
+[Install]
+WantedBy=multi-user.target

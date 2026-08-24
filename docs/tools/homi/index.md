@@ -197,6 +197,47 @@ The controllers are the other. A controller can be held by one primary only,
 so the sets must not overlap; the second primary to claim one fails rather
 than sharing it.
 
+## Running as a service
+
+A primary is only useful while it is running, which makes it a service rather
+than a command someone remembers to start. A unit template for that is
+installed with xNVMe, along with an example configuration file, so enabling an
+instance is all that remains:
+
+```bash
+cp /etc/xnvme/homi.conf.example /etc/xnvme/homi-1.conf
+systemctl enable --now xnvme-homi@1
+```
+
+The unit is installed where systemd says units belong, and its `ExecStart`
+names the `homi` that this build installs, so a prefixed build points at its
+own binary rather than at whichever one is first on `PATH`. Two build options
+govern it:
+
+`-Dsystemd=auto` is the default. It installs the unit where systemd is
+present and stays quiet where it is not, which is any non-Linux platform and
+any build configured with `-Dtools=false`. Use `-Dsystemd=disabled` to keep a
+build from writing to the unit directory at all, and `-Dsystemd=enabled` to
+have configuration fail instead of skipping it silently.
+
+The unit reads its configuration from the `sysconfdir` of the same build, so
+a prefixed install writes the example and reads the configuration under that
+prefix rather than writing to one path and reading from another. Pass
+`--sysconfdir=/etc` to keep it at the usual place regardless of prefix.
+
+`-Dsystemd_unitdir=` overrides the location. Left empty, it is whatever
+systemd reports through `pkg-config`, resolved against the configured prefix
+rather than taken as the absolute path systemd reports, so `--prefix` and
+`DESTDIR` are both honoured. Set it to place units somewhere else, such as
+`-Dsystemd_unitdir=/etc/systemd/system` for a machine-local override.
+
+The unit is templated on `shm_id`, matching the model above, so several
+instances can run side by side. It does not bind controllers or reserve
+hugepages: those are prerequisites it checks for and refuses to start without,
+because inferring a machine's driver bindings from a unit file is worse than
+failing with a clear message. `systemctl start` returns only once a secondary
+could actually attach, which it establishes with `homi status`.
+
 ## Backends
 
 **homi** works with any backend that advertises the multi-process capability,

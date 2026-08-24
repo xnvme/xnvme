@@ -109,7 +109,8 @@ jobs:
       run: pre-commit run --all-files
 
   #
-  # Ensure that bash completions and man pages can be generated without error
+  # Ensure that bash completions, man pages, and the systemd unit are
+  # generated without error
   #
   test-gen-targets:
     needs: source-archive
@@ -140,6 +141,26 @@ jobs:
 
     - name: Run make gen-man-pages
       run: make gen-man-pages
+
+    # The unit names an absolute ExecStart, so a build installing it under
+    # another prefix has to substitute one in; an unsubstituted token would
+    # install a unit that cannot start. The directory is given here rather
+    # than discovered, so the check does not depend on systemd being present
+    # in the container.
+    - name: Check the systemd unit substitutes and can be turned off
+      run: |
+        meson setup /tmp/bd-systemd --prefix=/opt/xnvme \
+          -Dsystemd_unitdir=/lib/systemd/system -Dbuild_subprojects=false
+        unit="/tmp/bd-systemd/toolbox/systemd/xnvme-homi@.service"
+        grep -q '^ExecStart=/opt/xnvme/bin/homi ' "$unit"
+        grep -q '^EnvironmentFile=/opt/xnvme/etc/xnvme/' "$unit"
+        ! grep -qE '@[a-z_]+@' "$unit"
+        meson introspect /tmp/bd-systemd --installed \
+          | grep -q '/lib/systemd/system/xnvme-homi@.service'
+        meson setup /tmp/bd-nosystemd -Dsystemd=disabled \
+          -Dsystemd_unitdir=/lib/systemd/system -Dbuild_subprojects=false
+        ! meson introspect /tmp/bd-nosystemd --installed \
+          | grep -q 'xnvme-homi@.service'
 
   build-rust:
     needs: source-archive
