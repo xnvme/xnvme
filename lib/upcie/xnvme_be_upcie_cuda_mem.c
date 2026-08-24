@@ -46,6 +46,26 @@ xnvme_be_upcie_cuda_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void 
 	return 0;
 }
 
+/**
+ * Register a caller-allocated device buffer for DMA
+ *
+ * Resolves through the same registry as the heap, so a buffer handed over here
+ * is usable exactly as one from xnvme_buf_alloc(). Registering the same range
+ * twice is cheap: the chunks it covers are refcounted.
+ */
+int
+xnvme_be_upcie_cuda_mem_map(const struct xnvme_dev *XNVME_UNUSED(dev), void *vaddr, size_t nbytes,
+			    uint64_t *phys)
+{
+	return xnvme_be_upcie_dmamem_map(&g_upcie_cuda_rte.dmem, vaddr, nbytes, phys);
+}
+
+int
+xnvme_be_upcie_cuda_mem_unmap(const struct xnvme_dev *XNVME_UNUSED(dev), void *vaddr)
+{
+	return xnvme_be_upcie_dmamem_unmap(&g_upcie_cuda_rte.dmem, vaddr);
+}
+
 #endif
 
 struct xnvme_be_mem g_xnvme_be_upcie_cuda_mem = {
@@ -55,8 +75,8 @@ struct xnvme_be_mem g_xnvme_be_upcie_cuda_mem = {
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
 	.buf_free = xnvme_be_upcie_cuda_buf_free,
 	.buf_vtophys = xnvme_be_upcie_cuda_buf_vtophys,
-	.mem_map = xnvme_be_nosys_mem_map,
-	.mem_unmap = xnvme_be_nosys_mem_unmap,
+	.mem_map = xnvme_be_upcie_cuda_mem_map,
+	.mem_unmap = xnvme_be_upcie_cuda_mem_unmap,
 #else
 	.buf_alloc = xnvme_be_nosys_buf_alloc,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,

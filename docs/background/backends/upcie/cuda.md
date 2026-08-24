@@ -35,6 +35,12 @@ The NVMe **data** path goes GPU ↔ NVMe without touching host DRAM. The
 still flows through host memory. As a result, both the CUDA heap and the host
 hugepage runtime are initialized when the first **upcie-cuda** device is opened.
 
+A caller can hand over device memory it allocated itself with
+`xnvme_mem_map()`, which registers the range through the same registry the
+heap uses, so such a buffer is usable exactly as one from
+`xnvme_buf_alloc()`. Registering a range twice is cheap, since what it
+covers is refcounted.
+
 (sec-backends-upcie-cuda-kernel)=
 
 ## Kernel Requirement
@@ -117,6 +123,5 @@ cd cijoe && cijoe workflows/test-gpu.yaml --config configs/<your-config>.toml
   is 513 × 4 KiB ≈ 2 MiB.
 - **No `buf_realloc`.** Buffer reallocation is not implemented and returns
   `ENOSYS`.
-- **No memory mapping** (`mem_map` / `mem_unmap`). These return `ENOSYS`.
 - **No pseudo commands.** Show registers, controller reset, subsystem reset,
   and namespace rescan all return `ENOSYS`.
