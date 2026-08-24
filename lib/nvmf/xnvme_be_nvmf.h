@@ -12,6 +12,7 @@
 #include <pthread.h>
 
 #include <xnvme_be_nvmf_ctrlr.h>
+#include <xnvme_be_nvmf_qpair.h>
 
 #ifndef container_of
 #define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))
