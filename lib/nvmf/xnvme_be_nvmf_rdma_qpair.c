@@ -327,6 +327,9 @@ _initialize_rdma_qpair(struct xnvme_be_nvmf_ctrlr *ctrlr, uint16_t qid, int qsiz
 		.ops = &g_xnvme_be_nvmf_rdma_qpair_ops,
 		.ctrlr = ctrlr,
 		.state = XNVME_NVMF_QPAIR_STATE_INIT,
+		.on_capsule_recv = xnvme_be_nvmf_rdma_on_capsule_recv,
+		.on_send_cmpl = xnvme_be_nvmf_rdma_on_send_cmpl,
+		.on_state_change = xnvme_be_nvmf_rdma_on_state_change,
 	};
 
 	return 0;
