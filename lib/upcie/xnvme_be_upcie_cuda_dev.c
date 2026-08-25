@@ -141,8 +141,6 @@ _cuda_rte_init(size_t heap_size, uint32_t gpu_id)
 		return -ENOMEM;
 	}
 
-	/* Physical addresses read the same from every controller, so one table
-	 * serves them all; per-domain IOVAs do not. */
 	if (!xnvme_be_upcie_iova_range_required()) {
 		err = dmamem_from_cuda_registry(&g_upcie_cuda_rte.dmem,
 						&g_upcie_cuda_rte.cuda_heap,
@@ -152,6 +150,17 @@ _cuda_rte_init(size_t heap_size, uint32_t gpu_id)
 			cudamem_heap_term(&g_upcie_cuda_rte.cuda_heap);
 			_cuda_ctx_term();
 			return err;
+		}
+		g_upcie_cuda_rte.dmem_is_shared = 1;
+	} else if (g_upcie_rte.mode == XNVME_BE_UPCIE_MODE_VFIO_CDEV) {
+		err = dmamem_from_cuda_iommufd(&g_upcie_cuda_rte.dmem, &g_upcie_cuda_rte.cuda_heap,
+					       &g_upcie_rte.cdev.iommufd);
+		if (err) {
+			XNVME_DEBUG("FAILED: dmamem_from_cuda_iommufd(); err(%d); mapping "
+				    "per controller instead",
+				    err);
+		} else {
+			g_upcie_cuda_rte.dmem_is_shared = 1;
 		}
 	}
 
@@ -177,7 +186,7 @@ _cuda_dev_dmem_init(struct xnvme_dev *dev)
 	struct xnvme_be_upcie_iova_range_dmem *range;
 	int err;
 
-	if (!xnvme_be_upcie_iova_range_required()) {
+	if (g_upcie_cuda_rte.dmem_is_shared) {
 		state->dmem = &g_upcie_cuda_rte.dmem;
 		return 0;
 	}
