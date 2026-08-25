@@ -25,6 +25,8 @@
 #define NVME_CMD_CAPSULE_SIZE sizeof(struct xnvme_spec_cmd_common)
 #define NVME_CPL_CAPSULE_SIZE sizeof(struct xnvme_spec_cpl)
 
+typedef int (*xnvme_be_nvmf_ib_cmpl_fn)(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc);
+
 static struct xnvme_be_nvmf_qpair_ops g_xnvme_be_nvmf_rdma_qpair_ops;
 
 static inline int
@@ -95,6 +97,218 @@ _destroy_rdma_qpair(struct xnvme_be_nvmf_rdma_qpair *qpair)
 	return 0;
 }
 
+static int
+_handle_send_cmpl(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc)
+{
+	int status = (wc->status == IBV_WC_SUCCESS) ? 0 : -EIO;
+	/* wr_id carries the original buffer pointer set in _rdma_send_capsule. */
+	void *buf = (void *)(uintptr_t)wc->wr_id;
+
+	if (wc->status != IBV_WC_SUCCESS) {
+		XNVME_DEBUG("FAILED: send WC error: %s", ibv_wc_status_str(wc->status));
+	}
+
+	if (qpair->on_send_cmpl) {
+		qpair->on_send_cmpl(qpair, buf, status);
+	}
+
+	return 0;
+}
+
+static int
+_handle_recv_cmpl(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc)
+{
+	struct xnvme_be_nvmf_rdma_qpair *rdma_qpair = TO_XNVME_NVMF_RDMA_QPAIR(qpair);
+	struct xnvme_be_nvmf_wr_id wr_id = {.raw = wc->wr_id};
+	void *buf;
+	struct ibv_sge sge;
+	struct ibv_recv_wr recv_wr;
+	int err;
+
+	if (wc->status != IBV_WC_SUCCESS) {
+		XNVME_DEBUG("FAILED: recv WC error: %s", ibv_wc_status_str(wc->status));
+		return -EIO;
+	}
+
+	buf = rdma_qpair->recv_buffer + wr_id.index * NVME_CPL_CAPSULE_SIZE;
+
+	/* Re-post the slot before the callback so the pool never drains. */
+	sge = (struct ibv_sge){
+		.addr = (uintptr_t)buf,
+		.length = NVME_CPL_CAPSULE_SIZE,
+		.lkey = rdma_qpair->recv_mr->lkey,
+	};
+	recv_wr = (struct ibv_recv_wr){
+		.wr_id = wc->wr_id,
+		.sg_list = &sge,
+		.num_sge = 1,
+	};
+	err = ibv_post_recv(rdma_qpair->cm_id->qp, &recv_wr, NULL);
+	if (err) {
+		XNVME_DEBUG("FAILED: ibv_post_recv() to re-post slot, err: %d", err);
+		return err;
+	}
+
+	if (qpair->on_capsule_recv) {
+		qpair->on_capsule_recv(qpair, buf, NVME_CPL_CAPSULE_SIZE);
+	}
+
+	return 0;
+}
+
+static inline int
+_process_completions(struct xnvme_be_nvmf_qpair *qpair, struct ibv_cq *cq,
+		     xnvme_be_nvmf_ib_cmpl_fn handle_cmpl)
+{
+	struct ibv_wc wc;
+	int count = 0;
+	int err;
+
+	while (1) {
+		err = ibv_poll_cq(cq, 1, &wc);
+		if (err < 0) {
+			XNVME_DEBUG("FAILED: ibv_poll_cq() for cq, err: %d", err);
+			return err;
+		} else if (err == 0) {
+			break;
+		}
+
+		if (wc.status != IBV_WC_SUCCESS) {
+			XNVME_DEBUG("FAILED: Work completion error, status: %d, error=%s",
+				    wc.status, ibv_wc_status_str(wc.status));
+			return -EIO;
+		}
+
+		XNVME_DEBUG("INFO: Completion received, wr_id: %lu", wc.wr_id);
+		err = handle_cmpl(qpair, &wc);
+		if (err) {
+			XNVME_DEBUG("FAILED: handle_cmpl(), err: %d", err);
+			return err;
+		}
+		count++;
+	}
+
+	return count;
+}
+
+static inline int
+_process_recv_completions(struct xnvme_be_nvmf_qpair *qpair)
+{
+	struct xnvme_be_nvmf_rdma_qpair *rdma_qpair = TO_XNVME_NVMF_RDMA_QPAIR(qpair);
+
+	return _process_completions(qpair, rdma_qpair->cm_id->qp->recv_cq, _handle_recv_cmpl);
+}
+
+static inline int
+_process_send_completions(struct xnvme_be_nvmf_qpair *qpair)
+{
+	struct xnvme_be_nvmf_rdma_qpair *rdma_qpair = TO_XNVME_NVMF_RDMA_QPAIR(qpair);
+
+	return _process_completions(qpair, rdma_qpair->cm_id->qp->send_cq, _handle_send_cmpl);
+}
+
+static inline int
+_progress_all_completion_queues(struct xnvme_be_nvmf_qpair *qpair)
+{
+	int err;
+
+	err = _process_send_completions(qpair);
+	if (err < 0) {
+		XNVME_DEBUG("FAILED: _process_send_completions(), err: %d", err);
+		return err;
+	} else if (err > 0) {
+		XNVME_DEBUG("INFO: Processed %d send completions", err);
+	}
+
+	err = _process_recv_completions(qpair);
+	if (err < 0) {
+		XNVME_DEBUG("FAILED: _process_recv_completions(), err: %d", err);
+		return err;
+	} else if (err > 0) {
+		XNVME_DEBUG("INFO: Processed %d receive completions", err);
+	}
+
+	return err;
+}
+
+static int
+_disconnect_rdma_qpair_sync(struct xnvme_be_nvmf_qpair *qpair)
+{
+	struct xnvme_be_nvmf_rdma_qpair *rdma_qpair = TO_XNVME_NVMF_RDMA_QPAIR(qpair);
+	int err;
+
+	if (qpair->state != XNVME_NVMF_QPAIR_STATE_CONNECTED &&
+	    qpair->state != XNVME_NVMF_QPAIR_STATE_READY) {
+		XNVME_DEBUG("INFO: QPair is not connected, skipping disconnect");
+		return -ENOLINK;
+	}
+
+	err = rdma_disconnect(rdma_qpair->cm_id);
+	if (err) {
+		XNVME_DEBUG("FAILED: rdma_disconnect(), err: %d", err);
+		return err;
+	}
+	XNVME_DEBUG("INFO: rdma_disconnect() successful, waiting for RDMA_CM_EVENT_DISCONNECTED");
+
+	while (qpair->state != XNVME_NVMF_QPAIR_STATE_DISCONNECTED) {
+		err = qpair->ctrlr->ops->process_events(qpair->ctrlr,
+							XNVME_BE_NVMF_MAX_RDMACM_TIMEOUT_MS);
+		if (err) {
+			XNVME_DEBUG("FAILED: process_events(), err: %d", err);
+			return err;
+		}
+	}
+
+	return 0;
+}
+
+static int
+_connect_rdma_qpair_sync(struct xnvme_be_nvmf_qpair *qpair)
+{
+	struct xnvme_be_nvmf_rdma_qpair *rdma_qpair = TO_XNVME_NVMF_RDMA_QPAIR(qpair);
+	struct xnvme_be_nvmf_rdma_ctrlr *rdma_ctrlr =
+		TO_XNVME_NVMF_RDMA_CTRLR(rdma_qpair->base.ctrlr);
+	struct rdma_addrinfo *ai = rdma_ctrlr->selected;
+	int err;
+
+	assert(qpair->state == XNVME_NVMF_QPAIR_STATE_INIT);
+
+	err = rdma_create_id(rdma_ctrlr->event_channel, &rdma_qpair->cm_id, qpair,
+			     ai->ai_port_space);
+	if (err) {
+		XNVME_DEBUG("FAILED: rdma_create_id(), err: %d", err);
+		return err;
+	}
+
+	err = rdma_resolve_addr(rdma_qpair->cm_id, NULL, ai->ai_dst_addr,
+				XNVME_BE_NVMF_MAX_RDMACM_TIMEOUT_MS);
+	if (err) {
+		XNVME_DEBUG("FAILED: rdma_resolve_addr(), err: %d", err);
+		rdma_destroy_id(rdma_qpair->cm_id);
+		return err;
+	}
+	XNVME_DEBUG(
+		"INFO: rdma_resolve_addr() successful, waiting for RDMA_CM_EVENT_ADDR_RESOLVED");
+	rdma_qpair->rdma_qp_state = XNVME_NVMF_RDMACM_STATE_RESOLVE_ADDRESS;
+
+	while (qpair->state != XNVME_NVMF_QPAIR_STATE_CONNECTED) {
+		err = xnvme_be_nvmf_ctrlr_process_events(qpair->ctrlr,
+							 XNVME_BE_NVMF_MAX_RDMACM_TIMEOUT_MS);
+		if (err) {
+			XNVME_DEBUG("FAILED: process_events(), err: %d", err);
+			return err;
+		}
+
+		if (qpair->state == XNVME_NVMF_QPAIR_STATE_ERROR) {
+			XNVME_DEBUG("FAILED: QPair entered ERROR state during connection");
+			_destroy_rdma_qpair(TO_XNVME_NVMF_RDMA_QPAIR(qpair));
+			return -EIO;
+		}
+	}
+
+	return 0;
+}
+
 int
 _initialize_rdma_qpair(struct xnvme_be_nvmf_ctrlr *ctrlr, uint16_t qid, int qsize,
 		       struct xnvme_be_nvmf_qpair *qpair)
@@ -136,6 +350,30 @@ xnvme_be_nvmf_create_rdma_qpair(struct xnvme_be_nvmf_ctrlr *ctrlr, struct xnvme_
 
 	return 0;
 }
+static int
+_rdma_process_completions(struct xnvme_be_nvmf_qpair *qpair, int max_completions)
+{
+	int total = 0;
+	int n;
+
+	n = _process_send_completions(qpair);
+	if (n < 0) {
+		return n;
+	}
+	total += n;
+
+	if (total >= max_completions) {
+		return total;
+	}
+
+	n = _process_recv_completions(qpair);
+	if (n < 0) {
+		return n;
+	}
+	total += n;
+
+	return total;
+}
 
 static int
 _rdma_destroy(struct xnvme_be_nvmf_qpair *qpair)
@@ -154,7 +392,10 @@ _rdma_destroy(struct xnvme_be_nvmf_qpair *qpair)
 }
 
 static struct xnvme_be_nvmf_qpair_ops g_xnvme_be_nvmf_rdma_qpair_ops = {
+	.connect = _connect_rdma_qpair_sync,
+	.disconnect = _disconnect_rdma_qpair_sync,
 	.destroy = _rdma_destroy,
+	.process_completions = _rdma_process_completions,
 };
 
 #endif // XNVME_BE_NVMF_ENABLED
