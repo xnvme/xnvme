@@ -4,19 +4,12 @@
  * HIP/ROCm uPCIe header bundle
  * ============================
  *
- * This includes the standard uPCIe bundle plus the HIP/ROCm headers for AMD GPU
- * device memory. It covers the regular CPU-initiated paths, including
- * CPU-initiated with GPU-direct P2P on AMD (host-driven NVMe queues, payload
- * DMA'd straight to/from GPU VRAM via hipmem).
- *
- * The GPU-initiated path (a HIP kernel drives the NVMe queues itself: the
- * doorbell bridge, its host poller, coherent queue placement, and the device
- * reap) is deliberately NOT pulled in here. It carries machinery (pthreads,
- * per-queue host relays) that the CPU-initiated paths do not need. Include
- * `upcie/upcie_hip_gpuinit.h` to opt into it.
+ * This includes the standard uPCIe bundle, as well as the HIP/ROCm specific
+ * headers for AMD GPU device memory. NVMe arrives with the standard bundle, so
+ * a payload can be DMA'd straight to or from GPU VRAM on a host-driven queue.
  *
  * @file upcie_hip.h
- * @version 0.6.0
+ * @version 0.7.0
  */
 
 #ifndef HIPUPCIE_H
@@ -43,16 +36,6 @@ extern "C" {
 #include <upcie/hipmem_dma.h>
 #include <upcie/hipmem_mapping.h>
 #include <upcie/dmamem_hip.h>
-
-// HIP/ROCm uPCIe NVMe libraries
-//
-// Only the request helper is bundled here: it builds PRP lists against hipmem
-// buffers for the CPU-initiated (host-driven queue) P2P path and pulls in no
-// GPU-initiated machinery. The GPU-initiated controller/qpair live in
-// upcie/upcie_hip_gpuinit.h.
-#ifdef _UPCIE_WITH_NVME
-#include <upcie/nvme/nvme_request_hip.h>
-#endif
 
 #ifdef __cplusplus
 }

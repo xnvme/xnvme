@@ -101,7 +101,7 @@
  * directly and do not depend on this sentinel.
  * 
  * @file cudamem_mapping.h
- * @version 0.6.0
+ * @version 0.7.0
  */
 
 /**
@@ -381,7 +381,7 @@ err_free:
  * `vaddr` and `nbytes` may have arbitrary byte alignment; the chunk cache
  * resolves at byte granularity. Note that downstream consumers may impose
  * stricter alignment, e.g., NVMe PRP construction requires host-page-aligned
- * buffer addresses (asserted in nvme_request_prep_command_prps_*_cuda_mapped).
+ * buffer addresses.
  *
  * `config` must describe the same device the registry was initialized with;
  * it is consulted only to populate new chunks (host page size for the

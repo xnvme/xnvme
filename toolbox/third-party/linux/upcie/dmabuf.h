@@ -14,7 +14,7 @@
  * lives in <upcie/experimental/dmabuf_import.h>.
  *
  * @file dmabuf.h
- * @version 0.6.0
+ * @version 0.7.0
  */
 
 struct dmabuf_page {
@@ -83,6 +83,76 @@ dmabuf_get_lut(struct dmabuf *dmabuf, size_t nphys, uint64_t *phys_lut, uint64_t
 
 	if (i != nphys) {
 		UPCIE_DEBUG("FAILED: LUT is not full: actual < expected (%zu < %zu)", i, nphys);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+/**
+ * Summarise a dma-buf into one address per granule
+ *
+ * Where dmabuf_get_lut() expands the scatter list per page, this collapses it
+ * per `granule`, for a translator indexing by `va >> granule_shift`.
+ *
+ * Each granule is verified physically contiguous rather than assumed: an
+ * exporter may split a contiguous run at its own page size, which is harmless,
+ * but a genuine discontinuity would make `base + offset` resolve wrongly.
+ *
+ * And it is tolerant at both ends, because neither vendor's export lines up
+ * with the allocation size it reports. An export describing more than `nlut`
+ * granules is fine, the surplus is ignored; so is a final granule the export
+ * only partially covers, which is what an allocation not ending on a granule
+ * boundary produces. What is not fine is a granule the export does not reach
+ * at all, since nothing would fill its entry.
+ *
+ * @param dmabuf  Attached dma-buf to read the scatter list from
+ * @param lut     Destination, `nlut` entries, one per granule from the start
+ * @param nlut    Number of granules to fill
+ * @param granule Bytes per entry; a power of two
+ *
+ * @return 0 on success, -EINVAL on bad arguments or a granule the export does
+ *         not reach, -EOPNOTSUPP when a granule is not contiguous.
+ */
+static inline int
+dmabuf_get_granule_lut(struct dmabuf *dmabuf, uint64_t *lut, size_t nlut, uint64_t granule)
+{
+	uint64_t off = 0;
+	size_t filled = 0;
+
+	if (!dmabuf || !lut || !nlut || !granule || (granule & (granule - 1))) {
+		return -EINVAL;
+	}
+
+	for (size_t j = 0; j < dmabuf->npages; ++j) {
+		const uint64_t addr = dmabuf->pages[j].addr;
+		const uint64_t len = dmabuf->pages[j].len;
+		const size_t g = (size_t)(off / granule);
+
+		if (g >= nlut) {
+			break;
+		}
+
+		if (g == filled) {
+			/* Unopened only on a boundary, so off is aligned. */
+			lut[g] = addr - (off % granule);
+			filled = g + 1;
+		} else if (addr != lut[g] + (off % granule)) {
+			UPCIE_DEBUG("FAILED: granule(%zu) not contiguous at off(0x%" PRIx64 ")", g,
+				    off);
+			return -EOPNOTSUPP;
+		}
+
+		for (size_t k = filled; k < nlut && (uint64_t)k * granule < off + len; ++k) {
+			lut[k] = addr + ((uint64_t)k * granule - off);
+			filled = k + 1;
+		}
+
+		off += len;
+	}
+
+	if (filled < nlut) {
+		UPCIE_DEBUG("FAILED: export describes %zu granules, need %zu", filled, nlut);
 		return -EINVAL;
 	}
 

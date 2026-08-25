@@ -9,7 +9,7 @@
  * NVMe controllers.
  * 
  * @file nvme_controller_cuda.h
- * @version 0.6.0
+ * @version 0.7.0
  */
 
 

@@ -7,7 +7,7 @@
  * This includes the standard uPCIe bundle, as well as the cuda specific headers.
  *
  * @file upcie_cuda.h
- * @version 0.6.0
+ * @version 0.7.0
  */
 
 #ifndef CUPCIE_H
@@ -34,7 +34,6 @@ extern "C" {
 
 // CUDA uPCIe NVMe libraries
 #ifdef _UPCIE_WITH_NVME
-#include <upcie/nvme/nvme_request_cuda.h>
 #include <upcie/nvme/nvme_qpair_cuda.h>
 #include <upcie/nvme/nvme_controller_cuda.h>
 #endif
