@@ -322,7 +322,7 @@ xnvme_be_upcie_mproc_free_all_queues(struct xnvme_be_upcie_ctrlr *ctrlr)
 		return;
 	}
 
-	for (uint16_t qid = 1; qid < NVME_QID_BITMAP_WORDS * BITS_PER_WORD; qid++) {
+	for (uint32_t qid = 1; qid < NVME_QID_MAX; qid++) {
 		if (nvme_qid_is_allocated(shm->ctrl.qids, qid)) {
 			struct nvme_command cmd = {0};
 			struct nvme_completion cpl = {0};

@@ -19,13 +19,13 @@
  * consume 512 bytes.
  *
  * @file nvme_qid.h
- * @version 0.6.0
+ * @version 0.7.0
  */
 
 #define BITS_PER_WORD 64
 
 #define NVME_QID_MAX 0xFFFF
-#define NVME_QID_BITMAP_WORDS (NVME_QID_MAX / BITS_PER_WORD)
+#define NVME_QID_BITMAP_WORDS ((NVME_QID_MAX + BITS_PER_WORD - 1) / BITS_PER_WORD)
 
 static inline int
 nvme_qid_is_allocated(uint64_t *qid_bitmap, uint16_t qid)
@@ -59,6 +59,26 @@ nvme_qid_alloc(uint64_t *qid_bitmap, uint16_t qid)
 	qid_bitmap[qid / BITS_PER_WORD] |= (1ULL << (qid % BITS_PER_WORD));
 
 	return 0;
+}
+
+/**
+ * Count the allocated queue ids, admin queue included
+ */
+static inline uint32_t
+nvme_qid_used(const uint64_t *qid_bitmap)
+{
+	uint32_t used = 0;
+
+	for (int word = 0; word < NVME_QID_BITMAP_WORDS; ++word) {
+		uint64_t w = qid_bitmap[word];
+
+		while (w) {
+			w &= w - 1;
+			used++;
+		}
+	}
+
+	return used;
 }
 
 static inline int

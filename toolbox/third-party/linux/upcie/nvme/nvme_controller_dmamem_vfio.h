@@ -17,7 +17,7 @@
  * nvme_qpair_sqdb_update, and nvme_qpair_reap_cpl unchanged.
  *
  * @file nvme_controller_dmamem_vfio.h
- * @version 0.6.0
+ * @version 0.7.0
  */
 
 /**

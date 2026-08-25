@@ -19,7 +19,7 @@
  * nvme_qpair_reap_cpl unchanged.
  *
  * @file nvme_controller_dmamem_type1.h
- * @version 0.6.0
+ * @version 0.7.0
  */
 
 /**

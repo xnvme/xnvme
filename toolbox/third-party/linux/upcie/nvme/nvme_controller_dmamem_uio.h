@@ -18,7 +18,7 @@
  * nvme_controller_enable_via_bar0.
  *
  * @file nvme_controller_dmamem_uio.h
- * @version 0.6.0
+ * @version 0.7.0
  */
 
 /**
@@ -45,7 +45,7 @@ nvme_dmamem_uio_ctx_init(struct nvme_dmamem_uio_ctx *ctx)
  * Open an NVMe controller through uio_pci_generic.
  *
  * The heap must sit on a LUT-translator dmamem (typically a hostmem
- * hugepage wrapped via dmamem_from_hostmem_lut) so dmamem_heap_at_iova
+ * hugepage wrapped via dmamem_from_hostmem_registry) so dmamem_heap_at_iova
  * yields physical addresses that the device can DMA against with
  * iommu=pt/off.
  *

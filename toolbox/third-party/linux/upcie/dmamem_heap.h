@@ -14,7 +14,7 @@
  * available (memfd backing) and always return the IOVA (all backings).
  *
  * @file dmamem_heap.h
- * @version 0.6.0
+ * @version 0.7.0
  */
 
 struct dmamem_heap_block {
@@ -120,7 +120,7 @@ dmamem_heap_granule(struct dmamem_heap *heap)
 		return 0;
 	}
 
-	return heap->dmem->hugepgsz;
+	return heap->dmem->registry.gran_mask + 1;
 }
 
 /**

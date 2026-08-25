@@ -35,7 +35,7 @@
  * Kernel docs: https://docs.kernel.org/userspace-api/iommufd.html
  *
  * @file iommufd.h
- * @version 0.6.0
+ * @version 0.7.0
  */
 #include <linux/vfio.h>
 #if defined(__has_include) && __has_include(<linux/iommufd.h>) && defined(VFIO_DEVICE_BIND_IOMMUFD)
