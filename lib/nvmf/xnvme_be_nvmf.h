@@ -11,6 +11,7 @@
 #include <xnvme_queue.h>
 #include <pthread.h>
 
+#include <xnvme_be_nvmf_debug.h>
 #include <xnvme_be_nvmf_ctrlr.h>
 #include <xnvme_be_nvmf_qpair.h>
 
