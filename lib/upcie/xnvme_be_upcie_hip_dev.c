@@ -69,8 +69,15 @@ _hip_rte_init(size_t heap_size, uint32_t gpu_id)
 		return -ENOMEM;
 	}
 
-	/* Physical addresses read the same from every controller, so one table
-	 * serves them all; per-domain IOVAs do not. */
+	/* How the heap is described to a controller depends on what that
+	 * controller consumes. Physical addresses read the same from every one
+	 * of them, so a single table serves them all. Under an enforcing IOMMU
+	 * they do not, and there are two ways to get addresses it will accept:
+	 * iommufd maps the heap once for the process, and iommu-map-pa maps it
+	 * per controller into whichever domain each is already in. iommufd is
+	 * preferred where the device is on vfio-cdev, since it needs no
+	 * out-of-tree module; where it cannot map, _hip_dev_dmem_init() still
+	 * builds a table per controller. */
 	if (!xnvme_be_upcie_gpu_map_required()) {
 		err = dmamem_from_hip_registry(&g_upcie_hip_rte.dmem, &g_upcie_hip_rte.hip_heap,
 					       xnvme_be_upcie_va_bits());
@@ -79,6 +86,18 @@ _hip_rte_init(size_t heap_size, uint32_t gpu_id)
 			hipmem_heap_term(&g_upcie_hip_rte.hip_heap);
 			return err;
 		}
+		g_upcie_hip_rte.dmem_is_shared = 1;
+	} else if (g_upcie_rte.mode == XNVME_BE_UPCIE_MODE_VFIO_CDEV) {
+		err = dmamem_from_hip_iommufd(&g_upcie_hip_rte.dmem, &g_upcie_hip_rte.hip_heap,
+					      &g_upcie_rte.cdev.iommufd);
+		if (err) {
+			XNVME_DEBUG("FAILED: dmamem_from_hip_iommufd(); err(%d); mapping per "
+				    "controller instead",
+				    err);
+		} else {
+			g_upcie_hip_rte.dmem_is_shared = 1;
+		}
+	}
 	}
 
 	g_upcie_hip_rte.is_initialized = 1;
@@ -103,7 +122,9 @@ _hip_dev_dmem_init(struct xnvme_dev *dev)
 	struct xnvme_be_upcie_gpu_dmem *gpu;
 	int err;
 
-	if (!xnvme_be_upcie_gpu_map_required()) {
+	/* Set where the runtime described the heap once for the whole process,
+	 * whether in physical addresses or through iommufd. */
+	if (g_upcie_hip_rte.dmem_is_shared) {
 		state->dmem = &g_upcie_hip_rte.dmem;
 		return 0;
 	}

@@ -17,6 +17,7 @@ struct xnvme_be_upcie_hip_rte {
 	struct hipmem_config hip_config;
 	struct hipmem_heap hip_heap;
 	struct dmamem dmem; ///< Shared translation; unused where each controller needs its own
+	int dmem_is_shared;  ///< dmem describes the heap for every controller
 	int is_initialized;
 };
 
