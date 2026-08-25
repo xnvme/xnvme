@@ -2636,6 +2636,36 @@ struct xnvme_spec_nvm_compare {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_compare) == 64, "Incorrect size")
 
+struct xnvme_spec_fabric_connect_attr {
+	union {
+		struct {
+			uint8_t rsvd         : 3;
+			uint8_t connent      : 1;
+			uint8_t indivioqdels : 1;
+			uint8_t dissqfc      : 1;
+			uint8_t prioclass    : 2;
+		};
+		uint8_t raw;
+	};
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_fabric_connect_attr) == 1, "Incorrect size")
+
+struct xnvme_spec_fabric_connect_cmd {
+	uint32_t cdw0;
+	uint8_t fctype;
+	uint8_t rsvd[19];
+	struct xnvme_spec_sgl_descriptor sgl1;
+	uint16_t recfmt;
+	uint16_t qid;
+	uint16_t sqsize;
+	struct xnvme_spec_fabric_connect_attr cattr;
+	uint8_t rsvd2;
+	uint32_t kato;
+	uint16_t nvmsetid;
+	uint8_t rsvd3[10];
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_fabric_connect_cmd) == 64, "Incorrect size")
+
 /**
  * NVMe Command Accessors
  *
@@ -2660,6 +2690,7 @@ struct xnvme_spec_cmd {
 		struct xnvme_spec_io_mgmt_cmd mgmt;
 		struct xnvme_spec_kvs_cmd kvs;
 		struct xnvme_spec_nvm_compare compare;
+		struct xnvme_spec_fabric_connect_cmd fabric_connect;
 	};
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd) == 64, "Incorrect size")

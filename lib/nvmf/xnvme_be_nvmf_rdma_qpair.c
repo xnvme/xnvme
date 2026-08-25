@@ -350,6 +350,52 @@ xnvme_be_nvmf_create_rdma_qpair(struct xnvme_be_nvmf_ctrlr *ctrlr, struct xnvme_
 
 	return 0;
 }
+
+static int
+_rdma_send_capsule(struct xnvme_be_nvmf_qpair *qpair, void *buf, size_t len)
+{
+	struct xnvme_be_nvmf_rdma_qpair *rdma_qpair = TO_XNVME_NVMF_RDMA_QPAIR(qpair);
+	struct ibv_sge sge = {
+		.addr = (uintptr_t)buf,
+		.length = len,
+		.lkey = rdma_qpair->send_mr ? rdma_qpair->send_mr->lkey : 0,
+	};
+	struct ibv_send_wr send_wr = {
+		/* Store buf pointer so on_send_cmpl can echo it back. */
+		.wr_id = (uint64_t)(uintptr_t)buf,
+		.sg_list = &sge,
+		.num_sge = 1,
+		.opcode = IBV_WR_SEND,
+		.send_flags = IBV_SEND_SIGNALED,
+	};
+	struct ibv_send_wr *bad_wr;
+	int err;
+
+	if (len <= (size_t)rdma_qpair->qp_init_attr.cap.max_inline_data) {
+		send_wr.send_flags |= IBV_SEND_INLINE;
+		sge.lkey = 0;
+	}
+
+	err = ibv_post_send(rdma_qpair->cm_id->qp, &send_wr, &bad_wr);
+	if (err) {
+		XNVME_DEBUG("FAILED: ibv_post_send(), err: %d", err);
+	}
+	return err;
+}
+
+static int
+_rdma_post_recv(struct xnvme_be_nvmf_qpair *qpair, void *buf, size_t len)
+{
+	/*
+	 * The RDMA transport pre-posts all recv slots at connect time and
+	 * re-posts them after each completion. No extra action needed here.
+	 */
+	(void)qpair;
+	(void)buf;
+	(void)len;
+	return 0;
+}
+
 static int
 _rdma_process_completions(struct xnvme_be_nvmf_qpair *qpair, int max_completions)
 {
@@ -395,6 +441,8 @@ static struct xnvme_be_nvmf_qpair_ops g_xnvme_be_nvmf_rdma_qpair_ops = {
 	.connect = _connect_rdma_qpair_sync,
 	.disconnect = _disconnect_rdma_qpair_sync,
 	.destroy = _rdma_destroy,
+	.send_capsule = _rdma_send_capsule,
+	.post_recv = _rdma_post_recv,
 	.process_completions = _rdma_process_completions,
 };
 

@@ -57,10 +57,6 @@ extern struct xnvme_be_dev g_xnvme_be_nvmf_dev;
 extern struct xnvme_be_mem g_xnvme_be_nvmf_mem;
 extern struct xnvme_be_sync g_xnvme_be_nvmf_sync;
 
-#define _INTERNAL_NOT_IMPLEMENTED()                     \
-	{                                               \
-		XNVME_DEBUG("FAILED: Not implemented"); \
-		return -ENOSYS;                         \
-	}
+#define XNVME_NVMF_DISCOVERY_NQN "nqn.2014-08.org.nvmexpress.discovery"
 
 #endif /* __INTERNAL_XNVME_BE_NVMF_H */
