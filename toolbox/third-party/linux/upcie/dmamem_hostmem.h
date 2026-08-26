@@ -33,7 +33,7 @@
  * with its original owner.
  *
  * @file dmamem_hostmem.h
- * @version 0.7.0
+ * @version 0.8.0
  */
 
 /**
@@ -83,8 +83,8 @@ dmamem_from_hostmem_iommufd(struct dmamem *dmem, struct iommufd *iommufd,
  * caller-chosen base IOVA. type1 has no "kernel picks IOVA" mode.
  */
 static inline int
-dmamem_from_hostmem_type1(struct dmamem *dmem, struct vfio_container *container, uint64_t base_iova,
-			  struct hostmem_hugepage *hp)
+dmamem_from_hostmem_type1(struct dmamem *dmem, struct vfio_container *container,
+			  uint64_t base_iova, struct hostmem_hugepage *hp)
 {
 	struct vfio_iommu_type1_dma_map map = {0};
 	int err;
@@ -138,6 +138,181 @@ dmamem_from_hostmem_type1(struct dmamem *dmem, struct vfio_container *container,
  *
  * @return 0 on success, negative errno on failure.
  */
+/**
+ * A host heap described well enough for another process to translate through it
+ *
+ * Physical addresses come from pagemap, which wants CAP_SYS_ADMIN, so a
+ * client of memory somebody else allocated cannot read them. The server can,
+ * and does so once at allocation; putting the table where the client will map
+ * it anyway means the work is inherited rather than repeated, and it is what
+ * lets a client be unprivileged at all on the UIO path.
+ *
+ * The server allocates this from the heap like anything else and names the
+ * offset in the handshake, so nothing has to be reserved at a fixed place and
+ * neither allocator has to know it exists.
+ */
+enum hostmem_shared_kind {
+	HOSTMEM_SHARED_LUT = 0x1,       ///< phys[] holds a base per granule
+	HOSTMEM_SHARED_ARITHMETIC = 0x2 ///< the whole region resolves from base_addr
+};
+
+struct hostmem_shared_desc {
+	uint32_t version;    ///< HOSTMEM_SHARED_DESC_VERSION
+	uint32_t kind;       ///< One of enum hostmem_shared_kind
+	uint64_t nbytes;     ///< Size of the region described
+	uint64_t base_addr;  ///< ARITHMETIC: what offset zero resolves to
+	uint32_t nphys;      ///< LUT: entries in phys[]
+	uint32_t gran_shift; ///< LUT: log2 of the granule each entry covers
+	uint64_t phys[];     ///< LUT: base of each granule, in order
+};
+
+#define HOSTMEM_SHARED_DESC_VERSION 1U
+
+/**
+ * What to allocate for a description of a region with this many granules
+ */
+static inline size_t
+hostmem_shared_desc_nbytes(size_t nphys)
+{
+	return sizeof(struct hostmem_shared_desc) + (nphys * sizeof(uint64_t));
+}
+
+/**
+ * Fill a description from a hugepage this process allocated
+ *
+ * @param desc Pre-allocated description, of hostmem_shared_desc_nbytes()
+ * @param hp The hugepage backing the shared region
+ *
+ * @return 0 on success, negative errno on error
+ */
+static inline int
+hostmem_shared_desc_fill(struct hostmem_shared_desc *desc, const struct hostmem_hugepage *hp)
+{
+	int shift;
+
+	if (!desc || !hp || !hp->phys_lut || !hp->config) {
+		return -EINVAL;
+	}
+
+	shift = dmamem_lut_pagesize_shift(hp->config->hugepgsz);
+	if (shift < 0) {
+		return -EINVAL;
+	}
+
+	desc->version = HOSTMEM_SHARED_DESC_VERSION;
+	desc->kind = HOSTMEM_SHARED_LUT;
+	desc->nphys = (uint32_t)hp->nphys;
+	desc->nbytes = hp->size;
+	desc->gran_shift = (uint32_t)shift;
+	desc->base_addr = 0;
+	memcpy(desc->phys, hp->phys_lut, hp->nphys * sizeof(*desc->phys));
+
+	return 0;
+}
+
+/**
+ * Describe a region the device reaches at one base address
+ *
+ * Where the device translates through an address space rather than through
+ * physical addresses, there is no table to carry: every offset resolves from
+ * the base the region was mapped at.
+ *
+ * @param desc Pre-allocated description; sizeof(*desc) is enough for this kind
+ * @param nbytes Size of the region
+ * @param base_addr What offset zero in it resolves to for the device
+ *
+ * @return 0 on success, negative errno on error
+ */
+static inline int
+hostmem_shared_desc_fill_arithmetic(struct hostmem_shared_desc *desc, size_t nbytes,
+				    uint64_t base_addr)
+{
+	if (!desc || !nbytes) {
+		return -EINVAL;
+	}
+
+	memset(desc, 0, sizeof(*desc));
+	desc->version = HOSTMEM_SHARED_DESC_VERSION;
+	desc->kind = HOSTMEM_SHARED_ARITHMETIC;
+	desc->nbytes = nbytes;
+	desc->base_addr = base_addr;
+
+	return 0;
+}
+
+/**
+ * Build a dmamem over memory another process allocated and described
+ *
+ * Nothing here reads pagemap: the addresses come from the description, and the
+ * registry is populated for this process's own mapping, since the table is
+ * indexed by address and one process's addresses are not another's.
+ *
+ * @param dmem Pre-allocated dmamem to fill
+ * @param base This process's mapping of the shared region
+ * @param desc The server's description, found at the offset it named
+ * @param va_bits Bounds the LUT reservation; 0 selects the default
+ *
+ * @return 0 on success, negative errno on failure
+ */
+static inline int
+dmamem_from_shared_hostmem(struct dmamem *dmem, void *base, const struct hostmem_shared_desc *desc,
+			   int va_bits)
+{
+	int err;
+
+	if (!dmem || !base || !desc) {
+		return -EINVAL;
+	}
+	if (desc->version != HOSTMEM_SHARED_DESC_VERSION) {
+		UPCIE_DEBUG("FAILED: description version(%u), expected(%u)", desc->version,
+			    HOSTMEM_SHARED_DESC_VERSION);
+		return -EPROTO;
+	}
+
+	memset(dmem, 0, sizeof(*dmem));
+
+	if (desc->kind == HOSTMEM_SHARED_ARITHMETIC) {
+		/* Nothing to index: the device resolves the whole region from
+		 * one base, and this process's addresses do not enter into
+		 * it. */
+		dmem->fd = -1;
+		dmem->cpu_va = base;
+		dmem->base_va = base;
+		dmem->base_iova = desc->base_addr;
+		dmem->size = desc->nbytes;
+		dmem->backing = DMAMEM_BACKING_HOSTMEM;
+		dmem->translator = DMAMEM_XLATE_ARITHMETIC;
+		dmem->owned = 0;
+
+		return 0;
+	}
+
+	err = dmamem_registry_init(&dmem->registry, (size_t)1 << desc->gran_shift, va_bits, NULL,
+				   NULL, NULL, NULL);
+	if (err) {
+		UPCIE_DEBUG("FAILED: dmamem_registry_init(); err(%d)", err);
+		return err;
+	}
+
+	err = dmamem_registry_adopt(&dmem->registry, base, desc->nbytes, desc->phys,
+				    (int)desc->gran_shift, NULL);
+	if (err) {
+		UPCIE_DEBUG("FAILED: dmamem_registry_adopt(); err(%d)", err);
+		dmamem_registry_term(&dmem->registry);
+		return err;
+	}
+
+	dmem->fd = -1;
+	dmem->cpu_va = base;
+	dmem->base_va = base;
+	dmem->size = desc->nbytes;
+	dmem->backing = DMAMEM_BACKING_HOSTMEM;
+	dmem->translator = DMAMEM_XLATE_LUT;
+	dmem->owned = 0;
+
+	return 0;
+}
+
 static inline int
 dmamem_from_hostmem_registry(struct dmamem *dmem, struct hostmem_hugepage *hp, int va_bits)
 {

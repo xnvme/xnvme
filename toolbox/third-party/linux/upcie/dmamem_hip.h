@@ -20,7 +20,7 @@
  * measured from heap->vaddr.
  *
  * @file dmamem_hip.h
- * @version 0.7.0
+ * @version 0.8.0
  */
 
 /**
@@ -138,6 +138,55 @@ dmamem_hip_registry_release(void *UPCIE_UNUSED(ctx), struct dmabuf *attach)
  *
  * @return 0 on success, negative errno on failure.
  */
+/**
+ * Build a dmamem for a HIP heap that a device reaches through an IOMMU
+ *
+ * The registry constructor resolves to physical addresses, which is what a
+ * device consumes with the IOMMU out of the way and nothing a device behind
+ * one can use. This exports the heap and maps it into the address space the
+ * device translates through instead.
+ *
+ * As of writing IOMMU_IOAS_MAP_FILE refuses dma-bufs exported by GPU runtimes,
+ * so this returns -ENOTSUP on current kernels. It is written anyway: the path
+ * is where it belongs, the failure names the call that refuses, and the day
+ * that call accepts one, nothing here has to change.
+ *
+ * @param dmem Pre-allocated dmamem to fill
+ * @param heap A HIP heap from hipmem_heap_init
+ * @param iommufd The address space the device is attached to
+ *
+ * @return 0 on success, negative errno on failure
+ */
+static inline int
+dmamem_from_hip_iommufd(struct dmamem *dmem, struct hipmem_heap *heap, struct iommufd *iommufd)
+{
+	int dmabuf_fd = -1;
+	hipError_t cr;
+	int err;
+
+	if (!dmem || !heap || !iommufd) {
+		return -EINVAL;
+	}
+
+	cr = hipMemGetHandleForAddressRange(&dmabuf_fd, (hipDeviceptr_t)heap->vaddr, heap->size,
+					    hipMemRangeHandleTypeDmaBufFd, 0);
+	if (cr != hipSuccess) {
+		UPCIE_DEBUG("FAILED: hipMemGetHandleForAddressRange(); hipError_t(%d)", cr);
+		return -EIO;
+	}
+
+	err = dmamem_from_dmabuf(dmem, iommufd, dmabuf_fd, heap->size);
+	close(dmabuf_fd);
+	if (err) {
+		UPCIE_DEBUG("FAILED: dmamem_from_dmabuf(hip heap); err(%d)", err);
+		return err;
+	}
+
+	dmem->backing = DMAMEM_BACKING_HIPMEM;
+
+	return 0;
+}
+
 static inline int
 dmamem_from_hip_registry(struct dmamem *dmem, struct hipmem_heap *heap, int va_bits)
 {

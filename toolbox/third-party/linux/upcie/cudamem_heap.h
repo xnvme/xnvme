@@ -21,7 +21,7 @@
  *	nvidia-smi -q -d memory
  *
  * @file cudamem_heap.h
- * @version 0.7.0
+ * @version 0.8.0
  */
 
 /**
