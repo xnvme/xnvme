@@ -23,7 +23,7 @@
  * cpu_va NULL and rely on offset-based access.
  *
  * @file dmamem_dmabuf.h
- * @version 0.7.0
+ * @version 0.8.0
  */
 
 /**
@@ -69,6 +69,14 @@ dmamem_from_dmabuf(struct dmamem *dmem, struct iommufd *iommufd, int dmabuf_fd, 
 				    IOMMU_IOAS_MAP_READABLE | IOMMU_IOAS_MAP_WRITEABLE,
 				    &dmem->base_iova);
 	if (err) {
+		if (err == -ENOTSUP) {
+			/* The kernel takes dma-bufs exported by vfio-pci and
+			 * refuses the rest, which the errno alone does not
+			 * say. */
+			UPCIE_DEBUG("FAILED: IOMMU_IOAS_MAP_FILE refused this dma-buf; a "
+				    "kernel that maps GPU memory for a peer to DMA against "
+				    "is required");
+		}
 		UPCIE_DEBUG("FAILED: iommufd_ioas_map_file(dma-buf); err(%d)", err);
 		if (dmem->cpu_va) {
 			munmap(dmem->cpu_va, size);

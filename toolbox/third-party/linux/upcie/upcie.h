@@ -31,12 +31,14 @@
  *   #include <upcie/upcie.h>
  *
  * @file upcie.h
- * @version 0.7.0
+ * @version 0.8.0
  */
 #ifndef UPCIE_H
 #define UPCIE_H
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,6 +58,7 @@ extern "C" {
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
@@ -102,6 +105,8 @@ extern "C" {
 #include <upcie/nvme/nvme_qid.h>
 #include <upcie/nvme/nvme_qpair.h>
 #include <upcie/nvme/nvme_controller.h>
+#include <upcie/nvme/nvme_runtime_record.h>
+#include <upcie/nvme/nvme_cplane.h>
 #include <upcie/nvme/nvme_controller_vfio_pci.h>
 #include <upcie/nvme/nvme_controller_vfio.h>
 #include <upcie/nvme/nvme_controller_dmamem_vfio.h>
