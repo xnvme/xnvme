@@ -3,7 +3,7 @@
 # uPCIe CUDA
 
 ```{warning}
-This backend requires a custom Linux kernel patch that is not yet upstream.
+This backend requires an out-of-tree kernel module that is not yet upstream.
 See {ref}`sec-backends-upcie-cuda-kernel` for details.
 ```
 
@@ -43,15 +43,25 @@ covers is refcounted.
 
 (sec-backends-upcie-cuda-kernel)=
 
-## Kernel Requirement
+## Kernel Module
 
 Physical address resolution for CUDA device memory relies on importing a
-`dma-buf` exported by the CUDA driver into the kernel's DMA subsystem. This
-requires a Linux kernel patch that is not yet upstream:
+`dma-buf` exported by the CUDA driver into the kernel's DMA subsystem. The
+ioctls that do so are not upstream. They ship as `dmabuf-import`, a standalone
+out-of-tree module serving `/dev/dmabuf_import`, packaged for DKMS.
 
-- [xnvme/udmabuf-import](https://github.com/xnvme/udmabuf-import)
+This backend requires **dmabuf-import 0.2.0**, published as an asset of the
+uPCIe release the headers here are vendored from:
 
-Build and install that patched kernel before using the **upcie-cuda** backend.
+- [safl/upcie v0.7.0](https://github.com/safl/upcie/releases/tag/v0.7.0)
+
+```bash
+sudo apt install ./dmabuf-import-dkms_0.2.0_all.deb
+```
+
+These ioctls began as a patch to the in-tree `udmabuf` driver, which meant
+rebuilding the kernel to get them. That is no longer necessary, and the module
+supersedes the `udmabuf-import` package that carried the patched version.
 
 (sec-backends-upcie-cuda-config)=
 
