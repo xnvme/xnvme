@@ -3,7 +3,7 @@ import pytest
 from ..conftest import get_shm_id, xnvme_parametrize
 
 
-@xnvme_parametrize(labels=["pcie"], opts=["be"])
+@xnvme_parametrize(labels=["cuda"], opts=["be"])
 def test_cuda_mem_map(cijoe, device, be_opts, cli_args):
     if be_opts["be"] != "upcie-cuda":
         pytest.skip(reason="The example opens the device with --be upcie-cuda")
@@ -14,7 +14,7 @@ def test_cuda_mem_map(cijoe, device, be_opts, cli_args):
     assert not err
 
 
-@xnvme_parametrize(labels=["pcie"], opts=["be"])
+@xnvme_parametrize(labels=["hip"], opts=["be"])
 def test_hip_mem_map(cijoe, device, be_opts, cli_args):
     if be_opts["be"] != "upcie-hip":
         pytest.skip(reason="The example opens the device with --be upcie-hip")

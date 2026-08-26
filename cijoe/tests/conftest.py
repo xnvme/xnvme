@@ -159,9 +159,13 @@ def xnvme_setup(labels=[], opts=[]):
 
     parametrization = []
 
-    combinations = xnvme_be_opts(
-        opts, ["file"] if "file" in labels else ["bdev", "cdev", "pcie", "fabrics"]
+    # The caller's labels join the defaults rather than being filtered against
+    # them: a backend reached only by its own label, as the GPU ones are, has no
+    # combination generated at all otherwise, and its tests skip everywhere
+    default_labels = (
+        ["file"] if "file" in labels else ["bdev", "cdev", "pcie", "fabrics"]
     )
+    combinations = xnvme_be_opts(opts, sorted(set(default_labels) | set(labels)))
 
     for be_opts in combinations:
         search = labels + be_opts["label"]
@@ -231,9 +235,25 @@ class XnvmeDriver(object):
 
     IS_KERNEL_ATTACHED = None
 
+    # Which userspace driver the current attachment used, so that moving between
+    # a GPU device and a host one rebinds rather than reusing the wrong one
+    USERSPACE_DRIVER = None
+
     @staticmethod
-    def kernel_detach(cijoe):
-        """Detach from kernel"""
+    def userspace_driver(labels):
+        """
+        The userspace driver a device with these labels needs, or None for the default.
+
+        The GPU backends reach a heap the GPU runtime exported, and
+        IOMMU_IOAS_MAP_FILE refuses a dma-buf from one, so a controller behind an
+        IOMMU cannot address it. They need the IOMMU out of the way.
+        """
+
+        return "uio_pci_generic" if {"cuda", "hip"} & set(labels or []) else None
+
+    @staticmethod
+    def kernel_detach(cijoe, driver=None):
+        """Detach from kernel, optionally onto a named userspace driver"""
 
         # Rebinding devices and re-allocating hugepages invalidates a running primary,
         # so tear it down first rather than leaving MprocPrimary with a stale handle.
@@ -241,15 +261,22 @@ class XnvmeDriver(object):
 
         # 64MB contigmem buffers avoid ENOMEM on FreeBSD's fragmented CI heap;
         # see toolbox/xnvme-driver.sh.
-        cmd = "xnvme-driver"
+        env = []
         if get_osname() == "freebsd":
-            cmd = "env CONTIGMEM_BUFSZ=64 " + cmd
+            env.append("CONTIGMEM_BUFSZ=64")
+        if driver:
+            env.append(f"DRIVER_OVERRIDE={driver}")
+
+        cmd = "xnvme-driver"
+        if env:
+            cmd = "env " + " ".join(env) + " " + cmd
 
         err, _ = cijoe.run(cmd)
         if err:
             cijoe.run("dmesg | tail -n20")
 
         XnvmeDriver.IS_KERNEL_ATTACHED = False
+        XnvmeDriver.USERSPACE_DRIVER = driver
 
     @staticmethod
     def kernel_attach(cijoe):
@@ -269,9 +296,13 @@ class XnvmeDriver(object):
 
         needs_kernel = device.get("driver_attachment", "kernel") == "kernel"
         needs_userspace = not needs_kernel
+        driver = XnvmeDriver.userspace_driver(device.get("labels"))
 
-        if needs_userspace and XnvmeDriver.IS_KERNEL_ATTACHED in [True, None]:
-            XnvmeDriver.kernel_detach(cijoe)
+        if needs_userspace and (
+            XnvmeDriver.IS_KERNEL_ATTACHED in [True, None]
+            or XnvmeDriver.USERSPACE_DRIVER != driver
+        ):
+            XnvmeDriver.kernel_detach(cijoe, driver)
             cijoe.run("xnvme enum")
         elif needs_kernel and XnvmeDriver.IS_KERNEL_ATTACHED in [False, None]:
             XnvmeDriver.kernel_attach(cijoe)

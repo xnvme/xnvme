@@ -156,6 +156,15 @@ def get_backend_configurations():
             "label": ["cuda"],
             "mproc": True,
         },
+        {
+            "be": ["upcie-hip"],
+            "mem": ["upcie-hip"],
+            "async": ["upcie-hip"],
+            "sync": ["upcie-hip"],
+            "admin": ["upcie-hip"],
+            "label": ["hip"],
+            "mproc": True,
+        },
         # Ramdisk
         {
             "be": ["ramdisk_emu"],
