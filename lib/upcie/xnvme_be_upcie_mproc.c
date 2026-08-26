@@ -332,14 +332,14 @@ xnvme_be_upcie_mproc_free_all_queues(struct xnvme_be_upcie_ctrlr *ctrlr)
 
 			cmd.opc = 0x00; ///< Delete I/O Submission Queue
 			err = nvme_qpair_submit_sync(&ctrlr->ctrl->aq, &cmd,
-						     ctrlr->ctrl->timeout_ms, &cpl);
+						     ctrlr->ctrl->base.admin_timeout_ms, &cpl);
 			if (err) {
 				XNVME_DEBUG("FAILED: nvme_qpair_submit_sync(); err(%d)", err);
 			}
 
 			cmd.opc = 0x04; ///< Delete I/O Completion Queue
 			err = nvme_qpair_submit_sync(&ctrlr->ctrl->aq, &cmd,
-						     ctrlr->ctrl->timeout_ms, &cpl);
+						     ctrlr->ctrl->base.admin_timeout_ms, &cpl);
 			if (err) {
 				XNVME_DEBUG("FAILED: nvme_qpair_submit_sync(); err(%d)", err);
 			}
@@ -579,7 +579,7 @@ xnvme_be_upcie_mproc_ctrlr_shm_attach(struct xnvme_dev *dev, struct xnvme_be_upc
 		goto failed;
 	}
 
-	ctrlr->ctrl->timeout_ms = shm->ctrl.timeout_ms;
+	ctrlr->ctrl->base = shm->ctrl.base;
 
 	/* Retrieve BAR0 register mapping (not in shared memory) */
 	{

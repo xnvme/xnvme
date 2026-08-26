@@ -12,14 +12,11 @@
  * the mapping in place); this module owns the device fd, the mmap'd
  * BAR0, and the admin queue buffers sub-allocated from the heap.
  *
- * The submit/reap path is the existing nvme_qpair primitives; only
- * the SQ/CQ backing (and the DMA-address arithmetic) is different
- * from the base upcie hostmem_heap path, so the dmamem-backed admin
- * queue reuses nvme_qpair_enqueue, nvme_qpair_sqdb_update, and
- * nvme_qpair_reap_cpl unchanged.
+ * Submit and reap use the nvme_qpair primitives unchanged; only the
+ * SQ/CQ backing differs from the vfio and uio siblings.
  *
  * @file nvme_controller_dmamem_type1.h
- * @version 0.8.0
+ * @version 0.10.0
  */
 
 /**
@@ -186,8 +183,9 @@ nvme_controller_close_dmamem_type1(struct nvme_controller *ctrlr, struct nvme_dm
 
 	if (ctx->bar0) {
 		nvme_mmio_cc_disable(ctx->bar0);
-		if (ctrlr->timeout_ms) {
-			err = nvme_mmio_csts_wait_until_not_ready(ctx->bar0, ctrlr->timeout_ms);
+		if (ctrlr->base.timeout_ms) {
+			err = nvme_mmio_csts_wait_until_not_ready(ctx->bar0,
+								  ctrlr->base.timeout_ms);
 			if (err) {
 				first_err = err;
 			}

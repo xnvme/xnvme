@@ -6,7 +6,7 @@
  * =======================================================================
  *
  * @file debug.h
- * @version 0.8.0
+ * @version 0.10.0
  */
 
 #ifdef UPCIE_DEBUG_ENABLED
@@ -42,8 +42,10 @@
  * Verity structure size at compile-time
  */
 
-#ifdef static_assert
+#if defined(__cplusplus)
 #define UPCIE_STATIC_ASSERT(cond, msg) static_assert(cond, msg);
+#elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
+#define UPCIE_STATIC_ASSERT(cond, msg) _Static_assert(cond, msg);
 #else
 #define UPCIE_STATIC_ASSERT(cond, msg)
 #endif

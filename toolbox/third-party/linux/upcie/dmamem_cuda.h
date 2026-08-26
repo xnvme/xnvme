@@ -25,7 +25,7 @@
  * <upcie/dmamem_iommu_map_pa.h>.
  *
  * @file dmamem_cuda.h
- * @version 0.8.0
+ * @version 0.10.0
  */
 
 /**
@@ -144,6 +144,50 @@ static inline void
 dmamem_cuda_registry_release(void *UPCIE_UNUSED(ctx), struct dmabuf *attach)
 {
 	dmabuf_import_detach(attach);
+}
+
+/**
+ * Build a dmamem for a CUDA heap that a device reaches through an IOMMU
+ *
+ * The registry constructor yields physical addresses, which a device behind an
+ * IOMMU cannot use; this maps the exported heap into the IOAS instead. Current
+ * kernels refuse GPU dma-bufs in IOMMU_IOAS_MAP_FILE, so this returns -ENOTSUP
+ * until they accept them.
+ *
+ * @param dmem Pre-allocated dmamem to fill
+ * @param heap A CUDA heap from cudamem_heap_init
+ * @param iommufd The address space the device is attached to
+ *
+ * @return 0 on success, negative errno on failure
+ */
+static inline int
+dmamem_from_cuda_iommufd(struct dmamem *dmem, struct cudamem_heap *heap, struct iommufd *iommufd)
+{
+	int dmabuf_fd = -1;
+	CUresult cr;
+	int err;
+
+	if (!dmem || !heap || !iommufd) {
+		return -EINVAL;
+	}
+
+	cr = cuMemGetHandleForAddressRange(&dmabuf_fd, (CUdeviceptr)heap->vaddr, heap->size,
+					   CU_MEM_RANGE_HANDLE_TYPE_DMA_BUF_FD, 0);
+	if (cr != CUDA_SUCCESS) {
+		UPCIE_DEBUG("FAILED: cuMemGetHandleForAddressRange(); CUresult(%d)", cr);
+		return -EIO;
+	}
+
+	err = dmamem_from_dmabuf(dmem, iommufd, dmabuf_fd, heap->size);
+	if (err) {
+		close(dmabuf_fd);
+		UPCIE_DEBUG("FAILED: dmamem_from_dmabuf(cuda heap); err(%d)", err);
+		return err;
+	}
+
+	dmem->backing = DMAMEM_BACKING_CUDAMEM;
+
+	return 0;
 }
 
 /**

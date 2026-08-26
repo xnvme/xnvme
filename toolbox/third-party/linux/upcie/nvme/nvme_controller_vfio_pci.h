@@ -6,16 +6,13 @@
  * ================================================================
  *
  * From a caller-supplied vfio device fd, acquire BAR0 and drive the
- * NVMe controller enable sequence. Both nvme_controller_open_vfio
- * (legacy vfio type1 container) and nvme_controller_open_dmamem_vfio
- * (iommufd + dmamem) reach the same code once they have a device fd:
- * bus-master enable, BAR0 mmap, CC.EN=0/1 dance, CAP/CSTS handshake.
- * That invariant middle lives here. The parts that vary (how the fd
- * was obtained, how DMA is mapped, which heap backs the admin queue)
- * stay with each caller.
+ * NVMe controller enable sequence. nvme_controller_open_dmamem_vfio,
+ * nvme_controller_open_dmamem_type1 and nvme_controller_open_dmamem_uio
+ * share it once they have BAR0; how BAR0 was obtained and how DMA is
+ * mapped stay with each caller.
  *
  * @file nvme_controller_vfio_pci.h
- * @version 0.8.0
+ * @version 0.10.0
  */
 
 /**
@@ -108,7 +105,7 @@ nvme_vfio_pci_acquire_bar0(int device_fd, struct nvme_controller *ctrlr, void **
 }
 
 /**
- * Read CAP, derive controller timeout, disable the controller, wait
+ * Read CAP, derive the controller's timeouts, disable the controller, wait
  * for CSTS.RDY=0.
  *
  * The caller uses *cap_out when programming CC on enable.
@@ -119,11 +116,13 @@ nvme_controller_reset_via_bar0(struct nvme_controller *ctrlr, uint8_t *bar0, uin
 	uint64_t cap = nvme_mmio_cap_read(bar0);
 	int err;
 
-	ctrlr->timeout_ms = nvme_reg_cap_get_to(cap) * 500;
+	ctrlr->base.cap = cap;
+	ctrlr->base.timeout_ms = nvme_reg_cap_get_to(cap) * 500;
+	ctrlr->base.admin_timeout_ms = NVME_ADMIN_TIMEOUT_MS;
 
 	nvme_mmio_cc_disable(bar0);
 
-	err = nvme_mmio_csts_wait_until_not_ready(bar0, ctrlr->timeout_ms);
+	err = nvme_mmio_csts_wait_until_not_ready(bar0, ctrlr->base.timeout_ms);
 	if (err) {
 		UPCIE_DEBUG("FAILED: nvme_mmio_csts_wait_until_not_ready(); err(%d)", err);
 		return err;
@@ -156,8 +155,9 @@ nvme_controller_enable_via_bar0(struct nvme_controller *ctrlr, uint8_t *bar0, ui
 	cc = nvme_reg_cc_set_en(cc, 0x1);
 
 	nvme_mmio_cc_write(bar0, cc);
+	ctrlr->base.cc = cc;
 
-	err = nvme_mmio_csts_wait_until_ready(bar0, ctrlr->timeout_ms);
+	err = nvme_mmio_csts_wait_until_ready(bar0, ctrlr->base.timeout_ms);
 	if (err) {
 		UPCIE_DEBUG("FAILED: nvme_mmio_csts_wait_until_ready(); err(%d)", err);
 		return err;
