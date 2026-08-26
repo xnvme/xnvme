@@ -195,3 +195,23 @@ def test_verify_sync_iovec_direct(cijoe, device, be_opts, cli_args):
         f"xnvme_tests_ioworker verify-sync {cli_args} --nlb 7 --vec-cnt 4 --direct 1"
     )
     assert not err
+
+
+@xnvme_parametrize(labels=["dev"], opts=["be", "sync", "async", "admin"])
+def test_verify_flush(cijoe, device, be_opts, cli_args):
+    # Async-interfaces without an implementation of NVM FLUSH: FreeBSD 'kqueue'
+    # and Windows 'ioring' reject it with -ENOSYS, Windows 'iocp'/'iocp_th'
+    # handle only the FS FLUSH opcode
+    if be_opts["async"] in ["kqueue", "iocp", "iocp_th", "ioring"]:
+        pytest.skip(reason=f"[async={be_opts['async']}] does not implement NVM FLUSH")
+
+    # The FUA-writes make this the first fabrics case sustaining I/O beyond the
+    # keep-alive timeout, and the spdk backend only services the admin-queue --
+    # and thereby keep-alive -- inside admin commands, so the target reaps the
+    # controller mid-run and the queue dies with -ENXIO. A backend concern, not
+    # a FLUSH one; skip until the backend keeps the connection alive
+    if "fabrics" in device["labels"]:
+        pytest.skip(reason="[fabrics] spdk backend sends no keep-alive during I/O")
+
+    err, _ = cijoe.run(f"xnvme_tests_ioworker verify-flush {cli_args}")
+    assert not err
