@@ -9,7 +9,7 @@
  * including BAR-space mappings, controller registers, and values derived from register content.
  *
  * @file nvme_controller.h
- * @version 0.8.0
+ * @version 0.10.0
  */
 
 /**
@@ -20,112 +20,12 @@ struct nvme_controller {
 	struct nvme_qpair aq;                 ///< Admin qpair
 	uint64_t qids[NVME_QID_BITMAP_WORDS]; ///< Allocation status of IO queues
 
-	struct hostmem_heap *heap; ///< Heap for DMA-capable memory
-	void *buf;                 ///< IO-buffer for identify-commands, io-qpair-creation etc.
-
 	uint32_t csts; ///< Controller Status Register Value
 	uint32_t cap;  ///< Controller Capabilities Register Value
 	uint32_t cc;   ///< Controller configuration Register Value
 
 	int timeout_ms; ///< Command timeout in milliseconds (derived from cap.to)
 };
-
-static inline void
-nvme_controller_close(struct nvme_controller *ctrlr)
-{
-	if (ctrlr->aq.rpool) {
-		nvme_qpair_term(&ctrlr->aq);
-		memset(&ctrlr->aq, 0, sizeof(ctrlr->aq));
-	}
-
-	if (ctrlr->buf) {
-		hostmem_dma_free(ctrlr->heap, ctrlr->buf);
-		ctrlr->buf = NULL;
-	}
-
-	pci_func_close(&ctrlr->func);
-	memset(ctrlr, 0, sizeof(*ctrlr));
-}
-
-/**
- * Disables the NVMe controller at 'bdf', sets up admin-queues and enables it again
- */
-static inline int
-nvme_controller_open(struct nvme_controller *ctrlr, const char *bdf, struct hostmem_heap *heap)
-{
-	uint64_t cap;
-	void *bar0;
-	int err;
-
-	memset(ctrlr, 0, sizeof(*ctrlr));
-	ctrlr->heap = heap;
-
-	ctrlr->buf = hostmem_dma_malloc(ctrlr->heap, 4096);
-	if (!ctrlr->buf) {
-		UPCIE_DEBUG("FAILED: hostmem_dma_malloc(buf); errno(%d)\n", errno);
-		return -errno;
-	}
-	memset(ctrlr->buf, 0, 4096);
-
-	nvme_qid_bitmap_init(ctrlr->qids);
-
-	err = pci_func_open(bdf, &ctrlr->func);
-	if (err) {
-		UPCIE_DEBUG("FAILED: pci_func_open(%.*s); err(%d)", 13, bdf, err);
-		return -err;
-	}
-
-	err = pci_bar_map(ctrlr->func.bdf, 0, &ctrlr->func.bars[0]);
-	if (err) {
-		UPCIE_DEBUG("FAILED: pci_bar_map(BAR0); err(%d)", err);
-		return -err;
-	}
-	bar0 = ctrlr->func.bars[0].region;
-
-	cap = nvme_mmio_cap_read(bar0);
-	// CAP.TO is encoded in units of 500 ms.
-	ctrlr->timeout_ms = nvme_reg_cap_get_to(cap) * 500;
-
-	nvme_mmio_cc_disable(bar0);
-
-	err = nvme_mmio_csts_wait_until_not_ready(bar0, ctrlr->timeout_ms);
-	if (err) {
-		UPCIE_DEBUG("FAILED: nvme_mmio_csts_wait_until_ready(); err(%d)\n", err);
-		return -err;
-	}
-
-	err = nvme_qpair_init(&ctrlr->aq, 0, 256, ctrlr->func.bars[0].region, ctrlr->heap);
-	if (err) {
-		UPCIE_DEBUG("FAILED: nvme_qpair_init(); err(%d)", err);
-		return -err;
-	}
-
-	nvme_mmio_aq_setup(bar0, hostmem_dma_v2p(heap, ctrlr->aq.sq),
-			   hostmem_dma_v2p(heap, ctrlr->aq.cq), ctrlr->aq.depth);
-
-	{
-		uint32_t css = (nvme_reg_cap_get_css(cap) & (1 << 6)) ? 0x6 : 0x0;
-		uint32_t cc = 0;
-
-		cc = nvme_reg_cc_set_css(cc, css);
-		cc = nvme_reg_cc_set_shn(cc, 0x0);
-		cc = nvme_reg_cc_set_mps(cc, 0x0);
-		cc = nvme_reg_cc_set_ams(cc, 0x0);
-		cc = nvme_reg_cc_set_iosqes(cc, 6);
-		cc = nvme_reg_cc_set_iocqes(cc, 4);
-		cc = nvme_reg_cc_set_en(cc, 0x1);
-
-		nvme_mmio_cc_write(bar0, cc);
-	}
-
-	err = nvme_mmio_csts_wait_until_ready(bar0, ctrlr->timeout_ms);
-	if (err) {
-		UPCIE_DEBUG("FAILED: nvme_mmio_csts_wait_until_ready(); err(%d)", err);
-		return -err;
-	}
-
-	return 0;
-}
 
 /**
  * Sends a Delete I/O Completion Queue admin command for `qid`
@@ -145,136 +45,4 @@ nvme_controller_delete_io_cq(struct nvme_controller *ctrlr, uint16_t qid)
 	cmd.cdw10 = qid;
 
 	return nvme_qpair_submit_sync(&ctrlr->aq, &cmd, ctrlr->timeout_ms, &cpl);
-}
-
-/**
- * Deletes the submission-queue and completion-queue and frees host-side resources.
- *
- * Sends Delete I/O SQ and Delete I/O CQ admin commands to the controller, then
- * releases the host DMA memory and returns the queue ID to the free pool.
- *
- * @param ctrlr Pointer to a pre-allocated NVMe controller
- * @param qpair Pointer to a queue-pair (from nvme_controller_create_io_qpair)
- *
- * @return 0 on success, negative errno on error. Resources are freed regardless.
- */
-static inline int
-nvme_controller_delete_io_qpair(struct nvme_controller *ctrlr, struct nvme_qpair *qpair)
-{
-	uint16_t qid = qpair->qid;
-	int err;
-
-	{
-		struct nvme_command cmd = {0};
-		struct nvme_completion cpl = {0};
-
-		cmd.opc = 0x0; ///< Delete I/O Submission Queue
-		cmd.cdw10 = qid;
-
-		err = nvme_qpair_submit_sync(&ctrlr->aq, &cmd, ctrlr->timeout_ms, &cpl);
-		if (err) {
-			UPCIE_DEBUG("FAILED: nvme_qpair_submit_sync(Delete SQ); err(%d)", err);
-		}
-	}
-
-	{
-		struct nvme_command cmd = {0};
-		struct nvme_completion cpl = {0};
-
-		cmd.opc = 0x4; ///< Delete I/O Completion Queue
-		cmd.cdw10 = qid;
-
-		err = nvme_qpair_submit_sync(&ctrlr->aq, &cmd, ctrlr->timeout_ms, &cpl);
-		if (err) {
-			UPCIE_DEBUG("FAILED: nvme_qpair_submit_sync(Delete CQ); err(%d)", err);
-		}
-	}
-
-	nvme_qpair_term(qpair);
-	nvme_qid_free(ctrlr->qids, qid);
-
-	return err;
-}
-
-/**
- * Allocates a submission-queue, a completion-queue, and wraps them in the nvme_qpair struct
- */
-static inline int
-nvme_controller_create_io_qpair(struct nvme_controller *ctrlr, struct nvme_qpair *qpair,
-				uint16_t depth)
-{
-	uint16_t qid;
-	int err, del_err, qid_orphaned = 0;
-
-	err = nvme_qid_find_free(ctrlr->qids);
-	if (err < 1) {
-		return -ENOMEM;
-	}
-	qid = err;
-
-	err = nvme_qid_alloc(ctrlr->qids, qid);
-	if (err) {
-		UPCIE_DEBUG("FAILED: nvme_qid_alloc(): err(%d)", err);
-		return err;
-	}
-
-	err = nvme_qpair_init(qpair, qid, depth, ctrlr->func.bars[0].region, ctrlr->heap);
-	if (err) {
-		UPCIE_DEBUG("FAILED: nvme_qpair_init(); err(%d)", err);
-		goto free_qid;
-	}
-
-	{
-		struct nvme_command cmd = {0};
-		struct nvme_completion cpl = {0};
-
-		cmd.opc = 0x5; ///< Create I/O Completion Queue
-		cmd.prp1 = hostmem_dma_v2p(ctrlr->heap, qpair->cq);
-		cmd.cdw10 = ((depth - 1) << 16) | qid;
-		cmd.cdw11 = 0x1; ///< Physically contigous
-
-		err = nvme_qpair_submit_sync(&ctrlr->aq, &cmd, ctrlr->timeout_ms, &cpl);
-		if (err) {
-			UPCIE_DEBUG("FAILED: nvme_qpair_submit_sync(Create CQ); err(%d)", err);
-			goto term_qpair;
-		}
-	}
-
-	{
-		struct nvme_command cmd = {0};
-		struct nvme_completion cpl = {0};
-
-		cmd.opc = 0x1; ///< Create I/O Submission Queue
-		cmd.prp1 = hostmem_dma_v2p(ctrlr->heap, qpair->sq);
-		cmd.cdw10 = ((depth - 1) << 16) | qid;
-		cmd.cdw11 = (qid << 16) | 0x1; ///< CQID and Physically contigous
-
-		err = nvme_qpair_submit_sync(&ctrlr->aq, &cmd, ctrlr->timeout_ms, &cpl);
-		if (err) {
-			UPCIE_DEBUG("FAILED: nvme_qpair_submit_sync(Create SQ); err(%d)", err);
-			goto delete_cq;
-		}
-	}
-
-	return 0;
-
-delete_cq:
-	/* Kept out of err, which carries the failure being unwound. */
-	del_err = nvme_controller_delete_io_cq(ctrlr, qid);
-	if (del_err) {
-		UPCIE_DEBUG("FAILED: nvme_controller_delete_io_cq(); err(%d)", del_err);
-
-		/* The controller still holds a completion queue under this qid, so the
-		 * qid is retired instead of returned to the pool */
-		qid_orphaned = 1;
-	}
-term_qpair:
-	nvme_qpair_term(qpair);
-	memset(qpair, 0, sizeof(*qpair));
-free_qid:
-	if (!qid_orphaned) {
-		nvme_qid_free(ctrlr->qids, qid);
-	}
-
-	return err;
 }

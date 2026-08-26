@@ -36,7 +36,7 @@
  * also gains access to those physical addresses—without needing CAP_SYS_ADMIN.
  *
  * @file hostmem.h
- * @version 0.8.0
+ * @version 0.10.0
  */
 
 /**
@@ -51,6 +51,10 @@ struct hostmem_heap_block {
 
 /**
  * A pre-allocated heap providing memory for a buffer-allocator
+ *
+ * The heap takes no lock. The free list is a chain that alloc splits and free
+ * coalesces, so calls from two threads at once corrupt it; a caller that
+ * shares one heap between threads serialises alloc, free and pp itself.
  */
 struct hostmem_heap {
 	struct hostmem_hugepage memory; ///< A hugepage-allocation; can span multiple hugepages

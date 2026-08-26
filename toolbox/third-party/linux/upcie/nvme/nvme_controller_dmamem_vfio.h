@@ -17,7 +17,7 @@
  * nvme_qpair_sqdb_update, and nvme_qpair_reap_cpl unchanged.
  *
  * @file nvme_controller_dmamem_vfio.h
- * @version 0.8.0
+ * @version 0.10.0
  */
 
 /**
@@ -88,9 +88,8 @@ nvme_dmamem_vfio_ctx_close(struct nvme_dmamem_vfio_ctx *ctx)
  * for a queue pair from a dmamem_heap, and populate the nvme_qpair
  * fields the submit/reap primitives read.
  *
- * The heap stays with the caller; qp->heap is left NULL to signal that
- * qp is not managed by hostmem_dma_free. Use nvme_qpair_dmamem_term to
- * free, passing back the same offsets returned here.
+ * The heap stays with the caller. Use nvme_qpair_dmamem_term to free,
+ * passing back the same offsets returned here.
  *
  * @param qp             Queue pair to populate; fully memset before use.
  * @param qid            NVMe queue identifier (0 for the admin queue).
@@ -142,9 +141,9 @@ nvme_qpair_dmamem_init(struct nvme_qpair *qp, uint32_t qid, uint16_t depth, uint
 		return err;
 	}
 
-	qp->rpool = calloc(1, sizeof(*qp->rpool));
+	qp->rpool = nvme_request_pool_alloc();
 	if (!qp->rpool) {
-		UPCIE_DEBUG("FAILED: calloc(rpool); errno(%d)", errno);
+		UPCIE_DEBUG("FAILED: nvme_request_pool_alloc(); errno(%d)", errno);
 		dmamem_heap_free(heap, cq_offset);
 		dmamem_heap_free(heap, sq_offset);
 		return -errno;
@@ -379,27 +378,28 @@ nvme_admin_sync_dmamem(struct nvme_controller *ctrlr, struct nvme_command *cmd, 
 }
 
 /**
- * Create an I/O queue pair on the dmamem path.
+ * Create an I/O queue pair on the dmamem path, with the CQ where the caller says
  *
- * Allocates SQ/CQ from the caller's dmamem_heap, then programs the
- * controller via admin CREATE_IO_CQ + CREATE_IO_SQ so the controller
- * knows about the new qpair. The resulting nvme_qpair is compatible
- * with the heap-agnostic submit/reap primitives (nvme_qpair_enqueue,
- * nvme_qpair_sqdb_update, nvme_qpair_reap_cpl).
+ * As nvme_controller_create_io_qpair_dmamem(), except that the controller is
+ * told to complete into cq_iova rather than into the dmamem CQ. The dmamem CQ
+ * is allocated all the same and qp->cq points at it; the caller keeps it a
+ * copy of what lands at cq_iova, so the reap primitives read it unchanged.
+ * This is what puts the CQ beside the data in a peer's memory, so that a
+ * completion is not held behind the data it announces. A cq_iova of 0 means
+ * the dmamem CQ itself.
  *
- * The qid is allocated from the controller's bitmap; the caller must
- * hold on to the returned sq_offset/cq_offset until
- * nvme_controller_delete_io_qpair_dmamem is called.
+ * @param cq_iova Where the controller writes completions; 0 for the dmamem CQ
  */
 static inline int
-nvme_controller_create_io_qpair_dmamem(struct nvme_controller *ctrlr, struct nvme_qpair *qp,
-				       uint16_t depth, struct dmamem_heap *heap,
-				       size_t *sq_offset_out, size_t *cq_offset_out,
-				       size_t *prp_offset_out)
+nvme_controller_create_io_qpair_dmamem_cq_iova(struct nvme_controller *ctrlr,
+					       struct nvme_qpair *qp, uint16_t depth,
+					       struct dmamem_heap *heap, size_t *sq_offset_out,
+					       size_t *cq_offset_out, size_t *prp_offset_out,
+					       uint64_t cq_iova)
 {
 	struct nvme_command cmd = {0};
 	struct nvme_completion cpl = {0};
-	uint64_t sq_iova = 0, cq_iova = 0;
+	uint64_t sq_iova = 0, cq_dmamem_iova = 0;
 	uint16_t qid;
 	int err;
 
@@ -416,11 +416,15 @@ nvme_controller_create_io_qpair_dmamem(struct nvme_controller *ctrlr, struct nvm
 	}
 
 	err = nvme_qpair_dmamem_init(qp, qid, depth, ctrlr->func.bars[0].region, heap, sq_offset_out,
-				     cq_offset_out, prp_offset_out, &sq_iova, &cq_iova);
+				     cq_offset_out, prp_offset_out, &sq_iova,
+				     &cq_dmamem_iova);
 	if (err) {
 		UPCIE_DEBUG("FAILED: nvme_qpair_dmamem_init(io); err(%d)", err);
 		nvme_qid_free(ctrlr->qids, qid);
 		return err;
+	}
+	if (!cq_iova) {
+		cq_iova = cq_dmamem_iova;
 	}
 
 	memset(&cmd, 0, sizeof(cmd));
@@ -461,7 +465,37 @@ rollback_qpair:
 }
 
 /**
+ * Create an I/O queue pair on the dmamem path.
+ *
+ * Allocates SQ/CQ from the caller's dmamem_heap, then programs the
+ * controller via admin CREATE_IO_CQ + CREATE_IO_SQ so the controller
+ * knows about the new qpair. The resulting nvme_qpair is compatible
+ * with the heap-agnostic submit/reap primitives (nvme_qpair_enqueue,
+ * nvme_qpair_sqdb_update, nvme_qpair_reap_cpl).
+ *
+ * The qid is allocated from the controller's bitmap; the caller must
+ * hold on to the returned sq_offset/cq_offset until
+ * nvme_controller_delete_io_qpair_dmamem is called.
+ */
+static inline int
+nvme_controller_create_io_qpair_dmamem(struct nvme_controller *ctrlr, struct nvme_qpair *qp,
+				       uint16_t depth, struct dmamem_heap *heap,
+				       size_t *sq_offset_out, size_t *cq_offset_out,
+				       size_t *prp_offset_out)
+{
+	return nvme_controller_create_io_qpair_dmamem_cq_iova(
+		ctrlr, qp, depth, heap, sq_offset_out, cq_offset_out, prp_offset_out, 0);
+}
+
+/**
  * Tear down an I/O queue pair created with the dmamem variant.
+ *
+ * The memory and the identifier are given back only when the controller has
+ * confirmed both deletes. Where it has not, they are kept rather than reused,
+ * so a caller that ignores the return value leaks instead of handing a live
+ * queue's memory to the next allocation.
+ *
+ * @return 0 when the controller let go, the first delete's error otherwise
  */
 static inline int
 nvme_controller_delete_io_qpair_dmamem(struct nvme_controller *ctrlr, struct nvme_qpair *qp,
@@ -490,7 +524,25 @@ nvme_controller_delete_io_qpair_dmamem(struct nvme_controller *ctrlr, struct nvm
 		first_err = err;
 	}
 
+	/* Only once the controller has actually let go. A delete that failed
+	 * leaves the queue live as far as the device is concerned, and it can
+	 * still write to the memory behind it, so returning that memory to the
+	 * heap hands a live DMA target to whoever is allocated it next. The
+	 * identifier goes with it, since reissuing one the controller still
+	 * holds makes the next create fail, or succeed onto the old queue.
+	 *
+	 * So a failure leaks both, for the life of the runtime. That is the
+	 * cheaper mistake by a wide margin, and the caller is told.
+	 */
+	if (first_err) {
+		UPCIE_DEBUG("FAILED: delete(qid=%u); err(%d), keeping its memory and its id",
+			    qid, first_err);
+
+		return first_err;
+	}
+
 	nvme_qpair_dmamem_term(qp, heap, sq_offset, cq_offset, prp_offset);
 	nvme_qid_free(ctrlr->qids, qid);
-	return first_err;
+
+	return 0;
 }
