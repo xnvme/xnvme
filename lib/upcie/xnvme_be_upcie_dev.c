@@ -223,8 +223,8 @@ _rte_init_vfio_type1(size_t heap_size)
 /**
  * Bring up the process-wide RTE in the given mode, or verify an already
  * initialized RTE matches. When opts->shm_id is non-zero, additionally
- * enable multi-process mode; only UIO_LUT supports it because the primary
- * publishes its hugepage for secondaries to import, which the memfd and
+ * enable multi-process mode; only UIO_LUT supports it because the server
+ * publishes its hugepage for clients to import, which the memfd and
  * type1-container paths cannot do.
  */
 static int
@@ -299,7 +299,7 @@ _rte_init(enum xnvme_be_upcie_mode mode, struct xnvme_opts *opts)
 				usleep(1000);
 			}
 			if (!atomic_load_explicit(&shm->is_initialized, memory_order_acquire)) {
-				XNVME_DEBUG("FAILED: timed out waiting for primary hp publish");
+				XNVME_DEBUG("FAILED: timed out waiting for server hp publish");
 				_rte_term();
 				return -ENOENT;
 			}
@@ -439,8 +439,8 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 		return NULL;
 	}
 
-	/* Only the owner writes the PCI Command register; the primary already flipped
-	 * Bus Master Enable at open time and a secondary neither needs to nor typically
+	/* Only the server writes the PCI Command register; the server already flipped
+	 * Bus Master Enable at open time and a client neither needs to nor typically
 	 * may touch config space. */
 	if (!g_upcie_rte.mproc || g_upcie_rte.mproc->is_primary) {
 		err = _pci_enable_bus_master(dev->ident.uri);
@@ -462,7 +462,7 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 	ctrlr->mproc.shm_fd = -1;
 	ctrlr->mproc.lock_fd = -1;
 
-	/* mproc secondary: skip open-and-initialize; attach to primary's controller via shm. */
+	/* mproc client: skip open-and-initialize; attach to server's controller via shm. */
 	if (g_upcie_rte.mproc && !g_upcie_rte.mproc->is_primary) {
 		err = xnvme_be_upcie_mproc_ctrlr_shm_attach(dev, ctrlr);
 		if (err) {
@@ -474,10 +474,10 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 		return ctrlr;
 	}
 
-	/* Primary path (or non-mproc): open the controller and create the sync qpair.
-	 * For the mproc primary, allocate the per-controller shm first and use its
-	 * embedded nvme_controller as the target so the primary's runtime state is
-	 * directly visible to secondaries. */
+	/* Server path (or non-mproc): open the controller and create the sync qpair.
+	 * For the mproc server, allocate the per-controller shm first and use its
+	 * embedded nvme_controller as the target so the server's runtime state is
+	 * directly visible to clients. */
 	if (g_upcie_rte.mproc) {
 		err = xnvme_be_upcie_mproc_ctrlr_shm_init(dev, ctrlr, driver_name);
 		if (err) {
@@ -539,7 +539,7 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 		goto failed;
 	}
 
-	/* Publish the fully-opened controller so mproc secondaries may attach. */
+	/* Publish the fully-opened controller so mproc clients may attach. */
 	if (ctrlr->mproc.shm) {
 		atomic_store_explicit(&ctrlr->mproc.shm->is_initialized, true,
 				      memory_order_release);
@@ -574,14 +574,14 @@ xnvme_be_upcie_ctrlr_term(void *handle)
 
 	if (is_secondary) {
 		xnvme_be_upcie_mproc_delete_io_qpair(ctrlr, &ctrlr->sync, &ctrlr->sync_offsets);
-		/* Do not close the controller: the primary owns it and closing here would
+		/* Do not close the controller: the server owns it and closing here would
 		 * tear down the shared admin queue. Just release the local BAR mapping
 		 * (pci_func_close unmaps all bound BARs) and the local ctrl copy. */
 		pci_func_close(&ctrlr->ctrl->func);
 		xnvme_be_upcie_mproc_ctrlr_shm_term(ctrlr);
 		free(ctrlr->ctrl);
 	} else if (ctrlr->mproc.shm) {
-		/* Primary in mproc: reap secondaries' still-allocated queues via the admin
+		/* Server in mproc: reap clients' still-allocated queues via the admin
 		 * queue before we tear the shared segment down. */
 		xnvme_be_upcie_mproc_delete_io_qpair(ctrlr, &ctrlr->sync, &ctrlr->sync_offsets);
 		xnvme_be_upcie_mproc_free_all_queues(ctrlr);

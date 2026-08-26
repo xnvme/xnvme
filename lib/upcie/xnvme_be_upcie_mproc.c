@@ -24,7 +24,7 @@ xnvme_be_upcie_mproc_rte_term()
 	if (mproc->is_primary) {
 		int attached = atomic_load(&mproc->shm->refcount);
 		if (attached > 1) {
-			XNVME_DEBUG("WARNING: closing primary with %d secondary process(es) still "
+			XNVME_DEBUG("WARNING: closing server with %d client process(es) still "
 				    "attached",
 				    attached - 1);
 		}
@@ -73,7 +73,7 @@ xnvme_be_upcie_mproc_rte_init(int shm_id)
 
 	mproc->is_primary = true;
 
-	/* Use flock to determine primary / secondary role */
+	/* Use flock to determine server / client role */
 
 	snprintf(mproc->lock_name, sizeof(mproc->lock_name), "/tmp/xnvme-upcie-flock-%d", shm_id);
 	mproc->lock_fd = open(mproc->lock_name, O_CREAT | O_RDWR, 0600);
@@ -86,7 +86,7 @@ xnvme_be_upcie_mproc_rte_init(int shm_id)
 	err = flock(mproc->lock_fd, LOCK_EX | LOCK_NB);
 	if (err) {
 		if (errno == EWOULDBLOCK) {
-			XNVME_DEBUG("INFO: Lock file already claimed, setting role to secondary");
+			XNVME_DEBUG("INFO: Lock file already claimed, setting role to client");
 			close(mproc->lock_fd);
 			mproc->lock_fd = -1;
 			mproc->is_primary = false;
@@ -112,7 +112,7 @@ xnvme_be_upcie_mproc_rte_init(int shm_id)
 		shm_unlink(mproc->shm_name);
 	}
 
-	// Wait at most ~1 second to open shared memory segment. We do not retry in primary
+	// Wait at most ~1 second to open shared memory segment. We do not retry in server
 	// processes.
 	for (int i = 0; i < 1000; i++) {
 		shm_fd = shm_open(mproc->shm_name, oflag, shm_mode);
@@ -177,7 +177,7 @@ failed:
 }
 
 /**
- * Import the primary's hugepages for accessing the admin queue in secondary processes.
+ * Import the server's hugepages for accessing the admin queue in client processes.
  */
 int
 xnvme_be_upcie_mproc_import_admin_hugepage()
@@ -239,7 +239,7 @@ _recover_aq(struct xnvme_be_upcie_ctrlr *ctrlr)
 	shm->ctrl.aq.phase = aq->phase;
 
 	if (drained) {
-		XNVME_DEBUG("INFO: recovered admin CQ after owner death; drained(%d)", drained);
+		XNVME_DEBUG("INFO: recovered admin CQ after server death; drained(%d)", drained);
 	}
 }
 
@@ -255,7 +255,7 @@ xnvme_be_upcie_ctrlr_mutex_lock(struct xnvme_be_upcie_ctrlr *ctrlr)
 
 	err = pthread_mutex_lock(&shm->aq_mutex);
 	if (err == EOWNERDEAD) {
-		// Previous owner died inside the critical section; drain any
+		// Previous server died inside the critical section; drain any
 		// completions it left behind and resync before marking consistent.
 		_recover_aq(ctrlr);
 		pthread_mutex_consistent(&shm->aq_mutex);
@@ -311,7 +311,7 @@ xnvme_be_upcie_mproc_free_all_queues(struct xnvme_be_upcie_ctrlr *ctrlr)
 	int err;
 
 	if (!g_upcie_rte.mproc || !g_upcie_rte.mproc->is_primary) {
-		XNVME_DEBUG("INFO: xnvme_be_upcie_mproc_free_all_queues() called in non-primary "
+		XNVME_DEBUG("INFO: xnvme_be_upcie_mproc_free_all_queues() called in non-server "
 			    "process; skipping");
 		return;
 	}
@@ -355,7 +355,7 @@ xnvme_be_upcie_mproc_ctrlr_shm_term(struct xnvme_be_upcie_ctrlr *ctrlr)
 	if (g_upcie_rte.mproc->is_primary) {
 		int attached = atomic_load(&ctrlr->mproc.shm->refcount);
 		if (attached > 1) {
-			XNVME_DEBUG("WARNING: terminating controller with %d secondary "
+			XNVME_DEBUG("WARNING: terminating controller with %d client "
 				    "process(es) still "
 				    "attached",
 				    attached - 1);
@@ -397,7 +397,7 @@ xnvme_be_upcie_mproc_ctrlr_shm_init(struct xnvme_dev *dev, struct xnvme_be_upcie
 
 	xnvme_be_upcie_shm_bdf_name(dev->ident.uri, shm_name, sizeof(shm_name));
 
-	/* Use flock to determine whether another primary process has claimed device */
+	/* Use flock to determine whether another server process has claimed device */
 	snprintf(ctrlr->mproc.lock_name, sizeof(ctrlr->mproc.lock_name),
 		 "/tmp/xnvme-upcie-%s-lock", dev->ident.uri);
 	ctrlr->mproc.lock_fd = -1;
@@ -486,9 +486,9 @@ failed:
 /**
  * Attach to an existing controller in shared memory
  *
- * Waits (up to ~1s) for the primary to create, size and finish initializing the
- * shared segment, so starting the primary and secondary concurrently is safe;
- * if the primary does not become ready within the timeout, attach fails.
+ * Waits (up to ~1s) for the server to create, size and finish initializing the
+ * shared segment, so starting the server and client concurrently is safe;
+ * if the server does not become ready within the timeout, attach fails.
  */
 int
 xnvme_be_upcie_mproc_ctrlr_shm_attach(struct xnvme_dev *dev, struct xnvme_be_upcie_ctrlr *ctrlr)
@@ -499,12 +499,12 @@ xnvme_be_upcie_mproc_ctrlr_shm_attach(struct xnvme_dev *dev, struct xnvme_be_upc
 	bool rpool_prps_ready = false;
 	int shm_fd, err;
 
-	ctrlr->mproc.shm_fd = -1; // File descripter should not be saved in secondaries
+	ctrlr->mproc.shm_fd = -1; // File descripter should not be saved in clients
 
 	xnvme_be_upcie_shm_bdf_name(dev->ident.uri, shm_name, sizeof(shm_name));
 
-	// Wait for the primary to create and size the segment. shm_open() can
-	// succeed before the primary has ftruncate()'d it, so mapping and touching
+	// Wait for the server to create and size the segment. shm_open() can
+	// succeed before the server has ftruncate()'d it, so mapping and touching
 	// it then would SIGBUS; only proceed once it is at least shm_size bytes.
 	for (int i = 0; i < 1000; i++) {
 		struct stat st;
@@ -532,7 +532,7 @@ xnvme_be_upcie_mproc_ctrlr_shm_attach(struct xnvme_dev *dev, struct xnvme_be_upc
 	}
 
 	if (shm_fd < 0) {
-		XNVME_DEBUG("FAILED: timed out waiting for primary to create shm(%s)", shm_name);
+		XNVME_DEBUG("FAILED: timed out waiting for server to create shm(%s)", shm_name);
 		err = -ENOENT;
 		goto failed;
 	}
@@ -550,7 +550,7 @@ xnvme_be_upcie_mproc_ctrlr_shm_attach(struct xnvme_dev *dev, struct xnvme_be_upc
 	ctrlr->mproc.shm = shm;
 	snprintf(ctrlr->mproc.shm_name, sizeof(ctrlr->mproc.shm_name), "%s", shm_name);
 
-	// Wait for the primary to finish opening the controller before reading any
+	// Wait for the server to finish opening the controller before reading any
 	// shared fields; they are undefined until is_initialized is published.
 	for (int i = 0; i < 1000; i++) {
 		if (atomic_load_explicit(&shm->is_initialized, memory_order_acquire)) {
@@ -560,13 +560,13 @@ xnvme_be_upcie_mproc_ctrlr_shm_attach(struct xnvme_dev *dev, struct xnvme_be_upc
 	}
 
 	if (!atomic_load_explicit(&shm->is_initialized, memory_order_acquire)) {
-		XNVME_DEBUG("FAILED: timed out waiting for primary controller init");
+		XNVME_DEBUG("FAILED: timed out waiting for server controller init");
 		err = -ENOENT;
 		goto failed;
 	}
 
 	if (strcmp(shm->driver_name, "uio_pci_generic")) {
-		XNVME_DEBUG("FAILED: mproc requires uio_pci_generic, primary saw '%s'",
+		XNVME_DEBUG("FAILED: mproc requires uio_pci_generic, server saw '%s'",
 			    shm->driver_name);
 		err = -ENOTSUP;
 		goto failed;
@@ -621,7 +621,7 @@ xnvme_be_upcie_mproc_ctrlr_shm_attach(struct xnvme_dev *dev, struct xnvme_be_upc
 
 	/* Allocate local request pool with per-process PRP scratch on the local dmamem heap.
 	 * The rpool itself is per-process; the PRPs are addressed via dmamem offsets so the
-	 * primary and secondaries do not step on each other's scratch. */
+	 * server and clients do not step on each other's scratch. */
 	ctrlr->ctrl->aq.rpool = calloc(1, sizeof(*ctrlr->ctrl->aq.rpool));
 	if (!ctrlr->ctrl->aq.rpool) {
 		err = -ENOMEM;
@@ -654,7 +654,7 @@ failed_close_function:
 
 failed:
 	if (ctrlr->ctrl) {
-		/* The PRP scratch sits in the primary's heap, so it outlives this
+		/* The PRP scratch sits in the server's heap, so it outlives this
 		 * process; hand it back rather than leaking it into the shared heap. */
 		if (rpool_prps_ready) {
 			nvme_request_pool_term_prps_dmamem(ctrlr->ctrl->aq.rpool,
@@ -683,9 +683,9 @@ failed:
  * Take the admin-queue mutex and import the shared I/O queue-id bitmap
  *
  * Wraps xnvme_be_upcie_ctrlr_mutex_lock() for callers that allocate or release
- * I/O queue identifiers. In a secondary process ctrlr->ctrl is a process-local
+ * I/O queue identifiers. In a client process ctrlr->ctrl is a process-local
  * copy of the controller and has to see the current bitmap before it is
- * consulted; in a primary process ctrlr->ctrl points into the shared segment
+ * consulted; in a server process ctrlr->ctrl points into the shared segment
  * itself so no import is needed, and outside multi-process mode ctrlr->mproc.shm is
  * NULL, so this is a no-op beyond the locking itself.
  *

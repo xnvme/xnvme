@@ -235,9 +235,9 @@ class XnvmeDriver(object):
     def kernel_detach(cijoe):
         """Detach from kernel"""
 
-        # Rebinding devices and re-allocating hugepages invalidates a running primary,
-        # so tear it down first rather than leaving MprocPrimary with a stale handle.
-        MprocPrimary.stop(cijoe)
+        # Rebinding devices and re-allocating hugepages invalidates a running server,
+        # so tear it down first rather than leaving MprocServer with a stale handle.
+        MprocServer.stop(cijoe)
 
         # 64MB contigmem buffers avoid ENOMEM on FreeBSD's fragmented CI heap;
         # see toolbox/xnvme-driver.sh.
@@ -255,7 +255,7 @@ class XnvmeDriver(object):
     def kernel_attach(cijoe):
         """Attach to kernel"""
 
-        MprocPrimary.stop(cijoe)
+        MprocServer.stop(cijoe)
 
         err, _ = cijoe.run("xnvme-driver reset")
         if err:
@@ -307,7 +307,7 @@ def device(cijoe, request):
             be_opts = callspec.params.get("be_opts") if callspec else None
             if be_opts:
                 if be_opts.get("mproc"):
-                    MprocPrimary.start(cijoe, be_opts["be"], be_opts.get("label"))
+                    MprocServer.start(cijoe, be_opts["be"], be_opts.get("label"))
                 else:
                     pytest.skip(f"{be_opts.get('be')} does not support multi-process")
         XnvmeDriver.attach(cijoe, request.param)
@@ -349,16 +349,16 @@ def xnvme_parametrize(labels, opts):
     return decorator
 
 
-class MprocPrimary:
+class MprocServer:
     """
-    Manages the lifecycle of a homi primary daemon.
+    Manages the lifecycle of a homi server daemon.
 
-    A single primary holds every device carrying the labels of the backend-configuration
+    A single server holds every device carrying the labels of the backend-configuration
     under test, so it can serve whichever device a testcase asks for, as well as
     testcases enumerating and opening all of them. Labels vary per backend; the GPU
     backends use 'cuda'/'hip' where the host backend uses 'pcie'.
 
-    Tracks the backend and labels the running primary was started with (similar to
+    Tracks the backend and labels the running server was started with (similar to
     XnvmeDriver.IS_KERNEL_ATTACHED), so it is only restarted when those change.
     """
 
@@ -371,7 +371,7 @@ class MprocPrimary:
 
     @staticmethod
     def is_running(cijoe):
-        """Returns True when a homi primary is running"""
+        """Returns True when a homi server is running"""
 
         # Match on the process name; 'pgrep -f' also matched the shell that cijoe.run()
         # wraps the command in, so it never detected a failed start
@@ -381,9 +381,9 @@ class MprocPrimary:
 
     @staticmethod
     def is_ready(cijoe, be):
-        """Returns True when the homi primary has opened all of its devices"""
+        """Returns True when the homi server has opened all of its devices"""
 
-        err, _ = cijoe.run(f"grep -q '{MprocPrimary.READY_MARKER}' /tmp/mproc_{be}.out")
+        err, _ = cijoe.run(f"grep -q '{MprocServer.READY_MARKER}' /tmp/mproc_{be}.out")
 
         return not err
 
@@ -391,7 +391,7 @@ class MprocPrimary:
     def start(cijoe, be, labels=None):
         labels = labels if labels else ["pcie"]
 
-        if MprocPrimary.RUNNING == (be, tuple(labels)):
+        if MprocServer.RUNNING == (be, tuple(labels)):
             return
 
         uris = " ".join(d["uri"] for d in cijoe_config_get_all_devices(labels))
@@ -401,61 +401,61 @@ class MprocPrimary:
         XnvmeDriver.kernel_detach(cijoe)
 
         # SPDK backs its DMA memory with files in the hugetlbfs mount and never unlinks
-        # them, since secondaries must be able to map them. As xNVMe does not call
+        # them, since clients must be able to map them. As xNVMe does not call
         # spdk_env_fini(), they outlive the process and keep holding hugepages. Drop them
-        # so the primary starting here does so with a full pool.
+        # so the server starting here does so with a full pool.
         mount_point = cijoe.getconf("hugetlbfs.mount_point", "/mnt/huge")
         cijoe.run(f"rm -f {mount_point}/spdk*map_*")
 
         # 'stdbuf -oL' keeps the readiness marker from sitting in libc's fully-buffered
-        # stdout while the primary parks waiting for a signal
+        # stdout while the server parks waiting for a signal
         cijoe.run(
             f"stdbuf -oL nohup homi start {uris} --be {be} --shm_id {_shm_id} "
             f"> /tmp/mproc_{be}.out 2>&1 &"
         )
 
         # Opening a device takes about a second, so waiting a fixed duration either
-        # wastes time or lets testcases attach while the primary is still opening the
-        # rest, where they fail with the primary unresponsive on the DPDK mp channel.
-        for _ in range(MprocPrimary.TIMEOUT):
-            if MprocPrimary.is_ready(cijoe, be):
+        # wastes time or lets testcases attach while the server is still opening the
+        # rest, where they fail with the server unresponsive on the DPDK mp channel.
+        for _ in range(MprocServer.TIMEOUT):
+            if MprocServer.is_ready(cijoe, be):
                 break
-            if not MprocPrimary.is_running(cijoe):
+            if not MprocServer.is_running(cijoe):
                 cijoe.run(f"cat /tmp/mproc_{be}.out")
-                pytest.fail(f"homi primary for be({be}) is not running")
+                pytest.fail(f"homi server for be({be}) is not running")
             sleep(1)
         else:
             cijoe.run(f"cat /tmp/mproc_{be}.out")
-            pytest.fail(f"homi primary for be({be}) did not become ready")
+            pytest.fail(f"homi server for be({be}) did not become ready")
 
-        MprocPrimary.RUNNING = (be, tuple(labels))
-        MprocPrimary.CIJOE = cijoe
+        MprocServer.RUNNING = (be, tuple(labels))
+        MprocServer.CIJOE = cijoe
 
     @staticmethod
     def stop(cijoe):
-        if MprocPrimary.RUNNING is None:
+        if MprocServer.RUNNING is None:
             return
 
-        MprocPrimary.RUNNING = None
-        MprocPrimary.CIJOE = None
+        MprocServer.RUNNING = None
+        MprocServer.CIJOE = None
 
         cijoe.run("pkill -x homi || true")
 
-        # Closing a controller is not instant, and a primary still holding the device
+        # Closing a controller is not instant, and a server still holding the device
         # keeps its successor from claiming it, so wait for it to actually be gone
-        for _ in range(MprocPrimary.TIMEOUT):
-            if not MprocPrimary.is_running(cijoe):
+        for _ in range(MprocServer.TIMEOUT):
+            if not MprocServer.is_running(cijoe):
                 break
             sleep(1)
         else:
-            pytest.fail("homi primary did not terminate")
+            pytest.fail("homi server did not terminate")
 
 
 @pytest.fixture(scope="session", autouse=True)
 def mproc_teardown():
     yield
-    if MprocPrimary.CIJOE is not None:
-        MprocPrimary.stop(MprocPrimary.CIJOE)
+    if MprocServer.CIJOE is not None:
+        MprocServer.stop(MprocServer.CIJOE)
 
 
 # Sort order for pytest_collection_modifyitems. `be` first because backend

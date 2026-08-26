@@ -17,7 +17,7 @@
 
 // The GPU backends allocate a device heap for data buffers, which HOMI never allocates
 // from; only the control structures it does need live on the host heap. Claiming the
-// backend default would take a GiB of VRAM away from the secondaries. 2MiB is the dma-buf
+// backend default would take a GiB of VRAM away from the clients. 2MiB is the dma-buf
 // granularity that AMD requires, so it is the smallest heap both GPU backends accept.
 #define HOMI_DEVICE_HEAP_SIZE (2ULL * 1024 * 1024)
 
@@ -122,7 +122,7 @@ sub_start(struct xnvme_cli *cli)
 
 	// The heap is per-process rather than per-device, so it has to cover every device
 	// held. Claiming the backend default would leave nothing in the hugepage pool for
-	// the secondaries HOMI exists to serve.
+	// the clients HOMI exists to serve.
 	opts.host_heap_size = cli->args.host_heap_size ? cli->args.host_heap_size
 						       : HOMI_HEAP_SIZE_PER_DEV * ndevs;
 	opts.device_heap_size =
@@ -178,7 +178,7 @@ static struct xnvme_cli_sub g_subs[] = {
 static struct xnvme_cli g_cli = {
 	.title = "homi - Host-Orchestrated Multi-process I/O",
 	.descr_short = "Hold NVMe devices open for multi-process sharing",
-	.descr_long = "Hold NVMe devices open for multi-process sharing. Secondary "
+	.descr_long = "Hold NVMe devices open for multi-process sharing. Client "
 		      "processes attach to the same controllers by passing the same --shm_id.",
 	.subs = g_subs,
 	.nsubs = sizeof g_subs / sizeof(*g_subs),
