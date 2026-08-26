@@ -57,7 +57,7 @@ xnvme_be_upcie_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf
 
 	nvme_qpair_sqdb_update(&ctrl->aq);
 
-	err = nvme_qpair_reap_cpl(&ctrl->aq, ctrl->timeout_ms, cpl);
+	err = nvme_qpair_reap_cpl(&ctrl->aq, ctrl->base.admin_timeout_ms, cpl);
 	if (err) {
 		XNVME_DEBUG("FAILED: nvme_qpair_reap_cpl(); err(%d)", err);
 		goto exit;

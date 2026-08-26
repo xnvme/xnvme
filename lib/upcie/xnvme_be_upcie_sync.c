@@ -81,7 +81,7 @@ xnvme_be_upcie_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 		}
 	}
 
-	err = _submit_sync(qp, cmd, ctrl->timeout_ms, cpl);
+	err = _submit_sync(qp, cmd, ctrl->base.timeout_ms, cpl);
 	nvme_request_free(qp->rpool, req->cid);
 
 	if (err || xnvme_cmd_ctx_cpl_status(ctx)) {
@@ -144,7 +144,7 @@ xnvme_be_upcie_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_
 		}
 	}
 
-	err = _submit_sync(qp, cmd, ctrl->timeout_ms, cpl);
+	err = _submit_sync(qp, cmd, ctrl->base.timeout_ms, cpl);
 	nvme_request_free(qp->rpool, req->cid);
 
 	if (err || xnvme_cmd_ctx_cpl_status(ctx)) {

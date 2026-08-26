@@ -9,7 +9,7 @@
  * NVMe controllers.
  * 
  * @file nvme_controller_cuda.h
- * @version 0.8.0
+ * @version 0.10.0
  */
 
 
@@ -52,7 +52,7 @@ nvme_controller_cuda_delete_io_qpair(struct nvme_controller *ctrlr,
 		cmd.opc = 0x0; ///< Delete I/O Submission Queue
 		cmd.cdw10 = _qpair.qid;
 
-		err = nvme_qpair_submit_sync(&ctrlr->aq, &cmd, ctrlr->timeout_ms, &cpl);
+		err = nvme_qpair_submit_sync(&ctrlr->aq, &cmd, ctrlr->base.admin_timeout_ms, &cpl);
 		if (err) {
 			UPCIE_DEBUG("FAILED: nvme_qpair_submit_sync(Delete SQ); err(%d)", err);
 		}
@@ -65,7 +65,7 @@ nvme_controller_cuda_delete_io_qpair(struct nvme_controller *ctrlr,
 		cmd.opc = 0x4; ///< Delete I/O completion Queue
 		cmd.cdw10 = _qpair.qid;
 
-		err = nvme_qpair_submit_sync(&ctrlr->aq, &cmd, ctrlr->timeout_ms, &cpl);
+		err = nvme_qpair_submit_sync(&ctrlr->aq, &cmd, ctrlr->base.admin_timeout_ms, &cpl);
 		if (err) {
 			UPCIE_DEBUG("FAILED: nvme_qpair_submit_sync(Delete CQ); err(%d)", err);
 		}
@@ -141,7 +141,7 @@ nvme_controller_cuda_create_io_qpair(struct nvme_controller *ctrlr,
 		_qpair.head = 0;
 		_qpair.depth = depth;
 		_qpair.phase = 1;
-		_qpair.timeout_ms = ctrlr->timeout_ms;
+		_qpair.timeout_ms = ctrlr->base.timeout_ms;
 
 		{
 			int clock_rate_khz = 0;
@@ -218,7 +218,7 @@ nvme_controller_cuda_create_io_qpair(struct nvme_controller *ctrlr,
 		cmd.cdw10 = ((depth - 1) << 16) | qid;
 		cmd.cdw11 = 0x1; ///< Physically contigous
 
-		err = nvme_qpair_submit_sync(&ctrlr->aq, &cmd, ctrlr->timeout_ms, &cpl);
+		err = nvme_qpair_submit_sync(&ctrlr->aq, &cmd, ctrlr->base.admin_timeout_ms, &cpl);
 		if (err) {
 			UPCIE_DEBUG("FAILED: nvme_qpair_submit_sync(Create CQ); err(%d)", err);
 			goto free_cq;
@@ -234,7 +234,7 @@ nvme_controller_cuda_create_io_qpair(struct nvme_controller *ctrlr,
 		cmd.cdw10 = ((depth - 1) << 16) | qid;
 		cmd.cdw11 = (qid << 16) | 0x1; ///< CQID and Physically contigous
 
-		err = nvme_qpair_submit_sync(&ctrlr->aq, &cmd, ctrlr->timeout_ms, &cpl);
+		err = nvme_qpair_submit_sync(&ctrlr->aq, &cmd, ctrlr->base.admin_timeout_ms, &cpl);
 		if (err) {
 			UPCIE_DEBUG("FAILED: nvme_qpair_submit_sync(Create SQ); err(%d)", err);
 			goto delete_cq;

@@ -34,7 +34,7 @@ struct xnvme_queue_upcie {
 	struct xnvme_queue_base base;
 	struct nvme_qpair qpair;
 	struct xnvme_be_upcie_qpair_offsets offsets;
-	uint8_t _rvds[144];
+	uint8_t _rvds[152];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_upcie) == XNVME_BE_QUEUE_STATE_NBYTES,
 		    "Incorrect size")

@@ -14,7 +14,7 @@
  * lives in <upcie/experimental/dmabuf_import.h>.
  *
  * @file dmabuf.h
- * @version 0.8.0
+ * @version 0.10.0
  */
 
 struct dmabuf_page {
@@ -24,6 +24,7 @@ struct dmabuf_page {
 
 struct dmabuf {
 	int fd;				///< dma-buf file descriptor
+	int import_fd;			///< Owns the import; see dmabuf_import_attach()
 	size_t npages;			///< Number of pages in the dma-buf
 	struct dmabuf_page *pages;	///< Array of pages in the dma-buf
 };

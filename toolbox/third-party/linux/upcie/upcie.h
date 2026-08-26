@@ -31,7 +31,7 @@
  *   #include <upcie/upcie.h>
  *
  * @file upcie.h
- * @version 0.8.0
+ * @version 0.10.0
  */
 #ifndef UPCIE_H
 #define UPCIE_H
@@ -58,6 +58,7 @@ extern "C" {
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
@@ -70,6 +71,7 @@ extern "C" {
 
 // uPCIe libraries
 #include <upcie/debug.h>
+#include <upcie/upcie_versions.h>
 #include <upcie/barriers.h>
 #include <upcie/bitfield.h>
 #include <upcie/dmabuf.h>
@@ -107,8 +109,8 @@ extern "C" {
 #include <upcie/nvme/nvme_qid.h>
 #include <upcie/nvme/nvme_qpair.h>
 #include <upcie/nvme/nvme_controller.h>
+#include <upcie/nvme/nvme_cplane.h>
 #include <upcie/nvme/nvme_controller_vfio_pci.h>
-#include <upcie/nvme/nvme_controller_vfio.h>
 #include <upcie/nvme/nvme_controller_dmamem_vfio.h>
 #include <upcie/nvme/nvme_controller_dmamem_uio.h>
 #include <upcie/nvme/nvme_controller_dmamem_type1.h>

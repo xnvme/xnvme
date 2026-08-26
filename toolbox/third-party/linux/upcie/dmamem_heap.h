@@ -13,8 +13,11 @@
  * Convenience accessors return the CPU VA of an allocation when
  * available (memfd backing) and always return the IOVA (all backings).
  *
+ * Not thread-safe: a caller sharing the heap between threads serialises alloc
+ * and free.
+ *
  * @file dmamem_heap.h
- * @version 0.8.0
+ * @version 0.10.0
  */
 
 struct dmamem_heap_block {
