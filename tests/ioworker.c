@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <libxnvme.h>
+#include <string.h>
 
 #define QDEPTH_MAX 16
 #define QDEPTH_DEF 4
@@ -68,6 +69,7 @@ struct iowork {
 
 	int vectored; ///< Whether or not the vectored I/O path is used
 	int vec_cnt;
+	int fua; ///< Set the FUA bit on writes
 
 	uint64_t nio; ///< Number of I/Os to complete (count-from-1)
 
@@ -239,6 +241,7 @@ on_completion(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 	ctx->cmd.common.opcode = work->opc;
 	ctx->cmd.nvm.nlb = work->io.naddr - 1;
 	ctx->cmd.nvm.slba += work->nworkers * work->io.naddr;
+	ctx->cmd.nvm.fua = work->fua && (work->opc == XNVME_SPEC_NVM_OPC_WRITE);
 
 	_submit(work, worker, ctx);
 
@@ -388,6 +391,7 @@ start_workers(struct iowork *work)
 		ctx->cmd.common.opcode = work->opc;
 		ctx->cmd.nvm.nlb = work->io.naddr - 1;
 		ctx->cmd.nvm.slba = work->range.slba + i * work->io.naddr;
+		ctx->cmd.nvm.fua = work->fua && (work->opc == XNVME_SPEC_NVM_OPC_WRITE);
 		ctx->async.cb_arg = worker;
 		err = _submit(work, worker, ctx);
 		if (err) {
@@ -395,6 +399,87 @@ start_workers(struct iowork *work)
 		}
 	}
 	return 0;
+}
+
+struct flush_state {
+	struct iowork *work;
+	int done;
+	int err;
+};
+
+static void
+on_flush_completion(struct xnvme_cmd_ctx *ctx, void *cb_arg)
+{
+	struct flush_state *state = cb_arg;
+
+	state->err = xnvme_cmd_ctx_cpl_status(ctx) ? -EIO : 0;
+
+	// Restore the queue-wide callback; xnvme_queue_set_cb() stamps it onto
+	// every pooled context only once, so a per-context override would
+	// otherwise survive the put and hijack a later data-I/O
+	xnvme_cmd_ctx_set_cb(ctx, on_completion, state->work);
+	xnvme_queue_put_cmd_ctx(ctx->async.queue, ctx);
+
+	state->done = 1;
+}
+
+static int
+iowork_flush(struct iowork *work)
+{
+	struct flush_state state = {.work = work, .done = 0, .err = 0};
+	struct xnvme_cmd_ctx *ctx;
+	int err;
+
+	ctx = xnvme_queue_get_cmd_ctx(work->queue);
+	if (!ctx) {
+		return -errno;
+	}
+
+	memset(&ctx->cmd, 0x0, sizeof(ctx->cmd));
+	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_FLUSH;
+	ctx->cmd.common.nsid = work->nsid;
+	xnvme_cmd_ctx_set_cb(ctx, on_flush_completion, &state);
+
+retry:
+	// Submit through the vectored path when the data-phases do; the FLUSH
+	// dispatch differs between cmd_io and cmd_iov, so both need exercising
+	if (work->vectored) {
+		err = xnvme_cmd_pass_iov(ctx, NULL, 0, 0, NULL, 0);
+	} else {
+		err = xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
+	}
+	switch (err) {
+	case 0:
+		break;
+
+	case -EBUSY:
+	case -EAGAIN:
+		err = xnvme_queue_poke(work->queue, 0);
+		if (err < 0) {
+			goto failed;
+		}
+		goto retry;
+
+	default:
+		goto failed;
+	}
+
+	while (!state.done) {
+		err = xnvme_queue_poke(work->queue, 0);
+		if (err < 0) {
+			// The command was submitted; the context is in flight and
+			// cannot be returned to the pool
+			return err;
+		}
+	}
+
+	return state.err;
+
+failed:
+	// Not submitted; restore the queue-wide callback and return the context
+	xnvme_cmd_ctx_set_cb(ctx, on_completion, work);
+	xnvme_queue_put_cmd_ctx(work->queue, ctx);
+	return err;
 }
 
 static int
@@ -421,7 +506,7 @@ final(struct iowork work, int err)
 }
 
 static int
-test_verify(struct xnvme_cli *cli)
+_verify(struct xnvme_cli *cli, bool flush)
 {
 	struct iowork work;
 	int err;
@@ -431,6 +516,10 @@ test_verify(struct xnvme_cli *cli)
 		XNVME_DEBUG("FAILED: iowork_from_cli(), err: %d", err);
 		return err;
 	}
+
+	// The flush-variant also sets the FUA bit on its writes; both are
+	// durability paths, and neither has coverage elsewhere
+	work.fua = flush;
 
 	iowork_pp(&work);
 	xnvme_dev_pr(work.dev, XNVME_PR_DEF);
@@ -466,9 +555,30 @@ test_verify(struct xnvme_cli *cli)
 			err = EIO;
 			return final(work, err);
 		}
+
+		// Flush between the write phase and the read phase
+		if (flush && (i == 0)) {
+			err = iowork_flush(&work);
+			if (err) {
+				xnvme_cli_perr("iowork_flush()", err);
+				return final(work, err);
+			}
+		}
 	}
 
 	return final(work, err);
+}
+
+static int
+test_verify(struct xnvme_cli *cli)
+{
+	return _verify(cli, false);
+}
+
+static int
+test_verify_flush(struct xnvme_cli *cli)
+{
+	return _verify(cli, true);
 }
 
 static int
@@ -520,6 +630,22 @@ static struct xnvme_cli_sub g_subs[] = {
 		"Write, then read and compare",
 		"Write, then read and compare",
 		test_verify,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_VEC_CNT, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_NLB, XNVME_CLI_LOPT},
+
+			XNVME_CLI_ASYNC_OPTS,
+		},
+	},
+	{
+		"verify-flush",
+		"Write, flush, then read and compare",
+		"Write, flush, then read and compare",
+		test_verify_flush,
 		{
 			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},

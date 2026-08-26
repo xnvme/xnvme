@@ -39,6 +39,9 @@ tests = {
   ],
   'ioworker.c': [
     ['verify', ['verify', '1GB']],
+    ['verify_flush', ['verify-flush', '1GB']],
+    ['verify_flush emu', ['verify-flush', '1GB', '--async', 'emu']],
+    ['verify_flush emu vec-cnt=4', ['verify-flush', '1GB', '--async', 'emu', '--vec-cnt', '4']],
     ['verify_sync', ['verify-sync', '1GB']],
     ['verify vec-cnt=4', ['verify', '1GB', '--vec-cnt', '4']],
     ['verify_sync vec-cnt=4', ['verify-sync', '1GB', '--vec-cnt', '4']],
