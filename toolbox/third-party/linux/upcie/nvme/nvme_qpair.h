@@ -15,17 +15,19 @@
  *
  * Key functions include:
  *
- * nvme_qpair_init():      Initializes a queue pair and allocates DMA memory for SQ/CQ.
- * nvme_qpair_term():      Frees resources associated with a queue pair.
- * nvme_qpair_reap_cpl():  Polls the CQ for a completion, updates head/phase, and rings CQ
- * doorbell. nvme_qpair_sqdb_ring(): Notifies the controller by ringing the SQ doorbell.
+ * nvme_qpair_reap_cpl():    Polls the CQ for a completion, updates head/phase, and rings the
+ *                           CQ doorbell.
+ * nvme_qpair_sqdb_update(): Notifies the controller by ringing the SQ doorbell.
  * nvme_qpair_enqueue():     Writes the given command into the SQ
  * nvme_qpair_submit_sync(): Submits a command and waits synchronously for its completion.
+ *
+ * The memory behind a queue pair comes from a dmamem_heap; see nvme_qpair_dmamem_init() and
+ * nvme_qpair_dmamem_term() in nvme_controller_dmamem_vfio.h.
  *
  * See also: nvme_qid.h for queue ID (qid) management.
  *
  * @file nvme_qpair.h
- * @version 0.8.0
+ * @version 0.10.0
  */
 
 struct nvme_qpair {
@@ -41,76 +43,7 @@ struct nvme_qpair {
 	uint8_t phase;
 	uint8_t _rsdv[3];
 	struct nvme_request_pool *rpool; ///< Command Identifier tracking and user-callback
-	struct hostmem_heap *heap;       ///< For allocation / free of DMA-capable SQ/CQ entries
 };
-
-static inline void
-nvme_qpair_term(struct nvme_qpair *qp)
-{
-	nvme_request_pool_term_prps(qp->rpool, qp->heap);
-	
-	free(qp->rpool);
-	hostmem_dma_free(qp->heap, qp->sq);
-	hostmem_dma_free(qp->heap, qp->cq);
-}
-
-/**
- * Initialize a queue-pair on the given controller
- */
-static inline int
-nvme_qpair_init(struct nvme_qpair *qp, uint32_t qid, uint16_t depth, uint8_t *bar0,
-		struct hostmem_heap *heap)
-{
-	int dstrd = nvme_reg_cap_get_dstrd(nvme_mmio_cap_read(bar0));
-	size_t nbytes = 1024 * 64;
-	int err;
-
-	qp->heap = heap;
-	qp->sqdb = bar0 + 0x1000 + ((2 * qid) << (2 + dstrd));
-	qp->cqdb = bar0 + 0x1000 + ((2 * qid + 1) << (2 + dstrd));
-	qp->qid = qid;
-	qp->tail = 0;
-	qp->tail_last_written = UINT16_MAX;
-	qp->head = 0;
-	qp->depth = depth;
-	qp->phase = 1;
-
-	qp->sq = hostmem_dma_alloc_array(qp->heap, 1, nbytes);
-	if (!qp->sq) {
-		UPCIE_DEBUG("FAILED: hostmem_dma_alloc_array(sq); errno(%d)", errno);
-		return -errno;
-	}
-	memset(qp->sq, 0, nbytes);
-
-	qp->cq = hostmem_dma_alloc_array(qp->heap, 1, nbytes);
-	if (!qp->cq) {
-		UPCIE_DEBUG("FAILED: hostmem_dma_alloc_array(cq); errno(%d)", errno);
-		hostmem_dma_free(qp->heap, qp->sq);
-		return -errno;
-	}
-	memset(qp->cq, 0, nbytes);
-
-	qp->rpool = calloc(1, sizeof(*qp->rpool));
-	if (!qp->rpool) {
-		UPCIE_DEBUG("FAILED: calloc(rpool); errno(%d)", errno);
-		hostmem_dma_free(qp->heap, qp->sq);
-		hostmem_dma_free(qp->heap, qp->cq);
-		return -errno;
-	}
-	nvme_request_pool_init(qp->rpool);
-
-	err = nvme_request_pool_init_prps(qp->rpool, heap);
-	if (err) {
-		hostmem_dma_free(qp->heap, qp->sq);
-		hostmem_dma_free(qp->heap, qp->cq);
-		free(qp->rpool);
-
-		UPCIE_DEBUG("FAILED: nvme_request_pool_init_prps; err(%d)", err);
-		return -errno;
-	}
-
-	return 0;
-}
 
 /**
  * Reaps at most a single completion and informs the controller via qp->cqdb
@@ -221,116 +154,6 @@ nvme_qpair_submit_sync(struct nvme_qpair *qp, struct nvme_command *cmd, int time
 		return -errno;
 	}
 	cmd->cid = req->cid;
-
-	err = nvme_qpair_enqueue(qp, cmd);
-	if (err) {
-		return -err;
-	}
-
-	nvme_qpair_sqdb_update(qp);
-
-	err = nvme_qpair_reap_cpl(qp, timeout_ms, cpl);
-	if (err) {
-		return -err;
-	}
-
-	nvme_request_free(qp->rpool, req->cid);
-
-	if (cpl->status & 0x1FE) {
-		err = -EIO;
-	}
-
-	return err;
-}
-
-/**
- * Submits a command with a contiguous PRP payload, waits for completion, and populates `cpl`.
- *
- * This is intended for synchronous I/O or Admin commands using a physically contiguous buffer.
- * The function prepares the PRP entries automatically using the provided `heap` and `dbuf`,
- * sets up the command, submits it on the given qpair, and waits for completion.
- *
- * @param qp          Pointer to the submission queue pair.
- * @param heap        Pointer to the host memory heap used for resolving physical addresses.
- * @param dbuf        Pointer to the data buffer to be described via PRPs.
- * @param dbuf_nbytes Size of the data buffer in bytes.
- * @param cmd         Pointer to the command to submit; `cid` will be assigned and PRPs set.
- * @param timeout_ms  Timeout in milliseconds to wait for command completion.
- * @param cpl         Pointer to a completion structure to receive the result.
- *
- * @return On success 0 is returned. On error, negative errno is returned to indicate the error.
- */
-static inline int
-nvme_qpair_submit_sync_contig_prps(struct nvme_qpair *qp, struct hostmem_heap *heap, void *dbuf,
-				   size_t dbuf_nbytes, struct nvme_command *cmd, int timeout_ms,
-				   struct nvme_completion *cpl)
-{
-	struct nvme_request *req;
-	int err;
-
-	req = nvme_request_alloc(qp->rpool);
-	if (!req) {
-		UPCIE_DEBUG("FAILED: nvme_request_alloc(); errno(%d)", errno);
-		return -errno;
-	}
-	cmd->cid = req->cid;
-
-	nvme_request_prep_command_prps_contig(req, heap, dbuf, dbuf_nbytes, cmd);
-
-	err = nvme_qpair_enqueue(qp, cmd);
-	if (err) {
-		return -err;
-	}
-
-	nvme_qpair_sqdb_update(qp);
-
-	err = nvme_qpair_reap_cpl(qp, timeout_ms, cpl);
-	if (err) {
-		return -err;
-	}
-
-	nvme_request_free(qp->rpool, req->cid);
-
-	if (cpl->status & 0x1FE) {
-		err = -EIO;
-	}
-
-	return err;
-}
-
-/**
- * Submits a command with an iovec PRP payload, waits for completion, and populates `cpl`.
- *
- * This is intended for synchronous I/O commands using scatter-gather buffers.
- * The function prepares the PRP entries automatically using the provided `heap` and `dvec`,
- * sets up the command, submits it on the given qpair, and waits for completion.
- *
- * @param qp          Pointer to the submission queue pair.
- * @param heap        Pointer to the host memory heap used for resolving physical addresses.
- * @param dvec        Array of iovec structures describing the data segments.
- * @param dvec_cnt    Number of elements in the dvec array.
- * @param cmd         Pointer to the command to submit; `cid` will be assigned and PRPs set.
- * @param timeout_ms  Timeout in milliseconds to wait for command completion.
- * @param cpl         Pointer to a completion structure to receive the result.
- *
- * @return On success 0 is returned. On error, negative errno is returned to indicate the error.
- */
-static inline int
-nvme_qpair_submit_sync_iov_prps(struct nvme_qpair *qp, struct hostmem_heap *heap,
-				struct iovec *dvec, size_t dvec_cnt, struct nvme_command *cmd,
-				int timeout_ms, struct nvme_completion *cpl)
-{
-	struct nvme_request *req;
-	int err;
-
-	req = nvme_request_alloc(qp->rpool);
-	if (!req) {
-		UPCIE_DEBUG("FAILED: nvme_request_alloc(); errno(%d)", errno);
-		return -errno;
-	}
-	cmd->cid = req->cid;
-
-	nvme_request_prep_command_prps_iov(req, heap, dvec, dvec_cnt, cmd);
 
 	err = nvme_qpair_enqueue(qp, cmd);
 	if (err) {
