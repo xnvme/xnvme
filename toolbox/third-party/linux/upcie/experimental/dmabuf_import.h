@@ -14,7 +14,7 @@
  * ==========================================================================
  *
  * @file dmabuf_import.h
- * @version 0.8.0
+ * @version 0.10.0
  */
 #ifndef UPCIE_EXPERIMENTAL_DMABUF_IMPORT_H
 #define UPCIE_EXPERIMENTAL_DMABUF_IMPORT_H
@@ -31,7 +31,7 @@
 #  endif
 #endif
 
-#ifdef DMABUF_IMPORT_ATTACH
+#ifdef DMABUF_IMPORT_ATTACH_BDF
 /* The module's UAPI is available, so the real import path is compiled in. */
 #define UPCIE_HAVE_DMABUF_IMPORT 1
 /**
@@ -40,14 +40,17 @@
  * Populates the given dma-buf structure with information about the dma-buf.
  */
 static inline int
-dmabuf_import_attach(int dmabuf_fd, struct dmabuf *dmabuf)
+dmabuf_import_attach_as(int dmabuf_fd, const char *bdf, struct dmabuf *dmabuf)
 {
-	struct dmabuf_import_attach attach;
+	struct dmabuf_import_attach_bdf attach;
 	struct dmabuf_import_get_map *map = NULL;
 	int import_fd, err;
 	size_t map_size, pages_size;
 
-	import_fd = open(DMABUF_IMPORT_DEVPATH, O_RDWR);
+	/* O_CLOEXEC: the descriptor is held for the import's life now, and an
+	 * exec'd child inheriting it would keep the memory pinned past the
+	 * caller's exit. */
+	import_fd = open(DMABUF_IMPORT_DEVPATH, O_RDWR | O_CLOEXEC);
 	if (import_fd < 0) {
 		err = -errno;
 		UPCIE_DEBUG("FAILED: open(%s), errno: %d", DMABUF_IMPORT_DEVPATH, err);
@@ -56,11 +59,17 @@ dmabuf_import_attach(int dmabuf_fd, struct dmabuf *dmabuf)
 
 	memset(&attach, 0, sizeof(attach));
 	attach.fd = dmabuf_fd;
+	if (bdf) {
+		snprintf(attach.bdf, sizeof(attach.bdf), "%s", bdf);
+	}
 
-	err = ioctl(import_fd, DMABUF_IMPORT_ATTACH, &attach);
+	/* The bdf form, with an empty bdf where the caller named no device: it
+	 * is the one whose imports belong to 'import_fd' below, and so the one
+	 * the kernel gives back when this process goes away. */
+	err = ioctl(import_fd, DMABUF_IMPORT_ATTACH_BDF, &attach);
 	if (err) {
 		err = -errno;
-		UPCIE_DEBUG("FAILED: ioctl(DMABUF_IMPORT_ATTACH), errno: %d", err);
+		UPCIE_DEBUG("FAILED: ioctl(DMABUF_IMPORT_ATTACH_BDF), errno: %d", err);
 		goto exit;
 	}
 
@@ -99,10 +108,27 @@ dmabuf_import_attach(int dmabuf_fd, struct dmabuf *dmabuf)
 
 	memcpy(dmabuf->pages, map->dma_arr, pages_size);
 
+	/* Kept open, not closed here: the import belongs to it, so the kernel
+	 * gives the import back when this process exits however it exits.
+	 * Closed by dmabuf_import_detach(). */
+	dmabuf->import_fd = import_fd;
+	free(map);
+
+	return 0;
+
 exit:
 	free(map);
 	close(import_fd);
 	return err;
+}
+
+/**
+ * Attach to the given dma-buf as the misc device
+ */
+static inline int
+dmabuf_import_attach(int dmabuf_fd, struct dmabuf *dmabuf)
+{
+	return dmabuf_import_attach_as(dmabuf_fd, NULL, dmabuf);
 }
 
 /**
@@ -119,12 +145,9 @@ dmabuf_import_detach(struct dmabuf *dmabuf)
 		return 0;
 	}
 
-	import_fd = open(DMABUF_IMPORT_DEVPATH, O_RDWR);
-	if (import_fd < 0) {
-		err = -errno;
-		UPCIE_DEBUG("FAILED: open(%s), errno: %d", DMABUF_IMPORT_DEVPATH, err);
-		return err;
-	}
+	/* The one the import was made on: another open of the device owns
+	 * nothing and would have nothing to give back. */
+	import_fd = dmabuf->import_fd;
 
 	err = ioctl(import_fd, DMABUF_IMPORT_DETACH, &dmabuf->fd);
 	if (err) {
@@ -141,9 +164,11 @@ dmabuf_import_detach(struct dmabuf *dmabuf)
 	dmabuf->fd = -1;
 
 	close(import_fd);
+	dmabuf->import_fd = -1;
+
 	return err;
 }
-#else /* !DMABUF_IMPORT_ATTACH: the module UAPI is unavailable, stub it out */
+#else /* !DMABUF_IMPORT_ATTACH_BDF: the module UAPI is too old or absent */
 /* The module's UAPI was not found, so the calls below fail with -ENOTSUP. */
 #define UPCIE_HAVE_DMABUF_IMPORT 0
 
@@ -151,6 +176,14 @@ dmabuf_import_detach(struct dmabuf *dmabuf)
  * Attach stub: the dmabuf_import UAPI (<linux/dmabuf_import.h>) is not
  * available. Install the dmabuf-import DKMS package to enable importing.
  */
+static inline int
+dmabuf_import_attach_as(int UPCIE_UNUSED(dmabuf_fd), const char *UPCIE_UNUSED(bdf),
+			struct dmabuf *UPCIE_UNUSED(dmabuf))
+{
+	UPCIE_DEBUG("FAILED: dmabuf_import unavailable; install dmabuf-import-dkms");
+	return -ENOTSUP;
+}
+
 static inline int
 dmabuf_import_attach(int UPCIE_UNUSED(dmabuf_fd), struct dmabuf *UPCIE_UNUSED(dmabuf))
 {
@@ -164,6 +197,6 @@ dmabuf_import_detach(struct dmabuf *UPCIE_UNUSED(dmabuf))
 	UPCIE_DEBUG("FAILED: dmabuf_import unavailable; install dmabuf-import-dkms");
 	return -ENOTSUP;
 }
-#endif /* DMABUF_IMPORT_ATTACH */
+#endif /* DMABUF_IMPORT_ATTACH_BDF */
 
 #endif /* UPCIE_EXPERIMENTAL_DMABUF_IMPORT_H */
