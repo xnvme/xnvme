@@ -58,7 +58,7 @@
  * also gains access to those physical addresses—without needing CAP_SYS_ADMIN.
  *
  * @file hostmem_hugepage.h
- * @version 0.7.0
+ * @version 0.9.0
  */
 
 struct hostmem_hugepage {
@@ -248,34 +248,40 @@ hostmem_hugepage_alloc(size_t size, struct hostmem_hugepage *hugepage,
 }
 
 /**
- * Import (re-map) an existing hugepage shared by another process.
+ * Import (re-map) an existing hugepage by descriptor
  *
- * This function uses fstat() to determine the size of the shared memory region.
+ * Uses fstat() to determine the size of the region. The descriptor is dup'ed,
+ * so the caller keeps ownership of the one it passed.
  *
- * @param path Path to the memfd or hugetlbfs file (e.g. /proc/<pid>/fd/<fd>)
+ * @param fd Descriptor backing the region, a memfd or a hugetlbfs file
  * @param hugepage Pre-allocated pointer to the descriptor to fill in
+ * @param config Pointer to the hugepage configuration
+ * @param need_phys Whether to read the physical base from pagemap, which wants
+ * CAP_SYS_ADMIN
  *
  * @return 0 on success, negative errno on error
  */
 static inline int
-hostmem_hugepage_import(const char *path, struct hostmem_hugepage *hugepage,
-			struct hostmem_config *config)
+hostmem_hugepage_import_fd(int fd, struct hostmem_hugepage *hugepage,
+			   struct hostmem_config *config, int need_phys)
 {
 	struct stat st;
 	int err;
 
-	if (!path || !hugepage) {
+	if ((fd < 0) || !hugepage) {
 		return -EINVAL;
 	}
 
-	snprintf(hugepage->path, sizeof(hugepage->path), "%s", path);
 	hugepage->config = config;
 
-	hugepage->fd = open(hugepage->path, O_RDWR);
+	/* The descriptor is the caller's; take a copy so that closing one does
+	 * not surprise the other. */
+	hugepage->fd = dup(fd);
 	if (hugepage->fd < 0) {
-		UPCIE_DEBUG("FAILED: open(hugepage->path); errno(%d)", errno);
+		UPCIE_DEBUG("FAILED: dup(fd); errno(%d)", errno);
 		return -errno;
 	}
+	snprintf(hugepage->path, sizeof(hugepage->path), "/proc/%d/fd/%d", getpid(), hugepage->fd);
 
 	if (fstat(hugepage->fd, &st) != 0) {
 		UPCIE_DEBUG("FAILED: fstat(hugepage_import_path); errno(%d)", errno);
@@ -311,6 +317,13 @@ hostmem_hugepage_import(const char *path, struct hostmem_hugepage *hugepage,
 		}
 	}
 
+	/* Reading pagemap wants CAP_SYS_ADMIN. A caller that has the physical
+	 * addresses from elsewhere, such as a heap header written by whoever
+	 * allocated the memory, does not need them read again here. */
+	if (!need_phys) {
+		return 0;
+	}
+
 	err = hostmem_pagemap_virt_to_phys(hugepage->virt, &hugepage->phys);
 	if (err) {
 		UPCIE_DEBUG("FAILED: hostmem_pagemap_virt_to_phys(); err(%d)", err);
@@ -320,4 +333,38 @@ hostmem_hugepage_import(const char *path, struct hostmem_hugepage *hugepage,
 	}
 
 	return 0;
+}
+
+/**
+ * Import a hugepage-allocation by path
+ *
+ * @param path Path to the memfd or hugetlbfs file (e.g. /proc/<pid>/fd/<fd>)
+ * @param hugepage Pre-allocated pointer to the descriptor to fill in
+ * @param config Pointer to the hugepage configuration
+ *
+ * @return 0 on success, negative errno on error
+ */
+static inline int
+hostmem_hugepage_import(const char *path, struct hostmem_hugepage *hugepage,
+			struct hostmem_config *config)
+{
+	int fd, err;
+
+	if (!path || !hugepage) {
+		return -EINVAL;
+	}
+
+	fd = open(path, O_RDWR);
+	if (fd < 0) {
+		UPCIE_DEBUG("FAILED: open(path); errno(%d)", errno);
+		return -errno;
+	}
+
+	err = hostmem_hugepage_import_fd(fd, hugepage, config, 1);
+	close(fd);
+	if (!err) {
+		snprintf(hugepage->path, sizeof(hugepage->path), "%s", path);
+	}
+
+	return err;
 }

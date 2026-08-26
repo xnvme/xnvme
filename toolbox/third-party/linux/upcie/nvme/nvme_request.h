@@ -24,7 +24,7 @@
  * The stack implementation has an upper-bound of NVME_REQUEST_POOL_LEN elements.
  *
  * @file nvme_request.h
- * @version 0.7.0
+ * @version 0.9.0
  */
 
 #define NVME_REQUEST_POOL_LEN 1024
@@ -66,6 +66,39 @@ static inline void
 nvme_request_pool_term_prps(struct nvme_request_pool *pool, struct hostmem_heap *heap)
 {
 	hostmem_dma_free(heap, pool->prps);
+}
+
+/**
+ * Point a pool at PRP scratch somebody else allocated
+ *
+ * A client of a served queue cannot allocate from the heap it was handed,
+ * since the allocator is the server's. The server allocates the scratch with the
+ * queue and names it as an offset, and this attaches the pool to it.
+ *
+ * @param pool Pool to attach, already through nvme_request_pool_init()
+ * @param heap The heap the offset refers into
+ * @param offset Offset of NVME_REQUEST_POOL_LEN pages of scratch
+ *
+ * @return 0 on success, negative errno on error
+ */
+static inline int
+nvme_request_pool_attach_prps(struct nvme_request_pool *pool, struct hostmem_heap *heap,
+			      uint64_t offset)
+{
+	size_t nbytes = (size_t)NVME_REQUEST_POOL_LEN * heap->config->pagesize;
+
+	if (!pool || !heap || ((offset + nbytes) > heap->memory.size)) {
+		return -EINVAL;
+	}
+
+	pool->prps = (char *)heap->memory.virt + offset;
+
+	for (uint16_t i = 0; i < NVME_REQUEST_POOL_LEN; ++i) {
+		pool->reqs[i].prp = ((uint8_t *)pool->prps) + (i * heap->config->pagesize);
+		pool->reqs[i].prp_addr = hostmem_dma_v2p(heap, pool->reqs[i].prp);
+	}
+
+	return 0;
 }
 
 static inline int
@@ -301,7 +334,8 @@ nvme_request_prep_command_prps_contig(struct nvme_request *request, struct hostm
 		} else {
 			page_phys = nvme_request_prp_retranslate(
 				heap, vbase + (i << heap->config->pagesize_shift));
-			strides_left = (heap->config->hugepgsz >> heap->config->pagesize_shift) - 1;
+			strides_left =
+				(heap->config->hugepgsz >> heap->config->pagesize_shift) - 1;
 		}
 		prp_list[i - 1] = page_phys;
 	}

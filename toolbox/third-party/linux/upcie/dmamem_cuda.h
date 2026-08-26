@@ -19,8 +19,13 @@
  * and callers compose PRPs via dmamem_offset_to_iova() with offsets
  * measured from heap->vaddr.
  *
+ * dmamem_from_cuda_iommu_map_pa() covers the neighbouring cell, where an IOMMU
+ * translates for the device. It reuses the backend below and differs only in
+ * installing a mapping per allocation; see
+ * <upcie/dmamem_iommu_map_pa.h>.
+ *
  * @file dmamem_cuda.h
- * @version 0.7.0
+ * @version 0.9.0
  */
 
 /**
@@ -160,6 +165,55 @@ dmamem_cuda_registry_release(void *UPCIE_UNUSED(ctx), struct dmabuf *attach)
  *
  * @return 0 on success, negative errno on failure.
  */
+/**
+ * Build a dmamem for a CUDA heap that a device reaches through an IOMMU
+ *
+ * The registry constructor resolves to physical addresses, which is what a
+ * device consumes with the IOMMU out of the way and nothing a device behind
+ * one can use. This exports the heap and maps it into the address space the
+ * device translates through instead.
+ *
+ * As of writing IOMMU_IOAS_MAP_FILE refuses dma-bufs exported by GPU runtimes,
+ * so this returns -ENOTSUP on current kernels. It is written anyway: the path
+ * is where it belongs, the failure names the call that refuses, and the day
+ * that call accepts one, nothing here has to change.
+ *
+ * @param dmem Pre-allocated dmamem to fill
+ * @param heap A CUDA heap from cudamem_heap_init
+ * @param iommufd The address space the device is attached to
+ *
+ * @return 0 on success, negative errno on failure
+ */
+static inline int
+dmamem_from_cuda_iommufd(struct dmamem *dmem, struct cudamem_heap *heap, struct iommufd *iommufd)
+{
+	int dmabuf_fd = -1;
+	CUresult cr;
+	int err;
+
+	if (!dmem || !heap || !iommufd) {
+		return -EINVAL;
+	}
+
+	cr = cuMemGetHandleForAddressRange(&dmabuf_fd, (CUdeviceptr)heap->vaddr, heap->size,
+					   CU_MEM_RANGE_HANDLE_TYPE_DMA_BUF_FD, 0);
+	if (cr != CUDA_SUCCESS) {
+		UPCIE_DEBUG("FAILED: cuMemGetHandleForAddressRange(); CUresult(%d)", cr);
+		return -EIO;
+	}
+
+	err = dmamem_from_dmabuf(dmem, iommufd, dmabuf_fd, heap->size);
+	close(dmabuf_fd);
+	if (err) {
+		UPCIE_DEBUG("FAILED: dmamem_from_dmabuf(cuda heap); err(%d)", err);
+		return err;
+	}
+
+	dmem->backing = DMAMEM_BACKING_CUDAMEM;
+
+	return 0;
+}
+
 static inline int
 dmamem_from_cuda_registry(struct dmamem *dmem, struct cudamem_heap *heap, int va_bits)
 {
@@ -194,6 +248,59 @@ dmamem_from_cuda_registry(struct dmamem *dmem, struct cudamem_heap *heap, int va
 	dmem->backing = DMAMEM_BACKING_CUDAMEM;
 	dmem->translator = DMAMEM_XLATE_LUT;
 	dmem->owned = 0;
+
+	return 0;
+}
+
+/**
+ * Build a registry-translating dmamem around a cudamem_heap, addressed through
+ * an enforcing IOMMU.
+ *
+ * The counterpart to dmamem_from_cuda_registry(): same backend, same
+ * dmamem_register() for buffers handed over later, except that each allocation
+ * is also inserted into the device's IOMMU domain and the LUT holds the
+ * resulting IOVAs. See <upcie/dmamem_iommu_map_pa.h>.
+ *
+ * dmamem_from_cuda_registry() adopts the heap's existing address table. This
+ * cannot: that table holds physical addresses, which is what the IOMMU rejects.
+ * The heap is registered instead, so every backing gets a mapping and an IOVA.
+ *
+ * `imp` is borrowed and must be closed only after dmamem_destroy().
+ *
+ * @param dmem    Pre-allocated dmamem descriptor to fill
+ * @param heap    Borrowed cudamem_heap; must outlive the dmamem
+ * @param va_bits Bounds the LUT reservation; 0 selects the default
+ * @param imp     Open iommu-map-pa handle naming the target device
+ *
+ * @return 0 on success, negative errno on failure.
+ */
+static inline int
+dmamem_from_cuda_iommu_map_pa(struct dmamem *dmem, struct cudamem_heap *heap, int va_bits,
+			      struct dmamem_iommu_map_pa *imp)
+{
+	int err;
+
+	if (!dmem || !heap || !heap->config || !imp) {
+		return -EINVAL;
+	}
+
+	err = dmamem_from_iommu_map_pa(dmem, imp, DMAMEM_CUDA_REGISTRY_GRANULARITY, va_bits,
+				       dmamem_cuda_registry_range, dmamem_cuda_registry_populate,
+				       dmamem_cuda_registry_release, heap->config);
+	if (err) {
+		return err;
+	}
+
+	dmem->base_va = (void *)(uintptr_t)heap->vaddr;
+	dmem->size = heap->size;
+	dmem->backing = DMAMEM_BACKING_CUDAMEM;
+
+	err = dmamem_register(dmem, (void *)(uintptr_t)heap->vaddr, heap->size);
+	if (err) {
+		UPCIE_DEBUG("FAILED: dmamem_register(heap), err: %d", err);
+		dmamem_destroy(dmem);
+		return err;
+	}
 
 	return 0;
 }

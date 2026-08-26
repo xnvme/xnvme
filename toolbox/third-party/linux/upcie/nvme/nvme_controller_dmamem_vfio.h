@@ -17,7 +17,7 @@
  * nvme_qpair_sqdb_update, and nvme_qpair_reap_cpl unchanged.
  *
  * @file nvme_controller_dmamem_vfio.h
- * @version 0.7.0
+ * @version 0.9.0
  */
 
 /**
@@ -462,6 +462,13 @@ rollback_qpair:
 
 /**
  * Tear down an I/O queue pair created with the dmamem variant.
+ *
+ * The memory and the identifier are given back only when the controller has
+ * confirmed both deletes. Where it has not, they are kept rather than reused,
+ * so a caller that ignores the return value leaks instead of handing a live
+ * queue's memory to the next allocation.
+ *
+ * @return 0 when the controller let go, the first delete's error otherwise
  */
 static inline int
 nvme_controller_delete_io_qpair_dmamem(struct nvme_controller *ctrlr, struct nvme_qpair *qp,
@@ -490,7 +497,25 @@ nvme_controller_delete_io_qpair_dmamem(struct nvme_controller *ctrlr, struct nvm
 		first_err = err;
 	}
 
+	/* Only once the controller has actually let go. A delete that failed
+	 * leaves the queue live as far as the device is concerned, and it can
+	 * still write to the memory behind it, so returning that memory to the
+	 * heap hands a live DMA target to whoever is allocated it next. The
+	 * identifier goes with it, since reissuing one the controller still
+	 * holds makes the next create fail, or succeed onto the old queue.
+	 *
+	 * So a failure leaks both, for the life of the runtime. That is the
+	 * cheaper mistake by a wide margin, and the caller is told.
+	 */
+	if (first_err) {
+		UPCIE_DEBUG("FAILED: delete(qid=%u); err(%d), keeping its memory and its id",
+			    qid, first_err);
+
+		return first_err;
+	}
+
 	nvme_qpair_dmamem_term(qp, heap, sq_offset, cq_offset, prp_offset);
 	nvme_qid_free(ctrlr->qids, qid);
-	return first_err;
+
+	return 0;
 }

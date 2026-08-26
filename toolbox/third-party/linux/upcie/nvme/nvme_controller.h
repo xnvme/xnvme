@@ -9,7 +9,7 @@
  * including BAR-space mappings, controller registers, and values derived from register content.
  *
  * @file nvme_controller.h
- * @version 0.7.0
+ * @version 0.9.0
  */
 
 /**
@@ -128,6 +128,26 @@ nvme_controller_open(struct nvme_controller *ctrlr, const char *bdf, struct host
 }
 
 /**
+ * Sends a Delete I/O Completion Queue admin command for `qid`
+ *
+ * @param ctrlr Pointer to a pre-allocated NVMe controller
+ * @param qid The identifier of the completion-queue to delete
+ *
+ * @return 0 on success, negative errno on error.
+ */
+static inline int
+nvme_controller_delete_io_cq(struct nvme_controller *ctrlr, uint16_t qid)
+{
+	struct nvme_command cmd = {0};
+	struct nvme_completion cpl = {0};
+
+	cmd.opc = 0x4; ///< Delete I/O Completion Queue
+	cmd.cdw10 = qid;
+
+	return nvme_qpair_submit_sync(&ctrlr->aq, &cmd, ctrlr->timeout_ms, &cpl);
+}
+
+/**
  * Deletes the submission-queue and completion-queue and frees host-side resources.
  *
  * Sends Delete I/O SQ and Delete I/O CQ admin commands to the controller, then
@@ -184,7 +204,7 @@ nvme_controller_create_io_qpair(struct nvme_controller *ctrlr, struct nvme_qpair
 				uint16_t depth)
 {
 	uint16_t qid;
-	int err;
+	int err, del_err, qid_orphaned = 0;
 
 	err = nvme_qid_find_free(ctrlr->qids);
 	if (err < 1) {
@@ -200,10 +220,8 @@ nvme_controller_create_io_qpair(struct nvme_controller *ctrlr, struct nvme_qpair
 
 	err = nvme_qpair_init(qpair, qid, depth, ctrlr->func.bars[0].region, ctrlr->heap);
 	if (err) {
-		UPCIE_DEBUG("FAILED: nvme_qpair_init(); err(%d)\n", err);
-		nvme_qid_free(ctrlr->qids, qid);
-
-		return err;
+		UPCIE_DEBUG("FAILED: nvme_qpair_init(); err(%d)", err);
+		goto free_qid;
 	}
 
 	{
@@ -217,8 +235,8 @@ nvme_controller_create_io_qpair(struct nvme_controller *ctrlr, struct nvme_qpair
 
 		err = nvme_qpair_submit_sync(&ctrlr->aq, &cmd, ctrlr->timeout_ms, &cpl);
 		if (err) {
-			UPCIE_DEBUG("FAILED: nvme_qpair_submit_sync(); err(%d)\n", err);
-			return err;
+			UPCIE_DEBUG("FAILED: nvme_qpair_submit_sync(Create CQ); err(%d)", err);
+			goto term_qpair;
 		}
 	}
 
@@ -233,10 +251,30 @@ nvme_controller_create_io_qpair(struct nvme_controller *ctrlr, struct nvme_qpair
 
 		err = nvme_qpair_submit_sync(&ctrlr->aq, &cmd, ctrlr->timeout_ms, &cpl);
 		if (err) {
-			UPCIE_DEBUG("FAILED: nvme_qpair_submit_sync(); err(%d)\n", err);
-			return err;
+			UPCIE_DEBUG("FAILED: nvme_qpair_submit_sync(Create SQ); err(%d)", err);
+			goto delete_cq;
 		}
 	}
 
 	return 0;
+
+delete_cq:
+	/* Kept out of err, which carries the failure being unwound. */
+	del_err = nvme_controller_delete_io_cq(ctrlr, qid);
+	if (del_err) {
+		UPCIE_DEBUG("FAILED: nvme_controller_delete_io_cq(); err(%d)", del_err);
+
+		/* The controller still holds a completion queue under this qid, so the
+		 * qid is retired instead of returned to the pool */
+		qid_orphaned = 1;
+	}
+term_qpair:
+	nvme_qpair_term(qpair);
+	memset(qpair, 0, sizeof(*qpair));
+free_qid:
+	if (!qid_orphaned) {
+		nvme_qid_free(ctrlr->qids, qid);
+	}
+
+	return err;
 }
