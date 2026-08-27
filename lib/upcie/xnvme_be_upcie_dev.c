@@ -43,8 +43,13 @@ _rte_term(void)
 		return;
 	}
 
-	if (g_upcie_rte.mproc) {
-		xnvme_be_upcie_mproc_rte_term();
+	if (g_upcie_rte.connection.alive) {
+		/* Nothing below this is ours to release: the memory belongs to
+		 * whoever is serving, and closing the socket is what tells it
+		 * to take back what this process still holds. */
+		xnvme_be_upcie_cplane_disconnect();
+		g_upcie_rte.is_initialized = 0;
+		return;
 	}
 
 	if (g_upcie_rte.mem.heap_alive) {
@@ -222,13 +227,14 @@ _rte_init_vfio_type1(size_t heap_size)
 
 /**
  * Bring up the process-wide RTE in the given mode, or verify an already
- * initialized RTE matches. When opts->shm_id is non-zero, additionally
- * enable multi-process mode; only UIO_LUT supports it because the primary
- * publishes its hugepage for secondaries to import, which the memfd and
- * type1-container paths cannot do.
+ * initialized RTE matches. A non-zero opts->homi_id names a runtime another
+ * process may already be serving; this connects to it where that is so, and
+ * builds its own where it is not. Which attachment mode the device is under
+ * does not enter into it: what crosses is descriptors, and a descriptor is a
+ * descriptor whichever way the controller is reached.
  */
 static int
-_rte_init(enum xnvme_be_upcie_mode mode, struct xnvme_opts *opts)
+_rte_init(enum xnvme_be_upcie_mode mode, struct xnvme_opts *opts, const char *bdf)
 {
 	size_t heap_size = opts->host_heap_size;
 	int err;
@@ -242,16 +248,27 @@ _rte_init(enum xnvme_be_upcie_mode mode, struct xnvme_opts *opts)
 		return 0;
 	}
 
-	if (opts->shm_id && mode != XNVME_BE_UPCIE_MODE_UIO_LUT) {
-		XNVME_DEBUG("FAILED: shm_id requires UIO_LUT (uio_pci_generic); mode(%d)", mode);
-		return -ENOTSUP;
-	}
-
 	if (!heap_size) {
 		heap_size = XNVME_BE_UPCIE_DEFAULT_HEAP_SIZE;
 	}
 
 	g_upcie_rte.mode = mode;
+
+	if (opts->homi_id) {
+		/* Somebody may already own this identifier. Connecting to them
+		 * is cheaper than allocating a runtime and then discovering
+		 * they exist, and it is what makes the socket the way in. */
+		err = xnvme_be_upcie_cplane_init_connection(opts->homi_id, bdf, NULL);
+		if (!err) {
+			g_upcie_rte.is_initialized = 1;
+			return 0;
+		}
+		if (err != -ENOENT) {
+			XNVME_DEBUG("FAILED: xnvme_be_upcie_cplane_init_connection(); err(%d)",
+				    err);
+			return err;
+		}
+	}
 
 	switch (mode) {
 	case XNVME_BE_UPCIE_MODE_VFIO_CDEV:
@@ -271,45 +288,6 @@ _rte_init(enum xnvme_be_upcie_mode mode, struct xnvme_opts *opts)
 	if (err) {
 		_rte_term();
 		return err;
-	}
-
-	if (opts->shm_id) {
-		err = xnvme_be_upcie_mproc_rte_init(opts->shm_id);
-		if (err) {
-			XNVME_DEBUG("FAILED: xnvme_be_upcie_mproc_rte_init(); err(%d)", err);
-			_rte_term();
-			return err;
-		}
-
-		if (g_upcie_rte.mproc->is_primary) {
-			struct xnvme_be_upcie_mproc_shm *shm = g_upcie_rte.mproc->shm;
-
-			snprintf(shm->hugepage_path, sizeof(shm->hugepage_path), "%s",
-				 g_upcie_rte.mem.hp.path);
-			shm->hugepage_base = (uint64_t)g_upcie_rte.mem.hp.virt;
-			atomic_store_explicit(&shm->is_initialized, true, memory_order_release);
-		} else {
-			struct xnvme_be_upcie_mproc_shm *shm = g_upcie_rte.mproc->shm;
-
-			for (int i = 0; i < 1000; i++) {
-				if (atomic_load_explicit(&shm->is_initialized,
-							 memory_order_acquire)) {
-					break;
-				}
-				usleep(1000);
-			}
-			if (!atomic_load_explicit(&shm->is_initialized, memory_order_acquire)) {
-				XNVME_DEBUG("FAILED: timed out waiting for primary hp publish");
-				_rte_term();
-				return -ENOENT;
-			}
-			err = xnvme_be_upcie_mproc_import_admin_hugepage();
-			if (err) {
-				XNVME_DEBUG("FAILED: mproc_import_admin_hugepage(); err(%d)", err);
-				_rte_term();
-				return err;
-			}
-		}
 	}
 
 	g_upcie_rte.is_initialized = 1;
@@ -432,17 +410,17 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 		return NULL;
 	}
 
-	err = _rte_init(mode, &dev->opts);
+	err = _rte_init(mode, &dev->opts, dev->ident.uri);
 	if (err) {
 		XNVME_DEBUG("FAILED: _rte_init(mode(%d))", mode);
 		errno = -err;
 		return NULL;
 	}
 
-	/* Only the owner writes the PCI Command register; the primary already flipped
-	 * Bus Master Enable at open time and a secondary neither needs to nor typically
+	/* Only the server writes the PCI Command register; the server already flipped
+	 * Bus Master Enable at open time and a client neither needs to nor typically
 	 * may touch config space. */
-	if (!g_upcie_rte.mproc || g_upcie_rte.mproc->is_primary) {
+	if (!g_upcie_rte.connection.alive) {
 		err = _pci_enable_bus_master(dev->ident.uri);
 		if (err) {
 			XNVME_DEBUG("FAILED: _pci_enable_bus_master(%s)", dev->ident.uri);
@@ -459,40 +437,47 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 	}
 
 	ctrlr->attach.type1_group.fd = -1;
-	ctrlr->mproc.shm_fd = -1;
-	ctrlr->mproc.lock_fd = -1;
 
-	/* mproc secondary: skip open-and-initialize; attach to primary's controller via shm. */
-	if (g_upcie_rte.mproc && !g_upcie_rte.mproc->is_primary) {
-		err = xnvme_be_upcie_mproc_ctrlr_shm_attach(dev, ctrlr);
-		if (err) {
-			XNVME_DEBUG("FAILED: mproc_ctrlr_shm_attach(); err(%d)", err);
-			errno = -err;
-			goto failed;
-		}
-		g_ctrlr_count++;
-		return ctrlr;
-	}
-
-	/* Primary path (or non-mproc): open the controller and create the sync qpair.
-	 * For the mproc primary, allocate the per-controller shm first and use its
-	 * embedded nvme_controller as the target so the primary's runtime state is
-	 * directly visible to secondaries. */
-	if (g_upcie_rte.mproc) {
-		err = xnvme_be_upcie_mproc_ctrlr_shm_init(dev, ctrlr, driver_name);
-		if (err) {
-			XNVME_DEBUG("FAILED: mproc_ctrlr_shm_init(); err(%d)", err);
-			errno = -err;
-			goto failed;
-		}
-		/* ctrlr->ctrl now points into shm->ctrl */
-	} else {
+	/* Connected: the controller is open in another process, so this builds a
+	 * description of it and asks that process for a queue to submit on. */
+	if (g_upcie_rte.connection.alive) {
 		ctrlr->ctrl = calloc(1, sizeof(*ctrlr->ctrl));
 		if (!ctrlr->ctrl) {
 			XNVME_DEBUG("FAILED: calloc(ctrl)");
 			errno = ENOMEM;
 			goto failed;
 		}
+
+		err = xnvme_be_upcie_cplane_init_connection(dev->opts.homi_id, dev->ident.uri,
+							    ctrlr);
+		if (err) {
+			XNVME_DEBUG("FAILED: xnvme_be_upcie_cplane_init_connection(%s); err(%d)",
+				    dev->ident.uri, err);
+			errno = -err;
+			goto failed;
+		}
+
+		err = xnvme_be_upcie_cplane_ctrlr_from_record(ctrlr);
+		if (err) {
+			XNVME_DEBUG("FAILED: xnvme_be_upcie_cplane_ctrlr_from_record(); err(%d)",
+				    err);
+			errno = -err;
+			goto failed;
+		}
+
+		/* No I/O queue yet: one is dedicated to whoever holds it, so it
+		 * is asked for on first use rather than at open. */
+
+		g_ctrlr_count++;
+
+		return ctrlr;
+	}
+
+	ctrlr->ctrl = calloc(1, sizeof(*ctrlr->ctrl));
+	if (!ctrlr->ctrl) {
+		XNVME_DEBUG("FAILED: calloc(ctrl)");
+		errno = ENOMEM;
+		goto failed;
 	}
 
 	switch (g_upcie_rte.mode) {
@@ -539,23 +524,13 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 		goto failed;
 	}
 
-	/* Publish the fully-opened controller so mproc secondaries may attach. */
-	if (ctrlr->mproc.shm) {
-		atomic_store_explicit(&ctrlr->mproc.shm->is_initialized, true,
-				      memory_order_release);
-	}
-
 	g_ctrlr_count++;
 
 	return ctrlr;
 
 failed:
 	if (ctrlr) {
-		if (ctrlr->mproc.shm) {
-			xnvme_be_upcie_mproc_ctrlr_shm_term(ctrlr);
-		} else {
-			free(ctrlr->ctrl);
-		}
+		free(ctrlr->ctrl);
 		free(ctrlr);
 	}
 
@@ -570,30 +545,34 @@ int
 xnvme_be_upcie_ctrlr_term(void *handle)
 {
 	struct xnvme_be_upcie_ctrlr *ctrlr = handle;
-	int is_secondary = g_upcie_rte.mproc && !g_upcie_rte.mproc->is_primary;
+	if (g_upcie_rte.connection.alive) {
+		/* Hand the I/O queue back, if one was ever asked for, and let go
+		 * of the description. The controller itself is the server's and
+		 * is not closed here; the BAR mapping goes with the runtime,
+		 * not with this. */
+		xnvme_be_upcie_ctrlr_admin_prp_release(ctrlr);
+		xnvme_be_upcie_cplane_free_qpair(ctrlr, &ctrlr->sync);
+		if (ctrlr->bar0) {
+			munmap(ctrlr->bar0, ctrlr->bar0_nbytes);
+		}
+		/* The socket is not closed here: it is the process's rather
+		 * than this controller's, so it goes with the runtime, which
+		 * _rte_term() takes down when the last controller closes. */
+		free(ctrlr->ctrl);
+		free(ctrlr);
 
-	if (is_secondary) {
-		xnvme_be_upcie_mproc_delete_io_qpair(ctrlr, &ctrlr->sync, &ctrlr->sync_offsets);
-		/* Do not close the controller: the primary owns it and closing here would
-		 * tear down the shared admin queue. Just release the local BAR mapping
-		 * (pci_func_close unmaps all bound BARs) and the local ctrl copy. */
-		pci_func_close(&ctrlr->ctrl->func);
-		xnvme_be_upcie_mproc_ctrlr_shm_term(ctrlr);
-		free(ctrlr->ctrl);
-	} else if (ctrlr->mproc.shm) {
-		/* Primary in mproc: reap secondaries' still-allocated queues via the admin
-		 * queue before we tear the shared segment down. */
-		xnvme_be_upcie_mproc_delete_io_qpair(ctrlr, &ctrlr->sync, &ctrlr->sync_offsets);
-		xnvme_be_upcie_mproc_free_all_queues(ctrlr);
-		_ctrlr_close(ctrlr);
-		xnvme_be_upcie_mproc_ctrlr_shm_term(ctrlr);
-	} else {
-		nvme_controller_delete_io_qpair_dmamem(
-			ctrlr->ctrl, &ctrlr->sync, &g_upcie_rte.mem.heap, ctrlr->sync_offsets.sq,
-			ctrlr->sync_offsets.cq, ctrlr->sync_offsets.prp);
-		_ctrlr_close(ctrlr);
-		free(ctrlr->ctrl);
+		if (--g_ctrlr_count == 0) {
+			_rte_term();
+		}
+
+		return 0;
 	}
+
+	nvme_controller_delete_io_qpair_dmamem(ctrlr->ctrl, &ctrlr->sync, &g_upcie_rte.mem.heap,
+					       ctrlr->sync_offsets.sq, ctrlr->sync_offsets.cq,
+					       ctrlr->sync_offsets.prp);
+	_ctrlr_close(ctrlr);
+	free(ctrlr->ctrl);
 	free(ctrlr);
 
 	if (--g_ctrlr_count == 0) {
