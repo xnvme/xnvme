@@ -6,21 +6,29 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include <libxnvme.h>
 #include <xnvme_cuse.h>
 #include <xnvme_vcs.h>
 
-// The backend default (1GiB) is sized for a process doing I/O. HOMI only needs the
-// admin queue and the sync qpair that opening a device creates, so claiming the
-// default is overkill. Each of those two queue pairs carries a request pool of
-// NVME_REQUEST_POOL_LEN PRP pages, which is 4MiB apiece, so budget double the 8MiB
-// per device that costs.
-#define HOMI_HEAP_SIZE_PER_DEV (16ULL * 1024 * 1024)
+// This heap is the pool every client draws from, so it is sized for the I/O they
+// do rather than for what HOMI does itself. It used to be 16MiB, which was right when
+// a client brought its own memory: it now has none of its own, and asks for all of
+// it here, so the old figure left clients unable to allocate a working buffer.
+// Tunable with --host_heap_size for a machine with less to spare, or more to serve.
+#define HOMI_HEAP_SIZE_PER_DEV (64ULL * 1024 * 1024)
+
+// What HOMI itself takes from that heap for each device held: the admin queue and
+// the sync queue pair that opening it creates, each carrying a 4 MiB request pool.
+// Budgeted on top of the pool rather than out of it, so a client can be handed a
+// buffer the size of the pool even when a single device is held.
+#define HOMI_HEAP_SIZE_SELF_PER_DEV (16ULL * 1024 * 1024)
 
 // The GPU backends allocate a device heap for data buffers, which HOMI never allocates
 // from; only the control structures it does need live on the host heap. Claiming the
-// backend default would take a GiB of VRAM away from the secondaries. 2MiB is the dma-buf
+// backend default would take a GiB of VRAM away from the clients. 2MiB is the dma-buf
 // granularity that AMD requires, so it is the smallest heap both GPU backends accept.
 #define HOMI_DEVICE_HEAP_SIZE (2ULL * 1024 * 1024)
 
@@ -101,7 +109,12 @@ sub_serve(struct xnvme_cli *cli)
 	// Before any CUSE session thread exists: a thread inherits its creator's signal mask
 	block_stop_signals();
 
+	/* SPDK needs the identifier at open, as the DPDK segment to be. uPCIe
+	 * must not see it there: to the backend it names a server to connect
+	 * to, and this process is the one that will serve, so it opens the
+	 * controllers as their owner and takes the identifier at serve time. */
 	opts.shm_id = (uint32_t)cli->args.homi_id;
+	opts.homi_id = 0;
 	opts.be = cli->args.be;
 	// homi holds whole controllers, not namespaces: nsid=0 gives dtype
 	// XNVME_DEV_TYPE_NVME_CONTROLLER, which lib/cuse/xnvme_cuse.c relies on
@@ -109,9 +122,11 @@ sub_serve(struct xnvme_cli *cli)
 
 	// The heap is per-process rather than per-device, so it has to cover every device
 	// held. Claiming the backend default would leave nothing in the hugepage pool for
-	// the secondaries HOMI exists to serve.
-	opts.host_heap_size = cli->args.host_heap_size ? cli->args.host_heap_size
-						       : HOMI_HEAP_SIZE_PER_DEV * ndevs;
+	// the clients HOMI exists to serve.
+	opts.host_heap_size =
+		cli->args.host_heap_size
+			? cli->args.host_heap_size
+			: (HOMI_HEAP_SIZE_PER_DEV + HOMI_HEAP_SIZE_SELF_PER_DEV) * ndevs;
 	opts.device_heap_size =
 		cli->args.device_heap_size ? cli->args.device_heap_size : HOMI_DEVICE_HEAP_SIZE;
 
@@ -158,7 +173,21 @@ sub_serve(struct xnvme_cli *cli)
 	xnvme_cli_pinf("HOMI started successfully, use Ctrl+C to stop");
 	xnvme_ver_pr(XNVME_PR_DEF);
 	printf("\n");
-	wait_for_stop_signal();
+
+	// cplane_serve() polls its own flag, so handle_signal() must run somewhere to
+	// set it; unblock here only, CUSE threads keep it blocked from their creation
+	sigprocmask(SIG_SETMASK, &g_orig_sigmask, NULL);
+
+	err = xnvme_cplane_serve(devs, ndevs, (uint32_t)cli->args.homi_id, &stop);
+	if (err == -ENOSYS) {
+		/* A backend that shares its own way, so hold the
+		 * controllers and let it do the sharing. */
+		err = 0;
+		block_stop_signals();
+		wait_for_stop_signal();
+	} else if (err) {
+		xnvme_cli_perr("xnvme_cplane_serve()", err);
+	}
 
 	for (int i = 0; cuse_sessions && i < ndevs; ++i) {
 		xnvme_cuse_stop(&cuse_sessions[i]);
@@ -167,7 +196,7 @@ sub_serve(struct xnvme_cli *cli)
 
 	xnvme_cli_dev_close_multi(devs, ndevs);
 
-	return 0;
+	return err;
 }
 
 #else
@@ -177,7 +206,124 @@ sub_serve(struct xnvme_cli *XNVME_UNUSED(cli))
 {
 	int err = -ENOTSUP;
 
-	xnvme_cli_perr("No multi-process capable backend is available on Windows", err);
+	xnvme_cli_perr("No backend that can share a controller is available on Windows", err);
+
+	return err;
+}
+
+#endif
+
+/* Reads uPCIe's own state, so 'homi serve --be spdk' works on hosts where
+ * 'homi status' refuses */
+#ifdef XNVME_BE_UPCIE_ENABLED
+
+/**
+ * Emit one YAML sequence entry per controller the runtime reports
+ *
+ * Totals are omitted rather than zeroed when the controller did not report
+ * them: absent says unknown, where zero would say none.
+ *
+ * Sets `*all_up` to whether every controller finished coming up, which is the
+ * difference between a server that exists and one that can be connected to.
+ */
+static int
+_pr_held_controllers(uint32_t homi_id, int *all_up)
+{
+	struct xnvme_cplane_ctrlr_info info;
+	struct xnvme_cplane_info rte;
+	int err;
+
+	*all_up = 0;
+
+	err = xnvme_cplane_get_info(homi_id, &rte);
+	if (err) {
+		return (err == -ENOENT) ? 0 : err;
+	}
+
+	printf("connections: %u\n", rte.nconnections);
+	if (rte.nctrlrs_held > rte.nctrlrs) {
+		printf("controllers_held: %u\n", rte.nctrlrs_held);
+	}
+
+	*all_up = rte.nctrlrs ? 1 : 0;
+
+	for (uint32_t i = 0; i < rte.nctrlrs; ++i) {
+		if (!i) {
+			printf("controllers:\n");
+		}
+		printf("  - uri: '%s'\n", rte.ctrlrs[i]);
+
+		if (xnvme_cplane_get_ctrlr_info(rte.ctrlrs[i], &info)) {
+			printf("    readable: false\n");
+			*all_up = 0;
+			continue;
+		}
+
+		if (!info.initialized) {
+			*all_up = 0;
+		}
+
+		printf("    readable: true\n");
+		printf("    initialized: %s\n", info.initialized ? "true" : "false");
+		printf("    connections: %u\n", info.nconnections);
+		printf("    nsq_used: %u\n", info.nsq_used);
+		printf("    ncq_used: %u\n", info.ncq_used);
+		if (info.nsq_total || info.ncq_total) {
+			printf("    nsq_total: %u\n", info.nsq_total);
+			printf("    ncq_total: %u\n", info.ncq_total);
+		}
+	}
+
+	return (int)rte.nctrlrs;
+}
+
+static int
+sub_status(struct xnvme_cli *cli)
+{
+	const uint32_t homi_id = (uint32_t)cli->args.homi_id;
+	int running, held, all_up = 0;
+
+	running = xnvme_cplane_server_alive(homi_id);
+	if (running < 0) {
+		xnvme_cli_perr("Failed probing the runtime", running);
+		return running;
+	}
+
+	printf("homi_id: %" PRIu32 "\n", homi_id);
+	printf("server_running: %s\n", running ? "true" : "false");
+
+	if (!running) {
+		printf("ready: false\n");
+		printf("controllers: []\n");
+		fflush(stdout);
+
+		return -ENODEV;
+	}
+
+	held = _pr_held_controllers(homi_id, &all_up);
+	if (held < 0) {
+		fflush(stdout);
+		xnvme_cli_perr("Failed listing controllers", held);
+		return held;
+	}
+	if (!held) {
+		printf("controllers: []\n");
+	}
+	printf("ready: %s\n", all_up ? "true" : "false");
+
+	fflush(stdout);
+
+	return all_up ? 0 : -EAGAIN;
+}
+
+#else
+
+static int
+sub_status(struct xnvme_cli *XNVME_UNUSED(cli))
+{
+	int err = -ENOTSUP;
+
+	xnvme_cli_perr("Inspection requires the uPCIe backend, which this build lacks", err);
 
 	return err;
 }
@@ -202,14 +348,28 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_NO_CUSE, XNVME_CLI_LFLG},
 		},
 	},
+	{
+		"status",
+		"Report whether a server is holding devices",
+		"Report whether a server is holding devices. Reads the state the "
+		"uPCIe runtime keeps, taking no lock and opening no device, so it "
+		"disturbs neither I/O nor a runtime that is starting. Exits "
+		"non-zero until a server is up and its devices are ready.",
+		sub_status,
+		{
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_HOMI_ID, XNVME_CLI_LREQ},
+		},
+	},
 };
 
 static struct xnvme_cli g_cli = {
 	.title = "homi - Host-Orchestrated Multi-path I/O",
 	.vcs = XNVME_VCS_TAG,
-	.descr_short = "Hold NVMe devices open for multi-process sharing",
-	.descr_long = "Hold NVMe devices open for multi-process sharing. Secondary "
-		      "processes attach to the same controllers by passing the same --homi-id.",
+	.descr_short = "Hold NVMe devices open and serve them to clients",
+	.descr_long = "Hold NVMe devices open and serve them to clients, which may be other "
+		      "processes or accelerators. A client attaches to the same controllers "
+		      "by passing the same --homi-id.",
 	.subs = g_subs,
 	.nsubs = sizeof g_subs / sizeof(*g_subs),
 };
