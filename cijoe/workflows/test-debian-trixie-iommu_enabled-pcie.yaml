@@ -51,6 +51,6 @@ steps:
 - name: test_mproc
   uses: core.testrunner
   with:
-    # Excluded from multi-process mode: kvs and dual_be (has no --shm_id)
-    args: '-k "pcie and not (upcie or fabrics or kvs or dual_be)" tests --shm_id 1'
+    # Excluded from multi-process mode: kvs, dual_be and qublk (have no --shm_id)
+    args: '-k "pcie and not (upcie or fabrics or kvs or dual_be or qublk)" tests --shm_id 1'
     random_order: false
