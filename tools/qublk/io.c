@@ -80,7 +80,7 @@ iod_stride(void)
 static unsigned
 ring_entries_for(const struct qublk_queue *q)
 {
-	unsigned nq = q->dev->nr_queues;
+	unsigned nq = q->dev->nqueues;
 	unsigned entries = (unsigned)q->depth * (2 * nq - 1);
 
 	if (entries < (unsigned)q->depth) {
@@ -110,10 +110,10 @@ rflush_pool_init(struct qublk_dev *dev, struct qublk_queue *q)
 {
 	uint32_t n;
 
-	if (dev->nr_queues <= 1) {
+	if (dev->nqueues <= 1) {
 		return 0;
 	}
-	n = (uint32_t)(dev->nr_queues - 1) * q->depth;
+	n = (uint32_t)(dev->nqueues - 1) * q->depth;
 	q->rflush_pool = calloc(n, sizeof(*q->rflush_pool));
 	if (!q->rflush_pool) {
 		return -ENOMEM;
@@ -385,7 +385,7 @@ dispatch_barrier(struct qublk_queue *q, struct qublk_io *io, uint8_t op)
 	io->barrier_outstanding = 1;
 	io->barrier_err = 0;
 
-	for (uint16_t r = 0; r < dev->nr_queues; r++) {
+	for (uint16_t r = 0; r < dev->nqueues; r++) {
 		struct qublk_queue *rq;
 		struct io_uring_sqe *sqe;
 
@@ -557,7 +557,7 @@ queue_init(struct qublk_dev *dev, struct qublk_queue *q, int q_id, int ublkc_fd)
 
 	q->dev = dev;
 	q->q_id = q_id;
-	q->depth = dev->depth;
+	q->depth = dev->qdepth;
 	q->ublkc_fd = ublkc_fd;
 	q->ios = NULL;
 	q->iod_arr = NULL;
@@ -635,7 +635,7 @@ qublk_io_init(struct qublk_dev *dev)
 	char path[64];
 	int ublkc_fd, rc;
 
-	dev->queues = calloc(dev->nr_queues, sizeof(*dev->queues));
+	dev->queues = calloc(dev->nqueues, sizeof(*dev->queues));
 	if (!dev->queues) {
 		return -ENOMEM;
 	}
@@ -648,12 +648,12 @@ qublk_io_init(struct qublk_dev *dev)
 		goto err;
 	}
 
-	for (uint16_t i = 0; i < dev->nr_queues; i++) {
+	for (uint16_t i = 0; i < dev->nqueues; i++) {
 		dev->queues[i].ublkc_fd = -1;
 	}
 	dev->queues[0].ublkc_fd = ublkc_fd;
 
-	for (uint16_t i = 0; i < dev->nr_queues; i++) {
+	for (uint16_t i = 0; i < dev->nqueues; i++) {
 		rc = queue_init(dev, &dev->queues[i], i, ublkc_fd);
 		if (rc < 0) {
 			goto err;
@@ -675,7 +675,7 @@ qublk_io_fini(struct qublk_dev *dev)
 	if (!dev->queues) {
 		return;
 	}
-	for (uint16_t i = 0; i < dev->nr_queues; i++) {
+	for (uint16_t i = 0; i < dev->nqueues; i++) {
 		if (dev->queues[i].ublkc_fd >= 0) {
 			ublkc_fd = dev->queues[i].ublkc_fd;
 		}
@@ -831,7 +831,7 @@ qublk_io_thread_start(struct qublk_dev *dev)
 		return -errno;
 	}
 
-	for (uint16_t i = 0; i < dev->nr_queues; i++) {
+	for (uint16_t i = 0; i < dev->nqueues; i++) {
 		dev->queues[i].init_rc = 0;
 		rc = pthread_create(&dev->queues[i].tid, NULL, io_thread_main, &dev->queues[i]);
 		if (rc) {
@@ -849,7 +849,7 @@ qublk_io_thread_start(struct qublk_dev *dev)
 	sem_destroy(&dev->io_ready);
 
 	if (err == 0) {
-		for (uint16_t i = 0; i < dev->nr_queues; i++) {
+		for (uint16_t i = 0; i < dev->nqueues; i++) {
 			if (dev->queues[i].init_rc < 0) {
 				err = dev->queues[i].init_rc;
 				break;
@@ -871,7 +871,7 @@ qublk_io_thread_join(struct qublk_dev *dev)
 	if (!dev->queues) {
 		return;
 	}
-	for (uint16_t i = 0; i < dev->nr_queues; i++) {
+	for (uint16_t i = 0; i < dev->nqueues; i++) {
 		if (dev->queues[i].tid) {
 			pthread_join(dev->queues[i].tid, NULL);
 			dev->queues[i].tid = 0;

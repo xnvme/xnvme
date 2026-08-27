@@ -43,7 +43,7 @@ struct qublk_remote_flush {
 
 struct qublk_queue {
 	int q_id;
-	uint16_t depth;
+	uint32_t depth;
 	int ublkc_fd;
 	struct io_uring ring;
 	struct ublksrv_io_desc *iod_arr;
@@ -61,8 +61,8 @@ struct qublk_queue {
 struct qublk_dev {
 	int ctrl_fd;
 	int dev_id;
-	uint16_t nr_queues;
-	uint16_t depth;
+	uint32_t nqueues;
+	uint32_t qdepth;
 	uint32_t max_io_buf;
 	uint64_t flags;
 	struct xnvme_dev *xdev;
