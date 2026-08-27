@@ -1,0 +1,12 @@
+Usage: homi status [<args>]
+
+Report whether a server is holding devices. Asks the server over its socket and opens no device, so it disturbs no I/O. Exits non-zero until a server is up and its devices are ready.
+  
+Where <args> include:
+
+  --homi-id NUM                 ; The HOMI identifier to share controllers under
+  [ --help ]                    ; Show usage / help
+
+See 'homi --help' for other commands
+
+homi - Host-Orchestrated Multi-path I/O -- ver: {major: 0, minor: 7, patch: 5}
