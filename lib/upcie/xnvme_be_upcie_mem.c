@@ -17,11 +17,38 @@
  * attached; the caller hands the returned VA to the device as a PRP later.
  */
 void *
-xnvme_be_upcie_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t nbytes, uint64_t *phys)
+xnvme_be_upcie_buf_alloc_on(struct xnvme_be_upcie_ctrlr *ctrlr, size_t nbytes, uint64_t *phys)
 {
 	size_t offset = 0;
 	void *buf;
 	int err;
+
+	if (g_upcie_rte.connection.alive) {
+		/* The allocator belongs to whoever owns the heap, so this asks
+		 * for an offset rather than taking one. */
+		struct nvme_cplane_msg msg = {0};
+
+		msg.op = NVME_CPLANE_OP_ALLOC_BUF;
+		msg.u.mem.nbytes = nbytes;
+
+		if (!ctrlr) {
+			errno = EINVAL;
+			return NULL;
+		}
+
+		err = xnvme_be_upcie_cplane_ask_ctrlr(ctrlr, &msg, NULL, NULL);
+		if (err) {
+			errno = -err;
+			return NULL;
+		}
+
+		buf = (char *)g_upcie_rte.connection.heap_base + msg.u.mem.offset;
+		if (phys) {
+			*phys = dmamem_va_to_iova(&g_upcie_rte.mem.dmem, buf);
+		}
+
+		return buf;
+	}
 
 	err = dmamem_heap_alloc(&g_upcie_rte.mem.heap, nbytes, &offset);
 	if (err) {
@@ -44,7 +71,7 @@ xnvme_be_upcie_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t nbyte
 }
 
 void
-xnvme_be_upcie_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
+xnvme_be_upcie_buf_free_on(struct xnvme_be_upcie_ctrlr *ctrlr, void *buf)
 {
 	size_t offset;
 
@@ -53,7 +80,42 @@ xnvme_be_upcie_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
 	}
 	offset = (size_t)((char *)buf - (char *)g_upcie_rte.mem.dmem.cpu_va);
 
+	if (g_upcie_rte.connection.alive) {
+		struct nvme_cplane_msg msg = {0};
+
+		msg.op = NVME_CPLANE_OP_FREE_BUF;
+		msg.u.mem.offset = offset;
+
+		if (!ctrlr || xnvme_be_upcie_cplane_ask_ctrlr(ctrlr, &msg, NULL, NULL)) {
+			XNVME_DEBUG("FAILED: giving back offset(0x%zx)", offset);
+		}
+
+		return;
+	}
+
 	dmamem_heap_free(&g_upcie_rte.mem.heap, offset);
+}
+
+/**
+ * Allocate from the heap, on behalf of the device's controller
+ *
+ * Attached, the allocator belongs to the server this controller is served by,
+ * so which controller it is decides which socket to ask on.
+ */
+void *
+xnvme_be_upcie_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
+{
+	struct xnvme_be_upcie_state *state = dev ? (void *)dev->be.state : NULL;
+
+	return xnvme_be_upcie_buf_alloc_on(state ? state->ctrlr : NULL, nbytes, phys);
+}
+
+void
+xnvme_be_upcie_buf_free(const struct xnvme_dev *dev, void *buf)
+{
+	struct xnvme_be_upcie_state *state = dev ? (void *)dev->be.state : NULL;
+
+	xnvme_be_upcie_buf_free_on(state ? state->ctrlr : NULL, buf);
 }
 
 int

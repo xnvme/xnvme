@@ -68,10 +68,20 @@ _hip_rte_init(size_t heap_size, uint32_t gpu_id)
 		return -ENOMEM;
 	}
 
-	err = dmamem_from_hip_registry(&g_upcie_hip_rte.dmem, &g_upcie_hip_rte.hip_heap,
-				       xnvme_be_upcie_va_bits());
+	/* Which addresses the controller consumes decides how the heap is
+	 * described to it: physical where the IOMMU is out of the way, IOVAs
+	 * where it is not. */
+	if (g_upcie_rte.mode == XNVME_BE_UPCIE_MODE_UIO_LUT) {
+		err = dmamem_from_hip_registry(&g_upcie_hip_rte.dmem, &g_upcie_hip_rte.hip_heap,
+					       xnvme_be_upcie_va_bits());
+	} else if (g_upcie_rte.mode == XNVME_BE_UPCIE_MODE_VFIO_CDEV) {
+		err = dmamem_from_hip_iommufd(&g_upcie_hip_rte.dmem, &g_upcie_hip_rte.hip_heap,
+					      &g_upcie_rte.cdev.iommufd);
+	} else {
+		err = -ENOTSUP;
+	}
 	if (err) {
-		XNVME_DEBUG("FAILED: dmamem_from_hip_registry(); err(%d)", err);
+		XNVME_DEBUG("FAILED: describing the HIP heap to the controller; err(%d)", err);
 		hipmem_heap_term(&g_upcie_hip_rte.hip_heap);
 		return err;
 	}
@@ -95,12 +105,9 @@ _check_driver(struct xnvme_dev *dev)
 	}
 	snprintf(dev->ident.kernel_driver, sizeof(dev->ident.kernel_driver), "%s", driver_name);
 
-	if (strcmp(driver_name, "uio_pci_generic")) {
-		XNVME_DEBUG(
-			"FAILED: unsupported driver '%s', upcie-hip requires 'uio_pci_generic'",
-			driver_name);
-		return -ENOTSUP;
-	}
+	/* No check on which driver is bound: whether a controller behind an
+	 * IOMMU can DMA into VRAM is the kernel's answer to give, and refusing
+	 * here would go on being wrong after it stops being true. */
 
 	return 0;
 }
@@ -108,8 +115,7 @@ _check_driver(struct xnvme_dev *dev)
 /**
  * Initialize the NVMe controller for a uPCIe HIP device.
  *
- * Validates that the device is bound to uio_pci_generic (vfio-pci is not
- * supported for HIP P2P DMA) and delegates to xnvme_be_upcie_ctrlr_init,
+ * Delegates to xnvme_be_upcie_ctrlr_init,
  * which opens the NVMe controller and allocates the host hugepage runtime.
  * HIP runtime initialization is done in dev_open.
  */

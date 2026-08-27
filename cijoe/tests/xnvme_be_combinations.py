@@ -128,7 +128,7 @@ def get_backend_configurations():
             "admin": ["spdk"],
             "mem": ["spdk"],
             "label": ["pcie"],
-            "mproc": True,
+            "cplane": True,
         },
         {
             "be": ["spdk"],
@@ -145,7 +145,7 @@ def get_backend_configurations():
             "sync": ["upcie"],
             "admin": ["upcie"],
             "label": ["pcie"],
-            "mproc": True,
+            "cplane": True,
         },
         {
             "be": ["upcie-cuda"],
@@ -154,7 +154,7 @@ def get_backend_configurations():
             "sync": ["upcie-cuda"],
             "admin": ["upcie-cuda"],
             "label": ["cuda"],
-            "mproc": True,
+            "cplane": True,
         },
         # Ramdisk
         {
@@ -209,7 +209,7 @@ def get_backend_configurations():
             "admin": ["spdk"],
             "mem": ["spdk"],
             "label": ["pcie"],
-            "mproc": True,
+            "cplane": True,
         },
         # Ramdisk
         {
