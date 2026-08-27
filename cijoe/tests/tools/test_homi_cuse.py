@@ -2,15 +2,15 @@
 homi exposes each PCIe-attached controller it holds as a CUSE ioctl mimic
 under /dev/xnvme/<bdf> (on by default; --no-cuse disables it), backed by the
 same lib/xnvme_cuse.c session qublk's /dev/ublkb<dev_id>-ctl uses. These
-cases start a homi primary directly (independent of --shm_id): one sends
-the same identify-controller command through both nvme-cli and xNVMe's own
-CLI, the other confirms that namespace-scoped ioctls are declined on it,
-since homi holds a controller, not a namespace.
+cases start a homi control-plane server directly (independent of --homi-id):
+one sends the same identify-controller command through both nvme-cli and
+xNVMe's own CLI, the other confirms that namespace-scoped ioctls are declined
+on it, since homi holds a controller, not a namespace.
 """
 
 import pytest
 
-from ..conftest import MprocPrimary, get_osname, require_nvme_cli, xnvme_parametrize
+from ..conftest import CPlaneServer, get_osname, require_nvme_cli, xnvme_parametrize
 
 CTL_BE = "nil"
 
@@ -38,15 +38,15 @@ def homi_cuse_cleanup(cijoe):
 
     yield
 
-    MprocPrimary.stop(cijoe)
+    CPlaneServer.stop(cijoe)
 
 
 @xnvme_parametrize(labels=["pcie"], opts=["be"])
 def test_idfy_ctrlr(cijoe, device, be_opts, cli_args):
-    if not be_opts.get("mproc"):
-        pytest.skip(f"{be_opts['be']} does not support multi-process")
+    if not be_opts.get("cplane"):
+        pytest.skip(f"{be_opts['be']} cannot share a controller")
 
-    MprocPrimary.start(cijoe, be_opts["be"], be_opts.get("label"))
+    CPlaneServer.start(cijoe, be_opts["be"], be_opts.get("label"))
 
     ctl = f"/dev/xnvme/{device['uri']}"
 
@@ -64,10 +64,10 @@ def test_idfy_ctrlr(cijoe, device, be_opts, cli_args):
 def test_decline_namespace_ioctls(cijoe, device, be_opts, cli_args):
     """homi holds a controller, not a namespace; namespace-scoped ioctls must fail on it"""
 
-    if not be_opts.get("mproc"):
-        pytest.skip(f"{be_opts['be']} does not support multi-process")
+    if not be_opts.get("cplane"):
+        pytest.skip(f"{be_opts['be']} cannot share a controller")
 
-    MprocPrimary.start(cijoe, be_opts["be"], be_opts.get("label"))
+    CPlaneServer.start(cijoe, be_opts["be"], be_opts.get("label"))
 
     ctl = f"/dev/xnvme/{device['uri']}"
 

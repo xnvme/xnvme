@@ -406,6 +406,9 @@ print_run_args(struct xnvmeperf_args *args, const char *pattern)
 	printf("- io pattern: %s\n", pattern);
 	printf("- queues per device: %u\n", args->nqueues);
 	printf("- queue depth: %u\n", args->qdepth);
+	if (args->opts.homi_id) {
+		printf("- served by homi: %u\n", args->opts.homi_id);
+	}
 	printf("- io size: %u\n", args->iosize);
 	printf("- runtime: %u\n", args->time);
 

@@ -42,13 +42,15 @@ The heap is allocated once per process, on the first device open, so
 `--host_heap_size` covers every device **homi** holds rather than being per
 device.
 
-Rather than the 1 GiB the backend would otherwise use, **homi** defaults to 16
-MiB per device held. It needs only the admin queue and the sync queue pair
-that opening a device creates, and each of those carries a request pool
-costing 4 MiB, so 16 MiB per device is roughly double what is required.
-Every process in multi-process mode allocates a heap of its own, so a server
-claiming the backend default would leave nothing in the hugepage pool for the
-clients it exists to serve:
+Rather than the 1 GiB the backend would otherwise use, **homi** defaults to 80
+MiB per device held. The heap is the pool every client draws from, since a
+client brings no memory of its own, and 64 MiB of that is for them. The rest
+is what **homi** itself needs: the admin queue and the sync queue pair that
+opening a device creates, each carrying a request pool costing 4 MiB. The two
+are budgeted separately so that a client can be handed a buffer the size of
+the pool from a server holding a single device. Claiming the backend default
+instead would leave nothing in the hugepage pool for clients of anything else,
+so size it for the buffers the clients will ask for:
 
 ```bash
 homi start 0000:03:00.0 --be upcie --homi-id 1 --host_heap_size 134217728
