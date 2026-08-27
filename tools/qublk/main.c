@@ -67,8 +67,8 @@ main(int argc, char **argv)
 	struct qublk_dev dev = {
 		.ctrl_fd = -1,
 		.dev_id = -1,
-		.nr_queues = 1,
-		.depth = 64,
+		.nqueues = 1,
+		.qdepth = 64,
 		.flags = UBLK_F_CMD_IOCTL_ENCODE,
 	};
 	struct xnvme_opts xopts;
@@ -84,7 +84,7 @@ main(int argc, char **argv)
 			be = optarg;
 			break;
 		case 'd':
-			dev.depth = (uint16_t)atoi(optarg);
+			dev.qdepth = (uint32_t)atoi(optarg);
 			break;
 		case 'i':
 			dev.dev_id = atoi(optarg);
@@ -93,7 +93,7 @@ main(int argc, char **argv)
 			want_max_io = (uint32_t)strtoul(optarg, NULL, 0);
 			break;
 		case 'q':
-			dev.nr_queues = (uint16_t)atoi(optarg);
+			dev.nqueues = (uint32_t)atoi(optarg);
 			break;
 		case 'h':
 			usage(argv[0]);
@@ -108,12 +108,12 @@ main(int argc, char **argv)
 		return 2;
 	}
 	uri = argv[optind];
-	if (!is_pow2(dev.depth) || dev.depth > QUBLK_MAX_QUEUE_DEPTH) {
+	if (!is_pow2(dev.qdepth) || dev.qdepth > QUBLK_MAX_QUEUE_DEPTH) {
 		fprintf(stderr, "qublk: --depth must be power of 2, <= %u\n",
 			QUBLK_MAX_QUEUE_DEPTH);
 		return 2;
 	}
-	if (dev.nr_queues < 1 || dev.nr_queues > UBLK_MAX_NR_QUEUES) {
+	if (dev.nqueues < 1 || dev.nqueues > UBLK_MAX_NR_QUEUES) {
 		fprintf(stderr, "qublk: --nr-queues must be in [1, %u]\n", UBLK_MAX_NR_QUEUES);
 		return 2;
 	}
@@ -171,7 +171,7 @@ main(int argc, char **argv)
 	}
 	fprintf(stderr,
 		"qublk: added ublk dev id=%d nr_queues=%u depth=%u max_io=%u backend=%s uri=%s\n",
-		dev.dev_id, dev.nr_queues, dev.depth, dev.max_io_buf, be ? be : "(auto)", uri);
+		dev.dev_id, dev.nqueues, dev.qdepth, dev.max_io_buf, be ? be : "(auto)", uri);
 
 	if (qublk_ctrl_set_params(&dev) < 0) {
 		goto err_added;

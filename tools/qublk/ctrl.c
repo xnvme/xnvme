@@ -113,8 +113,8 @@ int
 qublk_ctrl_add_dev(struct qublk_dev *dev)
 {
 	struct ublksrv_ctrl_dev_info info = {
-		.nr_hw_queues = dev->nr_queues,
-		.queue_depth = dev->depth,
+		.nr_hw_queues = dev->nqueues,
+		.queue_depth = dev->qdepth,
 		.max_io_buf_bytes = dev->max_io_buf,
 		.dev_id = (uint32_t)dev->dev_id,
 		.flags = dev->flags,
