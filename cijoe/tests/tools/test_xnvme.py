@@ -456,3 +456,38 @@ def test_namespace_rescan(cijoe, device, be_opts, cli_args):
     err, _ = cijoe.run(f"xnvme ns-rescan {cli_args}")
 
     assert not err
+
+
+@xnvme_parametrize(labels=["pcie"], opts=["be"])
+def test_homi_id_and_shm_id_must_agree(cijoe, device, be_opts, cli_args):
+    """
+    Giving both spellings different values is refused; giving both the same is not.
+
+    They name one identifier, so two values means whoever passed them meant one
+    runtime and named two. Letting either win would reach a runtime the caller
+    did not ask for, which is worse than saying so. The same value twice says
+    one thing twice, and is allowed.
+
+    The refusal happens while the options are being built, before any device is
+    opened, so this needs no server.
+    """
+
+    uri = device["uri"]
+    base = (
+        f"xnvme info {uri} --dev-nsid {device['nsid']}"
+        f" --be {be_opts['be']} --admin {be_opts['be']} --sync {be_opts['be']}"
+    )
+
+    err, state = cijoe.run(f"{base} --homi-id 41 --shm_id 42")
+    assert err, "two identifiers were accepted; one of them was silently ignored"
+    assert (
+        "disagree" in state.output()
+    ), f"refused, but not for the reason given: {state.output()!r}"
+
+    # What is asserted is that the pair got past the option check, not that the
+    # command succeeded: opening the device can fail for reasons of its own,
+    # and reading those as "the pair was refused" is how this test lied once.
+    _, state = cijoe.run(f"{base} --homi-id 42 --shm_id 42")
+    assert (
+        "disagree" not in state.output()
+    ), f"the same identifier given twice was refused: {state.output()!r}"

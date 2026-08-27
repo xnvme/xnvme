@@ -117,7 +117,7 @@ sub_start(struct xnvme_cli *cli)
 	}
 	dev_uris = cli->args.posn;
 
-	opts.shm_id = cli->args.shm_id;
+	opts.shm_id = (uint32_t)cli->args.homi_id;
 	opts.be = cli->args.be;
 
 	// The heap is per-process rather than per-device, so it has to cover every device
@@ -166,7 +166,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_URI, XNVME_CLI_POSN},
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
-			{XNVME_CLI_OPT_SHM_ID, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_HOMI_ID, XNVME_CLI_LREQ},
 			{XNVME_CLI_OPT_ORCH_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HOST_HEAP_SIZE, XNVME_CLI_LOPT},
@@ -179,7 +179,7 @@ static struct xnvme_cli g_cli = {
 	.title = "homi - Host-Orchestrated Multi-path I/O",
 	.descr_short = "Hold NVMe devices open for multi-process sharing",
 	.descr_long = "Hold NVMe devices open for multi-process sharing. Secondary "
-		      "processes attach to the same controllers by passing the same --shm_id.",
+		      "processes attach to the same controllers by passing the same --homi-id.",
 	.subs = g_subs,
 	.nsubs = sizeof g_subs / sizeof(*g_subs),
 };
