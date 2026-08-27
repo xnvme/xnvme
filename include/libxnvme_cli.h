@@ -9,8 +9,9 @@
 #define XNVME_CLI_CORE_OPTS                                                                  \
 	{XNVME_CLI_OPT_ORCH_TITLE, XNVME_CLI_SKIP}, {XNVME_CLI_OPT_SUBNQN, XNVME_CLI_LOPT},  \
 		{XNVME_CLI_OPT_HOSTNQN, XNVME_CLI_LOPT}, {XNVME_CLI_OPT_BE, XNVME_CLI_LOPT}, \
+		{XNVME_CLI_OPT_SHM_ID, XNVME_CLI_LOPT},                                      \
 	{                                                                                    \
-		XNVME_CLI_OPT_SHM_ID, XNVME_CLI_LOPT                                         \
+		XNVME_CLI_OPT_CPLANE_ID, XNVME_CLI_LOPT                                      \
 	}
 
 #define XNVME_CLI_ADMIN_OPTS                                                                \
@@ -122,6 +123,7 @@ struct xnvme_cli_args {
 	const char *admin;
 
 	uint64_t shm_id;
+	uint64_t cplane_id;
 	uint64_t host_heap_size;
 	uint64_t device_heap_size;
 	uint32_t main_core;
@@ -379,7 +381,9 @@ enum xnvme_cli_opt {
 
 	XNVME_CLI_OPT_MAX_IO_BYTES = 136, ///< XNVME_CLI_OPT_MAX_IO_BYTES
 
-	XNVME_CLI_OPT_END = 137, ///< XNVME_CLI_OPT_END
+	XNVME_CLI_OPT_CPLANE_ID = 137, ///< XNVME_CLI_OPT_CPLANE_ID
+
+	XNVME_CLI_OPT_END = 138, ///< XNVME_CLI_OPT_END
 };
 
 /**
