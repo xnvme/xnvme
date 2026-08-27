@@ -78,6 +78,7 @@ xnvme_opts_yaml(FILE *stream, const struct xnvme_opts *opts, int indent, const c
 	wrtn += fprintf(stream, "%*suse_cmb_sqs: 0x%" PRIx32 "%s", indent, "", opts->use_cmb_sqs,
 			sep);
 	wrtn += fprintf(stream, "%*sshm_id: 0x%" PRIx32 "%s", indent, "", opts->shm_id, sep);
+	wrtn += fprintf(stream, "%*shomi_id: 0x%" PRIx32 "%s", indent, "", opts->homi_id, sep);
 	wrtn += fprintf(stream, "%*smain_core: 0x%" PRIx32 "%s", indent, "", opts->main_core, sep);
 
 	wrtn += fprintf(stream, "%*score_mask: '%s'%s", indent, "", opts->core_mask, sep);

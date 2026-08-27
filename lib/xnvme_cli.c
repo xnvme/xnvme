@@ -614,7 +614,13 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.opt = XNVME_CLI_OPT_SHM_ID,
 		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "shm_id",
-		.descr = "For be={spdk,upcie}, multi-process shared-memory-id",
+		.descr = "SPDK's spelling of --homi-id; the DPDK shared-memory-id",
+	},
+	{
+		.opt = XNVME_CLI_OPT_HOMI_ID,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
+		.name = "homi-id",
+		.descr = "The HOMI identifier to share controllers under",
 	},
 	{
 		.opt = XNVME_CLI_OPT_HOST_HEAP_SIZE,
@@ -1642,6 +1648,9 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 	case XNVME_CLI_OPT_SHM_ID:
 		args->shm_id = num;
 		break;
+	case XNVME_CLI_OPT_HOMI_ID:
+		args->homi_id = num;
+		break;
 	case XNVME_CLI_OPT_HOST_HEAP_SIZE:
 		args->host_heap_size = num;
 		break;
@@ -2272,7 +2281,32 @@ xnvme_cli_to_opts(const struct xnvme_cli *cli, struct xnvme_opts *opts)
 
 	opts->use_cmb_sqs =
 		cli->given[XNVME_CLI_OPT_USE_CMB_SQS] ? cli->args.use_cmb_sqs : opts->use_cmb_sqs;
-	opts->shm_id = cli->given[XNVME_CLI_OPT_SHM_ID] ? cli->args.shm_id : opts->shm_id;
+	/* One HOMI identifier, but two fields to put it in: SPDK looks in
+	 * shm_id and uPCIe in homi_id. So either spelling fills both. Filling
+	 * only one is how a backend ends up told to share and quietly not
+	 * sharing.
+	 *
+	 * Passing both with different values is a mistake rather than a
+	 * preference: whoever did it meant one identifier and named two, and
+	 * letting either win would reach controllers they did not ask for.
+	 * Passing both with the same value says one thing twice, which is
+	 * harmless. */
+	if (cli->given[XNVME_CLI_OPT_HOMI_ID] && cli->given[XNVME_CLI_OPT_SHM_ID] &&
+	    (cli->args.homi_id != cli->args.shm_id)) {
+		fprintf(stderr,
+			"# ERR: --homi-id(%" PRIu64 ") and --shm_id(%" PRIu64
+			") disagree; give one, or give both the same value\n",
+			cli->args.homi_id, cli->args.shm_id);
+		errno = EINVAL;
+		return -EINVAL;
+	}
+	if (cli->given[XNVME_CLI_OPT_HOMI_ID]) {
+		opts->homi_id = cli->args.homi_id;
+		opts->shm_id = cli->args.homi_id;
+	} else if (cli->given[XNVME_CLI_OPT_SHM_ID]) {
+		opts->homi_id = cli->args.shm_id;
+		opts->shm_id = cli->args.shm_id;
+	}
 	opts->host_heap_size = cli->given[XNVME_CLI_OPT_HOST_HEAP_SIZE] ? cli->args.host_heap_size
 									: opts->host_heap_size;
 	opts->device_heap_size = cli->given[XNVME_CLI_OPT_DEVICE_HEAP_SIZE]
