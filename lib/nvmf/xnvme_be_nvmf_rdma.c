@@ -171,6 +171,14 @@ xnvme_be_nvmf_rdma_on_state_change(struct xnvme_be_nvmf_qpair *qpair,
 	switch (state) {
 	case XNVME_NVMF_QPAIR_STATE_CONNECTED:
 		struct xnvme_be_nvmf_rdma_connect_data_rec *connect_data;
+		struct xnvme_be_nvmf_req *req = NULL;
+
+		req = xnvme_be_nvmf_req_alloc(qpair->req_pool, NULL); 
+		if (!req) {
+			XNVME_DEBUG("FAILED: could not allocate request");
+			qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
+			return;
+		}
 
 		sgl = &cmd.fabric_connect.sgl1;
 		connect_data =
@@ -181,7 +189,7 @@ xnvme_be_nvmf_rdma_on_state_change(struct xnvme_be_nvmf_qpair *qpair,
 		connect_data->cntlid = 0xffff; /* assume dynamic controller model for now */
 
 		cmd.common.opcode = 0x7f; /* Fabric command opcode */
-		cmd.common.cid = 0;       /* TODO: This should be unique for each command */
+		cmd.common.cid = req->cid;       /* TODO: This should be unique for each command */
 		cmd.common.fuse = 0;      /* There are no fused fabrics commands */
 		cmd.common.psdt = XNVME_SPEC_PSDT_SGL_MPTR_SGL;
 

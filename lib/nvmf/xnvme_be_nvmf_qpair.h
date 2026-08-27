@@ -57,6 +57,7 @@ struct xnvme_be_nvmf_qpair {
 	enum xnvme_nvmf_qpair_state state;
 	struct xnvme_be_nvmf_qpair_attr attr;
 	uint16_t cntlid; /* assigned by the controller in the Fabric Connect response */
+	struct xnvme_be_nvmf_req_pool *req_pool;
 	struct xnvme_be_nvmf_ctrlr *ctrlr;
 
 	xnvme_be_nvmf_capsule_recv_fn on_capsule_recv;

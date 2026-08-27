@@ -36,6 +36,13 @@ xnvme_be_nvmf_qpair_create(struct xnvme_be_nvmf_ctrlr *ctrlr, struct xnvme_be_nv
 	tmp->ctrlr = ctrlr;
 	tmp->state = XNVME_NVMF_QPAIR_STATE_INIT;
 
+	err = xnvme_be_nvmf_req_pool_alloc(&tmp->req_pool, attr->qsize);
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_be_nvmf_req_pool_alloc(), err: %d", err);
+		free(tmp);
+		return err;
+	}
+
 	*qpair = tmp;
 	return 0;
 }
@@ -74,6 +81,14 @@ xnvme_be_nvmf_disconnect_qpair(struct xnvme_be_nvmf_qpair *qpair)
 int
 xnvme_be_nvmf_destroy_qpair(struct xnvme_be_nvmf_qpair *qpair)
 {
+	int err; 
+
+	err = xnvme_be_nvmf_req_pool_free(qpair->req_pool);
+	if (err) {
+		XNVME_DEBUG("FAILED: nvme_be_nvmf_req_pool_free(), err: %d", err);
+		return err;
+	}
+
 	return qpair->ops->destroy(qpair);
 }
 

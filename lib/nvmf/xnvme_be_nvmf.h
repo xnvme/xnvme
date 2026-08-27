@@ -14,6 +14,7 @@
 #include <xnvme_be_nvmf_debug.h>
 #include <xnvme_be_nvmf_ctrlr.h>
 #include <xnvme_be_nvmf_qpair.h>
+#include <xnvme_be_nvmf_req_pool.h>
 
 #ifndef container_of
 #define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))
