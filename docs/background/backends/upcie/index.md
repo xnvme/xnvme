@@ -18,7 +18,7 @@ allocated:
 
 Additionally, the host-memory backend supports a **{ref}`sec-backends-upcie-mproc`**
 mode in which several processes share a single NVMe controller via a designated
-primary process.
+server process.
 
 (sec-backends-upcie-identifiers)=
 
