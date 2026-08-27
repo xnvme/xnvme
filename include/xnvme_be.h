@@ -154,15 +154,15 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_mem) == XNVME_BE_MEM_NBYTES, "Incorre
  * Backend capability flags
  */
 enum xnvme_be_cap {
-	XNVME_BE_CAP_NVME_CDEV = 0x1 << 0, ///< NVMe char device (/dev/ng0n1)
-	XNVME_BE_CAP_NVME_BDEV = 0x1 << 1, ///< NVMe block device (/dev/nvme0n1)
-	XNVME_BE_CAP_BDEV      = 0x1 << 2, ///< Generic block device
-	XNVME_BE_CAP_FILE      = 0x1 << 3, ///< Regular file
-	XNVME_BE_CAP_RAMDISK   = 0x1 << 4, ///< Ramdisk virtual device
-	XNVME_BE_CAP_NVME_PCIE = 0x1 << 5, ///< NVMe over PCIe (user-space driver)
-	XNVME_BE_CAP_NVME_TCP  = 0x1 << 6, ///< NVMe over TCP (user-space driver)
-	XNVME_BE_CAP_NVME_RDMA = 0x1 << 7, ///< NVMe over RDMA (user-space driver)
-	XNVME_BE_CAP_MPROC     = 0x1 << 8, ///< Multi-process mode
+	XNVME_BE_CAP_NVME_CDEV     = 0x1 << 0, ///< NVMe char device (/dev/ng0n1)
+	XNVME_BE_CAP_NVME_BDEV     = 0x1 << 1, ///< NVMe block device (/dev/nvme0n1)
+	XNVME_BE_CAP_BDEV          = 0x1 << 2, ///< Generic block device
+	XNVME_BE_CAP_FILE          = 0x1 << 3, ///< Regular file
+	XNVME_BE_CAP_RAMDISK       = 0x1 << 4, ///< Ramdisk virtual device
+	XNVME_BE_CAP_NVME_PCIE     = 0x1 << 5, ///< NVMe over PCIe (user-space driver)
+	XNVME_BE_CAP_NVME_TCP      = 0x1 << 6, ///< NVMe over TCP (user-space driver)
+	XNVME_BE_CAP_NVME_RDMA     = 0x1 << 7, ///< NVMe over RDMA (user-space driver)
+	XNVME_BE_CAP_CTRLR_SHARING = 0x1 << 8, ///< Can share a controller between processes
 };
 
 /**
