@@ -12,8 +12,7 @@ from ..conftest import (
 @xnvme_parametrize(labels=["dev"], opts=["be"])
 def test_open(cijoe, device, be_opts, cli_args):
     homi_id = get_homi_id()
-    flag = "--homi-id" if be_opts["be"].startswith("upcie") else "--shm_id"
-    cplane_arg = f"{flag} {homi_id}" if homi_id else ""
+    cplane_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     if be_opts["admin"] == "ramdisk":
         pytest.skip(reason=f"[be={be_opts['be']}] does not support enumeration")
@@ -32,8 +31,7 @@ def test_open(cijoe, device, be_opts, cli_args):
 @xnvme_parametrize(labels=["dev"], opts=["be"])
 def test_keep_open(cijoe, device, be_opts, cli_args):
     homi_id = get_homi_id()
-    flag = "--homi-id" if be_opts["be"].startswith("upcie") else "--shm_id"
-    cplane_arg = f"{flag} {homi_id}" if homi_id else ""
+    cplane_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     if be_opts["admin"] == "ramdisk":
         pytest.skip(reason=f"[be={be_opts['be']}] does not support enumeration")
@@ -53,8 +51,7 @@ def test_keep_open(cijoe, device, be_opts, cli_args):
 @xnvme_parametrize(labels=["dev"], opts=["be"])
 def test_multi(cijoe, device, be_opts, cli_args):
     homi_id = get_homi_id()
-    flag = "--homi-id" if be_opts["be"].startswith("upcie") else "--shm_id"
-    cplane_arg = f"{flag} {homi_id}" if homi_id else ""
+    cplane_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     if be_opts["admin"] == "ramdisk":
         pytest.skip(reason=f"[be={be_opts['be']}] does not support enumeration")
