@@ -614,7 +614,13 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.opt = XNVME_CLI_OPT_SHM_ID,
 		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "shm_id",
-		.descr = "For be={spdk,upcie}, multi-process shared-memory-id",
+		.descr = "For be=spdk, DPDK shared-memory-id; for be=upcie, --cplane-id",
+	},
+	{
+		.opt = XNVME_CLI_OPT_CPLANE_ID,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
+		.name = "cplane-id",
+		.descr = "For be=upcie, the control-plane server to attach to",
 	},
 	{
 		.opt = XNVME_CLI_OPT_HOST_HEAP_SIZE,
@@ -1642,6 +1648,9 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 	case XNVME_CLI_OPT_SHM_ID:
 		args->shm_id = num;
 		break;
+	case XNVME_CLI_OPT_CPLANE_ID:
+		args->cplane_id = num;
+		break;
 	case XNVME_CLI_OPT_HOST_HEAP_SIZE:
 		args->host_heap_size = num;
 		break;
@@ -2273,6 +2282,14 @@ xnvme_cli_to_opts(const struct xnvme_cli *cli, struct xnvme_opts *opts)
 	opts->use_cmb_sqs =
 		cli->given[XNVME_CLI_OPT_USE_CMB_SQS] ? cli->args.use_cmb_sqs : opts->use_cmb_sqs;
 	opts->shm_id = cli->given[XNVME_CLI_OPT_SHM_ID] ? cli->args.shm_id : opts->shm_id;
+
+	/* --shm_id predates --cplane-id and named both things, so it still sets
+	 * both; --cplane-id is uPCIe's alone and leaves SPDK's segment id be. */
+	if (cli->given[XNVME_CLI_OPT_CPLANE_ID]) {
+		opts->cplane_id = cli->args.cplane_id;
+	} else if (cli->given[XNVME_CLI_OPT_SHM_ID]) {
+		opts->cplane_id = cli->args.shm_id;
+	}
 	opts->host_heap_size = cli->given[XNVME_CLI_OPT_HOST_HEAP_SIZE] ? cli->args.host_heap_size
 									: opts->host_heap_size;
 	opts->device_heap_size = cli->given[XNVME_CLI_OPT_DEVICE_HEAP_SIZE]
