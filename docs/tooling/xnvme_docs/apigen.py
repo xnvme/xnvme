@@ -42,6 +42,7 @@ NAMESPACES: dict[str, set[str]] = {
         "xnvme_spec_fs",
         "xnvme_spec_pp",
         "xnvme_topology",
+        "xnvme_cplane",
         "xnvme_znd",
     },
     "file": {
