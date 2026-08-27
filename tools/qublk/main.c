@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 #include <errno.h>
 #include <getopt.h>
 #include <signal.h>
@@ -192,10 +194,13 @@ main(int argc, char **argv)
 
 	sigwait(&blk, &sig);
 	fprintf(stderr, "qublk: stopping (signal %d)\n", sig);
+	// STOP_DEV first, as ubdsrv does: del_gendisk() waits on requests in
+	// flight, so the queue threads must still be servicing; the kernel then
+	// aborts the pending FETCHes, which is what makes the threads exit
+	qublk_ctrl_stop_dev(&dev);
 	dev.stop = 1;
 
 	qublk_io_thread_join(&dev);
-	qublk_ctrl_stop_dev(&dev);
 	qublk_io_fini(&dev);
 	qublk_ctrl_del_dev(&dev);
 	qublk_ctrl_close(&dev);

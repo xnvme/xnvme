@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 #include "io.h"
 
 #include <errno.h>
@@ -312,6 +314,11 @@ handle_msg_do_flush(struct qublk_queue *q, uint16_t orig_qid, uint16_t orig_tag)
 		if (ctx) {
 			break;
 		}
+		if (dev->stop) {
+			rflush_release(q, rf);
+			msg_post_flush_done(q, orig_qid, orig_tag, -ENODEV);
+			return;
+		}
 		xnvme_queue_poke(q->xq, 0);
 	}
 	memset(&ctx->cmd, 0, sizeof(ctx->cmd));
@@ -498,7 +505,10 @@ handle_ublk_cqe(struct qublk_queue *q, struct io_uring_cqe *cqe)
 	if (cqe->res == UBLK_IO_RES_OK) {
 		rc = dispatch(q, io);
 		while (rc == -EBUSY || rc == -EAGAIN) {
+			// -EBUSY is a full xnvme queue, cured by poking it; -EAGAIN
+			// is an exhausted io_uring SQ, cured only by submitting it
 			xnvme_queue_poke(q->xq, 0);
+			io_uring_submit(&q->ring);
 			rc = dispatch(q, io);
 		}
 		return rc;
@@ -762,7 +772,10 @@ io_loop(struct qublk_queue *q)
 		count = 0;
 		io_uring_for_each_cqe(&q->ring, head, cqe)
 		{
-			(void)cqe;
+			// Dispatch rather than discard; STOP_DEV waits on requests
+			// in flight, and one delivered after 'stop' was set would
+			// otherwise never be committed
+			handle_cqe(q, cqe);
 			count++;
 		}
 		if (count) {
