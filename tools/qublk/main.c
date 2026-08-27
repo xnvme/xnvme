@@ -207,6 +207,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_MAX_IO_BYTES, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_ORCH_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_SHM_ID, XNVME_CLI_LOPT},
 		},
 	},
 };
