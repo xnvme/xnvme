@@ -323,14 +323,10 @@ _initialize_rdma_qpair(struct xnvme_be_nvmf_ctrlr *ctrlr, uint16_t qid, int qsiz
 	rdma_qpair->qp_init_attr.qp_type = IBV_QPT_RC;
 	rdma_qpair->qp_init_attr.qp_context = (void *)&qpair;
 
-	rdma_qpair->base = (struct xnvme_be_nvmf_qpair){
-		.ops = &g_xnvme_be_nvmf_rdma_qpair_ops,
-		.ctrlr = ctrlr,
-		.state = XNVME_NVMF_QPAIR_STATE_INIT,
-		.on_capsule_recv = xnvme_be_nvmf_rdma_on_capsule_recv,
-		.on_send_cmpl = xnvme_be_nvmf_rdma_on_send_cmpl,
-		.on_state_change = xnvme_be_nvmf_rdma_on_state_change,
-	};
+	rdma_qpair->base.ops = &g_xnvme_be_nvmf_rdma_qpair_ops;
+	rdma_qpair->base.on_capsule_recv = xnvme_be_nvmf_rdma_on_capsule_recv;
+	rdma_qpair->base.on_send_cmpl = xnvme_be_nvmf_rdma_on_send_cmpl;
+	rdma_qpair->base.on_state_change = xnvme_be_nvmf_rdma_on_state_change;
 
 	return 0;
 }

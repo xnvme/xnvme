@@ -114,7 +114,6 @@ xnvme_be_nvmf_create_rdma_controller(struct xnvme_be_nvmf_ctrlr **ctrlr)
 		.qid = XNVME_BE_NVMF_SYNC_QUEUE_ID,
 		.qsize = 8,
 	};
-	struct xnvme_be_nvmf_ctrlr *base;
 	int err;
 
 	rdma_ctrlr = calloc(1, sizeof(*rdma_ctrlr));
@@ -123,7 +122,7 @@ xnvme_be_nvmf_create_rdma_controller(struct xnvme_be_nvmf_ctrlr **ctrlr)
 		return -ENOMEM;
 	}
 	pthread_mutex_init(&rdma_ctrlr->lock, NULL);
-	base = &rdma_ctrlr->base;
+	rdma_ctrlr->base.ops = &g_xnvme_be_nvmf_rdma_ctrlr_ops;
 
 	rdma_ctrlr->event_channel = rdma_create_event_channel();
 	if (!rdma_ctrlr->event_channel) {
@@ -133,28 +132,29 @@ xnvme_be_nvmf_create_rdma_controller(struct xnvme_be_nvmf_ctrlr **ctrlr)
 	}
 
 	err = xnvme_be_nvmf_create_rdma_qpair(&rdma_ctrlr->base, &admin_attr,
-					      &base->admin_qpair);
+					      &rdma_ctrlr->base.admin_qpair);
 	if (err) {
 		XNVME_DEBUG("FAILED: xnvme_be_nvmf_create_rdma_qpair() for admin_qpair, err: %d",
 			    err);
 		goto destroy_event_channel;
 	}
 
+	/*
 	err = xnvme_be_nvmf_create_rdma_qpair(&rdma_ctrlr->base, &sync_attr,
-					      &base->sync_qpair);
+					      &rdma_ctrlr->base.sync_qpair);
 	if (err) {
 		XNVME_DEBUG("FAILED: xnvme_be_nvmf_create_rdma_qpair() for sync_qpair, err: %d",
 			    err);
 		goto destroy_admin_qpair;
 	}
+	*/
 
-	rdma_ctrlr->base.ops = &g_xnvme_be_nvmf_rdma_ctrlr_ops;
 	*ctrlr = &rdma_ctrlr->base;
 
 	return 0;
 
 destroy_admin_qpair:
-	xnvme_be_nvmf_destroy_qpair(base->admin_qpair);
+	xnvme_be_nvmf_destroy_qpair(rdma_ctrlr->base.admin_qpair);
 destroy_event_channel:
 	rdma_destroy_event_channel(rdma_ctrlr->event_channel);
 free_ctrlr:
@@ -217,14 +217,13 @@ _disconnect_rdma_controller(struct xnvme_be_nvmf_ctrlr *ctrlr)
 		}
 
 		xnvme_be_nvmf_destroy_qpair(ctrlr->admin_qpair);
-		free(ctrlr->admin_qpair);
 
 		ctrlr->attached = 0;
 	}
 
 	// TODO: This requires proper handling.
-	xnvme_be_nvmf_destroy_qpair(ctrlr->sync_qpair);
-	free(ctrlr->sync_qpair);
+	//xnvme_be_nvmf_destroy_qpair(rdma_ctrlr->base.sync_qpair);
+	//free(rdma_ctrlr->base.sync_qpair);
 
 	return 0;
 }
