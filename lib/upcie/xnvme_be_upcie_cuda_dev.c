@@ -189,8 +189,8 @@ _cuda_dev_dmem_term(struct xnvme_dev *dev)
  *    (g_upcie_cuda_rte).  The NVMe controller accesses these directly via
  *    PCIe P2P DMA, bypassing host DRAM entirely.
  *
- * Consequently, both the host hugepage runtime (256 MiB) and the CUDA heap
- * (1 GiB) are initialized when the first upcie-cuda device is opened.
+ * Consequently, both the host hugepage runtime and the CUDA heap are
+ * initialized when the first upcie-cuda device is opened.
  */
 static int
 xnvme_be_upcie_cuda_dev_open(struct xnvme_dev *dev)
