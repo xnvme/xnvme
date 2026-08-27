@@ -33,7 +33,7 @@ xnvme_cuda_queue_create(struct xnvme_dev *dev, uint16_t depth, struct xnvme_cuda
 	// what is needed.
 	err = nvme_controller_cuda_create_io_qpair(state->ctrlr->ctrl,
 						   (struct nvme_qpair_cuda *)qpair, depth + 1,
-						   &g_upcie_cuda_rte.cuda_heap);
+						   &g_upcie_cuda_rte.cuda_heap, state->dmem);
 
 	xnvme_be_upcie_mproc_qids_unlock(state->ctrlr);
 
