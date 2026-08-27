@@ -34,6 +34,7 @@
 		     (struct xnvme_be_nvmf_transport **)g_xnvme_be_nvmf_transports; \
 	     *transport != NULL; ++transport)
 
+
 atomic_int g_xnvme_be_nvmf_ctrlr_id_counter = ATOMIC_VAR_INIT(0);
 extern struct xnvme_be_nvmf_transport g_xnvme_be_nvmf_rdma_transport;
 
