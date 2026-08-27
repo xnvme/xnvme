@@ -10,9 +10,9 @@
 #include <xnvme_dev.h>
 
 void *
-xnvme_be_upcie_hip_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t nbytes,
-			     uint64_t *phys)
+xnvme_be_upcie_hip_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
 {
+	const struct xnvme_be_upcie_state *state = (void *)dev->be.state;
 	void *buf;
 
 	buf = hipmem_dma_malloc(&g_upcie_hip_rte.hip_heap, nbytes);
@@ -21,7 +21,7 @@ xnvme_be_upcie_hip_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t n
 		return NULL;
 	}
 	if (phys) {
-		*phys = dmamem_va_to_iova(&g_upcie_hip_rte.dmem, buf);
+		*phys = dmamem_va_to_iova(state->dmem, buf);
 	}
 
 	return buf;
@@ -34,10 +34,11 @@ xnvme_be_upcie_hip_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf
 }
 
 int
-xnvme_be_upcie_hip_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf,
-			       uint64_t *phys)
+xnvme_be_upcie_hip_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys)
 {
-	*phys = dmamem_va_to_iova(&g_upcie_hip_rte.dmem, buf);
+	const struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+
+	*phys = dmamem_va_to_iova(state->dmem, buf);
 	if (!*phys) {
 		XNVME_DEBUG("FAILED: buf(%p) is neither heap nor registered", buf);
 		return -EINVAL;
@@ -49,21 +50,26 @@ xnvme_be_upcie_hip_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *
 /**
  * Register a caller-allocated device buffer for DMA
  *
- * Resolves through the same registry as the heap, so a buffer handed over here
- * is usable exactly as one from xnvme_buf_alloc(). Registering the same range
- * twice is cheap: the chunks it covers are refcounted.
+ * Resolves through this device's registry, so a buffer handed over here is
+ * usable on this device as one from xnvme_buf_alloc() is; behind an IOMMU each
+ * controller has IOVAs of its own, so register it with each device it is used
+ * from. Registering the same range twice is cheap: the chunks it covers are
+ * refcounted.
  */
 int
-xnvme_be_upcie_hip_mem_map(const struct xnvme_dev *XNVME_UNUSED(dev), void *vaddr, size_t nbytes,
-			   uint64_t *phys)
+xnvme_be_upcie_hip_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, uint64_t *phys)
 {
-	return xnvme_be_upcie_dmamem_map(&g_upcie_hip_rte.dmem, vaddr, nbytes, phys);
+	const struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+
+	return xnvme_be_upcie_dmamem_map(state->dmem, vaddr, nbytes, phys);
 }
 
 int
-xnvme_be_upcie_hip_mem_unmap(const struct xnvme_dev *XNVME_UNUSED(dev), void *vaddr)
+xnvme_be_upcie_hip_mem_unmap(const struct xnvme_dev *dev, void *vaddr)
 {
-	return xnvme_be_upcie_dmamem_unmap(&g_upcie_hip_rte.dmem, vaddr);
+	const struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+
+	return xnvme_be_upcie_dmamem_unmap(state->dmem, vaddr);
 }
 
 #endif

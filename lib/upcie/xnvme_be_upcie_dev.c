@@ -31,6 +31,202 @@ xnvme_be_upcie_va_bits(void)
 }
 
 /**
+ * Default IOVA window, one slice per controller
+ *
+ * The base clears the IOVAs iommufd hands out from the low end and the reserved
+ * regions near 4 GiB, and leaves the window inside a single usable range on a
+ * 39-bit aperture, the narrowest in common use.
+ */
+#define XNVME_BE_UPCIE_GPU_IOVA_BASE (256ULL << 30)
+#define XNVME_BE_UPCIE_GPU_IOVA_SIZE (64ULL << 30)
+#define XNVME_BE_UPCIE_GPU_MAX_SLICES 64
+
+static struct {
+	struct dmamem_iommu_map_pa owner; ///< Holds the window claim; maps nothing itself
+	int owner_alive;
+	uint64_t base;
+	uint64_t span; ///< Width of one slice
+	int nslices;
+	int used[XNVME_BE_UPCIE_GPU_MAX_SLICES];
+	int nused;
+} g_gpu_win;
+
+static uint64_t
+_env_u64(const char *name, uint64_t fallback)
+{
+	const char *env = getenv(name);
+	char *end = NULL;
+	uint64_t val;
+
+	if (!env || !*env) {
+		return fallback;
+	}
+
+	val = strtoull(env, &end, 0);
+	if (end && *end) {
+		XNVME_DEBUG("FAILED: %s('%s') is not a number; using the default", name, env);
+		return fallback;
+	}
+
+	return val;
+}
+
+int
+xnvme_be_upcie_gpu_map_required(void)
+{
+	return g_upcie_rte.mode != XNVME_BE_UPCIE_MODE_UIO_LUT;
+}
+
+/** Claim the window and fix its slice width; a no-op once claimed */
+static int
+_gpu_window_claim(const char *bdf, uint64_t span)
+{
+	uint64_t size, slice;
+	int err;
+
+	if (g_gpu_win.nslices) {
+		if (span > g_gpu_win.span) {
+			XNVME_DEBUG("FAILED: span(0x%" PRIx64 ") exceeds slice(0x%" PRIx64 ")",
+				    span, g_gpu_win.span);
+			return -ENOSPC;
+		}
+
+		return 0;
+	}
+
+	g_gpu_win.base = _env_u64("XNVME_UPCIE_GPU_IOVA_BASE", XNVME_BE_UPCIE_GPU_IOVA_BASE);
+	size = _env_u64("XNVME_UPCIE_GPU_IOVA_SIZE", XNVME_BE_UPCIE_GPU_IOVA_SIZE);
+	slice = _env_u64("XNVME_UPCIE_GPU_IOVA_SLICE", span * 2);
+
+	if (!g_gpu_win.base || !span || (slice < span) || (slice > size)) {
+		XNVME_DEBUG("FAILED: window 0x%" PRIx64 "+0x%" PRIx64 " cannot hold a 0x%" PRIx64
+			    " slice; check XNVME_UPCIE_GPU_IOVA_{BASE,SIZE,SLICE}",
+			    g_gpu_win.base, size, slice);
+		return -EINVAL;
+	}
+
+	g_gpu_win.span = slice;
+	g_gpu_win.nslices = (size / slice) > XNVME_BE_UPCIE_GPU_MAX_SLICES
+				    ? XNVME_BE_UPCIE_GPU_MAX_SLICES
+				    : (int)(size / slice);
+
+	/* type1 needs no reservation: the window clears the iova-0 hugepage. */
+	if (g_upcie_rte.mode != XNVME_BE_UPCIE_MODE_VFIO_CDEV) {
+		return 0;
+	}
+
+	err = dmamem_iommu_map_pa_open(&g_gpu_win.owner, bdf, g_gpu_win.base, size);
+	if (err) {
+		XNVME_DEBUG("FAILED: dmamem_iommu_map_pa_open(%s); err(%d); module loaded?", bdf,
+			    err);
+		g_gpu_win.nslices = 0;
+		return err;
+	}
+
+	err = dmamem_iommu_map_pa_reserve_window(&g_gpu_win.owner, &g_upcie_rte.cdev.iommufd);
+	if (err) {
+		XNVME_DEBUG("FAILED: dmamem_iommu_map_pa_reserve_window(0x%" PRIx64 "+0x%" PRIx64
+			    "); err(%d)",
+			    g_gpu_win.base, size, err);
+		dmamem_iommu_map_pa_close(&g_gpu_win.owner);
+		g_gpu_win.nslices = 0;
+		return err;
+	}
+	g_gpu_win.owner_alive = 1;
+
+	return 0;
+}
+
+/** Drop the claim once the last slice is handed back */
+static void
+_gpu_window_release(void)
+{
+	if (g_gpu_win.nused) {
+		return;
+	}
+
+	if (g_gpu_win.owner_alive) {
+		dmamem_iommu_map_pa_close(&g_gpu_win.owner);
+	}
+
+	/* The allowed ranges stay as they are; the IOAS goes with the runtime. */
+	memset(&g_gpu_win, 0, sizeof(g_gpu_win));
+}
+
+int
+xnvme_be_upcie_gpu_map_open(struct xnvme_be_upcie_gpu_map *map, const char *bdf, uint64_t span)
+{
+	int slice, err;
+
+	map->slice = -1;
+
+	if (!xnvme_be_upcie_gpu_map_required()) {
+		return 0;
+	}
+
+	if (!UPCIE_HAVE_IOMMU_MAP_PA) {
+		XNVME_DEBUG("FAILED: built without the iommu-map-pa UAPI");
+		return -ENOTSUP;
+	}
+
+	err = _gpu_window_claim(bdf, span);
+	if (err) {
+		return err;
+	}
+
+	for (slice = 0; slice < g_gpu_win.nslices; ++slice) {
+		if (!g_gpu_win.used[slice]) {
+			break;
+		}
+	}
+	if (slice == g_gpu_win.nslices) {
+		XNVME_DEBUG("FAILED: all %d window slices in use; raise "
+			    "XNVME_UPCIE_GPU_IOVA_SIZE",
+			    g_gpu_win.nslices);
+		_gpu_window_release();
+		return -ENOSPC;
+	}
+
+	err = dmamem_iommu_map_pa_open(
+		&map->imp, bdf, g_gpu_win.base + (uint64_t)slice * g_gpu_win.span, g_gpu_win.span);
+	if (err) {
+		XNVME_DEBUG("FAILED: dmamem_iommu_map_pa_open(%s); err(%d); module loaded?", bdf,
+			    err);
+		_gpu_window_release();
+		return err;
+	}
+
+	g_gpu_win.used[slice] = 1;
+	g_gpu_win.nused += 1;
+
+	map->alive = 1;
+	map->slice = slice;
+	snprintf(map->bdf, sizeof(map->bdf), "%s", bdf);
+
+	return 0;
+}
+
+void
+xnvme_be_upcie_gpu_map_close(struct xnvme_be_upcie_gpu_map *map)
+{
+	if (!map->alive) {
+		return;
+	}
+
+	dmamem_iommu_map_pa_close(&map->imp);
+
+	if (map->slice >= 0) {
+		g_gpu_win.used[map->slice] = 0;
+		g_gpu_win.nused -= 1;
+	}
+	map->slice = -1;
+	map->alive = 0;
+	map->bdf[0] = '\0';
+
+	_gpu_window_release();
+}
+
+/**
  * Terminate the uPCIe runtime-environment
  *
  * The state is globally accessible via g_upcie_rte, this function terminates it, unless it is

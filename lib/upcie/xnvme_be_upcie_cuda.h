@@ -21,7 +21,7 @@ struct xnvme_be_upcie_cuda_rte {
 	CUcontext cu_ctx;
 	struct cudamem_config cuda_config;
 	struct cudamem_heap cuda_heap;
-	struct dmamem dmem; ///< Registry wrapped for translation; allocation stays on the heap
+	struct dmamem dmem; ///< Shared translation; unused where each controller needs its own
 	int is_initialized;
 };
 
