@@ -102,7 +102,7 @@ _dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnv
 		goto ctrlr_ready;
 	}
 
-	if (dev->opts.shm_id && !(cfg->attr.caps & XNVME_BE_CAP_MPROC)) {
+	if (dev->opts.shm_id && !(cfg->attr.caps & XNVME_BE_CAP_CPLANE)) {
 		XNVME_DEBUG("FAILED: backend '%s' does not support multi-process", cfg->attr.name);
 		return -ENOTSUP;
 	}
