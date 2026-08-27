@@ -29,9 +29,9 @@ steps:
     args: '-k "(upcie or spdk) and not fabrics" tests'
     random_order: false
 
-- name: test_mproc
+- name: test_cplane
   uses: core.testrunner
   with:
-    # Excluded from multi-process mode: kvs, dual_be and qublk (have no --shm_id)
-    args: '-k "(upcie or spdk) and not (fabrics or kvs or dual_be or qublk)" tests --shm_id 1'
+    # Excluded from control-plane runs: kvs, dual_be and qublk (have no --homi-id)
+    args: '-k "(upcie or spdk) and not (fabrics or kvs or dual_be or qublk)" tests --homi-id 42'
     random_order: false

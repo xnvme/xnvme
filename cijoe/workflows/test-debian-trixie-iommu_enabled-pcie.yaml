@@ -48,9 +48,13 @@ steps:
     args: '-k "pcie" tests'
     random_order: false
 
-- name: test_mproc
+- name: test_cplane
   uses: core.testrunner
   with:
-    # Excluded from multi-process mode: kvs, dual_be and qublk (have no --shm_id)
-    args: '-k "pcie and not (upcie or fabrics or kvs or dual_be or qublk)" tests --shm_id 1'
+    # Excluded from control-plane runs: kvs, dual_be and qublk (have no
+    # --homi-id). uPCIe is included here as well as in the iommu_disabled
+    # run: a server hands a client the vfio descriptor over its socket, so
+    # sharing works behind an IOMMU, which the shared segment this replaced
+    # could not do.
+    args: '-k "pcie and not (fabrics or kvs or dual_be or qublk)" tests --homi-id 42'
     random_order: false

@@ -21,24 +21,24 @@ import pytest
 
 from .xnvme_be_combinations import get_backend_configurations
 
-_shm_id = 0
+_homi_id = 0
 
 
 def pytest_addoption(parser):
     parser.addoption(
-        "--shm_id",
+        "--homi-id",
         type=int,
         default=0,
-        help="Open devices with the given shm_id (0 = single process mode)",
+        help="Open devices against the given control-plane id (0 = single process)",
     )
 
 
 def pytest_configure(config):
-    global _shm_id
+    global _homi_id
     try:
-        _shm_id = config.getoption("--shm_id", default=0)
+        _homi_id = config.getoption("--homi-id", default=0)
     except ValueError:
-        _shm_id = 0
+        _homi_id = 0
 
 
 def get_osname():
@@ -49,8 +49,8 @@ def get_osname():
     return osname
 
 
-def get_shm_id():
-    return _shm_id if _shm_id else None
+def get_homi_id():
+    return _homi_id if _homi_id else None
 
 
 def xnvme_be_opts(options=None, only_labels=[]):
@@ -83,7 +83,7 @@ def xnvme_be_opts(options=None, only_labels=[]):
                                     "sync": be_sync,
                                     "async": be_async,
                                     "label": opts["label"],
-                                    "mproc": opts.get("mproc", False),
+                                    "cplane": opts.get("cplane", False),
                                 }
                             )
 
@@ -148,8 +148,10 @@ def xnvme_cli_args(device, be_opts):
     if be_opts:
         args += [f"--{arg} {val}" for arg, val in be_opts.items() if arg != "label"]
 
-    if _shm_id > 0:
-        args += [f"--shm_id {_shm_id}"]
+    if _homi_id > 0:
+        # One spelling for every backend: --homi-id fills both the field uPCIe
+        # reads and the segment id SPDK hands DPDK.
+        args += [f"--homi-id {_homi_id}"]
 
     return " ".join(args)
 
@@ -168,7 +170,7 @@ def xnvme_setup(labels=[], opts=[]):
         device = cijoe_config_get_device(search)
 
         dstr = device["uri"] if device else "None"
-        bstr = ",".join([f"{k}={v}" for k, v in be_opts.items() if k != "mproc"])
+        bstr = ",".join([f"{k}={v}" for k, v in be_opts.items() if k != "cplane"])
 
         paramid = f"uri={dstr},{bstr}"
 
@@ -235,9 +237,9 @@ class XnvmeDriver(object):
     def kernel_detach(cijoe):
         """Detach from kernel"""
 
-        # Rebinding devices and re-allocating hugepages invalidates a running primary,
-        # so tear it down first rather than leaving MprocPrimary with a stale handle.
-        MprocPrimary.stop(cijoe)
+        # Rebinding devices and re-allocating hugepages invalidates a running server,
+        # so tear it down first rather than leaving CPlaneServer with a stale handle.
+        CPlaneServer.stop(cijoe)
 
         # 64MB contigmem buffers avoid ENOMEM on FreeBSD's fragmented CI heap;
         # see toolbox/xnvme-driver.sh.
@@ -255,7 +257,7 @@ class XnvmeDriver(object):
     def kernel_attach(cijoe):
         """Attach to kernel"""
 
-        MprocPrimary.stop(cijoe)
+        CPlaneServer.stop(cijoe)
 
         err, _ = cijoe.run("xnvme-driver reset")
         if err:
@@ -302,14 +304,14 @@ def device(cijoe, request):
     from within the testcase body itself.
     """
     if request.param:
-        if _shm_id:
+        if _homi_id:
             callspec = getattr(request.node, "callspec", None)
             be_opts = callspec.params.get("be_opts") if callspec else None
             if be_opts:
-                if be_opts.get("mproc"):
-                    MprocPrimary.start(cijoe, be_opts["be"], be_opts.get("label"))
+                if be_opts.get("cplane"):
+                    CPlaneServer.start(cijoe, be_opts["be"], be_opts.get("label"))
                 else:
-                    pytest.skip(f"{be_opts.get('be')} does not support multi-process")
+                    pytest.skip(f"{be_opts.get('be')} cannot share a controller")
         XnvmeDriver.attach(cijoe, request.param)
 
     return request.param
@@ -349,16 +351,16 @@ def xnvme_parametrize(labels, opts):
     return decorator
 
 
-class MprocPrimary:
+class CPlaneServer:
     """
-    Manages the lifecycle of a homi primary daemon.
+    Manages the lifecycle of a homi server daemon.
 
-    A single primary holds every device carrying the labels of the backend-configuration
+    A single server holds every device carrying the labels of the backend-configuration
     under test, so it can serve whichever device a testcase asks for, as well as
     testcases enumerating and opening all of them. Labels vary per backend; the GPU
     backends use 'cuda'/'hip' where the host backend uses 'pcie'.
 
-    Tracks the backend and labels the running primary was started with (similar to
+    Tracks the backend and labels the running server was started with (similar to
     XnvmeDriver.IS_KERNEL_ATTACHED), so it is only restarted when those change.
     """
 
@@ -371,7 +373,7 @@ class MprocPrimary:
 
     @staticmethod
     def is_running(cijoe):
-        """Returns True when a homi primary is running"""
+        """Returns True when a homi server is running"""
 
         # Match on the process name; 'pgrep -f' also matched the shell that cijoe.run()
         # wraps the command in, so it never detected a failed start
@@ -381,9 +383,11 @@ class MprocPrimary:
 
     @staticmethod
     def is_ready(cijoe, be):
-        """Returns True when the homi primary has opened all of its devices"""
+        """Returns True when the homi server has opened all of its devices"""
 
-        err, _ = cijoe.run(f"grep -q '{MprocPrimary.READY_MARKER}' /tmp/mproc_{be}.out")
+        err, _ = cijoe.run(
+            f"grep -q '{CPlaneServer.READY_MARKER}' /tmp/cplane_{be}.out"
+        )
 
         return not err
 
@@ -391,71 +395,112 @@ class MprocPrimary:
     def start(cijoe, be, labels=None):
         labels = labels if labels else ["pcie"]
 
-        if MprocPrimary.RUNNING == (be, tuple(labels)):
+        if CPlaneServer.RUNNING == (be, tuple(labels)):
             return
 
-        uris = " ".join(d["uri"] for d in cijoe_config_get_all_devices(labels))
+        devices = cijoe_config_get_all_devices(labels)
+        uris = " ".join(d["uri"] for d in devices)
         if not uris:
             pytest.skip(f"Configuration has no device labelled: {labels}")
 
         XnvmeDriver.kernel_detach(cijoe)
 
+        # A server nobody here started is holding the devices, which a run
+        # before this one left behind. Every testcase wanting a server would
+        # otherwise skip on the probe below, because the device it wants is
+        # taken, and a suite reporting skips exits zero: a broken environment
+        # would read as a run where nothing applied.
+        if CPlaneServer.RUNNING is None and CPlaneServer.is_running(cijoe):
+            cijoe.run("pgrep -a homi")
+            pytest.fail(
+                "a homi server is already running that this run did not start;"
+                " it holds the devices, so nothing here can serve them. A run"
+                " killed before its teardown leaves one behind: 'pkill -9 -x"
+                " homi' clears it"
+            )
+
+        # A backend that cannot open the device at all on this machine is not a
+        # defect in what is under test, and a server that fails for that reason
+        # tells us nothing. Ask first, so that the environment produces a skip
+        # while a server that cannot start over devices that do open produces a
+        # failure.
+        err, _ = cijoe.run(f"xnvme info {devices[0]['uri']} --be {be}")
+        if err:
+            pytest.skip(f"be({be}) cannot open {devices[0]['uri']} on this machine")
+
         # SPDK backs its DMA memory with files in the hugetlbfs mount and never unlinks
-        # them, since secondaries must be able to map them. As xNVMe does not call
+        # them, since clients must be able to map them. As xNVMe does not call
         # spdk_env_fini(), they outlive the process and keep holding hugepages. Drop them
-        # so the primary starting here does so with a full pool.
+        # so the server starting here does so with a full pool.
         mount_point = cijoe.getconf("hugetlbfs.mount_point", "/mnt/huge")
         cijoe.run(f"rm -f {mount_point}/spdk*map_*")
 
         # 'stdbuf -oL' keeps the readiness marker from sitting in libc's fully-buffered
-        # stdout while the primary parks waiting for a signal
+        # stdout while the server parks waiting for a signal.
+        #
+        # 'setsid' and the closed stdin are what let this run against a remote
+        # target: nohup alone leaves the server holding the transport's
+        # channel, so the command never returns and the server is reported as
+        # not running. Harmless where the target is localhost.
         cijoe.run(
-            f"stdbuf -oL nohup homi start {uris} --be {be} --homi-id {_shm_id} "
-            f"> /tmp/mproc_{be}.out 2>&1 &"
+            f"setsid stdbuf -oL homi start {uris} --be {be} --homi-id {_homi_id} "
+            f"< /dev/null > /tmp/cplane_{be}.out 2>&1 &"
         )
 
         # Opening a device takes about a second, so waiting a fixed duration either
-        # wastes time or lets testcases attach while the primary is still opening the
-        # rest, where they fail with the primary unresponsive on the DPDK mp channel.
-        for _ in range(MprocPrimary.TIMEOUT):
-            if MprocPrimary.is_ready(cijoe, be):
+        # wastes time or lets testcases attach while the server is still opening the
+        # rest, where they fail with the server unresponsive on the DPDK mp channel.
+        for _ in range(CPlaneServer.TIMEOUT):
+            if CPlaneServer.is_ready(cijoe, be):
                 break
-            if not MprocPrimary.is_running(cijoe):
-                cijoe.run(f"cat /tmp/mproc_{be}.out")
-                pytest.fail(f"homi primary for be({be}) is not running")
+            if not CPlaneServer.is_running(cijoe):
+                cijoe.run(f"cat /tmp/cplane_{be}.out")
+                pytest.fail(f"homi server for be({be}) is not running")
             sleep(1)
         else:
-            cijoe.run(f"cat /tmp/mproc_{be}.out")
-            pytest.fail(f"homi primary for be({be}) did not become ready")
+            cijoe.run(f"cat /tmp/cplane_{be}.out")
+            pytest.fail(f"homi server for be({be}) did not become ready")
 
-        MprocPrimary.RUNNING = (be, tuple(labels))
-        MprocPrimary.CIJOE = cijoe
+        CPlaneServer.RUNNING = (be, tuple(labels))
+        CPlaneServer.CIJOE = cijoe
+
+    @staticmethod
+    def forget():
+        """
+        Drop the record of a server that is already gone
+
+        For a testcase that ended the server itself, where stop() has nothing
+        left to ask for or wait on. The next testcase to want one starts it.
+        """
+
+        CPlaneServer.RUNNING = None
+        CPlaneServer.CIJOE = None
 
     @staticmethod
     def stop(cijoe):
-        if MprocPrimary.RUNNING is None:
+        if CPlaneServer.RUNNING is None:
             return
 
-        MprocPrimary.RUNNING = None
-        MprocPrimary.CIJOE = None
+        CPlaneServer.RUNNING = None
+        CPlaneServer.CIJOE = None
 
         cijoe.run("pkill -x homi || true")
 
-        # Closing a controller is not instant, and a primary still holding the device
+        # Closing a controller is not instant, and a server still holding the device
         # keeps its successor from claiming it, so wait for it to actually be gone
-        for _ in range(MprocPrimary.TIMEOUT):
-            if not MprocPrimary.is_running(cijoe):
+        for _ in range(CPlaneServer.TIMEOUT):
+            if not CPlaneServer.is_running(cijoe):
                 break
             sleep(1)
         else:
-            pytest.fail("homi primary did not terminate")
+            pytest.fail("homi server did not terminate")
 
 
 @pytest.fixture(scope="session", autouse=True)
-def mproc_teardown():
+def cplane_teardown():
     yield
-    if MprocPrimary.CIJOE is not None:
-        MprocPrimary.stop(MprocPrimary.CIJOE)
+    if CPlaneServer.CIJOE is not None:
+        CPlaneServer.stop(CPlaneServer.CIJOE)
 
 
 # Sort order for pytest_collection_modifyitems. `be` first because backend
