@@ -16,7 +16,7 @@ allocated:
   enabling PCIe peer-to-peer (P2P) transfers directly between the NVMe device
   and the GPU.
 
-Additionally, the host-memory backend supports a **{ref}`sec-backends-upcie-mproc`**
+Additionally, the host-memory backend supports a **{ref}`sec-backends-upcie-cplane`**
 mode in which several processes share a single NVMe controller via a designated
 server process.
 
@@ -57,7 +57,7 @@ DMA memory is wired up:
 
 `uio_pci_generic`
 : UIO_LUT. BAR mapping plus a hugepage-backed lookup-table translator. The
-  only mode that supports {ref}`sec-backends-upcie-mproc`.
+  only mode that supports {ref}`sec-backends-upcie-cplane`.
 
 `vfio-pci` with `/dev/iommu`
 : VFIO_CDEV. One iommufd IOAS shared across controllers, memory imported
@@ -114,5 +114,5 @@ struct xnvme_dev *cuda_dev = xnvme_dev_open("0000:03:00.0", &cuda_opts);
 
 host
 cuda
-mproc
+cplane
 ```
