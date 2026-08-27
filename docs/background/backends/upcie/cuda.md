@@ -190,6 +190,131 @@ the host hugepage runtime (256 MiB) used to hold NVMe control structures. Follow
 the hugepage setup steps in {ref}`sec-backends-upcie-host` before opening an
 **upcie-cuda** device.
 
+(sec-backends-upcie-cuda-gpu-domain)=
+
+### GPU IOMMU domain
+
+Needed only for GPU-resident queues -- `xnvmeperf cuda-run`, `cuda-verify`, and
+anything else built on {ref}`sec-api-c-gpu`. Host-driven I/O on this backend is
+unaffected and needs nothing from this section.
+
+A host-driven queue is rung by the CPU. A GPU-resident queue rings its own
+doorbell, and that is a **peer-to-peer write from the GPU into the controller's
+BAR0**. Two IOMMU domains are therefore in play, and they are not the same one:
+
+| Traffic | Translated by |
+|---------|---------------|
+| NVMe reading and writing GPU memory | the **controller's** domain, which `vfio-pci` owns and {ref}`sec-backends-upcie-cuda-iommu` sets up |
+| GPU writing the controller's doorbell | the **GPU's** domain, which its in-kernel driver owns |
+
+CUDA hands the GPU the BAR's physical address for the doorbell. With the GPU in
+a translating domain nothing has mapped that address for it, so every write
+faults and no command is ever fetched.
+
+#### Recognising it
+
+The symptom is a run that completes while every single I/O fails:
+
+```text
+ Device                        IOPS      MiB/s   Failed
+ 0000:01:00.0                  2.30       0.01       32
+```
+
+The `Failed` count equals the commands submitted, and the elapsed time is the
+queue's timeout rather than `--runtime`, because the first round of commands
+waits out a completion that never arrives.
+
+What confirms it is the kernel log, which names the **GPU**, not the NVMe:
+
+```text
+nvidia 0000:2b:00.0: AMD-Vi: IO_PAGE_FAULT domain=0x0012 address=0xee901010
+```
+
+`0xee901010` is BAR0 plus `0x1010`, the submission-queue doorbell of queue 2.
+An Intel host reports the equivalent under `DMAR:`.
+
+Note what is *not* in that log: no fault against the `vfio-pci` device. The
+controller's own access to GPU memory is mapped correctly; only the doorbell is
+not.
+
+#### Fixing it persistently
+
+Boot with the GPU in a passthrough domain. Add to `GRUB_CMDLINE_LINUX_DEFAULT`
+in `/etc/default/grub`:
+
+```text
+iommu.passthrough=1
+```
+
+then `sudo update-grub && sudo reboot`.
+
+This changes only the *default* domain type. `vfio-pci` still attaches its own
+enforcing domain to the NVMe, so the controller stays confined and
+{ref}`sec-backends-upcie-cuda-iommu` keeps working as described.
+
+#### Fixing it without a reboot
+
+A group's domain type can be switched at runtime, but only while **no device in
+that group has a driver bound**. On a headless host that is straightforward; a
+machine running a display server on the GPU cannot do it.
+
+Find the group and everything in it -- the GPU's audio function usually shares
+it, and it has to be unbound too:
+
+```bash
+readlink -f /sys/bus/pci/devices/0000:2b:00.0/iommu_group
+ls /sys/bus/pci/devices/0000:2b:00.0/iommu_group/devices/
+```
+
+The addresses and the group number below are from one host; substitute what the
+two commands above report. Release whatever holds the GPU, then unbind, switch,
+and rebind:
+
+```bash
+# What is holding it? An empty result is what you want.
+sudo fuser -v /dev/nvidia*
+
+sudo systemctl stop nvidia-dcgm nvidia-persistenced
+sudo rmmod nvidia_uvm   # plus nvidia_drm and nvidia_modeset where loaded
+
+echo 0000:2b:00.1 | sudo tee /sys/bus/pci/drivers/snd_hda_intel/unbind
+echo 0000:2b:00.0 | sudo tee /sys/bus/pci/drivers/nvidia/unbind
+
+echo identity | sudo tee /sys/kernel/iommu_groups/16/type
+
+echo 0000:2b:00.0 | sudo tee /sys/bus/pci/drivers/nvidia/bind
+echo 0000:2b:00.1 | sudo tee /sys/bus/pci/drivers/snd_hda_intel/bind
+sudo modprobe nvidia_uvm
+sudo systemctl start nvidia-dcgm
+```
+
+The write fails with `EBUSY` if anything is still bound. This does **not**
+survive a reboot.
+
+#### Checking it took
+
+```bash
+cat /sys/kernel/iommu_groups/16/type      # identity
+nvidia-smi                                # the GPU came back
+```
+
+Then read data back through the GPU queues rather than trusting a throughput
+number, and confirm the kernel stayed quiet:
+
+```bash
+sudo xnvmeperf cuda-verify --be upcie-cuda --iosize 4096 --qdepth 32 \
+    --nqueues 2 0000:01:00.0
+sudo dmesg | grep -iE 'AMD-Vi|DMAR'
+```
+
+`cuda-verify` should report `0 mismatches` and `dmesg` nothing at all.
+
+```{note}
+This is a constraint on GPUDirect peer-to-peer traffic generally, not on xNVMe
+or uPCIe. Any peer-to-peer write from the GPU to another device's BAR is subject
+to it.
+```
+
 (sec-backends-upcie-cuda-gpu)=
 
 ## GPU-Resident Queue API
@@ -198,26 +323,10 @@ The **upcie-cuda** backend supports GPU-resident NVMe queue pairs via the
 `libxnvme_cuda` API. See {ref}`sec-api-c-gpu` for the full API reference,
 including host-side setup, CUDA kernel dispatch, and queue depth semantics.
 
-### The GPU's own IOMMU domain
-
-A GPU-resident queue rings the doorbell itself, which is a peer-to-peer write
-from the GPU into the controller's BAR0. That write is translated by the *GPU's*
-IOMMU domain, not the controller's, and CUDA gives the GPU the BAR's physical
-address -- so with the GPU in a translating domain it faults:
-
-    nvidia 0000:2b:00.0: AMD-Vi: IO_PAGE_FAULT domain=0x0012 address=0xee901010
-
-The GPU therefore has to sit in a passthrough domain, whatever the controller is
-bound to. Boot with `iommu.passthrough=1`, which leaves vfio free to attach its
-own enforcing domain to the NVMe, or switch the GPU's group at runtime with all
-of its devices' drivers unbound:
-
-```bash
-echo identity | sudo tee /sys/kernel/iommu_groups/<N>/type
-```
-
-This is a constraint on GPUDirect P2P generally rather than on this backend:
-host-driven queues are unaffected, since the CPU writes the doorbell.
+A GPU-resident queue rings its own doorbell, which is peer-to-peer traffic the
+GPU's IOMMU domain has to be able to carry. On a host with an IOMMU enabled that
+takes one more step than the host-driven path needs; see
+{ref}`sec-backends-upcie-cuda-gpu-domain`.
 
 (sec-backends-upcie-cuda-validation)=
 
