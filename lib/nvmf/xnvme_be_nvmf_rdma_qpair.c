@@ -98,18 +98,56 @@ _destroy_rdma_qpair(struct xnvme_be_nvmf_rdma_qpair *qpair)
 }
 
 static int
+_handle_ibv_completion(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc)
+{
+	if (wc->wc_flags & IBV_WC_WITH_IMM) {
+		XNVME_DEBUG("INFO: Work completion with immediate data, imm_data: %u", wc->imm_data);
+		// TODO: Figure out if anything needs to be done
+	}
+	
+	if (wc->wc_flags & IBV_WC_WITH_INV) {
+		XNVME_DEBUG("INFO: Work completion with invalidate, invalidate_rkey: %u", wc->invalidated_rkey);
+		// TODO: track invalidate
+	}
+
+	return 0;
+}
+
+static inline const char *
+_ibv_wc_opcode_str(enum ibv_wc_opcode opcode)
+{
+	switch (opcode) {
+	case IBV_WC_SEND: return "SEND";
+	case IBV_WC_RDMA_WRITE: return "RDMA_WRITE";
+	case IBV_WC_RDMA_READ: return "RDMA_READ";
+	case IBV_WC_COMP_SWAP: return "COMP_SWAP";
+	case IBV_WC_FETCH_ADD: return "FETCH_ADD";
+	case IBV_WC_BIND_MW: return "BIND_MW";
+	case IBV_WC_RECV: return "RECV";
+	case IBV_WC_RECV_RDMA_WITH_IMM: return "RECV_RDMA_WITH_IMM";
+	default: return "UNKNOWN";
+	}
+}
+
+static int
 _handle_send_cmpl(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc)
 {
+	struct xnvme_be_nvmf_wr_id wr_id = {.raw = wc->wr_id};
 	int status = (wc->status == IBV_WC_SUCCESS) ? 0 : -EIO;
 	/* wr_id carries the original buffer pointer set in _rdma_send_capsule. */
 	void *buf = (void *)(uintptr_t)wc->wr_id;
 
 	if (wc->status != IBV_WC_SUCCESS) {
 		XNVME_DEBUG("FAILED: send WC error: %s", ibv_wc_status_str(wc->status));
-	}
+	} else {
+		XNVME_DEBUG("INFO: Work completion, status: %s, opcode: %s, wr_id: %lu, byte_len: %u", 
+			ibv_wc_status_str(wc->status), _ibv_wc_opcode_str(wc->opcode), wc->wr_id, wc->byte_len);
+		XNVME_DEBUG("INFO: Work completion, wr_id index: %u, type: %u", wr_id.index, wr_id.type);
+		_handle_ibv_completion(qpair, wc);
 
-	if (qpair->on_send_cmpl) {
-		qpair->on_send_cmpl(qpair, buf, status);
+		if (qpair->on_send_cmpl) {
+			qpair->on_send_cmpl(qpair, buf, status);
+		}
 	}
 
 	return 0;
@@ -128,29 +166,36 @@ _handle_recv_cmpl(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc)
 	if (wc->status != IBV_WC_SUCCESS) {
 		XNVME_DEBUG("FAILED: recv WC error: %s", ibv_wc_status_str(wc->status));
 		return -EIO;
-	}
+	} else {
+		XNVME_DEBUG("INFO: Work completion, status: %s, opcode: %s, wr_id: %lu, byte_len: %u", 
+			ibv_wc_status_str(wc->status), _ibv_wc_opcode_str(wc->opcode), wc->wr_id, wc->byte_len);
+		XNVME_DEBUG("INFO: Work completion, wr_id index: %u, type: %u", wr_id.index, wr_id.type);
 
-	buf = rdma_qpair->recv_buffer + wr_id.index * NVME_CPL_CAPSULE_SIZE;
+		_handle_ibv_completion(qpair, wc);
 
-	/* Re-post the slot before the callback so the pool never drains. */
-	sge = (struct ibv_sge){
-		.addr = (uintptr_t)buf,
-		.length = NVME_CPL_CAPSULE_SIZE,
-		.lkey = rdma_qpair->recv_mr->lkey,
-	};
-	recv_wr = (struct ibv_recv_wr){
-		.wr_id = wc->wr_id,
-		.sg_list = &sge,
-		.num_sge = 1,
-	};
-	err = ibv_post_recv(rdma_qpair->cm_id->qp, &recv_wr, NULL);
-	if (err) {
-		XNVME_DEBUG("FAILED: ibv_post_recv() to re-post slot, err: %d", err);
-		return err;
-	}
+		buf = rdma_qpair->recv_buffer + wr_id.index * NVME_CPL_CAPSULE_SIZE;
 
-	if (qpair->on_capsule_recv) {
-		qpair->on_capsule_recv(qpair, buf, NVME_CPL_CAPSULE_SIZE);
+		/* Re-post the slot before the callback so the pool never drains. */
+		sge = (struct ibv_sge){
+			.addr = (uintptr_t)buf,
+			.length = NVME_CPL_CAPSULE_SIZE,
+			.lkey = rdma_qpair->recv_mr->lkey,
+		};
+		recv_wr = (struct ibv_recv_wr){
+			.wr_id = wc->wr_id,
+			.sg_list = &sge,
+			.num_sge = 1,
+		};
+
+		err = ibv_post_recv(rdma_qpair->cm_id->qp, &recv_wr, NULL);
+		if (err) {
+			XNVME_DEBUG("FAILED: ibv_post_recv() to re-post slot, err: %d", err);
+			return err;
+		}
+
+		if (qpair->on_capsule_recv) {
+			qpair->on_capsule_recv(qpair, buf, NVME_CPL_CAPSULE_SIZE);
+		}
 	}
 
 	return 0;

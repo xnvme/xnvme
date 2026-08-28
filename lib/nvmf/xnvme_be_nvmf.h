@@ -60,4 +60,11 @@ extern struct xnvme_be_sync g_xnvme_be_nvmf_sync;
 
 #define XNVME_NVMF_DISCOVERY_NQN "nqn.2014-08.org.nvmexpress.discovery"
 
+// TODO: Deal with this later. 
+static inline void _print_nvme_completion(struct xnvme_spec_cpl *cpl)
+{
+	XNVME_DEBUG("INFO: NVMe Completion - cid: %u, sc: %u, sct: %u",
+		    cpl->cid, cpl->status.sc, cpl->status.sct);
+}
+
 #endif /* __INTERNAL_XNVME_BE_NVMF_H */

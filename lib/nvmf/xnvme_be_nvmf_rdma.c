@@ -121,12 +121,50 @@ _handle_fabric_connect_error(struct xnvme_spec_cpl *cpl,
 	}
 }
 
+static inline void
+_handle_fabric_connect(struct xnvme_be_nvmf_qpair *qpair, void *buf, size_t len)
+{
+	struct xnvme_spec_cpl *cpl = buf;
+	struct xnvme_be_nvmf_connect_response_cpl *connect_cpl =
+		(struct xnvme_be_nvmf_connect_response_cpl *)cpl;
+
+	if (cpl->status.sc != 0) {
+		_handle_fabric_connect_error(cpl, connect_cpl);
+		qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
+		return;
+	}
+
+	qpair->cntlid = ((struct xnvme_be_nvmf_connect_response_cpl *)cpl)->success.cntlid;
+
+	/* TODO: Deal with authentication requirements later*/
+	if (connect_cpl->success.authreq.ascr) {
+		XNVME_DEBUG("ERROR: Fabric Connect accepted, but authentication is "
+				"required (ascr=1)");
+		qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
+	} else if (connect_cpl->success.authreq.atr) {
+		XNVME_DEBUG("ERROR: Fabric Connect accepted, but authentication is "
+				"required (atr=1)");
+		qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
+	} else {
+		XNVME_DEBUG("INFO: Fabric Connect accepted, cntlid: %u", qpair->cntlid);
+		qpair->state = XNVME_NVMF_QPAIR_STATE_READY;
+	}
+
+	return;
+}
+
+static inline void _handle_nvme_completion(struct xnvme_be_nvmf_qpair *qpair, void *buf, size_t len)
+{
+	
+}
+
 void
 xnvme_be_nvmf_rdma_on_capsule_recv(struct xnvme_be_nvmf_qpair *qpair, void *buf, size_t len)
 {
 	struct xnvme_spec_cpl *cpl = buf;
 	struct xnvme_be_nvmf_connect_response_cpl *connect_cpl =
 		(struct xnvme_be_nvmf_connect_response_cpl *)cpl;
+	struct xnvme_be_nvmf_req *req = NULL;
 
 	if (len < sizeof(*cpl)) {
 		XNVME_DEBUG("FAILED: short capsule, len: %zu", len);
@@ -134,33 +172,23 @@ xnvme_be_nvmf_rdma_on_capsule_recv(struct xnvme_be_nvmf_qpair *qpair, void *buf,
 		return;
 	}
 
+	req = xnvme_be_nvmf_req_get(qpair->req_pool, cpl->cid);
+	if (!req) {
+		XNVME_DEBUG("FAILED: could not get request for cid: %u", cpl->cid);
+		qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
+		return;
+	}
+
+	_print_nvme_completion(cpl);
+
 	switch (qpair->state) {
 	case XNVME_NVMF_QPAIR_STATE_CONNECTED:
-		if (cpl->status.sc != 0) {
-			_handle_fabric_connect_error(cpl, connect_cpl);
-			qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
-			return;
-		}
-
-		qpair->cntlid = ((struct xnvme_be_nvmf_connect_response_cpl *)cpl)->success.cntlid;
-
-		/* TODO: Deal with authentication requirements later*/
-		if (connect_cpl->success.authreq.ascr) {
-			XNVME_DEBUG("ERROR: Fabric Connect accepted, but authentication is "
-				    "required (ascr=1)");
-			qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
-		} else if (connect_cpl->success.authreq.atr) {
-			XNVME_DEBUG("ERROR: Fabric Connect accepted, but authentication is "
-				    "required (atr=1)");
-			qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
-		} else {
-			XNVME_DEBUG("INFO: Fabric Connect accepted, cntlid: %u", qpair->cntlid);
-			qpair->state = XNVME_NVMF_QPAIR_STATE_READY;
-		}
+		_handle_fabric_connect(qpair, buf, len);
 		break;
 
 	case XNVME_NVMF_QPAIR_STATE_READY:
 		/* Normal I/O completions are dispatched by the layer above. */
+		_handle_nvme_completion(qpair, buf, len);
 		break;
 
 	default:
