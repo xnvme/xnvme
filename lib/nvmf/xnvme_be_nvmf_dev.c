@@ -105,7 +105,7 @@ xnvme_be_nvmf_transport_probe(struct xnvme_be_nvmf_transport *transport, struct 
 
 	/* TODO: Move all of this into ctrlr_create */
 	tmp_ctrlr->ctrlr_id = ctrlr_id;
-	tmp_ctrlr->cm_state = XNVME_NVMF_CTRLR_STATE_INIT;
+	tmp_ctrlr->ctrlr_state = XNVME_NVMF_CTRLR_STATE_INIT;
 	tmp_ctrlr->last_allocated_queue_id = XNVME_BE_NVMF_IO_QUEUE_ID_START;
 	tmp_ctrlr->attached = 0;
 	tmp_ctrlr->discovery_ctrlr = dev->opts.nsid == 0 ? 1 : 0;
@@ -119,7 +119,7 @@ xnvme_be_nvmf_transport_probe(struct xnvme_be_nvmf_transport *transport, struct 
 		goto destroy_controller;
 	}
 
-	tmp_ctrlr->cm_state = XNVME_NVMF_CTRLR_STATE_CONNECTED;
+	tmp_ctrlr->ctrlr_state = XNVME_NVMF_CTRLR_STATE_CONNECTED;
 	tmp_ctrlr->attached = 1;
 	*ctrlr = tmp_ctrlr;
 
@@ -213,7 +213,7 @@ xnvme_be_nvmf_ctrlr_term(void *ctrlr)
 	XNVME_DEBUG("INFO: ctrlr_term() for NVMe-oF controller");
 
 	if (nvmf_ctrlr) {
-		if (nvmf_ctrlr->cm_state == XNVME_NVMF_CTRLR_STATE_CONNECTED) {
+		if (nvmf_ctrlr->ctrlr_state == XNVME_NVMF_CTRLR_STATE_CONNECTED) {
 			err = xnvme_be_nvmf_ctrlr_disconnect(nvmf_ctrlr);
 			if (err) {
 				XNVME_DEBUG("FAILED: xnvme_be_nvmf_ctrlr_disconnect(), err: %d",

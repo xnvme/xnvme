@@ -21,7 +21,7 @@ struct xnvme_be_nvmf_ctrlr {
 	struct xnvme_be_nvmf_ctrlr_ops *ops;
 	pthread_mutex_t lock;
 	uint8_t ctrlr_id;                     ///< Controller ID for this device
-	enum xnvme_nvmf_ctrlr_state cm_state; ///< Connection state of the controller
+	enum xnvme_nvmf_ctrlr_state ctrlr_state; ///< Connection state of the controller
 	struct xnvme_be_nvmf_qpair *admin_qpair;
 	struct xnvme_be_nvmf_qpair *sync_qpair;
 	int last_allocated_queue_id;
