@@ -63,6 +63,27 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_nvmf_connect_response_cpl) ==
 			    sizeof(struct xnvme_spec_cpl),
 		    "Incorrect size")
 
+struct xnvme_be_nvmf_property_get_response_cpl {
+	uint64_t value;
+	uint16_t sqhd;
+	uint16_t rsvd1;
+	uint16_t cid;
+	struct xnvme_spec_status status;
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_nvmf_property_get_response_cpl) ==
+			    sizeof(struct xnvme_spec_cpl),
+		    "Incorrect size")
+
+struct xnvme_be_nvmf_property_set_response_cpl {
+	uint64_t rsvd1;
+	uint16_t sqhd;
+	uint16_t cid;
+	struct xnvme_spec_status status;
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_nvmf_property_set_response_cpl) ==
+			    sizeof(struct xnvme_spec_cpl),
+		    "Incorrect size")
+
 static inline void
 _handle_fabric_connect_error(struct xnvme_spec_cpl *cpl,
 			     struct xnvme_be_nvmf_connect_response_cpl *connect_cpl)
