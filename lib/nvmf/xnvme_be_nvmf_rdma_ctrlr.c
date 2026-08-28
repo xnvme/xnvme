@@ -33,7 +33,7 @@ _process_cm_events(struct xnvme_be_nvmf_ctrlr *ctrlr, int timeout_ms)
 	struct xnvme_timer timer;
 	int err = 0;
 
-	pthread_mutex_lock(&rdma_ctrlr->lock);
+	pthread_mutex_lock(&ctrlr->lock);
 
 	xnvme_timer_start(&timer);
 	do {
@@ -62,7 +62,7 @@ _process_cm_events(struct xnvme_be_nvmf_ctrlr *ctrlr, int timeout_ms)
 	}
 
 unlock_ctrlr:
-	pthread_mutex_unlock(&rdma_ctrlr->lock);
+	pthread_mutex_unlock(&ctrlr->lock);
 	return err;
 }
 
@@ -121,7 +121,7 @@ xnvme_be_nvmf_create_rdma_controller(struct xnvme_be_nvmf_ctrlr **ctrlr)
 		XNVME_DEBUG("FAILED: calloc(), err: %d", errno);
 		return -ENOMEM;
 	}
-	pthread_mutex_init(&rdma_ctrlr->lock, NULL);
+	pthread_mutex_init(&rdma_ctrlr->base.lock, NULL);
 	rdma_ctrlr->base.ops = &g_xnvme_be_nvmf_rdma_ctrlr_ops;
 
 	rdma_ctrlr->event_channel = rdma_create_event_channel();

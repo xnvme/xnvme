@@ -58,7 +58,6 @@ struct xnvme_be_nvmf_rdma_qpair {
 
 struct xnvme_be_nvmf_rdma_ctrlr {
 	struct xnvme_be_nvmf_ctrlr base;
-	pthread_mutex_t lock;           ///< Controller lock for thread-safe operations
 	struct rdma_addrinfo *res;      ///< Resolved address information array for the controller
 	struct rdma_addrinfo *selected; ///< Selected address information for the controller
 	struct rdma_event_channel *event_channel;
