@@ -131,19 +131,19 @@ xnvme_be_nvmf_create_rdma_controller(struct xnvme_be_nvmf_ctrlr **ctrlr)
 		goto free_ctrlr;
 	}
 
-	err = xnvme_be_nvmf_create_rdma_qpair(&rdma_ctrlr->base, &admin_attr,
+	err = xnvme_be_nvmf_qpair_create(&rdma_ctrlr->base, &admin_attr,
 					      &rdma_ctrlr->base.admin_qpair);
 	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_be_nvmf_create_rdma_qpair() for admin_qpair, err: %d",
+		XNVME_DEBUG("FAILED: xnvme_be_nvmf_qpair_create() for admin_qpair, err: %d",
 			    err);
 		goto destroy_event_channel;
 	}
 
 	/*
-	err = xnvme_be_nvmf_create_rdma_qpair(&rdma_ctrlr->base, &sync_attr,
+	err = xnvme_be_nvmf_qpair_create(&rdma_ctrlr->base, &sync_attr,
 					      &rdma_ctrlr->base.sync_qpair);
 	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_be_nvmf_create_rdma_qpair() for sync_qpair, err: %d",
+		XNVME_DEBUG("FAILED: xnvme_be_nvmf_qpair_create() for sync_qpair, err: %d",
 			    err);
 		goto destroy_admin_qpair;
 	}

@@ -310,7 +310,7 @@ _connect_rdma_qpair_sync(struct xnvme_be_nvmf_qpair *qpair)
 }
 
 int
-_initialize_rdma_qpair(struct xnvme_be_nvmf_ctrlr *ctrlr, uint16_t qid, int qsize,
+_initialize_rdma_qpair(struct xnvme_be_nvmf_ctrlr *ctrlr,  size_t qsize,
 		       struct xnvme_be_nvmf_qpair *qpair)
 {
 	struct xnvme_be_nvmf_rdma_qpair *rdma_qpair = TO_XNVME_NVMF_RDMA_QPAIR(qpair);
@@ -343,7 +343,7 @@ xnvme_be_nvmf_create_rdma_qpair(struct xnvme_be_nvmf_ctrlr *ctrlr, struct xnvme_
 		return -ENOMEM;
 	}
 
-	_initialize_rdma_qpair(ctrlr, attr->qid, attr->qsize, &rdma_qpair->base);
+	_initialize_rdma_qpair(ctrlr, attr->qsize, &rdma_qpair->base);
 
 	*qpair = &rdma_qpair->base;
 
