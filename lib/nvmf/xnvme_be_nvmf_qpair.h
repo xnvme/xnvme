@@ -7,12 +7,6 @@
 struct xnvme_be_nvmf_qpair;
 struct xnvme_be_nvmf_qpair_ops;
 
-/* 8 AER slots + 1 FabricTermReq; 4 internal slots; transport must keep at least this many recv
- * buffers posted. */
-#define XNVME_NVMF_QPAIR_ASYNC_RECV_RESERVE 13
-/* 4 internal slots; transport must keep at least this many send buffers available. */
-#define XNVME_NVMF_QPAIR_ASYNC_SEND_RESERVE 4
-
 enum xnvme_nvmf_qpair_state {
 	XNVME_NVMF_QPAIR_STATE_INVALID = 0,
 	XNVME_NVMF_QPAIR_STATE_INIT,
@@ -71,11 +65,10 @@ struct xnvme_be_nvmf_qpair {
  *
  * connect / disconnect / destroy
  *   Manage the lifetime of the underlying transport connection. On connect the
- *   transport must pre-post XNVME_NVMF_QPAIR_ASYNC_RECV_RESERVE receive
- *   buffers before returning. These are owned by the transport; the protocol
- *   layer never calls post_recv for them. When a reserve buffer is consumed the
- *   transport re-posts it before invoking on_capsule_recv so the pool never
- *   drains. For stream-based transports (TCP) this is a no-op.
+ *   transport must pre-post receive buffers before returning. These are owned 
+ *   by the transport; the protocol layer never calls post_recv for them. When 
+ *   a reserve buffer is consumed the transport re-posts it before invoking 
+ *   on_capsule_recv so the pool never drains. 
  *
  * send_capsule
  *   Place one capsule (buf, len) onto the send queue. The caller owns the
