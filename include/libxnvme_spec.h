@@ -1857,6 +1857,21 @@ enum xnvme_spec_psdt {
 	XNVME_SPEC_PSDT_SGL_MPTR_SGL        = 0x2,
 };
 
+enum xnvme_spec_opcode {
+	XNVME_SPEC_OPCODE_FABRIC_COMMAND = 0x7f,
+};
+
+enum xnvme_spec_fabric_command_type {
+	XNVME_SPEC_FABRIC_COMMAND_PROPERTY_SET = 0x0,
+	XNVME_SPEC_FABRIC_COMMAND_CONNECT = 0x1,
+	XNVME_SPEC_FABRIC_COMMAND_PROPERTY_GET = 0x4,
+	XNVME_SPEC_FABRIC_COMMAND_AUTHENTICATION_SEND = 0x5,
+	XNVME_SPEC_FABRIC_COMMAND_AUTHENTICATION_RECEIVE = 0x6,
+	XNVME_SPEC_FABRIC_COMMAND_DISCONNECT = 0x8,	
+	XNVME_SPEC_FABRIC_COMMAND_VENDOR_START = 0xc0,
+	XNVME_SPEC_FABRIC_COMMAND_VENDOR_END = 0xff,
+};
+
 /**
  * NVMe Command Accessor for common use of the 64byte NVMe command
  *
@@ -2666,6 +2681,42 @@ struct xnvme_spec_fabric_connect_cmd {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_fabric_connect_cmd) == 64, "Incorrect size")
 
+struct xnvme_spec_fabric_property_get_cmd {
+	uint32_t cdw0;
+	uint8_t fctype;
+	uint8_t rsvd[35];
+	struct {
+		uint8_t rsvd4 : 5;
+		uint8_t prs: 3;
+	} attrib;
+	uint8_t rsvd2[3];
+	uint32_t ofst;
+	uint64_t rsvd5[2];
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_fabric_property_get_cmd) == 64, "Incorrect size")
+
+struct xnvme_spec_fabric_property_set_cmd {
+	uint32_t cdw0;
+	uint8_t fctype;
+	uint8_t rsvd[35];
+	struct {
+		uint8_t rsvd4 : 5;
+		uint8_t pus: 3;
+	} attrib;
+	uint8_t rsvd2[3];
+	uint32_t ofst;
+	union {
+		uint64_t value;
+		struct {
+			uint32_t ddw;
+			uint32_t rsvd3;
+		};
+	};
+	uint64_t rsvd5;
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_fabric_property_set_cmd) == 64, "Incorrect size")
+
+
 /**
  * NVMe Command Accessors
  *
@@ -2691,6 +2742,8 @@ struct xnvme_spec_cmd {
 		struct xnvme_spec_kvs_cmd kvs;
 		struct xnvme_spec_nvm_compare compare;
 		struct xnvme_spec_fabric_connect_cmd fabric_connect;
+		struct xnvme_spec_fabric_property_get_cmd fabric_property_get;
+		struct xnvme_spec_fabric_property_set_cmd fabric_property_set;
 	};
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd) == 64, "Incorrect size")
