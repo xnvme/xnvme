@@ -9,7 +9,6 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 
-#ifdef XNVME_BE_NVMF_ENABLED
 #include <errno.h>
 #include <unistd.h>
 #include <pthread.h>
@@ -254,5 +253,3 @@ static struct xnvme_be_nvmf_ctrlr_ops g_xnvme_be_nvmf_rdma_ctrlr_ops = {
 	.create_qpair = xnvme_be_nvmf_create_rdma_qpair,
 	.process_events = _process_cm_events,
 };
-
-#endif // XNVME_BE_NVMF_ENABLED

@@ -10,7 +10,6 @@
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 
-#ifdef XNVME_BE_NVMF_ENABLED
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -261,18 +260,11 @@ xnvme_be_nvmf_dev_open(struct xnvme_dev *dev)
 
 	return 0;
 }
-#endif
 
 struct xnvme_be_dev g_xnvme_be_nvmf_dev = {
-#ifdef XNVME_BE_NVMF_ENABLED
+	.id = "nvmf",
 	.dev_open = xnvme_be_nvmf_dev_open,
 	.dev_close = xnvme_be_nvmf_dev_close,
-	.id = "nvmf",
 	.ctrlr_init = xnvme_be_nvmf_ctrlr_init,
 	.ctrlr_term = xnvme_be_nvmf_ctrlr_term,
-#else
-	.dev_open = xnvme_be_nosys_dev_open,
-	.dev_close = xnvme_be_nosys_dev_close,
-	.id = "nosys",
-#endif
 };

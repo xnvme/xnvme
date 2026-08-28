@@ -5,7 +5,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_NVMF_ENABLED
+
 #include <errno.h>
 
 #include <xnvme_dev.h>
@@ -57,11 +57,9 @@ xnvme_be_nvmf_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_
 {
 	return -ENOSYS;
 }
-#endif
 
 struct xnvme_be_async g_xnvme_be_nvmf_async = {
 	.id = "nvmf",
-#ifdef XNVME_BE_NVMF_ENABLED
 	.cmd_io = xnvme_be_nvmf_async_cmd_io,
 	.cmd_iov = xnvme_be_nvmf_async_cmd_iov,
 	.poke = xnvme_be_nvmf_queue_poke,
@@ -69,13 +67,4 @@ struct xnvme_be_async g_xnvme_be_nvmf_async = {
 	.init = xnvme_be_nvmf_queue_init,
 	.term = xnvme_be_nvmf_queue_term,
 	.get_completion_fd = xnvme_be_nosys_queue_get_completion_fd,
-#else
-	.cmd_io = xnvme_be_nosys_queue_cmd_io,
-	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
-	.poke = xnvme_be_nosys_queue_poke,
-	.wait = xnvme_be_nosys_queue_wait,
-	.init = xnvme_be_nosys_queue_init,
-	.term = xnvme_be_nosys_queue_term,
-	.get_completion_fd = xnvme_be_nosys_queue_get_completion_fd,
-#endif
 };

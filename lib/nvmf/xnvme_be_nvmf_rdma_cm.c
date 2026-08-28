@@ -10,7 +10,6 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 
-#ifdef XNVME_BE_NVMF_ENABLED
 #include <errno.h>
 
 #include <xnvme_dev.h>
@@ -425,4 +424,3 @@ _handle_rdmacm_event(struct rdma_cm_event *event)
 
 	return 0;
 }
-#endif // XNVME_BE_NVMF_ENABLED

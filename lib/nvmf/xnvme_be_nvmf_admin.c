@@ -9,7 +9,6 @@
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 
-#ifdef XNVME_BE_NVMF_ENABLED
 #include <errno.h>
 #include <unistd.h>
 #include <xnvme_dev.h>
@@ -125,15 +124,9 @@ _xnvme_be_nvmf_admin_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 
 	return err;
 }
-#endif
 
 struct xnvme_be_admin g_xnvme_be_nvmf_admin = {
 	.id = "nvmf",
-#ifdef XNVME_BE_NVMF_ENABLED
 	.cmd_admin = _xnvme_be_nvmf_admin_cmd_admin,
 	.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo,
-#else
-	.cmd_admin = xnvme_be_nosys_sync_cmd_admin,
-	.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo,
-#endif
 };

@@ -5,7 +5,6 @@
 #include <libxnvme.h>
 #include <xnvme_be_nvmf.h>
 
-#ifdef XNVME_BE_NVMF_ENABLED
 #define XNVME_BE_NVMF_MAX_QSIZE 4096
 
 int
@@ -91,5 +90,3 @@ xnvme_be_nvmf_destroy_qpair(struct xnvme_be_nvmf_qpair *qpair)
 
 	return qpair->ops->destroy(qpair);
 }
-
-#endif // XNVME_BE_NVMF_ENABLED

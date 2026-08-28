@@ -10,7 +10,6 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 
-#ifdef XNVME_BE_NVMF_ENABLED
 #include <errno.h>
 
 #include <xnvme_dev.h>
@@ -489,5 +488,3 @@ static struct xnvme_be_nvmf_qpair_ops g_xnvme_be_nvmf_rdma_qpair_ops = {
 	.post_recv = _rdma_post_recv,
 	.process_completions = _rdma_process_completions,
 };
-
-#endif // XNVME_BE_NVMF_ENABLED

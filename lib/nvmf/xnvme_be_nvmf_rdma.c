@@ -8,7 +8,6 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 
-#ifdef XNVME_BE_NVMF_ENABLED
 #include <xnvme_be_nvmf.h>
 #include <xnvme_be_nvmf_rdma.h>
 
@@ -298,5 +297,3 @@ struct xnvme_be_nvmf_transport g_xnvme_be_nvmf_rdma_transport = {
 			.create_ctrlr = xnvme_be_nvmf_create_rdma_controller,
 		},
 };
-
-#endif // XNVME_BE_NVMF_ENABLED
