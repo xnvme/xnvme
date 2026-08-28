@@ -263,10 +263,6 @@ xnvme_be_nvmf_rdma_on_state_change(struct xnvme_be_nvmf_qpair *qpair,
 	}
 }
 
-static struct xnvme_be_nvmf_transport_ops g_xnvme_be_nvmf_rdma_transport_ops = {
-	.create_ctrlr = xnvme_be_nvmf_create_rdma_controller,
-};
-
 struct xnvme_be_nvmf_transport g_xnvme_be_nvmf_rdma_transport = {
 	.name = "rdma",
 	.ops =
