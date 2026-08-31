@@ -68,13 +68,12 @@ xnvme_be_nvmf_req_get(struct xnvme_be_nvmf_req_pool *pool, uint64_t index)
 }
 
 static inline struct xnvme_be_nvmf_req *
-xnvme_be_nvmf_req_alloc(struct xnvme_be_nvmf_req_pool *pool, void *user_context)
+xnvme_be_nvmf_req_alloc(struct xnvme_be_nvmf_req_pool *pool)
 {
     struct xnvme_be_nvmf_req *req = SLIST_FIRST(&pool->free_list);
 
     if (req) {
         SLIST_REMOVE_HEAD(&pool->free_list, next); // Using the SLIST_ENTRY next to get the next request
-        req->context = user_context;
         req->active = 1;
         pool->allocated++;
     }

@@ -221,7 +221,7 @@ xnvme_be_nvmf_rdma_on_state_change(struct xnvme_be_nvmf_qpair *qpair,
 		struct xnvme_be_nvmf_rdma_connect_data_rec *connect_data;
 		struct xnvme_be_nvmf_req *req = NULL;
 
-		req = xnvme_be_nvmf_req_alloc(qpair->req_pool, NULL); 
+		req = xnvme_be_nvmf_req_alloc(qpair->req_pool); 
 		if (!req) {
 			XNVME_DEBUG("FAILED: could not allocate request");
 			qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;

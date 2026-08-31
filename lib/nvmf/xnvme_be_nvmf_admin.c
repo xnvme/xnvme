@@ -90,11 +90,13 @@ _xnvme_be_nvmf_admin_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	XNVME_DEBUG("INFO: admin_cmd() for NVMe-oF device: %s", ctx->dev->ident.uri);
 	XNVME_DEBUG("INFO: opcode: 0x%x, nsid: %d", ctx->cmd.common.opcode, ctx->cmd.common.nsid);
 
-	req = xnvme_be_nvmf_req_alloc(qpair->req_pool, (void *)	ctx);
+	req = xnvme_be_nvmf_req_alloc(qpair->req_pool);
 	if (!req) {
 		XNVME_DEBUG("FAILED: xnvme_be_nvmf_req_alloc()");
 		return -ENOSPC;
 	}
+
+	req->context = (void *)	ctx;
 
 	/* Set the command identifier (CID) to the request's CID */
 	ctx->cmd.common.cid = req->cid;
