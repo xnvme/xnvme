@@ -29,33 +29,69 @@
 int
 xnvme_be_nvmf_queue_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 {
-	return -ENOSYS;
+	struct xnvme_be_nvmf_queue *queue = (struct xnvme_be_nvmf_queue *)q;
+
+	return 0;
 }
 
 int
 xnvme_be_nvmf_queue_term(struct xnvme_queue *q)
 {
-	return -ENOSYS;
+	struct xnvme_be_nvmf_queue *queue = (struct xnvme_be_nvmf_queue *)q;
+	struct xnvme_be_nvmf_qpair *qpair = queue->qpair;
+	int err;
+
+	if (qpair->state == XNVME_NVMF_QPAIR_STATE_CONNECTED || \
+			qpair->state == XNVME_NVMF_QPAIR_STATE_READY) {
+		err = xnvme_be_nvmf_disconnect_qpair(qpair);
+		if (err) {
+			XNVME_DEBUG("Failed to disconnect qpair: %d", err);
+			return err;
+		}
+	}
+	
+	err = xnvme_be_nvmf_destroy_qpair(qpair);
+	if (err) {
+		XNVME_DEBUG("Failed to destroy qpair: %d", err);
+		return err;
+	}
+
+	return err;
 }
 
 int
 xnvme_be_nvmf_queue_poke(struct xnvme_queue *q, uint32_t max)
 {
-	return -ENOSYS;
+	struct xnvme_be_nvmf_queue *queue = (struct xnvme_be_nvmf_queue *)q;
+	struct xnvme_be_nvmf_qpair *qpair = queue->qpair;
+
+	return xnvme_be_nvmf_qpair_process_completions(qpair, max);
 }
 
 int
 xnvme_be_nvmf_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			   size_t XNVME_UNUSED(mbuf_nbytes))
 {
-	return -ENOSYS;
+	struct xnvme_be_nvmf_queue *queue = (struct xnvme_be_nvmf_queue *)ctx->async.queue;
+	int err = -ENOSYS;
+
+	if (!err) 
+		queue->base.outstanding++;
+
+	return err;
 }
 
 int
 xnvme_be_nvmf_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
 			    size_t dvec_nbytes, void *mbuf, size_t XNVME_UNUSED(mbuf_nbytes))
 {
-	return -ENOSYS;
+	struct xnvme_be_nvmf_queue *queue = (struct xnvme_be_nvmf_queue *)ctx->async.queue;
+	int err = -ENOSYS;
+
+	if (!err) 
+		queue->base.outstanding++;
+
+	return err;
 }
 
 struct xnvme_be_async g_xnvme_be_nvmf_async = {

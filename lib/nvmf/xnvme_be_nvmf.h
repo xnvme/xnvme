@@ -27,6 +27,16 @@
 #define NVME_CMD_CAPSULE_SIZE sizeof(struct xnvme_spec_cmd_common)
 #define NVME_CPL_CAPSULE_SIZE sizeof(struct xnvme_spec_cpl)
 
+struct xnvme_be_nvmf_queue {
+	struct xnvme_queue_base base;
+	uint64_t completions_pending;
+	struct xnvme_be_nvmf_qpair *qpair;
+	uint8_t be_rsvd[216]; ///< Auxilary backend data
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_nvmf_queue) == sizeof(struct xnvme_queue), 
+	"Incorrect size of xnvme_be_nvmf_queue");
+
+
 struct xnvme_be_nvmf_state {
 	void *ctrlr; ///< Pointer to attached controller (must be first: platform
 		     ///< stores ctrlr at state[0])
