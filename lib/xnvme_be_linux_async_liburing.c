@@ -374,6 +374,7 @@ xnvme_be_linux_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, s
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
 	uint64_t ssw = 0;
 	struct io_uring_sqe *sqe = NULL;
+	int opcode;
 
 	int fd;
 	int err = 0;
@@ -398,6 +399,35 @@ xnvme_be_linux_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, s
 		return -ENOSYS;
 	}
 
+	// NOTE: dispatch on the opcode, rejecting the unknown, before acquiring
+	// an sqe; io_uring_get_sqe() advances the submission-queue tail, so an
+	// sqe acquired and then abandoned would go out, carrying stale content,
+	// with the next io_uring_submit()
+	switch (ctx->cmd.common.opcode) {
+	case XNVME_SPEC_NVM_OPC_WRITE:
+		ssw = queue->base.dev->geo.ssw;
+	/* fall through */
+	case XNVME_SPEC_FS_OPC_WRITE:
+		opcode = IORING_OP_WRITEV;
+		break;
+
+	case XNVME_SPEC_NVM_OPC_READ:
+		ssw = queue->base.dev->geo.ssw;
+	/* fall through */
+	case XNVME_SPEC_FS_OPC_READ:
+		opcode = IORING_OP_READV;
+		break;
+
+	case XNVME_SPEC_NVM_OPC_FLUSH:
+	case XNVME_SPEC_FS_OPC_FLUSH:
+		opcode = IORING_OP_FSYNC;
+		break;
+
+	default:
+		XNVME_DEBUG("FAILED: unsupported opcode: %d for async", ctx->cmd.common.opcode);
+		return -ENOSYS;
+	}
+
 	sqe = io_uring_get_sqe(&queue->ring);
 	if (!sqe) {
 		return -EAGAIN;
@@ -407,11 +437,8 @@ xnvme_be_linux_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, s
 	// provided index will always be 0
 	fd = queue->poll_sq ? 0 : state->fd;
 
-	switch (ctx->cmd.common.opcode) {
-	case XNVME_SPEC_NVM_OPC_WRITE:
-		ssw = queue->base.dev->geo.ssw;
-	/* fall through */
-	case XNVME_SPEC_FS_OPC_WRITE:
+	switch (opcode) {
+	case IORING_OP_WRITEV:
 		io_uring_prep_writev(sqe, fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
 		if (ctx->cmd.common.opcode == XNVME_SPEC_NVM_OPC_WRITE && ctx->cmd.nvm.fua) {
 			// Honour the FUA bit of an NVM write; on a raw block device
@@ -422,22 +449,14 @@ xnvme_be_linux_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, s
 		}
 		break;
 
-	case XNVME_SPEC_NVM_OPC_READ:
-		ssw = queue->base.dev->geo.ssw;
-	/* fall through */
-	case XNVME_SPEC_FS_OPC_READ:
+	case IORING_OP_READV:
 		io_uring_prep_readv(sqe, fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
 		break;
 
-	case XNVME_SPEC_NVM_OPC_FLUSH:
-	case XNVME_SPEC_FS_OPC_FLUSH:
+	case IORING_OP_FSYNC:
 		// NOTE: full fsync, matching the psync backend
 		io_uring_prep_fsync(sqe, fd, 0);
 		break;
-
-	default:
-		XNVME_DEBUG("FAILED: unsupported opcode: %d for async", ctx->cmd.common.opcode);
-		return -ENOSYS;
 	}
 
 	// NOTE: set after the prep-helpers; on liburing versions where
