@@ -18,22 +18,29 @@ Linux and FreeBSD. On Windows it exits with `-ENOTSUP`, since no
 multi-process capable backend is available there. On other platforms it runs,
 but opening a device with a non-zero `shm_id` fails with `-ENOTSUP`.
 
+```{literalinclude} homi_usage.out
+:language: bash
+```
+
 ## `start`: Hold devices open
+
+```{literalinclude} homi_start_usage.out
+:language: bash
+```
 
 Opens every device given as a positional argument, then blocks until
 signalled.
 
-`--shm_id` is required and sets the shared-memory id the devices are opened
-with. Every process that should share these controllers must be started with
-the same id. `--be` optionally selects the backend.
+Every process that should share these controllers must be started with the
+same id.
 
 Roles are not assigned by the tool: whichever process claims a given `shm_id`
 first becomes the primary (see {ref}`sec-backends-upcie-mproc-model`).
 Starting **homi** before any secondary is therefore what makes it the primary.
 
-`--host_heap_size` sets the size of the `upcie` host DMA heap, in bytes. The
-heap is allocated once per process, on the first device open, so this value
-covers every device **homi** holds rather than being per device.
+The heap is allocated once per process, on the first device open, so
+`--host_heap_size` covers every device **homi** holds rather than being per
+device.
 
 Rather than the 1 GiB the backend would otherwise use, **homi** defaults to 16
 MiB per device held. It needs only the admin queue and the sync queue pair

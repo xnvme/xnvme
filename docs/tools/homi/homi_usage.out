@@ -1,0 +1,9 @@
+Usage: homi <command> [<args>]
+
+Where <command> is one of:
+
+  start            | Open the given devices and hold them open
+
+See 'homi <command> --help' for the description of [<args>]
+
+homi - Host-Orchestrated Multi-process I/O -- ver: {major: 0, minor: 7, patch: 5}
