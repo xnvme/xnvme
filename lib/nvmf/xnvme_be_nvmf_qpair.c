@@ -64,8 +64,6 @@ xnvme_be_nvmf_connect_qpair(struct xnvme_be_nvmf_qpair *qpair)
 			XNVME_DEBUG("FAILED: process_completions(), err: %d", err);
 			return err;
 		}
-		if (qpair->state == XNVME_NVMF_QPAIR_STATE_ERROR)
-			return -EIO;
 	}
 
 	return (qpair->state == XNVME_NVMF_QPAIR_STATE_READY) ? 0 : -EIO;
