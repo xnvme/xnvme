@@ -103,16 +103,6 @@ int
 xnvme_be_nvmf_create_rdma_controller(struct xnvme_be_nvmf_ctrlr **ctrlr)
 {
 	struct xnvme_be_nvmf_rdma_ctrlr *rdma_ctrlr;
-	struct xnvme_be_nvmf_qpair_attr admin_attr = {
-		.qid = XNVME_BE_NVMF_ADMIN_QUEUE_ID,
-		.qsize = 8,
-		.capsule_size = NVME_CMD_CAPSULE_SIZE,
-		.completion_size = NVME_CPL_CAPSULE_SIZE,
-	};
-	struct xnvme_be_nvmf_qpair_attr sync_attr = {
-		.qid = XNVME_BE_NVMF_SYNC_QUEUE_ID,
-		.qsize = 8,
-	};
 	int err;
 
 	rdma_ctrlr = calloc(1, sizeof(*rdma_ctrlr));
@@ -120,8 +110,6 @@ xnvme_be_nvmf_create_rdma_controller(struct xnvme_be_nvmf_ctrlr **ctrlr)
 		XNVME_DEBUG("FAILED: calloc(), err: %d", errno);
 		return -ENOMEM;
 	}
-	pthread_mutex_init(&rdma_ctrlr->base.lock, NULL);
-	rdma_ctrlr->base.ops = &g_xnvme_be_nvmf_rdma_ctrlr_ops;
 
 	rdma_ctrlr->event_channel = rdma_create_event_channel();
 	if (!rdma_ctrlr->event_channel) {
@@ -130,24 +118,7 @@ xnvme_be_nvmf_create_rdma_controller(struct xnvme_be_nvmf_ctrlr **ctrlr)
 		goto free_ctrlr;
 	}
 
-	err = xnvme_be_nvmf_qpair_create(&rdma_ctrlr->base, &admin_attr,
-					      &rdma_ctrlr->base.admin_qpair);
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_be_nvmf_qpair_create() for admin_qpair, err: %d",
-			    err);
-		goto destroy_event_channel;
-	}
-
-	/*
-	err = xnvme_be_nvmf_qpair_create(&rdma_ctrlr->base, &sync_attr,
-					      &rdma_ctrlr->base.sync_qpair);
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_be_nvmf_qpair_create() for sync_qpair, err: %d",
-			    err);
-		goto destroy_admin_qpair;
-	}
-	*/
-
+	rdma_ctrlr->base.ops = &g_xnvme_be_nvmf_rdma_ctrlr_ops;
 	*ctrlr = &rdma_ctrlr->base;
 
 	return 0;

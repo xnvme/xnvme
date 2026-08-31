@@ -8,6 +8,12 @@ xnvme_be_nvmf_ctrlr_create(struct xnvme_be_nvmf_transport *transport,
 	struct xnvme_be_nvmf_ctrlr **ctrlr)
 {
     struct xnvme_be_nvmf_ctrlr *tmp = NULL;
+    struct xnvme_be_nvmf_qpair_attr admin_attr = {
+        .qid = XNVME_BE_NVMF_ADMIN_QUEUE_ID,
+        .qsize = 8,
+        .capsule_size = NVME_CMD_CAPSULE_SIZE,
+        .completion_size = NVME_CPL_CAPSULE_SIZE,
+    };
 
     if (!transport || !attr || !ctrlr) {
         return -EINVAL;
@@ -22,6 +28,7 @@ xnvme_be_nvmf_ctrlr_create(struct xnvme_be_nvmf_transport *transport,
         return err;
     }
 
+    pthread_mutex_init(&tmp->lock, NULL);
     tmp->ctrlr_id = attr->ctrlr_id;
     tmp->dev = attr->dev;
     tmp->transport = transport;
@@ -32,6 +39,15 @@ xnvme_be_nvmf_ctrlr_create(struct xnvme_be_nvmf_transport *transport,
 
     XNVME_DEBUG("INFO: ctrlr->discovery_ctrlr set to %d based on dev->opts.nsid=%u",
 	    tmp->discovery_ctrlr, attr->dev->opts.nsid);
+
+    err = xnvme_be_nvmf_qpair_create(tmp, &admin_attr,
+					      &tmp->admin_qpair);
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_be_nvmf_qpair_create() for admin_qpair, err: %d",
+			    err);
+        free(tmp);
+        return err;
+    }
 
 	*ctrlr = tmp;
 	return err;
