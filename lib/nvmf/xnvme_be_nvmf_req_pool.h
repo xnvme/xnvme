@@ -7,10 +7,17 @@
 #include <errno.h>
 #include <sys/queue.h>
 
+enum xnvme_be_nvmf_req_type {
+    XNVME_BE_NVMF_REQ_TYPE_INTERNAL,
+    XNVME_BE_NVMF_REQ_TYPE_USER,
+    XNVME_BE_NVMF_REQ_TYPE_MAX = XNVME_BE_NVMF_REQ_TYPE_USER,
+};
+
 struct xnvme_be_nvmf_req {
     void *context;
     uint16_t cid;
     uint8_t active;
+    enum xnvme_be_nvmf_req_type type;
     SLIST_ENTRY(xnvme_be_nvmf_req) next;
 };
 
@@ -57,29 +64,47 @@ xnvme_be_nvmf_req_pool_free(struct xnvme_be_nvmf_req_pool *pool)
     return 0;
 }
 
-
+// TODO: Consider moving to errno-based for better error reporting
 static inline struct xnvme_be_nvmf_req *
 xnvme_be_nvmf_req_get(struct xnvme_be_nvmf_req_pool *pool, uint64_t index)
 {
     if (index >= pool->entries) {
         return NULL;
     }
+
+    if (!pool->reqs[index].active) {
+        return NULL;
     }
+
     return &pool->reqs[index];
 }
 
 static inline struct xnvme_be_nvmf_req *
-xnvme_be_nvmf_req_alloc(struct xnvme_be_nvmf_req_pool *pool)
+_xnvme_be_nvmf_req_alloc_helper(struct xnvme_be_nvmf_req_pool *pool, enum xnvme_be_nvmf_req_type type)
 {
     struct xnvme_be_nvmf_req *req = SLIST_FIRST(&pool->free_list);
 
     if (req) {
         SLIST_REMOVE_HEAD(&pool->free_list, next); // Using the SLIST_ENTRY next to get the next request
+        req->type = type;
         req->active = 1;
         pool->allocated++;
     }
 
     return req;
+}
+
+
+static inline struct xnvme_be_nvmf_req *
+xnvme_be_nvmf_req_alloc(struct xnvme_be_nvmf_req_pool *pool)
+{
+    return _xnvme_be_nvmf_req_alloc_helper(pool, XNVME_BE_NVMF_REQ_TYPE_USER);
+}
+
+static inline struct xnvme_be_nvmf_req *
+xnvme_be_nvmf_req_internal_alloc(struct xnvme_be_nvmf_req_pool *pool)
+{
+    return _xnvme_be_nvmf_req_alloc_helper(pool, XNVME_BE_NVMF_REQ_TYPE_INTERNAL);
 }
 
 static inline void
