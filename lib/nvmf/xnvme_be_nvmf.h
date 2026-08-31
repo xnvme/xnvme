@@ -27,15 +27,6 @@
 #define NVME_CMD_CAPSULE_SIZE sizeof(struct xnvme_spec_cmd_common)
 #define NVME_CPL_CAPSULE_SIZE sizeof(struct xnvme_spec_cpl)
 
-struct xnvme_be_nvmf_transport_ops {
-	int (*create_ctrlr)(struct xnvme_be_nvmf_ctrlr **ctrlr);
-};
-
-struct xnvme_be_nvmf_transport {
-	const char *name;
-	struct xnvme_be_nvmf_transport_ops ops;
-};
-
 struct xnvme_be_nvmf_state {
 	void *ctrlr; ///< Pointer to attached controller (must be first: platform
 		     ///< stores ctrlr at state[0])
