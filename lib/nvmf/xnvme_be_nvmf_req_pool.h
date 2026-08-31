@@ -64,6 +64,7 @@ xnvme_be_nvmf_req_get(struct xnvme_be_nvmf_req_pool *pool, uint64_t index)
     if (index >= pool->entries) {
         return NULL;
     }
+    }
     return &pool->reqs[index];
 }
 
