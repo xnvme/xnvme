@@ -17,26 +17,22 @@ struct xnvme_be_nvmf_req {
 struct xnvme_be_nvmf_req_pool {
     uint64_t entries;
     uint64_t allocated;
-    struct xnvme_be_nvmf_req *reqs;
     SLIST_HEAD(, xnvme_be_nvmf_req) free_list;
+    struct xnvme_be_nvmf_req reqs[];
 };
 
 static inline int
 xnvme_be_nvmf_req_pool_alloc(struct xnvme_be_nvmf_req_pool **pool, uint64_t entries)
 {
-    struct xnvme_be_nvmf_req_pool *p = calloc(1, sizeof(struct xnvme_be_nvmf_req_pool));
+    struct xnvme_be_nvmf_req_pool *p;
+    uint64_t pool_size = sizeof(struct xnvme_be_nvmf_req_pool) + entries * sizeof(struct xnvme_be_nvmf_req);
 
+    p = calloc(1, pool_size);
     if (!p) {
         return -ENOMEM;
     }
     
     p->entries = entries;
-    
-    p->reqs = calloc(entries, sizeof(struct xnvme_be_nvmf_req));
-    if (!p->reqs) {
-        free(p);
-        return -ENOMEM;
-    }
 
     SLIST_INIT(&p->free_list);
     for (int i = entries - 1; i >= 0; i--) {
@@ -56,7 +52,6 @@ xnvme_be_nvmf_req_pool_free(struct xnvme_be_nvmf_req_pool *pool)
         return -EBUSY;
     }
 
-    free(pool->reqs);
     free(pool);
     
     return 0;
