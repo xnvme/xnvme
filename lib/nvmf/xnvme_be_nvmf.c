@@ -5,7 +5,7 @@
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 700
 #endif
-#ifdef XNVME_BE_NVMF_ENABLED
+
 #include <xnvme_be.h>
 #include <xnvme_be_nvmf.h>
 #include <xnvme_be_cbi.h>
@@ -23,4 +23,3 @@ const struct xnvme_be_config g_xnvme_be_nvmf = {
 			.caps = XNVME_BE_CAP_NVME_TCP | XNVME_BE_CAP_NVME_RDMA,
 		},
 };
-#endif
