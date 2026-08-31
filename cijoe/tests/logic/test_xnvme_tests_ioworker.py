@@ -215,3 +215,36 @@ def test_verify_flush(cijoe, device, be_opts, cli_args):
 
     err, _ = cijoe.run(f"xnvme_tests_ioworker verify-flush {cli_args}")
     assert not err
+
+
+@xnvme_parametrize(labels=["bdev"], opts=["be", "sync", "async", "admin"])
+def test_verify_sqpoll(cijoe, device, be_opts, cli_args):
+    if be_opts["async"] != "io_uring":
+        pytest.skip(reason="poll_sq (SQPOLL) is io_uring-only")
+
+    for subcmd, args in [
+        ("verify", "--poll_sq 1"),
+        ("verify", "--poll_sq 1 --vec-cnt 4 --nlb 7"),
+        ("verify", "--poll_sq 1 --vec-cnt 8 --nlb 3 --qdepth 8"),
+        ("verify-flush", "--poll_sq 1 --vec-cnt 4 --nlb 7"),
+    ]:
+        err, _ = cijoe.run(f"xnvme_tests_ioworker {subcmd} {cli_args} {args}")
+        assert not err
+
+
+@xnvme_parametrize(labels=["bdev"], opts=["be", "sync", "async", "admin"])
+def test_verify_flush_iopoll_rejected(cijoe, device, be_opts, cli_args):
+    if be_opts["async"] != "io_uring":
+        pytest.skip(reason="poll_io (IOPOLL) is io_uring-only")
+
+    # Control: the same invocation without IOPOLL must succeed, so that the
+    # failure below can only be the submission-time rejection
+    err, _ = cijoe.run(f"xnvme_tests_ioworker verify-flush {cli_args} --direct 1")
+    assert not err
+
+    # IORING_OP_FSYNC has no iopoll-handler; the backend rejects FLUSH on an
+    # IOPOLL queue at submission-time, so the run must fail
+    err, _ = cijoe.run(
+        f"xnvme_tests_ioworker verify-flush {cli_args} --poll_io 1 --direct 1"
+    )
+    assert err
