@@ -8,16 +8,18 @@
 #define TO_XNVME_NVMF_RDMA_QPAIR(qpair) \
 	container_of((qpair), struct xnvme_be_nvmf_rdma_qpair, base)
 
+#define TO_XNVME_NVMF_RDMA_CTRLR(ctrlr) \
+	container_of((ctrlr), struct xnvme_be_nvmf_rdma_ctrlr, base)
+
 void
 xnvme_be_nvmf_rdma_on_capsule_recv(struct xnvme_be_nvmf_qpair *qpair, void *buf, size_t len);
+
 void
 xnvme_be_nvmf_rdma_on_send_cmpl(struct xnvme_be_nvmf_qpair *qpair, void *buf, int status);
+
 void
 xnvme_be_nvmf_rdma_on_state_change(struct xnvme_be_nvmf_qpair *qpair,
 				   enum xnvme_nvmf_qpair_state state, void *ctx);
-
-#define TO_XNVME_NVMF_RDMA_CTRLR(ctrlr) \
-	container_of((ctrlr), struct xnvme_be_nvmf_rdma_ctrlr, base)
 
 enum xnvme_nvmf_rdmacm_state {
 	XNVME_NVMF_RDMACM_STATE_INVALID = 0,
