@@ -123,10 +123,6 @@ xnvme_be_nvmf_create_rdma_controller(struct xnvme_be_nvmf_ctrlr **ctrlr)
 
 	return 0;
 
-destroy_admin_qpair:
-	xnvme_be_nvmf_destroy_qpair(rdma_ctrlr->base.admin_qpair);
-destroy_event_channel:
-	rdma_destroy_event_channel(rdma_ctrlr->event_channel);
 free_ctrlr:
 	free(rdma_ctrlr);
 	return err;
