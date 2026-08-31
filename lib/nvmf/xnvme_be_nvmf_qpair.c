@@ -5,6 +5,8 @@
 #include <libxnvme.h>
 #include <xnvme_be_nvmf.h>
 
+#define XNVME_MIN_CAPSULE_SIZE sizeof(struct xnvme_spec_cmd)
+#define XNVME_MIN_COMPLETION_SIZE sizeof(struct xnvme_spec_cpl)
 #define XNVME_BE_NVMF_MAX_QSIZE 4096
 
 int
@@ -22,7 +24,11 @@ xnvme_be_nvmf_qpair_create(struct xnvme_be_nvmf_ctrlr *ctrlr, struct xnvme_be_nv
 		return -EINVAL;
 	}
 
-	if (attr->capsule_size == 0) {
+	if (attr->capsule_size < XNVME_MIN_CAPSULE_SIZE) {
+		return -EINVAL;
+	}
+
+	if (attr->completion_size < XNVME_MIN_COMPLETION_SIZE) {
 		return -EINVAL;
 	}
 
