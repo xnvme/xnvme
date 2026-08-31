@@ -403,8 +403,6 @@ xnvme_be_linux_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, s
 		return -EAGAIN;
 	}
 
-	sqe->flags = queue->poll_sq ? IOSQE_FIXED_FILE : 0;
-
 	// NOTE: we only ever register a single file, the raw device, so the
 	// provided index will always be 0
 	fd = queue->poll_sq ? 0 : state->fd;
@@ -435,17 +433,18 @@ xnvme_be_linux_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, s
 	case XNVME_SPEC_FS_OPC_FLUSH:
 		// NOTE: full fsync, matching the psync backend
 		io_uring_prep_fsync(sqe, fd, 0);
-		// NOTE: re-assign after the prep-helper; on liburing versions where
-		// io_uring_prep_rw() zeroes 'flags', the assignment above would be
-		// dropped and an SQPOLL queue would fsync the actual file descriptor
-		// 0 instead of the registered file. Matches the single-buffer path
-		sqe->flags = queue->poll_sq ? IOSQE_FIXED_FILE : 0;
 		break;
 
 	default:
 		XNVME_DEBUG("FAILED: unsupported opcode: %d for async", ctx->cmd.common.opcode);
 		return -ENOSYS;
 	}
+
+	// NOTE: set after the prep-helpers; on liburing versions where
+	// io_uring_prep_rw() zeroes 'flags', assigning this any earlier would
+	// drop IOSQE_FIXED_FILE and make an SQPOLL queue target the actual file
+	// descriptor 0 instead of the registered file
+	sqe->flags = queue->poll_sq ? IOSQE_FIXED_FILE : 0;
 
 	io_uring_sqe_set_data(sqe, ctx);
 
