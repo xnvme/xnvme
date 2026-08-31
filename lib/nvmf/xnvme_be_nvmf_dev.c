@@ -133,9 +133,6 @@ xnvme_be_nvmf_ctrlr_init(struct xnvme_dev *dev)
 		goto free_ctrlr_id;
 	}
 
-	// queue ID 0 is reserved for the admin queue, so we start allocating from 1.
-	ctrlr->last_allocated_queue_id = 0;
-
 	XNVME_DEBUG("INFO: ctrlr_init() OK");
 	return ctrlr;
 
