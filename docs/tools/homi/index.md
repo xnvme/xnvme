@@ -1,7 +1,7 @@
 (sec-tools-homi)=
 # homi
 
-**homi**, Host-Orchestrated Multi-process I/O, opens a set of NVMe devices and
+**homi**, Host-Orchestrated Multi-path I/O, opens a set of NVMe devices and
 holds them open until it is told to stop. It does no I/O of its own.
 
 Its purpose is to provide the long-lived **primary** process for

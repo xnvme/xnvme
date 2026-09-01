@@ -176,7 +176,7 @@ static struct xnvme_cli_sub g_subs[] = {
 };
 
 static struct xnvme_cli g_cli = {
-	.title = "homi - Host-Orchestrated Multi-process I/O",
+	.title = "homi - Host-Orchestrated Multi-path I/O",
 	.descr_short = "Hold NVMe devices open for multi-process sharing",
 	.descr_long = "Hold NVMe devices open for multi-process sharing. Secondary "
 		      "processes attach to the same controllers by passing the same --shm_id.",
