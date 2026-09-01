@@ -389,28 +389,6 @@ _connect_rdma_qpair_sync(struct xnvme_be_nvmf_qpair *qpair)
 }
 
 int
-_initialize_rdma_qpair(struct xnvme_be_nvmf_ctrlr *ctrlr,  size_t qsize,
-		       struct xnvme_be_nvmf_qpair *qpair)
-{
-	struct xnvme_be_nvmf_rdma_qpair *rdma_qpair = TO_XNVME_NVMF_RDMA_QPAIR(qpair);
-
-	rdma_qpair->qp_init_attr.cap.max_send_wr = qsize;
-	rdma_qpair->qp_init_attr.cap.max_recv_wr = qsize;
-	rdma_qpair->qp_init_attr.cap.max_send_sge = 1;
-	rdma_qpair->qp_init_attr.cap.max_recv_sge = 1;
-	rdma_qpair->qp_init_attr.cap.max_inline_data = NVME_CMD_CAPSULE_SIZE;
-	rdma_qpair->qp_init_attr.qp_type = IBV_QPT_RC;
-	rdma_qpair->qp_init_attr.qp_context = (void *)&qpair;
-
-	rdma_qpair->base.ops = &g_xnvme_be_nvmf_rdma_qpair_ops;
-	rdma_qpair->base.on_capsule_recv = xnvme_be_nvmf_rdma_on_capsule_recv;
-	rdma_qpair->base.on_send_cmpl = xnvme_be_nvmf_rdma_on_send_cmpl;
-	rdma_qpair->base.on_state_change = xnvme_be_nvmf_rdma_on_state_change;
-
-	return 0;
-}
-
-int
 xnvme_be_nvmf_create_rdma_qpair(struct xnvme_be_nvmf_ctrlr *ctrlr, struct xnvme_be_nvmf_qpair_attr *attr,
 				struct xnvme_be_nvmf_qpair **qpair)
 {
@@ -422,7 +400,18 @@ xnvme_be_nvmf_create_rdma_qpair(struct xnvme_be_nvmf_ctrlr *ctrlr, struct xnvme_
 		return -ENOMEM;
 	}
 
-	_initialize_rdma_qpair(ctrlr, attr->qsize, &rdma_qpair->base);
+	rdma_qpair->qp_init_attr.cap.max_send_wr = attr->qsize;
+	rdma_qpair->qp_init_attr.cap.max_recv_wr = attr->qsize;
+	rdma_qpair->qp_init_attr.cap.max_send_sge = 1;
+	rdma_qpair->qp_init_attr.cap.max_recv_sge = 1;
+	rdma_qpair->qp_init_attr.cap.max_inline_data = NVME_CMD_CAPSULE_SIZE;
+	rdma_qpair->qp_init_attr.qp_type = IBV_QPT_RC;
+	rdma_qpair->qp_init_attr.qp_context = (void *)&qpair;
+
+	rdma_qpair->base.ops = &g_xnvme_be_nvmf_rdma_qpair_ops;
+	rdma_qpair->base.on_capsule_recv = xnvme_be_nvmf_rdma_on_capsule_recv;
+	rdma_qpair->base.on_send_cmpl = xnvme_be_nvmf_rdma_on_send_cmpl;
+	rdma_qpair->base.on_state_change = xnvme_be_nvmf_rdma_on_state_change;
 
 	*qpair = &rdma_qpair->base;
 
