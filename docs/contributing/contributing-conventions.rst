@@ -1,3 +1,5 @@
+.. _sec-contributing-conventions:
+
 Conventions
 ===========
 
