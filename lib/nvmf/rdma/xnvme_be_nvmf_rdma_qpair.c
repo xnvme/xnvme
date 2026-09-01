@@ -454,6 +454,7 @@ _rdma_send_capsule(struct xnvme_be_nvmf_qpair *qpair, void *buf, size_t len)
 		sge.lkey = 0;
 	}
 
+	XNVME_DEBUG("INFO: Sending capsule, wr_id.index: %lu, wr_id.type: %u, len: %zu", wr_id.index, wr_id.type, len);
 	err = ibv_post_send(rdma_qpair->cm_id->qp, &send_wr, &bad_wr);
 	if (err) {
 		XNVME_DEBUG("FAILED: ibv_post_send(), err: %d", err);
