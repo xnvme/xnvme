@@ -433,6 +433,7 @@ static int
 _rdma_send_capsule(struct xnvme_be_nvmf_qpair *qpair, void *buf, size_t len)
 {
 	struct xnvme_be_nvmf_rdma_qpair *rdma_qpair = TO_XNVME_NVMF_RDMA_QPAIR(qpair);
+	struct xnvme_be_nvmf_wr_id wr_id = {0};
 	struct ibv_sge sge = {
 		.addr = (uintptr_t)buf,
 		.length = len,
@@ -440,7 +441,7 @@ _rdma_send_capsule(struct xnvme_be_nvmf_qpair *qpair, void *buf, size_t len)
 	};
 	struct ibv_send_wr send_wr = {
 		/* Store buf pointer so on_send_cmpl can echo it back. */
-		.wr_id = (uint64_t)(uintptr_t)buf,
+		.wr_id = wr_id.raw,
 		.sg_list = &sge,
 		.num_sge = 1,
 		.opcode = IBV_WR_SEND,
@@ -448,6 +449,8 @@ _rdma_send_capsule(struct xnvme_be_nvmf_qpair *qpair, void *buf, size_t len)
 	};
 	struct ibv_send_wr *bad_wr;
 	int err;
+
+	wr_id.type = XNVME_BE_NVMF_WR_TYPE_SEND;
 
 	if (len <= (size_t)rdma_qpair->qp_init_attr.cap.max_inline_data) {
 		send_wr.send_flags |= IBV_SEND_INLINE;
