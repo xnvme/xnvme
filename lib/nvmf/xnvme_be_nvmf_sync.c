@@ -18,7 +18,7 @@ int
 xnvme_be_nvmf_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			  size_t mbuf_nbytes)
 {
-	struct xnvme_be_nvmf_state *state = ctx->dev->be.state;
+	struct xnvme_be_nvmf_state *state = (struct xnvme_be_nvmf_state *) ctx->dev->be.state;
 	struct xnvme_be_nvmf_ctrlr *ctrlr = state->ctrlr;
 	struct xnvme_be_nvmf_qpair *qpair = ctrlr->sync_qpair;
 	int err;
@@ -34,7 +34,7 @@ int
 xnvme_be_nvmf_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
 			   size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
-	struct xnvme_be_nvmf_state *state = ctx->dev->be.state;
+	struct xnvme_be_nvmf_state *state = (struct xnvme_be_nvmf_state *) ctx->dev->be.state;
 	struct xnvme_be_nvmf_ctrlr *ctrlr = state->ctrlr;
 	struct xnvme_be_nvmf_qpair *qpair = ctrlr->sync_qpair;
 	int err;
