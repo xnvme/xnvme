@@ -51,8 +51,7 @@ void
 xnvme_cuda_queue_destroy(struct xnvme_dev *dev, struct xnvme_cuda_queue *queue)
 {
 	struct xnvme_be_upcie_state *state = (void *)dev->be.state;
-	struct nvme_qpair_cuda qpair = {0};
-	int cu_err, err;
+	int err;
 
 	err = xnvme_be_upcie_mproc_qids_lock(state->ctrlr);
 	if (err) {
@@ -62,20 +61,8 @@ xnvme_cuda_queue_destroy(struct xnvme_dev *dev, struct xnvme_cuda_queue *queue)
 		return;
 	}
 
-	// nvme_controller_cuda_delete_io_qpair() does not return the queue identifier to the
-	// pool, unlike its host counterpart. Read it off the device-side queue-pair and release
-	// it here, so a create/destroy cycle does not drain the identifier space.
-	cu_err = cuMemcpyDtoH(&qpair, (CUdeviceptr)queue, sizeof(qpair));
-	if (cu_err) {
-		XNVME_DEBUG("FAILED: cuMemcpyDtoH(device QP -> host QP); CUresult(%d)", cu_err);
-	}
-
 	nvme_controller_cuda_delete_io_qpair(state->ctrlr->ctrl, (struct nvme_qpair_cuda *)queue,
 					     &g_upcie_cuda_rte.cuda_heap);
-
-	if (!cu_err) {
-		nvme_qid_free(state->ctrlr->ctrl->qids, qpair.qid);
-	}
 
 	xnvme_be_upcie_mproc_qids_unlock(state->ctrlr);
 
