@@ -9,7 +9,7 @@
  * NVMe controllers.
  * 
  * @file nvme_controller_cuda.h
- * @version 0.7.0
+ * @version 0.7.1
  */
 
 
@@ -32,6 +32,7 @@ nvme_controller_cuda_delete_io_qpair(struct nvme_controller *ctrlr,
 	err = cuMemcpyDtoH(&_qpair, (CUdeviceptr)qpair, sizeof(_qpair));
 	if (err) {
 		UPCIE_DEBUG("FAILED: cuMemcpyDtoH(device QP -> host QP); CUresult(%d)", err);
+		return;
 	}
 
 	err = cuMemHostUnregister(_qpair.sqdb);
@@ -72,6 +73,8 @@ nvme_controller_cuda_delete_io_qpair(struct nvme_controller *ctrlr,
 
 	cudamem_heap_block_free(heap, _qpair.sq);
 	cudamem_heap_block_free(heap, _qpair.cq);
+
+	nvme_qid_free(ctrlr->qids, _qpair.qid);
 }
 
 /**
@@ -97,7 +100,7 @@ nvme_controller_cuda_create_io_qpair(struct nvme_controller *ctrlr,
 	 */
 	struct nvme_qpair_cuda _qpair = {0};
 	uint16_t qid;
-	int err;
+	int err, del_err, qid_orphaned = 0;
 
 	err = nvme_qid_find_free(ctrlr->qids);
 	if (err < 1) {
@@ -137,14 +140,13 @@ nvme_controller_cuda_create_io_qpair(struct nvme_controller *ctrlr,
 		err = cuMemHostRegister(_qpair.sqdb, sizeof(uint32_t), CU_MEMHOSTREGISTER_IOMEMORY);
 		if (err) {
 			UPCIE_DEBUG("FAILED: cuMemHostRegister(sqdb); CUresult(%d)", err);
-			return err;
+			goto free_qid;
 		}
 
 		err = cuMemHostRegister(_qpair.cqdb, sizeof(uint32_t), CU_MEMHOSTREGISTER_IOMEMORY);
 		if (err) {
 			UPCIE_DEBUG("FAILED: cuMemHostRegister(cqdb); CUresult(%d)", err);
-			cuMemHostUnregister(_qpair.sqdb);
-			return err;
+			goto unregister_sqdb;
 		}
 
 		/* One element: the queue is created Physically Contiguous below. */
@@ -152,29 +154,35 @@ nvme_controller_cuda_create_io_qpair(struct nvme_controller *ctrlr,
 		if (!_qpair.sq) {
 			err = -errno;
 			UPCIE_DEBUG("FAILED: cudamem_dma_alloc_array(sq); errno(%d)", err);
-			cuMemHostUnregister(_qpair.sqdb);
-			cuMemHostUnregister(_qpair.cqdb);
-			return err;
+			goto unregister_cqdb;
 		}
 
 		_qpair.cq = cudamem_dma_alloc_array(heap, 1, nbytes);
 		if (!_qpair.cq) {
 			err = -errno;
 			UPCIE_DEBUG("FAILED: cudamem_dma_alloc_array(cq); errno(%d)", err);
-			cuMemHostUnregister(_qpair.sqdb);
-			cuMemHostUnregister(_qpair.cqdb);
-			cudamem_heap_block_free(heap, _qpair.sq);
-			return err;
+			goto free_sq;
+		}
+
+		/* The heap does not clear what it hands out, and a consumer reads a
+		 * completion as ready from its phase tag. Stale bytes carrying the
+		 * awaited phase are a completion that never happened. */
+		err = cuMemsetD8((CUdeviceptr)_qpair.sq, 0, nbytes);
+		if (err) {
+			UPCIE_DEBUG("FAILED: cuMemsetD8(sq); CUresult(%d)", err);
+			goto free_cq;
+		}
+
+		err = cuMemsetD8((CUdeviceptr)_qpair.cq, 0, nbytes);
+		if (err) {
+			UPCIE_DEBUG("FAILED: cuMemsetD8(cq); CUresult(%d)", err);
+			goto free_cq;
 		}
 
 		err = cuMemcpyHtoD((CUdeviceptr)qpair, &_qpair, sizeof(_qpair));
 		if (err) {
 			UPCIE_DEBUG("FAILED: cuMemcpyHtoD(host QP -> device QP); CUresult(%d)", err);
-			cuMemHostUnregister(_qpair.sqdb);
-			cuMemHostUnregister(_qpair.cqdb);
-			cudamem_heap_block_free(heap, _qpair.sq);
-			cudamem_heap_block_free(heap, _qpair.cq);
-			return err;
+			goto free_cq;
 		}
 	}
 
@@ -189,8 +197,8 @@ nvme_controller_cuda_create_io_qpair(struct nvme_controller *ctrlr,
 
 		err = nvme_qpair_submit_sync(&ctrlr->aq, &cmd, ctrlr->timeout_ms, &cpl);
 		if (err) {
-			UPCIE_DEBUG("FAILED: nvme_qpair_submit_sync(); err(%d)", err);
-			return err;
+			UPCIE_DEBUG("FAILED: nvme_qpair_submit_sync(Create CQ); err(%d)", err);
+			goto free_cq;
 		}
 	}
 
@@ -205,10 +213,35 @@ nvme_controller_cuda_create_io_qpair(struct nvme_controller *ctrlr,
 
 		err = nvme_qpair_submit_sync(&ctrlr->aq, &cmd, ctrlr->timeout_ms, &cpl);
 		if (err) {
-			UPCIE_DEBUG("FAILED: nvme_qpair_submit_sync(); err(%d)", err);
-			return err;
+			UPCIE_DEBUG("FAILED: nvme_qpair_submit_sync(Create SQ); err(%d)", err);
+			goto delete_cq;
 		}
 	}
 
 	return 0;
+
+delete_cq:
+	/* Kept out of err, which carries the failure being unwound. */
+	del_err = nvme_controller_delete_io_cq(ctrlr, qid);
+	if (del_err) {
+		UPCIE_DEBUG("FAILED: nvme_controller_delete_io_cq(); err(%d)", del_err);
+
+		/* The controller still holds a completion queue under this qid, so the
+		 * qid is retired instead of returned to the pool */
+		qid_orphaned = 1;
+	}
+free_cq:
+	cudamem_heap_block_free(heap, _qpair.cq);
+free_sq:
+	cudamem_heap_block_free(heap, _qpair.sq);
+unregister_cqdb:
+	cuMemHostUnregister(_qpair.cqdb);
+unregister_sqdb:
+	cuMemHostUnregister(_qpair.sqdb);
+free_qid:
+	if (!qid_orphaned) {
+		nvme_qid_free(ctrlr->qids, qid);
+	}
+
+	return err;
 }

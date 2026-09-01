@@ -31,12 +31,14 @@
  *   #include <upcie/upcie.h>
  *
  * @file upcie.h
- * @version 0.7.0
+ * @version 0.7.1
  */
 #ifndef UPCIE_H
 #define UPCIE_H
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #ifdef __cplusplus
 extern "C" {
