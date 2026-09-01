@@ -69,9 +69,9 @@ struct xnvme_be_nvmf_rdma_ctrlr {
 struct xnvme_be_nvmf_wr_id {
 	union {
 		struct {
-			uint64_t index : 12;
-			uint64_t type  : 4;
 			uint64_t rsvd  : 48;
+			uint64_t type  : 4;
+			uint64_t index : 12;
 		};
 		uint64_t raw;
 	};
