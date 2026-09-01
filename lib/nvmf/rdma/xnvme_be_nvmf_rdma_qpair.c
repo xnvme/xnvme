@@ -131,32 +131,74 @@ _ibv_wc_opcode_str(enum ibv_wc_opcode opcode)
 static int
 _handle_send_cmpl(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc)
 {
+	struct xnvme_be_nvmf_req *req;
 	struct xnvme_be_nvmf_wr_id wr_id = {.raw = wc->wr_id};
 	int status = (wc->status == IBV_WC_SUCCESS) ? 0 : -EIO;
+
+	req = xnvme_be_nvmf_req_get(qpair->req_pool, wr_id.index);
+	if (!req) {
+		XNVME_DEBUG("FAILED: xnvme_be_nvmf_req_get() for wr_id index: %u", wr_id.index);
+		return -EIO;  // TODO: Find a different error code
+	}
+
 	/* wr_id carries the original buffer pointer set in _rdma_send_capsule. */
 	void *buf = (void *)(uintptr_t)wc->wr_id;
 
 	if (wc->status != IBV_WC_SUCCESS) {
 		XNVME_DEBUG("FAILED: send WC error: %s", ibv_wc_status_str(wc->status));
+		req->cmpl_sts = XNVME_BE_NVMF_REQ_CMPL_STS_SEND_ERROR;
+		req->status = wc->status;
 	} else {
-		XNVME_DEBUG("INFO: Work completion, status: %s, opcode: %s, wr_id: %lu, byte_len: %u", 
-			ibv_wc_status_str(wc->status), _ibv_wc_opcode_str(wc->opcode), wc->wr_id, wc->byte_len);
-		XNVME_DEBUG("INFO: Work completion, wr_id index: %u, type: %u", wr_id.index, wr_id.type);
-		_handle_ibv_completion(qpair, wc);
+		req->cmpl_sts = XNVME_BE_NVMF_REQ_CMPL_STS_SEND_SUCCESS;
+		req->status = wc->status;
 
 		if (qpair->on_send_cmpl) {
 			qpair->on_send_cmpl(qpair, buf, status);
 		}
 	}
 
-	return 0;
+	return status;
+}
+
+static inline int
+_repost_recv_buffer(struct xnvme_be_nvmf_rdma_qpair *rdma_qpair, uint64_t index, struct ibv_wc *wc)
+{
+	struct ibv_recv_wr recv_wr;
+	struct ibv_recv_wr *bad_recv_wr;
+	struct ibv_sge sge;
+	void *buf;
+	int err;
+
+	buf = rdma_qpair->recv_buffer + index * rdma_qpair->base.attr.completion_size;
+
+	/* Re-post the slot before the callback so the pool never drains. */
+	sge = (struct ibv_sge){
+		.addr = (uintptr_t)buf,
+		.length = rdma_qpair->base.attr.completion_size,
+		.lkey = rdma_qpair->recv_mr->lkey,
+	};
+	recv_wr = (struct ibv_recv_wr){
+		.wr_id = index,
+		.sg_list = &sge,
+		.num_sge = 1,
+	};
+
+	err = ibv_post_recv(rdma_qpair->cm_id->qp, &recv_wr, &bad_recv_wr);
+	if (err) {
+		XNVME_DEBUG("FAILED: ibv_post_recv() to re-post slot, err: %d", err);
+		return err;
+	}
+
+	return err;
 }
 
 static int
 _handle_recv_cmpl(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc)
 {
+	struct xnvme_be_nvmf_req *req;
 	struct xnvme_be_nvmf_rdma_qpair *rdma_qpair = TO_XNVME_NVMF_RDMA_QPAIR(qpair);
 	struct xnvme_be_nvmf_wr_id wr_id = {.raw = wc->wr_id};
+	struct xnvme_spec_cpl *cpl;
 	void *buf;
 	struct ibv_sge sge;
 	struct ibv_recv_wr recv_wr;
@@ -164,40 +206,33 @@ _handle_recv_cmpl(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc)
 
 	if (wc->status != IBV_WC_SUCCESS) {
 		XNVME_DEBUG("FAILED: recv WC error: %s", ibv_wc_status_str(wc->status));
+		qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;  // TODO: Cannot track which request caused the error, so ignore for now and mark the qpair as dead. 
 		return -EIO;
-	} else {
-		XNVME_DEBUG("INFO: Work completion, status: %s, opcode: %s, wr_id: %lu, byte_len: %u", 
-			ibv_wc_status_str(wc->status), _ibv_wc_opcode_str(wc->opcode), wc->wr_id, wc->byte_len);
-		XNVME_DEBUG("INFO: Work completion, wr_id index: %u, type: %u", wr_id.index, wr_id.type);
-
-		_handle_ibv_completion(qpair, wc);
-
-		buf = rdma_qpair->recv_buffer + wr_id.index * NVME_CPL_CAPSULE_SIZE;
-
-		/* Re-post the slot before the callback so the pool never drains. */
-		sge = (struct ibv_sge){
-			.addr = (uintptr_t)buf,
-			.length = NVME_CPL_CAPSULE_SIZE,
-			.lkey = rdma_qpair->recv_mr->lkey,
-		};
-		recv_wr = (struct ibv_recv_wr){
-			.wr_id = wc->wr_id,
-			.sg_list = &sge,
-			.num_sge = 1,
-		};
-
-		err = ibv_post_recv(rdma_qpair->cm_id->qp, &recv_wr, NULL);
-		if (err) {
-			XNVME_DEBUG("FAILED: ibv_post_recv() to re-post slot, err: %d", err);
-			return err;
-		}
-
-		if (qpair->on_capsule_recv) {
-			qpair->on_capsule_recv(qpair, buf, NVME_CPL_CAPSULE_SIZE);
-		}
 	}
 
-	return 0;
+	buf = rdma_qpair->recv_buffer + wr_id.index * qpair->attr.completion_size;
+	cpl = (struct xnvme_spec_cpl *)buf;
+
+	req = xnvme_be_nvmf_req_get(qpair->req_pool, cpl->cid);
+	if (!req) {
+		XNVME_DEBUG("FAILED: Could not get request for wr_id index: %u", cpl->cid);
+		return -EIO;
+	}
+
+	req->cmpl_sts = XNVME_BE_NVMF_REQ_CMPL_STS_RECV_SUCCESS;
+	req->status = wc->status;
+
+	if (qpair->on_capsule_recv) {
+		qpair->on_capsule_recv(qpair, buf, qpair->attr.completion_size);
+	}
+
+	err = _repost_recv_buffer(rdma_qpair, wr_id.index, wc);
+	if (err) {
+		XNVME_DEBUG("FAILED: _repost_recv_buffer(), err: %d", err);
+		return err;
+	}
+
+	return err;
 }
 
 static inline int

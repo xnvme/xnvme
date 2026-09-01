@@ -13,13 +13,27 @@ enum xnvme_be_nvmf_req_type {
     XNVME_BE_NVMF_REQ_TYPE_MAX = XNVME_BE_NVMF_REQ_TYPE_USER,
 };
 
+enum xnvme_be_nvmf_req_cmpl_sts {
+    XNVME_BE_NVMF_REQ_CMPL_STS_PENDING,
+    XNVME_BE_NVMF_REQ_CMPL_STS_SEND_SUCCESS,
+    XNVME_BE_NVMF_REQ_CMPL_STS_SEND_ERROR,
+    XNVME_BE_NVMF_REQ_CMPL_STS_RECV_SUCCESS,
+    XNVME_BE_NVMF_REQ_CMPL_STS_RECV_ERROR,
+    XNVME_BE_NVMF_REQ_CMPL_STS_MAX = XNVME_BE_NVMF_REQ_CMPL_STS_RECV_ERROR,
+};
+
 struct xnvme_be_nvmf_req {
+    SLIST_ENTRY(xnvme_be_nvmf_req) next;
     void *context;
     uint16_t cid;
+    uint8_t type : 1;
+    uint8_t cmpl_sts : 3;
+    uint8_t reserved : 4;
+    uint16_t status;
     uint8_t active;
-    enum xnvme_be_nvmf_req_type type;
-    SLIST_ENTRY(xnvme_be_nvmf_req) next;
+    uint8_t padding[9];
 };
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_nvmf_req) == 32, "Unexpected size for xnvme_be_nvmf_req");
 
 struct xnvme_be_nvmf_req_pool {
     uint64_t entries;
