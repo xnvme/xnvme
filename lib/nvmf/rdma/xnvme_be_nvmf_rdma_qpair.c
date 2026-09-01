@@ -239,6 +239,7 @@ static inline int
 _process_completions(struct xnvme_be_nvmf_qpair *qpair, struct ibv_cq *cq,
 		     xnvme_be_nvmf_ib_cmpl_fn handle_cmpl)
 {
+	struct xnvme_be_nvmf_wr_id wr_id = {0};
 	struct ibv_wc wc;
 	int count = 0;
 	int err;
@@ -252,13 +253,16 @@ _process_completions(struct xnvme_be_nvmf_qpair *qpair, struct ibv_cq *cq,
 			break;
 		}
 
+		wr_id.raw = wc.wr_id;
+		XNVME_DEBUG("INFO: Work completion, status: %s, opcode: %s, byte_len: %u, wr_id index: %u, type: %u", 
+			ibv_wc_status_str(wc.status), _ibv_wc_opcode_str(wc.opcode), wc.byte_len, wr_id.index, wr_id.type);
+
 		if (wc.status != IBV_WC_SUCCESS) {
 			XNVME_DEBUG("FAILED: Work completion error, status: %d, error=%s",
 				    wc.status, ibv_wc_status_str(wc.status));
 			return -EIO;
 		}
 
-		XNVME_DEBUG("INFO: Completion received, wr_id: %lu", wc.wr_id);
 		err = handle_cmpl(qpair, &wc);
 		if (err) {
 			XNVME_DEBUG("FAILED: handle_cmpl(), err: %d", err);
