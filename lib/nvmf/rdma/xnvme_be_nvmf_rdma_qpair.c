@@ -96,22 +96,6 @@ _destroy_rdma_qpair(struct xnvme_be_nvmf_rdma_qpair *qpair)
 	return 0;
 }
 
-static int
-_handle_ibv_completion(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc)
-{
-	if (wc->wc_flags & IBV_WC_WITH_IMM) {
-		XNVME_DEBUG("INFO: Work completion with immediate data, imm_data: %u", wc->imm_data);
-		// TODO: Figure out if anything needs to be done
-	}
-	
-	if (wc->wc_flags & IBV_WC_WITH_INV) {
-		XNVME_DEBUG("INFO: Work completion with invalidate, invalidate_rkey: %u", wc->invalidated_rkey);
-		// TODO: track invalidate
-	}
-
-	return 0;
-}
-
 static inline const char *
 _ibv_wc_opcode_str(enum ibv_wc_opcode opcode)
 {
