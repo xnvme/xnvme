@@ -34,9 +34,39 @@
 void
 serve_conn_wipe(struct serve_conn *conn)
 {
+	if (conn->in_fd >= 0) {
+		close(conn->in_fd);
+	}
 	free(conn->allocs);
+	free(conn->regs);
 	memset(conn, 0, sizeof(*conn));
 	conn->sock = -1;
+	conn->in_fd = -1;
+}
+
+/**
+ * Make room for one more registration on this connection
+ */
+int
+serve_conn_regs_grow(struct serve_conn *conn)
+{
+	struct serve_registration *grown;
+	int cap;
+
+	if (conn->nregs < conn->regs_cap) {
+		return 0;
+	}
+
+	cap = conn->regs_cap ? conn->regs_cap * 2 : 4;
+	grown = realloc(conn->regs, sizeof(*grown) * (size_t)cap);
+	if (!grown) {
+		return -ENOMEM;
+	}
+
+	conn->regs = grown;
+	conn->regs_cap = cap;
+
+	return 0;
 }
 
 /**
@@ -100,6 +130,20 @@ serve_conn_release(struct serve_conn *conn, int devidx)
 		if (err) {
 			XNVME_DEBUG("FAILED: free(slot(%d)); err(%d)", i, err);
 		}
+	}
+
+	/* Registrations are this controller's too: the mapping was installed in
+	 * the domain it uses, so it is this thread that takes it out. */
+	for (int i = 0; i < conn->nregs;) {
+		if (conn->regs[i].dev != devidx) {
+			++i;
+			continue;
+		}
+
+		pthread_mutex_lock(&serve_lock);
+		xnvme_be_upcie_cplane_unregister_mem(&conn->regs[i].reg);
+		conn->regs[i] = conn->regs[--conn->nregs];
+		pthread_mutex_unlock(&serve_lock);
 	}
 
 	pthread_mutex_lock(&serve_lock);

@@ -146,11 +146,16 @@ xnvme_cplane_get_ctrlr_info(const char *uri, struct xnvme_cplane_ctrlr_info *inf
  * @param cplane_id Identifier to serve under; the sockets are named from it
  * @param stop Set to non-zero to bring the server down; typed for a signal
  * handler, since that is what usually sets it
+ * @param ready Called once, from this thread, when the socket is bound and
+ * clients can connect; NULL when the caller does not care. Anything a caller
+ * announces before this call it is announcing on faith, since the bind can
+ * still fail. Optional.
+ * @param ready_arg Handed back to `ready`
  *
  * @return 0 on success, negative errno on error
  */
 int
 xnvme_cplane_serve(struct xnvme_dev **devs, int ndevs, uint32_t cplane_id,
-		   volatile sig_atomic_t *stop);
+		   volatile sig_atomic_t *stop, void (*ready)(void *), void *ready_arg);
 
 #endif /* __LIBXNVME_CPLANE_H */
