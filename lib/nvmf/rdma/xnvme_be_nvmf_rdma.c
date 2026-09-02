@@ -164,6 +164,7 @@ xnvme_be_nvmf_rdma_on_capsule_recv(struct xnvme_be_nvmf_qpair *qpair, void *buf,
 	struct xnvme_be_nvmf_connect_response_cpl *connect_cpl =
 		(struct xnvme_be_nvmf_connect_response_cpl *)cpl;
 	struct xnvme_be_nvmf_req *req = NULL;
+	struct xnvme_cmd_ctx *cmd_ctx = NULL;
 
 	if (len < sizeof(*cpl)) {
 		XNVME_DEBUG("FAILED: short capsule, len: %zu", len);
@@ -173,10 +174,17 @@ xnvme_be_nvmf_rdma_on_capsule_recv(struct xnvme_be_nvmf_qpair *qpair, void *buf,
 
 	req = xnvme_be_nvmf_req_get(qpair->req_pool, cpl->cid);
 	if (!req) {
-		XNVME_DEBUG("FAILED: could not get request for cid: %u", cpl->cid);
+		XNVME_DEBUG("FAILED: Could not get request for wr_id index: %u", cpl->cid);
 		qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
 		return;
 	}
+
+	req->cmpl_type = XNVME_BE_NVMF_REQ_CMPL_TYPE_RECV;
+	req->status = 0;
+	cmd_ctx = (struct xnvme_cmd_ctx *)&req->context;
+
+	// copy the completion into the command context
+	memcpy(&cmd_ctx->cpl, cpl, sizeof(*cpl));
 
 	_print_nvme_completion(cpl);
 
