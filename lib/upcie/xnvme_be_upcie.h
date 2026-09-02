@@ -164,6 +164,87 @@ xnvme_be_upcie_cplane_export(struct xnvme_dev *dev, struct xnvme_be_upcie_cplane
 void
 xnvme_be_upcie_cplane_unexport(struct xnvme_be_upcie_cplane_export *exported);
 
+/* The doorbell registers, as an offset into BAR0. Whoever maps the page and
+ * whoever computes a doorbell inside it have to agree, and they are not in the
+ * same file. */
+#define XNVME_BE_UPCIE_DOORBELL_OFFSET 0x1000
+
+/**
+ * Where device memory is installed for the controllers that must reach it
+ *
+ * One range per process, holding one set of addresses, so every controller
+ * sharing a heap reaches it at the same IOVAs. Opened for the first controller
+ * and attached to by the rest.
+ */
+/* Controllers one process may drive a GPU against at once. */
+#define XNVME_BE_UPCIE_GPU_CTRLRS_MAX 16
+
+struct xnvme_be_upcie_iova_range {
+	/* The one this process claimed, or NULL where the mode needs none. It
+	 * is shared rather than owned: a second range would reserve the same
+	 * addresses in the same IOAS and be refused, and mappings installed
+	 * through one would be invisible to the other. */
+	struct dmamem_iommu_map_pa *imp;
+	int alive; ///< Whether imp is open; a mode needing no mapping leaves it 0
+};
+
+int
+xnvme_be_upcie_iova_range_open(struct xnvme_be_upcie_iova_range *map, const char *bdf);
+
+int
+xnvme_be_upcie_iova_range_attach(struct xnvme_be_upcie_iova_range *map, const char *bdf);
+
+void
+xnvme_be_upcie_iova_range_close(struct xnvme_be_upcie_iova_range *map);
+
+/**
+ * What the server holds on behalf of one registration
+ *
+ * The description is the client's to read; everything else is what has to be
+ * given back when the registration ends, which is either the client asking or
+ * the client dying.
+ */
+/* Distinct client regions one server may have installed at once. */
+#define XNVME_BE_UPCIE_CPLANE_REGIONS_MAX 32
+
+struct xnvme_be_upcie_cplane_registration {
+	uint64_t desc_offset; ///< The description, as a heap offset
+	struct dmabuf dmabuf; ///< What dmabuf_import_attach() gave back
+	int attached;         ///< Whether dmabuf holds an attachment
+	int map_fd;           ///< iommu-map-pa handle; -1 where the mode needs none
+	uint64_t map_handle;  ///< What iommu_map_pa_add() gave back
+	int region;           ///< The installed region shared with; -1 when there is none
+};
+
+/**
+ * Describe a client's own memory in terms the controller can consume
+ *
+ * The client allocated the memory and sends a dma-buf naming it. What that has
+ * to become depends on what the controller reads: physical addresses with the
+ * IOMMU out of the way, and an IOVA where it is not.
+ *
+ * @param dmabuf_fd The client's region, received over SCM_RIGHTS
+ * @param nbytes How much of it
+ * @param page_size The granule the client's runtime hands out
+ * @param bdf The controller the memory is being registered for
+ * @param out Pre-allocated registration to fill
+ *
+ * @return 0 on success, negative errno on error
+ */
+int
+xnvme_be_upcie_cplane_register_mem(int dmabuf_fd, uint64_t nbytes, uint32_t page_size,
+				   const char *bdf,
+				   struct xnvme_be_upcie_cplane_registration *out);
+
+/**
+ * Release a registration, and the description that went with it
+ *
+ * Safe on an all-zero registration, so a caller can release unconditionally
+ * after a failed register.
+ */
+void
+xnvme_be_upcie_cplane_unregister_mem(struct xnvme_be_upcie_cplane_registration *reg);
+
 int
 xnvme_be_upcie_cplane_admin(struct xnvme_dev *dev, void *cmd, void *cpl);
 
@@ -219,7 +300,35 @@ void
 xnvme_be_upcie_cplane_disconnect(void);
 
 int
+xnvme_be_upcie_cplane_ask_ctrlr_fd(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_cplane_msg *msg,
+				   int fd);
+
+int
+xnvme_be_upcie_cplane_register_client_mem(struct xnvme_be_upcie_ctrlr *ctrlr, int dmabuf_fd,
+					  uint64_t nbytes, uint32_t page_size,
+					  const struct hostmem_shared_desc **desc_out,
+					  uint64_t *offset_out);
+
+int
+xnvme_be_upcie_cplane_unregister_client_mem(struct xnvme_be_upcie_ctrlr *ctrlr, uint64_t offset);
+
+int
 xnvme_be_upcie_cplane_ctrlr_from_record(struct xnvme_be_upcie_ctrlr *ctrlr);
+
+int
+xnvme_be_upcie_ctrlr_qpair_create_at(struct xnvme_dev *dev, uint64_t sq_addr, uint64_t cq_addr,
+				     uint16_t depth, uint32_t *qid);
+
+int
+xnvme_be_upcie_ctrlr_qpair_delete_at(struct xnvme_dev *dev, uint32_t qid);
+
+int
+xnvme_be_upcie_cplane_alloc_qpair_at(struct xnvme_be_upcie_ctrlr *ctrlr, uint64_t desc_offset,
+				     uint64_t sq_offset, uint64_t cq_offset, uint16_t depth,
+				     uint32_t *qid);
+
+int
+xnvme_be_upcie_cplane_free_qpair_at(struct xnvme_be_upcie_ctrlr *ctrlr, uint32_t qid);
 
 int
 xnvme_be_upcie_cplane_alloc_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_qpair *qpair,

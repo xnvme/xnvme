@@ -69,6 +69,15 @@ XNVME_STATIC_ASSERT(SERVE_DEVS_MAX <= 32, "SERVE_DEVS_MAX exceeds the connection
 #define SERVE_ALLOCS_INITIAL 32
 
 /**
+ * One region of a client's own memory, and which controller it was made
+ * reachable for
+ */
+struct serve_registration {
+	struct xnvme_be_upcie_cplane_registration reg;
+	int dev;
+};
+
+/**
  * A queue this client was given, and what it takes to give it back
  *
  * Kept with the connection rather than in a table of its own: a queue belongs
@@ -80,6 +89,10 @@ struct serve_ioqpair {
 	size_t sq_offset;
 	size_t cq_offset;
 	size_t prp_offset;
+
+	/* The memory is the client's, so only the queue and the identifier are
+	 * this server's to give back. */
+	int foreign;
 
 	/* Which controller it came off. Queue identifiers are the controller's
 	 * own, so two of them hand out the same one, and a client holding both
@@ -110,6 +123,15 @@ struct serve_conn {
 	uint64_t *allocs; ///< Heap offsets handed out, grown as they are
 	int nallocs;
 	int allocs_cap;
+
+	struct serve_registration *regs; ///< Client memory made reachable, grown as it is
+	int nregs;
+	int regs_cap;
+
+	/* A descriptor arrives with the first bytes of the message that names
+	 * it, which may be several wake-ups before the message is whole. Held
+	 * here until then; -1 when nothing is pending. */
+	int in_fd;
 
 	struct nvme_cplane_msg msg; ///< The request being read
 	size_t nread;               ///< How much of it has arrived
@@ -208,10 +230,18 @@ serve_ioqpair_alloc(struct xnvme_dev *dev, uint16_t depth, struct serve_ioqpair 
 		    struct serve_qalloc *out);
 
 int
+serve_ioqpair_alloc_at(struct xnvme_dev *dev, struct serve_conn *conn, int devidx,
+		       const struct nvme_cplane_msg *msg, struct serve_ioqpair *held,
+		       uint32_t *qid);
+
+int
 serve_ioqpair_free(struct xnvme_dev *dev, struct serve_ioqpair *held);
 
 void
 serve_conn_wipe(struct serve_conn *conn);
+
+int
+serve_conn_regs_grow(struct serve_conn *conn);
 
 int
 serve_conn_allocs_grow(struct serve_conn *conn);

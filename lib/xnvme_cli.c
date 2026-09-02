@@ -937,6 +937,12 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "Use given 'NUM' as per-IO buffer size in bytes",
 	},
 	{
+		.opt = XNVME_CLI_OPT_ALT_URI,
+		.vtype = XNVME_CLI_OPT_VTYPE_URI,
+		.name = "alt-uri",
+		.descr = "URI of another device; a comma-separated list for several",
+	},
+	{
 		.opt = XNVME_CLI_OPT_ALT_BE,
 		.vtype = XNVME_CLI_OPT_VTYPE_STR,
 		.name = "alt-be",
@@ -1629,6 +1635,10 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 	case XNVME_CLI_OPT_BE:
 		args->be = arg ? arg : "INVALID_INPUT";
 		break;
+	case XNVME_CLI_OPT_ALT_URI:
+		args->alt_uri = arg ? arg : "INVALID_INPUT";
+		break;
+
 	case XNVME_CLI_OPT_ALT_BE:
 		args->alt_be = arg ? arg : "INVALID_INPUT";
 		break;

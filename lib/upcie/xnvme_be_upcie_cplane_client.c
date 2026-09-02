@@ -225,6 +225,103 @@ cplane_conn_get(uint32_t cplane_id)
 }
 
 /**
+ * Ask about this controller, handing over a descriptor with the request
+ *
+ * The registration operations name a region by descriptor rather than by
+ * address, since an address in this process means nothing in the server's.
+ *
+ * @return 0 on success, the server's status when it refused, negative errno
+ */
+int
+xnvme_be_upcie_cplane_ask_ctrlr_fd(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_cplane_msg *msg,
+				   int fd)
+{
+	int err;
+
+	if (!ctrlr || !msg) {
+		return -ENOTCONN;
+	}
+
+	msg->index = (uint32_t)ctrlr->index;
+
+	pthread_mutex_lock(&cplane_sock_lock);
+	err = nvme_cplane_request_with(g_upcie_rte.connection.sock, msg, &fd, 1, NULL, NULL);
+	pthread_mutex_unlock(&cplane_sock_lock);
+
+	return err;
+}
+
+/**
+ * Have the server describe memory this process allocated
+ *
+ * What comes back is an offset into the heap, where the server left a
+ * description of the region in terms the controller can consume. The caller
+ * builds its dmamem from that rather than from anything it could work out
+ * locally, since the addresses are the server's to know.
+ *
+ * @param ctrlr A connected controller
+ * @param dmabuf_fd The region, as a dma-buf this process exported
+ * @param nbytes How much of it
+ * @param page_size The granule this process's runtime hands out
+ * @param desc_out Set to the description, within this process's heap mapping
+ * @param offset_out Set to the offset the registration is handed back by, or NULL
+ *
+ * @return 0 on success, negative errno on error
+ */
+int
+xnvme_be_upcie_cplane_register_client_mem(struct xnvme_be_upcie_ctrlr *ctrlr, int dmabuf_fd,
+					  uint64_t nbytes, uint32_t page_size,
+					  const struct hostmem_shared_desc **desc_out,
+					  uint64_t *offset_out)
+{
+	struct nvme_cplane_msg msg = {0};
+	int err;
+
+	if (!ctrlr || (dmabuf_fd < 0) || !nbytes || !page_size || !desc_out) {
+		return -EINVAL;
+	}
+	if (!g_upcie_rte.connection.alive) {
+		return -ENOTCONN;
+	}
+
+	msg.op = NVME_CPLANE_OP_REGISTER_MEM;
+	msg.u.reg.nbytes = nbytes;
+	msg.u.reg.page_size = page_size;
+
+	err = xnvme_be_upcie_cplane_ask_ctrlr_fd(ctrlr, &msg, dmabuf_fd);
+	if (err) {
+		XNVME_DEBUG("FAILED: registering %" PRIu64 " bytes; err(%d)", nbytes, err);
+		return err;
+	}
+
+	*desc_out = (const struct hostmem_shared_desc *)((char *)g_upcie_rte.connection.heap_base +
+							 msg.u.reg.desc_offset);
+	if (offset_out) {
+		*offset_out = msg.u.reg.desc_offset;
+	}
+
+	return 0;
+}
+
+/**
+ * Give a registration back, naming it by the offset it was answered with
+ */
+int
+xnvme_be_upcie_cplane_unregister_client_mem(struct xnvme_be_upcie_ctrlr *ctrlr, uint64_t offset)
+{
+	struct nvme_cplane_msg msg = {0};
+
+	if (!ctrlr || !offset) {
+		return -EINVAL;
+	}
+
+	msg.op = NVME_CPLANE_OP_UNREGISTER_MEM;
+	msg.u.reg.desc_offset = offset;
+
+	return xnvme_be_upcie_cplane_ask_ctrlr(ctrlr, &msg, NULL, NULL);
+}
+
+/**
  * Build this process's view of a controller somebody else owns
  *
  * @param cplane_id Identifies the runtime, and with it the socket
@@ -466,13 +563,73 @@ xnvme_be_upcie_cplane_ctrlr_from_record(struct xnvme_be_upcie_ctrlr *ctrlr)
 }
 
 /**
- * Ask the server for a queue, and build a local view of it
+ * Ask for a queue built on memory this process registered
  *
- * @param qpair Pre-allocated queue pair to fill
- * @param depth Entries wanted
+ * What comes back is only an identifier: the memory is already this process's,
+ * and the doorbells follow from the identifier, so there is nothing else for
+ * the server to say.
  *
- * @return 0 on success, negative errno on error
+ * @param ctrlr A connected controller
+ * @param desc_offset The registration the queue lives in
+ * @param sq_offset Submission queue, from the registered region's base
+ * @param cq_offset Completion queue, from the registered region's base
+ * @param depth Entries in each
+ * @param qid Set to the identifier allocated
+ *
+ * @return 0 on success, negative errno on failure
  */
+int
+xnvme_be_upcie_cplane_alloc_qpair_at(struct xnvme_be_upcie_ctrlr *ctrlr, uint64_t desc_offset,
+				     uint64_t sq_offset, uint64_t cq_offset, uint16_t depth,
+				     uint32_t *qid)
+{
+	struct nvme_cplane_msg msg = {0};
+	int err;
+
+	if (!ctrlr || !qid) {
+		return -EINVAL;
+	}
+
+	msg.op = NVME_CPLANE_OP_ALLOC_IOQPAIR_AT;
+	msg.u.queue_at.desc_offset = desc_offset;
+	msg.u.queue_at.sq_offset = sq_offset;
+	msg.u.queue_at.cq_offset = cq_offset;
+	msg.u.queue_at.depth = depth;
+
+	err = xnvme_be_upcie_cplane_ask_ctrlr(ctrlr, &msg, NULL, NULL);
+	if (err) {
+		XNVME_DEBUG("FAILED: asking for a queue on registered memory; err(%d)", err);
+		return err;
+	}
+
+	*qid = msg.u.queue_at.qid;
+
+	return 0;
+}
+
+/**
+ * Hand back a queue built on this process's own memory
+ *
+ * @param ctrlr A connected controller
+ * @param qid The identifier handed out earlier
+ *
+ * @return 0 on success, negative errno on failure
+ */
+int
+xnvme_be_upcie_cplane_free_qpair_at(struct xnvme_be_upcie_ctrlr *ctrlr, uint32_t qid)
+{
+	struct nvme_cplane_msg msg = {0};
+
+	if (!ctrlr) {
+		return -EINVAL;
+	}
+
+	msg.op = NVME_CPLANE_OP_FREE_IOQPAIR;
+	msg.u.release.qid = qid;
+
+	return xnvme_be_upcie_cplane_ask_ctrlr(ctrlr, &msg, NULL, NULL);
+}
+
 int
 xnvme_be_upcie_cplane_alloc_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_qpair *qpair,
 				  uint16_t depth)
@@ -501,8 +658,10 @@ xnvme_be_upcie_cplane_alloc_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvm
 	qpair->depth = msg.u.queue.allocation.depth;
 	qpair->sq = base + msg.u.queue.allocation.sq_offset;
 	qpair->cq = base + msg.u.queue.allocation.cq_offset;
-	qpair->sqdb = (char *)ctrlr->bar0 + 0x1000 + ((2 * qpair->qid) << (2 + dstrd));
-	qpair->cqdb = (char *)ctrlr->bar0 + 0x1000 + ((2 * qpair->qid + 1) << (2 + dstrd));
+	qpair->sqdb = (char *)ctrlr->bar0 + XNVME_BE_UPCIE_DOORBELL_OFFSET +
+		      ((2 * qpair->qid) << (2 + dstrd));
+	qpair->cqdb = (char *)ctrlr->bar0 + XNVME_BE_UPCIE_DOORBELL_OFFSET +
+		      ((2 * qpair->qid + 1) << (2 + dstrd));
 	qpair->tail_last_written = UINT16_MAX;
 	qpair->phase = 1;
 

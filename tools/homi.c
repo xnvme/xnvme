@@ -110,6 +110,19 @@ _wait_for_stop_signal(void)
 	sigprocmask(SIG_SETMASK, &orig, NULL);
 }
 
+/**
+ * Say it is up once it actually is
+ *
+ * Announced from the server rather than before it, since until the socket is
+ * bound there is nothing for a client to reach and saying otherwise is how a
+ * server that never started reads as one that did.
+ */
+static void
+_announce_serving(void *XNVME_UNUSED(arg))
+{
+	xnvme_cli_pinf("HOMI started successfully, use Ctrl+C to stop");
+}
+
 static int
 sub_start(struct xnvme_cli *cli)
 {
@@ -147,15 +160,17 @@ sub_start(struct xnvme_cli *cli)
 		return err;
 	}
 
-	xnvme_cli_pinf("HOMI started successfully, use Ctrl+C to stop");
-
 	{
 		_install_stop_handler();
 
-		err = xnvme_cplane_serve(devs, ndevs, (uint32_t)cli->args.homi_id, &stop);
+		err = xnvme_cplane_serve(devs, ndevs, (uint32_t)cli->args.homi_id, &stop,
+					 _announce_serving, NULL);
 		if (err == -ENOSYS) {
 			/* A backend that shares its own way, so hold the
 			 * controllers and let it do the sharing. */
+			xnvme_cli_pinf("HOMI holding %d controller(s); %s shares them by its own "
+				       "means, use Ctrl+C to stop",
+				       ndevs, cli->args.be ? cli->args.be : "the backend");
 			err = 0;
 			_wait_for_stop_signal();
 		} else if (err) {

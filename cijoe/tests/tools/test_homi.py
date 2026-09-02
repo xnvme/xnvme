@@ -814,7 +814,8 @@ def test_a_queue_survives_a_release_on_another_controller(
     for _ in range(5):
         err, _ = cijoe.run(
             f"lblk read {visitor['uri']} --dev-nsid {visitor['nsid']}"
-            f" --slba 0x0 --nlb 0 --be {be} --admin {be} --sync {be}"
+            f" --slba 0x0 --nlb 0 --be {be} --admin {be_opts['admin']}"
+            f" --sync {be_opts['sync']}"
             f" --homi-id {homi_id}"
         )
         assert not err, f"a client of {visitor['uri']} could not read"
@@ -949,7 +950,8 @@ def test_the_two_spellings_name_one_identifier(cijoe, device, be_opts, cli_args)
 
     err, _ = cijoe.run(
         f"lblk read {uri} --dev-nsid {device['nsid']} --slba 0x0 --nlb 0"
-        f" --be {be_opts['be']} --admin {be_opts['be']} --sync {be_opts['be']}"
+        f" --be {be_opts['be']} --admin {be_opts['admin']}"
+        f" --sync {be_opts['sync']}"
         f" --shm_id {homi_id}"
     )
     assert not err, f"a client of {uri} could not read with --shm_id"
@@ -1784,8 +1786,8 @@ def test_a_stalled_client_does_not_stop_a_working_one(cijoe, device, be_opts, cl
     started = time()
     err, _ = cijoe.run(
         f"timeout {stall // 3} lblk read {uri} --dev-nsid {device['nsid']}"
-        f" --slba 0x0 --nlb 0 --be {be_opts['be']} --admin {be_opts['be']}"
-        f" --sync {be_opts['be']} --homi-id {homi_id}"
+        f" --slba 0x0 --nlb 0 --be {be_opts['be']} --admin {be_opts['admin']}"
+        f" --sync {be_opts['sync']} --homi-id {homi_id}"
     )
     elapsed = time() - started
 
