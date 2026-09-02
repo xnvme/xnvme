@@ -104,6 +104,19 @@ is_pci_bdf(const char *uri)
 	       uri[end] == '\0';
 }
 
+/**
+ * Say it is up once it actually is
+ *
+ * Announced from the server rather than before it, since until the socket is
+ * bound there is nothing for a client to reach and saying otherwise is how a
+ * server that never started reads as one that did.
+ */
+static void
+_announce_serving(void *XNVME_UNUSED(arg))
+{
+	xnvme_cli_pinf("HOMI started successfully, use Ctrl+C to stop");
+}
+
 static int
 sub_start(struct xnvme_cli *cli)
 {
@@ -143,6 +156,7 @@ sub_start(struct xnvme_cli *cli)
 			: (HOMI_HEAP_SIZE_PER_DEV + HOMI_HEAP_SIZE_SELF_PER_DEV) * ndevs;
 	opts.device_heap_size =
 		cli->args.device_heap_size ? cli->args.device_heap_size : HOMI_DEVICE_HEAP_SIZE;
+	opts.gpu_id = cli->given[XNVME_CLI_OPT_GPU_ID] ? cli->args.gpu_id : 0;
 
 	err = xnvme_cli_dev_open_multi(dev_uris, ndevs, &opts, &devs);
 	if (err) {
@@ -187,16 +201,18 @@ sub_start(struct xnvme_cli *cli)
 		}
 	}
 
-	xnvme_cli_pinf("HOMI started successfully, use Ctrl+C to stop");
-
 	// cplane_serve() polls its own flag, so handle_signal() must run somewhere to
 	// set it; unblock here only, CUSE threads keep it blocked from their creation
 	sigprocmask(SIG_SETMASK, &g_orig_sigmask, NULL);
 
-	err = xnvme_cplane_serve(devs, ndevs, (uint32_t)cli->args.homi_id, &stop);
+	err = xnvme_cplane_serve(devs, ndevs, (uint32_t)cli->args.homi_id, &stop,
+				 _announce_serving, NULL);
 	if (err == -ENOSYS) {
 		/* A backend that shares its own way, so hold the
 		 * controllers and let it do the sharing. */
+		xnvme_cli_pinf("HOMI started successfully, holding %d controller(s) that %s "
+			       "shares by its own means, use Ctrl+C to stop",
+			       ndevs, cli->args.be ? cli->args.be : "the backend");
 		err = 0;
 		block_stop_signals();
 		wait_for_stop_signal();
@@ -360,6 +376,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HOST_HEAP_SIZE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_DEVICE_HEAP_SIZE, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_GPU_ID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_NO_CUSE, XNVME_CLI_LFLG},
 		},
 	},
