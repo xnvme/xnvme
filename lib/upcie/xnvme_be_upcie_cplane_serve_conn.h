@@ -22,6 +22,14 @@
 #define XNVME_BE_UPCIE_CPLANE_SERVE_ALLOCS_INITIAL 32
 
 /**
+ * A region of a client's own memory, and the controller `dev` it was made reachable for
+ */
+struct xnvme_be_upcie_cplane_serve_registration {
+	struct xnvme_be_upcie_cplane_registration reg;
+	int dev;
+};
+
+/**
  * One client connection, and everything the client was given
  *
  * `inited` and `closing_devs` hold a bit per controller index. While `owed` is
@@ -43,7 +51,11 @@ struct xnvme_be_upcie_cplane_serve_conn {
 	uint64_t *allocs; ///< Heap offsets handed out
 	int nallocs;
 	int allocs_cap;
+	struct xnvme_be_upcie_cplane_serve_registration *regs; ///< Client memory made reachable
+	int nregs;
+	int regs_cap;
 
+	int in_fd;                  ///< Descriptor the request came with; -1 for none
 	struct nvme_cplane_msg msg; ///< The request being answered
 
 	int owed;     ///< Handed to a controller's thread
@@ -58,6 +70,14 @@ struct xnvme_be_upcie_cplane_serve_conn {
  */
 void
 xnvme_be_upcie_cplane_serve_conn_wipe(struct xnvme_be_upcie_cplane_serve_conn *conn);
+
+/**
+ * Make room on `conn` for one more registration
+ *
+ * @return 0 on success, negative errno on error
+ */
+int
+xnvme_be_upcie_cplane_serve_conn_regs_grow(struct xnvme_be_upcie_cplane_serve_conn *conn);
 
 /**
  * Make room on `conn` for one more allocation

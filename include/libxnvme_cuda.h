@@ -76,7 +76,8 @@ extern "C" {
  * @param depth Number of IO slots in the queue
  * @param queue On success, set to a device pointer to the GPU queue
  *
- * @return 0 on success, negative error code on failure
+ * @return 0 on success, -ENOTCONN when no ``upcie-cuda`` device is open, another
+ * negative error code on failure
  */
 int
 xnvme_cuda_queue_create(struct xnvme_dev *dev, uint16_t depth, struct xnvme_cuda_queue **queue);
@@ -85,6 +86,8 @@ xnvme_cuda_queue_create(struct xnvme_dev *dev, uint16_t depth, struct xnvme_cuda
  * Destroy a GPU-resident NVMe IO queue
  *
  * Deletes the queue pair from the NVMe controller and frees the device memory.
+ * Destroy it before the device that created it is closed: with no ``upcie-cuda``
+ * device open this returns without touching the queue.
  *
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation

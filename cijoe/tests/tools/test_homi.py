@@ -423,8 +423,8 @@ def test_server_says_where_it_placed_itself(cijoe, device, be_opts, cli_args):
     if CPlaneServer.RUNNING is None:
         pytest.skip(reason="No server started by this run to read the output of")
 
-    be, _ = CPlaneServer.RUNNING
-    err, state = cijoe.run(f"cat /tmp/cplane_{be}.out")
+    be, labels = CPlaneServer.RUNNING
+    err, state = cijoe.run(f"cat {CPlaneServer.logfile(be, list(labels))}")
     assert not err, "the server's output is not where it was written"
 
     out = state.output()
@@ -861,7 +861,8 @@ def test_a_queue_survives_a_release_on_another_controller(
     for _ in range(5):
         err, _ = cijoe.run(
             f"lblk read {visitor['uri']} --dev-nsid {visitor['nsid']}"
-            f" --slba 0x0 --nlb 0 --be {be} --admin {be} --sync {be}"
+            f" --slba 0x0 --nlb 0 --be {be} --admin {be_opts['admin']}"
+            f" --sync {be_opts['sync']}"
             f" --homi-id {homi_id}"
         )
         assert not err, f"a client of {visitor['uri']} could not read"
@@ -996,7 +997,8 @@ def test_the_two_spellings_name_one_identifier(cijoe, device, be_opts, cli_args)
 
     err, _ = cijoe.run(
         f"lblk read {uri} --dev-nsid {device['nsid']} --slba 0x0 --nlb 0"
-        f" --be {be_opts['be']} --admin {be_opts['be']} --sync {be_opts['be']}"
+        f" --be {be_opts['be']} --admin {be_opts['admin']}"
+        f" --sync {be_opts['sync']}"
         f" --shm_id {homi_id}"
     )
     assert not err, f"a client of {uri} could not read with --shm_id"
@@ -1214,6 +1216,9 @@ _OP_FREE_IOQPAIR = 3
 _OP_ALLOC_BUF = 5
 _OP_FREE_BUF = 6
 _OP_STATUS = 7
+_OP_REGISTER_MEM = 8
+_OP_UNREGISTER_MEM = 9
+_OP_ALLOC_IOQPAIR_AT = 10
 
 
 def _speak(cijoe, homi_id, op, version=_MSG_VERSION, payload_at=None, index=0):
@@ -1752,7 +1757,7 @@ def test_asking_for_resources_before_initialising_is_refused(
     """
     A connection that has not initialised cannot take a queue or memory.
 
-    Both replies are an offset into the heap, and a connection that never asked
+    Each reply is an offset into the heap, and a connection that never asked
     for the descriptors has no mapping of the heap to resolve one against. A
     server that answered anyway would carve a real queue off the controller, or
     a 2 MiB payload granule, for a client that cannot use either.
@@ -1770,12 +1775,24 @@ def test_asking_for_resources_before_initialising_is_refused(
         pytest.skip(reason="Serving over the socket is uPCIe's")
 
     # Queue depth at offset 32 of the body, and a byte count at 0, so each
-    # request is one the server would otherwise honour.
+    # request is one the server would otherwise honour; for a placed queue the
+    # value at 32 lands in the description offset instead, which the refusal
+    # comes before.
     status = _speak(cijoe, homi_id, _OP_ALLOC_IOQPAIR, payload_at=(32, 8))
     assert status == -107, f"expected -ENOTCONN for a queue before init, got {status}"
 
     status = _speak(cijoe, homi_id, _OP_ALLOC_BUF, payload_at=(0, 4096))
     assert status == -107, f"expected -ENOTCONN for memory before init, got {status}"
+
+    status = _speak(cijoe, homi_id, _OP_ALLOC_IOQPAIR_AT, payload_at=(32, 8))
+    assert (
+        status == -107
+    ), f"expected -ENOTCONN for a placed queue before init, got {status}"
+
+    status = _speak(cijoe, homi_id, _OP_REGISTER_MEM, payload_at=(0, 4096))
+    assert (
+        status == -107
+    ), f"expected -ENOTCONN for a registration before init, got {status}"
 
 
 @xnvme_parametrize(labels=["pcie"], opts=["be"])
@@ -1805,6 +1822,9 @@ def test_handing_back_what_was_never_held_is_refused(cijoe, device, be_opts, cli
 
     status = _speak(cijoe, homi_id, _OP_FREE_BUF, payload_at=(8, 0xDEAD))
     assert status == -2, f"expected -ENOENT for memory never held, got {status}"
+
+    status = _speak(cijoe, homi_id, _OP_UNREGISTER_MEM, payload_at=(8, 4096))
+    assert status == -2, f"expected -ENOENT for a registration never held, got {status}"
 
     # A controller nobody holds, which is what naming one in the message
     # rather than in a socket name makes possible to ask for at all.
@@ -1862,8 +1882,8 @@ def test_a_stalled_client_does_not_stop_a_working_one(cijoe, device, be_opts, cl
     started = time()
     err, _ = cijoe.run(
         f"timeout {stall // 3} lblk read {uri} --dev-nsid {device['nsid']}"
-        f" --slba 0x0 --nlb 0 --be {be_opts['be']} --admin {be_opts['be']}"
-        f" --sync {be_opts['be']} --homi-id {homi_id}"
+        f" --slba 0x0 --nlb 0 --be {be_opts['be']} --admin {be_opts['admin']}"
+        f" --sync {be_opts['sync']} --homi-id {homi_id}"
     )
     elapsed = time() - started
 
