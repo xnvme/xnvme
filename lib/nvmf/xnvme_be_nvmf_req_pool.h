@@ -13,13 +13,11 @@ enum xnvme_be_nvmf_req_type {
     XNVME_BE_NVMF_REQ_TYPE_MAX = XNVME_BE_NVMF_REQ_TYPE_USER,
 };
 
-enum xnvme_be_nvmf_req_cmpl_sts {
-    XNVME_BE_NVMF_REQ_CMPL_STS_PENDING,
-    XNVME_BE_NVMF_REQ_CMPL_STS_SEND_SUCCESS,
-    XNVME_BE_NVMF_REQ_CMPL_STS_SEND_ERROR,
-    XNVME_BE_NVMF_REQ_CMPL_STS_RECV_SUCCESS,
-    XNVME_BE_NVMF_REQ_CMPL_STS_RECV_ERROR,
-    XNVME_BE_NVMF_REQ_CMPL_STS_MAX = XNVME_BE_NVMF_REQ_CMPL_STS_RECV_ERROR,
+enum xnvme_be_nvmf_req_cmpl_type {
+    XNVME_BE_NVMF_REQ_CMPL_TYPE_NONE,
+    XNVME_BE_NVMF_REQ_CMPL_TYPE_SEND,
+    XNVME_BE_NVMF_REQ_CMPL_TYPE_RECV,
+    XNVME_BE_NVMF_REQ_CMPL_TYPE_MAX = XNVME_BE_NVMF_REQ_CMPL_TYPE_RECV,
 };
 
 struct xnvme_be_nvmf_req {
@@ -27,7 +25,8 @@ struct xnvme_be_nvmf_req {
     void *context;
     uint16_t cid;
     uint8_t type : 1;
-    uint8_t cmpl_sts : 3;
+    uint8_t cmpl_type : 2;
+    uint8_t async : 1;
     uint8_t reserved : 4;
     uint16_t status;
     uint8_t active;
@@ -94,13 +93,15 @@ xnvme_be_nvmf_req_get(struct xnvme_be_nvmf_req_pool *pool, uint64_t index)
 }
 
 static inline struct xnvme_be_nvmf_req *
-_xnvme_be_nvmf_req_alloc_helper(struct xnvme_be_nvmf_req_pool *pool, enum xnvme_be_nvmf_req_type type)
+_xnvme_be_nvmf_req_alloc_helper(struct xnvme_be_nvmf_req_pool *pool, enum xnvme_be_nvmf_req_type type, bool async, void *context)
 {
     struct xnvme_be_nvmf_req *req = SLIST_FIRST(&pool->free_list);
 
     if (req) {
         SLIST_REMOVE_HEAD(&pool->free_list, next); // Using the SLIST_ENTRY next to get the next request
         req->type = type;
+        req->async = async;
+        req->context = context;
         req->active = 1;
         pool->allocated++;
     }
@@ -110,15 +111,15 @@ _xnvme_be_nvmf_req_alloc_helper(struct xnvme_be_nvmf_req_pool *pool, enum xnvme_
 
 
 static inline struct xnvme_be_nvmf_req *
-xnvme_be_nvmf_req_alloc(struct xnvme_be_nvmf_req_pool *pool)
+xnvme_be_nvmf_req_alloc(struct xnvme_be_nvmf_req_pool *pool, bool async, void *context)
 {
-    return _xnvme_be_nvmf_req_alloc_helper(pool, XNVME_BE_NVMF_REQ_TYPE_USER);
+    return _xnvme_be_nvmf_req_alloc_helper(pool, XNVME_BE_NVMF_REQ_TYPE_USER, async, context);
 }
 
 static inline struct xnvme_be_nvmf_req *
-xnvme_be_nvmf_req_internal_alloc(struct xnvme_be_nvmf_req_pool *pool)
+xnvme_be_nvmf_req_internal_alloc(struct xnvme_be_nvmf_req_pool *pool, bool async, void *context)
 {
-    return _xnvme_be_nvmf_req_alloc_helper(pool, XNVME_BE_NVMF_REQ_TYPE_INTERNAL);
+    return _xnvme_be_nvmf_req_alloc_helper(pool, XNVME_BE_NVMF_REQ_TYPE_INTERNAL, async, context);
 }
 
 static inline void
