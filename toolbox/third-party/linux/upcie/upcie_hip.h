@@ -9,7 +9,7 @@
  * a payload can be DMA'd straight to or from GPU VRAM on a host-driven queue.
  *
  * @file upcie_hip.h
- * @version 0.7.0
+ * @version 0.8.0
  */
 
 #ifndef HIPUPCIE_H

@@ -31,12 +31,14 @@
  *   #include <upcie/upcie.h>
  *
  * @file upcie.h
- * @version 0.7.0
+ * @version 0.8.0
  */
 #ifndef UPCIE_H
 #define UPCIE_H
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -89,6 +91,9 @@ extern "C" {
 #include <upcie/vfioctl.h>
 #include <upcie/dmamem_registry.h>
 #include <upcie/dmamem.h>
+/* EXPERIMENTAL: needs the out-of-tree iommu-map-pa DKMS module. Must follow
+ * <upcie/dmamem.h> and <upcie/experimental/iommu_map_pa.h>. */
+#include <upcie/dmamem_iommu_map_pa.h>
 #include <upcie/dmamem_memfd.h>
 #include <upcie/dmamem_dmabuf.h>
 #include <upcie/dmamem_hostmem.h>
