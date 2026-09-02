@@ -92,28 +92,21 @@ struct xnvme_be_upcie_ctrlr {
 };
 
 /**
- * One controller's iommu-map-pa handle
+ * The IOVA range memory the IOAS will not map itself is installed in
  *
  * IOMMU_IOAS_MAP_FILE rejects the dma-bufs CUDA and HIP export, so such memory
- * reaches the controller's domain through the out-of-tree iommu-map-pa module
- * instead. See <upcie/dmamem_iommu_map_pa.h>.
+ * reaches a controller's domain through the out-of-tree iommu-map-pa module
+ * instead; see <upcie/dmamem_iommu_map_pa.h>. One range per process, holding
+ * one set of addresses, so every controller sharing a heap reaches it at the
+ * same IOVAs: opened for the first controller and attached to by the rest.
  */
 struct xnvme_be_upcie_iova_range {
-	struct dmamem_iommu_map_pa imp;
-	char bdf[DMAMEM_IOMMU_MAP_PA_BDF_LEN]; ///< Device whose domain is mapped into
-	int alive;                             ///< Whether imp is open
-	int slice;                             ///< Window slice held; -1 when none
-};
-
-/**
- * One controller's view of a heap reached through its IOVA range
- *
- * The heap is process-wide; the IOVAs it is reached by are per controller, so
- * each needs a table of its own.
- */
-struct xnvme_be_upcie_iova_range_dmem {
-	struct xnvme_be_upcie_iova_range map; ///< Borrowed by dmem; outlives it
-	struct dmamem dmem;
+	/* The one this process claimed, or NULL where the mode needs none. It
+	 * is shared rather than owned: a second range would reserve the same
+	 * addresses in the same IOAS and be refused, and mappings installed
+	 * through one would be invisible to the other. */
+	struct dmamem_iommu_map_pa *imp;
+	int alive; ///< Whether imp is open; a mode needing no mapping leaves it 0
 };
 
 /**
@@ -127,11 +120,11 @@ struct xnvme_be_upcie_iova_range_dmem {
  * translates through.
  */
 struct xnvme_be_upcie_state {
-	struct xnvme_be_upcie_ctrlr *ctrlr; ///< Shared controller (first field for platform)
-	struct dmamem *dmem;                ///< Where this device's data buffers live
-	struct xnvme_be_upcie_iova_range_dmem *range; ///< Owned; NULL where no range is needed
+	struct xnvme_be_upcie_ctrlr *ctrlr;     ///< Shared controller (first field for platform)
+	struct dmamem *dmem;                    ///< Where this device's data buffers live
+	struct xnvme_be_upcie_iova_range range; ///< This device's hold on it; unopened if unneeded
 
-	uint8_t _rvds[104];
+	uint8_t _rvds[96];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_upcie_state) == XNVME_BE_STATE_NBYTES, "Incorrect size")
 
@@ -163,6 +156,62 @@ xnvme_be_upcie_cplane_export(struct xnvme_dev *dev, struct xnvme_be_upcie_cplane
  */
 void
 xnvme_be_upcie_cplane_unexport(struct xnvme_be_upcie_cplane_export *exported);
+
+/* The doorbell registers, as an offset into BAR0. Whoever maps the page and
+ * whoever computes a doorbell inside it have to agree, and they are not in the
+ * same file. */
+#define XNVME_BE_UPCIE_DOORBELL_OFFSET 0x1000
+
+/* Controllers one process may drive a GPU against at once. */
+#define XNVME_BE_UPCIE_GPU_CTRLRS_MAX 16
+
+/**
+ * What the server holds on behalf of one registration
+ *
+ * The description is the client's to read; everything else is what has to be
+ * given back when the registration ends, which is either the client asking or
+ * the client dying.
+ */
+/* Distinct client regions one server may have installed at once. */
+#define XNVME_BE_UPCIE_CPLANE_REGIONS_MAX 32
+
+struct xnvme_be_upcie_cplane_registration {
+	uint64_t desc_offset; ///< The description, as a heap offset
+	struct dmabuf dmabuf; ///< What dmabuf_import_attach() gave back
+	int attached;         ///< Whether dmabuf holds an attachment
+	int map_fd;           ///< iommu-map-pa handle; -1 where the mode needs none
+	uint64_t map_handle;  ///< What iommu_map_pa_add() gave back
+	int region;           ///< The installed region shared with; -1 when there is none
+};
+
+/**
+ * Describe a client's own memory in terms the controller can consume
+ *
+ * The client allocated the memory and sends a dma-buf naming it. What that has
+ * to become depends on what the controller reads: physical addresses with the
+ * IOMMU out of the way, and an IOVA where it is not.
+ *
+ * @param dmabuf_fd The client's region, received over SCM_RIGHTS
+ * @param nbytes How much of it
+ * @param page_size The granule the client's runtime hands out
+ * @param bdf The controller the memory is being registered for
+ * @param out Pre-allocated registration to fill
+ *
+ * @return 0 on success, negative errno on error
+ */
+int
+xnvme_be_upcie_cplane_register_mem(int dmabuf_fd, uint64_t nbytes, uint32_t page_size,
+				   const char *bdf,
+				   struct xnvme_be_upcie_cplane_registration *out);
+
+/**
+ * Release a registration, and the description that went with it
+ *
+ * Safe on an all-zero registration, so a caller can release unconditionally
+ * after a failed register.
+ */
+void
+xnvme_be_upcie_cplane_unregister_mem(struct xnvme_be_upcie_cplane_registration *reg);
 
 int
 xnvme_be_upcie_cplane_admin(struct xnvme_dev *dev, void *cmd, void *cpl);
@@ -219,7 +268,35 @@ void
 xnvme_be_upcie_cplane_disconnect(void);
 
 int
+xnvme_be_upcie_cplane_ask_ctrlr_fd(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_cplane_msg *msg,
+				   int fd);
+
+int
+xnvme_be_upcie_cplane_register_client_mem(struct xnvme_be_upcie_ctrlr *ctrlr, int dmabuf_fd,
+					  uint64_t nbytes, uint32_t page_size,
+					  const struct hostmem_shared_desc **desc_out,
+					  uint64_t *offset_out);
+
+int
+xnvme_be_upcie_cplane_unregister_client_mem(struct xnvme_be_upcie_ctrlr *ctrlr, uint64_t offset);
+
+int
 xnvme_be_upcie_cplane_ctrlr_from_record(struct xnvme_be_upcie_ctrlr *ctrlr);
+
+int
+xnvme_be_upcie_ctrlr_qpair_create_at(struct xnvme_dev *dev, uint64_t sq_addr, uint64_t cq_addr,
+				     uint16_t depth, uint32_t *qid);
+
+int
+xnvme_be_upcie_ctrlr_qpair_delete_at(struct xnvme_dev *dev, uint32_t qid);
+
+int
+xnvme_be_upcie_cplane_alloc_qpair_at(struct xnvme_be_upcie_ctrlr *ctrlr, uint64_t desc_offset,
+				     uint64_t sq_offset, uint64_t cq_offset, uint16_t depth,
+				     uint32_t *qid);
+
+int
+xnvme_be_upcie_cplane_free_qpair_at(struct xnvme_be_upcie_ctrlr *ctrlr, uint32_t qid);
 
 int
 xnvme_be_upcie_cplane_alloc_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_qpair *qpair,
@@ -350,32 +427,43 @@ xnvme_be_upcie_type1_attach(struct xnvme_be_upcie_ctrlr *ctrlr, const char *bdf)
 int
 xnvme_be_upcie_va_bits(void);
 
-/** Whether a heap needs an IOVA range per controller; false under UIO_LUT */
+/** Whether a heap needs the IOVA range to reach a controller; false under UIO_LUT */
 int
 xnvme_be_upcie_iova_range_required(void);
 
 /**
- * Open this controller's iommu-map-pa handle on a slice of the IOVA window
+ * Claim the range for `bdf`, or take a hold on it and attach `bdf`
  *
- * A mapping reaches one IOMMU domain, so each controller needs a slice of its
- * own.
+ * Where the controller consumes physical addresses there is nothing to install
+ * and nothing to claim, so this succeeds having done neither.
  *
  * Call it once the controller has attached: the IOAS reports the ranges it
- * enforces only when it knows the device's reserved regions. Close it before the
- * controller detaches, since that replaces the domain the mappings live in.
+ * enforces only when it knows the device's reserved regions.
  *
- * @param range Caller-allocated handle to fill
- * @param bdf   The controller whose domain to map into
- * @param span  Bytes needed for the heap; the slice is twice this, leaving room
- *             for xnvme_mem_map(). XNVME_UPCIE_IOVA_SLICE overrides it.
+ * @param range Caller-allocated, cleared on failure
+ * @param bdf   The controller that must reach the memory
  *
- * @return 0 on success, whether or not a handle was opened; negative errno on
- *         failure. -ENOSPC when the window is out of slices.
+ * @return 0 on success, negative errno on failure
  */
 int
-xnvme_be_upcie_iova_range_open(struct xnvme_be_upcie_iova_range *range, const char *bdf,
-			       uint64_t span);
+xnvme_be_upcie_iova_range_open(struct xnvme_be_upcie_iova_range *range, const char *bdf);
 
+/**
+ * Have `bdf` reach the memory where the controllers before it do
+ *
+ * @param range An opened range, or one a mode left unopened
+ * @param bdf   The controller to add
+ *
+ * @return 0 on success, negative errno on failure
+ */
+int
+xnvme_be_upcie_iova_range_attach(struct xnvme_be_upcie_iova_range *range, const char *bdf);
+
+/**
+ * Drop the hold; the last one closes the range and every mapping installed in it
+ *
+ * Destroy the dmamem built on the range first, since the mappings go with it.
+ */
 void
 xnvme_be_upcie_iova_range_close(struct xnvme_be_upcie_iova_range *range);
 

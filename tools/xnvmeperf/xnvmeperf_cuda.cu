@@ -381,6 +381,14 @@ xnvmeperf_cuda_setup(struct xnvme_dev **devs, int ndevs, uint32_t iosize, uint32
 			}
 
 			err = xnvme_cuda_queue_create(dev, qdepth, &h_qps[qi]);
+			if (err == -ERANGE) {
+				fprintf(stderr,
+					"Error: --qdepth %u puts the submission queue on %s "
+					"across GPU pages the controller cannot read as one; "
+					"lower --qdepth: err(%d)\n",
+					qdepth, xnvme_dev_get_ident(dev)->uri, err);
+				return err;
+			}
 			if (err) {
 				xnvme_cli_perr("Failed: xnvme_cuda_queue_create()", err);
 				return err;
