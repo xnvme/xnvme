@@ -245,10 +245,11 @@ _connect_rdma_qpair(struct xnvme_be_nvmf_qpair *qpair)
 			.length = qpair->attr.completion_size,
 			.lkey = rdma_qpair->recv_mr->lkey,
 		};
-		struct xnvme_be_nvmf_wr_id wr_id = {
-			.index = i,
-			.type = XNVME_BE_NVMF_WR_TYPE_RECV,
-		};
+		struct xnvme_be_nvmf_wr_id wr_id = {0};
+		
+		wr_id.index = i;
+		wr_id.type = XNVME_BE_NVMF_WR_TYPE_RECV;
+
 		struct ibv_recv_wr recv_wr = {
 			.wr_id = wr_id.raw,
 			.sg_list = &sge,
