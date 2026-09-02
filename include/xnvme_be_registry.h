@@ -106,4 +106,9 @@ extern const struct xnvme_be_config g_xnvme_be_windows_thrpool_fs;
 #endif
 #endif
 
+/* NVMEoF */
+#ifdef XNVME_BE_NVMF_ENABLED
+extern const struct xnvme_be_config g_xnvme_be_nvmf;
+#endif
+
 #endif /* __INTERNAL_XNVME_BE_REGISTRY_H */

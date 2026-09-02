@@ -402,6 +402,9 @@ struct xnvme_platform g_xnvme_platform_linux = {
 			&g_xnvme_be_ramdisk_thrpool,
 			&g_xnvme_be_ramdisk_emu,
 #endif
+#ifdef XNVME_BE_NVMF_ENABLED
+			&g_xnvme_be_nvmf,
+#endif
 			NULL,
 		},
 	.dev_open = xnvme_platform_dev_open,
