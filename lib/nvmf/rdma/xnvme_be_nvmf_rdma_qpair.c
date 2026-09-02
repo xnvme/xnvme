@@ -219,39 +219,44 @@ _handle_recv_cmpl(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc)
 	return err;
 }
 
+static inline void
+_handle_ibv_poll_error(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc, int err)
+{
+	XNVME_DEBUG("FAILED: ibv_poll_cq() for cq, err: %d", err);
+	XNVME_DEBUG("INFO: ibv_poll_cq() returned error, wc status: %s, opcode: %s, byte_len: %u, wr_id index: %u, type: %u", 
+		ibv_wc_status_str(wc->status), _ibv_wc_opcode_str(wc->opcode), wc->byte_len, wc->wr_id, 0);
+	qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
+}
+
+/*
+ * Returns -errno on error, 0 on no completions, or the number of completions processed on success.
+ */
 static inline int
 _process_completions(struct xnvme_be_nvmf_qpair *qpair, struct ibv_cq *cq,
-		     xnvme_be_nvmf_ib_cmpl_fn handle_cmpl)
+		     xnvme_be_nvmf_ib_cmpl_fn handle_cmpl, int max_completions)
 {
 	struct xnvme_be_nvmf_wr_id wr_id = {0};
 	struct ibv_wc wc;
 	int count = 0;
 	int err;
 
-	while (1) {
+	while (count < max_completions || !max_completions) {
 		err = ibv_poll_cq(cq, 1, &wc);
 		if (err < 0) {
-			XNVME_DEBUG("FAILED: ibv_poll_cq() for cq, err: %d", err);
-			return err;
-		} else if (err == 0) {
+			_handle_ibv_poll_error(qpair, &wc, err);
 			break;
 		}
 
-		wr_id.raw = wc.wr_id;
-		XNVME_DEBUG("INFO: Work completion, status: %s, opcode: %s, byte_len: %u, wr_id index: %u, type: %u", 
-			ibv_wc_status_str(wc.status), _ibv_wc_opcode_str(wc.opcode), wc.byte_len, wr_id.index, wr_id.type);
-
-		if (wc.status != IBV_WC_SUCCESS) {
-			XNVME_DEBUG("FAILED: Work completion error, status: %d, error=%s",
-				    wc.status, ibv_wc_status_str(wc.status));
-			return -EIO;
+		if (err == 0) {
+			break;
 		}
 
 		err = handle_cmpl(qpair, &wc);
 		if (err) {
 			XNVME_DEBUG("FAILED: handle_cmpl(), err: %d", err);
-			return err;
+			return -err;
 		}
+		
 		count++;
 	}
 
@@ -259,19 +264,19 @@ _process_completions(struct xnvme_be_nvmf_qpair *qpair, struct ibv_cq *cq,
 }
 
 static inline int
-_process_recv_completions(struct xnvme_be_nvmf_qpair *qpair)
+_process_recv_completions(struct xnvme_be_nvmf_qpair *qpair, int max_completions)
 {
 	struct xnvme_be_nvmf_rdma_qpair *rdma_qpair = TO_XNVME_NVMF_RDMA_QPAIR(qpair);
 
-	return _process_completions(qpair, rdma_qpair->cm_id->qp->recv_cq, _handle_recv_cmpl);
+	return _process_completions(qpair, rdma_qpair->cm_id->qp->recv_cq, _handle_recv_cmpl, max_completions);
 }
 
 static inline int
-_process_send_completions(struct xnvme_be_nvmf_qpair *qpair)
+_process_send_completions(struct xnvme_be_nvmf_qpair *qpair, int max_completions)
 {
 	struct xnvme_be_nvmf_rdma_qpair *rdma_qpair = TO_XNVME_NVMF_RDMA_QPAIR(qpair);
 
-	return _process_completions(qpair, rdma_qpair->cm_id->qp->send_cq, _handle_send_cmpl);
+	return _process_completions(qpair, rdma_qpair->cm_id->qp->send_cq, _handle_send_cmpl, max_completions);
 }
 
 static inline int
@@ -279,7 +284,7 @@ _progress_all_completion_queues(struct xnvme_be_nvmf_qpair *qpair)
 {
 	int err;
 
-	err = _process_send_completions(qpair);
+	err = _process_send_completions(qpair, 0);
 	if (err < 0) {
 		XNVME_DEBUG("FAILED: _process_send_completions(), err: %d", err);
 		return err;
@@ -287,7 +292,7 @@ _progress_all_completion_queues(struct xnvme_be_nvmf_qpair *qpair)
 		XNVME_DEBUG("INFO: Processed %d send completions", err);
 	}
 
-	err = _process_recv_completions(qpair);
+	err = _process_recv_completions(qpair, 0);
 	if (err < 0) {
 		XNVME_DEBUG("FAILED: _process_recv_completions(), err: %d", err);
 		return err;
@@ -456,28 +461,14 @@ _rdma_post_recv(struct xnvme_be_nvmf_qpair *qpair, void *buf, size_t len)
 }
 
 static int
-_rdma_process_completions(struct xnvme_be_nvmf_qpair *qpair, int max_completions)
+_rdma_process_completions(struct xnvme_be_nvmf_qpair *qpair, int max_completions) 
 {
-	int total = 0;
-	int n;
-
-	n = _process_send_completions(qpair);
-	if (n < 0) {
-		return n;
-	}
-	total += n;
-
-	if (total >= max_completions) {
-		return total;
+	int err = _process_send_completions(qpair, max_completions);
+	if (err < 0) {
+		return err;
 	}
 
-	n = _process_recv_completions(qpair);
-	if (n < 0) {
-		return n;
-	}
-	total += n;
-
-	return total;
+	return _process_recv_completions(qpair, max_completions);
 }
 
 static int
