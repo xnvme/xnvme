@@ -113,11 +113,24 @@ XNVME_STATIC_ASSERT(SERVE_DEVS_MAX <= 32, "SERVE_DEVS_MAX exceeds the connection
  * to exactly one client for exactly as long as that client does, so the
  * connection record is where the lookup already is.
  */
+/**
+ * One region of a client's own memory, and which controller it was made
+ * reachable for
+ */
+struct serve_registration {
+	struct xnvme_be_upcie_cplane_registration reg;
+	int dev;
+};
+
 struct serve_ioqpair {
 	struct nvme_qpair qpair;
 	size_t sq_offset;
 	size_t cq_offset;
 	size_t prp_offset;
+
+	/* The memory is the client's, so only the queue and the identifier are
+	 * this server's to give back. */
+	int foreign;
 
 	/* Which controller it came off. Queue identifiers are the controller's
 	 * own, so two of them hand out the same one, and a client holding both
@@ -148,6 +161,15 @@ struct serve_conn {
 	uint64_t *allocs; ///< Heap offsets handed out, grown as they are
 	int nallocs;
 	int allocs_cap;
+
+	struct serve_registration *regs; ///< Client memory made reachable, grown as it is
+	int nregs;
+	int regs_cap;
+
+	/* A descriptor arrives with the first bytes of the message that names
+	 * it, which may be several wake-ups before the message is whole. Held
+	 * here until then; -1 when nothing is pending. */
+	int in_fd;
 
 	struct nvme_cplane_msg msg; ///< The request being read
 	size_t nread;               ///< How much of it has arrived
@@ -291,6 +313,80 @@ serve_ioqpair_alloc(struct xnvme_dev *dev, uint16_t depth, struct serve_ioqpair 
 }
 
 /**
+ * Build a queue on memory the client registered
+ *
+ * The offsets are resolved through the client's own description, so a client
+ * can only ever name memory it registered; naming somebody else's is not a
+ * thing the protocol can express.
+ *
+ * @param dev A device this process opened
+ * @param conn The connection asking, whose registrations bound what it may name
+ * @param msg The request
+ * @param held Pre-allocated record to fill
+ * @param qid Set to the identifier allocated
+ *
+ * @return 0 on success, negative errno on error
+ */
+static int
+serve_ioqpair_alloc_at(struct xnvme_dev *dev, struct serve_conn *conn,
+		       const struct nvme_cplane_msg *msg, struct serve_ioqpair *held,
+		       uint32_t *qid)
+{
+	const struct hostmem_shared_desc *desc = NULL;
+	uint64_t sq_addr = 0, cq_addr = 0;
+	uint16_t depth;
+	int err;
+
+	if (!dev || !conn || !msg || !held || !qid) {
+		return -EINVAL;
+	}
+
+	depth = msg->u.queue_at.depth;
+	if (!depth) {
+		return -EINVAL;
+	}
+
+	for (int i = 0; i < conn->nregs; ++i) {
+		if (conn->regs[i].reg.desc_offset == msg->u.queue_at.desc_offset) {
+			desc = (const void *)((char *)g_upcie_rte.mem.dmem.base_va +
+					      conn->regs[i].reg.desc_offset);
+			break;
+		}
+	}
+	if (!desc) {
+		XNVME_DEBUG("FAILED: no registration of this connection at offset(%" PRIu64 ")",
+			    msg->u.queue_at.desc_offset);
+		return -ENOENT;
+	}
+
+	err = hostmem_shared_desc_addr(desc, msg->u.queue_at.sq_offset, (uint64_t)depth * 64,
+				       &sq_addr);
+	if (err) {
+		XNVME_DEBUG("FAILED: resolving the submission queue; err(%d)", err);
+		return err;
+	}
+
+	err = hostmem_shared_desc_addr(desc, msg->u.queue_at.cq_offset, (uint64_t)depth * 16,
+				       &cq_addr);
+	if (err) {
+		XNVME_DEBUG("FAILED: resolving the completion queue; err(%d)", err);
+		return err;
+	}
+
+	err = xnvme_be_upcie_ctrlr_qpair_create_at(dev, sq_addr, cq_addr, depth, qid);
+	if (err) {
+		return err;
+	}
+
+	memset(held, 0, sizeof(*held));
+	held->foreign = 1;
+	held->qpair.qid = (uint16_t)*qid;
+	held->qpair.depth = depth;
+
+	return 0;
+}
+
+/**
  * Delete a queue allocated earlier and release what went with it
  *
  * @param dev A device this process opened
@@ -321,9 +417,13 @@ serve_ioqpair_free(struct xnvme_dev *dev, struct serve_ioqpair *held)
 	 * record of it goes either way: the server has nothing further it can
 	 * do with a queue the controller will not give up, and holding the slot
 	 * would only stop the client's other queues from coming back. */
-	err = nvme_controller_delete_io_qpair_dmamem(ctrl, &held->qpair, &g_upcie_rte.mem.heap,
-						     held->sq_offset, held->cq_offset,
-						     held->prp_offset);
+	if (held->foreign) {
+		err = xnvme_be_upcie_ctrlr_qpair_delete_at(dev, held->qpair.qid);
+	} else {
+		err = nvme_controller_delete_io_qpair_dmamem(
+			ctrl, &held->qpair, &g_upcie_rte.mem.heap, held->sq_offset,
+			held->cq_offset, held->prp_offset);
+	}
 	memset(held, 0, sizeof(*held));
 
 	return err;
@@ -338,9 +438,39 @@ serve_ioqpair_free(struct xnvme_dev *dev, struct serve_ioqpair *held)
 static void
 serve_conn_wipe(struct serve_conn *conn)
 {
+	if (conn->in_fd >= 0) {
+		close(conn->in_fd);
+	}
 	free(conn->allocs);
+	free(conn->regs);
 	memset(conn, 0, sizeof(*conn));
 	conn->sock = -1;
+	conn->in_fd = -1;
+}
+
+/**
+ * Make room for one more registration on this connection
+ */
+static int
+serve_conn_regs_grow(struct serve_conn *conn)
+{
+	struct serve_registration *grown;
+	int cap;
+
+	if (conn->nregs < conn->regs_cap) {
+		return 0;
+	}
+
+	cap = conn->regs_cap ? conn->regs_cap * 2 : 4;
+	grown = realloc(conn->regs, sizeof(*grown) * (size_t)cap);
+	if (!grown) {
+		return -ENOMEM;
+	}
+
+	conn->regs = grown;
+	conn->regs_cap = cap;
+
+	return 0;
 }
 
 /**
@@ -404,6 +534,20 @@ serve_conn_release(struct serve_conn *conn, int devidx)
 		if (err) {
 			XNVME_DEBUG("FAILED: free(slot(%d)); err(%d)", i, err);
 		}
+	}
+
+	/* Registrations are this controller's too: the mapping was installed in
+	 * the domain it uses, so it is this thread that takes it out. */
+	for (int i = 0; i < conn->nregs;) {
+		if (conn->regs[i].dev != devidx) {
+			++i;
+			continue;
+		}
+
+		pthread_mutex_lock(&serve_lock);
+		xnvme_be_upcie_cplane_unregister_mem(&conn->regs[i].reg);
+		conn->regs[i] = conn->regs[--conn->nregs];
+		pthread_mutex_unlock(&serve_lock);
 	}
 
 	pthread_mutex_lock(&serve_lock);
@@ -584,6 +728,24 @@ serve_admin_main(void *arg)
 			}
 			break;
 
+		case NVME_CPLANE_OP_ALLOC_IOQPAIR_AT: {
+			uint32_t qid = 0;
+
+			pthread_mutex_lock(&serve_lock);
+			reply.status = serve_ioqpair_alloc_at(dev, conn, &conn->msg,
+							      &conn->qpairs[conn->nqpairs], &qid);
+			if (!reply.status) {
+				conn->qpairs[conn->nqpairs++].dev = admin->devidx;
+			}
+			pthread_mutex_unlock(&serve_lock);
+			if (reply.status) {
+				break;
+			}
+
+			reply.u.queue_at.qid = qid;
+			reply.u.queue_at.depth = conn->msg.u.queue_at.depth;
+		} break;
+
 		case NVME_CPLANE_OP_ALLOC_IOQPAIR: {
 			struct serve_qalloc allocation = {0};
 
@@ -605,6 +767,57 @@ serve_admin_main(void *arg)
 			reply.u.queue.allocation.qid = allocation.qid;
 			reply.u.queue.allocation.depth = allocation.depth;
 		} break;
+
+		case NVME_CPLANE_OP_REGISTER_MEM: {
+			struct serve_registration *held;
+
+			if (conn->in_fd < 0) {
+				/* The request names a region by descriptor;
+				 * without one there is nothing to describe. */
+				reply.status = -EINVAL;
+				break;
+			}
+
+			pthread_mutex_lock(&serve_lock);
+			reply.status = serve_conn_regs_grow(conn);
+			pthread_mutex_unlock(&serve_lock);
+			if (reply.status) {
+				break;
+			}
+
+			held = &conn->regs[conn->nregs];
+
+			pthread_mutex_lock(&serve_lock);
+			reply.status = xnvme_be_upcie_cplane_register_mem(
+				conn->in_fd, conn->msg.u.reg.nbytes, conn->msg.u.reg.page_size,
+				serve.exports[admin->devidx].uri, &held->reg);
+			if (!reply.status) {
+				held->dev = admin->devidx;
+				conn->nregs++;
+			}
+			pthread_mutex_unlock(&serve_lock);
+			if (reply.status) {
+				break;
+			}
+
+			reply.u.reg.desc_offset = held->reg.desc_offset;
+		} break;
+
+		case NVME_CPLANE_OP_UNREGISTER_MEM:
+			reply.status = -ENOENT;
+			pthread_mutex_lock(&serve_lock);
+			for (int i = 0; i < conn->nregs; ++i) {
+				if (conn->regs[i].reg.desc_offset != conn->msg.u.reg.desc_offset) {
+					continue;
+				}
+
+				xnvme_be_upcie_cplane_unregister_mem(&conn->regs[i].reg);
+				conn->regs[i] = conn->regs[--conn->nregs];
+				reply.status = 0;
+				break;
+			}
+			pthread_mutex_unlock(&serve_lock);
+			break;
 
 		case NVME_CPLANE_OP_FREE_IOQPAIR:
 			reply.status = -ENOENT;
@@ -628,6 +841,12 @@ serve_admin_main(void *arg)
 		default:
 			reply.status = -ENOSYS;
 			break;
+		}
+
+		/* The descriptor was the request's, whether or not it was used. */
+		if (conn->in_fd >= 0) {
+			close(conn->in_fd);
+			conn->in_fd = -1;
 		}
 
 		/* Never waiting, and never taking the connection down here: the
@@ -725,17 +944,22 @@ serve_dispatch(struct serve_conn *conn, struct nvme_cplane_msg *out, int *fds, u
 	switch (conn->msg.op) {
 	case NVME_CPLANE_OP_ADMIN_CMD:
 	case NVME_CPLANE_OP_ALLOC_IOQPAIR:
+	case NVME_CPLANE_OP_ALLOC_IOQPAIR_AT:
 	case NVME_CPLANE_OP_FREE_IOQPAIR:
+	case NVME_CPLANE_OP_REGISTER_MEM:
+	case NVME_CPLANE_OP_UNREGISTER_MEM:
 		/* An offset is only meaningful to a client that mapped the
 		 * heap, and mapping it is what initialising does. Without the
 		 * gate an uninitialised connection could take a real queue off
 		 * the controller and never be able to use it. */
-		if ((conn->msg.op == NVME_CPLANE_OP_ALLOC_IOQPAIR) &&
+		if (((conn->msg.op == NVME_CPLANE_OP_ALLOC_IOQPAIR) ||
+		     (conn->msg.op == NVME_CPLANE_OP_ALLOC_IOQPAIR_AT)) &&
 		    !(conn->inited & (1U << (unsigned)idx))) {
 			reply.status = -ENOTCONN;
 			break;
 		}
-		if ((conn->msg.op == NVME_CPLANE_OP_ALLOC_IOQPAIR) &&
+		if (((conn->msg.op == NVME_CPLANE_OP_ALLOC_IOQPAIR) ||
+		     (conn->msg.op == NVME_CPLANE_OP_ALLOC_IOQPAIR_AT)) &&
 		    (conn->nqpairs == SERVE_IOQPAIRS_PER_CLIENT)) {
 			reply.status = -ENOSPC;
 			break;
@@ -836,6 +1060,9 @@ serve_drop(struct serve_conn *conn)
 	for (int i = 0; i < conn->nqpairs; ++i) {
 		devs |= 1U << (unsigned)conn->qpairs[i].dev;
 	}
+	for (int i = 0; i < conn->nregs; ++i) {
+		devs |= 1U << (unsigned)conn->regs[i].dev;
+	}
 
 	if (devs) {
 		conn->closing = 1;
@@ -904,6 +1131,7 @@ xnvme_cplane_serve(struct xnvme_dev **devs, int ndevs, uint32_t cplane_id,
 
 	for (int i = 0; i < SERVE_CONNS_MAX; ++i) {
 		serve.conns[i].sock = -1;
+		serve.conns[i].in_fd = -1;
 	}
 
 	/* Non-blocking at both ends: the reader drains until empty, which on a
@@ -1070,8 +1298,26 @@ xnvme_cplane_serve(struct xnvme_dev **devs, int ndevs, uint32_t cplane_id,
 				continue;
 			}
 
-			rc = nvme_cplane_msg_recv_some(conn->sock, &conn->msg, &conn->nread, NULL,
-						       NULL);
+			{
+				int in[NVME_CPLANE_FDS_MAX];
+				uint32_t nin = 0;
+
+				rc = nvme_cplane_msg_recv_some(conn->sock, &conn->msg,
+							       &conn->nread, in, &nin);
+
+				/* Whatever arrived is installed in this process
+				 * already, so it is this process's to close. One
+				 * is kept for the request that named it; a peer
+				 * sending more than it needs gets them closed
+				 * rather than leaked. */
+				for (uint32_t f = 0; f < nin; ++f) {
+					if ((f == 0) && (conn->in_fd < 0)) {
+						conn->in_fd = in[f];
+						continue;
+					}
+					close(in[f]);
+				}
+			}
 			if (rc == -EAGAIN) {
 				pthread_mutex_unlock(&serve_lock);
 				continue;

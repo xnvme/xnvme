@@ -621,3 +621,141 @@ struct xnvme_be_dev g_xnvme_be_upcie_dev = {
 	.ctrlr_term = NULL,
 #endif
 };
+/**
+ * Have the controller build a queue on memory the caller owns
+ *
+ * The addresses are the caller's to vouch for: this only puts them in front of
+ * the controller. What it holds is what cannot be delegated, the identifier
+ * space and the admin queue the create commands go on, so a server calls it on
+ * a client's behalf and a GPU runtime calls it for itself.
+ *
+ * @param dev A device this process opened
+ * @param sq_addr Where the controller finds the submission queue
+ * @param cq_addr Where the controller finds the completion queue
+ * @param depth Entries in each
+ * @param qid Set to the identifier allocated
+ *
+ * @return 0 on success, negative errno on failure
+ */
+int
+xnvme_be_upcie_ctrlr_qpair_create_at(struct xnvme_dev *dev, uint64_t sq_addr, uint64_t cq_addr,
+				     uint16_t depth, uint32_t *qid)
+{
+	struct xnvme_be_upcie_state *state;
+	struct nvme_controller *ctrl;
+	struct nvme_command cmd = {0};
+	struct nvme_completion cpl = {0};
+	uint16_t allocated;
+	int err;
+
+	if (!dev || !qid || !depth || !sq_addr || !cq_addr) {
+		return -EINVAL;
+	}
+
+	state = (void *)dev->be.state;
+	ctrl = state->ctrlr->ctrl;
+
+	err = nvme_qid_find_free(ctrl->qids);
+	if (err < 1) {
+		XNVME_DEBUG("FAILED: nvme_qid_find_free(); err(%d)", err);
+		return -EBUSY;
+	}
+	allocated = (uint16_t)err;
+
+	err = nvme_qid_alloc(ctrl->qids, allocated);
+	if (err) {
+		XNVME_DEBUG("FAILED: nvme_qid_alloc(%u); err(%d)", allocated, err);
+		return err;
+	}
+
+	/* The completion queue first: a submission queue names the completion
+	 * queue it posts to, so the controller has to know of it already. */
+	cmd.opc = 0x5;
+	cmd.prp1 = cq_addr;
+	cmd.cdw10 = ((uint32_t)(depth - 1) << 16) | allocated;
+	cmd.cdw11 = 0x1; ///< Physically contiguous
+	err = nvme_qpair_submit_sync(&ctrl->aq, &cmd, ctrl->timeout_ms, &cpl);
+	if (err || (cpl.status & 0x1FE)) {
+		/* A refused create completes rather than failing to complete,
+		 * so the status is the part that says whether the controller
+		 * took the address it was given. */
+		XNVME_DEBUG("FAILED: Create I/O CQ; err(%d) status(0x%x)", err,
+			    cpl.status & 0x1FE);
+		nvme_qid_free(ctrl->qids, allocated);
+		return err ? err : -EIO;
+	}
+
+	memset(&cmd, 0, sizeof(cmd));
+	memset(&cpl, 0, sizeof(cpl));
+	cmd.opc = 0x1;
+	cmd.prp1 = sq_addr;
+	cmd.cdw10 = ((uint32_t)(depth - 1) << 16) | allocated;
+	cmd.cdw11 = ((uint32_t)allocated << 16) | 0x1;
+	err = nvme_qpair_submit_sync(&ctrl->aq, &cmd, ctrl->timeout_ms, &cpl);
+	if (err || (cpl.status & 0x1FE)) {
+		XNVME_DEBUG("FAILED: Create I/O SQ; err(%d) status(0x%x)", err,
+			    cpl.status & 0x1FE);
+		xnvme_be_upcie_ctrlr_qpair_delete_at(dev, allocated);
+		return err ? err : -EIO;
+	}
+
+	*qid = allocated;
+
+	return 0;
+}
+
+/**
+ * Take back a queue built on memory this process does not own
+ *
+ * The memory is the client's and stays untouched; what goes is the controller's
+ * knowledge of it and the identifier, so neither outlives the client.
+ *
+ * @param dev A device this process opened
+ * @param qid The identifier handed out earlier
+ *
+ * @return 0 on success, negative errno on failure
+ */
+int
+xnvme_be_upcie_ctrlr_qpair_delete_at(struct xnvme_dev *dev, uint32_t qid)
+{
+	struct xnvme_be_upcie_state *state;
+	struct nvme_controller *ctrl;
+	int err, first;
+
+	if (!dev || !qid) {
+		return -EINVAL;
+	}
+
+	state = (void *)dev->be.state;
+	ctrl = state->ctrlr->ctrl;
+
+	{
+		struct nvme_command cmd = {0};
+		struct nvme_completion cpl = {0};
+
+		cmd.opc = 0x0; ///< Delete I/O Submission Queue
+		cmd.cdw10 = qid;
+		first = nvme_qpair_submit_sync(&ctrl->aq, &cmd, ctrl->timeout_ms, &cpl);
+		if (first) {
+			XNVME_DEBUG("FAILED: Delete I/O SQ(%u); err(%d)", qid, first);
+		}
+	}
+	{
+		struct nvme_command cmd = {0};
+		struct nvme_completion cpl = {0};
+
+		cmd.opc = 0x4; ///< Delete I/O Completion Queue
+		cmd.cdw10 = qid;
+		err = nvme_qpair_submit_sync(&ctrl->aq, &cmd, ctrl->timeout_ms, &cpl);
+		if (err) {
+			XNVME_DEBUG("FAILED: Delete I/O CQ(%u); err(%d)", qid, err);
+		}
+	}
+
+	/* The identifier goes back regardless: a controller that will not give
+	 * up a queue is not made better by this server refusing to reuse the
+	 * number, and the client is gone either way. */
+	nvme_qid_free(ctrl->qids, (uint16_t)qid);
+
+	return first ? first : err;
+}

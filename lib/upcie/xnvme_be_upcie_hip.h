@@ -13,10 +13,21 @@
 /**
  * State used across multiple instances of controllers/namespaces
  */
+struct xnvme_be_upcie_ctrlr;
+
 struct xnvme_be_upcie_hip_rte {
 	struct hipmem_config hip_config;
 	struct hipmem_heap hip_heap;
 	struct dmamem dmem; ///< Registry wrapped for translation; allocation stays on the heap
+
+	/* Where the server left its description of this heap, when the
+	 * controller belongs to one. Zero when this process owns it. */
+	uint64_t reg_offset;
+
+	/* The controller the registration was made against, so it can be handed
+	 * back while the connection carrying it is still open. */
+	struct xnvme_be_upcie_ctrlr *reg_ctrlr;
+
 	int is_initialized;
 };
 

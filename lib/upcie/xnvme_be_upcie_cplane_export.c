@@ -171,6 +171,7 @@ xnvme_be_upcie_cplane_admin(struct xnvme_dev *dev, void *cmd, void *cpl)
 {
 	struct xnvme_be_upcie_state *state;
 	struct nvme_controller *ctrl;
+	int err;
 
 	if (!dev || !cmd || !cpl) {
 		return -EINVAL;
@@ -179,7 +180,18 @@ xnvme_be_upcie_cplane_admin(struct xnvme_dev *dev, void *cmd, void *cpl)
 	state = (void *)dev->be.state;
 	ctrl = state->ctrlr->ctrl;
 
-	return nvme_qpair_submit_sync(&ctrl->aq, cmd, ctrl->timeout_ms, cpl);
+	err = nvme_qpair_submit_sync(&ctrl->aq, cmd, ctrl->timeout_ms, cpl);
+
+	/* A command the controller refused did complete, and the completion is
+	 * what says so. Reporting that as a failed request would leave the
+	 * client with an errno and no status, unable to tell a command set it
+	 * does not have from a drive that went away. So the status travels and
+	 * only a command that never completed is an error here. */
+	if ((err == -EIO) && (((struct nvme_completion *)cpl)->status & 0x1FE)) {
+		return 0;
+	}
+
+	return err;
 }
 
 #define PAYLOAD_GRANULE (2ULL * 1024 * 1024)
@@ -317,4 +329,237 @@ xnvme_be_upcie_cplane_free_buf(uint64_t offset)
 
 	return 0;
 }
+
+static int
+_registration_lut(struct xnvme_be_upcie_cplane_registration *reg, uint64_t nbytes,
+		  uint32_t page_size, uint32_t nphys, const uint64_t *phys)
+{
+	struct hostmem_shared_desc *desc;
+	size_t desc_nbytes = hostmem_shared_desc_nbytes(nphys);
+	uint64_t offset = 0;
+	int shift, err;
+
+	for (shift = 0; (1U << shift) < page_size; ++shift) {
+		;
+	}
+
+	err = xnvme_be_upcie_cplane_alloc_buf(desc_nbytes, &offset);
+	if (err) {
+		XNVME_DEBUG("FAILED: no room for a description of %u granules", nphys);
+		return err;
+	}
+
+	desc = (void *)((char *)g_upcie_rte.mem.dmem.base_va + offset);
+	memset(desc, 0, desc_nbytes);
+	desc->version = HOSTMEM_SHARED_DESC_VERSION;
+	desc->kind = HOSTMEM_SHARED_LUT;
+	desc->nbytes = nbytes;
+	desc->nphys = nphys;
+	desc->gran_shift = (uint32_t)shift;
+	memcpy(desc->phys, phys, sizeof(*phys) * nphys);
+
+	reg->desc_offset = offset;
+
+	return 0;
+}
+
+/**
+ * The window every mapping this server installs is handed out from
+ *
+ * One per process, claimed from the IOAS before anything is placed in it, so
+ * what goes here cannot collide with what iommufd allocates later. Opened with
+ * the first region that needs it and closed with the last, since closing drops
+ * every mapping made on it.
+ */
+static struct dmamem_iommu_map_pa g_imp;
+static int g_imp_refs;
+
+/**
+ * Claim the window, or take another reference on it
+ *
+ * @param bdf The controller whose domain regions are mapped into
+ *
+ * @return 0 on success, negative errno on failure
+ */
+static int
+_imp_get(const char *bdf)
+{
+	int err;
+
+	if (g_imp_refs) {
+		++g_imp_refs;
+		return 0;
+	}
+
+	err = dmamem_iommu_map_pa_open(&g_imp, bdf, XNVME_BE_UPCIE_IMP_WINDOW_BASE,
+				       XNVME_BE_UPCIE_IMP_WINDOW_SIZE);
+	if (err) {
+		XNVME_DEBUG("FAILED: dmamem_iommu_map_pa_open(%s); err(%d)", bdf, err);
+		return err;
+	}
+
+	err = dmamem_iommu_map_pa_reserve_window(&g_imp, &g_upcie_rte.cdev.iommufd);
+	if (err) {
+		XNVME_DEBUG("FAILED: reserving the window; err(%d)", err);
+		dmamem_iommu_map_pa_close(&g_imp);
+		return err;
+	}
+
+	g_imp_refs = 1;
+
+	return 0;
+}
+
+/**
+ * Drop a reference, closing the window with the last one
+ */
+static void
+_imp_put(void)
+{
+	if (g_imp_refs && !--g_imp_refs) {
+		dmamem_iommu_map_pa_close(&g_imp);
+	}
+}
+
+static int
+_registration_arithmetic(struct xnvme_be_upcie_cplane_registration *reg, int dmabuf_fd,
+			 uint64_t nbytes, uint32_t page_size, uint32_t nphys, const uint64_t *phys,
+			 const char *bdf)
+{
+	struct hostmem_shared_desc *desc;
+	uint64_t iova_base, offset = 0;
+	int err;
+
+	err = _imp_get(bdf);
+	if (err) {
+		return err;
+	}
+
+	iova_base = dmamem_iommu_map_pa_window_alloc(&g_imp, nbytes, page_size);
+	if (!iova_base) {
+		XNVME_DEBUG("FAILED: no room in the window for %" PRIu64 " bytes", nbytes);
+		_imp_put();
+		return -ENOSPC;
+	}
+
+	err = iommu_map_pa_add(g_imp.fd, bdf, dmabuf_fd, iova_base, page_size, nphys, phys,
+			       IOMMU_MAP_PA_PROT_READ | IOMMU_MAP_PA_PROT_WRITE, &reg->map_handle);
+	if (err) {
+		XNVME_DEBUG("FAILED: iommu_map_pa_add(%s); err(%d)", bdf, err);
+		_imp_put();
+		return err;
+	}
+	reg->map_fd = g_imp.fd;
+
+	err = xnvme_be_upcie_cplane_alloc_buf(sizeof(*desc), &offset);
+	if (err) {
+		XNVME_DEBUG("FAILED: no room for a description; err(%d)", err);
+		iommu_map_pa_del(g_imp.fd, reg->map_handle);
+		_imp_put();
+		reg->map_fd = -1;
+		return err;
+	}
+
+	desc = (void *)((char *)g_upcie_rte.mem.dmem.base_va + offset);
+	hostmem_shared_desc_fill_arithmetic(desc, nbytes, iova_base);
+	reg->desc_offset = offset;
+
+	return 0;
+}
+
+int
+xnvme_be_upcie_cplane_register_mem(int dmabuf_fd, uint64_t nbytes, uint32_t page_size,
+				   const char *bdf, struct xnvme_be_upcie_cplane_registration *out)
+{
+	uint64_t *phys = NULL;
+	uint32_t nphys;
+	int err;
+
+	if ((dmabuf_fd < 0) || !nbytes || !page_size || !bdf || !out) {
+		return -EINVAL;
+	}
+	if (page_size & (page_size - 1)) {
+		XNVME_DEBUG("FAILED: page_size(%u) is not a power of two", page_size);
+		return -EINVAL;
+	}
+	if (nbytes % page_size) {
+		XNVME_DEBUG("FAILED: nbytes(%" PRIu64 ") is not a multiple of page_size(%u)",
+			    nbytes, page_size);
+		return -EINVAL;
+	}
+	if (!g_upcie_rte.mem.heap_alive) {
+		return -ENOTCONN;
+	}
+
+	memset(out, 0, sizeof(*out));
+	out->map_fd = -1;
+
+	err = dmabuf_import_attach(dmabuf_fd, &out->dmabuf);
+	if (err) {
+		XNVME_DEBUG("FAILED: dmabuf_import_attach(); err(%d)", err);
+		return err;
+	}
+	out->attached = 1;
+
+	nphys = (uint32_t)(nbytes / page_size);
+	phys = calloc(nphys, sizeof(*phys));
+	if (!phys) {
+		err = -errno;
+		goto failed;
+	}
+
+	err = dmabuf_get_lut(&out->dmabuf, nphys, phys, page_size);
+	if (err) {
+		XNVME_DEBUG("FAILED: dmabuf_get_lut(); err(%d)", err);
+		goto failed;
+	}
+
+	/* What the controller consumes decides the shape of the answer: physical
+	 * addresses where the IOMMU is out of the way, and a single base where
+	 * it is, since the mapping installs the granules behind it. */
+	if (g_upcie_rte.mode == XNVME_BE_UPCIE_MODE_UIO_LUT) {
+		err = _registration_lut(out, nbytes, page_size, nphys, phys);
+	} else {
+		err = _registration_arithmetic(out, dmabuf_fd, nbytes, page_size, nphys, phys,
+					       bdf);
+	}
+	if (err) {
+		goto failed;
+	}
+
+	free(phys);
+
+	return 0;
+
+failed:
+	free(phys);
+	xnvme_be_upcie_cplane_unregister_mem(out);
+
+	return err;
+}
+
+void
+xnvme_be_upcie_cplane_unregister_mem(struct xnvme_be_upcie_cplane_registration *reg)
+{
+	if (!reg) {
+		return;
+	}
+
+	if (reg->map_fd >= 0) {
+		if (reg->map_handle) {
+			iommu_map_pa_del(reg->map_fd, reg->map_handle);
+		}
+		_imp_put();
+	}
+	if (reg->desc_offset) {
+		xnvme_be_upcie_cplane_free_buf(reg->desc_offset);
+	}
+	if (reg->attached) {
+		dmabuf_import_detach(&reg->dmabuf);
+	}
+
+	memset(reg, 0, sizeof(*reg));
+	reg->map_fd = -1;
+}
+
 #endif

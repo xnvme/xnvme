@@ -20,13 +20,23 @@ _hip_rte_term(void)
 	}
 
 	dmamem_destroy(&g_upcie_hip_rte.dmem);
+	if (g_upcie_hip_rte.reg_offset) {
+		/* Handed back before the memory behind it goes away, so the
+		 * server is not left attached to a freed region. A server that
+		 * has gone reclaims on the socket closing regardless, hence
+		 * the unchecked return. */
+		xnvme_be_upcie_cplane_unregister_client_mem(g_upcie_hip_rte.reg_ctrlr,
+							    g_upcie_hip_rte.reg_offset);
+		g_upcie_hip_rte.reg_offset = 0;
+		g_upcie_hip_rte.reg_ctrlr = NULL;
+	}
 	hipmem_heap_term(&g_upcie_hip_rte.hip_heap);
 
 	g_upcie_hip_rte.is_initialized = 0;
 }
 
 static int
-_hip_rte_init(size_t heap_size, uint32_t gpu_id)
+_hip_rte_init(size_t heap_size, uint32_t gpu_id, struct xnvme_be_upcie_ctrlr *ctrlr)
 {
 	int err;
 
@@ -65,13 +75,30 @@ _hip_rte_init(size_t heap_size, uint32_t gpu_id)
 	err = hipmem_heap_init(&g_upcie_hip_rte.hip_heap, heap_size, &g_upcie_hip_rte.hip_config);
 	if (err) {
 		XNVME_DEBUG("FAILED: hipmem_heap_init(); err(%d)", err);
-		return -ENOMEM;
+		return err;
 	}
 
 	/* Which addresses the controller consumes decides how the heap is
 	 * described to it: physical where the IOMMU is out of the way, IOVAs
 	 * where it is not. */
-	if (g_upcie_rte.mode == XNVME_BE_UPCIE_MODE_UIO_LUT) {
+	if (g_upcie_rte.connection.alive) {
+		/* The controller belongs to the server, so the addresses it
+		 * consumes are the server's to know. This process hands over
+		 * the region and is told how it resolves. */
+		const struct hostmem_shared_desc *desc = NULL;
+
+		err = xnvme_be_upcie_cplane_register_client_mem(
+			ctrlr, g_upcie_hip_rte.hip_heap.dmabuf.fd, g_upcie_hip_rte.hip_heap.size,
+			(uint32_t)g_upcie_hip_rte.hip_config.device_pagesize, &desc,
+			&g_upcie_hip_rte.reg_offset);
+		if (!err) {
+			g_upcie_hip_rte.reg_ctrlr = ctrlr;
+			err = dmamem_from_shared(&g_upcie_hip_rte.dmem,
+						 (void *)(uintptr_t)g_upcie_hip_rte.hip_heap.vaddr,
+						 desc, xnvme_be_upcie_va_bits(),
+						 DMAMEM_BACKING_HIPMEM);
+		}
+	} else if (g_upcie_rte.mode == XNVME_BE_UPCIE_MODE_UIO_LUT) {
 		err = dmamem_from_hip_registry(&g_upcie_hip_rte.dmem, &g_upcie_hip_rte.hip_heap,
 					       xnvme_be_upcie_va_bits());
 	} else if (g_upcie_rte.mode == XNVME_BE_UPCIE_MODE_VFIO_CDEV) {
@@ -173,7 +200,11 @@ xnvme_be_upcie_hip_dev_open(struct xnvme_dev *dev)
 		return err;
 	}
 
-	err = _hip_rte_init(dev->opts.device_heap_size, dev->opts.gpu_id);
+	{
+		struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+
+		err = _hip_rte_init(dev->opts.device_heap_size, dev->opts.gpu_id, state->ctrlr);
+	}
 	if (err) {
 		XNVME_DEBUG("FAILED: _hip_rte_init(); err(%d)", err);
 		return err;
