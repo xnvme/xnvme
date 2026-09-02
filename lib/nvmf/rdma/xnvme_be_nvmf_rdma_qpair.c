@@ -447,19 +447,7 @@ _rdma_send_capsule(struct xnvme_be_nvmf_qpair *qpair, void *buf, size_t len)
 	return err;
 }
 
-static int
-_rdma_post_recv(struct xnvme_be_nvmf_qpair *qpair, void *buf, size_t len)
-{
-	/*
-	 * The RDMA transport pre-posts all recv slots at connect time and
-	 * re-posts them after each completion. No extra action needed here.
-	 */
-	(void)qpair;
-	(void)buf;
-	(void)len;
-	return 0;
-}
-
+/* upper-layer function to poke the RDMA qpair for completions */
 static int
 _rdma_process_completions(struct xnvme_be_nvmf_qpair *qpair, int max_completions) 
 {
@@ -492,6 +480,5 @@ static struct xnvme_be_nvmf_qpair_ops g_xnvme_be_nvmf_rdma_qpair_ops = {
 	.disconnect = _disconnect_rdma_qpair_sync,
 	.destroy = _rdma_destroy,
 	.send_capsule = _rdma_send_capsule,
-	.post_recv = _rdma_post_recv,
 	.process_completions = _rdma_process_completions,
 };
