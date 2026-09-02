@@ -21,11 +21,21 @@ xnvme_be_nvmf_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nby
 	struct xnvme_be_nvmf_state *state = (struct xnvme_be_nvmf_state *) ctx->dev->be.state;
 	struct xnvme_be_nvmf_ctrlr *ctrlr = state->ctrlr;
 	struct xnvme_be_nvmf_qpair *qpair = ctrlr->sync_qpair;
+	struct xnvme_be_nvmf_req *req;
 	int err;
+
+	req = xnvme_be_nvmf_req_alloc(qpair->req_pool, false, (void *)ctx);
+	if (!req) {
+		XNVME_DEBUG("Failed to allocate request");
+		return -ENOSPC;
+	}
 
 	pthread_mutex_lock(&ctrlr->lock);
 	err = -ENOSYS;
 	pthread_mutex_unlock(&ctrlr->lock);
+
+	xnvme_be_nvmf_wait_for_completion(qpair, req);
+	xnvme_be_nvmf_req_free(qpair->req_pool, req);
 
 	return err;
 }
@@ -37,11 +47,21 @@ xnvme_be_nvmf_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t
 	struct xnvme_be_nvmf_state *state = (struct xnvme_be_nvmf_state *) ctx->dev->be.state;
 	struct xnvme_be_nvmf_ctrlr *ctrlr = state->ctrlr;
 	struct xnvme_be_nvmf_qpair *qpair = ctrlr->sync_qpair;
+	struct xnvme_be_nvmf_req *req;
 	int err;
+
+	req = xnvme_be_nvmf_req_alloc(qpair->req_pool, false, (void *)ctx);
+	if (!req) {
+		XNVME_DEBUG("Failed to allocate request");
+		return -ENOSPC;
+	}
 
 	pthread_mutex_lock(&ctrlr->lock);
 	err = -ENOSYS;
 	pthread_mutex_unlock(&ctrlr->lock);
+
+	xnvme_be_nvmf_wait_for_completion(qpair, req);
+	xnvme_be_nvmf_req_free(qpair->req_pool, req);
 
 	return err;
 }

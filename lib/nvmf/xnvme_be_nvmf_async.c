@@ -73,11 +73,24 @@ xnvme_be_nvmf_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 			   size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	struct xnvme_be_nvmf_queue *queue = (struct xnvme_be_nvmf_queue *)ctx->async.queue;
+	struct xnvme_be_nvmf_req *req;
 	int err = -ENOSYS;
 
-	if (!err) 
-		queue->base.outstanding++;
+	req = xnvme_be_nvmf_req_alloc(queue->qpair->req_pool, true, (void *)ctx);
+	if (!req) {
+		XNVME_DEBUG("Failed to allocate request");
+		return -ENOSPC;
+	}
 
+	if (!err) {
+		queue->base.outstanding++;
+		goto free_req;
+	}
+
+	return err;
+
+free_req:
+	xnvme_be_nvmf_req_free(queue->qpair->req_pool, req);
 	return err;
 }
 
@@ -86,11 +99,24 @@ xnvme_be_nvmf_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_
 			    size_t dvec_nbytes, void *mbuf, size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	struct xnvme_be_nvmf_queue *queue = (struct xnvme_be_nvmf_queue *)ctx->async.queue;
+	struct xnvme_be_nvmf_req *req;
 	int err = -ENOSYS;
 
-	if (!err) 
-		queue->base.outstanding++;
+	req = xnvme_be_nvmf_req_alloc(queue->qpair->req_pool, true, (void *)ctx);
+	if (!req) {
+		XNVME_DEBUG("Failed to allocate request");
+		return -ENOSPC;
+	}
 
+	if (!err) {
+		queue->base.outstanding++;
+		goto free_req;
+	}
+
+	return err;
+
+free_req:
+	xnvme_be_nvmf_req_free(queue->qpair->req_pool, req);
 	return err;
 }
 
