@@ -19,6 +19,7 @@
 
 #include <xnvme_be_nvmf.h>
 #include <xnvme_be_nvmf_rdma.h>
+#include <xnvme_be_nvmf_req_pool.h>
 
 #define XNVME_BE_NVMF_MAX_RDMACM_TIMEOUT_MS 2000
 #define NVME_CMD_CAPSULE_SIZE sizeof(struct xnvme_spec_cmd_common)
@@ -382,6 +383,7 @@ _connect_rdma_qpair_sync(struct xnvme_be_nvmf_qpair *qpair)
 			return -EIO;
 		}
 	}
+
 	XNVME_DEBUG("INFO: QPair transport-connected successfully");
 
 	return 0;
