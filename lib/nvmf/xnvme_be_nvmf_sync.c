@@ -31,23 +31,31 @@ xnvme_be_nvmf_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nby
 	}
 
 	pthread_mutex_lock(&ctrlr->lock);
-	err = -ENOSYS;
+	err = xnvme_be_nvmf_cmd_io(qpair, ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
+	if (err) {
+		XNVME_DEBUG("Failed to submit command: %d", err);
+	} else {
+		xnvme_be_nvmf_wait_for_completion(qpair, req);
+	}	
 	pthread_mutex_unlock(&ctrlr->lock);
-
-	xnvme_be_nvmf_wait_for_completion(qpair, req);
+	
 	xnvme_be_nvmf_req_free(qpair->req_pool, req);
-
 	return err;
 }
 
 int
 xnvme_be_nvmf_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-			   size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
+			   size_t dvec_nbytes, void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_be_nvmf_state *state = (struct xnvme_be_nvmf_state *) ctx->dev->be.state;
 	struct xnvme_be_nvmf_ctrlr *ctrlr = state->ctrlr;
 	struct xnvme_be_nvmf_qpair *qpair = ctrlr->sync_qpair;
 	struct xnvme_be_nvmf_req *req;
+	struct iovec mvec = {
+		.iov_base = mbuf,
+		.iov_len = mbuf_nbytes,
+	};
+	int mvec_cnt = mbuf_nbytes > 0 ? 1 : 0;
 	int err;
 
 	req = xnvme_be_nvmf_req_alloc(qpair->req_pool, false, (void *)ctx);
@@ -57,10 +65,14 @@ xnvme_be_nvmf_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t
 	}
 
 	pthread_mutex_lock(&ctrlr->lock);
-	err = -ENOSYS;
+	err = xnvme_be_nvmf_cmd_iov(qpair, ctx, dvec, dvec_cnt, dvec_nbytes, &mvec, mvec_cnt, mbuf_nbytes);
+	if (err) {
+		XNVME_DEBUG("Failed to submit command: %d", err);
+	} else {
+		xnvme_be_nvmf_wait_for_completion(qpair, req);
+	}
 	pthread_mutex_unlock(&ctrlr->lock);
 
-	xnvme_be_nvmf_wait_for_completion(qpair, req);
 	xnvme_be_nvmf_req_free(qpair->req_pool, req);
 
 	return err;

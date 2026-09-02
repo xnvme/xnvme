@@ -109,6 +109,22 @@ int
 xnvme_be_nvmf_destroy_qpair(struct xnvme_be_nvmf_qpair *qpair);
 
 static inline int
+xnvme_be_nvmf_cmd_iov(struct xnvme_be_nvmf_qpair *qpair, struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, size_t dvec_nbytes,
+		struct iovec *mvec, size_t mvec_cnt, size_t mvec_nbyte)
+{
+	return -ENOSYS;
+	// return qpair->ops->cmd_iov(qpair, ctx, dvec, dvec_cnt, dvec_nbytes, mvec, mvec_cnt, mvec_nbyte);
+}
+
+static inline int
+xnvme_be_nvmf_cmd_io(struct xnvme_be_nvmf_qpair *qpair, struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
+			    void *mbuf, size_t mbuf_nbytes)
+{
+	return -ENOSYS;
+	// return qpair->ops->cmd_io(qpair, ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
+}
+
+static inline int
 xnvme_be_nvmf_qpair_send_capsule(struct xnvme_be_nvmf_qpair *qpair, void *buf, size_t len)
 {
 	return qpair->ops->send_capsule(qpair, buf, len);
