@@ -119,6 +119,9 @@ _handle_send_cmpl(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc)
 	struct xnvme_be_nvmf_wr_id wr_id = {.raw = wc->wr_id};
 	int status = (wc->status == IBV_WC_SUCCESS) ? 0 : -EIO;
 
+	XNVME_DEBUG("INFO: Work completion, status: %s, opcode: %s, byte_len: %u, wr_id index: %u, type: %u", 
+		ibv_wc_status_str(wc->status), _ibv_wc_opcode_str(wc->opcode), wc->byte_len, wr_id.index, wr_id.type);
+
 	req = xnvme_be_nvmf_req_get(qpair->req_pool, wr_id.index);
 	if (!req) {
 		XNVME_DEBUG("FAILED: xnvme_be_nvmf_req_get() for wr_id index: %u", wr_id.index);
@@ -127,13 +130,12 @@ _handle_send_cmpl(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc)
 
 	/* wr_id carries the original buffer pointer set in _rdma_send_capsule. */
 	void *buf = (void *)(uintptr_t)wc->wr_id;
-
+	
+	req->cmpl_type = XNVME_BE_NVMF_REQ_CMPL_TYPE_SEND;
+	req->status = wc->status;
 	if (wc->status != IBV_WC_SUCCESS) {
 		XNVME_DEBUG("FAILED: send WC error: %s", ibv_wc_status_str(wc->status));
-		req->cmpl_sts = XNVME_BE_NVMF_REQ_CMPL_STS_SEND_ERROR;
-		req->status = wc->status;
 	} else {
-		req->cmpl_sts = XNVME_BE_NVMF_REQ_CMPL_STS_SEND_SUCCESS;
 		req->status = wc->status;
 
 		if (qpair->on_send_cmpl) {
@@ -188,6 +190,9 @@ _handle_recv_cmpl(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc)
 	struct ibv_recv_wr recv_wr;
 	int err;
 
+	XNVME_DEBUG("INFO: Work completion, status: %s, opcode: %s, byte_len: %u, wr_id index: %u, type: %u", 
+		ibv_wc_status_str(wc->status), _ibv_wc_opcode_str(wc->opcode), wc->byte_len, wr_id.index, wr_id.type);
+
 	if (wc->status != IBV_WC_SUCCESS) {
 		XNVME_DEBUG("FAILED: recv WC error: %s", ibv_wc_status_str(wc->status));
 		qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;  // TODO: Cannot track which request caused the error, so ignore for now and mark the qpair as dead. 
@@ -203,8 +208,8 @@ _handle_recv_cmpl(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc)
 		return -EIO;
 	}
 
-	req->cmpl_sts = XNVME_BE_NVMF_REQ_CMPL_STS_RECV_SUCCESS;
-	req->status = wc->status;
+	req->cmpl_type = XNVME_BE_NVMF_REQ_CMPL_TYPE_RECV;
+	req->status = 0;
 
 	if (qpair->on_capsule_recv) {
 		qpair->on_capsule_recv(qpair, buf, qpair->attr.completion_size);
@@ -377,6 +382,7 @@ _connect_rdma_qpair_sync(struct xnvme_be_nvmf_qpair *qpair)
 			return -EIO;
 		}
 	}
+	XNVME_DEBUG("INFO: QPair transport-connected successfully");
 
 	return 0;
 }
