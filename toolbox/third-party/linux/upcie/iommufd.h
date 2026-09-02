@@ -35,7 +35,7 @@
  * Kernel docs: https://docs.kernel.org/userspace-api/iommufd.html
  *
  * @file iommufd.h
- * @version 0.7.0
+ * @version 0.8.0
  */
 #include <linux/vfio.h>
 #if defined(__has_include) && __has_include(<linux/iommufd.h>) && defined(VFIO_DEVICE_BIND_IOMMUFD)
@@ -52,6 +52,11 @@
 #define IOMMU_IOAS_MAP_FIXED_IOVA (1U << 0)
 #define IOMMU_IOAS_MAP_WRITEABLE  (1U << 1)
 #define IOMMU_IOAS_MAP_READABLE   (1U << 2)
+
+struct iommu_iova_range {
+	uint64_t start;
+	uint64_t last;
+};
 #endif
 
 /**
@@ -140,6 +145,124 @@ static inline int
 iommufd_ioas_alloc(struct iommufd *ctx)
 {
 	(void)ctx;
+	return -ENOTSUP;
+}
+#endif
+
+/**
+ * Query the IOVA ranges the IOAS can actually use
+ *
+ * Attach a device first; the answer is incomplete until then.
+ *
+ * @param ctx Pointer to an iommufd handle with an allocated IOAS (see
+ * iommufd_ioas_alloc)
+ * @param ranges Caller-provided array to fill
+ * @param nmax Capacity of `ranges` in elements
+ * @param nranges Receives the number of ranges written; on -EMSGSIZE it
+ * receives the number required instead
+ * @param iova_alignment Receives the required IOVA alignment; may be NULL
+ * @return On success, 0 is returned. On error, negative errno is returned to
+ * indicate the error. -EMSGSIZE when `nmax` is too small.
+ */
+#ifdef UPCIE_HAVE_IOMMUFD
+static inline int
+iommufd_ioas_iova_ranges(struct iommufd *ctx, struct iommu_iova_range *ranges, uint32_t nmax,
+			 uint32_t *nranges, uint64_t *iova_alignment)
+{
+	struct iommu_ioas_iova_ranges args = {0};
+
+	if (!ctx || !ranges || !nmax || !nranges) {
+		return -EINVAL;
+	}
+
+	args.size = sizeof(args);
+	args.ioas_id = ctx->ioas_id;
+	args.num_iovas = nmax;
+	args.allowed_iovas = (uint64_t)(uintptr_t)ranges;
+
+	if (ioctl(ctx->fd, IOMMU_IOAS_IOVA_RANGES, &args) == -1) {
+		const int err = -errno;
+
+		/* The kernel writes back a required count only on -EMSGSIZE. On any
+		 * other error num_iovas still holds the nmax that went in. */
+		*nranges = (err == -EMSGSIZE) ? args.num_iovas : 0;
+
+		return err;
+	}
+
+	*nranges = args.num_iovas;
+	if (iova_alignment) {
+		*iova_alignment = args.out_iova_alignment;
+	}
+
+	return 0;
+}
+#else
+static inline int
+iommufd_ioas_iova_ranges(struct iommufd *ctx, struct iommu_iova_range *ranges, uint32_t nmax,
+			 uint32_t *nranges, uint64_t *iova_alignment)
+{
+	(void)ctx;
+	(void)ranges;
+	(void)nmax;
+	(void)nranges;
+	(void)iova_alignment;
+	return -ENOTSUP;
+}
+#endif
+
+/**
+ * Confine the handle's IOAS to a set of allowed IOVA ranges
+ *
+ * By default the kernel picks IOVAs from anywhere usable, leaving no way to
+ * reserve a slice for something mapping into the same domain behind iommufd's
+ * back, as iommu-map-pa does for device memory (see
+ * <upcie/dmamem_iommu_map_pa.h>). Allowing everything but that
+ * slice keeps later maps out of it; the kernel does not relocate IOVAs already
+ * handed out inside the excluded range.
+ *
+ * An allowed range may not overlap a reserved region of any attached device;
+ * the kernel rejects this call, or the attach, with -EADDRINUSE. So pass what
+ * iommufd_ioas_iova_ranges() reports minus the slice to reserve, not a range
+ * invented by the caller.
+ *
+ * @param ctx Pointer to an iommufd handle with an allocated IOAS (see
+ * iommufd_ioas_alloc)
+ * @param ranges Ranges the kernel may allocate from
+ * @param nranges Number of entries in `ranges`
+ * @return On success, 0 is returned. On error, negative errno is returned to
+ * indicate the error. -EADDRINUSE when a range overlaps a reserved region.
+ */
+#ifdef UPCIE_HAVE_IOMMUFD
+static inline int
+iommufd_ioas_allow_iovas(struct iommufd *ctx, const struct iommu_iova_range *ranges,
+			 uint32_t nranges)
+{
+	struct iommu_ioas_allow_iovas args = {0};
+
+	if (!ctx || !ranges || !nranges) {
+		return -EINVAL;
+	}
+
+	args.size = sizeof(args);
+	args.ioas_id = ctx->ioas_id;
+	args.num_iovas = nranges;
+	args.allowed_iovas = (uint64_t)(uintptr_t)ranges;
+
+	if (ioctl(ctx->fd, IOMMU_IOAS_ALLOW_IOVAS, &args) == -1) {
+		return -errno;
+	}
+
+	return 0;
+}
+#else
+static inline int
+iommufd_ioas_allow_iovas(struct iommufd *ctx, const struct iommu_iova_range *ranges,
+			 uint32_t nranges)
+{
+	(void)ctx;
+	(void)ranges;
+	(void)nranges;
 	return -ENOTSUP;
 }
 #endif

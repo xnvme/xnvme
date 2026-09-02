@@ -16,18 +16,20 @@
  * caller-chosen offset into the DMA address the device expects. Two
  * translation shapes live behind the same public call:
  *
- *   ARITHMETIC: iova = base_iova + offset. Used whenever a real IOMMU
- *   mapping (iommufd IOAS or vfio type1 container) installed a single
- *   contiguous IOVA range for the whole dmamem. The dmamem stashes
- *   base_iova at construction and the submit path adds. No lookup.
+ *   ARITHMETIC: iova = base_iova + offset. For a region that resolves as one
+ *   contiguous range, such as an IOMMU mapping (iommufd IOAS or vfio type1
+ *   container). The dmamem stashes base_iova at construction and the submit
+ *   path adds. No lookup.
  *
  *   LUT: iova = lut_phys[va >> gran_shift] + (va & gran_mask), read from
- *   the registry the dmamem owns.
- *   Used when no IOMMU mapping was installed (uio_pci_generic with
- *   iommu=pt/off) and the device consumes physical addresses directly.
- *   The dmamem stashes a borrowed per-hugepage PA table and reads it on
- *   submit. One extra load and a shift compared to the arithmetic
+ *   the registry the dmamem owns. For a region that resolves per granule, such
+ *   as scattered hugepages. The dmamem stashes a borrowed table and reads
+ *   it on submit. One extra load and a shift compared to the arithmetic
  *   fastpath; identical shape to hostmem_dma_v2p in hostmem_dma.h.
+ *
+ * Which one applies follows the shape of the region. A LUT usually holds
+ * physical addresses (uio_pci_generic with iommu=pt/off), but its entries are
+ * whatever the region resolves to.
  *
  * dmamem_va_to_iova branches once on the translator. When a caller
  * uses one translator throughout (which is the typical shape, e.g.
@@ -55,7 +57,7 @@
  *   dmamem_hostmem.h and wrap an existing hostmem_hugepage.
  *
  * @file dmamem.h
- * @version 0.7.0
+ * @version 0.8.0
  */
 
 enum dmamem_backing {
@@ -70,9 +72,10 @@ enum dmamem_backing {
 /**
  * How offsets resolve to the address the device puts on the bus.
  *
- * "iova" is used throughout for that address, as DPDK does, but what it
- * holds depends on the translator: a kernel-assigned IOVA when a mapping
- * was installed, a physical or bus address when none was.
+ * "iova" is used throughout for that address, as DPDK does. What it holds
+ * depends on how the region was set up: a kernel-assigned IOVA where a mapping
+ * was installed, a physical or bus address where none was. A translator says
+ * only how to compute it from an offset; the two are orthogonal.
  *
  * ARITHMETIC = 0 by intent: a memset-to-zero dmamem is arithmetic by
  * default, which is what every current owned constructor produces
@@ -88,10 +91,9 @@ enum dmamem_backing {
  * matters.
  */
 enum dmamem_translator {
-	/** iova = base_iova + offset; the IOVA of the installed mapping. */
+	/** iova = base_iova + offset */
 	DMAMEM_XLATE_ARITHMETIC = 0x0,
-	/** iova = lut_phys[va >> gran_shift] + (va & gran_mask); an address the
-	 *  device uses directly, with no translation installed. */
+	/** iova = lut_phys[va >> gran_shift] + (va & gran_mask) */
 	DMAMEM_XLATE_LUT = 0x1,
 };
 
@@ -195,8 +197,9 @@ dmamem_va_to_iova(struct dmamem *dmem, void *vaddr);
  * then either a single addition (ARITHMETIC) or a shift + table
  * lookup + addition (LUT).
  *
- * The result is a kernel-assigned IOVA under the ARITHMETIC translator and
- * a physical or bus address under LUT; see enum dmamem_translator.
+ * The result is a kernel-assigned IOVA where a mapping was installed for the
+ * region and a physical or bus address where none was, whichever translator
+ * computed it; see enum dmamem_translator.
  */
 static inline uint64_t
 dmamem_offset_to_iova(struct dmamem *dmem, size_t offset)

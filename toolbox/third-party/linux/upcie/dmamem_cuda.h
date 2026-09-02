@@ -19,8 +19,13 @@
  * and callers compose PRPs via dmamem_offset_to_iova() with offsets
  * measured from heap->vaddr.
  *
+ * dmamem_from_cuda_iommu_map_pa() covers the neighbouring cell, where an IOMMU
+ * translates for the device. It reuses the backend below and differs only in
+ * installing a mapping per allocation; see
+ * <upcie/dmamem_iommu_map_pa.h>.
+ *
  * @file dmamem_cuda.h
- * @version 0.7.0
+ * @version 0.8.0
  */
 
 /**
@@ -194,6 +199,59 @@ dmamem_from_cuda_registry(struct dmamem *dmem, struct cudamem_heap *heap, int va
 	dmem->backing = DMAMEM_BACKING_CUDAMEM;
 	dmem->translator = DMAMEM_XLATE_LUT;
 	dmem->owned = 0;
+
+	return 0;
+}
+
+/**
+ * Build a registry-translating dmamem around a cudamem_heap, addressed through
+ * an enforcing IOMMU.
+ *
+ * The counterpart to dmamem_from_cuda_registry(): same backend, same
+ * dmamem_register() for buffers handed over later, except that each allocation
+ * is also inserted into the device's IOMMU domain and the LUT holds the
+ * resulting IOVAs. See <upcie/dmamem_iommu_map_pa.h>.
+ *
+ * dmamem_from_cuda_registry() adopts the heap's existing address table. This
+ * cannot: that table holds physical addresses, which is what the IOMMU rejects.
+ * The heap is registered instead, so every backing gets a mapping and an IOVA.
+ *
+ * `imp` is borrowed and must be closed only after dmamem_destroy().
+ *
+ * @param dmem    Pre-allocated dmamem descriptor to fill
+ * @param heap    Borrowed cudamem_heap; must outlive the dmamem
+ * @param va_bits Bounds the LUT reservation; 0 selects the default
+ * @param imp     Open iommu-map-pa handle naming the target device
+ *
+ * @return 0 on success, negative errno on failure.
+ */
+static inline int
+dmamem_from_cuda_iommu_map_pa(struct dmamem *dmem, struct cudamem_heap *heap, int va_bits,
+			      struct dmamem_iommu_map_pa *imp)
+{
+	int err;
+
+	if (!dmem || !heap || !heap->config || !imp) {
+		return -EINVAL;
+	}
+
+	err = dmamem_from_iommu_map_pa(dmem, imp, DMAMEM_CUDA_REGISTRY_GRANULARITY, va_bits,
+				       dmamem_cuda_registry_range, dmamem_cuda_registry_populate,
+				       dmamem_cuda_registry_release, heap->config);
+	if (err) {
+		return err;
+	}
+
+	dmem->base_va = (void *)(uintptr_t)heap->vaddr;
+	dmem->size = heap->size;
+	dmem->backing = DMAMEM_BACKING_CUDAMEM;
+
+	err = dmamem_register(dmem, (void *)(uintptr_t)heap->vaddr, heap->size);
+	if (err) {
+		UPCIE_DEBUG("FAILED: dmamem_register(heap), err: %d", err);
+		dmamem_destroy(dmem);
+		return err;
+	}
 
 	return 0;
 }

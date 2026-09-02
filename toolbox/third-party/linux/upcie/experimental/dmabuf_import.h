@@ -14,7 +14,7 @@
  * ==========================================================================
  *
  * @file dmabuf_import.h
- * @version 0.7.0
+ * @version 0.8.0
  */
 #ifndef UPCIE_EXPERIMENTAL_DMABUF_IMPORT_H
 #define UPCIE_EXPERIMENTAL_DMABUF_IMPORT_H
@@ -115,7 +115,9 @@ dmabuf_import_detach(struct dmabuf *dmabuf)
 {
 	int import_fd, err;
 
-	free(dmabuf->pages);
+	if (!dmabuf || !dmabuf->pages) {
+		return 0;
+	}
 
 	import_fd = open(DMABUF_IMPORT_DEVPATH, O_RDWR);
 	if (import_fd < 0) {
@@ -131,7 +133,13 @@ dmabuf_import_detach(struct dmabuf *dmabuf)
 		// fall-through
 	}
 
+	free(dmabuf->pages);
+	dmabuf->pages = NULL;
+	dmabuf->npages = 0;
+
 	close(dmabuf->fd);
+	dmabuf->fd = -1;
+
 	close(import_fd);
 	return err;
 }
