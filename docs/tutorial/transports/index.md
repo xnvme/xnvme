@@ -48,7 +48,7 @@ namespace.
 
 Both providers are driven by the same `nvme_target_start`,
 `nvme_target_probe`, and `nvme_target_stop` cijoe scripts, switched via
-`--provider`. The initiator side (xNVMe access via TCP URI) is identical
+`--nvme-provider`. The initiator side (xNVMe access via TCP URI) is identical
 between the two and is documented below.
 
 ```{toctree}
@@ -62,13 +62,13 @@ linux/index
 
 The three cijoe scripts share the same set of flags:
 
-| Argument       | Default       | Description                                  |
-|----------------|---------------|----------------------------------------------|
-| `--provider`   | `spdk`        | `spdk` or `linux`.                           |
-| `--traddr`     | `127.0.0.1`   | Transport address (IP) for the listener.     |
-| `--trsvcid`    | `4420`        | Transport service id (TCP port).             |
-| `--trtype`     | `tcp`         | Transport type.                              |
-| `--adrfam`     | `ipv4`        | Address family.                              |
+| Argument            | Default       | Description                                  |
+|---------------------|---------------|----------------------------------------------|
+| `--nvme-provider`   | `spdk`        | `spdk` or `linux`.                           |
+| `--nvme-traddr`     | `127.0.0.1`   | Transport address (IP) for the listener.     |
+| `--nvme-trsvcid`    | `4420`        | Transport service id (TCP port).             |
+| `--nvme-trtype`     | `tcp`         | Transport type.                              |
+| `--nvme-adrfam`     | `ipv4`        | Address family.                              |
 
 The PCIe device to export and its subsystem NQN are read from a device
 entry labelled `fabrics` (legacy label name) in the cijoe configuration.

@@ -4,7 +4,7 @@ Tear down an NVMe TCP transport target
 ======================================
 
 Tear down whichever NVMe TCP target was set up by ``nvme_target_start``.
-Two providers are supported via ``--provider``:
+Two providers are supported via ``--nvme-provider``:
 
 * ``spdk`` (default): stop the SPDK ``nvmf_tgt`` process.
 * ``linux``: remove the Linux kernel ``nvmet`` configfs entries.
@@ -20,10 +20,10 @@ from argparse import ArgumentParser
 
 def add_args(parser: ArgumentParser):
     parser.add_argument(
-        "--provider",
+        "--nvme-provider",
         choices=["spdk", "linux"],
         default="spdk",
-        help="Target provider: SPDK nvmf_tgt or Linux kernel nvmet",
+        help="NVMe target provider: SPDK nvmf_tgt or Linux kernel nvmet",
     )
 
 
@@ -70,9 +70,9 @@ def _stop_linux(args, cijoe):
 def main(args, cijoe):
     """Tear down an NVMe TCP target using the selected provider."""
 
-    if args.provider == "spdk":
+    if args.nvme_provider == "spdk":
         return _stop_spdk(args, cijoe)
-    if args.provider == "linux":
+    if args.nvme_provider == "linux":
         return _stop_linux(args, cijoe)
-    log.error("unknown provider: %s", args.provider)
+    log.error("unknown provider: %s", args.nvme_provider)
     return errno.EINVAL

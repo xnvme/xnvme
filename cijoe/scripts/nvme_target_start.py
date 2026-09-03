@@ -4,7 +4,7 @@ Bring up an NVMe TCP transport target
 =====================================
 
 Configure an NVMe target listening on a TCP transport. Two providers are
-supported via ``--provider``:
+supported via ``--nvme-provider``:
 
 * ``spdk`` (default): use the SPDK ``nvmf_tgt`` application driven through
   ``rpc.py`` to export a locally attached PCIe NVMe device.
@@ -24,31 +24,32 @@ from pathlib import Path
 
 def add_args(parser: ArgumentParser):
     parser.add_argument(
-        "--provider",
+        "--nvme-provider",
         choices=["spdk", "linux"],
         default="spdk",
-        help="Target provider: SPDK nvmf_tgt or Linux kernel nvmet",
+        help="NVMe target provider: SPDK nvmf_tgt or Linux kernel nvmet",
     )
     parser.add_argument(
-        "--traddr",
+        "--nvme-traddr",
         type=str,
         default="127.0.0.1",
         help="Transport address (IP) for the listener",
     )
     parser.add_argument(
-        "--trsvcid",
+        "--nvme-trsvcid",
         type=str,
         default="4420",
         help="Transport service id (TCP port)",
     )
     parser.add_argument(
-        "--trtype",
+        "--nvme-trtype",
         type=str,
         default="tcp",
-        help="Transport type",
+        choices=["tcp", "rdma"],
+        help="Transport type for the NVMe target",
     )
     parser.add_argument(
-        "--adrfam",
+        "--nvme-adrfam",
         type=str,
         default="ipv4",
         help="Address family",
@@ -114,20 +115,20 @@ def _start_spdk(args, cijoe):
         f"test -x {nvmf_tgt} || make -C {nvmf_tgt_src}",
         f"(nohup {nvmf_tgt} -m [1] > nvmf_tgt.out 2> nvmf_tgt.err < /dev/null &)",
         "sleep 3",
-        f"{rpc} nvmf_create_transport -t {args.trtype} -u 16384 -m 8 -c 8192",
+        f"{rpc} nvmf_create_transport -t {args.nvme_trtype} -u 16384 -m 8 -c 8192",
         f"{rpc} bdev_nvme_attach_controller -b Nvme0 -t PCIe -a {pcie_id} -U",
         f"{rpc} nvmf_create_subsystem {subnqn} "
         f"-a -s SPDK00000000000001 -d Controller1 -p",
         f"{rpc} nvmf_subsystem_add_ns {subnqn} Nvme0n1",
         f"{rpc} nvmf_subsystem_add_listener {subnqn} "
-        f"-t {args.trtype} -a {args.traddr} -s {args.trsvcid} -f {args.adrfam}",
+        f"-t {args.nvme_trtype} -a {args.nvme_traddr} -s {args.nvme_trsvcid} -f {args.nvme_adrfam}",
     ]
     err, cmd = _run_all(cijoe, subsystem)
     if err:
         log.error("FAILED: subsystem creation: %s (errno=%d)", cmd, err)
         return err
 
-    log.info("spdk target up: %s @ %s:%s", subnqn, args.traddr, args.trsvcid)
+    log.info("spdk target up: %s @ %s:%s", subnqn, args.nvme_traddr, args.nvme_trsvcid)
     return 0
 
 
@@ -167,10 +168,10 @@ def _start_linux(args, cijoe):
         f"{nvmet}/subsystems/{subnqn}/namespaces/1/device_path",
         f"echo 1 > {nvmet}/subsystems/{subnqn}/namespaces/1/enable",
         f"mkdir -p {nvmet}/ports/1",
-        f"echo {args.traddr} > {nvmet}/ports/1/addr_traddr",
-        f"echo {args.trtype} > {nvmet}/ports/1/addr_trtype",
-        f"echo {args.trsvcid} > {nvmet}/ports/1/addr_trsvcid",
-        f"echo {args.adrfam} > {nvmet}/ports/1/addr_adrfam",
+        f"echo {args.nvme_traddr} > {nvmet}/ports/1/addr_traddr",
+        f"echo {args.nvme_trtype} > {nvmet}/ports/1/addr_trtype",
+        f"echo {args.nvme_trsvcid} > {nvmet}/ports/1/addr_trsvcid",
+        f"echo {args.nvme_adrfam} > {nvmet}/ports/1/addr_adrfam",
         f"ln -s {nvmet}/subsystems/{subnqn} " f"{nvmet}/ports/1/subsystems/{subnqn}",
     ]
     err, cmd = _run_all(cijoe, subsystem)
@@ -178,16 +179,16 @@ def _start_linux(args, cijoe):
         log.error("FAILED: subsystem creation: %s (errno=%d)", cmd, err)
         return err
 
-    log.info("linux target up: %s @ %s:%s", subnqn, args.traddr, args.trsvcid)
+    log.info("linux target up: %s @ %s:%s", subnqn, args.nvme_traddr, args.nvme_trsvcid)
     return 0
 
 
 def main(args, cijoe):
     """Bring up an NVMe TCP target using the selected provider."""
 
-    if args.provider == "spdk":
+    if args.nvme_provider == "spdk":
         return _start_spdk(args, cijoe)
-    if args.provider == "linux":
+    if args.nvme_provider == "linux":
         return _start_linux(args, cijoe)
-    log.error("unknown provider: %s", args.provider)
+    log.error("unknown provider: %s", args.nvme_provider)
     return errno.EINVAL

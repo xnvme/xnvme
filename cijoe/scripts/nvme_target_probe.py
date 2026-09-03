@@ -17,29 +17,30 @@ from argparse import ArgumentParser
 
 def add_args(parser: ArgumentParser):
     parser.add_argument(
-        "--provider",
+        "--nvme-provider",
         choices=["spdk", "linux"],
         default="spdk",
-        help="Target provider that brought the listener up",
+        help="NVMe target provider that brought the listener up",
     )
     parser.add_argument(
-        "--traddr",
+        "--nvme-traddr",
         type=str,
         default="127.0.0.1",
-        help="Transport address (IP) of the listener",
+        help="Transport address (IP) of the NVMe listener",
     )
     parser.add_argument(
-        "--trsvcid",
+        "--nvme-trsvcid",
         type=str,
         default="4420",
-        help="Transport service id (TCP port)",
+        help="Transport service id (Port) of the NVMe listener",
     )
     parser.add_argument(
-        "--trtype",
+        "--nvme-trtype",
         type=str,
         default="tcp",
-        help="Transport type",
+        help="Transport type for the NVMe listener",
     )
+
 
 
 def _get_transport_device(cijoe):
@@ -59,9 +60,9 @@ def main(args, cijoe):
 
     subnqn = device["subnqn"]
 
-    uri = f"{args.traddr}:{args.trsvcid}"
+    uri = f"{args.nvme_traddr}:{args.nvme_trsvcid}"
     commands = [
-        f"nvme discover -t {args.trtype} -a {args.traddr} -s {args.trsvcid}",
+        f"nvme discover -t {args.nvme_trtype} -a {args.nvme_traddr} -s {args.nvme_trsvcid}",
         f"xnvme enum --uri {uri}",
         f"xnvme info {uri} --subnqn {subnqn}",
         f"xnvmeperf run {uri} --subnqn {subnqn} --iopattern randread "
