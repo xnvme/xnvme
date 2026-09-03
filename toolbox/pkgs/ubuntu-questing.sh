@@ -45,6 +45,7 @@ apt-get -qy install \
  python3-pyelftools \
  python3-tabulate \
  python3-venv \
+ rdma-core-dev \
  uuid-dev
 
 #
