@@ -62,6 +62,10 @@ Example::
    :ref:`sec-backends-upcie-cuda`
       Backend setup, system configuration, and memory architecture.
 
+   :ref:`sec-backends-upcie-cuda-gpu-domain`
+      Required with an IOMMU enabled. Without it the run succeeds while every
+      I/O fails.
+
    :ref:`sec-api-c-gpu`
       The ``libxnvme_cuda`` API used to create queues and dispatch commands
       from CUDA kernels.
@@ -69,7 +73,7 @@ Example::
 Requires the ``upcie-cuda`` backend. All queues across all devices are driven
 by a single CUDA kernel: each CUDA block owns one NVMe queue and each thread
 within the block owns one queue slot, so ``--qdepth`` threads submit and reap
-commands in lock-step. The grid has ``ndevs × --queues`` blocks in total.
+commands in lock-step. The grid has ``ndevs × --nqueues`` blocks in total.
 
 Both ``--qdepth`` and ``--iosize`` must be powers of 2. Supported patterns are
 ``read``, ``write``, ``randread``, and ``randwrite``.
@@ -79,7 +83,7 @@ Both ``--qdepth`` and ``--iosize`` must be powers of 2. Supported patterns are
 
 Example — sequential read, four queues of depth 32 on two devices::
 
-   xnvmeperf cuda-run --iopattern read --queues 4 --qdepth 32 --iosize 4096 \
+   xnvmeperf cuda-run --iopattern read --nqueues 4 --qdepth 32 --iosize 4096 \
        --runtime 10 --be upcie-cuda 0000:01:00.0 0000:02:00.0
 
 Example — random write, single queue::
