@@ -44,9 +44,9 @@ devices to uio_pci_generic or vfio-pci:
 xnvme-driver
 ```
 
-**upcie** supports both `uio_pci_generic` (no-IOMMU path) and `vfio-pci`
-(IOMMU-backed path). **upcie-cuda** and **upcie-hip** require the non-VFIO
-path.
+**upcie**, **upcie-cuda** and **upcie-hip** all support `uio_pci_generic`
+(no-IOMMU path) and `vfio-pci` (IOMMU-backed path). For the GPU backends see
+{ref}`sec-backends-upcie-cuda-iommu`.
 
 (sec-backends-upcie-attachment)=
 
