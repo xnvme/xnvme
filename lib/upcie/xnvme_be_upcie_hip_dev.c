@@ -21,18 +21,93 @@ _hip_rte_term(void)
 	}
 
 	dmamem_destroy(&g_upcie_hip_rte.dmem);
+	for (int i = 0; i < XNVME_BE_UPCIE_GPU_CTRLRS_MAX; ++i) {
+		struct xnvme_be_upcie_hip_ctrlr *slot = &g_upcie_hip_rte.ctrlrs[i];
+
+		if (!slot->reg_offset) {
+			continue;
+		}
+
+		/* Handed back before the memory behind it goes away, so the
+		 * server is not left attached to a freed region. A server that
+		 * has gone reclaims on the socket closing regardless, hence
+		 * the unchecked return. */
+		xnvme_be_upcie_cplane_unregister_client_mem(slot->ctrlr, slot->reg_offset);
+		memset(slot, 0, sizeof(*slot));
+	}
 	hipmem_heap_term(&g_upcie_hip_rte.hip_heap);
 
 	g_upcie_hip_rte.is_initialized = 0;
 }
 
+/**
+ * The slot holding `ctrlr`, or a free one to claim for it
+ */
+static struct xnvme_be_upcie_hip_ctrlr *
+_hip_ctrlr_slot(struct xnvme_be_upcie_ctrlr *ctrlr)
+{
+	struct xnvme_be_upcie_hip_ctrlr *free_slot = NULL;
+
+	for (int i = 0; i < XNVME_BE_UPCIE_GPU_CTRLRS_MAX; ++i) {
+		struct xnvme_be_upcie_hip_ctrlr *slot = &g_upcie_hip_rte.ctrlrs[i];
+
+		if (slot->ctrlr == ctrlr) {
+			return slot;
+		}
+		if (!free_slot && !slot->ctrlr) {
+			free_slot = slot;
+		}
+	}
+
+	return free_slot;
+}
+
+/**
+ * Have `ctrlr` reach the heap the runtime already built
+ */
 static int
-_hip_rte_init(size_t heap_size, uint32_t gpu_id)
+_hip_ctrlr_init(struct xnvme_be_upcie_ctrlr *ctrlr, const char *ctrlr_bdf)
+{
+	struct xnvme_be_upcie_hip_ctrlr *slot = _hip_ctrlr_slot(ctrlr);
+	const struct hostmem_shared_desc *desc = NULL;
+	int err;
+
+	if (!slot) {
+		XNVME_DEBUG("FAILED: more than %d controllers on one GPU runtime",
+			    XNVME_BE_UPCIE_GPU_CTRLRS_MAX);
+		return -ENOSPC;
+	}
+	if (slot->ctrlr) {
+		return 0;
+	}
+	slot->ctrlr = ctrlr;
+
+	if (!g_upcie_rte.connection.alive) {
+		/* This process owns the controller, so the addresses the heap
+		 * was described with already reach it. */
+		return 0;
+	}
+
+	err = xnvme_be_upcie_cplane_register_client_mem(
+		ctrlr, g_upcie_hip_rte.hip_heap.dmabuf.fd, g_upcie_hip_rte.hip_heap.size,
+		(uint32_t)g_upcie_hip_rte.hip_config.device_pagesize, &desc, &slot->reg_offset);
+	if (err) {
+		XNVME_DEBUG("FAILED: registering the HIP heap for the controller; err(%d)", err);
+		memset(slot, 0, sizeof(*slot));
+		return err;
+	}
+
+	return 0;
+}
+
+static int
+_hip_rte_init(size_t heap_size, uint32_t gpu_id, struct xnvme_be_upcie_ctrlr *ctrlr,
+	      const char *bdf)
 {
 	int err;
 
 	if (g_upcie_hip_rte.is_initialized) {
-		return 0;
+		return _hip_ctrlr_init(ctrlr, bdf);
 	}
 
 	if (!heap_size) {
@@ -66,12 +141,46 @@ _hip_rte_init(size_t heap_size, uint32_t gpu_id)
 	err = hipmem_heap_init(&g_upcie_hip_rte.hip_heap, heap_size, &g_upcie_hip_rte.hip_config);
 	if (err) {
 		XNVME_DEBUG("FAILED: hipmem_heap_init(); err(%d)", err);
-		return -ENOMEM;
+		return err;
 	}
 
-	/* Physical addresses read the same from every controller, so one table
-	 * serves them all; per-domain IOVAs do not. */
-	if (!xnvme_be_upcie_gpu_map_required()) {
+	/* How the heap is described to a controller depends on what that
+	 * controller consumes, and on whether this process owns it at all. A
+	 * client owns none of them, so the server answers. Otherwise: physical
+	 * addresses read the same from every controller, so one table serves
+	 * them all; under an enforcing IOMMU they do not, and there are two
+	 * ways to get addresses it will accept. iommufd maps the heap once for
+	 * the process and needs no out-of-tree module, so it is preferred where
+	 * the device is on vfio-cdev; where it cannot map, _hip_dev_dmem_init()
+	 * falls back to iommu-map-pa, which maps the heap per controller into
+	 * whichever domain each is already in. */
+	if (g_upcie_rte.connection.alive) {
+		/* The controller belongs to the server, so the addresses it
+		 * consumes are the server's to know. This process hands over
+		 * the region and is told how it resolves. */
+		struct xnvme_be_upcie_hip_ctrlr *slot = &g_upcie_hip_rte.ctrlrs[0];
+		const struct hostmem_shared_desc *desc = NULL;
+
+		slot->ctrlr = ctrlr;
+		err = xnvme_be_upcie_cplane_register_client_mem(
+			ctrlr, g_upcie_hip_rte.hip_heap.dmabuf.fd, g_upcie_hip_rte.hip_heap.size,
+			(uint32_t)g_upcie_hip_rte.hip_config.device_pagesize, &desc,
+			&slot->reg_offset);
+		if (!err) {
+			err = dmamem_from_shared(&g_upcie_hip_rte.dmem,
+						 (void *)(uintptr_t)g_upcie_hip_rte.hip_heap.vaddr,
+						 desc, xnvme_be_upcie_va_bits(),
+						 DMAMEM_BACKING_HIPMEM);
+		}
+		if (err) {
+			XNVME_DEBUG("FAILED: registering the HIP heap with the server; err(%d)",
+				    err);
+			memset(slot, 0, sizeof(*slot));
+			hipmem_heap_term(&g_upcie_hip_rte.hip_heap);
+			return err;
+		}
+		g_upcie_hip_rte.dmem_is_shared = 1;
+	} else if (!xnvme_be_upcie_gpu_map_required()) {
 		err = dmamem_from_hip_registry(&g_upcie_hip_rte.dmem, &g_upcie_hip_rte.hip_heap,
 					       xnvme_be_upcie_va_bits());
 		if (err) {
@@ -79,9 +188,21 @@ _hip_rte_init(size_t heap_size, uint32_t gpu_id)
 			hipmem_heap_term(&g_upcie_hip_rte.hip_heap);
 			return err;
 		}
+		g_upcie_hip_rte.dmem_is_shared = 1;
+	} else if (g_upcie_rte.mode == XNVME_BE_UPCIE_MODE_VFIO_CDEV) {
+		err = dmamem_from_hip_iommufd(&g_upcie_hip_rte.dmem, &g_upcie_hip_rte.hip_heap,
+					      &g_upcie_rte.cdev.iommufd);
+		if (err) {
+			XNVME_DEBUG("FAILED: dmamem_from_hip_iommufd(); err(%d); mapping per "
+				    "controller instead",
+				    err);
+		} else {
+			g_upcie_hip_rte.dmem_is_shared = 1;
+		}
 	}
 
 	g_upcie_hip_rte.is_initialized = 1;
+	g_upcie_hip_rte.ctrlrs[0].ctrlr = ctrlr;
 
 	return 0;
 }
@@ -103,7 +224,9 @@ _hip_dev_dmem_init(struct xnvme_dev *dev)
 	struct xnvme_be_upcie_gpu_dmem *gpu;
 	int err;
 
-	if (!xnvme_be_upcie_gpu_map_required()) {
+	/* Set where the runtime described the heap once for the whole process,
+	 * whether in physical addresses or through iommufd. */
+	if (g_upcie_hip_rte.dmem_is_shared) {
 		state->dmem = &g_upcie_hip_rte.dmem;
 		return 0;
 	}
@@ -186,7 +309,12 @@ xnvme_be_upcie_hip_dev_open(struct xnvme_dev *dev)
 		return err;
 	}
 
-	err = _hip_rte_init(dev->opts.device_heap_size, dev->opts.gpu_id);
+	{
+		struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+
+		err = _hip_rte_init(dev->opts.device_heap_size, dev->opts.gpu_id, state->ctrlr,
+				    dev->ident.uri);
+	}
 	if (err) {
 		XNVME_DEBUG("FAILED: _hip_rte_init(); err(%d)", err);
 		return err;
