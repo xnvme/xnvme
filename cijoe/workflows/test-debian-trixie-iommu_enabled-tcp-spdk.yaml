@@ -12,7 +12,7 @@ steps:
 - name: nvme_target_start
   uses: nvme_target_start
   with:
-    provider: spdk
+    nvme-provider: spdk
 
 - name: test_transport_tcp
   uses: core.testrunner
@@ -23,4 +23,4 @@ steps:
 - name: nvme_target_stop
   uses: nvme_target_stop
   with:
-    provider: spdk
+    nvme-provider: spdk

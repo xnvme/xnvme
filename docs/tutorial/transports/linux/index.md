@@ -8,7 +8,7 @@ driver so its local `/dev/nvmeXn1` is available; `nvmet` and `nvmet_tcp`
 are loaded; the subsystem, namespace, and port are created as `configfs`
 directories. The `cijoe/scripts/nvme_target_start.py`,
 `nvme_target_probe.py`, and `nvme_target_stop.py` scripts drive this with
-`--provider linux`. They are wired into the dedicated
+`--nvme-provider linux`. They are wired into the dedicated
 `workflows/transports-tcp-linux.yaml` workflow whose three steps
 (`nvme_target_start`, `nvme_target_probe`, `nvme_target_stop`) can be
 selected individually.

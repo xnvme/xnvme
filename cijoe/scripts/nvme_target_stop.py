@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Tear down an NVMe TCP transport target
+Tear down an NVMe transport target
 ======================================
 
-Tear down whichever NVMe TCP target was set up by ``nvme_target_start``.
-Two providers are supported via ``--provider``:
+Tear down whichever NVMe target was set up by ``nvme_target_start``.
+Two providers are supported via ``--nvme-provider``:
 
 * ``spdk`` (default): stop the SPDK ``nvmf_tgt`` process.
 * ``linux``: remove the Linux kernel ``nvmet`` configfs entries.
@@ -20,10 +20,16 @@ from argparse import ArgumentParser
 
 def add_args(parser: ArgumentParser):
     parser.add_argument(
-        "--provider",
+        "--nvme-provider",
         choices=["spdk", "linux"],
         default="spdk",
-        help="Target provider: SPDK nvmf_tgt or Linux kernel nvmet",
+        help="NVMe target provider: SPDK nvmf_tgt or Linux kernel nvmet",
+    )
+    parser.add_argument(
+        "--transport-name",
+        type=str,
+        default=None,
+        help="Transport to use for cijoe.run() commands",
     )
 
 
@@ -39,7 +45,10 @@ def _get_transport_device(cijoe):
 def _stop_spdk(args, cijoe):
     """Stop the SPDK ``nvmf_tgt`` process."""
 
-    cijoe.run("pgrep -f nvmf_tgt && pkill -f nvmf_tgt; true")
+    cijoe.run(
+        "pgrep -f nvmf_tgt && pkill -f nvmf_tgt; true",
+        transport_name=args.transport_name,
+    )
     log.info("spdk target down")
     return 0
 
@@ -61,7 +70,7 @@ def _stop_linux(args, cijoe):
         f"rmdir {nvmet}/subsystems/{subnqn}/namespaces/1; true",
         f"rmdir {nvmet}/subsystems/{subnqn}; true",
     ):
-        cijoe.run(cmd)
+        cijoe.run(cmd, transport_name=args.transport_name)
 
     log.info("linux target down")
     return 0
@@ -70,9 +79,9 @@ def _stop_linux(args, cijoe):
 def main(args, cijoe):
     """Tear down an NVMe TCP target using the selected provider."""
 
-    if args.provider == "spdk":
+    if args.nvme_provider == "spdk":
         return _stop_spdk(args, cijoe)
-    if args.provider == "linux":
+    if args.nvme_provider == "linux":
         return _stop_linux(args, cijoe)
-    log.error("unknown provider: %s", args.provider)
+    log.error("unknown provider: %s", args.nvme_provider)
     return errno.EINVAL
