@@ -223,22 +223,6 @@ _connect_rdma_qpair(struct xnvme_be_nvmf_qpair *qpair)
 		goto dereg_send_mr;
 	}
 
-	rdma_qpair->internal.size = 4096;
-	rdma_qpair->internal.buffer =
-		calloc(1, rdma_qpair->internal.size); // Allocate 4KB for internal buffer
-	if (!rdma_qpair->internal.buffer) {
-		XNVME_DEBUG("FAILED: malloc() for internal buffer, err: %d", errno);
-		goto dereg_recv_mr;
-	}
-
-	rdma_qpair->internal.mr = ibv_reg_mr(
-		rdma_ctrlr->pd, rdma_qpair->internal.buffer, rdma_qpair->internal.size,
-		IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE);
-	if (!rdma_qpair->internal.mr) {
-		XNVME_DEBUG("FAILED: ibv_reg_mr() for internal buffer, err: %d", errno);
-		goto free_internal_buffer;
-	}
-
 	for (int i = 0; i < qpair->attr.qsize; ++i) {
 		struct ibv_sge sge = {
 			.addr = (uintptr_t)rdma_qpair->recv_buffer + i * qpair->attr.completion_size,
@@ -259,22 +243,18 @@ _connect_rdma_qpair(struct xnvme_be_nvmf_qpair *qpair)
 		err = ibv_post_recv(rdma_qpair->cm_id->qp, &recv_wr, NULL);
 		if (err) {
 			XNVME_DEBUG("FAILED: ibv_post_recv(), err: %d", err);
-			goto dereg_internal_buffer_mr;
+			goto destroy_qp;
 		}
 	}
 
 	err = _connect(rdma_qpair->cm_id, rdma_qpair->base.attr.qid, rdma_qpair->base.attr.qsize, rdma_qpair->base.ctrlr->ctrlr_id);
 	if (err) {
 		XNVME_DEBUG("FAILED: _connect(), err: %d", err);
-		goto dereg_internal_buffer_mr;
+		goto destroy_qp;
 	}
 
 	return 0;
 
-dereg_internal_buffer_mr:
-	ibv_dereg_mr(rdma_qpair->internal.mr);
-free_internal_buffer:
-	free(rdma_qpair->internal.buffer);
 destroy_qp:
 	rdma_destroy_qp(rdma_qpair->cm_id);
 dereg_recv_mr:

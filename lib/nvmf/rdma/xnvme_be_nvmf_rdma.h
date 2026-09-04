@@ -50,11 +50,6 @@ struct xnvme_be_nvmf_rdma_qpair {
 	struct ibv_cq *recv_cq;
 	void *send_buffer;
 	void *recv_buffer;
-	struct {
-		void *buffer;
-		size_t size;
-		struct ibv_mr *mr;
-	} internal; /* Internal buffer space for the RDMA QPair */
 	struct ibv_qp_init_attr qp_init_attr;
 };
 

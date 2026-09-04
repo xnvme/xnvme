@@ -19,7 +19,7 @@
 #include <infiniband/verbs.h>
 
 static inline int
-_xnvme_be_nvmf_admin_cmd_idfy(struct xnvme_be_nvmf_ctrlr *ctrlr, struct xnvme_cmd_ctx *ctx, void *dbuf,
+_xnvme_be_nvmf_admin_cmd_idfy(struct xnvme_be_nvmf_ctrlr *ctrlr, struct xnvme_cmd_ctx *ctx, struct xnvme_be_nvmf_req *req, void *dbuf,
 			      size_t dbuf_nbytes)
 {
 	struct xnvme_be_nvmf_qpair *qpair = (void *)ctrlr->admin_qpair;
@@ -48,16 +48,9 @@ _xnvme_be_nvmf_admin_cmd_idfy(struct xnvme_be_nvmf_ctrlr *ctrlr, struct xnvme_cm
 	sgl->keyed.key =
 		data_mr->rkey; // TODO: This needs to be set to the correct value for the controller.
 
-	err = xnvme_be_nvmf_qpair_send_capsule(qpair, cmd, sizeof(struct xnvme_spec_cmd));
+	err = xnvme_be_nvmf_qpair_send_capsule(qpair, req, cmd, sizeof(struct xnvme_spec_cmd));
 	if (err) {
 		XNVME_DEBUG("FAILED: xnvme_be_nvmf_qpair_send_capsule(), err: %d", err);
-		return err;
-	}
-
-	err = xnvme_be_nvmf_qpair_process_completions(qpair, 1);
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_be_nvmf_qpair_process_completions(), err: %d",
-				err);
 		return err;
 	}
 
@@ -104,7 +97,7 @@ _xnvme_be_nvmf_admin_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	case XNVME_SPEC_ADM_OPC_IDFY:
 
 		_hexdump_range(dbuf, dbuf_nbytes);
-		err = _xnvme_be_nvmf_admin_cmd_idfy(ctrlr, ctx, dbuf, dbuf_nbytes);
+		err = _xnvme_be_nvmf_admin_cmd_idfy(ctrlr, ctx, req, dbuf, dbuf_nbytes);
 		if (err) {
 			XNVME_DEBUG("FAILED: _xnvme_be_nvmf_admin_cmd_idfy(), err: %d", err);
 		}

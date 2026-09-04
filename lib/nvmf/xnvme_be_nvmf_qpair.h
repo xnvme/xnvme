@@ -87,14 +87,22 @@ struct xnvme_be_nvmf_qpair {
  *   of completions processed, or a negative errno on error.
  */
 struct xnvme_be_nvmf_qpair_ops {
+	/* control path */
 	int (*connect)(struct xnvme_be_nvmf_qpair *qpair);
 	int (*disconnect)(struct xnvme_be_nvmf_qpair *qpair);
 	int (*destroy)(struct xnvme_be_nvmf_qpair *qpair);
+	int (*reg_mr)(struct xnvme_be_nvmf_qpair *qpair, void *buf, size_t len, void **handle, uint64_t *lkey, uint64_t *rkey);
+	int (*dereg_mr)(struct xnvme_be_nvmf_qpair *qpair, void *handle);
 
-	int (*send_capsule)(struct xnvme_be_nvmf_qpair *qpair, void *buf, size_t len);
-	int (*post_recv)(struct xnvme_be_nvmf_qpair *qpair, void *buf, size_t len);
+	/* data path */
+	int (*cmd_io)(struct xnvme_be_nvmf_qpair *qpair, struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+	       size_t mbuf_nbyte);
+	int (*cmd_iov)(struct xnvme_be_nvmf_qpair *qpair, struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, size_t dvec_nbytes,
+		struct iovec *mvec, size_t mvec_cnt, size_t mvec_nbyte);
 
 	int (*process_completions)(struct xnvme_be_nvmf_qpair *qpair, int max_completions);
+
+	int (*send_capsule)(struct xnvme_be_nvmf_qpair *qpair, struct xnvme_be_nvmf_req* req, void *buf, size_t len);
 };
 
 int
@@ -112,28 +120,20 @@ static inline int
 xnvme_be_nvmf_cmd_iov(struct xnvme_be_nvmf_qpair *qpair, struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, size_t dvec_nbytes,
 		struct iovec *mvec, size_t mvec_cnt, size_t mvec_nbyte)
 {
-	return -ENOSYS;
-	// return qpair->ops->cmd_iov(qpair, ctx, dvec, dvec_cnt, dvec_nbytes, mvec, mvec_cnt, mvec_nbyte);
+	return qpair->ops->cmd_iov(qpair, ctx, dvec, dvec_cnt, dvec_nbytes, mvec, mvec_cnt, mvec_nbyte);
 }
 
 static inline int
 xnvme_be_nvmf_cmd_io(struct xnvme_be_nvmf_qpair *qpair, struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 			    void *mbuf, size_t mbuf_nbytes)
 {
-	return -ENOSYS;
-	// return qpair->ops->cmd_io(qpair, ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
+	return qpair->ops->cmd_io(qpair, ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
 }
 
 static inline int
-xnvme_be_nvmf_qpair_send_capsule(struct xnvme_be_nvmf_qpair *qpair, void *buf, size_t len)
+xnvme_be_nvmf_qpair_send_capsule(struct xnvme_be_nvmf_qpair *qpair, struct xnvme_be_nvmf_req* req, void *buf, size_t len)
 {
-	return qpair->ops->send_capsule(qpair, buf, len);
-}
-
-static inline int
-xnvme_be_nvmf_qpair_post_recv(struct xnvme_be_nvmf_qpair *qpair, void *buf, size_t len)
-{
-	return qpair->ops->post_recv(qpair, buf, len);
+	return qpair->ops->send_capsule(qpair, req, buf, len);
 }
 
 static inline int
