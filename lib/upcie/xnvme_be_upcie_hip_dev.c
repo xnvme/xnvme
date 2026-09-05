@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_upcie_hip.h>
+#include <xnvme_be_upcie_hip_cqmirror.h>
 
 static _Atomic int g_hip_ctrlr_count;
 
@@ -42,6 +43,7 @@ _hip_rte_term(void)
 		return;
 	}
 
+	xnvme_be_upcie_hip_cqmirror_term();
 	dmamem_destroy(&g_upcie_hip_rte.dmem);
 	for (int i = 0; i < XNVME_BE_UPCIE_GPU_CTRLRS_MAX; ++i) {
 		_hip_ctrlr_term(&g_upcie_hip_rte.ctrlrs[i]);

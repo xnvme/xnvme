@@ -81,9 +81,15 @@ the last such queue is terminated. For the same reason a process does not
 hold such a queue and a GPU-issued one at once, since creating and destroying
 the latter synchronise the device: each is refused with `EBUSY` while the other
 is open. The `--p2p-cq-mirror` flag of {ref}`sec-tools-xnvmeperf` and of the
-test tools sets the flag. The **upcie**
-backend rejects it with `ENOTSUP`, having no GPU to put the CQ in; the other
-backends ignore it, as they do the polling flags they do not implement.
+test tools sets the flag.
+
+**upcie-hip** implements the flag the same way, with a wavefront per queue.
+Its kernel is the only device code in the library and is compiled by `hipcc`
+on its own into a code object that the library embeds and loads through the
+module API, so the library remains an ordinary C build against the HIP
+runtime. The **upcie** backend rejects the flag with `ENOTSUP`, having no GPU
+to put the CQ in; the other backends ignore it, as they do the polling flags
+they do not implement.
 
 A caller can hand over device memory it allocated itself with
 `xnvme_mem_map()`, which registers the range through the same registry the
