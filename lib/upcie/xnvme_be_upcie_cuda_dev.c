@@ -14,6 +14,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_upcie_cplane_client.h>
 #include <xnvme_be_upcie_cuda.h>
+#include <xnvme_be_upcie_cuda_cqmirror.h>
 
 static _Atomic int g_cuda_ctrlr_count;
 
@@ -67,6 +68,7 @@ _cuda_rte_term(void)
 		return;
 	}
 
+	xnvme_be_upcie_cuda_cqmirror_term();
 	for (int i = 0; i < XNVME_BE_CREF_MAX_ENTRIES; ++i) {
 		_cuda_ctrlr_term(&g_upcie_cuda_rte.ctrlrs[i]);
 	}
