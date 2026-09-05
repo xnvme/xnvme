@@ -50,8 +50,10 @@ struct xnvme_queue_upcie {
 	struct nvme_qpair qpair;
 	struct xnvme_be_upcie_qpair_offsets offsets;
 	uint64_t served_gone_ns; ///< When the server was found gone; 0 while it answers
+	void *cq_gpu;            ///< XNVME_QUEUE_P2P_CQ_MIRROR: the CQ the controller writes
 	uint32_t pokes_idle;     ///< Pokes since the last completion
-	uint8_t _rvds[140];
+	int cqmirror_slot;       ///< The warp mirroring cq_gpu; see xnvme_be_upcie_cuda_cqmirror.h
+	uint8_t _rvds[128];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_upcie) == XNVME_BE_QUEUE_STATE_NBYTES,
 		    "Incorrect size")
