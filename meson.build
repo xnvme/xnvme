@@ -126,8 +126,8 @@ if conf_data.get('XNVME_BE_UPCIE_CUDA_ENABLED')
   cuda_arch_args = ['-arch=native']
 endif
 
-# uPCIe HIP/ROCm backend: AMD GPU device memory via the HIP host API (gcc, no
-# hipcc), linked against libamdhip64. Mirrors the CUDA backend above.
+# uPCIe HIP/ROCm backend, linked against libamdhip64; hipcc builds only the
+# CQ mirror kernel's object (lib/upcie). Mirrors the CUDA backend above.
 hip_dep = cc.find_library(
   'amdhip64',
   has_headers: ['hip/hip_runtime.h'],

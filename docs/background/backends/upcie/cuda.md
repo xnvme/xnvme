@@ -81,9 +81,10 @@ the last such queue is terminated. For the same reason a process does not
 hold such a queue and a GPU-issued one at once, since creating and destroying
 the latter synchronise the device: each is refused with `EBUSY` while the other
 is open. The `--p2p-cq-mirror` flag of {ref}`sec-tools-xnvmeperf` and of the
-test tools sets the flag. The **upcie**
-backend rejects it with `ENOTSUP`, having no GPU to put the CQ in; the other
-backends ignore it, as they do the polling flags they do not implement.
+test tools sets the flag. {ref}`sec-backends-upcie-hip` implements it as
+well. The **upcie** backend rejects the flag with `ENOTSUP`, having no GPU to
+put the CQ in; the other backends ignore it, as they do the polling flags they
+do not implement.
 
 The host and the kernel share a table with a slot per queue: the addresses
 of the two completion queues, the depth, a generation and an

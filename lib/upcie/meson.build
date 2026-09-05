@@ -22,6 +22,8 @@ xnvmelib_upcie_source = files(
   'xnvme_be_upcie_sync.c',
   'xnvme_be_upcie_vfio.c',
   'xnvme_be_upcie_hip.c',
+  'xnvme_be_upcie_hip_async.c',
+  'xnvme_be_upcie_hip_cqmirror.c',
   'xnvme_be_upcie_hip_dev.c',
   'xnvme_be_upcie_hip_mem.c',
 )
@@ -29,6 +31,22 @@ xnvmelib_source += xnvmelib_upcie_source
 
 if conf_data.get('XNVME_BE_UPCIE_CUDA_ENABLED')
   xnvmelib_source += files('xnvme_be_upcie_cuda_cqmirror.cu')
+endif
+
+# meson has no HIP language, so hipcc builds the kernel's object
+if conf_data.get('XNVME_BE_UPCIE_HIP_ENABLED')
+  hipcc = find_program('hipcc', dirs: ['/opt/rocm/bin'])
+  xnvmelib_source += custom_target(
+    'xnvme_be_upcie_hip_cqmirror.o',
+    input: 'xnvme_be_upcie_hip_cqmirror.hip',
+    output: 'xnvme_be_upcie_hip_cqmirror.o',
+    depend_files: 'xnvme_be_upcie_hip_cqmirror.h',
+    command: [
+      hipcc, '-c', '-fPIC', '--offload-arch=native', '-O2',
+      '-I', meson.current_source_dir(),
+      '@INPUT@', '-o', '@OUTPUT@',
+    ],
+  )
 endif
 
 if get_option('be_upcie') and is_linux
