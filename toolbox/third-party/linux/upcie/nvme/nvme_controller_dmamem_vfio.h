@@ -379,27 +379,28 @@ nvme_admin_sync_dmamem(struct nvme_controller *ctrlr, struct nvme_command *cmd, 
 }
 
 /**
- * Create an I/O queue pair on the dmamem path.
+ * Create an I/O queue pair on the dmamem path, with the CQ where the caller says
  *
- * Allocates SQ/CQ from the caller's dmamem_heap, then programs the
- * controller via admin CREATE_IO_CQ + CREATE_IO_SQ so the controller
- * knows about the new qpair. The resulting nvme_qpair is compatible
- * with the heap-agnostic submit/reap primitives (nvme_qpair_enqueue,
- * nvme_qpair_sqdb_update, nvme_qpair_reap_cpl).
+ * As nvme_controller_create_io_qpair_dmamem(), except that the controller is
+ * told to complete into cq_iova rather than into the dmamem CQ. The dmamem CQ
+ * is allocated all the same and qp->cq points at it; the caller keeps it a
+ * copy of what lands at cq_iova, so the reap primitives read it unchanged.
+ * This is what puts the CQ beside the data in a peer's memory, so that a
+ * completion is not held behind the data it announces. A cq_iova of 0 means
+ * the dmamem CQ itself.
  *
- * The qid is allocated from the controller's bitmap; the caller must
- * hold on to the returned sq_offset/cq_offset until
- * nvme_controller_delete_io_qpair_dmamem is called.
+ * @param cq_iova Where the controller writes completions; 0 for the dmamem CQ
  */
 static inline int
-nvme_controller_create_io_qpair_dmamem(struct nvme_controller *ctrlr, struct nvme_qpair *qp,
-				       uint16_t depth, struct dmamem_heap *heap,
-				       size_t *sq_offset_out, size_t *cq_offset_out,
-				       size_t *prp_offset_out)
+nvme_controller_create_io_qpair_dmamem_cq_iova(struct nvme_controller *ctrlr,
+					       struct nvme_qpair *qp, uint16_t depth,
+					       struct dmamem_heap *heap, size_t *sq_offset_out,
+					       size_t *cq_offset_out, size_t *prp_offset_out,
+					       uint64_t cq_iova)
 {
 	struct nvme_command cmd = {0};
 	struct nvme_completion cpl = {0};
-	uint64_t sq_iova = 0, cq_iova = 0;
+	uint64_t sq_iova = 0, cq_dmamem_iova = 0;
 	uint16_t qid;
 	int err;
 
@@ -416,11 +417,15 @@ nvme_controller_create_io_qpair_dmamem(struct nvme_controller *ctrlr, struct nvm
 	}
 
 	err = nvme_qpair_dmamem_init(qp, qid, depth, ctrlr->func.bars[0].region, heap, sq_offset_out,
-				     cq_offset_out, prp_offset_out, &sq_iova, &cq_iova);
+				     cq_offset_out, prp_offset_out, &sq_iova,
+				     &cq_dmamem_iova);
 	if (err) {
 		UPCIE_DEBUG("FAILED: nvme_qpair_dmamem_init(io); err(%d)", err);
 		nvme_qid_free(ctrlr->qids, qid);
 		return err;
+	}
+	if (!cq_iova) {
+		cq_iova = cq_dmamem_iova;
 	}
 
 	memset(&cmd, 0, sizeof(cmd));
@@ -458,6 +463,29 @@ rollback_qpair:
 	nvme_qpair_dmamem_term(qp, heap, *sq_offset_out, *cq_offset_out, *prp_offset_out);
 	nvme_qid_free(ctrlr->qids, qid);
 	return err;
+}
+
+/**
+ * Create an I/O queue pair on the dmamem path.
+ *
+ * Allocates SQ/CQ from the caller's dmamem_heap, then programs the
+ * controller via admin CREATE_IO_CQ + CREATE_IO_SQ so the controller
+ * knows about the new qpair. The resulting nvme_qpair is compatible
+ * with the heap-agnostic submit/reap primitives (nvme_qpair_enqueue,
+ * nvme_qpair_sqdb_update, nvme_qpair_reap_cpl).
+ *
+ * The qid is allocated from the controller's bitmap; the caller must
+ * hold on to the returned sq_offset/cq_offset until
+ * nvme_controller_delete_io_qpair_dmamem is called.
+ */
+static inline int
+nvme_controller_create_io_qpair_dmamem(struct nvme_controller *ctrlr, struct nvme_qpair *qp,
+				       uint16_t depth, struct dmamem_heap *heap,
+				       size_t *sq_offset_out, size_t *cq_offset_out,
+				       size_t *prp_offset_out)
+{
+	return nvme_controller_create_io_qpair_dmamem_cq_iova(
+		ctrlr, qp, depth, heap, sq_offset_out, cq_offset_out, prp_offset_out, 0);
 }
 
 /**
