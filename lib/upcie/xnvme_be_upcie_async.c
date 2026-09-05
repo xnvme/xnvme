@@ -23,11 +23,17 @@
 #define XNVME_BE_UPCIE_POKES_IDLE_MAX 1024
 
 int
-xnvme_be_upcie_queue_init_unlocked(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
+xnvme_be_upcie_queue_init_unlocked(struct xnvme_queue *queue, int opts)
 {
 	struct xnvme_queue_upcie *upcie_queue = (void *)queue;
 	struct xnvme_be_upcie_state *state = (void *)queue->base.dev->be.state;
 	int err;
+
+	if (opts & XNVME_QUEUE_P2P_CQ_MIRROR) {
+		XNVME_DEBUG(
+			"FAILED: XNVME_QUEUE_P2P_CQ_MIRROR; only upcie-cuda has a GPU to put it in");
+		return -ENOTSUP;
+	}
 
 	if (g_upcie_rte.connection.alive) {
 		/* The controller is another process's, so the queue is asked

@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_upcie_cuda.h>
+#include <xnvme_be_upcie_cuda_cqmirror.h>
 
 static _Atomic int g_cuda_ctrlr_count;
 
@@ -52,6 +53,7 @@ _cuda_rte_term(void)
 		return;
 	}
 
+	xnvme_be_upcie_cuda_cqmirror_term();
 	for (int i = 0; i < XNVME_BE_UPCIE_GPU_CTRLRS_MAX; ++i) {
 		_cuda_ctrlr_term(&g_upcie_cuda_rte.ctrlrs[i]);
 	}
