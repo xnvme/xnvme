@@ -31,7 +31,8 @@ xnvme_be_upcie_queue_init_unlocked(struct xnvme_queue *queue, int opts)
 
 	if (opts & XNVME_QUEUE_P2P_CQ_MIRROR) {
 		XNVME_DEBUG(
-			"FAILED: XNVME_QUEUE_P2P_CQ_MIRROR; only upcie-cuda has a GPU to put it in");
+			"FAILED: XNVME_QUEUE_P2P_CQ_MIRROR; only upcie-cuda and upcie-hip have a GPU "
+			"to put it in");
 		return -ENOTSUP;
 	}
 
