@@ -38,8 +38,13 @@ struct xnvme_queue_upcie {
 	/* A served queue completes nothing once its server has shut down; these
 	 * notice that from the poke path. See xnvme_be_upcie_queue_poke(). */
 	uint64_t served_gone_ns; ///< When the server was found gone; 0 while it answers
-	uint32_t pokes_idle;     ///< Pokes since a completion, gating the liveness check
-	uint8_t _rvds[140];
+
+	/* XNVME_QUEUE_P2P_CQ_MIRROR: the CQ the controller writes, and the warp copying
+	 * it into qpair.cq. See xnvme_be_upcie_cuda_cqmirror.h. */
+	void *cq_gpu;
+	uint32_t pokes_idle; ///< Pokes since a completion, gating the liveness check
+	int cqmirror_slot;
+	uint8_t _rvds[128];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_upcie) == XNVME_BE_QUEUE_STATE_NBYTES,
 		    "Incorrect size")

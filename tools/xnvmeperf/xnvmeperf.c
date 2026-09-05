@@ -233,7 +233,7 @@ setup_job(struct xnvmeperf_job *job, struct xnvme_dev *dev, struct xnvmeperf_arg
 		return -ENOTSUP;
 	}
 
-	err = xnvme_queue_init(job->dev, args->qdepth, 0, &job->queue);
+	err = xnvme_queue_init(job->dev, args->qdepth, args->queue_opts, &job->queue);
 	if (err) {
 		xnvme_cli_perr("Failed: xnvme_queue_init()", err);
 		return err;
@@ -406,6 +406,8 @@ print_run_args(struct xnvmeperf_args *args, const char *pattern)
 	printf("- io pattern: %s\n", pattern);
 	printf("- queues per device: %u\n", args->nqueues);
 	printf("- queue depth: %u\n", args->qdepth);
+	printf("- cq in gpu memory: %s\n",
+	       (args->queue_opts & XNVME_QUEUE_P2P_CQ_MIRROR) ? "yes" : "no");
 	if (args->opts.homi_id) {
 		printf("- served by homi: %u\n", args->opts.homi_id);
 	}
@@ -1104,6 +1106,7 @@ parse_common_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 
 	args->opts = xnvme_opts_default();
 	xnvme_cli_to_opts(cli, &args->opts);
+	args->queue_opts = cli->args.p2p_cq_mirror ? XNVME_QUEUE_P2P_CQ_MIRROR : 0;
 	return err;
 }
 
@@ -1333,6 +1336,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_GPU_ID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HOMI_ID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_REPORT_FREQ, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_P2P_CQ_MIRROR, XNVME_CLI_LFLG},
 		},
 	},
 	{
@@ -1355,6 +1359,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_POLL_SQ, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_GPU_ID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HOMI_ID, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_P2P_CQ_MIRROR, XNVME_CLI_LFLG},
 		},
 	},
 	{
