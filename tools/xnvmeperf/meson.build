@@ -10,7 +10,7 @@ if thread_dep.found()
   if conf_data.get('XNVME_BE_UPCIE_CUDA_ENABLED')
     xnvmeperf_sources += files('xnvmeperf_cuda.cu')
     xnvmeperf_deps += [cuda_dep]
-    xnvmeperf_cuda_args = ['-arch=native']
+    xnvmeperf_cuda_args = cuda_arch_args
   endif
 
   executable(

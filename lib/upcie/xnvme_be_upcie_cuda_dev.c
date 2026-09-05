@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_upcie_cuda.h>
+#include <xnvme_be_upcie_cuda_cqmirror.h>
 
 static _Atomic int g_cuda_ctrlr_count;
 
@@ -20,6 +21,7 @@ _cuda_rte_term(void)
 		return;
 	}
 
+	xnvme_be_upcie_cuda_cqmirror_term();
 	dmamem_destroy(&g_upcie_cuda_rte.dmem);
 	cudamem_heap_term(&g_upcie_cuda_rte.cuda_heap);
 	cuCtxDestroy(g_upcie_cuda_rte.cu_ctx);

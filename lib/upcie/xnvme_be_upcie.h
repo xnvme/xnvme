@@ -34,7 +34,12 @@ struct xnvme_queue_upcie {
 	struct xnvme_queue_base base;
 	struct nvme_qpair qpair;
 	struct xnvme_be_upcie_qpair_offsets offsets;
-	uint8_t _rvds[144];
+
+	/* XNVME_QUEUE_CQ_GPU: the CQ the controller writes, and the warp copying
+	 * it into qpair.cq. See xnvme_be_upcie_cuda_cqmirror.h. */
+	void *cq_gpu;
+	int cqmirror_slot;
+	uint8_t _rvds[128];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_upcie) == XNVME_BE_QUEUE_STATE_NBYTES,
 		    "Incorrect size")

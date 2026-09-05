@@ -115,8 +115,10 @@ cuda_dep = dependency(
   required: get_option('with-cuda'),
 )
 conf_data.set('XNVME_BE_UPCIE_CUDA_ENABLED', get_option('be_upcie') and is_linux and cuda_dep.found() and get_option('with-cuda').allowed())
+cuda_arch_args = []
 if conf_data.get('XNVME_BE_UPCIE_CUDA_ENABLED')
   add_languages('cuda', required: true, native: false)
+  cuda_arch_args = ['-arch=native']
 endif
 
 # uPCIe HIP/ROCm backend: AMD GPU device memory via the HIP host API (gcc, no

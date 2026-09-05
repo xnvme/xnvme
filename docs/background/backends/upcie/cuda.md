@@ -29,11 +29,45 @@ This backend uses a **hybrid memory model**:
 |-----------|----------|--------|
 | Data buffers (`xnvme_buf_alloc`) | GPU device memory (CUDA heap, 1 GiB) | Transferred directly by the NVMe controller via PCIe P2P, bypassing host DRAM |
 | SQ, CQ, PRP lists | Host hugepage memory (host heap, 256 MiB) | The CPU writes and the NVMe controller DMA-reads these structures; host-accessible memory is required |
+| CQ, with `XNVME_QUEUE_CQ_GPU` | GPU device memory, mirrored into the host CQ by a resident kernel | Keeps the controller's completion writes behind its data writes on one path; see {ref}`sec-backends-upcie-cuda-cq-gpu` |
 
 The NVMe **data** path goes GPU ↔ NVMe without touching host DRAM. The
 **control** path (submission queue entries, completion queue entries, PRP lists)
 still flows through host memory. As a result, both the CUDA heap and the host
 hugepage runtime are initialized when the first **upcie-cuda** device is opened.
+
+(sec-backends-upcie-cuda-cq-gpu)=
+
+## Completions in device memory
+
+A controller that writes its payloads into the GPU and its completions into
+host memory has two destinations for its posted writes, and PCIe orders them
+per requester. Each completion write then waits behind the data write ahead of
+it, and on a fast enough device that shows up as a ceiling on small I/O: on a
+drive that reaches 4.0M IOPS at 512 B with the buffers in host memory, the same
+run into device memory stops at 2.8M, from a queue depth of 64 upwards. Larger
+transfers are unaffected, and so are drives that never approach the rate.
+
+Opening a queue with `XNVME_QUEUE_CQ_GPU` places its completion queue in device
+memory as well, beside the data, so the controller has a single destination
+again. The CPU still owns the queue: it builds submissions, rings doorbells and
+polls for completions exactly as before, against the host-memory CQ the queue
+would have had anyway. What changes is who fills that CQ. A kernel resident on
+the GPU for as long as the process has such a queue watches each device-memory
+CQ with one warp, and copies completions into the host CQ as their phase bit
+turns. No command is issued from the GPU and the GPU never touches the
+controller's registers, so this needs none of the setup that
+{ref}`sec-backends-upcie-cuda-gpu` does and works behind a translating IOMMU.
+
+The mirror costs about a microsecond per completion, which is a loss below a
+queue depth of 32 and a gain above 64. On the drive above the ceiling is gone
+at every size measured, 512 B through 4 KiB, with host memory and device memory
+within a percent or two of each other. One kernel serves every queue in the
+process, up to 64 of them, and is launched with the first and retired with the
+last; it needs no stream or context from the caller. The `--cq-gpu` flag of
+{ref}`sec-tools-xnvmeperf` and of the test tools sets the flag. The **upcie**
+backend rejects it with `ENOTSUP`, having no GPU to put the CQ in; the other
+backends ignore it, as they do the polling flags they do not implement.
 
 A caller can hand over device memory it allocated itself with
 `xnvme_mem_map()`, which registers the range through the same registry the
