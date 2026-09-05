@@ -11,11 +11,17 @@
 #include <xnvme_be_upcie.h>
 
 int
-xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
+xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int opts)
 {
 	struct xnvme_queue_upcie *upcie_queue = (void *)queue;
 	struct xnvme_be_upcie_state *state = (void *)queue->base.dev->be.state;
 	int err;
+
+	if (opts & XNVME_QUEUE_CQ_GPU) {
+		XNVME_DEBUG("FAILED: XNVME_QUEUE_CQ_GPU; only upcie-cuda and upcie-hip have a GPU "
+			    "to put it in");
+		return -ENOTSUP;
+	}
 
 	if (g_upcie_rte.mproc) {
 		err = xnvme_be_upcie_mproc_create_io_qpair(state->ctrlr, &upcie_queue->qpair,

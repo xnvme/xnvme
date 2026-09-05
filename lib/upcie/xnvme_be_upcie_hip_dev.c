@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_upcie_hip.h>
+#include <xnvme_be_upcie_hip_cqmirror.h>
 
 static _Atomic int g_hip_ctrlr_count;
 
@@ -20,6 +21,7 @@ _hip_rte_term(void)
 		return;
 	}
 
+	xnvme_be_upcie_hip_cqmirror_term();
 	dmamem_destroy(&g_upcie_hip_rte.dmem);
 	hipmem_heap_term(&g_upcie_hip_rte.hip_heap);
 

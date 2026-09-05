@@ -24,6 +24,13 @@ extern struct xnvme_be_upcie_hip_rte g_upcie_hip_rte;
 
 extern struct xnvme_be_mem g_xnvme_be_upcie_hip_mem;
 extern struct xnvme_be_dev g_xnvme_be_upcie_hip_dev;
+extern struct xnvme_be_async g_xnvme_be_upcie_hip_async;
+
+int
+xnvme_be_upcie_hip_queue_init(struct xnvme_queue *queue, int opts);
+
+int
+xnvme_be_upcie_hip_queue_term(struct xnvme_queue *queue);
 
 #endif /* XNVME_BE_UPCIE_HIP_ENABLED */
 #endif /* __INTERNAL_XNVME_BE_UPCIE_HIP_H */

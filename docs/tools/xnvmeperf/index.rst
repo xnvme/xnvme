@@ -40,6 +40,15 @@ Example — random write across two devices on two CPUs::
    xnvmeperf run --iopattern randwrite --qdepth 64 --iosize 4096 \
        --runtime 10 --cpumask 0x3 /dev/nvme0n1 /dev/nvme1n1
 
+With ``--be upcie-cuda`` or ``--be upcie-hip`` the payloads land in GPU memory
+while the CPU drives the queues. Adding ``--cq-gpu`` places the completion
+queues there as well, so the controller's completion writes no longer queue
+behind its data writes; see :ref:`sec-backends-upcie-cuda-cq-gpu` for when
+that matters. Example::
+
+   xnvmeperf run --iopattern randread --qdepth 128 --iosize 512 \
+       --runtime 10 --cpulist 0 --be upcie-cuda --cq-gpu 0000:01:00.0
+
 ``verify`` — Data integrity check
 ==================================
 

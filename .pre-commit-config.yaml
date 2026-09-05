@@ -29,7 +29,7 @@ repos:
     language: system
     entry: toolbox/pcf_clang_format.py
     args: ["--style-file", "toolbox/clang-format-c"]
-    files: \.cu$
+    files: \.(cu|hip)$
 
   - id: commit-msg-ascii-only
     name: Commit-msg-ASCII-only

@@ -14,6 +14,7 @@ test_init_term(struct xnvme_cli *cli)
 	struct xnvme_dev *dev = cli->args.dev;
 	uint64_t count = cli->args.count;
 	uint64_t qd = cli->args.qdepth;
+	int opts = cli->args.cq_gpu ? XNVME_QUEUE_CQ_GPU : 0;
 	int err = 0;
 
 	struct xnvme_queue *queue[XNVME_TESTS_NQUEUE_MAX] = {0};
@@ -30,6 +31,7 @@ test_init_term(struct xnvme_cli *cli)
 	xnvme_cli_pinf("count: %zu", count);
 	xnvme_cli_pinf("qdepth: %zu", qd);
 	xnvme_cli_pinf("clear: %d", cli->args.clear);
+	xnvme_cli_pinf("cq_gpu: %d", cli->args.cq_gpu);
 
 	if (!cli->args.clear) {
 		// Ask how many queues are supported
@@ -58,7 +60,7 @@ test_init_term(struct xnvme_cli *cli)
 
 	// Initialize and check capacity of asynchronous contexts
 	for (uint64_t qn = 0; qn < count; ++qn) {
-		err = xnvme_queue_init(dev, qd, 0, &queue[qn]);
+		err = xnvme_queue_init(dev, qd, opts, &queue[qn]);
 		if (err) {
 			XNVME_DEBUG("FAILED: init qn: %zu, qd: %zu, err: %d", qn, qd, err);
 
@@ -94,6 +96,106 @@ exit:
 	return err;
 }
 
+static void
+cb_count(struct xnvme_cmd_ctx *ctx, void *cb_arg)
+{
+	uint64_t *completed = cb_arg;
+
+	if (xnvme_cmd_ctx_cpl_status(ctx)) {
+		xnvme_cmd_ctx_pr(ctx, XNVME_PR_DEF);
+	} else {
+		*completed += 1;
+	}
+	xnvme_queue_put_cmd_ctx(ctx->async.queue, ctx);
+}
+
+/**
+ * Create a queue, fill it with reads, drain it and tear it down, 'count' times over
+ *
+ * Every round reuses whatever the backend released in the previous one, so this is
+ * where a queue-scoped resource that is not given back, or a shared one that is torn
+ * down with the first queue rather than the last, shows up.
+ */
+static int
+test_init_io_term(struct xnvme_cli *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
+	uint32_t nsid = xnvme_dev_get_nsid(dev);
+	uint64_t count = cli->args.count;
+	uint64_t qd = cli->args.qdepth;
+	int opts = cli->args.cq_gpu ? XNVME_QUEUE_CQ_GPU : 0;
+	size_t buf_nbytes = qd * geo->lba_nbytes;
+	void *buf;
+	int err = 0;
+
+	if (qd > XNVME_TESTS_QDEPTH_MAX) {
+		XNVME_DEBUG("FAILED: qd(%zu) out-of-bounds for test", qd);
+		return 1;
+	}
+
+	xnvme_cli_pinf("count: %zu", count);
+	xnvme_cli_pinf("qdepth: %zu", qd);
+	xnvme_cli_pinf("cq_gpu: %d", cli->args.cq_gpu);
+
+	buf = xnvme_buf_alloc(dev, buf_nbytes);
+	if (!buf) {
+		err = -errno;
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
+		return err;
+	}
+
+	for (uint64_t round = 0; round < count; ++round) {
+		struct xnvme_queue *queue = NULL;
+		uint64_t completed = 0;
+
+		err = xnvme_queue_init(dev, qd, opts, &queue);
+		if (err) {
+			xnvme_cli_perr("xnvme_queue_init()", err);
+			goto exit;
+		}
+		xnvme_queue_set_cb(queue, cb_count, &completed);
+
+		for (uint64_t i = 0; i < qd; ++i) {
+			struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(queue);
+			uint64_t slba = (round * qd + i) % geo->nsect;
+
+			err = xnvme_nvm_read(ctx, nsid, slba, 0, (char *)buf + i * geo->lba_nbytes,
+					     NULL);
+			if (err) {
+				xnvme_cli_perr("xnvme_nvm_read()", err);
+				xnvme_queue_put_cmd_ctx(queue, ctx);
+				break;
+			}
+		}
+		if (!err) {
+			err = xnvme_queue_drain(queue);
+			if (err < 0) {
+				xnvme_cli_perr("xnvme_queue_drain()", err);
+			} else {
+				err = 0;
+			}
+		}
+		if (!err && completed != qd) {
+			XNVME_DEBUG("FAILED: round: %zu, completed: %zu != qd: %zu", round,
+				    completed, qd);
+			err = -EIO;
+		}
+		if (xnvme_queue_term(queue)) {
+			XNVME_DEBUG("FAILED: xnvme_queue_term, round(%zu)", round);
+			err = err ? err : -EIO;
+		}
+		if (err) {
+			goto exit;
+		}
+	}
+
+exit:
+	xnvme_buf_free(dev, buf);
+
+	return err;
+}
+
 //
 // Command-Line Interface (CLI) definition
 //
@@ -111,6 +213,24 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_COUNT, XNVME_CLI_LREQ},
 			{XNVME_CLI_OPT_QDEPTH, XNVME_CLI_LREQ},
 			{XNVME_CLI_OPT_CLEAR, XNVME_CLI_LFLG},
+			{XNVME_CLI_OPT_CQ_GPU, XNVME_CLI_LFLG},
+
+			XNVME_CLI_ASYNC_OPTS,
+		},
+	},
+	{
+		"init_io_term",
+		"Create a queue, read 'qdepth' LBAs through it and tear it down, 'count' times",
+		"Create a queue, read 'qdepth' LBAs through it and tear it down, 'count' times",
+		test_init_io_term,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_COUNT, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_QDEPTH, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_CQ_GPU, XNVME_CLI_LFLG},
 
 			XNVME_CLI_ASYNC_OPTS,
 		},

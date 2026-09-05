@@ -128,6 +128,7 @@ xnvmelib = library(
   link_args: link_args_hardening + version_script,
   link_depends: mapfile,
   include_directories: [conf_inc, xnvme_inc],
+  cuda_args: cuda_arch_args,
   install_dir: xnvmelib_libdir,
   install: true,
 )
