@@ -18,7 +18,8 @@ xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int opts)
 	int err;
 
 	if (opts & XNVME_QUEUE_CQ_GPU) {
-		XNVME_DEBUG("FAILED: XNVME_QUEUE_CQ_GPU; only upcie-cuda has a GPU to put it in");
+		XNVME_DEBUG("FAILED: XNVME_QUEUE_CQ_GPU; only upcie-cuda and upcie-hip have a GPU "
+			    "to put it in");
 		return -ENOTSUP;
 	}
 

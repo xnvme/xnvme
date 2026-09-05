@@ -65,9 +65,15 @@ at every size measured, 512 B through 4 KiB, with host memory and device memory
 within a percent or two of each other. One kernel serves every queue in the
 process, up to 64 of them, and is launched with the first and retired with the
 last; it needs no stream or context from the caller. The `--cq-gpu` flag of
-{ref}`sec-tools-xnvmeperf` and of the test tools sets the flag. The **upcie**
-backend rejects it with `ENOTSUP`, having no GPU to put the CQ in; the other
-backends ignore it, as they do the polling flags they do not implement.
+{ref}`sec-tools-xnvmeperf` and of the test tools sets the flag.
+
+**upcie-hip** implements the flag the same way, with a wavefront per queue.
+Its kernel is the only device code in the library and is compiled by `hipcc`
+on its own into a code object that the library embeds and loads through the
+module API, so the library remains an ordinary C build against the HIP
+runtime. The **upcie** backend rejects the flag with `ENOTSUP`, having no GPU
+to put the CQ in; the other backends ignore it, as they do the polling flags
+they do not implement.
 
 A caller can hand over device memory it allocated itself with
 `xnvme_mem_map()`, which registers the range through the same registry the
