@@ -8,6 +8,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_upcie_cplane_client.h>
 #include <xnvme_be_upcie_cuda.h>
+#include <xnvme_be_upcie_cuda_cqmirror.h>
 #include <xnvme_lock.h>
 #include <unistd.h>
 
@@ -49,6 +50,13 @@ _xnvme_cuda_queue_create(struct xnvme_dev *dev, uint16_t depth, struct xnvme_cud
 	struct xnvme_be_upcie_state *state = (void *)dev->be.state;
 	struct xnvme_cuda_queue *qpair;
 	int err;
+
+	/* Creating and destroying the queue synchronise the device, which a resident mirror
+	 * kernel never lets idle */
+	if (xnvme_be_upcie_cuda_cqmirror_nactive()) {
+		XNVME_DEBUG("FAILED: a XNVME_QUEUE_P2P_CQ_MIRROR queue is open");
+		return -EBUSY;
+	}
 
 	err = cuMemAlloc((CUdeviceptr *)&qpair, sizeof(struct xnvme_cuda_queue));
 	if (err) {
@@ -172,6 +180,15 @@ _xnvme_cuda_queue_create(struct xnvme_dev *dev, uint16_t depth, struct xnvme_cud
 	return 0;
 }
 
+/* Changed under xnvme_lock() */
+static int g_cuda_gpu_nqueues;
+
+int
+xnvme_be_upcie_cuda_gpu_nqueues(void)
+{
+	return g_cuda_gpu_nqueues;
+}
+
 int
 xnvme_cuda_queue_create(struct xnvme_dev *dev, uint16_t depth, struct xnvme_cuda_queue **queue)
 {
@@ -191,6 +208,9 @@ xnvme_cuda_queue_create(struct xnvme_dev *dev, uint16_t depth, struct xnvme_cuda
 		return -EIO;
 	}
 	err = _xnvme_cuda_queue_create(dev, depth, queue);
+	if (!err) {
+		++g_cuda_gpu_nqueues;
+	}
 	cuCtxPopCurrent(&prev);
 	xnvme_unlock();
 
@@ -232,6 +252,9 @@ xnvme_cuda_queue_destroy(struct xnvme_dev *dev, struct xnvme_cuda_queue *queue)
 		return;
 	}
 	err = _xnvme_cuda_queue_destroy(dev, queue);
+	if (!err) {
+		--g_cuda_gpu_nqueues;
+	}
 
 	if (!err) {
 		cuMemFree((CUdeviceptr)queue);

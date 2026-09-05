@@ -148,12 +148,11 @@ def get_backend_configurations():
             "homi": True,
         },
         {
-            # Only the backend and the allocator are the GPU's; the queues and
-            # commands are uPCIe's, and naming them after the GPU asks for
-            # implementations that do not exist.
+            # The commands are uPCIe's; the allocator and the queue setup are
+            # the GPU's.
             "be": ["upcie-cuda"],
             "mem": ["upcie-cuda"],
-            "async": ["upcie"],
+            "async": ["upcie-cuda"],
             "sync": ["upcie"],
             "admin": ["upcie"],
             "label": ["cuda"],
