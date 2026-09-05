@@ -7,7 +7,7 @@ minimal header-only **user space** NVMe driver. Unlike **SPDK**, **uPCIe** has
 no reactor, threading model, or application framework — just direct PCIe BAR
 access and DMA.
 
-Two backend configs are available, differing in where I/O buffers are
+Three backend configs are available, differing in where I/O buffers are
 allocated:
 
 - **{ref}`sec-backends-upcie-host`** — DMA buffers in host memory, backed by
@@ -15,6 +15,8 @@ allocated:
 - **{ref}`sec-backends-upcie-cuda`** — DMA buffers in GPU device memory,
   enabling PCIe peer-to-peer (P2P) transfers directly between the NVMe device
   and the GPU.
+- **{ref}`sec-backends-upcie-hip`**: the same for AMD GPU device memory,
+  through HIP.
 
 Additionally, the host-memory backend supports a
 **{ref}`sec-backends-upcie-cplane`** mode in which several processes share a
@@ -113,5 +115,6 @@ struct xnvme_dev *cuda_dev = xnvme_dev_open("0000:03:00.0", &cuda_opts);
 
 host
 cuda
+hip
 cplane
 ```
