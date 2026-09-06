@@ -412,7 +412,11 @@ on_flush_completion(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 {
 	struct flush_state *state = cb_arg;
 
-	state->err = xnvme_cmd_ctx_cpl_status(ctx) ? -EIO : 0;
+	if (xnvme_cmd_ctx_cpl_status(ctx)) {
+		xnvme_cli_perr("on_flush_completion()", EIO);
+		xnvme_cmd_ctx_pr(ctx, XNVME_PR_DEF);
+		state->err = -EIO;
+	}
 
 	// Restore the queue-wide callback; xnvme_queue_set_cb() stamps it onto
 	// every pooled context only once, so a per-context override would
