@@ -130,6 +130,9 @@ def qemu_nvme_args(nvme_img_root, features=None, vfu_socket=None):
         """Returns qemu-arguments for a namespace configuration"""
 
         drive_id = f"{controller_id}n{nsid}"
+        # Bypass the host page cache. With the default writeback, a FLUSH has
+        # to sync every write the guest made since the last one, and on a slow
+        # host disk that outlasts the guest's 30 s I/O timeout.
         drive = {
             "id": drive_id,
             "file": str(nvme_img_root / f"{drive_id}.img"),
@@ -137,6 +140,8 @@ def qemu_nvme_args(nvme_img_root, features=None, vfu_socket=None):
             "if": "none",
             "discard": "on",
             "detect-zeroes": "unmap",
+            "cache": "none",
+            "aio": "io_uring",
         }
         # drives.append(drive1)
         controller_namespace = {
