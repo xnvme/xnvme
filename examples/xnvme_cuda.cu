@@ -117,7 +117,18 @@ main(int argc, char **argv)
 	}
 
 	xnvme_cuda_io_kernel<<<1, qdepth>>>(gpu_queue, d_cmds, qdepth, d_errors);
-	cudaDeviceSynchronize();
+	cerr = cudaGetLastError();
+	if (cerr != cudaSuccess) {
+		fprintf(stderr, "kernel launch failed: %s\n", cudaGetErrorString(cerr));
+		err = -EIO;
+		goto exit;
+	}
+	cerr = cudaDeviceSynchronize();
+	if (cerr != cudaSuccess) {
+		fprintf(stderr, "kernel failed: %s\n", cudaGetErrorString(cerr));
+		err = -EIO;
+		goto exit;
+	}
 
 	h_errors = (int *)calloc(qdepth, sizeof(int));
 	if (!h_errors) {
