@@ -113,11 +113,11 @@ struct xnvme_be_upcie_ctrlr {
 /**
  * One controller's iommu-map-pa handle
  *
- * IOMMU_IOAS_MAP_FILE rejects the dma-bufs CUDA and HIP export, so device memory
+ * IOMMU_IOAS_MAP_FILE rejects the dma-bufs CUDA and HIP export, so such memory
  * reaches the controller's domain through the out-of-tree iommu-map-pa module
  * instead. See <upcie/dmamem_iommu_map_pa.h>.
  */
-struct xnvme_be_upcie_gpu_map {
+struct xnvme_be_upcie_iova_range {
 	struct dmamem_iommu_map_pa imp;
 	char bdf[DMAMEM_IOMMU_MAP_PA_BDF_LEN]; ///< Device whose domain is mapped into
 	int alive;                             ///< Whether imp is open
@@ -125,13 +125,13 @@ struct xnvme_be_upcie_gpu_map {
 };
 
 /**
- * One controller's view of the GPU heap
+ * One controller's view of a heap reached through its IOVA range
  *
  * The heap is process-wide; the IOVAs it is reached by are per controller, so
  * each needs a table of its own.
  */
-struct xnvme_be_upcie_gpu_dmem {
-	struct xnvme_be_upcie_gpu_map map; ///< Borrowed by dmem; outlives it
+struct xnvme_be_upcie_iova_range_dmem {
+	struct xnvme_be_upcie_iova_range map; ///< Borrowed by dmem; outlives it
 	struct dmamem dmem;
 };
 
@@ -146,9 +146,9 @@ struct xnvme_be_upcie_gpu_dmem {
  * translates through.
  */
 struct xnvme_be_upcie_state {
-	struct xnvme_be_upcie_ctrlr *ctrlr;  ///< Shared controller (first field for platform)
-	struct dmamem *dmem;                 ///< Where this device's data buffers live
-	struct xnvme_be_upcie_gpu_dmem *gpu; ///< Owned; NULL unless an IOMMU enforces for a GPU
+	struct xnvme_be_upcie_ctrlr *ctrlr; ///< Shared controller (first field for platform)
+	struct dmamem *dmem;                ///< Where this device's data buffers live
+	struct xnvme_be_upcie_iova_range_dmem *range; ///< Owned; NULL where no range is needed
 
 	uint8_t _rvds[104];
 };
@@ -266,9 +266,9 @@ xnvme_be_upcie_type1_attach(struct xnvme_be_upcie_ctrlr *ctrlr, const char *bdf)
 int
 xnvme_be_upcie_va_bits(void);
 
-/** Whether device memory needs mapping for an IOMMU; false under UIO_LUT */
+/** Whether a heap needs an IOVA range per controller; false under UIO_LUT */
 int
-xnvme_be_upcie_gpu_map_required(void);
+xnvme_be_upcie_iova_range_required(void);
 
 /**
  * Open this controller's iommu-map-pa handle on a slice of the IOVA window
@@ -280,19 +280,20 @@ xnvme_be_upcie_gpu_map_required(void);
  * enforces only when it knows the device's reserved regions. Close it before the
  * controller detaches, since that replaces the domain the mappings live in.
  *
- * @param map  Caller-allocated handle to fill
- * @param bdf  The controller whose domain to map into
- * @param span Bytes needed for the heap; the slice is twice this, leaving room
- *             for xnvme_mem_map(). XNVME_UPCIE_GPU_IOVA_SLICE overrides it.
+ * @param range Caller-allocated handle to fill
+ * @param bdf   The controller whose domain to map into
+ * @param span  Bytes needed for the heap; the slice is twice this, leaving room
+ *             for xnvme_mem_map(). XNVME_UPCIE_IOVA_SLICE overrides it.
  *
  * @return 0 on success, whether or not a handle was opened; negative errno on
  *         failure. -ENOSPC when the window is out of slices.
  */
 int
-xnvme_be_upcie_gpu_map_open(struct xnvme_be_upcie_gpu_map *map, const char *bdf, uint64_t span);
+xnvme_be_upcie_iova_range_open(struct xnvme_be_upcie_iova_range *range, const char *bdf,
+			       uint64_t span);
 
 void
-xnvme_be_upcie_gpu_map_close(struct xnvme_be_upcie_gpu_map *map);
+xnvme_be_upcie_iova_range_close(struct xnvme_be_upcie_iova_range *range);
 
 void
 xnvme_be_upcie_dev_close(struct xnvme_dev *dev);

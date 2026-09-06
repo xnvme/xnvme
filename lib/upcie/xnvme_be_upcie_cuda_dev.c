@@ -86,7 +86,7 @@ _cuda_rte_init(size_t heap_size, uint32_t gpu_id)
 
 	/* Physical addresses read the same from every controller, so one table
 	 * serves them all; per-domain IOVAs do not. */
-	if (!xnvme_be_upcie_gpu_map_required()) {
+	if (!xnvme_be_upcie_iova_range_required()) {
 		err = dmamem_from_cuda_registry(&g_upcie_cuda_rte.dmem,
 						&g_upcie_cuda_rte.cuda_heap,
 						xnvme_be_upcie_va_bits());
@@ -117,39 +117,39 @@ static int
 _cuda_dev_dmem_init(struct xnvme_dev *dev)
 {
 	struct xnvme_be_upcie_state *state = (void *)dev->be.state;
-	struct xnvme_be_upcie_gpu_dmem *gpu;
+	struct xnvme_be_upcie_iova_range_dmem *range;
 	int err;
 
-	if (!xnvme_be_upcie_gpu_map_required()) {
+	if (!xnvme_be_upcie_iova_range_required()) {
 		state->dmem = &g_upcie_cuda_rte.dmem;
 		return 0;
 	}
 
-	gpu = calloc(1, sizeof(*gpu));
-	if (!gpu) {
+	range = calloc(1, sizeof(*range));
+	if (!range) {
 		return -ENOMEM;
 	}
 
-	err = xnvme_be_upcie_gpu_map_open(&gpu->map, dev->ident.uri,
-					  _cuda_slice_span(&g_upcie_cuda_rte.cuda_heap));
+	err = xnvme_be_upcie_iova_range_open(&range->map, dev->ident.uri,
+					     _cuda_slice_span(&g_upcie_cuda_rte.cuda_heap));
 	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_be_upcie_gpu_map_open(%s); err(%d)", dev->ident.uri,
+		XNVME_DEBUG("FAILED: xnvme_be_upcie_iova_range_open(%s); err(%d)", dev->ident.uri,
 			    err);
-		free(gpu);
+		free(range);
 		return err;
 	}
 
-	err = dmamem_from_cuda_iommu_map_pa(&gpu->dmem, &g_upcie_cuda_rte.cuda_heap,
-					    xnvme_be_upcie_va_bits(), &gpu->map.imp);
+	err = dmamem_from_cuda_iommu_map_pa(&range->dmem, &g_upcie_cuda_rte.cuda_heap,
+					    xnvme_be_upcie_va_bits(), &range->map.imp);
 	if (err) {
 		XNVME_DEBUG("FAILED: dmamem_from_cuda_iommu_map_pa(); err(%d)", err);
-		xnvme_be_upcie_gpu_map_close(&gpu->map);
-		free(gpu);
+		xnvme_be_upcie_iova_range_close(&range->map);
+		free(range);
 		return err;
 	}
 
-	state->gpu = gpu;
-	state->dmem = &gpu->dmem;
+	state->range = range;
+	state->dmem = &range->dmem;
 
 	return 0;
 }
@@ -161,16 +161,16 @@ _cuda_dev_dmem_term(struct xnvme_dev *dev)
 
 	state->dmem = NULL;
 
-	if (!state->gpu) {
+	if (!state->range) {
 		return;
 	}
 
 	/* Unmap before ctrlr_term detaches and replaces the domain. */
-	dmamem_destroy(&state->gpu->dmem);
-	xnvme_be_upcie_gpu_map_close(&state->gpu->map);
+	dmamem_destroy(&state->range->dmem);
+	xnvme_be_upcie_iova_range_close(&state->range->map);
 
-	free(state->gpu);
-	state->gpu = NULL;
+	free(state->range);
+	state->range = NULL;
 }
 
 /**
