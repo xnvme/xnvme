@@ -70,6 +70,15 @@ process, up to 64 of them, and is launched with the first and retired with the
 last; it needs no stream or context from the caller. The `--p2p-cq-mirror` flag of
 {ref}`sec-tools-xnvmeperf` and of the test tools sets the flag.
 
+A controller served by {ref}`sec-tools-homi` takes the flag as well. The
+client cannot create the queue itself there, so it asks the server for one
+whose completion queue alone lies in the heap the client registered, naming it
+by offset; the submission queue and the PRP scratch stay in the server's heap,
+as for any served queue, and the server creates the pair with the completion
+queue at the client's address. What comes back names a completion queue in the
+server's heap that the controller never writes, and the resident kernel keeps
+that one a copy of the queue it placed, so the submitting side is unchanged.
+
 **upcie-hip** implements the flag the same way, with a wavefront per queue.
 Its kernel is the only device code in the library and is compiled by `hipcc`
 on its own into a code object that the library embeds and loads through the

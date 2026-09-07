@@ -145,6 +145,28 @@ serve_admin_main(void *arg)
 			reply.u.queue.allocation.depth = allocation.depth;
 		} break;
 
+		case NVME_CPLANE_OP_ALLOC_IOQPAIR_CQ_AT: {
+			struct serve_qalloc allocation = {0};
+
+			pthread_mutex_lock(&serve_lock);
+			reply.status = serve_ioqpair_alloc_cq_at(
+				dev, conn, admin->devidx, &conn->msg, &conn->qpairs[conn->nqpairs],
+				&allocation);
+			if (!reply.status) {
+				conn->qpairs[conn->nqpairs++].dev = admin->devidx;
+			}
+			pthread_mutex_unlock(&serve_lock);
+			if (reply.status) {
+				break;
+			}
+
+			reply.u.queue_cq_at.allocation.sq_offset = allocation.sq_offset;
+			reply.u.queue_cq_at.allocation.cq_offset = allocation.cq_offset;
+			reply.u.queue_cq_at.allocation.prp_offset = allocation.prp_offset;
+			reply.u.queue_cq_at.allocation.qid = allocation.qid;
+			reply.u.queue_cq_at.allocation.depth = allocation.depth;
+		} break;
+
 		case NVME_CPLANE_OP_REGISTER_MEM: {
 			struct serve_registration *held;
 
@@ -327,6 +349,7 @@ serve_dispatch(struct serve_conn *conn, struct nvme_cplane_msg *out, int *fds, u
 	case NVME_CPLANE_OP_ADMIN_CMD:
 	case NVME_CPLANE_OP_ALLOC_IOQPAIR:
 	case NVME_CPLANE_OP_ALLOC_IOQPAIR_AT:
+	case NVME_CPLANE_OP_ALLOC_IOQPAIR_CQ_AT:
 	case NVME_CPLANE_OP_FREE_IOQPAIR:
 	case NVME_CPLANE_OP_REGISTER_MEM:
 	case NVME_CPLANE_OP_UNREGISTER_MEM:
@@ -335,13 +358,15 @@ serve_dispatch(struct serve_conn *conn, struct nvme_cplane_msg *out, int *fds, u
 		 * gate an uninitialised connection could take a real queue off
 		 * the controller and never be able to use it. */
 		if (((conn->msg.op == NVME_CPLANE_OP_ALLOC_IOQPAIR) ||
-		     (conn->msg.op == NVME_CPLANE_OP_ALLOC_IOQPAIR_AT)) &&
+		     (conn->msg.op == NVME_CPLANE_OP_ALLOC_IOQPAIR_AT) ||
+		     (conn->msg.op == NVME_CPLANE_OP_ALLOC_IOQPAIR_CQ_AT)) &&
 		    !(conn->inited & (1U << (unsigned)idx))) {
 			reply.status = -ENOTCONN;
 			break;
 		}
 		if (((conn->msg.op == NVME_CPLANE_OP_ALLOC_IOQPAIR) ||
-		     (conn->msg.op == NVME_CPLANE_OP_ALLOC_IOQPAIR_AT)) &&
+		     (conn->msg.op == NVME_CPLANE_OP_ALLOC_IOQPAIR_AT) ||
+		     (conn->msg.op == NVME_CPLANE_OP_ALLOC_IOQPAIR_CQ_AT)) &&
 		    (conn->nqpairs == SERVE_IOQPAIRS_PER_CLIENT)) {
 			reply.status = -ENOSPC;
 			break;

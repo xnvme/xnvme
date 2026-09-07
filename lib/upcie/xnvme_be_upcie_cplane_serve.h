@@ -235,6 +235,11 @@ serve_ioqpair_alloc_at(struct xnvme_dev *dev, struct serve_conn *conn, int devid
 		       uint32_t *qid);
 
 int
+serve_ioqpair_alloc_cq_at(struct xnvme_dev *dev, struct serve_conn *conn, int devidx,
+			  const struct nvme_cplane_msg *msg, struct serve_ioqpair *held,
+			  struct serve_qalloc *out);
+
+int
 serve_ioqpair_free(struct xnvme_dev *dev, struct serve_ioqpair *held);
 
 void
