@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <libxnvme.h>
+#include <xnvme_vcs.h>
 
 #define IOSIZE_DEF 4096
 #define QDEPTH_MAX 256
@@ -327,6 +328,7 @@ static struct xnvme_cli_sub g_subs[] = {
 
 static struct xnvme_cli g_cli = {
 	.title = "xNVMe dd - Copy bytes from input to output",
+	.vcs = XNVME_VCS_TAG,
 	.descr_short = "Copy bytes from input to output",
 	.descr_long = "",
 	.subs = g_subs,
