@@ -2686,8 +2686,8 @@ struct xnvme_spec_fabric_property_get_cmd {
 	uint8_t fctype;
 	uint8_t rsvd[35];
 	struct {
-		uint8_t rsvd4 : 5;
-		uint8_t prs: 3;
+		uint8_t prs: 3;  ///< Property size, bits 0:2
+		uint8_t rsvd4 : 5; ///< Reserved bits, bits 3:7
 	} attrib;
 	uint8_t rsvd2[3];
 	uint32_t ofst;
