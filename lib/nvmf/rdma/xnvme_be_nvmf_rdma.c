@@ -35,7 +35,7 @@ xnvme_be_nvmf_rdma_on_capsule_recv(struct xnvme_be_nvmf_qpair *qpair, void *buf,
 
 	req->cmpl_type = XNVME_BE_NVMF_REQ_CMPL_TYPE_RECV;
 	req->status = 0;
-	cmd_ctx = (struct xnvme_cmd_ctx *)&req->context;
+	cmd_ctx = (struct xnvme_cmd_ctx *)req->context;
 
 	// copy the completion into the command context
 	memcpy(&cmd_ctx->cpl, cpl, sizeof(*cpl));
