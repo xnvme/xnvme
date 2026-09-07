@@ -157,12 +157,29 @@ _connect_rdma_controller(struct xnvme_be_nvmf_ctrlr *ctrlr, const char *uri)
 		break;
 	}
 
-	if (!rdma_ctrlr->selected) {
-		XNVME_DEBUG("FAILED: No suitable address found for transport");
-		return -ENODEV;
+	if (err) {
+		XNVME_DEBUG("FAILED: Could not connect to any suitable RDMA address");
+		goto destroy_qp;
+	}
+
+	XNVME_DEBUG("INFO: Successfully connected admin queue to remote controller");
+
+	err = xnvme_be_nvmf_initialize_remote_ctrlr(ctrlr);
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_be_nvmf_initialize_remote_ctrlr(), err: %d", err);
+		goto destroy_qp;
 	}
 
 	return 0;
+
+destroy_qp:
+	ctrlr->attached = 0;
+	ctrlr->ctrlr_state = XNVME_NVMF_CTRLR_STATE_ERROR;
+	if (ctrlr->admin_qpair) {
+		xnvme_be_nvmf_destroy_qpair(ctrlr->admin_qpair);
+		ctrlr->admin_qpair = NULL;
+	}
+	return -ENODEV;
 }
 
 static int
