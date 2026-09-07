@@ -120,8 +120,8 @@ _handle_send_cmpl(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc)
 	struct xnvme_be_nvmf_wr_id wr_id = {.raw = wc->wr_id};
 	int status = (wc->status == IBV_WC_SUCCESS) ? 0 : -EIO;
 
-	XNVME_DEBUG("INFO: Work completion, status: %s, opcode: %s, byte_len: %u, wr_id index: %u, type: %u", 
-		ibv_wc_status_str(wc->status), _ibv_wc_opcode_str(wc->opcode), wc->byte_len, wr_id.index, wr_id.type);
+	XNVME_DEBUG("INFO: Work completion, status: %s, opcode: %s, wr_id index: %u, type: %u", 
+		ibv_wc_status_str(wc->status), _ibv_wc_opcode_str(wc->opcode), wr_id.index, wr_id.type);
 
 	req = xnvme_be_nvmf_req_get(qpair->req_pool, wr_id.index);
 	if (!req) {
@@ -202,6 +202,8 @@ _handle_recv_cmpl(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc)
 
 	buf = rdma_qpair->recv_buffer + wr_id.index * qpair->attr.completion_size;
 	cpl = (struct xnvme_spec_cpl *)buf;
+
+	_hexdump_range(buf, qpair->attr.completion_size);
 
 	req = xnvme_be_nvmf_req_get(qpair->req_pool, cpl->cid);
 	if (!req) {
@@ -520,7 +522,7 @@ _rdma_register_memory(struct xnvme_be_nvmf_qpair *qpair, void *buf,	size_t len, 
 	struct ibv_mr *mr;
 	int err;
 
-	mr = ibv_reg_mr(rdma_ctrlr->pd, buf, len, IBV_ACCESS_LOCAL_WRITE);
+	mr = ibv_reg_mr(rdma_ctrlr->pd, buf, len, IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE);
 	if (!mr) {
 		XNVME_DEBUG("FAILED: ibv_reg_mr()");
 		return -ENOMEM;
