@@ -16,9 +16,18 @@ _hexdump_range(void *buf, size_t len)
 		printf("%02x ", ((unsigned char *)buf)[i]);
 	}
 	printf("\n");
+}
+
+static inline void 
+_print_nvme_completion(struct xnvme_spec_cpl *cpl)
 {
 	XNVME_DEBUG("INFO: NVMe Completion - cid: %u, sc: %u, sct: %u",
 		    cpl->cid, cpl->status.sc, cpl->status.sct);
+	if (cpl->status.sc || cpl->status.sct) {
+		XNVME_DEBUG("INFO: NVMe Completion indicates an error");
+		_xnvme_print_error_code(cpl);
+	}
+	
 }
 
 #endif // _INTERNAL_XNVME_BE_NVMF_DEBUG_H
