@@ -108,6 +108,7 @@ xnvme_be_nvmf_ctrlr_connect(struct xnvme_be_nvmf_ctrlr *ctrlr, const char *uri)
 	err = ctrlr->ops->connect(ctrlr, uri);
 	if (err) {
 		XNVME_DEBUG("FAILED: xnvme_be_nvmf_ctrlr_connect(), err: %d", err);
+		ctrlr->ctrlr_state = XNVME_NVMF_CTRLR_STATE_ERROR;
 		return err;
 	}
 
