@@ -103,6 +103,8 @@ _xnvme_be_nvmf_req_alloc_helper(struct xnvme_be_nvmf_req_pool *pool, enum xnvme_
         req->async = async;
         req->context = context;
         req->active = 1;
+        req->cmpl_type = XNVME_BE_NVMF_REQ_CMPL_TYPE_NONE;
+        req->status = 0;
         pool->allocated++;
     }
 
