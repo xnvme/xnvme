@@ -7,7 +7,7 @@ xNVMe's SPDK subproject. The PCIe device is bound to the userspace driver
 by `xnvme-driver`, attached to `nvmf_tgt` as `Nvme0` through `rpc.py`, and
 published as a TCP subsystem. The `cijoe/scripts/nvme_target_start.py`,
 `nvme_target_probe.py`, and `nvme_target_stop.py` scripts drive this with
-`--provider spdk`. They are wired into the dedicated
+`--nvme-provider spdk`. They are wired into the dedicated
 `workflows/transports-tcp-spdk.yaml` workflow whose three steps
 (`nvme_target_start`, `nvme_target_probe`, `nvme_target_stop`) can be
 selected individually.
