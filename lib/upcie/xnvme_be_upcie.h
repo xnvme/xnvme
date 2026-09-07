@@ -307,6 +307,11 @@ int
 xnvme_be_upcie_cplane_alloc_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_qpair *qpair,
 				  uint16_t depth);
 
+int
+xnvme_be_upcie_cplane_alloc_qpair_cq_at(struct xnvme_be_upcie_ctrlr *ctrlr,
+					struct nvme_qpair *qpair, uint16_t depth,
+					uint64_t desc_offset, uint64_t cq_offset);
+
 /**
  * The controller's I/O queue for this process, asked for if it has none yet
  *
