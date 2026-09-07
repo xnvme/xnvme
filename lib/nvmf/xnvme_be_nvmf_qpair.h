@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <xnvme_be_nvmf_ctrlr.h>
+#include <xnvme_be_nvmf_req_pool.h>
 
 struct xnvme_be_nvmf_qpair;
 struct xnvme_be_nvmf_qpair_ops;
