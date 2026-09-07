@@ -146,7 +146,7 @@ static inline void
 xnvme_be_nvmf_wait_for_completion(struct xnvme_be_nvmf_qpair *qpair, struct xnvme_be_nvmf_req *req)
 {
 	while (req->cmpl_type != XNVME_BE_NVMF_REQ_CMPL_TYPE_RECV) {
-		if (!req->status)
+		if (req->status)
 			break; 
 
 		if (qpair->state == XNVME_NVMF_QPAIR_STATE_ERROR)
