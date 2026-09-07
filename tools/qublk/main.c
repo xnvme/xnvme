@@ -16,6 +16,7 @@
 
 #include <libxnvme.h>
 #include <xnvme_util.h>
+#include <xnvme_vcs.h>
 
 #include "ctrl.h"
 #include "io.h"
@@ -437,6 +438,7 @@ static struct xnvme_cli_sub g_subs[] = {
 
 static struct xnvme_cli g_cli = {
 	.title = "qublk - ublk server backed by xNVMe",
+	.vcs = XNVME_VCS_TAG,
 	.descr_short = "Expose an xNVMe device as a ublk block-device",
 	.descr_long = "",
 	.subs = g_subs,

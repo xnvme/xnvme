@@ -1,0 +1,10 @@
+// SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+//
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// Generated at build time by meson vcs_tag() for the library and every tool that
+// lists it among its sources; the value is what toolbox/vcs_tag.py reports for
+// the source tree, or "unknown" when it has neither git metadata nor the
+// '.vcs_tag' file a dist archive carries.
+
+#define XNVME_VCS_TAG "@VCS_TAG@"

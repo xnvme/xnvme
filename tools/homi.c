@@ -9,6 +9,7 @@
 
 #include <libxnvme.h>
 #include <xnvme_cuse.h>
+#include <xnvme_vcs.h>
 
 // The backend default (1GiB) is sized for a process doing I/O. HOMI only needs the
 // admin queue and the sync qpair that opening a device creates, so claiming the
@@ -155,6 +156,8 @@ sub_serve(struct xnvme_cli *cli)
 	}
 
 	xnvme_cli_pinf("HOMI started successfully, use Ctrl+C to stop");
+	xnvme_ver_pr(XNVME_PR_DEF);
+	printf("\n");
 	wait_for_stop_signal();
 
 	for (int i = 0; cuse_sessions && i < ndevs; ++i) {
@@ -203,6 +206,7 @@ static struct xnvme_cli_sub g_subs[] = {
 
 static struct xnvme_cli g_cli = {
 	.title = "homi - Host-Orchestrated Multi-path I/O",
+	.vcs = XNVME_VCS_TAG,
 	.descr_short = "Hold NVMe devices open for multi-process sharing",
 	.descr_long = "Hold NVMe devices open for multi-process sharing. Secondary "
 		      "processes attach to the same controllers by passing the same --homi-id.",

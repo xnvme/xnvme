@@ -79,6 +79,8 @@ xnvmelib_rpath = get_option('prefix') + '/' + xnvmelib_libdir
 #
 # The project itself
 #
+python3 = import('python').find_installation()
+
 project_version_major = meson.project_version().split('.')[0]
 project_version_minor = meson.project_version().split('.')[1]
 project_version_patch = meson.project_version().split('.')[2]
@@ -262,6 +264,16 @@ configure_file(
     output:        'xnvme.spec',
     configuration: rpm_conf,
 )
+
+# The revision the sources came from, as 'xnvme_vcs.h'
+vcs_tag_py = meson.current_source_dir() / 'toolbox' / 'vcs_tag.py'
+xnvme_vcs_h = vcs_tag(
+  input: 'include/xnvme_vcs.h.in',
+  output: 'xnvme_vcs.h',
+  command: [python3, vcs_tag_py],
+  fallback: 'unknown',
+)
+meson.add_dist_script(python3, vcs_tag_py, '--dist')
 
 # Provide configuration via header-file 'xnvme_config.h'
 add_project_arguments(['-include', 'xnvme_config.h'], language: 'c')
