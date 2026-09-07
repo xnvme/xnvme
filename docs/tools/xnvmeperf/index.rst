@@ -30,6 +30,15 @@ concurrently.
 .. literalinclude:: xnvmeperf_run_usage.out
    :language: bash
 
+The title of the results block carries the library version and the revision
+the library was built from, so a measurement can be traced back to the exact
+commit. The revision is what ``git describe --tags --dirty=+ --always``
+reported at build time; a trailing ``+`` means the tree had uncommitted
+changes. A source archive made with ``meson dist``, such as the
+``xnvme-0.7.5.tar.gz`` CI builds from, carries the revision it was cut from.
+A copy of the sources with neither git metadata nor that stamp shows
+``unknown`` in its place.
+
 Example — sequential read on a single device::
 
    xnvmeperf run --iopattern read --qdepth 32 --iosize 4096 \

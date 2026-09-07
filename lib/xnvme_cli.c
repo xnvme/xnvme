@@ -1189,6 +1189,8 @@ xnvme_cli_usage(struct xnvme_cli *cli)
 
 	printf("\n");
 	printf("See '%s <command> --help' for the description of [<args>]\n", cli->argv[0]);
+	printf("See '%s --version' for the library version and the revision it was built from\n",
+	       cli->argv[0]);
 
 	if (cli->title) {
 		printf("\n");
@@ -2233,6 +2235,21 @@ xnvme_cli_run(struct xnvme_cli *cli, int argc, char **argv, int opts)
 
 	if ((argc < 2) || (!strcmp(argv[1], "--help")) || (!strcmp(argv[1], "-h"))) {
 		xnvme_cli_usage(cli);
+		return 0;
+	}
+
+	if (cli->vcs && strcmp(cli->vcs, xnvme_ver_vcs())) {
+		fprintf(stderr, "# WARNING: %s was built from '%s' but runs with libxnvme '%s'\n",
+			argv[0], cli->vcs, xnvme_ver_vcs());
+	}
+
+	if ((!strcmp(argv[1], "--version")) || (!strcmp(argv[1], "-V"))) {
+		printf("%s -- ", cli->title ? cli->title : argv[0]);
+		cli->ver_pr(XNVME_PR_DEF);
+		printf("\n");
+		if (cli->vcs) {
+			printf("built: {vcs: '%s'}\n", cli->vcs);
+		}
 		return 0;
 	}
 

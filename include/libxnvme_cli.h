@@ -479,6 +479,15 @@ struct xnvme_cli {
 
 	int (*ver_pr)(int); ///< Setup by library if unset
 
+	/**
+	 * Setup by user: the revision the program was built from, XNVME_VCS_TAG
+	 *
+	 * When set, xnvme_cli_run() compares it against xnvme_ver_vcs() and warns
+	 * when the library loaded at runtime is not the one the program was built
+	 * with. Leave it NULL to skip the check.
+	 */
+	const char *vcs;
+
 	int argc;                   ///< Setup by library
 	char **argv;                ///< Setup by library
 	struct xnvme_cli_args args; ///< Setup by library

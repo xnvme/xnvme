@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <libxnvme.h>
+#include <xnvme_vcs.h>
 
 int
 enumerate_cb(struct xnvme_dev *dev, void *cb_args)
@@ -1047,6 +1048,7 @@ static struct xnvme_cli_sub g_subs[] = {
 
 static struct xnvme_cli g_cli = {
 	.title = "Logical Block Namespace Utility",
+	.vcs = XNVME_VCS_TAG,
 	.descr_short = "Logical Block Namespace Utility",
 	.descr_long = "",
 	.subs = g_subs,

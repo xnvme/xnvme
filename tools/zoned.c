@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <libxnvme.h>
+#include <xnvme_vcs.h>
 
 int
 enumerate_cb(struct xnvme_dev *dev, void *cb_args)
@@ -839,6 +840,7 @@ static struct xnvme_cli_sub g_subs[] = {
 
 static struct xnvme_cli g_cli = {
 	.title = "Zoned Namespace Utility",
+	.vcs = XNVME_VCS_TAG,
 	.descr_short = "Enumerate Zoned Namespaces, manage, inspect properties, state, and send "
 		       "IO to them",
 	.subs = g_subs,

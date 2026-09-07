@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include <libxnvme.h>
+#include <xnvme_vcs.h>
 
 // This heap is the pool every client draws from, so it is sized for the I/O they
 // do rather than for what HOMI does itself. It used to be 16MiB, which was right when
@@ -84,6 +85,8 @@ static void
 _announce_serving(void *XNVME_UNUSED(arg))
 {
 	xnvme_cli_pinf("HOMI started successfully, use Ctrl+C to stop");
+	xnvme_ver_pr(XNVME_PR_DEF);
+	printf("\n");
 }
 
 static int
@@ -317,6 +320,7 @@ static struct xnvme_cli_sub g_subs[] = {
 
 static struct xnvme_cli g_cli = {
 	.title = "homi - Host-Orchestrated Multi-path I/O",
+	.vcs = XNVME_VCS_TAG,
 	.descr_short = "Hold NVMe devices open and serve them to clients",
 	.descr_long = "Hold NVMe devices open and serve them to clients, which may be other "
 		      "processes or accelerators. A client attaches to the same controllers "

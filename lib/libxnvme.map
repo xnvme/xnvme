@@ -438,6 +438,7 @@
 		xnvme_ver_major;
 		xnvme_ver_minor;
 		xnvme_ver_patch;
+		xnvme_ver_vcs;
 		xnvme_ver_fpr;
 		xnvme_ver_pr;
 
