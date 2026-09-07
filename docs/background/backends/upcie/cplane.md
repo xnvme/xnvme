@@ -238,6 +238,16 @@ by the server here and by a process that opened the controller for itself.
 A region registered again, for another controller, is handed the description
 it already has, so the addresses a client resolves through do not change.
 
+A host-driven GPU client can also ask for a queue whose completion queue alone
+lies in a region it registered, which is what `XNVME_QUEUE_P2P_CQ_MIRROR` needs:
+the submission queue and the PRP scratch stay in the server's heap and the
+controller completes beside the client's data. The server resolves the offset
+through the registration as it does for a queue the GPU issues on, and the
+allocation it returns names a completion queue in its heap that the controller
+never writes; the client mirrors into it. Only `upcie-cuda` asks for this so
+far; the HIP completion queue is memory outside the registered heap, and is
+not yet registered on its own.
+
 I/O the GPU issues itself needs no server at all: a controller this process
 opened builds the same queue in the same device memory, and only the
 identifier and the admin queue come from somewhere else. It does ask for more

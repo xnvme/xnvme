@@ -97,6 +97,15 @@ kernel is the only CUDA device code in the library and is compiled by
 `nvcc` in a translation unit of its own; the rest of **upcie-cuda** is C
 against the driver API.
 
+A controller served by {ref}`sec-tools-homi` takes the flag as well. The
+client cannot create the queue itself there, so it asks the server for one
+whose completion queue alone lies in the heap the client registered, naming it
+by offset; the submission queue and the PRP scratch stay in the server's heap,
+as for any served queue, and the server creates the pair with the completion
+queue at the client's address. What comes back names a completion queue in the
+server's heap that the controller never writes, and the resident kernel keeps
+that one a copy of the queue it placed, so the submitting side is unchanged.
+
 A caller can hand over device memory it allocated itself with
 `xnvme_mem_map()`, which registers the range through the same registry the
 heap uses, so such a buffer is usable exactly as one from

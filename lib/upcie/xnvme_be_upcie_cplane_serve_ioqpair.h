@@ -40,6 +40,13 @@ xnvme_be_upcie_cplane_serve_ioqpair_alloc_at(struct xnvme_dev *dev,
 					     struct xnvme_be_upcie_cplane_serve_ioqpair *held,
 					     uint32_t *qid);
 
+int
+xnvme_be_upcie_cplane_serve_ioqpair_alloc_cq_at(struct xnvme_dev *dev,
+						struct xnvme_be_upcie_cplane_serve_conn *conn,
+						int devidx, const struct nvme_cplane_msg *msg,
+						struct xnvme_be_upcie_cplane_serve_ioqpair *held,
+						struct nvme_ioqpair *out);
+
 /**
  * Delete a queue pair from xnvme_be_upcie_cplane_serve_ioqpair_alloc() and free its memory
  *

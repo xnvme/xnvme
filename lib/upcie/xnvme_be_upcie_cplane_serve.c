@@ -130,23 +130,37 @@ xnvme_be_upcie_cplane_serve_admin_main(void *arg)
 			break;
 
 		case NVME_CPLANE_OP_ALLOC_IOQPAIR_AT: {
+			const struct nvme_cplane_alloc_ioqpair_at *at =
+				&conn->msg.u.alloc_ioqpair_at;
+			struct nvme_ioqpair *allocation = &reply.u.alloc_ioqpair_at.allocation;
 			uint32_t qid = 0;
 
+			/* CQ alone: a host completing beside P2P data; SQ alone has no user */
+			if (at->cq_offset == NVME_CPLANE_QUEUE_IN_HEAP) {
+				reply.result = (at->sq_offset == NVME_CPLANE_QUEUE_IN_HEAP)
+						       ? -EINVAL
+						       : -EOPNOTSUPP;
+				break;
+			}
+
 			pthread_mutex_lock(&g_upcie_cplane_serve_lock);
-			reply.result = xnvme_be_upcie_cplane_serve_ioqpair_alloc_at(
-				dev, conn, admin->devidx, &conn->msg, &conn->qpairs[conn->nqpairs],
-				&qid);
+			if (at->sq_offset == NVME_CPLANE_QUEUE_IN_HEAP) {
+				reply.result = xnvme_be_upcie_cplane_serve_ioqpair_alloc_cq_at(
+					dev, conn, admin->devidx, &conn->msg,
+					&conn->qpairs[conn->nqpairs], allocation);
+			} else {
+				reply.result = xnvme_be_upcie_cplane_serve_ioqpair_alloc_at(
+					dev, conn, admin->devidx, &conn->msg,
+					&conn->qpairs[conn->nqpairs], &qid);
+				if (!reply.result) {
+					allocation->qid = qid;
+					allocation->depth = at->depth;
+				}
+			}
 			if (!reply.result) {
 				conn->qpairs[conn->nqpairs++].dev = admin->devidx;
 			}
 			pthread_mutex_unlock(&g_upcie_cplane_serve_lock);
-			if (reply.result) {
-				break;
-			}
-
-			reply.u.alloc_ioqpair_at.allocation.qid = qid;
-			reply.u.alloc_ioqpair_at.allocation.depth =
-				conn->msg.u.alloc_ioqpair_at.depth;
 		} break;
 
 		case NVME_CPLANE_OP_ALLOC_IOQPAIR:

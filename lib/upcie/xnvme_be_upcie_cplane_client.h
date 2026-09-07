@@ -111,10 +111,14 @@ xnvme_be_upcie_cplane_register_client_mem(struct xnvme_be_upcie_ctrlr *ctrlr, in
 int
 xnvme_be_upcie_cplane_unregister_client_mem(struct xnvme_be_upcie_ctrlr *ctrlr, uint64_t offset);
 
+/**
+ * `qpair` is NULL for a queue the GPU drives, which `qid` alone names; either offset may be
+ * NVME_CPLANE_QUEUE_IN_HEAP
+ */
 int
 xnvme_be_upcie_cplane_alloc_qpair_at(struct xnvme_be_upcie_ctrlr *ctrlr, uint64_t desc_offset,
 				     uint64_t sq_offset, uint64_t cq_offset, uint16_t depth,
-				     uint32_t *qid);
+				     struct nvme_qpair *qpair, uint32_t *qid);
 
 int
 xnvme_be_upcie_cplane_free_qpair_at(struct xnvme_be_upcie_ctrlr *ctrlr, uint32_t qid);
@@ -128,10 +132,8 @@ int
 xnvme_be_upcie_cplane_alloc_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_qpair *qpair,
 				  uint16_t depth);
 
-/**
- * Hand back a queue pair from xnvme_be_upcie_cplane_alloc_qpair()
- */
-void
+/** `qpair` is released even when the server did not confirm the delete */
+int
 xnvme_be_upcie_cplane_free_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_qpair *qpair);
 
 /**
