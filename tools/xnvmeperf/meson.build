@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 if thread_dep.found()
-  xnvmeperf_sources = files('xnvmeperf.c')
+  xnvmeperf_sources = [files('xnvmeperf.c'), xnvme_vcs_h]
   xnvmeperf_deps = [thread_dep]
 
   xnvmeperf_cuda_args = []

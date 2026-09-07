@@ -93,6 +93,8 @@ xnvmelib_source = [
   'xnvme_pi.c',
 ]
 
+xnvmelib_source += xnvme_vcs_h
+
 xnvmelib_deps = [
   setupapi_dep,
   corefoundation_dep,

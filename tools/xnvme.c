@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <libxnvme.h>
+#include <xnvme_vcs.h>
 
 #define SET_EVENT_TYPES ((uint8_t[]){0x0, 0x1, 0x2, 0x3, 0x80, 0x81})
 #define SET_EVENT_BUF_SIZE sizeof(SET_EVENT_TYPES)
@@ -1852,6 +1853,7 @@ static struct xnvme_cli_sub g_subs[] = {
 
 static struct xnvme_cli g_cli = {
 	.title = "xNVMe - Cross-platform NVMe utility",
+	.vcs = XNVME_VCS_TAG,
 	.descr_short = "Construct and execute NVMe Commands",
 	.descr_long = "",
 	.subs = g_subs,

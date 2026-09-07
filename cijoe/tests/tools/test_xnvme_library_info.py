@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 
@@ -118,3 +120,39 @@ def test_library_info_has_all_combos(cijoe):
             missing.append(be_name)
 
     assert not missing, f"Backend configs missing from library-info: {missing}"
+
+
+def test_library_info_has_vcs(cijoe):
+    """The version line names the revision the library was built from"""
+
+    err, state = cijoe.run("xnvme library-info")
+    assert not err
+
+    match = re.search(r"vcs: '([^']*)'", state.output())
+    assert match, "no vcs field in the version line"
+    assert match.group(1) not in ["", "unknown"], "build carries no revision"
+
+
+def test_version_flag_matches_library_info(cijoe):
+    """Every tool answers --version with the same line as library-info"""
+
+    err, state = cijoe.run("xnvme library-info")
+    assert not err
+    expected = re.search(r"ver: \{[^}]*\}", state.output()).group(0)
+
+    for tool in [
+        "xnvme",
+        "lblk",
+        "zoned",
+        "kvs",
+        "xdd",
+        "xnvme_file",
+        "homi",
+        "xnvmeperf",
+    ]:
+        err, state = cijoe.run(f"{tool} --version")
+        assert not err
+        assert expected in state.output()
+        assert (
+            "WARNING" not in state.output()
+        ), "tool and library built from different revisions"
