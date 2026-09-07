@@ -58,18 +58,6 @@ _xnvme_be_nvmf_admin_cmd_idfy(struct xnvme_be_nvmf_ctrlr *ctrlr, struct xnvme_cm
 	return 0;
 }
 
-static inline void
-_hexdump_range(void *buf, size_t len)
-{
-	for (size_t i = 0; i < len; ++i) {
-		if (i % 16 == 0) {
-			printf("\n%08zx: ", i);
-		}
-		printf("%02x ", ((unsigned char *)buf)[i]);
-	}
-	printf("\n");
-}
-
 static int
 _xnvme_be_nvmf_admin_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 			       void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
