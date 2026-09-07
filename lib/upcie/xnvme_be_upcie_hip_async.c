@@ -38,9 +38,10 @@ _queue_init(struct xnvme_queue *queue, int opts)
 		return xnvme_be_upcie_queue_init_unlocked(queue, opts);
 	}
 	if (g_upcie_rte.connection.alive) {
-		/* A served queue is created by the server, on memory it chose;
-		 * placing its CQ in this process's device memory is not something
-		 * the protocol can ask for yet. */
+		/* The server can place a CQ in a region this process registered,
+		 * but the HIP CQ is uncached memory of its own rather than a piece
+		 * of the registered heap, and registering it separately is not
+		 * done yet. */
 		XNVME_DEBUG("FAILED: XNVME_QUEUE_P2P_CQ_MIRROR on a served controller");
 		return -ENOTSUP;
 	}

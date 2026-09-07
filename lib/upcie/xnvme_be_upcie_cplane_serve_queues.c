@@ -153,6 +153,92 @@ serve_ioqpair_alloc_at(struct xnvme_dev *dev, struct serve_conn *conn, int devid
 }
 
 /**
+ * Allocate a queue whose completion queue alone is memory the client registered
+ *
+ * The submission queue and the PRP scratch come from the heap as in
+ * serve_ioqpair_alloc(); the completion queue the controller writes is at an
+ * offset the client named into a region it registered, resolved through the
+ * client's own description so it can only ever name memory of its own.
+ * nvme_controller_create_io_qpair_dmamem_cq_iova() allocates the heap
+ * completion queue all the same, and that is what the allocation names: the
+ * client keeps it a copy of the one it placed.
+ *
+ * @param dev A device this process opened
+ * @param conn The connection asking, whose registrations bound what it may name
+ * @param devidx The controller the queue is for, which the registration must match
+ * @param msg The request
+ * @param held Pre-allocated slot in the connection's record
+ * @param out Pre-allocated allocation to fill
+ *
+ * @return 0 on success, negative errno on error
+ */
+int
+serve_ioqpair_alloc_cq_at(struct xnvme_dev *dev, struct serve_conn *conn, int devidx,
+			  const struct nvme_cplane_msg *msg, struct serve_ioqpair *held,
+			  struct serve_qalloc *out)
+{
+	const struct hostmem_shared_desc *desc = NULL;
+	struct xnvme_be_upcie_state *state;
+	struct nvme_controller *ctrl;
+	uint64_t cq_addr = 0;
+	uint16_t depth;
+	int err;
+
+	if (!dev || !conn || !msg || !held || !out) {
+		return -EINVAL;
+	}
+
+	depth = msg->u.queue_cq_at.depth;
+	if (!depth) {
+		return -EINVAL;
+	}
+
+	for (int i = 0; i < conn->nregs; ++i) {
+		if ((conn->regs[i].reg.desc_offset == msg->u.queue_cq_at.desc_offset) &&
+		    (conn->regs[i].dev == devidx)) {
+			desc = (const void *)((char *)g_upcie_rte.mem.dmem.base_va +
+					      conn->regs[i].reg.desc_offset);
+			break;
+		}
+	}
+	if (!desc) {
+		XNVME_DEBUG("FAILED: connection has no registration at offset(%" PRIu64
+			    ") for controller %d",
+			    msg->u.queue_cq_at.desc_offset, devidx);
+		return -ENOENT;
+	}
+
+	err = hostmem_shared_desc_addr(desc, msg->u.queue_cq_at.cq_offset,
+				       (uint64_t)depth * sizeof(struct nvme_completion), &cq_addr);
+	if (err) {
+		XNVME_DEBUG("FAILED: resolving the completion queue; err(%d)", err);
+		return err;
+	}
+
+	state = (void *)dev->be.state;
+	ctrl = state->ctrlr->ctrl;
+
+	memset(held, 0, sizeof(*held));
+	err = nvme_controller_create_io_qpair_dmamem_cq_iova(
+		ctrl, &held->qpair, depth, &g_upcie_rte.mem.heap, &held->sq_offset,
+		&held->cq_offset, &held->prp_offset, cq_addr);
+	if (err) {
+		XNVME_DEBUG("FAILED: nvme_controller_create_io_qpair_dmamem_cq_iova(); err(%d)",
+			    err);
+		return err;
+	}
+
+	memset(out, 0, sizeof(*out));
+	out->sq_offset = held->sq_offset;
+	out->cq_offset = held->cq_offset;
+	out->prp_offset = held->prp_offset;
+	out->qid = held->qpair.qid;
+	out->depth = held->qpair.depth;
+
+	return 0;
+}
+
+/**
  * Delete a queue allocated earlier and release what went with it
  *
  * @param dev A device this process opened
