@@ -617,49 +617,32 @@ xnvme_be_upcie_cplane_free_qpair_at(struct xnvme_be_upcie_ctrlr *ctrlr, uint32_t
 	return xnvme_be_upcie_cplane_ask_ctrlr(ctrlr, &msg, NULL, NULL);
 }
 
-int
-xnvme_be_upcie_cplane_alloc_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_qpair *qpair,
-				  uint16_t depth)
+/* Map the queue pair the server allocated, with doorbells in this process's BAR0 mapping */
+static int
+_qpair_from_allocation(struct xnvme_be_upcie_ctrlr *ctrlr, const struct nvme_ioqpair *allocation,
+		       struct nvme_qpair *qpair)
 {
-	struct nvme_cplane_msg msg = {0};
 	char *base = g_upcie_rte.connection.heap_base;
-	int dstrd, err;
+	int dstrd = nvme_reg_cap_get_dstrd(nvme_mmio_cap_read(ctrlr->bar0));
 	void *rpool = NULL;
 	size_t nbytes;
-
-	if (!qpair || !ctrlr || !ctrlr->bar0) {
-		return -ENOTCONN;
-	}
-
-	msg.op = NVME_CPLANE_OP_ALLOC_IOQPAIR;
-	msg.u.alloc_ioqpair.depth = depth;
-
-	err = xnvme_be_upcie_cplane_ask_ctrlr(ctrlr, &msg, NULL, NULL);
-	if (err) {
-		XNVME_DEBUG("FAILED: asking for a queue; err(%d)", err);
-		return err;
-	}
-
-	dstrd = nvme_reg_cap_get_dstrd(nvme_mmio_cap_read(ctrlr->bar0));
-
-	if (!cplane_in_heap(msg.u.alloc_ioqpair.allocation.sq_offset,
-			    (uint64_t)msg.u.alloc_ioqpair.allocation.depth *
-				    sizeof(struct nvme_command)) ||
-	    !cplane_in_heap(msg.u.alloc_ioqpair.allocation.cq_offset,
-			    (uint64_t)msg.u.alloc_ioqpair.allocation.depth *
-				    sizeof(struct nvme_completion)) ||
-	    !cplane_in_heap(msg.u.alloc_ioqpair.allocation.prp_offset,
-			    (uint64_t)NVME_REQUEST_POOL_LEN * XNVME_BE_UPCIE_PRP_NBYTES)) {
-		XNVME_DEBUG("FAILED: the server placed queue(%u) outside the heap",
-			    msg.u.alloc_ioqpair.allocation.qid);
-		return -EPROTO;
-	}
+	int err;
 
 	memset(qpair, 0, sizeof(*qpair));
-	qpair->qid = msg.u.alloc_ioqpair.allocation.qid;
-	qpair->depth = msg.u.alloc_ioqpair.allocation.depth;
-	qpair->sq = base + msg.u.alloc_ioqpair.allocation.sq_offset;
-	qpair->cq = base + msg.u.alloc_ioqpair.allocation.cq_offset;
+	if (!cplane_in_heap(allocation->sq_offset,
+			    (uint64_t)allocation->depth * sizeof(struct nvme_command)) ||
+	    !cplane_in_heap(allocation->cq_offset,
+			    (uint64_t)allocation->depth * sizeof(struct nvme_completion)) ||
+	    !cplane_in_heap(allocation->prp_offset,
+			    (uint64_t)NVME_REQUEST_POOL_LEN * XNVME_BE_UPCIE_PRP_NBYTES)) {
+		XNVME_DEBUG("FAILED: the server placed queue(%u) outside the heap",
+			    allocation->qid);
+		return -EPROTO;
+	}
+	qpair->qid = allocation->qid;
+	qpair->depth = allocation->depth;
+	qpair->sq = base + allocation->sq_offset;
+	qpair->cq = base + allocation->cq_offset;
 	if ((size_t)XNVME_BE_UPCIE_DOORBELL_OFFSET + ((2 * qpair->qid + 1) << (2 + dstrd)) + 4 >
 	    ctrlr->bar0_nbytes) {
 		XNVME_DEBUG("FAILED: the doorbells of queue(%u) lie outside BAR0", qpair->qid);
@@ -687,15 +670,66 @@ xnvme_be_upcie_cplane_alloc_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvm
 
 	/* Strided as the server allocated; a client's runtime config is never filled in */
 	for (uint16_t i = 0; i < NVME_REQUEST_POOL_LEN; ++i) {
-		void *prp = base + msg.u.alloc_ioqpair.allocation.prp_offset +
-			    ((size_t)i * XNVME_BE_UPCIE_PRP_NBYTES);
+		void *prp =
+			base + allocation->prp_offset + ((size_t)i * XNVME_BE_UPCIE_PRP_NBYTES);
 
 		qpair->rpool->reqs[i].prp = prp;
 		qpair->rpool->reqs[i].prp_addr = dmamem_va_to_iova(&g_upcie_rte.mem.dmem, prp);
 	}
-	qpair->rpool->prps = base + msg.u.alloc_ioqpair.allocation.prp_offset;
+	qpair->rpool->prps = base + allocation->prp_offset;
 
 	return 0;
+}
+
+int
+xnvme_be_upcie_cplane_alloc_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_qpair *qpair,
+				  uint16_t depth)
+{
+	struct nvme_cplane_msg msg = {0};
+	int err;
+
+	if (!qpair || !ctrlr || !ctrlr->bar0) {
+		return -ENOTCONN;
+	}
+
+	msg.op = NVME_CPLANE_OP_ALLOC_IOQPAIR;
+	msg.u.alloc_ioqpair.depth = depth;
+
+	err = xnvme_be_upcie_cplane_ask_ctrlr(ctrlr, &msg, NULL, NULL);
+	if (err) {
+		XNVME_DEBUG("FAILED: asking for a queue; err(%d)", err);
+		return err;
+	}
+
+	return _qpair_from_allocation(ctrlr, &msg.u.alloc_ioqpair.allocation, qpair);
+}
+
+int
+xnvme_be_upcie_cplane_alloc_qpair_cq_at(struct xnvme_be_upcie_ctrlr *ctrlr,
+					struct nvme_qpair *qpair, uint16_t depth,
+					uint64_t desc_offset, uint64_t cq_offset)
+{
+	struct nvme_cplane_msg msg = {0};
+	int err;
+
+	if (!qpair || !ctrlr || !ctrlr->bar0) {
+		return -ENOTCONN;
+	}
+
+	msg.op = NVME_CPLANE_OP_ALLOC_IOQPAIR_AT;
+	msg.u.alloc_ioqpair_at.desc_offset = desc_offset;
+	msg.u.alloc_ioqpair_at.sq_offset = NVME_CPLANE_QUEUE_IN_HEAP;
+	msg.u.alloc_ioqpair_at.cq_offset = cq_offset;
+	msg.u.alloc_ioqpair_at.depth = depth;
+
+	err = xnvme_be_upcie_cplane_ask_ctrlr(ctrlr, &msg, NULL, NULL);
+	if (err) {
+		XNVME_DEBUG("FAILED: asking for a queue with its CQ in registered memory; err(%d)",
+			    err);
+		return err;
+	}
+
+	return _qpair_from_allocation(ctrlr, &msg.u.alloc_ioqpair_at.allocation, qpair);
 }
 
 struct nvme_qpair *

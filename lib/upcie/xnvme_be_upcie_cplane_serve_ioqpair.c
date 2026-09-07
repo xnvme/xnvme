@@ -188,6 +188,80 @@ xnvme_be_upcie_cplane_serve_ioqpair_alloc_at(struct xnvme_dev *dev,
 	return err;
 }
 
+static int
+_xnvme_be_upcie_cplane_serve_ioqpair_alloc_cq_at(struct xnvme_dev *dev,
+						 struct xnvme_be_upcie_cplane_serve_conn *conn,
+						 int devidx, const struct nvme_cplane_msg *msg,
+						 struct xnvme_be_upcie_cplane_serve_ioqpair *held,
+						 struct nvme_ioqpair *out)
+{
+	const struct hostmem_shared_desc *desc;
+	struct xnvme_be_upcie_state *state;
+	struct nvme_controller *ctrl;
+	uint64_t cq_addr = 0;
+	uint16_t depth;
+	int err;
+
+	if (!dev || !conn || !msg || !held || !out) {
+		return -EINVAL;
+	}
+
+	depth = msg->u.alloc_ioqpair_at.depth;
+	if (!depth) {
+		return -EINVAL;
+	}
+
+	desc = _registration_desc(conn, devidx, msg->u.alloc_ioqpair_at.desc_offset);
+	if (!desc) {
+		return -ENOENT;
+	}
+
+	err = hostmem_shared_desc_addr(desc, msg->u.alloc_ioqpair_at.cq_offset,
+				       (uint64_t)depth * sizeof(struct nvme_completion), &cq_addr);
+	if (err) {
+		XNVME_DEBUG("FAILED: resolving the completion queue; err(%d)", err);
+		return err;
+	}
+
+	state = (void *)dev->be.state;
+	ctrl = state->ctrlr->ctrl;
+
+	memset(held, 0, sizeof(*held));
+	err = nvme_controller_create_io_qpair_dmamem_cq_iova(
+		ctrl, &held->qpair, depth, &g_upcie_rte.mem.heap, &held->offsets.sq,
+		&held->offsets.cq, &held->offsets.prp, cq_addr);
+	if (err) {
+		XNVME_DEBUG("FAILED: nvme_controller_create_io_qpair_dmamem_cq_iova(); err(%d)",
+			    err);
+		return err;
+	}
+
+	memset(out, 0, sizeof(*out));
+	out->sq_offset = held->offsets.sq;
+	out->cq_offset = held->offsets.cq;
+	out->prp_offset = held->offsets.prp;
+	out->qid = held->qpair.qid;
+	out->depth = held->qpair.depth;
+
+	return 0;
+}
+
+int
+xnvme_be_upcie_cplane_serve_ioqpair_alloc_cq_at(struct xnvme_dev *dev,
+						struct xnvme_be_upcie_cplane_serve_conn *conn,
+						int devidx, const struct nvme_cplane_msg *msg,
+						struct xnvme_be_upcie_cplane_serve_ioqpair *held,
+						struct nvme_ioqpair *out)
+{
+	int err;
+
+	xnvme_lock();
+	err = _xnvme_be_upcie_cplane_serve_ioqpair_alloc_cq_at(dev, conn, devidx, msg, held, out);
+	xnvme_unlock();
+
+	return err;
+}
+
 int
 xnvme_be_upcie_cplane_serve_ioqpair_free(struct xnvme_dev *dev,
 					 struct xnvme_be_upcie_cplane_serve_ioqpair *held)

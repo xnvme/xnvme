@@ -59,6 +59,23 @@ xnvme_be_upcie_cplane_serve_ioqpair_alloc_at(struct xnvme_dev *dev,
 					     uint32_t *qid);
 
 /**
+ * Like xnvme_be_upcie_cplane_serve_ioqpair_alloc_at() with only the completion queue placed
+ *
+ * The submission queue and the PRP scratch come from the heap, as does a second
+ * completion queue, which `out` names: the client keeps it a copy of the one
+ * it placed.
+ *
+ * @return 0 on success, -ENOENT when `conn` has no such registration, another
+ * negative errno on error
+ */
+int
+xnvme_be_upcie_cplane_serve_ioqpair_alloc_cq_at(struct xnvme_dev *dev,
+						struct xnvme_be_upcie_cplane_serve_conn *conn,
+						int devidx, const struct nvme_cplane_msg *msg,
+						struct xnvme_be_upcie_cplane_serve_ioqpair *held,
+						struct nvme_ioqpair *out);
+
+/**
  * Delete a queue pair from xnvme_be_upcie_cplane_serve_ioqpair_alloc() and free its memory
  *
  * `held` is cleared even when the controller refuses, which leaves its memory

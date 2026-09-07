@@ -405,6 +405,23 @@ xnvme_be_upcie_cplane_alloc_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvm
 				  uint16_t depth);
 
 /**
+ * Like xnvme_be_upcie_cplane_alloc_qpair(), with the completion queue the controller
+ * writes placed in memory this process registered
+ *
+ * `qpair` reads a heap copy the server allocated beside it, which the caller
+ * keeps a mirror of the queue it placed.
+ *
+ * @param desc_offset The registration, as xnvme_be_upcie_cplane_register_client_mem() named it
+ * @param cq_offset Completion queue, from the start of the registered memory
+ *
+ * @return 0 on success, negative errno on error
+ */
+int
+xnvme_be_upcie_cplane_alloc_qpair_cq_at(struct xnvme_be_upcie_ctrlr *ctrlr,
+					struct nvme_qpair *qpair, uint16_t depth,
+					uint64_t desc_offset, uint64_t cq_offset);
+
+/**
  * Hand back a queue pair from xnvme_be_upcie_cplane_alloc_qpair()
  */
 void
