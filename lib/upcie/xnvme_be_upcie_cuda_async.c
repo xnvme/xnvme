@@ -8,6 +8,7 @@
 #include <xnvme_be_nosys.h>
 #include <xnvme_dev.h>
 #include <xnvme_queue.h>
+#include <xnvme_be_upcie_cplane_client.h>
 #include <xnvme_be_upcie_cuda.h>
 #include <xnvme_be_upcie_cuda_cqmirror.h>
 
@@ -32,11 +33,6 @@ xnvme_be_upcie_cuda_queue_init(struct xnvme_queue *queue, int opts)
 		XNVME_DEBUG("FAILED: a GPU-issued queue is open");
 		return -EBUSY;
 	}
-	if (g_upcie_rte.connection.alive) {
-		XNVME_DEBUG("FAILED: XNVME_QUEUE_P2P_CQ_MIRROR on a served controller");
-		return -ENOTSUP;
-	}
-
 	nbytes = ((size_t)depth * sizeof(struct nvme_completion) + 4095) & ~(size_t)4095;
 	upcie_queue->cq_gpu = cudamem_heap_block_alloc_array_aligned(&g_upcie_cuda_rte.cuda_heap,
 								     1, nbytes, 4096);
@@ -59,17 +55,35 @@ xnvme_be_upcie_cuda_queue_init(struct xnvme_queue *queue, int opts)
 		goto free_cq;
 	}
 
-	cq_iova = dmamem_va_to_iova(state->dmem, upcie_queue->cq_gpu);
-	if (!cq_iova) {
+	/* Served: the server resolves the offset itself */
+	cq_iova = g_upcie_rte.connection.alive
+			  ? 0
+			  : dmamem_va_to_iova(state->dmem, upcie_queue->cq_gpu);
+	if (!cq_iova && !g_upcie_rte.connection.alive) {
 		XNVME_DEBUG("FAILED: the CQ has no address the controller can reach");
 		err = -EFAULT;
 		goto free_cq;
 	}
 
-	err = nvme_controller_create_io_qpair_dmamem_cq_iova(
-		state->ctrlr->ctrl, &upcie_queue->qpair, depth, &g_upcie_rte.mem.heap,
-		&upcie_queue->offsets.sq, &upcie_queue->offsets.cq, &upcie_queue->offsets.prp,
-		cq_iova);
+	if (g_upcie_rte.connection.alive) {
+		struct xnvme_be_upcie_cuda_ctrlr *slot = _cuda_ctrlr_slot_of(state->ctrlr);
+
+		if (!slot || !slot->reg_offset) {
+			XNVME_DEBUG("FAILED: device heap not registered with the server");
+			err = -ENOTCONN;
+			goto free_cq;
+		}
+		err = xnvme_be_upcie_cplane_alloc_qpair_at(
+			state->ctrlr, slot->reg_offset, NVME_CPLANE_QUEUE_IN_HEAP,
+			(uint64_t)(uintptr_t)upcie_queue->cq_gpu -
+				g_upcie_cuda_rte.cuda_heap.vaddr,
+			depth, &upcie_queue->qpair, NULL);
+	} else {
+		err = nvme_controller_create_io_qpair_dmamem_cq_iova(
+			state->ctrlr->ctrl, &upcie_queue->qpair, depth, &g_upcie_rte.mem.heap,
+			&upcie_queue->offsets.sq, &upcie_queue->offsets.cq,
+			&upcie_queue->offsets.prp, cq_iova);
+	}
 	if (err) {
 		XNVME_DEBUG("FAILED: creating a queue of %u; err(%d)", depth, err);
 		goto free_cq;
@@ -87,9 +101,14 @@ xnvme_be_upcie_cuda_queue_init(struct xnvme_queue *queue, int opts)
 	return 0;
 
 delete_qpair:
-	nvme_controller_delete_io_qpair_dmamem(state->ctrlr->ctrl, &upcie_queue->qpair,
-					       &g_upcie_rte.mem.heap, upcie_queue->offsets.sq,
-					       upcie_queue->offsets.cq, upcie_queue->offsets.prp);
+	if (g_upcie_rte.connection.alive) {
+		xnvme_be_upcie_cplane_free_qpair(state->ctrlr, &upcie_queue->qpair);
+	} else {
+		nvme_controller_delete_io_qpair_dmamem(
+			state->ctrlr->ctrl, &upcie_queue->qpair, &g_upcie_rte.mem.heap,
+			upcie_queue->offsets.sq, upcie_queue->offsets.cq,
+			upcie_queue->offsets.prp);
+	}
 free_cq:
 	cudamem_heap_block_free(&g_upcie_cuda_rte.cuda_heap, upcie_queue->cq_gpu);
 	upcie_queue->cq_gpu = NULL;
@@ -102,6 +121,9 @@ xnvme_be_upcie_cuda_queue_term(struct xnvme_queue *queue)
 {
 	struct xnvme_queue_upcie *upcie_queue = (void *)queue;
 	struct xnvme_be_upcie_state *state = (void *)queue->base.dev->be.state;
+#ifdef XNVME_DEBUG_ENABLED
+	uint32_t qid = upcie_queue->qpair.qid;
+#endif
 	int err;
 
 	if (!upcie_queue->cq_gpu) {
@@ -111,12 +133,17 @@ xnvme_be_upcie_cuda_queue_term(struct xnvme_queue *queue)
 	/* The warp first, so nothing reads the CQ after the controller lets go; the memory
 	 * last, since a failed delete keeps it */
 	xnvme_be_upcie_cuda_cqmirror_detach(upcie_queue->cqmirror_slot);
-	err = nvme_controller_delete_io_qpair_dmamem(
-		state->ctrlr->ctrl, &upcie_queue->qpair, &g_upcie_rte.mem.heap,
-		upcie_queue->offsets.sq, upcie_queue->offsets.cq, upcie_queue->offsets.prp);
+	if (g_upcie_rte.connection.alive) {
+		err = xnvme_be_upcie_cplane_free_qpair(state->ctrlr, &upcie_queue->qpair);
+	} else {
+		err = nvme_controller_delete_io_qpair_dmamem(
+			state->ctrlr->ctrl, &upcie_queue->qpair, &g_upcie_rte.mem.heap,
+			upcie_queue->offsets.sq, upcie_queue->offsets.cq,
+			upcie_queue->offsets.prp);
+	}
 	if (err) {
-		XNVME_DEBUG("FAILED: deleting qid %u; err(%d), keeping its GPU memory too",
-			    upcie_queue->qpair.qid, err);
+		XNVME_DEBUG("FAILED: deleting qid %u; err(%d), keeping its GPU memory too", qid,
+			    err);
 		return 0;
 	}
 	cudamem_heap_block_free(&g_upcie_cuda_rte.cuda_heap, upcie_queue->cq_gpu);

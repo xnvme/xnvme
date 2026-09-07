@@ -575,35 +575,6 @@ xnvme_be_upcie_cplane_ctrlr_from_base(struct xnvme_be_upcie_ctrlr *ctrlr)
 }
 
 int
-xnvme_be_upcie_cplane_alloc_qpair_at(struct xnvme_be_upcie_ctrlr *ctrlr, uint64_t desc_offset,
-				     uint64_t sq_offset, uint64_t cq_offset, uint16_t depth,
-				     uint32_t *qid)
-{
-	struct nvme_cplane_msg msg = {0};
-	int err;
-
-	if (!ctrlr || !qid) {
-		return -EINVAL;
-	}
-
-	msg.op = NVME_CPLANE_OP_ALLOC_IOQPAIR_AT;
-	msg.u.alloc_ioqpair_at.desc_offset = desc_offset;
-	msg.u.alloc_ioqpair_at.sq_offset = sq_offset;
-	msg.u.alloc_ioqpair_at.cq_offset = cq_offset;
-	msg.u.alloc_ioqpair_at.depth = depth;
-
-	err = xnvme_be_upcie_cplane_ask_ctrlr(ctrlr, &msg, NULL, NULL);
-	if (err) {
-		XNVME_DEBUG("FAILED: asking for a queue on registered memory; err(%d)", err);
-		return err;
-	}
-
-	*qid = msg.u.alloc_ioqpair_at.allocation.qid;
-
-	return 0;
-}
-
-int
 xnvme_be_upcie_cplane_free_qpair_at(struct xnvme_be_upcie_ctrlr *ctrlr, uint32_t qid)
 {
 	struct nvme_cplane_msg msg = {0};
@@ -682,6 +653,24 @@ _qpair_from_allocation(struct xnvme_be_upcie_ctrlr *ctrlr, const struct nvme_ioq
 	return 0;
 }
 
+static int
+_qpair_take(struct xnvme_be_upcie_ctrlr *ctrlr, const struct nvme_ioqpair *allocation,
+	    struct nvme_qpair *qpair)
+{
+	int err;
+
+	err = _qpair_from_allocation(ctrlr, allocation, qpair);
+	if (err) {
+		if (xnvme_be_upcie_cplane_free_qpair_at(ctrlr, allocation->qid)) {
+			XNVME_DEBUG("FAILED: handing back qid(%u)", allocation->qid);
+		}
+		/* A qid left behind would be handed back again when the device closes */
+		memset(qpair, 0, sizeof(*qpair));
+	}
+
+	return err;
+}
+
 int
 xnvme_be_upcie_cplane_alloc_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_qpair *qpair,
 				  uint16_t depth)
@@ -702,18 +691,41 @@ xnvme_be_upcie_cplane_alloc_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvm
 		return err;
 	}
 
-	err = _qpair_from_allocation(ctrlr, &msg.u.alloc_ioqpair.allocation, qpair);
-	if (err) {
-		if (xnvme_be_upcie_cplane_free_qpair_at(ctrlr,
-							msg.u.alloc_ioqpair.allocation.qid)) {
-			XNVME_DEBUG("FAILED: handing back qid(%u)",
-				    msg.u.alloc_ioqpair.allocation.qid);
-		}
-		/* A qid left behind would be handed back again when the device closes */
-		memset(qpair, 0, sizeof(*qpair));
+	return _qpair_take(ctrlr, &msg.u.alloc_ioqpair.allocation, qpair);
+}
+
+int
+xnvme_be_upcie_cplane_alloc_qpair_at(struct xnvme_be_upcie_ctrlr *ctrlr, uint64_t desc_offset,
+				     uint64_t sq_offset, uint64_t cq_offset, uint16_t depth,
+				     struct nvme_qpair *qpair, uint32_t *qid)
+{
+	struct nvme_cplane_msg msg = {0};
+	int err;
+
+	if (!ctrlr || (!qpair && !qid)) {
+		return -EINVAL;
+	}
+	if (qpair && !ctrlr->bar0) {
+		return -ENOTCONN;
 	}
 
-	return err;
+	msg.op = NVME_CPLANE_OP_ALLOC_IOQPAIR_AT;
+	msg.u.alloc_ioqpair_at.desc_offset = desc_offset;
+	msg.u.alloc_ioqpair_at.sq_offset = sq_offset;
+	msg.u.alloc_ioqpair_at.cq_offset = cq_offset;
+	msg.u.alloc_ioqpair_at.depth = depth;
+
+	err = xnvme_be_upcie_cplane_ask_ctrlr(ctrlr, &msg, NULL, NULL);
+	if (err) {
+		XNVME_DEBUG("FAILED: asking for a queue on registered memory; err(%d)", err);
+		return err;
+	}
+
+	if (qid) {
+		*qid = msg.u.alloc_ioqpair_at.allocation.qid;
+	}
+
+	return qpair ? _qpair_take(ctrlr, &msg.u.alloc_ioqpair_at.allocation, qpair) : 0;
 }
 
 struct nvme_qpair *
@@ -776,19 +788,24 @@ xnvme_be_upcie_ctrlr_admin_prp_release(struct xnvme_be_upcie_ctrlr *ctrlr)
 	memset(&ctrlr->admin_prp, 0, sizeof(ctrlr->admin_prp));
 }
 
-void
+int
 xnvme_be_upcie_cplane_free_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_qpair *qpair)
 {
+	int err;
+
 	if (!ctrlr || !qpair || !qpair->qid) {
-		return;
+		return -EINVAL;
 	}
 
-	if (xnvme_be_upcie_cplane_free_qpair_at(ctrlr, qpair->qid)) {
-		XNVME_DEBUG("FAILED: handing back qid(%u)", qpair->qid);
+	err = xnvme_be_upcie_cplane_free_qpair_at(ctrlr, qpair->qid);
+	if (err) {
+		XNVME_DEBUG("FAILED: handing back qid(%u); err(%d)", qpair->qid, err);
 	}
 
 	free(qpair->rpool);
 	memset(qpair, 0, sizeof(*qpair));
+
+	return err;
 }
 
 /* The server never sends unsolicited, so anything readable means it closed */

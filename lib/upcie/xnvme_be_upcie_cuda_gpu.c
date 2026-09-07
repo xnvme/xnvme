@@ -126,7 +126,7 @@ _xnvme_cuda_queue_create(struct xnvme_dev *dev, uint16_t depth, struct xnvme_cud
 					state->ctrlr, slot->reg_offset,
 					(uint64_t)(uintptr_t)_qpair.sq - heap_base,
 					(uint64_t)(uintptr_t)_qpair.cq - heap_base, depth + 1,
-					&qid);
+					NULL, &qid);
 			}
 		} else {
 			err = xnvme_be_upcie_ctrlr_qpair_create_at(
