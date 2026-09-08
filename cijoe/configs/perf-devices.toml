@@ -1,0 +1,26 @@
+# Template: the devices to measure, for the perf-*.yaml workflows, and the
+# shapes to measure them in, since both follow from the host's topology. Host
+# settings that the aux config leaves unset, the IOMMU mode, the clock pin and
+# the hugepage count, belong here too.
+#
+# One [[devices]] table per controller, in the order xnvmeperf should see
+# them. A shape takes the first 'ndevs' of them and pins the I/O threads to
+# 'cpulist', which xnvmeperf slices the devices over in order; with several
+# NUMA nodes list one node's devices first and that node's CPUs first. Pick
+# whole cores per node with
+#
+#   hwloc-calc --intersect pu --physical-output node:0.core:1 node:1.core:1
+#
+# rather than guessing which numbers are hyperthread siblings. 'taskset' pins
+# the launch, and with it the queue memory, to a CPU's node; 'groups' runs
+# several processes at once, see perf_xnvmeperf for the form.
+[[perf.shapes]]
+name = "all-1core"
+ndevs = 2
+cpulist = "1"
+
+[[devices]]
+pci_addr = "0000:01:00.0"
+
+[[devices]]
+pci_addr = "0000:02:00.0"

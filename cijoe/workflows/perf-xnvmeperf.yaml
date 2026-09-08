@@ -1,0 +1,23 @@
+---
+doc: |
+  Measure xnvmeperf on a set of PCIe NVMe devices
+
+  Expects a host that perf-prepare.yaml has prepared. Takes three configs, so
+  each can be swapped on its own:
+
+    cijoe workflows/perf-xnvmeperf.yaml \
+      --config <transport>.toml \
+      --config <devices>.toml \
+      --config configs/perf-aux.toml
+
+  The transport config says which host; the devices config lists the BDFs
+  under [[devices]] and the shapes, device count and CPUs, to run; the aux
+  config holds the I/O shape and the modes. Templates for the first two are
+  configs/perf-transport.toml and configs/perf-devices.toml.
+
+steps:
+- name: sysinfo
+  uses: linux.sysinfo
+
+- name: xnvmeperf
+  uses: perf_xnvmeperf
