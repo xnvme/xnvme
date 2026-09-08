@@ -305,6 +305,35 @@ int
 xnvme_be_upcie_ctrlr_term(void *handle);
 
 /**
+ * Serialise the operations that touch the runtime's process-wide heaps
+ *
+ * The runtime keeps one host heap for the process, and the GPU backends one
+ * device heap each, and hands them to every controller open and close, queue
+ * init and term, and buffer alloc and free. The allocators behind them split
+ * and coalesce a free list with no lock of their own, so two such calls from
+ * different threads, a program closing its devices in parallel or one whose
+ * jobs each open a device, corrupt it. The public entry points of the uPCIe
+ * backends hold this lock for the duration of those calls, and only those:
+ * a queue stays the property of one thread, and the I/O path takes no lock.
+ *
+ * The internals those entry points call must not take it again.
+ */
+void
+xnvme_be_upcie_heap_lock(void);
+void
+xnvme_be_upcie_heap_unlock(void);
+
+/**
+ * The queue init and term without the lock, for a backend that already holds
+ * it and falls back to the host-memory queue: the CUDA and HIP backends do so
+ * when a queue is not asked to complete into device memory.
+ */
+int
+xnvme_be_upcie_queue_init_unlocked(struct xnvme_queue *queue, int opts);
+int
+xnvme_be_upcie_queue_term_unlocked(struct xnvme_queue *queue);
+
+/**
  * The admin, sync and async paths, shared by `upcie`, `upcie-cuda` and `upcie-hip`
  *
  * They translate payloads through the per-device dmamem in

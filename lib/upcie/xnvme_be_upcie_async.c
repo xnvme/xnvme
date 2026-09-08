@@ -11,7 +11,7 @@
 #include <xnvme_be_upcie.h>
 
 int
-xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
+xnvme_be_upcie_queue_init_unlocked(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
 {
 	struct xnvme_queue_upcie *upcie_queue = (void *)queue;
 	struct xnvme_be_upcie_state *state = (void *)queue->base.dev->be.state;
@@ -39,7 +39,18 @@ xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
 }
 
 int
-xnvme_be_upcie_queue_term(struct xnvme_queue *queue)
+xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int opts)
+{
+	int err;
+
+	xnvme_be_upcie_heap_lock();
+	err = xnvme_be_upcie_queue_init_unlocked(queue, opts);
+	xnvme_be_upcie_heap_unlock();
+	return err;
+}
+
+int
+xnvme_be_upcie_queue_term_unlocked(struct xnvme_queue *queue)
 {
 	struct xnvme_queue_upcie *upcie_queue = (void *)queue;
 	struct xnvme_be_upcie_state *state = (void *)queue->base.dev->be.state;
@@ -55,6 +66,17 @@ xnvme_be_upcie_queue_term(struct xnvme_queue *queue)
 	}
 
 	return 0;
+}
+
+int
+xnvme_be_upcie_queue_term(struct xnvme_queue *queue)
+{
+	int err;
+
+	xnvme_be_upcie_heap_lock();
+	err = xnvme_be_upcie_queue_term_unlocked(queue);
+	xnvme_be_upcie_heap_unlock();
+	return err;
 }
 
 int
