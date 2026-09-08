@@ -13,6 +13,19 @@
 #include <xnvme_be_upcie.h>
 
 static _Atomic int g_ctrlr_count;
+static pthread_mutex_t g_heap_lock = PTHREAD_MUTEX_INITIALIZER;
+
+void
+xnvme_be_upcie_heap_lock(void)
+{
+	pthread_mutex_lock(&g_heap_lock);
+}
+
+void
+xnvme_be_upcie_heap_unlock(void)
+{
+	pthread_mutex_unlock(&g_heap_lock);
+}
 
 /**
  * Address-space width the DMA-address table is sized for
@@ -603,8 +616,8 @@ _ctrlr_close(struct xnvme_be_upcie_ctrlr *ctrlr)
  * opens the NVMe controller and creates a sync qpair. The returned handle is
  * stored in cref and written to dev->be.state[0] by the platform.
  */
-void *
-xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
+static void *
+_ctrlr_init(struct xnvme_dev *dev)
 {
 	struct xnvme_be_upcie_ctrlr *ctrlr = NULL;
 	char driver_name[sizeof(dev->ident.kernel_driver)] = {0};
@@ -764,8 +777,19 @@ failed:
 	return NULL;
 }
 
-int
-xnvme_be_upcie_ctrlr_term(void *handle)
+void *
+xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
+{
+	void *ctrlr;
+
+	xnvme_be_upcie_heap_lock();
+	ctrlr = _ctrlr_init(dev);
+	xnvme_be_upcie_heap_unlock();
+	return ctrlr;
+}
+
+static int
+_ctrlr_term(void *handle)
 {
 	struct xnvme_be_upcie_ctrlr *ctrlr = handle;
 	int is_secondary = g_upcie_rte.mproc && !g_upcie_rte.mproc->is_primary;
@@ -799,6 +823,17 @@ xnvme_be_upcie_ctrlr_term(void *handle)
 	}
 
 	return 0;
+}
+
+int
+xnvme_be_upcie_ctrlr_term(void *handle)
+{
+	int err;
+
+	xnvme_be_upcie_heap_lock();
+	err = _ctrlr_term(handle);
+	xnvme_be_upcie_heap_unlock();
+	return err;
 }
 
 void
