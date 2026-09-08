@@ -1,0 +1,45 @@
+# Auxiliary settings for the perf-*.yaml workflows: how the host is prepared
+# (perf-prepare.yaml) and how xnvmeperf is run (perf-xnvmeperf.yaml). Pair it
+# with a transport config and a devices config. What depends on the host, its
+# IOMMU mode, its turbo ceiling and its memory, is left unset here and set
+# per host, next to its devices.
+[perf]
+# Mode 'iommu show' must report, e.g. "pt" or "off-for-uio"; the task stops if
+# the host is in another, since changing it takes a reboot. Unset accepts any.
+# iommu = "pt"
+
+# cpufreq governor for every CPU while measuring; perf_restore puts the
+# previous one back
+governor = "performance"
+
+# Pin every CPU to this clock while measuring, in kHz. Pick a value below the
+# host's turbo ceiling so runs compare across boots and hosts whose ceilings
+# differ; the ceiling is what one busy core settles at. Unset runs at whatever
+# the governor gives.
+# frequency_khz = 3000000
+
+# 2 MiB hugepages to reserve in total, spread over the NUMA nodes by the
+# kernel; size it to the devices and queues the run opens. Unset leaves the
+# reservation as it is.
+# hugepages = 2048
+
+# Driver the devices are bound to for the run: uio_pci_generic when the IOMMU
+# is off or in passthrough, vfio-pci when it translates
+driver = "uio_pci_generic"
+
+# I/O shape; 512 B random reads at depth 128 make the CPU the bottleneck
+iosize = 512
+qdepth = 128
+iopattern = "randread"
+runtime = 10
+repetitions = 3
+
+# Modes to run; see perf_xnvmeperf for what each does. 'served' starts a homi
+# on every configured device for the duration of the mode.
+modes = ["direct"]
+be = "upcie"
+homi_id = 42
+
+# The xnvmeperf to run; a path into a build tree measures that build against
+# the installed one on the same host
+# xnvmeperf = "/path/to/builddir/tools/xnvmeperf/xnvmeperf"
