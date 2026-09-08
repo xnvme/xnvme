@@ -1,0 +1,23 @@
+---
+doc: |
+  Prepare a host for benchmarks
+
+  Verifies the IOMMU mode, pins the cpufreq governor, reserves hugepages and
+  binds the devices to the user-space driver. Takes the same three configs as
+  perf-xnvmeperf.yaml:
+
+    cijoe workflows/perf-prepare.yaml \
+      --config <transport>.toml \
+      --config <devices>.toml \
+      --config configs/perf-aux.toml
+
+  What it changes is recorded on the host, so perf-restore.yaml can undo it
+  from a later invocation. Run it once, measure as often as needed, then
+  restore.
+
+steps:
+- name: sysinfo
+  uses: linux.sysinfo
+
+- name: prepare
+  uses: perf_prepare
