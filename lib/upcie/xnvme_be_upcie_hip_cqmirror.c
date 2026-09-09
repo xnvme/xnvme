@@ -13,7 +13,7 @@
 #include <xnvme_be_upcie_hip_cqmirror.h>
 
 #define CQMIRROR_NREGIONS 4
-#define CQMIRROR_CQ_NBYTES (2UL << 20)
+#define CQMIRROR_CQ_NBYTES XNVME_BE_UPCIE_HIP_CQMIRROR_CQ_NBYTES
 
 extern const unsigned char xnvme_be_upcie_hip_cqmirror_co[];
 extern const size_t xnvme_be_upcie_hip_cqmirror_co_len;
