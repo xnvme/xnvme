@@ -6,6 +6,7 @@
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_UPCIE_CUDA_ENABLED
 #include <errno.h>
+#include <unistd.h>
 #include <xnvme_be_upcie_cuda.h>
 #include <xnvme_dev.h>
 
@@ -74,20 +75,55 @@ xnvme_be_upcie_cuda_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t
  * controller has IOVAs of its own, so register it with each device it is used
  * from. Registering the same range twice is cheap: the chunks it covers are
  * refcounted.
+ *
+ * On a served controller the addresses are the server's to know, so the range
+ * is exported as a dma-buf and registered there, a round trip per call. The
+ * range has to be whole device pages, which is what the export needs.
  */
 int
 xnvme_be_upcie_cuda_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes,
 			    uint64_t *phys)
 {
 	const struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+	int dmabuf_fd = -1;
+	CUresult cr;
+	int err;
 
-	return xnvme_be_upcie_dmamem_map(state->dmem, vaddr, nbytes, phys);
+	if (!g_upcie_rte.connection.alive) {
+		return xnvme_be_upcie_dmamem_map(state->dmem, vaddr, nbytes, phys);
+	}
+
+	cr = cuMemGetHandleForAddressRange(&dmabuf_fd, (CUdeviceptr)vaddr, nbytes,
+					   CU_MEM_RANGE_HANDLE_TYPE_DMA_BUF_FD, 0);
+	if (cr != CUDA_SUCCESS) {
+		XNVME_DEBUG("FAILED: cuMemGetHandleForAddressRange(%p, %zu); cr(%d)", vaddr,
+			    nbytes, cr);
+		return -EIO;
+	}
+
+	err = xnvme_be_upcie_served_mem_map(
+		state->dmem, state->ctrlr, dmabuf_fd, vaddr, nbytes,
+		(uint32_t)g_upcie_cuda_rte.cuda_config.device_pagesize);
+	close(dmabuf_fd);
+	if (err) {
+		return err;
+	}
+
+	if (phys) {
+		*phys = dmamem_va_to_iova(state->dmem, vaddr);
+	}
+
+	return 0;
 }
 
 int
 xnvme_be_upcie_cuda_mem_unmap(const struct xnvme_dev *dev, void *vaddr)
 {
 	const struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+
+	if (g_upcie_rte.connection.alive) {
+		return xnvme_be_upcie_served_mem_unmap(state->dmem, state->ctrlr, vaddr);
+	}
 
 	return xnvme_be_upcie_dmamem_unmap(state->dmem, vaddr);
 }
