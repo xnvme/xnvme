@@ -7,7 +7,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define XNVME_BE_UPCIE_HIP_CQMIRROR_NSLOTS          64
+#define XNVME_BE_UPCIE_HIP_CQMIRROR_NSLOTS 64
+
+/* The dma-buf export wants a range this size and aligned to it, so a CQ is a region of its own */
+#define XNVME_BE_UPCIE_HIP_CQMIRROR_CQ_NBYTES       (2UL << 20)
 #define XNVME_BE_UPCIE_HIP_CQMIRROR_WAVES_PER_BLOCK 8
 
 /**
