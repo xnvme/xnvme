@@ -169,10 +169,11 @@ _hip_rte_init(size_t heap_size, uint32_t gpu_id, struct xnvme_be_upcie_ctrlr *ct
 			(uint32_t)g_upcie_hip_rte.hip_config.device_pagesize, &desc,
 			&slot->reg_offset);
 		if (!err) {
-			err = dmamem_from_shared(&g_upcie_hip_rte.dmem,
-						 (void *)(uintptr_t)g_upcie_hip_rte.hip_heap.vaddr,
-						 desc, xnvme_be_upcie_va_bits(),
-						 DMAMEM_BACKING_HIPMEM);
+			err = xnvme_be_upcie_dmem_from_desc(
+				&g_upcie_hip_rte.dmem,
+				(void *)(uintptr_t)g_upcie_hip_rte.hip_heap.vaddr, desc,
+				DMAMEM_BACKING_HIPMEM,
+				(uint32_t)g_upcie_hip_rte.hip_config.device_pagesize);
 		}
 		if (err) {
 			XNVME_DEBUG("FAILED: registering the HIP heap with the server; err(%d)",

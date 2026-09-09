@@ -6,6 +6,7 @@
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_UPCIE_HIP_ENABLED
 #include <errno.h>
+#include <unistd.h>
 #include <xnvme_be_upcie_hip.h>
 #include <xnvme_dev.h>
 
@@ -74,19 +75,53 @@ xnvme_be_upcie_hip_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t 
  * controller has IOVAs of its own, so register it with each device it is used
  * from. Registering the same range twice is cheap: the chunks it covers are
  * refcounted.
+ *
+ * On a served controller the addresses are the server's to know, so the range
+ * is exported as a dma-buf and registered there, a round trip per call. The
+ * range has to be whole device pages, which is what the export needs.
  */
 int
 xnvme_be_upcie_hip_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, uint64_t *phys)
 {
 	const struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+	int dmabuf_fd = -1;
+	hipError_t herr;
+	int err;
 
-	return xnvme_be_upcie_dmamem_map(state->dmem, vaddr, nbytes, phys);
+	if (!g_upcie_rte.connection.alive) {
+		return xnvme_be_upcie_dmamem_map(state->dmem, vaddr, nbytes, phys);
+	}
+
+	herr = hipMemGetHandleForAddressRange(&dmabuf_fd, (hipDeviceptr_t)vaddr, nbytes,
+					      hipMemRangeHandleTypeDmaBufFd, 0);
+	if (herr != hipSuccess) {
+		XNVME_DEBUG("FAILED: hipMemGetHandleForAddressRange(%p, %zu); herr(%d)", vaddr,
+			    nbytes, herr);
+		return -EIO;
+	}
+
+	err = xnvme_be_upcie_served_mem_map(state->dmem, state->ctrlr, dmabuf_fd, vaddr, nbytes,
+					    (uint32_t)g_upcie_hip_rte.hip_config.device_pagesize);
+	close(dmabuf_fd);
+	if (err) {
+		return err;
+	}
+
+	if (phys) {
+		*phys = dmamem_va_to_iova(state->dmem, vaddr);
+	}
+
+	return 0;
 }
 
 int
 xnvme_be_upcie_hip_mem_unmap(const struct xnvme_dev *dev, void *vaddr)
 {
 	const struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+
+	if (g_upcie_rte.connection.alive) {
+		return xnvme_be_upcie_served_mem_unmap(state->dmem, state->ctrlr, vaddr);
+	}
 
 	return xnvme_be_upcie_dmamem_unmap(state->dmem, vaddr);
 }

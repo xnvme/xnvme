@@ -316,10 +316,11 @@ _cuda_rte_init(size_t heap_size, uint32_t gpu_id, struct xnvme_be_upcie_ctrlr *c
 			if (_cuda_doorbells_init(slot, ctrlr->bar0, ctrlr->bar0_nbytes, bdf)) {
 				XNVME_DEBUG("FAILED: no doorbell mapping the GPU can reach");
 			}
-			err = dmamem_from_shared(
+			err = xnvme_be_upcie_dmem_from_desc(
 				&g_upcie_cuda_rte.dmem,
 				(void *)(uintptr_t)g_upcie_cuda_rte.cuda_heap.vaddr, desc,
-				xnvme_be_upcie_va_bits(), DMAMEM_BACKING_CUDAMEM);
+				DMAMEM_BACKING_CUDAMEM,
+				(uint32_t)g_upcie_cuda_rte.cuda_config.device_pagesize);
 		}
 		if (err) {
 			XNVME_DEBUG("FAILED: registering the CUDA heap with the server; err(%d)",

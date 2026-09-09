@@ -178,7 +178,7 @@ xnvme_be_upcie_cplane_unexport(struct xnvme_be_upcie_cplane_export *exported);
  * the client dying.
  */
 /* Distinct client regions one server may have installed at once. */
-#define XNVME_BE_UPCIE_CPLANE_REGIONS_MAX 32
+#define XNVME_BE_UPCIE_CPLANE_REGIONS_MAX 256
 
 struct xnvme_be_upcie_cplane_registration {
 	uint64_t desc_offset; ///< The description, as a heap offset
@@ -528,6 +528,59 @@ xnvme_be_upcie_dmamem_map(struct dmamem *dmem, void *vaddr, size_t nbytes, uint6
 
 int
 xnvme_be_upcie_dmamem_unmap(struct dmamem *dmem, void *vaddr);
+
+/**
+ * Build a dmamem over a region a server described, translating through a table
+ *
+ * Whatever the description's kind, the dmamem resolves through a registry, so
+ * regions a client registers later can be adopted into the same table; a
+ * dmamem that resolved arithmetically from one base could hold no second
+ * region. The arithmetic kind is unrolled into one entry per granule.
+ *
+ * @param dmem The dmamem to fill; owned by the caller, torn down with
+ *             dmamem_destroy() like any other
+ * @param base Where the region is mapped in this process
+ * @param desc The server's description of it
+ * @param backing What the memory is, for the callers that ask
+ * @param page_size The granule this process's runtime hands out, a power of two
+ *
+ * @return 0 on success, negative errno on error
+ */
+int
+xnvme_be_upcie_dmem_from_desc(struct dmamem *dmem, void *base,
+			      const struct hostmem_shared_desc *desc, enum dmamem_backing backing,
+			      uint32_t page_size);
+
+/**
+ * Register memory of this process's own with the server holding a controller
+ *
+ * The region goes to the server as a dma-buf; what comes back is adopted into
+ * the dmamem's table, so the memory is usable on the controller as memory from
+ * its heap is. One round trip per call and nothing on the I/O path, so a
+ * caller registers before it submits and not per command.
+ *
+ * @param dmem A dmamem built by xnvme_be_upcie_dmem_from_desc()
+ * @param ctrlr The served controller the memory is registered for
+ * @param dmabuf_fd The region as a dma-buf; closed by the caller afterwards
+ * @param vaddr Start of the region, aligned to page_size
+ * @param nbytes Length of it, a multiple of page_size
+ * @param page_size The granule the region is described in
+ *
+ * @return 0 on success, negative errno on error
+ */
+int
+xnvme_be_upcie_served_mem_map(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr *ctrlr,
+			      int dmabuf_fd, void *vaddr, size_t nbytes, uint32_t page_size);
+
+/**
+ * Undo xnvme_be_upcie_served_mem_map() for the region starting at vaddr
+ *
+ * @return 0 on success, -EINVAL when nothing was registered there for that
+ *         controller, negative errno when the server refused
+ */
+int
+xnvme_be_upcie_served_mem_unmap(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr *ctrlr,
+				void *vaddr);
 
 int
 xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int opts);
