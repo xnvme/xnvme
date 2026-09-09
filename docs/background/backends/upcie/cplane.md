@@ -245,9 +245,10 @@ the submission queue and the PRP scratch stay in the server's heap and the
 controller completes beside the client's data. The server resolves the offset
 through the registration as it does for a queue the GPU issues on, and the
 allocation it returns names a completion queue in its heap that the controller
-never writes; the client mirrors into it. Only `upcie-cuda` asks for this so
-far; the HIP completion queue is memory outside the registered heap, and is
-not yet registered on its own.
+never writes; the client mirrors into it. `upcie-cuda` names an offset into the heap it
+registered at open; `upcie-hip` keeps its completion queue in uncached memory
+of its own outside that heap, so it registers that region by itself, whole,
+and names offset zero in it.
 
 I/O the GPU issues itself needs no server at all: a controller this process
 opened builds the same queue in the same device memory, and only the
