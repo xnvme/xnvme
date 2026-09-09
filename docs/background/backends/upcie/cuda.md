@@ -91,7 +91,12 @@ A caller can hand over device memory it allocated itself with
 `xnvme_mem_map()`, which registers the range through the same registry the
 heap uses, so such a buffer is usable exactly as one from
 `xnvme_buf_alloc()`. Registering a range twice is cheap, since what it
-covers is refcounted.
+covers is refcounted. On a controller a server holds, the range is exported as
+a dma-buf and registered with the server instead, and the description that
+comes back is adopted into the same table; that is a socket round trip per
+call, so a client registers its buffers before it submits, not per command.
+Either way the range is whole device pages, 64 KiB on CUDA, since that is the
+granule the export works in.
 
 (sec-backends-upcie-cuda-kernel)=
 

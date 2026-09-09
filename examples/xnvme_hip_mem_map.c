@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <hip/hip_runtime_api.h>
 #include <libxnvme.h>
 
@@ -33,11 +34,16 @@ main(int argc, char **argv)
 	int err = 0;
 
 	if (argc < 2) {
-		fprintf(stderr, "Usage: %s <pci-id>\n", argv[0]);
+		fprintf(stderr, "Usage: %s <pci-id> [homi-id]\n", argv[0]);
 		return -EINVAL;
 	}
 
 	opts.be = "upcie-hip";
+	/* With a server id the controller is somebody else's, and the buffer
+	 * mapped below is registered with them rather than resolved here. */
+	if (argc > 2) {
+		opts.homi_id = (uint32_t)strtoul(argv[2], NULL, 0);
+	}
 	dev = xnvme_dev_open(argv[1], &opts);
 	if (!dev) {
 		err = -errno;
