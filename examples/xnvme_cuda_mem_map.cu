@@ -52,11 +52,14 @@ main(int argc, char **argv)
 
 	if (argc < 2) {
 		err = -EINVAL;
-		xnvme_cli_perr("Usage: %s <pci-id>", err);
+		xnvme_cli_perr("Usage: %s <pci-id> [homi-id]", err);
 		return err;
 	}
 
 	opts.be = "upcie-cuda";
+	if (argc > 2) {
+		opts.homi_id = (uint32_t)strtoul(argv[2], NULL, 0);
+	}
 	dev = xnvme_dev_open(argv[1], &opts);
 	if (!dev) {
 		err = -errno;

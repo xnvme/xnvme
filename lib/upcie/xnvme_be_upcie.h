@@ -254,6 +254,21 @@ xnvme_be_upcie_dmamem_map(struct dmamem *dmem, void *vaddr, size_t nbytes, uint6
 int
 xnvme_be_upcie_dmamem_unmap(struct dmamem *dmem, void *vaddr);
 
+/** Build a dmamem over a region the server described; the caller runs dmamem_destroy() on it */
+int
+xnvme_be_upcie_dmem_from_desc(struct dmamem *dmem, void *base,
+			      const struct hostmem_shared_desc *desc, enum dmamem_backing backing,
+			      uint32_t page_size);
+
+/** Register `dmabuf_fd` with the server of `ctrlr`; the caller closes the descriptor afterwards */
+int
+xnvme_be_upcie_served_mem_map(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr *ctrlr,
+			      int dmabuf_fd, void *vaddr, size_t nbytes, uint32_t page_size);
+
+int
+xnvme_be_upcie_served_mem_unmap(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr *ctrlr,
+				void *vaddr);
+
 int
 xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int opts);
 int

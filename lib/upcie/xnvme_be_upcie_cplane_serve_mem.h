@@ -11,7 +11,7 @@
 #ifdef XNVME_BE_UPCIE_ENABLED
 #include <xnvme_be_upcie.h>
 
-#define XNVME_BE_UPCIE_CPLANE_REGIONS_MAX 32
+#define XNVME_BE_UPCIE_CPLANE_REGIONS_MAX 256
 
 /**
  * Allocate `nbytes` from the heap on a client's behalf, reporting its heap offset
