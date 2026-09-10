@@ -58,6 +58,11 @@ that matters. Example::
    xnvmeperf run --iopattern randread --qdepth 128 --iosize 512 \
        --runtime 10 --cpulist 0 --be upcie-cuda --p2p-cq-mirror 0000:01:00.0
 
+For ``cuda-run`` and ``cuda-verify``, where the GPU issues the I/O, the queue
+pair lives in GPU memory. Adding ``--sq-hostmem`` moves the submission queue
+into host memory, which the controller fetches from faster than from GPU
+memory; see :ref:`sec-backends-upcie-cuda-gpu` for the trade-off.
+
 ``verify`` — Data integrity check
 ==================================
 
