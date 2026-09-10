@@ -69,18 +69,23 @@ extern "C" {
  * controller. The resulting pointer lives in device memory and can be passed
  * directly as a CUDA kernel argument.
  *
+ * With ``XNVME_QUEUE_SQ_HOSTMEM`` in ``opts`` the submission queue is placed in host
+ * memory; the other queue options are ignored.
+ *
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
  * @param dev   An xnvme_dev opened on an ``upcie-cuda`` device
  * @param depth Number of IO slots in the queue
+ * @param opts  Queue options, see ::xnvme_queue_opts; 0 for the defaults
  * @param queue On success, set to a device pointer to the GPU queue
  *
  * @return 0 on success, -ENOTCONN when no ``upcie-cuda`` device is open, another
  * negative error code on failure
  */
 int
-xnvme_cuda_queue_create(struct xnvme_dev *dev, uint16_t depth, struct xnvme_cuda_queue **queue);
+xnvme_cuda_queue_create(struct xnvme_dev *dev, uint16_t depth, int opts,
+			struct xnvme_cuda_queue **queue);
 
 /**
  * Destroy a GPU-resident NVMe IO queue
@@ -115,16 +120,14 @@ xnvme_cuda_enqueue_at_i(struct xnvme_cuda_queue *qp, struct xnvme_spec_cmd *cmd,
 	struct xnvme_spec_cmd *sq = (struct xnvme_spec_cmd *)qp->sq;
 	uint16_t index            = (qp->tail + offset) % qp->depth;
 
-	// Copy the command to the SQ word-by-word. The destination uses a volatile
-	// pointer to bypass the per-SM L1 cache so writes reach system DRAM
-	// without waiting for eviction, making them visible to the NVMe DMA engine.
-	// The source does not need to be volatile: cmd is a per-thread local copy
-	// held in registers.
-	uint32_t *src          = (uint32_t *)cmd;
-	volatile uint32_t *dst = (volatile uint32_t *)&sq[index];
+	// 16-byte stores cached at L2 only: the L2 combines them into whole sectors,
+	// where narrower stores to a host-memory SQ each cross PCIe on their own
+	const uint4 *src = (const uint4 *)cmd;
+	uint4 *dst       = (uint4 *)&sq[index];
 
-	for (unsigned i = 0; i < sizeof(struct xnvme_spec_cmd) / sizeof(uint32_t); i++) {
-		dst[i] = src[i];
+#pragma unroll
+	for (unsigned i = 0; i < sizeof(struct xnvme_spec_cmd) / sizeof(uint4); i++) {
+		__stcg(&dst[i], src[i]);
 	}
 }
 
