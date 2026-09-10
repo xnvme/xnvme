@@ -69,14 +69,22 @@ extern "C" {
  * controller. The resulting pointer lives in device memory and can be passed
  * directly as a CUDA kernel argument.
  *
+ * The completion queue and the queue's own state live in device memory; so
+ * does the submission queue, unless ``opts`` carries ``XNVME_QUEUE_SQ_HOSTMEM``,
+ * which places it in host memory mapped for the GPU, where the controller
+ * fetches entries from DRAM instead of across the root complex. The other
+ * queue options do not apply to a GPU-issued queue and are ignored.
+ *
  * @param dev   An xnvme_dev opened on an ``upcie-cuda`` device
  * @param depth Number of IO slots in the queue
+ * @param opts  Queue options, see ::xnvme_queue_opts; 0 for the defaults
  * @param queue On success, set to a device pointer to the GPU queue
  *
  * @return 0 on success, negative error code on failure
  */
 int
-xnvme_cuda_queue_create(struct xnvme_dev *dev, uint16_t depth, struct xnvme_cuda_queue **queue);
+xnvme_cuda_queue_create(struct xnvme_dev *dev, uint16_t depth, int opts,
+			struct xnvme_cuda_queue **queue);
 
 /**
  * Destroy a GPU-resident NVMe IO queue
@@ -107,16 +115,19 @@ xnvme_cuda_enqueue_at_i(struct xnvme_cuda_queue *qp, struct xnvme_spec_cmd *cmd,
 	struct xnvme_spec_cmd *sq = (struct xnvme_spec_cmd *)qp->sq;
 	uint16_t index            = (qp->tail + offset) % qp->depth;
 
-	// Copy the command to the SQ word-by-word. The destination uses a volatile
-	// pointer to bypass the per-SM L1 cache so writes reach system DRAM
-	// without waiting for eviction, making them visible to the NVMe DMA engine.
-	// The source does not need to be volatile: cmd is a per-thread local copy
-	// held in registers.
-	uint32_t *src          = (uint32_t *)cmd;
-	volatile uint32_t *dst = (volatile uint32_t *)&sq[index];
+	// Copy the command in the widest stores a thread has, 16 bytes, cached at
+	// L2 only (cg) so nothing lingers in the per-SM L1. Four stores in a row
+	// let the L2 combine the entry into whole sectors before it leaves the
+	// GPU; where the queue is in host memory each store is otherwise a posted
+	// write of its own across PCIe, and sixteen of them per entry is what
+	// bounds the rate long before the controller does. The source is a
+	// per-thread local copy, so plain loads read it.
+	const uint4 *src = (const uint4 *)cmd;
+	uint4 *dst       = (uint4 *)&sq[index];
 
-	for (unsigned i = 0; i < sizeof(struct xnvme_spec_cmd) / sizeof(uint32_t); i++) {
-		dst[i] = src[i];
+#pragma unroll
+	for (unsigned i = 0; i < sizeof(struct xnvme_spec_cmd) / sizeof(uint4); i++) {
+		__stcg(&dst[i], src[i]);
 	}
 }
 
