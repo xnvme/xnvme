@@ -266,15 +266,11 @@ the hugepage setup steps in {ref}`sec-backends-upcie-host` before opening an
 ### GPU IOMMU domain
 
 ```{important}
-GPU-issued I/O is **not supported behind a translating IOMMU**. The GPU has to
-sit in an identity-mapped (passthrough) domain. This is not a limitation xNVMe
-can lift: the doorbell write comes from the GPU through the mapping the CUDA
-runtime installs for the controller's BAR, and with the GPU's domain
-translating that mapping does not carry. The write is lost, the IOMMU and
-the GPU report nothing, and the I/O never completes. Until the CUDA runtime
-or driver handles BAR mappings under a translating domain, the only remedy
-is the domain type, set as described below. Host-issued I/O, including
-{ref}`sec-backends-upcie-cuda-p2p-cq-mirror`, is unaffected and works either way.
+GPU-issued I/O behind a translating IOMMU needs the `iommu_map_pa` module. With
+it loaded the backend maps the controller's BAR0 into the GPU's domain itself
+and nothing else is needed; without it the queue is refused, and the fallback is
+the domain type, set as described below. Host-issued I/O, including
+{ref}`sec-backends-upcie-cuda-p2p-cq-mirror`, needs none of this.
 ```
 
 Needed only for GPU-resident queues, meaning `xnvmeperf cuda-run`, `cuda-verify`
@@ -286,7 +282,23 @@ than the CPU doing it, so the write is peer-to-peer traffic into the
 controller's BAR0. It is translated by the GPU's own domain, not the
 controller's that {ref}`sec-backends-upcie-cuda-iommu` sets up, and CUDA hands
 the GPU a physical address. With the GPU in a translating domain nothing has
-mapped it, so every write faults.
+mapped it, so every write faults, which is what the identity mapping of the
+BAR into that domain prevents. The backend installs it, at the BAR's own
+physical address, when it opens a controller for GPU-issued I/O and the GPU's
+group is of type `DMA` or `DMA-FQ`, through the same `iommu_map_pa` module the
+heap relies on for the reverse direction; the throughput is then the one
+measured with the IOMMU off. The mapping is per controller and held for as
+long as the controller is open. The domain is the kernel's, the one the GPU's
+driver allocates its own DMA addresses from, and those come from the top of
+the 32-bit range downwards, so a BAR placed below 4 GiB can collide with them.
+Where the identity range is taken, GPU-issued I/O is declined for that
+controller, since a mapping the driver placed there looks the same as one an
+earlier opener of the controller installed. Setting
+`XNVME_UPCIE_CUDA_DOORBELL_SHARE` takes the collision to be the latter, for a
+second process opening the same controller for the same GPU. The mapping is
+then the first process's and goes when it closes the controller, so the first
+has to outlive the second. What follows
+describes the situation without the module.
 
 #### Recognising it
 
@@ -371,10 +383,11 @@ The **upcie-cuda** backend supports GPU-resident NVMe queue pairs via the
 `libxnvme_cuda` API. See {ref}`sec-api-c-gpu` for the full API reference,
 including host-side setup, CUDA kernel dispatch, and queue depth semantics.
 
-GPU-resident queues work only with the GPU in an identity-mapped domain; see
-{ref}`sec-backends-upcie-cuda-gpu-domain` for why that is outside xNVMe's
-control and how to set it. A queue built behind a translating domain is
-created without error and then completes nothing.
+GPU-resident queues behind a translating IOMMU need the `iommu_map_pa`
+module, through which the backend puts the controller's registers where the
+GPU's doorbell writes land; see {ref}`sec-backends-upcie-cuda-gpu-domain` for
+the mechanism and for the domain setting that stands in for the module when
+it is absent.
 
 By default the whole queue pair lives in device memory: the kernel writes
 entries locally, the controller fetches them across PCIe, completes into
@@ -393,8 +406,7 @@ pair from 1.65M to 3.8M IOPS and eight drives from 40M to 49M, at the same
 latency at a depth of one. What it costs is the entries themselves on the
 GPU's transmit side, four 16-byte writes per command, which is idle traffic
 for reads but competes with the controller's payload reads on writes; and
-the placement depends on host memory the GPU can map, which the identity
-domain the queue needs anyway provides. The `--sq-hostmem` flag of
+the placement depends on host memory the GPU can map. The `--sq-hostmem` flag of
 `xnvmeperf cuda-run` and `cuda-verify` selects it.
 
 A kernel writes an entry as four 16-byte stores cached at L2 only, so the
@@ -450,14 +462,9 @@ cd cijoe && cijoe workflows/test-gpu.yaml --config configs/<your-config>.toml
 - **I/O the GPU issues needs no server.** A controller this process opened
   builds the same queue in the same device memory, and behind an IOMMU installs
   the mapping itself rather than being given one.
-- **I/O the GPU issues needs the GPU's domain to be identity-mapped.** The
-  controller translates either way, through the domain `vfio-pci` installs for
-  it; the GPU stays on its own driver and uses the default domain, so what
-  decides is `iommu=pt` rather than which driver the controller is bound to.
-  With the default translating, `DMA-FQ` rather than `identity`, a queue is
-  built and the doorbell registers, but no completion arrives and nothing
-  faults on either the IOMMU or the GPU. What a client submits from the host,
-  payloads in device memory included, works either way.
+- **I/O the GPU issues behind a translating IOMMU needs the mapper module.** See
+  {ref}`sec-backends-upcie-cuda-gpu-domain`. What a client submits from the host
+  works either way.
 - **GPU 0 only.** The heap is always created on CUDA device 0. Multiple GPU
   support is not implemented.
 - **1 GiB heap.** The CUDA heap is fixed at 1 GiB. Allocations beyond this
