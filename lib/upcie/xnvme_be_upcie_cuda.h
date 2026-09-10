@@ -44,6 +44,10 @@ struct xnvme_be_upcie_cuda_rte {
 		void *db_page;    ///< The registered page within it
 		void *db_own_map; ///< Non-NULL when db_base is ours to unmap
 		size_t db_own_nbytes;
+		/* The BAR installed into the GPU's own IOMMU domain, where that
+		 * domain translates; the fd keeps the mapping alive */
+		int db_dom_fd;          ///< The mapper's fd plus one, 0 when none
+		uint64_t db_dom_handle; ///< What to unmap through it, 0 when shared
 	} ctrlrs[XNVME_BE_UPCIE_GPU_CTRLRS_MAX];
 
 	int is_initialized;

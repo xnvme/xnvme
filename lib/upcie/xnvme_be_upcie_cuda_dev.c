@@ -6,7 +6,9 @@
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_UPCIE_CUDA_ENABLED
+#include <ctype.h>
 #include <fcntl.h>
+#include <inttypes.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <stdatomic.h>
@@ -14,6 +16,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_upcie_cuda.h>
 #include <xnvme_be_upcie_cuda_cqmirror.h>
+#include <upcie/experimental/iommu_map_pa.h>
 
 static _Atomic int g_cuda_ctrlr_count;
 
@@ -34,6 +37,12 @@ _cuda_ctrlr_term(struct xnvme_be_upcie_cuda_ctrlr *slot)
 	}
 	if (slot->db_own_map) {
 		munmap(slot->db_own_map, slot->db_own_nbytes);
+	}
+	if (slot->db_dom_fd) {
+		if (slot->db_dom_handle) {
+			iommu_map_pa_del(slot->db_dom_fd - 1, slot->db_dom_handle);
+		}
+		close(slot->db_dom_fd - 1);
 	}
 	if (slot->reg_offset) {
 		/* Handed back before the memory behind it goes away, so the
@@ -98,6 +107,109 @@ _cuda_ctrlr_slot(struct xnvme_be_upcie_ctrlr *ctrlr)
 }
 
 /**
+ * Put the controller's registers where the GPU's writes to them will land
+ *
+ * The GPU rings a doorbell with a write to the register's physical address,
+ * the address the driver resolved the mapping to. That write is a peer
+ * transaction and the IOMMU translates it in the GPU's own domain, so where
+ * that domain translates rather than passes through, nothing maps the
+ * controller's BAR and the write faults instead of arriving. The remedy is an
+ * identity mapping of the BAR into the GPU's domain, installed through the
+ * mapper module the heap already relies on for the reverse direction. With an
+ * identity domain, or no IOMMU, there is nothing to do.
+ *
+ * The domain is the kernel's, shared with the driver's own DMA mappings; the
+ * BAR's physical address lies far below where those are allocated, so the
+ * identity range is free in practice, and an EADDRINUSE says another opener
+ * of the same controller installed it first.
+ *
+ * @param slot The controller's slot, given the mapping to release
+ * @param bdf The controller's address
+ * @param bar0_nbytes The BAR's size, all of it is installed
+ *
+ * @return 0 when the GPU can reach the registers, negative errno otherwise
+ */
+static int
+_cuda_doorbells_reach(struct xnvme_be_upcie_cuda_ctrlr *slot, const char *bdf,
+		      uint64_t bar0_nbytes)
+{
+	long page = sysconf(_SC_PAGESIZE);
+	char gpu_bdf[32] = {0}, path[256], type[32] = {0};
+	uint64_t bar0_phys = 0, handle = 0, *phys;
+	uint32_t nphys;
+	CUdevice cu_dev;
+	FILE *f;
+	int fd, err;
+
+	if (cuCtxGetDevice(&cu_dev) || cuDeviceGetPCIBusId(gpu_bdf, sizeof(gpu_bdf), cu_dev)) {
+		return -ENODEV;
+	}
+	for (char *c = gpu_bdf; *c; ++c) {
+		*c = (char)tolower((unsigned char)*c);
+	}
+
+	snprintf(path, sizeof(path), "/sys/bus/pci/devices/%s/iommu_group/type", gpu_bdf);
+	f = fopen(path, "r");
+	if (!f) {
+		return 0;
+	}
+	if (!fgets(type, sizeof(type), f)) {
+		type[0] = 0;
+	}
+	fclose(f);
+	if (strncmp(type, "DMA", 3) != 0) {
+		return 0;
+	}
+
+	snprintf(path, sizeof(path), "/sys/bus/pci/devices/%s/resource", bdf);
+	f = fopen(path, "r");
+	if (!f || fscanf(f, "%" SCNx64, &bar0_phys) != 1 || !bar0_phys) {
+		if (f) {
+			fclose(f);
+		}
+		XNVME_DEBUG("FAILED: reading BAR0 of %s", bdf);
+		return -ENODEV;
+	}
+	fclose(f);
+
+	fd = iommu_map_pa_open();
+	if (fd < 0) {
+		XNVME_DEBUG("FAILED: iommu_map_pa_open(); the GPU's domain translates and the "
+			    "mapper is not there; err(%d)",
+			    fd);
+		return fd;
+	}
+
+	nphys = (uint32_t)((bar0_nbytes + page - 1) / page);
+	phys = calloc(nphys, sizeof(*phys));
+	if (!phys) {
+		close(fd);
+		return -ENOMEM;
+	}
+	for (uint32_t i = 0; i < nphys; ++i) {
+		phys[i] = bar0_phys + (uint64_t)i * page;
+	}
+	err = iommu_map_pa_add(fd, gpu_bdf, -1, bar0_phys, (uint32_t)page, nphys, phys,
+			       IOMMU_MAP_PA_PROT_READ | IOMMU_MAP_PA_PROT_WRITE, &handle);
+	free(phys);
+	if (err == -EADDRINUSE) {
+		handle = 0;
+		err = 0;
+	}
+	if (err) {
+		XNVME_DEBUG("FAILED: mapping BAR0 of %s into the domain of %s; err(%d)", bdf,
+			    gpu_bdf, err);
+		close(fd);
+		return err;
+	}
+
+	slot->db_dom_fd = fd + 1;
+	slot->db_dom_handle = handle;
+
+	return 0;
+}
+
+/**
  * Find a doorbell mapping the GPU can be given
  *
  * A kernel issuing I/O writes the doorbell itself, which means the doorbell
@@ -122,7 +234,7 @@ _cuda_doorbells_init(struct xnvme_be_upcie_cuda_ctrlr *slot, void *bar0, uint64_
 	long page_nbytes = sysconf(_SC_PAGESIZE);
 	char path[256];
 	void *mapped;
-	int fd;
+	int fd, err;
 
 	if (!slot || !bar0 || !bar0_nbytes || !bdf) {
 		return -EINVAL;
@@ -133,7 +245,12 @@ _cuda_doorbells_init(struct xnvme_be_upcie_cuda_ctrlr *slot, void *bar0, uint64_
 		slot->db_base = bar0;
 		slot->db_page = (char *)bar0 + XNVME_BE_UPCIE_DOORBELL_OFFSET;
 
-		return 0;
+		err = _cuda_doorbells_reach(slot, bdf, bar0_nbytes);
+		if (err) {
+			cuMemHostUnregister(slot->db_page);
+			slot->db_base = slot->db_page = NULL;
+		}
+		return err;
 	}
 
 	snprintf(path, sizeof(path), "/sys/bus/pci/devices/%s/resource0", bdf);
@@ -162,7 +279,14 @@ _cuda_doorbells_init(struct xnvme_be_upcie_cuda_ctrlr *slot, void *bar0, uint64_
 	slot->db_own_map = mapped;
 	slot->db_own_nbytes = bar0_nbytes;
 
-	return 0;
+	err = _cuda_doorbells_reach(slot, bdf, bar0_nbytes);
+	if (err) {
+		cuMemHostUnregister(slot->db_page);
+		munmap(mapped, bar0_nbytes);
+		slot->db_base = slot->db_page = slot->db_own_map = NULL;
+		slot->db_own_nbytes = 0;
+	}
+	return err;
 }
 
 /**
