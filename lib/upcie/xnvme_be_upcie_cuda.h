@@ -23,6 +23,8 @@ struct xnvme_be_upcie_cuda_ctrlr {
 	void *db_page;
 	void *db_own_map; ///< Non-NULL when db_base is ours to unmap
 	size_t db_own_nbytes;
+	int db_dom_fd;          ///< The mapper's fd plus one; 0 when none
+	uint64_t db_dom_handle; ///< 0 when shared
 };
 
 /**
