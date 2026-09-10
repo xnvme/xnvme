@@ -29,12 +29,19 @@ struct xnvmeperf_args {
 	uint32_t time;
 	uint32_t count;
 	uint32_t nqueues;
+	double report_freq;
 	enum iopattern pattern;
 	struct xnvme_opts opts;
 };
 
 int
 fill_pattern(void *buf, size_t nbytes, uint64_t slba, uint16_t nlb);
+
+void
+print_intermediate_header(void);
+
+void
+print_intermediate_result(double elapsed, double interval, uint64_t completed, uint32_t iosize);
 
 #ifdef XNVME_BE_UPCIE_CUDA_ENABLED
 int
