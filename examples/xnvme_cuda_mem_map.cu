@@ -136,7 +136,7 @@ main(int argc, char **argv)
 	}
 	cudaMemset(d_errors, 0, qdepth * sizeof(int));
 
-	err = xnvme_cuda_queue_create(dev, qdepth, &gpu_queue);
+	err = xnvme_cuda_queue_create(dev, qdepth, 0, &gpu_queue);
 	if (err) {
 		xnvme_cli_perr("xnvme_cuda_queue_create()", err);
 		goto exit;

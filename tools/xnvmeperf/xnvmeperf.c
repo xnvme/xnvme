@@ -409,6 +409,8 @@ print_run_args(struct xnvmeperf_args *args, const char *pattern)
 	printf("- queue depth: %u\n", args->qdepth);
 	printf("- cq in gpu memory: %s\n",
 	       (args->queue_opts & XNVME_QUEUE_P2P_CQ_MIRROR) ? "yes" : "no");
+	printf("- sq in host memory: %s\n",
+	       (args->queue_opts & XNVME_QUEUE_SQ_HOSTMEM) ? "yes" : "no");
 	if (args->opts.homi_id) {
 		printf("- served by homi: %u\n", args->opts.homi_id);
 	}
@@ -1110,6 +1112,7 @@ parse_common_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 	args->opts = xnvme_opts_default();
 	xnvme_cli_to_opts(cli, &args->opts);
 	args->queue_opts = cli->args.p2p_cq_mirror ? XNVME_QUEUE_P2P_CQ_MIRROR : 0;
+	args->queue_opts |= cli->args.sq_hostmem ? XNVME_QUEUE_SQ_HOSTMEM : 0;
 	return err;
 }
 
@@ -1386,6 +1389,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_GPU_ID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HOMI_ID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_REPORT_FREQ, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_SQ_HOSTMEM, XNVME_CLI_LFLG},
 		},
 	},
 	{
@@ -1406,6 +1410,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_GPU_ID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HOMI_ID, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_SQ_HOSTMEM, XNVME_CLI_LFLG},
 		},
 	},
 };

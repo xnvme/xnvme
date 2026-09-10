@@ -31,7 +31,7 @@ struct xnvmeperf_args {
 	uint32_t nqueues;
 	double report_freq;
 	enum iopattern pattern;
-	int queue_opts; ///< Passed to xnvme_queue_init()
+	int queue_opts; ///< Passed to xnvme_queue_init() or xnvme_cuda_queue_create()
 	struct xnvme_opts opts;
 };
 

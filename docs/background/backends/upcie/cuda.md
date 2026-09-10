@@ -30,6 +30,7 @@ This backend uses a **hybrid memory model**:
 | Data buffers (`xnvme_buf_alloc`) | GPU device memory (CUDA heap, 1 GiB) | Transferred directly by the NVMe controller via PCIe P2P, bypassing host DRAM |
 | SQ, CQ, PRP lists | Host hugepage memory (host heap, 256 MiB) | The CPU writes and the NVMe controller DMA-reads these structures; host-accessible memory is required |
 | CQ, with `XNVME_QUEUE_P2P_CQ_MIRROR` | GPU device memory, mirrored into the host CQ by a resident kernel | Keeps the controller's completion writes behind its data writes on one path; see {ref}`sec-backends-upcie-cuda-p2p-cq-mirror` |
+| SQ of a GPU-issued queue | GPU device memory; host memory with `XNVME_QUEUE_SQ_HOSTMEM` | The controller fetches entries; from DRAM that is faster than across the root complex, see {ref}`sec-backends-upcie-cuda-gpu` |
 
 The NVMe **data** path goes GPU ↔ NVMe without touching host DRAM. The
 **control** path (submission queue entries, completion queue entries, PRP lists)
@@ -355,6 +356,27 @@ GPU-resident queues work only with the GPU in an identity-mapped domain; see
 {ref}`sec-backends-upcie-cuda-gpu-domain` for why that is outside xNVMe's
 control and how to set it. A queue built behind a translating domain is
 created without error and then completes nothing.
+
+By default the whole queue pair lives in device memory: the kernel writes
+entries locally, the controller fetches them across PCIe, completes into
+device memory and moves payloads to and from it, so nothing of the I/O
+touches host DRAM. Passing `XNVME_QUEUE_SQ_HOSTMEM` to
+`xnvme_cuda_queue_create()` moves the submission queue alone into host
+memory, taken from the process's own heap or, on a served controller, from
+the server's, and mapped into the GPU's address space; the kernel then writes
+entries across PCIe and the controller fetches them from DRAM. The reader
+decides: a controller fetching entries from device memory pays a PCIe round
+trip per fetch and keeps only so many in flight, which on a fast controller
+capped a queue pair below what the host can drive, whereas the GPU's writes
+and the controller's completion writes are posted and cost nothing of the
+sort. Measured with 512 B random reads, the host placement raised one queue
+pair from 1.65M to 3.8M IOPS and eight drives from 40M to 49M, at the same
+latency at a depth of one. What it costs is the entries themselves on the
+GPU's transmit side, four 16-byte writes per command, which is idle traffic
+for reads but competes with the controller's payload reads on writes; and
+the placement depends on host memory the GPU can map, which the identity
+domain the queue needs anyway provides. The `--sq-hostmem` flag of
+`xnvmeperf cuda-run` and `cuda-verify` selects it.
 
 (sec-backends-upcie-cuda-validation)=
 

@@ -101,6 +101,7 @@ struct xnvme_cli_args {
 	uint32_t max_io_bytes;
 	bool direct;
 	bool p2p_cq_mirror;
+	bool sq_hostmem;
 	uint32_t limit;
 
 	uint64_t count;
@@ -392,7 +393,9 @@ enum xnvme_cli_opt {
 
 	XNVME_CLI_OPT_P2P_CQ_MIRROR = 140, ///< XNVME_CLI_OPT_P2P_CQ_MIRROR
 
-	XNVME_CLI_OPT_END = 141, ///< XNVME_CLI_OPT_END
+	XNVME_CLI_OPT_SQ_HOSTMEM = 141, ///< XNVME_CLI_OPT_SQ_HOSTMEM
+
+	XNVME_CLI_OPT_END = 142, ///< XNVME_CLI_OPT_END
 };
 
 /**
