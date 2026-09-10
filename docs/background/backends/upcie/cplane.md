@@ -253,15 +253,12 @@ and names offset zero in it.
 
 I/O the GPU issues itself needs no server at all: a controller this process
 opened builds the same queue in the same device memory, and only the
-identifier and the admin queue come from somewhere else. It does ask for more
-of the platform, and gets it only while the GPU's own domain passes through.
-The controller's domain is not what decides: it translates either way, through
-the one `vfio-pci` installs for it. The GPU stays on its own driver and uses
-the default domain, so `iommu=pt` is the setting that matters. The queue lives
-in device memory and the doorbell has to be in the GPU's address space; with
-domains that translate, what the CUDA runtime installs for the BAR does not
-carry, and neither the IOMMU nor the GPU reports anything, so the I/O simply
-never completes. GPU-initiated I/O is therefore not supported behind a
-translating IOMMU, served or not. That sits in the CUDA runtime and driver,
-not in anything xNVMe or the server does, so the requirement stands until they
-change; see the GPU IOMMU domain section of the CUDA backend page.
+identifier and the admin queue come from somewhere else. It does ask one more
+thing of the platform. The controller's domain is not what decides: it
+translates either way, through the one `vfio-pci` installs for it. The GPU
+stays on its own driver and uses the default domain, and its doorbell writes
+are translated there; where that domain translates, the client installs the
+controller's BAR into it through the `iommu_map_pa` module, served or not,
+since the mapping concerns the GPU's domain and not the controller's owner.
+Without the module the queue is refused; see the GPU IOMMU domain section of
+the CUDA backend page.
