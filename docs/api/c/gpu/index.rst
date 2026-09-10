@@ -34,7 +34,9 @@ API Overview
 ``struct xnvme_cuda_queue`` is an opaque type — its internals are not part of the
 public API. ``xnvme_cuda_queue_create()`` allocates and initializes the queue
 pair in CUDA device memory, so the returned pointer can be passed directly to a
-kernel without any additional copy. This is in contrast to the command array, which
+kernel without any additional copy. Its ``opts`` take ``XNVME_QUEUE_SQ_HOSTMEM``
+to place the submission queue in host memory instead; the other queue options
+do not apply to a GPU-issued queue. This is in contrast to the command array, which
 is prepared on the host and must be copied to device memory with
 ``cudaMemcpy()`` before the kernel launch.
 

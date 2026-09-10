@@ -356,8 +356,8 @@ xnvmeperf_cuda_build_cmds(struct xnvme_dev **devs, int ndevs, uint32_t iosize, u
  */
 static int
 xnvmeperf_cuda_setup(struct xnvme_dev **devs, int ndevs, uint32_t iosize, uint32_t qdepth,
-		     uint32_t nqueues, struct xnvme_cuda_queue **h_qps, void ***bufs,
-		     void ***prp_bufs, uint64_t *h_nblocks)
+		     uint32_t nqueues, int queue_opts, struct xnvme_cuda_queue **h_qps,
+		     void ***bufs, void ***prp_bufs, uint64_t *h_nblocks)
 {
 	struct xnvme_dev *dev;
 	uint64_t nblocks;
@@ -380,12 +380,12 @@ xnvmeperf_cuda_setup(struct xnvme_dev **devs, int ndevs, uint32_t iosize, uint32
 				h_nblocks[qi] = nblocks;
 			}
 
-			err = xnvme_cuda_queue_create(dev, qdepth, &h_qps[qi]);
+			err = xnvme_cuda_queue_create(dev, qdepth, queue_opts, &h_qps[qi]);
 			if (err == -ERANGE) {
 				fprintf(stderr,
 					"Error: --qdepth %u puts the submission queue on %s "
 					"across GPU pages the controller cannot read as one; "
-					"lower --qdepth: err(%d)\n",
+					"lower --qdepth or use --sq-hostmem: err(%d)\n",
 					qdepth, xnvme_dev_get_ident(dev)->uri, err);
 				return err;
 			}
@@ -712,7 +712,7 @@ xnvmeperf_cuda_run_io(struct xnvme_dev **devs, const struct xnvmeperf_args *args
 	}
 
 	err = xnvmeperf_cuda_setup(devs, args->ndevs, args->iosize, args->qdepth, args->nqueues,
-				   h_qps, bufs, prp_bufs, nblocks);
+				   args->queue_opts, h_qps, bufs, prp_bufs, nblocks);
 	if (err) {
 		xnvme_cli_perr("Failed: xnvmeperf_cuda_setup()", err);
 		goto cleanup;
@@ -856,7 +856,7 @@ xnvmeperf_cuda_verify_io(struct xnvme_dev **devs, const struct xnvmeperf_args *a
 	}
 
 	err = xnvmeperf_cuda_setup(devs, args->ndevs, args->iosize, args->qdepth, args->nqueues,
-				   h_qps, bufs, prp_bufs, NULL);
+				   args->queue_opts, h_qps, bufs, prp_bufs, NULL);
 	if (err) {
 		xnvme_cli_perr("Failed: xnvmeperf_cuda_setup()", err);
 		goto cleanup;
