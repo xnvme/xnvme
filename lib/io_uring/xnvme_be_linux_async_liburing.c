@@ -262,9 +262,9 @@ xnvme_be_linux_liburing_poke(struct xnvme_queue *q, uint32_t max)
 	return completed;
 }
 
-int
-xnvme_be_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
-			       void *mbuf, size_t mbuf_nbytes)
+static inline int
+_cmd_io(struct xnvme_cmd_ctx *ctx, uint64_t addr, size_t dbuf_nbytes, void *mbuf,
+	size_t mbuf_nbytes, int buf_index)
 {
 	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
@@ -313,6 +313,11 @@ xnvme_be_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 		return -ENOSYS;
 	}
 
+	if ((buf_index >= 0) && (opcode != IORING_OP_FSYNC)) {
+		opcode =
+			(opcode == IORING_OP_WRITE) ? IORING_OP_WRITE_FIXED : IORING_OP_READ_FIXED;
+	}
+
 	sqe = io_uring_get_sqe(&queue->ring);
 	if (!sqe) {
 		return -EAGAIN;
@@ -331,7 +336,8 @@ xnvme_be_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	}
 
 	sqe->opcode = opcode;
-	sqe->addr = (unsigned long)dbuf;
+	sqe->addr = addr;
+	sqe->buf_index = (buf_index >= 0) ? (uint16_t)buf_index : 0;
 	sqe->len = dbuf_nbytes;
 	sqe->off = ctx->cmd.nvm.slba << ssw;
 	sqe->flags = queue->poll_sq ? IOSQE_FIXED_FILE : 0;
@@ -364,6 +370,20 @@ exit:
 	queue->base.outstanding += 1;
 
 	return 0;
+}
+
+int
+xnvme_be_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
+			       void *mbuf, size_t mbuf_nbytes)
+{
+	return _cmd_io(ctx, (unsigned long)dbuf, dbuf_nbytes, mbuf, mbuf_nbytes, -1);
+}
+
+int
+xnvme_be_linux_io_uring_cmd_io_fixed(struct xnvme_cmd_ctx *ctx, uint16_t buf_index,
+				     uint64_t offset, size_t dbuf_nbytes)
+{
+	return _cmd_io(ctx, offset, dbuf_nbytes, NULL, 0, buf_index);
 }
 
 int
