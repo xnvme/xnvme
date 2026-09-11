@@ -29,6 +29,7 @@ xnvmelib_source = [
   'xnvme_be_linux_block.c',
   'xnvme_be_linux_dev.c',
   'xnvme_be_linux_dmabuf.c',
+  'xnvme_be_linux_dmabuf_mem.c',
   'xnvme_be_linux_hugepage.c',
   'xnvme_be_linux_nvme.c',
   'xnvme_be_macos.c',

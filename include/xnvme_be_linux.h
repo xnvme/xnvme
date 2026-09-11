@@ -65,6 +65,8 @@ xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr opts);
  */
 extern struct xnvme_be_mem g_xnvme_be_linux_mem_hugepage;
 
+extern struct xnvme_be_mem g_xnvme_be_linux_mem_dmabuf;
+
 /**
  * Implementations of the admin command interface
  */
