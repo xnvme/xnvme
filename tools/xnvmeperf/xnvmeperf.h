@@ -34,6 +34,7 @@ struct xnvmeperf_args {
 	enum iopattern pattern;
 	int queue_opts;
 	int buf_host_bounce;
+	uint8_t gpu_buf; ///< Allocate IO buffers on the GPU; set by --be 'io_uring_dmabuf'
 	struct xnvme_opts opts;
 };
 
@@ -47,6 +48,12 @@ void
 print_intermediate_result(double elapsed, double interval, uint64_t completed, uint32_t iosize);
 
 #ifdef XNVME_BE_UPCIE_CUDA_ENABLED
+void *
+xnvmeperf_cuda_buf_alloc(uint32_t gpu_id, size_t nbytes);
+
+void
+xnvmeperf_cuda_buf_free(void *buf);
+
 int
 xnvmeperf_cuda_run_io(struct xnvme_dev **devs, const struct xnvmeperf_args *args,
 		      uint64_t *completed_per_dev, uint64_t *failed_per_dev, float *elapsed_ms);
@@ -59,6 +66,18 @@ xnvmeperf_cuda_ctx_check(void *ctx);
 void
 xnvmeperf_cuda_ctx_destroy(void *ctx);
 #else
+static inline void *
+xnvmeperf_cuda_buf_alloc(uint32_t XNVME_UNUSED(gpu_id), size_t XNVME_UNUSED(nbytes))
+{
+	errno = ENOSYS;
+	return NULL;
+}
+
+static inline void
+xnvmeperf_cuda_buf_free(void *XNVME_UNUSED(buf))
+{
+}
+
 static inline int
 xnvmeperf_cuda_run_io(struct xnvme_dev **XNVME_UNUSED(devs),
 		      const struct xnvmeperf_args *XNVME_UNUSED(args),
