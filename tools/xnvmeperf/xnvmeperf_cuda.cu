@@ -4,7 +4,9 @@
 
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include <errno.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -1301,3 +1303,33 @@ out:
 }
 
 } /* extern "C" */
+
+extern "C" void *
+xnvmeperf_cuda_buf_alloc(uint32_t gpu_id, size_t nbytes)
+{
+	void *buf = NULL;
+	cudaError_t cerr;
+
+	cerr = cudaSetDevice((int)gpu_id);
+	if (cerr != cudaSuccess) {
+		fprintf(stderr, "Failed: cudaSetDevice(%u): %s\n", gpu_id,
+			cudaGetErrorString(cerr));
+		errno = ENODEV;
+		return NULL;
+	}
+
+	cerr = cudaMalloc(&buf, nbytes);
+	if (cerr != cudaSuccess) {
+		fprintf(stderr, "Failed: cudaMalloc(%zu): %s\n", nbytes, cudaGetErrorString(cerr));
+		errno = ENOMEM;
+		return NULL;
+	}
+
+	return buf;
+}
+
+extern "C" void
+xnvmeperf_cuda_buf_free(void *buf)
+{
+	cudaFree(buf);
+}
