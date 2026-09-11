@@ -315,6 +315,33 @@ def device(cijoe, request):
     return request.param
 
 
+def zoned_bdev_reset(cijoe, device):
+    """
+    Reset the zones of a zoned block device through the block layer
+
+    Since Linux 6.10 the block layer keeps a write pointer per zone of its own
+    and fails a write that does not start at it. Tests reset and write zones
+    through the character device and through user-space drivers as well, which
+    the block layer does not see, so a zone can be empty on the device while the
+    kernel still holds the pointer from the last write it issued itself; the
+    next write through the block device at the zone's start then fails with EIO
+    although the device would take it. A reset through the block device brings
+    the two back in line; a test that writes a zoned block device calls this
+    first, so it starts from zones the kernel knows to be empty. Tests that only
+    read leave the zones as they find them, since what they read is what an
+    earlier test wrote. Nothing to do for a character device or a user-space
+    driver, whose writes never meet the block layer's pointers.
+    """
+
+    labels = device.get("labels", [])
+    if "zns" not in labels or "bdev" not in labels or get_osname() != "linux":
+        return
+
+    err, _ = cijoe.run(f"blkzone reset {device['uri']}")
+    if err:
+        pytest.fail(f"blkzone reset {device['uri']} failed: err({err})")
+
+
 def xnvme_parametrize(labels, opts):
     """
     This decorator provides all the pytest-parametrization magic in one.

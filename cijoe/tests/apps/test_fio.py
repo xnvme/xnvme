@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from ..conftest import get_osname, get_shm_id, xnvme_parametrize
+from ..conftest import get_osname, get_shm_id, xnvme_parametrize, zoned_bdev_reset
 from .fio_fancy import fio_fancy
 
 FIO_OUTPUT_FPATH = (
@@ -95,6 +95,10 @@ def test_fio_engine_zns(cijoe, device, be_opts, cli_args):
 
     size = "64M"
     # size = "1G"
+
+    # fio resets the zones it writes through the NVMe admin path, which the
+    # block layer does not see; see zoned_bdev_reset()
+    zoned_bdev_reset(cijoe, device)
 
     err, _ = fio_fancy(
         cijoe,
