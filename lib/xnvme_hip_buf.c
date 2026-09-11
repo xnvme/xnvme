@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifdef XNVME_BE_UPCIE_HIP_ENABLED
+#ifdef XNVME_HIP_ENABLED
 #include <hip/hip_runtime.h>
 #include <libxnvme.h>
 #include <xnvme_host_buf.h>
