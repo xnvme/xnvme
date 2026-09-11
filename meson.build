@@ -184,6 +184,17 @@ uring_dep = dependency(
   required: get_option('with-liburing'),
 )
 conf_data.set('XNVME_BE_LINUX_LIBURING_ENABLED', uring_dep.found())
+conf_data.set(
+  'XNVME_BE_LINUX_IO_URING_DMABUF_ENABLED',
+  uring_dep.found() and conf_data.get('XNVME_BE_CBI_MEM_POSIX_ENABLED') and (
+    conf_data.get('XNVME_CUDA_ENABLED') or conf_data.get('XNVME_HIP_ENABLED')
+  ) ? cc.has_member(
+    'struct io_uring_regbuf_desc',
+    'dmabuf_fd',
+    prefix: '#include <liburing.h>',
+    dependencies: uring_dep,
+  ) : false,
+)
 
 libvfn_dep = dependency(
   'libvfn',

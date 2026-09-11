@@ -60,6 +60,12 @@ xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr opts);
 extern struct xnvme_be_mem g_xnvme_be_linux_mem_hugepage;
 
 /**
+ * Implementation of the memory management interface registering GPU memory with
+ * io_uring as dma-buf
+ */
+extern struct xnvme_be_mem g_xnvme_be_linux_mem_io_uring_dmabuf;
+
+/**
  * Implementations of the admin command interface
  */
 extern struct xnvme_be_admin g_xnvme_be_linux_admin_nvme;
@@ -82,5 +88,12 @@ extern struct xnvme_be_async g_xnvme_be_linux_async_ucmd;
  * Implementations of the device enumeration and handles
  */
 extern struct xnvme_be_dev g_xnvme_be_dev_linux;
+extern struct xnvme_be_dev g_xnvme_be_dev_linux_io_uring_dmabuf;
+
+int
+xnvme_be_linux_dev_open(struct xnvme_dev *dev);
+
+void
+xnvme_be_linux_dev_close(struct xnvme_dev *dev);
 
 #endif /* __INTERNAL_XNVME_BE_LINUX */

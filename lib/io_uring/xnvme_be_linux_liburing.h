@@ -9,6 +9,8 @@
 #define XNVME_QUEUE_IOU_CQE_BATCH_MAX 8
 #define XNVME_QUEUE_IOU_BIGSQE        (0x1 << 2)
 
+struct xnvme_io_uring_dmabuf;
+
 struct xnvme_queue_liburing {
 	struct xnvme_queue_base base;
 
@@ -19,7 +21,7 @@ struct xnvme_queue_liburing {
 	uint8_t batching;
 	int efd; // Completion event FD
 
-	uint8_t _rsvd[5];
+	struct xnvme_io_uring_dmabuf *dmabuf; ///< dma-buf registry of the device, if any
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_liburing) == XNVME_BE_QUEUE_STATE_NBYTES,
 		    "Incorrect size")
