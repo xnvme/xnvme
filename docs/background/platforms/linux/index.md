@@ -71,6 +71,8 @@ interfaces, descriptions are available in the corresponding subsection.
   - `libaio`, Use Linux aio for Asynchronous I/O
   - `io_uring`, Use Linux io_uring for Asynchronous I/O
   - `io_uring_cmd`, Use Linux io_uring passthru command for Asynchronous I/O
+  - `io_uring_dmabuf`, Use Linux io_uring for Asynchronous I/O on GPU memory
+    registered as `dma-buf`. See {ref}`sec-platforms-linux-async-io_uring_dmabuf`.
   - `emu`, add link to CBI
   - `posix`, add link to CBI
   - `thrpool`, add link to CBI
@@ -156,4 +158,5 @@ block
 libaio
 io_uring
 io_uring_cmd
+io_uring_dmabuf
 ```
