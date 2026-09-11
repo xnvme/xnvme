@@ -159,6 +159,22 @@ const struct xnvme_be_config g_xnvme_be_linux_iou_block = {
 };
 #endif
 
+#ifdef XNVME_BE_LINUX_IO_URING_DMABUF_ENABLED
+const struct xnvme_be_config g_xnvme_be_linux_io_uring_dmabuf = {
+	.async = &g_xnvme_be_linux_async_io_uring_dmabuf,
+	.sync = &g_xnvme_be_linux_sync_nvme,
+	.admin = &g_xnvme_be_linux_admin_nvme,
+	.dev = &g_xnvme_be_dev_linux_io_uring_dmabuf,
+	.mem = &g_xnvme_be_linux_mem_io_uring_dmabuf,
+	.attr =
+		{
+			.name = "io_uring_dmabuf",
+			.descr = "io_uring with GPU memory via dma-buf",
+			.caps = XNVME_BE_CAP_NVME_BDEV,
+		},
+};
+#endif
+
 #ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
 const struct xnvme_be_config g_xnvme_be_linux_aio_nvme = {
 	.async = &g_xnvme_be_linux_async_libaio,

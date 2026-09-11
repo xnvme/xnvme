@@ -41,6 +41,9 @@ extern const struct xnvme_be_config g_xnvme_be_linux_iou_nvme;
 #if defined(XNVME_BE_LINUX_LIBURING_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
 extern const struct xnvme_be_config g_xnvme_be_linux_iou_block;
 #endif
+#ifdef XNVME_BE_LINUX_IO_URING_DMABUF_ENABLED
+extern const struct xnvme_be_config g_xnvme_be_linux_io_uring_dmabuf;
+#endif
 #ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
 extern const struct xnvme_be_config g_xnvme_be_linux_aio_nvme;
 #endif

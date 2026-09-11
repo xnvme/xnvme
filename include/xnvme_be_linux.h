@@ -82,6 +82,7 @@ extern struct xnvme_be_sync g_xnvme_be_linux_sync_block;
  */
 extern struct xnvme_be_async g_xnvme_be_linux_async_libaio;
 extern struct xnvme_be_async g_xnvme_be_linux_async_liburing;
+extern struct xnvme_be_async g_xnvme_be_linux_async_io_uring_dmabuf;
 extern struct xnvme_be_async g_xnvme_be_linux_async_ucmd;
 
 /**
