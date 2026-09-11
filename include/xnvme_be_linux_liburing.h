@@ -17,9 +17,12 @@ struct xnvme_queue_liburing {
 	uint8_t poll_io;
 	uint8_t poll_sq;
 	uint8_t batching;
+	uint8_t regbuf_err; ///< errno of a failed dma-buf registration
+
 	int efd; // Completion event FD
 
-	uint8_t _rsvd[5];
+	uint32_t regbuf_generation; ///< dma-buf registry generation of the ring
+	uint32_t regbuf_nentries;   ///< Size of the buffer-table of the ring
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_liburing) == XNVME_BE_QUEUE_STATE_NBYTES,
 		    "Incorrect size")

@@ -19,6 +19,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_linux_liburing.h>
 #include <xnvme_be_linux.h>
+#include <xnvme_be_linux_dmabuf.h>
 
 #ifndef IORING_SETUP_SINGLE_ISSUER
 #define IORING_SETUP_SINGLE_ISSUER (1U << 12)
@@ -262,6 +263,95 @@ xnvme_be_linux_liburing_poke(struct xnvme_queue *q, uint32_t max)
 	return completed;
 }
 
+#ifdef XNVME_BE_LINUX_LIBURING_DMABUF_ENABLED
+/**
+ * Register the dma-buf registry of the device as the buffer-table of the ring
+ *
+ * @return On success, 0 is returned. On error, negative errno
+ */
+static int
+_regbuf_sync(struct xnvme_queue_liburing *queue)
+{
+	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
+	uint32_t generation, nentries;
+	int err;
+
+	generation = xnvme_be_linux_dmabuf_generation(queue->base.dev, &nentries);
+	if (queue->regbuf_generation == generation) {
+		return 0;
+	}
+
+	if (queue->regbuf_err) {
+		return -(int)queue->regbuf_err;
+	}
+
+	if (queue->poll_io) {
+		XNVME_DEBUG("FAILED: dma-buf buffers are not supported on an IOPOLL queue");
+		queue->regbuf_err = ENOTSUP;
+		return -ENOTSUP;
+	}
+
+	// A table cannot be resized, so a registry that outgrew it gets a new one
+	if (nentries > queue->regbuf_nentries) {
+		if (queue->regbuf_nentries) {
+			err = io_uring_unregister_buffers(&queue->ring);
+			if (err) {
+				XNVME_DEBUG("FAILED: io_uring_unregister_buffers(), err: %d", err);
+				queue->regbuf_err = (uint8_t)-err;
+				return err;
+			}
+			queue->regbuf_nentries = 0;
+		}
+
+		err = io_uring_register_buffers_sparse(&queue->ring, nentries);
+		if (err) {
+			XNVME_DEBUG("FAILED: io_uring_register_buffers_sparse(), err: %d", err);
+			queue->regbuf_err = (uint8_t)-err;
+			return err;
+		}
+		queue->regbuf_nentries = nentries;
+	}
+
+	for (uint32_t index = 0; index < nentries; ++index) {
+		struct io_uring_regbuf_desc desc = {0};
+		struct io_uring_rsrc_update2 up = {0};
+		int fd;
+
+		fd = xnvme_be_linux_dmabuf_fd(queue->base.dev, (uint16_t)index);
+
+		desc.type = (fd < 0) ? IO_REGBUF_TYPE_EMPTY : IO_REGBUF_TYPE_DMABUF;
+		desc.dmabuf_fd = (fd < 0) ? 0 : fd;
+		desc.target_fd = (fd < 0) ? 0 : state->fd;
+
+		up.offset = index;
+		up.nr = 1;
+		up.data = (unsigned long)&desc;
+		// NOTE: the kernel names this member 'flags'; liburing does not yet
+		up.resv = IORING_RSRC_UPDATE_EXTENDED;
+
+		err = io_uring_register(queue->ring.ring_fd, IORING_REGISTER_BUFFERS_UPDATE, &up,
+					sizeof(up));
+		if (err != 1) {
+			XNVME_DEBUG("FAILED: io_uring_register(BUFFERS_UPDATE), err: %d", err);
+			err = (err < 0) ? err : -EIO;
+			queue->regbuf_err = (uint8_t)-err;
+			return err;
+		}
+	}
+
+	queue->regbuf_generation = generation;
+
+	return 0;
+}
+#else
+static int
+_regbuf_sync(struct xnvme_queue_liburing *XNVME_UNUSED(queue))
+{
+	XNVME_DEBUG("FAILED: liburing has no dma-buf buffer-registration");
+	return -ENOSYS;
+}
+#endif
+
 int
 xnvme_be_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 			       void *mbuf, size_t mbuf_nbytes)
@@ -270,6 +360,9 @@ xnvme_be_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
 	uint64_t ssw = 0;
 	struct io_uring_sqe *sqe = NULL;
+	uint64_t regbuf_off = 0;
+	uint16_t regbuf_index = 0;
+	bool regbuf = false;
 
 	int opcode = IORING_OP_NOP;
 	int err = 0;
@@ -313,6 +406,32 @@ xnvme_be_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 		return -ENOSYS;
 	}
 
+	// A dma-buf is addressed by buffer-table index and offset
+	if (opcode != IORING_OP_FSYNC) {
+		err = xnvme_be_linux_dmabuf_lookup(queue->base.dev, dbuf, dbuf_nbytes,
+						   &regbuf_index, &regbuf_off);
+		switch (err) {
+		case 0:
+			err = _regbuf_sync(queue);
+			if (err) {
+				XNVME_DEBUG("FAILED: _regbuf_sync(), err: %d", err);
+				return err;
+			}
+			opcode = (opcode == IORING_OP_WRITE) ? IORING_OP_WRITE_FIXED
+							     : IORING_OP_READ_FIXED;
+			regbuf = true;
+			break;
+
+		case -ENOENT:
+			err = 0;
+			break;
+
+		default:
+			XNVME_DEBUG("FAILED: xnvme_be_linux_dmabuf_lookup(), err: %d", err);
+			return err;
+		}
+	}
+
 	sqe = io_uring_get_sqe(&queue->ring);
 	if (!sqe) {
 		return -EAGAIN;
@@ -331,7 +450,8 @@ xnvme_be_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	}
 
 	sqe->opcode = opcode;
-	sqe->addr = (unsigned long)dbuf;
+	sqe->addr = regbuf ? regbuf_off : (unsigned long)dbuf;
+	sqe->buf_index = regbuf ? regbuf_index : 0;
 	sqe->len = dbuf_nbytes;
 	sqe->off = ctx->cmd.nvm.slba << ssw;
 	sqe->flags = queue->poll_sq ? IOSQE_FIXED_FILE : 0;
