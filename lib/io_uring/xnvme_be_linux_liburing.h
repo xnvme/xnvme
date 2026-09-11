@@ -31,6 +31,14 @@ xnvme_be_linux_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 			       void *mbuf, size_t mbuf_nbytes);
 
 int
+xnvme_be_linux_io_uring_cmd_io_fixed(struct xnvme_cmd_ctx *ctx, uint16_t buf_index,
+				     uint64_t offset, size_t dbuf_nbytes);
+
+int
+xnvme_be_linux_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+				size_t dvec_nbytes, void *mbuf, size_t mbuf_nbytes);
+
+int
 xnvme_be_linux_liburing_poke(struct xnvme_queue *queue, uint32_t max);
 
 int
