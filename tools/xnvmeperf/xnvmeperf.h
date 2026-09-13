@@ -32,6 +32,7 @@ struct xnvmeperf_args {
 	double report_freq;
 	enum iopattern pattern;
 	int queue_opts;
+	int buf_host_bounce;
 	struct xnvme_opts opts;
 };
 
