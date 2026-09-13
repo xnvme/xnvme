@@ -963,6 +963,12 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "Submit GPU-issued I/O from host memory (XNVME_QUEUE_SQ_HOSTMEM)",
 	},
 	{
+		.opt = XNVME_CLI_OPT_BUF_HOST_BOUNCE,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
+		.name = "buf-host-bounce",
+		.descr = "Read into a host buffer and copy it to the GPU, instead of P2P",
+	},
+	{
 		.opt = XNVME_CLI_OPT_ALT_BE,
 		.vtype = XNVME_CLI_OPT_VTYPE_STR,
 		.name = "alt-be",
@@ -1646,6 +1652,9 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 		break;
 	case XNVME_CLI_OPT_SQ_HOSTMEM:
 		args->sq_hostmem = true;
+		break;
+	case XNVME_CLI_OPT_BUF_HOST_BOUNCE:
+		args->buf_host_bounce = true;
 		break;
 
 	case XNVME_CLI_OPT_OPCODE:

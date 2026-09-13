@@ -971,3 +971,270 @@ cleanup:
 	free(cmp_buf);
 	return err;
 }
+
+/* ------------------------------------------------------------------------- *
+ * Host-bounce staging and the host-to-device copy roofline
+ *
+ * The NVMe I/O runs on a host backend and lands in host buffers; these move
+ * the payload on to the GPU with cudaMemcpyAsync, overlapping the copy of one
+ * slot with the read into the next. The generic loop in xnvmeperf.c owns the
+ * host buffers and hands slots here; this file owns the device buffer, one
+ * copy stream and one completion event per slot.
+ * ------------------------------------------------------------------------- */
+#include <errno.h>
+#include <string.h>
+#include <time.h>
+
+extern "C" {
+
+struct xnvmeperf_gpu {
+	uint32_t iosize;
+	uint32_t nslots;
+	uint8_t *dev;        ///< device buffer, nslots * iosize
+	cudaStream_t stream; ///< one stream carries every slot's copy in order
+	cudaEvent_t *events; ///< per-slot completion, so a slot is reused only once drained
+	void **hbufs;        ///< host buffers page-locked here, unregistered at close
+	uint8_t *pending;    ///< 1 while a slot's copy is enqueued and not yet observed done
+};
+
+int
+xnvmeperf_gpu_set_device(uint32_t gpu_id)
+{
+	cudaError_t cerr = cudaSetDevice((int)gpu_id);
+
+	if (cerr != cudaSuccess) {
+		fprintf(stderr, "Failed: cudaSetDevice(%u): %s\n", gpu_id,
+			cudaGetErrorString(cerr));
+		return -EIO;
+	}
+	return 0;
+}
+
+struct xnvmeperf_gpu *
+xnvmeperf_gpu_bounce_open(uint32_t gpu_id, uint32_t iosize, uint32_t nslots)
+{
+	struct xnvmeperf_gpu *gpu;
+	cudaError_t cerr;
+
+	if (xnvmeperf_gpu_set_device(gpu_id)) {
+		return NULL;
+	}
+	gpu = (struct xnvmeperf_gpu *)calloc(1, sizeof(*gpu));
+	if (!gpu) {
+		errno = ENOMEM;
+		return NULL;
+	}
+	gpu->iosize = iosize;
+	gpu->nslots = nslots;
+	gpu->events = (cudaEvent_t *)calloc(nslots, sizeof(*gpu->events));
+	gpu->hbufs = (void **)calloc(nslots, sizeof(*gpu->hbufs));
+	gpu->pending = (uint8_t *)calloc(nslots, sizeof(*gpu->pending));
+	if (!gpu->events || !gpu->hbufs || !gpu->pending) {
+		goto failed;
+	}
+
+	cerr = cudaMalloc((void **)&gpu->dev, (size_t)nslots * iosize);
+	if (cerr != cudaSuccess) {
+		fprintf(stderr, "Failed: cudaMalloc(%zu): %s\n", (size_t)nslots * iosize,
+			cudaGetErrorString(cerr));
+		goto failed;
+	}
+	cerr = cudaStreamCreateWithFlags(&gpu->stream, cudaStreamNonBlocking);
+	if (cerr != cudaSuccess) {
+		fprintf(stderr, "Failed: cudaStreamCreate(): %s\n", cudaGetErrorString(cerr));
+		goto failed;
+	}
+	for (uint32_t i = 0; i < nslots; i++) {
+		cerr = cudaEventCreateWithFlags(&gpu->events[i], cudaEventDisableTiming);
+		if (cerr != cudaSuccess) {
+			fprintf(stderr, "Failed: cudaEventCreate(): %s\n",
+				cudaGetErrorString(cerr));
+			goto failed;
+		}
+	}
+	return gpu;
+
+failed:
+	xnvmeperf_gpu_bounce_close(gpu);
+	errno = ENOMEM;
+	return NULL;
+}
+
+int
+xnvmeperf_gpu_bounce_register(struct xnvmeperf_gpu *gpu, uint32_t slot, void *hbuf)
+{
+	cudaError_t cerr;
+
+	gpu->hbufs[slot] = hbuf;
+	cerr = cudaHostRegister(hbuf, gpu->iosize, cudaHostRegisterDefault);
+	if (cerr == cudaErrorHostMemoryAlreadyRegistered) {
+		cudaGetLastError();
+		return 0;
+	}
+	if (cerr != cudaSuccess) {
+		/* Leave it unregistered: the copy still runs, just at the pageable
+		 * rate, which the report then reflects rather than hides. */
+		gpu->hbufs[slot] = NULL;
+		fprintf(stderr, "Warning: cudaHostRegister(%p): %s; copy will be pageable\n", hbuf,
+			cudaGetErrorString(cerr));
+		cudaGetLastError();
+		return -EIO;
+	}
+	return 0;
+}
+
+int
+xnvmeperf_gpu_bounce_ready(struct xnvmeperf_gpu *gpu, uint32_t slot)
+{
+	if (!gpu->pending[slot]) {
+		return 1;
+	}
+	if (cudaEventQuery(gpu->events[slot]) == cudaSuccess) {
+		gpu->pending[slot] = 0;
+		return 1;
+	}
+	return 0;
+}
+
+int
+xnvmeperf_gpu_bounce_copy(struct xnvmeperf_gpu *gpu, uint32_t slot, void *hbuf)
+{
+	cudaError_t cerr;
+
+	cerr = cudaMemcpyAsync(gpu->dev + (size_t)slot * gpu->iosize, hbuf, gpu->iosize,
+			       cudaMemcpyHostToDevice, gpu->stream);
+	if (cerr != cudaSuccess) {
+		fprintf(stderr, "Failed: cudaMemcpyAsync(): %s\n", cudaGetErrorString(cerr));
+		return -EIO;
+	}
+	cudaEventRecord(gpu->events[slot], gpu->stream);
+	gpu->pending[slot] = 1;
+	return 0;
+}
+
+void
+xnvmeperf_gpu_bounce_drain(struct xnvmeperf_gpu *gpu)
+{
+	cudaStreamSynchronize(gpu->stream);
+	memset(gpu->pending, 0, gpu->nslots);
+}
+
+void
+xnvmeperf_gpu_bounce_close(struct xnvmeperf_gpu *gpu)
+{
+	if (!gpu) {
+		return;
+	}
+	if (gpu->stream) {
+		cudaStreamSynchronize(gpu->stream);
+	}
+	for (uint32_t i = 0; i < gpu->nslots; i++) {
+		if (gpu->hbufs && gpu->hbufs[i]) {
+			cudaHostUnregister(gpu->hbufs[i]);
+		}
+		if (gpu->events && gpu->events[i]) {
+			cudaEventDestroy(gpu->events[i]);
+		}
+	}
+	if (gpu->dev) {
+		cudaFree(gpu->dev);
+	}
+	if (gpu->stream) {
+		cudaStreamDestroy(gpu->stream);
+	}
+	cudaGetLastError();
+	free(gpu->events);
+	free(gpu->hbufs);
+	free(gpu->pending);
+	free(gpu);
+}
+
+static double
+_now_s(void)
+{
+	struct timespec ts;
+
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	return (double)ts.tv_sec + (double)ts.tv_nsec / 1e9;
+}
+
+int
+xnvmeperf_htod_roofline(uint32_t gpu_id, uint32_t iosize, uint32_t nslots, uint32_t seconds,
+			double *gbps)
+{
+	uint8_t *hbuf = NULL, *dev = NULL;
+	cudaStream_t stream = NULL;
+	cudaEvent_t *events = NULL;
+	uint8_t *pending = NULL;
+	uint64_t done = 0;
+	double t0, elapsed;
+	cudaError_t cerr;
+	int err = 0;
+
+	if (xnvmeperf_gpu_set_device(gpu_id)) {
+		return -EIO;
+	}
+	events = (cudaEvent_t *)calloc(nslots, sizeof(*events));
+	pending = (uint8_t *)calloc(nslots, sizeof(*pending));
+	if (!events || !pending) {
+		err = -ENOMEM;
+		goto out;
+	}
+	if ((cerr = cudaHostAlloc((void **)&hbuf, iosize, cudaHostAllocDefault)) != cudaSuccess ||
+	    (cerr = cudaMalloc((void **)&dev, (size_t)nslots * iosize)) != cudaSuccess ||
+	    (cerr = cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking)) != cudaSuccess) {
+		fprintf(stderr, "Failed: roofline setup: %s\n", cudaGetErrorString(cerr));
+		err = -EIO;
+		goto out;
+	}
+	for (uint32_t i = 0; i < nslots; i++) {
+		if ((cerr = cudaEventCreateWithFlags(&events[i], cudaEventDisableTiming)) !=
+		    cudaSuccess) {
+			fprintf(stderr, "Failed: cudaEventCreate(): %s\n",
+				cudaGetErrorString(cerr));
+			err = -EIO;
+			goto out;
+		}
+	}
+
+	t0 = _now_s();
+	while (_now_s() - t0 < (double)seconds) {
+		for (uint32_t s = 0; s < nslots; s++) {
+			if (pending[s] && cudaEventQuery(events[s]) != cudaSuccess) {
+				continue;
+			}
+			cudaMemcpyAsync(dev + (size_t)s * iosize, hbuf, iosize,
+					cudaMemcpyHostToDevice, stream);
+			cudaEventRecord(events[s], stream);
+			pending[s] = 1;
+			done++;
+		}
+	}
+	cudaStreamSynchronize(stream);
+	elapsed = _now_s() - t0;
+	*gbps = (double)done * (double)iosize / elapsed / 1e9;
+
+out:
+	if (events) {
+		for (uint32_t i = 0; i < nslots; i++) {
+			if (events[i]) {
+				cudaEventDestroy(events[i]);
+			}
+		}
+	}
+	if (stream) {
+		cudaStreamDestroy(stream);
+	}
+	if (dev) {
+		cudaFree(dev);
+	}
+	if (hbuf) {
+		cudaFreeHost(hbuf);
+	}
+	cudaGetLastError();
+	free(events);
+	free(pending);
+	return err;
+}
+
+} /* extern "C" */
