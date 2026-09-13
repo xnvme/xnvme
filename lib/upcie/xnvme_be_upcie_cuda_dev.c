@@ -193,8 +193,28 @@ _cuda_doorbells_reach(struct xnvme_be_upcie_cuda_ctrlr *slot, const char *bdf,
 			       IOMMU_MAP_PA_PROT_READ | IOMMU_MAP_PA_PROT_WRITE, &handle);
 	free(phys);
 	if (err == -EADDRINUSE) {
-		handle = 0;
-		err = 0;
+		/* The identity IOVA is already taken in the GPU's domain. When that is
+		 * an earlier opener of this same controller, the mapping is the
+		 * controller's own BAR and the GPU reaches it. But it is also what an
+		 * unrelated mapping the GPU driver placed at the BAR's address looks
+		 * like, seen with controllers whose BAR0 sits in the range the driver
+		 * allocates from: then the GPU's doorbell writes land on that mapping
+		 * rather than the controller, and its GPU-issued I/O never completes,
+		 * hanging the polling kernel. The two cannot be told apart from user
+		 * space, so treat the collision as unreachable and let the caller
+		 * decline GPU-issued for this controller rather than hang;
+		 * XNVME_UPCIE_CUDA_DOORBELL_SHARE restores the assume-shared behaviour
+		 * for the genuine re-open case. */
+		if (getenv("XNVME_UPCIE_CUDA_DOORBELL_SHARE")) {
+			handle = 0;
+			err = 0;
+		} else {
+			XNVME_DEBUG("FAILED: BAR0 of %s (0x%" PRIx64 ") collides in the domain "
+				    "of %s; GPU-issued declined for it",
+				    bdf, bar0_phys, gpu_bdf);
+			close(fd);
+			return -EADDRINUSE;
+		}
 	}
 	if (err) {
 		XNVME_DEBUG("FAILED: mapping BAR0 of %s into the domain of %s; err(%d)", bdf,
