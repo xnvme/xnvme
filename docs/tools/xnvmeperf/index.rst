@@ -63,6 +63,29 @@ pair lives in GPU memory. Adding ``--sq-hostmem`` moves the submission queue
 into host memory, which the controller fetches from faster than from GPU
 memory; see :ref:`sec-backends-upcie-cuda-gpu` for the trade-off.
 
+``--buf-host-bounce`` keeps the I/O on a host backend and moves each payload
+on to the GPU named by ``--gpu_id`` once it completes, with the runtime's
+asynchronous copy. Every queue slot has a host buffer of its own, page-locked
+so the copy runs at link speed, and a slot is reused only once its copy has
+drained, so when the copy is slower than the drive, submission waits for it.
+At most 128 MiB of such buffers are in flight per device, so that the heap
+stays within the GPU's IOMMU aperture; the host heap is sized with headroom
+for the per-buffer overhead and for the hugepages a served **homi** shares,
+and kept under the 4 GiB at which the DMA mapping collides in that aperture,
+which is what caps the usable ``--iosize``. A buffer the runtime refuses to
+page-lock is copied at the pageable rate, which the report then shows.
+Example::
+
+   xnvmeperf run --iopattern randread --qdepth 64 --iosize 4096 \
+       --runtime 10 --be upcie --buf-host-bounce --gpu_id 0 0000:01:00.0
+
+``htod-roofline`` measures what that copy delivers on its own: it keeps
+``--qdepth`` page-locked copies of ``--iosize`` in flight to the GPU for
+``--runtime`` seconds and reports the host-to-device GB/s, taking no
+devices::
+
+   xnvmeperf htod-roofline --iosize 4096 --qdepth 64 --runtime 10 --gpu_id 0
+
 ``verify`` — Data integrity check
 ==================================
 
