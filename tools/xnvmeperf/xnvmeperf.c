@@ -342,6 +342,19 @@ job_bounce_init(struct xnvmeperf_job *job, struct xnvmeperf_args *args)
 {
 	uint32_t n = args->qdepth;
 
+	/* Cap the ring's in-flight staging by a byte budget: large blocks use
+	 * fewer buffers (they saturate at low depth) so the heap stays under the
+	 * GPU's IOMMU aperture, while small blocks keep the full queue depth. */
+	{
+		uint64_t cap = (128UL << 20) / args->iosize;
+		if (cap < 1) {
+			cap = 1;
+		}
+		if (n > cap) {
+			n = (uint32_t)cap;
+		}
+	}
+
 	job->nslots = n;
 	job->bbufs = calloc(n, sizeof(*job->bbufs));
 	job->bslot_inuse = calloc(n, sizeof(*job->bslot_inuse));
@@ -1338,7 +1351,11 @@ derive_heap_sizes(struct xnvmeperf_args *args)
 	size_t queues = (size_t)args->ndevs * nq;
 	size_t iosize = args->iosize;
 
-	size_t data_bufs = args->buf_host_bounce ? qd : 1;
+	size_t bounce_cap = (128UL << 20) / iosize;
+	if (bounce_cap < 1) {
+		bounce_cap = 1;
+	}
+	size_t data_bufs = args->buf_host_bounce ? (qd < bounce_cap ? qd : bounce_cap) : 1;
 	args->opts.host_heap_size = xnvme_util_heap_size(queues, is_gpu ? 0 : data_bufs * iosize);
 	if (args->buf_host_bounce) {
 		/* The bounce ring's real footprint runs well above the nominal byte
