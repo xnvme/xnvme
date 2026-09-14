@@ -48,5 +48,18 @@ if systemd_unitdir != ''
     install_dir: get_option('sysconfdir') / 'xnvme',
   )
 
+  configure_file(
+    input: 'xnvme-qublk@.service.in',
+    output: 'xnvme-qublk@.service',
+    configuration: unit_conf,
+    install: true,
+    install_dir: systemd_unitdir,
+  )
+
+  install_data(
+    'qublk.conf.example',
+    install_dir: get_option('sysconfdir') / 'xnvme',
+  )
+
   message('systemd units: ' + systemd_unitdir)
 endif

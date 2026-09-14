@@ -1,0 +1,23 @@
+# Configuration for one qublk server, read by xnvme-qublk@.service.
+#
+# Install as qublk-<dev_id>.conf next to this file, so that qublk-0.conf
+# configures the instance started by `systemctl start xnvme-qublk@0` and serves
+# /dev/ublkb0. That is /etc/xnvme/ for a default build, and the sysconfdir of
+# the build otherwise; the unit reads from wherever this file was installed.
+
+# The xNVMe device to back the ublk block device with. For the paired-instance
+# convention this is a HOMI-served controller: xnvme-qublk@0 attaches to the
+# HOMI server started by xnvme-homi@0 (see QUBLK_OPTS). A raw controller bound
+# to a userspace driver works too; the unit will not bind it for you.
+QUBLK_URI=0000:03:00.0
+
+# Anything else to pass to `qublk run`: --be selects the backend, --nqueues and
+# --qdepth shape the ublk queues.
+#
+#   --be upcie          host memory (default where the driver allows it)
+#   --be spdk           the SPDK NVMe driver
+#   --be libvfn         the libvfn driver
+#
+# --homi-id attaches to a HOMI server rather than opening the controller
+# directly; keep it equal to the instance id so xnvme-qublk@0 uses xnvme-homi@0.
+QUBLK_OPTS=--be upcie --homi-id 0 --nqueues 1 --qdepth 128
