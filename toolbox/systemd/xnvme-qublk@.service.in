@@ -1,0 +1,58 @@
+# xNVMe qublk server, one instance per ublk device id.
+#
+#   systemctl enable --now xnvme-qublk@0
+#
+# reads /etc/xnvme/qublk-0.conf and serves /dev/ublkb0 backed by the xNVMe
+# device named there, so anything on the host can do I/O to the block device.
+# See toolbox/systemd/README.md.
+
+[Unit]
+Description=xNVMe qublk server (dev-id %i)
+# The burst has to be counted over an interval wide enough to contain it: each
+# failed cycle costs RestartSec plus up to ten seconds of readiness polling, so
+# with the default the limit never trips on three ordinary starts.
+StartLimitIntervalSec=180
+StartLimitBurst=3
+Documentation=https://xnvme.io/tools/qublk/
+# Whatever binds the backing device to a userspace driver and reserves
+# hugepages has to have run. This does neither: it fails with a clear message
+# instead, because guessing at a machine's driver bindings from a unit file is
+# worse than refusing to start.
+After=local-fs.target
+# The device this serves is typically a HOMI-served controller, so the HOMI
+# server has to be up first. By convention xnvme-qublk@N pairs with
+# xnvme-homi@N (qublk@N serves /dev/ublkbN over homi@N); a run against a raw
+# controller needs neither and the Wants is then harmless.
+Wants=xnvme-homi@%i.service
+After=xnvme-homi@%i.service
+
+[Service]
+Type=exec
+EnvironmentFile=@sysconfdir@/xnvme/qublk-%i.conf
+
+# Refuse rather than half-start: a userspace backend allocates its queues from
+# hugepages, and the failure further in is harder to read than this one.
+ExecStartPre=/bin/sh -c '[ "$(cat /proc/sys/vm/nr_hugepages)" -gt 0 ] || { echo "no hugepages reserved; see @bindir@/xnvme-driver"; exit 1; }'
+
+ExecStart=@bindir@/qublk run $QUBLK_URI --dev-id %i $QUBLK_OPTS
+
+# Type=exec reports started as soon as the process execs, which is before the
+# ublk device exists. Wait for /dev/ublkb%i so systemctl start returns at the
+# point I/O could actually reach the device rather than at the point the
+# process exists.
+ExecStartPost=/bin/sh -c 'for i in $(seq 1 100); do [ -b /dev/ublkb%i ] && exit 0; sleep 0.1; done; echo "ublk device did not appear"; exit 1'
+
+# Users of the block device lose it if this dies, so come back, but do not
+# spin: a server that cannot start usually cannot start on the next attempt
+# either, and a restart loop hides that.
+Restart=on-failure
+RestartSec=5s
+
+# qublk waits on SIGINT or SIGTERM; on either it stops the device first, which
+# drains the requests in flight (del_gendisk waits on them) before the process
+# exits, so give the stop room.
+KillSignal=SIGTERM
+TimeoutStopSec=30s
+
+[Install]
+WantedBy=multi-user.target
