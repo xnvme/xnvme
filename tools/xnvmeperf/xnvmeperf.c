@@ -1341,11 +1341,14 @@ derive_heap_sizes(struct xnvmeperf_args *args)
 	size_t data_bufs = args->buf_host_bounce ? qd : 1;
 	args->opts.host_heap_size = xnvme_util_heap_size(queues, is_gpu ? 0 : data_bufs * iosize);
 	if (args->buf_host_bounce) {
-		/* The bounce ring shares the host heap with the PRP pools and the
-		 * queue rings, both of which grow with the I/O size; double the
-		 * estimate so the largest block has room rather than failing to
-		 * allocate the ring. */
-		args->opts.host_heap_size *= 2;
+		/* The bounce ring's real footprint runs well above the nominal byte
+		 * sum (per-buffer heap overhead), and the served homi shares the
+		 * hugepages, so size the heap with headroom: a fixed control slab
+		 * plus three times the ring. Kept under the ~4 GiB point where the
+		 * DMA mapping collides in the GPU's IOMMU aperture, which is what
+		 * caps the usable block size. */
+		args->opts.host_heap_size =
+			(size_t)queues * (64UL << 20) + 3UL * queues * data_bufs * iosize;
 	}
 	printf("- host_heap_size: %zu bytes\n", args->opts.host_heap_size);
 
