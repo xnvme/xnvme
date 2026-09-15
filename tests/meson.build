@@ -90,6 +90,11 @@ foreach test_source, tests_args : tests
   )
   foreach test_args : tests_args
     test_name = test_args[0]
-    test('tests - '+fs.stem(test_source)+', '+test_name, e, args : test_args[1])
+    test(
+      'tests - '+fs.stem(test_source)+', '+test_name,
+      e,
+      args : test_args[1],
+      suite : fs.stem(test_source),
+    )
   endforeach
 endforeach

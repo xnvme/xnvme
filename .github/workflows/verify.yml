@@ -311,6 +311,11 @@ jobs:
     - name: Execute 'xnvme library-info'
       run: xnvme library-info
 
+    - name: Execute the meson test-suite against the ramdisk
+      # The enum cases enumerate the devices of the host; they are the only
+      # cases needing hardware and privileges, so they are left out
+      run: meson test -C builddir --print-errorlogs --no-suite enum
+
     - name: Check pkg-config
       run: |
         pkg-config xnvme --libs
