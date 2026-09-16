@@ -47,9 +47,10 @@ NVMe driver so its local `/dev/nvmeXn1` can be exported as a `nvmet`
 namespace.
 
 Both providers are driven by the same `nvme_target_start`,
-`nvme_target_probe`, and `nvme_target_stop` cijoe scripts, switched via
-`--nvme-provider`. The initiator side (xNVMe access via TCP URI) is identical
-between the two and is documented below.
+`nvme_target_probe`, and `nvme_target_stop` cijoe scripts; `start` and `stop`
+are switched via `--nvme-provider`, `probe` discovers whichever is listening.
+The initiator side (xNVMe access via a fabrics URI) is identical between the
+two and is documented below.
 
 ```{toctree}
 :hidden:
@@ -60,7 +61,9 @@ linux/index
 
 ## Script configuration
 
-`nvme_target_start.py`, `nvme_target_probe.py`, and `nvme_target_stop.py` each accept a different set of arguments that controls the behavior of each script.
+`nvme_target_start.py`, `nvme_target_probe.py`, and `nvme_target_stop.py`
+each take their own set of arguments; `--transport-name` is the one all three
+share.
 
 `nvme_target_start.py` accepts the following arguments:
 
@@ -68,7 +71,7 @@ linux/index
 |---------------------|-------------|--------------------------------------------------------------------|
 | `--nvme-provider`   | `spdk`      | `spdk` or `linux`.                                                 |
 | `--nvme-traddr`     | `127.0.0.1` | Transport address (IP) for the listener.                           |
-| `--nvme-trsvcid`    | `4420`      | Transport service id (TCP port).                                   |
+| `--nvme-trsvcid`    | `4420`      | Transport service id (port); rdma listens on one as well.          |
 | `--nvme-trtype`     | `tcp`       | Transport type.                                                    |
 | `--nvme-adrfam`     | `ipv4`      | Address family.                                                    |
 | `--transport-name`  | None        | CIJOE Transport to use. Defaults to first-found, if not specified. |
@@ -78,7 +81,7 @@ linux/index
 | Argument            | Default     | Description                                                        |
 |---------------------|-------------|--------------------------------------------------------------------|
 | `--nvme-traddr`     | `127.0.0.1` | Transport address (IP) for the listener.                           |
-| `--nvme-trsvcid`    | `4420`      | Transport service id (TCP port).                                   |
+| `--nvme-trsvcid`    | `4420`      | Transport service id (port); rdma listens on one as well.          |
 | `--nvme-trtype`     | `tcp`       | Transport type.                                                    |
 | `--transport-name`  | None        | CIJOE Transport to use. Defaults to first-found, if not specified. |
 
