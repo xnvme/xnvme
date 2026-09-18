@@ -397,9 +397,9 @@ Checkout qemu:
 .. code-block:: bash
 
   cd ~/git
-  git clone https://github.com/SamsungDS/qemu.git --recursive
+  git clone https://github.com/qemu/qemu.git --recursive
   cd qemu
-  git checkout for-xnvme
+  git checkout v9.0.0
   git submodule update --init --recursive
 
 Create a work-directory:
