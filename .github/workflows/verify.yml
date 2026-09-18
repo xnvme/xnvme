@@ -43,7 +43,7 @@ jobs:
   #   and libvfn.
   #
   source-archive:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container: ghcr.io/xnvme/xnvme-deps-alpine-latest:main
     strategy:
       matrix:
@@ -89,7 +89,7 @@ jobs:
   # Check source-format using pre-commit
   #
   source-format-check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container: ghcr.io/xnvme/xnvme-citools-debian-latest:main
 
     steps:
@@ -113,7 +113,7 @@ jobs:
   #
   test-gen-targets:
     needs: source-archive
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container: ghcr.io/xnvme/xnvme-citools-debian-latest:main
 
     steps:
@@ -143,7 +143,7 @@ jobs:
 
   build-rust:
     needs: source-archive
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container:
       image: ghcr.io/xnvme/xnvme-deps-debian-trixie:main
 
@@ -184,7 +184,7 @@ jobs:
   #
   build-python:
     needs: source-archive
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container: ghcr.io/xnvme/xnvme-deps-debian-trixie:main
     strategy:
       fail-fast: false
@@ -227,7 +227,7 @@ jobs:
   #
   build-linux:
     needs: [source-archive, source-format-check, build-python]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: github.event_name == 'push' || github.event_name == 'pull_request'
 
     strategy:
@@ -695,7 +695,7 @@ jobs:
   #
   generate-verify-matrix:
     needs: [source-archive, source-format-check, build-python]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' &&
       github.event.inputs.job == 'verify')
 
@@ -730,7 +730,7 @@ jobs:
   verify:
     name: verify (${{ matrix.os }}, ${{ matrix.ver }}, ${{ matrix.transport }}, ${{ matrix.test }})
     needs: [generate-verify-matrix, source-archive, source-format-check, build-python]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' &&
       github.event.inputs.job == 'verify')
 
@@ -1241,7 +1241,7 @@ jobs:
   #
   docgen:
     needs: [source-archive, source-format-check, build-python]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' &&
       github.event.inputs.job == 'docgen')
 
@@ -1371,7 +1371,7 @@ jobs:
         git push
   packaging-debian:
     needs: source-archive
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container: ghcr.io/xnvme/xnvme-citools-debian-latest:main
     if: github.event_name == 'pull_request'
 
