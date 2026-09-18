@@ -16,26 +16,33 @@ xNVMe: cross-platform libraries and tools for NVMe devices
 
 See: https://xnvme.io/ for documentation
 
-- xNVMe, base NVMe specification (1.4) available as library and CLI `xnvme`
-  - Memory Management
-  - NVMe command interface
-    | Synchronous commands
-    | Asynchronous commands
-  - Helpers / convenience functions for common operations
-  - CLI-library for convenient derivative work
-  - Multiple backend implementations
-    | Linux SPDK
-    | Linux IOCTL
-    | Linux io_uring
-    | Linux libaio
-    | FreeBSD SPDK
-    | FreeBSD IOCTL
-- `libxnvme`, base NVMe Specification available as library and via CLI `xnvme`
-- `libxnvme_nvm`, The NVM Commands Set
-- `libxnvme_znd`, The Zoned Command Set available as a library and via CLI `zoned`
-- `libkvs`, SNIA KV API implemented [TODO]
-- `libocssd`, Open-Channel 2.0 support [TODO]
-- `libWHATEVERYOUWANT`, Go ahead and implement what you need [TODO]
+xNVMe provides APIs, libraries, and tools for user space programming of
+NVMe devices on Linux, FreeBSD, macOS, and Windows, through a single C
+API backed by the `libxnvme` library. The library carries backends
+utilizing and interfacing with the following, chosen at runtime, so the
+same application code runs unmodified across them:
+
+- Linux: `io_uring`, `io_uring_cmd`, `libaio`, block-layer IOCTLs
+- FreeBSD, macOS, Windows: the platform's native NVMe driver
+- `SPDK`, the popular user space NVMe driver on Linux and FreeBSD, for
+  CPU-initiated I/O
+- `uPCIe`, a blazingly fast user space PCIe driver on Linux, with P2P data
+  movement and support for CPU-initiated, Accelerator-assisted, and
+  Accelerator-initiated I/O; currently compatible with CUDA and HIP (ROCm)
+
+On top of `libxnvme`:
+
+- Command sets: `libxnvme_nvm` (NVM), `libxnvme_znd` (Zoned), `libxnvme_kvs` (KV)
+- CLI tools: `xnvme`, `lblk`, `zoned`, `kvs`, `xdd`
+- `xnvmeperf`, synthetic workload generation with minimal overhead, to
+  benchmark I/O processing at unprecedented efficiency across all of
+  xNVMe's backends
+- `homi`, the software equivalent of SR-IOV: a daemon enabling multiple
+  users, different processes on the host as well as compute kernels on
+  accelerators, to run I/O directly against a single NVMe controller
+- `qublk`, a `ublk`-server implementation enabling kernel I/O and file
+  systems to run in concert with the blazingly fast user space NVMe
+  drivers
 
 Contact and Contributions
 =========================
