@@ -2,9 +2,9 @@
 set -eux
 
 mkdir -p $HOME/git
-git clone --recursive https://github.com/SamsungDS/qemu.git $HOME/git/qemu
+git clone --recursive https://github.com/qemu/qemu.git $HOME/git/qemu
 cd $HOME/git/qemu
-git checkout for-xnvme
+git checkout v10.2.1
 mkdir -p /opt/qemu
 mkdir build
 cd build
