@@ -6,7 +6,7 @@ ConditionPathExists=/sys/module/vfio_pci
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/python3 /root/git/upcie/scripts/devbind.py --bind vfio-pci
+ExecStart=/usr/local/bin/devbind --bind vfio-pci --device 0000:02:00.0
 
 [Install]
 WantedBy=multi-user.target
