@@ -715,7 +715,7 @@ jobs:
         #- {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'tcp-linux'}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Generate the job-matrix from the cijoe workflows
       id: generate
