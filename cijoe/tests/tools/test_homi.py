@@ -554,6 +554,35 @@ def test_server_terminates_promptly(cijoe, device, be_opts, cli_args):
 
 
 @xnvme_parametrize(labels=["pcie"], opts=["be"])
+def test_server_runs_on_its_drives_node(cijoe, device, be_opts, cli_args):
+    """
+    A server whose drives share a NUMA node runs on that node's cores
+
+    Skipped where sysfs places the drives on no node, or on several, since the
+    server then leaves its placement alone.
+    """
+
+    _served(cijoe, be_opts)
+    if HomiServer.RUNNING is None:
+        pytest.skip(reason="No server started by this run to inspect")
+
+    _, labels = HomiServer.RUNNING
+    nodes = set()
+    for dev in cijoe_config_get_all_devices(list(labels)):
+        err, state = cijoe.run(f"cat /sys/bus/pci/devices/{dev['uri']}/numa_node")
+        nodes.add(-1 if err else int(state.output().strip()))
+    if len(nodes) != 1 or min(nodes) < 0:
+        pytest.skip(reason=f"The drives are on NUMA nodes {sorted(nodes)}")
+
+    err, want = cijoe.run(f"cat /sys/devices/system/node/node{nodes.pop()}/cpulist")
+    assert not err, "sysfs places the drives on a node it does not describe"
+
+    err, got = cijoe.run("grep Cpus_allowed_list /proc/$(pgrep -x homi)/status")
+    assert not err, "could not read the server's affinity"
+    assert got.output().split(":")[-1].strip() == want.output().strip()
+
+
+@xnvme_parametrize(labels=["pcie"], opts=["be"])
 def test_runtime_is_reachable_by_its_name(cijoe, device, be_opts, cli_args):
     """The server listens on the socket clients derive from --homi-id"""
 

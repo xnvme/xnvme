@@ -66,6 +66,13 @@ so size it for the buffers the clients will ask for:
 homi serve 0000:03:00.0 --be upcie --homi-id 1 --host_heap_size 134217728
 ```
 
+When every device given sits on one NUMA node, as sysfs reports it, **homi**
+binds its memory and threads to that node before opening anything, so the heap
+the controllers fetch from is local to them; otherwise it leaves placement
+alone. It says which when it starts. The binding is strict, so the hugepages
+have to be reserved on that node: a node short of them fails the open rather
+than spilling to another, and **homi** names the node when it does.
+
 If any device fails to open, **homi** closes the devices it has already opened
 and exits with an error, rather than holding a partial set open. Once all
 devices are open it reports that it has started, then waits for `SIGINT`
