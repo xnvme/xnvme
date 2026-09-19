@@ -29,6 +29,7 @@ struct xnvmeperf_args {
 	uint32_t time;
 	uint32_t count;
 	uint32_t nqueues;
+	uint32_t nbatches; ///< GPU-issued: batches the depth is split into, see cuda-run
 	double report_freq;
 	enum iopattern pattern;
 	int queue_opts;      ///< Passed to xnvme_queue_init() or xnvme_cuda_queue_create()
@@ -48,14 +49,14 @@ print_intermediate_result(double elapsed, double interval, uint64_t completed, u
 #ifdef XNVME_BE_UPCIE_CUDA_ENABLED
 int
 xnvmeperf_cuda_run_io(struct xnvme_dev **devs, const struct xnvmeperf_args *args,
-		      uint64_t *rounds_per_dev, uint64_t *failed_per_dev, float *elapsed_ms);
+		      uint64_t *completed_per_dev, uint64_t *failed_per_dev, float *elapsed_ms);
 int
 xnvmeperf_cuda_verify_io(struct xnvme_dev **devs, const struct xnvmeperf_args *args);
 #else
 static inline int
 xnvmeperf_cuda_run_io(struct xnvme_dev **XNVME_UNUSED(devs),
 		      const struct xnvmeperf_args *XNVME_UNUSED(args),
-		      uint64_t *XNVME_UNUSED(rounds_per_dev),
+		      uint64_t *XNVME_UNUSED(completed_per_dev),
 		      uint64_t *XNVME_UNUSED(failed_per_dev), float *XNVME_UNUSED(elapsed_ms))
 {
 	return -ENOSYS;

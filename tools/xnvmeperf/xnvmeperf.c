@@ -549,6 +549,7 @@ print_run_args(struct xnvmeperf_args *args, const char *pattern)
 	printf("- io pattern: %s\n", pattern);
 	printf("- queues per device: %u\n", args->nqueues);
 	printf("- queue depth: %u\n", args->qdepth);
+	printf("- gpu-issued batches per queue: %u\n", args->nbatches);
 	printf("- cq in gpu memory: %s\n",
 	       (args->queue_opts & XNVME_QUEUE_P2P_CQ_MIRROR) ? "yes" : "no");
 	printf("- sq in host memory: %s\n",
@@ -1131,7 +1132,7 @@ static int
 xnvmeperf_cuda_run(struct xnvmeperf_args *args)
 {
 	struct xnvme_dev **devs;
-	uint64_t *rounds_per_dev, *failed_per_dev;
+	uint64_t *completed_per_dev, *failed_per_dev;
 	double elapsed_s;
 	float elapsed_ms = 0;
 	int err;
@@ -1141,21 +1142,21 @@ xnvmeperf_cuda_run(struct xnvmeperf_args *args)
 		return err;
 	}
 
-	rounds_per_dev = calloc(args->ndevs, sizeof(*rounds_per_dev));
+	completed_per_dev = calloc(args->ndevs, sizeof(*completed_per_dev));
 	failed_per_dev = calloc(args->ndevs, sizeof(*failed_per_dev));
 
-	if (!rounds_per_dev || !failed_per_dev) {
+	if (!completed_per_dev || !failed_per_dev) {
 		err = -ENOMEM;
 		xnvme_cli_perr("Failed: calloc()", err);
-		free(rounds_per_dev);
+		free(completed_per_dev);
 		free(failed_per_dev);
 		goto close_devs;
 	}
 
-	err = xnvmeperf_cuda_run_io(devs, args, rounds_per_dev, failed_per_dev, &elapsed_ms);
+	err = xnvmeperf_cuda_run_io(devs, args, completed_per_dev, failed_per_dev, &elapsed_ms);
 	if (err) {
 		xnvme_cli_perr("Failed: xnvmeperf_cuda_run_io()", err);
-		free(rounds_per_dev);
+		free(completed_per_dev);
 		free(failed_per_dev);
 		goto close_devs;
 	}
@@ -1165,7 +1166,7 @@ xnvmeperf_cuda_run(struct xnvmeperf_args *args)
 		double iops[args->ndevs], mibps[args->ndevs];
 
 		for (int i = 0; i < args->ndevs; i++) {
-			double total_ios = (double)rounds_per_dev[i] * args->qdepth;
+			double total_ios = (double)completed_per_dev[i];
 			iops[i] = total_ios / elapsed_s;
 			mibps[i] = (total_ios * args->iosize) / (elapsed_s * 1024.0 * 1024.0);
 		}
@@ -1173,7 +1174,7 @@ xnvmeperf_cuda_run(struct xnvmeperf_args *args)
 				   iops, mibps, failed_per_dev, NULL);
 	}
 
-	free(rounds_per_dev);
+	free(completed_per_dev);
 	free(failed_per_dev);
 
 close_devs:
@@ -1316,6 +1317,14 @@ parse_run_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 	}
 
 	args->nqueues = cli->args.nqueues ? cli->args.nqueues : 1;
+
+	args->nbatches = cli->args.nbatches ? cli->args.nbatches : 2;
+	if (args->nbatches > args->qdepth || !xnvme_is_pow2(args->nbatches)) {
+		err = -EINVAL;
+		xnvme_cli_perr("Error: --nbatches must be a power of 2 no larger than --qdepth",
+			       err);
+		return err;
+	}
 
 	args->ncpus = cli->args.ncpus;
 	args->cpus = cli->args.cpus;
@@ -1592,6 +1601,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_HOMI_ID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_REPORT_FREQ, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_SQ_HOSTMEM, XNVME_CLI_LFLG},
+			{XNVME_CLI_OPT_NBATCHES, XNVME_CLI_LOPT},
 		},
 	},
 	{
