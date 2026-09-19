@@ -95,11 +95,21 @@ Example::
 
 Requires the ``upcie-cuda`` backend. All queues across all devices are driven
 by a single CUDA kernel: each CUDA block owns one NVMe queue and each thread
-within the block owns one queue slot, so ``--qdepth`` threads submit and reap
-commands in lock-step. The grid has ``ndevs × --nqueues`` blocks in total.
+within the block owns one queue slot. The grid has ``ndevs × --nqueues``
+blocks in total.
 
-Both ``--qdepth`` and ``--iosize`` must be powers of 2. Supported patterns are
-``read``, ``write``, ``randread``, and ``randwrite``.
+The slots of a queue are split into ``--nbatches`` groups that take turns: a
+group reaps the queue's next batch of completions and refills the room they
+leave, while the other groups' commands stay in service. With ``--nbatches 1``
+the whole depth is submitted, then waited for, so the queue runs empty for one
+GPU round trip per depth's worth of I/O and a single queue per drive cannot
+reach the drive's rate however deep it is; the default of 2 keeps the queue
+between half and fully loaded, and a single queue then reaches what two queues
+per drive otherwise take.
+
+``--qdepth``, ``--nbatches`` and ``--iosize`` must be powers of 2, and
+``--nbatches`` no larger than ``--qdepth``. Supported patterns are ``read``,
+``write``, ``randread``, and ``randwrite``.
 
 .. literalinclude:: xnvmeperf_cuda_run_usage.out
    :language: bash
