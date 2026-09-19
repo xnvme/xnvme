@@ -81,6 +81,7 @@ xnvmeperf_cuda_kernel_run(struct xnvme_cuda_queue **qps, struct xnvme_spec_cmd *
 	const uint16_t lane = (uint16_t)(tid % batch);
 	const int random = seeds != NULL;
 	size_t turn = 0;
+	unsigned nturns = 0;
 
 	qp = qps[bid];
 	cap = nblocks[bid];
@@ -109,8 +110,11 @@ xnvmeperf_cuda_kernel_run(struct xnvme_cuda_queue **qps, struct xnvme_spec_cmd *
 
 	while (true) {
 		/* Thread 0 samples the stop flag and broadcasts it through shared
-		 * memory, so every thread leaves at the same barrier. */
-		if (tid == 0) {
+		 * memory, so every thread leaves at the same barrier. The flag is
+		 * in host memory, so the read is a PCIe round trip, near 2 us on
+		 * the turn's critical path; every 32nd turn is late by under a
+		 * millisecond and costs nothing. */
+		if (tid == 0 && (nturns++ & 31) == 0) {
 			s_stop = *stop;
 		}
 		__syncthreads();
@@ -145,7 +149,12 @@ xnvmeperf_cuda_kernel_run(struct xnvme_cuda_queue **qps, struct xnvme_spec_cmd *
 		}
 		__syncthreads();
 		if (tid == 0) {
-			xnvme_cuda_sq_update(qp, batch);
+			/* Not xnvme_cuda_sq_update(): its fence is for a caller whose
+			 * threads did not fence, and here every thread's entry was
+			 * system-visible before it reached the barrier, so a second
+			 * fence only adds its round trip, about 1.5 us, to the turn. */
+			qp->tail = (qp->tail + batch) % qp->depth;
+			*(volatile uint32_t *)qp->sqdb = qp->tail;
 		}
 
 		turn = (turn + 1) % nbatches;
