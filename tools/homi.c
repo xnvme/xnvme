@@ -3,10 +3,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <errno.h>
+#include <sched.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/syscall.h>
 #include <unistd.h>
+#include <linux/mempolicy.h>
 
 #include <libxnvme.h>
 #include <xnvme_vcs.h>
@@ -38,6 +41,97 @@ static void
 handle_signal(int sig __attribute__((unused)))
 {
 	stop = 1;
+}
+
+/**
+ * The NUMA node a PCI function sits on, or -1 when sysfs does not say
+ */
+static int
+_uri_numa_node(const char *uri)
+{
+	char path[256];
+	FILE *f;
+	int node = -1;
+
+	snprintf(path, sizeof(path), "/sys/bus/pci/devices/%s/numa_node", uri);
+	f = fopen(path, "r");
+	if (!f) {
+		return -1;
+	}
+	if (fscanf(f, "%d", &node) != 1) {
+		node = -1;
+	}
+	fclose(f);
+
+	return node;
+}
+
+/**
+ * Put this process, and with it the heap it is about to allocate, on the
+ * devices' NUMA node
+ *
+ * The heap is what every served queue and every request's PRP list lives in,
+ * and the controllers fetch and complete through it; hugepages come from the
+ * node of whoever faults them, so left alone the heap lands wherever the
+ * scheduler had this process when it started. When every device is on one
+ * node, memory is bound there and the process pinned to its cores; with
+ * devices on several nodes, or none known, nothing is decided here.
+ *
+ * @return The node bound to, or -1 when none was
+ */
+static int
+_bind_to_devices_node(const char **uris, int count)
+{
+	char path[256], buf[4096];
+	unsigned long nodemask;
+	cpu_set_t cpus;
+	FILE *f;
+	int node = -1;
+
+	for (int i = 0; i < count; i++) {
+		int n = _uri_numa_node(uris[i]);
+
+		if (n < 0 || (node >= 0 && n != node)) {
+			return -1;
+		}
+		node = n;
+	}
+	if (node < 0 || node >= (int)(8 * sizeof(nodemask))) {
+		return -1;
+	}
+
+	nodemask = 1UL << node;
+	if (syscall(SYS_set_mempolicy, MPOL_BIND, &nodemask, 8 * sizeof(nodemask) + 1)) {
+		xnvme_cli_perr("Warning: set_mempolicy()", -errno);
+		return -1;
+	}
+
+	/* The cpulist reads "0,2,4-6,...": ranges of cores, comma-separated. */
+	snprintf(path, sizeof(path), "/sys/devices/system/node/node%d/cpulist", node);
+	f = fopen(path, "r");
+	if (!f || !fgets(buf, sizeof(buf), f)) {
+		if (f) {
+			fclose(f);
+		}
+		return node;
+	}
+	fclose(f);
+	CPU_ZERO(&cpus);
+	for (char *tok = strtok(buf, ",\n"); tok; tok = strtok(NULL, ",\n")) {
+		int lo, hi;
+
+		if (sscanf(tok, "%d-%d", &lo, &hi) < 2) {
+			hi = lo;
+		}
+		for (int c = lo; c <= hi && c < CPU_SETSIZE; c++) {
+			CPU_SET(c, &cpus);
+		}
+	}
+	if (CPU_COUNT(&cpus) && sched_setaffinity(0, sizeof(cpus), &cpus)) {
+		xnvme_cli_perr("Warning: sched_setaffinity()", -errno);
+	}
+
+	return node;
 }
 
 static void
@@ -123,6 +217,17 @@ sub_start(struct xnvme_cli *cli)
 	opts.device_heap_size =
 		cli->args.device_heap_size ? cli->args.device_heap_size : HOMI_DEVICE_HEAP_SIZE;
 	opts.gpu_id = cli->given[XNVME_CLI_OPT_GPU_ID] ? cli->args.gpu_id : 0;
+
+	{
+		int node = _bind_to_devices_node(dev_uris, ndevs);
+
+		if (node >= 0) {
+			xnvme_cli_pinf("Bound to NUMA node %d, the devices' own", node);
+		} else {
+			xnvme_cli_pinf("Not bound to a NUMA node: the devices span nodes, or "
+				       "sysfs does not place them");
+		}
+	}
 
 	err = xnvme_cli_dev_open_multi(dev_uris, ndevs, &opts, &devs);
 	if (err) {
