@@ -404,6 +404,36 @@ def test_server_terminates_promptly(cijoe, device, be_opts, cli_args):
 
 
 @xnvme_parametrize(labels=["pcie"], opts=["be"])
+def test_server_says_where_it_placed_itself(cijoe, device, be_opts, cli_args):
+    """
+    The server reports the NUMA placement it chose, or that it chose none.
+
+    Binding to the drives' node keeps the heap local to them, and this line is
+    how an operator tells; without it a misplaced server looks like one bound
+    where it should be.
+    """
+
+    _require_upcie(cijoe)
+
+    homi_id = get_homi_id()
+    if not homi_id:
+        pytest.skip(reason="Requires a control-plane server; pass --homi-id")
+    if not be_opts["be"].startswith("upcie"):
+        pytest.skip(reason="Only uPCIe serves clients over a socket")
+    if CPlaneServer.RUNNING is None:
+        pytest.skip(reason="No server started by this run to read the output of")
+
+    be, _ = CPlaneServer.RUNNING
+    err, state = cijoe.run(f"cat /tmp/cplane_{be}.out")
+    assert not err, "the server's output is not where it was written"
+
+    out = state.output()
+    assert (
+        "Bound to NUMA node" in out or "Not bound to a NUMA node" in out
+    ), "the server did not say where it placed itself"
+
+
+@xnvme_parametrize(labels=["pcie"], opts=["be"])
 def test_runtime_is_reachable_by_its_name(cijoe, device, be_opts, cli_args):
     """
     A runtime is one socket, named for the identifier clients pass.
