@@ -179,7 +179,14 @@ xnvme_cuda_reap_at_i(struct xnvme_cuda_queue *qp, int timeout_ms, struct xnvme_s
 		cqe = &cq[index];
 
 		if ((cqe->cid < 0xFFFF) && (cqe->status.p == expected_phase)) {
-			*cpl = *(struct xnvme_spec_cpl *)cqe;
+			// Copied through the volatile view too: a plain copy is a load
+			// the compiler may hoist above the poll, and did, so the caller
+			// got the entry as it was before the controller wrote it.
+			const volatile uint64_t *src = (const volatile uint64_t *)cqe;
+			uint64_t *dst                = (uint64_t *)cpl;
+
+			dst[0] = src[0];
+			dst[1] = src[1];
 			return 0;
 		}
 	} while ((int64_t)clock64() < deadline);
