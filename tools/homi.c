@@ -3,14 +3,16 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <errno.h>
-#include <sched.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/syscall.h>
 #include <unistd.h>
+#ifdef __linux__
+#include <sched.h>
+#include <sys/syscall.h>
 #include <linux/mempolicy.h>
+#endif
 
 #include <libxnvme.h>
 #include <xnvme_cuse.h>
@@ -46,6 +48,7 @@ handle_signal(int sig __attribute__((unused)))
 	stop = 1;
 }
 
+#ifdef __linux__
 /**
  * The NUMA node a PCI function sits on, or -1 when sysfs does not say
  */
@@ -136,6 +139,20 @@ bind_to_devices_node(const char **uris, int count)
 
 	return node;
 }
+#else
+/**
+ * NUMA binding is Linux-only (sysfs, set_mempolicy(2), sched_setaffinity(2));
+ * elsewhere this is nothing decided, same as when sysfs does not place the
+ * devices on Linux itself.
+ */
+static int
+bind_to_devices_node(const char **uris, int count)
+{
+	(void)uris;
+	(void)count;
+	return -1;
+}
+#endif
 
 /**
  * Must run before any CUSE session thread is created: a thread inherits the
