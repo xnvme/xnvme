@@ -706,7 +706,7 @@ print_results(struct xnvmeperf_thread *threads, struct xnvmeperf_args *args)
 	}
 
 	for (int d = 0; d < args->ndevs; d++) {
-		uint64_t completed = 0;
+		double dev_iops = 0;
 		int cpus_len = 0;
 
 		cpus_bufs[d] = calloc(256, 1);
@@ -724,7 +724,7 @@ print_results(struct xnvmeperf_thread *threads, struct xnvmeperf_args *args)
 					continue;
 				}
 
-				completed += thread->jobs[j].io_completed;
+				dev_iops += (double)thread->jobs[j].io_completed / thread->elapsed;
 				failed[d] += thread->jobs[j].io_failed;
 
 				if (cpus_len > 0) {
@@ -736,9 +736,8 @@ print_results(struct xnvmeperf_thread *threads, struct xnvmeperf_args *args)
 			}
 		}
 
-		iops[d] = (double)completed / elapsed;
-		mibps[d] =
-			((double)completed * (double)args->iosize) / (elapsed * 1024.0 * 1024.0);
+		iops[d] = dev_iops;
+		mibps[d] = (dev_iops * (double)args->iosize) / (1024.0 * 1024.0);
 		cpus[d] = cpus_bufs[d];
 	}
 
