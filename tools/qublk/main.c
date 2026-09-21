@@ -157,14 +157,8 @@ sub_run(struct xnvme_cli *cli)
 	dev.has_fua = backend_honours_fua(dev.xdev);
 
 	cap_max = dev.geo->mdts_nbytes ? dev.geo->mdts_nbytes : QUBLK_DEFAULT_MAX_IO_CAP;
-	dev.max_io_buf = want_max_io
-				 ? want_max_io
-				 : (cap_max < QUBLK_DEFAULT_MAX_IO_CAP ? cap_max
-								       : QUBLK_DEFAULT_MAX_IO_CAP);
-	if (dev.max_io_buf > cap_max) {
-		dev.max_io_buf = cap_max;
-	}
-
+	dev.max_io_buf = (uint32_t)XNVME_MIN_U64(
+		want_max_io ? want_max_io : QUBLK_DEFAULT_MAX_IO_CAP, cap_max);
 	dev.max_io_buf &= ~(uint32_t)(sysconf(_SC_PAGESIZE) - 1);
 
 	setvbuf(stderr, NULL, _IOLBF, 0);
