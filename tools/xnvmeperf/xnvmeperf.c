@@ -387,13 +387,6 @@ thread_fn(void *arg)
 	return NULL;
 }
 
-static void *
-dev_close_fn(void *arg)
-{
-	xnvme_dev_close(arg);
-	return NULL;
-}
-
 static void
 print_run_args(struct xnvmeperf_args *args, const char *pattern)
 {
@@ -559,43 +552,30 @@ done:
 /**
  * Open all devices in args and derive their geometry.
  *
- * devs must be a calloc'd array of args->ndevs null-initialised pointers.
- * On failure all successfully opened devices are closed and their entries
- * are set to NULL.
- *
  * @param args  Benchmark arguments with dev_uris, ndevs, and opts
- * @param devs  Caller-allocated array of ndevs device pointers (zero-initialised)
+ * @param devs  Set to the opened devices; release them with xnvme_cli_dev_close_multi()
  * @return 0 on success, negative errno on error
  */
 static int
-xnvmeperf_open_devs(struct xnvmeperf_args *args, struct xnvme_dev **devs)
+xnvmeperf_open_devs(struct xnvmeperf_args *args, struct xnvme_dev ***devs)
 {
 	int err;
 
+	err = xnvme_cli_dev_open_multi(args->dev_uris, args->ndevs, &args->opts, devs);
+	if (err) {
+		return err;
+	}
+
 	for (int i = 0; i < args->ndevs; i++) {
-		devs[i] = xnvme_dev_open(args->dev_uris[i], &args->opts);
-		if (!devs[i]) {
-			err = -errno;
-			fprintf(stderr, "Failed: xnvme_dev_open(%s): err(%d)\n", args->dev_uris[i],
-				err);
-			goto close;
-		}
-		err = xnvme_dev_derive_geo(devs[i]);
+		err = xnvme_dev_derive_geo((*devs)[i]);
 		if (err) {
 			xnvme_cli_perr("Failed: xnvme_dev_derive_geo()", err);
-			goto close;
+			xnvme_cli_dev_close_multi(*devs, args->ndevs);
+			return err;
 		}
 	}
-	return 0;
 
-close:
-	for (int i = 0; i < args->ndevs; i++) {
-		if (devs[i]) {
-			xnvme_dev_close(devs[i]);
-			devs[i] = NULL;
-		}
-	}
-	return err;
+	return 0;
 }
 
 /**
@@ -613,20 +593,12 @@ xnvmeperf_run(struct xnvmeperf_args *args)
 {
 	struct xnvmeperf_thread *threads;
 	struct xnvme_dev **devs;
-	pthread_t *tids, *close_tids;
+	pthread_t *tids;
 	int total_jobs, err;
 
 	// Pre-open all devices, as they can only be opened once.
-	devs = calloc(args->ndevs, sizeof(*devs));
-	if (!devs) {
-		err = -errno;
-		xnvme_cli_perr("Failed: calloc() for devs", err);
-		return err;
-	}
-
-	err = xnvmeperf_open_devs(args, devs);
+	err = xnvmeperf_open_devs(args, &devs);
 	if (err) {
-		free(devs);
 		return err;
 	}
 
@@ -693,35 +665,7 @@ xnvmeperf_run(struct xnvmeperf_args *args)
 	}
 
 close_devs:
-	close_tids = calloc(args->ndevs, sizeof(*close_tids));
-
-	// We use threads to close the devices, because it took a long time
-	// to close each, so this is to speed up the process.
-	if (close_tids) {
-		for (int i = 0; i < args->ndevs; i++) {
-			err = pthread_create(&close_tids[i], NULL, dev_close_fn, devs[i]);
-			if (err) {
-				// Failed creating thread, wait for all existing threads to finish
-				// and close manually
-				xnvme_cli_perr("Failed: pthread_create()", err);
-				for (int j = 0; j < i; j++) {
-					pthread_join(close_tids[j], NULL);
-				}
-				free(close_tids);
-				goto failed_pthread_close;
-			}
-		}
-		for (int i = 0; i < args->ndevs; i++) {
-			pthread_join(close_tids[i], NULL);
-		}
-		free(close_tids);
-	} else {
-failed_pthread_close:
-		for (int i = 0; i < args->ndevs; i++) {
-			xnvme_dev_close(devs[i]);
-		}
-	}
-	free(devs);
+	xnvme_cli_dev_close_multi(devs, args->ndevs);
 	free(threads);
 	free(tids);
 
@@ -785,14 +729,8 @@ xnvmeperf_verify(struct xnvmeperf_args *args)
 	printf("\nxnvmeperf verify: iosize=%u, nios=%d\n", args->iosize, nios);
 	printf("====================================================================\n");
 
-	devs = calloc(args->ndevs, sizeof(*devs));
-	if (!devs) {
-		return -ENOMEM;
-	}
-
-	err = xnvmeperf_open_devs(args, devs);
+	err = xnvmeperf_open_devs(args, &devs);
 	if (err) {
-		free(devs);
 		return err;
 	}
 
@@ -939,10 +877,7 @@ next_dev:
 
 	printf("====================================================================\n");
 
-	for (int i = 0; i < args->ndevs; i++) {
-		xnvme_dev_close(devs[i]);
-	}
-	free(devs);
+	xnvme_cli_dev_close_multi(devs, args->ndevs);
 	return err;
 }
 
@@ -955,16 +890,8 @@ xnvmeperf_cuda_run(struct xnvmeperf_args *args)
 	float elapsed_ms = 0;
 	int err;
 
-	devs = calloc(args->ndevs, sizeof(*devs));
-	if (!devs) {
-		err = -errno;
-		xnvme_cli_perr("Failed: calloc() for devs", err);
-		return err;
-	}
-
-	err = xnvmeperf_open_devs(args, devs);
+	err = xnvmeperf_open_devs(args, &devs);
 	if (err) {
-		free(devs);
 		return err;
 	}
 
@@ -1004,10 +931,7 @@ xnvmeperf_cuda_run(struct xnvmeperf_args *args)
 	free(failed_per_dev);
 
 close_devs:
-	for (int i = 0; i < args->ndevs; i++) {
-		xnvme_dev_close(devs[i]);
-	}
-	free(devs);
+	xnvme_cli_dev_close_multi(devs, args->ndevs);
 	return err;
 }
 
@@ -1017,16 +941,8 @@ xnvmeperf_cuda_verify(struct xnvmeperf_args *args)
 	struct xnvme_dev **devs;
 	int err;
 
-	devs = calloc(args->ndevs, sizeof(*devs));
-	if (!devs) {
-		err = -errno;
-		xnvme_cli_perr("Failed: calloc() for devs", err);
-		return err;
-	}
-
-	err = xnvmeperf_open_devs(args, devs);
+	err = xnvmeperf_open_devs(args, &devs);
 	if (err) {
-		free(devs);
 		return err;
 	}
 
@@ -1041,10 +957,7 @@ xnvmeperf_cuda_verify(struct xnvmeperf_args *args)
 
 	printf("====================================================================\n");
 
-	for (int i = 0; i < args->ndevs; i++) {
-		xnvme_dev_close(devs[i]);
-	}
-	free(devs);
+	xnvme_cli_dev_close_multi(devs, args->ndevs);
 	return err;
 }
 
