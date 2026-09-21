@@ -1,10 +1,10 @@
-Usage: qublk run <uri> [<args>]
+Usage: qublk run [<uri>...] [<args>]
 
-Serve a ublk block-device backed by the given xNVMe device
+Serve a ublk block-device for each of the given xNVMe devices
   
 Positional arguments:
 
-  uri                           ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1:8888', '\\.\PhysicalDrive1'
+  [uri ...]                     ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1:8888', '\\.\PhysicalDrive1'
   
 Where <args> include:
 
@@ -12,10 +12,13 @@ Where <args> include:
   [ --nqueues NUM ]             ; Number of queues per device
   [ --dev-id NUM ]              ; Use given 'NUM' as device identifier
   [ --max-io-bytes NUM ]        ; Use given 'NUM' as per-IO buffer size in bytes
+  [ --cpumask STRING ]          ; Hex CPU bitmask for thread pinning (e.g. 0x3)
+  [ --cpulist STRING ]          ; Comma-separated list of CPU ids or CPU id ranges for thread pinning (e.g. 0-3,4,6)
   
 With <args> for backend:
 
   [ --be STRING ]               ; xNVMe backend, e.g. 'spdk', 'libvfn', 'upcie'
+  [ --homi-id NUM ]             ; The HOMI identifier to share controllers under
   [ --help ]                    ; Show usage / help
 
 See 'qublk --help' for other commands
