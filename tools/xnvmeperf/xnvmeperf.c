@@ -10,15 +10,9 @@
 #include <string.h>
 
 #include <libxnvme.h>
+#include <xnvme_util.h>
 
 #include "xnvmeperf.h"
-
-/**
- * Generous per-queue allowance for uPCIe control structures (PRP pools, SQ/CQ
- * rings, and a share of the admin/sync qpairs). Sized to comfortably overshoot
- * the real per-queue overhead so the heap math stays simple.
- */
-#define XNVMEPERF_HEAP_QUEUE_OVERHEAD (16UL << 20)
 
 struct xnvmeperf_job {
 	struct xnvme_dev *dev;
@@ -68,22 +62,6 @@ rand_r(unsigned int *seed)
 	return (int)((*seed >> 16) & 0x7fff);
 }
 #endif
-
-static int
-pin_to_cpu(int cpu)
-{
-#ifdef XNVME_PTHREAD_SETAFFINITY_NP_ENABLED
-	cpu_set_t cpuset;
-
-	CPU_ZERO(&cpuset);
-	CPU_SET(cpu, &cpuset);
-	return pthread_setaffinity_np(pthread_self(), sizeof(cpuset), &cpuset);
-#else
-	(void)cpu;
-	fprintf(stderr, "Warning: CPU pinning not supported on this platform\n");
-	return 0;
-#endif
-}
 
 /**
  * Returns the current sequential starting LBA without advancing.
@@ -332,8 +310,10 @@ thread_fn(void *arg)
 	uint64_t runtime_ns = (uint64_t)args->time * 1000000000ULL;
 	int err;
 
-	err = pin_to_cpu(thread->cpu);
-	if (err) {
+	err = xnvme_util_pin_to_cpu(thread->cpu);
+	if (err == ENOSYS) {
+		fprintf(stderr, "Warning: CPU pinning not supported on this platform\n");
+	} else if (err) {
 		fprintf(stderr, "Warning: failed to pin thread to CPU %" PRIu16 "\n", thread->cpu);
 	}
 
@@ -1185,14 +1165,13 @@ derive_heap_sizes(struct xnvmeperf_args *args)
 	size_t nq = args->nqueues ? args->nqueues : 1;
 	size_t qd = args->qdepth ? args->qdepth : 1;
 	size_t queues = (size_t)args->ndevs * nq;
-	size_t control = queues * XNVMEPERF_HEAP_QUEUE_OVERHEAD;
 	size_t iosize = args->iosize;
 
-	args->opts.host_heap_size = control + (is_gpu ? 0 : queues * iosize);
+	args->opts.host_heap_size = xnvme_util_heap_size(queues, is_gpu ? 0 : iosize);
 	printf("- host_heap_size: %zu bytes\n", args->opts.host_heap_size);
 
 	if (is_gpu) {
-		args->opts.device_heap_size = control + queues * qd * iosize;
+		args->opts.device_heap_size = xnvme_util_heap_size(queues, qd * iosize);
 		printf("- device_heap_size: %zu bytes\n", args->opts.device_heap_size);
 	}
 }
