@@ -126,7 +126,7 @@ on_xnvme_complete(struct xnvme_cmd_ctx *ctx, void *opaque)
 	} else {
 		op = ublksrv_get_op(io->iod);
 		if (op == UBLK_IO_OP_READ || op == UBLK_IO_OP_WRITE) {
-			result = (int)(io->iod->nr_sectors << 9);
+			result = (int)(io->iod->nr_sectors << XNVME_UNIVERSAL_SECT_SH);
 		} else {
 			result = 0;
 		}
@@ -157,7 +157,7 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 	int rc;
 
 	if (op != UBLK_IO_OP_FLUSH) {
-		bytes = (uint64_t)iod->nr_sectors << 9;
+		bytes = (uint64_t)iod->nr_sectors << XNVME_UNIVERSAL_SECT_SH;
 		if (bytes > dev->max_io_buf) {
 			fprintf(stderr, "qublk: tag %u: I/O %lu B exceeds max_io_buf %u\n",
 				io->tag, (unsigned long)bytes, dev->max_io_buf);
@@ -202,13 +202,13 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 		rc = xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
 		break;
 	case UBLK_IO_OP_READ:
-		slba = iod->start_sector >> (lba_shift - 9);
-		nlb = (uint16_t)(((iod->nr_sectors << 9) >> lba_shift) - 1);
+		slba = iod->start_sector >> (lba_shift - XNVME_UNIVERSAL_SECT_SH);
+		nlb = (uint16_t)(((iod->nr_sectors << XNVME_UNIVERSAL_SECT_SH) >> lba_shift) - 1);
 		rc = xnvme_nvm_read(ctx, nsid, slba, nlb, io->buf, NULL);
 		break;
 	case UBLK_IO_OP_WRITE:
-		slba = iod->start_sector >> (lba_shift - 9);
-		nlb = (uint16_t)(((iod->nr_sectors << 9) >> lba_shift) - 1);
+		slba = iod->start_sector >> (lba_shift - XNVME_UNIVERSAL_SECT_SH);
+		nlb = (uint16_t)(((iod->nr_sectors << XNVME_UNIVERSAL_SECT_SH) >> lba_shift) - 1);
 		if (iod->op_flags & UBLK_IO_F_FUA) {
 			ctx->cmd.nvm.fua = 1;
 		}
