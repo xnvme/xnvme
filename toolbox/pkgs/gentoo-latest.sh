@@ -27,6 +27,7 @@ emerge \
  dev-vcs/git \
  findutils \
  make \
+ sys-cluster/rdma-core \
  sys-devel/patch \
  sys-libs/liburing \
  sys-libs/ncurses \

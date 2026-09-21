@@ -60,15 +60,37 @@ archive_dep = cc.find_library(
   has_headers: ['archive.h'],
 )
 
+# SPDK with RDMA support section
+spdk_rdma_option = get_option('with-spdk-rdma')
+
+ibverbs_dep = cc.find_library(
+  'ibverbs',
+  has_headers: ['infiniband/verbs.h'],
+  required: spdk_rdma_option,
+)
+rdmacm_dep = cc.find_library(
+  'rdmacm',
+  has_headers: ['rdma/rdma_cma.h'],
+  required: spdk_rdma_option,
+)
+
+build_with_rdma_support = ibverbs_dep.found() and rdmacm_dep.found() and spdk_rdma_option.allowed()
+if build_with_rdma_support
+  message('building with RDMA support enabled')
+  rdma_configure_flag = '--with-rdma'
+else
+  message('building with RDMA support disabled')
+  rdma_configure_flag = '--without-rdma'
+endif
+
 if get_option('build_subprojects') and not fs.exists('build')
   message('Patching ..')
   run_command('spdk_patches.sh', capture: true, check: true)
   message('Configuring ..')
-  if get_option('buildtype') == 'debug'
-     run_command('spdk_configure_debug.sh', capture: true, check: true)
-  else
-    run_command('spdk_configure.sh', capture: true, check: true)
-  endif
+
+  configure_script = get_option('buildtype') == 'debug' ? 'spdk_configure_debug.sh' : 'spdk_configure.sh'
+
+  run_command(configure_script, rdma_configure_flag, capture: true, check: true)
 endif
 if get_option('build_subprojects') and not fs.exists('build' / 'lib' / 'src' / 'spdk_nvme.a')
   cpu_count = run_command([
@@ -140,6 +162,11 @@ isal_libnames = get_option('build_subprojects') ? [
 
 spdk_deps = [dlfcn_dep, math_dep, numa_dep, uuid_dep, ssl_dep, ssl_dep, execinfo_dep, elf_dep, archive_dep,]
 
+if build_with_rdma_support
+  spdk_deps += [ibverbs_dep, rdmacm_dep]
+  spdk_libnames += ['spdk_rdma_provider', 'spdk_rdma_utils']
+endif
+
 spdk_paths = []
 foreach libname : spdk_libnames + dpdk_libnames + isal_libnames
   lib_dep = cc.find_library(
@@ -177,3 +204,5 @@ spdk_dep = declare_dependency(
   link_args: spdk_link_args,
   include_directories: spdk_inc,
 )
+
+spdk_rdma_enabled = build_with_rdma_support
