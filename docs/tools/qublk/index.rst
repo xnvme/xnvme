@@ -32,13 +32,18 @@ Requirements
 ``run`` — Serve a block-device
 ==============================
 
-Opens the given device URI, adds a ublk device, and serves it until
-``SIGINT`` / ``SIGTERM``, upon which it performs a clean teardown
+Opens the given device URIs, adds a ublk device for each, and serves them
+until ``SIGINT`` / ``SIGTERM``, upon which it performs a clean teardown
 (``STOP_DEV`` followed by ``DEL_DEV``).
 
-When ``--dev-id`` is not given, the kernel assigns the device identifier.
+When ``--dev-id`` is not given, the kernel assigns the device identifiers;
+when given, the devices are numbered consecutively from it.
 When ``--max-io-bytes`` is not given, the per-IO buffer size defaults to the
 smaller of 1MiB and the controller ``MDTS``.
+
+By default, each queue is served by a thread of its own. With ``--cpumask`` or
+``--cpulist``, a thread is pinned to each given CPU and the queues are spread
+evenly across them.
 
 .. literalinclude:: qublk_run_usage.out
    :language: bash
@@ -51,7 +56,12 @@ Example — user space NVMe via uPCIe, with multiple hardware queues::
 
    qublk run 0000:01:00.0 --be upcie --qdepth 64 --nqueues 4
 
-While **qublk** is running, ``/dev/ublkb0`` is the resulting block device.
+Example — four devices via uPCIe, served by two CPUs::
+
+   qublk run 0000:01:00.0 0000:02:00.0 0000:03:00.0 0000:04:00.0 \
+     --be upcie --qdepth 64 --cpulist 0-1
+
+While **qublk** is running, each device appears as ``/dev/ublkb<N>``.
 
 ``del`` — Delete a leftover device
 ==================================
