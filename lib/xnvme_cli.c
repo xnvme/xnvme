@@ -2248,6 +2248,49 @@ xnvme_cli_run(struct xnvme_cli *cli, int argc, char **argv, int opts)
 }
 
 int
+xnvme_cli_dev_open_multi(const char **uris, int count, struct xnvme_opts *opts,
+			 struct xnvme_dev ***devs)
+{
+	struct xnvme_dev **opened;
+	int err;
+
+	opened = calloc(count, sizeof(*opened));
+	if (!opened) {
+		err = -errno;
+		xnvme_cli_perr("calloc()", err);
+		return err;
+	}
+
+	for (int i = 0; i < count; i++) {
+		opened[i] = xnvme_dev_open(uris[i], opts);
+		if (!opened[i]) {
+			err = errno ? -errno : -EIO;
+			XNVME_DEBUG("FAILED: xnvme_dev_open(%s)", uris[i]);
+			xnvme_cli_perr("xnvme_dev_open()", err);
+			xnvme_cli_dev_close_multi(opened, i);
+			return err;
+		}
+	}
+
+	*devs = opened;
+
+	return 0;
+}
+
+void
+xnvme_cli_dev_close_multi(struct xnvme_dev **devs, int count)
+{
+	if (!devs) {
+		return;
+	}
+
+	for (int i = 0; i < count; i++) {
+		xnvme_dev_close(devs[i]);
+	}
+	free(devs);
+}
+
+int
 xnvme_cli_to_opts(const struct xnvme_cli *cli, struct xnvme_opts *opts)
 {
 	opts->be = cli->given[XNVME_CLI_OPT_BE] ? cli->args.be : opts->be;

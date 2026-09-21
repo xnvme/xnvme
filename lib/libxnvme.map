@@ -70,6 +70,8 @@
 		xnvme_cli_perr;
 		xnvme_cli_run;
 		xnvme_cli_to_opts;
+		xnvme_cli_dev_open_multi;
+		xnvme_cli_dev_close_multi;
 
 		# libxnvme_cmd.h
 		xnvme_cmd_ctx_async;
