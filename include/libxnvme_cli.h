@@ -562,3 +562,27 @@ xnvme_cli_run(struct xnvme_cli *cli, int argc, char **argv, int opts);
  */
 int
 xnvme_cli_to_opts(const struct xnvme_cli *cli, struct xnvme_opts *opts);
+
+/**
+ * Open a device for each of the given URIs
+ *
+ * @param uris The device URIs to open
+ * @param count The number of URIs
+ * @param opts The device-options to open them with
+ * @param devs Set to an array of 'count' devices, release it with ::xnvme_cli_dev_close_multi
+ *
+ * @return On success, 0 is returned. On error, negative errno is returned and no device
+ * is left open.
+ */
+int
+xnvme_cli_dev_open_multi(const char **uris, int count, struct xnvme_opts *opts,
+			 struct xnvme_dev ***devs);
+
+/**
+ * Close the devices opened by ::xnvme_cli_dev_open_multi and free the array
+ *
+ * @param devs The devices to close
+ * @param count The number of devices
+ */
+void
+xnvme_cli_dev_close_multi(struct xnvme_dev **devs, int count);
