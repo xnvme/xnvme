@@ -15,6 +15,7 @@
 #include <unistd.h>
 
 #include <libxnvme.h>
+#include <xnvme_util.h>
 
 #include "ctrl.h"
 #include "io.h"
@@ -223,6 +224,12 @@ sub_run(struct xnvme_cli *cli)
 
 	xnvme_cli_to_opts(cli, &xopts);
 	xopts.rdwr = 1;
+	// All devices share the uPCIe heap, which holds the I/O buffers of every
+	// queue. The heap is created when the first device opens, before MDTS is
+	// known, so size it for the largest buffer size allowed
+	xopts.host_heap_size = xnvme_util_heap_size(
+		(size_t)ndevs * nqueues,
+		(size_t)qdepth * (want_max_io ? want_max_io : QUBLK_DEFAULT_MAX_IO_CAP));
 
 	devs = calloc(ndevs, sizeof(*devs));
 	if (!devs) {
