@@ -156,7 +156,7 @@ sub_run(struct xnvme_cli *cli)
 
 	dev.geo = xnvme_dev_get_geo(dev.xdev);
 	dev.lba_shift = lba_shift_of(dev.geo->lba_nbytes);
-	if (dev.lba_shift < 9) {
+	if (dev.lba_shift < XNVME_UNIVERSAL_SECT_SH) {
 		xnvme_cli_perr("Failed: unsupported LBA size", -EINVAL);
 		goto err_xdev;
 	}
