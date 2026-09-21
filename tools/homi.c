@@ -4,7 +4,6 @@
 
 #include <errno.h>
 #include <signal.h>
-#include <stdlib.h>
 
 #include <libxnvme.h>
 
@@ -29,49 +28,6 @@ static void
 handle_signal(int sig __attribute__((unused)))
 {
 	stop = 1;
-}
-
-static void
-_xnvme_dev_close_all(struct xnvme_dev **devs, int count)
-{
-	for (int i = 0; i < count; i++) {
-		xnvme_dev_close(devs[i]);
-	}
-	free(devs);
-}
-
-static int
-_xnvme_dev_open_all(const char **uris, int count, struct xnvme_opts *opts, struct xnvme_dev ***out)
-{
-	struct xnvme_dev **devs;
-	int opened = 0, err;
-
-	devs = calloc(count, sizeof(*devs));
-	if (!devs) {
-		err = -errno;
-		xnvme_cli_perr("Failed: calloc()", err);
-		return err;
-	}
-
-	for (int i = 0; i < count; i++) {
-		devs[i] = xnvme_dev_open(uris[i], opts);
-		if (!devs[i]) {
-			err = -errno;
-			xnvme_cli_perr("Failed: xnvme_dev_open()", err);
-			XNVME_DEBUG("Could not open uri(%s) at index(%d): err(%d)", uris[i], i,
-				    err);
-			goto failed;
-		}
-		opened++;
-	}
-
-	*out = devs;
-
-	return 0;
-
-failed:
-	_xnvme_dev_close_all(devs, opened);
-	return err;
 }
 
 static void
@@ -128,7 +84,7 @@ sub_start(struct xnvme_cli *cli)
 	opts.device_heap_size =
 		cli->args.device_heap_size ? cli->args.device_heap_size : HOMI_DEVICE_HEAP_SIZE;
 
-	err = _xnvme_dev_open_all(dev_uris, ndevs, &opts, &devs);
+	err = xnvme_cli_dev_open_multi(dev_uris, ndevs, &opts, &devs);
 	if (err) {
 		xnvme_cli_perr("Failed opening all devices", err);
 		return err;
@@ -137,7 +93,7 @@ sub_start(struct xnvme_cli *cli)
 	xnvme_cli_pinf("HOMI started successfully, use Ctrl+C to stop");
 	_wait_for_stop_signal();
 
-	_xnvme_dev_close_all(devs, ndevs);
+	xnvme_cli_dev_close_multi(devs, ndevs);
 
 	return 0;
 }
