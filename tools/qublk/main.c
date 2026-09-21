@@ -70,18 +70,6 @@ backend_honours_fua(const struct xnvme_dev *xdev)
 	return 0;
 }
 
-static uint8_t
-lba_shift_of(uint32_t lba_nbytes)
-{
-	for (uint8_t s = 0; s < 32; s++) {
-		if ((1u << s) == lba_nbytes) {
-			return s;
-		}
-	}
-
-	return 0;
-}
-
 static int
 sub_run(struct xnvme_cli *cli)
 {
@@ -155,8 +143,8 @@ sub_run(struct xnvme_cli *cli)
 	}
 
 	dev.geo = xnvme_dev_get_geo(dev.xdev);
-	dev.lba_shift = lba_shift_of(dev.geo->lba_nbytes);
-	if (dev.lba_shift < XNVME_UNIVERSAL_SECT_SH) {
+	dev.lba_shift = (uint8_t)dev.geo->ssw;
+	if (!xnvme_is_pow2(dev.geo->lba_nbytes) || dev.lba_shift < XNVME_UNIVERSAL_SECT_SH) {
 		xnvme_cli_perr("Failed: unsupported LBA size", -EINVAL);
 		goto err_xdev;
 	}
