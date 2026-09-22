@@ -13,6 +13,19 @@
 #include <xnvme_be_upcie.h>
 
 static _Atomic int g_ctrlr_count;
+static pthread_mutex_t g_heap_lock = PTHREAD_MUTEX_INITIALIZER;
+
+void
+xnvme_be_upcie_heap_lock(void)
+{
+	pthread_mutex_lock(&g_heap_lock);
+}
+
+void
+xnvme_be_upcie_heap_unlock(void)
+{
+	pthread_mutex_unlock(&g_heap_lock);
+}
 
 /**
  * Address-space width the DMA-address table is sized for
@@ -37,9 +50,9 @@ xnvme_be_upcie_va_bits(void)
  * regions near 4 GiB, and leaves the window inside a single usable range on a
  * 39-bit aperture, the narrowest in common use.
  */
-#define XNVME_BE_UPCIE_GPU_IOVA_BASE (256ULL << 30)
-#define XNVME_BE_UPCIE_GPU_IOVA_SIZE (64ULL << 30)
-#define XNVME_BE_UPCIE_GPU_MAX_SLICES 64
+#define XNVME_BE_UPCIE_IOVA_BASE (256ULL << 30)
+#define XNVME_BE_UPCIE_IOVA_SIZE (64ULL << 30)
+#define XNVME_BE_UPCIE_IOVA_MAX_SLICES 64
 
 static struct {
 	struct dmamem_iommu_map_pa owner; ///< Holds the window claim; maps nothing itself
@@ -47,9 +60,9 @@ static struct {
 	uint64_t base;
 	uint64_t span; ///< Width of one slice
 	int nslices;
-	int used[XNVME_BE_UPCIE_GPU_MAX_SLICES];
+	int used[XNVME_BE_UPCIE_IOVA_MAX_SLICES];
 	int nused;
-} g_gpu_win;
+} g_iova_win;
 
 static uint64_t
 _env_u64(const char *name, uint64_t fallback)
@@ -72,95 +85,96 @@ _env_u64(const char *name, uint64_t fallback)
 }
 
 int
-xnvme_be_upcie_gpu_map_required(void)
+xnvme_be_upcie_iova_range_required(void)
 {
 	return g_upcie_rte.mode != XNVME_BE_UPCIE_MODE_UIO_LUT;
 }
 
 /** Claim the window and fix its slice width; a no-op once claimed */
 static int
-_gpu_window_claim(const char *bdf, uint64_t span)
+_iova_window_claim(const char *bdf, uint64_t span)
 {
 	uint64_t size, slice;
 	int err;
 
-	if (g_gpu_win.nslices) {
-		if (span > g_gpu_win.span) {
+	if (g_iova_win.nslices) {
+		if (span > g_iova_win.span) {
 			XNVME_DEBUG("FAILED: span(0x%" PRIx64 ") exceeds slice(0x%" PRIx64 ")",
-				    span, g_gpu_win.span);
+				    span, g_iova_win.span);
 			return -ENOSPC;
 		}
 
 		return 0;
 	}
 
-	g_gpu_win.base = _env_u64("XNVME_UPCIE_GPU_IOVA_BASE", XNVME_BE_UPCIE_GPU_IOVA_BASE);
-	size = _env_u64("XNVME_UPCIE_GPU_IOVA_SIZE", XNVME_BE_UPCIE_GPU_IOVA_SIZE);
-	slice = _env_u64("XNVME_UPCIE_GPU_IOVA_SLICE", span * 2);
+	g_iova_win.base = _env_u64("XNVME_UPCIE_IOVA_BASE", XNVME_BE_UPCIE_IOVA_BASE);
+	size = _env_u64("XNVME_UPCIE_IOVA_SIZE", XNVME_BE_UPCIE_IOVA_SIZE);
+	slice = _env_u64("XNVME_UPCIE_IOVA_SLICE", span * 2);
 
-	if (!g_gpu_win.base || !span || (slice < span) || (slice > size)) {
+	if (!g_iova_win.base || !span || (slice < span) || (slice > size)) {
 		XNVME_DEBUG("FAILED: window 0x%" PRIx64 "+0x%" PRIx64 " cannot hold a 0x%" PRIx64
-			    " slice; check XNVME_UPCIE_GPU_IOVA_{BASE,SIZE,SLICE}",
-			    g_gpu_win.base, size, slice);
+			    " slice; check XNVME_UPCIE_IOVA_{BASE,SIZE,SLICE}",
+			    g_iova_win.base, size, slice);
 		return -EINVAL;
 	}
 
-	g_gpu_win.span = slice;
-	g_gpu_win.nslices = (size / slice) > XNVME_BE_UPCIE_GPU_MAX_SLICES
-				    ? XNVME_BE_UPCIE_GPU_MAX_SLICES
-				    : (int)(size / slice);
+	g_iova_win.span = slice;
+	g_iova_win.nslices = (size / slice) > XNVME_BE_UPCIE_IOVA_MAX_SLICES
+				     ? XNVME_BE_UPCIE_IOVA_MAX_SLICES
+				     : (int)(size / slice);
 
 	/* type1 needs no reservation: the window clears the iova-0 hugepage. */
 	if (g_upcie_rte.mode != XNVME_BE_UPCIE_MODE_VFIO_CDEV) {
 		return 0;
 	}
 
-	err = dmamem_iommu_map_pa_open(&g_gpu_win.owner, bdf, g_gpu_win.base, size);
+	err = dmamem_iommu_map_pa_open(&g_iova_win.owner, bdf, g_iova_win.base, size);
 	if (err) {
 		XNVME_DEBUG("FAILED: dmamem_iommu_map_pa_open(%s); err(%d); module loaded?", bdf,
 			    err);
-		g_gpu_win.nslices = 0;
+		g_iova_win.nslices = 0;
 		return err;
 	}
 
-	err = dmamem_iommu_map_pa_reserve_window(&g_gpu_win.owner, &g_upcie_rte.cdev.iommufd);
+	err = dmamem_iommu_map_pa_reserve_window(&g_iova_win.owner, &g_upcie_rte.cdev.iommufd);
 	if (err) {
 		XNVME_DEBUG("FAILED: dmamem_iommu_map_pa_reserve_window(0x%" PRIx64 "+0x%" PRIx64
 			    "); err(%d)",
-			    g_gpu_win.base, size, err);
-		dmamem_iommu_map_pa_close(&g_gpu_win.owner);
-		g_gpu_win.nslices = 0;
+			    g_iova_win.base, size, err);
+		dmamem_iommu_map_pa_close(&g_iova_win.owner);
+		g_iova_win.nslices = 0;
 		return err;
 	}
-	g_gpu_win.owner_alive = 1;
+	g_iova_win.owner_alive = 1;
 
 	return 0;
 }
 
 /** Drop the claim once the last slice is handed back */
 static void
-_gpu_window_release(void)
+_iova_window_release(void)
 {
-	if (g_gpu_win.nused) {
+	if (g_iova_win.nused) {
 		return;
 	}
 
-	if (g_gpu_win.owner_alive) {
-		dmamem_iommu_map_pa_close(&g_gpu_win.owner);
+	if (g_iova_win.owner_alive) {
+		dmamem_iommu_map_pa_close(&g_iova_win.owner);
 	}
 
 	/* The allowed ranges stay as they are; the IOAS goes with the runtime. */
-	memset(&g_gpu_win, 0, sizeof(g_gpu_win));
+	memset(&g_iova_win, 0, sizeof(g_iova_win));
 }
 
 int
-xnvme_be_upcie_gpu_map_open(struct xnvme_be_upcie_gpu_map *map, const char *bdf, uint64_t span)
+xnvme_be_upcie_iova_range_open(struct xnvme_be_upcie_iova_range *range, const char *bdf,
+			       uint64_t span)
 {
 	int slice, err;
 
-	map->slice = -1;
+	range->slice = -1;
 
-	if (!xnvme_be_upcie_gpu_map_required()) {
+	if (!xnvme_be_upcie_iova_range_required()) {
 		return 0;
 	}
 
@@ -169,61 +183,62 @@ xnvme_be_upcie_gpu_map_open(struct xnvme_be_upcie_gpu_map *map, const char *bdf,
 		return -ENOTSUP;
 	}
 
-	err = _gpu_window_claim(bdf, span);
+	err = _iova_window_claim(bdf, span);
 	if (err) {
 		return err;
 	}
 
-	for (slice = 0; slice < g_gpu_win.nslices; ++slice) {
-		if (!g_gpu_win.used[slice]) {
+	for (slice = 0; slice < g_iova_win.nslices; ++slice) {
+		if (!g_iova_win.used[slice]) {
 			break;
 		}
 	}
-	if (slice == g_gpu_win.nslices) {
+	if (slice == g_iova_win.nslices) {
 		XNVME_DEBUG("FAILED: all %d window slices in use; raise "
-			    "XNVME_UPCIE_GPU_IOVA_SIZE",
-			    g_gpu_win.nslices);
-		_gpu_window_release();
+			    "XNVME_UPCIE_IOVA_SIZE",
+			    g_iova_win.nslices);
+		_iova_window_release();
 		return -ENOSPC;
 	}
 
-	err = dmamem_iommu_map_pa_open(
-		&map->imp, bdf, g_gpu_win.base + (uint64_t)slice * g_gpu_win.span, g_gpu_win.span);
+	err = dmamem_iommu_map_pa_open(&range->imp, bdf,
+				       g_iova_win.base + (uint64_t)slice * g_iova_win.span,
+				       g_iova_win.span);
 	if (err) {
 		XNVME_DEBUG("FAILED: dmamem_iommu_map_pa_open(%s); err(%d); module loaded?", bdf,
 			    err);
-		_gpu_window_release();
+		_iova_window_release();
 		return err;
 	}
 
-	g_gpu_win.used[slice] = 1;
-	g_gpu_win.nused += 1;
+	g_iova_win.used[slice] = 1;
+	g_iova_win.nused += 1;
 
-	map->alive = 1;
-	map->slice = slice;
-	snprintf(map->bdf, sizeof(map->bdf), "%s", bdf);
+	range->alive = 1;
+	range->slice = slice;
+	snprintf(range->bdf, sizeof(range->bdf), "%s", bdf);
 
 	return 0;
 }
 
 void
-xnvme_be_upcie_gpu_map_close(struct xnvme_be_upcie_gpu_map *map)
+xnvme_be_upcie_iova_range_close(struct xnvme_be_upcie_iova_range *range)
 {
-	if (!map->alive) {
+	if (!range->alive) {
 		return;
 	}
 
-	dmamem_iommu_map_pa_close(&map->imp);
+	dmamem_iommu_map_pa_close(&range->imp);
 
-	if (map->slice >= 0) {
-		g_gpu_win.used[map->slice] = 0;
-		g_gpu_win.nused -= 1;
+	if (range->slice >= 0) {
+		g_iova_win.used[range->slice] = 0;
+		g_iova_win.nused -= 1;
 	}
-	map->slice = -1;
-	map->alive = 0;
-	map->bdf[0] = '\0';
+	range->slice = -1;
+	range->alive = 0;
+	range->bdf[0] = '\0';
 
-	_gpu_window_release();
+	_iova_window_release();
 }
 
 /**
@@ -239,8 +254,13 @@ _rte_term(void)
 		return;
 	}
 
-	if (g_upcie_rte.mproc) {
-		xnvme_be_upcie_mproc_rte_term();
+	if (g_upcie_rte.connection.alive) {
+		/* Nothing below this is ours to release: the memory belongs to
+		 * whoever is serving, and closing the socket is what tells it
+		 * to take back what this process still holds. */
+		xnvme_be_upcie_cplane_disconnect();
+		g_upcie_rte.is_initialized = 0;
+		return;
 	}
 
 	if (g_upcie_rte.mem.heap_alive) {
@@ -418,13 +438,16 @@ _rte_init_vfio_type1(size_t heap_size)
 
 /**
  * Bring up the process-wide RTE in the given mode, or verify an already
- * initialized RTE matches. When opts->shm_id is non-zero, additionally
- * enable multi-process mode; only UIO_LUT supports it because the primary
- * publishes its hugepage for secondaries to import, which the memfd and
- * type1-container paths cannot do.
+ * initialized RTE matches. A non-zero opts->homi_id names a runtime another
+ * process serves; this connects to it, and fails when nobody answers, since a
+ * caller that asked to be served and quietly ran on its own would not know
+ * which of the two it measured. The server itself opens without the
+ * identifier and serves under it afterwards. Which attachment mode the device
+ * is under does not enter into it: what crosses is descriptors, and a
+ * descriptor is a descriptor whichever way the controller is reached.
  */
 static int
-_rte_init(enum xnvme_be_upcie_mode mode, struct xnvme_opts *opts)
+_rte_init(enum xnvme_be_upcie_mode mode, struct xnvme_opts *opts, const char *bdf)
 {
 	size_t heap_size = opts->host_heap_size;
 	int err;
@@ -438,16 +461,24 @@ _rte_init(enum xnvme_be_upcie_mode mode, struct xnvme_opts *opts)
 		return 0;
 	}
 
-	if (opts->shm_id && mode != XNVME_BE_UPCIE_MODE_UIO_LUT) {
-		XNVME_DEBUG("FAILED: shm_id requires UIO_LUT (uio_pci_generic); mode(%d)", mode);
-		return -ENOTSUP;
-	}
-
 	if (!heap_size) {
 		heap_size = XNVME_BE_UPCIE_DEFAULT_HEAP_SIZE;
 	}
 
 	g_upcie_rte.mode = mode;
+
+	if (opts->homi_id) {
+		err = xnvme_be_upcie_cplane_init_connection(opts->homi_id, bdf, NULL);
+		if (err) {
+			XNVME_DEBUG("FAILED: xnvme_be_upcie_cplane_init_connection(%u); err(%d)",
+				    opts->homi_id, err);
+			g_upcie_rte.mode = XNVME_BE_UPCIE_MODE_UNSET;
+			return err;
+		}
+		g_upcie_rte.is_initialized = 1;
+
+		return 0;
+	}
 
 	switch (mode) {
 	case XNVME_BE_UPCIE_MODE_VFIO_CDEV:
@@ -467,45 +498,6 @@ _rte_init(enum xnvme_be_upcie_mode mode, struct xnvme_opts *opts)
 	if (err) {
 		_rte_term();
 		return err;
-	}
-
-	if (opts->shm_id) {
-		err = xnvme_be_upcie_mproc_rte_init(opts->shm_id);
-		if (err) {
-			XNVME_DEBUG("FAILED: xnvme_be_upcie_mproc_rte_init(); err(%d)", err);
-			_rte_term();
-			return err;
-		}
-
-		if (g_upcie_rte.mproc->is_primary) {
-			struct xnvme_be_upcie_mproc_shm *shm = g_upcie_rte.mproc->shm;
-
-			snprintf(shm->hugepage_path, sizeof(shm->hugepage_path), "%s",
-				 g_upcie_rte.mem.hp.path);
-			shm->hugepage_base = (uint64_t)g_upcie_rte.mem.hp.virt;
-			atomic_store_explicit(&shm->is_initialized, true, memory_order_release);
-		} else {
-			struct xnvme_be_upcie_mproc_shm *shm = g_upcie_rte.mproc->shm;
-
-			for (int i = 0; i < 1000; i++) {
-				if (atomic_load_explicit(&shm->is_initialized,
-							 memory_order_acquire)) {
-					break;
-				}
-				usleep(1000);
-			}
-			if (!atomic_load_explicit(&shm->is_initialized, memory_order_acquire)) {
-				XNVME_DEBUG("FAILED: timed out waiting for primary hp publish");
-				_rte_term();
-				return -ENOENT;
-			}
-			err = xnvme_be_upcie_mproc_import_admin_hugepage();
-			if (err) {
-				XNVME_DEBUG("FAILED: mproc_import_admin_hugepage(); err(%d)", err);
-				_rte_term();
-				return err;
-			}
-		}
 	}
 
 	g_upcie_rte.is_initialized = 1;
@@ -601,8 +593,8 @@ _ctrlr_close(struct xnvme_be_upcie_ctrlr *ctrlr)
  * opens the NVMe controller and creates a sync qpair. The returned handle is
  * stored in cref and written to dev->be.state[0] by the platform.
  */
-void *
-xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
+static void *
+_ctrlr_init(struct xnvme_dev *dev)
 {
 	struct xnvme_be_upcie_ctrlr *ctrlr = NULL;
 	char driver_name[sizeof(dev->ident.kernel_driver)] = {0};
@@ -628,17 +620,17 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 		return NULL;
 	}
 
-	err = _rte_init(mode, &dev->opts);
+	err = _rte_init(mode, &dev->opts, dev->ident.uri);
 	if (err) {
 		XNVME_DEBUG("FAILED: _rte_init(mode(%d))", mode);
 		errno = -err;
 		return NULL;
 	}
 
-	/* Only the owner writes the PCI Command register; the primary already flipped
-	 * Bus Master Enable at open time and a secondary neither needs to nor typically
+	/* Only the server writes the PCI Command register; the server already flipped
+	 * Bus Master Enable at open time and a client neither needs to nor typically
 	 * may touch config space. */
-	if (!g_upcie_rte.mproc || g_upcie_rte.mproc->is_primary) {
+	if (!g_upcie_rte.connection.alive) {
 		err = _pci_enable_bus_master(dev->ident.uri);
 		if (err) {
 			XNVME_DEBUG("FAILED: _pci_enable_bus_master(%s)", dev->ident.uri);
@@ -655,40 +647,47 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 	}
 
 	ctrlr->attach.type1_group.fd = -1;
-	ctrlr->mproc.shm_fd = -1;
-	ctrlr->mproc.lock_fd = -1;
 
-	/* mproc secondary: skip open-and-initialize; attach to primary's controller via shm. */
-	if (g_upcie_rte.mproc && !g_upcie_rte.mproc->is_primary) {
-		err = xnvme_be_upcie_mproc_ctrlr_shm_attach(dev, ctrlr);
-		if (err) {
-			XNVME_DEBUG("FAILED: mproc_ctrlr_shm_attach(); err(%d)", err);
-			errno = -err;
-			goto failed;
-		}
-		g_ctrlr_count++;
-		return ctrlr;
-	}
-
-	/* Primary path (or non-mproc): open the controller and create the sync qpair.
-	 * For the mproc primary, allocate the per-controller shm first and use its
-	 * embedded nvme_controller as the target so the primary's runtime state is
-	 * directly visible to secondaries. */
-	if (g_upcie_rte.mproc) {
-		err = xnvme_be_upcie_mproc_ctrlr_shm_init(dev, ctrlr, driver_name);
-		if (err) {
-			XNVME_DEBUG("FAILED: mproc_ctrlr_shm_init(); err(%d)", err);
-			errno = -err;
-			goto failed;
-		}
-		/* ctrlr->ctrl now points into shm->ctrl */
-	} else {
+	/* Connected: the controller is open in another process, so this builds a
+	 * description of it and asks that process for a queue to submit on. */
+	if (g_upcie_rte.connection.alive) {
 		ctrlr->ctrl = calloc(1, sizeof(*ctrlr->ctrl));
 		if (!ctrlr->ctrl) {
 			XNVME_DEBUG("FAILED: calloc(ctrl)");
 			errno = ENOMEM;
 			goto failed;
 		}
+
+		err = xnvme_be_upcie_cplane_init_connection(dev->opts.homi_id, dev->ident.uri,
+							    ctrlr);
+		if (err) {
+			XNVME_DEBUG("FAILED: xnvme_be_upcie_cplane_init_connection(%s); err(%d)",
+				    dev->ident.uri, err);
+			errno = -err;
+			goto failed;
+		}
+
+		err = xnvme_be_upcie_cplane_ctrlr_from_record(ctrlr);
+		if (err) {
+			XNVME_DEBUG("FAILED: xnvme_be_upcie_cplane_ctrlr_from_record(); err(%d)",
+				    err);
+			errno = -err;
+			goto failed;
+		}
+
+		/* No I/O queue yet: one is dedicated to whoever holds it, so it
+		 * is asked for on first use rather than at open. */
+
+		g_ctrlr_count++;
+
+		return ctrlr;
+	}
+
+	ctrlr->ctrl = calloc(1, sizeof(*ctrlr->ctrl));
+	if (!ctrlr->ctrl) {
+		XNVME_DEBUG("FAILED: calloc(ctrl)");
+		errno = ENOMEM;
+		goto failed;
 	}
 
 	switch (g_upcie_rte.mode) {
@@ -735,23 +734,13 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 		goto failed;
 	}
 
-	/* Publish the fully-opened controller so mproc secondaries may attach. */
-	if (ctrlr->mproc.shm) {
-		atomic_store_explicit(&ctrlr->mproc.shm->is_initialized, true,
-				      memory_order_release);
-	}
-
 	g_ctrlr_count++;
 
 	return ctrlr;
 
 failed:
 	if (ctrlr) {
-		if (ctrlr->mproc.shm) {
-			xnvme_be_upcie_mproc_ctrlr_shm_term(ctrlr);
-		} else {
-			free(ctrlr->ctrl);
-		}
+		free(ctrlr->ctrl);
 		free(ctrlr);
 	}
 
@@ -762,34 +751,49 @@ failed:
 	return NULL;
 }
 
-int
-xnvme_be_upcie_ctrlr_term(void *handle)
+void *
+xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
+{
+	void *ctrlr;
+
+	xnvme_be_upcie_heap_lock();
+	ctrlr = _ctrlr_init(dev);
+	xnvme_be_upcie_heap_unlock();
+	return ctrlr;
+}
+
+static int
+_ctrlr_term(void *handle)
 {
 	struct xnvme_be_upcie_ctrlr *ctrlr = handle;
-	int is_secondary = g_upcie_rte.mproc && !g_upcie_rte.mproc->is_primary;
+	if (g_upcie_rte.connection.alive) {
+		/* Hand the I/O queue back, if one was ever asked for, and let go
+		 * of the description. The controller itself is the server's and
+		 * is not closed here; the BAR mapping goes with the runtime,
+		 * not with this. */
+		xnvme_be_upcie_ctrlr_admin_prp_release(ctrlr);
+		xnvme_be_upcie_cplane_free_qpair(ctrlr, &ctrlr->sync);
+		if (ctrlr->bar0) {
+			munmap(ctrlr->bar0, ctrlr->bar0_nbytes);
+		}
+		/* The socket is not closed here: it is the process's rather
+		 * than this controller's, so it goes with the runtime, which
+		 * _rte_term() takes down when the last controller closes. */
+		free(ctrlr->ctrl);
+		free(ctrlr);
 
-	if (is_secondary) {
-		xnvme_be_upcie_mproc_delete_io_qpair(ctrlr, &ctrlr->sync, &ctrlr->sync_offsets);
-		/* Do not close the controller: the primary owns it and closing here would
-		 * tear down the shared admin queue. Just release the local BAR mapping
-		 * (pci_func_close unmaps all bound BARs) and the local ctrl copy. */
-		pci_func_close(&ctrlr->ctrl->func);
-		xnvme_be_upcie_mproc_ctrlr_shm_term(ctrlr);
-		free(ctrlr->ctrl);
-	} else if (ctrlr->mproc.shm) {
-		/* Primary in mproc: reap secondaries' still-allocated queues via the admin
-		 * queue before we tear the shared segment down. */
-		xnvme_be_upcie_mproc_delete_io_qpair(ctrlr, &ctrlr->sync, &ctrlr->sync_offsets);
-		xnvme_be_upcie_mproc_free_all_queues(ctrlr);
-		_ctrlr_close(ctrlr);
-		xnvme_be_upcie_mproc_ctrlr_shm_term(ctrlr);
-	} else {
-		nvme_controller_delete_io_qpair_dmamem(
-			ctrlr->ctrl, &ctrlr->sync, &g_upcie_rte.mem.heap, ctrlr->sync_offsets.sq,
-			ctrlr->sync_offsets.cq, ctrlr->sync_offsets.prp);
-		_ctrlr_close(ctrlr);
-		free(ctrlr->ctrl);
+		if (--g_ctrlr_count == 0) {
+			_rte_term();
+		}
+
+		return 0;
 	}
+
+	nvme_controller_delete_io_qpair_dmamem(ctrlr->ctrl, &ctrlr->sync, &g_upcie_rte.mem.heap,
+					       ctrlr->sync_offsets.sq, ctrlr->sync_offsets.cq,
+					       ctrlr->sync_offsets.prp);
+	_ctrlr_close(ctrlr);
+	free(ctrlr->ctrl);
 	free(ctrlr);
 
 	if (--g_ctrlr_count == 0) {
@@ -797,6 +801,17 @@ xnvme_be_upcie_ctrlr_term(void *handle)
 	}
 
 	return 0;
+}
+
+int
+xnvme_be_upcie_ctrlr_term(void *handle)
+{
+	int err;
+
+	xnvme_be_upcie_heap_lock();
+	err = _ctrlr_term(handle);
+	xnvme_be_upcie_heap_unlock();
+	return err;
 }
 
 void

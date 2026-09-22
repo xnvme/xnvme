@@ -16,6 +16,7 @@ tests = {
   'buf.c': [
     ['alloc', ['buf_alloc_free', '1GB', '--count', '31']],
     ['virt_alloc', ['buf_virt_alloc_free', '1GB', '--count', '31']],
+    ['alloc_threads', ['buf_alloc_free_threads', '1GB', '--count', '5000']],
   ],
   'cli.c': [
     ['optional', ['optional']],
@@ -90,6 +91,7 @@ foreach test_source, tests_args : tests
     include_directories: [conf_inc, xnvme_inc],
     link_with: xnvmelib,
     link_args: link_args_hardening,
+    dependencies: [thread_dep],
     install_rpath: xnvmelib_rpath,
     install: true,
   )

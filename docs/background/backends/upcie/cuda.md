@@ -89,9 +89,9 @@ so a window is reserved for it: 64 GiB at 256 GiB, with the IOAS allowed every
 usable IOVA except that. Override where it does not fit:
 
 ```bash
-XNVME_UPCIE_GPU_IOVA_BASE=0x2000000000  # 128 GiB
-XNVME_UPCIE_GPU_IOVA_SIZE=0x400000000   # 16 GiB
-XNVME_UPCIE_GPU_IOVA_SLICE=0x80000000   # 2 GiB per controller
+XNVME_UPCIE_IOVA_BASE=0x2000000000  # 128 GiB
+XNVME_UPCIE_IOVA_SIZE=0x400000000   # 16 GiB
+XNVME_UPCIE_IOVA_SLICE=0x80000000   # 2 GiB per controller
 ```
 
 A window outside every usable IOVA range fails `xnvme_dev_open()` with `ERANGE`.
@@ -103,7 +103,7 @@ window and maps the heap into its own domain. Three limits follow, on the
 `vfio-pci` path only:
 
 - A slice is twice the size of the heap, leaving room for buffers registered
-  with `xnvme_mem_map()`. Set the width with `XNVME_UPCIE_GPU_IOVA_SLICE`. A
+  with `xnvme_mem_map()`. Set the width with `XNVME_UPCIE_IOVA_SLICE`. A
   full slice fails the registration with `ENOSPC`.
 - The window holds 31 controllers by default, and never more than 64. Past that
   `xnvme_dev_open()` fails with `ENOSPC`.
@@ -112,7 +112,7 @@ window and maps the heap into its own domain. Three limits follow, on the
 
 A controller attaching later brings its own reserved regions. Where one overlaps
 the ranges the IOAS was told to allow, that attach fails with `EADDRINUSE`. Move
-the window with `XNVME_UPCIE_GPU_IOVA_BASE`.
+the window with `XNVME_UPCIE_IOVA_BASE`.
 
 `uio_pci_generic` is unaffected. Physical addresses read the same from every
 controller, so one table serves them all.

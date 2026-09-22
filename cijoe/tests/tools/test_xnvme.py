@@ -1,6 +1,6 @@
 import pytest
 
-from ..conftest import XnvmeDriver, get_osname, get_shm_id, xnvme_parametrize
+from ..conftest import XnvmeDriver, get_homi_id, get_osname, xnvme_parametrize
 
 
 def test_library_info(cijoe):
@@ -405,8 +405,10 @@ def test_subsystem_reset(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[be=libvfn] does not support pseudo commands")
     if be_opts["admin"] == "upcie":
         pytest.skip(reason="[be=upcie] does not support subsystem-reset")
-    if get_shm_id():
-        pytest.skip(reason="reset tears down the queues held by the mproc primary")
+    if get_homi_id():
+        pytest.skip(
+            reason="reset tears down the queues held by the control-plane server"
+        )
 
     err, state = cijoe.run(
         f"xnvme subsystem-reset {device['uri']} --be {be_opts['be']} --admin {be_opts['admin']}"
@@ -436,8 +438,10 @@ def test_ctrlr_reset(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[be=libvfn] does not support pseudo commands")
     if be_opts["admin"] == "upcie":
         pytest.skip(reason="[be=upcie] does not support controller-reset")
-    if get_shm_id():
-        pytest.skip(reason="reset tears down the queues held by the mproc primary")
+    if get_homi_id():
+        pytest.skip(
+            reason="reset tears down the queues held by the control-plane server"
+        )
 
     err, _ = cijoe.run(
         f"xnvme ctrlr-reset {device['uri']} --be {be_opts['be']} --admin {be_opts['admin']}"
