@@ -583,11 +583,14 @@ xnvmeperf_cuda_launch(struct xnvme_cuda_queue **h_qps, struct xnvme_spec_cmd *h_
 		goto done;
 	}
 
+	// Passed by value into an int parameter, not tested by an if: plain 'report_freq'
+	// here would truncate toward zero on assignment (0.5 -> 0), silently disabling
+	// live reporting for any rate under 1.0; the explicit comparison forces a 0/1 int.
 	xnvmeperf_cuda_kernel_run<<<nqueues, qdepth>>>(
 		d_qps, d_cmds, d_nblocks, nlbas, d_seeds, nbatches, (volatile int *)d_stop,
 		(uint64_t *)d_completed, d_failed, report_freq != 0.0);
 
-	if (report_freq != 0.0) {
+	if (report_freq) {
 		uint64_t report_freq_ns = (uint64_t)(report_freq * 1000000000.0);
 		uint64_t runtime_ns = (uint64_t)runtime_secs * 1000000000ULL;
 		uint64_t deadline = report_freq_ns;
