@@ -699,7 +699,7 @@ xnvmeperf_run(struct xnvmeperf_args *args)
 		}
 	}
 
-	if (args->report_freq != 0.0) {
+	if (args->report_freq) {
 		uint64_t report_freq_ns = (uint64_t)(args->report_freq * 1000000000.0);
 		uint64_t runtime_ns = (uint64_t)args->time * 1000000000ULL;
 		uint64_t deadline = report_freq_ns;
@@ -1148,7 +1148,7 @@ parse_run_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 	}
 
 	args->report_freq = cli->args.report_freq;
-	if (args->report_freq != 0.0 && args->report_freq < 0.001) {
+	if (args->report_freq && args->report_freq < 0.001) {
 		err = -EINVAL;
 		xnvme_cli_perr("Error: --report-freq must be 0 or at least 0.001", err);
 		return err;
