@@ -48,6 +48,7 @@ struct xnvmeperf_thread {
 	double elapsed;
 	struct xnvme_dev **devs;
 	int ndevs;
+	int done;
 };
 
 #ifndef XNVME_RAND_R_ENABLED
@@ -347,6 +348,7 @@ thread_fn(void *arg)
 		err = xnvme_buf_fill(job->buf, args->iosize, "anum");
 		if (err) {
 			xnvme_cli_perr("Failed: xnvme_buf_fill()", err);
+			thread->done = 1;
 			return NULL;
 		}
 	}
@@ -404,6 +406,7 @@ thread_fn(void *arg)
 
 	xnvme_timer_stop(&timer);
 	thread->elapsed = xnvme_timer_elapsed_secs(&timer);
+	thread->done = 1;
 
 	return NULL;
 }
@@ -757,6 +760,14 @@ xnvmeperf_run(struct xnvmeperf_args *args)
 		while (1) {
 			struct timespec ts;
 			uint64_t elapsed, wakeup;
+			int running = 0;
+
+			for (uint16_t i = 0; i < args->ncpus; i++) {
+				running += !threads[i].done;
+			}
+			if (!running) {
+				break;
+			}
 
 			xnvme_timer_stop(&timer);
 			elapsed = xnvme_timer_elapsed_nsecs(&timer);
