@@ -136,8 +136,8 @@ xnvmeperf_cuda_kernel_run(struct xnvme_cuda_queue **qps, struct xnvme_spec_cmd *
 			xnvme_cuda_cq_update(qp, batch);
 			completed += batch;
 			if (live) {
-				atomicExch_system((unsigned long long *)&out_completed[bid],
-						  (unsigned long long)completed);
+				*(volatile unsigned long long *)&out_completed[bid] =
+					(unsigned long long)completed;
 			}
 		}
 
