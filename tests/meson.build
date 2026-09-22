@@ -65,7 +65,12 @@ tests = {
     ['scopy-msrc', ['scopy-msrc', '1GB']],
     ['scopy-msrc clear', ['scopy-msrc', '1GB', '--clear']],
   ],
-  'xnvme_cli.c': [],
+  'xnvme_cli.c': [
+    ['dev-open-multi, one', ['dev-open-multi', '1GB']],
+    ['dev-open-multi, two', ['dev-open-multi', '1GB', '1GB']],
+    ['dev-open-multi-fail, first', ['dev-open-multi-fail', 'nosuchdev']],
+    ['dev-open-multi-fail, last', ['dev-open-multi-fail', '1GB', 'nosuchdev']],
+  ],
   'xnvme_file.c': [],
   'znd_append.c': [],
   'znd_explicit_open.c': [],
