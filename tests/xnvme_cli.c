@@ -71,6 +71,69 @@ xnvme_cli_check_opt_attr(struct xnvme_cli *XNVME_UNUSED(cli))
 	return err;
 }
 
+int
+xnvme_cli_check_dev_open_multi(struct xnvme_cli *cli)
+{
+	struct xnvme_opts opts = xnvme_opts_default();
+	struct xnvme_dev **devs;
+	int err;
+
+	err = xnvme_cli_to_opts(cli, &opts);
+	if (err) {
+		xnvme_cli_perr("xnvme_cli_to_opts()", err);
+		return err;
+	}
+
+	err = xnvme_cli_dev_open_multi(cli->args.posn, cli->args.posn_count, &opts, &devs);
+	if (err) {
+		xnvme_cli_perr("xnvme_cli_dev_open_multi()", err);
+		return err;
+	}
+
+	for (int i = 0; i < cli->args.posn_count; i++) {
+		if (!devs[i]) {
+			xnvme_cli_pinf("ERR: !devs[%d] for uri: %s", i, cli->args.posn[i]);
+			err = -EINVAL;
+		}
+	}
+
+	xnvme_cli_dev_close_multi(devs, cli->args.posn_count);
+
+	return err;
+}
+
+int
+xnvme_cli_check_dev_open_multi_fail(struct xnvme_cli *cli)
+{
+	struct xnvme_opts opts = xnvme_opts_default();
+	struct xnvme_dev *sentinel[1];
+	struct xnvme_dev **devs = sentinel;
+	int err;
+
+	err = xnvme_cli_to_opts(cli, &opts);
+	if (err) {
+		xnvme_cli_perr("xnvme_cli_to_opts()", err);
+		return err;
+	}
+
+	err = xnvme_cli_dev_open_multi(cli->args.posn, cli->args.posn_count, &opts, &devs);
+	if (!err) {
+		xnvme_cli_pinf("ERR: expected the open to fail");
+		xnvme_cli_dev_close_multi(devs, cli->args.posn_count);
+		return -EINVAL;
+	}
+	if (err > 0) {
+		xnvme_cli_pinf("ERR: expected a negative errno, got: %d", err);
+		return -EINVAL;
+	}
+	if (devs != sentinel) {
+		xnvme_cli_pinf("ERR: devs was written on failure");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"copy-xnvme_cli_run",
@@ -92,6 +155,34 @@ static struct xnvme_cli_sub g_subs[] = {
 		xnvme_cli_check_opt_attr,
 		{
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+		},
+	},
+	{
+		"dev-open-multi",
+		"Open the given devices with xnvme_cli_dev_open_multi()",
+		"Open the given devices with xnvme_cli_dev_open_multi(), check that each is "
+		"set, and close them with xnvme_cli_dev_close_multi()",
+		xnvme_cli_check_dev_open_multi,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSN},
+
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
+		},
+	},
+	{
+		"dev-open-multi-fail",
+		"Check that xnvme_cli_dev_open_multi() fails on the given devices",
+		"Check that xnvme_cli_dev_open_multi() fails on the given devices, returning a "
+		"negative errno and leaving 'devs' untouched",
+		xnvme_cli_check_dev_open_multi_fail,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSN},
+
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
 		},
 	},
 };
