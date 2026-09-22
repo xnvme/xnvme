@@ -9,8 +9,8 @@
 #include <xnvme_be_upcie_cuda.h>
 #include <xnvme_dev.h>
 
-void *
-xnvme_be_upcie_cuda_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
+static void *
+_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
 {
 	const struct xnvme_be_upcie_state *state = (void *)dev->be.state;
 	void *buf;
@@ -27,10 +27,29 @@ xnvme_be_upcie_cuda_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64
 	return buf;
 }
 
-void
-xnvme_be_upcie_cuda_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
+void *
+xnvme_be_upcie_cuda_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
+{
+	void *buf;
+
+	xnvme_be_upcie_heap_lock();
+	buf = _buf_alloc(dev, nbytes, phys);
+	xnvme_be_upcie_heap_unlock();
+	return buf;
+}
+
+static void
+_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
 {
 	cudamem_dma_free(&g_upcie_cuda_rte.cuda_heap, buf);
+}
+
+void
+xnvme_be_upcie_cuda_buf_free(const struct xnvme_dev *dev, void *buf)
+{
+	xnvme_be_upcie_heap_lock();
+	_buf_free(dev, buf);
+	xnvme_be_upcie_heap_unlock();
 }
 
 int

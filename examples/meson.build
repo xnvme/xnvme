@@ -47,6 +47,7 @@ if conf_data.get('XNVME_BE_UPCIE_CUDA_ENABLED')
       include_directories: [conf_inc, xnvme_inc],
       link_with: xnvmelib,
       dependencies: [cuda_dep],
+      cuda_args: cuda_arch_args,
       link_args: link_args_hardening,
       install_rpath: xnvmelib_rpath,
       install: true,
