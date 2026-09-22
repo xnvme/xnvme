@@ -63,7 +63,8 @@ xnvmeperf_cuda_next(struct xnvme_spec_cmd *cmd, int random, uint64_t *seed, uint
 __global__ static void
 xnvmeperf_cuda_kernel_run(struct xnvme_cuda_queue **qps, struct xnvme_spec_cmd *cmds,
 			  uint64_t *nblocks, uint16_t nlbas, uint64_t *seeds, uint32_t nbatches,
-			  volatile int *stop, uint64_t *out_completed, uint64_t *out_failed, int live)
+			  volatile int *stop, uint64_t *out_completed, uint64_t *out_failed,
+			  int live)
 {
 	struct xnvme_cuda_queue *qp;
 	struct xnvme_spec_cmd cmd;
