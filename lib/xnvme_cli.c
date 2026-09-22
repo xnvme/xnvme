@@ -107,6 +107,8 @@ xnvme_cli_opt_value_type_str(int vtype)
 		return "FILE";
 	case XNVME_CLI_OPT_VTYPE_STR:
 		return "STRING";
+	case XNVME_CLI_OPT_VTYPE_FLOAT:
+		return "FLOAT";
 	}
 
 	return "ENOSYS";
@@ -900,6 +902,12 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "Run for 'NUM' seconds",
 	},
 	{
+		.opt = XNVME_CLI_OPT_REPORT_FREQ,
+		.vtype = XNVME_CLI_OPT_VTYPE_FLOAT,
+		.name = "report-freq",
+		.descr = "Report progress every 'FLOAT' seconds",
+	},
+	{
 		.opt = XNVME_CLI_OPT_IOPATTERN,
 		.vtype = XNVME_CLI_OPT_VTYPE_STR,
 		.name = "iopattern",
@@ -935,6 +943,30 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "max-io-bytes",
 		.descr = "Use given 'NUM' as per-IO buffer size in bytes",
+	},
+	{
+		.opt = XNVME_CLI_OPT_ALT_URI,
+		.vtype = XNVME_CLI_OPT_VTYPE_URI,
+		.name = "alt-uri",
+		.descr = "URI of another device; a comma-separated list for several",
+	},
+	{
+		.opt = XNVME_CLI_OPT_P2P_CQ_MIRROR,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
+		.name = "p2p-cq-mirror",
+		.descr = "Complete into GPU memory, beside the data (XNVME_QUEUE_P2P_CQ_MIRROR)",
+	},
+	{
+		.opt = XNVME_CLI_OPT_SQ_HOSTMEM,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
+		.name = "sq-hostmem",
+		.descr = "Submit GPU-issued I/O from host memory (XNVME_QUEUE_SQ_HOSTMEM)",
+	},
+	{
+		.opt = XNVME_CLI_OPT_BUF_HOST_BOUNCE,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
+		.name = "buf-host-bounce",
+		.descr = "Read into a host buffer and copy it to the GPU, instead of P2P",
 	},
 	{
 		.opt = XNVME_CLI_OPT_ALT_BE,
@@ -1169,6 +1201,8 @@ xnvme_cli_usage(struct xnvme_cli *cli)
 
 	printf("\n");
 	printf("See '%s <command> --help' for the description of [<args>]\n", cli->argv[0]);
+	printf("See '%s --version' for the library version and the revision it was built from\n",
+	       cli->argv[0]);
 
 	if (cli->title) {
 		printf("\n");
@@ -1347,6 +1381,7 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 	struct xnvme_cli_args *args = &cli->args;
 	char *endptr = NULL;
 	uint64_t num = 0;
+	double fnum = 0;
 	int err;
 
 	// Check numerical args
@@ -1376,6 +1411,26 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 			}
 			if (arg == endptr) {
 				XNVME_DEBUG("FAILED: strtoll(), no num. !");
+				errno = EINVAL;
+				return -1;
+			}
+			break;
+
+		case XNVME_CLI_OPT_VTYPE_FLOAT:
+			errno = 0;
+			fnum = strtod(arg, &endptr);
+			if (errno) {
+				XNVME_DEBUG("FAILED: strtod(), errno: %d", errno);
+				errno = EINVAL;
+				return -1;
+			}
+			if (*endptr != '\0') {
+				XNVME_DEBUG("FAILED: strtod(), invalid number: %s", arg);
+				errno = EINVAL;
+				return -1;
+			}
+			if (arg == endptr) {
+				XNVME_DEBUG("FAILED: strtod(), no num. !");
 				errno = EINVAL;
 				return -1;
 			}
@@ -1592,6 +1647,15 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 	case XNVME_CLI_OPT_DIRECT:
 		args->direct = true;
 		break;
+	case XNVME_CLI_OPT_P2P_CQ_MIRROR:
+		args->p2p_cq_mirror = true;
+		break;
+	case XNVME_CLI_OPT_SQ_HOSTMEM:
+		args->sq_hostmem = true;
+		break;
+	case XNVME_CLI_OPT_BUF_HOST_BOUNCE:
+		args->buf_host_bounce = true;
+		break;
 
 	case XNVME_CLI_OPT_OPCODE:
 		args->opcode = num;
@@ -1629,6 +1693,10 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 	case XNVME_CLI_OPT_BE:
 		args->be = arg ? arg : "INVALID_INPUT";
 		break;
+	case XNVME_CLI_OPT_ALT_URI:
+		args->alt_uri = arg ? arg : "INVALID_INPUT";
+		break;
+
 	case XNVME_CLI_OPT_ALT_BE:
 		args->alt_be = arg ? arg : "INVALID_INPUT";
 		break;
@@ -1804,6 +1872,9 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 		break;
 	case XNVME_CLI_OPT_RUNTIME:
 		args->runtime = num;
+		break;
+	case XNVME_CLI_OPT_REPORT_FREQ:
+		args->report_freq = fnum;
 		break;
 	case XNVME_CLI_OPT_IOPATTERN:
 		args->iopattern = arg ? arg : "INVALID_INPUT";
@@ -2182,6 +2253,21 @@ xnvme_cli_run(struct xnvme_cli *cli, int argc, char **argv, int opts)
 
 	if ((argc < 2) || (!strcmp(argv[1], "--help")) || (!strcmp(argv[1], "-h"))) {
 		xnvme_cli_usage(cli);
+		return 0;
+	}
+
+	if (cli->vcs && strcmp(cli->vcs, xnvme_ver_vcs())) {
+		fprintf(stderr, "# WARNING: %s was built from '%s' but runs with libxnvme '%s'\n",
+			argv[0], cli->vcs, xnvme_ver_vcs());
+	}
+
+	if ((!strcmp(argv[1], "--version")) || (!strcmp(argv[1], "-V"))) {
+		printf("%s -- ", cli->title ? cli->title : argv[0]);
+		cli->ver_pr(XNVME_PR_DEF);
+		printf("\n");
+		if (cli->vcs) {
+			printf("built: {vcs: '%s'}\n", cli->vcs);
+		}
 		return 0;
 	}
 

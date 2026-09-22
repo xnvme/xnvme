@@ -31,6 +31,19 @@ int
 xnvme_ver_patch(void);
 
 /**
+ * Produces the revision of the source tree the library was built from
+ *
+ * The value is what "git describe --tags --dirty=+ --always" reported at build
+ * time, so a trailing '+' means the tree had uncommitted changes. A source
+ * archive made with "meson dist" carries the revision it was cut from; a copy
+ * of the sources with neither git metadata nor that stamp yields "unknown".
+ *
+ * @return A pointer to a string owned by the library; do not free it
+ */
+const char *
+xnvme_ver_vcs(void);
+
+/**
  * Prints the library version to the given 'stream'
  *
  * @param stream output stream used for printing

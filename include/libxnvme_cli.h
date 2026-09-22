@@ -100,6 +100,9 @@ struct xnvme_cli_args {
 	uint32_t dev_id;
 	uint32_t max_io_bytes;
 	bool direct;
+	bool p2p_cq_mirror;
+	bool sq_hostmem;
+	bool buf_host_bounce;
 	uint32_t limit;
 
 	uint64_t count;
@@ -117,6 +120,7 @@ struct xnvme_cli_args {
 
 	const char *be;
 	const char *alt_be;
+	const char *alt_uri;
 	const char *mem;
 	const char *sync;
 	const char *async;
@@ -180,6 +184,7 @@ struct xnvme_cli_args {
 	uint64_t sdlba;
 
 	uint32_t runtime;
+	double report_freq;
 	const char *iopattern;
 
 	const char *cpumask;
@@ -383,7 +388,17 @@ enum xnvme_cli_opt {
 
 	XNVME_CLI_OPT_HOMI_ID = 137, ///< XNVME_CLI_OPT_HOMI_ID
 
-	XNVME_CLI_OPT_END = 138, ///< XNVME_CLI_OPT_END
+	XNVME_CLI_OPT_REPORT_FREQ = 138, ///< XNVME_CLI_OPT_REPORT_FREQ
+
+	XNVME_CLI_OPT_ALT_URI = 139, ///< XNVME_CLI_OPT_ALT_URI
+
+	XNVME_CLI_OPT_P2P_CQ_MIRROR = 140, ///< XNVME_CLI_OPT_P2P_CQ_MIRROR
+
+	XNVME_CLI_OPT_SQ_HOSTMEM = 141, ///< XNVME_CLI_OPT_SQ_HOSTMEM
+
+	XNVME_CLI_OPT_BUF_HOST_BOUNCE = 142, ///< XNVME_CLI_OPT_BUF_HOST_BOUNCE
+
+	XNVME_CLI_OPT_END = 143, ///< XNVME_CLI_OPT_END
 };
 
 /**
@@ -406,12 +421,13 @@ enum xnvme_cli_opt_type {
 };
 
 enum xnvme_cli_opt_value_type {
-	XNVME_CLI_OPT_VTYPE_URI  = 0x1,
-	XNVME_CLI_OPT_VTYPE_NUM  = 0x2,
-	XNVME_CLI_OPT_VTYPE_HEX  = 0x3,
-	XNVME_CLI_OPT_VTYPE_FILE = 0x4,
-	XNVME_CLI_OPT_VTYPE_STR  = 0x5,
-	XNVME_CLI_OPT_VTYPE_SKIP = 0x6,
+	XNVME_CLI_OPT_VTYPE_URI   = 0x1,
+	XNVME_CLI_OPT_VTYPE_NUM   = 0x2,
+	XNVME_CLI_OPT_VTYPE_HEX   = 0x3,
+	XNVME_CLI_OPT_VTYPE_FILE  = 0x4,
+	XNVME_CLI_OPT_VTYPE_STR   = 0x5,
+	XNVME_CLI_OPT_VTYPE_SKIP  = 0x6,
+	XNVME_CLI_OPT_VTYPE_FLOAT = 0x7,
 };
 
 struct xnvme_cli_opt_attr {
@@ -468,6 +484,15 @@ struct xnvme_cli {
 	struct xnvme_cli_sub *subs; ///< Setup by user
 
 	int (*ver_pr)(int); ///< Setup by library if unset
+
+	/**
+	 * Setup by user: the revision the program was built from, XNVME_VCS_TAG
+	 *
+	 * When set, xnvme_cli_run() compares it against xnvme_ver_vcs() and warns
+	 * when the library loaded at runtime is not the one the program was built
+	 * with. Leave it NULL to skip the check.
+	 */
+	const char *vcs;
 
 	int argc;                   ///< Setup by library
 	char **argv;                ///< Setup by library

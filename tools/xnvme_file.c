@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <libxnvme.h>
+#include <xnvme_vcs.h>
 
 #define IOSIZE_DEF 4096
 #define QDEPTH_MAX 256
@@ -1011,6 +1012,7 @@ static struct xnvme_cli_sub g_subs[] = {
 
 static struct xnvme_cli g_cli = {
 	.title = "xNVMe file - Exercise the xnvme_file API",
+	.vcs = XNVME_VCS_TAG,
 	.descr_short = "Exercise the xnvme_file API",
 	.descr_long = "",
 	.subs = g_subs,

@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <libxnvme.h>
+#include <xnvme_vcs.h>
 
 int
 enumerate_cb(struct xnvme_dev *dev, void *cb_args)
@@ -448,6 +449,7 @@ static struct xnvme_cli_sub g_subs[] = {
 
 static struct xnvme_cli g_cli = {
 	.title = "KV Utility",
+	.vcs = XNVME_VCS_TAG,
 	.descr_short = "Retrieve KV value",
 	.subs = g_subs,
 	.nsubs = sizeof g_subs / sizeof(*g_subs),

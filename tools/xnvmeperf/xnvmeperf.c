@@ -8,11 +8,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include <libxnvme.h>
 #include <xnvme_util.h>
+#include <xnvme_vcs.h>
 
 #include "xnvmeperf.h"
+
+struct xnvmeperf_job;
+/** Per-slot completion argument for the host-bounce path (job plus slot index). */
+struct xnvmeperf_bref {
+	struct xnvmeperf_job *job;
+	uint32_t slot;
+};
 
 struct xnvmeperf_job {
 	struct xnvme_dev *dev;
@@ -30,6 +39,13 @@ struct xnvmeperf_job {
 	uint64_t (*peek_slba)(struct xnvmeperf_job *);
 	void (*advance_slba)(struct xnvmeperf_job *);
 	struct xnvmeperf_args *args;
+	/* --buf-host-bounce: a ring of host buffers, one per queue slot, each copied
+	 * to the GPU on completion; NULL fields when the flag is off. */
+	struct xnvmeperf_gpu *gpu;
+	void **bbufs;
+	uint8_t *bslot_inuse;
+	struct xnvmeperf_bref *brefs;
+	uint32_t nslots;
 };
 
 struct xnvmeperf_thread {
@@ -41,6 +57,7 @@ struct xnvmeperf_thread {
 	double elapsed;
 	struct xnvme_dev **devs;
 	int ndevs;
+	int done;
 };
 
 #ifndef XNVME_RAND_R_ENABLED
@@ -127,16 +144,38 @@ static int
 submit_io(struct xnvmeperf_job *job, struct xnvme_cmd_ctx *ctx)
 {
 	uint64_t slba = job->peek_slba(job);
+	void *buf = job->buf;
+	int slot = -1;
 	int err;
+
+	if (job->args->buf_host_bounce) {
+		/* Take a slot whose buffer is free and whose last copy to the GPU has
+		 * drained; when none is, the copy is the bottleneck, so decline the
+		 * submit and let the caller poke completions before trying again. */
+		for (uint32_t sl = 0; sl < job->nslots; sl++) {
+			if (!job->bslot_inuse[sl] && xnvmeperf_gpu_bounce_ready(job->gpu, sl)) {
+				slot = (int)sl;
+				break;
+			}
+		}
+		if (slot < 0) {
+			return -EBUSY;
+		}
+		job->bslot_inuse[slot] = 1;
+		buf = job->bbufs[slot];
+		ctx->async.cb_arg = &job->brefs[slot];
+	}
 
 	ctx->cmd.common.opcode = job->opcode;
 	ctx->cmd.common.nsid = job->nsid;
 	ctx->cmd.nvm.nlb = job->nlb - 1;
 	ctx->cmd.nvm.slba = slba;
 
-	err = xnvme_cmd_pass(ctx, job->buf, (job->nbytes * job->nlb), NULL, 0);
+	err = xnvme_cmd_pass(ctx, buf, (job->nbytes * job->nlb), NULL, 0);
 	if (!err) {
 		job->advance_slba(job);
+	} else if (slot >= 0) {
+		job->bslot_inuse[slot] = 0;
 	}
 
 	return err;
@@ -159,6 +198,28 @@ cb_fn(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 		job->io_completed++;
 	}
 
+	xnvme_queue_put_cmd_ctx(ctx->async.queue, ctx);
+}
+
+/**
+ * Completion for --buf-host-bounce: on success enqueue the host-to-device copy
+ * of the slot just read, then release the slot; its buffer is reusable once the
+ * copy drains, which submit_io() checks via xnvmeperf_gpu_bounce_ready().
+ */
+static void
+cb_fn_bounce(struct xnvme_cmd_ctx *ctx, void *cb_arg)
+{
+	struct xnvmeperf_bref *ref = cb_arg;
+	struct xnvmeperf_job *job = ref->job;
+
+	if (xnvme_cmd_ctx_cpl_status(ctx)) {
+		job->io_failed++;
+	} else {
+		job->io_completed++;
+		xnvmeperf_gpu_bounce_copy(job->gpu, ref->slot, job->bbufs[ref->slot]);
+	}
+
+	job->bslot_inuse[ref->slot] = 0;
 	xnvme_queue_put_cmd_ctx(ctx->async.queue, ctx);
 }
 
@@ -231,12 +292,21 @@ setup_job(struct xnvmeperf_job *job, struct xnvme_dev *dev, struct xnvmeperf_arg
 		return -ENOTSUP;
 	}
 
-	err = xnvme_queue_init(job->dev, args->qdepth, 0, &job->queue);
+	err = xnvme_queue_init(job->dev, args->qdepth, args->queue_opts, &job->queue);
+	if (err == -ERANGE) {
+		fprintf(stderr,
+			"Error: --qdepth %u is more than one queue on %s can hold: the backend "
+			"tracks at most 1024 commands in flight per queue, and the drive's "
+			"CAP.MQES bounds its entries; lower --qdepth or raise --nqueues: "
+			"err(%d)\n",
+			args->qdepth, xnvme_dev_get_ident(job->dev)->uri, err);
+		return err;
+	}
 	if (err) {
 		xnvme_cli_perr("Failed: xnvme_queue_init()", err);
 		return err;
 	}
-	xnvme_queue_set_cb(job->queue, cb_fn, job);
+	xnvme_queue_set_cb(job->queue, args->buf_host_bounce ? cb_fn_bounce : cb_fn, job);
 
 	return 0;
 }
@@ -247,6 +317,20 @@ thread_term(struct xnvmeperf_thread *thread)
 	for (int i = 0; i < thread->ndevs; i++) {
 		struct xnvmeperf_job *job = &thread->jobs[i];
 
+		if (job->gpu) {
+			xnvmeperf_gpu_bounce_close(job->gpu);
+			job->gpu = NULL;
+		}
+		if (job->bbufs) {
+			for (uint32_t sl = 0; sl < job->nslots; sl++) {
+				if (job->bbufs[sl]) {
+					xnvme_buf_free(job->dev, job->bbufs[sl]);
+				}
+			}
+			free(job->bbufs);
+		}
+		free(job->bslot_inuse);
+		free(job->brefs);
 		if (job->buf) {
 			xnvme_buf_free(job->dev, job->buf);
 		}
@@ -255,6 +339,55 @@ thread_term(struct xnvmeperf_thread *thread)
 		}
 	}
 	free(thread->jobs);
+}
+
+/**
+ * Set up the host-bounce ring for one job: a host buffer per queue slot, a GPU
+ * handle with the device buffer and copy stream, and each host buffer page-locked
+ * for the copy. Freed by thread_term().
+ */
+static int
+job_bounce_init(struct xnvmeperf_job *job, struct xnvmeperf_args *args)
+{
+	uint32_t n = args->qdepth;
+
+	/* Cap the ring's in-flight staging by a byte budget: large blocks use
+	 * fewer buffers (they saturate at low depth) so the heap stays under the
+	 * GPU's IOMMU aperture, while small blocks keep the full queue depth. */
+	{
+		uint64_t cap = (128UL << 20) / args->iosize;
+		if (cap < 1) {
+			cap = 1;
+		}
+		if (n > cap) {
+			n = (uint32_t)cap;
+		}
+	}
+
+	job->nslots = n;
+	job->bbufs = calloc(n, sizeof(*job->bbufs));
+	job->bslot_inuse = calloc(n, sizeof(*job->bslot_inuse));
+	job->brefs = calloc(n, sizeof(*job->brefs));
+	if (!job->bbufs || !job->bslot_inuse || !job->brefs) {
+		return -ENOMEM;
+	}
+
+	job->gpu = xnvmeperf_gpu_bounce_open(args->opts.gpu_id, args->iosize, n);
+	if (!job->gpu) {
+		return -errno;
+	}
+
+	for (uint32_t sl = 0; sl < n; sl++) {
+		job->brefs[sl].job = job;
+		job->brefs[sl].slot = sl;
+		job->bbufs[sl] = xnvme_buf_alloc(job->dev, args->iosize);
+		if (!job->bbufs[sl]) {
+			return -errno;
+		}
+		xnvmeperf_gpu_bounce_register(job->gpu, sl, job->bbufs[sl]);
+	}
+
+	return 0;
 }
 
 static int
@@ -280,11 +413,19 @@ thread_init(struct xnvmeperf_thread *thread, struct xnvmeperf_args *args)
 			return err;
 		}
 
-		job->buf = xnvme_buf_alloc(job->dev, args->iosize);
-		if (!job->buf) {
-			err = -errno;
-			xnvme_cli_perr("Failed: xnvme_buf_alloc()", err);
-			return err;
+		if (args->buf_host_bounce) {
+			err = job_bounce_init(job, args);
+			if (err) {
+				xnvme_cli_perr("Failed: job_bounce_init()", err);
+				return err;
+			}
+		} else {
+			job->buf = xnvme_buf_alloc(job->dev, args->iosize);
+			if (!job->buf) {
+				err = -errno;
+				xnvme_cli_perr("Failed: xnvme_buf_alloc()", err);
+				return err;
+			}
 		}
 	}
 
@@ -317,16 +458,27 @@ thread_fn(void *arg)
 		fprintf(stderr, "Warning: failed to pin thread to CPU %" PRIu16 "\n", thread->cpu);
 	}
 
+	if (args->buf_host_bounce && xnvmeperf_gpu_set_device(args->opts.gpu_id)) {
+		fprintf(stderr, "Error: could not select GPU %u on this thread\n",
+			args->opts.gpu_id);
+		return NULL;
+	}
+
 	// Fill each job buffer with a known pattern. xnvme_buf_fill() routes
 	// transparently to device memory (CUDA/HIP) when the buffer is GPU VRAM,
-	// so the GPU-backend P2P path needs no special-casing here.
-	for (int i = 0; i < thread->ndevs; i++) {
-		struct xnvmeperf_job *job = &thread->jobs[i];
+	// so the GPU-backend P2P path needs no special-casing here. The bounce path
+	// owns a ring of read buffers instead of one, and reads overwrite them, so
+	// there is nothing to pre-fill.
+	if (!args->buf_host_bounce) {
+		for (int i = 0; i < thread->ndevs; i++) {
+			struct xnvmeperf_job *job = &thread->jobs[i];
 
-		err = xnvme_buf_fill(job->buf, args->iosize, "anum");
-		if (err) {
-			xnvme_cli_perr("Failed: xnvme_buf_fill()", err);
-			return NULL;
+			err = xnvme_buf_fill(job->buf, args->iosize, "anum");
+			if (err) {
+				xnvme_cli_perr("Failed: xnvme_buf_fill()", err);
+				thread->done = 1;
+				return NULL;
+			}
 		}
 	}
 
@@ -379,10 +531,14 @@ thread_fn(void *arg)
 
 	for (int i = 0; i < thread->ndevs; i++) {
 		xnvme_queue_drain(thread->jobs[i].queue);
+		if (args->buf_host_bounce) {
+			xnvmeperf_gpu_bounce_drain(thread->jobs[i].gpu);
+		}
 	}
 
 	xnvme_timer_stop(&timer);
 	thread->elapsed = xnvme_timer_elapsed_secs(&timer);
+	thread->done = 1;
 
 	return NULL;
 }
@@ -402,6 +558,16 @@ print_run_args(struct xnvmeperf_args *args, const char *pattern)
 	printf("- io pattern: %s\n", pattern);
 	printf("- queues per device: %u\n", args->nqueues);
 	printf("- queue depth: %u\n", args->qdepth);
+	printf("- gpu-issued batches per queue: %u\n", args->nbatches);
+	printf("- cq in gpu memory: %s\n",
+	       (args->queue_opts & XNVME_QUEUE_P2P_CQ_MIRROR) ? "yes" : "no");
+	printf("- sq in host memory: %s\n",
+	       (args->queue_opts & XNVME_QUEUE_SQ_HOSTMEM) ? "yes" : "no");
+	printf("- buf host bounce (read to host, copy to GPU): %s\n",
+	       args->buf_host_bounce ? "yes" : "no");
+	if (args->opts.homi_id) {
+		printf("- served by homi: %u\n", args->opts.homi_id);
+	}
 	printf("- io size: %u\n", args->iosize);
 	printf("- runtime: %u\n", args->time);
 
@@ -436,10 +602,12 @@ print_perf_results(const char *title, double elapsed, const char **uris, int nde
 {
 	double total_iops = 0, total_mibps = 0;
 	uint64_t total_failed = 0;
+	const char *vcs = xnvme_ver_vcs();
 
 	printf("\n");
 	printf("====================================================================\n");
-	printf(" %s (elapsed: %.2fs)\n", title, elapsed);
+	printf(" %s (v%d.%d.%d%s%s) (elapsed: %.2fs)\n", title, xnvme_ver_major(),
+	       xnvme_ver_minor(), xnvme_ver_patch(), *vcs ? " - " : "", vcs, elapsed);
 	printf("====================================================================\n");
 	if (cpus) {
 		printf(" %-20s  %6s  %12s %10s %8s\n", "Device", "CPUs", "IOPS", "MiB/s",
@@ -473,6 +641,47 @@ print_perf_results(const char *title, double elapsed, const char **uris, int nde
 	printf("====================================================================\n");
 }
 
+void
+print_intermediate_header(void)
+{
+	printf("Time,IOPS,MiB/s\n");
+	fflush(stdout);
+}
+
+void
+print_intermediate_result(double elapsed, double interval, uint64_t completed, uint32_t iosize)
+{
+	double iops, mibs;
+
+	if (interval <= 0.0) {
+		return;
+	}
+
+	iops = (double)completed / interval;
+	mibs = ((double)completed * (double)iosize) / (interval * 1024.0 * 1024.0);
+
+	printf("%.2f,%.2f,%.2f\n", elapsed, iops, mibs);
+	fflush(stdout);
+}
+
+static void
+print_intermediate_thread_result(struct xnvmeperf_thread *threads, struct xnvmeperf_args *args,
+				 double elapsed, double interval, uint64_t *prev_completed)
+{
+	uint64_t completed = 0;
+
+	for (int t = 0; t < args->ncpus; t++) {
+		struct xnvmeperf_thread *thread = &threads[t];
+
+		for (int j = 0; j < thread->njobs; j++) {
+			completed += thread->jobs[j].io_completed;
+		}
+	}
+
+	print_intermediate_result(elapsed, interval, completed - *prev_completed, args->iosize);
+	*prev_completed = completed;
+}
+
 static void
 print_results(struct xnvmeperf_thread *threads, struct xnvmeperf_args *args)
 {
@@ -497,7 +706,7 @@ print_results(struct xnvmeperf_thread *threads, struct xnvmeperf_args *args)
 	}
 
 	for (int d = 0; d < args->ndevs; d++) {
-		uint64_t completed = 0;
+		double dev_iops = 0;
 		int cpus_len = 0;
 
 		cpus_bufs[d] = calloc(256, 1);
@@ -515,7 +724,7 @@ print_results(struct xnvmeperf_thread *threads, struct xnvmeperf_args *args)
 					continue;
 				}
 
-				completed += thread->jobs[j].io_completed;
+				dev_iops += (double)thread->jobs[j].io_completed / thread->elapsed;
 				failed[d] += thread->jobs[j].io_failed;
 
 				if (cpus_len > 0) {
@@ -527,9 +736,8 @@ print_results(struct xnvmeperf_thread *threads, struct xnvmeperf_args *args)
 			}
 		}
 
-		iops[d] = (double)completed / elapsed;
-		mibps[d] =
-			((double)completed * (double)args->iosize) / (elapsed * 1024.0 * 1024.0);
+		iops[d] = dev_iops;
+		mibps[d] = (dev_iops * (double)args->iosize) / (1024.0 * 1024.0);
 		cpus[d] = cpus_bufs[d];
 	}
 
@@ -650,10 +858,57 @@ xnvmeperf_run(struct xnvmeperf_args *args)
 		if (err) {
 			xnvme_cli_perr("Failed: pthread_create()", err);
 			args->ncpus = i;
-			break;
+			goto skip_reporting;
 		}
 	}
 
+	if (args->report_freq) {
+		uint64_t report_freq_ns = (uint64_t)(args->report_freq * 1000000000.0);
+		uint64_t runtime_ns = (uint64_t)args->time * 1000000000ULL;
+		uint64_t deadline = report_freq_ns;
+		uint64_t prev_completed = 0, prev_elapsed = 0;
+		struct xnvme_timer timer = {0};
+
+		xnvme_timer_start(&timer);
+		print_intermediate_header();
+
+		while (1) {
+			struct timespec ts;
+			uint64_t elapsed, wakeup;
+			int running = 0;
+
+			for (uint16_t i = 0; i < args->ncpus; i++) {
+				running += !threads[i].done;
+			}
+			if (!running) {
+				break;
+			}
+
+			xnvme_timer_stop(&timer);
+			elapsed = xnvme_timer_elapsed_nsecs(&timer);
+			if (elapsed >= runtime_ns) {
+				break;
+			}
+			if (elapsed >= deadline) {
+				print_intermediate_thread_result(
+					threads, args, (double)elapsed / 1000000000.0,
+					(double)(elapsed - prev_elapsed) / 1000000000.0,
+					&prev_completed);
+				prev_elapsed = elapsed;
+				while (deadline <= elapsed) {
+					deadline += report_freq_ns;
+				}
+				continue;
+			}
+
+			wakeup = deadline < runtime_ns ? deadline : runtime_ns;
+			ts.tv_sec = (time_t)((wakeup - elapsed) / 1000000000ULL);
+			ts.tv_nsec = (long)((wakeup - elapsed) % 1000000000ULL);
+			nanosleep(&ts, NULL);
+		}
+	}
+
+skip_reporting:
 	for (int i = 0; i < args->ncpus; i++) {
 		pthread_join(tids[i], NULL);
 	}
@@ -763,7 +1018,7 @@ xnvmeperf_verify(struct xnvmeperf_args *args)
 		job.io_completed = 0;
 		job.io_failed = 0;
 
-		for (int i = 0; i < nios; i++) {
+		for (uint32_t i = 0; i < nios; i++) {
 			uint64_t slba = job.offset;
 
 			err = fill_pattern(write_buf, args->iosize, slba, job.nlb);
@@ -808,7 +1063,7 @@ xnvmeperf_verify(struct xnvmeperf_args *args)
 		job.io_completed = 0;
 		job.io_failed = 0;
 
-		for (int i = 0; i < nios; i++) {
+		for (uint32_t i = 0; i < nios; i++) {
 			uint64_t slba;
 			size_t diff = 0;
 
@@ -885,7 +1140,7 @@ static int
 xnvmeperf_cuda_run(struct xnvmeperf_args *args)
 {
 	struct xnvme_dev **devs;
-	uint64_t *rounds_per_dev, *failed_per_dev;
+	uint64_t *completed_per_dev, *failed_per_dev;
 	double elapsed_s;
 	float elapsed_ms = 0;
 	int err;
@@ -895,21 +1150,21 @@ xnvmeperf_cuda_run(struct xnvmeperf_args *args)
 		return err;
 	}
 
-	rounds_per_dev = calloc(args->ndevs, sizeof(*rounds_per_dev));
+	completed_per_dev = calloc(args->ndevs, sizeof(*completed_per_dev));
 	failed_per_dev = calloc(args->ndevs, sizeof(*failed_per_dev));
 
-	if (!rounds_per_dev || !failed_per_dev) {
+	if (!completed_per_dev || !failed_per_dev) {
 		err = -ENOMEM;
 		xnvme_cli_perr("Failed: calloc()", err);
-		free(rounds_per_dev);
+		free(completed_per_dev);
 		free(failed_per_dev);
 		goto close_devs;
 	}
 
-	err = xnvmeperf_cuda_run_io(devs, args, rounds_per_dev, failed_per_dev, &elapsed_ms);
+	err = xnvmeperf_cuda_run_io(devs, args, completed_per_dev, failed_per_dev, &elapsed_ms);
 	if (err) {
 		xnvme_cli_perr("Failed: xnvmeperf_cuda_run_io()", err);
-		free(rounds_per_dev);
+		free(completed_per_dev);
 		free(failed_per_dev);
 		goto close_devs;
 	}
@@ -919,7 +1174,7 @@ xnvmeperf_cuda_run(struct xnvmeperf_args *args)
 		double iops[args->ndevs], mibps[args->ndevs];
 
 		for (int i = 0; i < args->ndevs; i++) {
-			double total_ios = (double)rounds_per_dev[i] * args->qdepth;
+			double total_ios = (double)completed_per_dev[i];
 			iops[i] = total_ios / elapsed_s;
 			mibps[i] = (total_ios * args->iosize) / (elapsed_s * 1024.0 * 1024.0);
 		}
@@ -927,7 +1182,7 @@ xnvmeperf_cuda_run(struct xnvmeperf_args *args)
 				   iops, mibps, failed_per_dev, NULL);
 	}
 
-	free(rounds_per_dev);
+	free(completed_per_dev);
 	free(failed_per_dev);
 
 close_devs:
@@ -1009,6 +1264,8 @@ parse_common_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 
 	args->opts = xnvme_opts_default();
 	xnvme_cli_to_opts(cli, &args->opts);
+	args->queue_opts = cli->args.p2p_cq_mirror ? XNVME_QUEUE_P2P_CQ_MIRROR : 0;
+	args->queue_opts |= cli->args.sq_hostmem ? XNVME_QUEUE_SQ_HOSTMEM : 0;
 	return err;
 }
 
@@ -1055,10 +1312,42 @@ parse_run_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 		return err;
 	}
 
+	args->report_freq = cli->args.report_freq;
+	if (args->report_freq && args->report_freq < 0.001) {
+		err = -EINVAL;
+		xnvme_cli_perr("Error: --report-freq must be 0 or at least 0.001", err);
+		return err;
+	}
+	if (args->report_freq > args->time) {
+		err = -EINVAL;
+		xnvme_cli_perr("Error: --report-freq cannot be more than the runtime", err);
+		return err;
+	}
+
 	args->nqueues = cli->args.nqueues ? cli->args.nqueues : 1;
+
+	/* Not a user-facing knob: the right batch count depends on how much of the depth
+	 * is needed to hide one group's closed-loop round trip (barrier, fence, doorbell,
+	 * controller fetch), not on anything a caller would know to pick. One warp (32
+	 * lanes) per group is the finest split the kernel's per-warp grouping allows
+	 * without a warp spanning two groups (real SIMT divergence); args->qdepth is
+	 * already validated a power of 2 above, so qdepth/32 is one too whenever it is
+	 * at least 32, and the max(1, ...) floor covers depths below that. */
+	args->nbatches = args->qdepth / 32 ? args->qdepth / 32 : 1;
 
 	args->ncpus = cli->args.ncpus;
 	args->cpus = cli->args.cpus;
+
+	args->buf_host_bounce = cli->args.buf_host_bounce;
+	if (args->buf_host_bounce && args->opts.be &&
+	    (strstr(args->opts.be, "cuda") || strstr(args->opts.be, "hip"))) {
+		err = -EINVAL;
+		fprintf(stderr,
+			"Error: --buf-host-bounce reads into host memory and copies to the GPU;"
+			" use a host backend (e.g. --be upcie), not '%s': err(%d)\n",
+			args->opts.be, err);
+		return err;
+	}
 
 	return err;
 }
@@ -1080,7 +1369,22 @@ derive_heap_sizes(struct xnvmeperf_args *args)
 	size_t queues = (size_t)args->ndevs * nq;
 	size_t iosize = args->iosize;
 
-	args->opts.host_heap_size = xnvme_util_heap_size(queues, is_gpu ? 0 : iosize);
+	size_t bounce_cap = (128UL << 20) / iosize;
+	if (bounce_cap < 1) {
+		bounce_cap = 1;
+	}
+	size_t data_bufs = args->buf_host_bounce ? (qd < bounce_cap ? qd : bounce_cap) : 1;
+	args->opts.host_heap_size = xnvme_util_heap_size(queues, is_gpu ? 0 : data_bufs * iosize);
+	if (args->buf_host_bounce) {
+		/* The bounce ring's real footprint runs well above the nominal byte
+		 * sum (per-buffer heap overhead), and the served homi shares the
+		 * hugepages, so size the heap with headroom: a fixed control slab
+		 * plus three times the ring. Kept under the ~4 GiB point where the
+		 * DMA mapping collides in the GPU's IOMMU aperture, which is what
+		 * caps the usable block size. */
+		args->opts.host_heap_size =
+			(size_t)queues * (64UL << 20) + 3UL * queues * data_bufs * iosize;
+	}
 	printf("- host_heap_size: %zu bytes\n", args->opts.host_heap_size);
 
 	if (is_gpu) {
@@ -1199,6 +1503,37 @@ sub_cuda_verify(struct xnvme_cli *cli)
 	return xnvmeperf_cuda_verify(&args);
 }
 
+static int
+sub_htod_roofline(struct xnvme_cli *cli)
+{
+	struct xnvme_opts opts = xnvme_opts_default();
+	uint32_t iosize = cli->args.iosize;
+	uint32_t nslots = cli->args.qdepth ? cli->args.qdepth : 1;
+	uint32_t seconds = cli->args.runtime ? cli->args.runtime : 5;
+	double gbps = 0.0;
+	int err;
+
+	xnvme_cli_to_opts(cli, &opts);
+
+	if (!iosize || !xnvme_is_pow2(iosize)) {
+		err = -EINVAL;
+		xnvme_cli_perr("Error: --iosize must be a power of 2", err);
+		return err;
+	}
+
+	printf("xnvmeperf htod-roofline: iosize %u, in-flight %u, runtime %u s, gpu %u\n", iosize,
+	       nslots, seconds, opts.gpu_id);
+
+	err = xnvmeperf_htod_roofline(opts.gpu_id, iosize, nslots, seconds, &gbps);
+	if (err) {
+		xnvme_cli_perr("Failed: xnvmeperf_htod_roofline()", err);
+		return err;
+	}
+
+	printf("\nhost-to-device copy: %.2f GB/s\n", gbps);
+	return 0;
+}
+
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"run",
@@ -1225,6 +1560,9 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_POLL_SQ, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_GPU_ID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HOMI_ID, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_REPORT_FREQ, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_P2P_CQ_MIRROR, XNVME_CLI_LFLG},
+			{XNVME_CLI_OPT_BUF_HOST_BOUNCE, XNVME_CLI_LFLG},
 		},
 	},
 	{
@@ -1247,6 +1585,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_POLL_SQ, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_GPU_ID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HOMI_ID, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_P2P_CQ_MIRROR, XNVME_CLI_LFLG},
 		},
 	},
 	{
@@ -1269,6 +1608,8 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_GPU_ID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HOMI_ID, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_REPORT_FREQ, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_SQ_HOSTMEM, XNVME_CLI_LFLG},
 		},
 	},
 	{
@@ -1289,12 +1630,28 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_GPU_ID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HOMI_ID, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_SQ_HOSTMEM, XNVME_CLI_LFLG},
+		},
+	},
+	{
+		"htod-roofline",
+		"Host-to-device copy bandwidth ceiling (requires a GPU backend build)",
+		"Keep --qdepth pinned copies of --iosize in flight to one GPU for --runtime\n"
+		"seconds and report the delivered host-to-device GB/s. Takes no NVMe devices.",
+		sub_htod_roofline,
+		{
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_IOSIZE, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_QDEPTH, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_RUNTIME, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_GPU_ID, XNVME_CLI_LOPT},
 		},
 	},
 };
 
 static struct xnvme_cli g_cli = {
 	.title = "xnvmeperf - NVMe async IO benchmark",
+	.vcs = XNVME_VCS_TAG,
 	.descr_short = "Run async IO benchmarks against NVMe devices",
 	.descr_long = "",
 	.subs = g_subs,

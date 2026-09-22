@@ -1,0 +1,11 @@
+# Template: which host to measure on, for cijoe/workflows/perf-xnvmeperf.yaml.
+# Copy it, fill in the host, and keep the copy out of the repository if it
+# carries credentials. The options are passed verbatim to paramiko; leave
+# 'password' out to authenticate with the ssh agent or a key.
+[cijoe.transport.root]
+username = "root"
+hostname = "hostname-or-ip"
+port = 22
+
+[cijoe.workflow]
+fail_fast = true

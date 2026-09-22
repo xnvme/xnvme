@@ -14,3 +14,7 @@ if not is_windows
     install_dir: get_option('bindir')
   )
 endif
+
+if is_linux and get_option('tools')
+  subdir('systemd')
+endif

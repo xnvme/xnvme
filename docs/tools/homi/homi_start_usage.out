@@ -15,6 +15,7 @@ With <args> for backend:
   [ --be STRING ]               ; xNVMe backend, e.g. 'spdk', 'libvfn', 'upcie'
   [ --host_heap_size NUM ]      ; For be=upcie, host DMA heap size in bytes
   [ --device_heap_size NUM ]    ; For be={upcie-cuda,upcie-hip}, GPU device heap size in bytes
+  [ --gpu_id NUM ]              ; For be=upcie-cuda/upcie-hip, GPU ordinal to use
   [ --help ]                    ; Show usage / help
 
 See 'homi --help' for other commands

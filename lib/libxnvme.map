@@ -1,6 +1,12 @@
 {
 	global:
 
+		# libxnvme_cplane.h
+		xnvme_cplane_get_ctrlr_info;
+		xnvme_cplane_get_info;
+		xnvme_cplane_server_alive;
+		xnvme_cplane_serve;
+
 		# libxnvme_adm.h
 		xnvme_adm_idfy;
 		xnvme_adm_idfy_ctrlr;
@@ -432,6 +438,7 @@
 		xnvme_ver_major;
 		xnvme_ver_minor;
 		xnvme_ver_patch;
+		xnvme_ver_vcs;
 		xnvme_ver_fpr;
 		xnvme_ver_pr;
 
