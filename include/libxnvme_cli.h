@@ -194,7 +194,6 @@ struct xnvme_cli_args {
 	uint16_t ncpus;
 
 	uint32_t nqueues;
-	uint32_t nbatches;
 
 	const char **posn; //< Remaining positional args (points into argv)
 	int posn_count;    ///< Number of remaining positional args
@@ -399,9 +398,7 @@ enum xnvme_cli_opt {
 
 	XNVME_CLI_OPT_BUF_HOST_BOUNCE = 142, ///< XNVME_CLI_OPT_BUF_HOST_BOUNCE
 
-	XNVME_CLI_OPT_NBATCHES = 143, ///< XNVME_CLI_OPT_NBATCHES
-
-	XNVME_CLI_OPT_END = 144, ///< XNVME_CLI_OPT_END
+	XNVME_CLI_OPT_END = 143, ///< XNVME_CLI_OPT_END
 };
 
 /**

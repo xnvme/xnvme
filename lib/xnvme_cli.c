@@ -969,13 +969,6 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "Read into a host buffer and copy it to the GPU, instead of P2P",
 	},
 	{
-		.opt = XNVME_CLI_OPT_NBATCHES,
-		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
-		.name = "nbatches",
-		.descr = "Batches a GPU-issued queue's depth is split into and kept in flight "
-			 "by turns; 1 submits the depth, then waits for all of it",
-	},
-	{
 		.opt = XNVME_CLI_OPT_ALT_BE,
 		.vtype = XNVME_CLI_OPT_VTYPE_STR,
 		.name = "alt-be",
@@ -1924,9 +1917,6 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 		break;
 	case XNVME_CLI_OPT_NQUEUES:
 		args->nqueues = num;
-		break;
-	case XNVME_CLI_OPT_NBATCHES:
-		args->nbatches = num;
 		break;
 	case XNVME_CLI_OPT_POSA_TITLE:
 	case XNVME_CLI_OPT_NON_POSA_TITLE:

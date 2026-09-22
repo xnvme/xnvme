@@ -1326,13 +1326,14 @@ parse_run_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 
 	args->nqueues = cli->args.nqueues ? cli->args.nqueues : 1;
 
-	args->nbatches = cli->args.nbatches ? cli->args.nbatches : 2;
-	if (args->nbatches > args->qdepth || !xnvme_is_pow2(args->nbatches)) {
-		err = -EINVAL;
-		xnvme_cli_perr("Error: --nbatches must be a power of 2 no larger than --qdepth",
-			       err);
-		return err;
-	}
+	/* Not a user-facing knob: the right batch count depends on how much of the depth
+	 * is needed to hide one group's closed-loop round trip (barrier, fence, doorbell,
+	 * controller fetch), not on anything a caller would know to pick. One warp (32
+	 * lanes) per group is the finest split the kernel's per-warp grouping allows
+	 * without a warp spanning two groups (real SIMT divergence); args->qdepth is
+	 * already validated a power of 2 above, so qdepth/32 is one too whenever it is
+	 * at least 32, and the max(1, ...) floor covers depths below that. */
+	args->nbatches = args->qdepth / 32 ? args->qdepth / 32 : 1;
 
 	args->ncpus = cli->args.ncpus;
 	args->cpus = cli->args.cpus;
@@ -1609,7 +1610,6 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_HOMI_ID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_REPORT_FREQ, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_SQ_HOSTMEM, XNVME_CLI_LFLG},
-			{XNVME_CLI_OPT_NBATCHES, XNVME_CLI_LOPT},
 		},
 	},
 	{
