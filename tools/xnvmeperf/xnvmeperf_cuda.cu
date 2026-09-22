@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <cuda_runtime.h>
+#include <errno.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -911,4 +913,56 @@ cleanup:
 	free(h_errs);
 	free(cmp_buf);
 	return err;
+}
+
+/**
+ * Allocate an IO buffer in GPU memory and make it addressable for the device
+ *
+ * On the 'linux-dmabuf' memory manager, the xnvme_mem_map() exports the
+ * allocation as a dma-buf for the io_uring backend to register with its rings.
+ *
+ * @return On success, a device pointer is returned. On error, NULL and errno
+ */
+extern "C" void *
+xnvmeperf_cuda_buf_alloc(struct xnvme_dev *dev, uint32_t gpu_id, size_t nbytes)
+{
+	void *buf = NULL;
+	cudaError_t cerr;
+	int err;
+
+	cerr = cudaSetDevice((int)gpu_id);
+	if (cerr != cudaSuccess) {
+		fprintf(stderr, "Failed: cudaSetDevice(%u): %s\n", gpu_id,
+			cudaGetErrorString(cerr));
+		errno = ENODEV;
+		return NULL;
+	}
+
+	cerr = cudaMalloc(&buf, nbytes);
+	if (cerr != cudaSuccess) {
+		fprintf(stderr, "Failed: cudaMalloc(%zu): %s\n", nbytes, cudaGetErrorString(cerr));
+		errno = ENOMEM;
+		return NULL;
+	}
+
+	err = xnvme_mem_map(dev, buf, nbytes);
+	if (err) {
+		fprintf(stderr, "Failed: xnvme_mem_map(%p, %zu): %d\n", buf, nbytes, err);
+		cudaFree(buf);
+		errno = -err;
+		return NULL;
+	}
+
+	return buf;
+}
+
+extern "C" void
+xnvmeperf_cuda_buf_free(struct xnvme_dev *dev, void *buf)
+{
+	if (!buf) {
+		return;
+	}
+
+	xnvme_mem_unmap(dev, buf);
+	cudaFree(buf);
 }

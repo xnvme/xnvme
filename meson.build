@@ -114,7 +114,8 @@ cuda_dep = dependency(
   modules: ['cuda'],
   required: get_option('with-cuda'),
 )
-conf_data.set('XNVME_BE_UPCIE_CUDA_ENABLED', get_option('be_upcie') and is_linux and cuda_dep.found() and get_option('with-cuda').allowed())
+conf_data.set('XNVME_CUDA_ENABLED', is_linux and cuda_dep.found() and get_option('with-cuda').allowed())
+conf_data.set('XNVME_BE_UPCIE_CUDA_ENABLED', get_option('be_upcie') and conf_data.get('XNVME_CUDA_ENABLED'))
 if conf_data.get('XNVME_BE_UPCIE_CUDA_ENABLED')
   add_languages('cuda', required: true, native: false)
 endif
@@ -127,7 +128,8 @@ hip_dep = cc.find_library(
   header_args: ['-D__HIP_PLATFORM_AMD__'],
   required: get_option('with-hip'),
 )
-conf_data.set('XNVME_BE_UPCIE_HIP_ENABLED', get_option('be_upcie') and is_linux and hip_dep.found() and get_option('with-hip').allowed())
+conf_data.set('XNVME_HIP_ENABLED', is_linux and hip_dep.found() and get_option('with-hip').allowed())
+conf_data.set('XNVME_BE_UPCIE_HIP_ENABLED', get_option('be_upcie') and conf_data.get('XNVME_HIP_ENABLED'))
 if conf_data.get('XNVME_BE_UPCIE_HIP_ENABLED')
   add_project_arguments('-D__HIP_PLATFORM_AMD__', language: 'c')
 endif
@@ -142,6 +144,12 @@ conf_data.set('XNVME_BE_WINDOWS_FS_ENABLED', conf_data.get('XNVME_PLATFORM_WINDO
 conf_data.set('XNVME_BE_WINDOWS_ASYNC_ENABLED', conf_data.get('XNVME_PLATFORM_WINDOWS_ENABLED'))
 
 conf_data.set('XNVME_PLATFORM_LINUX_ENABLED', is_linux)
+conf_data.set(
+  'XNVME_BE_LINUX_DMABUF_IOMMU_ENABLED',
+  is_linux ? (cc.has_header('linux/dmabuf_import.h') and cc.has_header(
+    'linux/iommu_map_pa.h',
+  )) : false,
+)
 conf_data.set('XNVME_BE_LINUX_BLOCK_ENABLED', is_linux ? cc.has_header('linux/blkzoned.h') : false)
 conf_data.set('XNVME_BE_LINUX_BLOCK_ZONED_ENABLED', is_linux ? cc.has_header('linux/blkzoned.h') : false)
 conf_data.set(
@@ -162,6 +170,15 @@ uring_dep = dependency(
   required: get_option('with-liburing'),
 )
 conf_data.set('XNVME_BE_LINUX_LIBURING_ENABLED', uring_dep.found())
+conf_data.set(
+  'XNVME_BE_LINUX_LIBURING_DMABUF_ENABLED',
+  uring_dep.found() ? cc.has_member(
+    'struct io_uring_regbuf_desc',
+    'dmabuf_fd',
+    prefix: '#include <liburing.h>',
+    dependencies: uring_dep,
+  ) : false,
+)
 
 libvfn_dep = dependency(
   'libvfn',

@@ -22,6 +22,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_cbi.h>
 #include <xnvme_be_linux.h>
+#include <xnvme_be_linux_dmabuf.h>
 #include <xnvme_be_linux_nvme.h>
 
 static inline void
@@ -142,6 +143,7 @@ xnvme_be_linux_dev_close(struct xnvme_dev *dev)
 		return;
 	}
 
+	xnvme_be_linux_dmabuf_term(dev);
 	_be_linux_state_term((void *)dev->be.state);
 	memset(&dev->be, 0, sizeof(dev->be));
 }

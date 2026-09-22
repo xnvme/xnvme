@@ -18,6 +18,8 @@
  *
  * NOTE: When changing this struct, ensure compatibility with 'struct xnvme_be_cbi_state'
  */
+struct xnvme_be_linux_dmabuf;
+
 struct xnvme_be_linux_state {
 	int fd;
 
@@ -25,7 +27,11 @@ struct xnvme_be_linux_state {
 	uint8_t poll_io;
 	uint8_t poll_sq;
 
-	uint8_t _rsvd[121];
+	uint8_t _rsvd0[1];
+
+	struct xnvme_be_linux_dmabuf *dmabuf; ///< NULL until the device has a mapping
+
+	uint8_t _rsvd[112];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_linux_state) == XNVME_BE_STATE_NBYTES, "Incorrect size")
 
@@ -58,6 +64,8 @@ xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr opts);
  * Implementations of the memory management interface using hugepages
  */
 extern struct xnvme_be_mem g_xnvme_be_linux_mem_hugepage;
+
+extern struct xnvme_be_mem g_xnvme_be_linux_mem_dmabuf;
 
 /**
  * Implementations of the admin command interface

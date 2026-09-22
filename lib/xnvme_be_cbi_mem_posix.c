@@ -11,8 +11,9 @@
 #include <unistd.h>
 #include <errno.h>
 
-static void *
-buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t nbytes, uint64_t *XNVME_UNUSED(phys))
+void *
+xnvme_be_cbi_mem_posix_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t nbytes,
+				 uint64_t *XNVME_UNUSED(phys))
 {
 	long sz = sysconf(_SC_PAGESIZE);
 
@@ -24,26 +25,27 @@ buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t nbytes, uint64_t *XN
 	return xnvme_buf_virt_alloc(sz, nbytes);
 }
 
-static void *
-buf_realloc(const struct xnvme_dev *XNVME_UNUSED(dev), void *XNVME_UNUSED(buf),
-	    size_t XNVME_UNUSED(nbytes), uint64_t *XNVME_UNUSED(phys))
+void *
+xnvme_be_cbi_mem_posix_buf_realloc(const struct xnvme_dev *XNVME_UNUSED(dev),
+				   void *XNVME_UNUSED(buf), size_t XNVME_UNUSED(nbytes),
+				   uint64_t *XNVME_UNUSED(phys))
 {
-	XNVME_DEBUG("FAILED: _posix: does not support realloc");
+	XNVME_DEBUG("FAILED: posix: does not support realloc");
 	errno = ENOSYS;
 	return NULL;
 }
 
-static void
-buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
+void
+xnvme_be_cbi_mem_posix_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
 {
 	xnvme_buf_virt_free(buf);
 }
 
-static int
-buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *XNVME_UNUSED(buf),
-	    uint64_t *XNVME_UNUSED(phys))
+int
+xnvme_be_cbi_mem_posix_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev),
+				   void *XNVME_UNUSED(buf), uint64_t *XNVME_UNUSED(phys))
 {
-	XNVME_DEBUG("FAILED: _posix: does not support phys/DMA alloc");
+	XNVME_DEBUG("FAILED: posix: does not support phys/DMA alloc");
 	return -ENOSYS;
 }
 #endif
@@ -51,14 +53,18 @@ buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *XNVME_UNUSED(buf),
 struct xnvme_be_mem g_xnvme_be_cbi_mem_posix = {
 	.id = "posix",
 #ifdef XNVME_BE_CBI_MEM_POSIX_ENABLED
-	.buf_alloc = buf_alloc,
-	.buf_realloc = buf_realloc,
-	.buf_free = buf_free,
-	.buf_vtophys = buf_vtophys,
+	.buf_alloc = xnvme_be_cbi_mem_posix_buf_alloc,
+	.buf_realloc = xnvme_be_cbi_mem_posix_buf_realloc,
+	.buf_free = xnvme_be_cbi_mem_posix_buf_free,
+	.buf_vtophys = xnvme_be_cbi_mem_posix_buf_vtophys,
+	.mem_map = xnvme_be_nosys_mem_map,
+	.mem_unmap = xnvme_be_nosys_mem_unmap,
 #else
 	.buf_alloc = xnvme_be_nosys_buf_alloc,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
 	.buf_free = xnvme_be_nosys_buf_free,
 	.buf_vtophys = xnvme_be_nosys_buf_vtophys,
+	.mem_map = xnvme_be_nosys_mem_map,
+	.mem_unmap = xnvme_be_nosys_mem_unmap,
 #endif
 };

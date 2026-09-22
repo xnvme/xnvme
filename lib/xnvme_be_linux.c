@@ -127,6 +127,7 @@ const struct xnvme_be_config g_xnvme_be_linux_iou_nvme = {
 	.mem_overrides =
 		(const struct xnvme_be_mem *const[]){
 			&g_xnvme_be_linux_mem_hugepage,
+			&g_xnvme_be_linux_mem_dmabuf,
 			NULL,
 		},
 	.attr =
@@ -148,6 +149,7 @@ const struct xnvme_be_config g_xnvme_be_linux_iou_block = {
 	.mem_overrides =
 		(const struct xnvme_be_mem *const[]){
 			&g_xnvme_be_linux_mem_hugepage,
+			&g_xnvme_be_linux_mem_dmabuf,
 			NULL,
 		},
 	.attr =

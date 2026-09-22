@@ -248,7 +248,11 @@ thread_term(struct xnvmeperf_thread *thread)
 		struct xnvmeperf_job *job = &thread->jobs[i];
 
 		if (job->buf) {
-			xnvme_buf_free(job->dev, job->buf);
+			if (thread->args->gpu_buf) {
+				xnvmeperf_cuda_buf_free(job->dev, job->buf);
+			} else {
+				xnvme_buf_free(job->dev, job->buf);
+			}
 		}
 		if (job->queue) {
 			xnvme_queue_term(job->queue);
@@ -280,10 +284,12 @@ thread_init(struct xnvmeperf_thread *thread, struct xnvmeperf_args *args)
 			return err;
 		}
 
-		job->buf = xnvme_buf_alloc(job->dev, args->iosize);
+		job->buf = args->gpu_buf ? xnvmeperf_cuda_buf_alloc(job->dev, args->opts.gpu_id,
+								    args->iosize)
+					 : xnvme_buf_alloc(job->dev, args->iosize);
 		if (!job->buf) {
 			err = -errno;
-			xnvme_cli_perr("Failed: xnvme_buf_alloc()", err);
+			xnvme_cli_perr("Failed: IO buffer allocation", err);
 			return err;
 		}
 	}
@@ -345,6 +351,7 @@ thread_fn(void *arg)
 			err = submit_io(job, ctx);
 			if (err) {
 				xnvme_queue_put_cmd_ctx(job->queue, ctx);
+				xnvme_cli_perr("Failed: submit_io() filling the queue", err);
 				break;
 			}
 		}
@@ -1028,6 +1035,10 @@ parse_run_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 		return err;
 	}
 
+	// The 'linux-dmabuf' memory manager exists to put IO buffers in GPU memory,
+	// so asking for it is what selects them
+	args->gpu_buf = args->opts.mem && (!strcmp(args->opts.mem, "linux-dmabuf"));
+
 	if (!cli->args.iopattern) {
 		err = -EINVAL;
 		xnvme_cli_perr("Error: --iopattern is required", err);
@@ -1204,7 +1215,9 @@ static struct xnvme_cli_sub g_subs[] = {
 		"run",
 		"Run a benchmark against the given devices",
 		"Run a time-bounded async IO benchmark against one or more NVMe devices.\n"
-		"Devices are distributed across CPU threads pinned by --cpumask or --cpulist.",
+		"Devices are distributed across CPU threads pinned by --cpumask or --cpulist.\n"
+		"With --mem 'linux-dmabuf' the IO buffers are allocated on the GPU given by\n"
+		"--gpu_id and exported as a dma-buf for the kernel to DMA into.",
 		sub_run,
 		{
 			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
@@ -1219,6 +1232,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_CPULIST, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_ORCH_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_MEM, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_SUBNQN, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_DIRECT, XNVME_CLI_LFLG},
 			{XNVME_CLI_OPT_POLL_IO, XNVME_CLI_LOPT},
@@ -1241,6 +1255,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_COUNT, XNVME_CLI_LREQ},
 			{XNVME_CLI_OPT_ORCH_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_MEM, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_SUBNQN, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_DIRECT, XNVME_CLI_LFLG},
 			{XNVME_CLI_OPT_POLL_IO, XNVME_CLI_LOPT},

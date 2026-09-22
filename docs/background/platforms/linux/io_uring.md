@@ -13,6 +13,11 @@ and **Write** to `io_uring` opcodes:
 
   - Mapped when using `xnvme_cmd_passv(...)` with payload as iovec
 
+* `IORING_OP_READ_FIXED` / `IORING_OP_WRITE_FIXED`
+
+  - Mapped when the payload is GPU memory registered as a `dma-buf`, see
+    {ref}`sec-platforms-linux-dmabuf`
+
 ## Passthru
 
 If you are looking to do command-passthru, that is, send arbitrary user-defined
