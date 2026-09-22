@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include <libxnvme.h>
 
@@ -47,6 +48,7 @@ struct xnvmeperf_thread {
 	double elapsed;
 	struct xnvme_dev **devs;
 	int ndevs;
+	int done;
 };
 
 #ifndef XNVME_RAND_R_ENABLED
@@ -346,6 +348,7 @@ thread_fn(void *arg)
 		err = xnvme_buf_fill(job->buf, args->iosize, "anum");
 		if (err) {
 			xnvme_cli_perr("Failed: xnvme_buf_fill()", err);
+			thread->done = 1;
 			return NULL;
 		}
 	}
@@ -403,6 +406,7 @@ thread_fn(void *arg)
 
 	xnvme_timer_stop(&timer);
 	thread->elapsed = xnvme_timer_elapsed_secs(&timer);
+	thread->done = 1;
 
 	return NULL;
 }
@@ -498,6 +502,47 @@ print_perf_results(const char *title, double elapsed, const char **uris, int nde
 		       (unsigned long)total_failed);
 	}
 	printf("====================================================================\n");
+}
+
+void
+print_intermediate_header(void)
+{
+	printf("Time,IOPS,MiB/s\n");
+	fflush(stdout);
+}
+
+void
+print_intermediate_result(double elapsed, double interval, uint64_t completed, uint32_t iosize)
+{
+	double iops, mibs;
+
+	if (interval <= 0.0) {
+		return;
+	}
+
+	iops = (double)completed / interval;
+	mibs = ((double)completed * (double)iosize) / (interval * 1024.0 * 1024.0);
+
+	printf("%.2f,%.2f,%.2f\n", elapsed, iops, mibs);
+	fflush(stdout);
+}
+
+static void
+print_intermediate_thread_result(struct xnvmeperf_thread *threads, struct xnvmeperf_args *args,
+				 double elapsed, double interval, uint64_t *prev_completed)
+{
+	uint64_t completed = 0;
+
+	for (int t = 0; t < args->ncpus; t++) {
+		struct xnvmeperf_thread *thread = &threads[t];
+
+		for (int j = 0; j < thread->njobs; j++) {
+			completed += thread->jobs[j].io_completed;
+		}
+	}
+
+	print_intermediate_result(elapsed, interval, completed - *prev_completed, args->iosize);
+	*prev_completed = completed;
 }
 
 static void
@@ -698,10 +743,57 @@ xnvmeperf_run(struct xnvmeperf_args *args)
 		if (err) {
 			xnvme_cli_perr("Failed: pthread_create()", err);
 			args->ncpus = i;
-			break;
+			goto skip_reporting;
 		}
 	}
 
+	if (args->report_freq != 0.0) {
+		uint64_t report_freq_ns = (uint64_t)(args->report_freq * 1000000000.0);
+		uint64_t runtime_ns = (uint64_t)args->time * 1000000000ULL;
+		uint64_t deadline = report_freq_ns;
+		uint64_t prev_completed = 0, prev_elapsed = 0;
+		struct xnvme_timer timer = {0};
+
+		xnvme_timer_start(&timer);
+		print_intermediate_header();
+
+		while (1) {
+			struct timespec ts;
+			uint64_t elapsed, wakeup;
+			int running = 0;
+
+			for (uint16_t i = 0; i < args->ncpus; i++) {
+				running += !threads[i].done;
+			}
+			if (!running) {
+				break;
+			}
+
+			xnvme_timer_stop(&timer);
+			elapsed = xnvme_timer_elapsed_nsecs(&timer);
+			if (elapsed >= runtime_ns) {
+				break;
+			}
+			if (elapsed >= deadline) {
+				print_intermediate_thread_result(
+					threads, args, (double)elapsed / 1000000000.0,
+					(double)(elapsed - prev_elapsed) / 1000000000.0,
+					&prev_completed);
+				prev_elapsed = elapsed;
+				while (deadline <= elapsed) {
+					deadline += report_freq_ns;
+				}
+				continue;
+			}
+
+			wakeup = deadline < runtime_ns ? deadline : runtime_ns;
+			ts.tv_sec = (time_t)((wakeup - elapsed) / 1000000000ULL);
+			ts.tv_nsec = (long)((wakeup - elapsed) % 1000000000ULL);
+			nanosleep(&ts, NULL);
+		}
+	}
+
+skip_reporting:
 	for (int i = 0; i < args->ncpus; i++) {
 		pthread_join(tids[i], NULL);
 	}
@@ -845,7 +937,7 @@ xnvmeperf_verify(struct xnvmeperf_args *args)
 		job.io_completed = 0;
 		job.io_failed = 0;
 
-		for (int i = 0; i < nios; i++) {
+		for (uint32_t i = 0; i < nios; i++) {
 			uint64_t slba = job.offset;
 
 			err = fill_pattern(write_buf, args->iosize, slba, job.nlb);
@@ -890,7 +982,7 @@ xnvmeperf_verify(struct xnvmeperf_args *args)
 		job.io_completed = 0;
 		job.io_failed = 0;
 
-		for (int i = 0; i < nios; i++) {
+		for (uint32_t i = 0; i < nios; i++) {
 			uint64_t slba;
 			size_t diff = 0;
 
@@ -1162,6 +1254,18 @@ parse_run_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 		return err;
 	}
 
+	args->report_freq = cli->args.report_freq;
+	if (args->report_freq != 0.0 && args->report_freq < 0.001) {
+		err = -EINVAL;
+		xnvme_cli_perr("Error: --report-freq must be 0 or at least 0.001", err);
+		return err;
+	}
+	if (args->report_freq > args->time) {
+		err = -EINVAL;
+		xnvme_cli_perr("Error: --report-freq cannot be more than the runtime", err);
+		return err;
+	}
+
 	args->nqueues = cli->args.nqueues ? cli->args.nqueues : 1;
 
 	args->ncpus = cli->args.ncpus;
@@ -1333,6 +1437,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_POLL_SQ, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_GPU_ID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HOMI_ID, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_REPORT_FREQ, XNVME_CLI_LOPT},
 		},
 	},
 	{
@@ -1377,6 +1482,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_GPU_ID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HOMI_ID, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_REPORT_FREQ, XNVME_CLI_LOPT},
 		},
 	},
 	{
