@@ -14,8 +14,6 @@
 #include <liburing.h>
 #include <libxnvme.h>
 
-#define QUBLK_MAX_QUEUE_DEPTH UBLK_MAX_QUEUE_DEPTH
-
 struct qublk_dev;
 struct qublk_queue;
 

@@ -105,9 +105,9 @@ sub_run(struct xnvme_cli *cli)
 		want_max_io = cli->args.max_io_bytes;
 	}
 
-	// Half of QUBLK_MAX_QUEUE_DEPTH: xnvme_queue_init() requires a capacity
+	// Half of UBLK_MAX_QUEUE_DEPTH: xnvme_queue_init() requires a capacity
 	// strictly below 4096, so a qdepth of 4096 would fail only after ADD_DEV
-	if (!xnvme_is_pow2(dev.qdepth) || dev.qdepth > (QUBLK_MAX_QUEUE_DEPTH / 2)) {
+	if (!xnvme_is_pow2(dev.qdepth) || dev.qdepth > (UBLK_MAX_QUEUE_DEPTH / 2)) {
 		xnvme_cli_perr("Error: --qdepth must be a power of 2 and within limits", -EINVAL);
 		return -EINVAL;
 	}
