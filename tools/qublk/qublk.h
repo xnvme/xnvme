@@ -28,6 +28,7 @@ struct qublk_io {
 struct qublk_queue {
 	int q_id;
 	uint32_t depth;
+	uint32_t slot; ///< Index in 'thread->queues' and the fixed-file index of the ublkc fd
 	struct ublksrv_io_desc *iod_arr;
 	size_t iod_arr_bytes;
 	struct xnvme_queue *xq;
@@ -38,7 +39,8 @@ struct qublk_queue {
 
 struct qublk_thread {
 	struct io_uring ring;
-	struct qublk_queue *queue;
+	struct qublk_queue **queues;
+	uint32_t nqueues;
 	sem_t *io_ready;
 	pthread_t tid;
 	int init_rc;
