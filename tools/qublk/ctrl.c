@@ -68,6 +68,7 @@ ctrl_uring_cmd(int ctrl_fd, uint32_t cmd_op, const struct ublksrv_ctrl_cmd *cmd)
 		fprintf(stderr, "ublk ctrl cmd 0x%x failed: %s\n", cmd_op, strerror(-res));
 		return res;
 	}
+
 	return 0;
 }
 
@@ -79,6 +80,7 @@ qublk_ctrl_open(struct qublk_dev *dev)
 		fprintf(stderr, "open(%s): %s\n", CTRL_DEV, strerror(errno));
 		return -errno;
 	}
+
 	return 0;
 }
 
@@ -107,6 +109,7 @@ qublk_ctrl_get_features(struct qublk_dev *dev, uint64_t *features)
 	if (rc < 0) {
 		return rc;
 	}
+
 	*features = buf[0];
 	return 0;
 }
@@ -133,6 +136,7 @@ qublk_ctrl_add_dev(struct qublk_dev *dev)
 	if (rc < 0) {
 		return rc;
 	}
+
 	dev->dev_id = (int)info.dev_id;
 	return 0;
 }

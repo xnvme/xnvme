@@ -33,6 +33,7 @@ id_in(const char *id, const char **set, size_t n)
 			return 1;
 		}
 	}
+
 	return 0;
 }
 
@@ -60,10 +61,12 @@ backend_honours_fua(const struct xnvme_dev *xdev)
 	if (id_in(opts->async, async_honours, sizeof(async_honours) / sizeof(*async_honours))) {
 		return 1;
 	}
+
 	if (opts->async && (!strcmp(opts->async, "emu") || !strcmp(opts->async, "thrpool"))) {
 		return (uint8_t)id_in(opts->sync, sync_passthru,
 				      sizeof(sync_passthru) / sizeof(*sync_passthru));
 	}
+
 	return 0;
 }
 
@@ -75,6 +78,7 @@ lba_shift_of(uint32_t lba_nbytes)
 			return s;
 		}
 	}
+
 	return 0;
 }
 
@@ -100,12 +104,15 @@ sub_run(struct xnvme_cli *cli)
 	if (cli->given[XNVME_CLI_OPT_QDEPTH]) {
 		dev.qdepth = cli->args.qdepth;
 	}
+
 	if (cli->given[XNVME_CLI_OPT_NQUEUES]) {
 		dev.nqueues = cli->args.nqueues;
 	}
+
 	if (cli->given[XNVME_CLI_OPT_DEV_ID]) {
 		dev.dev_id = (int)cli->args.dev_id;
 	}
+
 	if (cli->given[XNVME_CLI_OPT_MAX_IO_BYTES]) {
 		want_max_io = cli->args.max_io_bytes;
 	}
@@ -116,15 +123,18 @@ sub_run(struct xnvme_cli *cli)
 		xnvme_cli_perr("Error: --qdepth must be a power of 2 and within limits", -EINVAL);
 		return -EINVAL;
 	}
+
 	if (dev.nqueues > UBLK_MAX_NR_QUEUES) {
 		xnvme_cli_perr("Error: --nqueues is out of range", -EINVAL);
 		return -EINVAL;
 	}
+
 	// The identifier becomes the ublk minor; cap it accordingly (MINORBITS)
 	if (cli->given[XNVME_CLI_OPT_DEV_ID] && cli->args.dev_id >= (1u << 20)) {
 		xnvme_cli_perr("Error: --dev-id is out of range", -EINVAL);
 		return -EINVAL;
 	}
+
 	// max_io_buf is rounded down to a page multiple below; anything smaller
 	// than a page would round to zero
 	if (cli->given[XNVME_CLI_OPT_MAX_IO_BYTES] &&
@@ -143,6 +153,7 @@ sub_run(struct xnvme_cli *cli)
 		xnvme_cli_perr("Failed: xnvme_dev_open()", err);
 		return err;
 	}
+
 	dev.geo = xnvme_dev_get_geo(dev.xdev);
 	dev.lba_shift = lba_shift_of(dev.geo->lba_nbytes);
 	if (dev.lba_shift < 9) {
@@ -154,6 +165,7 @@ sub_run(struct xnvme_cli *cli)
 		const struct xnvme_spec_idfy_ctrlr *ctrlr = xnvme_dev_get_ctrlr(dev.xdev);
 		dev.has_vwc = ctrlr ? (uint8_t)ctrlr->vwc.present : 1;
 	}
+
 	dev.has_fua = backend_honours_fua(dev.xdev);
 
 	cap_max = dev.geo->mdts_nbytes ? dev.geo->mdts_nbytes : QUBLK_DEFAULT_MAX_IO_CAP;
@@ -164,6 +176,7 @@ sub_run(struct xnvme_cli *cli)
 	if (dev.max_io_buf > cap_max) {
 		dev.max_io_buf = cap_max;
 	}
+
 	dev.max_io_buf &= ~(uint32_t)(sysconf(_SC_PAGESIZE) - 1);
 
 	setvbuf(stderr, NULL, _IOLBF, 0);
@@ -176,9 +189,11 @@ sub_run(struct xnvme_cli *cli)
 	if (qublk_ctrl_open(&dev) < 0) {
 		goto err_xdev;
 	}
+
 	if (qublk_ctrl_get_features(&dev, &feat) < 0) {
 		goto err_ctrl;
 	}
+
 	if (!(feat & UBLK_F_CMD_IOCTL_ENCODE)) {
 		xnvme_cli_perr("Failed: kernel lacks UBLK_F_CMD_IOCTL_ENCODE", -ENOSYS);
 		goto err_ctrl;
@@ -187,6 +202,7 @@ sub_run(struct xnvme_cli *cli)
 	if (qublk_ctrl_add_dev(&dev) < 0) {
 		goto err_ctrl;
 	}
+
 	fprintf(stderr,
 		"qublk: added ublk dev id=%d nqueues=%u qdepth=%u max_io=%u backend=%s uri=%s\n",
 		dev.dev_id, dev.nqueues, dev.qdepth, dev.max_io_buf, be ? be : "(auto)", uri);
@@ -194,12 +210,15 @@ sub_run(struct xnvme_cli *cli)
 	if (qublk_ctrl_set_params(&dev) < 0) {
 		goto err_added;
 	}
+
 	if (qublk_io_init(&dev) < 0) {
 		goto err_added;
 	}
+
 	if (qublk_io_thread_start(&dev) < 0) {
 		goto err_io;
 	}
+
 	if (qublk_ctrl_start_dev(&dev) < 0) {
 		dev.stop = 1;
 		qublk_io_thread_join(&dev);
@@ -246,16 +265,19 @@ sub_del(struct xnvme_cli *cli)
 		xnvme_cli_perr("Error: --dev-id is required", -EINVAL);
 		return -EINVAL;
 	}
+
 	if (cli->args.dev_id >= (1u << 20)) {
 		xnvme_cli_perr("Error: --dev-id is out of range", -EINVAL);
 		return -EINVAL;
 	}
+
 	dev.dev_id = (int)cli->args.dev_id;
 
 	rc = qublk_ctrl_open(&dev);
 	if (rc < 0) {
 		return rc;
 	}
+
 	// A device left behind by a killed server is usually still live; STOP_DEV
 	// makes the kernel abort its pending requests so DEL_DEV can proceed. On a
 	// device that is already stopped it fails, which is fine to ignore.
@@ -265,6 +287,7 @@ sub_del(struct xnvme_cli *cli)
 	if (rc == 0) {
 		fprintf(stderr, "qublk: deleted ublk dev id=%d\n", dev.dev_id);
 	}
+
 	return rc;
 }
 
