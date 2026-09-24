@@ -27,7 +27,6 @@ struct qublk_io {
 struct qublk_queue {
 	int q_id;
 	uint32_t depth;
-	int ublkc_fd;
 	struct io_uring ring;
 	struct ublksrv_io_desc *iod_arr;
 	size_t iod_arr_bytes;
@@ -40,6 +39,7 @@ struct qublk_queue {
 
 struct qublk_dev {
 	int ctrl_fd;
+	int ublkc_fd;
 	int dev_id;
 	uint32_t nqueues;
 	uint32_t qdepth;
