@@ -16,6 +16,7 @@
 
 struct qublk_dev;
 struct qublk_queue;
+struct qublk_thread;
 
 struct qublk_io {
 	uint16_t tag;
@@ -27,12 +28,18 @@ struct qublk_io {
 struct qublk_queue {
 	int q_id;
 	uint32_t depth;
-	struct io_uring ring;
 	struct ublksrv_io_desc *iod_arr;
 	size_t iod_arr_bytes;
 	struct xnvme_queue *xq;
 	struct qublk_io *ios;
 	struct qublk_dev *dev;
+	struct qublk_thread *thread;
+};
+
+struct qublk_thread {
+	struct io_uring ring;
+	struct qublk_queue *queue;
+	sem_t *io_ready;
 	pthread_t tid;
 	int init_rc;
 };
@@ -54,7 +61,6 @@ struct qublk_dev {
 	uint8_t added;
 	uint8_t started;
 	struct qublk_queue *queues;
-	sem_t io_ready;
 	volatile sig_atomic_t stop;
 };
 

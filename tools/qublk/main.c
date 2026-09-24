@@ -137,7 +137,8 @@ dev_add(struct qublk_dev *dev, const char *be)
 }
 
 static void
-devs_teardown(struct qublk_dev *devs, uint32_t ndevs)
+devs_teardown(struct qublk_dev *devs, uint32_t ndevs, struct qublk_thread *threads,
+	      uint32_t nthreads)
 {
 	for (uint32_t d = 0; d < ndevs; d++) {
 		// STOP_DEV first, as ubdsrv does: del_gendisk() waits on requests in
@@ -150,9 +151,7 @@ devs_teardown(struct qublk_dev *devs, uint32_t ndevs)
 		devs[d].stop = 1;
 	}
 
-	for (uint32_t d = 0; d < ndevs; d++) {
-		qublk_io_thread_join(&devs[d]);
-	}
+	qublk_io_threads_join(threads, nthreads);
 
 	for (uint32_t d = 0; d < ndevs; d++) {
 		qublk_io_fini(&devs[d]);
@@ -168,10 +167,11 @@ static int
 sub_run(struct xnvme_cli *cli)
 {
 	struct xnvme_opts xopts = xnvme_opts_default();
+	struct qublk_thread *threads = NULL;
 	struct qublk_dev *devs;
 	struct xnvme_dev **xdevs;
 	const char *be = cli->args.be;
-	uint32_t ndevs = (uint32_t)cli->args.posn_count;
+	uint32_t ndevs = (uint32_t)cli->args.posn_count, nthreads = 0;
 	uint32_t qdepth = QUBLK_DEFAULT_QDEPTH, nqueues = QUBLK_DEFAULT_NQUEUES;
 	uint32_t want_max_io = 0;
 	sigset_t blk;
@@ -276,11 +276,9 @@ sub_run(struct xnvme_cli *cli)
 		}
 	}
 
-	for (uint32_t d = 0; d < ndevs; d++) {
-		err = qublk_io_thread_start(&devs[d]);
-		if (err) {
-			goto teardown;
-		}
+	err = qublk_io_threads_start(devs, ndevs, &threads, &nthreads);
+	if (err) {
+		goto teardown;
 	}
 
 	for (uint32_t d = 0; d < ndevs; d++) {
@@ -297,7 +295,7 @@ sub_run(struct xnvme_cli *cli)
 	fprintf(stderr, "qublk: stopping (signal %d)\n", sig);
 
 teardown:
-	devs_teardown(devs, ndevs);
+	devs_teardown(devs, ndevs, threads, nthreads);
 	xnvme_cli_dev_close_multi(xdevs, (int)ndevs);
 	free(devs);
 	return err;
