@@ -74,6 +74,7 @@ static int
 sub_run(struct xnvme_cli *cli)
 {
 	struct qublk_dev dev = {
+		.uri = cli->args.uri,
 		.ctrl_fd = -1,
 		.ublkc_fd = -1,
 		.dev_id = QUBLK_DEFAULT_DEV_ID,
@@ -82,7 +83,6 @@ sub_run(struct xnvme_cli *cli)
 		.flags = UBLK_F_CMD_IOCTL_ENCODE,
 	};
 	struct xnvme_opts xopts = xnvme_opts_default();
-	const char *uri = cli->args.uri;
 	const char *be = cli->args.be;
 	sigset_t blk;
 	uint64_t feat = 0;
@@ -135,7 +135,7 @@ sub_run(struct xnvme_cli *cli)
 	xnvme_cli_to_opts(cli, &xopts);
 	xopts.rdwr = 1;
 
-	dev.xdev = xnvme_dev_open(uri, &xopts);
+	dev.xdev = xnvme_dev_open(dev.uri, &xopts);
 	if (!dev.xdev) {
 		int err = errno ? -errno : -EIO;
 
@@ -146,7 +146,7 @@ sub_run(struct xnvme_cli *cli)
 	dev.geo = xnvme_dev_get_geo(dev.xdev);
 	dev.lba_shift = (uint8_t)dev.geo->ssw;
 	if (!xnvme_is_pow2(dev.geo->lba_nbytes) || dev.lba_shift < XNVME_UNIVERSAL_SECT_SH) {
-		xnvme_cli_perr("Failed: unsupported LBA size", -EINVAL);
+		fprintf(stderr, "Failed: %s: unsupported LBA size\n", dev.uri);
 		goto err_xdev;
 	}
 
@@ -188,7 +188,7 @@ sub_run(struct xnvme_cli *cli)
 
 	fprintf(stderr,
 		"qublk: added ublk dev id=%d nqueues=%u qdepth=%u max_io=%u backend=%s uri=%s\n",
-		dev.dev_id, dev.nqueues, dev.qdepth, dev.max_io_buf, be ? be : "(auto)", uri);
+		dev.dev_id, dev.nqueues, dev.qdepth, dev.max_io_buf, be ? be : "(auto)", dev.uri);
 
 	if (qublk_ctrl_set_params(&dev) < 0) {
 		goto err_added;

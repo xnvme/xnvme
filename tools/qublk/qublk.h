@@ -38,6 +38,7 @@ struct qublk_queue {
 };
 
 struct qublk_dev {
+	const char *uri;
 	int ctrl_fd;
 	int ublkc_fd;
 	int dev_id;
