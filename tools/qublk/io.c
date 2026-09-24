@@ -138,7 +138,8 @@ on_xnvme_complete(struct xnvme_cmd_ctx *ctx, void *opaque)
 	// device rather than leave the request uncommitted and the block
 	// layer waiting on it forever
 	if (submit_commit_and_fetch(q, io, result) < 0) {
-		fprintf(stderr, "qublk: q%d tag %u: no SQE for commit\n", q->q_id, io->tag);
+		fprintf(stderr, "qublk: dev%d q%d tag %u: no SQE for commit\n", q->dev->dev_id,
+			q->q_id, io->tag);
 		q->dev->stop = 1;
 	}
 }
@@ -159,17 +160,17 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 	if (op != UBLK_IO_OP_FLUSH) {
 		bytes = (uint64_t)iod->nr_sectors << XNVME_UNIVERSAL_SECT_SH;
 		if (bytes > dev->max_io_buf) {
-			fprintf(stderr, "qublk: tag %u: I/O %lu B exceeds max_io_buf %u\n",
-				io->tag, (unsigned long)bytes, dev->max_io_buf);
+			XNVME_DEBUG("FAILED: dev%d q%d tag %u: I/O %lu B exceeds max_io_buf %u",
+				    dev->dev_id, q->q_id, io->tag, (unsigned long)bytes,
+				    dev->max_io_buf);
 			return submit_commit_and_fetch(q, io, -EINVAL);
 		}
 
 		// A zero-length or sub-LBA-sized transfer would underflow the
 		// zero-based 'nlb' computed below
 		if (!bytes || (bytes & ((1u << lba_shift) - 1))) {
-			fprintf(stderr,
-				"qublk: tag %u: I/O %lu B is not a multiple of the LBA size\n",
-				io->tag, (unsigned long)bytes);
+			XNVME_DEBUG("FAILED: dev%d q%d tag %u: %lu B is not LBA-aligned",
+				    dev->dev_id, q->q_id, io->tag, (unsigned long)bytes);
 			return submit_commit_and_fetch(q, io, -EINVAL);
 		}
 	}
@@ -265,7 +266,8 @@ handle_ublk_cqe(struct qublk_queue *q, struct io_uring_cqe *cqe)
 		return 0;
 	}
 
-	fprintf(stderr, "qublk: tag %u unexpected fetch res %d\n", tag, cqe->res);
+	fprintf(stderr, "qublk: dev%d q%d tag %u unexpected fetch res %d\n", q->dev->dev_id,
+		q->q_id, tag, cqe->res);
 	q->dev->stop = 1;
 	return 0;
 }
@@ -290,7 +292,7 @@ queue_init(struct qublk_dev *dev, struct qublk_queue *q, int q_id)
 	map_off = (off_t)UBLKSRV_CMD_BUF_OFFSET + (off_t)q_id * (off_t)stride;
 	q->iod_arr = mmap(NULL, q->iod_arr_bytes, PROT_READ, MAP_SHARED, dev->ublkc_fd, map_off);
 	if (q->iod_arr == MAP_FAILED) {
-		fprintf(stderr, "mmap(iod q%d): %s\n", q_id, strerror(errno));
+		fprintf(stderr, "mmap(iod dev%d q%d): %s\n", dev->dev_id, q_id, strerror(errno));
 		q->iod_arr = NULL;
 		return -errno;
 	}
@@ -314,7 +316,8 @@ queue_init(struct qublk_dev *dev, struct qublk_queue *q, int q_id)
 
 	rc = xnvme_queue_init(dev->xdev, q->depth, 0, &q->xq);
 	if (rc < 0) {
-		fprintf(stderr, "xnvme_queue_init(q%d, %u): %s\n", q_id, q->depth, strerror(-rc));
+		fprintf(stderr, "xnvme_queue_init(dev%d q%d, %u): %s\n", dev->dev_id, q_id,
+			q->depth, strerror(-rc));
 		return rc;
 	}
 
@@ -413,7 +416,8 @@ submit_initial_fetches(struct qublk_queue *q)
 	for (uint16_t t = 0; t < q->depth; t++) {
 		rc = submit_fetch(q, &q->ios[t]);
 		if (rc < 0) {
-			fprintf(stderr, "submit_fetch(q%d t%u): %s\n", q->q_id, t, strerror(-rc));
+			fprintf(stderr, "submit_fetch(dev%d q%d t%u): %s\n", q->dev->dev_id,
+				q->q_id, t, strerror(-rc));
 			return rc;
 		}
 	}
