@@ -271,7 +271,7 @@ handle_ublk_cqe(struct qublk_queue *q, struct io_uring_cqe *cqe)
 }
 
 static int
-queue_init(struct qublk_dev *dev, struct qublk_queue *q, int q_id, int ublkc_fd)
+queue_init(struct qublk_dev *dev, struct qublk_queue *q, int q_id)
 {
 	size_t stride = iod_stride();
 	off_t map_off;
@@ -280,7 +280,6 @@ queue_init(struct qublk_dev *dev, struct qublk_queue *q, int q_id, int ublkc_fd)
 	q->dev = dev;
 	q->q_id = q_id;
 	q->depth = dev->qdepth;
-	q->ublkc_fd = ublkc_fd;
 	q->ios = NULL;
 	q->iod_arr = NULL;
 	q->xq = NULL;
@@ -289,7 +288,7 @@ queue_init(struct qublk_dev *dev, struct qublk_queue *q, int q_id, int ublkc_fd)
 
 	q->iod_arr_bytes = page_round_up((size_t)q->depth * sizeof(struct ublksrv_io_desc));
 	map_off = (off_t)UBLKSRV_CMD_BUF_OFFSET + (off_t)q_id * (off_t)stride;
-	q->iod_arr = mmap(NULL, q->iod_arr_bytes, PROT_READ, MAP_SHARED, ublkc_fd, map_off);
+	q->iod_arr = mmap(NULL, q->iod_arr_bytes, PROT_READ, MAP_SHARED, dev->ublkc_fd, map_off);
 	if (q->iod_arr == MAP_FAILED) {
 		fprintf(stderr, "mmap(iod q%d): %s\n", q_id, strerror(errno));
 		q->iod_arr = NULL;
@@ -352,7 +351,7 @@ int
 qublk_io_init(struct qublk_dev *dev)
 {
 	char path[64];
-	int ublkc_fd, rc;
+	int rc;
 
 	dev->queues = calloc(dev->nqueues, sizeof(*dev->queues));
 	if (!dev->queues) {
@@ -360,21 +359,15 @@ qublk_io_init(struct qublk_dev *dev)
 	}
 
 	snprintf(path, sizeof(path), "/dev/ublkc%d", dev->dev_id);
-	ublkc_fd = open(path, O_RDWR | O_CLOEXEC);
-	if (ublkc_fd < 0) {
+	dev->ublkc_fd = open(path, O_RDWR | O_CLOEXEC);
+	if (dev->ublkc_fd < 0) {
 		fprintf(stderr, "open(%s): %s\n", path, strerror(errno));
 		rc = -errno;
 		goto err;
 	}
 
 	for (uint16_t i = 0; i < dev->nqueues; i++) {
-		dev->queues[i].ublkc_fd = -1;
-	}
-
-	dev->queues[0].ublkc_fd = ublkc_fd;
-
-	for (uint16_t i = 0; i < dev->nqueues; i++) {
-		rc = queue_init(dev, &dev->queues[i], i, ublkc_fd);
+		rc = queue_init(dev, &dev->queues[i], i);
 		if (rc < 0) {
 			goto err;
 		}
@@ -390,22 +383,17 @@ err:
 void
 qublk_io_fini(struct qublk_dev *dev)
 {
-	int ublkc_fd = -1;
-
 	if (!dev->queues) {
 		return;
 	}
 
 	for (uint16_t i = 0; i < dev->nqueues; i++) {
-		if (dev->queues[i].ublkc_fd >= 0) {
-			ublkc_fd = dev->queues[i].ublkc_fd;
-		}
-
 		queue_fini(dev, &dev->queues[i]);
 	}
 
-	if (ublkc_fd >= 0) {
-		close(ublkc_fd);
+	if (dev->ublkc_fd >= 0) {
+		close(dev->ublkc_fd);
+		dev->ublkc_fd = -1;
 	}
 
 	free(dev->queues);
@@ -524,7 +512,7 @@ io_thread_main(void *arg)
 		return NULL;
 	}
 
-	rc = io_uring_register_files(&q->ring, &q->ublkc_fd, 1);
+	rc = io_uring_register_files(&q->ring, &dev->ublkc_fd, 1);
 	if (rc < 0) {
 		fprintf(stderr, "io_uring_register_files(q%d): %s\n", q->q_id, strerror(-rc));
 		q->init_rc = rc;

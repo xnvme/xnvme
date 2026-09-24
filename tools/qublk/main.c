@@ -75,6 +75,7 @@ sub_run(struct xnvme_cli *cli)
 {
 	struct qublk_dev dev = {
 		.ctrl_fd = -1,
+		.ublkc_fd = -1,
 		.dev_id = QUBLK_DEFAULT_DEV_ID,
 		.nqueues = QUBLK_DEFAULT_NQUEUES,
 		.qdepth = QUBLK_DEFAULT_QDEPTH,
