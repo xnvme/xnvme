@@ -14,6 +14,12 @@
 #include <liburing.h>
 #include <libxnvme.h>
 
+/**
+ * The most entries an io_uring can have: the kernel's IORING_MAX_ENTRIES, which
+ * is not exported to user space
+ */
+#define QUBLK_MAX_RING_ENTRIES 32768
+
 struct qublk_dev;
 struct qublk_queue;
 struct qublk_thread;
@@ -38,6 +44,7 @@ struct qublk_queue {
 };
 
 struct qublk_thread {
+	int cpu; ///< -1 when unpinned
 	struct io_uring ring;
 	struct qublk_queue **queues;
 	uint32_t nqueues;

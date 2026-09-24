@@ -13,8 +13,8 @@ void
 qublk_io_fini(struct qublk_dev *dev);
 
 int
-qublk_io_threads_start(struct qublk_dev *devs, uint32_t ndevs, struct qublk_thread **threads,
-		       uint32_t *nthreads);
+qublk_io_threads_start(struct qublk_dev *devs, uint32_t ndevs, const uint16_t *cpus,
+		       uint16_t ncpus, struct qublk_thread **threads, uint32_t *nthreads);
 void
 qublk_io_threads_join(struct qublk_thread *threads, uint32_t nthreads);
 
