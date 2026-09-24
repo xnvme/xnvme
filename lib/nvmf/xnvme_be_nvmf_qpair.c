@@ -63,16 +63,27 @@ xnvme_be_nvmf_connect_qpair(struct xnvme_be_nvmf_qpair *qpair)
 		return err;
 	}
 
-	/* Poll completions until the Fabric Connect response arrives. */
-	while (qpair->state == XNVME_NVMF_QPAIR_STATE_CONNECTED) {
-		err = qpair->ops->process_completions(qpair, 16);
-		if (err < 0) {
-			XNVME_DEBUG("FAILED: process_completions(), err: %d", err);
+	// At this point, the transport has connected, but the fabric connect sequence is not complete.
+	assert(qpair->state == XNVME_NVMF_QPAIR_STATE_CONNECTED);
+
+	err = xnvme_be_nvmf_send_fabric_connect_command(qpair);
+	if (err) {
+		XNVME_DEBUG("FAILED: send fabric connect command, err: %d", err);
 			return err;
 		}
+
+	if (qpair->attr.qid == 0) {
+		// Admin queue
+		// Initialize controller
+		// 
+	} else {
+		// I/O queue
 	}
 
-	return (qpair->state == XNVME_NVMF_QPAIR_STATE_READY) ? 0 : -EIO;
+	// TODO: Finish this 
+	qpair->state = XNVME_NVMF_QPAIR_STATE_READY;
+
+	return err;
 }
 
 int

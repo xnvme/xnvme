@@ -522,7 +522,7 @@ _encode_fabric_connect_data(struct xnvme_be_nvmf_qpair *qpair, void *buf)
 	/* TODO: This is not fully populated */
 	data->cntlid = 0xffff; /* assume dynamic controller model for now */
 
-	if (qpair->ctrlr->discovery_ctrlr) {
+	if (strlen(qpair->ctrlr->dev->ident.subnqn) == 0) {
 		XNVME_DEBUG("INFO: Setting subnqn to discovery NQN: %s",
 				XNVME_NVMF_DISCOVERY_NQN);
 		strncpy((char *)data->subnqn, XNVME_NVMF_DISCOVERY_NQN,

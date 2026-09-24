@@ -189,16 +189,9 @@ xnvme_be_nvmf_dev_open(struct xnvme_dev *dev)
 {
 	XNVME_DEBUG("INFO: dev_open() for NVMe-oF device: %s", dev->ident.uri);
 
-	dev->ident.dtype = XNVME_DEV_TYPE_NVMF;
 	dev->ident.csi = XNVME_SPEC_CSI_NVM;
-
-	if (dev->opts.nsid) {
-		dev->ident.dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
+	dev->ident.dtype = dev->opts.nsid ? XNVME_DEV_TYPE_NVME_NAMESPACE : XNVME_DEV_TYPE_NVME_CONTROLLER;
 		dev->ident.nsid = dev->opts.nsid;
-	} else {
-		dev->ident.dtype = XNVME_DEV_TYPE_NVME_CONTROLLER;
-		dev->ident.nsid = 0;
-	}
 
 	return 0;
 }

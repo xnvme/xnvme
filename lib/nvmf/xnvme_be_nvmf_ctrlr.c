@@ -33,12 +33,12 @@ xnvme_be_nvmf_ctrlr_create(struct xnvme_be_nvmf_transport *transport,
     tmp->dev = attr->dev;
     tmp->transport = transport;
 	tmp->ctrlr_state = XNVME_NVMF_CTRLR_STATE_INIT;
-	tmp->discovery_ctrlr = attr->dev->opts.nsid == 0 ? 1 : 0;
+	tmp->discovery_ctrlr = strlen(attr->dev->ident.subnqn) == 0 ? 1 : 0;
     tmp->last_allocated_queue_id = XNVME_BE_NVMF_IO_QUEUE_ID_START;
 	tmp->attached = 0;
 
-    XNVME_DEBUG("INFO: ctrlr->discovery_ctrlr set to %d based on dev->opts.nsid=%u",
-	    tmp->discovery_ctrlr, attr->dev->opts.nsid);
+    XNVME_DEBUG("INFO: ctrlr->discovery_ctrlr set to %d based on dev->ident.subnqn=\"%s\"",
+	    tmp->discovery_ctrlr, attr->dev->ident.subnqn);
 
     err = xnvme_be_nvmf_qpair_create(tmp, &admin_attr,
 					      &tmp->admin_qpair);

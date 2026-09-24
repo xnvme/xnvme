@@ -454,7 +454,13 @@ _rdma_send_cap(struct xnvme_be_nvmf_qpair *qpair,
 		send_wr.send_flags |= IBV_SEND_INLINE;
 		sge.lkey = 0;
 	} else {
-		memcpy(buf, rdma_qpair->send_buffer + wr_id.index * qpair->attr.capsule_size, len);
+		if (len > qpair->attr.capsule_size) {
+			XNVME_DEBUG("WARNING: Capsule size exceeded, len: %zu, capsule_size: %zu", len, qpair->attr.capsule_size);
+			return -EINVAL;
+		}
+		sge.addr = (uintptr_t)(rdma_qpair->send_buffer + wr_id.index * qpair->attr.capsule_size);
+
+		memcpy((void *) sge.addr, buf, len);
 	}
 
 	XNVME_DEBUG("INFO: Sending capsule, wr_id.index: %lu, wr_id.type: %u, len: %zu", wr_id.index, wr_id.type, len);
