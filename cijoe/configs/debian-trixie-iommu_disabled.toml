@@ -283,7 +283,7 @@ subnqn = "nqn.2019-08.org.qemu:beef0003"
 device_path = "/dev/nvme3n1"
 nsid = 1
 labels = [ "dev", "fabrics", "nvm", "write_zeroes", "log_health_ns", "idfy_cs" ]
-driver_attachment = "userspace"
+driver_attachment = "none"
 
 [[devices]]
 uri = "127.0.0.1:4421"
@@ -293,7 +293,7 @@ ctrl_path = "/dev/nvme1"
 nsid = 1
 passthrough = true
 labels = [ "dev", "fabrics", "zns", "log_health_ns", "idfy_cs" ]
-driver_attachment = "userspace"
+driver_attachment = "none"
 
 [[devices]]
 uri = "127.0.0.1:4422"
@@ -303,7 +303,7 @@ ctrl_path = "/dev/nvme2"
 nsid = 1
 passthrough = true
 labels = [ "dev", "fabrics", "kvs", "log_health_ns", "idfy_cs" ]
-driver_attachment = "userspace"
+driver_attachment = "none"
 
 # File-based device
 [[devices]]
