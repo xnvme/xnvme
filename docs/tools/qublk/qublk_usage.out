@@ -2,7 +2,7 @@ Usage: qublk <command> [<args>]
 
 Where <command> is one of:
 
-  run              | Serve a ublk block-device backed by the given xNVMe device
+  run              | Serve a ublk block-device for each of the given xNVMe devices
   del              | Delete a ublk device left behind by a killed server
 
 See 'qublk <command> --help' for the description of [<args>]

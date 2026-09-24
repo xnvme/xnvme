@@ -68,6 +68,7 @@ ctrl_uring_cmd(int ctrl_fd, uint32_t cmd_op, const struct ublksrv_ctrl_cmd *cmd)
 		fprintf(stderr, "ublk ctrl cmd 0x%x failed: %s\n", cmd_op, strerror(-res));
 		return res;
 	}
+
 	return 0;
 }
 
@@ -79,6 +80,7 @@ qublk_ctrl_open(struct qublk_dev *dev)
 		fprintf(stderr, "open(%s): %s\n", CTRL_DEV, strerror(errno));
 		return -errno;
 	}
+
 	return 0;
 }
 
@@ -107,6 +109,7 @@ qublk_ctrl_get_features(struct qublk_dev *dev, uint64_t *features)
 	if (rc < 0) {
 		return rc;
 	}
+
 	*features = buf[0];
 	return 0;
 }
@@ -133,6 +136,7 @@ qublk_ctrl_add_dev(struct qublk_dev *dev)
 	if (rc < 0) {
 		return rc;
 	}
+
 	dev->dev_id = (int)info.dev_id;
 	return 0;
 }
@@ -142,7 +146,7 @@ qublk_ctrl_set_params(struct qublk_dev *dev)
 {
 	const struct xnvme_geo *geo = dev->geo;
 	uint8_t lba_shift = dev->lba_shift;
-	uint64_t dev_sectors_512 = geo->tbytes >> 9;
+	uint64_t dev_sectors_512 = geo->tbytes >> XNVME_UNIVERSAL_SECT_SH;
 	struct ublk_params params = {
 		.len = sizeof(params),
 		.types = UBLK_PARAM_TYPE_BASIC,
@@ -154,7 +158,7 @@ qublk_ctrl_set_params(struct qublk_dev *dev)
 				.physical_bs_shift = lba_shift,
 				.io_opt_shift = lba_shift,
 				.io_min_shift = lba_shift,
-				.max_sectors = dev->max_io_buf >> 9,
+				.max_sectors = dev->max_io_buf >> XNVME_UNIVERSAL_SECT_SH,
 				.dev_sectors = dev_sectors_512,
 			},
 	};

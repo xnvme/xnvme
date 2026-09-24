@@ -14,10 +14,15 @@
 #include <liburing.h>
 #include <libxnvme.h>
 
-#define QUBLK_MAX_QUEUE_DEPTH UBLK_MAX_QUEUE_DEPTH
+/**
+ * The most entries an io_uring can have: the kernel's IORING_MAX_ENTRIES, which
+ * is not exported to user space
+ */
+#define QUBLK_MAX_RING_ENTRIES 32768
 
 struct qublk_dev;
 struct qublk_queue;
+struct qublk_thread;
 
 struct qublk_io {
 	uint16_t tag;
@@ -29,19 +34,29 @@ struct qublk_io {
 struct qublk_queue {
 	int q_id;
 	uint32_t depth;
-	int ublkc_fd;
-	struct io_uring ring;
+	uint32_t slot; ///< Index in 'thread->queues' and the fixed-file index of the ublkc fd
 	struct ublksrv_io_desc *iod_arr;
 	size_t iod_arr_bytes;
 	struct xnvme_queue *xq;
 	struct qublk_io *ios;
 	struct qublk_dev *dev;
+	struct qublk_thread *thread;
+};
+
+struct qublk_thread {
+	int cpu; ///< -1 when unpinned
+	struct io_uring ring;
+	struct qublk_queue **queues;
+	uint32_t nqueues;
+	sem_t *io_ready;
 	pthread_t tid;
 	int init_rc;
 };
 
 struct qublk_dev {
+	const char *uri;
 	int ctrl_fd;
+	int ublkc_fd;
 	int dev_id;
 	uint32_t nqueues;
 	uint32_t qdepth;
@@ -52,8 +67,9 @@ struct qublk_dev {
 	uint8_t lba_shift;
 	uint8_t has_vwc;
 	uint8_t has_fua;
+	uint8_t added;
+	uint8_t started;
 	struct qublk_queue *queues;
-	sem_t io_ready;
 	volatile sig_atomic_t stop;
 };
 
