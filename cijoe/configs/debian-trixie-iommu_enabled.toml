@@ -275,7 +275,7 @@ nsid = 0
 labels = [ "ctrlr", "cdev", "log_health_ns", "idfy_cs" ]
 driver_attachment = "kernel"
 
-# Fabrics devices (using nvme3 for fabrics testing)
+# Fabrics devices, one subsystem each: nvme3 (NVM), nvme1 (ZNS)
 [[devices]]
 uri = "127.0.0.1:4420"
 pcie_id = "0000:04:00.0"
@@ -283,6 +283,16 @@ subnqn = "nqn.2019-08.org.qemu:beef0003"
 device_path = "/dev/nvme3n1"
 nsid = 1
 labels = [ "dev", "fabrics", "nvm", "write_zeroes", "log_health_ns", "idfy_cs" ]
+driver_attachment = "userspace"
+
+[[devices]]
+uri = "127.0.0.1:4421"
+pcie_id = "0000:02:00.0"
+subnqn = "nqn.2019-08.org.qemu:beef0001"
+ctrl_path = "/dev/nvme1"
+nsid = 1
+passthrough = true
+labels = [ "dev", "fabrics", "zns", "log_health_ns", "idfy_cs" ]
 driver_attachment = "userspace"
 
 # File-based device
