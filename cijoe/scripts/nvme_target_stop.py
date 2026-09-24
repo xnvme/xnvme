@@ -33,13 +33,14 @@ def add_args(parser: ArgumentParser):
     )
 
 
-def _get_transport_device(cijoe):
-    """Return the first device labelled for NVMe transport export."""
+def _get_transport_devices(cijoe):
+    """Return all devices labelled for NVMe transport export."""
 
-    for device in cijoe.getconf("devices", []):
-        if "fabrics" in device.get("labels", []):
-            return device
-    return None
+    return [
+        device
+        for device in cijoe.getconf("devices", [])
+        if "fabrics" in device.get("labels", [])
+    ]
 
 
 def _stop_spdk(args, cijoe):
@@ -56,21 +57,24 @@ def _stop_spdk(args, cijoe):
 def _stop_linux(args, cijoe):
     """Remove the Linux kernel ``nvmet`` configfs entries."""
 
-    device = _get_transport_device(cijoe)
-    if not device:
-        return 0
-
-    subnqn = device["subnqn"]
     nvmet = "/sys/kernel/config/nvmet"
 
-    for cmd in (
-        f"rm -f {nvmet}/ports/1/subsystems/{subnqn}",
-        f"rmdir {nvmet}/ports/1; true",
-        f"echo 0 > {nvmet}/subsystems/{subnqn}/namespaces/1/enable; true",
-        f"rmdir {nvmet}/subsystems/{subnqn}/namespaces/1; true",
-        f"rmdir {nvmet}/subsystems/{subnqn}; true",
-    ):
-        cijoe.run(cmd, transport_name=args.transport_name)
+    for portid, device in enumerate(_get_transport_devices(cijoe), start=1):
+        subnqn = device["subnqn"]
+        port = f"{nvmet}/ports/{portid}"
+        cmds = [
+            f"rm -f {port}/subsystems/{subnqn}",
+            f"rmdir {port}; true",
+        ]
+        if device.get("passthrough", False):
+            cmds += [f"echo 0 > {nvmet}/subsystems/{subnqn}/passthru/enable; true"]
+        else:
+            ns = f"{nvmet}/subsystems/{subnqn}/namespaces/1"
+            cmds += [f"echo 0 > {ns}/enable; true", f"rmdir {ns}; true"]
+        cmds += [f"rmdir {nvmet}/subsystems/{subnqn}; true"]
+
+        for cmd in cmds:
+            cijoe.run(cmd, transport_name=args.transport_name)
 
     log.info("linux target down")
     return 0
