@@ -58,6 +58,7 @@ init_ring(struct qublk_queue *q)
 		memset(&p, 0, sizeof(p));
 		rc = io_uring_queue_init_params(entries, &q->ring, &p);
 	}
+
 	return rc;
 }
 
@@ -87,6 +88,7 @@ submit_fetch(struct qublk_queue *q, struct qublk_io *io)
 	if (!sqe) {
 		return -EAGAIN;
 	}
+
 	prep_io_uring_cmd(sqe, UBLK_U_IO_FETCH_REQ, &cmd, io->tag);
 	return 0;
 }
@@ -106,6 +108,7 @@ submit_commit_and_fetch(struct qublk_queue *q, struct qublk_io *io, int result)
 	if (!sqe) {
 		return -EAGAIN;
 	}
+
 	prep_io_uring_cmd(sqe, UBLK_U_IO_COMMIT_AND_FETCH_REQ, &cmd, io->tag);
 	return 0;
 }
@@ -160,6 +163,7 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 				io->tag, (unsigned long)bytes, dev->max_io_buf);
 			return submit_commit_and_fetch(q, io, -EINVAL);
 		}
+
 		// A zero-length or sub-LBA-sized transfer would underflow the
 		// zero-based 'nlb' computed below
 		if (!bytes || (bytes & ((1u << lba_shift) - 1))) {
@@ -174,6 +178,7 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 	if (!ctx) {
 		return -EBUSY;
 	}
+
 	/*
 	 * The ctx is pooled per xnvme queue and reused across commands.
 	 * xnvme_nvm_{read,write} only writes opcode/nsid/slba/nlb, so other
@@ -207,6 +212,7 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 		if (iod->op_flags & UBLK_IO_F_FUA) {
 			ctx->cmd.nvm.fua = 1;
 		}
+
 		rc = xnvme_nvm_write(ctx, nsid, slba, nlb, io->buf, NULL);
 		break;
 	default:
@@ -218,10 +224,12 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 		xnvme_queue_put_cmd_ctx(q->xq, ctx);
 		return rc;
 	}
+
 	if (rc < 0) {
 		xnvme_queue_put_cmd_ctx(q->xq, ctx);
 		return submit_commit_and_fetch(q, io, rc);
 	}
+
 	return 0;
 }
 
@@ -236,6 +244,7 @@ handle_ublk_cqe(struct qublk_queue *q, struct io_uring_cqe *cqe)
 		fprintf(stderr, "qublk: bogus tag %u in cqe\n", tag);
 		return -EINVAL;
 	}
+
 	io = &q->ios[tag];
 
 	if (cqe->res == UBLK_IO_RES_OK) {
@@ -247,12 +256,15 @@ handle_ublk_cqe(struct qublk_queue *q, struct io_uring_cqe *cqe)
 			io_uring_submit(&q->ring);
 			rc = dispatch(q, io);
 		}
+
 		return rc;
 	}
+
 	if (cqe->res == UBLK_IO_RES_ABORT || cqe->res == -ENODEV) {
 		q->dev->stop = 1;
 		return 0;
 	}
+
 	fprintf(stderr, "qublk: tag %u unexpected fetch res %d\n", tag, cqe->res);
 	q->dev->stop = 1;
 	return 0;
@@ -288,6 +300,7 @@ queue_init(struct qublk_dev *dev, struct qublk_queue *q, int q_id, int ublkc_fd)
 	if (!q->ios) {
 		return -ENOMEM;
 	}
+
 	for (uint16_t t = 0; t < q->depth; t++) {
 		q->ios[t].tag = t;
 		q->ios[t].q = q;
@@ -317,15 +330,18 @@ queue_fini(struct qublk_dev *dev, struct qublk_queue *q)
 		xnvme_queue_term(q->xq);
 		q->xq = NULL;
 	}
+
 	if (q->ios) {
 		for (uint16_t t = 0; t < q->depth; t++) {
 			if (q->ios[t].buf) {
 				xnvme_buf_free(dev->xdev, q->ios[t].buf);
 			}
 		}
+
 		free(q->ios);
 		q->ios = NULL;
 	}
+
 	if (q->iod_arr) {
 		munmap(q->iod_arr, q->iod_arr_bytes);
 		q->iod_arr = NULL;
@@ -354,6 +370,7 @@ qublk_io_init(struct qublk_dev *dev)
 	for (uint16_t i = 0; i < dev->nqueues; i++) {
 		dev->queues[i].ublkc_fd = -1;
 	}
+
 	dev->queues[0].ublkc_fd = ublkc_fd;
 
 	for (uint16_t i = 0; i < dev->nqueues; i++) {
@@ -378,15 +395,19 @@ qublk_io_fini(struct qublk_dev *dev)
 	if (!dev->queues) {
 		return;
 	}
+
 	for (uint16_t i = 0; i < dev->nqueues; i++) {
 		if (dev->queues[i].ublkc_fd >= 0) {
 			ublkc_fd = dev->queues[i].ublkc_fd;
 		}
+
 		queue_fini(dev, &dev->queues[i]);
 	}
+
 	if (ublkc_fd >= 0) {
 		close(ublkc_fd);
 	}
+
 	free(dev->queues);
 	dev->queues = NULL;
 }
@@ -408,12 +429,14 @@ submit_initial_fetches(struct qublk_queue *q)
 			return rc;
 		}
 	}
+
 	rc = io_uring_submit(&q->ring);
 	if (rc < 0) {
 		fprintf(stderr, "io_uring_submit(initial FETCHs q%d): %s\n", q->q_id,
 			strerror(-rc));
 		return rc;
 	}
+
 	return 0;
 }
 
@@ -450,6 +473,7 @@ io_loop(struct qublk_queue *q)
 			handle_ublk_cqe(q, cqe);
 			count++;
 		}
+
 		if (count) {
 			io_uring_cq_advance(&q->ring, count);
 		}
@@ -471,6 +495,7 @@ io_loop(struct qublk_queue *q)
 			handle_ublk_cqe(q, cqe);
 			count++;
 		}
+
 		if (count) {
 			io_uring_cq_advance(&q->ring, count);
 		}
@@ -522,6 +547,7 @@ io_thread_main(void *arg)
 	if (q->init_rc == 0) {
 		io_loop(q);
 	}
+
 	io_uring_queue_exit(&q->ring);
 	return NULL;
 }
@@ -546,12 +572,14 @@ qublk_io_thread_start(struct qublk_dev *dev)
 			err = -rc;
 			break;
 		}
+
 		started++;
 	}
 
 	for (uint16_t i = 0; i < started; i++) {
 		sem_wait(&dev->io_ready);
 	}
+
 	sem_destroy(&dev->io_ready);
 
 	if (err == 0) {
@@ -568,6 +596,7 @@ qublk_io_thread_start(struct qublk_dev *dev)
 		qublk_io_thread_join(dev);
 		return err;
 	}
+
 	return 0;
 }
 
@@ -577,6 +606,7 @@ qublk_io_thread_join(struct qublk_dev *dev)
 	if (!dev->queues) {
 		return;
 	}
+
 	for (uint16_t i = 0; i < dev->nqueues; i++) {
 		if (dev->queues[i].tid) {
 			pthread_join(dev->queues[i].tid, NULL);
