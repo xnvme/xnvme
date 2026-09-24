@@ -51,6 +51,8 @@ struct qublk_dev {
 	uint8_t lba_shift;
 	uint8_t has_vwc;
 	uint8_t has_fua;
+	uint8_t added;
+	uint8_t started;
 	struct qublk_queue *queues;
 	sem_t io_ready;
 	volatile sig_atomic_t stop;

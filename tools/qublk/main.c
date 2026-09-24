@@ -71,6 +71,91 @@ backend_honours_fua(const struct xnvme_dev *xdev)
 }
 
 static int
+dev_init(struct qublk_dev *dev, uint32_t want_max_io)
+{
+	const struct xnvme_spec_idfy_ctrlr *ctrlr;
+	uint32_t cap_max;
+
+	dev->geo = xnvme_dev_get_geo(dev->xdev);
+	dev->lba_shift = (uint8_t)dev->geo->ssw;
+	if (!xnvme_is_pow2(dev->geo->lba_nbytes) || dev->lba_shift < XNVME_UNIVERSAL_SECT_SH) {
+		fprintf(stderr, "Failed: %s: unsupported LBA size\n", dev->uri);
+		return -EINVAL;
+	}
+
+	ctrlr = xnvme_dev_get_ctrlr(dev->xdev);
+	dev->has_vwc = ctrlr ? (uint8_t)ctrlr->vwc.present : 1;
+	dev->has_fua = backend_honours_fua(dev->xdev);
+
+	cap_max = dev->geo->mdts_nbytes ? dev->geo->mdts_nbytes : QUBLK_DEFAULT_MAX_IO_CAP;
+	dev->max_io_buf = (uint32_t)XNVME_MIN_U64(
+		want_max_io ? want_max_io : QUBLK_DEFAULT_MAX_IO_CAP, cap_max);
+	dev->max_io_buf &= ~(uint32_t)(sysconf(_SC_PAGESIZE) - 1);
+
+	return 0;
+}
+
+static int
+dev_add(struct qublk_dev *dev, const char *be)
+{
+	uint64_t feat = 0;
+	int rc;
+
+	rc = qublk_ctrl_open(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+	rc = qublk_ctrl_get_features(dev, &feat);
+	if (rc < 0) {
+		return rc;
+	}
+
+	if (!(feat & UBLK_F_CMD_IOCTL_ENCODE)) {
+		xnvme_cli_perr("Failed: kernel lacks UBLK_F_CMD_IOCTL_ENCODE", -ENOSYS);
+		return -ENOSYS;
+	}
+
+	rc = qublk_ctrl_add_dev(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+	dev->added = 1;
+	fprintf(stderr,
+		"qublk: added ublk dev id=%d nqueues=%u qdepth=%u max_io=%u backend=%s uri=%s\n",
+		dev->dev_id, dev->nqueues, dev->qdepth, dev->max_io_buf, be ? be : "(auto)",
+		dev->uri);
+
+	rc = qublk_ctrl_set_params(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+	return qublk_io_init(dev);
+}
+
+static void
+dev_teardown(struct qublk_dev *dev)
+{
+	// STOP_DEV first, as ubdsrv does: del_gendisk() waits on requests in
+	// flight, so the queue threads must still be servicing; the kernel then
+	// aborts the pending FETCHes, which is what makes the threads exit
+	if (dev->started) {
+		qublk_ctrl_stop_dev(dev);
+	}
+
+	dev->stop = 1;
+	qublk_io_thread_join(dev);
+	qublk_io_fini(dev);
+	if (dev->added) {
+		qublk_ctrl_del_dev(dev);
+	}
+
+	qublk_ctrl_close(dev);
+}
+
+static int
 sub_run(struct xnvme_cli *cli)
 {
 	struct qublk_dev dev = {
@@ -85,9 +170,8 @@ sub_run(struct xnvme_cli *cli)
 	struct xnvme_opts xopts = xnvme_opts_default();
 	const char *be = cli->args.be;
 	sigset_t blk;
-	uint64_t feat = 0;
-	uint32_t want_max_io = 0, cap_max;
-	int sig;
+	uint32_t want_max_io = 0;
+	int err, sig;
 
 	// Options are optional; only override the defaults for the ones actually given
 	if (cli->given[XNVME_CLI_OPT_QDEPTH]) {
@@ -137,30 +221,15 @@ sub_run(struct xnvme_cli *cli)
 
 	dev.xdev = xnvme_dev_open(dev.uri, &xopts);
 	if (!dev.xdev) {
-		int err = errno ? -errno : -EIO;
-
+		err = errno ? -errno : -EIO;
 		xnvme_cli_perr("Failed: xnvme_dev_open()", err);
 		return err;
 	}
 
-	dev.geo = xnvme_dev_get_geo(dev.xdev);
-	dev.lba_shift = (uint8_t)dev.geo->ssw;
-	if (!xnvme_is_pow2(dev.geo->lba_nbytes) || dev.lba_shift < XNVME_UNIVERSAL_SECT_SH) {
-		fprintf(stderr, "Failed: %s: unsupported LBA size\n", dev.uri);
-		goto err_xdev;
+	err = dev_init(&dev, want_max_io);
+	if (err) {
+		goto teardown;
 	}
-
-	{
-		const struct xnvme_spec_idfy_ctrlr *ctrlr = xnvme_dev_get_ctrlr(dev.xdev);
-		dev.has_vwc = ctrlr ? (uint8_t)ctrlr->vwc.present : 1;
-	}
-
-	dev.has_fua = backend_honours_fua(dev.xdev);
-
-	cap_max = dev.geo->mdts_nbytes ? dev.geo->mdts_nbytes : QUBLK_DEFAULT_MAX_IO_CAP;
-	dev.max_io_buf = (uint32_t)XNVME_MIN_U64(
-		want_max_io ? want_max_io : QUBLK_DEFAULT_MAX_IO_CAP, cap_max);
-	dev.max_io_buf &= ~(uint32_t)(sysconf(_SC_PAGESIZE) - 1);
 
 	setvbuf(stderr, NULL, _IOLBF, 0);
 
@@ -169,71 +238,31 @@ sub_run(struct xnvme_cli *cli)
 	sigaddset(&blk, SIGTERM);
 	pthread_sigmask(SIG_BLOCK, &blk, NULL);
 
-	if (qublk_ctrl_open(&dev) < 0) {
-		goto err_xdev;
+	err = dev_add(&dev, be);
+	if (err) {
+		goto teardown;
 	}
 
-	if (qublk_ctrl_get_features(&dev, &feat) < 0) {
-		goto err_ctrl;
+	err = qublk_io_thread_start(&dev);
+	if (err) {
+		goto teardown;
 	}
 
-	if (!(feat & UBLK_F_CMD_IOCTL_ENCODE)) {
-		xnvme_cli_perr("Failed: kernel lacks UBLK_F_CMD_IOCTL_ENCODE", -ENOSYS);
-		goto err_ctrl;
+	err = qublk_ctrl_start_dev(&dev);
+	if (err) {
+		goto teardown;
 	}
 
-	if (qublk_ctrl_add_dev(&dev) < 0) {
-		goto err_ctrl;
-	}
-
-	fprintf(stderr,
-		"qublk: added ublk dev id=%d nqueues=%u qdepth=%u max_io=%u backend=%s uri=%s\n",
-		dev.dev_id, dev.nqueues, dev.qdepth, dev.max_io_buf, be ? be : "(auto)", dev.uri);
-
-	if (qublk_ctrl_set_params(&dev) < 0) {
-		goto err_added;
-	}
-
-	if (qublk_io_init(&dev) < 0) {
-		goto err_added;
-	}
-
-	if (qublk_io_thread_start(&dev) < 0) {
-		goto err_io;
-	}
-
-	if (qublk_ctrl_start_dev(&dev) < 0) {
-		dev.stop = 1;
-		qublk_io_thread_join(&dev);
-		goto err_io;
-	}
-
+	dev.started = 1;
 	fprintf(stderr, "qublk: /dev/ublkb%d ready (Ctrl-C to stop)\n", dev.dev_id);
 
 	sigwait(&blk, &sig);
 	fprintf(stderr, "qublk: stopping (signal %d)\n", sig);
-	// STOP_DEV first, as ubdsrv does: del_gendisk() waits on requests in
-	// flight, so the queue threads must still be servicing; the kernel then
-	// aborts the pending FETCHes, which is what makes the threads exit
-	qublk_ctrl_stop_dev(&dev);
-	dev.stop = 1;
 
-	qublk_io_thread_join(&dev);
-	qublk_io_fini(&dev);
-	qublk_ctrl_del_dev(&dev);
-	qublk_ctrl_close(&dev);
+teardown:
+	dev_teardown(&dev);
 	xnvme_dev_close(dev.xdev);
-	return 0;
-
-err_io:
-	qublk_io_fini(&dev);
-err_added:
-	qublk_ctrl_del_dev(&dev);
-err_ctrl:
-	qublk_ctrl_close(&dev);
-err_xdev:
-	xnvme_dev_close(dev.xdev);
-	return -EIO;
+	return err;
 }
 
 static int
