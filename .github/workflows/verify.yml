@@ -711,8 +711,7 @@ jobs:
         - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'pcie'}
         - {os: 'debian', ver: 'trixie-iommu_disabled', guest_dir: 'debian-trixie-amd64', transport: 'pcie'}
         - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'tcp-spdk'}
-        # tcp-linux: enabled in follow-up PR.
-        #- {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'tcp-linux'}
+        - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'tcp-linux'}
 
     steps:
     - uses: actions/checkout@v6
