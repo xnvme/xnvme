@@ -119,6 +119,20 @@ if conf_data.get('XNVME_BE_UPCIE_CUDA_ENABLED')
   add_languages('cuda', required: true, native: false)
 endif
 
+# nVMe-oF backend: NVMe over Fabrics backend support, linked against libibverbs and librdmacm.
+ibverbs_dep = cc.find_library(
+  'ibverbs',
+  has_headers: ['infiniband/verbs.h'],
+  required: get_option('with-nvmf'),
+)
+rdmacm_dep = cc.find_library(
+  'rdmacm',
+  has_headers: ['rdma/rdma_cma.h'],
+  required: get_option('with-nvmf'),
+)
+
+conf_data.set('XNVME_BE_NVMF_ENABLED', is_linux and ibverbs_dep.found() and rdmacm_dep.found())
+
 # uPCIe HIP/ROCm backend: AMD GPU device memory via the HIP host API (gcc, no
 # hipcc), linked against libamdhip64. Mirrors the CUDA backend above.
 hip_dep = cc.find_library(
