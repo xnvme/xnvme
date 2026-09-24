@@ -220,6 +220,11 @@ class XnvmeDriver(object):
 
         driver_attachment: "userspace"
 
+    or, to leave the attachment as it is, e.g. for a device exported by the NVMe
+    target of the fabrics tests:
+
+        driver_attachment: "none"
+
     When no "driver_attachment" key is provided, "kernel" is assumed.
 
     Additionally, since switching device-driver-attachment takes a non-trivial amount of
@@ -267,8 +272,9 @@ class XnvmeDriver(object):
     def attach(cijoe, device):
         """Attach device driver according to the 'needs' of the given 'device'"""
 
-        needs_kernel = device.get("driver_attachment", "kernel") == "kernel"
-        needs_userspace = not needs_kernel
+        attachment = device.get("driver_attachment", "kernel")
+        needs_kernel = attachment == "kernel"
+        needs_userspace = attachment == "userspace"
 
         if needs_userspace and XnvmeDriver.IS_KERNEL_ATTACHED in [True, None]:
             XnvmeDriver.kernel_detach(cijoe)
