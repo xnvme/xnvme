@@ -431,6 +431,36 @@ submit_initial_fetches(struct qublk_queue *q)
 	return 0;
 }
 
+static unsigned
+thread_reap(struct qublk_thread *t)
+{
+	struct io_uring_cqe *cqe;
+	unsigned head, count = 0;
+
+	io_uring_for_each_cqe(&t->ring, head, cqe)
+	{
+		// Dispatch rather than discard; STOP_DEV waits on requests
+		// in flight, and one delivered after 'stop' was set would
+		// otherwise never be committed
+		handle_ublk_cqe(t->queue, cqe);
+		count++;
+	}
+
+	if (count) {
+		io_uring_cq_advance(&t->ring, count);
+	}
+
+	return count;
+}
+
+static int
+thread_poke(struct qublk_thread *t)
+{
+	struct xnvme_queue *xq = t->queue->xq;
+
+	return xnvme_queue_get_outstanding(xq) && xnvme_queue_poke(xq, 0);
+}
+
 static void
 io_loop(struct qublk_thread *t)
 {
@@ -438,7 +468,7 @@ io_loop(struct qublk_thread *t)
 	struct qublk_dev *dev = q->dev;
 	struct __kernel_timespec idle_ts = {.tv_nsec = 100 * 1000 * 1000};
 	struct io_uring_cqe *cqe;
-	unsigned head, count;
+	unsigned count;
 	int xp;
 
 	while (!dev->stop) {
@@ -459,40 +489,15 @@ io_loop(struct qublk_thread *t)
 			io_uring_submit_and_get_events(&t->ring);
 		}
 
-		count = 0;
-		io_uring_for_each_cqe(&t->ring, head, cqe)
-		{
-			handle_ublk_cqe(q, cqe);
-			count++;
-		}
-
-		if (count) {
-			io_uring_cq_advance(&t->ring, count);
-		}
-
-		if (xnvme_queue_get_outstanding(q->xq)) {
-			xnvme_queue_poke(q->xq, 0);
-		}
+		thread_reap(t);
+		thread_poke(t);
 	}
 
 	/* Drain: keep pumping until xnvme queue empty and no more ublk CQEs. */
 	for (int idle = 0; idle < 1024;) {
 		io_uring_submit_and_get_events(&t->ring);
-		count = 0;
-		io_uring_for_each_cqe(&t->ring, head, cqe)
-		{
-			// Dispatch rather than discard; STOP_DEV waits on requests
-			// in flight, and one delivered after 'stop' was set would
-			// otherwise never be committed
-			handle_ublk_cqe(q, cqe);
-			count++;
-		}
-
-		if (count) {
-			io_uring_cq_advance(&t->ring, count);
-		}
-
-		xp = xnvme_queue_poke(q->xq, 0);
+		count = thread_reap(t);
+		xp = thread_poke(t);
 		if (xnvme_queue_get_outstanding(q->xq) == 0 && count == 0 && xp == 0) {
 			idle++;
 		} else {
