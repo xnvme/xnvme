@@ -44,19 +44,19 @@ iod_stride(void)
 }
 
 static int
-init_ring(struct qublk_queue *q)
+init_ring(struct qublk_thread *t)
 {
 	struct io_uring_params p = {0};
 	// Per iteration of io_loop we queue, between submits, at most one
 	// COMMIT_AND_FETCH per local tag
-	unsigned entries = q->depth;
+	unsigned entries = t->queue->depth;
 	int rc;
 
 	p.flags = IORING_SETUP_SINGLE_ISSUER | IORING_SETUP_DEFER_TASKRUN;
-	rc = io_uring_queue_init_params(entries, &q->ring, &p);
+	rc = io_uring_queue_init_params(entries, &t->ring, &p);
 	if (rc == -EINVAL) {
 		memset(&p, 0, sizeof(p));
-		rc = io_uring_queue_init_params(entries, &q->ring, &p);
+		rc = io_uring_queue_init_params(entries, &t->ring, &p);
 	}
 
 	return rc;
@@ -84,7 +84,7 @@ submit_fetch(struct qublk_queue *q, struct qublk_io *io)
 		.addr = (uint64_t)(uintptr_t)io->buf,
 	};
 
-	sqe = io_uring_get_sqe(&q->ring);
+	sqe = io_uring_get_sqe(&q->thread->ring);
 	if (!sqe) {
 		return -EAGAIN;
 	}
@@ -104,7 +104,7 @@ submit_commit_and_fetch(struct qublk_queue *q, struct qublk_io *io, int result)
 		.addr = (uint64_t)(uintptr_t)io->buf,
 	};
 
-	sqe = io_uring_get_sqe(&q->ring);
+	sqe = io_uring_get_sqe(&q->thread->ring);
 	if (!sqe) {
 		return -EAGAIN;
 	}
@@ -254,7 +254,7 @@ handle_ublk_cqe(struct qublk_queue *q, struct io_uring_cqe *cqe)
 			// -EBUSY is a full xnvme queue, cured by poking it; -EAGAIN
 			// is an exhausted io_uring SQ, cured only by submitting it
 			xnvme_queue_poke(q->xq, 0);
-			io_uring_submit(&q->ring);
+			io_uring_submit(&q->thread->ring);
 			rc = dispatch(q, io);
 		}
 
@@ -285,8 +285,7 @@ queue_init(struct qublk_dev *dev, struct qublk_queue *q, int q_id)
 	q->ios = NULL;
 	q->iod_arr = NULL;
 	q->xq = NULL;
-	q->tid = 0;
-	q->init_rc = 0;
+	q->thread = NULL;
 
 	q->iod_arr_bytes = page_round_up((size_t)q->depth * sizeof(struct ublksrv_io_desc));
 	map_off = (off_t)UBLKSRV_CMD_BUF_OFFSET + (off_t)q_id * (off_t)stride;
@@ -422,7 +421,7 @@ submit_initial_fetches(struct qublk_queue *q)
 		}
 	}
 
-	rc = io_uring_submit(&q->ring);
+	rc = io_uring_submit(&q->thread->ring);
 	if (rc < 0) {
 		fprintf(stderr, "io_uring_submit(initial FETCHs q%d): %s\n", q->q_id,
 			strerror(-rc));
@@ -433,8 +432,9 @@ submit_initial_fetches(struct qublk_queue *q)
 }
 
 static void
-io_loop(struct qublk_queue *q)
+io_loop(struct qublk_thread *t)
 {
+	struct qublk_queue *q = t->queue;
 	struct qublk_dev *dev = q->dev;
 	struct __kernel_timespec idle_ts = {.tv_nsec = 100 * 1000 * 1000};
 	struct io_uring_cqe *cqe;
@@ -454,20 +454,20 @@ io_loop(struct qublk_queue *q)
 		 * thread without posting a CQE here.
 		 */
 		if (xnvme_queue_get_outstanding(q->xq) == 0) {
-			io_uring_submit_and_wait_timeout(&q->ring, &cqe, 1, &idle_ts, NULL);
+			io_uring_submit_and_wait_timeout(&t->ring, &cqe, 1, &idle_ts, NULL);
 		} else {
-			io_uring_submit_and_get_events(&q->ring);
+			io_uring_submit_and_get_events(&t->ring);
 		}
 
 		count = 0;
-		io_uring_for_each_cqe(&q->ring, head, cqe)
+		io_uring_for_each_cqe(&t->ring, head, cqe)
 		{
 			handle_ublk_cqe(q, cqe);
 			count++;
 		}
 
 		if (count) {
-			io_uring_cq_advance(&q->ring, count);
+			io_uring_cq_advance(&t->ring, count);
 		}
 
 		if (xnvme_queue_get_outstanding(q->xq)) {
@@ -477,9 +477,9 @@ io_loop(struct qublk_queue *q)
 
 	/* Drain: keep pumping until xnvme queue empty and no more ublk CQEs. */
 	for (int idle = 0; idle < 1024;) {
-		io_uring_submit_and_get_events(&q->ring);
+		io_uring_submit_and_get_events(&t->ring);
 		count = 0;
-		io_uring_for_each_cqe(&q->ring, head, cqe)
+		io_uring_for_each_cqe(&t->ring, head, cqe)
 		{
 			// Dispatch rather than discard; STOP_DEV waits on requests
 			// in flight, and one delivered after 'stop' was set would
@@ -489,7 +489,7 @@ io_loop(struct qublk_queue *q)
 		}
 
 		if (count) {
-			io_uring_cq_advance(&q->ring, count);
+			io_uring_cq_advance(&t->ring, count);
 		}
 
 		xp = xnvme_queue_poke(q->xq, 0);
@@ -504,63 +504,91 @@ io_loop(struct qublk_queue *q)
 static void *
 io_thread_main(void *arg)
 {
-	struct qublk_queue *q = arg;
-	struct qublk_dev *dev = q->dev;
+	struct qublk_thread *t = arg;
+	struct qublk_queue *q = t->queue;
 	int rc;
 
-	rc = init_ring(q);
+	rc = init_ring(t);
 	if (rc < 0) {
 		fprintf(stderr, "io_uring_queue_init(q%d): %s\n", q->q_id, strerror(-rc));
-		q->init_rc = rc;
-		sem_post(&dev->io_ready);
+		t->init_rc = rc;
+		sem_post(t->io_ready);
 		return NULL;
 	}
 
-	rc = io_uring_register_files(&q->ring, &dev->ublkc_fd, 1);
+	rc = io_uring_register_files(&t->ring, &q->dev->ublkc_fd, 1);
 	if (rc < 0) {
 		fprintf(stderr, "io_uring_register_files(q%d): %s\n", q->q_id, strerror(-rc));
-		q->init_rc = rc;
-		sem_post(&dev->io_ready);
-		io_uring_queue_exit(&q->ring);
+		t->init_rc = rc;
+		sem_post(t->io_ready);
+		io_uring_queue_exit(&t->ring);
 		return NULL;
 	}
 
-	rc = io_uring_register_ring_fd(&q->ring);
+	rc = io_uring_register_ring_fd(&t->ring);
 	if (rc < 0) {
 		fprintf(stderr, "io_uring_register_ring_fd(q%d): %s\n", q->q_id, strerror(-rc));
-		q->init_rc = rc;
-		sem_post(&dev->io_ready);
-		io_uring_queue_exit(&q->ring);
+		t->init_rc = rc;
+		sem_post(t->io_ready);
+		io_uring_queue_exit(&t->ring);
 		return NULL;
 	}
 
-	q->init_rc = submit_initial_fetches(q);
-	sem_post(&dev->io_ready);
-	if (q->init_rc == 0) {
-		io_loop(q);
+	t->init_rc = submit_initial_fetches(q);
+	sem_post(t->io_ready);
+	if (t->init_rc == 0) {
+		io_loop(t);
 	}
 
-	io_uring_queue_exit(&q->ring);
+	io_uring_queue_exit(&t->ring);
 	return NULL;
 }
 
 int
-qublk_io_thread_start(struct qublk_dev *dev)
+qublk_io_threads_start(struct qublk_dev *devs, uint32_t ndevs, struct qublk_thread **threads,
+		       uint32_t *nthreads)
 {
-	uint16_t started = 0;
+	struct qublk_thread *thr;
+	sem_t io_ready;
+	uint32_t total = 0, nthr, started = 0;
 	int rc, err = 0;
 
-	if (sem_init(&dev->io_ready, 0, 0) < 0) {
-		fprintf(stderr, "sem_init: %s\n", strerror(errno));
-		return -errno;
+	for (uint32_t d = 0; d < ndevs; d++) {
+		total += devs[d].nqueues;
 	}
 
-	for (uint16_t i = 0; i < dev->nqueues; i++) {
-		dev->queues[i].init_rc = 0;
-		rc = pthread_create(&dev->queues[i].tid, NULL, io_thread_main, &dev->queues[i]);
+	nthr = total;
+
+	thr = calloc(nthr, sizeof(*thr));
+	if (!thr) {
+		return -ENOMEM;
+	}
+
+	for (uint32_t i = 0, d = 0, q = 0; i < nthr; i++) {
+		struct qublk_queue *queue = &devs[d].queues[q];
+
+		queue->thread = &thr[i];
+		thr[i].queue = queue;
+		thr[i].io_ready = &io_ready;
+
+		if (++q == devs[d].nqueues) {
+			q = 0;
+			d++;
+		}
+	}
+
+	if (sem_init(&io_ready, 0, 0) < 0) {
+		err = -errno;
+		fprintf(stderr, "sem_init: %s\n", strerror(errno));
+		qublk_io_threads_join(thr, nthr);
+		return err;
+	}
+
+	for (uint32_t i = 0; i < nthr; i++) {
+		rc = pthread_create(&thr[i].tid, NULL, io_thread_main, &thr[i]);
 		if (rc) {
-			fprintf(stderr, "pthread_create(q%u): %s\n", i, strerror(rc));
-			dev->queues[i].tid = 0;
+			fprintf(stderr, "pthread_create(thread %u): %s\n", i, strerror(rc));
+			thr[i].tid = 0;
 			err = -rc;
 			break;
 		}
@@ -568,41 +596,48 @@ qublk_io_thread_start(struct qublk_dev *dev)
 		started++;
 	}
 
-	for (uint16_t i = 0; i < started; i++) {
-		sem_wait(&dev->io_ready);
+	for (uint32_t i = 0; i < started; i++) {
+		sem_wait(&io_ready);
 	}
 
-	sem_destroy(&dev->io_ready);
+	sem_destroy(&io_ready);
 
 	if (err == 0) {
-		for (uint16_t i = 0; i < dev->nqueues; i++) {
-			if (dev->queues[i].init_rc < 0) {
-				err = dev->queues[i].init_rc;
+		for (uint32_t i = 0; i < nthr; i++) {
+			if (thr[i].init_rc < 0) {
+				err = thr[i].init_rc;
 				break;
 			}
 		}
 	}
 
 	if (err < 0) {
-		dev->stop = 1;
-		qublk_io_thread_join(dev);
+		for (uint32_t d = 0; d < ndevs; d++) {
+			devs[d].stop = 1;
+		}
+
+		qublk_io_threads_join(thr, nthr);
 		return err;
 	}
 
+	*threads = thr;
+	*nthreads = nthr;
 	return 0;
 }
 
 void
-qublk_io_thread_join(struct qublk_dev *dev)
+qublk_io_threads_join(struct qublk_thread *threads, uint32_t nthreads)
 {
-	if (!dev->queues) {
+	if (!threads) {
 		return;
 	}
 
-	for (uint16_t i = 0; i < dev->nqueues; i++) {
-		if (dev->queues[i].tid) {
-			pthread_join(dev->queues[i].tid, NULL);
-			dev->queues[i].tid = 0;
+	for (uint32_t i = 0; i < nthreads; i++) {
+		if (threads[i].tid) {
+			pthread_join(threads[i].tid, NULL);
+			threads[i].tid = 0;
 		}
 	}
+
+	free(threads);
 }
