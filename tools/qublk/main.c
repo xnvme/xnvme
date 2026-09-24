@@ -222,6 +222,19 @@ sub_run(struct xnvme_cli *cli)
 		return -EINVAL;
 	}
 
+	if (cli->args.ncpus > (uint64_t)ndevs * nqueues) {
+		xnvme_cli_perr("Error: more CPUs than queues", -EINVAL);
+		return -EINVAL;
+	}
+
+	// A thread's io_uring needs one entry per tag of each of its queues
+	if (cli->args.ncpus &&
+	    qdepth * (((uint64_t)ndevs * nqueues + cli->args.ncpus - 1) / cli->args.ncpus) >
+		    QUBLK_MAX_RING_ENTRIES) {
+		xnvme_cli_perr("Error: too many queues per CPU for --qdepth", -EINVAL);
+		return -EINVAL;
+	}
+
 	xnvme_cli_to_opts(cli, &xopts);
 	xopts.rdwr = 1;
 	// All devices share the uPCIe heap, which holds the I/O buffers of every
@@ -276,7 +289,8 @@ sub_run(struct xnvme_cli *cli)
 		}
 	}
 
-	err = qublk_io_threads_start(devs, ndevs, &threads, &nthreads);
+	err = qublk_io_threads_start(devs, ndevs, cli->args.cpus, cli->args.ncpus, &threads,
+				     &nthreads);
 	if (err) {
 		goto teardown;
 	}
@@ -353,6 +367,8 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_NQUEUES, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_DEV_ID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_MAX_IO_BYTES, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CPUMASK, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CPULIST, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_ORCH_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HOMI_ID, XNVME_CLI_LOPT},

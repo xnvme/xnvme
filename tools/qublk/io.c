@@ -17,6 +17,7 @@
 
 #include <liburing.h>
 #include <libxnvme.h>
+#include <xnvme_util.h>
 
 #ifndef IORING_SETUP_SINGLE_ISSUER
 #define IORING_SETUP_SINGLE_ISSUER (1U << 12)
@@ -563,6 +564,14 @@ io_thread_main(void *arg)
 	int *fds;
 	int rc;
 
+	if (t->cpu >= 0) {
+		rc = xnvme_util_pin_to_cpu(t->cpu);
+		if (rc) {
+			fprintf(stderr, "xnvme_util_pin_to_cpu(%d): %s; running unpinned\n",
+				t->cpu, strerror(rc));
+		}
+	}
+
 	rc = init_ring(t);
 	if (rc < 0) {
 		fprintf(stderr, "io_uring_queue_init(): %s\n", strerror(-rc));
@@ -613,8 +622,8 @@ io_thread_main(void *arg)
 }
 
 int
-qublk_io_threads_start(struct qublk_dev *devs, uint32_t ndevs, struct qublk_thread **threads,
-		       uint32_t *nthreads)
+qublk_io_threads_start(struct qublk_dev *devs, uint32_t ndevs, const uint16_t *cpus,
+		       uint16_t ncpus, struct qublk_thread **threads, uint32_t *nthreads)
 {
 	struct qublk_thread *thr;
 	sem_t io_ready;
@@ -625,7 +634,10 @@ qublk_io_threads_start(struct qublk_dev *devs, uint32_t ndevs, struct qublk_thre
 		total += devs[d].nqueues;
 	}
 
-	nthr = total;
+	nthr = ncpus ? ncpus : total;
+	if (!nthr || nthr > total) {
+		return -EINVAL;
+	}
 
 	thr = calloc(nthr, sizeof(*thr));
 	if (!thr) {
@@ -635,6 +647,7 @@ qublk_io_threads_start(struct qublk_dev *devs, uint32_t ndevs, struct qublk_thre
 	for (uint32_t i = 0, d = 0, q = 0; i < nthr; i++) {
 		uint32_t count = total / nthr + (i < total % nthr ? 1 : 0);
 
+		thr[i].cpu = ncpus ? cpus[i] : -1;
 		thr[i].io_ready = &io_ready;
 		thr[i].queues = calloc(count, sizeof(*thr[i].queues));
 		if (!thr[i].queues) {
