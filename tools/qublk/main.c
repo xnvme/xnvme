@@ -136,54 +136,58 @@ dev_add(struct qublk_dev *dev, const char *be)
 }
 
 static void
-dev_teardown(struct qublk_dev *dev)
+devs_teardown(struct qublk_dev *devs, uint32_t ndevs)
 {
-	// STOP_DEV first, as ubdsrv does: del_gendisk() waits on requests in
-	// flight, so the queue threads must still be servicing; the kernel then
-	// aborts the pending FETCHes, which is what makes the threads exit
-	if (dev->started) {
-		qublk_ctrl_stop_dev(dev);
+	for (uint32_t d = 0; d < ndevs; d++) {
+		// STOP_DEV first, as ubdsrv does: del_gendisk() waits on requests in
+		// flight, so the queue threads must still be servicing; the kernel then
+		// aborts the pending FETCHes, which is what makes the threads exit
+		if (devs[d].started) {
+			qublk_ctrl_stop_dev(&devs[d]);
+		}
+
+		devs[d].stop = 1;
 	}
 
-	dev->stop = 1;
-	qublk_io_thread_join(dev);
-	qublk_io_fini(dev);
-	if (dev->added) {
-		qublk_ctrl_del_dev(dev);
+	for (uint32_t d = 0; d < ndevs; d++) {
+		qublk_io_thread_join(&devs[d]);
 	}
 
-	qublk_ctrl_close(dev);
+	for (uint32_t d = 0; d < ndevs; d++) {
+		qublk_io_fini(&devs[d]);
+		if (devs[d].added) {
+			qublk_ctrl_del_dev(&devs[d]);
+		}
+
+		qublk_ctrl_close(&devs[d]);
+	}
 }
 
 static int
 sub_run(struct xnvme_cli *cli)
 {
-	struct qublk_dev dev = {
-		.uri = cli->args.uri,
-		.ctrl_fd = -1,
-		.ublkc_fd = -1,
-		.dev_id = QUBLK_DEFAULT_DEV_ID,
-		.nqueues = QUBLK_DEFAULT_NQUEUES,
-		.qdepth = QUBLK_DEFAULT_QDEPTH,
-		.flags = UBLK_F_CMD_IOCTL_ENCODE,
-	};
 	struct xnvme_opts xopts = xnvme_opts_default();
+	struct qublk_dev *devs;
+	struct xnvme_dev **xdevs;
 	const char *be = cli->args.be;
-	sigset_t blk;
+	uint32_t ndevs = (uint32_t)cli->args.posn_count;
+	uint32_t qdepth = QUBLK_DEFAULT_QDEPTH, nqueues = QUBLK_DEFAULT_NQUEUES;
 	uint32_t want_max_io = 0;
-	int err, sig;
+	sigset_t blk;
+	int err = 0, sig;
+
+	if (!cli->args.posn_count) {
+		xnvme_cli_perr("Error: at least one device URI is required", -EINVAL);
+		return -EINVAL;
+	}
 
 	// Options are optional; only override the defaults for the ones actually given
 	if (cli->given[XNVME_CLI_OPT_QDEPTH]) {
-		dev.qdepth = cli->args.qdepth;
+		qdepth = cli->args.qdepth;
 	}
 
 	if (cli->given[XNVME_CLI_OPT_NQUEUES]) {
-		dev.nqueues = cli->args.nqueues;
-	}
-
-	if (cli->given[XNVME_CLI_OPT_DEV_ID]) {
-		dev.dev_id = (int)cli->args.dev_id;
+		nqueues = cli->args.nqueues;
 	}
 
 	if (cli->given[XNVME_CLI_OPT_MAX_IO_BYTES]) {
@@ -192,18 +196,19 @@ sub_run(struct xnvme_cli *cli)
 
 	// Half of UBLK_MAX_QUEUE_DEPTH: xnvme_queue_init() requires a capacity
 	// strictly below 4096, so a qdepth of 4096 would fail only after ADD_DEV
-	if (!xnvme_is_pow2(dev.qdepth) || dev.qdepth > (UBLK_MAX_QUEUE_DEPTH / 2)) {
+	if (!xnvme_is_pow2(qdepth) || qdepth > (UBLK_MAX_QUEUE_DEPTH / 2)) {
 		xnvme_cli_perr("Error: --qdepth must be a power of 2 and within limits", -EINVAL);
 		return -EINVAL;
 	}
 
-	if (dev.nqueues > UBLK_MAX_NR_QUEUES) {
+	if (!nqueues || nqueues > UBLK_MAX_NR_QUEUES) {
 		xnvme_cli_perr("Error: --nqueues is out of range", -EINVAL);
 		return -EINVAL;
 	}
 
 	// The identifier becomes the ublk minor; cap it accordingly (MINORBITS)
-	if (cli->given[XNVME_CLI_OPT_DEV_ID] && cli->args.dev_id >= (1u << 20)) {
+	if (cli->given[XNVME_CLI_OPT_DEV_ID] &&
+	    (uint64_t)cli->args.dev_id + ndevs - 1 >= (1u << 20)) {
 		xnvme_cli_perr("Error: --dev-id is out of range", -EINVAL);
 		return -EINVAL;
 	}
@@ -219,16 +224,35 @@ sub_run(struct xnvme_cli *cli)
 	xnvme_cli_to_opts(cli, &xopts);
 	xopts.rdwr = 1;
 
-	dev.xdev = xnvme_dev_open(dev.uri, &xopts);
-	if (!dev.xdev) {
-		err = errno ? -errno : -EIO;
-		xnvme_cli_perr("Failed: xnvme_dev_open()", err);
+	devs = calloc(ndevs, sizeof(*devs));
+	if (!devs) {
+		xnvme_cli_perr("Failed: calloc()", -ENOMEM);
+		return -ENOMEM;
+	}
+
+	err = xnvme_cli_dev_open_multi(cli->args.posn, (int)ndevs, &xopts, &xdevs);
+	if (err) {
+		free(devs);
 		return err;
 	}
 
-	err = dev_init(&dev, want_max_io);
-	if (err) {
-		goto teardown;
+	for (uint32_t d = 0; d < ndevs; d++) {
+		devs[d].xdev = xdevs[d];
+		devs[d].uri = cli->args.posn[d];
+		devs[d].ctrl_fd = -1;
+		devs[d].ublkc_fd = -1;
+		devs[d].dev_id = cli->given[XNVME_CLI_OPT_DEV_ID] ? (int)(cli->args.dev_id + d)
+								  : QUBLK_DEFAULT_DEV_ID;
+		devs[d].nqueues = nqueues;
+		devs[d].qdepth = qdepth;
+		devs[d].flags = UBLK_F_CMD_IOCTL_ENCODE;
+	}
+
+	for (uint32_t d = 0; d < ndevs; d++) {
+		err = dev_init(&devs[d], want_max_io);
+		if (err) {
+			goto teardown;
+		}
 	}
 
 	setvbuf(stderr, NULL, _IOLBF, 0);
@@ -238,30 +262,37 @@ sub_run(struct xnvme_cli *cli)
 	sigaddset(&blk, SIGTERM);
 	pthread_sigmask(SIG_BLOCK, &blk, NULL);
 
-	err = dev_add(&dev, be);
-	if (err) {
-		goto teardown;
+	for (uint32_t d = 0; d < ndevs; d++) {
+		err = dev_add(&devs[d], be);
+		if (err) {
+			goto teardown;
+		}
 	}
 
-	err = qublk_io_thread_start(&dev);
-	if (err) {
-		goto teardown;
+	for (uint32_t d = 0; d < ndevs; d++) {
+		err = qublk_io_thread_start(&devs[d]);
+		if (err) {
+			goto teardown;
+		}
 	}
 
-	err = qublk_ctrl_start_dev(&dev);
-	if (err) {
-		goto teardown;
-	}
+	for (uint32_t d = 0; d < ndevs; d++) {
+		err = qublk_ctrl_start_dev(&devs[d]);
+		if (err) {
+			goto teardown;
+		}
 
-	dev.started = 1;
-	fprintf(stderr, "qublk: /dev/ublkb%d ready (Ctrl-C to stop)\n", dev.dev_id);
+		devs[d].started = 1;
+		fprintf(stderr, "qublk: /dev/ublkb%d ready (Ctrl-C to stop)\n", devs[d].dev_id);
+	}
 
 	sigwait(&blk, &sig);
 	fprintf(stderr, "qublk: stopping (signal %d)\n", sig);
 
 teardown:
-	dev_teardown(&dev);
-	xnvme_dev_close(dev.xdev);
+	devs_teardown(devs, ndevs);
+	xnvme_cli_dev_close_multi(xdevs, (int)ndevs);
+	free(devs);
 	return err;
 }
 
@@ -306,12 +337,12 @@ sub_del(struct xnvme_cli *cli)
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"run",
-		"Serve a ublk block-device backed by the given xNVMe device",
-		"Serve a ublk block-device backed by the given xNVMe device",
+		"Serve a ublk block-device for each of the given xNVMe devices",
+		"Serve a ublk block-device for each of the given xNVMe devices",
 		sub_run,
 		{
 			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
-			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSN},
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_QDEPTH, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_NQUEUES, XNVME_CLI_LOPT},
