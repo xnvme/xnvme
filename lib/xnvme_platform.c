@@ -200,16 +200,14 @@ _dev_open_try_config(struct xnvme_dev *dev, const struct xnvme_be_config *cfg,
 int
 xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 {
-	int has_backend_opts = opts && (opts->async || opts->sync || opts->admin);
 	uint32_t uri_cap = 0;
 	int err = 0;
 
-	if (!has_backend_opts && g_xnvme_platform->classify) {
+	if (g_xnvme_platform->classify) {
 		uri_cap = g_xnvme_platform->classify(dev->ident.uri);
 	}
 
-	XNVME_DEBUG("INFO: uri='%s' classified cap=0x%x has_backend_opts=%d", dev->ident.uri,
-		    uri_cap, has_backend_opts);
+	XNVME_DEBUG("INFO: uri='%s' classified cap=0x%x", dev->ident.uri, uri_cap);
 
 	for (int i = 0; g_xnvme_platform->backends[i]; ++i) {
 		const struct xnvme_be_config *cfg = g_xnvme_platform->backends[i];
