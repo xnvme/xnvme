@@ -299,6 +299,11 @@ iowork_from_cli(struct xnvme_cli *cli, struct iowork *work)
 		return -EINVAL;
 	}
 
+	if (!work->geo->lba_nbytes) {
+		XNVME_DEBUG("FAILED: invalid, work->geo->lba_nbytes: 0");
+		return -EINVAL;
+	}
+
 	work->io.nbytes = work->vec_cnt * (work->io.nlb + 1) * work->geo->lba_nbytes;
 	work->io.naddr = work->vec_cnt * (work->io.nlb + 1);
 
