@@ -16,6 +16,7 @@ const struct xnvme_be_config g_xnvme_be_nvmf = {
 	.dev = &g_xnvme_be_nvmf_dev,
 	.async = &g_xnvme_be_cbi_async_nil,
 	.mem = &g_xnvme_be_cbi_mem_posix,
+	//.mem = &g_xnvme_be_nvmf_mem,
 	.attr =
 		{
 			.name = "nvmf",

@@ -9,6 +9,9 @@
 #include <xnvme_be_nvmf.h>
 #include <xnvme_be_nvmf_fabric.h>
 
+#define _NVMF_ERROR(fmt, ...) NVMF_ERROR(NVMF_DEBUG_CATEGORY_FABRICS, fmt, ##__VA_ARGS__)
+#define _NVMF_DEBUG(fmt, ...) NVMF_DEBUG(NVMF_DEBUG_CATEGORY_FABRICS, fmt, ##__VA_ARGS__)
+
 #define NVMF_FABRIC_OPCODE 0x7f
 
 enum xnvme_be_nvmf_fabric_command_type {
@@ -299,33 +302,33 @@ static inline void
 _handle_fabric_connect_error(struct xnvme_spec_cpl *cpl,
 			     struct xnvme_be_nvmf_connect_response_cpl *connect_cpl)
 {
-	XNVME_DEBUG("FAILED: Fabric Connect rejected, sc: %u sct: %u", cpl->status.sc,
+	_NVMF_ERROR("FAILED: Fabric Connect rejected, sc: %u sct: %u", cpl->status.sc,
 		    cpl->status.sct);
 	_xnvme_print_error_code(cpl);
 	if (cpl->status.sc = 0x02) {
-		XNVME_DEBUG(
+		_NVMF_DEBUG(
 			"INFO: Fabric Connect rejected due to invalid parameter, ipo: %u ips: %u",
 			connect_cpl->connect_invalid.ipo, connect_cpl->connect_invalid.iattr.ips);
 
 		if (connect_cpl->connect_invalid.iattr.ips == 0) {
-			XNVME_DEBUG("INFO: Invalid parameter in submission queue entry: %u",
+			_NVMF_DEBUG("INFO: Invalid parameter in submission queue entry: %u",
 				    connect_cpl->connect_invalid.ipo);
 		} else {
-			XNVME_DEBUG("INFO: Invalid parameter in data: %u",
+			_NVMF_DEBUG("INFO: Invalid parameter in data: %u",
 				    connect_cpl->connect_invalid.ipo);
 			if (connect_cpl->connect_invalid.ipo < 16) {
-				XNVME_DEBUG("INFO: Invalid host identifier");
+				_NVMF_DEBUG("INFO: Invalid host identifier");
 			} else if (connect_cpl->connect_invalid.ipo >= 16 &&
 				   connect_cpl->connect_invalid.ipo < 18) {
-				XNVME_DEBUG("INFO: Invalid controller id");
+				_NVMF_DEBUG("INFO: Invalid controller id");
 			} else if (connect_cpl->connect_invalid.ipo >= 256 &&
 				   connect_cpl->connect_invalid.ipo < 512) {
-				XNVME_DEBUG("INFO: Invalid subsystem NQN");
+				_NVMF_DEBUG("INFO: Invalid subsystem NQN");
 			} else if (connect_cpl->connect_invalid.ipo >= 512 &&
 				   connect_cpl->connect_invalid.ipo < 768) {
-				XNVME_DEBUG("INFO: Invalid host NQN");
+				_NVMF_DEBUG("INFO: Invalid host NQN");
 			} else {
-				XNVME_DEBUG("INFO: Invalid parameter offset: %u",
+				_NVMF_DEBUG("INFO: Invalid parameter offset: %u",
 					    connect_cpl->connect_invalid.ipo);
 			}
 		}
@@ -349,15 +352,15 @@ _handle_fabric_connect(struct xnvme_be_nvmf_qpair *qpair, void *buf, size_t len)
 
 	/* TODO: Deal with authentication requirements later*/
 	if (connect_cpl->success.authreq.ascr) {
-		XNVME_DEBUG("ERROR: Fabric Connect accepted, but authentication is "
+		 _NVMF_ERROR("ERROR: Fabric Connect accepted, but authentication is "
 				"required (ascr=1)");
 		qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
 	} else if (connect_cpl->success.authreq.atr) {
-		XNVME_DEBUG("ERROR: Fabric Connect accepted, but authentication is "
+		_NVMF_ERROR("ERROR: Fabric Connect accepted, but authentication is "
 				"required (atr=1)");
 		qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
 	} else {
-		XNVME_DEBUG("INFO: Fabric Connect accepted, cntlid: %u", qpair->cntlid);
+		_NVMF_DEBUG("INFO: Fabric Connect accepted, cntlid: %u", qpair->cntlid);
 		qpair->state = XNVME_NVMF_QPAIR_STATE_READY;
 	}
 
@@ -365,9 +368,9 @@ _handle_fabric_connect(struct xnvme_be_nvmf_qpair *qpair, void *buf, size_t len)
 }
 
 static int
-_perform_property_get(struct xnvme_be_nvmf_ctrlr *ctrlr, uint32_t property, uint64_t *value)
+_perform_property_get(struct xnvme_be_nvmf_ctrlr *ctrlr, struct xnvme_be_nvmf_qpair *admin_qpair, uint32_t property, uint64_t *value)
 {
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(ctrlr->dev);
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(admin_qpair->dev);
 	struct xnvme_spec_fabric_property_get_cmd *prop_get_cmd = &ctx.cmd.fabric_property_get;
 	struct xnvme_be_nvmf_fabric_generic_cpl *cpl;
 	struct xnvme_be_nvmf_req *req;
@@ -377,33 +380,33 @@ _perform_property_get(struct xnvme_be_nvmf_ctrlr *ctrlr, uint32_t property, uint
 
 	if (ctrlr->discovery_ctrlr) {
 		if (!_discovery_controller_supported(property)) {
-			XNVME_DEBUG("ERROR: Property 0x%x not supported by discovery controller", property);
+			_NVMF_ERROR("ERROR: Property 0x%x not supported by discovery controller", property);
 			return -EINVAL;
 		}
 		prop_sz = _fabric_property_size(property);
  	} else {
 		if (!_admin_ctrlr_supported(property)) {
-			XNVME_DEBUG("ERROR: Property 0x%x not supported by admin controller", property);
+			_NVMF_ERROR("ERROR: Property 0x%x not supported by admin controller", property);
 			return -EINVAL;
 		}
 		prop_sz = _fabric_property_size(property);
 	}
 
 	if (prop_sz == 0) {
-		XNVME_DEBUG("INFO: Property 0x%x is reserved, doing nothing", property);
+		_NVMF_DEBUG("INFO: Property 0x%x is reserved, doing nothing", property);
 		*value = 0;  // Set value to 0 for reserved entries
 		return 0;  // Do nothing for reserved entries
 	}
 
-	req = xnvme_be_nvmf_req_internal_alloc(ctrlr->admin_qpair->req_pool, false, &ctx);
+	req = xnvme_be_nvmf_req_internal_alloc(admin_qpair->req_pool, false, &ctx);
 	if (!req) {
-		XNVME_DEBUG("ERROR: Failed to allocate internal request");
+		_NVMF_ERROR("ERROR: Failed to allocate internal request");
 		return ENOSPC;
 	}
-	XNVME_DEBUG("INFO: Allocated internal request: cid: %u, req: %p, req->context: %p, ctx.cmd: %p, ctx.cpl: %p", 
+	_NVMF_DEBUG("INFO: Allocated internal request: cid: %u, req: %p, req->context: %p, ctx.cmd: %p, ctx.cpl: %p", 
 		req->cid, req, req->context, &ctx.cmd, &ctx.cpl);
-	XNVME_DEBUG("INFO: Hexdump of request");
-	_hexdump_range(req, sizeof(*req));
+	_NVMF_DEBUG("INFO: Hexdump of request");
+	_hexdump_range(NVMF_DEBUG_CATEGORY_FABRICS, req, sizeof(*req));
 
 	ctx.cmd.common.cid = req->cid;
 	ctx.cmd.common.opcode = NVMF_FABRIC_OPCODE; /* Fabric command opcode */
@@ -413,26 +416,26 @@ _perform_property_get(struct xnvme_be_nvmf_ctrlr *ctrlr, uint32_t property, uint
 	prop_get_cmd->attrib.prs = prop_sz == 8 ? 0b001 : 0b000; // property size
 	prop_get_cmd->ofst = property;
 
-	err = xnvme_be_nvmf_qpair_send_capsule(ctrlr->admin_qpair, req, &ctx.cmd, sizeof(*prop_get_cmd));
+	err = xnvme_be_nvmf_qpair_send_capsule(admin_qpair, req, &ctx.cmd, sizeof(*prop_get_cmd));
 	if (err) {
-		XNVME_DEBUG("ERROR: Failed to send property get command");
+		_NVMF_ERROR("ERROR: Failed to send property get command");
 		return err;
 	}
 
-	XNVME_DEBUG("INFO: Waiting for completion of property get command");
-	XNVME_DEBUG("INFO: cmd: %p, cpl: %p", &ctx.cmd, &ctx.cpl);
+	_NVMF_DEBUG("INFO: Waiting for completion of property get command");
+	_NVMF_DEBUG("INFO: cmd: %p, cpl: %p", &ctx.cmd, &ctx.cpl);
 
-	xnvme_be_nvmf_wait_for_completion(ctrlr->admin_qpair, req);
-	XNVME_DEBUG("INFO: Completion received for property get command");
-	_hexdump_range(&ctx.cpl, sizeof(ctx.cpl));
+	xnvme_be_nvmf_wait_for_completion(admin_qpair, req);
+	_NVMF_DEBUG("INFO: Completion received for property get command");
+	_hexdump_range(NVMF_DEBUG_CATEGORY_FABRICS, &ctx.cpl, sizeof(ctx.cpl));
 	cpl = (struct xnvme_be_nvmf_fabric_generic_cpl *) &ctx.cpl;
-	XNVME_DEBUG("INFO: Hexdump of request");
-	_hexdump_range(req, sizeof(*req));
+	_NVMF_DEBUG("INFO: Hexdump of request");
+	_hexdump_range(NVMF_DEBUG_CATEGORY_FABRICS, req, sizeof(*req));
 
-	xnvme_be_nvmf_req_free(ctrlr->admin_qpair->req_pool, req);	
+	xnvme_be_nvmf_req_free(admin_qpair->req_pool, req);
 
 	if (cpl->prop_get.status.sc) {
-		XNVME_DEBUG("ERROR: Property get command failed with status code 0x%x", cpl->prop_get.status.sc);
+		_NVMF_ERROR("ERROR: Property get command failed with status code 0x%x", cpl->prop_get.status.sc);
 		return cpl->prop_get.status.sc;
 	}
 
@@ -445,9 +448,9 @@ _perform_property_get(struct xnvme_be_nvmf_ctrlr *ctrlr, uint32_t property, uint
 }
 
 static int
-_perform_property_set(struct xnvme_be_nvmf_ctrlr *ctrlr, uint32_t property, uint64_t value)
+_perform_property_set(struct xnvme_be_nvmf_ctrlr *ctrlr, struct xnvme_be_nvmf_qpair *admin_qpair, uint32_t property, uint64_t value)
 {
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(ctrlr->dev);
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(admin_qpair->dev);
 	struct xnvme_spec_fabric_property_set_cmd *prop_set_cmd = &ctx.cmd.fabric_property_set;
 	struct xnvme_be_nvmf_fabric_generic_cpl *cpl;
 	struct xnvme_be_nvmf_req *req;
@@ -456,26 +459,26 @@ _perform_property_set(struct xnvme_be_nvmf_ctrlr *ctrlr, uint32_t property, uint
 
 	if (ctrlr->discovery_ctrlr) {
 		if (!_discovery_controller_supported(property)) {
-			XNVME_DEBUG("ERROR: Property 0x%x not supported by discovery controller", property);
+			_NVMF_ERROR("ERROR: Property 0x%x not supported by discovery controller", property);
 			return -EINVAL;
 		}
 		prop_sz = _fabric_property_size(property);
  	} else {
 		if (!_admin_ctrlr_supported(property)) {
-			XNVME_DEBUG("ERROR: Property 0x%x not supported by admin controller", property);
+			_NVMF_ERROR("ERROR: Property 0x%x not supported by admin controller", property);
 			return -EINVAL;
 		}
 		prop_sz = _fabric_property_size(property);
 	}
 
 	if (prop_sz == 0) {
-		XNVME_DEBUG("INFO: Property 0x%x is reserved, doing nothing", property);
+		_NVMF_DEBUG("INFO: Property 0x%x is reserved, doing nothing", property);
 		return 0;  // Do nothing for reserved entries
 	}
 
-	req = xnvme_be_nvmf_req_internal_alloc(ctrlr->admin_qpair->req_pool, false, &ctx);
+	req = xnvme_be_nvmf_req_internal_alloc(admin_qpair->req_pool, false, &ctx);
 	if (!req) {
-		XNVME_DEBUG("ERROR: Failed to allocate internal request");
+		_NVMF_ERROR("ERROR: Failed to allocate internal request");
 		return ENOSPC;
 	}
 
@@ -491,24 +494,24 @@ _perform_property_set(struct xnvme_be_nvmf_ctrlr *ctrlr, uint32_t property, uint
 	else
 		prop_set_cmd->value = value;
 	
-	err = xnvme_be_nvmf_qpair_send_capsule(ctrlr->admin_qpair, req, &ctx.cmd, sizeof(*prop_set_cmd));
+	err = xnvme_be_nvmf_qpair_send_capsule(admin_qpair, req, &ctx.cmd, sizeof(*prop_set_cmd));
 	if (err) {
-		XNVME_DEBUG("ERROR: Failed to send property set command");
+		_NVMF_ERROR("ERROR: Failed to send property set command");
 		return err;
 	}
 
-	xnvme_be_nvmf_wait_for_completion(ctrlr->admin_qpair, req);
+	xnvme_be_nvmf_wait_for_completion(admin_qpair, req);
 
 	cpl = (struct xnvme_be_nvmf_fabric_generic_cpl *) &ctx.cpl;
-	xnvme_be_nvmf_req_free(ctrlr->admin_qpair->req_pool, req);
+	xnvme_be_nvmf_req_free(admin_qpair->req_pool, req);
 
 	if (cpl->prop_set.status.sc) {
-		XNVME_DEBUG("ERROR: Property set command failed with status code 0x%x", cpl->prop_set.status.sc);
+		_NVMF_ERROR("ERROR: Property set command failed with status code 0x%x", cpl->prop_set.status.sc);
 		_print_nvme_completion(&ctx.cpl);
 		return cpl->prop_set.status.sc;
 	}
 
-	XNVME_DEBUG("INFO: Property set command completed successfully");
+	_NVMF_DEBUG("INFO: Property set command completed successfully");
 	return 0;
 }
 
@@ -522,17 +525,14 @@ _encode_fabric_connect_data(struct xnvme_be_nvmf_qpair *qpair, void *buf)
 	/* TODO: This is not fully populated */
 	data->cntlid = 0xffff; /* assume dynamic controller model for now */
 
-	if (strlen(qpair->ctrlr->dev->ident.subnqn) == 0) {
-		XNVME_DEBUG("INFO: Setting subnqn to discovery NQN: %s",
+	if (strlen(qpair->dev->ident.subnqn) == 0) {
+		_NVMF_DEBUG("INFO: Setting subnqn to discovery NQN: %s",
 				XNVME_NVMF_DISCOVERY_NQN);
 		strncpy((char *)data->subnqn, XNVME_NVMF_DISCOVERY_NQN,
-			sizeof(data->subnqn));
+		 	sizeof(data->subnqn));
 	} else {
-		XNVME_DEBUG("INFO: NOT YET IMPLEMENTED: Setting subnqn to target NQN, "
-				"which should be provided by the user or discovered through "
-				"some other means.");
-		// TODO: This should be set to the NQN of the target subsystem, which
-		// should be provided by the user or discovered through some other means.
+		strncpy((char *)data->subnqn, qpair->dev->ident.subnqn,
+		 	sizeof(data->subnqn));
 	}
 }
 
@@ -541,7 +541,7 @@ xnvme_be_nvmf_send_fabric_connect_command(struct xnvme_be_nvmf_qpair *qpair)
 {
 	struct xnvme_be_nvmf_rdma_connect_data_rec *connect_data;
 	struct xnvme_be_nvmf_req *req = NULL;
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(qpair->ctrlr->dev);
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(qpair->dev);
 	struct xnvme_spec_cmd *cmd = &ctx.cmd;
 	struct xnvme_spec_sgl_descriptor *sgl = &cmd->fabric_connect.sgl1;
 	void *handle;
@@ -552,7 +552,7 @@ xnvme_be_nvmf_send_fabric_connect_command(struct xnvme_be_nvmf_qpair *qpair)
 
     buffer = xnvme_buf_virt_alloc(0x1000, sizeof(*connect_data));
 	if (!buffer) {
-		XNVME_DEBUG("FAILED: xnvme_buf_virt_alloc() for connect_data");
+		_NVMF_ERROR("FAILED: xnvme_buf_virt_alloc() for connect_data");
 		qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
 		return -ENOMEM;
 	}
@@ -560,16 +560,17 @@ xnvme_be_nvmf_send_fabric_connect_command(struct xnvme_be_nvmf_qpair *qpair)
 	if (qpair->ops->reg_mr) {
 		err = qpair->ops->reg_mr(qpair, buffer, sizeof(*connect_data), &handle, &lkey, &rkey);
 		if (err) {
-			XNVME_DEBUG("FAILED: reg_mr() for connect_data");
+			_NVMF_ERROR("FAILED: reg_mr() for connect_data");
 			err = -EIO;
 			goto free_data_buffer;
 		}
 	}
-	XNVME_DEBUG("INFO: Fabric connect data buffer allocated at %p, size: %zu, lkey: %" PRIu64 ", rkey: %" PRIu64, buffer, sizeof(*connect_data), lkey, rkey);
+	_NVMF_DEBUG("INFO: Fabric connect data buffer allocated at %p, size: %zu, lkey: %" PRIu64 ", rkey: %" PRIu64, 
+		buffer, sizeof(*connect_data), lkey, rkey);
 
 	req = xnvme_be_nvmf_req_internal_alloc(qpair->req_pool, false, (void *) &ctx); 
 	if (!req) {
-		XNVME_DEBUG("FAILED: could not allocate request");
+		_NVMF_ERROR("FAILED: could not allocate request");
 		err = -ENOMEM;
 		goto dereg_data_buffer;
 	}
@@ -596,17 +597,24 @@ xnvme_be_nvmf_send_fabric_connect_command(struct xnvme_be_nvmf_qpair *qpair)
 
 	err = xnvme_be_nvmf_qpair_send_capsule(qpair, req, cmd, sizeof(*cmd));
 	if (err) {
-		XNVME_DEBUG("FAILED: send_capsule() for Fabric Connect, err: %d", err);
+		_NVMF_ERROR("FAILED: send_capsule() for Fabric Connect, err: %d", err);
 		qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
 		goto dereg_data_buffer;
 	}
 
 	xnvme_be_nvmf_wait_for_completion(qpair, req);
 
-
-	XNVME_DEBUG("INFO: Handling fabric connect completion");
-	_hexdump_range(&ctx.cpl, sizeof(ctx.cpl));
+	_NVMF_DEBUG("INFO: Handling fabric connect completion");
+	_hexdump_range(NVMF_DEBUG_CATEGORY_FABRICS, &ctx.cpl, sizeof(ctx.cpl));
 	_handle_fabric_connect(qpair, &ctx.cpl, sizeof(ctx.cpl));
+
+	if (qpair->state == XNVME_NVMF_QPAIR_STATE_ERROR) {
+		_NVMF_ERROR("FAILED: QPair in error state after fabric connect");
+		err = -ECONNREFUSED;
+		goto dereg_data_buffer;
+	}
+
+
 
 	xnvme_be_nvmf_req_free(qpair->req_pool, req);
 
@@ -628,35 +636,34 @@ free_data_buffer:
 
 
 int
-xnvme_be_nvmf_initialize_remote_ctrlr(struct xnvme_be_nvmf_ctrlr *ctrlr)
+xnvme_be_nvmf_initialize_remote_ctrlr(struct xnvme_be_nvmf_ctrlr *ctrlr, struct xnvme_be_nvmf_qpair *admin_qpair)
 {
 	struct nvme_ctrlr_cap cap;
 	struct nvme_ctrlr_cc cc;
 	struct nvme_ctrlr_csts csts = {0};
-
 	uint64_t val;
 	int err;
 
 	// determine controller capabilities
-	err = _perform_property_get(ctrlr, NVME_CTRLR_PROP_CAP, &val);
+	err = _perform_property_get(ctrlr, admin_qpair, NVME_CTRLR_PROP_CAP, &val);
 	if (err) {
-		XNVME_DEBUG("FAILED: get CAP, err: %d", err);
+		_NVMF_ERROR("FAILED: get CAP, err: %d", err);
 		return err;
 	}
 	cap.raw = val;
 
-	err = _perform_property_get(ctrlr, NVME_CTRLR_PROP_CC, &val);
+	err = _perform_property_get(ctrlr, admin_qpair, NVME_CTRLR_PROP_CC, &val);
 	if (err) {
-		XNVME_DEBUG("FAILED: get CC, err: %d", err);
+		_NVMF_ERROR("FAILED: get CC, err: %d", err);
 		return err;
 	}
 	cc.raw = val;
 
-	XNVME_DEBUG("INFO: Controller CAP:");
-	_hexdump_range(&cap, sizeof(cap));
+	_NVMF_DEBUG("INFO: Controller CAP:");
+	_hexdump_range(NVMF_DEBUG_CATEGORY_FABRICS, &cap, sizeof(cap));
 
-	XNVME_DEBUG("INFO: Controller CC:");
-	_hexdump_range(&cc, sizeof(cc));
+	_NVMF_DEBUG("INFO: Controller CC:");
+	_hexdump_range(NVMF_DEBUG_CATEGORY_FABRICS, &cc, sizeof(cc));
 
 	// determine the supposed IO set
 	if (cap.noiocss)
@@ -666,7 +673,7 @@ xnvme_be_nvmf_initialize_remote_ctrlr(struct xnvme_be_nvmf_ctrlr *ctrlr)
 	else if (!cap.iocss && cap.ncss)
 		cc.css = 0b000;
 	else {
-		XNVME_DEBUG("FAILED: unsupported IO command set configuration, cap.css: 0x%lx", cap.noiocss | cap.iocss | cap.ncss);
+		_NVMF_ERROR("FAILED: unsupported IO command set configuration, cap.css: 0x%lx", cap.noiocss | cap.iocss | cap.ncss);
 		return -1;
 	}
 
@@ -680,25 +687,28 @@ xnvme_be_nvmf_initialize_remote_ctrlr(struct xnvme_be_nvmf_ctrlr *ctrlr)
 	
 	cc.en = 1; // enable controller
 
-	err = _perform_property_set(ctrlr, NVME_CTRLR_PROP_CC, (uint64_t) cc.raw);
+	err = _perform_property_set(ctrlr, admin_qpair, NVME_CTRLR_PROP_CC, (uint64_t) cc.raw);
 	if (err) {
-		XNVME_DEBUG("FAILED: set CC, err: %d", err);
+		_NVMF_ERROR("FAILED: set CC, err: %d", err);
 		return err;
 	}
 
 	while (!csts.rdy) {
-		err = _perform_property_get(ctrlr, NVME_CTRLR_PROP_CSTS, &val);
+		csts.rdy = 0;
+
+		err = _perform_property_get(ctrlr, admin_qpair, NVME_CTRLR_PROP_CSTS, &val);
 		if (err) {
 			XNVME_DEBUG("FAILED: get CSTS, err: %d", err);
 			return err;
 		}
+
 		csts.raw = val;
 	}
 
-	XNVME_DEBUG("INFO: Controller CSTS:");
-	_hexdump_range(&csts, sizeof(csts));
+	_NVMF_DEBUG("INFO: Controller CSTS:");
+	_hexdump_range(NVMF_DEBUG_CATEGORY_FABRICS, &csts, sizeof(csts));
 
-	XNVME_DEBUG("INFO: Controller CSTS Ready: %d", csts.rdy);
+	_NVMF_DEBUG("INFO: Controller CSTS Ready: %d", csts.rdy);
 
 #if 0
 

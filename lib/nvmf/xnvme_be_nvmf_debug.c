@@ -3,6 +3,27 @@
 
 #include <xnvme_be_nvmf_debug.h>
 
+int nvmf_debug_log_level;
+int nvmf_debug_categories[NVMF_DEBUG_CATEGORY_MAX];
+
+const char *nvmf_debug_log_level_str(void)
+{
+	switch (nvmf_debug_log_level) {
+	case NVMF_DEBUG_LOG_LEVEL_NONE:
+		return "NONE";
+	case NVMF_DEBUG_LOG_LEVEL_ERROR:
+		return "ERROR";
+	case NVMF_DEBUG_LOG_LEVEL_WARN:
+		return "WARN";
+	case NVMF_DEBUG_LOG_LEVEL_INFO:
+		return "INFO";
+	case NVMF_DEBUG_LOG_LEVEL_DEBUG:
+		return "DEBUG";
+	default:
+		return "UNKNOWN";
+	}
+}
+
 static inline const char *
 _xnvme_resolve_generic_sc(struct xnvme_spec_cpl *cpl)
 {
@@ -268,3 +289,123 @@ _xnvme_print_error_code(struct xnvme_spec_cpl *cpl)
 
 	return 0;
 }
+
+static inline void
+parse_categories(char *val)
+{
+	char *string = strdup(val);
+	char *token = strtok(string, ",");
+	while (token) {
+		if (strcasecmp(token, "all") == 0) {
+			for (int i = 0; i < NVMF_DEBUG_CATEGORY_MAX; ++i) {
+				nvmf_debug_categories[i] = 1;
+			}
+			break;
+		}
+		if (strcasecmp(token, "core") == 0) {
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CORE] = 1;
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CORE_CTRLR] = 1;
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CORE_QPAIR] = 1;
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CORE_DEV] = 1;	
+		} else if (strcasecmp(token, "core_ctrlr") == 0) {
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CORE_CTRLR] = 1;
+		} else if (strcasecmp(token, "core_qpair") == 0) {
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CORE_QPAIR] = 1;
+		} else if (strcasecmp(token, "core_dev") == 0) {
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CORE_DEV] = 1;
+		} else if (strcasecmp(token, "fabrics") == 0) {
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_FABRICS] = 1;
+		} else if (strcasecmp(token, "nvme") == 0) {
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_NVME] = 1;
+		} else if (strcasecmp(token, "rdmacm") == 0) {
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_RDMACM] = 1;
+		} else if (strcasecmp(token, "verbs") == 0) {
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_VERBS] = 1;
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_VERBS_CTRL] = 1;
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_VERBS_DATA] = 1;
+		} else if (strcasecmp(token, "verbs_ctrl") == 0) {
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_VERBS_CTRL] = 1;
+		} else if (strcasecmp(token, "verbs_data") == 0) {
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_VERBS_DATA] = 1;
+		} else if (strcasecmp(token, "cmd") == 0) {
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CMD] = 1;
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CMD_ADMIN] = 1;
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CMD_IO] = 1;
+		} else if (strcasecmp(token, "cmd_admin") == 0) {
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CMD_ADMIN] = 1;
+		} else if (strcasecmp(token, "cmd_io") == 0) {
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CMD_IO] = 1;
+		} else if (strcasecmp(token, "dump") == 0) {
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CMD_DUMP] = 1;
+		} else {
+			XNVME_DEBUG("WARN: Unknown debug category: %s", token);
+		}
+		token = strtok(NULL, ",");
+	}
+	free(string);
+}
+
+static inline void 
+parse_log_level(char *val)
+{
+	char *string = strdup(val);
+	char *token = strtok(string, ",");
+	
+	while (token) {
+		if (strcasecmp(token, "none") == 0) {
+			nvmf_debug_log_level = NVMF_DEBUG_LOG_LEVEL_NONE;
+		} else if (strcasecmp(token, "error") == 0) {
+			nvmf_debug_log_level = NVMF_DEBUG_LOG_LEVEL_ERROR;
+		} else if (strcasecmp(token, "warn") == 0) {
+			nvmf_debug_log_level = NVMF_DEBUG_LOG_LEVEL_WARN;
+		} else if (strcasecmp(token, "info") == 0) {
+			nvmf_debug_log_level = NVMF_DEBUG_LOG_LEVEL_INFO;
+		} else if (strcasecmp(token, "debug") == 0) {
+			nvmf_debug_log_level = NVMF_DEBUG_LOG_LEVEL_DEBUG;
+		} else if (strcasecmp(token, "trace") == 0) {
+			nvmf_debug_log_level = NVMF_DEBUG_LOG_LEVEL_TRACE;
+		} else {
+			XNVME_DEBUG("WARN: Unknown debug log level: %s", token);
+		}
+		token = strtok(NULL, ",");
+	}
+	free(string);
+}
+
+__attribute__((constructor))
+static int xnvme_be_nvmf_debug_init(void)
+{
+	char *val;
+	val = getenv("NVMF_DEBUG_LOG_LEVEL");
+	if (val) {
+		parse_log_level(val);
+	}
+
+	val = getenv("NVMF_DEBUG_CATEGORIES");
+	if (val) {
+		parse_categories(val);
+	}
+
+	XNVME_DEBUG("INFO: NVMF_DEBUG_LOG_LEVEL=%d", nvmf_debug_log_level);
+	XNVME_DEBUG("INFO: NVMF_DEBUG_CATEGORY[%s]=%d", "CORE", nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CORE]);
+	XNVME_DEBUG("INFO: NVMF_DEBUG_CATEGORY[%s]=%d", "CORE_CTRLR", nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CORE_CTRLR]);
+	XNVME_DEBUG("INFO: NVMF_DEBUG_CATEGORY[%s]=%d", "CORE_QPAIR", nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CORE_QPAIR]);
+	XNVME_DEBUG("INFO: NVMF_DEBUG_CATEGORY[%s]=%d", "CORE_DEV", nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CORE_DEV]);
+
+	XNVME_DEBUG("INFO: NVMF_DEBUG_CATEGORY[%s]=%d", "RDMACM", nvmf_debug_categories[NVMF_DEBUG_CATEGORY_RDMACM]);
+
+	XNVME_DEBUG("INFO: NVMF_DEBUG_CATEGORY[%s]=%d", "VERBS", nvmf_debug_categories[NVMF_DEBUG_CATEGORY_VERBS]);
+	XNVME_DEBUG("INFO: NVMF_DEBUG_CATEGORY[%s]=%d", "VERBS_CTRL", nvmf_debug_categories[NVMF_DEBUG_CATEGORY_VERBS_CTRL]);
+	XNVME_DEBUG("INFO: NVMF_DEBUG_CATEGORY[%s]=%d", "VERBS_DATA", nvmf_debug_categories[NVMF_DEBUG_CATEGORY_VERBS_DATA]);
+	
+	XNVME_DEBUG("INFO: NVMF_DEBUG_CATEGORY[%s]=%d", "NVME", nvmf_debug_categories[NVMF_DEBUG_CATEGORY_NVME]);
+	XNVME_DEBUG("INFO: NVMF_DEBUG_CATEGORY[%s]=%d", "FABRICS", nvmf_debug_categories[NVMF_DEBUG_CATEGORY_FABRICS]);
+	
+	XNVME_DEBUG("INFO: NVMF_DEBUG_CATEGORY[%s]=%d", "CMD", nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CMD]);
+	XNVME_DEBUG("INFO: NVMF_DEBUG_CATEGORY[%s]=%d", "CMD_ADMIN", nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CMD_ADMIN]);
+	XNVME_DEBUG("INFO: NVMF_DEBUG_CATEGORY[%s]=%d", "CMD_IO", nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CMD_IO]);
+	XNVME_DEBUG("INFO: NVMF debug initialization complete");
+
+	return 0;
+}
+

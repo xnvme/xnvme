@@ -1,6 +1,20 @@
 #ifndef _INTERNAL_XNVME_BE_NVMF_CTRLR_H
 #define _INTERNAL_XNVME_BE_NVMF_CTRLR_H
 
+/**
+ * NVMe-oF controller creation and management functions
+ * 
+ * A NVMe-of Controller represents a remote NVMe uri/port combination as an endpoint for 
+ * the NVMe-oF protocol. It manages the connection, state, and associated resources
+ * for communicating with the remote NVMe device. This does not manage anything with subnqns. 
+ * 
+ * This includes creating and connecting admin and I/O queue pairs, managing controller state,
+ * and handling discovery controllers.
+ * 
+ * @note This is a low-level backend implementation and should be used through the
+ *       higher-level xNVMe API.
+ */
+
 #include <stdint.h>
 #include <pthread.h>
 
@@ -38,7 +52,7 @@ struct xnvme_be_nvmf_ctrlr {
 	struct xnvme_be_nvmf_ctrlr_ops *ops;
 	pthread_mutex_t lock;
 	uint8_t ctrlr_id;                     ///< Controller ID for this device
-	struct xnvme_dev *dev; ///< Pointer to the underlying xNVMe device
+	//struct xnvme_dev *dev; ///< Pointer to the underlying xNVMe device
 	struct xnvme_be_nvmf_transport *transport; ///< Transport used by the NVMe-oF controller
 	enum xnvme_nvmf_ctrlr_state ctrlr_state; ///< Connection state of the controller
 	struct xnvme_be_nvmf_qpair *admin_qpair;
@@ -60,63 +74,11 @@ struct xnvme_be_nvmf_ctrlr_ops {
 	int (*process_events)(struct xnvme_be_nvmf_ctrlr *ctrlr, int timeout_ms);
 };
 
+void *
+xnvme_be_nvmf_ctrlr_init(struct xnvme_dev *dev);
+
 int
-xnvme_be_nvmf_ctrlr_create(struct xnvme_be_nvmf_transport *transport,
-	struct xnvme_be_nvmf_ctrlr_attr *attr,
-	struct xnvme_be_nvmf_ctrlr **ctrlr);
-
-static inline int
-xnvme_be_nvmf_ctrlr_disconnect(struct xnvme_be_nvmf_ctrlr *ctrlr)
-{
-	if (!ctrlr) {
-		XNVME_DEBUG("FAILED: NULL ctrlr");
-		return -EINVAL;
-	}
-
-	if (ctrlr->ops && ctrlr->ops->disconnect) {
-		return ctrlr->ops->disconnect(ctrlr);
-	}
-
-	XNVME_DEBUG("FAILED: No disconnect operation defined for controller");
-	return -ENOSYS;
-}
-
-static inline int
-xnvme_be_nvmf_ctrlr_destroy(struct xnvme_be_nvmf_ctrlr *ctrlr)
-{
-	if (!ctrlr) {
-		XNVME_DEBUG("FAILED: NULL ctrlr");
-		return -EINVAL;
-	}
-
-	if (ctrlr->ops && ctrlr->ops->destroy) {
-		return ctrlr->ops->destroy(ctrlr);
-	}
-
-	free(ctrlr);
-
-	return 0;
-}
-
-static inline int
-xnvme_be_nvmf_ctrlr_connect(struct xnvme_be_nvmf_ctrlr *ctrlr, const char *uri)
-{
-	int err;
-	if (!ctrlr || !uri)
-		return -EINVAL;
-
-	err = ctrlr->ops->connect(ctrlr, uri);
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_be_nvmf_ctrlr_connect(), err: %d", err);
-		ctrlr->ctrlr_state = XNVME_NVMF_CTRLR_STATE_ERROR;
-		return err;
-	}
-
-	ctrlr->ctrlr_state = XNVME_NVMF_CTRLR_STATE_CONNECTED;
-	ctrlr->attached = 1;
-
-	return err;
-}
+xnvme_be_nvmf_ctrlr_term(void *ctrlr);
 
 
 static inline int

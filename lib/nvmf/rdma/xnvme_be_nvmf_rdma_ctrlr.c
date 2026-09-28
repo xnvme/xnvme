@@ -149,7 +149,7 @@ _connect_rdma_controller(struct xnvme_be_nvmf_ctrlr *ctrlr, const char *uri)
 		}
 
 		rdma_ctrlr->selected = ai;
-		err = xnvme_be_nvmf_connect_qpair(ctrlr->admin_qpair);
+		err = xnvme_be_nvmf_qpair_connect(ctrlr->admin_qpair);
 		if (err) {
 			rdma_ctrlr->selected = NULL;
 			continue;
@@ -164,19 +164,13 @@ _connect_rdma_controller(struct xnvme_be_nvmf_ctrlr *ctrlr, const char *uri)
 
 	XNVME_DEBUG("INFO: Successfully connected admin queue to remote controller");
 
-	err = xnvme_be_nvmf_initialize_remote_ctrlr(ctrlr);
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_be_nvmf_initialize_remote_ctrlr(), err: %d", err);
-		goto destroy_qp;
-	}
-
 	return 0;
 
 destroy_qp:
 	ctrlr->attached = 0;
 	ctrlr->ctrlr_state = XNVME_NVMF_CTRLR_STATE_ERROR;
 	if (ctrlr->admin_qpair) {
-		xnvme_be_nvmf_destroy_qpair(ctrlr->admin_qpair);
+		xnvme_be_nvmf_qpair_destroy(ctrlr->admin_qpair);
 		ctrlr->admin_qpair = NULL;
 	}
 	return -ENODEV;
@@ -193,13 +187,13 @@ _disconnect_rdma_controller(struct xnvme_be_nvmf_ctrlr *ctrlr)
 	}
 
 	if (ctrlr->attached) {
-		err = xnvme_be_nvmf_disconnect_qpair(ctrlr->admin_qpair);
+		err = xnvme_be_nvmf_qpair_disconnect(ctrlr->admin_qpair);
 		if (err) {
 			XNVME_DEBUG("FAILED: xnvme_be_nvmf_disconnect_qpair(), err: %d", err);
 			return err;
 		}
 
-		xnvme_be_nvmf_destroy_qpair(ctrlr->admin_qpair);
+		xnvme_be_nvmf_qpair_destroy(ctrlr->admin_qpair);
 
 		ctrlr->attached = 0;
 	}

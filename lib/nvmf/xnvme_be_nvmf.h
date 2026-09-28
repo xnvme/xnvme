@@ -11,6 +11,8 @@
 #include <xnvme_queue.h>
 #include <pthread.h>
 
+#include <xnvme_dev.h>
+
 #include <xnvme_be_nvmf_debug.h>
 #include <xnvme_be_nvmf_ctrlr.h>
 #include <xnvme_be_nvmf_qpair.h>
@@ -42,9 +44,9 @@ struct xnvme_be_nvmf_state {
 	void *ctrlr; ///< Pointer to attached controller (must be first: platform
 		     ///< stores ctrlr at state[0])
 	void *ns;    ///< Pointer to associated namespace
-	void *qpair; ///< QPAIR for SYNC IO commands
-
-	uint8_t _rsvd0[38];
+	void *admin_qpair; ///< Admin queue pair
+	void *sync_qpair; ///< Synchronous IO queue pair
+	uint8_t _rsvd0[30];
 
 	union {
 		pthread_mutex_t lock; ///< Controller lock for thread-safe operations

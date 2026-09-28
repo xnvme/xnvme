@@ -54,6 +54,7 @@ struct xnvme_be_nvmf_qpair {
 	uint16_t cntlid; /* assigned by the controller in the Fabric Connect response */
 	struct xnvme_be_nvmf_req_pool *req_pool;
 	struct xnvme_be_nvmf_ctrlr *ctrlr;
+	struct xnvme_dev *dev; ///< Pointer to the underlying xNVMe device
 
 	xnvme_be_nvmf_capsule_recv_fn on_capsule_recv;
 	xnvme_be_nvmf_send_cmpl_fn on_send_cmpl;
@@ -107,15 +108,15 @@ struct xnvme_be_nvmf_qpair_ops {
 };
 
 int
-xnvme_be_nvmf_qpair_create(struct xnvme_be_nvmf_ctrlr *ctrlr, struct xnvme_be_nvmf_qpair_attr *attr,
-			   struct xnvme_be_nvmf_qpair **qpair);
+xnvme_be_nvmf_qpair_create(struct xnvme_be_nvmf_ctrlr *ctrlr, struct xnvme_dev *dev,
+	struct xnvme_be_nvmf_qpair_attr *attr, struct xnvme_be_nvmf_qpair **qpair);
 
 int
-xnvme_be_nvmf_connect_qpair(struct xnvme_be_nvmf_qpair *qpair);
+xnvme_be_nvmf_qpair_connect(struct xnvme_be_nvmf_qpair *qpair);
 int
-xnvme_be_nvmf_disconnect_qpair(struct xnvme_be_nvmf_qpair *qpair);
+xnvme_be_nvmf_qpair_disconnect(struct xnvme_be_nvmf_qpair *qpair);
 int
-xnvme_be_nvmf_destroy_qpair(struct xnvme_be_nvmf_qpair *qpair);
+xnvme_be_nvmf_qpair_destroy(struct xnvme_be_nvmf_qpair *qpair);
 
 static inline int
 xnvme_be_nvmf_cmd_iov(struct xnvme_be_nvmf_qpair *qpair, struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, size_t dvec_nbytes,

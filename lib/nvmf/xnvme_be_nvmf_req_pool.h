@@ -55,7 +55,8 @@ xnvme_be_nvmf_req_pool_alloc(struct xnvme_be_nvmf_req_pool **pool, uint64_t entr
     p->entries = entries;
 
     SLIST_INIT(&p->free_list);
-    for (int i = entries - 1; i >= 0; i--) {
+    //for (int i = entries - 1; i >= 0; i--) {
+    for (uint64_t i = 0; i < entries; i++) {
         p->reqs[i].cid = i;
         p->reqs[i].context = NULL;
         SLIST_INSERT_HEAD(&p->free_list, &p->reqs[i], next);

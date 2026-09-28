@@ -43,14 +43,14 @@ xnvme_be_nvmf_queue_term(struct xnvme_queue *q)
 
 	if (qpair->state == XNVME_NVMF_QPAIR_STATE_CONNECTED || \
 			qpair->state == XNVME_NVMF_QPAIR_STATE_READY) {
-		err = xnvme_be_nvmf_disconnect_qpair(qpair);
+		err = xnvme_be_nvmf_qpair_disconnect(qpair);
 		if (err) {
 			XNVME_DEBUG("Failed to disconnect qpair: %d", err);
 			return err;
 		}
 	}
 	
-	err = xnvme_be_nvmf_destroy_qpair(qpair);
+	err = xnvme_be_nvmf_qpair_destroy(qpair);
 	if (err) {
 		XNVME_DEBUG("Failed to destroy qpair: %d", err);
 		return err;
