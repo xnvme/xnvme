@@ -9,7 +9,7 @@
 # userspace driver; the unit refuses to start rather than binding them itself.
 HOMI_DEVICES=0000:03:00.0 0000:04:00.0
 
-# Anything else to pass to `homi start`. The heap defaults are deliberately
+# Anything else to pass to `homi serve`. The heap defaults are deliberately
 # small, since a server holds controllers rather than doing I/O, so the usual
 # reason to set anything here is --be.
 #

@@ -541,7 +541,7 @@ class CPlaneServer:
         # under the same name would otherwise answer for this one.
         cijoe.run(f"rm -f {logfile}")
         cijoe.run(
-            f"setsid stdbuf -oL homi start {uris} --be {be} --homi-id {_homi_id} "
+            f"setsid stdbuf -oL homi serve {uris} --be {be} --homi-id {_homi_id} "
             f"< /dev/null > {logfile} 2>&1 &"
         )
 

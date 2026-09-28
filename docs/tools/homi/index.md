@@ -28,9 +28,9 @@ runs, but opening a device with a non-zero `homi_id` fails with `-ENOTSUP`.
 :language: bash
 ```
 
-## `start`: Hold devices open
+## `serve`: Hold devices open
 
-```{literalinclude} homi_start_usage.out
+```{literalinclude} homi_serve_usage.out
 :language: bash
 ```
 
@@ -60,7 +60,7 @@ instead would leave nothing in the hugepage pool for clients of anything else,
 so size it for the buffers the clients will ask for:
 
 ```bash
-homi start 0000:03:00.0 --be upcie --homi-id 1 --host_heap_size 134217728
+homi serve 0000:03:00.0 --be upcie --homi-id 1 --host_heap_size 134217728
 ```
 
 If any device fails to open, **homi** closes the devices it has already opened
@@ -71,13 +71,13 @@ devices are open it reports that it has started, then waits for `SIGINT`
 Example: hold a single device open as the server for `homi_id` 1:
 
 ```bash
-homi start 0000:03:00.0 --be upcie --homi-id 1
+homi serve 0000:03:00.0 --be upcie --homi-id 1
 ```
 
 Example: hold several devices under the same `homi_id`:
 
 ```bash
-homi start 0000:03:00.0 0000:04:00.0 --be upcie --homi-id 1
+homi serve 0000:03:00.0 0000:04:00.0 --be upcie --homi-id 1
 ```
 
 For a controller reached over a PCIe-attached backend (`upcie`, `spdk`), whose
@@ -185,8 +185,8 @@ controllers under its own `homi_id`. Clients reach the one they want by
 passing the matching id:
 
 ```bash
-homi start 0000:03:00.0 0000:04:00.0 --be upcie --homi-id 1
-homi start 0000:05:00.0 0000:06:00.0 --be upcie --homi-id 2
+homi serve 0000:03:00.0 0000:04:00.0 --be upcie --homi-id 1
+homi serve 0000:05:00.0 0000:06:00.0 --be upcie --homi-id 2
 ```
 
 Two things are shared across all of them and have to be budgeted rather than
@@ -247,7 +247,7 @@ could actually connect, which it establishes with `homi status`.
 which is `spdk`, `upcie`, `upcie-cuda` and `upcie-hip`:
 
 ```bash
-homi start 0000:03:00.0 --be spdk --homi-id 1
+homi serve 0000:03:00.0 --be spdk --homi-id 1
 ```
 
 With `upcie-cuda` and `upcie-hip`, **homi** additionally caps the GPU device
@@ -256,7 +256,7 @@ data buffers, which is all the device heap is used for, so claiming the
 default would take VRAM away from the clients:
 
 ```bash
-homi start 0000:03:00.0 --be upcie-cuda --homi-id 1
+homi serve 0000:03:00.0 --be upcie-cuda --homi-id 1
 ```
 
 `homi status` is the exception: it asks over the socket uPCIe serves, so a

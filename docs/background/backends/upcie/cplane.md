@@ -20,7 +20,7 @@ nobody serving simply runs on its own.
 
 ```bash
 # The server holds the controller for as long as it runs
-homi start --homi-id 1 --be upcie 0000:03:00.0
+homi serve --homi-id 1 --be upcie 0000:03:00.0
 
 # Clients name the same id and connect to it
 xnvme info 0000:03:00.0 --be upcie --homi-id 1

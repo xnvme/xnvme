@@ -1,4 +1,4 @@
-Usage: homi start [<uri>...] [<args>]
+Usage: homi serve [<uri>...] [<args>]
 
 Open the given devices and hold them open
   

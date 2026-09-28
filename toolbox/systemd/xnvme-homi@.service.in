@@ -32,7 +32,7 @@ EnvironmentFile=@sysconfdir@/xnvme/homi-%i.conf
 # its queues, and the failure further in is harder to read than this one.
 ExecStartPre=/bin/sh -c '[ "$(cat /proc/sys/vm/nr_hugepages)" -gt 0 ] || { echo "no hugepages reserved; see @bindir@/xnvme-driver"; exit 1; }'
 
-ExecStart=@bindir@/homi start --homi-id %i $HOMI_OPTS $HOMI_DEVICES
+ExecStart=@bindir@/homi serve --homi-id %i $HOMI_OPTS $HOMI_DEVICES
 
 # Type=exec reports started as soon as the process execs, which is before the
 # controllers are up. 'homi status' exits zero only once every controller the
@@ -47,7 +47,7 @@ ExecStartPost=/bin/sh -c 'for i in $(seq 1 100); do @bindir@/homi status --homi-
 Restart=on-failure
 RestartSec=5s
 
-# SIGTERM is what homi start waits for; it closes the controllers on the way out.
+# SIGTERM is what homi serve waits for; it closes the controllers on the way out.
 KillSignal=SIGTERM
 TimeoutStopSec=30s
 
