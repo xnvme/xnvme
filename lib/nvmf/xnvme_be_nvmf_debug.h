@@ -71,7 +71,6 @@ _print_nvme_completion(struct xnvme_spec_cpl *cpl)
 		XNVME_DEBUG("INFO: NVMe Completion indicates an error");
 		_xnvme_print_error_code(cpl);
 	}
-	
 }
 
 #define _NVMF_DEBUG_PRINT(level, category,...)                                                                    \
