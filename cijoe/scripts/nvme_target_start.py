@@ -11,8 +11,10 @@ supported via ``--nvme-provider``:
 * ``linux``: use the Linux kernel ``nvmet`` driver through configfs to
   export an existing ``/dev/nvmeXn1``.
 
-In both cases the device to export is read from the cijoe config entry
-labelled ``fabrics`` (legacy label name).
+Each cijoe config entry labelled ``fabrics`` (legacy label name) becomes one
+subsystem, listening on the ``uri`` of the entry, e.g. ``127.0.0.1:4420``.
+Passthrough is off unless the entry sets ``passthrough = true``; the Linux
+provider skips such entries.
 
 Retargetable: True
 """
@@ -21,6 +23,8 @@ import logging as log
 from argparse import ArgumentParser
 from pathlib import Path
 
+import nvme_target_stop
+
 
 def add_args(parser: ArgumentParser):
     parser.add_argument(
@@ -28,18 +32,6 @@ def add_args(parser: ArgumentParser):
         choices=["spdk", "linux"],
         default="spdk",
         help="NVMe target provider: SPDK nvmf_tgt or Linux kernel nvmet",
-    )
-    parser.add_argument(
-        "--nvme-traddr",
-        type=str,
-        default="127.0.0.1",
-        help="Transport address (IP) for the listener",
-    )
-    parser.add_argument(
-        "--nvme-trsvcid",
-        type=str,
-        default="4420",
-        help="Transport service id (Port)",
     )
     parser.add_argument(
         "--nvme-trtype",
@@ -62,13 +54,14 @@ def add_args(parser: ArgumentParser):
     )
 
 
-def _get_transport_device(cijoe):
-    """Return the first device labelled for NVMe transport export."""
+def _get_transport_devices(cijoe):
+    """Return all devices labelled for NVMe transport export."""
 
-    for device in cijoe.getconf("devices", []):
-        if "fabrics" in device.get("labels", []):
-            return device
-    return None
+    return [
+        device
+        for device in cijoe.getconf("devices", [])
+        if "fabrics" in device.get("labels", [])
+    ]
 
 
 def _run_all(cijoe, commands, transport_name):
@@ -89,13 +82,10 @@ def _start_spdk(args, cijoe):
         log.error("FAILED: 'xnvme.repository.sync.remote_path' not set")
         return errno.EINVAL
 
-    device = _get_transport_device(cijoe)
-    if not device:
+    devices = _get_transport_devices(cijoe)
+    if not devices:
         log.error("FAILED: no device labelled 'fabrics' in CIJOE config")
         return errno.ENOENT
-
-    pcie_id = device["pcie_id"]
-    subnqn = device["subnqn"]
 
     spdk_path = Path(xnvme_repos) / "subprojects" / "spdk"
     rpc = spdk_path / "scripts" / "rpc.py"
@@ -125,35 +115,45 @@ def _start_spdk(args, cijoe):
         f"(nohup {nvmf_tgt} -m [1] > nvmf_tgt.out 2> nvmf_tgt.err < /dev/null &)",
         "sleep 3",
         f"{rpc} nvmf_create_transport -t {args.nvme_trtype} -u 16384 -m 8 -c 8192",
-        f"{rpc} bdev_nvme_attach_controller -b Nvme0 -t PCIe -a {pcie_id} -U",
-        f"{rpc} nvmf_create_subsystem {subnqn} "
-        f"-a -s SPDK00000000000001 -d Controller1 -p",
-        f"{rpc} nvmf_subsystem_add_ns {subnqn} Nvme0n1",
-        f"{rpc} nvmf_subsystem_add_listener {subnqn} "
-        f"-t {args.nvme_trtype} -a {args.nvme_traddr} -s {args.nvme_trsvcid} -f {args.nvme_adrfam}",
     ]
+    for idx, device in enumerate(devices):
+        traddr, trsvcid = device["uri"].rsplit(":", 1)
+        subnqn = device["subnqn"]
+        passthrough = " -p" if device.get("passthrough", False) else ""
+        subsystem += [
+            f"{rpc} bdev_nvme_attach_controller -b Nvme{idx} -t PCIe -a {device['pcie_id']} -U",
+            f"{rpc} nvmf_create_subsystem {subnqn} "
+            f"-a -s SPDK{idx + 1:014d} -d Controller{idx + 1}{passthrough}",
+            f"{rpc} nvmf_subsystem_add_ns {subnqn} Nvme{idx}n1",
+            f"{rpc} nvmf_subsystem_add_listener {subnqn} "
+            f"-t {args.nvme_trtype} -a {traddr} -s {trsvcid} -f {args.nvme_adrfam}",
+        ]
     err, cmd = _run_all(cijoe, subsystem, args.transport_name)
     if err:
         log.error("FAILED: subsystem creation: %s (errno=%d)", cmd, err)
         return err
 
-    log.info("spdk target up: %s @ %s:%s", subnqn, args.nvme_traddr, args.nvme_trsvcid)
+    for device in devices:
+        log.info("spdk target up: %s @ %s", device["subnqn"], device["uri"])
     return 0
 
 
 def _start_linux(args, cijoe):
     """Configure the Linux kernel NVMe target through nvmet/configfs."""
 
-    device = _get_transport_device(cijoe)
-    if not device:
-        log.error("FAILED: no device labelled 'fabrics' in CIJOE config")
+    devices = _get_transport_devices(cijoe)
+    for device in devices:
+        if device.get("passthrough", False):
+            log.info("skipping %s: passthrough is SPDK only", device["subnqn"])
+    devices = [d for d in devices if not d.get("passthrough", False)]
+    if not devices:
+        log.error("FAILED: no device labelled 'fabrics' without passthrough")
         return errno.ENOENT
 
-    subnqn = device["subnqn"]
-    dev_path = device.get("device_path")
-    if not dev_path:
-        log.error("FAILED: device missing 'device_path' (local /dev/nvmeXn1)")
-        return errno.EINVAL
+    for device in devices:
+        if not device.get("device_path"):
+            log.error("FAILED: device missing 'device_path' (local /dev/nvmeXn1)")
+            return errno.EINVAL
     nvmet = "/sys/kernel/config/nvmet"
 
     drivers = [
@@ -170,25 +170,32 @@ def _start_linux(args, cijoe):
     subsystem = [
         "mountpoint -q /sys/kernel/config "
         "|| mount -t configfs none /sys/kernel/config",
-        f"mkdir -p {nvmet}/subsystems/{subnqn}",
-        f"echo 1 > {nvmet}/subsystems/{subnqn}/attr_allow_any_host",
-        f"mkdir -p {nvmet}/subsystems/{subnqn}/namespaces/1",
-        f"echo -n {dev_path} > "
-        f"{nvmet}/subsystems/{subnqn}/namespaces/1/device_path",
-        f"echo 1 > {nvmet}/subsystems/{subnqn}/namespaces/1/enable",
-        f"mkdir -p {nvmet}/ports/1",
-        f"echo {args.nvme_traddr} > {nvmet}/ports/1/addr_traddr",
-        f"echo {args.nvme_trtype} > {nvmet}/ports/1/addr_trtype",
-        f"echo {args.nvme_trsvcid} > {nvmet}/ports/1/addr_trsvcid",
-        f"echo {args.nvme_adrfam} > {nvmet}/ports/1/addr_adrfam",
-        f"ln -s {nvmet}/subsystems/{subnqn} " f"{nvmet}/ports/1/subsystems/{subnqn}",
     ]
+    for portid, device in enumerate(devices, start=1):
+        traddr, trsvcid = device["uri"].rsplit(":", 1)
+        subnqn = device["subnqn"]
+        port = f"{nvmet}/ports/{portid}"
+        subsystem += [
+            f"mkdir -p {nvmet}/subsystems/{subnqn}",
+            f"echo 1 > {nvmet}/subsystems/{subnqn}/attr_allow_any_host",
+            f"mkdir -p {nvmet}/subsystems/{subnqn}/namespaces/1",
+            f"echo -n {device['device_path']} > "
+            f"{nvmet}/subsystems/{subnqn}/namespaces/1/device_path",
+            f"echo 1 > {nvmet}/subsystems/{subnqn}/namespaces/1/enable",
+            f"mkdir -p {port}",
+            f"echo {traddr} > {port}/addr_traddr",
+            f"echo {args.nvme_trtype} > {port}/addr_trtype",
+            f"echo {trsvcid} > {port}/addr_trsvcid",
+            f"echo {args.nvme_adrfam} > {port}/addr_adrfam",
+            f"ln -s {nvmet}/subsystems/{subnqn} {port}/subsystems/{subnqn}",
+        ]
     err, cmd = _run_all(cijoe, subsystem, args.transport_name)
     if err:
         log.error("FAILED: subsystem creation: %s (errno=%d)", cmd, err)
         return err
 
-    log.info("linux target up: %s @ %s:%s", subnqn, args.nvme_traddr, args.nvme_trsvcid)
+    for device in devices:
+        log.info("linux target up: %s @ %s", device["subnqn"], device["uri"])
     return 0
 
 
@@ -196,8 +203,13 @@ def main(args, cijoe):
     """Bring up an NVMe target using the selected provider."""
 
     if args.nvme_provider == "spdk":
-        return _start_spdk(args, cijoe)
-    if args.nvme_provider == "linux":
-        return _start_linux(args, cijoe)
-    log.error("unknown provider: %s", args.nvme_provider)
-    return errno.EINVAL
+        err = _start_spdk(args, cijoe)
+    elif args.nvme_provider == "linux":
+        err = _start_linux(args, cijoe)
+    else:
+        log.error("unknown provider: %s", args.nvme_provider)
+        return errno.EINVAL
+
+    if err:
+        nvme_target_stop.main(args, cijoe)
+    return err

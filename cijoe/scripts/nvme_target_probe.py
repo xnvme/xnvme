@@ -17,18 +17,6 @@ from argparse import ArgumentParser
 
 def add_args(parser: ArgumentParser):
     parser.add_argument(
-        "--nvme-traddr",
-        type=str,
-        default="127.0.0.1",
-        help="Transport address (IP) of the NVMe listener",
-    )
-    parser.add_argument(
-        "--nvme-trsvcid",
-        type=str,
-        default="4420",
-        help="Transport service id (Port) of the NVMe listener",
-    )
-    parser.add_argument(
         "--nvme-trtype",
         type=str,
         default="tcp",
@@ -60,9 +48,10 @@ def main(args, cijoe):
 
     subnqn = device["subnqn"]
 
-    uri = f"{args.nvme_traddr}:{args.nvme_trsvcid}"
+    uri = device["uri"]
+    traddr, trsvcid = uri.rsplit(":", 1)
     commands = [
-        f"nvme discover -t {args.nvme_trtype} -a {args.nvme_traddr} -s {args.nvme_trsvcid}",
+        f"nvme discover -t {args.nvme_trtype} -a {traddr} -s {trsvcid}",
         f"xnvme enum --uri {uri}",
         f"xnvme info {uri} --subnqn {subnqn}",
         f"xnvmeperf run {uri} --subnqn {subnqn} --iopattern randread "

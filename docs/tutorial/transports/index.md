@@ -70,8 +70,6 @@ share.
 | Argument            | Default     | Description                                                        |
 |---------------------|-------------|--------------------------------------------------------------------|
 | `--nvme-provider`   | `spdk`      | `spdk` or `linux`.                                                 |
-| `--nvme-traddr`     | `127.0.0.1` | Transport address (IP) for the listener.                           |
-| `--nvme-trsvcid`    | `4420`      | Transport service id (port); rdma listens on one as well.          |
 | `--nvme-trtype`     | `tcp`       | Transport type.                                                    |
 | `--nvme-adrfam`     | `ipv4`      | Address family.                                                    |
 | `--transport-name`  | None        | CIJOE Transport to use. Defaults to first-found, if not specified. |
@@ -80,8 +78,6 @@ share.
 
 | Argument            | Default     | Description                                                        |
 |---------------------|-------------|--------------------------------------------------------------------|
-| `--nvme-traddr`     | `127.0.0.1` | Transport address (IP) for the listener.                           |
-| `--nvme-trsvcid`    | `4420`      | Transport service id (port); rdma listens on one as well.          |
 | `--nvme-trtype`     | `tcp`       | Transport type.                                                    |
 | `--transport-name`  | None        | CIJOE Transport to use. Defaults to first-found, if not specified. |
 
@@ -92,11 +88,24 @@ share.
 | `--nvme-provider`   | `spdk`      | `spdk` or `linux`.                                                 |
 | `--transport-name`  | None        | CIJOE Transport to use. Defaults to first-found, if not specified. |
 
-The PCIe device to export and its subsystem NQN are read from a device
-entry labelled `fabrics` (legacy label name) in the cijoe configuration.
-The expected fields are `pcie_id` (e.g. `0000:04:00.0`), `subnqn` (the
-target NQN), and `device_path` (the local `/dev/nvmeXn1` used by the
-Linux provider).
+The devices to export are the entries labelled `fabrics` (legacy label
+name) in the cijoe configuration. Each entry becomes one subsystem. An entry
+has these fields:
+
+| Field         | Description                                                     |
+|---------------|-----------------------------------------------------------------|
+| `uri`         | Address and port to listen on, e.g. `127.0.0.1:4420`.           |
+| `pcie_id`     | PCIe address of the device, e.g. `0000:04:00.0`.                |
+| `subnqn`      | NQN of the subsystem.                                           |
+| `passthrough` | `true` to pass commands through to the device. Default `false`. |
+| `device_path` | Block device, e.g. `/dev/nvme3n1`. Linux provider only.         |
+
+Give every entry its own port, so the initiator can find each subsystem
+without a `--subnqn`. A namespace without a block device, such as KV, needs
+passthrough. The Linux provider does not support passthrough and skips such
+entries.
+
+`nvme_target_probe.py` probes the first entry.
 
 ## Initiator usage
 
