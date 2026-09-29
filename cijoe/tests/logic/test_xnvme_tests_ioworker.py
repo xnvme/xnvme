@@ -207,10 +207,10 @@ def test_verify_sync_iovec_direct(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "sync", "async", "admin"])
 def test_verify_flush(cijoe, device, be_opts, cli_args):
-    # Async-interfaces without an implementation of NVM FLUSH: FreeBSD 'kqueue'
-    # and Windows 'ioring' reject it with -ENOSYS, Windows 'iocp'/'iocp_th'
-    # handle only the FS FLUSH opcode
-    if be_opts["async"] in ["kqueue", "iocp", "iocp_th", "ioring"]:
+    # Async-interfaces without an implementation of NVM FLUSH: Windows 'ioring'
+    # rejects it with -ENOSYS, Windows 'iocp'/'iocp_th' handle only the FS FLUSH
+    # opcode
+    if be_opts["async"] in ["iocp", "iocp_th", "ioring"]:
         pytest.skip(reason=f"[async={be_opts['async']}] does not implement NVM FLUSH")
 
     # The FUA-writes make this the first fabrics case sustaining I/O beyond the
