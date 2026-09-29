@@ -23,6 +23,9 @@
 
 static struct xnvme_be_nvmf_ctrlr_ops g_xnvme_be_nvmf_rdma_ctrlr_ops;
 
+#define _NVMF_RDMACM_DEBUG(fmt,...) NVMF_DEBUG(NVMF_DEBUG_CATEGORY_RDMACM, fmt, ##__VA_ARGS__)
+#define _NVMF_RDMACM_ERROR(fmt,...) NVMF_ERROR(NVMF_DEBUG_CATEGORY_RDMACM, fmt, ##__VA_ARGS__)
+
 static int
 _process_cm_events(struct xnvme_be_nvmf_ctrlr *ctrlr, int timeout_ms)
 {
@@ -39,7 +42,7 @@ _process_cm_events(struct xnvme_be_nvmf_ctrlr *ctrlr, int timeout_ms)
 		err = rdma_get_cm_event(event_channel, &event);
 		if (err) {
 			if (xnvme_timer_elapsed_msecs(&timer) >= (double)timeout_ms) {
-				XNVME_DEBUG("FAILED: rdma_get_cm_event() timed out");
+				_NVMF_RDMACM_ERROR("FAILED: rdma_get_cm_event() timed out");
 				err = -ETIMEDOUT;
 				goto unlock_ctrlr;
 			}
@@ -51,12 +54,12 @@ _process_cm_events(struct xnvme_be_nvmf_ctrlr *ctrlr, int timeout_ms)
 
 	err = _handle_rdmacm_event(event);
 	if (err) {
-		XNVME_DEBUG("FAILED: _handle_rdmacm_event(), err: %d", err);
+		_NVMF_RDMACM_ERROR("FAILED: _handle_rdmacm_event(), err: %d", err);
 	}
 
 	err = rdma_ack_cm_event(event);
 	if (err) {
-		XNVME_DEBUG("FAILED: rdma_ack_cm_event(), err: %d", err);
+		_NVMF_RDMACM_ERROR("FAILED: rdma_ack_cm_event(), err: %d", err);
 		goto unlock_ctrlr;
 	}
 
@@ -74,7 +77,7 @@ _rdma_resolve_addrinfo(struct xnvme_be_nvmf_ctrlr *ctrlr, const char *uri)
 
 	cpy = strdup(uri);
 	if (!cpy) {
-		XNVME_DEBUG("FAILED: strdup(), err: %d", errno);
+		_NVMF_RDMACM_ERROR("FAILED: strdup(), err: %d", errno);
 		return -ENOMEM;
 	}
 
@@ -84,12 +87,12 @@ _rdma_resolve_addrinfo(struct xnvme_be_nvmf_ctrlr *ctrlr, const char *uri)
 
 	err = rdma_getaddrinfo(ip_addr, port, NULL, &rdma_ctrlr->res);
 	if (err) {
-		XNVME_DEBUG("FAILED: rdma_getaddrinfo(), err: %d", err);
+		_NVMF_RDMACM_ERROR("FAILED: rdma_getaddrinfo(), err: %d", err);
 		goto failed_getaddrinfo;
 	}
-	XNVME_DEBUG("INFO: Successfully retrieved address for transport: IP: %s, Port: %s",
+	_NVMF_RDMACM_DEBUG("INFO: Successfully retrieved address for transport: IP: %s, Port: %s",
 		    ip_addr, port);
-	XNVME_DEBUG("INFO: Address family: %s",
+	_NVMF_RDMACM_DEBUG("INFO: Address family: %s",
 		    rdma_ctrlr->res->ai_family == AF_INET ? "IPv4" : "IPv6");
 
 	return 0;
@@ -107,13 +110,13 @@ xnvme_be_nvmf_create_rdma_controller(struct xnvme_be_nvmf_ctrlr **ctrlr)
 
 	rdma_ctrlr = calloc(1, sizeof(*rdma_ctrlr));
 	if (!rdma_ctrlr) {
-		XNVME_DEBUG("FAILED: calloc(), err: %d", errno);
+		_NVMF_RDMACM_ERROR("FAILED: calloc(), err: %d", errno);
 		return -ENOMEM;
 	}
 
 	rdma_ctrlr->event_channel = rdma_create_event_channel();
 	if (!rdma_ctrlr->event_channel) {
-		XNVME_DEBUG("FAILED: rdma_create_event_channel(), err: %d", errno);
+		_NVMF_RDMACM_ERROR("FAILED: rdma_create_event_channel(), err: %d", errno);
 		err = -errno;
 		goto free_ctrlr;
 	}
@@ -136,14 +139,14 @@ _connect_rdma_controller(struct xnvme_be_nvmf_ctrlr *ctrlr, const char *uri)
 
 	err = _rdma_resolve_addrinfo(ctrlr, uri);
 	if (err) {
-		XNVME_DEBUG("FAILED: _rdma_resolve_addrinfo(), err: %d", err);
+		_NVMF_RDMACM_ERROR("FAILED: _rdma_resolve_addrinfo(), err: %d", err);
 		return err;
 	}
 
 	rdma_ctrlr->selected = NULL;
 	for (struct rdma_addrinfo *ai = rdma_ctrlr->res; ai != NULL; ai = ai->ai_next) {
 		if (ai->ai_family != AF_INET) {
-			XNVME_DEBUG("INFO: Skipping unsupported address family: %d",
+			_NVMF_RDMACM_DEBUG("INFO: Skipping unsupported address family: %d",
 				    ai->ai_family);
 			continue;
 		}
@@ -158,11 +161,11 @@ _connect_rdma_controller(struct xnvme_be_nvmf_ctrlr *ctrlr, const char *uri)
 	}
 
 	if (err) {
-		XNVME_DEBUG("FAILED: Could not connect to any suitable RDMA address");
+		_NVMF_RDMACM_ERROR("FAILED: Could not connect to any suitable RDMA address");
 		goto destroy_qp;
 	}
 
-	XNVME_DEBUG("INFO: Successfully connected admin queue to remote controller");
+	_NVMF_RDMACM_DEBUG("INFO: Successfully connected admin queue to remote controller");
 
 	return 0;
 
@@ -182,14 +185,14 @@ _disconnect_rdma_controller(struct xnvme_be_nvmf_ctrlr *ctrlr)
 	int err;
 
 	if (!ctrlr || !ctrlr->admin_qpair) {
-		XNVME_DEBUG("INFO: No admin_qpair to disconnect");
+		_NVMF_RDMACM_DEBUG("INFO: No admin_qpair to disconnect");
 		return 0;
 	}
 
 	if (ctrlr->attached) {
 		err = xnvme_be_nvmf_qpair_disconnect(ctrlr->admin_qpair);
 		if (err) {
-			XNVME_DEBUG("FAILED: xnvme_be_nvmf_disconnect_qpair(), err: %d", err);
+			_NVMF_RDMACM_ERROR("FAILED: xnvme_be_nvmf_disconnect_qpair(), err: %d", err);
 			return err;
 		}
 

@@ -11,6 +11,9 @@
 #include <xnvme_be_nvmf.h>
 #include <xnvme_be_nvmf_rdma.h>
 
+#define _NVMF_DATA_DEBUG(fmt,...) NVMF_DEBUG(NVMF_DEBUG_CATEGORY_VERBS_DATA, fmt, ##__VA_ARGS__)
+#define _NVMF_DATA_ERROR(fmt,...) NVMF_ERROR(NVMF_DEBUG_CATEGORY_VERBS_DATA, fmt, ##__VA_ARGS__)
+
 void
 xnvme_be_nvmf_rdma_on_capsule_recv(struct xnvme_be_nvmf_qpair *qpair, void *buf, size_t len)
 {
@@ -21,14 +24,14 @@ xnvme_be_nvmf_rdma_on_capsule_recv(struct xnvme_be_nvmf_qpair *qpair, void *buf,
 	struct xnvme_cmd_ctx *cmd_ctx = NULL;
 
 	if (len < sizeof(*cpl)) {
-		XNVME_DEBUG("FAILED: short capsule, len: %zu", len);
+		_NVMF_DATA_ERROR("FAILED: short capsule, len: %zu", len);
 		qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
 		return;
 	}
 
 	req = xnvme_be_nvmf_req_get(qpair->req_pool, cpl->cid);
 	if (!req) {
-		XNVME_DEBUG("FAILED: Could not get request for wr_id index: %u", cpl->cid);
+		_NVMF_DATA_ERROR("FAILED: Could not get request for wr_id index: %u", cpl->cid);
 		qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
 		return;
 	}
@@ -48,7 +51,7 @@ xnvme_be_nvmf_rdma_on_capsule_recv(struct xnvme_be_nvmf_qpair *qpair, void *buf,
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: capsule in unexpected state: %d", qpair->state);
+		_NVMF_DATA_ERROR("FAILED: capsule in unexpected state: %d", qpair->state);
 		break;
 	}
 }
@@ -59,7 +62,7 @@ xnvme_be_nvmf_rdma_on_send_cmpl(struct xnvme_be_nvmf_qpair *qpair, void *buf, in
 	(void)qpair;
 	(void)buf;
 	if (status)
-		XNVME_DEBUG("FAILED: send completed with error: %d", status);
+		_NVMF_DATA_ERROR("FAILED: send completed with error: %d", status);
 }
 
 void
