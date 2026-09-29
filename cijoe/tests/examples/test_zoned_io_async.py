@@ -1,6 +1,6 @@
 import pytest
 
-from ..conftest import get_osname, xnvme_parametrize, zoned_bdev_reset
+from ..conftest import get_osname, is_nvmet, xnvme_parametrize, zoned_bdev_reset
 
 
 @xnvme_parametrize(labels=["zns"], opts=["be", "admin", "async"])
@@ -46,5 +46,7 @@ def test_read(cijoe, device, be_opts, cli_args):
         "ramdisk_thrpool",
     ]:
         pytest.skip(reason="Freebsd kernel doesn't support zns")
+    if is_nvmet(cijoe, device):
+        pytest.skip(reason="[nvmet] swaps the Full and Read Only zone report filters")
     err, _ = cijoe.run(f"zoned_io_async read {cli_args}")
     assert not err

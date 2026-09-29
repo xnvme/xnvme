@@ -1,6 +1,6 @@
 import pytest
 
-from ..conftest import XnvmeDriver, get_osname, xnvme_parametrize
+from ..conftest import XnvmeDriver, get_osname, is_nvmet, xnvme_parametrize
 
 
 def test_enum(cijoe):
@@ -45,6 +45,8 @@ def test_compare(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
     if be_opts["admin"] == "block":
         pytest.skip(reason="[admin=block] does not implement compare")
+    if is_nvmet(cijoe, device):
+        pytest.skip(reason="[nvmet] does not implement compare")
     src = "/tmp/file.bin"
 
     prep = [

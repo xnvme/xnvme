@@ -53,6 +53,18 @@ def get_shm_id():
     return _shm_id if _shm_id else None
 
 
+def is_nvmet(cijoe, device):
+    """Return True when the fabrics device is exported by the Linux NVMe target"""
+
+    if "subnqn" not in device:
+        return False
+
+    err, _ = cijoe.run(
+        f"test -d /sys/kernel/config/nvmet/subsystems/{device['subnqn']}"
+    )
+    return not err
+
+
 def xnvme_be_opts(options=None, only_labels=[]):
     """Produce a list of "sensible" backend configurations"""
 
