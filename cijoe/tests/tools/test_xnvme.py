@@ -317,8 +317,12 @@ def test_padc(cijoe, device, be_opts, cli_args):
 
     assert data_nbytes > 0
 
+    # Number of dwords to read (NUMDL), zero-based, in the upper half of cdw10
+    numdl = data_nbytes // 4 - 1
+    cdw10 = f"{(numdl << 16) | int(lid, 16):#x}"
+
     err, _ = cijoe.run(
-        f"xnvme padc {cli_args} --opcode {opcode} --cdw10 {lid} --data-nbytes {data_nbytes} --nsid {nsid}"
+        f"xnvme padc {cli_args} --opcode {opcode} --cdw10 {cdw10} --data-nbytes {data_nbytes} --nsid {nsid}"
     )
     assert not err
 
