@@ -1,6 +1,6 @@
 import pytest
 
-from ..conftest import XnvmeDriver, get_osname, get_shm_id, xnvme_parametrize
+from ..conftest import XnvmeDriver, get_osname, get_shm_id, is_nvmet, xnvme_parametrize
 
 
 def test_library_info(cijoe):
@@ -151,6 +151,8 @@ def test_idfy_cs(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[admin=block] does not implement idfy-cs")
     if be_opts["admin"] == "ramdisk":
         pytest.skip(reason="[be=ramdisk] does not implement idfy-cs")
+    if is_nvmet(cijoe, device):
+        pytest.skip(reason="[nvmet] does not implement idfy-cs")
 
     err, _ = cijoe.run(f"xnvme idfy-cs {cli_args}")
     assert not err
@@ -275,6 +277,8 @@ def test_feature_get(cijoe, device, be_opts, cli_args):
 def test_feature_set(cijoe, device, be_opts, cli_args):
     if be_opts["admin"] == "ramdisk":
         pytest.skip(reason="[be=ramdisk] does not implement feature-set")
+    if is_nvmet(cijoe, device):
+        pytest.skip(reason="[nvmet] does not implement feature 0x4")
 
     err, _ = cijoe.run(f"xnvme feature-set {cli_args} --fid 0x4 --feat 0x1")
 
