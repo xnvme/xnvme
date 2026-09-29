@@ -157,6 +157,35 @@ xnvme_be_freebsd_kqueue_poke(struct xnvme_queue *q, uint32_t max)
 	return completed;
 }
 
+/**
+ * Execute a flush and complete the command-context inline
+ *
+ * The asynchronous aio_fsync() is not usable here: the FreeBSD kernel rejects it with ENOTSUP
+ * on the NVMe namespace character-devices which this backend primarily drives, whereas the
+ * synchronous fsync() is serviced, as demonstrated by the psync command-interface. Since the
+ * flush thus never produces a kqueue-event, it neither consumes a request-object nor bumps
+ * the outstanding-counter; the completion-callback is invoked before returning instead.
+ *
+ * Like a flush submitted to a NVMe controller, this provides no ordering-guarantee with
+ * regards to the commands which are still outstanding on the queue.
+ */
+static int
+kqueue_flush(struct xnvme_cmd_ctx *ctx, int fd)
+{
+	if (fsync(fd)) {
+		XNVME_DEBUG("FAILED: fsync(), err: %d", errno);
+		return -errno;
+	}
+
+	ctx->cpl.result = 0;
+	ctx->cpl.status.val = 0;
+
+	///< Nothing on the queue is touched past this point; the callback is free to re-enter
+	ctx->async.cb(ctx, ctx->async.cb_arg);
+
+	return 0;
+}
+
 int
 xnvme_be_freebsd_kqueue_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 			       void *mbuf, size_t mbuf_nbytes)
@@ -171,6 +200,15 @@ xnvme_be_freebsd_kqueue_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	if (mbuf || mbuf_nbytes) {
 		XNVME_DEBUG("FAILED: mbuf or mbuf_nbytes provided");
 		return -ENOTSUP;
+	}
+
+	switch (ctx->cmd.common.opcode) {
+	case XNVME_SPEC_NVM_OPC_FLUSH:
+	case XNVME_SPEC_FS_OPC_FLUSH:
+		return kqueue_flush(ctx, state->fd.ns);
+
+	default:
+		break;
 	}
 
 	req = TAILQ_FIRST(&queue->reqs_ready);
@@ -207,11 +245,6 @@ xnvme_be_freebsd_kqueue_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 		aiocb->aio_offset = ctx->cmd.nvm.slba;
 		err = aio_read(aiocb);
 		break;
-
-	case XNVME_SPEC_NVM_OPC_FLUSH:
-	case XNVME_SPEC_FS_OPC_FLUSH:
-		// TODO: should this be handled by calling aio_fsync()?
-		// err = aio_fsync(_, &aiocb);
 
 	default:
 		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);
@@ -252,6 +285,16 @@ xnvme_be_freebsd_kqueue_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, s
 		return -ENOTSUP;
 	}
 
+	///< A flush has no payload, thus the vectored path defers to the same helper
+	switch (ctx->cmd.common.opcode) {
+	case XNVME_SPEC_NVM_OPC_FLUSH:
+	case XNVME_SPEC_FS_OPC_FLUSH:
+		return kqueue_flush(ctx, state->fd.ns);
+
+	default:
+		break;
+	}
+
 	req = TAILQ_FIRST(&queue->reqs_ready);
 	assert(req != NULL);
 
@@ -286,11 +329,6 @@ xnvme_be_freebsd_kqueue_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, s
 		aiocb->aio_offset = ctx->cmd.nvm.slba;
 		err = aio_readv(aiocb);
 		break;
-
-	case XNVME_SPEC_NVM_OPC_FLUSH:
-	case XNVME_SPEC_FS_OPC_FLUSH:
-		// TODO: should this be handled by calling aio_fsync()?
-		// err = aio_fsync(_, &aiocb);
 
 	default:
 		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);
