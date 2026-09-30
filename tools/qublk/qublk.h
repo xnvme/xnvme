@@ -13,6 +13,7 @@
 #include <linux/ublk_cmd.h>
 #include <liburing.h>
 #include <libxnvme.h>
+#include <xnvme_cuse.h>
 
 /**
  * The most entries an io_uring can have: the kernel's IORING_MAX_ENTRIES, which
@@ -71,6 +72,9 @@ struct qublk_dev {
 	uint8_t started;
 	struct qublk_queue *queues;
 	volatile sig_atomic_t stop;
+
+	uint8_t cuse;                   ///< Set while /dev/ublkb<dev_id>-nvme is served
+	struct xnvme_cuse cuse_session; ///< The CUSE session serving it
 };
 
 #endif

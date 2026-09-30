@@ -20,9 +20,9 @@ else
   executable(
     'qublk',
     qublk_source,
-    include_directories: [conf_inc, xnvme_inc],
+    include_directories: [conf_inc, xnvme_inc, xnvme_cuse_inc],
     link_args: link_args_hardening,
-    link_with: xnvmelib,
+    link_with: [xnvmelib, xnvme_cuse_lib],
     install_rpath: xnvmelib_rpath,
     dependencies: [uring_dep, thread_dep],
     install: true,
