@@ -71,6 +71,16 @@ Example: hold several devices under the same `--homi-id`:
 homi start 0000:03:00.0 0000:04:00.0 --be upcie --homi-id 1
 ```
 
+For a controller reached over a PCIe-attached backend (`upcie`, `spdk`), whose
+URI is therefore its bus:device.function address, **homi** also exposes a
+`/dev/xnvme/<bdf>` character device answering the Linux kernel NVMe driver's
+ioctl() interface, the same mimic `qublk` serves as `/dev/ublkb<N>-nvme` (see
+{ref}`sec-tools-qublk`). A controller reached any other way
+(fabrics, a bare device-file path) has no such address and is left
+unexposed, with no fallback name. Pass `--no-cuse` to skip it entirely. The
+mimic itself is Linux-only; on another platform **homi** still runs, quietly
+skipping the character device for every controller.
+
 While it runs, other processes attach as secondaries by passing the same
 identifier:
 
