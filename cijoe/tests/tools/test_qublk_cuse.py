@@ -7,8 +7,11 @@ smart-log'/'xnvme log-health' go through NVME_IOCTL_ADMIN_CMD, and 'nvme
 read'/'nvme write'/'nvme flush' go through NVME_IOCTL_IO_CMD. 'lblk
 read'/'lblk write'/'xnvme pioc' issue the same commands but, on a kernel
 new enough to have it, through NVME_IOCTL_IO64_CMD instead, which is why
-they only join here now that that ioctl is answered too. Cases for
-further ioctls are added here as lib/xnvme_cuse.c grows to answer them.
+they only join here now that that ioctl is answered too.
+
+NVME_IOCTL_IO64_CMD_VEC has no nvme-cli equivalent to pair it with, so it
+is exercised in test_qublk_cuse_vec.py instead, which does not require
+nvme-cli.
 
 The xNVMe side's --be is fixed to 'nil': it is lib/xnvme_cuse.c being
 exercised here, not the server's own backend (that one is be_opts['be'],

@@ -41,6 +41,15 @@
 	(XNVME_CUSE_MAX_WRITE + 4096) ///< + slack for the fuse/ioctl headers ahead of the payload
 
 /**
+ * NVME_IOCTL_IO64_CMD_VEC's retry sends the cmd struct, an optional metadata
+ * segment and 'vec_cnt' data segments as both the in and out iovec list; the
+ * kernel rejects a FUSE_IOCTL_RETRY whose in_iovs + out_iovs exceeds
+ * FUSE_IOCTL_MAX_IOV (256), so this is the largest 'vec_cnt' that list can
+ * ever carry (1 + 1 + 125, doubled, is already at the ceiling)
+ */
+#define XNVME_CUSE_VEC_MAX_SEGS 125
+
+/**
  * Serializes dispatch across sessions: some backends (e.g. uPCIe) keep
  * per-process state their sync command path does not lock internally
  */
@@ -249,10 +258,125 @@ cuse_run_passthru64(struct xnvme_dev *xdev, int admin, const struct nvme_passthr
 	return cuse_nvme_status(&ctx);
 }
 
+struct cuse_passthru64_vec_layout {
+	size_t iovec_off, iovec_nbytes;
+	size_t meta_off, meta_nbytes;
+	size_t data_off, data_nbytes;
+};
+
+/**
+ * Compute the [struct][iovec array][metadata][data...] layout of an
+ * NVME_IOCTL_IO64_CMD_VEC request; 'uiov' must already point at the
+ * fetched iovec array
+ */
+static struct cuse_passthru64_vec_layout
+cuse_passthru64_vec_layout(const struct nvme_passthru_cmd64 *ucmd, const struct iovec *uiov)
+{
+	struct cuse_passthru64_vec_layout l = {0};
+
+	l.iovec_off = sizeof(*ucmd);
+	l.iovec_nbytes = (size_t)ucmd->vec_cnt * sizeof(struct iovec);
+	l.meta_off = l.iovec_off + l.iovec_nbytes;
+	l.meta_nbytes = ucmd->metadata_len;
+	l.data_off = l.meta_off + l.meta_nbytes;
+
+	for (uint32_t i = 0; i < ucmd->vec_cnt; i++) {
+		l.data_nbytes += uiov[i].iov_len;
+	}
+
+	return l;
+}
+
+/**
+ * Execute a vectored 64-bit nvme_passthru_cmd64, gathering 'uiov's segments
+ * (as laid out by 'l' in 'in_buf') into one contiguous xnvme_buf_alloc()'d
+ * data buffer and the fetched metadata into its own, then issuing it via
+ * the plain xnvme_cmd_pass() rather than xnvme_cmd_pass_iov(): a backend's
+ * vectored path forces SGL unconditionally, which not every controller
+ * supports, while the gathered data is already one contiguous run that
+ * needs no SGL at all. The reply mirrors the request's layout, carrying
+ * back whatever the command actually left in each buffer.
+ */
+static int
+cuse_run_passthru64_vec(struct xnvme_dev *xdev, const struct nvme_passthru_cmd64 *ucmd,
+			const struct iovec *uiov, const struct cuse_passthru64_vec_layout *l,
+			const void *in_buf, void **reply, size_t *reply_nbytes)
+{
+	struct xnvme_cmd_ctx ctx = cuse_ctx_from_cdws(
+		xdev, ucmd->opcode, ucmd->nsid, ucmd->cdw2, ucmd->cdw3, ucmd->cdw10, ucmd->cdw11,
+		ucmd->cdw12, ucmd->cdw13, ucmd->cdw14, ucmd->cdw15);
+	struct nvme_passthru_cmd64 *reply_cmd;
+	void *dbuf = NULL, *mbuf = NULL;
+	char *reply_buf;
+	size_t off = 0;
+	int err;
+
+	if (l->data_nbytes) {
+		dbuf = xnvme_buf_alloc(xdev, l->data_nbytes);
+		if (!dbuf) {
+			XNVME_DEBUG("FAILED: xnvme_buf_alloc(data_nbytes: %zu)", l->data_nbytes);
+			return -ENOMEM;
+		}
+
+		// Gathered into one xnvme_buf_alloc()'d run, not kept as separate
+		// segments: a backend's vectored path forces SGL even where every
+		// segment landed contiguous, and not every controller supports one
+		for (uint32_t i = 0; i < ucmd->vec_cnt; i++) {
+			memcpy((char *)dbuf + off, (const char *)in_buf + l->data_off + off,
+			       uiov[i].iov_len);
+			off += uiov[i].iov_len;
+		}
+	}
+
+	if (l->meta_nbytes) {
+		mbuf = xnvme_buf_alloc(xdev, l->meta_nbytes);
+		if (!mbuf) {
+			XNVME_DEBUG("FAILED: xnvme_buf_alloc(meta_nbytes: %zu)", l->meta_nbytes);
+			xnvme_buf_free(xdev, dbuf);
+			return -ENOMEM;
+		}
+		memcpy(mbuf, (const char *)in_buf + l->meta_off, l->meta_nbytes);
+	}
+
+	err = xnvme_cmd_pass(&ctx, dbuf, l->data_nbytes, mbuf, l->meta_nbytes);
+	if (err && !xnvme_cmd_ctx_cpl_status(&ctx)) {
+		XNVME_DEBUG("FAILED: xnvme_cmd_pass(); err(%d)", err);
+		xnvme_buf_free(xdev, dbuf);
+		xnvme_buf_free(xdev, mbuf);
+		return err;
+	}
+
+	*reply_nbytes = l->data_off + l->data_nbytes;
+	*reply = malloc(*reply_nbytes);
+	if (!*reply) {
+		XNVME_DEBUG("FAILED: malloc(reply_nbytes: %zu)", *reply_nbytes);
+		xnvme_buf_free(xdev, dbuf);
+		xnvme_buf_free(xdev, mbuf);
+		return -ENOMEM;
+	}
+	reply_buf = *reply;
+
+	reply_cmd = (void *)reply_buf;
+	*reply_cmd = *ucmd;
+	reply_cmd->result = ctx.cpl.result;
+
+	memcpy(reply_buf + l->iovec_off, uiov, l->iovec_nbytes);
+	if (l->meta_nbytes) {
+		memcpy(reply_buf + l->meta_off, mbuf, l->meta_nbytes);
+	}
+	memcpy(reply_buf + l->data_off, dbuf, l->data_nbytes);
+
+	xnvme_buf_free(xdev, dbuf);
+	xnvme_buf_free(xdev, mbuf);
+
+	return cuse_nvme_status(&ctx);
+}
+
 /**
  * Answer one FUSE_IOCTL request; NVME_IOCTL_ID, NVME_IOCTL_ADMIN_CMD,
- * NVME_IOCTL_IO_CMD, NVME_IOCTL_ADMIN64_CMD and NVME_IOCTL_IO64_CMD are
- * answered so far, everything else declines with ENOTTY
+ * NVME_IOCTL_IO_CMD, NVME_IOCTL_ADMIN64_CMD, NVME_IOCTL_IO64_CMD and
+ * NVME_IOCTL_IO64_CMD_VEC are answered, everything else declines with
+ * ENOTTY
  */
 static int
 cuse_dispatch_ioctl(int fd, uint64_t unique, struct xnvme_dev *xdev,
@@ -411,6 +535,89 @@ cuse_dispatch_ioctl(int fd, uint64_t unique, struct xnvme_dev *xdev,
 					     mbuf, &reply, &reply_nbytes);
 		xnvme_buf_free(xdev, dbuf);
 		xnvme_buf_free(xdev, mbuf);
+
+		rc = result < 0 ? cuse_reply_err(fd, unique, -result)
+				: cuse_reply_ioctl(fd, unique, result, reply, reply_nbytes);
+		free(reply);
+		return rc;
+	}
+
+	case NVME_IOCTL_IO64_CMD_VEC: {
+		const struct nvme_passthru_cmd64 *ucmd;
+		const struct iovec *uiov;
+		struct cuse_passthru64_vec_layout l;
+		void *reply = NULL;
+		size_t reply_nbytes = 0;
+		int result, rc;
+
+		if (xnvme_dev_get_ident(xdev)->dtype == XNVME_DEV_TYPE_NVME_CONTROLLER) {
+			return cuse_reply_err(fd, unique, ENOTTY);
+		}
+
+		if (in_bufsz < cmd_nbytes64) {
+			struct iovec iov = {arg, cmd_nbytes64};
+
+			return cuse_reply_ioctl_retry(fd, unique, &iov, 1, &iov, 1);
+		}
+
+		ucmd = in_buf;
+		if (ucmd->vec_cnt > XNVME_CUSE_VEC_MAX_SEGS) {
+			XNVME_DEBUG("FAILED: vec_cnt(%u) exceeds the retry-list ceiling",
+				    ucmd->vec_cnt);
+			return cuse_reply_err(fd, unique, EINVAL);
+		}
+
+		if (in_bufsz < cmd_nbytes64 + (size_t)ucmd->vec_cnt * sizeof(struct iovec) +
+				       ucmd->metadata_len) {
+			struct iovec iov[3];
+			uint32_t n = 0;
+
+			iov[n].iov_base = arg;
+			iov[n++].iov_len = cmd_nbytes64;
+			iov[n].iov_base = (void *)(uintptr_t)ucmd->addr;
+			iov[n++].iov_len = (size_t)ucmd->vec_cnt * sizeof(struct iovec);
+			if (ucmd->metadata_len) {
+				iov[n].iov_base = (void *)(uintptr_t)ucmd->metadata;
+				iov[n++].iov_len = ucmd->metadata_len;
+			}
+
+			return cuse_reply_ioctl_retry(fd, unique, iov, n, iov, n);
+		}
+
+		uiov = (const void *)((const char *)in_buf + cmd_nbytes64);
+		// Bound each segment before summing: an unbounded sum can wrap to a
+		// small value, understating how much data is actually coming
+		for (uint32_t i = 0; i < ucmd->vec_cnt; i++) {
+			if (uiov[i].iov_len > XNVME_CUSE_MAX_WRITE) {
+				XNVME_DEBUG("FAILED: iov_len(%zu) exceeds XNVME_CUSE_MAX_WRITE",
+					    uiov[i].iov_len);
+				return cuse_reply_err(fd, unique, EINVAL);
+			}
+		}
+		l = cuse_passthru64_vec_layout(ucmd, uiov);
+
+		if (in_bufsz < l.data_off + l.data_nbytes) {
+			struct iovec iov[2 + ucmd->vec_cnt + (ucmd->metadata_len ? 1 : 0)];
+			uint32_t n = 0;
+
+			iov[n].iov_base = arg;
+			iov[n++].iov_len = cmd_nbytes64;
+			iov[n].iov_base = (void *)(uintptr_t)ucmd->addr;
+			iov[n++].iov_len = l.iovec_nbytes;
+			if (ucmd->metadata_len) {
+				iov[n].iov_base = (void *)(uintptr_t)ucmd->metadata;
+				iov[n++].iov_len = ucmd->metadata_len;
+			}
+			for (uint32_t i = 0; i < ucmd->vec_cnt; i++) {
+				iov[n].iov_base = uiov[i].iov_base;
+				iov[n++].iov_len = uiov[i].iov_len;
+			}
+
+			return cuse_reply_ioctl_retry(fd, unique, iov, n, iov, n);
+		}
+
+		result = cuse_run_passthru64_vec(xdev, ucmd, uiov, &l, in_buf, &reply,
+						 &reply_nbytes);
 
 		rc = result < 0 ? cuse_reply_err(fd, unique, -result)
 				: cuse_reply_ioctl(fd, unique, result, reply, reply_nbytes);
