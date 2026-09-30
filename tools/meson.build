@@ -45,12 +45,13 @@ tools = {
 
 foreach source, tests : tools
   bin_name = fs.stem(source)
+  bin_cuse = bin_name == 'homi'
   bin = executable(
     bin_name,
     source,
-    include_directories: [conf_inc, xnvme_inc],
+    include_directories: [conf_inc, xnvme_inc] + (bin_cuse ? [xnvme_cuse_inc] : []),
     link_args: link_args_hardening,
-    link_with: xnvmelib,
+    link_with: [xnvmelib] + (bin_cuse ? [xnvme_cuse_lib] : []),
     install_rpath: xnvmelib_rpath,
     install: true,
   )
