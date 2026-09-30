@@ -141,6 +141,12 @@ conf_data.set('XNVME_PLATFORM_WINDOWS_ENABLED', setupapi_dep.found())
 conf_data.set('XNVME_BE_WINDOWS_FS_ENABLED', conf_data.get('XNVME_PLATFORM_WINDOWS_ENABLED'))
 conf_data.set('XNVME_BE_WINDOWS_ASYNC_ENABLED', conf_data.get('XNVME_PLATFORM_WINDOWS_ENABLED'))
 
+xnvme_cuse_has_header = is_linux ? cc.has_header('linux/fuse.h', required: get_option('with-cuse')) : false
+conf_data.set('XNVME_CUSE_ENABLED', xnvme_cuse_has_header)
+if not xnvme_cuse_has_header and get_option('with-cuse').allowed()
+  warning('No linux/fuse.h, the NVMe ioctl() CUSE mimic is unavailable')
+endif
+
 conf_data.set('XNVME_PLATFORM_LINUX_ENABLED', is_linux)
 conf_data.set('XNVME_BE_LINUX_BLOCK_ENABLED', is_linux ? cc.has_header('linux/blkzoned.h') : false)
 conf_data.set('XNVME_BE_LINUX_BLOCK_ZONED_ENABLED', is_linux ? cc.has_header('linux/blkzoned.h') : false)
@@ -219,7 +225,7 @@ conf = configure_file(
   configuration : conf_data,
   output : 'xnvme_config.h',
 )
-conf_inc = [ include_directories('.') ]
+conf_inc = [ include_directories('.'), include_directories('lib') ]
 if is_linux
   conf_inc += [ include_directories('toolbox' / 'third-party' / 'linux') ]
 endif
