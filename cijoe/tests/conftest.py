@@ -65,6 +65,14 @@ def is_nvmet(cijoe, device):
     return not err
 
 
+def require_nvme_cli(cijoe):
+    """Skip unless nvme-cli is available; shared by every case that also exercises it"""
+
+    err, _ = cijoe.run("command -v nvme")
+    if err:
+        pytest.skip("this case also exercises nvme-cli, which is not installed")
+
+
 def xnvme_be_opts(options=None, only_labels=[]):
     """Produce a list of "sensible" backend configurations"""
 

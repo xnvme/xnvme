@@ -80,10 +80,152 @@ cuse_reply_ioctl(int fd, uint64_t unique, int32_t result, const void *buf, size_
 	return cuse_reply(fd, unique, 0, &out, sizeof(out), buf, buf_nbytes);
 }
 
+// The kernel re-sends the FUSE_IOCTL with 'in_iov' fetched, back to back, at the front of its
+// buffer; the final reply's payload is scattered back over 'out_iov'
+static int
+cuse_reply_ioctl_retry(int fd, uint64_t unique, const struct iovec *in_iov, uint32_t in_count,
+		       const struct iovec *out_iov, uint32_t out_count)
+{
+	struct fuse_ioctl_out out = {
+		.flags = FUSE_IOCTL_RETRY,
+		.in_iovs = in_count,
+		.out_iovs = out_count,
+	};
+	struct fuse_ioctl_iovec fiov[in_count + out_count];
+
+	for (uint32_t i = 0; i < in_count; i++) {
+		fiov[i].base = (uint64_t)(uintptr_t)in_iov[i].iov_base;
+		fiov[i].len = in_iov[i].iov_len;
+	}
+	for (uint32_t i = 0; i < out_count; i++) {
+		fiov[in_count + i].base = (uint64_t)(uintptr_t)out_iov[i].iov_base;
+		fiov[in_count + i].len = out_iov[i].iov_len;
+	}
+
+	return cuse_reply(fd, unique, 0, &out, sizeof(out), fiov,
+			  sizeof(fiov[0]) * (in_count + out_count));
+}
+
+static struct xnvme_cmd_ctx
+cuse_ctx_from_cmd(struct xnvme_dev *dev, const struct nvme_passthru_cmd *cmd)
+{
+	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+
+	ctx.cmd.common.opcode = cmd->opcode;
+	ctx.cmd.common.nsid = cmd->nsid;
+	ctx.cmd.common.cdw02 = cmd->cdw2;
+	ctx.cmd.common.cdw03 = cmd->cdw3;
+	ctx.cmd.common.ndt =
+		cmd->cdw10; // cdw10 and cdw11 are 'ndt' and 'ndm' in the common layout
+	ctx.cmd.common.ndm = cmd->cdw11;
+	ctx.cmd.common.cdw12 = cmd->cdw12;
+	ctx.cmd.common.cdw13 = cmd->cdw13;
+	ctx.cmd.common.cdw14 = cmd->cdw14;
+	ctx.cmd.common.cdw15 = cmd->cdw15;
+
+	return ctx;
+}
+
+// As nvme_submit_user_cmd(): the status field without its phase tag
+static int
+cuse_nvme_status(const struct xnvme_cmd_ctx *ctx)
+{
+	return ctx->cpl.status.val >> 1;
+}
+
+static int
+cuse_passthru(int fd, uint64_t unique, struct xnvme_dev *dev, const struct fuse_ioctl_in *ioc,
+	      const void *buf, size_t buf_nbytes)
+{
+	void *arg = (void *)(uintptr_t)ioc->arg;
+	int admin = ioc->cmd == NVME_IOCTL_ADMIN_CMD;
+	size_t cmd_nbytes = sizeof(struct nvme_passthru_cmd);
+	struct nvme_passthru_cmd cmd;
+	struct xnvme_cmd_ctx ctx;
+	void *dbuf = NULL, *mbuf = NULL;
+	char *reply = NULL;
+	size_t reply_nbytes;
+	int err, rc;
+
+	if (buf_nbytes < cmd_nbytes) {
+		struct iovec iov = {arg, cmd_nbytes};
+
+		return cuse_reply_ioctl_retry(fd, unique, &iov, 1, &iov, 1);
+	}
+	memcpy(&cmd, buf, cmd_nbytes);
+
+	if (buf_nbytes < cmd_nbytes + cmd.data_len + cmd.metadata_len) {
+		struct iovec iov[3];
+		uint32_t n = 0;
+
+		n = cuse_iov_push(iov, n, arg, cmd_nbytes);
+		n = cuse_iov_push(iov, n, (void *)(uintptr_t)cmd.addr, cmd.data_len);
+		n = cuse_iov_push(iov, n, (void *)(uintptr_t)cmd.metadata, cmd.metadata_len);
+
+		return cuse_reply_ioctl_retry(fd, unique, iov, n, iov, n);
+	}
+
+	// Bounced: some backends submit only from their own DMA-registered heap
+	if (cmd.data_len) {
+		dbuf = xnvme_buf_alloc(dev, cmd.data_len);
+		if (!dbuf) {
+			XNVME_DEBUG("FAILED: xnvme_buf_alloc(data_len: %u)", cmd.data_len);
+			rc = cuse_reply_err(fd, unique, ENOMEM);
+			goto exit;
+		}
+		memcpy(dbuf, (const char *)buf + cmd_nbytes, cmd.data_len);
+	}
+	if (cmd.metadata_len) {
+		mbuf = xnvme_buf_alloc(dev, cmd.metadata_len);
+		if (!mbuf) {
+			XNVME_DEBUG("FAILED: xnvme_buf_alloc(metadata_len: %u)", cmd.metadata_len);
+			rc = cuse_reply_err(fd, unique, ENOMEM);
+			goto exit;
+		}
+		memcpy(mbuf, (const char *)buf + cmd_nbytes + cmd.data_len, cmd.metadata_len);
+	}
+
+	ctx = cuse_ctx_from_cmd(dev, &cmd);
+	err = admin ? xnvme_cmd_pass_admin(&ctx, dbuf, cmd.data_len, mbuf, cmd.metadata_len)
+		    : xnvme_cmd_pass(&ctx, dbuf, cmd.data_len, mbuf, cmd.metadata_len);
+	// A completion carries its status even when 'err' is set; only without one is the errno
+	// all there is to relay
+	if (err && !xnvme_cmd_ctx_cpl_status(&ctx)) {
+		XNVME_DEBUG("FAILED: xnvme_cmd_pass%s(); err(%d)", admin ? "_admin" : "", err);
+		rc = cuse_reply_err(fd, unique, -err);
+		goto exit;
+	}
+
+	reply_nbytes = cmd_nbytes + cmd.data_len + cmd.metadata_len;
+	reply = malloc(reply_nbytes);
+	if (!reply) {
+		XNVME_DEBUG("FAILED: malloc(reply_nbytes: %zu)", reply_nbytes);
+		rc = cuse_reply_err(fd, unique, ENOMEM);
+		goto exit;
+	}
+	memcpy(reply, &cmd, cmd_nbytes);
+	// The 32-bit 'result' truncates to cdw0, as the kernel driver's does
+	((struct nvme_passthru_cmd *)reply)->result = ctx.cpl.result;
+	if (cmd.data_len) {
+		memcpy(reply + cmd_nbytes, dbuf, cmd.data_len);
+	}
+	if (cmd.metadata_len) {
+		memcpy(reply + cmd_nbytes + cmd.data_len, mbuf, cmd.metadata_len);
+	}
+
+	rc = cuse_reply_ioctl(fd, unique, cuse_nvme_status(&ctx), reply, reply_nbytes);
+
+exit:
+	free(reply);
+	xnvme_buf_free(dev, mbuf);
+	xnvme_buf_free(dev, dbuf);
+
+	return rc;
+}
+
 static int
 cuse_dispatch_ioctl(int fd, uint64_t unique, struct xnvme_dev *dev,
-		    const struct fuse_ioctl_in *ioc, const void *XNVME_UNUSED(buf),
-		    size_t XNVME_UNUSED(buf_nbytes))
+		    const struct fuse_ioctl_in *ioc, const void *buf, size_t buf_nbytes)
 {
 	if (ioc->flags & FUSE_IOCTL_COMPAT) {
 		XNVME_DEBUG("FAILED: FUSE_IOCTL_COMPAT is not supported");
@@ -97,6 +239,9 @@ cuse_dispatch_ioctl(int fd, uint64_t unique, struct xnvme_dev *dev,
 			return cuse_reply_err(fd, unique, ENOTTY);
 		}
 		return cuse_reply_ioctl(fd, unique, (int)xnvme_dev_get_nsid(dev), NULL, 0);
+
+	case NVME_IOCTL_ADMIN_CMD:
+		return cuse_passthru(fd, unique, dev, ioc, buf, buf_nbytes);
 
 	default:
 		XNVME_DEBUG("FAILED: unsupported ioctl cmd(0x%x)", ioc->cmd);
