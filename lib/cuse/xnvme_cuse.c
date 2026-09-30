@@ -16,6 +16,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <signal.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,6 +33,11 @@
 // ioctl above 128KiB before this is consulted; it only bounds our own buffer
 #define XNVME_CUSE_MAX_WRITE (1u << 20)
 #define XNVME_CUSE_BUFSIZE (XNVME_CUSE_MAX_WRITE + 4096) // + the fuse/ioctl headers
+
+// The 32-bit command is widened into the 64-bit one; they share their layout up to timeout_ms
+XNVME_STATIC_ASSERT(offsetof(struct nvme_passthru_cmd, timeout_ms) ==
+			    offsetof(struct nvme_passthru_cmd64, timeout_ms),
+		    "nvme_passthru_cmd is not a prefix of nvme_passthru_cmd64")
 
 // Some backends (e.g. uPCIe) keep per-process state their sync command path does not lock
 static pthread_mutex_t g_cuse_dispatch_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -107,7 +113,7 @@ cuse_reply_ioctl_retry(int fd, uint64_t unique, const struct iovec *in_iov, uint
 }
 
 static struct xnvme_cmd_ctx
-cuse_ctx_from_cmd(struct xnvme_dev *dev, const struct nvme_passthru_cmd *cmd)
+cuse_ctx_from_cmd(struct xnvme_dev *dev, const struct nvme_passthru_cmd64 *cmd)
 {
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 
@@ -138,9 +144,11 @@ cuse_passthru(int fd, uint64_t unique, struct xnvme_dev *dev, const struct fuse_
 	      const void *buf, size_t buf_nbytes)
 {
 	void *arg = (void *)(uintptr_t)ioc->arg;
-	int admin = ioc->cmd == NVME_IOCTL_ADMIN_CMD;
-	size_t cmd_nbytes = sizeof(struct nvme_passthru_cmd);
-	struct nvme_passthru_cmd cmd;
+	int admin = ioc->cmd == NVME_IOCTL_ADMIN_CMD || ioc->cmd == NVME_IOCTL_ADMIN64_CMD;
+	size_t cmd_nbytes = (ioc->cmd == NVME_IOCTL_ADMIN_CMD || ioc->cmd == NVME_IOCTL_IO_CMD)
+				    ? sizeof(struct nvme_passthru_cmd)
+				    : sizeof(struct nvme_passthru_cmd64);
+	struct nvme_passthru_cmd64 cmd = {0};
 	struct xnvme_cmd_ctx ctx;
 	void *dbuf = NULL, *mbuf = NULL;
 	char *reply = NULL;
@@ -210,7 +218,11 @@ cuse_passthru(int fd, uint64_t unique, struct xnvme_dev *dev, const struct fuse_
 	}
 	memcpy(reply, &cmd, cmd_nbytes);
 	// The 32-bit 'result' truncates to cdw0, as the kernel driver's does
-	((struct nvme_passthru_cmd *)reply)->result = ctx.cpl.result;
+	if (cmd_nbytes == sizeof(struct nvme_passthru_cmd)) {
+		((struct nvme_passthru_cmd *)reply)->result = ctx.cpl.result;
+	} else {
+		((struct nvme_passthru_cmd64 *)reply)->result = ctx.cpl.result;
+	}
 	if (cmd.data_len) {
 		memcpy(reply + cmd_nbytes, dbuf, cmd.data_len);
 	}
@@ -247,6 +259,7 @@ cuse_dispatch_ioctl(int fd, uint64_t unique, struct xnvme_dev *dev,
 
 	case NVME_IOCTL_ADMIN_CMD:
 	case NVME_IOCTL_IO_CMD:
+	case NVME_IOCTL_ADMIN64_CMD:
 		return cuse_passthru(fd, unique, dev, ioc, buf, buf_nbytes);
 
 	default:
