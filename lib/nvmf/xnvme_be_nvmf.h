@@ -13,12 +13,6 @@
 
 #include <xnvme_dev.h>
 
-#include <xnvme_be_nvmf_debug.h>
-#include <xnvme_be_nvmf_ctrlr.h>
-#include <xnvme_be_nvmf_qpair.h>
-#include <xnvme_be_nvmf_req_pool.h>
-#include <xnvme_be_nvmf_fabric.h>
-
 #ifndef container_of
 #define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))
 #endif
@@ -30,22 +24,23 @@
 #define NVME_CMD_CAPSULE_SIZE sizeof(struct xnvme_spec_cmd_common)
 #define NVME_CPL_CAPSULE_SIZE sizeof(struct xnvme_spec_cpl)
 
+struct xnvme_be_nvmf_qpair;
+
 struct xnvme_be_nvmf_queue {
 	struct xnvme_queue_base base;
 	uint64_t completions_pending;
 	struct xnvme_be_nvmf_qpair *qpair;
 	uint8_t be_rsvd[216]; ///< Auxilary backend data
 };
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_nvmf_queue) == sizeof(struct xnvme_queue), 
-	"Incorrect size of xnvme_be_nvmf_queue");
-
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_nvmf_queue) == sizeof(struct xnvme_queue),
+		    "Incorrect size of xnvme_be_nvmf_queue");
 
 struct xnvme_be_nvmf_state {
-	void *ctrlr; ///< Pointer to attached controller (must be first: platform
-		     ///< stores ctrlr at state[0])
-	void *ns;    ///< Pointer to associated namespace
+	void *ctrlr;       ///< Pointer to attached controller (must be first: platform
+			   ///< stores ctrlr at state[0])
+	void *ns;          ///< Pointer to associated namespace
 	void *admin_qpair; ///< Admin queue pair
-	void *sync_qpair; ///< Synchronous IO queue pair
+	void *sync_qpair;  ///< Synchronous IO queue pair
 	uint8_t _rsvd0[30];
 
 	union {

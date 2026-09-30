@@ -6,63 +6,27 @@
 
 #include <xnvme_cmd.h>
 #include <xnvme_be_nvmf.h>
+#include <xnvme_be_nvmf_ctrlr.h>
+#include <xnvme_be_nvmf_qpair.h>
+#include <xnvme_be_nvmf_req.h>
+#include <xnvme_be_nvmf_fabric.h>
+#include <xnvme_be_nvmf_debug.h>
 
 #define XNVME_MIN_CAPSULE_SIZE sizeof(struct xnvme_spec_cmd)
 #define XNVME_MIN_COMPLETION_SIZE sizeof(struct xnvme_spec_cpl)
 #define XNVME_BE_NVMF_MAX_QSIZE 4096
 
-#define _NVMF_ERROR(fmt, ...) NVMF_ERROR(NVMF_DEBUG_CATEGORY_CORE_QPAIR, fmt, ##__VA_ARGS__)
-#define _NVMF_DEBUG(fmt, ...) NVMF_DEBUG(NVMF_DEBUG_CATEGORY_CORE_QPAIR, fmt, ##__VA_ARGS__)
-
-#if 0
-static void
-_xnvme_be_nvmf_on_send_cmpl(struct xnvme_be_nvmf_qpair *qpair, struct xnvme_be_nvmf_req *req, int status)
-{	
-	return; // no-op
-}
-
-static void
-_xnvme_be_nvmf_on_recv_cmpl(struct xnvme_be_nvmf_qpair *qpair, struct xnvme_be_nvmf_req *req, int status)
-{
-	struct xnvme_cmd_ctx *ctx = req->context;
-	XNVME_DEBUG("INFO: Receive completion received for req: %p, status: %d", req, status);
-	assert(qpair != NULL);
-	assert(req != NULL);
-
-	switch(req->type) {
-		case XNVME_BE_NVMF_REQ_TYPE_USER:
-			XNVME_DEBUG("INFO: User request receive completed");
-			if (ctx->opts & XNVME_CMD_ASYNC) {
-				/* Handle asynchronous completion */
-				struct xnvme_be_nvmf_queue *async_queue = (struct xnvme_be_nvmf_queue *) ctx->async.queue;
-				async_queue->base.outstanding--;
-				async_queue->completions_pending++;
-
-				if (ctx->async.cb) {
-					ctx->async.cb(ctx, ctx->async.cb_arg);
-				}
-			}
-			break;
-		case XNVME_BE_NVMF_REQ_TYPE_INTERNAL:
-			XNVME_DEBUG("INFO: Internal request receive completed");
-			break;
-		default:
-			XNVME_DEBUG("INFO: Unknown request type receive completed");
-			qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
-			break;
-	}
-	return;
-}
-#endif
+#define NVMF_DEBUG_CATEGORY NVMF_DEBUG_CATEGORY_CORE_QPAIR
 
 int
-xnvme_be_nvmf_qpair_create(struct xnvme_be_nvmf_ctrlr *ctrlr, struct xnvme_dev *dev, struct xnvme_be_nvmf_qpair_attr *attr,
+xnvme_be_nvmf_qpair_create(struct xnvme_be_nvmf_ctrlr *ctrlr, struct xnvme_dev *dev,
+			   struct xnvme_be_nvmf_qpair_attr *attr,
 			   struct xnvme_be_nvmf_qpair **qpair)
 {
 	struct xnvme_be_nvmf_qpair *tmp;
 	int err;
 
-    if (!attr) {
+	if (!attr) {
 		return -EINVAL;
 	}
 
@@ -78,7 +42,7 @@ xnvme_be_nvmf_qpair_create(struct xnvme_be_nvmf_ctrlr *ctrlr, struct xnvme_dev *
 		return -EINVAL;
 	}
 
-	err = ctrlr->ops->create_qpair(ctrlr, attr, &tmp);
+	err = ctrlr->ops->qpair_alloc(ctrlr, &tmp);
 	if (err) {
 		return err;
 	}
@@ -88,10 +52,18 @@ xnvme_be_nvmf_qpair_create(struct xnvme_be_nvmf_ctrlr *ctrlr, struct xnvme_dev *
 	tmp->dev = dev;
 	tmp->state = XNVME_NVMF_QPAIR_STATE_INIT;
 
+	err = tmp->ops->qpair_init(tmp);
+	if (err) {
+		NVMF_DEBUG("FAILED: qpair->ops->qpair_init(), err: %d", err);
+		tmp->ops->qpair_free(tmp);
+		return err;
+	}
+
 	err = xnvme_be_nvmf_req_pool_alloc(&tmp->req_pool, attr->qsize);
 	if (err) {
-		_NVMF_ERROR("FAILED: xnvme_be_nvmf_req_pool_alloc(), err: %d", err);
-		free(tmp);
+		NVMF_DEBUG("FAILED: xnvme_be_nvmf_req_pool_alloc(), err: %d", err);
+		tmp->ops->qpair_teardown(tmp);
+		tmp->ops->qpair_free(tmp);
 		return err;
 	}
 
@@ -104,18 +76,19 @@ xnvme_be_nvmf_qpair_connect(struct xnvme_be_nvmf_qpair *qpair)
 {
 	int err;
 
-	err = qpair->ops->connect(qpair);
+	err = qpair->ops->qpair_connect(qpair);
 	if (err) {
-		_NVMF_ERROR("FAILED: transport connect, err: %d", err);
+		NVMF_DEBUG("FAILED: transport connect, err: %d", err);
 		return err;
 	}
 
-	// At this point, the transport has connected, but the fabric connect sequence is not complete.
+	// At this point, the transport has connected, but the fabric connect sequence is not
+	// complete.
 	assert(qpair->state == XNVME_NVMF_QPAIR_STATE_CONNECTED);
 
-	err = xnvme_be_nvmf_send_fabric_connect_command(qpair);
+	err = xnvme_be_nvmf_fabric_connect(qpair);
 	if (err) {
-		_NVMF_ERROR("FAILED: send fabric connect command, err: %d", err);
+		NVMF_DEBUG("FAILED: send fabric connect command, err: %d", err);
 		return err;
 	}
 
@@ -127,19 +100,48 @@ xnvme_be_nvmf_qpair_connect(struct xnvme_be_nvmf_qpair *qpair)
 int
 xnvme_be_nvmf_qpair_disconnect(struct xnvme_be_nvmf_qpair *qpair)
 {
-	return qpair->ops->disconnect(qpair);
+	return qpair->ops->qpair_disconnect(qpair);
 }
 
 int
 xnvme_be_nvmf_qpair_destroy(struct xnvme_be_nvmf_qpair *qpair)
 {
-	int err; 
+	int err;
 
 	err = xnvme_be_nvmf_req_pool_free(qpair->req_pool);
 	if (err) {
-		_NVMF_ERROR("FAILED: nvme_be_nvmf_req_pool_free(), err: %d", err);
+		NVMF_DEBUG("FAILED: nvme_be_nvmf_req_pool_free(), err: %d", err);
 		return err;
 	}
 
-	return qpair->ops->destroy(qpair);
+	err = qpair->ops->qpair_teardown(qpair);
+	if (err) {
+		NVMF_DEBUG("FAILED: qpair->ops->qpair_teardown(), err: %d", err);
+		return err;
+	}
+
+	qpair->ops->qpair_free(qpair);
+
+	return 0;
+}
+
+int
+xnvme_be_nvmf_qpair_complete(struct xnvme_be_nvmf_qpair *qpair, const struct xnvme_spec_cpl *cpl)
+{
+	struct xnvme_be_nvmf_req *req;
+	struct xnvme_cmd_ctx *ctx;
+
+	req = xnvme_be_nvmf_req_get(qpair->req_pool, cpl->cid);
+	if (!req) {
+		NVMF_DEBUG("FAILED: xnvme_be_nvmf_req_get() for cid: %u", cpl->cid);
+		return -EINVAL;
+	}
+
+	ctx = (struct xnvme_cmd_ctx *)req->context;
+	ctx->cpl = *cpl;
+
+	req->cmpl_type = XNVME_BE_NVMF_REQ_CMPL_TYPE_RECV;
+	req->status = 0;
+
+	return 0;
 }

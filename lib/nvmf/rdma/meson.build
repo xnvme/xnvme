@@ -1,8 +1,7 @@
 xnvmelib_nvmf_rdma_source = files(
   'xnvme_be_nvmf_rdma.c',
   'xnvme_be_nvmf_rdma_cm.c',
-  'xnvme_be_nvmf_rdma_ctrlr.c',
-  'xnvme_be_nvmf_rdma_qpair.c',
+  'xnvme_be_nvmf_rdma_verbs.c',
 )
 
 if get_option('with-nvmf').enabled()

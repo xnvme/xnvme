@@ -11,6 +11,8 @@
 #include <xnvme_dev.h>
 #include <xnvme_queue.h>
 #include <xnvme_be_nvmf.h>
+#include <xnvme_be_nvmf_qpair.h>
+#include <xnvme_be_nvmf_req.h>
 
 /**
  * Command Queue for asynchronous command submission and completion
@@ -41,15 +43,15 @@ xnvme_be_nvmf_queue_term(struct xnvme_queue *q)
 	struct xnvme_be_nvmf_qpair *qpair = queue->qpair;
 	int err;
 
-	if (qpair->state == XNVME_NVMF_QPAIR_STATE_CONNECTED || \
-			qpair->state == XNVME_NVMF_QPAIR_STATE_READY) {
+	if (qpair->state == XNVME_NVMF_QPAIR_STATE_CONNECTED ||
+	    qpair->state == XNVME_NVMF_QPAIR_STATE_READY) {
 		err = xnvme_be_nvmf_qpair_disconnect(qpair);
 		if (err) {
 			XNVME_DEBUG("Failed to disconnect qpair: %d", err);
 			return err;
 		}
 	}
-	
+
 	err = xnvme_be_nvmf_qpair_destroy(qpair);
 	if (err) {
 		XNVME_DEBUG("Failed to destroy qpair: %d", err);
@@ -65,7 +67,7 @@ xnvme_be_nvmf_queue_poke(struct xnvme_queue *q, uint32_t max)
 	struct xnvme_be_nvmf_queue *queue = (struct xnvme_be_nvmf_queue *)q;
 	struct xnvme_be_nvmf_qpair *qpair = queue->qpair;
 
-	return xnvme_be_nvmf_qpair_process_completions(qpair, max);
+	return xnvme_be_nvmf_qpair_poll(qpair, max);
 }
 
 int
@@ -114,7 +116,8 @@ xnvme_be_nvmf_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_
 		return -ENOSPC;
 	}
 
-	err = xnvme_be_nvmf_cmd_iov(queue->qpair, ctx, dvec, dvec_cnt, dvec_nbytes, &mvec, mvec_cnt, mbuf_nbytes);
+	err = xnvme_be_nvmf_cmd_iov(queue->qpair, ctx, dvec, dvec_cnt, dvec_nbytes, &mvec,
+				    mvec_cnt, mbuf_nbytes);
 	if (!err) {
 		queue->base.outstanding++;
 		goto free_req;
