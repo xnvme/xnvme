@@ -260,6 +260,7 @@ cuse_dispatch_ioctl(int fd, uint64_t unique, struct xnvme_dev *dev,
 	case NVME_IOCTL_ADMIN_CMD:
 	case NVME_IOCTL_IO_CMD:
 	case NVME_IOCTL_ADMIN64_CMD:
+	case NVME_IOCTL_IO64_CMD:
 		return cuse_passthru(fd, unique, dev, ioc, buf, buf_nbytes);
 
 	default:
