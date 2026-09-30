@@ -113,6 +113,7 @@ struct xnvme_cli_args {
 	bool save;
 	uint32_t reset;
 	bool verbose;
+	bool no_cuse;
 	uint32_t help;
 
 	const char *be;
@@ -386,7 +387,9 @@ enum xnvme_cli_opt {
 
 	XNVME_CLI_OPT_REPORT_FREQ = 138, ///< XNVME_CLI_OPT_REPORT_FREQ
 
-	XNVME_CLI_OPT_END = 139, ///< XNVME_CLI_OPT_END
+	XNVME_CLI_OPT_NO_CUSE = 139, ///< XNVME_CLI_OPT_NO_CUSE
+
+	XNVME_CLI_OPT_END = 140, ///< XNVME_CLI_OPT_END
 };
 
 /**

@@ -625,6 +625,12 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "The HOMI identifier to share controllers under",
 	},
 	{
+		.opt = XNVME_CLI_OPT_NO_CUSE,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
+		.name = "no-cuse",
+		.descr = "Disable the NVMe-driver ioctl() CUSE mimic",
+	},
+	{
 		.opt = XNVME_CLI_OPT_HOST_HEAP_SIZE,
 		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "host_heap_size",
@@ -1679,6 +1685,9 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 		break;
 	case XNVME_CLI_OPT_HOMI_ID:
 		args->homi_id = num;
+		break;
+	case XNVME_CLI_OPT_NO_CUSE:
+		args->no_cuse = true;
 		break;
 	case XNVME_CLI_OPT_HOST_HEAP_SIZE:
 		args->host_heap_size = num;
