@@ -138,3 +138,22 @@ def test_idfy_ctrlr64(cijoe, device, be_opts, cli_args):
         nvme=UBLK_NVME,
     )
     assert not err
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_write_vec(cijoe, device, be_opts, cli_args):
+    # SPDK needs SGL for a vectored command, and xNVMe fails it rather than bounce
+    if be_opts["be"] == "spdk" and "nosgl" in device["labels"]:
+        pytest.skip(reason="[be=spdk] vectored passthru needs SGL support")
+
+    err, _ = qublk_session(
+        cijoe,
+        device["uri"],
+        be_opts["be"],
+        [
+            f"xnvme_file dump-sync-iovec {UBLK_NVME} --be {CUSE_BE} --data-nbytes 8192 "
+            "--sync nvme --vec-cnt 2",
+        ],
+        nvme=UBLK_NVME,
+    )
+    assert not err
