@@ -39,7 +39,8 @@ struct xnvme_cuse {
 /**
  * Start a CUSE session mimicking the Linux kernel NVMe driver's ioctl()
  * interface (NVME_IOCTL_ID, NVME_IOCTL_ADMIN_CMD, NVME_IOCTL_IO_CMD,
- * NVME_IOCTL_ADMIN64_CMD) for 'dev', creating /dev/<name>
+ * NVME_IOCTL_ADMIN64_CMD, NVME_IOCTL_IO64_CMD) for 'dev', creating
+ * /dev/<name>
  *
  * Returns once the device is up or has failed to come up; does not block
  * waiting for it to stop. Tear it down with ::xnvme_cuse_stop even on

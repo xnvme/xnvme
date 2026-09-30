@@ -84,6 +84,7 @@ def test_read(cijoe, device, be_opts, cli_args):
             f"nvme read {UBLK_NVME} -n 1 -s 0 -c 0 -z $lba -o binary > $rbuf",
             "hexdump -C $rbuf | head",
             "rm -f $rbuf",
+            f"lblk read {UBLK_NVME} --be {CUSE_BE} --slba 0x0 --nlb 0",
         ],
         nvme=UBLK_NVME,
     )
@@ -103,6 +104,7 @@ def test_write(cijoe, device, be_opts, cli_args):
             "dd if=/dev/urandom of=$wbuf bs=$lba count=1 2>/dev/null",
             f"nvme write {UBLK_NVME} -n 1 -s 0 -c 0 -z $lba -d $wbuf",
             "rm -f $wbuf",
+            f"lblk write {UBLK_NVME} --be {CUSE_BE} --slba 0x0 --nlb 0",
         ],
         nvme=UBLK_NVME,
     )
@@ -117,6 +119,7 @@ def test_flush(cijoe, device, be_opts, cli_args):
         be_opts["be"],
         [
             f"nvme flush {UBLK_NVME} -n 1",
+            f"xnvme pioc {UBLK_NVME} --be {CUSE_BE} --opcode 0x0 --nsid 1",
         ],
         nvme=UBLK_NVME,
     )
