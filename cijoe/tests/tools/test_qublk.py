@@ -12,7 +12,15 @@ test_qublk_fs.py.
 import pytest
 
 from ..conftest import xnvme_parametrize
-from .qublk_session import UBLK_NODE, qublk_session, qublk_teardown, require_ublk
+from .qublk_session import (
+    UBLK_NODE,
+    UBLK_NVME,
+    is_userspace_nvme,
+    qublk_session,
+    qublk_teardown,
+    require_cuse,
+    require_ublk,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -103,5 +111,22 @@ def test_run_max_io_bytes(cijoe, device, be_opts, cli_args):
         be_opts["be"],
         [f"dd if={UBLK_NODE} of=/dev/null bs=128k count=64 iflag=direct"],
         args="--qdepth 64 --max-io-bytes 131072",
+    )
+    assert not err
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_run_no_nvme_device(cijoe, device, be_opts, cli_args):
+    """A device not on a user-space NVMe driver gets no /dev/ublkb<N>-nvme"""
+
+    if is_userspace_nvme(be_opts["be"]):
+        pytest.skip(f"[be={be_opts['be']}] gets /dev/ublkb<N>-nvme")
+    require_cuse(cijoe)
+
+    # qublk starts the CUSE device before the block device, so once the
+    # session's readiness wait has seen the block device, a CUSE device that
+    # was going to appear already has
+    err, _ = qublk_session(
+        cijoe, device["uri"], be_opts["be"], [f"test ! -e {UBLK_NVME}"]
     )
     assert not err

@@ -12,6 +12,10 @@ runs a payload against it, and tears it down with SIGINT.
 
 * qublk_teardown(cijoe, mountpoint): remove leftovers from a failed test-case
 
+* require_cuse(cijoe): skip unless the CUSE ioctl mimic can actually be used
+
+* is_userspace_nvme(be): whether qublk serves the CUSE ioctl mimic on 'be' at all
+
 Three things the session-script must get right, each of which has bitten before:
 
 * The lines are joined by newline, not by ';'. The background launch already ends in
@@ -30,6 +34,7 @@ import pytest
 
 UBLK_NODE = "/dev/ublkb0"
 UBLK_CONTROL = "/dev/ublk-control"
+UBLK_NVME = f"{UBLK_NODE}-nvme"
 
 DEFAULT_TIMEOUT_TICKS = 50  # 0.2s each, so 10s for the block-device to appear
 
@@ -56,6 +61,35 @@ def require_ublk(cijoe):
         pytest.skip(f"qublk requires the ublk_drv module ({UBLK_CONTROL} is absent)")
 
 
+def require_cuse(cijoe):
+    """
+    Skip unless qublk's CUSE ioctl mimic (on by default for a device on a
+    user-space NVMe driver; --no-cuse disables it) can actually come up
+
+    Root is already covered by require_ublk(); this only adds the 'cuse'
+    module, whose absence would otherwise make the -nvme device silently
+    never appear rather than failing the test-case with a clear reason.
+    """
+
+    cijoe.run("modprobe cuse 2>/dev/null || true")
+
+    err, _ = cijoe.run("test -c /dev/cuse")
+    if err:
+        pytest.skip("qublk's CUSE mimic requires /dev/cuse (modprobe cuse)")
+
+
+def is_userspace_nvme(be):
+    """
+    Whether 'be' is one of xNVMe's user-space NVMe drivers
+
+    xnvme_cuse_start() declines every other backend: a kernel-managed NVMe
+    device already has /dev/nvme<X>n<Y> and /dev/ng<X>n<Y>, and anything else
+    has no NVMe interface to mimic. So only these get /dev/ublkb<N>-nvme.
+    """
+
+    return be in ("spdk", "libvfn") or be.startswith("upcie")
+
+
 def require_mkfs_xfs(cijoe):
     """Skip unless mkfs.xfs is available; the fs-level cases format with XFS"""
 
@@ -64,18 +98,23 @@ def require_mkfs_xfs(cijoe):
         pytest.skip("the filesystem-level cases require mkfs.xfs (xfsprogs)")
 
 
-def qublk_script(uri, be, args, payload, node=UBLK_NODE, mountpoint=None):
+def qublk_script(uri, be, args, payload, node=UBLK_NODE, nvme=None, mountpoint=None):
     """
     Produce the shell session serving 'node' from the given device
 
     'payload' is a list of shell lines run while the block-device is served; its exit status
     becomes the exit status of the session. When 'mountpoint' is given it is unmounted during
-    teardown regardless of what the payload did.
+    teardown regardless of what the payload did. When 'nvme' is given, the readiness wait
+    also covers that CUSE char-device, since a case whose payload touches it must not start
+    running before it exists.
     """
 
     umount = [
         f"umount {mountpoint} 2>/dev/null || umount -l {mountpoint} 2>/dev/null || true"
     ]
+
+    ready_test = f"[ -b {node} ]" + (f" && [ -c {nvme} ]" if nvme else "")
+    missing_msg = "MISSING-DEVICE" if not nvme else "MISSING-DEVICE-OR-NVME"
 
     return "\n".join(
         [
@@ -91,8 +130,8 @@ def qublk_script(uri, be, args, payload, node=UBLK_NODE, mountpoint=None):
             ),
             "pid=$!",
             f"for i in $(seq 1 {DEFAULT_TIMEOUT_TICKS}); "
-            f"do [ -b {node} ] && break; sleep 0.2; done",
-            f"if [ ! -b {node} ]; then echo MISSING-DEVICE; cat $log; "
+            f"do {ready_test} && break; sleep 0.2; done",
+            f"if ! {{ {ready_test}; }}; then echo {missing_msg}; cat $log; "
             "kill -INT $pid 2>/dev/null; exit 1; fi",
             "(",
             "set -e",
@@ -110,10 +149,14 @@ def qublk_script(uri, be, args, payload, node=UBLK_NODE, mountpoint=None):
     )
 
 
-def qublk_session(cijoe, uri, be, payload, args="", node=UBLK_NODE, mountpoint=None):
+def qublk_session(
+    cijoe, uri, be, payload, args="", node=UBLK_NODE, nvme=None, mountpoint=None
+):
     """Run 'payload' against the ublk block-device served by qublk"""
 
-    script = qublk_script(uri, be, args, payload, node=node, mountpoint=mountpoint)
+    script = qublk_script(
+        uri, be, args, payload, node=node, nvme=nvme, mountpoint=mountpoint
+    )
     # A payload line is free to contain a single quote (e.g. an awk program);
     # close the outer quoting, emit an escaped one, and reopen it
     escaped = script.replace("'", "'\\''")
