@@ -132,6 +132,8 @@ xnvmelib = library(
   install: true,
 )
 
+subdir('cuse')
+
 # pkg-config -- describing how to consume the xNVMe library
 pconf.generate(
   xnvmelib,
