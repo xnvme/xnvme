@@ -4,7 +4,10 @@ the Linux kernel NVMe driver's ioctl() interface on /dev/ublkb<dev_id>-ctl.
 Each case sends the same operation through both nvme-cli and an xNVMe
 command-line tool: 'nvme id-ctrl'/'xnvme idfy-ctrlr' and 'nvme
 smart-log'/'xnvme log-health' go through NVME_IOCTL_ADMIN_CMD, and 'nvme
-read'/'nvme write'/'nvme flush' go through NVME_IOCTL_IO_CMD. Cases for
+read'/'nvme write'/'nvme flush' go through NVME_IOCTL_IO_CMD. 'lblk
+read'/'lblk write'/'xnvme pioc' issue the same commands but, on a kernel
+new enough to have it, through NVME_IOCTL_IO64_CMD instead, which is why
+they only join here now that that ioctl is answered too. Cases for
 further ioctls are added here as lib/xnvme_cuse.c grows to answer them.
 
 The xNVMe side's --be is fixed to 'nil': it is lib/xnvme_cuse.c being
@@ -93,6 +96,7 @@ def test_read(cijoe, device, be_opts, cli_args):
             f"nvme read {UBLK_CTL} -n 1 -s 0 -c 0 -z $lba -o binary > $rbuf",
             "hexdump -C $rbuf | head",
             "rm -f $rbuf",
+            f"lblk read {UBLK_CTL} --be {CTL_BE} --slba 0x0 --nlb 0",
         ],
         ctl=UBLK_CTL,
     )
@@ -112,6 +116,7 @@ def test_write(cijoe, device, be_opts, cli_args):
             "dd if=/dev/urandom of=$wbuf bs=$lba count=1 2>/dev/null",
             f"nvme write {UBLK_CTL} -n 1 -s 0 -c 0 -z $lba -d $wbuf",
             "rm -f $wbuf",
+            f"lblk write {UBLK_CTL} --be {CTL_BE} --slba 0x0 --nlb 0",
         ],
         ctl=UBLK_CTL,
     )
@@ -126,6 +131,7 @@ def test_flush(cijoe, device, be_opts, cli_args):
         be_opts["be"],
         [
             f"nvme flush {UBLK_CTL} -n 1",
+            f"xnvme pioc {UBLK_CTL} --be {CTL_BE} --opcode 0x0 --nsid 1",
         ],
         ctl=UBLK_CTL,
     )

@@ -251,8 +251,8 @@ cuse_run_passthru64(struct xnvme_dev *xdev, int admin, const struct nvme_passthr
 
 /**
  * Answer one FUSE_IOCTL request; NVME_IOCTL_ID, NVME_IOCTL_ADMIN_CMD,
- * NVME_IOCTL_IO_CMD and NVME_IOCTL_ADMIN64_CMD are answered so far,
- * everything else declines with ENOTTY
+ * NVME_IOCTL_IO_CMD, NVME_IOCTL_ADMIN64_CMD and NVME_IOCTL_IO64_CMD are
+ * answered so far, everything else declines with ENOTTY
  */
 static int
 cuse_dispatch_ioctl(int fd, uint64_t unique, struct xnvme_dev *xdev,
@@ -349,11 +349,17 @@ cuse_dispatch_ioctl(int fd, uint64_t unique, struct xnvme_dev *xdev,
 		return rc;
 	}
 
-	case NVME_IOCTL_ADMIN64_CMD: {
+	case NVME_IOCTL_ADMIN64_CMD:
+	case NVME_IOCTL_IO64_CMD: {
 		const struct nvme_passthru_cmd64 *ucmd;
 		void *dbuf = NULL, *mbuf = NULL, *reply = NULL;
 		size_t reply_nbytes = 0;
 		int result, rc;
+
+		if (ioc->cmd == NVME_IOCTL_IO64_CMD &&
+		    xnvme_dev_get_ident(xdev)->dtype == XNVME_DEV_TYPE_NVME_CONTROLLER) {
+			return cuse_reply_err(fd, unique, ENOTTY);
+		}
 
 		if (in_bufsz < cmd_nbytes64) {
 			struct iovec iov = {arg, cmd_nbytes64};
@@ -401,7 +407,8 @@ cuse_dispatch_ioctl(int fd, uint64_t unique, struct xnvme_dev *xdev,
 			       ucmd->metadata_len);
 		}
 
-		result = cuse_run_passthru64(xdev, 1, ucmd, dbuf, mbuf, &reply, &reply_nbytes);
+		result = cuse_run_passthru64(xdev, ioc->cmd == NVME_IOCTL_ADMIN64_CMD, ucmd, dbuf,
+					     mbuf, &reply, &reply_nbytes);
 		xnvme_buf_free(xdev, dbuf);
 		xnvme_buf_free(xdev, mbuf);
 
