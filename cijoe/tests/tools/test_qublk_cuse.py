@@ -121,3 +121,17 @@ def test_flush(cijoe, device, be_opts, cli_args):
         nvme=UBLK_NVME,
     )
     assert not err
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_idfy_ctrlr64(cijoe, device, be_opts, cli_args):
+    err, _ = qublk_session(
+        cijoe,
+        device["uri"],
+        be_opts["be"],
+        [
+            f"xnvme_tests_cuse_admin64_identify identify64 {UBLK_NVME}",
+        ],
+        nvme=UBLK_NVME,
+    )
+    assert not err
