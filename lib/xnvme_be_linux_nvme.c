@@ -218,7 +218,7 @@ exit:
 #ifdef NVME_IOCTL_IO64_CMD_VEC
 int
 xnvme_be_linux_nvme_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-			    size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
+			    size_t dvec_nbytes, void *mbuf, size_t mbuf_nbytes)
 {
 	struct nvme_passthru_cmd64 *kcmd = (void *)ctx;
 	int err;
@@ -229,11 +229,13 @@ xnvme_be_linux_nvme_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_FS_OPC_READ:
 		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
+		ctx->cmd.nvm.nlb = (dvec_nbytes / ctx->dev->geo.lba_nbytes) - 1;
 		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
 		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
+		ctx->cmd.nvm.nlb = (dvec_nbytes / ctx->dev->geo.lba_nbytes) - 1;
 		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
 		break;
 	}
