@@ -114,8 +114,11 @@ def qublk_session(cijoe, uri, be, payload, args="", node=UBLK_NODE, mountpoint=N
     """Run 'payload' against the ublk block-device served by qublk"""
 
     script = qublk_script(uri, be, args, payload, node=node, mountpoint=mountpoint)
+    # A payload line is free to contain a single quote (e.g. an awk program);
+    # close the outer quoting, emit an escaped one, and reopen it
+    escaped = script.replace("'", "'\\''")
 
-    return cijoe.run(f"bash -c '{script}'")
+    return cijoe.run(f"bash -c '{escaped}'")
 
 
 def qublk_teardown(cijoe, mountpoint=None, node=UBLK_NODE):
