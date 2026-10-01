@@ -3,7 +3,8 @@ qublk's CUSE ioctl mimic (on by default; --no-cuse disables it) answers
 the Linux kernel NVMe driver's ioctl() interface on /dev/ublkb<dev_id>-ctl.
 Each case sends the same operation through both nvme-cli and an xNVMe
 command-line tool: 'nvme id-ctrl'/'xnvme idfy-ctrlr' and 'nvme
-smart-log'/'xnvme log-health' go through NVME_IOCTL_ADMIN_CMD. Cases for
+smart-log'/'xnvme log-health' go through NVME_IOCTL_ADMIN_CMD, and 'nvme
+read'/'nvme write'/'nvme flush' go through NVME_IOCTL_IO_CMD. Cases for
 further ioctls are added here as lib/xnvme_cuse.c grows to answer them.
 
 The xNVMe side's --be is fixed to 'nil': it is lib/xnvme_cuse.c being
@@ -71,6 +72,60 @@ def test_log_health(cijoe, device, be_opts, cli_args):
             # namespace, the same reason 'xnvme log-health' defaults to the broadcast nsid
             f"nvme smart-log {UBLK_CTL}",
             f"xnvme log-health {UBLK_CTL} --be {CTL_BE}",
+        ],
+        ctl=UBLK_CTL,
+    )
+    assert not err
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_read(cijoe, device, be_opts, cli_args):
+    err, _ = qublk_session(
+        cijoe,
+        device["uri"],
+        be_opts["be"],
+        [
+            # nvme-cli needs an explicit --data-size; look up the LBA size first, captured
+            # into a variable so 'set -e' catches a failing 'lblk info', not awk's exit status
+            f"info=$(lblk info {UBLK_CTL} --be {CTL_BE})",
+            "lba=$(echo \"$info\" | awk '/lba_nbytes:/{print $2}')",
+            "rbuf=$(mktemp)",
+            f"nvme read {UBLK_CTL} -n 1 -s 0 -c 0 -z $lba -o binary > $rbuf",
+            "hexdump -C $rbuf | head",
+            "rm -f $rbuf",
+        ],
+        ctl=UBLK_CTL,
+    )
+    assert not err
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_write(cijoe, device, be_opts, cli_args):
+    err, _ = qublk_session(
+        cijoe,
+        device["uri"],
+        be_opts["be"],
+        [
+            f"info=$(lblk info {UBLK_CTL} --be {CTL_BE})",
+            "lba=$(echo \"$info\" | awk '/lba_nbytes:/{print $2}')",
+            "wbuf=$(mktemp)",
+            "dd if=/dev/urandom of=$wbuf bs=$lba count=1 2>/dev/null",
+            f"nvme write {UBLK_CTL} -n 1 -s 0 -c 0 -z $lba -d $wbuf",
+            "rm -f $wbuf",
+        ],
+        ctl=UBLK_CTL,
+    )
+    assert not err
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_flush(cijoe, device, be_opts, cli_args):
+    err, _ = qublk_session(
+        cijoe,
+        device["uri"],
+        be_opts["be"],
+        [
+            f"nvme flush {UBLK_CTL} -n 1",
         ],
         ctl=UBLK_CTL,
     )

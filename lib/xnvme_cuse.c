@@ -207,8 +207,9 @@ cuse_run_passthru(struct xnvme_dev *xdev, int admin, const struct nvme_passthru_
 }
 
 /**
- * Answer one FUSE_IOCTL request; NVME_IOCTL_ID and NVME_IOCTL_ADMIN_CMD are
- * answered so far, everything else declines with ENOTTY
+ * Answer one FUSE_IOCTL request; NVME_IOCTL_ID, NVME_IOCTL_ADMIN_CMD and
+ * NVME_IOCTL_IO_CMD are answered so far, everything else declines with
+ * ENOTTY
  */
 static int
 cuse_dispatch_ioctl(int fd, uint64_t unique, struct xnvme_dev *xdev,
@@ -231,11 +232,19 @@ cuse_dispatch_ioctl(int fd, uint64_t unique, struct xnvme_dev *xdev,
 		}
 		return cuse_reply_ioctl(fd, unique, (int)xnvme_dev_get_nsid(xdev), NULL, 0);
 
-	case NVME_IOCTL_ADMIN_CMD: {
+	case NVME_IOCTL_ADMIN_CMD:
+	case NVME_IOCTL_IO_CMD: {
 		const struct nvme_passthru_cmd *ucmd;
 		void *dbuf = NULL, *mbuf = NULL, *reply = NULL;
 		size_t reply_nbytes = 0;
 		int result, rc;
+
+		// A controller has no namespace of its own; match the kernel
+		// driver's own NVME_IOCTL_ID precedent above
+		if (ioc->cmd == NVME_IOCTL_IO_CMD &&
+		    xnvme_dev_get_ident(xdev)->dtype == XNVME_DEV_TYPE_NVME_CONTROLLER) {
+			return cuse_reply_err(fd, unique, ENOTTY);
+		}
 
 		if (in_bufsz < cmd_nbytes) {
 			struct iovec iov = {arg, cmd_nbytes};
@@ -285,7 +294,8 @@ cuse_dispatch_ioctl(int fd, uint64_t unique, struct xnvme_dev *xdev,
 			       ucmd->metadata_len);
 		}
 
-		result = cuse_run_passthru(xdev, 1, ucmd, dbuf, mbuf, &reply, &reply_nbytes);
+		result = cuse_run_passthru(xdev, ioc->cmd == NVME_IOCTL_ADMIN_CMD, ucmd, dbuf,
+					   mbuf, &reply, &reply_nbytes);
 		xnvme_buf_free(xdev, dbuf);
 		xnvme_buf_free(xdev, mbuf);
 
