@@ -67,3 +67,57 @@ def test_log_health(cijoe, device, be_opts, cli_args):
         nvme=UBLK_NVME,
     )
     assert not err
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_read(cijoe, device, be_opts, cli_args):
+    err, _ = qublk_session(
+        cijoe,
+        device["uri"],
+        be_opts["be"],
+        [
+            # nvme-cli needs an explicit --data-size; look up the LBA size first, captured
+            # into a variable so 'set -e' catches a failing 'lblk info', not awk's exit status
+            f"info=$(lblk info {UBLK_NVME} --be {CUSE_BE})",
+            "lba=$(echo \"$info\" | awk '/lba_nbytes:/{print $2}')",
+            "rbuf=$(mktemp)",
+            f"nvme read {UBLK_NVME} -n 1 -s 0 -c 0 -z $lba -o binary > $rbuf",
+            "hexdump -C $rbuf | head",
+            "rm -f $rbuf",
+        ],
+        nvme=UBLK_NVME,
+    )
+    assert not err
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_write(cijoe, device, be_opts, cli_args):
+    err, _ = qublk_session(
+        cijoe,
+        device["uri"],
+        be_opts["be"],
+        [
+            f"info=$(lblk info {UBLK_NVME} --be {CUSE_BE})",
+            "lba=$(echo \"$info\" | awk '/lba_nbytes:/{print $2}')",
+            "wbuf=$(mktemp)",
+            "dd if=/dev/urandom of=$wbuf bs=$lba count=1 2>/dev/null",
+            f"nvme write {UBLK_NVME} -n 1 -s 0 -c 0 -z $lba -d $wbuf",
+            "rm -f $wbuf",
+        ],
+        nvme=UBLK_NVME,
+    )
+    assert not err
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_flush(cijoe, device, be_opts, cli_args):
+    err, _ = qublk_session(
+        cijoe,
+        device["uri"],
+        be_opts["be"],
+        [
+            f"nvme flush {UBLK_NVME} -n 1",
+        ],
+        nvme=UBLK_NVME,
+    )
+    assert not err
