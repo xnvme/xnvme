@@ -147,6 +147,11 @@ cuse_passthru(int fd, uint64_t unique, struct xnvme_dev *dev, const struct fuse_
 	size_t reply_nbytes;
 	int err, rc;
 
+	// As the kernel driver: a controller has no namespace of its own to send I/O to
+	if (!admin && xnvme_dev_get_ident(dev)->dtype == XNVME_DEV_TYPE_NVME_CONTROLLER) {
+		return cuse_reply_err(fd, unique, ENOTTY);
+	}
+
 	if (buf_nbytes < cmd_nbytes) {
 		struct iovec iov = {arg, cmd_nbytes};
 
@@ -241,6 +246,7 @@ cuse_dispatch_ioctl(int fd, uint64_t unique, struct xnvme_dev *dev,
 		return cuse_reply_ioctl(fd, unique, (int)xnvme_dev_get_nsid(dev), NULL, 0);
 
 	case NVME_IOCTL_ADMIN_CMD:
+	case NVME_IOCTL_IO_CMD:
 		return cuse_passthru(fd, unique, dev, ioc, buf, buf_nbytes);
 
 	default:
