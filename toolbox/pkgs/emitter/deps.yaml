@@ -294,6 +294,20 @@ deps:
       yum: [openssl-devel, openssl11-devel]
       zypper: [libopenssl-devel]
 
+  rdma-core:
+    notes: Required by SPDK for RDMA support
+    ver: 0.0
+    when: [building, running]
+    purpose: {be: [spdk], async: [rdma]}
+    names:
+      default: [rdma-core, rdma-core-dev]
+      apt: [rdma-core, libibverbs-dev, librdmacm-dev]
+      dnf: [rdma-core, rdma-core-devel]
+      emerge: [sys-cluster/rdma-core]
+      pacman: [extra/rdma-core]
+      yum: [rdma-core, rdma-core-devel]
+      zypper: [rdma-core, rdma-core-devel]
+
 apps:
   fio:
     notes: The flexible I/O tester (fio), supports xNVMe when fio is built from source
@@ -320,7 +334,7 @@ defaults:
   linux:
     deps:
     - [sys, [archive, bash, cunit, clang-format, elftools, find, git, jinja2, libaio, libisal, liburing, libuuid, make, meson,
-        nasm, ncurses, numactl, openssl, patch, pipx, pkg-config, python3, tabulate]]
+        nasm, ncurses, numactl, openssl, patch, pipx, pkg-config, python3, tabulate, rdma-core]]
     - [src, [libvfn]]
     apps:
     - [src, [fio]]
@@ -351,7 +365,7 @@ platforms:
   ver: [latest]
   os: linux
   mng: apk
-  drop: [elftools, libisal]
+  drop: [elftools, libisal, rdma-core, rdma-core-dev]
   alt:
   - [pip, [pipx]]
   aux:
