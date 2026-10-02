@@ -91,8 +91,8 @@ _print_nvme_completion(struct xnvme_spec_cpl *cpl)
 #define _NVMF_TRACE(category, ...) \
 	_NVMF_DEBUG_PRINT(NVMF_DEBUG_LOG_LEVEL_TRACE, category, __VA_ARGS__)
 
-#define NVMF_INFO(fmt, ...) _NVMF_INFO(NVMF_DEBUG_CATEGORY, fmt, ##__VA_ARGS__)
-#define NVMF_WARN(fmt, ...) _NVMF_WARN(NVMF_DEBUG_CATEGORY, fmt, ##__VA_ARGS__)
+#define NVMF_INFO(fmt, ...)  _NVMF_INFO(NVMF_DEBUG_CATEGORY, fmt, ##__VA_ARGS__)
+#define NVMF_WARN(fmt, ...)  _NVMF_WARN(NVMF_DEBUG_CATEGORY, fmt, ##__VA_ARGS__)
 #define NVMF_TRACE(fmt, ...) _NVMF_TRACE(NVMF_DEBUG_CATEGORY, fmt, ##__VA_ARGS__)
 #define NVMF_ERROR(fmt, ...) _NVMF_ERROR(NVMF_DEBUG_CATEGORY, fmt, ##__VA_ARGS__)
 #define NVMF_DEBUG(fmt, ...) _NVMF_DEBUG(NVMF_DEBUG_CATEGORY, fmt, ##__VA_ARGS__)
