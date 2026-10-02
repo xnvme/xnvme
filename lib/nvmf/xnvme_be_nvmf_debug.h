@@ -115,13 +115,13 @@ _print_nvme_completion(struct xnvme_spec_cpl *XNVME_UNUSED(cpl))
 	return;
 }
 
-#define _NVMF_DEBUG_PRINT(level, category, ...) 
+#define _NVMF_DEBUG_PRINT(level, category, ...)
 
-#define _NVMF_DEBUG(category, ...) 
-#define _NVMF_INFO(category, ...) 
-#define _NVMF_WARN(category, ...) 
-#define _NVMF_ERROR(category, ...) 
-#define _NVMF_TRACE(category, ...) 
+#define _NVMF_DEBUG(category, ...)
+#define _NVMF_INFO(category, ...)
+#define _NVMF_WARN(category, ...)
+#define _NVMF_ERROR(category, ...)
+#define _NVMF_TRACE(category, ...)
 
 #define NVMF_INFO(fmt, ...)
 #define NVMF_WARN(fmt, ...)
