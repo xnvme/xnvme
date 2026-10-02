@@ -84,7 +84,7 @@ _handle_send_cmpl(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc)
 }
 
 static inline int
-_repost_recv_buffer(struct xnvme_be_nvmf_rdma_qpair *rdma_qpair, uint64_t index, struct ibv_wc *wc)
+_repost_recv_buffer(struct xnvme_be_nvmf_rdma_qpair *rdma_qpair, uint64_t index, struct ibv_wc *XNVME_UNUSED(wc))
 {
 	struct ibv_recv_wr recv_wr;
 	struct ibv_recv_wr *bad_recv_wr;
@@ -161,7 +161,7 @@ _handle_ibv_poll_error(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc, int
 {
 	NVMF_ERROR("FAILED: ibv_poll_cq() for cq, err: %d", err);
 	NVMF_DEBUG("INFO: ibv_poll_cq() returned error, wc status: %s, opcode: %s, "
-		   "byte_len: %u, wr_id index: %u, type: %u",
+		   "byte_len: %u, wr_id index: %lu, type: %u",
 		   ibv_wc_status_str(wc->status), _ibv_wc_opcode_str(wc->opcode), wc->byte_len,
 		   wc->wr_id, 0);
 	qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
