@@ -156,4 +156,5 @@ block
 libaio
 io_uring
 io_uring_cmd
+dmabuf
 ```

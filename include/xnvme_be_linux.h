@@ -13,6 +13,8 @@
 #define XNVME_LINUX_CTRLR_FMT _PATH_DEV "nvme%1u"
 #define XNVME_LINUX_NS_FMT    _PATH_DEV "nvme%1un%1u"
 
+struct xnvme_be_linux_dmabuf;
+
 /**
  * Internal representation of XNVME_BE_LINUX state
  *
@@ -25,7 +27,11 @@ struct xnvme_be_linux_state {
 	uint8_t poll_io;
 	uint8_t poll_sq;
 
-	uint8_t _rsvd[121];
+	uint8_t _rsvd0[1];
+
+	struct xnvme_be_linux_dmabuf *dmabuf;
+
+	uint8_t _rsvd[112];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_linux_state) == XNVME_BE_STATE_NBYTES, "Incorrect size")
 
@@ -58,6 +64,8 @@ xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr opts);
  * Implementations of the memory management interface using hugepages
  */
 extern struct xnvme_be_mem g_xnvme_be_linux_mem_hugepage;
+
+extern struct xnvme_be_mem g_xnvme_be_linux_mem_dmabuf;
 
 /**
  * Implementations of the admin command interface

@@ -17,6 +17,19 @@ extern struct xnvme_be_async g_xnvme_be_cbi_async_nil;
 extern struct xnvme_be_async g_xnvme_be_cbi_async_posix;
 extern struct xnvme_be_async g_xnvme_be_cbi_async_thrpool;
 extern struct xnvme_be_mem g_xnvme_be_cbi_mem_posix;
+
+void *
+xnvme_be_cbi_mem_posix_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys);
+
+void *
+xnvme_be_cbi_mem_posix_buf_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes,
+				   uint64_t *phys);
+
+void
+xnvme_be_cbi_mem_posix_buf_free(const struct xnvme_dev *dev, void *buf);
+
+int
+xnvme_be_cbi_mem_posix_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys);
 extern struct xnvme_be_sync g_xnvme_be_cbi_sync_psync;
 
 int
