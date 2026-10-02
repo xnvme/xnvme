@@ -28,10 +28,10 @@ static inline void
 _dump_qpair(struct xnvme_be_nvmf_qpair *qpair)
 {
 	NVMF_DEBUG("INFO: \nqpair=%p\n"
-		    "\tqid: %d\n"
-		    "\tqsize: %d\n"
-		    "\tcntlid: %d\n",
-		    qpair, qpair->attr.qid, qpair->attr.qsize, qpair->cntlid);
+		   "\tqid: %d\n"
+		   "\tqsize: %d\n"
+		   "\tcntlid: %d\n",
+		   qpair, qpair->attr.qid, qpair->attr.qsize, qpair->cntlid);
 }
 
 static inline void
@@ -40,16 +40,16 @@ _dump_dev(struct xnvme_dev *dev)
 	struct xnvme_be_nvmf_state *state = (struct xnvme_be_nvmf_state *)&dev->be.state;
 
 	NVMF_DEBUG("INFO: \ndev=%p\n\tdev->ident: \n\t\turi: %s, \n\t\tcsi: %d, \n\t\tdtype: %d, "
-		    "\n\t\tnsid: %d, \n\t\tsubnqn: %s",
-		    dev, dev->ident.uri, dev->ident.csi, dev->ident.dtype, dev->ident.nsid,
-		    dev->ident.subnqn);
+		   "\n\t\tnsid: %d, \n\t\tsubnqn: %s",
+		   dev, dev->ident.uri, dev->ident.csi, dev->ident.dtype, dev->ident.nsid,
+		   dev->ident.subnqn);
 
 	NVMF_DEBUG("INFO: \ndev=%p \n"
-		    "\tstate.ctrlr: %p\n"
-		    "\tstate.ns: %p\n"
-		    "\tstate.admin_qpair: %p\n"
-		    "\tstate.sync_qpair: %p",
-		    dev, state->ctrlr, state->ns, state->admin_qpair, state->sync_qpair);
+		   "\tstate.ctrlr: %p\n"
+		   "\tstate.ns: %p\n"
+		   "\tstate.admin_qpair: %p\n"
+		   "\tstate.sync_qpair: %p",
+		   dev, state->ctrlr, state->ns, state->admin_qpair, state->sync_qpair);
 
 	if (state->admin_qpair) {
 		_dump_qpair((struct xnvme_be_nvmf_qpair *)state->admin_qpair);
@@ -73,8 +73,8 @@ xnvme_be_nvmf_dev_open(struct xnvme_dev *dev)
 	struct xnvme_be_nvmf_qpair *admin_qpair = NULL;
 
 	NVMF_DEBUG("INFO: dev_open() for NVMe-oF device: dev=%p, %s, dtype: %d, nsid: 0x%x, "
-		    "subnqn: %s",
-		    dev, dev->ident.uri, dev->ident.dtype, dev->ident.nsid, dev->ident.subnqn);
+		   "subnqn: %s",
+		   dev, dev->ident.uri, dev->ident.dtype, dev->ident.nsid, dev->ident.subnqn);
 
 	dev->ident.csi = XNVME_SPEC_CSI_NVM;
 	if (strlen(dev->ident.subnqn) == 0 ||
