@@ -22,6 +22,7 @@ xnvme_be_nvmf_fabric_enable(struct xnvme_be_nvmf_ctrlr *ctrlr,
 int
 xnvme_be_nvmf_fabric_connect(struct xnvme_be_nvmf_qpair *qpair);
 
+#if 0  // Determine whether to expose property get/set functions
 /**
  * Fabrics Property Get / Set on @admin_qpair. @property is one of the
  * `XNVME_SPEC_FABRIC_PROP_*` offsets.
@@ -35,5 +36,6 @@ int
 xnvme_be_nvmf_fabric_prop_set(struct xnvme_be_nvmf_ctrlr *ctrlr,
 			      struct xnvme_be_nvmf_qpair *admin_qpair, uint32_t property,
 			      uint64_t value);
+#endif // Determine whether to expose property get/set functions
 
 #endif /* _INTERNAL_XNVME_BE_NVMF_FABRIC_H */

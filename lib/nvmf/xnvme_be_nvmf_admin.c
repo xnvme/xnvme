@@ -23,8 +23,7 @@
 
 static inline int
 _xnvme_be_nvmf_admin_cmd_idfy(struct xnvme_be_nvmf_qpair *qpair, struct xnvme_cmd_ctx *ctx,
-			      struct xnvme_be_nvmf_req *req, void *dbuf, size_t dbuf_nbytes,
-			      void **handle_out)
+	void *dbuf, size_t dbuf_nbytes)
 {
 	struct xnvme_be_nvmf_state *state = (void *)ctx->dev->be.state;
 	struct xnvme_spec_cmd *cmd = &ctx->cmd;
@@ -116,16 +115,16 @@ _xnvme_be_nvmf_admin_cmd_idfy(struct xnvme_be_nvmf_qpair *qpair, struct xnvme_cm
 	NVMF_DEBUG("INFO: SGL type: 0x%x", sgl->keyed.type);
 	NVMF_DEBUG("INFO: SGL subtype: 0x%x", sgl->keyed.subtype);
 
-	err = xnvme_be_nvmf_qpair_submit(qpair, cmd, sizeof(struct xnvme_spec_cmd), req->cid);
+	err = xnvme_be_nvmf_qpair_submit_sync(qpair, cmd, sizeof(struct xnvme_spec_cmd), NULL, 0, NULL, 0, false, ctx);
 	if (err) {
 		NVMF_ERROR("FAILED: xnvme_be_nvmf_qpair_submit(), err: %d", err);
 		xnvme_be_nvmf_ctrlr_dereg(ctrlr, handle);
 		return err;
 	}
 
-	/* Deregistered by the caller only after the command completes: the remote
-	 * controller still needs the key valid to RDMA-write the Identify data. */
-	*handle_out = handle;
+	xnvme_be_nvmf_ctrlr_dereg(ctrlr, handle);
+	
+
 	return 0;
 }
 
@@ -136,27 +135,16 @@ _xnvme_be_nvmf_admin_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	struct xnvme_be_nvmf_state *state = (void *)ctx->dev->be.state;
 	struct xnvme_be_nvmf_ctrlr *ctrlr = state->ctrlr;
 	struct xnvme_be_nvmf_qpair *qpair = ctrlr->admin_qpair;
-	struct xnvme_be_nvmf_req *req = NULL;
-	void *handle = NULL;
 	int err = 0;
 
 	NVMF_DEBUG("INFO: admin_cmd() for NVMe-oF device: %s", ctx->dev->ident.uri);
 	NVMF_DEBUG("INFO: opcode: 0x%x, nsid: %d", ctx->cmd.common.opcode, ctx->cmd.common.nsid);
 
-	req = xnvme_be_nvmf_req_alloc(qpair->req_pool, false, (void *)ctx);
-	if (!req) {
-		NVMF_ERROR("FAILED: xnvme_be_nvmf_req_alloc()");
-		return -ENOSPC;
-	}
-
-	/* Set the command identifier (CID) to the request's CID */
-	ctx->cmd.common.cid = req->cid;
-
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_ADM_OPC_IDFY:
 
 		//_hexdump_range(dbuf, dbuf_nbytes);
-		err = _xnvme_be_nvmf_admin_cmd_idfy(qpair, ctx, req, dbuf, dbuf_nbytes, &handle);
+		err = _xnvme_be_nvmf_admin_cmd_idfy(qpair, ctx, dbuf, dbuf_nbytes);
 		if (err) {
 			NVMF_ERROR("FAILED: _xnvme_be_nvmf_admin_cmd_idfy(), err: %d", err);
 		}
@@ -168,16 +156,7 @@ _xnvme_be_nvmf_admin_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	default:
 		NVMF_ERROR("FAILED: ENOSYS opcode: %d", ctx->cmd.common.opcode);
 		err = -ENOSYS;
-		break;
 	}
-
-	xnvme_be_nvmf_wait_for_completion(qpair, req);
-
-	if (handle) {
-		xnvme_be_nvmf_ctrlr_dereg(ctrlr, handle);
-	}
-
-	xnvme_be_nvmf_req_free(qpair->req_pool, req);
 
 	return err;
 }

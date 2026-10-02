@@ -477,14 +477,74 @@ _rdma_qpair_disconnect(struct xnvme_be_nvmf_qpair *qpair)
 }
 
 static inline int
-_rdma_send_cap(struct xnvme_be_nvmf_qpair *qpair, const void *buf, size_t len, uint16_t cid,
-	       uint32_t lkey)
+_rdma_send_cap_helper(struct xnvme_be_nvmf_rdma_qpair *rdma_qpair, struct ibv_send_wr *send_wr, struct ibv_sge *sge)
+{
+	struct ibv_send_wr *bad_wr = NULL;
+	int err;
+
+	struct xnvme_be_nvmf_wr_id wr_id = {.raw = send_wr->wr_id};
+	NVMF_DATA_DEBUG("INFO: Hexdump of send buffer: addr=%p, len=%zu, lkey=%u",
+			(void *)sge->addr, sge->length, sge->lkey);
+	_hexdump_range(NVMF_DEBUG_CATEGORY_VERBS_DATA, (void *)sge->addr, sge->length);
+	NVMF_DATA_DEBUG("INFO: Sending capsule, wr_id.index: %lu, wr_id.type: %u, len: %zu",
+			wr_id.index, wr_id.type, sge->length);
+
+	err = ibv_post_send(rdma_qpair->cm_id->qp, send_wr, &bad_wr);
+	if (err) {
+		NVMF_DATA_ERROR("FAILED: ibv_post_send(), err: %d", err);
+	}
+
+	return err;
+}
+
+static inline int
+_rdma_send_cap_inline(struct xnvme_be_nvmf_qpair *qpair, const void *buf, size_t len, uint16_t cid,
+		      uint32_t lkey)
 {
 	struct xnvme_be_nvmf_rdma_qpair *rdma_qpair = TO_XNVME_NVMF_RDMA_QPAIR(qpair);
 	struct xnvme_be_nvmf_wr_id wr_id = {0};
 	struct ibv_sge sge = {
-		.addr = (uintptr_t)
-			buf, // assume we will use this buffer directly for sending (inline)
+		.addr = (uintptr_t)buf,
+		.length = len,
+		.lkey = 0,
+	};
+	struct ibv_send_wr send_wr = {
+		.sg_list = &sge,
+		.num_sge = 1,
+		.opcode = IBV_WR_SEND,
+		.send_flags = IBV_SEND_SIGNALED | IBV_SEND_INLINE,
+	};
+	struct xnvme_spec_cmd *cmd;
+	int err;
+	int old_cid;
+
+	wr_id.type = XNVME_BE_NVMF_WR_TYPE_SEND;
+	wr_id.index = cid;
+
+	send_wr.wr_id = wr_id.raw;
+	// access the capsule to modify the command ID transferred to the controller
+	cmd = (struct xnvme_spec_cmd *)buf;
+	// When using inline, we use the user's buffer instead of the qpair memory buffer, so set
+	// the CID to req->cid before sending it inline.
+	old_cid = cmd->common.cid;
+	cmd->common.cid = cid;
+
+	err = _rdma_send_cap_helper(rdma_qpair, &send_wr, &sge);
+
+	// when using INLINE, we use the user's buffer, so restore the old CID
+	cmd->common.cid = old_cid;
+
+	return err;
+}
+
+static inline int
+_rdma_send_cap_eager(struct xnvme_be_nvmf_qpair *qpair, const void *buf, size_t len, uint16_t cid,
+		     uint32_t lkey)
+{
+	struct xnvme_be_nvmf_rdma_qpair *rdma_qpair = TO_XNVME_NVMF_RDMA_QPAIR(qpair);
+	struct xnvme_be_nvmf_wr_id wr_id = {0};
+	struct ibv_sge sge = {
+		.addr = (uintptr_t)(rdma_qpair->send_buffer + cid * qpair->attr.capsule_size),
 		.length = len,
 		.lkey = lkey,
 	};
@@ -494,39 +554,35 @@ _rdma_send_cap(struct xnvme_be_nvmf_qpair *qpair, const void *buf, size_t len, u
 		.opcode = IBV_WR_SEND,
 		.send_flags = IBV_SEND_SIGNALED,
 	};
-	struct ibv_send_wr *bad_wr;
+	struct xnvme_spec_cmd *cmd;
 	int err;
 
+	// construct work request ID and associate it with the send work request
 	wr_id.type = XNVME_BE_NVMF_WR_TYPE_SEND;
 	wr_id.index = cid;
-
 	send_wr.wr_id = wr_id.raw;
 
+	// Copy the capsule into qpair send buffer memory
+	memcpy((void *)sge.addr, buf, len);
+
+	// access the capsule to modify the command ID transferred to the controller
+	cmd = (struct xnvme_spec_cmd *)sge.addr;
+	cmd->common.cid = cid;
+
+	return _rdma_send_cap_helper(rdma_qpair, &send_wr, &sge);
+} 
+
+static inline int
+_rdma_send_cap(struct xnvme_be_nvmf_qpair *qpair, const void *buf, size_t len, uint16_t cid,
+	       uint32_t lkey)
+{
+	struct xnvme_be_nvmf_rdma_qpair *rdma_qpair = TO_XNVME_NVMF_RDMA_QPAIR(qpair);
+
 	if (len <= (size_t)rdma_qpair->qp_init_attr.cap.max_inline_data) {
-		send_wr.send_flags |= IBV_SEND_INLINE;
-		sge.lkey = 0;
+		return _rdma_send_cap_inline(qpair, buf, len, cid, lkey);
 	} else {
-		if (len > qpair->attr.capsule_size) {
-			XNVME_DEBUG("WARNING: Capsule size exceeded, len: %zu, capsule_size: %zu",
-				    len, qpair->attr.capsule_size);
-			return -EINVAL;
-		}
-		sge.addr = (uintptr_t)(rdma_qpair->send_buffer +
-				       wr_id.index * qpair->attr.capsule_size);
-
-		memcpy((void *)sge.addr, buf, len);
+		return _rdma_send_cap_eager(qpair, buf, len, cid, lkey);
 	}
-
-	NVMF_DATA_DEBUG("INFO: Hexdump of send buffer: addr=%p, len=%zu, lkey=%u",
-			 (void *)sge.addr, sge.length, sge.lkey);
-	_hexdump_range(NVMF_DEBUG_CATEGORY_VERBS_DATA, (void *)sge.addr, sge.length);
-	NVMF_DATA_DEBUG("INFO: Sending capsule, wr_id.index: %lu, wr_id.type: %u, len: %zu",
-			 wr_id.index, wr_id.type, len);
-	err = ibv_post_send(rdma_qpair->cm_id->qp, &send_wr, &bad_wr);
-	if (err) {
-		NVMF_DATA_ERROR("FAILED: ibv_post_send(), err: %d", err);
-	}
-	return err;
 }
 
 static int
