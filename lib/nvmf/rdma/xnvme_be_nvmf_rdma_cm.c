@@ -31,7 +31,6 @@
 
 #define NVMF_DEBUG_CATEGORY NVMF_DEBUG_CATEGORY_RDMACM
 
-
 struct xnvme_rdma_cm_request_pdf {
 	uint16_t recfmt;
 	uint16_t qid;
@@ -91,8 +90,8 @@ _resolve_rdma_route(struct xnvme_be_nvmf_qpair *qpair)
 
 	/*
 	 * The PD is allocated lazily, once, on the admin qpair's transport
-	 * connect. Later qpairs reuse it. 
-	 * 
+	 * connect. Later qpairs reuse it.
+	 *
 	 * On an error in this function, only a PD allocated by this call
 	 * is freed here; a PD inherited from an earlier qpair may already be
 	 * in use elsewhere and is left for ctrlr_teardown to free.
@@ -419,7 +418,7 @@ _handle_rdmacm_event(struct rdma_cm_event *event)
 	err = g_xnvme_be_nvmf_rdmacm_state_fns[rdma_qpair->rdma_qp_state](qpair, event);
 	if (err) {
 		NVMF_ERROR("FAILED: State handler for qpair state %d returned error: %d",
-			    qpair->state, err);
+			   qpair->state, err);
 		qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
 		return err;
 	}
