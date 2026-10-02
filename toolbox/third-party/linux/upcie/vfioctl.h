@@ -31,8 +31,11 @@
  * The above is the essential modeling of the isolation-level of memory among devices.
  *
  * @file vfioctl.h
- * @version 0.8.0
+ * @version 0.10.0
  */
+
+#include <linux/limits.h>
+
 struct vfio_group {
 	int fd;
 	int id;
@@ -120,6 +123,37 @@ static inline int
 vfio_group_close(struct vfio_group *group)
 {
 	return close(group->fd);
+}
+
+/**
+ * Resolve the IOMMU group id of the PCI function identified by 'bdf'
+ *
+ * Read from the iommu_group link under the function's sysfs directory, so it
+ * needs no device open and answers for a function bound to any driver.
+ */
+static inline int
+vfio_device_get_iommu_group_id(const char *bdf, int *group_id)
+{
+	char path[PATH_MAX] = {0};
+	char link[PATH_MAX] = {0};
+	ssize_t nbytes;
+	char *base;
+
+	snprintf(path, sizeof(path), "/sys/bus/pci/devices/%s/iommu_group", bdf);
+
+	nbytes = readlink(path, link, sizeof(link) - 1);
+	if (nbytes < 0) {
+		return -errno;
+	}
+
+	base = strrchr(link, '/');
+	if (!base || !base[1]) {
+		return -EINVAL;
+	}
+
+	*group_id = atoi(base + 1);
+
+	return 0;
 }
 
 /**

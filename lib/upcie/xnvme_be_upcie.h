@@ -34,7 +34,12 @@ struct xnvme_queue_upcie {
 	struct xnvme_queue_base base;
 	struct nvme_qpair qpair;
 	struct xnvme_be_upcie_qpair_offsets offsets;
-	uint8_t _rvds[144];
+
+	/* A served queue completes nothing once its server has shut down; these
+	 * notice that from the poke path. See xnvme_be_upcie_queue_poke(). */
+	uint64_t served_gone_ns; ///< When the server was found gone; 0 while it answers
+	uint32_t pokes_idle;     ///< Pokes since a completion, gating the liveness check
+	uint8_t _rvds[140];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_upcie) == XNVME_BE_QUEUE_STATE_NBYTES,
 		    "Incorrect size")
@@ -49,25 +54,6 @@ enum xnvme_be_upcie_mode {
 	XNVME_BE_UPCIE_MODE_VFIO_CDEV,  ///< vfio-cdev + iommufd + memfd
 	XNVME_BE_UPCIE_MODE_UIO_LUT,    ///< uio_pci_generic + hugepages + LUT translator
 	XNVME_BE_UPCIE_MODE_VFIO_TYPE1, ///< vfio-pci + legacy type1 container
-};
-
-/**
- * Per-controller shared segment
- *
- * One per physical controller, created by the primary. Embeds the full
- * struct nvme_controller so secondaries can attach without re-initializing
- * the device. Pointer fields inside the embedded controller reference the
- * primary's virtual address space; secondaries fix them up on attach by
- * the constant offset between their imported hugepage base and the
- * primary's published base.
- */
-struct xnvme_be_upcie_ctrlr_shm {
-	_Atomic int32_t refcount;    ///< Number of processes currently attached
-	_Atomic bool is_initialized; ///< Set by primary once the controller is fully opened
-	pthread_mutex_t aq_mutex;    ///< Process-shared mutex for admin queue access
-	char driver_name[32];
-	struct xnvme_be_upcie_qpair_offsets sync_offsets; ///< Heap offsets of the sync qpair
-	struct nvme_controller ctrl; ///< Embedded controller; pointer fields use primary's VA
 };
 
 /**
@@ -86,20 +72,6 @@ struct xnvme_be_upcie_ctrlr_attach {
 };
 
 /**
- * Multi-process bookkeeping for one controller
- *
- * All of it is inert outside multi-process mode, where `shm` is NULL.
- */
-struct xnvme_be_upcie_ctrlr_mproc {
-	char lock_name[128];                  ///< Per-BDF primary-election lock path
-	int lock_fd;                          ///< Owned by primary while it holds the controller
-	char shm_name[64];                    ///< POSIX shm name for the per-controller segment
-	int shm_fd;                           ///< Owned by primary; -1 in secondaries
-	struct xnvme_be_upcie_ctrlr_shm *shm; ///< Per-controller shm (NULL outside mproc)
-	size_t aq_rpool_prp_offset;           ///< Heap offset of a secondary's admin-rpool PRPs
-};
-
-/**
  * Shared controller state, one per physical controller, managed by cref.
  */
 struct xnvme_be_upcie_ctrlr {
@@ -107,17 +79,26 @@ struct xnvme_be_upcie_ctrlr {
 	struct xnvme_be_upcie_ctrlr_attach attach;
 	struct nvme_qpair sync; ///< Shared submission/completion queue for synchronous IOs
 	struct xnvme_be_upcie_qpair_offsets sync_offsets; ///< Heap offsets of the sync qpair
-	struct xnvme_be_upcie_ctrlr_mproc mproc;
+	struct nvme_request admin_prp; ///< PRP scratch for admin payloads, this controller's own
+
+	/* Where this controller sits in the server's list, which is how a
+	 * request says which one it is about. The socket is the runtime's and
+	 * shared, so this is what distinguishes one controller from another on
+	 * it. */
+	int index;
+	void *bar0;                               ///< This process's mapping of this BAR0
+	uint64_t bar0_nbytes;                     ///< How much of it
+	const struct nvme_runtime_record *record; ///< In the heap, written by the server
 };
 
 /**
  * One controller's iommu-map-pa handle
  *
- * IOMMU_IOAS_MAP_FILE rejects the dma-bufs CUDA and HIP export, so device memory
+ * IOMMU_IOAS_MAP_FILE rejects the dma-bufs CUDA and HIP export, so such memory
  * reaches the controller's domain through the out-of-tree iommu-map-pa module
  * instead. See <upcie/dmamem_iommu_map_pa.h>.
  */
-struct xnvme_be_upcie_gpu_map {
+struct xnvme_be_upcie_iova_range {
 	struct dmamem_iommu_map_pa imp;
 	char bdf[DMAMEM_IOMMU_MAP_PA_BDF_LEN]; ///< Device whose domain is mapped into
 	int alive;                             ///< Whether imp is open
@@ -125,13 +106,13 @@ struct xnvme_be_upcie_gpu_map {
 };
 
 /**
- * One controller's view of the GPU heap
+ * One controller's view of a heap reached through its IOVA range
  *
  * The heap is process-wide; the IOVAs it is reached by are per controller, so
  * each needs a table of its own.
  */
-struct xnvme_be_upcie_gpu_dmem {
-	struct xnvme_be_upcie_gpu_map map; ///< Borrowed by dmem; outlives it
+struct xnvme_be_upcie_iova_range_dmem {
+	struct xnvme_be_upcie_iova_range map; ///< Borrowed by dmem; outlives it
 	struct dmamem dmem;
 };
 
@@ -146,46 +127,130 @@ struct xnvme_be_upcie_gpu_dmem {
  * translates through.
  */
 struct xnvme_be_upcie_state {
-	struct xnvme_be_upcie_ctrlr *ctrlr;  ///< Shared controller (first field for platform)
-	struct dmamem *dmem;                 ///< Where this device's data buffers live
-	struct xnvme_be_upcie_gpu_dmem *gpu; ///< Owned; NULL unless an IOMMU enforces for a GPU
+	struct xnvme_be_upcie_ctrlr *ctrlr; ///< Shared controller (first field for platform)
+	struct dmamem *dmem;                ///< Where this device's data buffers live
+	struct xnvme_be_upcie_iova_range_dmem *range; ///< Owned; NULL where no range is needed
 
 	uint8_t _rvds[104];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_upcie_state) == XNVME_BE_STATE_NBYTES, "Incorrect size")
 
 /**
- * Per-runtime shared segment (one per shm_id)
+ * What a process needs to hand another one for it to attach
  *
- * Created by the primary. Carries the primary's hugepage backing-file path
- * and virtual base so secondaries can import the same memory and reach the
- * admin queue by a constant VA offset. The refcount is advisory.
+ * The descriptors are the server's and stay open in it; a client receives
+ * copies over a socket. The offsets are into the heap the descriptor names.
  */
-struct xnvme_be_upcie_mproc_shm {
-	char hugepage_path[256]; ///< Path to primary's hugepage file
-	uint64_t hugepage_base;  ///< Primary's hugepage virtual base for secondary pointer fixup
-	_Atomic int refcount;    ///< Number of processes currently attached
-	_Atomic bool is_initialized;
+struct xnvme_be_upcie_cplane_export {
+	int heap_fd;            ///< The DMA heap, for the client to map
+	int bar0_fd;            ///< BAR0, since a client rings its own doorbell
+	uint64_t bar0_nbytes;   ///< How much of BAR0 to map
+	uint64_t heap_nbytes;   ///< How much of the heap to map
+	uint64_t record_offset; ///< Where the runtime record sits
+	uint64_t desc_offset;   ///< Where the heap's description sits
+	char uri[32];           ///< The identifier clients were given
+	int live;               ///< Whether the offsets above hold allocations
 };
+
+int
+xnvme_be_upcie_cplane_export(struct xnvme_dev *dev, struct xnvme_be_upcie_cplane_export *out);
 
 /**
- * Per-process multi-process state
+ * Release what xnvme_be_upcie_cplane_export() took from the heap
  *
- * Populated by xnvme_be_upcie_mproc_rte_init when opts->shm_id != 0.
- * is_primary is decided by an advisory flock keyed on shm_id.
+ * Safe on an all-zero export, so a caller can release unconditionally after a
+ * failed export.
  */
-struct xnvme_be_upcie_mproc {
-	bool is_primary; ///< If true, this process owns the shared state
+void
+xnvme_be_upcie_cplane_unexport(struct xnvme_be_upcie_cplane_export *exported);
 
-	char lock_name[64];
-	int lock_fd;
+int
+xnvme_be_upcie_cplane_admin(struct xnvme_dev *dev, void *cmd, void *cpl);
 
-	char shm_name[64];
-	int shm_fd;
-	struct xnvme_be_upcie_mproc_shm *shm;
+void
+xnvme_be_upcie_cplane_socket_path(uint32_t cplane_id, char *path, size_t nbytes);
 
-	struct hostmem_hugepage *primary_hugepage; ///< Imported hugepage in a secondary
-};
+int
+xnvme_be_upcie_cplane_ask(int sock, struct nvme_cplane_msg *msg, int *fds, uint32_t *nfds);
+
+int
+xnvme_be_upcie_cplane_ask_ctrlr(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_cplane_msg *msg,
+				int *fds, uint32_t *nfds);
+
+int
+xnvme_be_upcie_cplane_init_connection(uint32_t cplane_id, const char *bdf,
+				      struct xnvme_be_upcie_ctrlr *ctrlr);
+
+int
+xnvme_be_upcie_cplane_query(uint32_t cplane_id, struct nvme_cplane_msg *msg);
+
+/**
+ * Connect to the server at `path`
+ *
+ * Nobody serving is reported as -ENOENT whichever way the kernel says it, so a
+ * caller can tell "there is no server" from "something went wrong". That is not
+ * an error to every caller: some decide to become the server instead.
+ *
+ * @return A connected socket the caller closes, or negative errno
+ */
+int
+xnvme_be_upcie_cplane_connect(const char *path);
+
+/**
+ * Ask one status question on an open socket
+ *
+ * `msg` is sent as given apart from the op, so a caller walking controllers
+ * sets `index` before each call. It comes back as the reply.
+ */
+int
+xnvme_be_upcie_cplane_ask_status(int sock, struct nvme_cplane_msg *msg);
+
+/**
+ * Ask the server at `path` for status
+ *
+ * The caller owns the request: `msg` is sent as given, apart from the op, so
+ * zero it and set what the request needs before calling. It comes back as the
+ * reply.
+ */
+int
+xnvme_be_upcie_cplane_query_path(const char *path, struct nvme_cplane_msg *msg);
+
+void
+xnvme_be_upcie_cplane_disconnect(void);
+
+int
+xnvme_be_upcie_cplane_ctrlr_from_record(struct xnvme_be_upcie_ctrlr *ctrlr);
+
+int
+xnvme_be_upcie_cplane_alloc_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_qpair *qpair,
+				  uint16_t depth);
+
+/**
+ * The controller's I/O queue for this process, asked for if it has none yet
+ *
+ * An I/O queue is dedicated to whoever holds it, so a connected process takes
+ * one only when it has something to submit. The admin queue is not this: that
+ * one is the server's and shared, and commands for it travel over the socket.
+ *
+ * @return The queue on success, NULL on failure with errno set.
+ */
+struct nvme_qpair *
+xnvme_be_upcie_ctrlr_ioq(struct xnvme_be_upcie_ctrlr *ctrlr);
+
+struct nvme_request *
+xnvme_be_upcie_ctrlr_admin_prp(struct xnvme_be_upcie_ctrlr *ctrlr);
+
+void
+xnvme_be_upcie_ctrlr_admin_prp_release(struct xnvme_be_upcie_ctrlr *ctrlr);
+
+void
+xnvme_be_upcie_cplane_free_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_qpair *qpair);
+
+int
+xnvme_be_upcie_cplane_alloc_buf(size_t nbytes, uint64_t *offset);
+
+int
+xnvme_be_upcie_cplane_free_buf(uint64_t offset);
 
 /**
  * State used across multiple instances of controllers/namespaces
@@ -224,12 +289,31 @@ struct xnvme_be_upcie_rte_mem {
 	int heap_alive; ///< Whether heap is initialized
 };
 
+/**
+ * This process's view of a runtime another process owns
+ *
+ * Empty in the process that owns one. `sock` is what the server watches: it
+ * closing is how a client's queues and allocs come back.
+ */
+struct xnvme_be_upcie_rte_connection {
+	int alive;            ///< Whether this process is a client of a server
+	void *heap_base;      ///< This process's mapping of the server's heap
+	uint64_t heap_nbytes; ///< How much of it
+
+	/* One socket for the whole runtime, and one for the process: a request
+	 * names the controller it is about, so a client holding several needs
+	 * no more than this. What serialises a request against its reply is a
+	 * lock in the client, kept there rather than here so that letting go of
+	 * a runtime is a memset and nothing more. */
+	int sock; ///< To the server; 0 here means not connected, see connection.alive
+};
+
 struct xnvme_be_upcie_rte {
 	enum xnvme_be_upcie_mode mode;
 	struct xnvme_be_upcie_rte_cdev cdev;
 	struct xnvme_be_upcie_rte_type1 type1;
 	struct xnvme_be_upcie_rte_mem mem;
-	struct xnvme_be_upcie_mproc *mproc; ///< NULL when not in multi-process mode
+	struct xnvme_be_upcie_rte_connection connection; ///< Set when another process owns this
 	int is_initialized;
 };
 
@@ -266,9 +350,9 @@ xnvme_be_upcie_type1_attach(struct xnvme_be_upcie_ctrlr *ctrlr, const char *bdf)
 int
 xnvme_be_upcie_va_bits(void);
 
-/** Whether device memory needs mapping for an IOMMU; false under UIO_LUT */
+/** Whether a heap needs an IOVA range per controller; false under UIO_LUT */
 int
-xnvme_be_upcie_gpu_map_required(void);
+xnvme_be_upcie_iova_range_required(void);
 
 /**
  * Open this controller's iommu-map-pa handle on a slice of the IOVA window
@@ -280,19 +364,20 @@ xnvme_be_upcie_gpu_map_required(void);
  * enforces only when it knows the device's reserved regions. Close it before the
  * controller detaches, since that replaces the domain the mappings live in.
  *
- * @param map  Caller-allocated handle to fill
- * @param bdf  The controller whose domain to map into
- * @param span Bytes needed for the heap; the slice is twice this, leaving room
- *             for xnvme_mem_map(). XNVME_UPCIE_GPU_IOVA_SLICE overrides it.
+ * @param range Caller-allocated handle to fill
+ * @param bdf   The controller whose domain to map into
+ * @param span  Bytes needed for the heap; the slice is twice this, leaving room
+ *             for xnvme_mem_map(). XNVME_UPCIE_IOVA_SLICE overrides it.
  *
  * @return 0 on success, whether or not a handle was opened; negative errno on
  *         failure. -ENOSPC when the window is out of slices.
  */
 int
-xnvme_be_upcie_gpu_map_open(struct xnvme_be_upcie_gpu_map *map, const char *bdf, uint64_t span);
+xnvme_be_upcie_iova_range_open(struct xnvme_be_upcie_iova_range *range, const char *bdf,
+			       uint64_t span);
 
 void
-xnvme_be_upcie_gpu_map_close(struct xnvme_be_upcie_gpu_map *map);
+xnvme_be_upcie_iova_range_close(struct xnvme_be_upcie_iova_range *range);
 
 void
 xnvme_be_upcie_dev_close(struct xnvme_dev *dev);
@@ -302,6 +387,35 @@ void *
 xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev);
 int
 xnvme_be_upcie_ctrlr_term(void *handle);
+
+/**
+ * Serialise the operations that touch the runtime's process-wide heaps
+ *
+ * The runtime keeps one host heap for the process, and the GPU backends one
+ * device heap each, and hands them to every controller open and close, queue
+ * init and term, and buffer alloc and free. The allocators behind them split
+ * and coalesce a free list with no lock of their own, so two such calls from
+ * different threads, a program closing its devices in parallel or one whose
+ * jobs each open a device, corrupt it. The public entry points of the uPCIe
+ * backends hold this lock for the duration of those calls, and only those:
+ * a queue stays the property of one thread, and the I/O path takes no lock.
+ *
+ * The internals those entry points call must not take it again.
+ */
+void
+xnvme_be_upcie_heap_lock(void);
+void
+xnvme_be_upcie_heap_unlock(void);
+
+/**
+ * The queue init and term without the lock, for a backend that already holds
+ * it and falls back to the host-memory queue: the CUDA and HIP backends do so
+ * when a queue is not asked to complete into device memory.
+ */
+int
+xnvme_be_upcie_queue_init_unlocked(struct xnvme_queue *queue, int opts);
+int
+xnvme_be_upcie_queue_term_unlocked(struct xnvme_queue *queue);
 
 /**
  * The admin, sync and async paths, shared by `upcie`, `upcie-cuda` and `upcie-hip`
@@ -342,43 +456,19 @@ int
 xnvme_be_upcie_sync_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 			       void *mbuf, size_t mbuf_nbytes);
 
-// Multi-process runtime bring-up / teardown
-int
-xnvme_be_upcie_mproc_rte_init(int shm_id);
-void
-xnvme_be_upcie_mproc_rte_term(void);
-int
-xnvme_be_upcie_mproc_import_admin_hugepage(void);
+// DMA buffers, from the heap this process owns or the one it connected to
+// (xnvme_be_upcie_mem.c)
 
-// Admin-queue mutex; no-op when not in multi-process mode
-int
-xnvme_be_upcie_ctrlr_mutex_lock(struct xnvme_be_upcie_ctrlr *ctrlr);
-void
-xnvme_be_upcie_ctrlr_mutex_unlock(struct xnvme_be_upcie_ctrlr *ctrlr);
+void *
+xnvme_be_upcie_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys);
 
-// Per-controller shared segment for the primary/secondary handshake
-int
-xnvme_be_upcie_mproc_ctrlr_shm_init(struct xnvme_dev *dev, struct xnvme_be_upcie_ctrlr *ctrlr,
-				    const char *driver_name);
-int
-xnvme_be_upcie_mproc_ctrlr_shm_attach(struct xnvme_dev *dev, struct xnvme_be_upcie_ctrlr *ctrlr);
-void
-xnvme_be_upcie_mproc_ctrlr_shm_term(struct xnvme_be_upcie_ctrlr *ctrlr);
-void
-xnvme_be_upcie_mproc_free_all_queues(struct xnvme_be_upcie_ctrlr *ctrlr);
+void *
+xnvme_be_upcie_buf_alloc_on(struct xnvme_be_upcie_ctrlr *ctrlr, size_t nbytes, uint64_t *phys);
 
-// qids-bitmap lock; used by GPU-initiated queue create/destroy
-int
-xnvme_be_upcie_mproc_qids_lock(struct xnvme_be_upcie_ctrlr *ctrlr);
 void
-xnvme_be_upcie_mproc_qids_unlock(struct xnvme_be_upcie_ctrlr *ctrlr);
+xnvme_be_upcie_buf_free_on(struct xnvme_be_upcie_ctrlr *ctrlr, void *buf);
 
-// Mutex-guarded IO qpair create/delete on the dmamem heap
-int
-xnvme_be_upcie_mproc_create_io_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_qpair *qpair,
-				     uint16_t depth, struct xnvme_be_upcie_qpair_offsets *offsets);
 void
-xnvme_be_upcie_mproc_delete_io_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_qpair *qpair,
-				     const struct xnvme_be_upcie_qpair_offsets *offsets);
+xnvme_be_upcie_buf_free(const struct xnvme_dev *dev, void *buf);
 
 #endif /* __INTERNAL_XNVME_BE_UPCIE */

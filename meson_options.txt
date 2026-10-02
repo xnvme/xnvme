@@ -5,6 +5,7 @@ option('with-isal', type: 'feature', value: 'auto')
 option('with-spdk', type: 'feature', value: 'auto')
 option('with-cuda', type: 'feature', value: 'auto')
 option('with-hip', type: 'feature', value: 'auto')
+option('with-cuse', type: 'feature', value: 'auto')
 
 option('be_ramdisk', type: 'boolean', value: true)
 option('be_upcie', type: 'boolean', value: true)
@@ -26,3 +27,6 @@ option('build_subprojects', type : 'boolean', value : true, yield : true)
 option('force_completions', type: 'boolean', value: false, description: 'Install bash-completions at the default location if bash-completion is not available on the system')
 
 option('hardening', type: 'boolean', value: false, description: 'Attempt enabling hardening, such as bind-now' )
+
+option('systemd', type: 'feature', value: 'auto', description: 'Install the HOMI systemd unit; requires systemd and the tools')
+option('systemd_unitdir', type: 'string', value: '', description: 'Where to install systemd units; empty asks systemd via pkg-config')

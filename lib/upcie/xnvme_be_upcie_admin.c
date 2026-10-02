@@ -23,17 +23,50 @@ xnvme_be_upcie_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf
 	struct nvme_request *req;
 	int err;
 
-	err = xnvme_be_upcie_ctrlr_mutex_lock(ctrlr);
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_be_upcie_ctrlr_mutex_lock(); err(%d)", err);
-		return err;
+	if (g_upcie_rte.connection.alive) {
+		/* There is one admin queue and it belongs to whoever opened the
+		 * controller. The payload does not travel with the request: the
+		 * command names an address this process registered or was
+		 * given, so the answer lands here without a copy. */
+		struct nvme_cplane_msg msg = {0};
+
+		if (dbuf) {
+			/* Describing the payload is all this needs the scratch
+			 * for; the admin queue it is submitted on belongs to the
+			 * server. */
+			struct nvme_request *prp = xnvme_be_upcie_ctrlr_admin_prp(ctrlr);
+
+			if (!prp) {
+				XNVME_DEBUG("FAILED: admin PRP scratch; errno(%d)", errno);
+				return -errno;
+			}
+
+			err = nvme_request_prep_command_prps_contig_dmamem(prp, state->dmem, dbuf,
+									   dbuf_nbytes, cmd);
+			if (err) {
+				XNVME_DEBUG("FAILED: prps_contig_dmamem(); err(%d)", err);
+				return err;
+			}
+		}
+
+		msg.op = NVME_CPLANE_OP_ADMIN_CMD;
+		memcpy(&msg.u.admin.cmd, cmd, sizeof(msg.u.admin.cmd));
+
+		err = xnvme_be_upcie_cplane_ask_ctrlr(ctrlr, &msg, NULL, NULL);
+		if (err) {
+			XNVME_DEBUG("FAILED: asking for an admin command; err(%d)", err);
+			return err;
+		}
+
+		memcpy(cpl, &msg.u.admin.cpl, sizeof(*cpl));
+
+		return xnvme_cmd_ctx_cpl_status(ctx) ? -EIO : 0;
 	}
 
 	req = nvme_request_alloc(ctrl->aq.rpool);
 	if (!req) {
 		XNVME_DEBUG("FAILED: nvme_request_alloc(); errno(%d)", errno);
 		err = -errno;
-		xnvme_be_upcie_ctrlr_mutex_unlock(ctrlr);
 		return err;
 	}
 
@@ -70,7 +103,6 @@ xnvme_be_upcie_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf
 	}
 
 exit:
-	xnvme_be_upcie_ctrlr_mutex_unlock(ctrlr);
 	nvme_request_free(ctrl->aq.rpool, req->cid);
 	return err;
 }

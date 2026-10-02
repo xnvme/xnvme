@@ -29,6 +29,15 @@ Requirements
 * for user space backends such as **uPCIe**, a device bound to
   ``uio_pci_generic`` and hugepages configured; see :ref:`sec-backends-upcie`
 
+The Linux-NVMe-driver ioctl() mimic (see below) additionally needs a kernel
+new enough to carry ``NVME_IOCTL_IO64_CMD_VEC`` in ``<linux/nvme_ioctl.h>``
+(5.17+) alongside ``<linux/fuse.h>``, both at build time;
+``-Dwith-cuse=disabled`` skips it explicitly, and without either header
+**qublk** still builds, quietly serving every device without its ``-ctl``
+character device, since that is a permanent build-time condition rather
+than a one-off failure; a CUSE device that fails to come up at runtime for
+some other reason still warns and does the same.
+
 ``run`` — Serve a block-device
 ==============================
 
@@ -62,6 +71,21 @@ Example — four devices via uPCIe, served by two CPUs::
      --be upcie --qdepth 64 --cpulist 0-1
 
 While **qublk** is running, each device appears as ``/dev/ublkb<N>``.
+
+By default, each device also gets a ``/dev/ublkb<N>-ctl`` character device
+answering the Linux kernel NVMe driver's ioctl() interface (``NVME_IOCTL_ID``,
+``NVME_IOCTL_ADMIN_CMD``, ``NVME_IOCTL_IO_CMD``, ``NVME_IOCTL_ADMIN64_CMD``,
+``NVME_IOCTL_IO64_CMD``, ``NVME_IOCTL_IO64_CMD_VEC``), so tools such as
+``nvme-cli`` address it like a kernel-attached controller. Pass
+``--no-cuse`` to skip it; a failed CUSE device only disables itself, the
+block device still comes up. Passthru data and metadata, together with the
+``nvme_passthru_cmd``/``nvme_passthru_cmd64`` struct itself, are capped at
+128KiB by the kernel's CUSE ioctl handling, not the device's real
+``MDTS``. ``NVME_IOCTL_IO64_CMD_VEC`` additionally rejects a request whose
+``vec_cnt`` is above 125: every retry round resends the same iovec list as
+both the fetch and the scatter-back list, and the kernel's own
+``FUSE_IOCTL_MAX_IOV`` (256) bounds their combined count, well below the
+real driver's ``UIO_MAXIOV``.
 
 ``del`` — Delete a leftover device
 ==================================

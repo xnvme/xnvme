@@ -115,8 +115,10 @@ cuda_dep = dependency(
   required: get_option('with-cuda'),
 )
 conf_data.set('XNVME_BE_UPCIE_CUDA_ENABLED', get_option('be_upcie') and is_linux and cuda_dep.found() and get_option('with-cuda').allowed())
+cuda_arch_args = []
 if conf_data.get('XNVME_BE_UPCIE_CUDA_ENABLED')
   add_languages('cuda', required: true, native: false)
+  cuda_arch_args = ['-arch=native']
 endif
 
 # uPCIe HIP/ROCm backend: AMD GPU device memory via the HIP host API (gcc, no
@@ -140,6 +142,19 @@ setupapi_dep = cc.find_library(
 conf_data.set('XNVME_PLATFORM_WINDOWS_ENABLED', setupapi_dep.found())
 conf_data.set('XNVME_BE_WINDOWS_FS_ENABLED', conf_data.get('XNVME_PLATFORM_WINDOWS_ENABLED'))
 conf_data.set('XNVME_BE_WINDOWS_ASYNC_ENABLED', conf_data.get('XNVME_PLATFORM_WINDOWS_ENABLED'))
+
+xnvme_cuse_has_fuse = is_linux ? cc.has_header('linux/fuse.h', required: get_option('with-cuse')) : false
+# Also gate on the 5.17+ NVME_IOCTL_IO64_CMD_VEC symbol, or an older kernel header degrades instead of failing the build.
+xnvme_cuse_has_vec = is_linux ? cc.has_header_symbol(
+  'linux/nvme_ioctl.h',
+  'NVME_IOCTL_IO64_CMD_VEC',
+  required: get_option('with-cuse'),
+) : false
+xnvme_cuse_has_header = xnvme_cuse_has_fuse and xnvme_cuse_has_vec
+conf_data.set('XNVME_CUSE_ENABLED', xnvme_cuse_has_header)
+if not xnvme_cuse_has_header and is_linux and get_option('with-cuse').allowed()
+  warning('No linux/fuse.h or too old linux/nvme_ioctl.h, the NVMe ioctl() CUSE mimic is unavailable')
+endif
 
 conf_data.set('XNVME_PLATFORM_LINUX_ENABLED', is_linux)
 conf_data.set('XNVME_BE_LINUX_BLOCK_ENABLED', is_linux ? cc.has_header('linux/blkzoned.h') : false)
@@ -219,7 +234,7 @@ conf = configure_file(
   configuration : conf_data,
   output : 'xnvme_config.h',
 )
-conf_inc = [ include_directories('.') ]
+conf_inc = [ include_directories('.'), include_directories('lib') ]
 if is_linux
   conf_inc += [ include_directories('toolbox' / 'third-party' / 'linux') ]
 endif
