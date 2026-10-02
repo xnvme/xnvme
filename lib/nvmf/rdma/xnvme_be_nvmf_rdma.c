@@ -483,10 +483,10 @@ _rdma_send_cap_helper(struct xnvme_be_nvmf_rdma_qpair *rdma_qpair, struct ibv_se
 	int err;
 
 	struct xnvme_be_nvmf_wr_id wr_id = {.raw = send_wr->wr_id};
-	NVMF_DATA_DEBUG("INFO: Hexdump of send buffer: addr=%p, len=%zu, lkey=%u",
+	NVMF_DATA_DEBUG("INFO: Hexdump of send buffer: addr=%p, len=%u, lkey=%u",
 			(void *)sge->addr, sge->length, sge->lkey);
 	_hexdump_range(NVMF_DEBUG_CATEGORY_VERBS_DATA, (void *)sge->addr, sge->length);
-	NVMF_DATA_DEBUG("INFO: Sending capsule, wr_id.index: %lu, wr_id.type: %u, len: %zu",
+	NVMF_DATA_DEBUG("INFO: Sending capsule, wr_id.index: %u, wr_id.type: %u, len: %u",
 			wr_id.index, wr_id.type, sge->length);
 
 	err = ibv_post_send(rdma_qpair->cm_id->qp, send_wr, &bad_wr);
@@ -499,7 +499,7 @@ _rdma_send_cap_helper(struct xnvme_be_nvmf_rdma_qpair *rdma_qpair, struct ibv_se
 
 static inline int
 _rdma_send_cap_inline(struct xnvme_be_nvmf_qpair *qpair, const void *buf, size_t len, uint16_t cid,
-		      uint32_t lkey)
+		      uint32_t XNVME_UNUSED(lkey))
 {
 	struct xnvme_be_nvmf_rdma_qpair *rdma_qpair = TO_XNVME_NVMF_RDMA_QPAIR(qpair);
 	struct xnvme_be_nvmf_wr_id wr_id = {0};
@@ -555,7 +555,6 @@ _rdma_send_cap_eager(struct xnvme_be_nvmf_qpair *qpair, const void *buf, size_t 
 		.send_flags = IBV_SEND_SIGNALED,
 	};
 	struct xnvme_spec_cmd *cmd;
-	int err;
 
 	// construct work request ID and associate it with the send work request
 	wr_id.type = XNVME_BE_NVMF_WR_TYPE_SEND;
