@@ -89,7 +89,7 @@ _handle_fabric_connect_error(struct xnvme_spec_cpl *cpl,
 			     struct xnvme_spec_fabric_connect_resp_cpl *connect_cpl)
 {
 	NVMF_ERROR("FAILED: Fabric Connect rejected, sc: %u sct: %u", cpl->status.sc,
-		    cpl->status.sct);
+		   cpl->status.sct);
 	_xnvme_print_error_code(cpl);
 	if (cpl->status.sc == 0x02) {
 		NVMF_DEBUG(
@@ -98,10 +98,10 @@ _handle_fabric_connect_error(struct xnvme_spec_cpl *cpl,
 
 		if (connect_cpl->connect_invalid.iattr.ips == 0) {
 			NVMF_DEBUG("INFO: Invalid parameter in submission queue entry: %u",
-				    connect_cpl->connect_invalid.ipo);
+				   connect_cpl->connect_invalid.ipo);
 		} else {
 			NVMF_DEBUG("INFO: Invalid parameter in data: %u",
-				    connect_cpl->connect_invalid.ipo);
+				   connect_cpl->connect_invalid.ipo);
 			if (connect_cpl->connect_invalid.ipo < 16) {
 				NVMF_DEBUG("INFO: Invalid host identifier");
 			} else if (connect_cpl->connect_invalid.ipo >= 16 &&
@@ -115,7 +115,7 @@ _handle_fabric_connect_error(struct xnvme_spec_cpl *cpl,
 				NVMF_DEBUG("INFO: Invalid host NQN");
 			} else {
 				NVMF_DEBUG("INFO: Invalid parameter offset: %u",
-					    connect_cpl->connect_invalid.ipo);
+					   connect_cpl->connect_invalid.ipo);
 			}
 		}
 	}
@@ -139,11 +139,11 @@ _handle_fabric_connect(struct xnvme_be_nvmf_qpair *qpair, void *buf)
 	/* TODO: Deal with authentication requirements later*/
 	if (connect_cpl->success.authreq.ascr) {
 		NVMF_ERROR("ERROR: Fabric Connect accepted, but authentication is "
-			    "required (ascr=1)");
+			   "required (ascr=1)");
 		qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
 	} else if (connect_cpl->success.authreq.atr) {
 		NVMF_ERROR("ERROR: Fabric Connect accepted, but authentication is "
-			    "required (atr=1)");
+			   "required (atr=1)");
 		qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
 	} else {
 		NVMF_DEBUG("INFO: Fabric Connect accepted, cntlid: %u", qpair->cntlid);
@@ -365,8 +365,8 @@ xnvme_be_nvmf_fabric_enable(struct xnvme_be_nvmf_ctrlr *ctrlr,
 	else if (!cap.iocss && cap.ncss)
 		cc.css = 0b000;
 	else {
-		NVMF_ERROR("FAILED: unsupported IO command set configuration, cap.css: 0x%lx",
-			    cap.noiocss | cap.iocss | cap.ncss);
+		NVMF_ERROR("FAILED: unsupported IO command set configuration, cap.css: 0x%x",
+			   cap.noiocss | cap.iocss | cap.ncss);
 		return -1;
 	}
 

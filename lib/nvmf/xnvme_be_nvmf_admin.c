@@ -32,9 +32,9 @@ _xnvme_be_nvmf_admin_cmd_idfy(struct xnvme_be_nvmf_qpair *qpair, struct xnvme_cm
 	void *handle;
 	uint32_t key;
 	int err;
-	
+
 	NVMF_DEBUG("INFO: Preparing IDFY command with dbuf at %p, cntlid: %u", dbuf,
-		    qpair->cntlid);
+		   qpair->cntlid);
 	NVMF_DEBUG("INFO: CNS value: 0x%x", cmd->idfy.cns);
 
 	enum xnvme_idfy_cns {

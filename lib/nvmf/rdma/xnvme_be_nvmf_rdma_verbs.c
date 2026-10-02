@@ -64,15 +64,13 @@ _handle_send_cmpl(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc)
 	struct xnvme_be_nvmf_wr_id wr_id = {.raw = wc->wr_id};
 	int status = (wc->status == IBV_WC_SUCCESS) ? 0 : -EIO;
 
-	NVMF_DEBUG(
-		"INFO: Work completion, status: %s, opcode: %s, wr_id index: %u, type: %u",
-		ibv_wc_status_str(wc->status), _ibv_wc_opcode_str(wc->opcode), wr_id.index,
-		wr_id.type);
+	NVMF_DEBUG("INFO: Work completion, status: %s, opcode: %s, wr_id index: %u, type: %u",
+		   ibv_wc_status_str(wc->status), _ibv_wc_opcode_str(wc->opcode), wr_id.index,
+		   wr_id.type);
 
 	req = xnvme_be_nvmf_req_get(qpair->req_pool, wr_id.index);
 	if (!req) {
-		NVMF_ERROR("FAILED: xnvme_be_nvmf_req_get() for wr_id index: %u",
-				 wr_id.index);
+		NVMF_ERROR("FAILED: xnvme_be_nvmf_req_get() for wr_id index: %u", wr_id.index);
 		return -EIO; // TODO: Find a different error code
 	}
 
@@ -126,9 +124,9 @@ _handle_recv_cmpl(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc)
 	int err;
 
 	NVMF_DEBUG("INFO: Work completion, status: %s, opcode: %s, byte_len: %u, wr_id "
-			 "index: %u, type: %u",
-			 ibv_wc_status_str(wc->status), _ibv_wc_opcode_str(wc->opcode),
-			 wc->byte_len, wr_id.index, wr_id.type);
+		   "index: %u, type: %u",
+		   ibv_wc_status_str(wc->status), _ibv_wc_opcode_str(wc->opcode), wc->byte_len,
+		   wr_id.index, wr_id.type);
 
 	if (wc->status != IBV_WC_SUCCESS) {
 		NVMF_ERROR("FAILED: recv WC error: %s", ibv_wc_status_str(wc->status));
@@ -140,6 +138,7 @@ _handle_recv_cmpl(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc)
 
 	buf = rdma_qpair->recv_buffer + wr_id.index * qpair->attr.completion_size;
 
+	NVMF_DEBUG("INFO: Received buffer at index: %u", wr_id.index);
 	_hexdump_range(NVMF_DEBUG_CATEGORY_VERBS_DATA, buf, qpair->attr.completion_size);
 
 	err = xnvme_be_nvmf_rdma_top_recv_complete(qpair, buf, qpair->attr.completion_size);
@@ -162,9 +161,9 @@ _handle_ibv_poll_error(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc, int
 {
 	NVMF_ERROR("FAILED: ibv_poll_cq() for cq, err: %d", err);
 	NVMF_DEBUG("INFO: ibv_poll_cq() returned error, wc status: %s, opcode: %s, "
-			 "byte_len: %u, wr_id index: %u, type: %u",
-			 ibv_wc_status_str(wc->status), _ibv_wc_opcode_str(wc->opcode),
-			 wc->byte_len, wc->wr_id, 0);
+		   "byte_len: %u, wr_id index: %u, type: %u",
+		   ibv_wc_status_str(wc->status), _ibv_wc_opcode_str(wc->opcode), wc->byte_len,
+		   wc->wr_id, 0);
 	qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
 }
 
