@@ -1835,6 +1835,13 @@ struct xnvme_spec_sgl_descriptor {
 			uint64_t subtype : 4; ///< SGL subtype
 			uint64_t type    : 4; ///< SGL type
 		} unkeyed;
+
+		struct {
+			uint64_t len     : 24; ///< Length of entry
+			uint64_t key     : 32; ///< Key
+			uint64_t subtype : 4;  ///< SGL subtype
+			uint64_t type    : 4;  ///< SGL type
+		} keyed;
 	};
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_sgl_descriptor) == 16, "Incorrect size")
