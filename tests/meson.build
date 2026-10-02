@@ -83,6 +83,12 @@ if not is_windows
   tests += {'map.c': []}
 endif
 
+# Issues the raw NVME_IOCTL_ADMIN64_CMD itself, bypassing xNVMe's own command
+# path, which never selects it; only built where that ioctl ABI exists
+if is_linux
+  tests += {'cuse_admin64_identify.c': []}
+endif
+
 foreach test_source, tests_args : tests
   e = executable(
     tests_prefix + fs.stem(test_source),

@@ -4,8 +4,11 @@
 
 #include <errno.h>
 #include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include <libxnvme.h>
+#include <xnvme_cuse.h>
 
 // The backend default (1GiB) is sized for a process doing I/O. HOMI only needs the
 // admin queue and the sync qpair that opening a device creates, so claiming the
@@ -23,6 +26,7 @@
 #ifndef XNVME_PLATFORM_WINDOWS_ENABLED
 
 static volatile sig_atomic_t stop = 0;
+static sigset_t g_orig_sigmask;
 
 static void
 handle_signal(int sig __attribute__((unused)))
@@ -30,11 +34,16 @@ handle_signal(int sig __attribute__((unused)))
 	stop = 1;
 }
 
+/**
+ * Must run before any CUSE session thread is created: a thread inherits the
+ * creating thread's signal mask, so blocking these here first is what keeps
+ * them out of every later thread's mask too
+ */
 static void
-_wait_for_stop_signal(void)
+block_stop_signals(void)
 {
 	struct sigaction sa = {0};
-	sigset_t mask, orig;
+	sigset_t mask;
 
 	sa.sa_handler = handle_signal;
 	sa.sa_flags = 0;
@@ -43,24 +52,55 @@ _wait_for_stop_signal(void)
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGINT, &sa, NULL);
 
-	// Block the stop-signals before testing 'stop', and let sigsuspend() unblock them only
-	// while parked, such that a signal arriving between the test and the wait cannot be lost
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGTERM);
 	sigaddset(&mask, SIGINT);
-	sigprocmask(SIG_BLOCK, &mask, &orig);
+	sigprocmask(SIG_BLOCK, &mask, &g_orig_sigmask);
+}
 
+/**
+ * Let sigsuspend() unblock the stop-signals only while parked, such that
+ * one arriving between the 'stop' test and the wait cannot be lost; restores
+ * the mask block_stop_signals() saved before returning, so SIGTERM/SIGINT
+ * are unblocked again for the rest of teardown
+ */
+static void
+wait_for_stop_signal(void)
+{
 	while (!stop) {
-		sigsuspend(&orig);
+		sigsuspend(&g_orig_sigmask);
 	}
 
-	sigprocmask(SIG_SETMASK, &orig, NULL);
+	sigprocmask(SIG_SETMASK, &g_orig_sigmask, NULL);
+}
+
+static void
+sigusr1_noop(int sig __attribute__((unused)))
+{
+}
+
+/**
+ * A controller opened via a PCIe-attached backend (upcie, spdk) carries its
+ * bus:device.function address as its URI verbatim (see
+ * '_scan_pci_report_ctrlr()' in xnvme_platform_linux.c); that is the only
+ * identifier HOMI's CUSE mimic uses, so a controller reached any other way
+ * (fabrics, a bare device-file path) has none and is left unexposed
+ */
+static bool
+is_pci_bdf(const char *uri)
+{
+	unsigned int domain, bus, dev, func;
+	int end = 0;
+
+	return sscanf(uri, "%4x:%2x:%2x.%1x%n", &domain, &bus, &dev, &func, &end) == 4 &&
+	       uri[end] == '\0';
 }
 
 static int
 sub_start(struct xnvme_cli *cli)
 {
 	struct xnvme_dev **devs;
+	struct xnvme_cuse *cuse_sessions = NULL;
 	struct xnvme_opts opts = xnvme_opts_default();
 	const char **dev_uris;
 	int ndevs, err;
@@ -73,8 +113,13 @@ sub_start(struct xnvme_cli *cli)
 	}
 	dev_uris = cli->args.posn;
 
+	block_stop_signals();
+
 	opts.shm_id = (uint32_t)cli->args.homi_id;
 	opts.be = cli->args.be;
+	// homi holds whole controllers, not namespaces: nsid=0 gives dtype
+	// XNVME_DEV_TYPE_NVME_CONTROLLER, which lib/xnvme_cuse.c relies on
+	opts.nsid = 0;
 
 	// The heap is per-process rather than per-device, so it has to cover every device
 	// held. Claiming the backend default would leave nothing in the hugepage pool for
@@ -90,8 +135,50 @@ sub_start(struct xnvme_cli *cli)
 		return err;
 	}
 
+	cuse_sessions = calloc(ndevs, sizeof(*cuse_sessions));
+	if (!cuse_sessions) {
+		xnvme_cli_perr("Failed allocating CUSE session state", -ENOMEM);
+		xnvme_cli_dev_close_multi(devs, ndevs);
+		return -ENOMEM;
+	}
+
+	if (!cli->args.no_cuse) {
+		// Without a handler, xnvme_cuse_stop()'s SIGUSR1 would terminate the process
+		struct sigaction sa = {.sa_handler = sigusr1_noop};
+
+		sigemptyset(&sa.sa_mask);
+		sigaction(SIGUSR1, &sa, NULL);
+
+		for (int i = 0; i < ndevs; ++i) {
+			const struct xnvme_ident *ident = xnvme_dev_get_ident(devs[i]);
+			char name[64];
+
+			if (!is_pci_bdf(ident->uri)) {
+				continue; // No BDF for this controller; nothing to expose
+			}
+
+			snprintf(name, sizeof(name), "xnvme/%s", ident->uri);
+
+			err = xnvme_cuse_start(&cuse_sessions[i], devs[i], name);
+			if (err == -ENOSYS) {
+				continue; // Built without the CUSE mimic (Linux-only); quiet
+			}
+			if (err) {
+				xnvme_cli_perr("Failed: xnvme_cuse_start(); continuing without it",
+					       err);
+				continue; // Non-fatal: HOMI still serves the controller
+			}
+			xnvme_cli_pinf("Exposing /dev/%s", name);
+		}
+	}
+
 	xnvme_cli_pinf("HOMI started successfully, use Ctrl+C to stop");
-	_wait_for_stop_signal();
+	wait_for_stop_signal();
+
+	for (int i = 0; i < ndevs; ++i) {
+		xnvme_cuse_stop(&cuse_sessions[i]);
+	}
+	free(cuse_sessions);
 
 	xnvme_cli_dev_close_multi(devs, ndevs);
 
@@ -127,6 +214,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HOST_HEAP_SIZE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_DEVICE_HEAP_SIZE, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_NO_CUSE, XNVME_CLI_LFLG},
 		},
 	},
 };
