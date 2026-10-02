@@ -113,6 +113,7 @@ struct xnvme_cli_args {
 	bool save;
 	uint32_t reset;
 	bool verbose;
+	bool no_cuse;
 	uint32_t help;
 
 	const char *be;
@@ -180,6 +181,7 @@ struct xnvme_cli_args {
 	uint64_t sdlba;
 
 	uint32_t runtime;
+	double report_freq;
 	const char *iopattern;
 
 	const char *cpumask;
@@ -383,7 +385,11 @@ enum xnvme_cli_opt {
 
 	XNVME_CLI_OPT_HOMI_ID = 137, ///< XNVME_CLI_OPT_HOMI_ID
 
-	XNVME_CLI_OPT_END = 138, ///< XNVME_CLI_OPT_END
+	XNVME_CLI_OPT_NO_CUSE = 138, ///< XNVME_CLI_OPT_NO_CUSE
+
+	XNVME_CLI_OPT_REPORT_FREQ = 139, ///< XNVME_CLI_OPT_REPORT_FREQ
+
+	XNVME_CLI_OPT_END = 140, ///< XNVME_CLI_OPT_END
 };
 
 /**
@@ -406,12 +412,13 @@ enum xnvme_cli_opt_type {
 };
 
 enum xnvme_cli_opt_value_type {
-	XNVME_CLI_OPT_VTYPE_URI  = 0x1,
-	XNVME_CLI_OPT_VTYPE_NUM  = 0x2,
-	XNVME_CLI_OPT_VTYPE_HEX  = 0x3,
-	XNVME_CLI_OPT_VTYPE_FILE = 0x4,
-	XNVME_CLI_OPT_VTYPE_STR  = 0x5,
-	XNVME_CLI_OPT_VTYPE_SKIP = 0x6,
+	XNVME_CLI_OPT_VTYPE_URI   = 0x1,
+	XNVME_CLI_OPT_VTYPE_NUM   = 0x2,
+	XNVME_CLI_OPT_VTYPE_HEX   = 0x3,
+	XNVME_CLI_OPT_VTYPE_FILE  = 0x4,
+	XNVME_CLI_OPT_VTYPE_STR   = 0x5,
+	XNVME_CLI_OPT_VTYPE_SKIP  = 0x6,
+	XNVME_CLI_OPT_VTYPE_FLOAT = 0x7,
 };
 
 struct xnvme_cli_opt_attr {

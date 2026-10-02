@@ -202,6 +202,7 @@ dump_sync_iovec(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_file_open(fh)", err);
 		return err;
 	}
+	xnvme_dev_get_geo(fh); // Derives 'fh's geometry; the backend's cmd_iov() needs it
 	tbytes = cli->args.data_nbytes;
 	tbytes_left = tbytes;
 

@@ -16,8 +16,8 @@
  * translator, so the same allocation works whichever way the target is
  * attached; the caller hands the returned VA to the device as a PRP later.
  */
-void *
-xnvme_be_upcie_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t nbytes, uint64_t *phys)
+static void *
+_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t nbytes, uint64_t *phys)
 {
 	size_t offset = 0;
 	void *buf;
@@ -43,8 +43,19 @@ xnvme_be_upcie_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t nbyte
 	return buf;
 }
 
-void
-xnvme_be_upcie_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
+void *
+xnvme_be_upcie_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
+{
+	void *buf;
+
+	xnvme_be_upcie_heap_lock();
+	buf = _buf_alloc(dev, nbytes, phys);
+	xnvme_be_upcie_heap_unlock();
+	return buf;
+}
+
+static void
+_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
 {
 	size_t offset;
 
@@ -54,6 +65,14 @@ xnvme_be_upcie_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
 	offset = (size_t)((char *)buf - (char *)g_upcie_rte.mem.dmem.cpu_va);
 
 	dmamem_heap_free(&g_upcie_rte.mem.heap, offset);
+}
+
+void
+xnvme_be_upcie_buf_free(const struct xnvme_dev *dev, void *buf)
+{
+	xnvme_be_upcie_heap_lock();
+	_buf_free(dev, buf);
+	xnvme_be_upcie_heap_unlock();
 }
 
 int
