@@ -71,9 +71,9 @@ xnvme_be_spdk_queue_term(struct xnvme_queue *q)
 	}
 	reason = spdk_nvme_qpair_get_failure_reason(queue->qpair);
 	if (reason) {
-		// the qpair has already disconnected
+		// already disconnected; still must release the qpair below, since
+		// spdk_nvme_ctrlr_free_io_qpair() is the only way to give it back
 		XNVME_DEBUG("WARNING: qpair in failed state, reason: %d", reason);
-		return 0;
 	}
 
 	err = spdk_nvme_ctrlr_free_io_qpair(queue->qpair);
