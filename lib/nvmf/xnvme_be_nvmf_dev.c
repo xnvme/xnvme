@@ -76,13 +76,6 @@ xnvme_be_nvmf_dev_open(struct xnvme_dev *dev)
 		    "subnqn: %s",
 		    dev, dev->ident.uri, dev->ident.dtype, dev->ident.nsid, dev->ident.subnqn);
 
-	struct xnvme_be_nvmf_qpair_attr admin_attr = {
-		.qid = XNVME_BE_NVMF_ADMIN_QUEUE_ID,
-		.qsize = 8,
-		.capsule_size = NVME_CMD_CAPSULE_SIZE,
-		.completion_size = NVME_CPL_CAPSULE_SIZE,
-	};
-
 	dev->ident.csi = XNVME_SPEC_CSI_NVM;
 	if (strlen(dev->ident.subnqn) == 0 ||
 	    strcasecmp(dev->ident.subnqn, XNVME_NVMF_DISCOVERY_NQN) == 0 || dev->ident.nsid == 0 ||
