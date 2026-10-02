@@ -259,7 +259,6 @@ int
 xnvme_be_nvmf_fabric_connect(struct xnvme_be_nvmf_qpair *qpair)
 {
 	struct xnvme_spec_fabric_connect_data *connect_data;
-	struct xnvme_be_nvmf_req *req = NULL;
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(qpair->dev);
 	struct xnvme_spec_cmd *cmd = &ctx.cmd;
 	struct xnvme_spec_fabric_cmd *fcmd = (struct xnvme_spec_fabric_cmd *)&ctx.cmd;
