@@ -111,7 +111,7 @@ _xnvme_be_nvmf_admin_cmd_idfy(struct xnvme_be_nvmf_qpair *qpair, struct xnvme_cm
 
 	NVMF_DEBUG("INFO: SGL address: %p", (void *)sgl->addr);
 	_hexdump_range(NVMF_DEBUG_CATEGORY_CMD_ADMIN, &sgl->addr, sizeof(sgl->addr));
-	NVMF_DEBUG("INFO: SGL length: %zu", sgl->keyed.len);
+	NVMF_DEBUG("INFO: SGL length: %u", sgl->keyed.len);
 	NVMF_DEBUG("INFO: SGL key: 0x%x", sgl->keyed.key);
 	NVMF_DEBUG("INFO: SGL type: 0x%x", sgl->keyed.type);
 	NVMF_DEBUG("INFO: SGL subtype: 0x%x", sgl->keyed.subtype);
