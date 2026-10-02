@@ -136,4 +136,16 @@ xnvme_be_nvmf_req_free(struct xnvme_be_nvmf_req_pool *pool, struct xnvme_be_nvmf
 	SLIST_INSERT_HEAD(&pool->free_list, req, next);
 	pool->allocated--;
 }
+
+static inline bool
+xnvme_be_nvmf_req_is_complete(struct xnvme_be_nvmf_req *req)
+{
+	return req->cmpl_type == XNVME_BE_NVMF_REQ_CMPL_TYPE_RECV;
+}
+
+static inline bool
+xnvme_be_nvmf_req_has_error(struct xnvme_be_nvmf_req *req)
+{
+	return req->status != 0;
+}
 #endif /* _INTERNAL_XNVME_BE_NVMF_REQ_H */

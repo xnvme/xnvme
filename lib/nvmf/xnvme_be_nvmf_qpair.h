@@ -117,14 +117,20 @@ xnvme_be_nvmf_qpair_poll(struct xnvme_be_nvmf_qpair *qpair, uint32_t max)
 	return qpair->ops->qpair_poll(qpair, max);
 }
 
+static inline bool
+xnvme_be_nvmf_qpair_has_error(struct xnvme_be_nvmf_qpair *qpair)
+{
+	return qpair->state == XNVME_NVMF_QPAIR_STATE_ERROR;
+}
+
 static inline void
 xnvme_be_nvmf_wait_for_completion(struct xnvme_be_nvmf_qpair *qpair, struct xnvme_be_nvmf_req *req)
 {
-	while (req->cmpl_type != XNVME_BE_NVMF_REQ_CMPL_TYPE_RECV) {
-		if (req->status)
+	while (!xnvme_be_nvmf_req_is_complete(req)) {
+		if (xnvme_be_nvmf_req_has_error(req))
 			break;
 
-		if (qpair->state == XNVME_NVMF_QPAIR_STATE_ERROR)
+		if (xnvme_be_nvmf_qpair_has_error(qpair))
 			break;
 
 		xnvme_be_nvmf_qpair_poll(qpair, 1);
