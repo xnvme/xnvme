@@ -74,9 +74,9 @@ _rdma_resolve_addrinfo(struct xnvme_be_nvmf_ctrlr *ctrlr, const char *uri)
 		goto failed_getaddrinfo;
 	}
 	NVMF_RDMACM_DEBUG("INFO: Successfully retrieved address for transport: IP: %s, Port: %s",
-			   ip_addr, port);
+			  ip_addr, port);
 	NVMF_RDMACM_DEBUG("INFO: Address family: %s",
-			   rdma_ctrlr->res->ai_family == AF_INET ? "IPv4" : "IPv6");
+			  rdma_ctrlr->res->ai_family == AF_INET ? "IPv4" : "IPv6");
 
 	return 0;
 
@@ -134,7 +134,7 @@ _rdma_ctrlr_connect(struct xnvme_be_nvmf_ctrlr *ctrlr, const char *uri)
 	for (struct rdma_addrinfo *ai = rdma_ctrlr->res; ai != NULL; ai = ai->ai_next) {
 		if (ai->ai_family != AF_INET) {
 			NVMF_RDMACM_DEBUG("INFO: Skipping unsupported address family: %d",
-					   ai->ai_family);
+					  ai->ai_family);
 			continue;
 		}
 
@@ -180,7 +180,7 @@ _rdma_ctrlr_disconnect(struct xnvme_be_nvmf_ctrlr *ctrlr)
 		err = xnvme_be_nvmf_qpair_disconnect(ctrlr->admin_qpair);
 		if (err) {
 			NVMF_RDMACM_ERROR("FAILED: xnvme_be_nvmf_disconnect_qpair(), err: %d",
-					   err);
+					  err);
 			return err;
 		}
 
@@ -218,7 +218,7 @@ _rdma_ctrlr_teardown(struct xnvme_be_nvmf_ctrlr *ctrlr)
  * ctrlr_reg / ctrlr_dereg
  *
  * Thin wrapper around ibv_reg_mr()/ibv_dereg_mr() on the ctrlr's PD. The PD
- * is created lazily during the admin qpair's transport connect, so it must 
+ * is created lazily during the admin qpair's transport connect, so it must
  * exist by the time any caller registers memory.
  */
 static int
@@ -570,7 +570,7 @@ _rdma_cmd_iov(struct xnvme_be_nvmf_qpair *XNVME_UNUSED(qpair),
 }
 
 /*
- * The only up-call the bottom half is allowed to reach. Folds what used 
+ * The only up-call the bottom half is allowed to reach. Folds what used
  * to be the on_capsule_recv callback: the length check,
  * the qpair-state check, and the completion delivery into the core.
  */
