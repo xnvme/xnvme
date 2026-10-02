@@ -101,7 +101,7 @@ _handle_fabric_connect_error(struct xnvme_spec_cpl *cpl,
 	NVMF_ERROR("FAILED: Fabric Connect rejected, sc: %u sct: %u", cpl->status.sc,
 		    cpl->status.sct);
 	_xnvme_print_error_code(cpl);
-	if (cpl->status.sc = 0x02) {
+	if (cpl->status.sc == 0x02) {
 		NVMF_DEBUG(
 			"INFO: Fabric Connect rejected due to invalid parameter, ipo: %u ips: %u",
 			connect_cpl->connect_invalid.ipo, connect_cpl->connect_invalid.iattr.ips);
