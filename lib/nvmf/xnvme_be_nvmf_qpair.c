@@ -140,6 +140,10 @@ xnvme_be_nvmf_qpair_complete(struct xnvme_be_nvmf_qpair *qpair, const struct xnv
 	ctx = (struct xnvme_cmd_ctx *)req->context;
 	ctx->cpl = *cpl;
 
+	NVMF_DEBUG("INFO: Completing request for cid: %u", ctx->cpl.cid);
+	_hexdump_range(NVMF_DEBUG_CATEGORY_FABRICS, &ctx->cpl, sizeof(ctx->cpl));
+
+
 	req->cmpl_type = XNVME_BE_NVMF_REQ_CMPL_TYPE_RECV;
 	req->status = 0;
 
