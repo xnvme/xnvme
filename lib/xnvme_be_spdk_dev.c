@@ -430,9 +430,8 @@ xnvme_be_spdk_dev_close(struct xnvme_dev *dev)
 	reason = spdk_nvme_qpair_get_failure_reason(state->qpair);
 	if (reason) {
 		XNVME_DEBUG("WARNING: qpair in failed state, reason: %d", reason);
-	} else {
-		spdk_nvme_ctrlr_free_io_qpair(state->qpair);
 	}
+	spdk_nvme_ctrlr_free_io_qpair(state->qpair);
 
 	err = pthread_mutex_destroy(&state->qpair_lock);
 	if (err) {
