@@ -31,7 +31,7 @@
 int
 xnvme_be_nvmf_queue_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 {
-	struct xnvme_be_nvmf_queue *queue = (struct xnvme_be_nvmf_queue *)q;
+	struct xnvme_be_nvmf_queue *XNVME_UNUSED(queue) = (struct xnvme_be_nvmf_queue *)q;
 
 	return 0;
 }
