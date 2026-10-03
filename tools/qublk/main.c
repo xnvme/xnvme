@@ -16,6 +16,7 @@
 
 #include <libxnvme.h>
 #include <xnvme_util.h>
+#include <xnvme_vcs.h>
 
 #include "ctrl.h"
 #include "io.h"
@@ -25,6 +26,11 @@
 #define QUBLK_DEFAULT_NQUEUES 1
 #define QUBLK_DEFAULT_DEV_ID (-1) ///< Let the kernel assign the ublk device identifier
 #define QUBLK_DEFAULT_MAX_IO_CAP (1u << 20)
+
+static void
+sigusr1_noop(int XNVME_UNUSED(sig))
+{
+}
 
 static int
 id_in(const char *id, const char **set, size_t n)
@@ -136,6 +142,37 @@ dev_add(struct qublk_dev *dev, const char *be)
 	return qublk_io_init(dev);
 }
 
+/**
+ * Starts 'dev's CUSE device, once every device's qublk_io_init() has run:
+ * that call and an already-running session's ioctl dispatch both reach the
+ * backend's shared per-process state (e.g. uPCIe's DMA heap), unserialized
+ * against each other
+ */
+static void
+dev_add_cuse(struct qublk_dev *dev)
+{
+	char name[32];
+	int rc;
+
+	if (!dev->cuse) {
+		return;
+	}
+
+	snprintf(name, sizeof(name), "ublkb%d-ctl", dev->dev_id);
+
+	rc = xnvme_cuse_start(&dev->cuse_session, dev->xdev, name);
+	if (rc == -ENOSYS) {
+		dev->cuse = 0; // Built without the CUSE mimic; quiet, nothing changed
+		return;
+	}
+	if (rc < 0) {
+		// On by default, not requested; non-fatal, the device still serves fine
+		xnvme_cli_perr("Failed: xnvme_cuse_start(); continuing without the CUSE device",
+			       rc);
+		dev->cuse = 0;
+	}
+}
+
 static void
 devs_teardown(struct qublk_dev *devs, uint32_t ndevs, struct qublk_thread *threads,
 	      uint32_t nthreads)
@@ -152,6 +189,12 @@ devs_teardown(struct qublk_dev *devs, uint32_t ndevs, struct qublk_thread *threa
 	}
 
 	qublk_io_threads_join(threads, nthreads);
+
+	// Every session stopped before any device's qublk_io_fini() runs, for the
+	// same reason dev_add_cuse() waits for every qublk_io_init() to finish first
+	for (uint32_t d = 0; d < ndevs; d++) {
+		xnvme_cuse_stop(&devs[d].cuse_session);
+	}
 
 	for (uint32_t d = 0; d < ndevs; d++) {
 		qublk_io_fini(&devs[d]);
@@ -266,6 +309,7 @@ sub_run(struct xnvme_cli *cli)
 		devs[d].nqueues = nqueues;
 		devs[d].qdepth = qdepth;
 		devs[d].flags = UBLK_F_CMD_IOCTL_ENCODE;
+		devs[d].cuse = !cli->args.no_cuse;
 	}
 
 	for (uint32_t d = 0; d < ndevs; d++) {
@@ -277,6 +321,14 @@ sub_run(struct xnvme_cli *cli)
 
 	setvbuf(stderr, NULL, _IOLBF, 0);
 
+	// Without a handler, xnvme_cuse_stop()'s SIGUSR1 would terminate the process
+	{
+		struct sigaction sa = {0};
+
+		sa.sa_handler = sigusr1_noop;
+		sigaction(SIGUSR1, &sa, NULL);
+	}
+
 	sigemptyset(&blk);
 	sigaddset(&blk, SIGINT);
 	sigaddset(&blk, SIGTERM);
@@ -287,6 +339,10 @@ sub_run(struct xnvme_cli *cli)
 		if (err) {
 			goto teardown;
 		}
+	}
+
+	for (uint32_t d = 0; d < ndevs; d++) {
+		dev_add_cuse(&devs[d]);
 	}
 
 	err = qublk_io_threads_start(devs, ndevs, cli->args.cpus, cli->args.ncpus, &threads,
@@ -302,7 +358,15 @@ sub_run(struct xnvme_cli *cli)
 		}
 
 		devs[d].started = 1;
-		fprintf(stderr, "qublk: /dev/ublkb%d ready (Ctrl-C to stop)\n", devs[d].dev_id);
+		if (devs[d].cuse) {
+			fprintf(stderr,
+				"qublk: /dev/ublkb%d and /dev/ublkb%d-ctl ready (Ctrl-C to "
+				"stop)\n",
+				devs[d].dev_id, devs[d].dev_id);
+		} else {
+			fprintf(stderr, "qublk: /dev/ublkb%d ready (Ctrl-C to stop)\n",
+				devs[d].dev_id);
+		}
 	}
 
 	sigwait(&blk, &sig);
@@ -369,6 +433,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_MAX_IO_BYTES, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_CPUMASK, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_CPULIST, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_NO_CUSE, XNVME_CLI_LFLG},
 			{XNVME_CLI_OPT_ORCH_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HOMI_ID, XNVME_CLI_LOPT},
@@ -388,6 +453,7 @@ static struct xnvme_cli_sub g_subs[] = {
 
 static struct xnvme_cli g_cli = {
 	.title = "qublk - ublk server backed by xNVMe",
+	.vcs = XNVME_VCS_TAG,
 	.descr_short = "Expose an xNVMe device as a ublk block-device",
 	.descr_long = "",
 	.subs = g_subs,

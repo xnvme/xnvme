@@ -29,17 +29,75 @@ This backend uses a **hybrid memory model**:
 |-----------|----------|--------|
 | Data buffers (`xnvme_buf_alloc`) | GPU device memory (CUDA heap, 1 GiB) | Transferred directly by the NVMe controller via PCIe P2P, bypassing host DRAM |
 | SQ, CQ, PRP lists | Host hugepage memory (host heap, 256 MiB) | The CPU writes and the NVMe controller DMA-reads these structures; host-accessible memory is required |
+| CQ, with `XNVME_QUEUE_P2P_CQ_MIRROR` | GPU device memory, mirrored into the host CQ by a resident kernel | Keeps the controller's completion writes behind its data writes on one path; see {ref}`sec-backends-upcie-cuda-p2p-cq-mirror` |
+| SQ of a GPU-issued queue | GPU device memory; host memory with `XNVME_QUEUE_SQ_HOSTMEM` | The controller fetches entries; from DRAM that is faster than across the root complex, see {ref}`sec-backends-upcie-cuda-gpu` |
 
 The NVMe **data** path goes GPU ↔ NVMe without touching host DRAM. The
 **control** path (submission queue entries, completion queue entries, PRP lists)
 still flows through host memory. As a result, both the CUDA heap and the host
 hugepage runtime are initialized when the first **upcie-cuda** device is opened.
 
+(sec-backends-upcie-cuda-p2p-cq-mirror)=
+
+## Completions in device memory
+
+PCIe keeps a requester's posted writes in order. With one destination that
+costs nothing; with two, the root complex holds each write until the one ahead
+of it has been accepted at the other. A controller that writes its payloads
+into the GPU and its completions into host memory changes destination at every
+command, and on a fast enough device that shows up as a ceiling on small I/O:
+on a drive that reaches 4.0M IOPS at 512 B with the buffers in host memory, the
+same run into device memory stops at 2.8M, from a queue depth of 64 upwards.
+Larger transfers are unaffected, and so are drives that never approach the
+rate. The other split, payloads in host memory and completions in the GPU, has
+not been measured; by this account it pays the same.
+
+Opening a queue with `XNVME_QUEUE_P2P_CQ_MIRROR` places its completion queue in device
+memory as well, beside the data, so the controller has a single destination
+again. The CPU still owns the queue: it builds submissions, rings doorbells and
+polls for completions exactly as before, against the host-memory CQ the queue
+would have had anyway. What changes is who fills that CQ. A kernel resident on
+the GPU for as long as the process has such a queue watches each device-memory
+CQ with one warp, and copies completions into the host CQ as their phase bit
+turns. No command is issued from the GPU and the GPU never touches the
+controller's registers, so this needs none of the setup that
+{ref}`sec-backends-upcie-cuda-gpu` does and works behind a translating IOMMU.
+
+The mirror costs about a microsecond per completion, which is a loss below a
+queue depth of 32 and a gain above 64. On the drive above the ceiling is gone
+at every size measured, 512 B through 4 KiB, with host memory and device memory
+within a percent or two of each other. One kernel serves every queue in the
+process, up to 64 of them, and is launched with the first and retired with the
+last; it needs no stream or context from the caller. The `--p2p-cq-mirror` flag of
+{ref}`sec-tools-xnvmeperf` and of the test tools sets the flag.
+
+A controller served by {ref}`sec-tools-homi` takes the flag as well. The
+client cannot create the queue itself there, so it asks the server for one
+whose completion queue alone lies in the heap the client registered, naming it
+by offset; the submission queue and the PRP scratch stay in the server's heap,
+as for any served queue, and the server creates the pair with the completion
+queue at the client's address. What comes back names a completion queue in the
+server's heap that the controller never writes, and the resident kernel keeps
+that one a copy of the queue it placed, so the submitting side is unchanged.
+
+**upcie-hip** implements the flag the same way, with a wavefront per queue.
+Its kernel is the only device code in the library and is compiled by `hipcc`
+on its own into a code object that the library embeds and loads through the
+module API, so the library remains an ordinary C build against the HIP
+runtime. The **upcie** backend rejects the flag with `ENOTSUP`, having no GPU
+to put the CQ in; the other backends ignore it, as they do the polling flags
+they do not implement.
+
 A caller can hand over device memory it allocated itself with
 `xnvme_mem_map()`, which registers the range through the same registry the
 heap uses, so such a buffer is usable exactly as one from
 `xnvme_buf_alloc()`. Registering a range twice is cheap, since what it
-covers is refcounted.
+covers is refcounted. On a controller a server holds, the range is exported as
+a dma-buf and registered with the server instead, and the description that
+comes back is adopted into the same table; that is a socket round trip per
+call, so a client registers its buffers before it submits, not per command.
+Either way the range is whole device pages, 64 KiB on CUDA, since that is the
+granule the export works in.
 
 (sec-backends-upcie-cuda-kernel)=
 
@@ -72,6 +130,10 @@ registry hands it those. Under `vfio-pci` an IOMMU translates, so every address
 it sees is an IOVA. Device memory cannot get one the way host memory does,
 since `IOMMU_IOAS_MAP_FILE` rejects the dma-bufs the CUDA driver exports.
 
+Where the controller is on `vfio-cdev`, `iommufd` is asked first: it maps the
+heap once for the whole process and needs no out-of-tree module. It cannot
+always, and what follows is what happens when it cannot.
+
 The `iommu-map-pa` module inserts the VRAM into the controller's domain
 directly, and the registry's table holds the resulting IOVAs. It is published as
 an asset of the same release as `dmabuf-import`, packaged for DKMS:
@@ -89,30 +151,28 @@ so a window is reserved for it: 64 GiB at 256 GiB, with the IOAS allowed every
 usable IOVA except that. Override where it does not fit:
 
 ```bash
-XNVME_UPCIE_GPU_IOVA_BASE=0x2000000000  # 128 GiB
-XNVME_UPCIE_GPU_IOVA_SIZE=0x400000000   # 16 GiB
-XNVME_UPCIE_GPU_IOVA_SLICE=0x80000000   # 2 GiB per controller
+XNVME_UPCIE_IOVA_BASE=0x2000000000  # 128 GiB
+XNVME_UPCIE_IOVA_SIZE=0x400000000   # 16 GiB
 ```
 
 A window outside every usable IOVA range fails `xnvme_dev_open()` with `ERANGE`.
 
 ### Several controllers
 
-A mapping reaches one IOMMU domain, so each controller gets its own slice of the
-window and maps the heap into its own domain. Three limits follow, on the
-`vfio-pci` path only:
+The window holds one set of addresses for the process. The first controller
+opened claims it and the heap is installed in it; every controller opened after
+that is attached to the same range, so all of them reach the heap, and anything
+registered with `xnvme_mem_map()`, at the same IOVAs through one translation
+table. Two limits follow, on the `vfio-pci` path only:
 
-- A slice is twice the size of the heap, leaving room for buffers registered
-  with `xnvme_mem_map()`. Set the width with `XNVME_UPCIE_GPU_IOVA_SLICE`. A
-  full slice fails the registration with `ENOSPC`.
-- The window holds 31 controllers by default, and never more than 64. Past that
-  `xnvme_dev_open()` fails with `ENOSPC`.
-- Each controller reserves a translation table of its own, sized as
-  {ref}`sec-backends-upcie-host` describes. `XNVME_UPCIE_VA_BITS` bounds it.
+- The heap and every registered buffer have to fit in the window. A full window
+  fails the registration with `ENOSPC`.
+- The translation table is sized as {ref}`sec-backends-upcie-host` describes.
+  `XNVME_UPCIE_VA_BITS` bounds it.
 
 A controller attaching later brings its own reserved regions. Where one overlaps
 the ranges the IOAS was told to allow, that attach fails with `EADDRINUSE`. Move
-the window with `XNVME_UPCIE_GPU_IOVA_BASE`.
+the window with `XNVME_UPCIE_IOVA_BASE`.
 
 `uio_pci_generic` is unaffected. Physical addresses read the same from every
 controller, so one table serves them all.
@@ -133,6 +193,29 @@ xnvme_mem_map(dev_b, buf, nbytes);
 
 Under `uio_pci_generic` one table serves every controller, so a single
 registration covers them all.
+
+(sec-backends-upcie-cuda-upstream)=
+
+### What upstream would have to change
+
+None of the out-of-tree code here exists because the kernel cannot do these
+things. It exists because the interfaces that would are closed to a `dma-buf`
+that a GPU exported, or to memory that is not RAM. Three changes would retire
+it:
+
+- **A way to resolve a `dma-buf` to physical addresses.** This is what
+  `dmabuf-import` does, and what a driver already does internally when it maps
+  one for DMA. Nothing equivalent is exposed to user space.
+- **`IOMMU_IOAS_MAP_FILE` accepting a GPU `dma-buf`.** It refuses one today,
+  which is why the mapping is installed from physical addresses instead.
+- **A CUDA runtime that can map a BAR it is handed.**
+  `cuMemHostRegister(..., CU_MEMHOSTREGISTER_IOMEMORY)` puts a BAR in the GPU's
+  address space, which is what lets a kernel ring a doorbell. It takes a host
+  mapping and resolves it, and for a mapping made through a `vfio` device it
+  will not: only the first page of one is accepted, and the doorbells are never
+  in it. Taking a `dma-buf` wrapping the BAR, which `vfio` can export, would
+  make the mapping a thing the runtime is given rather than something it has to
+  work out from a virtual address.
 
 (sec-backends-upcie-cuda-config)=
 
@@ -163,6 +246,23 @@ the hugepage setup steps in {ref}`sec-backends-upcie-host` before opening an
 
 ### GPU IOMMU domain
 
+```{important}
+GPU-issued I/O behind a translating IOMMU needs the `iommu_map_pa` module.
+The GPU rings the doorbell with a write to the register's physical address,
+the one the CUDA runtime resolved the BAR mapping to, and that write is a
+peer transaction translated in the GPU's own domain, not the controller's.
+Where that domain translates, nothing maps the controller's BAR there, and
+the write faults. The backend closes the gap itself: on opening a controller
+for GPU-issued I/O with the GPU's group of type `DMA` or `DMA-FQ`, it
+installs the controller's BAR0 into the GPU's domain at its own physical
+address through the mapper module, the same module the heap relies on for
+the reverse direction. With the module loaded nothing else is needed and the
+throughput is the one measured with the IOMMU off; without it the queue is
+refused and the fallback is the domain type, set as described below.
+Host-issued I/O, including {ref}`sec-backends-upcie-cuda-p2p-cq-mirror`, needs
+none of this and works either way.
+```
+
 Needed only for GPU-resident queues, meaning `xnvmeperf cuda-run`, `cuda-verify`
 and anything else built on {ref}`sec-api-c-gpu`. Host-driven I/O needs nothing
 here.
@@ -172,7 +272,14 @@ than the CPU doing it, so the write is peer-to-peer traffic into the
 controller's BAR0. It is translated by the GPU's own domain, not the
 controller's that {ref}`sec-backends-upcie-cuda-iommu` sets up, and CUDA hands
 the GPU a physical address. With the GPU in a translating domain nothing has
-mapped it, so every write faults.
+mapped it, so every write faults, which is what the identity mapping of the
+BAR into that domain prevents. The mapping is per controller, held for as
+long as the controller is open, and shared where a second process opens the
+same controller for the same GPU. The domain is the kernel's, the one the
+GPU's driver allocates its own DMA addresses from, and those come from the
+top of the address space while a BAR sits far below, so the identity range
+is free in practice. What follows describes the situation without the
+module.
 
 #### Recognising it
 
@@ -257,8 +364,32 @@ The **upcie-cuda** backend supports GPU-resident NVMe queue pairs via the
 `libxnvme_cuda` API. See {ref}`sec-api-c-gpu` for the full API reference,
 including host-side setup, CUDA kernel dispatch, and queue depth semantics.
 
-GPU-resident queues need the setup described in
-{ref}`sec-backends-upcie-cuda-gpu-domain`.
+GPU-resident queues behind a translating IOMMU need the `iommu_map_pa`
+module, through which the backend puts the controller's registers where the
+GPU's doorbell writes land; see {ref}`sec-backends-upcie-cuda-gpu-domain` for
+the mechanism and for the domain setting that stands in for the module when
+it is absent.
+
+By default the whole queue pair lives in device memory: the kernel writes
+entries locally, the controller fetches them across PCIe, completes into
+device memory and moves payloads to and from it, so nothing of the I/O
+touches host DRAM. Passing `XNVME_QUEUE_SQ_HOSTMEM` to
+`xnvme_cuda_queue_create()` moves the submission queue alone into host
+memory, taken from the process's own heap or, on a served controller, from
+the server's, and mapped into the GPU's address space; the kernel then writes
+entries across PCIe and the controller fetches them from DRAM. The reader
+decides: a controller fetching entries from device memory pays a PCIe round
+trip per fetch and keeps only so many in flight, which on a fast controller
+capped a queue pair below what the host can drive, whereas the GPU's writes
+and the controller's completion writes are posted and cost nothing of the
+sort. Measured with 512 B random reads, the host placement raised one queue
+pair from 1.65M to 3.8M IOPS and eight drives from 40M to 49M, at the same
+latency at a depth of one. What it costs is the entries themselves on the
+GPU's transmit side, four 16-byte writes per command, which is idle traffic
+for reads but competes with the controller's payload reads on writes; and
+the placement depends on host memory the GPU can map, which the identity
+domain the queue needs anyway provides. The `--sq-hostmem` flag of
+`xnvmeperf cuda-run` and `cuda-verify` selects it.
 
 (sec-backends-upcie-cuda-validation)=
 
@@ -288,6 +419,31 @@ cd cijoe && cijoe workflows/test-gpu.yaml --config configs/<your-config>.toml
 
 - **31 controllers per process under an enforcing IOMMU** at the default heap
   and window size, capped at 64. See {ref}`sec-backends-upcie-cuda-iommu`.
+- **`vfio-pci` may need the mapping installed by hand.** Describing the GPU heap
+  by mapping its `dma-buf` is what `IOMMU_IOAS_MAP_FILE` would do, and it
+  refuses one a GPU runtime exported. Where `iommufd` cannot map it, the mapping
+  goes in from the physical addresses behind it instead. That happens either
+  way: a server does it for a client, and a process holding the controller does
+  it for itself. See {ref}`sec-backends-upcie-cuda-upstream`.
+- **Doorbells come from `sysfs` under `vfio-pci`.** A queue the GPU submits on
+  needs the doorbell page in the GPU's address space, and the CUDA runtime will
+  not take it from a `vfio` mapping, so it is taken from the BAR's `resource0`
+  instead. Both name the same registers. This costs a served client something:
+  everything else it needs arrives as a descriptor over the socket, and this it
+  has to open for itself, which `resource0` only permits to root. A client that
+  submits from the host is unaffected.
+- **I/O the GPU issues needs no server.** A controller this process opened
+  builds the same queue in the same device memory, and behind an IOMMU installs
+  the mapping itself rather than being given one.
+- **I/O the GPU issues behind a translating IOMMU needs the mapper module.**
+  The controller translates either way, through the domain `vfio-pci` installs
+  for it; the GPU stays on its own driver and uses the default domain, and its
+  doorbell writes are translated there. With that domain `DMA-FQ` rather than
+  `identity`, the backend installs the controller's BAR into it through
+  `iommu_map_pa`, served or not, and the queue then runs as it does with the
+  IOMMU off. Without the module the queue is refused. What a client submits
+  from the host, payloads in device memory included, works either way and
+  needs no mapping.
 - **GPU 0 only.** The CUDA context and heap are always created on CUDA device
   0. Multiple GPU support is not implemented.
 - **1 GiB heap.** The CUDA heap is fixed at 1 GiB. Allocations beyond this

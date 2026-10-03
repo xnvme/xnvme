@@ -3,7 +3,97 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <errno.h>
+#include <pthread.h>
 #include <libxnvme.h>
+
+#define THREADS 16
+#define SLOTS 8
+
+#ifndef XNVME_RAND_R_ENABLED
+/**
+ * Thread-safe stand-in for rand_r() where libc has none, e.g. Windows; the
+ * glibc LCG, returning bits [30:16] of the state
+ */
+static int
+rand_r(unsigned int *seed)
+{
+	*seed = *seed * 1103515245 + 12345;
+	return (int)((*seed >> 16) & 0x7fff);
+}
+#endif
+
+struct hammer {
+	struct xnvme_dev *dev;
+	uint64_t rounds;
+	unsigned seed;
+	int nerr;
+};
+
+/**
+ * Allocate and free buffers of varying sizes in a random order, one thread of
+ * many doing the same on the same device, so the backend's allocator sees
+ * concurrent calls. A backend that shares one heap across threads without a
+ * lock corrupts its free list here, which glibc reports as a double free or a
+ * corrupted chunk.
+ */
+static void *
+hammer_fn(void *arg)
+{
+	struct hammer *h = arg;
+	void *held[SLOTS] = {NULL};
+
+	for (uint64_t round = 0; round < h->rounds; ++round) {
+		int slot = rand_r(&h->seed) % SLOTS;
+
+		if (held[slot]) {
+			xnvme_buf_free(h->dev, held[slot]);
+			held[slot] = NULL;
+			continue;
+		}
+		held[slot] = xnvme_buf_alloc(h->dev, 4096UL << (rand_r(&h->seed) % 6));
+		if (!held[slot]) {
+			h->nerr += 1;
+		}
+	}
+	for (int slot = 0; slot < SLOTS; ++slot) {
+		if (held[slot]) {
+			xnvme_buf_free(h->dev, held[slot]);
+		}
+	}
+	return NULL;
+}
+
+static int
+test_buf_alloc_free_threads(struct xnvme_cli *cli)
+{
+	struct hammer hammers[THREADS];
+	pthread_t tids[THREADS];
+	int nerr = 0;
+
+	xnvme_cli_pinf("threads: %d, rounds per thread: %zu", THREADS, cli->args.count);
+
+	for (int i = 0; i < THREADS; ++i) {
+		hammers[i].dev = cli->args.dev;
+		hammers[i].rounds = cli->args.count;
+		hammers[i].seed = 1000 + i;
+		hammers[i].nerr = 0;
+		if (pthread_create(&tids[i], NULL, hammer_fn, &hammers[i])) {
+			xnvme_cli_perr("pthread_create()", -errno);
+			return -errno;
+		}
+	}
+	for (int i = 0; i < THREADS; ++i) {
+		pthread_join(tids[i], NULL);
+		nerr += hammers[i].nerr;
+	}
+
+	if (nerr) {
+		xnvme_cli_pinf("nerr: %d allocations refused", nerr);
+		return -ENOMEM;
+	}
+	xnvme_cli_pinf("LGMT: xnvme_buf_{alloc,free} from %d threads", THREADS);
+	return 0;
+}
 
 static int
 test_buf_alloc_free(struct xnvme_cli *cli)
@@ -139,6 +229,19 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_COUNT, XNVME_CLI_LREQ},
 
+			XNVME_CLI_ADMIN_OPTS,
+		},
+	},
+	{
+		"buf_alloc_free_threads",
+		"Allocate and free buffers from 16 threads at once, 'count' rounds each",
+		"Allocate and free buffers from 16 threads at once, 'count' rounds each",
+		test_buf_alloc_free_threads,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_COUNT, XNVME_CLI_LREQ},
 			XNVME_CLI_ADMIN_OPTS,
 		},
 	},

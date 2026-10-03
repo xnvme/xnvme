@@ -1,0 +1,13 @@
+---
+doc: |
+  Put a host back after benchmarks
+
+  Undoes what perf-prepare.yaml did, from the record it left on the host.
+  cijoe needs a config even with the local transport, so pass the
+  transport config, or any config, when running on the host itself:
+
+    cijoe workflows/perf-restore.yaml --config <transport>.toml
+
+steps:
+- name: restore
+  uses: perf_restore

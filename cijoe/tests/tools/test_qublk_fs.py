@@ -30,7 +30,6 @@ MOUNT = f"mount {UBLK_NODE} {MNT}"
 UMOUNT = f"umount {MNT}"
 
 # Write a reproducible payload and record its digest next to it.
-# No single-quotes in payload lines: the session is wrapped in bash -c '...'
 WRITE_PAYLOAD = [
     f"dd if=/dev/urandom of={PAYLOAD_FILE} bs=1M count={PAYLOAD_MIB} status=none",
     f'sha256sum {PAYLOAD_FILE} | cut -d" " -f1 > {MNT}/payload.sha256',

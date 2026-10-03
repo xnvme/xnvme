@@ -7,10 +7,21 @@
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_SPDK_ENABLED
 #include <errno.h>
+#include <unistd.h>
 #include <spdk/env.h>
 #include <xnvme_dev.h>
 #include <xnvme_queue.h>
 #include <xnvme_be_spdk.h>
+
+/**
+ * Over NVMe-oF, closing one I/O qpair and immediately opening another can race the
+ * target's teardown of the qid just released: the target still considers the qid
+ * in use and rejects the new qpair's connect, which SPDK surfaces as a NULL qpair.
+ * A short bounded retry absorbs that transient window; it is a no-op for PCIe,
+ * where qpair allocation is local and does not depend on a remote peer settling.
+ */
+#define XNVME_BE_SPDK_ALLOC_IO_QPAIR_RETRIES 50
+#define XNVME_BE_SPDK_ALLOC_IO_QPAIR_RETRY_US 50000
 
 /**
  * Command Queue for asynchronous command submission and completion
@@ -43,7 +54,13 @@ xnvme_be_spdk_queue_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 		qopts.delay_cmd_submit = false;
 	}
 
-	queue->qpair = spdk_nvme_ctrlr_alloc_io_qpair(state->ctrlr, &qopts, sizeof(qopts));
+	for (int retries = 0; !queue->qpair && retries < XNVME_BE_SPDK_ALLOC_IO_QPAIR_RETRIES;
+	     ++retries) {
+		if (retries) {
+			usleep(XNVME_BE_SPDK_ALLOC_IO_QPAIR_RETRY_US);
+		}
+		queue->qpair = spdk_nvme_ctrlr_alloc_io_qpair(state->ctrlr, &qopts, sizeof(qopts));
+	}
 	if (!queue->qpair) {
 		XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_alloc_io_qpair()");
 		return -ENOMEM;
@@ -71,9 +88,9 @@ xnvme_be_spdk_queue_term(struct xnvme_queue *q)
 	}
 	reason = spdk_nvme_qpair_get_failure_reason(queue->qpair);
 	if (reason) {
-		// the qpair has already disconnected
+		// already disconnected; still must release the qpair below, since
+		// spdk_nvme_ctrlr_free_io_qpair() is the only way to give it back
 		XNVME_DEBUG("WARNING: qpair in failed state, reason: %d", reason);
-		return 0;
 	}
 
 	err = spdk_nvme_ctrlr_free_io_qpair(queue->qpair);

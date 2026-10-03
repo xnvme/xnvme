@@ -47,7 +47,7 @@ foreach source, tests : tools
   bin_name = fs.stem(source)
   bin = executable(
     bin_name,
-    source,
+    [source, xnvme_vcs_h],
     include_directories: [conf_inc, xnvme_inc],
     link_args: link_args_hardening,
     link_with: xnvmelib,

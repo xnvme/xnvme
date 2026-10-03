@@ -30,6 +30,15 @@ concurrently.
 .. literalinclude:: xnvmeperf_run_usage.out
    :language: bash
 
+The title of the results block carries the library version and the revision
+the library was built from, so a measurement can be traced back to the exact
+commit. The revision is what ``git describe --tags --dirty=+ --always``
+reported at build time; a trailing ``+`` means the tree had uncommitted
+changes. A source archive made with ``meson dist``, such as the
+``xnvme-0.7.5.tar.gz`` CI builds from, carries the revision it was cut from.
+A copy of the sources with neither git metadata nor that stamp shows
+``unknown`` in its place.
+
 Example — sequential read on a single device::
 
    xnvmeperf run --iopattern read --qdepth 32 --iosize 4096 \
@@ -39,6 +48,20 @@ Example — random write across two devices on two CPUs::
 
    xnvmeperf run --iopattern randwrite --qdepth 64 --iosize 4096 \
        --runtime 10 --cpumask 0x3 /dev/nvme0n1 /dev/nvme1n1
+
+With ``--be upcie-cuda`` or ``--be upcie-hip`` the payloads land in GPU memory
+while the CPU drives the queues. Adding ``--p2p-cq-mirror`` places the completion
+queues there as well, so the controller's completion writes no longer queue
+behind its data writes; see :ref:`sec-backends-upcie-cuda-p2p-cq-mirror` for when
+that matters. Example::
+
+   xnvmeperf run --iopattern randread --qdepth 128 --iosize 512 \
+       --runtime 10 --cpulist 0 --be upcie-cuda --p2p-cq-mirror 0000:01:00.0
+
+For ``cuda-run`` and ``cuda-verify``, where the GPU issues the I/O, the queue
+pair lives in GPU memory. Adding ``--sq-hostmem`` moves the submission queue
+into host memory, which the controller fetches from faster than from GPU
+memory; see :ref:`sec-backends-upcie-cuda-gpu` for the trade-off.
 
 ``verify`` — Data integrity check
 ==================================
@@ -72,11 +95,21 @@ Example::
 
 Requires the ``upcie-cuda`` backend. All queues across all devices are driven
 by a single CUDA kernel: each CUDA block owns one NVMe queue and each thread
-within the block owns one queue slot, so ``--qdepth`` threads submit and reap
-commands in lock-step. The grid has ``ndevs × --nqueues`` blocks in total.
+within the block owns one queue slot. The grid has ``ndevs × --nqueues``
+blocks in total.
 
-Both ``--qdepth`` and ``--iosize`` must be powers of 2. Supported patterns are
-``read``, ``write``, ``randread``, and ``randwrite``.
+The slots of a queue are split into ``--nbatches`` groups that take turns: a
+group reaps the queue's next batch of completions and refills the room they
+leave, while the other groups' commands stay in service. With ``--nbatches 1``
+the whole depth is submitted, then waited for, so the queue runs empty for one
+GPU round trip per depth's worth of I/O and a single queue per drive cannot
+reach the drive's rate however deep it is; the default of 2 keeps the queue
+between half and fully loaded, and a single queue then reaches what two queues
+per drive otherwise take.
+
+``--qdepth``, ``--nbatches`` and ``--iosize`` must be powers of 2, and
+``--nbatches`` no larger than ``--qdepth``. Supported patterns are ``read``,
+``write``, ``randread``, and ``randwrite``.
 
 .. literalinclude:: xnvmeperf_cuda_run_usage.out
    :language: bash
