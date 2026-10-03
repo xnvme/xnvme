@@ -7,10 +7,31 @@
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_SPDK_ENABLED
 #include <errno.h>
+#include <unistd.h>
 #include <spdk/env.h>
 #include <xnvme_dev.h>
 #include <xnvme_queue.h>
 #include <xnvme_be_spdk.h>
+
+#define XNVME_BE_SPDK_ALLOC_IO_QPAIR_RETRIES 50
+#define XNVME_BE_SPDK_ALLOC_IO_QPAIR_RETRY_US 50000
+
+struct spdk_nvme_qpair *
+xnvme_be_spdk_alloc_io_qpair(struct spdk_nvme_ctrlr *ctrlr,
+			     const struct spdk_nvme_io_qpair_opts *opts, size_t opts_size)
+{
+	struct spdk_nvme_qpair *qpair = NULL;
+
+	for (int retries = 0; !qpair && retries < XNVME_BE_SPDK_ALLOC_IO_QPAIR_RETRIES;
+	     ++retries) {
+		if (retries) {
+			usleep(XNVME_BE_SPDK_ALLOC_IO_QPAIR_RETRY_US);
+		}
+		qpair = spdk_nvme_ctrlr_alloc_io_qpair(ctrlr, opts, opts_size);
+	}
+
+	return qpair;
+}
 
 /**
  * Command Queue for asynchronous command submission and completion
@@ -43,7 +64,7 @@ xnvme_be_spdk_queue_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 		qopts.delay_cmd_submit = false;
 	}
 
-	queue->qpair = spdk_nvme_ctrlr_alloc_io_qpair(state->ctrlr, &qopts, sizeof(qopts));
+	queue->qpair = xnvme_be_spdk_alloc_io_qpair(state->ctrlr, &qopts, sizeof(qopts));
 	if (!queue->qpair) {
 		XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_alloc_io_qpair()");
 		return -ENOMEM;

@@ -57,6 +57,10 @@ struct xnvme_be_spdk_state {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_spdk_state) == XNVME_BE_STATE_NBYTES, "Incorrect size")
 
+struct spdk_nvme_qpair *
+xnvme_be_spdk_alloc_io_qpair(struct spdk_nvme_ctrlr *ctrlr,
+			     const struct spdk_nvme_io_qpair_opts *opts, size_t opts_size);
+
 extern struct xnvme_be_admin g_xnvme_be_spdk_admin;
 extern struct xnvme_be_sync g_xnvme_be_spdk_sync;
 extern struct xnvme_be_async g_xnvme_be_spdk_async;
