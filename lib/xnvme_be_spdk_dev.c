@@ -646,7 +646,7 @@ xnvme_be_spdk_dev_open(struct xnvme_dev *dev)
 		return -err;
 	}
 
-	state->qpair = spdk_nvme_ctrlr_alloc_io_qpair(state->ctrlr, NULL, 0);
+	state->qpair = xnvme_be_spdk_alloc_io_qpair(state->ctrlr, NULL, 0);
 	if (!state->qpair) {
 		XNVME_DEBUG("FAILED: spdk_nvme_ctrlr_alloc_io_qpair()");
 		pthread_mutex_destroy(&state->qpair_lock);
