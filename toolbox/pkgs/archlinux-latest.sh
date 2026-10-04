@@ -12,6 +12,7 @@ pacman -S --noconfirm \
  bash \
  clang \
  cunit \
+ extra/rdma-core \
  findutils \
  git \
  libaio \

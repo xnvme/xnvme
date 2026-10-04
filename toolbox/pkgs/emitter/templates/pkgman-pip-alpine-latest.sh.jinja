@@ -1,5 +1,6 @@
 # Install packages via the Python package-manager (pip)
-python3 -m pip install --break-system-packages --ignore-installed \
+python3 -m pip install --upgrade pip
+python3 -m pip install --ignore-installed \
 {%- for dep in deps %}
  {{ dep }}{% if not loop.last %} \{% endif %}
 {%- endfor %}

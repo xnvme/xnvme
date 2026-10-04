@@ -27,6 +27,7 @@ emerge \
  dev-vcs/git \
  findutils \
  make \
+ sys-cluster/rdma-core \
  sys-devel/patch \
  sys-libs/liburing \
  sys-libs/ncurses \
@@ -50,6 +51,6 @@ meson install -C builddir
 popd
 
 # Install packages via the Python package-manager (pip)
-python3 -m pip install --break-system-packages \
+python3 -m pip install --break-system-packages --ignore-installed \
  pipx
 
