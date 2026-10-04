@@ -2,8 +2,8 @@
 git clone https://github.com/xnvme/xnvme.git
 cd xnvme
 
-# Install toolchain and libraries on macOS (14)
-sudo ./xnvme/toolbox/pkgs/macos-14.sh
+# Install toolchain and libraries on macOS (26)
+sudo ./xnvme/toolbox/pkgs/macos-26.sh
 
 # configure xNVMe
 meson setup builddir

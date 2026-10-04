@@ -1,6 +1,43 @@
 (sec-toolchain-macos)=
 # macOS
 
+## macOS (26)
+
+Install the required toolchain and libraries by running the package installation
+script provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as `root` or with
+`sudo`):
+
+```bash
+sudo ./xnvme/toolbox/pkgs/macos-26.sh
+```
+
+Or, run the commands contained within the script manually:
+
+```{literalinclude} ../../../toolbox/pkgs/macos-26.sh
+:language: bash
+:lines: 8-
+```
+
+:::{note}
+A Docker-image is provided via `ghcr.io`, specifically
+`ghcr.io/xnvme/xnvme-deps-macos-26:main`. This Docker-image contains
+all the software described above.
+:::
+
+Then go ahead and configure, build and install using `meson`:
+
+```{literalinclude} ../../../toolbox/pkgs/default-build.sh
+:language: bash
+:lines: 2-
+```
+
+
+:::{note}
+Interfaces; libaio, liburing, libvfn, and SPDK are not supported on macOS.
+:::
+
+
 ## macOS (15)
 
 Install the required toolchain and libraries by running the package installation

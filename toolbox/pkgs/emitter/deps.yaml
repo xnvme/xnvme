@@ -568,8 +568,11 @@ platforms:
 
 - alias: macOS
   notes: Interfaces; libaio, liburing, libvfn, and SPDK are not supported on macOS.
+  # 14 is kept for cijoe/configs/verify-phys-macos.toml, the physical lab Mac,
+  # which is still on that version; it is not part of the GitHub-hosted
+  # build-macos matrix, which only tracks the latest two GA runner images.
   name: macos
-  ver: [15, 14]
+  ver: [26, 15, 14]
   os: macos
   mng: brew
   drop: []
