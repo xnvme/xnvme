@@ -411,8 +411,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - {os: 'macos', ver: '14'}
         - {os: 'macos', ver: '15'}
+        - {os: 'macos', ver: '26'}
 
     steps:
     - name: Retrieve and unpack the xNVMe source archive
