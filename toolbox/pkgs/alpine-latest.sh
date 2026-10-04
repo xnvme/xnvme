@@ -57,6 +57,6 @@ popd
 
 # Install packages via the Python package-manager (pip)
 python3 -m pip install --upgrade pip
-python3 -m pip install \
+python3 -m pip install --ignore-installed \
  pipx
 
