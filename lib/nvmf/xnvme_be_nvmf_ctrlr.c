@@ -7,6 +7,7 @@
 #include <xnvme_be_nvmf_debug.h>
 #include <xnvme_be_nvmf_fabric.h>
 #include <xnvme_be_nvmf_qpair.h>
+#include <xnvme_be_nvmf_subsys.h>
 #include <xnvme_be_nvmf_transport.h>
 
 #include <xnvme_be_nvmf_ctrlr.h>
@@ -261,7 +262,7 @@ xnvme_be_nvmf_ctrlr_enable(struct xnvme_be_nvmf_ctrlr *ctrlr)
 		return -EINVAL;
 	}
 
-	return xnvme_be_nvmf_fabric_enable(ctrlr, ctrlr->admin_qpair);
+	return xnvme_be_nvmf_fabric_enable(ctrlr, ctrlr->admin_qpair, true);
 }
 
 /**
@@ -328,6 +329,8 @@ xnvme_be_nvmf_dev_ctrlr_init(struct xnvme_dev *dev)
 		return NULL;
 	}
 
+	ctrlr->last_assigned_discovery_id = 0;
+
 	_dump_ctrlr(ctrlr);
 
 	err = xnvme_be_nvmf_ctrlr_enable(ctrlr);
@@ -370,3 +373,32 @@ xnvme_be_nvmf_dev_ctrlr_term(void *ctrlr)
 
 	return 0;
 }
+
+struct xnvme_be_nvmf_subsys *xnvme_be_nvmf_ctrlr_find_first_subsys(struct xnvme_be_nvmf_ctrlr *ctrlr, const char *subnqn)
+{
+    struct xnvme_be_nvmf_subsys *subsys;
+
+    SLIST_FOREACH(subsys, &ctrlr->subsystems, entry) {
+        if (strcmp(subsys->subnqn, subnqn) == 0) {
+            return subsys;
+        }
+    }
+
+    return NULL;
+}
+
+struct xnvme_be_nvmf_subsys *
+xnvme_be_nvmf_ctrlr_find_first_subsys_nsidx(struct xnvme_be_nvmf_ctrlr *ctrlr, int nsidx)
+{
+    struct xnvme_be_nvmf_subsys *subsys;
+
+    SLIST_FOREACH(subsys, &ctrlr->subsystems, entry) {
+		NVMF_DEBUG("INFO: Checking subsys with discovery_nsidx=%d against nsidx=%d", subsys->discovery_nsidx, nsidx);
+        if (subsys->discovery_nsidx == nsidx) {
+            return subsys;
+        }
+    }
+
+    return NULL;
+}
+

@@ -14,10 +14,15 @@
 #include <xnvme_be_nvmf_spec_base.h>
 #include <xnvme_be_nvmf_debug.h>
 
+int 
+xnvme_be_nvmf_get_discovery_log(struct xnvme_be_nvmf_ctrlr *ctrlr,
+	struct xnvme_be_nvmf_qpair *admin_qpair, 
+	struct xnvme_spec_discovery_log_page *log_page);
+
 #define NVMF_DEBUG_CATEGORY NVMF_DEBUG_CATEGORY_FABRICS
 #define _PROP_GET(qpair, prop, retvar, val, label)                                          \
 	do {                                                                                \
-		int sz = _property_size(prop);                                              \
+		int sz = _nvmf_fabric_property_size(prop);                                              \
 		if (sz <= 0) {                                                              \
 			NVMF_ERROR("FAILED: property_get " #prop ", invalid size: %d", sz); \
 			goto label;                                                         \
@@ -31,7 +36,7 @@
 
 #define _PROP_SET(qpair, prop, retvar, val, label)                                          \
 	do {                                                                                \
-		int sz = _property_size(prop);                                              \
+		int sz = _nvmf_fabric_property_size(prop);                                              \
 		if (sz <= 0) {                                                              \
 			NVMF_ERROR("FAILED: property_set " #prop ", invalid size: %d", sz); \
 			goto label;                                                         \
@@ -45,7 +50,7 @@
 
 // return value of 0 indicates that the property is reserved
 static inline int
-_property_size(uint32_t offset)
+_nvmf_fabric_property_size(uint32_t offset)
 {
 	switch (offset) {
 	case XNVME_SPEC_FABRIC_PROP_CAP:
@@ -67,25 +72,7 @@ _property_size(uint32_t offset)
 }
 
 static inline void
-_encode_keyed_sgl(struct xnvme_spec_sgl_descriptor *sgl, void *buf, size_t len, uint64_t key)
-{
-	assert(sgl != NULL);
-	assert(buf != NULL);
-	assert(len < (1UL << 24)); // Ensure length fits within 24 bits for the SGL descriptor
-	assert(key < (1UL << 32)); // Ensure key fits within 64 bits for the SGL descriptor
-
-	// Set the SGL descriptor type and subtype
-	sgl->keyed.type = XNVME_SPEC_SGL_DESCR_TYPE_KEYED_DATA_BLOCK;
-	sgl->keyed.subtype = XNVME_SPEC_SGL_DESCR_SUBTYPE_ADDRESS;
-
-	// set the SGL descriptor to point to the internal buffer
-	sgl->addr = (uintptr_t)buf;
-	sgl->keyed.len = len;
-	sgl->keyed.key = key;
-}
-
-static inline void
-_handle_fabric_connect_error(struct xnvme_spec_cpl *cpl,
+_nvmf_fabric_handle_connect_error(struct xnvme_spec_cpl *cpl,
 			     struct xnvme_spec_fabric_connect_resp_cpl *connect_cpl)
 {
 	NVMF_ERROR("FAILED: Fabric Connect rejected, sc: %u sct: %u", cpl->status.sc,
@@ -122,14 +109,14 @@ _handle_fabric_connect_error(struct xnvme_spec_cpl *cpl,
 }
 
 static inline void
-_handle_fabric_connect(struct xnvme_be_nvmf_qpair *qpair, void *buf)
+_nvmf_fabric_handle_connect(struct xnvme_be_nvmf_qpair *qpair, void *buf)
 {
 	struct xnvme_spec_cpl *cpl = buf;
 	struct xnvme_spec_fabric_connect_resp_cpl *connect_cpl =
 		(struct xnvme_spec_fabric_connect_resp_cpl *)cpl;
 
 	if (cpl->status.sc != 0) {
-		_handle_fabric_connect_error(cpl, connect_cpl);
+		_nvmf_fabric_handle_connect_error(cpl, connect_cpl);
 		qpair->state = XNVME_NVMF_QPAIR_STATE_ERROR;
 		return;
 	}
@@ -238,7 +225,7 @@ _nvmf_fabric_prop_set(struct xnvme_be_nvmf_qpair *admin_qpair, uint32_t property
 }
 
 static inline void
-_encode_fabric_connect_data(struct xnvme_be_nvmf_qpair *qpair, void *buf)
+_nvmf_fabric_connect_data_init(struct xnvme_be_nvmf_qpair *qpair, void *buf)
 {
 	struct xnvme_spec_fabric_connect_data *data = buf;
 
@@ -248,11 +235,11 @@ _encode_fabric_connect_data(struct xnvme_be_nvmf_qpair *qpair, void *buf)
 	data->cntlid = 0xffff; /* assume dynamic controller model for now */
 
 	if (strlen(qpair->dev->ident.subnqn) == 0) {
-		NVMF_DEBUG("INFO: Setting subnqn to discovery NQN: %s", XNVME_NVMF_DISCOVERY_NQN);
 		strncpy((char *)data->subnqn, XNVME_NVMF_DISCOVERY_NQN, sizeof(data->subnqn));
 	} else {
 		strncpy((char *)data->subnqn, qpair->dev->ident.subnqn, sizeof(data->subnqn));
 	}
+	NVMF_DEBUG("INFO: Fabric connect data initialized with subnqn: %s", data->subnqn);
 }
 
 int
@@ -299,9 +286,9 @@ xnvme_be_nvmf_fabric_connect(struct xnvme_be_nvmf_qpair *qpair)
 	fcmd->connect.cattr.dissqfc = 0;
 	fcmd->connect.cattr.prioclass = 0;
 
-	_encode_fabric_connect_data(qpair, buffer);
+	_nvmf_fabric_connect_data_init(qpair, buffer);
 
-	_encode_keyed_sgl(sgl, buffer, sizeof(*connect_data), rkey);
+	xnvme_be_nvmf_keyed_sgl_init(sgl, buffer, sizeof(*connect_data), rkey);
 
 	err = xnvme_be_nvmf_qpair_submit_internal_sync(qpair, cmd, sizeof(*cmd), NULL, 0, NULL, 0,
 						       &ctx);
@@ -314,7 +301,7 @@ xnvme_be_nvmf_fabric_connect(struct xnvme_be_nvmf_qpair *qpair)
 
 	NVMF_DEBUG("INFO: Handling fabric connect completion");
 	_hexdump_range(NVMF_DEBUG_CATEGORY_FABRICS, &ctx.cpl, sizeof(ctx.cpl));
-	_handle_fabric_connect(qpair, &ctx.cpl);
+	_nvmf_fabric_handle_connect(qpair, &ctx.cpl);
 
 	if (qpair->state == XNVME_NVMF_QPAIR_STATE_ERROR) {
 		NVMF_ERROR("FAILED: QPair in error state after fabric connect");
@@ -339,7 +326,7 @@ free_data_buffer:
 #define PROP_SET(prop, val) _PROP_SET(admin_qpair, prop, err, val, shutdown_controller)
 int
 xnvme_be_nvmf_fabric_enable(struct xnvme_be_nvmf_ctrlr *ctrlr,
-			    struct xnvme_be_nvmf_qpair *admin_qpair)
+			    struct xnvme_be_nvmf_qpair *admin_qpair, bool is_discovery)
 {
 	struct nvme_ctrlr_cap cap;
 	struct nvme_ctrlr_cc cc;
@@ -370,7 +357,7 @@ xnvme_be_nvmf_fabric_enable(struct xnvme_be_nvmf_ctrlr *ctrlr,
 	}
 
 	// host configures controller settings
-	if (ctrlr->discovery_ctrlr) {
+	if (is_discovery) {
 		cc = (struct nvme_ctrlr_cc){0}; // Cleared for discovery controllers
 	} else {
 		cc.mps = 0b000; // memory page size, default to 4KiB
@@ -389,6 +376,15 @@ xnvme_be_nvmf_fabric_enable(struct xnvme_be_nvmf_ctrlr *ctrlr,
 
 	NVMF_DEBUG("INFO: Controller CSTS Ready: %d", csts.rdy);
 
+	if (is_discovery) {
+		err = xnvme_be_nvmf_get_discovery_log(ctrlr, admin_qpair, NULL);
+		if (err) {
+			NVMF_ERROR("FAILED: xnvme_be_nvmf_get_discovery_log(), err: %d", err);
+			return err;
+		}
+		NVMF_DEBUG("INFO: Successfully retrieved discovery log");
+	}
+
 	return 0;
 
 shutdown_controller:
@@ -397,39 +393,3 @@ shutdown_controller:
 #undef PROP_GET
 #undef PROP_SET
 
-#if 0
-int 
-xnvme_be_nvmf_get_discovery_log(struct xnvme_be_nvmf_ctrlr *ctrlr,
-	struct xnvme_be_nvmf_qpair *admin_qpair, 
-	struct xnvme_spec_discovery_log_page *log_page)
-{
-	int err;
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(admin_qpair->dev);
-	struct xnvme_spec_cmd *cmd = &ctx.cmd;
-	struct xnvme_spec_cmd_log *log = &ctx.cmd.log;
-	struct xnvme_be_nvmf_req *req = xnvme_be_nvmf_req_alloc(admin_qpair->req_pool, false, (void *)&ctx);
-	void *buf;
-	uint64_t size;
-	uint64_t key;
-	void *handle;
-
-	size = sizeof(struct xnvme_spec_discovery_log_page) + 3 * sizeof(struct xnvme_spec_discovery_log_page_entry);
-	buf = calloc(1, size);
-	if (!buf) {
-		NVMF_ERROR("FAILED: allocate buffer for discovery log");
-		return -1;
-	}
-
-	xnvme_be_nvmf_ctrlr_reg(ctrlr, buf, size, &handle, &key);
-
-	cmd->common.opcode = XNVME_SPEC_ADM_OPC_LOG; // Get Log Page
-	cmd->common.nsid = 0; // For discovery log, NSID is 0
-	cmd->common.cid = req->cid;
-	cmd->common.fuse = 0; // No fused operation
-	cmd->common.psdt = 0b10; // SGL data transfer type
-
-	log->csi = XNVME_SPEC_CSI_NVM; // Command Set Identifier for NVM command set
-
-	return 0;
-}
-#endif

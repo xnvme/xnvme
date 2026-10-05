@@ -16,6 +16,7 @@
 #include <xnvme_be_nvmf.h>
 #include <xnvme_be_nvmf_ctrlr.h>
 #include <xnvme_be_nvmf_debug.h>
+#include <xnvme_be_nvmf_ns.h>
 #include <xnvme_be_nvmf_qpair.h>
 #include <xnvme_be_nvmf_req.h>
 
@@ -134,11 +135,17 @@ _xnvme_be_nvmf_admin_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 {
 	struct xnvme_be_nvmf_state *state = (void *)ctx->dev->be.state;
 	struct xnvme_be_nvmf_ctrlr *ctrlr = state->ctrlr;
-	struct xnvme_be_nvmf_qpair *qpair = ctrlr->admin_qpair;
+	struct xnvme_be_nvmf_ns *ns = state->ns;
+	struct xnvme_be_nvmf_qpair *qpair;
 	int err = 0;
 
 	NVMF_DEBUG("INFO: admin_cmd() for NVMe-oF device: %s", ctx->dev->ident.uri);
 	NVMF_DEBUG("INFO: opcode: 0x%x, nsid: %d", ctx->cmd.common.opcode, ctx->cmd.common.nsid);
+
+	if (ns)
+		qpair = ns->admin_qpair;
+	else
+		qpair = ctrlr->admin_qpair; // Fallback to admin qpair if no namespace is associated
 
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_ADM_OPC_IDFY:

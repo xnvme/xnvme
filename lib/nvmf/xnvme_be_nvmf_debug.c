@@ -310,12 +310,20 @@ parse_categories(char *val)
 			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CORE_CTRLR] = 1;
 			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CORE_QPAIR] = 1;
 			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CORE_DEV] = 1;
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CORE_NAMESPACE] = 1;
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CORE_SUBSYS] = 1;
 		} else if (strcasecmp(token, "core_ctrlr") == 0) {
 			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CORE_CTRLR] = 1;
 		} else if (strcasecmp(token, "core_qpair") == 0) {
 			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CORE_QPAIR] = 1;
 		} else if (strcasecmp(token, "core_dev") == 0) {
 			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CORE_DEV] = 1;
+		} else if (strcasecmp(token, "core_namespace") == 0) {
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CORE_NAMESPACE] = 1;
+		} else if (strcasecmp(token, "core_subsys") == 0) {
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_CORE_SUBSYS] = 1;
+		} else if (strcasecmp(token, "discovery") == 0) {
+			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_DISCOVERY] = 1;
 		} else if (strcasecmp(token, "fabrics") == 0) {
 			nvmf_debug_categories[NVMF_DEBUG_CATEGORY_FABRICS] = 1;
 		} else if (strcasecmp(token, "nvme") == 0) {

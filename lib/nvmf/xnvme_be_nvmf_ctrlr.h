@@ -17,6 +17,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <sys/queue.h>
 
 #include <xnvme_be_nvmf_transport.h>
 
@@ -48,6 +49,8 @@ struct xnvme_be_nvmf_ctrlr {
 	struct xnvme_be_nvmf_qpair *admin_qpair;
 	struct xnvme_be_nvmf_qpair *sync_qpair;
 	int last_allocated_queue_id;
+	int last_assigned_discovery_id;
+	SLIST_HEAD(, xnvme_be_nvmf_subsys) subsystems; ///< List of subsystems associated with this controller
 
 	// candidates for 'flags'
 	uint8_t attached;
@@ -118,4 +121,9 @@ xnvme_be_nvmf_ctrlr_reg(struct xnvme_be_nvmf_ctrlr *ctrlr, void *buf, size_t nby
 int
 xnvme_be_nvmf_ctrlr_dereg(struct xnvme_be_nvmf_ctrlr *ctrlr, void *handle);
 
+struct xnvme_be_nvmf_subsys *
+xnvme_be_nvmf_ctrlr_find_first_subsys(struct xnvme_be_nvmf_ctrlr *ctrlr, const char *subnqn);
+
+struct xnvme_be_nvmf_subsys *
+xnvme_be_nvmf_ctrlr_find_first_subsys_nsidx(struct xnvme_be_nvmf_ctrlr *ctrlr, int nsidx);
 #endif /* _INTERNAL_XNVME_BE_NVMF_CTRLR_H */
