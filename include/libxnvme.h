@@ -43,6 +43,7 @@ extern "C" {
 #include "libxnvme_scan.h"
 #include "libxnvme_queue.h"
 #include "libxnvme_spec.h"
+#include "libxnvme_spec_fabric.h"
 #include "libxnvme_spec_fs.h"
 #include "libxnvme_spec_pp.h"
 #include "libxnvme_cmd.h"

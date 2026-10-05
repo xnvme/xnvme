@@ -4,6 +4,7 @@
   --disable-unit-tests \
   --disable-examples \
   --disable-apps \
+  --with-rdma \
   --without-crypto \
   --without-idxd \
   --without-iscsi-initiator \
