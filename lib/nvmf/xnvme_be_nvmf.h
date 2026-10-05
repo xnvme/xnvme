@@ -6,12 +6,15 @@
 #define __INTERNAL_XNVME_BE_NVMF_H
 
 #include <errno.h>
-#include <xnvme_be.h>
-#include <libxnvme.h>
-#include <xnvme_queue.h>
 #include <pthread.h>
+#include <stddef.h>
 
+#include <libxnvme.h>
+
+#include <xnvme_be.h>
 #include <xnvme_dev.h>
+#include <xnvme_queue.h>
+
 
 #ifndef container_of
 #define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))
@@ -37,11 +40,12 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_nvmf_queue) == sizeof(struct xnvme_qu
 
 struct xnvme_be_nvmf_state {
 	void *ctrlr;       ///< Pointer to attached controller (must be first: platform
-			   ///< stores ctrlr at state[0])
+			   		   ///< stores ctrlr at state[0])
+	void *subsys;
 	void *ns;          ///< Pointer to associated namespace
 	void *admin_qpair; ///< Admin queue pair
 	void *sync_qpair;  ///< Synchronous IO queue pair
-	uint8_t _rsvd0[30];
+	uint8_t _rsvd0[22];
 
 	union {
 		pthread_mutex_t lock; ///< Controller lock for thread-safe operations

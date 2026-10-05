@@ -15,9 +15,9 @@
 
 #include <xnvme_be_nvmf.h>
 #include <xnvme_be_nvmf_ctrlr.h>
+#include <xnvme_be_nvmf_debug.h>
 #include <xnvme_be_nvmf_qpair.h>
 #include <xnvme_be_nvmf_req.h>
-#include <xnvme_be_nvmf_debug.h>
 
 #define NVMF_DEBUG_CATEGORY NVMF_DEBUG_CATEGORY_CMD_ADMIN
 

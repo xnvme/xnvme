@@ -2,12 +2,14 @@
 #include <errno.h>
 
 #include <xnvme_dev.h>
+
 #include <xnvme_be_nvmf.h>
-#include <xnvme_be_nvmf_ctrlr.h>
+#include <xnvme_be_nvmf_debug.h>
+#include <xnvme_be_nvmf_fabric.h>
 #include <xnvme_be_nvmf_qpair.h>
 #include <xnvme_be_nvmf_transport.h>
-#include <xnvme_be_nvmf_fabric.h>
-#include <xnvme_be_nvmf_debug.h>
+
+#include <xnvme_be_nvmf_ctrlr.h>
 
 #define NVMF_DEBUG_CATEGORY NVMF_DEBUG_CATEGORY_CORE_CTRLR
 
