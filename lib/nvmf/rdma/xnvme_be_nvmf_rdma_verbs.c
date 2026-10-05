@@ -84,7 +84,8 @@ _handle_send_cmpl(struct xnvme_be_nvmf_qpair *qpair, struct ibv_wc *wc)
 }
 
 static inline int
-_repost_recv_buffer(struct xnvme_be_nvmf_rdma_qpair *rdma_qpair, uint64_t index, struct ibv_wc *XNVME_UNUSED(wc))
+_repost_recv_buffer(struct xnvme_be_nvmf_rdma_qpair *rdma_qpair, uint64_t index,
+		    struct ibv_wc *XNVME_UNUSED(wc))
 {
 	struct ibv_recv_wr recv_wr;
 	struct ibv_recv_wr *bad_recv_wr;

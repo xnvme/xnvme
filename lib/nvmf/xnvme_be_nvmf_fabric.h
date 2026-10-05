@@ -23,7 +23,8 @@ int
 xnvme_be_nvmf_fabric_connect(struct xnvme_be_nvmf_qpair *qpair);
 
 static inline void
-xnvme_be_nvmf_keyed_sgl_init(struct xnvme_spec_sgl_descriptor *sgl, void *buf, size_t len, uint64_t key)
+xnvme_be_nvmf_keyed_sgl_init(struct xnvme_spec_sgl_descriptor *sgl, void *buf, size_t len,
+			     uint64_t key)
 {
 	assert(sgl != NULL);
 	assert(buf != NULL);
@@ -31,11 +32,11 @@ xnvme_be_nvmf_keyed_sgl_init(struct xnvme_spec_sgl_descriptor *sgl, void *buf, s
 	assert(key < (1UL << 32)); // Ensure key fits within 64 bits for the SGL descriptor
 
 	// Set the SGL descriptor type and subtype
-	sgl->keyed.type = XNVME_SPEC_SGL_DESCR_TYPE_KEYED_DATA_BLOCK;
+	sgl->keyed.type    = XNVME_SPEC_SGL_DESCR_TYPE_KEYED_DATA_BLOCK;
 	sgl->keyed.subtype = XNVME_SPEC_SGL_DESCR_SUBTYPE_ADDRESS;
 
 	// set the SGL descriptor to point to the internal buffer
-	sgl->addr = (uintptr_t)buf;
+	sgl->addr      = (uintptr_t)buf;
 	sgl->keyed.len = len;
 	sgl->keyed.key = key;
 }

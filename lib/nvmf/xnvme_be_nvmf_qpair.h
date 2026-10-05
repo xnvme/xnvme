@@ -101,10 +101,10 @@ xnvme_be_nvmf_cmd_io(struct xnvme_be_nvmf_qpair *qpair, struct xnvme_cmd_ctx *ct
  * data-plane entry. @cid goes into the transport work request identifier.
  */
 static inline int
-xnvme_be_nvmf_qpair_submit_async(struct xnvme_be_nvmf_qpair *qpair, void* capsule, size_t nbytes, 
-				void *XNVME_UNUSED(dbuf), size_t XNVME_UNUSED(dbuf_nbytes),
-				void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes),
-				bool internal, void *ctx, struct xnvme_be_nvmf_req **req_out)
+xnvme_be_nvmf_qpair_submit_async(struct xnvme_be_nvmf_qpair *qpair, void *capsule, size_t nbytes,
+				 void *XNVME_UNUSED(dbuf), size_t XNVME_UNUSED(dbuf_nbytes),
+				 void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes),
+				 bool internal, void *ctx, struct xnvme_be_nvmf_req **req_out)
 {
 
 	struct xnvme_be_nvmf_req *req;
@@ -115,7 +115,7 @@ xnvme_be_nvmf_qpair_submit_async(struct xnvme_be_nvmf_qpair *qpair, void* capsul
 	} else {
 		req = xnvme_be_nvmf_req_alloc(qpair->req_pool, false, ctx);
 	}
-	
+
 	if (!req) {
 		return -ENOSPC;
 	}
@@ -132,17 +132,23 @@ xnvme_be_nvmf_qpair_submit_async(struct xnvme_be_nvmf_qpair *qpair, void* capsul
 }
 
 static inline int
-xnvme_be_nvmf_qpair_submit_user_async(struct xnvme_be_nvmf_qpair *qpair, void* capsule, size_t nbytes, 
-				void *dbuf, size_t dbuf_nbytes, void *mbuf, size_t mbuf_nbytes, void *ctx, struct xnvme_be_nvmf_req **req_out)
+xnvme_be_nvmf_qpair_submit_user_async(struct xnvme_be_nvmf_qpair *qpair, void *capsule,
+				      size_t nbytes, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+				      size_t mbuf_nbytes, void *ctx,
+				      struct xnvme_be_nvmf_req **req_out)
 {
-	return xnvme_be_nvmf_qpair_submit_async(qpair, capsule, nbytes, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes, false, ctx, req_out);
+	return xnvme_be_nvmf_qpair_submit_async(qpair, capsule, nbytes, dbuf, dbuf_nbytes, mbuf,
+						mbuf_nbytes, false, ctx, req_out);
 }
 
 static inline int
-xnvme_be_nvmf_qpair_submit_internal_async(struct xnvme_be_nvmf_qpair *qpair, void* capsule, size_t nbytes, 
-				void *dbuf, size_t dbuf_nbytes, void *mbuf, size_t mbuf_nbytes, void *ctx, struct xnvme_be_nvmf_req **req_out)
+xnvme_be_nvmf_qpair_submit_internal_async(struct xnvme_be_nvmf_qpair *qpair, void *capsule,
+					  size_t nbytes, void *dbuf, size_t dbuf_nbytes,
+					  void *mbuf, size_t mbuf_nbytes, void *ctx,
+					  struct xnvme_be_nvmf_req **req_out)
 {
-	return xnvme_be_nvmf_qpair_submit_async(qpair, capsule, nbytes, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes, true, ctx, req_out);
+	return xnvme_be_nvmf_qpair_submit_async(qpair, capsule, nbytes, dbuf, dbuf_nbytes, mbuf,
+						mbuf_nbytes, true, ctx, req_out);
 }
 
 /**
@@ -176,17 +182,16 @@ xnvme_be_nvmf_wait_for_completion(struct xnvme_be_nvmf_qpair *qpair, struct xnvm
 }
 
 static inline int
-xnvme_be_nvmf_qpair_submit_sync(struct xnvme_be_nvmf_qpair *qpair, void* capsule, size_t nbytes, 
-				void *dbuf, size_t dbuf_nbytes, void *mbuf, size_t mbuf_nbytes, bool is_internal, void *ctx)
+xnvme_be_nvmf_qpair_submit_sync(struct xnvme_be_nvmf_qpair *qpair, void *capsule, size_t nbytes,
+				void *dbuf, size_t dbuf_nbytes, void *mbuf, size_t mbuf_nbytes,
+				bool is_internal, void *ctx)
 {
 
 	struct xnvme_be_nvmf_req *req = NULL;
 	int retval;
 
-	retval = xnvme_be_nvmf_qpair_submit_async(qpair, capsule, nbytes,
-		dbuf, dbuf_nbytes,
-		mbuf, mbuf_nbytes,
-		is_internal, ctx, &req);
+	retval = xnvme_be_nvmf_qpair_submit_async(qpair, capsule, nbytes, dbuf, dbuf_nbytes, mbuf,
+						  mbuf_nbytes, is_internal, ctx, &req);
 	if (retval)
 		return retval;
 
@@ -199,16 +204,20 @@ xnvme_be_nvmf_qpair_submit_sync(struct xnvme_be_nvmf_qpair *qpair, void* capsule
 }
 
 static inline int
-xnvme_be_nvmf_qpair_submit_user_sync(struct xnvme_be_nvmf_qpair *qpair, void* capsule, size_t nbytes, 
-				void *dbuf, size_t dbuf_nbytes, void *mbuf, size_t mbuf_nbytes, void *ctx)
+xnvme_be_nvmf_qpair_submit_user_sync(struct xnvme_be_nvmf_qpair *qpair, void *capsule,
+				     size_t nbytes, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+				     size_t mbuf_nbytes, void *ctx)
 {
-	return xnvme_be_nvmf_qpair_submit_sync(qpair, capsule, nbytes, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes, false, ctx);
+	return xnvme_be_nvmf_qpair_submit_sync(qpair, capsule, nbytes, dbuf, dbuf_nbytes, mbuf,
+					       mbuf_nbytes, false, ctx);
 }
 
 static inline int
-xnvme_be_nvmf_qpair_submit_internal_sync(struct xnvme_be_nvmf_qpair *qpair, void* capsule, size_t nbytes, 
-				void *dbuf, size_t dbuf_nbytes, void *mbuf, size_t mbuf_nbytes, void *ctx)
+xnvme_be_nvmf_qpair_submit_internal_sync(struct xnvme_be_nvmf_qpair *qpair, void *capsule,
+					 size_t nbytes, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+					 size_t mbuf_nbytes, void *ctx)
 {
-	return xnvme_be_nvmf_qpair_submit_sync(qpair, capsule, nbytes, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes, true, ctx);
+	return xnvme_be_nvmf_qpair_submit_sync(qpair, capsule, nbytes, dbuf, dbuf_nbytes, mbuf,
+					       mbuf_nbytes, true, ctx);
 }
 #endif /* _INTERNAL_XNVME_BE_NVMF_QPAIR_H */

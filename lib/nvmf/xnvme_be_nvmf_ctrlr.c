@@ -106,7 +106,7 @@ xnvme_be_nvmf_ctrlr_create(struct xnvme_be_nvmf_transport *transport,
 	tmp->attached = 0;
 
 	NVMF_INFO("INFO: ctrlr->discovery_ctrlr set to %d based on dev->ident.subnqn=\"%s\"",
-		   tmp->discovery_ctrlr, attr->dev->ident.subnqn);
+		  tmp->discovery_ctrlr, attr->dev->ident.subnqn);
 
 	err = tmp->ops->ctrlr_init(tmp);
 	if (err) {
@@ -184,12 +184,12 @@ static inline void
 _dump_ctrlr(struct xnvme_be_nvmf_ctrlr *ctrlr)
 {
 	NVMF_DEBUG("INFO: ctrlr: \n"
-		    "\tctrlr_id: %d\n"
-		    "\tctrlr_state: %d"
-		    "\tattached: %d\n"
-		    "\tdiscovery_ctrlr: %d",
-		    ctrlr->admin_qpair->cntlid, ctrlr->ctrlr_state, ctrlr->attached,
-		    ctrlr->discovery_ctrlr);
+		   "\tctrlr_id: %d\n"
+		   "\tctrlr_state: %d"
+		   "\tattached: %d\n"
+		   "\tdiscovery_ctrlr: %d",
+		   ctrlr->admin_qpair->cntlid, ctrlr->ctrlr_state, ctrlr->attached,
+		   ctrlr->discovery_ctrlr);
 }
 
 /**
@@ -226,14 +226,14 @@ xnvme_be_nvmf_ctrlr_probe(struct xnvme_dev *dev, struct xnvme_be_nvmf_ctrlr **ct
 			err = xnvme_be_nvmf_transport_probe(*transport, &attr, &tmp_ctrlr);
 			if (!err) {
 				NVMF_INFO("INFO: Successfully connected to transport: %s",
-					   dev->ident.uri);
+					  dev->ident.uri);
 				NVMF_INFO("INFO: transport->probe() successful, device is "
-					   "reachable and supports NVMe-oF");
+					  "reachable and supports NVMe-oF");
 				break;
 			} else {
 				NVMF_INFO("INFO: transport->probe() failed for transport: %s, "
-					   "err: %d",
-					   (*transport)->name, err);
+					  "err: %d",
+					  (*transport)->name, err);
 			}
 		}
 	}
@@ -315,7 +315,7 @@ xnvme_be_nvmf_dev_ctrlr_init(struct xnvme_dev *dev)
 	int err;
 
 	NVMF_INFO("INFO: dev_ctrlr_init() for NVMe-oF device: %s, ns=%u, discovery=%s",
-		   dev->ident.uri, dev->ident.nsid, dev->ident.nsid == 0 ? "yes" : "no");
+		  dev->ident.uri, dev->ident.nsid, dev->ident.nsid == 0 ? "yes" : "no");
 
 	if (state->ctrlr) {
 		NVMF_INFO("INFO: Controller already initialized, reusing existing controller");
@@ -359,7 +359,7 @@ xnvme_be_nvmf_dev_ctrlr_term(void *ctrlr)
 			err = xnvme_be_nvmf_ctrlr_disconnect(nvmf_ctrlr);
 			if (err) {
 				NVMF_ERROR("FAILED: xnvme_be_nvmf_ctrlr_disconnect(), err: %d",
-					    err);
+					   err);
 				return err;
 			}
 		}
@@ -374,31 +374,34 @@ xnvme_be_nvmf_dev_ctrlr_term(void *ctrlr)
 	return 0;
 }
 
-struct xnvme_be_nvmf_subsys *xnvme_be_nvmf_ctrlr_find_first_subsys(struct xnvme_be_nvmf_ctrlr *ctrlr, const char *subnqn)
+struct xnvme_be_nvmf_subsys *
+xnvme_be_nvmf_ctrlr_find_first_subsys(struct xnvme_be_nvmf_ctrlr *ctrlr, const char *subnqn)
 {
-    struct xnvme_be_nvmf_subsys *subsys;
+	struct xnvme_be_nvmf_subsys *subsys;
 
-    SLIST_FOREACH(subsys, &ctrlr->subsystems, entry) {
-        if (strcmp(subsys->subnqn, subnqn) == 0) {
-            return subsys;
-        }
-    }
+	SLIST_FOREACH(subsys, &ctrlr->subsystems, entry)
+	{
+		if (strcmp(subsys->subnqn, subnqn) == 0) {
+			return subsys;
+		}
+	}
 
-    return NULL;
+	return NULL;
 }
 
 struct xnvme_be_nvmf_subsys *
 xnvme_be_nvmf_ctrlr_find_first_subsys_nsidx(struct xnvme_be_nvmf_ctrlr *ctrlr, int nsidx)
 {
-    struct xnvme_be_nvmf_subsys *subsys;
+	struct xnvme_be_nvmf_subsys *subsys;
 
-    SLIST_FOREACH(subsys, &ctrlr->subsystems, entry) {
-		NVMF_DEBUG("INFO: Checking subsys with discovery_nsidx=%d against nsidx=%d", subsys->discovery_nsidx, nsidx);
-        if (subsys->discovery_nsidx == nsidx) {
-            return subsys;
-        }
-    }
+	SLIST_FOREACH(subsys, &ctrlr->subsystems, entry)
+	{
+		NVMF_DEBUG("INFO: Checking subsys with discovery_nsidx=%d against nsidx=%d",
+			   subsys->discovery_nsidx, nsidx);
+		if (subsys->discovery_nsidx == nsidx) {
+			return subsys;
+		}
+	}
 
-    return NULL;
+	return NULL;
 }
-

@@ -14,15 +14,15 @@
 #include <xnvme_be_nvmf_spec_base.h>
 #include <xnvme_be_nvmf_debug.h>
 
-int 
+int
 xnvme_be_nvmf_get_discovery_log(struct xnvme_be_nvmf_ctrlr *ctrlr,
-	struct xnvme_be_nvmf_qpair *admin_qpair, 
-	struct xnvme_spec_discovery_log_page *log_page);
+				struct xnvme_be_nvmf_qpair *admin_qpair,
+				struct xnvme_spec_discovery_log_page *log_page);
 
 #define NVMF_DEBUG_CATEGORY NVMF_DEBUG_CATEGORY_FABRICS
 #define _PROP_GET(qpair, prop, retvar, val, label)                                          \
 	do {                                                                                \
-		int sz = _nvmf_fabric_property_size(prop);                                              \
+		int sz = _nvmf_fabric_property_size(prop);                                  \
 		if (sz <= 0) {                                                              \
 			NVMF_ERROR("FAILED: property_get " #prop ", invalid size: %d", sz); \
 			goto label;                                                         \
@@ -36,7 +36,7 @@ xnvme_be_nvmf_get_discovery_log(struct xnvme_be_nvmf_ctrlr *ctrlr,
 
 #define _PROP_SET(qpair, prop, retvar, val, label)                                          \
 	do {                                                                                \
-		int sz = _nvmf_fabric_property_size(prop);                                              \
+		int sz = _nvmf_fabric_property_size(prop);                                  \
 		if (sz <= 0) {                                                              \
 			NVMF_ERROR("FAILED: property_set " #prop ", invalid size: %d", sz); \
 			goto label;                                                         \
@@ -73,7 +73,7 @@ _nvmf_fabric_property_size(uint32_t offset)
 
 static inline void
 _nvmf_fabric_handle_connect_error(struct xnvme_spec_cpl *cpl,
-			     struct xnvme_spec_fabric_connect_resp_cpl *connect_cpl)
+				  struct xnvme_spec_fabric_connect_resp_cpl *connect_cpl)
 {
 	NVMF_ERROR("FAILED: Fabric Connect rejected, sc: %u sct: %u", cpl->status.sc,
 		   cpl->status.sct);
@@ -272,7 +272,7 @@ xnvme_be_nvmf_fabric_connect(struct xnvme_be_nvmf_qpair *qpair)
 		   buffer, sizeof(*connect_data), rkey);
 
 	cmd->common.opcode = XNVME_SPEC_FABRIC_OPC; /* Fabric command opcode */
-	cmd->common.fuse = 0;       /* There are no fused fabrics commands */
+	cmd->common.fuse = 0;                       /* There are no fused fabrics commands */
 	cmd->common.psdt = XNVME_SPEC_PSDT_SGL_MPTR_SGL;
 
 	fcmd->connect.fctype = XNVME_SPEC_FABRIC_COMMAND_CONNECT;
@@ -392,4 +392,3 @@ shutdown_controller:
 }
 #undef PROP_GET
 #undef PROP_SET
-

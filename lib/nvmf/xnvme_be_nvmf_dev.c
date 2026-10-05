@@ -62,7 +62,7 @@ _dump_dev(struct xnvme_dev *dev)
 	}
 }
 
-static inline int 
+static inline int
 _nvmf_dev_close_controller(struct xnvme_dev *XNVME_UNUSED(dev))
 {
 	return 0;
@@ -78,7 +78,8 @@ _nvmf_dev_close_namespace(struct xnvme_dev *dev)
 		refs = xnvme_be_nvmf_ns_put(state->ns);
 		if (refs) {
 			NVMF_DEBUG("INFO: ns still has %d references", refs);
-			xnvme_be_nvmf_ns_get(state->ns); // taking reference to prevent close loop to free referenced memory
+			xnvme_be_nvmf_ns_get(state->ns); // taking reference to prevent close loop
+							 // to free referenced memory
 			return -EBUSY;
 		}
 		state->ns = NULL;
@@ -88,13 +89,13 @@ _nvmf_dev_close_namespace(struct xnvme_dev *dev)
 		refs = xnvme_be_nvmf_subsys_put(state->subsys);
 		if (refs) {
 			NVMF_DEBUG("INFO: subsys still has %d references", refs);
-			xnvme_be_nvmf_subsys_get(state->subsys); // taking reference to prevent close loop to free referenced memory
+			xnvme_be_nvmf_subsys_get(
+				state->subsys); // taking reference to prevent close loop to free
+						// referenced memory
 			return -EBUSY;
 		}
 		state->subsys = NULL;
 	}
-
-
 
 	return 0;
 }
@@ -117,15 +118,13 @@ xnvme_be_nvmf_dev_close(struct xnvme_dev *dev)
 static inline int
 _nvmf_is_controller(struct xnvme_dev *dev)
 {
-	return dev->opts.nsid == NVMF_CONTROLLER_NSID || 
-		dev->opts.nsid == NVMF_BROADCAST_NSID;
+	return dev->opts.nsid == NVMF_CONTROLLER_NSID || dev->opts.nsid == NVMF_BROADCAST_NSID;
 }
 
 static inline int
 _nvmf_is_discovery(const char *subnqn)
 {
-	return !subnqn || 
-		strcasecmp(subnqn, XNVME_NVMF_DISCOVERY_NQN) == 0;
+	return !subnqn || strcasecmp(subnqn, XNVME_NVMF_DISCOVERY_NQN) == 0;
 }
 
 static inline int
@@ -153,15 +152,20 @@ _nvmf_dev_bind_to_namespace(struct xnvme_dev *dev, const char *subnqn, int nsid)
 		// This is coming from first device init, and NSID should index the subsystem
 		subsys = xnvme_be_nvmf_ctrlr_find_first_subsys_nsidx(state->ctrlr, nsid);
 		if (!subsys) {
-			NVMF_ERROR("FAILED: xnvme_be_nvmf_ctrlr_find_first_subsys_nsidx(), nsid: %d", nsid);
-			return -EINVAL; // should never happen because subsystems should be created when walking the discovery log
+			NVMF_ERROR(
+				"FAILED: xnvme_be_nvmf_ctrlr_find_first_subsys_nsidx(), nsid: %d",
+				nsid);
+			return -EINVAL; // should never happen because subsystems should be created
+					// when walking the discovery log
 		}
 	} else {
 		// This is coming from subsequent device init, and subnqn should be provided
 		subsys = xnvme_be_nvmf_ctrlr_find_first_subsys(state->ctrlr, subnqn);
 		if (!subsys) {
-			NVMF_ERROR("FAILED: xnvme_be_nvmf_ctrlr_find_first_subsys(), subnqn: %s", subnqn);
-			return -EINVAL; // should never happen because subsystems should be created when walking the discovery log
+			NVMF_ERROR("FAILED: xnvme_be_nvmf_ctrlr_find_first_subsys(), subnqn: %s",
+				   subnqn);
+			return -EINVAL; // should never happen because subsystems should be created
+					// when walking the discovery log
 		}
 	}
 
@@ -204,16 +208,17 @@ _nvmf_dev_bind_to_namespace(struct xnvme_dev *dev, const char *subnqn, int nsid)
 /*
  * Open an NVMe-oF device
  *
- * Note: dev->ident.uri is the only field that can be trusted to be correctly populated by the caller.
- * Other fields in dev->ident may not be reliable and should be verified or populated by the backend.
- * 
- * Other fields could be filled by other backends during the probing process, and may leave the device in an inconsistent state.
+ * Note: dev->ident.uri is the only field that can be trusted to be correctly populated by the
+ * caller. Other fields in dev->ident may not be reliable and should be verified or populated by
+ * the backend.
+ *
+ * Other fields could be filled by other backends during the probing process, and may leave the
+ * device in an inconsistent state.
  */
 int
 xnvme_be_nvmf_dev_open(struct xnvme_dev *dev)
 {
-	NVMF_DEBUG("INFO: dev_open() for NVMe-oF device: dev=%p, (%s)",
-		   dev, dev->ident.uri);
+	NVMF_DEBUG("INFO: dev_open() for NVMe-oF device: dev=%p, (%s)", dev, dev->ident.uri);
 	NVMF_DEBUG("INFO: dev->opts: \n\t\tnsid: 0x%x\n\t\tsubnqn: %s\n\t\thostnqn: %s",
 		   dev->opts.nsid, dev->opts.subnqn, dev->opts.hostnqn);
 

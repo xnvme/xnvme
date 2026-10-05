@@ -15,7 +15,6 @@
 #include <xnvme_dev.h>
 #include <xnvme_queue.h>
 
-
 #ifndef container_of
 #define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))
 #endif
@@ -39,8 +38,8 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_nvmf_queue) == sizeof(struct xnvme_qu
 		    "Incorrect size of xnvme_be_nvmf_queue");
 
 struct xnvme_be_nvmf_state {
-	void *ctrlr;       ///< Pointer to attached controller (must be first: platform
-			   		   ///< stores ctrlr at state[0])
+	void *ctrlr; ///< Pointer to attached controller (must be first: platform
+		     ///< stores ctrlr at state[0])
 	void *subsys;
 	void *ns;          ///< Pointer to associated namespace
 	void *admin_qpair; ///< Admin queue pair

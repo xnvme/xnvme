@@ -477,7 +477,8 @@ _rdma_qpair_disconnect(struct xnvme_be_nvmf_qpair *qpair)
 }
 
 static inline int
-_rdma_send_cap_helper(struct xnvme_be_nvmf_rdma_qpair *rdma_qpair, struct ibv_send_wr *send_wr, struct ibv_sge *sge)
+_rdma_send_cap_helper(struct xnvme_be_nvmf_rdma_qpair *rdma_qpair, struct ibv_send_wr *send_wr,
+		      struct ibv_sge *sge)
 {
 	struct ibv_send_wr *bad_wr = NULL;
 	int err;
@@ -569,7 +570,7 @@ _rdma_send_cap_eager(struct xnvme_be_nvmf_qpair *qpair, const void *buf, size_t 
 	cmd->common.cid = cid;
 
 	return _rdma_send_cap_helper(rdma_qpair, &send_wr, &sge);
-} 
+}
 
 static inline int
 _rdma_send_cap(struct xnvme_be_nvmf_qpair *qpair, const void *buf, size_t len, uint16_t cid,

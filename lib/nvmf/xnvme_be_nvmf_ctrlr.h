@@ -50,7 +50,8 @@ struct xnvme_be_nvmf_ctrlr {
 	struct xnvme_be_nvmf_qpair *sync_qpair;
 	int last_allocated_queue_id;
 	int last_assigned_discovery_id;
-	SLIST_HEAD(, xnvme_be_nvmf_subsys) subsystems; ///< List of subsystems associated with this controller
+	SLIST_HEAD(, xnvme_be_nvmf_subsys)
+	subsystems; ///< List of subsystems associated with this controller
 
 	// candidates for 'flags'
 	uint8_t attached;

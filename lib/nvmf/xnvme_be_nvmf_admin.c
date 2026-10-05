@@ -24,7 +24,7 @@
 
 static inline int
 _xnvme_be_nvmf_admin_cmd_idfy(struct xnvme_be_nvmf_qpair *qpair, struct xnvme_cmd_ctx *ctx,
-	void *dbuf, size_t dbuf_nbytes)
+			      void *dbuf, size_t dbuf_nbytes)
 {
 	struct xnvme_be_nvmf_state *state = (void *)ctx->dev->be.state;
 	struct xnvme_spec_cmd *cmd = &ctx->cmd;
@@ -116,7 +116,8 @@ _xnvme_be_nvmf_admin_cmd_idfy(struct xnvme_be_nvmf_qpair *qpair, struct xnvme_cm
 	NVMF_DEBUG("INFO: SGL type: 0x%x", sgl->keyed.type);
 	NVMF_DEBUG("INFO: SGL subtype: 0x%x", sgl->keyed.subtype);
 
-	err = xnvme_be_nvmf_qpair_submit_sync(qpair, cmd, sizeof(struct xnvme_spec_cmd), NULL, 0, NULL, 0, false, ctx);
+	err = xnvme_be_nvmf_qpair_submit_sync(qpair, cmd, sizeof(struct xnvme_spec_cmd), NULL, 0,
+					      NULL, 0, false, ctx);
 	if (err) {
 		NVMF_ERROR("FAILED: xnvme_be_nvmf_qpair_submit(), err: %d", err);
 		xnvme_be_nvmf_ctrlr_dereg(ctrlr, handle);
@@ -124,7 +125,6 @@ _xnvme_be_nvmf_admin_cmd_idfy(struct xnvme_be_nvmf_qpair *qpair, struct xnvme_cm
 	}
 
 	xnvme_be_nvmf_ctrlr_dereg(ctrlr, handle);
-	
 
 	return 0;
 }
@@ -145,7 +145,8 @@ _xnvme_be_nvmf_admin_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	if (ns)
 		qpair = ns->admin_qpair;
 	else
-		qpair = ctrlr->admin_qpair; // Fallback to admin qpair if no namespace is associated
+		qpair = ctrlr->admin_qpair; // Fallback to admin qpair if no namespace is
+					    // associated
 
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_ADM_OPC_IDFY:
