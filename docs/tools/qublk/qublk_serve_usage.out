@@ -1,4 +1,4 @@
-Usage: qublk run [<uri>...] [<args>]
+Usage: qublk serve [<uri>...] [<args>]
 
 Serve a ublk block-device for each of the given xNVMe devices
   
