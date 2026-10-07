@@ -24,8 +24,6 @@ xnvmelib_source = [
   'xnvme_be_freebsd_nvme.c',
   'xnvme_be_linux.c',
   'xnvme_be_linux_async_libaio.c',
-  'xnvme_be_linux_async_liburing.c',
-  'xnvme_be_linux_async_ucmd.c',
   'xnvme_be_linux_block.c',
   'xnvme_be_linux_dev.c',
   'xnvme_be_linux_hugepage.c',
@@ -107,6 +105,7 @@ xnvmelib_deps = [
   hip_dep,
 ]
 
+subdir('io_uring')
 subdir('upcie')
 
 mapfile = 'libxnvme.map'
