@@ -60,7 +60,7 @@ xnvmeperf_cuda_kernel_run(struct xnvme_cuda_queue **qps, struct xnvme_spec_cmd *
 	const uint16_t lane = (uint16_t)(tid % batch);
 	const int random = seeds != NULL;
 	size_t turn = 0;
-	unsigned nturns = 0;
+	unsigned nturns = 0, nchecks = 0;
 
 	qp = qps[bid];
 	cap = nblocks[bid];
@@ -86,8 +86,9 @@ xnvmeperf_cuda_kernel_run(struct xnvme_cuda_queue **qps, struct xnvme_spec_cmd *
 	}
 
 	while (true) {
-		/* Sampled by thread 0 and broadcast, so all threads leave at one barrier */
-		if (tid == 0) {
+		/* Sampled every 32nd turn, a PCIe round trip, and broadcast so all threads leave
+		 * at one barrier */
+		if (tid == 0 && (nchecks++ & 31) == 0) {
 			s_stop = *stop;
 		}
 		__syncthreads();
@@ -121,7 +122,10 @@ xnvmeperf_cuda_kernel_run(struct xnvme_cuda_queue **qps, struct xnvme_spec_cmd *
 		}
 		__syncthreads();
 		if (tid == 0) {
-			xnvme_cuda_sq_update(qp, batch);
+			/* Not xnvme_cuda_sq_update(): every entry was fenced before the barrier,
+			 * so its fence would only add a round trip */
+			qp->tail = (qp->tail + batch) % qp->depth;
+			*(volatile uint32_t *)qp->sqdb = qp->tail;
 		}
 
 		turn = (turn + 1) % nbatches;
