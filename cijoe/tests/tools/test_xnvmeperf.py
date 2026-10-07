@@ -1,3 +1,5 @@
+import pytest
+
 from ..conftest import get_homi_id, xnvme_parametrize
 
 
@@ -59,6 +61,23 @@ def test_verify(cijoe, device, be_opts, cli_args):
         f" --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert not err
+
+
+@xnvme_parametrize(labels=["pcie", "nvm"], opts=["be"])
+def test_run_qdepth_past_the_pool_is_refused(cijoe, device, be_opts, cli_args):
+    """A queue deeper than the 1024 commands uPCIe tracks per queue is refused"""
+
+    if not be_opts["be"].startswith("upcie"):
+        pytest.skip(reason="The per-queue command limit is uPCIe's")
+
+    homi_id = get_homi_id()
+    homi_arg = f"--homi-id {homi_id}" if homi_id else ""
+
+    err, _ = cijoe.run(
+        f"xnvmeperf run --iopattern read --qdepth 2048 --iosize 4096 --runtime 1"
+        f" --cpumask 0x1 --be {be_opts['be']} {homi_arg} {device['uri']}"
+    )
+    assert err, "a queue deeper than the backend tracks was accepted"
 
 
 @xnvme_parametrize(labels=["pcie", "nvm"], opts=["be"])
