@@ -118,8 +118,23 @@ Example::
 
 Requires the ``upcie-cuda`` backend. All queues across all devices are driven
 by a single CUDA kernel: each CUDA block owns one NVMe queue and each thread
-within the block owns one queue slot, so ``--qdepth`` threads submit and reap
-commands in lock-step. The grid has ``ndevs × --nqueues`` blocks in total.
+within the block owns one queue slot. The grid has ``ndevs × --nqueues``
+blocks in total.
+
+The slots of a queue form groups of one warp, 32 slots, that take turns: a
+group reaps the queue's next batch of completions and refills the room they
+leave, while the other groups' commands stay in service. Submitting the whole
+depth and then waiting for it would leave the queue empty for one GPU round
+trip per depth's worth of I/O, so a single queue per drive could not reach the
+drive's rate however deep it is. A depth below 32 is a single group.
+
+A slot's previous command may still be in flight when a group reuses it,
+since a group reaps the queue's oldest completions and not necessarily its
+own, so a command identifier advances by the depth on every submission.
+Each thread fences its own entry before the group's barrier: with two
+batches in flight, a single fence by the thread that rings the doorbell let
+the controller fetch entries before they were written and execute what it
+found there, a few per million.
 
 Both ``--qdepth`` and ``--iosize`` must be powers of 2. Supported patterns are
 ``read``, ``write``, ``randread``, and ``randwrite``.
