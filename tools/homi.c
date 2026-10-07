@@ -81,7 +81,7 @@ is_pci_bdf(const char *uri)
 }
 
 static int
-sub_start(struct xnvme_cli *cli)
+sub_serve(struct xnvme_cli *cli)
 {
 	struct xnvme_dev **devs;
 	struct xnvme_cuse *cuse_sessions = NULL;
@@ -170,7 +170,7 @@ sub_start(struct xnvme_cli *cli)
 #else
 
 static int
-sub_start(struct xnvme_cli *XNVME_UNUSED(cli))
+sub_serve(struct xnvme_cli *XNVME_UNUSED(cli))
 {
 	int err = -ENOTSUP;
 
@@ -183,10 +183,10 @@ sub_start(struct xnvme_cli *XNVME_UNUSED(cli))
 
 static struct xnvme_cli_sub g_subs[] = {
 	{
-		"start",
+		"serve",
 		"Open the given devices and hold them open",
 		"Open the given devices and hold them open",
-		sub_start,
+		sub_serve,
 		{
 			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_URI, XNVME_CLI_POSN},

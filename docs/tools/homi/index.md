@@ -22,9 +22,9 @@ but opening a device with a non-zero `--homi-id` fails with `-ENOTSUP`.
 :language: bash
 ```
 
-## `start`: Hold devices open
+## `serve`: Hold devices open
 
-```{literalinclude} homi_start_usage.out
+```{literalinclude} homi_serve_usage.out
 :language: bash
 ```
 
@@ -51,7 +51,7 @@ claiming the backend default would leave nothing in the hugepage pool for the
 secondaries it exists to serve:
 
 ```bash
-homi start 0000:03:00.0 --be upcie --homi-id 1 --host_heap_size 134217728
+homi serve 0000:03:00.0 --be upcie --homi-id 1 --host_heap_size 134217728
 ```
 
 If any device fails to open, **homi** closes the devices it has already opened
@@ -62,13 +62,13 @@ devices are open it reports that it has started, then waits for `SIGINT`
 Example: hold a single device open as the primary for `--homi-id` 1:
 
 ```bash
-homi start 0000:03:00.0 --be upcie --homi-id 1
+homi serve 0000:03:00.0 --be upcie --homi-id 1
 ```
 
 Example: hold several devices under the same `--homi-id`:
 
 ```bash
-homi start 0000:03:00.0 0000:04:00.0 --be upcie --homi-id 1
+homi serve 0000:03:00.0 0000:04:00.0 --be upcie --homi-id 1
 ```
 
 For a controller reached over a PCIe-attached backend (`upcie`, `spdk`), whose
@@ -94,7 +94,7 @@ xnvme info 0000:03:00.0 --be upcie --homi-id 1
 which is `spdk`, `upcie`, `upcie-cuda` and `upcie-hip`:
 
 ```bash
-homi start 0000:03:00.0 --be spdk --homi-id 1
+homi serve 0000:03:00.0 --be spdk --homi-id 1
 ```
 
 With `upcie-cuda` and `upcie-hip`, **homi** additionally caps the GPU device
@@ -103,7 +103,7 @@ data buffers, which is all the device heap is used for, so claiming the
 default would take VRAM away from the secondaries:
 
 ```bash
-homi start 0000:03:00.0 --be upcie-cuda --homi-id 1
+homi serve 0000:03:00.0 --be upcie-cuda --homi-id 1
 ```
 
 `homi status` is the exception: it reads uPCIe's shared segment directly, so a

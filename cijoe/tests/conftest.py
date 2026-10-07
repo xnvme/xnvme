@@ -463,7 +463,7 @@ class MprocPrimary:
         # 'stdbuf -oL' keeps the readiness marker from sitting in libc's fully-buffered
         # stdout while the primary parks waiting for a signal
         cijoe.run(
-            f"stdbuf -oL nohup homi start {uris} --be {be} --homi-id {_shm_id} "
+            f"stdbuf -oL nohup homi serve {uris} --be {be} --homi-id {_shm_id} "
             f"> /tmp/mproc_{be}.out 2>&1 &"
         )
 
