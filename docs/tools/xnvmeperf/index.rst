@@ -135,6 +135,10 @@ Each thread fences its own entry before the group's barrier: with two
 batches in flight, a single fence by the thread that rings the doorbell let
 the controller fetch entries before they were written and execute what it
 found there, a few per million.
+The stop flag lives in host memory, where reading it is a PCIe round trip
+on the turn's critical path, so the kernel samples it every 32nd turn, and
+it rings the doorbell without a second fence, since every entry was fenced
+before the barrier.
 
 Both ``--qdepth`` and ``--iosize`` must be powers of 2. Supported patterns are
 ``read``, ``write``, ``randread``, and ``randwrite``.
