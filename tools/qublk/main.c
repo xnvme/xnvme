@@ -190,7 +190,7 @@ devs_teardown(struct qublk_dev *devs, uint32_t ndevs, struct qublk_thread *threa
 }
 
 static int
-sub_run(struct xnvme_cli *cli)
+sub_serve(struct xnvme_cli *cli)
 {
 	struct xnvme_opts xopts = xnvme_opts_default();
 	struct qublk_thread *threads = NULL;
@@ -403,10 +403,10 @@ sub_del(struct xnvme_cli *cli)
 
 static struct xnvme_cli_sub g_subs[] = {
 	{
-		"run",
+		"serve",
 		"Serve a ublk block-device for each of the given xNVMe devices",
 		"Serve a ublk block-device for each of the given xNVMe devices",
-		sub_run,
+		sub_serve,
 		{
 			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_URI, XNVME_CLI_POSN},

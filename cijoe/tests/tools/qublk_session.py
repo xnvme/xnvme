@@ -125,7 +125,7 @@ def qublk_script(uri, be, args, payload, node=UBLK_NODE, nvme=None, mountpoint=N
             # wait while the qublk under test got another id; refuse to start
             f"if [ -b {node} ]; then echo PREEXISTING-DEVICE; exit 1; fi",
             "log=$(mktemp)",
-            f"qublk run {uri} --be {be} --dev-id 0 {args} > $log 2>&1 &".replace(
+            f"qublk serve {uri} --be {be} --dev-id 0 {args} > $log 2>&1 &".replace(
                 "  >", " >"
             ),
             "pid=$!",
