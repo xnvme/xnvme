@@ -6,8 +6,8 @@
 #define __INTERNAL_XNVME_BE_IO_URING_H
 #include <liburing.h>
 
-#define XNVME_QUEUE_IOU_CQE_BATCH_MAX 8
-#define XNVME_QUEUE_IOU_BIGSQE        (0x1 << 2)
+#define XNVME_QUEUE_IO_URING_CQE_BATCH_MAX 8
+#define XNVME_QUEUE_IO_URING_BIGSQE        (0x1 << 2)
 
 struct xnvme_queue_io_uring {
 	struct xnvme_queue_base base;

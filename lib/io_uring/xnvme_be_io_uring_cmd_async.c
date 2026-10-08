@@ -55,7 +55,7 @@ xnvme_be_io_uring_cmd_init(struct xnvme_queue *q, int opts)
 		return -ENOSYS;
 	}
 
-	opts |= XNVME_QUEUE_IOU_BIGSQE;
+	opts |= XNVME_QUEUE_IO_URING_BIGSQE;
 
 	return xnvme_be_io_uring_init(q, opts);
 }

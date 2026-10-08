@@ -131,7 +131,7 @@ xnvme_be_io_uring_init(struct xnvme_queue *q, int opts)
 		ring_params.flags |= IORING_SETUP_IOPOLL;
 	}
 
-	if (opts & XNVME_QUEUE_IOU_BIGSQE) {
+	if (opts & XNVME_QUEUE_IO_URING_BIGSQE) {
 		ring_params.flags |= IORING_SETUP_SQE128;
 		ring_params.flags |= IORING_SETUP_CQE32;
 	}
