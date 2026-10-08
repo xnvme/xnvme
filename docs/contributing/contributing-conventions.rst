@@ -109,8 +109,8 @@ backend and its function-interface implementations.
 
   - The ``<ident>`` is a name uniquely identifying the interface-implementation
   - Example: the Linux backend, named **linux**, has the **async**
-    implementation of the **async** interface utilizing **io_uring** in a file
-    named: * ``xnvme_be_linux_async_liburing.c``
+    implementation of the **async** interface utilizing **libaio** in a file
+    named: * ``xnvme_be_linux_async_libaio.c``
   - Example: The SPDK backend, named **spdk**, has the **async** implementation
     using the SPDK NVMe driver in a file named:
     * ``xnvme_be_spdk_async_nvme.c``

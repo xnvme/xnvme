@@ -17,7 +17,7 @@
 #include <unistd.h>
 #include <xnvme_queue.h>
 #include <xnvme_dev.h>
-#include <xnvme_be_linux_liburing.h>
+#include <xnvme_be_io_uring.h>
 #include <xnvme_be_linux.h>
 
 #ifndef IORING_SETUP_SINGLE_ISSUER

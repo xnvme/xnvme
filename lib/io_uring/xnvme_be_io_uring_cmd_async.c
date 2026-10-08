@@ -13,7 +13,7 @@
 #include <liburing.h>
 #include <xnvme_queue.h>
 #include <xnvme_dev.h>
-#include <xnvme_be_linux_liburing.h>
+#include <xnvme_be_io_uring.h>
 #include <xnvme_be_linux.h>
 #include <xnvme_be_linux_nvme.h>
 #include <linux/nvme_ioctl.h>
