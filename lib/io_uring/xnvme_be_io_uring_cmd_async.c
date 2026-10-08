@@ -57,14 +57,14 @@ xnvme_be_linux_ucmd_init(struct xnvme_queue *q, int opts)
 
 	opts |= XNVME_QUEUE_IOU_BIGSQE;
 
-	return xnvme_be_linux_liburing_init(q, opts);
+	return xnvme_be_io_uring_init(q, opts);
 }
 
 #ifdef NVME_URING_CMD_IO
 int
 xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 {
-	struct xnvme_queue_liburing *queue = (void *)q;
+	struct xnvme_queue_io_uring *queue = (void *)q;
 	struct io_uring_cqe *cqe;
 	struct xnvme_cmd_ctx *ctx;
 	unsigned completed;
@@ -135,7 +135,7 @@ int
 xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 		       size_t mbuf_nbytes)
 {
-	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
+	struct xnvme_queue_io_uring *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
 	struct io_uring_sqe *sqe = NULL;
 	int err = 0;
@@ -191,7 +191,7 @@ int
 xnvme_be_linux_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
 			size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
-	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
+	struct xnvme_queue_io_uring *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
 	struct io_uring_sqe *sqe = NULL;
 	int err = 0;
@@ -251,8 +251,8 @@ struct xnvme_be_async g_xnvme_be_linux_async_ucmd = {
 	.poke = xnvme_be_linux_ucmd_poke,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_linux_ucmd_init,
-	.term = xnvme_be_linux_liburing_term,
-	.get_completion_fd = xnvme_be_linux_liburing_get_completion_fd,
+	.term = xnvme_be_io_uring_term,
+	.get_completion_fd = xnvme_be_io_uring_get_completion_fd,
 #else
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
