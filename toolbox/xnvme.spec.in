@@ -23,6 +23,10 @@ BuildRoot:	%{_tmppath}/%{name}-%{version}-root
 meson build
 
 %install
+# The binaries carry an RPATH to the prefix's libdir, which for the
+# /usr/local prefix is /usr/local/lib64. check-rpaths accepts only
+# subdirectories of it and files the directory itself as invalid (0x0002).
+export QA_RPATHS=0x0002
 meson install -C build --destdir %{buildroot}
 
 %post -p /sbin/ldconfig
