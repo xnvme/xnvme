@@ -263,8 +263,8 @@ xnvme_be_io_uring_poke(struct xnvme_queue *q, uint32_t max)
 }
 
 int
-xnvme_be_io_uring_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
-			 size_t mbuf_nbytes)
+xnvme_be_io_uring_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+		     size_t mbuf_nbytes)
 {
 	struct xnvme_queue_io_uring *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
@@ -367,8 +367,8 @@ exit:
 }
 
 int
-xnvme_be_io_uring_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-			  size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
+xnvme_be_io_uring_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+		      size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_queue_io_uring *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
@@ -523,8 +523,8 @@ xnvme_be_io_uring_get_completion_fd(struct xnvme_queue *queue)
 struct xnvme_be_async g_xnvme_be_linux_async_liburing = {
 	.id = "io_uring",
 #ifdef XNVME_BE_IO_URING_ENABLED
-	.cmd_io = xnvme_be_io_uring_cmd_io,
-	.cmd_iov = xnvme_be_io_uring_cmd_iov,
+	.cmd_io = xnvme_be_io_uring_io,
+	.cmd_iov = xnvme_be_io_uring_iov,
 	.poke = xnvme_be_io_uring_poke,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_io_uring_init,

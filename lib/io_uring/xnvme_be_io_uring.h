@@ -25,8 +25,8 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_io_uring) == XNVME_BE_QUEUE_STATE_
 		    "Incorrect size")
 
 int
-xnvme_be_io_uring_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
-			 size_t mbuf_nbytes);
+xnvme_be_io_uring_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+		     size_t mbuf_nbytes);
 
 int
 xnvme_be_io_uring_poke(struct xnvme_queue *queue, uint32_t max);
