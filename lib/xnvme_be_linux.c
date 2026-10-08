@@ -100,7 +100,7 @@ const struct xnvme_be_config g_xnvme_be_linux_emu_block = {
 
 #ifdef XNVME_BE_IO_URING_ENABLED
 const struct xnvme_be_config g_xnvme_be_io_uring_cmd_nvme = {
-	.async = &g_xnvme_be_linux_async_ucmd,
+	.async = &g_xnvme_be_io_uring_cmd_async,
 	.sync = &g_xnvme_be_linux_sync_nvme,
 	.admin = &g_xnvme_be_linux_admin_nvme,
 	.dev = &g_xnvme_be_dev_linux,
@@ -118,8 +118,8 @@ const struct xnvme_be_config g_xnvme_be_io_uring_cmd_nvme = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_linux_iou_nvme = {
-	.async = &g_xnvme_be_linux_async_liburing,
+const struct xnvme_be_config g_xnvme_be_io_uring_nvme = {
+	.async = &g_xnvme_be_io_uring_async,
 	.sync = &g_xnvme_be_linux_sync_nvme,
 	.admin = &g_xnvme_be_linux_admin_nvme,
 	.dev = &g_xnvme_be_dev_linux,
@@ -139,8 +139,8 @@ const struct xnvme_be_config g_xnvme_be_linux_iou_nvme = {
 #endif /* XNVME_BE_IO_URING_ENABLED */
 
 #if defined(XNVME_BE_IO_URING_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
-const struct xnvme_be_config g_xnvme_be_linux_iou_block = {
-	.async = &g_xnvme_be_linux_async_liburing,
+const struct xnvme_be_config g_xnvme_be_io_uring_block = {
+	.async = &g_xnvme_be_io_uring_async,
 	.sync = &g_xnvme_be_linux_sync_block,
 	.admin = &g_xnvme_be_linux_admin_block,
 	.dev = &g_xnvme_be_dev_linux,
@@ -320,8 +320,8 @@ const struct xnvme_be_config g_xnvme_be_linux_thrpool_file = {
 };
 
 #ifdef XNVME_BE_IO_URING_ENABLED
-const struct xnvme_be_config g_xnvme_be_linux_iou_file = {
-	.async = &g_xnvme_be_linux_async_liburing,
+const struct xnvme_be_config g_xnvme_be_io_uring_file = {
+	.async = &g_xnvme_be_io_uring_async,
 	.sync = &g_xnvme_be_cbi_sync_psync,
 	.admin = &g_xnvme_be_cbi_admin_shim,
 	.dev = &g_xnvme_be_dev_linux,

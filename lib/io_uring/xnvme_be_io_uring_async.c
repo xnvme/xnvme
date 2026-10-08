@@ -520,7 +520,7 @@ xnvme_be_io_uring_get_completion_fd(struct xnvme_queue *queue)
 
 #endif
 
-struct xnvme_be_async g_xnvme_be_linux_async_liburing = {
+struct xnvme_be_async g_xnvme_be_io_uring_async = {
 	.id = "io_uring",
 #ifdef XNVME_BE_IO_URING_ENABLED
 	.cmd_io = xnvme_be_io_uring_io,

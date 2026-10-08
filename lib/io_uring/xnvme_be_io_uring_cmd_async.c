@@ -243,7 +243,7 @@ xnvme_be_io_uring_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t 
 #endif
 #endif
 
-struct xnvme_be_async g_xnvme_be_linux_async_ucmd = {
+struct xnvme_be_async g_xnvme_be_io_uring_cmd_async = {
 	.id = "io_uring_cmd",
 #ifdef XNVME_BE_IO_URING_ENABLED
 	.cmd_io = xnvme_be_io_uring_cmd_io,
