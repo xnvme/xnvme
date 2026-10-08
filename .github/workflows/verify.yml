@@ -428,6 +428,35 @@ jobs:
   #
   # Build on macOS
   #
+  build-rpm:
+    needs: [source-format-check]
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    container:
+      image: fedora:44
+
+    steps:
+    # git before checkout: 'make build-rpm' archives HEAD, so it needs a clone
+    - name: Install what the spec builds with, and rpm-build
+      run: dnf install -y git make meson gcc python3 rpm-build
+
+    - name: Grab source
+      uses: actions/checkout@v6
+
+    - name: Build the RPM
+      run: |
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
+        meson setup builddir -Dwith-spdk=disabled -Dwith-libvfn=disabled
+        make build-rpm
+
+    - name: Install the RPM
+      run: dnf install -y builddir/meson-dist/RPMS/x86_64/xnvme-*.rpm
+
+    - name: Run the installed tools
+      run: |
+        xnvme library-info
+        xnvme info 1GB --be ramdisk
+
   build-macos:
     needs: [source-archive, source-format-check, build-python]
     runs-on: ${{ matrix.os }}-${{ matrix.ver }}
