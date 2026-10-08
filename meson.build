@@ -260,7 +260,7 @@ rpm_conf.set('NAME',    meson.project_name())
 rpm_conf.set('VERSION', meson.project_version())
 rpm_conf.set('LICENSE', meson.project_license()[0])
 configure_file(
-    input:         'xnvme.spec.in',
+    input:         'toolbox/xnvme.spec.in',
     output:        'xnvme.spec',
     configuration: rpm_conf,
 )
