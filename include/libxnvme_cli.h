@@ -571,7 +571,30 @@ int
 xnvme_cli_to_opts(const struct xnvme_cli *cli, struct xnvme_opts *opts);
 
 /**
+ * Split a device argument into its URI and the namespace it names
+ *
+ * A device argument is a URI, optionally followed by a query naming the namespace:
+ * "<uri>/?nsid=<nsid>" or "<uri>?nsid=<nsid>", the identifier in decimal or hex. The
+ * device-open helpers of xnvme_cli use this, so every tool takes such arguments. It is a
+ * convention of the command line only: ::xnvme_dev_open takes the URI without a query.
+ *
+ * @param arg The device argument
+ * @param uri Set to the URI without the query
+ * @param uri_nbytes Size of the buffer 'uri' points to
+ * @param nsid Set to the namespace identifier when the query names one, left as is otherwise
+ *
+ * @return 1 when the query names a namespace, 0 when there is no query. On error, negative
+ * errno is returned: -EINVAL for an unknown key, a malformed identifier, or a URI that does
+ * not fit 'uri'.
+ */
+int
+xnvme_cli_uri_parse(const char *arg, char *uri, size_t uri_nbytes, uint32_t *nsid);
+
+/**
  * Open a device for each of the given URIs
+ *
+ * A URI may name its namespace as described for ::xnvme_cli_uri_parse; a namespace named
+ * that way must be active, or the open fails with -ENODEV.
  *
  * @param uris The device URIs to open
  * @param count The number of URIs

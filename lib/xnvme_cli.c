@@ -2204,6 +2204,78 @@ xnvme_cli_parse(struct xnvme_cli *cli)
 }
 
 int
+xnvme_cli_uri_parse(const char *arg, char *uri, size_t uri_nbytes, uint32_t *nsid)
+{
+	const char *query;
+	unsigned long val;
+	size_t nbytes;
+	char *end;
+
+	if (!arg || !uri || !uri_nbytes || !nsid) {
+		return -EINVAL;
+	}
+
+	query = strchr(arg, '?');
+	nbytes = query ? (size_t)(query - arg) : strlen(arg);
+	if (query && nbytes && arg[nbytes - 1] == '/') {
+		nbytes--;
+	}
+	if (!nbytes || nbytes >= uri_nbytes) {
+		return -EINVAL;
+	}
+	memcpy(uri, arg, nbytes);
+	uri[nbytes] = '\0';
+
+	if (!query) {
+		return 0;
+	}
+	if (strncmp(query + 1, "nsid=", 5)) {
+		return -EINVAL;
+	}
+
+	errno = 0;
+	val = strtoul(query + 6, &end, 0);
+	if (errno || end == query + 6 || *end || !val || val > UINT32_MAX) {
+		return -EINVAL;
+	}
+	*nsid = (uint32_t)val;
+
+	return 1;
+}
+
+static struct xnvme_dev *
+_dev_open(const char *arg, const struct xnvme_opts *opts)
+{
+	struct xnvme_opts dev_opts = *opts;
+	char uri[XNVME_IDENT_URI_LEN];
+	const struct xnvme_spec_idfy_ns *ns;
+	struct xnvme_dev *dev;
+	int named;
+
+	named = xnvme_cli_uri_parse(arg, uri, sizeof(uri), &dev_opts.nsid);
+	if (named < 0) {
+		xnvme_cli_perr("expected <uri> or <uri>/?nsid=<nsid>", named);
+		errno = -named;
+		return NULL;
+	}
+
+	dev = xnvme_dev_open(uri, &dev_opts);
+	if (!dev || !named) {
+		return dev;
+	}
+
+	ns = xnvme_dev_get_ns(dev);
+	if (!ns || !ns->nsze) {
+		xnvme_cli_pinf("namespace %u is not active on '%s'", dev_opts.nsid, uri);
+		xnvme_dev_close(dev);
+		errno = ENODEV;
+		return NULL;
+	}
+
+	return dev;
+}
+
+int
 xnvme_cli_run(struct xnvme_cli *cli, int argc, char **argv, int opts)
 {
 	int err = 0;
@@ -2264,7 +2336,7 @@ xnvme_cli_run(struct xnvme_cli *cli, int argc, char **argv, int opts)
 			return -1;
 		}
 
-		cli->args.dev = xnvme_dev_open(cli->args.uri, &opts);
+		cli->args.dev = _dev_open(cli->args.uri, &opts);
 		if (!cli->args.dev) {
 			err = -errno;
 			xnvme_cli_perr("xnvme_dev_open()", err);
@@ -2303,7 +2375,7 @@ xnvme_cli_dev_open_multi(const char **uris, int count, struct xnvme_opts *opts,
 	}
 
 	for (int i = 0; i < count; i++) {
-		opened[i] = xnvme_dev_open(uris[i], opts);
+		opened[i] = _dev_open(uris[i], opts);
 		if (!opened[i]) {
 			err = errno ? -errno : -EIO;
 			XNVME_DEBUG("FAILED: xnvme_dev_open(%s)", uris[i]);

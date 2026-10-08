@@ -92,6 +92,40 @@ def test_scan(cijoe, device, be_opts, cli_args):
             assert scan_count > 0, "Expected at least one namespace from scan"
 
 
+def _with_uri_nsid(device, cli_args, nsid):
+    """cli_args with the device URI replaced by one naming 'nsid' in its query"""
+
+    return cli_args.replace(device["uri"], f"'{device['uri']}/?nsid={nsid}'", 1)
+
+
+@xnvme_parametrize(labels=["pcie", "nvm"], opts=["be"])
+def test_info_uri_nsid(cijoe, device, be_opts, cli_args):
+    """A controller URI names its namespace with '/?nsid=<nsid>'"""
+
+    nsid = int(device["nsid"])
+    err, state = cijoe.run(f"xnvme info {_with_uri_nsid(device, cli_args, nsid)}")
+    assert not err
+    assert f"nsid: {nsid:#x}" in state.output()
+
+
+@xnvme_parametrize(labels=["pcie", "nvm"], opts=["be"])
+def test_info_uri_nsid_inactive(cijoe, device, be_opts, cli_args):
+    """A namespace named in the URI that is not active is refused, not replaced"""
+
+    # The configured controllers each have a single namespace
+    nsid = int(device["nsid"]) + 1
+    err, state = cijoe.run(f"xnvme info {_with_uri_nsid(device, cli_args, nsid)}")
+    assert err, f"opened an inactive namespace: {state.output()}"
+
+
+def test_uri_query_malformed(cijoe):
+    """A query naming anything but a namespace is refused"""
+
+    for query in ["?foo=1", "/?nsid=", "/?nsid=0", "/?nsid=1&x=2"]:
+        err, _ = cijoe.run(f"xnvme info '1GB{query}' --be ramdisk")
+        assert err, f"accepted '1GB{query}'"
+
+
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin", "sync", "async"])
 def test_info(cijoe, device, be_opts, cli_args):
     err, state = cijoe.run(f"xnvme info {cli_args}")
