@@ -998,7 +998,7 @@ struct xnvme_platform g_xnvme_platform_linux = {
 		&g_xnvme_be_vfio,
 #endif
 		&g_xnvme_be_linux_emu_nvme,
-#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
+#ifdef XNVME_BE_IO_URING_ENABLED
 		&g_xnvme_be_linux_ucmd_nvme,
 		&g_xnvme_be_linux_iou_nvme,
 #endif

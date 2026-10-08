@@ -368,11 +368,11 @@ struct xnvme_platform g_xnvme_platform_linux = {
 #ifdef XNVME_BE_LINUX_BLOCK_ENABLED
 			&g_xnvme_be_linux_emu_block,
 #endif
-#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
+#ifdef XNVME_BE_IO_URING_ENABLED
 			&g_xnvme_be_linux_ucmd_nvme,
 			&g_xnvme_be_linux_iou_nvme,
 #endif
-#if defined(XNVME_BE_LINUX_LIBURING_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
+#if defined(XNVME_BE_IO_URING_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
 			&g_xnvme_be_linux_iou_block,
 #endif
 #ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
@@ -391,7 +391,7 @@ struct xnvme_platform g_xnvme_platform_linux = {
 			&g_xnvme_be_linux_nil_nvme,
 			&g_xnvme_be_linux_emu_file,
 			&g_xnvme_be_linux_thrpool_file,
-#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
+#ifdef XNVME_BE_IO_URING_ENABLED
 			&g_xnvme_be_linux_iou_file,
 #endif
 #ifdef XNVME_BE_LINUX_LIBAIO_ENABLED

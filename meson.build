@@ -180,7 +180,7 @@ uring_dep = dependency(
   version: '>=2.2',
   required: get_option('with-liburing'),
 )
-conf_data.set('XNVME_BE_LINUX_LIBURING_ENABLED', uring_dep.found())
+conf_data.set('XNVME_BE_IO_URING_ENABLED', uring_dep.found())
 
 libvfn_dep = dependency(
   'libvfn',

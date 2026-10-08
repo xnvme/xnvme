@@ -8,7 +8,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
+#ifdef XNVME_BE_IO_URING_ENABLED
 #include <pthread.h>
 #include <errno.h>
 #include <liburing.h>
@@ -522,7 +522,7 @@ xnvme_be_linux_liburing_get_completion_fd(struct xnvme_queue *queue)
 
 struct xnvme_be_async g_xnvme_be_linux_async_liburing = {
 	.id = "io_uring",
-#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
+#ifdef XNVME_BE_IO_URING_ENABLED
 	.cmd_io = xnvme_be_linux_liburing_cmd_io,
 	.cmd_iov = xnvme_be_linux_liburing_cmd_iov,
 	.poke = xnvme_be_linux_liburing_poke,
