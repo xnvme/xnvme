@@ -18,14 +18,14 @@
 #include <xnvme_be_linux_nvme.h>
 #include <linux/nvme_ioctl.h>
 
-static int g_linux_liburing_optional[] = {
+static int g_io_uring_cmd_optional[] = {
 	IORING_OP_URING_CMD,
 };
-static int g_linux_liburing_noptional =
-	sizeof g_linux_liburing_optional / sizeof(*g_linux_liburing_optional);
+static int g_io_uring_cmd_noptional =
+	sizeof g_io_uring_cmd_optional / sizeof(*g_io_uring_cmd_optional);
 
 static int
-_linux_liburing_noptional_missing(void)
+_io_uring_cmd_noptional_missing(void)
 {
 	struct io_uring_probe *probe;
 	int missing = 0;
@@ -36,8 +36,8 @@ _linux_liburing_noptional_missing(void)
 		return -ENOSYS;
 	}
 
-	for (int i = 0; i < g_linux_liburing_noptional; ++i) {
-		if (!io_uring_opcode_supported(probe, g_linux_liburing_optional[i])) {
+	for (int i = 0; i < g_io_uring_cmd_noptional; ++i) {
+		if (!io_uring_opcode_supported(probe, g_io_uring_cmd_optional[i])) {
 			missing += 1;
 		}
 	}
@@ -48,9 +48,9 @@ _linux_liburing_noptional_missing(void)
 }
 
 int
-xnvme_be_linux_ucmd_init(struct xnvme_queue *q, int opts)
+xnvme_be_io_uring_cmd_init(struct xnvme_queue *q, int opts)
 {
-	if (_linux_liburing_noptional_missing()) {
+	if (_io_uring_cmd_noptional_missing()) {
 		fprintf(stderr, "# FAILED: io_uring cmd, not supported by kernel!\n");
 		return -ENOSYS;
 	}
@@ -62,7 +62,7 @@ xnvme_be_linux_ucmd_init(struct xnvme_queue *q, int opts)
 
 #ifdef NVME_URING_CMD_IO
 int
-xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
+xnvme_be_io_uring_cmd_poke(struct xnvme_queue *q, uint32_t max)
 {
 	struct xnvme_queue_io_uring *queue = (void *)q;
 	struct io_uring_cqe *cqe;
@@ -123,7 +123,7 @@ xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 
 #else
 int
-xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
+xnvme_be_io_uring_cmd_poke(struct xnvme_queue *q, uint32_t max)
 {
 	XNVME_DEBUG("FAILED: not supported, built on system without NVME_URING_CMD_IO");
 	return xnvme_be_nosys_queue_poke(q, max);
@@ -132,8 +132,8 @@ xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 
 #ifdef NVME_URING_CMD_IO
 int
-xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
-		       size_t mbuf_nbytes)
+xnvme_be_io_uring_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			 size_t mbuf_nbytes)
 {
 	struct xnvme_queue_io_uring *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
@@ -178,8 +178,8 @@ exit:
 }
 #else
 int
-xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
-		       size_t mbuf_nbytes)
+xnvme_be_io_uring_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			 size_t mbuf_nbytes)
 {
 	XNVME_DEBUG("FAILED: not supported, built on system without NVME_URING_CMD_IO");
 	return xnvme_be_nosys_queue_cmd_io(ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
@@ -188,8 +188,8 @@ xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 
 #ifdef NVME_URING_CMD_IO_VEC
 int
-xnvme_be_linux_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-			size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
+xnvme_be_io_uring_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+			  size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_queue_io_uring *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
@@ -234,8 +234,8 @@ exit:
 }
 #else
 int
-xnvme_be_linux_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-			size_t dvec_nbytes, void *mbuf, size_t mbuf_nbytes)
+xnvme_be_io_uring_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+			  size_t dvec_nbytes, void *mbuf, size_t mbuf_nbytes)
 {
 	XNVME_DEBUG("FAILED: not supported, built on system without NVME_URING_CMD_IO_VEC");
 	return xnvme_be_nosys_queue_cmd_iov(ctx, dvec, dvec_cnt, dvec_nbytes, mbuf, mbuf_nbytes);
@@ -246,11 +246,11 @@ xnvme_be_linux_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dv
 struct xnvme_be_async g_xnvme_be_linux_async_ucmd = {
 	.id = "io_uring_cmd",
 #ifdef XNVME_BE_IO_URING_ENABLED
-	.cmd_io = xnvme_be_linux_ucmd_io,
-	.cmd_iov = xnvme_be_linux_ucmd_iov,
-	.poke = xnvme_be_linux_ucmd_poke,
+	.cmd_io = xnvme_be_io_uring_cmd_io,
+	.cmd_iov = xnvme_be_io_uring_cmd_iov,
+	.poke = xnvme_be_io_uring_cmd_poke,
 	.wait = xnvme_be_nosys_queue_wait,
-	.init = xnvme_be_linux_ucmd_init,
+	.init = xnvme_be_io_uring_cmd_init,
 	.term = xnvme_be_io_uring_term,
 	.get_completion_fd = xnvme_be_io_uring_get_completion_fd,
 #else

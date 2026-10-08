@@ -35,7 +35,7 @@ extern const struct xnvme_be_config g_xnvme_be_linux_emu_nvme;
 extern const struct xnvme_be_config g_xnvme_be_linux_emu_block;
 #endif
 #ifdef XNVME_BE_IO_URING_ENABLED
-extern const struct xnvme_be_config g_xnvme_be_linux_ucmd_nvme;
+extern const struct xnvme_be_config g_xnvme_be_io_uring_cmd_nvme;
 extern const struct xnvme_be_config g_xnvme_be_linux_iou_nvme;
 #endif
 #if defined(XNVME_BE_IO_URING_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
