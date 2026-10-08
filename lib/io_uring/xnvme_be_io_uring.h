@@ -5,6 +5,7 @@
 #ifndef __INTERNAL_XNVME_BE_IO_URING_H
 #define __INTERNAL_XNVME_BE_IO_URING_H
 #include <liburing.h>
+#include <xnvme_queue.h>
 
 #define XNVME_QUEUE_IO_URING_CQE_BATCH_MAX 8
 #define XNVME_QUEUE_IO_URING_BIGSQE        (0x1 << 2)
@@ -42,5 +43,8 @@ xnvme_be_io_uring_term(struct xnvme_queue *queue);
 
 int
 xnvme_be_io_uring_get_completion_fd(struct xnvme_queue *queue);
+
+extern struct xnvme_be_async g_xnvme_be_io_uring_async;
+extern struct xnvme_be_async g_xnvme_be_io_uring_cmd_async;
 
 #endif /* __INTERNAL_XNVME_BE_IO_URING_H */

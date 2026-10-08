@@ -20,6 +20,9 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_cbi.h>
 #include <xnvme_be_linux.h>
+#ifdef XNVME_BE_IO_URING_ENABLED
+#include <xnvme_be_io_uring.h>
+#endif
 
 int
 xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr opts)
