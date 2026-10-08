@@ -20,7 +20,7 @@ BuildRoot:	%{_tmppath}/%{name}-%{version}-root
 %autosetup -c
 
 %build
-meson build
+meson setup build -Dwith-spdk=disabled -Dwith-libvfn=disabled
 
 %install
 # The binaries carry an RPATH to the prefix's libdir, which for the
