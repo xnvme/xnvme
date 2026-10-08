@@ -115,6 +115,17 @@ def test_run_max_io_bytes(cijoe, device, be_opts, cli_args):
     assert not err
 
 
+@xnvme_parametrize(labels=["pcie", "nvm"], opts=["be"])
+def test_run_uri_nsid(cijoe, device, be_opts, cli_args):
+    err, _ = qublk_session(
+        cijoe,
+        f"'{device['uri']}/?nsid={device['nsid']}'",
+        be_opts["be"],
+        [f"dd if={UBLK_NODE} of=/dev/null bs=4k count=64 iflag=direct"],
+    )
+    assert not err
+
+
 @xnvme_parametrize(labels=["nvm"], opts=["be"])
 def test_run_no_nvme_device(cijoe, device, be_opts, cli_args):
     """A device not on a user-space NVMe driver gets no /dev/ublkb<N>-nvme"""

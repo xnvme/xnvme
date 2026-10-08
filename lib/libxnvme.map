@@ -71,6 +71,7 @@
 		xnvme_cli_run;
 		xnvme_cli_to_opts;
 		xnvme_cli_dev_open_multi;
+		xnvme_cli_uri_parse;
 		xnvme_cli_dev_close_multi;
 
 		# libxnvme_cmd.h
