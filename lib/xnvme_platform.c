@@ -9,6 +9,7 @@
 #include <xnvme_be.h>
 #include <xnvme_be_cref.h>
 #include <xnvme_dev.h>
+#include <xnvme_lock.h>
 #include <xnvme_platform.h>
 
 #define XNVME_MAX_NS_LIST_SIZE 1024
@@ -353,11 +354,14 @@ exit:
 	xnvme_buf_free(ctrlr_dev, idfy_buf);
 
 	if (!ctx->anchor) {
-		const struct xnvme_be_cref_entry *cref = xnvme_be_cref_get(uri);
+		const struct xnvme_be_cref_entry *cref;
 
+		xnvme_lock();
+		cref = xnvme_be_cref_get(uri);
 		if (cref) {
 			ctx->anchor = cref->ctrlr;
 		}
+		xnvme_unlock();
 	}
 	xnvme_dev_close(ctrlr_dev);
 	return 0;
@@ -458,7 +462,9 @@ xnvme_platform_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enu
 
 	/** Release the controller pinned open across enumeration, if any */
 	if (ctx.anchor) {
+		xnvme_lock();
 		xnvme_be_cref_put(ctx.anchor);
+		xnvme_unlock();
 	}
 
 	return err;

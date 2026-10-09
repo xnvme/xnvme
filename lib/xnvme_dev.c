@@ -10,6 +10,7 @@
 #include <xnvme_cmd.h>
 #include <xnvme_dev.h>
 #include <xnvme_geo.h>
+#include <xnvme_lock.h>
 
 #ifdef XNVME_PLATFORM_LINUX_ENABLED
 /**
@@ -767,7 +768,9 @@ xnvme_dev_open(const char *dev_uri, struct xnvme_opts *opts)
 		return NULL;
 	}
 
+	xnvme_lock();
 	err = g_xnvme_platform->dev_open(dev, opts);
+	xnvme_unlock();
 	if (err) {
 		XNVME_DEBUG("FAILED: failed opening uri: %s", dev_uri);
 		errno = -err;
@@ -785,6 +788,7 @@ xnvme_dev_close(struct xnvme_dev *dev)
 		return;
 	}
 
+	xnvme_lock();
 	{
 		void *ctrlr = ((void **)dev->be.state)[0];
 
@@ -794,6 +798,7 @@ xnvme_dev_close(struct xnvme_dev *dev)
 			xnvme_be_cref_put(ctrlr);
 		}
 	}
+	xnvme_unlock();
 
 	free(dev);
 }
