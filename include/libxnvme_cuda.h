@@ -69,6 +69,9 @@ extern "C" {
  * controller. The resulting pointer lives in device memory and can be passed
  * directly as a CUDA kernel argument.
  *
+ * @note Control plane: serialised with the other control-plane calls, not with I/O on the
+ * same device, queue or buffer; see Thread Safety in the API documentation
+ *
  * @param dev   An xnvme_dev opened on an ``upcie-cuda`` device
  * @param depth Number of IO slots in the queue
  * @param queue On success, set to a device pointer to the GPU queue
@@ -82,6 +85,9 @@ xnvme_cuda_queue_create(struct xnvme_dev *dev, uint16_t depth, struct xnvme_cuda
  * Destroy a GPU-resident NVMe IO queue
  *
  * Deletes the queue pair from the NVMe controller and frees the device memory.
+ *
+ * @note Control plane: serialised with the other control-plane calls, not with I/O on the
+ * same device, queue or buffer; see Thread Safety in the API documentation
  *
  * @param dev   The xnvme_dev used to create the queue
  * @param queue GPU queue pointer returned by xnvme_cuda_queue_create()

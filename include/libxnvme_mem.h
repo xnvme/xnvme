@@ -14,6 +14,8 @@
  *
  * @note nbytes must be greater than zero and a multiple of minimal granularity
  * @note Unmap the buffer using xnvme_mem_unmap()
+ * @note Control plane: serialised with the other control-plane calls, not with I/O on the
+ * same device, queue or buffer; see Thread Safety in the API documentation
  *
  * @param dev Device handle obtained with xnvme_dev_open()
  * @param vaddr Pointer to start of virtual memory to use as mapped memory
@@ -26,6 +28,9 @@ xnvme_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes);
 
 /**
  * Unmap the given IO buffer mapped with xnvme_mem_map()
+ *
+ * @note Control plane: serialised with the other control-plane calls, not with I/O on the
+ * same device, queue or buffer; see Thread Safety in the API documentation
  *
  * @param dev Device handle obtained with xnvme_dev_open()
  * @param buf Pointer to a buffer allocated with xnvme_buf_alloc()

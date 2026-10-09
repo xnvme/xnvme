@@ -61,7 +61,25 @@ C: API
   - Exceptions: API-calls mimicking legacy interfaces, such as the
     ``xnvme_buf_alloc()`` which is operating similar to ``malloc()/free()``.
 
-* The API and its backend implementation cannot be assumed to be thread-safe
+* The library is not thread-safe. Only the following control-plane calls may
+  be made concurrently, on every backend, and only with respect to each other:
+  a call made while another thread uses the same device, queue or buffer for
+  I/O is not covered
+
+  - ``xnvme_dev_open()``, ``xnvme_dev_close()``, ``xnvme_enumerate()``,
+    ``xnvme_queue_init()``, ``xnvme_queue_term()``, ``xnvme_buf_alloc()``,
+    ``xnvme_buf_realloc()``, ``xnvme_buf_free()``, their ``xnvme_buf_phys_*()``
+    variants, ``xnvme_buf_vtophys()``, ``xnvme_mem_map()``,
+    ``xnvme_mem_unmap()``, ``xnvme_cuda_queue_create()`` and
+    ``xnvme_cuda_queue_destroy()``; one process-wide lock serialises them
+    (``lib/xnvme_lock.c``)
+  - A queue, and the command contexts drawn from it, belongs to one thread at a
+    time, and so do a device's synchronous and admin command paths
+  - The device getters that identify the device on first use, such as
+    ``xnvme_dev_get_geo()`` and ``xnvme_dev_get_ident()``, must not make that
+    first call from several threads at once
+  - Backend code that reaches the same process-wide state from threads of its
+    own takes the same lock, ``xnvme_lock()``
 
 * Be minimal with definitions in the public API
 
