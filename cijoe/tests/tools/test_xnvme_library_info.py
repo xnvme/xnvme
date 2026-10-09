@@ -41,7 +41,7 @@ def test_library_info_has_liburing(cijoe):
         err, state = cijoe.run("xnvme library-info")
         assert not err
 
-        assert "XNVME_BE_LINUX_LIBURING_ENABLED" in state.output()
+        assert "XNVME_BE_IO_URING_ENABLED" in state.output()
     else:
         pytest.skip("Not Linux, so skipping liburing check")
 
@@ -97,10 +97,10 @@ def test_library_info_has_all_combos(cijoe):
     optional = {
         "spdk": "XNVME_BE_SPDK_ENABLED",
         "libvfn": "XNVME_BE_LIBVFN_ENABLED",
-        "io_uring": "XNVME_BE_LINUX_LIBURING_ENABLED",
-        "io_uring_cmd": "XNVME_BE_LINUX_LIBURING_ENABLED",
-        "io_uring_bdev": "XNVME_BE_LINUX_LIBURING_ENABLED",
-        "io_uring_file": "XNVME_BE_LINUX_LIBURING_ENABLED",
+        "io_uring": "XNVME_BE_IO_URING_ENABLED",
+        "io_uring_cmd": "XNVME_BE_IO_URING_ENABLED",
+        "io_uring_bdev": "XNVME_BE_IO_URING_ENABLED",
+        "io_uring_file": "XNVME_BE_IO_URING_ENABLED",
         "libaio": "XNVME_BE_LINUX_LIBAIO_ENABLED",
         "libaio_bdev": "XNVME_BE_LINUX_LIBAIO_ENABLED",
         "libaio_file": "XNVME_BE_LINUX_LIBAIO_ENABLED",
