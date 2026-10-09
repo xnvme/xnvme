@@ -11,6 +11,7 @@
 #include <xnvme_host_buf.h>
 #include <xnvme_cuda_buf.h>
 #include <xnvme_hip_buf.h>
+#include <xnvme_lock.h>
 
 void *
 xnvme_buf_virt_alloc(size_t alignment, size_t nbytes)
@@ -51,37 +52,63 @@ xnvme_buf_virt_free(void *buf)
 void *
 xnvme_buf_phys_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
 {
-	return dev->be.mem.buf_alloc(dev, nbytes, phys);
+	void *buf;
+	int err;
+
+	xnvme_lock();
+	buf = dev->be.mem.buf_alloc(dev, nbytes, phys);
+	err = errno;
+	xnvme_unlock();
+	errno = err;
+
+	return buf;
 }
 
 void *
 xnvme_buf_phys_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes, uint64_t *phys)
 {
-	return dev->be.mem.buf_realloc(dev, buf, nbytes, phys);
+	void *new_buf;
+	int err;
+
+	xnvme_lock();
+	new_buf = dev->be.mem.buf_realloc(dev, buf, nbytes, phys);
+	err = errno;
+	xnvme_unlock();
+	errno = err;
+
+	return new_buf;
 }
 
 void
 xnvme_buf_phys_free(const struct xnvme_dev *dev, void *buf)
 {
+	xnvme_lock();
 	dev->be.mem.buf_free(dev, buf);
+	xnvme_unlock();
 }
 
 int
 xnvme_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys)
 {
-	return dev->be.mem.buf_vtophys(dev, buf, phys);
+	int err;
+
+	xnvme_lock();
+	err = dev->be.mem.buf_vtophys(dev, buf, phys);
+	xnvme_unlock();
+
+	return err;
 }
 
 void *
 xnvme_buf_alloc(const struct xnvme_dev *dev, size_t nbytes)
 {
-	return dev->be.mem.buf_alloc(dev, nbytes, NULL);
+	return xnvme_buf_phys_alloc(dev, nbytes, NULL);
 }
 
 void *
 xnvme_buf_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes)
 {
-	return dev->be.mem.buf_realloc(dev, buf, nbytes, NULL);
+	return xnvme_buf_phys_realloc(dev, buf, nbytes, NULL);
 }
 
 void
@@ -242,11 +269,23 @@ xnvme_buf_diff_pr(const void *expected, const void *actual, size_t nbytes, int X
 int
 xnvme_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 {
-	return dev->be.mem.mem_map(dev, vaddr, nbytes, NULL);
+	int err;
+
+	xnvme_lock();
+	err = dev->be.mem.mem_map(dev, vaddr, nbytes, NULL);
+	xnvme_unlock();
+
+	return err;
 }
 
 int
 xnvme_mem_unmap(const struct xnvme_dev *dev, void *buf)
 {
-	return dev->be.mem.mem_unmap(dev, buf);
+	int err;
+
+	xnvme_lock();
+	err = dev->be.mem.mem_unmap(dev, buf);
+	xnvme_unlock();
+
+	return err;
 }
