@@ -951,6 +951,30 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.descr = "Use given 'NUM' as per-IO buffer size in bytes",
 	},
 	{
+		.opt = XNVME_CLI_OPT_ALT_URI,
+		.vtype = XNVME_CLI_OPT_VTYPE_URI,
+		.name = "alt-uri",
+		.descr = "URI of another device; a comma-separated list for several",
+	},
+	{
+		.opt = XNVME_CLI_OPT_P2P_CQ_MIRROR,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
+		.name = "p2p-cq-mirror",
+		.descr = "Complete into GPU memory, beside the data (XNVME_QUEUE_P2P_CQ_MIRROR)",
+	},
+	{
+		.opt = XNVME_CLI_OPT_SQ_HOSTMEM,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
+		.name = "sq-hostmem",
+		.descr = "Submit GPU-issued I/O from host memory (XNVME_QUEUE_SQ_HOSTMEM)",
+	},
+	{
+		.opt = XNVME_CLI_OPT_BUF_HOST_BOUNCE,
+		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
+		.name = "buf-host-bounce",
+		.descr = "Read into a host buffer and copy it to the GPU, instead of P2P",
+	},
+	{
 		.opt = XNVME_CLI_OPT_ALT_BE,
 		.vtype = XNVME_CLI_OPT_VTYPE_STR,
 		.name = "alt-be",
@@ -1629,6 +1653,15 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 	case XNVME_CLI_OPT_DIRECT:
 		args->direct = true;
 		break;
+	case XNVME_CLI_OPT_P2P_CQ_MIRROR:
+		args->p2p_cq_mirror = true;
+		break;
+	case XNVME_CLI_OPT_SQ_HOSTMEM:
+		args->sq_hostmem = true;
+		break;
+	case XNVME_CLI_OPT_BUF_HOST_BOUNCE:
+		args->buf_host_bounce = true;
+		break;
 
 	case XNVME_CLI_OPT_OPCODE:
 		args->opcode = num;
@@ -1666,6 +1699,10 @@ xnvme_cli_assign_arg(struct xnvme_cli *cli, struct xnvme_cli_opt_attr *opt_attr,
 	case XNVME_CLI_OPT_BE:
 		args->be = arg ? arg : "INVALID_INPUT";
 		break;
+	case XNVME_CLI_OPT_ALT_URI:
+		args->alt_uri = arg ? arg : "INVALID_INPUT";
+		break;
+
 	case XNVME_CLI_OPT_ALT_BE:
 		args->alt_be = arg ? arg : "INVALID_INPUT";
 		break;
