@@ -29,6 +29,9 @@ enum xnvme_queue_opts {
 /**
  * Allocate a Command Queue for asynchronous command submission and completion
  *
+ * @note Control plane: serialised with the other control-plane calls, not with I/O on the
+ * same device, queue or buffer; see Thread Safety in the API documentation
+ *
  * @param dev Device handle (::xnvme_dev) obtained with xnvme_dev_open()
  * @param capacity Maximum number of outstanding commands on the initialized queue, note that it
  * must be a power of 2 within the range [1,4096]
@@ -64,6 +67,9 @@ xnvme_queue_get_outstanding(struct xnvme_queue *queue);
 
 /**
  * Tear down the given ::xnvme_queue
+ *
+ * @note Control plane: serialised with the other control-plane calls, not with I/O on the
+ * same device, queue or buffer; see Thread Safety in the API documentation
  *
  * @param queue Pointer to the ::xnvme_queue to tear down
  *

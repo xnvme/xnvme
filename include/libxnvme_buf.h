@@ -14,6 +14,8 @@
  *
  * @note nbytes must be greater than zero and a multiple of minimal granularity
  * @note De-allocate the buffer using xnvme_buf_free()
+ * @note Control plane: serialised with the other control-plane calls, not with I/O on the
+ * same device, queue or buffer; see Thread Safety in the API documentation
  *
  * @param dev Device handle obtained with xnvme_dev_open()
  * @param nbytes The size of the allocated buffer in bytes
@@ -32,6 +34,8 @@ xnvme_buf_alloc(const struct xnvme_dev *dev, size_t nbytes);
  *
  * @note nbytes must be greater than zero and a multiple of minimal granularity
  * @note De-allocate the buffer using xnvme_buf_free()
+ * @note Control plane: serialised with the other control-plane calls, not with I/O on the
+ * same device, queue or buffer; see Thread Safety in the API documentation
  *
  * @param dev Device handle obtained with xnvme_dev_open()
  * @param buf The buffer to reallocate
@@ -46,6 +50,9 @@ xnvme_buf_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes);
 /**
  * Free the given IO buffer allocated with xnvme_buf_alloc()
  *
+ * @note Control plane: serialised with the other control-plane calls, not with I/O on the
+ * same device, queue or buffer; see Thread Safety in the API documentation
+ *
  * @param dev Device handle obtained with xnvme_dev_open()
  * @param buf Pointer to a buffer allocated with xnvme_buf_alloc()
  */
@@ -57,6 +64,8 @@ xnvme_buf_free(const struct xnvme_dev *dev, void *buf);
  *
  * @note nbytes must be greater than zero and a multiple of minimal granularity
  * @note De-allocate the buffer using xnvme_buf_phys_free()
+ * @note Control plane: serialised with the other control-plane calls, not with I/O on the
+ * same device, queue or buffer; see Thread Safety in the API documentation
  *
  * @param dev Device handle obtained with xnvme_dev_open()
  * @param nbytes The size of the allocated buffer in bytes
@@ -72,6 +81,9 @@ xnvme_buf_phys_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
 /**
  * Free the given buffer of physical memory allocated with xnvme_buf_phys_alloc()
  *
+ * @note Control plane: serialised with the other control-plane calls, not with I/O on the
+ * same device, queue or buffer; see Thread Safety in the API documentation
+ *
  * @param dev Device handle obtained with xnvme_dev_open()
  * @param buf Pointer to a buffer allocated with xnvme_buf_phys_alloc()
  */
@@ -83,6 +95,8 @@ xnvme_buf_phys_free(const struct xnvme_dev *dev, void *buf);
  *
  * @note nbytes must be greater than zero and a multiple of minimal granularity
  * @note De-allocate the buffer using xnvme_buf_phys_free()
+ * @note Control plane: serialised with the other control-plane calls, not with I/O on the
+ * same device, queue or buffer; see Thread Safety in the API documentation
  *
  * @param dev Device handle obtained with xnvme_dev_open()
  * @param buf The buffer to reallocate
@@ -102,6 +116,9 @@ xnvme_buf_phys_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes, ui
  * The intended use for this function is to provide the physical-address of a buffer-allocation
  * allocated with xnvme_buf_phys_alloc() or xnvme_buf_alloc(), where the 'phys' argument was either
  * not provided.
+ *
+ * @note Control plane: serialised with the other control-plane calls, not with I/O on the
+ * same device, queue or buffer; see Thread Safety in the API documentation
  *
  * @param dev Device handle obtained with xnvme_dev_open()
  * @param buf Pointer to a buffer allocated with xnvme_buf_alloc()

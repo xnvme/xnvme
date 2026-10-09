@@ -58,6 +58,9 @@ typedef int (*xnvme_enumerate_cb)(struct xnvme_dev *dev, void *cb_args);
 /**
  * enumerate devices
  *
+ * @note Control plane: serialised with the other control-plane calls, not with I/O on the
+ * same device, queue or buffer; see Thread Safety in the API documentation
+ *
  * @param sys_uri URI of the system to enumerate, when NULL, localhost/PCIe
  * @param opts Options for instrumenting the runtime during enumeration
  * @param cb_func Callback function to invoke for each yielded device
@@ -208,6 +211,9 @@ xnvme_dev_get_ssw(const struct xnvme_dev *dev);
 /**
  * Creates a device handle (::xnvme_dev) based on the given device-uri
  *
+ * @note Control plane: serialised with the other control-plane calls, not with I/O on the
+ * same device, queue or buffer; see Thread Safety in the API documentation
+ *
  * @param dev_uri File path "/dev/nvme0n1" or "0000:04.01"
  * @param opts Options for library backend and system-interfaces
  *
@@ -219,6 +225,9 @@ xnvme_dev_open(const char *dev_uri, struct xnvme_opts *opts);
 
 /**
  * Destroy the given device handle (::xnvme_dev)
+ *
+ * @note Control plane: serialised with the other control-plane calls, not with I/O on the
+ * same device, queue or buffer; see Thread Safety in the API documentation
  *
  * @param dev Device handle obtained with xnvme_dev_open()
  */
