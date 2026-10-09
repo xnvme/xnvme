@@ -7,9 +7,10 @@
 #ifdef XNVME_BE_UPCIE_CUDA_ENABLED
 #include <xnvme_dev.h>
 #include <xnvme_be_upcie_cuda.h>
+#include <xnvme_lock.h>
 
-int
-xnvme_cuda_queue_create(struct xnvme_dev *dev, uint16_t depth, struct xnvme_cuda_queue **queue)
+static int
+_xnvme_cuda_queue_create(struct xnvme_dev *dev, uint16_t depth, struct xnvme_cuda_queue **queue)
 {
 	struct xnvme_be_upcie_state *state = (void *)dev->be.state;
 	struct xnvme_cuda_queue *qpair;
@@ -47,8 +48,20 @@ xnvme_cuda_queue_create(struct xnvme_dev *dev, uint16_t depth, struct xnvme_cuda
 	return 0;
 }
 
-void
-xnvme_cuda_queue_destroy(struct xnvme_dev *dev, struct xnvme_cuda_queue *queue)
+int
+xnvme_cuda_queue_create(struct xnvme_dev *dev, uint16_t depth, struct xnvme_cuda_queue **queue)
+{
+	int err;
+
+	xnvme_lock();
+	err = _xnvme_cuda_queue_create(dev, depth, queue);
+	xnvme_unlock();
+
+	return err;
+}
+
+static int
+_xnvme_cuda_queue_destroy(struct xnvme_dev *dev, struct xnvme_cuda_queue *queue)
 {
 	struct xnvme_be_upcie_state *state = (void *)dev->be.state;
 	int err;
@@ -58,7 +71,7 @@ xnvme_cuda_queue_destroy(struct xnvme_dev *dev, struct xnvme_cuda_queue *queue)
 		// Without the admin queue the device-side queues cannot be deleted, and
 		// releasing the GPU memory they still reference would be worse than leaking it.
 		XNVME_DEBUG("FAILED: xnvme_be_upcie_mproc_qids_lock(); err(%d)", err);
-		return;
+		return err;
 	}
 
 	nvme_controller_cuda_delete_io_qpair(state->ctrlr->ctrl, (struct nvme_qpair_cuda *)queue,
@@ -66,7 +79,21 @@ xnvme_cuda_queue_destroy(struct xnvme_dev *dev, struct xnvme_cuda_queue *queue)
 
 	xnvme_be_upcie_mproc_qids_unlock(state->ctrlr);
 
-	cuMemFree((CUdeviceptr)queue);
+	return 0;
+}
+
+void
+xnvme_cuda_queue_destroy(struct xnvme_dev *dev, struct xnvme_cuda_queue *queue)
+{
+	int err;
+
+	xnvme_lock();
+	err = _xnvme_cuda_queue_destroy(dev, queue);
+	xnvme_unlock();
+
+	if (!err) {
+		cuMemFree((CUdeviceptr)queue);
+	}
 }
 
 #else

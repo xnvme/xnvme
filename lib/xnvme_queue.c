@@ -8,6 +8,7 @@
 #include <xnvme_be.h>
 #include <xnvme_cmd.h>
 #include <xnvme_dev.h>
+#include <xnvme_lock.h>
 #include <xnvme_queue.h>
 
 int
@@ -20,7 +21,9 @@ xnvme_queue_term(struct xnvme_queue *queue)
 		return -EINVAL;
 	}
 
+	xnvme_lock();
 	err = queue->base.dev ? queue->base.dev->be.async.term(queue) : 0;
+	xnvme_unlock();
 	if (err) {
 		XNVME_DEBUG("FAILED: backend queue-termination failed with err: %d", err);
 	}
@@ -74,7 +77,9 @@ xnvme_queue_init(struct xnvme_dev *dev, uint16_t capacity, int opts, struct xnvm
 		SLIST_INSERT_HEAD(&(*queue)->base.pool, &((*queue)->pool_storage[i]), link);
 	}
 
+	xnvme_lock();
 	err = dev->be.async.init(*queue, opts);
+	xnvme_unlock();
 	if (err) {
 		XNVME_DEBUG("FAILED: backend-queue initialization with err: %d", err);
 		free(*queue);
