@@ -16,6 +16,7 @@ tests = {
   'buf.c': [
     ['alloc', ['buf_alloc_free', '1GB', '--count', '31']],
     ['virt_alloc', ['buf_virt_alloc_free', '1GB', '--count', '31']],
+    ['alloc_threads', ['buf_alloc_free_threads', '1GB', '--count', '5000']],
   ],
   'cli.c': [
     ['optional', ['optional']],
@@ -65,6 +66,9 @@ tests = {
     ['scopy-msrc', ['scopy-msrc', '1GB']],
     ['scopy-msrc clear', ['scopy-msrc', '1GB', '--clear']],
   ],
+  'threads.c': [
+    ['init_term', ['init_term', '1GB', '--count', '200', '--qdepth', '64']],
+  ],
   'xnvme_cli.c': [
     ['dev-open-multi, one', ['dev-open-multi', '1GB']],
     ['dev-open-multi, two', ['dev-open-multi', '1GB', '1GB']],
@@ -96,6 +100,7 @@ foreach test_source, tests_args : tests
     include_directories: [conf_inc, xnvme_inc],
     link_with: xnvmelib,
     link_args: link_args_hardening,
+    dependencies: [thread_dep],
     install_rpath: xnvmelib_rpath,
     install: true,
   )

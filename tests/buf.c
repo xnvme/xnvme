@@ -3,7 +3,149 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <errno.h>
+#include <pthread.h>
+#include <stdlib.h>
+#include <string.h>
 #include <libxnvme.h>
+
+#define THREADS 16
+#define SLOTS 8
+
+#ifndef XNVME_RAND_R_ENABLED
+static int
+rand_r(unsigned int *seed)
+{
+	*seed = *seed * 1103515245 + 12345;
+	return (int)((*seed >> 16) & 0x7fff);
+}
+#endif
+
+#define MAX_NBYTES (4096UL << 5)
+
+struct hammer {
+	struct xnvme_dev *dev;
+	uint64_t rounds;
+	unsigned seed;
+	int id;
+	int nerr;
+	int ncorrupt;
+	uint64_t *stamp;
+	uint64_t *check;
+};
+
+static void
+stamp_fill(uint64_t *stamp, size_t nbytes, uint64_t tag)
+{
+	for (size_t i = 0; i < nbytes / sizeof(*stamp); ++i) {
+		stamp[i] = tag ^ i;
+	}
+}
+
+/*
+ * Each buffer gets a pattern unique to this thread, slot and allocation, written and read back
+ * through xnvme_buf_memcpy() so device-memory buffers work too. Two threads handed overlapping
+ * blocks then fail the check instead of passing unnoticed.
+ */
+static void *
+hammer_fn(void *arg)
+{
+	struct hammer *h = arg;
+	void *held[SLOTS] = {NULL};
+	size_t nbytes[SLOTS] = {0};
+	uint64_t tag[SLOTS] = {0};
+
+	for (uint64_t round = 0; round < h->rounds; ++round) {
+		int slot = rand_r(&h->seed) % SLOTS;
+
+		if (held[slot]) {
+			stamp_fill(h->stamp, nbytes[slot], tag[slot]);
+			if (xnvme_buf_memcpy(h->check, held[slot], nbytes[slot]) ||
+			    memcmp(h->check, h->stamp, nbytes[slot])) {
+				h->ncorrupt += 1;
+			}
+			xnvme_buf_free(h->dev, held[slot]);
+			held[slot] = NULL;
+			continue;
+		}
+		nbytes[slot] = 4096UL << (rand_r(&h->seed) % 6);
+		held[slot] = xnvme_buf_alloc(h->dev, nbytes[slot]);
+		if (!held[slot]) {
+			h->nerr += 1;
+			continue;
+		}
+		tag[slot] = ((uint64_t)h->id << 56) | ((uint64_t)slot << 48) | round;
+		stamp_fill(h->stamp, nbytes[slot], tag[slot]);
+		if (xnvme_buf_memcpy(held[slot], h->stamp, nbytes[slot])) {
+			h->nerr += 1;
+		}
+	}
+	for (int slot = 0; slot < SLOTS; ++slot) {
+		if (held[slot]) {
+			xnvme_buf_free(h->dev, held[slot]);
+		}
+	}
+	return NULL;
+}
+
+static int
+test_buf_alloc_free_threads(struct xnvme_cli *cli)
+{
+	struct hammer hammers[THREADS];
+	pthread_t tids[THREADS];
+	int ncorrupt = 0;
+	int nerr = 0;
+	int err;
+
+	xnvme_cli_pinf("threads: %d, rounds per thread: %zu", THREADS, cli->args.count);
+
+	for (int i = 0; i < THREADS; ++i) {
+		hammers[i].dev = cli->args.dev;
+		hammers[i].rounds = cli->args.count;
+		hammers[i].seed = 1000 + i;
+		hammers[i].id = i;
+		hammers[i].nerr = 0;
+		hammers[i].ncorrupt = 0;
+		hammers[i].stamp = malloc(MAX_NBYTES);
+		hammers[i].check = malloc(MAX_NBYTES);
+		if (!hammers[i].stamp || !hammers[i].check) {
+			xnvme_cli_perr("malloc()", -ENOMEM);
+			err = ENOMEM;
+		} else {
+			err = pthread_create(&tids[i], NULL, hammer_fn, &hammers[i]);
+			if (err) {
+				xnvme_cli_perr("pthread_create()", -err);
+			}
+		}
+		if (err) {
+			for (int j = 0; j < i; ++j) {
+				pthread_join(tids[j], NULL);
+			}
+			for (int j = 0; j <= i; ++j) {
+				free(hammers[j].stamp);
+				free(hammers[j].check);
+			}
+			return -err;
+		}
+	}
+	for (int i = 0; i < THREADS; ++i) {
+		pthread_join(tids[i], NULL);
+		nerr += hammers[i].nerr;
+		ncorrupt += hammers[i].ncorrupt;
+		free(hammers[i].stamp);
+		free(hammers[i].check);
+	}
+
+	if (ncorrupt) {
+		xnvme_cli_pinf("ncorrupt: %d buffers changed while held by one thread", ncorrupt);
+		return -EIO;
+	}
+	if (nerr) {
+		xnvme_cli_pinf("nerr: %d allocations refused", nerr);
+		return -ENOMEM;
+	}
+	xnvme_cli_pinf("LGMT: xnvme_buf_{alloc,free} from %d threads", THREADS);
+	return 0;
+}
 
 static int
 test_buf_alloc_free(struct xnvme_cli *cli)
@@ -139,6 +281,19 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_COUNT, XNVME_CLI_LREQ},
 
+			XNVME_CLI_ADMIN_OPTS,
+		},
+	},
+	{
+		"buf_alloc_free_threads",
+		"Allocate and free buffers from 16 threads at once, 'count' rounds each",
+		"Allocate and free buffers from 16 threads at once, 'count' rounds each",
+		test_buf_alloc_free_threads,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_COUNT, XNVME_CLI_LREQ},
 			XNVME_CLI_ADMIN_OPTS,
 		},
 	},
