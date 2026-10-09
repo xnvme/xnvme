@@ -100,11 +100,8 @@ conf_data.set('XNVME_BE_CBI_ASYNC_EMU_ENABLED', get_option('cbi_async_emu'))
 conf_data.set('XNVME_BE_CBI_ASYNC_NIL_ENABLED', get_option('cbi_async_nil'))
 conf_data.set('XNVME_BE_CBI_ASYNC_POSIX_ENABLED', get_option('cbi_async_posix') and (is_linux or is_freebsd or is_darwin))
 
-thread_dep = dependency(
-  'threads',
-  required: get_option('cbi_async_thrpool'),
-)
-conf_data.set('XNVME_BE_CBI_ASYNC_THRPOOL_ENABLED', thread_dep.found())
+thread_dep = dependency('threads')
+conf_data.set('XNVME_BE_CBI_ASYNC_THRPOOL_ENABLED', get_option('cbi_async_thrpool'))
 
 conf_data.set('XNVME_BE_CBI_MEM_POSIX_ENABLED', get_option('cbi_mem_posix') and (is_linux or is_freebsd or is_darwin))
 conf_data.set('XNVME_BE_CBI_SYNC_PSYNC_ENABLED', get_option('cbi_sync_psync') and (is_linux or is_freebsd or is_darwin))
