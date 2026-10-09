@@ -23,7 +23,7 @@
  * cpu_va NULL and rely on offset-based access.
  *
  * @file dmamem_dmabuf.h
- * @version 0.8.0
+ * @version 0.10.0
  */
 
 /**
@@ -35,7 +35,9 @@
  * @param size       Size of the range to map.
  *
  * @return 0 on success (dmamem now owns dmabuf_fd), negative errno on
- * error (caller retains dmabuf_fd).
+ * error (caller retains dmabuf_fd). -ENOTSUP means IOMMU_IOAS_MAP_FILE refused
+ * the dma-buf: the kernel takes those exported by vfio-pci and refuses the
+ * rest, which the errno alone does not say, so the debug output names it.
  */
 static inline int
 dmamem_from_dmabuf(struct dmamem *dmem, struct iommufd *iommufd, int dmabuf_fd, size_t size)
@@ -69,6 +71,11 @@ dmamem_from_dmabuf(struct dmamem *dmem, struct iommufd *iommufd, int dmabuf_fd, 
 				    IOMMU_IOAS_MAP_READABLE | IOMMU_IOAS_MAP_WRITEABLE,
 				    &dmem->base_iova);
 	if (err) {
+		if (err == -ENOTSUP) {
+			UPCIE_DEBUG("FAILED: IOMMU_IOAS_MAP_FILE refused this dma-buf; a "
+				    "kernel that maps GPU memory for a peer to DMA against "
+				    "is required");
+		}
 		UPCIE_DEBUG("FAILED: iommufd_ioas_map_file(dma-buf); err(%d)", err);
 		if (dmem->cpu_va) {
 			munmap(dmem->cpu_va, size);

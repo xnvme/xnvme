@@ -42,10 +42,19 @@
  * ==========================================================================
  *
  * @file dmamem_iommu_map_pa.h
- * @version 0.8.0
+ * @version 0.10.0
  */
 /** Room for "0000:00:00.0", matching the ioctl ABI's field. */
 #define DMAMEM_IOMMU_MAP_PA_BDF_LEN 16
+
+/**
+ * Devices one decorator may install the same addresses into.
+ *
+ * A dmamem holds one table of addresses, so every device sharing it has to
+ * reach the memory at the same IOVAs, which means installing each mapping into
+ * each domain.
+ */
+#define DMAMEM_IOMMU_MAP_PA_DEVS_MAX 16
 
 /**
  * Largest number of IOVA ranges an IOAS is expected to report.
@@ -61,31 +70,42 @@
  * One installed mapping.
  *
  * Keyed by dma-buf fd because that is all release() receives to find it by.
+ *
+ * The physical addresses it was installed from are kept, since populate()
+ * rewrites the caller's table to hold IOVAs and a device attached later has no
+ * other way to be given the same mapping.
  */
 struct dmamem_iommu_map_pa_mapping {
 	int dmabuf_fd;      ///< Key; the fd inner populate() attached to
 	uint64_t iova_base; ///< Where in the window the mapping was placed
 	uint64_t nbytes;    ///< Length of the mapping in bytes
-	uint64_t map_handle;                      ///< Handle for IOMMU_UNMAP_PA
-	struct dmamem_iommu_map_pa_mapping *next; ///< List linkage; owned here
+	uint64_t handles[DMAMEM_IOMMU_MAP_PA_DEVS_MAX]; ///< One per target, by index
+	uint32_t nhandles;                              ///< Targets this is installed in
+	uint64_t *phys;                                 ///< Physical addresses installed from
+	uint32_t nphys;                                 ///< Entries in phys
+	uint64_t granularity;                           ///< Bytes each entry of phys covers
+	struct dmamem_iommu_map_pa_mapping *next;       ///< List linkage; owned here
 };
 
 /**
  * A decorated registry backend plus the iommu-map-pa state it needs.
  *
- * Serves one target device, and may back several dmamems, which all resolve
- * through the one inner backend bound on first use. It must outlive all of them:
+ * Serves one target device, or several that must reach the memory at the same
+ * addresses, and may back several dmamems, which all resolve through the one
+ * inner backend bound on first use. It must outlive all of them:
  * releasing a backing unmaps through this handle.
  */
 struct dmamem_iommu_map_pa {
-	int fd;                                ///< /dev/iommu_map_pa; -1 when closed
-	char bdf[DMAMEM_IOMMU_MAP_PA_BDF_LEN]; ///< Device whose domain is mapped into
-	uint64_t window_base;                  ///< First IOVA this may hand out
-	uint64_t window_size;                  ///< Length of the window in bytes
-	dmamem_registry_range_fn range;        ///< Inner backend; may be NULL
-	dmamem_registry_populate_fn populate;  ///< Inner backend, bound on first use
-	dmamem_registry_release_fn release;    ///< Inner backend; may be NULL
-	void *ctx;                             ///< Inner backend context; not owned
+	int fd; ///< /dev/iommu_map_pa; -1 when closed
+	char bdfs[DMAMEM_IOMMU_MAP_PA_DEVS_MAX]
+		 [DMAMEM_IOMMU_MAP_PA_BDF_LEN];   ///< Devices whose domains are mapped into
+	uint32_t nbdfs;                           ///< How many, at least one
+	uint64_t window_base;                     ///< First IOVA this may hand out
+	uint64_t window_size;                     ///< Length of the window in bytes
+	dmamem_registry_range_fn range;           ///< Inner backend; may be NULL
+	dmamem_registry_populate_fn populate;     ///< Inner backend, bound on first use
+	dmamem_registry_release_fn release;       ///< Inner backend; may be NULL
+	void *ctx;                                ///< Inner backend context; not owned
 	struct dmamem_iommu_map_pa_mapping *maps; ///< Owned list of live mappings
 };
 
@@ -113,7 +133,7 @@ dmamem_iommu_map_pa_open(struct dmamem_iommu_map_pa *imp, const char *bdf, uint6
 	if (!imp || !bdf || !window_base || !window_size) {
 		return -EINVAL;
 	}
-	if (strlen(bdf) >= sizeof(imp->bdf)) {
+	if (strlen(bdf) >= sizeof(imp->bdfs[0])) {
 		UPCIE_DEBUG("FAILED: bdf('%s') does not fit the ioctl ABI", bdf);
 		return -EINVAL;
 	}
@@ -131,7 +151,8 @@ dmamem_iommu_map_pa_open(struct dmamem_iommu_map_pa *imp, const char *bdf, uint6
 	}
 
 	imp->fd = fd;
-	strncpy(imp->bdf, bdf, sizeof(imp->bdf) - 1);
+	strncpy(imp->bdfs[0], bdf, sizeof(imp->bdfs[0]) - 1);
+	imp->nbdfs = 1;
 	imp->window_base = window_base;
 	imp->window_size = window_size;
 
@@ -166,7 +187,8 @@ dmamem_iommu_map_pa_close(struct dmamem_iommu_map_pa *imp)
 		iommu_map_pa_close(imp->fd);
 	}
 
-	memset(imp->bdf, 0, sizeof(imp->bdf));
+	memset(imp->bdfs, 0, sizeof(imp->bdfs));
+	imp->nbdfs = 0;
 	imp->fd = -1;
 	imp->window_base = 0;
 	imp->window_size = 0;
@@ -325,7 +347,103 @@ dmamem_iommu_map_pa_range(void *ctx, uint64_t va, uint64_t *base_out, size_t *si
 }
 
 /**
+ * Add a device that must reach the same memory at the same addresses
+ *
+ * A dmamem carries one table of addresses, so a second controller sharing it
+ * has to see the memory where the first does. Mappings already installed are
+ * back-filled into the new domain, and everything installed afterwards goes
+ * into all of them.
+ *
+ * A device sharing a domain with one already served reaches the memory
+ * through the mapping made then, which the module reports as -EADDRINUSE;
+ * that counts as installed, with no handle of its own, so release leaves the
+ * mapping to its owner.
+ *
+ * @param imp An opened decorator
+ * @param bdf The device to add, in "0000:bb:dd.f" form
+ *
+ * @return 0 on success, negative errno on failure. -EEXIST is not an error to
+ *         the caller: the device is already served and nothing changed.
+ */
+static inline int
+dmamem_iommu_map_pa_attach(struct dmamem_iommu_map_pa *imp, const char *bdf)
+{
+	uint32_t slot;
+	int err;
+
+	if (!imp || (imp->fd < 0) || !bdf) {
+		return -EINVAL;
+	}
+	if (strlen(bdf) >= sizeof(imp->bdfs[0])) {
+		return -EINVAL;
+	}
+
+	for (uint32_t d = 0; d < imp->nbdfs; ++d) {
+		if (!strcmp(imp->bdfs[d], bdf)) {
+			return -EEXIST;
+		}
+	}
+	if (imp->nbdfs == DMAMEM_IOMMU_MAP_PA_DEVS_MAX) {
+		UPCIE_DEBUG("FAILED: already serving %u devices", imp->nbdfs);
+		return -ENOSPC;
+	}
+
+	slot = imp->nbdfs;
+	strncpy(imp->bdfs[slot], bdf, sizeof(imp->bdfs[slot]) - 1);
+
+	for (struct dmamem_iommu_map_pa_mapping *m = imp->maps; m; m = m->next) {
+		if (m->dmabuf_fd < 0) {
+			continue;
+		}
+
+		err = iommu_map_pa_add(imp->fd, imp->bdfs[slot], m->dmabuf_fd, m->iova_base,
+				       (uint32_t)m->granularity, m->nphys, m->phys,
+				       IOMMU_MAP_PA_PROT_READ | IOMMU_MAP_PA_PROT_WRITE,
+				       &m->handles[slot]);
+		if (err == -EADDRINUSE) {
+			m->handles[slot] = 0;
+			err = 0;
+		}
+		if (err) {
+			UPCIE_DEBUG("FAILED: back-filling %s at 0x%" PRIx64 "; err(%d)",
+				    imp->bdfs[slot], m->iova_base, err);
+			for (struct dmamem_iommu_map_pa_mapping *u = imp->maps; u != m;
+			     u = u->next) {
+				if ((u->dmabuf_fd >= 0) && u->handles[slot]) {
+					iommu_map_pa_del(imp->fd, u->handles[slot]);
+				}
+				u->handles[slot] = 0;
+				if (u->nhandles > slot) {
+					u->nhandles = slot;
+				}
+			}
+			imp->bdfs[slot][0] = '\0';
+			return err;
+		}
+		m->nhandles = slot + 1;
+	}
+
+	imp->nbdfs = slot + 1;
+
+	return 0;
+}
+
+/**
  * Make one allocation addressable through the IOMMU, for a dmamem_registry.
+ *
+ * The allocation is installed at one IOVA into the domain of every device the
+ * decorator serves, since they share one table of addresses; a device whose
+ * domain already maps the IOVA answers -EADDRINUSE and is counted as installed
+ * with no handle of its own. The dma-buf fd goes along so the module holds a
+ * reference on the exporter for as long as the mapping lives.
+ *
+ * @param ctx The struct dmamem_iommu_map_pa this backend was bound with
+ * @param base Start of the allocation in this process
+ * @param size Length of the allocation in bytes
+ * @param granularity Bytes each entry of the table covers
+ * @param lut_out Table to fill; holds IOVAs on return
+ * @param nlut Entries in lut_out
+ * @param attach_out The attachment the inner backend made, for release()
  *
  * @return 0 on success, negative errno on failure. -ENOSPC when the window has
  *         no room for the allocation.
@@ -354,9 +472,19 @@ dmamem_iommu_map_pa_populate(void *ctx, uint64_t base, size_t size, uint64_t gra
 		return -ENOMEM;
 	}
 
+	m->phys = calloc(nlut, sizeof(*m->phys));
+	if (!m->phys) {
+		free(m);
+		return -ENOMEM;
+	}
+	m->nphys = (uint32_t)nlut;
+	m->granularity = granularity;
+
 	err = imp->populate(imp->ctx, base, size, granularity, lut_out, nlut, attach_out);
 	if (err) {
-		UPCIE_DEBUG("FAILED: inner populate(0x%" PRIx64 ", %zu); err(%d)", base, size, err);
+		UPCIE_DEBUG("FAILED: inner populate(0x%" PRIx64 ", %zu); err(%d)", base, size,
+			    err);
+		free(m->phys);
 		free(m);
 		return err;
 	}
@@ -369,15 +497,29 @@ dmamem_iommu_map_pa_populate(void *ctx, uint64_t base, size_t size, uint64_t gra
 		goto err_release;
 	}
 
-	/* The dma-buf fd goes along so the module holds a reference on the
-	 * exporter for as long as the mapping lives. */
-	err = iommu_map_pa_add(imp->fd, imp->bdf, attach_out->fd, iova_base, (uint32_t)granularity,
-			       (uint32_t)nlut, lut_out,
-			       IOMMU_MAP_PA_PROT_READ | IOMMU_MAP_PA_PROT_WRITE, &m->map_handle);
-	if (err) {
-		UPCIE_DEBUG("FAILED: iommu_map_pa_add(iova 0x%" PRIx64 ", %" PRIu64 "); err(%d)",
-			    iova_base, nbytes, err);
-		goto err_release;
+	memcpy(m->phys, lut_out, nlut * sizeof(*m->phys));
+
+	for (uint32_t d = 0; d < imp->nbdfs; ++d) {
+		err = iommu_map_pa_add(imp->fd, imp->bdfs[d], attach_out->fd, iova_base,
+				       (uint32_t)granularity, (uint32_t)nlut, lut_out,
+				       IOMMU_MAP_PA_PROT_READ | IOMMU_MAP_PA_PROT_WRITE,
+				       &m->handles[d]);
+		if (err == -EADDRINUSE) {
+			m->handles[d] = 0;
+			err = 0;
+		}
+		if (err) {
+			UPCIE_DEBUG("FAILED: iommu_map_pa_add(%s, iova 0x%" PRIx64 ", %" PRIu64
+				    "); err(%d)",
+				    imp->bdfs[d], iova_base, nbytes, err);
+			while (d--) {
+				if (m->handles[d]) {
+					iommu_map_pa_del(imp->fd, m->handles[d]);
+				}
+			}
+			goto err_release;
+		}
+		m->nhandles = d + 1;
 	}
 
 	/* The device now reaches these pages by IOVA, not by the address the
@@ -398,6 +540,7 @@ err_release:
 	if (imp->release) {
 		imp->release(imp->ctx, attach_out);
 	}
+	free(m->phys);
 	free(m);
 
 	return err;
@@ -426,7 +569,19 @@ dmamem_iommu_map_pa_release(void *ctx, struct dmabuf *attach)
 			continue;
 		}
 
-		err = iommu_map_pa_del(imp->fd, m->map_handle);
+		err = 0;
+		for (uint32_t d = 0; d < m->nhandles; ++d) {
+			int one;
+
+			if (!m->handles[d]) {
+				continue;
+			}
+			one = iommu_map_pa_del(imp->fd, m->handles[d]);
+
+			if (one && !err) {
+				err = one;
+			}
+		}
 		if (err) {
 			/* The module may still have it mapped, so the IOVA cannot go
 			 * back to the window: something placed there next would land
@@ -440,6 +595,7 @@ dmamem_iommu_map_pa_release(void *ctx, struct dmabuf *attach)
 		}
 
 		*prev = m->next;
+		free(m->phys);
 		free(m);
 		break;
 	}

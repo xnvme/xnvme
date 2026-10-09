@@ -26,7 +26,7 @@ const struct xnvme_be_config g_xnvme_be_upcie_hip = {
 		{
 			.name = "upcie-hip",
 			.descr = "HIP-based uPCIe userspace NVMe driver",
-			.caps = XNVME_BE_CAP_NVME_PCIE | XNVME_BE_CAP_MPROC,
+			.caps = XNVME_BE_CAP_NVME_PCIE | XNVME_BE_CAP_CTRLR_SHARING,
 		},
 };
 
