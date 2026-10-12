@@ -103,6 +103,54 @@ def test_del_leftover(cijoe, device, be_opts, cli_args):
     assert not err, state.output()
 
 
+def _reject_at_setup(cijoe, device, be_opts, phrase):
+    """Run 'qublk serve' on a namespace it must refuse; expect 'phrase' in its output"""
+
+    # The rejection comes before ADD_DEV, so a correct qublk exits on its own
+    # and the session need not wait for a device; the timeout only bounds a
+    # qublk that wrongly went on to serve, and SIGINT lets it tear down
+    script = "\n".join(
+        [
+            "set -u",
+            "modprobe ublk_drv || echo MODPROBE-FAILED",
+            f"if [ -b {UBLK_NODE} ]; then echo PREEXISTING-DEVICE; exit 1; fi",
+            "log=$(mktemp)",
+            f"timeout -s INT 10 qublk serve {device['uri']} --be {be_opts['be']} "
+            "--dev-id 0 > $log 2>&1",
+            "rc=$?",
+            "if [ $rc -eq 0 ]; then echo SERVE-PASSED; rc=1; "
+            "elif [ $rc -eq 124 ]; then echo SERVE-TIMED-OUT; rc=1; "
+            "else rc=0; fi",
+            f'grep -q "{phrase}" $log || {{ echo MISSING-REJECTION; rc=1; }}',
+            f"if [ -b {UBLK_NODE} ]; then echo LEFTOVER-DEVICE; rc=1; fi",
+            "cat $log",
+            "rm -f $log",
+            "exit $rc",
+        ]
+    )
+    err, state = cijoe.run(f"bash -c '{script}'")
+    assert not err, state.output()
+
+
+@xnvme_parametrize(labels=["zns"], opts=["be"])
+def test_reject_zoned(cijoe, device, be_opts, cli_args):
+    """A zoned namespace is refused at setup; no block-device is served"""
+
+    _reject_at_setup(cijoe, device, be_opts, "zoned (ZNS)")
+
+
+# The name must contain "kvs": test IDs carry no device labels (see paramid in
+# conftest.py), so CI's tcp-linux "-k 'fabrics and not kvs'" and the mproc steps
+# can only exclude the key-value cases by name. The kernel nvmet target does not
+# export the passthrough KV port 4422, so a case not matching "kvs" would be
+# selected there and fail to connect.
+@xnvme_parametrize(labels=["kvs"], opts=["be"])
+def test_reject_kvs(cijoe, device, be_opts, cli_args):
+    """A key-value namespace is refused at setup; no block-device is served"""
+
+    _reject_at_setup(cijoe, device, be_opts, "namespace is key-value")
+
+
 @xnvme_parametrize(labels=["nvm"], opts=["be"])
 def test_run_max_io_bytes(cijoe, device, be_opts, cli_args):
     err, _ = qublk_session(
