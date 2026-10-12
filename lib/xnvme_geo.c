@@ -15,6 +15,8 @@ xnvme_geo_type_str(int type)
 		return "XNVME_GEO_CONVENTIONAL";
 	case XNVME_GEO_ZONED:
 		return "XNVME_GEO_ZONED";
+	case XNVME_GEO_KV:
+		return "XNVME_GEO_KV";
 	default:
 		return "XNVME_GEO_ENOSYS";
 	}

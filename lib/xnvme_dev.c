@@ -179,7 +179,11 @@ static int
 _kvs_geometry(struct xnvme_dev *dev)
 {
 	struct xnvme_geo *geo = &dev->geo;
+
+	///< note: a key-value namespace has no logical blocks, so nbytes, lba_nbytes, ssw and
+	///< tbytes stay zero; mdts is setup in derive-geometry
 	geo->type = XNVME_GEO_KV;
+
 	return 0;
 }
 
@@ -197,6 +201,58 @@ _controller_geometry(struct xnvme_dev *dev)
 }
 
 /**
+ * Helper function retrieving the command set identifier of the namespace from the Namespace
+ * Identification Descriptor list (CNS 0x3, NIDT 0x4)
+ *
+ * @return On success, 0 is returned and 'csi' assigned. On error, negative errno is returned
+ * when the identify command failed, and -ENOENT when the list has no CSI descriptor.
+ */
+static int
+_dev_idfy_ns_desc_csi(struct xnvme_dev *dev, struct xnvme_spec_idfy *idfy, uint8_t *csi)
+{
+	struct xnvme_cmd_ctx ctx;
+	const uint8_t *buf = (const uint8_t *)idfy;
+	size_t ofz = 0;
+	int err;
+
+	err = xnvme_buf_clear(idfy, sizeof(*idfy));
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_buf_clear(idfy), err: %d", err);
+		return err;
+	}
+
+	ctx = xnvme_cmd_ctx_from_dev(dev);
+	ctx.cmd.common.opcode = XNVME_SPEC_ADM_OPC_IDFY;
+	ctx.cmd.common.nsid = dev->ident.nsid;
+	ctx.cmd.idfy.cns = XNVME_SPEC_IDFY_NSDSCR;
+
+	err = xnvme_cmd_pass_admin(&ctx, idfy, sizeof(*idfy), NULL, 0x0);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		XNVME_DEBUG("INFO: !idfy(NS_DESC), err: %d", err);
+		return err ? err : -EIO;
+	}
+
+	// Walk the list; each descriptor is a 4 byte header followed by 'nidl' bytes. Per NVMe
+	// Base 2.3 5.2.13.2.3 a NIDL of zero ends the list, and descriptors of other types are
+	// skipped
+	while (ofz + 4 <= sizeof(*idfy)) {
+		const struct xnvme_spec_ns_desc *desc = (const void *)(buf + ofz);
+
+		if ((!desc->nidl) || (ofz + 4 + desc->nidl > sizeof(*idfy))) {
+			break;
+		}
+		if ((desc->nidt == XNVME_SPEC_NS_DESC_NIDT_CSI) && (desc->nidl == 1)) {
+			*csi = desc->nid[0];
+			return 0;
+		}
+
+		ofz += 4 + desc->nidl;
+	}
+
+	return -ENOENT;
+}
+
+/**
  * Helper function for determining command set identifier
  */
 static int
@@ -204,6 +260,7 @@ _dev_idfy_csi(struct xnvme_dev *dev, struct xnvme_spec_idfy *idfy_ns,
 	      struct xnvme_spec_idfy *idfy_ctrlr)
 {
 	struct xnvme_cmd_ctx ctx;
+	uint8_t csi = 0;
 	int err;
 
 	// Attempt to identify ZONED
@@ -317,6 +374,63 @@ not_zns:
 
 not_fs:
 	XNVME_DEBUG("INFO: no positive response to idfy(FS)");
+
+	// Attempt to identify KV
+	//
+	// The KV identify data structures have no field that distinguishes them from a controller
+	// answering the KV identifies for a conventional namespace, so the namespace must declare
+	// the KV command set in its identification descriptors.
+
+	err = _dev_idfy_ns_desc_csi(dev, idfy_ns, &csi);
+	if (err || (csi != XNVME_SPEC_CSI_KV)) {
+		XNVME_DEBUG("INFO: no CSI(KV) in idfy(NS_DESC), err: %d", err);
+		goto not_kv;
+	}
+
+	err = xnvme_buf_clear(idfy_ctrlr, sizeof(*idfy_ctrlr));
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_buf_clear(idfy_ctrlr), err: %d", err);
+		return err;
+	}
+
+	ctx = xnvme_cmd_ctx_from_dev(dev);
+	err = xnvme_adm_idfy_ctrlr_csi(&ctx, XNVME_SPEC_CSI_KV, idfy_ctrlr);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ctrlr_csi(CSI_KV)");
+		goto not_kv;
+	}
+
+	err = xnvme_buf_clear(idfy_ns, sizeof(*idfy_ns));
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_buf_clear(idfy_ns), err: %d", err);
+		return err;
+	}
+
+	ctx = xnvme_cmd_ctx_from_dev(dev);
+	err = xnvme_adm_idfy_ns_csi(&ctx, dev->ident.nsid, XNVME_SPEC_CSI_KV, idfy_ns);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ns_csi(CSI_KV)");
+		goto not_kv;
+	}
+
+	err = xnvme_buf_memcpy(&dev->idcss.ctrlr, idfy_ctrlr, sizeof(*idfy_ctrlr));
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_buf_memcpy(idfy_ctrlr), err: %d", err);
+		return err;
+	}
+
+	err = xnvme_buf_memcpy(&dev->idcss.ns, idfy_ns, sizeof(*idfy_ns));
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_buf_memcpy(idfy_ns), err: %d", err);
+		return err;
+	}
+
+	XNVME_DEBUG("INFO: looks like csi(KV)");
+	dev->ident.csi = XNVME_SPEC_CSI_KV;
+	return err;
+
+not_kv:
+	XNVME_DEBUG("INFO: no positive response to idfy(KV)");
 
 	// Attempt to identify NVM
 

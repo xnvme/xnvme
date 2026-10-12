@@ -539,6 +539,42 @@ enum xnvme_spec_csi {
 };
 
 /**
+ * Namespace Identifier Type (NIDT) of a Namespace Identification Descriptor
+ *
+ * @see NVM Express Base Specification 2.3, Section 5.2.13.2.3, Figure 331 (Identify - Namespace
+ * Identification Descriptor)
+ *
+ * @enum xnvme_spec_ns_desc_nidt
+ */
+enum xnvme_spec_ns_desc_nidt {
+	XNVME_SPEC_NS_DESC_NIDT_IEUID = 0x1, ///< IEEE Extended Unique Identifier (IEUID)
+	XNVME_SPEC_NS_DESC_NIDT_NGUID = 0x2, ///< Namespace Globally Unique Identifier (NGUID)
+	XNVME_SPEC_NS_DESC_NIDT_NUUID = 0x3, ///< Namespace UUID (NUUID)
+	XNVME_SPEC_NS_DESC_NIDT_CSI   = 0x4, ///< Command Set Identifier (CSI)
+};
+
+/**
+ * Namespace Identification Descriptor
+ *
+ * That is, one entry in the list returned for opcode XNVME_SPEC_OPC_IDFY(0x06) with
+ * XNVME_SPEC_IDFY_NSDSCR(0x3). Only the first 'nidl' bytes of 'nid' are valid, the next
+ * descriptor starts at offset 4 + 'nidl', and the list is terminated by a descriptor with
+ * 'nidl' equal to zero (NVMe Base 2.3, 5.2.13.2.3).
+ *
+ * @see NVM Express Base Specification 2.3, Section 5.2.13.2.3, Figure 331 (Identify - Namespace
+ * Identification Descriptor)
+ *
+ * @struct xnvme_spec_ns_desc
+ */
+struct xnvme_spec_ns_desc {
+	uint8_t nidt;     ///< Namespace Identifier Type (NIDT)
+	uint8_t nidl;     ///< Namespace Identifier Length (NIDL)
+	uint8_t rsvd2[2]; ///< Reserved
+	uint8_t nid[16];  ///< Namespace Identifier, 8 (IEUID), 16 (NGUID, NUUID) or 1 (CSI) bytes
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_ns_desc) == 20, "Incorrect size")
+
+/**
  * Representation of NVMe completion result Identify Namespace
  *
  * That is, for opcode XNVME_SPEC_OPC_IDFY(0x06) with XNVME_SPEC_IDFY_NS(0x0)
