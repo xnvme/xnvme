@@ -77,6 +77,26 @@ backend_honours_fua(const struct xnvme_dev *xdev)
 	return 0;
 }
 
+/*
+ * What the rejection of a namespace outside the NVM command set names it as;
+ * qublk issues plain NVM read/write, so serving anything else would
+ * misrepresent it as an ordinary block device. A zoned namespace would need
+ * serving as a zoned ublk device; a key-value namespace has no block-device
+ * model to map to.
+ */
+static const char *
+geo_type_rejection(enum xnvme_geo_type type)
+{
+	switch (type) {
+	case XNVME_GEO_ZONED:
+		return "namespace is zoned (ZNS)";
+	case XNVME_GEO_KV:
+		return "namespace is key-value";
+	default:
+		return "no namespace geometry";
+	}
+}
+
 static int
 dev_init(struct qublk_dev *dev, uint32_t want_max_io)
 {
@@ -84,6 +104,13 @@ dev_init(struct qublk_dev *dev, uint32_t want_max_io)
 	uint32_t cap_max;
 
 	dev->geo = xnvme_dev_get_geo(dev->xdev);
+	// Before the LBA check: a key-value geometry has no LBA size, and
+	// failing on that would hide the actual reason
+	if (dev->geo->type != XNVME_GEO_CONVENTIONAL) {
+		fprintf(stderr, "Failed: %s: %s; qublk serves only conventional NVM namespaces\n",
+			dev->uri, geo_type_rejection(dev->geo->type));
+		return -EINVAL;
+	}
 	dev->lba_shift = (uint8_t)dev->geo->ssw;
 	if (!xnvme_is_pow2(dev->geo->lba_nbytes) || dev->lba_shift < XNVME_UNIVERSAL_SECT_SH) {
 		fprintf(stderr, "Failed: %s: unsupported LBA size\n", dev->uri);
