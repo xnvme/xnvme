@@ -29,6 +29,8 @@ missing. For the kernel driver that is ``poll_queues``: polled I/O through
 how rather than doing it. It then prints what ``xnvme library-info`` prints:
 the version, the build configuration and the backends. ``xnvme env system``
 and ``xnvme env library`` print one of the two. It changes nothing.
+The fixes name the ``hugepages`` and ``iommu`` tools, installed with
+``pipx install hugepages iommu``.
 
 ``xnvme list`` shows the NVMe controller functions on the PCI bus, found with
 ``xnvme_scan()``, as YAML: the driver each is on and its IOMMU group, read from

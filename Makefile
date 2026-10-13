@@ -343,7 +343,7 @@ guest-start:
 		guest_check
 	@echo "## xNVMe: guest-start [DONE]"
 
-PROVISION_STEPS = xnvme_source_sync xnvme_build_prep test_deps xnvme_build xnvme_install ldconfig stabilize_nvme_naming xnvme_bindings_py_install_tgz fio_prep
+PROVISION_STEPS = xnvme_source_sync xnvme_build_prep test_deps test_tools xnvme_build xnvme_install ldconfig stabilize_nvme_naming xnvme_bindings_py_install_tgz fio_prep
 PROVISION_STEPS_WINDOWS = xnvme_source_sync xnvme_build_prep xnvme_build xnvme_install
 
 define guest-provision-help
