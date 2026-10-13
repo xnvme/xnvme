@@ -52,6 +52,24 @@ supported on macOS and Windows. Nothing is recorded on the side: what is
 shown is what sysfs says, and whether a controller is in use is checked when
 it is to move, which ``--dry-run`` does without moving it.
 
+``xnvme cmd-admin``, ``cmd-io`` and ``cmd-iov`` send a raw command, and take
+the options of ``nvme admin-passthru`` and ``nvme io-passthru``, the same long
+names and the same letters, so a command line moves between the two by
+changing the program and the subcommand. The device is any **xNVMe** URI, so
+the same command reaches a controller on a userspace driver, which
+``nvme-cli`` cannot:
+
+.. code-block:: bash
+
+   nvme  admin-passthru /dev/nvme0    --opcode=0x06 --cdw10=1 --data-len=4096 -r
+   xnvme cmd-admin      /dev/nvme0n1  --opcode=0x06 --cdw10=1 --data-len=4096 -r
+   xnvme cmd-admin      0000:03:00.0  --opcode=0x06 --cdw10=1 --data-len=4096 -r --be upcie
+
+The options choosing the path, ``--be``, ``--admin``, ``--sync``, ``--async``,
+``--dev-nsid`` and ``--homi-id``, are long options only. ``cmd-iov`` sends the
+data in ``--vec-cnt`` equal segments. ``--timeout`` and ``--output-format json``
+are refused rather than ignored.
+
 The installed test programs are listed and run the same way:
 
 .. literalinclude:: xnvme_test.cmd

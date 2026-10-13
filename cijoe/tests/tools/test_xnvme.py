@@ -752,3 +752,52 @@ def test_frontend_driver_refuses_open_namespace(cijoe):
         assert frontend_ctrlr(cijoe, bdf)["driver"] == "nvme"
     finally:
         cijoe.run("kill $(cat /tmp/xnvme-hold.pid); rm -f /tmp/xnvme-hold.pid")
+
+
+IDFY_CTRLR = "--opcode=0x06 --cdw10=1 --data-len=4096 --read --raw-binary"
+
+
+def test_frontend_cmd_admin_matches_nvme_cli(cijoe):
+    """The same command line gives the same answer from nvme-cli and from xnvme, on the
+    kernel path and, after an attach, on the userspace one"""
+
+    bdf = frontend_pcie_bdf(cijoe)
+    XnvmeDriver.kernel_attach(cijoe)
+    err, _ = cijoe.run("command -v nvme")
+    if err:
+        pytest.skip(reason="nvme-cli is not installed")
+
+    err, state = cijoe.run(f"ls /sys/bus/pci/devices/{bdf}/nvme/")
+    assert not err
+    ctrl = state.output().split()[-1]
+    err, state = cijoe.run(
+        f"ls /sys/bus/pci/devices/{bdf}/nvme/{ctrl}/ | grep -m1 -E '^nvme[0-9]+n[0-9]+$'"
+    )
+    if err:
+        pytest.skip(reason="the controller has no namespace block device")
+    ns = state.output().split()[-1]
+
+    err, state = cijoe.run(
+        f"nvme admin-passthru /dev/{ctrl} {IDFY_CTRLR} 2>/dev/null | sha256sum"
+    )
+    assert not err
+    expected = state.output().split()[0]
+    err, state = cijoe.run(
+        f"xnvme cmd-admin /dev/{ns} {IDFY_CTRLR} 2>/dev/null | sha256sum"
+    )
+    assert not err
+    assert state.output().split()[0] == expected
+
+    err, _ = cijoe.run(f"xnvme driver --be upcie {bdf} --force")
+    assert not err
+    XnvmeDriver.IS_KERNEL_ATTACHED = None
+    try:
+        err, state = cijoe.run(
+            f"xnvme cmd-admin {bdf} {IDFY_CTRLR} --be upcie 2>/dev/null | sha256sum"
+        )
+        assert not err
+        assert state.output().split()[0] == expected
+    finally:
+        err, _ = cijoe.run(f"xnvme driver --be posix {bdf}")
+    assert not err
+    XnvmeDriver.IS_KERNEL_ATTACHED = True
