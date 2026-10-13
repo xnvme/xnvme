@@ -66,6 +66,13 @@ frontend_env.set(
 )
 frontend_tests = [
   ['overview', [], false],
+  ['env', ['env'], false],
+  ['env system', ['env', 'system'], false],
+  ['env library', ['env', 'library'], false],
+  ['env, bad argument', ['env', '--yaml'], true],
+  ['env, no such section', ['env', 'nosuch'], true],
+  ['env --help', ['env', '--help'], false],
+  ['--help on a front-end command', ['env', '--help'], false],
   ['group nvme, listing', ['nvme'], false],
   ['group nvme', ['nvme'], false],
   ['--help on a built-in', ['info', '--help'], false],

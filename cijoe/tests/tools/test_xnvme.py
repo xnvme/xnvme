@@ -574,3 +574,18 @@ def test_frontend_perf_program(cijoe):
 
     err, _ = cijoe.run("xnvme perf --help")
     assert not err
+
+
+def test_frontend_env(cijoe):
+    """'xnvme env' is one YAML document, the facts of the system then the library"""
+
+    err, state = cijoe.run("xnvme env")
+    assert not err
+    doc = yaml.safe_load(state.output())
+    assert {"system", "ver", "xnvme_libconf", "xnvme_platform"} <= set(doc)
+
+    if get_osname() == "linux":
+        system = doc["system"]
+        assert system["iommu"]["groups"] >= 0
+        assert {"available", "builtin", "loaded"} <= set(system["vfio-pci"])
+        assert "default_kib" in system["hugepages"]

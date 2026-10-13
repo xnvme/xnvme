@@ -18,6 +18,14 @@ are separate programs, which ``xnvme`` looks up on its exec path,
 the install directory unless ``XNVME_EXEC_PATH`` names others;
 ``xnvme --exec-path`` prints it.
 
+``xnvme env`` says, as YAML, whether the host is ready for the userspace
+drivers: the IOMMU groups, whether each kernel module is available, built in
+and loaded, the hugepages of each size and NUMA node, where hugetlbfs is
+mounted, memlock and the device nodes, each with a ``fix`` where something is
+missing. It then prints what ``xnvme library-info`` prints: the version, the
+build configuration and the backends. ``xnvme env system`` and
+``xnvme env library`` print one of the two. It changes nothing.
+
 The installed test programs are listed and run the same way:
 
 .. literalinclude:: xnvme_test.cmd
