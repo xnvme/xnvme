@@ -1,7 +1,16 @@
+import re
+
 import pytest
 import yaml
 
-from ..conftest import XnvmeDriver, get_homi_id, get_osname, is_nvmet, xnvme_parametrize
+from ..conftest import (
+    XnvmeDriver,
+    get_homi_id,
+    get_osname,
+    get_userspace_be,
+    is_nvmet,
+    xnvme_parametrize,
+)
 
 
 def test_library_info(cijoe):
@@ -596,7 +605,7 @@ def test_frontend_overview(cijoe):
     err, state = cijoe.run("xnvme")
     assert not err
     assert "Start here:" in state.output()
-    assert "xnvme nvme" in state.output()
+    assert "xnvme driver" in state.output()
     assert "idfy-ctrlr" not in state.output()
 
 
@@ -647,6 +656,11 @@ def test_frontend_env(cijoe):
         assert system["iommu"]["groups"] >= 0
         assert {"available", "builtin", "loaded"} <= set(system["vfio-pci"])
         assert "default_kib" in system["hugepages"]
+        if "nvme_driver" in system:
+            assert system["nvme_driver"]["poll_queues"] >= 0
+            assert ("fix" in system["nvme_driver"]) == (
+                system["nvme_driver"]["poll_queues"] == 0
+            )
 
 
 def test_frontend_env_sections_named(cijoe):
@@ -658,3 +672,187 @@ def test_frontend_env_sections_named(cijoe):
         doc = yaml.safe_load(state.output()) or {}
         assert keys <= set(doc), f"'xnvme env {args}' printed {sorted(doc)}"
         assert ("ver" in doc) == ("library" in args)
+
+
+def test_frontend_driver(cijoe):
+    """Bare 'xnvme driver' is 'xnvme list' and then 'xnvme env', as one YAML document"""
+
+    err, state = cijoe.run("xnvme driver")
+    assert not err
+    doc = yaml.safe_load(state.output())
+    assert {"system", "ver", "xnvme_platform"} <= set(doc)
+    if get_osname() in ["linux", "freebsd"]:
+        assert "devices" in doc
+
+
+def test_frontend_driver_refuses_backend_of_no_controller(cijoe):
+    """A backend that reaches no controller function, or none at all, binds nothing"""
+
+    if get_osname() not in ["linux", "freebsd"]:
+        pytest.skip(reason="'xnvme driver --be' is not implemented on this platform")
+
+    err, state = cijoe.run("xnvme driver --be nosuch --all")
+    assert err
+
+
+def frontend_ctrlr(cijoe, bdf):
+    """The 'xnvme list' entry of the controller function at 'bdf'"""
+
+    err, state = cijoe.run("xnvme list")
+    assert not err
+
+    return (yaml.safe_load(state.output())["devices"] or {}).get(bdf)
+
+
+def frontend_pcie_bdf(cijoe, linux_only=False):
+    from ..conftest import cijoe_config_get_all_devices
+
+    if get_osname() not in (["linux"] if linux_only else ["linux", "freebsd"]):
+        pytest.skip(reason="'xnvme driver --be' is not implemented on this platform")
+    for device in cijoe_config_get_all_devices(["pcie"]):
+        if device.get("driver_attachment", "kernel") != "none":
+            return device["uri"]
+    pytest.skip(reason="no PCIe device in the configuration")
+
+
+def test_frontend_driver_be(cijoe):
+    """A controller moves to the driver of a userspace backend, and back to the kernel's"""
+
+    bdf = frontend_pcie_bdf(cijoe)
+    be = get_userspace_be()
+    XnvmeDriver.kernel_attach(cijoe)
+    assert frontend_ctrlr(cijoe, bdf)["driver"] == "nvme"
+
+    err, state = cijoe.run(f"xnvme driver --be {be} {bdf} --force")
+    assert not err
+    XnvmeDriver.IS_KERNEL_ATTACHED = None
+    ctrlr = frontend_ctrlr(cijoe, bdf)
+    assert ctrlr["driver"] in ["vfio-pci", "uio_pci_generic", "nic_uio"]
+    assert yaml.safe_load(state.output())["devices"] == {
+        bdf: {"driver": ctrlr["driver"], "changed": True}
+    }
+
+    err, state = cijoe.run(f"xnvme driver --be {be} {bdf}")
+    assert not err
+    assert yaml.safe_load(state.output())["devices"] == {
+        bdf: {"driver": ctrlr["driver"], "changed": False}
+    }
+
+    err, _ = cijoe.run(f"xnvme driver --be posix {bdf}")
+    assert not err
+    assert frontend_ctrlr(cijoe, bdf)["driver"] == "nvme"
+    XnvmeDriver.IS_KERNEL_ATTACHED = True
+
+
+def test_frontend_driver_be_all(cijoe):
+    """--all moves every controller, and reports each of them"""
+
+    frontend_pcie_bdf(cijoe)
+    be = get_userspace_be()
+    XnvmeDriver.kernel_attach(cijoe)
+
+    err, state = cijoe.run("xnvme list")
+    assert not err
+    bdfs = set(yaml.safe_load(state.output())["devices"] or {})
+
+    err, state = cijoe.run(f"xnvme driver --be {be} --all --force")
+    assert not err
+    XnvmeDriver.IS_KERNEL_ATTACHED = None
+    assert set(yaml.safe_load(state.output())["devices"]) == bdfs
+
+    err, state = cijoe.run("xnvme driver --be posix --all")
+    assert not err
+    assert set(yaml.safe_load(state.output())["devices"]) == bdfs
+    for bdf in bdfs:
+        assert frontend_ctrlr(cijoe, bdf)["driver"] == "nvme"
+    XnvmeDriver.IS_KERNEL_ATTACHED = True
+
+
+def test_frontend_driver_refuses_open_namespace(cijoe):
+    """A namespace held open by a process keeps its controller on the kernel driver"""
+
+    bdf = frontend_pcie_bdf(cijoe, linux_only=True)
+    XnvmeDriver.kernel_attach(cijoe)
+
+    err, state = cijoe.run(
+        f"ls /sys/bus/pci/devices/{bdf}/nvme/*/ | grep -m1 -E '^nvme[0-9]+n[0-9]+$'"
+    )
+    if err or not state.output().strip():
+        pytest.skip(reason="the controller has no namespace block device")
+    ns = state.output().strip().splitlines()[-1]
+
+    err, _ = cijoe.run(
+        f"sleep 60 < /dev/{ns} > /dev/null 2>&1 & echo $! > /tmp/xnvme-hold.pid"
+    )
+    assert not err
+    try:
+        err, state = cijoe.run(f"xnvme driver --be upcie {bdf}")
+        assert err
+        assert "open by sleep (pid" in state.output()
+        assert frontend_ctrlr(cijoe, bdf)["driver"] == "nvme"
+    finally:
+        cijoe.run("kill $(cat /tmp/xnvme-hold.pid); rm -f /tmp/xnvme-hold.pid")
+
+
+def test_frontend_driver_refuses_open_multipath_namespace(cijoe):
+    """A multipath namespace held open through its head keeps its controller on the
+    kernel driver, also on a kernel without the head's multipath links in sysfs"""
+
+    frontend_pcie_bdf(cijoe, linux_only=True)
+    XnvmeDriver.kernel_attach(cijoe)
+
+    err, state = cijoe.run(
+        "ls -d /sys/bus/pci/devices/*/nvme/nvme*/nvme*c*n* 2>/dev/null | head -1"
+    )
+    if err or not state.output().strip():
+        pytest.skip(reason="no controller in a multipath subsystem")
+    path = state.output().strip().splitlines()[-1]
+    bdf, name = path.split("/")[5], path.split("/")[-1]
+    head = re.sub(r"^(nvme\d+)c\d+", r"\1", name)
+
+    err, _ = cijoe.run(
+        f"sleep 60 < /dev/{head} > /dev/null 2>&1 & echo $! > /tmp/xnvme-hold.pid"
+    )
+    assert not err
+    try:
+        err, state = cijoe.run(f"xnvme driver --be upcie {bdf}")
+        assert err
+        assert "open by sleep (pid" in state.output()
+        assert frontend_ctrlr(cijoe, bdf)["driver"] == "nvme"
+    finally:
+        cijoe.run("kill $(cat /tmp/xnvme-hold.pid); rm -f /tmp/xnvme-hold.pid")
+
+
+def test_frontend_driver_nic_uio_reload_spares_one_in_use(cijoe):
+    """Attaching a controller reloads nic_uio, which would detach the controllers already
+    on it; one of them in use refuses the attach and both stay where they are"""
+
+    from ..conftest import cijoe_config_get_all_devices
+
+    if get_osname() != "freebsd":
+        pytest.skip(reason="nic_uio is FreeBSD's")
+    bdfs = [d["uri"] for d in cijoe_config_get_all_devices(["pcie"])]
+    if len(bdfs) < 2:
+        pytest.skip(reason="needs two controllers")
+    held, other = bdfs[0], bdfs[1]
+    XnvmeDriver.kernel_attach(cijoe)
+
+    err, _ = cijoe.run(f"xnvme driver --be spdk {held} --force")
+    assert not err
+    XnvmeDriver.IS_KERNEL_ATTACHED = None
+    bus, dev, func = (int(x, 16) for x in re.split(r"[:.]", held)[1:])
+    err, _ = cijoe.run(
+        f"sleep 60 < /dev/uio@pci:{bus}:{dev}:{func} > /dev/null 2>&1 &"
+        " echo $! > /tmp/xnvme-hold.pid"
+    )
+    assert not err
+    try:
+        for targets in (other, f"{held} {other}"):
+            err, state = cijoe.run(f"xnvme driver --be spdk {targets} --force")
+            assert err
+            assert f"detaches {held}" in state.output()
+            assert frontend_ctrlr(cijoe, held)["driver"] == "nic_uio"
+            assert frontend_ctrlr(cijoe, other)["driver"] == "nvme"
+    finally:
+        cijoe.run("kill $(cat /tmp/xnvme-hold.pid); rm -f /tmp/xnvme-hold.pid")
+        XnvmeDriver.kernel_attach(cijoe)

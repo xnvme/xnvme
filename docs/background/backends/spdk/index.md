@@ -355,7 +355,10 @@ Should have output similar to:
 
 With the system configured then you can use the `xnvme-driver` script to bind
 and unbind devices. The `xnvme-driver` script is a merge of the **SPDK**
-`setup.sh` script and its dependencies.
+`setup.sh` script and its dependencies. It binds every NVMe controller on the
+host; `xnvme driver --be spdk <bdf>` binds only the one named, and
+`xnvme driver --be io_uring <bdf>` returns it, but neither reserves
+hugepages.
 
 By running the command below **8GB** of hugepages will be configured, the
 Kernel NVMe driver unbound, and `vfio-pci` bound to the device:
