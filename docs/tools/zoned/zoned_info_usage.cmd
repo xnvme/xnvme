@@ -1,1 +1,0 @@
-zoned info --help

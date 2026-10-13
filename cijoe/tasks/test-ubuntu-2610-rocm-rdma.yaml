@@ -31,10 +31,10 @@ steps:
 - name: test_rdma_io
   run: |
     xnvme enum --uri {{ config.rig.devices.nic0.transport.traddr }}:{{ config.rig.devices.nic0.transport.trsvcid }}
-    lblk idfy {{ config.rig.devices.nic0.transport.traddr }}:{{ config.rig.devices.nic0.transport.trsvcid }} --dev-nsid 1 --be spdk
+    xnvme_tests_nvm idfy {{ config.rig.devices.nic0.transport.traddr }}:{{ config.rig.devices.nic0.transport.trsvcid }} --dev-nsid 1 --be spdk
     head -c 32768 /dev/urandom > /tmp/rdma_io.in
-    lblk write {{ config.rig.devices.nic0.transport.traddr }}:{{ config.rig.devices.nic0.transport.trsvcid }} --dev-nsid 1 --be spdk --slba 0x0 --nlb 7 --data-input /tmp/rdma_io.in
-    lblk read {{ config.rig.devices.nic0.transport.traddr }}:{{ config.rig.devices.nic0.transport.trsvcid }} --dev-nsid 1 --be spdk --slba 0x0 --nlb 7 --data-output /tmp/rdma_io.out
+    xnvme_tests_nvm write {{ config.rig.devices.nic0.transport.traddr }}:{{ config.rig.devices.nic0.transport.trsvcid }} --dev-nsid 1 --be spdk --slba 0x0 --nlb 7 --data-input /tmp/rdma_io.in
+    xnvme_tests_nvm read {{ config.rig.devices.nic0.transport.traddr }}:{{ config.rig.devices.nic0.transport.trsvcid }} --dev-nsid 1 --be spdk --slba 0x0 --nlb 7 --data-output /tmp/rdma_io.out
     cmp -n 32768 /tmp/rdma_io.in /tmp/rdma_io.out
     xnvmeperf run --iopattern randwrite --qdepth 16 --iosize 4096 --runtime 3 --cpumask 0x1 --be spdk {{ config.rig.devices.nic0.transport.traddr }}:{{ config.rig.devices.nic0.transport.trsvcid }}
     xnvmeperf run --iopattern randread --qdepth 16 --iosize 4096 --runtime 3 --cpumask 0x1 --be spdk {{ config.rig.devices.nic0.transport.traddr }}:{{ config.rig.devices.nic0.transport.trsvcid }}
