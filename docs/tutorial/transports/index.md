@@ -38,7 +38,7 @@ emulation is on the roadmap, with no committed timeline.
 
 [**SPDK Target**](spdk/index.md) uses the user-space `nvmf_tgt`
 application. The PCIe device is bound to the userspace driver via
-`xnvme-driver`, attached to `nvmf_tgt` as `Nvme0`, and published as a TCP
+`xnvme driver --be spdk`, attached to `nvmf_tgt` as `Nvme0`, and published as a TCP
 subsystem through `rpc.py`.
 
 [**Linux Target**](linux/index.md) uses the in-tree `nvmet` driver
