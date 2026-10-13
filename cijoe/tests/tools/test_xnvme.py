@@ -538,3 +538,39 @@ def test_homi_id_and_shm_id_must_agree(cijoe, device, be_opts, cli_args):
     assert (
         "disagree" not in state.output()
     ), f"the same identifier given twice was refused: {state.output()!r}"
+
+
+def test_frontend_overview(cijoe):
+    """Bare xnvme prints the groups rather than every subcommand"""
+
+    err, state = cijoe.run("xnvme")
+    assert not err
+    assert "Start here:" in state.output()
+    assert "xnvme nvme" in state.output()
+    assert "idfy-ctrlr" not in state.output()
+
+
+def test_frontend_group(cijoe):
+    err, state = cijoe.run("xnvme nvme")
+    assert not err
+    assert "idfy-ctrlr" in state.output()
+
+
+def test_frontend_tests_listed_and_run(cijoe):
+    """The installed test programs are found on the exec path, and run through xnvme"""
+
+    err, state = cijoe.run("xnvme test")
+    assert not err
+    assert "xnvme test nvm" in state.output()
+
+    err, _ = cijoe.run("xnvme test nvm enum")
+    assert not err
+
+
+def test_frontend_perf_program(cijoe):
+    err, state = cijoe.run("xnvme")
+    assert not err
+    assert "xnvme perf" in state.output()
+
+    err, _ = cijoe.run("xnvme perf --help")
+    assert not err

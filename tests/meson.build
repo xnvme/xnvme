@@ -112,6 +112,7 @@ if is_linux
   tests += {'cuse_admin64_identify.c': []}
 endif
 
+tests_bins = []
 foreach test_source, tests_args : tests
   e = executable(
     tests_prefix + fs.stem(test_source),
@@ -123,6 +124,7 @@ foreach test_source, tests_args : tests
     install_rpath: xnvmelib_rpath,
     install: true,
   )
+  tests_bins += e
   foreach test_args : tests_args
     test_name = test_args[0]
     test(

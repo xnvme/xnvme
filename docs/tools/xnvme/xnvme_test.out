@@ -1,0 +1,32 @@
+Test programs, run one to list its subcommands:
+
+  xnvme test async-intf
+  xnvme test async-limbo
+  xnvme test buf
+  xnvme test cli
+  xnvme test compare
+  xnvme test copy
+  xnvme test ctrlr
+  xnvme test cuse-admin64-identify
+  xnvme test dd
+  xnvme test delay-identification
+  xnvme test dual-be
+  xnvme test enum
+  xnvme test file
+  xnvme test ioworker
+  xnvme test kv
+  xnvme test kvs
+  xnvme test lblk
+  xnvme test map
+  xnvme test nvm
+  xnvme test scc
+  xnvme test threads
+  xnvme test xnvme-cli
+  xnvme test xnvme-file
+  xnvme test znd-append
+  xnvme test znd-explicit-open
+  xnvme test znd-state
+  xnvme test znd-zrwa
+  xnvme test zns
+
+See 'xnvme test <name> <subcommand> --help' for the description of [<args>]
