@@ -2113,6 +2113,29 @@ cli_names_free(char **names, int count)
 	}
 }
 
+/**
+ * Return 's' as the inside of a single-quoted YAML scalar, its quotes doubled. The result
+ * lives in one of a few static buffers, so up to four can be used in one printf()
+ */
+static const char *
+cli_yq(const char *s)
+{
+	static char bufs[4][1024];
+	static int next;
+	char *buf = bufs[next++ % 4];
+	size_t len = 0;
+
+	for (; s && *s && len < sizeof(bufs[0]) - 2; ++s) {
+		buf[len++] = *s;
+		if (*s == '\'') {
+			buf[len++] = '\'';
+		}
+	}
+	buf[len] = '\0';
+
+	return buf;
+}
+
 static void
 cli_row(const char *cmd, const char *descr)
 {
@@ -2154,10 +2177,10 @@ cli_overview(struct xnvme_cli *cli)
 	printf("%s\n", cli->descr_short);
 	printf("\n");
 	printf("Start here:\n");
-	cli_row("xnvme list", cli_builtin(cli, "list")->descr_short);
+	cli_row("xnvme env", "Relevant system config and library introspection");
+	cli_row("xnvme list", "List devices on the system");
 	cli_row("xnvme info <uri>", cli_builtin(cli, "info")->descr_short);
 	cli_row("xnvme enum", cli_builtin(cli, "enum")->descr_short);
-	cli_row("xnvme library-info", cli_builtin(cli, "library-info")->descr_short);
 	cli_listed_pr(NULL, g_cli_listed, sizeof g_cli_listed / sizeof(*g_cli_listed));
 	printf("\n");
 	printf("Groups, run one to list its commands:\n");
@@ -2212,10 +2235,356 @@ cli_group_programs(const char *group, const char *prefix)
 	return 0;
 }
 
+/**
+ * 'xnvme env': whether this host can run xNVMe, and what this xNVMe is, as YAML. Each fact of
+ * the host is a mapping of what was found, with a 'fix' where something is missing. It reads,
+ * never changes.
+ */
+#ifdef XNVME_PLATFORM_LINUX_ENABLED
+#include <sys/resource.h>
+#include <sys/utsname.h>
+
 static bool
-cli_is_group(const char *name)
+cli_path_exists(const char *path)
 {
-	return !strcmp(name, "nvme") || !strcmp(name, "test") || !strcmp(name, "example");
+	struct stat st;
+
+	return !stat(path, &st);
+}
+
+static int
+cli_dir_count(const char *path)
+{
+	DIR *dir = opendir(path);
+	struct dirent *ent;
+	int count = 0;
+
+	while (dir && (ent = readdir(dir))) {
+		count += ent->d_name[0] != '.';
+	}
+	if (dir) {
+		closedir(dir);
+	}
+
+	return dir ? count : -1;
+}
+
+/**
+ * Whether the file at 'path' has a line containing 'needle'
+ */
+static bool
+cli_file_has(const char *path, const char *needle)
+{
+	FILE *fp = fopen(path, "r");
+	char line[4096];
+	bool found = false;
+
+	while (fp && !found && fgets(line, sizeof(line), fp)) {
+		found = strstr(line, needle) != NULL;
+	}
+	if (fp) {
+		fclose(fp);
+	}
+
+	return found;
+}
+
+static long
+cli_file_long(const char *path)
+{
+	FILE *fp = fopen(path, "r");
+	long val = -1;
+
+	if (fp) {
+		if (fscanf(fp, "%ld", &val) != 1) {
+			val = -1;
+		}
+		fclose(fp);
+	}
+
+	return val;
+}
+
+/**
+ * Print the kernel module 'name': available, built in, and loaded
+ */
+static void
+cli_env_kmod(const char *name, const char *fix)
+{
+	struct utsname uts;
+	char path[512];
+	char needle[128];
+	char sysname[128];
+	bool builtin = false, loaded, available = false;
+
+	snprintf(sysname, sizeof(sysname), "%s", name);
+	for (char *c = sysname; *c; ++c) {
+		*c = (*c == '-') ? '_' : *c;
+	}
+	snprintf(needle, sizeof(needle), "%s ", sysname);
+	loaded = false;
+	{
+		FILE *fp = fopen("/proc/modules", "r");
+		char line[512];
+
+		while (fp && !loaded && fgets(line, sizeof(line), fp)) {
+			loaded = !strncmp(line, needle, strlen(needle));
+		}
+		if (fp) {
+			fclose(fp);
+		}
+	}
+	if (!uname(&uts)) {
+		snprintf(needle, sizeof(needle), "/%s.ko", name);
+		snprintf(path, sizeof(path), "/lib/modules/%s/modules.builtin", uts.release);
+		builtin = cli_file_has(path, needle);
+		snprintf(path, sizeof(path), "/lib/modules/%s/modules.dep", uts.release);
+		available = builtin || loaded || cli_file_has(path, needle);
+	}
+
+	printf("  %s: {available: %s, builtin: %s, loaded: %s", name, available ? "true" : "false",
+	       builtin ? "true" : "false", loaded ? "true" : "false");
+	if (!builtin && !loaded) {
+		printf(", fix: '%s'", cli_yq(fix));
+	}
+	printf("}\n");
+}
+
+/**
+ * Print whether the device node 'path' exists, as the fact 'name'
+ */
+static void
+cli_env_node(const char *name, const char *path, const char *fix)
+{
+	bool exists = cli_path_exists(path);
+
+	printf("  %s: {path: '%s', exists: %s", name, path, exists ? "true" : "false");
+	if (!exists) {
+		printf(", fix: '%s'", cli_yq(fix));
+	}
+	printf("}\n");
+}
+
+static int
+cli_cmp_long(const void *a, const void *b)
+{
+	long x = *(const long *)a, y = *(const long *)b;
+
+	return (x > y) - (x < y);
+}
+
+/**
+ * Print the hugepages: the default size, and for each size the pages reserved and free, and
+ * those reserved on each NUMA node
+ */
+static void
+cli_env_hugepages(void)
+{
+	DIR *dir = opendir("/sys/kernel/mm/hugepages");
+	struct dirent *ent;
+	long sizes[16];
+	int nsizes = 0;
+	long dflt = 0, reserved = 0;
+	FILE *fp = fopen("/proc/meminfo", "r");
+	char line[256];
+
+	while (fp && fgets(line, sizeof(line), fp)) {
+		sscanf(line, "Hugepagesize: %ld kB", &dflt);
+	}
+	if (fp) {
+		fclose(fp);
+	}
+	while (dir && (ent = readdir(dir)) && nsizes < 16) {
+		long kib;
+
+		if (sscanf(ent->d_name, "hugepages-%ldkB", &kib) == 1) {
+			sizes[nsizes++] = kib;
+		}
+	}
+	if (dir) {
+		closedir(dir);
+	}
+	qsort(sizes, nsizes, sizeof(*sizes), cli_cmp_long);
+
+	printf("  hugepages: {default_kib: %ld, sizes: {", dflt);
+	for (int i = 0; i < nsizes; ++i) {
+		char path[256];
+		long total, free_;
+		int nnodes = 0;
+
+		snprintf(path, sizeof(path),
+			 "/sys/kernel/mm/hugepages/hugepages-%ldkB/nr_hugepages", sizes[i]);
+		total = cli_file_long(path);
+		snprintf(path, sizeof(path),
+			 "/sys/kernel/mm/hugepages/hugepages-%ldkB/free_hugepages", sizes[i]);
+		free_ = cli_file_long(path);
+		reserved += total > 0 ? total : 0;
+		printf("%s%ld: {total: %ld, free: %ld, nodes: {", i ? ", " : "", sizes[i], total,
+		       free_);
+		for (int node = 0; node < 1024; ++node) {
+			long n;
+
+			snprintf(path, sizeof(path),
+				 "/sys/devices/system/node/node%d/hugepages/hugepages-%ldkB/"
+				 "nr_hugepages",
+				 node, sizes[i]);
+			n = cli_file_long(path);
+			if (n < 0) {
+				if (node > 64) {
+					break;
+				}
+				continue;
+			}
+			printf("%s%d: %ld", nnodes++ ? ", " : "", node, n);
+		}
+		printf("}}");
+	}
+	printf("}");
+	if (!reserved) {
+		printf(", fix: '%s'",
+		       cli_yq("set vm.nr_hugepages in /etc/sysctl.d/; the userspace drivers "
+			      "allocate from them"));
+	}
+	printf("}\n");
+}
+
+/**
+ * Print where hugetlbfs is mounted
+ */
+static void
+cli_env_hugetlbfs(void)
+{
+	FILE *fp = fopen("/proc/self/mountinfo", "r");
+	char line[4096];
+	int count = 0;
+
+	printf("  hugetlbfs: {paths: [");
+	while (fp && fgets(line, sizeof(line), fp)) {
+		char mnt[1024];
+
+		if (!strstr(line, " - hugetlbfs ") ||
+		    sscanf(line, "%*s %*s %*s %*s %1023s", mnt) != 1) {
+			continue;
+		}
+		printf("%s'%s'", count++ ? ", " : "", cli_yq(mnt));
+	}
+	if (fp) {
+		fclose(fp);
+	}
+	printf("], mounted: %s", count ? "true" : "false");
+	if (!count) {
+		printf(", fix: '%s'", cli_yq("mount -t hugetlbfs nodev /dev/hugepages; SPDK needs it"));
+	}
+	printf("}\n");
+}
+
+static void
+cli_env_system(void)
+{
+	struct utsname uts;
+	struct rlimit rlim;
+	int count;
+
+	count = cli_dir_count("/sys/kernel/iommu_groups");
+	printf("  iommu: {groups: %d", count > 0 ? count : 0);
+	if (count <= 0) {
+		printf(", fix: '%s'",
+		       cli_yq("enable VT-d or AMD-Vi in firmware, and boot with intel_iommu=on or "
+			      "amd_iommu=on; vfio-pci needs it unless in no-IOMMU mode"));
+	}
+	printf("}\n");
+
+	cli_env_kmod("vfio-pci",
+		     "modprobe vfio-pci, and list it in /etc/modules-load.d/ to load at boot");
+	cli_env_node("iommufd", "/dev/iommu",
+		     "a kernel with CONFIG_IOMMUFD; uPCIe falls back to VFIO_TYPE1 without it");
+	cli_env_node("vfio-cdev", "/dev/vfio/devices",
+		     "a kernel with CONFIG_VFIO_DEVICE_CDEV; uPCIe falls back to VFIO_TYPE1 "
+		     "without it");
+	cli_env_kmod("uio_pci_generic",
+		     "modprobe uio_pci_generic, for userspace drivers without an IOMMU");
+	cli_env_hugepages();
+	cli_env_hugetlbfs();
+
+	if (!getrlimit(RLIMIT_MEMLOCK, &rlim)) {
+		if (rlim.rlim_cur == RLIM_INFINITY) {
+			printf("  memlock: {unlimited: true}\n");
+		} else {
+			printf("  memlock: {unlimited: false, limit_kib: %llu, fix: '%s'}\n",
+			       (unsigned long long)rlim.rlim_cur / 1024,
+			       cli_yq("ulimit -l unlimited, or a memlock entry in "
+				      "/etc/security/limits.d/"));
+		}
+	}
+
+	cli_env_kmod("ublk_drv", "modprobe ublk_drv; qublk needs it");
+	cli_env_node("cuse", "/dev/cuse",
+		     "modprobe cuse; for the NVMe ioctl mimic of homi and qublk");
+
+	printf("  systemd: {running: %s}\n",
+	       cli_path_exists("/run/systemd/system") ? "true" : "false");
+	if (!uname(&uts)) {
+		printf("  kernel: {release: '%s'}\n", cli_yq(uts.release));
+	}
+}
+#else
+static void
+cli_env_system(void)
+{
+	printf("  platform: {checked: false, why: 'the system checks are written for Linux'}\n");
+}
+#endif
+
+static void
+cli_env_library(struct xnvme_cli *cli)
+{
+	xnvme_ver_pr(XNVME_PR_DEF);
+	printf("\nexec_path: '%s'\n", cli_exec_path());
+	printf("\n");
+	xnvme_libconf_pr(xnvme_libconf_get(), XNVME_PR_DEF);
+	printf("\n");
+	xnvme_be_attr_list_pr(XNVME_PR_DEF);
+	if (cli->vcs && strcmp(cli->vcs, xnvme_ver_vcs())) {
+		fprintf(stderr, "xnvme: WARNING: built from '%s', libxnvme from '%s'\n", cli->vcs,
+			xnvme_ver_vcs());
+	}
+}
+
+static int
+cli_env(struct xnvme_cli *cli, int argc, char **argv)
+{
+	bool system = true, library = true;
+
+	for (int i = 0; i < argc; ++i) {
+		if (!strcmp(argv[i], "system")) {
+			library = false;
+		} else if (!strcmp(argv[i], "library")) {
+			system = false;
+		} else {
+			FILE *out = strcmp(argv[i], "--help") ? stderr : stdout;
+
+			fprintf(out, "Usage: xnvme env [system|library]\n\n");
+			fprintf(out, "As YAML, what the userspace drivers depend on, such as\n");
+			fprintf(out, "the IOMMU, the kernel modules, hugepages and memlock,\n");
+			fprintf(out, "each with a fix where something is missing; then the\n");
+			fprintf(out, "library version, build configuration and backends.\n");
+			fprintf(out, "'system' or 'library' prints one of the two.\n");
+			return out == stdout ? 0 : 1;
+		}
+	}
+
+	if (system) {
+		printf("system:\n");
+		cli_env_system();
+	}
+	if (library) {
+		if (system) {
+			printf("\n");
+		}
+		cli_env_library(cli);
+	}
+
+	return 0;
 }
 
 /**
@@ -2237,6 +2606,9 @@ cli_main(struct xnvme_cli *cli, int argc, char **argv)
 	if (cli_builtin(cli, cmd)) {
 		return -1;
 	}
+	if (!strcmp(cmd, "env")) {
+		return cli_env(cli, argc - 2, argv + 2);
+	}
 	if (!strcmp(cmd, "--exec-path")) {
 		printf("%s\n", cli_exec_path());
 		return 0;
@@ -2255,24 +2627,6 @@ cli_main(struct xnvme_cli *cli, int argc, char **argv)
 			       ? cli_dispatch(CLI_EXAMPLE_PREFIX, "example ", argv[2], argc - 3,
 					      argv + 3)
 			       : cli_group_programs("example", CLI_EXAMPLE_PREFIX);
-	}
-	if (!strcmp(cmd, "help")) {
-		char *help[] = {"--help"};
-
-		if (argc < 3 || !strcmp(argv[2], "help") || !strcmp(argv[2], "--help")) {
-			return cli_overview(cli);
-		}
-		if (cli_builtin(cli, argv[2])) {
-			char *nargv[] = {argv[0], argv[2], "--help", NULL};
-
-			return xnvme_cli_run(cli, 3, nargv, XNVME_CLI_INIT_NONE);
-		}
-		if (cli_is_group(argv[2])) {
-			char *nargv[] = {argv[0], argv[2], NULL};
-
-			return cli_main(cli, 2, nargv);
-		}
-		return cli_dispatch(CLI_PROG_PREFIX, "", argv[2], 1, help);
 	}
 	if (cmd[0] != '-' && !cli_resolve(CLI_PROG_PREFIX, cmd, path, sizeof(path))) {
 		return cli_dispatch(CLI_PROG_PREFIX, "", cmd, argc - 2, argv + 2);
