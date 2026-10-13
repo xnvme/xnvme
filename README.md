@@ -33,7 +33,7 @@ same application code runs unmodified across them:
 On top of `libxnvme`:
 
 - Command sets: `libxnvme_nvm` (NVM), `libxnvme_znd` (Zoned), `libxnvme_kvs` (KV)
-- CLI tools: `xnvme`, `lblk`, `zoned`, `kvs`, `xdd`
+- CLI tools: `xnvme`
 - `xnvmeperf`, synthetic workload generation with minimal overhead, to
   benchmark I/O processing at unprecedented efficiency across all of
   xNVMe's backends

@@ -169,10 +169,10 @@ def test_reject_zoned(cijoe, device, be_opts, cli_args):
     _reject_at_setup(cijoe, device, be_opts, "zoned (ZNS)")
 
 
-# The name must contain "kvs": test IDs carry no device labels (see paramid in
-# conftest.py), so CI's tcp-linux "-k 'fabrics and not kvs'" and the mproc steps
+# The name must contain "kv": test IDs carry no device labels (see paramid in
+# conftest.py), so CI's tcp-linux "-k 'fabrics and not kv'" and the mproc steps
 # can only exclude the key-value cases by name. The kernel nvmet target does not
-# export the passthrough KV port 4422, so a case not matching "kvs" would be
+# export the passthrough KV port 4422, so a case not matching "kv" would be
 # selected there and fail to connect.
 @xnvme_parametrize(labels=["kvs"], opts=["be"])
 def test_reject_kvs(cijoe, device, be_opts, cli_args):

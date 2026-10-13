@@ -5,17 +5,17 @@ from ..conftest import XnvmeDriver, xnvme_parametrize
 
 def test_enum(cijoe):
     XnvmeDriver.kernel_attach(cijoe)
-    err, _ = cijoe.run("kvs enum")
+    err, _ = cijoe.run("xnvme_tests_kv enum")
     assert not err
 
     XnvmeDriver.kernel_detach(cijoe)
-    err, _ = cijoe.run("kvs enum")
+    err, _ = cijoe.run("xnvme_tests_kv enum")
     assert not err
 
 
 @xnvme_parametrize(labels=["kvs"], opts=["be", "admin"])
 def test_idfy_ns(cijoe, device, be_opts, cli_args):
-    err, _ = cijoe.run(f"kvs idfy-ns {cli_args} --nsid {device['nsid']}")
+    err, _ = cijoe.run(f"xnvme_tests_kv idfy-ns {cli_args} --nsid {device['nsid']}")
     assert not err
 
 
@@ -38,24 +38,24 @@ def test_delete_store_exist(cijoe, device, be_opts, cli_args):
     val = "world"
 
     # This is just to ensure the key is not there
-    cijoe.run(f"kvs delete {cli_args} --key {key}")
+    cijoe.run(f"xnvme_tests_kv delete {cli_args} --key {key}")
 
     err, _ = cijoe.run(
-        f"kvs exist {cli_args} --key {key}",
+        f"xnvme_tests_kv exist {cli_args} --key {key}",
     )
     assert err, "We expected this to fail"
 
     err, _ = cijoe.run(
-        f"kvs store {cli_args} --key {key} --value {val} --only-update",
+        f"xnvme_tests_kv store {cli_args} --key {key} --value {val} --only-update",
     )
     assert err, "We expected this to fail"
 
     commands = [
-        f"kvs store {cli_args} --key {key} --value {val} --only-add",
-        f"kvs store {cli_args} --key {key} --value {val} --only-update",
-        f"kvs store {cli_args} --key {key} --value {val} --compress",
-        f"kvs store {cli_args} --key {key} --value {val}",
-        f"kvs exist {cli_args} --key {key}",
+        f"xnvme_tests_kv store {cli_args} --key {key} --value {val} --only-add",
+        f"xnvme_tests_kv store {cli_args} --key {key} --value {val} --only-update",
+        f"xnvme_tests_kv store {cli_args} --key {key} --value {val} --compress",
+        f"xnvme_tests_kv store {cli_args} --key {key} --value {val}",
+        f"xnvme_tests_kv exist {cli_args} --key {key}",
     ]
     for command in commands:
         err, _ = cijoe.run(command)
@@ -71,13 +71,15 @@ def test_delete_store_list(cijoe, device, be_opts, cli_args):
 
     # This is just to ensure the key is not there
     for key, value in pairs:
-        cijoe.run(f"kvs delete {cli_args} --key {key}")
+        cijoe.run(f"xnvme_tests_kv delete {cli_args} --key {key}")
 
     for key, value in pairs:
-        err, _ = cijoe.run(f"kvs store {cli_args} --key {key} --value {value}")
+        err, _ = cijoe.run(
+            f"xnvme_tests_kv store {cli_args} --key {key} --value {value}"
+        )
         assert not err
 
-    err, _ = cijoe.run(f"kvs list {cli_args} --key {key}")
+    err, _ = cijoe.run(f"xnvme_tests_kv list {cli_args} --key {key}")
     assert not err
 
 
@@ -86,15 +88,15 @@ def test_retrieve(cijoe, device, be_opts, cli_args):
     key, val = ("hello", "world")
 
     # This is just to ensure the key is not there
-    cijoe.run(f"kvs delete {cli_args} --key {key}")
+    cijoe.run(f"xnvme_tests_kv delete {cli_args} --key {key}")
 
-    err, _ = cijoe.run(f"kvs retrieve {cli_args} --key {key}")
+    err, _ = cijoe.run(f"xnvme_tests_kv retrieve {cli_args} --key {key}")
     assert err, "We expected this to fail"
 
-    err, _ = cijoe.run(f"kvs store {cli_args} --key {key} --value {val}")
+    err, _ = cijoe.run(f"xnvme_tests_kv store {cli_args} --key {key} --value {val}")
     assert not err
 
-    err, _ = cijoe.run(f"kvs retrieve {cli_args} --key {key}")
+    err, _ = cijoe.run(f"xnvme_tests_kv retrieve {cli_args} --key {key}")
     assert not err
 
 
@@ -104,24 +106,30 @@ def test_store_optional(cijoe, device, be_opts, cli_args):
     val = "world"
     val_next = "xnvme"
 
-    err, _ = cijoe.run(f"kvs delete {cli_args} --key {key}")
+    err, _ = cijoe.run(f"xnvme_tests_kv delete {cli_args} --key {key}")
 
-    err, _ = cijoe.run(f"kvs store {cli_args} --key {key} --value {val} --only-update")
+    err, _ = cijoe.run(
+        f"xnvme_tests_kv store {cli_args} --key {key} --value {val} --only-update"
+    )
     assert err, "We expected this to fail"
 
-    err, _ = cijoe.run(f"kvs store {cli_args} --key {key} --value {val}")
+    err, _ = cijoe.run(f"xnvme_tests_kv store {cli_args} --key {key} --value {val}")
     assert not err
 
     err, _ = cijoe.run(
-        f"kvs store {cli_args} --key {key} --value {val_next} --only-update"
+        f"xnvme_tests_kv store {cli_args} --key {key} --value {val_next} --only-update"
     )
     assert not err
 
-    err, _ = cijoe.run(f"kvs store {cli_args} --key {key} --value {val} --only-add")
+    err, _ = cijoe.run(
+        f"xnvme_tests_kv store {cli_args} --key {key} --value {val} --only-add"
+    )
     assert err, "We expected this to fail"
 
-    err, _ = cijoe.run(f"kvs delete {cli_args} --key {key}")
+    err, _ = cijoe.run(f"xnvme_tests_kv delete {cli_args} --key {key}")
     assert not err
 
-    err, _ = cijoe.run(f"kvs store {cli_args} --key {key} --value {val} --only-add")
+    err, _ = cijoe.run(
+        f"xnvme_tests_kv store {cli_args} --key {key} --value {val} --only-add"
+    )
     assert not err
