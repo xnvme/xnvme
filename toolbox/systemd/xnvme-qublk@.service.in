@@ -34,7 +34,7 @@ EnvironmentFile=@sysconfdir@/xnvme/qublk-%i.conf
 # hugepages, and the failure further in is harder to read than this one.
 ExecStartPre=/bin/sh -c '[ "$(cat /proc/sys/vm/nr_hugepages)" -gt 0 ] || { echo "no hugepages reserved; see @bindir@/xnvme-driver"; exit 1; }'
 
-ExecStart=@bindir@/qublk serve $QUBLK_URI --dev-id %i $QUBLK_OPTS
+ExecStart=@libexecdir@/xnvme-qublk serve $QUBLK_URI --dev-id %i $QUBLK_OPTS
 
 # Type=exec reports started as soon as the process execs, which is before the
 # ublk device exists. Wait for /dev/ublkb%i so systemctl start returns at the

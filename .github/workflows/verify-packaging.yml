@@ -39,7 +39,7 @@ jobs:
     - name: Retrieve the Debian packaging
       id: packaging
       continue-on-error: true
-      run: git clone --depth 1 https://salsa.debian.org/safl/xnvme.git /tmp/debpkg
+      run: git clone --depth 1 -b xnvme-cli-libexec https://salsa.debian.org/safl/xnvme.git /tmp/debpkg
 
     - name: Install the packaging's Build-Depends, and nothing else
       id: deps

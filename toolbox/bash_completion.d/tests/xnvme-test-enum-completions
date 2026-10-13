@@ -1,0 +1,59 @@
+# xnvme-test-enum completion                           -*- shell-script -*-
+#
+# Bash completion script for the `xnvme-test-enum` CLI
+#
+# SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+_xnvme-test-enum_completions()
+{
+    local cur=${COMP_WORDS[COMP_CWORD]}
+    local sub=""
+    local opts=""
+
+    COMPREPLY=()
+
+    # Complete sub-commands
+    if [[ $COMP_CWORD < 2 ]]; then
+        COMPREPLY+=( $( compgen -W 'multi open keep_open backend --help' -- $cur ) )
+        return 0
+    fi
+
+    # Complete sub-command arguments
+
+    sub=${COMP_WORDS[1]}
+
+    if [[ "$sub" != "enum" ]]; then
+        opts+="/dev/nvme* "
+    fi
+
+    case "$sub" in
+    
+    "multi")
+        opts+="--uri --count --verbose --subnqn --hostnqn --be --shm_id --homi-id --help"
+        ;;
+
+    "open")
+        opts+="--uri --count --verbose --subnqn --hostnqn --be --shm_id --homi-id --help"
+        ;;
+
+    "keep_open")
+        opts+="--uri --verbose --subnqn --hostnqn --be --shm_id --homi-id --help"
+        ;;
+
+    "backend")
+        opts+="--help"
+        ;;
+
+    esac
+
+    COMPREPLY+=( $( compgen -W "$opts" -- $cur ) )
+
+    return 0
+}
+
+#
+complete -o nosort -F _xnvme-test-enum_completions xnvme-test-enum
+
+# ex: filetype=sh

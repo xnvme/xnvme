@@ -112,7 +112,7 @@ def main(args, cijoe):
         with state_file.open() as f:
             state = yaml.safe_load(f) or {}
         cmd = (state.get("cmd") or "").strip()
-        if cmd.startswith(("xnvme ", "xnvmeperf ")):
+        if cmd.startswith("xnvme "):
             initiator_cmds.append(cmd)
     if initiator_cmds:
         (transport_static / "initiator.txt").write_text(

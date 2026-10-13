@@ -475,9 +475,10 @@ class HomiServer:
     def is_running(cijoe):
         """Returns True when a homi server is running"""
 
-        # Match on the process name; 'pgrep -f' also matched the shell that cijoe.run()
-        # wraps the command in, so it never detected a failed start
-        err, _ = cijoe.run("pgrep -x homi")
+        # Not by name: until the front-end execs xnvme-homi the process is setsid,
+        # stdbuf or xnvme, and run directly it is 'xnvme-homi serve'. The brackets
+        # keep the pattern from matching the shell that cijoe.run() wraps this in.
+        err, _ = cijoe.run("pgrep -f '[x]nvme[- ]homi serve'")
 
         return not err
 
@@ -531,7 +532,7 @@ class HomiServer:
                 "a homi server is already running that this run did not start;"
                 " it holds the devices, so nothing here can serve them. A run"
                 " killed before its teardown leaves one behind: 'pkill -9 -x"
-                " homi' clears it"
+                " xnvme-homi' clears it"
             )
 
         # A backend that cannot open the device at all on this machine is not a
@@ -563,7 +564,7 @@ class HomiServer:
         # under the same name would otherwise answer for this one.
         cijoe.run(f"rm -f {logfile}")
         cijoe.run(
-            f"setsid stdbuf -oL homi serve {uris} --be {be} --homi-id {_homi_id} "
+            f"setsid stdbuf -oL xnvme homi serve {uris} --be {be} --homi-id {_homi_id} "
             f"--host-heap-size {HomiServer.HOST_HEAP_SIZE_PER_DEV * len(ctrlrs)} "
             f"< /dev/null > {logfile} 2>&1 &"
         )
@@ -571,15 +572,25 @@ class HomiServer:
         # Opening a device takes about a second, so waiting a fixed duration either
         # wastes time or lets testcases attach while the server is still opening the
         # rest, where they fail with the server unresponsive on the DPDK mp channel.
+        #
+        # The server comes up through setsid, stdbuf and the front-end before it
+        # execs xnvme-homi, so one look right after the launch can miss it; it is
+        # gone only when it is missing on several looks in a row. A server that
+        # failed is killed, as one left running would hold the devices of every
+        # testcase after this one.
+        missing = 0
         for _ in range(HomiServer.TIMEOUT):
             if HomiServer.is_ready(cijoe, be, labels):
                 break
-            if not HomiServer.is_running(cijoe):
+            missing = 0 if HomiServer.is_running(cijoe) else missing + 1
+            if missing >= 3:
                 cijoe.run(f"cat {logfile}")
+                cijoe.run("pkill -x xnvme-homi || true")
                 pytest.fail(f"homi server for be({be}) is not running")
             sleep(1)
         else:
             cijoe.run(f"cat {logfile}")
+            cijoe.run("pkill -x xnvme-homi || true")
             pytest.fail(f"homi server for be({be}) did not become ready")
 
         HomiServer.RUNNING = (be, tuple(labels))
@@ -605,7 +616,7 @@ class HomiServer:
         HomiServer.RUNNING = None
         HomiServer.CIJOE = None
 
-        cijoe.run("pkill -x homi || true")
+        cijoe.run("pkill -x xnvme-homi || true")
 
         # Closing a controller is not instant, and a server still holding the device
         # keeps its successor from claiming it, so wait for it to actually be gone
