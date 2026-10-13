@@ -8,7 +8,7 @@ def test_delayed_identification(cijoe, device, be_opts, cli_args):
     if get_homi_id():
         HomiServer.stop(cijoe)
 
-    err, state = cijoe.run(f"xnvme_tests_delay_identification open {device['uri']}")
+    err, state = cijoe.run(f"xnvme test delay-identification open {device['uri']}")
 
     assert "XNVME_GEO_UNKNOWN" in state.output()
     assert "XNVME_GEO_CONVENTIONAL" in state.output()

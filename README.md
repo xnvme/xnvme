@@ -33,14 +33,14 @@ same application code runs unmodified across them:
 On top of `libxnvme`:
 
 - Command sets: `libxnvme_nvm` (NVM), `libxnvme_znd` (Zoned), `libxnvme_kvs` (KV)
-- CLI tools: `xnvme`
-- `xnvmeperf`, synthetic workload generation with minimal overhead, to
+- `xnvme`, the command line; run it without arguments to see where to start
+- `xnvme perf`, synthetic workload generation with minimal overhead, to
   benchmark I/O processing at unprecedented efficiency across all of
   xNVMe's backends
-- `homi`, the software equivalent of SR-IOV: a daemon enabling multiple
+- `xnvme homi`, the software equivalent of SR-IOV: a daemon enabling multiple
   users, different processes on the host as well as compute kernels on
   accelerators, to run I/O directly against a single NVMe controller
-- `qublk`, a `ublk`-server implementation enabling kernel I/O and file
+- `xnvme qublk`, a `ublk`-server implementation enabling kernel I/O and file
   systems to run in concert with the blazingly fast user space NVMe
   drivers
 

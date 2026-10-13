@@ -11,5 +11,5 @@ def test_read(cijoe, device, be_opts, cli_args):
         "io_uring_cmd",
     ]:
         pytest.skip(reason=f"[async={be_opts['async']}] Eventfd not supported")
-    err, _ = cijoe.run(f"xnvme_single_async_efd read {cli_args}")
+    err, _ = cijoe.run(f"xnvme example single-async-efd read {cli_args}")
     assert not err
