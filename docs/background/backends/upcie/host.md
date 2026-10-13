@@ -13,11 +13,11 @@ is needed on the I/O path.
 
 ### Hugepages
 
-`xnvme-driver` configures hugepages as part of device setup. To allocate them
-manually:
+Reserve them with the `hugepages` tool, `pipx install hugepages`, and lift the
+memlock limit; `xnvme env` reports both:
 
 ```bash
-echo 128 | tee -a /proc/sys/vm/nr_hugepages
+hugepages setup --count 128
 ulimit -l unlimited
 ```
 
