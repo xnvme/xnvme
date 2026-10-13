@@ -1,0 +1,59 @@
+# xnvmeperf completion                           -*- shell-script -*-
+#
+# Bash completion script for the `xnvmeperf` CLI
+#
+# SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+_xnvmeperf_completions()
+{
+    local cur=${COMP_WORDS[COMP_CWORD]}
+    local sub=""
+    local opts=""
+
+    COMPREPLY=()
+
+    # Complete sub-commands
+    if [[ $COMP_CWORD < 2 ]]; then
+        COMPREPLY+=( $( compgen -W 'run verify cuda-run cuda-verify --help' -- $cur ) )
+        return 0
+    fi
+
+    # Complete sub-command arguments
+
+    sub=${COMP_WORDS[1]}
+
+    if [[ "$sub" != "enum" ]]; then
+        opts+="/dev/nvme* "
+    fi
+
+    case "$sub" in
+    
+    "run")
+        opts+="--iopattern --nqueues --qdepth --iosize --runtime --cpumask --cpulist --be --subnqn --direct --poll_io --poll_sq --gpu_id --homi-id --report-freq --help"
+        ;;
+
+    "verify")
+        opts+="--iosize --count --be --subnqn --direct --poll_io --poll_sq --gpu_id --homi-id --help"
+        ;;
+
+    "cuda-run")
+        opts+="--iopattern --nqueues --qdepth --iosize --runtime --be --gpu_id --homi-id --report-freq --help"
+        ;;
+
+    "cuda-verify")
+        opts+="--iosize --nqueues --qdepth --be --gpu_id --homi-id --help"
+        ;;
+
+    esac
+
+    COMPREPLY+=( $( compgen -W "$opts" -- $cur ) )
+
+    return 0
+}
+
+#
+complete -o nosort -F _xnvmeperf_completions xnvmeperf
+
+# ex: filetype=sh

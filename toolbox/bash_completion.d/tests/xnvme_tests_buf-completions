@@ -16,7 +16,7 @@ _xnvme_tests_buf_completions()
 
     # Complete sub-commands
     if [[ $COMP_CWORD < 2 ]]; then
-        COMPREPLY+=( $( compgen -W 'buf_alloc_free buf_virt_alloc_free --help' -- $cur ) )
+        COMPREPLY+=( $( compgen -W 'buf_alloc_free buf_alloc_free_threads buf_vtophys buf_virt_alloc_free --help' -- $cur ) )
         return 0
     fi
 
@@ -31,11 +31,19 @@ _xnvme_tests_buf_completions()
     case "$sub" in
     
     "buf_alloc_free")
-        opts+="--count --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        opts+="--count --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --help"
+        ;;
+
+    "buf_alloc_free_threads")
+        opts+="--count --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --help"
+        ;;
+
+    "buf_vtophys")
+        opts+="--subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --help"
         ;;
 
     "buf_virt_alloc_free")
-        opts+="--count --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        opts+="--count --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --help"
         ;;
 
     esac

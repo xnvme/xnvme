@@ -31,7 +31,7 @@ _xnvme_tests_compare_completions()
     case "$sub" in
     
     "compare")
-        opts+="--slba --nlb --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
+        opts+="--slba --nlb --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     esac
