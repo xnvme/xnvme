@@ -1,1 +1,1 @@
-xnvmeperf cuda-run --help
+xnvme perf cuda-run --help

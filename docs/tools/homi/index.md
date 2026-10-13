@@ -63,7 +63,7 @@ instead would leave nothing in the hugepage pool for clients of anything else,
 so size it for the buffers the clients will ask for:
 
 ```bash
-homi serve 0000:03:00.0 --be upcie --homi-id 1 --host-heap-size 134217728
+xnvme homi serve 0000:03:00.0 --be upcie --homi-id 1 --host-heap-size 134217728
 ```
 
 When every device given sits on one NUMA node, as sysfs reports it, **homi**
@@ -81,13 +81,13 @@ devices are open it reports that it has started, then waits for `SIGINT`
 Example: hold a single device open as the server for `homi_id` 1:
 
 ```bash
-homi serve 0000:03:00.0 --be upcie --homi-id 1
+xnvme homi serve 0000:03:00.0 --be upcie --homi-id 1
 ```
 
 Example: hold several devices under the same `homi_id`:
 
 ```bash
-homi serve 0000:03:00.0 0000:04:00.0 --be upcie --homi-id 1
+xnvme homi serve 0000:03:00.0 0000:04:00.0 --be upcie --homi-id 1
 ```
 
 For a controller reached over a PCIe-attached backend (`upcie`, `spdk`), whose
@@ -116,7 +116,7 @@ xnvme info 0000:03:00.0 --be upcie --homi-id 1
 Answers whether anything is holding controllers, without opening a device:
 
 ```bash
-homi status --homi-id 1
+xnvme homi status --homi-id 1
 ```
 
 It reports whether a server is holding controllers under that id and, when
@@ -153,7 +153,7 @@ ready: true
 ```
 
 The top-level `connections` counts the sockets the server has open, including
-the one `homi status` is using to ask, so a server serving two clients reads
+the one `xnvme homi status` is using to ask, so a server serving two clients reads
 as three. There is one per client process, however many controllers that
 process reaches, since a request names the controller it is about. The per-
 controller `connections` is that controller's own: the clients that asked the
@@ -195,8 +195,8 @@ controllers under its own `homi_id`. Clients reach the one they want by
 passing the matching id:
 
 ```bash
-homi serve 0000:03:00.0 0000:04:00.0 --be upcie --homi-id 1
-homi serve 0000:05:00.0 0000:06:00.0 --be upcie --homi-id 2
+xnvme homi serve 0000:03:00.0 0000:04:00.0 --be upcie --homi-id 1
+xnvme homi serve 0000:05:00.0 0000:06:00.0 --be upcie --homi-id 2
 ```
 
 Two things are shared across all of them and have to be budgeted rather than
@@ -249,7 +249,7 @@ instances can run side by side. It does not bind controllers or reserve
 hugepages: those are prerequisites it checks for and refuses to start without,
 because inferring a machine's driver bindings from a unit file is worse than
 failing with a clear message. `systemctl start` returns only once a client
-could actually connect, which it establishes with `homi status`.
+could actually connect, which it establishes with `xnvme homi status`.
 
 ## Backends
 
@@ -257,7 +257,7 @@ could actually connect, which it establishes with `homi status`.
 `upcie`, `upcie-cuda` and `upcie-hip`:
 
 ```bash
-homi serve 0000:03:00.0 --be spdk --homi-id 1
+xnvme homi serve 0000:03:00.0 --be spdk --homi-id 1
 ```
 
 With `upcie-cuda` and `upcie-hip`, **homi** additionally caps the GPU device
@@ -266,10 +266,10 @@ data buffers, which is all the device heap is used for, so claiming the
 default would take VRAM away from the clients:
 
 ```bash
-homi serve 0000:03:00.0 --be upcie-cuda --homi-id 1
+xnvme homi serve 0000:03:00.0 --be upcie-cuda --homi-id 1
 ```
 
-`homi status` is the exception: it asks over the socket uPCIe serves, so a
+`xnvme homi status` is the exception: it asks over the socket uPCIe serves, so a
 server started with `--be spdk` reads as absent rather than as running, and on
 a platform without uPCIe the subcommand refuses outright. The same applies to
 the systemd unit, whose readiness gate is that command.

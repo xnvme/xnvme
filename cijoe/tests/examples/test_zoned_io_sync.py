@@ -19,7 +19,7 @@ def test_write(cijoe, device, be_opts, cli_args):
     # The example resets the zone through the NVMe admin path where admin=nvme,
     # which the block layer does not see; see zoned_bdev_reset()
     zoned_bdev_reset(cijoe, device)
-    err, _ = cijoe.run(f"zoned_io_sync write {cli_args} --direct 1")
+    err, _ = cijoe.run(f"xnvme example zoned-io-sync write {cli_args} --direct 1")
     assert not err
 
 
@@ -36,7 +36,7 @@ def test_append(cijoe, device, be_opts, cli_args):
     if be_opts["sync"] in ["block", "psync"]:
         pytest.skip(reason="Linux Block layer does not support append")
 
-    err, _ = cijoe.run(f"zoned_io_sync append {cli_args}")
+    err, _ = cijoe.run(f"xnvme example zoned-io-sync append {cli_args}")
     assert not err
 
 
@@ -51,5 +51,5 @@ def test_read(cijoe, device, be_opts, cli_args):
     if be_opts["sync"] == "psync":
         pytest.skip(reason="psync(pread/write) does not support mgmt. send/receive")
 
-    err, _ = cijoe.run(f"zoned_io_sync read {cli_args}")
+    err, _ = cijoe.run(f"xnvme example zoned-io-sync read {cli_args}")
     assert not err

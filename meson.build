@@ -259,6 +259,8 @@ conf_data.set('XNVME_PTHREAD_SETAFFINITY_NP_ENABLED', cc.has_function(
     dependencies: thread_dep)
 )
 conf_data.set('XNVME_RAND_R_ENABLED', cc.has_function('rand_r'))
+xnvme_libexecdir = get_option('libexecdir') / 'xnvme'
+conf_data.set_quoted('XNVME_LIBEXECDIR', get_option('prefix') / xnvme_libexecdir)
 
 conf = configure_file(
   configuration : conf_data,

@@ -465,9 +465,10 @@ class HomiServer:
     def is_running(cijoe):
         """Returns True when a homi server is running"""
 
-        # Match on the process name; 'pgrep -f' also matched the shell that cijoe.run()
-        # wraps the command in, so it never detected a failed start
-        err, _ = cijoe.run("pgrep -x homi")
+        # Not by name: until the front-end execs xnvme-homi the process is setsid,
+        # stdbuf or xnvme. The brackets keep the pattern from matching the shell
+        # that cijoe.run() wraps this command in.
+        err, _ = cijoe.run("pgrep -f '[x]nvme homi serve'")
 
         return not err
 
@@ -519,7 +520,7 @@ class HomiServer:
                 "a homi server is already running that this run did not start;"
                 " it holds the devices, so nothing here can serve them. A run"
                 " killed before its teardown leaves one behind: 'pkill -9 -x"
-                " homi' clears it"
+                " xnvme-homi' clears it"
             )
 
         # A backend that cannot open the device at all on this machine is not a
@@ -551,7 +552,7 @@ class HomiServer:
         # under the same name would otherwise answer for this one.
         cijoe.run(f"rm -f {logfile}")
         cijoe.run(
-            f"setsid stdbuf -oL homi serve {uris} --be {be} --homi-id {_homi_id} "
+            f"setsid stdbuf -oL xnvme homi serve {uris} --be {be} --homi-id {_homi_id} "
             f"--host-heap-size {HomiServer.HOST_HEAP_SIZE_PER_DEV * len(devices)} "
             f"< /dev/null > {logfile} 2>&1 &"
         )
@@ -593,7 +594,7 @@ class HomiServer:
         HomiServer.RUNNING = None
         HomiServer.CIJOE = None
 
-        cijoe.run("pkill -x homi || true")
+        cijoe.run("pkill -x xnvme-homi || true")
 
         # Closing a controller is not instant, and a server still holding the device
         # keeps its successor from claiming it, so wait for it to actually be gone

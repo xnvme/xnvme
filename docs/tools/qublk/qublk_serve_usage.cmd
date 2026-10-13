@@ -1,1 +1,1 @@
-qublk serve --help
+xnvme qublk serve --help

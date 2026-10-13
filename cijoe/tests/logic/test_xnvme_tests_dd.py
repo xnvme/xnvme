@@ -9,51 +9,51 @@ def test_dd(cijoe):
 
     commands = [
         (
-            "xnvme_tests_dd sync --data-input test.0 --data-output test.1 --data-nbytes 2097152",
+            "xnvme test dd sync --data-input test.0 --data-output test.1 --data-nbytes 2097152",
             "cmp test.0 test.1 && rm test.1",
         ),
         (
-            "xnvme_tests_dd sync --data-input test.0 --data-output test.1 --data-nbytes 1048576 --offset 1048576",
+            "xnvme test dd sync --data-input test.0 --data-output test.1 --data-nbytes 1048576 --offset 1048576",
             "cmp --ignore-initial=1048576:0 test.0 test.1 && rm test.1",
         ),
         (
-            "xnvme_tests_dd sync --data-input test.0 --data-output test.1 --data-nbytes 1048577 --offset 1048575",
+            "xnvme test dd sync --data-input test.0 --data-output test.1 --data-nbytes 1048577 --offset 1048575",
             "cmp --ignore-initial=1048575:0 test.0 test.1 && rm test.1",
         ),
         (
-            "xnvme_tests_dd sync --data-input test.0 --data-output test.1 --data-nbytes 1048575 --offset 1048577",
+            "xnvme test dd sync --data-input test.0 --data-output test.1 --data-nbytes 1048575 --offset 1048577",
             "cmp --ignore-initial=1048577:0 test.0 test.1 && rm test.1",
         ),
         (
-            "xnvme_tests_dd sync --data-input test.0 --data-output test.1 --data-nbytes 1048576 --offset 1048576 --iosize 8192",
+            "xnvme test dd sync --data-input test.0 --data-output test.1 --data-nbytes 1048576 --offset 1048576 --iosize 8192",
             "cmp --ignore-initial=1048576:0 test.0 test.1 && rm test.1",
         ),
         (
-            "xnvme_tests_dd async --data-input test.0 --data-output test.1 --data-nbytes 2097152",
+            "xnvme test dd async --data-input test.0 --data-output test.1 --data-nbytes 2097152",
             "cmp test.0 test.1 && rm test.1",
         ),
         (
-            "xnvme_tests_dd async --data-input test.0 --data-output test.1 --data-nbytes 1048576 --offset 1048576",
+            "xnvme test dd async --data-input test.0 --data-output test.1 --data-nbytes 1048576 --offset 1048576",
             "cmp --ignore-initial=1048576:0 test.0 test.1 && rm test.1",
         ),
         (
-            "xnvme_tests_dd async --data-input test.0 --data-output test.1 --data-nbytes 1048577 --offset 1048575",
+            "xnvme test dd async --data-input test.0 --data-output test.1 --data-nbytes 1048577 --offset 1048575",
             "cmp --ignore-initial=1048575:0 test.0 test.1 && rm test.1",
         ),
         (
-            "xnvme_tests_dd async --data-input test.0 --data-output test.1 --data-nbytes 1048575 --offset 1048577",
+            "xnvme test dd async --data-input test.0 --data-output test.1 --data-nbytes 1048575 --offset 1048577",
             "cmp --ignore-initial=1048577:0 test.0 test.1 && rm test.1",
         ),
         (
-            "xnvme_tests_dd async --data-input test.0 --data-output test.1 --data-nbytes 1048576 --offset 1048576 --iosize 8192",
+            "xnvme test dd async --data-input test.0 --data-output test.1 --data-nbytes 1048576 --offset 1048576 --iosize 8192",
             "cmp --ignore-initial=1048576:0 test.0 test.1 && rm test.1",
         ),
         (
-            "xnvme_tests_dd async --data-input test.0 --data-output test.1 --data-nbytes 1048576 --offset 1048576 --qdepth 32",
+            "xnvme test dd async --data-input test.0 --data-output test.1 --data-nbytes 1048576 --offset 1048576 --qdepth 32",
             "cmp --ignore-initial=1048576:0 test.0 test.1 && rm test.1",
         ),
         (
-            "xnvme_tests_dd async --data-input test.0 --data-output test.1 --data-nbytes 1048576 --offset 1048576 --qdepth 32 --iosize 8192",
+            "xnvme test dd async --data-input test.0 --data-output test.1 --data-nbytes 1048576 --offset 1048576 --qdepth 32 --iosize 8192",
             "cmp --ignore-initial=1048576:0 test.0 test.1 && rm test.1",
         ),
     ]

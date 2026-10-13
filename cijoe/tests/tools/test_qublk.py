@@ -84,7 +84,7 @@ def test_run_user_copy(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["nvm"], opts=["be"])
 def test_del_leftover(cijoe, device, be_opts, cli_args):
-    """SIGKILL the server, then recover the leftover device with 'qublk del'"""
+    """SIGKILL the server, then recover the leftover device with 'xnvme qublk del'"""
 
     script = "\n".join(
         [
@@ -92,7 +92,7 @@ def test_del_leftover(cijoe, device, be_opts, cli_args):
             "modprobe ublk_drv || echo MODPROBE-FAILED",
             f"if [ -b {UBLK_NODE} ]; then echo PREEXISTING-DEVICE; exit 1; fi",
             "log=$(mktemp)",
-            f"qublk serve {device['uri']} --be {be_opts['be']} --dev-id 0 > $log 2>&1 &",
+            f"xnvme qublk serve {device['uri']} --be {be_opts['be']} --dev-id 0 > $log 2>&1 &",
             "pid=$!",
             f"for i in $(seq 1 50); do [ -b {UBLK_NODE} ] && break; sleep 0.2; done",
             f"if [ ! -b {UBLK_NODE} ]; then echo MISSING-DEVICE; cat $log; "
@@ -112,12 +112,12 @@ def test_del_leftover(cijoe, device, be_opts, cli_args):
             "wait $pid 2>/dev/null",
             # The control-side device outlives the killed server; 'del' must
             # remove it, and the char-device is the observable for that
-            "qublk del --dev-id 0",
+            "xnvme qublk del --dev-id 0",
             "rc=$?",
             "for i in $(seq 1 25); do [ -c /dev/ublkc0 ] || break; sleep 0.2; done",
             "if [ -c /dev/ublkc0 ]; then echo LEFTOVER-DEVICE; rc=1; fi",
             # A nonexistent identifier must fail rather than report success
-            "if qublk del --dev-id 999; then echo DEL-BOGUS-ID-PASSED; rc=1; fi",
+            "if xnvme qublk del --dev-id 999; then echo DEL-BOGUS-ID-PASSED; rc=1; fi",
             "cat $log",
             "rm -f $log",
             "exit $rc",
@@ -128,7 +128,7 @@ def test_del_leftover(cijoe, device, be_opts, cli_args):
 
 
 def _reject_at_setup(cijoe, device, be_opts, phrase):
-    """Run 'qublk serve' on a namespace it must refuse; expect 'phrase' in its output"""
+    """Run 'xnvme qublk serve' on a namespace it must refuse; expect 'phrase' in its output"""
 
     # The rejection comes before ADD_DEV, so a correct qublk exits on its own
     # and the session need not wait for a device; the timeout only bounds a
@@ -139,7 +139,7 @@ def _reject_at_setup(cijoe, device, be_opts, phrase):
             "modprobe ublk_drv || echo MODPROBE-FAILED",
             f"if [ -b {UBLK_NODE} ]; then echo PREEXISTING-DEVICE; exit 1; fi",
             "log=$(mktemp)",
-            f"timeout -s INT 10 qublk serve {device['uri']} --be {be_opts['be']} "
+            f"timeout -s INT 10 xnvme qublk serve {device['uri']} --be {be_opts['be']} "
             "--dev-id 0 > $log 2>&1",
             "rc=$?",
             "if [ $rc -eq 0 ]; then echo SERVE-PASSED; rc=1; "

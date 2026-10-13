@@ -12,7 +12,7 @@ def test_init_term(cijoe, device, be_opts, cli_args):
     qdepth = 64
     for count in [1, 2, 4, 8, 16, 32, 64, 128]:
         err, _ = cijoe.run(
-            f"xnvme_tests_async_intf init_term {cli_args} "
+            f"xnvme test async-intf init_term {cli_args} "
             f"--count {count} --qdepth {qdepth}"
         )
         assert not err
@@ -28,7 +28,7 @@ def test_init_io_term(cijoe, device, be_opts, cli_args):
 
     for qdepth in [8, 64]:
         err, _ = cijoe.run(
-            f"xnvme_tests_async_intf init_io_term {cli_args} "
+            f"xnvme test async-intf init_io_term {cli_args} "
             f"--count 4 --qdepth {qdepth}"
         )
         assert not err

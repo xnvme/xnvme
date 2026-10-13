@@ -1,0 +1,16 @@
+Usage: xnvme <command> [<args>] [--help]
+
+Find NVMe devices, inspect and benchmark them, and manage userspace drivers
+
+Start here:
+  xnvme list               List devices on the system
+  xnvme info <uri>         Retrieve derived information for given device
+  xnvme enum               Enumerate devices on the system
+  xnvme library-info       Produce information about the library
+  xnvme perf               Run IO benchmarks against xNVMe devices
+
+Groups, run one to list its commands:
+  xnvme test               installed test programs
+  xnvme example            installed example programs
+  xnvme nvme               NVMe admin commands; see nvme-cli for kernel-bound devices
+  xnvme --help             every built-in command at once
