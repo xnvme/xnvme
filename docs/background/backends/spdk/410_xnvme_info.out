@@ -1,5 +1,4 @@
-0000:03:00.0 (1b36 0010): Already using the vfio-pci driver
-0000:00:02.0 (1af4 1001): Active mountpoints on /dev/vda, so not binding
+0000:03:00.0: already on vfio-pci
 
 
 xnvme_dev:

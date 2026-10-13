@@ -963,8 +963,8 @@ jobs:
         --monitor \
         --config "configs/${{ matrix.hostname }}.toml" \
         --output "${{ github.job }}-${{ matrix.hostname }}-provision-xnvme" \
-        xnvme_source_sync xnvme_build_prep test_deps xnvme_build xnvme_install \
-        ldconfig xnvme_bindings_py_install_tgz fio_prep
+        xnvme_source_sync xnvme_build_prep test_deps test_tools xnvme_build \
+        xnvme_install ldconfig xnvme_bindings_py_install_tgz fio_prep
 
     - name: CIJOE, run tests
       run: |

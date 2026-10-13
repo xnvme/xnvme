@@ -4,7 +4,7 @@
 
 The SPDK target runs the user-space `nvmf_tgt` application bundled in
 xNVMe's SPDK subproject. The PCIe device is bound to the userspace driver
-by `xnvme-driver`, attached to `nvmf_tgt` as `Nvme0` through `rpc.py`, and
+by `xnvme driver --be spdk`, attached to `nvmf_tgt` as `Nvme0` through `rpc.py`, and
 published as a TCP subsystem. The `cijoe/scripts/nvme_target_start.py`,
 `nvme_target_probe.py`, and `nvme_target_stop.py` scripts drive this with
 `--nvme-provider spdk`. They are wired into the dedicated

@@ -275,17 +275,21 @@ class XnvmeDriver(object):
         # reserve it here.
         if get_osname() == "freebsd":
             # 32 contigmem buffers of 64MB; smaller buffers than the module's default
-            # avoid ENOMEM on FreeBSD's fragmented CI heap
+            # avoid ENOMEM on FreeBSD's fragmented CI heap. With the hugepages tool
+            # where it is installed; it reloads the module, so only when not loaded
             err, _ = cijoe.run(
                 "xnvme driver --be spdk --all --force && "
                 "{ kldstat -q -m contigmem || "
+                "hugepages setup --size 65536 --count 32 || "
                 "{ kenv hw.contigmem.num_buffers=32 && "
                 "kenv hw.contigmem.buffer_size=67108864 && kldload contigmem; }; }"
             )
         else:
+            # With the hugepages tool where it is installed
             err, _ = cijoe.run(
                 "xnvme driver --be upcie --all --force && "
                 "{ [ $(cat /proc/sys/vm/nr_hugepages) -ge 1024 ] || "
+                "hugepages setup --count 1024 || "
                 "echo 1024 > /proc/sys/vm/nr_hugepages; }"
             )
         if err:

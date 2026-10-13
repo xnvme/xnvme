@@ -48,8 +48,10 @@ xnvme driver --be upcie 0000:03:00.0
 
 It binds only the named controller, and refuses one whose namespaces are
 mounted, held, used as swap or open.
-`xnvme driver --be io_uring 0000:03:00.0` returns it to the kernel driver. Hugepages are not reserved by it; `xnvme env`
-says whether they are, and how to reserve them.
+`xnvme driver --be io_uring 0000:03:00.0` returns it to the kernel driver. It reserves no hugepages; the `hugepages`
+tool does, `hugepages setup --count 1024`, and `iommu show` prints the mode the
+kernel runs the IOMMU in; `pipx install hugepages iommu` installs both, and
+`xnvme env` says whether anything is missing.
 
 **upcie**, **upcie-cuda** and **upcie-hip** all support `uio_pci_generic`
 (no-IOMMU path) and `vfio-pci` (IOMMU-backed path). For the GPU backends see

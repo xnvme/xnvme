@@ -62,6 +62,13 @@ steps:
   run: |
     if command -v apt-get > /dev/null; then apt-get -qy install xfsprogs; fi
 
+# The FreeBSD guest image does not yet carry the hugepages tool the test-suite
+# reserves contigmem with; pipx is among the build dependencies installed above.
+# Drop this once the image has it, as the Linux guest images do.
+- name: test_tools
+  run: |
+    if [ "$(uname -s)" = "FreeBSD" ]; then PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin pipx install --force hugepages==0.3.0 && hugepages --version; fi
+
 - name: xnvme_build
   uses: xnvme_build
   with:
@@ -76,10 +83,10 @@ steps:
   run: ldconfig /usr/local/lib/ || true
 
 # Reprobe nvme so /dev/nvmeN enumerates in PCI slot order; otherwise vfu_kvssd
-# lands at the wrong index. Runs after xnvme_install for the xnvme-driver tool.
+# lands at the wrong index. Runs after xnvme_install for the xnvme tool.
 - name: stabilize_nvme_naming
   run: |
-    if [ "$(uname -s)" = "Linux" ]; then xnvme-driver && xnvme-driver reset && udevadm settle; fi
+    if [ "$(uname -s)" = "Linux" ]; then xnvme driver --be upcie --all --force && xnvme driver --be posix --all && udevadm settle; fi
 
 - name: xnvme_bindings_py_install_tgz
   uses: xnvme_bindings_py_install_tgz

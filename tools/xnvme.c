@@ -2466,8 +2466,8 @@ cli_env_hugepages(void)
 	printf("}");
 	if (!reserved) {
 		printf(", fix: '%s'",
-		       cli_yq("set vm.nr_hugepages in /etc/sysctl.d/; the userspace drivers "
-			      "allocate from them"));
+		       cli_yq("hugepages setup --count <pages>, and vm.nr_hugepages in "
+			      "/etc/sysctl.d/ to keep them across a reboot"));
 	}
 	printf("}\n");
 }
@@ -2497,13 +2497,36 @@ cli_env_hugetlbfs(void)
 	}
 	printf("], mounted: %s", count ? "true" : "false");
 	if (!count) {
-		printf(", fix: '%s'", cli_yq("mount -t hugetlbfs nodev /dev/hugepages; SPDK needs it"));
+		printf(", fix: '%s'", cli_yq("hugepages mount; SPDK needs it"));
 	}
 	printf("}\n");
 }
 
 static void
 cli_env_ctrlrs(void);
+
+/// The host setup 'xnvme driver' leaves to other tools
+static const char *g_cli_env_tools[] = {"hugepages", "iommu"};
+
+static bool
+cli_on_path(const char *name)
+{
+	const char *seg = getenv("PATH");
+
+	while (seg && *seg) {
+		const char *end = strchr(seg, ':');
+		int seg_len = end ? (int)(end - seg) : (int)strlen(seg);
+		char path[4096];
+
+		snprintf(path, sizeof(path), "%.*s/%s", seg_len, seg, name);
+		if (seg_len && !access(path, X_OK)) {
+			return true;
+		}
+		seg = end ? end + 1 : NULL;
+	}
+
+	return false;
+}
 
 /// What polled I/O with io_uring needs from the kernel nvme driver
 static const char *g_cli_poll_hint =
@@ -2538,14 +2561,16 @@ cli_env_system(void)
 {
 	struct utsname uts;
 	struct rlimit rlim;
+	bool missing = false;
 	int count;
 
 	count = cli_dir_count("/sys/kernel/iommu_groups");
 	printf("  iommu: {groups: %d", count > 0 ? count : 0);
 	if (count <= 0) {
 		printf(", fix: '%s'",
-		       cli_yq("enable VT-d or AMD-Vi in firmware, and boot with intel_iommu=on or "
-			      "amd_iommu=on; vfio-pci needs it unless in no-IOMMU mode"));
+		       cli_yq("enable VT-d or AMD-Vi in firmware; 'iommu show' prints the mode "
+			      "the "
+			      "kernel runs it in, and 'iommu pt' sets passthrough"));
 	}
 	printf("}\n");
 
@@ -2587,6 +2612,18 @@ cli_env_system(void)
 		}
 		printf("}\n");
 	}
+
+	printf("  tools: {");
+	for (size_t i = 0; i < sizeof g_cli_env_tools / sizeof(*g_cli_env_tools); ++i) {
+		bool found = cli_on_path(g_cli_env_tools[i]);
+
+		printf("%s%s: %s", i ? ", " : "", g_cli_env_tools[i], found ? "true" : "false");
+		missing |= !found;
+	}
+	if (missing) {
+		printf(", fix: 'pipx install hugepages iommu'");
+	}
+	printf("}\n");
 
 	printf("  systemd: {running: %s}\n",
 	       cli_path_exists("/run/systemd/system") ? "true" : "false");

@@ -279,7 +279,7 @@ class XnvmeDriver(object):
     * vfio-pci (User space)
     * uio-generic (User space)
 
-    Switching attachment is done via the 'xnvme-driver' cli-tool.
+    Switching attachment is done via 'xnvme driver --be upcie' and '--be posix'.
 
     This class encapsulates the cli-tool via static helpers (kernel_detach,
     kernal_attach). Whether or not a device needs one or the other is handled
@@ -314,7 +314,13 @@ class XnvmeDriver(object):
             else:
                 XnvmeDriver.IS_FABRICS_UP = False
 
-        cijoe.run("xnvme-driver")
+        # The test devices are scratch, hence --force; attach leaves hugepages alone.
+        cijoe.run(
+            "xnvme driver --be upcie --all --force && "
+            "{ [ $(cat /proc/sys/vm/nr_hugepages) -ge 1024 ] || "
+            "hugepages setup --count 1024 || "
+            "echo 1024 > /proc/sys/vm/nr_hugepages; }"
+        )
         XnvmeDriver.IS_KERNEL_ATTACHED = False
 
     @staticmethod
@@ -328,7 +334,7 @@ class XnvmeDriver(object):
             else:
                 XnvmeDriver.IS_FABRICS_UP = False
 
-        cijoe.run("xnvme-driver reset")
+        cijoe.run("xnvme driver --be posix --all")
         XnvmeDriver.IS_KERNEL_ATTACHED = True
 
     @staticmethod
