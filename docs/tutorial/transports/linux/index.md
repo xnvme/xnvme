@@ -3,7 +3,7 @@
 # Linux Target
 
 The Linux target uses the in-tree `nvmet` driver configured through
-`configfs`. `xnvme-driver reset` rebinds the device to the kernel NVMe
+`configfs`. `xnvme driver --be io_uring --all` rebinds the device to the kernel NVMe
 driver so its local `/dev/nvmeXn1` is available; `nvmet` and `nvmet_tcp`
 are loaded; the subsystem, namespace, and port are created as `configfs`
 directories. The `cijoe/scripts/nvme_target_start.py`,

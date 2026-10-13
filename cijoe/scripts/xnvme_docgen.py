@@ -59,8 +59,8 @@ def main(args, cijoe):
         "pipx ensurepath",
         "pipx install kmdo",
         # Ensure deterministic device naming before capturing command outputs
-        "xnvme-driver",
-        "xnvme-driver reset",
+        "xnvme driver --be upcie --all --force",
+        "xnvme driver --be posix --all",
         "udevadm settle",  # Wait for device nodes to be created
         "ldconfig",
         "sync; echo 1 > /proc/sys/vm/drop_caches",

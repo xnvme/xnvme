@@ -32,7 +32,7 @@ EnvironmentFile=@sysconfdir@/xnvme/qublk-%i.conf
 
 # Refuse rather than half-start: a userspace backend allocates its queues from
 # hugepages, and the failure further in is harder to read than this one.
-ExecStartPre=/bin/sh -c '[ "$(cat /proc/sys/vm/nr_hugepages)" -gt 0 ] || { echo "no hugepages reserved; see @bindir@/xnvme-driver"; exit 1; }'
+ExecStartPre=/bin/sh -c '[ "$(cat /proc/sys/vm/nr_hugepages)" -gt 0 ] || { echo "no hugepages reserved; reserve them with hugepages setup"; exit 1; }'
 
 ExecStart=@libexecdir@/xnvme-qublk serve $QUBLK_URI --dev-id %i $QUBLK_OPTS
 

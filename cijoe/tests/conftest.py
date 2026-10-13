@@ -290,10 +290,12 @@ class XnvmeDriver(object):
         # --force as the filesystem cases leave signatures on the devices; 'xnvme driver'
         # reserves no DMA memory
         if get_osname() == "freebsd":
-            # avoid ENOMEM on FreeBSD's fragmented CI heap
+            # Buffers smaller than the default avoid ENOMEM on the fragmented CI heap;
+            # 'hugepages setup' reloads contigmem, so only when it is not loaded
             err, _ = cijoe.run(
                 "xnvme driver --be spdk --all --force && "
                 "{ kldstat -q -m contigmem || "
+                "hugepages setup --size 65536 --count 32 || "
                 "{ kenv hw.contigmem.num_buffers=32 && "
                 "kenv hw.contigmem.buffer_size=67108864 && kldload contigmem; }; }"
             )
@@ -301,6 +303,7 @@ class XnvmeDriver(object):
             err, _ = cijoe.run(
                 "xnvme driver --be upcie --all --force && "
                 "{ [ $(cat /proc/sys/vm/nr_hugepages) -ge 1024 ] || "
+                "hugepages setup --count 1024 || "
                 "echo 1024 > /proc/sys/vm/nr_hugepages; }"
             )
         if err:
