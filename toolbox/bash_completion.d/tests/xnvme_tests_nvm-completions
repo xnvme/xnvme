@@ -1,0 +1,91 @@
+# xnvme_tests_nvm completion                           -*- shell-script -*-
+#
+# Bash completion script for the `xnvme_tests_nvm` CLI
+#
+# SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+_xnvme_tests_nvm_completions()
+{
+    local cur=${COMP_WORDS[COMP_CWORD]}
+    local sub=""
+    local opts=""
+
+    COMPREPLY=()
+
+    # Complete sub-commands
+    if [[ $COMP_CWORD < 2 ]]; then
+        COMPREPLY+=( $( compgen -W 'enum info idfy dir-send dir-receive read write write-zeros write-uncor write-dir write-read-pi compare --help' -- $cur ) )
+        return 0
+    fi
+
+    # Complete sub-command arguments
+
+    sub=${COMP_WORDS[1]}
+
+    if [[ "$sub" != "enum" ]]; then
+        opts+="/dev/nvme* "
+    fi
+
+    case "$sub" in
+    
+    "enum")
+        opts+="--uri --flags --subnqn --hostnqn --be --shm_id --homi-id --help"
+        ;;
+
+    "info")
+        opts+="--subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --help"
+        ;;
+
+    "idfy")
+        opts+="--nsid --data-output --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --help"
+        ;;
+
+    "dir-send")
+        opts+="--nsid --dspec --dtype --doper --endir --tgtdir --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --help"
+        ;;
+
+    "dir-receive")
+        opts+="--nsid --dtype --doper --nsr --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --help"
+        ;;
+
+    "read")
+        opts+="--slba --nlb --nsid --data-output --meta-output --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
+        ;;
+
+    "write")
+        opts+="--slba --nlb --nsid --data-input --meta-input --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
+        ;;
+
+    "write-zeros")
+        opts+="--slba --nlb --nsid --data-input --meta-input --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
+        ;;
+
+    "write-uncor")
+        opts+="--slba --nlb --nsid --data-input --meta-input --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
+        ;;
+
+    "write-dir")
+        opts+="--slba --nlb --nsid --data-input --meta-input --dtype --dspec --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
+        ;;
+
+    "write-read-pi")
+        opts+="--slba --nlb --nsid --pract --prchk --apptag --apptag_mask --data-input --meta-input --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
+        ;;
+
+    "compare")
+        opts+="--slba --nlb --nsid --data-input --meta-input --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
+        ;;
+
+    esac
+
+    COMPREPLY+=( $( compgen -W "$opts" -- $cur ) )
+
+    return 0
+}
+
+#
+complete -o nosort -F _xnvme_tests_nvm_completions xnvme_tests_nvm
+
+# ex: filetype=sh

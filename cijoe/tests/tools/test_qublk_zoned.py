@@ -65,7 +65,7 @@ def qublk_zoned_cleanup(cijoe, device, be_opts, cli_args):
     qublk_teardown(cijoe, mountpoint=MNT)
 
     # A payload that failed midway did not reach its final reset
-    cijoe.run(f"zoned mgmt-reset {cli_args} --slba 0 --all")
+    cijoe.run(f"xnvme_tests_zns mgmt-reset {cli_args} --slba 0 --all")
 
 
 def zoned_geometry(cijoe, cli_args):

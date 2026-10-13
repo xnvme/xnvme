@@ -69,7 +69,7 @@ def test_write_dir(cijoe, device, be_opts, cli_args):
 
     # Write (DPD) to placement id 0x0
     err, _ = cijoe.run(
-        f"lblk write-dir {cli_args} --slba 0x0 --nlb 2 --dtype 0x2 --dspec 0x0"
+        f"xnvme_tests_nvm write-dir {cli_args} --slba 0x0 --nlb 2 --dtype 0x2 --dspec 0x0"
     )
     assert not err
 

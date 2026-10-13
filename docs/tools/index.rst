@@ -15,10 +15,6 @@ exposes an **xNVMe** device as an ordinary Linux block device.
    :hidden:
 
    xnvme/index
-   lblk/index
-   zoned/index
-   xdd/index
-   file/index
    homi/index
    fio/index
    xnvmeperf/index
