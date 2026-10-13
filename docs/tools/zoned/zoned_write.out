@@ -1,7 +1,0 @@
-# MGMT: zslba: 0x0000000000000000, action: 0x4, str: ZND_CMD_MGMT_SEND_RESET
-
-
-# Writing nsid: 0x2, slba: 0x0000000000000000, nlb: 0
-# Alloc/fill dbuf, dbuf_nbytes: 512
-# Sending the command...
-

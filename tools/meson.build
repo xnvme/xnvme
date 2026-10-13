@@ -3,30 +3,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 tools_source = [
-  'lblk.c',
   'homi.c',
-  'xdd.c',
   'xnvme.c',
-  'xnvme_file.c',
-  'zoned.c',
-  'kvs.c',
 ]
 tools = {
   'homi.c': [],
-  'kvs.c': [],
-  'lblk.c': [
-    ['enum', ['enum']],
-    ['info', ['info', '1GB']],
-    ['idfy', ['idfy', '1GB']],
-    ['read', ['read', '1GB', '--slba', '0x0', '--nlb', '0']],
-    ['write', ['write', '1GB', '--slba', '0x0', '--nlb', '0']],
-    ['write-zeros', ['write-zeros', '1GB', '--slba', '0x0', '--nlb', '0']],
-    ['write-dir', ['write-dir', '1GB', '--slba', '0x0', '--nlb', '7']], 
-    ['write-read-pi, prchk not set', ['write-read-pi', '1GB', '--slba', '0x0', '--nlb', '8', '--pract', '1']],
-    ['write-read-pi, prchk=0x4', ['write-read-pi', '1GB', '--slba', '0x0', '--nlb', '0', '--pract', '1', '--prchk', '0x4']], 
-    ['write-read-pi, prchk=0x5', ['write-read-pi', '1GB', '--slba', '0x0', '--nlb', '0', '--pract', '1', '--prchk', '0x5']], 
-  ],
-  'xdd.c': [],
   'xnvme.c': [
     ['list', ['list']],
     ['enum', ['enum']],
@@ -37,10 +18,6 @@ tools = {
     ['idfy-ctrlr', ['idfy-ctrlr', '1GB']],
     ['library-info', ['library-info']],
   ],
-  'xnvme_file.c': [
-    ['write-read', ['write-read', '1GB', '8']],
-  ],
-  'zoned.c': [],
 }
 
 foreach source, tests : tools

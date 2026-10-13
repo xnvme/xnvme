@@ -1,1 +1,0 @@
-zoned report --help

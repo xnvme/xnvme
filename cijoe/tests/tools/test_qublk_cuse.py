@@ -77,14 +77,14 @@ def test_read(cijoe, device, be_opts, cli_args):
         be_opts["be"],
         [
             # nvme-cli needs an explicit --data-size; look up the LBA size first, captured
-            # into a variable so 'set -e' catches a failing 'lblk info', not awk's exit status
-            f"info=$(lblk info {UBLK_NVME} --be {CUSE_BE})",
+            # into a variable so 'set -e' catches a failing info, not awk's exit status
+            f"info=$(xnvme_tests_nvm info {UBLK_NVME} --be {CUSE_BE})",
             "lba=$(echo \"$info\" | awk '/lba_nbytes:/{print $2}')",
             "rbuf=$(mktemp)",
             f"nvme read {UBLK_NVME} -n 1 -s 0 -c 0 -z $lba -o binary > $rbuf",
             "hexdump -C $rbuf | head",
             "rm -f $rbuf",
-            f"lblk read {UBLK_NVME} --be {CUSE_BE} --slba 0x0 --nlb 0",
+            f"xnvme_tests_nvm read {UBLK_NVME} --be {CUSE_BE} --slba 0x0 --nlb 0",
         ],
         nvme=UBLK_NVME,
     )
@@ -98,13 +98,13 @@ def test_write(cijoe, device, be_opts, cli_args):
         device["uri"],
         be_opts["be"],
         [
-            f"info=$(lblk info {UBLK_NVME} --be {CUSE_BE})",
+            f"info=$(xnvme_tests_nvm info {UBLK_NVME} --be {CUSE_BE})",
             "lba=$(echo \"$info\" | awk '/lba_nbytes:/{print $2}')",
             "wbuf=$(mktemp)",
             "dd if=/dev/urandom of=$wbuf bs=$lba count=1 2>/dev/null",
             f"nvme write {UBLK_NVME} -n 1 -s 0 -c 0 -z $lba -d $wbuf",
             "rm -f $wbuf",
-            f"lblk write {UBLK_NVME} --be {CUSE_BE} --slba 0x0 --nlb 0",
+            f"xnvme_tests_nvm write {UBLK_NVME} --be {CUSE_BE} --slba 0x0 --nlb 0",
         ],
         nvme=UBLK_NVME,
     )
@@ -151,7 +151,7 @@ def test_write_vec(cijoe, device, be_opts, cli_args):
         device["uri"],
         be_opts["be"],
         [
-            f"xnvme_file dump-sync-iovec {UBLK_NVME} --be {CUSE_BE} --data-nbytes 8192 "
+            f"xnvme_tests_file dump-sync-iovec {UBLK_NVME} --be {CUSE_BE} --data-nbytes 8192 "
             "--sync nvme --vec-cnt 2",
         ],
         nvme=UBLK_NVME,

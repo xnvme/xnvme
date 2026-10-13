@@ -32,6 +32,7 @@ tests = {
     ['slba=0 sdlba=8', ['copy', '1GB', '--slba', '0', '--nlb', '7', '--sdlba', '8']],
     ['slba=8 sdlba=0', ['copy', '1GB', '--slba', '8', '--nlb', '7', '--sdlba', '0']]],
   'ctrlr.c': [],
+  'dd.c': [],
   'delay_identification.c': [
     ['open', ['open', '1GB']]
   ],
@@ -39,6 +40,9 @@ tests = {
   'enum.c': [
     ['open', ['open', '--count', '4']],
     ['multi', ['multi', '--count', '4']],
+  ],
+  'file.c': [
+    ['write-read', ['write-read', '1GB', '8']],
   ],
   'ioworker.c': [
     ['verify', ['verify', '1GB']],
@@ -53,10 +57,23 @@ tests = {
     ['verify vec-cnt=4 direct=1', ['verify', '1GB', '--vec-cnt', '4', '--direct', '1']],
     ['verify_sync vec-cnt=4 direct=1', ['verify-sync', '1GB', '--vec-cnt', '4', '--direct', '1']],
   ],
+  'kv.c': [],
   'kvs.c': [],
   'lblk.c': [
     ['io', ['io', '1GB']],
     ['write_zeroes', ['write_zeroes', '1GB']],
+  ],
+  'nvm.c': [
+    ['enum', ['enum']],
+    ['info', ['info', '1GB']],
+    ['idfy', ['idfy', '1GB']],
+    ['read', ['read', '1GB', '--slba', '0x0', '--nlb', '0']],
+    ['write', ['write', '1GB', '--slba', '0x0', '--nlb', '0']],
+    ['write-zeros', ['write-zeros', '1GB', '--slba', '0x0', '--nlb', '0']],
+    ['write-dir', ['write-dir', '1GB', '--slba', '0x0', '--nlb', '7']],
+    ['write-read-pi, prchk not set', ['write-read-pi', '1GB', '--slba', '0x0', '--nlb', '8', '--pract', '1']],
+    ['write-read-pi, prchk=0x4', ['write-read-pi', '1GB', '--slba', '0x0', '--nlb', '0', '--pract', '1', '--prchk', '0x4']],
+    ['write-read-pi, prchk=0x5', ['write-read-pi', '1GB', '--slba', '0x0', '--nlb', '0', '--pract', '1', '--prchk', '0x5']],
   ],
   'scc.c': [
     ['idfy', ['idfy', '1GB']],
@@ -81,6 +98,7 @@ tests = {
   'znd_explicit_open.c': [],
   'znd_state.c': [],
   'znd_zrwa.c': [],
+  'zns.c': [],
   'async_limbo.c': [],
 }
 

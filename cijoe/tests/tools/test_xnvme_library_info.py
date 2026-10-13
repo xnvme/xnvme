@@ -142,11 +142,6 @@ def test_version_flag_matches_library_info(cijoe):
 
     for tool in [
         "xnvme",
-        "lblk",
-        "zoned",
-        "kvs",
-        "xdd",
-        "xnvme_file",
         "homi",
         "qublk",
         "xnvmeperf",
