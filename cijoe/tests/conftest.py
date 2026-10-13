@@ -49,6 +49,11 @@ def get_osname():
     return osname
 
 
+def get_userspace_be():
+    """Return a backend driving controllers from userspace on this OS"""
+    return "spdk" if get_osname() == "freebsd" else "upcie"
+
+
 def get_shm_id():
     return _shm_id if _shm_id else None
 
@@ -228,7 +233,8 @@ class XnvmeDriver(object):
     * vfio-pci (User space)
     * uio-generic (User space)
 
-    Switching attachment is done via the 'xnvme-driver' cli-tool.
+    Switching attachment is done with 'xnvme driver --be <backend>', a userspace
+    backend such as upcie or spdk, or posix for the kernel.
 
     This class encapsulates the cli-tool via static helpers (kernel_detach,
     kernal_attach). Whether or not a device needs one or the other is handled
@@ -264,15 +270,26 @@ class XnvmeDriver(object):
         # so tear it down first rather than leaving MprocPrimary with a stale handle.
         MprocPrimary.stop(cijoe)
 
-        # 64MB contigmem buffers avoid ENOMEM on FreeBSD's fragmented CI heap;
-        # see toolbox/xnvme-driver.sh.
-        cmd = "xnvme-driver"
+        # The test devices are scratch, and the filesystem cases leave signatures on
+        # them, hence --force. 'xnvme driver' leaves the DMA memory alone, so
+        # reserve it here.
         if get_osname() == "freebsd":
-            cmd = "env CONTIGMEM_BUFSZ=64 " + cmd
-
-        err, _ = cijoe.run(cmd)
+            # 32 contigmem buffers of 64MB; smaller buffers than the module's default
+            # avoid ENOMEM on FreeBSD's fragmented CI heap
+            err, _ = cijoe.run(
+                "xnvme driver --be spdk --all --force && "
+                "{ kldstat -q -m contigmem || "
+                "{ kenv hw.contigmem.num_buffers=32 && "
+                "kenv hw.contigmem.buffer_size=67108864 && kldload contigmem; }; }"
+            )
+        else:
+            err, _ = cijoe.run(
+                "xnvme driver --be upcie --all --force && "
+                "{ [ $(cat /proc/sys/vm/nr_hugepages) -ge 1024 ] || "
+                "echo 1024 > /proc/sys/vm/nr_hugepages; }"
+            )
         if err:
-            cijoe.run("dmesg | tail -n20")
+            cijoe.run("xnvme list; dmesg | tail -n20")
 
         XnvmeDriver.IS_KERNEL_ATTACHED = False
 
@@ -282,9 +299,9 @@ class XnvmeDriver(object):
 
         MprocPrimary.stop(cijoe)
 
-        err, _ = cijoe.run("xnvme-driver reset")
+        err, _ = cijoe.run("xnvme driver --be posix --all")
         if err:
-            cijoe.run("dmesg | tail -n20")
+            cijoe.run("xnvme list; dmesg | tail -n20")
 
         XnvmeDriver.IS_KERNEL_ATTACHED = True
 

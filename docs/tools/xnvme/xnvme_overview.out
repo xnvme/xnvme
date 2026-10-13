@@ -3,11 +3,18 @@ Usage: xnvme <command> [<args>] [--help]
 Find NVMe devices, inspect and benchmark them, and manage userspace drivers
 
 Start here:
-  xnvme env              Relevant system config and library introspection
-  xnvme list             List devices on the system
-  xnvme info <uri>       Retrieve derived information for given device
-  xnvme enum             Enumerate devices on the system
-  xnvme perf             Synthetic workloads, on every backend
+  xnvme list               NVMe controller functions and their driver
+  xnvme info <uri>         Retrieve derived information for given device
+  xnvme enum               Enumerate devices on the system
+  xnvme perf               Synthetic workloads, on every backend
+
+Set up the host:
+  xnvme env                Relevant system config and library introspection
+  xnvme driver             Bind the driver a backend needs, or show them
+
+Serve devices:
+  xnvme homi               Share NVMe controllers between processes
+  xnvme qublk              Serve an xNVMe device as a Linux block device
 
 Groups, run one to list its commands:
   xnvme test             installed test programs
