@@ -179,7 +179,7 @@ def _lblk_read(cijoe, dev, be_opts, homi_id, id_opt="--homi-id", timeout=None):
     prefix = f"timeout {timeout} " if timeout else ""
 
     return cijoe.run(
-        f"{prefix}lblk read {dev['uri']} --dev-nsid {dev['nsid']} --slba 0x0 --nlb 0"
+        f"{prefix}xnvme_tests_nvm read {dev['uri']} --dev-nsid {dev['nsid']} --slba 0x0 --nlb 0"
         f" --be {be_opts['be']} --admin {be_opts['admin']} --sync {be_opts['sync']}"
         f" {id_opt} {homi_id}"
     )
