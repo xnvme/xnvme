@@ -1,1 +1,1 @@
-qublk --help
+xnvme qublk --help

@@ -29,7 +29,7 @@ def test_gpu_buffers_reach_the_controller_under_vfio(cijoe, device, be_opts, cli
         )
 
     err, state = cijoe.run(
-        f"xnvmeperf verify {uri} --be {be_opts['be']} --iosize 4096 --count 32"
+        f"xnvme perf verify {uri} --be {be_opts['be']} --iosize 4096 --count 32"
     )
     if err and "Operation not supported" in state.output():
         pytest.skip(

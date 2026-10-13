@@ -20,6 +20,7 @@ if systemd_unitdir != ''
   unit_conf = configuration_data()
   # Absolute: systemd resolves neither PATH nor a relative ExecStart or EnvironmentFile
   unit_conf.set('bindir', get_option('prefix') / get_option('bindir'))
+  unit_conf.set('libexecdir', get_option('prefix') / xnvme_libexecdir)
   unit_conf.set('sysconfdir', get_option('prefix') / get_option('sysconfdir'))
 
   configure_file(

@@ -11,7 +11,7 @@ def test_copy_sync(cijoe, device, be_opts, cli_args):
         "free -m",
         "df -h",
         "lsblk",
-        f"xnvme_tests_file copy-sync {src} {dst} --iosize={iosize}",
+        f"xnvme test file copy-sync {src} {dst} --iosize={iosize}",
         f"cmp {src} {dst}",
         "free -m",
     ]
