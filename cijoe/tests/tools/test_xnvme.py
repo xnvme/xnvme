@@ -97,6 +97,37 @@ def test_scan(cijoe, device, be_opts, cli_args):
             assert scan_count > 0, "Expected at least one namespace from scan"
 
 
+def test_scan_iommu_group(cijoe):
+    """Each controller xnvme_scan() reports carries the IOMMU group sysfs gives it"""
+
+    if get_osname() != "linux":
+        pytest.skip(reason="IOMMU groups are reported on Linux only")
+
+    err, state = cijoe.run("xnvme scan")
+    assert not err
+    ctrlrs = [
+        ident
+        for ident in (yaml.safe_load(state.output())["xnvme_scan"] or [])
+        if ident["dtype"] == 0x1
+    ]
+    if not ctrlrs:
+        pytest.skip(reason="no NVMe controller on the PCI bus")
+
+    for ident in ctrlrs:
+        bdf = ident["uri"]
+        err, state = cijoe.run(
+            f"basename $(readlink /sys/bus/pci/devices/{bdf}/iommu_group) 2>/dev/null"
+            " || true"
+        )
+        assert not err
+        group = (
+            state.output().strip().splitlines()[-1] if state.output().strip() else ""
+        )
+        assert (
+            str(ident["iommu_group"]) == group
+        ), f"{bdf}: {ident['iommu_group']} != {group}"
+
+
 def _with_uri_nsid(device, cli_args, nsid):
     """cli_args with the device URI replaced by one naming 'nsid' in its query"""
 
