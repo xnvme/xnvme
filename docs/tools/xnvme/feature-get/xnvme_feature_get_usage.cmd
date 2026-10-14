@@ -1,1 +1,0 @@
-xnvme feature-get --help

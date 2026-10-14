@@ -1,1 +1,0 @@
-xnvme log-erri --help

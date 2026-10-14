@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 """
-Check that 'xnvme library-info' names every with-<name> build option, and
+Check that 'xnvme env library' names every with-<name> build option, and
 nothing that is not one, so its 'with' section tells what the flags switched
 """
 
@@ -17,7 +17,7 @@ def main(xnvme, meson_options):
         options = set(re.findall(r"^option\('with-([^']+)'", ofd.read(), re.M))
 
     info = subprocess.run(
-        [xnvme, "library-info"], capture_output=True, text=True, check=True
+        [xnvme, "env", "library"], capture_output=True, text=True, check=True
     ).stdout
     section = info.split("\n  with:\n", 1)[1].split("\n\n", 1)[0]
     parts = set(

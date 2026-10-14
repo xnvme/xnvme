@@ -1,5 +1,6 @@
 The test programs, run one to list its subcommands:
 
+  xnvme test adm
   xnvme test async-intf
   xnvme test async-limbo
   xnvme test buf

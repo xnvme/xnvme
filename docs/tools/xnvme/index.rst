@@ -26,9 +26,9 @@ queues of the kernel ``nvme`` driver, each with a ``fix`` where something is
 missing. For the kernel driver that is ``poll_queues``: polled I/O through
 ``io_uring`` needs it above zero, which takes a module option and a reload of
 ``nvme``, and a reload drops every NVMe device on the host, so ``xnvme`` says
-how rather than doing it. It then prints what ``xnvme library-info`` prints:
-the version, the build configuration and the backends. ``xnvme env system``
-and ``xnvme env library`` print one of the two. It changes nothing.
+how rather than doing it. It then prints the library: the
+version, the build configuration and the backends. ``xnvme env system`` and
+``xnvme env library`` print one of the two. It changes nothing.
 The fixes name the ``hugepages`` and ``iommu`` tools, installed with
 ``pipx install hugepages iommu``.
 
@@ -72,6 +72,12 @@ The options choosing the path, ``--be``, ``--admin``, ``--sync``, ``--async``,
 data in ``--vec-cnt`` equal segments. ``--timeout`` and ``--output-format json``
 are refused rather than ignored.
 
+The admin commands with their output decoded, Identify, the log pages,
+features, format, sanitize, FDP and the resets, are ``xnvme test adm``, which
+the tests run through every backend. For a controller on the kernel driver,
+``nvme-cli`` is the tool for these; ``xnvme cmd-admin`` sends any of them raw,
+on any backend.
+
 The installed test programs are listed and run the same way:
 
 .. literalinclude:: xnvme_test.cmd
@@ -90,17 +96,5 @@ Subcommands
 
 .. toctree::
 
-   enum/index
-   feature-get/index
-   feature-set/index
-   format/index
-   idfy-ctrlr/index
-   idfy-ns/index
-   idfy/index
    info/index
-   log-erri/index
-   log-health/index
-   log/index
-   padc/index
-   pioc/index
-   sanitize/index
+   enum/index

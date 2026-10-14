@@ -329,8 +329,8 @@ jobs:
     - name: ldconfig
       run: ldconfig
 
-    - name: Execute 'xnvme library-info'
-      run: xnvme library-info
+    - name: Execute 'xnvme env library'
+      run: xnvme env library
 
     - uses: dtolnay/rust-toolchain@stable
 

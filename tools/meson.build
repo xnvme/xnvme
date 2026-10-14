@@ -12,11 +12,6 @@ tools = {
     ['list', ['list']],
     ['enum', ['enum']],
     ['info', ['info', '1GB']],
-    ['idfy, no args', ['idfy', '1GB', '--cns', '0x0']],
-    ['idfy, cntid=0x0', ['idfy', '1GB', '--cns', '0x0', '--cntid', '0x0', '--setid', '0x0', '--uuid', '0x0']],
-    ['idfy-ns', ['idfy-ns', '1GB']],
-    ['idfy-ctrlr', ['idfy-ctrlr', '1GB']],
-    ['library-info', ['library-info']],
   ],
 }
 
@@ -51,7 +46,7 @@ foreach source, tests : tools
 endforeach
 
 test(
-  'tools - xnvme, library-info names every with- option',
+  'tools - xnvme, env library names every with- option',
   python3,
   args: [files('library_info_with.py'), xnvme_bin, meson.project_source_root() / 'meson_options.txt'],
 )
@@ -100,7 +95,6 @@ frontend_tests = [
   ['cmd-admin, no opcode', ['cmd-admin', '1GB'], true],
   ['cmd-admin, timeout', ['cmd-admin', '1GB', '-O', '6', '-t', '100'], true],
   ['cmd-admin, json', ['cmd-admin', '1GB', '-O', '6', '-o', 'json'], true],
-  ['group nvme', ['nvme'], false],
   ['--help on a built-in', ['info', '--help'], false],
   ['--help on a group', ['cmd', '--help'], false],
   ['exec-path', ['--exec-path'], false],
@@ -116,6 +110,7 @@ if get_option('tests')
   frontend_tests += [
     ['test listing', ['test'], false],
     ['run a test', ['test', 'nvm', 'enum'], false],
+    ['run a test, admin command', ['test', 'adm', 'idfy-ctrlr', '1GB'], false],
     ['run a test, hyphenated', ['test', 'znd-append'], false],
     ['no such test', ['test', 'nosuch'], true],
     ['group test --help', ['test', '--help'], false],
