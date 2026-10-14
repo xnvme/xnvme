@@ -64,7 +64,7 @@ _${tname}_completions()
 
     sub=${COMP_WORDS[1]}
 
-    if [[ "$sub" != "enum" ]]; then
+${groups}    if ${nodev}; then
         opts+="/dev/nvme* "
     fi
 
@@ -105,10 +105,27 @@ AUTHOR
   Written by ${author_name} <${author_email}> on behalf of ${sponsor}
 """
 
+GROUP = """    # Complete the command of a group, then name it by both words
+    case "$sub" in
+    ${cases}
+    esac
+
+"""
+
+GROUP_CASE = """
+    "${group}")
+        if [[ $COMP_CWORD < 3 ]]; then
+            COMPREPLY+=( $( compgen -W '${cmds}' -- $cur ) )
+            return 0
+        fi
+        sub="$sub-${COMP_WORDS[2]}"
+        ;;
+"""
+
 MANPAGE_SUB = """NAME
   ${name} - ${descr}
 SYNOPSIS
-  ${usage}
+${usage}
 DESCRIPTION
   ${descr_long}
 ${required}
@@ -137,7 +154,7 @@ def run(cmd, cmd_input=None, cwd=None):
         stderr=PIPE,
         cwd=cwd,
         shell=True,
-        env={"PATH": cwd} if cwd else None,
+        env={"PATH": cwd, "XNVME_EXEC_PATH": os.devnull} if cwd else None,
     ) as proc:
         out, err = proc.communicate(
             input=cmd_input.encode("utf-8") if cmd_input else None
@@ -162,7 +179,7 @@ def emit_meson_build(args, folder, meson_file):
 
 
 def parse_tool_sub_sig(tsig, sname):
-    """Parse the signature of the given tool sub-command"""
+    """Parse the signature of the given tool sub-command, from the --help of xnvme_cli"""
 
     tname = tsig["name"]
 
@@ -178,10 +195,12 @@ def parse_tool_sub_sig(tsig, sname):
 
     sig = {
         "name": sname,
-        "usage": match.group("usage"),
+        "usage": "  " + match.group("usage"),
         "descr": match.group("descr").strip(),
+        "descr_long": match.group("descr").strip(),
         "args": [],
         "opts": [],
+        "dev": sname != "enum",
     }
 
     for line in match.group("body").strip().splitlines():
@@ -206,6 +225,100 @@ def parse_tool_sub_sig(tsig, sname):
     return True
 
 
+def prose(text):
+    """Text for a man page section: paragraphs reflowed, indented ones such as tables kept"""
+
+    paras = []
+    for para in text.strip().split("\n\n"):
+        lines = para.splitlines()
+        if any(line.startswith(" ") for line in lines):
+            paras.append("\n  ".join(lines))
+        else:
+            paras.append(" ".join(lines))
+
+    return "\n\n  ".join(paras)
+
+
+def parse_frontend_sub_sig(tsig, words, descr):
+    """
+    Parse the signature of a command the xnvme front-end implements itself: its --help is
+    the usage, a blank line, and prose naming the options
+    """
+
+    out, _, rcode = run([tsig["name"], *words, "--help"], cwd=tsig["dirname"])
+    if rcode or not out.startswith("Usage:"):
+        return None
+
+    # A command of xnvme_cli, such as 'info', is documented from its own signature
+    match = re.match(RE_SIG, out, re.MULTILINE | re.IGNORECASE)
+    if match:
+        sname = match.group("usage").split()[1]
+        if sname not in tsig["subs"] and parse_tool_sub_sig(tsig, sname):
+            return sname
+        return None
+
+    # A range of options, such as '--cdw10=NUM .. --cdw15=NUM', names each one
+    opts = re.sub(
+        r"--([a-z]+)(\d+)=\w+ \.\. --\1(\d+)",
+        lambda m: " ".join(f"--{m[1]}{n}" for n in range(int(m[2]), int(m[3]) + 1)),
+        out,
+    )
+
+    # The lines after the first are indented to line up under it, past 'Usage: '
+    usage, _, body = out.partition("\n\n")
+    sname = "-".join(words)
+    tsig["subs"][sname] = {
+        "name": sname,
+        "usage": "\n".join(
+            "  " + line[len("Usage: ") :] for line in usage.splitlines()
+        ),
+        "descr": descr,
+        "descr_long": prose(body) or descr,
+        "args": [],
+        "opts": list(dict.fromkeys(re.findall(r"(?<![\w-])--[a-z][\w-]*", opts))),
+        "dev": "<uri>" in usage,
+    }
+
+    return sname
+
+
+def parse_frontend(tsig):
+    """
+    Parse the commands listed by the xnvme front-end's overview, and those of its groups;
+    returns their names, or none for a tool that is not the front-end
+    """
+
+    out, _, rcode = run([tsig["name"]], cwd=tsig["dirname"])
+    if rcode or "Groups, run one" not in out:
+        return []
+
+    snames = []
+    for line in out.splitlines():
+        match = re.match(r"^  xnvme (\w[\w-]*)(?: <\w+>)?\s{2,}(.+)$", line)
+        if not match or match.group(1) == "help":
+            continue
+        name, descr = match.groups()
+
+        # A group lists its commands with a description each; programs are documented apart
+        lst, _, rcode = run([tsig["name"], name, "--help"], cwd=tsig["dirname"])
+        if not rcode and lst.startswith("Commands in"):
+            nested = f"See 'xnvme {name} <command>" in lst
+            for row in re.findall(r"^  (\S+)\s{2,}(.+)$", lst, re.MULTILINE):
+                words = [name, row[0]] if nested else [row[0]]
+                sname = parse_frontend_sub_sig(tsig, words, row[1])
+                if sname:
+                    snames.append(sname)
+                    if nested:
+                        tsig["groups"].setdefault(name, []).append(row[0])
+            continue
+
+        sname = parse_frontend_sub_sig(tsig, [name], descr)
+        if sname:
+            snames.append(sname)
+
+    return snames
+
+
 def parse_tool_sig(tpath):
     """Parse the signature of the given tool and its sub-commands"""
 
@@ -226,10 +339,22 @@ def parse_tool_sig(tpath):
         logging.error(out, err, rcode)
         return None
 
-    match = re.match(RE_SIG, out, re.MULTILINE | re.IGNORECASE)
-    if not match:
-        logging.error("No match!")
-        return None
+    if "\n\nStart here:\n" in out:
+        # The front-end's --help is its overview: the usage, a description, then the command
+        # tree; the commands of xnvme_cli are among those 'xnvme --list-cmds' prints
+        usage, descr = out.split("\n\n")[:2]
+        usage = usage[len("Usage: ") :]
+        lst, _, _ = run([tname, "--list-cmds"], cwd=tdirname)
+        names = lst.split()
+    else:
+        match = re.match(RE_SIG, out, re.MULTILINE | re.IGNORECASE)
+        if not match:
+            logging.error("No match!")
+            return None
+        usage, descr = match.group("usage"), match.group("descr")
+        names = [
+            line.split()[0] for line in match.group("body").splitlines() if line.strip()
+        ]
 
     tsig = {
         "name": tname,
@@ -240,17 +365,15 @@ def parse_tool_sig(tpath):
         "descr_long": match.group("descr").strip(),
         "snames": [],
         "subs": {},
+        "groups": {},
     }
 
-    for line in match.group("body").splitlines():
-        line = line.strip()
-        if not line:
+    tsig["snames"] = parse_frontend(tsig)
+
+    for sname in names:
+        if sname in tsig["subs"]:
             continue
 
-        sname = line.split(" ")[0]
-
-        # A command the xnvme front-end handles itself, such as 'list' on Linux, has a
-        # --help of its own rather than xnvme_cli's; it is documented with the front-end
         if not parse_tool_sub_sig(tsig, sname):
             logging.warning("skipping tname: %s, sname: %s", tname, sname)
             continue
@@ -268,9 +391,26 @@ def emit_completion(tool):
             "${opts}", " ".join(tool["subs"][sname]["opts"])
         )
 
+    groups = ""
+    for group, cmds in tool["groups"].items():
+        groups += GROUP_CASE.replace("${group}", group).replace(
+            "${cmds}", " ".join(cmds)
+        )
+
+    nodev = ["enum"] + [
+        s for s in tool["snames"] if not tool["subs"][s]["dev"] and s != "enum"
+    ]
+    words = []
+    for sname in tool["snames"]:
+        group = next((g for g in tool["groups"] if sname.startswith(g + "-")), sname)
+        if group not in words:
+            words.append(group)
+
     compl = (
         SCRIPT.replace("${tname}", tool["name"])
-        .replace("${snames}", " ".join(tool["snames"]))
+        .replace("${snames}", " ".join(words))
+        .replace("${groups}", GROUP.replace("${cases}", groups) if groups else "")
+        .replace("${nodev}", " && ".join(f'[[ "$sub" != "{s}" ]]' for s in nodev))
         .replace("${subs}", cases)
     )
 
@@ -322,7 +462,9 @@ def emit_manpage_sub(tool, sub):
     txtpage = (
         MANPAGE_SUB.replace("${name}", "-".join([tool["name"], sub["name"]]))
         .replace("${descr}", sub["descr"] if sub["descr"] else "None provided")
-        .replace("${descr_long}", sub["descr"] if sub["descr"] else "None provided")
+        .replace(
+            "${descr_long}", sub["descr_long"] if sub["descr_long"] else "None provided"
+        )
         .replace("${usage}", sub["usage"])
         .replace("${required}", "REQUIRED\n" + "".join(required) if required else "")
         .replace("${optional}", "OPTIONAL\n" + "".join(optional) if optional else "")

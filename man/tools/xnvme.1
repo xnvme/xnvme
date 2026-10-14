@@ -5,7 +5,7 @@
 .SH SYNOPSIS
 .nf
 .fam C
-\fBxnvme\fP <command> [<args>]
+\fBxnvme\fP <command> [<args>] [\fB--help\fP]
 .fam T
 .fi
 .fam T
@@ -15,16 +15,44 @@ No long description
 .SH COMMANDS
 .TP
 .B
-\fBxnvme-enum\fP(1)
-Enumerate devices on the system
+\fBxnvme-env\fP(1)
+Relevant system config and library introspection
 .TP
 .B
-\fBxnvme-scan\fP(1)
-Scan for devices without opening them
+\fBxnvme-list\fP(1)
+NVMe controller functions and their driver
 .TP
 .B
 \fBxnvme-info\fP(1)
 Retrieve derived information for given device
+.TP
+.B
+\fBxnvme-enum\fP(1)
+Enumerate devices on the system
+.TP
+.B
+\fBxnvme-driver\fP(1)
+Bind the driver a backend needs, or show them
+.TP
+.B
+\fBxnvme-cmd-admin\fP(1)
+An admin command, as 'nvme admin-passthru' takes it
+.TP
+.B
+\fBxnvme-cmd-io\fP(1)
+An I/O command, as 'nvme io-passthru' takes it
+.TP
+.B
+\fBxnvme-cmd-iov\fP(1)
+An I/O command with its data in \fB--vec-cnt\fP segments
+.TP
+.B
+\fBxnvme-serve\fP(1)
+controllers, bdevs: share devices, and what is served
+.TP
+.B
+\fBxnvme-scan\fP(1)
+Scan for devices without opening them
 .RE
 .PP
 
