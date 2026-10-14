@@ -62,7 +62,7 @@ def test_idfy_ctrlr(cijoe, device, be_opts, cli_args):
     err, _ = cijoe.run(f"nvme id-ctrl {ctl}")
     assert not err
 
-    err, _ = cijoe.run(f"xnvme idfy-ctrlr {ctl} --be {CUSE_BE}")
+    err, _ = cijoe.run(f"xnvme test adm idfy-ctrlr {ctl} --be {CUSE_BE}")
     assert not err
 
 
@@ -135,8 +135,8 @@ def test_admin_ioctls_alongside_served_admin(cijoe, device, be_opts, cli_args):
     HomiServer.start(cijoe, be_opts["be"], be_opts.get("label"))
 
     ctl = f"/dev/xnvme/{device['uri']}"
-    ioctl = f"xnvme feature-get {ctl} --be {CUSE_BE} --fid 0x4"
-    served = f"xnvme feature-get {cli_args} --fid 0x7"
+    ioctl = f"xnvme test adm feature-get {ctl} --be {CUSE_BE} --fid 0x4"
+    served = f"xnvme test adm feature-get {cli_args} --fid 0x7"
 
     err, _ = cijoe.run(
         "set -e; "
