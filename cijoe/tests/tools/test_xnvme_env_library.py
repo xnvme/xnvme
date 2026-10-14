@@ -15,7 +15,7 @@ def grab_sysinfo(cijoe):
     return info
 
 
-def test_library_info_has_spdk(cijoe):
+def test_env_library_has_spdk(cijoe):
     info = grab_sysinfo(cijoe)
 
     is_macos = "darwin" in info["os"]
@@ -26,7 +26,7 @@ def test_library_info_has_spdk(cijoe):
             pytest.skip("SPDK does not support Alpine Linux; skipping")
             return
 
-        err, state = cijoe.run("xnvme library-info")
+        err, state = cijoe.run("xnvme env library")
         assert not err
 
         assert (
@@ -37,11 +37,11 @@ def test_library_info_has_spdk(cijoe):
         pytest.skip("Not Linux or FreeBSD, so skipping SPDK check")
 
 
-def test_library_info_has_liburing(cijoe):
+def test_env_library_has_liburing(cijoe):
     info = grab_sysinfo(cijoe)
 
     if "linux" in info["os"]:
-        err, state = cijoe.run("xnvme library-info")
+        err, state = cijoe.run("xnvme env library")
         assert not err
 
         assert (
@@ -52,11 +52,11 @@ def test_library_info_has_liburing(cijoe):
         pytest.skip("Not Linux, so skipping liburing check")
 
 
-def test_library_info_has_libaio(cijoe):
+def test_env_library_has_libaio(cijoe):
     info = grab_sysinfo(cijoe)
 
     if "linux" in info["os"]:
-        err, state = cijoe.run("xnvme library-info")
+        err, state = cijoe.run("xnvme env library")
         assert not err
 
         assert (
@@ -67,11 +67,11 @@ def test_library_info_has_libaio(cijoe):
         pytest.skip("Not Linux, so skipping libaio check")
 
 
-def test_library_info_has_libvfn(cijoe):
+def test_env_library_has_libvfn(cijoe):
     info = grab_sysinfo(cijoe)
 
     if "linux" in info["os"]:
-        err, state = cijoe.run("xnvme library-info")
+        err, state = cijoe.run("xnvme env library")
         assert not err
 
         assert (
@@ -82,8 +82,8 @@ def test_library_info_has_libvfn(cijoe):
         pytest.skip("Not Linux, so skipping libvfn/vfio check")
 
 
-def test_library_info_has_all_combos(cijoe):
-    """Verify every combo in get_backend_configurations() exists in library-info"""
+def test_env_library_has_all_combos(cijoe):
+    """Verify every combo in get_backend_configurations() exists in 'xnvme env library'"""
     from ..xnvme_be_combinations import get_backend_configurations
 
     info = grab_sysinfo(cijoe)
@@ -100,7 +100,7 @@ def test_library_info_has_all_combos(cijoe):
         pytest.skip(f"Unknown OS: {info['os']}")
         return
 
-    err, state = cijoe.run("xnvme library-info")
+    err, state = cijoe.run("xnvme env library")
     assert not err
 
     output = state.output()
@@ -132,13 +132,13 @@ def test_library_info_has_all_combos(cijoe):
         if f"name: '{be_name}'" not in output:
             missing.append(be_name)
 
-    assert not missing, f"Backend configs missing from library-info: {missing}"
+    assert not missing, f"Backend configs missing from 'xnvme env library': {missing}"
 
 
-def test_library_info_has_vcs(cijoe):
+def test_env_library_has_vcs(cijoe):
     """The version line names the revision the library was built from"""
 
-    err, state = cijoe.run("xnvme library-info")
+    err, state = cijoe.run("xnvme env library")
     assert not err
 
     match = re.search(r"vcs: '([^']*)'", state.output())
@@ -146,10 +146,10 @@ def test_library_info_has_vcs(cijoe):
     assert match.group(1) not in ["", "unknown"], "build carries no revision"
 
 
-def test_version_flag_matches_library_info(cijoe):
-    """Every tool answers --version with the same line as library-info"""
+def test_version_flag_matches_env_library(cijoe):
+    """Every tool answers --version with the same line as 'xnvme env library'"""
 
-    err, state = cijoe.run("xnvme library-info")
+    err, state = cijoe.run("xnvme env library")
     assert not err
     expected = re.search(r"ver: \{[^}]*\}", state.output()).group(0)
 

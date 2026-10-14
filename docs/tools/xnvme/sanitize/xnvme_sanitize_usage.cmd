@@ -1,1 +1,0 @@
-xnvme sanitize --help
