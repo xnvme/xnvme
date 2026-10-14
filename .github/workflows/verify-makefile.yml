@@ -11,8 +11,7 @@ defaults:
 
 jobs:
   #
-  # Ensure that the bash completion runs, and that the man pages and the
-  # systemd unit are generated without error
+  # Check the bash completion, the committed man pages, and the systemd unit
   #
   gen-targets:
     runs-on: ubuntu-24.04
@@ -46,8 +45,12 @@ jobs:
         xnvme --list-cmds | grep -qx info
         xnvme --list-cmds=test | grep -qx adm
 
-    - name: Run make gen-man-pages
-      run: make gen-man-pages
+    # txt2man dates each page, hence the .TH lines are not compared
+    - name: Run make gen-man-pages, and compare with the committed pages
+      run: |
+        cp -r man /tmp/man.committed
+        make gen-man-pages
+        diff -r -I '^\.TH ' /tmp/man.committed man
 
     # The unit directory is given rather than discovered, so the check does not
     # depend on systemd being present in the container
