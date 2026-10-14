@@ -21,6 +21,7 @@ if thread_dep.found()
     xnvmeperf_deps += [hip_dep]
   endif
 
+  libexec_names += 'xnvme-perf'
   xnvmeperf_bin = executable(
     'xnvme-perf',
     xnvmeperf_sources,
