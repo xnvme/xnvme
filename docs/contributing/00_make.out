@@ -4,32 +4,53 @@ Usage:
   make help-verbose  ; Verbose target descriptions
   make [target]      ; Invoke the given 'target'
  
+Example:
+ 
+  make common && sudo make install
+ 
 Targets:
  
-[1mbuild               [0m ; Build xNVMe with Meson
-[1mbuild-deb           [0m ; Build a binary DEB package
-[1mclean               [0m ; Remove Meson builddir
-[1mclean-subprojects   [0m ; Remove Meson builddir as well as running 'make clean' in all subprojects 
-[1mclobber             [0m ; invoke 'make clean' and: remove subproject builds, git-clean and git-checkout .
-[1mconfig              [0m ; Configure Meson
-[1mconfig-debug        [0m ; Configure Meson to compile xNVMe with '--buildtype=debug'
-[1mconfig-slim         [0m ; Configure Meson to compile xNVMe without subprojects (SPDK, fio, liburing)
-[1mconfig-uring        [0m ; Configure Meson to compile xNVMe with liburing as the only backend
-[1mdefault             [0m ; invoke: 'make info', 'make tags', 'make git-setup', 'make config' and 'make build'
-[1mformat              [0m ; run code format (style, code-conventions and language-integrity) on staged changes
-[1mformat-all          [0m ; run code format (style, code-conventions and language-integrity) on staged and committed changes
-[1mgen-bash-completions[0m ; Helper-target to produce Bash-completions for tools (tools, examples, tests)
-[1mgen-libconf         [0m ; Helper-target generating third-party/subproject/os/library-configuration string
-[1mgen-man-pages       [0m ; Helper-target to produce man pages for tools (tools, examples, tests)
-[1mgen-src-archive     [0m ; Helper-target to produce full-source archive
-[1mgit-setup           [0m ; Do git config for: 'core.hooksPath' and 'blame.ignoreRevsFile'
-[1mhelp                [0m ; Print the description of every target
-[1mhelp-verbose        [0m ; Print the verbose description of every target
-[1minfo                [0m ; Print information relevant to xNVMe
-[1minstall             [0m ; Install xNVMe with Meson
-[1minstall-deb         [0m ; Install the binary DEB package created with: make build-deb
-[1mtags                [0m ; Helper-target to produce tags
-[1mtags-xnvme-public   [0m ; Make tags for public APIs
-[1muninstall           [0m ; Uninstall xNVMe with Meson
-[1muninstall-deb       [0m ; Uninstall xNVMe with apt-get
-
+[1m_require_builddir               [0m ; This helper is not intended to be invoked via the command-line-interface.
+[1mbuild                           [0m ; Build xNVMe with Meson
+[1mbuild-deb                       [0m ; Build a binary DEB package
+[1mbuild-rpm                       [0m ; Build a binary RPM package
+[1mcijoe-install                   [0m ; Install CIJOE and dependencies via pipx (used by CI and guest-env)
+[1mclean                           [0m ; Remove Meson builddir
+[1mclean-subprojects               [0m ; Remove Meson builddir as well as running 'make clean' in all subprojects
+[1mclobber                         [0m ; Invoke 'make clean' and: remove subproject builds, git-clean and git-checkout .
+[1mcommon                          [0m ; Invokes: make info git-setup clean config build tags
+[1mconfig                          [0m ; Configure Meson
+[1mconfig-debug                    [0m ; Configure Meson to compile xNVMe with '--buildtype=debug'
+[1mconfig-slim                     [0m ; Configure Meson to compile xNVMe without any third-party libraries
+[1mdefault                         [0m ; Invoke: 'make help'
+[1mdocgen-guest                    [0m ; Provision a QEMU guest and generate documentation (reads from cijoe/current.guest)
+[1mdocker                          [0m ; Drop into a privileged docker instance with the repository bind-mounted at /tmp/xnvme
+[1mdocs                            [0m ; Build docs using the new tooling (ctags, doxygen, apigen, toolchain, sphinx)
+[1mformat                          [0m ; Run code format (style, code-conventions and language-integrity) on staged changes
+[1mformat-all                      [0m ; Run code format (style, code-conventions and language-integrity) on staged and committed changes
+[1mgen-artifacts                   [0m ; Generate artifacts in "/tmp/artifacts" for local guest provisioning
+[1mgen-libconf                     [0m ; Helper-target generating third-party/subproject/os/library-configuration string
+[1mgen-man-pages                   [0m ; Helper-target to produce man pages for tools (tools, examples, tests)
+[1mgen-src-archive                 [0m ; Produce a source-archive (.tar.gz) without subproject-source
+[1mgen-src-archive-with-subprojects[0m ; Produce a source-archive (.tar.gz) with subproject-source
+[1mgit-setup                       [0m ; Do git config for: 'core.hooksPath' and 'blame.ignoreRevsFile'
+[1mguest-env                       [0m ; Setup guest environment: install CIJOE, check QEMU, select guest
+[1mguest-provision                 [0m ; Sync source, build, and install xNVMe inside the guest (reads from cijoe/current.guest)
+[1mguest-select                    [0m ; Interactive menu to select the active QEMU guest (or pipe: echo debian-trixie | make guest-select)
+[1mguest-start                     [0m ; Kill, initialize, and start the QEMU guest (reads from cijoe/current.guest)
+[1mguest-stop                      [0m ; Stop (kill) the QEMU guest (reads from cijoe/current.guest)
+[1mguest-test                      [0m ; Run the CIJOE test workflow for the selected guest (reads from cijoe/current.guest)
+[1mhelp                            [0m ; Print the description of every target
+[1mhelp-verbose                    [0m ; Print the verbose description of every target
+[1minfo                            [0m ; Print information relevant to xNVMe
+[1minstall                         [0m ; Install xNVMe with Meson
+[1minstall-deb                     [0m ; Install the binary DEB package created with: make build-deb
+[1minstall-rpm                     [0m ; Install the binary RPM package created with: make build-rpm
+[1mtags                            [0m ; Helper-target to produce tags and compile-commands
+[1mtags-xnvme-public               [0m ; Make tags for public APIs
+[1mtest                            [0m ; Test xNVMe with Meson
+[1muninstall                       [0m ; Uninstall xNVMe with Meson
+[1muninstall-deb                   [0m ; Uninstall xNVMe with apt-get
+[1muninstall-rpm                   [0m ; Uninstall xNVMe with yum
+[1mverify-guest                    [0m ; Chain: guest-start + guest-provision + guest-test (reads from cijoe/current.guest)
+[1mverify-ramdisk                  [0m ; Build, install, prepare fio, and run the CIJOE ramdisk test suite

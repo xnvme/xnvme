@@ -109,8 +109,8 @@ jobs:
       run: pre-commit run --all-files
 
   #
-  # Ensure that bash completions, man pages, and the systemd unit are
-  # generated without error
+  # Ensure that the bash completion runs, and that the man pages and the
+  # systemd unit are generated without error
   #
   test-gen-targets:
     needs: source-archive
@@ -136,8 +136,11 @@ jobs:
     - name: Execute 'xnvme env library'
       run: xnvme env library
 
-    - name: Run make gen-bash-completions
-      run: make gen-bash-completions
+    - name: Check the bash completion parses and xnvme lists its commands
+      run: |
+        bash -n toolbox/bash_completion.d/xnvme
+        xnvme --list-cmds | grep -qx info
+        xnvme --list-cmds=test | grep -qx adm
 
     - name: Run make gen-man-pages
       run: make gen-man-pages

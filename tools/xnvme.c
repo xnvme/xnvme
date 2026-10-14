@@ -2139,6 +2139,73 @@ exit:
 }
 
 /**
+ * The commands the front-end implements itself, besides the subcommands of g_cli
+ */
+static const char *g_cli_builtins[] = {
+	"env", "list", "driver", "cmd", "cmd-admin", "cmd-io", "cmd-iov", "test", "example",
+};
+
+static bool
+cli_is_fe_builtin(const char *name)
+{
+	for (size_t i = 0; i < sizeof g_cli_builtins / sizeof(*g_cli_builtins); ++i) {
+		if (!strcmp(g_cli_builtins[i], name)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * 'xnvme --list-cmds' prints the commands, built-in and on the exec path, one per line;
+ * 'xnvme --list-cmds=<group>' those of a group. It is what the bash completion runs, so it
+ * lists only what is installed.
+ */
+static int
+cli_list_cmds(struct xnvme_cli *cli, const char *group)
+{
+	char *names[CLI_NAMES_MAX];
+	int count;
+
+	if (!group) {
+		for (size_t i = 0; i < sizeof g_cli_builtins / sizeof(*g_cli_builtins); ++i) {
+			printf("%s\n", g_cli_builtins[i]);
+		}
+		for (int i = 0; i < cli->nsubs; ++i) {
+			if (!cli_is_fe_builtin(cli->subs[i].name)) {
+				printf("%s\n", cli->subs[i].name);
+			}
+		}
+		count = cli_names(CLI_PROG_PREFIX, names, CLI_NAMES_MAX);
+		for (int i = 0; i < count; ++i) {
+			if (strncmp(names[i], "test-", 5) && strncmp(names[i], "example-", 8) &&
+			    !cli_is_fe_builtin(names[i]) && !cli_builtin(cli, names[i])) {
+				printf("%s\n", names[i]);
+			}
+		}
+		cli_names_free(names, count);
+		return 0;
+	}
+	if (!strcmp(group, "test") || !strcmp(group, "example")) {
+		count = cli_names(strcmp(group, "test") ? CLI_EXAMPLE_PREFIX : CLI_TEST_PREFIX,
+				  names, CLI_NAMES_MAX);
+		for (int i = 0; i < count; ++i) {
+			printf("%s\n", names[i]);
+		}
+		cli_names_free(names, count);
+		return 0;
+	}
+	if (!strcmp(group, "env")) {
+		printf("system\nlibrary\n");
+		return 0;
+	}
+
+	fprintf(stderr, "xnvme: no group '%s'\n", group);
+	return 1;
+}
+
+/**
  * Handle what the front-end owns: the overview, the groups, '--exec-path', and the
  * commands run by other programs
  *
@@ -2175,6 +2242,9 @@ cli_main(struct xnvme_cli *cli, int argc, char **argv)
 	}
 	if (!strcmp(cmd, "env")) {
 		return cli_env(cli, argc - 2, argv + 2);
+	}
+	if (!strcmp(cmd, "--list-cmds") || !strncmp(cmd, "--list-cmds=", 12)) {
+		return cli_list_cmds(cli, cmd[11] == '=' ? cmd + 12 : NULL);
 	}
 	if (!strcmp(cmd, "--exec-path")) {
 		printf("%s\n", cli_exec_path());

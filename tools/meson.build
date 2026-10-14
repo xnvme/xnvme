@@ -90,6 +90,9 @@ frontend_tests = [
   ['cmd-admin, no opcode', ['cmd-admin', '1GB'], true],
   ['cmd-admin, timeout', ['cmd-admin', '1GB', '-O', '6', '-t', '100'], true],
   ['cmd-admin, json', ['cmd-admin', '1GB', '-O', '6', '-o', 'json'], true],
+  ['list the commands', ['--list-cmds'], false],
+  ['list the commands of a group', ['--list-cmds=env'], false],
+  ['list the commands, no such group', ['--list-cmds=nosuch'], true],
   ['--help on a built-in', ['info', '--help'], false],
   ['--help on a group', ['cmd', '--help'], false],
   ['exec-path', ['--exec-path'], false],
@@ -110,6 +113,8 @@ if get_option('tests')
     ['run a test, hyphenated', ['test', 'znd-append'], false],
     ['no such test', ['test', 'nosuch'], true],
     ['group test --help', ['test', '--help'], false],
+    ['list the test programs', ['--list-cmds=test'], false],
+    ['a test program lists its subcommands', ['test', 'adm', '--list-cmds'], false],
   ]
 endif
 foreach test : frontend_tests

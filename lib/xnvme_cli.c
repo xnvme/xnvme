@@ -2306,6 +2306,16 @@ xnvme_cli_run(struct xnvme_cli *cli, int argc, char **argv, int opts)
 		return 0;
 	}
 
+	// Not in the usage: for the bash completion, which completes a subcommand from these
+	if (argc == 2 && !strcmp(argv[1], "--list-cmds")) {
+		for (int i = 0; i < cli->nsubs; ++i) {
+			if (cli->subs[i].name) {
+				printf("%s\n", cli->subs[i].name);
+			}
+		}
+		return 0;
+	}
+
 	if (cli->vcs && strcmp(cli->vcs, xnvme_ver_vcs())) {
 		fprintf(stderr, "# WARNING: %s was built from '%s' but runs with libxnvme '%s'\n",
 			argv[0], cli->vcs, xnvme_ver_vcs());
