@@ -45,7 +45,7 @@ def test_idfy_ctrlr(cijoe, device, be_opts, cli_args):
         be_opts["be"],
         [
             f"nvme id-ctrl {UBLK_NVME}",
-            f"xnvme idfy-ctrlr {UBLK_NVME} --be {CUSE_BE}",
+            f"xnvme test adm idfy-ctrlr {UBLK_NVME} --be {CUSE_BE}",
         ],
         nvme=UBLK_NVME,
     )
@@ -60,9 +60,9 @@ def test_log_health(cijoe, device, be_opts, cli_args):
         be_opts["be"],
         [
             # No '-n': this drive's controller declines SMART/Health scoped to a
-            # namespace, the same reason 'xnvme log-health' defaults to the broadcast nsid
+            # namespace, the same reason 'xnvme test adm log-health' defaults to the broadcast nsid
             f"nvme smart-log {UBLK_NVME}",
-            f"xnvme log-health {UBLK_NVME} --be {CUSE_BE}",
+            f"xnvme test adm log-health {UBLK_NVME} --be {CUSE_BE}",
         ],
         nvme=UBLK_NVME,
     )
@@ -119,7 +119,7 @@ def test_flush(cijoe, device, be_opts, cli_args):
         be_opts["be"],
         [
             f"nvme flush {UBLK_NVME} -n 1",
-            f"xnvme pioc {UBLK_NVME} --be {CUSE_BE} --opcode 0x0 --nsid 1",
+            f"xnvme cmd-io {UBLK_NVME} --be {CUSE_BE} --opcode 0x0 --namespace-id 1",
         ],
         nvme=UBLK_NVME,
     )

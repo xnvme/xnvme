@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+install_data('xnvme-test-adm-completions', install_dir: bash_completions_dir)
 install_data('xnvme-test-async-intf-completions', install_dir: bash_completions_dir)
 install_data('xnvme-test-async-limbo-completions', install_dir: bash_completions_dir)
 install_data('xnvme-test-buf-completions', install_dir: bash_completions_dir)
