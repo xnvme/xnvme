@@ -18,7 +18,6 @@ Targets:
 [1mdefault             [0m ; invoke: 'make info', 'make tags', 'make git-setup', 'make config' and 'make build'
 [1mformat              [0m ; run code format (style, code-conventions and language-integrity) on staged changes
 [1mformat-all          [0m ; run code format (style, code-conventions and language-integrity) on staged and committed changes
-[1mgen-bash-completions[0m ; Helper-target to produce Bash-completions for tools (tools, examples, tests)
 [1mgen-libconf         [0m ; Helper-target generating third-party/subproject/os/library-configuration string
 [1mgen-man-pages       [0m ; Helper-target to produce man pages for tools (tools, examples, tests)
 [1mgen-src-archive     [0m ; Helper-target to produce full-source archive

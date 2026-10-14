@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 """
-    Generate Bash-completions and man pages for xNVMe CLI tools
+    Generate man pages for xNVMe CLI tools
 
     The generator runs each program in 'builddir' with '--help', and parses the output
-    to generate the corresponding bash-completion script and man page.
+    to generate man pages: a general page and one for each sub-command. The tool
+    `txt2man` is required.
 
-    Bash-completions) One bash-completion script is generated per CLI tool
-
-    man pages) multiple man-pages are generated per CLI tool, a general page and one for
-    each sub-command. The tool `txt2man` is required for the man generator
+    The bash completion is not generated: toolbox/bash_completion.d/xnvme asks xnvme.
 """
 from __future__ import print_function
 
@@ -20,7 +18,6 @@ import sys
 from pathlib import Path
 from subprocess import PIPE, Popen
 
-MESON_BASH_INSTALL = "install_data('{completion}', install_dir: bash_completions_dir)"
 MESON_MAN_INSTALL = "install_man('{manpage}')"
 
 RE_SIG = "".join(
@@ -31,57 +28,6 @@ RE_SIG = "".join(
         r"(?P<body>(?:.|\n)*?)^See",
     ]
 )
-
-SNAMES = """
-    "${sname}")
-        opts+="${opts}"
-        ;;
-"""
-
-SCRIPT = """# ${tname} completion                           -*- shell-script -*-
-#
-# Bash completion script for the `${tname}` CLI
-#
-# SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
-#
-# SPDX-License-Identifier: BSD-3-Clause
-
-_${tname}_completions()
-{
-    local cur=${COMP_WORDS[COMP_CWORD]}
-    local sub=""
-    local opts=""
-
-    COMPREPLY=()
-
-    # Complete sub-commands
-    if [[ $COMP_CWORD < 2 ]]; then
-        COMPREPLY+=( $( compgen -W '${snames} --help' -- $cur ) )
-        return 0
-    fi
-
-    # Complete sub-command arguments
-
-    sub=${COMP_WORDS[1]}
-
-    if [[ "$sub" != "enum" ]]; then
-        opts+="/dev/nvme* "
-    fi
-
-    case "$sub" in
-    ${subs}
-    esac
-
-    COMPREPLY+=( $( compgen -W "$opts" -- $cur ) )
-
-    return 0
-}
-
-#
-complete -o nosort -F _${tname}_completions ${tname}
-
-# ex: filetype=sh
-"""
 
 MANPAGE_MAIN = """NAME
   ${name} - ${descr}
@@ -181,7 +127,6 @@ def parse_tool_sub_sig(tsig, sname):
         "usage": match.group("usage"),
         "descr": match.group("descr").strip(),
         "args": [],
-        "opts": [],
     }
 
     for line in match.group("body").strip().splitlines():
@@ -196,10 +141,6 @@ def parse_tool_sub_sig(tsig, sname):
             arg = "<%s>" % arg
 
         sig["args"].append({"arg": arg, "descr": descr.strip()})
-
-        if "--" in arg:
-            opt = arg.replace("[", "").replace("]", "").strip().split(" ")[0]
-            sig["opts"].append(opt)
 
     tsig["subs"][sname] = sig
 
@@ -255,51 +196,6 @@ def parse_tool_sig(tpath):
             return None
 
     return tsig
-
-
-def emit_completion(tool):
-    """Emits completion script for the given tool-struct"""
-
-    cases = ""
-    for sname in tool["snames"]:
-        cases += SNAMES.replace("${sname}", sname).replace(
-            "${opts}", " ".join(tool["subs"][sname]["opts"])
-        )
-
-    compl = (
-        SCRIPT.replace("${tname}", tool["name"])
-        .replace("${snames}", " ".join(tool["snames"]))
-        .replace("${subs}", cases)
-    )
-
-    return compl
-
-
-def gen_completions(args, folders):
-    """Generate Bash-completions"""
-
-    for folder, tools in folders.items():
-        meson = []  # Populate with lines for a meson.build file
-
-        logging.info("Writing scripts to: %r", args.output)
-        for tool in tools:
-            tool_fname = "%s-completions" % tool["name"]
-            tool_fpath = os.sep.join([args.output, folder, tool_fname])
-
-            logging.info("Generating for %r at %r", tool["name"], tool_fpath)
-
-            script = emit_completion(tool)
-
-            with open(tool_fpath, "w") as tfd:
-                tfd.write(script)
-
-            meson.append(MESON_BASH_INSTALL.format(completion=tool_fname))
-
-        meson.sort()
-
-        emit_meson_build(args, folder, meson)
-
-    return 0
 
 
 def emit_manpage_sub(tool, sub):
@@ -477,10 +373,10 @@ def find_binaries(folder):
 def setup():
     """Parse command-line arguments for generator and setup logger"""
 
-    generators = {"man": gen_manpage, "cpl": gen_completions}
+    generators = {"man": gen_manpage}
 
     prsr = argparse.ArgumentParser(
-        description="xNVMe CLI Bash-completions and man page generator",
+        description="xNVMe CLI man page generator",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     prsr.add_argument(
@@ -491,7 +387,7 @@ def setup():
     )
     prsr.add_argument(
         "--output",
-        help="Path to directory in which to emit subfolders with completions/manpages",
+        help="Path to directory in which to emit subfolders with man pages",
         default=os.sep.join(["."]),
     )
     prsr.add_argument(
@@ -514,7 +410,7 @@ def setup():
 
 
 def main(args):
-    """Generate bash-completions and man-pages for xNVMe CLI tools"""
+    """Generate man pages for xNVMe CLI tools"""
 
     folders = {"examples": [], "tests": [], "tools": []}
     for folder, tools in folders.items():
