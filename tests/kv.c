@@ -448,7 +448,7 @@ static struct xnvme_cli_sub g_subs[] = {
 
 static struct xnvme_cli g_cli = {
 	.title = "KV Utility",
-	.descr_short = "Retrieve KV value",
+	.descr_short = "Store, retrieve, delete, check and list key-value pairs",
 	.subs = g_subs,
 	.nsubs = sizeof g_subs / sizeof(*g_subs),
 };
