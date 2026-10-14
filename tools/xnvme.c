@@ -232,7 +232,8 @@ static struct xnvme_cli_sub g_subs[] = {
 static struct xnvme_cli g_cli = {
 	.title = "xNVMe - Cross-platform NVMe utility",
 	.vcs = XNVME_VCS_TAG,
-	.descr_short = "Construct and execute NVMe Commands",
+	.descr_short =
+		"Find NVMe devices, inspect and benchmark them, and manage userspace drivers",
 	.descr_long = "",
 	.subs = g_subs,
 	.nsubs = sizeof g_subs / sizeof(*g_subs),

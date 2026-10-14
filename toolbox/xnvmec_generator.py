@@ -239,6 +239,12 @@ def prose(text):
     return "\n\n  ".join(paras)
 
 
+def summary(text):
+    """The first sentence, or clause, of a description: the one-liner of a man page NAME"""
+
+    return re.split(r"(?<=[.;])\s", text.strip(), maxsplit=1)[0].rstrip(".;")
+
+
 def parse_frontend_sub_sig(tsig, words, descr):
     """
     Parse the signature of a command the xnvme front-end implements itself: its --help is
@@ -360,9 +366,9 @@ def parse_tool_sig(tpath):
         "name": tname,
         "path": tpath,
         "dirname": tdirname,
-        "usage": match.group("usage"),
-        "descr": match.group("descr").strip(),
-        "descr_long": match.group("descr").strip(),
+        "usage": usage,
+        "descr": summary(descr),
+        "descr_long": prose(descr),
         "snames": [],
         "subs": {},
         "groups": {},

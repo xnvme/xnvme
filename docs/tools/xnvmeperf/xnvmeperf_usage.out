@@ -1,5 +1,7 @@
 Usage: xnvmeperf <command> [<args>]
 
+Run IO benchmarks against xNVMe devices
+
 Where <command> is one of:
 
   run              | Run a benchmark against the given devices

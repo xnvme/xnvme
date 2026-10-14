@@ -1166,6 +1166,12 @@ xnvme_cli_usage(struct xnvme_cli *cli)
 
 	printf("Usage: %s <command> [<args>]\n", cli->argv[0]);
 
+	if (cli->descr_long && strnlen(cli->descr_long, 2) > 1) {
+		printf("\n%s\n", cli->descr_long);
+	} else if (cli->descr_short && strnlen(cli->descr_short, 2) > 1) {
+		printf("\n%s\n", cli->descr_short);
+	}
+
 	printf("\n");
 	printf("Where <command> is one of:\n");
 	printf("\n");

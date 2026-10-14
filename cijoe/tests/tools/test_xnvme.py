@@ -1,3 +1,5 @@
+import re
+
 import pytest
 import yaml
 
@@ -302,6 +304,14 @@ def test_frontend_overview(cijoe):
     assert "Start here:" in state.output()
     assert "xnvme driver" in state.output()
     assert "idfy-ctrlr" not in state.output()
+
+
+def test_frontend_help_describes(cijoe):
+    """--help says what the program is for, under its usage; xnvme(1) takes NAME from it"""
+
+    err, state = cijoe.run("xnvme --help")
+    assert not err
+    assert re.search(r"^Usage: .*\n\n(?!Where)\S", state.output(), re.MULTILINE)
 
 
 def test_frontend_group(cijoe):

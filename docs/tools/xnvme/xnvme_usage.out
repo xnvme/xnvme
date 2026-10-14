@@ -1,5 +1,7 @@
 Usage: xnvme <command> [<args>]
 
+Find NVMe controllers, set them up for userspace drivers, and send them commands
+
 Where <command> is one of:
 
   list             | List devices on the system

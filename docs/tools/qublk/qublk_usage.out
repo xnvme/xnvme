@@ -1,5 +1,7 @@
 Usage: qublk <command> [<args>]
 
+Expose an xNVMe device as a ublk block-device
+
 Where <command> is one of:
 
   serve            | Serve a ublk block-device for each of the given xNVMe devices

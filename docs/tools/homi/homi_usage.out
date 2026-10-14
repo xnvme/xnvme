@@ -1,5 +1,7 @@
 Usage: homi <command> [<args>]
 
+Hold NVMe devices open for multi-process sharing. Secondary processes attach to the same controllers by passing the same --homi-id.
+
 Where <command> is one of:
 
   serve            | Open the given devices and hold them open
