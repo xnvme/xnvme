@@ -1,27 +1,34 @@
-Usage: xnvmeperf run [<args>]
+Usage: xnvme perf run [<uri>...] [<args>]
 
 Run a time-bounded async IO benchmark against one or more NVMe devices.
-Devices are distributed across CPU threads pinned by --cpumask.
-Device URIs are given as positional arguments at the end, e.g.:
-  xnvmeperf run [options] <uri0> [uri1 ...]
+Devices are distributed across CPU threads pinned by --cpumask or --cpulist.
+
+Positional arguments:
+
+  [uri ...]                     ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1:8888', '\\.\PhysicalDrive1'
 
 Where <args> include:
 
-  --iopattern STRING            ; IO pattern (read, write, randread, randwrite, verify)
+  --iopattern STRING            ; IO pattern (read, write, randread, randwrite)
+  [ --nqueues NUM ]             ; Number of queues per device
   --qdepth NUM                  ; Use given 'NUM' as queue max capacity
   --iosize NUM                  ; Use given 'NUM' as bs/iosize
   --runtime NUM                 ; Run for 'NUM' seconds
-  --cpumask STRING              ; Hex CPU bitmask for thread pinning (e.g. 0x3)
+  [ --cpumask STRING ]          ; Hex CPU bitmask for thread pinning (e.g. 0x3)
+  [ --cpulist STRING ]          ; Comma-separated list of CPU ids or CPU id ranges for thread pinning (e.g. 0-3,4,6)
 
 With <args> for backend:
 
-  [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'macos', 'posix', 'windows'
-  [ --async STRING ]            ; xNVMe async. command-interface, e.g. 'io_uring', 'emu'
+  [ --be STRING ]               ; xNVMe backend, e.g. 'spdk', 'libvfn', 'upcie'
+  [ --subnqn STRING ]           ; Subsystem NQN of the NVMe over Fabrics endpoint e.g. 'nqn.2022-06.io.xnvme:ctrlnode1'
   [ --direct ]                  ; Bypass layers
-  [ --poll_io NUM ]             ; For async=io_uring, enable hipri/io-compl.polling
+  [ --poll_io NUM ]             ; For async={io_uring,libaio,kqueue}, enable hipri/io-compl.polling
   [ --poll_sq NUM ]             ; For async=io_uring, enable kernel-side sqthread-poll
+  [ --gpu_id NUM ]              ; For be=upcie-cuda/upcie-hip, GPU ordinal to use
+  [ --homi-id NUM ]             ; The HOMI identifier to share controllers under
+  [ --report-freq FLOAT ]       ; Report progress every 'FLOAT' seconds
+  [ --help ]                    ; Show usage / help
 
-See 'xnvmeperf --help' for other commands
+See 'xnvme perf --help' for other commands
 
-xnvmeperf - NVMe async IO benchmark -- ver: {major: 0, minor: 7, patch: 5}
-
+xnvme perf - IO benchmarks against xNVMe devices -- ver: {major: 0, minor: 7, patch: 5, vcs: 'be83e57'}

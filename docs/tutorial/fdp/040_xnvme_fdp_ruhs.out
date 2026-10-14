@@ -1,6 +1,9 @@
+# Allocating and clearing buffer...
+# Retrieving ruhs ...
+# 4 reclaim unit handle status:
 xnvme_spec_ruhs:
-  nruhsd: 3
-  - ruhs_desc[0] : { pi: 0 ruhi: 1 earutr: 0 ruamw: 16042}
-  - ruhs_desc[1] : { pi: 1 ruhi: 2 earutr: 0 ruamw: 16043}
-  - ruhs_desc[2] : { pi: 2 ruhi: 3 earutr: 0 ruamw: 16043}
-  - ruhs_desc[3] : { pi: 0 ruhi: 0 earutr: 0 ruamw: 0}
+  nruhsd: 128
+  - ruhs_desc[0] : { pi: 0 ruhi: 0 earutr: 0 ruamw: 10}
+  - ruhs_desc[1] : { pi: 1024 ruhi: 0 earutr: 0 ruamw: 10}
+  - ruhs_desc[2] : { pi: 2048 ruhi: 0 earutr: 0 ruamw: 10}
+  - ruhs_desc[3] : { pi: 3072 ruhi: 0 earutr: 0 ruamw: 10}

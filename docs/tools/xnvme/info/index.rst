@@ -7,4 +7,4 @@ Device information:
    :language: bash
 
 .. literalinclude:: xnvme_info_usage.out
-   :language: bash
+   :language: text

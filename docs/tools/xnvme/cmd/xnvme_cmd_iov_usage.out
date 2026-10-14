@@ -1,0 +1,17 @@
+Usage: xnvme cmd-iov <uri> [OPTIONS]
+
+Send a user-defined command to the device at <uri>, any xNVMe URI: a
+character or block device, a BDF, or a fabrics address. The options are
+those of nvme io-passthru, with the same names and letters:
+
+  -O, --opcode=NUM       -f, --flags=NUM        -p, --prefill=NUM
+  -R, --rsvd=NUM         -n, --namespace-id=NUM -l, --data-len=NUM
+  -m, --metadata-len=NUM -2, --cdw2=NUM         -3, --cdw3=NUM
+  -4 .. -9, --cdw10=NUM .. --cdw15=NUM          -i, --input-file=FILE
+  -M, --metadata=FILE    -b, --raw-binary       -s, --show-command
+  -d, --dry-run          -r, --read             -w, --write
+  -T, --latency          -t, --timeout=NUM      -o, --output-format=FMT
+  -v, --verbose          --no-retries
+
+and, choosing the path: --be, --admin, --sync, --async, --dev-nsid and
+--homi-id or --shm_id, and --vec-cnt=NUM, the number of equal segments the data is sent in.

@@ -1,4 +1,4 @@
-Usage: qublk <command> [<args>]
+Usage: xnvme qublk <command> [<args>]
 
 Expose an xNVMe device as a ublk block-device
 
@@ -7,6 +7,7 @@ Where <command> is one of:
   serve            | Serve a ublk block-device for each of the given xNVMe devices
   del              | Delete a ublk device left behind by a killed server
 
-See 'qublk <command> --help' for the description of [<args>]
+See 'xnvme qublk <command> --help' for the description of [<args>]
+See 'xnvme qublk --version' for the library version and the revision it was built from
 
-qublk - ublk server backed by xNVMe -- ver: {major: 0, minor: 7, patch: 5}
+qublk - ublk server backed by xNVMe -- ver: {major: 0, minor: 7, patch: 5, vcs: 'be83e57'}

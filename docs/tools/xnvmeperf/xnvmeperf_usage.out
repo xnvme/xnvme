@@ -1,4 +1,4 @@
-Usage: xnvmeperf <command> [<args>]
+Usage: xnvme perf <command> [<args>]
 
 Run IO benchmarks against xNVMe devices
 
@@ -6,8 +6,10 @@ Where <command> is one of:
 
   run              | Run a benchmark against the given devices
   verify           | Verify data integrity by writing and reading back a known pattern
+  cuda-run         | Run a GPU benchmark against the given devices (requires upcie-cuda backend)
+  cuda-verify      | Verify GPU NVMe I/O data integrity (requires upcie-cuda backend)
 
-See 'xnvmeperf <command> --help' for the description of [<args>]
+See 'xnvme perf <command> --help' for the description of [<args>]
+See 'xnvme perf --version' for the library version and the revision it was built from
 
-xnvmeperf - NVMe async IO benchmark -- ver: {major: 0, minor: 7, patch: 5}
-
+xnvme perf - IO benchmarks against xNVMe devices -- ver: {major: 0, minor: 7, patch: 5, vcs: 'be83e57'}

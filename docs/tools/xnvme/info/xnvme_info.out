@@ -4,19 +4,23 @@ xnvme_dev:
     dtype: 0x2
     nsid: 0x1
     csi: 0x0
+    kernel_driver: ''
+    iommu_group: ''
+    subnqn: 'nqn.2019-08.org.qemu:beef0000'
   xnvme_be:
+    dev: {id: 'linux'}
     admin: {id: 'nvme'}
     sync: {id: 'nvme'}
     async: {id: 'emu'}
-    attr: {name: 'linux'}
+    mem: {id: 'posix'}
+    attr: {name: 'emu', descr: 'Emulated async with NVMe ioctl', caps: 0x3}
   xnvme_opts:
-    be: 'linux'
+    be: 'emu'
     mem: 'posix'
     dev: 'linux'
     admin: 'nvme'
     sync: 'nvme'
     async: 'emu'
-    oflags: 0x4
   xnvme_geo:
     type: XNVME_GEO_CONVENTIONAL
     npugrp: 1
@@ -30,4 +34,6 @@ xnvme_dev:
     lba_nbytes: 4096
     lba_extended: 0
     ssw: 12
-
+    pi_type: 0
+    pi_loc: 0
+    pi_format: 0

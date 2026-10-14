@@ -1,4 +1,6 @@
+# Allocating and clearing buffer...
+# Retrieving FDP statistics log page ...
 xnvme_spec_log_fdp_stats:
-  hbmw: [104857600, 0]
-  mbmw: [104857600, 0]
+  hbmw: [2097152, 0]
+  mbmw: [2342912, 0]
   mbe: [0, 0]
