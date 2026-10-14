@@ -142,12 +142,15 @@ def test_version_flag_matches_library_info(cijoe):
 
     for tool in [
         "xnvme",
-        "homi",
-        "qublk",
-        "xnvmeperf",
+        "xnvme homi",
+        "xnvme qublk",
+        "xnvme perf",
     ]:
         # qublk is only built where the ublk UAPI header is available
-        if tool == "qublk" and cijoe.run("command -v qublk")[0]:
+        if (
+            tool == "xnvme qublk"
+            and cijoe.run('test -x "$(xnvme --exec-path)/xnvme-qublk"')[0]
+        ):
             continue
 
         err, state = cijoe.run(f"{tool} --version")

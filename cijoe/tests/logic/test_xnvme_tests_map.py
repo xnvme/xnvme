@@ -8,7 +8,7 @@ def test_mem_map_unmap(cijoe, device, be_opts, cli_args):
     if be_opts["admin"] != "libvfn":
         pytest.skip(reason="Backend does not support memory-mapping")
 
-    err, _ = cijoe.run(f"xnvme_tests_map mem_map_unmap {cli_args} --count 31")
+    err, _ = cijoe.run(f"xnvme test map mem_map_unmap {cli_args} --count 31")
     assert not err
 
 
@@ -37,7 +37,7 @@ def test_mptr_registration(cijoe, device, be_opts, cli_args):
                 reason="uPCIe needs uio_pci_generic; with vfio the IOMMU translates"
             )
 
-    err, state = cijoe.run(f"xnvme_tests_map mptr_registration {cli_args}")
+    err, state = cijoe.run(f"xnvme test map mptr_registration {cli_args}")
     if "INCONCLUSIVE" in state.output():
         pytest.skip(
             reason="namespace has no out-of-band space; mptr is refused regardless"

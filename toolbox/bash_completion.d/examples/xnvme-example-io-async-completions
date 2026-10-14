@@ -1,0 +1,51 @@
+# xnvme-example-io-async completion                           -*- shell-script -*-
+#
+# Bash completion script for the `xnvme-example-io-async` CLI
+#
+# SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+_xnvme-example-io-async_completions()
+{
+    local cur=${COMP_WORDS[COMP_CWORD]}
+    local sub=""
+    local opts=""
+
+    COMPREPLY=()
+
+    # Complete sub-commands
+    if [[ $COMP_CWORD < 2 ]]; then
+        COMPREPLY+=( $( compgen -W 'read write --help' -- $cur ) )
+        return 0
+    fi
+
+    # Complete sub-command arguments
+
+    sub=${COMP_WORDS[1]}
+
+    if [[ "$sub" != "enum" ]]; then
+        opts+="/dev/nvme* "
+    fi
+
+    case "$sub" in
+    
+    "read")
+        opts+="--qdepth --slba --elba --data-output --seed --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --async --help"
+        ;;
+
+    "write")
+        opts+="--qdepth --slba --elba --data-input --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --async --help"
+        ;;
+
+    esac
+
+    COMPREPLY+=( $( compgen -W "$opts" -- $cur ) )
+
+    return 0
+}
+
+#
+complete -o nosort -F _xnvme-example-io-async_completions xnvme-example-io-async
+
+# ex: filetype=sh

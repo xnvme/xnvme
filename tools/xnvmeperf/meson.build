@@ -13,8 +13,8 @@ if thread_dep.found()
     xnvmeperf_cuda_args = cuda_arch_args
   endif
 
-  executable(
-    'xnvmeperf',
+  xnvmeperf_bin = executable(
+    'xnvme-perf',
     xnvmeperf_sources,
     include_directories: [conf_inc, xnvme_inc],
     link_args: link_args_hardening,
@@ -23,6 +23,7 @@ if thread_dep.found()
     dependencies: xnvmeperf_deps,
     cuda_args: xnvmeperf_cuda_args,
     install: true,
+    install_dir: xnvme_libexecdir,
   )
 else
   warning('No support for threads, skipping xnvmeperf')

@@ -428,7 +428,7 @@ class MprocPrimary:
 
         # Match on the process name; 'pgrep -f' also matched the shell that cijoe.run()
         # wraps the command in, so it never detected a failed start
-        err, _ = cijoe.run("pgrep -x homi")
+        err, _ = cijoe.run("pgrep -x xnvme-homi")
 
         return not err
 
@@ -463,7 +463,7 @@ class MprocPrimary:
         # 'stdbuf -oL' keeps the readiness marker from sitting in libc's fully-buffered
         # stdout while the primary parks waiting for a signal
         cijoe.run(
-            f"stdbuf -oL nohup homi serve {uris} --be {be} --homi-id {_shm_id} "
+            f"stdbuf -oL nohup xnvme homi serve {uris} --be {be} --homi-id {_shm_id} "
             f"> /tmp/mproc_{be}.out 2>&1 &"
         )
 
@@ -492,7 +492,7 @@ class MprocPrimary:
         MprocPrimary.RUNNING = None
         MprocPrimary.CIJOE = None
 
-        cijoe.run("pkill -x homi || true")
+        cijoe.run("pkill -x xnvme-homi || true")
 
         # Closing a controller is not instant, and a primary still holding the device
         # keeps its successor from claiming it, so wait for it to actually be gone

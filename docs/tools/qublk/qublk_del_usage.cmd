@@ -1,1 +1,1 @@
-qublk del --help
+xnvme qublk del --help

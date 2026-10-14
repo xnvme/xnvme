@@ -163,7 +163,7 @@ the hugepage setup steps in {ref}`sec-backends-upcie-host` before opening an
 
 ### GPU IOMMU domain
 
-Needed only for GPU-resident queues, meaning `xnvmeperf cuda-run`, `cuda-verify`
+Needed only for GPU-resident queues, meaning `xnvme perf cuda-run`, `cuda-verify`
 and anything else built on {ref}`sec-api-c-gpu`. Host-driven I/O needs nothing
 here.
 
@@ -237,7 +237,7 @@ survive a reboot.
 
 ```bash
 cat /sys/kernel/iommu_groups/16/type      # identity
-sudo xnvmeperf cuda-verify --be upcie-cuda --iosize 4096 --qdepth 32 \
+sudo xnvme perf cuda-verify --be upcie-cuda --iosize 4096 --qdepth 32 \
     --nqueues 2 0000:01:00.0
 sudo dmesg | grep -iE 'AMD-Vi|DMAR'
 ```

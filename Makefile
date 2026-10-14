@@ -662,9 +662,7 @@ gen-bash-completions:
 define gen-man-pages-help
 # Helper-target to produce man pages for tools (tools, examples, tests)
 #
-# NOTE: This target requires a bunch of things: binaries must be built and
-# residing in '$(BUILD_DIR)/tools' etc. AND installed on the system. Also, the find
-# command has only been tried with GNU find
+# NOTE: This target requires the binaries built in '$(BUILD_DIR)', and 'txt2man'
 endef
 .PHONY: gen-man-pages
 gen-man-pages:

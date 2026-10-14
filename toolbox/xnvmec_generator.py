@@ -2,9 +2,8 @@
 """
     Generate Bash-completions and man pages for xNVMe CLI tools
 
-    The generator requires that the tools are installed on the system, since it runs the
-    tool to parse the '--help' output in order to generate the corresponding
-    bash-completion script and man page.
+    The generator runs each program in 'builddir' with '--help', and parses the output
+    to generate the corresponding bash-completion script and man page.
 
     Bash-completions) One bash-completion script is generated per CLI tool
 
@@ -457,23 +456,20 @@ def gen_manpage(args, folders):
 
 
 def find_binaries(folder):
-    """This will look in builddir for xnvme-executables"""
+    """Return the paths of the executables in builddir, run from there since installed
+    ones are off PATH"""
 
     builddir = Path(__file__).parent.parent / "builddir"
 
     bins = []
 
+    # These examples parse argv by hand, so their --help is not one to generate from
+    skip = ("dev", "enum", "hello", "single-")
     for path in sorted((builddir / folder).rglob("*")):
-        if path.stem.startswith("xnvme_single"):
-            continue
-        if path.stem.startswith("xnvme_dev"):
-            continue
-        if path.stem.startswith("xnvme_enum"):
-            continue
-        if path.stem.startswith("xnvme_hello"):
+        if path.stem.startswith(tuple(f"xnvme-example-{name}" for name in skip)):
             continue
         if path.is_file() and path.stat().st_mode & os.X_OK:
-            bins.append(path.name)
+            bins.append(str(path))
 
     return bins
 

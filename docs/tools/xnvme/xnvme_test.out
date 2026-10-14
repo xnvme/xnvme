@@ -1,4 +1,4 @@
-Test programs, run one to list its subcommands:
+The test programs, run one to list its subcommands:
 
   xnvme test async-intf
   xnvme test async-limbo

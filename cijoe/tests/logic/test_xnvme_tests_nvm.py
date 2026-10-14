@@ -5,17 +5,17 @@ from ..conftest import XnvmeDriver, get_osname, is_nvmet, xnvme_parametrize
 
 def test_enum(cijoe):
     XnvmeDriver.kernel_attach(cijoe)
-    err, _ = cijoe.run("xnvme_tests_nvm enum")
+    err, _ = cijoe.run("xnvme test nvm enum")
     assert not err
 
     XnvmeDriver.kernel_detach(cijoe)
-    err, _ = cijoe.run("xnvme_tests_nvm enum")
+    err, _ = cijoe.run("xnvme test nvm enum")
     assert not err
 
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_info(cijoe, device, be_opts, cli_args):
-    err, _ = cijoe.run(f"xnvme_tests_nvm info {cli_args}")
+    err, _ = cijoe.run(f"xnvme test nvm info {cli_args}")
     assert not err
 
 
@@ -23,19 +23,19 @@ def test_info(cijoe, device, be_opts, cli_args):
 def test_idfy(cijoe, device, be_opts, cli_args):
     if be_opts["mem"] == "upcie-cuda":
         pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
-    err, _ = cijoe.run(f"xnvme_tests_nvm idfy {cli_args}")
+    err, _ = cijoe.run(f"xnvme test nvm idfy {cli_args}")
     assert not err
 
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_read(cijoe, device, be_opts, cli_args):
-    err, _ = cijoe.run(f"xnvme_tests_nvm read {cli_args} --slba 0x0 --nlb 0")
+    err, _ = cijoe.run(f"xnvme test nvm read {cli_args} --slba 0x0 --nlb 0")
     assert not err
 
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_write(cijoe, device, be_opts, cli_args):
-    err, _ = cijoe.run(f"xnvme_tests_nvm write {cli_args} --slba 0x0 --nlb 0")
+    err, _ = cijoe.run(f"xnvme test nvm write {cli_args} --slba 0x0 --nlb 0")
     assert not err
 
 
@@ -52,8 +52,8 @@ def test_compare(cijoe, device, be_opts, cli_args):
     prep = [
         f"dd if=/dev/zero of={src} bs=1024 count=1000",
         "sync",
-        f"xnvme_tests_nvm read {cli_args} --slba 0x0 --nlb 0 --data-output {src}",
-        f"xnvme_tests_nvm compare {cli_args} --slba 0x0 --nlb 0 --data-input {src}",
+        f"xnvme test nvm read {cli_args} --slba 0x0 --nlb 0 --data-output {src}",
+        f"xnvme test nvm compare {cli_args} --slba 0x0 --nlb 0 --data-input {src}",
     ]
 
     for cmd in prep:
@@ -63,11 +63,11 @@ def test_compare(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["write_uncor"], opts=["be", "admin"])
 def test_write_uncor(cijoe, device, be_opts, cli_args):
-    err, _ = cijoe.run(f"xnvme_tests_nvm write-uncor {cli_args} --slba 0x0 --nlb 0")
+    err, _ = cijoe.run(f"xnvme test nvm write-uncor {cli_args} --slba 0x0 --nlb 0")
     assert not err
 
     # Rewrite the LBA to clear the uncorrectable status
-    err, _ = cijoe.run(f"xnvme_tests_nvm write {cli_args} --slba 0x0 --nlb 0")
+    err, _ = cijoe.run(f"xnvme test nvm write {cli_args} --slba 0x0 --nlb 0")
     assert not err
 
 
@@ -75,7 +75,7 @@ def test_write_uncor(cijoe, device, be_opts, cli_args):
 def test_write_zeroes(cijoe, device, be_opts, cli_args):
     if be_opts["admin"] == "block":
         pytest.skip(reason="[admin=block] does not implement write-zeroes")
-    err, _ = cijoe.run(f"xnvme_tests_nvm write-zeros {cli_args} --slba 0x0 --nlb 0")
+    err, _ = cijoe.run(f"xnvme test nvm write-zeros {cli_args} --slba 0x0 --nlb 0")
     assert not err
 
 
@@ -88,12 +88,12 @@ def test_pi_type1(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[admin=nvme] does not support metadata")
 
     err, _ = cijoe.run(
-        f"xnvme_tests_nvm write-read-pi {cli_args} --slba 0x0 --nlb 0 --pract 1 --prchk 0x5"
+        f"xnvme test nvm write-read-pi {cli_args} --slba 0x0 --nlb 0 --pract 1 --prchk 0x5"
     )
     assert not err
 
     err, _ = cijoe.run(
-        f"xnvme_tests_nvm write-read-pi {cli_args} --slba 0x0 --nlb 4 --prchk 0x7 --apptag 0x1234 --apptag_mask 0xFFFF"
+        f"xnvme test nvm write-read-pi {cli_args} --slba 0x0 --nlb 4 --prchk 0x7 --apptag 0x1234 --apptag_mask 0xFFFF"
     )
     assert not err
 
@@ -107,12 +107,12 @@ def test_pi_type2(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[admin=nvme] does not support metadata")
 
     err, _ = cijoe.run(
-        f"xnvme_tests_nvm write-read-pi {cli_args} --slba 0x0 --nlb 0 --pract 1 --prchk 0x5"
+        f"xnvme test nvm write-read-pi {cli_args} --slba 0x0 --nlb 0 --pract 1 --prchk 0x5"
     )
     assert not err
 
     err, _ = cijoe.run(
-        f"xnvme_tests_nvm write-read-pi {cli_args} --slba 0x0 --nlb 4 --prchk 0x7 --apptag 0x1234 --apptag_mask 0xFFFF"
+        f"xnvme test nvm write-read-pi {cli_args} --slba 0x0 --nlb 4 --prchk 0x7 --apptag 0x1234 --apptag_mask 0xFFFF"
     )
     assert not err
 
@@ -128,13 +128,13 @@ def test_pi_type3(cijoe, device, be_opts, cli_args):
     # For PI type 3 prchk 0bxx1 is invalid
     # Thus using prchk 0b100
     err, _ = cijoe.run(
-        f"xnvme_tests_nvm write-read-pi {cli_args} --slba 0x0 --nlb 0 --pract 1 --prchk 0x4"
+        f"xnvme test nvm write-read-pi {cli_args} --slba 0x0 --nlb 0 --pract 1 --prchk 0x4"
     )
     assert not err
 
     # And prchk 0b110
     err, _ = cijoe.run(
-        f"xnvme_tests_nvm write-read-pi {cli_args} --slba 0x0 --nlb 4 --prchk 0x6 --apptag 0x1234 --apptag_mask 0xFFFF"
+        f"xnvme test nvm write-read-pi {cli_args} --slba 0x0 --nlb 4 --prchk 0x6 --apptag 0x1234 --apptag_mask 0xFFFF"
     )
     assert not err
 
@@ -145,12 +145,12 @@ def test_pi_type1_extended_lba(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[admin=block] does not support metadata")
 
     err, _ = cijoe.run(
-        f"xnvme_tests_nvm write-read-pi {cli_args} --slba 0x0 --nlb 0 --pract 1 --prchk 0x5"
+        f"xnvme test nvm write-read-pi {cli_args} --slba 0x0 --nlb 0 --pract 1 --prchk 0x5"
     )
     assert not err
 
     err, _ = cijoe.run(
-        f"xnvme_tests_nvm write-read-pi {cli_args} --slba 0x0 --nlb 4 --prchk 0x7 --apptag 0x1234 --apptag_mask 0xFFFF"
+        f"xnvme test nvm write-read-pi {cli_args} --slba 0x0 --nlb 4 --prchk 0x7 --apptag 0x1234 --apptag_mask 0xFFFF"
     )
     assert not err
 
@@ -164,11 +164,11 @@ def test_pi1_pif2(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[admin=nvme] does not support metadata")
 
     err, _ = cijoe.run(
-        f"xnvme_tests_nvm write-read-pi {cli_args} --slba 0x0 --nlb 0 --pract 1 --prchk 0x5"
+        f"xnvme test nvm write-read-pi {cli_args} --slba 0x0 --nlb 0 --pract 1 --prchk 0x5"
     )
     assert not err
 
     err, _ = cijoe.run(
-        f"xnvme_tests_nvm write-read-pi {cli_args} --slba 0x0 --nlb 4 --prchk 0x7 --apptag 0x1234 --apptag_mask 0xFFFF"
+        f"xnvme test nvm write-read-pi {cli_args} --slba 0x0 --nlb 4 --prchk 0x7 --apptag 0x1234 --apptag_mask 0xFFFF"
     )
     assert not err

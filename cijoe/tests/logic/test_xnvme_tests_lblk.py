@@ -5,7 +5,7 @@ from ..conftest import xnvme_parametrize
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin", "sync"])
 def test_io(cijoe, device, be_opts, cli_args):
-    err, _ = cijoe.run(f"xnvme_tests_lblk io {cli_args}")
+    err, _ = cijoe.run(f"xnvme test lblk io {cli_args}")
     assert not err
 
 
@@ -14,7 +14,7 @@ def test_write_uncorrectable(cijoe, device, be_opts, cli_args):
     if be_opts["sync"] in ["block", "psync"]:
         pytest.skip(reason=f"Not supported: write_uncor via {be_opts['sync']}")
 
-    err, _ = cijoe.run(f"xnvme_tests_lblk write_uncorrectable {cli_args}")
+    err, _ = cijoe.run(f"xnvme test lblk write_uncorrectable {cli_args}")
     assert not err
 
 
@@ -23,5 +23,5 @@ def test_write_zeroes(cijoe, device, be_opts, cli_args):
     if be_opts["sync"] in ["block", "psync"]:
         pytest.skip(reason=f"Not supported: write_zeroes via {be_opts['sync']}")
 
-    err, _ = cijoe.run(f"xnvme_tests_lblk write_zeroes {cli_args}")
+    err, _ = cijoe.run(f"xnvme test lblk write_zeroes {cli_args}")
     assert not err

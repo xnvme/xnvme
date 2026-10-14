@@ -1,0 +1,47 @@
+# xnvme-test-async-limbo completion                           -*- shell-script -*-
+#
+# Bash completion script for the `xnvme-test-async-limbo` CLI
+#
+# SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+_xnvme-test-async-limbo_completions()
+{
+    local cur=${COMP_WORDS[COMP_CWORD]}
+    local sub=""
+    local opts=""
+
+    COMPREPLY=()
+
+    # Complete sub-commands
+    if [[ $COMP_CWORD < 2 ]]; then
+        COMPREPLY+=( $( compgen -W 'randr --help' -- $cur ) )
+        return 0
+    fi
+
+    # Complete sub-command arguments
+
+    sub=${COMP_WORDS[1]}
+
+    if [[ "$sub" != "enum" ]]; then
+        opts+="/dev/nvme* "
+    fi
+
+    case "$sub" in
+    
+    "randr")
+        opts+="--count --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --help"
+        ;;
+
+    esac
+
+    COMPREPLY+=( $( compgen -W "$opts" -- $cur ) )
+
+    return 0
+}
+
+#
+complete -o nosort -F _xnvme-test-async-limbo_completions xnvme-test-async-limbo
+
+# ex: filetype=sh

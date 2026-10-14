@@ -149,11 +149,11 @@ jobs:
         meson setup /tmp/bd-systemd --prefix=/opt/xnvme \
           -Dsystemd_unitdir=/lib/systemd/system -Dbuild_subprojects=false
         unit="/tmp/bd-systemd/toolbox/systemd/xnvme-homi@.service"
-        grep -q '^ExecStart=/opt/xnvme/bin/homi ' "$unit"
+        grep -q '^ExecStart=/opt/xnvme/libexec/xnvme/xnvme-homi ' "$unit"
         grep -q '^EnvironmentFile=/opt/xnvme/etc/xnvme/' "$unit"
         ! grep -qE '@[a-z_]+@' "$unit"
         unit="/tmp/bd-systemd/toolbox/systemd/xnvme-qublk@.service"
-        grep -q '^ExecStart=/opt/xnvme/bin/qublk serve ' "$unit"
+        grep -q '^ExecStart=/opt/xnvme/libexec/xnvme/xnvme-qublk serve ' "$unit"
         grep -q '^EnvironmentFile=/opt/xnvme/etc/xnvme/' "$unit"
         ! grep -qE '@[a-z_]+@' "$unit"
         meson introspect /tmp/bd-systemd --installed \

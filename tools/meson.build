@@ -21,9 +21,13 @@ tools = {
 }
 
 tools_bins = []
+tools_names = {
+  'homi.c': 'xnvme-homi',
+  'xnvme.c': 'xnvme',
+}
 foreach source, tests : tools
-  bin_name = fs.stem(source)
-  bin_cuse = bin_name == 'homi'
+  bin_name = tools_names[source]
+  bin_cuse = source == 'homi.c'
   bin = executable(
     bin_name,
     [source, xnvme_vcs_h],
@@ -32,6 +36,7 @@ foreach source, tests : tools
     link_with: [xnvmelib] + (bin_cuse ? [xnvme_cuse_lib] : []),
     install_rpath: xnvmelib_rpath,
     install: true,
+    install_dir: bin_name == 'xnvme' ? get_option('bindir') : xnvme_libexecdir,
   )
   if bin_name == 'xnvme'
     xnvme_bin = bin
@@ -53,8 +58,10 @@ frontend_env.set(
   'XNVME_EXEC_PATH',
   (is_windows ? ';' : ':').join([
     meson.project_build_root() / 'tests',
+    meson.project_build_root() / 'examples',
     meson.current_build_dir(),
     meson.current_build_dir() / 'xnvmeperf',
+    meson.current_build_dir() / 'qublk',
   ]),
 )
 frontend_tests = [
@@ -66,7 +73,7 @@ frontend_tests = [
   ['exec-path', ['--exec-path'], false],
   ['no such command', ['nosuch'], true],
 ]
-# xnvmeperf is the one program the overview lists, and is built where there are threads
+# xnvme-perf is the one program the overview lists, and is built where there are threads
 if thread_dep.found()
   frontend_tests += [
     ['--help on a program', ['perf', '--help'], false],
@@ -79,6 +86,7 @@ if get_option('tests')
     ['run a test', ['test', 'nvm', 'enum'], false],
     ['run a test, hyphenated', ['test', 'znd-append'], false],
     ['no such test', ['test', 'nosuch'], true],
+    ['group test --help', ['test', '--help'], false],
   ]
 endif
 foreach test : frontend_tests
