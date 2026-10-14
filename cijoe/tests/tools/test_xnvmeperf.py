@@ -9,7 +9,7 @@ def test_run_read(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, _ = cijoe.run(
-        f"xnvmeperf run --iopattern read --qdepth 32 --iosize 4096 --runtime 3"
+        f"xnvme perf run --iopattern read --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert not err
@@ -21,7 +21,7 @@ def test_run_write(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, _ = cijoe.run(
-        f"xnvmeperf run --iopattern write --qdepth 32 --iosize 4096 --runtime 3"
+        f"xnvme perf run --iopattern write --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert not err
@@ -33,7 +33,7 @@ def test_run_randread(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, _ = cijoe.run(
-        f"xnvmeperf run --iopattern randread --qdepth 32 --iosize 4096 --runtime 3"
+        f"xnvme perf run --iopattern randread --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert not err
@@ -45,7 +45,7 @@ def test_run_randwrite(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, _ = cijoe.run(
-        f"xnvmeperf run --iopattern randwrite --qdepth 32 --iosize 4096 --runtime 3"
+        f"xnvme perf run --iopattern randwrite --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert not err
@@ -57,7 +57,7 @@ def test_verify(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, _ = cijoe.run(
-        f"xnvmeperf verify --iosize 4096 --count 64"
+        f"xnvme perf verify --iosize 4096 --count 64"
         f" --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert not err
@@ -74,7 +74,7 @@ def test_run_qdepth_past_the_pool_is_refused(cijoe, device, be_opts, cli_args):
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
     err, _ = cijoe.run(
-        f"xnvmeperf run --iopattern read --qdepth 2048 --iosize 4096 --runtime 1"
+        f"xnvme perf run --iopattern read --qdepth 2048 --iosize 4096 --runtime 1"
         f" --cpumask 0x1 --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert err, "a queue deeper than the backend tracks was accepted"
@@ -87,7 +87,7 @@ def test_run_uri_nsid(cijoe, device, be_opts, cli_args):
     homi_id = get_homi_id()
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
     err, _ = cijoe.run(
-        f"xnvmeperf run --iopattern read --qdepth 32 --iosize 4096 --runtime 3"
+        f"xnvme perf run --iopattern read --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --be {be_opts['be']} {homi_arg}"
         f" '{device['uri']}/?nsid={device['nsid']}'"
     )
@@ -103,7 +103,7 @@ def test_run_uri_nsid_inactive(cijoe, device, be_opts, cli_args):
     # The configured controllers each have a single namespace
     nsid = int(device["nsid"]) + 1
     err, state = cijoe.run(
-        f"xnvmeperf run --iopattern read --qdepth 32 --iosize 4096 --runtime 3"
+        f"xnvme perf run --iopattern read --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --be {be_opts['be']} {homi_arg}"
         f" '{device['uri']}/?nsid={nsid}'"
     )

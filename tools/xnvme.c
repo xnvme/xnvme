@@ -1870,8 +1870,8 @@ static struct xnvme_cli g_cli = {
  * Front-end: bare 'xnvme' and a group name print the command tree one level at a time, and a
  * command that lives in another program is looked up on the exec path and run.
  *
- * The exec path is XNVME_EXEC_PATH when set, a list of directories, else the directory the
- * programs are installed into.
+ * The programs are named 'xnvme-<command>' and installed off PATH, in XNVME_LIBEXECDIR. The
+ * exec path is XNVME_EXEC_PATH when set, a list of directories, else that directory.
  */
 #ifdef XNVME_PLATFORM_WINDOWS_ENABLED
 #include <process.h>
@@ -1882,20 +1882,22 @@ static struct xnvme_cli g_cli = {
 #define CLI_EXE_SUFFIX ""
 #endif
 
-#define CLI_TESTS_PREFIX "xnvme_tests_"
+#define CLI_PROG_PREFIX "xnvme-"
+#define CLI_TEST_PREFIX "xnvme-test-"
+#define CLI_EXAMPLE_PREFIX "xnvme-example-"
 #define CLI_NAMES_MAX 256
 
-struct cli_ext {
+/**
+ * The programs the overview lists at the top level; any 'xnvme-<command>' on the exec path runs
+ * as 'xnvme <command>', listed or not
+ */
+struct cli_listed {
 	const char *name;  ///< Command name under 'xnvme'
-	const char *prog;  ///< Program the command runs
 	const char *descr; ///< Short description, shown by the overview
-	bool listed;       ///< Whether the overview lists it; unlisted ones resolve all the same
 };
 
-static const struct cli_ext g_cli_exts[] = {
-	{"perf", "xnvmeperf", "Synthetic workloads, on every backend", true},
-	{"homi", "homi", "Share controllers between processes", false},
-	{"qublk", "qublk", "Expose an xNVMe device as a Linux block device", false},
+static const struct cli_listed g_cli_listed[] = {
+	{"perf", "Run IO benchmarks against xNVMe devices"},
 };
 
 /// Built-ins the front-end lists itself, or keeps out of the 'nvme' group
@@ -1906,28 +1908,33 @@ cli_exec_path(void)
 {
 	const char *env = getenv("XNVME_EXEC_PATH");
 
-	return (env && env[0]) ? env : XNVME_BINDIR;
+	return (env && env[0]) ? env : XNVME_LIBEXECDIR;
 }
 
 /**
- * Find 'prog' in the directories of the exec path, writing its path to 'path'
+ * Find the program 'prefix' followed by 'name' in the directories of the exec path, writing its
+ * path to 'path'; a '_' in 'name' is taken as '-'
  *
  * @return On success, 0 is returned. When no directory holds it, -ENOENT is returned.
  */
 static int
-cli_resolve(const char *prog, char *path, size_t path_len)
+cli_resolve(const char *prefix, const char *name, char *path, size_t path_len)
 {
 	const char *seg = cli_exec_path();
+	char prog[256];
+
+	snprintf(prog, sizeof(prog), "%s%s", prefix, name);
+	for (char *c = prog; *c; ++c) {
+		*c = (*c == '_') ? '-' : *c;
+	}
 
 	while (*seg) {
 		const char *end = strchr(seg, CLI_PATH_SEP);
 		int seg_len = end ? (int)(end - seg) : (int)strlen(seg);
+		struct stat st;
 
 		if (seg_len) {
-			struct stat st;
-
 			snprintf(path, path_len, "%.*s/%s%s", seg_len, seg, prog, CLI_EXE_SUFFIX);
-			// Not a directory of the same name, as the build tree has for xnvmeperf
 			if (!stat(path, &st) && S_ISREG(st.st_mode)) {
 				return 0;
 			}
@@ -1981,24 +1988,31 @@ cli_run(const char *path, char *argv0, int argc, char **argv)
 	return 1;
 }
 
+/**
+ * Run 'xnvme <words> <name>' as the program 'prefix' 'name', with the 'argc' arguments in
+ * 'argv'
+ */
+static int
+cli_dispatch(const char *prefix, const char *words, const char *name, int argc, char **argv)
+{
+	char path[4096];
+	char argv0[512];
+
+	if (cli_resolve(prefix, name, path, sizeof(path))) {
+		fprintf(stderr, "xnvme: no command '%s%s'; see 'xnvme'\n", words, name);
+		return 1;
+	}
+	snprintf(argv0, sizeof(argv0), "xnvme %s%s", words, name);
+
+	return cli_run(path, argv0, argc, argv);
+}
+
 static const struct xnvme_cli_sub *
 cli_builtin(struct xnvme_cli *cli, const char *name)
 {
 	for (int i = 0; i < cli->nsubs; ++i) {
 		if (!strcmp(cli->subs[i].name, name)) {
 			return &cli->subs[i];
-		}
-	}
-
-	return NULL;
-}
-
-static const struct cli_ext *
-cli_ext(const char *name)
-{
-	for (size_t i = 0; i < sizeof g_cli_exts / sizeof(*g_cli_exts); ++i) {
-		if (!strcmp(g_cli_exts[i].name, name)) {
-			return &g_cli_exts[i];
 		}
 	}
 
@@ -2024,16 +2038,15 @@ cli_cmp_names(const void *a, const void *b)
 }
 
 /**
- * Collect the test names found on the exec path: the program names without CLI_TESTS_PREFIX,
- * with '-' for '_' as 'xnvme test' spells them
+ * Collect the names of the programs on the exec path that start with 'prefix', without it
  *
  * @return The number of names stored in 'names', sorted and without duplicates
  */
 static int
-cli_tests(char **names, int names_max)
+cli_names(const char *prefix, char **names, int names_max)
 {
 	const char *seg = cli_exec_path();
-	size_t prefix_len = strlen(CLI_TESTS_PREFIX);
+	size_t prefix_len = strlen(prefix);
 	size_t suffix_len = strlen(CLI_EXE_SUFFIX);
 	int count = 0;
 
@@ -2051,13 +2064,11 @@ cli_tests(char **names, int names_max)
 			char fpath[4096 + 256];
 			struct stat st;
 
-			if (strncmp(ent->d_name, CLI_TESTS_PREFIX, prefix_len) ||
-			    len <= prefix_len) {
+			if (len <= prefix_len + suffix_len ||
+			    strncmp(ent->d_name, prefix, prefix_len)) {
 				continue;
 			}
-			if (suffix_len &&
-			    (len <= suffix_len ||
-			     strcmp(ent->d_name + len - suffix_len, CLI_EXE_SUFFIX))) {
+			if (suffix_len && strcmp(ent->d_name + len - suffix_len, CLI_EXE_SUFFIX)) {
 				continue;
 			}
 			snprintf(fpath, sizeof(fpath), "%s/%s", dpath, ent->d_name);
@@ -2069,9 +2080,6 @@ cli_tests(char **names, int names_max)
 			if (names[count]) {
 				memcpy(names[count], ent->d_name + prefix_len, len);
 				names[count][len] = '\0';
-				for (char *c = names[count]; *c; ++c) {
-					*c = (*c == '_') ? '-' : *c;
-				}
 				count += 1;
 			}
 		}
@@ -2098,7 +2106,7 @@ cli_tests(char **names, int names_max)
 }
 
 static void
-cli_tests_free(char **names, int count)
+cli_names_free(char **names, int count)
 {
 	for (int i = 0; i < count; ++i) {
 		free(names[i]);
@@ -2111,11 +2119,36 @@ cli_row(const char *cmd, const char *descr)
 	printf("  %-24s %s\n", cmd, descr);
 }
 
+/**
+ * Print 'heading' and a row for each program in 'listed' that is installed; nothing when none is
+ *
+ * @return The number of rows printed
+ */
+static int
+cli_listed_pr(const char *heading, const struct cli_listed *listed, size_t nlisted)
+{
+	char path[4096];
+	int nrows = 0;
+
+	for (size_t i = 0; i < nlisted; ++i) {
+		char cmd[64];
+
+		if (cli_resolve(CLI_PROG_PREFIX, listed[i].name, path, sizeof(path))) {
+			continue;
+		}
+		if (!nrows++ && heading) {
+			printf("%s\n", heading);
+		}
+		snprintf(cmd, sizeof(cmd), "xnvme %s", listed[i].name);
+		cli_row(cmd, listed[i].descr);
+	}
+
+	return nrows;
+}
+
 static int
 cli_overview(struct xnvme_cli *cli)
 {
-	char path[4096];
-
 	printf("Usage: xnvme <command> [<args>] [--help]\n");
 	printf("\n");
 	printf("%s\n", cli->descr_short);
@@ -2125,17 +2158,11 @@ cli_overview(struct xnvme_cli *cli)
 	cli_row("xnvme info <uri>", cli_builtin(cli, "info")->descr_short);
 	cli_row("xnvme enum", cli_builtin(cli, "enum")->descr_short);
 	cli_row("xnvme library-info", cli_builtin(cli, "library-info")->descr_short);
-	for (size_t i = 0; i < sizeof g_cli_exts / sizeof(*g_cli_exts); ++i) {
-		if (g_cli_exts[i].listed && !cli_resolve(g_cli_exts[i].prog, path, sizeof(path))) {
-			char cmd[64];
-
-			snprintf(cmd, sizeof(cmd), "xnvme %s", g_cli_exts[i].name);
-			cli_row(cmd, g_cli_exts[i].descr);
-		}
-	}
+	cli_listed_pr(NULL, g_cli_listed, sizeof g_cli_listed / sizeof(*g_cli_listed));
 	printf("\n");
 	printf("Groups, run one to list its commands:\n");
 	cli_row("xnvme test", "installed test programs");
+	cli_row("xnvme example", "installed example programs");
 	cli_row("xnvme nvme", "NVMe admin commands; see nvme-cli for kernel-bound devices");
 	cli_row("xnvme --help", "the device commands list, enum, scan and info");
 
@@ -2158,64 +2185,37 @@ cli_group_nvme(struct xnvme_cli *cli)
 	return 0;
 }
 
+/**
+ * List the programs of the 'test' or 'example' group
+ */
 static int
-cli_group_test(void)
+cli_group_programs(const char *group, const char *prefix)
 {
 	char *names[CLI_NAMES_MAX];
-	int count = cli_tests(names, CLI_NAMES_MAX);
+	int count = cli_names(prefix, names, CLI_NAMES_MAX);
 
 	if (!count) {
-		printf("No test programs found on the exec path: %s\n", cli_exec_path());
+		printf("No %s programs found on the exec path: %s\n", group, cli_exec_path());
 		return 0;
 	}
 
-	printf("Test programs, run one to list its subcommands:\n");
+	printf("The %s programs, run one to list its subcommands:\n", group);
 	printf("\n");
 	for (int i = 0; i < count; ++i) {
-		printf("  xnvme test %s\n", names[i]);
+		printf("  xnvme %s %s\n", group, names[i]);
 	}
 	printf("\n");
-	printf("See 'xnvme test <name> <subcommand> --help' for the description of [<args>]\n");
-	cli_tests_free(names, count);
+	printf("See 'xnvme %s <name> <subcommand> --help' for the description of [<args>]\n",
+	       group);
+	cli_names_free(names, count);
 
 	return 0;
 }
 
-static int
-cli_test(int argc, char **argv)
+static bool
+cli_is_group(const char *name)
 {
-	char prog[256];
-	char path[4096];
-	char argv0[512];
-
-	snprintf(prog, sizeof(prog), "%s%s", CLI_TESTS_PREFIX, argv[0]);
-	for (char *c = prog; *c; ++c) {
-		*c = (*c == '-') ? '_' : *c;
-	}
-	if (cli_resolve(prog, path, sizeof(path))) {
-		fprintf(stderr, "xnvme: no test program '%s' on the exec path; see 'xnvme test'\n",
-			argv[0]);
-		return 1;
-	}
-	snprintf(argv0, sizeof(argv0), "xnvme test %s", argv[0]);
-
-	return cli_run(path, argv0, argc - 1, argv + 1);
-}
-
-static int
-cli_external(const struct cli_ext *ext, int argc, char **argv)
-{
-	char path[4096];
-	char argv0[512];
-
-	if (cli_resolve(ext->prog, path, sizeof(path))) {
-		fprintf(stderr, "xnvme: '%s' runs '%s', which is not on the exec path: %s\n",
-			ext->name, ext->prog, cli_exec_path());
-		return 1;
-	}
-	snprintf(argv0, sizeof(argv0), "xnvme %s", ext->name);
-
-	return cli_run(path, argv0, argc, argv);
+	return !strcmp(name, "nvme") || !strcmp(name, "test") || !strcmp(name, "example");
 }
 
 /**
@@ -2229,7 +2229,7 @@ static int
 cli_main(struct xnvme_cli *cli, int argc, char **argv)
 {
 	const char *cmd = argc > 1 ? argv[1] : NULL;
-	const struct cli_ext *ext;
+	char path[4096];
 
 	if (!cmd) {
 		return cli_overview(cli);
@@ -2245,7 +2245,16 @@ cli_main(struct xnvme_cli *cli, int argc, char **argv)
 		return cli_group_nvme(cli);
 	}
 	if (!strcmp(cmd, "test")) {
-		return argc > 2 ? cli_test(argc - 2, argv + 2) : cli_group_test();
+		return argc > 2 && strcmp(argv[2], "--help")
+			       ? cli_dispatch(CLI_TEST_PREFIX, "test ", argv[2], argc - 3,
+					      argv + 3)
+			       : cli_group_programs("test", CLI_TEST_PREFIX);
+	}
+	if (!strcmp(cmd, "example")) {
+		return argc > 2 && strcmp(argv[2], "--help")
+			       ? cli_dispatch(CLI_EXAMPLE_PREFIX, "example ", argv[2], argc - 3,
+					      argv + 3)
+			       : cli_group_programs("example", CLI_EXAMPLE_PREFIX);
 	}
 	if (!strcmp(cmd, "help")) {
 		char *help[] = {"--help"};
@@ -2258,21 +2267,15 @@ cli_main(struct xnvme_cli *cli, int argc, char **argv)
 
 			return xnvme_cli_run(cli, 3, nargv, XNVME_CLI_INIT_NONE);
 		}
-		if (!strcmp(argv[2], "nvme") || !strcmp(argv[2], "test")) {
+		if (cli_is_group(argv[2])) {
 			char *nargv[] = {argv[0], argv[2], NULL};
 
 			return cli_main(cli, 2, nargv);
 		}
-		ext = cli_ext(argv[2]);
-		if (ext) {
-			return cli_external(ext, 1, help);
-		}
-		fprintf(stderr, "xnvme: no command '%s'; see 'xnvme'\n", argv[2]);
-		return 1;
+		return cli_dispatch(CLI_PROG_PREFIX, "", argv[2], 1, help);
 	}
-	ext = cli_ext(cmd);
-	if (ext) {
-		return cli_external(ext, argc - 2, argv + 2);
+	if (cmd[0] != '-' && !cli_resolve(CLI_PROG_PREFIX, cmd, path, sizeof(path))) {
+		return cli_dispatch(CLI_PROG_PREFIX, "", cmd, argc - 2, argv + 2);
 	}
 
 	return -1;

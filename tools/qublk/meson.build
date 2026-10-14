@@ -26,7 +26,7 @@ else
   endif
 
   executable(
-    'qublk',
+    'xnvme-qublk',
     [qublk_source, xnvme_vcs_h],
     include_directories: [conf_inc, xnvme_inc, xnvme_cuse_inc],
     c_args: qublk_c_args,
@@ -36,5 +36,6 @@ else
     install_rpath: xnvmelib_rpath,
     dependencies: [uring_dep, thread_dep],
     install: true,
+    install_dir: xnvme_libexecdir,
   )
 endif

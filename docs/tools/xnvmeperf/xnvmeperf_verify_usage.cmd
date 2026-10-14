@@ -1,1 +1,1 @@
-xnvmeperf verify --help
+xnvme perf verify --help

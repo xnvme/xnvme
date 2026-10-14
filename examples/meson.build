@@ -14,9 +14,10 @@ examples_source = [
   'zoned_io_sync.c',
 ]
 
+# Installed as 'xnvme-example-<name>', run as 'xnvme example <name>'
 foreach example_source : examples_source
   executable(
-    fs.stem(example_source),
+    'xnvme-example-' + fs.stem(example_source).replace('xnvme_', '').replace('_', '-'),
     example_source,
     include_directories: [conf_inc, xnvme_inc],
     link_with: xnvmelib,
@@ -24,12 +25,13 @@ foreach example_source : examples_source
     pie: get_option('hardening'),
     install_rpath: xnvmelib_rpath,
     install: true,
+    install_dir: xnvme_libexecdir,
   )
 endforeach
 
 if conf_data.get('XNVME_BE_UPCIE_HIP_ENABLED')
   executable(
-    'xnvme_hip_mem_map',
+    'xnvme-example-hip-mem-map',
     'xnvme_hip_mem_map.c',
     include_directories: [conf_inc, xnvme_inc],
     link_with: xnvmelib,
@@ -38,13 +40,14 @@ if conf_data.get('XNVME_BE_UPCIE_HIP_ENABLED')
     pie: get_option('hardening'),
     install_rpath: xnvmelib_rpath,
     install: true,
+    install_dir: xnvme_libexecdir,
   )
 endif
 
 if conf_data.get('XNVME_BE_UPCIE_CUDA_ENABLED')
   foreach example: ['xnvme_cuda', 'xnvme_cuda_mem_map']
     executable(
-      example,
+      'xnvme-example-' + example.replace('xnvme_', '').replace('_', '-'),
       example + '.cu',
       include_directories: [conf_inc, xnvme_inc],
       link_with: xnvmelib,
@@ -54,6 +57,7 @@ if conf_data.get('XNVME_BE_UPCIE_CUDA_ENABLED')
       pie: get_option('hardening'),
       install_rpath: xnvmelib_rpath,
       install: true,
+      install_dir: xnvme_libexecdir,
     )
   endforeach
 endif

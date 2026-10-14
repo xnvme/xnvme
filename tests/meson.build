@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-tests_prefix = 'xnvme_tests_'
+tests_prefix = 'xnvme-test-'
 
 tests = {
   'async_intf.c': [
@@ -116,7 +116,7 @@ endif
 tests_bins = []
 foreach test_source, tests_args : tests
   e = executable(
-    tests_prefix + fs.stem(test_source),
+    tests_prefix + fs.stem(test_source).replace('_', '-'),
     test_source,
     include_directories: [conf_inc, xnvme_inc],
     link_with: xnvmelib,
@@ -125,6 +125,7 @@ foreach test_source, tests_args : tests
     dependencies: [thread_dep],
     install_rpath: xnvmelib_rpath,
     install: true,
+    install_dir: xnvme_libexecdir,
   )
   tests_bins += e
   foreach test_args : tests_args

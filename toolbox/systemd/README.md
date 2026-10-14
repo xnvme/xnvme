@@ -4,7 +4,7 @@
 `homi.conf.example` as the configuration to copy into `/etc/xnvme/`.
 
 It is a template rather than a finished unit: `@bindir@` is substituted at
-configuration time so the installed unit names the `homi` from the same build.
+configuration time so the installed unit names the `xnvme-homi` from the same build.
 Read the generated unit from the build directory, not this file, when checking
 what a given build installs.
 

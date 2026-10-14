@@ -20,7 +20,7 @@ _UNCLAIMED_ID = 4242
 
 def _require_upcie(cijoe):
     """
-    Skip unless this build has the uPCIe backend, whose runtime 'homi status' reads
+    Skip unless this build has the uPCIe backend, whose runtime 'xnvme homi status' reads
 
     Asked of the library rather than decided from the platform, since a Linux
     build configured with -Dbe_upcie=false is in the same position.
@@ -52,9 +52,9 @@ def _sock(homi_id):
 
 
 def _status(cijoe, homi_id):
-    """Run 'homi status' and return its exit code and parsed document"""
+    """Run 'xnvme homi status' and return its exit code and parsed document"""
 
-    err, state = cijoe.run(f"homi status --homi-id {homi_id}")
+    err, state = cijoe.run(f"xnvme homi status --homi-id {homi_id}")
     output = state.output()
     lines = output.split("\n")
 
@@ -162,7 +162,7 @@ def _perf(uris, be, homi_id, runtime, nqueues=1):
     """An xnvmeperf client of `uris`, holding `nqueues` queues for `runtime` seconds"""
 
     return (
-        f"xnvmeperf run {' '.join(uris)} --be {be} --homi-id {homi_id}"
+        f"xnvme perf run {' '.join(uris)} --be {be} --homi-id {homi_id}"
         f" --iopattern randread --iosize 4096 --qdepth 8 --nqueues {nqueues}"
         f" --runtime {runtime} --cpulist 0"
     )
@@ -179,7 +179,7 @@ def _lblk_read(cijoe, dev, be_opts, homi_id, id_opt="--homi-id", timeout=None):
     prefix = f"timeout {timeout} " if timeout else ""
 
     return cijoe.run(
-        f"{prefix}xnvme_tests_nvm read {dev['uri']} --dev-nsid {dev['nsid']} --slba 0x0 --nlb 0"
+        f"{prefix}xnvme test nvm read {dev['uri']} --dev-nsid {dev['nsid']} --slba 0x0 --nlb 0"
         f" --be {be_opts['be']} --admin {be_opts['admin']} --sync {be_opts['sync']}"
         f" {id_opt} {homi_id}"
     )
@@ -359,7 +359,7 @@ def test_upcie_status_refuses_when_absent(cijoe):
     if "name: 'upcie'" in state.output():
         pytest.skip(reason="This build has uPCIe; the refusal is a build without it")
 
-    err, state = cijoe.run(f"homi status --homi-id {_UNCLAIMED_ID}")
+    err, state = cijoe.run(f"xnvme homi status --homi-id {_UNCLAIMED_ID}")
 
     assert err, "status exits zero on a build that cannot inspect"
     # A document, even an empty one, would read as 'no server'
@@ -522,7 +522,7 @@ def test_status_does_not_disturb_election(cijoe, device, be_opts, cli_args):
     # 'sh -c' keeps it a simple command, which a transport prefixing
     # environment assignments ('cijoe.run.env') needs
     err, _ = cijoe.run(
-        "sh -c 'for i in $(seq 1 200); do homi status"
+        "sh -c 'for i in $(seq 1 200); do xnvme homi status"
         f" --homi-id {homi_id} >/dev/null || exit 1; done'"
     )
     assert not err, "status stopped reporting the server while being polled"
@@ -580,7 +580,7 @@ def test_server_runs_on_its_drives_node(cijoe, device, be_opts, cli_args):
     err, want = cijoe.run(f"cat /sys/devices/system/node/node{nodes.pop()}/cpulist")
     assert not err, "sysfs places the drives on a node it does not describe"
 
-    err, got = cijoe.run("grep Cpus_allowed_list /proc/$(pgrep -x homi)/status")
+    err, got = cijoe.run("grep Cpus_allowed_list /proc/$(pgrep -x xnvme-homi)/status")
     assert not err, "could not read the server's affinity"
     assert got.output().split(":")[-1].strip() == want.output().strip()
 
