@@ -25,6 +25,7 @@ else
     warning('linux/ublk_cmd.h lacks UBLK_F_ZONED (kernel headers < 6.6), qublk will not serve zoned namespaces')
   endif
 
+  libexec_names += 'xnvme-qublk'
   executable(
     'xnvme-qublk',
     [qublk_source, xnvme_vcs_h],
