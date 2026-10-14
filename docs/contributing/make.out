@@ -38,7 +38,6 @@ docs                             ; Build docs using the new tooling (ctags, doxy
 format                           ; Run code format (style, code-conventions and language-integrity) on staged changes
 format-all                       ; Run code format (style, code-conventions and language-integrity) on staged and committed changes
 gen-artifacts                    ; Generate artifacts in "/tmp/artifacts" for local guest provisioning
-gen-bash-completions             ; Helper-target to produce Bash-completions for tools (tools, examples, tests)
 gen-libconf                      ; Helper-target generating third-party/subproject/os/library-configuration string
 gen-man-pages                    ; Helper-target to produce man pages for tools (tools, examples, tests)
 gen-src-archive                  ; Produce a source-archive (.tar.gz) without the source of SPDK, carrying only
