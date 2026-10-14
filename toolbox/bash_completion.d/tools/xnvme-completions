@@ -16,7 +16,7 @@ _xnvme_completions()
 
     # Complete sub-commands
     if [[ $COMP_CWORD < 2 ]]; then
-        COMPREPLY+=( $( compgen -W 'enum scan info --help' -- $cur ) )
+        COMPREPLY+=( $( compgen -W 'env list enum info monitor driver cmd-admin cmd-io cmd-iov serve scan --help' -- $cur ) )
         return 0
     fi
 
@@ -24,22 +24,67 @@ _xnvme_completions()
 
     sub=${COMP_WORDS[1]}
 
-    if [[ "$sub" != "enum" ]]; then
+    # Complete the command of a group, then name it by both words
+    case "$sub" in
+    
+    "driver")
+        if [[ $COMP_CWORD < 3 ]]; then
+            COMPREPLY+=( $( compgen -W 'attach detach' -- $cur ) )
+            return 0
+        fi
+        sub="$sub-${COMP_WORDS[2]}"
+        ;;
+
+    esac
+
+    if [[ "$sub" != "enum" ]] && [[ "$sub" != "env" ]] && [[ "$sub" != "list" ]] && [[ "$sub" != "monitor" ]] && [[ "$sub" != "driver" ]]; then
         opts+="/dev/nvme* "
     fi
 
     case "$sub" in
     
-    "enum")
-        opts+="--uri --flags --subnqn --hostnqn --be --shm_id --homi-id --help"
+    "env")
+        opts+="--yaml"
         ;;
 
-    "scan")
+    "list")
+        opts+="--yaml"
+        ;;
+
+    "enum")
         opts+="--uri --flags --subnqn --hostnqn --be --shm_id --homi-id --help"
         ;;
 
     "info")
         opts+="--subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --async --help"
+        ;;
+
+    "monitor")
+        opts+="--interval --once --yaml"
+        ;;
+
+    "driver")
+        opts+="--be --force --all --dry-run"
+        ;;
+
+    "cmd-admin")
+        opts+="--opcode --flags --prefill --rsvd --namespace-id --data-len --metadata-len --cdw2 --cdw3 --cdw10 --cdw11 --cdw12 --cdw13 --cdw14 --cdw15 --input-file --metadata --raw-binary --show-command --dry-run --read --write --latency --timeout --output-format --verbose --no-retries --be --admin --sync --async --dev-nsid --homi-id --shm_id"
+        ;;
+
+    "cmd-io")
+        opts+="--opcode --flags --prefill --rsvd --namespace-id --data-len --metadata-len --cdw2 --cdw3 --cdw10 --cdw11 --cdw12 --cdw13 --cdw14 --cdw15 --input-file --metadata --raw-binary --show-command --dry-run --read --write --latency --timeout --output-format --verbose --no-retries --be --admin --sync --async --dev-nsid --homi-id --shm_id"
+        ;;
+
+    "cmd-iov")
+        opts+="--opcode --flags --prefill --rsvd --namespace-id --data-len --metadata-len --cdw2 --cdw3 --cdw10 --cdw11 --cdw12 --cdw13 --cdw14 --cdw15 --input-file --metadata --raw-binary --show-command --dry-run --read --write --latency --timeout --output-format --verbose --no-retries --be --admin --sync --async --dev-nsid --homi-id --shm_id --vec-cnt"
+        ;;
+
+    "serve")
+        opts+="--id --through --enable --replace --stop --foreground"
+        ;;
+
+    "scan")
+        opts+="--uri --flags --subnqn --hostnqn --be --shm_id --homi-id --help"
         ;;
 
     esac
