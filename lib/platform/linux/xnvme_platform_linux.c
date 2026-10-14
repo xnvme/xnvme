@@ -120,21 +120,46 @@ _scan_pci_read_driver(const char *bdf, char *driver, size_t driver_sz)
 }
 
 /**
+ * Read the IOMMU group of the PCI function 'bdf' from sysfs; empty when it has none.
+ */
+static void
+_scan_pci_read_iommu_group(const char *bdf, char *group, size_t group_sz)
+{
+	char link_path[PATH_MAX] = {0};
+	char link_target[PATH_MAX] = {0};
+	const char *name;
+	ssize_t len;
+
+	snprintf(link_path, sizeof(link_path), "/sys/bus/pci/devices/%s/iommu_group", bdf);
+	len = readlink(link_path, link_target, sizeof(link_target) - 1);
+	if (len <= 0) {
+		return;
+	}
+	link_target[len] = '\0';
+
+	name = strrchr(link_target, '/');
+	snprintf(group, group_sz, "%s", name ? name + 1 : link_target);
+}
+
+/**
  * Report a PCI NVMe controller to the scan callback.
  *
  * @param args Scan arguments containing callback and state
  * @param bdf PCI bus-device-function string
  * @param driver Kernel driver name bound to the device
+ * @param iommu_group IOMMU group of the device, empty when it has none
  *
  * @return Non-zero if the callback requested a stop, 0 otherwise
  */
 static int
-_scan_pci_report_ctrlr(struct xnvme_linux_scan_args *args, const char *bdf, const char *driver)
+_scan_pci_report_ctrlr(struct xnvme_linux_scan_args *args, const char *bdf, const char *driver,
+		       const char *iommu_group)
 {
 	struct xnvme_ident ident = {.dtype = XNVME_DEV_TYPE_NVME_CONTROLLER};
 
 	snprintf(ident.uri, sizeof(ident.uri), "%s", bdf);
 	snprintf(ident.kernel_driver, sizeof(ident.kernel_driver), "%s", driver);
+	snprintf(ident.iommu_group, sizeof(ident.iommu_group), "%s", iommu_group);
 
 	if (args->cb_func(&ident, args->cb_args)) {
 		args->stopped = 1;
@@ -190,19 +215,21 @@ _scan_pci_read_nsid(const char *ns_dir, const char *ns_name)
  *
  * @param args Scan arguments containing callback and state
  * @param uri Device path (e.g. "/dev/nvme0n1" or "/dev/ng0n1")
- * @param driver Kernel driver name bound to the device
+ * @param driver Kernel driver name bound to the controller of the namespace
+ * @param iommu_group IOMMU group of that controller, empty when it has none
  * @param nsid NVMe namespace ID
  *
  * @return Non-zero if the callback requested a stop, 0 otherwise
  */
 static int
 _scan_pci_report_ns(struct xnvme_linux_scan_args *args, const char *uri, const char *driver,
-		    uint32_t nsid)
+		    const char *iommu_group, uint32_t nsid)
 {
 	struct xnvme_ident ident = {.dtype = XNVME_DEV_TYPE_NVME_NAMESPACE, .nsid = nsid};
 
 	snprintf(ident.uri, sizeof(ident.uri), "%s", uri);
 	snprintf(ident.kernel_driver, sizeof(ident.kernel_driver), "%s", driver);
+	snprintf(ident.iommu_group, sizeof(ident.iommu_group), "%s", iommu_group);
 
 	if (args->cb_func(&ident, args->cb_args)) {
 		args->stopped = 1;
@@ -219,12 +246,13 @@ _scan_pci_report_ns(struct xnvme_linux_scan_args *args, const char *uri, const c
  * @param args Scan arguments containing callback and state
  * @param bdf PCI bus-device-function string
  * @param driver Kernel driver name bound to the device
+ * @param iommu_group IOMMU group of the device, empty when it has none
  *
  * @return Non-zero if the callback requested a stop, 0 otherwise
  */
 static int
 _scan_pci_report_namespaces(struct xnvme_linux_scan_args *args, const char *bdf,
-			    const char *driver)
+			    const char *driver, const char *iommu_group)
 {
 	char nvme_dir[PATH_MAX] = {0};
 	struct dirent *entry;
@@ -277,14 +305,14 @@ _scan_pci_report_namespaces(struct xnvme_linux_scan_args *args, const char *bdf,
 			}
 
 			snprintf(uri, sizeof(uri), "/dev/%s", nsent->d_name);
-			if (_scan_pci_report_ns(args, uri, driver, nsid)) {
+			if (_scan_pci_report_ns(args, uri, driver, iommu_group, nsid)) {
 				closedir(nsdir);
 				closedir(dir);
 				return 1;
 			}
 
 			snprintf(uri, sizeof(uri), "/dev/ng%dn%d", ctrlr_idx, ns_idx);
-			if (_scan_pci_report_ns(args, uri, driver, nsid)) {
+			if (_scan_pci_report_ns(args, uri, driver, iommu_group, nsid)) {
 				closedir(nsdir);
 				closedir(dir);
 				return 1;
@@ -303,6 +331,7 @@ _scan_pci_cb(struct pci_func *func, void *cb_arg)
 	struct xnvme_linux_scan_args *args = cb_arg;
 	uint32_t classcode = func->ident.classcode;
 	char driver[32] = {0};
+	char iommu_group[8] = {0};
 
 	// Filter for NVMe: base=0x01, sub=0x08, progif=0x02
 	if ((classcode >> 8) != 0x0108 || (classcode & 0xFF) != 0x02) {
@@ -310,13 +339,14 @@ _scan_pci_cb(struct pci_func *func, void *cb_arg)
 	}
 
 	_scan_pci_read_driver(func->bdf, driver, sizeof(driver));
+	_scan_pci_read_iommu_group(func->bdf, iommu_group, sizeof(iommu_group));
 
-	if (_scan_pci_report_ctrlr(args, func->bdf, driver)) {
+	if (_scan_pci_report_ctrlr(args, func->bdf, driver, iommu_group)) {
 		return PCI_SCAN_ACTION_RELEASE_FUNC;
 	}
 
 	if (!strcmp(driver, "nvme")) {
-		if (_scan_pci_report_namespaces(args, func->bdf, driver)) {
+		if (_scan_pci_report_namespaces(args, func->bdf, driver, iommu_group)) {
 			return PCI_SCAN_ACTION_RELEASE_FUNC;
 		}
 	}
