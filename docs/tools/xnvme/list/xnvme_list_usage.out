@@ -1,0 +1,4 @@
+Usage: xnvme list
+
+The NVMe controller functions on the PCI bus, as YAML: the driver each is
+on and its IOMMU group, read from sysfs without opening anything

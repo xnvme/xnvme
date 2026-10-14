@@ -30,6 +30,17 @@ Device Interaction
   among other things, information such as the command-set-identifier, which
   tells you which NVMe command-set is available.
 
+Controllers and Drivers
+  :ref:`sec-api-c-xnvme_scan-func-xnvme_scan` lists the NVMe controller
+  functions on the system without opening them, each with the kernel driver
+  it is bound to and its IOMMU group. The :ref:`sec-api-c-xnvme_driver`
+  module moves a function between the kernel NVMe driver and a userspace one:
+  :ref:`sec-api-c-xnvme_driver-func-xnvme_driver_attach` and
+  :ref:`sec-api-c-xnvme_driver-func-xnvme_driver_detach`, with a dry run that
+  says what holds a function before it is moved, and
+  :ref:`sec-api-c-xnvme_driver-func-xnvme_driver_for_be` names the driver a
+  backend needs. This is what ``xnvme list`` and ``xnvme driver`` are built on.
+
 Commands
   Commands are encapsulated in the :ref:`sec-api-c-xnvme_cmd` module
   and :ref:`sec-api-c-xnvme_cmd-struct-xnvme_cmd_ctx`. The ``xnvme_cmd_ctx``,
