@@ -1,1 +1,0 @@
-xnvme format --help

@@ -248,11 +248,13 @@ def parse_tool_sig(tpath):
             continue
 
         sname = line.split(" ")[0]
-        tsig["snames"].append(sname)
 
+        # A command the xnvme front-end handles itself, such as 'list' on Linux, has a
+        # --help of its own rather than xnvme_cli's; it is documented with the front-end
         if not parse_tool_sub_sig(tsig, sname):
-            logging.error("FAILED: parsing tname: %s, sname: %s", tname, sname)
-            return None
+            logging.warning("skipping tname: %s, sname: %s", tname, sname)
+            continue
+        tsig["snames"].append(sname)
 
     return tsig
 

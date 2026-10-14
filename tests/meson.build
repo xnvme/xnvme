@@ -5,6 +5,12 @@
 tests_prefix = 'xnvme-test-'
 
 tests = {
+  'adm.c': [
+    ['idfy, no args', ['idfy', '1GB', '--cns', '0x0']],
+    ['idfy, cntid=0x0', ['idfy', '1GB', '--cns', '0x0', '--cntid', '0x0', '--setid', '0x0', '--uuid', '0x0']],
+    ['idfy-ns', ['idfy-ns', '1GB']],
+    ['idfy-ctrlr', ['idfy-ctrlr', '1GB']],
+  ],
   'async_intf.c': [
     ['count=1', ['init_term', '1GB', '--count', '1', '--qdepth', '64']],
     ['count=2', ['init_term', '1GB', '--count', '2', '--qdepth', '64']],

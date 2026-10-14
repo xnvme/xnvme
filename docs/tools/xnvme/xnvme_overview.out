@@ -24,7 +24,6 @@ Command passthru:
 Groups, run one to list its commands:
   xnvme test             installed test programs
   xnvme example          installed example programs
-  xnvme nvme             NVMe admin commands; see nvme-cli for kernel-bound devices
 
   xnvme help <command>   options of one command
   xnvme --help           every built-in command at once
