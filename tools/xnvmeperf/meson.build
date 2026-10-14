@@ -13,6 +13,7 @@ if thread_dep.found()
     xnvmeperf_cuda_args = cuda_arch_args
   endif
 
+  libexec_names += 'xnvme-perf'
   xnvmeperf_bin = executable(
     'xnvme-perf',
     xnvmeperf_sources,
