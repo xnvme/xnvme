@@ -5,11 +5,9 @@
 Bash Completions
 ================
 
-Bash completion scripts for examples, tests, and tools. These are generated
-automatically by the script::
-
-  toolbox/xnvmec_generator.py
-
-They are generated during the release process or adhoc via the mk-helper::
-
-  make gen-bash-completions
+One script, ``xnvme``, completes the ``xnvme`` front-end and every program it
+runs. It holds no lists of its own: it asks ``xnvme --list-cmds`` for the
+commands and installed programs, ``xnvme --list-cmds=<group>`` for those of a
+group such as ``test``, a program for its subcommands with ``--list-cmds``, and
+a command for its options with ``--help``. So it completes what is installed,
+and needs no regenerating when a command changes.
