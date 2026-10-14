@@ -16,6 +16,7 @@ tools = {
 }
 
 tools_bins = []
+libexec_names = []
 tools_names = {
   'homi.c': 'xnvme-homi',
   'xnvme.c': 'xnvme',
@@ -36,6 +37,8 @@ foreach source, tests : tools
   )
   if bin_name == 'xnvme'
     xnvme_bin = bin
+  else
+    libexec_names += bin_name
   endif
   tools_bins += bin
   foreach test : tests
@@ -47,6 +50,18 @@ endforeach
 
 subdir('xnvmeperf')
 subdir('qublk')
+
+# g_cli_builtins then g_subs of tools/xnvme.c; the test 'front-end, built-ins' checks the order
+frontend_builtins = [
+  'env', 'list', 'driver', 'cmd', 'cmd-admin', 'cmd-io', 'cmd-iov', 'test', 'example', 'enum',
+  'scan', 'info',
+]
+foreach name : libexec_names
+  if frontend_builtins.contains(name.substring(6))
+    error('@0@ would be run as \'xnvme @1@\', which is a command of xnvme itself'.format(
+      name, name.substring(6)))
+  endif
+endforeach
 
 frontend_env = environment()
 frontend_env.set(
@@ -126,3 +141,19 @@ foreach test : frontend_tests
     suite: 'frontend',
   )
 endforeach
+
+# An empty XNVME_EXEC_PATH means the install directory, hence one that does not exist
+frontend_builtins_env = environment()
+frontend_builtins_env.set('XNVME_EXEC_PATH', meson.current_build_dir() / 'no-programs')
+test(
+  'tools - xnvme front-end, built-ins',
+  python3,
+  args: [
+    '-c',
+    'import subprocess, sys; out = subprocess.run([sys.argv[1], "--list-cmds"], '
+    + 'capture_output=True, text=True).stdout.split(); sys.exit(out != sys.argv[2:])',
+    xnvme_bin,
+  ] + frontend_builtins,
+  env: frontend_builtins_env,
+  suite: 'frontend',
+)

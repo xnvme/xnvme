@@ -2027,7 +2027,7 @@ exit:
 }
 
 /**
- * The commands the front-end implements itself, besides the subcommands of g_cli
+ * A program on the exec path is never run under one of these names; tools/meson.build refuses one
  */
 static const char *g_cli_builtins[] = {
 	"env", "list", "driver", "cmd", "cmd-admin", "cmd-io", "cmd-iov", "test", "example",
