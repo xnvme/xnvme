@@ -109,8 +109,9 @@ jobs:
       run: pre-commit run --all-files
 
   #
-  # Ensure that the bash completion runs, and that the man pages and the
-  # systemd unit are generated without error
+  # Ensure that the bash completion runs, that the committed man pages are what
+  # the generator makes of the --help of each program, and that the systemd unit
+  # is generated without error
   #
   test-gen-targets:
     needs: source-archive
@@ -142,8 +143,13 @@ jobs:
         xnvme --list-cmds | grep -qx info
         xnvme --list-cmds=test | grep -qx adm
 
-    - name: Run make gen-man-pages
-      run: make gen-man-pages
+    # The pages are committed, so a --help changed without regenerating them
+    # shows here; txt2man dates each page, hence the .TH lines are not compared
+    - name: Run make gen-man-pages, and compare with the committed pages
+      run: |
+        cp -r man /tmp/man.committed
+        make gen-man-pages
+        diff -r -I '^\.TH ' /tmp/man.committed man
 
     # The unit directory is given rather than discovered, so the check does not
     # depend on systemd being present in the container

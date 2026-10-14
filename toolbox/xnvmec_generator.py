@@ -52,6 +52,21 @@ AUTHOR
   Written by ${author_name} <${author_email}> on behalf of ${sponsor}
 """
 
+MANPAGE_GROUP = """NAME
+  ${name} - ${descr}
+SYNOPSIS
+  ${usage}
+DESCRIPTION
+  ${descr}
+${commands}
+SEE ALSO
+  ${tname}(1)
+
+  Full documentation at: <https://xnvme.io/>
+AUTHOR
+  Written by ${author_name} <${author_email}> on behalf of ${sponsor}
+"""
+
 MANPAGE_SUB = """NAME
   ${name} - ${descr}
 SYNOPSIS
@@ -74,8 +89,11 @@ def expand_path(path):
     return os.path.abspath(os.path.expanduser(os.path.expandvars(path)))
 
 
-def run(cmd, cmd_input=None, cwd=None):
-    """Run the given 'cmd' and return (stdout, stderr, returncode)"""
+def run(cmd, cmd_input=None, cwd=None, exec_path=None):
+    """
+    Run the given 'cmd' and return (stdout, stderr, returncode); the xnvme front-end looks
+    programs up on 'exec_path' only, so installed ones are not taken for those built
+    """
 
     with Popen(
         " ".join(cmd),
@@ -84,7 +102,11 @@ def run(cmd, cmd_input=None, cwd=None):
         stderr=PIPE,
         cwd=cwd,
         shell=True,
-        env={"PATH": cwd, "XNVME_EXEC_PATH": os.devnull} if cwd else None,
+        env=(
+            {"PATH": cwd, "XNVME_EXEC_PATH": str(exec_path or os.devnull)}
+            if cwd
+            else None
+        ),
     ) as proc:
         out, err = proc.communicate(
             input=cmd_input.encode("utf-8") if cmd_input else None
@@ -207,33 +229,69 @@ def parse_frontend(tsig):
     """
     Parse the commands listed by the xnvme front-end's overview, and those of its groups;
     returns their names, or none for a tool that is not the front-end
+
+    Records, in the order of the overview, what xnvme(1) lists in 'toc', and the groups
+    in 'group_pages'.
     """
 
     out, _, rcode = run([tsig["name"]], cwd=tsig["dirname"])
     if rcode or "Groups, run one" not in out:
         return []
 
+    builddir = Path(__file__).parent.parent / "builddir"
     snames = []
     for line in out.splitlines():
         match = re.match(r"^  xnvme (\w[\w-]*)(?: <\w+>)?\s{2,}(.+)$", line)
-        if not match or match.group(1) == "help":
+        if not match:
             continue
         name, descr = match.groups()
 
-        # A group lists its commands with a description each; programs are documented apart
+        # A group of programs, named by 'xnvme --list-cmds'; each documents its own commands
+        if name in ("test", "example"):
+            lst, _, rcode = run(
+                [tsig["name"], f"--list-cmds={name}"],
+                cwd=tsig["dirname"],
+                exec_path=builddir / f"{name}s",
+            )
+            rows = []
+            for prog in lst.split() if not rcode else []:
+                pout, _, _ = run(
+                    [f"xnvme-{name}-{prog}", "--help"], cwd=str(builddir / f"{name}s")
+                )
+                match = re.match(RE_SIG, pout, re.MULTILINE | re.IGNORECASE)
+                rows.append(
+                    (f"{name}-{prog}", summary(match.group("descr")) if match else "")
+                )
+            usage = f"xnvme {name} <program> <command> [<args>]"
+            tsig["group_pages"].append((name, descr, usage, rows))
+            tsig["toc"].append((name, descr))
+            continue
+
         lst, _, rcode = run([tsig["name"], name, "--help"], cwd=tsig["dirname"])
-        if not rcode and lst.startswith("Commands in"):
+        if rcode:
+            continue
+
+        # A group lists its commands with a description each
+        if lst.startswith("Commands in"):
             nested = f"See 'xnvme {name} <command>" in lst
+            rows = []
             for row in re.findall(r"^  (\S+)\s{2,}(.+)$", lst, re.MULTILINE):
                 words = [name, row[0]] if nested else [row[0]]
                 sname = parse_frontend_sub_sig(tsig, words, row[1])
-                if sname:
-                    snames.append(sname)
+                if not sname:
+                    continue
+                snames.append(sname)
+                rows.append((sname, row[1]))
+            usage = f"xnvme {name} <command> [<args>]" if nested else f"xnvme {name}"
+            tsig["group_pages"].append((name, descr, usage, rows))
+            tsig["toc"].append((name, descr))
             continue
 
         sname = parse_frontend_sub_sig(tsig, [name], descr)
-        if sname:
-            snames.append(sname)
+        if not sname:
+            continue
+        snames.append(sname)
+        tsig["toc"].append((sname, descr))
 
     return snames
 
@@ -284,6 +342,8 @@ def parse_tool_sig(tpath):
         "descr_long": prose(descr),
         "snames": [],
         "subs": {},
+        "group_pages": [],
+        "toc": [],
     }
 
     tsig["snames"] = parse_frontend(tsig)
@@ -296,6 +356,7 @@ def parse_tool_sig(tpath):
             logging.warning("skipping tname: %s, sname: %s", tname, sname)
             continue
         tsig["snames"].append(sname)
+        tsig["toc"].append((sname, tsig["subs"][sname]["descr"]))
 
     return tsig
 
@@ -359,9 +420,9 @@ def emit_manpage_main(tool):
 
     txt_subs = "COMMANDS\n"
 
-    for sname in tool["snames"]:
-        txt_subs += "  %s-%s(1)" % (tool["name"], sname)
-        txt_subs += "  %s\n\n" % tool["subs"][sname]["descr"]
+    for name, descr in tool["toc"]:
+        txt_subs += "  %s-%s(1)" % (tool["name"], name)
+        txt_subs += "  %s\n\n" % descr
 
     txtpage = (
         MANPAGE_MAIN.replace("${name}", tool["name"])
@@ -397,6 +458,41 @@ def emit_manpage_main(tool):
             "xNVMe",
         ],
         txtpage,
+    )
+    if rcode:
+        logging.error("FAILED: txt2man; '%s', rcode:%s", err, rcode)
+        return None
+
+    return manpage, txtpage
+
+
+def emit_manpage_group(tool, group):
+    """Emit man page for a group of the xnvme front-end, listing the pages of its commands"""
+
+    name, descr, usage, rows = group
+
+    txt_subs = "COMMANDS\n"
+    for row, row_descr in rows:
+        txt_subs += "  %s-%s(1)  %s\n\n" % (
+            tool["name"],
+            row,
+            row_descr or "None provided",
+        )
+
+    txtpage = (
+        MANPAGE_GROUP.replace("${name}", "-".join([tool["name"], name]))
+        .replace("${descr}", descr)
+        .replace("${usage}", usage)
+        .replace("${commands}", txt_subs)
+        .replace("${tname}", tool["name"])
+        .replace("${author_name}", "Simon A. F. Lund")
+        .replace("${author_email}", "simon.lund@samsung.com")
+        .replace("${sponsor}", "Samsung")
+    )
+
+    title = "-".join([tool["name"].upper(), name.upper()])
+    manpage, err, rcode = run(
+        ["txt2man", "-t", title, "-v", "xNVMe", "-s", "1", "-r", "xNVMe"], txtpage
     )
     if rcode:
         logging.error("FAILED: txt2man; '%s', rcode:%s", err, rcode)
@@ -447,6 +543,14 @@ def gen_manpage(args, folders):
                     txt.write(txtpage)
 
                 meson.append(MESON_MAN_INSTALL.format(manpage=sub_fname))
+
+            for group in tool["group_pages"]:
+                group_fname = "%s-%s.1" % (tool["name"], group[0])
+                emitted = emit_manpage_group(tool, group)
+                if emitted is None:
+                    return 1
+                (Path(args.output) / folder / group_fname).write_text(emitted[0])
+                meson.append(MESON_MAN_INSTALL.format(manpage=group_fname))
 
         meson.sort()
 
