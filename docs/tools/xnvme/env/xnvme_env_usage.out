@@ -1,0 +1,8 @@
+Usage: xnvme env [system|library]
+
+As YAML, what the drivers depend on, such as the IOMMU,
+the kernel modules, hugepages and memlock, the NVMe
+controllers and the queues of the kernel nvme driver,
+each with a fix where something is missing; then the
+library version, build configuration and backends.
+'system' or 'library' prints one of the two.

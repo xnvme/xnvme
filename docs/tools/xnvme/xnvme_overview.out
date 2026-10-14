@@ -6,7 +6,7 @@ Start here:
   xnvme list               NVMe controller functions and their driver
   xnvme info <uri>         Retrieve derived information for given device
   xnvme enum               Enumerate devices on the system
-  xnvme perf               Synthetic workloads, on every backend
+  xnvme perf               Run IO benchmarks against xNVMe devices
 
 Set up the host:
   xnvme env                Relevant system config and library introspection
@@ -22,9 +22,5 @@ Command passthru:
   xnvme cmd-iov            An I/O command with its data in --vec-cnt segments
 
 Groups, run one to list its commands:
-  xnvme test             installed test programs
-  xnvme example          installed example programs
-
-  xnvme help <command>   options of one command
-  xnvme --help           every built-in command at once
-  xnvme --exec-path      where the programs xnvme runs are looked up
+  xnvme test               installed test programs
+  xnvme example            installed example programs
