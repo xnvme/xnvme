@@ -30,7 +30,7 @@ def _require_upcie(cijoe):
     build configured with -Dwith-upcie=disabled is in the same position.
     """
 
-    err, state = cijoe.run("xnvme library-info")
+    err, state = cijoe.run("xnvme env library")
     assert not err, "could not ask the library what backends it has"
 
     if UPCIE_BUILT not in state.output():
@@ -357,7 +357,7 @@ def _alloc_buffers(cijoe, homi_id, count, nbytes=4096):
 def test_upcie_status_refuses_when_absent(cijoe):
     """A build without uPCIe refuses to inspect, rather than report no server"""
 
-    err, state = cijoe.run("xnvme library-info")
+    err, state = cijoe.run("xnvme env library")
     assert not err, "could not ask the library what backends it has"
 
     if UPCIE_BUILT in state.output():
@@ -505,7 +505,7 @@ def test_totals_come_from_the_controller(cijoe, device, be_opts, cli_args):
     if "nsq_total" not in ctrlr:
         pytest.skip(reason="the controller did not report its queue allocation")
 
-    err, state = cijoe.run(f"xnvme feature-get {cli_args} --fid 0x7 --sel 0")
+    err, state = cijoe.run(f"xnvme test adm feature-get {cli_args} --fid 0x7 --sel 0")
     assert not err, "could not ask the controller for Number of Queues"
 
     # NSQA and NCQA are zero-based

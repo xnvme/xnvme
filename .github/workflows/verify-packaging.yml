@@ -70,7 +70,7 @@ jobs:
       if: steps.install.outcome == 'success'
       continue-on-error: true
       run: |
-        xnvme library-info
+        xnvme env library
         xnvme info 1GB --be ramdisk
 
     - name: Upload the packages
@@ -119,7 +119,7 @@ jobs:
 
     - name: Run the installed tools
       run: |
-        xnvme library-info
+        xnvme env library
         xnvme info 1GB --be ramdisk
 
   #
@@ -155,5 +155,5 @@ jobs:
 
     - name: Run the installed tools
       run: |
-        xnvme library-info
+        xnvme env library
         xnvme info 1GB --be ramdisk

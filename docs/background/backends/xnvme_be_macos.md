@@ -20,5 +20,5 @@ This URI can be used in the **xNVMe** command line tools and C API:
 
 ```
 # Example of Identify with MacVFN
-xnvme idfy --cns 1 MacVFN-<serial>
+xnvme cmd-admin MacVFN-<serial> --opcode=0x06 --cdw10=1 --data-len=4096 -r
 ```
