@@ -24,4 +24,3 @@ Command passthru:
 Groups, run one to list its commands:
   xnvme test               installed test programs
   xnvme example            installed example programs
-  xnvme --help             every built-in command at once

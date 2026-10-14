@@ -527,7 +527,6 @@ cli_overview(struct xnvme_cli *cli)
 	printf("Groups, run one to list its commands:\n");
 	cli_row("xnvme test", "installed test programs");
 	cli_row("xnvme example", "installed example programs");
-	cli_row("xnvme --help", "every built-in command at once");
 
 	return 0;
 }
@@ -2099,7 +2098,7 @@ cli_main(struct xnvme_cli *cli, int argc, char **argv)
 	const char *cmd = argc > 1 ? argv[1] : NULL;
 	char path[4096];
 
-	if (!cmd) {
+	if (!cmd || !strcmp(cmd, "--help") || !strcmp(cmd, "-h")) {
 		return cli_overview(cli);
 	}
 	if (!strcmp(cmd, "list")) {

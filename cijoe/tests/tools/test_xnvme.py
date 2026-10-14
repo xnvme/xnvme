@@ -325,6 +325,14 @@ def test_frontend_overview(cijoe):
     assert "idfy-ctrlr" not in state.output()
 
 
+def test_frontend_short_help(cijoe):
+    """-h prints the overview, as --help does"""
+
+    err, state = cijoe.run("xnvme -h")
+    assert not err
+    assert "Start here:" in state.output()
+
+
 def test_frontend_group(cijoe):
     err, state = cijoe.run("xnvme cmd")
     assert not err

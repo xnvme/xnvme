@@ -2,7 +2,12 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+install_man('xnvme-cmd-admin.1')
+install_man('xnvme-cmd-io.1')
+install_man('xnvme-cmd-iov.1')
+install_man('xnvme-driver.1')
 install_man('xnvme-enum.1')
+install_man('xnvme-env.1')
 install_man('xnvme-homi-serve.1')
 install_man('xnvme-homi.1')
 install_man('xnvme-info.1')
