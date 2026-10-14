@@ -407,5 +407,8 @@ struct xnvme_platform g_xnvme_platform_linux = {
 	.dev_open = xnvme_platform_dev_open,
 	.scan = xnvme_platform_linux_scan,
 	.enumerate = xnvme_platform_enumerate,
+	.driver_default = xnvme_driver_linux_default,
+	.driver_attach = xnvme_driver_linux_attach,
+	.driver_detach = xnvme_driver_linux_detach,
 };
 #endif
