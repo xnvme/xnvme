@@ -16,7 +16,8 @@ Run a group to list its commands, and append ``--help`` to any command for its
 arguments. Commands such as ``perf``, ``homi`` and ``qublk``
 are separate programs, which ``xnvme`` looks up on its exec path,
 the install directory unless ``XNVME_EXEC_PATH`` names others;
-``xnvme --exec-path`` prints it.
+``xnvme env library`` shows it as ``exec_path``, and ``xnvme --exec-path``
+prints it alone, for scripts.
 
 ``xnvme env`` says, as YAML, whether the host is ready for the userspace
 drivers: the IOMMU groups, whether each kernel module is available, built in
@@ -86,15 +87,23 @@ The installed test programs are listed and run the same way:
 .. literalinclude:: xnvme_test.out
    :language: bash
 
-Every built-in command at once:
+``xnvme --help`` prints the same overview.
 
-.. literalinclude:: xnvme_usage.out
-   :language: bash
+The bash completion, installed with ``xnvme``, asks it what to complete:
+``xnvme --list-cmds`` prints the commands and the installed programs,
+``xnvme --list-cmds=<group>`` those of a group such as ``test``, and each
+program prints its subcommands with ``--list-cmds``. It therefore completes what
+is installed, and the man pages, ``man xnvme`` and ``man xnvme-<command>``, are
+generated from the same ``--help`` output shown here.
 
-Subcommands
-===========
+Commands
+========
 
 .. toctree::
 
+   list/index
    info/index
    enum/index
+   env/index
+   driver/index
+   cmd/index
