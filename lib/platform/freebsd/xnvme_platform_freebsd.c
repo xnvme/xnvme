@@ -282,5 +282,8 @@ struct xnvme_platform g_xnvme_platform_freebsd = {
 	.dev_open = xnvme_platform_dev_open,
 	.scan = xnvme_platform_freebsd_scan,
 	.enumerate = xnvme_platform_enumerate,
+	.driver_default = xnvme_driver_freebsd_default,
+	.driver_attach = xnvme_driver_freebsd_attach,
+	.driver_detach = xnvme_driver_freebsd_detach,
 };
 #endif

@@ -7,6 +7,7 @@ xnvmelib_source += files(
   'xnvme_cmd.c',
   'xnvme_cuda_buf.c',
   'xnvme_dev.c',
+  'xnvme_driver.c',
   'xnvme_geo.c',
   'xnvme_hip_buf.c',
   'xnvme_host_buf.c',
