@@ -67,6 +67,7 @@ tests = {
     ['scopy-msrc clear', ['scopy-msrc', '1GB', '--clear']],
   ],
   'threads.c': [
+    ['reopen', ['reopen', '1GB', '--count', '5']],
     ['init_term', ['init_term', '1GB', '--count', '200', '--qdepth', '64']],
   ],
   'xnvme_cli.c': [

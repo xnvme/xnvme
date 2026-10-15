@@ -101,6 +101,16 @@ test_open_close(struct xnvme_cli *cli)
 	return run_workers(cli, NULL, open_close_fn, THREADS);
 }
 
+/**
+ * Each open follows a close that released the controller, so a backend has to bring the
+ * controller up again right after tearing it down
+ */
+static int
+test_reopen(struct xnvme_cli *cli)
+{
+	return run_workers(cli, NULL, open_close_fn, 1);
+}
+
 static int
 test_init_term(struct xnvme_cli *cli)
 {
@@ -151,6 +161,19 @@ static struct xnvme_cli_sub g_subs[] = {
 		"Open and close 'uri' from 8 threads at once, 'count' rounds each",
 		"Open and close 'uri' from 8 threads at once, 'count' rounds each",
 		test_open_close,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_COUNT, XNVME_CLI_LREQ},
+			XNVME_CLI_ASYNC_OPTS,
+		},
+	},
+	{
+		"reopen",
+		"Open and close 'uri' 'count' times, each open right after the previous close",
+		"Open and close 'uri' 'count' times, each open right after the previous close",
+		test_reopen,
 		{
 			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
