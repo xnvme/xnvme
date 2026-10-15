@@ -11,9 +11,19 @@
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_PLATFORM_MACOS_ENABLED
 #include <mach/mach_error.h>
+#include <unistd.h>
 #include <CoreFoundation/CoreFoundation.h>
 
 #include <xnvme_dev.h>
+
+/**
+ * How long ctrlr_init() retries IOServiceOpen(), in milliseconds
+ *
+ * MacVFN serves one client at a time, and counts a closed one as gone only when the driver
+ * has run its Stop(), which is after IOServiceClose() has returned; an open right after the
+ * last close is refused until then.
+ */
+#define XNVME_BE_MACOS_DRIVERKIT_OPEN_WAIT_MS 2000
 
 void
 xnvme_be_macos_driverkit_dev_close(struct xnvme_dev *dev)
@@ -130,7 +140,14 @@ xnvme_be_macos_driverkit_ctrlr_init(struct xnvme_dev *dev)
 		return NULL;
 	}
 
-	err = IOServiceOpen(service, mach_task_self_, MACVFN_CLIENT_VERSION, &connection);
+	for (int waited_ms = 0;; waited_ms += 10) {
+		err = IOServiceOpen(service, mach_task_self_, MACVFN_CLIENT_VERSION, &connection);
+		if (err == kIOReturnSuccess ||
+		    waited_ms >= XNVME_BE_MACOS_DRIVERKIT_OPEN_WAIT_MS) {
+			break;
+		}
+		usleep(10 * 1000);
+	}
 	if (err != kIOReturnSuccess) {
 		XNVME_DEBUG("FAILED: IOServiceOpen(MACVFN_CLIENT_VERSION); connection(%u),"
 			    "ret(0x%08x), '%s'",
