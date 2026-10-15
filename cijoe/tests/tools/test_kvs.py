@@ -20,6 +20,19 @@ def test_idfy_ns(cijoe, device, be_opts, cli_args):
 
 
 @xnvme_parametrize(labels=["kvs"], opts=["be", "admin"])
+def test_info_csi_kv(cijoe, device, be_opts, cli_args):
+    """A key-value namespace is identified by CSI 0x1 and classified as XNVME_GEO_KV"""
+
+    err, state = cijoe.run(f"xnvme info {cli_args}")
+    assert not err, state.output()
+
+    output = state.output()
+    lines = [line.strip() for line in output.split("\n")]
+    for expected in ["csi: 0x1", "type: XNVME_GEO_KV"]:
+        assert expected in lines, f"missing '{expected}' in:\n{output}"
+
+
+@xnvme_parametrize(labels=["kvs"], opts=["be", "admin"])
 def test_delete_store_exist(cijoe, device, be_opts, cli_args):
     key = "hello"
     val = "world"
