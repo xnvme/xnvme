@@ -98,7 +98,7 @@ sub_enumerate(struct xnvme_cli *cli)
 	}
 
 	if (ns_count == 0) {
-		fprintf(stdout, "~\n");
+		fprintf(stdout, " ~\n");
 	}
 
 	return 0;
