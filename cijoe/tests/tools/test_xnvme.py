@@ -1,6 +1,7 @@
 import os
 
 import pytest
+import yaml
 
 from ..conftest import (
     XnvmeDriver,
@@ -18,13 +19,17 @@ def test_library_info(cijoe):
 
 
 def test_enum(cijoe):
+    """The enumeration is YAML, a mapping also when it finds nothing"""
+
     XnvmeDriver.kernel_attach(cijoe)
-    err, _ = cijoe.run("xnvme enum")
+    err, state = cijoe.run("xnvme enum")
     assert not err
+    assert "xnvme_cli_enumeration" in yaml.safe_load(state.output())
 
     XnvmeDriver.kernel_detach(cijoe)
-    err, _ = cijoe.run("xnvme enum")
+    err, state = cijoe.run("xnvme enum")
     assert not err
+    assert "xnvme_cli_enumeration" in yaml.safe_load(state.output())
 
 
 @xnvme_parametrize(labels=["fabrics"], opts=["be"])
