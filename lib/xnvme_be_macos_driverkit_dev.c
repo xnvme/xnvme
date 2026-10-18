@@ -120,10 +120,10 @@ _xnvme_be_driverkit_delete_ioqpair(struct xnvme_be_macos_driverkit_state *state,
 static void *
 xnvme_be_macos_driverkit_ctrlr_init(struct xnvme_dev *dev)
 {
+	io_connect_t connection = IO_OBJECT_NULL;
 	struct xnvme_be_macos_driverkit_ctrlr *ctrlr;
 	CFMutableDictionaryRef matching_dict;
 	io_service_t service;
-	io_connect_t connection;
 	kern_return_t err;
 
 	ctrlr = calloc(1, sizeof(*ctrlr));
@@ -152,6 +152,7 @@ xnvme_be_macos_driverkit_ctrlr_init(struct xnvme_dev *dev)
 		XNVME_DEBUG("FAILED: IOServiceOpen(MACVFN_CLIENT_VERSION); connection(%u),"
 			    "ret(0x%08x), '%s'",
 			    connection, err, mach_error_string(err));
+		IOObjectRelease(service);
 		free(ctrlr);
 		return NULL;
 	}
@@ -165,8 +166,8 @@ xnvme_be_macos_driverkit_ctrlr_init(struct xnvme_dev *dev)
 		XNVME_DEBUG("FAILED: IOConnectCallScalarMethod(NVME_INIT);"
 			    "ret(0x%08x), '%s'",
 			    err, mach_error_string(err));
-		IOServiceClose(service);
 		IOServiceClose(connection);
+		IOObjectRelease(service);
 		free(ctrlr);
 		return NULL;
 	}
@@ -182,8 +183,8 @@ xnvme_be_macos_driverkit_ctrlr_term(void *handle)
 {
 	struct xnvme_be_macos_driverkit_ctrlr *ctrlr = handle;
 
-	IOServiceClose(ctrlr->device_service);
 	IOServiceClose(ctrlr->device_connection);
+	IOObjectRelease(ctrlr->device_service);
 	free(ctrlr);
 
 	return 0;
