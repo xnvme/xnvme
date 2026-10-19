@@ -14,6 +14,23 @@
 static _Atomic int g_cuda_ctrlr_count;
 
 static void
+_cuda_ctx_term(void)
+{
+	CUcontext current = NULL;
+
+	if (g_upcie_cuda_rte.cu_ctx_retained) {
+		cuCtxGetCurrent(&current);
+		if (current == g_upcie_cuda_rte.cu_ctx) {
+			cuCtxSetCurrent(NULL);
+		}
+		cuDevicePrimaryCtxRelease(g_upcie_cuda_rte.cu_dev);
+	}
+
+	g_upcie_cuda_rte.cu_ctx = NULL;
+	g_upcie_cuda_rte.cu_ctx_retained = 0;
+}
+
+static void
 _cuda_rte_term(void)
 {
 	if (!g_upcie_cuda_rte.is_initialized) {
@@ -22,9 +39,56 @@ _cuda_rte_term(void)
 
 	dmamem_destroy(&g_upcie_cuda_rte.dmem);
 	cudamem_heap_term(&g_upcie_cuda_rte.cuda_heap);
-	cuCtxDestroy(g_upcie_cuda_rte.cu_ctx);
+	_cuda_ctx_term();
 
 	g_upcie_cuda_rte.is_initialized = 0;
+}
+
+static int
+_cuda_ctx_init(CUdevice cu_dev, uint32_t gpu_id)
+{
+	CUcontext current = NULL;
+	CUdevice current_dev;
+	int err;
+
+	err = cuCtxGetCurrent(&current);
+	if (err) {
+		XNVME_DEBUG("FAILED: cuCtxGetCurrent(); err(%d)", err);
+		return -EIO;
+	}
+	g_upcie_cuda_rte.cu_dev = cu_dev;
+
+	if (current) {
+		err = cuCtxGetDevice(&current_dev);
+		if (err) {
+			XNVME_DEBUG("FAILED: cuCtxGetDevice(); err(%d)", err);
+			return -EIO;
+		}
+		if (current_dev != cu_dev) {
+			XNVME_DEBUG("FAILED: the current CUDA context is not on gpu_id(%u)",
+				    gpu_id);
+			return -EINVAL;
+		}
+		g_upcie_cuda_rte.cu_ctx = current;
+		g_upcie_cuda_rte.cu_ctx_retained = 0;
+		return 0;
+	}
+
+	err = cuDevicePrimaryCtxRetain(&g_upcie_cuda_rte.cu_ctx, cu_dev);
+	if (err) {
+		XNVME_DEBUG("FAILED: cuDevicePrimaryCtxRetain(); err(%d)", err);
+		return -EIO;
+	}
+	err = cuCtxSetCurrent(g_upcie_cuda_rte.cu_ctx);
+	if (err) {
+		XNVME_DEBUG("FAILED: cuCtxSetCurrent(); err(%d)", err);
+		cuDevicePrimaryCtxRelease(cu_dev);
+		g_upcie_cuda_rte.cu_ctx = NULL;
+		return -EIO;
+	}
+	g_upcie_cuda_rte.cu_ctx_retained = 1;
+
+	return 0;
 }
 
 static int
@@ -53,21 +117,14 @@ _cuda_rte_init(size_t heap_size, uint32_t gpu_id)
 		return -ENODEV;
 	}
 
-	// CUDA 13 redefines cuCtxCreate -> cuCtxCreate_v4, which takes an extra
-	// CUctxCreateParams* (NULL = the old default); CUDA 12 keeps the 3-arg form.
-#if CUDA_VERSION >= 13000
-	err = cuCtxCreate(&g_upcie_cuda_rte.cu_ctx, NULL, 0, cu_dev);
-#else
-	err = cuCtxCreate(&g_upcie_cuda_rte.cu_ctx, 0, cu_dev);
-#endif
+	err = _cuda_ctx_init(cu_dev, gpu_id);
 	if (err) {
-		XNVME_DEBUG("FAILED: cuCtxCreate(); err(%d)", err);
-		return -EIO;
+		return err;
 	}
 	err = cudamem_config_init(&g_upcie_cuda_rte.cuda_config, 0);
 	if (err) {
 		XNVME_DEBUG("FAILED: cudamem_config_init(); err(%d)", err);
-		cuCtxDestroy(g_upcie_cuda_rte.cu_ctx);
+		_cuda_ctx_term();
 		return err;
 	}
 
@@ -80,7 +137,7 @@ _cuda_rte_init(size_t heap_size, uint32_t gpu_id)
 				&g_upcie_cuda_rte.cuda_config);
 	if (err) {
 		XNVME_DEBUG("FAILED: cudamem_heap_init(); err(%d)", err);
-		cuCtxDestroy(g_upcie_cuda_rte.cu_ctx);
+		_cuda_ctx_term();
 		return -ENOMEM;
 	}
 
@@ -93,7 +150,7 @@ _cuda_rte_init(size_t heap_size, uint32_t gpu_id)
 		if (err) {
 			XNVME_DEBUG("FAILED: dmamem_from_cuda_registry(); err(%d)", err);
 			cudamem_heap_term(&g_upcie_cuda_rte.cuda_heap);
-			cuCtxDestroy(g_upcie_cuda_rte.cu_ctx);
+			_cuda_ctx_term();
 			return err;
 		}
 	}

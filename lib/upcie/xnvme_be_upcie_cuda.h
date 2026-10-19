@@ -19,6 +19,9 @@ struct xnvme_cuda_queue {
  */
 struct xnvme_be_upcie_cuda_rte {
 	CUcontext cu_ctx;
+	CUdevice cu_dev;
+	int cu_ctx_retained;
+
 	struct cudamem_config cuda_config;
 	struct cudamem_heap cuda_heap;
 	struct dmamem dmem; ///< Shared translation; unused where each controller needs its own
