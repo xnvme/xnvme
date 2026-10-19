@@ -49,7 +49,7 @@ foreach source, tests : tools
   bin = executable(
     bin_name,
     [source, xnvme_vcs_h],
-    include_directories: [conf_inc, xnvme_inc] + (bin_cuse ? [xnvme_cuse_inc] : []),
+    include_directories: [conf_inc, xnvme_inc, xnvme_priv_inc] + (bin_cuse ? [xnvme_cuse_inc] : []),
     link_args: link_args_hardening,
     link_with: [xnvmelib] + (bin_cuse ? [xnvme_cuse_lib] : []),
     install_rpath: xnvmelib_rpath,

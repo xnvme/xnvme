@@ -181,7 +181,7 @@ struct xnvme_queue *q2 = xnvme_queue_init(dev, 128, 0);  // Client's own queue
 ├─────────────────────────────────────────────────────────────┤
 │  Cross-platform components                                  │
 │                                                             │
-│  CBI: emu, thrpool, nil, posix mem, psync                   │
+│  posix, emu, thrpool, nil, shim: shared by the platforms    │
 │  Ramdisk: virtual device driver (reusable by any platform)  │
 │  cref: controller reference counting                        │
 └─────────────────────────────────────────────────────────────┘
@@ -528,8 +528,8 @@ enum xnvme_dev_type detect_device_type(const char *uri) {
 
 ### Ramdisk
 
-Ramdisk is a cross-platform virtual device driver - not a backend, not formally
-CBI, but reusable like CBI.
+Ramdisk is a cross-platform virtual device driver in `lib/backend/ramdisk`,
+reusable by every platform like the other cross-platform implementations.
 
 ```c
 // Ramdisk via URI pattern
@@ -540,7 +540,7 @@ xnvme_dev_open("1GB", &(struct xnvme_opts){.be = "ramdisk"});
 ```
 
 - Memory-backed NVMe device emulation
-- Uses CBI async wrappers (thrpool, emu, nil)
+- Uses the cross-platform async implementations (thrpool, emu, nil)
 - Available on all platforms
 - Config provides its own sync/admin/dev
 
@@ -586,9 +586,9 @@ Userspace configs bundle everything and don't allow mixing:
 | uio         | uio       | uio       | uio       | hugepage  | Linux          | uPCIe   |
 | driverkit   | driverkit | driverkit | driverkit | driverkit | macOS          | MacVFN  |
 
-### CBI / Virtual Components
+### Cross-platform and Virtual Components
 
-Cross-platform common backend implementations:
+The implementations shared by the platforms, each in `lib/backend/<dir>`:
 
 | Component | Type   | Description                              |
 | --------- | ------ | ---------------------------------------- |
@@ -1200,34 +1200,29 @@ xnvme_platform_dev_close(struct xnvme_dev *dev)
 ## File Organization
 
 ```
+include/                          # Public headers only
 lib/
-├── xnvme_platform.c              # Shared dev_open, enumerate
-├── xnvme_platform_linux.c        # Linux: scan, classify
-├── xnvme_platform_freebsd.c      # FreeBSD: scan, classify
-├── xnvme_platform_macos.c        # macOS: scan, classify
-├── xnvme_platform_windows.c      # Windows: scan, classify
+├── core/                       # dev, buf, cmd, queue, geo, ident, opts
+├── nvme/                       # adm, nvm, znd, kvs, spec, topology, pi
+├── util/                       # lock, crc, lba, libconf, ver
+├── file/  cli/                 # the file API and the CLI library
 │
-├── xnvme_be_linux.c              # Linux configs + helpers
-├── xnvme_be_linux_dev.c          # Linux: dev_open, dev_close
-├── xnvme_be_linux_sync_nvme.c    # Linux: NVMe ioctl sync
-├── xnvme_be_linux_sync_block.c   # Linux: block layer sync
-├── xnvme_be_linux_admin_nvme.c   # Linux: NVMe ioctl admin
-├── xnvme_be_linux_admin_block.c  # Linux: block layer admin
-├── xnvme_be_linux_async_*.c      # Linux: io_uring, libaio, etc.
-├── xnvme_be_linux_mem_hugepage.c # Linux: hugepage memory
+├── platform/
+│   ├── xnvme_platform.c          # Shared dev_open, enumerate
+│   └── <os>/                     # linux, freebsd, macos, windows
+│       └── xnvme_platform_<os>.c # Scan, classify, the configs the OS offers
 │
-├── xnvme_be_fbsd*.c              # FreeBSD configs + implementations
-├── xnvme_be_macos*.c             # macOS configs + implementations
-├── xnvme_be_macos_driverkit*.c   # macOS DriverKit configs + implementations
-├── xnvme_be_windows*.c           # Windows configs + implementations
-│
-├── xnvme_be_spdk*.c              # SPDK userspace driver
-├── xnvme_be_vfio*.c              # libvfn userspace driver
-│
-├── xnvme_be_cbi_*.c              # Cross-platform components (emu, thrpool, psync, etc.)
-├── xnvme_be_cref.c               # Controller reference counting
-├── xnvme_be_ramdisk*.c           # Ramdisk virtual device driver
-└── xnvme_be_nosys.c              # Stubs for disabled features
+└── backend/
+    ├── xnvme_be.c                # Backend printers
+    ├── xnvme_be_cref.c           # Controller reference counting
+    ├── xnvme_be_nosys.c          # Stubs for what an implementation lacks
+    ├── xnvme_be_registry.h       # Extern declarations for all configs
+    │
+    └── <dir>/                    # One mechanism: posix, emu, thrpool, nil,
+                                  # shim, liburing, libaio, iocp, ioring,
+                                  # spdk, libvfn, upcie, driverkit, ramdisk;
+                                  # or an OS's own: linux, freebsd, macos,
+                                  # windows
 ```
 
 ## Naming Convention

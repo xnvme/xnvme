@@ -39,13 +39,13 @@ NAMESPACES: dict[str, set[str]] = {
         "xnvme_nvm",
         "xnvme_pi",
         "xnvme_spec",
-        "xnvme_spec_fs",
         "xnvme_spec_pp",
         "xnvme_topology",
         "xnvme_znd",
     },
     "file": {
         "xnvme_file",
+        "xnvme_spec_fs",
     },
     "cli": {
         "xnvme_cli",

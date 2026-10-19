@@ -265,7 +265,7 @@ configure_file(
 # The revision the sources came from, as 'xnvme_vcs.h'
 vcs_tag_py = meson.current_source_dir() / 'toolbox' / 'vcs_tag.py'
 xnvme_vcs_h = vcs_tag(
-  input: 'include/xnvme_vcs.h.in',
+  input: 'lib/util/xnvme_vcs.h.in',
   output: 'xnvme_vcs.h',
   command: [python3, vcs_tag_py],
   fallback: 'unknown',

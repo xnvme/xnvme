@@ -101,7 +101,7 @@ foreach test_source, tests_args : tests
   e = executable(
     tests_prefix + fs.stem(test_source),
     test_source,
-    include_directories: [conf_inc, xnvme_inc],
+    include_directories: [conf_inc, xnvme_inc, xnvme_priv_inc],
     link_with: xnvmelib,
     link_args: link_args_hardening,
     dependencies: [thread_dep],
