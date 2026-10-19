@@ -7,7 +7,7 @@
 #endif
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_CBI_ASYNC_POSIX_ENABLED
+#ifdef XNVME_BE_POSIX_ENABLED
 #include <inttypes.h>
 #include <errno.h>
 #include <aio.h>
@@ -134,7 +134,7 @@ posix_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mb
 {
 	struct posix_queue *queue = (void *)ctx->async.queue;
 
-	struct xnvme_be_cbi_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_posix_state *state = (void *)queue->base.dev->be.state;
 	const uint64_t ssw = queue->base.dev->geo.ssw;
 	struct posix_request *req;
 	struct aiocb *aiocb;
@@ -202,9 +202,9 @@ posix_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mb
 }
 #endif
 
-struct xnvme_be_async g_xnvme_be_cbi_async_posix = {
+struct xnvme_be_async g_xnvme_be_posix_async = {
 	.id = "posix",
-#ifdef XNVME_BE_CBI_ASYNC_POSIX_ENABLED
+#ifdef XNVME_BE_POSIX_ENABLED
 	.cmd_io = posix_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
 	.poke = posix_poke,

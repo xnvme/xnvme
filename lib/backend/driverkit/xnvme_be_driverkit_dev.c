@@ -2,14 +2,14 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifdef XNVME_PLATFORM_MACOS_ENABLED
+#ifdef XNVME_BE_DRIVERKIT_ENABLED
 #include <xnvme_be_driverkit.h>
 #endif
 
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_PLATFORM_MACOS_ENABLED
+#ifdef XNVME_BE_DRIVERKIT_ENABLED
 #include <mach/mach_error.h>
 #include <unistd.h>
 #include <CoreFoundation/CoreFoundation.h>
@@ -23,13 +23,12 @@
  * has run its Stop(), which is after IOServiceClose() has returned; an open right after the
  * last close is refused until then.
  */
-#define XNVME_BE_MACOS_DRIVERKIT_OPEN_WAIT_MS 2000
+#define XNVME_BE_DRIVERKIT_OPEN_WAIT_MS 2000
 
 void
-xnvme_be_macos_driverkit_dev_close(struct xnvme_dev *dev)
+xnvme_be_driverkit_dev_close(struct xnvme_dev *dev)
 {
-	struct xnvme_be_macos_driverkit_state *state =
-		(struct xnvme_be_macos_driverkit_state *)dev->be.state;
+	struct xnvme_be_driverkit_state *state = (struct xnvme_be_driverkit_state *)dev->be.state;
 
 	if (state->qid_sync) {
 		_xnvme_be_driverkit_delete_ioqpair(state, state->qid_sync);
@@ -38,9 +37,9 @@ xnvme_be_macos_driverkit_dev_close(struct xnvme_dev *dev)
 }
 
 int
-_xnvme_be_driverkit_create_ioqpair(struct xnvme_be_macos_driverkit_state *state, int qd, int flags)
+_xnvme_be_driverkit_create_ioqpair(struct xnvme_be_driverkit_state *state, int qd, int flags)
 {
-	struct xnvme_be_macos_driverkit_ctrlr *ctrlr = state->ctrlr;
+	struct xnvme_be_driverkit_ctrlr *ctrlr = state->ctrlr;
 	unsigned int qid = __builtin_ffsll(ctrlr->qidmap);
 	NvmeQueue ioqpair_return;
 	NvmeQueue ioqpair_create;
@@ -84,9 +83,9 @@ _xnvme_be_driverkit_create_ioqpair(struct xnvme_be_macos_driverkit_state *state,
 }
 
 int
-_xnvme_be_driverkit_delete_ioqpair(struct xnvme_be_macos_driverkit_state *state, int qid)
+_xnvme_be_driverkit_delete_ioqpair(struct xnvme_be_driverkit_state *state, int qid)
 {
-	struct xnvme_be_macos_driverkit_ctrlr *ctrlr = state->ctrlr;
+	struct xnvme_be_driverkit_ctrlr *ctrlr = state->ctrlr;
 	size_t output_cnt = 0;
 	NvmeQueue ioqpair_delete = {
 		.id = (uint64_t)qid,
@@ -113,15 +112,15 @@ _xnvme_be_driverkit_delete_ioqpair(struct xnvme_be_macos_driverkit_state *state,
 /**
  * Initialize the DriverKit controller.
  *
- * Allocates a shared xnvme_be_macos_driverkit_ctrlr, opens the IOKit service
+ * Allocates a shared xnvme_be_driverkit_ctrlr, opens the IOKit service
  * and connection, initializes the NVMe controller. The returned handle is stored
  * in cref and written to dev->be.state[0] by the platform.
  */
 static void *
-xnvme_be_macos_driverkit_ctrlr_init(struct xnvme_dev *dev)
+xnvme_be_driverkit_ctrlr_init(struct xnvme_dev *dev)
 {
 	io_connect_t connection = IO_OBJECT_NULL;
-	struct xnvme_be_macos_driverkit_ctrlr *ctrlr;
+	struct xnvme_be_driverkit_ctrlr *ctrlr;
 	CFMutableDictionaryRef matching_dict;
 	io_service_t service;
 	kern_return_t err;
@@ -142,8 +141,7 @@ xnvme_be_macos_driverkit_ctrlr_init(struct xnvme_dev *dev)
 
 	for (int waited_ms = 0;; waited_ms += 10) {
 		err = IOServiceOpen(service, mach_task_self_, MACVFN_CLIENT_VERSION, &connection);
-		if (err == kIOReturnSuccess ||
-		    waited_ms >= XNVME_BE_MACOS_DRIVERKIT_OPEN_WAIT_MS) {
+		if (err == kIOReturnSuccess || waited_ms >= XNVME_BE_DRIVERKIT_OPEN_WAIT_MS) {
 			break;
 		}
 		usleep(10 * 1000);
@@ -179,9 +177,9 @@ xnvme_be_macos_driverkit_ctrlr_init(struct xnvme_dev *dev)
 }
 
 static int
-xnvme_be_macos_driverkit_ctrlr_term(void *handle)
+xnvme_be_driverkit_ctrlr_term(void *handle)
 {
-	struct xnvme_be_macos_driverkit_ctrlr *ctrlr = handle;
+	struct xnvme_be_driverkit_ctrlr *ctrlr = handle;
 
 	IOServiceClose(ctrlr->device_connection);
 	IOObjectRelease(ctrlr->device_service);
@@ -191,10 +189,9 @@ xnvme_be_macos_driverkit_ctrlr_term(void *handle)
 }
 
 int
-xnvme_be_macos_driverkit_dev_open(struct xnvme_dev *dev)
+xnvme_be_driverkit_dev_open(struct xnvme_dev *dev)
 {
-	struct xnvme_be_macos_driverkit_state *state =
-		(struct xnvme_be_macos_driverkit_state *)dev->be.state;
+	struct xnvme_be_driverkit_state *state = (struct xnvme_be_driverkit_state *)dev->be.state;
 	int qpid;
 
 	dev->ident.dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;
@@ -218,13 +215,13 @@ xnvme_be_macos_driverkit_dev_open(struct xnvme_dev *dev)
 }
 #endif
 
-struct xnvme_be_dev g_xnvme_be_macos_driverkit_dev = {
-#ifdef XNVME_PLATFORM_MACOS_ENABLED
-	.dev_open = xnvme_be_macos_driverkit_dev_open,
-	.dev_close = xnvme_be_macos_driverkit_dev_close,
+struct xnvme_be_dev g_xnvme_be_driverkit_dev = {
+#ifdef XNVME_BE_DRIVERKIT_ENABLED
+	.dev_open = xnvme_be_driverkit_dev_open,
+	.dev_close = xnvme_be_driverkit_dev_close,
 	.id = "driverkit",
-	.ctrlr_init = xnvme_be_macos_driverkit_ctrlr_init,
-	.ctrlr_term = xnvme_be_macos_driverkit_ctrlr_term,
+	.ctrlr_init = xnvme_be_driverkit_ctrlr_init,
+	.ctrlr_term = xnvme_be_driverkit_ctrlr_term,
 #else
 	.dev_open = xnvme_be_nosys_dev_open,
 	.dev_close = xnvme_be_nosys_dev_close,

@@ -59,9 +59,9 @@ _cuda_ctrlr_slot_of(struct xnvme_be_upcie_ctrlr *ctrlr)
 	return NULL;
 }
 
-extern struct xnvme_be_mem g_xnvme_be_upcie_cuda_mem;
-extern struct xnvme_be_dev g_xnvme_be_upcie_cuda_dev;
-extern struct xnvme_be_async g_xnvme_be_upcie_cuda_async;
+extern struct xnvme_be_mem g_xnvme_be_upcie_mem_cuda;
+extern struct xnvme_be_dev g_xnvme_be_upcie_dev_cuda;
+extern struct xnvme_be_async g_xnvme_be_upcie_async_cuda;
 
 int
 xnvme_be_upcie_cuda_queue_init(struct xnvme_queue *queue, int opts);

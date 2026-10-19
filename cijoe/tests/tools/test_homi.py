@@ -23,7 +23,7 @@ def _require_upcie(cijoe):
     Skip unless this build has the uPCIe backend, whose runtime 'homi status' reads
 
     Asked of the library rather than decided from the platform, since a Linux
-    build configured with -Dbe_upcie=false is in the same position.
+    build configured with -Dwith-upcie=disabled is in the same position.
     """
 
     err, state = cijoe.run("xnvme library-info")

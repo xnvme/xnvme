@@ -4,40 +4,42 @@
 
 #ifndef __INTERNAL_XNVME_BE_POSIX_H
 #define __INTERNAL_XNVME_BE_POSIX_H
-struct xnvme_be_cbi_state {
+
+struct xnvme_be_posix_state {
 	int fd;
 
 	uint8_t _rsvd[124];
 };
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_cbi_state) == XNVME_BE_STATE_NBYTES, "Incorrect size");
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_posix_state) == XNVME_BE_STATE_NBYTES,
+		    "Incorrect size");
 
-extern struct xnvme_be_admin g_xnvme_be_cbi_admin_shim;
-extern struct xnvme_be_async g_xnvme_be_cbi_async_emu;
-extern struct xnvme_be_async g_xnvme_be_cbi_async_nil;
-extern struct xnvme_be_async g_xnvme_be_cbi_async_posix;
-extern struct xnvme_be_async g_xnvme_be_cbi_async_thrpool;
-extern struct xnvme_be_mem g_xnvme_be_cbi_mem_posix;
-
-void *
-xnvme_be_cbi_mem_posix_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys);
+extern struct xnvme_be_admin g_xnvme_be_shim_admin;
+extern struct xnvme_be_async g_xnvme_be_emu_async;
+extern struct xnvme_be_async g_xnvme_be_nil_async;
+extern struct xnvme_be_async g_xnvme_be_posix_async;
+extern struct xnvme_be_async g_xnvme_be_thrpool_async;
+extern struct xnvme_be_mem g_xnvme_be_posix_mem;
 
 void *
-xnvme_be_cbi_mem_posix_buf_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes,
-				   uint64_t *phys);
+xnvme_be_posix_mem_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys);
+
+void *
+xnvme_be_posix_mem_buf_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes,
+			       uint64_t *phys);
 
 void
-xnvme_be_cbi_mem_posix_buf_free(const struct xnvme_dev *dev, void *buf);
+xnvme_be_posix_mem_buf_free(const struct xnvme_dev *dev, void *buf);
 
 int
-xnvme_be_cbi_mem_posix_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys);
-extern struct xnvme_be_sync g_xnvme_be_cbi_sync_psync;
+xnvme_be_posix_mem_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys);
+extern struct xnvme_be_sync g_xnvme_be_posix_sync;
 
 int
-xnvme_be_cbi_sync_psync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
-			       void *mbuf, size_t mbuf_nbytes);
+xnvme_be_posix_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			   size_t mbuf_nbytes);
 
 int
-xnvme_be_cbi_sync_psync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-				size_t dvec_nbytes, void *mbuf, size_t mbuf_nbytes);
+xnvme_be_posix_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+			    size_t dvec_nbytes, void *mbuf, size_t mbuf_nbytes);
 
 #endif /* __INTERNAL_XNVME_BE_POSIX_H */

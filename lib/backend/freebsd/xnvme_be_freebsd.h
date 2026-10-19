@@ -11,7 +11,7 @@
 /**
  * Internal representation of XNVME_BE_FREEBSD state
  *
- * NOTE: When changing this struct, ensure compatibility with 'struct xnvme_be_cbi_state'
+ * NOTE: When changing this struct, ensure compatibility with 'struct xnvme_be_posix_state'
  */
 struct xnvme_be_freebsd_state {
 	struct {
