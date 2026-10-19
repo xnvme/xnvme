@@ -120,8 +120,8 @@ backend and its function-interface implementations.
   - Located in ``include/xnvme_be_<backend_name>.h``
   - Have a state-struct named ``xnvme_be_<backend_name>_state``
   - Provide ``extern struct xnvme_be_<interface> *`` definitions for the
-    interface implementations, these are used when "mixing-in" the
-    implementations into the backend
+    interface implementations, these are used when composing them into
+    backend configs (``struct xnvme_be_config``)
 
 * Should be implemented in a file named ``lib/xnvme_be_<backend_name>_<interface>_<ident>.c``
 

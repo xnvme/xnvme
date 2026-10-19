@@ -167,10 +167,6 @@ enum xnvme_be_cap {
 
 /**
  * Pre-populated backend configuration
- *
- * Complete "recipe" for populating a struct xnvme_be instance.
- * Used by monolithic backends (SPDK, libvfn) that have exactly one
- * implementation per interface type, eliminating mixin lookup.
  */
 struct xnvme_be_config {
 	const struct xnvme_be_async *async;
