@@ -223,7 +223,7 @@ xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 		if (opts && opts->admin && strcmp(opts->admin, cfg->admin->id)) {
 			continue;
 		}
-		if (uri_cap && cfg->attr.caps && !(cfg->attr.caps & uri_cap)) {
+		if (uri_cap && !(cfg->attr.caps & uri_cap)) {
 			XNVME_DEBUG("INFO: skipping config '%s'; caps 0x%x vs uri 0x%x",
 				    cfg->attr.descr, cfg->attr.caps, uri_cap);
 			continue;
@@ -248,7 +248,7 @@ xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 			return err;
 		}
 
-		if (uri_cap && cfg->attr.caps) {
+		if (uri_cap) {
 			XNVME_DEBUG("FAILED: caps-matched config returned err: %d", err);
 			return err;
 		}
