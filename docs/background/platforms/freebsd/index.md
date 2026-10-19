@@ -60,22 +60,22 @@ and `nvmecontrol`.
 
 The FreeBSD platform provides the following backend configs. Some of these use
 **cross-platform
-implementations** from the **Common Backend Implementations** (CBI). For these,
-links point to descriptions in the CBI section. For the FreeBSD-specific
+implementations**, each in a directory of its own under `lib/backend/`. For
+these, links point to the cross-platform section. For the FreeBSD-specific
 interfaces, descriptions are available in the corresponding subsections.
 
 * Memory Allocators
 
   - `posix`, Use **libc** `malloc()/free()` with `sysconf()` for
-    alignment, add link to CBI
+    alignment, add link to the cross-platform section
 
 * Asynchronous Interfaces
 
   - `kqueue`, Use kqueue based aio for Asynchronous I/O
-  - `posix`, add link to CBI
-  - `emu`, add link to CBI
-  - `thrpool`, add link to CBI
-  - `nil`, add link to CBI
+  - `posix`, add link to the cross-platform section
+  - `emu`, add link to the cross-platform section
+  - `thrpool`, add link to the cross-platform section
+  - `nil`, add link to the cross-platform section
 
 * Synchronous Interfaces
 

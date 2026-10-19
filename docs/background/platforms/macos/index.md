@@ -25,20 +25,20 @@ macOS exposes NVMe devices as files using the following naming schemes:
 
 The macOS platform provides the following backend configs. Some of these use
 **cross-platform
-implementations** from the **Common Backend Implementations** (CBI). For these,
-links point to descriptions in the CBI section. For the macOS-specific
+implementations**, each in a directory of its own under `lib/backend/`. For
+these, links point to the cross-platform section. For the macOS-specific
 interfaces, descriptions are available in the corresponding subsections.
 
 * Memory Allocators
 
   - `posix`, Use **libc** `malloc()/free()` with `sysconf()` for
-    alignment, add link to CBI
+    alignment, add link to the cross-platform section
 
 * Asynchronous Interfaces
 
-  - `emu`, add link to CBI
-  - `posix`, add link to CBI
-  - `thrpool`, add link to CBI
+  - `emu`, add link to the cross-platform section
+  - `posix`, add link to the cross-platform section
+  - `thrpool`, add link to the cross-platform section
 
 * Synchronous Interfaces
 

@@ -141,7 +141,7 @@ if conf_data.get('XNVME_BE_UPCIE_CUDA_ENABLED')
 endif
 
 # uPCIe HIP/ROCm backend, linked against libamdhip64; hipcc builds only the
-# CQ mirror kernel's object (lib/upcie). Mirrors the CUDA backend above.
+# CQ mirror kernel's object (lib/backend/upcie). Mirrors the CUDA backend above.
 hip_dep = cc.find_library(
   'amdhip64',
   has_headers: ['hip/hip_runtime.h'],
@@ -285,7 +285,7 @@ configure_file(
 # The revision the sources came from, as 'xnvme_vcs.h'
 vcs_tag_py = meson.current_source_dir() / 'toolbox' / 'vcs_tag.py'
 xnvme_vcs_h = vcs_tag(
-  input: 'include/xnvme_vcs.h.in',
+  input: 'lib/util/xnvme_vcs.h.in',
   output: 'xnvme_vcs.h',
   command: [python3, vcs_tag_py],
   fallback: 'unknown',
