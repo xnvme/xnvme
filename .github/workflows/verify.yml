@@ -26,6 +26,52 @@ defaults:
 
 jobs:
   #
+  # Classify a pull-request, or a push to main: when it changes nothing but the
+  # documentation, then the jobs building and verifying the code are skipped, and
+  # only 'docs' builds the documentation. A push to main still runs 'docgen', and
+  # what it needs, since the site is built from the command outputs of its guest.
+  # A changed .cmd file counts as code, since only the guest of 'docgen' runs it.
+  # Tags and manual runs are not classified. When the classification fails, then
+  # the change does not count as documentation-only, and everything runs.
+  #
+  changes-to-docs:
+    runs-on: ubuntu-24.04
+    outputs:
+      docs_prose_only: ${{ steps.classify.outputs.docs_prose_only }}
+
+    steps:
+    - name: Grab source
+      uses: actions/checkout@v6
+      continue-on-error: true
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        fetch-depth: 0
+
+    - name: Classify the change
+      id: classify
+      continue-on-error: true
+      env:
+        EVENT: ${{ github.event_name }}
+        REF: ${{ github.ref }}
+        PR_BASE: ${{ github.event.pull_request.base.sha }}
+        BEFORE: ${{ github.event.before }}
+      run: |
+        docs_prose_only=false
+        : > changed.txt
+        if [ "$EVENT" = "pull_request" ]; then
+          git diff --name-only --no-renames "$PR_BASE...HEAD" > changed.txt || : > changed.txt
+        elif [ "$EVENT" = "push" ] && [ "$REF" = "refs/heads/main" ] &&
+          git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+          git diff --name-only --no-renames "$BEFORE" HEAD > changed.txt || : > changed.txt
+        fi
+        cat changed.txt
+        if [ -s changed.txt ] && ! grep -qvE '^(docs/|[^/]+\.md$)' changed.txt &&
+          ! grep -qE '^docs/.*\.cmd$' changed.txt; then
+          docs_prose_only=true
+        fi
+        echo "docs_prose_only=$docs_prose_only" | tee -a "$GITHUB_OUTPUT"
+
+  #
   # Produce a source-archive (with and without subprojects)
   #
   # with-subprojects
@@ -43,7 +89,9 @@ jobs:
   #   and libvfn.
   #
   source-archive:
+    needs: changes-to-docs
     runs-on: ubuntu-24.04
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' || github.event_name == 'push'
     container: ghcr.io/xnvme/xnvme-deps-alpine-latest:main
     strategy:
       matrix:
@@ -113,8 +161,9 @@ jobs:
   # generated without error
   #
   test-gen-targets:
-    needs: source-archive
+    needs: [source-archive, changes-to-docs, docs]
     runs-on: ubuntu-24.04
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true'
     container: ghcr.io/xnvme/xnvme-citools-debian-latest:main
 
     steps:
@@ -168,8 +217,9 @@ jobs:
           | grep -q 'xnvme-qublk@.service'
 
   build-rust:
-    needs: source-archive
+    needs: [source-archive, changes-to-docs, docs]
     runs-on: ubuntu-24.04
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true'
     container:
       image: ghcr.io/xnvme/xnvme-deps-debian-trixie:main
 
@@ -209,8 +259,9 @@ jobs:
   # Build xNVMe Python packages
   #
   build-python:
-    needs: source-archive
+    needs: [source-archive, changes-to-docs, docs]
     runs-on: ubuntu-24.04
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' || github.event_name == 'push'
     container: ghcr.io/xnvme/xnvme-deps-debian-trixie:main
     strategy:
       fail-fast: false
@@ -252,9 +303,9 @@ jobs:
   # Build on Linux using different Linux distributions
   #
   build-linux:
-    needs: [source-archive, source-format-check, build-python]
+    needs: [source-archive, source-format-check, build-python, changes-to-docs]
     runs-on: ubuntu-24.04
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'push' || github.event_name == 'pull_request')
 
     strategy:
       fail-fast: false
@@ -429,9 +480,9 @@ jobs:
   # Build on macOS
   #
   build-rpm:
-    needs: [source-format-check]
+    needs: [source-format-check, changes-to-docs, docs]
     runs-on: ubuntu-24.04
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'push' || github.event_name == 'pull_request')
     container:
       image: fedora:44
 
@@ -458,9 +509,9 @@ jobs:
         xnvme info 1GB --be ramdisk
 
   build-macos:
-    needs: [source-archive, source-format-check, build-python]
+    needs: [source-archive, source-format-check, build-python, changes-to-docs]
     runs-on: ${{ matrix.os }}-${{ matrix.ver }}
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'push' || github.event_name == 'pull_request')
 
     strategy:
       fail-fast: false
@@ -590,9 +641,9 @@ jobs:
   # Build on Windows
   #
   build-windows:
-    needs: [source-archive, source-format-check, build-python]
+    needs: [source-archive, source-format-check, build-python, changes-to-docs]
     runs-on: ${{ matrix.os }}-${{ matrix.ver }}
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'push' || github.event_name == 'pull_request')
 
     defaults:
       run:
@@ -749,10 +800,10 @@ jobs:
   # Build and test xNVMe
   #
   generate-verify-matrix:
-    needs: [source-archive, source-format-check, build-python]
+    needs: [source-archive, source-format-check, build-python, changes-to-docs]
     runs-on: ubuntu-24.04
-    if: github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' &&
-      github.event.inputs.job == 'verify')
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'push' || github.event_name == 'pull_request'
+      || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'verify'))
 
     outputs:
       matrix: ${{ steps.generate.outputs.matrix }}
@@ -899,10 +950,11 @@ jobs:
   # Build and test xNVMe on physical machines
   #
   verify-physical:
-    needs: [source-archive, source-format-check, build-python]
+    needs: [source-archive, source-format-check, build-python, changes-to-docs]
     runs-on: ${{ matrix.labels }}
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name,
-      'maas')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'verify')
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'push' || (github.event_name == 'pull_request'
+      && contains(github.event.pull_request.labels.*.name, 'maas')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.job
+      == 'verify'))
 
     strategy:
       fail-fast: false
@@ -1007,10 +1059,11 @@ jobs:
   # Build and test xNVMe on physical hardware on MaaS
   #
   verify-maas:
-    needs: [source-archive, source-format-check, build-python]
+    needs: [source-archive, source-format-check, build-python, changes-to-docs]
     runs-on: ${{ matrix.labels }}
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name,
-      'maas')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'verify')
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'push' || (github.event_name == 'pull_request'
+      && contains(github.event.pull_request.labels.*.name, 'maas')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.job
+      == 'verify'))
 
     strategy:
       fail-fast: false
@@ -1099,10 +1152,11 @@ jobs:
   # Build and run performance test of xNVMe
   #
   benchmark-bdev_xnvme:
-    needs: [source-archive, source-format-check, build-python]
+    needs: [source-archive, source-format-check, build-python, changes-to-docs]
     runs-on: [self-hosted, linux, amd64, maas]
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name,
-      'maas')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'bench')
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'push' || (github.event_name == 'pull_request'
+      && contains(github.event.pull_request.labels.*.name, 'maas')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.job
+      == 'bench'))
 
     steps:
     - uses: xnvme/actions/.github/actions/cleanup@main
@@ -1183,9 +1237,10 @@ jobs:
   # Build and run fio latency test of xNVMe
   #
   benchmark-latency:
-    needs: [source-archive, source-format-check, build-python]
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name,
-      'maas')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'bench')
+    needs: [source-archive, source-format-check, build-python, changes-to-docs]
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'push' || (github.event_name == 'pull_request'
+      && contains(github.event.pull_request.labels.*.name, 'maas')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.job
+      == 'bench'))
 
     strategy:
       fail-fast: false
@@ -1294,10 +1349,10 @@ jobs:
   # https://xnvme.io/ serves the latest state of xNVMe.
   #
   docgen:
-    needs: [source-archive, source-format-check, build-python]
+    needs: [source-archive, source-format-check, build-python, changes-to-docs]
     runs-on: ubuntu-24.04
-    if: github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' &&
-      github.event.inputs.job == 'docgen')
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && needs.changes-to-docs.outputs.docs_prose_only
+      != 'true') || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'docgen')
 
     strategy:
       fail-fast: false
@@ -1423,11 +1478,35 @@ jobs:
         git add .
         git commit -a -m "Auto-deployed update of 'docs/' for '${{ github.ref }}'"
         git push
+  #
+  # Build the documentation without a guest, so without running the commands.
+  # It is quick, and runs alongside source-archive; the jobs building and verifying
+  # the code after it wait for it, so a change that breaks the documentation
+  # schedules none of them.
+  #
+  docs:
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Grab source
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+    - name: Install doc toolchain
+      run: |
+        sudo apt-get -qy update
+        sudo apt-get -qy install doxygen graphviz universal-ctags
+        pipx install ./docs/tooling
+
+    - name: Build the documentation
+      run: make docs
+
   packaging-debian:
-    needs: source-archive
+    needs: [source-archive, changes-to-docs, docs]
     runs-on: ubuntu-24.04
     container: ghcr.io/xnvme/xnvme-citools-debian-latest:main
-    if: github.event_name == 'pull_request'
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && github.event_name == 'pull_request'
 
     steps:
     - name: Info
