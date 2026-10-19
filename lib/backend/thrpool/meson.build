@@ -3,6 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 xnvmelib_source += files(
-  'xnvme_be_cbi_async_thrpool.c',
+  'xnvme_be_thrpool_async.c',
 )
 xnvmelib_inc += include_directories('.')

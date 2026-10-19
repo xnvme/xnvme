@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_linux.h>
-#include <xnvme_be_linux_io_uring_dmabuf.h>
+#include <xnvme_be_liburing_dmabuf.h>
 
 // Fails here rather than at the first mapping on a kernel without the io_uring
 // dma-buf series, and without O_DIRECT, which IO on a dma-buf needs

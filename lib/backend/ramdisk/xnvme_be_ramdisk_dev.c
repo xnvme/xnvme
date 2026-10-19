@@ -14,7 +14,7 @@
 #include <fcntl.h>
 #include <xnvme_be_ramdisk.h>
 #include <xnvme_dev.h>
-#include <xnvme_be_cbi.h>
+#include <xnvme_be_posix.h>
 
 void
 xnvme_be_ramdisk_dev_close(struct xnvme_dev *dev)

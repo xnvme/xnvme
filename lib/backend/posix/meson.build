@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 xnvmelib_source += files(
-  'xnvme_be_cbi_async_posix.c',
-  'xnvme_be_cbi_mem_posix.c',
-  'xnvme_be_cbi_sync_psync.c',
+  'xnvme_be_posix_async.c',
+  'xnvme_be_posix_mem.c',
+  'xnvme_be_posix_sync.c',
 )
 xnvmelib_inc += include_directories('.')

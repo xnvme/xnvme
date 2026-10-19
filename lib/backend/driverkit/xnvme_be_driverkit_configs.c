@@ -4,8 +4,8 @@
 
 #ifdef XNVME_PLATFORM_MACOS_ENABLED
 #include <xnvme_be.h>
-#include <xnvme_be_cbi.h>
-#include <xnvme_be_macos_driverkit.h>
+#include <xnvme_be_posix.h>
+#include <xnvme_be_driverkit.h>
 
 const struct xnvme_be_config g_xnvme_be_driverkit_native = {
 	.async = &g_xnvme_be_macos_driverkit_async,

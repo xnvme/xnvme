@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifndef __INTERNAL_XNVME_BE_LINUX_IO_URING_DMABUF_H
-#define __INTERNAL_XNVME_BE_LINUX_IO_URING_DMABUF_H
+#ifndef __INTERNAL_XNVME_BE_LIBURING_DMABUF_H
+#define __INTERNAL_XNVME_BE_LIBURING_DMABUF_H
 #include <stddef.h>
 #include <stdint.h>
 
@@ -40,4 +40,4 @@ xnvme_io_uring_dmabuf_detach(struct xnvme_queue_liburing *queue);
 void
 xnvme_io_uring_dmabuf_term(const struct xnvme_dev *dev);
 
-#endif /* __INTERNAL_XNVME_BE_LINUX_IO_URING_DMABUF_H */
+#endif /* __INTERNAL_XNVME_BE_LIBURING_DMABUF_H */

@@ -65,11 +65,11 @@ def test_a_glob_minimatch_reads_otherwise_is_an_error(glob):
             ["gate:emulated", "gate:hardware", "gate:perf"],
         ),
         (
-            ["lib/backend/upcie/xnvme_be_upcie_cuda.c"],
+            ["lib/backend/upcie/xnvme_be_upcie_cuda_gpu.c"],
             ["gate:emulated", "gate:hardware", "gate:gpu", "gate:perf"],
         ),
         (
-            ["lib/backend/liburing/xnvme_be_linux_io_uring_dmabuf.c"],
+            ["lib/backend/liburing/xnvme_be_liburing_dmabuf.c"],
             ["gate:emulated", "gate:hardware", "gate:gpu"],
         ),
         (["lib/backend/spdk/xnvme_be_spdk_dev.c"], ["gate:emulated", "gate:rdma"]),

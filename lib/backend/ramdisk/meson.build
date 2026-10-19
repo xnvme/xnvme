@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 xnvmelib_source += files(
-  'xnvme_be_ramdisk.c',
   'xnvme_be_ramdisk_admin.c',
+  'xnvme_be_ramdisk_configs.c',
   'xnvme_be_ramdisk_dev.c',
   'xnvme_be_ramdisk_sync.c',
 )
