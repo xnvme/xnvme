@@ -152,7 +152,7 @@ xnvme_be_upcie_cuda_queue_term(struct xnvme_queue *queue)
 	return 0;
 }
 
-struct xnvme_be_async g_xnvme_be_upcie_cuda_async = {
+struct xnvme_be_async g_xnvme_be_upcie_async_cuda = {
 	.id = "upcie-cuda",
 	.cmd_io = xnvme_be_upcie_async_cmd_io,
 	.cmd_iov = xnvme_be_upcie_async_cmd_iov,

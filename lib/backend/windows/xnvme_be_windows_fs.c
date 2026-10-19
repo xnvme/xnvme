@@ -8,7 +8,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_WINDOWS_FS_ENABLED
+#ifdef XNVME_PLATFORM_WINDOWS_ENABLED
 #include <errno.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_windows.h>
@@ -285,7 +285,7 @@ xnvme_be_windows_fs_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf,
 
 struct xnvme_be_sync g_xnvme_be_windows_sync_fs = {
 	.id = "file",
-#ifdef XNVME_BE_WINDOWS_FS_ENABLED
+#ifdef XNVME_PLATFORM_WINDOWS_ENABLED
 	.cmd_io = xnvme_be_windows_sync_fs_cmd_io,
 #else
 	.cmd_io = xnvme_be_nosys_sync_cmd_io,
@@ -294,7 +294,7 @@ struct xnvme_be_sync g_xnvme_be_windows_sync_fs = {
 
 struct xnvme_be_admin g_xnvme_be_windows_admin_fs = {
 	.id = "file",
-#ifdef XNVME_BE_WINDOWS_FS_ENABLED
+#ifdef XNVME_PLATFORM_WINDOWS_ENABLED
 	.cmd_admin = xnvme_be_windows_fs_cmd_admin,
 	.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo,
 #else

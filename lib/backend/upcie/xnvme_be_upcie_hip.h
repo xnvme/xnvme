@@ -33,9 +33,9 @@ struct xnvme_be_upcie_hip_rte {
 
 extern struct xnvme_be_upcie_hip_rte g_upcie_hip_rte;
 
-extern struct xnvme_be_mem g_xnvme_be_upcie_hip_mem;
-extern struct xnvme_be_dev g_xnvme_be_upcie_hip_dev;
-extern struct xnvme_be_async g_xnvme_be_upcie_hip_async;
+extern struct xnvme_be_mem g_xnvme_be_upcie_mem_hip;
+extern struct xnvme_be_dev g_xnvme_be_upcie_dev_hip;
+extern struct xnvme_be_async g_xnvme_be_upcie_async_hip;
 
 int
 xnvme_be_upcie_hip_queue_init(struct xnvme_queue *queue, int opts);

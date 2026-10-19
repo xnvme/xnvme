@@ -5,14 +5,14 @@
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 700
 #endif
-#ifdef XNVME_BE_WINDOWS_ASYNC_ENABLED
+#ifdef XNVME_BE_IORING_ENABLED
 #define NTDDI_VERSION NTDDI_WIN10_NI
 #define _WIN32_WINNT NTDDI_WIN10_NI
 #endif
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_WINDOWS_ASYNC_ENABLED
+#ifdef XNVME_BE_IORING_ENABLED
 #include <ntstatus.h>
 #define WIN32_NO_STATUS
 #include <Windows.h>
@@ -27,7 +27,7 @@
 #include <xnvme_be_ioring.h>
 
 int
-xnvme_be_windows_ioring_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
+xnvme_be_ioring_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 {
 	struct xnvme_queue_ioring *queue = (void *)q;
 	HRESULT err;
@@ -59,7 +59,7 @@ xnvme_be_windows_ioring_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 }
 
 int
-xnvme_be_windows_ioring_term(struct xnvme_queue *q)
+xnvme_be_ioring_term(struct xnvme_queue *q)
 {
 	struct xnvme_queue_ioring *queue = (void *)q;
 	close_ioring_ptr close_ioring_ptr_procadd =
@@ -81,7 +81,7 @@ xnvme_be_windows_ioring_term(struct xnvme_queue *q)
 }
 
 int
-xnvme_be_windows_ioring_poke(struct xnvme_queue *q, uint32_t max)
+xnvme_be_ioring_poke(struct xnvme_queue *q, uint32_t max)
 {
 	struct xnvme_queue_ioring *queue = (void *)q;
 	unsigned completed = 0;
@@ -125,8 +125,8 @@ xnvme_be_windows_ioring_poke(struct xnvme_queue *q, uint32_t max)
 }
 
 int
-xnvme_be_windows_ioring_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
-			       void *mbuf, size_t mbuf_nbytes)
+xnvme_be_ioring_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+		       size_t mbuf_nbytes)
 {
 	struct xnvme_queue_ioring *queue = (void *)ctx->async.queue;
 	struct xnvme_be_windows_state *state = (void *)queue->base.dev->be.state;
@@ -211,14 +211,14 @@ xnvme_be_windows_ioring_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 
 #endif
 
-struct xnvme_be_async g_xnvme_be_windows_async_ioring = {
+struct xnvme_be_async g_xnvme_be_ioring_async = {
 	.id = "io_ring",
-#ifdef XNVME_BE_WINDOWS_ASYNC_ENABLED
-	.cmd_io = xnvme_be_windows_ioring_cmd_io,
-	.poke = xnvme_be_windows_ioring_poke,
+#ifdef XNVME_BE_IORING_ENABLED
+	.cmd_io = xnvme_be_ioring_cmd_io,
+	.poke = xnvme_be_ioring_poke,
 	.wait = xnvme_be_nosys_queue_wait,
-	.init = xnvme_be_windows_ioring_init,
-	.term = xnvme_be_windows_ioring_term,
+	.init = xnvme_be_ioring_init,
+	.term = xnvme_be_ioring_term,
 	.get_completion_fd = xnvme_be_nosys_queue_get_completion_fd,
 #else
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,

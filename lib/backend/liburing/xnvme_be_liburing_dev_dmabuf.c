@@ -4,7 +4,7 @@
 
 #include <xnvme_be.h>
 
-#ifdef XNVME_BE_LINUX_IO_URING_DMABUF_ENABLED
+#ifdef XNVME_BE_LIBURING_DMABUF_ENABLED
 #include <errno.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_linux.h>
@@ -22,7 +22,7 @@ dev_open(struct xnvme_dev *dev)
 		return -EINVAL;
 	}
 
-	err = xnvme_io_uring_dmabuf_supported();
+	err = xnvme_be_liburing_dmabuf_supported();
 	if (err) {
 		return err;
 	}
@@ -37,11 +37,11 @@ dev_close(struct xnvme_dev *dev)
 		return;
 	}
 
-	xnvme_io_uring_dmabuf_term(dev);
+	xnvme_be_liburing_dmabuf_term(dev);
 	xnvme_be_linux_dev_close(dev);
 }
 
-struct xnvme_be_dev g_xnvme_be_dev_linux_io_uring_dmabuf = {
+struct xnvme_be_dev g_xnvme_be_liburing_dev_dmabuf = {
 	.id = "linux",
 	.dev_open = dev_open,
 	.dev_close = dev_close,

@@ -220,7 +220,7 @@ xnvme_be_windows_dev_close(struct xnvme_dev *dev)
 
 #endif
 
-struct xnvme_be_dev g_xnvme_be_dev_windows = {
+struct xnvme_be_dev g_xnvme_be_windows_dev = {
 #ifdef XNVME_PLATFORM_WINDOWS_ENABLED
 	.dev_open = xnvme_be_windows_dev_open,
 	.dev_close = xnvme_be_windows_dev_close,
