@@ -7,7 +7,7 @@
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_PLATFORM_MACOS_ENABLED
 #include <errno.h>
-#include <xnvme_be_macos_driverkit.h>
+#include <xnvme_be_driverkit.h>
 #include <mach/mach_error.h>
 
 #include <xnvme_dev.h>

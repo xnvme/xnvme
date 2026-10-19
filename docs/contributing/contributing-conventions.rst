@@ -117,23 +117,23 @@ backend and its function-interface implementations.
 
 * Should have a header-file defining the backend and what it exposes
 
-  - Located next to its sources, in ``lib/backend/<dir>/``; ``include/`` is
-    only for public headers
+  - Named ``xnvme_be_<dir>.h``, located next to its sources in
+    ``lib/backend/<dir>/``; ``include/`` is only for public headers
   - Have a state-struct named ``xnvme_be_<backend_name>_state``
   - Provide ``extern struct xnvme_be_<interface> *`` definitions for the
     interface implementations, these are used when composing them into
     backend configs (``struct xnvme_be_config``)
 
-* Should be implemented in a file named ``xnvme_be_<backend_name>_<interface>_<ident>.c``,
-  in that same directory
+* Should be implemented in a file named ``xnvme_be_<dir>_<interface>_<ident>.c``,
+  in that same directory, with its backend configs in ``xnvme_be_<dir>_configs.c``
 
-  - The ``<ident>`` is a name uniquely identifying the interface-implementation
-  - Example: the Linux backend, named **linux**, has the **async**
-    implementation of the **async** interface utilizing **io_uring** in a file
-    named: * ``xnvme_be_linux_async_liburing.c``
-  - Example: The SPDK backend, named **spdk**, has the **async** implementation
-    using the SPDK NVMe driver in a file named:
-    * ``xnvme_be_spdk_async_nvme.c``
+  - The ``<dir>`` is the name of the directory the file lives in
+  - The ``<ident>`` is a name uniquely identifying the interface-implementation,
+    and is left out when there is only one
+  - Example: the **async** implementation using **io_uring** passthru lives in
+    ``lib/backend/liburing/xnvme_be_liburing_async_ucmd.c``
+  - Example: the SPDK **async** implementation lives in
+    ``lib/backend/spdk/xnvme_be_spdk_async.c``
 
 * Should use static function declarations to avoid symbol-leak
 

@@ -14,7 +14,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <xnvme_dev.h>
-#include <xnvme_be_cbi.h>
+#include <xnvme_be_posix.h>
 
 int
 xnvme_be_cbi_sync_psync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,

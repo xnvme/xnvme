@@ -18,8 +18,8 @@
 
 #include <errno.h>
 #include <unistd.h>
-#include <xnvme_be_cbi.h>
-#include <xnvme_be_linux_io_uring_dmabuf.h>
+#include <xnvme_be_posix.h>
+#include <xnvme_be_liburing_dmabuf.h>
 
 static size_t
 _export_nbytes(size_t alloc_nbytes)

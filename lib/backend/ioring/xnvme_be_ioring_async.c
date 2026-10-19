@@ -24,7 +24,7 @@
 #include <xnvme_queue.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_windows.h>
-#include <xnvme_be_windows_ioring.h>
+#include <xnvme_be_ioring.h>
 
 int
 xnvme_be_windows_ioring_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))

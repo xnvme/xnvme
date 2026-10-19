@@ -13,7 +13,7 @@
 #include <libgen.h>
 
 #include <xnvme_dev.h>
-#include <xnvme_be_cbi.h>
+#include <xnvme_be_posix.h>
 #include <xnvme_be_macos.h>
 
 #ifndef _PATH_DEV_DISK

@@ -12,7 +12,7 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include <xnvme_be_cbi.h>
+#include <xnvme_be_posix.h>
 #include <xnvme_be_linux.h>
 
 #ifdef XNVME_BE_LINUX_BLOCK_ZONED_ENABLED

@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifndef __INTERNAL_XNVME_BE_MACOS_DRIVERKIT_H
-#define __INTERNAL_XNVME_BE_MACOS_DRIVERKIT_H
+#ifndef __INTERNAL_XNVME_BE_DRIVERKIT_H
+#define __INTERNAL_XNVME_BE_DRIVERKIT_H
 #include <IOKit/IOKitLib.h>
 #include <xnvme_be.h>
 

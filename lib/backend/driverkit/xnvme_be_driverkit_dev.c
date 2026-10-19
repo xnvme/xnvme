@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #ifdef XNVME_PLATFORM_MACOS_ENABLED
-#include <xnvme_be_macos_driverkit.h>
+#include <xnvme_be_driverkit.h>
 #endif
 
 #include <libxnvme.h>
