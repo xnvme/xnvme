@@ -74,17 +74,5 @@ extern struct xnvme_be_upcie_cplane_serve_state {
  */
 extern pthread_mutex_t g_upcie_cplane_serve_lock;
 
-/**
- * Tell the reader that a controller's thread has answered a connection
- */
-void
-xnvme_be_upcie_cplane_serve_wake(void);
-
-/**
- * Hand `conn` to the thread of controller `devidx`; callers hold g_upcie_cplane_serve_lock
- */
-void
-xnvme_be_upcie_cplane_serve_owe(struct xnvme_be_upcie_cplane_serve_conn *conn, int devidx);
-
 #endif /* XNVME_BE_UPCIE_ENABLED */
 #endif /* __INTERNAL_XNVME_BE_UPCIE_CPLANE_SERVE_H */

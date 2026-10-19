@@ -34,8 +34,9 @@
 struct xnvme_be_upcie_cplane_serve_state g_upcie_cplane_serve;
 pthread_mutex_t g_upcie_cplane_serve_lock = PTHREAD_MUTEX_INITIALIZER;
 
-void
-xnvme_be_upcie_cplane_serve_wake(void)
+/* Tell the reader that a controller's thread has answered a connection */
+static void
+cplane_serve_wake(void)
 {
 	const char one = 'x';
 	ssize_t nbytes;
@@ -48,8 +49,9 @@ xnvme_be_upcie_cplane_serve_wake(void)
 	(void)nbytes;
 }
 
-void
-xnvme_be_upcie_cplane_serve_owe(struct xnvme_be_upcie_cplane_serve_conn *conn, int devidx)
+/* Hand `conn` to the thread of controller `devidx`; callers hold g_upcie_cplane_serve_lock */
+static void
+cplane_serve_owe(struct xnvme_be_upcie_cplane_serve_conn *conn, int devidx)
 {
 	struct xnvme_be_upcie_cplane_serve_admin *admin = &g_upcie_cplane_serve.admin[devidx];
 
@@ -64,7 +66,7 @@ xnvme_be_upcie_cplane_serve_owe(struct xnvme_be_upcie_cplane_serve_conn *conn, i
 
 /* Run a client's admin command on the admin queue of `dev` */
 static int
-xnvme_be_upcie_cplane_serve_admin_cmd(struct xnvme_dev *dev, void *cmd, void *cpl)
+cplane_serve_admin_cmd(struct xnvme_dev *dev, void *cmd, void *cpl)
 {
 	struct xnvme_be_upcie_state *state;
 	struct nvme_controller *ctrl;
@@ -92,7 +94,7 @@ xnvme_be_upcie_cplane_serve_admin_cmd(struct xnvme_dev *dev, void *cmd, void *cp
 
 /* The thread of one controller: runs the requests owed to it, in order */
 static void *
-xnvme_be_upcie_cplane_serve_admin_main(void *arg)
+cplane_serve_admin_main(void *arg)
 {
 	struct xnvme_be_upcie_cplane_serve_admin *admin = arg;
 	struct xnvme_dev *dev = g_upcie_cplane_serve.devs[admin->devidx];
@@ -116,7 +118,7 @@ xnvme_be_upcie_cplane_serve_admin_main(void *arg)
 
 		if (conn->closing) {
 			xnvme_be_upcie_cplane_serve_conn_release(conn, admin->devidx);
-			xnvme_be_upcie_cplane_serve_wake();
+			cplane_serve_wake();
 			continue;
 		}
 
@@ -125,8 +127,8 @@ xnvme_be_upcie_cplane_serve_admin_main(void *arg)
 
 		switch (conn->msg.op) {
 		case NVME_CPLANE_OP_ADMIN_CMD:
-			reply.result = xnvme_be_upcie_cplane_serve_admin_cmd(
-				dev, &conn->msg.u.admin_cmd.cmd, &reply.u.admin_cmd.cpl);
+			reply.result = cplane_serve_admin_cmd(dev, &conn->msg.u.admin_cmd.cmd,
+							      &reply.u.admin_cmd.cpl);
 			break;
 
 		case NVME_CPLANE_OP_ALLOC_IOQPAIR_AT: {
@@ -263,13 +265,13 @@ xnvme_be_upcie_cplane_serve_admin_main(void *arg)
 		conn->owed = 0;
 		pthread_mutex_unlock(&g_upcie_cplane_serve_lock);
 
-		xnvme_be_upcie_cplane_serve_wake();
+		cplane_serve_wake();
 	}
 
 	return NULL;
 }
 
-/* What xnvme_be_upcie_cplane_serve_dispatch() leaves its caller to do */
+/* What cplane_serve_dispatch() leaves its caller to do */
 enum xnvme_be_upcie_cplane_serve_reply {
 	XNVME_BE_UPCIE_CPLANE_SERVE_REPLY_NONE = 0, /* A controller's thread answers it */
 	XNVME_BE_UPCIE_CPLANE_SERVE_REPLY_SEND,     /* Send the reply */
@@ -282,8 +284,8 @@ enum xnvme_be_upcie_cplane_serve_reply {
  * letting go of it.
  */
 static enum xnvme_be_upcie_cplane_serve_reply
-xnvme_be_upcie_cplane_serve_dispatch(struct xnvme_be_upcie_cplane_serve_conn *conn,
-				     struct nvme_cplane_msg *out, int *fds, uint32_t *out_nfds)
+cplane_serve_dispatch(struct xnvme_be_upcie_cplane_serve_conn *conn, struct nvme_cplane_msg *out,
+		      int *fds, uint32_t *out_nfds)
 {
 	const struct xnvme_be_upcie_cplane_share *share;
 	struct nvme_cplane_msg reply = {0};
@@ -345,7 +347,7 @@ xnvme_be_upcie_cplane_serve_dispatch(struct xnvme_be_upcie_cplane_serve_conn *co
 			break;
 		}
 
-		xnvme_be_upcie_cplane_serve_owe(conn, idx);
+		cplane_serve_owe(conn, idx);
 
 		return XNVME_BE_UPCIE_CPLANE_SERVE_REPLY_NONE;
 
@@ -431,7 +433,7 @@ xnvme_be_upcie_cplane_serve_dispatch(struct xnvme_be_upcie_cplane_serve_conn *co
  * buffers go back here. Callers hold g_upcie_cplane_serve_lock.
  */
 static void
-xnvme_be_upcie_cplane_serve_drop(struct xnvme_be_upcie_cplane_serve_conn *conn)
+cplane_serve_drop(struct xnvme_be_upcie_cplane_serve_conn *conn)
 {
 	uint64_t devs = 0;
 
@@ -448,7 +450,7 @@ xnvme_be_upcie_cplane_serve_drop(struct xnvme_be_upcie_cplane_serve_conn *conn)
 
 		for (int i = 0; i < g_upcie_cplane_serve.ndevs; ++i) {
 			if (devs & (UINT64_C(1) << (unsigned)i)) {
-				xnvme_be_upcie_cplane_serve_owe(conn, i);
+				cplane_serve_owe(conn, i);
 			}
 		}
 
@@ -467,7 +469,7 @@ xnvme_be_upcie_cplane_serve_drop(struct xnvme_be_upcie_cplane_serve_conn *conn)
 
 /* Ask each controller for its queue counts, so a status request costs no admin command */
 static void
-xnvme_be_upcie_cplane_serve_totals_read(void)
+cplane_serve_totals_read(void)
 {
 	for (int i = 0; i < g_upcie_cplane_serve.ndevs; ++i) {
 		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(g_upcie_cplane_serve.devs[i]);
@@ -487,7 +489,7 @@ xnvme_be_upcie_cplane_serve_totals_read(void)
  * errno with nothing left behind.
  */
 static int
-xnvme_be_upcie_cplane_serve_listen(const char *path)
+cplane_serve_listen(const char *path)
 {
 	struct sockaddr_un addr = {.sun_family = AF_UNIX};
 	mode_t mask;
@@ -521,7 +523,7 @@ xnvme_be_upcie_cplane_serve_listen(const char *path)
 
 /* Start the thread of every controller; those started are stopped by _admin_stop() */
 static int
-xnvme_be_upcie_cplane_serve_admin_start(void)
+cplane_serve_admin_start(void)
 {
 	for (int i = 0; i < g_upcie_cplane_serve.ndevs; ++i) {
 		struct xnvme_be_upcie_cplane_serve_admin *admin = &g_upcie_cplane_serve.admin[i];
@@ -530,8 +532,7 @@ xnvme_be_upcie_cplane_serve_admin_start(void)
 		admin->devidx = i;
 		pthread_mutex_init(&admin->lock, NULL);
 		pthread_cond_init(&admin->cond, NULL);
-		err = -pthread_create(&admin->tid, NULL, xnvme_be_upcie_cplane_serve_admin_main,
-				      admin);
+		err = -pthread_create(&admin->tid, NULL, cplane_serve_admin_main, admin);
 		if (err) {
 			XNVME_DEBUG("FAILED: pthread_create(admin %d); err(%d)", i, err);
 			return err;
@@ -543,7 +544,7 @@ xnvme_be_upcie_cplane_serve_admin_start(void)
 }
 
 static void
-xnvme_be_upcie_cplane_serve_admin_stop(void)
+cplane_serve_admin_stop(void)
 {
 	for (int i = 0; i < g_upcie_cplane_serve.ndevs; ++i) {
 		struct xnvme_be_upcie_cplane_serve_admin *admin = &g_upcie_cplane_serve.admin[i];
@@ -564,7 +565,7 @@ xnvme_be_upcie_cplane_serve_admin_stop(void)
 
 /* Take every connection waiting on `listener`, refusing peers of another user */
 static void
-xnvme_be_upcie_cplane_serve_accept(int listener)
+cplane_serve_accept(int listener)
 {
 	for (;;) {
 		struct xnvme_be_upcie_cplane_serve_conn *conn = NULL;
@@ -599,7 +600,7 @@ xnvme_be_upcie_cplane_serve_accept(int listener)
 
 /* Answer the request waiting on `conn`, or drop it when its peer has gone */
 static void
-xnvme_be_upcie_cplane_serve_read(struct xnvme_be_upcie_cplane_serve_conn *conn)
+cplane_serve_read(struct xnvme_be_upcie_cplane_serve_conn *conn)
 {
 	struct nvme_cplane_msg reply = {0};
 	int fds[NVME_CPLANE_FDS_MAX];
@@ -632,12 +633,12 @@ xnvme_be_upcie_cplane_serve_read(struct xnvme_be_upcie_cplane_serve_conn *conn)
 		return;
 	}
 	if (rc) {
-		xnvme_be_upcie_cplane_serve_drop(conn);
+		cplane_serve_drop(conn);
 		pthread_mutex_unlock(&g_upcie_cplane_serve_lock);
 		return;
 	}
 
-	send = xnvme_be_upcie_cplane_serve_dispatch(conn, &reply, fds, &nfds);
+	send = cplane_serve_dispatch(conn, &reply, fds, &nfds);
 	sock = conn->sock;
 	if ((send != XNVME_BE_UPCIE_CPLANE_SERVE_REPLY_NONE) && (conn->in_fd >= 0)) {
 		close(conn->in_fd);
@@ -654,7 +655,7 @@ xnvme_be_upcie_cplane_serve_read(struct xnvme_be_upcie_cplane_serve_conn *conn)
 	    (send == XNVME_BE_UPCIE_CPLANE_SERVE_REPLY_LAST)) {
 		pthread_mutex_lock(&g_upcie_cplane_serve_lock);
 		if (conn->sock == sock) {
-			xnvme_be_upcie_cplane_serve_drop(conn);
+			cplane_serve_drop(conn);
 		}
 		pthread_mutex_unlock(&g_upcie_cplane_serve_lock);
 	}
@@ -662,7 +663,7 @@ xnvme_be_upcie_cplane_serve_read(struct xnvme_be_upcie_cplane_serve_conn *conn)
 
 /* Wait for connections, requests and wake-ups, and handle what arrived */
 static int
-xnvme_be_upcie_cplane_serve_poll(int listener)
+cplane_serve_poll(int listener)
 {
 	struct pollfd pfds[XNVME_BE_UPCIE_CPLANE_SERVE_CONNS_MAX + 2];
 	struct xnvme_be_upcie_cplane_serve_conn *polled[XNVME_BE_UPCIE_CPLANE_SERVE_CONNS_MAX];
@@ -696,7 +697,7 @@ xnvme_be_upcie_cplane_serve_poll(int listener)
 	}
 
 	if (pfds[0].revents & POLLIN) {
-		xnvme_be_upcie_cplane_serve_accept(listener);
+		cplane_serve_accept(listener);
 	}
 
 	if (pfds[1].revents & POLLIN) {
@@ -709,7 +710,7 @@ xnvme_be_upcie_cplane_serve_poll(int listener)
 
 	for (int i = 0; i < npolled; ++i) {
 		if (pfds[2 + i].revents) {
-			xnvme_be_upcie_cplane_serve_read(polled[i]);
+			cplane_serve_read(polled[i]);
 		}
 	}
 
@@ -718,7 +719,7 @@ xnvme_be_upcie_cplane_serve_poll(int listener)
 
 /* Disconnect every client, stop the controllers' threads, and release what clients held */
 static void
-xnvme_be_upcie_cplane_serve_teardown(void)
+cplane_serve_teardown(void)
 {
 	/* Clients learn of the shutdown before their queues are deleted, see
 	 * xnvme_be_upcie_cplane_queue_poke_idle() */
@@ -730,7 +731,7 @@ xnvme_be_upcie_cplane_serve_teardown(void)
 	}
 	pthread_mutex_unlock(&g_upcie_cplane_serve_lock);
 
-	xnvme_be_upcie_cplane_serve_admin_stop();
+	cplane_serve_admin_stop();
 
 	/* The controllers' threads are gone, so their releases run here */
 	for (int i = 0; i < XNVME_BE_UPCIE_CPLANE_SERVE_CONNS_MAX; ++i) {
@@ -815,16 +816,16 @@ xnvme_cplane_serve(struct xnvme_dev **devs, int ndevs, uint32_t cplane_id,
 		}
 	}
 
-	xnvme_be_upcie_cplane_serve_totals_read();
+	cplane_serve_totals_read();
 
 	xnvme_be_upcie_cplane_socket_path(cplane_id, path, sizeof(path));
-	listener = xnvme_be_upcie_cplane_serve_listen(path);
+	listener = cplane_serve_listen(path);
 	if (listener < 0) {
 		err = listener;
 		goto exit;
 	}
 
-	err = xnvme_be_upcie_cplane_serve_admin_start();
+	err = cplane_serve_admin_start();
 	if (err) {
 		goto exit;
 	}
@@ -834,11 +835,11 @@ xnvme_cplane_serve(struct xnvme_dev **devs, int ndevs, uint32_t cplane_id,
 	}
 
 	while (!*stop && !err) {
-		err = xnvme_be_upcie_cplane_serve_poll(listener);
+		err = cplane_serve_poll(listener);
 	}
 
 exit:
-	xnvme_be_upcie_cplane_serve_teardown();
+	cplane_serve_teardown();
 
 	if (listener >= 0) {
 		close(listener);

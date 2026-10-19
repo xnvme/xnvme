@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <xnvme_be_posix.h>
+#include <xnvme_be_shim.h>
 #include <xnvme_dev.h>
 
 static int

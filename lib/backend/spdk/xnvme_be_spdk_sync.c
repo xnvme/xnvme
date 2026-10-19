@@ -47,7 +47,7 @@ submit_ioc(struct spdk_nvme_ctrlr *ctrlr, struct spdk_nvme_qpair *qpair, struct 
 						  dbuf, dbuf_nbytes, mbuf, cb_fn, cb_arg);
 }
 
-int
+static int
 xnvme_be_spdk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			  size_t XNVME_UNUSED(mbuf_nbytes))
 {
@@ -142,7 +142,7 @@ next_sgl_entry(void *cb_arg, void **address, uint32_t *length)
 	return 0;
 }
 
-int
+static int
 xnvme_be_spdk_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
 			   size_t dvec_nbytes, void *mbuf, size_t XNVME_UNUSED(mbuf_nbytes))
 {

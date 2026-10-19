@@ -51,7 +51,7 @@ cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf, si
 	}
 }
 
-int
+static int
 cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, size_t dvec_nbytes,
 	void *mbuf, size_t mbuf_nbytes)
 {

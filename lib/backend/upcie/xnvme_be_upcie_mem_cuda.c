@@ -10,7 +10,7 @@
 #include <xnvme_be_upcie_cuda.h>
 #include <xnvme_dev.h>
 
-void *
+static void *
 xnvme_be_upcie_cuda_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
 {
 	const struct xnvme_be_upcie_state *state = (void *)dev->be.state;
@@ -28,13 +28,13 @@ xnvme_be_upcie_cuda_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64
 	return buf;
 }
 
-void
+static void
 xnvme_be_upcie_cuda_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
 {
 	cudamem_dma_free(&g_upcie_cuda_rte.cuda_heap, buf);
 }
 
-int
+static int
 xnvme_be_upcie_cuda_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys)
 {
 	const struct xnvme_be_upcie_state *state = (void *)dev->be.state;
@@ -48,7 +48,7 @@ xnvme_be_upcie_cuda_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t
 	return 0;
 }
 
-int
+static int
 xnvme_be_upcie_cuda_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes,
 			    uint64_t *phys)
 {
@@ -84,7 +84,7 @@ xnvme_be_upcie_cuda_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nby
 	return 0;
 }
 
-int
+static int
 xnvme_be_upcie_cuda_mem_unmap(const struct xnvme_dev *dev, void *vaddr)
 {
 	const struct xnvme_be_upcie_state *state = (void *)dev->be.state;

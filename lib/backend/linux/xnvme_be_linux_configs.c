@@ -20,6 +20,12 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_posix.h>
 #include <xnvme_be_linux.h>
+#include <xnvme_be_emu.h>
+#include <xnvme_be_nil.h>
+#include <xnvme_be_shim.h>
+#include <xnvme_be_thrpool.h>
+#include <xnvme_be_libaio.h>
+#include <xnvme_be_liburing.h>
 
 int
 xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr opts)
@@ -44,7 +50,7 @@ xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr opts)
 }
 
 int
-xnvme_file_opts_to_linux(struct xnvme_opts *opts)
+xnvme_be_linux_file_opts(struct xnvme_opts *opts)
 {
 	int flags = 0;
 
