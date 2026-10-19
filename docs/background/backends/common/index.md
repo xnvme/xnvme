@@ -1,27 +1,29 @@
 (sec-backends-common)=
 
-# Common Backend Impl (CBI)
+# Cross-platform implementations
 
-The common backend implementations are implementations for re-use by other
-platforms. For example, instead of the Linux, FreeBSD, and macOS platforms all
-implementing the same POSIX asynchronous I/O interface, it is instead provided
-here, and they can all include it in their backend configs.
+These implementations are shared by several platforms, each in a directory of
+its own under `lib/backend/`. For example, instead of the Linux, FreeBSD, and
+macOS platforms each implementing POSIX asynchronous I/O, `lib/backend/posix`
+provides it once, and they all include it in their backend configs.
 
 Similarly, **xNVMe** provides several software-only implementations of the
-**xNVMe** API, such as the **thrpool** which implements the asynchronous parts
-of the **xNVMe** API by using a thread-pool.
+**xNVMe** API, such as `lib/backend/thrpool`, which implements the
+asynchronous parts of the **xNVMe** API with a thread pool, and
+`lib/backend/emu` and `lib/backend/nil`.
 
-Each platform composes these CBI components into predefined backend configs
-(`xnvme_be_config`), providing tested and validated combinations. In addition to
-common implementations and interface emulation, **xNVMe** also provides simple
-device emulation via the **ramdisk** backend implementation.
+Each platform combines these with its own implementations into predefined
+backend configs (`xnvme_be_config`), providing tested and validated
+combinations. In addition, `lib/backend/ramdisk` provides simple device
+emulation, and `lib/backend/shim` emulates the NVMe admin commands for
+regular files.
 
 ## Instrumentation
 
 * Memory Allocators
 
   - `posix`, Use **libc** `malloc()/free()` with `sysconf()` for
-    alignment, add link to CBI
+    alignment, add link to the cross-platform section
 
 * Asynchronous Interfaces
 
