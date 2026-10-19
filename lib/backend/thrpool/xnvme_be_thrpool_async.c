@@ -4,6 +4,7 @@
 
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
+#include <xnvme_be_thrpool.h>
 #ifdef XNVME_BE_THRPOOL_ENABLED
 #include <errno.h>
 #include <pthread.h>

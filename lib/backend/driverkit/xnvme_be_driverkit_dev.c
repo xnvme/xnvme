@@ -25,19 +25,19 @@
  */
 #define XNVME_BE_DRIVERKIT_OPEN_WAIT_MS 2000
 
-void
+static void
 xnvme_be_driverkit_dev_close(struct xnvme_dev *dev)
 {
 	struct xnvme_be_driverkit_state *state = (struct xnvme_be_driverkit_state *)dev->be.state;
 
 	if (state->qid_sync) {
-		_xnvme_be_driverkit_delete_ioqpair(state, state->qid_sync);
+		xnvme_be_driverkit_delete_ioqpair(state, state->qid_sync);
 	}
 	free(state->buffers);
 }
 
 int
-_xnvme_be_driverkit_create_ioqpair(struct xnvme_be_driverkit_state *state, int qd, int flags)
+xnvme_be_driverkit_create_ioqpair(struct xnvme_be_driverkit_state *state, int qd, int flags)
 {
 	struct xnvme_be_driverkit_ctrlr *ctrlr = state->ctrlr;
 	unsigned int qid = __builtin_ffsll(ctrlr->qidmap);
@@ -83,7 +83,7 @@ _xnvme_be_driverkit_create_ioqpair(struct xnvme_be_driverkit_state *state, int q
 }
 
 int
-_xnvme_be_driverkit_delete_ioqpair(struct xnvme_be_driverkit_state *state, int qid)
+xnvme_be_driverkit_delete_ioqpair(struct xnvme_be_driverkit_state *state, int qid)
 {
 	struct xnvme_be_driverkit_ctrlr *ctrlr = state->ctrlr;
 	size_t output_cnt = 0;
@@ -188,7 +188,7 @@ xnvme_be_driverkit_ctrlr_term(void *handle)
 	return 0;
 }
 
-int
+static int
 xnvme_be_driverkit_dev_open(struct xnvme_dev *dev)
 {
 	struct xnvme_be_driverkit_state *state = (struct xnvme_be_driverkit_state *)dev->be.state;
@@ -198,7 +198,7 @@ xnvme_be_driverkit_dev_open(struct xnvme_dev *dev)
 	dev->ident.csi = XNVME_SPEC_CSI_NVM;
 	dev->ident.nsid = dev->opts.nsid;
 
-	qpid = _xnvme_be_driverkit_create_ioqpair(state, 31, 0x0);
+	qpid = xnvme_be_driverkit_create_ioqpair(state, 31, 0x0);
 	if (qpid < 0) {
 		XNVME_DEBUG("FAILED: initializing qpairs for sync IO: %d", qpid);
 		return qpid;

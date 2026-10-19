@@ -122,7 +122,7 @@ xnvme_be_upcie_cplane_peer_check(int sock, int root_ok)
 
 /* Whether `nbytes` from `offset` lies within the server's heap */
 static bool
-cplane_in_heap(uint64_t offset, uint64_t nbytes)
+cplane_client_in_heap(uint64_t offset, uint64_t nbytes)
 {
 	uint64_t heap_nbytes = g_upcie_rte.connection.heap_nbytes;
 
@@ -131,7 +131,7 @@ cplane_in_heap(uint64_t offset, uint64_t nbytes)
 
 /* Whether the description at `offset`, table included, lies within a heap of `heap_nbytes` */
 static bool
-cplane_desc_fits(const char *heap_base, uint64_t heap_nbytes, uint64_t offset)
+cplane_client_desc_fits(const char *heap_base, uint64_t heap_nbytes, uint64_t offset)
 {
 	const struct hostmem_shared_desc *desc;
 
@@ -143,8 +143,16 @@ cplane_desc_fits(const char *heap_base, uint64_t heap_nbytes, uint64_t offset)
 	return hostmem_shared_desc_nbytes(desc->nphys) <= heap_nbytes - offset;
 }
 
-int
-xnvme_be_upcie_cplane_ask(int sock, struct nvme_cplane_msg *msg, int *fds, uint32_t *nfds)
+/**
+ * Send `msg` on `sock` and replace it with the reply
+ *
+ * @param fds Pre-allocated array of NVME_CPLANE_FDS_MAX, or NULL
+ * @param nfds Set to how many descriptors arrived
+ *
+ * @return 0 on success, the server's result when it refused, negative errno on error
+ */
+static int
+cplane_client_ask(int sock, struct nvme_cplane_msg *msg, int *fds, uint32_t *nfds)
 {
 	if (sock < 0) {
 		return -ENOTCONN;
@@ -166,7 +174,7 @@ xnvme_be_upcie_cplane_ask_ctrlr(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_
 	msg->index = (uint32_t)ctrlr->index;
 
 	pthread_mutex_lock(&cplane_sock_lock);
-	err = xnvme_be_upcie_cplane_ask(g_upcie_rte.connection.sock, msg, fds, nfds);
+	err = cplane_client_ask(g_upcie_rte.connection.sock, msg, fds, nfds);
 	pthread_mutex_unlock(&cplane_sock_lock);
 
 	return err;
@@ -241,7 +249,7 @@ xnvme_be_upcie_cplane_buf_alloc(struct xnvme_be_upcie_ctrlr *ctrlr, size_t nbyte
 		errno = -err;
 		return NULL;
 	}
-	if (!cplane_in_heap(msg.u.buf.offset, nbytes)) {
+	if (!cplane_client_in_heap(msg.u.buf.offset, nbytes)) {
 		XNVME_DEBUG("FAILED: offset(0x%" PRIx64 ") is outside the heap", msg.u.buf.offset);
 		errno = EPROTO;
 		return NULL;
@@ -270,7 +278,7 @@ xnvme_be_upcie_cplane_buf_free(struct xnvme_be_upcie_ctrlr *ctrlr, void *buf)
 
 /* The server's index for `bdf`, matched against the identifiers it publishes */
 static int
-cplane_index_of(int sock, const char *bdf)
+cplane_client_index_of(int sock, const char *bdf)
 {
 	struct nvme_cplane_msg msg = {0};
 	uint32_t ndevs;
@@ -298,7 +306,7 @@ cplane_index_of(int sock, const char *bdf)
 
 /* The runtime's socket, connected on first use; callers hold cplane_sock_lock */
 static int
-cplane_conn_get(uint32_t cplane_id)
+cplane_client_conn_get(uint32_t cplane_id)
 {
 	char path[256] = {0};
 	int sock;
@@ -363,8 +371,8 @@ xnvme_be_upcie_cplane_register_client_mem(struct xnvme_be_upcie_ctrlr *ctrlr, in
 		XNVME_DEBUG("FAILED: registering %" PRIu64 " bytes; err(%d)", nbytes, err);
 		return err;
 	}
-	if (!cplane_desc_fits(g_upcie_rte.connection.heap_base, g_upcie_rte.connection.heap_nbytes,
-			      msg.u.mem.desc_offset)) {
+	if (!cplane_client_desc_fits(g_upcie_rte.connection.heap_base,
+				     g_upcie_rte.connection.heap_nbytes, msg.u.mem.desc_offset)) {
 		XNVME_DEBUG("FAILED: the description lies outside the heap");
 		return -EPROTO;
 	}
@@ -408,7 +416,7 @@ xnvme_be_upcie_cplane_init_connection(uint32_t cplane_id, const char *bdf,
 
 	pthread_mutex_lock(&cplane_sock_lock);
 
-	sock = cplane_conn_get(cplane_id);
+	sock = cplane_client_conn_get(cplane_id);
 	if (sock < 0) {
 		pthread_mutex_unlock(&cplane_sock_lock);
 
@@ -416,7 +424,7 @@ xnvme_be_upcie_cplane_init_connection(uint32_t cplane_id, const char *bdf,
 	}
 
 	if (bdf) {
-		index = cplane_index_of(sock, bdf);
+		index = cplane_client_index_of(sock, bdf);
 		if (index < 0) {
 			XNVME_DEBUG("FAILED: nobody serves bdf(%s); err(%d)", bdf, index);
 			err = index;
@@ -426,7 +434,7 @@ xnvme_be_upcie_cplane_init_connection(uint32_t cplane_id, const char *bdf,
 
 	msg.op = NVME_CPLANE_OP_INIT_CONNECTION;
 	msg.index = (uint32_t)index;
-	err = xnvme_be_upcie_cplane_ask(sock, &msg, fds, &nfds);
+	err = cplane_client_ask(sock, &msg, fds, &nfds);
 	if (err || (nfds != 2)) {
 		XNVME_DEBUG("FAILED: init-connection; err(%d) nfds(%u)", err, nfds);
 		/* Descriptors that arrived are this process's to close */
@@ -474,8 +482,8 @@ xnvme_be_upcie_cplane_init_connection(uint32_t cplane_id, const char *bdf,
 		err = -EPROTO;
 		goto failed;
 	}
-	if (!cplane_desc_fits(heap_base, msg.u.init_connection.heap_nbytes,
-			      msg.u.init_connection.desc_offset)) {
+	if (!cplane_client_desc_fits(heap_base, msg.u.init_connection.heap_nbytes,
+				     msg.u.init_connection.desc_offset)) {
 		XNVME_DEBUG("FAILED: the heap description lies outside the heap");
 		err = -EPROTO;
 		goto failed;
@@ -591,8 +599,9 @@ xnvme_be_upcie_cplane_free_qpair_at(struct xnvme_be_upcie_ctrlr *ctrlr, uint32_t
 
 /* Map the queue pair the server allocated, with doorbells in this process's BAR0 mapping */
 static int
-_qpair_from_allocation(struct xnvme_be_upcie_ctrlr *ctrlr, const struct nvme_ioqpair *allocation,
-		       struct nvme_qpair *qpair)
+cplane_client_qpair_from_allocation(struct xnvme_be_upcie_ctrlr *ctrlr,
+				    const struct nvme_ioqpair *allocation,
+				    struct nvme_qpair *qpair)
 {
 	char *base = g_upcie_rte.connection.heap_base;
 	int dstrd = nvme_reg_cap_get_dstrd(nvme_mmio_cap_read(ctrlr->bar0));
@@ -601,12 +610,12 @@ _qpair_from_allocation(struct xnvme_be_upcie_ctrlr *ctrlr, const struct nvme_ioq
 	int err;
 
 	memset(qpair, 0, sizeof(*qpair));
-	if (!cplane_in_heap(allocation->sq_offset,
-			    (uint64_t)allocation->depth * sizeof(struct nvme_command)) ||
-	    !cplane_in_heap(allocation->cq_offset,
-			    (uint64_t)allocation->depth * sizeof(struct nvme_completion)) ||
-	    !cplane_in_heap(allocation->prp_offset,
-			    (uint64_t)NVME_REQUEST_POOL_LEN * XNVME_BE_UPCIE_PRP_NBYTES)) {
+	if (!cplane_client_in_heap(allocation->sq_offset,
+				   (uint64_t)allocation->depth * sizeof(struct nvme_command)) ||
+	    !cplane_client_in_heap(allocation->cq_offset,
+				   (uint64_t)allocation->depth * sizeof(struct nvme_completion)) ||
+	    !cplane_client_in_heap(allocation->prp_offset,
+				   (uint64_t)NVME_REQUEST_POOL_LEN * XNVME_BE_UPCIE_PRP_NBYTES)) {
 		XNVME_DEBUG("FAILED: the server placed queue(%u) outside the heap",
 			    allocation->qid);
 		return -EPROTO;
@@ -654,12 +663,12 @@ _qpair_from_allocation(struct xnvme_be_upcie_ctrlr *ctrlr, const struct nvme_ioq
 }
 
 static int
-_qpair_take(struct xnvme_be_upcie_ctrlr *ctrlr, const struct nvme_ioqpair *allocation,
-	    struct nvme_qpair *qpair)
+cplane_client_qpair_take(struct xnvme_be_upcie_ctrlr *ctrlr, const struct nvme_ioqpair *allocation,
+			 struct nvme_qpair *qpair)
 {
 	int err;
 
-	err = _qpair_from_allocation(ctrlr, allocation, qpair);
+	err = cplane_client_qpair_from_allocation(ctrlr, allocation, qpair);
 	if (err) {
 		if (xnvme_be_upcie_cplane_free_qpair_at(ctrlr, allocation->qid)) {
 			XNVME_DEBUG("FAILED: handing back qid(%u)", allocation->qid);
@@ -691,7 +700,7 @@ xnvme_be_upcie_cplane_alloc_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvm
 		return err;
 	}
 
-	return _qpair_take(ctrlr, &msg.u.alloc_ioqpair.allocation, qpair);
+	return cplane_client_qpair_take(ctrlr, &msg.u.alloc_ioqpair.allocation, qpair);
 }
 
 int
@@ -725,7 +734,8 @@ xnvme_be_upcie_cplane_alloc_qpair_at(struct xnvme_be_upcie_ctrlr *ctrlr, uint64_
 		*qid = msg.u.alloc_ioqpair_at.allocation.qid;
 	}
 
-	return qpair ? _qpair_take(ctrlr, &msg.u.alloc_ioqpair_at.allocation, qpair) : 0;
+	return qpair ? cplane_client_qpair_take(ctrlr, &msg.u.alloc_ioqpair_at.allocation, qpair)
+		     : 0;
 }
 
 struct nvme_qpair *
@@ -810,7 +820,7 @@ xnvme_be_upcie_cplane_free_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme
 
 /* The server never sends unsolicited, so anything readable means it closed */
 static int
-_server_gone(int sock)
+cplane_client_server_gone(int sock)
 {
 	char byte;
 	ssize_t nbytes;
@@ -829,7 +839,7 @@ _server_gone(int sock)
 
 /* Completes what is in flight with the status a deleted SQ gets; returns how many */
 static int
-_queue_fail_inflight(struct xnvme_queue_upcie *upcie_queue)
+cplane_client_queue_fail_inflight(struct xnvme_queue_upcie *upcie_queue)
 {
 	struct nvme_request_pool *rpool = upcie_queue->qpair.rpool;
 	uint8_t inflight[NVME_REQUEST_POOL_LEN];
@@ -876,7 +886,7 @@ xnvme_be_upcie_cplane_queue_poke_idle(struct xnvme_queue_upcie *upcie_queue)
 	upcie_queue->pokes_idle = 0;
 
 	if (!upcie_queue->served_gone_ns) {
-		if (!_server_gone(g_upcie_rte.connection.sock)) {
+		if (!cplane_client_server_gone(g_upcie_rte.connection.sock)) {
 			return 0;
 		}
 
@@ -893,7 +903,7 @@ xnvme_be_upcie_cplane_queue_poke_idle(struct xnvme_queue_upcie *upcie_queue)
 		return 0;
 	}
 
-	return _queue_fail_inflight(upcie_queue);
+	return cplane_client_queue_fail_inflight(upcie_queue);
 }
 
 void

@@ -22,7 +22,7 @@
 #define _RDISK_PREFIX "rdisk"
 #endif
 
-io_object_t
+static io_object_t
 _get_ioservice_device(char *devname)
 {
 	CFMutableDictionaryRef matching_dictionary;
@@ -33,7 +33,7 @@ _get_ioservice_device(char *devname)
 	return ioservice_device;
 }
 
-int
+static int
 _get_nvme_smart_interface(io_object_t ioservice_device,
 			  IONVMeSMARTInterface ***nvme_smart_interface,
 			  IOCFPlugInInterface ***plugin_interface)
@@ -82,7 +82,7 @@ _get_nvme_smart_interface(io_object_t ioservice_device,
 	return 0;
 }
 
-int
+static int
 _get_nvme_ns(io_object_t ioservice_device)
 {
 	CFTypeRef cf_nsid = IORegistryEntrySearchCFProperty(
@@ -100,7 +100,7 @@ _get_nvme_ns(io_object_t ioservice_device)
 	return nsid;
 }
 
-int
+static int
 _is_disk_nvme(io_object_t ioservice_device)
 {
 	CFBooleanRef is_nvme;
@@ -116,7 +116,7 @@ _is_disk_nvme(io_object_t ioservice_device)
 	return 0;
 }
 
-void
+static void
 xnvme_be_macos_state_term(struct xnvme_be_macos_state *state)
 {
 	if (!state) {
@@ -140,7 +140,7 @@ xnvme_be_macos_state_term(struct xnvme_be_macos_state *state)
 	}
 }
 
-void
+static void
 xnvme_be_macos_dev_close(struct xnvme_dev *dev)
 {
 	if (!dev) {
@@ -151,8 +151,8 @@ xnvme_be_macos_dev_close(struct xnvme_dev *dev)
 	memset(&dev->be, 0, sizeof(dev->be));
 }
 
-int
-xnvme_file_opts_to_macos(struct xnvme_opts *opts)
+static int
+xnvme_be_macos_file_opts(struct xnvme_opts *opts)
 {
 	int flags = 0;
 
@@ -165,12 +165,12 @@ xnvme_file_opts_to_macos(struct xnvme_opts *opts)
 	return flags;
 }
 
-int
+static int
 xnvme_be_macos_dev_open(struct xnvme_dev *dev)
 {
 	struct xnvme_be_macos_state *state = (void *)dev->be.state;
 	struct xnvme_opts *opts = &dev->opts;
-	int flags = xnvme_file_opts_to_macos(opts);
+	int flags = xnvme_be_macos_file_opts(opts);
 	io_object_t ioservice_device;
 	IONVMeSMARTInterface **nvme_smart_interface;
 	IOCFPlugInInterface **plugin_interface;

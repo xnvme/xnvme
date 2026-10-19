@@ -43,20 +43,14 @@ int
 xnvme_be_upcie_cplane_peer_check(int sock, int root_ok);
 
 /**
- * Send `msg` on `sock` and replace it with the reply
+ * Send `msg` about `ctrlr` on the runtime's socket and replace it with the reply
+ *
+ * Serialised, since the threads of a process share the one socket.
  *
  * @param fds Pre-allocated array of NVME_CPLANE_FDS_MAX, or NULL
  * @param nfds Set to how many descriptors arrived
  *
  * @return 0 on success, the server's result when it refused, negative errno on error
- */
-int
-xnvme_be_upcie_cplane_ask(int sock, struct nvme_cplane_msg *msg, int *fds, uint32_t *nfds);
-
-/**
- * Like xnvme_be_upcie_cplane_ask(), about `ctrlr`, on the runtime's socket
- *
- * Serialised, since the threads of a process share the one socket.
  */
 int
 xnvme_be_upcie_cplane_ask_ctrlr(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_cplane_msg *msg,
