@@ -15,6 +15,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 
 #include <xnvme_dev.h>
+#include <xnvme_be_state.h>
 
 /**
  * How long ctrlr_init() retries IOServiceOpen(), in milliseconds
@@ -28,7 +29,7 @@
 static void
 xnvme_be_driverkit_dev_close(struct xnvme_dev *dev)
 {
-	struct xnvme_be_driverkit_state *state = (struct xnvme_be_driverkit_state *)dev->be.state;
+	struct xnvme_be_driverkit_state *state = &xnvme_be_state(dev)->driverkit_state;
 
 	if (state->qid_sync) {
 		xnvme_be_driverkit_delete_ioqpair(state, state->qid_sync);
@@ -114,7 +115,7 @@ xnvme_be_driverkit_delete_ioqpair(struct xnvme_be_driverkit_state *state, int qi
  *
  * Allocates a shared xnvme_be_driverkit_ctrlr, opens the IOKit service
  * and connection, initializes the NVMe controller. The returned handle is stored
- * in cref and written to dev->be.state[0] by the platform.
+ * in cref and written to the ctrlr member of its state by the platform.
  */
 static void *
 xnvme_be_driverkit_ctrlr_init(struct xnvme_dev *dev)
@@ -191,7 +192,7 @@ xnvme_be_driverkit_ctrlr_term(void *handle)
 static int
 xnvme_be_driverkit_dev_open(struct xnvme_dev *dev)
 {
-	struct xnvme_be_driverkit_state *state = (struct xnvme_be_driverkit_state *)dev->be.state;
+	struct xnvme_be_driverkit_state *state = &xnvme_be_state(dev)->driverkit_state;
 	int qpid;
 
 	dev->ident.dtype = XNVME_DEV_TYPE_NVME_NAMESPACE;

@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_windows.h>
+#include <xnvme_be_state.h>
 #include <windows.h>
 
 /**
@@ -33,7 +34,7 @@ xnvme_be_windows_sync_fs_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t db
 	int err = 0;
 	uint64_t slba = 0;
 	OVERLAPPED overlapped;
-	struct xnvme_be_windows_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_windows_state *state = &xnvme_be_state(ctx->dev)->windows_state;
 	const uint64_t ssw = ctx->dev->geo.ssw;
 
 	memset(&overlapped, 0, sizeof(OVERLAPPED));

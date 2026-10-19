@@ -27,17 +27,7 @@ struct xnvme_be_libvfn_ctrlr {
 	struct nvme_cq *cq_sync; ///< Shared completion queue for synchronous IOs
 };
 
-/**
- * Per-device state embedded in xnvme_dev.be.state.
- * The first field (ctrlr) is the cref handle written by the platform.
- */
-struct xnvme_be_libvfn_state {
-	struct xnvme_be_libvfn_ctrlr *ctrlr; ///< Shared controller (first field for platform)
-
-	uint8_t _rvds[120];
-};
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_libvfn_state) == XNVME_BE_STATE_NBYTES,
-		    "Incorrect size")
+#include <xnvme_be_libvfn_state.h>
 
 int
 xnvme_be_libvfn_create_ioqpair(struct xnvme_be_libvfn_state *state, int qd, int flags);

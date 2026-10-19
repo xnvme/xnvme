@@ -12,6 +12,7 @@
 #include <xnvme_be_liburing.h>
 #include <xnvme_be_liburing_dmabuf.h>
 #include <xnvme_be_nosys.h>
+#include <xnvme_be_state.h>
 
 static int
 cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf, size_t mbuf_nbytes)
@@ -41,7 +42,7 @@ cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf, si
 static int
 queue_init(struct xnvme_queue *q, int opts)
 {
-	struct xnvme_be_linux_state *state = (void *)q->base.dev->be.state;
+	struct xnvme_be_linux_state *state = &xnvme_be_state(q->base.dev)->linux_state;
 	int err;
 
 	if ((opts & XNVME_QUEUE_IOPOLL) || (state->poll_io)) {

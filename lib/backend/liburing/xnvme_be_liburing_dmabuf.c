@@ -20,6 +20,7 @@
 #include <xnvme_be_linux.h>
 #include <xnvme_be_liburing.h>
 #include <xnvme_be_liburing_dmabuf.h>
+#include <xnvme_be_state.h>
 // The uPCIe headers do not include their dependencies: dmabuf_import.h needs the
 // three before it, and the system headers that iommu_map_pa.h includes
 #include <upcie/debug.h>
@@ -392,9 +393,9 @@ _ring_fd_update(int ring_fd, uint32_t index, int fd, int target_fd)
 static int
 _ring_update(struct xnvme_queue_liburing *queue, uint32_t index, int fd)
 {
-	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_linux_state *state = &xnvme_be_state(queue->base.dev)->linux_state;
 
-	return _ring_fd_update(queue->ring.ring_fd, index, fd, state->fd);
+	return _ring_fd_update(queue->ring.ring_fd, index, fd, state->posix.fd);
 }
 
 int

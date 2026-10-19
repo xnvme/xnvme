@@ -15,6 +15,7 @@
 #include <Setupapi.h>
 #include <xnvme_be_windows.h>
 #include <xnvme_be_windows_nvme.h>
+#include <xnvme_be_state.h>
 
 static int
 xnvme_be_windows_read(HANDLE handle, struct xnvme_spec_cmd cmd, void *dbuf, size_t dbuf_nbytes)
@@ -106,7 +107,7 @@ static int
 xnvme_be_windows_sync_nvme_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 				  void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
-	struct xnvme_be_windows_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_windows_state *state = &xnvme_be_state(ctx->dev)->windows_state;
 	int ret = 0;
 
 	switch (ctx->cmd.common.opcode) {

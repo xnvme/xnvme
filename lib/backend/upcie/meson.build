@@ -47,6 +47,4 @@ if conf_data.get('XNVME_BE_UPCIE_HIP_ENABLED')
   )
 endif
 
-if be_upcie
 xnvmelib_inc += include_directories('.')
-endif

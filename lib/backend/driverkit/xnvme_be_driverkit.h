@@ -20,21 +20,7 @@ struct xnvme_be_driverkit_ctrlr {
 	uint64_t qidmap;
 };
 
-/**
- * Per-device state embedded in xnvme_dev.be.state.
- * The first field (ctrlr) is the cref handle written by the platform.
- */
-struct xnvme_be_driverkit_state {
-	struct xnvme_be_driverkit_ctrlr *ctrlr; ///< Shared controller (first for platform)
-
-	uint64_t qid_sync;
-
-	struct buffer *buffers;
-
-	uint8_t _rsvd[104];
-};
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_driverkit_state) == XNVME_BE_STATE_NBYTES,
-		    "Incorrect size")
+#include <xnvme_be_driverkit_state.h>
 
 int
 xnvme_be_driverkit_create_ioqpair(struct xnvme_be_driverkit_state *state, int qd, int flags);
