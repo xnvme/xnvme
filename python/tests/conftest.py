@@ -29,7 +29,7 @@ from xnvme_be_combinations import get_combinations
 def xnvme_be_opts(options=None, only_labels=[]):
     """Produce a list of "sensible" backend configurations.
 
-    Each returned dict always carries the full xnvme mixin tuple
+    Each returned dict always carries the full backend-config tuple
     (be/mem/admin/sync/async/label) so callers like ``dev_from_params`` can
     populate every ``xnvme_opts`` field. ``options`` controls only how the
     parametrize matrix deduplicates and orders: a test decorated with
