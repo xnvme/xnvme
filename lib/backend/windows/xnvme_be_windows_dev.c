@@ -18,6 +18,47 @@
 #include <xnvme_be_windows.h>
 
 static int
+xnvme_be_windows_file_access_opts(struct xnvme_opts *opts)
+{
+	int flags = 0;
+	flags |= opts->rdonly ? GENERIC_READ : 0x0;
+	flags |= opts->wronly ? GENERIC_WRITE : 0x0;
+	flags |= opts->rdwr ? GENERIC_WRITE | GENERIC_READ : 0x0;
+	return flags;
+}
+
+static int
+xnvme_be_windows_file_creation_opts(struct xnvme_opts *opts)
+{
+	int flags = 0;
+
+	flags |= opts->create ? CREATE_ALWAYS : 0x0;
+	flags |= opts->truncate ? TRUNCATE_EXISTING : 0x0;
+
+	if (!flags) {
+		flags = OPEN_EXISTING;
+	}
+	return flags;
+}
+
+/**
+ * Convert the xnvme supplied flags to file attributes parameters
+ *
+ * @param oflags device/file oflag
+ *
+ * @return flag with dwCreationDisposition value is returned.
+ */
+static int
+xnvme_be_windows_file_attributes_opts(struct xnvme_opts *opts)
+{
+	int flags = 0;
+
+	flags |= opts->direct ? FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH : 0x0;
+
+	return flags;
+}
+
+static int
 xnvme_be_windows_get_device_type(HANDLE dev_handle)
 {
 	ULONG ret_len;

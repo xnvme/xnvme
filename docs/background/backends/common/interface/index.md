@@ -51,6 +51,8 @@ Have a look at the existing implementations:
 
 * `lib/platform/<os>/xnvme_platform_<os>.c`: platform registration, scan,
   classify and the list of configs the OS offers
+* `lib/platform/<os>/xnvme_platform_<os>_configs.c`: the configs that combine
+  implementations from several directories
 * `lib/backend/<dir>/`: one directory per mechanism, such as `liburing`,
   `posix` or `spdk`, and one per OS for its own interfaces, such as `linux`
 * `lib/backend/xnvme_be_registry.h`: extern declarations for all configs
