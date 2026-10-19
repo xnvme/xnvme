@@ -61,18 +61,18 @@ def test_a_glob_minimatch_reads_otherwise_is_an_error(glob):
         (["toolbox/pkgs/debian-trixie.sh"], ["gate:emulated"]),
         (["meson.build"], ["gate:emulated"]),
         (
-            ["lib/upcie/xnvme_be_upcie_dev.c"],
+            ["lib/backend/upcie/xnvme_be_upcie_dev.c"],
             ["gate:emulated", "gate:hardware", "gate:perf"],
         ),
         (
-            ["lib/upcie/xnvme_be_upcie_cuda.c"],
+            ["lib/backend/upcie/xnvme_be_upcie_cuda.c"],
             ["gate:emulated", "gate:hardware", "gate:gpu", "gate:perf"],
         ),
         (
-            ["lib/io_uring/xnvme_be_linux_io_uring_dmabuf.c"],
+            ["lib/backend/liburing/xnvme_be_linux_io_uring_dmabuf.c"],
             ["gate:emulated", "gate:hardware", "gate:gpu"],
         ),
-        (["lib/xnvme_be_spdk_dev.c"], ["gate:emulated", "gate:rdma"]),
+        (["lib/backend/spdk/xnvme_be_spdk_dev.c"], ["gate:emulated", "gate:rdma"]),
         (
             ["tools/xnvmeperf/xnvmeperf.c", "docs/index.rst"],
             ["gate:emulated", "gate:perf", "gate:docgen"],

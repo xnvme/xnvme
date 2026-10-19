@@ -25,8 +25,8 @@ Windows exposes NVMe devices as files using the following naming schemes:
 
 The Windows platform provides the following backend configs. Some of these use
 **cross-platform
-implementations** from the **Common Backend Implementations** (CBI). For these,
-links point to descriptions in the CBI section. For the Windows-specific
+implementations**, each in a directory of its own under `lib/backend/`. For
+these, links point to the cross-platform section. For the Windows-specific
 interfaces, descriptions are available in the corresponding subsections.
 
 * Memory Allocators
@@ -38,8 +38,8 @@ interfaces, descriptions are available in the corresponding subsections.
   - `iocp`, Use Windows readfile/writefile with overlapped(iocp) for Asynchronous I/O
   - `iocp_th`, Use Windows readfile/writefile with thread based overlapped(iocp) for Asynchronous I/O
   - `io_ring`, Use Windows io_ring for Asynchronous I/O
-  - `emu`, add link to CBI
-  - `thrpool`, add link to CBI
+  - `emu`, add link to the cross-platform section
+  - `thrpool`, add link to the cross-platform section
 
 * Synchronous Interfaces
 

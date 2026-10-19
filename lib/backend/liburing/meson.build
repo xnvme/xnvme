@@ -10,5 +10,4 @@ xnvmelib_source += files(
   'xnvme_be_linux_io_uring_dmabuf_dev.c',
   'xnvme_be_linux_io_uring_dmabuf_mem.c',
 )
-
-conf_inc += [ include_directories('.') ]
+xnvmelib_inc += include_directories('.')
