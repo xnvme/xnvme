@@ -11,6 +11,7 @@
 #include <mach/mach_error.h>
 
 #include <xnvme_dev.h>
+#include <xnvme_be_state.h>
 #include <errno.h>
 #include <sys/mman.h>
 
@@ -18,7 +19,7 @@ static void *
 xnvme_be_driverkit_buf_alloc(const struct xnvme_dev *dev, size_t nbytes,
 			     uint64_t *XNVME_UNUSED(phys))
 {
-	struct xnvme_be_driverkit_state *state = (struct xnvme_be_driverkit_state *)dev->be.state;
+	struct xnvme_be_driverkit_state *state = &xnvme_be_state(dev)->driverkit_state;
 	long sz = sysconf(_SC_PAGESIZE);
 	void *ptr;
 	uint64_t *buf;
@@ -60,7 +61,7 @@ xnvme_be_driverkit_buf_alloc(const struct xnvme_dev *dev, size_t nbytes,
 static void
 xnvme_be_driverkit_buf_free(const struct xnvme_dev *dev, void *buf)
 {
-	struct xnvme_be_driverkit_state *state = (struct xnvme_be_driverkit_state *)dev->be.state;
+	struct xnvme_be_driverkit_state *state = &xnvme_be_state(dev)->driverkit_state;
 	size_t _output_cnt = 0;
 	struct buffer *_buf;
 	kern_return_t ret;

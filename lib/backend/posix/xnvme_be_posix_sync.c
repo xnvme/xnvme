@@ -15,12 +15,13 @@
 #include <unistd.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_posix.h>
+#include <xnvme_be_state.h>
 
 int
 xnvme_be_posix_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			   size_t mbuf_nbytes)
 {
-	struct xnvme_be_posix_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_posix_state *state = &xnvme_be_state(ctx->dev)->posix_state;
 	const uint64_t ssw = ctx->dev->geo.ssw;
 	ssize_t res;
 	uint8_t sc;
@@ -78,7 +79,7 @@ int
 xnvme_be_posix_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
 			    size_t dvec_nbytes, void *mbuf, size_t mbuf_nbytes)
 {
-	struct xnvme_be_posix_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_posix_state *state = &xnvme_be_state(ctx->dev)->posix_state;
 	const uint64_t ssw = ctx->dev->geo.ssw;
 	ssize_t res;
 	uint8_t sc;

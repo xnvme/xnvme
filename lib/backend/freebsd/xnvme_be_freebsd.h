@@ -4,27 +4,12 @@
 
 #ifndef __INTERNAL_XNVME_BE_FREEBSD_H
 #define __INTERNAL_XNVME_BE_FREEBSD_H
+#include <xnvme_be_posix.h>
 
 #define XNVME_BE_FREEBSD_CTRLR_PREFIX "nvme"
 #define XNVME_BE_FREEBSD_NS_PREFIX    "ns"
 
-/**
- * Internal representation of XNVME_BE_FREEBSD state
- *
- * NOTE: When changing this struct, ensure compatibility with 'struct xnvme_be_posix_state'
- */
-struct xnvme_be_freebsd_state {
-	struct {
-		int ns;
-		int ctrlr;
-	} fd;
-
-	uint8_t poll_io;
-
-	uint8_t _rsvd[119];
-};
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_freebsd_state) == XNVME_BE_STATE_NBYTES,
-		    "Incorrect size")
+#include <xnvme_be_freebsd_state.h>
 
 int
 xnvme_be_freebsd_nvme_get_nsid_and_ctrlr_fd(int fd, uint32_t *nsid, int *ctrlr_fd);

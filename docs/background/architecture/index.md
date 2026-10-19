@@ -1218,6 +1218,7 @@ lib/
     ├── xnvme_be_cref.c           # Controller reference counting
     ├── xnvme_be_nosys.c          # Stubs for what an implementation lacks
     ├── xnvme_be_registry.h       # Extern declarations for all configs
+    ├── xnvme_be_state.h          # The union of the backend states
     │
     └── <dir>/                    # One mechanism: posix, emu, thrpool, nil,
         │                         # shim, liburing, libaio, iocp, ioring,

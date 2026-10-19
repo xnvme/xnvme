@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <xnvme_be_linux.h>
 #include <xnvme_spec.h>
+#include <xnvme_be_state.h>
 
 static int
 _controller_get_registers(const struct xnvme_dev *dev, void *dbuf, size_t dbuf_nbytes)
@@ -91,7 +92,7 @@ static int
 xnvme_be_linux_nvme_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 			       void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
-	struct xnvme_be_linux_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_linux_state *state = &xnvme_be_state(ctx->dev)->linux_state;
 	int ioctl_req;
 	int err;
 
@@ -121,7 +122,7 @@ xnvme_be_linux_nvme_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 		return -ENOSYS;
 	}
 
-	err = ioctl(state->fd, ioctl_req);
+	err = ioctl(state->posix.fd, ioctl_req);
 	if (err < 0) {
 		XNVME_DEBUG("FAILED: ioctl() err: %d", err);
 		return err;

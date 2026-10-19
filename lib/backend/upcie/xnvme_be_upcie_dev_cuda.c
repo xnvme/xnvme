@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_upcie_cuda.h>
+#include <xnvme_be_state.h>
 
 static _Atomic int g_cuda_ctrlr_count;
 
@@ -116,7 +117,7 @@ _cuda_slice_span(const struct cudamem_heap *heap)
 static int
 _cuda_dev_dmem_init(struct xnvme_dev *dev)
 {
-	struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 	struct xnvme_be_upcie_iova_range_dmem *range;
 	int err;
 
@@ -157,7 +158,7 @@ _cuda_dev_dmem_init(struct xnvme_dev *dev)
 static void
 _cuda_dev_dmem_term(struct xnvme_dev *dev)
 {
-	struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 
 	state->dmem = NULL;
 

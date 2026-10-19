@@ -12,6 +12,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_queue.h>
 #include <xnvme_be_spdk.h>
+#include <xnvme_be_state.h>
 
 #define XNVME_BE_SPDK_ALLOC_IO_QPAIR_RETRIES 50
 #define XNVME_BE_SPDK_ALLOC_IO_QPAIR_RETRY_US 50000
@@ -51,7 +52,7 @@ static int
 xnvme_be_spdk_queue_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 {
 	struct xnvme_queue_spdk *queue = (void *)(q);
-	struct xnvme_be_spdk_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_spdk_state *state = &xnvme_be_state(queue->base.dev)->spdk_state;
 	struct spdk_nvme_io_qpair_opts qopts = {0};
 
 	spdk_nvme_ctrlr_get_default_io_qpair_opts(state->ctrlr, &qopts, sizeof(qopts));
@@ -161,7 +162,7 @@ xnvme_be_spdk_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 			   size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	struct xnvme_queue_spdk *queue = (void *)ctx->async.queue;
-	struct xnvme_be_spdk_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_spdk_state *state = &xnvme_be_state(queue->base.dev)->spdk_state;
 	int err;
 
 	queue->base.outstanding += 1;
@@ -228,7 +229,7 @@ xnvme_be_spdk_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_
 			    size_t dvec_nbytes, void *mbuf, size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	struct xnvme_queue_spdk *queue = (void *)ctx->async.queue;
-	struct xnvme_be_spdk_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_spdk_state *state = &xnvme_be_state(queue->base.dev)->spdk_state;
 	struct xnvme_cmd_ctx_entry *ctx_entry = (void *)ctx;
 	struct xnvme_be_spdk_iov_payload *payload = &queue->iov_payloads[ctx_entry->id];
 

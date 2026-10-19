@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include <xnvme_be_ramdisk.h>
 #include <xnvme_dev.h>
+#include <xnvme_be_state.h>
 
 static void
 xnvme_be_ramdisk_dev_close(struct xnvme_dev *dev)
@@ -24,7 +25,7 @@ xnvme_be_ramdisk_dev_close(struct xnvme_dev *dev)
 		return;
 	}
 
-	state = (void *)dev->be.state;
+	state = &xnvme_be_state(dev)->ramdisk_state;
 	if (state->ramdisk) {
 		free(state->ramdisk);
 	}
@@ -50,7 +51,7 @@ xnvme_be_ramdisk_dev_get_size(struct xnvme_dev *dev)
 static int
 xnvme_be_ramdisk_dev_open(struct xnvme_dev *dev)
 {
-	struct xnvme_be_ramdisk_state *state = (void *)dev->be.state;
+	struct xnvme_be_ramdisk_state *state = &xnvme_be_state(dev)->ramdisk_state;
 
 	size_t ramdisk_size = xnvme_be_ramdisk_dev_get_size(dev);
 	if (!ramdisk_size) {

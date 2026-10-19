@@ -11,6 +11,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_lock.h>
 #include <xnvme_platform.h>
+#include <xnvme_be_state.h>
 
 #define XNVME_MAX_NS_LIST_SIZE 1024
 
@@ -122,7 +123,7 @@ _dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnv
 	}
 
 ctrlr_ready:
-	((void **)be->state)[0] = ctrlr;
+	xnvme_be_state_of(be)->ctrlr = ctrlr;
 
 	err = be->dev.dev_open(dev);
 	if (err) {

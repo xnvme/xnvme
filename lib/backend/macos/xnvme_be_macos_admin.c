@@ -12,6 +12,7 @@
 
 #include <xnvme_dev.h>
 #include <xnvme_be_macos.h>
+#include <xnvme_be_state.h>
 
 static int
 _gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
@@ -39,13 +40,12 @@ xnvme_be_macos_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 {
 	IOReturn err;
 	int nsid;
-	struct xnvme_be_macos_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_macos_state *state = &xnvme_be_state(ctx->dev)->macos_state;
+	IONVMeSMARTInterface **smart = state->nvme_smart_interface;
 
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_ADM_OPC_LOG:
-		err = (*state->nvme_smart_interface)
-			      ->GetLogPage(state->nvme_smart_interface, dbuf, ctx->cmd.log.lid,
-					   dbuf_nbytes / 4 - 1);
+		err = (*smart)->GetLogPage(smart, dbuf, ctx->cmd.log.lid, dbuf_nbytes / 4 - 1);
 		if (err != kIOReturnSuccess) {
 			XNVME_DEBUG("Error in GetLogPage: %s", (char *)mach_error_string(err));
 			return 1;
@@ -57,8 +57,7 @@ xnvme_be_macos_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 			// If we are providing a namespace id, overwrite with that.
 			nsid = ctx->cmd.common.nsid;
 		}
-		err = (*state->nvme_smart_interface)
-			      ->GetIdentifyData(state->nvme_smart_interface, dbuf, nsid);
+		err = (*smart)->GetIdentifyData(smart, dbuf, nsid);
 		if (err != kIOReturnSuccess) {
 			XNVME_DEBUG("Error in GetIdentifyData: %s",
 				    (char *)mach_error_string(err));

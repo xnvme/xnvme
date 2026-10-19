@@ -8,11 +8,12 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_upcie_cuda.h>
 #include <xnvme_lock.h>
+#include <xnvme_be_state.h>
 
 static int
 _xnvme_cuda_queue_create(struct xnvme_dev *dev, uint16_t depth, struct xnvme_cuda_queue **queue)
 {
-	struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 	struct xnvme_cuda_queue *qpair;
 	int err;
 
@@ -63,7 +64,7 @@ xnvme_cuda_queue_create(struct xnvme_dev *dev, uint16_t depth, struct xnvme_cuda
 static int
 _xnvme_cuda_queue_destroy(struct xnvme_dev *dev, struct xnvme_cuda_queue *queue)
 {
-	struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 	int err;
 
 	err = xnvme_be_upcie_mproc_qids_lock(state->ctrlr);

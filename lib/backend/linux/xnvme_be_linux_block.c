@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <xnvme_be_posix.h>
 #include <xnvme_be_linux.h>
+#include <xnvme_be_state.h>
 
 #ifdef XNVME_BE_LINUX_BLOCK_ZONED_ENABLED
 #include <linux/blkzoned.h>
@@ -23,10 +24,10 @@
 int
 xnvme_be_linux_block_nrzones(struct xnvme_dev *dev, uint64_t *nr_zones)
 {
-	struct xnvme_be_linux_state *state = (void *)dev->be.state;
+	struct xnvme_be_linux_state *state = &xnvme_be_state(dev)->linux_state;
 	int err;
 
-	err = ioctl(state->fd, BLKGETNRZONES, nr_zones);
+	err = ioctl(state->posix.fd, BLKGETNRZONES, nr_zones);
 	if (err) {
 		XNVME_DEBUG("FAILED: ioctl(BLKGETNRZONES), err: %d, errno: %d", err, errno);
 		return err;

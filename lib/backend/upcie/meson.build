@@ -18,6 +18,4 @@ xnvmelib_upcie_source = files(
 )
 xnvmelib_source += xnvmelib_upcie_source
 
-if be_upcie
 xnvmelib_inc += include_directories('.')
-endif

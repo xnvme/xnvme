@@ -11,6 +11,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_geo.h>
 #include <xnvme_lock.h>
+#include <xnvme_be_state.h>
 
 #ifdef XNVME_PLATFORM_LINUX_ENABLED
 /**
@@ -904,7 +905,7 @@ xnvme_dev_close(struct xnvme_dev *dev)
 
 	xnvme_lock();
 	{
-		void *ctrlr = ((void **)dev->be.state)[0];
+		void *ctrlr = xnvme_be_state(dev)->ctrlr;
 
 		dev->be.dev.dev_close(dev);
 

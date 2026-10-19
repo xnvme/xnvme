@@ -8,6 +8,7 @@
 #ifdef XNVME_BE_UPCIE_ENABLED
 #include <xnvme_dev.h>
 #include <xnvme_be_upcie.h>
+#include <xnvme_be_state.h>
 
 static int
 _submit_sync(struct nvme_qpair *qp, struct nvme_command *cmd, uint32_t timeout_ms,
@@ -35,7 +36,7 @@ static int
 xnvme_be_upcie_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			   size_t XNVME_UNUSED(mbuf_nbytes))
 {
-	struct xnvme_be_upcie_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(ctx->dev)->upcie_state;
 	struct nvme_controller *ctrl = state->ctrlr->ctrl;
 	struct nvme_qpair *qp = &state->ctrlr->sync;
 	struct nvme_command *cmd = (struct nvme_command *)&ctx->cmd;
@@ -98,7 +99,7 @@ xnvme_be_upcie_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_
 			    size_t XNVME_UNUSED(dvec_nbytes), void *mbuf,
 			    size_t XNVME_UNUSED(mbuf_nbytes))
 {
-	struct xnvme_be_upcie_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(ctx->dev)->upcie_state;
 	struct nvme_controller *ctrl = state->ctrlr->ctrl;
 	struct nvme_qpair *qp = &state->ctrlr->sync;
 	struct nvme_command *cmd = (struct nvme_command *)&ctx->cmd;

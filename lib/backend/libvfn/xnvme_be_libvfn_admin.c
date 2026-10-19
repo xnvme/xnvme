@@ -9,12 +9,13 @@
 #include <xnvme_dev.h>
 #include <xnvme_queue.h>
 #include <xnvme_be_libvfn.h>
+#include <xnvme_be_state.h>
 
 static int
 xnvme_be_libvfn_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 			       void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
-	struct xnvme_be_libvfn_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_libvfn_state *state = &xnvme_be_state(ctx->dev)->libvfn_state;
 	struct nvme_ctrl *ctrl = state->ctrlr->ctrl;
 	union nvme_cmd *cmd = (union nvme_cmd *)&ctx->cmd;
 	struct nvme_cqe *cqe = (struct nvme_cqe *)&ctx->cpl;

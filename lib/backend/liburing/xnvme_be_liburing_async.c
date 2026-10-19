@@ -19,6 +19,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_liburing.h>
 #include <xnvme_be_linux.h>
+#include <xnvme_be_state.h>
 
 #ifndef IORING_SETUP_SINGLE_ISSUER
 #define IORING_SETUP_SINGLE_ISSUER (1U << 12)
@@ -61,7 +62,7 @@ int
 xnvme_be_liburing_init(struct xnvme_queue *q, int opts)
 {
 	struct xnvme_queue_liburing *queue = (void *)q;
-	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_linux_state *state = &xnvme_be_state(queue->base.dev)->linux_state;
 	struct io_uring_params ring_params = {0};
 	int err = 0;
 
@@ -143,7 +144,7 @@ xnvme_be_liburing_init(struct xnvme_queue *q, int opts)
 	}
 
 	if (queue->poll_sq) {
-		err = io_uring_register_files(&queue->ring, &(state->fd), 1);
+		err = io_uring_register_files(&queue->ring, &(state->posix.fd), 1);
 		if (err) {
 			XNVME_DEBUG("FAILED: io_uring_register_files, err: %d", err);
 			goto exit;
@@ -267,7 +268,7 @@ xnvme_be_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyt
 			 size_t mbuf_nbytes)
 {
 	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
-	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_linux_state *state = &xnvme_be_state(queue->base.dev)->linux_state;
 	uint64_t ssw = 0;
 	struct io_uring_sqe *sqe = NULL;
 
@@ -322,7 +323,7 @@ xnvme_be_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyt
 		// NOTE: the prep-helper zeroes 'addr', 'off', 'len' and 'fsync_flags'.
 		// io_fsync_prep() rejects a non-zero 'addr'; 'off'/'len' would select a
 		// range for vfs_fsync_range(), zero/zero means the entire file
-		io_uring_prep_fsync(sqe, queue->poll_sq ? 0 : state->fd, 0);
+		io_uring_prep_fsync(sqe, queue->poll_sq ? 0 : state->posix.fd, 0);
 		// NOTE: set after the prep-helper; io_uring_prep_rw() zeroes 'flags'
 		sqe->flags = queue->poll_sq ? IOSQE_FIXED_FILE : 0;
 		sqe->user_data = (unsigned long)ctx;
@@ -338,7 +339,7 @@ xnvme_be_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyt
 	sqe->ioprio = 0;
 	// NOTE: we only ever register a single file, the raw device, so the
 	// provided index will always be 0
-	sqe->fd = queue->poll_sq ? 0 : state->fd;
+	sqe->fd = queue->poll_sq ? 0 : state->posix.fd;
 	// Honour the FUA bit of an NVM write; on a raw block device RWF_DSYNC
 	// makes the kernel issue the write with REQ_FUA. Only for the NVM opcode:
 	// 'fua' is an NVMe command-field, it does not exist for the FS opcodes
@@ -371,7 +372,7 @@ xnvme_be_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t 
 			  size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
-	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_linux_state *state = &xnvme_be_state(queue->base.dev)->linux_state;
 	uint64_t ssw = 0;
 	struct io_uring_sqe *sqe = NULL;
 	int opcode;
@@ -435,7 +436,7 @@ xnvme_be_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t 
 
 	// NOTE: we only ever register a single file, the raw device, so the
 	// provided index will always be 0
-	fd = queue->poll_sq ? 0 : state->fd;
+	fd = queue->poll_sq ? 0 : state->posix.fd;
 
 	switch (opcode) {
 	case IORING_OP_WRITEV:

@@ -11,6 +11,7 @@
 #include <stdatomic.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_upcie.h>
+#include <xnvme_be_state.h>
 
 static _Atomic int g_ctrlr_count;
 
@@ -809,7 +810,7 @@ xnvme_be_upcie_dev_close(struct xnvme_dev *XNVME_UNUSED(dev))
 int
 xnvme_be_upcie_dev_open(struct xnvme_dev *dev)
 {
-	struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 
 	dev->ident.dtype =
 		dev->opts.nsid ? XNVME_DEV_TYPE_NVME_NAMESPACE : XNVME_DEV_TYPE_NVME_CONTROLLER;

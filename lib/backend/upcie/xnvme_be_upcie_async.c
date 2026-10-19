@@ -9,12 +9,13 @@
 #include <xnvme_dev.h>
 #include <xnvme_queue.h>
 #include <xnvme_be_upcie.h>
+#include <xnvme_be_state.h>
 
 static int
 xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
 {
 	struct xnvme_queue_upcie *upcie_queue = (void *)queue;
-	struct xnvme_be_upcie_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(queue->base.dev)->upcie_state;
 	int err;
 
 	if (g_upcie_rte.mproc) {
@@ -42,7 +43,7 @@ static int
 xnvme_be_upcie_queue_term(struct xnvme_queue *queue)
 {
 	struct xnvme_queue_upcie *upcie_queue = (void *)queue;
-	struct xnvme_be_upcie_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(queue->base.dev)->upcie_state;
 
 	if (g_upcie_rte.mproc) {
 		xnvme_be_upcie_mproc_delete_io_qpair(state->ctrlr, &upcie_queue->qpair,
@@ -121,7 +122,7 @@ xnvme_be_upcie_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 			    size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	struct xnvme_queue_upcie *upcie_queue = (struct xnvme_queue_upcie *)ctx->async.queue;
-	struct xnvme_be_upcie_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(ctx->dev)->upcie_state;
 	struct nvme_command *cmd = (struct nvme_command *)&ctx->cmd;
 	struct nvme_request *req;
 	int err;
@@ -187,7 +188,7 @@ xnvme_be_upcie_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size
 			     size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	struct xnvme_queue_upcie *upcie_queue = (struct xnvme_queue_upcie *)ctx->async.queue;
-	struct xnvme_be_upcie_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(ctx->dev)->upcie_state;
 	struct nvme_command *cmd = (struct nvme_command *)&ctx->cmd;
 	struct nvme_request *req;
 	int err;

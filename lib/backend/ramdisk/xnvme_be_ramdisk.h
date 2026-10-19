@@ -4,13 +4,7 @@
 
 #ifndef __INTERNAL_XNVME_BE_RAMDISK_H
 #define __INTERNAL_XNVME_BE_RAMDISK_H
-struct xnvme_be_ramdisk_state {
-	void *ramdisk;
-
-	uint8_t _rsvd[120];
-};
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_ramdisk_state) == XNVME_BE_STATE_NBYTES,
-		    "Incorrect size");
+#include <xnvme_be_ramdisk_state.h>
 
 size_t
 xnvme_be_ramdisk_dev_get_size(struct xnvme_dev *dev);

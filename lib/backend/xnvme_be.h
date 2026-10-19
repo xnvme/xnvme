@@ -7,6 +7,7 @@
 #ifndef WIN32
 #include <paths.h>
 #endif
+#include <stddef.h>
 #include <libxnvme.h>
 
 #define XNVME_BE_QUEUE_STATE_NBYTES 256
@@ -18,6 +19,15 @@
 #define XNVME_BE_MEM_NBYTES   56
 #define XNVME_BE_ATTR_NBYTES  24
 #define XNVME_BE_STATE_NBYTES 128
+
+/**
+ * xnvme_platform_dev_open() stores a shared controller in the first pointer of
+ * xnvme_be.state; a dev implementation that shares controllers asserts with
+ * this that its state starts with that pointer
+ */
+#define XNVME_BE_CTRLR_STATE_FIRST(type)                       \
+	XNVME_STATIC_ASSERT(offsetof(struct type, ctrlr) == 0, \
+			    "struct " #type " must start with its ctrlr")
 #define XNVME_BE_NBYTES                                                         \
 	(XNVME_BE_ASYNC_NBYTES + XNVME_BE_SYNC_NBYTES + XNVME_BE_ADMIN_NBYTES + \
 	 XNVME_BE_DEV_NBYTES + XNVME_BE_MEM_NBYTES + XNVME_BE_ATTR_NBYTES +     \

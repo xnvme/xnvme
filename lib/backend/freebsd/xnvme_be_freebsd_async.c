@@ -18,6 +18,7 @@
 #include <xnvme_queue.h>
 #include <xnvme_be_freebsd.h>
 #include <xnvme_dev.h>
+#include <xnvme_be_state.h>
 
 struct xnvme_queue_kqueue {
 	struct xnvme_queue_base base;
@@ -63,7 +64,7 @@ static int
 xnvme_be_freebsd_kqueue_init(struct xnvme_queue *q, int opts)
 {
 	struct xnvme_queue_kqueue *queue = (void *)q;
-	struct xnvme_be_freebsd_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_freebsd_state *state = &xnvme_be_state(queue->base.dev)->freebsd_state;
 	size_t queue_nbytes = queue->base.capacity * sizeof(struct kqueue_request);
 
 	queue->poll_io = (opts & XNVME_QUEUE_IOPOLL) || state->poll_io;
@@ -191,7 +192,7 @@ xnvme_be_freebsd_kqueue_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 			       void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_queue_kqueue *queue = (void *)ctx->async.queue;
-	struct xnvme_be_freebsd_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_freebsd_state *state = &xnvme_be_state(queue->base.dev)->freebsd_state;
 	const uint64_t ssw = queue->base.dev->geo.ssw;
 	struct kqueue_request *req;
 	struct aiocb *aiocb;
@@ -205,7 +206,7 @@ xnvme_be_freebsd_kqueue_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_NVM_OPC_FLUSH:
 	case XNVME_SPEC_FS_OPC_FLUSH:
-		return kqueue_flush(ctx, state->fd.ns);
+		return kqueue_flush(ctx, state->posix.fd);
 
 	default:
 		break;
@@ -216,7 +217,7 @@ xnvme_be_freebsd_kqueue_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 
 	req->ctx = ctx;
 	aiocb = &req->aiocb;
-	aiocb->aio_fildes = state->fd.ns;
+	aiocb->aio_fildes = state->posix.fd;
 	aiocb->aio_buf = dbuf;
 	aiocb->aio_nbytes = dbuf_nbytes;
 	aiocb->aio_sigevent.sigev_notify_kqueue = queue->kq;
@@ -269,7 +270,7 @@ xnvme_be_freebsd_kqueue_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, s
 				size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_queue_kqueue *queue = (void *)ctx->async.queue;
-	struct xnvme_be_freebsd_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_freebsd_state *state = &xnvme_be_state(queue->base.dev)->freebsd_state;
 	const uint64_t ssw = queue->base.dev->geo.ssw;
 	struct kqueue_request *req;
 	struct aiocb *aiocb;
@@ -289,7 +290,7 @@ xnvme_be_freebsd_kqueue_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, s
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_NVM_OPC_FLUSH:
 	case XNVME_SPEC_FS_OPC_FLUSH:
-		return kqueue_flush(ctx, state->fd.ns);
+		return kqueue_flush(ctx, state->posix.fd);
 
 	default:
 		break;
@@ -300,7 +301,7 @@ xnvme_be_freebsd_kqueue_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, s
 
 	req->ctx = ctx;
 	aiocb = &req->aiocb;
-	aiocb->aio_fildes = state->fd.ns;
+	aiocb->aio_fildes = state->posix.fd;
 	aiocb->aio_iov = dvec;
 	aiocb->aio_iovcnt = dvec_cnt;
 	aiocb->aio_sigevent.sigev_notify_kqueue = queue->kq;

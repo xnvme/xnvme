@@ -22,6 +22,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_posix.h>
 #include <xnvme_be_linux.h>
+#include <xnvme_be_state.h>
 
 static int
 xnvme_be_linux_file_opts(struct xnvme_opts *opts)
@@ -45,14 +46,14 @@ _be_linux_state_term(struct xnvme_be_linux_state *state)
 		return;
 	}
 
-	close(state->fd);
-	state->fd = 0;
+	close(state->posix.fd);
+	state->posix.fd = 0;
 }
 
 static int
 xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 {
-	struct xnvme_be_linux_state *state = (void *)dev->be.state;
+	struct xnvme_be_linux_state *state = &xnvme_be_state(dev)->linux_state;
 	const struct xnvme_ident *ident = &dev->ident;
 	struct xnvme_opts *opts = &dev->opts;
 	struct stat dev_stat;
@@ -64,22 +65,22 @@ xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 	XNVME_DEBUG("INFO: open() : flags: 0x%x, opts->create_mode: 0x%x", flags,
 		    opts->create_mode);
 
-	state->fd = open(ident->uri, flags, opts->create_mode);
-	if (state->fd < 0) {
-		XNVME_DEBUG("FAILED: open(uri: '%s') : state->fd: '%d', errno: %d", ident->uri,
-			    state->fd, errno);
+	state->posix.fd = open(ident->uri, flags, opts->create_mode);
+	if (state->posix.fd < 0) {
+		XNVME_DEBUG("FAILED: open(uri: '%s') : state->posix.fd: '%d', errno: %d",
+			    ident->uri, state->posix.fd, errno);
 
 		opts->direct = 0;
 		flags = xnvme_be_linux_file_opts(opts);
-		state->fd = open(ident->uri, flags, opts->create_mode);
-		if (state->fd < 0) {
-			XNVME_DEBUG("FAILED: open(uri: '%s') : state->fd: '%d', errno: %d",
-				    ident->uri, state->fd, errno);
+		state->posix.fd = open(ident->uri, flags, opts->create_mode);
+		if (state->posix.fd < 0) {
+			XNVME_DEBUG("FAILED: open(uri: '%s') : state->posix.fd: '%d', errno: %d",
+				    ident->uri, state->posix.fd, errno);
 			return -errno;
 		}
 	}
 
-	err = fstat(state->fd, &dev_stat);
+	err = fstat(state->posix.fd, &dev_stat);
 	if (err < 0) {
 		XNVME_DEBUG("FAILED: open() : fstat() : err: %d, errno: %d", err, errno);
 		return -errno;
@@ -156,7 +157,7 @@ xnvme_be_linux_dev_close(struct xnvme_dev *dev)
 		return;
 	}
 
-	_be_linux_state_term((void *)dev->be.state);
+	_be_linux_state_term(&xnvme_be_state(dev)->linux_state);
 	memset(&dev->be, 0, sizeof(dev->be));
 }
 
