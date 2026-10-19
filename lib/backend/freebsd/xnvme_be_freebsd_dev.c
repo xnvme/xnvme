@@ -10,7 +10,7 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <xnvme_dev.h>
-#include <xnvme_be_cbi.h>
+#include <xnvme_be_posix.h>
 #include <xnvme_be_freebsd.h>
 
 void

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 xnvmelib_source += files(
-  'xnvme_be_linux_async_liburing.c',
-  'xnvme_be_linux_async_ucmd.c',
+  'xnvme_be_liburing_async.c',
+  'xnvme_be_liburing_async_ucmd.c',
 )
 xnvmelib_inc += include_directories('.')

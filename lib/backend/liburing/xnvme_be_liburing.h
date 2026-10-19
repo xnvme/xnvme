@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifndef __INTERNAL_XNVME_BE_LINUX_LIBURING_H
-#define __INTERNAL_XNVME_BE_LINUX_LIBURING_H
+#ifndef __INTERNAL_XNVME_BE_LIBURING_H
+#define __INTERNAL_XNVME_BE_LIBURING_H
 #include <liburing.h>
 
 #define XNVME_QUEUE_IOU_CQE_BATCH_MAX 8
@@ -40,4 +40,4 @@ xnvme_be_linux_liburing_term(struct xnvme_queue *queue);
 int
 xnvme_be_linux_liburing_get_completion_fd(struct xnvme_queue *queue);
 
-#endif /* __INTERNAL_XNVME_BE_LINUX_LIBURING_H */
+#endif /* __INTERNAL_XNVME_BE_LIBURING_H */

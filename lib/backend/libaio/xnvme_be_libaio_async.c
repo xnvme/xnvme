@@ -17,7 +17,7 @@
 #include <unistd.h>
 #include <xnvme_queue.h>
 #include <xnvme_be_linux.h>
-#include <xnvme_be_linux_libaio.h>
+#include <xnvme_be_libaio.h>
 #include <xnvme_dev.h>
 
 struct xnvme_aio_ring {

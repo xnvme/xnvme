@@ -1219,22 +1219,29 @@ lib/
     ├── xnvme_be_registry.h       # Extern declarations for all configs
     │
     └── <dir>/                    # One mechanism: posix, emu, thrpool, nil,
-                                  # shim, liburing, libaio, iocp, ioring,
-                                  # spdk, libvfn, upcie, driverkit, ramdisk;
-                                  # or an OS's own: linux, freebsd, macos,
-                                  # windows
+        │                         # shim, liburing, libaio, iocp, ioring,
+        │                         # spdk, libvfn, upcie, driverkit, ramdisk;
+        │                         # or an OS's own: linux, freebsd, macos,
+        │                         # windows
+        ├── xnvme_be_<dir>_configs.c
+        └── xnvme_be_<dir>_<intf>.c   # dev, mem, admin, sync or async
 ```
 
 ## Naming Convention
 
-| Prefix                | Meaning                                                   |
-| --------------------- | --------------------------------------------------------- |
-| `xnvme_platform_<os>` | Platform (OS-specific scan, classify)                     |
-| `xnvme_be_<os>_`      | Backend implementation (configs, sync, admin, async, mem) |
-| `xnvme_be_<name>`     | Userspace driver (spdk, vfio)                             |
-| `xnvme_be_cbi_`       | Cross-platform backend implementation                     |
-| `xnvme_be_ramdisk`    | Ramdisk virtual device                                    |
-| `xnvme_be_cref`       | Controller reference counting                             |
+The prefix names what a file implements, and the rest which one. A backend
+file is named `xnvme_be_<dir>_<intf>[_<ident>].c`, where `<dir>` is the
+directory it lives in, `<intf>` the backend interface it implements, and
+`<ident>` tells implementations of the same interface apart. A directory's
+private header is `xnvme_be_<dir>.h`.
+
+| File                         | Meaning                                       |
+| ---------------------------- | --------------------------------------------- |
+| `xnvme_platform_<os>.c`      | Platform (OS-specific scan, classify)         |
+| `xnvme_be_<dir>_configs.c`   | Backend configs combining the implementations |
+| `xnvme_be_<dir>_<intf>.c`    | Implementation of one backend interface       |
+| `xnvme_be_cref`              | Controller reference counting                 |
+| `xnvme_be_nosys`             | Stubs for what an implementation lacks        |
 
 ## Migration Progress
 

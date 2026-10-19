@@ -5,8 +5,8 @@
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 700
 #endif
-#ifndef __INTERNAL_XNVME_BE_WINDOWS_IORING_H
-#define __INTERNAL_XNVME_BE_WINDOWS_IORING_H
+#ifndef __INTERNAL_XNVME_BE_IORING_H
+#define __INTERNAL_XNVME_BE_IORING_H
 
 #define MAX_IORING_SQ 0x10000
 #define MAX_IORING_CQ 0x20000
@@ -46,4 +46,4 @@ typedef HRESULT(WINAPI *pop_ioring_completion_ptr)(_In_ HIORING ioRing, _Out_ IO
 
 typedef HRESULT(WINAPI *close_ioring_ptr)(_In_ HIORING ioRing);
 
-#endif /* __INTERNAL_XNVME_BE_WINDOWS_IORING_H */
+#endif /* __INTERNAL_XNVME_BE_IORING_H */

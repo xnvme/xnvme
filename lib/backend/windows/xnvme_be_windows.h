@@ -8,7 +8,7 @@
 #ifndef __INTERNAL_XNVME_BE_WINDOWS_H
 #define __INTERNAL_XNVME_BE_WINDOWS_H
 #include <xnvme_dev.h>
-#include <xnvme_be_cbi.h>
+#include <xnvme_be_posix.h>
 
 /**
  * Internal representation of options for Windows backends
