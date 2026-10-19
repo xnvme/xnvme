@@ -10,17 +10,17 @@
 #endif
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_CBI_SYNC_PSYNC_ENABLED
+#ifdef XNVME_BE_POSIX_ENABLED
 #include <errno.h>
 #include <unistd.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_posix.h>
 
 int
-xnvme_be_cbi_sync_psync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
-			       void *mbuf, size_t mbuf_nbytes)
+xnvme_be_posix_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			   size_t mbuf_nbytes)
 {
-	struct xnvme_be_cbi_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_posix_state *state = (void *)ctx->dev->be.state;
 	const uint64_t ssw = ctx->dev->geo.ssw;
 	ssize_t res;
 	uint8_t sc;
@@ -75,10 +75,10 @@ exit:
 }
 
 int
-xnvme_be_cbi_sync_psync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-				size_t dvec_nbytes, void *mbuf, size_t mbuf_nbytes)
+xnvme_be_posix_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+			    size_t dvec_nbytes, void *mbuf, size_t mbuf_nbytes)
 {
-	struct xnvme_be_cbi_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_posix_state *state = (void *)ctx->dev->be.state;
 	const uint64_t ssw = ctx->dev->geo.ssw;
 	ssize_t res;
 	uint8_t sc;
@@ -136,11 +136,11 @@ exit:
 }
 #endif
 
-struct xnvme_be_sync g_xnvme_be_cbi_sync_psync = {
+struct xnvme_be_sync g_xnvme_be_posix_sync = {
 	.id = "psync",
-#ifdef XNVME_BE_CBI_SYNC_PSYNC_ENABLED
-	.cmd_io = xnvme_be_cbi_sync_psync_cmd_io,
-	.cmd_iov = xnvme_be_cbi_sync_psync_cmd_iov,
+#ifdef XNVME_BE_POSIX_ENABLED
+	.cmd_io = xnvme_be_posix_sync_cmd_io,
+	.cmd_iov = xnvme_be_posix_sync_cmd_iov,
 #else
 	.cmd_io = xnvme_be_nosys_sync_cmd_io,
 	.cmd_iov = xnvme_be_nosys_sync_cmd_iov,

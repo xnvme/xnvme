@@ -370,7 +370,7 @@ jobs:
         - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'tcp-spdk'}
         - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'tcp-linux'}
       BUILD_LINUX: |
-        # alpine: SPDK not supported, --with-spdk=disabled
+        # alpine: SPDK not supported, -Dbe_spdk=disabled
         - {os: 'alpine', ver: 'latest'}
         - {os: 'archlinux', ver: 'latest'}
         - {os: 'centos', ver: 'stream10'}

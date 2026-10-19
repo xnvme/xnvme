@@ -10,8 +10,8 @@
 #include <xnvme_be_ramdisk.h>
 #include <xnvme_be_posix.h>
 
-#if defined(XNVME_BE_CBI_MEM_POSIX_ENABLED)
-#define XNVME_BE_RAMDISK_MEM &g_xnvme_be_cbi_mem_posix
+#if defined(XNVME_BE_POSIX_ENABLED)
+#define XNVME_BE_RAMDISK_MEM &g_xnvme_be_posix_mem
 #elif defined(XNVME_PLATFORM_WINDOWS_ENABLED)
 #include <xnvme_be_windows.h>
 #define XNVME_BE_RAMDISK_MEM &g_xnvme_be_windows_mem
@@ -30,8 +30,8 @@
 #define XNVME_BE_RAMDISK_MEM_OVERRIDES
 #endif
 
-const struct xnvme_be_config g_xnvme_be_ramdisk_nil = {
-	.async = &g_xnvme_be_cbi_async_nil,
+const struct xnvme_be_config g_xnvme_be_ramdisk = {
+	.async = &g_xnvme_be_nil_async,
 	.sync = &g_xnvme_be_ramdisk_sync,
 	.admin = &g_xnvme_be_ramdisk_admin,
 	.dev = &g_xnvme_be_ramdisk_dev,
@@ -45,7 +45,7 @@ const struct xnvme_be_config g_xnvme_be_ramdisk_nil = {
 };
 
 const struct xnvme_be_config g_xnvme_be_ramdisk_thrpool = {
-	.async = &g_xnvme_be_cbi_async_thrpool,
+	.async = &g_xnvme_be_thrpool_async,
 	.sync = &g_xnvme_be_ramdisk_sync,
 	.admin = &g_xnvme_be_ramdisk_admin,
 	.dev = &g_xnvme_be_ramdisk_dev,
@@ -59,7 +59,7 @@ const struct xnvme_be_config g_xnvme_be_ramdisk_thrpool = {
 };
 
 const struct xnvme_be_config g_xnvme_be_ramdisk_emu = {
-	.async = &g_xnvme_be_cbi_async_emu,
+	.async = &g_xnvme_be_emu_async,
 	.sync = &g_xnvme_be_ramdisk_sync,
 	.admin = &g_xnvme_be_ramdisk_admin,
 	.dev = &g_xnvme_be_ramdisk_dev,

@@ -5,7 +5,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_PLATFORM_MACOS_ENABLED
+#ifdef XNVME_BE_DRIVERKIT_ENABLED
 #include <errno.h>
 #include <xnvme_be_driverkit.h>
 #include <mach/mach_error.h>
@@ -26,11 +26,11 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_macos_driverkit) == XNVME_BE_QUEUE
 		    "Incorrect size")
 
 int
-xnvme_be_macos_driverkit_queue_init(struct xnvme_queue *_queue, int XNVME_UNUSED(opts))
+xnvme_be_driverkit_queue_init(struct xnvme_queue *_queue, int XNVME_UNUSED(opts))
 {
 	struct xnvme_queue_macos_driverkit *q = (struct xnvme_queue_macos_driverkit *)_queue;
-	struct xnvme_be_macos_driverkit_state *state =
-		(struct xnvme_be_macos_driverkit_state *)_queue->base.dev->be.state;
+	struct xnvme_be_driverkit_state *state =
+		(struct xnvme_be_driverkit_state *)_queue->base.dev->be.state;
 	mach_vm_size_t size = 0;
 	mach_vm_address_t addr;
 	kern_return_t res;
@@ -70,11 +70,11 @@ xnvme_be_macos_driverkit_queue_init(struct xnvme_queue *_queue, int XNVME_UNUSED
 }
 
 int
-xnvme_be_macos_driverkit_queue_term(struct xnvme_queue *_queue)
+xnvme_be_driverkit_queue_term(struct xnvme_queue *_queue)
 {
 	struct xnvme_queue_macos_driverkit *q = (struct xnvme_queue_macos_driverkit *)_queue;
-	struct xnvme_be_macos_driverkit_state *state =
-		(struct xnvme_be_macos_driverkit_state *)q->base.dev->be.state;
+	struct xnvme_be_driverkit_state *state =
+		(struct xnvme_be_driverkit_state *)q->base.dev->be.state;
 	int ret;
 
 	ret = _xnvme_be_driverkit_delete_ioqpair(state, q->id);
@@ -89,11 +89,11 @@ xnvme_be_macos_driverkit_queue_term(struct xnvme_queue *_queue)
 }
 
 int
-xnvme_be_macos_driverkit_queue_poke(struct xnvme_queue *queue, uint32_t XNVME_UNUSED(max))
+xnvme_be_driverkit_queue_poke(struct xnvme_queue *queue, uint32_t XNVME_UNUSED(max))
 {
 	struct xnvme_queue_macos_driverkit *q = (struct xnvme_queue_macos_driverkit *)queue;
-	struct xnvme_be_macos_driverkit_state *state =
-		(struct xnvme_be_macos_driverkit_state *)queue->base.dev->be.state;
+	struct xnvme_be_driverkit_state *state =
+		(struct xnvme_be_driverkit_state *)queue->base.dev->be.state;
 	uint64_t qid[2] = {q->id, q->id}; // Submission queue, completion queue
 	int reaped = 0;
 	int queue_ret;
@@ -126,13 +126,13 @@ xnvme_be_macos_driverkit_queue_poke(struct xnvme_queue *queue, uint32_t XNVME_UN
 }
 
 int
-xnvme_be_macos_driverkit_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
-				      void *mbuf, size_t mbuf_nbytes)
+xnvme_be_driverkit_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
+				void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_queue_macos_driverkit *q =
 		(struct xnvme_queue_macos_driverkit *)ctx->async.queue;
-	struct xnvme_be_macos_driverkit_state *state =
-		(struct xnvme_be_macos_driverkit_state *)ctx->dev->be.state;
+	struct xnvme_be_driverkit_state *state =
+		(struct xnvme_be_driverkit_state *)ctx->dev->be.state;
 	NvmeSubmitCmd cmd = {0};
 	int queue_ret;
 	struct buffer *buf;
@@ -201,14 +201,14 @@ xnvme_be_macos_driverkit_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, siz
 
 #endif
 
-struct xnvme_be_async g_xnvme_be_macos_driverkit_async = {
-#ifdef XNVME_PLATFORM_MACOS_ENABLED
-	.cmd_io = xnvme_be_macos_driverkit_async_cmd_io,
+struct xnvme_be_async g_xnvme_be_driverkit_async = {
+#ifdef XNVME_BE_DRIVERKIT_ENABLED
+	.cmd_io = xnvme_be_driverkit_async_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
-	.poke = xnvme_be_macos_driverkit_queue_poke,
+	.poke = xnvme_be_driverkit_queue_poke,
 	.wait = xnvme_be_nosys_queue_wait,
-	.init = xnvme_be_macos_driverkit_queue_init,
-	.term = xnvme_be_macos_driverkit_queue_term,
+	.init = xnvme_be_driverkit_queue_init,
+	.term = xnvme_be_driverkit_queue_term,
 #else
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,

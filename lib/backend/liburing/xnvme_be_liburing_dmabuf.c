@@ -8,7 +8,7 @@
 
 #include <xnvme_be.h>
 
-#ifdef XNVME_BE_LINUX_IO_URING_DMABUF_ENABLED
+#ifdef XNVME_BE_LIBURING_DMABUF_ENABLED
 #include <dirent.h>
 #include <errno.h>
 #include <pthread.h>
@@ -46,7 +46,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_io_uring_regbuf_desc) == 80, "Incorrect 
 
 // A dma-buf registered with the rings of the device, at the 'sqe->buf_index' that
 // is its index in the registry
-struct xnvme_io_uring_dmabuf_entry {
+struct xnvme_be_liburing_dmabuf_entry {
 	void *vaddr;
 	size_t nbytes;
 	uint64_t map_handle;
@@ -55,18 +55,18 @@ struct xnvme_io_uring_dmabuf_entry {
 	uint32_t refs;
 };
 
-struct xnvme_io_uring_dmabuf {
+struct xnvme_be_liburing_dmabuf {
 	const struct xnvme_dev *dev;
-	struct xnvme_io_uring_dmabuf *next;
+	struct xnvme_be_liburing_dmabuf *next;
 	struct xnvme_queue_liburing **queues; ///< Rings holding the entries in their buffer-table
 	uint32_t nqueues;
 	uint32_t nentries; ///< One past the highest entry ever used
-	struct xnvme_io_uring_dmabuf_entry entries[XNVME_IO_URING_DMABUF_NENTRIES];
+	struct xnvme_be_liburing_dmabuf_entry entries[XNVME_BE_LIBURING_DMABUF_NENTRIES];
 };
 
 // Guards the registries; IO only reads the entries of its own
 static pthread_mutex_t g_registries_mutex = PTHREAD_MUTEX_INITIALIZER;
-static struct xnvme_io_uring_dmabuf *g_registries;
+static struct xnvme_be_liburing_dmabuf *g_registries;
 
 static int
 _sysfs_read(const struct xnvme_dev *dev, const char *attr, char *buf, int buf_len)
@@ -208,7 +208,7 @@ _iommu_unmap(uint64_t handle)
 }
 
 static void
-_entry_release(struct xnvme_io_uring_dmabuf_entry *entry)
+_entry_release(struct xnvme_be_liburing_dmabuf_entry *entry)
 {
 	if (entry->map_handle) {
 		_iommu_unmap(entry->map_handle);
@@ -222,9 +222,9 @@ _entry_release(struct xnvme_io_uring_dmabuf_entry *entry)
 }
 
 static int
-_registry(const struct xnvme_dev *dev, bool create, struct xnvme_io_uring_dmabuf **registry)
+_registry(const struct xnvme_dev *dev, bool create, struct xnvme_be_liburing_dmabuf **registry)
 {
-	struct xnvme_io_uring_dmabuf *reg;
+	struct xnvme_be_liburing_dmabuf *reg;
 
 	for (reg = g_registries; reg; reg = reg->next) {
 		if (reg->dev == dev) {
@@ -240,7 +240,7 @@ _registry(const struct xnvme_dev *dev, bool create, struct xnvme_io_uring_dmabuf
 	if (!reg) {
 		return -ENOMEM;
 	}
-	for (uint32_t i = 0; i < XNVME_IO_URING_DMABUF_NENTRIES; ++i) {
+	for (uint32_t i = 0; i < XNVME_BE_LIBURING_DMABUF_NENTRIES; ++i) {
 		reg->entries[i].fd = -1;
 	}
 
@@ -254,20 +254,20 @@ _registry(const struct xnvme_dev *dev, bool create, struct xnvme_io_uring_dmabuf
 }
 
 static int
-_registry_add(struct xnvme_io_uring_dmabuf *registry, void *vaddr, size_t nbytes, int fd)
+_registry_add(struct xnvme_be_liburing_dmabuf *registry, void *vaddr, size_t nbytes, int fd)
 {
-	struct xnvme_io_uring_dmabuf_entry *entry;
+	struct xnvme_be_liburing_dmabuf_entry *entry;
 	uint32_t i;
 	int err;
 
-	for (i = 0; i < XNVME_IO_URING_DMABUF_NENTRIES; ++i) {
+	for (i = 0; i < XNVME_BE_LIBURING_DMABUF_NENTRIES; ++i) {
 		if (registry->entries[i].fd < 0) {
 			break;
 		}
 	}
-	if (i == XNVME_IO_URING_DMABUF_NENTRIES) {
+	if (i == XNVME_BE_LIBURING_DMABUF_NENTRIES) {
 		XNVME_DEBUG("FAILED: all %d dma-buf entries are in use",
-			    XNVME_IO_URING_DMABUF_NENTRIES);
+			    XNVME_BE_LIBURING_DMABUF_NENTRIES);
 		return -ENOMEM;
 	}
 	entry = &registry->entries[i];
@@ -296,11 +296,11 @@ _registry_add(struct xnvme_io_uring_dmabuf *registry, void *vaddr, size_t nbytes
 }
 
 static int
-_registry_lookup(struct xnvme_io_uring_dmabuf *registry, const void *buf, size_t nbytes,
-		 struct xnvme_io_uring_dmabuf_entry **entry, uint64_t *offset)
+_registry_lookup(struct xnvme_be_liburing_dmabuf *registry, const void *buf, size_t nbytes,
+		 struct xnvme_be_liburing_dmabuf_entry **entry, uint64_t *offset)
 {
 	for (uint32_t i = 0; i < registry->nentries; ++i) {
-		struct xnvme_io_uring_dmabuf_entry *ent = &registry->entries[i];
+		struct xnvme_be_liburing_dmabuf_entry *ent = &registry->entries[i];
 		uint64_t off;
 
 		if (ent->fd < 0) {
@@ -326,9 +326,9 @@ _registry_lookup(struct xnvme_io_uring_dmabuf *registry, const void *buf, size_t
 }
 
 void
-xnvme_io_uring_dmabuf_term(const struct xnvme_dev *dev)
+xnvme_be_liburing_dmabuf_term(const struct xnvme_dev *dev)
 {
-	struct xnvme_io_uring_dmabuf **link, *registry;
+	struct xnvme_be_liburing_dmabuf **link, *registry;
 
 	pthread_mutex_lock(&g_registries_mutex);
 
@@ -398,7 +398,7 @@ _ring_update(struct xnvme_queue_liburing *queue, uint32_t index, int fd)
 }
 
 int
-xnvme_io_uring_dmabuf_supported(void)
+xnvme_be_liburing_dmabuf_supported(void)
 {
 	struct io_uring ring;
 	int err;
@@ -429,10 +429,10 @@ exit:
 }
 
 int
-xnvme_io_uring_dmabuf_ref(const struct xnvme_dev *dev, const void *vaddr, size_t nbytes)
+xnvme_be_liburing_dmabuf_ref(const struct xnvme_dev *dev, const void *vaddr, size_t nbytes)
 {
-	struct xnvme_io_uring_dmabuf_entry *entry;
-	struct xnvme_io_uring_dmabuf *registry;
+	struct xnvme_be_liburing_dmabuf_entry *entry;
+	struct xnvme_be_liburing_dmabuf *registry;
 	uint64_t offset;
 	int err;
 
@@ -456,10 +456,10 @@ exit:
 }
 
 int
-xnvme_io_uring_dmabuf_add(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, int fd)
+xnvme_be_liburing_dmabuf_add(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, int fd)
 {
-	struct xnvme_io_uring_dmabuf_entry *entry;
-	struct xnvme_io_uring_dmabuf *registry;
+	struct xnvme_be_liburing_dmabuf_entry *entry;
+	struct xnvme_be_liburing_dmabuf *registry;
 	uint64_t offset;
 	int index, err;
 
@@ -513,10 +513,10 @@ exit:
 }
 
 int
-xnvme_io_uring_dmabuf_unref(const struct xnvme_dev *dev, const void *vaddr)
+xnvme_be_liburing_dmabuf_unref(const struct xnvme_dev *dev, const void *vaddr)
 {
-	struct xnvme_io_uring_dmabuf_entry *entry;
-	struct xnvme_io_uring_dmabuf *registry;
+	struct xnvme_be_liburing_dmabuf_entry *entry;
+	struct xnvme_be_liburing_dmabuf *registry;
 	uint64_t offset;
 	int err;
 
@@ -548,10 +548,10 @@ exit:
 }
 
 int
-xnvme_io_uring_dmabuf_lookup(struct xnvme_io_uring_dmabuf *registry, const void *buf,
-			     size_t nbytes, uint16_t *index, uint64_t *offset)
+xnvme_be_liburing_dmabuf_lookup(struct xnvme_be_liburing_dmabuf *registry, const void *buf,
+				size_t nbytes, uint16_t *index, uint64_t *offset)
 {
-	struct xnvme_io_uring_dmabuf_entry *entry;
+	struct xnvme_be_liburing_dmabuf_entry *entry;
 	int err;
 
 	err = _registry_lookup(registry, buf, nbytes, &entry, offset);
@@ -565,13 +565,13 @@ xnvme_io_uring_dmabuf_lookup(struct xnvme_io_uring_dmabuf *registry, const void 
 }
 
 int
-xnvme_io_uring_dmabuf_attach(struct xnvme_queue_liburing *queue)
+xnvme_be_liburing_dmabuf_attach(struct xnvme_queue_liburing *queue)
 {
-	struct xnvme_io_uring_dmabuf *registry;
+	struct xnvme_be_liburing_dmabuf *registry;
 	struct xnvme_queue_liburing **queues;
 	int err;
 
-	err = io_uring_register_buffers_sparse(&queue->ring, XNVME_IO_URING_DMABUF_NENTRIES);
+	err = io_uring_register_buffers_sparse(&queue->ring, XNVME_BE_LIBURING_DMABUF_NENTRIES);
 	if (err) {
 		XNVME_DEBUG("FAILED: io_uring_register_buffers_sparse(), err: %d", err);
 		return err;
@@ -614,9 +614,9 @@ exit:
 }
 
 void
-xnvme_io_uring_dmabuf_detach(struct xnvme_queue_liburing *queue)
+xnvme_be_liburing_dmabuf_detach(struct xnvme_queue_liburing *queue)
 {
-	struct xnvme_io_uring_dmabuf *registry = queue->dmabuf;
+	struct xnvme_be_liburing_dmabuf *registry = queue->dmabuf;
 
 	if (!registry) {
 		return;

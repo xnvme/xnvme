@@ -77,7 +77,7 @@ jobs:
     - name: Build the RPM
       run: |
         git config --global --add safe.directory "$GITHUB_WORKSPACE"
-        meson setup builddir -Dwith-spdk=disabled -Dwith-libvfn=disabled
+        meson setup builddir -Dbe_spdk=disabled -Dbe_libvfn=disabled
         make rpm-dev
 
     - name: Install the RPM
