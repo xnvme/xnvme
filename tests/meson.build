@@ -13,6 +13,9 @@ tests = {
     ['count=16', ['init_term', '1GB', '--count', '16', '--qdepth', '64']],
     ['count=32', ['init_term', '1GB', '--count', '32', '--qdepth', '64']],
   ],
+  'be.c': [
+    ['caps', ['caps']],
+  ],
   'buf.c': [
     ['alloc', ['buf_alloc_free', '1GB', '--count', '31']],
     ['virt_alloc', ['buf_virt_alloc_free', '1GB', '--count', '31']],
