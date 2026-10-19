@@ -201,21 +201,6 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_be) == XNVME_BE_NBYTES, "Incorrect size"
  * Auxilary helpers
  */
 
-/**
- * Resolve the name of the given backend identifier
- */
-const char *
-xnvme_be_id2name(int bid);
-
-/**
- * Resolve the internal identifier of the given backend name.
- *
- * @returns Returns numerical identifier on success. On error, e.g. the given
- * name does not exists in the list of backend implementations, -1 is returned.
- */
-int
-xnvme_be_name2id(const char *bname);
-
 int
 xnvme_be_yaml(FILE *stream, const struct xnvme_be *be, int indent, const char *sep, int head);
 

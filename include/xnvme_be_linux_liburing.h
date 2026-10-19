@@ -32,9 +32,6 @@ int
 xnvme_be_linux_liburing_poke(struct xnvme_queue *queue, uint32_t max);
 
 int
-xnvme_be_linux_liburing_wait(struct xnvme_queue *queue);
-
-int
 xnvme_be_linux_liburing_init(struct xnvme_queue *queue, int opts);
 
 int
