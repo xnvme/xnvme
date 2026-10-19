@@ -11,6 +11,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_queue.h>
 #include <xnvme_be_spdk.h>
+#include <xnvme_be_state.h>
 
 static void
 cmd_sync_cb(void *cb_arg, const struct spdk_nvme_cpl *cpl)
@@ -51,7 +52,7 @@ static int
 xnvme_be_spdk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			  size_t XNVME_UNUSED(mbuf_nbytes))
 {
-	struct xnvme_be_spdk_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_spdk_state *state = &xnvme_be_state(ctx->dev)->spdk_state;
 	struct spdk_nvme_qpair *qpair = state->qpair;
 	pthread_mutex_t *qpair_lock = &state->qpair_lock;
 	uint8_t *completed = &ctx->be_rsvd[0];
@@ -100,7 +101,7 @@ static void
 reset_sgl_offset(void *cb_arg, uint32_t offset)
 {
 	struct xnvme_cmd_ctx *ctx = cb_arg;
-	struct xnvme_be_spdk_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_spdk_state *state = &xnvme_be_state(ctx->dev)->spdk_state;
 	struct iovec *iov;
 
 	state->payload.iov_offset = offset;
@@ -120,7 +121,7 @@ static int
 next_sgl_entry(void *cb_arg, void **address, uint32_t *length)
 {
 	struct xnvme_cmd_ctx *ctx = cb_arg;
-	struct xnvme_be_spdk_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_spdk_state *state = &xnvme_be_state(ctx->dev)->spdk_state;
 	struct iovec *iov;
 
 	iov = &state->payload.iov[state->payload.iov_pos];
@@ -146,7 +147,7 @@ static int
 xnvme_be_spdk_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
 			   size_t dvec_nbytes, void *mbuf, size_t XNVME_UNUSED(mbuf_nbytes))
 {
-	struct xnvme_be_spdk_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_spdk_state *state = &xnvme_be_state(ctx->dev)->spdk_state;
 	struct spdk_nvme_qpair *qpair = state->qpair;
 	pthread_mutex_t *qpair_lock = &state->qpair_lock;
 	uint8_t *completed = &ctx->be_rsvd[0];

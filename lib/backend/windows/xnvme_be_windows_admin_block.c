@@ -15,6 +15,7 @@
 #include <Setupapi.h>
 #include <xnvme_be_windows.h>
 #include <xnvme_be_windows_nvme.h>
+#include <xnvme_be_state.h>
 
 BOOL
 get_drive_geometry(HANDLE dev_handle, DISK_GEOMETRY *pdg)
@@ -63,7 +64,7 @@ static int
 _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 {
 	struct xnvme_spec_idfy_ns *ns = dbuf;
-	struct xnvme_be_windows_state *state = (void *)dev->be.state;
+	struct xnvme_be_windows_state *state = &xnvme_be_state(dev)->windows_state;
 
 	DWORD disk_size = get_device_size(state->async_handle);
 

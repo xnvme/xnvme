@@ -34,6 +34,7 @@ _cuda_host_sq_find(struct xnvme_cuda_queue *queue)
 
 	return NULL;
 }
+#include <xnvme_be_state.h>
 
 static int
 _cuda_host_sq_alloc(size_t nbytes, struct _cuda_host_sq *rec, void **sq_dev, uint64_t *sq_iova)
@@ -160,7 +161,7 @@ static int
 _xnvme_cuda_queue_create(struct xnvme_dev *dev, uint16_t depth, int opts,
 			 struct xnvme_cuda_queue **queue)
 {
-	struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 	struct xnvme_cuda_queue *qpair;
 	int hostmem = opts & XNVME_QUEUE_SQ_HOSTMEM;
 	int err;
@@ -387,7 +388,7 @@ xnvme_cuda_queue_create(struct xnvme_dev *dev, uint16_t depth, int opts,
 static int
 _xnvme_cuda_queue_destroy(struct xnvme_dev *dev, struct xnvme_cuda_queue *queue)
 {
-	struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 	struct nvme_qpair_cuda qpair = {0};
 	int cu_err;
 

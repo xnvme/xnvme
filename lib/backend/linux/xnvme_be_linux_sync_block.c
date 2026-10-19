@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <xnvme_be_posix.h>
 #include <xnvme_be_linux.h>
+#include <xnvme_be_state.h>
 
 #ifdef XNVME_BE_LINUX_BLOCK_ZONED_ENABLED
 #include <linux/blkzoned.h>
@@ -42,7 +43,7 @@ static int
 _lzbd_zone_mgmt_send(struct xnvme_cmd_ctx *ctx)
 {
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(ctx->dev);
-	struct xnvme_be_linux_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_linux_state *state = &xnvme_be_state(ctx->dev)->linux_state;
 	const uint64_t zone_nbytes = geo->nsect * geo->nbytes;
 	struct blk_zone_range zr = {0};
 	int err;
@@ -67,22 +68,22 @@ _lzbd_zone_mgmt_send(struct xnvme_cmd_ctx *ctx)
 	switch (ctx->cmd.znd.mgmt_send.zsa) {
 #ifdef BLKCLOSEZONE
 	case XNVME_SPEC_ZND_CMD_MGMT_SEND_CLOSE:
-		err = ioctl(state->fd, BLKCLOSEZONE, &zr);
+		err = ioctl(state->posix.fd, BLKCLOSEZONE, &zr);
 		break;
 #endif
 #ifdef BLKFINISHZONE
 	case XNVME_SPEC_ZND_CMD_MGMT_SEND_FINISH:
-		err = ioctl(state->fd, BLKFINISHZONE, &zr);
+		err = ioctl(state->posix.fd, BLKFINISHZONE, &zr);
 		break;
 #endif
 #ifdef BLKOPENZONE
 	case XNVME_SPEC_ZND_CMD_MGMT_SEND_OPEN:
-		err = ioctl(state->fd, BLKOPENZONE, &zr);
+		err = ioctl(state->posix.fd, BLKOPENZONE, &zr);
 		break;
 #endif
 #ifdef BLKRESETZONE
 	case XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET:
-		err = ioctl(state->fd, BLKRESETZONE, &zr);
+		err = ioctl(state->posix.fd, BLKRESETZONE, &zr);
 		break;
 #endif
 	default:
@@ -123,14 +124,14 @@ static int
 _lzbd_ioctl_rprt(struct xnvme_dev *dev, uint64_t zslba, uint32_t nzones,
 		 struct blk_zone_report *report)
 {
-	struct xnvme_be_linux_state *state = (void *)dev->be.state;
+	struct xnvme_be_linux_state *state = &xnvme_be_state(dev)->linux_state;
 
 	report->sector = zslba << (dev->geo.ssw - LINUX_BLOCK_SSW);
 	report->nr_zones = nzones;
 
 	XNVME_DEBUG("sector: 0x%llx, nr_zones: %u", report->sector, report->nr_zones);
 
-	return ioctl(state->fd, BLKREPORTZONE, report);
+	return ioctl(state->posix.fd, BLKREPORTZONE, report);
 }
 #else
 static int

@@ -15,6 +15,9 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_posix.h>
 #include <xnvme_be_macos.h>
+#include <xnvme_be_state.h>
+
+XNVME_STATIC_ASSERT(sizeof(io_object_t) == sizeof(uint32_t), "Incorrect size")
 
 #ifndef _PATH_DEV_DISK
 #define _PATH_DEV_DISK "/dev/"
@@ -123,8 +126,8 @@ xnvme_be_macos_state_term(struct xnvme_be_macos_state *state)
 		return;
 	}
 
-	if (state->fd >= 0) {
-		close(state->fd);
+	if (state->posix.fd >= 0) {
+		close(state->posix.fd);
 	}
 
 	if (state->ioservice_device) {
@@ -132,11 +135,15 @@ xnvme_be_macos_state_term(struct xnvme_be_macos_state *state)
 	}
 
 	if (state->nvme_smart_interface) {
-		(*state->nvme_smart_interface)->Release(state->nvme_smart_interface);
+		IONVMeSMARTInterface **smart = state->nvme_smart_interface;
+
+		(*smart)->Release(smart);
 	}
 
 	if (state->plugin_interface) {
-		IODestroyPlugInInterface(state->plugin_interface);
+		IOCFPlugInInterface **plugin = state->plugin_interface;
+
+		IODestroyPlugInInterface(plugin);
 	}
 }
 
@@ -147,7 +154,7 @@ xnvme_be_macos_dev_close(struct xnvme_dev *dev)
 		return;
 	}
 
-	xnvme_be_macos_state_term((void *)dev->be.state);
+	xnvme_be_macos_state_term(&xnvme_be_state(dev)->macos_state);
 	memset(&dev->be, 0, sizeof(dev->be));
 }
 
@@ -168,7 +175,7 @@ xnvme_be_macos_file_opts(struct xnvme_opts *opts)
 static int
 xnvme_be_macos_dev_open(struct xnvme_dev *dev)
 {
-	struct xnvme_be_macos_state *state = (void *)dev->be.state;
+	struct xnvme_be_macos_state *state = &xnvme_be_state(dev)->macos_state;
 	struct xnvme_opts *opts = &dev->opts;
 	int flags = xnvme_be_macos_file_opts(opts);
 	io_object_t ioservice_device;
@@ -188,8 +195,8 @@ xnvme_be_macos_dev_open(struct xnvme_dev *dev)
 	}
 
 	if (_is_disk_nvme(ioservice_device)) {
-		state->fd = open(dev->ident.uri, flags);
-		if (state->fd < 0) {
+		state->posix.fd = open(dev->ident.uri, flags);
+		if (state->posix.fd < 0) {
 			XNVME_DEBUG("FAILED: Unable to open device, errno: %d, %s", errno,
 				    strerror(errno));
 			return -errno;
@@ -204,7 +211,7 @@ xnvme_be_macos_dev_open(struct xnvme_dev *dev)
 		XNVME_DEBUG("non-nvme disks are currently unsupported.");
 		return -ENOTSUP;
 
-		state->fd = open(dev->ident.uri, flags, opts->create_mode);
+		state->posix.fd = open(dev->ident.uri, flags, opts->create_mode);
 		state->ioservice_device = 0;
 		state->nvme_smart_interface = NULL;
 		dev->ident.nsid = 1;

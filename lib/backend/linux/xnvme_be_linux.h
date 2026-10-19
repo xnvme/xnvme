@@ -4,6 +4,7 @@
 
 #ifndef __INTERNAL_XNVME_BE_LINUX_H
 #define __INTERNAL_XNVME_BE_LINUX_H
+#include <xnvme_be_posix.h>
 #include <xnvme_dev.h>
 
 #ifndef LINUX_BLOCK_SSW
@@ -13,21 +14,7 @@
 #define XNVME_LINUX_CTRLR_FMT _PATH_DEV "nvme%1u"
 #define XNVME_LINUX_NS_FMT    _PATH_DEV "nvme%1un%1u"
 
-/**
- * Internal representation of XNVME_BE_LINUX state
- *
- * NOTE: When changing this struct, ensure compatibility with 'struct xnvme_be_posix_state'
- */
-struct xnvme_be_linux_state {
-	int fd;
-
-	uint8_t pseudo;
-	uint8_t poll_io;
-	uint8_t poll_sq;
-
-	uint8_t _rsvd[121];
-};
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_linux_state) == XNVME_BE_STATE_NBYTES, "Incorrect size")
+#include <xnvme_be_linux_state.h>
 
 static inline uint64_t
 xnvme_lba2off(struct xnvme_dev *dev, uint64_t lba)

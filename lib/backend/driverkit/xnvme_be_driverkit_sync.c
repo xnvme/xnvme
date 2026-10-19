@@ -8,6 +8,7 @@
 #ifdef XNVME_BE_DRIVERKIT_ENABLED
 #include <xnvme_be_driverkit.h>
 #include <xnvme_dev.h>
+#include <xnvme_be_state.h>
 
 #include <mach/mach_error.h>
 #include <errno.h>
@@ -15,8 +16,7 @@
 static int
 cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf, size_t mbuf_nbytes)
 {
-	struct xnvme_be_driverkit_state *state =
-		(struct xnvme_be_driverkit_state *)ctx->dev->be.state;
+	struct xnvme_be_driverkit_state *state = &xnvme_be_state(ctx->dev)->driverkit_state;
 	size_t output_cnt = sizeof(NvmeSubmitCmd);
 	NvmeSubmitCmd cmd = {0};
 	NvmeSubmitCmd cmd_return = {0};

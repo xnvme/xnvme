@@ -10,6 +10,7 @@
 #include <string.h>
 #include <xnvme_be_upcie.h>
 #include <xnvme_be_upcie_cplane_client.h>
+#include <xnvme_be_state.h>
 #include <xnvme_dev.h>
 
 /**
@@ -27,7 +28,8 @@ xnvme_be_upcie_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *p
 	int err;
 
 	if (g_upcie_rte.connection.alive) {
-		struct xnvme_be_upcie_state *state = dev ? (void *)dev->be.state : NULL;
+		struct xnvme_be_upcie_state *state =
+			dev ? &xnvme_be_state(dev)->upcie_state : NULL;
 
 		return xnvme_be_upcie_cplane_buf_alloc(state ? state->ctrlr : NULL, nbytes, phys);
 	}
@@ -62,7 +64,8 @@ xnvme_be_upcie_buf_free(const struct xnvme_dev *dev, void *buf)
 	}
 
 	if (g_upcie_rte.connection.alive) {
-		struct xnvme_be_upcie_state *state = dev ? (void *)dev->be.state : NULL;
+		struct xnvme_be_upcie_state *state =
+			dev ? &xnvme_be_state(dev)->upcie_state : NULL;
 
 		xnvme_be_upcie_cplane_buf_free(state ? state->ctrlr : NULL, buf);
 		return;

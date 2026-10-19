@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <xnvme_be_linux.h>
 #include <xnvme_spec.h>
+#include <xnvme_be_state.h>
 
 #ifdef XNVME_DEBUG_ENABLED
 static const char *
@@ -135,10 +136,10 @@ int
 xnvme_be_linux_nvme_ioctl(struct xnvme_dev *dev, unsigned long ioctl_req,
 			  struct xnvme_cmd_ctx *ctx)
 {
-	struct xnvme_be_linux_state *state = (void *)dev->be.state;
+	struct xnvme_be_linux_state *state = &xnvme_be_state(dev)->linux_state;
 	int err;
 
-	err = ioctl(state->fd, ioctl_req, ctx);
+	err = ioctl(state->posix.fd, ioctl_req, ctx);
 	XNVME_DEBUG("INFO: ioctl(%s), err(%d), errno(%d)", ioctl_request_to_str(ioctl_req), err,
 		    errno);
 	if (!err) {
@@ -170,9 +171,9 @@ xnvme_be_linux_nvme_ioctl(struct xnvme_dev *dev, unsigned long ioctl_req,
 int
 xnvme_be_linux_nvme_dev_nsid(struct xnvme_dev *dev)
 {
-	struct xnvme_be_linux_state *state = (void *)dev->be.state;
+	struct xnvme_be_linux_state *state = &xnvme_be_state(dev)->linux_state;
 
-	return ioctl(state->fd, NVME_IOCTL_ID);
+	return ioctl(state->posix.fd, NVME_IOCTL_ID);
 }
 
 #endif

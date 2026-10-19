@@ -9,12 +9,13 @@
 #include <errno.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_libvfn.h>
+#include <xnvme_be_state.h>
 
 static int
 xnvme_be_libvfn_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			    size_t mbuf_nbytes)
 {
-	struct xnvme_be_libvfn_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_libvfn_state *state = &xnvme_be_state(ctx->dev)->libvfn_state;
 	struct nvme_ctrl *ctrl = state->ctrlr->ctrl;
 	struct nvme_rq *rq;
 	uint64_t iova;
@@ -73,7 +74,7 @@ static int
 xnvme_be_libvfn_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
 			     size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
-	struct xnvme_be_libvfn_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_libvfn_state *state = &xnvme_be_state(ctx->dev)->libvfn_state;
 	struct nvme_ctrl *ctrl = state->ctrlr->ctrl;
 	struct nvme_rq *rq;
 	uint64_t iova;

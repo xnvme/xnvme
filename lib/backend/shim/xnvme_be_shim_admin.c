@@ -14,6 +14,7 @@
 #include <xnvme_be_posix.h>
 #include <xnvme_be_shim.h>
 #include <xnvme_dev.h>
+#include <xnvme_be_state.h>
 
 static int
 idfy_ctrlr_iocs_fs(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
@@ -37,7 +38,7 @@ idfy_ctrlr_iocs_fs(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 static int
 idfy_ns_iocs_fs(struct xnvme_dev *dev, void *dbuf)
 {
-	struct xnvme_be_posix_state *state = (void *)dev->be.state;
+	struct xnvme_be_posix_state *state = &xnvme_be_state(dev)->posix_state;
 	struct xnvme_spec_fs_idfy_ns *ns = dbuf;
 	struct stat stat = {0};
 	int err;
@@ -71,7 +72,7 @@ idfy_ctrlr(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 static int
 idfy_ns(struct xnvme_dev *dev, void *dbuf)
 {
-	struct xnvme_be_posix_state *state = (void *)dev->be.state;
+	struct xnvme_be_posix_state *state = &xnvme_be_state(dev)->posix_state;
 	struct xnvme_spec_idfy_ns *ns = dbuf;
 	struct stat stat = {0};
 	int err;

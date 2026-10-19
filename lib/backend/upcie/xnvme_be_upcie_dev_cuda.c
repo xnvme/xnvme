@@ -18,6 +18,7 @@
 #include <xnvme_be_upcie_cuda.h>
 #include <xnvme_be_upcie_cuda_cqmirror.h>
 #include <upcie/experimental/iommu_map_pa.h>
+#include <xnvme_be_state.h>
 
 static _Atomic int g_cuda_ctrlr_count;
 
@@ -477,7 +478,7 @@ _cuda_rte_init(size_t heap_size, uint32_t gpu_id, struct xnvme_be_upcie_ctrlr *c
 static int
 _cuda_dev_dmem_init(struct xnvme_dev *dev)
 {
-	struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 	int err;
 
 	if (g_upcie_cuda_rte.dmem_is_shared && !g_upcie_cuda_rte.dmem_in_range) {
@@ -513,7 +514,7 @@ _cuda_dev_dmem_init(struct xnvme_dev *dev)
 static void
 _cuda_dev_dmem_term(struct xnvme_dev *dev)
 {
-	struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 
 	state->dmem = NULL;
 
@@ -560,7 +561,7 @@ xnvme_be_upcie_cuda_dev_open(struct xnvme_dev *dev)
 	}
 
 	{
-		struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+		struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 
 		err = _cuda_rte_init(dev->opts.device_heap_size, dev->opts.gpu_id, state->ctrlr,
 				     dev->ident.uri);

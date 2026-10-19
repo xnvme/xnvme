@@ -9,6 +9,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_queue.h>
 #include <xnvme_be_libvfn.h>
+#include <xnvme_be_state.h>
 #include <sys/eventfd.h>
 
 struct xnvme_queue_libvfn {
@@ -27,7 +28,7 @@ static int
 xnvme_be_libvfn_queue_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 {
 	struct xnvme_queue_libvfn *queue = (struct xnvme_queue_libvfn *)q;
-	struct xnvme_be_libvfn_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_libvfn_state *state = &xnvme_be_state(queue->base.dev)->libvfn_state;
 	int qpid;
 
 	qpid = xnvme_be_libvfn_create_ioqpair(state, queue->base.capacity, 0x0);
@@ -46,7 +47,7 @@ static int
 xnvme_be_libvfn_queue_term(struct xnvme_queue *q)
 {
 	struct xnvme_queue_libvfn *queue = (struct xnvme_queue_libvfn *)q;
-	struct xnvme_be_libvfn_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_libvfn_state *state = &xnvme_be_state(queue->base.dev)->libvfn_state;
 	if (state->ctrlr->efds[queue->id] != -1) {
 		close(state->ctrlr->efds[queue->id]);
 		state->ctrlr->efds[queue->id] = -1;
@@ -102,7 +103,7 @@ xnvme_be_libvfn_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_
 			     size_t mbuf_nbytes)
 {
 	struct xnvme_queue_libvfn *q = (struct xnvme_queue_libvfn *)ctx->async.queue;
-	struct xnvme_be_libvfn_state *state = (void *)q->base.dev->be.state;
+	struct xnvme_be_libvfn_state *state = &xnvme_be_state(q->base.dev)->libvfn_state;
 	struct nvme_ctrl *ctrl = state->ctrlr->ctrl;
 	struct nvme_rq *rq;
 	uint64_t iova;
@@ -161,7 +162,7 @@ xnvme_be_libvfn_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, siz
 			      size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_queue_libvfn *q = (struct xnvme_queue_libvfn *)ctx->async.queue;
-	struct xnvme_be_libvfn_state *state = (void *)q->base.dev->be.state;
+	struct xnvme_be_libvfn_state *state = &xnvme_be_state(q->base.dev)->libvfn_state;
 	struct nvme_ctrl *ctrl = state->ctrlr->ctrl;
 	struct nvme_rq *rq;
 	uint64_t iova;
@@ -214,7 +215,7 @@ static int
 xnvme_be_libvfn_queue_get_completion_fd(struct xnvme_queue *queue)
 {
 	struct xnvme_queue_libvfn *q = (struct xnvme_queue_libvfn *)queue;
-	struct xnvme_be_libvfn_state *state = (void *)q->base.dev->be.state;
+	struct xnvme_be_libvfn_state *state = &xnvme_be_state(q->base.dev)->libvfn_state;
 	int efd;
 
 	if (state->ctrlr->efds[q->id] != -1) {

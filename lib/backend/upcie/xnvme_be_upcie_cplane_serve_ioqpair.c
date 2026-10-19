@@ -19,6 +19,7 @@
 #include <xnvme_be_upcie.h>
 #include <xnvme_be_upcie_cplane_serve_conn.h>
 #include <xnvme_be_upcie_cplane_serve_ioqpair.h>
+#include <xnvme_be_state.h>
 #include <xnvme_lock.h>
 
 static int
@@ -34,7 +35,7 @@ _xnvme_be_upcie_cplane_serve_ioqpair_alloc(struct xnvme_dev *dev, uint16_t depth
 		return -EINVAL;
 	}
 
-	state = (void *)dev->be.state;
+	state = &xnvme_be_state(dev)->upcie_state;
 	ctrl = state->ctrlr->ctrl;
 
 	memset(held, 0, sizeof(*held));
@@ -82,7 +83,7 @@ _xnvme_be_upcie_cplane_serve_ioqpair_free(struct xnvme_dev *dev,
 		return -EINVAL;
 	}
 
-	state = (void *)dev->be.state;
+	state = &xnvme_be_state(dev)->upcie_state;
 	ctrl = state->ctrlr->ctrl;
 
 	if (held->foreign) {
@@ -219,7 +220,7 @@ _xnvme_be_upcie_cplane_serve_ioqpair_alloc_cq_at(struct xnvme_dev *dev,
 		return err;
 	}
 
-	state = (void *)dev->be.state;
+	state = &xnvme_be_state(dev)->upcie_state;
 	ctrl = state->ctrlr->ctrl;
 
 	memset(held, 0, sizeof(*held));

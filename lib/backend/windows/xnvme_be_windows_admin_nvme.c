@@ -15,6 +15,7 @@
 #include <Setupapi.h>
 #include <xnvme_be_windows.h>
 #include <xnvme_be_windows_nvme.h>
+#include <xnvme_be_state.h>
 
 /**
  * For issuing the format command in Windows
@@ -30,7 +31,7 @@ xnvme_be_windows_format(struct xnvme_dev *dev)
 	int err = 0;
 	ULONG ret_len = 0;
 
-	struct xnvme_be_windows_state *state = (void *)dev->be.state;
+	struct xnvme_be_windows_state *state = &xnvme_be_state(dev)->windows_state;
 
 	ret = DeviceIoControl(state->sync_handle, IOCTL_STORAGE_REINITIALIZE_MEDIA, NULL, 0, NULL,
 			      0, &ret_len, NULL);
@@ -56,7 +57,7 @@ _be_windows_nvme_storage_property(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t 
 	PSTORAGE_PROTOCOL_SPECIFIC_DATA protocol_data = NULL;
 	PSTORAGE_PROTOCOL_DATA_DESCRIPTOR protocol_data_descr = NULL;
 
-	struct xnvme_be_windows_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_windows_state *state = &xnvme_be_state(ctx->dev)->windows_state;
 	// Allocate buffer for use.
 	buff_len = __builtin_offsetof(STORAGE_PROPERTY_QUERY, AdditionalParameters) +
 		   sizeof(STORAGE_PROTOCOL_SPECIFIC_DATA) + dbuf_nbytes;
