@@ -72,7 +72,7 @@ C: API
     variants, ``xnvme_buf_vtophys()``, ``xnvme_mem_map()``,
     ``xnvme_mem_unmap()``, ``xnvme_cuda_queue_create()`` and
     ``xnvme_cuda_queue_destroy()``; one process-wide lock serialises them
-    (``lib/xnvme_lock.c``)
+    (``lib/util/xnvme_lock.c``)
   - A queue, and the command contexts drawn from it, belongs to one thread at a
     time, and so do a device's synchronous and admin command paths
   - The device getters that identify the device on first use, such as
@@ -117,13 +117,15 @@ backend and its function-interface implementations.
 
 * Should have a header-file defining the backend and what it exposes
 
-  - Located in ``include/xnvme_be_<backend_name>.h``
+  - Located next to its sources, in ``lib/backend/<dir>/``; ``include/`` is
+    only for public headers
   - Have a state-struct named ``xnvme_be_<backend_name>_state``
   - Provide ``extern struct xnvme_be_<interface> *`` definitions for the
     interface implementations, these are used when composing them into
     backend configs (``struct xnvme_be_config``)
 
-* Should be implemented in a file named ``lib/xnvme_be_<backend_name>_<interface>_<ident>.c``
+* Should be implemented in a file named ``xnvme_be_<backend_name>_<interface>_<ident>.c``,
+  in that same directory
 
   - The ``<ident>`` is a name uniquely identifying the interface-implementation
   - Example: the Linux backend, named **linux**, has the **async**

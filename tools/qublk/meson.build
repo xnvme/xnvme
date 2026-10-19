@@ -28,7 +28,7 @@ else
   executable(
     'qublk',
     [qublk_source, xnvme_vcs_h],
-    include_directories: [conf_inc, xnvme_inc, xnvme_cuse_inc],
+    include_directories: [conf_inc, xnvme_inc, xnvme_priv_inc, xnvme_cuse_inc],
     c_args: qublk_c_args,
     link_args: link_args_hardening,
     pie: get_option('hardening'),

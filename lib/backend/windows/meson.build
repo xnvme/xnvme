@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+xnvmelib_source += files(
+  'xnvme_be_windows.c',
+  'xnvme_be_windows_block.c',
+  'xnvme_be_windows_dev.c',
+  'xnvme_be_windows_fs.c',
+  'xnvme_be_windows_mem.c',
+  'xnvme_be_windows_nvme.c',
+)
+xnvmelib_inc += include_directories('.')
