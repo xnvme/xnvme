@@ -1,0 +1,3 @@
+# Changes to the workflows, among them the ci-result check that merging requires,
+# need a review from a maintainer
+/.github/ @xnvme/sai
