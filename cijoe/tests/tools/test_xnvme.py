@@ -133,7 +133,7 @@ def test_info(cijoe, device, be_opts, cli_args):
 
     output = state.output()
 
-    # Parse resolved mixin ids from xnvme_be section
+    # Parse the resolved interface ids from the xnvme_be section
     resolved = {}
     for line in output.split("\n"):
         line = line.strip()
