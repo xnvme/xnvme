@@ -23,6 +23,21 @@
 #include <xnvme_be_posix.h>
 #include <xnvme_be_linux.h>
 
+static int
+xnvme_be_linux_file_opts(struct xnvme_opts *opts)
+{
+	int flags = 0;
+
+	flags |= opts->create ? O_CREAT : 0x0;
+	flags |= opts->direct ? O_DIRECT : 0x0;
+	flags |= opts->rdonly ? O_RDONLY : 0x0;
+	flags |= opts->wronly ? O_WRONLY : 0x0;
+	flags |= opts->rdwr ? O_RDWR : 0x0;
+	flags |= opts->truncate ? O_TRUNC : 0x0;
+
+	return flags;
+}
+
 static inline void
 _be_linux_state_term(struct xnvme_be_linux_state *state)
 {
