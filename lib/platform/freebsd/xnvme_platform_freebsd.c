@@ -265,17 +265,17 @@ struct xnvme_platform g_xnvme_platform_freebsd = {
 #ifdef XNVME_BE_SPDK_ENABLED
 			&g_xnvme_be_spdk,
 #endif
-			&g_xnvme_be_freebsd_kqueue,
-			&g_xnvme_be_freebsd_emu_file,
-			&g_xnvme_be_freebsd_kqueue_file,
-			&g_xnvme_be_freebsd_posix,
-			&g_xnvme_be_freebsd_thrpool,
-			&g_xnvme_be_freebsd_emu,
-			&g_xnvme_be_freebsd_nil,
+			&g_xnvme_platform_freebsd_kqueue,
+			&g_xnvme_platform_freebsd_emu_file,
+			&g_xnvme_platform_freebsd_kqueue_file,
+			&g_xnvme_platform_freebsd_posix,
+			&g_xnvme_platform_freebsd_thrpool,
+			&g_xnvme_platform_freebsd_emu,
+			&g_xnvme_platform_freebsd_nil,
 #ifdef XNVME_BE_RAMDISK_ENABLED
-			&g_xnvme_be_ramdisk_emu,
-			&g_xnvme_be_ramdisk_thrpool,
-			&g_xnvme_be_ramdisk,
+			&g_xnvme_platform_freebsd_ramdisk_emu,
+			&g_xnvme_platform_freebsd_ramdisk_thrpool,
+			&g_xnvme_platform_freebsd_ramdisk,
 #endif
 			NULL,
 		},

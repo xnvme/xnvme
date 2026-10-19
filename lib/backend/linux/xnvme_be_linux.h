@@ -29,9 +29,6 @@ struct xnvme_be_linux_state {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_linux_state) == XNVME_BE_STATE_NBYTES, "Incorrect size")
 
-int
-xnvme_be_linux_file_opts(struct xnvme_opts *opts);
-
 static inline uint64_t
 xnvme_lba2off(struct xnvme_dev *dev, uint64_t lba)
 {
