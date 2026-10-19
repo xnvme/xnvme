@@ -13,8 +13,9 @@
 #include <xnvme_be_nil.h>
 #include <xnvme_be_shim.h>
 #include <xnvme_be_thrpool.h>
+#include <xnvme_be_ramdisk.h>
 
-const struct xnvme_be_config g_xnvme_be_freebsd_kqueue = {
+const struct xnvme_be_config g_xnvme_platform_freebsd_kqueue = {
 	.async = &g_xnvme_be_freebsd_async,
 	.sync = &g_xnvme_be_freebsd_sync_nvme,
 	.admin = &g_xnvme_be_freebsd_admin_nvme,
@@ -28,7 +29,7 @@ const struct xnvme_be_config g_xnvme_be_freebsd_kqueue = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_freebsd_emu_file = {
+const struct xnvme_be_config g_xnvme_platform_freebsd_emu_file = {
 	.async = &g_xnvme_be_emu_async,
 	.sync = &g_xnvme_be_posix_sync,
 	.admin = &g_xnvme_be_shim_admin,
@@ -42,7 +43,7 @@ const struct xnvme_be_config g_xnvme_be_freebsd_emu_file = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_freebsd_kqueue_file = {
+const struct xnvme_be_config g_xnvme_platform_freebsd_kqueue_file = {
 	.async = &g_xnvme_be_freebsd_async,
 	.sync = &g_xnvme_be_posix_sync,
 	.admin = &g_xnvme_be_shim_admin,
@@ -56,7 +57,7 @@ const struct xnvme_be_config g_xnvme_be_freebsd_kqueue_file = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_freebsd_posix = {
+const struct xnvme_be_config g_xnvme_platform_freebsd_posix = {
 	.async = &g_xnvme_be_posix_async,
 	.sync = &g_xnvme_be_freebsd_sync_nvme,
 	.admin = &g_xnvme_be_freebsd_admin_nvme,
@@ -70,7 +71,7 @@ const struct xnvme_be_config g_xnvme_be_freebsd_posix = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_freebsd_thrpool = {
+const struct xnvme_be_config g_xnvme_platform_freebsd_thrpool = {
 	.async = &g_xnvme_be_thrpool_async,
 	.sync = &g_xnvme_be_freebsd_sync_nvme,
 	.admin = &g_xnvme_be_freebsd_admin_nvme,
@@ -84,7 +85,7 @@ const struct xnvme_be_config g_xnvme_be_freebsd_thrpool = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_freebsd_emu = {
+const struct xnvme_be_config g_xnvme_platform_freebsd_emu = {
 	.async = &g_xnvme_be_emu_async,
 	.sync = &g_xnvme_be_freebsd_sync_nvme,
 	.admin = &g_xnvme_be_freebsd_admin_nvme,
@@ -98,7 +99,7 @@ const struct xnvme_be_config g_xnvme_be_freebsd_emu = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_freebsd_nil = {
+const struct xnvme_be_config g_xnvme_platform_freebsd_nil = {
 	.async = &g_xnvme_be_nil_async,
 	.sync = &g_xnvme_be_freebsd_sync_nvme,
 	.admin = &g_xnvme_be_freebsd_admin_nvme,
@@ -112,4 +113,47 @@ const struct xnvme_be_config g_xnvme_be_freebsd_nil = {
 		},
 };
 
+#ifdef XNVME_BE_RAMDISK_ENABLED
+const struct xnvme_be_config g_xnvme_platform_freebsd_ramdisk = {
+	.async = &g_xnvme_be_nil_async,
+	.sync = &g_xnvme_be_ramdisk_sync,
+	.admin = &g_xnvme_be_ramdisk_admin,
+	.dev = &g_xnvme_be_ramdisk_dev,
+	.mem = &g_xnvme_be_posix_mem,
+	.attr =
+		{
+			.name = "ramdisk",
+			.descr = "Ramdisk with nil async",
+			.caps = XNVME_BE_CAP_RAMDISK,
+		},
+};
+
+const struct xnvme_be_config g_xnvme_platform_freebsd_ramdisk_thrpool = {
+	.async = &g_xnvme_be_thrpool_async,
+	.sync = &g_xnvme_be_ramdisk_sync,
+	.admin = &g_xnvme_be_ramdisk_admin,
+	.dev = &g_xnvme_be_ramdisk_dev,
+	.mem = &g_xnvme_be_posix_mem,
+	.attr =
+		{
+			.name = "ramdisk_thrpool",
+			.descr = "Ramdisk with thread pool",
+			.caps = XNVME_BE_CAP_RAMDISK,
+		},
+};
+
+const struct xnvme_be_config g_xnvme_platform_freebsd_ramdisk_emu = {
+	.async = &g_xnvme_be_emu_async,
+	.sync = &g_xnvme_be_ramdisk_sync,
+	.admin = &g_xnvme_be_ramdisk_admin,
+	.dev = &g_xnvme_be_ramdisk_dev,
+	.mem = &g_xnvme_be_posix_mem,
+	.attr =
+		{
+			.name = "ramdisk_emu",
+			.descr = "Ramdisk with emulated async",
+			.caps = XNVME_BE_CAP_RAMDISK,
+		},
+};
+#endif
 #endif

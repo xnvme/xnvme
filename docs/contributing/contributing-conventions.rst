@@ -126,12 +126,16 @@ files follow from what they define:
   - A topic whose declarations need headers the rest of the directory must
     not include, such as a GPU runtime, gets ``xnvme_be_<dir>_<topic>.h``
 
-* ``xnvme_be_<dir>_configs.c`` holds the directory's backend configs, if it
-  has any. A config is named after the name ``--be`` selects it by, with
-  ``-`` as ``_``: ``g_xnvme_be_<dir>_<name>``, the ``<dir>_`` left out where
-  the name starts with the directory's, as in ``g_xnvme_be_spdk`` and
-  ``g_xnvme_be_upcie_cuda``. Every config is declared in
-  ``lib/backend/xnvme_be_registry.h``, the one list the platforms draw from
+* ``xnvme_be_<dir>_configs.c`` holds the backend configs whose parts all
+  come from the directory, named ``g_xnvme_be_<name>`` after the name ``--be``
+  selects them by, with ``-`` as ``_``, such as ``g_xnvme_be_spdk`` and
+  ``g_xnvme_be_upcie_cuda``. A config that combines implementations from
+  several directories, such as io_uring with the Linux NVMe ioctls and POSIX
+  memory, lives with the platform that offers it, in
+  ``lib/platform/<os>/xnvme_platform_<os>_configs.c``, and is named
+  ``g_xnvme_platform_<os>_<name>``, such as
+  ``g_xnvme_platform_linux_io_uring``. Every config is declared in
+  ``lib/backend/xnvme_be_registry.h``
 
 * Each implementation of a backend interface has a file of its own: the
   ``g_xnvme_be_<dir>_<interface>[_<ident>]`` it defines lives in

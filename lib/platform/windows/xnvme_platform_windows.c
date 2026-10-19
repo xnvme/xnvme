@@ -128,18 +128,24 @@ struct xnvme_platform g_xnvme_platform_windows = {
 	.classify = xnvme_platform_windows_classify,
 	.backends =
 		(const struct xnvme_be_config *const[]){
-			&g_xnvme_be_windows_emu,
-			&g_xnvme_be_windows_thrpool,
-			&g_xnvme_be_windows_iocp,
-			&g_xnvme_be_windows_iocp_th,
-			&g_xnvme_be_windows_ioring,
-			&g_xnvme_be_windows_nil,
-			&g_xnvme_be_windows_iocp_file,
-			&g_xnvme_be_windows_thrpool_file,
+			&g_xnvme_platform_windows_emu,
+			&g_xnvme_platform_windows_thrpool,
+#ifdef XNVME_BE_IOCP_ENABLED
+			&g_xnvme_platform_windows_iocp,
+			&g_xnvme_platform_windows_iocp_th,
+#endif
+#ifdef XNVME_BE_IORING_ENABLED
+			&g_xnvme_platform_windows_ioring,
+#endif
+			&g_xnvme_platform_windows_nil,
+#ifdef XNVME_BE_IOCP_ENABLED
+			&g_xnvme_platform_windows_iocp_file,
+#endif
+			&g_xnvme_platform_windows_thrpool_file,
 #ifdef XNVME_BE_RAMDISK_ENABLED
-			&g_xnvme_be_ramdisk_emu,
-			&g_xnvme_be_ramdisk_thrpool,
-			&g_xnvme_be_ramdisk,
+			&g_xnvme_platform_windows_ramdisk_emu,
+			&g_xnvme_platform_windows_ramdisk_thrpool,
+			&g_xnvme_platform_windows_ramdisk,
 #endif
 			NULL,
 		},

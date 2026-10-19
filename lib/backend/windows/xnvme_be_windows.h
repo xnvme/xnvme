@@ -37,12 +37,6 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_windows_state) == XNVME_BE_STATE_NBYT
  */
 int
 xnvme_be_windows_uapi_ver_fpr(FILE *stream, enum xnvme_pr opts);
-int
-xnvme_be_windows_file_creation_opts(struct xnvme_opts *opts);
-int
-xnvme_be_windows_file_access_opts(struct xnvme_opts *opts);
-int
-xnvme_be_windows_file_attributes_opts(struct xnvme_opts *opts);
 
 /**
  * Implementations of the admin command interface
