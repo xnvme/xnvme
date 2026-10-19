@@ -360,7 +360,7 @@ struct xnvme_be_config {
 
 ```c
 // NVMe passthrough via io_uring_cmd
-const struct xnvme_be_config g_xnvme_be_linux_io_uring_cmd = {
+const struct xnvme_be_config g_xnvme_platform_linux_io_uring_cmd = {
 	.async = &g_xnvme_be_liburing_async_ucmd,
 	.sync = &g_xnvme_be_linux_sync_nvme,
 	.admin = &g_xnvme_be_linux_admin_nvme,
@@ -376,7 +376,7 @@ const struct xnvme_be_config g_xnvme_be_linux_io_uring_cmd = {
 };
 
 // File I/O via io_uring
-const struct xnvme_be_config g_xnvme_be_linux_io_uring_file = {
+const struct xnvme_be_config g_xnvme_platform_linux_io_uring_file = {
 	.async = &g_xnvme_be_liburing_async,
 	.sync = &g_xnvme_be_posix_sync,
 	.admin = &g_xnvme_be_shim_admin,
@@ -997,18 +997,18 @@ struct xnvme_platform g_xnvme_platform_linux = {
 #ifdef XNVME_BE_VFIO_ENABLED
 		&g_xnvme_be_vfio,
 #endif
-		&g_xnvme_be_linux_emu,
+		&g_xnvme_platform_linux_emu,
 #ifdef XNVME_BE_LIBURING_ENABLED
-		&g_xnvme_be_linux_io_uring_cmd,
-		&g_xnvme_be_linux_io_uring,
+		&g_xnvme_platform_linux_io_uring_cmd,
+		&g_xnvme_platform_linux_io_uring,
 #endif
 		// ... more configs ...
-		&g_xnvme_be_linux_emu_file,
-		&g_xnvme_be_linux_thrpool_file,
+		&g_xnvme_platform_linux_emu_file,
+		&g_xnvme_platform_linux_thrpool_file,
 #ifdef XNVME_BE_RAMDISK_ENABLED
-		&g_xnvme_be_ramdisk_emu,
-		&g_xnvme_be_ramdisk_thrpool,
-		&g_xnvme_be_ramdisk,
+		&g_xnvme_platform_linux_ramdisk_emu,
+		&g_xnvme_platform_linux_ramdisk_thrpool,
+		&g_xnvme_platform_linux_ramdisk,
 #endif
 		NULL,
 	},
@@ -1210,7 +1210,8 @@ lib/
 ├── platform/
 │   ├── xnvme_platform.c          # Shared dev_open, enumerate
 │   └── <os>/                     # linux, freebsd, macos, windows
-│       └── xnvme_platform_<os>.c # Scan, classify, the configs the OS offers
+│       ├── xnvme_platform_<os>.c # Scan, classify, the configs the OS offers
+│       └── xnvme_platform_<os>_configs.c  # Configs combining directories
 │
 └── backend/
     ├── xnvme_be.c                # Backend printers
@@ -1223,8 +1224,9 @@ lib/
         │                         # spdk, libvfn, upcie, driverkit, ramdisk;
         │                         # or an OS's own: linux, freebsd, macos,
         │                         # windows
-        ├── xnvme_be_<dir>_configs.c
-        └── xnvme_be_<dir>_<intf>.c   # dev, mem, admin, sync or async
+        ├── xnvme_be_<dir>_configs.c  # Configs from this directory alone
+        ├── xnvme_be_<dir>_<intf>.c   # dev, mem, admin, sync or async
+        └── xnvme_be_<dir>_<topic>.c  # Code shared within the directory
 ```
 
 ## Naming Convention
@@ -1238,7 +1240,8 @@ private header is `xnvme_be_<dir>.h`.
 | File                         | Meaning                                       |
 | ---------------------------- | --------------------------------------------- |
 | `xnvme_platform_<os>.c`      | Platform (OS-specific scan, classify)         |
-| `xnvme_be_<dir>_configs.c`   | Backend configs combining the implementations |
+| `xnvme_be_<dir>_configs.c`   | Backend configs from one directory alone      |
+| `xnvme_platform_<os>_configs.c` | Backend configs combining directories    |
 | `xnvme_be_<dir>_<intf>.c`    | Implementation of one backend interface       |
 | `xnvme_be_cref`              | Controller reference counting                 |
 | `xnvme_be_nosys`             | Stubs for what an implementation lacks        |

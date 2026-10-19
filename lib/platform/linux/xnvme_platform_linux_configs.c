@@ -26,45 +26,9 @@
 #include <xnvme_be_thrpool.h>
 #include <xnvme_be_libaio.h>
 #include <xnvme_be_liburing.h>
+#include <xnvme_be_ramdisk.h>
 
-int
-xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr opts)
-{
-	int wrtn = 0;
-
-	switch (opts) {
-	case XNVME_PR_TERSE:
-		wrtn += fprintf(stream, "# ENOSYS: opts(%x)", opts);
-		return wrtn;
-
-	case XNVME_PR_DEF:
-	case XNVME_PR_YAML:
-		break;
-	}
-
-	wrtn += fprintf(stream, "linux;LINUX_VERSION_CODE-UAPI/%d-%d.%d.%d", LINUX_VERSION_CODE,
-			(LINUX_VERSION_CODE & (0xff << 16)) >> 16,
-			(LINUX_VERSION_CODE & (0xff << 8)) >> 8, LINUX_VERSION_CODE & 0xff);
-
-	return wrtn;
-}
-
-int
-xnvme_be_linux_file_opts(struct xnvme_opts *opts)
-{
-	int flags = 0;
-
-	flags |= opts->create ? O_CREAT : 0x0;
-	flags |= opts->direct ? O_DIRECT : 0x0;
-	flags |= opts->rdonly ? O_RDONLY : 0x0;
-	flags |= opts->wronly ? O_WRONLY : 0x0;
-	flags |= opts->rdwr ? O_RDWR : 0x0;
-	flags |= opts->truncate ? O_TRUNC : 0x0;
-
-	return flags;
-}
-
-const struct xnvme_be_config g_xnvme_be_linux_emu = {
+const struct xnvme_be_config g_xnvme_platform_linux_emu = {
 	.async = &g_xnvme_be_emu_async,
 	.sync = &g_xnvme_be_linux_sync_nvme,
 	.admin = &g_xnvme_be_linux_admin_nvme,
@@ -84,7 +48,7 @@ const struct xnvme_be_config g_xnvme_be_linux_emu = {
 };
 
 #ifdef XNVME_BE_LINUX_BLOCK_ENABLED
-const struct xnvme_be_config g_xnvme_be_linux_emu_bdev = {
+const struct xnvme_be_config g_xnvme_platform_linux_emu_bdev = {
 	.async = &g_xnvme_be_emu_async,
 	.sync = &g_xnvme_be_linux_sync_block,
 	.admin = &g_xnvme_be_linux_admin_block,
@@ -105,7 +69,7 @@ const struct xnvme_be_config g_xnvme_be_linux_emu_bdev = {
 #endif
 
 #ifdef XNVME_BE_LIBURING_ENABLED
-const struct xnvme_be_config g_xnvme_be_linux_io_uring_cmd = {
+const struct xnvme_be_config g_xnvme_platform_linux_io_uring_cmd = {
 	.async = &g_xnvme_be_liburing_async_ucmd,
 	.sync = &g_xnvme_be_linux_sync_nvme,
 	.admin = &g_xnvme_be_linux_admin_nvme,
@@ -124,7 +88,7 @@ const struct xnvme_be_config g_xnvme_be_linux_io_uring_cmd = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_linux_io_uring = {
+const struct xnvme_be_config g_xnvme_platform_linux_io_uring = {
 	.async = &g_xnvme_be_liburing_async,
 	.sync = &g_xnvme_be_linux_sync_nvme,
 	.admin = &g_xnvme_be_linux_admin_nvme,
@@ -145,7 +109,7 @@ const struct xnvme_be_config g_xnvme_be_linux_io_uring = {
 #endif /* XNVME_BE_LIBURING_ENABLED */
 
 #if defined(XNVME_BE_LIBURING_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
-const struct xnvme_be_config g_xnvme_be_linux_io_uring_bdev = {
+const struct xnvme_be_config g_xnvme_platform_linux_io_uring_bdev = {
 	.async = &g_xnvme_be_liburing_async,
 	.sync = &g_xnvme_be_linux_sync_block,
 	.admin = &g_xnvme_be_linux_admin_block,
@@ -166,7 +130,7 @@ const struct xnvme_be_config g_xnvme_be_linux_io_uring_bdev = {
 #endif
 
 #ifdef XNVME_BE_LIBAIO_ENABLED
-const struct xnvme_be_config g_xnvme_be_linux_libaio = {
+const struct xnvme_be_config g_xnvme_platform_linux_libaio = {
 	.async = &g_xnvme_be_libaio_async,
 	.sync = &g_xnvme_be_linux_sync_nvme,
 	.admin = &g_xnvme_be_linux_admin_nvme,
@@ -187,7 +151,7 @@ const struct xnvme_be_config g_xnvme_be_linux_libaio = {
 #endif
 
 #if defined(XNVME_BE_LIBAIO_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
-const struct xnvme_be_config g_xnvme_be_linux_libaio_bdev = {
+const struct xnvme_be_config g_xnvme_platform_linux_libaio_bdev = {
 	.async = &g_xnvme_be_libaio_async,
 	.sync = &g_xnvme_be_linux_sync_block,
 	.admin = &g_xnvme_be_linux_admin_block,
@@ -208,7 +172,7 @@ const struct xnvme_be_config g_xnvme_be_linux_libaio_bdev = {
 #endif
 
 #ifdef XNVME_BE_POSIX_ENABLED
-const struct xnvme_be_config g_xnvme_be_linux_posix = {
+const struct xnvme_be_config g_xnvme_platform_linux_posix = {
 	.async = &g_xnvme_be_posix_async,
 	.sync = &g_xnvme_be_linux_sync_nvme,
 	.admin = &g_xnvme_be_linux_admin_nvme,
@@ -228,7 +192,7 @@ const struct xnvme_be_config g_xnvme_be_linux_posix = {
 };
 #endif
 
-const struct xnvme_be_config g_xnvme_be_linux_thrpool = {
+const struct xnvme_be_config g_xnvme_platform_linux_thrpool = {
 	.async = &g_xnvme_be_thrpool_async,
 	.sync = &g_xnvme_be_linux_sync_nvme,
 	.admin = &g_xnvme_be_linux_admin_nvme,
@@ -248,7 +212,7 @@ const struct xnvme_be_config g_xnvme_be_linux_thrpool = {
 };
 
 #ifdef XNVME_BE_LINUX_BLOCK_ENABLED
-const struct xnvme_be_config g_xnvme_be_linux_thrpool_bdev = {
+const struct xnvme_be_config g_xnvme_platform_linux_thrpool_bdev = {
 	.async = &g_xnvme_be_thrpool_async,
 	.sync = &g_xnvme_be_linux_sync_block,
 	.admin = &g_xnvme_be_linux_admin_block,
@@ -268,7 +232,7 @@ const struct xnvme_be_config g_xnvme_be_linux_thrpool_bdev = {
 };
 #endif
 
-const struct xnvme_be_config g_xnvme_be_linux_nil = {
+const struct xnvme_be_config g_xnvme_platform_linux_nil = {
 	.async = &g_xnvme_be_nil_async,
 	.sync = &g_xnvme_be_linux_sync_nvme,
 	.admin = &g_xnvme_be_linux_admin_nvme,
@@ -287,7 +251,7 @@ const struct xnvme_be_config g_xnvme_be_linux_nil = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_linux_emu_file = {
+const struct xnvme_be_config g_xnvme_platform_linux_emu_file = {
 	.async = &g_xnvme_be_emu_async,
 	.sync = &g_xnvme_be_posix_sync,
 	.admin = &g_xnvme_be_shim_admin,
@@ -306,7 +270,7 @@ const struct xnvme_be_config g_xnvme_be_linux_emu_file = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_linux_thrpool_file = {
+const struct xnvme_be_config g_xnvme_platform_linux_thrpool_file = {
 	.async = &g_xnvme_be_thrpool_async,
 	.sync = &g_xnvme_be_posix_sync,
 	.admin = &g_xnvme_be_shim_admin,
@@ -326,7 +290,7 @@ const struct xnvme_be_config g_xnvme_be_linux_thrpool_file = {
 };
 
 #ifdef XNVME_BE_LIBURING_ENABLED
-const struct xnvme_be_config g_xnvme_be_linux_io_uring_file = {
+const struct xnvme_be_config g_xnvme_platform_linux_io_uring_file = {
 	.async = &g_xnvme_be_liburing_async,
 	.sync = &g_xnvme_be_posix_sync,
 	.admin = &g_xnvme_be_shim_admin,
@@ -347,7 +311,7 @@ const struct xnvme_be_config g_xnvme_be_linux_io_uring_file = {
 #endif
 
 #ifdef XNVME_BE_LIBAIO_ENABLED
-const struct xnvme_be_config g_xnvme_be_linux_libaio_file = {
+const struct xnvme_be_config g_xnvme_platform_linux_libaio_file = {
 	.async = &g_xnvme_be_libaio_async,
 	.sync = &g_xnvme_be_posix_sync,
 	.admin = &g_xnvme_be_shim_admin,
@@ -367,10 +331,62 @@ const struct xnvme_be_config g_xnvme_be_linux_libaio_file = {
 };
 #endif
 
-#else
-int
-xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr XNVME_UNUSED(opts))
-{
-	return fprintf(stream, "linux;LINUX_VERSION_CODE-UAPI/NOSYS\n");
-}
+#ifdef XNVME_BE_RAMDISK_ENABLED
+const struct xnvme_be_config g_xnvme_platform_linux_ramdisk = {
+	.async = &g_xnvme_be_nil_async,
+	.sync = &g_xnvme_be_ramdisk_sync,
+	.admin = &g_xnvme_be_ramdisk_admin,
+	.dev = &g_xnvme_be_ramdisk_dev,
+	.mem = &g_xnvme_be_posix_mem,
+	.mem_overrides =
+		(const struct xnvme_be_mem *const[]){
+			&g_xnvme_be_linux_mem_hugepage,
+			NULL,
+		},
+	.attr =
+		{
+			.name = "ramdisk",
+			.descr = "Ramdisk with nil async",
+			.caps = XNVME_BE_CAP_RAMDISK,
+		},
+};
+
+const struct xnvme_be_config g_xnvme_platform_linux_ramdisk_thrpool = {
+	.async = &g_xnvme_be_thrpool_async,
+	.sync = &g_xnvme_be_ramdisk_sync,
+	.admin = &g_xnvme_be_ramdisk_admin,
+	.dev = &g_xnvme_be_ramdisk_dev,
+	.mem = &g_xnvme_be_posix_mem,
+	.mem_overrides =
+		(const struct xnvme_be_mem *const[]){
+			&g_xnvme_be_linux_mem_hugepage,
+			NULL,
+		},
+	.attr =
+		{
+			.name = "ramdisk_thrpool",
+			.descr = "Ramdisk with thread pool",
+			.caps = XNVME_BE_CAP_RAMDISK,
+		},
+};
+
+const struct xnvme_be_config g_xnvme_platform_linux_ramdisk_emu = {
+	.async = &g_xnvme_be_emu_async,
+	.sync = &g_xnvme_be_ramdisk_sync,
+	.admin = &g_xnvme_be_ramdisk_admin,
+	.dev = &g_xnvme_be_ramdisk_dev,
+	.mem = &g_xnvme_be_posix_mem,
+	.mem_overrides =
+		(const struct xnvme_be_mem *const[]){
+			&g_xnvme_be_linux_mem_hugepage,
+			NULL,
+		},
+	.attr =
+		{
+			.name = "ramdisk_emu",
+			.descr = "Ramdisk with emulated async",
+			.caps = XNVME_BE_CAP_RAMDISK,
+		},
+};
+#endif
 #endif

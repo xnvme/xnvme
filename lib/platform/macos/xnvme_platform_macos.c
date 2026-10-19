@@ -174,17 +174,17 @@ struct xnvme_platform g_xnvme_platform_macos = {
 	.classify = xnvme_platform_macos_classify,
 	.backends =
 		(const struct xnvme_be_config *const[]){
-			&g_xnvme_be_macos_emu,
-			&g_xnvme_be_macos_thrpool,
-			&g_xnvme_be_macos_posix,
+			&g_xnvme_platform_macos_emu,
+			&g_xnvme_platform_macos_thrpool,
+			&g_xnvme_platform_macos_posix,
 #ifdef XNVME_BE_DRIVERKIT_ENABLED
 			&g_xnvme_be_driverkit,
-			&g_xnvme_be_driverkit_emu,
+			&g_xnvme_platform_macos_driverkit_emu,
 #endif
 #ifdef XNVME_BE_RAMDISK_ENABLED
-			&g_xnvme_be_ramdisk_emu,
-			&g_xnvme_be_ramdisk_thrpool,
-			&g_xnvme_be_ramdisk,
+			&g_xnvme_platform_macos_ramdisk_emu,
+			&g_xnvme_platform_macos_ramdisk_thrpool,
+			&g_xnvme_platform_macos_ramdisk,
 #endif
 			NULL,
 		},

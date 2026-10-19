@@ -4,7 +4,6 @@
 
 xnvmelib_source += files(
   'xnvme_be_macos_admin.c',
-  'xnvme_be_macos_configs.c',
   'xnvme_be_macos_dev.c',
   'xnvme_be_macos_sync.c',
 )
