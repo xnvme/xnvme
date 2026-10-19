@@ -21,6 +21,9 @@
 
 #if defined(XNVME_PLATFORM_LINUX_ENABLED)
 #include <xnvme_be_linux.h>
+#include <xnvme_be_emu.h>
+#include <xnvme_be_nil.h>
+#include <xnvme_be_thrpool.h>
 #define XNVME_BE_RAMDISK_MEM_OVERRIDES                         \
 	.mem_overrides = (const struct xnvme_be_mem *const[]){ \
 		&g_xnvme_be_linux_mem_hugepage,                \

@@ -14,6 +14,7 @@
 #include <xnvme_queue.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_windows.h>
+#include <xnvme_be_iocp.h>
 
 struct _ov_request {
 	OVERLAPPED o;
@@ -31,7 +32,7 @@ struct xnvme_queue_aio_ov {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_aio_ov) == XNVME_BE_QUEUE_STATE_NBYTES,
 		    "Incorrect size")
 
-int
+static int
 _windows_async_iocp_term(struct xnvme_queue *q)
 {
 	struct xnvme_queue_aio_ov *queue = (void *)q;
@@ -47,7 +48,7 @@ _windows_async_iocp_term(struct xnvme_queue *q)
 	return 0;
 }
 
-int
+static int
 _windows_async_iocp_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 {
 	ULONG queue_nbytes = 0;
@@ -87,7 +88,7 @@ exit:
 	return err;
 }
 
-int
+static int
 _windows_async_iocp_poke(struct xnvme_queue *q, uint32_t max)
 {
 	struct xnvme_queue_aio_ov *queue = (void *)q;
@@ -131,7 +132,7 @@ _windows_async_iocp_poke(struct xnvme_queue *q, uint32_t max)
 	return completed;
 }
 
-int
+static int
 _windows_async_iocp_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			   size_t mbuf_nbytes)
 {

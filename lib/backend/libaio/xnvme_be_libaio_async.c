@@ -299,7 +299,7 @@ _linux_libaio_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec
 	return err;
 }
 
-int
+static int
 _linux_libaio_get_completion_fd(struct xnvme_queue *queue)
 {
 	struct xnvme_queue_libaio *q = (struct xnvme_queue_libaio *)queue;

@@ -33,7 +33,7 @@ _gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 	return 0;
 }
 
-int
+static int
 xnvme_be_macos_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 		     void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {

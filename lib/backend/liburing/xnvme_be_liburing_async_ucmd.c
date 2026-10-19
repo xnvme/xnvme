@@ -15,7 +15,6 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_liburing.h>
 #include <xnvme_be_linux.h>
-#include <xnvme_be_linux_nvme.h>
 #include <linux/nvme_ioctl.h>
 
 static int g_linux_liburing_optional[] = {
@@ -47,7 +46,7 @@ _linux_liburing_noptional_missing(void)
 	return missing;
 }
 
-int
+static int
 xnvme_be_liburing_ucmd_init(struct xnvme_queue *q, int opts)
 {
 	if (_linux_liburing_noptional_missing()) {
@@ -61,7 +60,7 @@ xnvme_be_liburing_ucmd_init(struct xnvme_queue *q, int opts)
 }
 
 #ifdef NVME_URING_CMD_IO
-int
+static int
 xnvme_be_liburing_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 {
 	struct xnvme_queue_liburing *queue = (void *)q;
@@ -122,7 +121,7 @@ xnvme_be_liburing_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 }
 
 #else
-int
+static int
 xnvme_be_liburing_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 {
 	XNVME_DEBUG("FAILED: not supported, built on system without NVME_URING_CMD_IO");
@@ -131,7 +130,7 @@ xnvme_be_liburing_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 #endif
 
 #ifdef NVME_URING_CMD_IO
-int
+static int
 xnvme_be_liburing_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			  size_t mbuf_nbytes)
 {
@@ -177,7 +176,7 @@ exit:
 	return 0;
 }
 #else
-int
+static int
 xnvme_be_liburing_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			  size_t mbuf_nbytes)
 {
@@ -187,7 +186,7 @@ xnvme_be_liburing_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nby
 #endif
 
 #ifdef NVME_URING_CMD_IO_VEC
-int
+static int
 xnvme_be_liburing_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
 			   size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
@@ -233,7 +232,7 @@ exit:
 	return 0;
 }
 #else
-int
+static int
 xnvme_be_liburing_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
 			   size_t dvec_nbytes, void *mbuf, size_t mbuf_nbytes)
 {

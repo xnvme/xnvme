@@ -42,7 +42,7 @@ struct kqueue_request {
 	TAILQ_ENTRY(kqueue_request) link;
 };
 
-int
+static int
 xnvme_be_freebsd_kqueue_term(struct xnvme_queue *q)
 {
 	struct xnvme_queue_kqueue *queue = (void *)q;
@@ -59,7 +59,7 @@ xnvme_be_freebsd_kqueue_term(struct xnvme_queue *q)
 	return 0;
 }
 
-int
+static int
 xnvme_be_freebsd_kqueue_init(struct xnvme_queue *q, int opts)
 {
 	struct xnvme_queue_kqueue *queue = (void *)q;
@@ -90,7 +90,7 @@ xnvme_be_freebsd_kqueue_init(struct xnvme_queue *q, int opts)
 	return 0;
 }
 
-int
+static int
 xnvme_be_freebsd_kqueue_poke(struct xnvme_queue *q, uint32_t max)
 {
 	struct xnvme_queue_kqueue *queue = (void *)q;
@@ -186,7 +186,7 @@ kqueue_flush(struct xnvme_cmd_ctx *ctx, int fd)
 	return 0;
 }
 
-int
+static int
 xnvme_be_freebsd_kqueue_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 			       void *mbuf, size_t mbuf_nbytes)
 {
@@ -264,7 +264,7 @@ xnvme_be_freebsd_kqueue_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	return err;
 }
 
-int
+static int
 xnvme_be_freebsd_kqueue_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
 				size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {

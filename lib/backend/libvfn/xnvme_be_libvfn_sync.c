@@ -10,7 +10,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_libvfn.h>
 
-int
+static int
 xnvme_be_libvfn_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			    size_t mbuf_nbytes)
 {
@@ -69,7 +69,7 @@ out:
 	return ret;
 }
 
-int
+static int
 xnvme_be_libvfn_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
 			     size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {

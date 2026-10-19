@@ -11,6 +11,11 @@
 #include <xnvme_be_posix.h>
 #include <windows.h>
 #include <xnvme_be_windows.h>
+#include <xnvme_be_emu.h>
+#include <xnvme_be_nil.h>
+#include <xnvme_be_thrpool.h>
+#include <xnvme_be_iocp.h>
+#include <xnvme_be_ioring.h>
 
 #define STATUS_SUCCESS (0x00000000)
 
@@ -60,7 +65,7 @@ xnvme_be_windows_uapi_ver_fpr(FILE *stream, enum xnvme_pr opts)
 }
 
 int
-xnvme_file_access_opts_to_windows(struct xnvme_opts *opts)
+xnvme_be_windows_file_access_opts(struct xnvme_opts *opts)
 {
 	int flags = 0;
 	flags |= opts->rdonly ? GENERIC_READ : 0x0;
@@ -70,7 +75,7 @@ xnvme_file_access_opts_to_windows(struct xnvme_opts *opts)
 }
 
 int
-xnvme_file_creation_opts_to_windows(struct xnvme_opts *opts)
+xnvme_be_windows_file_creation_opts(struct xnvme_opts *opts)
 {
 	int flags = 0;
 
@@ -91,7 +96,7 @@ xnvme_file_creation_opts_to_windows(struct xnvme_opts *opts)
  * @return flag with dwCreationDisposition value is returned.
  */
 int
-xnvme_file_attributes_opts_to_windows(struct xnvme_opts *opts)
+xnvme_be_windows_file_attributes_opts(struct xnvme_opts *opts)
 {
 	int flags = 0;
 
