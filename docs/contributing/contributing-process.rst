@@ -20,6 +20,10 @@ Contribution Process
     the builds and the verification. Merged, it runs only what the website
     needs, and publishes it. A changed ``.cmd`` file runs everything, since only
     the guest runs the commands
+  - Merging requires the check ``ci-result``, which passes when every job did.
+    A pull-request changing code also needs the verification on physical
+    devices, which runs once the pull-request has the label ``maas``; until
+    then ``ci-result`` fails
   - One manual CI-job is triggered via the label ``bench``
 
 * Go over the :ref:`sec-contributing-process-pr-checklist` and re-iterate on
