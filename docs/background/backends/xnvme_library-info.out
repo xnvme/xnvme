@@ -1,43 +1,41 @@
 # xNVMe Library Information
-ver: {major: 0, minor: 4, patch: 0}
+ver: {major: 0, minor: 7, patch: 5, vcs: 'v0.7.5'}
 xnvme_libconf:
-  - '3p: fio;git-describe:fio-3.30'
-  - '3p: liburing;git-describe:liburing-2.1-460-g4633a2d0'
-  - '3p: spdk;git-describe:v21.10;+patches'
+  entries:
+  - 'spdk;NOSYS'
+  - 'conf: XNVME_BE_SHIM_ENABLED'
+  - 'conf: XNVME_BE_EMU_ENABLED'
+  - 'conf: XNVME_BE_NIL_ENABLED'
+  - 'conf: XNVME_BE_POSIX_ENABLED'
+  - 'conf: XNVME_BE_THRPOOL_ENABLED'
+  - 'conf: XNVME_BE_RAMDISK_ENABLED'
   - 'conf: XNVME_PLATFORM_LINUX_ENABLED'
   - 'conf: XNVME_BE_LINUX_BLOCK_ENABLED'
   - 'conf: XNVME_BE_LINUX_BLOCK_ZONED_ENABLED'
-  - 'conf: XNVME_BE_LIBAIO_ENABLED'
   - 'conf: XNVME_BE_LIBURING_ENABLED'
-  - 'conf: XNVME_BE_POSIX_ENABLED'
-  - 'conf: XNVME_BE_SPDK_ENABLED'
-  - 'conf: XNVME_BE_SPDK_TRANSPORT_PCIE_ENABLED'
-  - 'conf: XNVME_BE_SPDK_TRANSPORT_TCP_ENABLED'
-  - 'conf: XNVME_BE_SPDK_TRANSPORT_RDMA_ENABLED'
-  - 'conf: XNVME_BE_SPDK_TRANSPORT_FC_ENABLED'
-  - 'conf: XNVME_BE_ASYNC_ENABLED'
-  - 'conf: XNVME_BE_ASYNC_EMU_ENABLED'
-  - 'conf: XNVME_BE_ASYNC_THRPOOL_ENABLED'
-  - '3p: linux;LINUX_VERSION_CODE-UAPI/330332-5.10.92'
+  - 'conf: XNVME_BE_UPCIE_ENABLED'
   - '3p: NVME_IOCTL_IO64_CMD'
+  - '3p: NVME_IOCTL_IO64_CMD_VEC'
   - '3p: NVME_IOCTL_ADMIN64_CMD'
-xnvme_be_attr_list:
-  count: 5
-  capacity: 5
-  items:
-  - name: 'spdk'
-    enabled: 1
+  - '3p: linux;LINUX_VERSION_CODE-UAPI/458752-7.0.0'
 
-  - name: 'linux'
-    enabled: 1
-
-  - name: 'fbsd'
-    enabled: 0
-
-  - name: 'posix'
-    enabled: 1
-
-  - name: 'windows'
-    enabled: 0
-
+xnvme_platform:
+  name: 'linux'
+  backends:
+  - {name: 'upcie', async: 'upcie', sync: 'upcie', admin: 'upcie', descr: 'uPCIe userspace NVMe driver', caps: 0x120}
+  - {name: 'emu', async: 'emu', sync: 'nvme', admin: 'nvme', descr: 'Emulated async with NVMe ioctl', caps: 0x3}
+  - {name: 'emu_bdev', async: 'emu', sync: 'block', admin: 'block', descr: 'Emulated async with block layer', caps: 0x6}
+  - {name: 'io_uring_cmd', async: 'io_uring_cmd', sync: 'nvme', admin: 'nvme', descr: 'io_uring passthru with NVMe ioctl', caps: 0x3}
+  - {name: 'io_uring', async: 'io_uring', sync: 'nvme', admin: 'nvme', descr: 'io_uring with NVMe ioctl', caps: 0x3}
+  - {name: 'io_uring_bdev', async: 'io_uring', sync: 'block', admin: 'block', descr: 'io_uring with block layer', caps: 0x6}
+  - {name: 'posix', async: 'posix', sync: 'nvme', admin: 'nvme', descr: 'POSIX aio with NVMe ioctl', caps: 0x3}
+  - {name: 'thrpool', async: 'thrpool', sync: 'nvme', admin: 'nvme', descr: 'Thread pool with NVMe ioctl', caps: 0x3}
+  - {name: 'thrpool_bdev', async: 'thrpool', sync: 'block', admin: 'block', descr: 'Thread pool with block layer', caps: 0x6}
+  - {name: 'nil', async: 'nil', sync: 'nvme', admin: 'nvme', descr: 'Nil async with NVMe ioctl', caps: 0x3}
+  - {name: 'emu_file', async: 'emu', sync: 'psync', admin: 'file_as_ns', descr: 'Emulated async with file I/O', caps: 0x8}
+  - {name: 'thrpool_file', async: 'thrpool', sync: 'psync', admin: 'file_as_ns', descr: 'Thread pool with file I/O', caps: 0x8}
+  - {name: 'io_uring_file', async: 'io_uring', sync: 'psync', admin: 'file_as_ns', descr: 'io_uring with file I/O', caps: 0x8}
+  - {name: 'ramdisk_emu', async: 'emu', sync: 'ramdisk', admin: 'ramdisk', descr: 'Ramdisk with emulated async', caps: 0x10}
+  - {name: 'ramdisk_thrpool', async: 'thrpool', sync: 'ramdisk', admin: 'ramdisk', descr: 'Ramdisk with thread pool', caps: 0x10}
+  - {name: 'ramdisk', async: 'nil', sync: 'ramdisk', admin: 'ramdisk', descr: 'Ramdisk with nil async', caps: 0x10}
 
