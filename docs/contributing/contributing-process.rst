@@ -44,6 +44,9 @@ Please check your pull-request for the following:
 * All commits must have their commit messages formatted according to
   :ref:`sec-contributing-process-commit-messages`
 
+* Neither commit messages nor source code refer to GitHub pull requests or
+  issues, see :ref:`sec-contributing-process-references`
+
 * Commits are rebased on top of ``main``
 
 * New functionality is accompanied by tests verifying it
@@ -89,6 +92,27 @@ specification. And in addition, for readability:
 Take a look at the commit history (``git log --follow <files>``), for the files
 you are changing, that should give you an idea of the "component" as well as the
 other items on the list above.
+
+.. _sec-contributing-process-references:
+
+References to GitHub
+====================
+
+Commit messages and source code do not refer to pull requests, issues, or
+anything else GitHub numbers or links. Git is the record, and GitHub is a
+service on top of it. The history and the code outlive it: they are cloned,
+mirrored, moved to another host, and read offline, where ``#811`` names nothing
+or something else.
+
+Say instead what the reference would have pointed at. Name the behaviour, the
+function, or the commit, and name a commit by its abbreviated hash and its
+subject. The same goes for closing keywords such as ``Fixes #123`` and for
+links to GitHub.
+
+Although not allowed in commit messages, such references are highly encouraged
+in pull-request descriptions. A pull-request description lives on GitHub, so
+link the issues and pull-requests it relates to, and put a closing keyword
+there.
 
 .. _Discord: https://discord.com/invite/XCbBX9DmKf
 .. _Fork: https://github.com/xnvme/xnvme/fork
