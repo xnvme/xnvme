@@ -4,7 +4,18 @@
 
 #ifndef __INTERNAL_XNVME_BE_LIBURING_H
 #define __INTERNAL_XNVME_BE_LIBURING_H
+#include <libxnvme.h>
+#include <xnvme_be.h>
+
+extern struct xnvme_be_async g_xnvme_be_liburing_async;
+extern struct xnvme_be_async g_xnvme_be_liburing_async_dmabuf;
+extern struct xnvme_be_async g_xnvme_be_liburing_async_ucmd;
+extern struct xnvme_be_dev g_xnvme_be_liburing_dev_dmabuf;
+extern struct xnvme_be_mem g_xnvme_be_liburing_mem_dmabuf;
+
+#ifdef XNVME_BE_LIBURING_ENABLED
 #include <liburing.h>
+#include <xnvme_queue.h>
 
 #define XNVME_QUEUE_IOU_CQE_BATCH_MAX 8
 #define XNVME_QUEUE_IOU_BIGSQE        (0x1 << 2)
@@ -49,5 +60,6 @@ xnvme_be_liburing_term(struct xnvme_queue *queue);
 
 int
 xnvme_be_liburing_get_completion_fd(struct xnvme_queue *queue);
+#endif
 
 #endif /* __INTERNAL_XNVME_BE_LIBURING_H */

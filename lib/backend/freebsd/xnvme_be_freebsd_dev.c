@@ -13,7 +13,7 @@
 #include <xnvme_be_posix.h>
 #include <xnvme_be_freebsd.h>
 
-void
+static void
 xnvme_be_freebsd_state_term(struct xnvme_be_freebsd_state *state)
 {
 	if (!state) {
@@ -28,7 +28,7 @@ xnvme_be_freebsd_state_term(struct xnvme_be_freebsd_state *state)
 	}
 }
 
-void
+static void
 xnvme_be_freebsd_dev_close(struct xnvme_dev *dev)
 {
 	if (!dev) {
@@ -39,8 +39,8 @@ xnvme_be_freebsd_dev_close(struct xnvme_dev *dev)
 	memset(&dev->be, 0, sizeof(dev->be));
 }
 
-int
-xnvme_file_opts_to_freebsd(struct xnvme_opts *opts)
+static int
+xnvme_be_freebsd_file_opts(struct xnvme_opts *opts)
 {
 	int flags = 0;
 
@@ -54,13 +54,13 @@ xnvme_file_opts_to_freebsd(struct xnvme_opts *opts)
 	return flags;
 }
 
-int
+static int
 xnvme_be_freebsd_dev_open(struct xnvme_dev *dev)
 {
 	struct xnvme_be_freebsd_state *state = (void *)dev->be.state;
 	const struct xnvme_ident *ident = &dev->ident;
 	struct xnvme_opts *opts = &dev->opts;
-	int flags = xnvme_file_opts_to_freebsd(opts);
+	int flags = xnvme_be_freebsd_file_opts(opts);
 	struct stat dev_stat = {0};
 	int err;
 

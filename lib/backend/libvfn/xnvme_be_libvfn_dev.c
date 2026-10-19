@@ -10,7 +10,7 @@
 #include <xnvme_be_libvfn.h>
 
 int
-_xnvme_be_libvfn_create_ioqpair(struct xnvme_be_libvfn_state *state, int qd, int flags)
+xnvme_be_libvfn_create_ioqpair(struct xnvme_be_libvfn_state *state, int qd, int flags)
 {
 	struct xnvme_be_libvfn_ctrlr *ctrlr = state->ctrlr;
 	unsigned int qid = __builtin_ffsll(ctrlr->qidmap);
@@ -38,7 +38,7 @@ _xnvme_be_libvfn_create_ioqpair(struct xnvme_be_libvfn_state *state, int qd, int
 }
 
 int
-_xnvme_be_libvfn_delete_ioqpair(struct xnvme_be_libvfn_state *state, unsigned int qid)
+xnvme_be_libvfn_delete_ioqpair(struct xnvme_be_libvfn_state *state, unsigned int qid)
 {
 	struct xnvme_be_libvfn_ctrlr *ctrlr = state->ctrlr;
 
@@ -115,7 +115,7 @@ xnvme_be_libvfn_ctrlr_init(struct xnvme_dev *dev)
 		struct xnvme_be_libvfn_state tmp_state = {.ctrlr = ctrlr};
 		int qpid;
 
-		qpid = _xnvme_be_libvfn_create_ioqpair(&tmp_state, 31, 0x0);
+		qpid = xnvme_be_libvfn_create_ioqpair(&tmp_state, 31, 0x0);
 		if (qpid < 0) {
 			XNVME_DEBUG("FAILED: creating sync qpair: %d", qpid);
 			goto fail_efds;
@@ -151,7 +151,7 @@ xnvme_be_libvfn_ctrlr_term(void *handle)
 	return 0;
 }
 
-int
+static int
 xnvme_be_libvfn_dev_open(struct xnvme_dev *dev)
 {
 	dev->ident.dtype =
@@ -162,7 +162,7 @@ xnvme_be_libvfn_dev_open(struct xnvme_dev *dev)
 	return 0;
 }
 
-void
+static void
 xnvme_be_libvfn_dev_close(struct xnvme_dev *dev)
 {
 	(void)dev;

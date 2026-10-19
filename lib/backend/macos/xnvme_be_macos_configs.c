@@ -8,6 +8,8 @@
 
 #include <xnvme_be_posix.h>
 #include <xnvme_be_macos.h>
+#include <xnvme_be_emu.h>
+#include <xnvme_be_thrpool.h>
 
 const struct xnvme_be_config g_xnvme_be_macos_emu = {
 	.async = &g_xnvme_be_emu_async,

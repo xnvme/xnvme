@@ -15,7 +15,7 @@
 #include <xnvme_be_ramdisk.h>
 #include <xnvme_dev.h>
 
-void
+static void
 xnvme_be_ramdisk_dev_close(struct xnvme_dev *dev)
 {
 	struct xnvme_be_ramdisk_state *state;
@@ -47,7 +47,7 @@ xnvme_be_ramdisk_dev_get_size(struct xnvme_dev *dev)
 	return (size_t)atoi(ident->uri) * 1024 * 1024 * 1024;
 }
 
-int
+static int
 xnvme_be_ramdisk_dev_open(struct xnvme_dev *dev)
 {
 	struct xnvme_be_ramdisk_state *state = (void *)dev->be.state;

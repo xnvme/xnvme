@@ -169,24 +169,6 @@ exit:
 	return err;
 }
 
-const char *
-_spdk_nvmf_adrfam_str(enum spdk_nvmf_adrfam adrfam)
-{
-	switch (adrfam) {
-	case SPDK_NVMF_ADRFAM_IPV4:
-		return "IPv4";
-	case SPDK_NVMF_ADRFAM_IPV6:
-		return "IPv6";
-	case SPDK_NVMF_ADRFAM_IB:
-	case SPDK_NVMF_ADRFAM_FC:
-	case SPDK_NVMF_ADRFAM_INTRA_HOST:
-	case SPDK_NVMF_ADRFAM_NOT_SPECIFIED:
-		return "";
-	}
-
-	return "";
-}
-
 /**
  * Construct a SPDK transport identifier from a xNVMe identifier
  *
@@ -249,7 +231,7 @@ _xnvme_be_spdk_ident_to_trid(const struct xnvme_ident *ident, struct xnvme_opts 
 	return 0;
 }
 
-int
+static int
 _spdk_nvme_transport_id_pr(const struct spdk_nvme_transport_id *trid)
 {
 	int wrtn = 0;
@@ -266,7 +248,7 @@ _spdk_nvme_transport_id_pr(const struct spdk_nvme_transport_id *trid)
 	return wrtn;
 }
 
-int
+static int
 _spdk_nvme_transport_id_compare_weak(const struct spdk_nvme_transport_id *trid1,
 				     const struct spdk_nvme_transport_id *trid2)
 {
@@ -279,7 +261,7 @@ _spdk_nvme_transport_id_compare_weak(const struct spdk_nvme_transport_id *trid1,
 	return spdk_nvme_transport_id_compare(&one, &other);
 }
 
-bool
+static bool
 _spdk_setup_controller_opts(struct xnvme_opts *opts, const struct spdk_nvme_transport_id *trid,
 			    struct spdk_nvme_ctrlr_opts *ctrlr_opts)
 {
@@ -412,7 +394,7 @@ xnvme_be_spdk_ctrlr_term(void *ctrlr)
 	return err;
 }
 
-void
+static void
 xnvme_be_spdk_dev_close(struct xnvme_dev *dev)
 {
 	struct xnvme_be_spdk_state *state = (void *)dev->be.state;
@@ -599,7 +581,7 @@ xnvme_be_spdk_ctrlr_init(struct xnvme_dev *dev)
 	return state->ctrlr;
 }
 
-int
+static int
 xnvme_be_spdk_dev_open(struct xnvme_dev *dev)
 {
 	struct xnvme_be_spdk_state *state = (void *)dev->be.state;

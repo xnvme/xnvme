@@ -20,7 +20,7 @@
  * @return On success, a pointer to the allocated memory is returned. On error, NULL is returned
  * and `errno` set to indicate the error.
  */
-void *
+static void *
 xnvme_be_windows_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t nbytes,
 			   uint64_t *XNVME_UNUSED(phys))
 {
@@ -43,7 +43,7 @@ xnvme_be_windows_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t nby
  * @return On success, a pointer to the allocated memory is returned. On error, NULL is returned
  * and `errno` set to indicate the error.
  */
-void *
+static void *
 xnvme_be_windows_buf_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes,
 			     uint64_t *XNVME_UNUSED(phys))
 {
@@ -64,7 +64,7 @@ xnvme_be_windows_buf_realloc(const struct xnvme_dev *dev, void *buf, size_t nbyt
  *
  * @param buf Pointer to a buffer allocated with xnvme_buf_alloc()
  */
-void
+static void
 xnvme_be_windows_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
 {
 	xnvme_buf_virt_free(buf);
@@ -79,7 +79,7 @@ xnvme_be_windows_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
  *
  * @return On success, 0 is returned. On error, GetLastError is returned.
  */
-int
+static int
 xnvme_be_windows_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *XNVME_UNUSED(buf),
 			     uint64_t *XNVME_UNUSED(phys))
 {

@@ -9,6 +9,10 @@
 #include <xnvme_be.h>
 #include <xnvme_be_posix.h>
 #include <xnvme_be_freebsd.h>
+#include <xnvme_be_emu.h>
+#include <xnvme_be_nil.h>
+#include <xnvme_be_shim.h>
+#include <xnvme_be_thrpool.h>
 
 const struct xnvme_be_config g_xnvme_be_freebsd_kqueue = {
 	.async = &g_xnvme_be_freebsd_async,
