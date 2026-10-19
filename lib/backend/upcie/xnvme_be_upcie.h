@@ -92,30 +92,7 @@ struct xnvme_be_upcie_ctrlr {
 	int attached;                     ///< Whether base and bdf came from the server
 };
 
-/** One per process; the IOAS refuses a second range at the same addresses */
-struct xnvme_be_upcie_iova_range {
-	struct dmamem_iommu_map_pa *imp; ///< NULL where the mode needs none
-	int alive;                       ///< Whether imp is open
-};
-
-/**
- * Per-device state embedded in xnvme_dev.be.state.
- *
- * The first field (ctrlr) is the cref handle written by the platform. The
- * second says where data buffers for this device live: the host heap for
- * `upcie`, the GPU heap for `upcie-cuda` and `upcie-hip`, assigned by the
- * backend's dev_open. That is what lets the admin, sync and async paths be
- * shared across the three, since they differ only in which dmamem a payload
- * translates through.
- */
-struct xnvme_be_upcie_state {
-	struct xnvme_be_upcie_ctrlr *ctrlr; ///< Shared controller (first field for platform)
-	struct dmamem *dmem;                ///< Where this device's data buffers live
-	struct xnvme_be_upcie_iova_range range;
-
-	uint8_t _rvds[96];
-};
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_upcie_state) == XNVME_BE_STATE_NBYTES, "Incorrect size")
+#include <xnvme_be_upcie_state.h>
 
 int
 xnvme_be_upcie_ctrlr_qpair_create_at(struct xnvme_dev *dev, uint64_t sq_addr, uint64_t cq_addr,

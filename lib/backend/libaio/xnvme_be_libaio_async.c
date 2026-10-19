@@ -19,6 +19,7 @@
 #include <xnvme_be_linux.h>
 #include <xnvme_be_libaio.h>
 #include <xnvme_dev.h>
+#include <xnvme_be_state.h>
 
 struct xnvme_aio_ring {
 	uint32_t id;
@@ -61,7 +62,7 @@ static int
 _linux_libaio_init(struct xnvme_queue *q, int opts)
 {
 	struct xnvme_queue_libaio *queue = (void *)q;
-	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_linux_state *state = &xnvme_be_state(queue->base.dev)->linux_state;
 	int err = 0;
 
 	queue->poll_io = (opts & XNVME_QUEUE_IOPOLL) || state->poll_io;
@@ -158,7 +159,7 @@ _linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, 
 		     size_t mbuf_nbytes)
 {
 	struct xnvme_queue_libaio *queue = (void *)ctx->async.queue;
-	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_linux_state *state = &xnvme_be_state(queue->base.dev)->linux_state;
 	const uint64_t ssw = queue->base.dev->geo.ssw;
 
 	struct iocb iocb;
@@ -174,25 +175,26 @@ _linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, 
 	///< NOTE: opcode-dispatch (io)
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
-		io_prep_pwrite(&iocb, state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba << ssw);
+		io_prep_pwrite(&iocb, state->posix.fd, dbuf, dbuf_nbytes,
+			       ctx->cmd.nvm.slba << ssw);
 		break;
 
 	case XNVME_SPEC_NVM_OPC_READ:
-		io_prep_pread(&iocb, state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba << ssw);
+		io_prep_pread(&iocb, state->posix.fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba << ssw);
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
-		io_prep_pwrite(&iocb, state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
+		io_prep_pwrite(&iocb, state->posix.fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
 		break;
 
 	case XNVME_SPEC_FS_OPC_READ:
-		io_prep_pread(&iocb, state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
+		io_prep_pread(&iocb, state->posix.fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba);
 		break;
 
 	case XNVME_SPEC_NVM_OPC_FLUSH:
 	case XNVME_SPEC_FS_OPC_FLUSH:
 		// NOTE: full fsync, matching the psync backend
-		io_prep_fsync(&iocb, state->fd);
+		io_prep_fsync(&iocb, state->posix.fd);
 		break;
 
 	default:
@@ -229,7 +231,7 @@ _linux_libaio_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec
 		      size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_queue_libaio *queue = (void *)ctx->async.queue;
-	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_linux_state *state = &xnvme_be_state(queue->base.dev)->linux_state;
 	const uint64_t ssw = queue->base.dev->geo.ssw;
 
 	struct iocb iocb;
@@ -249,25 +251,25 @@ _linux_libaio_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec
 	///< NOTE: opcode-dispatch (io)
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
-		io_prep_pwritev(&iocb, state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
+		io_prep_pwritev(&iocb, state->posix.fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
 		break;
 
 	case XNVME_SPEC_NVM_OPC_READ:
-		io_prep_preadv(&iocb, state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
+		io_prep_preadv(&iocb, state->posix.fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
-		io_prep_pwritev(&iocb, state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba);
+		io_prep_pwritev(&iocb, state->posix.fd, dvec, dvec_cnt, ctx->cmd.nvm.slba);
 		break;
 
 	case XNVME_SPEC_FS_OPC_READ:
-		io_prep_preadv(&iocb, state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba);
+		io_prep_preadv(&iocb, state->posix.fd, dvec, dvec_cnt, ctx->cmd.nvm.slba);
 		break;
 
 	case XNVME_SPEC_NVM_OPC_FLUSH:
 	case XNVME_SPEC_FS_OPC_FLUSH:
 		// NOTE: full fsync, matching the psync backend
-		io_prep_fsync(&iocb, state->fd);
+		io_prep_fsync(&iocb, state->posix.fd);
 		break;
 
 	default:

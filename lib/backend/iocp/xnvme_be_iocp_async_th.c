@@ -15,6 +15,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_windows.h>
 #include <xnvme_be_iocp.h>
+#include <xnvme_be_state.h>
 
 enum io_state { NONE, IN_PROGRESS, SUCCESS, FAILED };
 
@@ -106,7 +107,7 @@ _windows_async_iocp_th_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 	int err;
 	struct _thread_ctx *pt_ctx;
 	struct xnvme_queue_aio_ov *queue = (void *)q;
-	struct xnvme_be_windows_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_windows_state *state = &xnvme_be_state(queue->base.dev)->windows_state;
 
 	uint32_t capacity = queue->base.capacity;
 	queue_nbytes = (capacity + 1) * sizeof(struct _ov_request);
@@ -228,7 +229,7 @@ _windows_async_iocp_th_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf
 			      void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_queue_aio_ov *queue = (void *)ctx->async.queue;
-	struct xnvme_be_windows_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_windows_state *state = &xnvme_be_state(ctx->dev)->windows_state;
 	int err;
 	struct _ov_request *req;
 	const uint64_t ssw = ctx->dev->geo.ssw;

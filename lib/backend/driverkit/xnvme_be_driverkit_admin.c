@@ -11,13 +11,13 @@
 #include <errno.h>
 
 #include <xnvme_dev.h>
+#include <xnvme_be_state.h>
 
 static int
 xnvme_be_driverkit_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 			 void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
-	struct xnvme_be_driverkit_state *state =
-		(struct xnvme_be_driverkit_state *)ctx->dev->be.state;
+	struct xnvme_be_driverkit_state *state = &xnvme_be_state(ctx->dev)->driverkit_state;
 	uint64_t _buf_base_offset = 0;
 	NvmeSubmitCmd cmd_return;
 	struct buffer *buf;

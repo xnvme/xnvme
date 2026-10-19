@@ -9,11 +9,12 @@
 #include <sys/mman.h>
 #include <xnvme_be_libvfn.h>
 #include <xnvme_dev.h>
+#include <xnvme_be_state.h>
 
 static void
 xnvme_be_libvfn_buf_free(const struct xnvme_dev *dev, void *buf)
 {
-	struct xnvme_be_libvfn_state *state = (void *)dev->be.state;
+	struct xnvme_be_libvfn_state *state = &xnvme_be_state(dev)->libvfn_state;
 	struct iommu_ctx *ctx = state->ctrlr->ctrl->pci.dev.ctx;
 	size_t len;
 
@@ -34,7 +35,7 @@ xnvme_be_libvfn_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *
 {
 	void *vaddr;
 	ssize_t len;
-	struct xnvme_be_libvfn_state *state = (void *)dev->be.state;
+	struct xnvme_be_libvfn_state *state = &xnvme_be_state(dev)->libvfn_state;
 	struct iommu_ctx *ctx = state->ctrlr->ctrl->pci.dev.ctx;
 
 	XNVME_DEBUG("xnvme_be_libvfn_buf_alloc(%p, %ld)", dev, nbytes);
@@ -63,7 +64,7 @@ xnvme_be_libvfn_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *
 static int
 xnvme_be_libvfn_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys)
 {
-	struct xnvme_be_libvfn_state *state = (void *)dev->be.state;
+	struct xnvme_be_libvfn_state *state = &xnvme_be_state(dev)->libvfn_state;
 	struct iommu_ctx *ctx = state->ctrlr->ctrl->pci.dev.ctx;
 
 	if (!iommu_translate_vaddr(ctx, buf, phys)) {
@@ -77,7 +78,7 @@ xnvme_be_libvfn_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *ph
 static int
 xnvme_be_libvfn_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, uint64_t *phys)
 {
-	struct xnvme_be_libvfn_state *state = (void *)dev->be.state;
+	struct xnvme_be_libvfn_state *state = &xnvme_be_state(dev)->libvfn_state;
 	struct iommu_ctx *ctx = state->ctrlr->ctrl->pci.dev.ctx;
 	int err;
 
@@ -102,7 +103,7 @@ xnvme_be_libvfn_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes,
 static int
 xnvme_be_libvfn_mem_unmap(const struct xnvme_dev *dev, void *buf)
 {
-	struct xnvme_be_libvfn_state *state = (void *)dev->be.state;
+	struct xnvme_be_libvfn_state *state = &xnvme_be_state(dev)->libvfn_state;
 	struct iommu_ctx *ctx = state->ctrlr->ctrl->pci.dev.ctx;
 
 	XNVME_DEBUG("xnvme_be_libvfn_buf_unmap(%p, %p)", dev, buf);

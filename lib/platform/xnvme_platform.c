@@ -11,6 +11,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_lock.h>
 #include <xnvme_platform.h>
+#include <xnvme_be_state.h>
 
 #define XNVME_MAX_NS_LIST_SIZE 1024
 
@@ -67,7 +68,7 @@ _dev_open_resolve_mem(struct xnvme_be *be, const struct xnvme_be_config *cfg,
  * Looks up an existing cref for the URI and config name. When none exists,
  * checks for conflicts with other backend configs, initializes a new controller,
  * and inserts it into the cref table. On success, stores the controller
- * pointer in be->state[0].
+ * pointer in the ctrlr member of the backend state.
  *
  * @param dev Device being opened
  * @param be Backend instance with dev operations
@@ -117,7 +118,7 @@ _dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnv
 	}
 
 ctrlr_ready:
-	((void **)be->state)[0] = ctrlr;
+	xnvme_be_state_of(be)->ctrlr = ctrlr;
 
 	err = be->dev.dev_open(dev);
 	if (err) {

@@ -29,6 +29,7 @@
 #include <xnvme_be_upcie_cplane_serve.h>
 #include <xnvme_be_upcie_cplane_serve_mem.h>
 #include <xnvme_be_upcie_cplane_share.h>
+#include <xnvme_be_state.h>
 #include <xnvme_lock.h>
 
 struct xnvme_be_upcie_cplane_serve_state g_upcie_cplane_serve;
@@ -76,7 +77,7 @@ cplane_serve_admin_cmd(struct xnvme_dev *dev, void *cmd, void *cpl)
 		return -EINVAL;
 	}
 
-	state = (void *)dev->be.state;
+	state = &xnvme_be_state(dev)->upcie_state;
 	ctrl = state->ctrlr->ctrl;
 
 	/* As xnvme_be_upcie_sync_cmd_admin() does, since queue setup shares the queue */

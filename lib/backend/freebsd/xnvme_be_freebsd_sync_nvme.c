@@ -18,12 +18,13 @@ __FBSDID("$FreeBSD$");
 #include <errno.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_freebsd.h>
+#include <xnvme_be_state.h>
 
 static int
 xnvme_be_freebsd_nvme_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			 size_t mbuf_nbytes)
 {
-	struct xnvme_be_freebsd_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_freebsd_state *state = &xnvme_be_state(ctx->dev)->freebsd_state;
 	struct nvme_pt_command ptc = {0};
 	int err;
 
@@ -49,7 +50,7 @@ xnvme_be_freebsd_nvme_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyt
 	ptc.len = dbuf_nbytes;
 	ptc.is_read = (ptc.cmd.opc & 0x2) != 0;
 
-	err = ioctl(state->fd.ns, NVME_PASSTHROUGH_CMD, &ptc);
+	err = ioctl(state->posix.fd, NVME_PASSTHROUGH_CMD, &ptc);
 	if (err < 0) {
 		XNVME_DEBUG("FAILED: ioctl() err: %d, errno: %d", err, errno);
 		return err;

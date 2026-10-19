@@ -16,6 +16,7 @@
 #include <windows.h>
 #include <Setupapi.h>
 #include <xnvme_be_windows.h>
+#include <xnvme_be_state.h>
 
 static int
 xnvme_be_windows_file_access_opts(struct xnvme_opts *opts)
@@ -122,7 +123,7 @@ xnvme_be_windows_file_opts(struct xnvme_opts *opts)
 static int
 xnvme_be_windows_dev_open(struct xnvme_dev *dev)
 {
-	struct xnvme_be_windows_state *state = (void *)dev->be.state;
+	struct xnvme_be_windows_state *state = &xnvme_be_state(dev)->windows_state;
 	struct xnvme_ident *ident = &dev->ident;
 	struct xnvme_opts *opts = &dev->opts;
 	int dw_creation_mode = 0;
@@ -255,7 +256,7 @@ xnvme_be_windows_dev_close(struct xnvme_dev *dev)
 		return;
 	}
 
-	_be_windows_state_term((void *)dev->be.state);
+	_be_windows_state_term(&xnvme_be_state(dev)->windows_state);
 	memset(&dev->be, 0, sizeof(dev->be));
 }
 

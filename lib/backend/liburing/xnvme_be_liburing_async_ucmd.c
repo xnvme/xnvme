@@ -15,6 +15,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_liburing.h>
 #include <xnvme_be_linux.h>
+#include <xnvme_be_state.h>
 #include <linux/nvme_ioctl.h>
 
 static int g_linux_liburing_optional[] = {
@@ -135,7 +136,7 @@ xnvme_be_liburing_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nby
 			  size_t mbuf_nbytes)
 {
 	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
-	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_linux_state *state = &xnvme_be_state(queue->base.dev)->linux_state;
 	struct io_uring_sqe *sqe = NULL;
 	int err = 0;
 
@@ -149,7 +150,7 @@ xnvme_be_liburing_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nby
 	sqe->flags = queue->poll_sq ? IOSQE_FIXED_FILE : 0;
 	// NOTE: we only ever register a single file, the raw device, so the
 	// provided index will always be 0
-	sqe->fd = queue->poll_sq ? 0 : state->fd;
+	sqe->fd = queue->poll_sq ? 0 : state->posix.fd;
 	sqe->user_data = (unsigned long)ctx;
 
 	ctx->cmd.common.dptr.lnx_ioctl.data = (uint64_t)dbuf;
@@ -191,7 +192,7 @@ xnvme_be_liburing_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t
 			   size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
-	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_linux_state *state = &xnvme_be_state(queue->base.dev)->linux_state;
 	struct io_uring_sqe *sqe = NULL;
 	int err = 0;
 
@@ -205,7 +206,7 @@ xnvme_be_liburing_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t
 	sqe->flags = queue->poll_sq ? IOSQE_FIXED_FILE : 0;
 	// NOTE: we only ever register a single file, the raw device, so the
 	// provided index will always be 0
-	sqe->fd = queue->poll_sq ? 0 : state->fd;
+	sqe->fd = queue->poll_sq ? 0 : state->posix.fd;
 	sqe->user_data = (unsigned long)ctx;
 
 	ctx->cmd.common.dptr.lnx_ioctl.data = (uint64_t)dvec;

@@ -56,7 +56,7 @@ xnvme_be_libvfn_delete_ioqpair(struct xnvme_be_libvfn_state *state, unsigned int
  *
  * Allocates a shared xnvme_be_libvfn_ctrlr, initializes the NVMe controller,
  * sets up IRQs and event FDs. The returned handle is stored in cref and
- * written to dev->be.state[0] by the platform.
+ * written to the ctrlr member of its state by the platform.
  */
 static void *
 xnvme_be_libvfn_ctrlr_init(struct xnvme_dev *dev)

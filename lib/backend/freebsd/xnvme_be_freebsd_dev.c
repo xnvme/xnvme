@@ -12,6 +12,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_posix.h>
 #include <xnvme_be_freebsd.h>
+#include <xnvme_be_state.h>
 
 static void
 xnvme_be_freebsd_state_term(struct xnvme_be_freebsd_state *state)
@@ -20,11 +21,11 @@ xnvme_be_freebsd_state_term(struct xnvme_be_freebsd_state *state)
 		return;
 	}
 
-	if (state->fd.ns >= 0) {
-		close(state->fd.ns);
+	if (state->posix.fd >= 0) {
+		close(state->posix.fd);
 	}
-	if ((state->fd.ctrlr >= 0) && (state->fd.ctrlr != state->fd.ns)) {
-		close(state->fd.ctrlr);
+	if ((state->ctrlr_fd >= 0) && (state->ctrlr_fd != state->posix.fd)) {
+		close(state->ctrlr_fd);
 	}
 }
 
@@ -35,7 +36,7 @@ xnvme_be_freebsd_dev_close(struct xnvme_dev *dev)
 		return;
 	}
 
-	xnvme_be_freebsd_state_term((void *)dev->be.state);
+	xnvme_be_freebsd_state_term(&xnvme_be_state(dev)->freebsd_state);
 	memset(&dev->be, 0, sizeof(dev->be));
 }
 
@@ -57,7 +58,7 @@ xnvme_be_freebsd_file_opts(struct xnvme_opts *opts)
 static int
 xnvme_be_freebsd_dev_open(struct xnvme_dev *dev)
 {
-	struct xnvme_be_freebsd_state *state = (void *)dev->be.state;
+	struct xnvme_be_freebsd_state *state = &xnvme_be_state(dev)->freebsd_state;
 	const struct xnvme_ident *ident = &dev->ident;
 	struct xnvme_opts *opts = &dev->opts;
 	int flags = xnvme_be_freebsd_file_opts(opts);
@@ -67,16 +68,16 @@ xnvme_be_freebsd_dev_open(struct xnvme_dev *dev)
 	XNVME_DEBUG("INFO: open() : flags: 0x%x, opts->create_mode: 0x%x", flags,
 		    opts->create_mode);
 
-	state->fd.ns = -1;
-	state->fd.ctrlr = -1;
+	state->posix.fd = -1;
+	state->ctrlr_fd = -1;
 
-	state->fd.ns = open(ident->uri, flags, opts->create_mode);
-	if (state->fd.ns < 0) {
-		XNVME_DEBUG("FAILED: open(uri: '%s'), state->fd.ns: '%d', errno: %d",
-			    dev->ident.uri, state->fd.ns, errno);
+	state->posix.fd = open(ident->uri, flags, opts->create_mode);
+	if (state->posix.fd < 0) {
+		XNVME_DEBUG("FAILED: open(uri: '%s'), state->posix.fd: '%d', errno: %d",
+			    dev->ident.uri, state->posix.fd, errno);
 		return -errno;
 	}
-	err = fstat(state->fd.ns, &dev_stat);
+	err = fstat(state->posix.fd, &dev_stat);
 	if (err < 0) {
 		XNVME_DEBUG("FAILED: err: %d, errno: %d", err, errno);
 		return -errno;
@@ -88,7 +89,7 @@ xnvme_be_freebsd_dev_open(struct xnvme_dev *dev)
 		dev->ident.dtype = XNVME_DEV_TYPE_FS_FILE;
 		dev->ident.csi = XNVME_SPEC_CSI_FS;
 		dev->ident.nsid = 1;
-		state->fd.ctrlr = state->fd.ns;
+		state->ctrlr_fd = state->posix.fd;
 		break;
 
 	case S_IFBLK:
@@ -96,19 +97,19 @@ xnvme_be_freebsd_dev_open(struct xnvme_dev *dev)
 		dev->ident.dtype = XNVME_DEV_TYPE_BLOCK_DEVICE;
 		dev->ident.csi = XNVME_SPEC_CSI_FS;
 		dev->ident.nsid = 1;
-		state->fd.ctrlr = state->fd.ns;
+		state->ctrlr_fd = state->posix.fd;
 		break;
 
 	case S_IFCHR:
 		XNVME_DEBUG("INFO: open() : char-device-file assuming NVMe ctrlr. or ns.");
 
-		if (xnvme_be_freebsd_nvme_get_nsid_and_ctrlr_fd(state->fd.ns, &dev->ident.nsid,
-								&state->fd.ctrlr)) {
+		if (xnvme_be_freebsd_nvme_get_nsid_and_ctrlr_fd(state->posix.fd, &dev->ident.nsid,
+								&state->ctrlr_fd)) {
 			XNVME_DEBUG("INFO: open() : assuming it is an NVMe controller");
 			dev->ident.dtype = XNVME_DEV_TYPE_NVME_CONTROLLER;
 			dev->ident.csi = XNVME_SPEC_CSI_NVM;
 			dev->ident.nsid = 0;
-			state->fd.ctrlr = state->fd.ns;
+			state->ctrlr_fd = state->posix.fd;
 		}
 
 		XNVME_DEBUG("INFO: open() : responds like an NVMe namespace");

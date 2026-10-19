@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_windows.h>
+#include <xnvme_be_state.h>
 #include <windows.h>
 
 static int
@@ -37,7 +38,7 @@ static int
 _idfy_ns_iocs_fs(struct xnvme_dev *dev, void *dbuf)
 {
 	struct xnvme_spec_fs_idfy_ns *ns = dbuf;
-	struct xnvme_be_windows_state *state = (void *)dev->be.state;
+	struct xnvme_be_windows_state *state = &xnvme_be_state(dev)->windows_state;
 
 	DWORD file_size = GetFileSize(state->sync_handle, NULL);
 	if (file_size == INVALID_FILE_SIZE) {
@@ -70,7 +71,7 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 {
 	struct xnvme_spec_idfy_ns *ns = dbuf;
 
-	struct xnvme_be_windows_state *state = (void *)dev->be.state;
+	struct xnvme_be_windows_state *state = &xnvme_be_state(dev)->windows_state;
 
 	DWORD file_size = GetFileSize(state->sync_handle, NULL);
 	if (file_size == INVALID_FILE_SIZE) {
