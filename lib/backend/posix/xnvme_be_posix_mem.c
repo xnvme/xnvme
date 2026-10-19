@@ -7,7 +7,7 @@
 #endif
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_CBI_MEM_POSIX_ENABLED
+#ifdef XNVME_BE_POSIX_ENABLED
 #include <unistd.h>
 #include <errno.h>
 
@@ -48,9 +48,9 @@ buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *XNVME_UNUSED(buf),
 }
 #endif
 
-struct xnvme_be_mem g_xnvme_be_cbi_mem_posix = {
+struct xnvme_be_mem g_xnvme_be_posix_mem = {
 	.id = "posix",
-#ifdef XNVME_BE_CBI_MEM_POSIX_ENABLED
+#ifdef XNVME_BE_POSIX_ENABLED
 	.buf_alloc = buf_alloc,
 	.buf_realloc = buf_realloc,
 	.buf_free = buf_free,

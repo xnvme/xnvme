@@ -8,7 +8,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
+#ifdef XNVME_BE_LIBURING_ENABLED
 #include <errno.h>
 #include <liburing.h>
 #include <xnvme_queue.h>
@@ -48,7 +48,7 @@ _linux_liburing_noptional_missing(void)
 }
 
 int
-xnvme_be_linux_ucmd_init(struct xnvme_queue *q, int opts)
+xnvme_be_liburing_ucmd_init(struct xnvme_queue *q, int opts)
 {
 	if (_linux_liburing_noptional_missing()) {
 		fprintf(stderr, "# FAILED: io_uring cmd, not supported by kernel!\n");
@@ -57,12 +57,12 @@ xnvme_be_linux_ucmd_init(struct xnvme_queue *q, int opts)
 
 	opts |= XNVME_QUEUE_IOU_BIGSQE;
 
-	return xnvme_be_linux_liburing_init(q, opts);
+	return xnvme_be_liburing_init(q, opts);
 }
 
 #ifdef NVME_URING_CMD_IO
 int
-xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
+xnvme_be_liburing_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 {
 	struct xnvme_queue_liburing *queue = (void *)q;
 	struct io_uring_cqe *cqe;
@@ -123,7 +123,7 @@ xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 
 #else
 int
-xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
+xnvme_be_liburing_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 {
 	XNVME_DEBUG("FAILED: not supported, built on system without NVME_URING_CMD_IO");
 	return xnvme_be_nosys_queue_poke(q, max);
@@ -132,8 +132,8 @@ xnvme_be_linux_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 
 #ifdef NVME_URING_CMD_IO
 int
-xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
-		       size_t mbuf_nbytes)
+xnvme_be_liburing_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			  size_t mbuf_nbytes)
 {
 	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
@@ -178,8 +178,8 @@ exit:
 }
 #else
 int
-xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
-		       size_t mbuf_nbytes)
+xnvme_be_liburing_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			  size_t mbuf_nbytes)
 {
 	XNVME_DEBUG("FAILED: not supported, built on system without NVME_URING_CMD_IO");
 	return xnvme_be_nosys_queue_cmd_io(ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
@@ -188,8 +188,8 @@ xnvme_be_linux_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 
 #ifdef NVME_URING_CMD_IO_VEC
 int
-xnvme_be_linux_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-			size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
+xnvme_be_liburing_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+			   size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
 	struct xnvme_queue_liburing *queue = (void *)ctx->async.queue;
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
@@ -234,8 +234,8 @@ exit:
 }
 #else
 int
-xnvme_be_linux_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-			size_t dvec_nbytes, void *mbuf, size_t mbuf_nbytes)
+xnvme_be_liburing_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+			   size_t dvec_nbytes, void *mbuf, size_t mbuf_nbytes)
 {
 	XNVME_DEBUG("FAILED: not supported, built on system without NVME_URING_CMD_IO_VEC");
 	return xnvme_be_nosys_queue_cmd_iov(ctx, dvec, dvec_cnt, dvec_nbytes, mbuf, mbuf_nbytes);
@@ -243,16 +243,16 @@ xnvme_be_linux_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dv
 #endif
 #endif
 
-struct xnvme_be_async g_xnvme_be_linux_async_ucmd = {
+struct xnvme_be_async g_xnvme_be_liburing_async_ucmd = {
 	.id = "io_uring_cmd",
-#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
-	.cmd_io = xnvme_be_linux_ucmd_io,
-	.cmd_iov = xnvme_be_linux_ucmd_iov,
-	.poke = xnvme_be_linux_ucmd_poke,
+#ifdef XNVME_BE_LIBURING_ENABLED
+	.cmd_io = xnvme_be_liburing_ucmd_io,
+	.cmd_iov = xnvme_be_liburing_ucmd_iov,
+	.poke = xnvme_be_liburing_ucmd_poke,
 	.wait = xnvme_be_nosys_queue_wait,
-	.init = xnvme_be_linux_ucmd_init,
-	.term = xnvme_be_linux_liburing_term,
-	.get_completion_fd = xnvme_be_linux_liburing_get_completion_fd,
+	.init = xnvme_be_liburing_ucmd_init,
+	.term = xnvme_be_liburing_term,
+	.get_completion_fd = xnvme_be_liburing_get_completion_fd,
 #else
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,

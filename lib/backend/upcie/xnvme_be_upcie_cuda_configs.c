@@ -20,8 +20,8 @@ const struct xnvme_be_config g_xnvme_be_upcie_cuda = {
 	.async = &g_xnvme_be_upcie_async,
 	.sync = &g_xnvme_be_upcie_sync,
 	.admin = &g_xnvme_be_upcie_admin,
-	.dev = &g_xnvme_be_upcie_cuda_dev,
-	.mem = &g_xnvme_be_upcie_cuda_mem,
+	.dev = &g_xnvme_be_upcie_dev_cuda,
+	.mem = &g_xnvme_be_upcie_mem_cuda,
 	.attr =
 		{
 			.name = "upcie-cuda",

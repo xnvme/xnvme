@@ -8,7 +8,7 @@
 /**
  * Internal representation of XNVME_BE_MACOS state
  *
- * NOTE: When changing this struct, ensure compatibility with 'struct xnvme_be_cbi_state'
+ * NOTE: When changing this struct, ensure compatibility with 'struct xnvme_be_posix_state'
  */
 struct xnvme_be_macos_state {
 	int fd;
@@ -21,7 +21,7 @@ struct xnvme_be_macos_state {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_macos_state) == XNVME_BE_STATE_NBYTES, "Incorrect size")
 
 extern struct xnvme_be_admin g_xnvme_be_macos_admin;
-extern struct xnvme_be_sync g_xnvme_be_macos_sync_psync;
+extern struct xnvme_be_sync g_xnvme_be_macos_sync;
 extern struct xnvme_be_dev g_xnvme_be_macos_dev;
 
 #endif /* __INTERNAL_XNVME_BE_MACOS */

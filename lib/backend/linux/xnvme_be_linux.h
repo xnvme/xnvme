@@ -16,7 +16,7 @@
 /**
  * Internal representation of XNVME_BE_LINUX state
  *
- * NOTE: When changing this struct, ensure compatibility with 'struct xnvme_be_cbi_state'
+ * NOTE: When changing this struct, ensure compatibility with 'struct xnvme_be_posix_state'
  */
 struct xnvme_be_linux_state {
 	int fd;
@@ -74,13 +74,13 @@ extern struct xnvme_be_sync g_xnvme_be_linux_sync_block;
 /**
  * Implementations of the asynchronous command interface
  */
-extern struct xnvme_be_async g_xnvme_be_linux_async_libaio;
-extern struct xnvme_be_async g_xnvme_be_linux_async_liburing;
-extern struct xnvme_be_async g_xnvme_be_linux_async_ucmd;
+extern struct xnvme_be_async g_xnvme_be_libaio_async;
+extern struct xnvme_be_async g_xnvme_be_liburing_async;
+extern struct xnvme_be_async g_xnvme_be_liburing_async_ucmd;
 
 /**
  * Implementations of the device enumeration and handles
  */
-extern struct xnvme_be_dev g_xnvme_be_dev_linux;
+extern struct xnvme_be_dev g_xnvme_be_linux_dev;
 
 #endif /* __INTERNAL_XNVME_BE_LINUX */

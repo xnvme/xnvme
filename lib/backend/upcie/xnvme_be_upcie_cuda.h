@@ -27,8 +27,8 @@ struct xnvme_be_upcie_cuda_rte {
 
 extern struct xnvme_be_upcie_cuda_rte g_upcie_cuda_rte;
 
-extern struct xnvme_be_mem g_xnvme_be_upcie_cuda_mem;
-extern struct xnvme_be_dev g_xnvme_be_upcie_cuda_dev;
+extern struct xnvme_be_mem g_xnvme_be_upcie_mem_cuda;
+extern struct xnvme_be_dev g_xnvme_be_upcie_dev_cuda;
 
 #endif /* XNVME_BE_UPCIE_CUDA_ENABLED */
 #endif /* __INTERNAL_XNVME_BE_UPCIE_CUDA_H */

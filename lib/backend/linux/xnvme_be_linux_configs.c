@@ -58,12 +58,12 @@ xnvme_file_opts_to_linux(struct xnvme_opts *opts)
 	return flags;
 }
 
-const struct xnvme_be_config g_xnvme_be_linux_emu_nvme = {
-	.async = &g_xnvme_be_cbi_async_emu,
+const struct xnvme_be_config g_xnvme_be_linux_emu = {
+	.async = &g_xnvme_be_emu_async,
 	.sync = &g_xnvme_be_linux_sync_nvme,
 	.admin = &g_xnvme_be_linux_admin_nvme,
-	.dev = &g_xnvme_be_dev_linux,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.dev = &g_xnvme_be_linux_dev,
+	.mem = &g_xnvme_be_posix_mem,
 	.mem_overrides =
 		(const struct xnvme_be_mem *const[]){
 			&g_xnvme_be_linux_mem_hugepage,
@@ -78,12 +78,12 @@ const struct xnvme_be_config g_xnvme_be_linux_emu_nvme = {
 };
 
 #ifdef XNVME_BE_LINUX_BLOCK_ENABLED
-const struct xnvme_be_config g_xnvme_be_linux_emu_block = {
-	.async = &g_xnvme_be_cbi_async_emu,
+const struct xnvme_be_config g_xnvme_be_linux_emu_bdev = {
+	.async = &g_xnvme_be_emu_async,
 	.sync = &g_xnvme_be_linux_sync_block,
 	.admin = &g_xnvme_be_linux_admin_block,
-	.dev = &g_xnvme_be_dev_linux,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.dev = &g_xnvme_be_linux_dev,
+	.mem = &g_xnvme_be_posix_mem,
 	.mem_overrides =
 		(const struct xnvme_be_mem *const[]){
 			&g_xnvme_be_linux_mem_hugepage,
@@ -98,13 +98,13 @@ const struct xnvme_be_config g_xnvme_be_linux_emu_block = {
 };
 #endif
 
-#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
-const struct xnvme_be_config g_xnvme_be_linux_ucmd_nvme = {
-	.async = &g_xnvme_be_linux_async_ucmd,
+#ifdef XNVME_BE_LIBURING_ENABLED
+const struct xnvme_be_config g_xnvme_be_linux_io_uring_cmd = {
+	.async = &g_xnvme_be_liburing_async_ucmd,
 	.sync = &g_xnvme_be_linux_sync_nvme,
 	.admin = &g_xnvme_be_linux_admin_nvme,
-	.dev = &g_xnvme_be_dev_linux,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.dev = &g_xnvme_be_linux_dev,
+	.mem = &g_xnvme_be_posix_mem,
 	.mem_overrides =
 		(const struct xnvme_be_mem *const[]){
 			&g_xnvme_be_linux_mem_hugepage,
@@ -118,12 +118,12 @@ const struct xnvme_be_config g_xnvme_be_linux_ucmd_nvme = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_linux_iou_nvme = {
-	.async = &g_xnvme_be_linux_async_liburing,
+const struct xnvme_be_config g_xnvme_be_linux_io_uring = {
+	.async = &g_xnvme_be_liburing_async,
 	.sync = &g_xnvme_be_linux_sync_nvme,
 	.admin = &g_xnvme_be_linux_admin_nvme,
-	.dev = &g_xnvme_be_dev_linux,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.dev = &g_xnvme_be_linux_dev,
+	.mem = &g_xnvme_be_posix_mem,
 	.mem_overrides =
 		(const struct xnvme_be_mem *const[]){
 			&g_xnvme_be_linux_mem_hugepage,
@@ -136,15 +136,15 @@ const struct xnvme_be_config g_xnvme_be_linux_iou_nvme = {
 			.caps = XNVME_BE_CAP_NVME_CDEV | XNVME_BE_CAP_NVME_BDEV,
 		},
 };
-#endif /* XNVME_BE_LINUX_LIBURING_ENABLED */
+#endif /* XNVME_BE_LIBURING_ENABLED */
 
-#if defined(XNVME_BE_LINUX_LIBURING_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
-const struct xnvme_be_config g_xnvme_be_linux_iou_block = {
-	.async = &g_xnvme_be_linux_async_liburing,
+#if defined(XNVME_BE_LIBURING_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
+const struct xnvme_be_config g_xnvme_be_linux_io_uring_bdev = {
+	.async = &g_xnvme_be_liburing_async,
 	.sync = &g_xnvme_be_linux_sync_block,
 	.admin = &g_xnvme_be_linux_admin_block,
-	.dev = &g_xnvme_be_dev_linux,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.dev = &g_xnvme_be_linux_dev,
+	.mem = &g_xnvme_be_posix_mem,
 	.mem_overrides =
 		(const struct xnvme_be_mem *const[]){
 			&g_xnvme_be_linux_mem_hugepage,
@@ -159,13 +159,13 @@ const struct xnvme_be_config g_xnvme_be_linux_iou_block = {
 };
 #endif
 
-#ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
-const struct xnvme_be_config g_xnvme_be_linux_aio_nvme = {
-	.async = &g_xnvme_be_linux_async_libaio,
+#ifdef XNVME_BE_LIBAIO_ENABLED
+const struct xnvme_be_config g_xnvme_be_linux_libaio = {
+	.async = &g_xnvme_be_libaio_async,
 	.sync = &g_xnvme_be_linux_sync_nvme,
 	.admin = &g_xnvme_be_linux_admin_nvme,
-	.dev = &g_xnvme_be_dev_linux,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.dev = &g_xnvme_be_linux_dev,
+	.mem = &g_xnvme_be_posix_mem,
 	.mem_overrides =
 		(const struct xnvme_be_mem *const[]){
 			&g_xnvme_be_linux_mem_hugepage,
@@ -180,13 +180,13 @@ const struct xnvme_be_config g_xnvme_be_linux_aio_nvme = {
 };
 #endif
 
-#if defined(XNVME_BE_LINUX_LIBAIO_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
-const struct xnvme_be_config g_xnvme_be_linux_aio_block = {
-	.async = &g_xnvme_be_linux_async_libaio,
+#if defined(XNVME_BE_LIBAIO_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
+const struct xnvme_be_config g_xnvme_be_linux_libaio_bdev = {
+	.async = &g_xnvme_be_libaio_async,
 	.sync = &g_xnvme_be_linux_sync_block,
 	.admin = &g_xnvme_be_linux_admin_block,
-	.dev = &g_xnvme_be_dev_linux,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.dev = &g_xnvme_be_linux_dev,
+	.mem = &g_xnvme_be_posix_mem,
 	.mem_overrides =
 		(const struct xnvme_be_mem *const[]){
 			&g_xnvme_be_linux_mem_hugepage,
@@ -201,13 +201,13 @@ const struct xnvme_be_config g_xnvme_be_linux_aio_block = {
 };
 #endif
 
-#ifdef XNVME_BE_CBI_ASYNC_POSIX_ENABLED
-const struct xnvme_be_config g_xnvme_be_linux_posix_nvme = {
-	.async = &g_xnvme_be_cbi_async_posix,
+#ifdef XNVME_BE_POSIX_ENABLED
+const struct xnvme_be_config g_xnvme_be_linux_posix = {
+	.async = &g_xnvme_be_posix_async,
 	.sync = &g_xnvme_be_linux_sync_nvme,
 	.admin = &g_xnvme_be_linux_admin_nvme,
-	.dev = &g_xnvme_be_dev_linux,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.dev = &g_xnvme_be_linux_dev,
+	.mem = &g_xnvme_be_posix_mem,
 	.mem_overrides =
 		(const struct xnvme_be_mem *const[]){
 			&g_xnvme_be_linux_mem_hugepage,
@@ -222,12 +222,12 @@ const struct xnvme_be_config g_xnvme_be_linux_posix_nvme = {
 };
 #endif
 
-const struct xnvme_be_config g_xnvme_be_linux_thrpool_nvme = {
-	.async = &g_xnvme_be_cbi_async_thrpool,
+const struct xnvme_be_config g_xnvme_be_linux_thrpool = {
+	.async = &g_xnvme_be_thrpool_async,
 	.sync = &g_xnvme_be_linux_sync_nvme,
 	.admin = &g_xnvme_be_linux_admin_nvme,
-	.dev = &g_xnvme_be_dev_linux,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.dev = &g_xnvme_be_linux_dev,
+	.mem = &g_xnvme_be_posix_mem,
 	.mem_overrides =
 		(const struct xnvme_be_mem *const[]){
 			&g_xnvme_be_linux_mem_hugepage,
@@ -242,12 +242,12 @@ const struct xnvme_be_config g_xnvme_be_linux_thrpool_nvme = {
 };
 
 #ifdef XNVME_BE_LINUX_BLOCK_ENABLED
-const struct xnvme_be_config g_xnvme_be_linux_thrpool_block = {
-	.async = &g_xnvme_be_cbi_async_thrpool,
+const struct xnvme_be_config g_xnvme_be_linux_thrpool_bdev = {
+	.async = &g_xnvme_be_thrpool_async,
 	.sync = &g_xnvme_be_linux_sync_block,
 	.admin = &g_xnvme_be_linux_admin_block,
-	.dev = &g_xnvme_be_dev_linux,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.dev = &g_xnvme_be_linux_dev,
+	.mem = &g_xnvme_be_posix_mem,
 	.mem_overrides =
 		(const struct xnvme_be_mem *const[]){
 			&g_xnvme_be_linux_mem_hugepage,
@@ -262,12 +262,12 @@ const struct xnvme_be_config g_xnvme_be_linux_thrpool_block = {
 };
 #endif
 
-const struct xnvme_be_config g_xnvme_be_linux_nil_nvme = {
-	.async = &g_xnvme_be_cbi_async_nil,
+const struct xnvme_be_config g_xnvme_be_linux_nil = {
+	.async = &g_xnvme_be_nil_async,
 	.sync = &g_xnvme_be_linux_sync_nvme,
 	.admin = &g_xnvme_be_linux_admin_nvme,
-	.dev = &g_xnvme_be_dev_linux,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.dev = &g_xnvme_be_linux_dev,
+	.mem = &g_xnvme_be_posix_mem,
 	.mem_overrides =
 		(const struct xnvme_be_mem *const[]){
 			&g_xnvme_be_linux_mem_hugepage,
@@ -282,11 +282,11 @@ const struct xnvme_be_config g_xnvme_be_linux_nil_nvme = {
 };
 
 const struct xnvme_be_config g_xnvme_be_linux_emu_file = {
-	.async = &g_xnvme_be_cbi_async_emu,
-	.sync = &g_xnvme_be_cbi_sync_psync,
-	.admin = &g_xnvme_be_cbi_admin_shim,
-	.dev = &g_xnvme_be_dev_linux,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.async = &g_xnvme_be_emu_async,
+	.sync = &g_xnvme_be_posix_sync,
+	.admin = &g_xnvme_be_shim_admin,
+	.dev = &g_xnvme_be_linux_dev,
+	.mem = &g_xnvme_be_posix_mem,
 	.mem_overrides =
 		(const struct xnvme_be_mem *const[]){
 			&g_xnvme_be_linux_mem_hugepage,
@@ -301,11 +301,11 @@ const struct xnvme_be_config g_xnvme_be_linux_emu_file = {
 };
 
 const struct xnvme_be_config g_xnvme_be_linux_thrpool_file = {
-	.async = &g_xnvme_be_cbi_async_thrpool,
-	.sync = &g_xnvme_be_cbi_sync_psync,
-	.admin = &g_xnvme_be_cbi_admin_shim,
-	.dev = &g_xnvme_be_dev_linux,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.async = &g_xnvme_be_thrpool_async,
+	.sync = &g_xnvme_be_posix_sync,
+	.admin = &g_xnvme_be_shim_admin,
+	.dev = &g_xnvme_be_linux_dev,
+	.mem = &g_xnvme_be_posix_mem,
 	.mem_overrides =
 		(const struct xnvme_be_mem *const[]){
 			&g_xnvme_be_linux_mem_hugepage,
@@ -319,13 +319,13 @@ const struct xnvme_be_config g_xnvme_be_linux_thrpool_file = {
 		},
 };
 
-#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
-const struct xnvme_be_config g_xnvme_be_linux_iou_file = {
-	.async = &g_xnvme_be_linux_async_liburing,
-	.sync = &g_xnvme_be_cbi_sync_psync,
-	.admin = &g_xnvme_be_cbi_admin_shim,
-	.dev = &g_xnvme_be_dev_linux,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+#ifdef XNVME_BE_LIBURING_ENABLED
+const struct xnvme_be_config g_xnvme_be_linux_io_uring_file = {
+	.async = &g_xnvme_be_liburing_async,
+	.sync = &g_xnvme_be_posix_sync,
+	.admin = &g_xnvme_be_shim_admin,
+	.dev = &g_xnvme_be_linux_dev,
+	.mem = &g_xnvme_be_posix_mem,
 	.mem_overrides =
 		(const struct xnvme_be_mem *const[]){
 			&g_xnvme_be_linux_mem_hugepage,
@@ -340,13 +340,13 @@ const struct xnvme_be_config g_xnvme_be_linux_iou_file = {
 };
 #endif
 
-#ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
-const struct xnvme_be_config g_xnvme_be_linux_aio_file = {
-	.async = &g_xnvme_be_linux_async_libaio,
-	.sync = &g_xnvme_be_cbi_sync_psync,
-	.admin = &g_xnvme_be_cbi_admin_shim,
-	.dev = &g_xnvme_be_dev_linux,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+#ifdef XNVME_BE_LIBAIO_ENABLED
+const struct xnvme_be_config g_xnvme_be_linux_libaio_file = {
+	.async = &g_xnvme_be_libaio_async,
+	.sync = &g_xnvme_be_posix_sync,
+	.admin = &g_xnvme_be_shim_admin,
+	.dev = &g_xnvme_be_linux_dev,
+	.mem = &g_xnvme_be_posix_mem,
 	.mem_overrides =
 		(const struct xnvme_be_mem *const[]){
 			&g_xnvme_be_linux_mem_hugepage,

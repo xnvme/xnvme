@@ -236,7 +236,7 @@ xnvme_be_upcie_cuda_dev_close(struct xnvme_dev *dev)
 
 #endif
 
-struct xnvme_be_dev g_xnvme_be_upcie_cuda_dev = {
+struct xnvme_be_dev g_xnvme_be_upcie_dev_cuda = {
 #ifdef XNVME_BE_UPCIE_CUDA_ENABLED
 	.dev_open = xnvme_be_upcie_cuda_dev_open,
 	.dev_close = xnvme_be_upcie_cuda_dev_close,

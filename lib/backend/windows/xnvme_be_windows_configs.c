@@ -100,11 +100,11 @@ xnvme_file_attributes_opts_to_windows(struct xnvme_opts *opts)
 	return flags;
 }
 
-const struct xnvme_be_config g_xnvme_be_windows_emu_nvme = {
-	.async = &g_xnvme_be_cbi_async_emu,
+const struct xnvme_be_config g_xnvme_be_windows_emu = {
+	.async = &g_xnvme_be_emu_async,
 	.sync = &g_xnvme_be_windows_sync_nvme,
 	.admin = &g_xnvme_be_windows_admin_nvme,
-	.dev = &g_xnvme_be_dev_windows,
+	.dev = &g_xnvme_be_windows_dev,
 	.mem = &g_xnvme_be_windows_mem,
 	.attr =
 		{
@@ -114,11 +114,11 @@ const struct xnvme_be_config g_xnvme_be_windows_emu_nvme = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_windows_thrpool_nvme = {
-	.async = &g_xnvme_be_cbi_async_thrpool,
+const struct xnvme_be_config g_xnvme_be_windows_thrpool = {
+	.async = &g_xnvme_be_thrpool_async,
 	.sync = &g_xnvme_be_windows_sync_nvme,
 	.admin = &g_xnvme_be_windows_admin_nvme,
-	.dev = &g_xnvme_be_dev_windows,
+	.dev = &g_xnvme_be_windows_dev,
 	.mem = &g_xnvme_be_windows_mem,
 	.attr =
 		{
@@ -128,11 +128,11 @@ const struct xnvme_be_config g_xnvme_be_windows_thrpool_nvme = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_windows_iocp_nvme = {
-	.async = &g_xnvme_be_windows_async_iocp,
+const struct xnvme_be_config g_xnvme_be_windows_iocp = {
+	.async = &g_xnvme_be_iocp_async,
 	.sync = &g_xnvme_be_windows_sync_nvme,
 	.admin = &g_xnvme_be_windows_admin_nvme,
-	.dev = &g_xnvme_be_dev_windows,
+	.dev = &g_xnvme_be_windows_dev,
 	.mem = &g_xnvme_be_windows_mem,
 	.attr =
 		{
@@ -142,11 +142,11 @@ const struct xnvme_be_config g_xnvme_be_windows_iocp_nvme = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_windows_iocp_th_nvme = {
-	.async = &g_xnvme_be_windows_async_iocp_th,
+const struct xnvme_be_config g_xnvme_be_windows_iocp_th = {
+	.async = &g_xnvme_be_iocp_async_th,
 	.sync = &g_xnvme_be_windows_sync_nvme,
 	.admin = &g_xnvme_be_windows_admin_nvme,
-	.dev = &g_xnvme_be_dev_windows,
+	.dev = &g_xnvme_be_windows_dev,
 	.mem = &g_xnvme_be_windows_mem,
 	.attr =
 		{
@@ -156,11 +156,11 @@ const struct xnvme_be_config g_xnvme_be_windows_iocp_th_nvme = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_windows_ioring_nvme = {
-	.async = &g_xnvme_be_windows_async_ioring,
+const struct xnvme_be_config g_xnvme_be_windows_ioring = {
+	.async = &g_xnvme_be_ioring_async,
 	.sync = &g_xnvme_be_windows_sync_nvme,
 	.admin = &g_xnvme_be_windows_admin_nvme,
-	.dev = &g_xnvme_be_dev_windows,
+	.dev = &g_xnvme_be_windows_dev,
 	.mem = &g_xnvme_be_windows_mem,
 	.attr =
 		{
@@ -170,11 +170,11 @@ const struct xnvme_be_config g_xnvme_be_windows_ioring_nvme = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_windows_nil_nvme = {
-	.async = &g_xnvme_be_cbi_async_nil,
+const struct xnvme_be_config g_xnvme_be_windows_nil = {
+	.async = &g_xnvme_be_nil_async,
 	.sync = &g_xnvme_be_windows_sync_nvme,
 	.admin = &g_xnvme_be_windows_admin_nvme,
-	.dev = &g_xnvme_be_dev_windows,
+	.dev = &g_xnvme_be_windows_dev,
 	.mem = &g_xnvme_be_windows_mem,
 	.attr =
 		{
@@ -184,12 +184,11 @@ const struct xnvme_be_config g_xnvme_be_windows_nil_nvme = {
 		},
 };
 
-#ifdef XNVME_BE_WINDOWS_FS_ENABLED
-const struct xnvme_be_config g_xnvme_be_windows_iocp_fs = {
-	.async = &g_xnvme_be_windows_async_iocp,
+const struct xnvme_be_config g_xnvme_be_windows_iocp_file = {
+	.async = &g_xnvme_be_iocp_async,
 	.sync = &g_xnvme_be_windows_sync_fs,
 	.admin = &g_xnvme_be_windows_admin_fs,
-	.dev = &g_xnvme_be_dev_windows,
+	.dev = &g_xnvme_be_windows_dev,
 	.mem = &g_xnvme_be_windows_mem,
 	.attr =
 		{
@@ -199,11 +198,11 @@ const struct xnvme_be_config g_xnvme_be_windows_iocp_fs = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_windows_thrpool_fs = {
-	.async = &g_xnvme_be_cbi_async_thrpool,
+const struct xnvme_be_config g_xnvme_be_windows_thrpool_file = {
+	.async = &g_xnvme_be_thrpool_async,
 	.sync = &g_xnvme_be_windows_sync_fs,
 	.admin = &g_xnvme_be_windows_admin_fs,
-	.dev = &g_xnvme_be_dev_windows,
+	.dev = &g_xnvme_be_windows_dev,
 	.mem = &g_xnvme_be_windows_mem,
 	.attr =
 		{
@@ -212,6 +211,5 @@ const struct xnvme_be_config g_xnvme_be_windows_thrpool_fs = {
 			.caps = XNVME_BE_CAP_FILE,
 		},
 };
-#endif
 
 #endif

@@ -74,7 +74,7 @@ xnvme_be_upcie_hip_mem_unmap(const struct xnvme_dev *dev, void *vaddr)
 
 #endif
 
-struct xnvme_be_mem g_xnvme_be_upcie_hip_mem = {
+struct xnvme_be_mem g_xnvme_be_upcie_mem_hip = {
 	.id = "upcie-hip",
 #ifdef XNVME_BE_UPCIE_HIP_ENABLED
 	.buf_alloc = xnvme_be_upcie_hip_buf_alloc,

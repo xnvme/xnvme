@@ -16,7 +16,7 @@ WORKDIR xnvme
 
 RUN bash toolbox/pkgs/debian-trixie.sh
 
-RUN meson setup builddir -Dwith-spdk=disabled && \
+RUN meson setup builddir -Dbe_spdk=disabled && \
 	make && \
 	make build-deb && \
 	make install-deb && \

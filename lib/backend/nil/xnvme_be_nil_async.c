@@ -7,24 +7,24 @@
 #endif
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_CBI_ASYNC_NIL_ENABLED
+#ifdef XNVME_BE_NIL_ENABLED
 #include <errno.h>
 #include <xnvme_queue.h>
 #include <xnvme_dev.h>
 
-#define XNVME_BE_CBI_ASYNC_NIL_CTX_DEPTH_MAX 29
+#define XNVME_BE_NIL_ASYNC_CTX_DEPTH_MAX 29
 
 struct nil_queue {
 	struct xnvme_queue_base base;
 
-	struct xnvme_cmd_ctx *ctx[XNVME_BE_CBI_ASYNC_NIL_CTX_DEPTH_MAX];
+	struct xnvme_cmd_ctx *ctx[XNVME_BE_NIL_ASYNC_CTX_DEPTH_MAX];
 };
 XNVME_STATIC_ASSERT(sizeof(struct nil_queue) == XNVME_BE_QUEUE_STATE_NBYTES, "Incorrect size")
 
 static int
 nil_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
 {
-	if (queue->base.capacity > XNVME_BE_CBI_ASYNC_NIL_CTX_DEPTH_MAX) {
+	if (queue->base.capacity > XNVME_BE_NIL_ASYNC_CTX_DEPTH_MAX) {
 		XNVME_DEBUG("FAILED: requested more than async-nil supports");
 		return -EINVAL;
 	}
@@ -83,9 +83,9 @@ nil_cmd_io(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf), size_t XNVME_UNU
 }
 #endif
 
-struct xnvme_be_async g_xnvme_be_cbi_async_nil = {
+struct xnvme_be_async g_xnvme_be_nil_async = {
 	.id = "nil",
-#ifdef XNVME_BE_CBI_ASYNC_NIL_ENABLED
+#ifdef XNVME_BE_NIL_ENABLED
 	.cmd_io = nil_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
 	.poke = nil_poke,

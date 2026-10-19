@@ -7,7 +7,7 @@
 #endif
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_CBI_ADMIN_SHIM_ENABLED
+#ifdef XNVME_BE_SHIM_ENABLED
 #include <errno.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -36,7 +36,7 @@ idfy_ctrlr_iocs_fs(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 static int
 idfy_ns_iocs_fs(struct xnvme_dev *dev, void *dbuf)
 {
-	struct xnvme_be_cbi_state *state = (void *)dev->be.state;
+	struct xnvme_be_posix_state *state = (void *)dev->be.state;
 	struct xnvme_spec_fs_idfy_ns *ns = dbuf;
 	struct stat stat = {0};
 	int err;
@@ -70,7 +70,7 @@ idfy_ctrlr(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 static int
 idfy_ns(struct xnvme_dev *dev, void *dbuf)
 {
-	struct xnvme_be_cbi_state *state = (void *)dev->be.state;
+	struct xnvme_be_posix_state *state = (void *)dev->be.state;
 	struct xnvme_spec_idfy_ns *ns = dbuf;
 	struct stat stat = {0};
 	int err;
@@ -178,9 +178,9 @@ shim_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t XNVME_UNUSED(dbuf_n
 }
 #endif
 
-struct xnvme_be_admin g_xnvme_be_cbi_admin_shim = {
+struct xnvme_be_admin g_xnvme_be_shim_admin = {
 	.id = "file_as_ns",
-#ifdef XNVME_BE_CBI_ADMIN_SHIM_ENABLED
+#ifdef XNVME_BE_SHIM_ENABLED
 	.cmd_admin = shim_cmd_admin,
 	.cmd_pseudo = xnvme_be_nosys_sync_cmd_pseudo,
 #else

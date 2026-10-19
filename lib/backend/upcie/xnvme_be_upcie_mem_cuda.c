@@ -75,7 +75,7 @@ xnvme_be_upcie_cuda_mem_unmap(const struct xnvme_dev *dev, void *vaddr)
 
 #endif
 
-struct xnvme_be_mem g_xnvme_be_upcie_cuda_mem = {
+struct xnvme_be_mem g_xnvme_be_upcie_mem_cuda = {
 	.id = "upcie-cuda",
 #ifdef XNVME_BE_UPCIE_CUDA_ENABLED
 	.buf_alloc = xnvme_be_upcie_cuda_buf_alloc,

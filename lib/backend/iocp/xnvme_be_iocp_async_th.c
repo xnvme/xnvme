@@ -8,7 +8,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_WINDOWS_ASYNC_ENABLED
+#ifdef XNVME_BE_IOCP_ENABLED
 #include <errno.h>
 #include <windows.h>
 #include <xnvme_queue.h>
@@ -325,9 +325,9 @@ _windows_async_iocp_th_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf
 }
 #endif
 
-struct xnvme_be_async g_xnvme_be_windows_async_iocp_th = {
+struct xnvme_be_async g_xnvme_be_iocp_async_th = {
 	.id = "iocp_th",
-#ifdef XNVME_BE_WINDOWS_ASYNC_ENABLED
+#ifdef XNVME_BE_IOCP_ENABLED
 	.cmd_io = _windows_async_iocp_th_cmd_io,
 	.poke = _windows_async_iocp_th_poke,
 	.wait = xnvme_be_nosys_queue_wait,

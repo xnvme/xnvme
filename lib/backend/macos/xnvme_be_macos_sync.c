@@ -20,7 +20,7 @@
 static int
 cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf, size_t mbuf_nbytes)
 {
-	struct xnvme_be_cbi_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_posix_state *state = (void *)ctx->dev->be.state;
 	ssize_t res;
 
 	switch (ctx->cmd.common.opcode) {
@@ -47,7 +47,7 @@ cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf, si
 		}
 		return 0;
 	default:
-		return xnvme_be_cbi_sync_psync_cmd_io(ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
+		return xnvme_be_posix_sync_cmd_io(ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
 	}
 }
 
@@ -55,7 +55,7 @@ int
 cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, size_t dvec_nbytes,
 	void *mbuf, size_t mbuf_nbytes)
 {
-	struct xnvme_be_cbi_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_posix_state *state = (void *)ctx->dev->be.state;
 	ssize_t res;
 
 	switch (ctx->cmd.common.opcode) {
@@ -82,13 +82,13 @@ cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, size_t d
 		}
 		return 0;
 	default:
-		return xnvme_be_cbi_sync_psync_cmd_iov(ctx, dvec, dvec_cnt, dvec_nbytes, mbuf,
-						       mbuf_nbytes);
+		return xnvme_be_posix_sync_cmd_iov(ctx, dvec, dvec_cnt, dvec_nbytes, mbuf,
+						   mbuf_nbytes);
 	}
 }
 #endif
 
-struct xnvme_be_sync g_xnvme_be_macos_sync_psync = {
+struct xnvme_be_sync g_xnvme_be_macos_sync = {
 	.id = "macos",
 #ifdef XNVME_PLATFORM_MACOS_ENABLED
 	.cmd_io = cmd_io,

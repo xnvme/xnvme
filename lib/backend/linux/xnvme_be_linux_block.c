@@ -406,7 +406,7 @@ xnvme_be_linux_block_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 	case XNVME_SPEC_FS_OPC_READ:
 	case XNVME_SPEC_NVM_OPC_FLUSH:
 	case XNVME_SPEC_FS_OPC_FLUSH:
-		return xnvme_be_cbi_sync_psync_cmd_io(ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
+		return xnvme_be_posix_sync_cmd_io(ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
 
 	case XNVME_SPEC_ZND_OPC_MGMT_SEND:
 		return _lzbd_zone_mgmt_send(ctx);
@@ -627,7 +627,7 @@ struct xnvme_be_sync g_xnvme_be_linux_sync_block = {
 	.id = "block",
 #ifdef XNVME_BE_LINUX_BLOCK_ENABLED
 	.cmd_io = xnvme_be_linux_block_cmd_io,
-	.cmd_iov = xnvme_be_cbi_sync_psync_cmd_iov,
+	.cmd_iov = xnvme_be_posix_sync_cmd_iov,
 #else
 	.cmd_io = xnvme_be_nosys_sync_cmd_io,
 	.cmd_iov = xnvme_be_nosys_sync_cmd_iov,

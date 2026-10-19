@@ -20,8 +20,8 @@ const struct xnvme_be_config g_xnvme_be_upcie_hip = {
 	.async = &g_xnvme_be_upcie_async,
 	.sync = &g_xnvme_be_upcie_sync,
 	.admin = &g_xnvme_be_upcie_admin,
-	.dev = &g_xnvme_be_upcie_hip_dev,
-	.mem = &g_xnvme_be_upcie_hip_mem,
+	.dev = &g_xnvme_be_upcie_dev_hip,
+	.mem = &g_xnvme_be_upcie_mem_hip,
 	.attr =
 		{
 			.name = "upcie-hip",

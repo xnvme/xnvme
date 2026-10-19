@@ -97,6 +97,7 @@ if is_linux
   tests += {'cuse_admin64_identify.c': []}
 endif
 
+tests_exe = {}
 foreach test_source, tests_args : tests
   e = executable(
     tests_prefix + fs.stem(test_source),
@@ -108,6 +109,7 @@ foreach test_source, tests_args : tests
     install_rpath: xnvmelib_rpath,
     install: true,
   )
+  tests_exe += {fs.stem(test_source): e}
   foreach test_args : tests_args
     test_name = test_args[0]
     test(
@@ -118,3 +120,22 @@ foreach test_source, tests_args : tests
     )
   endforeach
 endforeach
+
+# The thread pool reads its thread count from the environment; a count of 0
+# fails the queue init, so the case fails when, and only when, the name is read
+thrpool_nthreads = [
+  ['XNVME_BE_THRPOOL_ASYNC_NTHREADS', '1', false],
+  ['XNVME_BE_THRPOOL_ASYNC_NTHREADS', '0', true],
+]
+if conf_data.get('XNVME_BE_THRPOOL_ENABLED') and conf_data.get('XNVME_BE_RAMDISK_ENABLED')
+  foreach t : thrpool_nthreads
+    test(
+      'tests - async_intf, thrpool ' + t[0] + '=' + t[1],
+      tests_exe['async_intf'],
+      args: ['init_term', '1GB', '--count', '1', '--qdepth', '64', '--be', 'ramdisk_thrpool'],
+      env: {t[0]: t[1]},
+      should_fail: t[2],
+      suite: 'async_intf',
+    )
+  endforeach
+endif

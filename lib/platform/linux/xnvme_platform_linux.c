@@ -364,43 +364,43 @@ struct xnvme_platform g_xnvme_platform_linux = {
 #ifdef XNVME_BE_UPCIE_HIP_ENABLED
 			&g_xnvme_be_upcie_hip,
 #endif
-			&g_xnvme_be_linux_emu_nvme,
+			&g_xnvme_be_linux_emu,
 #ifdef XNVME_BE_LINUX_BLOCK_ENABLED
-			&g_xnvme_be_linux_emu_block,
+			&g_xnvme_be_linux_emu_bdev,
 #endif
-#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
-			&g_xnvme_be_linux_ucmd_nvme,
-			&g_xnvme_be_linux_iou_nvme,
+#ifdef XNVME_BE_LIBURING_ENABLED
+			&g_xnvme_be_linux_io_uring_cmd,
+			&g_xnvme_be_linux_io_uring,
 #endif
-#if defined(XNVME_BE_LINUX_LIBURING_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
-			&g_xnvme_be_linux_iou_block,
+#if defined(XNVME_BE_LIBURING_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
+			&g_xnvme_be_linux_io_uring_bdev,
 #endif
-#ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
-			&g_xnvme_be_linux_aio_nvme,
+#ifdef XNVME_BE_LIBAIO_ENABLED
+			&g_xnvme_be_linux_libaio,
 #endif
-#if defined(XNVME_BE_LINUX_LIBAIO_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
-			&g_xnvme_be_linux_aio_block,
+#if defined(XNVME_BE_LIBAIO_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
+			&g_xnvme_be_linux_libaio_bdev,
 #endif
-#ifdef XNVME_BE_CBI_ASYNC_POSIX_ENABLED
-			&g_xnvme_be_linux_posix_nvme,
+#ifdef XNVME_BE_POSIX_ENABLED
+			&g_xnvme_be_linux_posix,
 #endif
-			&g_xnvme_be_linux_thrpool_nvme,
+			&g_xnvme_be_linux_thrpool,
 #ifdef XNVME_BE_LINUX_BLOCK_ENABLED
-			&g_xnvme_be_linux_thrpool_block,
+			&g_xnvme_be_linux_thrpool_bdev,
 #endif
-			&g_xnvme_be_linux_nil_nvme,
+			&g_xnvme_be_linux_nil,
 			&g_xnvme_be_linux_emu_file,
 			&g_xnvme_be_linux_thrpool_file,
-#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
-			&g_xnvme_be_linux_iou_file,
+#ifdef XNVME_BE_LIBURING_ENABLED
+			&g_xnvme_be_linux_io_uring_file,
 #endif
-#ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
-			&g_xnvme_be_linux_aio_file,
+#ifdef XNVME_BE_LIBAIO_ENABLED
+			&g_xnvme_be_linux_libaio_file,
 #endif
 #ifdef XNVME_BE_RAMDISK_ENABLED
 			&g_xnvme_be_ramdisk_emu,
 			&g_xnvme_be_ramdisk_thrpool,
-			&g_xnvme_be_ramdisk_nil,
+			&g_xnvme_be_ramdisk,
 #endif
 			NULL,
 		},

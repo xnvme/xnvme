@@ -148,7 +148,7 @@ xnvme_be_linux_dev_close(struct xnvme_dev *dev)
 
 #endif
 
-struct xnvme_be_dev g_xnvme_be_dev_linux = {
+struct xnvme_be_dev g_xnvme_be_linux_dev = {
 #ifdef XNVME_PLATFORM_LINUX_ENABLED
 	.dev_open = xnvme_be_linux_dev_open,
 	.dev_close = xnvme_be_linux_dev_close,

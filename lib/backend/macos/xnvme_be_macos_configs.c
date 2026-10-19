@@ -10,11 +10,11 @@
 #include <xnvme_be_macos.h>
 
 const struct xnvme_be_config g_xnvme_be_macos_emu = {
-	.async = &g_xnvme_be_cbi_async_emu,
-	.sync = &g_xnvme_be_macos_sync_psync,
+	.async = &g_xnvme_be_emu_async,
+	.sync = &g_xnvme_be_macos_sync,
 	.admin = &g_xnvme_be_macos_admin,
 	.dev = &g_xnvme_be_macos_dev,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem = &g_xnvme_be_posix_mem,
 	.attr =
 		{
 			.name = "emu",
@@ -24,11 +24,11 @@ const struct xnvme_be_config g_xnvme_be_macos_emu = {
 };
 
 const struct xnvme_be_config g_xnvme_be_macos_thrpool = {
-	.async = &g_xnvme_be_cbi_async_thrpool,
-	.sync = &g_xnvme_be_macos_sync_psync,
+	.async = &g_xnvme_be_thrpool_async,
+	.sync = &g_xnvme_be_macos_sync,
 	.admin = &g_xnvme_be_macos_admin,
 	.dev = &g_xnvme_be_macos_dev,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem = &g_xnvme_be_posix_mem,
 	.attr =
 		{
 			.name = "thrpool",
@@ -38,11 +38,11 @@ const struct xnvme_be_config g_xnvme_be_macos_thrpool = {
 };
 
 const struct xnvme_be_config g_xnvme_be_macos_posix = {
-	.async = &g_xnvme_be_cbi_async_posix,
-	.sync = &g_xnvme_be_macos_sync_psync,
+	.async = &g_xnvme_be_posix_async,
+	.sync = &g_xnvme_be_macos_sync,
 	.admin = &g_xnvme_be_macos_admin,
 	.dev = &g_xnvme_be_macos_dev,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem = &g_xnvme_be_posix_mem,
 	.attr =
 		{
 			.name = "posix",

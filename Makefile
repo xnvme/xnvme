@@ -113,10 +113,10 @@ endef
 config-slim:
 	@echo "## xNVMe: make config-slim"
 	CC=$(CC) CXX=$(CXX) $(MESON) setup $(BUILD_DIR) \
-	   -Dwith-spdk=disabled \
-		 -Dwith-liburing=disabled \
-		 -Dwith-libvfn=disabled \
-		 -Dwith-libaio=disabled \
+	   -Dbe_spdk=disabled \
+		 -Dbe_liburing=disabled \
+		 -Dbe_libvfn=disabled \
+		 -Dbe_libaio=disabled \
 		 -Dwith-isal=disabled
 	@echo "## xNVMe: make config-slim [DONE]"
 
@@ -609,7 +609,7 @@ endef
 .PHONY: gen-src-archive
 gen-src-archive:
 	@echo "## xNVMe: make gen-src-archive"
-	$(MESON) setup $(BUILD_DIR) -Dbuild_subprojects=false -Dwith-liburing=disabled -Dwith-libvfn=disabled
+	$(MESON) setup $(BUILD_DIR) -Dbuild_subprojects=false -Dbe_liburing=disabled -Dbe_libvfn=disabled
 	if [ $(ALLOW_DIRTY) -eq 1 ]; then \
 		$(MESON) dist -C $(BUILD_DIR) --no-tests --formats gztar --allow-dirty; \
 	else \
@@ -623,7 +623,7 @@ endef
 .PHONY: gen-src-archive-with-subprojects
 gen-src-archive-with-subprojects:
 	@echo "## xNVMe: make gen-src-archive-with-subprojects"
-	$(MESON) setup $(BUILD_DIR) -Dbuild_subprojects=false -Dwith-liburing=disabled -Dwith-libvfn=disabled
+	$(MESON) setup $(BUILD_DIR) -Dbuild_subprojects=false -Dbe_liburing=disabled -Dbe_libvfn=disabled
 	if [ $(ALLOW_DIRTY) -eq 1 ]; then \
 		$(MESON) dist -C $(BUILD_DIR) --no-tests --formats gztar --include-subprojects --allow-dirty; \
 	else \

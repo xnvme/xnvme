@@ -8,7 +8,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
+#ifdef XNVME_BE_LIBAIO_ENABLED
 #include <errno.h>
 #include <libaio.h>
 #include <linux/fs.h>
@@ -322,9 +322,9 @@ _linux_libaio_get_completion_fd(struct xnvme_queue *queue)
 
 #endif
 
-struct xnvme_be_async g_xnvme_be_linux_async_libaio = {
+struct xnvme_be_async g_xnvme_be_libaio_async = {
 	.id = "libaio",
-#ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
+#ifdef XNVME_BE_LIBAIO_ENABLED
 	.cmd_io = _linux_libaio_cmd_io,
 	.cmd_iov = _linux_libaio_cmd_iov,
 	.poke = _linux_libaio_poke,

@@ -14,7 +14,7 @@ struct buffer;
 /**
  * Shared controller state, one per physical controller, managed by cref.
  */
-struct xnvme_be_macos_driverkit_ctrlr {
+struct xnvme_be_driverkit_ctrlr {
 	io_service_t device_service;
 	io_connect_t device_connection;
 	uint64_t qidmap;
@@ -24,8 +24,8 @@ struct xnvme_be_macos_driverkit_ctrlr {
  * Per-device state embedded in xnvme_dev.be.state.
  * The first field (ctrlr) is the cref handle written by the platform.
  */
-struct xnvme_be_macos_driverkit_state {
-	struct xnvme_be_macos_driverkit_ctrlr *ctrlr; ///< Shared controller (first for platform)
+struct xnvme_be_driverkit_state {
+	struct xnvme_be_driverkit_ctrlr *ctrlr; ///< Shared controller (first for platform)
 
 	uint64_t qid_sync;
 
@@ -33,14 +33,13 @@ struct xnvme_be_macos_driverkit_state {
 
 	uint8_t _rsvd[104];
 };
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_macos_driverkit_state) == XNVME_BE_STATE_NBYTES,
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_driverkit_state) == XNVME_BE_STATE_NBYTES,
 		    "Incorrect size")
 
 int
-_xnvme_be_driverkit_create_ioqpair(struct xnvme_be_macos_driverkit_state *state, int qd,
-				   int flags);
+_xnvme_be_driverkit_create_ioqpair(struct xnvme_be_driverkit_state *state, int qd, int flags);
 int
-_xnvme_be_driverkit_delete_ioqpair(struct xnvme_be_macos_driverkit_state *state, int qid);
+_xnvme_be_driverkit_delete_ioqpair(struct xnvme_be_driverkit_state *state, int qid);
 
 struct buffer {
 	uint64_t vaddr;
@@ -94,10 +93,10 @@ buffer_find(struct buffer *buffers, uint64_t vaddr)
 	return NULL;
 }
 
-extern struct xnvme_be_admin g_xnvme_be_macos_driverkit_admin;
-extern struct xnvme_be_sync g_xnvme_be_macos_driverkit_sync;
-extern struct xnvme_be_dev g_xnvme_be_macos_driverkit_dev;
-extern struct xnvme_be_async g_xnvme_be_macos_driverkit_async;
-extern struct xnvme_be_mem g_xnvme_be_macos_driverkit_mem;
+extern struct xnvme_be_admin g_xnvme_be_driverkit_admin;
+extern struct xnvme_be_sync g_xnvme_be_driverkit_sync;
+extern struct xnvme_be_dev g_xnvme_be_driverkit_dev;
+extern struct xnvme_be_async g_xnvme_be_driverkit_async;
+extern struct xnvme_be_mem g_xnvme_be_driverkit_mem;
 
 #endif /* __INTERNAL_XNVME_BE_MACOS_DRIVERKIT */
