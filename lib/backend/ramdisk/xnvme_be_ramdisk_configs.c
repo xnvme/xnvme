@@ -8,7 +8,7 @@
 #ifdef XNVME_BE_RAMDISK_ENABLED
 #include <xnvme_be.h>
 #include <xnvme_be_ramdisk.h>
-#include <xnvme_be_cbi.h>
+#include <xnvme_be_posix.h>
 
 #if defined(XNVME_BE_CBI_MEM_POSIX_ENABLED)
 #define XNVME_BE_RAMDISK_MEM &g_xnvme_be_cbi_mem_posix

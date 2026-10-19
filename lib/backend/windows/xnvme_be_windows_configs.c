@@ -8,7 +8,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #ifdef XNVME_PLATFORM_WINDOWS_ENABLED
-#include <xnvme_be_cbi.h>
+#include <xnvme_be_posix.h>
 #include <windows.h>
 #include <xnvme_be_windows.h>
 

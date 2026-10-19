@@ -11,7 +11,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <xnvme_be_cbi.h>
+#include <xnvme_be_posix.h>
 #include <xnvme_dev.h>
 
 static int

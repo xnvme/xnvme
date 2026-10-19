@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 xnvmelib_source += files(
-  'xnvme_be_windows_async_iocp.c',
-  'xnvme_be_windows_async_iocp_th.c',
+  'xnvme_be_iocp_async.c',
+  'xnvme_be_iocp_async_th.c',
 )
 xnvmelib_inc += include_directories('.')

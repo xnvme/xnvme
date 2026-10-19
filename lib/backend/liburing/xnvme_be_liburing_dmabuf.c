@@ -18,8 +18,8 @@
 #include <xnvme_dev.h>
 #include <xnvme_queue.h>
 #include <xnvme_be_linux.h>
-#include <xnvme_be_linux_liburing.h>
-#include <xnvme_be_linux_io_uring_dmabuf.h>
+#include <xnvme_be_liburing.h>
+#include <xnvme_be_liburing_dmabuf.h>
 // The uPCIe headers do not include their dependencies: dmabuf_import.h needs the
 // three before it, and the system headers that iommu_map_pa.h includes
 #include <upcie/debug.h>
