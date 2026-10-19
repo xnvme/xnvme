@@ -3,6 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 xnvmelib_source += files(
-  'xnvme_be_linux_async_libaio.c',
+  'xnvme_be_libaio_async.c',
 )
 xnvmelib_inc += include_directories('.')

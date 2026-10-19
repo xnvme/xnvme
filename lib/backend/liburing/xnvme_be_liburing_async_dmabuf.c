@@ -9,8 +9,8 @@
 #include <xnvme_dev.h>
 #include <xnvme_queue.h>
 #include <xnvme_be_linux.h>
-#include <xnvme_be_linux_liburing.h>
-#include <xnvme_be_linux_io_uring_dmabuf.h>
+#include <xnvme_be_liburing.h>
+#include <xnvme_be_liburing_dmabuf.h>
 #include <xnvme_be_nosys.h>
 
 static int

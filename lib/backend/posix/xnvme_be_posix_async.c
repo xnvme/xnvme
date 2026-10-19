@@ -13,7 +13,7 @@
 #include <aio.h>
 #include <xnvme_queue.h>
 #include <xnvme_dev.h>
-#include <xnvme_be_cbi.h>
+#include <xnvme_be_posix.h>
 
 struct posix_queue {
 	struct xnvme_queue_base base;

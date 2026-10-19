@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifndef __INTERNAL_XNVME_BE_LINUX_LIBAIO_H
-#define __INTERNAL_XNVME_BE_LINUX_LIBAIO_H
+#ifndef __INTERNAL_XNVME_BE_LIBAIO_H
+#define __INTERNAL_XNVME_BE_LIBAIO_H
 #include <libaio.h>
 
 struct xnvme_queue_libaio {
@@ -20,4 +20,4 @@ struct xnvme_queue_libaio {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_libaio) == XNVME_BE_QUEUE_STATE_NBYTES,
 		    "Incorrect size")
 
-#endif /* __INTERNAL_XNVME_BE_LINUX_LIBAIO_H */
+#endif /* __INTERNAL_XNVME_BE_LIBAIO_H */

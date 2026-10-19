@@ -3,6 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 xnvmelib_source += files(
-  'xnvme_be_windows_async_ioring.c',
+  'xnvme_be_ioring_async.c',
 )
 xnvmelib_inc += include_directories('.')

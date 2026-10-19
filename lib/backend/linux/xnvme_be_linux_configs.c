@@ -18,7 +18,7 @@
 #include <linux/fs.h>
 #include <linux/version.h>
 #include <xnvme_dev.h>
-#include <xnvme_be_cbi.h>
+#include <xnvme_be_posix.h>
 #include <xnvme_be_linux.h>
 
 int
