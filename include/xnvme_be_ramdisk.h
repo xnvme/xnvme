@@ -12,9 +12,6 @@ struct xnvme_be_ramdisk_state {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_ramdisk_state) == XNVME_BE_STATE_NBYTES,
 		    "Incorrect size");
 
-int
-xnvme_be_ramdisk_supported(struct xnvme_dev *dev, uint32_t opts);
-
 size_t
 xnvme_be_ramdisk_dev_get_size(struct xnvme_dev *dev);
 
