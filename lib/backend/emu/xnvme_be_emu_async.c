@@ -7,6 +7,7 @@
 #endif
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
+#include <xnvme_be_emu.h>
 #ifdef XNVME_BE_EMU_ENABLED
 #include <errno.h>
 #include <xnvme_queue.h>

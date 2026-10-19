@@ -14,6 +14,7 @@
 #include <xnvme_queue.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_windows.h>
+#include <xnvme_be_iocp.h>
 
 enum io_state { NONE, IN_PROGRESS, SUCCESS, FAILED };
 
@@ -78,7 +79,7 @@ _windows_iocp(LPVOID context)
 	return 0;
 }
 
-int
+static int
 _windows_async_iocp_th_term(struct xnvme_queue *q)
 {
 	struct xnvme_queue_aio_ov *queue = (void *)q;
@@ -97,7 +98,7 @@ _windows_async_iocp_th_term(struct xnvme_queue *q)
 	return 0;
 }
 
-int
+static int
 _windows_async_iocp_th_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 {
 	ULONG queue_nbytes;
@@ -162,7 +163,7 @@ exit:
 	return err;
 }
 
-int
+static int
 _windows_async_iocp_th_poke(struct xnvme_queue *q, uint32_t max)
 {
 	struct xnvme_queue_aio_ov *queue = (void *)q;
@@ -222,7 +223,7 @@ _windows_async_iocp_th_poke(struct xnvme_queue *q, uint32_t max)
 	return completed;
 }
 
-int
+static int
 _windows_async_iocp_th_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 			      void *mbuf, size_t mbuf_nbytes)
 {

@@ -43,7 +43,7 @@ xnvme_be_upcie_get_driver_name(const char *bdf, char *driver_name, size_t driver
 	return 0;
 }
 
-int
+static int
 xnvme_be_upcie_resolve_vfio_cdev(const char *bdf, char *cdev_path, size_t cdev_path_len)
 {
 	char sysfs_path[PATH_MAX] = {0};

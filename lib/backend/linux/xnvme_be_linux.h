@@ -30,7 +30,7 @@ struct xnvme_be_linux_state {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_linux_state) == XNVME_BE_STATE_NBYTES, "Incorrect size")
 
 int
-xnvme_file_opts_to_linux(struct xnvme_opts *opts);
+xnvme_be_linux_file_opts(struct xnvme_opts *opts);
 
 static inline uint64_t
 xnvme_lba2off(struct xnvme_dev *dev, uint64_t lba)
@@ -50,6 +50,14 @@ xnvme_be_linux_sysfs_dev_attr_to_buf(struct xnvme_dev *dev, const char *attr, ch
 
 int
 xnvme_be_linux_sysfs_dev_attr_to_num(struct xnvme_dev *dev, const char *attr, uint64_t *val);
+
+/**
+ * Retrieve the number of zones of a zoned block device
+ *
+ * @return 0 on success, negative errno on failure, -ENOSYS without BLKGETNRZONES
+ */
+int
+xnvme_be_linux_block_nrzones(struct xnvme_dev *dev, uint64_t *nr_zones);
 
 int
 xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr opts);
@@ -74,13 +82,25 @@ extern struct xnvme_be_sync g_xnvme_be_linux_sync_block;
 /**
  * Implementations of the asynchronous command interface
  */
-extern struct xnvme_be_async g_xnvme_be_libaio_async;
-extern struct xnvme_be_async g_xnvme_be_liburing_async;
-extern struct xnvme_be_async g_xnvme_be_liburing_async_ucmd;
 
 /**
  * Implementations of the device enumeration and handles
  */
 extern struct xnvme_be_dev g_xnvme_be_linux_dev;
+
+int
+xnvme_be_linux_nvme_dev_nsid(struct xnvme_dev *dev);
+
+/**
+ * Issue the NVMe-driver ioctl() 'ioctl_req' for 'ctx' and map its completion
+ *
+ * @return 0 on success, negative errno on failure, -EIO on an NVMe error status
+ */
+int
+xnvme_be_linux_nvme_ioctl(struct xnvme_dev *dev, unsigned long ioctl_req,
+			  struct xnvme_cmd_ctx *ctx);
+
+int
+xnvme_be_linux_nvme_map_cpl(struct xnvme_cmd_ctx *ctx, unsigned long ioctl_req, int err);
 
 #endif /* __INTERNAL_XNVME_BE_LINUX */

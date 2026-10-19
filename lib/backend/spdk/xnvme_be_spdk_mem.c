@@ -9,7 +9,7 @@
 #include <spdk/env.h>
 #include <xnvme_dev.h>
 
-void *
+static void *
 xnvme_be_spdk_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
 {
 	const size_t alignment = dev->geo.nbytes ? dev->geo.nbytes : 4096;
@@ -24,7 +24,7 @@ xnvme_be_spdk_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *ph
 	return buf;
 }
 
-void *
+static void *
 xnvme_be_spdk_buf_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes, uint64_t *phys)
 {
 	const size_t alignment = dev->geo.nbytes ? dev->geo.nbytes : 4096;
@@ -39,13 +39,13 @@ xnvme_be_spdk_buf_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes,
 	return rebuf;
 }
 
-void
+static void
 xnvme_be_spdk_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
 {
 	spdk_dma_free(buf);
 }
 
-int
+static int
 xnvme_be_spdk_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf, uint64_t *phys)
 {
 	*phys = spdk_vtophys(buf, NULL);

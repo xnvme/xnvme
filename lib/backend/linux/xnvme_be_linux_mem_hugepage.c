@@ -90,7 +90,7 @@ _hugepage_heap_init(void)
 	return 0;
 }
 
-void *
+static void *
 xnvme_be_linux_mem_hugepage_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t nbytes,
 				      uint64_t *phys)
 {
@@ -123,7 +123,7 @@ xnvme_be_linux_mem_hugepage_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev),
 	return buf;
 }
 
-void
+static void
 xnvme_be_linux_mem_hugepage_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
 {
 	if (!buf) {
@@ -133,7 +133,7 @@ xnvme_be_linux_mem_hugepage_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), 
 	hostmem_dma_free(&g_hugepage_heap, buf);
 }
 
-int
+static int
 xnvme_be_linux_mem_hugepage_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf,
 					uint64_t *phys)
 {

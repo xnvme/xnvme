@@ -14,7 +14,7 @@
 #include <errno.h>
 #include <sys/mman.h>
 
-void *
+static void *
 xnvme_be_driverkit_buf_alloc(const struct xnvme_dev *dev, size_t nbytes,
 			     uint64_t *XNVME_UNUSED(phys))
 {
@@ -57,7 +57,7 @@ xnvme_be_driverkit_buf_alloc(const struct xnvme_dev *dev, size_t nbytes,
 	return ptr;
 }
 
-void
+static void
 xnvme_be_driverkit_buf_free(const struct xnvme_dev *dev, void *buf)
 {
 	struct xnvme_be_driverkit_state *state = (struct xnvme_be_driverkit_state *)dev->be.state;

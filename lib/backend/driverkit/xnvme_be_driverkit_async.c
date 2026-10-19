@@ -25,7 +25,7 @@ struct xnvme_queue_macos_driverkit {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_macos_driverkit) == XNVME_BE_QUEUE_STATE_NBYTES,
 		    "Incorrect size")
 
-int
+static int
 xnvme_be_driverkit_queue_init(struct xnvme_queue *_queue, int XNVME_UNUSED(opts))
 {
 	struct xnvme_queue_macos_driverkit *q = (struct xnvme_queue_macos_driverkit *)_queue;
@@ -36,7 +36,7 @@ xnvme_be_driverkit_queue_init(struct xnvme_queue *_queue, int XNVME_UNUSED(opts)
 	kern_return_t res;
 	int qpid;
 
-	qpid = _xnvme_be_driverkit_create_ioqpair(state, q->base.capacity, 0);
+	qpid = xnvme_be_driverkit_create_ioqpair(state, q->base.capacity, 0);
 	if (qpid < 0) {
 		XNVME_DEBUG("FAILED: nvme_create_ioqpair(); err: %d", qpid);
 		return qpid;
@@ -69,7 +69,7 @@ xnvme_be_driverkit_queue_init(struct xnvme_queue *_queue, int XNVME_UNUSED(opts)
 	return 0;
 }
 
-int
+static int
 xnvme_be_driverkit_queue_term(struct xnvme_queue *_queue)
 {
 	struct xnvme_queue_macos_driverkit *q = (struct xnvme_queue_macos_driverkit *)_queue;
@@ -77,9 +77,9 @@ xnvme_be_driverkit_queue_term(struct xnvme_queue *_queue)
 		(struct xnvme_be_driverkit_state *)q->base.dev->be.state;
 	int ret;
 
-	ret = _xnvme_be_driverkit_delete_ioqpair(state, q->id);
+	ret = xnvme_be_driverkit_delete_ioqpair(state, q->id);
 	if (ret) {
-		XNVME_DEBUG("FAILED: _xnvme_be_driverkit_delete_ioqpair()");
+		XNVME_DEBUG("FAILED: xnvme_be_driverkit_delete_ioqpair()");
 		return ret;
 	}
 
@@ -88,7 +88,7 @@ xnvme_be_driverkit_queue_term(struct xnvme_queue *_queue)
 	return ret;
 }
 
-int
+static int
 xnvme_be_driverkit_queue_poke(struct xnvme_queue *queue, uint32_t XNVME_UNUSED(max))
 {
 	struct xnvme_queue_macos_driverkit *q = (struct xnvme_queue_macos_driverkit *)queue;
@@ -125,7 +125,7 @@ xnvme_be_driverkit_queue_poke(struct xnvme_queue *queue, uint32_t XNVME_UNUSED(m
 	return reaped;
 }
 
-int
+static int
 xnvme_be_driverkit_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 				void *mbuf, size_t mbuf_nbytes)
 {

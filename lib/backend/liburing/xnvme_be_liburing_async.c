@@ -204,7 +204,7 @@ exit:
 	return err;
 }
 
-int
+static int
 xnvme_be_liburing_poke(struct xnvme_queue *q, uint32_t max)
 {
 	struct xnvme_queue_liburing *queue = (void *)q;
@@ -262,7 +262,7 @@ xnvme_be_liburing_poke(struct xnvme_queue *q, uint32_t max)
 	return completed;
 }
 
-int
+static int
 xnvme_be_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			 size_t mbuf_nbytes)
 {
@@ -366,7 +366,7 @@ exit:
 	return 0;
 }
 
-int
+static int
 xnvme_be_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
 			  size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {

@@ -10,7 +10,7 @@
 #include <xnvme_queue.h>
 #include <xnvme_be_libvfn.h>
 
-int
+static int
 xnvme_be_libvfn_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 			       void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {

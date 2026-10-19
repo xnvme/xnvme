@@ -40,9 +40,9 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_libvfn_state) == XNVME_BE_STATE_NBYTE
 		    "Incorrect size")
 
 int
-_xnvme_be_libvfn_create_ioqpair(struct xnvme_be_libvfn_state *state, int qd, int flags);
+xnvme_be_libvfn_create_ioqpair(struct xnvme_be_libvfn_state *state, int qd, int flags);
 int
-_xnvme_be_libvfn_delete_ioqpair(struct xnvme_be_libvfn_state *state, unsigned int qid);
+xnvme_be_libvfn_delete_ioqpair(struct xnvme_be_libvfn_state *state, unsigned int qid);
 
 extern struct xnvme_be_admin g_xnvme_be_libvfn_admin;
 extern struct xnvme_be_sync g_xnvme_be_libvfn_sync;

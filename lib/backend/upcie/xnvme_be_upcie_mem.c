@@ -16,7 +16,7 @@
  * translator, so the same allocation works whichever way the target is
  * attached; the caller hands the returned VA to the device as a PRP later.
  */
-void *
+static void *
 xnvme_be_upcie_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t nbytes, uint64_t *phys)
 {
 	size_t offset = 0;
@@ -43,7 +43,7 @@ xnvme_be_upcie_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t nbyte
 	return buf;
 }
 
-void
+static void
 xnvme_be_upcie_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
 {
 	size_t offset;
@@ -56,7 +56,7 @@ xnvme_be_upcie_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
 	dmamem_heap_free(&g_upcie_rte.mem.heap, offset);
 }
 
-int
+static int
 xnvme_be_upcie_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf, uint64_t *phys)
 {
 	*phys = dmamem_va_to_iova(&g_upcie_rte.mem.dmem, buf);

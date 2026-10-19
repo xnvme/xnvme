@@ -31,7 +31,7 @@ _submit_sync(struct nvme_qpair *qp, struct nvme_command *cmd, uint32_t timeout_m
 	return 0;
 }
 
-int
+static int
 xnvme_be_upcie_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			   size_t XNVME_UNUSED(mbuf_nbytes))
 {
@@ -93,7 +93,7 @@ xnvme_be_upcie_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 	return 0;
 }
 
-int
+static int
 xnvme_be_upcie_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
 			    size_t XNVME_UNUSED(dvec_nbytes), void *mbuf,
 			    size_t XNVME_UNUSED(mbuf_nbytes))

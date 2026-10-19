@@ -246,9 +246,6 @@ int
 xnvme_be_upcie_get_driver_name(const char *bdf, char *driver_name, size_t driver_name_len);
 
 int
-xnvme_be_upcie_resolve_vfio_cdev(const char *bdf, char *cdev_path, size_t cdev_path_len);
-
-int
 xnvme_be_upcie_mode_from_driver(const char *bdf, const char *driver_name,
 				enum xnvme_be_upcie_mode *mode, char *cdev_path,
 				size_t cdev_path_len);
@@ -317,31 +314,6 @@ xnvme_be_upcie_dmamem_map(struct dmamem *dmem, void *vaddr, size_t nbytes, uint6
 
 int
 xnvme_be_upcie_dmamem_unmap(struct dmamem *dmem, void *vaddr);
-
-int
-xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int opts);
-int
-xnvme_be_upcie_queue_term(struct xnvme_queue *queue);
-int
-xnvme_be_upcie_queue_poke(struct xnvme_queue *queue, uint32_t max);
-int
-xnvme_be_upcie_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
-			    size_t mbuf_nbytes);
-int
-xnvme_be_upcie_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-			     size_t dvec_nbytes, void *mbuf, size_t mbuf_nbytes);
-int
-xnvme_be_upcie_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
-			   size_t mbuf_nbytes);
-int
-xnvme_be_upcie_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
-			    size_t dvec_nbytes, void *mbuf, size_t mbuf_nbytes);
-int
-xnvme_be_upcie_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
-			      void *mbuf, size_t mbuf_nbytes);
-int
-xnvme_be_upcie_sync_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
-			       void *mbuf, size_t mbuf_nbytes);
 
 // Multi-process runtime bring-up / teardown
 int

@@ -22,7 +22,6 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_posix.h>
 #include <xnvme_be_linux.h>
-#include <xnvme_be_linux_nvme.h>
 
 static inline void
 _be_linux_state_term(struct xnvme_be_linux_state *state)
@@ -35,7 +34,7 @@ _be_linux_state_term(struct xnvme_be_linux_state *state)
 	state->fd = 0;
 }
 
-int
+static int
 xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 {
 	struct xnvme_be_linux_state *state = (void *)dev->be.state;
@@ -45,7 +44,7 @@ xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 	int flags;
 	int err;
 
-	flags = xnvme_file_opts_to_linux(opts);
+	flags = xnvme_be_linux_file_opts(opts);
 
 	XNVME_DEBUG("INFO: open() : flags: 0x%x, opts->create_mode: 0x%x", flags,
 		    opts->create_mode);
@@ -56,7 +55,7 @@ xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 			    state->fd, errno);
 
 		opts->direct = 0;
-		flags = xnvme_file_opts_to_linux(opts);
+		flags = xnvme_be_linux_file_opts(opts);
 		state->fd = open(ident->uri, flags, opts->create_mode);
 		if (state->fd < 0) {
 			XNVME_DEBUG("FAILED: open(uri: '%s') : state->fd: '%d', errno: %d",
@@ -135,7 +134,7 @@ xnvme_be_linux_dev_open(struct xnvme_dev *dev)
 	return 0;
 }
 
-void
+static void
 xnvme_be_linux_dev_close(struct xnvme_dev *dev)
 {
 	if (!dev) {

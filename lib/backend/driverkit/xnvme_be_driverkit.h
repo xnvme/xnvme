@@ -37,9 +37,9 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_driverkit_state) == XNVME_BE_STATE_NB
 		    "Incorrect size")
 
 int
-_xnvme_be_driverkit_create_ioqpair(struct xnvme_be_driverkit_state *state, int qd, int flags);
+xnvme_be_driverkit_create_ioqpair(struct xnvme_be_driverkit_state *state, int qd, int flags);
 int
-_xnvme_be_driverkit_delete_ioqpair(struct xnvme_be_driverkit_state *state, int qid);
+xnvme_be_driverkit_delete_ioqpair(struct xnvme_be_driverkit_state *state, int qid);
 
 struct buffer {
 	uint64_t vaddr;

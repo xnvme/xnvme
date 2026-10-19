@@ -112,40 +112,51 @@ are labeled / grouped by:
 * **sync** : synchronous I/O command processing
 * **async** : asynchronous I/O command submission/completion via queues
 
-Additionally, a backend-state is available for specialization to a given
-backend and its function-interface implementations.
+Each directory in ``lib/backend/`` is one mechanism, such as ``liburing``,
+``posix`` or ``spdk``, or one OS's own interfaces, such as ``linux``. Its
+files follow from what they define:
 
-* Should have a header-file defining the backend and what it exposes
+* ``xnvme_be_<dir>.h`` is the directory's header. It holds the state-struct
+  ``xnvme_be_<dir>_state``, the ``extern`` declarations of the directory's
+  implementations, and the declarations of its shared helpers. It can be
+  included anywhere: what needs the directory's external library, such as
+  ``liburing.h``, sits behind the directory's ``XNVME_BE_*_ENABLED``. ``include/``
+  is only for public headers
 
-  - Named ``xnvme_be_<dir>.h``, located next to its sources in
-    ``lib/backend/<dir>/``; ``include/`` is only for public headers
-  - Have a state-struct named ``xnvme_be_<backend_name>_state``
-  - Provide ``extern struct xnvme_be_<interface> *`` definitions for the
-    interface implementations, these are used when composing them into
-    backend configs (``struct xnvme_be_config``)
+  - A topic whose declarations need headers the rest of the directory must
+    not include, such as a GPU runtime, gets ``xnvme_be_<dir>_<topic>.h``
 
-* Should be implemented in a file named ``xnvme_be_<dir>_<interface>_<ident>.c``,
-  in that same directory, with its backend configs in ``xnvme_be_<dir>_configs.c``
+* ``xnvme_be_<dir>_configs.c`` holds the directory's backend configs, if it
+  has any. A config is named after the name ``--be`` selects it by, with
+  ``-`` as ``_``: ``g_xnvme_be_<dir>_<name>``, the ``<dir>_`` left out where
+  the name starts with the directory's, as in ``g_xnvme_be_spdk`` and
+  ``g_xnvme_be_upcie_cuda``. Every config is declared in
+  ``lib/backend/xnvme_be_registry.h``, the one list the platforms draw from
 
-  - The ``<dir>`` is the name of the directory the file lives in
-  - The ``<ident>`` is a name uniquely identifying the interface-implementation,
-    and is left out when there is only one
-  - Example: the **async** implementation using **io_uring** passthru lives in
+* Each implementation of a backend interface has a file of its own: the
+  ``g_xnvme_be_<dir>_<interface>[_<ident>]`` it defines lives in
+  ``xnvme_be_<dir>_<interface>[_<ident>].c``. The ``<ident>`` tells
+  implementations of the same interface apart, and is left out when there is
+  only one
+
+  - Example: the **async** implementation using **io_uring** passthru is
+    ``g_xnvme_be_liburing_async_ucmd``, in
     ``lib/backend/liburing/xnvme_be_liburing_async_ucmd.c``
-  - Example: the SPDK **async** implementation lives in
-    ``lib/backend/spdk/xnvme_be_spdk_async.c``
+  - Example: the Linux **sync** implementation using the NVMe-driver ioctls is
+    ``g_xnvme_be_linux_sync_nvme``, in
+    ``lib/backend/linux/xnvme_be_linux_sync_nvme.c``
 
-* Should use static function declarations to avoid symbol-leak
+* Code that more than one file in the directory uses lives in
+  ``xnvme_be_<dir>_<topic>.c``, such as ``xnvme_be_linux_nvme.c`` for the
+  NVMe-driver ioctl wrapper or ``xnvme_be_upcie_vfio.c``. A topic file defines
+  no ``struct xnvme_be_<interface>``
 
-  - The ``cmd_io()`` backend interface function should be declared ``static int
-    cmd_io(...)``
+* Functions are ``static`` unless another file needs them, and then they are
+  named ``xnvme_be_<dir>_<topic>_<function>()`` and declared in
+  ``xnvme_be_<dir>.h``
 
-* In case an interface-function should be shared by other backends, then
-  provide the full "name", backend/interface/ident/function
-
-  - Example: for the Common Backend Implementations (CBI), the **sync**
-    implementation using **psync** for the **cmd_iov()** interface function,
-    then the function is named: ``xnvme_be_posix_sync_cmd_io()``
+  - Example: ``xnvme_be_posix_sync_cmd_io()``, which the Linux block **sync**
+    implementation reuses for reads and writes
 
 * Each directory in ``lib/backend/`` has one build option, ``be_<dir>``, and
   one macro, ``XNVME_BE_<DIR>_ENABLED``, which ``xnvme library-info`` lists. A

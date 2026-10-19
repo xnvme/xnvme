@@ -6,6 +6,7 @@
 #include <xnvme_be.h>
 #include <xnvme_be_posix.h>
 #include <xnvme_be_driverkit.h>
+#include <xnvme_be_emu.h>
 
 const struct xnvme_be_config g_xnvme_be_driverkit = {
 	.async = &g_xnvme_be_driverkit_async,

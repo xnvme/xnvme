@@ -10,7 +10,7 @@
 #include <xnvme_be_libvfn.h>
 #include <xnvme_dev.h>
 
-void
+static void
 xnvme_be_libvfn_buf_free(const struct xnvme_dev *dev, void *buf)
 {
 	struct xnvme_be_libvfn_state *state = (void *)dev->be.state;
@@ -29,7 +29,7 @@ xnvme_be_libvfn_buf_free(const struct xnvme_dev *dev, void *buf)
 	}
 }
 
-void *
+static void *
 xnvme_be_libvfn_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
 {
 	void *vaddr;
@@ -60,7 +60,7 @@ xnvme_be_libvfn_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *
 	return vaddr;
 }
 
-int
+static int
 xnvme_be_libvfn_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys)
 {
 	struct xnvme_be_libvfn_state *state = (void *)dev->be.state;
@@ -74,7 +74,7 @@ xnvme_be_libvfn_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *ph
 	return 0;
 }
 
-int
+static int
 xnvme_be_libvfn_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, uint64_t *phys)
 {
 	struct xnvme_be_libvfn_state *state = (void *)dev->be.state;
@@ -99,7 +99,7 @@ xnvme_be_libvfn_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes,
 	return 0;
 }
 
-int
+static int
 xnvme_be_libvfn_mem_unmap(const struct xnvme_dev *dev, void *buf)
 {
 	struct xnvme_be_libvfn_state *state = (void *)dev->be.state;

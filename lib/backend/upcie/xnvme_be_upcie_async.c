@@ -10,7 +10,7 @@
 #include <xnvme_queue.h>
 #include <xnvme_be_upcie.h>
 
-int
+static int
 xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
 {
 	struct xnvme_queue_upcie *upcie_queue = (void *)queue;
@@ -38,7 +38,7 @@ xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
 	return 0;
 }
 
-int
+static int
 xnvme_be_upcie_queue_term(struct xnvme_queue *queue)
 {
 	struct xnvme_queue_upcie *upcie_queue = (void *)queue;
@@ -57,7 +57,7 @@ xnvme_be_upcie_queue_term(struct xnvme_queue *queue)
 	return 0;
 }
 
-int
+static int
 xnvme_be_upcie_queue_poke(struct xnvme_queue *queue, uint32_t max)
 {
 	struct xnvme_queue_upcie *upcie_queue = (struct xnvme_queue_upcie *)queue;
@@ -116,7 +116,7 @@ xnvme_be_upcie_queue_poke(struct xnvme_queue *queue, uint32_t max)
 	return reaped;
 }
 
-int
+static int
 xnvme_be_upcie_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			    size_t XNVME_UNUSED(mbuf_nbytes))
 {
@@ -181,7 +181,7 @@ xnvme_be_upcie_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 	return 0;
 }
 
-int
+static int
 xnvme_be_upcie_async_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
 			     size_t XNVME_UNUSED(dvec_nbytes), void *mbuf,
 			     size_t XNVME_UNUSED(mbuf_nbytes))

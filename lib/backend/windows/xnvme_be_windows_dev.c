@@ -17,7 +17,7 @@
 #include <Setupapi.h>
 #include <xnvme_be_windows.h>
 
-int
+static int
 xnvme_be_windows_get_device_type(HANDLE dev_handle)
 {
 	ULONG ret_len;
@@ -57,8 +57,8 @@ _be_windows_state_term(struct xnvme_be_windows_state *state)
 	state->async_handle = NULL;
 }
 
-int
-xnvme_file_opts_to_win(struct xnvme_opts *opts)
+static int
+xnvme_be_windows_file_opts(struct xnvme_opts *opts)
 {
 	int flags = 0;
 
@@ -78,7 +78,7 @@ xnvme_file_opts_to_win(struct xnvme_opts *opts)
  *
  * @return On success, a handle to the device. On error, GetLastError() is returned.
  */
-int
+static int
 xnvme_be_windows_dev_open(struct xnvme_dev *dev)
 {
 	struct xnvme_be_windows_state *state = (void *)dev->be.state;
@@ -91,7 +91,7 @@ xnvme_be_windows_dev_open(struct xnvme_dev *dev)
 	int err = 0;
 	int dev_type;
 
-	int flags = xnvme_file_opts_to_win(opts);
+	int flags = xnvme_be_windows_file_opts(opts);
 
 	XNVME_DEBUG("INFO: open() : flags: 0x%x, opts->create_mode: 0x%x", flags,
 		    opts->create_mode);
@@ -124,9 +124,9 @@ xnvme_be_windows_dev_open(struct xnvme_dev *dev)
 	}
 	_close(state->fd);
 
-	dw_creation_mode = xnvme_file_creation_opts_to_windows(opts);
-	access_mode = xnvme_file_access_opts_to_windows(opts);
-	file_attributes |= xnvme_file_attributes_opts_to_windows(opts);
+	dw_creation_mode = xnvme_be_windows_file_creation_opts(opts);
+	access_mode = xnvme_be_windows_file_access_opts(opts);
+	file_attributes |= xnvme_be_windows_file_attributes_opts(opts);
 	switch (dev_stat.st_mode & S_IFMT) {
 	case S_IFREG:
 		state->sync_handle = CreateFile((LPCSTR)ident->uri, access_mode, share_mode, NULL,
@@ -207,7 +207,7 @@ xnvme_be_windows_dev_open(struct xnvme_dev *dev)
  *
  * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
  */
-void
+static void
 xnvme_be_windows_dev_close(struct xnvme_dev *dev)
 {
 	if (!dev) {
