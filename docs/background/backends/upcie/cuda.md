@@ -35,6 +35,12 @@ The NVMe **data** path goes GPU ↔ NVMe without touching host DRAM. The
 still flows through host memory. As a result, both the CUDA heap and the host
 hugepage runtime are initialized when the first **upcie-cuda** device is opened.
 
+The heap is allocated in the CUDA context current on the thread opening that
+first device, or, when none is current, in the device's primary context, which
+the backend retains and makes current. An application on the runtime API thus
+finds the heap in the context it already uses on every thread, and what it
+creates after the open is untouched by the last close.
+
 A caller can hand over device memory it allocated itself with
 `xnvme_mem_map()`, which registers the range through the same registry the
 heap uses, so such a buffer is usable exactly as one from
@@ -288,8 +294,8 @@ cd cijoe && cijoe workflows/test-gpu.yaml --config configs/<your-config>.toml
 
 - **31 controllers per process under an enforcing IOMMU** at the default heap
   and window size, capped at 64. See {ref}`sec-backends-upcie-cuda-iommu`.
-- **GPU 0 only.** The CUDA context and heap are always created on CUDA device
-  0. Multiple GPU support is not implemented.
+- **GPU 0 only.** The heap is always created on CUDA device 0. Multiple GPU
+  support is not implemented.
 - **1 GiB heap.** The CUDA heap is fixed at 1 GiB. Allocations beyond this
   limit return `ENOMEM`.
 - **No PRP list chaining.** Each request has a single 4 KiB PRP list page
