@@ -14,6 +14,12 @@ Contribution Process
 
   - The default CI-jobs consists of running style/linters and building **xNVMe**
   - Average time for a full functional verification run is about 40min
+  - The documentation is built early, without a guest and so without running
+    the commands, and the builds and the verification wait for it
+  - A pull-request changing only ``docs/`` and top-level Markdown files skips
+    the builds and the verification. Merged, it runs only what the website
+    needs, and publishes it. A changed ``.cmd`` file runs everything, since only
+    the guest runs the commands
   - One manual CI-job is triggered via the label ``bench``
 
 * Go over the :ref:`sec-contributing-process-pr-checklist` and re-iterate on
