@@ -12,6 +12,7 @@
 #include <xnvme_be_upcie_cplane_client.h>
 #include <xnvme_be_upcie_hip.h>
 #include <xnvme_be_upcie_hip_cqmirror.h>
+#include <xnvme_be_state.h>
 
 static _Atomic int g_hip_ctrlr_count;
 
@@ -195,7 +196,7 @@ _hip_rte_init(size_t heap_size, uint32_t gpu_id, struct xnvme_be_upcie_ctrlr *ct
 static int
 _hip_dev_dmem_init(struct xnvme_dev *dev)
 {
-	struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 	int err;
 
 	if (g_upcie_hip_rte.dmem_is_shared && !g_upcie_hip_rte.dmem_in_range) {
@@ -231,7 +232,7 @@ _hip_dev_dmem_init(struct xnvme_dev *dev)
 static void
 _hip_dev_dmem_term(struct xnvme_dev *dev)
 {
-	struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 
 	state->dmem = NULL;
 
@@ -279,7 +280,7 @@ xnvme_be_upcie_hip_dev_open(struct xnvme_dev *dev)
 	}
 
 	{
-		struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+		struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 
 		err = _hip_rte_init(dev->opts.device_heap_size, dev->opts.gpu_id, state->ctrlr);
 	}

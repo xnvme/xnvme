@@ -14,13 +14,6 @@
 #define XNVME_BE_SPDK_QPAIR_MAX 64
 #define XNVME_BE_SPDK_ALIGN     0x1000
 
-struct xnvme_be_spdk_iov_payload {
-	struct iovec *iov;
-	size_t iov_cnt;
-	size_t iov_pos;
-	size_t iov_offset;
-};
-
 struct xnvme_queue_spdk {
 	struct xnvme_queue_base base;
 
@@ -38,24 +31,7 @@ XNVME_STATIC_ASSERT(sizeof(struct spdk_nvme_ctrlr_data) == sizeof(struct xnvme_s
 XNVME_STATIC_ASSERT(sizeof(struct spdk_nvme_ns_data) == sizeof(struct xnvme_spec_idfy_ns),
 		    "Incorrect size")
 
-struct xnvme_be_spdk_state {
-	struct spdk_nvme_ctrlr *ctrlr; ///< Pointer to attached controller (must be first: platform
-				       ///< stores ctrlr at state[0])
-	struct spdk_nvme_ns *ns;       ///< Pointer to associated namespace
-	struct spdk_nvme_qpair *qpair; ///< QPAIR for SYNC IO commands
-
-	uint8_t attached;
-
-	uint8_t _rsvd[7];
-
-	struct xnvme_be_spdk_iov_payload payload;
-
-	union {
-		pthread_mutex_t qpair_lock; ///< LOCK for SYNC IO commands
-		uint8_t _fill[64];
-	};
-};
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_spdk_state) == XNVME_BE_STATE_NBYTES, "Incorrect size")
+#include <xnvme_be_spdk_state.h>
 
 struct spdk_nvme_qpair *
 xnvme_be_spdk_alloc_io_qpair(struct spdk_nvme_ctrlr *ctrlr,

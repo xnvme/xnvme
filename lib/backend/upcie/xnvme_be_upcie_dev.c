@@ -12,6 +12,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_upcie.h>
 #include <xnvme_be_upcie_cplane_client.h>
+#include <xnvme_be_state.h>
 
 static _Atomic int g_ctrlr_count;
 
@@ -792,7 +793,7 @@ xnvme_be_upcie_dev_close(struct xnvme_dev *XNVME_UNUSED(dev))
 int
 xnvme_be_upcie_dev_open(struct xnvme_dev *dev)
 {
-	struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 
 	dev->ident.dtype =
 		dev->opts.nsid ? XNVME_DEV_TYPE_NVME_NAMESPACE : XNVME_DEV_TYPE_NVME_CONTROLLER;
@@ -821,7 +822,7 @@ xnvme_be_upcie_ctrlr_qpair_create_at(struct xnvme_dev *dev, uint64_t sq_addr, ui
 		return -EINVAL;
 	}
 
-	state = (void *)dev->be.state;
+	state = &xnvme_be_state(dev)->upcie_state;
 	ctrl = state->ctrlr->ctrl;
 
 	err = nvme_qid_find_free(ctrl->qids);
@@ -881,7 +882,7 @@ xnvme_be_upcie_ctrlr_qpair_delete_id(struct xnvme_dev *dev, uint32_t qid)
 		return -EINVAL;
 	}
 
-	state = (void *)dev->be.state;
+	state = &xnvme_be_state(dev)->upcie_state;
 	ctrl = state->ctrlr->ctrl;
 
 	{

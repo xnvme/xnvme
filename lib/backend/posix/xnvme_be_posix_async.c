@@ -14,6 +14,7 @@
 #include <xnvme_queue.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_posix.h>
+#include <xnvme_be_state.h>
 
 struct posix_queue {
 	struct xnvme_queue_base base;
@@ -134,7 +135,7 @@ posix_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mb
 {
 	struct posix_queue *queue = (void *)ctx->async.queue;
 
-	struct xnvme_be_posix_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_posix_state *state = &xnvme_be_state(queue->base.dev)->posix_state;
 	const uint64_t ssw = queue->base.dev->geo.ssw;
 	struct posix_request *req;
 	struct aiocb *aiocb;

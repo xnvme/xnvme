@@ -126,6 +126,24 @@ files follow from what they define:
   - A topic whose declarations need headers the rest of the directory must
     not include, such as a GPU runtime, gets ``xnvme_be_<dir>_<topic>.h``
 
+* All implementations in a config share one state, ``dev->be.state``, and
+  the dev implementation decides its layout. A directory defines its layout
+  in ``xnvme_be_<dir>_state.h``, which needs no external headers, and
+  ``lib/backend/xnvme_be_state.h`` lists every layout as a member of ``union
+  xnvme_be_state``. Implementations reach it through ``xnvme_be_state(dev)``,
+  as in ``&xnvme_be_state(dev)->linux_state``, and never cast
+  ``dev->be.state`` themselves
+
+  - Where implementations from another directory read the state, the layouts
+    share a first member, so the read is defined by C's rule on common initial
+    sequences, and the header asserts it
+  - The posix and shim implementations read ``posix_state``, so the Linux,
+    FreeBSD and macOS states embed ``struct xnvme_be_posix_state`` as their
+    first member, ``posix``, asserted with ``XNVME_BE_POSIX_STATE_FIRST()``
+  - ``xnvme_platform_dev_open()`` stores a shared controller in ``ctrlr``, so
+    the states of the dev implementations that share controllers start with
+    ``ctrlr``, asserted with ``XNVME_BE_CTRLR_STATE_FIRST()``
+
 * ``xnvme_be_<dir>_configs.c`` holds the backend configs whose parts all
   come from the directory, named ``g_xnvme_be_<name>`` after the name ``--be``
   selects them by, with ``-`` as ``_``, such as ``g_xnvme_be_spdk`` and

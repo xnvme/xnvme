@@ -13,12 +13,13 @@
 #include <unistd.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_ramdisk.h>
+#include <xnvme_be_state.h>
 
 static int
 xnvme_be_ramdisk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			     size_t mbuf_nbytes)
 {
-	struct xnvme_be_ramdisk_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_ramdisk_state *state = &xnvme_be_state(ctx->dev)->ramdisk_state;
 	struct xnvme_spec_nvm_scopy_fmt_zero *ranges = dbuf;
 	size_t sdlba_offset = 0;
 	const uint64_t ssw = ctx->dev->geo.ssw;
@@ -90,7 +91,7 @@ static int
 xnvme_be_ramdisk_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
 			      size_t XNVME_UNUSED(dvec_nbytes), void *mbuf, size_t mbuf_nbytes)
 {
-	struct xnvme_be_ramdisk_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_ramdisk_state *state = &xnvme_be_state(ctx->dev)->ramdisk_state;
 	const uint64_t ssw = ctx->dev->geo.ssw;
 	char *offset = state->ramdisk;
 

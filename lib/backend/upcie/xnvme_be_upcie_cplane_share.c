@@ -16,6 +16,7 @@
 #ifdef XNVME_BE_UPCIE_ENABLED
 #include <xnvme_be_upcie.h>
 #include <xnvme_be_upcie_cplane_share.h>
+#include <xnvme_be_state.h>
 #include <xnvme_lock.h>
 
 static int
@@ -32,7 +33,7 @@ _xnvme_be_upcie_cplane_share_get(struct xnvme_dev *dev, struct xnvme_be_upcie_cp
 		return -EINVAL;
 	}
 
-	state = (void *)dev->be.state;
+	state = &xnvme_be_state(dev)->upcie_state;
 	ctrl = state->ctrlr->ctrl;
 	heap_base = g_upcie_rte.mem.dmem.base_va;
 

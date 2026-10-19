@@ -11,12 +11,13 @@
 #include <xnvme_be_upcie_cplane_client.h>
 #include <xnvme_be_upcie_cuda.h>
 #include <xnvme_be_upcie_cuda_cqmirror.h>
+#include <xnvme_be_state.h>
 
 int
 xnvme_be_upcie_cuda_queue_init(struct xnvme_queue *queue, int opts)
 {
 	struct xnvme_queue_upcie *upcie_queue = (void *)queue;
-	struct xnvme_be_upcie_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(queue->base.dev)->upcie_state;
 	struct dmamem *host = &g_upcie_rte.mem.dmem;
 	uint16_t depth = queue->base.capacity + 1;
 	size_t nbytes;
@@ -120,7 +121,7 @@ int
 xnvme_be_upcie_cuda_queue_term(struct xnvme_queue *queue)
 {
 	struct xnvme_queue_upcie *upcie_queue = (void *)queue;
-	struct xnvme_be_upcie_state *state = (void *)queue->base.dev->be.state;
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(queue->base.dev)->upcie_state;
 #ifdef XNVME_DEBUG_ENABLED
 	uint32_t qid = upcie_queue->qpair.qid;
 #endif

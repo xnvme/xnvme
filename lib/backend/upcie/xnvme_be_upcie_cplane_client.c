@@ -26,6 +26,7 @@
 
 #include <xnvme_be_upcie.h>
 #include <xnvme_be_upcie_cplane_client.h>
+#include <xnvme_be_state.h>
 
 /* Keeps a queue's request pool off the cache lines of its neighbours */
 #define XNVME_BE_UPCIE_CACHE_LINE 64
@@ -183,7 +184,7 @@ xnvme_be_upcie_cplane_ask_ctrlr(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_
 int
 xnvme_be_upcie_cplane_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 {
-	struct xnvme_be_upcie_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(ctx->dev)->upcie_state;
 	struct nvme_command *cmd = (struct nvme_command *)&ctx->cmd;
 	struct nvme_cplane_msg msg = {0};
 	int err;
@@ -876,7 +877,7 @@ cplane_client_queue_fail_inflight(struct xnvme_queue_upcie *upcie_queue)
 int
 xnvme_be_upcie_cplane_queue_poke_idle(struct xnvme_queue_upcie *upcie_queue)
 {
-	struct xnvme_be_upcie_state *state = (void *)upcie_queue->base.dev->be.state;
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(upcie_queue->base.dev)->upcie_state;
 	struct timespec ts;
 	uint64_t now_ns;
 

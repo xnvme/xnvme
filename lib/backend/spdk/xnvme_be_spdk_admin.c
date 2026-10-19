@@ -11,6 +11,7 @@
 #include <xnvme_queue.h>
 #include <xnvme_spec.h>
 #include <xnvme_be_spdk.h>
+#include <xnvme_be_state.h>
 
 static void
 cmd_sync_cb(void *cb_arg, const struct spdk_nvme_cpl *cpl)
@@ -46,7 +47,7 @@ static int
 xnvme_be_spdk_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			     size_t mbuf_nbytes)
 {
-	struct xnvme_be_spdk_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_spdk_state *state = &xnvme_be_state(ctx->dev)->spdk_state;
 	uint8_t *completed = &ctx->be_rsvd[0];
 
 	*completed = 0;
@@ -76,7 +77,7 @@ static int
 xnvme_be_spdk_sync_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 			      void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
-	struct xnvme_be_spdk_state *state = (void *)ctx->dev->be.state;
+	struct xnvme_be_spdk_state *state = &xnvme_be_state(ctx->dev)->spdk_state;
 
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_PSEUDO_OPC_SHOW_REGS:

@@ -19,6 +19,7 @@
 #include <xnvme_be_spdk.h>
 #include <xnvme_be_registry.h>
 #include <xnvme_dev.h>
+#include <xnvme_be_state.h>
 
 #define XNVME_BE_SPDK_MAX_PROBE_ATTEMPTS 1
 #define XNVME_BE_SPDK_AVLB_TRANSPORTS 3
@@ -309,7 +310,7 @@ probe_cb(void *cb_ctx, const struct spdk_nvme_transport_id *probed,
 	 struct spdk_nvme_ctrlr_opts *ctrlr_opts)
 {
 	struct xnvme_dev *dev = cb_ctx;
-	struct xnvme_be_spdk_state *state = (void *)dev->be.state;
+	struct xnvme_be_spdk_state *state = &xnvme_be_state(dev)->spdk_state;
 	struct spdk_nvme_transport_id req = {0};
 
 	if (state->attached) {
@@ -361,7 +362,7 @@ attach_cb(void *cb_ctx, const struct spdk_nvme_transport_id *trid, struct spdk_n
 {
 	struct xnvme_dev *dev = cb_ctx;
 	struct xnvme_opts *opts = &dev->opts;
-	struct xnvme_be_spdk_state *state = (void *)dev->be.state;
+	struct xnvme_be_spdk_state *state = &xnvme_be_state(dev)->spdk_state;
 
 	if (state->attached) {
 		XNVME_DEBUG("SKIP: Already attached");
@@ -397,7 +398,7 @@ xnvme_be_spdk_ctrlr_term(void *ctrlr)
 static void
 xnvme_be_spdk_dev_close(struct xnvme_dev *dev)
 {
-	struct xnvme_be_spdk_state *state = (void *)dev->be.state;
+	struct xnvme_be_spdk_state *state = &xnvme_be_state(dev)->spdk_state;
 	spdk_nvme_qp_failure_reason reason;
 	int err;
 
@@ -483,7 +484,7 @@ exit:
 static void *
 xnvme_be_spdk_ctrlr_init(struct xnvme_dev *dev)
 {
-	struct xnvme_be_spdk_state *state = (void *)dev->be.state;
+	struct xnvme_be_spdk_state *state = &xnvme_be_state(dev)->spdk_state;
 	struct spdk_env_opts env_opts = {0};
 	int err;
 
@@ -584,7 +585,7 @@ xnvme_be_spdk_ctrlr_init(struct xnvme_dev *dev)
 static int
 xnvme_be_spdk_dev_open(struct xnvme_dev *dev)
 {
-	struct xnvme_be_spdk_state *state = (void *)dev->be.state;
+	struct xnvme_be_spdk_state *state = &xnvme_be_state(dev)->spdk_state;
 	int err;
 
 	// ctrlr is at state->ctrlr, placed there by platform (cref reuse or ctrlr_init).

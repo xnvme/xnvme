@@ -14,13 +14,9 @@
  * extension that Linux, FreeBSD and macOS all provide, so a platform with POSIX
  * alone would not build xnvme_be_posix_sync.c.
  */
-struct xnvme_be_posix_state {
-	int fd;
-
-	uint8_t _rsvd[124];
-};
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_posix_state) == XNVME_BE_STATE_NBYTES,
-		    "Incorrect size");
+#include <stddef.h>
+#include <libxnvme.h>
+#include <xnvme_be_posix_state.h>
 
 extern struct xnvme_be_async g_xnvme_be_posix_async;
 extern struct xnvme_be_mem g_xnvme_be_posix_mem;
