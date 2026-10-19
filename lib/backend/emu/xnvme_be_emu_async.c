@@ -7,7 +7,7 @@
 #endif
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_BE_CBI_ASYNC_EMU_ENABLED
+#ifdef XNVME_BE_EMU_ENABLED
 #include <errno.h>
 #include <xnvme_queue.h>
 #include <xnvme_dev.h>
@@ -215,9 +215,9 @@ emu_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, size
 
 #endif
 
-struct xnvme_be_async g_xnvme_be_cbi_async_emu = {
+struct xnvme_be_async g_xnvme_be_emu_async = {
 	.id = "emu",
-#ifdef XNVME_BE_CBI_ASYNC_EMU_ENABLED
+#ifdef XNVME_BE_EMU_ENABLED
 	.cmd_io = emu_cmd_io,
 	.cmd_iov = emu_cmd_iov,
 	.poke = emu_poke,

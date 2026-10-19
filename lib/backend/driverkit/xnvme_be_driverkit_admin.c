@@ -5,7 +5,7 @@
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
-#ifdef XNVME_PLATFORM_MACOS_ENABLED
+#ifdef XNVME_BE_DRIVERKIT_ENABLED
 #include <xnvme_be_driverkit.h>
 #include <mach/mach_error.h>
 #include <errno.h>
@@ -13,11 +13,11 @@
 #include <xnvme_dev.h>
 
 int
-xnvme_be_macos_driverkit_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
-			       void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
+xnvme_be_driverkit_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
+			 void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
-	struct xnvme_be_macos_driverkit_state *state =
-		(struct xnvme_be_macos_driverkit_state *)ctx->dev->be.state;
+	struct xnvme_be_driverkit_state *state =
+		(struct xnvme_be_driverkit_state *)ctx->dev->be.state;
 	uint64_t _buf_base_offset = 0;
 	NvmeSubmitCmd cmd_return;
 	struct buffer *buf;
@@ -59,9 +59,9 @@ xnvme_be_macos_driverkit_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 
 #endif
 
-struct xnvme_be_admin g_xnvme_be_macos_driverkit_admin = {
-#ifdef XNVME_PLATFORM_MACOS_ENABLED
-	.cmd_admin = xnvme_be_macos_driverkit_admin,
+struct xnvme_be_admin g_xnvme_be_driverkit_admin = {
+#ifdef XNVME_BE_DRIVERKIT_ENABLED
+	.cmd_admin = xnvme_be_driverkit_admin,
 #else
 	.cmd_admin = xnvme_be_nosys_sync_cmd_admin,
 #endif

@@ -4,7 +4,7 @@
 
 #include <xnvme_be.h>
 
-#ifdef XNVME_BE_LINUX_IO_URING_DMABUF_ENABLED
+#ifdef XNVME_BE_LIBURING_DMABUF_ENABLED
 #ifdef XNVME_CUDA_ENABLED
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -119,7 +119,7 @@ mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, uint64_t *XNVME
 		return -EINVAL;
 	}
 
-	err = xnvme_io_uring_dmabuf_ref(dev, vaddr, nbytes);
+	err = xnvme_be_liburing_dmabuf_ref(dev, vaddr, nbytes);
 	if (err != -ENOENT) {
 		return err;
 	}
@@ -129,7 +129,7 @@ mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, uint64_t *XNVME
 		return err;
 	}
 
-	err = xnvme_io_uring_dmabuf_add(dev, base, alloc_nbytes, fd);
+	err = xnvme_be_liburing_dmabuf_add(dev, base, alloc_nbytes, fd);
 	if (err) {
 		close(fd);
 		// Added by another thread meanwhile, which also took the reference
@@ -142,15 +142,15 @@ mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, uint64_t *XNVME
 static int
 mem_unmap(const struct xnvme_dev *dev, void *vaddr)
 {
-	return xnvme_io_uring_dmabuf_unref(dev, vaddr);
+	return xnvme_be_liburing_dmabuf_unref(dev, vaddr);
 }
 
-struct xnvme_be_mem g_xnvme_be_linux_mem_io_uring_dmabuf = {
+struct xnvme_be_mem g_xnvme_be_liburing_mem_dmabuf = {
 	.id = "io_uring_dmabuf",
-	.buf_alloc = xnvme_be_cbi_mem_posix_buf_alloc,
-	.buf_realloc = xnvme_be_cbi_mem_posix_buf_realloc,
-	.buf_free = xnvme_be_cbi_mem_posix_buf_free,
-	.buf_vtophys = xnvme_be_cbi_mem_posix_buf_vtophys,
+	.buf_alloc = xnvme_be_posix_mem_buf_alloc,
+	.buf_realloc = xnvme_be_posix_mem_buf_realloc,
+	.buf_free = xnvme_be_posix_mem_buf_free,
+	.buf_vtophys = xnvme_be_posix_mem_buf_vtophys,
 	.mem_map = mem_map,
 	.mem_unmap = mem_unmap,
 };

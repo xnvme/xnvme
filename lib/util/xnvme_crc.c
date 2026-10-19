@@ -10,7 +10,7 @@
  * Use Intelligent Storage Acceleration Library for line speed CRC
  */
 
-#ifdef XNVME_BE_LINUX_LIBISAL_ENABLED
+#ifdef XNVME_LIBISAL_ENABLED
 #include <isa-l/crc.h>
 
 uint16_t

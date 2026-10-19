@@ -145,4 +145,14 @@ backend and its function-interface implementations.
 
   - Example: for the Common Backend Implementations (CBI), the **sync**
     implementation using **psync** for the **cmd_iov()** interface function,
-    then the function is named: ``xnvme_be_cbi_sync_psync_cmd_io()``
+    then the function is named: ``xnvme_be_posix_sync_cmd_io()``
+
+* Each directory in ``lib/backend/`` has one build option, ``be_<dir>``, and
+  one macro, ``XNVME_BE_<DIR>_ENABLED``, which ``xnvme library-info`` lists. A
+  feature within a directory is ``XNVME_BE_<DIR>_<FEATURE>_ENABLED``, such as
+  ``XNVME_BE_LINUX_BLOCK_ENABLED``
+
+  - A disabled directory keeps its implementations, compiled to the functions
+    of ``xnvme_be_nosys.h``. A config using a disabled ``emu``, ``nil``,
+    ``thrpool`` or ``shim`` stays and reports ``-ENOSYS``; one using any
+    other disabled directory is left out of the platform's list

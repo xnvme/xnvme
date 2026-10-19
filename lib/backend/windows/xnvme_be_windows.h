@@ -8,7 +8,6 @@
 #ifndef __INTERNAL_XNVME_BE_WINDOWS_H
 #define __INTERNAL_XNVME_BE_WINDOWS_H
 #include <xnvme_dev.h>
-#include <xnvme_be_posix.h>
 
 /**
  * Internal representation of options for Windows backends
@@ -61,11 +60,11 @@ extern struct xnvme_be_sync g_xnvme_be_windows_sync_nvme;
 /**
  * Implementations of the asynchronous command interface
  */
-extern struct xnvme_be_async g_xnvme_be_cbi_async_emu;
-extern struct xnvme_be_async g_xnvme_be_cbi_async_thrpool;
-extern struct xnvme_be_async g_xnvme_be_windows_async_iocp;
-extern struct xnvme_be_async g_xnvme_be_windows_async_iocp_th;
-extern struct xnvme_be_async g_xnvme_be_windows_async_ioring;
+extern struct xnvme_be_async g_xnvme_be_emu_async;
+extern struct xnvme_be_async g_xnvme_be_thrpool_async;
+extern struct xnvme_be_async g_xnvme_be_iocp_async;
+extern struct xnvme_be_async g_xnvme_be_iocp_async_th;
+extern struct xnvme_be_async g_xnvme_be_ioring_async;
 
 /**
  * Implementations of the memory management interface
@@ -75,6 +74,6 @@ extern struct xnvme_be_mem g_xnvme_be_windows_mem;
 /**
  * Implementations of the device enumeration and handles
  */
-extern struct xnvme_be_dev g_xnvme_be_dev_windows;
+extern struct xnvme_be_dev g_xnvme_be_windows_dev;
 
 #endif /* __INTERNAL_XNVME_BE_WINDOWS */

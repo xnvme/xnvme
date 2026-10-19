@@ -192,7 +192,7 @@ xnvme_be_upcie_hip_queue_term(struct xnvme_queue *queue)
 	return 0;
 }
 
-struct xnvme_be_async g_xnvme_be_upcie_hip_async = {
+struct xnvme_be_async g_xnvme_be_upcie_async_hip = {
 	.id = "upcie-hip",
 	.cmd_io = xnvme_be_upcie_async_cmd_io,
 	.cmd_iov = xnvme_be_upcie_async_cmd_iov,

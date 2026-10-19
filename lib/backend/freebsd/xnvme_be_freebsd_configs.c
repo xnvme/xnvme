@@ -10,12 +10,12 @@
 #include <xnvme_be_posix.h>
 #include <xnvme_be_freebsd.h>
 
-const struct xnvme_be_config g_xnvme_be_freebsd_kqueue_nvme = {
+const struct xnvme_be_config g_xnvme_be_freebsd_kqueue = {
 	.async = &g_xnvme_be_freebsd_async,
 	.sync = &g_xnvme_be_freebsd_sync_nvme,
 	.admin = &g_xnvme_be_freebsd_admin_nvme,
 	.dev = &g_xnvme_be_freebsd_dev,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem = &g_xnvme_be_posix_mem,
 	.attr =
 		{
 			.name = "kqueue",
@@ -25,11 +25,11 @@ const struct xnvme_be_config g_xnvme_be_freebsd_kqueue_nvme = {
 };
 
 const struct xnvme_be_config g_xnvme_be_freebsd_emu_file = {
-	.async = &g_xnvme_be_cbi_async_emu,
-	.sync = &g_xnvme_be_cbi_sync_psync,
-	.admin = &g_xnvme_be_cbi_admin_shim,
+	.async = &g_xnvme_be_emu_async,
+	.sync = &g_xnvme_be_posix_sync,
+	.admin = &g_xnvme_be_shim_admin,
 	.dev = &g_xnvme_be_freebsd_dev,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem = &g_xnvme_be_posix_mem,
 	.attr =
 		{
 			.name = "emu_file",
@@ -38,12 +38,12 @@ const struct xnvme_be_config g_xnvme_be_freebsd_emu_file = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_freebsd_kqueue_psync = {
+const struct xnvme_be_config g_xnvme_be_freebsd_kqueue_file = {
 	.async = &g_xnvme_be_freebsd_async,
-	.sync = &g_xnvme_be_cbi_sync_psync,
-	.admin = &g_xnvme_be_cbi_admin_shim,
+	.sync = &g_xnvme_be_posix_sync,
+	.admin = &g_xnvme_be_shim_admin,
 	.dev = &g_xnvme_be_freebsd_dev,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem = &g_xnvme_be_posix_mem,
 	.attr =
 		{
 			.name = "kqueue_file",
@@ -52,12 +52,12 @@ const struct xnvme_be_config g_xnvme_be_freebsd_kqueue_psync = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_freebsd_posix_nvme = {
-	.async = &g_xnvme_be_cbi_async_posix,
+const struct xnvme_be_config g_xnvme_be_freebsd_posix = {
+	.async = &g_xnvme_be_posix_async,
 	.sync = &g_xnvme_be_freebsd_sync_nvme,
 	.admin = &g_xnvme_be_freebsd_admin_nvme,
 	.dev = &g_xnvme_be_freebsd_dev,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem = &g_xnvme_be_posix_mem,
 	.attr =
 		{
 			.name = "posix",
@@ -66,12 +66,12 @@ const struct xnvme_be_config g_xnvme_be_freebsd_posix_nvme = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_freebsd_thrpool_nvme = {
-	.async = &g_xnvme_be_cbi_async_thrpool,
+const struct xnvme_be_config g_xnvme_be_freebsd_thrpool = {
+	.async = &g_xnvme_be_thrpool_async,
 	.sync = &g_xnvme_be_freebsd_sync_nvme,
 	.admin = &g_xnvme_be_freebsd_admin_nvme,
 	.dev = &g_xnvme_be_freebsd_dev,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem = &g_xnvme_be_posix_mem,
 	.attr =
 		{
 			.name = "thrpool",
@@ -80,12 +80,12 @@ const struct xnvme_be_config g_xnvme_be_freebsd_thrpool_nvme = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_freebsd_emu_nvme = {
-	.async = &g_xnvme_be_cbi_async_emu,
+const struct xnvme_be_config g_xnvme_be_freebsd_emu = {
+	.async = &g_xnvme_be_emu_async,
 	.sync = &g_xnvme_be_freebsd_sync_nvme,
 	.admin = &g_xnvme_be_freebsd_admin_nvme,
 	.dev = &g_xnvme_be_freebsd_dev,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem = &g_xnvme_be_posix_mem,
 	.attr =
 		{
 			.name = "emu",
@@ -94,12 +94,12 @@ const struct xnvme_be_config g_xnvme_be_freebsd_emu_nvme = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_freebsd_nil_nvme = {
-	.async = &g_xnvme_be_cbi_async_nil,
+const struct xnvme_be_config g_xnvme_be_freebsd_nil = {
+	.async = &g_xnvme_be_nil_async,
 	.sync = &g_xnvme_be_freebsd_sync_nvme,
 	.admin = &g_xnvme_be_freebsd_admin_nvme,
 	.dev = &g_xnvme_be_freebsd_dev,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.mem = &g_xnvme_be_posix_mem,
 	.attr =
 		{
 			.name = "nil",
