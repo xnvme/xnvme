@@ -45,17 +45,19 @@ id_in(const char *id, const char **set, size_t n)
 }
 
 /*
- * Whether the resolved backend delivers the NVMe 'fua' bit to the device:
- * io_uring and libaio map it to RWF_DSYNC, the passthru async backends carry
- * the command verbatim, and emu/thrpool delegate each command to the sync
- * layer, so there it depends on the sync implementation being a passthru --
- * psync and block issue a plain pwrite() and drop the bit.
+ * Whether the resolved backend carries NVMe commands verbatim to the device:
+ * the passthru async backends do, and emu/thrpool delegate each command to the
+ * sync layer, so there it depends on the sync implementation being a passthru
+ * -- psync and block translate the command into a plain pread()/pwrite().
  */
 static uint8_t
-backend_honours_fua(const struct xnvme_dev *xdev)
+backend_passes_nvme(const struct xnvme_dev *xdev)
 {
-	static const char *async_honours[] = {
-		"io_uring", "libaio", "io_uring_cmd", "spdk", "libvfn", "upcie",
+	static const char *async_passthru[] = {
+		"io_uring_cmd",
+		"spdk",
+		"libvfn",
+		"upcie",
 	};
 	static const char *sync_passthru[] = {
 		"nvme",
@@ -65,7 +67,7 @@ backend_honours_fua(const struct xnvme_dev *xdev)
 	};
 	const struct xnvme_opts *opts = xnvme_dev_get_opts(xdev);
 
-	if (id_in(opts->async, async_honours, sizeof(async_honours) / sizeof(*async_honours))) {
+	if (id_in(opts->async, async_passthru, sizeof(async_passthru) / sizeof(*async_passthru))) {
 		return 1;
 	}
 
@@ -75,6 +77,27 @@ backend_honours_fua(const struct xnvme_dev *xdev)
 	}
 
 	return 0;
+}
+
+/*
+ * Whether the resolved backend delivers the NVMe 'fua' bit to the device:
+ * io_uring and libaio map it to RWF_DSYNC, and a passthru backend carries it
+ * with the rest of the command; the other block-device paths drop it.
+ */
+static uint8_t
+backend_honours_fua(const struct xnvme_dev *xdev)
+{
+	static const char *async_dsync[] = {
+		"io_uring",
+		"libaio",
+	};
+	const struct xnvme_opts *opts = xnvme_dev_get_opts(xdev);
+
+	if (id_in(opts->async, async_dsync, sizeof(async_dsync) / sizeof(*async_dsync))) {
+		return 1;
+	}
+
+	return backend_passes_nvme(xdev);
 }
 
 /*
