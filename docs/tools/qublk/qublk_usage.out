@@ -1,10 +1,1 @@
-Usage: qublk <command> [<args>]
-
-Where <command> is one of:
-
-  serve            | Serve a ublk block-device for each of the given xNVMe devices
-  del              | Delete a ublk device left behind by a killed server
-
-See 'qublk <command> --help' for the description of [<args>]
-
-qublk - ublk server backed by xNVMe -- ver: {major: 0, minor: 7, patch: 5}
+This file is here to avoid sphinx-doc build-warnings; generate its content by running 'make docgen-guest', see docs/tutorial/devs.

@@ -1,4 +1,1 @@
-xnvme_spec_log_fdp_stats:
-  hbmw: [104857600, 0]
-  mbmw: [104857600, 0]
-  mbe: [0, 0]
+This file is here to avoid sphinx-doc build-warnings; generate its content by running 'make docgen-guest', see docs/tutorial/devs.

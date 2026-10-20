@@ -1,2 +1,1 @@
-cmd_gfeat: {nsid: 0x1, fid: 0x1d, sel: 0x0}
-feat: { fdpe: 1, fdpci: 0 }
+This file is here to avoid sphinx-doc build-warnings; generate its content by running 'make docgen-guest', see docs/tutorial/devs.
