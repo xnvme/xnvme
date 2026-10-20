@@ -52,10 +52,22 @@ xnvme_be_macos_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 		}
 		break;
 	case XNVME_SPEC_ADM_OPC_IDFY:
-		nsid = 0; // 0 for controller identify data as per Apple docs
-		if (ctx->cmd.idfy.cns == 0) {
-			// If we are providing a namespace id, overwrite with that.
+		// The IOKit SMART interface only serves controller (nsid 0) and namespace identify
+		// data, so other CNS values fail with an NVMe status instead of returning
+		// controller data.
+		switch (ctx->cmd.idfy.cns) {
+		case XNVME_SPEC_IDFY_NS:
 			nsid = ctx->cmd.common.nsid;
+			break;
+		case XNVME_SPEC_IDFY_CTRLR:
+			nsid = 0; // 0 for controller identify data as per Apple docs
+			break;
+		default:
+			XNVME_DEBUG("FAILED: unsupported cns: 0x%x", ctx->cmd.idfy.cns);
+			ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_GENERIC;
+			ctx->cpl.status.sc = XNVME_STATUS_CODE_INVALID_FIELD;
+			ctx->cpl.status.dnr = 1;
+			return -EIO;
 		}
 		err = (*state->nvme_smart_interface)
 			      ->GetIdentifyData(state->nvme_smart_interface, dbuf, nsid);
