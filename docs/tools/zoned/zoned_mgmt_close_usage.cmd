@@ -1,1 +1,0 @@
-zoned mgmt-close --help

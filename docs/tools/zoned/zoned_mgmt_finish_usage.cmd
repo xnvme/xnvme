@@ -1,1 +1,0 @@
-zoned mgmt-finish --help
