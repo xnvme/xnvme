@@ -14,6 +14,7 @@ struct worker {
 	struct xnvme_dev *dev;
 	uint64_t rounds;
 	int nerr;
+	int idx;
 };
 
 static void *
@@ -54,6 +55,41 @@ init_term_fn(void *arg)
 	return NULL;
 }
 
+static void *
+idfy_fn(void *arg)
+{
+	struct worker *w = arg;
+	struct xnvme_spec_idfy *idfy;
+
+	idfy = xnvme_buf_alloc(w->dev, sizeof(*idfy));
+	if (!idfy) {
+		w->nerr += 1;
+		return NULL;
+	}
+	for (uint64_t round = 0; round < w->rounds; ++round) {
+		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(w->dev);
+
+		if (xnvme_adm_idfy_ctrlr(&ctx, idfy) || xnvme_cmd_ctx_cpl_status(&ctx)) {
+			w->nerr += 1;
+		}
+	}
+	xnvme_buf_free(w->dev, idfy);
+
+	return NULL;
+}
+
+/**
+ * Half the threads send admin commands while the other half create and delete queues, which
+ * the controller also does through its admin queue
+ */
+static void *
+admin_fn(void *arg)
+{
+	struct worker *w = arg;
+
+	return (w->idx % 2) ? init_term_fn(arg) : idfy_fn(arg);
+}
+
 static int
 run_workers(struct xnvme_cli *cli, struct xnvme_dev *dev, void *(*fn)(void *), int nthreads)
 {
@@ -63,7 +99,8 @@ run_workers(struct xnvme_cli *cli, struct xnvme_dev *dev, void *(*fn)(void *), i
 	int err;
 
 	for (int i = 0; i < nthreads; ++i) {
-		workers[i] = (struct worker){.cli = cli, .dev = dev, .rounds = cli->args.count};
+		workers[i] = (struct worker){
+			.cli = cli, .dev = dev, .rounds = cli->args.count, .idx = i};
 		err = xnvme_cli_to_opts(cli, &workers[i].opts);
 		if (err) {
 			xnvme_cli_perr("xnvme_cli_to_opts()", err);
@@ -112,7 +149,7 @@ test_reopen(struct xnvme_cli *cli)
 }
 
 static int
-test_init_term(struct xnvme_cli *cli)
+test_queues(struct xnvme_cli *cli, void *(*fn)(void *))
 {
 	struct xnvme_opts opts = xnvme_opts_default();
 	struct xnvme_dev *dev;
@@ -148,11 +185,23 @@ test_init_term(struct xnvme_cli *cli)
 		return 0;
 	}
 
-	err = run_workers(cli, dev, init_term_fn, nthreads);
+	err = run_workers(cli, dev, fn, nthreads);
 
 	xnvme_dev_close(dev);
 
 	return err;
+}
+
+static int
+test_init_term(struct xnvme_cli *cli)
+{
+	return test_queues(cli, init_term_fn);
+}
+
+static int
+test_admin(struct xnvme_cli *cli)
+{
+	return test_queues(cli, admin_fn);
 }
 
 static struct xnvme_cli_sub g_subs[] = {
@@ -187,6 +236,20 @@ static struct xnvme_cli_sub g_subs[] = {
 		"Create and destroy a queue on 'uri' from 8 threads at once, 'count' rounds each",
 		"Create and destroy a queue on 'uri' from 8 threads at once, 'count' rounds each",
 		test_init_term,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_COUNT, XNVME_CLI_LREQ},
+			{XNVME_CLI_OPT_QDEPTH, XNVME_CLI_LREQ},
+			XNVME_CLI_ASYNC_OPTS,
+		},
+	},
+	{
+		"admin",
+		"Identify 'uri' from 4 threads while 4 others create and destroy queues on it",
+		"Identify 'uri' from 4 threads while 4 others create and destroy queues on it",
+		test_admin,
 		{
 			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
