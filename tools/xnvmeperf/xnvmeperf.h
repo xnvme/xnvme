@@ -49,6 +49,12 @@ xnvmeperf_cuda_run_io(struct xnvme_dev **devs, const struct xnvmeperf_args *args
 		      uint64_t *rounds_per_dev, uint64_t *failed_per_dev, float *elapsed_ms);
 int
 xnvmeperf_cuda_verify_io(struct xnvme_dev **devs, const struct xnvmeperf_args *args);
+int
+xnvmeperf_cuda_ctx_create(void **ctx);
+int
+xnvmeperf_cuda_ctx_check(void *ctx);
+void
+xnvmeperf_cuda_ctx_destroy(void *ctx);
 #else
 static inline int
 xnvmeperf_cuda_run_io(struct xnvme_dev **XNVME_UNUSED(devs),
@@ -64,6 +70,23 @@ xnvmeperf_cuda_verify_io(struct xnvme_dev **XNVME_UNUSED(devs),
 			 const struct xnvmeperf_args *XNVME_UNUSED(args))
 {
 	return -ENOSYS;
+}
+
+static inline int
+xnvmeperf_cuda_ctx_create(void **XNVME_UNUSED(ctx))
+{
+	return -ENOSYS;
+}
+
+static inline int
+xnvmeperf_cuda_ctx_check(void *XNVME_UNUSED(ctx))
+{
+	return -ENOSYS;
+}
+
+static inline void
+xnvmeperf_cuda_ctx_destroy(void *XNVME_UNUSED(ctx))
+{
 }
 #endif
 

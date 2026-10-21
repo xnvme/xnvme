@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <cuda.h>
 #include <cuda_runtime.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -165,6 +166,62 @@ cuda_upload(void **d_ptr, const void *h_ptr, size_t nbytes)
 		fprintf(stderr, "Failed: cudaMemcpy(): %s\n", cudaGetErrorString(cerr));
 	}
 	return cerr;
+}
+
+int
+xnvmeperf_cuda_ctx_create(void **ctx)
+{
+	CUcontext cu_ctx;
+	CUdevice cu_dev;
+	CUresult res;
+
+	res = cuInit(0);
+	if (res != CUDA_SUCCESS) {
+		fprintf(stderr, "Failed: cuInit(): %d\n", res);
+		return -EIO;
+	}
+	res = cuDeviceGet(&cu_dev, 0);
+	if (res != CUDA_SUCCESS) {
+		fprintf(stderr, "Failed: cuDeviceGet(): %d\n", res);
+		return -EIO;
+	}
+#if CUDA_VERSION >= 13000
+	res = cuCtxCreate(&cu_ctx, NULL, 0, cu_dev);
+#else
+	res = cuCtxCreate(&cu_ctx, 0, cu_dev);
+#endif
+	if (res != CUDA_SUCCESS) {
+		fprintf(stderr, "Failed: cuCtxCreate(): %d\n", res);
+		return -EIO;
+	}
+	*ctx = cu_ctx;
+
+	return 0;
+}
+
+int
+xnvmeperf_cuda_ctx_check(void *ctx)
+{
+	CUcontext current = NULL;
+	CUresult res;
+
+	res = cuCtxGetCurrent(&current);
+	if (res != CUDA_SUCCESS) {
+		fprintf(stderr, "Failed: cuCtxGetCurrent(): %d\n", res);
+		return -EIO;
+	}
+	if (current != (CUcontext)ctx) {
+		fprintf(stderr, "Failed: the current CUDA context is not the one created here\n");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+void
+xnvmeperf_cuda_ctx_destroy(void *ctx)
+{
+	cuCtxDestroy((CUcontext)ctx);
 }
 
 /**
