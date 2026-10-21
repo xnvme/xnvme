@@ -1,15 +1,15 @@
-Usage: homi serve [<uri>...] [<args>]
+Usage: xnvme homi serve [<uri>...] [<args>]
 
 Open the given devices and hold them open
-  
+
 Positional arguments:
 
   [uri ...]                     ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1:8888', '\\.\PhysicalDrive1'
-  
+
 Where <args> include:
 
   --homi-id NUM                 ; The HOMI identifier to share controllers under
-  
+
 With <args> for backend:
 
   [ --be STRING ]               ; xNVMe backend, e.g. 'spdk', 'libvfn', 'upcie'
@@ -18,6 +18,6 @@ With <args> for backend:
   [ --no-cuse ]                 ; Disable the NVMe-driver ioctl() CUSE mimic
   [ --help ]                    ; Show usage / help
 
-See 'homi --help' for other commands
+See 'xnvme homi --help' for other commands
 
-homi - Host-Orchestrated Multi-path I/O -- ver: {major: 0, minor: 7, patch: 5}
+homi - Host-Orchestrated Multi-path I/O -- ver: {major: 0, minor: 7, patch: 5, vcs: 'be83e57'}

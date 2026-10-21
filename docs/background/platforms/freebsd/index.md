@@ -12,26 +12,37 @@ a version listed in the {ref}`sec-toolchain` section.
 
 (sec-platforms-freebsd-contigmem)=
 
-### User-space DMA memory (`contigmem`)
+### Userspace driver and DMA memory
 
-The `spdk` backend gets its DMA memory from the `contigmem` kernel module,
-which the `xnvme-driver` script loads. It pre-allocates a pool of
-physically-contiguous buffers, `CONTIGMEM_BUFSZ` MB each (`256` by default), up
-to a total of `HUGEMEM` MB (`2048` by default). The pool holds at most 64
-buffers, so `HUGEMEM / CONTIGMEM_BUFSZ` must not exceed 64.
+The `spdk` backend needs the controller on the `nic_uio` driver, and its DMA
+memory from the `contigmem` kernel module. `xnvme driver --be spdk` moves a
+controller onto `nic_uio`, and `xnvme driver --be posix` returns it to `nvme`:
 
-`CONTIGMEM_BUFSZ` is a hard upper bound on a single DMA allocation: a buffer
-cannot span multiple `contigmem` buffers, so `xnvme_buf_alloc()` cannot return
-more than `CONTIGMEM_BUFSZ` MB no matter how much of the pool is free.
+```bash
+xnvme driver --be spdk 0000:01:00.0
+```
+
+`contigmem` pre-allocates a pool of physically-contiguous buffers when it
+loads, sized by two tunables, and holds at most 64 buffers. The buffer size is a
+hard upper bound on a single DMA allocation: a buffer cannot span multiple
+`contigmem` buffers, so `xnvme_buf_alloc()` cannot return more than one buffer
+no matter how much of the pool is free.
 
 On a fragmented heap, a large physically-contiguous buffer can be impossible to
 place even when plenty of memory is free, and loading `contigmem` then fails
 with `contigmalloc failed for buffer N` in `dmesg`. Smaller buffers are easier
-to place, so lowering `CONTIGMEM_BUFSZ` avoids the failure:
+to place. The `hugepages` tool, installed with `pipx install hugepages`, sets
+the tunables and loads the module; this reserves 32 buffers of 64 MB:
 
 ```bash
-CONTIGMEM_BUFSZ=64 xnvme-driver
+hugepages setup --size 65536 --count 32
 ```
+
+The tunables are read only when the module loads, so `hugepages setup`
+reloads it, which fails while a process still has buffers mapped.
+`hugepages setup --count 0` unloads it, and `hugepages info` shows what is
+reserved. Without the tool, set `hw.contigmem.num_buffers` and
+`hw.contigmem.buffer_size` with `kenv` and `kldload contigmem`.
 
 (sec-platforms-freebsd-identification)=
 

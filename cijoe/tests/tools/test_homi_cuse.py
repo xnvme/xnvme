@@ -56,7 +56,7 @@ def test_idfy_ctrlr(cijoe, device, be_opts, cli_args):
     err, _ = cijoe.run(f"nvme id-ctrl {ctl}")
     assert not err
 
-    err, _ = cijoe.run(f"xnvme idfy-ctrlr {ctl} --be {CUSE_BE}")
+    err, _ = cijoe.run(f"xnvme test adm idfy-ctrlr {ctl} --be {CUSE_BE}")
     assert not err
 
 

@@ -169,12 +169,28 @@ class Engine:
 
 class KernelEngine(Engine):
     def prepare(self) -> None:
-        self.cijoe.run(" ".join(["xnvme-driver", "reset"]))
+        self.cijoe.run("xnvme driver --be posix --all")
 
 
 class UserSpaceEngine(Engine):
     def prepare(self) -> None:
-        self.cijoe.run(" ".join(["xnvme-driver"]))
+        # The DMA memory is hugepages on Linux and contigmem on FreeBSD, reserved with the
+        # hugepages tool where it is installed; contigmem only when not loaded, since
+        # 'hugepages setup' reloads it
+        self.cijoe.run(
+            'if [ "$(uname -s)" = FreeBSD ]; then '
+            "xnvme driver --be spdk --all --force && "
+            "{ kldstat -q -m contigmem || "
+            "hugepages setup --size 65536 --count 32 || "
+            "{ kenv hw.contigmem.num_buffers=32 && "
+            "kenv hw.contigmem.buffer_size=67108864 && kldload contigmem; }; }; "
+            "else "
+            "xnvme driver --be upcie --all --force && "
+            "{ [ $(cat /proc/sys/vm/nr_hugepages) -ge 1024 ] || "
+            "hugepages setup --count 1024 || "
+            "echo 1024 > /proc/sys/vm/nr_hugepages; }; "
+            "fi"
+        )
 
 
 @dataclass

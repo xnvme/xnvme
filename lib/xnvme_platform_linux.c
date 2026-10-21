@@ -132,9 +132,22 @@ static int
 _scan_pci_report_ctrlr(struct xnvme_linux_scan_args *args, const char *bdf, const char *driver)
 {
 	struct xnvme_ident ident = {.dtype = XNVME_DEV_TYPE_NVME_CONTROLLER};
+	char link_path[PATH_MAX] = {0};
+	char link_target[PATH_MAX] = {0};
+	ssize_t len;
 
 	snprintf(ident.uri, sizeof(ident.uri), "%s", bdf);
 	snprintf(ident.kernel_driver, sizeof(ident.kernel_driver), "%s", driver);
+
+	// The group is the last component of the iommu_group link; there is no link without one
+	snprintf(link_path, sizeof(link_path), "/sys/bus/pci/devices/%s/iommu_group", bdf);
+	len = readlink(link_path, link_target, sizeof(link_target) - 1);
+	if (len > 0) {
+		const char *group = strrchr(link_target, '/');
+
+		snprintf(ident.iommu_group, sizeof(ident.iommu_group), "%s",
+			 group ? group + 1 : link_target);
+	}
 
 	if (args->cb_func(&ident, args->cb_args)) {
 		args->stopped = 1;
@@ -407,5 +420,8 @@ struct xnvme_platform g_xnvme_platform_linux = {
 	.dev_open = xnvme_platform_dev_open,
 	.scan = xnvme_platform_linux_scan,
 	.enumerate = xnvme_platform_enumerate,
+	.driver_default = xnvme_driver_linux_default,
+	.driver_attach = xnvme_driver_linux_attach,
+	.driver_detach = xnvme_driver_linux_detach,
 };
 #endif

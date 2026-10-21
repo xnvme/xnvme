@@ -395,7 +395,7 @@ thread_fn(void *arg)
 static void
 print_run_args(struct xnvmeperf_args *args, const char *pattern)
 {
-	printf("Running xnvmeperf with arguments:\n");
+	printf("Running xnvme perf with arguments:\n");
 	printf("- Devices: [");
 	for (int i = 0; i < args->ndevs; i++) {
 		if (i) {
@@ -425,7 +425,7 @@ print_run_args(struct xnvmeperf_args *args, const char *pattern)
 /**
  * Print a performance results table.
  *
- * @param title    Header string (e.g. "xnvmeperf" or "xnvmeperf cuda-run")
+ * @param title    Header string (e.g. "xnvme perf run" or "xnvme perf cuda-run")
  * @param elapsed  Elapsed time in seconds
  * @param uris     Device URI strings
  * @param ndevs    Number of devices
@@ -580,8 +580,8 @@ print_results(struct xnvmeperf_thread *threads, struct xnvmeperf_args *args)
 		cpus[d] = cpus_bufs[d];
 	}
 
-	print_perf_results("xnvmeperf", elapsed, args->dev_uris, args->ndevs, iops, mibps, failed,
-			   cpus);
+	print_perf_results("xnvme perf run", elapsed, args->dev_uris, args->ndevs, iops, mibps,
+			   failed, cpus);
 
 done:
 	if (cpus_bufs) {
@@ -820,7 +820,7 @@ xnvmeperf_verify(struct xnvmeperf_args *args)
 	uint32_t nios = args->count;
 	int err;
 
-	printf("\nxnvmeperf verify: iosize=%u, nios=%d\n", args->iosize, nios);
+	printf("\nxnvme perf verify: iosize=%u, nios=%d\n", args->iosize, nios);
 	printf("====================================================================\n");
 
 	err = xnvmeperf_open_devs(args, &devs);
@@ -1017,7 +1017,7 @@ xnvmeperf_cuda_run(struct xnvmeperf_args *args)
 			iops[i] = total_ios / elapsed_s;
 			mibps[i] = (total_ios * args->iosize) / (elapsed_s * 1024.0 * 1024.0);
 		}
-		print_perf_results("xnvmeperf cuda-run", elapsed_s, args->dev_uris, args->ndevs,
+		print_perf_results("xnvme perf cuda-run", elapsed_s, args->dev_uris, args->ndevs,
 				   iops, mibps, failed_per_dev, NULL);
 	}
 
@@ -1040,7 +1040,7 @@ xnvmeperf_cuda_verify(struct xnvmeperf_args *args)
 		return err;
 	}
 
-	printf("\nxnvmeperf cuda-verify: iosize: %u, qdepth: %u, nqueues: %u\n", args->iosize,
+	printf("\nxnvme perf cuda-verify: iosize: %u, qdepth: %u, nqueues: %u\n", args->iosize,
 	       args->qdepth, args->nqueues);
 	printf("====================================================================\n");
 
@@ -1402,9 +1402,9 @@ static struct xnvme_cli_sub g_subs[] = {
 };
 
 static struct xnvme_cli g_cli = {
-	.title = "xnvmeperf - NVMe async IO benchmark",
+	.title = "xnvme perf - IO benchmarks against xNVMe devices",
 	.vcs = XNVME_VCS_TAG,
-	.descr_short = "Run async IO benchmarks against NVMe devices",
+	.descr_short = "Run IO benchmarks against xNVMe devices",
 	.descr_long = "",
 	.subs = g_subs,
 	.nsubs = sizeof g_subs / sizeof(*g_subs),

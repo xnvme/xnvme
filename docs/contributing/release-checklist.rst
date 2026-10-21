@@ -12,12 +12,13 @@ release are integrated on ``main`` and all tests are passing. Then:
   - See the ``git log`` for previous commits bumping the version-number, to
     check that you bump everywhere needed.
 
-* Update man-pages and Bash completion-scripts
+* Update man-pages
 
   - Build and install the version-bumped **xNVMe**
-  - Then run: ``make gen-man-pages gen-bash-completions``
+  - Then run: ``make gen-man-pages``
   - Commit the man-pages with message: ``docs(man): update for vX.Y.Z``
-  - Commit the Bash-completions-scripts with message: ``feat(toolbox/completions): update for vX.Y.Z``
+  - The Bash completion, ``toolbox/bash_completion.d/xnvme``, asks ``xnvme`` what
+    to complete, so it needs no update
 
 * Update ``CONTRIBUTORS.rst``
 
@@ -32,7 +33,7 @@ release are integrated on ``main`` and all tests are passing. Then:
 
 * Open a pull-request for the release-prep commits
 
-  - The release-prep commits (version bump, man-pages, completions,
+  - The release-prep commits (version bump, man-pages,
     CONTRIBUTORS, CHANGELOG) go through PR review like any other change
   - Get review and wait for tests to finalize / pass
   - Double-check the generated docs at https://xnvme.io/ (served from ``main``)

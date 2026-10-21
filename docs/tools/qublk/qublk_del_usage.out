@@ -1,12 +1,12 @@
-Usage: qublk del [<args>]
+Usage: xnvme qublk del [<args>]
 
 Delete a ublk device left behind by a killed server
-  
+
 Where <args> include:
 
   [ --dev-id NUM ]              ; Use given 'NUM' as device identifier
   [ --help ]                    ; Show usage / help
 
-See 'qublk --help' for other commands
+See 'xnvme qublk --help' for other commands
 
-qublk - ublk server backed by xNVMe -- ver: {major: 0, minor: 7, patch: 5}
+qublk - ublk server backed by xNVMe -- ver: {major: 0, minor: 7, patch: 5, vcs: 'be83e57'}

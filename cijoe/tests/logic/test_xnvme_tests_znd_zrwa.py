@@ -10,7 +10,7 @@ def test_idfy(cijoe, device, be_opts, cli_args):
     if be_opts["admin"] == "block":
         pytest.skip(reason="ENOSYS: admin=[block] cannot do mgmt send/receive")
 
-    err, _ = cijoe.run(f"xnvme_tests_znd_zrwa idfy {cli_args}")
+    err, _ = cijoe.run(f"xnvme test znd-zrwa idfy {cli_args}")
     assert not err
 
 
@@ -21,7 +21,7 @@ def test_support(cijoe, device, be_opts, cli_args):
     if be_opts["admin"] == "block":
         pytest.skip(reason="ENOSYS: admin=[block] cannot do mgmt send/receive")
 
-    err, _ = cijoe.run(f"xnvme_tests_znd_zrwa support {cli_args}")
+    err, _ = cijoe.run(f"xnvme test znd-zrwa support {cli_args}")
     assert not err
 
 
@@ -38,7 +38,7 @@ def test_open_with_zrwa(cijoe, device, be_opts, cli_args):
     if be_opts["admin"] == "block":
         pytest.skip(reason="ENOSYS: admin=[block] cannot do mgmt send/receive")
 
-    err, _ = cijoe.run(f"xnvme_tests_znd_zrwa open-with-zrwa {cli_args}")
+    err, _ = cijoe.run(f"xnvme test znd-zrwa open-with-zrwa {cli_args}")
     assert not err
 
 
@@ -55,7 +55,7 @@ def test_open_without_zrwa(cijoe, device, be_opts, cli_args):
     if be_opts["admin"] == "block":
         pytest.skip(reason="ENOSYS: admin=[block] cannot do mgmt send/receive")
 
-    err, _ = cijoe.run(f"xnvme_tests_znd_zrwa open-without-zrwa {cli_args}")
+    err, _ = cijoe.run(f"xnvme test znd-zrwa open-without-zrwa {cli_args}")
     assert not err
 
 
@@ -72,7 +72,7 @@ def test_flush(cijoe, device, be_opts, cli_args):
     if be_opts["admin"] == "block":
         pytest.skip(reason="ENOSYS: admin=[block] cannot do mgmt send/receive")
 
-    err, _ = cijoe.run(f"xnvme_tests_znd_zrwa flush {cli_args}")
+    err, _ = cijoe.run(f"xnvme test znd-zrwa flush {cli_args}")
     assert not err
 
 
@@ -89,7 +89,7 @@ def test_flush_explicit(cijoe, device, be_opts, cli_args):
     if be_opts["admin"] == "block":
         pytest.skip(reason="ENOSYS: admin=[block] cannot do mgmt send/receive")
 
-    err, _ = cijoe.run(f"xnvme_tests_znd_zrwa flush-explicit {cli_args}")
+    err, _ = cijoe.run(f"xnvme test znd-zrwa flush-explicit {cli_args}")
     assert not err
 
 
@@ -106,5 +106,5 @@ def test_flush_implicit(cijoe, device, be_opts, cli_args):
     if be_opts["admin"] == "block":
         pytest.skip(reason="ENOSYS: admin=[block] cannot do mgmt send/receive")
 
-    err, _ = cijoe.run(f"xnvme_tests_znd_zrwa flush-implicit {cli_args}")
+    err, _ = cijoe.run(f"xnvme test znd-zrwa flush-implicit {cli_args}")
     assert not err

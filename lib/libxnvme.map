@@ -107,6 +107,12 @@
 		xnvme_dev_open;
 		xnvme_dev_close;
 
+		# libxnvme_driver.h
+		xnvme_driver_default;
+		xnvme_driver_for_be;
+		xnvme_driver_attach;
+		xnvme_driver_detach;
+
 		# libxnvme_file.h
 		xnvme_file_open;
 		xnvme_file_close;

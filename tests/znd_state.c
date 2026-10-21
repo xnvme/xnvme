@@ -135,8 +135,8 @@ static struct xnvme_cli_sub g_subs[] = {
 };
 
 static struct xnvme_cli g_cli = {
-	.title = "Tests for Zoned Random Write Area",
-	.descr_short = "Tests for Zoned Random Write Area",
+	.title = "Test zone-state transitions",
+	.descr_short = "Test zone-state transitions and the Changed Zone List log page",
 	.subs = g_subs,
 	.nsubs = sizeof g_subs / sizeof(*g_subs),
 };

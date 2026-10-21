@@ -8,5 +8,5 @@ def test_hw(cijoe, device, be_opts, cli_args):
     if get_shm_id():
         pytest.skip(reason="xnvme_hello does not take --shm_id as argument")
 
-    err, _ = cijoe.run(f"xnvme_hello {device['uri']}")
+    err, _ = cijoe.run(f"xnvme example hello {device['uri']}")
     assert not err

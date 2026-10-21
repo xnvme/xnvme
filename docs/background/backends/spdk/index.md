@@ -80,21 +80,22 @@ then the operating system driver must be detached and bound to a driver such as
 `vfio-pci` or `uio-generic-pci`, such that the NVMe driver can operate in
 user-space.
 
-By running the command below **8GB** of hugepages will be configured and the
-device detached from the Kernel NVMe driver:
+Reserve hugepages with `hugepages`, here 4 GiB of 2 MiB pages, and mount
+hugetlbfs, which SPDK needs; then move the controller to the driver the `spdk`
+backend needs with `xnvme driver --be spdk`, which binds only the controller
+named and refuses one whose namespaces are in use:
 
-```{literalinclude} 010_xnvme_driver.cmd
-:language: bash
+```bash
+hugepages setup --count 2048
+hugepages mount
+xnvme driver --be spdk 0000:03:00.0
 ```
 
-The `xnvme-driver` script is a merge of the **SPDK** `setup.sh` script and
-its dependencies.
-
-The command above should produce output similar to:
-
-```{literalinclude} 010_xnvme_driver.out
-:language: bash
-```
+`xnvme env` says whether the host is ready: the IOMMU, the modules, the
+hugepages and the memlock limit, with the fix for each that is not. The
+`hugepages` and `iommu` tools are installed with
+`pipx install hugepages iommu`; `iommu show` prints the mode the kernel runs
+the IOMMU in.
 
 If anything else that the above is output from `setup.sh`, for example:
 
@@ -137,16 +138,11 @@ example, see {ref}`sec-backends-spdk-config`.
 
 ### Re-binding devices
 
-Run the following:
+Return the controller to the kernel NVMe driver by naming a backend that uses
+it:
 
-```{literalinclude} 120_xnvme_driver_reset.cmd
-:language: bash
-```
-
-Should output similar to:
-
-```{literalinclude} 120_xnvme_driver_reset.out
-:language: bash
+```bash
+xnvme driver --be io_uring 0000:03:00.0
 ```
 
 (sec-backends-spdk-vfio)=
@@ -195,16 +191,10 @@ Should have output similar to:
 :language: bash
 ```
 
-And user-space driver setup:
+And user-space driver setup, which rebinds the device to `vfio-pci`:
 
-```{literalinclude} 400_xnvme_driver.cmd
-:language: bash
-```
-
-Should rebind the device to `vfio-pci`, eg.:
-
-```{literalinclude} 400_xnvme_driver.out
-:language: bash
+```bash
+xnvme driver --be spdk 0000:03:00.0
 ```
 
 ### Inspecting and manually changing memory available to `SPDK` aka `HUGEPAGES`
@@ -353,31 +343,15 @@ Should have output similar to:
 
 ### Unbinding and binding
 
-With the system configured then you can use the `xnvme-driver` script to bind
-and unbind devices. The `xnvme-driver` script is a merge of the **SPDK**
-`setup.sh` script and its dependencies.
+With the system configured, `xnvme driver --be spdk` moves a controller off
+the kernel NVMe driver and onto `vfio-pci`, or `uio_pci_generic` on a host
+without an IOMMU, and `xnvme driver --be io_uring` returns it; `xnvme list`
+shows each controller, its driver and what holds it:
 
-By running the command below **8GB** of hugepages will be configured, the
-Kernel NVMe driver unbound, and `vfio-pci` bound to the device:
-
-```{literalinclude} 010_xnvme_driver.cmd
-:language: bash
+```bash
+xnvme list
+xnvme driver --be spdk 0000:03:00.0
+xnvme driver --be io_uring 0000:03:00.0
 ```
 
-The command above should produce output similar to:
-
-```{literalinclude} 010_xnvme_driver.out
-:language: bash
-```
-
-To unbind from `vfio-pci` and back to the Kernel NVMe driver, then run:
-
-```{literalinclude} 500_xnvme_driver_reset.cmd
-:language: bash
-```
-
-Should output similar to:
-
-```{literalinclude} 500_xnvme_driver_reset.out
-:language: bash
-```
+Neither reserves hugepages; `hugepages setup --count <pages>` does.

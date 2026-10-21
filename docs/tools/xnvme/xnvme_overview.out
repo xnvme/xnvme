@@ -1,0 +1,26 @@
+Usage: xnvme <command> [<args>] [--help]
+
+Find NVMe devices, inspect and benchmark them, and manage userspace drivers
+
+Start here:
+  xnvme list               NVMe controller functions and their driver
+  xnvme info <uri>         Retrieve derived information for given device
+  xnvme enum               Enumerate devices on the system
+  xnvme perf               Run IO benchmarks against xNVMe devices
+
+Set up the host:
+  xnvme env                Relevant system config and library introspection
+  xnvme driver             Bind the driver a backend needs, or show them
+
+Serve devices:
+  xnvme homi               Share NVMe controllers between processes
+  xnvme qublk              Serve an xNVMe device as a Linux block device
+
+Command passthru:
+  xnvme cmd-admin          An admin command, as 'nvme admin-passthru' takes it
+  xnvme cmd-io             An I/O command, as 'nvme io-passthru' takes it
+  xnvme cmd-iov            An I/O command with its data in --vec-cnt segments
+
+Groups, run one to list its commands:
+  xnvme test               installed test programs
+  xnvme example            installed example programs

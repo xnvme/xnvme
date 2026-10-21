@@ -2,15 +2,25 @@ Usage: xnvme info <uri> [<args>]
 
 Retrieve derived information for given device
 
-Where <args> include:
+Positional arguments:
 
-  uri                           ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1.8888', '\\.\PhysicalDrive1'
+  uri                           ; Device URI e.g. '/dev/nvme0n1', '0000:01:00.1', '10.9.8.1:8888', '\\.\PhysicalDrive1'
+
+With <args> for backend:
+
+  [ --subnqn STRING ]           ; Subsystem NQN of the NVMe over Fabrics endpoint e.g. 'nqn.2022-06.io.xnvme:ctrlnode1'
+  [ --hostnqn STRING ]          ; The host NQN to use when connecting to NVMe over Fabrics controllers
+  [ --be STRING ]               ; xNVMe backend, e.g. 'spdk', 'libvfn', 'upcie'
+  [ --shm_id NUM ]              ; SPDK's spelling of --homi-id; the DPDK shared-memory-id
+  [ --homi-id NUM ]             ; The HOMI identifier to share controllers under
   [ --dev-nsid 0xNUM ]          ; Namespace Identifier for Device Handle
-  [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'posix', 'windows'
   [ --admin STRING ]            ; xNVMe admin. command-interface, e.g. 'nvme', 'block'
+  [ --mem STRING ]              ; xNVMe buffer/memory manager
+  [ --direct NUM ]              ; Bypass layers
+  [ --sync STRING ]             ; xNVMe sync. command-interface, e.g. 'nvme', 'block'
+  [ --async STRING ]            ; xNVMe async. command-interface, e.g. 'io_uring', 'emu'
   [ --help ]                    ; Show usage / help
 
 See 'xnvme --help' for other commands
 
-xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 4, patch: 0}
-
+xNVMe - Cross-platform NVMe utility -- ver: {major: 0, minor: 7, patch: 5, vcs: 'be83e57'}

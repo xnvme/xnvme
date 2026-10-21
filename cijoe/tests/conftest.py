@@ -49,6 +49,11 @@ def get_osname():
     return osname
 
 
+def get_userspace_be():
+    """Return a backend driving controllers from userspace on this OS"""
+    return "spdk" if get_osname() == "freebsd" else "upcie"
+
+
 def get_shm_id():
     return _shm_id if _shm_id else None
 
@@ -228,7 +233,8 @@ class XnvmeDriver(object):
     * vfio-pci (User space)
     * uio-generic (User space)
 
-    Switching attachment is done via the 'xnvme-driver' cli-tool.
+    Switching attachment is done with 'xnvme driver --be <backend>', a userspace
+    backend such as upcie or spdk, or posix for the kernel.
 
     This class encapsulates the cli-tool via static helpers (kernel_detach,
     kernal_attach). Whether or not a device needs one or the other is handled
@@ -264,15 +270,30 @@ class XnvmeDriver(object):
         # so tear it down first rather than leaving MprocPrimary with a stale handle.
         MprocPrimary.stop(cijoe)
 
-        # 64MB contigmem buffers avoid ENOMEM on FreeBSD's fragmented CI heap;
-        # see toolbox/xnvme-driver.sh.
-        cmd = "xnvme-driver"
+        # The test devices are scratch, and the filesystem cases leave signatures on
+        # them, hence --force. 'xnvme driver' leaves the DMA memory alone, so
+        # reserve it here.
         if get_osname() == "freebsd":
-            cmd = "env CONTIGMEM_BUFSZ=64 " + cmd
-
-        err, _ = cijoe.run(cmd)
+            # 32 contigmem buffers of 64MB; smaller buffers than the module's default
+            # avoid ENOMEM on FreeBSD's fragmented CI heap. With the hugepages tool
+            # where it is installed; it reloads the module, so only when not loaded
+            err, _ = cijoe.run(
+                "xnvme driver --be spdk --all --force && "
+                "{ kldstat -q -m contigmem || "
+                "hugepages setup --size 65536 --count 32 || "
+                "{ kenv hw.contigmem.num_buffers=32 && "
+                "kenv hw.contigmem.buffer_size=67108864 && kldload contigmem; }; }"
+            )
+        else:
+            # With the hugepages tool where it is installed
+            err, _ = cijoe.run(
+                "xnvme driver --be upcie --all --force && "
+                "{ [ $(cat /proc/sys/vm/nr_hugepages) -ge 1024 ] || "
+                "hugepages setup --count 1024 || "
+                "echo 1024 > /proc/sys/vm/nr_hugepages; }"
+            )
         if err:
-            cijoe.run("dmesg | tail -n20")
+            cijoe.run("xnvme list; dmesg | tail -n20")
 
         XnvmeDriver.IS_KERNEL_ATTACHED = False
 
@@ -282,9 +303,9 @@ class XnvmeDriver(object):
 
         MprocPrimary.stop(cijoe)
 
-        err, _ = cijoe.run("xnvme-driver reset")
+        err, _ = cijoe.run("xnvme driver --be posix --all")
         if err:
-            cijoe.run("dmesg | tail -n20")
+            cijoe.run("xnvme list; dmesg | tail -n20")
 
         XnvmeDriver.IS_KERNEL_ATTACHED = True
 
@@ -428,7 +449,7 @@ class MprocPrimary:
 
         # Match on the process name; 'pgrep -f' also matched the shell that cijoe.run()
         # wraps the command in, so it never detected a failed start
-        err, _ = cijoe.run("pgrep -x homi")
+        err, _ = cijoe.run("pgrep -x xnvme-homi")
 
         return not err
 
@@ -463,7 +484,7 @@ class MprocPrimary:
         # 'stdbuf -oL' keeps the readiness marker from sitting in libc's fully-buffered
         # stdout while the primary parks waiting for a signal
         cijoe.run(
-            f"stdbuf -oL nohup homi serve {uris} --be {be} --homi-id {_shm_id} "
+            f"stdbuf -oL nohup xnvme homi serve {uris} --be {be} --homi-id {_shm_id} "
             f"> /tmp/mproc_{be}.out 2>&1 &"
         )
 
@@ -492,7 +513,7 @@ class MprocPrimary:
         MprocPrimary.RUNNING = None
         MprocPrimary.CIJOE = None
 
-        cijoe.run("pkill -x homi || true")
+        cijoe.run("pkill -x xnvme-homi || true")
 
         # Closing a controller is not instant, and a primary still holding the device
         # keeps its successor from claiming it, so wait for it to actually be gone

@@ -35,12 +35,8 @@ application developers, and for anyone wanting their host-defined software to
 run on more than a single platform.
 
 On top of ``libxnvme`` a suite of tools and libraries are provided, that is, a
-command-line interface for managing your NVMe device named ``xnvme``, and
-``lblk`` for commands specific to NVM Namespaces.
-
-For the Zoned Command Set a command-line interface designed specifically for
-convenient management of Zoned NVMe devices named ``zoned`` and a C API
-``libxnvme_znd.h``.
+command-line interface for managing your NVMe device named ``xnvme``, and for
+the Zoned Command Set a C API ``libxnvme_znd.h``.
 
 To evaluate the performance of abstractions introduced by ``xNVMe`` a Fio IO
 engine is provided, supporting **conventional** NVMe devices, as well as

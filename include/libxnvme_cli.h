@@ -565,6 +565,20 @@ xnvme_cli_pinf(const char *format, ...);
 void
 xnvme_cli_perr(const char *msg, int err);
 
+/**
+ * Parse the command line by the subcommands of the given ::xnvme_cli and run the one named
+ *
+ * Without arguments, or with '--help', prints the usage; with '--version', the version of the
+ * library and the revision the program was built from. With '--list-cmds' as the only
+ * argument, prints the name of each subcommand on a line of its own, for a shell completion.
+ *
+ * @param cli the command-line interface: its title, descriptions and subcommands
+ * @param argc the argument count as given to main()
+ * @param argv the arguments as given to main()
+ * @param opts ::xnvme_cli_opts, such as XNVME_CLI_INIT_DEV_OPEN to open the device named
+ *
+ * @return On success, 0 or the return value of the subcommand. On error, non-zero.
+ */
 int
 xnvme_cli_run(struct xnvme_cli *cli, int argc, char **argv, int opts);
 

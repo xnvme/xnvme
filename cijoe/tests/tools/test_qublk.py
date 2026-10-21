@@ -68,7 +68,7 @@ def test_del_leftover(cijoe, device, be_opts, cli_args):
             "modprobe ublk_drv || echo MODPROBE-FAILED",
             f"if [ -b {UBLK_NODE} ]; then echo PREEXISTING-DEVICE; exit 1; fi",
             "log=$(mktemp)",
-            f"qublk serve {device['uri']} --be {be_opts['be']} --dev-id 0 > $log 2>&1 &",
+            f"xnvme qublk serve {device['uri']} --be {be_opts['be']} --dev-id 0 > $log 2>&1 &",
             "pid=$!",
             f"for i in $(seq 1 50); do [ -b {UBLK_NODE} ] && break; sleep 0.2; done",
             f"if [ ! -b {UBLK_NODE} ]; then echo MISSING-DEVICE; cat $log; "
@@ -88,12 +88,12 @@ def test_del_leftover(cijoe, device, be_opts, cli_args):
             "wait $pid 2>/dev/null",
             # The control-side device outlives the killed server; 'del' must
             # remove it, and the char-device is the observable for that
-            "qublk del --dev-id 0",
+            "xnvme qublk del --dev-id 0",
             "rc=$?",
             "for i in $(seq 1 25); do [ -c /dev/ublkc0 ] || break; sleep 0.2; done",
             "if [ -c /dev/ublkc0 ]; then echo LEFTOVER-DEVICE; rc=1; fi",
             # A nonexistent identifier must fail rather than report success
-            "if qublk del --dev-id 999; then echo DEL-BOGUS-ID-PASSED; rc=1; fi",
+            "if xnvme qublk del --dev-id 999; then echo DEL-BOGUS-ID-PASSED; rc=1; fi",
             "cat $log",
             "rm -f $log",
             "exit $rc",

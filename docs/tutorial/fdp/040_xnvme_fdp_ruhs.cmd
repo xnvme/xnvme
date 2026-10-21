@@ -1,1 +1,1 @@
-xnvme fdp-ruhs /dev/nvme5n1 --limit 4
+xnvme test adm fdp-ruhs /dev/nvme5n1 --limit 4

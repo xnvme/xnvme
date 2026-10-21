@@ -10,7 +10,7 @@ def test_cuda_mem_map(cijoe, device, be_opts, cli_args):
     if get_shm_id():
         pytest.skip(reason="xnvme_cuda_mem_map does not take --shm_id as argument")
 
-    err, _ = cijoe.run(f"xnvme_cuda_mem_map {device['uri']}")
+    err, _ = cijoe.run(f"xnvme example cuda-mem-map {device['uri']}")
     assert not err
 
 
@@ -21,5 +21,5 @@ def test_hip_mem_map(cijoe, device, be_opts, cli_args):
     if get_shm_id():
         pytest.skip(reason="xnvme_hip_mem_map does not take --shm_id as argument")
 
-    err, _ = cijoe.run(f"xnvme_hip_mem_map {device['uri']}")
+    err, _ = cijoe.run(f"xnvme example hip-mem-map {device['uri']}")
     assert not err

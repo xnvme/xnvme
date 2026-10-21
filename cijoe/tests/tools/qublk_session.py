@@ -125,7 +125,7 @@ def qublk_script(uri, be, args, payload, node=UBLK_NODE, nvme=None, mountpoint=N
             # wait while the qublk under test got another id; refuse to start
             f"if [ -b {node} ]; then echo PREEXISTING-DEVICE; exit 1; fi",
             "log=$(mktemp)",
-            f"qublk serve {uri} --be {be} --dev-id 0 {args} > $log 2>&1 &".replace(
+            f"xnvme qublk serve {uri} --be {be} --dev-id 0 {args} > $log 2>&1 &".replace(
                 "  >", " >"
             ),
             "pid=$!",
@@ -172,5 +172,5 @@ def qublk_teardown(cijoe, mountpoint=None, node=UBLK_NODE):
             f"umount {mountpoint} 2>/dev/null || umount -l {mountpoint} 2>/dev/null || true"
         )
 
-    cijoe.run("pkill -INT qublk || true")
+    cijoe.run("pkill -INT -x xnvme-qublk || true")
     cijoe.run(f"for i in $(seq 1 25); do [ -b {node} ] || break; sleep 0.2; done")

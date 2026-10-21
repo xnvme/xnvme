@@ -1,3 +1,0 @@
-xnvme_enumeration:
-  - {uri: '/dev/nvme0n2', dtype: 0x2, nsid: 0x2, csi: 0x2}
-

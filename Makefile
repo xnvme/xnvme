@@ -247,6 +247,7 @@ guest-provision:
 		xnvme_source_sync \
 		xnvme_build_prep \
 		test_deps \
+		test_tools \
 		xnvme_build \
 		xnvme_install \
 		ldconfig \
@@ -646,25 +647,10 @@ gen-artifacts: gen-src-archive-with-subprojects
 	ls -l /tmp/artifacts
 	@echo "## xNVMe: make gen-artifacts [DONE]"
 
-define gen-bash-completions-help
-# Helper-target to produce Bash-completions for tools (tools, examples, tests)
-#
-# NOTE: This target requires a bunch of things: binaries must be built and
-# residing in '$(BUILD_DIR)/tools' etc. AND installed on the system. Also, the find
-# command has only been tried with GNU find
-endef
-.PHONY: gen-bash-completions
-gen-bash-completions:
-	@echo "## xNVMe: make gen-bash-completions"
-	python3 ./$(TOOLBOX_DIR)/xnvmec_generator.py cpl --output $(TOOLBOX_DIR)/bash_completion.d
-	@echo "## xNVMe: make gen-bash-completions [DONE]"
-
 define gen-man-pages-help
 # Helper-target to produce man pages for tools (tools, examples, tests)
 #
-# NOTE: This target requires a bunch of things: binaries must be built and
-# residing in '$(BUILD_DIR)/tools' etc. AND installed on the system. Also, the find
-# command has only been tried with GNU find
+# NOTE: This target requires the binaries built in '$(BUILD_DIR)', and 'txt2man'
 endef
 .PHONY: gen-man-pages
 gen-man-pages:

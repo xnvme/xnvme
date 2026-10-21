@@ -17,7 +17,7 @@ def test_open_dev_twice(cijoe, device, be_opts, cli_args):
     # We are repurposing "xnvme_tests_dual_be idfy-cmp" to verify that opening the same
     # device twice with the same backend works.
     err, _ = cijoe.run(
-        f"xnvme_tests_dual_be idfy-cmp {device['uri']} --be {be_opts['be']} --alt-be {be_opts['be']} --dev-nsid {device['nsid']}"
+        f"xnvme test dual-be idfy-cmp {device['uri']} --be {be_opts['be']} --alt-be {be_opts['be']} --dev-nsid {device['nsid']}"
     )
     assert not err
 
@@ -28,7 +28,7 @@ def test_io_cmp(cijoe, device, be_opts, cli_args):
     if not alt_be:
         pytest.skip(reason=f"[be={be_opts['be']}] does not have an alternate backend")
     err, _ = cijoe.run(
-        f"xnvme_tests_dual_be io-cmp {device['uri']} --be {be_opts['be']} --alt-be {alt_be} --dev-nsid {device['nsid']}"
+        f"xnvme test dual-be io-cmp {device['uri']} --be {be_opts['be']} --alt-be {alt_be} --dev-nsid {device['nsid']}"
     )
     assert not err
 
@@ -39,6 +39,6 @@ def test_idfy_cmp(cijoe, device, be_opts, cli_args):
     if not alt_be:
         pytest.skip(reason=f"[be={be_opts['be']}] does not have an alternate backend")
     err, _ = cijoe.run(
-        f"xnvme_tests_dual_be idfy-cmp {device['uri']} --be {be_opts['be']} --alt-be {alt_be} --dev-nsid {device['nsid']}"
+        f"xnvme test dual-be idfy-cmp {device['uri']} --be {be_opts['be']} --alt-be {alt_be} --dev-nsid {device['nsid']}"
     )
     assert not err

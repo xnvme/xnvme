@@ -1,4 +1,7 @@
+# Allocating and clearing buffer...
+# Retrieving fdp-events-log ...
+# 2 fdp events log page entries:
 xnvme_spec_log_fdp_events:
   nevents: 1
-  - {type: 0, fdpef: 0x7, pid: 0, timestamp: 564646541814836, nsid: 1, rgid: 0, ruhid: 0, }
+  - {type: 0, fdpef: 0x7, pid: 0, timestamp: 564741960565485, nsid: 1, rgid: 0, ruhid: 0, }
   - {type: 0, fdpef: 0, pid: 0, timestamp: 0, nsid: 0, rgid: 0, ruhid: 0, }

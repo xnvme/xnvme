@@ -25,16 +25,6 @@ REPOS/subprojects/spdk/
   Repos: https://github.com/spdk/spdk
   Website: https://spdk.io/
 
-REPOS/toolbox/xnvme-driver.sh
-  Summary: This script is based on the setup.sh and its associated scripts from
-  SPDK. It is added here in a single-file for easy distribution with xNVMe.
-
-  License: BSD-3-Clause
-  https://github.com/spdk/spdk/blob/master/LICENSE
-
-  Repos: https://github.com/spdk/spdk
-  Website: https://spdk.io/
-
 SYSTEM:freebsd:/
   Summary: Headers for the FreeBSD Kernel NVMe driver IOCTLs are used by the
   ``be/fbsd``, then headers for backend. These headers are not distributed with

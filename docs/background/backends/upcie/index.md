@@ -37,12 +37,21 @@ identifier via the `--nsid` option.
 
 ### Driver Attachment
 
-Use the `xnvme-driver` script to unbind the kernel NVMe driver and bind
-devices to uio_pci_generic or vfio-pci:
+Move a controller off the kernel NVMe driver and onto vfio-pci, or
+uio_pci_generic on a host without an IOMMU, with `xnvme driver --be upcie`; see
+which controllers there are, and what holds each, with `xnvme list`:
 
 ```bash
-xnvme-driver
+xnvme list
+xnvme driver --be upcie 0000:03:00.0
 ```
+
+It binds only the named controller, and refuses one whose namespaces are
+mounted, held, used as swap or open.
+`xnvme driver --be io_uring 0000:03:00.0` returns it to the kernel driver. It reserves no hugepages; the `hugepages`
+tool does, `hugepages setup --count 1024`, and `iommu show` prints the mode the
+kernel runs the IOMMU in; `pipx install hugepages iommu` installs both, and
+`xnvme env` says whether anything is missing.
 
 **upcie**, **upcie-cuda** and **upcie-hip** all support `uio_pci_generic`
 (no-IOMMU path) and `vfio-pci` (IOMMU-backed path). For the GPU backends see

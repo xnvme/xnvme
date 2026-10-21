@@ -1,0 +1,139 @@
+# xnvme completion                                         -*- shell-script -*-
+#
+# SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Asks xnvme rather than holding lists of its own, so it completes what is installed:
+# 'xnvme --list-cmds' prints the commands and programs, 'xnvme --list-cmds=<group>' those of a
+# group, a program prints its subcommands with '--list-cmds', options come from '--help', and
+# devices from 'xnvme list'.
+
+# The options of the command given as arguments, from its --help
+_xnvme_opts()
+{
+    "$@" --help 2>/dev/null | grep -oE -- '--[a-z][a-z0-9_-]*' | sort -u
+}
+
+# Whether 'xnvme-<name>' is a program on the exec path rather than a command of xnvme itself
+_xnvme_is_prog()
+{
+    local dir
+    local IFS=:
+
+    for dir in $("$1" --exec-path 2>/dev/null); do
+        [[ -x "$dir/xnvme-$2" ]] && return 0
+    done
+
+    return 1
+}
+
+# The devices 'xnvme list' reports that a command can take: the namespaces of a controller on
+# the kernel nvme driver, by their device nodes, and a controller on a userspace driver by its
+# BDF. With 'nvme' or 'userspace' as the second argument, the BDFs of the controllers on that
+# side only, for 'xnvme driver --be'.
+_xnvme_devs()
+{
+    local bdf drv ctrl
+
+    while read -r bdf drv; do
+        case "$2" in
+        nvme)
+            [[ "$drv" == nvme ]] && echo "$bdf"
+            ;;
+        userspace)
+            [[ "$drv" != nvme && "$drv" != null ]] && echo "$bdf"
+            ;;
+        *)
+            if [[ "$drv" == nvme ]]; then
+                for ctrl in /sys/bus/pci/devices/"$bdf"/nvme/nvme*; do
+                    ctrl=${ctrl##*/}
+                    compgen -G "/dev/${ctrl}n*"
+                    compgen -G "/dev/ng${ctrl#nvme}n*"
+                done
+            elif [[ "$drv" != null ]]; then
+                echo "$bdf"
+            fi
+            ;;
+        esac
+    done < <("$1" list 2>/dev/null |
+        sed -n "s/^  '\([^']*\)': {driver: '\{0,1\}\([^',}]*\)'\{0,1\},.*/\1 \2/p")
+}
+
+_xnvme()
+{
+    local cur=${COMP_WORDS[COMP_CWORD]}
+    local prev=${COMP_WORDS[COMP_CWORD - 1]}
+    local cmd=("${COMP_WORDS[0]}")
+    local words
+
+    COMPREPLY=()
+
+    if ((COMP_CWORD == 1)); then
+        words="$("${cmd[0]}" --list-cmds 2>/dev/null) --help --version --exec-path"
+        COMPREPLY=($(compgen -W "$words" -- "$cur"))
+        return 0
+    fi
+
+    case "${COMP_WORDS[1]}" in
+    env | test | example)
+        if ((COMP_CWORD == 2)); then
+            words="$("${cmd[0]}" --list-cmds="${COMP_WORDS[1]}" 2>/dev/null)"
+            if [[ "${COMP_WORDS[1]}" == env ]]; then
+                words+=" $(_xnvme_opts "${cmd[0]}" "${COMP_WORDS[1]}")"
+            fi
+            COMPREPLY=($(compgen -W "$words" -- "$cur"))
+            return 0
+        fi
+        cmd+=("${COMP_WORDS[1]}" "${COMP_WORDS[2]}")
+        ;;
+    *)
+        cmd+=("${COMP_WORDS[1]}")
+        ;;
+    esac
+
+    # A program lists its subcommands, which come next; the front-end's own commands have none
+    if [[ "${cmd[1]}" == test || "${cmd[1]}" == example ]] ||
+        _xnvme_is_prog "${cmd[0]}" "${cmd[1]}"; then
+        local n=${#cmd[@]}
+
+        if words=$("${cmd[@]}" --list-cmds 2>/dev/null); then
+            if ((COMP_CWORD == n)); then
+                COMPREPLY=($(compgen -W "$words" -- "$cur"))
+                return 0
+            fi
+            if [[ " ${words//$'\n'/ } " == *" ${COMP_WORDS[n]} "* ]]; then
+                cmd+=("${COMP_WORDS[n]}")
+            fi
+        fi
+    fi
+
+    if [[ "$cur" == -* ]]; then
+        COMPREPLY=($(compgen -W "$(_xnvme_opts "${cmd[@]}")" -- "$cur"))
+    else
+        local devs
+
+        case "${cmd[1]}" in
+        driver)
+            if [[ "$prev" == --be ]]; then
+                devs=$("${cmd[0]}" env library 2>/dev/null |
+                    sed -n "s/^  - {name: '\([^']*\)'.*/\1/p")
+            else
+                devs=$(_xnvme_devs "${cmd[0]}")
+            fi
+            ;;
+        *)
+            devs=$(_xnvme_devs "${cmd[0]}")
+            # Off Linux 'xnvme list' reports no controllers by BDF; offer the device nodes
+            [[ -n "$devs" ]] || devs=$(compgen -G '/dev/nvme*'; compgen -G '/dev/ng*')
+            ;;
+        esac
+        COMPREPLY=($(compgen -W "$devs" -- "$cur"))
+    fi
+
+    return 0
+}
+
+complete -o default -F _xnvme xnvme
+
+# ex: filetype=sh

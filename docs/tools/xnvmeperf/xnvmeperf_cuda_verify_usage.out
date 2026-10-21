@@ -1,4 +1,4 @@
-Usage: xnvmeperf cuda-verify [<uri>...] [<args>]
+Usage: xnvme perf cuda-verify [<uri>...] [<args>]
 
 Write an LBA-stamped pattern to each device through GPU queues and read
 it back, verifying that the data matches. Uses the same queue topology
@@ -19,6 +19,6 @@ With <args> for backend:
   [ --be STRING ]               ; xNVMe backend, e.g. 'linux', 'spdk', 'fbsd', 'macos', 'posix', 'windows'
   [ --help ]                    ; Show usage / help
 
-See 'xnvmeperf --help' for other commands
+See 'xnvme perf --help' for other commands
 
-xnvmeperf - NVMe async IO benchmark -- ver: {major: 0, minor: 7, patch: 5}
+xnvme perf - IO benchmarks against xNVMe devices -- ver: {major: 0, minor: 7, patch: 5}

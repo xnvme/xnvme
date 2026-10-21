@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """
-    Generate Bash-completions and man pages for xNVMe CLI tools
+    Generate man pages for xNVMe CLI tools
 
-    The generator requires that the tools are installed on the system, since it runs the
-    tool to parse the '--help' output in order to generate the corresponding
-    bash-completion script and man page.
+    The generator runs each program in 'builddir' with '--help', and parses the output
+    to generate man pages: a general page and one for each sub-command. For the xnvme
+    front-end it also reads the overview, for the pages of its own commands and groups. The
+    tool `txt2man` is required.
 
-    Bash-completions) One bash-completion script is generated per CLI tool
-
-    man pages) multiple man-pages are generated per CLI tool, a general page and one for
-    each sub-command. The tool `txt2man` is required for the man generator
+    The bash completion is not generated: toolbox/bash_completion.d/xnvme asks xnvme.
 """
 from __future__ import print_function
 
@@ -21,67 +19,16 @@ import sys
 from pathlib import Path
 from subprocess import PIPE, Popen
 
-MESON_BASH_INSTALL = "install_data('{completion}', install_dir: bash_completions_dir)"
 MESON_MAN_INSTALL = "install_man('{manpage}')"
 
 RE_SIG = "".join(
     [
         r"^Usage:\s(?P<usage>.*)$",
         r"(?P<descr>(?:.|\n)*?)",
-        r"(?:Where.*:|With.*:|Positional arguments:)$(?P<body>(?:.|\n)*)See",
+        r"(?:(?:Where.*:|With.*:|Positional arguments:)$|(?=^\s+\[))",
+        r"(?P<body>(?:.|\n)*?)^See",
     ]
 )
-
-SNAMES = """
-    "${sname}")
-        opts+="${opts}"
-        ;;
-"""
-
-SCRIPT = """# ${tname} completion                           -*- shell-script -*-
-#
-# Bash completion script for the `${tname}` CLI
-#
-# SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
-#
-# SPDX-License-Identifier: BSD-3-Clause
-
-_${tname}_completions()
-{
-    local cur=${COMP_WORDS[COMP_CWORD]}
-    local sub=""
-    local opts=""
-
-    COMPREPLY=()
-
-    # Complete sub-commands
-    if [[ $COMP_CWORD < 2 ]]; then
-        COMPREPLY+=( $( compgen -W '${snames} --help' -- $cur ) )
-        return 0
-    fi
-
-    # Complete sub-command arguments
-
-    sub=${COMP_WORDS[1]}
-
-    if [[ "$sub" != "enum" ]]; then
-        opts+="/dev/nvme* "
-    fi
-
-    case "$sub" in
-    ${subs}
-    esac
-
-    COMPREPLY+=( $( compgen -W "$opts" -- $cur ) )
-
-    return 0
-}
-
-#
-complete -o nosort -F _${tname}_completions ${tname}
-
-# ex: filetype=sh
-"""
 
 MANPAGE_MAIN = """NAME
   ${name} - ${descr}
@@ -105,10 +52,25 @@ AUTHOR
   Written by ${author_name} <${author_email}> on behalf of ${sponsor}
 """
 
-MANPAGE_SUB = """NAME
+MANPAGE_GROUP = """NAME
   ${name} - ${descr}
 SYNOPSIS
   ${usage}
+DESCRIPTION
+  ${descr}
+${commands}
+SEE ALSO
+  ${tname}(1)
+
+  Full documentation at: <https://xnvme.io/>
+AUTHOR
+  Written by ${author_name} <${author_email}> on behalf of ${sponsor}
+"""
+
+MANPAGE_SUB = """NAME
+  ${name} - ${descr}
+SYNOPSIS
+${usage}
 DESCRIPTION
   ${descr_long}
 ${required}
@@ -127,8 +89,11 @@ def expand_path(path):
     return os.path.abspath(os.path.expanduser(os.path.expandvars(path)))
 
 
-def run(cmd, cmd_input=None, cwd=None):
-    """Run the given 'cmd' and return (stdout, stderr, returncode)"""
+def run(cmd, cmd_input=None, cwd=None, exec_path=None):
+    """
+    Run the given 'cmd' and return (stdout, stderr, returncode); the xnvme front-end looks
+    programs up on 'exec_path' only, so installed ones are not taken for those built
+    """
 
     with Popen(
         " ".join(cmd),
@@ -137,7 +102,11 @@ def run(cmd, cmd_input=None, cwd=None):
         stderr=PIPE,
         cwd=cwd,
         shell=True,
-        env={"PATH": cwd} if cwd else None,
+        env=(
+            {"PATH": cwd, "XNVME_EXEC_PATH": str(exec_path or os.devnull)}
+            if cwd
+            else None
+        ),
     ) as proc:
         out, err = proc.communicate(
             input=cmd_input.encode("utf-8") if cmd_input else None
@@ -162,7 +131,7 @@ def emit_meson_build(args, folder, meson_file):
 
 
 def parse_tool_sub_sig(tsig, sname):
-    """Parse the signature of the given tool sub-command"""
+    """Parse the signature of the given tool sub-command, from the --help of xnvme_cli"""
 
     tname = tsig["name"]
 
@@ -178,10 +147,10 @@ def parse_tool_sub_sig(tsig, sname):
 
     sig = {
         "name": sname,
-        "usage": match.group("usage"),
+        "usage": "  " + match.group("usage"),
         "descr": match.group("descr").strip(),
+        "descr_long": match.group("descr").strip(),
         "args": [],
-        "opts": [],
     }
 
     for line in match.group("body").strip().splitlines():
@@ -197,13 +166,134 @@ def parse_tool_sub_sig(tsig, sname):
 
         sig["args"].append({"arg": arg, "descr": descr.strip()})
 
-        if "--" in arg:
-            opt = arg.replace("[", "").replace("]", "").strip().split(" ")[0]
-            sig["opts"].append(opt)
-
     tsig["subs"][sname] = sig
 
     return True
+
+
+def prose(text):
+    """Text for a man page section: paragraphs reflowed, indented ones such as tables kept"""
+
+    paras = []
+    for para in text.strip().split("\n\n"):
+        lines = para.splitlines()
+        if any(line.startswith(" ") for line in lines):
+            paras.append("\n  ".join(lines))
+        else:
+            paras.append(" ".join(lines))
+
+    return "\n\n  ".join(paras)
+
+
+def summary(text):
+    """The first sentence, or clause, of a description: the one-liner of a man page NAME"""
+
+    return re.split(r"(?<=[.;])\s", text.strip(), maxsplit=1)[0].rstrip(".;")
+
+
+def parse_frontend_sub_sig(tsig, words, descr):
+    """
+    Parse the signature of a command the xnvme front-end implements itself: its --help is
+    the usage, a blank line, and prose naming the options
+    """
+
+    out, _, rcode = run([tsig["name"], *words, "--help"], cwd=tsig["dirname"])
+    if rcode or not out.startswith("Usage:"):
+        return None
+
+    # A command of xnvme_cli, such as 'info', is documented from its own signature
+    match = re.match(RE_SIG, out, re.MULTILINE | re.IGNORECASE)
+    if match:
+        sname = match.group("usage").split()[1]
+        if sname not in tsig["subs"] and parse_tool_sub_sig(tsig, sname):
+            return sname
+        return None
+
+    # The lines after the first are indented to line up under it, past 'Usage: '
+    usage, _, body = out.partition("\n\n")
+    sname = "-".join(words)
+    tsig["subs"][sname] = {
+        "name": sname,
+        "usage": "\n".join(
+            "  " + line[len("Usage: ") :] for line in usage.splitlines()
+        ),
+        "descr": descr,
+        "descr_long": prose(body) or descr,
+        "args": [],
+    }
+
+    return sname
+
+
+def parse_frontend(tsig):
+    """
+    Parse the commands listed by the xnvme front-end's overview, and those of its groups;
+    returns their names, or none for a tool that is not the front-end
+
+    Records, in the order of the overview, what xnvme(1) lists in 'toc', and the groups
+    in 'group_pages'.
+    """
+
+    out, _, rcode = run([tsig["name"]], cwd=tsig["dirname"])
+    if rcode or "Groups, run one" not in out:
+        return []
+
+    builddir = Path(__file__).parent.parent / "builddir"
+    snames = []
+    for line in out.splitlines():
+        match = re.match(r"^  xnvme (\w[\w-]*)(?: <\w+>)?\s{2,}(.+)$", line)
+        if not match:
+            continue
+        name, descr = match.groups()
+
+        # A group of programs, named by 'xnvme --list-cmds'; each documents its own commands
+        if name in ("test", "example"):
+            lst, _, rcode = run(
+                [tsig["name"], f"--list-cmds={name}"],
+                cwd=tsig["dirname"],
+                exec_path=builddir / f"{name}s",
+            )
+            rows = []
+            for prog in lst.split() if not rcode else []:
+                pout, _, _ = run(
+                    [f"xnvme-{name}-{prog}", "--help"], cwd=str(builddir / f"{name}s")
+                )
+                match = re.match(RE_SIG, pout, re.MULTILINE | re.IGNORECASE)
+                rows.append(
+                    (f"{name}-{prog}", summary(match.group("descr")) if match else "")
+                )
+            usage = f"xnvme {name} <program> <command> [<args>]"
+            tsig["group_pages"].append((name, descr, usage, rows))
+            tsig["toc"].append((name, descr))
+            continue
+
+        lst, _, rcode = run([tsig["name"], name, "--help"], cwd=tsig["dirname"])
+        if rcode:
+            continue
+
+        # A group lists its commands with a description each
+        if lst.startswith("Commands in"):
+            nested = f"See 'xnvme {name} <command>" in lst
+            rows = []
+            for row in re.findall(r"^  (\S+)\s{2,}(.+)$", lst, re.MULTILINE):
+                words = [name, row[0]] if nested else [row[0]]
+                sname = parse_frontend_sub_sig(tsig, words, row[1])
+                if not sname:
+                    continue
+                snames.append(sname)
+                rows.append((sname, row[1]))
+            usage = f"xnvme {name} <command> [<args>]" if nested else f"xnvme {name}"
+            tsig["group_pages"].append((name, descr, usage, rows))
+            tsig["toc"].append((name, descr))
+            continue
+
+        sname = parse_frontend_sub_sig(tsig, [name], descr)
+        if not sname:
+            continue
+        snames.append(sname)
+        tsig["toc"].append((sname, descr))
+
+    return snames
 
 
 def parse_tool_sig(tpath):
@@ -226,80 +316,49 @@ def parse_tool_sig(tpath):
         logging.error(out, err, rcode)
         return None
 
-    match = re.match(RE_SIG, out, re.MULTILINE | re.IGNORECASE)
-    if not match:
-        logging.error("No match!")
-        return None
+    if "\n\nStart here:\n" in out:
+        # The front-end's --help is its overview: the usage, a description, then the command
+        # tree; the commands of xnvme_cli are among those 'xnvme --list-cmds' prints
+        usage, descr = out.split("\n\n")[:2]
+        usage = usage[len("Usage: ") :]
+        lst, _, _ = run([tname, "--list-cmds"], cwd=tdirname)
+        names = lst.split()
+    else:
+        match = re.match(RE_SIG, out, re.MULTILINE | re.IGNORECASE)
+        if not match:
+            logging.error("No match!")
+            return None
+        usage, descr = match.group("usage"), match.group("descr")
+        names = [
+            line.split()[0] for line in match.group("body").splitlines() if line.strip()
+        ]
 
     tsig = {
         "name": tname,
         "path": tpath,
         "dirname": tdirname,
-        "usage": match.group("usage"),
-        "descr": match.group("descr").strip(),
-        "descr_long": match.group("descr").strip(),
+        "usage": usage,
+        "descr": summary(descr),
+        "descr_long": prose(descr),
         "snames": [],
         "subs": {},
+        "group_pages": [],
+        "toc": [],
     }
 
-    for line in match.group("body").splitlines():
-        line = line.strip()
-        if not line:
+    tsig["snames"] = parse_frontend(tsig)
+
+    for sname in names:
+        if sname in tsig["subs"]:
             continue
 
-        sname = line.split(" ")[0]
-        tsig["snames"].append(sname)
-
         if not parse_tool_sub_sig(tsig, sname):
-            logging.error("FAILED: parsing tname: %s, sname: %s", tname, sname)
-            return None
+            logging.warning("skipping tname: %s, sname: %s", tname, sname)
+            continue
+        tsig["snames"].append(sname)
+        tsig["toc"].append((sname, tsig["subs"][sname]["descr"]))
 
     return tsig
-
-
-def emit_completion(tool):
-    """Emits completion script for the given tool-struct"""
-
-    cases = ""
-    for sname in tool["snames"]:
-        cases += SNAMES.replace("${sname}", sname).replace(
-            "${opts}", " ".join(tool["subs"][sname]["opts"])
-        )
-
-    compl = (
-        SCRIPT.replace("${tname}", tool["name"])
-        .replace("${snames}", " ".join(tool["snames"]))
-        .replace("${subs}", cases)
-    )
-
-    return compl
-
-
-def gen_completions(args, folders):
-    """Generate Bash-completions"""
-
-    for folder, tools in folders.items():
-        meson = []  # Populate with lines for a meson.build file
-
-        logging.info("Writing scripts to: %r", args.output)
-        for tool in tools:
-            tool_fname = "%s-completions" % tool["name"]
-            tool_fpath = os.sep.join([args.output, folder, tool_fname])
-
-            logging.info("Generating for %r at %r", tool["name"], tool_fpath)
-
-            script = emit_completion(tool)
-
-            with open(tool_fpath, "w") as tfd:
-                tfd.write(script)
-
-            meson.append(MESON_BASH_INSTALL.format(completion=tool_fname))
-
-        meson.sort()
-
-        emit_meson_build(args, folder, meson)
-
-    return 0
 
 
 def emit_manpage_sub(tool, sub):
@@ -320,7 +379,9 @@ def emit_manpage_sub(tool, sub):
     txtpage = (
         MANPAGE_SUB.replace("${name}", "-".join([tool["name"], sub["name"]]))
         .replace("${descr}", sub["descr"] if sub["descr"] else "None provided")
-        .replace("${descr_long}", sub["descr"] if sub["descr"] else "None provided")
+        .replace(
+            "${descr_long}", sub["descr_long"] if sub["descr_long"] else "None provided"
+        )
         .replace("${usage}", sub["usage"])
         .replace("${required}", "REQUIRED\n" + "".join(required) if required else "")
         .replace("${optional}", "OPTIONAL\n" + "".join(optional) if optional else "")
@@ -359,9 +420,9 @@ def emit_manpage_main(tool):
 
     txt_subs = "COMMANDS\n"
 
-    for sname in tool["snames"]:
-        txt_subs += "  %s-%s(1)" % (tool["name"], sname)
-        txt_subs += "  %s\n\n" % tool["subs"][sname]["descr"]
+    for name, descr in tool["toc"]:
+        txt_subs += "  %s-%s(1)" % (tool["name"], name)
+        txt_subs += "  %s\n\n" % descr
 
     txtpage = (
         MANPAGE_MAIN.replace("${name}", tool["name"])
@@ -397,6 +458,41 @@ def emit_manpage_main(tool):
             "xNVMe",
         ],
         txtpage,
+    )
+    if rcode:
+        logging.error("FAILED: txt2man; '%s', rcode:%s", err, rcode)
+        return None
+
+    return manpage, txtpage
+
+
+def emit_manpage_group(tool, group):
+    """Emit man page for a group of the xnvme front-end, listing the pages of its commands"""
+
+    name, descr, usage, rows = group
+
+    txt_subs = "COMMANDS\n"
+    for row, row_descr in rows:
+        txt_subs += "  %s-%s(1)  %s\n\n" % (
+            tool["name"],
+            row,
+            row_descr or "None provided",
+        )
+
+    txtpage = (
+        MANPAGE_GROUP.replace("${name}", "-".join([tool["name"], name]))
+        .replace("${descr}", descr)
+        .replace("${usage}", usage)
+        .replace("${commands}", txt_subs)
+        .replace("${tname}", tool["name"])
+        .replace("${author_name}", "Simon A. F. Lund")
+        .replace("${author_email}", "simon.lund@samsung.com")
+        .replace("${sponsor}", "Samsung")
+    )
+
+    title = "-".join([tool["name"].upper(), name.upper()])
+    manpage, err, rcode = run(
+        ["txt2man", "-t", title, "-v", "xNVMe", "-s", "1", "-r", "xNVMe"], txtpage
     )
     if rcode:
         logging.error("FAILED: txt2man; '%s', rcode:%s", err, rcode)
@@ -448,6 +544,14 @@ def gen_manpage(args, folders):
 
                 meson.append(MESON_MAN_INSTALL.format(manpage=sub_fname))
 
+            for group in tool["group_pages"]:
+                group_fname = "%s-%s.1" % (tool["name"], group[0])
+                emitted = emit_manpage_group(tool, group)
+                if emitted is None:
+                    return 1
+                (Path(args.output) / folder / group_fname).write_text(emitted[0])
+                meson.append(MESON_MAN_INSTALL.format(manpage=group_fname))
+
         meson.sort()
 
         emit_meson_build(args, folder, meson)
@@ -456,23 +560,20 @@ def gen_manpage(args, folders):
 
 
 def find_binaries(folder):
-    """This will look in builddir for xnvme-executables"""
+    """Return the paths of the executables in builddir, run from there since installed
+    ones are off PATH"""
 
     builddir = Path(__file__).parent.parent / "builddir"
 
     bins = []
 
+    # These examples parse argv by hand, so their --help is not one to generate from
+    skip = ("dev", "enum", "hello", "single-")
     for path in sorted((builddir / folder).rglob("*")):
-        if path.stem.startswith("xnvme_single"):
-            continue
-        if path.stem.startswith("xnvme_dev"):
-            continue
-        if path.stem.startswith("xnvme_enum"):
-            continue
-        if path.stem.startswith("xnvme_hello"):
+        if path.stem.startswith(tuple(f"xnvme-example-{name}" for name in skip)):
             continue
         if path.is_file() and path.stat().st_mode & os.X_OK:
-            bins.append(path.name)
+            bins.append(str(path))
 
     return bins
 
@@ -480,10 +581,10 @@ def find_binaries(folder):
 def setup():
     """Parse command-line arguments for generator and setup logger"""
 
-    generators = {"man": gen_manpage, "cpl": gen_completions}
+    generators = {"man": gen_manpage}
 
     prsr = argparse.ArgumentParser(
-        description="xNVMe CLI Bash-completions and man page generator",
+        description="xNVMe CLI man page generator",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     prsr.add_argument(
@@ -494,7 +595,7 @@ def setup():
     )
     prsr.add_argument(
         "--output",
-        help="Path to directory in which to emit subfolders with completions/manpages",
+        help="Path to directory in which to emit subfolders with man pages",
         default=os.sep.join(["."]),
     )
     prsr.add_argument(
@@ -517,7 +618,7 @@ def setup():
 
 
 def main(args):
-    """Generate bash-completions and man-pages for xNVMe CLI tools"""
+    """Generate man pages for xNVMe CLI tools"""
 
     folders = {"examples": [], "tests": [], "tools": []}
     for folder, tools in folders.items():

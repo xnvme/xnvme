@@ -94,14 +94,17 @@ def _start_spdk(args, cijoe):
 
     # nvme_tcp/nvme_rdma is the kernel host driver loaded for the initiator-side
     # `nvme discover` in the probe step; nvmf_tgt itself runs in userspace and
-    # the PCIe device is rebound to vfio-pci by xnvme-driver, so nvmet and
+    # the PCIe device is rebound to vfio-pci by 'xnvme driver --be spdk', so nvmet and
     # nvmet_tcp/nvmet_rdma are not needed on the SPDK target path.
     # RDMA requires kernel modules and supporting software (e.g. libibverbs) to be
     # installed and configured on both the initiator and target. An error here may
     # reflect incomplete RDMA setup rather than a fault in this script.
     drivers = [
         f"modprobe nvme_{args.nvme_trtype}",
-        "xnvme-driver",
+        "xnvme driver --be spdk --all --force && "
+        "{ [ $(cat /proc/sys/vm/nr_hugepages) -ge 1024 ] || "
+        "hugepages setup --count 1024 || "
+        "echo 1024 > /proc/sys/vm/nr_hugepages; }",
     ]
     err, cmd = _run_all(cijoe, drivers, args.transport_name)
     if err:
@@ -157,7 +160,7 @@ def _start_linux(args, cijoe):
     nvmet = "/sys/kernel/config/nvmet"
 
     drivers = [
-        "xnvme-driver reset",
+        "xnvme driver --be posix --all",
         "modprobe nvme",
         "modprobe nvmet",
         f"modprobe nvmet_{args.nvme_trtype}",

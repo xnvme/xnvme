@@ -54,7 +54,7 @@ def main(args, cijoe):
         f"nvme discover -t {args.nvme_trtype} -a {traddr} -s {trsvcid}",
         f"xnvme enum --uri {uri}",
         f"xnvme info {uri} --subnqn {subnqn}",
-        f"xnvmeperf run {uri} --subnqn {subnqn} --iopattern randread "
+        f"xnvme perf run {uri} --subnqn {subnqn} --iopattern randread "
         f"--iosize 4096 --qdepth 32 --nqueues 1 --runtime 5 --cpumask 0x4",
     ]
     for cmd in commands:

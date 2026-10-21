@@ -29,7 +29,7 @@ EnvironmentFile=@sysconfdir@/xnvme/homi-%i.conf
 # its queues, and the failure further in is harder to read than this one.
 ExecStartPre=/bin/sh -c '[ "$(cat /proc/sys/vm/nr_hugepages)" -gt 0 ] || { echo "no hugepages reserved; see @bindir@/xnvme-driver"; exit 1; }'
 
-ExecStart=@bindir@/homi serve --homi-id %i $HOMI_OPTS $HOMI_DEVICES
+ExecStart=@libexecdir@/xnvme-homi serve --homi-id %i $HOMI_OPTS $HOMI_DEVICES
 
 # Clients lose their controllers if this dies, so come back, but do not
 # spin: a server that cannot start usually cannot start on the next attempt

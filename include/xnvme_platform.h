@@ -11,6 +11,7 @@ struct xnvme_be_config;
 struct xnvme_dev;
 struct xnvme_opts;
 struct xnvme_ident;
+struct xnvme_driver_result;
 
 /**
  * Callback function for xnvme_scan()
@@ -52,7 +53,41 @@ struct xnvme_platform {
 		    void *cb_args);
 	int (*enumerate)(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
 			 void *cb_args);
+
+	// The libxnvme_driver.h operations; NULL where the platform has none
+	const char *(*driver_default)(void);
+	int (*driver_attach)(const char *const *bdfs, int nbdfs, const char *driver, int flags,
+			     struct xnvme_driver_result *results);
+	int (*driver_detach)(const char *const *bdfs, int nbdfs, const char *driver, int flags,
+			     struct xnvme_driver_result *results);
 };
+
+/**
+ * Name the filesystem, partition table, volume or swap signature at the start of the block
+ * device at 'path', for the driver_attach implementations
+ *
+ * @return A description such as "an XFS filesystem", or NULL when it carries none known
+ */
+const char *
+xnvme_driver_signature(const char *path);
+
+const char *
+xnvme_driver_linux_default(void);
+int
+xnvme_driver_linux_attach(const char *const *bdfs, int nbdfs, const char *driver, int flags,
+			  struct xnvme_driver_result *results);
+int
+xnvme_driver_linux_detach(const char *const *bdfs, int nbdfs, const char *driver, int flags,
+			  struct xnvme_driver_result *results);
+
+const char *
+xnvme_driver_freebsd_default(void);
+int
+xnvme_driver_freebsd_attach(const char *const *bdfs, int nbdfs, const char *driver, int flags,
+			    struct xnvme_driver_result *results);
+int
+xnvme_driver_freebsd_detach(const char *const *bdfs, int nbdfs, const char *driver, int flags,
+			    struct xnvme_driver_result *results);
 
 /**
  * Shared dev_open implementation - iterates platform->backends configs, opens device

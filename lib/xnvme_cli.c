@@ -1166,6 +1166,12 @@ xnvme_cli_usage(struct xnvme_cli *cli)
 
 	printf("Usage: %s <command> [<args>]\n", cli->argv[0]);
 
+	if (cli->descr_long && strnlen(cli->descr_long, 2) > 1) {
+		printf("\n%s\n", cli->descr_long);
+	} else if (cli->descr_short && strnlen(cli->descr_short, 2) > 1) {
+		printf("\n%s\n", cli->descr_short);
+	}
+
 	printf("\n");
 	printf("Where <command> is one of:\n");
 	printf("\n");
@@ -2297,6 +2303,16 @@ xnvme_cli_run(struct xnvme_cli *cli, int argc, char **argv, int opts)
 
 	if ((argc < 2) || (!strcmp(argv[1], "--help")) || (!strcmp(argv[1], "-h"))) {
 		xnvme_cli_usage(cli);
+		return 0;
+	}
+
+	// Not in the usage: for the bash completion, which completes a subcommand from these
+	if (argc == 2 && !strcmp(argv[1], "--list-cmds")) {
+		for (int i = 0; i < cli->nsubs; ++i) {
+			if (cli->subs[i].name) {
+				printf("%s\n", cli->subs[i].name);
+			}
+		}
 		return 0;
 	}
 

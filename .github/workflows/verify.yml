@@ -109,8 +109,9 @@ jobs:
       run: pre-commit run --all-files
 
   #
-  # Ensure that bash completions, man pages, and the systemd unit are
-  # generated without error
+  # Ensure that the bash completion runs, that the committed man pages are what
+  # the generator makes of the --help of each program, and that the systemd unit
+  # is generated without error
   #
   test-gen-targets:
     needs: source-archive
@@ -133,14 +134,22 @@ jobs:
     - name: ldconfig
       run: ldconfig
 
-    - name: Execute 'xnvme library-info'
-      run: xnvme library-info
+    - name: Execute 'xnvme env library'
+      run: xnvme env library
 
-    - name: Run make gen-bash-completions
-      run: make gen-bash-completions
+    - name: Check the bash completion parses and xnvme lists its commands
+      run: |
+        bash -n toolbox/bash_completion.d/xnvme
+        xnvme --list-cmds | grep -qx info
+        xnvme --list-cmds=test | grep -qx adm
 
-    - name: Run make gen-man-pages
-      run: make gen-man-pages
+    # The pages are committed, so a --help changed without regenerating them
+    # shows here; txt2man dates each page, hence the .TH lines are not compared
+    - name: Run make gen-man-pages, and compare with the committed pages
+      run: |
+        cp -r man /tmp/man.committed
+        make gen-man-pages
+        diff -r -I '^\.TH ' /tmp/man.committed man
 
     # The unit directory is given rather than discovered, so the check does not
     # depend on systemd being present in the container
@@ -149,11 +158,11 @@ jobs:
         meson setup /tmp/bd-systemd --prefix=/opt/xnvme \
           -Dsystemd_unitdir=/lib/systemd/system -Dbuild_subprojects=false
         unit="/tmp/bd-systemd/toolbox/systemd/xnvme-homi@.service"
-        grep -q '^ExecStart=/opt/xnvme/bin/homi ' "$unit"
+        grep -q '^ExecStart=/opt/xnvme/libexec/xnvme/xnvme-homi ' "$unit"
         grep -q '^EnvironmentFile=/opt/xnvme/etc/xnvme/' "$unit"
         ! grep -qE '@[a-z_]+@' "$unit"
         unit="/tmp/bd-systemd/toolbox/systemd/xnvme-qublk@.service"
-        grep -q '^ExecStart=/opt/xnvme/bin/qublk serve ' "$unit"
+        grep -q '^ExecStart=/opt/xnvme/libexec/xnvme/xnvme-qublk serve ' "$unit"
         grep -q '^EnvironmentFile=/opt/xnvme/etc/xnvme/' "$unit"
         ! grep -qE '@[a-z_]+@' "$unit"
         meson introspect /tmp/bd-systemd --installed \
@@ -194,8 +203,8 @@ jobs:
     - name: ldconfig
       run: ldconfig
 
-    - name: Execute 'xnvme library-info'
-      run: xnvme library-info
+    - name: Execute 'xnvme env library'
+      run: xnvme env library
 
     - uses: dtolnay/rust-toolchain@stable
 
@@ -334,8 +343,8 @@ jobs:
     - name: Execute 'xnvme enum'
       run: xnvme enum
 
-    - name: Execute 'xnvme library-info'
-      run: xnvme library-info
+    - name: Execute 'xnvme env library'
+      run: xnvme env library
 
     - name: Execute the meson test-suite against the ramdisk
       # The enum cases enumerate the devices of the host; they are the only
@@ -454,7 +463,7 @@ jobs:
 
     - name: Run the installed tools
       run: |
-        xnvme library-info
+        xnvme env library
         xnvme info 1GB --be ramdisk
 
   build-macos:
@@ -505,8 +514,8 @@ jobs:
     - name: Execute 'xnvme enum'
       run: xnvme enum
 
-    - name: Execute 'xnvme library-info'
-      run: xnvme library-info
+    - name: Execute 'xnvme env library'
+      run: xnvme env library
 
     - name: Check pkg-config
       run: |
@@ -664,7 +673,7 @@ jobs:
     - name: Execute xnvme commands
       shell: powershell
       run: |
-        xnvme.exe library-info
+        xnvme.exe env library
         xnvme.exe enum
 
     - name: Check pkg-config
@@ -963,8 +972,8 @@ jobs:
         --monitor \
         --config "configs/${{ matrix.hostname }}.toml" \
         --output "${{ github.job }}-${{ matrix.hostname }}-provision-xnvme" \
-        xnvme_source_sync xnvme_build_prep test_deps xnvme_build xnvme_install \
-        ldconfig xnvme_bindings_py_install_tgz fio_prep
+        xnvme_source_sync xnvme_build_prep test_deps test_tools xnvme_build \
+        xnvme_install ldconfig xnvme_bindings_py_install_tgz fio_prep
 
     - name: CIJOE, run tests
       run: |

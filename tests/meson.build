@@ -2,9 +2,15 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-tests_prefix = 'xnvme_tests_'
+tests_prefix = 'xnvme-test-'
 
 tests = {
+  'adm.c': [
+    ['idfy, no args', ['idfy', '1GB', '--cns', '0x0']],
+    ['idfy, cntid=0x0', ['idfy', '1GB', '--cns', '0x0', '--cntid', '0x0', '--setid', '0x0', '--uuid', '0x0']],
+    ['idfy-ns', ['idfy-ns', '1GB']],
+    ['idfy-ctrlr', ['idfy-ctrlr', '1GB']],
+  ],
   'async_intf.c': [
     ['count=1', ['init_term', '1GB', '--count', '1', '--qdepth', '64']],
     ['count=2', ['init_term', '1GB', '--count', '2', '--qdepth', '64']],
@@ -32,6 +38,7 @@ tests = {
     ['slba=0 sdlba=8', ['copy', '1GB', '--slba', '0', '--nlb', '7', '--sdlba', '8']],
     ['slba=8 sdlba=0', ['copy', '1GB', '--slba', '8', '--nlb', '7', '--sdlba', '0']]],
   'ctrlr.c': [],
+  'dd.c': [],
   'delay_identification.c': [
     ['open', ['open', '1GB']]
   ],
@@ -39,6 +46,9 @@ tests = {
   'enum.c': [
     ['open', ['open', '--count', '4']],
     ['multi', ['multi', '--count', '4']],
+  ],
+  'file.c': [
+    ['write-read', ['write-read', '1GB', '8']],
   ],
   'ioworker.c': [
     ['verify', ['verify', '1GB']],
@@ -53,10 +63,23 @@ tests = {
     ['verify vec-cnt=4 direct=1', ['verify', '1GB', '--vec-cnt', '4', '--direct', '1']],
     ['verify_sync vec-cnt=4 direct=1', ['verify-sync', '1GB', '--vec-cnt', '4', '--direct', '1']],
   ],
+  'kv.c': [],
   'kvs.c': [],
   'lblk.c': [
     ['io', ['io', '1GB']],
     ['write_zeroes', ['write_zeroes', '1GB']],
+  ],
+  'nvm.c': [
+    ['enum', ['enum']],
+    ['info', ['info', '1GB']],
+    ['idfy', ['idfy', '1GB']],
+    ['read', ['read', '1GB', '--slba', '0x0', '--nlb', '0']],
+    ['write', ['write', '1GB', '--slba', '0x0', '--nlb', '0']],
+    ['write-zeros', ['write-zeros', '1GB', '--slba', '0x0', '--nlb', '0']],
+    ['write-dir', ['write-dir', '1GB', '--slba', '0x0', '--nlb', '7']],
+    ['write-read-pi, prchk not set', ['write-read-pi', '1GB', '--slba', '0x0', '--nlb', '8', '--pract', '1']],
+    ['write-read-pi, prchk=0x4', ['write-read-pi', '1GB', '--slba', '0x0', '--nlb', '0', '--pract', '1', '--prchk', '0x4']],
+    ['write-read-pi, prchk=0x5', ['write-read-pi', '1GB', '--slba', '0x0', '--nlb', '0', '--pract', '1', '--prchk', '0x5']],
   ],
   'scc.c': [
     ['idfy', ['idfy', '1GB']],
@@ -81,6 +104,7 @@ tests = {
   'znd_explicit_open.c': [],
   'znd_state.c': [],
   'znd_zrwa.c': [],
+  'zns.c': [],
   'async_limbo.c': [],
 }
 
@@ -94,9 +118,10 @@ if is_linux
   tests += {'cuse_admin64_identify.c': []}
 endif
 
+tests_bins = []
 foreach test_source, tests_args : tests
   e = executable(
-    tests_prefix + fs.stem(test_source),
+    tests_prefix + fs.stem(test_source).replace('_', '-'),
     test_source,
     include_directories: [conf_inc, xnvme_inc],
     link_with: xnvmelib,
@@ -104,7 +129,9 @@ foreach test_source, tests_args : tests
     dependencies: [thread_dep],
     install_rpath: xnvmelib_rpath,
     install: true,
+    install_dir: xnvme_libexecdir,
   )
+  tests_bins += e
   foreach test_args : tests_args
     test_name = test_args[0]
     test(

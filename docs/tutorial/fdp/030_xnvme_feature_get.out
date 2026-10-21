@@ -1,4 +1,4 @@
-cmd_gfeat: {nsid: 0x1, fid: 0x1e, sel: 0x0}
+# cmd_gfeat: {nsid: 0x1, fid: 0x1e, sel: 0x0}
 nevents: 6 }
 { type: 0, event enabled: 1 }
 { type: 0x1, event enabled: 1 }
