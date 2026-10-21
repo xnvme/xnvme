@@ -103,11 +103,6 @@ _dev_open_init_cref(struct xnvme_dev *dev, struct xnvme_be *be, const struct xnv
 		goto ctrlr_ready;
 	}
 
-	if ((dev->opts.shm_id || dev->opts.homi_id) && !(cfg->attr.caps & XNVME_BE_CAP_MPROC)) {
-		XNVME_DEBUG("FAILED: backend '%s' cannot share a controller", cfg->attr.name);
-		return -ENOTSUP;
-	}
-
 	ctrlr = be->dev.ctrlr_init(dev);
 	if (!ctrlr) {
 		XNVME_DEBUG("FAILED: ctrlr_init for uri '%s'", dev->ident.uri);
@@ -196,12 +191,14 @@ _dev_open_try_config(struct xnvme_dev *dev, const struct xnvme_be_config *cfg,
  * @param dev Device to open, with ident.uri already set
  * @param opts User-provided options for backend selection
  *
- * @return 0 on success, negative errno on failure (-ENXIO when no config matches)
+ * @return 0 on success, negative errno on failure (-ENXIO when no config matches, -ENOTSUP
+ * when only configs that cannot share a controller do and sharing was asked for)
  */
 int
 xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 {
 	uint32_t uri_cap = 0;
+	int unshared = 0;
 	int err = 0;
 
 	if (g_xnvme_platform->classify) {
@@ -231,6 +228,15 @@ xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 				    cfg->attr.descr, cfg->attr.caps, uri_cap);
 			continue;
 		}
+		/* Skipped rather than tried, since a caps-matched config that fails
+		 * ends the search and a backend later in the list may share */
+		if (opts && (opts->shm_id || opts->homi_id) &&
+		    !(cfg->attr.caps & XNVME_BE_CAP_CTRLR_SHARING)) {
+			XNVME_DEBUG("INFO: skipping config '%s'; it cannot share a controller",
+				    cfg->attr.descr);
+			unshared = 1;
+			continue;
+		}
 
 		err = _dev_open_try_config(dev, cfg, opts);
 		if (!err) {
@@ -252,7 +258,7 @@ xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 
 	XNVME_DEBUG("FAILED: no config for uri: '%s'", dev->ident.uri);
 
-	return err ? err : -ENXIO;
+	return err ? err : (unshared ? -ENOTSUP : -ENXIO);
 }
 
 struct enumerate_scan_ctx {

@@ -9,6 +9,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_queue.h>
 #include <xnvme_be_upcie.h>
+#include <xnvme_be_upcie_cplane_client.h>
 
 int
 xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
@@ -17,10 +18,9 @@ xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
 	struct xnvme_be_upcie_state *state = (void *)queue->base.dev->be.state;
 	int err;
 
-	if (g_upcie_rte.mproc) {
-		err = xnvme_be_upcie_mproc_create_io_qpair(state->ctrlr, &upcie_queue->qpair,
-							   queue->base.capacity + 1,
-							   &upcie_queue->offsets);
+	if (g_upcie_rte.connection.alive) {
+		err = xnvme_be_upcie_cplane_alloc_qpair(state->ctrlr, &upcie_queue->qpair,
+							queue->base.capacity + 1);
 	} else {
 		err = nvme_controller_create_io_qpair_dmamem(
 			state->ctrlr->ctrl, &upcie_queue->qpair, queue->base.capacity + 1,
@@ -28,9 +28,7 @@ xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int XNVME_UNUSED(opts))
 			&upcie_queue->offsets.prp);
 	}
 	if (err) {
-		XNVME_DEBUG("FAILED: %s(); err(%d)",
-			    g_upcie_rte.mproc ? "xnvme_be_upcie_mproc_create_io_qpair"
-					      : "nvme_controller_create_io_qpair_dmamem",
+		XNVME_DEBUG("FAILED: creating a queue of %u; err(%d)", queue->base.capacity + 1,
 			    err);
 		return err;
 	}
@@ -44,9 +42,8 @@ xnvme_be_upcie_queue_term(struct xnvme_queue *queue)
 	struct xnvme_queue_upcie *upcie_queue = (void *)queue;
 	struct xnvme_be_upcie_state *state = (void *)queue->base.dev->be.state;
 
-	if (g_upcie_rte.mproc) {
-		xnvme_be_upcie_mproc_delete_io_qpair(state->ctrlr, &upcie_queue->qpair,
-						     &upcie_queue->offsets);
+	if (g_upcie_rte.connection.alive) {
+		xnvme_be_upcie_cplane_free_qpair(state->ctrlr, &upcie_queue->qpair);
 	} else {
 		nvme_controller_delete_io_qpair_dmamem(
 			state->ctrlr->ctrl, &upcie_queue->qpair, &g_upcie_rte.mem.heap,
@@ -111,9 +108,13 @@ xnvme_be_upcie_queue_poke(struct xnvme_queue *queue, uint32_t max)
 
 	if (reaped) {
 		mmio_write32(qp->cqdb, 0, qp->head);
+		upcie_queue->pokes_idle = 0;
+		upcie_queue->served_gone_ns = 0;
+		return reaped;
 	}
 
-	return reaped;
+	return g_upcie_rte.connection.alive ? xnvme_be_upcie_cplane_queue_poke_idle(upcie_queue)
+					    : 0;
 }
 
 int
