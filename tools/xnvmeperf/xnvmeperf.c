@@ -982,11 +982,23 @@ xnvmeperf_cuda_run(struct xnvmeperf_args *args)
 	uint64_t *rounds_per_dev, *failed_per_dev;
 	double elapsed_s;
 	float elapsed_ms = 0;
+	void *ctx;
 	int err;
+
+	err = xnvmeperf_cuda_ctx_create(&ctx);
+	if (err) {
+		return err;
+	}
 
 	err = xnvmeperf_open_devs(args, &devs);
 	if (err) {
-		return err;
+		goto destroy_ctx;
+	}
+
+	err = xnvmeperf_cuda_ctx_check(ctx);
+	if (err) {
+		xnvme_cli_perr("Failed: the open replaced the CUDA context", err);
+		goto close_devs;
 	}
 
 	rounds_per_dev = calloc(args->ndevs, sizeof(*rounds_per_dev));
@@ -1026,6 +1038,14 @@ xnvmeperf_cuda_run(struct xnvmeperf_args *args)
 
 close_devs:
 	xnvme_cli_dev_close_multi(devs, args->ndevs);
+	if (!err) {
+		err = xnvmeperf_cuda_ctx_check(ctx);
+		if (err) {
+			xnvme_cli_perr("Failed: the close replaced the CUDA context", err);
+		}
+	}
+destroy_ctx:
+	xnvmeperf_cuda_ctx_destroy(ctx);
 	return err;
 }
 
@@ -1033,11 +1053,23 @@ static int
 xnvmeperf_cuda_verify(struct xnvmeperf_args *args)
 {
 	struct xnvme_dev **devs;
+	void *ctx;
 	int err;
+
+	err = xnvmeperf_cuda_ctx_create(&ctx);
+	if (err) {
+		return err;
+	}
 
 	err = xnvmeperf_open_devs(args, &devs);
 	if (err) {
-		return err;
+		goto destroy_ctx;
+	}
+
+	err = xnvmeperf_cuda_ctx_check(ctx);
+	if (err) {
+		xnvme_cli_perr("Failed: the open replaced the CUDA context", err);
+		goto close_devs;
 	}
 
 	printf("\nxnvmeperf cuda-verify: iosize: %u, qdepth: %u, nqueues: %u\n", args->iosize,
@@ -1051,7 +1083,16 @@ xnvmeperf_cuda_verify(struct xnvmeperf_args *args)
 
 	printf("====================================================================\n");
 
+close_devs:
 	xnvme_cli_dev_close_multi(devs, args->ndevs);
+	if (!err) {
+		err = xnvmeperf_cuda_ctx_check(ctx);
+		if (err) {
+			xnvme_cli_perr("Failed: the close replaced the CUDA context", err);
+		}
+	}
+destroy_ctx:
+	xnvmeperf_cuda_ctx_destroy(ctx);
 	return err;
 }
 
