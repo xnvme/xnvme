@@ -62,7 +62,7 @@ Contents:
    api/index.rst
    tutorial/index.rst
    material/index.rst
-   contributing/index.rst
+   contributing/index
 
 Indices and tables
 ==================
