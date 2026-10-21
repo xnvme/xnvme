@@ -1,0 +1,34 @@
+// SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
+#ifndef __INTERNAL_XNVME_BE_UPCIE_CUDA_H
+#define __INTERNAL_XNVME_BE_UPCIE_CUDA_H
+#ifdef XNVME_BE_UPCIE_CUDA_ENABLED
+#include <xnvme_be.h>
+
+#include <xnvme_be_upcie.h>
+#include <upcie/upcie_cuda.h>
+
+struct xnvme_cuda_queue {
+	struct nvme_qpair_cuda qpair;
+};
+
+/**
+ * State used across multiple instances of controllers/namespaces
+ */
+struct xnvme_be_upcie_cuda_rte {
+	CUcontext cu_ctx;
+	struct cudamem_config cuda_config;
+	struct cudamem_heap cuda_heap;
+	struct dmamem dmem; ///< Shared translation; unused where each controller needs its own
+	int is_initialized;
+};
+
+extern struct xnvme_be_upcie_cuda_rte g_upcie_cuda_rte;
+
+extern struct xnvme_be_mem g_xnvme_be_upcie_mem_cuda;
+extern struct xnvme_be_dev g_xnvme_be_upcie_dev_cuda;
+
+#endif /* XNVME_BE_UPCIE_CUDA_ENABLED */
+#endif /* __INTERNAL_XNVME_BE_UPCIE_CUDA_H */

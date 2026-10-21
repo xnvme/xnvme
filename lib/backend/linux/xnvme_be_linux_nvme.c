@@ -1,0 +1,179 @@
+// SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include <libxnvme.h>
+#include <xnvme_be.h>
+#include <xnvme_be_nosys.h>
+#ifdef XNVME_PLATFORM_LINUX_ENABLED
+#include <errno.h>
+#include <fcntl.h>
+#include <linux/nvme_ioctl.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <xnvme_be_linux.h>
+#include <xnvme_spec.h>
+#include <xnvme_be_state.h>
+
+#ifdef XNVME_DEBUG_ENABLED
+static const char *
+ioctl_request_to_str(unsigned long req)
+{
+	switch (req) {
+	case NVME_IOCTL_ID:
+		return "NVME_IOCTL_ID";
+	case NVME_IOCTL_ADMIN_CMD:
+		return "NVME_IOCTL_ADMIN_CMD";
+#ifdef NVME_IOCTL_ADMIN64_CMD
+	case NVME_IOCTL_ADMIN64_CMD:
+		return "NVME_IOCTL_ADMIN64_CMD";
+#endif
+	case NVME_IOCTL_SUBMIT_IO:
+		return "NVME_IOCTL_SUBMIT_IO";
+	case NVME_IOCTL_IO_CMD:
+		return "NVME_IOCTL_IO_CMD";
+#ifdef NVME_IOCTL_IO64_CMD
+	case NVME_IOCTL_IO64_CMD:
+		return "NVME_IOCTL_IO64_CMD";
+#endif
+#ifdef NVME_IOCTL_IO64_CMD_VEC
+	case NVME_IOCTL_IO64_CMD_VEC:
+		return "NVME_IOCTL_IO64_CMD_VEC";
+#endif
+#ifdef NVME_URING_CMD_IO
+	case NVME_URING_CMD_IO:
+		return "NVME_URING_CMD_IO";
+#endif
+#ifdef NVME_URING_CMD_IO_VEC
+	case NVME_URING_CMD_IO_VEC:
+		return "NVME_URING_CMD_IO_VEC";
+#endif
+	case NVME_IOCTL_RESET:
+		return "NVME_IOCTL_RESET";
+	case NVME_IOCTL_SUBSYS_RESET:
+		return "NVME_IOCTL_SUBSYS_RESET";
+	case NVME_IOCTL_RESCAN:
+		return "NVME_IOCTL_RESCAN";
+
+	default:
+		return "NVME_IOCTL_UNKNOWN";
+	}
+}
+#endif
+
+struct _kernel_cpl {
+	union {
+		struct {
+			uint32_t timeout_ms;
+			uint32_t result;
+			uint64_t rsvd;
+		} res32;
+
+		struct {
+			uint32_t timeout_ms;
+			uint32_t rsvd1;
+			uint64_t result;
+		} res64;
+	};
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cpl) == sizeof(struct _kernel_cpl), "Incorrect size")
+
+int
+xnvme_be_linux_nvme_map_cpl(struct xnvme_cmd_ctx *ctx, unsigned long ioctl_req, int res)
+{
+	struct _kernel_cpl *kcpl = (void *)&ctx->cpl;
+
+	switch (ioctl_req) {
+	case NVME_IOCTL_ADMIN_CMD:
+	case NVME_IOCTL_IO_CMD:
+		ctx->cpl.result = kcpl->res32.result;
+		break;
+#ifdef NVME_IOCTL_IO64_CMD
+	case NVME_IOCTL_IO64_CMD:
+		ctx->cpl.result = kcpl->res64.result;
+		break;
+#endif
+#ifdef NVME_IOCTL_IO64_CMD_VEC
+	case NVME_IOCTL_IO64_CMD_VEC:
+		ctx->cpl.result = kcpl->res64.result;
+		break;
+#endif
+#ifdef NVME_IOCTL_ADMIN64_CMD
+	case NVME_IOCTL_ADMIN64_CMD:
+		ctx->cpl.result = kcpl->res64.result;
+		break;
+#endif
+#ifdef NVME_URING_CMD_IO
+	case NVME_URING_CMD_IO:
+		break;
+#endif
+#ifdef NVME_URING_CMD_IO_VEC
+	case NVME_URING_CMD_IO_VEC:
+		break;
+#endif
+	default:
+		XNVME_DEBUG("FAILED: ioctl_req: %lu, res: %d", ioctl_req, res);
+		return -ENOSYS;
+	}
+
+	ctx->cpl.sqhd = 0;
+	ctx->cpl.sqid = 0;
+	ctx->cpl.cid = 0;
+	ctx->cpl.status.val = 0;
+	if (res) {
+		ctx->cpl.status.sc = res & 0xFF;
+		ctx->cpl.status.sct = (res >> 8) & 0x7;
+	}
+
+	return 0;
+}
+
+int
+xnvme_be_linux_nvme_ioctl(struct xnvme_dev *dev, unsigned long ioctl_req,
+			  struct xnvme_cmd_ctx *ctx)
+{
+	struct xnvme_be_linux_state *state = &xnvme_be_state(dev)->linux_state;
+	int err;
+
+	err = ioctl(state->posix.fd, ioctl_req, ctx);
+	XNVME_DEBUG("INFO: ioctl(%s), err(%d), errno(%d)", ioctl_request_to_str(ioctl_req), err,
+		    errno);
+	if (!err) {
+		return xnvme_be_linux_nvme_map_cpl(ctx, ioctl_req, 0);
+	}
+
+	if ((err == -1) && errno) {
+		XNVME_DEBUG("INFO: retconv: -1 and set errno")
+		if (xnvme_be_linux_nvme_map_cpl(ctx, ioctl_req, errno)) {
+			XNVME_DEBUG("FAILED: xnvme_be_linux_nvme_map_cpl(errno:%d)", errno);
+		}
+		return -errno;
+	} else if (err < 0) {
+		XNVME_DEBUG("INFO: retconv: -errno; unexpected ioctl() return-val convention.")
+		if (xnvme_be_linux_nvme_map_cpl(ctx, ioctl_req, err)) {
+			XNVME_DEBUG("FAILED: xnvme_be_linux_nvme_map_cpl(err:%d)", err);
+		}
+		return err;
+	}
+
+	XNVME_DEBUG("INFO: retconv: NVMe-completion-status-code. encoded in lower 16-bit")
+	if (xnvme_be_linux_nvme_map_cpl(ctx, ioctl_req, err)) {
+		XNVME_DEBUG("FAILED: xnvme_be_linux_nvme_map_cpl(err:%d)", err);
+	}
+
+	return -EIO;
+}
+
+int
+xnvme_be_linux_nvme_dev_nsid(struct xnvme_dev *dev)
+{
+	struct xnvme_be_linux_state *state = &xnvme_be_state(dev)->linux_state;
+
+	return ioctl(state->posix.fd, NVME_IOCTL_ID);
+}
+
+#endif

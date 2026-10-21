@@ -2,96 +2,19 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-xnvmelib_source = [
-  'xnvme_adm.c',
-  'xnvme_be.c',
-  'xnvme_be_cbi_admin_shim.c',
-  'xnvme_be_cbi_async_emu.c',
-  'xnvme_be_cbi_async_nil.c',
-  'xnvme_be_cbi_async_posix.c',
-  'xnvme_be_cbi_async_thrpool.c',
-  'xnvme_be_cbi_mem_posix.c',
-  'xnvme_be_cref.c',
-  'xnvme_be_cbi_sync_psync.c',
-  'xnvme_platform.c',
-  'xnvme_platform_linux.c',
-  'xnvme_platform_freebsd.c',
-  'xnvme_platform_macos.c',
-  'xnvme_platform_windows.c',
-  'xnvme_be_freebsd.c',
-  'xnvme_be_freebsd_async.c',
-  'xnvme_be_freebsd_dev.c',
-  'xnvme_be_freebsd_nvme.c',
-  'xnvme_be_linux.c',
-  'xnvme_be_linux_async_libaio.c',
-  'xnvme_be_linux_async_liburing.c',
-  'xnvme_be_linux_async_ucmd.c',
-  'xnvme_be_linux_block.c',
-  'xnvme_be_linux_dev.c',
-  'xnvme_be_linux_hugepage.c',
-  'xnvme_be_linux_nvme.c',
-  'xnvme_be_macos.c',
-  'xnvme_be_macos_admin.c',
-  'xnvme_be_macos_dev.c',
-  'xnvme_be_macos_sync.c',
-  'xnvme_be_macos_driverkit.c',
-  'xnvme_be_macos_driverkit_admin.c',
-  'xnvme_be_macos_driverkit_dev.c',
-  'xnvme_be_macos_driverkit_sync.c',
-  'xnvme_be_macos_driverkit_async.c',
-  'xnvme_be_macos_driverkit_mem.c',
-  'xnvme_be_nosys.c',
-  'xnvme_be_ramdisk.c',
-  'xnvme_be_ramdisk_admin.c',
-  'xnvme_be_ramdisk_dev.c',
-  'xnvme_be_ramdisk_sync.c',
-  'xnvme_be_spdk.c',
-  'xnvme_be_spdk_admin.c',
-  'xnvme_be_spdk_async.c',
-  'xnvme_be_spdk_dev.c',
-  'xnvme_be_spdk_mem.c',
-  'xnvme_be_spdk_sync.c',
-  'xnvme_be_libvfn.c',
-  'xnvme_be_libvfn_admin.c',
-  'xnvme_be_libvfn_async.c',
-  'xnvme_be_libvfn_dev.c',
-  'xnvme_be_libvfn_mem.c',
-  'xnvme_be_libvfn_sync.c',
-  'xnvme_be_windows.c',
-  'xnvme_be_windows_async_iocp.c',
-  'xnvme_be_windows_async_iocp_th.c',
-  'xnvme_be_windows_async_ioring.c',
-  'xnvme_be_windows_block.c',
-  'xnvme_be_windows_dev.c',
-  'xnvme_be_windows_fs.c',
-  'xnvme_be_windows_mem.c',
-  'xnvme_be_windows_nvme.c',
-  'xnvme_buf.c',
-  'xnvme_cli.c',
-  'xnvme_cmd.c',
-  'xnvme_cuda_buf.c',
-  'xnvme_hip_buf.c',
-  'xnvme_dev.c',
-  'xnvme_file.c',
-  'xnvme_geo.c',
-  'xnvme_host_buf.c',
-  'xnvme_ident.c',
-  'xnvme_kvs.c',
-  'xnvme_lba.c',
-  'xnvme_libconf.c',
-  'xnvme_lock.c',
-  'xnvme_nvm.c',
-  'xnvme_opts.c',
-  'xnvme_queue.c',
-  'xnvme_req.c',
-  'xnvme_spec.c',
-  'xnvme_spec_pp.c',
-  'xnvme_topology.c',
-  'xnvme_ver.c',
-  'xnvme_znd.c',
-  'xnvme_crc.c',
-  'xnvme_pi.c',
-]
+xnvmelib_source = []
+
+# Private headers, for the library and for the in-tree tests and tools
+xnvme_priv_inc = include_directories('core', 'nvme', 'util', 'backend', 'platform')
+xnvmelib_inc = [conf_inc, xnvme_inc, xnvme_priv_inc]
+
+subdir('util')
+subdir('backend')
+subdir('platform')
+subdir('core')
+subdir('nvme')
+subdir('file')
+subdir('cli')
 
 xnvmelib_source += xnvme_vcs_h
 
@@ -109,8 +32,6 @@ xnvmelib_deps = [
   cuda_dep,
   hip_dep,
 ]
-
-subdir('upcie')
 
 mapfile = 'libxnvme.map'
 # Version script is not supported by the linker on OSX
@@ -130,7 +51,7 @@ xnvmelib = library(
   dependencies: xnvmelib_deps,
   link_args: link_args_hardening + version_script,
   link_depends: mapfile,
-  include_directories: [conf_inc, xnvme_inc],
+  include_directories: xnvmelib_inc,
   install_dir: xnvmelib_libdir,
   install: true,
 )

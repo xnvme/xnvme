@@ -181,7 +181,7 @@ struct xnvme_queue *q2 = xnvme_queue_init(dev, 128, 0);  // Client's own queue
 ├─────────────────────────────────────────────────────────────┤
 │  Cross-platform components                                  │
 │                                                             │
-│  CBI: emu, thrpool, nil, posix mem, psync                   │
+│  posix, emu, thrpool, nil, shim: shared by the platforms    │
 │  Ramdisk: virtual device driver (reusable by any platform)  │
 │  cref: controller reference counting                        │
 └─────────────────────────────────────────────────────────────┘
@@ -360,12 +360,12 @@ struct xnvme_be_config {
 
 ```c
 // NVMe passthrough via io_uring_cmd
-const struct xnvme_be_config g_xnvme_be_linux_ucmd_nvme = {
-	.async = &g_xnvme_be_linux_async_ucmd,
+const struct xnvme_be_config g_xnvme_platform_linux_io_uring_cmd = {
+	.async = &g_xnvme_be_liburing_async_ucmd,
 	.sync = &g_xnvme_be_linux_sync_nvme,
 	.admin = &g_xnvme_be_linux_admin_nvme,
-	.dev = &g_xnvme_be_dev_linux,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+	.dev = &g_xnvme_be_linux_dev,
+	.mem = &g_xnvme_be_posix_mem,
 	.mem_overrides = (const struct xnvme_be_mem *const[]){
 		&g_xnvme_be_linux_mem_hugepage, NULL,
 	},
@@ -376,12 +376,12 @@ const struct xnvme_be_config g_xnvme_be_linux_ucmd_nvme = {
 };
 
 // File I/O via io_uring
-const struct xnvme_be_config g_xnvme_be_linux_iou_file = {
-	.async = &g_xnvme_be_linux_async_liburing,
-	.sync = &g_xnvme_be_cbi_sync_psync,
-	.admin = &g_xnvme_be_cbi_admin_shim,
-	.dev = &g_xnvme_be_dev_linux,
-	.mem = &g_xnvme_be_cbi_mem_posix,
+const struct xnvme_be_config g_xnvme_platform_linux_io_uring_file = {
+	.async = &g_xnvme_be_liburing_async,
+	.sync = &g_xnvme_be_posix_sync,
+	.admin = &g_xnvme_be_shim_admin,
+	.dev = &g_xnvme_be_linux_dev,
+	.mem = &g_xnvme_be_posix_mem,
 	.mem_overrides = (const struct xnvme_be_mem *const[]){
 		&g_xnvme_be_linux_mem_hugepage, NULL,
 	},
@@ -528,8 +528,8 @@ enum xnvme_dev_type detect_device_type(const char *uri) {
 
 ### Ramdisk
 
-Ramdisk is a cross-platform virtual device driver - not a backend, not formally
-CBI, but reusable like CBI.
+Ramdisk is a cross-platform virtual device driver in `lib/backend/ramdisk`,
+reusable by every platform like the other cross-platform implementations.
 
 ```c
 // Ramdisk via URI pattern
@@ -540,7 +540,7 @@ xnvme_dev_open("1GB", &(struct xnvme_opts){.be = "ramdisk"});
 ```
 
 - Memory-backed NVMe device emulation
-- Uses CBI async wrappers (thrpool, emu, nil)
+- Uses the cross-platform async implementations (thrpool, emu, nil)
 - Available on all platforms
 - Config provides its own sync/admin/dev
 
@@ -586,9 +586,9 @@ Userspace configs bundle everything and don't allow mixing:
 | uio         | uio       | uio       | uio       | hugepage  | Linux          | uPCIe   |
 | driverkit   | driverkit | driverkit | driverkit | driverkit | macOS          | MacVFN  |
 
-### CBI / Virtual Components
+### Cross-platform and Virtual Components
 
-Cross-platform common backend implementations:
+The implementations shared by the platforms, each in `lib/backend/<dir>`:
 
 | Component | Type   | Description                              |
 | --------- | ------ | ---------------------------------------- |
@@ -997,18 +997,18 @@ struct xnvme_platform g_xnvme_platform_linux = {
 #ifdef XNVME_BE_VFIO_ENABLED
 		&g_xnvme_be_vfio,
 #endif
-		&g_xnvme_be_linux_emu_nvme,
-#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
-		&g_xnvme_be_linux_ucmd_nvme,
-		&g_xnvme_be_linux_iou_nvme,
+		&g_xnvme_platform_linux_emu,
+#ifdef XNVME_BE_LIBURING_ENABLED
+		&g_xnvme_platform_linux_io_uring_cmd,
+		&g_xnvme_platform_linux_io_uring,
 #endif
 		// ... more configs ...
-		&g_xnvme_be_linux_emu_file,
-		&g_xnvme_be_linux_thrpool_file,
+		&g_xnvme_platform_linux_emu_file,
+		&g_xnvme_platform_linux_thrpool_file,
 #ifdef XNVME_BE_RAMDISK_ENABLED
-		&g_xnvme_be_ramdisk_emu,
-		&g_xnvme_be_ramdisk_thrpool,
-		&g_xnvme_be_ramdisk_nil,
+		&g_xnvme_platform_linux_ramdisk_emu,
+		&g_xnvme_platform_linux_ramdisk_thrpool,
+		&g_xnvme_platform_linux_ramdisk,
 #endif
 		NULL,
 	},
@@ -1200,46 +1200,52 @@ xnvme_platform_dev_close(struct xnvme_dev *dev)
 ## File Organization
 
 ```
+include/                          # Public headers only
 lib/
-├── xnvme_platform.c              # Shared dev_open, enumerate
-├── xnvme_platform_linux.c        # Linux: scan, classify
-├── xnvme_platform_freebsd.c      # FreeBSD: scan, classify
-├── xnvme_platform_macos.c        # macOS: scan, classify
-├── xnvme_platform_windows.c      # Windows: scan, classify
+├── core/                       # dev, buf, cmd, queue, geo, ident, opts
+├── nvme/                       # adm, nvm, znd, kvs, spec, topology, pi
+├── util/                       # lock, crc, lba, libconf, ver
+├── file/  cli/                 # the file API and the CLI library
 │
-├── xnvme_be_linux.c              # Linux configs + helpers
-├── xnvme_be_linux_dev.c          # Linux: dev_open, dev_close
-├── xnvme_be_linux_sync_nvme.c    # Linux: NVMe ioctl sync
-├── xnvme_be_linux_sync_block.c   # Linux: block layer sync
-├── xnvme_be_linux_admin_nvme.c   # Linux: NVMe ioctl admin
-├── xnvme_be_linux_admin_block.c  # Linux: block layer admin
-├── xnvme_be_linux_async_*.c      # Linux: io_uring, libaio, etc.
-├── xnvme_be_linux_mem_hugepage.c # Linux: hugepage memory
+├── platform/
+│   ├── xnvme_platform.c          # Shared dev_open, enumerate
+│   └── <os>/                     # linux, freebsd, macos, windows
+│       ├── xnvme_platform_<os>.c # Scan, classify, the configs the OS offers
+│       └── xnvme_platform_<os>_configs.c  # Configs combining directories
 │
-├── xnvme_be_fbsd*.c              # FreeBSD configs + implementations
-├── xnvme_be_macos*.c             # macOS configs + implementations
-├── xnvme_be_macos_driverkit*.c   # macOS DriverKit configs + implementations
-├── xnvme_be_windows*.c           # Windows configs + implementations
-│
-├── xnvme_be_spdk*.c              # SPDK userspace driver
-├── xnvme_be_vfio*.c              # libvfn userspace driver
-│
-├── xnvme_be_cbi_*.c              # Cross-platform components (emu, thrpool, psync, etc.)
-├── xnvme_be_cref.c               # Controller reference counting
-├── xnvme_be_ramdisk*.c           # Ramdisk virtual device driver
-└── xnvme_be_nosys.c              # Stubs for disabled features
+└── backend/
+    ├── xnvme_be.c                # Backend printers
+    ├── xnvme_be_cref.c           # Controller reference counting
+    ├── xnvme_be_nosys.c          # Stubs for what an implementation lacks
+    ├── xnvme_be_registry.h       # Extern declarations for all configs
+    ├── xnvme_be_state.h          # The union of the backend states
+    │
+    └── <dir>/                    # One mechanism: posix, emu, thrpool, nil,
+        │                         # shim, liburing, libaio, iocp, ioring,
+        │                         # spdk, libvfn, upcie, driverkit, ramdisk;
+        │                         # or an OS's own: linux, freebsd, macos,
+        │                         # windows
+        ├── xnvme_be_<dir>_configs.c  # Configs from this directory alone
+        ├── xnvme_be_<dir>_<intf>.c   # dev, mem, admin, sync or async
+        └── xnvme_be_<dir>_<topic>.c  # Code shared within the directory
 ```
 
 ## Naming Convention
 
-| Prefix                | Meaning                                                   |
-| --------------------- | --------------------------------------------------------- |
-| `xnvme_platform_<os>` | Platform (OS-specific scan, classify)                     |
-| `xnvme_be_<os>_`      | Backend implementation (configs, sync, admin, async, mem) |
-| `xnvme_be_<name>`     | Userspace driver (spdk, vfio)                             |
-| `xnvme_be_cbi_`       | Cross-platform backend implementation                     |
-| `xnvme_be_ramdisk`    | Ramdisk virtual device                                    |
-| `xnvme_be_cref`       | Controller reference counting                             |
+The prefix names what a file implements, and the rest which one. A backend
+file is named `xnvme_be_<dir>_<intf>[_<ident>].c`, where `<dir>` is the
+directory it lives in, `<intf>` the backend interface it implements, and
+`<ident>` tells implementations of the same interface apart. A directory's
+private header is `xnvme_be_<dir>.h`.
+
+| File                         | Meaning                                       |
+| ---------------------------- | --------------------------------------------- |
+| `xnvme_platform_<os>.c`      | Platform (OS-specific scan, classify)         |
+| `xnvme_be_<dir>_configs.c`   | Backend configs from one directory alone      |
+| `xnvme_platform_<os>_configs.c` | Backend configs combining directories    |
+| `xnvme_be_<dir>_<intf>.c`    | Implementation of one backend interface       |
+| `xnvme_be_cref`              | Controller reference counting                 |
+| `xnvme_be_nosys`             | Stubs for what an implementation lacks        |
 
 ## Migration Progress
 

@@ -14,7 +14,7 @@
 struct xnvme_be_attr {
 	const char *name;  ///< Backend name
 	const char *descr; ///< Human-readable description
-	uint32_t caps;     ///< Bitmask of xnvme_be_cap (0 = legacy/mixin-based)
+	uint32_t caps;     ///< Bitmask of xnvme_be_cap
 
 	uint8_t _rsvd[4];
 };

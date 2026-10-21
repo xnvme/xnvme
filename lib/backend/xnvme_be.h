@@ -1,0 +1,227 @@
+// SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
+#ifndef __INTERNAL_XNVME_BE_H
+#define __INTERNAL_XNVME_BE_H
+#ifndef WIN32
+#include <paths.h>
+#endif
+#include <stddef.h>
+#include <libxnvme.h>
+
+#define XNVME_BE_QUEUE_STATE_NBYTES 256
+
+#define XNVME_BE_ASYNC_NBYTES 64
+#define XNVME_BE_SYNC_NBYTES  24
+#define XNVME_BE_ADMIN_NBYTES 24
+#define XNVME_BE_DEV_NBYTES   40
+#define XNVME_BE_MEM_NBYTES   56
+#define XNVME_BE_ATTR_NBYTES  24
+#define XNVME_BE_STATE_NBYTES 128
+
+/**
+ * xnvme_platform_dev_open() stores a shared controller in the first pointer of
+ * xnvme_be.state; a dev implementation that shares controllers asserts with
+ * this that its state starts with that pointer
+ */
+#define XNVME_BE_CTRLR_STATE_FIRST(type)                       \
+	XNVME_STATIC_ASSERT(offsetof(struct type, ctrlr) == 0, \
+			    "struct " #type " must start with its ctrlr")
+#define XNVME_BE_NBYTES                                                         \
+	(XNVME_BE_ASYNC_NBYTES + XNVME_BE_SYNC_NBYTES + XNVME_BE_ADMIN_NBYTES + \
+	 XNVME_BE_DEV_NBYTES + XNVME_BE_MEM_NBYTES + XNVME_BE_ATTR_NBYTES +     \
+	 XNVME_BE_STATE_NBYTES)
+
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_attr) == XNVME_BE_ATTR_NBYTES, "Incorrect size");
+
+struct xnvme_be_async {
+	// Submit an async io command to be processed on the backend's io path
+	int (*cmd_io)(struct xnvme_cmd_ctx *, void *, size_t, void *, size_t);
+
+	// Submit a vectored async io command to be processed on the backend's io path
+	int (*cmd_iov)(struct xnvme_cmd_ctx *, struct iovec *, size_t, size_t, void *, size_t);
+
+	// Non-blocking reaping of up to `max` io completions
+	int (*poke)(struct xnvme_queue *, uint32_t);
+
+	// Blocking reaping of all outstanding io completions
+	int (*wait)(struct xnvme_queue *);
+
+	// Do initialization of the underlying backend's io path
+	int (*init)(struct xnvme_queue *, int);
+
+	// Close resources allocated for the underlying backend's io path
+	int (*term)(struct xnvme_queue *);
+
+	// Provide the completion event FD for the queue
+	int (*get_completion_fd)(struct xnvme_queue *);
+
+	// Check if the backend is supported in the current environment
+	const char *id;
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_async) == XNVME_BE_ASYNC_NBYTES, "Incorrect size")
+
+struct xnvme_be_sync {
+	/**
+	 * Pass a NVMe I/O Command Through to the device with minimal driver
+	 * intervention
+	 */
+	int (*cmd_io)(struct xnvme_cmd_ctx *, void *, size_t, void *, size_t);
+
+	/**
+	 * Pass a vectored NVMe I/O Command Through to the device with minimal
+	 * driver intervention
+	 */
+	int (*cmd_iov)(struct xnvme_cmd_ctx *, struct iovec *, size_t, size_t, void *, size_t);
+
+	const char *id;
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_sync) == XNVME_BE_SYNC_NBYTES, "Incorrect size")
+
+struct xnvme_be_admin {
+	/**
+	 * Pass a NVMe Admin Command Through to the device with minimal driver intervention
+	 */
+	int (*cmd_admin)(struct xnvme_cmd_ctx *, void *, size_t, void *, size_t);
+
+	/**
+	 * Pass pseudo admin-commands
+	 *
+	 * That is representation of various operations in NVMe commands, that look
+	 * like but are not actual NVMe commands.
+	 */
+	int (*cmd_pseudo)(struct xnvme_cmd_ctx *, void *, size_t, void *, size_t);
+
+	const char *id;
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_admin) == XNVME_BE_ADMIN_NBYTES, "Incorrect size")
+
+struct xnvme_be_dev {
+	/**
+	 * Construct a device from the given identifier
+	 */
+	int (*dev_open)(struct xnvme_dev *);
+
+	/**
+	 * Close the given device
+	 */
+	void (*dev_close)(struct xnvme_dev *);
+
+	const char *id;
+
+	/**
+	 * Initialize the controller for a userspace driver.
+	 * Returns an opaque controller handle, or NULL on failure.
+	 * NULL pointer means the backend does not use platform-managed cref.
+	 */
+	void *(*ctrlr_init)(struct xnvme_dev *);
+
+	/**
+	 * Terminate the controller for a userspace driver.
+	 * Called by the cref destructor when the refcount reaches zero.
+	 * Returns 0 on success, negative errno on error.
+	 */
+	int (*ctrlr_term)(void *ctrlr);
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_dev) == XNVME_BE_DEV_NBYTES, "Incorrect size")
+
+struct xnvme_be_mem {
+	/**
+	 * Allocate a buffer usable for NVMe commands
+	 */
+	void *(*buf_alloc)(const struct xnvme_dev *, size_t, uint64_t *);
+
+	/**
+	 * Resolve the physical address of the given buffer
+	 */
+	int (*buf_vtophys)(const struct xnvme_dev *, void *, uint64_t *);
+
+	/**
+	 * Re-allocate a buffer usable for NVMe commands
+	 */
+	void *(*buf_realloc)(const struct xnvme_dev *, void *, size_t, uint64_t *);
+
+	/**
+	 * Free a buffer usable for NVMe commands
+	 */
+	void (*buf_free)(const struct xnvme_dev *, void *);
+
+	/**
+	 * Map a buffer usable for NVMe commands
+	 */
+	int (*mem_map)(const struct xnvme_dev *, void *, size_t, uint64_t *);
+
+	/**
+	 * Unmap a buffer usable for NVMe commands
+	 */
+	int (*mem_unmap)(const struct xnvme_dev *, void *);
+	const char *id;
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_mem) == XNVME_BE_MEM_NBYTES, "Incorrect size")
+
+/**
+ * Backend capability flags
+ */
+enum xnvme_be_cap {
+	XNVME_BE_CAP_NVME_CDEV = 0x1 << 0, ///< NVMe char device (/dev/ng0n1)
+	XNVME_BE_CAP_NVME_BDEV = 0x1 << 1, ///< NVMe block device (/dev/nvme0n1)
+	XNVME_BE_CAP_BDEV      = 0x1 << 2, ///< Generic block device
+	XNVME_BE_CAP_FILE      = 0x1 << 3, ///< Regular file
+	XNVME_BE_CAP_RAMDISK   = 0x1 << 4, ///< Ramdisk virtual device
+	XNVME_BE_CAP_NVME_PCIE = 0x1 << 5, ///< NVMe over PCIe (user-space driver)
+	XNVME_BE_CAP_NVME_TCP  = 0x1 << 6, ///< NVMe over TCP (user-space driver)
+	XNVME_BE_CAP_NVME_RDMA = 0x1 << 7, ///< NVMe over RDMA (user-space driver)
+	XNVME_BE_CAP_MPROC     = 0x1 << 8, ///< Multi-process mode
+};
+
+/**
+ * Pre-populated backend configuration
+ *
+ * Complete "recipe" for populating a struct xnvme_be instance: one
+ * implementation of each backend interface. A platform lists the configs it
+ * offers, and device-open selects one of them.
+ */
+struct xnvme_be_config {
+	const struct xnvme_be_async *async;
+	const struct xnvme_be_sync *sync;
+	const struct xnvme_be_admin *admin;
+	const struct xnvme_be_dev *dev;
+	const struct xnvme_be_mem *mem;
+	const struct xnvme_be_mem *const
+		*mem_overrides; ///< NULL-terminated overrides (may be NULL)
+	struct xnvme_be_attr attr;
+};
+
+/**
+ * Backend interface consisting of functions, attributes and instance state
+ */
+struct xnvme_be {
+	struct xnvme_be_async async;          ///< Asynchronous I/O command interface
+	struct xnvme_be_sync sync;            ///< Synchronous I/O command interface
+	struct xnvme_be_admin admin;          ///< Administrative command interface
+	struct xnvme_be_dev dev;              ///< Device functions
+	struct xnvme_be_attr attr;            ///< Backend Attributes
+	struct xnvme_be_mem mem;              ///< Memory Management interface
+	uint8_t state[XNVME_BE_STATE_NBYTES]; ///< Backend instance state
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_be) == XNVME_BE_NBYTES, "Incorrect size")
+
+/**
+ * Auxilary helpers
+ */
+
+int
+xnvme_be_yaml(FILE *stream, const struct xnvme_be *be, int indent, const char *sep, int head);
+
+int
+xnvme_be_fpr(FILE *stream, const struct xnvme_be *be, enum xnvme_pr opts);
+
+int
+xnvme_be_pr(const struct xnvme_be *be, enum xnvme_pr opts);
+
+int
+xnvme_ident_yaml(FILE *stream, const struct xnvme_ident *ident, int indent, const char *sep,
+		 int head);
+
+#endif /* __INTERNAL_XNVME_BE_H */

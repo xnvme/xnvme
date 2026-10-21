@@ -46,14 +46,14 @@ Linux exposes storage devices as files using the following naming schemes:
 
 The Linux platform provides the following backend configs. Some of these use
 **cross-platform
-implementations** from the **Common Backend Implementations** (CBI). For these,
-links point to descriptions in the CBI section. For the Linux-specific
+implementations**, each in a directory of its own under `lib/backend/`. For
+these, links point to the cross-platform section. For the Linux-specific
 interfaces, descriptions are available in the corresponding subsection.
 
 * Memory Allocators
 
   - `posix`, Use **libc** `malloc()/free()` with `sysconf()` for
-    alignment, add link to CBI
+    alignment, add link to the cross-platform section
   - `hugepage`, Pre-allocated hugepage heap using uPCIe's `hostmem` library.
     Defaults to `memfd_create(MFD_HUGETLB)` (no filesystem mount required).
     Pages are pinned and physical addresses resolved at initialization.
@@ -71,10 +71,10 @@ interfaces, descriptions are available in the corresponding subsection.
   - `libaio`, Use Linux aio for Asynchronous I/O
   - `io_uring`, Use Linux io_uring for Asynchronous I/O
   - `io_uring_cmd`, Use Linux io_uring passthru command for Asynchronous I/O
-  - `emu`, add link to CBI
-  - `posix`, add link to CBI
-  - `thrpool`, add link to CBI
-  - `nil`, add link to CBI
+  - `emu`, add link to the cross-platform section
+  - `posix`, add link to the cross-platform section
+  - `thrpool`, add link to the cross-platform section
+  - `nil`, add link to the cross-platform section
 
 * Synchronous Interfaces
 

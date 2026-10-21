@@ -261,7 +261,7 @@ jobs:
       matrix:
         include:
         # Using an alpine container which is the same as upstream but with bash
-        # alpine: SPDK not supported, --with-spdk=disabled
+        # alpine: SPDK not supported, -Dbe_spdk=disabled
         - {os: 'alpine', dh: 'refenv/alpine-bash', ver: 'latest'}
         - {os: 'archlinux', dh: 'archlinux', ver: 'latest'}
         - {os: 'centos', dh: 'quay.io/centos/centos', ver: 'stream9'}
@@ -297,7 +297,7 @@ jobs:
     - name: Configure with and build with debug enabled (without spdk)
       if: ${{ contains(matrix.os, 'alpine') }}
       run: |
-        meson setup builddir --buildtype=debug -Dwith-spdk=disabled
+        meson setup builddir --buildtype=debug -Dbe_spdk=disabled
         meson compile -C builddir
         make clean # prepare for building without debug
 
@@ -307,6 +307,14 @@ jobs:
         meson setup builddir --buildtype=debug
         meson compile -C builddir
         make clean # prepare for building without debug
+
+    - name: Build with every optional backend disabled
+      # Every backend Linux allows to be disabled falls back to nosys; nothing else builds those paths
+      if: ${{ matrix.os == 'debian' && matrix.ver == 'trixie' }}
+      run: |
+        meson setup builddir-none $(for be in emu thrpool nil shim liburing libaio iocp ioring spdk libvfn upcie driverkit ramdisk; do printf -- '-Dbe_%s=disabled ' "$be"; done)
+        meson compile -C builddir-none
+        rm -rf builddir-none
 
     - name: Configure, Build, and Install
       env:
@@ -446,7 +454,7 @@ jobs:
     - name: Build the RPM
       run: |
         git config --global --add safe.directory "$GITHUB_WORKSPACE"
-        meson setup builddir -Dwith-spdk=disabled -Dwith-libvfn=disabled
+        meson setup builddir -Dbe_spdk=disabled -Dbe_libvfn=disabled
         make build-rpm
 
     - name: Install the RPM

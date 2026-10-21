@@ -1,0 +1,95 @@
+// SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
+#include <xnvme_be.h>
+#include <xnvme_be_nosys.h>
+#ifdef XNVME_BE_UPCIE_HIP_ENABLED
+#include <errno.h>
+#include <xnvme_be_upcie_hip.h>
+#include <xnvme_dev.h>
+#include <xnvme_be_state.h>
+
+static void *
+xnvme_be_upcie_hip_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
+{
+	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
+	void *buf;
+
+	buf = hipmem_dma_malloc(&g_upcie_hip_rte.hip_heap, nbytes);
+	if (!buf) {
+		errno = ENOMEM;
+		return NULL;
+	}
+	if (phys) {
+		*phys = dmamem_va_to_iova(state->dmem, buf);
+	}
+
+	return buf;
+}
+
+static void
+xnvme_be_upcie_hip_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
+{
+	hipmem_dma_free(&g_upcie_hip_rte.hip_heap, buf);
+}
+
+static int
+xnvme_be_upcie_hip_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys)
+{
+	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
+
+	*phys = dmamem_va_to_iova(state->dmem, buf);
+	if (!*phys) {
+		XNVME_DEBUG("FAILED: buf(%p) is neither heap nor registered", buf);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+/**
+ * Register a caller-allocated device buffer for DMA
+ *
+ * Resolves through this device's registry, so a buffer handed over here is
+ * usable on this device as one from xnvme_buf_alloc() is; behind an IOMMU each
+ * controller has IOVAs of its own, so register it with each device it is used
+ * from. Registering the same range twice is cheap: the chunks it covers are
+ * refcounted.
+ */
+static int
+xnvme_be_upcie_hip_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, uint64_t *phys)
+{
+	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
+
+	return xnvme_be_upcie_dmamem_map(state->dmem, vaddr, nbytes, phys);
+}
+
+static int
+xnvme_be_upcie_hip_mem_unmap(const struct xnvme_dev *dev, void *vaddr)
+{
+	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
+
+	return xnvme_be_upcie_dmamem_unmap(state->dmem, vaddr);
+}
+
+#endif
+
+struct xnvme_be_mem g_xnvme_be_upcie_mem_hip = {
+	.id = "upcie-hip",
+#ifdef XNVME_BE_UPCIE_HIP_ENABLED
+	.buf_alloc = xnvme_be_upcie_hip_buf_alloc,
+	.buf_realloc = xnvme_be_nosys_buf_realloc,
+	.buf_free = xnvme_be_upcie_hip_buf_free,
+	.buf_vtophys = xnvme_be_upcie_hip_buf_vtophys,
+	.mem_map = xnvme_be_upcie_hip_mem_map,
+	.mem_unmap = xnvme_be_upcie_hip_mem_unmap,
+#else
+	.buf_alloc = xnvme_be_nosys_buf_alloc,
+	.buf_realloc = xnvme_be_nosys_buf_realloc,
+	.buf_free = xnvme_be_nosys_buf_free,
+	.buf_vtophys = xnvme_be_nosys_buf_vtophys,
+	.mem_map = xnvme_be_nosys_mem_map,
+	.mem_unmap = xnvme_be_nosys_mem_unmap,
+#endif
+};
