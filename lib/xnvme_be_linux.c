@@ -20,6 +20,9 @@
 #include <xnvme_dev.h>
 #include <xnvme_be_cbi.h>
 #include <xnvme_be_linux.h>
+#ifdef XNVME_BE_IO_URING_ENABLED
+#include <xnvme_be_io_uring.h>
+#endif
 
 int
 xnvme_be_linux_uapi_ver_fpr(FILE *stream, enum xnvme_pr opts)
@@ -98,9 +101,9 @@ const struct xnvme_be_config g_xnvme_be_linux_emu_block = {
 };
 #endif
 
-#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
-const struct xnvme_be_config g_xnvme_be_linux_ucmd_nvme = {
-	.async = &g_xnvme_be_linux_async_ucmd,
+#ifdef XNVME_BE_IO_URING_ENABLED
+const struct xnvme_be_config g_xnvme_be_io_uring_cmd_nvme = {
+	.async = &g_xnvme_be_io_uring_cmd_async,
 	.sync = &g_xnvme_be_linux_sync_nvme,
 	.admin = &g_xnvme_be_linux_admin_nvme,
 	.dev = &g_xnvme_be_dev_linux,
@@ -118,8 +121,8 @@ const struct xnvme_be_config g_xnvme_be_linux_ucmd_nvme = {
 		},
 };
 
-const struct xnvme_be_config g_xnvme_be_linux_iou_nvme = {
-	.async = &g_xnvme_be_linux_async_liburing,
+const struct xnvme_be_config g_xnvme_be_io_uring_nvme = {
+	.async = &g_xnvme_be_io_uring_async,
 	.sync = &g_xnvme_be_linux_sync_nvme,
 	.admin = &g_xnvme_be_linux_admin_nvme,
 	.dev = &g_xnvme_be_dev_linux,
@@ -136,11 +139,11 @@ const struct xnvme_be_config g_xnvme_be_linux_iou_nvme = {
 			.caps = XNVME_BE_CAP_NVME_CDEV | XNVME_BE_CAP_NVME_BDEV,
 		},
 };
-#endif /* XNVME_BE_LINUX_LIBURING_ENABLED */
+#endif /* XNVME_BE_IO_URING_ENABLED */
 
-#if defined(XNVME_BE_LINUX_LIBURING_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
-const struct xnvme_be_config g_xnvme_be_linux_iou_block = {
-	.async = &g_xnvme_be_linux_async_liburing,
+#if defined(XNVME_BE_IO_URING_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
+const struct xnvme_be_config g_xnvme_be_io_uring_block = {
+	.async = &g_xnvme_be_io_uring_async,
 	.sync = &g_xnvme_be_linux_sync_block,
 	.admin = &g_xnvme_be_linux_admin_block,
 	.dev = &g_xnvme_be_dev_linux,
@@ -319,9 +322,9 @@ const struct xnvme_be_config g_xnvme_be_linux_thrpool_file = {
 		},
 };
 
-#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
-const struct xnvme_be_config g_xnvme_be_linux_iou_file = {
-	.async = &g_xnvme_be_linux_async_liburing,
+#ifdef XNVME_BE_IO_URING_ENABLED
+const struct xnvme_be_config g_xnvme_be_io_uring_file = {
+	.async = &g_xnvme_be_io_uring_async,
 	.sync = &g_xnvme_be_cbi_sync_psync,
 	.admin = &g_xnvme_be_cbi_admin_shim,
 	.dev = &g_xnvme_be_dev_linux,

@@ -34,12 +34,12 @@ extern const struct xnvme_be_config g_xnvme_be_linux_emu_nvme;
 #ifdef XNVME_BE_LINUX_BLOCK_ENABLED
 extern const struct xnvme_be_config g_xnvme_be_linux_emu_block;
 #endif
-#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
-extern const struct xnvme_be_config g_xnvme_be_linux_ucmd_nvme;
-extern const struct xnvme_be_config g_xnvme_be_linux_iou_nvme;
+#ifdef XNVME_BE_IO_URING_ENABLED
+extern const struct xnvme_be_config g_xnvme_be_io_uring_cmd_nvme;
+extern const struct xnvme_be_config g_xnvme_be_io_uring_nvme;
 #endif
-#if defined(XNVME_BE_LINUX_LIBURING_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
-extern const struct xnvme_be_config g_xnvme_be_linux_iou_block;
+#if defined(XNVME_BE_IO_URING_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
+extern const struct xnvme_be_config g_xnvme_be_io_uring_block;
 #endif
 #ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
 extern const struct xnvme_be_config g_xnvme_be_linux_aio_nvme;
@@ -57,8 +57,8 @@ extern const struct xnvme_be_config g_xnvme_be_linux_thrpool_block;
 extern const struct xnvme_be_config g_xnvme_be_linux_nil_nvme;
 extern const struct xnvme_be_config g_xnvme_be_linux_emu_file;
 extern const struct xnvme_be_config g_xnvme_be_linux_thrpool_file;
-#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
-extern const struct xnvme_be_config g_xnvme_be_linux_iou_file;
+#ifdef XNVME_BE_IO_URING_ENABLED
+extern const struct xnvme_be_config g_xnvme_be_io_uring_file;
 #endif
 #ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
 extern const struct xnvme_be_config g_xnvme_be_linux_aio_file;

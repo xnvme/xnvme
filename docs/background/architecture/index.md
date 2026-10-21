@@ -360,8 +360,8 @@ struct xnvme_be_config {
 
 ```c
 // NVMe passthrough via io_uring_cmd
-const struct xnvme_be_config g_xnvme_be_linux_ucmd_nvme = {
-	.async = &g_xnvme_be_linux_async_ucmd,
+const struct xnvme_be_config g_xnvme_be_io_uring_cmd_nvme = {
+	.async = &g_xnvme_be_io_uring_cmd_async,
 	.sync = &g_xnvme_be_linux_sync_nvme,
 	.admin = &g_xnvme_be_linux_admin_nvme,
 	.dev = &g_xnvme_be_dev_linux,
@@ -376,8 +376,8 @@ const struct xnvme_be_config g_xnvme_be_linux_ucmd_nvme = {
 };
 
 // File I/O via io_uring
-const struct xnvme_be_config g_xnvme_be_linux_iou_file = {
-	.async = &g_xnvme_be_linux_async_liburing,
+const struct xnvme_be_config g_xnvme_be_io_uring_file = {
+	.async = &g_xnvme_be_io_uring_async,
 	.sync = &g_xnvme_be_cbi_sync_psync,
 	.admin = &g_xnvme_be_cbi_admin_shim,
 	.dev = &g_xnvme_be_dev_linux,
@@ -998,9 +998,9 @@ struct xnvme_platform g_xnvme_platform_linux = {
 		&g_xnvme_be_vfio,
 #endif
 		&g_xnvme_be_linux_emu_nvme,
-#ifdef XNVME_BE_LINUX_LIBURING_ENABLED
-		&g_xnvme_be_linux_ucmd_nvme,
-		&g_xnvme_be_linux_iou_nvme,
+#ifdef XNVME_BE_IO_URING_ENABLED
+		&g_xnvme_be_io_uring_cmd_nvme,
+		&g_xnvme_be_io_uring_nvme,
 #endif
 		// ... more configs ...
 		&g_xnvme_be_linux_emu_file,

@@ -75,8 +75,6 @@ extern struct xnvme_be_sync g_xnvme_be_linux_sync_block;
  * Implementations of the asynchronous command interface
  */
 extern struct xnvme_be_async g_xnvme_be_linux_async_libaio;
-extern struct xnvme_be_async g_xnvme_be_linux_async_liburing;
-extern struct xnvme_be_async g_xnvme_be_linux_async_ucmd;
 
 /**
  * Implementations of the device enumeration and handles
