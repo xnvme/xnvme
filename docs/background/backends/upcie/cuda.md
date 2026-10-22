@@ -173,17 +173,17 @@ registration covers them all.
 
 ### Hardware Requirements
 
-P2P transfers require a GPU with a sufficiently large **BAR1** window. BAR1
-maps GPU device memory into the host PCIe address space and must be large
-enough to cover the device heap (1 GiB by default). To check the available BAR1
-size:
+P2P transfers require a GPU whose **BAR1** window maps all of its device
+memory into the host PCIe address space, which in practice means resizable BAR
+enabled in the firmware. The window must be at least as large as the GPU's
+total memory, whatever the size of the device heap. To compare the two:
 
 ```bash
 nvidia-smi -q -d memory
 ```
 
-Look for the `BAR1 Memory Usage` section. If `Total` BAR1 is smaller than the
-heap size, initialization will fail.
+If `Total` under `BAR1 Memory Usage` is smaller than `Total` under
+`FB Memory Usage`, opening a device fails with `EOPNOTSUPP`.
 
 ### Hugepages
 
