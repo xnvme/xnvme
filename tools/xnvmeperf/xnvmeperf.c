@@ -235,6 +235,15 @@ setup_job(struct xnvmeperf_job *job, struct xnvme_dev *dev, struct xnvmeperf_arg
 	}
 
 	err = xnvme_queue_init(job->dev, args->qdepth, 0, &job->queue);
+	if (err == -ERANGE) {
+		fprintf(stderr,
+			"Error: --qdepth %u is more than one queue on %s can hold: the backend "
+			"tracks at most 1024 commands in flight per queue, and the drive's "
+			"CAP.MQES bounds its entries; lower --qdepth or raise --nqueues: "
+			"err(%d)\n",
+			args->qdepth, xnvme_dev_get_ident(job->dev)->uri, err);
+		return err;
+	}
 	if (err) {
 		xnvme_cli_perr("Failed: xnvme_queue_init()", err);
 		return err;
@@ -407,6 +416,9 @@ print_run_args(struct xnvmeperf_args *args, const char *pattern)
 	printf("- io pattern: %s\n", pattern);
 	printf("- queues per device: %u\n", args->nqueues);
 	printf("- queue depth: %u\n", args->qdepth);
+	if (args->opts.homi_id) {
+		printf("- served by homi: %u\n", args->opts.homi_id);
+	}
 	printf("- io size: %u\n", args->iosize);
 	printf("- runtime: %u\n", args->time);
 

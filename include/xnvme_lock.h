@@ -18,8 +18,8 @@
  * too. It is recursive, so an entry point calling another entry point does not deadlock.
  *
  * Lock order, outermost first: a caller's own locks (the CUSE dispatch mutex, the HOMI
- * server's serve_lock), then this lock, then any backend-private or third-party lock. Nothing
- * may invoke a user callback while holding it.
+ * server's g_upcie_cplane_serve_lock), then this lock, then any backend-private or third-party
+ * lock. Nothing may invoke a user callback while holding it.
  */
 void
 xnvme_lock(void);

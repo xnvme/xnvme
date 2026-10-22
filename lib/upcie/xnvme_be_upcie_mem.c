@@ -17,11 +17,17 @@
  * attached; the caller hands the returned VA to the device as a PRP later.
  */
 void *
-xnvme_be_upcie_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t nbytes, uint64_t *phys)
+xnvme_be_upcie_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
 {
 	size_t offset = 0;
 	void *buf;
 	int err;
+
+	if (g_upcie_rte.connection.alive) {
+		struct xnvme_be_upcie_state *state = dev ? (void *)dev->be.state : NULL;
+
+		return xnvme_be_upcie_cplane_buf_alloc(state ? state->ctrlr : NULL, nbytes, phys);
+	}
 
 	err = dmamem_heap_alloc(&g_upcie_rte.mem.heap, nbytes, &offset);
 	if (err) {
@@ -44,15 +50,22 @@ xnvme_be_upcie_buf_alloc(const struct xnvme_dev *XNVME_UNUSED(dev), size_t nbyte
 }
 
 void
-xnvme_be_upcie_buf_free(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf)
+xnvme_be_upcie_buf_free(const struct xnvme_dev *dev, void *buf)
 {
 	size_t offset;
 
 	if (!buf) {
 		return;
 	}
-	offset = (size_t)((char *)buf - (char *)g_upcie_rte.mem.dmem.cpu_va);
 
+	if (g_upcie_rte.connection.alive) {
+		struct xnvme_be_upcie_state *state = dev ? (void *)dev->be.state : NULL;
+
+		xnvme_be_upcie_cplane_buf_free(state ? state->ctrlr : NULL, buf);
+		return;
+	}
+
+	offset = (size_t)((char *)buf - (char *)g_upcie_rte.mem.dmem.cpu_va);
 	dmamem_heap_free(&g_upcie_rte.mem.heap, offset);
 }
 

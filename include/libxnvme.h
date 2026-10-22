@@ -50,6 +50,7 @@ extern "C" {
 #include "libxnvme_ver.h"
 #include "libxnvme_file.h"
 #include "libxnvme_adm.h"
+#include "libxnvme_cplane.h"
 #include "libxnvme_nvm.h"
 #include "libxnvme_kvs.h"
 #include "libxnvme_znd.h"

@@ -118,6 +118,7 @@ struct xnvme_cli_args {
 
 	const char *be;
 	const char *alt_be;
+	const char *alt_uri;
 	const char *mem;
 	const char *sync;
 	const char *async;
@@ -389,7 +390,9 @@ enum xnvme_cli_opt {
 
 	XNVME_CLI_OPT_NO_CUSE = 139, ///< XNVME_CLI_OPT_NO_CUSE
 
-	XNVME_CLI_OPT_END = 140, ///< XNVME_CLI_OPT_END
+	XNVME_CLI_OPT_ALT_URI = 140, ///< XNVME_CLI_OPT_ALT_URI
+
+	XNVME_CLI_OPT_END = 141, ///< XNVME_CLI_OPT_END
 };
 
 /**
