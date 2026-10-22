@@ -51,7 +51,7 @@ _hip_rte_init(size_t heap_size, uint32_t gpu_id)
 		return -ENODEV;
 	}
 
-	err = hipmem_config_init(&g_upcie_hip_rte.hip_config, 0);
+	err = hipmem_config_init(&g_upcie_hip_rte.hip_config, gpu_id);
 	if (err) {
 		XNVME_DEBUG("FAILED: hipmem_config_init(); err(%d)", err);
 		return err;
