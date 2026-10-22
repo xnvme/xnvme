@@ -664,7 +664,7 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 		.opt = XNVME_CLI_OPT_GPU_ID,
 		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
 		.name = "gpu-id",
-		.descr = "For be=upcie-cuda/upcie-hip, GPU ordinal to use",
+		.descr = "For be={upcie-cuda,upcie-hip}, GPU ordinal to use",
 	},
 	{
 		.opt = XNVME_CLI_OPT_USE_CMB_SQS,
