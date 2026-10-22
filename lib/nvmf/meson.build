@@ -1,4 +1,6 @@
 xnvmelib_nvmf_source = files(
+  'xnvme_be_nvmf_admin.c',
+  'xnvme_be_nvmf_async.c',
   'xnvme_be_nvmf_ctrlr.c',
   'xnvme_be_nvmf_debug.c',
   'xnvme_be_nvmf_dev.c',
@@ -8,6 +10,7 @@ xnvmelib_nvmf_source = files(
   'xnvme_be_nvmf_ns.c',
   'xnvme_be_nvmf_qpair.c',
   'xnvme_be_nvmf_subsys.c',
+  'xnvme_be_nvmf_sync.c',
   'rdma/xnvme_be_nvmf_rdma.c',
   'rdma/xnvme_be_nvmf_rdma_cm.c',
   'rdma/xnvme_be_nvmf_rdma_verbs.c',
