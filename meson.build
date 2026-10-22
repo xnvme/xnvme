@@ -119,7 +119,8 @@ cuda_dep = dependency(
   modules: ['cuda'],
   required: get_option('with-cuda'),
 )
-conf_data.set('XNVME_BE_UPCIE_CUDA_ENABLED', get_option('be_upcie') and is_linux and cuda_dep.found() and get_option('with-cuda').allowed())
+conf_data.set('XNVME_CUDA_ENABLED', is_linux and cuda_dep.found() and get_option('with-cuda').allowed())
+conf_data.set('XNVME_BE_UPCIE_CUDA_ENABLED', get_option('be_upcie') and conf_data.get('XNVME_CUDA_ENABLED'))
 cuda_arch_args = []
 if conf_data.get('XNVME_BE_UPCIE_CUDA_ENABLED')
   add_languages('cuda', required: true, native: false)
@@ -134,8 +135,9 @@ hip_dep = cc.find_library(
   header_args: ['-D__HIP_PLATFORM_AMD__'],
   required: get_option('with-hip'),
 )
-conf_data.set('XNVME_BE_UPCIE_HIP_ENABLED', get_option('be_upcie') and is_linux and hip_dep.found() and get_option('with-hip').allowed())
-if conf_data.get('XNVME_BE_UPCIE_HIP_ENABLED')
+conf_data.set('XNVME_HIP_ENABLED', is_linux and hip_dep.found() and get_option('with-hip').allowed())
+conf_data.set('XNVME_BE_UPCIE_HIP_ENABLED', get_option('be_upcie') and conf_data.get('XNVME_HIP_ENABLED'))
+if conf_data.get('XNVME_HIP_ENABLED')
   add_project_arguments('-D__HIP_PLATFORM_AMD__', language: 'c')
 endif
 
@@ -182,6 +184,17 @@ uring_dep = dependency(
   required: get_option('with-liburing'),
 )
 conf_data.set('XNVME_BE_LINUX_LIBURING_ENABLED', uring_dep.found())
+conf_data.set(
+  'XNVME_BE_LINUX_IO_URING_DMABUF_ENABLED',
+  uring_dep.found() and conf_data.get('XNVME_BE_CBI_MEM_POSIX_ENABLED') and (
+    conf_data.get('XNVME_CUDA_ENABLED') or conf_data.get('XNVME_HIP_ENABLED')
+  ) ? cc.has_member(
+    'struct io_uring_regbuf_desc',
+    'dmabuf_fd',
+    prefix: '#include <liburing.h>',
+    dependencies: uring_dep,
+  ) : false,
+)
 
 libvfn_dep = dependency(
   'libvfn',

@@ -375,6 +375,9 @@ struct xnvme_platform g_xnvme_platform_linux = {
 #if defined(XNVME_BE_LINUX_LIBURING_ENABLED) && defined(XNVME_BE_LINUX_BLOCK_ENABLED)
 			&g_xnvme_be_linux_iou_block,
 #endif
+#ifdef XNVME_BE_LINUX_IO_URING_DMABUF_ENABLED
+			&g_xnvme_be_linux_io_uring_dmabuf,
+#endif
 #ifdef XNVME_BE_LINUX_LIBAIO_ENABLED
 			&g_xnvme_be_linux_aio_nvme,
 #endif

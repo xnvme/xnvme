@@ -420,6 +420,7 @@ determines default priority -- the first matching config wins.
 | `io_uring_cmd`     | io_uring_cmd | nvme    | nvme    | NVME_CDEV, NVME_BDEV |
 | `io_uring`         | io_uring     | nvme    | nvme    | NVME_CDEV, NVME_BDEV |
 | `io_uring_bdev`    | io_uring     | block   | block   | NVME_BDEV, BDEV      |
+| `io_uring_dmabuf`  | io_uring_dmabuf | nvme | nvme    | NVME_BDEV            |
 | `libaio`           | libaio       | nvme    | nvme    | NVME_CDEV, NVME_BDEV |
 | `libaio_bdev`      | libaio       | block   | block   | NVME_BDEV, BDEV      |
 | `posix`            | posix        | nvme    | nvme    | NVME_CDEV, NVME_BDEV |
@@ -434,8 +435,9 @@ determines default priority -- the first matching config wins.
 | `ramdisk_thrpool`  | thrpool      | ramdisk | ramdisk | RAMDISK              |
 | `ramdisk_emu`      | emu          | ramdisk | ramdisk | RAMDISK              |
 
-The `mem` on all Linux configs defaults to `posix` with `hugepage` available
-as an override via `opts.mem`.
+The `mem` on the Linux configs defaults to `posix` with `hugepage` available
+as an override via `opts.mem`. The exception is `io_uring_dmabuf`, whose `mem`
+registers GPU memory with `io_uring` on `xnvme_mem_map()`.
 
 ### URI Format
 
