@@ -211,7 +211,7 @@ static int
 _dev_idfy_ns_desc_csi(struct xnvme_dev *dev, struct xnvme_spec_idfy *idfy, uint8_t *csi)
 {
 	struct xnvme_cmd_ctx ctx;
-	const uint8_t *buf = (const uint8_t *)idfy;
+	uint8_t list[sizeof(struct xnvme_spec_idfy)];
 	size_t ofz = 0;
 	int err;
 
@@ -232,13 +232,20 @@ _dev_idfy_ns_desc_csi(struct xnvme_dev *dev, struct xnvme_spec_idfy *idfy, uint8
 		return err ? err : -EIO;
 	}
 
+	// The buffer may be device memory, which the CPU cannot read
+	err = xnvme_buf_memcpy(list, idfy, sizeof(list));
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_buf_memcpy(idfy), err: %d", err);
+		return err;
+	}
+
 	// Walk the list; each descriptor is a 4 byte header followed by 'nidl' bytes. Per NVMe
 	// Base 2.3 5.2.13.2.3 a NIDL of zero ends the list, and descriptors of other types are
 	// skipped
-	while (ofz + 4 <= sizeof(*idfy)) {
-		const struct xnvme_spec_ns_desc *desc = (const void *)(buf + ofz);
+	while (ofz + 4 <= sizeof(list)) {
+		const struct xnvme_spec_ns_desc *desc = (const void *)&list[ofz];
 
-		if ((!desc->nidl) || (ofz + 4 + desc->nidl > sizeof(*idfy))) {
+		if ((!desc->nidl) || (ofz + 4 + desc->nidl > sizeof(list))) {
 			break;
 		}
 		if ((desc->nidt == XNVME_SPEC_NS_DESC_NIDT_CSI) && (desc->nidl == 1)) {
