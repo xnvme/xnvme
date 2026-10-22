@@ -173,6 +173,12 @@ dev_add(struct qublk_dev *dev, const char *be)
 		return -ENOSYS;
 	}
 
+	if (dev->user_copy && !(feat & UBLK_F_USER_COPY)) {
+		xnvme_cli_perr("Failed: --user-copy: kernel lacks UBLK_F_USER_COPY (6.5+)",
+			       -ENOSYS);
+		return -ENOSYS;
+	}
+
 	rc = qublk_ctrl_add_dev(dev);
 	if (rc < 0) {
 		return rc;
@@ -343,6 +349,10 @@ sub_serve(struct xnvme_cli *cli)
 		devs[d].nqueues = nqueues;
 		devs[d].qdepth = qdepth;
 		devs[d].flags = UBLK_F_CMD_IOCTL_ENCODE;
+		if (cli->args.user_copy) {
+			devs[d].user_copy = 1;
+			devs[d].flags |= UBLK_F_USER_COPY;
+		}
 	}
 
 	for (uint32_t d = 0; d < ndevs; d++) {
@@ -469,6 +479,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_CPUMASK, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_CPULIST, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_NO_CUSE, XNVME_CLI_LFLG},
+			{XNVME_CLI_OPT_USER_COPY, XNVME_CLI_LFLG},
 			{XNVME_CLI_OPT_ORCH_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HOMI_ID, XNVME_CLI_LOPT},
