@@ -21,7 +21,8 @@ int
 xnvme_be_nvmf_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 			  void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
-	return -ENOSYS;
+	return xnvme_be_nvmf_cmd_sync(TO_NVMF_DEV_STATE(ctx->dev)->sync_qpair, ctx, dbuf,
+				      dbuf_nbytes);
 }
 
 int
