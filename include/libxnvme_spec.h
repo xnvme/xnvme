@@ -441,6 +441,7 @@ enum xnvme_spec_log_lpi {
 	XNVME_SPEC_LOG_FDPRUHU   = 0x21, ///< XNVME_SPEC_LOG_FDPRUHU
 	XNVME_SPEC_LOG_FDPSTATS  = 0x22, ///< XNVME_SPEC_LOG_FDPSTATS
 	XNVME_SPEC_LOG_FDPEVENTS = 0x23, ///< XNVME_SPEC_LOG_FDPEVENTS
+	XNVME_SPEC_LOG_DISCOVERY = 0x70, ///< XNVME_SPEC_LOG_DISCOVERY
 	XNVME_SPEC_LOG_SANITIZE  = 0x81, ///< XNVME_SPEC_LOG_SANITIZE
 };
 
@@ -1871,6 +1872,13 @@ struct xnvme_spec_sgl_descriptor {
 			uint64_t subtype : 4; ///< SGL subtype
 			uint64_t type    : 4; ///< SGL type
 		} unkeyed;
+
+		struct {
+			uint64_t len     : 24; ///< Length of entry
+			uint64_t key     : 32; ///< Key
+			uint64_t subtype : 4;  ///< SGL subtype
+			uint64_t type    : 4;  ///< SGL type
+		} keyed;
 	};
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_sgl_descriptor) == 16, "Incorrect size")

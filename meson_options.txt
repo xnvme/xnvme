@@ -7,6 +7,7 @@ option('with-spdk-rdma', type: 'feature', value: 'auto', description: 'Enable RD
 option('with-cuda', type: 'feature', value: 'auto')
 option('with-hip', type: 'feature', value: 'auto')
 option('with-cuse', type: 'feature', value: 'auto')
+option('with-nvmf', type: 'feature', value: 'auto')
 
 option('be_ramdisk', type: 'boolean', value: true)
 option('be_upcie', type: 'boolean', value: true)
