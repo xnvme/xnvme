@@ -25,7 +25,7 @@
 // do rather than for what HOMI does itself. It used to be 16MiB, which was right when
 // a client brought its own memory: it now has none of its own, and asks for all of
 // it here, so the old figure left clients unable to allocate a working buffer.
-// Tunable with --host_heap_size for a machine with less to spare, or more to serve.
+// Tunable with --host-heap-size for a machine with less to spare, or more to serve.
 #define HOMI_HEAP_SIZE_PER_DEV (64ULL * 1024 * 1024)
 
 // What HOMI itself takes from that heap for each device held: the admin queue and

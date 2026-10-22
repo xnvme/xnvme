@@ -1596,7 +1596,7 @@ static struct xnvme_cli_sub g_subs[] = {
 		"Run a time-bounded async IO benchmark against one or more NVMe devices.\n"
 		"Devices are distributed across CPU threads pinned by --cpumask or --cpulist.\n"
 		"With --be 'io_uring_dmabuf' the IO buffers are allocated on the GPU given by\n"
-		"--gpu_id and exported as a dma-buf for the kernel to DMA into.",
+		"--gpu-id and exported as a dma-buf for the kernel to DMA into.",
 		sub_run,
 		{
 			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
