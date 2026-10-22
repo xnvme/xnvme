@@ -21,6 +21,7 @@
 #include "ctrl.h"
 #include "io.h"
 #include "qublk.h"
+#include "zoned.h"
 
 #define QUBLK_DEFAULT_QDEPTH 64
 #define QUBLK_DEFAULT_NQUEUES 1
@@ -100,19 +101,12 @@ backend_honours_fua(const struct xnvme_dev *xdev)
 	return backend_passes_nvme(xdev);
 }
 
-/*
- * What the rejection of a namespace outside the NVM command set names it as;
- * qublk issues plain NVM read/write, so serving anything else would
- * misrepresent it as an ordinary block device. A zoned namespace would need
- * serving as a zoned ublk device; a key-value namespace has no block-device
- * model to map to.
- */
+// Names the namespace types qublk cannot serve: a key-value namespace has no
+// block-device model to map to
 static const char *
 geo_type_rejection(enum xnvme_geo_type type)
 {
 	switch (type) {
-	case XNVME_GEO_ZONED:
-		return "namespace is zoned (ZNS)";
 	case XNVME_GEO_KV:
 		return "namespace is key-value";
 	default:
@@ -129,8 +123,10 @@ dev_init(struct qublk_dev *dev, uint32_t want_max_io)
 	dev->geo = xnvme_dev_get_geo(dev->xdev);
 	// Before the LBA check: a key-value geometry has no LBA size, and
 	// failing on that would hide the actual reason
-	if (dev->geo->type != XNVME_GEO_CONVENTIONAL) {
-		fprintf(stderr, "Failed: %s: %s; qublk serves only conventional NVM namespaces\n",
+	if (dev->geo->type != XNVME_GEO_CONVENTIONAL && dev->geo->type != XNVME_GEO_ZONED) {
+		fprintf(stderr,
+			"Failed: %s: %s; qublk serves only conventional and zoned NVMe "
+			"namespaces\n",
 			dev->uri, geo_type_rejection(dev->geo->type));
 		return -EINVAL;
 	}
@@ -148,6 +144,11 @@ dev_init(struct qublk_dev *dev, uint32_t want_max_io)
 	dev->max_io_buf = (uint32_t)XNVME_MIN_U64(
 		want_max_io ? want_max_io : QUBLK_DEFAULT_MAX_IO_CAP, cap_max);
 	dev->max_io_buf &= ~(uint32_t)(sysconf(_SC_PAGESIZE) - 1);
+
+	// After max_io_buf: the append limit and the report buffer depend on it
+	if (dev->geo->type == XNVME_GEO_ZONED) {
+		return qublk_zoned_init(dev, backend_passes_nvme(dev->xdev));
+	}
 
 	return 0;
 }
@@ -173,6 +174,11 @@ dev_add(struct qublk_dev *dev, const char *be)
 		return -ENOSYS;
 	}
 
+	rc = qublk_zoned_check_features(dev, feat);
+	if (rc < 0) {
+		return rc;
+	}
+
 	if (dev->user_copy && !(feat & UBLK_F_USER_COPY)) {
 		xnvme_cli_perr("Failed: --user-copy: kernel lacks UBLK_F_USER_COPY (6.5+)",
 			       -ENOSYS);
@@ -181,6 +187,7 @@ dev_add(struct qublk_dev *dev, const char *be)
 
 	rc = qublk_ctrl_add_dev(dev);
 	if (rc < 0) {
+		qublk_zoned_add_failed(dev, rc);
 		return rc;
 	}
 
@@ -189,6 +196,7 @@ dev_add(struct qublk_dev *dev, const char *be)
 		"qublk: added ublk dev id=%d nqueues=%u qdepth=%u max_io=%u backend=%s uri=%s\n",
 		dev->dev_id, dev->nqueues, dev->qdepth, dev->max_io_buf, be ? be : "(auto)",
 		dev->uri);
+	qublk_zoned_print_info(dev);
 
 	rc = qublk_ctrl_set_params(dev);
 	if (rc < 0) {

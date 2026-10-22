@@ -39,6 +39,7 @@ struct qublk_io {
 	void *buf;
 	const struct ublksrv_io_desc *iod;
 	struct qublk_queue *q;
+	uint64_t zone_append_lba; ///< Sector a zone append landed on, else 0
 };
 
 struct qublk_queue {
@@ -80,6 +81,14 @@ struct qublk_dev {
 	uint8_t user_copy; ///< UBLK_F_USER_COPY: data moves via pread()/pwrite() on ublkc_fd
 	uint8_t added;
 	uint8_t started;
+
+	// Zoned serving (zoned.c); the geometry is in 512 B sectors and valid when 'zoned'
+	uint8_t zoned;
+	uint32_t zone_sectors;
+	uint32_t nr_zones;
+	uint32_t max_open;
+	uint32_t max_active;
+	uint32_t max_append_sectors;
 	struct qublk_queue *queues;
 	volatile sig_atomic_t stop;
 
