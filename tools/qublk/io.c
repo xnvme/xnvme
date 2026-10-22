@@ -73,6 +73,49 @@ to_user_data(const struct qublk_queue *q, uint16_t tag)
 	return ((uint64_t)q->slot << 16) | tag;
 }
 
+// Where a tag's data is on /dev/ublkc<N>; the queue is the ublk q_id, not the thread's slot
+static off_t
+user_copy_offset(const struct qublk_queue *q, uint16_t tag)
+{
+	return (off_t)UBLKSRV_IO_BUF_OFFSET + ((off_t)q->q_id << UBLK_QID_OFF) +
+	       ((off_t)tag << UBLK_TAG_OFF);
+}
+
+int
+qublk_io_user_copy_in(struct qublk_queue *q, struct qublk_io *io, size_t bytes)
+{
+	ssize_t n = pread(q->dev->ublkc_fd, io->buf, bytes, user_copy_offset(q, io->tag));
+
+	if (n != (ssize_t)bytes) {
+		XNVME_DEBUG("FAILED: dev%d q%d tag %u: pread(ublkc, %zu B): %zd, errno %d",
+			    q->dev->dev_id, q->q_id, io->tag, bytes, n, n < 0 ? errno : 0);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+int
+qublk_io_user_copy_out(struct qublk_queue *q, struct qublk_io *io, size_t bytes)
+{
+	ssize_t n = pwrite(q->dev->ublkc_fd, io->buf, bytes, user_copy_offset(q, io->tag));
+
+	if (n != (ssize_t)bytes) {
+		XNVME_DEBUG("FAILED: dev%d q%d tag %u: pwrite(ublkc, %zu B): %zd, errno %d",
+			    q->dev->dev_id, q->q_id, io->tag, bytes, n, n < 0 ? errno : 0);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+// Where the kernel finds the request's data; with user copy it is told nothing
+static uint64_t
+io_addr(const struct qublk_io *io)
+{
+	return io->q->dev->user_copy ? 0 : (uint64_t)(uintptr_t)io->buf;
+}
+
 static void
 prep_io_uring_cmd(struct io_uring_sqe *sqe, const struct qublk_queue *q, uint32_t cmd_op,
 		  const struct ublksrv_io_cmd *cmd)
@@ -92,7 +135,7 @@ submit_fetch(struct qublk_queue *q, struct qublk_io *io)
 		.q_id = q->q_id,
 		.tag = io->tag,
 		.result = -1,
-		.addr = (uint64_t)(uintptr_t)io->buf,
+		.addr = io_addr(io),
 	};
 
 	sqe = io_uring_get_sqe(&q->thread->ring);
@@ -112,7 +155,7 @@ submit_commit_and_fetch(struct qublk_queue *q, struct qublk_io *io, int result)
 		.q_id = q->q_id,
 		.tag = io->tag,
 		.result = result,
-		.addr = (uint64_t)(uintptr_t)io->buf,
+		.addr = io_addr(io),
 	};
 
 	sqe = io_uring_get_sqe(&q->thread->ring);
@@ -137,7 +180,15 @@ on_xnvme_complete(struct xnvme_cmd_ctx *ctx, void *opaque)
 	} else {
 		op = ublksrv_get_op(io->iod);
 		if (op == UBLK_IO_OP_READ || op == UBLK_IO_OP_WRITE) {
-			result = (int)(io->iod->nr_sectors << XNVME_UNIVERSAL_SECT_SH);
+			size_t bytes = (size_t)io->iod->nr_sectors << XNVME_UNIVERSAL_SECT_SH;
+
+			// The data read is handed to the kernel before the request completes
+			if (op == UBLK_IO_OP_READ && q->dev->user_copy &&
+			    qublk_io_user_copy_out(q, io, bytes)) {
+				result = -EIO;
+			} else {
+				result = (int)bytes;
+			}
 		} else {
 			result = 0;
 		}
@@ -223,6 +274,14 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 		nlb = (uint16_t)(((iod->nr_sectors << XNVME_UNIVERSAL_SECT_SH) >> lba_shift) - 1);
 		if (iod->op_flags & UBLK_IO_F_FUA) {
 			ctx->cmd.nvm.fua = 1;
+		}
+
+		// The data to write is fetched from the kernel before the command is submitted
+		if (dev->user_copy) {
+			rc = qublk_io_user_copy_in(q, io, (size_t)bytes);
+			if (rc) {
+				break;
+			}
 		}
 
 		rc = xnvme_nvm_write(ctx, nsid, slba, nlb, io->buf, NULL);
