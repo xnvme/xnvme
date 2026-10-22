@@ -17,7 +17,7 @@ steps:
 - name: test_transport_tcp
   uses: core.testrunner
   with:
-    args: '-k "fabrics and not kvs" tests'
+    args: '-k "fabrics and not kvs" tests --timeout=1800 --timeout-method=thread'
     random_order: false
 
 - name: nvme_target_stop
