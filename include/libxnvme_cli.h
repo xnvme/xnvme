@@ -117,6 +117,7 @@ struct xnvme_cli_args {
 	uint32_t reset;
 	bool verbose;
 	bool no_cuse;
+	bool user_copy;
 	uint32_t help;
 
 	const char *be;
@@ -401,7 +402,9 @@ enum xnvme_cli_opt {
 
 	XNVME_CLI_OPT_BUF_HOST_BOUNCE = 143, ///< XNVME_CLI_OPT_BUF_HOST_BOUNCE
 
-	XNVME_CLI_OPT_END = 144, ///< XNVME_CLI_OPT_END
+	XNVME_CLI_OPT_USER_COPY = 144, ///< XNVME_CLI_OPT_USER_COPY
+
+	XNVME_CLI_OPT_END = 145, ///< XNVME_CLI_OPT_END
 };
 
 /**

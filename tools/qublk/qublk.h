@@ -21,6 +21,15 @@
  */
 #define QUBLK_MAX_RING_ENTRIES 32768
 
+// User copy (kernel 6.5) ABI for older headers; GET_FEATURES says whether the kernel has it
+#ifndef UBLK_F_USER_COPY
+#define UBLK_F_USER_COPY (1UL << 7)
+#define UBLK_IO_BUF_BITS 25
+#define UBLK_TAG_OFF     UBLK_IO_BUF_BITS
+#define UBLK_TAG_BITS    16
+#define UBLK_QID_OFF     (UBLK_TAG_OFF + UBLK_TAG_BITS)
+#endif
+
 struct qublk_dev;
 struct qublk_queue;
 struct qublk_thread;
@@ -68,6 +77,7 @@ struct qublk_dev {
 	uint8_t lba_shift;
 	uint8_t has_vwc;
 	uint8_t has_fua;
+	uint8_t user_copy; ///< UBLK_F_USER_COPY: data moves via pread()/pwrite() on ublkc_fd
 	uint8_t added;
 	uint8_t started;
 	struct qublk_queue *queues;

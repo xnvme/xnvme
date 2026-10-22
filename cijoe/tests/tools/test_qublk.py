@@ -59,6 +59,29 @@ def test_run_multi_queue(cijoe, device, be_opts, cli_args):
 
 
 @xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_run_user_copy(cijoe, device, be_opts, cli_args):
+    """With --user-copy, a random pattern written with direct I/O reads back the same"""
+
+    payload = [
+        "src=$(mktemp)",
+        "dst=$(mktemp)",
+        'trap "rm -f $src $dst" EXIT',
+        "dd if=/dev/urandom of=$src bs=1M count=32 status=none",
+        f"dd if=$src of={UBLK_NODE} bs=1M oflag=direct status=none",
+        f"dd if={UBLK_NODE} of=$dst bs=1M count=32 iflag=direct status=none",
+        "cmp $src $dst",
+    ]
+    err, _ = qublk_session(
+        cijoe,
+        device["uri"],
+        be_opts["be"],
+        payload,
+        args="--qdepth 64 --nqueues 2 --user-copy",
+    )
+    assert not err
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
 def test_del_leftover(cijoe, device, be_opts, cli_args):
     """SIGKILL the server, then recover the leftover device with 'qublk del'"""
 
