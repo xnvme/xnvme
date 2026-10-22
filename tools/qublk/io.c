@@ -19,6 +19,8 @@
 #include <libxnvme.h>
 #include <xnvme_util.h>
 
+#include "zoned.h"
+
 #ifndef IORING_SETUP_SINGLE_ISSUER
 #define IORING_SETUP_SINGLE_ISSUER (1U << 12)
 #endif
@@ -109,11 +111,21 @@ qublk_io_user_copy_out(struct qublk_queue *q, struct qublk_io *io, size_t bytes)
 	return 0;
 }
 
-// Where the kernel finds the request's data; with user copy it is told nothing
+/*
+ * The 'addr' of a FETCH or COMMIT_AND_FETCH. With user copy the kernel wants
+ * zero, except after a zone append, where the field carries the sector the
+ * append landed on (zone_append_lba, set in zoned.c) and is zero otherwise.
+ */
 static uint64_t
 io_addr(const struct qublk_io *io)
 {
-	return io->q->dev->user_copy ? 0 : (uint64_t)(uintptr_t)io->buf;
+	return io->q->dev->user_copy ? io->zone_append_lba : (uint64_t)(uintptr_t)io->buf;
+}
+
+static size_t
+io_buf_nbytes(const struct qublk_dev *dev)
+{
+	return (size_t)dev->max_io_buf + qublk_zoned_buf_slack(dev);
 }
 
 static void
@@ -190,7 +202,7 @@ on_xnvme_complete(struct xnvme_cmd_ctx *ctx, void *opaque)
 				result = (int)bytes;
 			}
 		} else {
-			result = 0;
+			result = qublk_zoned_complete(q, io, ctx);
 		}
 	}
 
@@ -212,15 +224,21 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 	struct qublk_dev *dev = q->dev;
 	const struct ublksrv_io_desc *iod = io->iod;
 	struct xnvme_cmd_ctx *ctx;
-	uint64_t bytes, slba;
+	uint64_t bytes = (uint64_t)iod->nr_sectors << XNVME_UNIVERSAL_SECT_SH;
+	uint64_t slba;
 	uint32_t nsid = xnvme_dev_get_nsid(dev->xdev);
 	uint16_t nlb;
 	uint8_t op = ublksrv_get_op(iod);
 	uint8_t lba_shift = dev->lba_shift;
+	int is_append;
 	int rc;
 
-	if (op != UBLK_IO_OP_FLUSH) {
-		bytes = (uint64_t)iod->nr_sectors << XNVME_UNIVERSAL_SECT_SH;
+	// Only a zone append sets this, and it must not outlive its request (see io_addr)
+	io->zone_append_lba = 0;
+	is_append = qublk_zoned_op_is_append(op);
+
+	// Only data transfers carry a sector count
+	if (op == UBLK_IO_OP_READ || op == UBLK_IO_OP_WRITE || is_append) {
 		if (bytes > dev->max_io_buf) {
 			XNVME_DEBUG("FAILED: dev%d q%d tag %u: I/O %lu B exceeds max_io_buf %u",
 				    dev->dev_id, q->q_id, io->tag, (unsigned long)bytes,
@@ -287,8 +305,8 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 		rc = xnvme_nvm_write(ctx, nsid, slba, nlb, io->buf, NULL);
 		break;
 	default:
-		xnvme_queue_put_cmd_ctx(q->xq, ctx);
-		return submit_commit_and_fetch(q, io, -EOPNOTSUPP);
+		rc = qublk_zoned_dispatch(q, io, ctx);
+		break;
 	}
 
 	if (rc == -EBUSY || rc == -EAGAIN) {
@@ -380,9 +398,9 @@ queue_init(struct qublk_dev *dev, struct qublk_queue *q, int q_id)
 		q->ios[t].tag = t;
 		q->ios[t].q = q;
 		q->ios[t].iod = &q->iod_arr[t];
-		q->ios[t].buf = xnvme_buf_alloc(dev->xdev, dev->max_io_buf);
+		q->ios[t].buf = xnvme_buf_alloc(dev->xdev, io_buf_nbytes(dev));
 		if (!q->ios[t].buf) {
-			fprintf(stderr, "xnvme_buf_alloc(%u): %s\n", dev->max_io_buf,
+			fprintf(stderr, "xnvme_buf_alloc(%zu): %s\n", io_buf_nbytes(dev),
 				strerror(errno));
 			return -ENOMEM;
 		}
