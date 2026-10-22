@@ -16,6 +16,7 @@ from .qublk_session import (
     UBLK_NODE,
     UBLK_NVME,
     is_userspace_nvme,
+    passes_nvme,
     qublk_session,
     qublk_teardown,
     require_cuse,
@@ -157,7 +158,13 @@ def _reject_at_setup(cijoe, device, be_opts, phrase):
 
 @xnvme_parametrize(labels=["zns"], opts=["be"])
 def test_reject_zoned(cijoe, device, be_opts, cli_args):
-    """A zoned namespace is refused at setup; no block-device is served"""
+    """A zoned namespace is refused at setup on non-passthru backends; see test_qublk_zoned.py"""
+
+    if passes_nvme(be_opts):
+        pytest.skip(
+            f"[be={be_opts['be']}] passes NVMe commands through and serves a zoned "
+            "namespace; covered by test_qublk_zoned.py"
+        )
 
     _reject_at_setup(cijoe, device, be_opts, "zoned (ZNS)")
 
