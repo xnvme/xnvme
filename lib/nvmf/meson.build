@@ -7,6 +7,7 @@ xnvmelib_nvmf_source = files(
   'xnvme_be_nvmf_ns.c',
   'xnvme_be_nvmf_qpair.c',
   'xnvme_be_nvmf_subsys.c',
+  'rdma/xnvme_be_nvmf_rdma.c',
   'rdma/xnvme_be_nvmf_rdma_cm.c',
   'rdma/xnvme_be_nvmf_rdma_verbs.c',
   'util/xnvme_be_nvmf_rbtree.c',
