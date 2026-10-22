@@ -6,6 +6,7 @@
 #define _GNU_SOURCE
 #endif
 #include "ctrl.h"
+#include "zoned.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -168,6 +169,8 @@ qublk_ctrl_set_params(struct qublk_dev *dev)
 		.addr = (uint64_t)(uintptr_t)&params,
 		.len = sizeof(params),
 	};
+
+	qublk_zoned_set_params(dev, &params);
 
 	return ctrl_uring_cmd(dev->ctrl_fd, UBLK_U_CMD_SET_PARAMS, &cmd);
 }
