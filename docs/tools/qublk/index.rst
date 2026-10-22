@@ -50,6 +50,11 @@ when given, the devices are numbered consecutively from it.
 When ``--max-io-bytes`` is not given, the per-IO buffer size defaults to the
 smaller of 1MiB and the controller ``MDTS``.
 
+With ``--user-copy`` the server moves the request data itself, with
+``pread()`` / ``pwrite()`` on ``/dev/ublkc<N>`` (``UBLK_F_USER_COPY``, kernel
+6.5+), instead of the kernel reading and writing the server's buffers.
+Zoned namespaces always use it.
+
 By default, each queue is served by a thread of its own. With ``--cpumask`` or
 ``--cpulist``, a thread is pinned to each given CPU and the queues are spread
 evenly across them.
@@ -91,6 +96,40 @@ Passthru data and metadata, together with the
 both the fetch and the scatter-back list, and the kernel's own
 ``FUSE_IOCTL_MAX_IOV`` (256) bounds their combined count, well below the
 real driver's ``UIO_MAXIOV``.
+
+Zoned namespaces
+================
+
+A ZNS namespace is served as a host-managed zoned block device, so ``blkzone``,
+``zonefs``, zoned ``btrfs`` and ``fio --zonemode=zbd`` work on
+``/dev/ublkb<N>``. Report, open, close, finish, reset and zone append are
+mapped to the matching NVMe commands. It needs:
+
+* a backend that passes NVMe commands through: ``io_uring_cmd``, ``spdk``,
+  ``libvfn`` or ``upcie``, or ``emu`` / ``thrpool`` over the ``nvme``, ``spdk``,
+  ``libvfn`` or ``upcie`` sync path. Others are refused.
+* a kernel with ``CONFIG_BLK_DEV_ZONED`` and ``UBLK_F_ZONED`` (6.6+), and
+  matching ``<linux/ublk_cmd.h>`` at build time; the kernel ties it to user copy.
+* a power-of-two zone size and a capacity of whole zones.
+
+The open and active limits are ``MOR + 1`` and ``MAR + 1``, and the append limit
+is ``ZASL`` capped by the per-IO buffer and the zone size. The kernel may
+publish other values in ``/sys/block/ublkb<N>/queue``.
+
+A zone report must fit one request, or ``ublk_drv`` (6.6 to 6.18) returns it
+scrambled. The per-IO buffer holds 64 bytes per zone, so ``--max-io-bytes``
+should be at least 64 times the zone count, rounded up to a page; **qublk**
+warns at start-up when it is not, and when ``MDTS`` rules it out.
+
+Zone management or append through the ``/dev/ublkb<N>-nvme`` character device
+bypasses the block layer's write pointer tracking, and the next write to that
+zone may fail with ``EIO``. Use it for read-only commands only.
+
+Example — ZNS namespace via the NVMe character device::
+
+   qublk serve /dev/ng1n1 --be io_uring_cmd --qdepth 64 --nqueues 4
+   blkzone report /dev/ublkb0
+   mkfs.btrfs -O zoned /dev/ublkb0
 
 ``del`` — Delete a leftover device
 ==================================
