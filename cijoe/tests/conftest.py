@@ -44,7 +44,7 @@ def pytest_configure(config):
 def get_osname():
     """Return normalized OS name from CIJOE config"""
     osname = pytest.cijoe_instance.getconf("os.name", "linux")
-    if osname == "debian":
+    if osname in ("debian", "ubuntu"):
         osname = "linux"
     return osname
 
@@ -180,7 +180,8 @@ def xnvme_setup(labels=[], opts=[]):
     parametrization = []
 
     combinations = xnvme_be_opts(
-        opts, ["file"] if "file" in labels else ["bdev", "cdev", "pcie", "fabrics"]
+        opts,
+        ["file"] if "file" in labels else ["bdev", "cdev", "pcie", "fabrics", "rdma"],
     )
 
     for be_opts in combinations:

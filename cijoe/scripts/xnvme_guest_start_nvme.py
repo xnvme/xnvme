@@ -21,6 +21,10 @@ Linux kernel namespace ordering issues. On a recent Linux installation:
 Using the 'ng' device-handle, as it is always available, whereas 'nvme' are
 only for block-devices.
 
+When the config has a '[rocm_ernic]' section, a rocm-ernic emulated RDMA NIC is
+attached as well, over vfio-user, with its server built and started on the
+initiator. Its backend is taken from 'rocm_ernic.backend'.
+
 Retargetable: false
 -------------------
 """
@@ -29,6 +33,8 @@ import logging as log
 import subprocess
 from argparse import ArgumentParser
 from pathlib import Path
+
+import rocm_ernic_build
 
 from cijoe.qemu.wrapper import Guest
 
@@ -378,6 +384,46 @@ def setup_vfu_kvssd(cijoe):
     return socket
 
 
+def setup_rocm_ernic(cijoe):
+    """Ensure the rocm-ernic server is running; return its socket path, or None
+    when '[rocm_ernic]' is absent or the server could not be built or started.
+    Builds the server on first use and launches it detached, replacing any stale
+    server on the socket, since QEMU's vfio-user session does not survive one."""
+
+    if not cijoe.getconf("rocm_ernic", None):
+        return None
+
+    binary = rocm_ernic_build.build(cijoe)
+    if not binary:
+        return None
+
+    socket = cijoe.getconf("rocm_ernic.socket", "/tmp/vfio-user-rocm-ernic.sock")
+    backend = cijoe.getconf("rocm_ernic.backend", "loopback")
+    log_level = cijoe.getconf("rocm_ernic.log_level", "warn")
+    log_path = Path(socket).with_suffix(".log")
+
+    cijoe.run_local(f"pkill -f '{binary} --socket {socket}' || true")
+    cijoe.run_local(f"rm -f {socket}")
+    err, _ = cijoe.run_local(
+        f"setsid {binary} --socket {socket} --backend '{backend}' "
+        f"--log-level {log_level} > {log_path} 2>&1 < /dev/null & echo started"
+    )
+    if err:
+        log.error(f"failed to start rocm-ernic: err({err})")
+        return None
+
+    err, _ = cijoe.run_local(
+        f"for _ in $(seq 1 300); do [ -S {socket} ] && break; sleep 0.1; done; "
+        f"[ -S {socket} ]"
+    )
+    if err:
+        log.error(f"rocm-ernic did not create socket {socket}; see {log_path}")
+        return None
+
+    log.info(f"rocm-ernic ({backend}) listening on {socket}")
+    return socket
+
+
 def main(args, cijoe):
     """Start a qemu guest"""
 
@@ -407,7 +453,12 @@ def main(args, cijoe):
     vfu_socket = None
     if not features.get("kv"):
         vfu_socket = setup_vfu_kvssd(cijoe)
-    if vfu_socket:
+
+    ernic_socket = setup_rocm_ernic(cijoe)
+    if cijoe.getconf("rocm_ernic", None) and not ernic_socket:
+        return errno.EIO
+
+    if vfu_socket or ernic_socket:
         mem = guest.guest_config.get("system_args", {}).get("kwa", {}).get("m", "6G")
         extra_args += [
             "-machine",
@@ -418,6 +469,16 @@ def main(args, cijoe):
 
     drives, nvme_args = qemu_nvme_args(nvme_img_root, features, vfu_socket)
     extra_args += nvme_args
+
+    # On the root bus, as rocm-ernic's own launchers attach it; rombar=0 drops the
+    # ROM BAR vfio-user-pci would otherwise advertise. The JSON spec is
+    # single-quoted because cijoe runs qemu via a shell.
+    if ernic_socket:
+        ernic_dev = (
+            '{"driver":"vfio-user-pci","rombar":0,'
+            '"socket":{"type":"unix","path":"' + ernic_socket + '"}}'
+        )
+        extra_args += ["-device", f"'{ernic_dev}'"]
 
     # Check that the backing-storage exists, create them if they do not
     for drive in drives:
