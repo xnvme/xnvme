@@ -5,7 +5,8 @@ doc: |
   The guest has an emulated RDMA NIC whose server is itself the NVMe target,
   started with the guest; see configs/ubuntu-2610-rocm.toml. This addresses the
   guest end of the transport, checks that the kernel initiator can discover the
-  target, and then runs the tests labelled rdma against it.
+  target, sends a handful of commands and a few seconds of I/O through xNVMe,
+  and then runs the tests labelled rdma against it.
 
 steps:
 - name: sysinfo
@@ -26,6 +27,19 @@ steps:
   run: |
     modprobe nvme-rdma
     nvme discover -t rdma -a {{ config.rocm_ernic.transport.traddr }} -s {{ config.rocm_ernic.transport.trsvcid }}
+
+# Through xNVMe's SPDK RDMA initiator: a few commands, eight blocks written and
+# read back intact (--nlb is zero-based), then a few seconds of I/O each way
+- name: test_rdma_io
+  run: |
+    xnvme enum --uri {{ config.rocm_ernic.transport.traddr }}:{{ config.rocm_ernic.transport.trsvcid }}
+    lblk idfy {{ config.rocm_ernic.transport.traddr }}:{{ config.rocm_ernic.transport.trsvcid }} --dev-nsid 1 --be spdk
+    head -c 32768 /dev/urandom > /tmp/rdma_io.in
+    lblk write {{ config.rocm_ernic.transport.traddr }}:{{ config.rocm_ernic.transport.trsvcid }} --dev-nsid 1 --be spdk --slba 0x0 --nlb 7 --data-input /tmp/rdma_io.in
+    lblk read {{ config.rocm_ernic.transport.traddr }}:{{ config.rocm_ernic.transport.trsvcid }} --dev-nsid 1 --be spdk --slba 0x0 --nlb 7 --data-output /tmp/rdma_io.out
+    cmp -n 32768 /tmp/rdma_io.in /tmp/rdma_io.out
+    xnvmeperf run --iopattern randwrite --qdepth 16 --iosize 4096 --runtime 3 --cpumask 0x1 --be spdk {{ config.rocm_ernic.transport.traddr }}:{{ config.rocm_ernic.transport.trsvcid }}
+    xnvmeperf run --iopattern randread --qdepth 16 --iosize 4096 --runtime 3 --cpumask 0x1 --be spdk {{ config.rocm_ernic.transport.traddr }}:{{ config.rocm_ernic.transport.trsvcid }}
 
 - name: test_transport_rdma
   uses: core.testrunner
