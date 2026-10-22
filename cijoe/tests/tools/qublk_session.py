@@ -16,6 +16,8 @@ runs a payload against it, and tears it down with SIGINT.
 
 * is_userspace_nvme(be): whether qublk serves the CUSE ioctl mimic on 'be' at all
 
+* passes_nvme(be_opts): whether the combination carries NVMe commands to the device
+
 Three things the session-script must get right, each of which has bitten before:
 
 * The lines are joined by newline, not by ';'. The background launch already ends in
@@ -90,12 +92,40 @@ def is_userspace_nvme(be):
     return be in ("spdk", "libvfn") or be.startswith("upcie")
 
 
+def passes_nvme(be_opts):
+    """Whether the combination carries NVMe commands verbatim; see backend_passes_nvme() in qublk"""
+
+    if be_opts["async"] in ("io_uring_cmd", "spdk", "libvfn", "upcie"):
+        return True
+
+    if be_opts["async"] in ("emu", "thrpool"):
+        return be_opts["sync"] in ("nvme", "spdk", "libvfn", "upcie")
+
+    return False
+
+
 def require_mkfs_xfs(cijoe):
     """Skip unless mkfs.xfs is available; the fs-level cases format with XFS"""
 
     err, _ = cijoe.run("command -v mkfs.xfs")
     if err:
         pytest.skip("the filesystem-level cases require mkfs.xfs (xfsprogs)")
+
+
+def require_mkfs_btrfs(cijoe):
+    """Skip unless mkfs.btrfs is available"""
+
+    err, _ = cijoe.run("command -v mkfs.btrfs")
+    if err:
+        pytest.skip("the zoned filesystem-level case requires mkfs.btrfs (btrfs-progs)")
+
+
+def require_fio(cijoe):
+    """Skip unless fio is available"""
+
+    err, _ = cijoe.run("command -v fio")
+    if err:
+        pytest.skip("this case requires fio")
 
 
 def qublk_script(uri, be, args, payload, node=UBLK_NODE, nvme=None, mountpoint=None):

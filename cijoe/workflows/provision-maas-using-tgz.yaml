@@ -55,11 +55,11 @@ steps:
   run: |
     hostname
 
-# xfsprogs is a test-suite dependency, not a build/run one: the
-# filesystem-level qublk cases format with XFS
+# xfsprogs and btrfs-progs are test-suite dependencies, not build/run ones:
+# the filesystem-level qublk cases format with XFS, the zoned one with btrfs
 - name: packages_extra
   run: |
-    apt-get install -qy dmidecode patchelf xfsprogs || true
+    apt-get install -qy dmidecode patchelf xfsprogs btrfs-progs || true
     pkg install -y dmidecode patchelf || true
 
 - name: xnvme_source_sync
