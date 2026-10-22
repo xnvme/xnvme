@@ -1,4 +1,5 @@
 xnvmelib_nvmf_source = files(
+  'xnvme_be_nvmf_ctrlr.c',
   'xnvme_be_nvmf_discovery.c',
   'xnvme_be_nvmf_fabric.c',
   'xnvme_be_nvmf_mem.c',
