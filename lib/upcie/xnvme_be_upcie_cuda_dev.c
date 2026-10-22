@@ -121,7 +121,7 @@ _cuda_rte_init(size_t heap_size, uint32_t gpu_id)
 	if (err) {
 		return err;
 	}
-	err = cudamem_config_init(&g_upcie_cuda_rte.cuda_config, 0);
+	err = cudamem_config_init(&g_upcie_cuda_rte.cuda_config, gpu_id);
 	if (err) {
 		XNVME_DEBUG("FAILED: cudamem_config_init(); err(%d)", err);
 		_cuda_ctx_term();

@@ -39,7 +39,7 @@ first becomes the primary (see {ref}`sec-backends-upcie-mproc-model`).
 Starting **homi** before any secondary is therefore what makes it the primary.
 
 The heap is allocated once per process, on the first device open, so
-`--host_heap_size` covers every device **homi** holds rather than being per
+`--host-heap-size` covers every device **homi** holds rather than being per
 device.
 
 Rather than the 1 GiB the backend would otherwise use, **homi** defaults to 16
@@ -51,7 +51,7 @@ claiming the backend default would leave nothing in the hugepage pool for the
 secondaries it exists to serve:
 
 ```bash
-homi serve 0000:03:00.0 --be upcie --homi-id 1 --host_heap_size 134217728
+homi serve 0000:03:00.0 --be upcie --homi-id 1 --host-heap-size 134217728
 ```
 
 If any device fails to open, **homi** closes the devices it has already opened
