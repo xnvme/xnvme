@@ -184,6 +184,8 @@ xnvme_spec_log_lpi_str(enum xnvme_spec_log_lpi eval)
 		return "LOG_FDPEVENTS";
 	case XNVME_SPEC_LOG_SANITIZE:
 		return "LOG_SANITIZE";
+	case XNVME_SPEC_LOG_DISCOVERY:
+		return "LOG_DISCOVERY";
 	}
 
 	return "ENOSYS";
