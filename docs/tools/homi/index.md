@@ -49,7 +49,7 @@ Roles are not assigned by the tool: whichever process claims a given
 is therefore what makes it the server.
 
 The heap is allocated once per process, on the first device open, so
-`--host_heap_size` covers every device **homi** holds rather than being per
+`--host-heap-size` covers every device **homi** holds rather than being per
 device.
 
 Rather than the 1 GiB the backend would otherwise use, **homi** defaults to 80
@@ -63,7 +63,7 @@ instead would leave nothing in the hugepage pool for clients of anything else,
 so size it for the buffers the clients will ask for:
 
 ```bash
-homi serve 0000:03:00.0 --be upcie --homi-id 1 --host_heap_size 134217728
+homi serve 0000:03:00.0 --be upcie --homi-id 1 --host-heap-size 134217728
 ```
 
 When every device given sits on one NUMA node, as sysfs reports it, **homi**
@@ -202,7 +202,7 @@ homi serve 0000:05:00.0 0000:06:00.0 --be upcie --homi-id 2
 Two things are shared across all of them and have to be budgeted rather than
 assumed. The hugepage pool is one: each server allocates a heap, and every
 client of it draws from that heap rather than bringing one of its own, so a
-server's `--host_heap_size` has to cover the buffers all of its clients hold
+server's `--host-heap-size` has to cover the buffers all of its clients hold
 at once. Reserve hugepages for the sum of every server's heap, and size each
 for its clients rather than for the server.
 
