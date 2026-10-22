@@ -349,12 +349,6 @@ struct xnvme_platform g_xnvme_platform_linux = {
 	.classify = xnvme_platform_linux_classify,
 	.backends =
 		(const struct xnvme_be_config *const[]){
-#ifdef XNVME_BE_SPDK_ENABLED
-			&g_xnvme_be_spdk,
-#endif
-#ifdef XNVME_BE_LIBVFN_ENABLED
-			&g_xnvme_be_libvfn,
-#endif
 #ifdef XNVME_BE_UPCIE_ENABLED
 			&g_xnvme_be_upcie,
 #endif
@@ -363,6 +357,12 @@ struct xnvme_platform g_xnvme_platform_linux = {
 #endif
 #ifdef XNVME_BE_UPCIE_HIP_ENABLED
 			&g_xnvme_be_upcie_hip,
+#endif
+#ifdef XNVME_BE_SPDK_ENABLED
+			&g_xnvme_be_spdk,
+#endif
+#ifdef XNVME_BE_LIBVFN_ENABLED
+			&g_xnvme_be_libvfn,
 #endif
 			&g_xnvme_be_linux_emu_nvme,
 #ifdef XNVME_BE_LINUX_BLOCK_ENABLED
