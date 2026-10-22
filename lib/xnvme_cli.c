@@ -633,13 +633,13 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 	{
 		.opt = XNVME_CLI_OPT_HOST_HEAP_SIZE,
 		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
-		.name = "host_heap_size",
+		.name = "host-heap-size",
 		.descr = "For be=upcie, host DMA heap size in bytes",
 	},
 	{
 		.opt = XNVME_CLI_OPT_DEVICE_HEAP_SIZE,
 		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
-		.name = "device_heap_size",
+		.name = "device-heap-size",
 		.descr = "For be={upcie-cuda,upcie-hip}, GPU device heap size in bytes",
 	},
 	{
@@ -663,7 +663,7 @@ static struct xnvme_cli_opt_attr xnvme_cli_opts[] = {
 	{
 		.opt = XNVME_CLI_OPT_GPU_ID,
 		.vtype = XNVME_CLI_OPT_VTYPE_NUM,
-		.name = "gpu_id",
+		.name = "gpu-id",
 		.descr = "For be=upcie-cuda/upcie-hip, GPU ordinal to use",
 	},
 	{
