@@ -1673,7 +1673,7 @@ jobs:
   #
   ci-result:
     needs: [changes-to-docs, source-archive, source-format-check, test-gen-targets, build-rust, build-python, build-linux,
-      build-rpm, build-macos, build-windows, generate-verify-matrix, verify, verify-physical, verify-maas, benchmark-bdev_xnvme,
+      build-rpm, build-macos, build-windows, generate-verify-matrix, verify, verify-ernic, verify-physical, verify-maas, benchmark-bdev_xnvme,
       benchmark-latency, docgen, docs, packaging-debian]
     runs-on: ubuntu-24.04
     if: always()
