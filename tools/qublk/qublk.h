@@ -21,6 +21,15 @@
  */
 #define QUBLK_MAX_RING_ENTRIES 32768
 
+// User copy (kernel 6.5) ABI for older headers; GET_FEATURES says whether the kernel has it
+#ifndef UBLK_F_USER_COPY
+#define UBLK_F_USER_COPY (1UL << 7)
+#define UBLK_IO_BUF_BITS 25
+#define UBLK_TAG_OFF     UBLK_IO_BUF_BITS
+#define UBLK_TAG_BITS    16
+#define UBLK_QID_OFF     (UBLK_TAG_OFF + UBLK_TAG_BITS)
+#endif
+
 struct qublk_dev;
 struct qublk_queue;
 struct qublk_thread;
@@ -30,6 +39,7 @@ struct qublk_io {
 	void *buf;
 	const struct ublksrv_io_desc *iod;
 	struct qublk_queue *q;
+	uint64_t zone_append_lba; ///< Sector a zone append landed on, else 0
 };
 
 struct qublk_queue {
@@ -68,8 +78,17 @@ struct qublk_dev {
 	uint8_t lba_shift;
 	uint8_t has_vwc;
 	uint8_t has_fua;
+	uint8_t user_copy; ///< UBLK_F_USER_COPY: data moves via pread()/pwrite() on ublkc_fd
 	uint8_t added;
 	uint8_t started;
+
+	// Zoned serving (zoned.c); the geometry is in 512 B sectors and valid when 'zoned'
+	uint8_t zoned;
+	uint32_t zone_sectors;
+	uint32_t nr_zones;
+	uint32_t max_open;
+	uint32_t max_active;
+	uint32_t max_append_sectors;
 	struct qublk_queue *queues;
 	volatile sig_atomic_t stop;
 

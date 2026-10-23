@@ -16,6 +16,7 @@ from .qublk_session import (
     UBLK_NODE,
     UBLK_NVME,
     is_userspace_nvme,
+    passes_nvme,
     qublk_session,
     qublk_teardown,
     require_cuse,
@@ -54,6 +55,29 @@ def test_run_multi_queue(cijoe, device, be_opts, cli_args):
         be_opts["be"],
         [f"dd if={UBLK_NODE} of=/dev/null bs=1M count=32 iflag=direct"],
         args="--qdepth 64 --nqueues 4",
+    )
+    assert not err
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_run_user_copy(cijoe, device, be_opts, cli_args):
+    """With --user-copy, a random pattern written with direct I/O reads back the same"""
+
+    payload = [
+        "src=$(mktemp)",
+        "dst=$(mktemp)",
+        'trap "rm -f $src $dst" EXIT',
+        "dd if=/dev/urandom of=$src bs=1M count=32 status=none",
+        f"dd if=$src of={UBLK_NODE} bs=1M oflag=direct status=none",
+        f"dd if={UBLK_NODE} of=$dst bs=1M count=32 iflag=direct status=none",
+        "cmp $src $dst",
+    ]
+    err, _ = qublk_session(
+        cijoe,
+        device["uri"],
+        be_opts["be"],
+        payload,
+        args="--qdepth 64 --nqueues 2 --user-copy",
     )
     assert not err
 
@@ -134,7 +158,13 @@ def _reject_at_setup(cijoe, device, be_opts, phrase):
 
 @xnvme_parametrize(labels=["zns"], opts=["be"])
 def test_reject_zoned(cijoe, device, be_opts, cli_args):
-    """A zoned namespace is refused at setup; no block-device is served"""
+    """A zoned namespace is refused at setup on non-passthru backends; see test_qublk_zoned.py"""
+
+    if passes_nvme(be_opts):
+        pytest.skip(
+            f"[be={be_opts['be']}] passes NVMe commands through and serves a zoned "
+            "namespace; covered by test_qublk_zoned.py"
+        )
 
     _reject_at_setup(cijoe, device, be_opts, "zoned (ZNS)")
 

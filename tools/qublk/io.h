@@ -7,6 +7,12 @@
 
 #include "qublk.h"
 
+// Move 'bytes' of a request's data between the kernel and io->buf (user copy)
+int
+qublk_io_user_copy_in(struct qublk_queue *q, struct qublk_io *io, size_t bytes);
+int
+qublk_io_user_copy_out(struct qublk_queue *q, struct qublk_io *io, size_t bytes);
+
 int
 qublk_io_init(struct qublk_dev *dev);
 void

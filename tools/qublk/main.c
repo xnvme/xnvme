@@ -21,6 +21,7 @@
 #include "ctrl.h"
 #include "io.h"
 #include "qublk.h"
+#include "zoned.h"
 
 #define QUBLK_DEFAULT_QDEPTH 64
 #define QUBLK_DEFAULT_NQUEUES 1
@@ -45,17 +46,19 @@ id_in(const char *id, const char **set, size_t n)
 }
 
 /*
- * Whether the resolved backend delivers the NVMe 'fua' bit to the device:
- * io_uring and libaio map it to RWF_DSYNC, the passthru async backends carry
- * the command verbatim, and emu/thrpool delegate each command to the sync
- * layer, so there it depends on the sync implementation being a passthru --
- * psync and block issue a plain pwrite() and drop the bit.
+ * Whether the resolved backend carries NVMe commands verbatim to the device:
+ * the passthru async backends do, and emu/thrpool delegate each command to the
+ * sync layer, so there it depends on the sync implementation being a passthru
+ * -- psync and block translate the command into a plain pread()/pwrite().
  */
 static uint8_t
-backend_honours_fua(const struct xnvme_dev *xdev)
+backend_passes_nvme(const struct xnvme_dev *xdev)
 {
-	static const char *async_honours[] = {
-		"io_uring", "libaio", "io_uring_cmd", "spdk", "libvfn", "upcie",
+	static const char *async_passthru[] = {
+		"io_uring_cmd",
+		"spdk",
+		"libvfn",
+		"upcie",
 	};
 	static const char *sync_passthru[] = {
 		"nvme",
@@ -65,7 +68,7 @@ backend_honours_fua(const struct xnvme_dev *xdev)
 	};
 	const struct xnvme_opts *opts = xnvme_dev_get_opts(xdev);
 
-	if (id_in(opts->async, async_honours, sizeof(async_honours) / sizeof(*async_honours))) {
+	if (id_in(opts->async, async_passthru, sizeof(async_passthru) / sizeof(*async_passthru))) {
 		return 1;
 	}
 
@@ -78,18 +81,32 @@ backend_honours_fua(const struct xnvme_dev *xdev)
 }
 
 /*
- * What the rejection of a namespace outside the NVM command set names it as;
- * qublk issues plain NVM read/write, so serving anything else would
- * misrepresent it as an ordinary block device. A zoned namespace would need
- * serving as a zoned ublk device; a key-value namespace has no block-device
- * model to map to.
+ * Whether the resolved backend delivers the NVMe 'fua' bit to the device:
+ * io_uring and libaio map it to RWF_DSYNC, and a passthru backend carries it
+ * with the rest of the command; the other block-device paths drop it.
  */
+static uint8_t
+backend_honours_fua(const struct xnvme_dev *xdev)
+{
+	static const char *async_dsync[] = {
+		"io_uring",
+		"libaio",
+	};
+	const struct xnvme_opts *opts = xnvme_dev_get_opts(xdev);
+
+	if (id_in(opts->async, async_dsync, sizeof(async_dsync) / sizeof(*async_dsync))) {
+		return 1;
+	}
+
+	return backend_passes_nvme(xdev);
+}
+
+// Names the namespace types qublk cannot serve: a key-value namespace has no
+// block-device model to map to
 static const char *
 geo_type_rejection(enum xnvme_geo_type type)
 {
 	switch (type) {
-	case XNVME_GEO_ZONED:
-		return "namespace is zoned (ZNS)";
 	case XNVME_GEO_KV:
 		return "namespace is key-value";
 	default:
@@ -106,8 +123,10 @@ dev_init(struct qublk_dev *dev, uint32_t want_max_io)
 	dev->geo = xnvme_dev_get_geo(dev->xdev);
 	// Before the LBA check: a key-value geometry has no LBA size, and
 	// failing on that would hide the actual reason
-	if (dev->geo->type != XNVME_GEO_CONVENTIONAL) {
-		fprintf(stderr, "Failed: %s: %s; qublk serves only conventional NVM namespaces\n",
+	if (dev->geo->type != XNVME_GEO_CONVENTIONAL && dev->geo->type != XNVME_GEO_ZONED) {
+		fprintf(stderr,
+			"Failed: %s: %s; qublk serves only conventional and zoned NVMe "
+			"namespaces\n",
 			dev->uri, geo_type_rejection(dev->geo->type));
 		return -EINVAL;
 	}
@@ -125,6 +144,11 @@ dev_init(struct qublk_dev *dev, uint32_t want_max_io)
 	dev->max_io_buf = (uint32_t)XNVME_MIN_U64(
 		want_max_io ? want_max_io : QUBLK_DEFAULT_MAX_IO_CAP, cap_max);
 	dev->max_io_buf &= ~(uint32_t)(sysconf(_SC_PAGESIZE) - 1);
+
+	// After max_io_buf: the append limit and the report buffer depend on it
+	if (dev->geo->type == XNVME_GEO_ZONED) {
+		return qublk_zoned_init(dev, backend_passes_nvme(dev->xdev));
+	}
 
 	return 0;
 }
@@ -150,8 +174,20 @@ dev_add(struct qublk_dev *dev, const char *be)
 		return -ENOSYS;
 	}
 
+	rc = qublk_zoned_check_features(dev, feat);
+	if (rc < 0) {
+		return rc;
+	}
+
+	if (dev->user_copy && !(feat & UBLK_F_USER_COPY)) {
+		xnvme_cli_perr("Failed: --user-copy: kernel lacks UBLK_F_USER_COPY (6.5+)",
+			       -ENOSYS);
+		return -ENOSYS;
+	}
+
 	rc = qublk_ctrl_add_dev(dev);
 	if (rc < 0) {
+		qublk_zoned_add_failed(dev, rc);
 		return rc;
 	}
 
@@ -160,6 +196,7 @@ dev_add(struct qublk_dev *dev, const char *be)
 		"qublk: added ublk dev id=%d nqueues=%u qdepth=%u max_io=%u backend=%s uri=%s\n",
 		dev->dev_id, dev->nqueues, dev->qdepth, dev->max_io_buf, be ? be : "(auto)",
 		dev->uri);
+	qublk_zoned_print_info(dev);
 
 	rc = qublk_ctrl_set_params(dev);
 	if (rc < 0) {
@@ -320,6 +357,10 @@ sub_serve(struct xnvme_cli *cli)
 		devs[d].nqueues = nqueues;
 		devs[d].qdepth = qdepth;
 		devs[d].flags = UBLK_F_CMD_IOCTL_ENCODE;
+		if (cli->args.user_copy) {
+			devs[d].user_copy = 1;
+			devs[d].flags |= UBLK_F_USER_COPY;
+		}
 	}
 
 	for (uint32_t d = 0; d < ndevs; d++) {
@@ -446,6 +487,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_CPUMASK, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_CPULIST, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_NO_CUSE, XNVME_CLI_LFLG},
+			{XNVME_CLI_OPT_USER_COPY, XNVME_CLI_LFLG},
 			{XNVME_CLI_OPT_ORCH_TITLE, XNVME_CLI_SKIP},
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HOMI_ID, XNVME_CLI_LOPT},
