@@ -951,12 +951,14 @@ jobs:
   #
   # The NIC is rocm-ernic, whose server is also the NVMe target; it is built and
   # started on the runner beside the guest. See cijoe/configs/ubuntu-2610-rocm.toml.
+  # It takes about an hour, so a pull-request runs it only once labelled 'ernic'.
   #
   verify-ernic:
-    needs: [source-archive, source-format-check, build-python]
+    needs: [source-archive, source-format-check, build-python, changes-to-docs]
     runs-on: ubuntu-24.04
-    if: github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' &&
-      github.event.inputs.job == 'verify')
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'push' || (github.event_name == 'pull_request'
+      && contains(github.event.pull_request.labels.*.name, 'ernic')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.job
+      == 'verify'))
 
     env:
       GUEST: ubuntu-2610-rocm
@@ -1668,8 +1670,8 @@ jobs:
   #
   # The one check that branch protection requires. It fails when any job failed or
   # was cancelled. A pull-request changing code must also have run the 'maas'
-  # verification, which needs the 'maas' label; a documentation-only one needs the
-  # docs to build.
+  # verification and the RDMA guest, which need the labels 'maas' and 'ernic'; a
+  # documentation-only one needs the docs to build.
   #
   ci-result:
     needs: [changes-to-docs, source-archive, source-format-check, test-gen-targets, build-rust, build-python, build-linux,
@@ -1694,12 +1696,13 @@ jobs:
         fi
         required="source-format-check docs"
         if [ "$EVENT" = "pull_request" ] && [ "$DOCS_PROSE_ONLY" != "true" ]; then
-          required="$required verify-maas verify-physical"
+          required="$required verify-maas verify-physical verify-ernic"
         fi
         for job in $required; do
           result=$(jq -r --arg job "$job" '.[$job].result' <<< "$RESULTS")
           if [ "$result" != "success" ]; then
             case "$job" in
+            verify-ernic) echo "::error::$job is required and was $result; a change to code needs the 'ernic' label" ;;
             verify-*) echo "::error::$job is required and was $result; a change to code needs the 'maas' label" ;;
             *) echo "::error::$job is required and was $result" ;;
             esac

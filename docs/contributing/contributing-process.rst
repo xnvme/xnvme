@@ -22,8 +22,9 @@ Contribution Process
     the guest runs the commands
   - Merging requires the check ``ci-result``, which passes when every job did.
     A pull-request changing code also needs the verification on physical
-    devices, which runs once the pull-request has the label ``maas``; until
-    then ``ci-result`` fails
+    devices, which runs once the pull-request has the label ``maas``, and the
+    verification over NVMe/RDMA in an emulated-NIC guest, which runs once it
+    has the label ``ernic``; until then ``ci-result`` fails
   - One manual CI-job is triggered via the label ``bench``
 
 * Go over the :ref:`sec-contributing-process-pr-checklist` and re-iterate on
