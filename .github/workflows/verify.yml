@@ -1007,6 +1007,24 @@ jobs:
         mkdir -p /mnt/guests
         ln -s /mnt/guests "$HOME/guests"
 
+    - name: rocm-ernic, server revisions
+      id: ernic-rev
+      run: |
+        python3 - <<'EOF' >> "$GITHUB_OUTPUT"
+        import tomllib
+        cfg = tomllib.load(open("cijoe/configs/${{ env.GUEST }}.toml", "rb"))["rocm_ernic"]
+        print(f"key={cfg['sha']}-{cfg['libvfio_user']['sha']}")
+        EOF
+
+    # rocm_ernic_build skips the build when the cached server's stamp matches
+    - name: rocm-ernic, cache the server build
+      uses: actions/cache@v6.1.0
+      with:
+        path: |
+          ~/opt/rocm-ernic/bin
+          ~/opt/rocm-ernic/lib
+        key: rocm-ernic-${{ steps.ernic-rev.outputs.key }}-${{ hashFiles('cijoe/scripts/rocm_ernic_build.py') }}
+
     - name: CIJOE, provision and test guest
       run: |
         make verify-guest \
