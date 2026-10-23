@@ -85,12 +85,14 @@ target_lladdr = "02:00:00:00:c0:01"
 # Devices
 # =============================================================================
 
-# The namespace of the rocm-ernic NVMe-oF controller, over RDMA
+# The namespace of the rocm-ernic NVMe controller, over RDMA. Like the Linux
+# target it lacks Compare and the Temperature Threshold feature ("nvmet"); it takes
+# one SGL descriptor per command (msdbd = 1), so vectored commands fail ("novec").
 [[devices]]
 uri = "192.168.200.1:4420"
 subnqn = "nvmet-test"
 nsid = 1
-labels = [ "dev", "fabrics", "rdma", "nvm" ]
+labels = [ "dev", "fabrics", "rdma", "nvm", "nvmet", "novec" ]
 driver_attachment = "none"
 
 [hugetlbfs]
