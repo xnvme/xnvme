@@ -15,11 +15,14 @@ steps:
 - name: hugepages
   uses: linux_setup_hugepages
 
+# The SPDK backend probes TCP before RDMA, and nothing on the emulated wire
+# answers TCP, so each open would wait out the SYN retries; refuse it instead
 - name: rdma_transport
   run: |
     ip addr replace {{ config.rocm_ernic.transport.guest_addr }} dev {{ config.rocm_ernic.transport.netdev }}
     ip link set {{ config.rocm_ernic.transport.netdev }} up
     ip neigh replace {{ config.rocm_ernic.transport.traddr }} lladdr {{ config.rocm_ernic.transport.target_lladdr }} dev {{ config.rocm_ernic.transport.netdev }} nud permanent
+    iptables -I OUTPUT -p tcp -d {{ config.rocm_ernic.transport.traddr }} -j REJECT --reject-with tcp-reset
     ibv_devinfo | grep -E 'hca_id|state'
 
 # Fails here, rather than in xNVMe, when the transport itself is down
