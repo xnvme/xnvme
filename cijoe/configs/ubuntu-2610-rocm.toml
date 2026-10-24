@@ -59,7 +59,7 @@ system_args.tcp_forward = {host = 4200, guest = 22}
 # moves with the image digest in system_imaging.toml.
 [rocm_ernic]
 repository = "https://github.com/ROCm/rocm-ernic"
-sha = "4880c3428efb8653ca9b9747f67820ecf251b3f8"
+sha = "cddb171f54feab119f7b6deca5c33148bb7c020d"
 prefix = "{{ local.env.HOME }}/opt/rocm-ernic"
 socket = "/tmp/vfio-user-rocm-ernic.sock"
 backend = "nvmeof:size=1G,bs=4096,nqn=nvmet-test,ip=192.168.200.1,port=4420"
@@ -68,7 +68,7 @@ log_level = "info"
 # Pinned where rocm-ernic's own CI pins it at that revision.
 [rocm_ernic.libvfio_user]
 repository = "https://github.com/nutanix/libvfio-user"
-sha = "20e9803"
+sha = "8039244"
 
 # The guest side of the transport, set up by the test workflow. The controller
 # answers on .1 and the guest takes .11. Nothing on the emulated wire answers
