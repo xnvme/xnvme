@@ -145,6 +145,8 @@ def test_write_vec(cijoe, device, be_opts, cli_args):
     # SPDK needs SGL for a vectored command, and xNVMe fails it rather than bounce
     if be_opts["be"] == "spdk" and "nosgl" in device["labels"]:
         pytest.skip(reason="[be=spdk] vectored passthru needs SGL support")
+    if "novec" in device["labels"]:
+        pytest.skip(reason="[novec] the target takes no vectored commands")
 
     err, _ = qublk_session(
         cijoe,

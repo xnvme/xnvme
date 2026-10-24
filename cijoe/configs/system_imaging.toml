@@ -25,3 +25,12 @@ disk.path = "{{ local.env.HOME }}/system_imaging/disk/freebsd-14.1-ksrc-amd64.qc
 system_label = "x86_64"
 
 disk.path = "{{ local.env.HOME }}/system_imaging/disk/win11.qcow2"
+
+# The oras digest is the .img.gz layer's, not the manifest's; this is
+# ubuntu-2610-rocm:2026.W43. configs/ubuntu-2610-rocm.toml pins the rocm-ernic
+# revision this image was built from, so the two move together.
+[system-imaging.images.ubuntu-2610-rocm-x86_64]
+system_label = "x86_64"
+
+oras.url = "oras://ghcr.io/safl/nosi/ubuntu-2610-rocm@sha256:a778f9a6ce500ca4165638b0cad7db5d3b5f34cec369df9d5d0c1c0f55213106"
+disk.path = "{{ local.env.HOME }}/system_imaging/disk/ubuntu-2610-rocm-x86_64.qcow2"

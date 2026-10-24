@@ -44,7 +44,7 @@ def pytest_configure(config):
 def get_osname():
     """Return normalized OS name from CIJOE config"""
     osname = pytest.cijoe_instance.getconf("os.name", "linux")
-    if osname == "debian":
+    if osname in ("debian", "ubuntu"):
         osname = "linux"
     return osname
 
@@ -54,8 +54,14 @@ def get_shm_id():
 
 
 def is_nvmet(cijoe, device):
-    """Return True when the fabrics device is exported by the Linux NVMe target"""
+    """Return True when the device is exported by the Linux NVMe target
 
+    A device labelled "nvmet" is treated the same, for targets that implement the
+    same subset of the command set without being the Linux one.
+    """
+
+    if "nvmet" in device.get("labels", []):
+        return True
     if "subnqn" not in device:
         return False
 
@@ -180,7 +186,8 @@ def xnvme_setup(labels=[], opts=[]):
     parametrization = []
 
     combinations = xnvme_be_opts(
-        opts, ["file"] if "file" in labels else ["bdev", "cdev", "pcie", "fabrics"]
+        opts,
+        ["file"] if "file" in labels else ["bdev", "cdev", "pcie", "fabrics", "rdma"],
     )
 
     for be_opts in combinations:

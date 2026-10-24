@@ -947,6 +947,137 @@ jobs:
         if-no-files-found: error
 
   #
+  # Test the NVMe/RDMA transport, in a guest with an emulated RDMA NIC
+  #
+  # The NIC is rocm-ernic, whose server is also the NVMe target; it is built and
+  # started on the runner beside the guest. See cijoe/configs/ubuntu-2610-rocm.toml.
+  # It takes about an hour, so a pull-request runs it only once labelled 'ernic'.
+  #
+  verify-ernic:
+    needs: [source-archive, source-format-check, build-python, changes-to-docs]
+    runs-on: ubuntu-24.04
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'push' || (github.event_name == 'pull_request'
+      && contains(github.event.pull_request.labels.*.name, 'ernic')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.job
+      == 'verify'))
+
+    env:
+      GUEST: ubuntu-2610-rocm
+      GUEST_DIR: ubuntu-2610-rocm-amd64
+
+    container:
+      image: ghcr.io/safl/nosi/ubuntu-2604-docker:latest
+      # /mnt is the runner's ~70 GiB ephemeral disk; the nosi qcow2 + raw
+      # decompression overflow the container's small overlay otherwise.
+      options: --privileged -v /mnt:/mnt
+
+    steps:
+    - uses: xnvme/actions/.github/actions/cleanup@main
+
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
+      with:
+        name: xnvme-src-archive-with-subprojects
+
+    - name: Retrieve the xNVMe Python sdist package
+      uses: actions/download-artifact@v7.0.0
+      with:
+        name: xnvme-py-sdist
+        path: ${{ steps.source.outputs.directory }}
+
+    - name: Prep, environment GITHUB_PATH
+      run: |
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        cp -r ${{ steps.source.outputs.directory }} /tmp/artifacts
+        find /tmp/artifacts
+
+    - name: CIJOE, setup pipx environment
+      run: |
+        make guest-env <<< "${GUEST}"
+
+    - name: CIJOE, check that it is available
+      run: |
+        cijoe -r
+
+    # The image unpacks to 24 GiB, which the root disk does not have room for
+    - name: Stage artifacts on /mnt
+      run: |
+        mkdir -p /mnt/system_imaging
+        ln -s /mnt/system_imaging "$HOME/system_imaging"
+        mkdir -p /mnt/guests
+        ln -s /mnt/guests "$HOME/guests"
+
+    - name: rocm-ernic, server revisions
+      id: ernic-rev
+      run: |
+        python3 - <<'EOF' >> "$GITHUB_OUTPUT"
+        import tomllib
+        cfg = tomllib.load(open("cijoe/configs/${{ env.GUEST }}.toml", "rb"))["rocm_ernic"]
+        print(f"key={cfg['sha']}-{cfg['libvfio_user']['sha']}")
+        EOF
+
+    # rocm_ernic_build skips the build when the cached server's stamp matches
+    - name: rocm-ernic, cache the server build
+      uses: actions/cache@v6.1.0
+      with:
+        path: |
+          ~/opt/rocm-ernic/bin
+          ~/opt/rocm-ernic/lib
+        key: rocm-ernic-${{ steps.ernic-rev.outputs.key }}-${{ hashFiles('cijoe/scripts/rocm_ernic_build.py') }}
+
+    - name: CIJOE, provision and test guest
+      run: |
+        make verify-guest \
+          TRANSPORT=rdma \
+          CIJOE_OUTPUT="${{ github.job }}"
+
+    - name: Collect guest serial console
+      if: always()
+      run: |
+        serial="$HOME/guests/${GUEST_DIR}/serial.output"
+        echo "::group::guest serial console (tail)"
+        tail -c 20000 "$serial" 2>/dev/null || echo "no guest serial output"
+        echo "::endgroup::"
+        cp "$serial" "cijoe/${{ github.job }}-serial.output" 2>/dev/null || true
+
+    - name: Collect rocm-ernic server log
+      if: always()
+      run: |
+        echo "::group::rocm-ernic server log (tail)"
+        tail -c 20000 /tmp/vfio-user-rocm-ernic.log 2>/dev/null || echo "no rocm-ernic server log"
+        echo "::endgroup::"
+        cp /tmp/vfio-user-rocm-ernic.log "cijoe/${{ github.job }}-rocm-ernic.log" 2>/dev/null || true
+
+    - name: CIJOE, result-log-dump on error
+      if: failure()
+      run: |
+        find cijoe -name "*.output" | while read -r fpath; do
+          echo "=== ${fpath}"
+          cat "${fpath}"
+        done
+
+    - name: CIJOE, upload report.html
+      if: always()
+      uses: actions/upload-artifact@v6.0.0
+      with:
+        name: ${{ github.job }}-report-html
+        path: cijoe/${{ github.job }}-*/report.html
+        if-no-files-found: warn
+
+    - name: CIJOE, archive ${{ github.job }}-reports
+      if: always()
+      run: |
+        tar czf ${{ github.job }}-reports.tar.gz cijoe/${{ github.job }}-*
+
+    - name: CIJOE, upload ${{ github.job }}-reports
+      uses: actions/upload-artifact@v6.0.0
+      if: always()
+      with:
+        name: ${{ github.job }}-reports
+        path: ${{ github.job }}-reports.tar.gz
+        if-no-files-found: error
+
+  #
   # Build and test xNVMe on physical machines
   #
   verify-physical:
@@ -1557,12 +1688,12 @@ jobs:
   #
   # The one check that branch protection requires. It fails when any job failed or
   # was cancelled. A pull-request changing code must also have run the 'maas'
-  # verification, which needs the 'maas' label; a documentation-only one needs the
-  # docs to build.
+  # verification and the RDMA guest, which need the labels 'maas' and 'ernic'; a
+  # documentation-only one needs the docs to build.
   #
   ci-result:
     needs: [changes-to-docs, source-archive, source-format-check, test-gen-targets, build-rust, build-python, build-linux,
-      build-rpm, build-macos, build-windows, generate-verify-matrix, verify, verify-physical, verify-maas, benchmark-bdev_xnvme,
+      build-rpm, build-macos, build-windows, generate-verify-matrix, verify, verify-ernic, verify-physical, verify-maas, benchmark-bdev_xnvme,
       benchmark-latency, docgen, docs, packaging-debian]
     runs-on: ubuntu-24.04
     if: always()
@@ -1583,12 +1714,13 @@ jobs:
         fi
         required="source-format-check docs"
         if [ "$EVENT" = "pull_request" ] && [ "$DOCS_PROSE_ONLY" != "true" ]; then
-          required="$required verify-maas verify-physical"
+          required="$required verify-maas verify-physical verify-ernic"
         fi
         for job in $required; do
           result=$(jq -r --arg job "$job" '.[$job].result' <<< "$RESULTS")
           if [ "$result" != "success" ]; then
             case "$job" in
+            verify-ernic) echo "::error::$job is required and was $result; a change to code needs the 'ernic' label" ;;
             verify-*) echo "::error::$job is required and was $result; a change to code needs the 'maas' label" ;;
             *) echo "::error::$job is required and was $result" ;;
             esac

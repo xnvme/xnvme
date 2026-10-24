@@ -138,6 +138,17 @@ def get_backend_configurations():
             "mem": ["spdk"],
             "label": ["fabrics"],
         },
+        # The SPDK combination above again, for devices reached over RDMA, so that
+        # those can be selected on their own ('-k rdma'); such a device is also
+        # labelled 'fabrics', which is what the tests branch on
+        {
+            "be": ["spdk"],
+            "async": ["spdk"],
+            "sync": ["spdk"],
+            "admin": ["spdk"],
+            "mem": ["spdk"],
+            "label": ["rdma"],
+        },
         {
             "be": ["upcie"],
             "mem": ["upcie"],

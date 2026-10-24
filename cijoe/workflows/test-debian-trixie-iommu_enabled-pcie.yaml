@@ -39,7 +39,7 @@ steps:
 - name: test_os
   uses: core.testrunner
   with:
-    args: '-k "(not ramdisk) and (not pcie) and (not upcie) and (not fabrics)" tests --timeout=1800 --timeout-method=thread'
+    args: '-k "(not ramdisk) and (not pcie) and (not upcie) and (not fabrics) and (not rdma)" tests --timeout=1800 --timeout-method=thread'
     random_order: false
 
 - name: test_pcie
