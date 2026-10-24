@@ -128,7 +128,7 @@ def get_backend_configurations():
             "admin": ["spdk"],
             "mem": ["spdk"],
             "label": ["pcie"],
-            "mproc": True,
+            "cplane": True,
         },
         {
             "be": ["spdk"],
@@ -145,16 +145,31 @@ def get_backend_configurations():
             "sync": ["upcie"],
             "admin": ["upcie"],
             "label": ["pcie"],
-            "mproc": True,
+            "cplane": True,
         },
         {
+            # Only the backend and the allocator are the GPU's; the queues and
+            # commands are uPCIe's, and naming them after the GPU asks for
+            # implementations that do not exist.
             "be": ["upcie-cuda"],
             "mem": ["upcie-cuda"],
-            "async": ["upcie-cuda"],
-            "sync": ["upcie-cuda"],
-            "admin": ["upcie-cuda"],
+            "async": ["upcie"],
+            "sync": ["upcie"],
+            "admin": ["upcie"],
             "label": ["cuda"],
-            "mproc": True,
+            "cplane": True,
+        },
+        {
+            # Only the backend and the allocator are the GPU's; the queues and
+            # commands are uPCIe's, and naming them after the GPU asks for
+            # implementations that do not exist.
+            "be": ["upcie-hip"],
+            "mem": ["upcie-hip"],
+            "async": ["upcie"],
+            "sync": ["upcie"],
+            "admin": ["upcie"],
+            "label": ["hip"],
+            "cplane": True,
         },
         # Ramdisk
         {
@@ -209,7 +224,7 @@ def get_backend_configurations():
             "admin": ["spdk"],
             "mem": ["spdk"],
             "label": ["pcie"],
-            "mproc": True,
+            "cplane": True,
         },
         # Ramdisk
         {

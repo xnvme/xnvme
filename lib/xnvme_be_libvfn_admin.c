@@ -9,6 +9,7 @@
 #include <xnvme_dev.h>
 #include <xnvme_queue.h>
 #include <xnvme_be_libvfn.h>
+#include <xnvme_lock.h>
 
 int
 xnvme_be_libvfn_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
@@ -18,15 +19,19 @@ xnvme_be_libvfn_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	struct nvme_ctrl *ctrl = state->ctrlr->ctrl;
 	union nvme_cmd *cmd = (union nvme_cmd *)&ctx->cmd;
 	struct nvme_cqe *cqe = (struct nvme_cqe *)&ctx->cpl;
+	int err = 0;
 
 	dbuf_nbytes = ALIGN_UP(dbuf_nbytes, 4096);
 
+	/* Queue setup submits on the admin queue too, under this lock */
+	xnvme_lock();
 	if (nvme_admin(ctrl, cmd, dbuf, dbuf_nbytes, cqe)) {
 		XNVME_DEBUG("FAILED: nvme_oneshot()");
-		return -errno;
+		err = -errno;
 	}
+	xnvme_unlock();
 
-	return 0;
+	return err;
 }
 #endif
 

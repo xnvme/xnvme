@@ -52,11 +52,16 @@ main(int argc, char **argv)
 
 	if (argc < 2) {
 		err = -EINVAL;
-		xnvme_cli_perr("Usage: %s <pci-id>", err);
+		xnvme_cli_perr("Usage: %s <pci-id> [homi-id]", err);
 		return err;
 	}
 
 	opts.be = "upcie-cuda";
+	/* With a server id the controller is somebody else's, and the buffer
+	 * mapped below is registered with them rather than resolved here. */
+	if (argc > 2) {
+		opts.homi_id = (uint32_t)strtoul(argv[2], NULL, 0);
+	}
 	dev = xnvme_dev_open(argv[1], &opts);
 	if (!dev) {
 		err = -errno;
@@ -131,7 +136,7 @@ main(int argc, char **argv)
 	}
 	cudaMemset(d_errors, 0, qdepth * sizeof(int));
 
-	err = xnvme_cuda_queue_create(dev, qdepth, &gpu_queue);
+	err = xnvme_cuda_queue_create(dev, qdepth, 0, &gpu_queue);
 	if (err) {
 		xnvme_cli_perr("xnvme_cuda_queue_create()", err);
 		goto exit;

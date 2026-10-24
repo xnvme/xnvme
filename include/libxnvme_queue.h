@@ -24,6 +24,10 @@ struct xnvme_queue;
 enum xnvme_queue_opts {
 	XNVME_QUEUE_IOPOLL = 0x1,      ///< XNVME_QUEUE_IOPOLL: queue. is polled for completions
 	XNVME_QUEUE_SQPOLL = 0x1 << 1, ///< XNVME_QUEUE_SQPOLL: queue. is polled for submissions
+	/// XNVME_QUEUE_P2P_CQ_MIRROR: completions land in GPU memory, mirrored to the host
+	XNVME_QUEUE_P2P_CQ_MIRROR = 0x1 << 2,
+	/// XNVME_QUEUE_SQ_HOSTMEM: a GPU-issued queue submits from host memory
+	XNVME_QUEUE_SQ_HOSTMEM = 0x1 << 3,
 };
 
 /**

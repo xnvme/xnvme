@@ -37,11 +37,16 @@ xnvme_be_upcie_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 {
 	struct xnvme_be_upcie_state *state = (void *)ctx->dev->be.state;
 	struct nvme_controller *ctrl = state->ctrlr->ctrl;
-	struct nvme_qpair *qp = &state->ctrlr->sync;
+	struct nvme_qpair *qp = xnvme_be_upcie_ctrlr_ioq(state->ctrlr);
 	struct nvme_command *cmd = (struct nvme_command *)&ctx->cmd;
 	struct nvme_completion *cpl = (struct nvme_completion *)&ctx->cpl;
 	struct nvme_request *req;
 	int err;
+
+	if (!qp) {
+		XNVME_DEBUG("FAILED: no I/O queue; errno(%d)", errno);
+		return -errno;
+	}
 
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_FS_OPC_READ:
@@ -100,11 +105,16 @@ xnvme_be_upcie_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_
 {
 	struct xnvme_be_upcie_state *state = (void *)ctx->dev->be.state;
 	struct nvme_controller *ctrl = state->ctrlr->ctrl;
-	struct nvme_qpair *qp = &state->ctrlr->sync;
+	struct nvme_qpair *qp = xnvme_be_upcie_ctrlr_ioq(state->ctrlr);
 	struct nvme_command *cmd = (struct nvme_command *)&ctx->cmd;
 	struct nvme_completion *cpl = (struct nvme_completion *)&ctx->cpl;
 	struct nvme_request *req;
 	int err;
+
+	if (!qp) {
+		XNVME_DEBUG("FAILED: no I/O queue; errno(%d)", errno);
+		return -errno;
+	}
 
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_FS_OPC_READ:

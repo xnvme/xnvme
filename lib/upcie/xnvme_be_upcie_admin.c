@@ -10,30 +10,31 @@
 #include <xnvme_queue.h>
 #include <xnvme_spec.h>
 #include <xnvme_be_upcie.h>
+#include <xnvme_lock.h>
 
 int
 xnvme_be_upcie_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 			      void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	struct xnvme_be_upcie_state *state = (void *)ctx->dev->be.state;
-	struct xnvme_be_upcie_ctrlr *ctrlr = state->ctrlr;
 	struct nvme_controller *ctrl = state->ctrlr->ctrl;
 	struct nvme_command *cmd = (struct nvme_command *)&ctx->cmd;
 	struct nvme_completion *cpl = (struct nvme_completion *)&ctx->cpl;
 	struct nvme_request *req;
 	int err;
 
-	err = xnvme_be_upcie_ctrlr_mutex_lock(ctrlr);
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_be_upcie_ctrlr_mutex_lock(); err(%d)", err);
-		return err;
+	if (g_upcie_rte.connection.alive) {
+		return xnvme_be_upcie_cplane_sync_cmd_admin(ctx, dbuf, dbuf_nbytes);
 	}
+
+	/* Queue setup submits on the admin queue too, under this lock */
+	xnvme_lock();
 
 	req = nvme_request_alloc(ctrl->aq.rpool);
 	if (!req) {
 		XNVME_DEBUG("FAILED: nvme_request_alloc(); errno(%d)", errno);
 		err = -errno;
-		xnvme_be_upcie_ctrlr_mutex_unlock(ctrlr);
+		xnvme_unlock();
 		return err;
 	}
 
@@ -70,8 +71,8 @@ xnvme_be_upcie_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf
 	}
 
 exit:
-	xnvme_be_upcie_ctrlr_mutex_unlock(ctrlr);
 	nvme_request_free(ctrl->aq.rpool, req->cid);
+	xnvme_unlock();
 	return err;
 }
 

@@ -100,6 +100,9 @@ struct xnvme_cli_args {
 	uint32_t dev_id;
 	uint32_t max_io_bytes;
 	bool direct;
+	bool p2p_cq_mirror;
+	bool sq_hostmem;
+	bool buf_host_bounce;
 	uint32_t limit;
 
 	uint64_t count;
@@ -118,6 +121,7 @@ struct xnvme_cli_args {
 
 	const char *be;
 	const char *alt_be;
+	const char *alt_uri;
 	const char *mem;
 	const char *sync;
 	const char *async;
@@ -389,7 +393,15 @@ enum xnvme_cli_opt {
 
 	XNVME_CLI_OPT_NO_CUSE = 139, ///< XNVME_CLI_OPT_NO_CUSE
 
-	XNVME_CLI_OPT_END = 140, ///< XNVME_CLI_OPT_END
+	XNVME_CLI_OPT_ALT_URI = 140, ///< XNVME_CLI_OPT_ALT_URI
+
+	XNVME_CLI_OPT_P2P_CQ_MIRROR = 141, ///< XNVME_CLI_OPT_P2P_CQ_MIRROR
+
+	XNVME_CLI_OPT_SQ_HOSTMEM = 142, ///< XNVME_CLI_OPT_SQ_HOSTMEM
+
+	XNVME_CLI_OPT_BUF_HOST_BOUNCE = 143, ///< XNVME_CLI_OPT_BUF_HOST_BOUNCE
+
+	XNVME_CLI_OPT_END = 144, ///< XNVME_CLI_OPT_END
 };
 
 /**

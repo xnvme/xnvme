@@ -1,6 +1,6 @@
 import pytest
 
-from ..conftest import XnvmeDriver, get_osname, get_shm_id, is_nvmet, xnvme_parametrize
+from ..conftest import XnvmeDriver, get_homi_id, get_osname, is_nvmet, xnvme_parametrize
 
 
 def test_library_info(cijoe):
@@ -22,6 +22,25 @@ def test_enum(cijoe):
 def test_enum_fabrics(cijoe, device, be_opts, cli_args):
     err, _ = cijoe.run(f"xnvme enum --uri {device['uri']}")
     assert not err
+
+
+@xnvme_parametrize(labels=["pcie"], opts=["be"])
+def test_info_without_a_backend_takes_upcie(cijoe, device, be_opts, cli_args):
+    """
+    A controller named by its bus address and no backend opens with upcie.
+
+    upcie is tried before SPDK and libvfn, so a build carrying either still
+    defaults to it; this says so if the order changes.
+    """
+
+    if get_homi_id():
+        pytest.skip(reason="A served run has the controller held by the server")
+    if be_opts["be"] != "upcie":
+        pytest.skip(reason="Checked once, with the controller where upcie wants it")
+
+    err, state = cijoe.run(f"xnvme info {device['uri']}")
+    assert not err
+    assert "be: 'upcie'" in state.output(), "a bus address opened with another backend"
 
 
 @xnvme_parametrize(labels=["pcie"], opts=["be"])
@@ -447,8 +466,10 @@ def test_subsystem_reset(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[be=libvfn] does not support pseudo commands")
     if be_opts["admin"] == "upcie":
         pytest.skip(reason="[be=upcie] does not support subsystem-reset")
-    if get_shm_id():
-        pytest.skip(reason="reset tears down the queues held by the mproc primary")
+    if get_homi_id():
+        pytest.skip(
+            reason="reset tears down the queues held by the control-plane server"
+        )
 
     err, state = cijoe.run(
         f"xnvme subsystem-reset {device['uri']} --be {be_opts['be']} --admin {be_opts['admin']}"
@@ -478,8 +499,10 @@ def test_ctrlr_reset(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[be=libvfn] does not support pseudo commands")
     if be_opts["admin"] == "upcie":
         pytest.skip(reason="[be=upcie] does not support controller-reset")
-    if get_shm_id():
-        pytest.skip(reason="reset tears down the queues held by the mproc primary")
+    if get_homi_id():
+        pytest.skip(
+            reason="reset tears down the queues held by the control-plane server"
+        )
 
     err, _ = cijoe.run(
         f"xnvme ctrlr-reset {device['uri']} --be {be_opts['be']} --admin {be_opts['admin']}"
