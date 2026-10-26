@@ -215,8 +215,10 @@ then it is likely due to one of the following:
 
 The full source-archive is made available with each release and downloadable
 from the `GitHUB Release page <https://github.com/xnvme/xnvme/releases>`_
-release page. It contains the **xNVMe** source code along with all the
-third-party subproject source of **SPDK**.
+release page. It contains the **xNVMe** source code along with the
+third-party subproject source of **SPDK** and **uPCIe**. Every Linux build
+needs **uPCIe**, which the source-archive without **SPDK** carries too, so
+either archive builds offline on Linux.
 
 Missing dependencies / toolchain
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

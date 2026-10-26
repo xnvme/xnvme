@@ -81,7 +81,7 @@ xnvme_be_upcie_iova_range_open(struct xnvme_be_upcie_iova_range *range, const ch
 	}
 
 	if (!UPCIE_HAVE_IOMMU_MAP_PA) {
-		XNVME_DEBUG("FAILED: built without the iommu-map-pa UAPI; "
+		XNVME_DEBUG("FAILED: built without the iommu_map_pa UAPI; "
 			    "device memory cannot be addressed through an IOMMU");
 		return -ENOTSUP;
 	}
@@ -107,7 +107,7 @@ xnvme_be_upcie_iova_range_open(struct xnvme_be_upcie_iova_range *range, const ch
 	err = dmamem_iommu_map_pa_open(&g_iova_range_imp, bdf, base, size);
 	if (err) {
 		XNVME_DEBUG("FAILED: dmamem_iommu_map_pa_open(%s); err(%d); "
-			    "is the iommu-map-pa module loaded?",
+			    "is the iommu_map_pa module loaded?",
 			    bdf, err);
 		return err;
 	}

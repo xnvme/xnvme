@@ -124,16 +124,14 @@ granule the export works in.
 
 Physical address resolution for CUDA device memory relies on importing a
 `dma-buf` exported by the CUDA driver into the kernel's DMA subsystem. The
-ioctls that do so are not upstream. They ship as `dmabuf-import`, a standalone
-out-of-tree module serving `/dev/dmabuf_import`, packaged for DKMS.
-
-This backend requires **dmabuf-import 0.2.0**, published as an asset of the
-uPCIe release the headers here are vendored from:
-
-- [safl/upcie v0.8.0](https://github.com/safl/upcie/releases/tag/v0.8.0)
+ioctls that do so are not upstream. They ship as `dmabuf_import`, an
+out-of-tree module serving `/dev/dmabuf_import`, in `upcie-experimental-dkms`.
+That DKMS package is attached to every
+[uPCIe release](https://github.com/safl/upcie/releases) and carries its version.
+Install it from the release that `subprojects/upcie.wrap` pins:
 
 ```bash
-sudo apt install ./dmabuf-import-dkms_0.2.0_all.deb
+sudo apt install ./upcie-experimental-dkms_<version>_all.deb
 ```
 
 These ioctls began as a patch to the in-tree `udmabuf` driver, which meant
@@ -153,15 +151,10 @@ Where the controller is on `vfio-cdev`, `iommufd` is asked first: it maps the
 heap once for the whole process and needs no out-of-tree module. It cannot
 always, and what follows is what happens when it cannot.
 
-The `iommu-map-pa` module inserts the VRAM into the controller's domain
-directly, and the registry's table holds the resulting IOVAs. It is published as
-an asset of the same release as `dmabuf-import`, packaged for DKMS:
-
-- [safl/upcie v0.8.0](https://github.com/safl/upcie/releases/tag/v0.8.0)
-
-```bash
-sudo apt install ./iommu-map-pa-dkms_0.2.0_all.deb
-```
+The `iommu_map_pa` module inserts the VRAM into the controller's domain
+directly, and the registry's table holds the resulting IOVAs. It ships in the
+same `upcie-experimental-dkms` package as `dmabuf_import`, installed as
+{ref}`sec-backends-upcie-cuda-kernel` describes.
 
 ### IOVA window
 
@@ -223,7 +216,7 @@ that a GPU exported, or to memory that is not RAM. Three changes would retire
 it:
 
 - **A way to resolve a `dma-buf` to physical addresses.** This is what
-  `dmabuf-import` does, and what a driver already does internally when it maps
+  `dmabuf_import` does, and what a driver already does internally when it maps
   one for DMA. Nothing equivalent is exposed to user space.
 - **`IOMMU_IOAS_MAP_FILE` accepting a GPU `dma-buf`.** It refuses one today,
   which is why the mapping is installed from physical addresses instead.

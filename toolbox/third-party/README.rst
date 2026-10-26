@@ -25,6 +25,16 @@ REPOS/subprojects/spdk/
   Repos: https://github.com/spdk/spdk
   Website: https://spdk.io/
 
+REPOS/subprojects/upcie/
+  Summary: Header-only library for user-space PCIe and NVMe, used by the Linux
+  platform code and the ``upcie`` backends. Retrieved by
+  ``subprojects/upcie.wrap`` at the release tag it pins.
+
+  License: BSD-3-Clause
+  https://github.com/safl/upcie/blob/main/LICENSE
+
+  Repos: https://github.com/safl/upcie
+
 REPOS/toolbox/xnvme-driver.sh
   Summary: This script is based on the setup.sh and its associated scripts from
   SPDK. It is added here in a single-file for easy distribution with xNVMe.

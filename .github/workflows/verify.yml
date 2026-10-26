@@ -91,7 +91,8 @@ jobs:
   #   are solved via the package-manager and related packages that may or
   #   may not be available, and thus, no "bundled" dependencies. Also, for
   #   minimalistic users, that does not need the external deps of e.g. SPDK
-  #   and libvfn.
+  #   and libvfn. It does carry uPCIe, which is header-only, needed by every
+  #   Linux build, and packaged by no distribution.
   #
   source-archive:
     needs: changes-to-docs

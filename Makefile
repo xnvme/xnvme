@@ -826,16 +826,17 @@ gen-libconf:
 	@echo "## xNVMe: make gen-libconf [DONE]"
 
 define gen-src-archive-help
-# Produce a source-archive (.tar.gz) without subproject-source
+# Produce a source-archive (.tar.gz) without the source of SPDK, carrying only
+# the header-only uPCIe every Linux build needs
 endef
 .PHONY: gen-src-archive
 gen-src-archive:
 	@echo "## xNVMe: make gen-src-archive"
-	$(MESON) setup $(BUILD_DIR) -Dbuild_subprojects=false -Dwith-liburing=disabled -Dwith-libvfn=disabled
+	$(MESON) setup $(BUILD_DIR) -Dbuild_subprojects=false -Dwith-spdk=disabled -Dwith-liburing=disabled -Dwith-libvfn=disabled
 	if [ $(ALLOW_DIRTY) -eq 1 ]; then \
-		$(MESON) dist -C $(BUILD_DIR) --no-tests --formats gztar --allow-dirty; \
+		$(MESON) dist -C $(BUILD_DIR) --no-tests --formats gztar --include-subprojects --allow-dirty; \
 	else \
-		$(MESON) dist -C $(BUILD_DIR) --no-tests --formats gztar; \
+		$(MESON) dist -C $(BUILD_DIR) --no-tests --formats gztar --include-subprojects; \
 	fi
 	@echo "## xNVMe: make gen-src-archive [DONE]"
 
