@@ -107,9 +107,19 @@ conf_data.set('XNVME_BE_CBI_MEM_POSIX_ENABLED', get_option('cbi_mem_posix') and 
 conf_data.set('XNVME_BE_CBI_SYNC_PSYNC_ENABLED', get_option('cbi_sync_psync') and (is_linux or is_freebsd or is_darwin))
 
 conf_data.set('XNVME_BE_RAMDISK_ENABLED', get_option('be_ramdisk'))
+# Header-only; the Linux platform code uses it even without the upcie backend
+if is_linux
+  upcie_dep = subproject(
+    'upcie',
+    version: '>=0.10.4',
+    default_options: ['skip-install=true'],
+  ).get_variable('upcie_dep')
+else
+  upcie_dep = dependency('', required: false)
+endif
 conf_data.set('XNVME_BE_UPCIE_ENABLED', get_option('be_upcie') and is_linux)
 if get_option('be_upcie') and is_linux
-  # uPCIe vendored headers (dmabuf.h: memfd_create + file sealing) need _GNU_SOURCE
+  # uPCIe headers (dmabuf.h: memfd_create + file sealing) need _GNU_SOURCE
   add_project_arguments('-D_GNU_SOURCE', language: 'c')
 endif
 
@@ -242,9 +252,6 @@ conf = configure_file(
   output : 'xnvme_config.h',
 )
 conf_inc = [ include_directories('.') ]
-if is_linux
-  conf_inc += [ include_directories('toolbox' / 'third-party' / 'linux') ]
-endif
 if is_windows
   conf_inc += [ include_directories('toolbox' / 'third-party' / 'windows') ]
 endif

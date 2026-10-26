@@ -47,6 +47,7 @@ subprojects/*
 !subprojects/fio.wrap
 !subprojects/liburing.wrap
 !subprojects/spdk.wrap
+!subprojects/upcie.wrap
 !subprojects/libnvme-vfio.wrap
 !subprojects/packagefiles
 dist
