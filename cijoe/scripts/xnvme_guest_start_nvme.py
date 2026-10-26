@@ -125,7 +125,7 @@ def qemu_nvme_args(nvme_img_root, features=None, vfu_socket=None):
             ",".join(["nvme-subsys"] + [f"{k}={v}" for k, v in args.items()]),
         ]
 
-    def controller(id, serial, mdts, root_port, slot, subsystem=None):
+    def controller(id, serial, mdts, root_port, slot, subsystem=None, aux=None):
         args = {
             "id": id,
             "serial": serial,
@@ -135,6 +135,7 @@ def qemu_nvme_args(nvme_img_root, features=None, vfu_socket=None):
         }
         if subsystem:
             args["subsys"] = subsystem
+        args.update(aux or {})
 
         return [
             "-device",
@@ -281,6 +282,10 @@ def qemu_nvme_args(nvme_img_root, features=None, vfu_socket=None):
     # Build QEMU arguments from configuration
     # =========================================================================
 
+    # A queue allocation unlike the others', so a homi server reporting one
+    # controller's Number of Queues for all of them fails the tests reading it
+    controller_aux = {"nvme4": {"max_ioqpairs": 32}}
+
     drives = []
     nvme = []
 
@@ -314,7 +319,15 @@ def qemu_nvme_args(nvme_img_root, features=None, vfu_socket=None):
 
         # Create controller on its own root port
         root_port = f"pcie_root_port{slot}"
-        nvme += controller(ctrl_id, serial, mdts, root_port, slot, subsys_id)
+        nvme += controller(
+            ctrl_id,
+            serial,
+            mdts,
+            root_port,
+            slot,
+            subsys_id,
+            aux=controller_aux.get(ctrl_id),
+        )
 
         # Create namespaces
         for nsid, ns_attrs in namespaces:
