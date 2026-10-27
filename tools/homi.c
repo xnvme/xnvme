@@ -207,6 +207,14 @@ is_pci_bdf(const char *uri)
 	       uri[end] == '\0';
 }
 
+static void
+_announce_serving(void *XNVME_UNUSED(arg))
+{
+	xnvme_cli_pinf("HOMI started successfully, use Ctrl+C to stop");
+	xnvme_ver_pr(XNVME_PR_DEF);
+	printf("\n");
+}
+
 static int
 sub_serve(struct xnvme_cli *cli)
 {
@@ -300,18 +308,18 @@ sub_serve(struct xnvme_cli *cli)
 		}
 	}
 
-	xnvme_cli_pinf("HOMI started successfully, use Ctrl+C to stop");
-	xnvme_ver_pr(XNVME_PR_DEF);
-	printf("\n");
-
 	// cplane_serve() polls its own flag, so handle_signal() must run somewhere to
 	// set it; unblock here only, CUSE threads keep it blocked from their creation
 	sigprocmask(SIG_SETMASK, &g_orig_sigmask, NULL);
 
-	err = xnvme_cplane_serve(devs, ndevs, (uint32_t)cli->args.homi_id, &stop);
+	err = xnvme_cplane_serve(devs, ndevs, (uint32_t)cli->args.homi_id, &stop,
+				 _announce_serving, NULL);
 	if (err == -ENOSYS) {
 		/* A backend that shares its own way, so hold the
 		 * controllers and let it do the sharing. */
+		xnvme_cli_pinf("HOMI started successfully, holding %d controller(s) that %s "
+			       "shares by its own means, use Ctrl+C to stop",
+			       ndevs, cli->args.be ? cli->args.be : "the backend");
 		err = 0;
 		block_stop_signals();
 		wait_for_stop_signal();
