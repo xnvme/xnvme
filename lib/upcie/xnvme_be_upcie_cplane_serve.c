@@ -640,7 +640,7 @@ xnvme_be_upcie_cplane_serve_teardown(void)
 
 int
 xnvme_cplane_serve(struct xnvme_dev **devs, int ndevs, uint32_t cplane_id,
-		   volatile sig_atomic_t *stop)
+		   volatile sig_atomic_t *stop, void (*ready)(void *), void *ready_arg)
 {
 	struct xnvme_be_upcie_cplane_share shares[XNVME_BE_UPCIE_CPLANE_SERVE_DEVS_MAX] = {0};
 	char path[256] = {0};
@@ -708,6 +708,10 @@ xnvme_cplane_serve(struct xnvme_dev **devs, int ndevs, uint32_t cplane_id,
 		goto exit;
 	}
 
+	if (ready) {
+		ready(ready_arg);
+	}
+
 	while (!*stop && !err) {
 		err = xnvme_be_upcie_cplane_serve_poll(listener);
 	}
@@ -735,8 +739,12 @@ exit:
 #else
 int
 xnvme_cplane_serve(struct xnvme_dev **XNVME_UNUSED(devs), int XNVME_UNUSED(ndevs),
-		   uint32_t XNVME_UNUSED(cplane_id), volatile sig_atomic_t *XNVME_UNUSED(stop))
+		   uint32_t XNVME_UNUSED(cplane_id), volatile sig_atomic_t *XNVME_UNUSED(stop),
+		   void (*ready)(void *), void *XNVME_UNUSED(ready_arg))
 {
+	/* XNVME_UNUSED() is not usable on a function-pointer parameter */
+	(void)ready;
+
 	return -ENOSYS;
 }
 #endif
