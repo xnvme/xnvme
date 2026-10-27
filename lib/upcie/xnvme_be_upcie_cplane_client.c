@@ -212,7 +212,13 @@ xnvme_be_upcie_cplane_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size
 
 	memcpy(&ctx->cpl, &msg.u.admin_cmd.cpl, sizeof(ctx->cpl));
 
-	return xnvme_cmd_ctx_cpl_status(ctx) ? -EIO : 0;
+	if (xnvme_cmd_ctx_cpl_status(ctx)) {
+		XNVME_DEBUG("FAILED: command; sc(%d); sct(%d)", ctx->cpl.status.sc,
+			    ctx->cpl.status.sct);
+		return -EIO;
+	}
+
+	return 0;
 }
 
 void *
