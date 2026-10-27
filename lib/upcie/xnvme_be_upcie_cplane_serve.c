@@ -82,6 +82,11 @@ xnvme_be_upcie_cplane_serve_admin_cmd(struct xnvme_dev *dev, void *cmd, void *cp
 	err = nvme_qpair_submit_sync(&ctrl->aq, cmd, ctrl->base.admin_timeout_ms, cpl);
 	xnvme_unlock();
 
+	/* A refused command completed, and the status says so; not an error here */
+	if ((err == -EIO) && (((struct nvme_completion *)cpl)->status & 0x1FE)) {
+		return 0;
+	}
+
 	return err;
 }
 

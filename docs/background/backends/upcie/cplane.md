@@ -88,6 +88,9 @@ Everything else is a request, because the resources belong to the server:
   The payload does not travel with the request: the command names an address
   the device can already reach, so an identify lands in the client's own
   buffer and only the command and its completion cross.
+  A command the controller refuses has completed, and its status reaches
+  the client as it would reach the owning process; only a command that
+  never completed is reported as an error.
 
 ### Threads
 
