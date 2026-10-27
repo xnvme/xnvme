@@ -526,12 +526,15 @@ _qpair_from_allocation(struct xnvme_be_upcie_ctrlr *ctrlr, const struct nvme_ioq
 	qpair->depth = allocation->depth;
 	qpair->sq = base + allocation->sq_offset;
 	qpair->cq = base + allocation->cq_offset;
-	if ((size_t)0x1000 + ((2 * qpair->qid + 1) << (2 + dstrd)) + 4 > ctrlr->bar0_nbytes) {
+	if ((size_t)XNVME_BE_UPCIE_DOORBELL_OFFSET + ((2 * qpair->qid + 1) << (2 + dstrd)) + 4 >
+	    ctrlr->bar0_nbytes) {
 		XNVME_DEBUG("FAILED: the doorbells of queue(%u) lie outside BAR0", qpair->qid);
 		return -EPROTO;
 	}
-	qpair->sqdb = (char *)ctrlr->bar0 + 0x1000 + ((2 * qpair->qid) << (2 + dstrd));
-	qpair->cqdb = (char *)ctrlr->bar0 + 0x1000 + ((2 * qpair->qid + 1) << (2 + dstrd));
+	qpair->sqdb = (char *)ctrlr->bar0 + XNVME_BE_UPCIE_DOORBELL_OFFSET +
+		      ((2 * qpair->qid) << (2 + dstrd));
+	qpair->cqdb = (char *)ctrlr->bar0 + XNVME_BE_UPCIE_DOORBELL_OFFSET +
+		      ((2 * qpair->qid + 1) << (2 + dstrd));
 	qpair->tail_last_written = UINT16_MAX;
 	qpair->phase = 1;
 

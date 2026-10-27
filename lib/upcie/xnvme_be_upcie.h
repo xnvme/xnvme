@@ -19,6 +19,8 @@
  */
 #define XNVME_BE_UPCIE_DEFAULT_HEAP_SIZE (1024ULL * 1024 * 1024)
 
+#define XNVME_BE_UPCIE_DOORBELL_OFFSET 0x1000
+
 /**
  * Heap offsets of a queue-pair's allocations
  *
