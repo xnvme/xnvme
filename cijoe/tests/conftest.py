@@ -181,8 +181,17 @@ def xnvme_setup(labels=[], opts=[]):
 
     parametrization = []
 
+    # The GPU backends drive PCIe controllers like the others; their label
+    # says where the data buffers live. Leaving them out here made every
+    # combination declaring one unreachable, so the tests written for them
+    # could only ever skip.
     combinations = xnvme_be_opts(
-        opts, ["file"] if "file" in labels else ["bdev", "cdev", "pcie", "fabrics"]
+        opts,
+        (
+            ["file"]
+            if "file" in labels
+            else ["bdev", "cdev", "pcie", "fabrics", "cuda", "hip"]
+        ),
     )
 
     for be_opts in combinations:
@@ -335,7 +344,11 @@ def device(cijoe, request):
             be_opts = callspec.params.get("be_opts") if callspec else None
             if be_opts:
                 if be_opts.get("homi"):
-                    HomiServer.start(cijoe, be_opts["be"], be_opts.get("label"))
+                    HomiServer.start(
+                        cijoe,
+                        HomiServer.serve_be(be_opts["be"]),
+                        be_opts.get("label"),
+                    )
                 else:
                     pytest.skip(f"{be_opts.get('be')} cannot share a controller")
         XnvmeDriver.attach(cijoe, request.param)
@@ -421,7 +434,20 @@ class HomiServer:
     CIJOE = None
     TIMEOUT = 60
 
-    # Emitted by homi once every device it was given is open
+    # The GPU backends are client spellings of uPCIe, and homi refuses them;
+    # a server holds controllers and serves them, where a client's buffers
+    # live is the client's business. Every other client needs a server of its
+    # own backend: an SPDK client is a DPDK secondary and finds nothing to
+    # attach to behind a uPCIe server.
+    SERVE_BE = {"upcie-cuda": "upcie", "upcie-hip": "upcie"}
+
+    @staticmethod
+    def serve_be(be):
+        """The backend a server has to run to serve a client of 'be'"""
+
+        return HomiServer.SERVE_BE.get(be, be)
+
+    # Emitted by homi once it serves, or holds, every device it was given
     READY_MARKER = "HOMI started successfully"
 
     @staticmethod
@@ -435,10 +461,25 @@ class HomiServer:
         return not err
 
     @staticmethod
-    def is_ready(cijoe, be):
+    def logfile(be, labels):
+        """
+        Where a server's output goes, named for what makes it that server
+
+        The readiness marker is what says a server has opened its devices, so
+        the file it lands in has to name the server that wrote it. Keyed on the
+        backend alone, a marker left by the previous one reads as this one
+        being ready before it has opened anything.
+        """
+
+        return f"/tmp/homi_{be}_{'-'.join(labels)}.out"
+
+    @staticmethod
+    def is_ready(cijoe, be, labels):
         """Returns True when the homi server has opened all of its devices"""
 
-        err, _ = cijoe.run(f"grep -q '{HomiServer.READY_MARKER}' /tmp/homi_{be}.out")
+        err, _ = cijoe.run(
+            f"grep -q '{HomiServer.READY_MARKER}'" f" {HomiServer.logfile(be, labels)}"
+        )
 
         return not err
 
@@ -493,23 +534,28 @@ class HomiServer:
         # target: nohup alone leaves the server holding the transport's
         # channel, so the command never returns and the server is reported as
         # not running. Harmless where the target is localhost.
+        logfile = HomiServer.logfile(be, labels)
+
+        # Truncated rather than appended to: a marker from an earlier server
+        # under the same name would otherwise answer for this one.
+        cijoe.run(f"rm -f {logfile}")
         cijoe.run(
             f"setsid stdbuf -oL homi serve {uris} --be {be} --homi-id {_homi_id} "
-            f"< /dev/null > /tmp/homi_{be}.out 2>&1 &"
+            f"< /dev/null > {logfile} 2>&1 &"
         )
 
         # Opening a device takes about a second, so waiting a fixed duration either
         # wastes time or lets testcases attach while the server is still opening the
         # rest, where they fail with the server unresponsive on the DPDK mp channel.
         for _ in range(HomiServer.TIMEOUT):
-            if HomiServer.is_ready(cijoe, be):
+            if HomiServer.is_ready(cijoe, be, labels):
                 break
             if not HomiServer.is_running(cijoe):
-                cijoe.run(f"cat /tmp/homi_{be}.out")
+                cijoe.run(f"cat {logfile}")
                 pytest.fail(f"homi server for be({be}) is not running")
             sleep(1)
         else:
-            cijoe.run(f"cat /tmp/homi_{be}.out")
+            cijoe.run(f"cat {logfile}")
             pytest.fail(f"homi server for be({be}) did not become ready")
 
         HomiServer.RUNNING = (be, tuple(labels))
