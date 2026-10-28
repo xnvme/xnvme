@@ -1,5 +1,6 @@
 xnvmelib_transport_common_source = files(
   'xnvme_transport_ctrlr.c',
+  'xnvme_transport_debug.c',
   'xnvme_transport_discovery.c',
   'xnvme_transport_fabric.c',
   'xnvme_transport_ns.c',
