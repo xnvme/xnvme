@@ -9,9 +9,24 @@
 #include <stdatomic.h>
 #include <stdlib.h>
 #include <xnvme_dev.h>
+#include <xnvme_be_upcie_cplane_client.h>
 #include <xnvme_be_upcie_cuda.h>
 
 static _Atomic int g_cuda_ctrlr_count;
+
+static void
+_cuda_ctrlr_term(struct xnvme_be_upcie_cuda_ctrlr *slot)
+{
+	if (!slot->ctrlr) {
+		return;
+	}
+	if (slot->reg_offset) {
+		/* Unchecked: a server that has gone reclaims on the socket closing */
+		xnvme_be_upcie_cplane_unregister_client_mem(slot->ctrlr, slot->reg_offset);
+	}
+
+	memset(slot, 0, sizeof(*slot));
+}
 
 static void
 _cuda_ctx_term(void)
@@ -37,11 +52,61 @@ _cuda_rte_term(void)
 		return;
 	}
 
+	for (int i = 0; i < XNVME_BE_CREF_MAX_ENTRIES; ++i) {
+		_cuda_ctrlr_term(&g_upcie_cuda_rte.ctrlrs[i]);
+	}
+
 	dmamem_destroy(&g_upcie_cuda_rte.dmem);
 	cudamem_heap_term(&g_upcie_cuda_rte.cuda_heap);
 	_cuda_ctx_term();
 
 	g_upcie_cuda_rte.is_initialized = 0;
+}
+
+static struct xnvme_be_upcie_cuda_ctrlr *
+_cuda_ctrlr_slot(struct xnvme_be_upcie_ctrlr *ctrlr)
+{
+	struct xnvme_be_upcie_cuda_ctrlr *free_slot = NULL;
+
+	for (int i = 0; i < XNVME_BE_CREF_MAX_ENTRIES; ++i) {
+		struct xnvme_be_upcie_cuda_ctrlr *slot = &g_upcie_cuda_rte.ctrlrs[i];
+
+		if (slot->ctrlr == ctrlr) {
+			return slot;
+		}
+		if (!slot->ctrlr && !free_slot) {
+			free_slot = slot;
+		}
+	}
+
+	if (free_slot) {
+		memset(free_slot, 0, sizeof(*free_slot));
+		free_slot->ctrlr = ctrlr;
+	}
+
+	return free_slot;
+}
+
+static int
+_cuda_ctrlr_init(struct xnvme_be_upcie_cuda_ctrlr *slot, struct xnvme_be_upcie_ctrlr *ctrlr)
+{
+	const struct hostmem_shared_desc *desc = NULL;
+	int err;
+
+	if (!g_upcie_rte.connection.alive || slot->reg_offset) {
+		return 0;
+	}
+
+	err = xnvme_be_upcie_cplane_register_client_mem(
+		ctrlr, g_upcie_cuda_rte.cuda_heap.dmabuf.fd, g_upcie_cuda_rte.cuda_heap.size,
+		(uint32_t)g_upcie_cuda_rte.cuda_config.device_pagesize, &desc, &slot->reg_offset);
+	if (err) {
+		XNVME_DEBUG("FAILED: registering the CUDA heap for the controller; err(%d)", err);
+		memset(slot, 0, sizeof(*slot));
+		return err;
+	}
+
+	return 0;
 }
 
 static int
@@ -92,13 +157,21 @@ _cuda_ctx_init(CUdevice cu_dev, uint32_t gpu_id)
 }
 
 static int
-_cuda_rte_init(size_t heap_size, uint32_t gpu_id)
+_cuda_rte_init(size_t heap_size, uint32_t gpu_id, struct xnvme_be_upcie_ctrlr *ctrlr)
 {
+	struct xnvme_be_upcie_cuda_ctrlr *slot;
 	CUdevice cu_dev;
 	int err;
 
+	slot = _cuda_ctrlr_slot(ctrlr);
+	if (!slot) {
+		XNVME_DEBUG("FAILED: already driving %d controllers from this process",
+			    XNVME_BE_CREF_MAX_ENTRIES);
+		return -ENOSPC;
+	}
+
 	if (g_upcie_cuda_rte.is_initialized) {
-		return 0;
+		return _cuda_ctrlr_init(slot, ctrlr);
 	}
 
 	if (!heap_size) {
@@ -108,22 +181,26 @@ _cuda_rte_init(size_t heap_size, uint32_t gpu_id)
 	err = cuInit(0);
 	if (err) {
 		XNVME_DEBUG("FAILED: cuInit(); err(%d)", err);
+		_cuda_ctrlr_term(slot);
 		return -ENODEV;
 	}
 
 	err = cuDeviceGet(&cu_dev, gpu_id);
 	if (err) {
 		XNVME_DEBUG("FAILED: cuDeviceGet(); err(%d)", err);
+		_cuda_ctrlr_term(slot);
 		return -ENODEV;
 	}
 
 	err = _cuda_ctx_init(cu_dev, gpu_id);
 	if (err) {
+		_cuda_ctrlr_term(slot);
 		return err;
 	}
 	err = cudamem_config_init(&g_upcie_cuda_rte.cuda_config, 0);
 	if (err) {
 		XNVME_DEBUG("FAILED: cudamem_config_init(); err(%d)", err);
+		_cuda_ctrlr_term(slot);
 		_cuda_ctx_term();
 		return err;
 	}
@@ -137,16 +214,41 @@ _cuda_rte_init(size_t heap_size, uint32_t gpu_id)
 				&g_upcie_cuda_rte.cuda_config);
 	if (err) {
 		XNVME_DEBUG("FAILED: cudamem_heap_init(); err(%d)", err);
+		_cuda_ctrlr_term(slot);
 		_cuda_ctx_term();
-		return -ENOMEM;
+		return err;
 	}
 
-	if (!xnvme_be_upcie_iova_range_required()) {
+	if (g_upcie_rte.connection.alive) {
+		const struct hostmem_shared_desc *desc = NULL;
+
+		err = xnvme_be_upcie_cplane_register_client_mem(
+			ctrlr, g_upcie_cuda_rte.cuda_heap.dmabuf.fd,
+			g_upcie_cuda_rte.cuda_heap.size,
+			(uint32_t)g_upcie_cuda_rte.cuda_config.device_pagesize, &desc,
+			&slot->reg_offset);
+		if (!err) {
+			err = dmamem_from_shared(
+				&g_upcie_cuda_rte.dmem,
+				(void *)(uintptr_t)g_upcie_cuda_rte.cuda_heap.vaddr, desc,
+				xnvme_be_upcie_va_bits(), DMAMEM_BACKING_CUDAMEM);
+		}
+		if (err) {
+			XNVME_DEBUG("FAILED: registering the CUDA heap with the server; err(%d)",
+				    err);
+			_cuda_ctrlr_term(slot);
+			cudamem_heap_term(&g_upcie_cuda_rte.cuda_heap);
+			_cuda_ctx_term();
+			return err;
+		}
+		g_upcie_cuda_rte.dmem_is_shared = 1;
+	} else if (!xnvme_be_upcie_iova_range_required()) {
 		err = dmamem_from_cuda_registry(&g_upcie_cuda_rte.dmem,
 						&g_upcie_cuda_rte.cuda_heap,
 						xnvme_be_upcie_va_bits());
 		if (err) {
 			XNVME_DEBUG("FAILED: dmamem_from_cuda_registry(); err(%d)", err);
+			_cuda_ctrlr_term(slot);
 			cudamem_heap_term(&g_upcie_cuda_rte.cuda_heap);
 			_cuda_ctx_term();
 			return err;
@@ -254,7 +356,11 @@ xnvme_be_upcie_cuda_dev_open(struct xnvme_dev *dev)
 		return err;
 	}
 
-	err = _cuda_rte_init(dev->opts.device_heap_size, dev->opts.gpu_id);
+	{
+		struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+
+		err = _cuda_rte_init(dev->opts.device_heap_size, dev->opts.gpu_id, state->ctrlr);
+	}
 	if (err) {
 		XNVME_DEBUG("FAILED: _cuda_rte_init(); err(%d)", err);
 		return err;
@@ -273,6 +379,18 @@ xnvme_be_upcie_cuda_dev_open(struct xnvme_dev *dev)
 
 	atomic_fetch_add(&g_cuda_ctrlr_count, 1);
 	return 0;
+}
+
+static int
+xnvme_be_upcie_cuda_ctrlr_term(void *handle)
+{
+	struct xnvme_be_upcie_cuda_ctrlr *slot = _cuda_ctrlr_slot_of(handle);
+
+	if (slot) {
+		_cuda_ctrlr_term(slot);
+	}
+
+	return xnvme_be_upcie_ctrlr_term(handle);
 }
 
 static void
@@ -294,7 +412,7 @@ struct xnvme_be_dev g_xnvme_be_upcie_cuda_dev = {
 	.dev_close = xnvme_be_upcie_cuda_dev_close,
 	.id = "upcie-cuda",
 	.ctrlr_init = xnvme_be_upcie_ctrlr_init,
-	.ctrlr_term = xnvme_be_upcie_ctrlr_term,
+	.ctrlr_term = xnvme_be_upcie_cuda_ctrlr_term,
 #else
 	.dev_open = xnvme_be_nosys_dev_open,
 	.dev_close = xnvme_be_nosys_dev_close,

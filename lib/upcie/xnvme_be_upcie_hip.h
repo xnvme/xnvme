@@ -10,6 +10,13 @@
 #include <xnvme_be_upcie.h>
 #include <upcie/upcie_hip.h>
 
+struct xnvme_be_upcie_ctrlr;
+
+struct xnvme_be_upcie_hip_ctrlr {
+	struct xnvme_be_upcie_ctrlr *ctrlr; ///< NULL when the slot is free
+	uint64_t reg_offset;
+};
+
 /**
  * State used across multiple instances of controllers/namespaces
  */
@@ -19,6 +26,8 @@ struct xnvme_be_upcie_hip_rte {
 	struct dmamem dmem; ///< Shared translation; unused where each controller needs its own
 	int dmem_is_shared;
 	int dmem_in_range;
+	struct xnvme_be_upcie_hip_ctrlr ctrlrs[XNVME_BE_CREF_MAX_ENTRIES];
+
 	int is_initialized;
 };
 

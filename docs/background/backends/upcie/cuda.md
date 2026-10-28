@@ -142,6 +142,21 @@ xnvme_mem_map(dev_b, buf, nbytes);
 Under `uio_pci_generic` one table serves every controller, so a single
 registration covers them all.
 
+(sec-backends-upcie-cuda-upstream)=
+
+### What upstream would have to change
+
+None of the out-of-tree code here exists because the kernel cannot do these
+things. It exists because the interfaces that would are closed to a `dma-buf`
+that a GPU exported, or to memory that is not RAM. Two changes would retire
+it:
+
+- **A way to resolve a `dma-buf` to physical addresses.** This is what
+  `dmabuf-import` does, and what a driver already does internally when it maps
+  one for DMA. Nothing equivalent is exposed to user space.
+- **`IOMMU_IOAS_MAP_FILE` accepting a GPU `dma-buf`.** It refuses one today,
+  which is why the mapping is installed from physical addresses instead.
+
 (sec-backends-upcie-cuda-config)=
 
 ## System Configuration
@@ -300,6 +315,12 @@ cd cijoe && cijoe workflows/test-gpu.yaml --config configs/<your-config>.toml
   its controllers to (`DMAMEM_IOMMU_MAP_PA_DEVS_MAX`). Under an enforcing IOMMU
   the heap and every registered buffer must also fit in the IOVA window, see
   {ref}`sec-backends-upcie-cuda-iommu`.
+- **`vfio-pci` may need the mapping installed by hand.** Describing the GPU heap
+  by mapping its `dma-buf` is what `IOMMU_IOAS_MAP_FILE` would do, and it
+  refuses one a GPU runtime exported. Where `iommufd` cannot map it, the mapping
+  goes in from the physical addresses behind it instead. That happens either
+  way: a server does it for a client, and a process holding the controller does
+  it for itself. See {ref}`sec-backends-upcie-cuda-upstream`.
 - **GPU 0 only.** The heap is always created on CUDA device 0. Multiple GPU
   support is not implemented.
 - **1 GiB heap.** The CUDA heap is fixed at 1 GiB. Allocations beyond this
