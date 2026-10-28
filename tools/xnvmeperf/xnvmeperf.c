@@ -1167,7 +1167,7 @@ xnvmeperf_cuda_run(struct xnvmeperf_args *args)
 	void *ctx;
 	int err;
 
-	err = xnvmeperf_cuda_ctx_create(&ctx);
+	err = xnvmeperf_cuda_ctx_create(args->opts.gpu_id, &ctx);
 	if (err) {
 		return err;
 	}
@@ -1238,7 +1238,7 @@ xnvmeperf_cuda_verify(struct xnvmeperf_args *args)
 	void *ctx;
 	int err;
 
-	err = xnvmeperf_cuda_ctx_create(&ctx);
+	err = xnvmeperf_cuda_ctx_create(args->opts.gpu_id, &ctx);
 	if (err) {
 		return err;
 	}
