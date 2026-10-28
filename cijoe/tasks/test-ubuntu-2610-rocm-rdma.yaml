@@ -1,0 +1,33 @@
+---
+doc: |
+  Test xNVMe over the NVMe RDMA transport on Linux (rocm-ernic NVMe target)
+
+  The guest has an emulated RDMA NIC whose server is itself the NVMe target,
+  started with the guest by the rdma-node-emulated rig. This addresses the
+  guest end of the transport, checks that the kernel initiator can discover the
+  target, and then runs the tests labelled rdma against it.
+
+steps:
+- name: facts
+  uses: core.facts_gather
+
+- name: hugepages
+  uses: linux_setup_hugepages
+
+- name: rdma_transport
+  run: |
+    ip addr replace {{ config.rig.devices.nic0.transport.guest_addr }} dev {{ config.rig.devices.nic0.transport.netdev }}
+    ip link set {{ config.rig.devices.nic0.transport.netdev }} up
+    ip neigh replace {{ config.rig.devices.nic0.transport.traddr }} lladdr {{ config.rig.devices.nic0.transport.target_lladdr }} dev {{ config.rig.devices.nic0.transport.netdev }} nud permanent
+    ibv_devinfo | grep -E 'hca_id|state'
+
+- name: rdma_target_probe
+  run: |
+    modprobe nvme-rdma
+    nvme discover -t rdma -a {{ config.rig.devices.nic0.transport.traddr }} -s {{ config.rig.devices.nic0.transport.trsvcid }}
+
+- name: test_transport_rdma
+  uses: core.testrunner
+  with:
+    args: '-k "rdma" tests --timeout=1800 --timeout-method=thread'
+    random_order: false

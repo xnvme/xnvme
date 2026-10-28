@@ -1,0 +1,111 @@
+---
+name: verify-nvme-rdma-emulated
+
+# Verify xNVMe over NVMe/RDMA in a guest with an emulated RDMA NIC, called by 'verify'.
+on:
+  workflow_call:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  verify-nvme-rdma-emulated:
+    runs-on: ubuntu-24.04
+
+    env:
+      GUEST: ubuntu-2610-rocm
+      GUEST_DIR: ubuntu-2610-rocm-amd64
+
+    container:
+      image: ghcr.io/xnvme/xnvme-devenv/host:v0.14.0
+      options: --privileged -v /mnt:/mnt
+
+    steps:
+    - uses: xnvme/actions/.github/actions/cleanup@main
+
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
+      with:
+        name: xnvme-src-archive-with-subprojects
+
+    - name: Retrieve the xNVMe Python sdist package
+      uses: actions/download-artifact@v7.0.0
+      with:
+        name: xnvme-py-sdist
+        path: ${{ steps.source.outputs.directory }}
+
+    - name: Prep, environment GITHUB_PATH
+      run: |
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        cp -r ${{ steps.source.outputs.directory }} /tmp/artifacts
+        find /tmp/artifacts
+
+    - name: CIJOE, setup pipx environment
+      run: |
+        make guest-env <<< "${GUEST}"
+
+    - name: CIJOE, check that it is available
+      run: |
+        cijoe -r
+
+    - name: Stage artifacts on /mnt
+      run: |
+        mkdir -p /mnt/system_imaging
+        ln -s /mnt/system_imaging "$HOME/system_imaging"
+        mkdir -p /mnt/guests
+        ln -s /mnt/guests "$HOME/guests"
+
+    - name: CIJOE, provision and test guest
+      run: |
+        make verify-guest \
+          TRANSPORT=rdma \
+          RIG=rdma-node-emulated \
+          CIJOE_OUTPUT="${{ github.job }}"
+
+    - name: Collect guest serial console
+      if: always()
+      run: |
+        serial="$HOME/guests/${GUEST_DIR}/serial.output"
+        echo "::group::guest serial console (tail)"
+        tail -c 20000 "$serial" 2>/dev/null || echo "no guest serial output"
+        echo "::endgroup::"
+        cp "$serial" "cijoe/${{ github.job }}-serial.output" 2>/dev/null || true
+
+    - name: Collect rocm-ernic server log
+      if: always()
+      run: |
+        echo "::group::rocm-ernic server log (tail)"
+        tail -c 20000 $HOME/run/vfio-user-rocm-ernic.log 2>/dev/null || echo "no rocm-ernic server log"
+        echo "::endgroup::"
+        cp $HOME/run/vfio-user-rocm-ernic.log "cijoe/${{ github.job }}-rocm-ernic.log" 2>/dev/null || true
+
+    - name: CIJOE, result-log-dump on error
+      if: failure()
+      run: |
+        find cijoe -name "*.output" | while read -r fpath; do
+          echo "=== ${fpath}"
+          cat "${fpath}"
+        done
+
+    - name: CIJOE, upload report.html
+      if: always()
+      uses: actions/upload-artifact@v6.0.0
+      with:
+        name: ${{ github.job }}-report-html
+        path: cijoe/${{ github.job }}-*/report.html
+        if-no-files-found: warn
+
+    - name: CIJOE, archive ${{ github.job }}-reports
+      if: always()
+      run: |
+        tar czf ${{ github.job }}-reports.tar.gz cijoe/${{ github.job }}-*
+
+    - name: CIJOE, upload ${{ github.job }}-reports
+      uses: actions/upload-artifact@v6.0.0
+      if: always()
+      with:
+        name: ${{ github.job }}-reports
+        path: ${{ github.job }}-reports.tar.gz
+        if-no-files-found: error
