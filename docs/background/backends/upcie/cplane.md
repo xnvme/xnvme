@@ -183,12 +183,26 @@ heap it maps and the hugepages behind it.
 ### No isolation between processes
 
 A client maps BAR0 and can therefore ring any doorbell and write `CC`, which
-is to say it can reset the controller. Under `vfio-pci` it also holds the
-device descriptor. The server creates the socket for its own user alone and
-refuses a peer whose credentials name another user; a client in turn refuses a
-server that runs as neither root nor the client's user, since the path lies in
-a directory anyone can write and the client maps what the server hands over.
-Clients are inside one trust domain by construction; where that is
+is to say it can reset the controller. What it maps is the whole of BAR0
+rather than the doorbells it was given, so what a client can reach is not
+bounded by what it was allocated: one that asked for a single queue can ring
+the doorbells of every other queue on the controller, including queues held by
+other clients. Under `vfio-pci` it also holds the device descriptor, and a GPU
+client maps the same registers a second time through the BAR's sysfs resource,
+which is the only mapping its kernels can be given.
+
+Admission to the socket is therefore the whole of the boundary, and it is a
+coarse one. The server creates the socket for its own user alone and refuses a
+peer whose credentials name another user; a client in turn refuses a server
+that runs as neither root nor the client's user, since the path lies in a
+directory anyone can write and the client maps what the server hands over. It
+is not quite the whole of what a client needs, either: a GPU
+issuing its own I/O reaches the doorbells through the BAR's sysfs resource
+rather than the descriptor it was handed, so that client needs privileges of
+its own rather than only what the server gives it. Handing out only the
+doorbell page a client was allocated would be finer, and the register layout
+allows it where the page granularity happens to line up, but that is not what
+this does. Clients are inside one trust domain by construction; where that is
 unacceptable, the answer is the kernel driver, which arbitrates because it
 owns the device.
 
@@ -223,3 +237,18 @@ by CUDA or HIP; it is installed from the physical addresses behind it instead,
 by the server here and by a process that opened the controller for itself.
 A region registered again, for another controller, is handed the description
 it already has, so the addresses a client resolves through do not change.
+
+I/O the GPU issues itself needs no server at all: a controller this process
+opened builds the same queue in the same device memory, and only the
+identifier and the admin queue come from somewhere else. It does ask for more
+of the platform, and gets it only while the GPU's own domain passes through.
+The controller's domain is not what decides: it translates either way, through
+the one `vfio-pci` installs for it. The GPU stays on its own driver and uses
+the default domain, so `iommu=pt` is the setting that matters. The queue lives
+in device memory and the doorbell has to be in the GPU's address space; with
+domains that translate, what the CUDA runtime installs for the BAR does not
+carry, and neither the IOMMU nor the GPU reports anything, so the I/O simply
+never completes. GPU-initiated I/O is therefore not supported behind a
+translating IOMMU, served or not. That sits in the CUDA runtime and driver,
+not in anything xNVMe or the server does, so the requirement stands until they
+change; see the GPU IOMMU domain section of the CUDA backend page.

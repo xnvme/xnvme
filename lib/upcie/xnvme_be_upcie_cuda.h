@@ -19,6 +19,10 @@ struct xnvme_be_upcie_ctrlr;
 struct xnvme_be_upcie_cuda_ctrlr {
 	struct xnvme_be_upcie_ctrlr *ctrlr; ///< NULL when the slot is free
 	uint64_t reg_offset;
+	void *db_base;
+	void *db_page;
+	void *db_own_map; ///< Non-NULL when db_base is ours to unmap
+	size_t db_own_nbytes;
 };
 
 /**

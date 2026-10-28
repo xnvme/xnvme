@@ -6,6 +6,9 @@
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_UPCIE_CUDA_ENABLED
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <unistd.h>
 #include <stdatomic.h>
 #include <stdlib.h>
 #include <xnvme_dev.h>
@@ -17,8 +20,20 @@ static _Atomic int g_cuda_ctrlr_count;
 static void
 _cuda_ctrlr_term(struct xnvme_be_upcie_cuda_ctrlr *slot)
 {
+	CUcontext prev;
+
 	if (!slot->ctrlr) {
 		return;
+	}
+
+	/* The closing thread need not have the context current */
+	if (slot->db_page) {
+		cuCtxPushCurrent(g_upcie_cuda_rte.cu_ctx);
+		cuMemHostUnregister(slot->db_page);
+		cuCtxPopCurrent(&prev);
+	}
+	if (slot->db_own_map) {
+		munmap(slot->db_own_map, slot->db_own_nbytes);
 	}
 	if (slot->reg_offset) {
 		/* Unchecked: a server that has gone reclaims on the socket closing */
@@ -88,22 +103,86 @@ _cuda_ctrlr_slot(struct xnvme_be_upcie_ctrlr *ctrlr)
 }
 
 static int
-_cuda_ctrlr_init(struct xnvme_be_upcie_cuda_ctrlr *slot, struct xnvme_be_upcie_ctrlr *ctrlr)
+_cuda_doorbells_init(struct xnvme_be_upcie_cuda_ctrlr *slot, void *bar0, uint64_t bar0_nbytes,
+		     const char *bdf)
 {
-	const struct hostmem_shared_desc *desc = NULL;
-	int err;
+	long page_nbytes = sysconf(_SC_PAGESIZE);
+	char path[256];
+	void *mapped;
+	int fd;
 
-	if (!g_upcie_rte.connection.alive || slot->reg_offset) {
+	if (!slot || !bar0 || !bar0_nbytes || !bdf) {
+		return -EINVAL;
+	}
+
+	if (!cuMemHostRegister((char *)bar0 + XNVME_BE_UPCIE_DOORBELL_OFFSET, (size_t)page_nbytes,
+			       CU_MEMHOSTREGISTER_IOMEMORY)) {
+		slot->db_base = bar0;
+		slot->db_page = (char *)bar0 + XNVME_BE_UPCIE_DOORBELL_OFFSET;
+
 		return 0;
 	}
 
-	err = xnvme_be_upcie_cplane_register_client_mem(
-		ctrlr, g_upcie_cuda_rte.cuda_heap.dmabuf.fd, g_upcie_cuda_rte.cuda_heap.size,
-		(uint32_t)g_upcie_cuda_rte.cuda_config.device_pagesize, &desc, &slot->reg_offset);
+	snprintf(path, sizeof(path), "/sys/bus/pci/devices/%s/resource0", bdf);
+	fd = open(path, O_RDWR);
+	if (fd < 0) {
+		XNVME_DEBUG("FAILED: open(%s); errno(%d)", path, errno);
+		return -errno;
+	}
+
+	mapped = mmap(NULL, bar0_nbytes, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	close(fd);
+	if (mapped == MAP_FAILED) {
+		XNVME_DEBUG("FAILED: mmap(%s); errno(%d)", path, errno);
+		return -errno;
+	}
+
+	if (cuMemHostRegister((char *)mapped + XNVME_BE_UPCIE_DOORBELL_OFFSET, (size_t)page_nbytes,
+			      CU_MEMHOSTREGISTER_IOMEMORY)) {
+		XNVME_DEBUG("FAILED: cuMemHostRegister(sysfs doorbells)");
+		munmap(mapped, bar0_nbytes);
+		return -ENOTSUP;
+	}
+
+	slot->db_base = mapped;
+	slot->db_page = (char *)mapped + XNVME_BE_UPCIE_DOORBELL_OFFSET;
+	slot->db_own_map = mapped;
+	slot->db_own_nbytes = bar0_nbytes;
+
+	return 0;
+}
+
+static int
+_cuda_ctrlr_init(struct xnvme_be_upcie_cuda_ctrlr *slot, struct xnvme_be_upcie_ctrlr *ctrlr,
+		 const char *bdf)
+{
+	void *bar0 = g_upcie_rte.connection.alive ? ctrlr->bar0 : ctrlr->ctrl->func.bars[0].region;
+	size_t bar0_nbytes =
+		g_upcie_rte.connection.alive ? ctrlr->bar0_nbytes : ctrlr->ctrl->func.bars[0].size;
+	CUcontext prev;
+	int err;
+
+	/* Already registered when run again for doorbells the GPU could not reach */
+	if (g_upcie_rte.connection.alive && !slot->reg_offset) {
+		const struct hostmem_shared_desc *desc = NULL;
+
+		err = xnvme_be_upcie_cplane_register_client_mem(
+			ctrlr, g_upcie_cuda_rte.cuda_heap.dmabuf.fd,
+			g_upcie_cuda_rte.cuda_heap.size,
+			(uint32_t)g_upcie_cuda_rte.cuda_config.device_pagesize, &desc,
+			&slot->reg_offset);
+		if (err) {
+			XNVME_DEBUG("FAILED: registering the CUDA heap for %s; err(%d)", bdf, err);
+			memset(slot, 0, sizeof(*slot));
+			return err;
+		}
+	}
+
+	cuCtxPushCurrent(g_upcie_cuda_rte.cu_ctx);
+	err = _cuda_doorbells_init(slot, bar0, bar0_nbytes, bdf);
+	cuCtxPopCurrent(&prev);
 	if (err) {
-		XNVME_DEBUG("FAILED: registering the CUDA heap for the controller; err(%d)", err);
-		memset(slot, 0, sizeof(*slot));
-		return err;
+		XNVME_DEBUG("FAILED: no doorbell mapping the GPU can reach");
 	}
 
 	return 0;
@@ -157,7 +236,8 @@ _cuda_ctx_init(CUdevice cu_dev, uint32_t gpu_id)
 }
 
 static int
-_cuda_rte_init(size_t heap_size, uint32_t gpu_id, struct xnvme_be_upcie_ctrlr *ctrlr)
+_cuda_rte_init(size_t heap_size, uint32_t gpu_id, struct xnvme_be_upcie_ctrlr *ctrlr,
+	       const char *bdf)
 {
 	struct xnvme_be_upcie_cuda_ctrlr *slot;
 	CUdevice cu_dev;
@@ -171,7 +251,7 @@ _cuda_rte_init(size_t heap_size, uint32_t gpu_id, struct xnvme_be_upcie_ctrlr *c
 	}
 
 	if (g_upcie_cuda_rte.is_initialized) {
-		return _cuda_ctrlr_init(slot, ctrlr);
+		return slot->db_base ? 0 : _cuda_ctrlr_init(slot, ctrlr, bdf);
 	}
 
 	if (!heap_size) {
@@ -228,6 +308,9 @@ _cuda_rte_init(size_t heap_size, uint32_t gpu_id, struct xnvme_be_upcie_ctrlr *c
 			(uint32_t)g_upcie_cuda_rte.cuda_config.device_pagesize, &desc,
 			&slot->reg_offset);
 		if (!err) {
+			if (_cuda_doorbells_init(slot, ctrlr->bar0, ctrlr->bar0_nbytes, bdf)) {
+				XNVME_DEBUG("FAILED: no doorbell mapping the GPU can reach");
+			}
 			err = dmamem_from_shared(
 				&g_upcie_cuda_rte.dmem,
 				(void *)(uintptr_t)g_upcie_cuda_rte.cuda_heap.vaddr, desc,
@@ -264,6 +347,12 @@ _cuda_rte_init(size_t heap_size, uint32_t gpu_id, struct xnvme_be_upcie_ctrlr *c
 		} else {
 			g_upcie_cuda_rte.dmem_is_shared = 1;
 		}
+	}
+
+	if (!g_upcie_rte.connection.alive &&
+	    _cuda_doorbells_init(slot, ctrlr->ctrl->func.bars[0].region,
+				 ctrlr->ctrl->func.bars[0].size, bdf)) {
+		XNVME_DEBUG("FAILED: no doorbell mapping the GPU can reach");
 	}
 
 	g_upcie_cuda_rte.is_initialized = 1;
@@ -359,7 +448,8 @@ xnvme_be_upcie_cuda_dev_open(struct xnvme_dev *dev)
 	{
 		struct xnvme_be_upcie_state *state = (void *)dev->be.state;
 
-		err = _cuda_rte_init(dev->opts.device_heap_size, dev->opts.gpu_id, state->ctrlr);
+		err = _cuda_rte_init(dev->opts.device_heap_size, dev->opts.gpu_id, state->ctrlr,
+				     dev->ident.uri);
 	}
 	if (err) {
 		XNVME_DEBUG("FAILED: _cuda_rte_init(); err(%d)", err);
