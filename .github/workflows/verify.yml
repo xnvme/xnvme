@@ -8,6 +8,9 @@ on:
   pull_request:
     types: [opened, reopened, synchronize, labeled]
     branches: [main]
+  # Weekly, so the benchmarks keep being exercised
+  schedule:
+  - cron: '0 2 * * 0'
   workflow_dispatch:
     inputs:
       job:
@@ -1154,9 +1157,9 @@ jobs:
   benchmark-bdev_xnvme:
     needs: [source-archive, source-format-check, build-python, changes-to-docs]
     runs-on: [self-hosted, linux, amd64, maas]
-    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'push' || (github.event_name == 'pull_request'
-      && contains(github.event.pull_request.labels.*.name, 'maas')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.job
-      == 'bench'))
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'schedule' || (github.event_name
+      == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'bench')) || (github.event_name == 'workflow_dispatch'
+      && github.event.inputs.job == 'bench'))
 
     steps:
     - uses: xnvme/actions/.github/actions/cleanup@main
@@ -1238,9 +1241,9 @@ jobs:
   #
   benchmark-latency:
     needs: [source-archive, source-format-check, build-python, changes-to-docs]
-    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'push' || (github.event_name == 'pull_request'
-      && contains(github.event.pull_request.labels.*.name, 'maas')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.job
-      == 'bench'))
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'schedule' || (github.event_name
+      == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'bench')) || (github.event_name == 'workflow_dispatch'
+      && github.event.inputs.job == 'bench'))
 
     strategy:
       fail-fast: false
@@ -1562,8 +1565,7 @@ jobs:
   #
   ci-result:
     needs: [changes-to-docs, source-archive, source-format-check, test-gen-targets, build-rust, build-python, build-linux,
-      build-rpm, build-macos, build-windows, generate-verify-matrix, verify, verify-physical, verify-maas, benchmark-bdev_xnvme,
-      benchmark-latency, docgen, docs, packaging-debian]
+      build-rpm, build-macos, build-windows, generate-verify-matrix, verify, verify-physical, verify-maas, docgen, docs, packaging-debian]
     runs-on: ubuntu-24.04
     if: always()
 
