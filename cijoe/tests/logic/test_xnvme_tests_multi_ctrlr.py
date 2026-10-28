@@ -43,3 +43,10 @@ def test_io(cijoe, device, be_opts, cli_args):
     """Two controllers, one process, one buffer pool."""
 
     run_two(cijoe, device, be_opts, cli_args, ["dev"])
+
+
+@xnvme_parametrize(labels=["dev", "nvm", "cuda"], opts=["be"])
+def test_io_cuda(cijoe, device, be_opts, cli_args):
+    """The same, with the buffers in device memory the GPU owns."""
+
+    run_two(cijoe, device, be_opts, cli_args, ["dev", "cuda"])

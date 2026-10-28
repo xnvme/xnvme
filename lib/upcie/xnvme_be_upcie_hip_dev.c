@@ -95,53 +95,38 @@ _hip_rte_init(size_t heap_size, uint32_t gpu_id)
 	return 0;
 }
 
-/** Heap bytes to map, rounded as the registry rounds a registration */
-static uint64_t
-_hip_slice_span(const struct hipmem_heap *heap)
-{
-	const uint64_t gran = DMAMEM_HIP_REGISTRY_GRANULARITY;
-
-	return ((heap->size + gran - 1) & ~(gran - 1)) + gran;
-}
-
-/** Point the device at the runtime's table, or build it one of its own */
 static int
 _hip_dev_dmem_init(struct xnvme_dev *dev)
 {
 	struct xnvme_be_upcie_state *state = (void *)dev->be.state;
-	struct xnvme_be_upcie_iova_range_dmem *range;
 	int err;
 
-	if (g_upcie_hip_rte.dmem_is_shared) {
+	if (g_upcie_hip_rte.dmem_is_shared && !g_upcie_hip_rte.dmem_in_range) {
 		state->dmem = &g_upcie_hip_rte.dmem;
 		return 0;
 	}
 
-	range = calloc(1, sizeof(*range));
-	if (!range) {
-		return -ENOMEM;
-	}
-
-	err = xnvme_be_upcie_iova_range_open(&range->map, dev->ident.uri,
-					     _hip_slice_span(&g_upcie_hip_rte.hip_heap));
+	err = xnvme_be_upcie_iova_range_open(&state->range, dev->ident.uri);
 	if (err) {
 		XNVME_DEBUG("FAILED: xnvme_be_upcie_iova_range_open(%s); err(%d)", dev->ident.uri,
 			    err);
-		free(range);
 		return err;
 	}
 
-	err = dmamem_from_hip_iommu_map_pa(&range->dmem, &g_upcie_hip_rte.hip_heap,
-					   xnvme_be_upcie_va_bits(), &range->map.imp);
-	if (err) {
-		XNVME_DEBUG("FAILED: dmamem_from_hip_iommu_map_pa(); err(%d)", err);
-		xnvme_be_upcie_iova_range_close(&range->map);
-		free(range);
-		return err;
+	if (!g_upcie_hip_rte.dmem_is_shared) {
+		err = dmamem_from_hip_iommu_map_pa(&g_upcie_hip_rte.dmem,
+						   &g_upcie_hip_rte.hip_heap,
+						   xnvme_be_upcie_va_bits(), state->range.imp);
+		if (err) {
+			XNVME_DEBUG("FAILED: dmamem_from_hip_iommu_map_pa(); err(%d)", err);
+			xnvme_be_upcie_iova_range_close(&state->range);
+			return err;
+		}
+		g_upcie_hip_rte.dmem_is_shared = 1;
+		g_upcie_hip_rte.dmem_in_range = 1;
 	}
 
-	state->range = range;
-	state->dmem = &range->dmem;
+	state->dmem = &g_upcie_hip_rte.dmem;
 
 	return 0;
 }
@@ -153,16 +138,17 @@ _hip_dev_dmem_term(struct xnvme_dev *dev)
 
 	state->dmem = NULL;
 
-	if (!state->range) {
+	if (!state->range.alive) {
 		return;
 	}
 
-	/* Unmap before ctrlr_term detaches and replaces the domain. */
-	dmamem_destroy(&state->range->dmem);
-	xnvme_be_upcie_iova_range_close(&state->range->map);
-
-	free(state->range);
-	state->range = NULL;
+	/* The mappings go with the range, so the table goes with the last hold */
+	if (atomic_load(&g_hip_ctrlr_count) == 1) {
+		dmamem_destroy(&g_upcie_hip_rte.dmem);
+		g_upcie_hip_rte.dmem_is_shared = 0;
+		g_upcie_hip_rte.dmem_in_range = 0;
+	}
+	xnvme_be_upcie_iova_range_close(&state->range);
 }
 
 /**
