@@ -217,6 +217,9 @@ _OP_FREE_IOQPAIR = 3
 _OP_ALLOC_BUF = 5
 _OP_FREE_BUF = 6
 _OP_STATUS = 7
+_OP_REGISTER_MEM = 8
+_OP_UNREGISTER_MEM = 9
+_OP_ALLOC_IOQPAIR_AT = 10
 
 # Reads one reply into r; recv() without a control buffer drops its descriptors
 _PY_RECV = (
@@ -1103,7 +1106,7 @@ def test_asking_for_resources_before_initialising_is_refused(
     """
     A connection that has not initialised cannot take a queue or memory
 
-    Either reply is a heap offset, which such a connection has no mapping for.
+    Each reply is a heap offset, which such a connection has no mapping for.
     """
 
     homi_id = _served(cijoe, be_opts)
@@ -1115,6 +1118,14 @@ def test_asking_for_resources_before_initialising_is_refused(
 
     status = _speak(cijoe, homi_id, _OP_ALLOC_BUF, payload_at=(0, 4096))
     assert status == -107, f"expected -ENOTCONN for memory before init, got {status}"
+
+    # For a placed queue the value at 32 lands in the description offset, which
+    # the refusal comes before
+    status = _speak(cijoe, homi_id, _OP_ALLOC_IOQPAIR_AT, payload_at=(32, 8))
+    assert status == -107, f"expected -ENOTCONN for a placed queue, got {status}"
+
+    status = _speak(cijoe, homi_id, _OP_REGISTER_MEM, payload_at=(0, 4096))
+    assert status == -107, f"expected -ENOTCONN for a registration, got {status}"
 
 
 @xnvme_parametrize(labels=["pcie"], opts=["be"])
@@ -1129,6 +1140,9 @@ def test_handing_back_what_was_never_held_is_refused(cijoe, device, be_opts, cli
 
     status = _speak(cijoe, homi_id, _OP_FREE_BUF, payload_at=(8, 0xDEAD))
     assert status == -2, f"expected -ENOENT for memory never held, got {status}"
+
+    status = _speak(cijoe, homi_id, _OP_UNREGISTER_MEM, payload_at=(8, 4096))
+    assert status == -2, f"expected -ENOENT for a registration never held, got {status}"
 
     status = _speak(cijoe, homi_id, _OP_STATUS, index=4096)
     assert (

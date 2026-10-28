@@ -10,6 +10,7 @@
 #ifdef XNVME_BE_UPCIE_ENABLED
 #include <xnvme_be_upcie.h>
 #include <xnvme_be_upcie_cplane_serve_ioqpair.h>
+#include <xnvme_be_upcie_cplane_serve_mem.h>
 
 /**
  * Queues one connection may hold, across every controller it uses
@@ -20,6 +21,11 @@
  * Allocations a connection has room for before it grows the list
  */
 #define XNVME_BE_UPCIE_CPLANE_SERVE_ALLOCS_INITIAL 32
+
+struct xnvme_be_upcie_cplane_serve_registration {
+	struct xnvme_be_upcie_cplane_registration reg;
+	int dev;
+};
 
 /**
  * One client connection, and everything the client was given
@@ -43,7 +49,11 @@ struct xnvme_be_upcie_cplane_serve_conn {
 	uint64_t *allocs; ///< Heap offsets handed out
 	int nallocs;
 	int allocs_cap;
+	struct xnvme_be_upcie_cplane_serve_registration *regs;
+	int nregs;
+	int regs_cap;
 
+	int in_fd;                  ///< -1 for none
 	struct nvme_cplane_msg msg; ///< The request being answered
 
 	int owed;     ///< Handed to a controller's thread
@@ -58,6 +68,9 @@ struct xnvme_be_upcie_cplane_serve_conn {
  */
 void
 xnvme_be_upcie_cplane_serve_conn_wipe(struct xnvme_be_upcie_cplane_serve_conn *conn);
+
+int
+xnvme_be_upcie_cplane_serve_conn_regs_grow(struct xnvme_be_upcie_cplane_serve_conn *conn);
 
 /**
  * Make room on `conn` for one more allocation
