@@ -1,0 +1,37 @@
+---
+doc: |
+  Test xNVMe's upcie-hip backend on Linux, with an emulated AMD GPU
+
+  The guest boots the compute-node-emulated rig, an NVMe controller and a port
+  for the rocjitsu GPU behind one PCIe switch. This plugs in the GPU, which
+  the guest's amdgpu brings up, checks that the controller can move data in
+  and out of VRAM through the kernel, and then runs the tests labelled hip
+  against the controller, driven from user space with its buffers in VRAM.
+
+steps:
+- name: facts
+  uses: core.facts_gather
+
+- name: gpu_plug
+  uses: xnvme_devenv.rig_device_plug
+  with:
+    device_name: gpu0
+
+- name: gpu_up
+  run: |
+    for _ in $(seq 36); do test -e /dev/kfd && ls /dev/dri | grep -q renderD && break; sleep 5; done
+    test -e /dev/kfd && ls /dev/dri | grep -q renderD || { dmesg | grep -i amdgpu | tail -40; false; }
+
+- name: hugepages
+  uses: linux_setup_hugepages
+
+- name: vram_io_probe
+  run: |
+    lsblk -no NAME,SERIAL | grep {{ config.rig.devices.nvme0.serial }}
+    rocjitsu-guest-check iouring-vram /dev/$(lsblk -dno NAME,SERIAL | awk '$2=="{{ config.rig.devices.nvme0.serial }}"{print $1}')
+
+- name: test_hip
+  uses: core.testrunner
+  with:
+    args: '-k "hip" tests --timeout=1800 --timeout-method=thread'
+    random_order: false
