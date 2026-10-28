@@ -139,6 +139,14 @@ def get_backend_configurations():
             "label": ["fabrics"],
         },
         {
+            "be": ["spdk"],
+            "async": ["spdk"],
+            "sync": ["spdk"],
+            "admin": ["spdk"],
+            "mem": ["spdk"],
+            "label": ["rdma"],
+        },
+        {
             "be": ["upcie"],
             "mem": ["upcie"],
             "async": ["upcie"],
