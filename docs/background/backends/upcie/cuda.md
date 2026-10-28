@@ -78,6 +78,10 @@ registry hands it those. Under `vfio-pci` an IOMMU translates, so every address
 it sees is an IOVA. Device memory cannot get one the way host memory does,
 since `IOMMU_IOAS_MAP_FILE` rejects the dma-bufs the CUDA driver exports.
 
+Where the controller is on `vfio-cdev`, `iommufd` is asked first: it maps the
+heap once for the whole process and needs no out-of-tree module. It cannot
+always, and what follows is what happens when it cannot.
+
 The `iommu-map-pa` module inserts the VRAM into the controller's domain
 directly, and the registry's table holds the resulting IOVAs. It is published as
 an asset of the same release as `dmabuf-import`, packaged for DKMS:
@@ -97,24 +101,22 @@ usable IOVA except that. Override where it does not fit:
 ```bash
 XNVME_UPCIE_IOVA_BASE=0x2000000000  # 128 GiB
 XNVME_UPCIE_IOVA_SIZE=0x400000000   # 16 GiB
-XNVME_UPCIE_IOVA_SLICE=0x80000000   # 2 GiB per controller
 ```
 
 A window outside every usable IOVA range fails `xnvme_dev_open()` with `ERANGE`.
 
 ### Several controllers
 
-A mapping reaches one IOMMU domain, so each controller gets its own slice of the
-window and maps the heap into its own domain. Three limits follow, on the
-`vfio-pci` path only:
+The window holds one set of addresses for the process. The first controller
+opened claims it and the heap is installed in it; every controller opened after
+that is attached to the same range, so all of them reach the heap, and anything
+registered with `xnvme_mem_map()`, at the same IOVAs through one translation
+table. Two limits follow, on the `vfio-pci` path only:
 
-- A slice is twice the size of the heap, leaving room for buffers registered
-  with `xnvme_mem_map()`. Set the width with `XNVME_UPCIE_IOVA_SLICE`. A
-  full slice fails the registration with `ENOSPC`.
-- The window holds 31 controllers by default, and never more than 64. Past that
-  `xnvme_dev_open()` fails with `ENOSPC`.
-- Each controller reserves a translation table of its own, sized as
-  {ref}`sec-backends-upcie-host` describes. `XNVME_UPCIE_VA_BITS` bounds it.
+- The heap and every registered buffer have to fit in the window. A full window
+  fails the registration with `ENOSPC`.
+- The translation table is sized as {ref}`sec-backends-upcie-host` describes.
+  `XNVME_UPCIE_VA_BITS` bounds it.
 
 A controller attaching later brings its own reserved regions. Where one overlaps
 the ranges the IOAS was told to allow, that attach fails with `EADDRINUSE`. Move
@@ -292,8 +294,12 @@ cd cijoe && cijoe workflows/test-gpu.yaml --config configs/<your-config>.toml
 
 ## Limitations
 
-- **31 controllers per process under an enforcing IOMMU** at the default heap
-  and window size, capped at 64. See {ref}`sec-backends-upcie-cuda-iommu`.
+- **100 controllers per process, 16 where the heap goes in through
+  `iommu_map_pa`.** The first is the controller table
+  (`XNVME_BE_CREF_MAX_ENTRIES`), the second the one importer a process attaches
+  its controllers to (`DMAMEM_IOMMU_MAP_PA_DEVS_MAX`). Under an enforcing IOMMU
+  the heap and every registered buffer must also fit in the IOVA window, see
+  {ref}`sec-backends-upcie-cuda-iommu`.
 - **GPU 0 only.** The heap is always created on CUDA device 0. Multiple GPU
   support is not implemented.
 - **1 GiB heap.** The CUDA heap is fixed at 1 GiB. Allocations beyond this

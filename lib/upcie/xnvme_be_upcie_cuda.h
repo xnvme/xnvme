@@ -26,6 +26,7 @@ struct xnvme_be_upcie_cuda_rte {
 	struct cudamem_heap cuda_heap;
 	struct dmamem dmem; ///< Shared translation; unused where each controller needs its own
 	int dmem_is_shared;
+	int dmem_in_range;
 	int is_initialized;
 };
 

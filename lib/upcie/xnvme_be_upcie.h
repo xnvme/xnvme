@@ -88,29 +88,10 @@ struct xnvme_be_upcie_ctrlr {
 	int attached;                     ///< Whether base and bdf came from the server
 };
 
-/**
- * One controller's iommu-map-pa handle
- *
- * IOMMU_IOAS_MAP_FILE rejects the dma-bufs CUDA and HIP export, so such memory
- * reaches the controller's domain through the out-of-tree iommu-map-pa module
- * instead. See <upcie/dmamem_iommu_map_pa.h>.
- */
+/** One per process; the IOAS refuses a second range at the same addresses */
 struct xnvme_be_upcie_iova_range {
-	struct dmamem_iommu_map_pa imp;
-	char bdf[DMAMEM_IOMMU_MAP_PA_BDF_LEN]; ///< Device whose domain is mapped into
-	int alive;                             ///< Whether imp is open
-	int slice;                             ///< Window slice held; -1 when none
-};
-
-/**
- * One controller's view of a heap reached through its IOVA range
- *
- * The heap is process-wide; the IOVAs it is reached by are per controller, so
- * each needs a table of its own.
- */
-struct xnvme_be_upcie_iova_range_dmem {
-	struct xnvme_be_upcie_iova_range map; ///< Borrowed by dmem; outlives it
-	struct dmamem dmem;
+	struct dmamem_iommu_map_pa *imp; ///< NULL where the mode needs none
+	int alive;                       ///< Whether imp is open
 };
 
 /**
@@ -126,9 +107,9 @@ struct xnvme_be_upcie_iova_range_dmem {
 struct xnvme_be_upcie_state {
 	struct xnvme_be_upcie_ctrlr *ctrlr; ///< Shared controller (first field for platform)
 	struct dmamem *dmem;                ///< Where this device's data buffers live
-	struct xnvme_be_upcie_iova_range_dmem *range; ///< Owned; NULL where no range is needed
+	struct xnvme_be_upcie_iova_range range;
 
-	uint8_t _rvds[104];
+	uint8_t _rvds[96];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_upcie_state) == XNVME_BE_STATE_NBYTES, "Incorrect size")
 
@@ -225,32 +206,17 @@ xnvme_be_upcie_type1_attach(struct xnvme_be_upcie_ctrlr *ctrlr, const char *bdf)
 int
 xnvme_be_upcie_va_bits(void);
 
-/** Whether a heap needs an IOVA range per controller; false under UIO_LUT */
 int
 xnvme_be_upcie_iova_range_required(void);
 
-/**
- * Open this controller's iommu-map-pa handle on a slice of the IOVA window
- *
- * A mapping reaches one IOMMU domain, so each controller needs a slice of its
- * own.
- *
- * Call it once the controller has attached: the IOAS reports the ranges it
- * enforces only when it knows the device's reserved regions. Close it before the
- * controller detaches, since that replaces the domain the mappings live in.
- *
- * @param range Caller-allocated handle to fill
- * @param bdf   The controller whose domain to map into
- * @param span  Bytes needed for the heap; the slice is twice this, leaving room
- *             for xnvme_mem_map(). XNVME_UPCIE_IOVA_SLICE overrides it.
- *
- * @return 0 on success, whether or not a handle was opened; negative errno on
- *         failure. -ENOSPC when the window is out of slices.
- */
+/** Call once `bdf` has attached; the IOAS knows its reserved regions only then */
 int
-xnvme_be_upcie_iova_range_open(struct xnvme_be_upcie_iova_range *range, const char *bdf,
-			       uint64_t span);
+xnvme_be_upcie_iova_range_open(struct xnvme_be_upcie_iova_range *range, const char *bdf);
 
+int
+xnvme_be_upcie_iova_range_attach(struct xnvme_be_upcie_iova_range *range, const char *bdf);
+
+/** Destroy the dmamem built on the range first; its mappings go with the range */
 void
 xnvme_be_upcie_iova_range_close(struct xnvme_be_upcie_iova_range *range);
 
