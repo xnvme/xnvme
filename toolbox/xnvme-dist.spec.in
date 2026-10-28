@@ -35,6 +35,7 @@ space. See https://xnvme.io/
   -Dwith-cuda=disabled \
   -Dwith-hip=disabled \
   -Dwith-cuse=disabled \
+  -Dwith-rdma=disabled \
   -Dsystemd=disabled
 %meson_build
 
