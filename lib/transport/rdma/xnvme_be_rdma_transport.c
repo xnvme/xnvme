@@ -328,19 +328,28 @@ _rdma_qpair_init(struct xnvme_transport_qpair *qpair)
 	return 0;
 }
 
+static void
+_rdma_flush_cm_events(struct xnvme_be_rdma_qpair *rdma_qpair)
+{
+	struct rdma_cm_event *event;
+
+	while (rdma_get_cm_event(rdma_qpair->event_channel, &event) == 0) {
+		rdma_ack_cm_event(event);
+	}
+}
+
 static int
 _rdma_qpair_teardown(struct xnvme_transport_qpair *qpair)
 {
 	struct xnvme_be_rdma_qpair *rdma_qpair = TO_RDMA_QPAIR(qpair);
 	int err = 0;
 
-	if (rdma_qpair->event_channel) {
-		rdma_destroy_event_channel(rdma_qpair->event_channel);
-		rdma_qpair->event_channel = NULL;
-	}
-
 	if (!rdma_qpair->cm_id) {
 		TRANSPORT_CTRL_ERROR("INFO: No qpair to destroy");
+		if (rdma_qpair->event_channel) {
+			rdma_destroy_event_channel(rdma_qpair->event_channel);
+			rdma_qpair->event_channel = NULL;
+		}
 		return 0;
 	}
 
@@ -374,6 +383,9 @@ _rdma_qpair_teardown(struct xnvme_transport_qpair *qpair)
 
 	if (rdma_qpair->cm_id) {
 		rdma_destroy_qp(rdma_qpair->cm_id);
+
+		_rdma_flush_cm_events(rdma_qpair);
+
 		err = rdma_destroy_id(rdma_qpair->cm_id);
 		if (err) {
 			TRANSPORT_CTRL_ERROR("FAILED: rdma_destroy_id(), err: %d", err);

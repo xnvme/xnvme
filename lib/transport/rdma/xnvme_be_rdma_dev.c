@@ -66,35 +66,38 @@ _rdma_dev_dump(struct xnvme_dev *dev)
 }
 
 static inline int
+_rdma_dev_close_subsystem(struct xnvme_dev *dev)
+{
+	struct xnvme_transport_state *state = TO_TRANSPORT_DEV_STATE(dev);
+	int refs = 0;
+
+	refs = xnvme_transport_subsys_put(state->subsys);
+	if (refs) {
+		TRANSPORT_DEBUG("INFO: subsys still has %d references", refs);
+		xnvme_transport_subsys_get(state->subsys); // taking reference to prevent close loop to free referenced memory
+		return -EBUSY;
+	}
+	state->subsys = NULL;
+
+	return 0;
+}
+
+static inline int
 _rdma_dev_close_namespace(struct xnvme_dev *dev)
 {
 	struct xnvme_transport_state *state = TO_TRANSPORT_DEV_STATE(dev);
 	int refs = 0;
 
-	if (state->ns) {
-		refs = xnvme_transport_ns_put(state->ns);
-		if (refs) {
-			TRANSPORT_DEBUG("INFO: ns still has %d references", refs);
-			xnvme_transport_ns_get(state->ns); // taking reference to prevent close
-							   // loop to free referenced memory
-			return -EBUSY;
-		}
-		state->ns = NULL;
+	refs = xnvme_transport_ns_put(state->ns);
+	if (refs) {
+		TRANSPORT_DEBUG("INFO: ns still has %d references", refs);
+		xnvme_transport_ns_get(state->ns); // taking reference to prevent close
+						   // loop to free referenced memory
+		return -EBUSY;
 	}
+	state->ns = NULL;
 
-	if (state->subsys) {
-		refs = xnvme_transport_subsys_put(state->subsys);
-		if (refs) {
-			TRANSPORT_DEBUG("INFO: subsys still has %d references", refs);
-			xnvme_transport_subsys_get(
-				state->subsys); // taking reference to prevent close loop to free
-						// referenced memory
-			return -EBUSY;
-		}
-		state->subsys = NULL;
-	}
-
-	return 0;
+	return _rdma_dev_close_subsystem(dev);
 }
 
 /*
@@ -108,20 +111,31 @@ xnvme_be_rdma_dev_close(struct xnvme_dev *dev)
 
 	TRANSPORT_DEBUG("INFO: dev_close() for NVMe-oF device: %s", dev->ident.uri);
 
-	if (state->admin_qpair) {
-		err = xnvme_transport_qpair_disconnect(state->admin_qpair);
-		if (err) {
-			TRANSPORT_ERROR("FAILED: xnvme_transport_qpair_disconnect(), err: %d",
-					err);
-			return;
-		}
-
-		err = xnvme_transport_qpair_destroy(state->admin_qpair);
-		if (err) {
-			TRANSPORT_ERROR("FAILED: xnvme_transport_qpair_destroy(), err: %d", err);
-			return;
-		}
+	if (state->ns) {
+		// namespace
+		_rdma_dev_close_namespace(dev);
 		state->admin_qpair = NULL;
+	} else if (state->subsys) {
+		// subsystem controller
+		_rdma_dev_close_subsystem(dev);
+		state->admin_qpair = NULL;
+	} else {
+		// discovery controller
+		if (state->admin_qpair && _rdma_dev_is_discovery_controller(dev)) {
+			err = xnvme_transport_qpair_disconnect(state->admin_qpair);
+			if (err) {
+				TRANSPORT_ERROR("FAILED: xnvme_transport_qpair_disconnect(), err: %d",
+						err);
+				return;
+			}
+
+			err = xnvme_transport_qpair_destroy(state->admin_qpair);
+			if (err) {
+				TRANSPORT_ERROR("FAILED: xnvme_transport_qpair_destroy(), err: %d", err);
+				return;
+			}
+			state->admin_qpair = NULL;
+		}
 	}
 
 	if (state->sync_qpair) {
@@ -141,10 +155,6 @@ xnvme_be_rdma_dev_close(struct xnvme_dev *dev)
 	}
 
 	xnvme_be_rdma_mem_term(dev);
-
-	if (dev->ident.dtype == XNVME_DEV_TYPE_NVME_NAMESPACE) {
-		_rdma_dev_close_namespace(dev);
-	}
 }
 
 static inline int
