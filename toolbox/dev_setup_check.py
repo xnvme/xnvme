@@ -56,8 +56,8 @@ def main():
         print("qemu-system-x86_64: MISSING")
         errors.append(
             "qemu-system-x86_64 not found. Need upstream QEMU >= %d.%d.\n"
-            "  a) Run inside the nosi Docker environment: make docker\n"
-            "  b) Build upstream QEMU from source" % MIN_QEMU_VERSION
+            "  Run inside the xnvme-devenv host container: make devenv-up, or\n"
+            "  make docker for a shell in it" % MIN_QEMU_VERSION
         )
     else:
         version = qemu_version(qemu)

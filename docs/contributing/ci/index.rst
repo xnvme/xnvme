@@ -90,6 +90,48 @@ In addition to cathing issues, then the CI is also utilized for:
 These following sections provide system-setup notes and other details for the
 various **CI** jobs.
 
+.. _sec-ci-sources:
+
+Where the devices come from, and which guest runs what
+######################################################
+
+A verification job gets its NVMe devices from one of three sources:
+
+* **emulated**: **QEMU** and the vfio-user device servers in `xnvme-devenv`_'s
+  host container, on a GitHub-hosted runner, with the guest booted on a rig
+* **passthru**: a lab machine's real drive, passed by vfio-pci to a guest
+  booted in the same host container, on the lab machine
+* **physical**: the machine's own OS, with no guest (the macOS machine)
+
+The guest follows what is verified. Debian 13 is kept upstream-pure, a stock
+kernel and in-tree drivers only, and verifies the transports on a kernel users
+run.
+
+.. list-table:: What runs where
+   :header-rows: 1
+   :widths: 22 30 26 22
+
+   * - Verifies
+     - Emulated
+     - Passthru
+     - Physical
+   * - NVMe/PCIe
+     - ``verify``: Debian 13 with the IOMMU on and off, FreeBSD 14; rig
+       ``storage-node-emulated``
+     - ``verify-maas``: Debian 13 on the lab machine; rig
+       ``storage-node-passthru``
+     - ``verify-physical``: macOS 14, through MacVFN
+   * - NVMe/TCP
+     - ``verify``: Debian 13, the kernel and SPDK initiators
+     - none
+     - none
+
+A cell that says none has no job: that subject is not verified from that
+source.
+
+The benchmarks run on the passthru machines, weekly and on request, outside
+``ci-result``.
+
 .. _sec-ci-environments:
 
 Containers and guest images
@@ -114,7 +156,8 @@ Both publish **OCI** artifacts on **GHCR**.
   (invoked from ``guest.yaml`` right before ``guest_initialize``), which
   talks directly to the
   **OCI** Distribution API via stdlib ``urllib`` (no ``oras`` CLI dependency);
-  the blob digest is pinned in each **CIJOE** config's ``[guest_image].url``.
+  the blob digest is pinned as ``oras.url`` under
+  ``[system-imaging.images.<name>]`` in ``cijoe/configs/system_imaging.toml``.
   The nosi guests ship with root locked and an operator account ``odus``;
   ``cijoe/scripts/root_unlock.py`` runs right after ``guest_start`` to open
   root **SSH** so the rest of the **CIJOE** workflow continues as root unchanged

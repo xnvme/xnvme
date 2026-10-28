@@ -29,7 +29,7 @@ provides a brief description of what is available:
 Local Testing
 -------------
 
-To reproduce the CI test suite locally using Docker, see
+To reproduce the CI test suite locally, in xnvme-devenv's host container, see
 :ref:`sec-tutorials-devs-linux-reproduce-ci`.
 
 .. _sec-contributing-toolbox-precommit:
