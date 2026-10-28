@@ -60,8 +60,7 @@ system_args.tcp_forward = {host = 4200, guest = 22}
 #system_args.host_share = "{{ local.env.HOME }}/git"
 
 [kvssd]
-binary = "{{ local.env.HOME }}/guests/vfu_kvssd"
-url = "https://github.com/safl/vfio-user-kvssd/releases/download/v0.1.11/vfu_kvssd-0.1.11-x86_64-linux"
+binary = "/usr/bin/vfu_kvssd"
 socket = "/tmp/vfu_kvssd.sock"
 
 # =============================================================================

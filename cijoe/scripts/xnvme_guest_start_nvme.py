@@ -340,32 +340,19 @@ def qemu_nvme_args(nvme_img_root, features=None, vfu_socket=None):
 
 def setup_vfu_kvssd(cijoe):
     """Ensure the vfu_kvssd server is running; return its socket path, or None
-    when '[kvssd]' is absent. Fetches the binary from 'url' on first use and
-    launches the server detached."""
+    when '[kvssd]' is absent. Launches 'kvssd.binary', which the xnvme-devenv
+    host container installs, detached."""
     binary = cijoe.getconf("kvssd.binary", None)
-    url = cijoe.getconf("kvssd.url", None)
-    if not (binary or url):
+    if not binary:
         return None
 
     socket = cijoe.getconf("kvssd.socket", "/tmp/vfu_kvssd.sock")
     log_path = Path(socket).with_suffix(".log")
 
-    need_fetch = True
-    if binary:
-        err, _ = cijoe.run_local(f"[ -x {binary} ]")
-        need_fetch = bool(err)
-    if need_fetch:
-        if not binary:
-            binary = Path(socket).with_name("vfu_kvssd")
-        if not url:
-            log.error("vfu_kvssd binary missing and no 'kvssd.url' to fetch it")
-            return None
-        err, _ = cijoe.run_local(
-            f"curl -fL --retry 3 -o {binary} {url} && chmod +x {binary}"
-        )
-        if err:
-            log.error(f"failed to fetch vfu_kvssd from {url}")
-            return None
+    err, _ = cijoe.run_local(f"[ -x {binary} ]")
+    if err:
+        log.error(f"no vfu_kvssd at {binary}; run in the xnvme-devenv host")
+        return None
 
     # Replace any stale server bound to this socket; VFU_KVSSD_TRACE bundles a
     # control/admin/IO log so probes can be inspected post-mortem.

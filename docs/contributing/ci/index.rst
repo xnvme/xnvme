@@ -95,13 +95,15 @@ various **CI** jobs.
 Containers and guest images
 ###########################
 
-Two of the **CI** jobs run inside a Docker host container (set by **GHA**'s
-``container:`` directive), and several boot a **QEMU** guest as part of their
-work. Both come from `nosi`_, which publishes base images as **OCI** artifacts
-on **GHCR**.
+The emulated **CI** jobs and ``docgen`` run inside a Docker host container
+(set by **GHA**'s ``container:`` directive), and boot a **QEMU** guest as part
+of their work. The host container comes from `xnvme-devenv`_, which adds the
+vfio-user device servers to a `nosi`_ base; the guest images come from
+`nosi`_ itself.
+Both publish **OCI** artifacts on **GHCR**.
 
 * **Host containers** carry the toolchain the **GHA** job itself uses: **QEMU**
-  binaries, **CIJOE**, devbind / hugepages helpers.
+  binaries, **CIJOE**, devbind / hugepages helpers, and ``vfu_kvssd``.
 
 * **Guest disk images** are the qcow2 boot disk the in-job **QEMU** instance
   runs. They are pulled in-job by the ``stage_nosi_guest`` **CIJOE** script
@@ -123,13 +125,13 @@ on **GHCR**.
      - Host container
      - Guest disk image
    * - ``verify (debian, trixie)``
-     - ``safl/nosi/ubuntu-2604-docker`` (upstream QEMU + CIJOE)
+     - ``xnvme/xnvme-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
      - ``safl/nosi/debian-13-headless``
    * - ``verify (debian, trixie-noiommu)``
-     - ``safl/nosi/ubuntu-2604-docker`` (upstream QEMU + CIJOE)
+     - ``xnvme/xnvme-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
      - ``safl/nosi/debian-13-headless``
    * - ``verify (freebsd, 14)``
-     - ``safl/nosi/ubuntu-2604-docker`` (upstream QEMU + CIJOE)
+     - ``xnvme/xnvme-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
      - ``safl/nosi/freebsd-14-headless``
    * - ``verify-maas (debian, trixie)``
      - n/a (self-hosted MAAS runner)
@@ -144,13 +146,14 @@ on **GHCR**.
      - n/a (self-hosted MAAS runner)
      - ``safl/nosi/freebsd-14-headless``
    * - ``docgen``
-     - ``safl/nosi/ubuntu-2604-docker`` (upstream QEMU + CIJOE)
+     - ``xnvme/xnvme-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
      - ``safl/nosi/debian-13-headless``
 
-All container-hosted jobs now run on the nosi ``ubuntu-2604-docker`` image
-with upstream **QEMU**; the NVMe KV command set is supplied by
-`vfio-user-kvssd`_ over **vfio-user**. The MAAS jobs run directly on
-bare-metal hardware so do not need a host container.
+All container-hosted jobs run in the `xnvme-devenv`_ host container, with
+upstream **QEMU**; the NVMe KV command set is supplied by `vfio-user-kvssd`_
+over **vfio-user**, installed in the container. The MAAS jobs need no host
+container: they run on the lab machines, and boot their guest there with the
+machine's drive passed through.
 
 .. toctree::
    :maxdepth: 2
@@ -165,5 +168,6 @@ bare-metal hardware so do not need a host container.
 .. _CIJOE: https://cijoe.readthedocs.io
 .. _GitHub Actions: https://github.com/features/actions
 .. _nosi: https://github.com/safl/nosi
+.. _xnvme-devenv: https://github.com/xnvme/xnvme-devenv
 .. _vfio-user-kvssd: https://github.com/safl/vfio-user-kvssd
 .. _xnvme.io via GitHub-pages: https://github.com/xnvme/xnvme.github.io
