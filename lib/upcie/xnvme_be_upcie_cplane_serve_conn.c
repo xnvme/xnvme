@@ -26,9 +26,36 @@
 void
 xnvme_be_upcie_cplane_serve_conn_wipe(struct xnvme_be_upcie_cplane_serve_conn *conn)
 {
+	if (conn->in_fd >= 0) {
+		close(conn->in_fd);
+	}
 	free(conn->allocs);
+	free(conn->regs);
 	memset(conn, 0, sizeof(*conn));
 	conn->sock = -1;
+	conn->in_fd = -1;
+}
+
+int
+xnvme_be_upcie_cplane_serve_conn_regs_grow(struct xnvme_be_upcie_cplane_serve_conn *conn)
+{
+	struct xnvme_be_upcie_cplane_serve_registration *grown;
+	int cap;
+
+	if (conn->nregs < conn->regs_cap) {
+		return 0;
+	}
+
+	cap = conn->regs_cap ? conn->regs_cap * 2 : 4;
+	grown = realloc(conn->regs, sizeof(*grown) * (size_t)cap);
+	if (!grown) {
+		return -ENOMEM;
+	}
+
+	conn->regs = grown;
+	conn->regs_cap = cap;
+
+	return 0;
 }
 
 int
@@ -51,6 +78,18 @@ xnvme_be_upcie_cplane_serve_conn_allocs_grow(struct xnvme_be_upcie_cplane_serve_
 	conn->allocs_cap = cap;
 
 	return 0;
+}
+
+static int
+_conn_reg_find(struct xnvme_be_upcie_cplane_serve_conn *conn, int devidx)
+{
+	for (int i = 0; i < conn->nregs; ++i) {
+		if (conn->regs[i].dev == devidx) {
+			return i;
+		}
+	}
+
+	return -1;
 }
 
 void
@@ -80,6 +119,20 @@ xnvme_be_upcie_cplane_serve_conn_release(struct xnvme_be_upcie_cplane_serve_conn
 		if (err) {
 			XNVME_DEBUG("FAILED: free(slot(%d)); err(%d)", i, err);
 		}
+	}
+
+	for (;;) {
+		int i;
+
+		pthread_mutex_lock(&g_upcie_cplane_serve_lock);
+		i = _conn_reg_find(conn, devidx);
+		if (i < 0) {
+			pthread_mutex_unlock(&g_upcie_cplane_serve_lock);
+			break;
+		}
+		xnvme_be_upcie_cplane_serve_unregister_mem(&conn->regs[i].reg);
+		conn->regs[i] = conn->regs[--conn->nregs];
+		pthread_mutex_unlock(&g_upcie_cplane_serve_lock);
 	}
 
 	pthread_mutex_lock(&g_upcie_cplane_serve_lock);

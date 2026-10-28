@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include <xnvme_be_upcie.h>
+#include <xnvme_be_upcie_cplane_serve_conn.h>
 #include <xnvme_be_upcie_cplane_serve_ioqpair.h>
 #include <xnvme_lock.h>
 
@@ -84,10 +85,101 @@ _xnvme_be_upcie_cplane_serve_ioqpair_free(struct xnvme_dev *dev,
 	state = (void *)dev->be.state;
 	ctrl = state->ctrlr->ctrl;
 
-	err = nvme_controller_delete_io_qpair_dmamem(ctrl, &held->qpair, &g_upcie_rte.mem.heap,
-						     held->offsets.sq, held->offsets.cq,
-						     held->offsets.prp);
+	if (held->foreign) {
+		err = xnvme_be_upcie_ctrlr_qpair_delete_id(dev, held->qpair.qid);
+	} else {
+		err = nvme_controller_delete_io_qpair_dmamem(
+			ctrl, &held->qpair, &g_upcie_rte.mem.heap, held->offsets.sq,
+			held->offsets.cq, held->offsets.prp);
+	}
 	memset(held, 0, sizeof(*held));
+
+	return err;
+}
+
+static const struct hostmem_shared_desc *
+_registration_desc(const struct xnvme_be_upcie_cplane_serve_conn *conn, int devidx,
+		   uint64_t desc_offset)
+{
+	for (int i = 0; i < conn->nregs; ++i) {
+		if ((conn->regs[i].reg.desc_offset == desc_offset) &&
+		    (conn->regs[i].dev == devidx)) {
+			return (const void *)((char *)g_upcie_rte.mem.dmem.base_va + desc_offset);
+		}
+	}
+
+	XNVME_DEBUG("FAILED: connection has no registration at offset(%" PRIu64
+		    ") for controller %d",
+		    desc_offset, devidx);
+
+	return NULL;
+}
+
+static int
+_xnvme_be_upcie_cplane_serve_ioqpair_alloc_at(struct xnvme_dev *dev,
+					      struct xnvme_be_upcie_cplane_serve_conn *conn,
+					      int devidx, const struct nvme_cplane_msg *msg,
+					      struct xnvme_be_upcie_cplane_serve_ioqpair *held,
+					      uint32_t *qid)
+{
+	const struct hostmem_shared_desc *desc;
+	uint64_t sq_addr = 0, cq_addr = 0;
+	uint16_t depth;
+	int err;
+
+	if (!dev || !conn || !msg || !held || !qid) {
+		return -EINVAL;
+	}
+
+	depth = msg->u.alloc_ioqpair_at.depth;
+	if (!depth) {
+		return -EINVAL;
+	}
+
+	desc = _registration_desc(conn, devidx, msg->u.alloc_ioqpair_at.desc_offset);
+	if (!desc) {
+		return -ENOENT;
+	}
+
+	err = hostmem_shared_desc_addr(desc, msg->u.alloc_ioqpair_at.sq_offset,
+				       (uint64_t)depth * sizeof(struct nvme_command), &sq_addr);
+	if (err) {
+		XNVME_DEBUG("FAILED: resolving the submission queue; err(%d)", err);
+		return err;
+	}
+
+	err = hostmem_shared_desc_addr(desc, msg->u.alloc_ioqpair_at.cq_offset,
+				       (uint64_t)depth * sizeof(struct nvme_completion), &cq_addr);
+	if (err) {
+		XNVME_DEBUG("FAILED: resolving the completion queue; err(%d)", err);
+		return err;
+	}
+
+	err = xnvme_be_upcie_ctrlr_qpair_create_at(dev, sq_addr, cq_addr, depth, qid);
+	if (err) {
+		return err;
+	}
+
+	memset(held, 0, sizeof(*held));
+	held->foreign = 1;
+	held->qpair.qid = (uint16_t)*qid;
+	held->qpair.depth = depth;
+
+	return 0;
+}
+
+int
+xnvme_be_upcie_cplane_serve_ioqpair_alloc_at(struct xnvme_dev *dev,
+					     struct xnvme_be_upcie_cplane_serve_conn *conn,
+					     int devidx, const struct nvme_cplane_msg *msg,
+					     struct xnvme_be_upcie_cplane_serve_ioqpair *held,
+					     uint32_t *qid)
+{
+	int err;
+
+	xnvme_lock();
+	err = _xnvme_be_upcie_cplane_serve_ioqpair_alloc_at(dev, conn, devidx, msg, held, qid);
+	xnvme_unlock();
 
 	return err;
 }

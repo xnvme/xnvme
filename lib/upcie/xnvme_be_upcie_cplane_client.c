@@ -320,6 +320,80 @@ cplane_conn_get(uint32_t cplane_id)
 }
 
 int
+xnvme_be_upcie_cplane_ask_ctrlr_fd(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_cplane_msg *msg,
+				   int fd)
+{
+	int err;
+
+	if (!ctrlr || !msg) {
+		return -ENOTCONN;
+	}
+
+	msg->index = (uint32_t)ctrlr->index;
+
+	pthread_mutex_lock(&cplane_sock_lock);
+	err = nvme_cplane_request_with(g_upcie_rte.connection.sock, msg, &fd, 1, NULL, NULL);
+	pthread_mutex_unlock(&cplane_sock_lock);
+
+	return err;
+}
+
+int
+xnvme_be_upcie_cplane_register_client_mem(struct xnvme_be_upcie_ctrlr *ctrlr, int dmabuf_fd,
+					  uint64_t nbytes, uint32_t page_size,
+					  const struct hostmem_shared_desc **desc_out,
+					  uint64_t *offset_out)
+{
+	struct nvme_cplane_msg msg = {0};
+	int err;
+
+	if (!ctrlr || (dmabuf_fd < 0) || !nbytes || !page_size || !desc_out) {
+		return -EINVAL;
+	}
+	if (!g_upcie_rte.connection.alive) {
+		return -ENOTCONN;
+	}
+
+	msg.op = NVME_CPLANE_OP_REGISTER_MEM;
+	msg.u.mem.nbytes = nbytes;
+	msg.u.mem.page_size = page_size;
+
+	err = xnvme_be_upcie_cplane_ask_ctrlr_fd(ctrlr, &msg, dmabuf_fd);
+	if (err) {
+		XNVME_DEBUG("FAILED: registering %" PRIu64 " bytes; err(%d)", nbytes, err);
+		return err;
+	}
+	if (!cplane_desc_fits(g_upcie_rte.connection.heap_base, g_upcie_rte.connection.heap_nbytes,
+			      msg.u.mem.desc_offset)) {
+		XNVME_DEBUG("FAILED: the description lies outside the heap");
+		return -EPROTO;
+	}
+
+	*desc_out = (const struct hostmem_shared_desc *)((char *)g_upcie_rte.connection.heap_base +
+							 msg.u.mem.desc_offset);
+	if (offset_out) {
+		*offset_out = msg.u.mem.desc_offset;
+	}
+
+	return 0;
+}
+
+int
+xnvme_be_upcie_cplane_unregister_client_mem(struct xnvme_be_upcie_ctrlr *ctrlr, uint64_t offset)
+{
+	struct nvme_cplane_msg msg = {0};
+
+	if (!ctrlr || !offset) {
+		return -EINVAL;
+	}
+
+	msg.op = NVME_CPLANE_OP_UNREGISTER_MEM;
+	msg.u.mem.desc_offset = offset;
+
+	return xnvme_be_upcie_cplane_ask_ctrlr(ctrlr, &msg, NULL, NULL);
+}
+
+int
 xnvme_be_upcie_cplane_init_connection(uint32_t cplane_id, const char *bdf,
 				      struct xnvme_be_upcie_ctrlr *ctrlr)
 {
@@ -500,6 +574,50 @@ xnvme_be_upcie_cplane_ctrlr_from_base(struct xnvme_be_upcie_ctrlr *ctrlr)
 	return 0;
 }
 
+int
+xnvme_be_upcie_cplane_alloc_qpair_at(struct xnvme_be_upcie_ctrlr *ctrlr, uint64_t desc_offset,
+				     uint64_t sq_offset, uint64_t cq_offset, uint16_t depth,
+				     uint32_t *qid)
+{
+	struct nvme_cplane_msg msg = {0};
+	int err;
+
+	if (!ctrlr || !qid) {
+		return -EINVAL;
+	}
+
+	msg.op = NVME_CPLANE_OP_ALLOC_IOQPAIR_AT;
+	msg.u.alloc_ioqpair_at.desc_offset = desc_offset;
+	msg.u.alloc_ioqpair_at.sq_offset = sq_offset;
+	msg.u.alloc_ioqpair_at.cq_offset = cq_offset;
+	msg.u.alloc_ioqpair_at.depth = depth;
+
+	err = xnvme_be_upcie_cplane_ask_ctrlr(ctrlr, &msg, NULL, NULL);
+	if (err) {
+		XNVME_DEBUG("FAILED: asking for a queue on registered memory; err(%d)", err);
+		return err;
+	}
+
+	*qid = msg.u.alloc_ioqpair_at.allocation.qid;
+
+	return 0;
+}
+
+int
+xnvme_be_upcie_cplane_free_qpair_at(struct xnvme_be_upcie_ctrlr *ctrlr, uint32_t qid)
+{
+	struct nvme_cplane_msg msg = {0};
+
+	if (!ctrlr) {
+		return -EINVAL;
+	}
+
+	msg.op = NVME_CPLANE_OP_FREE_IOQPAIR;
+	msg.u.free_ioqpair.qid = qid;
+
+	return xnvme_be_upcie_cplane_ask_ctrlr(ctrlr, &msg, NULL, NULL);
+}
+
 /* Map the queue pair the server allocated, with doorbells in this process's BAR0 mapping */
 static int
 _qpair_from_allocation(struct xnvme_be_upcie_ctrlr *ctrlr, const struct nvme_ioqpair *allocation,
@@ -564,18 +682,6 @@ _qpair_from_allocation(struct xnvme_be_upcie_ctrlr *ctrlr, const struct nvme_ioq
 	return 0;
 }
 
-/* Hand back the queue pair `qid`, which the server allocated for this process */
-static int
-_qpair_hand_back(struct xnvme_be_upcie_ctrlr *ctrlr, uint32_t qid)
-{
-	struct nvme_cplane_msg msg = {0};
-
-	msg.op = NVME_CPLANE_OP_FREE_IOQPAIR;
-	msg.u.free_ioqpair.qid = qid;
-
-	return xnvme_be_upcie_cplane_ask_ctrlr(ctrlr, &msg, NULL, NULL);
-}
-
 int
 xnvme_be_upcie_cplane_alloc_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_qpair *qpair,
 				  uint16_t depth)
@@ -598,7 +704,8 @@ xnvme_be_upcie_cplane_alloc_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvm
 
 	err = _qpair_from_allocation(ctrlr, &msg.u.alloc_ioqpair.allocation, qpair);
 	if (err) {
-		if (_qpair_hand_back(ctrlr, msg.u.alloc_ioqpair.allocation.qid)) {
+		if (xnvme_be_upcie_cplane_free_qpair_at(ctrlr,
+							msg.u.alloc_ioqpair.allocation.qid)) {
 			XNVME_DEBUG("FAILED: handing back qid(%u)",
 				    msg.u.alloc_ioqpair.allocation.qid);
 		}
@@ -676,7 +783,7 @@ xnvme_be_upcie_cplane_free_qpair(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme
 		return;
 	}
 
-	if (_qpair_hand_back(ctrlr, qpair->qid)) {
+	if (xnvme_be_upcie_cplane_free_qpair_at(ctrlr, qpair->qid)) {
 		XNVME_DEBUG("FAILED: handing back qid(%u)", qpair->qid);
 	}
 

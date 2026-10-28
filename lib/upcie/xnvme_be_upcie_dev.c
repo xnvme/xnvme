@@ -735,6 +735,113 @@ xnvme_be_upcie_dev_open(struct xnvme_dev *dev)
 	return 0;
 }
 
+int
+xnvme_be_upcie_ctrlr_qpair_create_at(struct xnvme_dev *dev, uint64_t sq_addr, uint64_t cq_addr,
+				     uint16_t depth, uint32_t *qid)
+{
+	struct xnvme_be_upcie_state *state;
+	struct nvme_controller *ctrl;
+	struct nvme_command cmd = {0};
+	struct nvme_completion cpl = {0};
+	uint16_t allocated;
+	int err;
+
+	if (!dev || !qid || !depth || !sq_addr || !cq_addr) {
+		return -EINVAL;
+	}
+
+	state = (void *)dev->be.state;
+	ctrl = state->ctrlr->ctrl;
+
+	err = nvme_qid_find_free(ctrl->qids);
+	if (err < 1) {
+		XNVME_DEBUG("FAILED: nvme_qid_find_free(); err(%d)", err);
+		return -EBUSY;
+	}
+	allocated = (uint16_t)err;
+
+	err = nvme_qid_alloc(ctrl->qids, allocated);
+	if (err) {
+		XNVME_DEBUG("FAILED: nvme_qid_alloc(%u); err(%d)", allocated, err);
+		return err;
+	}
+
+	/* CQ first: the SQ create names it */
+	cmd.opc = 0x5; ///< Create I/O Completion Queue
+	cmd.prp1 = cq_addr;
+	cmd.cdw10 = ((uint32_t)(depth - 1) << 16) | allocated;
+	cmd.cdw11 = 0x1; ///< Physically contiguous
+	err = nvme_qpair_submit_sync(&ctrl->aq, &cmd, ctrl->base.admin_timeout_ms, &cpl);
+	if (err || (cpl.status & 0xFFFE)) {
+		/* A refused create completes with a status rather than failing */
+		XNVME_DEBUG("FAILED: Create I/O CQ; err(%d) status(0x%x)", err,
+			    cpl.status & 0xFFFE);
+		nvme_qid_free(ctrl->qids, allocated);
+		return err ? err : -EIO;
+	}
+
+	memset(&cmd, 0, sizeof(cmd));
+	memset(&cpl, 0, sizeof(cpl));
+	cmd.opc = 0x1; ///< Create I/O Submission Queue
+	cmd.prp1 = sq_addr;
+	cmd.cdw10 = ((uint32_t)(depth - 1) << 16) | allocated;
+	cmd.cdw11 = ((uint32_t)allocated << 16) | 0x1;
+	err = nvme_qpair_submit_sync(&ctrl->aq, &cmd, ctrl->base.admin_timeout_ms, &cpl);
+	if (err || (cpl.status & 0xFFFE)) {
+		XNVME_DEBUG("FAILED: Create I/O SQ; err(%d) status(0x%x)", err,
+			    cpl.status & 0xFFFE);
+		xnvme_be_upcie_ctrlr_qpair_delete_id(dev, allocated);
+		return err ? err : -EIO;
+	}
+
+	*qid = allocated;
+
+	return 0;
+}
+
+int
+xnvme_be_upcie_ctrlr_qpair_delete_id(struct xnvme_dev *dev, uint32_t qid)
+{
+	struct xnvme_be_upcie_state *state;
+	struct nvme_controller *ctrl;
+	int err, first;
+
+	if (!dev || !qid) {
+		return -EINVAL;
+	}
+
+	state = (void *)dev->be.state;
+	ctrl = state->ctrlr->ctrl;
+
+	{
+		struct nvme_command cmd = {0};
+		struct nvme_completion cpl = {0};
+
+		cmd.opc = 0x0; ///< Delete I/O Submission Queue
+		cmd.cdw10 = qid;
+		first = nvme_qpair_submit_sync(&ctrl->aq, &cmd, ctrl->base.admin_timeout_ms, &cpl);
+		if (first) {
+			XNVME_DEBUG("FAILED: Delete I/O SQ(%u); err(%d)", qid, first);
+		}
+	}
+	{
+		struct nvme_command cmd = {0};
+		struct nvme_completion cpl = {0};
+
+		cmd.opc = 0x4; ///< Delete I/O Completion Queue
+		cmd.cdw10 = qid;
+		err = nvme_qpair_submit_sync(&ctrl->aq, &cmd, ctrl->base.admin_timeout_ms, &cpl);
+		if (err) {
+			XNVME_DEBUG("FAILED: Delete I/O CQ(%u); err(%d)", qid, err);
+		}
+	}
+
+	/* The identifier goes back regardless; the client is gone either way */
+	nvme_qid_free(ctrl->qids, (uint16_t)qid);
+
+	return first ? first : err;
+}
+
 #endif
 
 struct xnvme_be_dev g_xnvme_be_upcie_dev = {

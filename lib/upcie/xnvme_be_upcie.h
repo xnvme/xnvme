@@ -113,6 +113,14 @@ struct xnvme_be_upcie_state {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_upcie_state) == XNVME_BE_STATE_NBYTES, "Incorrect size")
 
+int
+xnvme_be_upcie_ctrlr_qpair_create_at(struct xnvme_dev *dev, uint64_t sq_addr, uint64_t cq_addr,
+				     uint16_t depth, uint32_t *qid);
+
+/** Delete a pair from xnvme_be_upcie_ctrlr_qpair_create_at(); its memory is the caller's */
+int
+xnvme_be_upcie_ctrlr_qpair_delete_id(struct xnvme_dev *dev, uint32_t qid);
+
 /** VFIO_CDEV mode: one iommufd handle with one IOAS, shared by all controllers */
 struct xnvme_be_upcie_rte_cdev {
 	struct iommufd iommufd;

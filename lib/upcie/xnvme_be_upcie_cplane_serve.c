@@ -129,6 +129,26 @@ xnvme_be_upcie_cplane_serve_admin_main(void *arg)
 				dev, &conn->msg.u.admin_cmd.cmd, &reply.u.admin_cmd.cpl);
 			break;
 
+		case NVME_CPLANE_OP_ALLOC_IOQPAIR_AT: {
+			uint32_t qid = 0;
+
+			pthread_mutex_lock(&g_upcie_cplane_serve_lock);
+			reply.result = xnvme_be_upcie_cplane_serve_ioqpair_alloc_at(
+				dev, conn, admin->devidx, &conn->msg, &conn->qpairs[conn->nqpairs],
+				&qid);
+			if (!reply.result) {
+				conn->qpairs[conn->nqpairs++].dev = admin->devidx;
+			}
+			pthread_mutex_unlock(&g_upcie_cplane_serve_lock);
+			if (reply.result) {
+				break;
+			}
+
+			reply.u.alloc_ioqpair_at.allocation.qid = qid;
+			reply.u.alloc_ioqpair_at.allocation.depth =
+				conn->msg.u.alloc_ioqpair_at.depth;
+		} break;
+
 		case NVME_CPLANE_OP_ALLOC_IOQPAIR:
 			pthread_mutex_lock(&g_upcie_cplane_serve_lock);
 			reply.result = xnvme_be_upcie_cplane_serve_ioqpair_alloc(
@@ -136,6 +156,57 @@ xnvme_be_upcie_cplane_serve_admin_main(void *arg)
 				&reply.u.alloc_ioqpair.allocation);
 			if (!reply.result) {
 				conn->qpairs[conn->nqpairs++].dev = admin->devidx;
+			}
+			pthread_mutex_unlock(&g_upcie_cplane_serve_lock);
+			break;
+
+		case NVME_CPLANE_OP_REGISTER_MEM: {
+			struct xnvme_be_upcie_cplane_serve_registration *held;
+
+			if (conn->in_fd < 0) {
+				reply.result = -EINVAL;
+				break;
+			}
+
+			pthread_mutex_lock(&g_upcie_cplane_serve_lock);
+			reply.result = xnvme_be_upcie_cplane_serve_conn_regs_grow(conn);
+			pthread_mutex_unlock(&g_upcie_cplane_serve_lock);
+			if (reply.result) {
+				break;
+			}
+
+			held = &conn->regs[conn->nregs];
+
+			pthread_mutex_lock(&g_upcie_cplane_serve_lock);
+			reply.result = xnvme_be_upcie_cplane_serve_register_mem(
+				conn->in_fd, conn->msg.u.mem.nbytes, conn->msg.u.mem.page_size,
+				g_upcie_cplane_serve.shares[admin->devidx].uri, &held->reg);
+			if (!reply.result) {
+				held->dev = admin->devidx;
+				conn->nregs++;
+			}
+			pthread_mutex_unlock(&g_upcie_cplane_serve_lock);
+			if (reply.result) {
+				break;
+			}
+
+			reply.u.mem.desc_offset = held->reg.desc_offset;
+		} break;
+
+		case NVME_CPLANE_OP_UNREGISTER_MEM:
+			reply.result = -ENOENT;
+			pthread_mutex_lock(&g_upcie_cplane_serve_lock);
+			for (int i = 0; i < conn->nregs; ++i) {
+				if ((conn->regs[i].reg.desc_offset !=
+				     conn->msg.u.mem.desc_offset) ||
+				    (conn->regs[i].dev != admin->devidx)) {
+					continue;
+				}
+
+				xnvme_be_upcie_cplane_serve_unregister_mem(&conn->regs[i].reg);
+				conn->regs[i] = conn->regs[--conn->nregs];
+				reply.result = 0;
+				break;
 			}
 			pthread_mutex_unlock(&g_upcie_cplane_serve_lock);
 			break;
@@ -161,6 +232,11 @@ xnvme_be_upcie_cplane_serve_admin_main(void *arg)
 		default:
 			reply.result = -ENOSYS;
 			break;
+		}
+
+		if (conn->in_fd >= 0) {
+			close(conn->in_fd);
+			conn->in_fd = -1;
 		}
 
 		/* A peer that stopped reading is gone; the reader drops it on the shutdown */
@@ -236,14 +312,20 @@ xnvme_be_upcie_cplane_serve_dispatch(struct xnvme_be_upcie_cplane_serve_conn *co
 	switch (conn->msg.op) {
 	case NVME_CPLANE_OP_ADMIN_CMD:
 	case NVME_CPLANE_OP_ALLOC_IOQPAIR:
+	case NVME_CPLANE_OP_ALLOC_IOQPAIR_AT:
 	case NVME_CPLANE_OP_FREE_IOQPAIR:
+	case NVME_CPLANE_OP_REGISTER_MEM:
+	case NVME_CPLANE_OP_UNREGISTER_MEM:
 		/* Offsets mean nothing to a client that has not mapped the heap */
-		if ((conn->msg.op == NVME_CPLANE_OP_ALLOC_IOQPAIR) &&
+		if (((conn->msg.op == NVME_CPLANE_OP_ALLOC_IOQPAIR) ||
+		     (conn->msg.op == NVME_CPLANE_OP_ALLOC_IOQPAIR_AT) ||
+		     (conn->msg.op == NVME_CPLANE_OP_REGISTER_MEM)) &&
 		    !(conn->inited & (UINT64_C(1) << (unsigned)idx))) {
 			reply.result = -ENOTCONN;
 			break;
 		}
-		if ((conn->msg.op == NVME_CPLANE_OP_ALLOC_IOQPAIR) &&
+		if (((conn->msg.op == NVME_CPLANE_OP_ALLOC_IOQPAIR) ||
+		     (conn->msg.op == NVME_CPLANE_OP_ALLOC_IOQPAIR_AT)) &&
 		    (conn->nqpairs == XNVME_BE_UPCIE_CPLANE_SERVE_IOQPAIRS_PER_CLIENT)) {
 			reply.result = -ENOSPC;
 			break;
@@ -341,6 +423,9 @@ xnvme_be_upcie_cplane_serve_drop(struct xnvme_be_upcie_cplane_serve_conn *conn)
 
 	for (int i = 0; i < conn->nqpairs; ++i) {
 		devs |= UINT64_C(1) << (unsigned)conn->qpairs[i].dev;
+	}
+	for (int i = 0; i < conn->nregs; ++i) {
+		devs |= UINT64_C(1) << (unsigned)conn->regs[i].dev;
 	}
 
 	if (devs) {
@@ -514,7 +599,20 @@ xnvme_be_upcie_cplane_serve_read(struct xnvme_be_upcie_cplane_serve_conn *conn)
 		return;
 	}
 
-	rc = nvme_cplane_msg_tryrecv(conn->sock, &conn->msg, NULL, NULL);
+	{
+		int in[NVME_CPLANE_FDS_MAX];
+		uint32_t nin = 0;
+
+		rc = nvme_cplane_msg_tryrecv(conn->sock, &conn->msg, in, &nin);
+
+		for (uint32_t f = 0; f < nin; ++f) {
+			if ((f == 0) && (conn->in_fd < 0)) {
+				conn->in_fd = in[f];
+				continue;
+			}
+			close(in[f]);
+		}
+	}
 	if (rc == -EAGAIN) {
 		pthread_mutex_unlock(&g_upcie_cplane_serve_lock);
 		return;
@@ -527,6 +625,10 @@ xnvme_be_upcie_cplane_serve_read(struct xnvme_be_upcie_cplane_serve_conn *conn)
 
 	send = xnvme_be_upcie_cplane_serve_dispatch(conn, &reply, fds, &nfds);
 	sock = conn->sock;
+	if ((send != XNVME_BE_UPCIE_CPLANE_SERVE_REPLY_NONE) && (conn->in_fd >= 0)) {
+		close(conn->in_fd);
+		conn->in_fd = -1;
+	}
 	pthread_mutex_unlock(&g_upcie_cplane_serve_lock);
 
 	if (send == XNVME_BE_UPCIE_CPLANE_SERVE_REPLY_NONE) {
@@ -628,6 +730,9 @@ xnvme_be_upcie_cplane_serve_teardown(void)
 		for (int q = 0; q < conn->nqpairs; ++q) {
 			conn->closing_devs |= UINT64_C(1) << (unsigned)conn->qpairs[q].dev;
 		}
+		for (int r = 0; r < conn->nregs; ++r) {
+			conn->closing_devs |= UINT64_C(1) << (unsigned)conn->regs[r].dev;
+		}
 		conn->closing_devs |= UINT64_C(1); /* Releases the slot even without queues */
 
 		for (int d = 0; d < g_upcie_cplane_serve.ndevs; ++d) {
@@ -677,6 +782,7 @@ xnvme_cplane_serve(struct xnvme_dev **devs, int ndevs, uint32_t cplane_id,
 
 	for (int i = 0; i < XNVME_BE_UPCIE_CPLANE_SERVE_CONNS_MAX; ++i) {
 		g_upcie_cplane_serve.conns[i].sock = -1;
+		g_upcie_cplane_serve.conns[i].in_fd = -1;
 	}
 
 	/* The reader drains it until empty, and a writer must not wait on a full one */
