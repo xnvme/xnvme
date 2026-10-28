@@ -1,5 +1,6 @@
 xnvmelib_rdma_source = files(
   'xnvme_be_rdma.c',
+  'xnvme_be_rdma_mem.c',
 )
 
 if get_option('with-rdma').enabled()
