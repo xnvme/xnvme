@@ -155,6 +155,14 @@ over **vfio-user**, installed in the container. The MAAS jobs need no host
 container: they run on the lab machines, and boot their guest there with the
 machine's drive passed through.
 
+.. _sec-ci-devenv:
+
+Reproducing a job, and developing in it
+#######################################
+
+The emulated jobs run the same make targets you run locally, in the same host
+container; :ref:`sec-tutorials-devs-linux-reproduce-ci` describes them.
+
 .. toctree::
    :maxdepth: 2
    :hidden:

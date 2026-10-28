@@ -144,6 +144,107 @@ docker:
 	docker run -it --privileged -w /tmp/xnvme --mount type=bind,source="$(shell pwd)",target=/tmp/xnvme --mount type=bind,source=/tmp/artifacts,target=/tmp/artifacts ghcr.io/xnvme/xnvme-devenv/host:v0.12.0 bash
 	@echo "## xNVME: docker [DONE]"
 
+DEVENV_IMAGE ?= ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
+DEVENV_ENGINE ?= docker
+DEVENV_NAME ?= xnvme-devenv-$(notdir $(CURDIR))
+DEVENV_HOME ?= $(CURDIR)/.devenv
+DEVENV_CACHE ?= $(HOME)/.cache/xnvme-devenv
+DEVENV_GUEST ?= $(shell cat $(CIJOE_GUEST_FILE) 2>/dev/null)
+export DEVENV_TESTS = $(TESTS)
+DEVENV_SSH_CONFIG = import sys, tomllib; c = tomllib.load(open(sys.argv[1], "rb"))["qemu"]; g = c["default_guest"]; f = c["guests"][g]["system_args"]["tcp_forward"]; print(f"[qemu.guests.{g}.system_args.tcp_forward]\nhost = {f['host']}\nguest = {f['guest']}\nhost_address = \"0.0.0.0\"")
+export DEVENV_SSH_CONFIG
+DEVENV_RUN = $(DEVENV_ENGINE) exec -e DEVENV_TESTS -e DEVENV_SSH_CONFIG $(DEVENV_NAME) bash -euo pipefail -c 'export PATH=$$HOME/.local/bin:$$PATH; $(1)'
+
+define devenv-up-help
+# Start the xnvme-devenv host container, unless running, the guest in it, and
+# provision this tree into the guest
+#
+# Optional: DEVENV_GUEST=<guest> (default: cijoe/current.guest), DEVENV_HOME,
+#           DEVENV_ENGINE=podman, DEVENV_IMAGE
+endef
+.PHONY: devenv-up
+devenv-up:
+	@echo "## xNVMe: devenv-up ($(DEVENV_GUEST))"
+	@test -n "$(DEVENV_GUEST)" || { echo "ERR: no guest; give DEVENV_GUEST=<guest>"; false; }
+	mkdir -p $(DEVENV_HOME) $(DEVENV_CACHE)
+	$(DEVENV_ENGINE) inspect $(DEVENV_NAME) >/dev/null 2>&1 || \
+		$(DEVENV_ENGINE) run -d --name $(DEVENV_NAME) --privileged -p 127.0.0.1::4200 \
+			-v $(CURDIR):/tmp/xnvme -v $(DEVENV_HOME):/root \
+			-v $(DEVENV_CACHE):/root/system_imaging -w /tmp/xnvme \
+			$(DEVENV_IMAGE) sleep infinity
+	$(call DEVENV_RUN,make guest-env <<< "$(DEVENV_GUEST)" && \
+		python3 -c "$$DEVENV_SSH_CONFIG" cijoe/configs/$(DEVENV_GUEST).toml > /root/devenv-ssh.toml && \
+		flock /root/system_imaging/.lock make guest-start GUEST_CONFIGS="--config /root/devenv-ssh.toml")
+	$(MAKE) devenv-provision
+	@echo "## xNVMe: devenv-up [DONE]"
+
+define devenv-provision-help
+# Build this tree's source archive and provision it into the running guest
+# from scratch: dependencies, a clean build, the Python bindings and fio
+endef
+.PHONY: devenv-provision
+devenv-provision:
+	@echo "## xNVMe: devenv-provision"
+	$(call DEVENV_RUN,make gen-artifacts ALLOW_DIRTY=1 && make guest-provision)
+	@echo "## xNVMe: devenv-provision [DONE]"
+
+define devenv-sync-help
+# Update the provisioned guest's source with this tree and rebuild only what
+# changed; devenv-provision starts over
+endef
+.PHONY: devenv-sync
+devenv-sync:
+	$(eval GUEST := $(shell cat $(CIJOE_GUEST_FILE)))
+	@echo "## xNVMe: devenv-sync ($(GUEST))"
+	$(call DEVENV_RUN,cd cijoe && cijoe workflows/devenv-sync.yaml --monitor \
+		--config configs/$(GUEST).toml --config configs/fio.toml --config configs/xnvme.toml \
+		--output cijoe-output-devenv-sync)
+	@echo "## xNVMe: devenv-sync [DONE]"
+
+define devenv-test-help
+# Run tests in the running guest: those TESTS selects, or the guest's test workflow
+#
+# Optional: TESTS=<pytest args>, e.g. TESTS='-k test_verify tests/logic'; without
+#           it TRANSPORT=<transport> and TEST_STEPS=<steps>, as for guest-test
+endef
+.PHONY: devenv-test
+devenv-test:
+	$(eval GUEST := $(shell cat $(CIJOE_GUEST_FILE)))
+	@echo "## xNVMe: devenv-test ($(GUEST))"
+ifneq ($(TESTS),)
+	$(call DEVENV_RUN,cd cijoe && cijoe workflows/devenv-tests.yaml --monitor \
+		--config configs/$(GUEST).toml --config configs/fio.toml --config configs/xnvme.toml \
+		--output cijoe-output-devenv-tests)
+else
+	$(call DEVENV_RUN,make guest-test TRANSPORT=$(TRANSPORT) TEST_STEPS="$(TEST_STEPS)")
+endif
+	@echo "## xNVMe: devenv-test [DONE]"
+
+define devenv-shell-help
+# Open a shell in the host container
+endef
+.PHONY: devenv-shell
+devenv-shell:
+	$(DEVENV_ENGINE) exec -it $(DEVENV_NAME) bash
+
+define devenv-ssh-help
+# SSH into the guest as root, on the port the host container publishes it on
+endef
+.PHONY: devenv-ssh
+devenv-ssh:
+	ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+		-p $$($(DEVENV_ENGINE) port $(DEVENV_NAME) 4200 | head -1 | sed 's/.*://') root@localhost
+
+define devenv-down-help
+# Stop the guest and remove the host container; DEVENV_HOME is kept
+endef
+.PHONY: devenv-down
+devenv-down:
+	@echo "## xNVMe: devenv-down"
+	-$(call DEVENV_RUN,make guest-stop)
+	$(DEVENV_ENGINE) rm -f $(DEVENV_NAME)
+	@echo "## xNVMe: devenv-down [DONE]"
+
 define cijoe-install-help
 # Install CIJOE and dependencies via pipx (used by CI and guest-env)
 endef
@@ -172,6 +273,8 @@ guest-select:
 
 define guest-start-help
 # Kill, initialize, and start the QEMU guest (reads from cijoe/current.guest)
+#
+# Optional: GUEST_CONFIGS='--config <file> ...', layered over the guest's own
 endef
 .PHONY: guest-start
 guest-start:
@@ -195,6 +298,7 @@ guest-start:
 		--config "configs/fio.toml" \
 		--config "configs/xnvme.toml" \
 		--config "configs/system_imaging.toml" \
+		$(GUEST_CONFIGS) \
 		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-guest-start,cijoe-output-guest-start)" \
 		guest_kill \
 		stage_nosi_guest \

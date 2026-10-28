@@ -55,3 +55,4 @@ selftest_results
 cijoe/current.guest
 # macos
 .DS_Store
+.devenv
