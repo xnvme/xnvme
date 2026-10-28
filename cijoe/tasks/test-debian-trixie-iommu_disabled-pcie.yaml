@@ -33,5 +33,5 @@ steps:
   uses: core.testrunner
   with:
     # Excluded from homi runs: kvs, dual_be and qublk (have no --homi-id)
-    args: '-k "(upcie or spdk) and not (fabrics or kvs or dual_be or qublk)" tests --homi-id 42 --timeout=1800 --timeout-method=thread'
+    args: '-k "(upcie or spdk) and not (fabrics or rdma or kvs or dual_be or qublk)" tests --homi-id 42 --timeout=1800 --timeout-method=thread'
     random_order: false

@@ -407,6 +407,12 @@ jobs:
       && github.event.inputs.job == 'verify'))
     uses: ./.github/workflows/verify-nvme-pcie-hardware.yml
 
+  verify-nvme-rdma-emulated:
+    needs: [source-archive, source-format-check, ffi-python]
+    if: github.event.inputs.job == 'all' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch'
+      && github.event.inputs.job == 'verify')
+    uses: ./.github/workflows/verify-nvme-rdma-emulated.yml
+
   verify-packaging:
     needs: [changes-to-docs, source-archive, source-format-check, ffi-python, docgen-shallow]
     if: needs.changes-to-docs.outputs.docs_prose_only != 'true'

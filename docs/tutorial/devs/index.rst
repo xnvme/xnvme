@@ -23,6 +23,9 @@ Guests
 The guest to pick depends on what you work on. Debian 13 is kept
 upstream-pure, a stock kernel with in-tree drivers only, so plain NVMe work
 runs on a kernel users run, without bleeding-edge surprises.
+The xnvme-devenv Ubuntu 26.10 guest carries what upstream does not have yet:
+a patched kernel, safl/linux 7.3.0-xnvme2, and drivers built for it, matched
+to the device servers in the host container of the same release.
 
 .. list-table::
    :header-rows: 1
@@ -38,6 +41,9 @@ runs on a kernel users run, without bleeding-edge surprises.
    * - NVMe/PCIe on a drive of your machine
      - ``debian-trixie-iommu_enabled``, ``freebsd-14`` or ``windows-11``
      - none; ``PASSTHRU=<bdf>`` names the drive
+   * - NVMe/RDMA
+     - ``ubuntu-2610-rocm``
+     - ``rdma-node-emulated``
 
 A rig is named for the machine it stands in for and where its devices come
 from. ``RIG`` takes a list of rig names or files, each one more **CIJOE**
