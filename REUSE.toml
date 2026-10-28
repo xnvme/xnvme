@@ -26,3 +26,9 @@ path = "toolbox/xnvme-driver.sh"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2016 Intel Corporation"
 SPDX-License-Identifier = "BSD-3-Clause"
+
+[[annotations]]
+path = ["lib/transport/common/xnvme_transport_rbtree.c", "lib/transport/common/xnvme_transport_rbtree.h"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Thomas Niemann"
+SPDX-License-Identifier = "LicenseRef-Niemann"
