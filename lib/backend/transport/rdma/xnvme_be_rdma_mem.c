@@ -237,7 +237,8 @@ xnvme_be_rdma_buf_free(const struct xnvme_dev *dev, void *buf)
 
 	err = xnvme_be_rdma_buf_unregister(dev, buf);
 	if (err) {
-		TRANSPORT_DEBUG("FAILED: xnvme_be_rdma_buf_unregister(), err: %d, buf=%p", err, buf);
+		TRANSPORT_DEBUG("FAILED: xnvme_be_rdma_buf_unregister(), err: %d, buf=%p", err,
+				buf);
 	}
 
 	xnvme_buf_virt_free(buf);

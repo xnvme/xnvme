@@ -2886,13 +2886,15 @@ struct xnvme_spec_ctrlr_cap {
 		struct {
 			union {
 				struct {
-					uint16_t mqes;   ///< Maximum Queue Entries Supported, bits 15:0
-					uint8_t cqr_ams; ///< bits 23:16, see XNVME_SPEC_CTRLR_CAP_CQR_AMS_*
-					uint8_t to;      ///< Timeout, in units of 500 ms, bits 31:24
+					uint16_t mqes;   ///< Maximum Queue Entries Supported, bits
+							 ///< 15:0
+					uint8_t cqr_ams; ///< bits 23:16, see
+							 ///< XNVME_SPEC_CTRLR_CAP_CQR_AMS_*
+					uint8_t to; ///< Timeout, in units of 500 ms, bits 31:24
 				};
 				uint32_t cdw0; ///< bits 31:0
 			};
-			uint32_t cdw1;   ///< bits 63:32, see XNVME_SPEC_CTRLR_CAP_CDW1_*
+			uint32_t cdw1; ///< bits 63:32, see XNVME_SPEC_CTRLR_CAP_CDW1_*
 		};
 		uint64_t raw;
 	};
@@ -2992,4 +2994,3 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_ctrlr_csts) == 4, "Incorrect size")
 #define XNVME_SPEC_CTRLR_CSTS_STS_PP 0x20
 /** Shutdown Type; bit 6 of 'sts' */
 #define XNVME_SPEC_CTRLR_CSTS_STS_ST 0x40
-
