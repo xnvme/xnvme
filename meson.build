@@ -126,6 +126,20 @@ if conf_data.get('XNVME_BE_UPCIE_CUDA_ENABLED')
   cuda_arch_args = ['-arch=native']
 endif
 
+# NVMe over RDMA backend support, linked against libibverbs and librdmacm.
+ibverbs_dep = cc.find_library(
+  'ibverbs',
+  has_headers: ['infiniband/verbs.h'],
+  required: get_option('with-rdma'),
+)
+rdmacm_dep = cc.find_library(
+  'rdmacm',
+  has_headers: ['rdma/rdma_cma.h'],
+  required: get_option('with-rdma'),
+)
+
+conf_data.set('XNVME_BE_RDMA_ENABLED', is_linux and ibverbs_dep.found() and rdmacm_dep.found())
+
 # uPCIe HIP/ROCm backend: AMD GPU device memory via the HIP host API (gcc, no
 # hipcc), linked against libamdhip64. Mirrors the CUDA backend above.
 hip_dep = cc.find_library(
