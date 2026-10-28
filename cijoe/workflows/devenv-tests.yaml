@@ -1,0 +1,16 @@
+---
+doc: |
+  Run chosen tests in a provisioned guest
+
+  The pytest arguments are DEVENV_TESTS, as 'make devenv-test TESTS=...'
+  passes them, e.g. '-k test_verify tests/logic/test_xnvme_tests_ioworker.py'.
+
+steps:
+- name: hugepages
+  uses: linux_setup_hugepages
+
+- name: tests
+  uses: core.testrunner
+  with:
+    args: '{{ local.env.DEVENV_TESTS }} --timeout=1800 --timeout-method=thread'
+    random_order: false
