@@ -472,43 +472,55 @@ You can reuse the qemu-guest to generate the documentation. See the
 
 .. _sec-tutorials-devs-linux-reproduce-ci:
 
-Reproduce GitHUB Actions locally
---------------------------------
+Developing in a guest
+---------------------
 
-The CI test suite can be reproduced locally using Docker. The
-``make docker`` target provides a privileged container with a custom QEMU
-build that includes NVMe device emulation.
+The ``devenv-*`` make targets keep one host container running, with this tree
+mounted, so a guest boots once and stays up while you change, rebuild and test
+against it::
 
-1. Build the source artifacts on your host:
+  make devenv-up DEVENV_GUEST=debian-trixie-iommu_disabled
+  make devenv-sync
+  make devenv-test TESTS='-k test_verify tests/logic/test_xnvme_tests_ioworker.py'
+  make devenv-down
 
-.. code-block:: bash
+* ``devenv-up`` starts the container, unless it is running, then the guest,
+  and provisions this tree into it: dependencies, a clean build, the Python
+  bindings and fio. ``DEVENV_GUEST`` is one of the guests ``make
+  guest-select`` lists, and defaults to the last selected.
 
-  make gen-artifacts ALLOW_DIRTY=1
+* ``devenv-sync`` updates the guest's source with this tree and rebuilds only
+  what changed, in the build directory the provision left, then installs; a
+  change to one source file takes seconds. A file deleted from the tree stays
+  in the guest; ``devenv-provision`` starts over from a clean build.
 
-2. Drop into the Docker container:
+* ``devenv-test`` runs the tests ``TESTS`` selects, as pytest arguments, or
+  without it the guest's test workflow, as ``guest-test`` does, with
+  ``TRANSPORT`` and ``TEST_STEPS`` passed through. ``TESTS`` replaces the
+  workflow's own selection, so add what it leaves out for the guest, such as
+  ``-k "not fabrics and not libvfn"`` on a guest without an IOMMU. ``TESTS``
+  is for the Linux guests; on FreeBSD, run the guest's test workflow.
 
-.. code-block:: bash
+* ``devenv-shell`` opens a shell in the host container, and ``devenv-ssh`` an
+  SSH session in the guest, as root, on the port the container publishes the
+  guest's SSH on.
 
-  make docker
+* ``devenv-down`` stops the guest and removes the container.
 
-The container bind-mounts the repository at ``/tmp/xnvme`` and
-``/tmp/artifacts``, so the artifacts from step 1 are available inside.
+The container's home is ``DEVENV_HOME`` (default ``.devenv`` in this tree),
+which keeps **CIJOE** and the guest across ``devenv-down``. The staged guest
+images are in ``DEVENV_CACHE`` (default ``~/.cache/xnvme-devenv``), which every
+checkout's environment shares, so point it at a disk that has the room.
+``DEVENV_ENGINE=podman`` runs it with Podman instead of Docker, and
+``DEVENV_IMAGE`` picks another host container, by default the one the **CI**
+jobs use. Each checkout gets an environment of its own, named for its
+directory (``DEVENV_NAME``), so several, such as one per worktree, run side by
+side on one machine.
 
-3. Inside the container, set up CIJOE, select a guest, and run tests:
-
-.. code-block:: bash
-
-  # Install CIJOE and select guest
-  echo debian-trixie | make guest-env
-
-  # Test
-  make verify-guest
-
-  # Or generate documentation
-  make docgen-guest
-
-In case you are setting up the test-target using other tools, or just want to
-run pytest directly, then the following two sections describe how to do that.
+The ``guest-*`` targets the ``devenv-*`` ones run can also be run by hand in
+the container, ``make devenv-shell``, for instance ``make verify-guest`` for a
+whole provision and test run as a **CI** job does it, or ``make docgen-guest``
+for the documentation.
 
 Running pytest from the repository
 ----------------------------------
