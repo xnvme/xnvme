@@ -408,9 +408,10 @@ jobs:
     uses: ./.github/workflows/verify-nvme-pcie-hardware.yml
 
   verify-nvme-rdma-emulated:
-    needs: [source-archive, source-format-check, ffi-python]
-    if: github.event.inputs.job == 'all' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch'
-      && github.event.inputs.job == 'verify')
+    needs: [source-archive, source-format-check, ffi-python, changes-to-docs]
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event.inputs.job == 'all' || (github.event_name
+      == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ernic')) || (github.event_name == 'workflow_dispatch'
+      && github.event.inputs.job == 'verify'))
     uses: ./.github/workflows/verify-nvme-rdma-emulated.yml
 
   verify-packaging:
@@ -421,12 +422,12 @@ jobs:
   #
   # The one check that branch protection requires. It fails when any job failed or
   # was cancelled. A pull-request changing code must also have run the 'maas'
-  # verification, which needs the 'maas' label; a documentation-only one needs the
-  # docs to build.
+  # verification and the RDMA guest, which need the labels 'maas' and 'ernic'; a
+  # documentation-only one needs the docs to build.
   #
   ci-result:
     needs: [changes-to-docs, source-archive, source-format-check, ffi-python, ffi-rust, matrices, docgen-shallow, build, verify-makefile,
-      verify-nvme-pcie-emulated, verify-nvme-pcie-hardware, verify-packaging, docgen-full]
+      verify-nvme-pcie-emulated, verify-nvme-pcie-hardware, verify-nvme-rdma-emulated, verify-packaging, docgen-full]
     runs-on: ubuntu-24.04
     if: always()
 
@@ -446,12 +447,13 @@ jobs:
         fi
         required="source-format-check docgen-shallow"
         if [ "$EVENT" = "pull_request" ] && [ "$DOCS_PROSE_ONLY" != "true" ]; then
-          required="$required verify-nvme-pcie-hardware"
+          required="$required verify-nvme-pcie-hardware verify-nvme-rdma-emulated"
         fi
         for job in $required; do
           result=$(jq -r --arg job "$job" '.[$job].result' <<< "$RESULTS")
           if [ "$result" != "success" ]; then
             case "$job" in
+            verify-nvme-rdma-emulated) echo "::error::$job is required and was $result; a change to code needs the 'ernic' label" ;;
             verify-nvme-pcie-hardware) echo "::error::$job is required and was $result; a change to code needs the 'maas' label" ;;
             *) echo "::error::$job is required and was $result" ;;
             esac
