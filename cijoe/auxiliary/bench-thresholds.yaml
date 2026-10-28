@@ -1,0 +1,30 @@
+---
+# Floors for benchmark_threshold, by 'os.name': the geometric mean, over a
+# run's iosizes and iodepths, of an xNVMe engine's IOPS over its native peer's.
+# Each is 95% of the lowest of five runs on main, the Windows ones of three
+# runs with the windowsaio fix, so a drop that fails is 5% beyond the variation
+# between runs.
+debian:
+  io_uring-bdev_xnvme/io_uring-bdev_uring: 1.51
+  io_uring-bdev_xnvme_conserve_cpu/io_uring-bdev_uring: 0.92
+  io_uring_cmd-bdev_xnvme/io_uring-bdev_uring: 1.72
+  io_uring_cmd-bdev_xnvme_conserve_cpu/io_uring-bdev_uring: 1.02
+  libaio-bdev_xnvme/libaio-bdev_aio: 0.91
+  xnvme_io_uring/io_uring: 0.90
+  xnvme_io_uring_cmd/io_uring_cmd: 0.98
+  xnvme_libaio/libaio: 0.98
+  xnvme_null/null: 1.01
+  xnvme_posix/posixaio: 0.97
+  xnvme_spdk/spdk: 0.93
+  xnvme_spdk/spdk_bdev: 0.94
+freebsd:
+  xnvme_kqueue/posixaio: 0.93
+  xnvme_null/null: 0.95
+  xnvme_posix/posixaio: 0.85
+  xnvme_spdk/spdk: 0.94
+  xnvme_spdk/spdk_bdev: 0.94
+windows:
+  xnvme_iocp/windowsaio: 1.18
+  xnvme_iocp_th/windowsaio: 1.00
+  xnvme_ioring/windowsaio: 1.37
+  xnvme_null/null: 0.86
