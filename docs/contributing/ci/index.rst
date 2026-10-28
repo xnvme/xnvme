@@ -103,11 +103,15 @@ vfio-user device servers to a `nosi`_ base; the guest images come from
 Both publish **OCI** artifacts on **GHCR**.
 
 * **Host containers** carry the toolchain the **GHA** job itself uses: **QEMU**
-  binaries, **CIJOE**, devbind / hugepages helpers, and ``vfu_kvssd``.
+  binaries, **CIJOE**, devbind / hugepages helpers, and ``vfu_kvssd``. They
+  also carry the rigs a guest boots with, its PCIe topology and NVMe
+  controllers, and the scripts that boot them. The **QEMU** jobs boot
+  ``storage-node-emulated``; ``make guest-start RIG=<rig> ...`` takes others,
+  rig names or files, each layered over the one before.
 
 * **Guest disk images** are the qcow2 boot disk the in-job **QEMU** instance
   runs. They are pulled in-job by the ``stage_nosi_guest`` **CIJOE** script
-  (invoked from ``provision-using-tgz.yaml`` and ``provision-maas-using-tgz
+  (invoked from ``guest.yaml`` and ``provision-maas-using-tgz
   .yaml`` right before ``guest_initialize``), which talks directly to the
   **OCI** Distribution API via stdlib ``urllib`` (no ``oras`` CLI dependency);
   the blob digest is pinned in each **CIJOE** config's ``[guest_image].url``.

@@ -59,10 +59,6 @@ system_args.raw = """\
 system_args.tcp_forward = {host = 4200, guest = 22}
 #system_args.host_share = "{{ local.env.HOME }}/git"
 
-[kvssd]
-binary = "/usr/bin/vfu_kvssd"
-socket = "/tmp/vfu_kvssd.sock"
-
 # =============================================================================
 # Devices - One namespace per controller to match flattened QEMU layout
 # =============================================================================

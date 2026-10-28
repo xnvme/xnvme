@@ -53,6 +53,7 @@ dist
 selftest_results
 *.egg-info
 cijoe/current.guest
+cijoe/current.rig
 # macos
 .DS_Store
 .devenv
