@@ -30,8 +30,12 @@ xnvme_hip_buf_clear(void *buf, size_t nbytes)
 	hipError_t err;
 
 	err = hipMemset(buf, 0, nbytes);
+	if (err == hipSuccess) {
+		err = hipDeviceSynchronize();
+	}
 	if (err != hipSuccess) {
-		XNVME_DEBUG("FAILED: hipMemset, err: %s", hipGetErrorString(err));
+		XNVME_DEBUG("FAILED: hipMemset/hipDeviceSynchronize, err: %s",
+			    hipGetErrorString(err));
 		return -EIO;
 	}
 

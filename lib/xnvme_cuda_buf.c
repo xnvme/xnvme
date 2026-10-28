@@ -30,8 +30,12 @@ xnvme_cuda_buf_clear(void *buf, size_t nbytes)
 	cudaError_t err;
 
 	err = cudaMemset(buf, 0, nbytes);
+	if (err == cudaSuccess) {
+		err = cudaDeviceSynchronize();
+	}
 	if (err != cudaSuccess) {
-		XNVME_DEBUG("FAILED: cudaMemset, err: %s", cudaGetErrorString(err));
+		XNVME_DEBUG("FAILED: cudaMemset/cudaDeviceSynchronize, err: %s",
+			    cudaGetErrorString(err));
 		return -EIO;
 	}
 
