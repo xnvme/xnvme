@@ -1,7 +1,9 @@
 xnvmelib_rdma_source = files(
   'xnvme_be_rdma.c',
   'xnvme_be_rdma_cm.c',
+  'xnvme_be_rdma_ctrlr.c',
   'xnvme_be_rdma_mem.c',
+  'xnvme_be_rdma_qpair.c',
   'xnvme_be_rdma_verbs.c',
 )
 
