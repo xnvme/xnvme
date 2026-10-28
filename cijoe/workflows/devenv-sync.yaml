@@ -1,0 +1,20 @@
+---
+doc: |
+  Rebuild a provisioned guest's xNVMe from the local working tree
+
+  For a guest that 'provision-using-tgz.yaml' provisioned: updates its source
+  with the local tree, then rebuilds incrementally in the builddir that
+  provision left, so a change rebuilds only what it touches, and installs.
+
+steps:
+- name: xnvme_source_update
+  uses: xnvme_source_update
+  with:
+    xnvme_source: '{{ config.xnvme.repository.sync.remote_path }}'
+
+- name: xnvme_rebuild
+  run: |
+    cd {{ config.xnvme.repository.sync.remote_path }} && meson compile -C builddir && meson install -C builddir
+
+- name: ldconfig
+  run: ldconfig /usr/local/lib/ || true
