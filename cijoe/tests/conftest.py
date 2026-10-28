@@ -44,7 +44,7 @@ def pytest_configure(config):
 def get_osname():
     """Return normalized OS name from CIJOE config"""
     osname = pytest.cijoe_instance.getconf("os.name", "linux")
-    if osname == "debian":
+    if osname in ("debian", "ubuntu"):
         osname = "linux"
     return osname
 
