@@ -534,7 +534,7 @@ verify-ramdisk:
 define verify-guest-help
 # Chain: guest-start + guest-provision + guest-test (reads from cijoe/current.guest)
 #
-# Requires: A custom QEMU environment (run: make docker)
+# Requires: the xnvme-devenv host container (run: make devenv-up, or make docker)
 # Requires: Guest selected via 'make guest-select'
 # Requires: /tmp/artifacts/xnvme-src.tar.gz (run: make gen-artifacts ALLOW_DIRTY=1)
 # Optional: CIJOE_OUTPUT=<prefix> for CI artifact naming
