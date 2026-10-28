@@ -106,6 +106,10 @@ A verification job gets its NVMe devices from one of three sources:
 The guest follows what is verified. Debian 13 is kept upstream-pure, a stock
 kernel and in-tree drivers only, and verifies the transports on a kernel users
 run.
+The xnvme-devenv Ubuntu 26.10 guest carries a patched kernel and the drivers
+built for it, matched to the device servers in the host container of the same
+release, and verifies what needs them; a driver and a server from different
+releases present as a wedged device rather than an error.
 
 .. list-table:: What runs where
    :header-rows: 1
@@ -123,6 +127,11 @@ run.
      - ``verify-physical``: macOS 14, through MacVFN
    * - NVMe/TCP
      - ``verify``: Debian 13, the kernel and SPDK initiators
+     - none
+     - none
+   * - NVMe/RDMA
+     - ``verify-ernic``: the xnvme-devenv Ubuntu 26.10 guest; rig
+       ``rdma-node-emulated``
      - none
      - none
 
@@ -180,6 +189,9 @@ Both publish **OCI** artifacts on **GHCR**.
    * - ``verify (freebsd, 14)``
      - ``xnvme/xnvme-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
      - ``safl/nosi/freebsd-14-headless``
+   * - ``verify-ernic``
+     - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE, rocm-ernic server)
+     - ``xnvme/xnvme-devenv/guest-ubuntu-2610``
    * - ``verify-maas (debian, trixie)``
      - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE), on the MAAS runner
      - ``safl/nosi/debian-13-headless``
