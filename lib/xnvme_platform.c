@@ -5,6 +5,8 @@
 #include <errno.h>
 #include <stddef.h>
 #include <string.h>
+#include <netdb.h>
+
 #include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_be_cref.h>
@@ -13,6 +15,7 @@
 #include <xnvme_platform.h>
 
 #define XNVME_MAX_NS_LIST_SIZE 1024
+#define XNVME_DISCOVERY_MAX_ENTRY_COUNT 16
 
 struct xnvme_platform *g_xnvme_platform =
 #if defined(XNVME_PLATFORM_LINUX_ENABLED)
@@ -268,6 +271,60 @@ struct enumerate_scan_ctx {
 	void *anchor;
 };
 
+static inline bool
+_uri_is_ipv4(const char *node, const char *service)
+{
+	const struct addrinfo hints = {
+		.ai_family = AF_INET,
+		.ai_socktype = SOCK_STREAM,
+	};
+	struct addrinfo *res;
+	int err;
+
+	err = getaddrinfo(node, service, &hints, &res);
+	if (err) {
+		XNVME_DEBUG("FAILED: getaddrinfo('%s', '%s'), err: %d", node, service, err);
+		return false;
+	}
+	freeaddrinfo(res);
+
+	return true;
+}
+
+static inline bool
+_uri_is_ipv6(const char *node, const char *service)
+{
+	const struct addrinfo hints = {
+		.ai_family = AF_INET6,
+		.ai_socktype = SOCK_STREAM,
+	};
+	struct addrinfo *res;
+	int err;
+
+	err = getaddrinfo(node, service, &hints, &res);
+	if (err) {
+		XNVME_DEBUG("FAILED: getaddrinfo('%s', '%s'), err: %d", node, service, err);
+		return false;
+	}
+	freeaddrinfo(res);
+
+	return true;
+}
+
+static bool
+_uri_is_fabric(const char *sys_uri)
+{
+	char addr[256];
+	char port[6];
+
+	if (sscanf(sys_uri, "%[^:]:%s", addr, port) != 2) {
+		XNVME_DEBUG("FAILED: uri: %s", sys_uri);
+		return false;
+	}
+
+	return _uri_is_ipv4(addr, port) || _uri_is_ipv6(addr, port);
+}
+
 /**
  * Open controller with nsid=0, send Identify Active Namespace List,
  * then open each namespace and invoke ctx->cb_func.
@@ -281,7 +338,7 @@ struct enumerate_scan_ctx {
  * completes.
  */
 static int
-enumerate_controller(const char *uri, const char *kernel_driver, struct enumerate_scan_ctx *ctx)
+_enumerate_controller(const char *uri, const char *kernel_driver, struct enumerate_scan_ctx *ctx)
 {
 	struct xnvme_opts ctrlr_opts = *ctx->opts;
 	struct xnvme_dev *ctrlr_dev;
@@ -371,6 +428,131 @@ exit:
 	}
 	xnvme_dev_close(ctrlr_dev);
 	return 0;
+}
+
+// TODO: This function currently is limited to fetching 16 discovery log entries
+// If more pages exist, then they are not fetched. Leaving this to future work to
+// expand this function to include the generation counter from the log page, and
+// fetching more than 16 log pages if more are advertised.
+static int
+_enumerate_discovery_controller(const char *uri, const char *kernel_driver,
+				struct enumerate_scan_ctx *ctx)
+{
+	// Implementation for enumerating discovery controllers goes here
+	struct xnvme_opts ctrlr_opts = *ctx->opts;
+	struct xnvme_dev *ctrlr_dev;
+	struct xnvme_cmd_ctx cmd_ctx;
+	struct xnvme_spec_discovery_log_page *log;
+	struct xnvme_spec_discovery_log_page_entry *entry;
+	struct xnvme_spec_discovery_log_page_entry *pages;
+	size_t buf_size;
+	int err;
+
+	if (ctx->opts->subnqn && !strstr(ctx->opts->subnqn, "discovery")) {
+		// use the controller-direct method of enumeration when the subnqn is not a
+		// discovery subnqn
+		return _enumerate_controller(uri, kernel_driver, ctx);
+	}
+
+	if (ctx->opts->be && strcasecmp(ctx->opts->be, "spdk") == 0) {
+		// redirect to the old mechanism for SPDK
+		return _enumerate_controller(uri, kernel_driver, ctx);
+	}
+
+	ctrlr_opts.nsid = 0;
+	ctrlr_opts.subnqn = ctx->opts->subnqn ? ctx->opts->subnqn : XNVME_DISCOVERY_NQN;
+	ctrlr_dev = xnvme_dev_open(uri, &ctrlr_opts);
+	if (!ctrlr_dev) {
+		XNVME_DEBUG("FAILED: xnvme_dev_open(%s) for controller", uri);
+		return -errno;
+	}
+
+	if (strcasecmp(ctrlr_dev->be.attr.name, "spdk") == 0) {
+		// redirect to the old mechanism for SPDK
+		xnvme_dev_close(ctrlr_dev);
+		return _enumerate_controller(uri, kernel_driver, ctx);
+	}
+
+	if (kernel_driver) {
+		snprintf(ctrlr_dev->ident.kernel_driver, sizeof(ctrlr_dev->ident.kernel_driver),
+			 "%s", kernel_driver);
+	}
+
+	buf_size = sizeof(*log) + sizeof(*entry) * XNVME_DISCOVERY_MAX_ENTRY_COUNT;
+	log = xnvme_buf_alloc(ctrlr_dev, buf_size);
+	if (!log) {
+		XNVME_DEBUG("FAILED: xnvme_buf_alloc()");
+		xnvme_dev_close(ctrlr_dev);
+		return -ENOMEM;
+	}
+
+	err = xnvme_buf_clear(log, buf_size);
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_buf_clear(), err: %d", err);
+		xnvme_buf_free(ctrlr_dev, log);
+		xnvme_dev_close(ctrlr_dev);
+		return err;
+	}
+
+	cmd_ctx = xnvme_cmd_ctx_from_dev(ctrlr_dev);
+	err = xnvme_adm_log(&cmd_ctx, XNVME_SPEC_LOG_DISCOVERY, 0, 0, 0, 0, log, buf_size);
+	if (err || xnvme_cmd_ctx_cpl_status(&cmd_ctx)) {
+		XNVME_DEBUG("FAILED: Get Discovery Log, err: %d", err);
+		xnvme_buf_free(ctrlr_dev, log);
+		xnvme_dev_close(ctrlr_dev);
+		return err ? err : -EIO;
+	}
+
+	if (!log->numrec) {
+		XNVME_DEBUG("INFO: No discovery log entries found");
+		goto exit;
+	}
+
+	pages = xnvme_buf_virt_alloc(0x1000, buf_size);
+	if (!pages) {
+		XNVME_DEBUG("FAILED: xnvme_buf_virt_alloc()");
+		goto exit;
+	}
+
+	// Copy data out of IO buffer, since this can be CUDA memory
+	err = xnvme_buf_memcpy(pages, log->first, log->numrec * sizeof(*pages));
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_buf_memcpy(), err: %d", err);
+		goto free_pages;
+	}
+
+	for (uint64_t i = 0; i < log->numrec; ++i) {
+		entry = &pages[i];
+
+		ctx->opts->subnqn = entry->subnqn;
+		_enumerate_controller(uri, kernel_driver, ctx);
+	}
+
+free_pages:
+	xnvme_buf_virt_free(pages);
+exit:
+	xnvme_buf_free(ctrlr_dev, log);
+
+	if (!ctx->anchor) {
+		const struct xnvme_be_cref_entry *cref = xnvme_be_cref_get(uri);
+
+		if (cref) {
+			ctx->anchor = cref->ctrlr;
+		}
+	}
+	xnvme_dev_close(ctrlr_dev);
+	return 0;
+}
+
+static int
+enumerate_controller(const char *uri, const char *kernel_driver, struct enumerate_scan_ctx *ctx)
+{
+	int uri_is_remote = _uri_is_fabric(uri);
+
+	if (!uri_is_remote) {
+		return _enumerate_controller(uri, kernel_driver, ctx);
+	}
+	return _enumerate_discovery_controller(uri, kernel_driver, ctx);
 }
 
 /**

@@ -1,0 +1,2 @@
+subdir('common')
+subdir('rdma')

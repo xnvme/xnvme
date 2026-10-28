@@ -60,7 +60,7 @@ xnvme_platform_freebsd_classify(const char *uri)
 
 	/* Fabrics address:port */
 	if (strchr(uri, ':')) {
-		return XNVME_BE_CAP_NVME_TCP;
+		return XNVME_BE_CAP_NVME_TCP | XNVME_BE_CAP_NVME_RDMA;
 	}
 
 	/* A path we could not stat() and which matched nothing else is assumed
@@ -276,6 +276,9 @@ struct xnvme_platform g_xnvme_platform_freebsd = {
 			&g_xnvme_be_ramdisk_emu,
 			&g_xnvme_be_ramdisk_thrpool,
 			&g_xnvme_be_ramdisk_nil,
+#endif
+#ifdef XNVME_BE_RDMA_ENABLED
+			&g_xnvme_be_rdma,
 #endif
 			NULL,
 		},
