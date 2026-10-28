@@ -39,3 +39,7 @@ steps:
     report_subtitle: "Latency Report"
     runs: auxiliary/bench-latency-runs.yaml
 
+- name: threshold
+  uses: benchmark_threshold
+  with:
+    thresholds: auxiliary/bench-thresholds.yaml

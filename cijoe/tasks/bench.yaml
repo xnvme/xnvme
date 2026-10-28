@@ -51,3 +51,8 @@ steps:
   with:
     report_title: "xNVMe in SPDK"
     report_subtitle: "Performance Report"
+
+- name: threshold
+  uses: benchmark_threshold
+  with:
+    thresholds: auxiliary/bench-thresholds.yaml
