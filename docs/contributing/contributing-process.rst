@@ -24,7 +24,9 @@ Contribution Process
     A pull-request changing code also needs the verification on physical
     devices, which runs once the pull-request has the label ``maas``; until
     then ``ci-result`` fails
-  - One manual CI-job is triggered via the label ``bench``
+  - The benchmarks run weekly, on a manual run with the job ``bench``, and on
+    a pull-request with the label ``bench``; they are not part of
+    ``ci-result``, so they never block merging
 
 * Go over the :ref:`sec-contributing-process-pr-checklist` and re-iterate on
   your pull-request / changes
