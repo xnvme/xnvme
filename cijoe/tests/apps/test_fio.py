@@ -52,6 +52,8 @@ def test_fio_engine_iov(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[sync=nvme] on FreeBSD does not implement iovec")
     if be_opts["admin"] == "driverkit":
         pytest.skip(reason="[admin=driverkit] does not implement iovec")
+    if "novec" in device["labels"]:
+        pytest.skip(reason="[novec] the target takes no vectored commands")
     if be_opts["mem"] == "upcie-cuda":
         pytest.skip(
             reason="[mem=upcie-cuda] fio xNVMe ioengine does not support CUDA memory"
