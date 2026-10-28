@@ -767,7 +767,8 @@ xnvme_cplane_serve(struct xnvme_dev **devs, int ndevs, uint32_t cplane_id,
 		return -EOPNOTSUPP;
 	}
 
-	if (strcmp(devs[0]->be.attr.name, "upcie")) {
+	/* The prefix covers upcie-cuda and upcie-hip */
+	if (strncmp(devs[0]->be.attr.name, "upcie", 5)) {
 		XNVME_DEBUG("FAILED: serving is uPCIe's; be(%s) has its own arrangement",
 			    devs[0]->be.attr.name);
 		return -ENOSYS;

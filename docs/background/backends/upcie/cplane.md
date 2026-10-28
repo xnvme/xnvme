@@ -215,7 +215,11 @@ one place where a policy could be applied and of a record that needs no lock.
 
 ### GPU clients
 
-A controller behind an IOMMU cannot yet DMA into VRAM: `IOMMU_IOAS_MAP_FILE`
-does not accept dma-bufs exported by CUDA or HIP. GPU workloads therefore stay
-on `uio_pci_generic` until that changes, and the vfio path serves
-CPU-submitted I/O into host memory.
+A GPU client registers its own device memory and the server describes it to
+the controller, so I/O a client submits from the host reaches VRAM under
+either attachment mode. Behind an IOMMU that description cannot come from
+mapping the dma-buf, since `IOMMU_IOAS_MAP_FILE` does not accept one exported
+by CUDA or HIP; it is installed from the physical addresses behind it instead,
+by the server here and by a process that opened the controller for itself.
+A region registered again, for another controller, is handed the description
+it already has, so the addresses a client resolves through do not change.

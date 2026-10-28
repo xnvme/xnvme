@@ -8,6 +8,7 @@
 #include <stdatomic.h>
 
 #include <xnvme_be.h>
+#include <xnvme_be_cref.h>
 #include <xnvme_queue.h>
 
 #define _UPCIE_WITH_NVME

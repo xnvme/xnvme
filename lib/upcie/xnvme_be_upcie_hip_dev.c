@@ -9,9 +9,24 @@
 #include <stdatomic.h>
 #include <stdlib.h>
 #include <xnvme_dev.h>
+#include <xnvme_be_upcie_cplane_client.h>
 #include <xnvme_be_upcie_hip.h>
 
 static _Atomic int g_hip_ctrlr_count;
+
+static void
+_hip_ctrlr_term(struct xnvme_be_upcie_hip_ctrlr *slot)
+{
+	if (!slot->ctrlr) {
+		return;
+	}
+	if (slot->reg_offset) {
+		/* Unchecked: a server that has gone reclaims on the socket closing */
+		xnvme_be_upcie_cplane_unregister_client_mem(slot->ctrlr, slot->reg_offset);
+	}
+
+	memset(slot, 0, sizeof(*slot));
+}
 
 static void
 _hip_rte_term(void)
@@ -21,18 +36,73 @@ _hip_rte_term(void)
 	}
 
 	dmamem_destroy(&g_upcie_hip_rte.dmem);
+	for (int i = 0; i < XNVME_BE_CREF_MAX_ENTRIES; ++i) {
+		_hip_ctrlr_term(&g_upcie_hip_rte.ctrlrs[i]);
+	}
 	hipmem_heap_term(&g_upcie_hip_rte.hip_heap);
 
 	g_upcie_hip_rte.is_initialized = 0;
 }
 
+static struct xnvme_be_upcie_hip_ctrlr *
+_hip_ctrlr_slot(struct xnvme_be_upcie_ctrlr *ctrlr)
+{
+	struct xnvme_be_upcie_hip_ctrlr *free_slot = NULL;
+
+	for (int i = 0; i < XNVME_BE_CREF_MAX_ENTRIES; ++i) {
+		struct xnvme_be_upcie_hip_ctrlr *slot = &g_upcie_hip_rte.ctrlrs[i];
+
+		if (slot->ctrlr == ctrlr) {
+			return slot;
+		}
+		if (!free_slot && !slot->ctrlr) {
+			free_slot = slot;
+		}
+	}
+
+	return free_slot;
+}
+
 static int
-_hip_rte_init(size_t heap_size, uint32_t gpu_id)
+_hip_ctrlr_init(struct xnvme_be_upcie_ctrlr *ctrlr)
+{
+	struct xnvme_be_upcie_hip_ctrlr *slot = _hip_ctrlr_slot(ctrlr);
+	const struct hostmem_shared_desc *desc = NULL;
+	int err;
+
+	if (!slot) {
+		XNVME_DEBUG("FAILED: more than %d controllers on one GPU runtime",
+			    XNVME_BE_CREF_MAX_ENTRIES);
+		return -ENOSPC;
+	}
+	if (slot->ctrlr) {
+		return 0;
+	}
+	slot->ctrlr = ctrlr;
+
+	if (!g_upcie_rte.connection.alive) {
+		return 0;
+	}
+
+	err = xnvme_be_upcie_cplane_register_client_mem(
+		ctrlr, g_upcie_hip_rte.hip_heap.dmabuf.fd, g_upcie_hip_rte.hip_heap.size,
+		(uint32_t)g_upcie_hip_rte.hip_config.device_pagesize, &desc, &slot->reg_offset);
+	if (err) {
+		XNVME_DEBUG("FAILED: registering the HIP heap for the controller; err(%d)", err);
+		memset(slot, 0, sizeof(*slot));
+		return err;
+	}
+
+	return 0;
+}
+
+static int
+_hip_rte_init(size_t heap_size, uint32_t gpu_id, struct xnvme_be_upcie_ctrlr *ctrlr)
 {
 	int err;
 
 	if (g_upcie_hip_rte.is_initialized) {
-		return 0;
+		return _hip_ctrlr_init(ctrlr);
 	}
 
 	if (!heap_size) {
@@ -66,10 +136,33 @@ _hip_rte_init(size_t heap_size, uint32_t gpu_id)
 	err = hipmem_heap_init(&g_upcie_hip_rte.hip_heap, heap_size, &g_upcie_hip_rte.hip_config);
 	if (err) {
 		XNVME_DEBUG("FAILED: hipmem_heap_init(); err(%d)", err);
-		return -ENOMEM;
+		return err;
 	}
 
-	if (!xnvme_be_upcie_iova_range_required()) {
+	if (g_upcie_rte.connection.alive) {
+		struct xnvme_be_upcie_hip_ctrlr *slot = &g_upcie_hip_rte.ctrlrs[0];
+		const struct hostmem_shared_desc *desc = NULL;
+
+		slot->ctrlr = ctrlr;
+		err = xnvme_be_upcie_cplane_register_client_mem(
+			ctrlr, g_upcie_hip_rte.hip_heap.dmabuf.fd, g_upcie_hip_rte.hip_heap.size,
+			(uint32_t)g_upcie_hip_rte.hip_config.device_pagesize, &desc,
+			&slot->reg_offset);
+		if (!err) {
+			err = dmamem_from_shared(&g_upcie_hip_rte.dmem,
+						 (void *)(uintptr_t)g_upcie_hip_rte.hip_heap.vaddr,
+						 desc, xnvme_be_upcie_va_bits(),
+						 DMAMEM_BACKING_HIPMEM);
+		}
+		if (err) {
+			XNVME_DEBUG("FAILED: registering the HIP heap with the server; err(%d)",
+				    err);
+			_hip_ctrlr_term(slot);
+			hipmem_heap_term(&g_upcie_hip_rte.hip_heap);
+			return err;
+		}
+		g_upcie_hip_rte.dmem_is_shared = 1;
+	} else if (!xnvme_be_upcie_iova_range_required()) {
 		err = dmamem_from_hip_registry(&g_upcie_hip_rte.dmem, &g_upcie_hip_rte.hip_heap,
 					       xnvme_be_upcie_va_bits());
 		if (err) {
@@ -91,6 +184,7 @@ _hip_rte_init(size_t heap_size, uint32_t gpu_id)
 	}
 
 	g_upcie_hip_rte.is_initialized = 1;
+	g_upcie_hip_rte.ctrlrs[0].ctrlr = ctrlr;
 
 	return 0;
 }
@@ -181,7 +275,11 @@ xnvme_be_upcie_hip_dev_open(struct xnvme_dev *dev)
 		return err;
 	}
 
-	err = _hip_rte_init(dev->opts.device_heap_size, dev->opts.gpu_id);
+	{
+		struct xnvme_be_upcie_state *state = (void *)dev->be.state;
+
+		err = _hip_rte_init(dev->opts.device_heap_size, dev->opts.gpu_id, state->ctrlr);
+	}
 	if (err) {
 		XNVME_DEBUG("FAILED: _hip_rte_init(); err(%d)", err);
 		return err;
@@ -200,6 +298,18 @@ xnvme_be_upcie_hip_dev_open(struct xnvme_dev *dev)
 
 	atomic_fetch_add(&g_hip_ctrlr_count, 1);
 	return 0;
+}
+
+static int
+xnvme_be_upcie_hip_ctrlr_term(void *handle)
+{
+	for (int i = 0; i < XNVME_BE_CREF_MAX_ENTRIES; ++i) {
+		if (g_upcie_hip_rte.ctrlrs[i].ctrlr == handle) {
+			_hip_ctrlr_term(&g_upcie_hip_rte.ctrlrs[i]);
+		}
+	}
+
+	return xnvme_be_upcie_ctrlr_term(handle);
 }
 
 static void
@@ -221,7 +331,7 @@ struct xnvme_be_dev g_xnvme_be_upcie_hip_dev = {
 	.dev_close = xnvme_be_upcie_hip_dev_close,
 	.id = "upcie-hip",
 	.ctrlr_init = xnvme_be_upcie_ctrlr_init,
-	.ctrlr_term = xnvme_be_upcie_ctrlr_term,
+	.ctrlr_term = xnvme_be_upcie_hip_ctrlr_term,
 #else
 	.dev_open = xnvme_be_nosys_dev_open,
 	.dev_close = xnvme_be_nosys_dev_close,

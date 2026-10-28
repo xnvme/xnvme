@@ -255,6 +255,7 @@ sub_serve(struct xnvme_cli *cli)
 			: (HOMI_HEAP_SIZE_PER_DEV + HOMI_HEAP_SIZE_SELF_PER_DEV) * ndevs;
 	opts.device_heap_size =
 		cli->args.device_heap_size ? cli->args.device_heap_size : HOMI_DEVICE_HEAP_SIZE;
+	opts.gpu_id = cli->given[XNVME_CLI_OPT_GPU_ID] ? cli->args.gpu_id : 0;
 
 	node = bind_to_devices_node(dev_uris, ndevs);
 	if (node >= 0) {
@@ -483,6 +484,7 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_HOST_HEAP_SIZE, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_DEVICE_HEAP_SIZE, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_GPU_ID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_NO_CUSE, XNVME_CLI_LFLG},
 		},
 	},
