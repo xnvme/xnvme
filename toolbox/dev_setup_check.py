@@ -89,9 +89,16 @@ def main():
         print("/dev/kvm: missing (guests will run without KVM acceleration)")
 
     print()
-    print("vfu_kvssd: fetched at run time from")
-    print("  https://github.com/safl/vfio-user-kvssd/releases")
-    print("  when a cijoe config defines a [kvssd] table.")
+    kvssd = shutil.which("vfu_kvssd")
+    if kvssd:
+        version = subprocess.run(
+            [kvssd, "--version"], capture_output=True, text=True
+        ).stdout.strip()
+        print(f"vfu_kvssd: {kvssd} ({version})")
+    else:
+        print("vfu_kvssd: missing (the guests' NVMe KV device will not attach)")
+        print("  fix: run in the xnvme-devenv host container (make docker), or")
+        print("  install the deb from https://github.com/safl/vfio-user-kvssd/releases")
 
     if errors:
         print()

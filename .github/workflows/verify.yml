@@ -847,7 +847,7 @@ jobs:
       matrix: ${{ fromJSON(needs.generate-verify-matrix.outputs.matrix) }}
 
     container:
-      image: ghcr.io/safl/nosi/ubuntu-2604-docker:latest
+      image: ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
       # /mnt is the runner's ~70 GiB ephemeral disk; the nosi qcow2 + raw
       # decompression overflow the container's small overlay otherwise.
       options: --privileged -v /mnt:/mnt
@@ -1364,7 +1364,7 @@ jobs:
         - {os: 'debian', ver: 'trixie-iommu_enabled'}
 
     container:
-      image: ghcr.io/safl/nosi/ubuntu-2604-docker:latest
+      image: ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
       # /mnt is the runner's ~70 GiB ephemeral disk; the nosi qcow2 + raw
       # decompression overflow the container's small overlay otherwise.
       options: --privileged -v /mnt:/mnt
