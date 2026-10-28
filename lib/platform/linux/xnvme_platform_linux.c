@@ -435,6 +435,9 @@ struct xnvme_platform g_xnvme_platform_linux = {
 			&g_xnvme_platform_linux_ramdisk_thrpool,
 			&g_xnvme_platform_linux_ramdisk,
 #endif
+#ifdef XNVME_BE_RDMA_ENABLED
+			&g_xnvme_be_rdma,
+#endif
 			NULL,
 		},
 	.dev_open = xnvme_platform_dev_open,

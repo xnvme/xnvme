@@ -120,4 +120,9 @@ extern const struct xnvme_be_config g_xnvme_platform_windows_iocp_file;
 extern const struct xnvme_be_config g_xnvme_platform_windows_thrpool_file;
 #endif
 
+/* NVMe over RDMA */
+#ifdef XNVME_BE_RDMA_ENABLED
+extern const struct xnvme_be_config g_xnvme_be_rdma;
+#endif
+
 #endif /* __INTERNAL_XNVME_BE_REGISTRY_H */

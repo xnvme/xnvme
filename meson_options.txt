@@ -19,6 +19,7 @@ option('with-cuda', type: 'feature', value: 'auto')
 option('with-hip', type: 'feature', value: 'auto')
 option('hip_offload_arch', type: 'string', value: 'native', description: 'The GPUs hipcc builds the HIP kernels for, as --offload-arch takes them; native asks the GPU of the building machine')
 option('with-cuse', type: 'feature', value: 'auto')
+option('with-rdma', type: 'feature', value: 'auto')
 
 option('examples', type: 'boolean', value: true)
 option('tests', type: 'boolean', value: true)

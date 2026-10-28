@@ -139,6 +139,15 @@ static const struct libconf_part g_libconf_parts[] = {
 		.without = "left out",
 	},
 	{
+		.name = "rdma",
+		.macro = "XNVME_BE_RDMA_ENABLED",
+#ifdef XNVME_BE_RDMA_ENABLED
+		.built = true,
+#endif
+		.brings = "the rdma config, native NVMe over RDMA in xNVMe without using SPDK",
+		.without = "left out",
+	},
+	{
 		.name = "upcie",
 		.macro = "XNVME_BE_UPCIE_ENABLED",
 #ifdef XNVME_BE_UPCIE_ENABLED

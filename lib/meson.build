@@ -33,6 +33,10 @@ xnvmelib_deps = [
   upcie_dep,
 ]
 
+if conf_data.get('XNVME_BE_RDMA_ENABLED')
+  xnvmelib_deps += [ibverbs_dep, rdmacm_dep]
+endif
+
 mapfile = 'libxnvme.map'
 # Version script is not supported by the linker on OSX
 # Use --undefined-version to avoid errors with linkers that have --no-undefined-version by default,
