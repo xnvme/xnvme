@@ -484,10 +484,12 @@ against it::
   make devenv-test TESTS='-k test_verify tests/logic/test_xnvme_tests_ioworker.py'
   make devenv-down
 
-* ``devenv-up`` starts the container, unless it is running, then the guest,
-  and provisions this tree into it: dependencies, a clean build, the Python
-  bindings and fio. ``DEVENV_GUEST`` is one of the guests ``make
-  guest-select`` lists, and defaults to the last selected.
+* ``devenv-up`` starts the container, unless it is running, then the guest on
+  its rig, and provisions this tree into it: dependencies, a clean build, the
+  Python bindings and fio. ``DEVENV_GUEST`` is one of the guests ``make
+  guest-select`` lists, and defaults to the last selected; ``RIG`` defaults to
+  the storage rig. The other targets use the rig the guest booted with, unless
+  given ``RIG``.
 
 * ``devenv-sync`` updates the guest's source with this tree and rebuilds only
   what changed, in the build directory the provision left, then installs; a

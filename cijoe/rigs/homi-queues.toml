@@ -1,0 +1,2 @@
+[rig.devices.nvme4]
+device = "nvme,mdts=9,ioeventfd=on,max_ioqpairs=32"

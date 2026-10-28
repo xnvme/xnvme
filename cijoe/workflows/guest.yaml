@@ -1,0 +1,37 @@
+---
+doc: |
+  Start a qemu guest with its rig
+
+  Stages the system image named by qemu.default_systemimage, initializes the
+  guest qemu.default_guest from it, and boots it with the rig's PCIe topology
+  and devices, with xnvme-devenv's rig scripts, which come in its host
+  container. 'guest_kill' alone stops the guest and the rig's servers.
+
+steps:
+- name: guest_kill
+  uses: xnvme_devenv.rig_guest_kill
+  with:
+    guest_name: "{{ config.qemu.default_guest }}"
+
+- name: stage_nosi_guest
+  uses: system_imaging.diskimage_from_oras
+  with:
+    pattern: "{{ config.qemu.default_systemimage }}"
+
+- name: guest_initialize
+  uses: qemu.guest_initialize
+  with:
+    guest_name: "{{ config.qemu.default_guest }}"
+    system_image_name: "{{ config.qemu.default_systemimage }}"
+
+- name: guest_start
+  uses: xnvme_devenv.rig_guest_start
+  with:
+    guest_name: "{{ config.qemu.default_guest }}"
+
+- name: root_unlock
+  uses: root_unlock
+
+- name: guest_check
+  run: |
+    hostname

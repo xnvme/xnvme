@@ -144,6 +144,17 @@ docker:
 	docker run -it --privileged -w /tmp/xnvme --mount type=bind,source="$(shell pwd)",target=/tmp/xnvme --mount type=bind,source=/tmp/artifacts,target=/tmp/artifacts ghcr.io/xnvme/xnvme-devenv/host:v0.12.0 bash
 	@echo "## xNVME: docker [DONE]"
 
+RIG_DEFAULT := storage-node-emulated homi-queues
+CIJOE_RIG_FILE := cijoe/current.rig
+ifeq ($(origin RIG),undefined)
+RIG = $(if $(filter guest-start verify-guest docgen-guest devenv-up,$(MAKECMDGOALS)),$(RIG_DEFAULT),$(or $(shell cat $(CIJOE_RIG_FILE) 2>/dev/null),$(RIG_DEFAULT)))
+endif
+export RIG
+DEVENV_CIJOE ?= /opt/xnvme-devenv/cijoe
+DEVENV_RIGS ?= /opt/xnvme-devenv/rigs
+rig_file = $(firstword $(wildcard $(abspath $(1)) $(CURDIR)/cijoe/rigs/$(1).toml $(DEVENV_RIGS)/$(1).toml))
+RIG_CONFIGS = $(foreach r,$(RIG),--config $(or $(call rig_file,$(r)),$(error no rig '$(r)'; is this the xnvme-devenv host container?)))
+
 DEVENV_IMAGE ?= ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
 DEVENV_ENGINE ?= docker
 DEVENV_NAME ?= xnvme-devenv-$(notdir $(CURDIR))
@@ -153,13 +164,14 @@ DEVENV_GUEST ?= $(shell cat $(CIJOE_GUEST_FILE) 2>/dev/null)
 export DEVENV_TESTS = $(TESTS)
 DEVENV_SSH_CONFIG = import sys, tomllib; c = tomllib.load(open(sys.argv[1], "rb"))["qemu"]; g = c["default_guest"]; f = c["guests"][g]["system_args"]["tcp_forward"]; print(f"[qemu.guests.{g}.system_args.tcp_forward]\nhost = {f['host']}\nguest = {f['guest']}\nhost_address = \"0.0.0.0\"")
 export DEVENV_SSH_CONFIG
-DEVENV_RUN = $(DEVENV_ENGINE) exec -e DEVENV_TESTS -e DEVENV_SSH_CONFIG $(DEVENV_NAME) bash -euo pipefail -c 'export PATH=$$HOME/.local/bin:$$PATH; $(1)'
+DEVENV_RUN = $(DEVENV_ENGINE) exec -e DEVENV_TESTS -e DEVENV_SSH_CONFIG -e RIG $(DEVENV_NAME) bash -euo pipefail -c 'export PATH=$$HOME/.local/bin:$$PATH; $(1)'
 
 define devenv-up-help
 # Start the xnvme-devenv host container, unless running, the guest in it, and
 # provision this tree into the guest
 #
-# Optional: DEVENV_GUEST=<guest> (default: cijoe/current.guest), DEVENV_HOME,
+# Optional: DEVENV_GUEST=<guest> (default: cijoe/current.guest),
+#           RIG=<rigs> (default: storage-node-emulated homi-queues), DEVENV_HOME,
 #           DEVENV_ENGINE=podman, DEVENV_IMAGE
 endef
 .PHONY: devenv-up
@@ -252,6 +264,7 @@ endef
 cijoe-install:
 	@echo "## xNVMe: cijoe-install"
 	pipx install cijoe/ --include-deps --force
+	if [ -d $(DEVENV_CIJOE) ]; then pipx inject xnvme-cijoe $(DEVENV_CIJOE) --force; fi
 	@echo "## xNVMe: cijoe-install [DONE]"
 
 define guest-env-help
@@ -291,13 +304,15 @@ guest-start:
 		false; \
 	fi
 	$(eval GUEST := $(shell cat $(CIJOE_GUEST_FILE)))
-	@echo "## xNVMe: guest-start ($(GUEST))"
-	cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
+	@echo "## xNVMe: guest-start ($(GUEST), rig=$(RIG))"
+	echo "$(RIG)" > $(CIJOE_RIG_FILE)
+	cd cijoe && cijoe "workflows/guest.yaml" \
 		--monitor \
 		--config "configs/$(GUEST).toml" \
 		--config "configs/fio.toml" \
 		--config "configs/xnvme.toml" \
 		--config "configs/system_imaging.toml" \
+		$(RIG_CONFIGS) \
 		$(GUEST_CONFIGS) \
 		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-guest-start,cijoe-output-guest-start)" \
 		guest_kill \
@@ -385,6 +400,7 @@ guest-test:
 		--config "configs/$(GUEST).toml" \
 		--config "configs/fio.toml" \
 		--config "configs/xnvme.toml" \
+		$(RIG_CONFIGS) \
 		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-test-results,cijoe-output-guest-test)" \
 		$(TEST_STEPS)
 	@echo "## xNVMe: guest-test [DONE]"
@@ -408,12 +424,13 @@ guest-stop:
 	fi
 	$(eval GUEST := $(shell cat $(CIJOE_GUEST_FILE)))
 	@echo "## xNVMe: guest-stop ($(GUEST))"
-	cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
+	cd cijoe && cijoe "workflows/guest.yaml" \
 		--monitor \
 		--config "configs/$(GUEST).toml" \
 		--config "configs/fio.toml" \
 		--config "configs/xnvme.toml" \
 		--config "configs/system_imaging.toml" \
+		$(RIG_CONFIGS) \
 		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-guest-stop,cijoe-output-guest-stop)" \
 		guest_kill
 	@echo "## xNVMe: guest-stop [DONE]"
