@@ -20,6 +20,7 @@ steps:
     ip addr replace {{ config.rig.devices.nic0.transport.guest_addr }} dev {{ config.rig.devices.nic0.transport.netdev }}
     ip link set {{ config.rig.devices.nic0.transport.netdev }} up
     ip neigh replace {{ config.rig.devices.nic0.transport.traddr }} lladdr {{ config.rig.devices.nic0.transport.target_lladdr }} dev {{ config.rig.devices.nic0.transport.netdev }} nud permanent
+    iptables -I OUTPUT -p tcp -d {{ config.rig.devices.nic0.transport.traddr }} -j REJECT --reject-with tcp-reset
     ibv_devinfo | grep -E 'hca_id|state'
 
 - name: rdma_target_probe
