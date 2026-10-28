@@ -134,6 +134,11 @@ releases present as a wedged device rather than an error.
        ``rdma-node-emulated``
      - none
      - none
+   * - NVMe with buffers in GPU memory
+     - ``verify-gpu``: the xnvme-devenv Ubuntu 26.10 guest; rig
+       ``compute-node-emulated``
+     - none
+     - none
 
 A cell that says none has no job: that subject is not verified from that
 source.
@@ -191,6 +196,9 @@ Both publish **OCI** artifacts on **GHCR**.
      - ``safl/nosi/freebsd-14-headless``
    * - ``verify-ernic``
      - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE, rocm-ernic server)
+     - ``xnvme/xnvme-devenv/guest-ubuntu-2610``
+   * - ``verify-gpu``
+     - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE, rocjitsu server)
      - ``xnvme/xnvme-devenv/guest-ubuntu-2610``
    * - ``verify-maas (debian, trixie)``
      - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE), on the MAAS runner

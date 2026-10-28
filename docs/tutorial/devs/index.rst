@@ -44,6 +44,9 @@ to the device servers in the host container of the same release.
    * - NVMe/RDMA
      - ``ubuntu-2610-rocm``
      - ``rdma-node-emulated``
+   * - NVMe with buffers in GPU memory
+     - ``ubuntu-2610-gpu``
+     - ``compute-node-emulated``
 
 A rig is named for the machine it stands in for and where its devices come
 from. ``RIG`` takes a list of rig names or files, each one more **CIJOE**
@@ -93,6 +96,8 @@ against it::
   task's own selection, so add what it leaves out for the guest, such as
   ``-k "not fabrics and not libvfn"`` on a guest without an IOMMU. ``TESTS``
   is for the Linux guests; on FreeBSD, run the guest's test task.
+  On the GPU guest, only the task plugs the GPU in, so a ``TESTS``
+  selection runs without it.
 
 * ``devenv-docgen`` generates the documentation in the guest, as the
   ``docgen`` job does, from the source the guest has, so run ``devenv-sync``
