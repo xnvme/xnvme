@@ -190,7 +190,7 @@ def xnvme_setup(labels=[], opts=[]):
         (
             ["file"]
             if "file" in labels
-            else ["bdev", "cdev", "pcie", "fabrics", "cuda", "hip"]
+            else ["bdev", "cdev", "pcie", "fabrics", "rdma", "cuda", "hip"]
         ),
     )
 
