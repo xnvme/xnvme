@@ -97,16 +97,19 @@ When the jobs run, and what is published
 
 The ``verify`` workflow runs on pull-requests, and only there. What a
 pull-request needs to merge runs there once; the jobs on lab machines run when
-it carries the label ``maas``, the benchmarks when it carries ``bench``, and the
-check ``ci-result`` says whether it may merge.
+it carries the label ``maas``, the RDMA guest with ``ernic``, the GPU guest with
+``gpu``, the benchmarks with ``bench``, and the check ``ci-result`` says whether
+it may merge.
 Main and its tags run none of it again. The benchmarks also run weekly. A
 newer push or label on a pull-request cancels its running run.
 
 Each kind of job has a workflow file of its own, ``build.yml``,
-``verify-nvme-pcie-emulated.yml``, ``verify-nvme-pcie-hardware.yml``, ``verify-makefile.yml``,
+``verify-nvme-pcie-emulated.yml``, ``verify-nvme-rdma-emulated.yml``, ``verify-gpu-emulated.yml``,
+``verify-nvme-pcie-hardware.yml``, ``verify-makefile.yml``,
 ``verify-packaging.yml``, ``perf.yml`` and ``docgen-full.yml``.
 ``verify`` calls them, so they run as part of its run and use its artifacts,
-and its ``ci-result`` checks them all.
+and its ``ci-result`` checks them all but the benchmarks and the GPU guest,
+whose failures it does not count.
 
 A push to main runs the ``publish`` workflow instead. It finds the pull-request
 that was merged and the ``verify`` run of its head that ``ci-result``
@@ -171,6 +174,11 @@ releases present as a wedged device rather than an error.
        ``rdma-node-emulated``
      - none
      - none
+   * - NVMe with buffers in GPU memory
+     - ``verify-gpu-emulated``: the xnvme-devenv Ubuntu 26.10 guest; rig
+       ``compute-node-emulated``
+     - none
+     - none
 
 A cell that says none has no job: that subject is not verified from that
 source.
@@ -228,6 +236,9 @@ Both publish **OCI** artifacts on **GHCR**.
      - ``safl/nosi/freebsd-14-headless``
    * - ``verify-nvme-rdma-emulated``
      - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE, rocm-ernic server)
+     - ``xnvme/xnvme-devenv/guest-ubuntu-2610``
+   * - ``verify-gpu-emulated``
+     - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE, rocjitsu server)
      - ``xnvme/xnvme-devenv/guest-ubuntu-2610``
    * - ``verify-nvme-pcie-hardware / passthru (debian, trixie-iommu_enabled, ...)``
      - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE), on the MAAS runner

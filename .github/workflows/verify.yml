@@ -387,6 +387,13 @@ jobs:
       && (github.event.inputs.job == 'bench' || github.event.inputs.job == 'all')))
     uses: ./.github/workflows/perf.yml
 
+  verify-gpu-emulated:
+    needs: [source-archive, source-format-check, ffi-python, changes-to-docs]
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event.inputs.job == 'all' || (github.event_name
+      == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'gpu')) || (github.event_name == 'workflow_dispatch'
+      && github.event.inputs.job == 'verify'))
+    uses: ./.github/workflows/verify-gpu-emulated.yml
+
   verify-makefile:
     needs: [changes-to-docs, source-archive, docgen-shallow]
     if: needs.changes-to-docs.outputs.docs_prose_only != 'true'

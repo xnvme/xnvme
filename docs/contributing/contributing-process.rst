@@ -25,6 +25,8 @@ Contribution Process
     devices, which runs once the pull-request has the label ``maas``, and the
     verification over NVMe/RDMA in an emulated-NIC guest, which runs once it
     has the label ``ernic``; until then ``ci-result`` fails
+  - The upcie-hip backend is verified in an emulated-GPU guest once the
+    pull-request has the label ``gpu``; it is not required for merging
   - The benchmarks run weekly, on a manual run with the job ``bench``, and on
     a pull-request with the label ``bench``; they are not part of
     ``ci-result``, so they never block merging
