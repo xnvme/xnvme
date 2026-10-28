@@ -148,7 +148,7 @@ registration covers them all.
 
 None of the out-of-tree code here exists because the kernel cannot do these
 things. It exists because the interfaces that would are closed to a `dma-buf`
-that a GPU exported, or to memory that is not RAM. Two changes would retire
+that a GPU exported, or to memory that is not RAM. Three changes would retire
 it:
 
 - **A way to resolve a `dma-buf` to physical addresses.** This is what
@@ -156,6 +156,14 @@ it:
   one for DMA. Nothing equivalent is exposed to user space.
 - **`IOMMU_IOAS_MAP_FILE` accepting a GPU `dma-buf`.** It refuses one today,
   which is why the mapping is installed from physical addresses instead.
+- **A CUDA runtime that can map a BAR it is handed.**
+  `cuMemHostRegister(..., CU_MEMHOSTREGISTER_IOMEMORY)` puts a BAR in the GPU's
+  address space, which is what lets a kernel ring a doorbell. It takes a host
+  mapping and resolves it, and for a mapping made through a `vfio` device it
+  will not: only the first page of one is accepted, and the doorbells are never
+  in it. Taking a `dma-buf` wrapping the BAR, which `vfio` can export, would
+  make the mapping a thing the runtime is given rather than something it has to
+  work out from a virtual address.
 
 (sec-backends-upcie-cuda-config)=
 
@@ -185,6 +193,18 @@ the hugepage setup steps in {ref}`sec-backends-upcie-host` before opening an
 (sec-backends-upcie-cuda-gpu-domain)=
 
 ### GPU IOMMU domain
+
+```{important}
+GPU-issued I/O is **not supported behind a translating IOMMU**. The GPU has to
+sit in an identity-mapped (passthrough) domain. This is not a limitation xNVMe
+can lift: the doorbell write comes from the GPU through the mapping the CUDA
+runtime installs for the controller's BAR, and with the GPU's domain
+translating that mapping does not carry. The write is lost, the IOMMU and
+the GPU report nothing, and the I/O never completes. Until the CUDA runtime
+or driver handles BAR mappings under a translating domain, the only remedy
+is the domain type, set as described below. Host-issued I/O, including
+{ref}`sec-backends-upcie-cuda-cq-mirror`, is unaffected and works either way.
+```
 
 Needed only for GPU-resident queues, meaning `xnvmeperf cuda-run`, `cuda-verify`
 and anything else built on {ref}`sec-api-c-gpu`. Host-driven I/O needs nothing
@@ -280,8 +300,10 @@ The **upcie-cuda** backend supports GPU-resident NVMe queue pairs via the
 `libxnvme_cuda` API. See {ref}`sec-api-c-gpu` for the full API reference,
 including host-side setup, CUDA kernel dispatch, and queue depth semantics.
 
-GPU-resident queues need the setup described in
-{ref}`sec-backends-upcie-cuda-gpu-domain`.
+GPU-resident queues work only with the GPU in an identity-mapped domain; see
+{ref}`sec-backends-upcie-cuda-gpu-domain` for why that is outside xNVMe's
+control and how to set it. A queue built behind a translating domain is
+created without error and then completes nothing.
 
 (sec-backends-upcie-cuda-validation)=
 
@@ -321,6 +343,24 @@ cd cijoe && cijoe workflows/test-gpu.yaml --config configs/<your-config>.toml
   goes in from the physical addresses behind it instead. That happens either
   way: a server does it for a client, and a process holding the controller does
   it for itself. See {ref}`sec-backends-upcie-cuda-upstream`.
+- **Doorbells come from `sysfs` under `vfio-pci`.** A queue the GPU submits on
+  needs the doorbell page in the GPU's address space, and the CUDA runtime will
+  not take it from a `vfio` mapping, so it is taken from the BAR's `resource0`
+  instead. Both name the same registers. This costs a served client something:
+  everything else it needs arrives as a descriptor over the socket, and this it
+  has to open for itself, which `resource0` only permits to root. A client that
+  submits from the host is unaffected.
+- **I/O the GPU issues needs no server.** A controller this process opened
+  builds the same queue in the same device memory, and behind an IOMMU installs
+  the mapping itself rather than being given one.
+- **I/O the GPU issues needs the GPU's domain to be identity-mapped.** The
+  controller translates either way, through the domain `vfio-pci` installs for
+  it; the GPU stays on its own driver and uses the default domain, so what
+  decides is `iommu=pt` rather than which driver the controller is bound to.
+  With the default translating, `DMA-FQ` rather than `identity`, a queue is
+  built and the doorbell registers, but no completion arrives and nothing
+  faults on either the IOMMU or the GPU. What a client submits from the host,
+  payloads in device memory included, works either way.
 - **GPU 0 only.** The heap is always created on CUDA device 0. Multiple GPU
   support is not implemented.
 - **1 GiB heap.** The CUDA heap is fixed at 1 GiB. Allocations beyond this
