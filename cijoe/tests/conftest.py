@@ -54,8 +54,14 @@ def get_homi_id():
 
 
 def is_nvmet(cijoe, device):
-    """Return True when the fabrics device is exported by the Linux NVMe target"""
+    """Return True when the device is exported by the Linux NVMe target
 
+    A device labelled "nvmet" is treated the same, for targets that implement the
+    same subset of the command set without being the Linux one.
+    """
+
+    if "nvmet" in device.get("labels", []):
+        return True
     if "subnqn" not in device:
         return False
 

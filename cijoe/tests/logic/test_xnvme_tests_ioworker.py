@@ -41,6 +41,8 @@ def test_verify_iovec(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[sync=nvme] on FreeBSD does not implement iovec")
     if be_opts["admin"] == "driverkit":
         pytest.skip(reason="[admin=driverkit] does not implement iovec")
+    if "novec" in device["labels"]:
+        pytest.skip(reason="[novec] the target takes no vectored commands")
 
     err, state = cijoe.run(f"xnvme_tests_ioworker verify {cli_args} --vec-cnt 4")
 
@@ -74,6 +76,8 @@ def test_verify_sync_iovec(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[sync=nvme] on FreeBSD does not implement iovec")
     if be_opts["admin"] == "driverkit":
         pytest.skip(reason="[admin=driverkit] does not implement iovec")
+    if "novec" in device["labels"]:
+        pytest.skip(reason="[novec] the target takes no vectored commands")
 
     err, state = cijoe.run(f"xnvme_tests_ioworker verify-sync {cli_args} --vec-cnt 4")
 
@@ -143,6 +147,8 @@ def test_verify_iovec_direct(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[sync=nvme] on FreeBSD does not implement iovec")
     if be_opts["admin"] == "driverkit":
         pytest.skip(reason="[admin=driverkit] does not implement iovec")
+    if "novec" in device["labels"]:
+        pytest.skip(reason="[novec] the target takes no vectored commands")
 
     err, state = cijoe.run(
         f"xnvme_tests_ioworker verify {cli_args} --vec-cnt 4 --direct 1"
@@ -178,6 +184,8 @@ def test_verify_sync_iovec_direct(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[sync=nvme] on FreeBSD does not implement iovec")
     if be_opts["admin"] == "driverkit":
         pytest.skip(reason="[admin=driverkit] does not implement iovec")
+    if "novec" in device["labels"]:
+        pytest.skip(reason="[novec] the target takes no vectored commands")
 
     err, state = cijoe.run(
         f"xnvme_tests_ioworker verify-sync {cli_args} --vec-cnt 4 --direct 1"
