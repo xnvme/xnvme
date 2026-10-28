@@ -258,6 +258,16 @@ class IOURingCmdEngine(KernelEngine):
 
 
 @dataclass
+class WindowsAIOEngine(KernelEngine):
+    @property
+    def filename(self) -> str:
+        """fio takes a Windows filename for a device only when it starts with
+        '\\\\.\\', which the device's '//./' spells with forward slashes;
+        single-quoted, so the shell keeps the backslashes"""
+        return "'" + self.device.uri.replace("/", "\\") + "'"
+
+
+@dataclass
 class BdevExternalPreloader(ExternalPreloader):
     def extra_args(self) -> Dict[str, str]:
         spdk_json_conf = self.cijoe.getconf("spdk.build.spdk_json_conf")
@@ -307,7 +317,7 @@ def determine_engine(
         Engines.XNVME_IORING.value: XnvmeKernelEngine,
         Engines.XNVME_IOCP.value: XnvmeKernelEngine,
         Engines.XNVME_IOCPTH.value: XnvmeKernelEngine,
-        Engines.WINDOWSAIO.value: KernelEngine,
+        Engines.WINDOWSAIO.value: WindowsAIOEngine,
     }
 
     if engine_identifier in id2engine:

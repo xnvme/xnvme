@@ -159,6 +159,12 @@ jobs:
     - name: Run pre-commit
       run: pre-commit run --all-files
 
+    - name: Test the cijoe scripts, those not needing a target
+      run: |
+        python3 -m venv /tmp/selftest
+        /tmp/selftest/bin/pip install -q pytest ./cijoe
+        /tmp/selftest/bin/pytest -q -p no:cacheprovider cijoe/tests/selftest
+
   #
   # Ensure that bash completions, man pages, and the systemd unit are
   # generated without error
