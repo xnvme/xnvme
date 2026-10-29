@@ -40,9 +40,6 @@ space. See https://xnvme.io/
 
 %install
 %meson_install
-# The binaries carry an RPATH to the prefix's libdir, /usr/lib64 here, which
-# check-rpaths files as a standard RPATH (0x0001)
-export QA_RPATHS=0x0001
 
 %post -p /sbin/ldconfig
 %postun -p /sbin/ldconfig
