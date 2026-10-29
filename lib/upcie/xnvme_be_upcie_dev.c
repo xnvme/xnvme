@@ -61,6 +61,77 @@ xnvme_be_upcie_iova_range_required(void)
 #define XNVME_BE_UPCIE_IOVA_BASE (256ULL << 30)
 #define XNVME_BE_UPCIE_IOVA_SIZE (64ULL << 30)
 
+#define XNVME_BE_UPCIE_HOST_IOVA_BASE (4ULL << 30)
+
+uint64_t
+xnvme_be_upcie_host_iova_base(void)
+{
+	return _env_u64("XNVME_UPCIE_HOST_IOVA_BASE", XNVME_BE_UPCIE_HOST_IOVA_BASE);
+}
+
+uint64_t
+xnvme_be_upcie_iova_base(void)
+{
+	return _env_u64("XNVME_UPCIE_IOVA_BASE", XNVME_BE_UPCIE_IOVA_BASE);
+}
+
+#ifdef UPCIE_HAVE_IOMMUFD
+static int
+_dmamem_from_memfd_at_host_base(struct dmamem *dmem, struct iommufd *iommufd, size_t heap_size,
+				size_t hugepgsz)
+{
+	struct iommu_ioas_allow_iovas all = {0};
+	struct iommu_iova_range above = {0};
+	int err;
+
+	above.start = xnvme_be_upcie_host_iova_base();
+	above.last = xnvme_be_upcie_iova_base() - 1;
+	if (above.last < above.start) {
+		XNVME_DEBUG("FAILED: host IOVA base(0x%" PRIx64 ") is not below the "
+			    "device-memory window",
+			    (uint64_t)above.start);
+		return -ERANGE;
+	}
+
+	err = iommufd_ioas_allow_iovas(iommufd, &above, 1);
+	if (err) {
+		XNVME_DEBUG("FAILED: iommufd_ioas_allow_iovas(0x%" PRIx64 "); err(%d)",
+			    (uint64_t)above.start, err);
+		return err;
+	}
+
+	err = dmamem_from_memfd(dmem, iommufd, heap_size, hugepgsz);
+	if (err) {
+		XNVME_DEBUG("FAILED: dmamem_from_memfd(); err(%d); does the heap fit "
+			    "0x%" PRIx64 "..0x%" PRIx64 "?",
+			    err, (uint64_t)above.start, (uint64_t)above.last);
+	}
+
+	all.size = sizeof(all);
+	all.ioas_id = iommufd->ioas_id;
+	if (ioctl(iommufd->fd, IOMMU_IOAS_ALLOW_IOVAS, &all) == -1) {
+		int cleared = -errno;
+
+		XNVME_DEBUG("FAILED: ioctl(IOMMU_IOAS_ALLOW_IOVAS, none); err(%d)", cleared);
+		if (!err) {
+			dmamem_destroy(dmem);
+			err = cleared;
+		}
+	}
+
+	return err;
+}
+#else
+static int
+_dmamem_from_memfd_at_host_base(struct dmamem *XNVME_UNUSED(dmem),
+				struct iommufd *XNVME_UNUSED(iommufd),
+				size_t XNVME_UNUSED(heap_size), size_t XNVME_UNUSED(hugepgsz))
+{
+	XNVME_DEBUG("FAILED: not supported, built on system without IOMMUFD");
+	return -ENOTSUP;
+}
+#endif
+
 static struct dmamem_iommu_map_pa g_iova_range_imp;
 static int g_iova_range_refs;
 
@@ -101,7 +172,7 @@ xnvme_be_upcie_iova_range_open(struct xnvme_be_upcie_iova_range *range, const ch
 		return err;
 	}
 
-	base = _env_u64("XNVME_UPCIE_IOVA_BASE", XNVME_BE_UPCIE_IOVA_BASE);
+	base = xnvme_be_upcie_iova_base();
 	size = _env_u64("XNVME_UPCIE_IOVA_SIZE", XNVME_BE_UPCIE_IOVA_SIZE);
 
 	err = dmamem_iommu_map_pa_open(&g_iova_range_imp, bdf, base, size);
@@ -115,7 +186,7 @@ xnvme_be_upcie_iova_range_open(struct xnvme_be_upcie_iova_range *range, const ch
 	range->alive = 1;
 	g_iova_range_refs = 1;
 
-	/* type1 needs none: its hugepage is mapped at iova 0, below the range */
+	/* type1 needs none: its hugepage is mapped at the host base, below the range */
 	if (g_upcie_rte.mode != XNVME_BE_UPCIE_MODE_VFIO_CDEV) {
 		return 0;
 	}
@@ -247,10 +318,10 @@ _rte_init_vfio_cdev(size_t heap_size)
 	}
 	g_upcie_rte.cdev.ioas_alive = 1;
 
-	err = dmamem_from_memfd(&g_upcie_rte.mem.dmem, &g_upcie_rte.cdev.iommufd, heap_size,
-				hugepgsz);
+	err = _dmamem_from_memfd_at_host_base(&g_upcie_rte.mem.dmem, &g_upcie_rte.cdev.iommufd,
+					      heap_size, hugepgsz);
 	if (err) {
-		XNVME_DEBUG("FAILED: dmamem_from_memfd(); err(%d)", err);
+		XNVME_DEBUG("FAILED: _dmamem_from_memfd_at_host_base(); err(%d)", err);
 		return err;
 	}
 	g_upcie_rte.mem.dmem_alive = 1;
