@@ -99,7 +99,8 @@ The ``verify`` workflow runs on pull-requests, and only there. What a
 pull-request needs to merge runs there once; the jobs on lab machines run when
 it carries the label ``maas``, the benchmarks when it carries ``bench``, and the
 check ``ci-result`` says whether it may merge.
-Main and its tags run none of it again. The benchmarks also run weekly.
+Main and its tags run none of it again. The benchmarks also run weekly. A
+newer push or label on a pull-request cancels its running run.
 
 A push to main runs the ``publish`` workflow instead. It finds the pull-request
 that was merged and the ``verify`` run of its head that ``ci-result``
@@ -115,8 +116,8 @@ release fails; see :ref:`sec-contributing-release`.
 
 Any job can be run by hand: start the ``verify`` workflow from the Actions tab,
 on a branch, with ``job`` set to ``all`` for every job, or to ``verify``,
-``bench`` or ``docgen``. A manual ``docgen`` run deploys the documentation of
-its branch.
+``bench`` or ``docgen``. A manual ``docgen`` run deploys the
+documentation of its branch.
 
 .. _sec-ci-sources:
 

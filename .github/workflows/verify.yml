@@ -25,6 +25,11 @@ on:
         - bench
         - docgen
 
+# A newer push or label on a pull-request supersedes its running run
+concurrency:
+  group: verify-${{ github.event.pull_request.number || github.ref }}-${{ github.event.inputs.job || github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 defaults:
   run:
     shell: bash
@@ -330,7 +335,7 @@ jobs:
   # Build on Linux using different Linux distributions
   #
   build-linux:
-    needs: [source-archive, source-format-check, build-python, changes-to-docs]
+    needs: [matrices, source-archive, source-format-check, build-python, changes-to-docs]
     runs-on: ubuntu-24.04
     if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event.inputs.job == 'all' || github.event_name
       == 'pull_request')
@@ -338,26 +343,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-        # Using an alpine container which is the same as upstream but with bash
-        # alpine: SPDK not supported, --with-spdk=disabled
-        - {os: 'alpine', dh: 'refenv/alpine-bash', ver: 'latest'}
-        - {os: 'archlinux', dh: 'archlinux', ver: 'latest'}
-        - {os: 'centos', dh: 'quay.io/centos/centos', ver: 'stream9'}
-        - {os: 'centos', dh: 'quay.io/centos/centos', ver: 'stream10'}
-        - {os: 'debian', dh: 'debian', ver: 'bookworm'}
-        - {os: 'debian', dh: 'debian', ver: 'forky'}
-        - {os: 'debian', dh: 'debian', ver: 'trixie'}
-        - {os: 'fedora', dh: 'fedora', ver: '42'}
-        - {os: 'fedora', dh: 'fedora', ver: '43'}
-        - {os: 'gentoo', dh: 'gentoo/stage3', ver: 'latest'}
-        - {os: 'opensuse-tumbleweed', dh: 'opensuse/tumbleweed', ver: 'latest'}
-        - {os: 'oraclelinux', dh: 'oraclelinux', ver: '9'}
-        - {os: 'oraclelinux', dh: 'oraclelinux', ver: '10'}
-        - {os: 'rockylinux', dh: 'rockylinux/rockylinux', ver: '9.7'}
-        - {os: 'ubuntu', dh: 'ubuntu', ver: 'noble'}
-        - {os: 'ubuntu', dh: 'ubuntu', ver: 'questing'}
-        - {os: 'ubuntu', dh: 'ubuntu', ver: 'resolute'}
+        include: ${{ fromJSON(needs.matrices.outputs.build_linux) }}
 
     container:
       image: ghcr.io/xnvme/xnvme-deps-${{ matrix.os }}-${{ matrix.ver }}:main
@@ -830,14 +816,20 @@ jobs:
   #
   # Build and test xNVMe
   #
-  generate-verify-matrix:
-    needs: [source-archive, source-format-check, build-python, changes-to-docs]
+  #
+  # The job-matrices, generated first, so the jobs using them are scheduled as
+  # soon as what they need is built, rather than queued behind the jobs started
+  # before them.
+  #
+  matrices:
+    needs: [changes-to-docs]
     runs-on: ubuntu-24.04
     if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event.inputs.job == 'all' || github.event_name
       == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'verify'))
 
     outputs:
       matrix: ${{ steps.generate.outputs.matrix }}
+      build_linux: ${{ steps.build_linux.outputs.build_linux }}
 
     env:
       # Each entry is expanded into one entry per 'test_*' step of the cijoe task it
@@ -849,6 +841,26 @@ jobs:
         - {os: 'debian', ver: 'trixie-iommu_disabled', guest_dir: 'debian-trixie-amd64', transport: 'pcie'}
         - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'tcp-spdk'}
         - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'tcp-linux'}
+      BUILD_LINUX: |
+        # Using an alpine container which is the same as upstream but with bash
+        # alpine: SPDK not supported, --with-spdk=disabled
+        - {os: 'alpine', dh: 'refenv/alpine-bash', ver: 'latest'}
+        - {os: 'archlinux', dh: 'archlinux', ver: 'latest'}
+        - {os: 'centos', dh: 'quay.io/centos/centos', ver: 'stream9'}
+        - {os: 'centos', dh: 'quay.io/centos/centos', ver: 'stream10'}
+        - {os: 'debian', dh: 'debian', ver: 'bookworm'}
+        - {os: 'debian', dh: 'debian', ver: 'forky'}
+        - {os: 'debian', dh: 'debian', ver: 'trixie'}
+        - {os: 'fedora', dh: 'fedora', ver: '42'}
+        - {os: 'fedora', dh: 'fedora', ver: '43'}
+        - {os: 'gentoo', dh: 'gentoo/stage3', ver: 'latest'}
+        - {os: 'opensuse-tumbleweed', dh: 'opensuse/tumbleweed', ver: 'latest'}
+        - {os: 'oraclelinux', dh: 'oraclelinux', ver: '9'}
+        - {os: 'oraclelinux', dh: 'oraclelinux', ver: '10'}
+        - {os: 'rockylinux', dh: 'rockylinux/rockylinux', ver: '9.7'}
+        - {os: 'ubuntu', dh: 'ubuntu', ver: 'noble'}
+        - {os: 'ubuntu', dh: 'ubuntu', ver: 'questing'}
+        - {os: 'ubuntu', dh: 'ubuntu', ver: 'resolute'}
 
     steps:
     - uses: actions/checkout@v6
@@ -863,16 +875,24 @@ jobs:
       run: |
         echo '${{ steps.generate.outputs.matrix }}' | python3 -m json.tool
 
+    - name: Generate the job-matrix of the Linux builds
+      id: build_linux
+      run: |
+        python3 - <<'PY' >> "$GITHUB_OUTPUT"
+        import json, os, yaml
+        print("build_linux=" + json.dumps(yaml.safe_load(os.environ["BUILD_LINUX"])))
+        PY
+
   verify:
     name: verify (${{ matrix.os }}, ${{ matrix.ver }}, ${{ matrix.transport }}, ${{ matrix.test }})
-    needs: [generate-verify-matrix, source-archive, source-format-check, build-python]
+    needs: [matrices, source-archive, source-format-check, build-python]
     runs-on: ubuntu-24.04
     if: github.event.inputs.job == 'all' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch'
       && github.event.inputs.job == 'verify')
 
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.generate-verify-matrix.outputs.matrix) }}
+      matrix: ${{ fromJSON(needs.matrices.outputs.matrix) }}
 
     container:
       image: ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
@@ -1581,7 +1601,7 @@ jobs:
   #
   ci-result:
     needs: [changes-to-docs, source-archive, source-format-check, test-gen-targets, build-rust, build-python, build-linux,
-      build-rpm, build-macos, build-windows, generate-verify-matrix, verify, verify-physical, verify-maas, docgen, docs, packaging-debian]
+      build-rpm, build-macos, build-windows, matrices, verify, verify-physical, verify-maas, docgen, docs, packaging-debian]
     runs-on: ubuntu-24.04
     if: always()
 
