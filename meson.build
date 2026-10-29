@@ -63,11 +63,6 @@ if not is_windows
   add_project_link_arguments(flto_args, language: 'c')
 endif
 
-if get_option('hardening')
-  add_project_arguments('-fpie', language: 'c')
-  add_project_link_arguments('-pie', language: 'c')
-endif
-
 link_args_hardening = get_option('hardening') ? cc.get_supported_arguments([
   '-znow',
   '-zrelro',
