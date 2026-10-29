@@ -418,7 +418,7 @@ sixteen of them per entry bound the rate before the controller does.
 
 ## Validation
 
-The cijoe workflow ``test-gpu.yaml`` exercises the **upcie-cuda** backend
+The cijoe task ``test-gpu.yaml`` exercises the **upcie-cuda** backend
 against a PCIe NVMe device. Devices must be tagged with the ``cuda`` label in
 your cijoe configuration:
 
@@ -430,10 +430,10 @@ labels = ["dev", "pcie", "nvm", "cuda"]
 driver_attachment = "userspace"
 ```
 
-Run the workflow with:
+Run the task with:
 
 ```bash
-cd cijoe && cijoe workflows/test-gpu.yaml --config configs/<your-config>.toml
+cd cijoe && cijoe tasks/test-gpu.yaml --config configs/<your-config>.toml
 ```
 
 (sec-backends-upcie-cuda-limitations)=

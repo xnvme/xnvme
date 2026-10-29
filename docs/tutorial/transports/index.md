@@ -109,7 +109,7 @@ entries.
 
 ## Initiator usage
 
-The probe step in each provider's demo workflow exercises the initiator
+The probe step in each provider's demo task exercises the initiator
 side against the brought-up listener. The xNVMe commands it issues are
 extracted from the live cijoe run and shown below:
 

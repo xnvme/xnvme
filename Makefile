@@ -220,13 +220,13 @@ endef
 devenv-sync:
 	$(eval GUEST := $(shell cat $(CIJOE_GUEST_FILE)))
 	@echo "## xNVMe: devenv-sync ($(GUEST))"
-	$(call DEVENV_RUN,cd cijoe && cijoe workflows/devenv-sync.yaml --monitor \
+	$(call DEVENV_RUN,cd cijoe && cijoe tasks/devenv-sync.yaml --monitor \
 		$(CIJOE_GUEST_CONFIGS) \
 		--output cijoe-output-devenv-sync)
 	@echo "## xNVMe: devenv-sync [DONE]"
 
 define devenv-test-help
-# Run tests in the running guest: those TESTS selects, or the guest's test workflow
+# Run tests in the running guest: those TESTS selects, or the guest's test task
 #
 # Optional: TESTS=<pytest args>, e.g. TESTS='-k test_verify tests/logic'; without
 #           it TRANSPORT=<transport> and TEST_STEPS=<steps>, as for guest-test
@@ -236,7 +236,7 @@ devenv-test:
 	$(eval GUEST := $(shell cat $(CIJOE_GUEST_FILE)))
 	@echo "## xNVMe: devenv-test ($(GUEST))"
 ifneq ($(TESTS),)
-	$(call DEVENV_RUN,cd cijoe && cijoe workflows/devenv-tests.yaml --monitor \
+	$(call DEVENV_RUN,cd cijoe && cijoe tasks/devenv-tests.yaml --monitor \
 		$(CIJOE_GUEST_CONFIGS) \
 		--output cijoe-output-devenv-tests)
 else
@@ -318,7 +318,7 @@ guest-start:
 	$(eval GUEST := $(shell cat $(CIJOE_GUEST_FILE)))
 	@echo "## xNVMe: guest-start ($(GUEST), rig=$(RIG))"
 	echo "$(RIG)" > $(CIJOE_RIG_FILE)
-	cd cijoe && cijoe "workflows/guest.yaml" \
+	cd cijoe && cijoe "tasks/guest.yaml" \
 		--monitor \
 		$(CIJOE_GUEST_CONFIGS) \
 		--config "configs/system_imaging.toml" \
@@ -370,7 +370,7 @@ guest-provision:
 		false; \
 	fi
 	@echo "## xNVMe: guest-provision ($(GUEST))"
-	cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
+	cd cijoe && cijoe "tasks/provision-using-tgz.yaml" \
 		--monitor \
 		$(CIJOE_GUEST_CONFIGS) \
 		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-guest-provision,cijoe-output-guest-provision)" \
@@ -379,7 +379,7 @@ guest-provision:
 	@echo "## xNVMe: guest-provision [DONE]"
 
 define guest-test-help
-# Run the CIJOE test workflow for the selected guest (reads from cijoe/current.guest)
+# Run the CIJOE test task for the selected guest (reads from cijoe/current.guest)
 #
 # Optional: CIJOE_OUTPUT=<prefix> for CI artifact naming
 endef
@@ -399,7 +399,7 @@ guest-test:
 	fi
 	$(eval GUEST := $(shell cat $(CIJOE_GUEST_FILE)))
 	@echo "## xNVMe: guest-test ($(GUEST), transport=$(TRANSPORT))"
-	cd cijoe && cijoe "workflows/test-$(GUEST)-$(TRANSPORT).yaml" \
+	cd cijoe && cijoe "tasks/test-$(GUEST)-$(TRANSPORT).yaml" \
 		--monitor \
 		$(CIJOE_GUEST_CONFIGS) \
 		$(RIG_CONFIGS) \
@@ -426,7 +426,7 @@ guest-stop:
 	fi
 	$(eval GUEST := $(shell cat $(CIJOE_GUEST_FILE)))
 	@echo "## xNVMe: guest-stop ($(GUEST))"
-	cd cijoe && cijoe "workflows/guest.yaml" \
+	cd cijoe && cijoe "tasks/guest.yaml" \
 		--monitor \
 		$(CIJOE_GUEST_CONFIGS) \
 		--config "configs/system_imaging.toml" \
@@ -523,7 +523,7 @@ verify-ramdisk:
 		--config "configs/fio.toml" \
 		--config "configs/xnvme.toml" \
 		$(if $(CIJOE_OUTPUT),--output "$(CIJOE_OUTPUT)-prep-fio")
-	cd cijoe && cijoe "workflows/test-ramdisk.yaml" \
+	cd cijoe && cijoe "tasks/test-ramdisk.yaml" \
 		--monitor \
 		--config "configs/ramdisk-linux.toml" \
 		--config "configs/fio.toml" \
@@ -564,20 +564,20 @@ endef
 BENCH ?= latency
 BENCH_CONFIGS = --config configs/xnvme.toml --config configs/$(GUEST).toml --config configs/bench-$(GUEST_FAMILY).toml
 BENCH_PREP_STEPS_WINDOWS = fio_prep
-BENCH_WORKFLOWS_latency = benchmark-latency
-BENCH_WORKFLOWS_bdev = benchmark-provisioning-linux bench
+BENCH_TASKS_latency = benchmark-latency
+BENCH_TASKS_bdev = benchmark-provisioning-linux bench
 .PHONY: guest-bench
 guest-bench:
 	$(eval GUEST := $(shell cat $(CIJOE_GUEST_FILE)))
 	@echo "## xNVMe: guest-bench ($(GUEST), bench=$(BENCH))"
-	cd cijoe && cijoe "workflows/benchmark-provisioning.yaml" \
+	cd cijoe && cijoe "tasks/benchmark-provisioning.yaml" \
 		--monitor \
 		$(BENCH_CONFIGS) \
 		$(RIG_CONFIGS) \
 		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-bench-prep,cijoe-output-bench-prep)" \
 		$(if $(filter windows,$(GUEST_FAMILY)),$(BENCH_PREP_STEPS_WINDOWS))
 	rm -rf cijoe/bench-results cijoe/latency-*-benchmark
-	$(foreach w,$(or $(BENCH_WORKFLOWS_$(BENCH)),$(error BENCH must be latency or bdev)),(cd cijoe && cijoe "workflows/$(w).yaml" \
+	$(foreach w,$(or $(BENCH_TASKS_$(BENCH)),$(error BENCH must be latency or bdev)),(cd cijoe && cijoe "tasks/$(w).yaml" \
 		--monitor \
 		$(BENCH_CONFIGS) \
 		$(RIG_CONFIGS) \
@@ -596,15 +596,15 @@ endef
 docgen-guest: guest-start guest-provision
 	$(eval GUEST := $(shell cat $(CIJOE_GUEST_FILE)))
 	@echo "## xNVMe: docgen-guest ($(GUEST))"
-	cd cijoe && cijoe "workflows/transports-tcp-spdk.yaml" \
+	cd cijoe && cijoe "tasks/transports-tcp-spdk.yaml" \
 		--monitor \
 		$(CIJOE_GUEST_CONFIGS) \
 		--output "cijoe-output-transports-spdk"
-	cd cijoe && cijoe "workflows/transports-tcp-linux.yaml" \
+	cd cijoe && cijoe "tasks/transports-tcp-linux.yaml" \
 		--monitor \
 		$(CIJOE_GUEST_CONFIGS) \
 		--output "cijoe-output-transports-linux"
-	cd cijoe && cijoe "workflows/docgen.yaml" \
+	cd cijoe && cijoe "tasks/docgen.yaml" \
 		--monitor \
 		$(CIJOE_GUEST_CONFIGS) \
 		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-docs,cijoe-output-docgen)"

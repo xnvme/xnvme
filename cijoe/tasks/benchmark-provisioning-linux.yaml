@@ -12,7 +12,7 @@ doc: |
   Preamble
   =================================================================
 
-  This workflow assumes that xNVMe has already been provisioned
+  This task assumes that xNVMe has already been provisioned
   on the target machine.
 
 steps:

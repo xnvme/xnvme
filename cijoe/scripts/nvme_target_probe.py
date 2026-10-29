@@ -6,7 +6,7 @@ Probe a running NVMe transport target
 Issue a discovery against a listener brought up by ``nvme_target_start`` and
 print basic information about the exported namespace. Used as the check step
 between ``nvme_target_start`` and ``nvme_target_stop`` in the transport demo
-workflows.
+tasks.
 
 Retargetable: True
 """

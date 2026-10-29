@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-Interactive guest selection for xNVMe CIJOE workflows.
+Interactive guest selection for xNVMe CIJOE tasks.
 
-Discovers available guests by scanning cijoe/workflows/test-*.yaml and
+Discovers available guests by scanning cijoe/tasks/test-*.yaml and
 verifying a matching cijoe/configs/{guest}.toml exists. Presents an
 interactive numbered menu on TTY, reads from stdin when piped.
 
-Workflow names carry the transport as the trailing segment, e.g.
+Task names carry the transport as the trailing segment, e.g.
 'test-debian-trixie-iommu_enabled-pcie.yaml' targets the guest
 'debian-trixie-iommu_enabled'. The trailing transport segment is dropped
-to find the matching config, and multiple workflows backed by the same
+to find the matching config, and multiple tasks backed by the same
 config are deduped so each guest appears once.
 
-Piped, it also takes a guest without a test workflow, one whose config
+Piped, it also takes a guest without a test task, one whose config
 defines a qemu guest, as the Windows guest the benchmarks boot.
 
 Writes the selected guest name to cijoe/current.guest.
@@ -26,7 +26,7 @@ KNOWN_TRANSPORTS = ("pcie", "tcp", "rdma")
 KNOWN_PROVIDERS = ("spdk", "linux")
 
 
-def _workflow_to_guest(stem):
+def _task_to_guest(stem):
     """Strip the trailing transport and optional provider segment."""
 
     parts = stem.rsplit("-", 1)
@@ -39,14 +39,14 @@ def _workflow_to_guest(stem):
 
 
 def discover_guests(cijoe_dir):
-    """Find guests that have both a test workflow and a config file."""
+    """Find guests that have both a test task and a config file."""
 
-    workflow_pattern = os.path.join(cijoe_dir, "workflows", "test-*.yaml")
+    task_pattern = os.path.join(cijoe_dir, "tasks", "test-*.yaml")
     configs_dir = os.path.join(cijoe_dir, "configs")
 
     seen = set()
     guests = []
-    for wf in sorted(glob.glob(workflow_pattern)):
+    for wf in sorted(glob.glob(task_pattern)):
         basename = os.path.basename(wf)
         stem = basename.removeprefix("test-").removesuffix(".yaml")
 
@@ -54,7 +54,7 @@ def discover_guests(cijoe_dir):
         if "ramdisk" in stem:
             continue
 
-        guest = _workflow_to_guest(stem)
+        guest = _task_to_guest(stem)
         if guest in seen:
             continue
 
@@ -86,7 +86,7 @@ def main():
 
     if not guests:
         print(
-            "ERROR: No guests found. Check cijoe/workflows/test-*.yaml and configs/.",
+            "ERROR: No guests found. Check cijoe/tasks/test-*.yaml and configs/.",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -121,11 +121,11 @@ def main():
                 print(f"Invalid choice: {choice}")
     else:
         # Piped / non-interactive mode. Accept either a canonical guest name
-        # or a workflow-stem-style input (e.g. 'debian-trixie-iommu_enabled-tcp-spdk');
+        # or a task-stem-style input (e.g. 'debian-trixie-iommu_enabled-tcp-spdk');
         # the trailing transport segment is stripped to find the canonical guest.
         selected = sys.stdin.readline().strip()
         if selected not in guests:
-            stripped = _workflow_to_guest(selected)
+            stripped = _task_to_guest(selected)
             if stripped in guests:
                 selected = stripped
             elif is_qemu_guest(cijoe_dir, selected):

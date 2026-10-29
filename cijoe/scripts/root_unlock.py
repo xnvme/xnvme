@@ -4,7 +4,7 @@ Unlock root SSH on a nosi guest
 ===============================
 
 nosi images ship with root locked; log in is via the 'odus' operator (passwordless
-sudo). This step opens root SSH over that operator so the rest of the workflow can
+sudo). This step opens root SSH over that operator so the rest of the task can
 use the default root transport unchanged.
 
 Retargetable: True (uses the 'root' and 'odus' transports).

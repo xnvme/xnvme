@@ -2,12 +2,12 @@
 doc: |
   Generate documentation with example-commands executed.
 
-  This workflow itself only runs the docgen step. The transports tutorial
+  This task itself only runs the docgen step. The transports tutorial
   embeds the live cijoe reports produced by the sibling
-  ``transports-tcp-spdk`` and ``transports-tcp-linux`` workflows; their
+  ``transports-tcp-spdk`` and ``transports-tcp-linux`` tasks; their
   ``report.html`` files are picked up by ``xnvme_docgen`` and dropped into
   the docs source tree before the local doc build runs. The Makefile target
-  ``docgen-guest`` is what runs the two demo workflows first, then this one.
+  ``docgen-guest`` is what runs the two demo tasks first, then this one.
 
 steps:
 - name: docgen
