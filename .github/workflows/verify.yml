@@ -22,7 +22,7 @@ on:
         options:
         - all
         - verify
-        - bench
+        - perf
         - docgen
 
 # A newer push or label on a pull-request supersedes its running run
@@ -383,8 +383,8 @@ jobs:
   perf:
     needs: [changes-to-docs, source-archive, source-format-check, ffi-python]
     if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'schedule' || (github.event_name
-      == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'bench')) || (github.event_name == 'workflow_dispatch'
-      && (github.event.inputs.job == 'bench' || github.event.inputs.job == 'all')))
+      == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'perf')) || (github.event_name == 'workflow_dispatch'
+      && (github.event.inputs.job == 'perf' || github.event.inputs.job == 'all')))
     uses: ./.github/workflows/perf.yml
 
   verify-gpu-emulated:
@@ -410,14 +410,14 @@ jobs:
   verify-nvme-pcie-hardware:
     needs: [changes-to-docs, source-archive, source-format-check, ffi-python]
     if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event.inputs.job == 'all' || (github.event_name
-      == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'maas')) || (github.event_name == 'workflow_dispatch'
+      == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'hardware')) || (github.event_name == 'workflow_dispatch'
       && github.event.inputs.job == 'verify'))
     uses: ./.github/workflows/verify-nvme-pcie-hardware.yml
 
   verify-nvme-rdma-emulated:
     needs: [source-archive, source-format-check, ffi-python, changes-to-docs]
     if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event.inputs.job == 'all' || (github.event_name
-      == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ernic')) || (github.event_name == 'workflow_dispatch'
+      == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'rdma')) || (github.event_name == 'workflow_dispatch'
       && github.event.inputs.job == 'verify'))
     uses: ./.github/workflows/verify-nvme-rdma-emulated.yml
 
@@ -428,8 +428,8 @@ jobs:
 
   #
   # The one check that branch protection requires. It fails when any job failed or
-  # was cancelled. A pull-request changing code must also have run the 'maas'
-  # verification and the RDMA guest, which need the labels 'maas' and 'ernic'; a
+  # was cancelled. A pull-request changing code must also have run the hardware
+  # verification and the RDMA guest, which need the labels 'hardware' and 'rdma'; a
   # documentation-only one needs the docs to build.
   #
   ci-result:
@@ -460,8 +460,8 @@ jobs:
           result=$(jq -r --arg job "$job" '.[$job].result' <<< "$RESULTS")
           if [ "$result" != "success" ]; then
             case "$job" in
-            verify-nvme-rdma-emulated) echo "::error::$job is required and was $result; a change to code needs the 'ernic' label" ;;
-            verify-nvme-pcie-hardware) echo "::error::$job is required and was $result; a change to code needs the 'maas' label" ;;
+            verify-nvme-rdma-emulated) echo "::error::$job is required and was $result; a change to code needs the 'rdma' label" ;;
+            verify-nvme-pcie-hardware) echo "::error::$job is required and was $result; a change to code needs the 'hardware' label" ;;
             *) echo "::error::$job is required and was $result" ;;
             esac
             exit 1
