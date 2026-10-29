@@ -37,11 +37,12 @@ defaults:
 jobs:
   #
   # Classify a pull-request: when it changes nothing but the documentation, then
-  # the jobs building and verifying the code are skipped, and only 'docs' builds
-  # the documentation. A changed .cmd file counts as code, since only the guest
-  # of 'docgen' runs it. Manual and weekly runs are not classified. When the
-  # classification fails, then the change does not count as documentation-only,
-  # and everything runs.
+  # the jobs building and verifying the code are skipped, and only
+  # 'docgen-shallow' and 'docgen-full' build the documentation, the latter so
+  # that 'publish' has it to deploy. A changed .cmd file counts as code, since
+  # only the guest of 'docgen-full' runs it. Manual and weekly runs are not
+  # classified. When the classification fails, then the change does not count
+  # as documentation-only, and everything runs.
   #
   changes-to-docs:
     runs-on: ubuntu-24.04
@@ -95,7 +96,6 @@ jobs:
   source-archive:
     needs: changes-to-docs
     runs-on: ubuntu-24.04
-    if: needs.changes-to-docs.outputs.docs_prose_only != 'true'
     container: ghcr.io/xnvme/xnvme-deps-alpine-latest:main
     strategy:
       matrix:
@@ -191,7 +191,6 @@ jobs:
   ffi-python:
     needs: [source-archive, changes-to-docs, docgen-shallow]
     runs-on: ubuntu-24.04
-    if: needs.changes-to-docs.outputs.docs_prose_only != 'true'
     container: ghcr.io/xnvme/xnvme-deps-debian-trixie:main
     strategy:
       fail-fast: false
@@ -368,8 +367,8 @@ jobs:
   #
   docgen-full:
     needs: [changes-to-docs, source-archive, source-format-check, ffi-python]
-    if: github.event.inputs.job == 'all' || (github.event_name == 'pull_request' && needs.changes-to-docs.outputs.docs_prose_only
-      != 'true') || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'docgen')
+    if: github.event.inputs.job == 'all' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch'
+      && github.event.inputs.job == 'docgen')
     uses: ./.github/workflows/docgen-full.yml
     secrets: inherit
 
