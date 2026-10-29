@@ -244,6 +244,16 @@ else
 endif
 	@echo "## xNVMe: devenv-test [DONE]"
 
+define devenv-docgen-help
+# Generate the documentation in the running guest, from the source it has;
+# run devenv-sync first for this tree's
+endef
+.PHONY: devenv-docgen
+devenv-docgen:
+	@echo "## xNVMe: devenv-docgen"
+	$(call DEVENV_RUN,make docgen-deps guest-docgen)
+	@echo "## xNVMe: devenv-docgen [DONE]"
+
 define devenv-shell-help
 # Open a shell in the host container
 endef
@@ -584,30 +594,56 @@ guest-bench:
 		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-$(w),cijoe-output-$(w))") &&) true
 	@echo "## xNVMe: guest-bench [DONE]"
 
-define docgen-guest-help
-# Provision a QEMU guest and generate documentation (reads from cijoe/current.guest)
+define docgen-deps-help
+# Install xNVMe's documentation tooling where cijoe runs; doxygen, graphviz and
+# ctags come with the xnvme-devenv host container
+endef
+.PHONY: docgen-deps
+docgen-deps:
+	@echo "## xNVMe: docgen-deps"
+	pipx install --force ./docs/tooling
+	@echo "## xNVMe: docgen-deps [DONE]"
+
+define guest-docgen-help
+# Generate the documentation in the provisioned guest, the transport
+# tutorials' reports first (reads from cijoe/current.guest)
 #
-# Requires: A custom QEMU environment (run: make docker)
+# Requires: docgen-deps
+# Optional: CIJOE_OUTPUT=<prefix> for CI artifact naming
+endef
+.PHONY: guest-docgen
+guest-docgen:
+	$(eval GUEST := $(shell cat $(CIJOE_GUEST_FILE)))
+	@echo "## xNVMe: guest-docgen ($(GUEST))"
+	cd cijoe && cijoe "tasks/transports-tcp-spdk.yaml" \
+		--monitor \
+		$(CIJOE_GUEST_CONFIGS) \
+		$(RIG_CONFIGS) \
+		--output "cijoe-output-transports-spdk"
+	cd cijoe && cijoe "tasks/transports-tcp-linux.yaml" \
+		--monitor \
+		$(CIJOE_GUEST_CONFIGS) \
+		$(RIG_CONFIGS) \
+		--output "cijoe-output-transports-linux"
+	cd cijoe && cijoe "tasks/docgen.yaml" \
+		--monitor \
+		$(CIJOE_GUEST_CONFIGS) \
+		$(RIG_CONFIGS) \
+		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-docs,cijoe-output-docgen)"
+	@echo "## xNVMe: guest-docgen [DONE]"
+
+define docgen-guest-help
+# Start and provision a QEMU guest, then generate the documentation in it
+# (reads from cijoe/current.guest)
+#
+# Requires: the xnvme-devenv host container, docgen-deps
 # Requires: Guest selected via 'make guest-select'
 # Requires: /tmp/artifacts/xnvme-src.tar.gz (run: make gen-artifacts ALLOW_DIRTY=1)
 # Optional: CIJOE_OUTPUT=<prefix> for CI artifact naming
 endef
 .PHONY: docgen-guest
 docgen-guest: guest-start guest-provision
-	$(eval GUEST := $(shell cat $(CIJOE_GUEST_FILE)))
-	@echo "## xNVMe: docgen-guest ($(GUEST))"
-	cd cijoe && cijoe "tasks/transports-tcp-spdk.yaml" \
-		--monitor \
-		$(CIJOE_GUEST_CONFIGS) \
-		--output "cijoe-output-transports-spdk"
-	cd cijoe && cijoe "tasks/transports-tcp-linux.yaml" \
-		--monitor \
-		$(CIJOE_GUEST_CONFIGS) \
-		--output "cijoe-output-transports-linux"
-	cd cijoe && cijoe "tasks/docgen.yaml" \
-		--monitor \
-		$(CIJOE_GUEST_CONFIGS) \
-		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-docs,cijoe-output-docgen)"
+	$(MAKE) guest-docgen
 	@echo "## xNVMe: docgen-guest [DONE]"
 
 define install-help

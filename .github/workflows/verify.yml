@@ -1400,20 +1400,19 @@ jobs:
       run: |
         cijoe -r
 
-    # Land the nosi qcow2 + raw on /mnt instead of / (same as the verify job).
+    # Land the nosi qcow2 and the emulated-NVMe raw backing images on /mnt
+    # instead of /, as the verify job does
     - name: Stage artifacts on /mnt
       run: |
         mkdir -p /mnt/system_imaging
         ln -s /mnt/system_imaging "$HOME/system_imaging"
+        mkdir -p /mnt/guests
+        ln -s /mnt/guests "$HOME/guests"
 
-    # The nosi container ships qemu+cijoe; the doc toolchain comes from here.
     - name: Install doc toolchain
       run: |
-        bash toolbox/pkgs/docgen.sh
-        pipx install ./docs/tooling
+        make docgen-deps
 
-    # cd'ing into 'cijoe' to auto-collect the non-packaged github-specific configs and
-    # workflows.
     - name: CIJOE, provision and generate documentation
       run: |
         make docgen-guest \
@@ -1427,12 +1426,7 @@ jobs:
         cat $HOME/run/vfu_kvssd.log 2>/dev/null || echo "no vfu_kvssd device log"
         echo "::endgroup::"
         cp $HOME/run/vfu_kvssd.log "${dst}-vfu_kvssd.log" 2>/dev/null || true
-        echo "::group::guest serial console (tail)"
-        tail -c 20000 "$HOME/guests/debian-trixie-amd64/serial.output" 2>/dev/null \
-          || echo "no guest serial output"
-        echo "::endgroup::"
-        cp "$HOME/guests/debian-trixie-amd64/serial.output" "${dst}-serial.output" \
-          2>/dev/null || true
+        toolbox/ci/collect-qemu-serial.sh "${dst}-serial"
 
     - name: CIJOE, upload report-docgen
       uses: actions/upload-artifact@v6.0.0
