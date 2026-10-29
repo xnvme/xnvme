@@ -23,8 +23,13 @@
 
 static int
 xnvme_be_rdma_admin_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
-			      void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
+			      void *mbuf, size_t mbuf_nbytes)
 {
+	if (mbuf || mbuf_nbytes) {
+		XNVME_DEBUG("FAILED: metadata buffers are not supported");
+		return -ENOSYS;
+	}
+
 	return xnvme_transport_cmd_sync(TO_TRANSPORT_DEV_STATE(ctx->dev)->admin_qpair, ctx, dbuf,
 					dbuf_nbytes);
 }

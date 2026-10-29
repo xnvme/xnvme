@@ -112,10 +112,15 @@ xnvme_be_rdma_queue_poke(struct xnvme_queue *q, uint32_t max)
 }
 
 int
-xnvme_be_rdma_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
-			   void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
+xnvme_be_rdma_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			   size_t mbuf_nbytes)
 {
 	int err;
+
+	if (mbuf || mbuf_nbytes) {
+		XNVME_DEBUG("FAILED: metadata buffers are not supported");
+		return -ENOSYS;
+	}
 
 	err = _rdma_async_cmd_submit(TO_RDMA_QUEUE_QPAIR(ctx->async.queue), ctx, dbuf,
 				     dbuf_nbytes);

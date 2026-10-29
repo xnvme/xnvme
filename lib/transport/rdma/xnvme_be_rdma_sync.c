@@ -20,9 +20,14 @@
 #include <xnvme_be_rdma.h>
 
 int
-xnvme_be_rdma_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
-			  void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
+xnvme_be_rdma_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			  size_t mbuf_nbytes)
 {
+	if (mbuf || mbuf_nbytes) {
+		XNVME_DEBUG("FAILED: metadata buffers are not supported");
+		return -ENOSYS;
+	}
+
 	return xnvme_transport_cmd_sync(TO_TRANSPORT_DEV_STATE(ctx->dev)->sync_qpair, ctx, dbuf,
 					dbuf_nbytes);
 }
