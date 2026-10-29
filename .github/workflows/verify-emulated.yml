@@ -1,7 +1,8 @@
 ---
-name: verify-nvme-pcie-emulated
+name: verify-emulated
 
-# Verify xNVMe in QEMU guests, one job per test-step, called by 'verify'.
+# Verify xNVMe in QEMU guests with emulated devices, one job per test-step of
+# the matrix it is given; 'verify' calls it for NVMe/PCIe and for NVMe/TCP.
 on:
   workflow_call:
     inputs:
@@ -15,8 +16,8 @@ defaults:
     shell: bash
 
 jobs:
-  verify-nvme-pcie-emulated:
-    name: verify-nvme-pcie-emulated (${{ matrix.os }}, ${{ matrix.ver }}, ${{ matrix.transport }}, ${{ matrix.test }})
+  verify:
+    name: (${{ matrix.os }}, ${{ matrix.ver }}, ${{ matrix.transport }}, ${{ matrix.test }})
     runs-on: ubuntu-24.04
 
     strategy:

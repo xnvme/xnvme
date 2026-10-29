@@ -283,17 +283,19 @@ jobs:
       == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'verify'))
 
     outputs:
-      matrix: ${{ steps.generate.outputs.matrix }}
+      nvme: ${{ steps.generate.outputs.nvme }}
+      tcp: ${{ steps.generate.outputs.tcp }}
       build_linux: ${{ steps.build_linux.outputs.build_linux }}
 
     env:
       # Each entry is expanded into one entry per 'test_*' step of the cijoe task it
       # runs, so that the test-steps of a task are verified as separate jobs.
-      BASE_MATRIX: |
+      BASE_MATRIX_NVME: |
         - {os: 'freebsd', ver: '14', guest_dir: 'freebsd-14-amd64', transport: 'pcie'}
         #- {os: 'freebsd', ver: '15', guest_dir: 'freebsd-15-amd64', transport: 'pcie'}
         - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'pcie'}
         - {os: 'debian', ver: 'trixie-iommu_disabled', guest_dir: 'debian-trixie-amd64', transport: 'pcie'}
+      BASE_MATRIX_TCP: |
         - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'tcp-spdk'}
         - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'tcp-linux'}
       BUILD_LINUX: |
@@ -324,11 +326,13 @@ jobs:
       id: generate
       run: |
         pip install --quiet pyyaml
-        python3 toolbox/gha_matrix.py <<< "$BASE_MATRIX" >> "$GITHUB_OUTPUT"
+        python3 toolbox/gha_matrix.py <<< "$BASE_MATRIX_NVME" | sed 's/^matrix=/nvme=/' >> "$GITHUB_OUTPUT"
+        python3 toolbox/gha_matrix.py <<< "$BASE_MATRIX_TCP" | sed 's/^matrix=/tcp=/' >> "$GITHUB_OUTPUT"
 
-    - name: Show the generated job-matrix
+    - name: Show the generated job-matrices
       run: |
-        echo '${{ steps.generate.outputs.matrix }}' | python3 -m json.tool
+        echo '${{ steps.generate.outputs.nvme }}' | python3 -m json.tool
+        echo '${{ steps.generate.outputs.tcp }}' | python3 -m json.tool
 
     - name: Generate the job-matrix of the Linux builds
       id: build_linux
@@ -403,9 +407,9 @@ jobs:
     needs: [matrices, source-archive, source-format-check, ffi-python]
     if: github.event.inputs.job == 'all' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch'
       && github.event.inputs.job == 'verify')
-    uses: ./.github/workflows/verify-nvme-pcie-emulated.yml
+    uses: ./.github/workflows/verify-emulated.yml
     with:
-      matrix: ${{ needs.matrices.outputs.matrix }}
+      matrix: ${{ needs.matrices.outputs.nvme }}
 
   verify-nvme-pcie-hardware:
     needs: [changes-to-docs, source-archive, source-format-check, ffi-python]
@@ -421,6 +425,14 @@ jobs:
       && github.event.inputs.job == 'verify'))
     uses: ./.github/workflows/verify-nvme-rdma-emulated.yml
 
+  verify-nvme-tcp-emulated:
+    needs: [matrices, source-archive, source-format-check, ffi-python]
+    if: github.event.inputs.job == 'all' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch'
+      && github.event.inputs.job == 'verify')
+    uses: ./.github/workflows/verify-emulated.yml
+    with:
+      matrix: ${{ needs.matrices.outputs.tcp }}
+
   verify-packaging:
     needs: [changes-to-docs, source-archive, source-format-check, ffi-python, docgen-shallow]
     if: needs.changes-to-docs.outputs.docs_prose_only != 'true'
@@ -434,7 +446,8 @@ jobs:
   #
   ci-result:
     needs: [changes-to-docs, source-archive, source-format-check, ffi-python, ffi-rust, matrices, docgen-shallow, build, verify-makefile,
-      verify-nvme-pcie-emulated, verify-nvme-pcie-hardware, verify-nvme-rdma-emulated, verify-packaging, docgen-full]
+      verify-nvme-pcie-emulated, verify-nvme-pcie-hardware, verify-nvme-rdma-emulated, verify-nvme-tcp-emulated, verify-packaging,
+      docgen-full]
     runs-on: ubuntu-24.04
     if: always()
 
