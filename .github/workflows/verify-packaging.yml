@@ -11,14 +11,14 @@ defaults:
     shell: bash
 
 jobs:
-  build-rpm:
+  rpm-dev:
     runs-on: ubuntu-24.04
     if: github.event_name == 'pull_request' || github.event.inputs.job == 'all'
     container:
       image: fedora:44
 
     steps:
-    # git before checkout: 'make build-rpm' archives HEAD, so it needs a clone
+    # git before checkout: 'make rpm-dev' archives HEAD, so it needs a clone
     - name: Install what the spec builds with, and rpm-build
       run: dnf install -y git make meson gcc python3 rpm-build
 
@@ -29,10 +29,46 @@ jobs:
       run: |
         git config --global --add safe.directory "$GITHUB_WORKSPACE"
         meson setup builddir -Dwith-spdk=disabled -Dwith-libvfn=disabled
-        make build-rpm
+        make rpm-dev
 
     - name: Install the RPM
       run: dnf install -y builddir/meson-dist/RPMS/x86_64/xnvme-*.rpm
+
+    - name: Run the installed tools
+      run: |
+        xnvme library-info
+        xnvme info 1GB --be ramdisk
+
+  #
+  # Package xNVMe as a distribution would, from the source archive without
+  # subprojects that the release ships, with only the spec's BuildRequires
+  #
+  rpm-dist:
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'pull_request' || github.event.inputs.job == 'all'
+    container:
+      image: fedora:44
+
+    steps:
+    - name: Install what unpacking the archive and rpmbuild need
+      run: dnf install -y tar gzip make python3 rpm-build dnf-plugins-core findutils
+
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
+      with:
+        name: xnvme-src-archive
+
+    - name: Install the spec's BuildRequires, and nothing else
+      run: |
+        sed "s/@VERSION@/0/" toolbox/xnvme-dist.spec.in > /tmp/deps.spec
+        dnf builddep -y /tmp/deps.spec
+
+    - name: Build the RPMs
+      run: make rpm-dist SRC_TGZ=${{ steps.source.outputs.src_tgz }}
+
+    - name: Install the RPM
+      run: dnf install -y $(find builddir/rpmbuild/RPMS -name 'xnvme-*.rpm')
 
     - name: Run the installed tools
       run: |

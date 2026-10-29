@@ -1,0 +1,55 @@
+# A spec built the way a distribution packages xNVMe: from the release's
+# source archive without subprojects, xnvme-X.Y.Z.tar.gz, with %%meson and the
+# dependencies from the system rather than bundled. 'make rpm-dist' fills in
+# the version and builds it; CI does so from the archive it ships.
+Name:           xnvme
+Version:        @VERSION@
+Release:        1%{?dist}
+Summary:        Cross-platform libraries and tools for NVMe devices
+License:        BSD-3-Clause
+URL:            https://xnvme.io/
+Source0:        xnvme-%{version}.tar.gz
+
+BuildRequires:  gcc
+BuildRequires:  meson
+BuildRequires:  libaio-devel
+BuildRequires:  liburing-devel
+
+%define debug_package %{nil}
+
+%description
+xNVMe provides the means to program and interact with NVMe devices from user
+space. See https://xnvme.io/
+
+%prep
+%autosetup -n xnvme-%{version}
+
+%build
+# %%meson enables every 'auto' feature, so those without a system package to
+# build with, or needing a GPU toolkit, are disabled by name
+%meson \
+  -Dwith-spdk=disabled \
+  -Dwith-spdk-rdma=disabled \
+  -Dwith-libvfn=disabled \
+  -Dwith-isal=disabled \
+  -Dwith-cuda=disabled \
+  -Dwith-hip=disabled \
+  -Dwith-cuse=disabled \
+  -Dsystemd=disabled
+%meson_build
+
+%install
+%meson_install
+# The binaries carry an RPATH to the prefix's libdir, /usr/lib64 here, which
+# check-rpaths files as a standard RPATH (0x0001)
+export QA_RPATHS=0x0001
+
+%post -p /sbin/ldconfig
+%postun -p /sbin/ldconfig
+
+%files
+%license LICENSE
+%{_includedir}/*
+%{_libdir}/*
+%{_bindir}/*
+%{_datadir}/*
