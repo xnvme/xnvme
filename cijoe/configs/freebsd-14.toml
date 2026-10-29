@@ -24,12 +24,6 @@ shell = "csh"
 bin = "clang"
 
 # Used by: qemu.build.py
-[qemu.repository]
-remote = "https://github.com/qemu/qemu.git"
-path = "{{ local.env.HOME }}/git/qemu"
-tag = "v8.0.0"
-
-# Used by: qemu.build.py
 [qemu.build]
 prefix = "{{ local.env.HOME }}/opt/qemu"
 

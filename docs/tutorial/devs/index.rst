@@ -521,8 +521,10 @@ side on one machine.
 
 The ``guest-*`` targets the ``devenv-*`` ones run can also be run by hand in
 the container, ``make devenv-shell``, for instance ``make verify-guest`` for a
-whole provision and test run as a **CI** job does it, or ``make docgen-guest``
-for the documentation.
+whole provision and test run as a **CI** job does it, ``make docgen-guest``
+for the documentation, or ``make guest-bench BENCH=latency`` (or ``bdev``) on a
+guest with a drive passed through, for a benchmark as the benchmark jobs run
+it.
 
 Running pytest from the repository
 ----------------------------------

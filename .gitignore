@@ -54,6 +54,7 @@ selftest_results
 *.egg-info
 cijoe/current.guest
 cijoe/current.rig
+cijoe/current.passthru.toml
 # macos
 .DS_Store
 .devenv

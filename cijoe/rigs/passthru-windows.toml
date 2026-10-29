@@ -1,0 +1,9 @@
+[rig.devices.nvme0]
+labels = ["nvm"]
+
+[[devices]]
+key = "bdev"
+uri = "//./PhysicalDrive1" # forward slashes survive shell evaluation; \\.\ loses its backslashes
+nsid = 1
+labels = [ "dev", "bdev", "nvm" ]
+driver_attachment = "kernel"

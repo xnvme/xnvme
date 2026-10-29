@@ -1,0 +1,65 @@
+[os]
+prettyname = "Linux"
+
+[cijoe.workflow]
+fail_fast=true
+
+[[duts]]
+pcie = "0000:01:00.0"
+os = "0n1"
+sn = "XXXXXXXXXXXXXXXX"
+label = "SAMSUNG990PRO2TB"
+
+[hugetlbfs]
+mount_point = "/mnt/huge"
+nr_hugepages = "128"
+
+[liburing.repository]
+remote = "https://github.com/axboe/liburing.git"
+path = "/root/git/liburing"
+tag = "liburing-2.4"
+
+[spdk.repository]
+remote = "https://github.com/spdk/spdk"
+path = "/root/git/spdk"
+tag = "v24.05"
+
+[spdk.build]
+prefix = "/opt/spdk"
+spdk_json_conf = "/opt/bdev_confs/bdev_nvme_spdk_nvme__1.conf"
+filename = "bdev_nvme_spdk_nvme_device0n1n1"
+
+[fio]
+bin = "/opt/fio/bin/fio"
+
+[fio.repository]
+remote = "https://github.com/axboe/fio.git"
+path = "/root/git/fio"
+tag = "fio-3.38"
+
+[fio.build]
+prefix = "/opt/fio"
+
+[fio.engines]
+libaio = {type = "builtin", group = "libaio", device = "bdev"}
+posixaio = {type = "builtin", group = "posixaio", device = "bdev"}
+
+io_uring = {type = "builtin", group = "io_uring", device = "bdev"}
+io_uring_cmd = {type = "builtin", group = "io_uring_cmd", device = "cdev"}
+
+null = {type = "builtin", group = "null", device = "bdev"}
+
+spdk_nvme = {type = "external_preload", group = "spdk", path = "/tmp/spdk/build/fio/spdk_nvme", device = "pcie"}
+spdk_bdev = {type = "external_preload", group = "spdk", path = "/tmp/spdk/build/fio/spdk_bdev", device = "pcie"}
+
+xnvme_libaio = {type = "builtin", group = "libaio", be = "libaio", device = "bdev"}
+xnvme_posixaio = {type = "builtin", group = "posixaio", be = "posix", device = "bdev"}
+xnvme_io_uring = {type = "builtin", group = "io_uring", be = "io_uring", device = "bdev"}
+xnvme_io_uring_cmd = {type = "builtin", group = "io_uring_cmd", be = "io_uring_cmd", device = "cdev"}
+xnvme_spdk = {type = "builtin", group = "spdk", be = "spdk", device = "pcie"}
+xnvme_null = {type = "builtin", group = "null", be = "nil", device = "bdev"}
+
+# Sized as the guest the benchmarks' results were measured in, not as the
+# smaller test guest; guest-start takes this config for a benchmark
+[qemu.guests.trixie_amd64.system_args]
+kwa = {cpu = "host", smp = 6, m = "32G", accel = "kvm"}

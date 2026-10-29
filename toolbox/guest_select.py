@@ -12,11 +12,15 @@ Workflow names carry the transport as the trailing segment, e.g.
 to find the matching config, and multiple workflows backed by the same
 config are deduped so each guest appears once.
 
+Piped, it also takes a guest without a test workflow, one whose config
+defines a qemu guest, as the Windows guest the benchmarks boot.
+
 Writes the selected guest name to cijoe/current.guest.
 """
 import glob
 import os
 import sys
+import tomllib
 
 KNOWN_TRANSPORTS = ("pcie", "tcp", "rdma")
 KNOWN_PROVIDERS = ("spdk", "linux")
@@ -60,6 +64,16 @@ def discover_guests(cijoe_dir):
             seen.add(guest)
 
     return guests
+
+
+def is_qemu_guest(cijoe_dir, name):
+    """Whether cijoe/configs/<name>.toml defines a qemu guest to boot"""
+
+    path = os.path.join(cijoe_dir, "configs", f"{name}.toml")
+    if not os.path.isfile(path):
+        return False
+    with open(path, "rb") as config:
+        return "default_guest" in tomllib.load(config).get("qemu", {})
 
 
 def main():
@@ -114,6 +128,8 @@ def main():
             stripped = _workflow_to_guest(selected)
             if stripped in guests:
                 selected = stripped
+            elif is_qemu_guest(cijoe_dir, selected):
+                pass
             else:
                 print(f"ERROR: Unknown guest '{selected}'", file=sys.stderr)
                 print(f"Available: {', '.join(guests)}", file=sys.stderr)

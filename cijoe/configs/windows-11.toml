@@ -1,0 +1,60 @@
+[cijoe.transport.root]
+username = "root"
+password = "root"
+hostname = "localhost"
+port = 4200
+
+[os]
+name = "windows"
+version = "11"
+
+[cijoe.run]
+shell = "bash"
+
+[build.compiler]
+bin = "gcc"
+
+[qemu]
+img_bin = "qemu-img"
+default_guest = "generic-bios-kvm-x86_64"
+default_systemimage = "windows-11"
+
+[qemu.build]
+prefix = "{{ local.env.HOME }}/opt/qemu"
+
+[qemu.systems.x86_64]
+bin = "qemu-system-x86_64"
+
+[qemu.guests.generic-bios-kvm-x86_64]
+path = "{{ local.env.HOME }}/guests/generic-bios-kvm-x86_64"
+
+system_label = "x86_64"
+
+system_args.kwa = {cpu = "host", smp = 6, m = "32G", accel = "kvm"}
+
+system_args.raw = """\
+-drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.ms.fd \
+-drive if=pflash,format=raw,file={{ local.env.HOME }}/system_imaging/fd/win11_VARS.fd \
+-blockdev driver=qcow2,node-name=boot,file.driver=file,file.filename={{ local.env.HOME }}/guests/generic-bios-kvm-x86_64/boot2.img \
+-device ide-hd,drive=boot \
+-drive file={{ local.env.HOME }}/system_imaging/iso/virtio-win.iso,media=cdrom \
+-M q35,kernel_irqchip=split \
+-chardev socket,id=chrtpm,path={{ local.env.HOME }}/guests/generic-bios-kvm-x86_64/swtpm.sock \
+-tpmdev emulator,id=tpm0,chardev=chrtpm \
+-device tpm-tis,tpmdev=tpm0
+"""
+
+system_args.tcp_forward = {host = 4200, guest = 22}
+
+[xnvme.repository]
+remote = "https://github.com/xnvme/xnvme.git"
+path = "C:/Users/odus/git/xnvme"
+branch = "main"
+
+[xnvme.repository.sync]
+branch = "wip"
+remote_alias = "guest"
+remote_path = "C:/Users/odus/tmp/xnvme"
+
+[xnvme.build]
+type = "debug"
