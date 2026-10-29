@@ -18,7 +18,7 @@ RUN bash toolbox/pkgs/debian-trixie.sh
 
 RUN meson setup builddir -Dwith-spdk=disabled && \
 	make && \
-	make build-deb && \
+	make deb-dev && \
 	make install-deb && \
 	make clean
 
