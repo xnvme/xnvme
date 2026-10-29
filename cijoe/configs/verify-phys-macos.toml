@@ -1,10 +1,10 @@
-[cijoe.transport.ssh]
+[cijoe.targets.ssh.ssh]
 hostname = "verify-macos"
 port = 22
 username = "root"
 password = "root"
 
-[cijoe.transport.nonroot]
+[cijoe.targets.nonroot.ssh]
 hostname = "verify-macos"
 port = 22
 username = "nonroot"

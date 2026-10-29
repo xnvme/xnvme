@@ -1,5 +1,5 @@
 # The SSH options are passed verbatim to paramiko; see https://www.paramiko.org/
-[cijoe.transport.root]
+[cijoe.targets.root.ssh]
 username = "root"
 password = "root"
 hostname = "localhost"
@@ -7,7 +7,7 @@ port = 4200
 
 # Operator account on nosi images; used by root_unlock. Inert when root SSH
 # already works (fork-based guest, or pre-unlocked images).
-[cijoe.transport.odus]
+[cijoe.targets.odus.ssh]
 username = "odus"
 password = "odus.321"
 hostname = "localhost"

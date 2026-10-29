@@ -1,4 +1,4 @@
-[cijoe.transport.root]
+[cijoe.targets.root.ssh]
 username = "root"
 password = "root"
 hostname = "localhost"
