@@ -75,7 +75,9 @@ link_args_hardening = get_option('hardening') ? cc.get_supported_arguments([
 ]) : []
 
 xnvmelib_libdir = get_option('libdir')
-xnvmelib_rpath = get_option('prefix') + '/' + xnvmelib_libdir
+# The loader searches a /usr prefix's libdir already, and distributions reject
+# an RPATH to it
+xnvmelib_rpath = get_option('prefix') == '/usr' ? '' : get_option('prefix') + '/' + xnvmelib_libdir
 
 #
 # The project itself
