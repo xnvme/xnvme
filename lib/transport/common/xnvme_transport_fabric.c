@@ -225,8 +225,8 @@ xnvme_transport_fabric_connect(struct xnvme_transport_qpair *qpair)
 	fcmd->connect.recfmt = 0;
 	fcmd->connect.qid = qpair->attr.qid;
 	fcmd->connect.sqsize = qpair->attr.qsize;
-	fcmd->connect.kato = 0;                       /* No keep-alive timeout */
-	fcmd->connect.nvmsetid = 0;                   /* Default NVM set */
+	fcmd->connect.kato = 0;     /* No keep-alive timeout */
+	fcmd->connect.nvmsetid = 0; /* Default NVM set */
 	fcmd->connect.cattr.connent = 0;
 	fcmd->connect.cattr.indivioqdels = 1;
 	fcmd->connect.cattr.dissqfc = 0;
@@ -313,8 +313,10 @@ static inline uint64_t
 _transport_calculate_timeout(struct nvme_ctrlr_cap cap)
 {
 	uint64_t timeout_ns = cap.to ? cap.to * TRANSPORT_FABRIC_CAP_TO_UNIT_NS
-				    : TRANSPORT_FABRIC_READY_TIMEOUT_NS;
-	timeout_ns = timeout_ns < TRANSPORT_FABRIC_READY_TIMEOUT_NS ? TRANSPORT_FABRIC_READY_TIMEOUT_NS : timeout_ns;
+				     : TRANSPORT_FABRIC_READY_TIMEOUT_NS;
+	timeout_ns = timeout_ns < TRANSPORT_FABRIC_READY_TIMEOUT_NS
+			     ? TRANSPORT_FABRIC_READY_TIMEOUT_NS
+			     : timeout_ns;
 	return timeout_ns;
 }
 
@@ -348,9 +350,10 @@ xnvme_transport_fabric_enable(struct xnvme_transport_ctrlr *ctrlr,
 	// calculate timeout
 	timeout_ns = _transport_calculate_timeout(cap);
 
-	// A controller that is already enabled must be left as is, as disabling it is not handled here
+	// A controller that is already enabled must be left as is, as disabling it is not handled
+	// here
 	if (cc.en) {
-		return 0; 
+		return 0;
 	}
 
 	// determine the supposed IO set
