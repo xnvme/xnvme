@@ -218,6 +218,22 @@ xnvme_be_upcie_type1_attach(struct xnvme_be_upcie_ctrlr *ctrlr, const char *bdf)
 int
 xnvme_be_upcie_va_bits(void);
 
+/**
+ * IOVA the host heap is mapped at on the vfio-pci paths
+ *
+ * Read from XNVME_UPCIE_HOST_IOVA_BASE.
+ */
+uint64_t
+xnvme_be_upcie_host_iova_base(void);
+
+/**
+ * IOVA the device-memory window starts at, which the host heap has to end below
+ *
+ * Read from XNVME_UPCIE_IOVA_BASE.
+ */
+uint64_t
+xnvme_be_upcie_iova_base(void);
+
 int
 xnvme_be_upcie_iova_range_required(void);
 
