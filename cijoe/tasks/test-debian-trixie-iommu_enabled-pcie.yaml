@@ -3,8 +3,8 @@ doc: |
   Test xNVMe on Linux
 
 steps:
-- name: sysinfo
-  uses: linux.sysinfo
+- name: facts
+  uses: core.facts_gather
 
 - name: enumerate
   run: |

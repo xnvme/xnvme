@@ -23,10 +23,6 @@ shell = "csh"
 [build.compiler]
 bin = "clang"
 
-# Used by: qemu.build.py
-[qemu.build]
-prefix = "{{ local.env.HOME }}/opt/qemu"
-
 [qemu]
 img_bin = "qemu-img"
 default_guest = "freebsd_14"

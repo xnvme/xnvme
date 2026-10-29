@@ -17,8 +17,8 @@ doc: |
 
 steps:
 
-- name: sysinfo
-  uses: linux.sysinfo
+- name: facts
+  uses: core.facts_gather
 
 - name: hardware
   run: lshw
