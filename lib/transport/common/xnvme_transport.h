@@ -40,14 +40,14 @@ struct xnvme_transport_ctrlr_ops {
 };
 
 struct xnvme_transport_qpair_ops {
-	/* control plane */
+	// control plane
 	void (*qpair_free)(struct xnvme_transport_qpair *qpair);
 	int (*qpair_init)(struct xnvme_transport_qpair *qpair);
 	int (*qpair_teardown)(struct xnvme_transport_qpair *qpair);
 	int (*qpair_connect)(struct xnvme_transport_qpair *qpair);
 	int (*qpair_disconnect)(struct xnvme_transport_qpair *qpair);
 
-	/* data plane */
+	// data plane
 	int (*qpair_submit)(struct xnvme_transport_qpair *qpair, const void *capsule,
 			    size_t nbytes, uint16_t cid);
 	int (*qpair_poll)(struct xnvme_transport_qpair *qpair, uint32_t max);
