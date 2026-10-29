@@ -15,9 +15,9 @@ def test_fio_engine(cijoe, device, be_opts, cli_args):
     """
     The construction of the fio-invocation is done in 'fio_fancy'
     """
-    if be_opts["mem"] == "upcie-cuda":
+    if be_opts["mem"] in ("upcie-cuda", "upcie-hip"):
         pytest.skip(
-            reason="[mem=upcie-cuda] fio xNVMe ioengine does not support CUDA memory"
+            reason=f"[mem={be_opts['mem']}] fio xNVMe ioengine does not support GPU memory"
         )
     if get_homi_id():
         pytest.skip(reason="the fio ioengine cannot attach to a homi server")
@@ -54,9 +54,9 @@ def test_fio_engine_iov(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[admin=driverkit] does not implement iovec")
     if "novec" in device["labels"]:
         pytest.skip(reason="[novec] the target takes no vectored commands")
-    if be_opts["mem"] == "upcie-cuda":
+    if be_opts["mem"] in ("upcie-cuda", "upcie-hip"):
         pytest.skip(
-            reason="[mem=upcie-cuda] fio xNVMe ioengine does not support CUDA memory"
+            reason=f"[mem={be_opts['mem']}] fio xNVMe ioengine does not support GPU memory"
         )
     if get_homi_id():
         pytest.skip(reason="the fio ioengine cannot attach to a homi server")
