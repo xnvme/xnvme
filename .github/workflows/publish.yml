@@ -1,0 +1,160 @@
+---
+name: publish
+
+# A push to main deploys the documentation, and releases when its head commit
+# is 'ver: bump to vX.Y.Z', from the artifacts of the 'verify' run of the
+# pull-request that was merged, so neither main nor the tag runs it again. The
+# artifacts are used only when that pull-request's head has the tree main now
+# has, which branch protection's up-to-date rule makes the case for a merge.
+# For a push without one, the documentation is built by a manual 'docgen' run
+# on main instead, and a release fails.
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+
+    steps:
+    - name: Grab source
+      uses: actions/checkout@v6
+
+    - name: Check whether this releases a version, and write the release notes
+      id: version
+      run: |
+        subject=$(git log -1 --format=%s)
+        case "$subject" in
+        "ver: bump to v"*)
+          python3 toolbox/xnvme_release.py "$subject" > "$RUNNER_TEMP/notes.md"
+          echo "version=${subject#ver: bump to v}" >> "$GITHUB_OUTPUT"
+          ;;
+        *) echo "Not a version bump: $subject" ;;
+        esac
+
+    - name: Find the 'verify' run of the merged pull-request on this tree
+      id: pr
+      env:
+        VERSION: ${{ steps.version.outputs.version }}
+      run: |
+        missing() {
+          if [ -n "$VERSION" ]; then
+            echo "::error::$1; v$VERSION is not released"
+            exit 1
+          fi
+          echo "::warning::$1; the documentation is built by a manual run instead"
+          exit 0
+        }
+        pr=$(gh api "repos/$REPO/commits/$GITHUB_SHA/pulls" \
+          --jq '[.[] | select(.merged_at != null)][0].number // empty')
+        [ -n "$pr" ] || missing "No pull-request merged $GITHUB_SHA"
+        git fetch --quiet --depth 1 origin "refs/pull/$pr/head"
+        if [ "$(git rev-parse 'FETCH_HEAD^{tree}')" != "$(git rev-parse 'HEAD^{tree}')" ]; then
+          missing "#$pr was behind main when merged, so its run tested another tree"
+        fi
+        # ci-result decides whether a pull-request may merge, not the run's own
+        # conclusion, which jobs that ci-result does not count can fail
+        run=""
+        for id in $(gh run list --repo "$REPO" --workflow verify.yml --event pull_request \
+          --commit "$(git rev-parse FETCH_HEAD)" --status completed --limit 20 \
+          --json databaseId --jq '.[].databaseId'); do
+          result=$(gh api --paginate "repos/$REPO/actions/runs/$id/jobs?per_page=100" \
+            --jq '.jobs[] | select(.name == "ci-result") | .conclusion')
+          if [ "$result" = success ]; then
+            run=$id
+            break
+          fi
+        done
+        [ -n "$run" ] || missing "#$pr has no 'verify' run of its head that ci-result passed"
+        echo "run=$run" >> "$GITHUB_OUTPUT"
+
+    - name: Download the documentation the pull-request built
+      id: docs
+      if: steps.pr.outputs.run
+      env:
+        RUN: ${{ steps.pr.outputs.run }}
+      run: |
+        gh run download "$RUN" --repo "$REPO" --pattern 'docgen-*-reports' --dir docgen || true
+        docs=$(find docgen -name docs.tar.gz 2>/dev/null | head -1)
+        if [ -z "$docs" ]; then
+          echo "::warning::Run $RUN built no documentation; it is built by a manual run instead"
+          exit 0
+        fi
+        tar xzf "$docs"
+        echo "built=true" >> "$GITHUB_OUTPUT"
+
+    - name: Build the documentation by a manual run, as there is none to deploy
+      if: steps.docs.outputs.built != 'true'
+      run: |
+        gh workflow run verify.yml --repo "$REPO" --ref main -f job=docgen
+
+    - name: Checkout site
+      if: steps.docs.outputs.built == 'true'
+      uses: actions/checkout@v6
+      with:
+        repository: "xnvme/xnvme.github.io"
+        token: ${{ secrets.DOCS_PAT }}
+        path: site
+
+    - name: Deploy the documentation for main, and the tag when releasing
+      if: steps.docs.outputs.built == 'true'
+      env:
+        VERSION: ${{ steps.version.outputs.version }}
+      run: |
+        pipx install docs/tooling
+        xnvme-docs-dest --docs html --site site --ref refs/heads/main
+        if [ -n "$VERSION" ]; then
+          xnvme-docs-dest --docs html --site site --ref "refs/tags/v$VERSION"
+        fi
+        cd site
+        git config user.name 'GitHUB Service'
+        git config user.email 'ghs@safl.dk'
+        git add .
+        if git diff --cached --quiet; then
+          echo "The site has these docs already"
+          exit 0
+        fi
+        git commit -m "Auto-deployed update of 'docs/' for '$GITHUB_SHA'${VERSION:+ and v$VERSION}"
+        git push
+
+    - name: Collect the release assets from the pull-request's run
+      if: steps.version.outputs.version
+      env:
+        RUN: ${{ steps.pr.outputs.run }}
+        VERSION: ${{ steps.version.outputs.version }}
+      run: |
+        mkdir -p assets
+        gh run download "$RUN" --repo "$REPO" --name xnvme-src-archive --dir src
+        gh run download "$RUN" --repo "$REPO" --name xnvme-src-archive-with-subprojects --dir src-fat
+        gh run download "$RUN" --repo "$REPO" --name xnvme-py-sdist --dir py
+        cp src/xnvme-src.tar.gz "assets/xnvme-$VERSION.tar.gz"
+        cp src-fat/xnvme-src.tar.gz "assets/xnvme-fat-$VERSION.tar.gz"
+        cp py/xnvme-py-sdist.tar.gz "assets/xnvme-py-sdist-v$VERSION.tar.gz"
+        (cd assets && for archive in xnvme-*.tar.gz; do sha256sum "$archive" > "$archive.sha256sum"; done)
+        gh run download "$RUN" --repo "$REPO" --pattern '*-reports' --dir reports
+        tar czf "assets/test-results-v$VERSION.tar.gz" reports
+        ls -lh assets
+
+    - name: Tag and create the release
+      if: steps.version.outputs.version
+      env:
+        VERSION: ${{ steps.version.outputs.version }}
+      run: |
+        gh release create "v$VERSION" --repo "$REPO" --target "$GITHUB_SHA" \
+          --title "Release Notes: v$VERSION" --notes-file "$RUNNER_TEMP/notes.md" \
+          --generate-notes assets/*

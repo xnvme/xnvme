@@ -1,10 +1,11 @@
 ---
 name: verify
 
+# Pull-requests run what it takes to get onto main, so main and its tags run
+# nothing again: the 'publish' workflow deploys the docs and releases from the
+# artifacts of the pull-request that was merged. A manual run on any branch
+# runs the jobs its 'job' names, 'all' every one.
 on:
-  push:
-    branches: [main]
-    tags: ['v*']
   pull_request:
     types: [opened, reopened, synchronize, labeled]
     branches: [main]
@@ -16,9 +17,10 @@ on:
       job:
         description: 'Job'
         required: true
-        default: docgen
+        default: all
         type: choice
         options:
+        - all
         - verify
         - bench
         - docgen
@@ -29,13 +31,12 @@ defaults:
 
 jobs:
   #
-  # Classify a pull-request, or a push to main: when it changes nothing but the
-  # documentation, then the jobs building and verifying the code are skipped, and
-  # only 'docs' builds the documentation. A push to main still runs 'docgen', and
-  # what it needs, since the site is built from the command outputs of its guest.
-  # A changed .cmd file counts as code, since only the guest of 'docgen' runs it.
-  # Tags and manual runs are not classified. When the classification fails, then
-  # the change does not count as documentation-only, and everything runs.
+  # Classify a pull-request: when it changes nothing but the documentation, then
+  # the jobs building and verifying the code are skipped, and only 'docs' builds
+  # the documentation. A changed .cmd file counts as code, since only the guest
+  # of 'docgen' runs it. Manual and weekly runs are not classified. When the
+  # classification fails, then the change does not count as documentation-only,
+  # and everything runs.
   #
   changes-to-docs:
     runs-on: ubuntu-24.04
@@ -55,17 +56,12 @@ jobs:
       continue-on-error: true
       env:
         EVENT: ${{ github.event_name }}
-        REF: ${{ github.ref }}
         PR_BASE: ${{ github.event.pull_request.base.sha }}
-        BEFORE: ${{ github.event.before }}
       run: |
         docs_prose_only=false
         : > changed.txt
         if [ "$EVENT" = "pull_request" ]; then
           git diff --name-only --no-renames "$PR_BASE...HEAD" > changed.txt || : > changed.txt
-        elif [ "$EVENT" = "push" ] && [ "$REF" = "refs/heads/main" ] &&
-          git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
-          git diff --name-only --no-renames "$BEFORE" HEAD > changed.txt || : > changed.txt
         fi
         cat changed.txt
         if [ -s changed.txt ] && ! grep -qvE '^(docs/|[^/]+\.md$)' changed.txt &&
@@ -94,7 +90,7 @@ jobs:
   source-archive:
     needs: changes-to-docs
     runs-on: ubuntu-24.04
-    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' || github.event_name == 'push'
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true'
     container: ghcr.io/xnvme/xnvme-deps-alpine-latest:main
     strategy:
       matrix:
@@ -124,8 +120,9 @@ jobs:
 
     - name: Rename to un-versioned xnvme-src.tar.gz
       run: |
-        mv builddir/meson-dist/xnvme-0.7.5.tar.gz builddir/meson-dist/xnvme-src.tar.gz
-        mv builddir/meson-dist/xnvme-0.7.5.tar.gz.sha256sum builddir/meson-dist/xnvme-src.tar.gz.sha256sum
+        ver=$(python3 toolbox/xnvme_ver.py --path meson.build)
+        mv builddir/meson-dist/xnvme-$ver.tar.gz builddir/meson-dist/xnvme-src.tar.gz
+        mv builddir/meson-dist/xnvme-$ver.tar.gz.sha256sum builddir/meson-dist/xnvme-src.tar.gz.sha256sum
 
     - name: Upload source archive
       uses: actions/upload-artifact@v6.0.0
@@ -159,11 +156,29 @@ jobs:
     - name: Run pre-commit
       run: pre-commit run --all-files
 
-    - name: Test the cijoe scripts, those not needing a target
+    - name: Test the cijoe scripts, those not needing a target, and the toolbox
       run: |
         python3 -m venv /tmp/selftest
         /tmp/selftest/bin/pip install -q pytest ./cijoe
-        /tmp/selftest/bin/pytest -q -p no:cacheprovider cijoe/tests/selftest
+        /tmp/selftest/bin/pytest -q -p no:cacheprovider cijoe/tests/selftest toolbox/tests
+
+    # The 'publish' workflow releases when the merged pull-request ends on the
+    # version bump; checking it here fails the pull-request, not the release
+    - name: Check the version bump, when the pull-request ends on one
+      if: github.event_name == 'pull_request'
+      env:
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      run: |
+        git fetch --quiet --depth 1 origin "$HEAD_SHA"
+        subject=$(git log -1 --format=%s FETCH_HEAD)
+        case "$subject" in
+        "ver: bump to v"*)
+          mkdir -p /tmp/head
+          git archive FETCH_HEAD | tar -x -C /tmp/head
+          python3 toolbox/xnvme_release.py "$subject" --root /tmp/head
+          ;;
+        *) echo "Not a version bump: $subject" ;;
+        esac
 
   #
   # Ensure that bash completions, man pages, and the systemd unit are
@@ -273,7 +288,7 @@ jobs:
   build-python:
     needs: [source-archive, changes-to-docs, docs]
     runs-on: ubuntu-24.04
-    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' || github.event_name == 'push'
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true'
     container: ghcr.io/xnvme/xnvme-deps-debian-trixie:main
     strategy:
       fail-fast: false
@@ -317,7 +332,8 @@ jobs:
   build-linux:
     needs: [source-archive, source-format-check, build-python, changes-to-docs]
     runs-on: ubuntu-24.04
-    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'push' || github.event_name == 'pull_request')
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event.inputs.job == 'all' || github.event_name
+      == 'pull_request')
 
     strategy:
       fail-fast: false
@@ -494,7 +510,8 @@ jobs:
   build-rpm:
     needs: [source-format-check, changes-to-docs, docs]
     runs-on: ubuntu-24.04
-    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'push' || github.event_name == 'pull_request')
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event.inputs.job == 'all' || github.event_name
+      == 'pull_request')
     container:
       image: fedora:44
 
@@ -523,7 +540,8 @@ jobs:
   build-macos:
     needs: [source-archive, source-format-check, build-python, changes-to-docs]
     runs-on: ${{ matrix.os }}-${{ matrix.ver }}
-    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'push' || github.event_name == 'pull_request')
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event.inputs.job == 'all' || github.event_name
+      == 'pull_request')
 
     strategy:
       fail-fast: false
@@ -655,7 +673,8 @@ jobs:
   build-windows:
     needs: [source-archive, source-format-check, build-python, changes-to-docs]
     runs-on: ${{ matrix.os }}-${{ matrix.ver }}
-    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'push' || github.event_name == 'pull_request')
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event.inputs.job == 'all' || github.event_name
+      == 'pull_request')
 
     defaults:
       run:
@@ -814,8 +833,8 @@ jobs:
   generate-verify-matrix:
     needs: [source-archive, source-format-check, build-python, changes-to-docs]
     runs-on: ubuntu-24.04
-    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'push' || github.event_name == 'pull_request'
-      || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'verify'))
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event.inputs.job == 'all' || github.event_name
+      == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'verify'))
 
     outputs:
       matrix: ${{ steps.generate.outputs.matrix }}
@@ -848,8 +867,8 @@ jobs:
     name: verify (${{ matrix.os }}, ${{ matrix.ver }}, ${{ matrix.transport }}, ${{ matrix.test }})
     needs: [generate-verify-matrix, source-archive, source-format-check, build-python]
     runs-on: ubuntu-24.04
-    if: github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' &&
-      github.event.inputs.job == 'verify')
+    if: github.event.inputs.job == 'all' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch'
+      && github.event.inputs.job == 'verify')
 
     strategy:
       fail-fast: false
@@ -964,9 +983,9 @@ jobs:
   verify-physical:
     needs: [source-archive, source-format-check, build-python, changes-to-docs]
     runs-on: ${{ matrix.labels }}
-    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'push' || (github.event_name == 'pull_request'
-      && contains(github.event.pull_request.labels.*.name, 'maas')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.job
-      == 'verify'))
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event.inputs.job == 'all' || (github.event_name
+      == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'maas')) || (github.event_name == 'workflow_dispatch'
+      && github.event.inputs.job == 'verify'))
 
     strategy:
       fail-fast: false
@@ -1073,9 +1092,9 @@ jobs:
   verify-maas:
     needs: [source-archive, source-format-check, build-python, changes-to-docs]
     runs-on: ${{ matrix.labels }}
-    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'push' || (github.event_name == 'pull_request'
-      && contains(github.event.pull_request.labels.*.name, 'maas')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.job
-      == 'verify'))
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event.inputs.job == 'all' || (github.event_name
+      == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'maas')) || (github.event_name == 'workflow_dispatch'
+      && github.event.inputs.job == 'verify'))
 
     strategy:
       fail-fast: false
@@ -1172,7 +1191,7 @@ jobs:
     runs-on: [self-hosted, linux, amd64, maas]
     if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'schedule' || (github.event_name
       == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'bench')) || (github.event_name == 'workflow_dispatch'
-      && github.event.inputs.job == 'bench'))
+      && (github.event.inputs.job == 'bench' || github.event.inputs.job == 'all')))
 
     container:
       image: ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
@@ -1250,7 +1269,7 @@ jobs:
     needs: [source-archive, source-format-check, build-python, changes-to-docs]
     if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'schedule' || (github.event_name
       == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'bench')) || (github.event_name == 'workflow_dispatch'
-      && github.event.inputs.job == 'bench'))
+      && (github.event.inputs.job == 'bench' || github.event.inputs.job == 'all')))
 
     strategy:
       fail-fast: false
@@ -1334,14 +1353,9 @@ jobs:
   #
   # Documentation: generate documentation and deploy it to githubpages (xnvme.io)
   #
-  # This is triggered upon:
-  #
-  # * push of branches and tags
-  # * manual 'workflow_dispatch'
-  # * pull-request changes, thus, we can catch whether a PR breaks documentation
-  #
-  # When triggered by 'push' or 'workflow_dispatch', then the documentation is
-  # deployed to:
+  # This runs on pull-requests, so we catch whether one breaks the documentation,
+  # and the 'publish' workflow deploys what the merged one built. A manual run
+  # with 'job' set to 'docgen' builds and deploys it itself, to:
   #
   #   githubpages/en/<ref>
   #
@@ -1351,14 +1365,14 @@ jobs:
   # * githubpages/en/v1.2.3
   # * githubpages/en/v1.2.4
   #
-  # Thus, upon push/dispatch then the archive/history is updated.
+  # Thus, each deploy updates the archive/history.
   # The root of the site is always synced with githubpages/en/main, so that
   # https://xnvme.io/ serves the latest state of xNVMe.
   #
   docgen:
     needs: [source-archive, source-format-check, build-python, changes-to-docs]
     runs-on: ubuntu-24.04
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && needs.changes-to-docs.outputs.docs_prose_only
+    if: github.event.inputs.job == 'all' || (github.event_name == 'pull_request' && needs.changes-to-docs.outputs.docs_prose_only
       != 'true') || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'docgen')
 
     strategy:
@@ -1446,7 +1460,7 @@ jobs:
         if-no-files-found: error
 
     - name: Checkout site
-      if: ((github.event_name == 'push') || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen')))
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'docgen'
       uses: actions/checkout@v6
       with:
         repository: "xnvme/xnvme.github.io"
@@ -1458,20 +1472,20 @@ jobs:
         git config --global --add safe.directory $(pwd)/site
 
     - name: Extract the website
-      if: ((github.event_name == 'push') || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen')))
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'docgen'
       run: |
         find cijoe
         cp cijoe/${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-docs/artifacts/docs.tar.gz .
         tar xzf docs.tar.gz
 
     - name: Update site repository
-      if: ((github.event_name == 'push') || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen')))
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'docgen'
       run: |
         pipx install docs/tooling
         xnvme-docs-dest --docs html --site site --ref "${{ github.ref }}"
 
     - name: Push site-changes
-      if: ((github.event_name == 'push') || ((github.event_name == 'workflow_dispatch') && (github.event.inputs.job == 'docgen')))
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'docgen'
       run: |
         cd site
         git config --global user.name 'GitHUB Service'
@@ -1507,7 +1521,8 @@ jobs:
     needs: [source-archive, changes-to-docs, docs]
     runs-on: ubuntu-24.04
     container: ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
-    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && github.event_name == 'pull_request'
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'pull_request' || github.event.inputs.job
+      == 'all')
 
     steps:
     - name: Info

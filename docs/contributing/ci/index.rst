@@ -90,6 +90,34 @@ In addition to cathing issues, then the CI is also utilized for:
 These following sections provide system-setup notes and other details for the
 various **CI** jobs.
 
+.. _sec-ci-when:
+
+When the jobs run, and what is published
+########################################
+
+The ``verify`` workflow runs on pull-requests, and only there. What a
+pull-request needs to merge runs there once; the jobs on lab machines run when
+it carries the label ``maas``, the benchmarks when it carries ``bench``, and the
+check ``ci-result`` says whether it may merge.
+Main and its tags run none of it again. The benchmarks also run weekly.
+
+A push to main runs the ``publish`` workflow instead. It finds the pull-request
+that was merged and the ``verify`` run of its head that ``ci-result``
+passed, and deploys the documentation that run built to
+`xnvme.io via GitHub-pages`_. When the head
+commit is ``ver: bump to vX.Y.Z``, it also tags main ``vX.Y.Z`` and creates the
+release, with the source archives, the Python sdist and the test results of
+that run, and the ``CHANGELOG.rst`` section of the version as its notes. The
+artifacts are used only when the pull-request's head has the tree main now
+has, that is, when it was up to date with main when merged. When it was not,
+the documentation is built by a manual ``docgen`` run on main instead, and a
+release fails; see :ref:`sec-contributing-release`.
+
+Any job can be run by hand: start the ``verify`` workflow from the Actions tab,
+on a branch, with ``job`` set to ``all`` for every job, or to ``verify``,
+``bench`` or ``docgen``. A manual ``docgen`` run deploys the documentation of
+its branch.
+
 .. _sec-ci-sources:
 
 Where the devices come from, and which guest runs what
