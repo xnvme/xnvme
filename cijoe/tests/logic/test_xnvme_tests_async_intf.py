@@ -5,7 +5,7 @@ from ..conftest import xnvme_parametrize
 
 @xnvme_parametrize(["dev"], opts=["be", "admin", "async"])
 def test_init_term(cijoe, device, be_opts, cli_args):
-    if be_opts["be"] in ("upcie", "upcie-cuda"):
+    if be_opts["be"] in ("upcie", "upcie-cuda", "upcie-hip"):
         pytest.skip(
             reason=f"[be={be_opts['be']}] This test requires memory beyond what is available"
         )
