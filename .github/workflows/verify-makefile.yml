@@ -1,0 +1,72 @@
+---
+name: verify-makefile
+
+# Check the Makefile's targets that generate files, called by 'verify'.
+on:
+  workflow_call:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  #
+  # Ensure that bash completions, man pages, and the systemd unit are
+  # generated without error
+  #
+  gen-targets:
+    runs-on: ubuntu-24.04
+    container: ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
+
+    steps:
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
+      with:
+        name: xnvme-src-archive-with-subprojects
+
+    - name: Install the build dependencies this tree names for the container's Ubuntu
+      run: bash toolbox/pkgs/ubuntu-resolute.sh
+
+    - name: Build xNVMe
+      run: make common
+
+    - name: Install xNVMe
+      run: make install
+
+    - name: ldconfig
+      run: ldconfig
+
+    - name: Execute 'xnvme library-info'
+      run: xnvme library-info
+
+    - name: Run make gen-bash-completions
+      run: make gen-bash-completions
+
+    - name: Run make gen-man-pages
+      run: make gen-man-pages
+
+    # The unit directory is given rather than discovered, so the check does not
+    # depend on systemd being present in the container
+    - name: Check the systemd unit substitutes and can be turned off
+      run: |
+        meson setup /tmp/bd-systemd --prefix=/opt/xnvme \
+          -Dsystemd_unitdir=/lib/systemd/system -Dbuild_subprojects=false
+        unit="/tmp/bd-systemd/toolbox/systemd/xnvme-homi@.service"
+        grep -q '^ExecStart=/opt/xnvme/bin/homi ' "$unit"
+        grep -q '^EnvironmentFile=/opt/xnvme/etc/xnvme/' "$unit"
+        ! grep -qE '@[a-z_]+@' "$unit"
+        unit="/tmp/bd-systemd/toolbox/systemd/xnvme-qublk@.service"
+        grep -q '^ExecStart=/opt/xnvme/bin/qublk serve ' "$unit"
+        grep -q '^EnvironmentFile=/opt/xnvme/etc/xnvme/' "$unit"
+        ! grep -qE '@[a-z_]+@' "$unit"
+        meson introspect /tmp/bd-systemd --installed \
+          | grep -q '/lib/systemd/system/xnvme-homi@.service'
+        meson introspect /tmp/bd-systemd --installed \
+          | grep -q '/lib/systemd/system/xnvme-qublk@.service'
+        meson setup /tmp/bd-nosystemd -Dsystemd=disabled \
+          -Dsystemd_unitdir=/lib/systemd/system -Dbuild_subprojects=false
+        ! meson introspect /tmp/bd-nosystemd --installed \
+          | grep -q 'xnvme-homi@.service'
+        ! meson introspect /tmp/bd-nosystemd --installed \
+          | grep -q 'xnvme-qublk@.service'

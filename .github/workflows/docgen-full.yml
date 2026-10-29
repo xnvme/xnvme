@@ -1,0 +1,153 @@
+---
+name: docgen-full
+
+# Generate the documentation, running its commands in a guest, called by
+# 'verify'. A manual run of 'docgen' also deploys it.
+on:
+  workflow_call:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  #
+  # Documentation: generate documentation and deploy it to githubpages (xnvme.io)
+  #
+  # This runs on pull-requests, so we catch whether one breaks the documentation,
+  # and the 'publish' workflow deploys what the merged one built. A manual run
+  # with 'job' set to 'docgen' builds and deploys it itself, to:
+  #
+  #   githubpages/en/<ref>
+  #
+  # A couple of examples:
+  #
+  # * githubpages/en/main
+  # * githubpages/en/v1.2.3
+  # * githubpages/en/v1.2.4
+  #
+  # Thus, each deploy updates the archive/history.
+  # The root of the site is always synced with githubpages/en/main, so that
+  # https://xnvme.io/ serves the latest state of xNVMe.
+  #
+  docgen-full:
+    runs-on: ubuntu-24.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - {os: 'debian', ver: 'trixie-iommu_enabled'}
+
+    container:
+      image: ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
+      # /mnt is the runner's ~70 GiB ephemeral disk; the nosi qcow2 + raw
+      # decompression overflow the container's small overlay otherwise.
+      options: --privileged -v /mnt:/mnt
+
+    steps:
+    - uses: xnvme/actions/.github/actions/cleanup@main
+
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
+      with:
+        name: xnvme-src-archive-with-subprojects
+
+    - name: Container-prep
+      run: |
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: Retrieve the xNVMe Python sdist package
+      uses: actions/download-artifact@v7.0.0
+      with:
+        name: xnvme-py-sdist
+        path: ${{ steps.source.outputs.directory }}
+
+    - name: Move source-archives to /tmp/artifacts
+      run: |
+        ls -lh
+        find . -name "*.tar.gz"
+        find /tmp -name "*.tar.gz"
+        rm -r /tmp/artifacts || true
+        cp -r ${{ steps.source.outputs.directory }} /tmp/artifacts
+        find /tmp/artifacts -name "*.tar.gz"
+
+    - name: CIJOE, setup pipx environment
+      run: |
+        make guest-env <<< "${{ matrix.os }}-${{ matrix.ver }}"
+
+    - name: CIJOE, check that it is available
+      run: |
+        cijoe -r
+
+    # Land the nosi qcow2 and the emulated-NVMe raw backing images on /mnt
+    # instead of /, as the verify job does
+    - name: Stage artifacts on /mnt
+      run: |
+        mkdir -p /mnt/system_imaging
+        ln -s /mnt/system_imaging "$HOME/system_imaging"
+        mkdir -p /mnt/guests
+        ln -s /mnt/guests "$HOME/guests"
+
+    - name: Install doc toolchain
+      run: |
+        make docgen-deps
+
+    - name: CIJOE, provision and generate documentation
+      run: |
+        make docgen-guest \
+          CIJOE_OUTPUT="${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}"
+
+    - name: Collect vfu_kvssd device log + guest serial console
+      if: always()
+      run: |
+        dst="cijoe/${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}"
+        echo "::group::vfu_kvssd device log"
+        cat $HOME/run/vfu_kvssd.log 2>/dev/null || echo "no vfu_kvssd device log"
+        echo "::endgroup::"
+        cp $HOME/run/vfu_kvssd.log "${dst}-vfu_kvssd.log" 2>/dev/null || true
+        toolbox/ci/collect-qemu-serial.sh "${dst}-serial"
+
+    - name: CIJOE, upload report-docgen
+      uses: actions/upload-artifact@v6.0.0
+      if: always()
+      with:
+        name: ${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-reports
+        path: cijoe/${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}*
+        if-no-files-found: error
+
+    - name: Checkout site
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'docgen'
+      uses: actions/checkout@v6
+      with:
+        repository: "xnvme/xnvme.github.io"
+        token: ${{ secrets.DOCS_PAT }}
+        path: site
+
+    - name: Add repos to git-config safe.directory
+      run: |
+        git config --global --add safe.directory $(pwd)/site
+
+    - name: Extract the website
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'docgen'
+      run: |
+        find cijoe
+        cp cijoe/${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-docs/artifacts/docs.tar.gz .
+        tar xzf docs.tar.gz
+
+    - name: Update site repository
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'docgen'
+      run: |
+        pipx install docs/tooling
+        xnvme-docs-dest --docs html --site site --ref "${{ github.ref }}"
+
+    - name: Push site-changes
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'docgen'
+      run: |
+        cd site
+        git config --global user.name 'GitHUB Service'
+        git config --global user.email 'ghs@safl.dk'
+        git add .
+        git commit -a -m "Auto-deployed update of 'docs/' for '${{ github.ref }}'"
+        git push

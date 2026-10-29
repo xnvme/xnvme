@@ -1,0 +1,462 @@
+---
+name: build
+
+# Build xNVMe on Linux, macOS and Windows, called by 'verify'.
+on:
+  workflow_call:
+    inputs:
+      build_linux:
+        description: 'JSON list of the Linux distributions to build on'
+        required: true
+        type: string
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  #
+  # Build on Linux using different Linux distributions
+  #
+  linux:
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'pull_request' || github.event.inputs.job == 'all'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(inputs.build_linux) }}
+
+    container:
+      image: ghcr.io/xnvme/xnvme-deps-${{ matrix.os }}-${{ matrix.ver }}:main
+
+    steps:
+    - name: Container-preparation, openSUSE does not have tar and gzip...
+      if: contains(matrix.os, 'opensuse')
+      run: zypper --non-interactive --no-refresh install -y tar gzip
+
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
+      with:
+        name: xnvme-src-archive-with-subprojects
+
+    - name: Configure with and build with debug enabled (without spdk)
+      if: ${{ contains(matrix.os, 'alpine') }}
+      run: |
+        meson setup builddir --buildtype=debug -Dwith-spdk=disabled
+        meson compile -C builddir
+        make clean # prepare for building without debug
+
+    - name: Configure with debug enabled
+      if: ${{ ! contains(matrix.os, 'alpine') }}
+      run: |
+        meson setup builddir --buildtype=debug
+        meson compile -C builddir
+        make clean # prepare for building without debug
+
+    - name: Configure, Build, and Install
+      env:
+        BSCRIPT_DEF: toolbox/pkgs/default-build.sh
+        BSCRIPT: toolbox/pkgs/${{ matrix.os }}-${{ matrix.ver }}-build.sh
+      run: |
+        if [[ -f "${BSCRIPT}" ]]; then source ${BSCRIPT}; else source ${BSCRIPT_DEF}; fi
+
+    - name: Execute 'ldconfig'
+      # ldconfig doesn't work on alpine
+      # centos7 needs "ldconfig /usr/lib/local" for python3 to work
+      if: ${{!contains(matrix.os, 'alpine') && !contains(matrix.ver, 'centos7') && !contains(matrix.ver, 'stream8')}}
+      run: ldconfig
+
+    - name: meson-log-dump
+      if: always()
+      run: |
+        cat builddir/meson-logs/meson-log.txt || true
+
+    - name: isal-log-dump
+      if: always()
+      run: |
+        cat subprojects/spdk/isa-l/spdk-isal.log || true
+
+    - name: Execute 'xnvme enum'
+      run: xnvme enum
+
+    - name: Execute 'xnvme library-info'
+      run: xnvme library-info
+
+    - name: Execute the meson test-suite against the ramdisk
+      # The enum cases enumerate the devices of the host; they are the only
+      # cases needing hardware and privileges, so they are left out
+      run: meson test -C builddir --print-errorlogs --no-suite enum
+
+    - name: Check pkg-config
+      run: |
+        pkg-config xnvme --libs
+        pkg-config xnvme --variable=datadir
+        pkg-config xnvme --variable=includedir
+        pkg-config xnvme --variable=libdir
+        pkg-config xnvme --variable=pcfiledir
+        pkg-config xnvme --variable=prefix
+        ls -lh $(pkg-config xnvme --variable=libdir) | grep xnvme
+
+    - name: Check Python, pip, pipx, platform, sysconfig and setup PATH for pipx
+      run: |
+        python3 --version
+        python3 -m pip --version
+        python3 -c 'import setuptools; print("setuptools version:", setuptools.__version__)'
+        python3 -c "import platform; print(platform.system()); print(platform.uname())"
+        python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
+        python3 -m pipx --version
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: Retrieve the xNVMe Python sdist package
+      uses: actions/download-artifact@v7.0.0
+      with:
+        name: xnvme-py-sdist
+        path: ${{ steps.source.outputs.directory }}
+
+    # Setup Python virtual-environment for cijoe and Python xNVMe bindings to run ramdisk testing
+    - name: CIJOE, setup pipx environment
+      if: (!contains('focal', matrix.ver))
+      run: |
+        # cijoe requires Python >= 3.10; on RHEL9-family the default is 3.9,
+        # so grab python3.11 from AppStream and steer pipx at it.
+        if ! python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3,10) else 1)'; then
+          if command -v dnf >/dev/null 2>&1; then
+            dnf install -y python3.11 python3.11-pip
+            export PIPX_DEFAULT_PYTHON=/usr/bin/python3.11
+            echo "PIPX_DEFAULT_PYTHON=/usr/bin/python3.11" >> "$GITHUB_ENV"
+          fi
+        fi
+        make cijoe-install
+
+    - name: CIJOE, check that it is available
+      if: (!contains('focal', matrix.ver))
+      run: |
+        cijoe -r
+
+    - name: Python-bindings (ctypes), install and test
+      if: (!contains('focal', matrix.ver))
+      run: |
+        python3 -m pipx inject xnvme-cijoe "${{ steps.source.outputs.directory }}/xnvme-py-sdist.tar.gz" --force
+        pytest --pyargs xnvme.ctypes_bindings
+
+    #
+    # Ramdisk testing
+    #
+    # Skipping on distros with too old gcc/clang to build fio, and too old a Python to run cijoe (requires 3.9)
+    #
+    - name: CIJOE, run ramdisk verification
+      if: (!contains('focal', matrix.ver))
+      run: make verify-ramdisk CIJOE_OUTPUT="${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}"
+
+    - name: CIJOE, upload report.html
+      if: always() && (!contains('focal', matrix.ver))
+      uses: actions/upload-artifact@v6.0.0
+      with:
+        name: ${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-report-html
+        path: cijoe/${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-*/report.html
+        if-no-files-found: warn
+
+    - name: CIJOE, archive build-${{ matrix.os }}-${{ matrix.ver }}-reports
+      if: always() && (!contains('focal', matrix.ver))
+      run: |
+        tar czf ${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-reports.tar.gz \
+          cijoe/${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-*
+
+    - name: CIJOE, upload build-${{ matrix.os }}-${{ matrix.ver }}-reports
+      if: always() && (!contains('focal', matrix.ver))
+      uses: actions/upload-artifact@v6.0.0
+      with:
+        name: ${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-reports
+        path: ${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-reports.tar.gz
+        if-no-files-found: error
+
+  #
+  # Build on macOS
+  #
+  macos:
+    runs-on: ${{ matrix.os }}-${{ matrix.ver }}
+    if: github.event_name == 'pull_request' || github.event.inputs.job == 'all'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - {os: 'macos', ver: '15'}
+        - {os: 'macos', ver: '26'}
+
+    steps:
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
+      with:
+        name: xnvme-src-archive-with-subprojects
+
+    - name: Install build-requirements
+      run: |
+        source toolbox/pkgs/${{ matrix.os }}-${{ matrix.ver }}.sh || true
+
+    - name: Prep, environment GITHUB_PATH
+      run: |
+        echo "/opt/homebrew/opt/make/libexec/gnubin" >> $GITHUB_PATH
+
+    - name: Configure and build with debug enabled
+      run: |
+        meson setup builddir --buildtype=debug
+        meson compile -C builddir
+        make clean # prepare for building without debug
+
+    - name: Configure, Build, and Install
+      env:
+        BSCRIPT_DEF: toolbox/pkgs/default-build.sh
+        BSCRIPT: toolbox/pkgs/${{ matrix.os }}-${{ matrix.ver }}-build.sh
+      run: |
+        if [[ -f "${BSCRIPT}" ]]; then source ${BSCRIPT}; else source ${BSCRIPT_DEF}; fi
+
+    - name: meson-log-dump
+      if: always()
+      run: |
+        cat builddir/meson-logs/meson-log.txt || true
+
+    - name: Execute 'xnvme enum'
+      run: xnvme enum
+
+    - name: Execute 'xnvme library-info'
+      run: xnvme library-info
+
+    - name: Check pkg-config
+      run: |
+        pkg-config xnvme --libs
+        pkg-config xnvme --variable=datadir
+        pkg-config xnvme --variable=includedir
+        pkg-config xnvme --variable=libdir
+        pkg-config xnvme --variable=pcfiledir
+        pkg-config xnvme --variable=prefix
+        ls -lh $(pkg-config xnvme --variable=libdir) | grep xnvme
+
+    - name: Check Python, pip, platform, and sysconfig
+      run: |
+        python3 --version
+        python3 -m pip --version
+        python3 -c "import platform; print(platform.system()); print(platform.uname())"
+        python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
+
+    - name: Retrieve the xNVMe Python sdist package
+      uses: actions/download-artifact@v7.0.0
+      with:
+        name: xnvme-py-sdist
+        path: ${{ steps.source.outputs.directory }}
+
+    # Setup Python virtual-environment for cijoe and Python xNVMe bindings to run ramdisk testing
+    - name: CIJOE, setup pipx environment
+      run: |
+        make cijoe-install
+
+    - name: CIJOE, check that it is available
+      run: |
+        cijoe -r
+
+    - name: Python-bindings (ctypes), install and test
+      run: |
+        pipx inject xnvme-cijoe "${{ steps.source.outputs.directory }}/xnvme-py-sdist.tar.gz" --force
+        pytest --pyargs xnvme.ctypes_bindings
+
+    #
+    # Ramdisk testing
+    #
+    - name: Install fio
+      run: |
+        git clone https://github.com/axboe/fio.git /tmp/fio
+        cd /tmp/fio
+        git checkout fio-3.38
+        git rev-parse --short HEAD
+        gmake
+
+    - name: CIJOE, run test-ramdisk.yaml
+      run: |
+        cd cijoe && cijoe "tasks/test-ramdisk-macos.yaml" \
+        --monitor \
+        --config "configs/ramdisk-macos.toml" \
+        --config "configs/xnvme.toml" \
+        --output "${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-test-ramdisk"
+
+    - name: CIJOE, upload report.html
+      if: always()
+      uses: actions/upload-artifact@v6.0.0
+      with:
+        name: ${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-report-html
+        path: cijoe/${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-*/report.html
+        if-no-files-found: warn
+
+    - name: CIJOE, archive build-${{ matrix.os }}-${{ matrix.ver }}-reports
+      if: always()
+      run: |
+        tar czf ${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-reports.tar.gz \
+          cijoe/${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-*
+
+    - name: CIJOE, upload build-${{ matrix.os }}-${{ matrix.ver }}-reports
+      uses: actions/upload-artifact@v6.0.0
+      if: always()
+      with:
+        name: ${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-reports
+        path: ${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-reports.tar.gz
+        if-no-files-found: error
+
+  #
+  # Build on Windows
+  #
+  windows:
+    runs-on: ${{ matrix.os }}-${{ matrix.ver }}
+    if: github.event_name == 'pull_request' || github.event.inputs.job == 'all'
+
+    defaults:
+      run:
+        shell: bash
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - {os: 'windows', ver: '2025'}
+
+    steps:
+    - name: Setup paths
+      shell: cmd
+      run: |
+        echo %ALLUSERSPROFILE%\chocolatey\bin>> %GITHUB_PATH%
+        echo %SystemDrive%\tools\msys64\mingw64\bin>> %GITHUB_PATH%
+        echo %SystemDrive%\tools\msys64>> %GITHUB_PATH%
+        echo %SystemDrive%\tools\msys64\usr\lib>> %GITHUB_PATH%
+        echo %SystemDrive%\tools\msys64\usr\bin>> %GITHUB_PATH%
+        echo PKG_CONFIG_PATH=%SystemDrive%/tools/msys64/usr/lib/pkgconfig;%SystemDrive%\tools\msys64\usr\lib\pkgconfig >> %GITHUB_ENV%
+
+    - name: Show paths
+      shell: powershell
+      run: |
+        echo $env:Path
+
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
+      with:
+        name: xnvme-src-archive-with-subprojects
+
+    - name: Install build-requirements
+      shell: powershell
+      run: |
+        Set-ExecutionPolicy Bypass -Scope Process -Force
+        .\toolbox\pkgs\windows-2022.ps1
+
+    - name: Configure and build with debug enabled
+      shell: bash
+      run: |
+        meson setup builddir --buildtype=debug
+        meson compile -C builddir
+        make clean # prepare for building without debug
+
+    - name: Build!
+      shell: powershell
+      run: |
+        meson setup builddir --prefix "$env:SystemDrive\tools\msys64\usr" --default-library=static
+        meson compile -C builddir
+
+    - name: meson-log-dump
+      shell: bash
+      if: always()
+      run: |
+        cat builddir/meson-logs/meson-log.txt || true
+
+    - name: Dump the compile-commands and machine
+      shell: bash
+      run: |
+        cat /proc/cpuinfo || true
+        cat builddir/compile_commands.json || true
+
+    - name: Install
+      run: |
+        meson install -C builddir
+
+    - name: Execute xnvme commands
+      shell: powershell
+      run: |
+        xnvme.exe library-info
+        xnvme.exe enum
+
+    - name: Check pkg-config
+      shell: bash
+      run: |
+        pkg-config xnvme --libs
+        pkg-config xnvme --variable=datadir
+        pkg-config xnvme --variable=includedir
+        pkg-config xnvme --variable=libdir
+        pkg-config xnvme --variable=pcfiledir
+        pkg-config xnvme --variable=prefix
+        ls -lh $(pkg-config xnvme --variable=libdir) | grep xnvme
+
+    - name: Check Python, pip, platform, and sysconfig
+      shell: bash
+      run: |
+        python3 --version
+        python3 -m pip --version
+        python3 -c "import platform; print(platform.system()); print(platform.uname())"
+        python3 -c 'import sysconfig; print(sysconfig.get_config_var("SHLIB_SUFFIX"))'
+
+    - name: Retrieve the xNVMe Python sdist package
+      uses: actions/download-artifact@v7.0.0
+      with:
+        name: xnvme-py-sdist
+        path: ${{ steps.source.outputs.directory }}
+
+    # Setup Python virtual-environment for cijoe and Python xNVMe bindings to run ramdisk testing
+    - name: CIJOE, setup pipx environment
+      run: |
+        make cijoe-install
+
+    - name: CIJOE, check that it is available
+      run: |
+        cijoe -r
+
+    #
+    # Ramdisk testing
+    #
+    - name: Install fio
+      shell: bash
+      run: |
+        rm -rf C:/tmp/fio
+        git clone https://github.com/axboe/fio.git C:/tmp/fio
+        cd C:/tmp/fio
+        git checkout fio-3.41
+        git rev-parse --short HEAD
+        make clean
+        make CFLAGS="-O0"
+
+    - name: CIJOE, run test-ramdisk-windows.yaml
+      shell: bash
+      run: |
+        cd cijoe; cijoe "tasks/test-ramdisk-windows.yaml" \
+        --monitor \
+        --config "configs/ramdisk-windows.toml" \
+        --output "${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-test-ramdisk"
+
+    - name: CIJOE, upload report.html
+      if: always()
+      uses: actions/upload-artifact@v6.0.0
+      with:
+        name: ${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-report-html
+        path: cijoe/${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-*/report.html
+        if-no-files-found: warn
+
+    - name: CIJOE, archive build-${{ matrix.os }}-${{ matrix.ver }}-reports
+      if: always()
+      run: |
+        tar czf ${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-reports.tar.gz \
+          cijoe/${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-*
+
+    - name: CIJOE, upload build-${{ matrix.os }}-${{ matrix.ver }}-reports
+      uses: actions/upload-artifact@v6.0.0
+      if: always()
+      with:
+        name: ${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-reports
+        path: ${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-reports.tar.gz
+        if-no-files-found: error

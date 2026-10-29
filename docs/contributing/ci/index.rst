@@ -102,6 +102,12 @@ check ``ci-result`` says whether it may merge.
 Main and its tags run none of it again. The benchmarks also run weekly. A
 newer push or label on a pull-request cancels its running run.
 
+Each kind of job has a workflow file of its own, ``build.yml``,
+``verify-nvme-pcie-emulated.yml``, ``verify-nvme-pcie-hardware.yml``, ``verify-makefile.yml``,
+``verify-packaging.yml``, ``perf.yml`` and ``docgen-full.yml``.
+``verify`` calls them, so they run as part of its run and use its artifacts,
+and its ``ci-result`` checks them all.
+
 A push to main runs the ``publish`` workflow instead. It finds the pull-request
 that was merged and the ``verify`` run of its head that ``ci-result``
 passed, and deploys the documentation that run built to
@@ -145,13 +151,13 @@ run.
      - Passthru
      - Physical
    * - NVMe/PCIe
-     - ``verify``: Debian 13 with the IOMMU on and off, FreeBSD 14; rig
+     - ``verify-nvme-pcie-emulated``: Debian 13 with the IOMMU on and off, FreeBSD 14; rig
        ``storage-node-emulated``
-     - ``verify-maas``: Debian 13 on the lab machine; rig
+     - ``verify-nvme-pcie-hardware / passthru``: Debian 13 on the lab machine; rig
        ``storage-node-passthru``
-     - ``verify-physical``: macOS 14, through MacVFN
+     - ``verify-nvme-pcie-hardware / physical``: macOS 14, through MacVFN
    * - NVMe/TCP
-     - ``verify``: Debian 13, the kernel and SPDK initiators
+     - ``verify-nvme-pcie-emulated``: Debian 13, the kernel and SPDK initiators
      - none
      - none
 
@@ -166,7 +172,7 @@ The benchmarks run on the passthru machines, weekly and on request, outside
 Containers and guest images
 ###########################
 
-The emulated **CI** jobs and ``docgen`` run inside a Docker host container
+The emulated **CI** jobs and ``docgen-full`` run inside a Docker host container
 (set by **GHA**'s ``container:`` directive), and boot a **QEMU** guest as part
 of their work. The host container comes from `xnvme-devenv`_, which adds the
 vfio-user device servers to a `nosi`_ base; the guest images come from
@@ -200,37 +206,37 @@ Both publish **OCI** artifacts on **GHCR**.
    * - Job
      - Host container
      - Guest disk image
-   * - ``verify (debian, trixie)``
+   * - ``verify-nvme-pcie-emulated / (debian, trixie-iommu_enabled, ...)``
      - ``xnvme/xnvme-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
      - ``safl/nosi/debian-13-headless``
-   * - ``verify (debian, trixie-noiommu)``
+   * - ``verify-nvme-pcie-emulated / (debian, trixie-iommu_disabled, ...)``
      - ``xnvme/xnvme-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
      - ``safl/nosi/debian-13-headless``
-   * - ``verify (freebsd, 14)``
+   * - ``verify-nvme-pcie-emulated / (freebsd, 14, ...)``
      - ``xnvme/xnvme-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
      - ``safl/nosi/freebsd-14-headless``
-   * - ``verify-maas (debian, trixie)``
+   * - ``verify-nvme-pcie-hardware / passthru (debian, trixie-iommu_enabled, ...)``
      - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE), on the MAAS runner
      - ``safl/nosi/debian-13-headless``
-   * - ``benchmark-bdev_xnvme``
+   * - ``perf / bdev_xnvme``
      - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE), on the MAAS runner
      - ``safl/nosi/debian-13-headless``
-   * - ``benchmark-latency (linux)``
+   * - ``perf / latency (linux, ...)``
      - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE), on the MAAS runner
      - ``safl/nosi/debian-13-headless``
-   * - ``benchmark-latency (freebsd)``
+   * - ``perf / latency (freebsd, ...)``
      - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE), on the MAAS runner
      - ``safl/nosi/freebsd-14-headless``
-   * - ``benchmark-latency (windows)``
+   * - ``perf / latency (windows, ...)``
      - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE, swtpm), on the MAAS runner
      - Windows 11, from the Hetzner Storage Box, on the runner
-   * - ``docgen``
+   * - ``docgen-full``
      - ``xnvme/xnvme-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
      - ``safl/nosi/debian-13-headless``
 
 All container-hosted jobs run in the `xnvme-devenv`_ host container, with
 upstream **QEMU**; the NVMe KV command set is supplied by `vfio-user-kvssd`_
-over **vfio-user**, installed in the container. ``verify-maas`` and the
+over **vfio-user**, installed in the container. ``verify-nvme-pcie-hardware / passthru`` and the
 benchmarks run the container on the lab machine, and pass its drive through
 with ``PASSTHRU=0000:02:00.0``; they mount the machine's
 ``/home/ghr/system_imaging``, so a guest image is staged once per machine, and

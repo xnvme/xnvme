@@ -1,0 +1,171 @@
+---
+name: perf
+
+# Benchmark xNVMe on the lab machines, called by 'verify' weekly, for a
+# pull-request labelled 'bench', and by a manual run.
+on:
+  workflow_call:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  #
+  # Build and run performance test of xNVMe
+  #
+  bdev_xnvme:
+    runs-on: [self-hosted, linux, amd64, maas]
+
+    container:
+      image: ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
+      options: --privileged --pid=host --ulimit memlock=-1 -v /home/ghr/system_imaging:/github/home/system_imaging
+
+    steps:
+    - uses: xnvme/actions/.github/actions/cleanup@main
+
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
+      with:
+        name: xnvme-src-archive-with-subprojects
+
+    - name: Retrieve the xNVMe Python sdist package
+      uses: actions/download-artifact@v7.0.0
+      with:
+        name: xnvme-py-sdist
+        path: ${{ steps.source.outputs.directory }}
+
+    - name: Prep, environment GITHUB_PATH
+      run: |
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        cp -r ${{ steps.source.outputs.directory }} /tmp/artifacts
+        find /tmp/artifacts
+
+    - name: CIJOE, setup pipx environment
+      run: |
+        make guest-env <<< "debian-trixie-iommu_enabled"
+
+    - name: CIJOE, provision guest
+      run: |
+        make guest-start guest-provision \
+          PASSTHRU=0000:02:00.0 \
+          GUEST_CONFIGS="--config configs/bench-debian.toml" \
+          CIJOE_OUTPUT="${{ github.job }}"
+
+    - name: CIJOE, run benchmark
+      run: |
+        make guest-bench \
+          BENCH=bdev \
+          CIJOE_OUTPUT="${{ github.job }}"
+
+    - name: Capture QEMU guest serial output
+      if: always()
+      run: |
+        toolbox/ci/collect-qemu-serial.sh "cijoe/${{ github.job }}-serial"
+
+    - name: CIJOE, upload report.html
+      if: always()
+      uses: actions/upload-artifact@v6.0.0
+      with:
+        name: ${{ github.job }}-report-html
+        path: cijoe/${{ github.job }}-*/report.html
+        if-no-files-found: warn
+
+    - name: CIJOE, archive ${{ github.job }}-reports
+      if: always()
+      run: |
+        tar czf ${{ github.job }}-reports.tar.gz \
+          cijoe/${{ github.job }}-*
+
+    - name: CIJOE, upload ${{ github.job }}-reports
+      uses: actions/upload-artifact@v6.0.0
+      if: always()
+      with:
+        name: ${{ github.job }}-reports
+        path: ${{ github.job }}-reports.tar.gz
+        if-no-files-found: error
+
+  #
+  # Build and run fio latency test of xNVMe
+  #
+  latency:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - {os: 'linux', guest: 'debian-trixie-iommu_disabled', bench: 'debian', labels: [self-hosted, linux, amd64, maas]}
+        - {os: 'freebsd', guest: 'freebsd-14', bench: 'freebsd', labels: [self-hosted, linux, amd64, maas]}
+        - {os: 'windows', guest: 'windows-11', bench: 'windows', labels: [self-hosted, linux, amd64, maas]}
+
+    runs-on: ${{ matrix.labels }}
+
+    container:
+      image: ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
+      options: --privileged --pid=host --ulimit memlock=-1 -v /home/ghr/system_imaging:/github/home/system_imaging
+
+    steps:
+    - uses: xnvme/actions/.github/actions/cleanup@main
+
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
+      with:
+        name: xnvme-src-archive-with-subprojects
+
+    - name: Retrieve the xNVMe Python sdist package
+      uses: actions/download-artifact@v7.0.0
+      with:
+        name: xnvme-py-sdist
+        path: ${{ steps.source.outputs.directory }}
+
+    - name: Prep, environment GITHUB_PATH
+      run: |
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        cp -r ${{ steps.source.outputs.directory }} /tmp/artifacts
+        find /tmp/artifacts
+
+    - name: CIJOE, setup pipx environment
+      run: |
+        make guest-env <<< "${{ matrix.guest }}"
+
+    - name: CIJOE, provision guest
+      run: |
+        make guest-start guest-provision \
+          PASSTHRU=0000:02:00.0 \
+          GUEST_CONFIGS="--config configs/bench-${{ matrix.bench }}.toml" \
+          CIJOE_OUTPUT="${{ github.job }}-${{ matrix.os }}"
+
+    - name: CIJOE, run benchmark
+      run: |
+        make guest-bench \
+          BENCH=latency \
+          CIJOE_OUTPUT="${{ github.job }}-${{ matrix.os }}"
+
+    - name: Capture QEMU guest serial output
+      if: always()
+      run: |
+        toolbox/ci/collect-qemu-serial.sh "cijoe/${{ github.job }}-${{ matrix.os }}-serial"
+
+    - name: CIJOE, upload report.html
+      if: always()
+      uses: actions/upload-artifact@v6.0.0
+      with:
+        name: ${{ github.job }}-${{ matrix.os }}-report-html
+        path: cijoe/${{ github.job }}-${{ matrix.os }}-*/report.html
+        if-no-files-found: warn
+
+    - name: CIJOE, archive ${{ github.job }}-${{ matrix.os }}-reports
+      if: always()
+      run: |
+        tar czf ${{ github.job }}-${{ matrix.os }}-reports.tar.gz \
+          cijoe/${{ github.job }}-${{ matrix.os }}-*
+
+    - name: CIJOE, upload ${{ github.job }}-${{ matrix.os }}-reports
+      uses: actions/upload-artifact@v6.0.0
+      if: always()
+      with:
+        name: ${{ github.job }}-${{ matrix.os }}-reports
+        path: ${{ github.job }}-${{ matrix.os }}-reports.tar.gz
+        if-no-files-found: error
