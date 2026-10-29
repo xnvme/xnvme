@@ -3,8 +3,8 @@ doc: |
   Test xNVMe uPCIe backend on Linux without IOMMU
 
 steps:
-- name: sysinfo
-  uses: linux.sysinfo
+- name: facts
+  uses: core.facts_gather
 
 - name: enumerate
   run: |

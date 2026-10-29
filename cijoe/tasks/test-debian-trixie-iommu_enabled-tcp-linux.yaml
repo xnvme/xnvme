@@ -3,8 +3,8 @@ doc: |
   Test xNVMe over the NVMe TCP transport on Linux (kernel nvmet target)
 
 steps:
-- name: sysinfo
-  uses: linux.sysinfo
+- name: facts
+  uses: core.facts_gather
 
 - name: hugepages
   uses: linux_setup_hugepages

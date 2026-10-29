@@ -19,9 +19,6 @@ img_bin = "qemu-img"
 default_guest = "generic-bios-kvm-x86_64"
 default_systemimage = "windows-11"
 
-[qemu.build]
-prefix = "{{ local.env.HOME }}/opt/qemu"
-
 [qemu.systems.x86_64]
 bin = "qemu-system-x86_64"
 
