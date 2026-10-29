@@ -88,21 +88,13 @@ xnvme_be_rdma_queue_term(struct xnvme_queue *q)
 	struct xnvme_transport_qpair *qpair = TO_RDMA_QUEUE_QPAIR(q);
 	int err;
 
-	if (xnvme_transport_qpair_is_connected(qpair)) {
-		err = xnvme_transport_qpair_disconnect(qpair);
-		if (err) {
-			XNVME_DEBUG("Failed to disconnect qpair: %d", err);
-			return err;
-		}
-	}
-
 	err = xnvme_transport_qpair_destroy(qpair);
 	if (err) {
 		XNVME_DEBUG("Failed to destroy qpair: %d", err);
 		return err;
 	}
 
-	return err;
+	return 0;
 }
 
 int
