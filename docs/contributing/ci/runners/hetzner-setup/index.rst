@@ -151,9 +151,9 @@ Windows Guest Image
 
 Unlike the other guests, the Windows image cannot be distributed. Therefore,
 you must manually retrieve it from the private Hetzner Storage Box. The
-``postinstall.sh`` script has already prepared the rest the Windows guest needs
-on the host, its UEFI variables and the virtio drivers; the container brings
-OVMF and swtpm.
+``postinstall.sh`` script has already fetched the virtio drivers the Windows
+guest needs; its UEFI firmware and TPM come with xnvme-devenv's
+``uefi-secureboot-tpm`` rig.
 
 Download the image using the command below, replacing your username with your
 Storage Box ``<USERNAME>``::

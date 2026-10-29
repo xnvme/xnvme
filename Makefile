@@ -155,7 +155,7 @@ ifneq ($(PASSTHRU),)
 $(file >$(CIJOE_PASSTHRU_FILE),$(PASSTHRU_RIG))
 endif
 export PASSTHRU
-RIG_DEFAULT = $(if $(PASSTHRU),storage-node-passthru passthru-$(GUEST_FAMILY) $(CIJOE_PASSTHRU_FILE),storage-node-emulated homi-queues)
+RIG_DEFAULT = $(if $(PASSTHRU),storage-node-passthru passthru-$(GUEST_FAMILY) $(CIJOE_PASSTHRU_FILE),storage-node-emulated homi-queues)$(if $(filter windows,$(GUEST_FAMILY)), uefi-secureboot-tpm)
 CIJOE_RIG_FILE := cijoe/current.rig
 ifeq ($(origin RIG),undefined)
 RIG = $(if $(filter guest-start verify-guest docgen-guest devenv-up,$(MAKECMDGOALS)),$(RIG_DEFAULT),$(or $(shell cat $(CIJOE_RIG_FILE) 2>/dev/null),$(RIG_DEFAULT)))
@@ -338,7 +338,6 @@ guest-start:
 		guest_kill \
 		stage_nosi_guest \
 		guest_initialize \
-		windows_qemu_prep \
 		guest_start \
 		root_unlock \
 		guest_check

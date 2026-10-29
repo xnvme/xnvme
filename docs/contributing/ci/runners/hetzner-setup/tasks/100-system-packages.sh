@@ -14,59 +14,7 @@ apt-get install -y \
     meson \
     pipx \
     python3 \
-    qemu-kvm \
     screen
-
-# For building and running custom qemu
-apt-get install -y \
-    autoconf \
-    automake \
-    bc \
-    bison \
-    bridge-utils \
-    build-essential \
-    ca-certificates \
-    cpio \
-    curl \
-    file \
-    flex \
-    gawk \
-    git \
-    libaio-dev \
-    libglib2.0-0 \
-    libglib2.0-dev \
-    libguestfs-tools \
-    liblzo2-dev \
-    libpixman-1-0 \
-    libpixman-1-dev \
-    libpmem-dev \
-    libslirp-dev \
-    libvirt0 \
-    libvirt-dev \
-    meson \
-    ninja-build \
-    python3 \
-    python3-dev \
-    python3-distutils \
-    python3-setuptools \
-    python3-venv \
-    rsync \
-    texinfo \
-    uuid-dev
-
-# For windows guests and libvirt / virt-manager use
-apt-get install -y \
-  qemu-system  \
-  qemu-utils  \
-  libvirt-daemon-system  \
-  libvirt-clients  \
-  virtinst  \
-  bridge-utils  \
-  ovmf  \
-  libguestfs-tools  \
-  dnsmasq-base \
-  swtpm \
-  swtpm-tools
 
 # For reduced variability
 apt-get install -y \
