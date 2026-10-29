@@ -88,6 +88,11 @@ against it::
   ``-k "not fabrics and not libvfn"`` on a guest without an IOMMU. ``TESTS``
   is for the Linux guests; on FreeBSD, run the guest's test task.
 
+* ``devenv-docgen`` generates the documentation in the guest, as the
+  ``docgen`` job does, from the source the guest has, so run ``devenv-sync``
+  first. It installs xNVMe's documentation tooling in the container before it
+  starts.
+
 * ``devenv-shell`` opens a shell in the host container, and ``devenv-ssh`` an
   SSH session in the guest, as root, on the port the container publishes the
   guest's SSH on.
