@@ -66,7 +66,7 @@ And the following system software setup and configuration:
     of memory
 
   - ``ghr`` is a member of ``docker``, thus, can start the xnvme-devenv host
-    container that ``verify-maas`` and the benchmarks run in
+    container that ``verify-nvme-pcie-hardware / passthru`` and the benchmarks run in
 
 * ``/home/ghr/system_imaging`` holds the guest images, the Windows one among
   them, and the jobs mount it into the container, so an image is staged once

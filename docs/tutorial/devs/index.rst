@@ -89,7 +89,7 @@ against it::
   is for the Linux guests; on FreeBSD, run the guest's test task.
 
 * ``devenv-docgen`` generates the documentation in the guest, as the
-  ``docgen`` job does, from the source the guest has, so run ``devenv-sync``
+  ``docgen-full`` job does, from the source the guest has, so run ``devenv-sync``
   first. It installs xNVMe's documentation tooling in the container before it
   starts.
 
@@ -123,7 +123,7 @@ To build and test **xNVMe** on a machine rather than in a guest, such as a
 lab machine with real NVMe drives, describe it in a **CIJOE** config: copy the
 one in ``cijoe/configs/`` that is closest, and change its SSH login, its
 ``[[devices]]`` and its paths. Then build the source archives and run the
-provisioning and a test task against it, as the ``verify-physical`` job
+provisioning and a test task against it, as the ``verify-nvme-pcie-hardware / physical`` job
 does with its macOS machine::
 
   make gen-artifacts ALLOW_DIRTY=1
