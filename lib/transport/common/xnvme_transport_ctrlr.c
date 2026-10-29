@@ -86,11 +86,21 @@ xnvme_transport_ctrlr_create(struct xnvme_transport *transport,
 int
 xnvme_transport_ctrlr_destroy(struct xnvme_transport_ctrlr *ctrlr)
 {
+	struct xnvme_transport_subsys *subsys;
 	int err;
 
 	if (!ctrlr) {
 		TRANSPORT_ERROR("FAILED: NULL ctrlr");
 		return -EINVAL;
+	}
+
+	// Release the controller's reference on every subsystem, devices hold their own
+	subsys = SLIST_FIRST(&ctrlr->subsystems);
+	while (subsys) {
+		struct xnvme_transport_subsys *next = SLIST_NEXT(subsys, entry);
+
+		xnvme_transport_subsys_put(subsys);
+		subsys = next;
 	}
 
 	err = ctrlr->ops->ctrlr_teardown(ctrlr);
