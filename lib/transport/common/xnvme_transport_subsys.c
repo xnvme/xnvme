@@ -16,6 +16,11 @@ _transport_subsys_destroy(struct xnvme_transport_ref *ref)
 
 	assert(SLIST_EMPTY(&subsys->namespaces));
 
+	if (subsys->admin_qpair) {
+		xnvme_transport_qpair_destroy(subsys->admin_qpair);
+		subsys->admin_qpair = NULL;
+	}
+
 	free(subsys->subnqn);
 	subsys->subnqn = NULL;
 
@@ -30,18 +35,19 @@ xnvme_transport_subsys_create(struct xnvme_transport_ctrlr *ctrlr, const char *s
 {
 	struct xnvme_transport_subsys *new_subsys;
 
+	if (!subnqn) {
+		return -EINVAL;
+	}
+
 	new_subsys = calloc(1, sizeof(*new_subsys));
 	if (!new_subsys) {
 		return -ENOMEM;
 	}
 
+	// The initial reference is owned by the controller, devices take their own
 	xnvme_transport_ref_init(&new_subsys->ref, _transport_subsys_destroy);
 	new_subsys->ctrlr = ctrlr;
 	new_subsys->discovery_nsidx = ++ctrlr->last_assigned_discovery_id;
-	if (!subnqn) {
-		free(new_subsys);
-		return -EINVAL;
-	}
 
 	SLIST_INIT(&new_subsys->namespaces);
 
