@@ -21,11 +21,9 @@
 #include <xnvme_be_rdma_transport.h>
 
 /*
- * Verbs completion queue mechanics. Pure
- * CQ/work-completion decoding, transport-native, with no NVMe-oF knowledge.
- * `_rdma_verbs_handle_recv()` is the one place that reaches into the top half,
- * through `_rdma_top_recv_complete()`, to deliver a received
- * capsule.
+ * Verbs completion queue mechanics. Pure CQ/work-completion decoding with no NVMe-oF knowledge.
+ * `_rdma_verbs_handle_recv()` is the one place that calls up into the top half, through
+ * `_rdma_top_recv_complete()`, to deliver a received completion.
  */
 
 #define TRANSPORT_DEBUG_CATEGORY TRANSPORT_DEBUG_CATEGORY_VERBS_DATA

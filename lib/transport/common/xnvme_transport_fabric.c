@@ -320,6 +320,28 @@ _transport_calculate_timeout(struct nvme_ctrlr_cap cap)
 	return timeout_ns;
 }
 
+static inline int
+_transport_calculate_css(struct nvme_ctrlr_cap cap, bool is_discovery, struct nvme_ctrlr_cc *cc)
+{
+	if (is_discovery) {
+		cc->css = NVME_CC_CSS_ADMIN_ONLY_SUPPORTED;
+	} else {
+		if (cap.iocss) {
+			cc->css = NVME_CC_CSS_ALL_IO_SUPPORTED;
+		} else if (cap.ncss) {
+			cc->css = NVME_CC_CSS_NVM_IO_SUPPORTED;
+		} else if (cap.noiocss) {
+			cc->css = NVME_CC_CSS_ADMIN_ONLY_SUPPORTED;
+		} else {
+			TRANSPORT_ERROR(
+				"FAILED: unsupported IO command set configuration, cap.css: 0x%x",
+				cap.noiocss | cap.iocss | cap.ncss);
+			return -EINVAL;
+		}
+	}
+	return 0;
+}
+
 int
 xnvme_transport_fabric_enable(struct xnvme_transport_ctrlr *ctrlr,
 			      struct xnvme_transport_qpair *admin_qpair, bool is_discovery)
@@ -357,16 +379,9 @@ xnvme_transport_fabric_enable(struct xnvme_transport_ctrlr *ctrlr,
 	}
 
 	// determine the supposed IO set
-	if (cap.iocss) {
-		cc.css = 0b110;
-	} else if (cap.ncss) {
-		cc.css = 0b000;
-	} else if (cap.noiocss) {
-		cc.css = 0b111;
-	} else {
-		TRANSPORT_ERROR("FAILED: unsupported IO command set configuration, cap.css: 0x%x",
-				cap.noiocss | cap.iocss | cap.ncss);
-		return -EINVAL;
+	err = _transport_calculate_css(cap, is_discovery, &cc);
+	if (err) {
+		return err;
 	}
 
 	// host configures controller settings

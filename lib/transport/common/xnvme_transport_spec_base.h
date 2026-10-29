@@ -9,6 +9,10 @@
 
 #include <libxnvme.h>
 
+#define NVME_CC_CSS_ALL_IO_SUPPORTED     0b110
+#define NVME_CC_CSS_NVM_IO_SUPPORTED     0b000
+#define NVME_CC_CSS_ADMIN_ONLY_SUPPORTED 0b111
+
 /**
  * Base-spec NVMe controller registers reached through NVMe-oF Property Get
  * and Property Set: Controller Capabilities (CAP), Controller Configuration
