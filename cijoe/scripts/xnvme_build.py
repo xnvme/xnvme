@@ -27,6 +27,7 @@ def main(args, cijoe):
         return errno.EINVAL
 
     os_name = cijoe.getconf("os.name", "")
+    setup_args = cijoe.getconf("xnvme.build.setup_args", "")
 
     commands = [
         "git rev-parse --short HEAD || true",
@@ -34,7 +35,7 @@ def main(args, cijoe):
         (
             'meson setup builddir --prefix "C:/tools/msys64/usr" --default-library=static'
             if os_name == "windows"
-            else "meson setup builddir"
+            else f"meson setup builddir {setup_args}".rstrip()
         ),
         "meson compile -C builddir",
         "cat builddir/meson-logs/meson-log.txt",
