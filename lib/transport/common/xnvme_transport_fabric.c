@@ -3,8 +3,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <errno.h>
+#include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <time.h>
 
@@ -21,8 +23,13 @@
 #define TRANSPORT_DEBUG_CATEGORY TRANSPORT_DEBUG_CATEGORY_FABRICS
 
 // Transport fabric timing constants
-// 5 seconds timeout for ready state
+// CAP.TO is in units of 500 ms, fall back to 5 seconds when the controller reports 0
+#define TRANSPORT_FABRIC_CAP_TO_UNIT_NS (500ULL * 1000000ULL)
 #define TRANSPORT_FABRIC_READY_TIMEOUT_NS (5ULL * 1000000000ULL)
+
+// Fabrics specific status codes
+#define TRANSPORT_FABRIC_SCT_COMMAND_SPECIFIC 0x1
+#define TRANSPORT_FABRIC_SC_CONNECT_INVALID_PARAMS 0x82
 
 // Minimum retry interval for ready state in nanoseconds, 100us min, 5ms max
 #define TRANSPORT_FABRIC_RETRY_MIN_NS (100ULL * 1000ULL)
@@ -40,7 +47,8 @@ _transport_fabric_handle_connect(struct xnvme_transport_qpair *qpair, void *buf)
 	if (cpl->status.sc != 0) {
 		TRANSPORT_ERROR("FAILED: Fabric Connect rejected, sc: %u sct: %u", cpl->status.sc,
 				cpl->status.sct);
-		if (cpl->status.sc == 0x02) {
+		if (cpl->status.sct == TRANSPORT_FABRIC_SCT_COMMAND_SPECIFIC &&
+		    cpl->status.sc == TRANSPORT_FABRIC_SC_CONNECT_INVALID_PARAMS) {
 			TRANSPORT_ERROR("FAILED: invalid parameter, ipo: %u ips: %u",
 					connect_cpl->connect_invalid.ipo,
 					connect_cpl->connect_invalid.iattr.ips);
@@ -50,7 +58,7 @@ _transport_fabric_handle_connect(struct xnvme_transport_qpair *qpair, void *buf)
 		return;
 	}
 
-	/* TODO: Deal with authentication requirements later*/
+	// Authentication is not supported yet, return error if required
 	if (connect_cpl->success.authreq.ascr) {
 		TRANSPORT_ERROR("ERROR: Fabric Connect accepted, but authentication is "
 				"required (ascr=1)");
@@ -60,12 +68,10 @@ _transport_fabric_handle_connect(struct xnvme_transport_qpair *qpair, void *buf)
 				"required (atr=1)");
 		qpair->state = XNVME_TRANSPORT_QPAIR_STATE_ERROR;
 	} else {
+		qpair->attr.cntlid = connect_cpl->success.cntlid;
 		TRANSPORT_DEBUG("INFO: Fabric Connect accepted, cntlid: %u", qpair->attr.cntlid);
 		qpair->state = XNVME_TRANSPORT_QPAIR_STATE_READY;
 	}
-
-	TRANSPORT_DEBUG("INFO: Updated qpair cntlid to %u", qpair->attr.cntlid);
-	qpair->attr.cntlid = connect_cpl->success.cntlid;
 
 	return;
 }
@@ -92,9 +98,9 @@ _transport_fabric_prop_get(struct xnvme_transport_qpair *admin_qpair, uint32_t p
 	}
 
 	if (cpl->prop_get.status.sc) {
-		TRANSPORT_ERROR("FAILED: property get 0x%x, status code: 0x%x", property,
-				cpl->prop_get.status.sc);
-		return cpl->prop_get.status.sc;
+		TRANSPORT_ERROR("FAILED: property get 0x%x, sc: 0x%x, sct: 0x%x", property,
+				cpl->prop_get.status.sc, cpl->prop_get.status.sct);
+		return -EIO;
 	}
 
 	*value = is_8byte ? cpl->prop_get.value : cpl->prop_get.ddw;
@@ -145,10 +151,10 @@ _transport_fabric_prop_set32(struct xnvme_transport_qpair *admin_qpair, uint32_t
 	}
 
 	if (cpl->prop_set.status.sc) {
-		TRANSPORT_ERROR("FAILED: property set 0x%x, status code: 0x%x", property,
-				cpl->prop_set.status.sc);
+		TRANSPORT_ERROR("FAILED: property set 0x%x, sc: 0x%x, sct: 0x%x", property,
+				cpl->prop_set.status.sc, cpl->prop_set.status.sct);
 		xnvme_transport_print_completion(&ctx.cpl);
-		return cpl->prop_set.status.sc;
+		return -EIO;
 	}
 
 	return 0;
@@ -164,12 +170,20 @@ _transport_fabric_connect_data_init(struct xnvme_transport_qpair *qpair, void *b
 	data->cntlid = qpair->attr.cntlid;
 
 	if (strlen(qpair->dev->ident.subnqn) == 0) {
-		strncpy((char *)data->subnqn, XNVME_DISCOVERY_NQN, sizeof(data->subnqn));
+		snprintf((char *)data->subnqn, sizeof(data->subnqn), "%s", XNVME_DISCOVERY_NQN);
 	} else {
-		strncpy((char *)data->subnqn, qpair->dev->ident.subnqn, sizeof(data->subnqn));
+		snprintf((char *)data->subnqn, sizeof(data->subnqn), "%s",
+			 qpair->dev->ident.subnqn);
 	}
-	TRANSPORT_DEBUG("INFO: Fabric connect data initialized with subnqn: %s, cntlid: %u",
-			data->subnqn, data->cntlid);
+
+	if (qpair->dev->opts.hostnqn) {
+		snprintf((char *)data->hostnqn, sizeof(data->hostnqn), "%s",
+			 qpair->dev->opts.hostnqn);
+	}
+
+	TRANSPORT_DEBUG("INFO: Fabric connect data initialized with subnqn: %s, hostnqn: %s, "
+			"cntlid: %u",
+			data->subnqn, data->hostnqn, data->cntlid);
 }
 
 int
@@ -211,8 +225,8 @@ xnvme_transport_fabric_connect(struct xnvme_transport_qpair *qpair)
 	fcmd->connect.recfmt = 0;
 	fcmd->connect.qid = qpair->attr.qid;
 	fcmd->connect.sqsize = qpair->attr.qsize;
-	fcmd->connect.kato = 0;     /* No keep-alive timeout */
-	fcmd->connect.nvmsetid = 0; /* Default NVM set */
+	fcmd->connect.kato = 0;                       /* No keep-alive timeout */
+	fcmd->connect.nvmsetid = 0;                   /* Default NVM set */
 	fcmd->connect.cattr.connent = 0;
 	fcmd->connect.cattr.indivioqdels = 1;
 	fcmd->connect.cattr.dissqfc = 0;
@@ -261,6 +275,49 @@ _transport_sleep_ns(uint64_t ns)
 	nanosleep(&ts, NULL);
 }
 
+// Polls CSTS.RDY until it equals @rdy, backing off exponentially, or fails with -ETIMEDOUT
+static int
+_transport_fabric_wait_ready(struct xnvme_transport_qpair *admin_qpair, bool rdy,
+			     uint64_t timeout_ns, struct nvme_ctrlr_csts *csts)
+{
+	uint64_t start = _xnvme_timer_clock_sample();
+	uint64_t interval = TRANSPORT_FABRIC_RETRY_MIN_NS;
+	int err;
+
+	for (;;) {
+		uint64_t elapsed;
+
+		err = _transport_fabric_prop_get32(admin_qpair, XNVME_SPEC_FABRIC_PROP_CSTS,
+						   &csts->raw);
+		if (err) {
+			return err;
+		}
+
+		if (!!csts->rdy == rdy) {
+			return 0;
+		}
+
+		elapsed = _xnvme_timer_clock_sample() - start;
+		if (elapsed > timeout_ns) {
+			TRANSPORT_ERROR("FAILED: CSTS.RDY not %u after %" PRIu64 " ns", rdy,
+					elapsed);
+			return -ETIMEDOUT;
+		}
+
+		_transport_sleep_ns(interval);
+		interval = RETRY_CLAMP(interval * 2, TRANSPORT_FABRIC_READY_MAX_NS);
+	}
+}
+
+static inline uint64_t
+_transport_calculate_timeout(struct nvme_ctrlr_cap cap)
+{
+	uint64_t timeout_ns = cap.to ? cap.to * TRANSPORT_FABRIC_CAP_TO_UNIT_NS
+				    : TRANSPORT_FABRIC_READY_TIMEOUT_NS;
+	timeout_ns = timeout_ns < TRANSPORT_FABRIC_READY_TIMEOUT_NS ? TRANSPORT_FABRIC_READY_TIMEOUT_NS : timeout_ns;
+	return timeout_ns;
+}
+
 int
 xnvme_transport_fabric_enable(struct xnvme_transport_ctrlr *ctrlr,
 			      struct xnvme_transport_qpair *admin_qpair, bool is_discovery)
@@ -268,8 +325,7 @@ xnvme_transport_fabric_enable(struct xnvme_transport_ctrlr *ctrlr,
 	struct nvme_ctrlr_cap cap;
 	struct nvme_ctrlr_cc cc;
 	struct nvme_ctrlr_csts csts = {0};
-	uint64_t now, start, elapsed;
-	uint64_t interval;
+	uint64_t timeout_ns;
 	int err;
 
 	// determine controller capabilities
@@ -289,14 +345,22 @@ xnvme_transport_fabric_enable(struct xnvme_transport_ctrlr *ctrlr,
 	TRANSPORT_DEBUG("INFO: Controller CC:");
 	xnvme_transport_hexdump_range(TRANSPORT_DEBUG_CATEGORY_FABRICS, &cc, sizeof(cc));
 
+	// calculate timeout
+	timeout_ns = _transport_calculate_timeout(cap);
+
+	// A controller that is already enabled must be left as is, as disabling it is not handled here
+	if (cc.en) {
+		return 0; 
+	}
+
 	// determine the supposed IO set
-	if (cap.noiocss)
-		cc.css = 0b111;
-	else if (cap.iocss)
+	if (cap.iocss) {
 		cc.css = 0b110;
-	else if (!cap.iocss && cap.ncss)
+	} else if (cap.ncss) {
 		cc.css = 0b000;
-	else {
+	} else if (cap.noiocss) {
+		cc.css = 0b111;
+	} else {
 		TRANSPORT_ERROR("FAILED: unsupported IO command set configuration, cap.css: 0x%x",
 				cap.noiocss | cap.iocss | cap.ncss);
 		return -EINVAL;
@@ -321,33 +385,10 @@ xnvme_transport_fabric_enable(struct xnvme_transport_ctrlr *ctrlr,
 		return err;
 	}
 
-	start = _xnvme_timer_clock_sample();
-
-	interval = TRANSPORT_FABRIC_RETRY_MIN_NS; // initial retry interval
-	do {
-		err = _transport_fabric_prop_get32(admin_qpair, XNVME_SPEC_FABRIC_PROP_CSTS,
-						   &csts.raw);
-		if (err) {
-			return err;
-		}
-
-		if (csts.rdy)
-			break;
-
-		now = _xnvme_timer_clock_sample();
-		elapsed = now - start;
-
-		if (elapsed > TRANSPORT_FABRIC_READY_TIMEOUT_NS) {
-			TRANSPORT_ERROR("FAILED: controller not ready after %lu ns", elapsed);
-			return -ETIMEDOUT;
-		}
-
-		// sleep for the retry interval
-		_transport_sleep_ns(interval);
-
-		// exponential backoff for the next interval
-		interval = RETRY_CLAMP(interval * 2, TRANSPORT_FABRIC_READY_MAX_NS);
-	} while (!csts.rdy);
+	err = _transport_fabric_wait_ready(admin_qpair, true, timeout_ns, &csts);
+	if (err) {
+		return err;
+	}
 
 	TRANSPORT_DEBUG("INFO: Controller CSTS:");
 	xnvme_transport_hexdump_range(TRANSPORT_DEBUG_CATEGORY_FABRICS, &csts, sizeof(csts));
