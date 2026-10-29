@@ -141,7 +141,7 @@ jobs:
   #
   source-format-check:
     runs-on: ubuntu-24.04
-    container: ghcr.io/xnvme/xnvme-citools-debian-latest:main
+    container: ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
 
     steps:
     - name: Grab source
@@ -167,7 +167,7 @@ jobs:
     needs: [source-archive, changes-to-docs, docs]
     runs-on: ubuntu-24.04
     if: needs.changes-to-docs.outputs.docs_prose_only != 'true'
-    container: ghcr.io/xnvme/xnvme-citools-debian-latest:main
+    container: ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
 
     steps:
     - name: Retrieve and unpack the xNVMe source archive
@@ -175,6 +175,9 @@ jobs:
       id: source
       with:
         name: xnvme-src-archive-with-subprojects
+
+    - name: Install the build dependencies this tree names for the container's Ubuntu
+      run: bash toolbox/pkgs/ubuntu-resolute.sh
 
     - name: Build xNVMe
       run: make common
@@ -1497,7 +1500,7 @@ jobs:
   packaging-debian:
     needs: [source-archive, changes-to-docs, docs]
     runs-on: ubuntu-24.04
-    container: ghcr.io/xnvme/xnvme-citools-debian-latest:main
+    container: ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
     if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && github.event_name == 'pull_request'
 
     steps:
@@ -1511,6 +1514,9 @@ jobs:
       id: source
       with:
         name: xnvme-src-archive
+
+    - name: Install the build dependencies this tree names for the container's Ubuntu
+      run: bash toolbox/pkgs/ubuntu-resolute.sh
 
     - name: Retrieve the xNVMe Debian package repository by branch
       run: |
