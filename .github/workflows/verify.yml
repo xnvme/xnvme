@@ -612,7 +612,7 @@ jobs:
 
     - name: CIJOE, run test-ramdisk.yaml
       run: |
-        cd cijoe && cijoe "workflows/test-ramdisk-macos.yaml" \
+        cd cijoe && cijoe "tasks/test-ramdisk-macos.yaml" \
         --monitor \
         --config "configs/ramdisk-macos.toml" \
         --config "configs/xnvme.toml" \
@@ -772,7 +772,7 @@ jobs:
     - name: CIJOE, run test-ramdisk-windows.yaml
       shell: bash
       run: |
-        cd cijoe; cijoe "workflows/test-ramdisk-windows.yaml" \
+        cd cijoe; cijoe "tasks/test-ramdisk-windows.yaml" \
         --monitor \
         --config "configs/ramdisk-windows.toml" \
         --output "${{ github.job }}-${{ matrix.os }}-${{ matrix.ver }}-test-ramdisk"
@@ -812,8 +812,8 @@ jobs:
       matrix: ${{ steps.generate.outputs.matrix }}
 
     env:
-      # Each entry is expanded into one entry per 'test_*' step of the cijoe workflow it
-      # runs, so that the test-steps of a workflow are verified as separate jobs.
+      # Each entry is expanded into one entry per 'test_*' step of the cijoe task it
+      # runs, so that the test-steps of a task are verified as separate jobs.
       BASE_MATRIX: |
         - {os: 'freebsd', ver: '14', guest_dir: 'freebsd-14-amd64', transport: 'pcie'}
         #- {os: 'freebsd', ver: '15', guest_dir: 'freebsd-15-amd64', transport: 'pcie'}
@@ -825,7 +825,7 @@ jobs:
     steps:
     - uses: actions/checkout@v6
 
-    - name: Generate the job-matrix from the cijoe workflows
+    - name: Generate the job-matrix from the cijoe tasks
       id: generate
       run: |
         pip install --quiet pyyaml
@@ -1007,14 +1007,14 @@ jobs:
     - name: CIJOE, run macvfn-provision.yaml
       if: matrix.os == 'macos'
       run: |
-        cd cijoe && cijoe "workflows/macvfn-provision.yaml" \
+        cd cijoe && cijoe "tasks/macvfn-provision.yaml" \
         --monitor \
         --config "configs/${{ matrix.hostname }}.toml" \
         --output "${{ github.job }}-${{ matrix.hostname }}-provision-macvfn"
 
     - name: CIJOE, run provisioning
       run: |
-        cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
+        cd cijoe && cijoe "tasks/provision-using-tgz.yaml" \
         --monitor \
         --config "configs/${{ matrix.hostname }}.toml" \
         --output "${{ github.job }}-${{ matrix.hostname }}-provision-xnvme" \
@@ -1023,7 +1023,7 @@ jobs:
 
     - name: CIJOE, run tests
       run: |
-        cd cijoe && cijoe "workflows/test-${{ matrix.os }}-${{ matrix.ver }}.yaml" \
+        cd cijoe && cijoe "tasks/test-${{ matrix.os }}-${{ matrix.ver }}.yaml" \
         --monitor \
         --config "configs/${{ matrix.hostname }}.toml" \
         --output "${{ github.job }}-${{ matrix.hostname }}-test-results"

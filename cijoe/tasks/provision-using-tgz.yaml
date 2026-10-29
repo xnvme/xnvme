@@ -25,7 +25,7 @@ steps:
 
 # Dependencies of the test-suite, as opposed to the build/run dependencies
 # installed by xnvme_build_prep; the guard is for the FreeBSD guests this
-# workflow also provisions. The filesystem-level qublk cases format with XFS.
+# task also provisions. The filesystem-level qublk cases format with XFS.
 - name: test_deps
   run: |
     if command -v apt-get > /dev/null; then apt-get -qy install xfsprogs; fi

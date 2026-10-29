@@ -3,16 +3,16 @@
 Expand a GitHub Actions job-matrix into one entry per cijoe test-step
 
 Reads a YAML list of matrix entries on stdin and, for each of them, locates the
-cijoe workflow it would run. The steps of that workflow are split in two: those
+cijoe task it would run. The steps of that task are split in two: those
 named 'test_*' and the rest, which are treated as preparation. One matrix entry is
 emitted per test-step, with a 'steps' key holding the preparation steps followed by
-that single test-step, such that the test-steps of a workflow run as separate jobs.
+that single test-step, such that the test-steps of a task run as separate jobs.
 
 Emits 'matrix=<json>' on stdout, for consumption via GITHUB_OUTPUT::
 
     python3 toolbox/gha_matrix.py <<< "$BASE_MATRIX" >> "$GITHUB_OUTPUT"
 
-The workflow of an entry is 'test-{os}-{ver}-{transport}.yaml', falling back to
+The task of an entry is 'test-{os}-{ver}-{transport}.yaml', falling back to
 'test-{os}-{ver}.yaml' for the entries whose 'ver' already carries the transport.
 """
 
@@ -22,39 +22,39 @@ from pathlib import Path
 
 import yaml
 
-WORKFLOWS = Path("cijoe/workflows")
+TASKS = Path("cijoe/tasks")
 TEST_PREFIX = "test_"
 
 
-def workflow_path(entry):
-    """Returns the path to the cijoe workflow which the given entry runs"""
+def task_path(entry):
+    """Returns the path to the cijoe task which the given entry runs"""
 
     stem = f"test-{entry['os']}-{entry['ver']}"
     candidates = [
-        WORKFLOWS / f"{stem}-{entry['transport']}.yaml",
-        WORKFLOWS / f"{stem}.yaml",
+        TASKS / f"{stem}-{entry['transport']}.yaml",
+        TASKS / f"{stem}.yaml",
     ]
 
     for candidate in candidates:
         if candidate.is_file():
             return candidate
 
-    raise SystemExit(f"no workflow for entry({entry}), tried({candidates})")
+    raise SystemExit(f"no task for entry({entry}), tried({candidates})")
 
 
 def expand(entry):
-    """Returns a list of matrix entries, one per test-step of the entry's workflow"""
+    """Returns a list of matrix entries, one per test-step of the entry's task"""
 
-    workflow = yaml.safe_load(workflow_path(entry).read_text())
-    names = [step["name"] for step in workflow.get("steps", [])]
+    task = yaml.safe_load(task_path(entry).read_text())
+    names = [step["name"] for step in task.get("steps", [])]
 
     tests = [name for name in names if name.startswith(TEST_PREFIX)]
 
-    # Without test-steps there is nothing to split on; run the workflow as it is
+    # Without test-steps there is nothing to split on; run the task as it is
     if not tests:
         return [entry_with(entry, "", "")]
 
-    # Keep the order the workflow declares, dropping only the other test-steps. Taking
+    # Keep the order the task declares, dropping only the other test-steps. Taking
     # the non-test steps as a prefix instead would move any teardown step ahead of the
     # test it is meant to run after.
     return [
@@ -75,7 +75,7 @@ def entry_with(entry, test, steps):
     """Returns the given entry, extended with its 'id', 'test' and 'steps'"""
 
     # 'id' identifies the entry, both as the job-name and when naming outputs and
-    # artifacts. It has to carry the transport as well: without it two workflows for the
+    # artifacts. It has to carry the transport as well: without it two tasks for the
     # same guest collide whenever they happen to share a test-step name.
     return {
         "id": "-".join(

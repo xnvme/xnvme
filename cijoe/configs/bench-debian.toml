@@ -1,7 +1,7 @@
 [os]
 prettyname = "Linux"
 
-[cijoe.workflow]
+[cijoe.task]
 fail_fast=true
 
 [[duts]]

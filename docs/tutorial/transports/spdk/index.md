@@ -8,19 +8,19 @@ by `xnvme-driver`, attached to `nvmf_tgt` as `Nvme0` through `rpc.py`, and
 published as a TCP subsystem. The `cijoe/scripts/nvme_target_start.py`,
 `nvme_target_probe.py`, and `nvme_target_stop.py` scripts drive this with
 `--nvme-provider spdk`. They are wired into the dedicated
-`workflows/transports-tcp-spdk.yaml` workflow whose three steps
+`tasks/transports-tcp-spdk.yaml` task whose three steps
 (`nvme_target_start`, `nvme_target_probe`, `nvme_target_stop`) can be
 selected individually.
 
 ## Dev loop
 
-Run the demo workflow end-to-end:
+Run the demo task end-to-end:
 
 ```bash
 cd cijoe
 cijoe --config configs/debian-trixie-iommu_enabled.toml \
       --output /tmp/spdk-up \
-      workflows/transports-tcp-spdk.yaml
+      tasks/transports-tcp-spdk.yaml
 ```
 
 This brings the target up, probes it from the initiator side, and tears
@@ -29,7 +29,7 @@ embedded report below. See the parent page for
 [shared configuration](../index.md) and
 [initiator usage](../index.md#initiator-usage).
 
-When you want to hold the target up between iterations, the workflow
+When you want to hold the target up between iterations, the task
 can be driven a step at a time
 (`cijoe ... transports-tcp-spdk.yaml nvme_target_start` and `...
 nvme_target_stop`), and the same logic is also reachable by invoking

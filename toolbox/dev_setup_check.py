@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Inventory the local QEMU environment against what xNVMe's guest workflows need:
+Inventory the local QEMU environment against what xNVMe's guest tasks need:
 
 - qemu-system-x86_64 >= 10.1 (for the vfio-user-pci device transport)
 - the vfio-user-pci device, used to attach the external vfu_kvssd binary
@@ -48,7 +48,7 @@ def qemu_has(qemu_bin, args, needle):
 def main():
     errors = []
 
-    print("Checking QEMU environment for xNVMe guest workflows...")
+    print("Checking QEMU environment for xNVMe guest tasks...")
     print()
 
     qemu = shutil.which("qemu-system-x86_64")

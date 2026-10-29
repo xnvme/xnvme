@@ -1,7 +1,7 @@
 [os]
 prettyname = "FreeBSD"
 
-[cijoe.workflow]
+[cijoe.task]
 fail_fast=true
 
 [liburing.repository]

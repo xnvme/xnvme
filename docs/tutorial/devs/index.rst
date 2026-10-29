@@ -82,11 +82,11 @@ against it::
   in the guest; ``devenv-provision`` starts over from a clean build.
 
 * ``devenv-test`` runs the tests ``TESTS`` selects, as pytest arguments, or
-  without it the guest's test workflow, as ``guest-test`` does, with
+  without it the guest's test task, as ``guest-test`` does, with
   ``TRANSPORT`` and ``TEST_STEPS`` passed through. ``TESTS`` replaces the
-  workflow's own selection, so add what it leaves out for the guest, such as
+  task's own selection, so add what it leaves out for the guest, such as
   ``-k "not fabrics and not libvfn"`` on a guest without an IOMMU. ``TESTS``
-  is for the Linux guests; on FreeBSD, run the guest's test workflow.
+  is for the Linux guests; on FreeBSD, run the guest's test task.
 
 * ``devenv-shell`` opens a shell in the host container, and ``devenv-ssh`` an
   SSH session in the guest, as root, on the port the container publishes the
@@ -118,14 +118,14 @@ To build and test **xNVMe** on a machine rather than in a guest, such as a
 lab machine with real NVMe drives, describe it in a **CIJOE** config: copy the
 one in ``cijoe/configs/`` that is closest, and change its SSH login, its
 ``[[devices]]`` and its paths. Then build the source archives and run the
-provisioning and a test workflow against it, as the ``verify-physical`` job
+provisioning and a test task against it, as the ``verify-physical`` job
 does with its macOS machine::
 
   make gen-artifacts ALLOW_DIRTY=1
   cd cijoe
-  cijoe workflows/provision-using-tgz.yaml --config mymachine.toml \
+  cijoe tasks/provision-using-tgz.yaml --config mymachine.toml \
     --config configs/fio.toml --config configs/xnvme.toml
-  cijoe workflows/test-debian-trixie-iommu_enabled-pcie.yaml --config mymachine.toml \
+  cijoe tasks/test-debian-trixie-iommu_enabled-pcie.yaml --config mymachine.toml \
     --config configs/fio.toml --config configs/xnvme.toml
 
 ``provision-using-tgz.yaml`` copies the archives over, then builds and

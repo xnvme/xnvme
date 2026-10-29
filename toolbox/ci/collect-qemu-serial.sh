@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Collect QEMU guest serial.output files into a destination directory and tail
-# each to stdout. Intended for CI: when a qemu-based cijoe workflow fails to
+# each to stdout. Intended for CI: when a qemu-based cijoe task fails to
 # reach 'login:', the guest's boot log lives at ~/guests/<name>/serial.output
 # on the runner and is otherwise lost when the runner is wiped.
 #

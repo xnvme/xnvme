@@ -37,7 +37,7 @@ delegated to `CIJOE`_ for details, then have a look at `CIJOE in xNVMe`_.
 
 The motivation for this separation is to make it simpler to reproduce build,
 test, and verfication issues occuring during a **CI** run, using locally
-available resources, by executing the `CIJOE in xNVMe`_ workflows and scripts.
+available resources, by executing the `CIJOE in xNVMe`_ tasks and scripts.
 
 .. _sec-ci-jobs:
 
@@ -160,7 +160,7 @@ Both publish **OCI** artifacts on **GHCR**.
   ``[system-imaging.images.<name>]`` in ``cijoe/configs/system_imaging.toml``.
   The nosi guests ship with root locked and an operator account ``odus``;
   ``cijoe/scripts/root_unlock.py`` runs right after ``guest_start`` to open
-  root **SSH** so the rest of the **CIJOE** workflow continues as root unchanged
+  root **SSH** so the rest of the **CIJOE** task continues as root unchanged
   (Linux uses ``chpasswd`` + ``systemctl``, FreeBSD uses ``pw usermod`` +
   ``service sshd reload``).
 
