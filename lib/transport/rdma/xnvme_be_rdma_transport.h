@@ -17,7 +17,7 @@
 
 #define TO_RDMA_CTRLR(ctrlr) container_of((ctrlr), struct xnvme_be_rdma_ctrlr, base)
 
-/* Work completions fetched per ibv_poll_cq() */
+// Work completions fetched per ibv_poll_cq()
 #define XNVME_BE_RDMA_CQ_BATCH 32
 
 enum xnvme_be_rdma_wr_type {
@@ -61,7 +61,7 @@ struct xnvme_be_rdma_wr_id {
 
 /*
  * Bottom half (xnvme_be_rdma_cm.c): the rdma_cm connection sequence. Used by the top
- * half's qpair_connect / qpair_disconnect (xnvme_be_rdma.c).
+ * half's qpair_connect / qpair_disconnect (xnvme_be_rdma_transport.c).
  *
  * xnvme_be_rdma_cm_connect() takes the qpair from INIT to CONNECTED, and sets it to ERROR
  * when the connection fails after the cm_id is created.
@@ -69,13 +69,13 @@ struct xnvme_be_rdma_wr_id {
 int
 xnvme_be_rdma_cm_connect(struct xnvme_transport_qpair *qpair);
 
-/* Waits for the disconnect event after rdma_disconnect() and sets the qpair to DISCONNECTED. */
+// Waits for the disconnect event after rdma_disconnect() and sets the qpair to DISCONNECTED.
 int
 xnvme_be_rdma_cm_wait_disconnected(struct xnvme_transport_qpair *qpair);
 
 /*
  * Bottom half (xnvme_be_rdma_verbs.c): drains one CQ's worth of
- * completions. Used by the top half's qpair_poll (xnvme_be_rdma.c).
+ * completions. Used by the top half's qpair_poll (xnvme_be_rdma_transport.c).
  */
 int
 xnvme_be_rdma_verbs_process_send_completions(struct xnvme_transport_qpair *qpair,
@@ -85,9 +85,9 @@ xnvme_be_rdma_verbs_process_recv_completions(struct xnvme_transport_qpair *qpair
 					     int max_completions);
 
 /*
- * Top half (xnvme_be_rdma.c): the only up-call the bottom half is allowed to reach. Checks
+ * Top half (xnvme_be_rdma_transport.c): the only function the bottom half calls up into. Checks
  * the length and the qpair state, then calls xnvme_transport_qpair_complete(). Called from
- * _handle_recv_cmpl() in xnvme_be_rdma_verbs.c.
+ * _rdma_verbs_handle_recv() in xnvme_be_rdma_verbs.c.
  */
 int
 _rdma_top_recv_complete(struct xnvme_transport_qpair *qpair, void *buf, size_t len);
