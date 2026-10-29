@@ -141,7 +141,7 @@ endef
 docker:
 	@echo "## xNVMe: docker"
 	mkdir -p /tmp/artifacts
-	docker run -it --privileged -w /tmp/xnvme --mount type=bind,source="$(shell pwd)",target=/tmp/xnvme --mount type=bind,source=/tmp/artifacts,target=/tmp/artifacts ghcr.io/xnvme/xnvme-devenv/host:v0.12.0 bash
+	docker run -it --privileged -w /tmp/xnvme --mount type=bind,source="$(shell pwd)",target=/tmp/xnvme --mount type=bind,source=/tmp/artifacts,target=/tmp/artifacts ghcr.io/xnvme/xnvme-devenv/host:v0.14.0 bash
 	@echo "## xNVME: docker [DONE]"
 
 CIJOE_GUEST_CONFIGS = --config configs/fio.toml --config configs/xnvme.toml --config configs/$(GUEST).toml
@@ -166,7 +166,7 @@ DEVENV_RIGS ?= /opt/xnvme-devenv/rigs
 rig_file = $(firstword $(wildcard $(abspath $(1)) $(CURDIR)/cijoe/rigs/$(1).toml $(DEVENV_RIGS)/$(1).toml))
 RIG_CONFIGS = $(foreach r,$(RIG),--config $(or $(call rig_file,$(r)),$(error no rig '$(r)'; is this the xnvme-devenv host container?)))
 
-DEVENV_IMAGE ?= ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
+DEVENV_IMAGE ?= ghcr.io/xnvme/xnvme-devenv/host:v0.14.0
 DEVENV_ENGINE ?= docker
 DEVENV_NAME ?= xnvme-devenv-$(notdir $(CURDIR))
 DEVENV_HOME ?= $(CURDIR)/.devenv

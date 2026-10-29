@@ -16,7 +16,7 @@ jobs:
   #
   gen-targets:
     runs-on: ubuntu-24.04
-    container: ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
+    container: ghcr.io/xnvme/xnvme-devenv/host:v0.14.0
 
     steps:
     - name: Retrieve and unpack the xNVMe source archive

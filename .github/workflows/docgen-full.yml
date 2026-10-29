@@ -40,7 +40,7 @@ jobs:
         - {os: 'debian', ver: 'trixie-iommu_enabled'}
 
     container:
-      image: ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
+      image: ghcr.io/xnvme/xnvme-devenv/host:v0.14.0
       # /mnt is the runner's ~70 GiB ephemeral disk; the nosi qcow2 + raw
       # decompression overflow the container's small overlay otherwise.
       options: --privileged -v /mnt:/mnt

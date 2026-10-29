@@ -18,7 +18,7 @@ jobs:
     runs-on: [self-hosted, linux, amd64, maas]
 
     container:
-      image: ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
+      image: ghcr.io/xnvme/xnvme-devenv/host:v0.14.0
       options: --privileged --pid=host --ulimit memlock=-1 -v /home/ghr/system_imaging:/github/home/system_imaging
 
     steps:
@@ -102,7 +102,7 @@ jobs:
     runs-on: ${{ matrix.labels }}
 
     container:
-      image: ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
+      image: ghcr.io/xnvme/xnvme-devenv/host:v0.14.0
       options: --privileged --pid=host --ulimit memlock=-1 -v /home/ghr/system_imaging:/github/home/system_imaging
 
     steps:
