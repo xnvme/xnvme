@@ -676,15 +676,15 @@ uninstall:
 	cd $(BUILD_DIR) && $(MESON) --internal uninstall
 	@echo "## xNVMe: make uninstall [DONE]"
 
-define build-deb-help
-# Build a binary DEB package
+define deb-dev-help
+# Build a binary DEB of the checkout's build, for a test box
 #
 # NOTE: The binary DEB packages generated here are not meant to be used for anything
 # but easy install/uninstall during test and development
 endef
-.PHONY: build-deb
-build-deb: _require_builddir
-	@echo "## xNVMe: make build-deb"
+.PHONY: deb-dev
+deb-dev: _require_builddir
+	@echo "## xNVMe: make deb-dev"
 	rm -rf $(BUILD_DIR)/meson-dist/deb
 	python3 $(TOOLBOX_DIR)/meson_dist_deb_build.py \
 		--deb-description "xNVMe binary package for test/development" \
@@ -692,11 +692,37 @@ build-deb: _require_builddir
 		--builddir $(BUILD_DIR) \
 		--workdir $(BUILD_DIR)/meson-dist/deb \
 		--output $(BUILD_DIR)/meson-dist/xnvme.deb
-	@echo "## xNVMe: make-deb [DONE]; find it here:"
+	@echo "## xNVMe: make deb-dev [DONE]; find it here:"
 	find $(BUILD_DIR)/meson-dist/ -name '*.deb'
 
+define deb-dist-help
+# Build the Debian packages from the source archive without subprojects, with
+# the packaging at DEB_PKG, a checkout of salsa.debian.org/safl/xnvme; SRC_TGZ
+# names the archive, by default what 'make gen-src-archive' made
+endef
+.PHONY: deb-dist
+deb-dist:
+	@echo "## xNVMe: make deb-dist"
+	@ver=$(PROJECT_VER); \
+	src=$${SRC_TGZ:-$(BUILD_DIR)/meson-dist/xnvme-$$ver.tar.gz}; \
+	top=$(abspath $(BUILD_DIR))/debbuild; \
+	test -d "$(DEB_PKG)/debian" || { echo "DEB_PKG must name a checkout of the packaging"; exit 1; }; \
+	rm -rf $$top && mkdir -p $$top/xnvme-$$ver && \
+	cp "$$src" "$$top/xnvme_$$ver.orig.tar.gz" && \
+	tar xzf "$$src" -C $$top/xnvme-$$ver --strip-components=1 && \
+	cp -r "$(DEB_PKG)/debian" $$top/xnvme-$$ver/debian && \
+	cd $$top/xnvme-$$ver && \
+	if ! head -1 debian/changelog | grep -q "($$ver-"; then \
+		{ printf "xnvme ($$ver-1) unstable; urgency=medium\n\n  * Built by 'make deb-dist' from the source archive\n\n -- %s  %s\n\n" \
+			"$$(sed -n 's/^Maintainer: //p' debian/control)" "$$(date -R)"; cat debian/changelog; } > debian/changelog.new && \
+		mv debian/changelog.new debian/changelog; \
+	fi && \
+	dpkg-buildpackage -us -uc -b
+	@echo "## xNVMe: make deb-dist [DONE]; find it here:"
+	find $(BUILD_DIR)/debbuild/ -maxdepth 1 -name '*.deb'
+
 define install-deb-help
-# Install the binary DEB package created with: make build-deb
+# Install the binary DEB package created with: make deb-dev
 #
 # This will install it instead of copying it directly
 # into the system paths. This is convenient as it is easier to purge it by

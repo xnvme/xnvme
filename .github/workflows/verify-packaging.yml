@@ -11,6 +11,55 @@ defaults:
     shell: bash
 
 jobs:
+  #
+  # Build the Debian packages from the source archive without subprojects that
+  # the release ships, with the packaging on salsa.debian.org, then lint them
+  #
+  deb-dist:
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'pull_request' || github.event.inputs.job == 'all'
+    container:
+      image: debian:trixie
+
+    steps:
+    - name: Install what unpacking the archive and dpkg-buildpackage need
+      run: |
+        apt-get update -qq
+        apt-get install -y -qq git make python3 dpkg-dev lintian
+
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      id: source
+      with:
+        name: xnvme-src-archive
+
+    - name: Retrieve the Debian packaging
+      run: git clone --depth 1 https://salsa.debian.org/safl/xnvme.git /tmp/debpkg
+
+    - name: Install the packaging's Build-Depends, and nothing else
+      run: apt-get build-dep -y -qq /tmp/debpkg
+
+    - name: Build the packages
+      run: make deb-dist DEB_PKG=/tmp/debpkg SRC_TGZ=${{ steps.source.outputs.src_tgz }}
+
+    - name: Lint the packages
+      run: lintian --fail-on error --tag-display-limit 0 builddir/debbuild/*.changes
+
+    - name: Install the packages
+      run: apt-get install -y ./builddir/debbuild/*_0*.deb
+
+    - name: Run the installed tools
+      run: |
+        xnvme library-info
+        xnvme info 1GB --be ramdisk
+
+    - name: Upload the packages
+      uses: actions/upload-artifact@v6.0.0
+      with:
+        name: packages-debian
+        path: builddir/debbuild/*.deb
+        if-no-files-found: error
+
   rpm-dev:
     runs-on: ubuntu-24.04
     if: github.event_name == 'pull_request' || github.event.inputs.job == 'all'
@@ -74,56 +123,3 @@ jobs:
       run: |
         xnvme library-info
         xnvme info 1GB --be ramdisk
-
-  packaging-debian:
-    runs-on: ubuntu-24.04
-    if: github.event_name == 'pull_request' || github.event.inputs.job == 'all'
-    container: ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
-
-    steps:
-    - name: Info
-      run: |
-        echo "Current branch is ${{ github.base_ref }}"
-        echo "Current tag is ${{ github.ref }}"
-
-    - name: Retrieve and unpack the xNVMe source archive
-      uses: xnvme/actions/.github/actions/setup-source@main
-      id: source
-      with:
-        name: xnvme-src-archive
-
-    - name: Install the build dependencies this tree names for the container's Ubuntu
-      run: bash toolbox/pkgs/ubuntu-resolute.sh
-
-    - name: Retrieve the xNVMe Debian package repository by branch
-      run: |
-        git clone https://salsa.debian.org/safl/xnvme.git debpkg
-        git -C debpkg checkout ${{ github.base_ref }}
-
-    - name: Prep
-      run: |
-        cp ${{ steps.source.outputs.src_tgz }} debpkg/input/xnvme-0.7.5.tar.gz
-
-    # STALE: salsa.debian.org/safl/xnvme's own version tracking has fallen
-    # behind (its Makefile reports VERSION 0.7.3 against the 0.7.5 tarball
-    # named above, and its fallback path assumes a checkout that doesn't
-    # exist in this container), so `make` here currently no-ops with no
-    # packages produced. Needs a fix in that repo, not this workflow; `||
-    # true` and `if-no-files-found: ignore` below just keep that known,
-    # external failure from showing up as a false near-miss on every run.
-    - name: Build
-      run: |
-        cd debpkg && make || true
-
-    - name: Upload debian packages
-      uses: actions/upload-artifact@v6.0.0
-      with:
-        name: packages-debian
-        if-no-files-found: ignore
-        path: |
-          debpkg/builddir/libxnvme*.deb
-          debpkg/builddir/xnvme-cli*.deb
-          debpkg/builddir/xnvme-full*.deb
-          debpkg/builddir/*.dsc
-          debpkg/builddir/*.buildinfo
-          debpkg/builddir/*.changes

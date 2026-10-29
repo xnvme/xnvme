@@ -23,7 +23,12 @@ see the :xref-github-xnvme-issues:`GitHUB Issue Tracker<389>`.
 
   - See: https://salsa.debian.org/safl/xnvme
 
-  - This is a work-in-progress
+  - ``make deb-dist DEB_PKG=<checkout of it>`` builds the packages from the
+    release's source archive without subprojects, ``xnvme-X.Y.Z.tar.gz``, and
+    CI's ``deb-dist`` job builds and lints them on every pull-request
+
+  - ``make deb-dev`` is not packaging: it builds a DEB of your checkout's
+    build, for putting on a test box
 
 * Fedora / OpenSUSE, CentOS / Rocky / RHEL (``rpm``)
 
