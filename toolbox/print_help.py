@@ -62,7 +62,7 @@ def gen_help(args):
         for line in makefile.readlines():
             if define_regex.match(line):
                 key = define_regex.match(line).group("target")
-            elif endef_regex.match(line):
+            elif endef_regex.match(line) and key:
                 args.help[key] = [
                     ln[1:].strip("\n") for ln in desc if ln.startswith("#")
                 ]
