@@ -29,6 +29,15 @@ see the :xref-github-xnvme-issues:`GitHUB Issue Tracker<389>`.
 
   - See: https://copr.fedorainfracloud.org/coprs/karlowich/xNVMe/
 
+  - ``toolbox/xnvme-dist.spec.in`` packages the release's source archive
+    without subprojects, ``xnvme-X.Y.Z.tar.gz``, with ``%meson`` and the
+    system's dependencies. ``make rpm-dist`` builds it, and CI's ``rpm-dist``
+    job builds it from the archive of its run, in ``fedora:44`` with only the
+    spec's ``BuildRequires`` installed
+
+  - ``make rpm-dev`` is not packaging: it builds an RPM of your checkout,
+    installing to ``/usr/local``, for putting on a test box
+
 * FreeBSD (``ports``)
 
   - See: https://ports.freebsd.org/cgi/ports.cgi?query=xnvme 

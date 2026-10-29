@@ -718,22 +718,39 @@ uninstall-deb:
 	apt-get --yes remove xnvme* || true
 	@echo "## xNVMe: make uninstall-deb [DONE]"
 
-define build-rpm-help
-# Build a binary RPM package
+define rpm-dev-help
+# Build a binary RPM of the checkout, installing to /usr/local, for a test box
 endef
-.PHONY: build-rpm
-build-rpm: _require_builddir
-	@echo "## xNVMe: make build-rpm"
+.PHONY: rpm-dev
+rpm-dev: _require_builddir
+	@echo "## xNVMe: make rpm-dev"
 	meson ${BUILD_DIR}
 	git archive --format=tar HEAD > xnvme.tar
 	tar rf xnvme.tar ${BUILD_DIR}/xnvme.spec
 	gzip -f -9 xnvme.tar
 	rpmbuild -ta xnvme.tar.gz -v --define "_topdir $(shell pwd)/${BUILD_DIR}/meson-dist" --define "_prefix /usr/local"
-	@echo "## xNVMe: make build-rpm [DONE]; find it here:"
+	@echo "## xNVMe: make rpm-dev [DONE]; find it here:"
 	find $(BUILD_DIR)/meson-dist/ -name '*.rpm'
 
+define rpm-dist-help
+# Build RPMs the way a distribution would, from the source archive without
+# subprojects; SRC_TGZ names it, by default what 'make gen-src-archive' made
+endef
+.PHONY: rpm-dist
+rpm-dist:
+	@echo "## xNVMe: make rpm-dist"
+	@ver=$(PROJECT_VER); \
+	src=$${SRC_TGZ:-$(BUILD_DIR)/meson-dist/xnvme-$$ver.tar.gz}; \
+	top=$(abspath $(BUILD_DIR))/rpmbuild; \
+	mkdir -p $$top/SOURCES $$top/SPECS && \
+	cp "$$src" "$$top/SOURCES/xnvme-$$ver.tar.gz" && \
+	sed "s/@VERSION@/$$ver/" $(TOOLBOX_DIR)/xnvme-dist.spec.in > $$top/SPECS/xnvme.spec && \
+	rpmbuild -ba $$top/SPECS/xnvme.spec --define "_topdir $$top"
+	@echo "## xNVMe: make rpm-dist [DONE]; find it here:"
+	find $(BUILD_DIR)/rpmbuild/ -name '*.rpm'
+
 define install-rpm-help
-# Install the binary RPM package created with: make build-rpm
+# Install the binary RPM package created with: make rpm-dev
 # This will install it instead of copying it directly
 # into the system paths. This is convenient as it is easier to purge it by
 # running eg.
