@@ -20,11 +20,6 @@ version = "trixie"
 [build.compiler]
 bin = "gcc"
 
-[qemu.repository]
-remote = "https://github.com/qemu/qemu.git"
-path = "{{ local.env.HOME }}/git/qemu"
-tag = "v9.0.0"
-
 # Used by: qemu.build.py
 [qemu.build]
 prefix = "{{ local.env.HOME }}/opt/qemu"
@@ -315,8 +310,3 @@ driver_attachment = "kernel"
 [hugetlbfs]
 mount_point = "/mnt/huge"
 nr_hugepages = "256"
-
-[linux.repository]
-remote = "https://github.com/torvalds/linux.git"
-path = "{{ local.env.HOME }}/git/linux"
-tag = "v6.12"

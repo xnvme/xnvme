@@ -144,7 +144,18 @@ docker:
 	docker run -it --privileged -w /tmp/xnvme --mount type=bind,source="$(shell pwd)",target=/tmp/xnvme --mount type=bind,source=/tmp/artifacts,target=/tmp/artifacts ghcr.io/xnvme/xnvme-devenv/host:v0.12.0 bash
 	@echo "## xNVME: docker [DONE]"
 
-RIG_DEFAULT := storage-node-emulated homi-queues
+CIJOE_GUEST_CONFIGS = --config configs/fio.toml --config configs/xnvme.toml --config configs/$(GUEST).toml
+GUEST_FAMILY = $(firstword $(subst -, ,$(or $(DEVENV_GUEST),$(shell cat $(CIJOE_GUEST_FILE) 2>/dev/null))))
+CIJOE_PASSTHRU_FILE := cijoe/current.passthru.toml
+define PASSTHRU_RIG
+[rig.devices.nvme0]
+host = "$(PASSTHRU)"
+endef
+ifneq ($(PASSTHRU),)
+$(file >$(CIJOE_PASSTHRU_FILE),$(PASSTHRU_RIG))
+endif
+export PASSTHRU
+RIG_DEFAULT = $(if $(PASSTHRU),storage-node-passthru passthru-$(GUEST_FAMILY) $(CIJOE_PASSTHRU_FILE),storage-node-emulated homi-queues)
 CIJOE_RIG_FILE := cijoe/current.rig
 ifeq ($(origin RIG),undefined)
 RIG = $(if $(filter guest-start verify-guest docgen-guest devenv-up,$(MAKECMDGOALS)),$(RIG_DEFAULT),$(or $(shell cat $(CIJOE_RIG_FILE) 2>/dev/null),$(RIG_DEFAULT)))
@@ -164,14 +175,15 @@ DEVENV_GUEST ?= $(shell cat $(CIJOE_GUEST_FILE) 2>/dev/null)
 export DEVENV_TESTS = $(TESTS)
 DEVENV_SSH_CONFIG = import sys, tomllib; c = tomllib.load(open(sys.argv[1], "rb"))["qemu"]; g = c["default_guest"]; f = c["guests"][g]["system_args"]["tcp_forward"]; print(f"[qemu.guests.{g}.system_args.tcp_forward]\nhost = {f['host']}\nguest = {f['guest']}\nhost_address = \"0.0.0.0\"")
 export DEVENV_SSH_CONFIG
-DEVENV_RUN = $(DEVENV_ENGINE) exec -e DEVENV_TESTS -e DEVENV_SSH_CONFIG -e RIG $(DEVENV_NAME) bash -euo pipefail -c 'export PATH=$$HOME/.local/bin:$$PATH; $(1)'
+DEVENV_RUN = $(DEVENV_ENGINE) exec -e DEVENV_TESTS -e DEVENV_SSH_CONFIG -e RIG -e PASSTHRU $(DEVENV_NAME) bash -euo pipefail -c 'export PATH=$$HOME/.local/bin:$$PATH; $(1)'
 
 define devenv-up-help
 # Start the xnvme-devenv host container, unless running, the guest in it, and
 # provision this tree into the guest
 #
 # Optional: DEVENV_GUEST=<guest> (default: cijoe/current.guest),
-#           RIG=<rigs> (default: storage-node-emulated homi-queues), DEVENV_HOME,
+#           RIG=<rigs> (default: storage-node-emulated homi-queues),
+#           PASSTHRU=<bdf> (a drive of this machine, on storage-node-passthru), DEVENV_HOME,
 #           DEVENV_ENGINE=podman, DEVENV_IMAGE
 endef
 .PHONY: devenv-up
@@ -180,7 +192,7 @@ devenv-up:
 	@test -n "$(DEVENV_GUEST)" || { echo "ERR: no guest; give DEVENV_GUEST=<guest>"; false; }
 	mkdir -p $(DEVENV_HOME) $(DEVENV_CACHE)
 	$(DEVENV_ENGINE) inspect $(DEVENV_NAME) >/dev/null 2>&1 || \
-		$(DEVENV_ENGINE) run -d --name $(DEVENV_NAME) --privileged -p 127.0.0.1::4200 \
+		$(DEVENV_ENGINE) run -d --name $(DEVENV_NAME) --privileged --ulimit memlock=-1 -p 127.0.0.1::4200 \
 			-v $(CURDIR):/tmp/xnvme -v $(DEVENV_HOME):/root \
 			-v $(DEVENV_CACHE):/root/system_imaging -w /tmp/xnvme \
 			$(DEVENV_IMAGE) sleep infinity
@@ -209,7 +221,7 @@ devenv-sync:
 	$(eval GUEST := $(shell cat $(CIJOE_GUEST_FILE)))
 	@echo "## xNVMe: devenv-sync ($(GUEST))"
 	$(call DEVENV_RUN,cd cijoe && cijoe workflows/devenv-sync.yaml --monitor \
-		--config configs/$(GUEST).toml --config configs/fio.toml --config configs/xnvme.toml \
+		$(CIJOE_GUEST_CONFIGS) \
 		--output cijoe-output-devenv-sync)
 	@echo "## xNVMe: devenv-sync [DONE]"
 
@@ -225,7 +237,7 @@ devenv-test:
 	@echo "## xNVMe: devenv-test ($(GUEST))"
 ifneq ($(TESTS),)
 	$(call DEVENV_RUN,cd cijoe && cijoe workflows/devenv-tests.yaml --monitor \
-		--config configs/$(GUEST).toml --config configs/fio.toml --config configs/xnvme.toml \
+		$(CIJOE_GUEST_CONFIGS) \
 		--output cijoe-output-devenv-tests)
 else
 	$(call DEVENV_RUN,make guest-test TRANSPORT=$(TRANSPORT) TEST_STEPS="$(TEST_STEPS)")
@@ -308,9 +320,7 @@ guest-start:
 	echo "$(RIG)" > $(CIJOE_RIG_FILE)
 	cd cijoe && cijoe "workflows/guest.yaml" \
 		--monitor \
-		--config "configs/$(GUEST).toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
+		$(CIJOE_GUEST_CONFIGS) \
 		--config "configs/system_imaging.toml" \
 		$(RIG_CONFIGS) \
 		$(GUEST_CONFIGS) \
@@ -318,10 +328,14 @@ guest-start:
 		guest_kill \
 		stage_nosi_guest \
 		guest_initialize \
+		windows_qemu_prep \
 		guest_start \
 		root_unlock \
 		guest_check
 	@echo "## xNVMe: guest-start [DONE]"
+
+PROVISION_STEPS = xnvme_source_sync xnvme_build_prep test_deps xnvme_build xnvme_install ldconfig stabilize_nvme_naming xnvme_bindings_py_install_tgz fio_prep
+PROVISION_STEPS_WINDOWS = xnvme_source_sync xnvme_build_prep xnvme_build xnvme_install
 
 define guest-provision-help
 # Sync source, build, and install xNVMe inside the guest (reads from cijoe/current.guest)
@@ -358,20 +372,10 @@ guest-provision:
 	@echo "## xNVMe: guest-provision ($(GUEST))"
 	cd cijoe && cijoe "workflows/provision-using-tgz.yaml" \
 		--monitor \
-		--config "configs/$(GUEST).toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
+		$(CIJOE_GUEST_CONFIGS) \
 		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-guest-provision,cijoe-output-guest-provision)" \
 		-l \
-		xnvme_source_sync \
-		xnvme_build_prep \
-		test_deps \
-		xnvme_build \
-		xnvme_install \
-		ldconfig \
-		stabilize_nvme_naming \
-		xnvme_bindings_py_install_tgz \
-		fio_prep
+		$(if $(filter windows,$(GUEST_FAMILY)),$(PROVISION_STEPS_WINDOWS),$(PROVISION_STEPS))
 	@echo "## xNVMe: guest-provision [DONE]"
 
 define guest-test-help
@@ -397,9 +401,7 @@ guest-test:
 	@echo "## xNVMe: guest-test ($(GUEST), transport=$(TRANSPORT))"
 	cd cijoe && cijoe "workflows/test-$(GUEST)-$(TRANSPORT).yaml" \
 		--monitor \
-		--config "configs/$(GUEST).toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
+		$(CIJOE_GUEST_CONFIGS) \
 		$(RIG_CONFIGS) \
 		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-test-results,cijoe-output-guest-test)" \
 		$(TEST_STEPS)
@@ -426,9 +428,7 @@ guest-stop:
 	@echo "## xNVMe: guest-stop ($(GUEST))"
 	cd cijoe && cijoe "workflows/guest.yaml" \
 		--monitor \
-		--config "configs/$(GUEST).toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
+		$(CIJOE_GUEST_CONFIGS) \
 		--config "configs/system_imaging.toml" \
 		$(RIG_CONFIGS) \
 		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-guest-stop,cijoe-output-guest-stop)" \
@@ -555,6 +555,35 @@ verify-guest:
 	fi
 	$(MAKE) guest-start guest-provision guest-test
 
+define guest-bench-help
+# Prepare the provisioned guest for benchmarking, then run a benchmark in it
+# (reads from cijoe/current.guest)
+#
+# Optional: BENCH=latency (default) or bdev, CIJOE_OUTPUT=<prefix>
+endef
+BENCH ?= latency
+BENCH_CONFIGS = --config configs/xnvme.toml --config configs/$(GUEST).toml --config configs/bench-$(GUEST_FAMILY).toml
+BENCH_PREP_STEPS_WINDOWS = fio_prep
+BENCH_WORKFLOWS_latency = benchmark-latency
+BENCH_WORKFLOWS_bdev = benchmark-provisioning-linux bench
+.PHONY: guest-bench
+guest-bench:
+	$(eval GUEST := $(shell cat $(CIJOE_GUEST_FILE)))
+	@echo "## xNVMe: guest-bench ($(GUEST), bench=$(BENCH))"
+	cd cijoe && cijoe "workflows/benchmark-provisioning.yaml" \
+		--monitor \
+		$(BENCH_CONFIGS) \
+		$(RIG_CONFIGS) \
+		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-bench-prep,cijoe-output-bench-prep)" \
+		$(if $(filter windows,$(GUEST_FAMILY)),$(BENCH_PREP_STEPS_WINDOWS))
+	rm -rf cijoe/bench-results cijoe/latency-*-benchmark
+	$(foreach w,$(or $(BENCH_WORKFLOWS_$(BENCH)),$(error BENCH must be latency or bdev)),(cd cijoe && cijoe "workflows/$(w).yaml" \
+		--monitor \
+		$(BENCH_CONFIGS) \
+		$(RIG_CONFIGS) \
+		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-$(w),cijoe-output-$(w))") &&) true
+	@echo "## xNVMe: guest-bench [DONE]"
+
 define docgen-guest-help
 # Provision a QEMU guest and generate documentation (reads from cijoe/current.guest)
 #
@@ -569,21 +598,15 @@ docgen-guest: guest-start guest-provision
 	@echo "## xNVMe: docgen-guest ($(GUEST))"
 	cd cijoe && cijoe "workflows/transports-tcp-spdk.yaml" \
 		--monitor \
-		--config "configs/$(GUEST).toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
+		$(CIJOE_GUEST_CONFIGS) \
 		--output "cijoe-output-transports-spdk"
 	cd cijoe && cijoe "workflows/transports-tcp-linux.yaml" \
 		--monitor \
-		--config "configs/$(GUEST).toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
+		$(CIJOE_GUEST_CONFIGS) \
 		--output "cijoe-output-transports-linux"
 	cd cijoe && cijoe "workflows/docgen.yaml" \
 		--monitor \
-		--config "configs/$(GUEST).toml" \
-		--config "configs/fio.toml" \
-		--config "configs/xnvme.toml" \
+		$(CIJOE_GUEST_CONFIGS) \
 		--output "$(if $(CIJOE_OUTPUT),$(CIJOE_OUTPUT)-docs,cijoe-output-docgen)"
 	@echo "## xNVMe: docgen-guest [DONE]"
 

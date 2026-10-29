@@ -1075,6 +1075,10 @@ jobs:
         - {os: 'debian', ver: 'trixie-iommu_enabled', transport: 'pcie', hostname: 'ax42-linux', labels: [self-hosted, linux,
             amd64, maas]}
 
+    container:
+      image: ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
+      options: --privileged --pid=host --ulimit memlock=-1 -v /home/ghr/system_imaging:/github/home/system_imaging
+
     steps:
     - uses: xnvme/actions/.github/actions/cleanup@main
 
@@ -1098,27 +1102,27 @@ jobs:
 
     - name: CIJOE, setup pipx environment
       run: |
-        make cijoe-install
-        cijoe --version
+        make guest-env <<< "${{ matrix.os }}-${{ matrix.ver }}"
 
-    - name: CIJOE, run provisioning
+    - name: CIJOE, check that it is available
       run: |
-        cd cijoe && cijoe \
-        "workflows/provision-maas-using-tgz.yaml" \
-        --monitor \
-        --config "configs/${{ matrix.hostname }}.toml" \
-        --config "configs/${{ matrix.hostname }}-testing.toml" \
-        --config "configs/system_imaging.toml" \
-        --output "${{ github.job }}-${{ matrix.hostname }}-provision"
+        cijoe -r
 
-    - name: CIJOE, run tests
+    - name: CIJOE, provision and test guest
       run: |
-        cd cijoe && cijoe \
-        workflows/test-${{ matrix.os }}-${{ matrix.ver }}-${{ matrix.transport }}.yaml \
-        --monitor \
-        --config "configs/${{ matrix.hostname }}.toml" \
-        --config "configs/${{ matrix.hostname }}-testing.toml" \
-        --output "${{ github.job }}-${{ matrix.hostname }}-test-results"
+        make verify-guest \
+          TRANSPORT="${{ matrix.transport }}" \
+          PASSTHRU=0000:02:00.0 \
+          CIJOE_OUTPUT="${{ github.job }}-${{ matrix.hostname }}"
+
+    - name: Collect guest serial console
+      if: always()
+      run: |
+        serial="$HOME/guests/debian-trixie-amd64/serial.output"
+        echo "::group::guest serial console (tail)"
+        tail -c 20000 "$serial" 2>/dev/null || echo "no guest serial output"
+        echo "::endgroup::"
+        cp "$serial" "cijoe/${{ github.job }}-${{ matrix.hostname }}-serial.output" 2>/dev/null || true
 
     - name: CIJOE, result-log-dump on error
       if: failure()
@@ -1161,6 +1165,10 @@ jobs:
       == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'bench')) || (github.event_name == 'workflow_dispatch'
       && github.event.inputs.job == 'bench'))
 
+    container:
+      image: ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
+      options: --privileged --pid=host --ulimit memlock=-1 -v /home/ghr/system_imaging:/github/home/system_imaging
+
     steps:
     - uses: xnvme/actions/.github/actions/cleanup@main
 
@@ -1178,41 +1186,31 @@ jobs:
 
     - name: Prep, environment GITHUB_PATH
       run: |
-        cp -r ${{ steps.source.outputs.directory }} /tmp/artifacts
-        find /tmp/artifacts -name "*.tar.gz"
         echo "$HOME/.local/bin" >> $GITHUB_PATH
+        cp -r ${{ steps.source.outputs.directory }} /tmp/artifacts
+        find /tmp/artifacts
 
     - name: CIJOE, setup pipx environment
       run: |
-        make cijoe-install
+        make guest-env <<< "debian-trixie-iommu_enabled"
 
-    - name: CIJOE, provision xnvme from tgz
+    - name: CIJOE, provision guest
       run: |
-        cd cijoe && cijoe \
-        "workflows/provision-maas-using-tgz.yaml" \
-        --monitor \
-        --config "configs/ax42-linux.toml" \
-        --config "configs/ax42-linux-testing.toml" \
-        --config "configs/system_imaging.toml" \
-        --output "${{ github.job }}-provision-xnvme"
+        make guest-start guest-provision \
+          PASSTHRU=0000:02:00.0 \
+          GUEST_CONFIGS="--config configs/bench-debian.toml" \
+          CIJOE_OUTPUT="${{ github.job }}"
 
-    - name: CIJOE, run benchmark provisioning
+    - name: CIJOE, run benchmark
       run: |
-        cd cijoe && cijoe "workflows/benchmark-provisioning-linux.yaml" \
-        --monitor \
-        --config "configs/ax42-linux.toml" \
-        --config "configs/ax42-linux-testing.toml" \
-        --config "configs/system_imaging.toml" \
-        --output "${{ github.job }}-provision-bench-specific"
+        make guest-bench \
+          BENCH=bdev \
+          CIJOE_OUTPUT="${{ github.job }}"
 
-    - name: CIJOE, run benchmarking
+    - name: Capture QEMU guest serial output
+      if: always()
       run: |
-        rm -rf cijoe/bench-results
-        cd cijoe && cijoe "workflows/bench.yaml" \
-        --monitor \
-        --config "configs/ax42-linux.toml" \
-        --config "configs/ax42-linux-testing.toml" \
-        --output "${{ github.job }}-results"
+        toolbox/ci/collect-qemu-serial.sh "cijoe/${{ github.job }}-serial"
 
     - name: CIJOE, upload report.html
       if: always()
@@ -1222,13 +1220,13 @@ jobs:
         path: cijoe/${{ github.job }}-*/report.html
         if-no-files-found: warn
 
-    - name: CIJOE, archive benchmark-bdev_xnvme-reports
+    - name: CIJOE, archive ${{ github.job }}-reports
       if: always()
       run: |
         tar czf ${{ github.job }}-reports.tar.gz \
           cijoe/${{ github.job }}-*
 
-    - name: CIJOE, upload benchmark-bdev_xnvme-reports
+    - name: CIJOE, upload ${{ github.job }}-reports
       uses: actions/upload-artifact@v6.0.0
       if: always()
       with:
@@ -1249,11 +1247,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - {os: 'linux', labels: [self-hosted, linux, amd64, maas]}
-        - {os: 'freebsd', labels: [self-hosted, linux, amd64, maas]}
-        - {os: 'windows', labels: [self-hosted, linux, amd64, maas]}
+        - {os: 'linux', guest: 'debian-trixie-iommu_disabled', bench: 'debian', labels: [self-hosted, linux, amd64, maas]}
+        - {os: 'freebsd', guest: 'freebsd-14', bench: 'freebsd', labels: [self-hosted, linux, amd64, maas]}
+        - {os: 'windows', guest: 'windows-11', bench: 'windows', labels: [self-hosted, linux, amd64, maas]}
 
     runs-on: ${{ matrix.labels }}
+
+    container:
+      image: ghcr.io/xnvme/xnvme-devenv/host:v0.12.0
+      options: --privileged --pid=host --ulimit memlock=-1 -v /home/ghr/system_imaging:/github/home/system_imaging
 
     steps:
     - uses: xnvme/actions/.github/actions/cleanup@main
@@ -1272,38 +1274,31 @@ jobs:
 
     - name: Prep, environment GITHUB_PATH
       run: |
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
         cp -r ${{ steps.source.outputs.directory }} /tmp/artifacts
         find /tmp/artifacts
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - name: CIJOE, setup pipx environment
       run: |
-        make cijoe-install
-        cijoe --version
+        make guest-env <<< "${{ matrix.guest }}"
 
-    - name: CIJOE, provision xnvme from tgz
+    - name: CIJOE, provision guest
       run: |
-        cd cijoe && cijoe \
-        "workflows/provision-maas-using-tgz.yaml" \
-        --monitor \
-        --config "configs/ax42-${{ matrix.os }}.toml" \
-        --config "configs/system_imaging.toml" \
-        ${{ matrix.os == 'windows' && 'guest_kill guest_initialize windows_qemu_prep windows_guest_start guest_check packages_extra xnvme_source_sync xnvme_build_prep xnvme_build xnvme_install fio_prep' || '' }} \
-        --output "${{ github.job }}-${{ matrix.os }}-provision-xnvme"
+        make guest-start guest-provision \
+          PASSTHRU=0000:02:00.0 \
+          GUEST_CONFIGS="--config configs/bench-${{ matrix.bench }}.toml" \
+          CIJOE_OUTPUT="${{ github.job }}-${{ matrix.os }}"
 
-    - name: CIJOE, run latency benchmark
+    - name: CIJOE, run benchmark
       run: |
-        rm -rf cijoe/latency-${{ matrix.os }}-benchmark
-        cd cijoe && cijoe "workflows/benchmark-latency.yaml" \
-        --monitor \
-        --config "configs/ax42-${{ matrix.os }}.toml" \
-        --output "${{ github.job }}-${{ matrix.os }}-benchmark"
+        make guest-bench \
+          BENCH=latency \
+          CIJOE_OUTPUT="${{ github.job }}-${{ matrix.os }}"
 
     - name: Capture QEMU guest serial output
       if: always()
       run: |
-        toolbox/ci/collect-qemu-serial.sh \
-          "cijoe/${{ github.job }}-${{ matrix.os }}-provision-xnvme"
+        toolbox/ci/collect-qemu-serial.sh "cijoe/${{ github.job }}-${{ matrix.os }}-serial"
 
     - name: CIJOE, upload report.html
       if: always()
@@ -1313,13 +1308,13 @@ jobs:
         path: cijoe/${{ github.job }}-${{ matrix.os }}-*/report.html
         if-no-files-found: warn
 
-    - name: CIJOE, archive latency-${{ matrix.os }}-reports
+    - name: CIJOE, archive ${{ github.job }}-${{ matrix.os }}-reports
       if: always()
       run: |
         tar czf ${{ github.job }}-${{ matrix.os }}-reports.tar.gz \
           cijoe/${{ github.job }}-${{ matrix.os }}-*
 
-    - name: CIJOE, upload latency-${{ matrix.os }}-reports
+    - name: CIJOE, upload ${{ github.job }}-${{ matrix.os }}-reports
       uses: actions/upload-artifact@v6.0.0
       if: always()
       with:

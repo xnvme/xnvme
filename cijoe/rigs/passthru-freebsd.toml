@@ -1,0 +1,16 @@
+[rig.devices.nvme0]
+labels = ["nvm"]
+
+[[devices]]
+key = "bdev"
+uri = "/dev/nvme0ns1"
+nsid = 1
+labels = ["dev", "bdev", "nvm"]
+driver_attachment = "kernel"
+
+[[devices]]
+key = "pcie"
+uri = "0000:01:00.0"
+nsid = 1
+labels = ["dev", "pcie", "nvm"]
+driver_attachment = "userspace"

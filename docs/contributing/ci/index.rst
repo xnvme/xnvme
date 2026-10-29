@@ -111,8 +111,8 @@ Both publish **OCI** artifacts on **GHCR**.
 
 * **Guest disk images** are the qcow2 boot disk the in-job **QEMU** instance
   runs. They are pulled in-job by the ``stage_nosi_guest`` **CIJOE** script
-  (invoked from ``guest.yaml`` and ``provision-maas-using-tgz
-  .yaml`` right before ``guest_initialize``), which talks directly to the
+  (invoked from ``guest.yaml`` right before ``guest_initialize``), which
+  talks directly to the
   **OCI** Distribution API via stdlib ``urllib`` (no ``oras`` CLI dependency);
   the blob digest is pinned in each **CIJOE** config's ``[guest_image].url``.
   The nosi guests ship with root locked and an operator account ``odus``;
@@ -138,26 +138,31 @@ Both publish **OCI** artifacts on **GHCR**.
      - ``xnvme/xnvme-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
      - ``safl/nosi/freebsd-14-headless``
    * - ``verify-maas (debian, trixie)``
-     - n/a (self-hosted MAAS runner)
+     - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE), on the MAAS runner
      - ``safl/nosi/debian-13-headless``
    * - ``benchmark-bdev_xnvme``
-     - n/a (self-hosted MAAS runner)
+     - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE), on the MAAS runner
      - ``safl/nosi/debian-13-headless``
    * - ``benchmark-latency (linux)``
-     - n/a (self-hosted MAAS runner)
+     - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE), on the MAAS runner
      - ``safl/nosi/debian-13-headless``
    * - ``benchmark-latency (freebsd)``
-     - n/a (self-hosted MAAS runner)
+     - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE), on the MAAS runner
      - ``safl/nosi/freebsd-14-headless``
+   * - ``benchmark-latency (windows)``
+     - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE, swtpm), on the MAAS runner
+     - Windows 11, from the Hetzner Storage Box, on the runner
    * - ``docgen``
      - ``xnvme/xnvme-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
      - ``safl/nosi/debian-13-headless``
 
 All container-hosted jobs run in the `xnvme-devenv`_ host container, with
 upstream **QEMU**; the NVMe KV command set is supplied by `vfio-user-kvssd`_
-over **vfio-user**, installed in the container. The MAAS jobs need no host
-container: they run on the lab machines, and boot their guest there with the
-machine's drive passed through.
+over **vfio-user**, installed in the container. ``verify-maas`` and the
+benchmarks run the container on the lab machine, and pass its drive through
+with ``PASSTHRU=0000:02:00.0``; they mount the machine's
+``/home/ghr/system_imaging``, so a guest image is staged once per machine, and
+the Windows image, which cannot be distributed, is there.
 
 .. _sec-ci-devenv:
 

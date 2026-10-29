@@ -3,9 +3,12 @@
 On Hetzner
 ==========
 
-Qemu guests on MaaS from Hetzner **AX42**, using vfio-passthru for one of the
-two NVMe SSDs on the host. Simultaneous Multithreading (SMT) disabled and six
-cores pinned for the guest machine, two left for Linux and the GitHub runner.
+Qemu guests on MaaS from Hetzner **AX42**, booted in the xnvme-devenv host
+container with one of the two NVMe SSDs on the host passed through by the
+``storage-node-passthru`` rig. Simultaneous Multithreading (SMT) disabled and
+six cores pinned for the guest machine, two left for Linux and the GitHub
+runner. The jobs bring QEMU, **CIJOE** and swtpm with the container; the host
+provides Docker, ``vfio-pci`` and the guest images that cannot be distributed.
 
 Hostname naming convention for the guest:
 
@@ -61,6 +64,12 @@ And the following system software setup and configuration:
 
   - ``ghr`` has ``memlock unlimited`` and can thus launch qemu guest with a lot
     of memory
+
+  - ``ghr`` is a member of ``docker``, thus, can start the xnvme-devenv host
+    container that ``verify-maas`` and the benchmarks run in
+
+* ``/home/ghr/system_imaging`` holds the guest images, the Windows one among
+  them, and the jobs mount it into the container, so an image is staged once
 
 To install a system have a look at the following section and for details, then
 look at the scripts and config files referred to there.
@@ -142,8 +151,9 @@ Windows Guest Image
 
 Unlike the other guests, the Windows image cannot be distributed. Therefore,
 you must manually retrieve it from the private Hetzner Storage Box. The
-``postinstall.sh`` script has already prepared everything needed to launch
-a Windows guest, including UEFI, OVMF, and TPM support.
+``postinstall.sh`` script has already prepared the rest the Windows guest needs
+on the host, its UEFI variables and the virtio drivers; the container brings
+OVMF and swtpm.
 
 Download the image using the command below, replacing your username with your
 Storage Box ``<USERNAME>``::

@@ -1,0 +1,52 @@
+---
+doc: |
+  Prepare a provisioned guest for benchmarking
+
+  Run after guest.yaml has booted the guest and provision-using-tgz.yaml has
+  built and installed xNVMe in it: builds fio and SPDK's fio plugin, generates
+  the SPDK bdev configs, and resets the driver attachment.
+
+steps:
+- name: packages_extra
+  run: |
+    apt-get install -qy dmidecode patchelf xfsprogs || true
+    pkg install -y dmidecode patchelf || true
+
+- name: remove_pytest
+  run: |
+    apt-get remove -qy python3-pytest || true
+
+- name: fio_prep
+  uses: fio_prep
+
+- name: spdk_source
+  run: |
+    cp -r {{ config.xnvme.repository.sync.remote_path }}/subprojects/spdk /tmp/spdk
+
+- name: spdk_fio_plugin
+  uses: spdk_fio_plugin
+  with:
+    spdk_source: /tmp/spdk
+
+- name: spdk_kmod_freebsd
+  run: |
+    kldconfig -i -m -vv /tmp/spdk/dpdk/build/kmod || true
+
+- name: bdev_confs
+  uses: spdk_bdev_confs_generator
+  with:
+    bdev_confs: /opt/bdev_confs
+
+- name: prep_driver
+  run: |
+    xnvme-driver || true
+    xnvme-driver reset || true
+
+# The maas guest passes a real NVMe through with vfio-pci. The nested
+# DMA mask doesn't reach SPDK's default IOVA-VA allocations, so DPDK
+# fails with "IOVA exceeding limits of current DMA mask". Force PA on
+# this guest; xnvme picks the value up via XNVME_SPDK_IOVA_MODE in
+# lib/xnvme_be_spdk_dev.c as a fallback when opts.iova_mode is unset.
+- name: set_iova_mode_pa
+  run: |
+    echo "XNVME_SPDK_IOVA_MODE=pa" >> /etc/environment
