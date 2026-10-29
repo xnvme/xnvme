@@ -104,7 +104,8 @@ Main and its tags run none of it again. The benchmarks also run weekly. A
 newer push or label on a pull-request cancels its running run.
 
 Each kind of job has a workflow file of its own, ``build.yml``,
-``verify-nvme-pcie-emulated.yml``, ``verify-nvme-rdma-emulated.yml``, ``verify-gpu-emulated.yml``,
+``verify-emulated.yml`` for NVMe/PCIe and NVMe/TCP,
+``verify-nvme-rdma-emulated.yml``, ``verify-gpu-emulated.yml``,
 ``verify-nvme-pcie-hardware.yml``, ``verify-makefile.yml``,
 ``verify-packaging.yml``, ``perf.yml`` and ``docgen-full.yml``.
 ``verify`` calls them, so they run as part of its run and use its artifacts,
@@ -166,7 +167,7 @@ releases present as a wedged device rather than an error.
        ``storage-node-passthru``
      - ``verify-nvme-pcie-hardware / physical``: macOS 14, through MacVFN
    * - NVMe/TCP
-     - ``verify-nvme-pcie-emulated``: Debian 13, the kernel and SPDK initiators
+     - ``verify-nvme-tcp-emulated``: Debian 13, the kernel and SPDK initiators
      - none
      - none
    * - NVMe/RDMA
@@ -234,6 +235,9 @@ Both publish **OCI** artifacts on **GHCR**.
    * - ``verify-nvme-pcie-emulated / (freebsd, 14, ...)``
      - ``xnvme/xnvme-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
      - ``safl/nosi/freebsd-14-headless``
+   * - ``verify-nvme-tcp-emulated / (debian, trixie-iommu_enabled, ...)``
+     - ``xnvme/xnvme-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
+     - ``safl/nosi/debian-13-headless``
    * - ``verify-nvme-rdma-emulated``
      - ``xnvme/xnvme-devenv/host`` (QEMU, CIJOE, rocm-ernic server)
      - ``xnvme/xnvme-devenv/guest-ubuntu-2610``
