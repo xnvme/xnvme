@@ -42,7 +42,7 @@ if conf_data.get('XNVME_BE_UPCIE_HIP_ENABLED')
     output: 'xnvme_be_upcie_hip_cqmirror.o',
     depend_files: 'xnvme_be_upcie_hip_cqmirror.h',
     command: [
-      hipcc, '-c', '-fPIC', '--offload-arch=native', '-O2',
+      hipcc, '-c', '-fPIC', '--offload-arch=' + get_option('hip_offload_arch'), '-O2',
       '-I', meson.current_source_dir(),
       '@INPUT@', '-o', '@OUTPUT@',
     ],
