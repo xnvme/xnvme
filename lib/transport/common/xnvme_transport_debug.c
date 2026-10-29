@@ -162,7 +162,7 @@ _transport_debug_resolve_io_sc(struct xnvme_spec_cpl *cpl)
 static inline const char *
 _transport_debug_resolve_fabrics_sc(struct xnvme_spec_cpl *cpl)
 {
-	/* indexed by sc - 0x80; gaps at 0x06-0x0F are NULL */
+	// indexed by sc - 0x80; gaps at 0x06-0x0F are NULL
 	static const char *fabrics_codes[] = {
 		[0x00] = "Incompatible Format",        [0x01] = "Controller Busy",
 		[0x02] = "Connect Invalid Parameters", [0x03] = "Connect Restart Discovery",
@@ -184,7 +184,7 @@ _transport_debug_resolve_fabrics_sc(struct xnvme_spec_cpl *cpl)
 static inline const char *
 _transport_debug_resolve_command_specific_sc(struct xnvme_spec_cpl *cpl)
 {
-	/* 0x04 and 0x17 are unassigned (NULL) */
+	// 0x04 and 0x17 are unassigned (NULL)
 	static const char *cmd_codes[] = {
 		[0x00] = "Completion Queue Invalid",
 		[0x01] = "Invalid Queue Identifier",
