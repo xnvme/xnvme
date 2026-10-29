@@ -13,7 +13,7 @@
 
 #define XNVME_MIN_CAPSULE_SIZE sizeof(struct xnvme_spec_cmd)
 #define XNVME_MIN_COMPLETION_SIZE sizeof(struct xnvme_spec_cpl)
-#define XNVME_BE_RDMA_MAX_QSIZE 4096
+#define XNVME_TRANSPORT_MAX_QSIZE 4096
 
 #define TRANSPORT_DEBUG_CATEGORY TRANSPORT_DEBUG_CATEGORY_CORE_QPAIR
 
@@ -29,7 +29,7 @@ xnvme_transport_qpair_create(struct xnvme_transport_ctrlr *ctrlr, struct xnvme_d
 		return -EINVAL;
 	}
 
-	if (attr->qsize == 0 || attr->qsize > XNVME_BE_RDMA_MAX_QSIZE) {
+	if (attr->qsize == 0 || attr->qsize > XNVME_TRANSPORT_MAX_QSIZE) {
 		return -EINVAL;
 	}
 
@@ -88,6 +88,7 @@ xnvme_transport_qpair_connect(struct xnvme_transport_qpair *qpair)
 	err = xnvme_transport_fabric_connect(qpair);
 	if (err) {
 		TRANSPORT_ERROR("FAILED: send fabric connect command, err: %d", err);
+		qpair->state = XNVME_TRANSPORT_QPAIR_STATE_ERROR;
 		return err;
 	}
 
@@ -106,6 +107,16 @@ int
 xnvme_transport_qpair_destroy(struct xnvme_transport_qpair *qpair)
 {
 	int err;
+
+	// A connected qpair is disconnected first, a failure is logged and does not stop the
+	// destroy
+	if (xnvme_transport_qpair_is_connected(qpair)) {
+		err = xnvme_transport_qpair_disconnect(qpair);
+		if (err) {
+			TRANSPORT_ERROR("FAILED: xnvme_transport_qpair_disconnect(), err: %d",
+					err);
+		}
+	}
 
 	err = xnvme_transport_req_pool_free(qpair->req_pool);
 	if (err) {

@@ -199,6 +199,11 @@ int
 xnvme_transport_qpair_connect(struct xnvme_transport_qpair *qpair);
 int
 xnvme_transport_qpair_disconnect(struct xnvme_transport_qpair *qpair);
+
+/**
+ * Destroys @qpair, disconnecting it first when it is connected. A failed disconnect is logged and
+ * does not prevent the destroy.
+ */
 int
 xnvme_transport_qpair_destroy(struct xnvme_transport_qpair *qpair);
 
