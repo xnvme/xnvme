@@ -159,7 +159,7 @@ struct xnvme_transport_qpair {
 	struct xnvme_dev *dev; ///< Pointer to the underlying xNVMe device
 };
 
-/* Attributes of every admin qpair. The controller ID is assigned by the Fabrics Connect. */
+// Attributes of every admin qpair. The controller ID is assigned by the Fabrics Connect.
 #define XNVME_TRANSPORT_ADMIN_QPAIR_ATTR                              \
 	{                                                             \
 		.qid             = XNVME_TRANSPORT_ADMIN_QUEUE_ID,    \
