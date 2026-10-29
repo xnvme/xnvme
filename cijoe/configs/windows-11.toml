@@ -29,16 +29,13 @@ system_label = "x86_64"
 
 system_args.kwa = {cpu = "host", smp = 6, m = "32G", accel = "kvm"}
 
+# The image is installed on IDE; the firmware and the TPM come with the
+# uefi-secureboot-tpm rig
+boot_driver = "ide-hd"
+
 system_args.raw = """\
--drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.ms.fd \
--drive if=pflash,format=raw,file={{ local.env.HOME }}/system_imaging/fd/win11_VARS.fd \
--blockdev driver=qcow2,node-name=boot,file.driver=file,file.filename={{ local.env.HOME }}/guests/generic-bios-kvm-x86_64/boot2.img \
--device ide-hd,drive=boot \
 -drive file={{ local.env.HOME }}/system_imaging/iso/virtio-win.iso,media=cdrom \
--M q35,kernel_irqchip=split \
--chardev socket,id=chrtpm,path={{ local.env.HOME }}/guests/generic-bios-kvm-x86_64/swtpm.sock \
--tpmdev emulator,id=tpm0,chardev=chrtpm \
--device tpm-tis,tpmdev=tpm0
+-M q35,kernel_irqchip=split
 """
 
 system_args.tcp_forward = {host = 4200, guest = 22}
