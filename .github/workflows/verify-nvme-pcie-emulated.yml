@@ -70,9 +70,23 @@ jobs:
         mkdir -p /mnt/guests
         ln -s /mnt/guests "$HOME/guests"
 
-    - name: CIJOE, provision and test guest
+    - name: CIJOE, start the guest
       run: |
-        make verify-guest \
+        make guest-start \
+          TRANSPORT="${{ matrix.transport }}" \
+          TEST_STEPS="${{ matrix.steps }}" \
+          CIJOE_OUTPUT="${{ github.job }}-${{ matrix.id }}"
+
+    - name: CIJOE, provision the guest
+      run: |
+        make guest-provision \
+          TRANSPORT="${{ matrix.transport }}" \
+          TEST_STEPS="${{ matrix.steps }}" \
+          CIJOE_OUTPUT="${{ github.job }}-${{ matrix.id }}"
+
+    - name: CIJOE, test the guest
+      run: |
+        make guest-test \
           TRANSPORT="${{ matrix.transport }}" \
           TEST_STEPS="${{ matrix.steps }}" \
           CIJOE_OUTPUT="${{ github.job }}-${{ matrix.id }}"
