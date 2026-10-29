@@ -102,6 +102,7 @@ foreach test_source, tests_args : tests
     include_directories: [conf_inc, xnvme_inc],
     link_with: xnvmelib,
     link_args: link_args_hardening,
+    pie: get_option('hardening'),
     dependencies: [thread_dep],
     install_rpath: xnvmelib_rpath,
     install: true,

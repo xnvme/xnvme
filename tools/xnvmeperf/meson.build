@@ -26,6 +26,7 @@ if thread_dep.found()
     xnvmeperf_sources,
     include_directories: [conf_inc, xnvme_inc],
     link_args: link_args_hardening,
+    pie: get_option('hardening'),
     link_with: xnvmelib,
     install_rpath: xnvmelib_rpath,
     dependencies: xnvmeperf_deps,

@@ -51,6 +51,7 @@ foreach source, tests : tools
     [source, xnvme_vcs_h],
     include_directories: [conf_inc, xnvme_inc] + (bin_cuse ? [xnvme_cuse_inc] : []),
     link_args: link_args_hardening,
+    pie: get_option('hardening'),
     link_with: [xnvmelib] + (bin_cuse ? [xnvme_cuse_lib] : []),
     install_rpath: xnvmelib_rpath,
     install: true,
