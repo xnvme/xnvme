@@ -21,18 +21,50 @@ Contribution Process
     its run when merged. A changed ``.cmd`` file runs everything, since only
     the guest runs the commands
   - Merging requires the check ``ci-result``, which passes when every job did.
-    A pull-request changing code also needs the verification on physical
-    devices, which runs once the pull-request has the label ``maas``, and the
-    verification over NVMe/RDMA in an emulated-NIC guest, which runs once it
-    has the label ``ernic``; until then ``ci-result`` fails
-  - The upcie-hip backend is verified in an emulated-GPU guest once the
-    pull-request has the label ``gpu``; it is not required for merging
-  - The benchmarks run weekly, on a manual run with the job ``bench``, and on
-    a pull-request with the label ``bench``; they are not part of
-    ``ci-result``, so they never block merging
+    The jobs that need hardware, or an emulated device that takes a while, run
+    once the pull-request has their label; see :ref:`sec-contributing-labels`
 
 * Go over the :ref:`sec-contributing-process-pr-checklist` and re-iterate on
   your pull-request / changes
+
+.. _sec-contributing-labels:
+
+Labels that run jobs
+====================
+
+A label on a pull-request runs the jobs below, and a newer label or push
+cancels the run in progress for a new one. The colour of a label says
+whether it gates merging. A red or orange label gates: a pull-request
+changing code cannot merge until it has the label and the jobs pass, and
+``ci-result`` names the missing label until then. A green or blue label
+does not: its jobs run, and their results are there to read, but
+``ci-result`` does not count them.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 10 70 20
+
+   * - Label
+     - Runs
+     - Merging
+   * - ``hardware``
+     - The verification on the lab machines: a real NVMe drive passed
+       through to a guest, and the macOS machine
+     - gates (red)
+   * - ``rdma``
+     - The verification over NVMe/RDMA, in a guest with an emulated RDMA NIC
+     - gates (orange)
+   * - ``gpu``
+     - The upcie-hip backend, in a guest with an emulated GPU
+     - does not gate (blue)
+   * - ``perf``
+     - The benchmarks on the lab machines, which fail on a regression beyond
+       their noise. They also run weekly
+     - does not gate (green)
+
+Everything else, the builds, the QEMU verification and the documentation, runs
+on every pull-request without a label. A pull-request changing only
+documentation needs none of the labels.
 
 .. _sec-contributing-process-pr-checklist:
 
