@@ -60,6 +60,12 @@ if not is_windows
     flto_args = ['-flto']
   endif
   add_project_arguments(flto_args, language: 'c')
+  # Without it, libxnvme.a holds LTO bytecode only, which no other compiler,
+  # or one of another version, can link. Checked with the LTO flags, as Apple
+  # clang takes it alone but rejects it next to them
+  if cc.has_multi_arguments(flto_args + ['-ffat-lto-objects'])
+    add_project_arguments('-ffat-lto-objects', language: 'c')
+  endif
   add_project_link_arguments(flto_args, language: 'c')
 endif
 
