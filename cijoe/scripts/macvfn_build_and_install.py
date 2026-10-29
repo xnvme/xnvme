@@ -18,10 +18,10 @@ import logging as log
 def main(args, cijoe):
     """Build and install MacVFN"""
 
-    username = cijoe.getconf("cijoe.transport.nonroot", None)
+    username = cijoe.getconf("cijoe.targets.nonroot", None)
     if not username:
         log.error(
-            "Missing non-root user transport from config. MacVFN must be installed without root access."
+            "Missing non-root user target from config. MacVFN must be installed without root access."
         )
 
     macvfn_source = cijoe.getconf("macvfn.repository.path", None)
@@ -39,7 +39,7 @@ def main(args, cijoe):
     err = 0
 
     for cmd in commands:
-        err, _ = cijoe.run(cmd, cwd=macvfn_source, transport_name="nonroot")
+        err, _ = cijoe.run(cmd, cwd=macvfn_source, target="nonroot")
         if err:
             log.error(f"error({cmd})")
             return err

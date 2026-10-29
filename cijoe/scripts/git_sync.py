@@ -34,15 +34,15 @@ def add_args(parser: ArgumentParser):
 
 
 def git_remote_from_config(cijoe, remote_path):
-    """Returns git-remote URI and SSH config using configuration cijoe.transport.ssh"""
+    """Returns git-remote URI and SSH config using configuration cijoe.targets.ssh.ssh"""
 
-    hostname = cijoe.getconf("cijoe.transport.ssh.hostname", None)
+    hostname = cijoe.getconf("cijoe.targets.ssh.ssh.hostname", None)
     if not hostname:
         return None, {}
 
-    username = cijoe.getconf("cijoe.transport.ssh.username", None)
-    port = cijoe.getconf("cijoe.transport.ssh.port", None)
-    password = cijoe.getconf("cijoe.transport.ssh.password", None)
+    username = cijoe.getconf("cijoe.targets.ssh.ssh.username", None)
+    port = cijoe.getconf("cijoe.targets.ssh.ssh.port", None)
+    password = cijoe.getconf("cijoe.targets.ssh.ssh.password", None)
 
     remote = "ssh://"
     if username:

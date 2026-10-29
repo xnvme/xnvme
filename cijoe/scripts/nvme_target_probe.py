@@ -23,12 +23,6 @@ def add_args(parser: ArgumentParser):
         choices=["tcp", "rdma"],
         help="Transport type for the NVMe listener",
     )
-    parser.add_argument(
-        "--transport-name",
-        type=str,
-        default=None,
-        help="Transport to use for cijoe.run() commands",
-    )
 
 
 def _get_transport_device(cijoe):
@@ -58,7 +52,7 @@ def main(args, cijoe):
         f"--iosize 4096 --qdepth 32 --nqueues 1 --runtime 5 --cpumask 0x4",
     ]
     for cmd in commands:
-        err, _ = cijoe.run(cmd, transport_name=args.transport_name)
+        err, _ = cijoe.run(cmd)
         if err:
             log.error("FAILED: %s (errno=%d)", cmd, err)
             return err

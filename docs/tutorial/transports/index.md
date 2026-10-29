@@ -62,8 +62,8 @@ linux/index
 ## Script configuration
 
 `nvme_target_start.py`, `nvme_target_probe.py`, and `nvme_target_stop.py`
-each take their own set of arguments; `--transport-name` is the one all three
-share.
+each take their own set of arguments, and run on the target their step
+names with `target:`, or on the default target when it names none.
 
 `nvme_target_start.py` accepts the following arguments:
 
@@ -72,21 +72,18 @@ share.
 | `--nvme-provider`   | `spdk`      | `spdk` or `linux`.                                                 |
 | `--nvme-trtype`     | `tcp`       | Transport type.                                                    |
 | `--nvme-adrfam`     | `ipv4`      | Address family.                                                    |
-| `--transport-name`  | None        | CIJOE Transport to use. Defaults to first-found, if not specified. |
 
 `nvme_target_probe.py` accepts the following arguments:
 
 | Argument            | Default     | Description                                                        |
 |---------------------|-------------|--------------------------------------------------------------------|
 | `--nvme-trtype`     | `tcp`       | Transport type.                                                    |
-| `--transport-name`  | None        | CIJOE Transport to use. Defaults to first-found, if not specified. |
 
 `nvme_target_stop.py` accepts the following arguments:
 
 | Argument            | Default     | Description                                                        |
 |---------------------|-------------|--------------------------------------------------------------------|
 | `--nvme-provider`   | `spdk`      | `spdk` or `linux`.                                                 |
-| `--transport-name`  | None        | CIJOE Transport to use. Defaults to first-found, if not specified. |
 
 The devices to export are the entries labelled `fabrics` (legacy label
 name) in the cijoe configuration. Each entry becomes one subsystem. An entry
