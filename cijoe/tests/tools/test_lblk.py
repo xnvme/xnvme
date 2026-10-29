@@ -21,8 +21,10 @@ def test_info(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_idfy(cijoe, device, be_opts, cli_args):
-    if be_opts["mem"] == "upcie-cuda":
-        pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
+    if be_opts["mem"] in ("upcie-cuda", "upcie-hip"):
+        pytest.skip(
+            reason=f"[mem={be_opts['mem']}] This test does not support GPU memory"
+        )
     err, _ = cijoe.run(f"lblk idfy {cli_args}")
     assert not err
 
@@ -41,8 +43,10 @@ def test_write(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
 def test_compare(cijoe, device, be_opts, cli_args):
-    if be_opts["mem"] == "upcie-cuda":
-        pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
+    if be_opts["mem"] in ("upcie-cuda", "upcie-hip"):
+        pytest.skip(
+            reason=f"[mem={be_opts['mem']}] This test does not support GPU memory"
+        )
     if be_opts["admin"] == "block":
         pytest.skip(reason="[admin=block] does not implement compare")
     if is_nvmet(cijoe, device):
