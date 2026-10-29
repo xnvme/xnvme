@@ -21,7 +21,7 @@ _transport_ns_destroy(struct xnvme_transport_ref *ref)
 
 int
 xnvme_transport_ns_create(struct xnvme_transport_ctrlr *ctrlr, struct xnvme_dev *dev,
-			  struct xnvme_transport_subsys *subsys, uint16_t nsid,
+			  struct xnvme_transport_subsys *subsys, uint32_t nsid,
 			  struct xnvme_transport_ns **ns)
 {
 	struct xnvme_transport_ns *new_ns;
