@@ -17,8 +17,8 @@ Contribution Process
   - The documentation is built early, without a guest and so without running
     the commands, and the builds and the verification wait for it
   - A pull-request changing only ``docs/`` and top-level Markdown files skips
-    the builds and the verification. Merged, it runs only what the website
-    needs, and publishes it. A changed ``.cmd`` file runs everything, since only
+    the builds and the verification, and its documentation is published from
+    its run when merged. A changed ``.cmd`` file runs everything, since only
     the guest runs the commands
   - Merging requires the check ``ci-result``, which passes when every job did.
     A pull-request changing code also needs the verification on physical

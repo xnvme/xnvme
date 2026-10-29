@@ -116,9 +116,11 @@ commit is ``ver: bump to vX.Y.Z``, it also tags main ``vX.Y.Z`` and creates the
 release, with the source archives, the Python sdist and the test results of
 that run, and the ``CHANGELOG.rst`` section of the version as its notes. The
 artifacts are used only when the pull-request's head has the tree main now
-has, that is, when it was up to date with main when merged. When it was not,
-the documentation is built by a manual ``docgen`` run on main instead, and a
-release fails; see :ref:`sec-contributing-release`.
+has, which branch protection makes the case by requiring it to be up to date
+with main. For a push to main that is not such a merge, the documentation is
+built by a manual ``docgen`` run on main instead, and a release fails; see
+:ref:`sec-contributing-release`. A pull-request changing only documentation
+still runs ``docgen-full``, so its documentation is deployed from its run too.
 
 Any job can be run by hand: start the ``verify`` workflow from the Actions tab,
 on a branch, with ``job`` set to ``all`` for every job, or to ``verify``,
