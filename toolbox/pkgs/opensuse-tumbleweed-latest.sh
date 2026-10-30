@@ -42,6 +42,7 @@ zypper --non-interactive install -y --allow-downgrade \
  python3-tabulate \
  rdma-core \
  rdma-core-devel \
+ systemd \
  tar
 
 #

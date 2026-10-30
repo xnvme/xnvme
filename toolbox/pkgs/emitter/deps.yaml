@@ -223,6 +223,15 @@ deps:
       emerge: [sys-libs/liburing]
       zypper: [liburing-devel]
 
+  systemd:
+    notes: When available; installs the systemd units of homi and qublk, which the build finds through systemd's pkg-config
+      file
+    ver: 0.0
+    when: [building]
+    names:
+      default: [systemd]
+      apt: [systemd-dev]
+
   libvfn:
     notes: When available; enable the use of the xNVMe libvfn backend
     ver: 3.0.1
@@ -334,7 +343,7 @@ defaults:
   linux:
     deps:
     - [sys, [archive, bash, cunit, clang-format, elftools, find, git, jinja2, libaio, libisal, liburing, libuuid, make, meson,
-        nasm, ncurses, numactl, openssl, patch, pipx, pkg-config, python3, tabulate, rdma-core]]
+        nasm, ncurses, numactl, openssl, patch, pipx, pkg-config, python3, tabulate, rdma-core, systemd]]
     - [src, [libvfn]]
     apps:
     - [src, [fio]]
@@ -365,7 +374,7 @@ platforms:
   ver: [latest]
   os: linux
   mng: apk
-  drop: [elftools, libisal, rdma-core]
+  drop: [elftools, libisal, rdma-core, systemd]
   alt:
   - [pip, [pipx]]
   aux:
@@ -477,7 +486,10 @@ platforms:
   ver: [bookworm]
   os: linux
   mng: apt
-  drop: []
+  # No systemd-dev, which Debian split from systemd after bookworm, whose systemd carries
+  # systemd.pc itself; the units are built where systemd is installed, and not in a
+  # container without it
+  drop: [systemd]
   alt: []
   aux:
   - [sys, [autoconf, build-essential, libtool]]
@@ -552,7 +564,8 @@ platforms:
   os: linux
   mng: emerge
   # dropping clang-format as it is only available via 'clang' which takes 4hours to build.
-  drop: [libuuid, clang-format]
+  # dropping systemd as the stage3 image runs OpenRC
+  drop: [libuuid, clang-format, systemd]
   alt:
   - [pip, [pipx]]
   aux: []

@@ -34,6 +34,7 @@ pacman -S --noconfirm \
  python-setuptools \
  python-tabulate \
  python3 \
+ systemd \
  util-linux-libs
 
 #

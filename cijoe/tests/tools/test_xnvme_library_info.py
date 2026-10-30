@@ -162,3 +162,31 @@ def test_version_flag_matches_library_info(cijoe):
         assert (
             "WARNING" not in state.output()
         ), "tool and library built from different revisions"
+
+
+def test_systemd_units_installed(cijoe):
+    """Where systemd's pkg-config file is, the build installs the homi and qublk units"""
+
+    info = grab_sysinfo(cijoe)
+    if "linux" not in info["os"]:
+        pytest.skip("Not Linux, so skipping the systemd units check")
+        return
+
+    err, _ = cijoe.run("pkg-config --exists systemd")
+    if err:
+        pytest.skip("No systemd pkg-config file, so the build leaves the units out")
+        return
+
+    err, state = cijoe.run("pkg-config xnvme --variable=prefix")
+    assert not err, "pkg-config does not find the installed xNVMe"
+    prefix = state.output().strip()
+
+    err, state = cijoe.run(
+        f"pkg-config --define-variable=prefix={prefix} --variable=systemdsystemunitdir systemd"
+    )
+    assert not err
+    unitdir = state.output().strip()
+
+    for unit in ["xnvme-homi@.service", "xnvme-qublk@.service"]:
+        err, _ = cijoe.run(f"test -f {unitdir}/{unit}")
+        assert not err, f"{unit} is not installed in {unitdir}"
