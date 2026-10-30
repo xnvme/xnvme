@@ -1305,7 +1305,7 @@ out:
 } /* extern "C" */
 
 extern "C" void *
-xnvmeperf_cuda_buf_alloc(uint32_t gpu_id, size_t nbytes)
+xnvmeperf_gpu_buf_alloc(uint32_t gpu_id, size_t nbytes)
 {
 	void *buf = NULL;
 	cudaError_t cerr;
@@ -1329,7 +1329,7 @@ xnvmeperf_cuda_buf_alloc(uint32_t gpu_id, size_t nbytes)
 }
 
 extern "C" void
-xnvmeperf_cuda_buf_free(void *buf)
+xnvmeperf_gpu_buf_free(void *buf)
 {
 	cudaFree(buf);
 }

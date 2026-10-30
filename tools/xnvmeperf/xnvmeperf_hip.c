@@ -257,3 +257,30 @@ out:
 	free(pending);
 	return err;
 }
+
+void *
+xnvmeperf_gpu_buf_alloc(uint32_t gpu_id, size_t nbytes)
+{
+	void *buf = NULL;
+	hipError_t herr;
+
+	if (xnvmeperf_gpu_set_device(gpu_id)) {
+		errno = ENODEV;
+		return NULL;
+	}
+
+	herr = hipMalloc(&buf, nbytes);
+	if (herr != hipSuccess) {
+		fprintf(stderr, "Failed: hipMalloc(%zu): %s\n", nbytes, hipGetErrorString(herr));
+		errno = ENOMEM;
+		return NULL;
+	}
+
+	return buf;
+}
+
+void
+xnvmeperf_gpu_buf_free(void *buf)
+{
+	hipFree(buf);
+}
