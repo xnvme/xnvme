@@ -26,6 +26,23 @@
 #include <upcie/experimental/iommu_map_pa.h>
 #include <upcie/experimental/dmabuf_import.h>
 
+// The kernel's io_uring dma-buf registration, from include/uapi/linux/io_uring.h
+// of the series, which no liburing release has yet
+#define XNVME_IORING_RSRC_UPDATE_EXTENDED (1U << 1)
+#define XNVME_IO_REGBUF_TYPE_EMPTY 0
+#define XNVME_IO_REGBUF_TYPE_DMABUF 2
+
+struct xnvme_io_uring_regbuf_desc {
+	uint32_t type;
+	uint32_t flags;
+	uint64_t size;
+	uint64_t uaddr;
+	int32_t dmabuf_fd;
+	int32_t target_fd;
+	uint64_t resv[6];
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_io_uring_regbuf_desc) == 80, "Incorrect size")
+
 // A dma-buf registered with the rings of the device, at the 'sqe->buf_index' that
 // is its index in the registry
 struct xnvme_io_uring_dmabuf_entry {
@@ -321,11 +338,11 @@ static int
 _ring_update(struct xnvme_queue_liburing *queue, uint32_t index, int fd)
 {
 	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
-	struct io_uring_regbuf_desc desc = {0};
+	struct xnvme_io_uring_regbuf_desc desc = {0};
 	struct io_uring_rsrc_update2 up = {0};
 	int err;
 
-	desc.type = (fd < 0) ? IO_REGBUF_TYPE_EMPTY : IO_REGBUF_TYPE_DMABUF;
+	desc.type = (fd < 0) ? XNVME_IO_REGBUF_TYPE_EMPTY : XNVME_IO_REGBUF_TYPE_DMABUF;
 	desc.dmabuf_fd = (fd < 0) ? 0 : fd;
 	desc.target_fd = (fd < 0) ? 0 : state->fd;
 
@@ -333,7 +350,7 @@ _ring_update(struct xnvme_queue_liburing *queue, uint32_t index, int fd)
 	up.nr = 1;
 	up.data = (unsigned long)&desc;
 	// NOTE: the kernel names this member 'flags'; liburing does not yet
-	up.resv = IORING_RSRC_UPDATE_EXTENDED;
+	up.resv = XNVME_IORING_RSRC_UPDATE_EXTENDED;
 
 	err = io_uring_register(queue->ring.ring_fd, IORING_REGISTER_BUFFERS_UPDATE, &up,
 				sizeof(up));
