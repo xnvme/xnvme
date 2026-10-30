@@ -3,69 +3,143 @@
 Contribution Process
 ####################
 
-* `Fork`_ the **xNVMe** repository on `GitHUB`_
+A change goes from a fork to ``main`` through a pull-request, in these steps.
+What CI runs at each is described in :ref:`sec-contributing-labels`.
 
-* Make your changes, push them to your fork and create a `pull-request`_
+#. `Fork`_ the **xNVMe** repository on `GitHUB`_, make your changes, and push
+   them to your fork.
 
-  - The `pull-request` should target the ``main`` branch
-  - For feedback/RFC then set up the `pull-request`_ as a **Draft**
+#. Open a `pull-request`_ against ``main`` as a **Draft**. A draft runs no
+   CI, so iterate on it freely, and ask for early feedback there.
 
-* The CI will trigger as you create the PR and re-triggered upon update. A
-  draft runs no CI; marking it ready for review starts its first run
+#. Go over the :ref:`sec-contributing-process-pr-checklist`, then mark the
+   pull-request **Ready for review**. That starts its first CI run, and the
+   ``labeler`` adds the ``gate:`` labels its changed files suggest. The first
+   run already counts those gates, without waiting for the labels.
 
-  - The default CI-jobs consists of running style/linters and building **xNVMe**
-  - Average time for a full functional verification run is about 40min
-  - The documentation is built early, without a guest and so without running
-    the commands, and the builds and the verification wait for it
-  - A pull-request changing only ``docs/`` and top-level Markdown files skips
-    the builds and the verification, and its documentation is published from
-    its run when merged. A changed ``.cmd`` file runs everything, since only
-    the guest runs the commands
-  - Merging requires the check ``ci-result``, which passes when every job did.
-    The jobs that need hardware, or an emulated device that takes a while, run
-    once the pull-request has their label; see :ref:`sec-contributing-labels`
+#. A maintainer reviews the pull-request, and with it the gates: they add a
+   ``gate:`` label the change needs and the rules missed, and remove one it
+   does not need, then re-run only the ``gates`` job of the latest run, so the
+   change takes effect without a new run of everything.
 
-* Go over the :ref:`sec-contributing-process-pr-checklist` and re-iterate on
-  your pull-request / changes
+#. Push fixes for the review as they come. Each push starts a new run and
+   cancels the one in progress. The labels stay, so each run opens the same
+   gates. A gate can be added at any point, as the change grows into code it
+   did not touch at first; the rules do not add it then, so the maintainer
+   does.
+
+#. When ``ci-result`` passes, whose summary says which gates passed, and the
+   review approves, a maintainer merges the pull-request by rebase.
+
+A full run of the fixed jobs takes about 40 minutes. The documentation is
+built first, without a guest and so without running its commands, and the
+builds and the verification wait for it.
 
 .. _sec-contributing-labels:
 
-Labels that run jobs
-====================
+What CI runs: always, and behind a gate
+=======================================
 
-A label on a pull-request runs the jobs below, and a newer label or push
-cancels the run in progress for a new one. The colour of a label says
-whether it gates merging. A red or orange label gates: a pull-request
-changing code cannot merge until it has the label and the jobs pass, and
-``ci-result`` names the missing label until then. A green or blue label
-does not: its jobs run, and their results are there to read, but
-``ci-result`` does not count them.
+CI runs two kinds of jobs on a pull-request. The fixed set runs on every
+run, and nobody can turn it off. The gated jobs run only when the
+pull-request carries their ``gate:`` label, so a maintainer decides, change
+by change, whether it needs lab machines, emulated RDMA or GPU guests, or the
+benchmarks.
+
+A draft runs no CI at all, and marking it ready for review starts its first
+run. A newer run of a pull-request, whatever started it, cancels the one in
+progress, so none runs superseded.
+
+The fixed set
+-------------
 
 .. list-table::
    :header-rows: 1
-   :widths: 10 70 20
+   :widths: 30 70
+
+   * - Job
+     - Runs
+   * - ``source-format-check``
+     - pre-commit over the whole tree, the tests of the cijoe scripts and the
+       toolbox, and the version files of a bump
+   * - ``source-archive``, ``build``
+     - The source archives, and the builds on Linux, macOS and Windows
+   * - ``ffi-python``, ``ffi-rust``
+     - The Python and Rust bindings
+   * - ``verify-makefile``, ``verify-packaging``
+     - The Makefile's targets that generate files, and the RPM and DEB
+       packages of a checkout and of the source archive
+   * - ``docgen-shallow``
+     - The documentation, without a guest and so without running its commands
+
+A pull-request changing only ``docs/`` and top-level Markdown files skips the
+builds, the bindings, ``verify-makefile`` and ``verify-packaging``; a gate
+opened on it runs as on any other. A changed ``.cmd`` file counts as code,
+since only the guest runs the commands.
+
+The gates
+---------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 80
 
    * - Label
      - Runs
-     - Merging
-   * - ``hardware``
+   * - ``gate:emulated``
+     - The verification in QEMU guests with emulated NVMe, over PCIe and TCP
+   * - ``gate:hardware``
      - The verification on the lab machines: a real NVMe drive passed
        through to a guest, and the macOS machine
-     - gates (red)
-   * - ``rdma``
+   * - ``gate:rdma``
      - The verification over NVMe/RDMA, in a guest with an emulated RDMA NIC
-     - gates (orange)
-   * - ``gpu``
-     - The upcie-hip backend, in a guest with an emulated GPU
-     - does not gate (blue)
-   * - ``perf``
+   * - ``gate:gpu``
+     - The upcie-hip and io_uring_dmabuf backends, in a guest with an emulated
+       GPU
+   * - ``gate:perf``
      - The benchmarks on the lab machines, which fail on a regression beyond
        their noise. They also run weekly
-     - does not gate (green)
+   * - ``gate:docgen``
+     - The documentation with its commands run in a guest, as published. When
+       a pull-request merges without it, ``publish`` builds the documentation
+       by a run on ``main`` instead
+   * - ``gate:all``
+     - Every gate above, as for a release
 
-Everything else, the builds, the QEMU verification and the documentation, runs
-on every pull-request without a label. A pull-request changing only
-documentation needs none of the labels.
+The files a pull-request changes suggest gates, by the rules in
+``.github/labeler.yml`` on ``main``. The ``labeler`` workflow adds their
+labels once, when the pull-request is opened ready for review or leaves draft,
+and the run that starts then counts them before they are added. From then on
+the labels alone decide: the rules do not add them again, on a push, a re-run
+or a reopening, so a gate a maintainer removed stays closed. A rule only adds a
+label; one set by hand stays. Most changes to code open ``gate:emulated``, and
+changes to ``docs/`` open ``gate:docgen``, so what the fixed set leaves out is
+suggested where it matters.
+
+The rules are a starting point, and maintainers adjust them per pull-request.
+Add a gate the rules missed, for a change whose effect reaches further than
+its paths suggest. Remove one the rules opened needlessly, such as
+``gate:hardware`` for a change to a comment in a header, which spends lab
+time on nothing. Rules that keep missing or keep opening too much are fixed in
+``.github/labeler.yml``.
+
+Adding or removing a label starts no run. The ``gates`` job reads the labels
+when a run starts, so to act on a label changed since, re-run only ``gates``
+on the latest run: GitHub then re-runs the jobs that need it, the gated jobs
+and ``ci-result``, and nothing else.
+
+``ci-result`` counts every job that ran, gated or fixed, and requires no
+gate. So a green ``ci-result`` covers the fixed set and the gates that were
+open, and no more: a pull-request without ``gate:hardware`` has not been on a
+drive, and which gates a change needs before it merges is the reviewers'
+judgement.
+
+``ci-result`` lists each gate and what its jobs gave, telling a gate that was
+not opened from one that was opened but did not run, as when a job it needs
+failed. Its notice says how many gates passed, as in ``2/6 gates passed:
+emulated, hardware``. The ``gates-report`` workflow keeps that table as one
+comment on the pull-request, updated after every run of its head, so it can
+be read there rather than in the run.
 
 .. _sec-contributing-process-pr-checklist:
 

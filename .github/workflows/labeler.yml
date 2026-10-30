@@ -1,0 +1,33 @@
+---
+name: labeler
+
+# Adds the labels a pull-request's changed files call for by .github/labeler.yml
+# when it is opened ready for review or leaves draft, so they are there to see
+# and to remove, and only then: a maintainer who removed one does not have it
+# added again. 'verify' does not wait for this: its 'gates' job reads the same
+# rules itself on the run that starts then. pull_request_target is what may
+# label a pull-request from a fork; it runs the base branch's workflow and
+# reads only the list of changed files, never the pull-request's code. A run
+# is never cancelled, as the rules are applied by it alone.
+on:
+  pull_request_target:
+    types: [opened, ready_for_review]
+    branches: [main]
+
+concurrency:
+  group: labeler-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  labeler:
+    if: github.event.pull_request.draft != true
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+    - name: Add the labels the changed files call for
+      uses: actions/labeler@v7
+      with:
+        sync-labels: false

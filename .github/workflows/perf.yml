@@ -2,7 +2,7 @@
 name: perf
 
 # Benchmark xNVMe on the lab machines, called by 'verify' weekly, for a
-# pull-request labelled 'perf', and by a manual run.
+# pull-request labelled 'gate:perf', and by a manual run.
 on:
   workflow_call:
 

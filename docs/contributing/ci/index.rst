@@ -96,14 +96,14 @@ When the jobs run, and what is published
 ########################################
 
 The ``verify`` workflow runs on pull-requests, and only there. What a
-pull-request needs to merge runs there once; the jobs on lab machines and the
-emulated RDMA and GPU guests run when it carries their label (see
-:ref:`sec-contributing-labels`), and the check ``ci-result`` says whether it
-may merge.
-Main and its tags run none of it again. The benchmarks also run weekly. A
-newer run of a pull-request cancels the one in progress, whatever started
-either, as does a newer run of a branch started the same way, by the schedule
-or by hand for the same ``job``.
+pull-request needs to merge runs there once: a fixed set of jobs on every run,
+and behind a ``gate:`` label, read when the run starts, the jobs in QEMU
+guests, on lab machines, the benchmarks and the documentation with its
+commands run (see :ref:`sec-contributing-labels`). The check ``ci-result``
+says whether what ran passed. Main and its tags run none of it again. The
+benchmarks also run weekly. A newer run of a pull-request cancels the one in
+progress, as does a newer run of a branch started the same way, by the
+schedule or by hand for the same ``job``.
 
 Each kind of job has a workflow file of its own, ``build.yml``,
 ``verify-emulated.yml`` for NVMe/PCIe and NVMe/TCP,
@@ -111,8 +111,7 @@ Each kind of job has a workflow file of its own, ``build.yml``,
 ``verify-nvme-pcie-hardware.yml``, ``verify-makefile.yml``,
 ``verify-packaging.yml``, ``perf.yml`` and ``docgen-full.yml``.
 ``verify`` calls them, so they run as part of its run and use its artifacts,
-and its ``ci-result`` checks them all but the benchmarks and the GPU guest,
-whose failures it does not count.
+and its ``ci-result`` checks every one that ran.
 
 A push to main runs the ``publish`` workflow instead. It finds the pull-request
 that was merged and the ``verify`` run of its head that ``ci-result``
@@ -125,8 +124,8 @@ artifacts are used only when the pull-request's head has the tree main now
 has, which branch protection makes the case by requiring it to be up to date
 with main. For a push to main that is not such a merge, the documentation is
 built by a manual ``docgen`` run on main instead, and a release fails; see
-:ref:`sec-contributing-release`. A pull-request changing only documentation
-still runs ``docgen-full``, so its documentation is deployed from its run too.
+:ref:`sec-contributing-release`. A pull-request merged without ``gate:docgen``
+has no documentation in its run, so ``publish`` starts that manual run too.
 
 Any job can be run by hand: start the ``verify`` workflow from the Actions tab,
 on a branch, with ``job`` set to ``all`` for every job, or to ``verify``,
@@ -186,8 +185,8 @@ releases present as a wedged device rather than an error.
 A cell that says none has no job: that subject is not verified from that
 source.
 
-The benchmarks run on the passthru machines, weekly and on request, outside
-``ci-result``.
+The benchmarks run on the passthru machines, weekly, on request, and on a
+pull-request labelled ``gate:perf``, where ``ci-result`` counts them.
 
 .. _sec-ci-environments:
 
