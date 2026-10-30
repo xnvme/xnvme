@@ -101,7 +101,9 @@ emulated RDMA and GPU guests run when it carries their label (see
 :ref:`sec-contributing-labels`), and the check ``ci-result`` says whether it
 may merge.
 Main and its tags run none of it again. The benchmarks also run weekly. A
-newer push or label on a pull-request cancels its running run.
+newer run of a pull-request cancels the one in progress, whatever started
+either, as does a newer run of a branch started the same way, by the schedule
+or by hand for the same ``job``.
 
 Each kind of job has a workflow file of its own, ``build.yml``,
 ``verify-emulated.yml`` for NVMe/PCIe and NVMe/TCP,
