@@ -66,42 +66,52 @@ _rdma_dev_dump(struct xnvme_dev *dev)
 }
 
 static inline int
-_rdma_dev_close_subsystem(struct xnvme_dev *dev)
+_rdma_dev_is_discovery_controller(struct xnvme_dev *dev)
 {
-	struct xnvme_transport_state *state = TO_TRANSPORT_DEV_STATE(dev);
-	int refs = 0;
-
-	refs = xnvme_transport_subsys_put(state->subsys);
-	if (refs) {
-		TRANSPORT_DEBUG("INFO: subsys still has %d references", refs);
-		xnvme_transport_subsys_get(state->subsys); // taking reference to prevent close loop to free referenced memory
-		return -EBUSY;
-	}
-	state->subsys = NULL;
-
-	return 0;
+	return !dev->opts.subnqn || strcasecmp(dev->opts.subnqn, XNVME_DISCOVERY_NQN) == 0;
 }
 
-static inline int
-_rdma_dev_close_namespace(struct xnvme_dev *dev)
+// Each device holds one reference on its namespace and one on its subsystem
+static inline void
+_rdma_dev_release_references(struct xnvme_dev *dev)
 {
 	struct xnvme_transport_state *state = TO_TRANSPORT_DEV_STATE(dev);
-	int refs = 0;
+	struct xnvme_transport_ns *ns = state->ns;
+	struct xnvme_transport_subsys *subsys = state->subsys;
 
-	refs = xnvme_transport_ns_put(state->ns);
-	if (refs) {
-		TRANSPORT_DEBUG("INFO: ns still has %d references", refs);
-		xnvme_transport_ns_get(state->ns); // taking reference to prevent close
-						   // loop to free referenced memory
-		return -EBUSY;
-	}
 	state->ns = NULL;
+	state->subsys = NULL;
 
-	return _rdma_dev_close_subsystem(dev);
+	if (ns) {
+		xnvme_transport_ns_put(ns);
+	}
+	if (subsys) {
+		xnvme_transport_subsys_put(subsys);
+	}
+}
+
+// The qpairs can outlive the device that created them, and only use the device while connecting
+static inline void
+_rdma_dev_detach_qpairs(struct xnvme_dev *dev)
+{
+	struct xnvme_transport_state *state = TO_TRANSPORT_DEV_STATE(dev);
+	struct xnvme_transport_ctrlr *ctrlr = TO_TRANSPORT_CTRLR(state->ctrlr);
+	struct xnvme_transport_qpair *qpairs[] = {
+		ctrlr ? ctrlr->admin_qpair : NULL,
+		TO_TRANSPORT_QPAIR(state->admin_qpair),
+	};
+
+	for (size_t i = 0; i < sizeof(qpairs) / sizeof(qpairs[0]); ++i) {
+		if (qpairs[i] && qpairs[i]->dev == dev) {
+			qpairs[i]->dev = NULL;
+		}
+	}
 }
 
 /*
  * Device functions for NVMe-oF backend
+ *
+ * Closing cannot report failure, so every step is attempted and failures are logged.
  */
 void
 xnvme_be_rdma_dev_close(struct xnvme_dev *dev)
@@ -111,50 +121,24 @@ xnvme_be_rdma_dev_close(struct xnvme_dev *dev)
 
 	TRANSPORT_DEBUG("INFO: dev_close() for NVMe-oF device: %s", dev->ident.uri);
 
-	if (state->ns) {
-		// namespace
-		_rdma_dev_close_namespace(dev);
-		state->admin_qpair = NULL;
-	} else if (state->subsys) {
-		// subsystem controller
-		_rdma_dev_close_subsystem(dev);
-		state->admin_qpair = NULL;
-	} else {
-		// discovery controller
-		if (state->admin_qpair && _rdma_dev_is_discovery_controller(dev)) {
-			err = xnvme_transport_qpair_disconnect(state->admin_qpair);
-			if (err) {
-				TRANSPORT_ERROR("FAILED: xnvme_transport_qpair_disconnect(), err: %d",
-						err);
-				return;
-			}
+	_rdma_dev_detach_qpairs(dev);
 
-			err = xnvme_transport_qpair_destroy(state->admin_qpair);
-			if (err) {
-				TRANSPORT_ERROR("FAILED: xnvme_transport_qpair_destroy(), err: %d", err);
-				return;
-			}
-			state->admin_qpair = NULL;
-		}
-	}
+	// The admin qpairs are shared and owned by the controller, subsystem or namespace
+	_rdma_dev_release_references(dev);
+	state->admin_qpair = NULL;
 
 	if (state->sync_qpair) {
-		err = xnvme_transport_qpair_disconnect(state->sync_qpair);
-		if (err) {
-			TRANSPORT_ERROR("FAILED: xnvme_transport_qpair_disconnect(), err: %d",
-					err);
-			return;
-		}
-
 		err = xnvme_transport_qpair_destroy(state->sync_qpair);
 		if (err) {
-			TRANSPORT_ERROR("FAILED: xnvme_transport_qpair_destroy(), err: %d", err);
-			return;
+			XNVME_DEBUG("FAILED: destroying the sync qpair, err: %d", err);
 		}
 		state->sync_qpair = NULL;
 	}
 
-	xnvme_be_rdma_mem_term(dev);
+	err = xnvme_be_rdma_mem_term(dev);
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_be_rdma_mem_term(), err: %d", err);
+	}
 }
 
 static inline int
@@ -184,13 +168,7 @@ _rdma_dev_enable_admin_qpair(struct xnvme_transport_ctrlr *ctrlr,
 	return err;
 }
 
-static inline int
-_rdma_dev_is_discovery_controller(struct xnvme_dev *dev)
-{
-	return !dev->opts.subnqn || strcasecmp(dev->opts.subnqn, XNVME_DISCOVERY_NQN) == 0;
-}
-
-/* Binds to the discovery controller, or to a subsystem controller when a subnqn is given. */
+// Binds to the discovery controller, or to a subsystem controller when a subnqn is given.
 static inline int
 _rdma_dev_bind_to_controller(struct xnvme_dev *dev)
 {
@@ -218,10 +196,9 @@ _rdma_dev_bind_to_controller(struct xnvme_dev *dev)
 	TRANSPORT_INFO("INFO: Binding to subsystem controller, subsystem: %p, subnqn: %s", subsys,
 		       subsys->subnqn);
 
-	state->subsys = subsys;
 
 	if (!subsys->admin_qpair) {
-		strncpy(dev->ident.subnqn, subsys->subnqn, sizeof(dev->ident.subnqn));
+		snprintf(dev->ident.subnqn, sizeof(dev->ident.subnqn), "%s", subsys->subnqn);
 
 		err = xnvme_transport_qpair_create(ctrlr, dev, &attr, &subsys->admin_qpair);
 		if (err) {
@@ -231,15 +208,21 @@ _rdma_dev_bind_to_controller(struct xnvme_dev *dev)
 
 		err = _rdma_dev_enable_admin_qpair(ctrlr, subsys->admin_qpair);
 		if (err) {
+			// Do not leave a broken qpair for the next open to pick up
+			xnvme_transport_qpair_destroy(subsys->admin_qpair);
+			subsys->admin_qpair = NULL;
 			return err;
 		}
 	}
+
+	xnvme_transport_subsys_get(subsys);
+	state->subsys = subsys;
 	state->admin_qpair = subsys->admin_qpair;
 
 	return 0;
 }
 
-/* The first device open identifies the subsystem by index (no subnqn), later opens by subnqn. */
+// The first device open identifies the subsystem by index (no subnqn), later opens by subnqn.
 static inline int
 _rdma_dev_bind_to_namespace(struct xnvme_dev *dev, const char *subnqn, int nsid)
 {
@@ -259,7 +242,7 @@ _rdma_dev_bind_to_namespace(struct xnvme_dev *dev, const char *subnqn, int nsid)
 
 	ns = xnvme_transport_subsys_find_first_ns(subsys, nsid);
 	if (!ns) {
-		strncpy(dev->ident.subnqn, subsys->subnqn, sizeof(dev->ident.subnqn));
+		snprintf(dev->ident.subnqn, sizeof(dev->ident.subnqn), "%s", subsys->subnqn);
 
 		err = xnvme_transport_ns_create(state->ctrlr, dev, subsys, nsid, &ns);
 		if (err) {
@@ -267,17 +250,19 @@ _rdma_dev_bind_to_namespace(struct xnvme_dev *dev, const char *subnqn, int nsid)
 			return err;
 		}
 
-		ns->admin_qpair->dev = dev;
-
 		err = _rdma_dev_enable_admin_qpair(state->ctrlr, ns->admin_qpair);
 		if (err) {
 			return err;
 		}
 	}
 
-	TRANSPORT_DEBUG("INFO: Bound to namespace: nsid=%u", ns->nsid);
+	xnvme_transport_subsys_get(subsys);
 	state->subsys = subsys;
+
+	xnvme_transport_ns_get(ns);
 	state->ns = ns;
+
+	TRANSPORT_DEBUG("INFO: Bound to namespace: nsid=%u", ns->nsid);
 	state->admin_qpair = ns->admin_qpair;
 
 	return 0;
@@ -348,33 +333,38 @@ xnvme_be_rdma_dev_open(struct xnvme_dev *dev)
 		err = _rdma_dev_bind_to_controller(dev);
 		if (err) {
 			TRANSPORT_ERROR("FAILED: _rdma_dev_bind_to_controller(), err: %d", err);
-			return err;
+			goto close_device;
 		}
 	} else {
 		err = _rdma_dev_bind_to_namespace(dev, dev->opts.subnqn, dev->opts.nsid);
 		if (err) {
 			TRANSPORT_ERROR("FAILED: _rdma_dev_bind_to_namespace(), err: %d", err);
-			return err;
+			goto close_device;
 		}
 	}
 
 	err = xnvme_be_rdma_mem_init(dev);
 	if (err) {
 		TRANSPORT_ERROR("FAILED: xnvme_be_rdma_mem_init(), err: %d", err);
-		return err;
+		goto close_device;
 	}
 
 	if (!_rdma_dev_is_discovery_controller(dev)) {
 		err = _rdma_dev_create_sync_queue(dev);
 		if (err) {
 			TRANSPORT_ERROR("FAILED: _rdma_dev_create_sync_queue(), err: %d", err);
-			return err;
+			goto close_device;
 		}
 	}
 
 	_rdma_dev_dump(dev);
 
 	return 0;
+
+close_device:
+	xnvme_be_rdma_dev_close(dev);
+
+	return err;
 }
 
 static void *
