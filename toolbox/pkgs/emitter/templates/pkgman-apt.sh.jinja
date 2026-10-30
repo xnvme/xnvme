@@ -4,9 +4,11 @@ export DEBIAN_PRIORITY=critical
 # Stop unattended-upgrades to avoid dpkg lock contention
 systemctl stop unattended-upgrades 2>/dev/null || true
 apt-get -qy -o DPkg::Lock::Timeout=120 update
-apt-get -qy \
-  -o "Dpkg::Options::=--force-confdef" \
-  -o "Dpkg::Options::=--force-confold" upgrade
+if [ "${XNVME_PKGS_NO_UPGRADE:-0}" != "1" ]; then
+  apt-get -qy \
+    -o "Dpkg::Options::=--force-confdef" \
+    -o "Dpkg::Options::=--force-confold" upgrade
+fi
 apt-get -qy --no-install-recommends install apt-utils
 apt-get -qy autoclean
 apt-get -qy install \

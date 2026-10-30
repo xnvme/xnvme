@@ -7,9 +7,11 @@
 export DEBIAN_FRONTEND=noninteractive
 export DEBIAN_PRIORITY=critical
 apt-get -qy update
-apt-get -qy \
-        -o "Dpkg::Options::=--force-confdef" \
-        -o "Dpkg::Options::=--force-confold" upgrade
+if [ "${XNVME_PKGS_NO_UPGRADE:-0}" != "1" ]; then
+  apt-get -qy \
+          -o "Dpkg::Options::=--force-confdef" \
+          -o "Dpkg::Options::=--force-confold" upgrade
+fi
 apt-get -qy autoclean
 apt-get -qy install \
         bash \

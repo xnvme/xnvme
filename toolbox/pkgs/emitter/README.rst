@@ -22,6 +22,11 @@ Adjusting to changes:
 
 Once changes are done, then run the emitter as previously described.
 
+The emitted ``apt`` and ``pkg`` scripts skip their system upgrade when
+``XNVME_PKGS_NO_UPGRADE=1`` is set, see the toolchain documentation. Keep that
+switch working when changing those templates, and keep the default, which
+upgrades, since the docker-images and CI rely on it.
+
 .. note: changes to the scripts do not take effect on the CI until they are
    merged on the ``main`` branch. This is because docker-images are pre-built
    based on the content of the scripts on ``main``.
