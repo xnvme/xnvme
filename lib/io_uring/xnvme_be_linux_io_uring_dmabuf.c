@@ -9,6 +9,7 @@
 #include <xnvme_be.h>
 
 #ifdef XNVME_BE_LINUX_IO_URING_DMABUF_ENABLED
+#include <dirent.h>
 #include <errno.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -82,18 +83,36 @@ _sysfs_read(const struct xnvme_dev *dev, const char *attr, char *buf, int buf_le
 	return 0;
 }
 
+// Returns 1 when the IOMMU translates the controller's DMA, 0 when it does not, and a
+// negative errno when that cannot be told
 static int
 _iommu_translates(const struct xnvme_dev *dev)
 {
 	char type[32];
+	DIR *groups;
+	int ngroups = 0;
 
-	// No IOMMU group means nothing translates
-	if (_sysfs_read(dev, "device/device/iommu_group/type", type, sizeof(type))) {
+	if (!_sysfs_read(dev, "device/device/iommu_group/type", type, sizeof(type))) {
+		// 'DMA' and 'DMA-FQ' translate; 'identity' and 'unmanaged' do not
+		return strncmp(type, "DMA", 3) ? 0 : 1;
+	}
+
+	// Without IOMMU groups nothing translates. With them, the namespace's controller
+	// was not found, as for the head of a native-multipath namespace, whose 'device'
+	// is the subsystem; mapping without the IOMMU then faults on the first DMA
+	groups = opendir("/sys/kernel/iommu_groups");
+	if (groups) {
+		for (struct dirent *ent = readdir(groups); ent; ent = readdir(groups)) {
+			ngroups += (ent->d_name[0] != '.');
+		}
+		closedir(groups);
+	}
+	if (!ngroups) {
 		return 0;
 	}
 
-	// 'DMA' and 'DMA-FQ' translate; 'identity' and 'unmanaged' do not
-	return strncmp(type, "DMA", 3) ? 0 : 1;
+	XNVME_DEBUG("FAILED: IOMMU groups exist, and the controller's is unknown");
+	return -ENODEV;
 }
 
 static int
@@ -253,7 +272,11 @@ _registry_add(struct xnvme_io_uring_dmabuf *registry, void *vaddr, size_t nbytes
 	}
 	entry = &registry->entries[i];
 
-	if (_iommu_translates(registry->dev)) {
+	err = _iommu_translates(registry->dev);
+	if (err < 0) {
+		return err;
+	}
+	if (err) {
 		err = _iommu_map(registry->dev, fd, &entry->map_handle, &entry->import);
 		if (err) {
 			XNVME_DEBUG("FAILED: _iommu_map(), err: %d", err);
