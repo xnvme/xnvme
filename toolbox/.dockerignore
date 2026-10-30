@@ -1,0 +1,3 @@
+# What toolbox/pkgs/Dockerfile copies in: the toolbox as committed, so not the
+# sources a third-party build left behind, which the scripts then clone again
+third-party/*/repository

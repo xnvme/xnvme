@@ -59,3 +59,21 @@ def test_every_specialised_template_is_for_an_emitted_platform():
             orphans.append(path.name)
 
     assert orphans == []
+
+
+def test_a_deps_container_is_built_for_every_linux_distribution():
+    workflow = ROOT / ".github" / "workflows" / "distro-deps.yml"
+    content = yaml.safe_load(workflow.read_text())
+    matrix = content["jobs"]["build"]["strategy"]["matrix"]["container"]
+
+    # Compared by script, as openSUSE splits its name differently in each
+    built = {f"{entry['os']}-{entry['ver']}" for entry in matrix}
+    linux = {
+        f"{platform['name']}-{ver}"
+        for platform in DEPS["platforms"]
+        if platform["os"] == "linux"
+        for ver in platform["ver"]
+    }
+    assert built == linux
+    for script in built:
+        assert (ROOT / "toolbox" / "pkgs" / f"{script}.sh").is_file()

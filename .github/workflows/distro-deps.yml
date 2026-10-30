@@ -1,0 +1,90 @@
+---
+name: distro-deps
+
+# Builds a container image per distribution with xNVMe's dependencies, as its
+# toolbox/pkgs script installs them, for CI to build in and for anyone to try a
+# distribution in: ghcr.io/xnvme/xnvme/distro-deps-<os>-<ver>:main. On main it pushes
+# them, when a script changes and every 12 hours, as the distributions update;
+# on a pull-request changing the scripts it builds them without pushing, so a
+# broken script fails there rather than after the merge.
+on:
+  push:
+    branches: [main]
+    paths:
+    - 'toolbox/pkgs/**'
+    - 'toolbox/nix/**'
+    - 'toolbox/third-party/**'
+    - '.github/workflows/distro-deps.yml'
+  pull_request:
+    branches: [main]
+    paths:
+    - 'toolbox/pkgs/**'
+    - 'toolbox/nix/**'
+    - 'toolbox/third-party/**'
+    - '.github/workflows/distro-deps.yml'
+  schedule:
+  - cron: '0 */12 * * *'
+  workflow_dispatch:
+
+# A pull-request's newer run cancels its older; on main they queue, as a run
+# cut off halfway leaves the images of two commits under ':main'
+concurrency:
+  group: distro-deps-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+  packages: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        container:
+        - {os: 'alpine', dh: 'refenv/alpine-bash', ver: 'latest'}
+        - {os: 'archlinux', dh: 'archlinux', ver: 'latest'}
+        - {os: 'centos', dh: 'quay.io/centos/centos', ver: 'stream10'}
+        - {os: 'debian', dh: 'debian', ver: 'forky'}
+        - {os: 'debian', dh: 'debian', ver: 'trixie'}
+        - {os: 'fedora', dh: 'fedora', ver: '43'}
+        - {os: 'fedora', dh: 'fedora', ver: '44'}
+        - {os: 'gentoo', dh: 'gentoo/stage3', ver: 'latest'}
+        - {os: 'nixos', dh: 'nixos/nix', ver: 'latest'}
+        - {os: 'opensuse-tumbleweed', dh: 'opensuse/tumbleweed', ver: 'latest'}
+        - {os: 'rockylinux', dh: 'rockylinux/rockylinux', ver: '9.7'}
+        - {os: 'rockylinux', dh: 'rockylinux/rockylinux', ver: '10.1'}
+        - {os: 'ubuntu', dh: 'ubuntu', ver: 'noble'}
+        - {os: 'ubuntu', dh: 'ubuntu', ver: 'resolute'}
+        - {os: 'ubuntu', dh: 'ubuntu', ver: 'stonking'}
+
+    env:
+      IMAGE: ghcr.io/xnvme/xnvme/distro-deps-${{ matrix.container.os }}-${{ matrix.container.ver }}:main
+      PUSH: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+
+    steps:
+    - name: Grab source
+      uses: actions/checkout@v6
+
+    - name: Build the image
+      run: |
+        docker build -f toolbox/pkgs/Dockerfile -t "$IMAGE" \
+          --build-arg BASE=${{ matrix.container.dh }}:${{ matrix.container.ver }} \
+          --build-arg SCRIPT=${{ matrix.container.os }}-${{ matrix.container.ver }}.sh \
+          toolbox
+
+    - name: Log into the GitHub Container Registry
+      if: env.PUSH == 'true'
+      run: |
+        echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+    - name: Push the image
+      if: env.PUSH == 'true'
+      run: |
+        docker push "$IMAGE"
