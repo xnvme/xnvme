@@ -3,8 +3,7 @@
 # Async. I/O on GPU memory via `io_uring_dmabuf`
 
 ```{warning}
-This needs a kernel that is not yet released and a `liburing` that is not yet
-upstream. See
+This needs a kernel that is not yet released. See
 {ref}`sec-platforms-linux-async-io_uring_dmabuf-kernel`.
 ```
 
@@ -42,11 +41,12 @@ mapped buffer is submitted as `IORING_OP_READ_FIXED` / `IORING_OP_WRITE_FIXED`.
 
 | | |
 |---|---|
-| Target | A raw NVMe block device opened with `O_DIRECT` |
+| Target | A raw NVMe block device opened with `O_DIRECT`, `opts.direct`, which the open checks |
 | Polling | Not supported, `IORING_SETUP_IOPOLL` fails queue initialization |
 | Vectored | Not supported (`xnvme_cmd_passv()`) |
-| Size | A `dma-buf` of at most 1 TiB |
+| Size | A `dma-buf` of at most 1 TiB, the kernel's limit for a registered buffer |
 | Count | At most 256 mapped allocations per device |
+| Threads | `xnvme_mem_map()` and `xnvme_mem_unmap()` must not run while IO is in flight on the device |
 
 (sec-platforms-linux-async-io_uring_dmabuf-kernel)=
 
@@ -58,11 +58,11 @@ not yet in a released kernel:
 - [rw-dmabuf-v11](https://lore.kernel.org/all/cover.1791975048.git.asml.silence@gmail.com/)
 - [rw-dmabuf](https://github.com/isilence/linux/commits/rw-dmabuf-v11/)
 
-Building needs a `liburing` with the matching UAPI, and CUDA or HIP:
-
-- [rw-dmabuf-tests](https://github.com/isilence/liburing/tree/rw-dmabuf-tests-v8)
-
-Without them, the backend is not built.
+The backend is built with `liburing` and CUDA or HIP. No `liburing` release
+has the UAPI of the series yet, so xNVMe defines the part it uses itself. On a
+kernel without the series, opening the device fails with `-ENOTSUP`. The
+[xnvme-devenv](https://github.com/xnvme/xnvme-devenv) guest runs a kernel with
+the series, and the CI runs the backend there, on an emulated AMD GPU.
 
 (sec-platforms-linux-async-io_uring_dmabuf-iommu)=
 
@@ -75,7 +75,10 @@ IOMMU domain of the device at IOVA == physical address.
 This needs the `dmabuf-import` and `iommu-map-pa` kernel modules, see
 {ref}`sec-backends-upcie-cuda-kernel` and {ref}`sec-backends-upcie-cuda-iommu`.
 Without them `xnvme_mem_map()` fails. Alternatively, boot with `iommu=pt`,
-`amd_iommu=off` or `intel_iommu=off`.
+`amd_iommu=off` or `intel_iommu=off`. The IOMMU group is read from the
+controller of the namespace; where it cannot be found, as for the head of a
+native-multipath namespace, while IOMMU groups exist, `xnvme_mem_map()` fails
+with `-ENODEV` rather than map without the IOMMU.
 
 ```{note}
 The `dma-buf` must be physically contiguous. See
