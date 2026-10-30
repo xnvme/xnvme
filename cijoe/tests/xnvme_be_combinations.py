@@ -177,6 +177,16 @@ def get_backend_configurations():
             "label": ["hip"],
             "homi": True,
         },
+        # The block device, with IO buffers in GPU memory registered with
+        # io_uring as dma-bufs
+        {
+            "be": ["io_uring_dmabuf"],
+            "async": ["io_uring_dmabuf"],
+            "sync": ["nvme"],
+            "admin": ["nvme"],
+            "mem": ["io_uring_dmabuf"],
+            "label": ["dmabuf"],
+        },
         # Ramdisk
         {
             "be": ["ramdisk_emu"],

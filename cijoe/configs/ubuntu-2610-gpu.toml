@@ -43,6 +43,15 @@ nsid = 1
 labels = [ "dev", "pcie", "hip", "nvm" ]
 driver_attachment = "userspace"
 
+# The same controller on the kernel's driver, for io_uring_dmabuf; the guest's
+# only NVMe controller, so its namespace is nvme0n1. Labelled dmabuf alone, so
+# only the tests written for that backend pick it
+[[devices]]
+uri = "/dev/nvme0n1"
+nsid = 1
+labels = [ "dmabuf" ]
+driver_attachment = "kernel"
+
 [hugetlbfs]
 mount_point = "/mnt/huge"
 nr_hugepages = "1024"
