@@ -219,6 +219,16 @@ Both publish **OCI** artifacts on **GHCR**.
   (Linux uses ``chpasswd`` + ``systemctl``, FreeBSD uses ``pw usermod`` +
   ``service sshd reload``).
 
+* **Deps containers** are an image per Linux distribution with xNVMe's
+  dependencies, as its ``toolbox/pkgs`` script installs them, for the build
+  jobs to run in and for anyone to try a distribution in. The
+  ``distro-deps`` workflow builds them from ``toolbox/pkgs/Dockerfile`` as
+  ``ghcr.io/xnvme/xnvme/distro-deps-<os>-<ver>:main``: on a pull-request changing the
+  scripts without pushing, and on ``main``, when a script changes and every 12
+  hours, pushing them. The build jobs still use the images of
+  xnvme-docker, ``ghcr.io/xnvme/xnvme-deps-<os>-<ver>:main``, until they
+  move to these.
+
 .. list-table:: Per-job container + guest-image inventory
    :header-rows: 1
    :widths: 28 32 32
