@@ -383,21 +383,18 @@ jobs:
         # alpine: SPDK not supported, --with-spdk=disabled
         - {os: 'alpine', dh: 'refenv/alpine-bash', ver: 'latest'}
         - {os: 'archlinux', dh: 'archlinux', ver: 'latest'}
-        - {os: 'centos', dh: 'quay.io/centos/centos', ver: 'stream9'}
         - {os: 'centos', dh: 'quay.io/centos/centos', ver: 'stream10'}
-        - {os: 'debian', dh: 'debian', ver: 'bookworm'}
         - {os: 'debian', dh: 'debian', ver: 'forky'}
         - {os: 'debian', dh: 'debian', ver: 'trixie'}
-        - {os: 'fedora', dh: 'fedora', ver: '42'}
         - {os: 'fedora', dh: 'fedora', ver: '43'}
+        - {os: 'fedora', dh: 'fedora', ver: '44'}
         - {os: 'gentoo', dh: 'gentoo/stage3', ver: 'latest'}
         - {os: 'opensuse-tumbleweed', dh: 'opensuse/tumbleweed', ver: 'latest'}
-        - {os: 'oraclelinux', dh: 'oraclelinux', ver: '9'}
-        - {os: 'oraclelinux', dh: 'oraclelinux', ver: '10'}
         - {os: 'rockylinux', dh: 'rockylinux/rockylinux', ver: '9.7'}
+        - {os: 'rockylinux', dh: 'rockylinux/rockylinux', ver: '10.1'}
         - {os: 'ubuntu', dh: 'ubuntu', ver: 'noble'}
-        - {os: 'ubuntu', dh: 'ubuntu', ver: 'questing'}
         - {os: 'ubuntu', dh: 'ubuntu', ver: 'resolute'}
+        - {os: 'ubuntu', dh: 'ubuntu', ver: 'stonking'}
 
     steps:
     - uses: actions/checkout@v6

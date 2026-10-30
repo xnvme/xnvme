@@ -2,8 +2,8 @@
 git clone https://github.com/xnvme/xnvme.git
 cd xnvme
 
-# Install toolchain and libraries on Linux (Debian Bookworm)
-sudo ./toolbox/pkgs/debian-bookworm.sh
+# Install toolchain and libraries on Linux (Debian Trixie)
+sudo ./toolbox/pkgs/debian-trixie.sh
 
 # configure xNVMe and build meson subprojects(SPDK)
 meson setup builddir

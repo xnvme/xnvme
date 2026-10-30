@@ -83,7 +83,7 @@ deps:
       apk: [python3, python3-dev, py3-pip]
       emerge: [dev-python/pip]
       pacman: [python3, python-pip, python-setuptools]
-      dnf: [python3-devel, python3-pip]
+      dnf: [python3-devel, python3-pip, python3-setuptools]
       src: [python3]
       zypper: [python3, python3-devel, python3-pip, python3-setuptools]
 
@@ -396,30 +396,6 @@ platforms:
   aux:
   - [sys, [base-devel, libutil-linux]]
 
-- alias: Oracle Linux 10
-  notes: ''
-  name: oraclelinux
-  ver: ['10']
-  os: linux
-  mng: dnf
-  drop: []
-  alt:
-  - [src, [libisal, libvfn]]
-  aux:
-  - [sys, [autoconf, diffutils, gcc, gcc-c++, libtool, procps, unzip, wget, zlib-devel]]
-
-- alias: Oracle Linux 9
-  notes: ''
-  name: oraclelinux
-  ver: ['9']
-  os: linux
-  mng: dnf
-  drop: []
-  alt:
-  - [src, [libisal, libvfn]]
-  aux:
-  - [sys, [autoconf, diffutils, gcc, gcc-c++, libtool, procps, unzip, wget, zlib-devel]]
-
 - alias: Rocky Linux 9
   notes: ''
   name: rockylinux
@@ -456,18 +432,6 @@ platforms:
   aux:
   - [sys, [autoconf, diffutils, gcc, gcc-c++, libtool, procps, unzip, wget, zlib-devel]]
 
-- alias: CentOS Stream 9
-  notes: ''
-  name: centos
-  ver: [stream9]
-  os: linux
-  mng: dnf
-  drop: [clang-format]
-  alt:
-  - [src, [libisal, libvfn]]
-  aux:
-  - [sys, [autoconf, diffutils, gcc, gcc-c++, libtool, procps, unzip, wget, zlib-devel]]
-
 - alias: Debian Stable
   notes: ''
   name: debian
@@ -479,20 +443,6 @@ platforms:
   aux:
   - [sys, [autoconf, automake, build-essential, libtool]]
 
-
-- alias: Debian Oldstable
-  notes: ''
-  name: debian
-  ver: [bookworm]
-  os: linux
-  mng: apt
-  # No systemd-dev, which Debian split from systemd after bookworm, whose systemd carries
-  # systemd.pc itself; the units are built where systemd is installed, and not in a
-  # container without it
-  drop: [systemd]
-  alt: []
-  aux:
-  - [sys, [autoconf, build-essential, libtool]]
 
 - alias: Debian Testing
   notes: ''
@@ -508,7 +458,7 @@ platforms:
 - alias: Fedora
   notes: ''
   name: fedora
-  ver: [43, 42]
+  ver: [44, 43]
   os: linux
   mng: dnf
   drop: []
@@ -520,12 +470,13 @@ platforms:
   notes: All tools and libraries are available via system package-manager.
   os: linux
   name: ubuntu
-  ver: [questing, stonking]
+  ver: [stonking]
   mng: apt
   drop: []
   alt: []
   aux:
-  - [sys, [autoconf, build-essential, libtool]]
+  # OpenSSL 4 links its static libcrypto against jitterentropy
+  - [sys, [autoconf, build-essential, libjitterentropy3-dev, libtool]]
 
 - alias: Ubuntu LTS
   notes: All tools and libraries are available via system package-manager.

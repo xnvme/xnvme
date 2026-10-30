@@ -37,6 +37,7 @@ dnf install -y \
  python3-jinja2 \
  python3-pip \
  python3-pyelftools \
+ python3-setuptools \
  python3-tabulate \
  rdma-core \
  rdma-core-devel \

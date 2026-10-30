@@ -5,23 +5,18 @@ ld -v || true
 # Query the (g)libc version
 ldd --version || true
 
-# Enable CRB repo for development packages
-dnf install -y 'dnf-command(config-manager)'
-dnf config-manager --set-enabled crb
-
-# Enable EPEL for additional packages
-dnf install -y epel-release
-
 # Install packages via the system package-manager (dnf)
 dnf install -y \
  CUnit-devel \
  autoconf \
  bash \
+ clang-tools-extra \
  diffutils \
  findutils \
+ g++ \
  gcc \
- gcc-c++ \
  git \
+ isa-l \
  libaio-devel \
  libarchive-devel \
  libtool \
@@ -42,30 +37,12 @@ dnf install -y \
  python3-jinja2 \
  python3-pip \
  python3-pyelftools \
+ python3-setuptools \
  python3-tabulate \
  rdma-core \
  rdma-core-devel \
  systemd \
- unzip \
- wget \
  zlib-devel
-
-#
-# Clone, build and install libisal
-#
-# Assumptions:
-#
-# - Commands are executed with sufficient privileges (sudo/root)
-#
-git clone https://github.com/intel/isa-l.git toolbox/third-party/libisal/repository
-
-pushd toolbox/third-party/libisal/repository
-git checkout v2.30.0
-./autogen.sh
-./configure --prefix=/usr --libdir=/usr/lib64
-make
-make install
-popd
 
 #
 # Clone, build and install libvfn
