@@ -1,5 +1,7 @@
 # Upgrade existing packages to avoid library version mismatches
-pkg upgrade -qy
+if ( "`printenv XNVME_PKGS_NO_UPGRADE`" != "1" ) then
+  pkg upgrade -qy
+endif
 
 # Install packages via the system package-manager (pkg)
 pkg install -qy \

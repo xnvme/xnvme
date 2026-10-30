@@ -22,6 +22,28 @@ The following sections describe how to install the recommended toolchain for
 each platform and the libraries necessary for all backends on various popular
 operating systems, including Linux distributions, FreeBSD, macOS, and Windows.
 
+The package installation scripts in ``toolbox/pkgs`` upgrade the installed
+system packages before installing the dependencies, on the platforms whose
+package manager is ``apt`` (Debian, Ubuntu) or ``pkg`` (FreeBSD). Where that
+upgrade is unwanted, for example on a machine with held driver packages whose
+userspace libraries must not move, set ``XNVME_PKGS_NO_UPGRADE=1``. The
+scripts then refresh the package index and install the dependencies, but skip
+the upgrade. Installing can still upgrade an installed package that a
+dependency requires a newer version of, such as the C library that a
+development package is built against, but packages outside the dependencies
+of **xNVMe** are left alone. Note that ``sudo`` drops the environment, so pass
+the variable through it:
+
+.. code-block:: bash
+
+   sudo XNVME_PKGS_NO_UPGRADE=1 ./xnvme/toolbox/pkgs/debian-trixie.sh
+
+The scripts for the other package managers do not run a system upgrade, so
+the variable makes no difference there. The exception is Arch Linux, where the
+script always runs ``pacman -Syyu``, since installing packages against a
+refreshed package database without upgrading is a partial upgrade, which Arch
+does not support.
+
 .. toctree::
    :maxdepth: 2
    :includehidden:
