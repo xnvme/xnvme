@@ -35,3 +35,18 @@ def test_every_pkgs_script_is_emitted_from_deps():
 
     names = {f"{os}-{ver}" for os, ver in emitted()}
     assert scripts - names == set()
+
+
+def test_every_specialised_template_is_for_an_emitted_platform():
+    templates = ROOT / "toolbox" / "pkgs" / "emitter" / "templates"
+    names = {f"{os}-{ver}" for os, ver in emitted()}
+
+    orphans = []
+    for path in templates.glob("*.sh.jinja"):
+        stem = path.name.removesuffix(".sh.jinja")
+        comp, *tail = stem.split("-")
+        specialised = "-".join(tail[1:])
+        if specialised and specialised not in names:
+            orphans.append(path.name)
+
+    assert orphans == []
