@@ -49,6 +49,7 @@ apt-get -qy install \
  python3-tabulate \
  python3-venv \
  rdma-core \
+ systemd-dev \
  uuid-dev
 
 #

@@ -40,6 +40,7 @@ dnf install -y \
  python3-tabulate \
  rdma-core \
  rdma-core-devel \
+ systemd \
  zlib-devel
 
 #
