@@ -176,7 +176,7 @@ jobs:
   source-archive:
     needs: changes-to-docs
     runs-on: ubuntu-24.04
-    container: ghcr.io/xnvme/xnvme-deps-alpine-latest:main
+    container: ghcr.io/xnvme/xnvme/distro-deps-alpine-latest:main
     strategy:
       matrix:
         variant: [with-subprojects, without-subprojects]
@@ -272,7 +272,7 @@ jobs:
   ffi-python:
     needs: [source-archive, changes-to-docs, docgen-shallow]
     runs-on: ubuntu-24.04
-    container: ghcr.io/xnvme/xnvme-deps-debian-trixie:main
+    container: ghcr.io/xnvme/xnvme/distro-deps-debian-trixie:main
     strategy:
       fail-fast: false
 
@@ -315,7 +315,7 @@ jobs:
     runs-on: ubuntu-24.04
     if: needs.changes-to-docs.outputs.docs_prose_only != 'true'
     container:
-      image: ghcr.io/xnvme/xnvme-deps-debian-trixie:main
+      image: ghcr.io/xnvme/xnvme/distro-deps-debian-trixie:main
 
     steps:
     - name: Retrieve and unpack the xNVMe source archive

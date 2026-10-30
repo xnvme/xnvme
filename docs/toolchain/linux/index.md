@@ -20,9 +20,9 @@ Or, run the commands contained within the script manually:
 ```
 
 :::{note}
-A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-alpine-latest:main`. This Docker-image contains
-all the software described above.
+A container image is provided via `ghcr.io`, specifically
+`ghcr.io/xnvme/xnvme/distro-deps-alpine-latest:main`. It contains all the
+software described above.
 :::
 
 Then go ahead and configure, build and install using `meson`:
@@ -64,9 +64,9 @@ Or, run the commands contained within the script manually:
 ```
 
 :::{note}
-A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-archlinux-latest:main`. This Docker-image contains
-all the software described above.
+A container image is provided via `ghcr.io`, specifically
+`ghcr.io/xnvme/xnvme/distro-deps-archlinux-latest:main`. It contains all the
+software described above.
 :::
 
 Then go ahead and configure, build and install using `meson`:
@@ -105,9 +105,9 @@ Or, run the commands contained within the script manually:
 ```
 
 :::{note}
-A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-rockylinux-9.7:main`. This Docker-image contains
-all the software described above.
+A container image is provided via `ghcr.io`, specifically
+`ghcr.io/xnvme/xnvme/distro-deps-rockylinux-9.7:main`. It contains all the
+software described above.
 :::
 
 Then go ahead and configure, build and install using `meson`:
@@ -138,9 +138,9 @@ Or, run the commands contained within the script manually:
 ```
 
 :::{note}
-A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-rockylinux-10.1:main`. This Docker-image contains
-all the software described above.
+A container image is provided via `ghcr.io`, specifically
+`ghcr.io/xnvme/xnvme/distro-deps-rockylinux-10.1:main`. It contains all the
+software described above.
 :::
 
 Then go ahead and configure, build and install using `meson`:
@@ -171,9 +171,9 @@ Or, run the commands contained within the script manually:
 ```
 
 :::{note}
-A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-centos-stream10:main`. This Docker-image contains
-all the software described above.
+A container image is provided via `ghcr.io`, specifically
+`ghcr.io/xnvme/xnvme/distro-deps-centos-stream10:main`. It contains all the
+software described above.
 :::
 
 Then go ahead and configure, build and install using `meson`:
@@ -204,9 +204,9 @@ Or, run the commands contained within the script manually:
 ```
 
 :::{note}
-A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-debian-trixie:main`. This Docker-image contains
-all the software described above.
+A container image is provided via `ghcr.io`, specifically
+`ghcr.io/xnvme/xnvme/distro-deps-debian-trixie:main`. It contains all the
+software described above.
 :::
 
 Then go ahead and configure, build and install using `meson`:
@@ -237,9 +237,9 @@ Or, run the commands contained within the script manually:
 ```
 
 :::{note}
-A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-debian-forky:main`. This Docker-image contains
-all the software described above.
+A container image is provided via `ghcr.io`, specifically
+`ghcr.io/xnvme/xnvme/distro-deps-debian-forky:main`. It contains all the
+software described above.
 :::
 
 Then go ahead and configure, build and install using `meson`:
@@ -270,9 +270,9 @@ Or, run the commands contained within the script manually:
 ```
 
 :::{note}
-A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-fedora-44:main`. This Docker-image contains
-all the software described above.
+A container image is provided via `ghcr.io`, specifically
+`ghcr.io/xnvme/xnvme/distro-deps-fedora-44:main`. It contains all the
+software described above.
 :::
 
 Then go ahead and configure, build and install using `meson`:
@@ -303,9 +303,9 @@ Or, run the commands contained within the script manually:
 ```
 
 :::{note}
-A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-fedora-43:main`. This Docker-image contains
-all the software described above.
+A container image is provided via `ghcr.io`, specifically
+`ghcr.io/xnvme/xnvme/distro-deps-fedora-43:main`. It contains all the
+software described above.
 :::
 
 Then go ahead and configure, build and install using `meson`:
@@ -336,9 +336,9 @@ Or, run the commands contained within the script manually:
 ```
 
 :::{note}
-A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-ubuntu-stonking:main`. This Docker-image contains
-all the software described above.
+A container image is provided via `ghcr.io`, specifically
+`ghcr.io/xnvme/xnvme/distro-deps-ubuntu-stonking:main`. It contains all the
+software described above.
 :::
 
 Then go ahead and configure, build and install using `meson`:
@@ -373,9 +373,9 @@ Or, run the commands contained within the script manually:
 ```
 
 :::{note}
-A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-ubuntu-resolute:main`. This Docker-image contains
-all the software described above.
+A container image is provided via `ghcr.io`, specifically
+`ghcr.io/xnvme/xnvme/distro-deps-ubuntu-resolute:main`. It contains all the
+software described above.
 :::
 
 Then go ahead and configure, build and install using `meson`:
@@ -410,9 +410,9 @@ Or, run the commands contained within the script manually:
 ```
 
 :::{note}
-A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-ubuntu-noble:main`. This Docker-image contains
-all the software described above.
+A container image is provided via `ghcr.io`, specifically
+`ghcr.io/xnvme/xnvme/distro-deps-ubuntu-noble:main`. It contains all the
+software described above.
 :::
 
 Then go ahead and configure, build and install using `meson`:
@@ -447,9 +447,9 @@ Or, run the commands contained within the script manually:
 ```
 
 :::{note}
-A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-nixos-latest:main`. This Docker-image contains
-all the software described above.
+A container image is provided via `ghcr.io`, specifically
+`ghcr.io/xnvme/xnvme/distro-deps-nixos-latest:main`. It contains all the
+software described above.
 :::
 
 Then go ahead and configure, build and install using `meson`:
@@ -490,9 +490,9 @@ Or, run the commands contained within the script manually:
 ```
 
 :::{note}
-A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-gentoo-latest:main`. This Docker-image contains
-all the software described above.
+A container image is provided via `ghcr.io`, specifically
+`ghcr.io/xnvme/xnvme/distro-deps-gentoo-latest:main`. It contains all the
+software described above.
 :::
 
 Then go ahead and configure, build and install using `meson`:
@@ -534,9 +534,9 @@ Or, run the commands contained within the script manually:
 ```
 
 :::{note}
-A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-opensuse-tumbleweed-latest:main`. This Docker-image contains
-all the software described above.
+A container image is provided via `ghcr.io`, specifically
+`ghcr.io/xnvme/xnvme/distro-deps-opensuse-tumbleweed-latest:main`. It contains all the
+software described above.
 :::
 
 Then go ahead and configure, build and install using `meson`:

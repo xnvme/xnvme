@@ -37,11 +37,13 @@ Or, run the commands contained within the script manually:
    :language: bash
    :lines: 8-
 
+{% if platform.os == "linux" -%}
 .. note::
-   A Docker-image is provided via ``ghcr.io``, specifically
-   ``ghcr.io/xnvme/xnvme-deps-{{ ident }}:main``. This Docker-image contains
-   all the software described above.
+   A container image is provided via ``ghcr.io``, specifically
+   ``ghcr.io/xnvme/xnvme/distro-deps-{{ ident }}:main``. It contains all the
+   software described above.
 
+{% endif -%}
 {% endif -%}
 Then go ahead and configure, build and install using ``meson``:
 
