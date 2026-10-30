@@ -113,19 +113,18 @@ Each kind of job has a workflow file of its own, ``build.yml``,
 ``verify`` calls them, so they run as part of its run and use its artifacts,
 and its ``ci-result`` checks every one that ran.
 
-A push to main runs the ``publish`` workflow instead. It finds the pull-request
-that was merged and the ``verify`` run of its head that ``ci-result``
-passed, and deploys the documentation that run built to
-`xnvme.io via GitHub-pages`_. When the head
-commit is ``ver: bump to vX.Y.Z``, it also tags main ``vX.Y.Z`` and creates the
-release, with the source archives, the Python sdist and the test results of
-that run, and the ``CHANGELOG.rst`` section of the version as its notes. The
-artifacts are used only when the pull-request's head has the tree main now
-has, which branch protection makes the case by requiring it to be up to date
-with main. For a push to main that is not such a merge, the documentation is
-built by a manual ``docgen`` run on main instead, and a release fails; see
-:ref:`sec-contributing-release`. A pull-request merged without ``gate:docgen``
-has no documentation in its run, so ``publish`` starts that manual run too.
+A push to main runs two workflows instead. ``publish-docs`` starts a
+``docgen`` run of ``verify`` on main, which builds the documentation of main's
+tree and deploys it to `xnvme.io via GitHub-pages`_. When the head commit is
+``ver: bump to vX.Y.Z``, ``publish-release`` finds the pull-request that was
+merged and the ``verify`` run of its head that ``ci-result`` passed, tags main
+``vX.Y.Z`` and creates the release, with the source archives, the Python sdist and the test
+results of that run, and the ``CHANGELOG.rst`` section of the version as its
+notes, and starts a ``docgen`` run on the tag for the documentation of the
+release. The artifacts are used only when the pull-request's head has the tree
+main now has, which branch protection makes the case by requiring it to be up
+to date with main; otherwise the release fails, see
+:ref:`sec-contributing-release`.
 
 Any job can be run by hand: start the ``verify`` workflow from the Actions tab,
 on a branch, with ``job`` set to ``all`` for every job, or to ``verify``,

@@ -2,8 +2,8 @@
 name: verify
 
 # Pull-requests run what it takes to get onto main, so main and its tags run
-# nothing again: the 'publish' workflow deploys the docs and releases from the
-# artifacts of the pull-request that was merged. A manual run on any branch
+# nothing again: the 'publish-release' workflow releases from the artifacts of
+# the pull-request that was merged. A manual run on any branch
 # runs the jobs its 'job' names, 'all' every one. A draft runs nothing;
 # marking it ready for review starts its first run. Beside a fixed set of jobs,
 # a 'gate:' label on a pull-request adds the jobs it names to the run; changing
@@ -33,7 +33,7 @@ on:
 # A newer run cancels the one in progress: of a pull-request whatever started
 # it, so none is left to run superseded, and of a branch when started the same
 # way, by the schedule or by hand for the same 'job', so the weekly benchmarks
-# and a manual 'docgen' that 'publish' starts do not cancel each other
+# and a manual 'docgen' that 'publish-docs' starts do not cancel each other
 concurrency:
   group: verify-${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || format('{0}-{1}',
     github.ref, github.event.inputs.job || github.event_name) }}
@@ -248,7 +248,7 @@ jobs:
         /tmp/selftest/bin/pip install -q pytest ./cijoe
         /tmp/selftest/bin/pytest -q -p no:cacheprovider cijoe/tests/selftest toolbox/tests
 
-    # The 'publish' workflow releases when the merged pull-request ends on the
+    # The 'publish-release' workflow releases when the merged pull-request ends on the
     # version bump; checking it here fails the pull-request, not the release
     - name: Check the version bump, when the pull-request ends on one
       if: github.event_name == 'pull_request'
