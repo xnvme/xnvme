@@ -107,6 +107,7 @@ def test_library_info_has_all_combos(cijoe):
         "upcie": "XNVME_BE_UPCIE_ENABLED",
         "upcie-cuda": "XNVME_BE_UPCIE_CUDA_ENABLED",
         "upcie-hip": "XNVME_BE_UPCIE_HIP_ENABLED",
+        "io_uring_dmabuf": "XNVME_BE_LINUX_IO_URING_DMABUF_ENABLED",
     }
 
     combos = get_backend_configurations()

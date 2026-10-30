@@ -6,7 +6,8 @@ doc: |
   for the rocjitsu GPU behind one PCIe switch. This plugs in the GPU, which
   the guest's amdgpu brings up, checks that the controller can move data in
   and out of VRAM through the kernel, and then runs the tests labelled hip
-  against the controller, driven from user space with its buffers in VRAM.
+  against the controller, driven from user space with its buffers in VRAM,
+  and those of io_uring_dmabuf, which does IO on VRAM through the kernel.
 
 steps:
 - name: facts
@@ -34,4 +35,11 @@ steps:
   uses: core.testrunner
   with:
     args: '-k "hip" tests --timeout=1800 --timeout-method=thread'
+    random_order: false
+
+# io_uring_dmabuf on the controller's block device, with the IO buffers in VRAM
+- name: test_dmabuf
+  uses: core.testrunner
+  with:
+    args: 'tests/tools/test_xnvmeperf_dmabuf.py --timeout=1800 --timeout-method=thread'
     random_order: false

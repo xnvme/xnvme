@@ -72,6 +72,9 @@ static const char *g_libconf_strings[] = {
 #ifdef XNVME_BE_UPCIE_HIP_ENABLED
 	"conf: XNVME_BE_UPCIE_HIP_ENABLED",
 #endif
+#ifdef XNVME_BE_LINUX_IO_URING_DMABUF_ENABLED
+	"conf: XNVME_BE_LINUX_IO_URING_DMABUF_ENABLED",
+#endif
 #ifdef XNVME_BE_SPDK_ENABLED
 	"conf: XNVME_BE_SPDK_ENABLED",
 #endif
