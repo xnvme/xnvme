@@ -1,0 +1,29 @@
+---
+name: publish-docs
+
+# A push to main starts a 'docgen' run of 'verify' on main, which builds the
+# documentation of main's tree, running its commands in a guest, and deploys it
+# to xnvme.io. So what is published is built from the tree it describes, not
+# taken from a pull-request's run. A newer push cancels the start of an older
+# one; the 'docgen' runs themselves cancel each other in 'verify'.
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: publish-docs
+  cancel-in-progress: true
+
+jobs:
+  docs:
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: write
+
+    steps:
+    - name: Build and deploy the documentation of main by a 'docgen' run
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+      run: |
+        gh workflow run verify.yml --repo "$REPO" --ref main -f job=docgen

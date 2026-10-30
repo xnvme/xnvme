@@ -100,9 +100,9 @@ The gates
      - The benchmarks on the lab machines, which fail on a regression beyond
        their noise. They also run weekly
    * - ``gate:docgen``
-     - The documentation with its commands run in a guest, as published. When
-       a pull-request merges without it, ``publish`` builds the documentation
-       by a run on ``main`` instead
+     - The documentation with its commands run in a guest, to catch a change
+       that breaks it. What is published is built after the merge, by a run
+       on ``main`` that ``publish-docs`` starts
    * - ``gate:all``
      - Every gate above, as for a release
 

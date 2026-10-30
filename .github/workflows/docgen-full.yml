@@ -14,9 +14,10 @@ jobs:
   #
   # Documentation: generate documentation and deploy it to githubpages (xnvme.io)
   #
-  # This runs on pull-requests, so we catch whether one breaks the documentation,
-  # and the 'publish' workflow deploys what the merged one built. A manual run
-  # with 'job' set to 'docgen' builds and deploys it itself, to:
+  # This runs on pull-requests with 'gate:docgen', so we catch whether one breaks
+  # the documentation. A manual run with 'job' set to 'docgen' builds and
+  # deploys it, as the 'publish-docs' workflow starts on main after every
+  # merge, and 'publish-release' on the tag of a release, to:
   #
   #   githubpages/en/<ref>
   #
@@ -149,5 +150,18 @@ jobs:
         git config --global user.name 'GitHUB Service'
         git config --global user.email 'ghs@safl.dk'
         git add .
-        git commit -a -m "Auto-deployed update of 'docs/' for '${{ github.ref }}'"
-        git push
+        if git diff --cached --quiet; then
+          echo "The site has these docs already"
+          exit 0
+        fi
+        git commit -m "Auto-deployed update of 'docs/' for '${{ github.ref }}'"
+        # A release deploys main and its tag by two runs at once; the one that
+        # pushes second takes the other's commit and tries again
+        for attempt in 1 2 3 4 5; do
+          if git push; then
+            exit 0
+          fi
+          sleep $((attempt * 10))
+          git pull --rebase
+        done
+        exit 1
