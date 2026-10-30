@@ -330,6 +330,10 @@ xnvme_io_uring_dmabuf_term(const struct xnvme_dev *dev)
 			_entry_release(&registry->entries[i]);
 		}
 	}
+	// A queue terminated after its device closes then finds nothing to detach
+	for (uint32_t i = 0; i < registry->nqueues; ++i) {
+		registry->queues[i]->dmabuf = NULL;
+	}
 	free(registry->queues);
 	free(registry);
 }
