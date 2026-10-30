@@ -10,7 +10,8 @@ Contribution Process
   - The `pull-request` should target the ``main`` branch
   - For feedback/RFC then set up the `pull-request`_ as a **Draft**
 
-* The CI will trigger as you create the PR and re-triggered upon update
+* The CI will trigger as you create the PR and re-triggered upon update. A
+  draft runs no CI; marking it ready for review starts its first run
 
   - The default CI-jobs consists of running style/linters and building **xNVMe**
   - Average time for a full functional verification run is about 40min
