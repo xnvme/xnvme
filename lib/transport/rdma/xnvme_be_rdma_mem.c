@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <stdlib.h>
 #include <unistd.h>
 
 #include <xnvme_transport_debug.h>
@@ -71,8 +72,7 @@ xnvme_be_rdma_mem_term(struct xnvme_dev *dev)
 }
 
 static inline int
-_rdma_mem_register_buf(const struct xnvme_dev *dev, void *user_buffer, size_t nbytes,
-		       long alignment)
+_rdma_mem_register_buf(const struct xnvme_dev *dev, void *user_buffer, size_t nbytes)
 {
 	struct xnvme_transport_state *state = TO_TRANSPORT_DEV_STATE(dev);
 	struct xnvme_transport_memory_handle *reg_handle = NULL;
@@ -81,9 +81,9 @@ _rdma_mem_register_buf(const struct xnvme_dev *dev, void *user_buffer, size_t nb
 	RbtStatus status;
 	int err;
 
-	reg_handle = xnvme_buf_virt_alloc(alignment, sizeof(*reg_handle));
+	reg_handle = calloc(1, sizeof(*reg_handle));
 	if (!reg_handle) {
-		XNVME_DEBUG("FAILED: xnvme_buf_virt_alloc() for handle_mem");
+		XNVME_DEBUG("FAILED: calloc() for handle_mem");
 		return -ENOMEM;
 	}
 
@@ -114,7 +114,7 @@ _rdma_mem_register_buf(const struct xnvme_dev *dev, void *user_buffer, size_t nb
 deregister_region:
 	xnvme_transport_ctrlr_dereg(ctrlr, reg_handle->handle);
 free_handle:
-	xnvme_buf_virt_free(reg_handle);
+	free(reg_handle);
 	return err;
 }
 
@@ -137,7 +137,7 @@ xnvme_be_rdma_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *XN
 	}
 	TRANSPORT_DEBUG("INFO: Allocated user buffer %p of size %zu", user_buffer, nbytes);
 
-	err = _rdma_mem_register_buf(dev, user_buffer, nbytes, sz);
+	err = _rdma_mem_register_buf(dev, user_buffer, nbytes);
 	if (err) {
 		XNVME_DEBUG("FAILED: _rdma_mem_register_buf(), err: %d", err);
 		goto free_user_buffer;
@@ -216,11 +216,11 @@ _rdma_mem_deregister_buf(const struct xnvme_dev *dev, void *buf)
 	err = xnvme_transport_ctrlr_dereg(ctrlr, mem_handle->handle);
 	if (err) {
 		TRANSPORT_DEBUG("FAILED: xnvme_transport_ctrlr_dereg(), err: %d", err);
-		xnvme_buf_virt_free(mem_handle); // best-effort free on failure
+		free(mem_handle); // best-effort free on failure
 		return err;
 	}
 
-	xnvme_buf_virt_free(mem_handle);
+	free(mem_handle);
 
 	return 0;
 }
