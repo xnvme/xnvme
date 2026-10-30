@@ -1,0 +1,75 @@
+---
+name: gates-report
+
+# Keeps one comment on a pull-request saying what its latest 'verify' run gave:
+# the verdict of 'ci-result' and the table of gates it printed, so nobody digs
+# through the run's pages for it. It runs from main's workflow on
+# 'workflow_run', as a run of a pull-request from a fork has a token that cannot
+# comment. It reads the run's jobs and the log of its 'ci-result' from the API
+# and never runs the pull-request's code; as that code wrote the log, only lines
+# of the form the table has are taken from it. A run whose head is no longer the
+# head of its pull-request, as one a newer push cancelled, is not reported.
+on:
+  workflow_run:
+    workflows: [verify]
+    types: [completed]
+
+concurrency:
+  group: gates-report-${{ github.event.workflow_run.head_branch }}-${{ github.event.workflow_run.head_repository.full_name
+    }}
+  cancel-in-progress: false
+
+jobs:
+  report:
+    if: github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+
+    steps:
+    - name: Grab source
+      uses: actions/checkout@v6
+      with:
+        sparse-checkout: toolbox/gha_gates.py
+        sparse-checkout-cone-mode: false
+
+    - name: Write or update the comment
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+        RUN: ${{ github.event.workflow_run.id }}
+        ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+        SHA: ${{ github.event.workflow_run.head_sha }}
+        URL: ${{ github.event.workflow_run.html_url }}
+      run: |
+        pr=$(gh api --paginate "repos/$REPO/pulls?state=open&per_page=100" \
+          --jq ".[] | select(.head.sha == \"$SHA\") | .number" | head -n1)
+        if [ -z "$pr" ]; then
+          echo "No open pull-request has $SHA as its head; nothing to report"
+          exit 0
+        fi
+        gh api --paginate "repos/$REPO/actions/runs/$RUN/attempts/$ATTEMPT/jobs?per_page=100" \
+          --jq '.jobs[] | {name, conclusion, id}' | jq -s . > jobs.json
+        job=$(jq -r '.[] | select(.name == "ci-result") | .id' jobs.json | head -n1)
+        if [ -n "$job" ]; then
+          gh api "repos/$REPO/actions/jobs/$job/logs" > ci-result.log || : > ci-result.log
+        else
+          : > ci-result.log
+        fi
+        if ! python3 toolbox/gha_gates.py report --sha "$SHA" --attempt "$ATTEMPT" --url "$URL" \
+          --log ci-result.log < jobs.json > body.md; then
+          echo "The run gave no ci-result; nothing to report"
+          exit 0
+        fi
+        cat body.md
+        marker=$(head -n1 body.md)
+        id=$(gh api --paginate "repos/$REPO/issues/$pr/comments?per_page=100" \
+          --jq ".[] | select(.user.login == \"github-actions[bot]\") | select(.body | startswith(\"$marker\")) | .id" \
+          | head -n1)
+        if [ -n "$id" ]; then
+          gh api -X PATCH "repos/$REPO/issues/comments/$id" -F body=@body.md --jq .html_url
+        else
+          gh api "repos/$REPO/issues/$pr/comments" -F body=@body.md --jq .html_url
+        fi

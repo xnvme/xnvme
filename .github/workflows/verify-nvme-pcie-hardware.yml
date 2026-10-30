@@ -2,7 +2,7 @@
 name: verify-nvme-pcie-hardware
 
 # Verify xNVMe on the lab machines, called by 'verify' for a pull-request
-# labelled 'hardware', and by a manual run.
+# labelled 'gate:hardware', and by a manual run.
 on:
   workflow_call:
 

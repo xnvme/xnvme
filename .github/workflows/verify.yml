@@ -5,10 +5,14 @@ name: verify
 # nothing again: the 'publish' workflow deploys the docs and releases from the
 # artifacts of the pull-request that was merged. A manual run on any branch
 # runs the jobs its 'job' names, 'all' every one. A draft runs nothing;
-# marking it ready for review starts its first run.
+# marking it ready for review starts its first run. Beside a fixed set of jobs,
+# a 'gate:' label on a pull-request adds the jobs it names to the run; changing
+# one starts no run. The 'gates' job reads the labels when a run starts, so
+# re-running it alone picks up a label changed since, and reruns only what
+# needs it: the gated jobs and 'ci-result'.
 on:
   pull_request:
-    types: [opened, reopened, synchronize, labeled, ready_for_review]
+    types: [opened, reopened, synchronize, ready_for_review]
     branches: [main]
   # Weekly, so the benchmarks keep being exercised
   schedule:
@@ -42,12 +46,12 @@ defaults:
 jobs:
   #
   # Classify a pull-request: when it changes nothing but the documentation, then
-  # the jobs building and verifying the code are skipped, and only
-  # 'docgen-shallow' and 'docgen-full' build the documentation, the latter so
-  # that 'publish' has it to deploy. A changed .cmd file counts as code, since
-  # only the guest of 'docgen-full' runs it. Manual and weekly runs are not
-  # classified. When the classification fails, then the change does not count
-  # as documentation-only, and everything runs.
+  # the fixed jobs building the code are skipped. The gated jobs do not look at
+  # this; their labels decide, so a gate a maintainer opens on such a change
+  # runs. A changed .cmd file counts as code, since only the guest of
+  # 'docgen-full' runs it. Manual and weekly runs are not classified. When the
+  # classification fails, then the change does not count as documentation-only,
+  # and everything runs.
   #
   changes-to-docs:
     if: github.event.pull_request.draft != true
@@ -81,6 +85,75 @@ jobs:
           docs_prose_only=true
         fi
         echo "docs_prose_only=$docs_prose_only" | tee -a "$GITHUB_OUTPUT"
+
+  #
+  # The gates of a pull-request: the labels it carries, as they are when the run
+  # starts, read from the API rather than the event, which a re-run replays with
+  # the labels it had. On the first attempt of the run the 'labeler' workflow
+  # also starts, it adds the labels the changed files call for by
+  # .github/labeler.yml, which it may not have added yet. The rules and the
+  # script are the base branch's, as the labeler's are, so a pull-request does
+  # not decide its own gates by changing them
+  #
+  gates:
+    if: github.event.pull_request.draft != true
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      docgen: ${{ steps.read.outputs.docgen }}
+      emulated: ${{ steps.read.outputs.emulated }}
+      gpu: ${{ steps.read.outputs.gpu }}
+      hardware: ${{ steps.read.outputs.hardware }}
+      perf: ${{ steps.read.outputs.perf }}
+      rdma: ${{ steps.read.outputs.rdma }}
+
+    steps:
+    - name: Grab the rules and the script of the base branch
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.pull_request.base.sha || github.sha }}
+        path: base
+        sparse-checkout: |
+          .github/labeler.yml
+          toolbox/gha_gates.py
+        sparse-checkout-cone-mode: false
+
+    # Only for the pull-request that adds them, as the base has none yet
+    - name: Grab the rules and the script of the pull-request
+      if: hashFiles('base/toolbox/gha_gates.py') == ''
+      uses: actions/checkout@v6
+      with:
+        path: base
+        sparse-checkout: |
+          .github/labeler.yml
+          toolbox/gha_gates.py
+        sparse-checkout-cone-mode: false
+
+    - name: Read the labels, and those the changed files call for
+      id: read
+      env:
+        GH_TOKEN: ${{ github.token }}
+        EVENT: ${{ github.event_name }}
+        ACTION: ${{ github.event.action }}
+        ATTEMPT: ${{ github.run_attempt }}
+        PR: ${{ github.event.pull_request.number }}
+        REPO: ${{ github.repository }}
+      run: |
+        labels=""
+        if [ "$EVENT" = "pull_request" ]; then
+          labels=$(gh api "repos/$REPO/issues/$PR/labels" --jq '.[].name')
+          python3 -m venv /tmp/gates
+          /tmp/gates/bin/pip install -q pyyaml
+          files=$(gh api --paginate "repos/$REPO/pulls/$PR/files?per_page=100" --jq '.[].filename')
+          called=$(/tmp/gates/bin/python base/toolbox/gha_gates.py labels --rules base/.github/labeler.yml \
+            --action "$ACTION" --attempt "$ATTEMPT" <<< "$files")
+          echo "labels: $(echo $labels)"
+          echo "called for by the changed files: $(echo $called)"
+          labels=$(printf '%s\n%s\n' "$labels" "$called")
+        fi
+        python3 base/toolbox/gha_gates.py open <<< "$labels" | tee -a "$GITHUB_OUTPUT"
 
   #
   # Produce a source-archive (with and without subprojects)
@@ -286,8 +359,8 @@ jobs:
   matrices:
     needs: [changes-to-docs]
     runs-on: ubuntu-24.04
-    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event.inputs.job == 'all' || github.event_name
-      == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'verify'))
+    if: github.event.inputs.job == 'all' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch'
+      && github.event.inputs.job == 'verify')
 
     outputs:
       nvme: ${{ steps.generate.outputs.nvme }}
@@ -379,9 +452,9 @@ jobs:
   # they share this run, so they use its artifacts and 'ci-result' checks them.
   #
   docgen-full:
-    needs: [changes-to-docs, source-archive, source-format-check, ffi-python]
-    if: github.event.inputs.job == 'all' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch'
-      && github.event.inputs.job == 'docgen')
+    needs: [changes-to-docs, source-archive, source-format-check, ffi-python, gates]
+    if: github.event.inputs.job == 'all' || (github.event_name == 'pull_request' && needs.gates.outputs.docgen == 'true')
+      || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'docgen')
     uses: ./.github/workflows/docgen-full.yml
     secrets: inherit
 
@@ -393,17 +466,15 @@ jobs:
       build_linux: ${{ needs.matrices.outputs.build_linux }}
 
   perf:
-    needs: [changes-to-docs, source-archive, source-format-check, ffi-python]
-    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'schedule' || (github.event_name
-      == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'perf')) || (github.event_name == 'workflow_dispatch'
-      && (github.event.inputs.job == 'perf' || github.event.inputs.job == 'all')))
+    needs: [gates, source-archive, source-format-check, ffi-python]
+    if: (github.event_name == 'schedule' || (github.event_name == 'pull_request' && needs.gates.outputs.perf == 'true') ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.job == 'perf' || github.event.inputs.job == 'all')))
     uses: ./.github/workflows/perf.yml
 
   verify-gpu-emulated:
-    needs: [source-archive, source-format-check, ffi-python, changes-to-docs]
-    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event.inputs.job == 'all' || (github.event_name
-      == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'gpu')) || (github.event_name == 'workflow_dispatch'
-      && github.event.inputs.job == 'verify'))
+    needs: [source-archive, source-format-check, ffi-python, gates]
+    if: (github.event.inputs.job == 'all' || (github.event_name == 'pull_request' && needs.gates.outputs.gpu == 'true') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'verify'))
     uses: ./.github/workflows/verify-gpu-emulated.yml
 
   verify-makefile:
@@ -412,31 +483,29 @@ jobs:
     uses: ./.github/workflows/verify-makefile.yml
 
   verify-nvme-pcie-emulated:
-    needs: [matrices, source-archive, source-format-check, ffi-python]
-    if: github.event.inputs.job == 'all' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch'
-      && github.event.inputs.job == 'verify')
+    needs: [matrices, source-archive, source-format-check, ffi-python, gates]
+    if: github.event.inputs.job == 'all' || (github.event_name == 'pull_request' && needs.gates.outputs.emulated == 'true')
+      || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'verify')
     uses: ./.github/workflows/verify-emulated.yml
     with:
       matrix: ${{ needs.matrices.outputs.nvme }}
 
   verify-nvme-pcie-hardware:
-    needs: [changes-to-docs, source-archive, source-format-check, ffi-python]
-    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event.inputs.job == 'all' || (github.event_name
-      == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'hardware')) || (github.event_name == 'workflow_dispatch'
-      && github.event.inputs.job == 'verify'))
+    needs: [gates, source-archive, source-format-check, ffi-python]
+    if: (github.event.inputs.job == 'all' || (github.event_name == 'pull_request' && needs.gates.outputs.hardware == 'true')
+      || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'verify'))
     uses: ./.github/workflows/verify-nvme-pcie-hardware.yml
 
   verify-nvme-rdma-emulated:
-    needs: [source-archive, source-format-check, ffi-python, changes-to-docs]
-    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event.inputs.job == 'all' || (github.event_name
-      == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'rdma')) || (github.event_name == 'workflow_dispatch'
-      && github.event.inputs.job == 'verify'))
+    needs: [source-archive, source-format-check, ffi-python, gates]
+    if: (github.event.inputs.job == 'all' || (github.event_name == 'pull_request' && needs.gates.outputs.rdma == 'true') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'verify'))
     uses: ./.github/workflows/verify-nvme-rdma-emulated.yml
 
   verify-nvme-tcp-emulated:
-    needs: [matrices, source-archive, source-format-check, ffi-python]
-    if: github.event.inputs.job == 'all' || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch'
-      && github.event.inputs.job == 'verify')
+    needs: [matrices, source-archive, source-format-check, ffi-python, gates]
+    if: github.event.inputs.job == 'all' || (github.event_name == 'pull_request' && needs.gates.outputs.emulated == 'true')
+      || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'verify')
     uses: ./.github/workflows/verify-emulated.yml
     with:
       matrix: ${{ needs.matrices.outputs.tcp }}
@@ -447,24 +516,37 @@ jobs:
     uses: ./.github/workflows/verify-packaging.yml
 
   #
-  # The one check that branch protection requires. It fails when any job failed or
-  # was cancelled. A pull-request changing code must also have run the hardware
-  # verification and the RDMA guest, which need the labels 'hardware' and 'rdma'; a
-  # documentation-only one needs the docs to build.
+  # The one check that branch protection requires. It fails when any job that ran
+  # failed or was cancelled, the jobs a label added among them, and when the
+  # source checks or the docs did not build. It requires no label: what a label
+  # adds counts once it runs, so a green 'ci-result' is as exhaustive as the
+  # labels the pull-request carried.
   #
   ci-result:
-    needs: [changes-to-docs, source-archive, source-format-check, ffi-python, ffi-rust, matrices, docgen-shallow, build, verify-makefile,
-      verify-nvme-pcie-emulated, verify-nvme-pcie-hardware, verify-nvme-rdma-emulated, verify-nvme-tcp-emulated, verify-packaging,
-      docgen-full]
+    needs: [changes-to-docs, gates, source-archive, source-format-check, ffi-python, ffi-rust, matrices, docgen-shallow, build,
+      verify-makefile, verify-nvme-pcie-emulated, verify-nvme-pcie-hardware, verify-nvme-rdma-emulated, verify-nvme-tcp-emulated,
+      verify-packaging, verify-gpu-emulated, perf, docgen-full]
     runs-on: ubuntu-24.04
     if: always() && github.event.pull_request.draft != true
 
     steps:
+    - name: Grab source
+      uses: actions/checkout@v6
+      with:
+        sparse-checkout: toolbox/gha_gates.py
+        sparse-checkout-cone-mode: false
+
+    - name: Summarize the gates
+      env:
+        RESULTS: ${{ toJSON(needs) }}
+      run: |
+        summary=$(python3 toolbox/gha_gates.py summary <<< "$RESULTS")
+        echo "$summary" | tee -a "$GITHUB_STEP_SUMMARY"
+        echo "::notice::$(tail -n1 <<< "$summary")"
+
     - name: Check the results of the jobs
       env:
         RESULTS: ${{ toJSON(needs) }}
-        EVENT: ${{ github.event_name }}
-        DOCS_PROSE_ONLY: ${{ needs.changes-to-docs.outputs.docs_prose_only }}
       run: |
         jq -r 'to_entries[] | "\(.key): \(.value.result)"' <<< "$RESULTS"
         bad=$(jq -r '[to_entries[] | select(.value.result == "failure" or .value.result == "cancelled") | .key] | join(" ")' \
@@ -473,18 +555,10 @@ jobs:
           echo "::error::Did not succeed: $bad"
           exit 1
         fi
-        required="source-format-check docgen-shallow"
-        if [ "$EVENT" = "pull_request" ] && [ "$DOCS_PROSE_ONLY" != "true" ]; then
-          required="$required verify-nvme-pcie-hardware verify-nvme-rdma-emulated"
-        fi
-        for job in $required; do
+        for job in source-format-check docgen-shallow; do
           result=$(jq -r --arg job "$job" '.[$job].result' <<< "$RESULTS")
           if [ "$result" != "success" ]; then
-            case "$job" in
-            verify-nvme-rdma-emulated) echo "::error::$job is required and was $result; a change to code needs the 'rdma' label" ;;
-            verify-nvme-pcie-hardware) echo "::error::$job is required and was $result; a change to code needs the 'hardware' label" ;;
-            *) echo "::error::$job is required and was $result" ;;
-            esac
+            echo "::error::$job is required and was $result"
             exit 1
           fi
         done

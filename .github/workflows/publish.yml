@@ -69,8 +69,8 @@ jobs:
         if [ "$(git rev-parse 'FETCH_HEAD^{tree}')" != "$(git rev-parse 'HEAD^{tree}')" ]; then
           missing "#$pr was behind main when merged, so its run tested another tree"
         fi
-        # ci-result decides whether a pull-request may merge, not the run's own
-        # conclusion, which jobs that ci-result does not count can fail
+        # ci-result decides whether a pull-request may merge, so the run it
+        # passed is the one to publish from, whatever the run's own conclusion
         run=""
         for id in $(gh run list --repo "$REPO" --workflow verify.yml --event pull_request \
           --commit "$(git rev-parse FETCH_HEAD)" --status completed --limit 20 \

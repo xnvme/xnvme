@@ -1,0 +1,62 @@
+---
+# The labels a pull-request's changed files call for, as the 'labeler' workflow
+# adds them when it leaves draft, and as the 'gates' job of 'verify' reads them
+# on the run that starts then. A rule only adds a label; one set by hand stays.
+# Globs take '*', '**' as a whole path segment, and '?'; toolbox/gha_gates.py
+# rejects anything else, as it would read it otherwise than the labeler does.
+'gate:emulated':
+- changed-files:
+  - any-glob-to-any-file:
+    - 'lib/**'
+    - 'include/**'
+    - 'tools/**'
+    - 'tests/**'
+    - 'examples/**'
+    - 'cijoe/**'
+    - 'subprojects/**'
+    - 'toolbox/pkgs/**'
+    - 'toolbox/*.py'
+    - 'python/**'
+    - '.github/workflows/**'
+    - 'meson.build'
+    - 'meson_options.txt'
+    - 'Makefile'
+
+'gate:hardware':
+- changed-files:
+  - any-glob-to-any-file:
+    - 'lib/upcie/**'
+    - 'lib/xnvme_be_linux*'
+    - 'lib/io_uring/**'
+    - 'include/**'
+
+'gate:gpu':
+- changed-files:
+  - any-glob-to-any-file:
+    - 'lib/upcie/*cuda*'
+    - 'lib/upcie/*hip*'
+    - 'lib/io_uring/*dmabuf*'
+    - '**/*cuda*'
+    - '**/*hip*'
+
+'gate:rdma':
+- changed-files:
+  - any-glob-to-any-file:
+    - 'lib/xnvme_be_spdk*'
+    - '**/*rdma*'
+    - '**/*fabrics*'
+
+'gate:perf':
+- changed-files:
+  - any-glob-to-any-file:
+    - 'tools/xnvmeperf/**'
+    - 'lib/upcie/**'
+    - 'lib/xnvme_queue*'
+
+'gate:docgen':
+- changed-files:
+  - any-glob-to-any-file:
+    - 'docs/**'
+    - 'tools/**'
+    - 'include/**'
+    - '*.md'
