@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Query the linker version
+ld -v || true
+
+# Query the (g)libc version
+ldd --version || true
+
+# The dependencies are the build inputs of the package in toolbox/nix; this
+# fetches them into the Nix store, so a build after it needs no network
+nix-build --no-out-link "$(dirname "$0")/../nix" -A inputDerivation
+

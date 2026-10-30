@@ -37,6 +37,15 @@ def test_every_pkgs_script_is_emitted_from_deps():
     assert scripts - names == set()
 
 
+def test_nixos_builds_its_package_in_its_deps_image():
+    build = yaml.safe_load((ROOT / ".github" / "workflows" / "build.yml").read_text())
+    run = "\n".join(step.get("run", "") for step in build["jobs"]["nixos"]["steps"])
+
+    assert "ghcr.io/xnvme/xnvme-deps-nixos-latest:main" in run
+    assert "toolbox/pkgs/nixos-latest-build.sh" in run
+    assert ("nixos", "latest") in emitted()
+
+
 def test_every_specialised_template_is_for_an_emitted_platform():
     templates = ROOT / "toolbox" / "pkgs" / "emitter" / "templates"
     names = {f"{os}-{ver}" for os, ver in emitted()}

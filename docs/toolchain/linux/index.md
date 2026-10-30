@@ -428,6 +428,49 @@ All tools and libraries are available via system package-manager.
 :::
 
 
+## NixOS (latest)
+
+Install the required toolchain and libraries by running the package installation
+script provided with the **xNVMe** repository, as shown below. Ensure that you
+have sufficient system privileges when doing so (e.g., run as `root` or with
+`sudo`):
+
+```bash
+sudo ./xnvme/toolbox/pkgs/nixos-latest.sh
+```
+
+Or, run the commands contained within the script manually:
+
+```{literalinclude} ../../../toolbox/pkgs/nixos-latest.sh
+:language: bash
+:lines: 8-
+```
+
+:::{note}
+A Docker-image is provided via `ghcr.io`, specifically
+`ghcr.io/xnvme/xnvme-deps-nixos-latest:main`. This Docker-image contains
+all the software described above.
+:::
+
+Then go ahead and configure, build and install using `meson`:
+
+```{literalinclude} ../../../toolbox/pkgs/nixos-latest-build.sh
+:language: bash
+:lines: 2-
+```
+
+
+:::{note}
+The script and the build use xNVMe's Nix package, ``toolbox/nix/package.nix``,
+which builds only on what Nix provides. **xNVMe** is then built without SPDK
+and libvfn, which it otherwise builds from source as meson subprojects, and
+NVMe devices are driven from user space by the uPCIe backend, which is
+included. ``nix-build toolbox/nix`` builds the package from your checkout, as
+shown above.
+
+:::
+
+
 ## Gentoo (latest)
 
 Install the required toolchain and libraries by running the package installation

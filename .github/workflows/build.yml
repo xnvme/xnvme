@@ -173,6 +173,27 @@ jobs:
         if-no-files-found: error
 
   #
+  # Build xNVMe as its Nix package, toolbox/nix/package.nix, in the deps image
+  # of NixOS. The image runs as a plain container rather than as the job's, as
+  # it has no loader for the actions' own programs.
+  #
+  nixos:
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'pull_request' || github.event.inputs.job == 'all'
+
+    steps:
+    - name: Retrieve and unpack the xNVMe source archive
+      uses: xnvme/actions/.github/actions/setup-source@main
+      with:
+        name: xnvme-src-archive
+
+    - name: Build and run the Nix package
+      run: |
+        docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src \
+          ghcr.io/xnvme/xnvme-deps-nixos-latest:main \
+          bash -e toolbox/pkgs/nixos-latest-build.sh
+
+  #
   # Build on macOS
   #
   macos:
