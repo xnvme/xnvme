@@ -500,6 +500,22 @@ platforms:
   aux:
   - [sys, [autoconf, build-essential, libtool]]
 
+- alias: NixOS
+  notes: |
+    The script and the build use xNVMe's Nix package, ``toolbox/nix/package.nix``,
+    which builds only on what Nix provides. **xNVMe** is then built without SPDK
+    and libvfn, which it otherwise builds from source as meson subprojects, and
+    NVMe devices are driven from user space by the uPCIe backend, which is
+    included. ``nix-build toolbox/nix`` builds the package from your checkout, as
+    shown above.
+  name: nixos
+  ver: [latest]
+  os: linux
+  mng: nix
+  drop: [libvfn]
+  alt: []
+  aux: []
+
 - alias: Gentoo
   notes: |
     In case you get ``error adding symbols: DSO missing from command line``,
