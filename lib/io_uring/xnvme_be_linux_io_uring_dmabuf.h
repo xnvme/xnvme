@@ -14,6 +14,10 @@ struct xnvme_dev;
 struct xnvme_queue_liburing;
 struct xnvme_io_uring_dmabuf;
 
+// Returns 0 when the kernel can register dma-bufs with io_uring, -ENOTSUP when not
+int
+xnvme_io_uring_dmabuf_supported(void);
+
 int
 xnvme_io_uring_dmabuf_ref(const struct xnvme_dev *dev, const void *vaddr, size_t nbytes);
 
