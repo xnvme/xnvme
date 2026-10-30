@@ -195,7 +195,9 @@ _entry_release(struct xnvme_io_uring_dmabuf_entry *entry)
 		_iommu_unmap(entry->map_handle);
 		dmabuf_import_detach(&entry->import);
 	}
-	close(entry->fd);
+	if (entry->fd >= 0) {
+		close(entry->fd);
+	}
 	memset(entry, 0, sizeof(*entry));
 	entry->fd = -1;
 }
@@ -468,6 +470,8 @@ xnvme_io_uring_dmabuf_add(const struct xnvme_dev *dev, void *vaddr, size_t nbyte
 			while (i--) {
 				_ring_update(registry->queues[i], index, -1);
 			}
+			// The caller still owns and closes 'fd' when this fails
+			registry->entries[index].fd = -1;
 			_entry_release(&registry->entries[index]);
 			goto exit;
 		}
