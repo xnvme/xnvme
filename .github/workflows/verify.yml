@@ -4,10 +4,11 @@ name: verify
 # Pull-requests run what it takes to get onto main, so main and its tags run
 # nothing again: the 'publish' workflow deploys the docs and releases from the
 # artifacts of the pull-request that was merged. A manual run on any branch
-# runs the jobs its 'job' names, 'all' every one.
+# runs the jobs its 'job' names, 'all' every one. A draft runs nothing;
+# marking it ready for review starts its first run.
 on:
   pull_request:
-    types: [opened, reopened, synchronize, labeled]
+    types: [opened, reopened, synchronize, labeled, ready_for_review]
     branches: [main]
   # Weekly, so the benchmarks keep being exercised
   schedule:
@@ -45,6 +46,7 @@ jobs:
   # as documentation-only, and everything runs.
   #
   changes-to-docs:
+    if: github.event.pull_request.draft != true
     runs-on: ubuntu-24.04
     outputs:
       docs_prose_only: ${{ steps.classify.outputs.docs_prose_only }}
@@ -143,6 +145,7 @@ jobs:
   # Check source-format using pre-commit
   #
   source-format-check:
+    if: github.event.pull_request.draft != true
     runs-on: ubuntu-24.04
     container: ghcr.io/xnvme/xnvme-devenv/host:v0.14.0
 
@@ -349,6 +352,7 @@ jobs:
   # schedules none of them.
   #
   docgen-shallow:
+    if: github.event.pull_request.draft != true
     runs-on: ubuntu-24.04
 
     steps:
@@ -449,7 +453,7 @@ jobs:
       verify-nvme-pcie-emulated, verify-nvme-pcie-hardware, verify-nvme-rdma-emulated, verify-nvme-tcp-emulated, verify-packaging,
       docgen-full]
     runs-on: ubuntu-24.04
-    if: always()
+    if: always() && github.event.pull_request.draft != true
 
     steps:
     - name: Check the results of the jobs
