@@ -3,7 +3,8 @@
 # run's iosizes and iodepths, of an xNVMe engine's IOPS over its native peer's.
 # Each is 95% of the lowest of five runs on main, the Windows ones of three
 # runs with the windowsaio fix, so a drop that fails is 5% beyond the variation
-# between runs.
+# between runs. xnvme_ioring/windowsaio is the exception, lowered after a run
+# on main's code measured 1.31, below the 1.37 its three runs gave.
 debian:
   io_uring-bdev_xnvme/io_uring-bdev_uring: 1.51
   io_uring-bdev_xnvme_conserve_cpu/io_uring-bdev_uring: 0.92
@@ -26,5 +27,5 @@ freebsd:
 windows:
   xnvme_iocp/windowsaio: 1.18
   xnvme_iocp_th/windowsaio: 1.00
-  xnvme_ioring/windowsaio: 1.37
+  xnvme_ioring/windowsaio: 1.25
   xnvme_null/null: 0.86
