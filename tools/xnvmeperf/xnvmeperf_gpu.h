@@ -5,6 +5,7 @@
 #ifndef __XNVMEPERF_GPU_H
 #define __XNVMEPERF_GPU_H
 
+#include <stddef.h>
 #include <stdint.h>
 #include <errno.h>
 
@@ -38,6 +39,16 @@ xnvmeperf_gpu_bounce_close(struct xnvmeperf_gpu *gpu);
 int
 xnvmeperf_htod_roofline(uint32_t gpu_id, uint32_t iosize, uint32_t nslots, uint32_t seconds,
 			double *gbps);
+
+/**
+ * Allocate an IO buffer of 'nbytes' in the memory of GPU 'gpu_id', for a backend that does IO
+ * on GPU memory, as io_uring_dmabuf does; NULL with errno set on failure
+ */
+void *
+xnvmeperf_gpu_buf_alloc(uint32_t gpu_id, size_t nbytes);
+
+void
+xnvmeperf_gpu_buf_free(void *buf);
 
 #else
 static inline int
@@ -83,6 +94,16 @@ xnvmeperf_htod_roofline(uint32_t XNVME_UNUSED(gpu_id), uint32_t XNVME_UNUSED(ios
 			double *XNVME_UNUSED(gbps))
 {
 	return -ENOSYS;
+}
+static inline void *
+xnvmeperf_gpu_buf_alloc(uint32_t XNVME_UNUSED(gpu_id), size_t XNVME_UNUSED(nbytes))
+{
+	errno = ENOSYS;
+	return NULL;
+}
+static inline void
+xnvmeperf_gpu_buf_free(void *XNVME_UNUSED(buf))
+{
 }
 #endif
 

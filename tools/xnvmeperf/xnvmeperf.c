@@ -312,7 +312,7 @@ io_buf_alloc(struct xnvme_dev *dev, const struct xnvmeperf_args *args)
 		return xnvme_buf_alloc(dev, args->iosize);
 	}
 
-	buf = xnvmeperf_cuda_buf_alloc(args->opts.gpu_id, args->iosize);
+	buf = xnvmeperf_gpu_buf_alloc(args->opts.gpu_id, args->iosize);
 	if (!buf) {
 		return NULL;
 	}
@@ -320,7 +320,7 @@ io_buf_alloc(struct xnvme_dev *dev, const struct xnvmeperf_args *args)
 	err = xnvme_mem_map(dev, buf, args->iosize);
 	if (err) {
 		xnvme_cli_perr("Failed: xnvme_mem_map()", err);
-		xnvmeperf_cuda_buf_free(buf);
+		xnvmeperf_gpu_buf_free(buf);
 		errno = -err;
 		return NULL;
 	}
@@ -333,7 +333,7 @@ io_buf_free(struct xnvme_dev *dev, const struct xnvmeperf_args *args, void *buf)
 {
 	if (args->gpu_buf) {
 		xnvme_mem_unmap(dev, buf);
-		xnvmeperf_cuda_buf_free(buf);
+		xnvmeperf_gpu_buf_free(buf);
 		return;
 	}
 
@@ -1397,8 +1397,9 @@ parse_run_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 	args->cpus = cli->args.cpus;
 
 	args->buf_host_bounce = cli->args.buf_host_bounce;
-	if (args->buf_host_bounce && args->opts.be &&
-	    (strstr(args->opts.be, "cuda") || strstr(args->opts.be, "hip"))) {
+	if (args->buf_host_bounce &&
+	    (args->gpu_buf ||
+	     (args->opts.be && (strstr(args->opts.be, "cuda") || strstr(args->opts.be, "hip"))))) {
 		err = -EINVAL;
 		fprintf(stderr,
 			"Error: --buf-host-bounce reads into host memory and copies to the GPU;"
