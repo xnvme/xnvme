@@ -26,10 +26,14 @@ on:
         - perf
         - docgen
 
-# A newer push or label on a pull-request supersedes its running run
+# A newer run cancels the one in progress: of a pull-request whatever started
+# it, so none is left to run superseded, and of a branch when started the same
+# way, by the schedule or by hand for the same 'job', so the weekly benchmarks
+# and a manual 'docgen' that 'publish' starts do not cancel each other
 concurrency:
-  group: verify-${{ github.event.pull_request.number || github.ref }}-${{ github.event.inputs.job || github.event_name }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: verify-${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || format('{0}-{1}',
+    github.ref, github.event.inputs.job || github.event_name) }}
+  cancel-in-progress: true
 
 defaults:
   run:

@@ -12,6 +12,8 @@ on:
   push:
     branches: [main]
 
+# Queued, never cancelled: a deploy or release cut off halfway could leave a tag
+# without its release
 concurrency:
   group: publish
   cancel-in-progress: false
