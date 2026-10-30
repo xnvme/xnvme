@@ -63,7 +63,7 @@ static inline int
 _rdma_ctrlr_resolve_addrinfo(struct xnvme_transport_ctrlr *ctrlr, const char *uri)
 {
 	struct xnvme_be_rdma_ctrlr *rdma_ctrlr = TO_RDMA_CTRLR(ctrlr);
-	char *cpy, *ip_addr = NULL, *port = NULL;
+	char *cpy, *saveptr = NULL, *ip_addr = NULL, *port = NULL;
 	int err;
 
 	cpy = strdup(uri);
@@ -73,11 +73,18 @@ _rdma_ctrlr_resolve_addrinfo(struct xnvme_transport_ctrlr *ctrlr, const char *ur
 	}
 
 	// TODO: change for IPv6 support
-	ip_addr = strtok(cpy, ":");
-	port = strtok(NULL, ":");
+	ip_addr = strtok_r(cpy, ":", &saveptr);
+	port = strtok_r(NULL, ":", &saveptr);
+	if (!ip_addr || !port) {
+		TRANSPORT_RDMACM_ERROR("FAILED: uri must be of the form <ip>:<port>, uri: %s",
+				       uri);
+		err = -EINVAL;
+		goto failed_getaddrinfo;
+	}
 
 	err = rdma_getaddrinfo(ip_addr, port, NULL, &rdma_ctrlr->res);
 	if (err) {
+		err = -errno;
 		TRANSPORT_RDMACM_ERROR("FAILED: rdma_getaddrinfo(), err: %d", err);
 		goto failed_getaddrinfo;
 	}
@@ -117,6 +124,23 @@ _rdma_ctrlr_free(struct xnvme_transport_ctrlr *ctrlr)
 	free(rdma_ctrlr);
 }
 
+// A failed connect leaves the admin qpair unusable, so replace it before trying another address
+static int
+_rdma_ctrlr_reset_admin_qpair(struct xnvme_transport_ctrlr *ctrlr)
+{
+	struct xnvme_transport_qpair_attr attr = ctrlr->admin_qpair->attr;
+	struct xnvme_dev *dev = ctrlr->admin_qpair->dev;
+	int err;
+
+	err = xnvme_transport_qpair_destroy(ctrlr->admin_qpair);
+	if (err) {
+		return err;
+	}
+	ctrlr->admin_qpair = NULL;
+
+	return xnvme_transport_qpair_create(ctrlr, dev, &attr, &ctrlr->admin_qpair);
+}
+
 static int
 _rdma_ctrlr_connect(struct xnvme_transport_ctrlr *ctrlr, const char *uri)
 {
@@ -139,11 +163,18 @@ _rdma_ctrlr_connect(struct xnvme_transport_ctrlr *ctrlr, const char *uri)
 
 		rdma_ctrlr->selected = ai;
 		err = xnvme_transport_qpair_connect(ctrlr->admin_qpair);
-		if (err) {
-			rdma_ctrlr->selected = NULL;
-			continue;
+		if (!err) {
+			break;
+		} else {
+			TRANSPORT_RDMACM_ERROR("FAILED: xnvme_transport_qpair_connect(), err: %d", err);
+			err = _rdma_ctrlr_reset_admin_qpair(ctrlr);
+			if (err) {
+				TRANSPORT_RDMACM_ERROR(
+					"FAILED: _rdma_ctrlr_reset_admin_qpair(), err: %d", err);
+				break;
+			}
 		}
-		break;
+		rdma_ctrlr->selected = NULL;
 	}
 
 	if (err) {
@@ -162,7 +193,7 @@ destroy_qp:
 		xnvme_transport_qpair_destroy(ctrlr->admin_qpair);
 		ctrlr->admin_qpair = NULL;
 	}
-	return -ENODEV;
+	return err;
 }
 
 static int
@@ -255,7 +286,7 @@ _rdma_ctrlr_dereg(struct xnvme_transport_ctrlr *XNVME_UNUSED(ctrlr), void *handl
 	err = ibv_dereg_mr(mr);
 	if (err) {
 		TRANSPORT_RDMACM_ERROR("FAILED: ibv_dereg_mr(), err: %d", err);
-		return -err;
+		return -err; // ibv_dereg_mr returns positive errno on failure, convert to negative
 	}
 
 	return 0;
@@ -297,6 +328,7 @@ static int
 _rdma_qpair_init(struct xnvme_transport_qpair *qpair)
 {
 	struct xnvme_be_rdma_qpair *rdma_qpair = TO_RDMA_QPAIR(qpair);
+	int flags;
 	int err;
 
 	rdma_qpair->event_channel = rdma_create_event_channel();
@@ -305,12 +337,20 @@ _rdma_qpair_init(struct xnvme_transport_qpair *qpair)
 		return -errno;
 	}
 
-	/* Non-blocking, so event waits can poll() the fd with a deadline */
-	err = fcntl(rdma_qpair->event_channel->fd, F_SETFL,
-		    fcntl(rdma_qpair->event_channel->fd, F_GETFL) | O_NONBLOCK);
+	// Non-blocking, so event waits can poll() the fd with a deadline
+	flags = fcntl(rdma_qpair->event_channel->fd, F_GETFL);
+	if (flags < 0) {
+		err = -errno;
+		TRANSPORT_CTRL_ERROR("FAILED: fcntl(F_GETFL), err: %d", err);
+		rdma_destroy_event_channel(rdma_qpair->event_channel);
+		rdma_qpair->event_channel = NULL;
+		return err;
+	}
+
+	err = fcntl(rdma_qpair->event_channel->fd, F_SETFL, flags | O_NONBLOCK);
 	if (err) {
 		err = -errno;
-		TRANSPORT_CTRL_ERROR("FAILED: fcntl(O_NONBLOCK), err: %d", err);
+		TRANSPORT_CTRL_ERROR("FAILED: fcntl(F_SETFL, O_NONBLOCK), err: %d", err);
 		rdma_destroy_event_channel(rdma_qpair->event_channel);
 		rdma_qpair->event_channel = NULL;
 		return err;
@@ -322,7 +362,7 @@ _rdma_qpair_init(struct xnvme_transport_qpair *qpair)
 	rdma_qpair->qp_init_attr.cap.max_recv_sge = 1;
 	rdma_qpair->qp_init_attr.cap.max_inline_data = NVME_CMD_CAPSULE_SIZE;
 	rdma_qpair->qp_init_attr.qp_type = IBV_QPT_RC;
-	/* Unused verbs metadata, point it at the qpair. */
+
 	rdma_qpair->qp_init_attr.qp_context = qpair;
 
 	return 0;
@@ -357,7 +397,7 @@ _rdma_qpair_teardown(struct xnvme_transport_qpair *qpair)
 		err = ibv_dereg_mr(rdma_qpair->send_mr);
 		if (err) {
 			TRANSPORT_CTRL_ERROR("FAILED: ibv_dereg_mr() for send_mr, err: %d", err);
-			return err;
+			return -err; // ibv_dereg_mr returns positive errno on failure, convert to negative
 		}
 		rdma_qpair->send_mr = NULL;
 	}
@@ -366,7 +406,7 @@ _rdma_qpair_teardown(struct xnvme_transport_qpair *qpair)
 		err = ibv_dereg_mr(rdma_qpair->recv_mr);
 		if (err) {
 			TRANSPORT_CTRL_ERROR("FAILED: ibv_dereg_mr() for recv_mr, err: %d", err);
-			return err;
+			return -err; // ibv_dereg_mr returns positive errno on failure, convert to negative
 		}
 		rdma_qpair->recv_mr = NULL;
 	}
@@ -388,6 +428,7 @@ _rdma_qpair_teardown(struct xnvme_transport_qpair *qpair)
 
 		err = rdma_destroy_id(rdma_qpair->cm_id);
 		if (err) {
+			err = -errno;
 			TRANSPORT_CTRL_ERROR("FAILED: rdma_destroy_id(), err: %d", err);
 			return err;
 		}
@@ -399,7 +440,7 @@ _rdma_qpair_teardown(struct xnvme_transport_qpair *qpair)
 		err = ibv_destroy_cq(rdma_qpair->send_cq);
 		if (err) {
 			TRANSPORT_CTRL_ERROR("FAILED: ibv_destroy_cq() for send_cq, err: %d", err);
-			return err;
+			return -err; // ibv_destroy_cq returns positive errno on failure, convert to negative
 		}
 		rdma_qpair->send_cq = NULL;
 	}
@@ -408,7 +449,7 @@ _rdma_qpair_teardown(struct xnvme_transport_qpair *qpair)
 		err = ibv_destroy_cq(rdma_qpair->recv_cq);
 		if (err) {
 			TRANSPORT_CTRL_ERROR("FAILED: ibv_destroy_cq() for recv_cq, err: %d", err);
-			return err;
+			return -err; // ibv_destroy_cq returns positive errno on failure, convert to negative
 		}
 		rdma_qpair->recv_cq = NULL;
 	}
@@ -456,6 +497,7 @@ _rdma_qpair_disconnect(struct xnvme_transport_qpair *qpair)
 
 	err = rdma_disconnect(rdma_qpair->cm_id);
 	if (err) {
+		err = -errno;
 		TRANSPORT_CTRL_ERROR("FAILED: rdma_disconnect(), err: %d", err);
 		return err;
 	}
@@ -470,7 +512,7 @@ _rdma_qpair_disconnect(struct xnvme_transport_qpair *qpair)
 	return err;
 }
 
-/* The core has already set the CID inside the capsule. */
+// The core has already set the CID inside the capsule.
 static int
 _rdma_qpair_submit(struct xnvme_transport_qpair *qpair, const void *capsule, size_t nbytes,
 		   uint16_t cid)
@@ -494,15 +536,21 @@ _rdma_qpair_submit(struct xnvme_transport_qpair *qpair, const void *capsule, siz
 	struct ibv_send_wr *bad_wr = NULL;
 	int err;
 
+	if (nbytes > qpair->attr.capsule_size) {
+		TRANSPORT_DATA_ERROR("FAILED: capsule of %zu bytes exceeds capsule_size", nbytes);
+		return -EINVAL;
+	}
+
 	if (nbytes <= (size_t)rdma_qpair->qp_init_attr.cap.max_inline_data) {
 		send_wr.send_flags |= IBV_SEND_INLINE;
 	} else {
-		sge.addr = (uintptr_t)rdma_qpair->send_buffer + cid * qpair->attr.capsule_size;
+		sge.addr = (uintptr_t)rdma_qpair->send_buffer +
+			   (size_t)cid * qpair->attr.capsule_size;
 		sge.lkey = rdma_qpair->send_mr->lkey;
 		memcpy((void *)sge.addr, capsule, nbytes);
 	}
 
-	err = ibv_post_send(rdma_qpair->cm_id->qp, &send_wr, &bad_wr);
+	err = -ibv_post_send(rdma_qpair->cm_id->qp, &send_wr, &bad_wr);
 	if (err) {
 		TRANSPORT_DATA_ERROR("FAILED: ibv_post_send(), err: %d", err);
 	}
@@ -510,7 +558,7 @@ _rdma_qpair_submit(struct xnvme_transport_qpair *qpair, const void *capsule, siz
 	return err;
 }
 
-/* upper-layer function to poke the RDMA qpair for completions */
+// upper-layer function to poke the RDMA qpair for completions
 static int
 _rdma_qpair_poll(struct xnvme_transport_qpair *qpair, uint32_t max)
 {
@@ -544,8 +592,9 @@ _rdma_top_recv_complete(struct xnvme_transport_qpair *qpair, void *buf, size_t l
 		break;
 
 	default:
-		TRANSPORT_FATAL("FAILED: capsule in unexpected state: %d", qpair->state);
-		break;
+		TRANSPORT_DATA_ERROR("FAILED: capsule in unexpected state: %d", qpair->state);
+		qpair->state = XNVME_TRANSPORT_QPAIR_STATE_ERROR;
+		return -EIO;
 	}
 
 	err = xnvme_transport_qpair_complete(qpair, cpl);

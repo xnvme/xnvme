@@ -10,9 +10,6 @@
 #include <string.h>
 #include <time.h>
 
-#include <libxnvme.h>
-#include <xnvme_be.h>
-
 #include <xnvme_transport_base.h>
 #include <xnvme_transport_spec_base.h>
 #include <xnvme_transport_debug.h>

@@ -9,7 +9,6 @@
 #include <pthread.h>
 #include <stddef.h>
 
-#include <libxnvme.h>
 #include <xnvme_be.h>
 #include <xnvme_dev.h>
 #include <xnvme_queue.h>
@@ -27,6 +26,9 @@
 #define XNVME_TRANSPORT_IO_QUEUE_ID_START XNVME_TRANSPORT_SYNC_QUEUE_ID
 
 #define TRANSPORT_ADMINQ_DYNAMIC_CTRLR_ID 0xffff
+
+// The keyed SGL length field is 24 bits wide
+#define TRANSPORT_KEYED_SGL_MAX_LEN 0xFFFFFFUL
 
 #define NVME_CMD_CAPSULE_SIZE sizeof(struct xnvme_spec_cmd_common)
 #define NVME_CPL_CAPSULE_SIZE sizeof(struct xnvme_spec_cpl)

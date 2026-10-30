@@ -2,11 +2,17 @@
 //
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <inttypes.h>
+#include <string.h>
+
 #include <xnvme_transport_base.h>
 #include <xnvme_transport_debug.h>
 #include <xnvme_transport_ctrlr.h>
 #include <xnvme_transport_fabric.h>
 #include <xnvme_transport_subsys.h>
+
+// The log buffer holds the header and this many entries
+#define TRANSPORT_DISCOVERY_MAX_ENTRIES 3
 
 #define TRANSPORT_DEBUG_CATEGORY TRANSPORT_DEBUG_CATEGORY_DISCOVERY
 
@@ -17,7 +23,8 @@ _transport_discovery_walk_log(struct xnvme_transport_ctrlr *ctrlr, void *buf)
 		(struct xnvme_spec_discovery_log_page *)buf;
 	struct xnvme_spec_discovery_log_page_entry *entry;
 	struct xnvme_transport_subsys *subsys;
-	uint32_t i;
+	uint64_t nentries;
+	uint64_t i;
 	int err;
 
 	if (!log_page) {
@@ -32,17 +39,34 @@ _transport_discovery_walk_log(struct xnvme_transport_ctrlr *ctrlr, void *buf)
 		"INFO: Discovery Log Page Header: genctr=%u, recfmt=%u, numrec=%u, tdlpl=%u",
 		log_page->genctr, log_page->recfmt, log_page->numrec, log_page->tdlpl);
 
-	for (i = 0; i < log_page->numrec; ++i) {
+	// NUMREC counts every record on the controller, only the requested ones were transferred
+	nentries = log_page->numrec;
+	if (nentries > TRANSPORT_DISCOVERY_MAX_ENTRIES) {
+		TRANSPORT_ERROR("FAILED: discovery log has %" PRIu64 " entries, only %d retrieved",
+				nentries, TRANSPORT_DISCOVERY_MAX_ENTRIES);
+		nentries = TRANSPORT_DISCOVERY_MAX_ENTRIES;
+	}
+
+	for (i = 0; i < nentries; ++i) {
 		entry = (struct xnvme_spec_discovery_log_page_entry
 				 *)((char *)log_page->first +
 				    i * sizeof(struct xnvme_spec_discovery_log_page_entry));
-		TRANSPORT_DEBUG("INFO: Discovery Log Entry %d:", i);
+		TRANSPORT_DEBUG("INFO: Discovery Log Entry %" PRIu64 ":", i);
 		xnvme_transport_hexdump_range(TRANSPORT_DEBUG_CATEGORY, entry, sizeof(*entry));
 
-		TRANSPORT_DEBUG(
-			"INFO: Discovery Log Entry %d Details: cntlid=%u, asqsz=%u, portid=%u", i,
-			entry->cntlid, entry->asqsz, entry->portid);
-		TRANSPORT_DEBUG("INFO: Discovery Log Entry %d Details: subnqn=%s", i,
+		TRANSPORT_DEBUG("INFO: Discovery Log Entry %" PRIu64
+				" Details: cntlid=%u, asqsz=%u, portid=%u",
+				i, entry->cntlid, entry->asqsz, entry->portid);
+
+		// The target controls these bytes, so require a terminator before using them as a
+		// string
+		if (!memchr(entry->subnqn, '\0', sizeof(entry->subnqn))) {
+			TRANSPORT_ERROR("FAILED: Discovery Log Entry %" PRIu64
+					" has an unterminated subnqn",
+					i);
+			continue;
+		}
+		TRANSPORT_DEBUG("INFO: Discovery Log Entry %" PRIu64 " Details: subnqn=%s", i,
 				entry->subnqn);
 
 		subsys = xnvme_transport_ctrlr_find_first_subsys(ctrlr, entry->subnqn);
@@ -78,7 +102,8 @@ xnvme_transport_discovery_get_log(struct xnvme_transport_ctrlr *ctrlr,
 	uint64_t offset = 0;
 
 	size = sizeof(struct xnvme_spec_discovery_log_page) +
-	       3 * sizeof(struct xnvme_spec_discovery_log_page_entry);
+	       TRANSPORT_DISCOVERY_MAX_ENTRIES *
+		       sizeof(struct xnvme_spec_discovery_log_page_entry);
 	buf = calloc(1, size);
 	if (!buf) {
 		TRANSPORT_ERROR("FAILED: allocate buffer for discovery log");
@@ -90,20 +115,23 @@ xnvme_transport_discovery_get_log(struct xnvme_transport_ctrlr *ctrlr,
 		TRANSPORT_ERROR("FAILED: xnvme_transport_ctrlr_reg(), err: %d", err);
 		goto free_log_buffer;
 	}
-	cmd->common.opcode = XNVME_SPEC_ADM_OPC_LOG; // Get Log Page
-	cmd->common.nsid = 0;                        // For discovery log, NSID is 0
-	cmd->common.fuse = 0;                        // No fused operation
-	cmd->common.psdt = 0b10;                     // SGL data transfer type
+	cmd->common.opcode = XNVME_SPEC_ADM_OPC_LOG;     // Get Log Page
+	cmd->common.nsid = 0;                            // For discovery log, NSID is 0
+	cmd->common.fuse = 0;                            // No fused operation
+	cmd->common.psdt = XNVME_SPEC_PSDT_SGL_MPTR_SGL; // SGL data transfer type
 
 	ndw = (size >> 2) - 1;
 	log->numdl = ndw & 0xFFFF;
 	log->numdu = (ndw >> 16) & 0xFFFF;
-	TRANSPORT_DEBUG("INFO: size=%lu", size);
+	TRANSPORT_DEBUG("INFO: size=%" PRIu64, size);
 	TRANSPORT_DEBUG("INFO: ndw: %u", ndw);
 	TRANSPORT_DEBUG("INFO: log->numdl: %u, log->numdu: %u", log->numdl, log->numdu);
 	log->lid = XNVME_SPEC_LOG_DISCOVERY;
 	// log->lsp = 0x2000; // Log Specific Parameter
 	log->csi = 0; // Command Set Identifier
+
+	log->lpol = offset & 0xFFFFFFFF; // Log Page Offset Low
+	log->lpou = offset >> 32;        // Log Page Offset Upper
 
 	xnvme_transport_keyed_sgl_init(sgl, buf, size, key);
 
@@ -112,9 +140,6 @@ xnvme_transport_discovery_get_log(struct xnvme_transport_ctrlr *ctrlr,
 		TRANSPORT_ERROR("FAILED: xnvme_transport_qpair_submit_sync(), err: %d", err);
 		goto deregister_log_buffer_mr;
 	}
-
-	log->lpol = offset & 0xFFFFFFFF; // Log Page Offset Low
-	log->lpou = offset >> 32;        // Log Page Offset Upper
 
 	if (xnvme_cmd_ctx_cpl_status(&ctx)) {
 		TRANSPORT_ERROR("FAILED: discovery log command completion status indicates error");

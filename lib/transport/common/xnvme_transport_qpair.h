@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/queue.h>
 
 #include <xnvme_transport_base.h>
@@ -25,9 +26,9 @@ struct xnvme_transport_req {
 	void *context;
 	uint16_t cid;
 	uint8_t complete;
-	uint16_t status;
 	uint8_t active;
-	uint8_t padding[9];
+	int status; ///< 0 on success, otherwise -errno
+	uint8_t padding[8];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_transport_req) == 32,
 		    "Unexpected size for xnvme_transport_req");
@@ -281,7 +282,7 @@ xnvme_transport_wait_for_completion(struct xnvme_transport_qpair *qpair,
 			break;
 
 		if (xnvme_transport_qpair_has_error(qpair)) {
-			req->status = ECONNRESET;
+			req->status = -ECONNRESET;
 			break;
 		}
 
@@ -310,13 +311,28 @@ xnvme_transport_qpair_submit_sync(struct xnvme_transport_qpair *qpair, struct xn
 
 /**
  * Points @ctx's command at @dbuf with a keyed SGL, using the key of the
- * registered buffer containing it.
+ * registered buffer containing it. A NULL or empty @dbuf yields an empty data block descriptor.
  */
 static inline int
 xnvme_transport_cmd_set_sgl(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 {
 	uint32_t key;
 	int err;
+
+	ctx->cmd.common.psdt = XNVME_SPEC_PSDT_SGL_MPTR_SGL;
+
+	// Commands without data carry a zeroed data block descriptor
+	if (!dbuf || !dbuf_nbytes) {
+		memset(&ctx->cmd.common.dptr.sgl, 0, sizeof(ctx->cmd.common.dptr.sgl));
+		return 0;
+	}
+
+	if (dbuf_nbytes > TRANSPORT_KEYED_SGL_MAX_LEN) {
+		_TRANSPORT_ERROR(TRANSPORT_DEBUG_CATEGORY_CMD_IO,
+				 "FAILED: transfer of %zu bytes exceeds the keyed SGL limit",
+				 dbuf_nbytes);
+		return -EINVAL;
+	}
 
 	err = xnvme_transport_registration_lookup_key(ctx->dev, dbuf, dbuf_nbytes, &key);
 	if (err) {
@@ -326,7 +342,6 @@ xnvme_transport_cmd_set_sgl(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 		return err;
 	}
 
-	ctx->cmd.common.psdt = 0b10;
 	xnvme_transport_keyed_sgl_init(&ctx->cmd.common.dptr.sgl, dbuf, dbuf_nbytes, key);
 
 	return 0;

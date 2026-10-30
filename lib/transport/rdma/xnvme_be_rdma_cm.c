@@ -7,6 +7,7 @@
 #endif
 
 #include <errno.h>
+#include <inttypes.h>
 #include <poll.h>
 
 #include <rdma/rdma_cma.h>
@@ -23,12 +24,12 @@
 #include <xnvme_be_rdma.h>
 #include <xnvme_be_rdma_transport.h>
 
-#define XNVME_BE_RDMA_MAX_RDMACM_TIMEOUT_NS 2000000000
-#define NSECS_IN_MS 1000000
+#define XNVME_BE_RDMA_MAX_RDMACM_TIMEOUT_MS 2000
+#define NSECS_IN_MS 1000000ULL
 
 /*
  * Bottom half: rdma_cm connection sequence. Transport-native, with no NVMe-oF
- * knowledge. It never calls up into the core.
+ * knowledge. It never calls up into the top half or the core.
  */
 
 #define TRANSPORT_DEBUG_CATEGORY TRANSPORT_DEBUG_CATEGORY_RDMACM
@@ -52,12 +53,14 @@ _rdma_cm_resolve_route(struct rdma_cm_id *cm_id, struct ibv_pd *pd,
 
 	err = rdma_create_qp(cm_id, pd, qp_init_attr);
 	if (err) {
+		err = -errno;
 		TRANSPORT_ERROR("FAILED: rdma_create_qp(), err: %d", err);
 		return err;
 	}
 
-	err = rdma_resolve_route(cm_id, XNVME_BE_RDMA_MAX_RDMACM_TIMEOUT_NS);
+	err = rdma_resolve_route(cm_id, XNVME_BE_RDMA_MAX_RDMACM_TIMEOUT_MS);
 	if (err) {
+		err = -errno;
 		TRANSPORT_ERROR("FAILED: rdma_resolve_route(), err: %d", err);
 		rdma_destroy_qp(cm_id);
 		return err;
@@ -143,6 +146,7 @@ _rdma_cm_send_connect(struct rdma_cm_id *cm_id, uint16_t qid, uint16_t qsize, ui
 
 	err = ibv_query_device(cm_id->verbs, &device_attr);
 	if (err) {
+		err = -err;
 		TRANSPORT_ERROR("FAILED: ibv_query_device(), err: %d", err);
 		return err;
 	}
@@ -161,6 +165,7 @@ _rdma_cm_send_connect(struct rdma_cm_id *cm_id, uint16_t qid, uint16_t qsize, ui
 
 	err = rdma_connect(cm_id, &conn_param);
 	if (err) {
+		err = -errno;
 		TRANSPORT_ERROR("FAILED: rdma_connect(), err: %d", err);
 		return err;
 	}
@@ -178,21 +183,20 @@ _rdma_cm_connect_qpair(struct xnvme_transport_qpair *qpair)
 
 	rdma_qpair->send_buffer = calloc(qpair->attr.qsize, qpair->attr.capsule_size);
 	if (!rdma_qpair->send_buffer) {
-		TRANSPORT_ERROR("FAILED: malloc() for send_buffer, err: %d", errno);
+		TRANSPORT_ERROR("FAILED: calloc() for send_buffer, err: %d", errno);
 		return -ENOMEM;
 	}
 
 	rdma_qpair->recv_buffer = calloc(qpair->attr.qsize, qpair->attr.completion_size);
 	if (!rdma_qpair->recv_buffer) {
-		TRANSPORT_ERROR("FAILED: malloc() for recv_buffer, err: %d", errno);
-		err = -errno;
+		TRANSPORT_ERROR("FAILED: calloc() for recv_buffer, err: %d", errno);
+		err = -ENOMEM;
 		goto free_send_buffer;
 	}
 
-	rdma_qpair->send_mr = ibv_reg_mr(rdma_ctrlr->pd, rdma_qpair->send_buffer,
-					 qpair->attr.qsize * qpair->attr.capsule_size,
-					 IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ |
-						 IBV_ACCESS_REMOTE_WRITE);
+	rdma_qpair->send_mr =
+		ibv_reg_mr(rdma_ctrlr->pd, rdma_qpair->send_buffer,
+			   qpair->attr.qsize * qpair->attr.capsule_size, IBV_ACCESS_LOCAL_WRITE);
 	if (!rdma_qpair->send_mr) {
 		TRANSPORT_ERROR("FAILED: ibv_reg_mr() for send_buffer, err: %d", errno);
 		err = -errno;
@@ -229,6 +233,7 @@ _rdma_cm_connect_qpair(struct xnvme_transport_qpair *qpair)
 
 		err = ibv_post_recv(rdma_qpair->cm_id->qp, &recv_wr, NULL);
 		if (err) {
+			err = -err;
 			TRANSPORT_ERROR("FAILED: ibv_post_recv(), err: %d", err);
 			goto destroy_qp;
 		}
@@ -264,21 +269,21 @@ free_send_buffer:
 	return err;
 }
 
-/* Waits for the next event on the qpair's channel, which must be of type @expected. */
+// Waits for the next event on the qpair's channel, which must be of type @expected.
 static int
 _rdma_cm_wait_event(struct xnvme_transport_qpair *qpair, enum rdma_cm_event_type expected)
 {
 	struct xnvme_be_rdma_qpair *rdma_qpair = TO_RDMA_QPAIR(qpair);
 	struct rdma_cm_event *event;
 	enum rdma_cm_event_type type;
-	struct xnvme_timer timer;
 	struct pollfd pfd = {.fd = rdma_qpair->event_channel->fd, .events = POLLIN};
-	uint64_t elapsed, start, now;
+	const uint64_t timeout_ns = XNVME_BE_RDMA_MAX_RDMACM_TIMEOUT_MS * NSECS_IN_MS;
+	uint64_t elapsed, start;
 	int err;
 
 	start = _xnvme_timer_clock_sample();
 	while (rdma_get_cm_event(rdma_qpair->event_channel, &event)) {
-		double left;
+		uint64_t left_ms;
 
 		if (errno != EAGAIN && errno != EWOULDBLOCK) {
 			err = -errno;
@@ -286,18 +291,16 @@ _rdma_cm_wait_event(struct xnvme_transport_qpair *qpair, enum rdma_cm_event_type
 			return err;
 		}
 
-		now = _xnvme_timer_clock_sample();
-		elapsed = now - start;
-		left = (XNVME_BE_RDMA_MAX_RDMACM_TIMEOUT_NS - elapsed) / NSECS_IN_MS;
-		if (left <= 0) {
-			TRANSPORT_ERROR(
-				"FAILED: rdma_get_cm_event() timed out, left=%lu, elapsed=%lu",
-				left, elapsed);
+		elapsed = _xnvme_timer_clock_sample() - start;
+		if (elapsed >= timeout_ns) {
+			TRANSPORT_ERROR("FAILED: rdma_get_cm_event() timed out, elapsed: %" PRIu64,
+					elapsed);
 			return -ETIMEDOUT;
 		}
+		left_ms = (timeout_ns - elapsed) / NSECS_IN_MS;
 
-		/* Sleep in the kernel until the channel is readable or the deadline passes */
-		if (poll(&pfd, 1, (int)left + 1) < 0 && errno != EINTR) {
+		// Sleep in the kernel until the channel is readable or the deadline passes
+		if (poll(&pfd, 1, (int)left_ms + 1) < 0 && errno != EINTR) {
 			err = -errno;
 			TRANSPORT_ERROR("FAILED: poll(), err: %d", err);
 			return err;
@@ -307,6 +310,7 @@ _rdma_cm_wait_event(struct xnvme_transport_qpair *qpair, enum rdma_cm_event_type
 	type = event->event;
 	err = rdma_ack_cm_event(event);
 	if (err) {
+		err = -errno;
 		TRANSPORT_ERROR("FAILED: rdma_ack_cm_event(), err: %d", err);
 		return err;
 	}
@@ -334,13 +338,15 @@ xnvme_be_rdma_cm_connect(struct xnvme_transport_qpair *qpair)
 	err = rdma_create_id(rdma_qpair->event_channel, &rdma_qpair->cm_id, qpair,
 			     ai->ai_port_space);
 	if (err) {
+		err = -errno;
 		TRANSPORT_ERROR("FAILED: rdma_create_id(), err: %d", err);
 		return err;
 	}
 
 	err = rdma_resolve_addr(rdma_qpair->cm_id, NULL, ai->ai_dst_addr,
-				XNVME_BE_RDMA_MAX_RDMACM_TIMEOUT_NS);
+				XNVME_BE_RDMA_MAX_RDMACM_TIMEOUT_MS);
 	if (err) {
+		err = -errno;
 		TRANSPORT_ERROR("FAILED: rdma_resolve_addr(), err: %d", err);
 		rdma_destroy_id(rdma_qpair->cm_id);
 		rdma_qpair->cm_id = NULL;
