@@ -332,19 +332,18 @@ xnvme_io_uring_dmabuf_term(const struct xnvme_dev *dev)
 	free(registry);
 }
 
-// Set the given slot of the buffer-table of the ring to the dma-buf 'fd', or
-// empty it when 'fd' is negative
+// Set slot 'index' of the buffer-table of 'ring_fd' to the dma-buf 'fd', for IO
+// on 'target_fd', or empty it when 'fd' is negative
 static int
-_ring_update(struct xnvme_queue_liburing *queue, uint32_t index, int fd)
+_ring_fd_update(int ring_fd, uint32_t index, int fd, int target_fd)
 {
-	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
 	struct xnvme_io_uring_regbuf_desc desc = {0};
 	struct io_uring_rsrc_update2 up = {0};
 	int err;
 
 	desc.type = (fd < 0) ? XNVME_IO_REGBUF_TYPE_EMPTY : XNVME_IO_REGBUF_TYPE_DMABUF;
 	desc.dmabuf_fd = (fd < 0) ? 0 : fd;
-	desc.target_fd = (fd < 0) ? 0 : state->fd;
+	desc.target_fd = (fd < 0) ? 0 : target_fd;
 
 	up.offset = index;
 	up.nr = 1;
@@ -352,14 +351,52 @@ _ring_update(struct xnvme_queue_liburing *queue, uint32_t index, int fd)
 	// NOTE: the kernel names this member 'flags'; liburing does not yet
 	up.resv = XNVME_IORING_RSRC_UPDATE_EXTENDED;
 
-	err = io_uring_register(queue->ring.ring_fd, IORING_REGISTER_BUFFERS_UPDATE, &up,
-				sizeof(up));
+	err = io_uring_register(ring_fd, IORING_REGISTER_BUFFERS_UPDATE, &up, sizeof(up));
 	if (err != 1) {
 		XNVME_DEBUG("FAILED: io_uring_register(BUFFERS_UPDATE), err: %d", err);
 		return (err < 0) ? err : -EIO;
 	}
 
 	return 0;
+}
+
+static int
+_ring_update(struct xnvme_queue_liburing *queue, uint32_t index, int fd)
+{
+	struct xnvme_be_linux_state *state = (void *)queue->base.dev->be.state;
+
+	return _ring_fd_update(queue->ring.ring_fd, index, fd, state->fd);
+}
+
+int
+xnvme_io_uring_dmabuf_supported(void)
+{
+	struct io_uring ring;
+	int err;
+
+	err = io_uring_queue_init(1, &ring, 0);
+	if (err) {
+		XNVME_DEBUG("FAILED: io_uring_queue_init(), err: %d", err);
+		return err;
+	}
+
+	err = io_uring_register_buffers_sparse(&ring, 1);
+	if (err) {
+		XNVME_DEBUG("FAILED: io_uring_register_buffers_sparse(), err: %d", err);
+		goto exit;
+	}
+
+	// A kernel without the series rejects the extended form with -EINVAL
+	err = _ring_fd_update(ring.ring_fd, 0, -1, -1);
+	if (err) {
+		XNVME_DEBUG("INFO: the kernel cannot register dma-bufs with io_uring");
+		err = -ENOTSUP;
+	}
+
+exit:
+	io_uring_queue_exit(&ring);
+
+	return err;
 }
 
 int
