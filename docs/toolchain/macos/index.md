@@ -19,12 +19,6 @@ Or, run the commands contained within the script manually:
 :lines: 8-
 ```
 
-:::{note}
-A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-macos-26:main`. This Docker-image contains
-all the software described above.
-:::
-
 Then go ahead and configure, build and install using `meson`:
 
 ```{literalinclude} ../../../toolbox/pkgs/default-build.sh
@@ -56,12 +50,6 @@ Or, run the commands contained within the script manually:
 :lines: 8-
 ```
 
-:::{note}
-A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-macos-15:main`. This Docker-image contains
-all the software described above.
-:::
-
 Then go ahead and configure, build and install using `meson`:
 
 ```{literalinclude} ../../../toolbox/pkgs/default-build.sh
@@ -92,12 +80,6 @@ Or, run the commands contained within the script manually:
 :language: bash
 :lines: 8-
 ```
-
-:::{note}
-A Docker-image is provided via `ghcr.io`, specifically
-`ghcr.io/xnvme/xnvme-deps-macos-14:main`. This Docker-image contains
-all the software described above.
-:::
 
 Then go ahead and configure, build and install using `meson`:
 

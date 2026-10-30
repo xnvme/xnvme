@@ -1,3 +1,4 @@
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -41,7 +42,7 @@ def test_nixos_builds_its_package_in_its_deps_image():
     build = yaml.safe_load((ROOT / ".github" / "workflows" / "build.yml").read_text())
     run = "\n".join(step.get("run", "") for step in build["jobs"]["nixos"]["steps"])
 
-    assert "ghcr.io/xnvme/xnvme-deps-nixos-latest:main" in run
+    assert "ghcr.io/xnvme/xnvme/distro-deps-nixos-latest:main" in run
     assert "toolbox/pkgs/nixos-latest-build.sh" in run
     assert ("nixos", "latest") in emitted()
 
@@ -77,3 +78,22 @@ def test_a_deps_container_is_built_for_every_linux_distribution():
     assert built == linux
     for script in built:
         assert (ROOT / "toolbox" / "pkgs" / f"{script}.sh").is_file()
+
+
+def test_nothing_uses_the_images_of_xnvme_docker():
+    """Its images are no longer built; a reference to one pins a stale image"""
+
+    # Tracked files only, as a local docs build may hold old pages
+    tracked = subprocess.run(
+        ["git", "ls-files", ".github", "docs"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.split()
+    stale = [
+        path
+        for path in tracked
+        if "ghcr.io/xnvme/xnvme-deps-" in (ROOT / path).read_text(errors="ignore")
+    ]
+    assert stale == []

@@ -28,7 +28,7 @@ jobs:
         include: ${{ fromJSON(inputs.build_linux) }}
 
     container:
-      image: ghcr.io/xnvme/xnvme-deps-${{ matrix.os }}-${{ matrix.ver }}:main
+      image: ghcr.io/xnvme/xnvme/distro-deps-${{ matrix.os }}-${{ matrix.ver }}:main
 
     steps:
     - name: Container-preparation, openSUSE does not have tar and gzip...
@@ -190,7 +190,7 @@ jobs:
     - name: Build and run the Nix package
       run: |
         docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src \
-          ghcr.io/xnvme/xnvme-deps-nixos-latest:main \
+          ghcr.io/xnvme/xnvme/distro-deps-nixos-latest:main \
           bash -e toolbox/pkgs/nixos-latest-build.sh
 
   #
