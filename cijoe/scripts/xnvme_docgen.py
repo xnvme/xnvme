@@ -59,8 +59,8 @@ def main(args, cijoe):
         "pipx ensurepath",
         "pipx install kmdo",
         # Ensure deterministic device naming before capturing command outputs
-        "xnvme-driver",
-        "xnvme-driver reset",
+        "xnvme driver --be upcie --all --force",
+        "xnvme driver --be posix --all",
         "udevadm settle",  # Wait for device nodes to be created
         "ldconfig",
         "sync; echo 1 > /proc/sys/vm/drop_caches",
@@ -112,7 +112,7 @@ def main(args, cijoe):
         with state_file.open() as f:
             state = yaml.safe_load(f) or {}
         cmd = (state.get("cmd") or "").strip()
-        if cmd.startswith(("xnvme ", "xnvmeperf ")):
+        if cmd.startswith("xnvme "):
             initiator_cmds.append(cmd)
     if initiator_cmds:
         (transport_static / "initiator.txt").write_text(

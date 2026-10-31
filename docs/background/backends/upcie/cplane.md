@@ -14,7 +14,7 @@ runs on its own, and one that names a server nobody runs fails to open with
 
 ```bash
 # The server holds the controller for as long as it runs
-homi serve --homi-id 1 --be upcie 0000:03:00.0
+xnvme homi serve --homi-id 1 --be upcie 0000:03:00.0
 
 # Clients name the same id and connect to it
 xnvme info 0000:03:00.0 --be upcie --homi-id 1

@@ -3,4 +3,4 @@
 # user's Nix profile, which puts its tools on the PATH
 nix-build toolbox/nix -o result
 nix-env --install ./result
-xnvme library-info
+xnvme env library

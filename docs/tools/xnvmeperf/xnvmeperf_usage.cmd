@@ -1,1 +1,1 @@
-xnvmeperf --help
+xnvme perf --help

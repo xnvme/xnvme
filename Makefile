@@ -343,7 +343,7 @@ guest-start:
 		guest_check
 	@echo "## xNVMe: guest-start [DONE]"
 
-PROVISION_STEPS = xnvme_source_sync xnvme_build_prep test_deps xnvme_build xnvme_install ldconfig stabilize_nvme_naming xnvme_bindings_py_install_tgz fio_prep
+PROVISION_STEPS = xnvme_source_sync xnvme_build_prep test_deps test_tools xnvme_build xnvme_install ldconfig stabilize_nvme_naming xnvme_bindings_py_install_tgz fio_prep
 PROVISION_STEPS_WINDOWS = xnvme_source_sync xnvme_build_prep xnvme_build xnvme_install
 
 define guest-provision-help
@@ -869,25 +869,10 @@ gen-artifacts: gen-src-archive-with-subprojects
 	ls -l /tmp/artifacts
 	@echo "## xNVMe: make gen-artifacts [DONE]"
 
-define gen-bash-completions-help
-# Helper-target to produce Bash-completions for tools (tools, examples, tests)
-#
-# NOTE: This target requires a bunch of things: binaries must be built and
-# residing in '$(BUILD_DIR)/tools' etc. AND installed on the system. Also, the find
-# command has only been tried with GNU find
-endef
-.PHONY: gen-bash-completions
-gen-bash-completions:
-	@echo "## xNVMe: make gen-bash-completions"
-	python3 ./$(TOOLBOX_DIR)/xnvmec_generator.py cpl --output $(TOOLBOX_DIR)/bash_completion.d
-	@echo "## xNVMe: make gen-bash-completions [DONE]"
-
 define gen-man-pages-help
 # Helper-target to produce man pages for tools (tools, examples, tests)
 #
-# NOTE: This target requires a bunch of things: binaries must be built and
-# residing in '$(BUILD_DIR)/tools' etc. AND installed on the system. Also, the find
-# command has only been tried with GNU find
+# NOTE: This target requires the binaries built in '$(BUILD_DIR)', and 'txt2man'
 endef
 .PHONY: gen-man-pages
 gen-man-pages:

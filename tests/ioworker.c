@@ -692,8 +692,8 @@ static struct xnvme_cli_sub g_subs[] = {
 };
 
 static struct xnvme_cli g_cli = {
-	.title = "Test xNVMe basic buffer alloc/free",
-	.descr_short = "Test xNVMe basic buffer alloc/free",
+	.title = "Test I/O workers writing, then reading back and comparing",
+	.descr_short = "Write, then read back and compare, with several commands in flight",
 	.subs = g_subs,
 	.nsubs = sizeof g_subs / sizeof(*g_subs),
 };

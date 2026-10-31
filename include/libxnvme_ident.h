@@ -23,7 +23,8 @@ struct xnvme_ident {
 	uint8_t csi;
 
 	char kernel_driver[32];
-	uint8_t rsvd[23];
+	char iommu_group[8]; ///< IOMMU group of a PCI function, empty when it has none
+	uint8_t rsvd[15];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_ident) == 704, "Incorrect size")
 
