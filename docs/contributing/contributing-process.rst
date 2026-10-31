@@ -73,7 +73,8 @@ The fixed set
      - The documentation, without a guest and so without running its commands
 
 A pull-request changing only ``docs/`` and top-level Markdown files skips the
-builds, the bindings, ``verify-makefile`` and ``verify-packaging``; a gate
+builds, the Rust bindings, ``verify-makefile`` and ``verify-packaging``, while
+the Python bindings still build, as the documentation needs them; a gate
 opened on it runs as on any other. A changed ``.cmd`` file counts as code,
 since only the guest runs the commands.
 
