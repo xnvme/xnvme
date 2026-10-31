@@ -108,6 +108,15 @@ against it::
   SSH session in the guest, as root, on the port the container publishes the
   guest's SSH on.
 
+* ``devenv-run`` runs ``CMD`` in the host container, starting it unless it is
+  running, and boots no guest. It is for what the **CI** runs in the container
+  itself, such as generating the man pages::
+
+    make devenv-run CMD='bash toolbox/pkgs/ubuntu-resolute.sh && make common install gen-man-pages'
+
+  ``devenv-host`` only starts the container, as ``devenv-up`` does before it
+  boots the guest.
+
 * ``devenv-down`` stops the guest and removes the container.
 
 The container's home is ``DEVENV_HOME`` (default ``.devenv`` in this tree),

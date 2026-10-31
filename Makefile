@@ -190,17 +190,44 @@ endef
 devenv-up:
 	@echo "## xNVMe: devenv-up ($(DEVENV_GUEST))"
 	@test -n "$(DEVENV_GUEST)" || { echo "ERR: no guest; give DEVENV_GUEST=<guest>"; false; }
+	$(MAKE) devenv-host
+	$(call DEVENV_RUN,make guest-env <<< "$(DEVENV_GUEST)" && \
+		python3 -c "$$DEVENV_SSH_CONFIG" cijoe/configs/$(DEVENV_GUEST).toml > /root/devenv-ssh.toml && \
+		flock /root/system_imaging/.lock make guest-start GUEST_CONFIGS="--config /root/devenv-ssh.toml")
+	$(MAKE) devenv-provision
+	@echo "## xNVMe: devenv-up [DONE]"
+
+define devenv-host-help
+# Start the xnvme-devenv host container, unless running, without a guest
+#
+# Optional: DEVENV_HOME, DEVENV_ENGINE=podman, DEVENV_IMAGE
+endef
+.PHONY: devenv-host
+devenv-host:
+	@echo "## xNVMe: devenv-host"
 	mkdir -p $(DEVENV_HOME) $(DEVENV_CACHE)
 	$(DEVENV_ENGINE) inspect $(DEVENV_NAME) >/dev/null 2>&1 || \
 		$(DEVENV_ENGINE) run -d --name $(DEVENV_NAME) --privileged --ulimit memlock=-1 -p 127.0.0.1::4200 \
 			-v $(CURDIR):/tmp/xnvme -v $(DEVENV_HOME):/root \
 			-v $(DEVENV_CACHE):/root/system_imaging -w /tmp/xnvme \
 			$(DEVENV_IMAGE) sleep infinity
-	$(call DEVENV_RUN,make guest-env <<< "$(DEVENV_GUEST)" && \
-		python3 -c "$$DEVENV_SSH_CONFIG" cijoe/configs/$(DEVENV_GUEST).toml > /root/devenv-ssh.toml && \
-		flock /root/system_imaging/.lock make guest-start GUEST_CONFIGS="--config /root/devenv-ssh.toml")
-	$(MAKE) devenv-provision
-	@echo "## xNVMe: devenv-up [DONE]"
+	@echo "## xNVMe: devenv-host [DONE]"
+
+define devenv-run-help
+# Run CMD in the host container, starting it unless running; no guest is
+# booted, so this is for what the CI runs in the container itself, such as
+# 'make common install gen-man-pages'
+#
+# Required: CMD=<command>; quote with double quotes inside it, and write a
+#           shell '$' as '$$', as make expands it first
+endef
+.PHONY: devenv-run
+devenv-run:
+	$(if $(strip $(CMD)),,$(error no command; give CMD=<command>))
+	$(MAKE) devenv-host
+	@echo "## xNVMe: devenv-run"
+	$(call DEVENV_RUN,$(CMD))
+	@echo "## xNVMe: devenv-run [DONE]"
 
 define devenv-provision-help
 # Build this tree's source archive and provision it into the running guest
