@@ -25,7 +25,9 @@ deb-dist                         ; Build the Debian packages from the source arc
 default                          ; Invoke: 'make help'
 devenv-docgen                    ; Generate the documentation in the running guest, from the source it has;
 devenv-down                      ; Stop the guest and remove the host container; DEVENV_HOME is kept
+devenv-host                      ; Start the xnvme-devenv host container, unless running, without a guest
 devenv-provision                 ; Build this tree's source archive and provision it into the running guest
+devenv-run                       ; Run CMD in the host container, starting it unless running; no guest is
 devenv-shell                     ; Open a shell in the host container
 devenv-ssh                       ; SSH into the guest as root, on the port the host container publishes it on
 devenv-sync                      ; Update the provisioned guest's source with this tree and rebuild only what
