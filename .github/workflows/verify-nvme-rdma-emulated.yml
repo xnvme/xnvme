@@ -18,7 +18,7 @@ jobs:
       GUEST_DIR: ubuntu-2610-rocm-amd64
 
     container:
-      image: ghcr.io/xnvme/xnvme-devenv/host:v0.14.0
+      image: ghcr.io/xnvme/xnvme-devenv/host:v0.15.0
       options: --privileged -v /mnt:/mnt
 
     steps:
