@@ -49,10 +49,14 @@ complete recipe combining async, sync, admin, dev, and mem implementations.
 
 Have a look at the existing implementations:
 
-* `lib/xnvme_platform_*.c` — platform registration and config arrays
-* `lib/xnvme_be_*.c` — backend implementations
-* `include/xnvme_be_registry.h` — extern declarations for all configs
+* `lib/platform/<os>/xnvme_platform_<os>.c`: platform registration, scan,
+  classify and the list of configs the OS offers
+* `lib/platform/<os>/xnvme_platform_<os>_configs.c`: the configs that combine
+  implementations from several directories
+* `lib/backend/<dir>/`: one directory per mechanism, such as `liburing`,
+  `posix` or `spdk`, and one per OS for its own interfaces, such as `linux`
+* `lib/backend/xnvme_be_registry.h`: extern declarations for all configs
 
 And the definition of the backend interface in:
 
-* `include/xnvme_be.h`
+* `lib/backend/xnvme_be.h`

@@ -28,9 +28,9 @@ space. See https://xnvme.io/
 # %%meson enables every 'auto' feature, so those without a system package to
 # build with, or needing a GPU toolkit, are disabled by name
 %meson \
-  -Dwith-spdk=disabled \
+  -Dbe_spdk=disabled \
   -Dwith-spdk-rdma=disabled \
-  -Dwith-libvfn=disabled \
+  -Dbe_libvfn=disabled \
   -Dwith-isal=disabled \
   -Dwith-cuda=disabled \
   -Dwith-hip=disabled \

@@ -1,0 +1,65 @@
+// SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
+#ifndef __INTERNAL_XNVME_BE_LIBURING_H
+#define __INTERNAL_XNVME_BE_LIBURING_H
+#include <libxnvme.h>
+#include <xnvme_be.h>
+
+extern struct xnvme_be_async g_xnvme_be_liburing_async;
+extern struct xnvme_be_async g_xnvme_be_liburing_async_dmabuf;
+extern struct xnvme_be_async g_xnvme_be_liburing_async_ucmd;
+extern struct xnvme_be_dev g_xnvme_be_liburing_dev_dmabuf;
+extern struct xnvme_be_mem g_xnvme_be_liburing_mem_dmabuf;
+
+#ifdef XNVME_BE_LIBURING_ENABLED
+#include <liburing.h>
+#include <xnvme_queue.h>
+
+#define XNVME_QUEUE_IOU_CQE_BATCH_MAX 8
+#define XNVME_QUEUE_IOU_BIGSQE        (0x1 << 2)
+
+struct xnvme_be_liburing_dmabuf;
+
+struct xnvme_queue_liburing {
+	struct xnvme_queue_base base;
+
+	struct io_uring ring;
+
+	uint8_t poll_io;
+	uint8_t poll_sq;
+	uint8_t batching;
+	int efd; // Completion event FD
+
+	struct xnvme_be_liburing_dmabuf *dmabuf; ///< dma-buf registry of the device, if any
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_liburing) == XNVME_BE_QUEUE_STATE_NBYTES,
+		    "Incorrect size")
+
+int
+xnvme_be_liburing_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
+			 size_t mbuf_nbytes);
+
+int
+xnvme_be_liburing_cmd_io_fixed(struct xnvme_cmd_ctx *ctx, uint16_t buf_index, uint64_t offset,
+			       size_t dbuf_nbytes);
+
+int
+xnvme_be_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
+			  size_t dvec_nbytes, void *mbuf, size_t mbuf_nbytes);
+
+int
+xnvme_be_liburing_poke(struct xnvme_queue *queue, uint32_t max);
+
+int
+xnvme_be_liburing_init(struct xnvme_queue *queue, int opts);
+
+int
+xnvme_be_liburing_term(struct xnvme_queue *queue);
+
+int
+xnvme_be_liburing_get_completion_fd(struct xnvme_queue *queue);
+#endif
+
+#endif /* __INTERNAL_XNVME_BE_LIBURING_H */

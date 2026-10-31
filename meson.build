@@ -98,18 +98,20 @@ conf_data.set('XNVME_VERSION_PATCH', project_version_patch)
 
 conf_data.set('XNVME_DEBUG_ENABLED', get_option('buildtype') == 'debug')
 
-conf_data.set('XNVME_BE_CBI_ADMIN_SHIM_ENABLED', get_option('cbi_admin_shim'))
-conf_data.set('XNVME_BE_CBI_ASYNC_EMU_ENABLED', get_option('cbi_async_emu'))
-conf_data.set('XNVME_BE_CBI_ASYNC_NIL_ENABLED', get_option('cbi_async_nil'))
-conf_data.set('XNVME_BE_CBI_ASYNC_POSIX_ENABLED', get_option('cbi_async_posix') and (is_linux or is_freebsd or is_darwin))
+is_posix = is_linux or is_freebsd or is_darwin
+be_posix = get_option('be_posix').require(is_posix, error_message: 'needs Linux, FreeBSD or macOS')
+if is_posix and be_posix.disabled()
+  error('-Dbe_posix=disabled: the Linux, FreeBSD and macOS backends take their memory and psync from posix')
+endif
+conf_data.set('XNVME_BE_POSIX_ENABLED', be_posix.allowed())
+conf_data.set('XNVME_BE_EMU_ENABLED', get_option('be_emu').allowed())
+conf_data.set('XNVME_BE_NIL_ENABLED', get_option('be_nil').allowed())
+conf_data.set('XNVME_BE_SHIM_ENABLED', get_option('be_shim').allowed())
 
 thread_dep = dependency('threads')
-conf_data.set('XNVME_BE_CBI_ASYNC_THRPOOL_ENABLED', get_option('cbi_async_thrpool'))
+conf_data.set('XNVME_BE_THRPOOL_ENABLED', get_option('be_thrpool').allowed())
 
-conf_data.set('XNVME_BE_CBI_MEM_POSIX_ENABLED', get_option('cbi_mem_posix') and (is_linux or is_freebsd or is_darwin))
-conf_data.set('XNVME_BE_CBI_SYNC_PSYNC_ENABLED', get_option('cbi_sync_psync') and (is_linux or is_freebsd or is_darwin))
-
-conf_data.set('XNVME_BE_RAMDISK_ENABLED', get_option('be_ramdisk'))
+conf_data.set('XNVME_BE_RAMDISK_ENABLED', get_option('be_ramdisk').allowed())
 # Header-only; the Linux platform code uses it even without the upcie backend
 if is_linux
   upcie_dep = subproject(
@@ -120,8 +122,9 @@ if is_linux
 else
   upcie_dep = dependency('', required: false)
 endif
-conf_data.set('XNVME_BE_UPCIE_ENABLED', get_option('be_upcie') and is_linux)
-if get_option('be_upcie') and is_linux
+be_upcie = get_option('be_upcie').require(is_linux, error_message: 'needs Linux').allowed()
+conf_data.set('XNVME_BE_UPCIE_ENABLED', be_upcie)
+if be_upcie
   # uPCIe headers (dmabuf.h: memfd_create + file sealing) need _GNU_SOURCE
   add_project_arguments('-D_GNU_SOURCE', language: 'c')
 endif
@@ -133,7 +136,7 @@ cuda_dep = dependency(
   required: get_option('with-cuda'),
 )
 conf_data.set('XNVME_CUDA_ENABLED', is_linux and cuda_dep.found() and get_option('with-cuda').allowed())
-conf_data.set('XNVME_BE_UPCIE_CUDA_ENABLED', get_option('be_upcie') and conf_data.get('XNVME_CUDA_ENABLED'))
+conf_data.set('XNVME_BE_UPCIE_CUDA_ENABLED', be_upcie and conf_data.get('XNVME_CUDA_ENABLED'))
 cuda_arch_args = []
 if conf_data.get('XNVME_BE_UPCIE_CUDA_ENABLED')
   add_languages('cuda', required: true, native: false)
@@ -141,7 +144,7 @@ if conf_data.get('XNVME_BE_UPCIE_CUDA_ENABLED')
 endif
 
 # uPCIe HIP/ROCm backend, linked against libamdhip64; hipcc builds only the
-# CQ mirror kernel's object (lib/upcie). Mirrors the CUDA backend above.
+# CQ mirror kernel's object (lib/backend/upcie). Mirrors the CUDA backend above.
 hip_dep = cc.find_library(
   'amdhip64',
   has_headers: ['hip/hip_runtime.h'],
@@ -149,7 +152,7 @@ hip_dep = cc.find_library(
   required: get_option('with-hip'),
 )
 conf_data.set('XNVME_HIP_ENABLED', is_linux and hip_dep.found() and get_option('with-hip').allowed())
-conf_data.set('XNVME_BE_UPCIE_HIP_ENABLED', get_option('be_upcie') and conf_data.get('XNVME_HIP_ENABLED'))
+conf_data.set('XNVME_BE_UPCIE_HIP_ENABLED', be_upcie and conf_data.get('XNVME_HIP_ENABLED'))
 if conf_data.get('XNVME_HIP_ENABLED')
   add_project_arguments('-D__HIP_PLATFORM_AMD__', language: 'c')
 endif
@@ -160,8 +163,9 @@ setupapi_dep = cc.find_library(
   required: is_windows,
 )
 conf_data.set('XNVME_PLATFORM_WINDOWS_ENABLED', setupapi_dep.found())
-conf_data.set('XNVME_BE_WINDOWS_FS_ENABLED', conf_data.get('XNVME_PLATFORM_WINDOWS_ENABLED'))
-conf_data.set('XNVME_BE_WINDOWS_ASYNC_ENABLED', conf_data.get('XNVME_PLATFORM_WINDOWS_ENABLED'))
+be_windows = conf_data.get('XNVME_PLATFORM_WINDOWS_ENABLED')
+conf_data.set('XNVME_BE_IOCP_ENABLED', get_option('be_iocp').require(be_windows, error_message: 'needs Windows').allowed())
+conf_data.set('XNVME_BE_IORING_ENABLED', get_option('be_ioring').require(be_windows, error_message: 'needs Windows').allowed())
 
 xnvme_cuse_has_fuse = is_linux ? cc.has_header('linux/fuse.h', required: get_option('with-cuse')) : false
 # Also gate on the 5.17+ NVME_IOCTL_IO64_CMD_VEC symbol, or an older kernel header degrades instead of failing the build.
@@ -184,32 +188,37 @@ conf_data.set(
   is_linux ? cc.has_member('struct blk_zone', 'capacity', prefix: '#include <linux/blkzoned.h>') : false,
 )
 
+be_libaio = get_option('be_libaio')
+be_libaio = be_libaio.require(is_linux, error_message: 'reads the Linux backend state')
 aio_dep = cc.find_library(
   'aio',
   has_headers: ['libaio.h'],
-  required: get_option('with-libaio'),
+  required: be_libaio,
 )
-conf_data.set('XNVME_BE_LINUX_LIBAIO_ENABLED', aio_dep.found())
+conf_data.set('XNVME_BE_LIBAIO_ENABLED', aio_dep.found())
 
+be_liburing = get_option('be_liburing')
+be_liburing = be_liburing.require(is_linux, error_message: 'reads the Linux backend state')
 uring_dep = dependency(
   'liburing',
   version: '>=2.2',
-  required: get_option('with-liburing'),
+  required: be_liburing,
 )
-conf_data.set('XNVME_BE_LINUX_LIBURING_ENABLED', uring_dep.found())
+conf_data.set('XNVME_BE_LIBURING_ENABLED', uring_dep.found())
 # The io_uring dma-buf UAPI is not in any liburing release, so the backend
 # defines it itself and finds out at runtime whether the kernel has it
 conf_data.set(
-  'XNVME_BE_LINUX_IO_URING_DMABUF_ENABLED',
-  uring_dep.found() and conf_data.get('XNVME_BE_CBI_MEM_POSIX_ENABLED') and (
+  'XNVME_BE_LIBURING_DMABUF_ENABLED',
+  uring_dep.found() and conf_data.get('XNVME_BE_POSIX_ENABLED') and (
     conf_data.get('XNVME_CUDA_ENABLED') or conf_data.get('XNVME_HIP_ENABLED')
   ),
 )
 
+be_libvfn = get_option('be_libvfn')
 libvfn_dep = dependency(
   'libvfn',
   version: '>=5.1.0',
-  required: get_option('with-libvfn')
+  required: be_libvfn
 )
 conf_data.set('XNVME_BE_LIBVFN_ENABLED', libvfn_dep.found())
 
@@ -218,10 +227,11 @@ isal_dep = dependency(
   version: '>=2.30',
   required: get_option('with-isal'),
 )
-conf_data.set('XNVME_BE_LINUX_LIBISAL_ENABLED', isal_dep.found())
+conf_data.set('XNVME_LIBISAL_ENABLED', isal_dep.found())
 
+be_spdk = get_option('be_spdk')
 if (is_linux or is_freebsd)
-  spdk_proj = subproject('spdk', required: get_option('with-spdk'))
+  spdk_proj = subproject('spdk', required: be_spdk)
   spdk_dep = spdk_proj.found() ? spdk_proj.get_variable('spdk_dep') : dependency('', required: false)
   spdk_rdma_enabled = spdk_proj.found() ? spdk_proj.get_variable('spdk_rdma_enabled') : false
 else
@@ -245,6 +255,7 @@ iokit_dep = dependency(
   required: is_darwin
 )
 conf_data.set('XNVME_PLATFORM_MACOS_ENABLED', corefoundation_dep.found() and iokit_dep.found())
+conf_data.set('XNVME_BE_DRIVERKIT_ENABLED', get_option('be_driverkit').require(conf_data.get('XNVME_PLATFORM_MACOS_ENABLED'), error_message: 'needs macOS').allowed())
 
 rt_dep = cc.find_library('rt', required: is_darwin ? false : (is_linux or is_freebsd))
 if not cc.has_function('clock_gettime', prefix: '#include <time.h>', dependencies: rt_dep)
@@ -285,7 +296,7 @@ configure_file(
 # The revision the sources came from, as 'xnvme_vcs.h'
 vcs_tag_py = meson.current_source_dir() / 'toolbox' / 'vcs_tag.py'
 xnvme_vcs_h = vcs_tag(
-  input: 'include/xnvme_vcs.h.in',
+  input: 'lib/util/xnvme_vcs.h.in',
   output: 'xnvme_vcs.h',
   command: [python3, vcs_tag_py],
   fallback: 'unknown',

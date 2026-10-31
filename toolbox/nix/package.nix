@@ -59,12 +59,12 @@ stdenv.mkDerivation {
 
   # Without SPDK and libvfn; the uPCIe backend drives NVMe from user space
   mesonFlags = [
-    (lib.mesonEnable "with-spdk" false)
-    (lib.mesonEnable "with-libvfn" false)
+    (lib.mesonEnable "be_spdk" false)
+    (lib.mesonEnable "be_libvfn" false)
     (lib.mesonEnable "with-cuda" false)
     (lib.mesonEnable "with-hip" false)
-    (lib.mesonEnable "with-libaio" true)
-    (lib.mesonEnable "with-liburing" true)
+    (lib.mesonEnable "be_libaio" true)
+    (lib.mesonEnable "be_liburing" true)
     (lib.mesonEnable "with-isal" true)
     (lib.mesonBool "build_subprojects" false)
     (lib.mesonOption "systemd_unitdir" "${placeholder "out"}/lib/systemd/system")

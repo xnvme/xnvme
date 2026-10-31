@@ -72,7 +72,7 @@ C: API
     variants, ``xnvme_buf_vtophys()``, ``xnvme_mem_map()``,
     ``xnvme_mem_unmap()``, ``xnvme_cuda_queue_create()`` and
     ``xnvme_cuda_queue_destroy()``; one process-wide lock serialises them
-    (``lib/xnvme_lock.c``)
+    (``lib/util/xnvme_lock.c``)
   - A queue, and the command contexts drawn from it, belongs to one thread at a
     time, and so do a device's synchronous and admin command paths
   - The device getters that identify the device on first use, such as
@@ -98,13 +98,53 @@ C: API
     instrumentation of not just the logic of the tool but also the library
     backend
 
-C: Backend Implementations
---------------------------
+C: Code organisation
+--------------------
 
-The backend interface is declared in the internal header ``xnvme_be.h``. It
-consists of function-pointers for different tasks grouped together in structs.
-Those different set of tasks are referred to as the function-interfaces, they
-are labeled / grouped by:
+Where code lives and what it is named follow from what it does, so new code
+has one place and one name. These rules are for people and coding agents
+alike: follow them rather than the nearest existing example, and where a case
+is not covered, raise it in review instead of inventing a convention.
+
+Layout
+~~~~~~
+
+* ``include/`` holds the public headers, ``libxnvme*.h``, and nothing else
+* ``lib/<group>/`` holds the implementation of the public API, where
+  ``lib/<group>/xnvme_<topic>.c`` implements ``include/libxnvme_<topic>.h``,
+  next to the private headers it shares, ``xnvme_<topic>.h``. The groups are
+  the ones the API documentation uses, ``NAMESPACES`` in
+  ``docs/tooling/xnvme_docs/apigen.py``, so a new public header goes in both
+
+  - ``util``: utilities the other groups use: the lock, CRCs, LBA helpers,
+    the version and the build configuration
+  - ``core``: devices, buffers, commands, queues, geometry, identifiers and
+    options
+  - ``nvme``: the NVMe command sets, the spec and its printers, topology and
+    protection information
+  - ``file``: the file API
+  - ``cli``: the command-line library the tools share
+
+  ``lib/meson.build`` lists ``util`` first, then ``backend`` and
+  ``platform``, which the public API is built on, then ``core``, ``nvme``,
+  ``file`` and ``cli``
+
+* ``lib/cuse/`` is a static library of its own for the tools, not part of
+  ``libxnvme``
+* ``lib/platform/`` holds what selects among the backend configs:
+  ``xnvme_platform.c``, the device-open loop, and per OS
+  ``lib/platform/<os>/xnvme_platform_<os>.c``, the scan, the classify and the
+  list of configs the OS offers
+* ``lib/backend/`` holds the backend interface, ``xnvme_be.h``, its shared
+  code, ``xnvme_be.c``, ``xnvme_be_cref.c`` and ``xnvme_be_nosys.c``, the
+  declarations of every config, ``xnvme_be_registry.h``, the state union,
+  ``xnvme_be_state.h``, and one directory per mechanism or OS
+
+The backend interface
+~~~~~~~~~~~~~~~~~~~~~
+
+A backend config, ``struct xnvme_be_config``, combines one implementation of
+each backend interface:
 
 * **dev** : device handles and device enumeration
 * **mem** : memory allocation for command-payloads aka buffers
@@ -112,35 +152,123 @@ are labeled / grouped by:
 * **sync** : synchronous I/O command processing
 * **async** : asynchronous I/O command submission/completion via queues
 
-Additionally, a backend-state is available for specialization to a given
-backend and its function-interface implementations.
+Directories in ``lib/backend/``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Should have a header-file defining the backend and what it exposes
+* A directory is either one mechanism, named after the library or interface it
+  uses, such as ``liburing``, ``libaio``, ``spdk``, ``upcie``, ``iocp``,
+  ``posix`` or ``thrpool``, or one OS's own interfaces, ``linux``,
+  ``freebsd``, ``macos`` and ``windows``
+* A mechanism gets its own directory even when only one OS has it, as
+  ``liburing`` and ``iocp`` do
+* What an OS provides itself, such as its NVMe-driver ioctls, stays in that
+  OS's directory even when every OS has an equivalent, since the equivalents
+  share no code
 
-  - Located in ``include/xnvme_be_<backend_name>.h``
-  - Have a state-struct named ``xnvme_be_<backend_name>_state``
-  - Provide ``extern struct xnvme_be_<interface> *`` definitions for the
-    interface implementations, these are used when "mixing-in" the
-    implementations into the backend
+Names
+~~~~~
 
-* Should be implemented in a file named ``lib/xnvme_be_<backend_name>_<interface>_<ident>.c``
+The prefix names what a file or symbol implements, and the rest names which
+one. Basenames are unique across ``lib/``, so every private header shares one
+include path.
 
-  - The ``<ident>`` is a name uniquely identifying the interface-implementation
-  - Example: the Linux backend, named **linux**, has the **async**
-    implementation of the **async** interface utilizing **io_uring** in a file
-    named: * ``xnvme_be_linux_async_liburing.c``
-  - Example: The SPDK backend, named **spdk**, has the **async** implementation
-    using the SPDK NVMe driver in a file named:
-    * ``xnvme_be_spdk_async_nvme.c``
+* ``g_xnvme_be_<dir>_<interface>[_<ident>]`` is an implementation of a backend
+  interface, in ``lib/backend/<dir>/xnvme_be_<dir>_<interface>[_<ident>].c``,
+  one implementation per file. The ``<ident>`` tells implementations of the
+  same interface apart, comes after the interface, and is left out when there
+  is only one
 
-* Should use static function declarations to avoid symbol-leak
+  - Example: ``g_xnvme_be_liburing_async_ucmd``, in
+    ``lib/backend/liburing/xnvme_be_liburing_async_ucmd.c``
+  - Example: ``g_xnvme_be_upcie_dev_cuda``, in
+    ``lib/backend/upcie/xnvme_be_upcie_dev_cuda.c``
 
-  - The ``cmd_io()`` backend interface function should be declared ``static int
-    cmd_io(...)``
+* ``xnvme_be_<dir>_<topic>.c`` holds code that more than one file of the
+  directory uses, such as ``xnvme_be_linux_nvme.c`` for the NVMe-driver ioctl
+  wrapper. A topic file defines no ``struct xnvme_be_<interface>``
+* ``xnvme_be_<dir>.h`` is the directory's header: the ``extern`` declarations
+  of its implementations and of its shared functions. A header that configs
+  outside the directory include, such as ``xnvme_be_liburing.h``, keeps what
+  needs the directory's external library behind its
+  ``XNVME_BE_<DIR>_ENABLED``, so it builds where the library is absent
 
-* In case an interface-function should be shared by other backends, then
-  provide the full "name", backend/interface/ident/function
+  - A topic whose declarations need headers the rest of the directory must
+    not see, such as a GPU runtime, gets ``xnvme_be_<dir>_<topic>.h``
 
-  - Example: for the Common Backend Implementations (CBI), the **sync**
-    implementation using **psync** for the **cmd_iov()** interface function,
-    then the function is named: ``xnvme_be_cbi_sync_psync_cmd_io()``
+* ``xnvme_be_<dir>_state.h`` holds the directory's state, ``struct
+  xnvme_be_<dir>_state``. It needs no external headers: a type from a
+  library or SDK is held behind a pointer or an integer of its size, so
+  ``lib/backend/xnvme_be_state.h`` can include every one of them
+* A function is ``static`` unless another file needs it, and is then named
+  ``xnvme_be_<dir>_<function>()`` and declared in ``xnvme_be_<dir>.h``, such
+  as ``xnvme_be_posix_sync_cmd_io()``. The exception is a function of the
+  public API that a backend implements, such as ``xnvme_cuda_queue_create()``
+* A config is named after the name ``--be`` selects it by, with ``-`` as
+  ``_``. One whose parts all come from one directory lives in
+  ``lib/backend/<dir>/xnvme_be_<dir>_configs.c`` as ``g_xnvme_be_<name>``,
+  such as ``g_xnvme_be_spdk`` and ``g_xnvme_be_upcie_cuda``. One that combines
+  directories lives with the platform that offers it, in
+  ``lib/platform/<os>/xnvme_platform_<os>_configs.c``, as
+  ``g_xnvme_platform_<os>_<name>``, such as
+  ``g_xnvme_platform_linux_libaio_bdev``. Every config is declared in
+  ``lib/backend/xnvme_be_registry.h``
+* A platform's files are ``xnvme_platform_<os>.c`` and
+  ``xnvme_platform_<os>_configs.c``
+* A mechanism directory has one build option, ``be_<dir>``, and one macro,
+  ``XNVME_BE_<DIR>_ENABLED``, which ``xnvme library-info`` lists. An OS
+  directory is built with its platform, ``XNVME_PLATFORM_<OS>_ENABLED``. A feature
+  within a directory is ``XNVME_BE_<DIR>_<FEATURE>_ENABLED``, such as
+  ``XNVME_BE_LINUX_BLOCK_ENABLED``; one outside the backend is
+  ``XNVME_<FEATURE>_ENABLED``, such as ``XNVME_LIBISAL_ENABLED``
+
+The backend state
+~~~~~~~~~~~~~~~~~
+
+* All implementations in a config share one state, ``dev->be.state``, and the
+  config's dev implementation decides its layout. ``lib/backend/xnvme_be_state.h``
+  lists every layout as a member of ``union xnvme_be_state``, and
+  implementations reach it through ``xnvme_be_state(dev)``, as in
+  ``&xnvme_be_state(dev)->linux_state``. Nothing casts ``dev->be.state``
+* Where implementations from another directory read the state, the layouts
+  share a first member, so the read is defined by C's rule on common initial
+  sequences, and the state header asserts it
+
+  - The posix and shim implementations read ``posix_state``, so the Linux,
+    FreeBSD and macOS states embed ``struct xnvme_be_posix_state`` as their
+    first member, ``posix``, asserted with ``XNVME_BE_POSIX_STATE_FIRST()``
+  - ``xnvme_platform_dev_open()`` stores a shared controller in ``ctrlr``, so
+    the states of the dev implementations that share controllers start with
+    ``ctrlr``, asserted with ``XNVME_BE_CTRLR_STATE_FIRST()``
+
+Dependencies
+~~~~~~~~~~~~
+
+* A directory that needs another directory, or an OS, says so in
+  ``meson.build``: its option requires the other, and the configure step fails
+  when the other is disabled or absent. liburing and libaio require Linux, and
+  posix cannot be disabled on Linux, FreeBSD and macOS, whose directories take
+  their memory and psync from it
+* A disabled directory keeps its implementations, compiled to the functions
+  of ``xnvme_be_nosys.h``. A config using a disabled ``emu``, ``nil``,
+  ``thrpool`` or ``shim`` stays and reports ``-ENOSYS``; one using any other
+  disabled directory is left out of the platform's list. ``nosys`` is for a
+  directory that is switched off, never a way to leave a broken dependency to
+  fail at runtime
+* A directory includes another directory's header only for what it uses
+
+Where new code goes
+~~~~~~~~~~~~~~~~~~~
+
+1. Part of the public API: ``lib/<group>/xnvme_<topic>.c``, declared in
+   ``include/libxnvme_<topic>.h``, with ``xnvme_<topic>`` added to the same
+   group in ``NAMESPACES``
+2. A new library or mechanism: a new directory, ``lib/backend/<name>/``, with
+   its header, its state header, one file per implementation, a
+   ``meson.build`` adding its sources and include directory, its option
+   ``be_<name>`` and macro ``XNVME_BE_<NAME>_ENABLED``, and its configs if
+   they need nothing from other directories
+3. Something an OS provides itself: that OS's directory,
+   ``lib/backend/<os>/``
+4. A config combining directories: the platform's
+   ``xnvme_platform_<os>_configs.c``, listed in the platform's preset table in
+   ``xnvme_platform_<os>.c`` and declared in ``xnvme_be_registry.h``
