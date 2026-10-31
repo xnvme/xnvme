@@ -456,6 +456,11 @@ class HomiServer:
     # Emitted by homi once it serves, or holds, every device it was given
     READY_MARKER = "HOMI started successfully"
 
+    # homi's own default host heap per device: the 64 MiB pool its clients draw from
+    # plus the 16 MiB it takes itself. Passed explicitly, so --host-heap-size is
+    # exercised without changing what the server gets.
+    HOST_HEAP_SIZE_PER_DEV = (64 + 16) * 1024 * 1024
+
     @staticmethod
     def is_running(cijoe):
         """Returns True when a homi server is running"""
@@ -547,6 +552,7 @@ class HomiServer:
         cijoe.run(f"rm -f {logfile}")
         cijoe.run(
             f"setsid stdbuf -oL homi serve {uris} --be {be} --homi-id {_homi_id} "
+            f"--host-heap-size {HomiServer.HOST_HEAP_SIZE_PER_DEV * len(devices)} "
             f"< /dev/null > {logfile} 2>&1 &"
         )
 

@@ -54,7 +54,7 @@ xnvmeperf_cuda_run_io(struct xnvme_dev **devs, const struct xnvmeperf_args *args
 int
 xnvmeperf_cuda_verify_io(struct xnvme_dev **devs, const struct xnvmeperf_args *args);
 int
-xnvmeperf_cuda_ctx_create(void **ctx);
+xnvmeperf_cuda_ctx_create(uint32_t gpu_id, void **ctx);
 int
 xnvmeperf_cuda_ctx_check(void *ctx);
 void
@@ -77,7 +77,7 @@ xnvmeperf_cuda_verify_io(struct xnvme_dev **XNVME_UNUSED(devs),
 }
 
 static inline int
-xnvmeperf_cuda_ctx_create(void **XNVME_UNUSED(ctx))
+xnvmeperf_cuda_ctx_create(uint32_t XNVME_UNUSED(gpu_id), void **XNVME_UNUSED(ctx))
 {
 	return -ENOSYS;
 }

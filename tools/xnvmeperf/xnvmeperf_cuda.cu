@@ -191,7 +191,7 @@ cuda_upload(void **d_ptr, const void *h_ptr, size_t nbytes)
 }
 
 int
-xnvmeperf_cuda_ctx_create(void **ctx)
+xnvmeperf_cuda_ctx_create(uint32_t gpu_id, void **ctx)
 {
 	CUcontext cu_ctx;
 	CUdevice cu_dev;
@@ -202,7 +202,7 @@ xnvmeperf_cuda_ctx_create(void **ctx)
 		fprintf(stderr, "Failed: cuInit(): %d\n", res);
 		return -EIO;
 	}
-	res = cuDeviceGet(&cu_dev, 0);
+	res = cuDeviceGet(&cu_dev, gpu_id);
 	if (res != CUDA_SUCCESS) {
 		fprintf(stderr, "Failed: cuDeviceGet(): %d\n", res);
 		return -EIO;

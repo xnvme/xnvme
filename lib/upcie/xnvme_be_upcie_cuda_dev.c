@@ -302,7 +302,7 @@ _cuda_ctrlr_init(struct xnvme_be_upcie_cuda_ctrlr *slot, struct xnvme_be_upcie_c
 }
 
 static int
-_cuda_ctx_init(CUdevice cu_dev, uint32_t gpu_id)
+_cuda_ctx_init(CUdevice cu_dev)
 {
 	CUcontext current = NULL;
 	CUdevice current_dev;
@@ -322,8 +322,7 @@ _cuda_ctx_init(CUdevice cu_dev, uint32_t gpu_id)
 			return -EIO;
 		}
 		if (current_dev != cu_dev) {
-			XNVME_DEBUG("FAILED: the current CUDA context is not on gpu_id(%u)",
-				    gpu_id);
+			XNVME_DEBUG("FAILED: the current CUDA context is on another GPU");
 			return -EINVAL;
 		}
 		g_upcie_cuda_rte.cu_ctx = current;
@@ -385,12 +384,13 @@ _cuda_rte_init(size_t heap_size, uint32_t gpu_id, struct xnvme_be_upcie_ctrlr *c
 		return -ENODEV;
 	}
 
-	err = _cuda_ctx_init(cu_dev, gpu_id);
+	err = _cuda_ctx_init(cu_dev);
 	if (err) {
+		XNVME_DEBUG("FAILED: _cuda_ctx_init(gpu_id(%u)); err(%d)", gpu_id, err);
 		_cuda_ctrlr_term(slot);
 		return err;
 	}
-	err = cudamem_config_init(&g_upcie_cuda_rte.cuda_config, 0);
+	err = cudamem_config_init(&g_upcie_cuda_rte.cuda_config, gpu_id);
 	if (err) {
 		XNVME_DEBUG("FAILED: cudamem_config_init(); err(%d)", err);
 		_cuda_ctrlr_term(slot);

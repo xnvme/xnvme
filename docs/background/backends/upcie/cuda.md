@@ -27,15 +27,15 @@ This backend uses a **hybrid memory model**:
 
 | Structure | Location | Reason |
 |-----------|----------|--------|
-| Data buffers (`xnvme_buf_alloc`) | GPU device memory (CUDA heap, 1 GiB) | Transferred directly by the NVMe controller via PCIe P2P, bypassing host DRAM |
-| SQ, CQ, PRP lists | Host hugepage memory (host heap, 256 MiB) | The CPU writes and the NVMe controller DMA-reads these structures; host-accessible memory is required |
+| Data buffers (`xnvme_buf_alloc`) | GPU device memory (device heap, 1 GiB by default) | Transferred directly by the NVMe controller via PCIe P2P, bypassing host DRAM |
+| SQ, CQ, PRP lists | Host hugepage memory (host heap, 1 GiB by default) | The CPU writes and the NVMe controller DMA-reads these structures; host-accessible memory is required |
 | CQ, with `XNVME_QUEUE_P2P_CQ_MIRROR` | GPU device memory, mirrored into the host CQ by a resident kernel | Keeps the controller's completion writes behind its data writes on one path; see {ref}`sec-backends-upcie-cuda-p2p-cq-mirror` |
 | SQ of a GPU-issued queue | GPU device memory; host memory with `XNVME_QUEUE_SQ_HOSTMEM` | The controller fetches entries; from DRAM that is faster than across the root complex, see {ref}`sec-backends-upcie-cuda-gpu` |
 
 The NVMe **data** path goes GPU ↔ NVMe without touching host DRAM. The
 **control** path (submission queue entries, completion queue entries, PRP lists)
-still flows through host memory. As a result, both the CUDA heap and the host
-hugepage runtime are initialized when the first **upcie-cuda** device is opened.
+still flows through host memory. As a result, both the device heap and the
+host heap are initialized when the first **upcie-cuda** device is opened.
 
 The heap is allocated in the CUDA context current on the thread opening that
 first device, or, when none is current, in the device's primary context, which
@@ -117,6 +117,33 @@ comes back is adopted into the same table; that is a socket round trip per
 call, so a client registers its buffers before it submits, not per command.
 Either way the range is whole device pages, 64 KiB on CUDA, since that is the
 granule the export works in.
+
+(sec-backends-upcie-cuda-opts)=
+
+## Choosing the GPU and Heap Sizes
+
+Three fields of `struct xnvme_opts` control where the heaps live and how large
+they are:
+
+| Option | CLI | Default |
+|--------|-----|---------|
+| `gpu_id` | `--gpu-id` | `0` |
+| `device_heap_size` | `--device-heap-size` | `0`, meaning 1 GiB |
+| `host_heap_size` | `--host-heap-size` | `0`, meaning 1 GiB |
+
+`gpu_id` is the CUDA device ordinal the device heap is allocated on. When a
+CUDA context is current on the opening thread, it must belong to that GPU, or
+the open fails with `EINVAL`.
+
+The device heap is rounded up to 64 KiB and the host heap to the hugepage size.
+
+Each heap is allocated once per process, on the first open, so the values given
+to that open are the ones that take effect, and later opens leave the heaps as
+they are.
+
+Not every tool takes these options on its command line. **xnvmeperf** takes
+`--gpu-id` and sizes both heaps from the workload it is given, and **homi**
+takes all three.
 
 (sec-backends-upcie-cuda-kernel)=
 
@@ -235,22 +262,23 @@ it:
 
 ### Hardware Requirements
 
-P2P transfers require a GPU with a sufficiently large **BAR1** window. BAR1
-maps GPU device memory into the host PCIe address space and must be large
-enough to cover the CUDA heap (1 GiB by default). To check the available BAR1
-size:
+P2P transfers require a GPU whose **BAR1** window maps all of its device
+memory into the host PCIe address space, which in practice means resizable BAR
+enabled in the firmware. The window must be at least as large as the GPU's
+total memory, whatever the size of the device heap. To compare the two:
 
 ```bash
 nvidia-smi -q -d memory
 ```
 
-Look for the `BAR1 Memory Usage` section. If `Total` BAR1 is smaller than the
-heap size, initialization will fail.
+If `Total` under `BAR1 Memory Usage` is smaller than `Total` under
+`FB Memory Usage`, opening a device fails with `EOPNOTSUPP`.
 
 ### Hugepages
 
-In addition to the CUDA heap, opening an **upcie-cuda** device also initializes
-the host hugepage runtime (256 MiB) used to hold NVMe control structures. Follow
+In addition to the device heap, opening an **upcie-cuda** device also
+initializes the host heap (1 GiB by default) used to hold NVMe control
+structures. Follow
 the hugepage setup steps in {ref}`sec-backends-upcie-host` before opening an
 **upcie-cuda** device.
 
@@ -458,10 +486,8 @@ cd cijoe && cijoe tasks/test-gpu.yaml --config configs/<your-config>.toml
 - **I/O the GPU issues behind a translating IOMMU needs the mapper module.** See
   {ref}`sec-backends-upcie-cuda-gpu-domain`. What a client submits from the host
   works either way.
-- **GPU 0 only.** The heap is always created on CUDA device 0. Multiple GPU
-  support is not implemented.
-- **1 GiB heap.** The CUDA heap is fixed at 1 GiB. Allocations beyond this
-  limit return `ENOMEM`.
+- **One GPU per process.** The device heap lives on the GPU chosen by the
+  first open. See {ref}`sec-backends-upcie-cuda-opts`.
 - **No PRP list chaining.** Each request has a single 4 KiB PRP list page
   (512 entries). Combined with PRP1, the maximum transfer size per command
   is 513 × 4 KiB ≈ 2 MiB.
