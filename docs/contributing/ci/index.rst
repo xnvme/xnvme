@@ -94,13 +94,15 @@ various **CI** jobs.
 When the jobs run, and what is published
 ########################################
 
-The ``verify`` workflow runs on pull-requests, and only there. What a
-pull-request needs to merge runs there once: a fixed set of jobs on every run,
+The ``verify`` workflow runs on pull-requests, and otherwise weekly for the
+benchmarks, when started by hand, and for the documentation, which
+``publish-docs`` and ``publish-release`` start. What a pull-request needs to
+merge runs there once: a fixed set of jobs on every run,
 and behind a ``gate:`` label, read when the run starts, the jobs in QEMU
 guests, on lab machines, the benchmarks and the documentation with its
 commands run (see :ref:`sec-contributing-labels`). The check ``ci-result``
-says whether what ran passed. Main and its tags run none of it again. The
-benchmarks also run weekly. A newer run of a pull-request cancels the one in
+says whether what ran passed. Main and its tags run none of it again but the
+documentation. A newer run of a pull-request cancels the one in
 progress, as does a newer run of a branch started the same way, by the
 schedule or by hand for the same ``job``.
 
@@ -271,7 +273,7 @@ Both publish **OCI** artifacts on **GHCR**.
      - ``xnvme/xnvme-devenv/host`` (upstream QEMU + CIJOE + vfu_kvssd)
      - ``safl/nosi/debian-13-headless``
 
-All container-hosted jobs run in the `xnvme-devenv`_ host container, with
+The emulated jobs and ``docgen-full`` run in the `xnvme-devenv`_ host container, with
 upstream **QEMU**; the NVMe KV command set is supplied by `vfio-user-kvssd`_
 over **vfio-user**, installed in the container. ``verify-nvme-pcie-hardware / passthru`` and the
 benchmarks run the container on the lab machine, and pass its drive through

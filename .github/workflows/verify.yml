@@ -3,8 +3,9 @@ name: verify
 
 # Pull-requests run what it takes to get onto main, so main and its tags run
 # nothing again: the 'publish-release' workflow releases from the artifacts of
-# the pull-request that was merged. A manual run on any branch
-# runs the jobs its 'job' names, 'all' every one. A draft runs nothing;
+# the pull-request that was merged, and 'publish-docs' starts a run of 'docgen'
+# alone. A manual run on any branch runs the jobs its 'job' names, 'all' every
+# one. A draft runs nothing;
 # marking it ready for review starts its first run. Beside a fixed set of jobs,
 # a 'gate:' label on a pull-request adds the jobs it names to the run; changing
 # one starts no run. The 'gates' job reads the labels when a run starts, so
@@ -120,17 +121,6 @@ jobs:
           toolbox/gha_gates.py
         sparse-checkout-cone-mode: false
 
-    # Only for the pull-request that adds them, as the base has none yet
-    - name: Grab the rules and the script of the pull-request
-      if: hashFiles('base/toolbox/gha_gates.py') == ''
-      uses: actions/checkout@v6
-      with:
-        path: base
-        sparse-checkout: |
-          .github/labeler.yml
-          toolbox/gha_gates.py
-        sparse-checkout-cone-mode: false
-
     - name: Read the labels, and those the changed files call for
       id: read
       env:
@@ -222,7 +212,7 @@ jobs:
   # Check source-format using pre-commit
   #
   source-format-check:
-    if: github.event.pull_request.draft != true
+    if: github.event.pull_request.draft != true && github.event.inputs.job != 'docgen'
     runs-on: ubuntu-24.04
     container: ghcr.io/xnvme/xnvme-devenv/host:v0.14.0
 
@@ -313,7 +303,8 @@ jobs:
   ffi-rust:
     needs: [source-archive, changes-to-docs, docgen-shallow]
     runs-on: ubuntu-24.04
-    if: needs.changes-to-docs.outputs.docs_prose_only != 'true'
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'pull_request' || github.event.inputs.job
+      == 'all')
     container:
       image: ghcr.io/xnvme/xnvme/distro-deps-debian-trixie:main
 
@@ -379,22 +370,21 @@ jobs:
         - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'tcp-spdk'}
         - {os: 'debian', ver: 'trixie-iommu_enabled', guest_dir: 'debian-trixie-amd64', transport: 'tcp-linux'}
       BUILD_LINUX: |
-        # Using an alpine container which is the same as upstream but with bash
         # alpine: SPDK not supported, --with-spdk=disabled
-        - {os: 'alpine', dh: 'refenv/alpine-bash', ver: 'latest'}
-        - {os: 'archlinux', dh: 'archlinux', ver: 'latest'}
-        - {os: 'centos', dh: 'quay.io/centos/centos', ver: 'stream10'}
-        - {os: 'debian', dh: 'debian', ver: 'forky'}
-        - {os: 'debian', dh: 'debian', ver: 'trixie'}
-        - {os: 'fedora', dh: 'fedora', ver: '43'}
-        - {os: 'fedora', dh: 'fedora', ver: '44'}
-        - {os: 'gentoo', dh: 'gentoo/stage3', ver: 'latest'}
-        - {os: 'opensuse-tumbleweed', dh: 'opensuse/tumbleweed', ver: 'latest'}
-        - {os: 'rockylinux', dh: 'rockylinux/rockylinux', ver: '9.7'}
-        - {os: 'rockylinux', dh: 'rockylinux/rockylinux', ver: '10.1'}
-        - {os: 'ubuntu', dh: 'ubuntu', ver: 'noble'}
-        - {os: 'ubuntu', dh: 'ubuntu', ver: 'resolute'}
-        - {os: 'ubuntu', dh: 'ubuntu', ver: 'stonking'}
+        - {os: 'alpine', ver: 'latest'}
+        - {os: 'archlinux', ver: 'latest'}
+        - {os: 'centos', ver: 'stream10'}
+        - {os: 'debian', ver: 'forky'}
+        - {os: 'debian', ver: 'trixie'}
+        - {os: 'fedora', ver: '43'}
+        - {os: 'fedora', ver: '44'}
+        - {os: 'gentoo', ver: 'latest'}
+        - {os: 'opensuse-tumbleweed', ver: 'latest'}
+        - {os: 'rockylinux', ver: '9.7'}
+        - {os: 'rockylinux', ver: '10.1'}
+        - {os: 'ubuntu', ver: 'noble'}
+        - {os: 'ubuntu', ver: 'resolute'}
+        - {os: 'ubuntu', ver: 'stonking'}
 
     steps:
     - uses: actions/checkout@v6
@@ -449,7 +439,7 @@ jobs:
   # they share this run, so they use its artifacts and 'ci-result' checks them.
   #
   docgen-full:
-    needs: [changes-to-docs, source-archive, source-format-check, ffi-python, gates]
+    needs: [changes-to-docs, source-archive, ffi-python, gates]
     if: github.event.inputs.job == 'all' || (github.event_name == 'pull_request' && needs.gates.outputs.docgen == 'true')
       || (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'docgen')
     uses: ./.github/workflows/docgen-full.yml
@@ -476,7 +466,8 @@ jobs:
 
   verify-makefile:
     needs: [changes-to-docs, source-archive, docgen-shallow]
-    if: needs.changes-to-docs.outputs.docs_prose_only != 'true'
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'pull_request' || github.event.inputs.job
+      == 'all')
     uses: ./.github/workflows/verify-makefile.yml
 
   verify-nvme-pcie-emulated:
@@ -509,7 +500,8 @@ jobs:
 
   verify-packaging:
     needs: [changes-to-docs, source-archive, source-format-check, ffi-python, docgen-shallow]
-    if: needs.changes-to-docs.outputs.docs_prose_only != 'true'
+    if: needs.changes-to-docs.outputs.docs_prose_only != 'true' && (github.event_name == 'pull_request' || github.event.inputs.job
+      == 'all')
     uses: ./.github/workflows/verify-packaging.yml
 
   #
@@ -544,6 +536,7 @@ jobs:
     - name: Check the results of the jobs
       env:
         RESULTS: ${{ toJSON(needs) }}
+        EVENT: ${{ github.event_name }}
       run: |
         jq -r 'to_entries[] | "\(.key): \(.value.result)"' <<< "$RESULTS"
         bad=$(jq -r '[to_entries[] | select(.value.result == "failure" or .value.result == "cancelled") | .key] | join(" ")' \
@@ -552,10 +545,13 @@ jobs:
           echo "::error::Did not succeed: $bad"
           exit 1
         fi
-        for job in source-format-check docgen-shallow; do
-          result=$(jq -r --arg job "$job" '.[$job].result' <<< "$RESULTS")
-          if [ "$result" != "success" ]; then
-            echo "::error::$job is required and was $result"
-            exit 1
-          fi
-        done
+        # What a pull-request must pass; a manual run does only what its 'job' names
+        if [ "$EVENT" = "pull_request" ]; then
+          for job in source-format-check docgen-shallow; do
+            result=$(jq -r --arg job "$job" '.[$job].result' <<< "$RESULTS")
+            if [ "$result" != "success" ]; then
+              echo "::error::$job is required and was $result"
+              exit 1
+            fi
+          done
+        fi

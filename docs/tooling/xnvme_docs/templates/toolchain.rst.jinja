@@ -45,7 +45,11 @@ Or, run the commands contained within the script manually:
 
 {% endif -%}
 {% endif -%}
+{% if platform.mng == "nix" -%}
+Then build it as its Nix package and install it into your Nix profile:
+{%- else -%}
 Then go ahead and configure, build and install using ``meson``:
+{%- endif %}
 
 .. literalinclude:: ../../../toolbox/pkgs/{% if ident in build_scripts %}{{ build_scripts[ident].name }}{% else %}default-build.sh{% endif %}
    :language: bash

@@ -27,7 +27,7 @@ The emitted ``apt`` and ``pkg`` scripts skip their system upgrade when
 switch working when changing those templates, and keep the default, which
 upgrades, since the docker-images and CI rely on it.
 
-.. note: the build jobs run in container images with the scripts' packages
+.. note:: the build jobs run in container images with the scripts' packages
    installed, which the ``distro-deps`` workflow builds; a pull-request
    changing the scripts builds them there, but the build jobs use those that
    ``main`` pushed, so they see a change to the scripts once it is merged.

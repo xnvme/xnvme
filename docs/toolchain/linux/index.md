@@ -452,7 +452,7 @@ A container image is provided via `ghcr.io`, specifically
 software described above.
 :::
 
-Then go ahead and configure, build and install using `meson`:
+Then build it as its Nix package and install it into your Nix profile:
 
 ```{literalinclude} ../../../toolbox/pkgs/nixos-latest-build.sh
 :language: bash
