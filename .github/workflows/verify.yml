@@ -214,7 +214,7 @@ jobs:
   source-format-check:
     if: github.event.pull_request.draft != true && github.event.inputs.job != 'docgen'
     runs-on: ubuntu-24.04
-    container: ghcr.io/xnvme/xnvme-devenv/host:v0.14.0
+    container: ghcr.io/xnvme/xnvme-devenv/host:v0.15.0
 
     steps:
     - name: Grab source

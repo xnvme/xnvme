@@ -29,5 +29,5 @@ disk.path = "{{ local.env.HOME }}/system_imaging/disk/win11.qcow2"
 [system-imaging.images.ubuntu-2610-rocm-x86_64]
 system_label = "x86_64"
 
-oras.url = "oras://ghcr.io/xnvme/xnvme-devenv/guest-ubuntu-2610:v0.14.0"
+oras.url = "oras://ghcr.io/xnvme/xnvme-devenv/guest-ubuntu-2610:v0.15.0"
 disk.path = "{{ local.env.HOME }}/system_imaging/disk/ubuntu-2610-rocm-x86_64.qcow2"
