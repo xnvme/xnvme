@@ -16,7 +16,7 @@ Changes are described in this file in a section matching the version tag.
 Known Issues
 ------------
 
-See the file named ``ISSUES`` in the root of the repository.
+See the file named ``ISSUES.rst`` in the root of the repository.
 
 v0.7.5
 ------
