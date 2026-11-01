@@ -89,6 +89,47 @@ def test_verify_separate_metadata(cijoe, device, be_opts, cli_args):
         assert "in a buffer of its own" in state.output(), state.output()
 
 
+GPU_BACKENDS = ("upcie-cuda", "upcie-hip")
+
+
+def _verify_gpu(cijoe, device, be_opts, iosize, extra=""):
+    """Write and read back from buffers in GPU memory; returns what 'verify' printed"""
+
+    if be_opts["be"] not in GPU_BACKENDS:
+        pytest.skip(reason="Only the GPU backends put data buffers in device memory")
+
+    homi_id = get_homi_id()
+    homi_arg = f"--homi-id {homi_id}" if homi_id else ""
+
+    err, state = cijoe.run(
+        f"xnvmeperf verify --iosize {iosize} --count 16 {extra}"
+        f" --be {be_opts['be']} {homi_arg} '{device['uri']}/?nsid={device['nsid']}'"
+    )
+    assert not err, state.output()
+
+    return state.output()
+
+
+@pytest.mark.parametrize("iosize", [4096, 8192, 16384, 131072])
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_verify_gpu_payload(cijoe, device, be_opts, cli_args, iosize):
+    """
+    Each way a command points at its data, with the data in GPU memory
+
+    With 4 KiB pages: PRP1 alone, PRP1 and PRP2, and PRP1 with a PRP list of three and
+    of 31 entries.
+    """
+
+    _verify_gpu(cijoe, device, be_opts, iosize)
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_verify_gpu_p2p_cq_mirror(cijoe, device, be_opts, cli_args):
+    """Completions land in GPU memory and a GPU kernel mirrors them to the host"""
+
+    _verify_gpu(cijoe, device, be_opts, 16384, "--p2p-cq-mirror")
+
+
 @xnvme_parametrize(labels=["pcie", "nvm"], opts=["be"])
 def test_run_qdepth_past_the_pool_is_refused(cijoe, device, be_opts, cli_args):
     """A queue deeper than the 1024 commands uPCIe tracks per queue is refused"""
