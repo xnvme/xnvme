@@ -1,6 +1,13 @@
 import pytest
 
-from ..conftest import XnvmeDriver, get_homi_id, get_osname, is_nvmet, xnvme_parametrize
+from ..conftest import (
+    XnvmeDriver,
+    cijoe_config_inactive_nsid,
+    get_homi_id,
+    get_osname,
+    is_nvmet,
+    xnvme_parametrize,
+)
 
 
 def test_library_info(cijoe):
@@ -131,8 +138,7 @@ def test_info_uri_nsid(cijoe, device, be_opts, cli_args):
 def test_info_uri_nsid_inactive(cijoe, device, be_opts, cli_args):
     """A namespace named in the URI that is not active is refused, not replaced"""
 
-    # The configured controllers each have a single namespace
-    nsid = int(device["nsid"]) + 1
+    nsid = cijoe_config_inactive_nsid(device)
     err, state = cijoe.run(f"xnvme info {_with_uri_nsid(device, cli_args, nsid)}")
     assert err, f"opened an inactive namespace: {state.output()}"
 
