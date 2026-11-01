@@ -91,7 +91,8 @@ devices::
 
 Writes ``--count`` sequential I/Os with a per-LBA stamp pattern, then reads
 them back and compares against the expected data. Reports the number of
-mismatches and I/O errors per device.
+mismatches and I/O errors per device, and exits non-zero when either is not
+zero.
 
 .. literalinclude:: xnvmeperf_verify_usage.out
    :language: bash

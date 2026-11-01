@@ -53,6 +53,11 @@ def test_run_randwrite(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["nvm"], opts=["be"])
 def test_verify(cijoe, device, be_opts, cli_args):
+    if be_opts["be"] == "ramdisk":
+        pytest.skip(
+            reason="The ramdisk's async interface, nil, completes IO moving no data"
+        )
+
     homi_id = get_homi_id()
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
 
