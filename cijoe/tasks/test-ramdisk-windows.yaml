@@ -13,4 +13,4 @@ steps:
 - name: test_ramdisk
   uses: core.testrunner
   with:
-    args: '-k "ramdisk and (not compare) and (not hugepage) or xnvme_library_info" tests'
+    args: '-k "ramdisk and (not compare) and (not hugepage) or xnvme_env_library" tests'

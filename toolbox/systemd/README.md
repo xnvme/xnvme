@@ -3,10 +3,10 @@
 `xnvme-homi@.service.in` runs a HOMI server, one instance per `homi_id`, with
 `homi.conf.example` as the configuration to copy into `/etc/xnvme/`.
 
-It is a template rather than a finished unit: `@bindir@` is substituted at
-configuration time so the installed unit names the `homi` from the same build.
-Read the generated unit from the build directory, not this file, when checking
-what a given build installs.
+It is a template rather than a finished unit: `@libexecdir@` is substituted at
+configuration time so the installed unit names the `xnvme-homi` from the same
+build. Read the generated unit from the build directory, not this file, when
+checking what a given build installs.
 
 `xnvme-qublk@.service.in` is the same thing for the `qublk` ublk server, one
 instance per ublk device id, with `qublk.conf.example` naming the backing

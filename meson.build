@@ -259,6 +259,8 @@ conf_data.set('XNVME_PTHREAD_SETAFFINITY_NP_ENABLED', cc.has_function(
     dependencies: thread_dep)
 )
 conf_data.set('XNVME_RAND_R_ENABLED', cc.has_function('rand_r'))
+xnvme_libexecdir = get_option('libexecdir') / 'xnvme'
+conf_data.set_quoted('XNVME_LIBEXECDIR', get_option('prefix') / xnvme_libexecdir)
 
 conf = configure_file(
   configuration : conf_data,
@@ -298,7 +300,6 @@ if cuda_dep.found()
   add_project_arguments(['-include', 'xnvme_config.h'], language: 'cuda')
 endif
 
-# bash-completions: run the Makefile target 'make gen-bash-completions' to update the completions
 bash_completion_dep = dependency(
   'bash-completion',
   version: '>=2.0',
@@ -338,21 +339,15 @@ subdir('lib')
 if get_option('tests')
   subdir('tests')
   subdir('man/tests')
-  if install_completions
-     subdir('toolbox/bash_completion.d/tests')
-  endif
 endif
 if get_option('tools')
   subdir('tools')
   subdir('man/tools')
   if install_completions
-     subdir('toolbox/bash_completion.d/tools')
+    install_data('toolbox/bash_completion.d/xnvme', install_dir: bash_completions_dir)
   endif
 endif
 if get_option('examples')
   subdir('examples')
   subdir('man/examples')
-  if install_completions
-     subdir('toolbox/bash_completion.d/examples')
-  endif
 endif

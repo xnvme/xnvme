@@ -33,7 +33,7 @@ def run_two(cijoe, device, be_opts, cli_args, labels):
     # cli_args carries the HOMI id where the suite is served; without it the
     # program opens the controller underneath the server holding it.
     err, _ = cijoe.run(
-        f"xnvme_tests_multi_ctrlr io {cli_args} --alt-uri {others[0]['uri']}"
+        f"xnvme test multi-ctrlr io {cli_args} --alt-uri {others[0]['uri']}"
     )
     assert not err
 

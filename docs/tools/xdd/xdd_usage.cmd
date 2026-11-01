@@ -1,1 +1,0 @@
-xdd --help

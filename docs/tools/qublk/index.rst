@@ -64,15 +64,15 @@ evenly across them.
 
 Example — NVMe block device via io_uring::
 
-   qublk serve /dev/nvme0n1 --be io_uring --qdepth 64
+   xnvme qublk serve /dev/nvme0n1 --be io_uring --qdepth 64
 
 Example — user space NVMe via uPCIe, with multiple hardware queues::
 
-   qublk serve 0000:01:00.0 --be upcie --qdepth 64 --nqueues 4
+   xnvme qublk serve 0000:01:00.0 --be upcie --qdepth 64 --nqueues 4
 
 Example — four devices via uPCIe, served by two CPUs::
 
-   qublk serve 0000:01:00.0 0000:02:00.0 0000:03:00.0 0000:04:00.0 \
+   xnvme qublk serve 0000:01:00.0 0000:02:00.0 0000:03:00.0 0000:04:00.0 \
      --be upcie --qdepth 64 --cpulist 0-1
 
 While **qublk** is running, each device appears as ``/dev/ublkb<N>``.
@@ -127,17 +127,17 @@ zone may fail with ``EIO``. Use it for read-only commands only.
 
 Example — ZNS namespace via the NVMe character device::
 
-   qublk serve /dev/ng1n1 --be io_uring_cmd --qdepth 64 --nqueues 4
+   xnvme qublk serve /dev/ng1n1 --be io_uring_cmd --qdepth 64 --nqueues 4
    blkzone report /dev/ublkb0
    mkfs.btrfs -O zoned /dev/ublkb0
 
 ``del`` — Delete a leftover device
 ==================================
 
-A ``qublk serve`` that is killed rather than signalled cleanly leaves its ublk
+An ``xnvme qublk serve`` that is killed rather than signalled cleanly leaves its ublk
 device behind. ``del`` stops and deletes such a device by identifier::
 
-   qublk del --dev-id 0
+   xnvme qublk del --dev-id 0
 
 .. literalinclude:: qublk_del_usage.out
    :language: bash

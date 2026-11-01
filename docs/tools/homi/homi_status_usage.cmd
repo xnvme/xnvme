@@ -1,1 +1,1 @@
-homi status --help
+xnvme homi status --help

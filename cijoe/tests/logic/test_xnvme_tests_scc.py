@@ -8,7 +8,7 @@ def test_idfy(cijoe, device, be_opts, cli_args):
     if be_opts["sync"] in ["block", "psync"]:
         pytest.skip(reason="Linux Block layer does not support simple-copy")
 
-    err, _ = cijoe.run(f"xnvme_tests_scc idfy {cli_args}")
+    err, _ = cijoe.run(f"xnvme test scc idfy {cli_args}")
     assert not err
 
 
@@ -17,7 +17,7 @@ def test_support(cijoe, device, be_opts, cli_args):
     if be_opts["admin"] == "block":
         pytest.skip(reason="Linux Block layer does not support simple-copy")
 
-    err, _ = cijoe.run(f"xnvme_tests_scc support {cli_args}")
+    err, _ = cijoe.run(f"xnvme test scc support {cli_args}")
     assert not err
 
 
@@ -28,7 +28,7 @@ def test_scopy(cijoe, device, be_opts, cli_args):
     if be_opts["sync"] in ["block", "psync"]:
         pytest.skip(reason="Does not support simple-copy")
 
-    err, _ = cijoe.run(f"xnvme_tests_scc scopy {cli_args}")
+    err, _ = cijoe.run(f"xnvme test scc scopy {cli_args}")
     assert not err
 
 
@@ -39,7 +39,7 @@ def test_scopy_clear(cijoe, device, be_opts, cli_args):
     if be_opts["sync"] in ["block", "psync"]:
         pytest.skip(reason="Does not support simple-copy")
 
-    err, _ = cijoe.run(f"xnvme_tests_scc scopy {cli_args} --clear")
+    err, _ = cijoe.run(f"xnvme test scc scopy {cli_args} --clear")
     assert not err
 
 
@@ -50,7 +50,7 @@ def test_scopy_msrc(cijoe, device, be_opts, cli_args):
     if be_opts["sync"] in ["block", "psync"]:
         pytest.skip(reason="Does not support simple-copy")
 
-    err, _ = cijoe.run(f"xnvme_tests_scc scopy-msrc {cli_args}")
+    err, _ = cijoe.run(f"xnvme test scc scopy-msrc {cli_args}")
     assert not err
 
 
@@ -61,5 +61,5 @@ def test_scopy_msrc_clear(cijoe, device, be_opts, cli_args):
     if be_opts["sync"] in ["block", "psync"]:
         pytest.skip(reason="Does not support simple-copy")
 
-    err, _ = cijoe.run(f"xnvme_tests_scc scopy-msrc {cli_args} --clear")
+    err, _ = cijoe.run(f"xnvme test scc scopy-msrc {cli_args} --clear")
     assert not err

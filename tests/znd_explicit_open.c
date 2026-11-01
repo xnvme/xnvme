@@ -178,8 +178,8 @@ exit:
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"test_open_zdptr",
-		"jazz",
-		"jazz",
+		"Open a zone with a Zone Descriptor Extension, and check the zone report",
+		"Open a zone with a Zone Descriptor Extension, and check the zone report",
 		test_open_zdptr,
 		{
 			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
@@ -192,8 +192,8 @@ static struct xnvme_cli_sub g_subs[] = {
 };
 
 static struct xnvme_cli g_cli = {
-	.title = "Test Zoned Reporting and Management",
-	.descr_short = "Test Zoned Reporting and Management",
+	.title = "Test explicitly opening a zone",
+	.descr_short = "Explicitly open a zone with a Zone Descriptor Extension",
 	.subs = g_subs,
 	.nsubs = sizeof g_subs / sizeof(*g_subs),
 };

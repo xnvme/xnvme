@@ -20,7 +20,7 @@ device is e.g. `/dev/nvme0n1`.
 Select the backend with `opts.be` or `--be`:
 
 ```bash
-xnvmeperf run /dev/nvme0n1 --be io_uring_dmabuf --direct \
+xnvme perf run /dev/nvme0n1 --be io_uring_dmabuf --direct \
     --iopattern randread --iosize 4096 --qdepth 32 --runtime 10 --cpumask 0x1
 ```
 

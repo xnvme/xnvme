@@ -49,6 +49,11 @@ def get_osname():
     return osname
 
 
+def get_userspace_be():
+    """Return a backend driving controllers from userspace on this OS"""
+    return "spdk" if get_osname() == "freebsd" else "upcie"
+
+
 def get_homi_id():
     return _homi_id if _homi_id else None
 
@@ -245,7 +250,8 @@ class XnvmeDriver(object):
     * vfio-pci (User space)
     * uio-generic (User space)
 
-    Switching attachment is done via the 'xnvme-driver' cli-tool.
+    Switching attachment is done with 'xnvme driver --be <backend>', a userspace
+    backend such as upcie or spdk, or posix for the kernel.
 
     This class encapsulates the cli-tool via static helpers (kernel_detach,
     kernal_attach). Whether or not a device needs one or the other is handled
@@ -281,15 +287,27 @@ class XnvmeDriver(object):
         # so tear it down first rather than leaving HomiServer with a stale handle.
         HomiServer.stop(cijoe)
 
-        # 64MB contigmem buffers avoid ENOMEM on FreeBSD's fragmented CI heap;
-        # see toolbox/xnvme-driver.sh.
-        cmd = "xnvme-driver"
+        # --force as the filesystem cases leave signatures on the devices; 'xnvme driver'
+        # reserves no DMA memory
         if get_osname() == "freebsd":
-            cmd = "env CONTIGMEM_BUFSZ=64 " + cmd
-
-        err, _ = cijoe.run(cmd)
+            # Buffers smaller than the default avoid ENOMEM on the fragmented CI heap;
+            # 'hugepages setup' reloads contigmem, so only when it is not loaded
+            err, _ = cijoe.run(
+                "xnvme driver --be spdk --all --force && "
+                "{ kldstat -q -m contigmem || "
+                "hugepages setup --size 65536 --count 32 || "
+                "{ kenv hw.contigmem.num_buffers=32 && "
+                "kenv hw.contigmem.buffer_size=67108864 && kldload contigmem; }; }"
+            )
+        else:
+            err, _ = cijoe.run(
+                "xnvme driver --be upcie --all --force && "
+                "{ [ $(cat /proc/sys/vm/nr_hugepages) -ge 1024 ] || "
+                "hugepages setup --count 1024 || "
+                "echo 1024 > /proc/sys/vm/nr_hugepages; }"
+            )
         if err:
-            cijoe.run("dmesg | tail -n20")
+            cijoe.run("xnvme list; dmesg | tail -n20")
 
         XnvmeDriver.IS_KERNEL_ATTACHED = False
 
@@ -299,9 +317,9 @@ class XnvmeDriver(object):
 
         HomiServer.stop(cijoe)
 
-        err, _ = cijoe.run("xnvme-driver reset")
+        err, _ = cijoe.run("xnvme driver --be posix --all")
         if err:
-            cijoe.run("dmesg | tail -n20")
+            cijoe.run("xnvme list; dmesg | tail -n20")
 
         XnvmeDriver.IS_KERNEL_ATTACHED = True
 
@@ -465,9 +483,10 @@ class HomiServer:
     def is_running(cijoe):
         """Returns True when a homi server is running"""
 
-        # Match on the process name; 'pgrep -f' also matched the shell that cijoe.run()
-        # wraps the command in, so it never detected a failed start
-        err, _ = cijoe.run("pgrep -x homi")
+        # Not by name: until the front-end execs xnvme-homi the process is setsid,
+        # stdbuf or xnvme. The brackets keep the pattern from matching the shell
+        # that cijoe.run() wraps this command in.
+        err, _ = cijoe.run("pgrep -f '[x]nvme homi serve'")
 
         return not err
 
@@ -519,7 +538,7 @@ class HomiServer:
                 "a homi server is already running that this run did not start;"
                 " it holds the devices, so nothing here can serve them. A run"
                 " killed before its teardown leaves one behind: 'pkill -9 -x"
-                " homi' clears it"
+                " xnvme-homi' clears it"
             )
 
         # A backend that cannot open the device at all on this machine is not a
@@ -551,7 +570,7 @@ class HomiServer:
         # under the same name would otherwise answer for this one.
         cijoe.run(f"rm -f {logfile}")
         cijoe.run(
-            f"setsid stdbuf -oL homi serve {uris} --be {be} --homi-id {_homi_id} "
+            f"setsid stdbuf -oL xnvme homi serve {uris} --be {be} --homi-id {_homi_id} "
             f"--host-heap-size {HomiServer.HOST_HEAP_SIZE_PER_DEV * len(devices)} "
             f"< /dev/null > {logfile} 2>&1 &"
         )
@@ -593,7 +612,7 @@ class HomiServer:
         HomiServer.RUNNING = None
         HomiServer.CIJOE = None
 
-        cijoe.run("pkill -x homi || true")
+        cijoe.run("pkill -x xnvme-homi || true")
 
         # Closing a controller is not instant, and a server still holding the device
         # keeps its successor from claiming it, so wait for it to actually be gone

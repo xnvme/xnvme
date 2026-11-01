@@ -34,7 +34,7 @@ jobs:
         name: xnvme-src-archive
 
     - name: Retrieve the Debian packaging
-      run: git clone --depth 1 https://salsa.debian.org/safl/xnvme.git /tmp/debpkg
+      run: git clone --depth 1 -b xnvme-cli-libexec https://salsa.debian.org/safl/xnvme.git /tmp/debpkg
 
     - name: Install the packaging's Build-Depends, and nothing else
       run: apt-get build-dep -y -qq /tmp/debpkg
@@ -50,7 +50,7 @@ jobs:
 
     - name: Run the installed tools
       run: |
-        xnvme library-info
+        xnvme env library
         xnvme info 1GB --be ramdisk
 
     - name: Upload the packages
@@ -85,7 +85,7 @@ jobs:
 
     - name: Run the installed tools
       run: |
-        xnvme library-info
+        xnvme env library
         xnvme info 1GB --be ramdisk
 
   #
@@ -121,5 +121,5 @@ jobs:
 
     - name: Run the installed tools
       run: |
-        xnvme library-info
+        xnvme env library
         xnvme info 1GB --be ramdisk

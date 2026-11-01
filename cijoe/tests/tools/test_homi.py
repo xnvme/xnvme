@@ -20,13 +20,13 @@ _UNCLAIMED_ID = 4242
 
 def _require_upcie(cijoe):
     """
-    Skip unless this build has the uPCIe backend, whose runtime 'homi status' reads
+    Skip unless this build has the uPCIe backend, whose runtime 'xnvme homi status' reads
 
     Asked of the library rather than decided from the platform, since a Linux
     build configured with -Dbe_upcie=false is in the same position.
     """
 
-    err, state = cijoe.run("xnvme library-info")
+    err, state = cijoe.run("xnvme env library")
     assert not err, "could not ask the library what backends it has"
 
     if "name: 'upcie'" not in state.output():
@@ -52,9 +52,9 @@ def _sock(homi_id):
 
 
 def _status(cijoe, homi_id):
-    """Run 'homi status' and return its exit code and parsed document"""
+    """Run 'xnvme homi status' and return its exit code and parsed document"""
 
-    err, state = cijoe.run(f"homi status --homi-id {homi_id}")
+    err, state = cijoe.run(f"xnvme homi status --homi-id {homi_id}")
     output = state.output()
     lines = output.split("\n")
 
@@ -116,7 +116,7 @@ def _alone(cijoe, homi_id):
     """Stop every client, so the only connection left is the one asking"""
 
     # The brackets stop pkill matching its own command line
-    cijoe.run("pkill -f '[x]nvmeperf run ' || true")
+    cijoe.run("pkill -f '[x]nvme perf run ' || true")
     cijoe.run("pkill -f '[s]ocket.AF_UNIX' || true")
     ok, connections, _ = _wait_for(cijoe, homi_id, lambda c, _u: c == 1, 60)
     assert ok, f"the server reports {connections} connections with no clients running"
@@ -162,7 +162,7 @@ def _perf(uris, be, homi_id, runtime, nqueues=1):
     """An xnvmeperf client of `uris`, holding `nqueues` queues for `runtime` seconds"""
 
     return (
-        f"xnvmeperf run {' '.join(uris)} --be {be} --homi-id {homi_id}"
+        f"xnvme perf run {' '.join(uris)} --be {be} --homi-id {homi_id}"
         f" --iopattern randread --iosize 4096 --qdepth 8 --nqueues {nqueues}"
         f" --runtime {runtime} --cpulist 0"
     )
@@ -170,7 +170,7 @@ def _perf(uris, be, homi_id, runtime, nqueues=1):
 
 def _stop_clients(cijoe, uris):
     for uri in uris:
-        cijoe.run(f"pkill -f '[x]nvmeperf run {uri} ' || true")
+        cijoe.run(f"pkill -f '[x]nvme perf run {uri} ' || true")
 
 
 def _lblk_read(cijoe, dev, be_opts, homi_id, id_opt="--homi-id", timeout=None):
@@ -179,7 +179,7 @@ def _lblk_read(cijoe, dev, be_opts, homi_id, id_opt="--homi-id", timeout=None):
     prefix = f"timeout {timeout} " if timeout else ""
 
     return cijoe.run(
-        f"{prefix}lblk read {dev['uri']} --dev-nsid {dev['nsid']} --slba 0x0 --nlb 0"
+        f"{prefix}xnvme test nvm read {dev['uri']} --dev-nsid {dev['nsid']} --slba 0x0 --nlb 0"
         f" --be {be_opts['be']} --admin {be_opts['admin']} --sync {be_opts['sync']}"
         f" {id_opt} {homi_id}"
     )
@@ -353,13 +353,13 @@ def _alloc_buffers(cijoe, homi_id, count, nbytes=4096):
 def test_upcie_status_refuses_when_absent(cijoe):
     """A build without uPCIe refuses to inspect, rather than report no server"""
 
-    err, state = cijoe.run("xnvme library-info")
+    err, state = cijoe.run("xnvme env library")
     assert not err, "could not ask the library what backends it has"
 
     if "name: 'upcie'" in state.output():
         pytest.skip(reason="This build has uPCIe; the refusal is a build without it")
 
-    err, state = cijoe.run(f"homi status --homi-id {_UNCLAIMED_ID}")
+    err, state = cijoe.run(f"xnvme homi status --homi-id {_UNCLAIMED_ID}")
 
     assert err, "status exits zero on a build that cannot inspect"
     # A document, even an empty one, would read as 'no server'
@@ -498,7 +498,7 @@ def test_totals_come_from_the_controller(cijoe, device, be_opts, cli_args):
     if "nsq_total" not in ctrlr:
         pytest.skip(reason="the controller did not report its queue allocation")
 
-    err, state = cijoe.run(f"xnvme feature-get {cli_args} --fid 0x7 --sel 0")
+    err, state = cijoe.run(f"xnvme test adm feature-get {cli_args} --fid 0x7 --sel 0")
     assert not err, "could not ask the controller for Number of Queues"
 
     # NSQA and NCQA are zero-based
@@ -522,7 +522,7 @@ def test_status_does_not_disturb_election(cijoe, device, be_opts, cli_args):
     # 'sh -c' keeps it a simple command, which a transport prefixing
     # environment assignments ('cijoe.run.env') needs
     err, _ = cijoe.run(
-        "sh -c 'for i in $(seq 1 200); do homi status"
+        "sh -c 'for i in $(seq 1 200); do xnvme homi status"
         f" --homi-id {homi_id} >/dev/null || exit 1; done'"
     )
     assert not err, "status stopped reporting the server while being polled"
@@ -580,7 +580,7 @@ def test_server_runs_on_its_drives_node(cijoe, device, be_opts, cli_args):
     err, want = cijoe.run(f"cat /sys/devices/system/node/node{nodes.pop()}/cpulist")
     assert not err, "sysfs places the drives on a node it does not describe"
 
-    err, got = cijoe.run("grep Cpus_allowed_list /proc/$(pgrep -x homi)/status")
+    err, got = cijoe.run("grep Cpus_allowed_list /proc/$(pgrep -x xnvme-homi)/status")
     assert not err, "could not read the server's affinity"
     assert got.output().split(":")[-1].strip() == want.output().strip()
 
@@ -603,7 +603,7 @@ def test_a_killed_server_leaves_nothing_to_clean_up(cijoe, device, be_opts, cli_
 
     assert HomiServer.is_running(cijoe), "no server to kill"
 
-    cijoe.run("pkill -9 -x homi")
+    cijoe.run("pkill -9 -x xnvme-homi")
     HomiServer.forget()
 
     for _ in range(30):
@@ -807,7 +807,7 @@ def test_a_client_outlives_the_server_shutting_down(cijoe, device, be_opts, cli_
     # The runtime, the command timeout for noticing, and slack for a loaded host
     rc = _bg_wait(cijoe, "shutdown", runtime + 45)
     if rc is None:
-        cijoe.run("pgrep -a -x xnvmeperf")
+        cijoe.run("pgrep -a -x xnvme-perf")
     assert rc is not None, f"the client of {uri} never terminated after its server did"
     assert rc == "0", f"the client of {uri} exited {rc} after its server shut down"
 

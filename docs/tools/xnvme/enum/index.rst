@@ -7,4 +7,4 @@ Enumerate devices, that is, controllers and namespaces available to the system:
    :language: bash
 
 .. literalinclude:: xnvme_enum_usage.out
-   :language: bash
+   :language: text

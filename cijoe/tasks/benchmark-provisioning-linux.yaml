@@ -39,8 +39,8 @@ steps:
 
 - name: prep
   run: |
-    xnvme-driver || true
-    xnvme-driver reset || true
+    xnvme driver --be upcie --all --force || true
+    xnvme driver --be posix --all || true
 
 # This is needed whenever io_uring and io_uring_cmd is used, hmm, bdevperf will
 # probably need something special here...

@@ -41,12 +41,12 @@ A copy of the sources with neither git metadata nor that stamp shows
 
 Example — sequential read on a single device::
 
-   xnvmeperf run --iopattern read --qdepth 32 --iosize 4096 \
+   xnvme perf run --iopattern read --qdepth 32 --iosize 4096 \
        --runtime 10 --cpumask 0x1 /dev/nvme0n1
 
 Example — random write across two devices on two CPUs::
 
-   xnvmeperf run --iopattern randwrite --qdepth 64 --iosize 4096 \
+   xnvme perf run --iopattern randwrite --qdepth 64 --iosize 4096 \
        --runtime 10 --cpumask 0x3 /dev/nvme0n1 /dev/nvme1n1
 
 With ``--be upcie-cuda`` or ``--be upcie-hip`` the payloads land in GPU memory
@@ -55,7 +55,7 @@ queues there as well, so the controller's completion writes no longer queue
 behind its data writes; see :ref:`sec-backends-upcie-cuda-p2p-cq-mirror` for when
 that matters. Example::
 
-   xnvmeperf run --iopattern randread --qdepth 128 --iosize 512 \
+   xnvme perf run --iopattern randread --qdepth 128 --iosize 512 \
        --runtime 10 --cpulist 0 --be upcie-cuda --p2p-cq-mirror 0000:01:00.0
 
 For ``cuda-run`` and ``cuda-verify``, where the GPU issues the I/O, the queue
@@ -76,7 +76,7 @@ which is what caps the usable ``--iosize``. A buffer the runtime refuses to
 page-lock is copied at the pageable rate, which the report then shows.
 Example::
 
-   xnvmeperf run --iopattern randread --qdepth 64 --iosize 4096 \
+   xnvme perf run --iopattern randread --qdepth 64 --iosize 4096 \
        --runtime 10 --be upcie --buf-host-bounce --gpu-id 0 0000:01:00.0
 
 ``htod-roofline`` measures what that copy delivers on its own: it keeps
@@ -84,7 +84,7 @@ Example::
 ``--runtime`` seconds and reports the host-to-device GB/s, taking no
 devices::
 
-   xnvmeperf htod-roofline --iosize 4096 --qdepth 64 --runtime 10 --gpu-id 0
+   xnvme perf htod-roofline --iosize 4096 --qdepth 64 --runtime 10 --gpu-id 0
 
 ``verify`` — Data integrity check
 ==================================
@@ -98,7 +98,7 @@ mismatches and I/O errors per device.
 
 Example::
 
-   xnvmeperf verify --iosize 4096 --count 256 /dev/nvme0n1
+   xnvme perf verify --iosize 4096 --count 256 /dev/nvme0n1
 
 ``cuda-run`` — GPU benchmark
 ============================
@@ -148,12 +148,12 @@ Both ``--qdepth`` and ``--iosize`` must be powers of 2. Supported patterns are
 
 Example — sequential read, four queues of depth 32 on two devices::
 
-   xnvmeperf cuda-run --iopattern read --nqueues 4 --qdepth 32 --iosize 4096 \
+   xnvme perf cuda-run --iopattern read --nqueues 4 --qdepth 32 --iosize 4096 \
        --runtime 10 --be upcie-cuda 0000:01:00.0 0000:02:00.0
 
 Example — random write, single queue::
 
-   xnvmeperf cuda-run --iopattern randwrite --qdepth 64 --iosize 4096 \
+   xnvme perf cuda-run --iopattern randwrite --qdepth 64 --iosize 4096 \
        --runtime 10 --be upcie-cuda 0000:01:00.0
 
 ``cuda-verify`` — GPU data integrity check
@@ -169,4 +169,4 @@ compares against the expected data. This is intended to confirm that
 
 Example::
 
-   xnvmeperf cuda-verify --iosize 4096 --qdepth 32 --be upcie-cuda 0000:01:00.0
+   xnvme perf cuda-verify --iosize 4096 --qdepth 32 --be upcie-cuda 0000:01:00.0

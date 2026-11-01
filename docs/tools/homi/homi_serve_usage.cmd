@@ -1,1 +1,1 @@
-homi serve --help
+xnvme homi serve --help

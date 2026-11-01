@@ -352,8 +352,8 @@ sub_serve(struct xnvme_cli *XNVME_UNUSED(cli))
 
 #endif
 
-/* Reads uPCIe's own state, so 'homi serve --be spdk' works on hosts where
- * 'homi status' refuses */
+/* Reads uPCIe's own state, so 'xnvme homi serve --be spdk' works on hosts
+ * where 'xnvme homi status' refuses */
 #ifdef XNVME_BE_UPCIE_ENABLED
 
 /**

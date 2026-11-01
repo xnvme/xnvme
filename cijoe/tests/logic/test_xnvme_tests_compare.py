@@ -10,5 +10,5 @@ def test_compare(cijoe, device, be_opts, cli_args):
     if is_nvmet(cijoe, device):
         pytest.skip(reason="[nvmet] does not implement compare")
 
-    err, _ = cijoe.run(f"xnvme_tests_compare compare {cli_args}")
+    err, _ = cijoe.run(f"xnvme test compare compare {cli_args}")
     assert not err

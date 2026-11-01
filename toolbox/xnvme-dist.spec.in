@@ -49,4 +49,5 @@ space. See https://xnvme.io/
 %{_includedir}/*
 %{_libdir}/*
 %{_bindir}/*
+%{_libexecdir}/xnvme/
 %{_datadir}/*
