@@ -61,21 +61,21 @@ jobs:
       run: |
         make guest-start \
           TRANSPORT=pcie \
-          RIG=compute-node-emulated \
+          RIG="compute-node-emulated separate-metadata" \
           CIJOE_OUTPUT="${{ github.job }}"
 
     - name: CIJOE, provision the guest
       run: |
         make guest-provision \
           TRANSPORT=pcie \
-          RIG=compute-node-emulated \
+          RIG="compute-node-emulated separate-metadata" \
           CIJOE_OUTPUT="${{ github.job }}"
 
     - name: CIJOE, test the guest
       run: |
         make guest-test \
           TRANSPORT=pcie \
-          RIG=compute-node-emulated \
+          RIG="compute-node-emulated separate-metadata" \
           CIJOE_OUTPUT="${{ github.job }}"
 
     - name: Collect guest serial console
