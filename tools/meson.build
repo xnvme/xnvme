@@ -56,12 +56,21 @@ foreach source, tests : tools
     install_rpath: xnvmelib_rpath,
     install: true,
   )
+  if bin_name == 'xnvme'
+    xnvme_bin = bin
+  endif
   foreach test : tests
     test_name = test[0]
     test_args = test[1]
     test('tools - '+bin_name+', '+test_name, bin, args : test_args)
   endforeach
 endforeach
+
+test(
+  'tools - xnvme, library-info names every with- option',
+  python3,
+  args: [files('library_info_with.py'), xnvme_bin, meson.project_source_root() / 'meson_options.txt'],
+)
 
 subdir('xnvmeperf')
 subdir('qublk')
