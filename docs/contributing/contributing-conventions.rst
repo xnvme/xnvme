@@ -267,8 +267,10 @@ Where new code goes
 2. A new library or mechanism: a new directory, ``lib/backend/<name>/``, with
    its header, its state header, one file per implementation, a
    ``meson.build`` adding its sources and include directory, its option
-   ``with-<name>`` and macro ``XNVME_BE_<NAME>_ENABLED``, and its configs if
-   they need nothing from other directories
+   ``with-<name>`` and macro ``XNVME_BE_<NAME>_ENABLED``, its entry in
+   ``g_libconf_parts`` in ``lib/util/xnvme_libconf.c``, which ``xnvme
+   library-info`` prints, and its configs if they need nothing from other
+   directories
 3. Something an OS provides itself: that OS's directory,
    ``lib/backend/<os>/``
 4. A config combining directories: the platform's
