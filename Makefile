@@ -909,6 +909,23 @@ gen-bash-completions:
 	python3 ./$(TOOLBOX_DIR)/xnvmec_generator.py cpl --output $(TOOLBOX_DIR)/bash_completion.d
 	@echo "## xNVMe: make gen-bash-completions [DONE]"
 
+define version-help
+# Set the version in every file that carries it: make version VERSION=x.y.z
+endef
+.PHONY: version
+version:
+	@echo "## xNVMe: make version"
+	@test -n "$(VERSION)" || { echo "VERSION=x.y.z is required"; exit 1; }
+	python3 ./$(TOOLBOX_DIR)/xnvme_release.py --bump $(VERSION)
+	@echo "## xNVMe: make version [DONE]"
+
+define contributors-help
+# Print the authors since the previous tag that CONTRIBUTORS.md does not name
+endef
+.PHONY: contributors
+contributors:
+	@python3 ./$(TOOLBOX_DIR)/xnvme_release.py --contributors
+
 define gen-man-pages-help
 # Helper-target to produce man pages for tools (tools, examples, tests)
 #

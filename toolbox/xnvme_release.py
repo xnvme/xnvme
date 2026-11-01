@@ -11,10 +11,15 @@ Given the subject of the commit, 'ver: bump to vX.Y.Z', this checks that every
 file carrying the version carries X.Y.Z and that CHANGELOG.rst has a section
 for vX.Y.Z, and writes that section to stdout as the release notes. It exits
 non-zero, saying why, when any of that is not so.
+
+With --bump X.Y.Z it instead writes X.Y.Z into every file carrying the
+version, and with --contributors it prints the authors since the previous tag
+that CONTRIBUTORS.md does not name.
 """
 
 import argparse
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -63,19 +68,81 @@ def check(subject: str, root: Path):
     return version, notes
 
 
+def bump(version: str, root: Path):
+    """Write 'version' into every file carrying it, or into none of them
+
+    Each file's first match is replaced, the one check() reads; a file with no
+    match fails the bump rather than being left at the old version.
+    """
+
+    if not re.fullmatch(r"\d+\.\d+\.\d+", version):
+        raise ValueError(f"not a version: {version!r}")
+
+    texts = {}
+    for path, pattern in VERSIONED:
+        text = texts.get(path, (root / path).read_text())
+        found = re.search(pattern, text, re.M)
+        if not found:
+            raise ValueError(f"{path}: no match of {pattern!r}")
+        start, end = found.span(1)
+        texts[path] = text[:start] + version + text[end:]
+
+    for path, text in texts.items():
+        (root / path).write_text(text)
+
+
+def missing_contributors(root: Path):
+    """Authors since the previous tag whom CONTRIBUTORS.md does not name"""
+
+    def git(*args):
+        try:
+            return subprocess.run(
+                ["git", "-C", str(root), *args],
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout
+        except subprocess.CalledProcessError as exc:
+            raise ValueError(exc.stderr.strip()) from exc
+
+    tag = git("describe", "--tags", "--abbrev=0", "--match", "v[0-9]*").strip()
+    authors = set(git("log", "--format=%aN", f"{tag}..HEAD").splitlines())
+    try:
+        contributors = (root / "CONTRIBUTORS.md").read_text()
+    except FileNotFoundError as exc:
+        raise ValueError(str(exc)) from exc
+    named = set(re.findall(r"^\* (.+?) <", contributors, re.M))
+
+    return sorted(authors - named)
+
+
 def main():
     prsr = argparse.ArgumentParser(description="Check a version bump, print its notes")
-    prsr.add_argument("subject", help="Subject of the commit")
+    prsr.add_argument("subject", nargs="?", help="Subject of the commit")
+    mode = prsr.add_mutually_exclusive_group()
+    mode.add_argument("--bump", metavar="X.Y.Z", help="Set the version everywhere")
+    mode.add_argument(
+        "--contributors", action="store_true", help="Authors CONTRIBUTORS.md misses"
+    )
     prsr.add_argument("--root", type=Path, default=Path.cwd())
     args = prsr.parse_args()
+    if args.subject and (args.bump or args.contributors):
+        prsr.error("give a commit subject, --bump or --contributors, not both")
 
     try:
-        _, notes = check(args.subject, args.root)
+        if args.bump:
+            bump(args.bump, args.root)
+        elif args.contributors:
+            for name in missing_contributors(args.root):
+                print(name)
+        elif args.subject:
+            _, notes = check(args.subject, args.root)
+            print(notes)
+        else:
+            prsr.error("give a commit subject, --bump or --contributors")
     except ValueError as exc:
         print(f"release: {exc}", file=sys.stderr)
         return 1
-
-    print(notes)
 
     return 0
 
