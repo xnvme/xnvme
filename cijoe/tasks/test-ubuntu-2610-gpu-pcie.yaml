@@ -29,7 +29,7 @@ steps:
 - name: vram_io_probe
   run: |
     lsblk -no NAME,SERIAL | grep {{ config.rig.devices.nvme0.serial }}
-    rocjitsu-guest-check iouring-vram /dev/$(lsblk -dno NAME,SERIAL | awk '$2=="{{ config.rig.devices.nvme0.serial }}"{print $1}')
+    rocjitsu-guest-check iouring-vram /dev/$(lsblk -dno NAME,SERIAL | awk '$2=="{{ config.rig.devices.nvme0.serial }}" && $1 ~ /n1$/ {print $1}')
 
 - name: test_hip
   uses: core.testrunner

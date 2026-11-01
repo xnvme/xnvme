@@ -1,6 +1,6 @@
 import pytest
 
-from ..conftest import get_homi_id, xnvme_parametrize
+from ..conftest import cijoe_config_inactive_nsid, get_homi_id, xnvme_parametrize
 
 
 @xnvme_parametrize(labels=["nvm"], opts=["be"])
@@ -130,6 +130,14 @@ def test_verify_gpu_p2p_cq_mirror(cijoe, device, be_opts, cli_args):
     _verify_gpu(cijoe, device, be_opts, 16384, "--p2p-cq-mirror")
 
 
+@xnvme_parametrize(labels=["meta_sep"], opts=["be"])
+def test_verify_gpu_metadata(cijoe, device, be_opts, cli_args):
+    """Metadata in a buffer of its own in GPU memory, through the metadata pointer"""
+
+    output = _verify_gpu(cijoe, device, be_opts, 16384)
+    assert "in a buffer of its own" in output, "the namespace has no separate metadata"
+
+
 @xnvme_parametrize(labels=["pcie", "nvm"], opts=["be"])
 def test_run_qdepth_past_the_pool_is_refused(cijoe, device, be_opts, cli_args):
     """A queue deeper than the 1024 commands uPCIe tracks per queue is refused"""
@@ -167,8 +175,7 @@ def test_run_uri_nsid_inactive(cijoe, device, be_opts, cli_args):
 
     homi_id = get_homi_id()
     homi_arg = f"--homi-id {homi_id}" if homi_id else ""
-    # The configured controllers each have a single namespace
-    nsid = int(device["nsid"]) + 1
+    nsid = cijoe_config_inactive_nsid(device)
     err, state = cijoe.run(
         f"xnvmeperf run --iopattern read --qdepth 32 --iosize 4096 --runtime 3"
         f" --cpumask 0x1 --be {be_opts['be']} {homi_arg}"
