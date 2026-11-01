@@ -1,12 +1,12 @@
-# xnvme_hello completion                           -*- shell-script -*-
+# qublk completion                           -*- shell-script -*-
 #
-# Bash completion script for the `xnvme_hello` CLI
+# Bash completion script for the `qublk` CLI
 #
 # SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-_xnvme_hello_completions()
+_qublk_completions()
 {
     local cur=${COMP_WORDS[COMP_CWORD]}
     local sub=""
@@ -16,7 +16,7 @@ _xnvme_hello_completions()
 
     # Complete sub-commands
     if [[ $COMP_CWORD < 2 ]]; then
-        COMPREPLY+=( $( compgen -W 'hw --help' -- $cur ) )
+        COMPREPLY+=( $( compgen -W 'serve del --help' -- $cur ) )
         return 0
     fi
 
@@ -30,8 +30,12 @@ _xnvme_hello_completions()
 
     case "$sub" in
     
-    "hw")
-        opts+="--subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+    "serve")
+        opts+="--qdepth --nqueues --dev-id --max-io-bytes --cpumask --cpulist --no-cuse --be --homi-id --help"
+        ;;
+
+    "del")
+        opts+="--dev-id --help"
         ;;
 
     esac
@@ -42,6 +46,6 @@ _xnvme_hello_completions()
 }
 
 #
-complete -o nosort -F _xnvme_hello_completions xnvme_hello
+complete -o nosort -F _qublk_completions qublk
 
 # ex: filetype=sh

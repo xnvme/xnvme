@@ -16,7 +16,7 @@ _xnvme_tests_xnvme_cli_completions()
 
     # Complete sub-commands
     if [[ $COMP_CWORD < 2 ]]; then
-        COMPREPLY+=( $( compgen -W 'copy-xnvme_cli_run check-opt-attr --help' -- $cur ) )
+        COMPREPLY+=( $( compgen -W 'copy-xnvme_cli_run check-opt-attr dev-open-multi dev-open-multi-fail --help' -- $cur ) )
         return 0
     fi
 
@@ -36,6 +36,14 @@ _xnvme_tests_xnvme_cli_completions()
 
     "check-opt-attr")
         opts+="--help"
+        ;;
+
+    "dev-open-multi")
+        opts+="--be --help"
+        ;;
+
+    "dev-open-multi-fail")
+        opts+="--be --help"
         ;;
 
     esac

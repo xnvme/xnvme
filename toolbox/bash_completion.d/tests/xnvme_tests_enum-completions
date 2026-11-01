@@ -16,7 +16,7 @@ _xnvme_tests_enum_completions()
 
     # Complete sub-commands
     if [[ $COMP_CWORD < 2 ]]; then
-        COMPREPLY+=( $( compgen -W 'multi open backend --help' -- $cur ) )
+        COMPREPLY+=( $( compgen -W 'multi open keep_open backend --help' -- $cur ) )
         return 0
     fi
 
@@ -31,11 +31,15 @@ _xnvme_tests_enum_completions()
     case "$sub" in
     
     "multi")
-        opts+="--uri --count --verbose --subnqn --hostnqn --be --help"
+        opts+="--uri --count --verbose --subnqn --hostnqn --be --shm_id --homi-id --help"
         ;;
 
     "open")
-        opts+="--uri --count --verbose --subnqn --hostnqn --be --help"
+        opts+="--uri --count --verbose --subnqn --hostnqn --be --shm_id --homi-id --help"
+        ;;
+
+    "keep_open")
+        opts+="--uri --verbose --subnqn --hostnqn --be --shm_id --homi-id --help"
         ;;
 
     "backend")

@@ -31,51 +31,51 @@ _lblk_completions()
     case "$sub" in
     
     "enum")
-        opts+="--uri --flags --subnqn --hostnqn --be --help"
+        opts+="--uri --flags --subnqn --hostnqn --be --shm_id --homi-id --help"
         ;;
 
     "info")
-        opts+="--subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        opts+="--subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --help"
         ;;
 
     "idfy")
-        opts+="--nsid --data-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        opts+="--nsid --data-output --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --help"
         ;;
 
     "dir-send")
-        opts+="--nsid --dspec --dtype --doper --endir --tgtdir --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        opts+="--nsid --dspec --dtype --doper --endir --tgtdir --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --help"
         ;;
 
     "dir-receive")
-        opts+="--nsid --dtype --doper --nsr --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        opts+="--nsid --dtype --doper --nsr --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --help"
         ;;
 
     "read")
-        opts+="--slba --nlb --nsid --data-output --meta-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
+        opts+="--slba --nlb --nsid --data-output --meta-output --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "write")
-        opts+="--slba --nlb --nsid --data-input --meta-input --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
+        opts+="--slba --nlb --nsid --data-input --meta-input --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "write-zeros")
-        opts+="--slba --nlb --nsid --data-input --meta-input --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
+        opts+="--slba --nlb --nsid --data-input --meta-input --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "write-uncor")
-        opts+="--slba --nlb --nsid --data-input --meta-input --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
+        opts+="--slba --nlb --nsid --data-input --meta-input --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "write-dir")
-        opts+="--slba --nlb --nsid --data-input --meta-input --dtype --dspec --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
+        opts+="--slba --nlb --nsid --data-input --meta-input --dtype --dspec --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "write-read-pi")
-        opts+="--slba --nlb --nsid --pract --prchk --apptag --apptag_mask --data-input --meta-input --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
+        opts+="--slba --nlb --nsid --pract --prchk --apptag --apptag_mask --data-input --meta-input --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "compare")
-        opts+="--slba --nlb --nsid --data-input --meta-input --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
+        opts+="--slba --nlb --nsid --data-input --meta-input --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     esac

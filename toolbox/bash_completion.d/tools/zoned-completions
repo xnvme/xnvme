@@ -31,63 +31,63 @@ _zoned_completions()
     case "$sub" in
     
     "enum")
-        opts+="--uri --flags --subnqn --hostnqn --be --help"
+        opts+="--uri --flags --subnqn --hostnqn --be --shm_id --homi-id --help"
         ;;
 
     "info")
-        opts+="--subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        opts+="--subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --help"
         ;;
 
     "idfy-ctrlr")
-        opts+="--subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        opts+="--subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --help"
         ;;
 
     "idfy-ns")
-        opts+="--subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        opts+="--subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --help"
         ;;
 
     "changes")
-        opts+="--data-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        opts+="--data-output --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --help"
         ;;
 
     "errors")
-        opts+="--nsid --data-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --help"
+        opts+="--nsid --data-output --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --help"
         ;;
 
     "read")
-        opts+="--slba --nlb --nsid --data-output --meta-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
+        opts+="--slba --nlb --nsid --data-output --meta-output --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "write")
-        opts+="--slba --nlb --nsid --data-input --meta-input --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
+        opts+="--slba --nlb --nsid --data-input --meta-input --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "append")
-        opts+="--slba --nlb --nsid --data-input --meta-input --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
+        opts+="--slba --nlb --nsid --data-input --meta-input --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "mgmt-open")
-        opts+="--slba --nsid --all --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
+        opts+="--slba --nsid --all --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "mgmt-close")
-        opts+="--slba --nsid --all --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
+        opts+="--slba --nsid --all --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "mgmt-finish")
-        opts+="--slba --nsid --all --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
+        opts+="--slba --nsid --all --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "mgmt-reset")
-        opts+="--slba --nsid --all --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
+        opts+="--slba --nsid --all --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "mgmt")
-        opts+="--slba --zsa --nsid --all --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
+        opts+="--slba --zsa --nsid --all --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     "report")
-        opts+="--slba --limit --data-output --subnqn --hostnqn --be --dev-nsid --admin --mem --direct --sync --help"
+        opts+="--slba --limit --data-output --subnqn --hostnqn --be --shm_id --homi-id --dev-nsid --admin --mem --direct --sync --help"
         ;;
 
     esac
