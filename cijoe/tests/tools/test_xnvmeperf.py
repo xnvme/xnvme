@@ -68,6 +68,27 @@ def test_verify(cijoe, device, be_opts, cli_args):
     assert not err
 
 
+METADATA_BUFFER_BACKENDS = ("upcie", "upcie-cuda", "upcie-hip", "spdk", "libvfn")
+
+
+@xnvme_parametrize(labels=["pi1"], opts=["be"])
+def test_verify_separate_metadata(cijoe, device, be_opts, cli_args):
+    """No backend fails verify on a namespace with separate metadata: one taking a
+    metadata buffer verifies it too, one that does not, or hides the metadata, the
+    data alone"""
+
+    homi_id = get_homi_id()
+    homi_arg = f"--homi-id {homi_id}" if homi_id else ""
+
+    err, state = cijoe.run(
+        f"xnvmeperf verify --iosize 4096 --count 16"
+        f" --be {be_opts['be']} {homi_arg} '{device['uri']}/?nsid={device['nsid']}'"
+    )
+    assert not err, state.output()
+    if be_opts["be"] in METADATA_BUFFER_BACKENDS:
+        assert "in a buffer of its own" in state.output(), state.output()
+
+
 @xnvme_parametrize(labels=["pcie", "nvm"], opts=["be"])
 def test_run_qdepth_past_the_pool_is_refused(cijoe, device, be_opts, cli_args):
     """A queue deeper than the 1024 commands uPCIe tracks per queue is refused"""
