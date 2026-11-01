@@ -993,13 +993,15 @@ fill_pattern(void *buf, size_t nbytes, uint64_t slba, uint16_t nlb)
  * run with effective queue depth 1 to ensure buffer ordering correctness.
  *
  * @param args  Benchmark arguments
- * @return      0 on success, negative errno on the first device error
+ * @return      0 on success, negative errno on the first device error, and -EIO when
+ *              an IO failed or read back other than what was written
  */
 static int
 xnvmeperf_verify(struct xnvmeperf_args *args)
 {
 	struct xnvme_dev **devs;
 	uint32_t nios = args->count;
+	int unverified = 0, first_err = 0;
 	int err;
 
 	printf("\nxnvmeperf verify: iosize=%u, nios=%d\n", args->iosize, nios);
@@ -1027,7 +1029,7 @@ xnvmeperf_verify(struct xnvmeperf_args *args)
 		read_buf = xnvme_buf_alloc(dev, args->iosize);
 		expect_buf = malloc(args->iosize);
 		if (!write_buf || !read_buf || !expect_buf) {
-			err = -errno;
+			err = errno ? -errno : -ENOMEM;
 			xnvme_cli_perr("Failed: buffer allocation", err);
 			goto next_dev;
 		}
@@ -1070,10 +1072,14 @@ xnvmeperf_verify(struct xnvmeperf_args *args)
 			}
 		}
 		xnvme_queue_drain(job.queue);
+		if (err) {
+			goto next_dev;
+		}
 
 		if (job.io_failed > 0) {
 			fprintf(stderr, " %-20s  FAIL: %lu write errors\n", args->dev_uris[d],
 				(unsigned long)job.io_failed);
+			unverified = 1;
 			goto next_dev;
 		}
 
@@ -1137,8 +1143,14 @@ xnvmeperf_verify(struct xnvmeperf_args *args)
 
 		printf(" %-20s  verified %d IOs, %lu mismatches, %lu failed\n", args->dev_uris[d],
 		       nios, (unsigned long)mismatches, (unsigned long)job.io_failed);
+		if (mismatches || job.io_failed) {
+			unverified = 1;
+		}
 
 next_dev:
+		if (err && !first_err) {
+			first_err = err;
+		}
 		if (write_buf) {
 			xnvme_buf_free(dev, write_buf);
 		}
@@ -1154,7 +1166,7 @@ next_dev:
 	printf("====================================================================\n");
 
 	xnvme_cli_dev_close_multi(devs, args->ndevs);
-	return err;
+	return first_err ? first_err : (unverified ? -EIO : 0);
 }
 
 static int
