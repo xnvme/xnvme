@@ -99,14 +99,19 @@ def test_ioctls_alongside_served_clients(cijoe, device, be_opts, cli_args):
 
     ctl = f"/dev/xnvme/{device['uri']}"
 
+    # Two GPU clients at once must fit the GPU, and the default heap is 1 GiB each
+    gpu = be_opts["be"] in ("upcie-cuda", "upcie-hip")
+    heap = "--device-heap-size 268435456" if gpu else ""
+
     # Every ioctl bounces through a buffer from the server's heap, while one
     # client allocates buffers and another creates queues from the same heap
     err, _ = cijoe.run(
         "set -e; "
         f"( for i in $(seq 1 500); do xnvme_tests_cuse_admin64_identify identify64 {ctl}"
         " > /dev/null; done ) & ioctls=$!; "
-        f"xnvme_tests_buf buf_alloc_free_threads {cli_args} --count 2000 & bufs=$!; "
-        f"xnvme_tests_threads init_term {cli_args} --count 100 --qdepth 64 & queues=$!; "
+        f"xnvme_tests_buf buf_alloc_free_threads {cli_args} {heap} --count 2000 & bufs=$!; "
+        f"xnvme_tests_threads init_term {cli_args} {heap} --count 100 --qdepth 64"
+        " & queues=$!; "
         "wait $ioctls; wait $bufs; wait $queues"
     )
     assert not err
