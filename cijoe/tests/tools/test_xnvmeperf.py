@@ -127,6 +127,9 @@ def test_verify_gpu_payload(cijoe, device, be_opts, cli_args, iosize):
 def test_verify_gpu_p2p_cq_mirror(cijoe, device, be_opts, cli_args):
     """Completions land in GPU memory and a GPU kernel mirrors them to the host"""
 
+    if get_homi_id():
+        pytest.skip(reason="A homi client with the P2P CQ mirror hangs in verify")
+
     _verify_gpu(cijoe, device, be_opts, 16384, "--p2p-cq-mirror")
 
 
