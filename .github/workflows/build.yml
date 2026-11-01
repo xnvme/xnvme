@@ -55,6 +55,14 @@ jobs:
         meson compile -C builddir
         make clean # prepare for building without debug
 
+    - name: Build with every optional backend disabled
+      # Nothing else builds the nosys fallbacks
+      if: ${{ matrix.os == 'debian' && matrix.ver == 'trixie' }}
+      run: |
+        meson setup builddir-none $(for be in emu thrpool nil shim liburing libaio iocp ioring spdk libvfn upcie driverkit ramdisk; do printf -- '-Dwith-%s=disabled ' "$be"; done)
+        meson compile -C builddir-none
+        rm -rf builddir-none
+
     - name: Configure, Build, and Install
       env:
         BSCRIPT_DEF: toolbox/pkgs/default-build.sh

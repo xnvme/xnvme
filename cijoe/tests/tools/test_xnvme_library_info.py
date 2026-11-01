@@ -29,7 +29,10 @@ def test_library_info_has_spdk(cijoe):
         err, state = cijoe.run("xnvme library-info")
         assert not err
 
-        assert "XNVME_BE_SPDK_ENABLED" in state.output()
+        assert (
+            "{name: 'spdk', macro: 'XNVME_BE_SPDK_ENABLED', built: yes"
+            in state.output()
+        )
     else:
         pytest.skip("Not Linux or FreeBSD, so skipping SPDK check")
 
@@ -41,7 +44,10 @@ def test_library_info_has_liburing(cijoe):
         err, state = cijoe.run("xnvme library-info")
         assert not err
 
-        assert "XNVME_BE_LINUX_LIBURING_ENABLED" in state.output()
+        assert (
+            "{name: 'liburing', macro: 'XNVME_BE_LIBURING_ENABLED', built: yes"
+            in state.output()
+        )
     else:
         pytest.skip("Not Linux, so skipping liburing check")
 
@@ -53,7 +59,10 @@ def test_library_info_has_libaio(cijoe):
         err, state = cijoe.run("xnvme library-info")
         assert not err
 
-        assert "XNVME_BE_LINUX_LIBAIO_ENABLED" in state.output()
+        assert (
+            "{name: 'libaio', macro: 'XNVME_BE_LIBAIO_ENABLED', built: yes"
+            in state.output()
+        )
     else:
         pytest.skip("Not Linux, so skipping libaio check")
 
@@ -65,7 +74,10 @@ def test_library_info_has_libvfn(cijoe):
         err, state = cijoe.run("xnvme library-info")
         assert not err
 
-        assert "XNVME_BE_LIBVFN_ENABLED" in state.output()
+        assert (
+            "{name: 'libvfn', macro: 'XNVME_BE_LIBVFN_ENABLED', built: yes"
+            in state.output()
+        )
     else:
         pytest.skip("Not Linux, so skipping libvfn/vfio check")
 
@@ -97,17 +109,17 @@ def test_library_info_has_all_combos(cijoe):
     optional = {
         "spdk": "XNVME_BE_SPDK_ENABLED",
         "libvfn": "XNVME_BE_LIBVFN_ENABLED",
-        "io_uring": "XNVME_BE_LINUX_LIBURING_ENABLED",
-        "io_uring_cmd": "XNVME_BE_LINUX_LIBURING_ENABLED",
-        "io_uring_bdev": "XNVME_BE_LINUX_LIBURING_ENABLED",
-        "io_uring_file": "XNVME_BE_LINUX_LIBURING_ENABLED",
-        "libaio": "XNVME_BE_LINUX_LIBAIO_ENABLED",
-        "libaio_bdev": "XNVME_BE_LINUX_LIBAIO_ENABLED",
-        "libaio_file": "XNVME_BE_LINUX_LIBAIO_ENABLED",
+        "io_uring": "XNVME_BE_LIBURING_ENABLED",
+        "io_uring_cmd": "XNVME_BE_LIBURING_ENABLED",
+        "io_uring_bdev": "XNVME_BE_LIBURING_ENABLED",
+        "io_uring_file": "XNVME_BE_LIBURING_ENABLED",
+        "libaio": "XNVME_BE_LIBAIO_ENABLED",
+        "libaio_bdev": "XNVME_BE_LIBAIO_ENABLED",
+        "libaio_file": "XNVME_BE_LIBAIO_ENABLED",
         "upcie": "XNVME_BE_UPCIE_ENABLED",
         "upcie-cuda": "XNVME_BE_UPCIE_CUDA_ENABLED",
         "upcie-hip": "XNVME_BE_UPCIE_HIP_ENABLED",
-        "io_uring_dmabuf": "XNVME_BE_LINUX_IO_URING_DMABUF_ENABLED",
+        "io_uring_dmabuf": "XNVME_BE_LIBURING_DMABUF_ENABLED",
     }
 
     combos = get_backend_configurations()
@@ -115,7 +127,7 @@ def test_library_info_has_all_combos(cijoe):
     for combo in combos.get(os_key, []):
         be_name = combo["be"][0]
         # Skip optional backends not compiled in
-        if be_name in optional and optional[be_name] not in output:
+        if be_name in optional and f"conf: {optional[be_name]}" not in output:
             continue
         if f"name: '{be_name}'" not in output:
             missing.append(be_name)

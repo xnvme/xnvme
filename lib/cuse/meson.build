@@ -8,7 +8,7 @@ xnvme_cuse_inc = include_directories('.')
 xnvme_cuse_lib = static_library(
   'xnvme_cuse',
   files('xnvme_cuse.c'),
-  include_directories: [conf_inc, xnvme_inc],
+  include_directories: [conf_inc, xnvme_inc, xnvme_priv_inc],
   link_with: xnvmelib,
   dependencies: [thread_dep],
   install: false,

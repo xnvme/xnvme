@@ -18,18 +18,21 @@ from ..conftest import (
 _UNCLAIMED_ID = 4242
 
 
+UPCIE_BUILT = "{name: 'upcie', macro: 'XNVME_BE_UPCIE_ENABLED', built: yes"
+
+
 def _require_upcie(cijoe):
     """
     Skip unless this build has the uPCIe backend, whose runtime 'homi status' reads
 
     Asked of the library rather than decided from the platform, since a Linux
-    build configured with -Dbe_upcie=false is in the same position.
+    build configured with -Dwith-upcie=disabled is in the same position.
     """
 
     err, state = cijoe.run("xnvme library-info")
     assert not err, "could not ask the library what backends it has"
 
-    if "name: 'upcie'" not in state.output():
+    if UPCIE_BUILT not in state.output():
         pytest.skip(reason="Requires the uPCIe backend; this build does not have it")
 
 
@@ -356,7 +359,7 @@ def test_upcie_status_refuses_when_absent(cijoe):
     err, state = cijoe.run("xnvme library-info")
     assert not err, "could not ask the library what backends it has"
 
-    if "name: 'upcie'" in state.output():
+    if UPCIE_BUILT in state.output():
         pytest.skip(reason="This build has uPCIe; the refusal is a build without it")
 
     err, state = cijoe.run(f"homi status --homi-id {_UNCLAIMED_ID}")

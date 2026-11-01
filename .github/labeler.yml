@@ -25,24 +25,25 @@
 'gate:hardware':
 - changed-files:
   - any-glob-to-any-file:
-    - 'lib/upcie/**'
-    - 'lib/xnvme_be_linux*'
-    - 'lib/io_uring/**'
+    - 'lib/backend/upcie/**'
+    - 'lib/backend/linux/**'
+    - 'lib/backend/libaio/**'
+    - 'lib/backend/liburing/**'
     - 'include/**'
 
 'gate:gpu':
 - changed-files:
   - any-glob-to-any-file:
-    - 'lib/upcie/*cuda*'
-    - 'lib/upcie/*hip*'
-    - 'lib/io_uring/*dmabuf*'
+    - 'lib/backend/upcie/*cuda*'
+    - 'lib/backend/upcie/*hip*'
+    - 'lib/backend/liburing/*dmabuf*'
     - '**/*cuda*'
     - '**/*hip*'
 
 'gate:rdma':
 - changed-files:
   - any-glob-to-any-file:
-    - 'lib/xnvme_be_spdk*'
+    - 'lib/backend/spdk/**'
     - '**/*rdma*'
     - '**/*fabrics*'
 
@@ -50,8 +51,8 @@
 - changed-files:
   - any-glob-to-any-file:
     - 'tools/xnvmeperf/**'
-    - 'lib/upcie/**'
-    - 'lib/xnvme_queue*'
+    - 'lib/backend/upcie/**'
+    - 'lib/core/xnvme_queue*'
 
 'gate:docgen':
 - changed-files:

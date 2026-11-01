@@ -49,19 +49,28 @@ foreach source, tests : tools
   bin = executable(
     bin_name,
     [source, xnvme_vcs_h],
-    include_directories: [conf_inc, xnvme_inc] + (bin_cuse ? [xnvme_cuse_inc] : []),
+    include_directories: [conf_inc, xnvme_inc, xnvme_priv_inc] + (bin_cuse ? [xnvme_cuse_inc] : []),
     link_args: link_args_hardening,
     pie: get_option('hardening'),
     link_with: [xnvmelib] + (bin_cuse ? [xnvme_cuse_lib] : []),
     install_rpath: xnvmelib_rpath,
     install: true,
   )
+  if bin_name == 'xnvme'
+    xnvme_bin = bin
+  endif
   foreach test : tests
     test_name = test[0]
     test_args = test[1]
     test('tools - '+bin_name+', '+test_name, bin, args : test_args)
   endforeach
 endforeach
+
+test(
+  'tools - xnvme, library-info names every with- option',
+  python3,
+  args: [files('library_info_with.py'), xnvme_bin, meson.project_source_root() / 'meson_options.txt'],
+)
 
 subdir('xnvmeperf')
 subdir('qublk')
