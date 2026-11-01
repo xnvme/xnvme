@@ -28,8 +28,12 @@ What CI runs at each is described in :ref:`sec-contributing-labels`.
    did not touch at first; the rules do not add it then, so the maintainer
    does.
 
-#. When ``ci-result`` passes, whose summary says which gates passed, and the
-   review approves, a maintainer merges the pull-request by rebase.
+#. A maintainer merges the pull-request by rebase once ``main``'s branch
+   protection allows it: ``ci-result`` passes, whose summary says which gates
+   passed, on a branch up to date with ``main``; two maintainers approve, after
+   the last push, as a push dismisses earlier approvals; and every review
+   conversation is resolved. The history stays linear, so a merge commit is
+   refused.
 
 A full run of the fixed jobs takes about 40 minutes. The documentation is
 built first, without a guest and so without running its commands, and the
