@@ -1,0 +1,13 @@
+# A second namespace on compute-node-emulated's controller, with 16 bytes of
+# separate metadata per LBA and no protection information
+
+[rig.devices.nvme0]
+children = [
+  "nvme-ns,drive=nvme0n1,nsid=1,logical_block_size=4096,physical_block_size=4096",
+  "nvme-ns,drive=nvme0n2,nsid=2,logical_block_size=4096,physical_block_size=4096,ms=16",
+]
+
+[rig.devices.nvme0n2]
+provider = "qemu"
+drives = ["id=nvme0n2,file={{ local.env.HOME }}/guests/compute-node-emulated/nvme0n2.img,format=raw,if=none,discard=on,detect-zeroes=unmap,cache=none,aio=io_uring"]
+image = {path = "{{ local.env.HOME }}/guests/compute-node-emulated/nvme0n2.img", size = "1G"}

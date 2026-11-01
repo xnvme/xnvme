@@ -145,6 +145,16 @@ def cijoe_config_get_device(labels):
     return None
 
 
+def cijoe_config_inactive_nsid(device):
+    """The namespace after the highest one configured on the device's controller"""
+
+    return 1 + max(
+        int(d["nsid"])
+        for d in pytest.cijoe_instance.getconf("devices", [])
+        if d["uri"] == device["uri"]
+    )
+
+
 def xnvme_setup_device(labels):
     """Get a device, without a backend-configuration to match"""
 
@@ -501,8 +511,11 @@ class HomiServer:
         if HomiServer.RUNNING == (be, tuple(labels)):
             return
 
-        devices = cijoe_config_get_all_devices(labels)
-        uris = " ".join(d["uri"] for d in devices)
+        # A server holds controllers, so namespaces of one controller are one to it
+        ctrlrs = list(
+            dict.fromkeys(d["uri"] for d in cijoe_config_get_all_devices(labels))
+        )
+        uris = " ".join(ctrlrs)
         if not uris:
             pytest.skip(f"Configuration has no device labelled: {labels}")
 
@@ -527,9 +540,9 @@ class HomiServer:
         # tells us nothing. Ask first, so that the environment produces a skip
         # while a server that cannot start over devices that do open produces a
         # failure.
-        err, _ = cijoe.run(f"xnvme info {devices[0]['uri']} --be {be}")
+        err, _ = cijoe.run(f"xnvme info {ctrlrs[0]} --be {be}")
         if err:
-            pytest.skip(f"be({be}) cannot open {devices[0]['uri']} on this machine")
+            pytest.skip(f"be({be}) cannot open {ctrlrs[0]} on this machine")
 
         # SPDK backs its DMA memory with files in the hugetlbfs mount and never unlinks
         # them, since clients must be able to map them. As xNVMe does not call
@@ -552,7 +565,7 @@ class HomiServer:
         cijoe.run(f"rm -f {logfile}")
         cijoe.run(
             f"setsid stdbuf -oL homi serve {uris} --be {be} --homi-id {_homi_id} "
-            f"--host-heap-size {HomiServer.HOST_HEAP_SIZE_PER_DEV * len(devices)} "
+            f"--host-heap-size {HomiServer.HOST_HEAP_SIZE_PER_DEV * len(ctrlrs)} "
             f"< /dev/null > {logfile} 2>&1 &"
         )
 

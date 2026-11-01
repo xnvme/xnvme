@@ -461,16 +461,18 @@ def test_admin_costs_no_ioqueue(cijoe, device, be_opts, cli_args):
 
     baseline = _queues_on(cijoe, homi_id, uri)
 
+    # A GPU client brings its runtime up first, seconds on an emulated GPU
+    gpu = be_opts["be"] in ("upcie-cuda", "upcie-hip")
     _bg(
         cijoe,
         "admin",
-        f"for i in $(seq 60); do xnvme info {uri} --be {be_opts['be']}"
+        f"for i in $(seq {8 if gpu else 60}); do xnvme info {uri} --be {be_opts['be']}"
         f" --homi-id {homi_id} >/dev/null 2>&1; done",
     )
 
     # Sampled while the clients run, since a queue goes back on exit
     peak = baseline
-    for _ in range(90):
+    for _ in range(300 if gpu else 90):
         _, used = _counts(cijoe, homi_id)
         peak = max(peak, used.get(uri, 0))
         if _bg_rc(cijoe, "admin") is not None:
@@ -478,6 +480,7 @@ def test_admin_costs_no_ioqueue(cijoe, device, be_opts, cli_args):
         sleep(0.2)
     else:
         cijoe.run("cat /tmp/homi-admin.out")
+        cijoe.run("pkill -f '[/]tmp/homi-admin.rc'; pkill -x xnvme")
         pytest.fail("the admin clients never finished")
 
     assert (

@@ -43,6 +43,13 @@ nsid = 1
 labels = [ "dev", "pcie", "hip", "nvm" ]
 driver_attachment = "userspace"
 
+# Namespace 2, from the rig separate-metadata
+[[devices]]
+uri = "0000:03:00.0"
+nsid = 2
+labels = [ "hip", "meta_sep" ]
+driver_attachment = "userspace"
+
 # The same controller on the kernel's driver, for io_uring_dmabuf; the guest's
 # only NVMe controller, so its namespace is nvme0n1. Labelled dmabuf alone, so
 # only the tests written for that backend pick it
