@@ -2,6 +2,7 @@ import pytest
 import yaml
 
 from ..conftest import (
+    HomiServer,
     XnvmeDriver,
     cijoe_config_get_all_devices,
     get_homi_id,
@@ -100,5 +101,10 @@ def test_fabrics_enum_count(cijoe, device, be_opts, cli_args):
 
 @xnvme_parametrize(labels=["dev"], opts=[])
 def test_backend(cijoe, device, be_opts, cli_args):
+    """Opens the controllers with every backend, so a server must not hold them"""
+
+    if get_homi_id():
+        HomiServer.stop(cijoe)
+
     err, _ = cijoe.run("xnvme_tests_enum backend")
     assert not err

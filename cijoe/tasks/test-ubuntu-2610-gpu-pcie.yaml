@@ -37,6 +37,13 @@ steps:
     args: '-k "hip" tests --timeout=1800 --timeout-method=thread'
     random_order: false
 
+# Again as clients of a homi server; kvs, dual_be and qublk take no --homi-id
+- name: test_hip_homi
+  uses: core.testrunner
+  with:
+    args: '-k "hip and not (kvs or dual_be or qublk)" tests --homi-id 42 --timeout=1800 --timeout-method=thread'
+    random_order: false
+
 # io_uring_dmabuf on the controller's block device, with the IO buffers in VRAM
 - name: test_dmabuf
   uses: core.testrunner
