@@ -224,7 +224,7 @@ _dev_idfy_ns_desc_csi(struct xnvme_dev *dev, struct xnvme_spec_idfy *idfy, uint8
 	ctx = xnvme_cmd_ctx_from_dev(dev);
 	ctx.cmd.common.opcode = XNVME_SPEC_ADM_OPC_IDFY;
 	ctx.cmd.common.nsid = dev->ident.nsid;
-	ctx.cmd.idfy.cns = XNVME_SPEC_IDFY_NSDSCR;
+	ctx.cmd.idfy.cns = XNVME_SPEC_IDFY_NS_DESC;
 
 	err = xnvme_cmd_pass_admin(&ctx, idfy, sizeof(*idfy), NULL, 0x0);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {

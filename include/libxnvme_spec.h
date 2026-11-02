@@ -490,11 +490,12 @@ enum xnvme_spec_io_mgmt_send_mo {
  * @enum xnvme_spec_idfy_cns
  */
 enum xnvme_spec_idfy_cns {
-	XNVME_SPEC_IDFY_NS     = 0x0, ///< XNVME_SPEC_IDFY_NS
-	XNVME_SPEC_IDFY_CTRLR  = 0x1, ///< XNVME_SPEC_IDFY_CTRLR
-	XNVME_SPEC_IDFY_NSLIST = 0x2, ///< XNVME_SPEC_IDFY_NSLIST
-	XNVME_SPEC_IDFY_NSDSCR = 0x3, ///< XNVME_SPEC_IDFY_NSDSCR
-	XNVME_SPEC_IDFY_SETL   = 0x4, ///< XNVME_SPEC_IDFY_SETL
+	XNVME_SPEC_IDFY_NS      = 0x0,                     ///< XNVME_SPEC_IDFY_NS
+	XNVME_SPEC_IDFY_CTRLR   = 0x1,                     ///< XNVME_SPEC_IDFY_CTRLR
+	XNVME_SPEC_IDFY_NSLIST  = 0x2,                     ///< XNVME_SPEC_IDFY_NSLIST
+	XNVME_SPEC_IDFY_NS_DESC = 0x3,                     ///< XNVME_SPEC_IDFY_NS_DESC
+	XNVME_SPEC_IDFY_NSDSCR  = XNVME_SPEC_IDFY_NS_DESC, ///< XNVME_SPEC_IDFY_NSDSCR
+	XNVME_SPEC_IDFY_SETL    = 0x4,                     ///< XNVME_SPEC_IDFY_SETL
 
 	XNVME_SPEC_IDFY_NS_IOCS     = 0x05, ///< XNVME_SPEC_IDFY_NS_IOCS
 	XNVME_SPEC_IDFY_CTRLR_IOCS  = 0x6,  ///< XNVME_SPEC_IDFY_CTRLR_IOCS
@@ -557,7 +558,7 @@ enum xnvme_spec_ns_desc_nidt {
  * Namespace Identification Descriptor
  *
  * That is, one entry in the list returned for opcode XNVME_SPEC_OPC_IDFY(0x06) with
- * XNVME_SPEC_IDFY_NSDSCR(0x3). Only the first 'nidl' bytes of 'nid' are valid, the next
+ * XNVME_SPEC_IDFY_NS_DESC(0x3). Only the first 'nidl' bytes of 'nid' are valid, the next
  * descriptor starts at offset 4 + 'nidl', and the list is terminated by a descriptor with
  * 'nidl' equal to zero (NVMe Base 2.3, 5.2.13.2.3).
  *

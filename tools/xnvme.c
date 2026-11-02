@@ -247,7 +247,7 @@ sub_idfy(struct xnvme_cli *cli)
 	switch (cns) {
 	case XNVME_SPEC_IDFY_NS:
 	case XNVME_SPEC_IDFY_NSLIST:
-	case XNVME_SPEC_IDFY_NSDSCR:
+	case XNVME_SPEC_IDFY_NS_DESC:
 	case XNVME_SPEC_IDFY_NS_IOCS:
 	case XNVME_SPEC_IDFY_NSLIST_IOCS:
 	case XNVME_SPEC_IDFY_NSLIST_ALLOC:
