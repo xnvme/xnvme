@@ -1,11 +1,11 @@
 /**
- * Deprecated functions, kept so code written for earlier releases, such as the xNVMe engine of
- * fio, builds unchanged
+ * Deprecated names, kept so code written for earlier releases, such as the xNVMe engine of fio,
+ * builds unchanged
  *
- * Each calls the function replacing it. In a build with XNVME_DEBUG_ENABLED defined, as xNVMe's
- * debug builds are, the first call of each also prints a deprecation warning to stderr; otherwise
- * nothing is added to the call. They are inline, so they are not part of the library, nor of its
- * bindings.
+ * Each function calls the function replacing it. In a build with XNVME_DEBUG_ENABLED defined, as
+ * xNVMe's debug builds are, the first call of each also prints a deprecation warning to stderr;
+ * otherwise nothing is added to the call. They are inline, so they are not part of the library,
+ * nor of its bindings. Each other name is a macro expanding to the name replacing it.
  *
  * SPDX-FileCopyrightText: Samsung Electronics Co., Ltd
  *
@@ -13,6 +13,11 @@
  *
  * @file libxnvme_compat.h
  */
+
+/**
+ * @deprecated Use XNVME_SPEC_IDFY_NS_DESC
+ */
+#define XNVME_SPEC_IDFY_NSDSCR XNVME_SPEC_IDFY_NS_DESC
 
 static inline void
 xnvme_compat_deprecated(int *warned, const char *name, const char *instead)
