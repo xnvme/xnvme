@@ -15,45 +15,6 @@
 #include <xnvme_dev.h>
 
 static int
-_idfy_ctrlr_iocs_fs(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
-{
-	struct xnvme_spec_fs_idfy_ctrlr *ctrlr = dbuf;
-
-	ctrlr->caps.direct = 1;
-
-	ctrlr->iosizes.min = 1;
-	ctrlr->iosizes.max = 1024 * 1024 * 128;
-	ctrlr->iosizes.opt = 1024 * 64;
-
-	ctrlr->limits.file_data_size = 1;
-
-	ctrlr->ac = 0xAC;
-	ctrlr->dc = 0xDC;
-
-	return 0;
-}
-
-static int
-_idfy_ns_iocs_fs(struct xnvme_dev *dev, void *dbuf)
-{
-	struct xnvme_spec_fs_idfy_ns *ns = dbuf;
-
-	size_t ramdisk_size = xnvme_be_ramdisk_dev_get_size(dev);
-	if (!ramdisk_size) {
-		return -1;
-	}
-
-	ns->nsze = ramdisk_size;
-	ns->ncap = ramdisk_size;
-	ns->nuse = ramdisk_size;
-
-	ns->ac = 0xAC;
-	ns->dc = 0xDC;
-
-	return 0;
-}
-
-static int
 _idfy_ctrlr(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 {
 	struct xnvme_spec_idfy_ctrlr *ctrlr = dbuf;
@@ -105,26 +66,6 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf)
 
 	case XNVME_SPEC_IDFY_CTRLR:
 		return _idfy_ctrlr(ctx->dev, dbuf);
-
-	case XNVME_SPEC_IDFY_NS_IOCS:
-		switch (ctx->cmd.idfy.csi) {
-		case XNVME_SPEC_CSI_FS:
-			return _idfy_ns_iocs_fs(ctx->dev, dbuf);
-
-		default:
-			break;
-		}
-		break;
-
-	case XNVME_SPEC_IDFY_CTRLR_IOCS:
-		switch (ctx->cmd.idfy.csi) {
-		case XNVME_SPEC_CSI_FS:
-			return _idfy_ctrlr_iocs_fs(ctx->dev, dbuf);
-
-		default:
-			break;
-		}
-		break;
 
 	default:
 		break;
