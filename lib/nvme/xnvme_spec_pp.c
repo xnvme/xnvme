@@ -125,8 +125,8 @@ xnvme_spec_idfy_cns_str(enum xnvme_spec_idfy_cns eval)
 		return "IDFY_IOCS";
 	case XNVME_SPEC_IDFY_NS:
 		return "IDFY_NS";
-	case XNVME_SPEC_IDFY_NSDSCR:
-		return "IDFY_NSDSCR";
+	case XNVME_SPEC_IDFY_NS_DESC:
+		return "IDFY_NS_DESC";
 	case XNVME_SPEC_IDFY_NSGRAN:
 		return "IDFY_NSGRAN";
 	case XNVME_SPEC_IDFY_NSLIST:
