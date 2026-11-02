@@ -11,6 +11,9 @@
 #include <xnvme_dev.h>
 
 #ifdef XNVME_BE_UPCIE_ENABLED
+#include <fcntl.h>
+#include <unistd.h>
+
 #include <xnvme_be_upcie.h>
 #include <xnvme_be_upcie_cplane_serve_mem.h>
 #include <xnvme_lock.h>
@@ -387,7 +390,7 @@ _xnvme_be_upcie_cplane_serve_register_mem(int dmabuf_fd, uint64_t nbytes, uint32
 {
 	uint64_t *phys = NULL;
 	uint32_t nphys;
-	int err;
+	int import_fd, err;
 
 	if ((dmabuf_fd < 0) || !nbytes || !page_size || !bdf || !out) {
 		return -EINVAL;
@@ -414,9 +417,17 @@ _xnvme_be_upcie_cplane_serve_register_mem(int dmabuf_fd, uint64_t nbytes, uint32
 	out->map_fd = -1;
 	out->region = -1;
 
-	err = dmabuf_import_attach(dmabuf_fd, &out->dmabuf);
+	/* Detaching closes the descriptor the import holds, and the caller still owns
+	 * dmabuf_fd; sharing one number lets the detach close whatever reused it.
+	 * Close-on-exec as received, see nvme_cplane_msg_recv_flags() */
+	import_fd = fcntl(dmabuf_fd, F_DUPFD_CLOEXEC, 0);
+	if (import_fd < 0) {
+		return -errno;
+	}
+	err = dmabuf_import_attach(import_fd, &out->dmabuf);
 	if (err) {
 		XNVME_DEBUG("FAILED: dmabuf_import_attach(); err(%d)", err);
+		close(import_fd);
 		return err;
 	}
 	out->attached = 1;

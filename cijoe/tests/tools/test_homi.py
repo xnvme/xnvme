@@ -1,3 +1,4 @@
+import base64
 import re
 from time import sleep, time
 
@@ -1179,3 +1180,108 @@ def test_a_stalled_client_does_not_stop_a_working_one(cijoe, device, be_opts, cl
     assert elapsed < (
         stall / 2
     ), f"the read took {elapsed:.1f}s against a {stall}s stall"
+
+
+# Registers a udmabuf over a memfd as client A, connects client B, takes A's
+# registration away by `how`, and asks B for a status. The server lets go of the
+# received dma-buf right after the registration, so B's socket gets its number.
+_REUSE_PY = r"""
+import fcntl, os, socket, struct, sys, time
+
+path, how, nbytes = sys.argv[1], sys.argv[2], 2 * 1024 * 1024
+MSG, HDR = 104, 24
+
+def msg(op):
+    m = bytearray(MSG)
+    m[0:HDR] = struct.pack("<IIiIII", op, 1, 0, 0, 0, 0)
+    return m
+
+def ask(s, m, fds=()):
+    if fds:
+        socket.send_fds(s, [bytes(m)], list(fds))
+    else:
+        s.sendall(bytes(m))
+    r = s.recv(MSG)
+    if len(r) != MSG:
+        raise ConnectionError(f"reply of {len(r)} bytes")
+    return r
+
+def result(r):
+    return struct.unpack("<i", r[8:12])[0]
+
+def connect():
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_SEQPACKET)
+    s.settimeout(10)
+    s.connect(path)
+    return s
+
+memfd = os.memfd_create("homi-reuse", os.MFD_ALLOW_SEALING)
+os.ftruncate(memfd, nbytes)
+fcntl.fcntl(memfd, fcntl.F_ADD_SEALS, fcntl.F_SEAL_SHRINK)
+udev = os.open("/dev/udmabuf", os.O_RDWR)
+create = bytearray(struct.pack("<IIQQ", memfd, 0x01, 0, nbytes))
+dmabuf = fcntl.ioctl(udev, 0x40187542, create, True)  # UDMABUF_CREATE
+
+a = connect()
+assert result(ask(a, msg(1))) == 0, "A could not initialise"
+m = msg(8)  # REGISTER_MEM
+m[HDR : HDR + 8] = struct.pack("<Q", nbytes)
+m[HDR + 16 : HDR + 20] = struct.pack("<I", 4096)
+r = ask(a, m, [dmabuf])
+assert result(r) == 0, f"A could not register; result({result(r)})"
+offset = struct.unpack("<Q", r[HDR + 8 : HDR + 16])[0]
+os.close(dmabuf)
+
+b = connect()
+assert result(ask(b, msg(7))) == 0, "B got no status before A left"
+
+try:
+    if how == "unregister":
+        m = msg(9)  # UNREGISTER_MEM
+        m[HDR + 8 : HDR + 16] = struct.pack("<Q", offset)
+        assert result(ask(a, m)) == 0, "A could not unregister"
+    else:
+        a.close()
+        for _ in range(100):
+            if struct.unpack("<I", ask(b, msg(7))[HDR + 4 : HDR + 8])[0] == 0:
+                break
+            time.sleep(0.1)
+        else:
+            raise SystemExit("the server never let go of A")
+    assert result(ask(b, msg(7))) == 0, "B got a refusal after A left"
+except (OSError, ConnectionError) as exc:
+    raise SystemExit(f"B lost its connection when A left: {exc!r}")
+
+print("survived")
+"""
+
+
+@pytest.mark.parametrize("how", ["unregister", "close"])
+@xnvme_parametrize(labels=["pcie"], opts=["be"])
+def test_a_registration_going_away_leaves_other_clients_alone(
+    cijoe, device, be_opts, cli_args, how
+):
+    """
+    Client A registers a dma-buf, client B connects, A's registration goes away;
+    B must keep its connection
+
+    The server receives A's dma-buf as a descriptor, so once it has let go of
+    that number the next connection may get it. Releasing the registration
+    must close only what the registration holds. Host memory through udmabuf,
+    so no GPU is needed, but dmabuf_import is: without it no registration
+    succeeds.
+    """
+
+    homi_id = _served(cijoe, be_opts)
+
+    err, _ = cijoe.run("test -c /dev/udmabuf && test -c /dev/dmabuf_import")
+    if err:
+        pytest.skip(reason="Requires /dev/udmabuf and the dmabuf_import module")
+
+    script = base64.b64encode(_REUSE_PY.encode()).decode()
+    err, state = cijoe.run(
+        f"echo {script} | base64 -d > /tmp/homi-reuse.py"
+        f" && python3 /tmp/homi-reuse.py {_sock(homi_id)} {how}"
+    )
+    assert not err, f"B did not outlive A's registration: {state.output()!r}"
+    assert "survived" in state.output()
