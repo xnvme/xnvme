@@ -226,6 +226,37 @@ def test_idfy_ns_desc_file(cijoe, device, be_opts, cli_args):
     assert not any(data[5:])
 
 
+def _assert_info_csi(cijoe, cli_args, csi, geo_type):
+    err, state = cijoe.run(f"xnvme info {cli_args}")
+    assert not err, state.output()
+
+    output = state.output()
+    lines = [line.strip() for line in output.split("\n")]
+    for expected in [f"csi: {csi}", f"type: {geo_type}"]:
+        assert expected in lines, f"missing '{expected}' in:\n{output}"
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be", "admin"])
+def test_info_csi_nvm(cijoe, device, be_opts, cli_args):
+    """An NVM namespace is identified by CSI 0x0 and classified as conventional"""
+
+    _assert_info_csi(cijoe, cli_args, "0x0", "XNVME_GEO_CONVENTIONAL")
+
+
+@xnvme_parametrize(labels=["zns"], opts=["be", "admin"])
+def test_info_csi_zns(cijoe, device, be_opts, cli_args):
+    """A zoned namespace is identified by CSI 0x2 and classified as zoned"""
+
+    _assert_info_csi(cijoe, cli_args, "0x2", "XNVME_GEO_ZONED")
+
+
+@xnvme_parametrize(labels=["file"], opts=["be", "admin"])
+def test_info_csi_file(cijoe, device, be_opts, cli_args):
+    """A file is identified by CSI 0x1f and classified as conventional"""
+
+    _assert_info_csi(cijoe, cli_args, "0x1f", "XNVME_GEO_CONVENTIONAL")
+
+
 @xnvme_parametrize(labels=["dev", "idfy_cs"], opts=["be", "admin"])
 def test_idfy_cs(cijoe, device, be_opts, cli_args):
     if be_opts["admin"] == "block":
