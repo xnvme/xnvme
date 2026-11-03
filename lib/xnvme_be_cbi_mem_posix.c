@@ -7,6 +7,7 @@
 #endif
 #include <xnvme_be.h>
 #include <xnvme_be_nosys.h>
+#include <xnvme_mem.h>
 #ifdef XNVME_BE_CBI_MEM_POSIX_ENABLED
 #include <unistd.h>
 #include <errno.h>
@@ -57,8 +58,9 @@ struct xnvme_be_mem g_xnvme_be_cbi_mem_posix = {
 	.buf_realloc = xnvme_be_cbi_mem_posix_buf_realloc,
 	.buf_free = xnvme_be_cbi_mem_posix_buf_free,
 	.buf_vtophys = xnvme_be_cbi_mem_posix_buf_vtophys,
-	.mem_map = xnvme_be_nosys_mem_map,
-	.mem_unmap = xnvme_be_nosys_mem_unmap,
+	.mem_map = xnvme_mem_noreq_map,
+	.mem_unmap = xnvme_mem_noreq_unmap,
+	.mem_map_req = xnvme_mem_noreq_map_req,
 #else
 	.buf_alloc = xnvme_be_nosys_buf_alloc,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
