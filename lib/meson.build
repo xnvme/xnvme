@@ -130,6 +130,7 @@ xnvmelib = library(
   dependencies: xnvmelib_deps,
   link_args: link_args_hardening + version_script,
   link_depends: mapfile,
+  link_language: conf_data.get('XNVME_BE_UPCIE_CUDA_ENABLED') ? 'cpp' : 'c',
   include_directories: [conf_inc, xnvme_inc],
   cuda_args: cuda_arch_args,
   install_dir: xnvmelib_libdir,

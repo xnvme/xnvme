@@ -137,6 +137,12 @@ conf_data.set('XNVME_BE_UPCIE_CUDA_ENABLED', get_option('be_upcie') and conf_dat
 cuda_arch_args = []
 if conf_data.get('XNVME_BE_UPCIE_CUDA_ENABLED')
   add_languages('cuda', required: true, native: false)
+  # libxnvme is linked by g++, not nvcc: nvcc moves the SPDK archives out of
+  # their --whole-archive, dropping SPDK's transports, which only register
+  # themselves, and the .cu object needs the libstdc++ that g++ links. This
+  # holds while the .cu sources are compiled whole, without -rdc; relocatable
+  # device code would need a device-link step of its own before this link
+  add_languages('cpp', required: true, native: false)
   cuda_arch_args = ['-arch=native']
 endif
 
