@@ -5,8 +5,18 @@ from ..conftest import xnvme_parametrize
 
 @xnvme_parametrize(labels=["dev"], opts=["be"])
 def test_mem_map_unmap(cijoe, device, be_opts, cli_args):
-    if be_opts["admin"] != "libvfn":
+    if be_opts["mem"] not in ("libvfn", "posix", "spdk", "windows"):
         pytest.skip(reason="Backend does not support memory-mapping")
+
+    # Without an IOMMU, SPDK maps only memory in hugetlb pages, which the test
+    # does not allocate
+    if be_opts["mem"] == "spdk":
+        uri = device["uri"]
+        err, state = cijoe.run(
+            f"sh -c 'basename $(readlink -f /sys/bus/pci/devices/{uri}/driver)'"
+        )
+        if err or "uio_pci_generic" in state.output():
+            pytest.skip(reason="SPDK without an IOMMU maps hugetlb memory only")
 
     err, _ = cijoe.run(f"xnvme_tests_map mem_map_unmap {cli_args} --count 31")
     assert not err
