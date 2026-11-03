@@ -6,57 +6,57 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libxnvme.h>
-#include <sys/mman.h>
-#include <unistd.h>
 
 static int
 test_mem_map_unmap(struct xnvme_cli *cli)
 {
 	uint64_t count = cli->args.count;
-	int nerr = 0;
+	struct xnvme_mem_map_req req;
+	size_t align;
+	int nerr = 0, err;
 
 	xnvme_cli_pinf("count: %zu", count);
 
+	err = xnvme_mem_map_get_req(cli->args.dev, &req);
+	if (err) {
+		xnvme_cli_perr("xnvme_mem_map_get_req()", err);
+		return err;
+	}
+	align = req.align;
+	xnvme_cli_pinf("alignment: %zu", align);
+
 	for (uint64_t i = 0; i < count; ++i) {
-		size_t buf_nbytes = 1 << i;
+		size_t buf_nbytes = 1ULL << i;
 		void *buf;
-		int err;
-		long page_size;
+
+		// The memory to map starts and ends on the alignment
+		buf_nbytes = (buf_nbytes + align - 1) & ~(align - 1);
 
 		printf("\n");
 		xnvme_cli_pinf("[map/unmap] i: %zu, buf_nbytes: %zu", i + 1, buf_nbytes);
 
-		page_size = sysconf(_SC_PAGESIZE);
-		buf_nbytes = (buf_nbytes + page_size - 1) & ~(page_size - 1);
-
-		buf = mmap(NULL, buf_nbytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS,
-			   0, 0);
-		if (buf == MAP_FAILED) {
-			xnvme_cli_perr("mmap()", -errno);
+		buf = xnvme_buf_virt_alloc(align, buf_nbytes);
+		if (!buf) {
+			xnvme_cli_perr("xnvme_buf_virt_alloc()", -errno);
+			nerr += 1;
 			continue;
 		}
 
 		err = xnvme_mem_map(cli->args.dev, buf, buf_nbytes);
 		if (err) {
-			xnvme_cli_perr("xnvme_mem_map()", -errno);
+			xnvme_cli_perr("xnvme_mem_map()", err);
 			nerr += 1;
-			munmap(buf, buf_nbytes);
+			xnvme_buf_virt_free(buf);
 			continue;
 		}
 
 		err = xnvme_mem_unmap(cli->args.dev, buf);
 		if (err) {
-			xnvme_cli_perr("xnvme_mem_unmap()", -errno);
+			xnvme_cli_perr("xnvme_mem_unmap()", err);
 			nerr += 1;
-			munmap(buf, buf_nbytes);
-			continue;
 		}
 
-		if (munmap(buf, buf_nbytes)) {
-			xnvme_cli_perr("munmap()", -errno);
-			nerr += 1;
-			continue;
-		}
+		xnvme_buf_virt_free(buf);
 	}
 
 	if (nerr) {
