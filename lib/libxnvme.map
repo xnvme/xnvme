@@ -156,6 +156,7 @@
 		# libxnvme_mem.h
 		xnvme_mem_map;
 		xnvme_mem_unmap;
+		xnvme_mem_map_get_req;
 
 		# libxnvme_nvm.h
 		xnvme_nvm_read;

@@ -145,6 +145,17 @@ mem_unmap(const struct xnvme_dev *dev, void *vaddr)
 	return xnvme_io_uring_dmabuf_unref(dev, vaddr);
 }
 
+/**
+ * The whole allocation the memory lies in is exported and registered, so any range of it maps
+ */
+static int
+mem_map_req(const struct xnvme_dev *XNVME_UNUSED(dev), struct xnvme_mem_map_req *req)
+{
+	req->align = 1;
+
+	return 0;
+}
+
 struct xnvme_be_mem g_xnvme_be_linux_mem_io_uring_dmabuf = {
 	.id = "io_uring_dmabuf",
 	.buf_alloc = xnvme_be_cbi_mem_posix_buf_alloc,
@@ -153,5 +164,6 @@ struct xnvme_be_mem g_xnvme_be_linux_mem_io_uring_dmabuf = {
 	.buf_vtophys = xnvme_be_cbi_mem_posix_buf_vtophys,
 	.mem_map = mem_map,
 	.mem_unmap = mem_unmap,
+	.mem_map_req = mem_map_req,
 };
 #endif
