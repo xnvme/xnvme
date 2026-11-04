@@ -22,6 +22,11 @@ Auxiliary Pretty-Printers (:ref:`sec-api-c-xnvme_pp`)
   The pretty-printers provided here are either for the top-level namespace
   (``xnvme_``) or for those that do not have a specific namespace.
 
+Deprecated Functions (:ref:`sec-api-c-xnvme_compat`)
+  Functions kept so code written for earlier releases builds unchanged; in a
+  debug build, each warns when first called, and names the function replacing
+  it.
+
 Miscellaneous Utilities (:ref:`sec-api-c-xnvme_util`)
   This module includes utilities for measuring wall-clock time and
   miscellaneous helpers such as ``xnvme_is_pow2()`` and preprocessor macros

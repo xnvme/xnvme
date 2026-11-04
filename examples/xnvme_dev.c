@@ -27,8 +27,10 @@
 int
 main(int argc, char *argv[])
 {
-	struct xnvme_opts opts = xnvme_opts_default();
+	struct xnvme_opts opts = {0};
 	struct xnvme_dev *dev;
+
+	xnvme_opts_set_defaults(&opts);
 
 	switch (argc) {
 	case 3:

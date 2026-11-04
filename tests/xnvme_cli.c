@@ -74,9 +74,11 @@ xnvme_cli_check_opt_attr(struct xnvme_cli *XNVME_UNUSED(cli))
 int
 xnvme_cli_check_dev_open_multi(struct xnvme_cli *cli)
 {
-	struct xnvme_opts opts = xnvme_opts_default();
+	struct xnvme_opts opts = {0};
 	struct xnvme_dev **devs;
 	int err;
+
+	xnvme_opts_set_defaults(&opts);
 
 	err = xnvme_cli_to_opts(cli, &opts);
 	if (err) {
@@ -105,10 +107,12 @@ xnvme_cli_check_dev_open_multi(struct xnvme_cli *cli)
 int
 xnvme_cli_check_dev_open_multi_fail(struct xnvme_cli *cli)
 {
-	struct xnvme_opts opts = xnvme_opts_default();
+	struct xnvme_opts opts = {0};
 	struct xnvme_dev *sentinel[1];
 	struct xnvme_dev **devs = sentinel;
 	int err;
+
+	xnvme_opts_set_defaults(&opts);
 
 	err = xnvme_cli_to_opts(cli, &opts);
 	if (err) {

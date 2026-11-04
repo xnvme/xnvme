@@ -163,7 +163,6 @@
 		xnvme_opts_css;
 		xnvme_opts;
 		xnvme_opts_set_defaults;
-		xnvme_opts_default;
 
 		# libxnvme_pi.h
 		xnvme_pi_type;

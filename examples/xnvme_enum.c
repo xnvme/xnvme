@@ -26,7 +26,9 @@ enum_cb(struct xnvme_dev *dev, void *XNVME_UNUSED(cb_args))
 int
 main(int argc, char *argv[])
 {
-	struct xnvme_opts opts = xnvme_opts_default();
+	struct xnvme_opts opts = {0};
+
+	xnvme_opts_set_defaults(&opts);
 
 	return xnvme_enumerate(argc > 1 ? argv[1] : NULL, &opts, enum_cb, NULL);
 }

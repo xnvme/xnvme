@@ -447,8 +447,10 @@ int
 xnvme_platform_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
 			 void *cb_args)
 {
-	struct xnvme_opts opts_default = xnvme_opts_default();
+	struct xnvme_opts opts_default = {0};
 	int err;
+
+	xnvme_opts_set_defaults(&opts_default);
 
 	if (!opts) {
 		opts = &opts_default;

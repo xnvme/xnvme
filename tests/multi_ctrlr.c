@@ -25,11 +25,13 @@ static int
 sub_io(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev[XNVME_CPLANE_MAX_CTRLRS] = {cli->args.dev};
-	struct xnvme_opts opts = xnvme_opts_default();
+	struct xnvme_opts opts = {0};
 	void *buf[XNVME_CPLANE_MAX_CTRLRS] = {NULL};
 	char *host_w = NULL, *host_r = NULL, *uris = NULL;
 	int ndev = 1, err = 0;
 	size_t nbytes;
+
+	xnvme_opts_set_defaults(&opts);
 
 	if (!cli->args.alt_uri) {
 		xnvme_cli_perr("At least one more controller is required; give --alt-uri",

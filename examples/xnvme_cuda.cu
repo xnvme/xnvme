@@ -30,7 +30,7 @@ xnvme_cuda_io_kernel(struct xnvme_cuda_queue *qp, struct xnvme_spec_cmd *cmds, s
 int
 main(int argc, char **argv)
 {
-	struct xnvme_opts opts = xnvme_opts_default();
+	struct xnvme_opts opts = {0};
 	struct xnvme_dev *dev = NULL;
 	struct xnvme_spec_cmd *h_cmds = NULL, *d_cmds = NULL;
 	struct xnvme_cuda_queue *gpu_queue = NULL;
@@ -41,6 +41,8 @@ main(int argc, char **argv)
 	int *h_errors = NULL, *d_errors = NULL;
 	cudaError_t cerr;
 	int err = 0;
+
+	xnvme_opts_set_defaults(&opts);
 
 	if (argc < 2) {
 		err = -EINVAL;

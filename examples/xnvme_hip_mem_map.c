@@ -24,7 +24,7 @@
 int
 main(int argc, char **argv)
 {
-	struct xnvme_opts opts = xnvme_opts_default();
+	struct xnvme_opts opts = {0};
 	struct xnvme_dev *dev = NULL;
 	struct xnvme_cmd_ctx ctx = {0};
 	size_t lba_nbytes, buf_nbytes, nlb;
@@ -32,6 +32,8 @@ main(int argc, char **argv)
 	hipError_t herr;
 	int mapped = 0;
 	int err = 0;
+
+	xnvme_opts_set_defaults(&opts);
 
 	if (argc < 2) {
 		fprintf(stderr, "Usage: %s <pci-id> [homi-id]\n", argv[0]);

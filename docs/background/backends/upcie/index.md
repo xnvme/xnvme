@@ -100,8 +100,11 @@ requirements for {ref}`sec-backends-upcie-cuda`.
 ### Example
 
 ```c
-struct xnvme_opts host_opts = xnvme_opts_default();
-struct xnvme_opts cuda_opts = xnvme_opts_default();
+struct xnvme_opts host_opts = {0};
+struct xnvme_opts cuda_opts = {0};
+
+xnvme_opts_set_defaults(&host_opts);
+xnvme_opts_set_defaults(&cuda_opts);
 host_opts.be = "upcie";
 cuda_opts.be = "upcie-cuda";
 

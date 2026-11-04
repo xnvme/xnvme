@@ -151,10 +151,12 @@ test_reopen(struct xnvme_cli *cli)
 static int
 test_queues(struct xnvme_cli *cli, void *(*fn)(void *))
 {
-	struct xnvme_opts opts = xnvme_opts_default();
+	struct xnvme_opts opts = {0};
 	struct xnvme_dev *dev;
 	int nthreads = THREADS;
 	int err;
+
+	xnvme_opts_set_defaults(&opts);
 
 	err = xnvme_cli_to_opts(cli, &opts);
 	if (err) {

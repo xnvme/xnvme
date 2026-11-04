@@ -33,6 +33,10 @@ tests = {
     ['no args', ['compare', '1GB']],
     ['slba=0 nlb=7', ['compare', '1GB', '--slba', '0', '--nlb', '7']],
   ],
+  'compat.c': [
+    ['deprecated', ['deprecated']],
+    ['null-args', ['null-args']],
+  ],
   'copy.c': [
     ['no args', ['copy', '1GB']],
     ['slba=0 sdlba=8', ['copy', '1GB', '--slba', '0', '--nlb', '7', '--sdlba', '8']],

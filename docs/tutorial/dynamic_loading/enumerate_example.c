@@ -6,7 +6,7 @@
 struct lib {
 	void *handle;
 
-	struct xnvme_opts (*opts_default)(void);
+	int (*opts_set_defaults)(struct xnvme_opts *);
 	struct xnvme_ident *(*get_ident)(struct xnvme_dev *);
 	int (*ident_pr)(const struct xnvme_ident *, int);
 	int (*enumerate)(char *, struct xnvme_opts *, xnvme_enumerate_cb, void *);
@@ -26,7 +26,7 @@ int
 main(int argc, char *argv[])
 {
 	struct lib lib = {0};
-	struct xnvme_opts opts;
+	struct xnvme_opts opts = {0};
 	int err;
 
 	if (argc < 2) {
@@ -47,8 +47,8 @@ main(int argc, char *argv[])
 		goto exit;
 	}
 
-	lib.opts_default = dlsym(lib.handle, "xnvme_opts_default");
-	if (!lib.opts_default) {
+	lib.opts_set_defaults = dlsym(lib.handle, "xnvme_opts_set_defaults");
+	if (!lib.opts_set_defaults) {
 		fprintf(stderr, "%s\n", dlerror());
 		err = EXIT_FAILURE;
 		goto exit;
@@ -68,7 +68,7 @@ main(int argc, char *argv[])
 		goto exit;
 	}
 
-	opts = lib.opts_default();
+	lib.opts_set_defaults(&opts);
 
 	err = lib.enumerate(argc > 2 ? argv[2] : NULL, &opts, enum_cb, &lib);
 	if (err) {

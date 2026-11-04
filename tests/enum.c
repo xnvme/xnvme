@@ -248,9 +248,11 @@ backend_cb(struct xnvme_dev *dev, void *cb_args)
 static int
 test_enum_backend(struct xnvme_cli *cli)
 {
-	struct xnvme_opts opts = xnvme_opts_default();
+	struct xnvme_opts opts = {0};
 	struct backend_cb_args cb_args = {0};
 	int err;
+
+	xnvme_opts_set_defaults(&opts);
 
 	for (int i = 0;; ++i) {
 		const struct xnvme_be_attr *attr = xnvme_be_attr_get(i);
