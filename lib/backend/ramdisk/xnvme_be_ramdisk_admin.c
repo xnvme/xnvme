@@ -58,10 +58,10 @@ _idfy_ctrlr(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 {
 	struct xnvme_spec_idfy_ctrlr *ctrlr = dbuf;
 	ctrlr->mdts = 0;
-	ctrlr->oncs.copy = 1;
-	ctrlr->oncs.write_zeroes = 1;
+	ctrlr->oncs = xnvme_bits_set(ctrlr->oncs, XNVME_SPEC_IDFY_CTRLR_ONCS_COPY, 1);
+	ctrlr->oncs = xnvme_bits_set(ctrlr->oncs, XNVME_SPEC_IDFY_CTRLR_ONCS_WRITE_ZEROES, 1);
 
-	ctrlr->cdfs.format0 = 1;
+	ctrlr->cdfs = xnvme_bits_set(ctrlr->cdfs, XNVME_SPEC_IDFY_CTRLR_CDFS_FORMAT0, 1);
 	return 0;
 }
 
@@ -81,8 +81,9 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 	ns->ncap = ramdisk_size / lba_size;
 	ns->nuse = ramdisk_size / lba_size;
 
-	ns->nlbaf = 0;        ///< This means that there is only one
-	ns->flbas.format = 0; ///< using the first one
+	ns->nlbaf = 0; ///< This means that there is only one
+	ns->flbas = xnvme_bits_set(ns->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT,
+				   0); ///< using the first one
 
 	ns->lbaf[0].ms = 0;
 	ns->lbaf[0].ds = XNVME_ILOG2(lba_size);

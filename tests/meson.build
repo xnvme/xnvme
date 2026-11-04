@@ -73,6 +73,10 @@ tests = {
     ['scopy-msrc', ['scopy-msrc', '1GB']],
     ['scopy-msrc clear', ['scopy-msrc', '1GB', '--clear']],
   ],
+  'spec.c': [
+    ['idfy-offsets', ['idfy-offsets']],
+    ['idfy-masks', ['idfy-masks']],
+  ],
   'threads.c': [
     ['reopen', ['reopen', '1GB', '--count', '5']],
     ['init_term', ['init_term', '1GB', '--count', '200', '--qdepth', '64']],
