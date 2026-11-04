@@ -474,7 +474,7 @@ sub_dir_receive(struct xnvme_cli *cli)
 			break;
 		case XNVME_SPEC_DRECV_STREAMS_ALLRS: {
 			struct xnvme_spec_alloc_resource ar = {.val = ctx.cpl.cdw0};
-			xnvme_spec_drecv_sar_pr(ar, XNVME_PR_DEF);
+			xnvme_spec_drecv_sar_pr(&ar, XNVME_PR_DEF);
 		} break;
 		default:
 			xnvme_cli_perr("invalid directive operation for streams directive", err);
