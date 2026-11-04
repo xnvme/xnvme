@@ -220,9 +220,11 @@ sub_serve(struct xnvme_cli *cli)
 {
 	struct xnvme_dev **devs;
 	struct xnvme_cuse *cuse_sessions = NULL;
-	struct xnvme_opts opts = xnvme_opts_default();
+	struct xnvme_opts opts = {0};
 	const char **dev_uris;
 	int ndevs, node, err;
+
+	xnvme_opts_set_defaults(&opts);
 
 	ndevs = cli->args.posn_count;
 	if (ndevs <= 0) {

@@ -13,8 +13,10 @@ enum_cb(struct xnvme_dev *dev, void *cb_args)
 int
 main(int argc, const char *argv[])
 {
-	struct xnvme_opts opts = xnvme_opts_default();
+	struct xnvme_opts opts = {0};
 	int err;
+
+	xnvme_opts_set_defaults(&opts);
 
 	err = xnvme_enumerate(argc > 2 ? argv[2] : NULL, &opts, enum_cb, NULL);
 	if (err) {

@@ -5,9 +5,12 @@
 #include <errno.h>
 #include <libxnvme.h>
 
-void
+int
 xnvme_opts_set_defaults(struct xnvme_opts *opts)
 {
+	if (!opts) {
+		return -EINVAL;
+	}
 	opts->rdwr = 1;
 	opts->nsid = 1;
 	opts->admin_timeout = 60000000;
@@ -15,16 +18,8 @@ xnvme_opts_set_defaults(struct xnvme_opts *opts)
 
 	// Value is only applicable if the user also sets opts->create = 1
 	opts->create_mode = S_IRUSR | S_IWUSR;
-}
 
-struct xnvme_opts
-xnvme_opts_default(void)
-{
-	struct xnvme_opts opts = {0};
-
-	xnvme_opts_set_defaults(&opts);
-
-	return opts;
+	return 0;
 }
 
 int

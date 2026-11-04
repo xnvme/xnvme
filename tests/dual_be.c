@@ -10,9 +10,11 @@
 static int
 open_alt(struct xnvme_cli *cli, struct xnvme_dev **alt_dev)
 {
-	struct xnvme_opts opts = xnvme_opts_default();
+	struct xnvme_opts opts = {0};
 	const char *uri = cli->args.uri;
 	int err;
+
+	xnvme_opts_set_defaults(&opts);
 
 	opts.be = cli->args.alt_be;
 	opts.nsid = cli->args.dev_nsid;

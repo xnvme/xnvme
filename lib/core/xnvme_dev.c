@@ -863,9 +863,11 @@ xnvme_dev_get_be_state(const struct xnvme_dev *dev)
 struct xnvme_dev *
 xnvme_dev_open(const char *dev_uri, struct xnvme_opts *opts)
 {
-	struct xnvme_opts opts_default = xnvme_opts_default();
+	struct xnvme_opts opts_default = {0};
 	struct xnvme_dev *dev = NULL;
 	int err;
+
+	xnvme_opts_set_defaults(&opts_default);
 
 	if (!dev_uri) { ///< Ensure a dev_uri is given
 		errno = EINVAL;

@@ -258,7 +258,7 @@ devs_teardown(struct qublk_dev *devs, uint32_t ndevs, struct qublk_thread *threa
 static int
 sub_serve(struct xnvme_cli *cli)
 {
-	struct xnvme_opts xopts = xnvme_opts_default();
+	struct xnvme_opts xopts = {0};
 	struct qublk_thread *threads = NULL;
 	struct qublk_dev *devs;
 	struct xnvme_dev **xdevs;
@@ -268,6 +268,8 @@ sub_serve(struct xnvme_cli *cli)
 	uint32_t want_max_io = 0;
 	sigset_t blk;
 	int err = 0, sig;
+
+	xnvme_opts_set_defaults(&xopts);
 
 	if (!cli->args.posn_count) {
 		xnvme_cli_perr("Error: at least one device URI is required", -EINVAL);

@@ -33,7 +33,7 @@ cb_fn(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(cb_arg))
 int
 main(int argc, char **argv)
 {
-	struct xnvme_opts opts = xnvme_opts_default();
+	struct xnvme_opts opts = {0};
 	struct xnvme_dev *dev = NULL;
 	uint32_t nsid;
 	char *buf = NULL;
@@ -41,6 +41,8 @@ main(int argc, char **argv)
 	struct xnvme_queue *queue = NULL;
 	const int qdepth = 16;
 	int ret = 0, err = 0;
+
+	xnvme_opts_set_defaults(&opts);
 
 	if (argc < 2) {
 		xnvme_cli_perr("Usage: %s <ident>", EINVAL);

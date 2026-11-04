@@ -2393,7 +2393,9 @@ xnvme_cli_run(struct xnvme_cli *cli, int argc, char **argv, int opts)
 	}
 
 	if ((opts & XNVME_CLI_INIT_DEV_OPEN) && cli->args.uri) {
-		struct xnvme_opts opts = xnvme_opts_default();
+		struct xnvme_opts opts = {0};
+
+		xnvme_opts_set_defaults(&opts);
 
 		if (xnvme_cli_to_opts(cli, &opts)) {
 			xnvme_cli_perr("xnvme_cli_to_opts()", errno);

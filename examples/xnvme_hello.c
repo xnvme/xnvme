@@ -8,8 +8,10 @@
 int
 main(int argc, char **argv)
 {
-	struct xnvme_opts opts = xnvme_opts_default();
+	struct xnvme_opts opts = {0};
 	struct xnvme_dev *dev;
+
+	xnvme_opts_set_defaults(&opts);
 
 	if (argc < 2) {
 		xnvme_cli_perr("Usage: %s <identifer>", EINVAL);

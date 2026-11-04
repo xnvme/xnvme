@@ -58,6 +58,14 @@ C: API
   - Pass pointers to "objects" e.g. ``xnvme_cmd_pass(*ctx, ...);``
   - Pass double-pointers for "object-initialization" e.g. ``xnvme_queue(..., **queue);``
   - On success, return 0. On error, Return negative ``errno``.
+  - Never pass or return a structure by value; pass a pointer, and fill an
+    output argument rather than returning one, as
+    ``xnvme_opts_set_defaults(&opts)`` does: a structure by value is
+    simple in C, but not over FFI
+  - A function replaced for any of these keeps working, as a ``static
+    inline`` in ``libxnvme_compat.h`` calling its replacement, and in a
+    debug build warning that it is deprecated, until a later release
+    removes it
   - Exceptions: API-calls mimicking legacy interfaces, such as the
     ``xnvme_buf_alloc()`` which is operating similar to ``malloc()/free()``.
 

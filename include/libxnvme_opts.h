@@ -60,18 +60,18 @@ struct xnvme_opts {
 };
 
 /**
- * Initialize the given 'opts' with default values
- */
-void
-xnvme_opts_set_defaults(struct xnvme_opts *opts);
-
-/**
- * Returns an initialized option-struct with default values
+ * Set the defaults of the given 'opts'
  *
- * @return Zero-initialized and with default values where applicable
+ * Fields without a default are left as they are; zero-initialize 'opts' first, as in
+ * 'struct xnvme_opts opts = {0};'.
+ *
+ * @param opts The options to set the defaults of
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned: -EINVAL when
+ * `opts` is NULL.
  */
-struct xnvme_opts
-xnvme_opts_default(void);
+int
+xnvme_opts_set_defaults(struct xnvme_opts *opts);
 
 /**
  * Prints a humanly readable representation of the given ::xnvme_opts

@@ -1441,7 +1441,8 @@ parse_common_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 		return err;
 	}
 
-	args->opts = xnvme_opts_default();
+	args->opts = (struct xnvme_opts){0};
+	xnvme_opts_set_defaults(&args->opts);
 	xnvme_cli_to_opts(cli, &args->opts);
 	args->queue_opts = cli->args.p2p_cq_mirror ? XNVME_QUEUE_P2P_CQ_MIRROR : 0;
 	args->queue_opts |= cli->args.sq_hostmem ? XNVME_QUEUE_SQ_HOSTMEM : 0;
@@ -1678,12 +1679,14 @@ sub_cuda_verify(struct xnvme_cli *cli)
 static int
 sub_htod_roofline(struct xnvme_cli *cli)
 {
-	struct xnvme_opts opts = xnvme_opts_default();
+	struct xnvme_opts opts = {0};
 	uint32_t iosize = cli->args.iosize;
 	uint32_t nslots = cli->args.qdepth ? cli->args.qdepth : 1;
 	uint32_t seconds = cli->args.runtime ? cli->args.runtime : 5;
 	double gbps = 0.0;
 	int err;
+
+	xnvme_opts_set_defaults(&opts);
 
 	xnvme_cli_to_opts(cli, &opts);
 
