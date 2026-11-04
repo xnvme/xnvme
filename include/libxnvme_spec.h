@@ -19,8 +19,8 @@
  * defintions have two associated pretty-printers named by the type, suffixed
  * by ``_fpr`` and ``_pr``, for example:
  *
- * - xnvme_spec_cpl_fpr(), prints the given ``struct xnvme_spec_cpl`` struct to the given fstream
- * - xnvme_spec_cpl_pr(),  prints the given ``struct xnvme_spec_cpl`` struct to stdout
+ * - xnvme_spec_cqe_fpr(), prints the given ``struct xnvme_spec_cqe`` struct to the given fstream
+ * - xnvme_spec_cqe_pr(),  prints the given ``struct xnvme_spec_cqe`` struct to stdout
  *
  * These functions are auto-generated and available by importing
  * ``libxnvme_spec_pp.h``. Thus, when you see a definition in
@@ -117,9 +117,9 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_status) == 2, "Incorrect size")
 /**
  * Completion Queue Entry
  *
- * @struct xnvme_spec_cpl
+ * @struct xnvme_spec_cqe
  */
-struct xnvme_spec_cpl {
+struct xnvme_spec_cqe {
 	union {
 		struct {
 			/* dword 0 */
@@ -140,7 +140,7 @@ struct xnvme_spec_cpl {
 	uint16_t cid; ///< command identifier
 	struct xnvme_spec_status status;
 };
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cpl) == 16, "Incorrect size")
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cqe) == 16, "Incorrect size")
 
 /**
  * NVMe get-log-page entry for error information

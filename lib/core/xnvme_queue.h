@@ -14,7 +14,7 @@
  */
 struct xnvme_cmd_ctx_entry {
 	struct xnvme_spec_cmd cmd;
-	struct xnvme_spec_cpl cpl;
+	struct xnvme_spec_cqe cpl;
 
 	struct xnvme_dev *dev;
 

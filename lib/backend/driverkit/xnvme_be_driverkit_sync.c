@@ -80,7 +80,7 @@ cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf, si
 			    ret, mach_error_string(ret));
 		return -EIO;
 	}
-	memcpy(cmd.cpl, &ctx->cpl, sizeof(struct xnvme_spec_cpl));
+	memcpy(cmd.cpl, &ctx->cpl, sizeof(struct xnvme_spec_cqe));
 
 	return 0;
 }

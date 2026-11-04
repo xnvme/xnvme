@@ -128,7 +128,7 @@ cmd_async_cb(void *cb_arg, const struct spdk_nvme_cpl *cpl)
 	struct xnvme_cmd_ctx *ctx = cb_arg;
 
 	ctx->async.queue->base.outstanding -= 1;
-	ctx->cpl = *(const struct xnvme_spec_cpl *)cpl;
+	ctx->cpl = *(const struct xnvme_spec_cqe *)cpl;
 	ctx->async.cb(ctx, ctx->async.cb_arg);
 }
 

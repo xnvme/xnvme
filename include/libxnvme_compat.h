@@ -37,6 +37,11 @@ xnvme_compat_deprecated(int *warned, const char *name, const char *instead)
 }
 
 /**
+ * @deprecated Use struct xnvme_spec_cqe
+ */
+#define xnvme_spec_cpl xnvme_spec_cqe
+
+/**
  * @deprecated Use xnvme_opts_set_defaults() on zero-initialized options
  *
  * @return Zero-initialized options with their defaults set

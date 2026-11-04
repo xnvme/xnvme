@@ -19,7 +19,7 @@ cmd_sync_cb(void *cb_arg, const struct spdk_nvme_cpl *cpl)
 	struct xnvme_cmd_ctx *ctx = cb_arg;
 	uint8_t *completed = &ctx->be_rsvd[0];
 
-	ctx->cpl = *(const struct xnvme_spec_cpl *)cpl;
+	ctx->cpl = *(const struct xnvme_spec_cqe *)cpl;
 	*completed = 1;
 }
 

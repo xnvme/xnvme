@@ -24,7 +24,7 @@ struct xnvme_cmd_ctx_async {
  */
 struct xnvme_cmd_ctx {
 	struct xnvme_spec_cmd cmd;        ///< Command to be processed
-	struct xnvme_spec_cpl cpl;        ///< Completion result from processing
+	struct xnvme_spec_cqe cpl;        ///< Completion result from processing
 	struct xnvme_dev *dev;            ///< Device associated with the command
 	struct xnvme_cmd_ctx_async async; ///< Fields for command option: XNVME_CMD_ASYNC
 	///< Field containing command-options, the field is initialized by helper-functions
