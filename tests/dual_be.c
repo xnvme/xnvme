@@ -126,7 +126,7 @@ sub_idfy_cmp(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *alt_dev, *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx;
-	struct xnvme_spec_idfy *idfy = NULL, *alt_idfy = NULL;
+	union xnvme_spec_idfy *idfy = NULL, *alt_idfy = NULL;
 	size_t diff = 0;
 	int err;
 

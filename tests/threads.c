@@ -59,7 +59,7 @@ static void *
 idfy_fn(void *arg)
 {
 	struct worker *w = arg;
-	struct xnvme_spec_idfy *idfy;
+	union xnvme_spec_idfy *idfy;
 
 	idfy = xnvme_buf_alloc(w->dev, sizeof(*idfy));
 	if (!idfy) {

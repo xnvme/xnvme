@@ -168,7 +168,7 @@ test_enum_keep_open(struct xnvme_cli *cli)
 	struct xnvme_dev *devs[MAX_DEVS];
 	struct xnvme_opts enum_opts = {0};
 	struct xnvme_cmd_ctx ctx = {0};
-	struct xnvme_spec_idfy *idfy_ctrlr = NULL;
+	union xnvme_spec_idfy *idfy_ctrlr = NULL;
 	int err;
 	int found = 0;
 

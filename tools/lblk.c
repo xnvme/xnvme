@@ -80,7 +80,7 @@ sub_idfy(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
-	struct xnvme_spec_idfy *idfy = NULL;
+	union xnvme_spec_idfy *idfy = NULL;
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
 	int err;
 
