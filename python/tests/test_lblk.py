@@ -53,7 +53,8 @@ def fill_lba_range_and_write_buffer_with_character(
 
     written_bytes = 0
     for slba in range(rng_slba, rng_elba, mdts_naddr):
-        ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+        ctx = xnvme.xnvme_cmd_ctx()
+        xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
         nlb = min(rng_elba - slba, mdts_naddr - 1)
 
         written_bytes += (1 + nlb) * geo.lba_nbytes
@@ -126,7 +127,8 @@ class TestLBLK:
         # xnvme.xnvmec_buf_fill(wbuf, buf_nbytes, "anum")
 
         for count in range(mdts_naddr):
-            ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)  # TODO: Reuse from before?
+            ctx = xnvme.xnvme_cmd_ctx()  # TODO: Reuse from before?
+            xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
             wbuf_ofz = count * geo.lba_nbytes
             slba = rng_slba + count * 4
 
@@ -153,7 +155,8 @@ class TestLBLK:
         assert not np.all(rbuf_mem_view == wbuf_mem_view)
         # xnvme.xnvmec_buf_clear(rbuf, buf_nbytes)
         for count in range(mdts_naddr):
-            ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+            ctx = xnvme.xnvme_cmd_ctx()
+            xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
             rbuf_ofz = count * geo.lba_nbytes
             slba = rng_slba + count * 4
 
@@ -249,7 +252,8 @@ class TestLBLK:
         wbuf_mem_view[:] = np.arange(len(wbuf_mem_view))
         # xnvmec_buf_fill(wbuf, buf_nbytes, "anum")
         for count in range(xfer_naddr):
-            ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+            ctx = xnvme.xnvme_cmd_ctx()
+            xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
             wbuf_ofz = count * geo.lba_nbytes
             slba = rng_slba + count * 4
 
@@ -269,7 +273,8 @@ class TestLBLK:
                 err or xnvme.xnvme_cmd_ctx_cpl_status(ctx)
             ), xnvme.xnvme_cmd_ctx_pr(ctx, xnvme.XNVME_PR_DEF)
 
-        ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+        ctx = xnvme.xnvme_cmd_ctx()
+        xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
         nr = xfer_naddr - 1
 
         print("scopy sranges to sdlba: 0x{sdlba:016x}")
@@ -305,7 +310,8 @@ class TestLBLK:
         read_lbs = 0
         r_nlb = 0
         while read_lbs < nlb:
-            ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+            ctx = xnvme.xnvme_cmd_ctx()
+            xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
             r_nlb = min(mdts_naddr, nlb - read_lbs)
 
             err = xnvme.xnvme_nvm_read(
@@ -376,7 +382,8 @@ class TestLBLK:
         print(f"Compared {compared_bytes} bytes to !")
 
         for slba in range(rng_slba, rng_elba, mdts_naddr):
-            ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+            ctx = xnvme.xnvme_cmd_ctx()
+            xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
             nlb = min((rng_elba - slba) * geo.lba_nbytes, UINT16_MAX)
 
             err = xnvme.xnvme_nvm_write_zeroes(ctx, nsid, slba, nlb)

@@ -229,7 +229,7 @@ _dev_idfy_ns_desc_csi(struct xnvme_dev *dev, union xnvme_spec_idfy *idfy, uint8_
 		return err;
 	}
 
-	ctx = xnvme_cmd_ctx_from_dev(dev);
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	ctx.cmd.common.opcode = XNVME_SPEC_ADM_OPC_IDFY;
 	ctx.cmd.common.nsid = dev->ident.nsid;
 	ctx.cmd.idfy.cns = XNVME_SPEC_IDFY_NSDSCR;
@@ -288,7 +288,7 @@ _dev_idfy_csi(struct xnvme_dev *dev, union xnvme_spec_idfy *idfy_ns,
 		return err;
 	}
 
-	ctx = xnvme_cmd_ctx_from_dev(dev);
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_adm_idfy_ctrlr_csi(&ctx, XNVME_SPEC_CSI_ZONED, idfy_ctrlr);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ctrlr_csi(CSI_ZONED)");
@@ -301,7 +301,7 @@ _dev_idfy_csi(struct xnvme_dev *dev, union xnvme_spec_idfy *idfy_ns,
 		return err;
 	}
 
-	ctx = xnvme_cmd_ctx_from_dev(dev);
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_adm_idfy_ns_csi(&ctx, dev->ident.nsid, XNVME_SPEC_CSI_ZONED, idfy_ns);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ns_csi(CSI_ZONED)");
@@ -343,7 +343,7 @@ not_zns:
 		return err;
 	}
 
-	ctx = xnvme_cmd_ctx_from_dev(dev);
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_adm_idfy_ctrlr_csi(&ctx, XNVME_SPEC_CSI_FS, idfy_ctrlr);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ctrlr_csi(CSI_FS)");
@@ -360,7 +360,7 @@ not_zns:
 		return err;
 	}
 
-	ctx = xnvme_cmd_ctx_from_dev(dev);
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_adm_idfy_ns_csi(&ctx, dev->ident.nsid, XNVME_SPEC_CSI_FS, idfy_ns);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ns_csi(CSI_FS)");
@@ -408,7 +408,7 @@ not_fs:
 		return err;
 	}
 
-	ctx = xnvme_cmd_ctx_from_dev(dev);
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_adm_idfy_ctrlr_csi(&ctx, XNVME_SPEC_CSI_KV, idfy_ctrlr);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ctrlr_csi(CSI_KV)");
@@ -421,7 +421,7 @@ not_fs:
 		return err;
 	}
 
-	ctx = xnvme_cmd_ctx_from_dev(dev);
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_adm_idfy_ns_csi(&ctx, dev->ident.nsid, XNVME_SPEC_CSI_KV, idfy_ns);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ns_csi(CSI_KV)");
@@ -455,7 +455,7 @@ not_kv:
 		return err;
 	}
 
-	ctx = xnvme_cmd_ctx_from_dev(dev);
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_adm_idfy_ctrlr_csi(&ctx, XNVME_SPEC_CSI_NVM, idfy_ctrlr);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ctrlr_csi(CSI_NVM)");
@@ -468,7 +468,7 @@ not_kv:
 		return err;
 	}
 
-	ctx = xnvme_cmd_ctx_from_dev(dev);
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_adm_idfy_ns_csi(&ctx, dev->ident.nsid, XNVME_SPEC_CSI_NVM, idfy_ns);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ns_csi(CSI_NVM)");
@@ -530,7 +530,7 @@ _dev_idfy(struct xnvme_dev *dev)
 		return err;
 	}
 
-	ctx = xnvme_cmd_ctx_from_dev(dev);
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_adm_idfy_ctrlr(&ctx, idfy_ctrlr);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		err = err ? err : -EIO;
@@ -563,7 +563,7 @@ _dev_idfy(struct xnvme_dev *dev)
 		return err;
 	}
 
-	ctx = xnvme_cmd_ctx_from_dev(dev);
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_adm_idfy_ns(&ctx, dev->ident.nsid, idfy_ns);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		err = err ? err : -EIO;

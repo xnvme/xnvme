@@ -67,7 +67,9 @@ idfy_fn(void *arg)
 		return NULL;
 	}
 	for (uint64_t round = 0; round < w->rounds; ++round) {
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(w->dev);
+		struct xnvme_cmd_ctx ctx = {0};
+
+		xnvme_dev_get_cmd_ctx(w->dev, &ctx);
 
 		if (xnvme_adm_idfy_ctrlr(&ctx, idfy) || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			w->nerr += 1;
@@ -171,8 +173,10 @@ test_queues(struct xnvme_cli *cli, void *(*fn)(void *))
 	}
 
 	{
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+		struct xnvme_cmd_ctx ctx = {0};
 		struct xnvme_spec_feat feat = {.val = 0};
+
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 		err = xnvme_adm_gfeat(&ctx, 0x0, XNVME_SPEC_FEAT_NQUEUES,
 				      XNVME_SPEC_FEAT_SEL_CURRENT, NULL, 0);

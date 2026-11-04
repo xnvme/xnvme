@@ -30,7 +30,7 @@ xnvme_file_close(struct xnvme_dev *fh);
 /**
  * Perform a stateless read to the file or device encapsulated by 'ctx'
  *
- * Retrieve a synchronous context using ::xnvme_cmd_ctx_from_dev and an asynchronous context using
+ * Retrieve a synchronous context using ::xnvme_dev_get_cmd_ctx and an asynchronous context using
  * ::xnvme_cmd_ctx_from_queue.
  *
  * @note Unlike, the pread() syscall, then this function does not return the number of bytes
@@ -49,7 +49,7 @@ xnvme_file_pread(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, off_t offse
 /**
  * Perform a stateless write to the file or device encapsulated by 'ctx'
  *
- * Retrieve a synchronous context using ::xnvme_cmd_ctx_from_dev and an asynchronous context using
+ * Retrieve a synchronous context using ::xnvme_dev_get_cmd_ctx and an asynchronous context using
  * ::xnvme_cmd_ctx_from_queue
  *
  * @note Unlike, the pwrite() syscall, then this function does not return the number of bytes read.
@@ -76,11 +76,3 @@ xnvme_file_pwrite(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, off_t offs
  */
 int
 xnvme_file_sync(struct xnvme_dev *fh);
-
-/**
- * Returns a synchronous command-context for the given file-handle
- *
- * @note For asynchronous I/O, see the ::xnvme_queue interface and ::xnvme_cmd_ctx_from_queue
- */
-struct xnvme_cmd_ctx
-xnvme_file_get_cmd_ctx(struct xnvme_dev *fh);

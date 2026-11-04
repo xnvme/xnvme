@@ -320,7 +320,7 @@ enumerate_controller(const char *uri, const char *kernel_driver, struct enumerat
 		return err;
 	}
 
-	cmd_ctx = xnvme_cmd_ctx_from_dev(ctrlr_dev);
+	xnvme_dev_get_cmd_ctx(ctrlr_dev, &cmd_ctx);
 	err = xnvme_adm_idfy(&cmd_ctx, XNVME_SPEC_IDFY_NSLIST, 0, 0, 0, 0, idfy_buf);
 	if (err || xnvme_cmd_ctx_cpl_status(&cmd_ctx)) {
 		XNVME_DEBUG("FAILED: Identify Active NS List, err: %d", err);

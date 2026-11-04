@@ -62,11 +62,13 @@ static inline int
 cmd_idfy_ns(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
 	enum xnvme_spec_csi csi = XNVME_SPEC_CSI_KV;
 	struct xnvme_spec_kvs_idfy *idfy = NULL;
 	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	if (!cli->given[XNVME_CLI_OPT_NSID]) {
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
@@ -109,11 +111,13 @@ static int
 cmd_retrieve(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	uint8_t nsid = cli->args.nsid;
 	void *dbuf = NULL;
 	size_t dbuf_nbytes = 4096;
 	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	if (!cli->given[XNVME_CLI_OPT_NSID]) {
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
@@ -164,12 +168,14 @@ static int
 cmd_store(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	uint8_t nsid = cli->args.nsid;
 	uint8_t opt = 0x0;
 	void *dbuf = NULL;
 	size_t dbuf_nbytes = strlen(cli->args.kv_val) + 1;
 	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	if (!cli->given[XNVME_CLI_OPT_NSID]) {
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
@@ -215,9 +221,11 @@ static int
 cmd_delete(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	uint8_t nsid = cli->args.nsid;
 	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	if (!cli->given[XNVME_CLI_OPT_NSID]) {
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
@@ -243,9 +251,11 @@ static int
 cmd_exist(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	uint8_t nsid = cli->args.nsid;
 	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	if (!cli->given[XNVME_CLI_OPT_NSID]) {
 		nsid = xnvme_dev_get_nsid(cli->args.dev);
@@ -270,11 +280,13 @@ static int
 cmd_list(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	uint8_t nsid = cli->args.nsid;
 	void *dbuf = NULL;
 	size_t stdio_wrtn, dbuf_nbytes = 4096;
 	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	if (!cli->given[XNVME_CLI_OPT_NSID]) {
 		nsid = xnvme_dev_get_nsid(cli->args.dev);

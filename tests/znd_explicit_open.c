@@ -9,7 +9,7 @@ static int
 test_open_zdptr(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	struct xnvme_spec_idfy_ns *nvm = (void *)xnvme_dev_get_ns(dev);
 	struct xnvme_spec_znd_idfy_ns *zns = (void *)xnvme_dev_get_ns_css(dev);
 	uint32_t nsid = xnvme_dev_get_nsid(dev);
@@ -25,6 +25,8 @@ test_open_zdptr(struct xnvme_cli *cli)
 	struct xnvme_spec_znd_descr *descr;
 
 	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	if (!zde_nbytes) {
 		xnvme_cli_pinf("Invalid device: zde_nbytes: %d", zde_nbytes);

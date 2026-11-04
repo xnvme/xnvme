@@ -97,7 +97,8 @@ def test_pointers(cijoe, device, be_opts, cli_args):
     xnvme.xnvme_dev_close(dev)
 
     # A random xNVMe object which is easy to create
-    ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+    ctx = xnvme.xnvme_cmd_ctx()
+    xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
     ptr_a = pointer(ctx)
     ptr_b = pointer(ctx)
 

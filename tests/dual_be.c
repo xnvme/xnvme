@@ -71,7 +71,7 @@ sub_io_cmp(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	ctx = xnvme_cmd_ctx_from_dev(dev);
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_nvm_write(&ctx, nsid, 0, nlb, write_buf, NULL);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_perr("xnvme_nvm_write()", err);
@@ -93,7 +93,7 @@ sub_io_cmp(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	ctx = xnvme_cmd_ctx_from_dev(alt_dev);
+	xnvme_dev_get_cmd_ctx(alt_dev, &ctx);
 	err = xnvme_nvm_read(&ctx, nsid, 0, nlb, read_buf, NULL);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_perr("xnvme_nvm_read()", err);
@@ -153,7 +153,7 @@ sub_idfy_cmp(struct xnvme_cli *cli)
 	}
 	xnvme_buf_clear(alt_idfy, sizeof(*alt_idfy));
 
-	ctx = xnvme_cmd_ctx_from_dev(dev);
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_adm_idfy_ctrlr(&ctx, idfy);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_perr("xnvme_adm_idfy_ctrlr(--be)", err);
@@ -162,7 +162,7 @@ sub_idfy_cmp(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	ctx = xnvme_cmd_ctx_from_dev(alt_dev);
+	xnvme_dev_get_cmd_ctx(alt_dev, &ctx);
 	err = xnvme_adm_idfy_ctrlr(&ctx, alt_idfy);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_perr("xnvme_adm_idfy_ctrlr(--alt-be)", err);

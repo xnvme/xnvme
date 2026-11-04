@@ -83,7 +83,10 @@ read_and_compare_lba_range(uint8_t *rbuf, const uint8_t *cbuf, const uint64_t rn
 	xnvme_cli_pinf("Reading and comparing in LBA range [%ld,%ld]", rng_slba, rng_slba + nlb);
 
 	for (uint64_t read_lbs = 0, r_nlb = 0; read_lbs < nlb; read_lbs += r_nlb) {
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+		struct xnvme_cmd_ctx ctx = {0};
+
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
+
 		r_nlb = XNVME_MIN(mdts_naddr, nlb - read_lbs);
 
 		err = xnvme_nvm_read(&ctx, nsid, rng_slba + read_lbs, r_nlb - 1, rbuf, NULL);
@@ -134,8 +137,11 @@ fill_lba_range_and_write_buffer_with_pattern(uint8_t *wbuf, size_t buf_nbytes, u
 
 	*written_bytes = 0;
 	for (uint64_t slba = rng_slba; slba <= rng_elba; slba += mdts_naddr) {
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+		struct xnvme_cmd_ctx ctx = {0};
 		uint64_t nlb = XNVME_MIN(rng_elba - slba, mdts_naddr - 1);
+
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
+
 		*written_bytes += (1 + nlb) * geo->lba_nbytes;
 
 		err = xnvme_nvm_write(&ctx, nsid, slba, nlb, wbuf, NULL);
@@ -207,9 +213,11 @@ sub_io(struct xnvme_cli *cli)
 	}
 
 	for (uint64_t count = 0; count < mdts_naddr; ++count) {
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+		struct xnvme_cmd_ctx ctx = {0};
 		size_t wbuf_ofz = count * geo->lba_nbytes;
 		uint64_t slba = rng_slba + count * 4;
+
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 		err = xnvme_nvm_write(&ctx, nsid, slba, 0, wbuf + wbuf_ofz, NULL);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
@@ -230,9 +238,11 @@ sub_io(struct xnvme_cli *cli)
 	}
 
 	for (uint64_t count = 0; count < mdts_naddr; ++count) {
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+		struct xnvme_cmd_ctx ctx = {0};
 		size_t rbuf_ofz = count * geo->lba_nbytes;
 		uint64_t slba = rng_slba + count * 4;
+
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 		err = xnvme_nvm_read(&ctx, nsid, slba, 0, rbuf + rbuf_ofz, NULL);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
@@ -329,8 +339,10 @@ test_write_zeroes(struct xnvme_cli *cli)
 	xnvme_cli_pinf("Compared %ld bytes to !", compared_bytes);
 
 	for (uint64_t slba = rng_slba; slba < rng_elba; slba += mdts_naddr) {
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+		struct xnvme_cmd_ctx ctx = {0};
 		uint16_t nlb = XNVME_MIN((rng_elba - slba) * geo->lba_nbytes, UINT16_MAX);
+
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 		err = xnvme_nvm_write_zeroes(&ctx, nsid, slba, nlb);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
@@ -434,7 +446,10 @@ test_write_uncorrectable(struct xnvme_cli *cli)
 	entered_uncorrectable_loop = true;
 
 	for (uint64_t execed_lbs = 0, r_nlb = 0; execed_lbs < nlb; execed_lbs += r_nlb) {
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+		struct xnvme_cmd_ctx ctx = {0};
+
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
+
 		r_nlb = XNVME_MIN(mdts_naddr, nlb - execed_lbs);
 
 		err = xnvme_nvm_write_uncorrectable(&ctx, nsid, rng_slba + execed_lbs, r_nlb - 1);
@@ -448,10 +463,12 @@ test_write_uncorrectable(struct xnvme_cli *cli)
 	/* Make sure that all lbas return an error when read */
 	xnvme_cli_pinf("Reading from LBA range [slba,elba]");
 	for (uint64_t count = 0; count < mdts_naddr; ++count) {
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+		struct xnvme_cmd_ctx ctx = {0};
 		size_t rbuf_ofz = count * geo->lba_nbytes;
 		uint64_t slba = rng_slba + count * 4;
 		int read_err;
+
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 		read_err = xnvme_nvm_read(&ctx, nsid, slba, 0, rbuf + rbuf_ofz, NULL);
 		if (!read_err) {

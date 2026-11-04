@@ -76,7 +76,7 @@ main(int argc, char **argv)
 	mapped = 1;
 	xnvme_cli_pinf("xnvme_mem_map(%p, %zu): registered", buf, buf_nbytes);
 
-	ctx = xnvme_cmd_ctx_from_dev(dev);
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_nvm_read(&ctx, xnvme_dev_get_nsid(dev), 0x0, nlb - 1, buf, NULL);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		err = err ? err : -EIO;

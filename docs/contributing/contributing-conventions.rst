@@ -66,8 +66,13 @@ C: API
     inline`` in ``libxnvme_compat.h`` calling its replacement, and in a
     debug build warning that it is deprecated, until a later release
     removes it
-  - Exceptions: API-calls mimicking legacy interfaces, such as the
-    ``xnvme_buf_alloc()`` which is operating similar to ``malloc()/free()``.
+  - Who owns the memory decides the signature. Memory the caller owns is
+    filled through an output argument, with 0 or negative ``errno``
+    returned, as ``xnvme_dev_get_cmd_ctx(dev, &ctx)`` does. Memory the
+    library owns and lends out is returned as a pointer, NULL with
+    ``errno`` set on error, and given back with a matching call, as
+    ``xnvme_queue_get_cmd_ctx()`` and ``xnvme_queue_put_cmd_ctx()``, or
+    ``xnvme_buf_alloc()`` and ``xnvme_buf_free()``
 
 * The library is not thread-safe. Only the following control-plane calls may
   be made concurrently, on every backend, and only with respect to each other:

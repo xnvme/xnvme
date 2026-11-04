@@ -76,10 +76,12 @@ static int
 _eopen_with_zrwa(struct xnvme_cli *cli, bool zrwaa)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	uint32_t nsid = xnvme_dev_get_nsid(dev);
 	struct xnvme_spec_znd_descr zone = {0}, after = {0};
 	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	if (cli->given[XNVME_CLI_OPT_SLBA]) {
 		err = xnvme_znd_descr_from_dev(dev, cli->args.slba, &zone);
@@ -198,7 +200,9 @@ test_flush(struct xnvme_cli *cli)
 
 	// Open Zone with Random Write Area
 	{
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+		struct xnvme_cmd_ctx ctx = {0};
+
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 		err = xnvme_znd_mgmt_send(&ctx, nsid, zone.zslba, false,
 					  XNVME_SPEC_ZND_CMD_MGMT_SEND_OPEN,
@@ -218,8 +222,10 @@ test_flush(struct xnvme_cli *cli)
 		uint64_t bound = XNVME_MIN(zone.zcap - ai, zrwa_naddr);
 
 		for (uint64_t count = 0; count < bound; ++count) {
-			struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+			struct xnvme_cmd_ctx ctx = {0};
 			uint64_t slba = zone.zslba + ai + count;
+
+			xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 			err = xnvme_nvm_write(&ctx, nsid, slba, 0, dbuf, NULL);
 			if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
@@ -233,8 +239,10 @@ test_flush(struct xnvme_cli *cli)
 
 		// Flush the ZRWA
 		{
-			struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+			struct xnvme_cmd_ctx ctx = {0};
 			uint64_t lba = zone.zslba + ai + bound - 1;
+
+			xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 			err = xnvme_znd_zrwa_flush(&ctx, nsid, lba);
 			if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
@@ -312,7 +320,9 @@ test_flush_implicit(struct xnvme_cli *cli)
 
 	// Open Zone with Random Write Area
 	{
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+		struct xnvme_cmd_ctx ctx = {0};
+
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 		err = xnvme_znd_mgmt_send(&ctx, nsid, zone.zslba, false,
 					  XNVME_SPEC_ZND_CMD_MGMT_SEND_OPEN,
@@ -332,8 +342,10 @@ test_flush_implicit(struct xnvme_cli *cli)
 		uint64_t bound = XNVME_MIN(zone.zcap - ai, zrwa_naddr);
 
 		for (uint64_t count = 0; count < bound; ++count) {
-			struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+			struct xnvme_cmd_ctx ctx = {0};
 			uint64_t slba = zone.zslba + ai + count;
+
+			xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 			err = xnvme_nvm_write(&ctx, nsid, slba, 0, dbuf, NULL);
 			if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {

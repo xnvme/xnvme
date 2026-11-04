@@ -29,12 +29,15 @@ xnvme_cmd_ctx_clear(struct xnvme_cmd_ctx *ctx)
 	memset(ctx, 0x0, sizeof(*ctx));
 }
 
-struct xnvme_cmd_ctx
-xnvme_cmd_ctx_from_dev(struct xnvme_dev *dev)
+int
+xnvme_dev_get_cmd_ctx(struct xnvme_dev *dev, struct xnvme_cmd_ctx *ctx)
 {
-	struct xnvme_cmd_ctx ctx = {.dev = dev, .opts = XNVME_CMD_SYNC};
+	if (!dev || !ctx) {
+		return -EINVAL;
+	}
+	*ctx = (struct xnvme_cmd_ctx){.dev = dev, .opts = XNVME_CMD_SYNC};
 
-	return ctx;
+	return 0;
 }
 
 struct xnvme_cmd_ctx *

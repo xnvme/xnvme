@@ -79,11 +79,13 @@ static inline int
 cmd_idfy_ctrlr(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
 	enum xnvme_spec_csi csi = XNVME_SPEC_CSI_ZONED;
 	struct xnvme_spec_znd_idfy *idfy = NULL;
 	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	xnvme_cli_pinf("xnvme_adm_idfy_ctrlr: {nsid: 0x%x, csi: %s}", nsid,
 		       xnvme_spec_csi_str(csi));
@@ -123,11 +125,13 @@ static inline int
 cmd_idfy_ns(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
 	enum xnvme_spec_csi csi = XNVME_SPEC_CSI_ZONED;
 	struct xnvme_spec_znd_idfy *idfy = NULL;
 	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	xnvme_cli_pinf("xnvme_adm_idfy_ns: {nsid: 0x%x, csi: %s}", nsid, xnvme_spec_csi_str(csi));
 
@@ -242,7 +246,7 @@ static int
 cmd_errors(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	struct xnvme_spec_log_erri_entry *log = NULL;
 	uint32_t nsid = cli->args.nsid;
 	uint32_t log_nentries = 0;
@@ -250,6 +254,8 @@ cmd_errors(struct xnvme_cli *cli)
 
 	size_t nvalid = 0;
 	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	log_nentries = (uint32_t)xnvme_dev_get_ctrlr(cli->args.dev)->elpe + 1;
 	log_nbytes = log_nentries * sizeof(*log);
@@ -293,7 +299,7 @@ static int
 cmd_read(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	const uint64_t slba = cli->args.slba;
 	const size_t nlb = cli->args.nlb;
@@ -302,6 +308,8 @@ cmd_read(struct xnvme_cli *cli)
 	void *dbuf = NULL, *mbuf = NULL;
 	size_t dbuf_nbytes, mbuf_nbytes;
 	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	switch (geo->type) {
 	case XNVME_GEO_CONVENTIONAL:
@@ -378,7 +386,7 @@ static int
 cmd_write(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	const uint64_t slba = cli->args.slba;
 	const size_t nlb = cli->args.nlb;
@@ -387,6 +395,8 @@ cmd_write(struct xnvme_cli *cli)
 	void *dbuf = NULL, *mbuf = NULL;
 	size_t dbuf_nbytes, mbuf_nbytes;
 	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	switch (geo->type) {
 	case XNVME_GEO_CONVENTIONAL:
@@ -456,7 +466,7 @@ static int
 cmd_append(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	uint64_t nsid = cli->args.nsid;
 	const uint64_t zslba = cli->args.slba;
@@ -464,6 +474,8 @@ cmd_append(struct xnvme_cli *cli)
 	size_t dbuf_nbytes;
 	char *dbuf;
 	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	if (geo->type != XNVME_GEO_ZONED) {
 		XNVME_DEBUG("FAILED: not zns, got; %d", geo->type);
@@ -511,7 +523,7 @@ static int
 _cmd_mgmt(struct xnvme_cli *cli, uint8_t zsa)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	uint32_t nsid = cli->args.nsid;
 	const uint64_t zslba = cli->args.slba;
 	const struct xnvme_spec_znd_idfy_lbafe *lbafe = xnvme_znd_dev_get_lbafe(dev);
@@ -521,6 +533,8 @@ _cmd_mgmt(struct xnvme_cli *cli, uint8_t zsa)
 	char *dbuf = NULL;
 
 	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	select_all = cli->given[XNVME_CLI_OPT_ALL] ? true : false;
 	if (!cli->given[XNVME_CLI_OPT_NSID]) {

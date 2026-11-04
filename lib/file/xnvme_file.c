@@ -38,18 +38,14 @@ xnvme_file_close(struct xnvme_dev *fh)
 int
 xnvme_file_sync(struct xnvme_dev *fh)
 {
-	struct xnvme_cmd_ctx ctx = xnvme_file_get_cmd_ctx(fh);
+	struct xnvme_cmd_ctx ctx = {0};
+
+	xnvme_dev_get_cmd_ctx(fh, &ctx);
 
 	ctx.cmd.common.opcode = XNVME_SPEC_FS_OPC_FLUSH;
 	ctx.cmd.common.nsid = xnvme_dev_get_nsid(ctx.dev);
 
 	return xnvme_cmd_pass(&ctx, NULL, 0, NULL, 0);
-}
-
-struct xnvme_cmd_ctx
-xnvme_file_get_cmd_ctx(struct xnvme_dev *fh)
-{
-	return xnvme_cmd_ctx_from_dev(fh);
 }
 
 struct xnvme_dev *
