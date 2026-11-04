@@ -814,7 +814,7 @@ copy_file_async(struct xnvme_cli *cli)
 
 	for (size_t ofz = 0; (ofz < tbytes) && !nerrors;) {
 		struct cb_args_copy *work = &cb_args_copy[(ofz / iosize) % qdepth];
-		struct xnvme_cmd_ctx *src_ctx = xnvme_cmd_ctx_from_queue(queue);
+		struct xnvme_cmd_ctx *src_ctx = xnvme_queue_get_cmd_ctx(queue);
 		size_t nbytes = XNVME_MIN_U64(iosize, tbytes - ofz);
 
 		src_ctx->async.cb_arg = work;

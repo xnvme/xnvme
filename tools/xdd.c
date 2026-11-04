@@ -132,7 +132,7 @@ copy_async(struct xnvme_cli *cli)
 		work->start_offset = start_offset;
 	}
 	for (size_t ofz = start_offset; (ofz - start_offset < tbytes) && !nerrors;) {
-		struct xnvme_cmd_ctx *src_ctx = xnvme_cmd_ctx_from_queue(queue);
+		struct xnvme_cmd_ctx *src_ctx = xnvme_queue_get_cmd_ctx(queue);
 		size_t nbytes = XNVME_MIN_U64(iosize, tbytes - (ofz - start_offset));
 		struct cb_args *work = NULL;
 		ssize_t res;

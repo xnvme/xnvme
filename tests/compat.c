@@ -69,6 +69,52 @@ sub_null_args(struct xnvme_cli *XNVME_UNUSED(cli))
 	return err;
 }
 
+static int
+sub_deprecated_queue(struct xnvme_cli *cli)
+{
+	struct xnvme_opts opts = {0};
+	struct xnvme_queue *queue = NULL;
+	struct xnvme_dev *dev;
+	int err;
+
+	xnvme_opts_set_defaults(&opts);
+	err = xnvme_cli_to_opts(cli, &opts);
+	if (err) {
+		xnvme_cli_perr("xnvme_cli_to_opts()", err);
+		return err;
+	}
+	dev = xnvme_dev_open(cli->args.uri, &opts);
+	if (!dev) {
+		xnvme_cli_perr("xnvme_dev_open()", -errno);
+		return -errno;
+	}
+	err = xnvme_queue_init(dev, 2, 0, &queue);
+	if (err) {
+		xnvme_cli_perr("xnvme_queue_init()", err);
+		goto exit;
+	}
+
+	for (int i = 0; i < 2; ++i) {
+		struct xnvme_cmd_ctx *ctx = xnvme_cmd_ctx_from_queue(queue);
+
+		if (!ctx || ctx->dev != dev) {
+			xnvme_cli_pinf(
+				"FAILED: xnvme_cmd_ctx_from_queue() != xnvme_queue_get_cmd_ctx()");
+			err = -EINVAL;
+			break;
+		}
+		xnvme_queue_put_cmd_ctx(queue, ctx);
+	}
+
+exit:
+	if (queue) {
+		xnvme_queue_term(queue);
+	}
+	xnvme_dev_close(dev);
+
+	return err;
+}
+
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"deprecated",
@@ -86,6 +132,20 @@ static struct xnvme_cli_sub g_subs[] = {
 		sub_null_args,
 		{
 			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
+		},
+	},
+	{
+		"deprecated-queue",
+		"Call the deprecated functions taking a queue",
+		"Call the deprecated functions taking a queue",
+		sub_deprecated_queue,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			XNVME_CLI_SYNC_OPTS,
+			XNVME_CLI_ASYNC_OPTS,
 		},
 	},
 };

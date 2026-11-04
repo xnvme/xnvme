@@ -40,12 +40,6 @@ xnvme_dev_get_cmd_ctx(struct xnvme_dev *dev, struct xnvme_cmd_ctx *ctx)
 	return 0;
 }
 
-struct xnvme_cmd_ctx *
-xnvme_cmd_ctx_from_queue(struct xnvme_queue *queue)
-{
-	return xnvme_queue_get_cmd_ctx(queue);
-}
-
 int
 xnvme_cmd_pass(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 	       size_t mbuf_nbytes)
