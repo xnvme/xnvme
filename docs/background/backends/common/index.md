@@ -23,7 +23,7 @@ regular files.
 * Memory Allocators
 
   - `posix`, Use **libc** `malloc()/free()` with `sysconf()` for
-    alignment, add link to the cross-platform section
+    alignment
 
 * Asynchronous Interfaces
 
