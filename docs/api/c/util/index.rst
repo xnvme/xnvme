@@ -3,10 +3,6 @@
 Utilities
 #########
 
-LBA Helpers (:ref:`sec-api-c-xnvme_lba`)
-  This module includes functions for constructing an `xnvme_lba_range`, which is
-  a struct representing a range of logical block addresses (LBAs).
-
 Library Capabilities (:ref:`sec-api-c-xnvme_libconf`)
   This module allows introspective querying of the **xNVMe** library for its
   capabilities.

@@ -4,7 +4,6 @@
 
 xnvmelib_source += files(
   'xnvme_crc.c',
-  'xnvme_lba.c',
   'xnvme_libconf.c',
   'xnvme_lock.c',
   'xnvme_ver.c',
