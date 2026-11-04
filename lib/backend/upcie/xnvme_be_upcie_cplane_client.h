@@ -43,20 +43,6 @@ int
 xnvme_be_upcie_cplane_peer_check(int sock, int root_ok);
 
 /**
- * Send `msg` about `ctrlr` on the runtime's socket and replace it with the reply
- *
- * Serialised, since the threads of a process share the one socket.
- *
- * @param fds Pre-allocated array of NVME_CPLANE_FDS_MAX, or NULL
- * @param nfds Set to how many descriptors arrived
- *
- * @return 0 on success, the server's result when it refused, negative errno on error
- */
-int
-xnvme_be_upcie_cplane_ask_ctrlr(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_cplane_msg *msg,
-				int *fds, uint32_t *nfds);
-
-/**
  * Ask the server on `sock` about the controller at `index`; the reply lands in `msg`
  *
  * @return 0 on success, the server's result when it refused (-ERANGE past the
@@ -91,10 +77,6 @@ xnvme_be_upcie_cplane_ctrlr_from_base(struct xnvme_be_upcie_ctrlr *ctrlr);
  */
 void
 xnvme_be_upcie_cplane_disconnect(void);
-
-int
-xnvme_be_upcie_cplane_ask_ctrlr_fd(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_cplane_msg *msg,
-				   int fd);
 
 int
 xnvme_be_upcie_cplane_register_client_mem(struct xnvme_be_upcie_ctrlr *ctrlr, int dmabuf_fd,
@@ -171,14 +153,6 @@ xnvme_be_upcie_cplane_queue_poke_idle(struct xnvme_queue_upcie *upcie_queue);
  */
 struct nvme_qpair *
 xnvme_be_upcie_ctrlr_ioq(struct xnvme_be_upcie_ctrlr *ctrlr);
-
-/**
- * A client's PRP scratch for admin payloads on `ctrlr`, allocated on first use
- *
- * @return The request carrying the scratch, NULL with errno set on error
- */
-struct nvme_request *
-xnvme_be_upcie_ctrlr_admin_prp(struct xnvme_be_upcie_ctrlr *ctrlr);
 
 /**
  * Free the scratch of xnvme_be_upcie_ctrlr_admin_prp(), when there is one

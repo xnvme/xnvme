@@ -162,7 +162,17 @@ cplane_client_ask(int sock, struct nvme_cplane_msg *msg, int *fds, uint32_t *nfd
 	return nvme_cplane_request(sock, msg, fds, nfds);
 }
 
-int
+/**
+ * Send `msg` about `ctrlr` on the runtime's socket and replace it with the reply
+ *
+ * Serialised, since the threads of a process share the one socket.
+ *
+ * @param fds Pre-allocated array of NVME_CPLANE_FDS_MAX, or NULL
+ * @param nfds Set to how many descriptors arrived
+ *
+ * @return 0 on success, the server's result when it refused, negative errno on error
+ */
+static int
 xnvme_be_upcie_cplane_ask_ctrlr(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_cplane_msg *msg,
 				int *fds, uint32_t *nfds)
 {
@@ -179,6 +189,32 @@ xnvme_be_upcie_cplane_ask_ctrlr(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_
 	pthread_mutex_unlock(&cplane_sock_lock);
 
 	return err;
+}
+
+/**
+ * A client's PRP scratch for admin payloads on `ctrlr`, allocated on first use
+ *
+ * @return The request carrying the scratch, NULL with errno set on error
+ */
+static struct nvme_request *
+xnvme_be_upcie_ctrlr_admin_prp(struct xnvme_be_upcie_ctrlr *ctrlr)
+{
+	if (!ctrlr) {
+		errno = EINVAL;
+		return NULL;
+	}
+	if (ctrlr->admin_prp.prp) {
+		return &ctrlr->admin_prp;
+	}
+
+	ctrlr->admin_prp.prp =
+		xnvme_be_upcie_cplane_buf_alloc(ctrlr, 4096, &ctrlr->admin_prp.prp_addr);
+	if (!ctrlr->admin_prp.prp) {
+		XNVME_DEBUG("FAILED: allocating admin PRP scratch; errno(%d)", errno);
+		return NULL;
+	}
+
+	return &ctrlr->admin_prp;
 }
 
 int
@@ -328,7 +364,7 @@ cplane_client_conn_get(uint32_t cplane_id)
 	return sock;
 }
 
-int
+static int
 xnvme_be_upcie_cplane_ask_ctrlr_fd(struct xnvme_be_upcie_ctrlr *ctrlr, struct nvme_cplane_msg *msg,
 				   int fd)
 {
@@ -765,27 +801,6 @@ xnvme_be_upcie_ctrlr_ioq(struct xnvme_be_upcie_ctrlr *ctrlr)
 	}
 
 	return &ctrlr->sync;
-}
-
-struct nvme_request *
-xnvme_be_upcie_ctrlr_admin_prp(struct xnvme_be_upcie_ctrlr *ctrlr)
-{
-	if (!ctrlr) {
-		errno = EINVAL;
-		return NULL;
-	}
-	if (ctrlr->admin_prp.prp) {
-		return &ctrlr->admin_prp;
-	}
-
-	ctrlr->admin_prp.prp =
-		xnvme_be_upcie_cplane_buf_alloc(ctrlr, 4096, &ctrlr->admin_prp.prp_addr);
-	if (!ctrlr->admin_prp.prp) {
-		XNVME_DEBUG("FAILED: allocating admin PRP scratch; errno(%d)", errno);
-		return NULL;
-	}
-
-	return &ctrlr->admin_prp;
 }
 
 void
