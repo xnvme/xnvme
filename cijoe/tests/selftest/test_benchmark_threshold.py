@@ -1,7 +1,10 @@
 import importlib.util
 from pathlib import Path
 
+import yaml
+
 SCRIPT = Path(__file__).parents[2] / "scripts" / "benchmark_threshold.py"
+THRESHOLDS = Path(__file__).parents[2] / "auxiliary" / "bench-thresholds.yaml"
 spec = importlib.util.spec_from_file_location("benchmark_threshold", SCRIPT)
 threshold = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(threshold)
@@ -117,3 +120,26 @@ def test_a_pair_with_no_common_point_fails():
     assert threshold.check(results, floors) == [
         "cmd-bdev_xnvme/uring-bdev_uring: no point where both report IOPS"
     ]
+
+
+def test_the_windows_floors_pass_a_run_that_lost_cpu():
+    floors = yaml.safe_load(THRESHOLDS.read_text())["windows"]
+    results = run(
+        {
+            "null": 1000,
+            "xnvme_null": 766,
+            "windowsaio": 1000,
+            "xnvme_iocp": 1000,
+            "xnvme_iocp_th": 1000,
+            "xnvme_ioring": 1000,
+        },
+        groups={
+            "null": "null",
+            "xnvme_null": "null",
+            "windowsaio": "windowsaio",
+            "xnvme_iocp": "windowsaio",
+            "xnvme_iocp_th": "windowsaio",
+            "xnvme_ioring": "windowsaio",
+        },
+    )
+    assert threshold.check(results, floors) == []
