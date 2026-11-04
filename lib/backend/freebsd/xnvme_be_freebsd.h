@@ -11,11 +11,8 @@
 
 #include <xnvme_be_freebsd_state.h>
 
-int
-xnvme_be_freebsd_nvme_get_nsid_and_ctrlr_fd(int fd, uint32_t *nsid, int *ctrlr_fd);
-
-extern struct xnvme_be_admin g_xnvme_be_freebsd_admin_nvme;
-extern struct xnvme_be_sync g_xnvme_be_freebsd_sync_nvme;
+extern struct xnvme_be_admin g_xnvme_be_freebsd_admin;
+extern struct xnvme_be_sync g_xnvme_be_freebsd_sync;
 extern struct xnvme_be_dev g_xnvme_be_freebsd_dev;
 extern struct xnvme_be_async g_xnvme_be_freebsd_async;
 
