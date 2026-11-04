@@ -331,15 +331,37 @@ xnvme_be_upcie_mem_map_ioas(void)
 	if (!_heap_at_va()) {
 		return NULL;
 	}
+	if (g_upcie_rte.connection.alive) {
+		return g_upcie_rte.connection.iommufd_alive ? &g_upcie_rte.connection.iommufd
+							    : NULL;
+	}
+
 	return (g_upcie_rte.mode == XNVME_BE_UPCIE_MODE_VFIO_CDEV) ? &g_upcie_rte.cdev.iommufd
 								   : NULL;
+}
+
+struct vfio_container *
+xnvme_be_upcie_mem_map_container(void)
+{
+	if (!_heap_at_va()) {
+		return NULL;
+	}
+	if (g_upcie_rte.connection.alive) {
+		return g_upcie_rte.connection.container_alive ? &g_upcie_rte.connection.container
+							      : NULL;
+	}
+
+	return ((g_upcie_rte.mode == XNVME_BE_UPCIE_MODE_VFIO_TYPE1) &&
+		g_upcie_rte.type1.iommu_set)
+		       ? &g_upcie_rte.type1.container
+		       : NULL;
 }
 
 /**
  * How memory of this process's own is made reachable, if at all
  *
  * Through an IOMMU it is mapped at an IOVA equal to its address, in this
- * process's IOAS or container or the server's IOAS. Without one the device
+ * process's IOAS or container or the server's. Without one the device
  * takes physical addresses, which the heap's registry reads from pagemap.
  */
 enum _map_via {
@@ -357,9 +379,7 @@ _map_via(void)
 	if (xnvme_be_upcie_mem_map_ioas()) {
 		return _MAP_VIA_IOMMUFD;
 	}
-	if (!g_upcie_rte.connection.alive &&
-	    (g_upcie_rte.mode == XNVME_BE_UPCIE_MODE_VFIO_TYPE1) && g_upcie_rte.type1.iommu_set &&
-	    _heap_at_va()) {
+	if (xnvme_be_upcie_mem_map_container()) {
 		return _MAP_VIA_TYPE1;
 	}
 	if (g_upcie_rte.mem.dmem_alive && (dmem->translator == DMAMEM_XLATE_LUT) &&
@@ -382,7 +402,7 @@ _iommu_map(enum _map_via via, uint64_t va, uint64_t nbytes)
 		map.iova = va;
 		map.size = nbytes;
 
-		return vfio_iommu_map_dma(&g_upcie_rte.type1.container, &map) ? -errno : 0;
+		return vfio_iommu_map_dma(xnvme_be_upcie_mem_map_container(), &map) ? -errno : 0;
 	}
 
 	return iommufd_ioas_map(xnvme_be_upcie_mem_map_ioas(), va, nbytes,
@@ -401,7 +421,11 @@ _iommu_unmap(enum _map_via via, uint64_t va, uint64_t nbytes)
 		unmap.iova = va;
 		unmap.size = nbytes;
 
-		return vfio_iommu_unmap_dma(&g_upcie_rte.type1.container, &unmap) ? -errno : 0;
+		if (vfio_iommu_unmap_dma(xnvme_be_upcie_mem_map_container(), &unmap)) {
+			return -errno;
+		}
+
+		return 0;
 	}
 
 	return iommufd_ioas_unmap(xnvme_be_upcie_mem_map_ioas(), va, nbytes);
@@ -454,6 +478,15 @@ _maps_grow(void)
 void
 xnvme_be_upcie_mem_maps_term(void)
 {
+	const enum _map_via via = _map_via();
+
+	/* A server's address space outlives this process, so what is left must go */
+	if ((via == _MAP_VIA_IOMMUFD) || (via == _MAP_VIA_TYPE1)) {
+		for (int i = 0; i < g_maps.count; ++i) {
+			_iommu_unmap(via, (uint64_t)g_maps.entries[i].vaddr,
+				     g_maps.entries[i].nbytes);
+		}
+	}
 	free(g_maps.entries);
 	memset(&g_maps, 0, sizeof(g_maps));
 }

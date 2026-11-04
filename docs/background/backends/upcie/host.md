@@ -43,7 +43,16 @@ device-memory window (see `XNVME_UPCIE_IOVA_BASE`).
   `ENOSYS`.
 - **Memory mapping** (`mem_map` / `mem_unmap`):
   - Through an IOMMU (iommufd or type1), any page-aligned memory. A client of a
-    server maps nothing.
+    server maps only when it could map the server's heap at the server's
+    address, and counts what it maps against its own locked-memory limit.
+  - A client of a server maps at an IOVA equal to its address, in an address
+    space shared with every other client, so `xnvme_mem_map()` fails with `EEXIST`
+    where another client holds that range. Allocate the memory elsewhere and
+    map it again. This is rare with a few clients mapping a few GiB each, more
+    common with large mappings or many clients, and certain for two copies of
+    one program running with address-space randomisation off. A client unmaps
+    what it still has mapped as it closes; only one that dies first leaves
+    mappings behind, which stay until the server stops.
   - With `uio_pci_generic`, only memory in hugetlb pages of the heap's hugepage
     size, aligned to it, since only those keep the physical address the device
     was given. Reading that address needs `CAP_SYS_ADMIN`.

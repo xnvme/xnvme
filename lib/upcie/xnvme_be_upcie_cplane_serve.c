@@ -359,6 +359,14 @@ xnvme_be_upcie_cplane_serve_dispatch(struct xnvme_be_upcie_cplane_serve_conn *co
 		reply.u.init_connection.bar0_nbytes = share->bar0_nbytes;
 		fds[nfds++] = share->heap_fd;
 		fds[nfds++] = share->bar0_fd;
+		if (xnvme_be_upcie_mem_map_ioas()) {
+			reply.u.init_connection.iommu = NVME_CPLANE_IOMMU_IOMMUFD;
+			reply.u.init_connection.ioas_id = g_upcie_rte.cdev.iommufd.ioas_id;
+			fds[nfds++] = g_upcie_rte.cdev.iommufd.fd;
+		} else if (xnvme_be_upcie_mem_map_container()) {
+			reply.u.init_connection.iommu = NVME_CPLANE_IOMMU_TYPE1;
+			fds[nfds++] = g_upcie_rte.type1.container.fd;
+		}
 		conn->inited |= UINT64_C(1) << (unsigned)idx;
 		break;
 
