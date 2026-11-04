@@ -247,8 +247,11 @@ xnvme_be_liburing_poke(struct xnvme_queue *q, uint32_t max)
 		ctx->cpl.result = cqe->res;
 		if (cqe->res < 0) {
 			ctx->cpl.result = 0;
-			ctx->cpl.status.sc = -cqe->res;
-			ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
+			ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC,
+							 -cqe->res);
+			ctx->cpl.status =
+				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+					       XNVME_STATUS_CODE_TYPE_VENDOR);
 		}
 
 		queue->base.outstanding--;

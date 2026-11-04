@@ -32,8 +32,11 @@ cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf, si
 		if (res < 0) {
 			XNVME_DEBUG("FAILED: {fsync}(), errno: %d", errno);
 			ctx->cpl.result = 0;
-			ctx->cpl.status.sc = errno;
-			ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
+			ctx->cpl.status =
+				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, errno);
+			ctx->cpl.status =
+				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+					       XNVME_STATUS_CODE_TYPE_VENDOR);
 			return -errno;
 		}
 
@@ -42,8 +45,11 @@ cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf, si
 		if (res < 0) {
 			XNVME_DEBUG("FAILED: {F_FULLFSYNC}(), errno: %d", errno);
 			ctx->cpl.result = 0;
-			ctx->cpl.status.sc = errno;
-			ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
+			ctx->cpl.status =
+				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, errno);
+			ctx->cpl.status =
+				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+					       XNVME_STATUS_CODE_TYPE_VENDOR);
 			return -errno;
 		}
 		return 0;
@@ -67,8 +73,11 @@ cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, size_t d
 		if (res < 0) {
 			XNVME_DEBUG("FAILED: {fsync}(), errno: %d", errno);
 			ctx->cpl.result = 0;
-			ctx->cpl.status.sc = errno;
-			ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
+			ctx->cpl.status =
+				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, errno);
+			ctx->cpl.status =
+				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+					       XNVME_STATUS_CODE_TYPE_VENDOR);
 			return -errno;
 		}
 
@@ -77,8 +86,11 @@ cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, size_t d
 		if (res < 0) {
 			XNVME_DEBUG("FAILED: {F_FULLFSYNC}(), errno: %d", errno);
 			ctx->cpl.result = 0;
-			ctx->cpl.status.sc = errno;
-			ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
+			ctx->cpl.status =
+				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, errno);
+			ctx->cpl.status =
+				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+					       XNVME_STATUS_CODE_TYPE_VENDOR);
 			return -errno;
 		}
 		return 0;

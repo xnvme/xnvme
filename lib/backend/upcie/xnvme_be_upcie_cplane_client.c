@@ -258,8 +258,9 @@ xnvme_be_upcie_cplane_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size
 	memcpy(&ctx->cpl, &msg.u.admin_cmd.cpl, sizeof(ctx->cpl));
 
 	if (xnvme_cmd_ctx_cpl_status(ctx)) {
-		XNVME_DEBUG("FAILED: command; sc(%d); sct(%d)", ctx->cpl.status.sc,
-			    ctx->cpl.status.sct);
+		XNVME_DEBUG("FAILED: command; sc(%d); sct(%d)",
+			    (int)xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC),
+			    (int)xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT));
 		return -EIO;
 	}
 
@@ -879,8 +880,9 @@ cplane_client_queue_fail_inflight(struct xnvme_queue_upcie *upcie_queue)
 
 		memset(&ctx->cpl, 0, sizeof(ctx->cpl));
 		ctx->cpl.cid = cid;
-		ctx->cpl.status.sc = 0x08; /* Command Aborted due to SQ Deletion */
-		ctx->cpl.status.dnr = 1;
+		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC,
+						 0x08); /* Command Aborted due to SQ Deletion */
+		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_DNR, 1);
 
 		ctx->async.cb(ctx, ctx->async.cb_arg);
 		failed++;

@@ -82,6 +82,7 @@ tests = {
   'spec.c': [
     ['idfy-offsets', ['idfy-offsets']],
     ['idfy-masks', ['idfy-masks']],
+    ['status-masks', ['status-masks']],
   ],
   'threads.c': [
     ['reopen', ['reopen', '1GB', '--count', '5']],

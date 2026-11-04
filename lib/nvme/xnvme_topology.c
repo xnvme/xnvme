@@ -24,8 +24,8 @@ xnvme_subsystem_reset(struct xnvme_dev *dev)
 	}
 	if (xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("FAILED: xnvme_cmd_pass_pseudo(); xnvme_cmd_ctx_cpl_status.sc: %d",
-			    ctx.cpl.status.sc);
-		return -ctx.cpl.status.sc;
+			    (int)xnvme_bits_get(ctx.cpl.status, XNVME_SPEC_CQE_STATUS_SC));
+		return -(int)xnvme_bits_get(ctx.cpl.status, XNVME_SPEC_CQE_STATUS_SC);
 	}
 
 	return 0;
@@ -48,8 +48,8 @@ xnvme_controller_reset(struct xnvme_dev *dev)
 	}
 	if (xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("FAILED: xnvme_cmd_pass_pseudo(); xnvme_cmd_ctx_cpl_status.sc: %d",
-			    ctx.cpl.status.sc);
-		return -ctx.cpl.status.sc;
+			    (int)xnvme_bits_get(ctx.cpl.status, XNVME_SPEC_CQE_STATUS_SC));
+		return -(int)xnvme_bits_get(ctx.cpl.status, XNVME_SPEC_CQE_STATUS_SC);
 	}
 
 	return 0;
@@ -72,8 +72,8 @@ xnvme_namespace_rescan(struct xnvme_dev *dev)
 	}
 	if (xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("FAILED: xnvme_cmd_pass_pseudo(); xnvme_cmd_ctx_cpl_status.sc: %d",
-			    ctx.cpl.status.sc);
-		return -ctx.cpl.status.sc;
+			    (int)xnvme_bits_get(ctx.cpl.status, XNVME_SPEC_CQE_STATUS_SC));
+		return -(int)xnvme_bits_get(ctx.cpl.status, XNVME_SPEC_CQE_STATUS_SC);
 	}
 
 	return 0;
@@ -98,8 +98,8 @@ xnvme_controller_get_registers(struct xnvme_dev *dev, struct xnvme_spec_ctrlr_ba
 	}
 	if (xnvme_cmd_ctx_cpl_status(&ctx)) {
 		XNVME_DEBUG("FAILED: xnvme_cmd_pass_pseudo(); xnvme_cmd_ctx_cpl_status.sc: %d",
-			    ctx.cpl.status.sc);
-		return -ctx.cpl.status.sc;
+			    (int)xnvme_bits_get(ctx.cpl.status, XNVME_SPEC_CQE_STATUS_SC));
+		return -(int)xnvme_bits_get(ctx.cpl.status, XNVME_SPEC_CQE_STATUS_SC);
 	}
 
 	return 0;

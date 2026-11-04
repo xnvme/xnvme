@@ -107,8 +107,11 @@ posix_poke(struct xnvme_queue *q, uint32_t max)
 			ctx->cpl.result = 0;
 			// When aio_error() fails, we use 'err'
 			// When aio_return() fails, we use 'errno'
-			ctx->cpl.status.sc = err ? err : errno;
-			ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
+			ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC,
+							 err ? err : errno);
+			ctx->cpl.status =
+				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+					       XNVME_STATUS_CODE_TYPE_VENDOR);
 		}
 
 		ctx->async.cb(ctx, ctx->async.cb_arg);

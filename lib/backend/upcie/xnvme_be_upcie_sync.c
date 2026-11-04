@@ -93,7 +93,8 @@ xnvme_be_upcie_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 
 	if (err || xnvme_cmd_ctx_cpl_status(ctx)) {
 		XNVME_DEBUG("FAILED: sync_cmd_io(); err(%d); sc(%d); sct(%d)", err,
-			    ctx->cpl.status.sc, ctx->cpl.status.sct);
+			    (int)xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC),
+			    (int)xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT));
 		return err;
 	}
 
@@ -161,7 +162,8 @@ xnvme_be_upcie_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_
 
 	if (err || xnvme_cmd_ctx_cpl_status(ctx)) {
 		XNVME_DEBUG("FAILED: sync_cmd_iov(); err(%d); sc(%d); sct(%d)", err,
-			    ctx->cpl.status.sc, ctx->cpl.status.sct);
+			    (int)xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC),
+			    (int)xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT));
 		return err;
 	}
 

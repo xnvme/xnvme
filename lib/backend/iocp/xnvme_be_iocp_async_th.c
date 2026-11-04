@@ -203,8 +203,11 @@ _windows_async_iocp_th_poke(struct xnvme_queue *q, uint32_t max)
 
 		case FAILED:
 			cmd_ctx->cpl.result = 0;
-			cmd_ctx->cpl.status.sc = req->err;
-			cmd_ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
+			cmd_ctx->cpl.status = xnvme_bits_set(cmd_ctx->cpl.status,
+							     XNVME_SPEC_CQE_STATUS_SC, req->err);
+			cmd_ctx->cpl.status =
+				xnvme_bits_set(cmd_ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+					       XNVME_STATUS_CODE_TYPE_VENDOR);
 			break;
 
 		default:

@@ -64,9 +64,13 @@ xnvme_be_macos_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 			break;
 		default:
 			XNVME_DEBUG("FAILED: unsupported cns: 0x%x", ctx->cmd.idfy.cns);
-			ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_GENERIC;
-			ctx->cpl.status.sc = XNVME_STATUS_CODE_INVALID_FIELD;
-			ctx->cpl.status.dnr = 1;
+			ctx->cpl.status =
+				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+					       XNVME_STATUS_CODE_TYPE_GENERIC);
+			ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC,
+							 XNVME_STATUS_CODE_INVALID_FIELD);
+			ctx->cpl.status =
+				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_DNR, 1);
 			return -EIO;
 		}
 		err = (*smart)->GetIdentifyData(smart, dbuf, nsid);

@@ -143,8 +143,11 @@ _linux_libaio_poke(struct xnvme_queue *q, uint32_t max)
 		if (((int64_t)ev->res) < 0) {
 			XNVME_DEBUG("FAILED: res: %lu, res2: %lu", ev->res, ev->res2);
 			ctx->cpl.result = 0;
-			ctx->cpl.status.sc = -ev->res;
-			ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
+			ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC,
+							 -ev->res);
+			ctx->cpl.status =
+				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+					       XNVME_STATUS_CODE_TYPE_VENDOR);
 		}
 
 		ctx->async.cb(ctx, ctx->async.cb_arg);

@@ -17,6 +17,22 @@
 		 ((uint64_t)1 << (4 * XNVME_SIZEOF_MEMBER(type, field))) ==           \
 	 0)
 
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cqe, status,
+			 XNVME_SPEC_CQE_STATUS_P | XNVME_SPEC_CQE_STATUS_SC |
+				 XNVME_SPEC_CQE_STATUS_SCT | XNVME_SPEC_CQE_STATUS_CRD |
+				 XNVME_SPEC_CQE_STATUS_M | XNVME_SPEC_CQE_STATUS_DNR),
+		    "status of struct xnvme_spec_cqe")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cqe, status) == 14,
+		    "status of struct xnvme_spec_cqe")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_log_erri_entry, status,
+			 XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_P | XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_SC |
+				 XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_SCT |
+				 XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_CRD |
+				 XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_M |
+				 XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_DNR),
+		    "status of struct xnvme_spec_log_erri_entry")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_log_erri_entry, status) == 12,
+		    "status of struct xnvme_spec_log_erri_entry")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_lbaf, rp, XNVME_SPEC_LBAF_RP),
 		    "rp of struct xnvme_spec_lbaf")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ns, nsfeat,
@@ -319,6 +335,30 @@ sub_idfy_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 	return err;
 }
 
+static int
+sub_status_masks(struct xnvme_cli *XNVME_UNUSED(cli))
+{
+	uint8_t raw[sizeof(struct xnvme_spec_cqe)] = {0};
+	struct xnvme_spec_cqe cpl;
+	int err = 0;
+
+	raw[14] = 0x05; // Completion Queue Entry DW3 bits 31:16: phase tag, status code 0x2,
+	raw[15] = 0x82; // status code type 0x1, do not retry
+	memcpy(&cpl, raw, sizeof(cpl));
+
+	if (!xnvme_bits_get(cpl.status, XNVME_SPEC_CQE_STATUS_P) ||
+	    xnvme_bits_get(cpl.status, XNVME_SPEC_CQE_STATUS_SC) != 0x2 ||
+	    xnvme_bits_get(cpl.status, XNVME_SPEC_CQE_STATUS_SCT) != 0x1 ||
+	    xnvme_bits_get(cpl.status, XNVME_SPEC_CQE_STATUS_CRD) ||
+	    xnvme_bits_get(cpl.status, XNVME_SPEC_CQE_STATUS_M) ||
+	    !xnvme_bits_get(cpl.status, XNVME_SPEC_CQE_STATUS_DNR)) {
+		xnvme_cli_pinf("FAILED: status: %#" PRIx16, cpl.status);
+		err = -EINVAL;
+	}
+
+	return err;
+}
+
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"idfy-offsets",
@@ -334,6 +374,15 @@ static struct xnvme_cli_sub g_subs[] = {
 		"Read identify fields of bits through their masks",
 		"Read identify fields of bits through their masks",
 		sub_idfy_masks,
+		{
+			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
+		},
+	},
+	{
+		"status-masks",
+		"Read the completion status through its masks",
+		"Read the completion status through its masks",
+		sub_status_masks,
 		{
 			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
 		},

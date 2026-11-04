@@ -61,7 +61,7 @@ nil_poke(struct xnvme_queue *q, uint32_t max)
 			return -EIO;
 		}
 
-		ctx->cpl.status.sc = 0;
+		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, 0);
 		ctx->async.cb(ctx, ctx->async.cb_arg);
 		queue->ctx[cur] = NULL;
 

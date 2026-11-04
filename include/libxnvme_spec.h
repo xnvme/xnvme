@@ -95,26 +95,6 @@ enum xnvme_spec_status_code {
 };
 
 /**
- * NVMe Command Completion Status field
- *
- * @struct xnvme_spec_status
- */
-struct xnvme_spec_status {
-	union {
-		struct {
-			uint16_t p     : 1; ///< Phase tag
-			uint16_t sc    : 8; ///< Status codes
-			uint16_t sct   : 3; ///< Status code type
-			uint16_t rsvd2 : 2;
-			uint16_t m     : 1; ///< More
-			uint16_t dnr   : 1; ///< Do not retry
-		};
-		uint16_t val;
-	};
-};
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_status) == 2, "Incorrect size")
-
-/**
  * Completion Queue Entry
  *
  * @struct xnvme_spec_cqe
@@ -137,10 +117,23 @@ struct xnvme_spec_cqe {
 	uint16_t sqid; ///< submission queue identifier
 
 	/* dword 3 */
-	uint16_t cid; ///< command identifier
-	struct xnvme_spec_status status;
+	uint16_t cid;    ///< command identifier
+	uint16_t status; ///< Status Field and Phase Tag, see XNVME_SPEC_CQE_STATUS_*
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cqe) == 16, "Incorrect size")
+
+/** Phase Tag; bit 0 of 'status' */
+#define XNVME_SPEC_CQE_STATUS_P 0x1
+/** Status Code; bits 8:1 of 'status' */
+#define XNVME_SPEC_CQE_STATUS_SC 0x1fe
+/** Status Code Type; bits 11:9 of 'status' */
+#define XNVME_SPEC_CQE_STATUS_SCT 0xe00
+/** Command Retry Delay; bits 13:12 of 'status' */
+#define XNVME_SPEC_CQE_STATUS_CRD 0x3000
+/** More; bit 14 of 'status' */
+#define XNVME_SPEC_CQE_STATUS_M 0x4000
+/** Do Not Retry; bit 15 of 'status' */
+#define XNVME_SPEC_CQE_STATUS_DNR 0x8000
 
 /**
  * NVMe get-log-page entry for error information
@@ -231,7 +224,7 @@ struct xnvme_spec_log_erri_entry {
 	uint64_t ecnt;
 	uint16_t sqid;
 	uint16_t cid;
-	struct xnvme_spec_status status;
+	uint16_t status; ///< Status Field and Phase Tag, see XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_*
 	uint16_t eloc;
 	uint64_t lba;
 	uint32_t nsid;
@@ -243,6 +236,19 @@ struct xnvme_spec_log_erri_entry {
 	uint8_t reserved42[22];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_log_erri_entry) == 64, "Incorrect size")
+
+/** Phase Tag; bit 0 of 'status' */
+#define XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_P 0x1
+/** Status Code; bits 8:1 of 'status' */
+#define XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_SC 0x1fe
+/** Status Code Type; bits 11:9 of 'status' */
+#define XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_SCT 0xe00
+/** Command Retry Delay; bits 13:12 of 'status' */
+#define XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_CRD 0x3000
+/** More; bit 14 of 'status' */
+#define XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_M 0x4000
+/** Do Not Retry; bit 15 of 'status' */
+#define XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_DNR 0x8000
 
 /**
  * NVMe Reclaim unit handle descriptor
