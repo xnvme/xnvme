@@ -50,11 +50,15 @@ jobs:
       run: |
         cijoe -r
 
+    - name: Make room on the runner for the guests and their disk images
+      uses: refenv/gha-trim-runner@v1
+      with:
+        need-gib: 50
+
     - name: Stage artifacts on /mnt
       run: |
-        mkdir -p /mnt/system_imaging
+        mkdir -p /mnt/system_imaging /mnt/guests
         ln -s /mnt/system_imaging "$HOME/system_imaging"
-        mkdir -p /mnt/guests
         ln -s /mnt/guests "$HOME/guests"
 
     - name: CIJOE, start the guest
