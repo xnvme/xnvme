@@ -138,16 +138,6 @@
 		xnvme_kvs_exist;
 		xnvme_kvs_list;
 
-		# libxnvme_lba.h
-		xnvme_lba_range_attr;
-		xnvme_lba_range;
-		xnvme_lba_range_fpr;
-		xnvme_lba_range_pr;
-		xnvme_lba_range_from_offset_nbytes;
-		xnvme_lba_range_from_slba_elba;
-		xnvme_lba_range_from_slba_naddrs;
-		xnvme_lba_range_from_zdescr;
-
 		# libxnvme_libconf.h
 		xnvme_libconf_get;
 		xnvme_libconf_fpr;
@@ -188,10 +178,6 @@
 		xnvme_pr;
 		xnvme_be_attr_fpr;
 		xnvme_be_attr_pr;
-		xnvme_lba_fpr;
-		xnvme_lba_pr;
-		xnvme_lba_fprn;
-		xnvme_lba_prn;
 		xnvme_ident_yaml;
 		xnvme_ident_fpr;
 		xnvme_ident_pr;

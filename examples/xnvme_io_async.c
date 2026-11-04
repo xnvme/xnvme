@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <errno.h>
+#include <inttypes.h>
 #include <libxnvme.h>
 
 #define DEFAULT_QD 8
@@ -46,7 +47,8 @@ sub_async_read(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
-	struct xnvme_lba_range rng = {0};
+	uint64_t slba, naddrs;
+	size_t nbytes;
 	uint32_t nsid, qd;
 
 	struct cb_args cb_args = {0};
@@ -63,23 +65,24 @@ sub_async_read(struct xnvme_cli *cli)
 	qd = cli->given[XNVME_CLI_OPT_QDEPTH] ? cli->args.qdepth : DEFAULT_QD;
 	nsid = cli->given[XNVME_CLI_OPT_NSID] ? cli->args.nsid : xnvme_dev_get_nsid(dev);
 
-	rng = xnvme_lba_range_from_slba_elba(dev, cli->args.slba, cli->args.elba);
-	if (!rng.attr.is_valid) {
+	if (cli->args.slba > cli->args.elba) {
 		err = -EINVAL;
-		xnvme_cli_perr("invalid range", err);
-		xnvme_lba_range_pr(&rng, XNVME_PR_DEF);
+		xnvme_cli_perr("invalid range; slba > elba", err);
 		return err;
 	}
+	slba = cli->args.slba;
+	naddrs = cli->args.elba - cli->args.slba + 1;
+	nbytes = naddrs * geo->nbytes;
 
-	xnvme_cli_pinf("Allocating and filling buf of nbytes: %zu", rng.nbytes);
-	buf = xnvme_buf_alloc(dev, rng.nbytes);
+	xnvme_cli_pinf("Allocating and filling buf of nbytes: %zu", nbytes);
+	buf = xnvme_buf_alloc(dev, nbytes);
 	if (!buf) {
 		err = -errno;
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 
-	err = xnvme_buf_fill(buf, rng.nbytes, "zero");
+	err = xnvme_buf_fill(buf, nbytes, "zero");
 	if (err) {
 		xnvme_cli_perr("xnvme_buf_fill()", err);
 		goto exit;
@@ -94,16 +97,17 @@ sub_async_read(struct xnvme_cli *cli)
 	xnvme_queue_set_cb(queue, cb_pool, &cb_args);
 
 	xnvme_cli_pinf("Read uri: '%s', qd: %d", cli->args.uri, qd);
-	xnvme_lba_range_pr(&rng, XNVME_PR_DEF);
+	xnvme_cli_pinf("Range: {slba: 0x%" PRIx64 ", naddrs: %" PRIu64 ", nbytes: %zu}", slba,
+		       naddrs, nbytes);
 
 	xnvme_cli_timer_start(cli);
 
 	payload = buf;
-	for (uint64_t curs = 0; (curs < rng.naddrs) && !cb_args.ecount;) {
+	for (uint64_t curs = 0; (curs < naddrs) && !cb_args.ecount;) {
 		struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(queue);
 
 submit:
-		err = xnvme_nvm_read(ctx, nsid, rng.slba + curs, 0, payload, NULL);
+		err = xnvme_nvm_read(ctx, nsid, slba + curs, 0, payload, NULL);
 		switch (err) {
 		case 0:
 			cb_args.submitted += 1;
@@ -139,12 +143,12 @@ next:
 		goto exit;
 	}
 
-	xnvme_cli_timer_bw_pr(cli, "wall-clock", rng.naddrs * geo->nbytes);
+	xnvme_cli_timer_bw_pr(cli, "wall-clock", naddrs * geo->nbytes);
 
 	if (cli->args.data_output) {
-		xnvme_cli_pinf("Dumping nbytes: %zu, to: '%s'", rng.nbytes, cli->args.data_output);
+		xnvme_cli_pinf("Dumping nbytes: %zu, to: '%s'", nbytes, cli->args.data_output);
 
-		err = xnvme_buf_to_file(buf, rng.nbytes, cli->args.data_output);
+		err = xnvme_buf_to_file(buf, nbytes, cli->args.data_output);
 		if (err) {
 			xnvme_cli_perr("xnvme_buf_to_file()", err);
 		}
@@ -180,7 +184,8 @@ sub_async_write(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
-	struct xnvme_lba_range rng = {0};
+	uint64_t slba, naddrs;
+	size_t nbytes;
 	uint32_t nsid, qd;
 
 	struct cb_args cb_args = {0};
@@ -197,24 +202,24 @@ sub_async_write(struct xnvme_cli *cli)
 	qd = cli->given[XNVME_CLI_OPT_QDEPTH] ? cli->args.qdepth : DEFAULT_QD;
 	nsid = cli->given[XNVME_CLI_OPT_NSID] ? cli->args.nsid : xnvme_dev_get_nsid(cli->args.dev);
 
-	rng = xnvme_lba_range_from_slba_elba(dev, cli->args.slba, cli->args.elba);
-	if (!rng.attr.is_valid) {
+	if (cli->args.slba > cli->args.elba) {
 		err = -EINVAL;
-		xnvme_cli_perr("invalid range", err);
-		xnvme_lba_range_pr(&rng, XNVME_PR_DEF);
+		xnvme_cli_perr("invalid range; slba > elba", err);
 		return err;
 	}
+	slba = cli->args.slba;
+	naddrs = cli->args.elba - cli->args.slba + 1;
+	nbytes = naddrs * geo->nbytes;
 
-	xnvme_cli_pinf("Allocating and filling buf of nbytes: %zu", rng.nbytes);
-	buf = xnvme_buf_alloc(dev, rng.nbytes);
+	xnvme_cli_pinf("Allocating and filling buf of nbytes: %zu", nbytes);
+	buf = xnvme_buf_alloc(dev, nbytes);
 	if (!buf) {
 		err = -errno;
 		xnvme_cli_perr("xnvme_buf_alloc()", err);
 		goto exit;
 	}
 
-	err = xnvme_buf_fill(buf, rng.nbytes,
-			     cli->args.data_input ? cli->args.data_input : "anum");
+	err = xnvme_buf_fill(buf, nbytes, cli->args.data_input ? cli->args.data_input : "anum");
 	if (err) {
 		xnvme_cli_perr("xnvme_buf_fill()", err);
 		goto exit;
@@ -229,16 +234,17 @@ sub_async_write(struct xnvme_cli *cli)
 	xnvme_queue_set_cb(queue, cb_pool, &cb_args);
 
 	xnvme_cli_pinf("Write uri: '%s', qd: %d", cli->args.uri, qd);
-	xnvme_lba_range_pr(&rng, XNVME_PR_DEF);
+	xnvme_cli_pinf("Range: {slba: 0x%" PRIx64 ", naddrs: %" PRIu64 ", nbytes: %zu}", slba,
+		       naddrs, nbytes);
 
 	xnvme_cli_timer_start(cli);
 
 	payload = buf;
-	for (uint64_t sect = 0; (sect < rng.naddrs) && !cb_args.ecount;) {
+	for (uint64_t sect = 0; (sect < naddrs) && !cb_args.ecount;) {
 		struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(queue);
 
 submit:
-		err = xnvme_nvm_write(ctx, nsid, rng.slba + sect, 0, payload, NULL);
+		err = xnvme_nvm_write(ctx, nsid, slba + sect, 0, payload, NULL);
 		switch (err) {
 		case 0:
 			cb_args.submitted += 1;
@@ -274,7 +280,7 @@ next:
 		goto exit;
 	}
 
-	xnvme_cli_timer_bw_pr(cli, "wall-clock", rng.nbytes);
+	xnvme_cli_timer_bw_pr(cli, "wall-clock", nbytes);
 
 exit:
 	xnvme_cli_pinf("cb_args: {submitted: %u, completed: %u, ecount: %u}", cb_args.submitted,

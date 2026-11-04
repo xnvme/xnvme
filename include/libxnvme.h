@@ -46,7 +46,6 @@ extern "C" {
 #include "libxnvme_spec_fs.h"
 #include "libxnvme_spec_pp.h"
 #include "libxnvme_cmd.h"
-#include "libxnvme_lba.h"
 #include "libxnvme_ver.h"
 #include "libxnvme_file.h"
 #include "libxnvme_adm.h"
