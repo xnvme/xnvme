@@ -173,7 +173,7 @@ _sub_idfy(struct xnvme_cli *cli, uint8_t cns, uint16_t cntid, uint8_t nsid, uint
 {
 	struct xnvme_dev *dev = cli->args.dev;
 	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
-	struct xnvme_spec_idfy *dbuf = NULL;
+	union xnvme_spec_idfy *dbuf = NULL;
 	size_t dbuf_nbytes = sizeof(*dbuf);
 	int err;
 

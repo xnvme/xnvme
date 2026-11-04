@@ -66,7 +66,7 @@ xnvme_adm_log(struct xnvme_cmd_ctx *ctx, uint8_t lid, uint8_t lsp, uint64_t lpo_
 
 int
 xnvme_adm_idfy(struct xnvme_cmd_ctx *ctx, uint8_t cns, uint16_t cntid, uint8_t nsid,
-	       uint16_t nvmsetid, uint8_t uuid, struct xnvme_spec_idfy *dbuf)
+	       uint16_t nvmsetid, uint8_t uuid, union xnvme_spec_idfy *dbuf)
 {
 	const size_t dbuf_nbytes = sizeof(*dbuf);
 
@@ -81,7 +81,7 @@ xnvme_adm_idfy(struct xnvme_cmd_ctx *ctx, uint8_t cns, uint16_t cntid, uint8_t n
 }
 
 int
-xnvme_adm_idfy_ctrlr(struct xnvme_cmd_ctx *ctx, struct xnvme_spec_idfy *dbuf)
+xnvme_adm_idfy_ctrlr(struct xnvme_cmd_ctx *ctx, union xnvme_spec_idfy *dbuf)
 {
 	const size_t dbuf_nbytes = sizeof(*dbuf);
 
@@ -92,7 +92,7 @@ xnvme_adm_idfy_ctrlr(struct xnvme_cmd_ctx *ctx, struct xnvme_spec_idfy *dbuf)
 }
 
 int
-xnvme_adm_idfy_ctrlr_csi(struct xnvme_cmd_ctx *ctx, uint8_t csi, struct xnvme_spec_idfy *dbuf)
+xnvme_adm_idfy_ctrlr_csi(struct xnvme_cmd_ctx *ctx, uint8_t csi, union xnvme_spec_idfy *dbuf)
 {
 	const size_t dbuf_nbytes = sizeof(*dbuf);
 
@@ -104,7 +104,7 @@ xnvme_adm_idfy_ctrlr_csi(struct xnvme_cmd_ctx *ctx, uint8_t csi, struct xnvme_sp
 }
 
 int
-xnvme_adm_idfy_ns(struct xnvme_cmd_ctx *ctx, uint32_t nsid, struct xnvme_spec_idfy *dbuf)
+xnvme_adm_idfy_ns(struct xnvme_cmd_ctx *ctx, uint32_t nsid, union xnvme_spec_idfy *dbuf)
 {
 	const size_t dbuf_nbytes = sizeof(*dbuf);
 
@@ -118,7 +118,7 @@ xnvme_adm_idfy_ns(struct xnvme_cmd_ctx *ctx, uint32_t nsid, struct xnvme_spec_id
 
 int
 xnvme_adm_idfy_ns_csi(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t csi,
-		      struct xnvme_spec_idfy *dbuf)
+		      union xnvme_spec_idfy *dbuf)
 {
 	const size_t dbuf_nbytes = sizeof(*dbuf);
 

@@ -209,10 +209,10 @@ _controller_geometry(struct xnvme_dev *dev)
  * when the identify command failed, and -ENOENT when the list has no CSI descriptor.
  */
 static int
-_dev_idfy_ns_desc_csi(struct xnvme_dev *dev, struct xnvme_spec_idfy *idfy, uint8_t *csi)
+_dev_idfy_ns_desc_csi(struct xnvme_dev *dev, union xnvme_spec_idfy *idfy, uint8_t *csi)
 {
 	struct xnvme_cmd_ctx ctx;
-	uint8_t list[sizeof(struct xnvme_spec_idfy)];
+	uint8_t list[sizeof(union xnvme_spec_idfy)];
 	size_t ofz = 0;
 	int err;
 
@@ -264,8 +264,8 @@ _dev_idfy_ns_desc_csi(struct xnvme_dev *dev, struct xnvme_spec_idfy *idfy, uint8
  * Helper function for determining command set identifier
  */
 static int
-_dev_idfy_csi(struct xnvme_dev *dev, struct xnvme_spec_idfy *idfy_ns,
-	      struct xnvme_spec_idfy *idfy_ctrlr)
+_dev_idfy_csi(struct xnvme_dev *dev, union xnvme_spec_idfy *idfy_ns,
+	      union xnvme_spec_idfy *idfy_ctrlr)
 {
 	struct xnvme_cmd_ctx ctx;
 	uint8_t csi = 0;
@@ -494,7 +494,7 @@ static int
 _dev_idfy(struct xnvme_dev *dev)
 {
 	struct xnvme_cmd_ctx ctx = {0};
-	struct xnvme_spec_idfy *idfy_ctrlr = NULL, *idfy_ns = NULL;
+	union xnvme_spec_idfy *idfy_ctrlr = NULL, *idfy_ns = NULL;
 	int err;
 
 	dev->attempted_dev_idfy = true;

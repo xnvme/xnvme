@@ -286,7 +286,7 @@ enumerate_controller(const char *uri, const char *kernel_driver, struct enumerat
 {
 	struct xnvme_opts ctrlr_opts = *ctx->opts;
 	struct xnvme_dev *ctrlr_dev;
-	struct xnvme_spec_idfy *idfy_buf;
+	union xnvme_spec_idfy *idfy_buf;
 	struct xnvme_cmd_ctx cmd_ctx;
 	uint32_t nslist[XNVME_MAX_NS_LIST_SIZE];
 	size_t buf_size;

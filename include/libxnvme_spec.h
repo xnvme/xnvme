@@ -1517,20 +1517,17 @@ struct xnvme_spec_idfy_cs {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_cs) == 4096, "Incorrect size")
 
 /**
- * NVMe completion result accessor
+ * The data returned by an Identify command, as bytes and as the structure of each CNS
  *
- * TODO: clarify
- *
- * @struct xnvme_spec_idfy
+ * @union xnvme_spec_idfy
  */
-struct xnvme_spec_idfy {
-	union {
-		struct xnvme_spec_idfy_ctrlr ctrlr;
-		struct xnvme_spec_idfy_ns ns;
-		struct xnvme_spec_idfy_cs cs;
-	};
+union xnvme_spec_idfy {
+	uint8_t raw[4096];                  ///< The data as returned
+	struct xnvme_spec_idfy_ctrlr ctrlr; ///< Of XNVME_SPEC_IDFY_CTRLR
+	struct xnvme_spec_idfy_ns ns;       ///< Of XNVME_SPEC_IDFY_NS
+	struct xnvme_spec_idfy_cs cs;       ///< Of XNVME_SPEC_IDFY_IOCS
 };
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy) == 4096, "Incorrect size")
+XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_idfy) == 4096, "Incorrect size")
 
 /**
  * NVMe Admin Command Opcodes
@@ -2406,7 +2403,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_idfy_ns) == 4096, "Incorrect si
  */
 struct xnvme_spec_nvm_idfy {
 	union {
-		struct xnvme_spec_idfy base;
+		union xnvme_spec_idfy base;
 		struct xnvme_spec_nvm_idfy_ctrlr ctrlr;
 		struct xnvme_spec_nvm_idfy_ns ns;
 	};
@@ -2896,7 +2893,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_idfy_ns) == 4096, "Incorrect si
  */
 struct xnvme_spec_znd_idfy {
 	union {
-		struct xnvme_spec_idfy base;
+		union xnvme_spec_idfy base;
 		struct xnvme_spec_znd_idfy_ctrlr zctrlr;
 		struct xnvme_spec_znd_idfy_ns zns;
 	};
@@ -3027,7 +3024,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_kvs_idfy_ns) == 4096, "Incorrect si
 
 struct xnvme_spec_kvs_idfy {
 	union {
-		struct xnvme_spec_idfy base;
+		union xnvme_spec_idfy base;
 		struct xnvme_spec_kvs_idfy_ns ns;
 	};
 };

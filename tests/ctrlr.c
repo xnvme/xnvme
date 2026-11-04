@@ -59,7 +59,7 @@ static int
 test_ctrlr_idfy(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev;
-	struct xnvme_spec_idfy *idfy = NULL;
+	union xnvme_spec_idfy *idfy = NULL;
 	struct xnvme_cmd_ctx ctx;
 	int err;
 
@@ -102,7 +102,7 @@ static int
 test_ctrlr_nslist(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev;
-	struct xnvme_spec_idfy *idfy = NULL;
+	union xnvme_spec_idfy *idfy = NULL;
 	struct xnvme_cmd_ctx ctx;
 	uint32_t *nslist;
 	int err;
