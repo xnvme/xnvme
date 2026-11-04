@@ -842,10 +842,10 @@ xnvme_spec_idfy_cs_pr(const struct xnvme_spec_idfy_cs *idfy, int opts)
 }
 
 int
-xnvme_spec_cmd_fpr(FILE *stream, struct xnvme_spec_cmd *cmd, int opts)
+xnvme_spec_sqe_fpr(FILE *stream, union xnvme_spec_sqe *cmd, int opts)
 {
 	int wrtn = 0;
-	uint32_t *cdw = (void *)cmd;
+	uint32_t *cdw = cmd->cdw;
 
 	switch (opts) {
 	case XNVME_PR_TERSE:
@@ -857,7 +857,7 @@ xnvme_spec_cmd_fpr(FILE *stream, struct xnvme_spec_cmd *cmd, int opts)
 		break;
 	}
 
-	wrtn += fprintf(stream, "xnvme_spec_cmd:");
+	wrtn += fprintf(stream, "xnvme_spec_sqe:");
 
 	if (!cmd) {
 		wrtn += fprintf(stream, " ~\n");
@@ -910,9 +910,9 @@ xnvme_spec_cmd_fpr(FILE *stream, struct xnvme_spec_cmd *cmd, int opts)
 }
 
 int
-xnvme_spec_cmd_pr(struct xnvme_spec_cmd *cmd, int opts)
+xnvme_spec_sqe_pr(union xnvme_spec_sqe *cmd, int opts)
 {
-	return xnvme_spec_cmd_fpr(stdout, cmd, opts);
+	return xnvme_spec_sqe_fpr(stdout, cmd, opts);
 }
 
 int

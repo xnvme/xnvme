@@ -359,6 +359,27 @@ sub_status_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 	return err;
 }
 
+static int
+sub_sqe_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
+{
+	union xnvme_spec_sqe sqe = {0};
+	int err = 0;
+
+	sqe.cdw[0] = 0x02;       // Dword 0, bits 7:0: opcode
+	sqe.cdw[1] = 0x12345678; // Dword 1: namespace identifier
+	sqe.cdw[10] = 0x1;       // Dwords 10 and 11: starting LBA
+	sqe.cdw[11] = 0x2;
+
+	if (sqe.common.opcode != 0x02 || sqe.common.nsid != 0x12345678 ||
+	    sqe.nvm.slba != 0x200000001ULL) {
+		xnvme_cli_pinf("FAILED: opcode: %#x, nsid: %#x, slba: %#" PRIx64,
+			       sqe.common.opcode, sqe.common.nsid, (uint64_t)sqe.nvm.slba);
+		err = -EINVAL;
+	}
+
+	return err;
+}
+
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"idfy-offsets",
@@ -374,6 +395,15 @@ static struct xnvme_cli_sub g_subs[] = {
 		"Read identify fields of bits through their masks",
 		"Read identify fields of bits through their masks",
 		sub_idfy_masks,
+		{
+			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
+		},
+	},
+	{
+		"sqe-dwords",
+		"Read the submission queue entry through its dwords and its views",
+		"Read the submission queue entry through its dwords and its views",
+		sub_sqe_dwords,
 		{
 			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
 		},

@@ -13,7 +13,7 @@
  * availability of queue.h on various platforms, when consuming the xNVMe headers.
  */
 struct xnvme_cmd_ctx_entry {
-	struct xnvme_spec_cmd cmd;
+	union xnvme_spec_sqe cmd;
 	struct xnvme_spec_cqe cpl;
 
 	struct xnvme_dev *dev;

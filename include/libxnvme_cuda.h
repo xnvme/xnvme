@@ -124,10 +124,10 @@ xnvme_cuda_bits_get(uint64_t val, uint64_t mask)
  * @param offset Where to insert the Command in the queue in relation to the tail
  */
 static inline __device__ void
-xnvme_cuda_enqueue_at_i(struct xnvme_cuda_queue *qp, struct xnvme_spec_cmd *cmd, uint16_t offset)
+xnvme_cuda_enqueue_at_i(struct xnvme_cuda_queue *qp, union xnvme_spec_sqe *cmd, uint16_t offset)
 {
-	struct xnvme_spec_cmd *sq = (struct xnvme_spec_cmd *)qp->sq;
-	uint16_t index            = (qp->tail + offset) % qp->depth;
+	union xnvme_spec_sqe *sq = (union xnvme_spec_sqe *)qp->sq;
+	uint16_t index           = (qp->tail + offset) % qp->depth;
 
 	// 16-byte stores cached at L2 only: the L2 combines them into whole sectors,
 	// where narrower stores to a host-memory SQ each cross PCIe on their own
@@ -135,7 +135,7 @@ xnvme_cuda_enqueue_at_i(struct xnvme_cuda_queue *qp, struct xnvme_spec_cmd *cmd,
 	uint4 *dst       = (uint4 *)&sq[index];
 
 #pragma unroll
-	for (unsigned i = 0; i < sizeof(struct xnvme_spec_cmd) / sizeof(uint4); i++) {
+	for (unsigned i = 0; i < sizeof(union xnvme_spec_sqe) / sizeof(uint4); i++) {
 		__stcg(&dst[i], src[i]);
 	}
 }
@@ -263,7 +263,7 @@ xnvme_cuda_cq_update(struct xnvme_cuda_queue *qp, uint16_t increment)
  *         code on device error.
  */
 static inline __device__ int
-xnvme_cuda_cmd_io(struct xnvme_cuda_queue *qp, struct xnvme_spec_cmd *cmd, size_t tid,
+xnvme_cuda_cmd_io(struct xnvme_cuda_queue *qp, union xnvme_spec_sqe *cmd, size_t tid,
 		  size_t batch_size)
 {
 	struct xnvme_spec_cqe cpl = {0};

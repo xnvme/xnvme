@@ -1142,7 +1142,7 @@ sub_pass(struct xnvme_cli *cli, int admin)
 
 	if (cli->args.verbose) {
 		xnvme_cli_pinf("Submitting ...");
-		xnvme_spec_cmd_pr(&ctx.cmd, XNVME_PR_DEF);
+		xnvme_spec_sqe_pr(&ctx.cmd, XNVME_PR_DEF);
 	}
 
 	if (admin) {

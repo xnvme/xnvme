@@ -50,6 +50,22 @@ sub_deprecated(struct xnvme_cli *XNVME_UNUSED(cli))
 		}
 	}
 
+	{
+		union xnvme_spec_sqe sqe = {0};
+		FILE *stream = tmpfile();
+
+		if (!stream) {
+			xnvme_cli_perr("tmpfile()", -errno);
+			return -errno;
+		}
+		if (xnvme_spec_cmd_fpr(stream, &sqe, XNVME_PR_DEF) !=
+		    xnvme_spec_sqe_fpr(stream, &sqe, XNVME_PR_DEF)) {
+			xnvme_cli_pinf("FAILED: xnvme_spec_cmd_fpr() != xnvme_spec_sqe_fpr()");
+			err = -EINVAL;
+		}
+		fclose(stream);
+	}
+
 	return err;
 }
 

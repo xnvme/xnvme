@@ -36,7 +36,7 @@ cmd_admin_submit(struct spdk_nvme_ctrlr *ctrlr, struct xnvme_cmd_ctx *ctx, void 
 
 #ifdef XNVME_TRACE_ENABLED
 	XNVME_DEBUG("Dumping ADMIN command");
-	xnvme_spec_cmd_pr(cmd, 0x0);
+	xnvme_spec_sqe_pr(cmd, 0x0);
 #endif
 
 	return spdk_nvme_ctrlr_cmd_admin_raw(ctrlr, (struct spdk_nvme_cmd *)&ctx->cmd, dbuf,

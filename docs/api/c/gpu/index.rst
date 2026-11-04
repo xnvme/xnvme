@@ -44,7 +44,7 @@ Host-Side Setup
 ---------------
 
 Open a device on the ``upcie-cuda`` backend, allocate a data buffer, and
-prepare one ``xnvme_spec_cmd`` per thread on the host. PRP entries require
+prepare one ``xnvme_spec_sqe`` per thread on the host. PRP entries require
 physical addresses, so use :ref:`sec-api-c-xnvme_buf-func-xnvme_buf_vtophys`
 to resolve them before copying the commands to device memory and launching the
 kernel:

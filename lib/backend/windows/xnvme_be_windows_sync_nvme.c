@@ -18,7 +18,7 @@
 #include <xnvme_be_state.h>
 
 static int
-xnvme_be_windows_read(HANDLE handle, struct xnvme_spec_cmd cmd, void *dbuf, size_t dbuf_nbytes)
+xnvme_be_windows_read(HANDLE handle, union xnvme_spec_sqe cmd, void *dbuf, size_t dbuf_nbytes)
 {
 	struct scsi_pass_through_direct_with_buffer sptdwb;
 	int ret = 0;
@@ -61,7 +61,7 @@ xnvme_be_windows_read(HANDLE handle, struct xnvme_spec_cmd cmd, void *dbuf, size
 }
 
 static int
-xnvme_be_windows_write(HANDLE handle, struct xnvme_spec_cmd cmd, void *dbuf, size_t dbuf_nbytes)
+xnvme_be_windows_write(HANDLE handle, union xnvme_spec_sqe cmd, void *dbuf, size_t dbuf_nbytes)
 {
 	struct scsi_pass_through_direct_with_buffer sptdwb;
 	int ret = 0;

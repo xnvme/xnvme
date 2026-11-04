@@ -70,7 +70,7 @@ cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf, si
 		XNVME_DEBUG("INFO: buf token: %llx: %llx, %llx", (uint64_t)buf->vaddr,
 			    (uint64_t)mbuf, cmd.mbuf_offset);
 	}
-	memcpy(cmd.cmd, &ctx->cmd, sizeof(struct xnvme_spec_cmd));
+	memcpy(cmd.cmd, &ctx->cmd, sizeof(union xnvme_spec_sqe));
 
 	ret = IOConnectCallStructMethod(state->ctrlr->device_connection, NVME_ONESHOT, &cmd,
 					sizeof(NvmeSubmitCmd), &cmd_return, &output_cnt);

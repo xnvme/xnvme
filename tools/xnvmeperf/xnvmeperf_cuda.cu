@@ -20,7 +20,7 @@ extern "C" {
 }
 
 __device__ static void
-xnvmeperf_cuda_next(struct xnvme_spec_cmd *cmd, int random, uint64_t *seed, uint64_t *offset,
+xnvmeperf_cuda_next(union xnvme_spec_sqe *cmd, int random, uint64_t *seed, uint64_t *offset,
 		    uint64_t cap, uint16_t nlbas, size_t tid, size_t qdepth, uint32_t *nsubmitted)
 {
 	if (random) {
@@ -41,13 +41,13 @@ xnvmeperf_cuda_next(struct xnvme_spec_cmd *cmd, int random, uint64_t *seed, uint
 }
 
 __global__ static void
-xnvmeperf_cuda_kernel_run(struct xnvme_cuda_queue **qps, struct xnvme_spec_cmd *cmds,
+xnvmeperf_cuda_kernel_run(struct xnvme_cuda_queue **qps, union xnvme_spec_sqe *cmds,
 			  uint64_t *nblocks, uint16_t nlbas, uint64_t *seeds, uint32_t nbatches,
 			  volatile int *stop, volatile uint64_t *out_completed,
 			  uint64_t *out_failed, int live)
 {
 	struct xnvme_cuda_queue *qp;
-	struct xnvme_spec_cmd cmd;
+	union xnvme_spec_sqe cmd;
 	struct xnvme_spec_cqe cpl = {0};
 	uint64_t cap, offset, seed, completed = 0, failed = 0;
 	uint32_t nsubmitted = 0;
@@ -319,7 +319,7 @@ err_free_allocs:
 static int
 xnvmeperf_cuda_fill_cmds(struct xnvme_dev *dev, uint32_t iosize, uint32_t qdepth, uint8_t opcode,
 			 uint32_t nsid, uint16_t nlb, void **bufs, void **prp_bufs,
-			 struct xnvme_spec_cmd *h_cmds)
+			 union xnvme_spec_sqe *h_cmds)
 {
 	uint64_t prp1, prp2, prp_list_phys, page_phys, npages, *prp_list = NULL;
 	uint32_t pagesize;
@@ -401,7 +401,7 @@ done:
 static int
 xnvmeperf_cuda_build_cmds(struct xnvme_dev **devs, int ndevs, uint32_t iosize, uint32_t qdepth,
 			  uint8_t opcode, uint32_t nqueues, void ***bufs, void ***prp_bufs,
-			  struct xnvme_spec_cmd *h_cmds)
+			  union xnvme_spec_sqe *h_cmds)
 {
 	struct xnvme_dev *dev;
 	uint32_t nsid, qi;
@@ -520,14 +520,14 @@ xnvmeperf_cuda_cleanup(struct xnvme_dev **devs, int ndevs, uint32_t nqueues, uin
 }
 
 static int
-xnvmeperf_cuda_launch(struct xnvme_cuda_queue **h_qps, struct xnvme_spec_cmd *h_cmds,
+xnvmeperf_cuda_launch(struct xnvme_cuda_queue **h_qps, union xnvme_spec_sqe *h_cmds,
 		      uint64_t *h_seeds, uint32_t nqueues, uint64_t *h_nblocks, uint16_t nlbas,
 		      uint32_t runtime_secs, unsigned int qdepth, uint32_t nbatches,
 		      uint64_t *h_completed, uint64_t *h_failed, float *elapsed_ms,
 		      double report_freq, uint32_t iosize)
 {
 	struct xnvme_cuda_queue **d_qps = NULL;
-	struct xnvme_spec_cmd *d_cmds = NULL;
+	union xnvme_spec_sqe *d_cmds = NULL;
 	uint64_t *d_seeds = NULL, *d_nblocks = NULL, *d_failed = NULL;
 	void *d_stop = NULL, *d_completed = NULL;
 	int *h_stop = NULL;
@@ -721,7 +721,7 @@ xnvmeperf_cuda_run_io(struct xnvme_dev **devs, const struct xnvmeperf_args *args
 		      uint64_t *completed_per_dev, uint64_t *failed_per_dev, float *elapsed_ms)
 {
 	struct xnvme_cuda_queue **h_qps;
-	struct xnvme_spec_cmd *h_cmds;
+	union xnvme_spec_sqe *h_cmds;
 	void ***bufs, ***prp_bufs;
 	uint64_t *nblocks, *failed, *completed = NULL, *h_seeds = NULL;
 	uint32_t total_queues;
@@ -761,7 +761,7 @@ xnvmeperf_cuda_run_io(struct xnvme_dev **devs, const struct xnvmeperf_args *args
 	total_queues = (uint32_t)args->ndevs * args->nqueues;
 	/* Flat arrays; device d owns slots [d*nqueues .. (d+1)*nqueues). */
 	h_qps = (struct xnvme_cuda_queue **)calloc(total_queues, sizeof(*h_qps));
-	h_cmds = (struct xnvme_spec_cmd *)calloc(total_queues * args->qdepth, sizeof(*h_cmds));
+	h_cmds = (union xnvme_spec_sqe *)calloc(total_queues * args->qdepth, sizeof(*h_cmds));
 	bufs = (void ***)calloc(total_queues, sizeof(*bufs));
 	prp_bufs = (void ***)calloc(total_queues, sizeof(*prp_bufs));
 	nblocks = (uint64_t *)calloc(total_queues, sizeof(*nblocks));
@@ -842,20 +842,20 @@ cleanup:
  * because xnvme_cuda_cmd_io() contains a __syncthreads() internally.
  */
 __global__ static void
-xnvmeperf_cuda_kernel_verify_round(struct xnvme_cuda_queue **qps, struct xnvme_spec_cmd *cmds,
+xnvmeperf_cuda_kernel_verify_round(struct xnvme_cuda_queue **qps, union xnvme_spec_sqe *cmds,
 				   int *out_err)
 {
 	const size_t bid = blockIdx.x;
 	const size_t tid = threadIdx.x;
 	const size_t qdepth = blockDim.x;
-	struct xnvme_spec_cmd cmd = cmds[bid * qdepth + tid];
+	union xnvme_spec_sqe cmd = cmds[bid * qdepth + tid];
 
 	out_err[bid * qdepth + tid] = xnvme_cuda_cmd_io(qps[bid], &cmd, tid, qdepth);
 }
 
 static int
-verify_dispatch(struct xnvme_cuda_queue **d_qps, struct xnvme_spec_cmd *h_cmds,
-		struct xnvme_spec_cmd *d_cmds, int *d_errs, int *h_errs, uint32_t nqueues,
+verify_dispatch(struct xnvme_cuda_queue **d_qps, union xnvme_spec_sqe *h_cmds,
+		union xnvme_spec_sqe *d_cmds, int *d_errs, int *h_errs, uint32_t nqueues,
 		uint32_t qdepth, const char *phase)
 {
 	uint32_t total = nqueues * qdepth;
@@ -893,7 +893,7 @@ extern "C" int
 xnvmeperf_cuda_verify_io(struct xnvme_dev **devs, const struct xnvmeperf_args *args)
 {
 	struct xnvme_cuda_queue **h_qps, **d_qps = NULL;
-	struct xnvme_spec_cmd *h_cmds, *d_cmds = NULL;
+	union xnvme_spec_sqe *h_cmds, *d_cmds = NULL;
 	void ***bufs, ***prp_bufs;
 	void *cmp_buf;
 	uint32_t threads_per_dev, total_threads, total_queues;
@@ -913,7 +913,7 @@ xnvmeperf_cuda_verify_io(struct xnvme_dev **devs, const struct xnvmeperf_args *a
 	total_queues = (uint32_t)args->ndevs * args->nqueues;
 
 	h_qps = (struct xnvme_cuda_queue **)calloc(total_queues, sizeof(*h_qps));
-	h_cmds = (struct xnvme_spec_cmd *)calloc(total_threads, sizeof(*h_cmds));
+	h_cmds = (union xnvme_spec_sqe *)calloc(total_threads, sizeof(*h_cmds));
 	bufs = (void ***)calloc(total_queues, sizeof(*bufs));
 	prp_bufs = (void ***)calloc(total_queues, sizeof(*prp_bufs));
 	h_errs = (int *)malloc(total_threads * sizeof(*h_errs));

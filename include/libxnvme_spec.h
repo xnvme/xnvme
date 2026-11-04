@@ -2455,32 +2455,34 @@ struct xnvme_spec_nvm_compare {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_compare) == 64, "Incorrect size")
 
 /**
- * NVMe Command Accessors
+ * Submission Queue Entry
  *
- * @struct xnvme_spec_cmd
+ * The command as its dwords 0 to 15, and as the view of each command; they share the same 64
+ * bytes.
+ *
+ * @union xnvme_spec_sqe
  */
-struct xnvme_spec_cmd {
-	union {
-		struct xnvme_spec_cmd_common common;
-		struct xnvme_spec_cmd_sanitize sanitize;
-		struct xnvme_spec_cmd_format format;
-		struct xnvme_spec_cmd_log log;
-		struct xnvme_spec_cmd_gfeat gfeat;
-		struct xnvme_spec_cmd_sfeat sfeat;
-		struct xnvme_spec_cmd_idfy idfy;
-		struct xnvme_spec_cmd_dsend dsend;
-		struct xnvme_spec_cmd_drecv drecv;
-		struct xnvme_spec_cmd_nvm nvm;
-		struct xnvme_spec_cmd_dsm dsm;
-		struct xnvme_spec_nvm_cmd_scopy scopy;
-		struct xnvme_spec_nvm_write_zeroes write_zeroes;
-		struct xnvme_spec_znd_cmd znd;
-		struct xnvme_spec_io_mgmt_cmd mgmt;
-		struct xnvme_spec_kvs_cmd kvs;
-		struct xnvme_spec_nvm_compare compare;
-	};
+union xnvme_spec_sqe {
+	uint32_t cdw[16]; ///< The command as dwords 0 to 15, as the specification numbers them
+	struct xnvme_spec_cmd_common common;
+	struct xnvme_spec_cmd_sanitize sanitize;
+	struct xnvme_spec_cmd_format format;
+	struct xnvme_spec_cmd_log log;
+	struct xnvme_spec_cmd_gfeat gfeat;
+	struct xnvme_spec_cmd_sfeat sfeat;
+	struct xnvme_spec_cmd_idfy idfy;
+	struct xnvme_spec_cmd_dsend dsend;
+	struct xnvme_spec_cmd_drecv drecv;
+	struct xnvme_spec_cmd_nvm nvm;
+	struct xnvme_spec_cmd_dsm dsm;
+	struct xnvme_spec_nvm_cmd_scopy scopy;
+	struct xnvme_spec_nvm_write_zeroes write_zeroes;
+	struct xnvme_spec_znd_cmd znd;
+	struct xnvme_spec_io_mgmt_cmd mgmt;
+	struct xnvme_spec_kvs_cmd kvs;
+	struct xnvme_spec_nvm_compare compare;
 };
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd) == 64, "Incorrect size")
+XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_sqe) == 64, "Incorrect size")
 
 /**
  * Command-set specific status codes related to Zoned Namespaces
@@ -3025,7 +3027,7 @@ int
 xnvme_spec_feat_fdp_events_pr(void *buf, const struct xnvme_spec_feat *feat, int opts);
 
 /**
- * Prints the given :;xnvme_spec_cmd to the given output stream
+ * Prints the given :;xnvme_spec_sqe to the given output stream
  *
  * @param stream output stream used for printing
  * @param cmd pointer to structure to print
@@ -3033,17 +3035,17 @@ xnvme_spec_feat_fdp_events_pr(void *buf, const struct xnvme_spec_feat *feat, int
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_cmd_fpr(FILE *stream, struct xnvme_spec_cmd *cmd, int opts);
+xnvme_spec_sqe_fpr(FILE *stream, union xnvme_spec_sqe *cmd, int opts);
 
 /**
- * Prints the given :;xnvme_spec_cmd to stdout
+ * Prints the given :;xnvme_spec_sqe to stdout
  *
  * @param cmd pointer to structure to print
  * @param opts printer options, see ::xnvme_pr
  * @return On success, the number of characters printed is returned.
  */
 int
-xnvme_spec_cmd_pr(struct xnvme_spec_cmd *cmd, int opts);
+xnvme_spec_sqe_pr(union xnvme_spec_sqe *cmd, int opts);
 
 /**
  * Prints the given :;xnvme_spec_idfy_dir_rp to stdout

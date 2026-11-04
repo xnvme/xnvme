@@ -26,7 +26,7 @@
 #define UPCIE_CUDA_DEVICE_PAGESIZE 65536u
 
 __global__ static void
-xnvme_cuda_io_kernel(struct xnvme_cuda_queue *qp, struct xnvme_spec_cmd *cmds, size_t batch_size,
+xnvme_cuda_io_kernel(struct xnvme_cuda_queue *qp, union xnvme_spec_sqe *cmds, size_t batch_size,
 		     int *errors)
 {
 	size_t tid = threadIdx.x;
@@ -38,7 +38,7 @@ main(int argc, char **argv)
 {
 	struct xnvme_opts opts = {0};
 	struct xnvme_dev *dev = NULL;
-	struct xnvme_spec_cmd *h_cmds = NULL, *d_cmds = NULL;
+	union xnvme_spec_sqe *h_cmds = NULL, *d_cmds = NULL;
 	struct xnvme_cuda_queue *gpu_queue = NULL;
 	uint64_t phys;
 	uint32_t nsid;
@@ -95,7 +95,7 @@ main(int argc, char **argv)
 	}
 	mapped = 1;
 
-	h_cmds = (struct xnvme_spec_cmd *)calloc(qdepth, sizeof(*h_cmds));
+	h_cmds = (union xnvme_spec_sqe *)calloc(qdepth, sizeof(*h_cmds));
 	if (!h_cmds) {
 		err = -errno;
 		xnvme_cli_perr("calloc(h_cmds)", err);

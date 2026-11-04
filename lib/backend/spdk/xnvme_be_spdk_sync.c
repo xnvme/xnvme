@@ -29,7 +29,7 @@ submit_ioc(struct spdk_nvme_ctrlr *ctrlr, struct spdk_nvme_qpair *qpair, struct 
 {
 #ifdef XNVME_TRACE_ENABLED
 	XNVME_DEBUG("Dumping IO command");
-	xnvme_spec_cmd_pr(cmd, XNVME_PR_DEF);
+	xnvme_spec_sqe_pr(cmd, XNVME_PR_DEF);
 #endif
 
 	switch (ctx->cmd.common.opcode) {
