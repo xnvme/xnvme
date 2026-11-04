@@ -298,7 +298,7 @@
 		xnvme_spec_kv_status_code;
 		xnvme_spec_kvs_cmd;
 		xnvme_spec_nvm_compare;
-		xnvme_spec_cmd;
+		xnvme_spec_sqe;
 		xnvme_spec_znd_status_code;
 		xnvme_spec_znd_mgmt_send_action_so;
 		xnvme_spec_znd_cmd_mgmt_send_action;
@@ -336,8 +336,8 @@
 		xnvme_spec_feat_fpr;
 		xnvme_spec_feat_pr;
 		xnvme_spec_feat_fdp_events_pr;
-		xnvme_spec_cmd_fpr;
-		xnvme_spec_cmd_pr;
+		xnvme_spec_sqe_fpr;
+		xnvme_spec_sqe_pr;
 		xnvme_spec_drecv_idfy_pr;
 		xnvme_spec_drecv_srp_pr;
 		xnvme_spec_drecv_sgs_pr;

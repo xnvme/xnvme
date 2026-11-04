@@ -42,6 +42,43 @@ xnvme_compat_deprecated(int *warned, const char *name, const char *instead)
 #define xnvme_spec_cpl xnvme_spec_cqe
 
 /**
+ * @deprecated Use xnvme_spec_sqe_fpr()
+ *
+ * @param stream output stream used for printing
+ * @param sqe Pointer to the ::xnvme_spec_sqe to print
+ * @param opts Printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned.
+ */
+static inline int
+xnvme_spec_cmd_fpr(FILE *stream, union xnvme_spec_sqe *sqe, int opts)
+{
+	static int warned;
+
+	xnvme_compat_deprecated(&warned, "xnvme_spec_cmd_fpr", "xnvme_spec_sqe_fpr");
+
+	return xnvme_spec_sqe_fpr(stream, sqe, opts);
+}
+
+/**
+ * @deprecated Use xnvme_spec_sqe_pr()
+ *
+ * @param sqe Pointer to the ::xnvme_spec_sqe to print
+ * @param opts Printer options, see ::xnvme_pr
+ *
+ * @return On success, the number of characters printed is returned.
+ */
+static inline int
+xnvme_spec_cmd_pr(union xnvme_spec_sqe *sqe, int opts)
+{
+	static int warned;
+
+	xnvme_compat_deprecated(&warned, "xnvme_spec_cmd_pr", "xnvme_spec_sqe_pr");
+
+	return xnvme_spec_sqe_pr(sqe, opts);
+}
+
+/**
  * @deprecated Use xnvme_opts_set_defaults() on zero-initialized options
  *
  * @return Zero-initialized options with their defaults set

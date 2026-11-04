@@ -182,7 +182,7 @@ xnvme_be_driverkit_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t db
 		XNVME_DEBUG("INFO: buf token: %llx: %llx, %llx", (uint64_t)buf->vaddr,
 			    (uint64_t)mbuf, cmd.mbuf_offset);
 	}
-	memcpy(cmd.cmd, &ctx->cmd, sizeof(struct xnvme_spec_cmd));
+	memcpy(cmd.cmd, &ctx->cmd, sizeof(union xnvme_spec_sqe));
 	cmd.backend_opaque = (uint64_t)ctx;
 
 	queue_ret = queue_enqueue(q->sq_queue, &cmd);

@@ -20,7 +20,7 @@
 #include <xnvme_be_freebsd.h>
 #include <xnvme_be_state.h>
 
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd) == sizeof(struct nvme_command), "Incorrect size")
+XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_sqe) == sizeof(struct nvme_command), "Incorrect size")
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cqe) == sizeof(struct nvme_completion),
 		    "Incorrect size")
 

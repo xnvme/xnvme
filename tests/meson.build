@@ -83,6 +83,7 @@ tests = {
     ['idfy-offsets', ['idfy-offsets']],
     ['idfy-masks', ['idfy-masks']],
     ['status-masks', ['status-masks']],
+    ['sqe-dwords', ['sqe-dwords']],
   ],
   'threads.c': [
     ['reopen', ['reopen', '1GB', '--count', '5']],

@@ -23,7 +23,7 @@ struct xnvme_cmd_ctx_async {
  * @struct xnvme_cmd_ctx
  */
 struct xnvme_cmd_ctx {
-	struct xnvme_spec_cmd cmd;        ///< Command to be processed
+	union xnvme_spec_sqe cmd;         ///< Command to be processed
 	struct xnvme_spec_cqe cpl;        ///< Completion result from processing
 	struct xnvme_dev *dev;            ///< Device associated with the command
 	struct xnvme_cmd_ctx_async async; ///< Fields for command option: XNVME_CMD_ASYNC

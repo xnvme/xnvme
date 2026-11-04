@@ -9,7 +9,7 @@
 #include <xnvme_spec.h>
 
 static inline int
-kvs_cmd_set_key(struct xnvme_spec_cmd *cmd, const void *key, uint8_t key_len)
+kvs_cmd_set_key(union xnvme_spec_sqe *cmd, const void *key, uint8_t key_len)
 {
 	int err;
 	uint8_t *key_ptr = (uint8_t *)key;
