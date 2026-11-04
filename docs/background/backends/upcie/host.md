@@ -27,11 +27,11 @@ DMA buffer space needed by the application.
 ### IOVA of the heap
 
 With the controller on `vfio-pci`, through iommufd or type1, the heap is mapped
-at an IOVA equal to its address. User addresses lie far above the IOVAs a
-platform reserves low, listed in
-`/sys/bus/pci/devices/<bdf>/iommu_group/reserved_regions`, but have to fit the
-IOMMU's aperture, typically 48 bits, and stay clear of the device-memory window
-(see `XNVME_UPCIE_IOVA_BASE`).
+at an IOVA equal to its address, as is memory mapped with `xnvme_mem_map()`, so
+both translate alike. User addresses lie far above the IOVAs a platform reserves
+low, listed in `/sys/bus/pci/devices/<bdf>/iommu_group/reserved_regions`, but
+have to fit the IOMMU's aperture, typically 48 bits, and stay clear of the
+device-memory window (see `XNVME_UPCIE_IOVA_BASE`).
 
 `uio_pci_generic` is unaffected, as its DMA addresses are physical.
 
@@ -41,7 +41,15 @@ IOMMU's aperture, typically 48 bits, and stay clear of the device-memory window
 
 - **No `buf_realloc`.** Buffer reallocation is not implemented and returns
   `ENOSYS`.
-- **No memory mapping** (`mem_map` / `mem_unmap`). These return `ENOSYS`.
+- **Memory mapping** (`mem_map` / `mem_unmap`):
+  - Through an IOMMU (iommufd or type1), any page-aligned memory. A client of a
+    server maps nothing.
+  - With `uio_pci_generic`, only memory in hugetlb pages of the heap's hugepage
+    size, aligned to it, since only those keep the physical address the device
+    was given. Reading that address needs `CAP_SYS_ADMIN`.
+
+  `xnvme_mem_map_get_req()` reports the alignment for the case at hand, and
+  `ENOSYS` where mapping is not possible.
 - **Controller reset** and **subsystem reset** are not supported. These
   operations disable the controller and re-enable it, but do not re-program the
   admin submission/completion queues. Without full re-initialization the

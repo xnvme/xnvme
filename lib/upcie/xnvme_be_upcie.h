@@ -286,6 +286,18 @@ int
 xnvme_be_upcie_served_mem_unmap(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr *ctrlr,
 				void *vaddr);
 
+/**
+ * The IOAS that memory of this process maps into, at an IOVA equal to its address
+ *
+ * @return NULL unless the heap sits in it that way, through iommufd
+ */
+struct iommufd *
+xnvme_be_upcie_mem_map_ioas(void);
+
+/** Forget what was mapped; the IOAS or the connection holding it is going away */
+void
+xnvme_be_upcie_mem_maps_term(void);
+
 int
 xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int opts);
 int

@@ -218,6 +218,8 @@ _rte_term(void)
 		return;
 	}
 
+	xnvme_be_upcie_mem_maps_term();
+
 	if (g_upcie_rte.connection.alive) {
 		/* Nothing below this is ours to release: the memory belongs to
 		 * whoever is serving, and closing the socket is what tells it
