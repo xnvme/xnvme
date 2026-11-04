@@ -67,6 +67,23 @@ xnvme_cmd_ctx_from_dev(struct xnvme_dev *dev)
 }
 
 /**
+ * @deprecated Use xnvme_queue_get_cmd_ctx()
+ *
+ * @param queue The ::xnvme_queue to retrieve a command-context from
+ *
+ * @return On success, a command-context; on error, NULL, with `errno` set
+ */
+static inline struct xnvme_cmd_ctx *
+xnvme_cmd_ctx_from_queue(struct xnvme_queue *queue)
+{
+	static int warned;
+
+	xnvme_compat_deprecated(&warned, "xnvme_cmd_ctx_from_queue", "xnvme_queue_get_cmd_ctx");
+
+	return xnvme_queue_get_cmd_ctx(queue);
+}
+
+/**
  * @deprecated Use xnvme_dev_get_cmd_ctx()
  *
  * @param fh File handle (::xnvme_dev) obtained with xnvme_file_open()

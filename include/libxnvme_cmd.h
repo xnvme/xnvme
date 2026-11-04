@@ -71,17 +71,6 @@ int
 xnvme_dev_get_cmd_ctx(struct xnvme_dev *dev, struct xnvme_cmd_ctx *ctx);
 
 /**
- * Retrieve a command-text for issuing commands via the given queue
- *
- * @param queue Pointer to the ::xnvme_queue to retrieve a command-context for
- *
- * @return On success, a pointer to a ::xnvme_cmd_ctx is returned. On error, NULL is returned and
- * `errno` set to indicate the error.
- */
-struct xnvme_cmd_ctx *
-xnvme_cmd_ctx_from_queue(struct xnvme_queue *queue);
-
-/**
  * Clears/resets the given ::xnvme_cmd_ctx
  *
  * @param ctx Pointer to the ::xnvme_cmd_ctx to clear
@@ -108,7 +97,7 @@ xnvme_cmd_ctx_cpl_status(struct xnvme_cmd_ctx *ctx)
  * The mode of submission is determined by the command context: a context
  * obtained via xnvme_dev_get_cmd_ctx() submits synchronously and returns once
  * the command has completed, whereas a context obtained via
- * xnvme_cmd_ctx_from_queue() submits asynchronously and returns once the command
+ * xnvme_queue_get_cmd_ctx() submits asynchronously and returns once the command
  * has been submitted; its completion is then processed via xnvme_queue_poke().
  *
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)

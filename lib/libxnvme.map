@@ -85,7 +85,6 @@
 		xnvme_cmd_ctx;
 		xnvme_cmd_ctx_set_cb;
 		xnvme_dev_get_cmd_ctx;
-		xnvme_cmd_ctx_from_queue;
 		xnvme_cmd_ctx_clear;
 		xnvme_cmd_ctx_cpl_status;
 		xnvme_cmd_pass;
