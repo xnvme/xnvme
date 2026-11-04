@@ -70,10 +70,34 @@ xnvme_be_upcie_host_iova_base(void)
 	return _env_u64("XNVME_UPCIE_HOST_IOVA_BASE", XNVME_BE_UPCIE_HOST_IOVA_BASE);
 }
 
+int
+xnvme_be_upcie_host_iova_at_va(void)
+{
+	const char *env = getenv("XNVME_UPCIE_HOST_IOVA_BASE");
+
+	return !env || !*env;
+}
+
 uint64_t
 xnvme_be_upcie_iova_base(void)
 {
 	return _env_u64("XNVME_UPCIE_IOVA_BASE", XNVME_BE_UPCIE_IOVA_BASE);
+}
+
+int
+xnvme_be_upcie_iova_window_clear(uint64_t iova, uint64_t nbytes)
+{
+	const uint64_t window = xnvme_be_upcie_iova_base();
+	const uint64_t window_size = _env_u64("XNVME_UPCIE_IOVA_SIZE", XNVME_BE_UPCIE_IOVA_SIZE);
+
+	if ((iova < window + window_size) && (iova + nbytes > window)) {
+		XNVME_DEBUG("FAILED: 0x%" PRIx64 "+0x%" PRIx64
+			    " overlaps the device-memory window",
+			    iova, nbytes);
+		return -ERANGE;
+	}
+
+	return 0;
 }
 
 #ifdef UPCIE_HAVE_IOMMUFD
@@ -132,6 +156,35 @@ _dmamem_from_memfd_at_host_base(struct dmamem *XNVME_UNUSED(dmem),
 	return -ENOTSUP;
 }
 #endif
+
+/**
+ * At an IOVA equal to its address, so memory mapped later at its own address translates alike
+ *
+ * Where the IOMMU cannot hold that address, or XNVME_UPCIE_HOST_IOVA_BASE says otherwise, at the
+ * host IOVA base, and then nothing can be registered.
+ */
+static int
+_dmamem_from_memfd_heap(struct dmamem *dmem, struct iommufd *iommufd, size_t heap_size,
+			size_t hugepgsz)
+{
+	int err;
+
+	if (xnvme_be_upcie_host_iova_at_va()) {
+		err = dmamem_from_memfd_at_va(dmem, iommufd, heap_size, hugepgsz);
+		if (!err) {
+			err = xnvme_be_upcie_iova_window_clear(dmem->base_iova, dmem->size);
+			if (!err) {
+				return 0;
+			}
+			dmamem_destroy(dmem);
+		}
+		XNVME_DEBUG("INFO: the heap cannot sit at its address; err(%d); "
+			    "mapping it at the host IOVA base",
+			    err);
+	}
+
+	return _dmamem_from_memfd_at_host_base(dmem, iommufd, heap_size, hugepgsz);
+}
 
 static struct dmamem_iommu_map_pa g_iova_range_imp;
 static int g_iova_range_refs;
@@ -290,9 +343,10 @@ _rte_term(void)
  * Bring up the RTE in VFIO_CDEV mode.
  *
  * /dev/iommu + one IOAS + a hugepage-backed memfd imported via
- * IOMMU_IOAS_MAP_FILE. All controllers opened afterwards attach into
- * this same IOAS so their PRPs translate arithmetically off the shared
- * base_iova.
+ * IOMMU_IOAS_MAP_FILE at an IOVA equal to its address, or at the host IOVA
+ * base; see _dmamem_from_memfd_heap(). All controllers opened afterwards
+ * attach into this same IOAS so their PRPs translate arithmetically, as does
+ * memory registered later with xnvme_buf_register().
  */
 static int
 _rte_init_vfio_cdev(size_t heap_size)
@@ -319,10 +373,10 @@ _rte_init_vfio_cdev(size_t heap_size)
 	}
 	g_upcie_rte.cdev.ioas_alive = 1;
 
-	err = _dmamem_from_memfd_at_host_base(&g_upcie_rte.mem.dmem, &g_upcie_rte.cdev.iommufd,
-					      heap_size, hugepgsz);
+	err = _dmamem_from_memfd_heap(&g_upcie_rte.mem.dmem, &g_upcie_rte.cdev.iommufd, heap_size,
+				      hugepgsz);
 	if (err) {
-		XNVME_DEBUG("FAILED: _dmamem_from_memfd_at_host_base(); err(%d)", err);
+		XNVME_DEBUG("FAILED: _dmamem_from_memfd_heap(); err(%d)", err);
 		return err;
 	}
 	g_upcie_rte.mem.dmem_alive = 1;
