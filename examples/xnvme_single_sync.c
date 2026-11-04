@@ -54,7 +54,9 @@ main(int argc, char **argv)
 
 	// This block would typically be a loop as more than a single command would be submitted
 	{
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+		struct xnvme_cmd_ctx ctx = {0};
+
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 		// Submit and wait for the completion of a read command
 		err = xnvme_nvm_read(&ctx, nsid, 0x0, 0, buf, NULL);

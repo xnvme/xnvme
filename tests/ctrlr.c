@@ -76,7 +76,7 @@ test_ctrlr_idfy(struct xnvme_cli *cli)
 	}
 	memset(idfy, 0, sizeof(*idfy));
 
-	ctx = xnvme_cmd_ctx_from_dev(dev);
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_adm_idfy_ctrlr(&ctx, idfy);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_perr("xnvme_adm_idfy_ctrlr()", err ? err : -EIO);
@@ -120,7 +120,7 @@ test_ctrlr_nslist(struct xnvme_cli *cli)
 	}
 	memset(idfy, 0, sizeof(*idfy));
 
-	ctx = xnvme_cmd_ctx_from_dev(dev);
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_adm_idfy(&ctx, XNVME_SPEC_IDFY_NSLIST, 0, 0, 0, 0, idfy);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_perr("xnvme_adm_idfy(NSLIST)", err ? err : -EIO);
@@ -171,7 +171,7 @@ test_ctrlr_gfeat_nqueues(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	ctx = xnvme_cmd_ctx_from_dev(dev);
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_adm_gfeat_nqueues(&ctx, NULL, &ncq);
 	if (err != -EINVAL) {
 		xnvme_cli_pinf("FAILED: no output should be -EINVAL, got %d", err);
@@ -179,7 +179,7 @@ test_ctrlr_gfeat_nqueues(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	ctx = xnvme_cmd_ctx_from_dev(dev);
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_adm_gfeat_nqueues(&ctx, &nsq, &ncq);
 	if (err) {
 		xnvme_cli_perr("xnvme_adm_gfeat_nqueues()", err);
@@ -189,7 +189,7 @@ test_ctrlr_gfeat_nqueues(struct xnvme_cli *cli)
 	/* The helper exists to add the one the spec leaves out, so the check
 	 * that matters is against the raw feature rather than against a range:
 	 * a helper returning NSQA unchanged would still look plausible. */
-	ctx = xnvme_cmd_ctx_from_dev(dev);
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_adm_gfeat(&ctx, 0x0, XNVME_SPEC_FEAT_NQUEUES, XNVME_SPEC_FEAT_SEL_CURRENT,
 			      NULL, 0);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {

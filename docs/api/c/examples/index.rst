@@ -34,7 +34,7 @@ Synchronous I/O
 
 In this example we open a device and send a single synchronous read command.
 Note, when doing synchronous IO, there is no need for a command-queue.
-Instead, you get the command-context directly from the device with ``xnvme_cmd_ctx_from_dev()``.
+Instead, you get the command-context directly from the device with ``xnvme_dev_get_cmd_ctx()``.
 The example is intended to be easily extended by adding a for-loop and submitting multiple commands.
 
 .. literalinclude:: ../../../../examples/xnvme_single_sync.c

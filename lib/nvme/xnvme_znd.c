@@ -100,7 +100,7 @@ struct xnvme_znd_report *
 xnvme_znd_report_from_dev(struct xnvme_dev *dev, uint64_t slba, size_t limit, uint8_t extended)
 {
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	const uint32_t nsid = xnvme_dev_get_nsid(dev);
 	size_t dbuf_nentries_max;
 	size_t dbuf_nbytes;
@@ -110,6 +110,8 @@ xnvme_znd_report_from_dev(struct xnvme_dev *dev, uint64_t slba, size_t limit, ui
 	enum xnvme_spec_znd_cmd_mgmt_recv_action action;
 
 	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	if (geo->type != XNVME_GEO_ZONED) {
 		XNVME_DEBUG("FAILED: device is not zoned, got; %d", geo->type);
@@ -256,11 +258,13 @@ int
 xnvme_znd_descr_from_dev(struct xnvme_dev *dev, uint64_t slba, struct xnvme_spec_znd_descr *zdescr)
 {
 	const uint32_t nsid = xnvme_dev_get_nsid(dev);
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	struct xnvme_spec_znd_report_hdr *hdr;
 	size_t dbuf_nbytes;
 	void *dbuf;
 	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	dbuf_nbytes = sizeof(*hdr) + sizeof(*zdescr);
 	dbuf = xnvme_buf_alloc(dev, dbuf_nbytes);
@@ -301,12 +305,14 @@ xnvme_znd_descr_from_dev_in_state(struct xnvme_dev *dev, enum xnvme_spec_znd_sta
 				  struct xnvme_spec_znd_descr *zdescr)
 {
 	const uint32_t nsid = xnvme_dev_get_nsid(dev);
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	struct xnvme_spec_znd_report_hdr *hdr;
 	size_t dbuf_nbytes;
 	void *dbuf;
 	uint8_t sfield;
 	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	switch (state) {
 	case XNVME_SPEC_ZND_STATE_EMPTY:
@@ -375,10 +381,12 @@ xnvme_znd_stat(struct xnvme_dev *dev, enum xnvme_spec_znd_cmd_mgmt_recv_action_s
 	       uint64_t *nzones)
 {
 	const uint32_t nsid = xnvme_dev_get_nsid(dev);
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	struct xnvme_spec_znd_report_hdr *hdr;
 	const size_t hdr_nbytes = sizeof(*hdr);
 	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	hdr = xnvme_buf_alloc(dev, hdr_nbytes);
 	if (!hdr) {
@@ -406,10 +414,12 @@ exit:
 struct xnvme_spec_znd_log_changes *
 xnvme_znd_log_changes_from_dev(struct xnvme_dev *dev)
 {
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	struct xnvme_spec_znd_log_changes *log = NULL;
 	const size_t log_nbytes = sizeof(*log);
 	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	// Allocate buffer for the maximum possible amount of log entries
 	log = xnvme_buf_alloc(dev, log_nbytes);

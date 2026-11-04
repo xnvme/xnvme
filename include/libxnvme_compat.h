@@ -46,3 +46,41 @@ xnvme_opts_default(void)
 
 	return opts;
 }
+
+/**
+ * @deprecated Use xnvme_dev_get_cmd_ctx()
+ *
+ * @param dev Device handle (::xnvme_dev) obtained with xnvme_dev_open()
+ *
+ * @return A command-context for issuing synchronous commands to the given device
+ */
+static inline struct xnvme_cmd_ctx
+xnvme_cmd_ctx_from_dev(struct xnvme_dev *dev)
+{
+	static int warned;
+	struct xnvme_cmd_ctx ctx = {0};
+
+	xnvme_compat_deprecated(&warned, "xnvme_cmd_ctx_from_dev", "xnvme_dev_get_cmd_ctx");
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
+
+	return ctx;
+}
+
+/**
+ * @deprecated Use xnvme_dev_get_cmd_ctx()
+ *
+ * @param fh File handle (::xnvme_dev) obtained with xnvme_file_open()
+ *
+ * @return A command-context for issuing synchronous commands to the given file
+ */
+static inline struct xnvme_cmd_ctx
+xnvme_file_get_cmd_ctx(struct xnvme_dev *fh)
+{
+	static int warned;
+	struct xnvme_cmd_ctx ctx = {0};
+
+	xnvme_compat_deprecated(&warned, "xnvme_file_get_cmd_ctx", "xnvme_dev_get_cmd_ctx");
+	xnvme_dev_get_cmd_ctx(fh, &ctx);
+
+	return ctx;
+}

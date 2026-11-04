@@ -203,7 +203,7 @@ test_enum_keep_open(struct xnvme_cli *cli)
 			XNVME_DEBUG("FAILED: xnvme_buf_alloc()");
 			return -errno;
 		}
-		ctx = xnvme_cmd_ctx_from_dev(devs[i]);
+		xnvme_dev_get_cmd_ctx(devs[i], &ctx);
 		err = xnvme_adm_idfy_ctrlr(&ctx, idfy_ctrlr);
 		if (err) {
 			XNVME_DEBUG("FAILED: xnvme_adm_idfy_ctrlr()");

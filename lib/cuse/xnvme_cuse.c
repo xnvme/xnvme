@@ -119,7 +119,9 @@ cuse_reply_ioctl_retry(int fd, uint64_t unique, const struct iovec *in_iov, uint
 static struct xnvme_cmd_ctx
 cuse_ctx_from_cmd(struct xnvme_dev *dev, const struct nvme_passthru_cmd64 *cmd)
 {
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	ctx.cmd.common.opcode = cmd->opcode;
 	ctx.cmd.common.nsid = cmd->nsid;

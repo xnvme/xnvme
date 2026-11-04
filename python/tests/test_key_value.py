@@ -19,7 +19,8 @@ class KVException(Exception):
 
 
 def kvs_store(dev, kbuf, kbuf_nbytes, vbuf, vbuf_nbytes, opts=0):
-    ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+    ctx = xnvme.xnvme_cmd_ctx()
+    xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
     err = xnvme.xnvme_kvs_store(
         byref(ctx),
         xnvme.xnvme_dev_get_nsid(dev),
@@ -40,7 +41,8 @@ def kvs_store(dev, kbuf, kbuf_nbytes, vbuf, vbuf_nbytes, opts=0):
 
 
 def kvs_retrieve(dev, kbuf, kbuf_nbytes, vbuf, vbuf_nbytes, opts=0):
-    ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+    ctx = xnvme.xnvme_cmd_ctx()
+    xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
     err = xnvme.xnvme_kvs_retrieve(
         byref(ctx),
         xnvme.xnvme_dev_get_nsid(dev),
@@ -61,7 +63,8 @@ def kvs_retrieve(dev, kbuf, kbuf_nbytes, vbuf, vbuf_nbytes, opts=0):
 
 
 def kvs_exist(dev, kbuf, kbuf_nbytes):
-    ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+    ctx = xnvme.xnvme_cmd_ctx()
+    xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
     err = xnvme.xnvme_kvs_exist(
         byref(ctx),
         xnvme.xnvme_dev_get_nsid(dev),
@@ -79,7 +82,8 @@ def kvs_exist(dev, kbuf, kbuf_nbytes):
 
 
 def kvs_delete(dev, kbuf, kbuf_nbytes):
-    ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+    ctx = xnvme.xnvme_cmd_ctx()
+    xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
     err = xnvme.xnvme_kvs_delete(
         byref(ctx),
         xnvme.xnvme_dev_get_nsid(dev),
@@ -97,7 +101,8 @@ def kvs_delete(dev, kbuf, kbuf_nbytes):
 
 
 def kvs_list(dev, kbuf, kbuf_nbytes, vbuf, vbuf_nbytes, opts=0):
-    ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+    ctx = xnvme.xnvme_cmd_ctx()
+    xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
     err = xnvme.xnvme_kvs_list(
         byref(ctx),
         xnvme.xnvme_dev_get_nsid(dev),

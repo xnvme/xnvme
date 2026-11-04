@@ -19,7 +19,8 @@ def test_io_sync(cijoe, device, be_opts, cli_args):
     lba_nbytes = xnvme.xnvme_dev_get_geo(dev).contents.lba_nbytes
     nlb = 0
 
-    ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+    ctx = xnvme.xnvme_cmd_ctx()
+    xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
 
     data, data_view = buf_and_view(dev, lba_nbytes)
     assert data

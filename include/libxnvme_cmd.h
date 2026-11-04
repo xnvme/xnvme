@@ -58,14 +58,17 @@ xnvme_cmd_ctx_set_cb(struct xnvme_cmd_ctx *ctx, xnvme_queue_cb cb, void *cb_arg)
 }
 
 /**
- * Retrieve a command-context for issuing commands to the given device
+ * Initialize the given command-context for issuing synchronous commands to the given device
  *
- * @param dev Device handle (::xnvme_dev) obtained with xnvme_dev_open()
+ * @param dev Device handle (::xnvme_dev) obtained with xnvme_dev_open(), or with
+ * xnvme_file_open()
+ * @param ctx The ::xnvme_cmd_ctx to initialize; all of it is overwritten
  *
- * @return A ::xnvme_cmd_ctx initialized synchronous command on the given device
+ * @return On success, 0 is returned. On error, negative `errno` is returned: -EINVAL when
+ * `dev` or `ctx` is NULL.
  */
-struct xnvme_cmd_ctx
-xnvme_cmd_ctx_from_dev(struct xnvme_dev *dev);
+int
+xnvme_dev_get_cmd_ctx(struct xnvme_dev *dev, struct xnvme_cmd_ctx *ctx);
 
 /**
  * Retrieve a command-text for issuing commands via the given queue
@@ -103,7 +106,7 @@ xnvme_cmd_ctx_cpl_status(struct xnvme_cmd_ctx *ctx)
  * Pass an NVMe IO Command through to the device via the given ::xnvme_cmd_ctx
  *
  * The mode of submission is determined by the command context: a context
- * obtained via xnvme_cmd_ctx_from_dev() submits synchronously and returns once
+ * obtained via xnvme_dev_get_cmd_ctx() submits synchronously and returns once
  * the command has completed, whereas a context obtained via
  * xnvme_cmd_ctx_from_queue() submits asynchronously and returns once the command
  * has been submitted; its completion is then processed via xnvme_queue_poke().

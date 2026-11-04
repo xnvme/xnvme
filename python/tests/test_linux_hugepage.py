@@ -227,7 +227,8 @@ class TestHugepage:
         # Actual transfers
         try:
             # Has to fail because of too many segments
-            ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+            ctx = xnvme.xnvme_cmd_ctx()
+            xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
             lba_nbytes = xnvme.xnvme_dev_get_geo(dev).lba_nbytes
             err = xnvme.xnvme_nvm_write(
                 ctx,
@@ -241,7 +242,8 @@ class TestHugepage:
             assert err or cpl, f"err: 0x{err:x}, cpl: 0x{cpl:x}"
 
             # Has to succeed because of fewer than max segments
-            ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+            ctx = xnvme.xnvme_cmd_ctx()
+            xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
             lba_nbytes = xnvme.xnvme_dev_get_geo(dev).lba_nbytes
             err = xnvme.xnvme_nvm_write(
                 ctx,
@@ -287,7 +289,8 @@ class TestHugepage:
         assert check_frame_is_hugepage(page_frame_number)
 
         # Has to succeed because of fewer than max segments
-        ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+        ctx = xnvme.xnvme_cmd_ctx()
+        xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
         lba_nbytes = xnvme.xnvme_dev_get_geo(dev).lba_nbytes
         err = xnvme.xnvme_nvm_write(
             ctx, conftest.DEVICE_NSID, 0, buffer_size // lba_nbytes - 1, buf, NULL
@@ -295,7 +298,8 @@ class TestHugepage:
         cpl = xnvme.xnvme_cmd_ctx_cpl_status(ctx)
         assert not (err or cpl), f"err: 0x{err:x}, cpl: 0x{cpl:x}"
 
-        ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+        ctx = xnvme.xnvme_cmd_ctx()
+        xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
         err = xnvme.xnvme_file_pwrite(ctx, buf, buffer_size, 0)
         cpl = xnvme.xnvme_cmd_ctx_cpl_status(ctx)
         assert not (err or cpl), f"err: 0x{err:x}, cpl: 0x{cpl:x}"
@@ -342,7 +346,8 @@ def test_pwrite_pread(
     for n in range(4):
         buf_memview[:] = pattern << (2 * n)  # Just some changing bit-pattern
 
-        ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+        ctx = xnvme.xnvme_cmd_ctx()
+        xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
         err = xnvme.xnvme_file_pwrite(ctx, buf, buffer_size, buffer_size * n)
         cpl = xnvme.xnvme_cmd_ctx_cpl_status(ctx)
         assert not (err or cpl), f"err: 0x{err:x}, cpl: 0x{cpl:x}"
@@ -366,7 +371,8 @@ def test_pwrite_pread(
     # Read out with xnvme_file_pread to verify
     for n in range(4):
         buf_memview[:] = 0
-        ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+        ctx = xnvme.xnvme_cmd_ctx()
+        xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
         err = xnvme.xnvme_file_pread(ctx, buf, buffer_size, buffer_size * n)
         cpl = xnvme.xnvme_cmd_ctx_cpl_status(ctx)
         assert not (err or cpl), f"err: 0x{err:x}, cpl: 0x{cpl:x}"
@@ -418,7 +424,8 @@ def test_nvm_write_read(
     for n in range(4):
         buf_memview[:] = pattern << (2 * n)  # Just some changing bit-pattern
 
-        ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+        ctx = xnvme.xnvme_cmd_ctx()
+        xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
         slba = (n * buffer_size) // lba_nbytes
         nlb = (buffer_size // lba_nbytes) - 1
         err = xnvme.xnvme_nvm_write(ctx, conftest.DEVICE_NSID, slba, nlb, buf, NULL)
@@ -445,7 +452,8 @@ def test_nvm_write_read(
     for n in range(4):
         buf_memview[:] = 0
 
-        ctx = xnvme.xnvme_cmd_ctx_from_dev(dev)
+        ctx = xnvme.xnvme_cmd_ctx()
+        xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
         slba = (n * buffer_size) // lba_nbytes
         nlb = (buffer_size // lba_nbytes) - 1
         err = xnvme.xnvme_nvm_read(ctx, conftest.DEVICE_NSID, slba, nlb, buf, NULL)

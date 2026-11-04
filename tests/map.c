@@ -80,9 +80,11 @@ static int
 mptr_write(struct xnvme_dev *dev, void *mbuf)
 {
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	void *dbuf;
 	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	dbuf = xnvme_buf_alloc(dev, geo->lba_nbytes);
 	if (!dbuf) {

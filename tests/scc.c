@@ -219,8 +219,10 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 
 	// Write the dbuf to source LBAs
 	for (uint64_t i = 0; i < tlbas; ++i) {
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+		struct xnvme_cmd_ctx ctx = {0};
 		size_t ofz = i * geo->lba_nbytes;
+
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 		err = xnvme_nvm_write(&ctx, nsid, range->entry[i].slba, range->entry[i].nlb,
 				      dbuf + ofz, NULL);
@@ -234,8 +236,10 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 
 	// Write the vbuf to destination LBAs
 	for (uint64_t i = 0; i < tlbas; ++i) {
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+		struct xnvme_cmd_ctx ctx = {0};
 		size_t ofz = i * geo->lba_nbytes;
+
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 		err = xnvme_nvm_write(&ctx, nsid, sdlba + i, 0, vbuf + ofz, NULL);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
@@ -253,7 +257,9 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 	printf("sdlba: 0x%016" PRIx64 "\n", sdlba);
 
 	if (cli->args.clear) {
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+		struct xnvme_cmd_ctx ctx = {0};
+
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 		xnvme_cli_pinf("Using XNVME_CMD_SYNC mode");
 		err = xnvme_nvm_scopy(&ctx, nsid, sdlba, range->entry, nr, copy_fmt);
@@ -264,8 +270,10 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 			goto exit;
 		}
 	} else {
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+		struct xnvme_cmd_ctx ctx = {0};
 		struct xnvme_queue *queue = NULL;
+
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 		xnvme_cli_pinf("Using XNVME_CMD_ASYNC mode");
 
@@ -293,8 +301,10 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 
 	// Read destination LBAs into vbuf
 	for (uint64_t i = 0; i < tlbas; ++i) {
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+		struct xnvme_cmd_ctx ctx = {0};
 		size_t ofz = i * geo->lba_nbytes;
+
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 		err = xnvme_nvm_read(&ctx, nsid, sdlba + i, 0, vbuf + ofz, NULL);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {

@@ -115,7 +115,9 @@ cmd_verify(struct xnvme_cli *cli)
 	cb_args.zslba = zone.zslba;
 
 	for (uint64_t sect = 0; (sect < zone.zcap) && !cb_args.ecount; ++sect) {
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+		struct xnvme_cmd_ctx ctx = {0};
+
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 		ctx.async.queue = queue;
 		ctx.async.cb = cb_lbacheck;
@@ -161,7 +163,9 @@ cmd_verify(struct xnvme_cli *cli)
 
 	// Read zone content into vbuf
 	for (uint64_t sect = 0; sect < zone.zcap; ++sect) {
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+		struct xnvme_cmd_ctx ctx = {0};
+
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 		err = xnvme_nvm_read(&ctx, nsid, zone.zslba + sect, 0,
 				     vbuf + sect * geo->lba_nbytes, NULL);

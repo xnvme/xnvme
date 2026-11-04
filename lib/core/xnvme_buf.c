@@ -165,7 +165,7 @@ fdio_func(void *buf, size_t nbytes, const char *path, struct xnvme_opts *opts)
 		return -errno;
 	}
 
-	ctx = xnvme_file_get_cmd_ctx(fh);
+	xnvme_dev_get_cmd_ctx(fh, &ctx);
 
 	while (transferred < nbytes) {
 		const size_t remain = nbytes - transferred;

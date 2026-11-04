@@ -38,7 +38,9 @@ test_file_fsync(struct xnvme_cli *cli)
 	}
 
 	for (size_t i = 0; i < num_writes; i++) {
-		struct xnvme_cmd_ctx ctx = xnvme_file_get_cmd_ctx(fh);
+		struct xnvme_cmd_ctx ctx = {0};
+
+		xnvme_dev_get_cmd_ctx(fh, &ctx);
 
 		err = xnvme_file_pwrite(&ctx, buf, bytes_per_write, 0);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
@@ -92,7 +94,7 @@ file_write_ascii(const char *path, size_t nbytes, struct xnvme_opts *opts)
 		goto exit;
 	}
 
-	ctx = xnvme_file_get_cmd_ctx(fh);
+	xnvme_dev_get_cmd_ctx(fh, &ctx);
 	err = xnvme_file_pwrite(&ctx, buf, nbytes, 0);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		err = err ? err : -EIO;

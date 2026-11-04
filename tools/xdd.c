@@ -128,7 +128,7 @@ copy_async(struct xnvme_cli *cli)
 
 		work->nerrors = &nerrors;
 		work->buf = buf + (i * iosize);
-		work->dst_ctx = xnvme_file_get_cmd_ctx(dst_dev);
+		xnvme_dev_get_cmd_ctx(dst_dev, &work->dst_ctx);
 		work->start_offset = start_offset;
 	}
 	for (size_t ofz = start_offset; (ofz - start_offset < tbytes) && !nerrors;) {
@@ -261,9 +261,12 @@ copy_sync(struct xnvme_cli *cli)
 	xnvme_cli_timer_start(cli);
 
 	for (size_t ofz = start_offset; ofz - start_offset < tbytes; ofz += iosize) {
-		struct xnvme_cmd_ctx src_ctx = xnvme_file_get_cmd_ctx(src_dev);
-		struct xnvme_cmd_ctx dst_ctx = xnvme_file_get_cmd_ctx(dst_dev);
+		struct xnvme_cmd_ctx src_ctx = {0};
+		struct xnvme_cmd_ctx dst_ctx = {0};
 		size_t nbytes = XNVME_MIN_U64(iosize, tbytes - (ofz - start_offset));
+
+		xnvme_dev_get_cmd_ctx(src_dev, &src_ctx);
+		xnvme_dev_get_cmd_ctx(dst_dev, &dst_ctx);
 
 		err = xnvme_file_pread(&src_ctx, buf, nbytes, ofz);
 		if (err || xnvme_cmd_ctx_cpl_status(&src_ctx)) {

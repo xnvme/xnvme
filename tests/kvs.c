@@ -9,7 +9,7 @@ static int
 kvs_io(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = cli->args.dev;
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	uint8_t nsid = cli->args.dev_nsid;
 	const void *kv_key;
 	const void *kv_val;
@@ -19,6 +19,8 @@ kvs_io(struct xnvme_cli *cli)
 	size_t kv_val_nbytes = 0;
 	size_t diff = 0;
 	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	if (cli->given[XNVME_CLI_OPT_KV_KEY]) {
 		kv_key = cli->args.kv_key;

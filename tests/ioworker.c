@@ -161,9 +161,12 @@ submit:
 static int
 _submit_sync(struct iowork *work)
 {
-	struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(work->dev);
+	struct xnvme_cmd_ctx ctx = {0};
 	struct ioworker *worker = &work->workers[0];
 	int err;
+
+	xnvme_dev_get_cmd_ctx(work->dev, &ctx);
+
 	ctx.cmd.common.nsid = work->nsid;
 	ctx.cmd.common.opcode = work->opc;
 	ctx.cmd.nvm.nlb = work->io.naddr - 1;

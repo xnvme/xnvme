@@ -60,7 +60,7 @@ test_compare(struct xnvme_cli *cli)
 
 	// Write data to the buffer
 	nsid = xnvme_dev_get_nsid(dev);
-	ctx = xnvme_cmd_ctx_from_dev(dev);
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	err = xnvme_nvm_write(&ctx, nsid, slba, (nlb - 1), buf, NULL);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {

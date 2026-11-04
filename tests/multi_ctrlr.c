@@ -93,7 +93,9 @@ sub_io(struct xnvme_cli *cli)
 	}
 
 	for (int i = 0; i < ndev; ++i) {
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev[i]);
+		struct xnvme_cmd_ctx ctx = {0};
+
+		xnvme_dev_get_cmd_ctx(dev[i], &ctx);
 
 		buf[i] = xnvme_buf_alloc(dev[i], nbytes);
 		if (!buf[i]) {
@@ -120,7 +122,9 @@ sub_io(struct xnvme_cli *cli)
 	/* Every controller written before any is read, so a read reaching the
 	 * wrong one returns that controller's pattern rather than its own. */
 	for (int i = 0; i < ndev; ++i) {
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev[i]);
+		struct xnvme_cmd_ctx ctx = {0};
+
+		xnvme_dev_get_cmd_ctx(dev[i], &ctx);
 
 		memset(host_r, 0, nbytes);
 		err = xnvme_buf_memcpy(buf[i], host_r, nbytes);

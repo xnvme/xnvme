@@ -91,7 +91,7 @@ read_write(struct xnvme_cli *cli)
 		buf[u] = 'A';
 	}
 
-	ctx = xnvme_file_get_cmd_ctx(dev);
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_file_pwrite(&ctx, buf, size, 0);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		xnvme_cli_perr("xnvme_file_pwrite()", err);
@@ -155,8 +155,10 @@ dump_sync(struct xnvme_cli *cli)
 	xnvme_cli_timer_start(cli);
 
 	for (size_t ofz = 0; ofz < tbytes; ofz += iosize) {
-		struct xnvme_cmd_ctx ctx = xnvme_file_get_cmd_ctx(fh);
+		struct xnvme_cmd_ctx ctx = {0};
 		size_t nbytes = XNVME_MIN_U64(iosize, tbytes - ofz);
+
+		xnvme_dev_get_cmd_ctx(fh, &ctx);
 
 		err = xnvme_file_pwrite(&ctx, buf + ofz, nbytes, ofz);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
@@ -226,7 +228,7 @@ dump_sync_iovec(struct xnvme_cli *cli)
 
 	xnvme_cli_timer_start(cli);
 
-	ctx = xnvme_file_get_cmd_ctx(fh);
+	xnvme_dev_get_cmd_ctx(fh, &ctx);
 	ctx.cmd.common.nsid = xnvme_dev_get_nsid(ctx.dev);
 	ctx.cmd.common.opcode = XNVME_SPEC_FS_OPC_WRITE;
 	ctx.cmd.nvm.slba = ofz;
@@ -518,8 +520,10 @@ load_sync(struct xnvme_cli *cli)
 	xnvme_cli_timer_start(cli);
 
 	for (size_t ofz = 0; ofz < tbytes; ofz += iosize) {
-		struct xnvme_cmd_ctx ctx = xnvme_file_get_cmd_ctx(fh);
+		struct xnvme_cmd_ctx ctx = {0};
 		size_t nbytes = XNVME_MIN_U64(iosize, tbytes - ofz);
+
+		xnvme_dev_get_cmd_ctx(fh, &ctx);
 
 		err = xnvme_file_pread(&ctx, buf + ofz, nbytes, ofz);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
@@ -693,9 +697,12 @@ copy_file_sync(struct xnvme_cli *cli)
 	xnvme_cli_timer_start(cli);
 
 	for (size_t ofz = 0; ofz < tbytes; ofz += iosize) {
-		struct xnvme_cmd_ctx src_ctx = xnvme_file_get_cmd_ctx(src_fh);
-		struct xnvme_cmd_ctx dst_ctx = xnvme_file_get_cmd_ctx(dst_fh);
+		struct xnvme_cmd_ctx src_ctx = {0};
+		struct xnvme_cmd_ctx dst_ctx = {0};
 		size_t nbytes = XNVME_MIN_U64(iosize, tbytes - ofz);
+
+		xnvme_dev_get_cmd_ctx(src_fh, &src_ctx);
+		xnvme_dev_get_cmd_ctx(dst_fh, &dst_ctx);
 
 		err = xnvme_file_pread(&src_ctx, buf, nbytes, ofz);
 		if (err || xnvme_cmd_ctx_cpl_status(&src_ctx)) {
@@ -802,7 +809,7 @@ copy_file_async(struct xnvme_cli *cli)
 
 		work->nerrors = &nerrors;
 		work->buf = buf + (i * iosize);
-		work->dst_ctx = xnvme_file_get_cmd_ctx(dst_fh);
+		xnvme_dev_get_cmd_ctx(dst_fh, &work->dst_ctx);
 	}
 
 	for (size_t ofz = 0; (ofz < tbytes) && !nerrors;) {

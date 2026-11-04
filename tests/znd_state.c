@@ -34,8 +34,10 @@ cmd_transition(struct xnvme_cli *cli)
 	slba = cli->given[XNVME_CLI_OPT_SLBA] ? cli->args.slba : 0x0;
 
 	for (size_t i = 0; i < nactions; ++i) {
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
+		struct xnvme_cmd_ctx ctx = {0};
 		struct xnvme_spec_znd_descr zone = {0};
+
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 		err = xnvme_znd_mgmt_send(&ctx, nsid, slba, false, actions[i].action, 0x0, NULL);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {

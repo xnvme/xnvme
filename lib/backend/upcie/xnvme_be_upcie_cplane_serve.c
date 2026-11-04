@@ -473,7 +473,9 @@ static void
 cplane_serve_totals_read(void)
 {
 	for (int i = 0; i < g_upcie_cplane_serve.ndevs; ++i) {
-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(g_upcie_cplane_serve.devs[i]);
+		struct xnvme_cmd_ctx ctx = {0};
+
+		xnvme_dev_get_cmd_ctx(g_upcie_cplane_serve.devs[i], &ctx);
 
 		/* Zero totals mean the controller did not answer, as the status reply defines */
 		if (xnvme_adm_gfeat_nqueues(&ctx, &g_upcie_cplane_serve.nsq_total[i],
