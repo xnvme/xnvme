@@ -99,8 +99,9 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 	ns->ncap = val;
 	ns->nuse = val;
 
-	ns->nlbaf = 0;        ///< This means that there is only one
-	ns->flbas.format = 0; ///< using the first one
+	ns->nlbaf = 0; ///< This means that there is only one
+	ns->flbas = xnvme_bits_set(ns->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT,
+				   0); ///< using the first one
 
 	ns->lbaf[0].ms = 0;
 	ns->lbaf[0].ds = XNVME_ILOG2(nbytes);

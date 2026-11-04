@@ -75,7 +75,7 @@ cmd_changes(struct xnvme_cli *cli)
 	struct xnvme_spec_znd_log_changes *changes;
 	int err = 0;
 
-	if (!idfy_ctrlr->oaes.zone_changes) {
+	if (!xnvme_bits_get(idfy_ctrlr->oaes, XNVME_SPEC_IDFY_CTRLR_OAES_ZONE_CHANGES)) {
 		XNVME_DEBUG("INFO: skipping; not supported");
 		xnvme_cli_pinf("LGTM");
 		return 0;

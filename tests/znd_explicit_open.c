@@ -14,7 +14,8 @@ test_open_zdptr(struct xnvme_cli *cli)
 	struct xnvme_spec_znd_idfy_ns *zns = (void *)xnvme_dev_get_ns_css(dev);
 	uint32_t nsid = xnvme_dev_get_nsid(dev);
 
-	uint32_t zde_nbytes = zns->lbafe[nvm->flbas.format].zdes * 64;
+	uint32_t zde_nbytes =
+		zns->lbafe[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT)].zdes * 64;
 	uint8_t *zde = NULL;
 
 	uint64_t zslba = cli->args.lba;

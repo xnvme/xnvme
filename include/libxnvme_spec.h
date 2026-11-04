@@ -515,15 +515,19 @@ enum xnvme_spec_idfy_cns {
 };
 
 /**
+ * LBA Format
+ *
  * @struct xnvme_spec_lbaf
  */
 struct xnvme_spec_lbaf {
-	uint16_t ms;      ///< metadata size
-	uint8_t ds;       ///< lba data size
-	uint8_t rp   : 2; ///< relative performance
-	uint8_t rsvd : 6;
+	uint16_t ms; ///< metadata size
+	uint8_t ds;  ///< lba data size
+	uint8_t rp;  ///< relative performance, see XNVME_SPEC_LBAF_RP
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_lbaf) == 4, "Incorrect size")
+
+/** Relative performance, 00b best to 11b degraded; bits 1:0 of 'rp' */
+#define XNVME_SPEC_LBAF_RP 0x3
 
 /**
  * Command Set Identifiers
@@ -577,7 +581,8 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_ns_desc) == 20, "Incorrect size")
 /**
  * Representation of NVMe completion result Identify Namespace
  *
- * That is, for opcode XNVME_SPEC_OPC_IDFY(0x06) with XNVME_SPEC_IDFY_NS(0x0)
+ * That is, for opcode XNVME_SPEC_OPC_IDFY(0x06) with XNVME_SPEC_IDFY_NS(0x0). A field of bits
+ * is an integer of the width the specification gives it; its documentation names the bits.
  *
  * @struct xnvme_spec_idfy_ns
  */
@@ -586,225 +591,145 @@ struct xnvme_spec_idfy_ns {
 	uint64_t ncap; ///< namespace capacity
 	uint64_t nuse; ///< namespace utilization
 
-	/** namespace features */
-	struct {
-		uint8_t thin_prov                  : 1; ///< thin provisioning
-		uint8_t ns_atomic_write_unit       : 1; ///< NAWUN, NAWUPF, and NACWU
-		uint8_t dealloc_or_unwritten_error : 1;
-		uint8_t guid_never_reused          : 1; ///< Non-zero NGUID and EUI64
-		uint8_t optimal_performance        : 1; ///< NPWG, NPWA, NPDG, NPDA
-
-		uint8_t reserved1                  : 3;
-	} nsfeat;
+	uint8_t nsfeat; ///< Namespace features, see XNVME_SPEC_IDFY_NS_NSFEAT_*
 
 	uint8_t nlbaf; ///< number of lba formats
 
-	/** formatted lba size */
-	struct {
-		uint8_t format     : 4;
-		uint8_t extended   : 1;
-		uint8_t format_msb : 2;
-		uint8_t reserved2  : 1;
-	} flbas;
+	uint8_t flbas; ///< Formatted LBA size, see XNVME_SPEC_IDFY_NS_FLBAS_*
 
-	/** metadata capabilities */
-	struct {
-		/** metadata can be transferred as part of data prp list */
-		uint8_t extended  : 1;
+	uint8_t mc; ///< Metadata capabilities, see XNVME_SPEC_IDFY_NS_MC_*
 
-		/** metadata can be transferred with separate metadata pointer */
-		uint8_t pointer   : 1;
+	uint8_t dpc; ///< End-to-end data protection capabilities, see XNVME_SPEC_IDFY_NS_DPC_*
 
-		/** reserved */
-		uint8_t reserved3 : 6;
-	} mc;
+	uint8_t dps; ///< End-to-end data protection type settings, see XNVME_SPEC_IDFY_NS_DPS_*
 
-	/** end-to-end data protection capabilities */
-	union {
-		struct {
-			/** protection information type 1 */
-			uint8_t pit1     : 1;
+	uint8_t nmic; ///< Namespace multi-path I/O and namespace sharing capabilities, see
+		      ///< XNVME_SPEC_IDFY_NS_NMIC_*
 
-			/** protection information type 2 */
-			uint8_t pit2     : 1;
+	uint8_t nsrescap; ///< Reservation capabilities, see XNVME_SPEC_IDFY_NS_NSRESCAP_*
 
-			/** protection information type 3 */
-			uint8_t pit3     : 1;
+	uint8_t fpi; ///< Format progress indicator, see XNVME_SPEC_IDFY_NS_FPI_*
 
-			/** first eight bytes of metadata */
-			uint8_t md_start : 1;
+	uint8_t dlfeat; ///< Deallocate logical block features, see XNVME_SPEC_IDFY_NS_DLFEAT_*
 
-			/** last eight bytes of metadata */
-			uint8_t md_end   : 1;
+	uint16_t nawun; ///< namespace atomic write unit normal
 
-			uint8_t reserved : 3;
-		};
-		uint8_t val;
-	} dpc;
+	uint16_t nawupf; ///< namespace atomic write unit power fail
 
-	/** end-to-end data protection type settings */
-	union {
-		struct {
-			/** protection information type */
-			uint8_t pit       : 3;
+	uint16_t nacwu; ///< namespace atomic compare & write unit
 
-			/** 1 == protection info transferred at start of metadata */
-			/** 0 == protection info transferred at end of metadata */
-			uint8_t md_start  : 1;
+	uint16_t nabsn; ///< namespace atomic boundary size normal
 
-			uint8_t reserved4 : 4;
-		};
-		uint8_t val;
-	} dps;
+	uint16_t nabo; ///< namespace atomic boundary offset
 
-	/** namespace multi-path I/O and namespace sharing capabilities */
-	struct {
-		uint8_t can_share : 1;
-		uint8_t reserved  : 7;
-	} nmic;
+	uint16_t nabspf; ///< namespace atomic boundary size power fail
 
-	/** reservation capabilities */
-	union {
-		struct {
-			/** supports persist through power loss */
-			uint8_t persist                   : 1;
-
-			/** supports write exclusive */
-			uint8_t write_exclusive           : 1;
-
-			/** supports exclusive access */
-			uint8_t exclusive_access          : 1;
-
-			/** supports write exclusive - registrants only */
-			uint8_t write_exclusive_reg_only  : 1;
-
-			/** supports exclusive access - registrants only */
-			uint8_t exclusive_access_reg_only : 1;
-
-			/** supports write exclusive - all registrants */
-			uint8_t write_exclusive_all_reg   : 1;
-
-			/** supports exclusive access - all registrants */
-			uint8_t exclusive_access_all_reg  : 1;
-
-			/** supports ignore existing key */
-			uint8_t ignore_existing_key       : 1;
-		};
-		uint8_t val;
-	} nsrescap;
-
-	/** format progress indicator */
-	union {
-		struct {
-			uint8_t percentage_remaining : 7;
-			uint8_t fpi_supported        : 1;
-		};
-		uint8_t val;
-	} fpi;
-
-	/** deallocate logical features */
-	union {
-		struct {
-			/**
-			 * Value read from deallocated blocks
-			 *
-			 * 000b = not reported
-			 * 001b = all bytes 0x00
-			 * 010b = all bytes 0xFF
-			 *
-			 */
-			uint8_t read_value            : 3;
-
-			/** Supports Deallocate bit in Write Zeroes */
-			uint8_t write_zero_deallocate : 1;
-
-			/**
-			 * Guard field behavior for deallocated logical blocks
-			 * 0: contains 0xFFFF
-			 * 1: contains CRC for read value
-			 */
-			uint8_t guard_value           : 1;
-
-			uint8_t reserved              : 3;
-		} bits;
-
-		uint8_t val;
-	} dlfeat;
-
-	/** namespace atomic write unit normal */
-	uint16_t nawun;
-
-	/** namespace atomic write unit power fail */
-	uint16_t nawupf;
-
-	/** namespace atomic compare & write unit */
-	uint16_t nacwu;
-
-	/** namespace atomic boundary size normal */
-	uint16_t nabsn;
-
-	/** namespace atomic boundary offset */
-	uint16_t nabo;
-
-	/** namespace atomic boundary size power fail */
-	uint16_t nabspf;
-
-	/** namespace optimal I/O boundary in logical blocks */
-	uint16_t noiob;
+	uint16_t noiob; ///< namespace optimal I/O boundary in logical blocks
 
 	uint64_t nvmcap[2]; ///< NVM Capacity
 
-	/** namespace preferred write granularity */
-	uint16_t npwg;
+	uint16_t npwg; ///< namespace preferred write granularity
 
-	/** namespace preferred write alignment */
-	uint16_t npwa;
+	uint16_t npwa; ///< namespace preferred write alignment
 
-	/** namespace preferred deallocate granularity */
-	uint16_t npdg;
+	uint16_t npdg; ///< namespace preferred deallocate granularity
 
-	/** namespace preferred deallocate alignment */
-	uint16_t npda;
+	uint16_t npda; ///< namespace preferred deallocate alignment
 
-	/** namespace optimal write size */
-	uint16_t nows;
+	uint16_t nows; ///< namespace optimal write size
 
-	/** maximum single source range length */
-	uint16_t mssrl;
+	uint16_t mssrl; ///< maximum single source range length
 
-	/** max copy length */
-	uint32_t mcl;
+	uint32_t mcl; ///< max copy length
 
-	/** maximum source range count */
-	uint8_t msrc;
+	uint8_t msrc; ///< maximum source range count
 
 	uint8_t reserved81[11];
 
-	/** ANA group identifier */
-	uint32_t anagrpid;
+	uint32_t anagrpid; ///< ANA group identifier
 
 	uint8_t reserved96[3];
 
-	/** namespace attributes */
-	uint8_t nsattr;
+	uint8_t nsattr; ///< namespace attributes
 
-	/** NVM set identifier */
-	uint16_t nvmsetid;
+	uint16_t nvmsetid; ///< NVM set identifier
 
-	/** Endurance group identifier */
-	uint16_t endgid;
+	uint16_t endgid; ///< Endurance group identifier
 
-	/** namespace globally unique identifier */
-	uint8_t nguid[16];
+	uint8_t nguid[16]; ///< namespace globally unique identifier
 
-	/** IEEE extended unique identifier */
-	uint64_t eui64;
+	uint64_t eui64; ///< IEEE extended unique identifier
 
-	struct xnvme_spec_lbaf lbaf[64]; /// LBA format support
+	struct xnvme_spec_lbaf lbaf[64]; ///< LBA format support
 
 	uint8_t vendor_specific[3712];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_ns) == 4096, "Incorrect size")
+
+/** Thin provisioning is supported; bit 0 of 'nsfeat' */
+#define XNVME_SPEC_IDFY_NS_NSFEAT_THIN_PROV 0x1
+/** NAWUN, NAWUPF and NACWU are defined; bit 1 of 'nsfeat' */
+#define XNVME_SPEC_IDFY_NS_NSFEAT_NS_ATOMIC_WRITE_UNIT 0x2
+/** Deallocated or unwritten logical block error; bit 2 of 'nsfeat' */
+#define XNVME_SPEC_IDFY_NS_NSFEAT_DEALLOC_OR_UNWRITTEN_ERROR 0x4
+/** Non-zero NGUID and EUI64 are never reused; bit 3 of 'nsfeat' */
+#define XNVME_SPEC_IDFY_NS_NSFEAT_GUID_NEVER_REUSED 0x8
+/** NPWG, NPWA, NPDG, NPDA and NOWS are defined; bit 4 of 'nsfeat' */
+#define XNVME_SPEC_IDFY_NS_NSFEAT_OPTIMAL_PERFORMANCE 0x10
+/** The least significant bits of the index into 'lbaf'; bits 3:0 of 'flbas' */
+#define XNVME_SPEC_IDFY_NS_FLBAS_FORMAT 0xf
+/** The metadata is transferred at the end of the data; bit 4 of 'flbas' */
+#define XNVME_SPEC_IDFY_NS_FLBAS_EXTENDED 0x10
+/** The most significant bits of the index into 'lbaf'; bits 6:5 of 'flbas' */
+#define XNVME_SPEC_IDFY_NS_FLBAS_FORMAT_MSB 0x60
+/** Metadata can be transferred as part of the data; bit 0 of 'mc' */
+#define XNVME_SPEC_IDFY_NS_MC_EXTENDED 0x1
+/** Metadata can be transferred with a separate metadata pointer; bit 1 of 'mc' */
+#define XNVME_SPEC_IDFY_NS_MC_POINTER 0x2
+/** Protection information type 1 is supported; bit 0 of 'dpc' */
+#define XNVME_SPEC_IDFY_NS_DPC_PIT1 0x1
+/** Protection information type 2 is supported; bit 1 of 'dpc' */
+#define XNVME_SPEC_IDFY_NS_DPC_PIT2 0x2
+/** Protection information type 3 is supported; bit 2 of 'dpc' */
+#define XNVME_SPEC_IDFY_NS_DPC_PIT3 0x4
+/** Protection information can be the first eight bytes of the metadata; bit 3 of 'dpc' */
+#define XNVME_SPEC_IDFY_NS_DPC_MD_START 0x8
+/** Protection information can be the last eight bytes of the metadata; bit 4 of 'dpc' */
+#define XNVME_SPEC_IDFY_NS_DPC_MD_END 0x10
+/** The protection information type, 0 when disabled; bits 2:0 of 'dps' */
+#define XNVME_SPEC_IDFY_NS_DPS_PIT 0x7
+/** The protection information is at the start of the metadata, else its end; bit 3 of 'dps' */
+#define XNVME_SPEC_IDFY_NS_DPS_MD_START 0x8
+/** The namespace may be attached to two or more controllers; bit 0 of 'nmic' */
+#define XNVME_SPEC_IDFY_NS_NMIC_CAN_SHARE 0x1
+/** Persist through power loss; bit 0 of 'nsrescap' */
+#define XNVME_SPEC_IDFY_NS_NSRESCAP_PERSIST 0x1
+/** Write exclusive; bit 1 of 'nsrescap' */
+#define XNVME_SPEC_IDFY_NS_NSRESCAP_WRITE_EXCLUSIVE 0x2
+/** Exclusive access; bit 2 of 'nsrescap' */
+#define XNVME_SPEC_IDFY_NS_NSRESCAP_EXCLUSIVE_ACCESS 0x4
+/** Write exclusive, registrants only; bit 3 of 'nsrescap' */
+#define XNVME_SPEC_IDFY_NS_NSRESCAP_WRITE_EXCLUSIVE_REG_ONLY 0x8
+/** Exclusive access, registrants only; bit 4 of 'nsrescap' */
+#define XNVME_SPEC_IDFY_NS_NSRESCAP_EXCLUSIVE_ACCESS_REG_ONLY 0x10
+/** Write exclusive, all registrants; bit 5 of 'nsrescap' */
+#define XNVME_SPEC_IDFY_NS_NSRESCAP_WRITE_EXCLUSIVE_ALL_REG 0x20
+/** Exclusive access, all registrants; bit 6 of 'nsrescap' */
+#define XNVME_SPEC_IDFY_NS_NSRESCAP_EXCLUSIVE_ACCESS_ALL_REG 0x40
+/** Ignore existing key; bit 7 of 'nsrescap' */
+#define XNVME_SPEC_IDFY_NS_NSRESCAP_IGNORE_EXISTING_KEY 0x80
+/** The percentage of the format remaining; bits 6:0 of 'fpi' */
+#define XNVME_SPEC_IDFY_NS_FPI_PERCENTAGE_REMAINING 0x7f
+/** The format progress indicator is supported; bit 7 of 'fpi' */
+#define XNVME_SPEC_IDFY_NS_FPI_FPI_SUPPORTED 0x80
+/** Read from a deallocated block: 000b not reported, 001b all bytes 0x00, 010b all bytes 0xFF;
+ * bits 2:0 of 'dlfeat' */
+#define XNVME_SPEC_IDFY_NS_DLFEAT_READ_VALUE 0x7
+/** The Deallocate bit of Write Zeroes is supported; bit 3 of 'dlfeat' */
+#define XNVME_SPEC_IDFY_NS_DLFEAT_WRITE_ZERO_DEALLOCATE 0x8
+/** The guard of a deallocated block is the CRC of the value read, else 0xFFFF; bit 4 of 'dlfeat'
+ */
+#define XNVME_SPEC_IDFY_NS_DLFEAT_GUARD_VALUE 0x10
 
 struct xnvme_pif {
 	union {
@@ -837,77 +762,111 @@ enum xnvme_spec_nvm_ns_pif {
 };
 
 /**
+ * Extended LBA Format
+ *
  * @struct xnvme_spec_elbaf
  */
 struct xnvme_spec_elbaf {
-	uint32_t sts  : 7; ///< storage tag size
-	uint32_t pif  : 2; ///< protection information format
-	uint32_t rsvd : 23;
+	uint32_t val; ///< Extended LBA format, see XNVME_SPEC_ELBAF_*
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_elbaf) == 4, "Incorrect size")
+
+/** Storage tag size; bits 6:0 of 'val' */
+#define XNVME_SPEC_ELBAF_STS 0x7f
+/** Protection information format, see xnvme_spec_nvm_ns_pif; bits 8:7 of 'val' */
+#define XNVME_SPEC_ELBAF_PIF 0x180
 
 #define XNVME_SPEC_CTRLR_SN_LEN 20
 #define XNVME_SPEC_CTRLR_MN_LEN 40
 #define XNVME_SPEC_CTRLR_FR_LEN 8
 
 /**
+ * Power State Descriptor
+ *
  * @struct xnvme_spec_power_state
  */
 struct xnvme_spec_power_state {
-	uint16_t mp; /* bits 15:00: maximum power */
+	uint16_t mp; ///< maximum power, bits 15:00
 
 	uint8_t reserved1;
 
-	uint8_t mps       : 1; /* bit 24: max power scale */
-	uint8_t nops      : 1; /* bit 25: non-operational state */
-	uint8_t reserved2 : 6;
+	uint8_t mxps_nops; ///< bits 31:24, see XNVME_SPEC_POWER_STATE_MXPS and _NOPS
 
-	uint32_t enlat; /* bits 63:32: entry latency in microseconds */
-	uint32_t exlat; /* bits 95:64: exit latency in microseconds */
+	uint32_t enlat; ///< entry latency in microseconds, bits 63:32
+	uint32_t exlat; ///< exit latency in microseconds, bits 95:64
 
-	uint8_t rrt       : 5; /* bits 100:96: relative read throughput */
-	uint8_t reserved3 : 3;
+	uint8_t rrt; ///< relative read throughput, see XNVME_SPEC_POWER_STATE_RRT
+	uint8_t rrl; ///< relative read latency, see XNVME_SPEC_POWER_STATE_RRL
+	uint8_t rwt; ///< relative write throughput, see XNVME_SPEC_POWER_STATE_RWT
+	uint8_t rwl; ///< relative write latency, see XNVME_SPEC_POWER_STATE_RWL
 
-	uint8_t rrl       : 5; /* bits 108:104: relative read latency */
-	uint8_t reserved4 : 3;
+	uint16_t idlp; ///< idle power, bits 143:128
 
-	uint8_t rwt       : 5; /* bits 116:112: relative write throughput */
-	uint8_t reserved5 : 3;
-
-	uint8_t rwl       : 5; /* bits 124:120: relative write latency */
-	uint8_t reserved6 : 3;
-
-	uint16_t idlp; /* bits 143:128: idle power */
-
-	uint8_t reserved7 : 6;
-	uint8_t ips       : 2; /* bits 151:150: idle power scale */
+	uint8_t ips; ///< idle power scale, see XNVME_SPEC_POWER_STATE_IPS
 
 	uint8_t reserved8;
 
-	uint16_t actp; /* bits 175:160: active power */
+	uint16_t actp; ///< active power, bits 175:160
 
-	uint8_t apw       : 3; /* bits 178:176: active power workload */
-	uint8_t reserved9 : 3;
-	uint8_t aps       : 2; /* bits 183:182: active power scale */
+	uint8_t apw_aps; ///< bits 183:176, see XNVME_SPEC_POWER_STATE_APW and _APS
 
 	uint8_t reserved10[9];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_power_state) == 32, "Incorrect size")
 
-/**
- * @struct xnvme_spec_vs_register
- */
-union xnvme_spec_vs_register {
-	struct {
-		uint32_t ter : 8;  ///< Tertiary version
-		uint32_t mnr : 8;  ///< Indicated Minor Version
-		uint32_t mjr : 16; ///< Indicated Major Version
-	} bits;
-	uint32_t val;
-};
-XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_vs_register) == 4, "Incorrect size")
+/** Maximum power scale; bit 0 of 'mxps_nops' */
+#define XNVME_SPEC_POWER_STATE_MXPS 0x1
+/** Non-operational state; bit 1 of 'mxps_nops' */
+#define XNVME_SPEC_POWER_STATE_NOPS 0x2
+/** Relative read throughput; bits 4:0 of 'rrt' */
+#define XNVME_SPEC_POWER_STATE_RRT 0x1f
+/** Relative read latency; bits 4:0 of 'rrl' */
+#define XNVME_SPEC_POWER_STATE_RRL 0x1f
+/** Relative write throughput; bits 4:0 of 'rwt' */
+#define XNVME_SPEC_POWER_STATE_RWT 0x1f
+/** Relative write latency; bits 4:0 of 'rwl' */
+#define XNVME_SPEC_POWER_STATE_RWL 0x1f
+/** Idle power scale; bits 7:6 of 'ips' */
+#define XNVME_SPEC_POWER_STATE_IPS 0xc0
+/** Active power workload; bits 2:0 of 'apw_aps' */
+#define XNVME_SPEC_POWER_STATE_APW 0x7
+/** Active power scale; bits 7:6 of 'apw_aps' */
+#define XNVME_SPEC_POWER_STATE_APS 0xc0
 
 /**
+ * NVMe over Fabrics attributes of the Identify Controller data, bytes 1792-2047
+ *
+ * @struct xnvme_spec_idfy_ctrlr_nvmf
+ */
+struct xnvme_spec_idfy_ctrlr_nvmf {
+	uint32_t ioccsz; ///< I/O queue command capsule supported size (16-byte units)
+
+	uint32_t iorcsz; ///< I/O queue response capsule supported size (16-byte units)
+
+	uint16_t icdoff; ///< In-capsule data offset (16-byte units)
+
+	uint8_t ctrattr; ///< Controller attributes, see XNVME_SPEC_IDFY_CTRLR_NVMF_CTRATTR_*
+
+	uint8_t msdbd; ///< Maximum SGL block descriptors (0 = no limit)
+
+	uint16_t ofcs; ///< Optional Fabric Commands supported, see
+		       ///< XNVME_SPEC_IDFY_CTRLR_NVMF_OFCS_*
+
+	uint8_t reserved[242];
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_ctrlr_nvmf) == 256, "Incorrect size")
+
+/** The controller model, 1 static, 0 dynamic; bit 0 of 'ctrattr' */
+#define XNVME_SPEC_IDFY_CTRLR_NVMF_CTRATTR_CTRLR_MODEL 0x1
+/** The Disconnect command is supported; bit 0 of 'ofcs' */
+#define XNVME_SPEC_IDFY_CTRLR_NVMF_OFCS_DISC_DEL 0x1
+
+/**
+ * Representation of NVMe completion result Identify Controller
+ *
+ * A field of bits is an integer of the width the specification gives it; its documentation
+ * names the bits.
+ *
  * @struct xnvme_spec_idfy_ctrlr
  */
 struct xnvme_spec_idfy_ctrlr {
@@ -921,127 +880,21 @@ struct xnvme_spec_idfy_ctrlr {
 	uint8_t rab;                         ///< Recomm. Arbitration Burst
 	uint8_t ieee[3];                     ///< IEEE OUI Identifier
 
-	/** controller multi-path I/O and namespace sharing capabilities */
-	union {
-		struct {
-			uint8_t multi_port : 1;
-			uint8_t multi_host : 1;
-			uint8_t sr_iov     : 1;
-			uint8_t ana_rprt   : 1;
-			uint8_t reserved   : 4;
-		};
-		uint8_t val;
-	} cmic;
+	uint8_t cmic; ///< Controller multi-path I/O and namespace sharing capabilities, see
+		      ///< XNVME_SPEC_IDFY_CTRLR_CMIC_*
 
-	uint8_t mdts;                     ///< Maximum Data Transfer Size
-	uint16_t cntlid;                  ///< Controller ID
-	union xnvme_spec_vs_register ver; ///< Version
+	uint8_t mdts;    ///< Maximum Data Transfer Size
+	uint16_t cntlid; ///< Controller ID
+
+	uint32_t ver; ///< Version, see XNVME_SPEC_IDFY_CTRLR_VER_*
 
 	uint32_t rtd3r; ///< RTD3 Resume Latency
 	uint32_t rtd3e; ///< RTD3 Resume Latency
 
-	/** optional asynchronous events supported */
-	union {
-		struct {
-			uint32_t reserved1             : 8;
+	uint32_t
+		oaes; ///< Optional asynchronous events supported, see XNVME_SPEC_IDFY_CTRLR_OAES_*
 
-			/** Supports sending Namespace Attribute Notices. */
-			uint32_t ns_attribute_notices  : 1;
-
-			/** Supports sending Firmware Activation Notices. */
-			uint32_t fw_activation_notices : 1;
-
-			uint32_t reserved2             : 1;
-
-			/** Supports sending Asymmetric Namespace access Change Notices. */
-			uint32_t ana_notices           : 1;
-
-			/** Supports sending Predictable Latency Event Aggregate Log Change
-			 * Notices. */
-			uint32_t pleal_notices         : 1;
-
-			/** Supports sending LBA Status Information Alert Notices. */
-			uint32_t lba_sia_notices       : 1;
-
-			/** Supports sending Endurance Group Event Aggregate Log Change Notices. */
-			uint32_t egea_notices          : 1;
-
-			/** Supports sending Normal NVM Subsystem Shutdown event. */
-			uint32_t normal_nvm_ss         : 1;
-
-			uint32_t reserved3             : 11;
-
-			/** Supports Zone Descriptor Changed Notices/Changed Zoned List log page*/
-			uint32_t zone_changes          : 1;
-
-			uint32_t reserved4             : 3;
-
-			/** Supports sending Discovery Log Page Change Notices. */
-			uint32_t discovery_log_notices : 1;
-		};
-		uint32_t val;
-	} oaes;
-
-	/** controller attributes */
-	union {
-		struct {
-			/** Supports 128-bit host identifier */
-			uint32_t host_id_exhid_supported                     : 1;
-
-			/** Supports non-operational power state permissive mode */
-			uint32_t non_operational_power_state_permissive_mode : 1;
-
-			/** Supports NVM sets */
-			uint32_t nvm_sets                                    : 1;
-
-			/** Supports Read recovery levels */
-			uint32_t read_recovery_levels                        : 1;
-
-			/** Supports endurance groups */
-			uint32_t endurance_groups                            : 1;
-
-			/** Suports predictable latency mode */
-			uint32_t predictable_latency_mode                    : 1;
-
-			/** Supports Traffic based keep alive */
-			uint32_t tbkas                                       : 1;
-
-			/** Supports Namespace granularity */
-			uint32_t namespace_granularity                       : 1;
-
-			/** Supports SQ associations */
-			uint32_t sq_associations                             : 1;
-
-			/** Supports UUID list */
-			uint32_t uuid_list                                   : 1;
-
-			/** Supports multi-domain subsystem */
-			uint32_t multi_domain_subsystem                      : 1;
-
-			/** Supports fixed capacity management */
-			uint32_t fixed_capacity_management                   : 1;
-
-			/** Supports variable capacity management */
-			uint32_t variable_capacity_management                : 1;
-
-			/** Supports delete endurance group */
-			uint32_t delete_endurance_group                      : 1;
-
-			/** Supports delete NVM set */
-			uint32_t delete_nvm_set                              : 1;
-
-			/** Supports Extended lba formats */
-			uint32_t extended_lba_formats                        : 1;
-
-			uint32_t reserved1                                   : 3;
-
-			/** Supports flexible data placement */
-			uint32_t flexible_data_placement                     : 1;
-
-			uint32_t reserved2                                   : 12;
-		};
-		uint32_t val;
-	} ctratt;
+	uint32_t ctratt; ///< Controller attributes, see XNVME_SPEC_IDFY_CTRLR_CTRATT_*
 
 	uint16_t rrls; ///< Read Recovery Levels Supported
 
@@ -1059,159 +912,32 @@ struct xnvme_spec_idfy_ctrlr {
 
 	uint8_t reserved_134[119];
 
-	/** NVM Subsystem Report */
-	union {
-		struct {
-			/* NVMe storage device */
-			uint8_t nvmesd     : 1;
+	uint8_t nvmsr; ///< NVM Subsystem Report, see XNVME_SPEC_IDFY_CTRLR_NVMSR_*
 
-			/* NVMe enclosure */
-			uint8_t nvmee      : 1;
+	uint8_t vwci; ///< VPD Write Cycle Information, see XNVME_SPEC_IDFY_CTRLR_VWCI_*
 
-			uint8_t nvmsr_rsvd : 6;
-		};
-		uint8_t val;
-	} nvmsr;
-
-	/** VPD Write Cycle Information */
-	union {
-		struct {
-			/* VPD Write Cycles Remaining */
-			uint8_t vwcr  : 7;
-
-			/* VPD Write Cycles Remaining Valid */
-			uint8_t vwcrv : 1;
-		};
-		uint8_t val;
-	} vwci;
-
-	/** Management Endpoint Capabilities */
-	union {
-		struct {
-			/* SMBus/I2C Port Management Endpoint */
-			uint8_t smbusme  : 1;
-
-			/* PCIe Port Management Endpoint */
-			uint8_t pcieme   : 1;
-
-			uint8_t mec_rsvd : 6;
-		};
-		uint8_t val;
-	} mec;
+	uint8_t mec; ///< Management Endpoint Capabilities, see XNVME_SPEC_IDFY_CTRLR_MEC_*
 
 	/* bytes 256-511: admin command set attributes */
 
-	/** optional admin command support */
-	union {
-		struct {
-			/* supports security send/receive commands */
-			uint16_t security                  : 1;
+	uint16_t oacs; ///< Optional admin command support, see XNVME_SPEC_IDFY_CTRLR_OACS_*
 
-			/* supports format nvm command */
-			uint16_t format                    : 1;
+	uint8_t acl; ///< abort command limit
 
-			/* supports firmware activate/download commands */
-			uint16_t firmware                  : 1;
+	uint8_t aerl; ///< asynchronous event request limit
 
-			/* supports ns manage/ns attach commands */
-			uint16_t ns_manage                 : 1;
+	uint8_t frmw; ///< Firmware updates, see XNVME_SPEC_IDFY_CTRLR_FRMW_*
 
-			/* supports device self test command */
-			uint16_t device_self_test          : 1;
-
-			/* supports directives */
-			uint16_t directives                : 1;
-
-			/* supports NVMe-MI Send/receive commands */
-			uint16_t nvme_mi                   : 1;
-
-			/** Supports virtualization management command */
-			uint16_t virtualization_management : 1;
-
-			/** Supports doorbell buffer config command */
-			uint16_t doorbell_buffer_config    : 1;
-
-			/** Supports Get LBA status capability */
-			uint16_t lba_status                : 1;
-
-			/** Supports command and feature lockdown capability */
-			uint16_t cmd_feature_lockdown      : 1;
-
-			uint16_t oacs_rsvd                 : 5;
-		};
-		uint16_t val;
-	} oacs;
-
-	/** abort command limit */
-	uint8_t acl;
-
-	/** asynchronous event request limit */
-	uint8_t aerl;
-
-	/** firmware updates */
-	union {
-		struct {
-			/* first slot is read-only */
-			uint8_t slot1_ro                 : 1;
-
-			/* number of firmware slots */
-			uint8_t num_slots                : 3;
-
-			/* support activation without reset */
-			uint8_t activation_without_reset : 1;
-
-			/* support multiple update detection */
-			uint8_t mul_update_detection     : 1;
-
-			uint8_t frmw_rsvd                : 2;
-		};
-		uint8_t val;
-	} frmw;
-
-	/** Log Page Attributes */
-	union {
-		struct {
-			/* per namespace smart/health log page */
-			uint8_t ns_smart  : 1;
-			/* command effects log page */
-			uint8_t celp      : 1;
-			/* extended data (32bit vs 12bit) for get log page */
-			uint8_t edlp      : 1;
-			/* telemetry log pages and notices */
-			uint8_t telemetry : 1;
-			/* Persistent event log */
-			uint8_t pel       : 1;
-			/* Miscellaneous log */
-			uint8_t mel       : 1;
-			/* Data area 4 for telemetry */
-			uint8_t tel_da4   : 1;
-
-			uint8_t lpa_rsvd  : 1;
-		};
-		uint8_t val;
-	} lpa;
+	uint8_t lpa; ///< Log Page Attributes, see XNVME_SPEC_IDFY_CTRLR_LPA_*
 
 	uint8_t elpe; ///< Error Log Page Entries
 	uint8_t npss; ///< Number of Power States Supported
 
-	/** admin vendor specific command configuration */
-	union {
-		struct {
-			/* admin vendor specific commands use disk format */
-			uint8_t spec_format : 1;
-			uint8_t avscc_rsvd  : 7;
-		};
-		uint8_t val;
-	} avscc;
+	uint8_t avscc; ///< Admin vendor specific command configuration, see
+		       ///< XNVME_SPEC_IDFY_CTRLR_AVSCC_*
 
-	/** autonomous power state transition attributes */
-	union {
-		struct {
-			uint8_t supported  : 1;
-			uint8_t apsta_rsvd : 7;
-		};
-		uint8_t val;
-	} apsta;
+	uint8_t apsta; ///< Autonomous power state transition attributes, see
+		       ///< XNVME_SPEC_IDFY_CTRLR_APSTA_*
 
 	uint16_t wctemp; ///< Warning Composite Temperature threshold
 	uint16_t cctemp; ///< Critical Composite Temperature threshold
@@ -1219,82 +945,30 @@ struct xnvme_spec_idfy_ctrlr {
 	uint32_t hmpre;  ///< Host Memory Buffer Preferred size
 	uint32_t hmmin;  ///< Host Memory Buffer Minimum size
 
-	/** total NVM capacity */
-	uint64_t tnvmcap[2];
+	uint64_t tnvmcap[2]; ///< total NVM capacity
 
-	/** unallocated NVM capacity */
-	uint64_t unvmcap[2];
+	uint64_t unvmcap[2]; ///< unallocated NVM capacity
 
-	/** replay protected memory block support */
-	union {
-		struct {
-			uint8_t num_rpmb_units : 3;
-			uint8_t auth_method    : 3;
-			uint8_t reserved1      : 2;
+	uint32_t rpmbs; ///< Replay protected memory block support, see
+			///< XNVME_SPEC_IDFY_CTRLR_RPMBS_*
 
-			uint8_t reserved2;
+	uint16_t edstt; ///< extended device self-test time (in minutes)
 
-			uint8_t total_size;
-			uint8_t access_size;
-		};
-		uint32_t val;
-	} rpmbs;
+	uint8_t dsto; ///< Device self-test options, see XNVME_SPEC_IDFY_CTRLR_DSTO_*
 
-	/** extended device self-test time (in minutes) */
-	uint16_t edstt;
+	uint8_t fwug; ///< Firmware update granularity, in 4 KiB units; 0x00 if not reported, 0xFF
+		      ///< if unrestricted
 
-	/** device self-test options */
-	union {
-		struct {
-			/** Device supports only one device self-test operation at a time */
-			uint8_t one_only : 1;
+	uint16_t kas; ///< Keep Alive Support, the timer's granularity in 100 ms units; 0 if not
+		      ///< supported
 
-			uint8_t reserved : 7;
-		} bits;
-		uint8_t val;
-	} dsto;
-
-	/**
-	 * Firmware update granularity
-	 *
-	 * 4KB units
-	 * 0x00 = no information provided
-	 * 0xFF = no restriction
-	 */
-	uint8_t fwug;
-
-	/**
-	 * Keep Alive Support
-	 *
-	 * Granularity of keep alive timer in 100 ms units
-	 * 0 = keep alive not supported
-	 */
-	uint16_t kas;
-
-	/** Host controlled thermal management attributes */
-	union {
-		struct {
-			uint16_t supported : 1;
-			uint16_t reserved  : 15;
-		} bits;
-		uint16_t val;
-	} hctma;
+	uint16_t hctma; ///< Host controlled thermal management attributes, see
+			///< XNVME_SPEC_IDFY_CTRLR_HCTMA_*
 
 	uint16_t mntmt; ///< Minimum Thermal Management Temperature
 	uint16_t mxtmt; ///< Maximum Thermal Management Temperature
 
-	/** Sanitize capabilities */
-	union {
-		struct {
-			uint32_t crypto_erase : 1;
-			uint32_t block_erase  : 1;
-			uint32_t overwrite    : 1;
-			uint32_t reserved     : 26;
-			uint32_t ndi          : 1;
-			uint32_t nodmmas      : 2;
-		} bits;
-		uint32_t val;
-	} sanicap;
+	uint32_t sanicap; ///< Sanitize capabilities, see XNVME_SPEC_IDFY_CTRLR_SANICAP_*
 
 	uint32_t hmminds; ///< Host Memory Buffer Minimum Descriptor Entry Size
 	uint16_t hmmaxd;  ///< Host Memory Maximum Descriptor Entries
@@ -1304,20 +978,8 @@ struct xnvme_spec_idfy_ctrlr {
 
 	uint8_t anatt; ///< ANA Transition Time
 
-	/** Asymmetric Namespace Access capabilities */
-	union {
-		struct {
-			uint8_t optimize     : 1;
-			uint8_t non_optimize : 1;
-			uint8_t inaccessible : 1;
-			uint8_t persist_loss : 1;
-			uint8_t change       : 1;
-			uint8_t reserved1    : 1;
-			uint8_t ns_anagrpid  : 1;
-			uint8_t mgt_anagrpid : 1;
-		} bits;
-		uint8_t val;
-	} anacap;
+	uint8_t anacap; ///< Asymmetric Namespace Access capabilities, see
+			///< XNVME_SPEC_IDFY_CTRLR_ANACAP_*
 
 	uint32_t anagrpmax; ///< ANA Group Identifier Maximum
 	uint32_t nanagrpid; ///< Number of ANA Group Identifiers
@@ -1334,68 +996,21 @@ struct xnvme_spec_idfy_ctrlr {
 
 	/* bytes 512-703: nvm command set attributes */
 
-	/** submission queue entry size */
-	union {
-		struct {
-			uint8_t min : 4;
-			uint8_t max : 4;
-		};
-		uint8_t val;
-	} sqes;
+	uint8_t sqes; ///< Submission queue entry size, see XNVME_SPEC_IDFY_CTRLR_SQES_*
 
-	/** completion queue entry size */
-	union {
-		struct {
-			uint8_t min : 4;
-			uint8_t max : 4;
-		};
-		uint8_t val;
-	} cqes;
+	uint8_t cqes; ///< Completion queue entry size, see XNVME_SPEC_IDFY_CTRLR_CQES_*
 
 	uint16_t maxcmd;
 
 	uint32_t nn; ///< Number of Namespaces
 
-	/** optional nvm command support */
-	union {
-		struct {
-			uint16_t compare           : 1;
-			uint16_t write_unc         : 1;
-			uint16_t dsm               : 1;
-			uint16_t write_zeroes      : 1;
-			uint16_t set_features_save : 1;
-			uint16_t reservations      : 1;
-			uint16_t timestamp         : 1;
-			uint16_t verify            : 1;
-			uint16_t copy              : 1;
-			uint16_t reserved          : 7;
-		};
-		uint16_t val;
-	} oncs;
+	uint16_t oncs; ///< Optional NVM command support, see XNVME_SPEC_IDFY_CTRLR_ONCS_*
 
 	uint16_t fuses; ///< Fused Operation Support
 
-	/** format nvm attributes */
-	union {
-		struct {
-			uint8_t format_all_ns          : 1;
-			uint8_t erase_all_ns           : 1;
-			uint8_t crypto_erase_supported : 1;
-			uint8_t nsid_ffffffff          : 1;
-			uint8_t reserved               : 4;
-		};
-		uint8_t val;
-	} fna;
+	uint8_t fna; ///< Format NVM attributes, see XNVME_SPEC_IDFY_CTRLR_FNA_*
 
-	/** volatile write cache */
-	union {
-		struct {
-			uint8_t present         : 1;
-			uint8_t flush_broadcast : 2;
-			uint8_t reserved        : 5;
-		};
-		uint8_t val;
-	} vwc;
+	uint8_t vwc; ///< Volatile write cache, see XNVME_SPEC_IDFY_CTRLR_VWC_*
 
 	uint16_t awun;  ///< Atomic Write Unit Normal
 	uint16_t awupf; ///< Atomic Write Unit Power Fail
@@ -1405,33 +1020,9 @@ struct xnvme_spec_idfy_ctrlr {
 
 	uint16_t acwu; ///< atomic compare & write unit
 
-	/** Copy descriptors formats supported */
-	union {
-		struct {
-			uint16_t format0  : 1;
-			uint16_t format1  : 1;
-			uint16_t reserved : 14;
-		};
-		uint16_t val;
-	} cdfs;
+	uint16_t cdfs; ///< Copy descriptor formats supported, see XNVME_SPEC_IDFY_CTRLR_CDFS_*
 
-	/** SGL support */
-	union {
-		struct {
-			uint32_t supported             : 2;
-			uint32_t keyed_sgl             : 1;
-			uint32_t reserved1             : 5;
-			uint32_t sgl_desc_threshold    : 8;
-			uint32_t bit_bucket_descriptor : 1;
-			uint32_t metadata_pointer      : 1;
-			uint32_t oversized_sgl         : 1;
-			uint32_t metadata_address      : 1;
-			uint32_t sgl_offset            : 1;
-			uint32_t transport_sgl         : 1;
-			uint32_t reserved2             : 10;
-		};
-		uint32_t val;
-	} sgls;
+	uint32_t sgls; ///< SGL support, see XNVME_SPEC_IDFY_CTRLR_SGLS_*
 
 	uint32_t mnan; ///< Maximum Number of Allowed Namespaces
 
@@ -1444,34 +1035,7 @@ struct xnvme_spec_idfy_ctrlr {
 
 	uint8_t reserved_1024[768];
 
-	/** NVMe over Fabrics-specific fields */
-	struct {
-		/** I/O queue command capsule supported size (16-byte units) */
-		uint32_t ioccsz;
-
-		/** I/O queue response capsule supported size (16-byte units) */
-		uint32_t iorcsz;
-
-		/** In-capsule data offset (16-byte units) */
-		uint16_t icdoff;
-
-		/** Controller attributes */
-		struct {
-			uint8_t ctrlr_model : 1;
-			uint8_t reserved    : 7;
-		} ctrattr;
-
-		/** Maximum SGL block descriptors (0 = no limit) */
-		uint8_t msdbd;
-
-		/** Optional Fabric Commands supported */
-		struct {
-			uint16_t disc_del : 1;
-			uint16_t reserved : 15;
-		} ofcs;
-
-		uint8_t reserved[242];
-	} nvmf_specific;
+	struct xnvme_spec_idfy_ctrlr_nvmf nvmf_specific; ///< NVMe over Fabrics-specific fields
 
 	/* bytes 2048-3071: power state descriptors */
 	struct xnvme_spec_power_state psd[32];
@@ -1481,6 +1045,229 @@ struct xnvme_spec_idfy_ctrlr {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_ctrlr) == 4096, "Incorrect size")
 
+/** Multiple ports; bit 0 of 'cmic' */
+#define XNVME_SPEC_IDFY_CTRLR_CMIC_MULTI_PORT 0x1
+/** Multiple hosts; bit 1 of 'cmic' */
+#define XNVME_SPEC_IDFY_CTRLR_CMIC_MULTI_HOST 0x2
+/** SR-IOV; bit 2 of 'cmic' */
+#define XNVME_SPEC_IDFY_CTRLR_CMIC_SR_IOV 0x4
+/** Asymmetric namespace access reporting; bit 3 of 'cmic' */
+#define XNVME_SPEC_IDFY_CTRLR_CMIC_ANA_RPRT 0x8
+/** Tertiary version; bits 7:0 of 'ver' */
+#define XNVME_SPEC_IDFY_CTRLR_VER_TER 0xff
+/** Minor version; bits 15:8 of 'ver' */
+#define XNVME_SPEC_IDFY_CTRLR_VER_MNR 0xff00
+/** Major version; bits 31:16 of 'ver' */
+#define XNVME_SPEC_IDFY_CTRLR_VER_MJR 0xffff0000
+/** Namespace Attribute Notices; bit 8 of 'oaes' */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_NS_ATTRIBUTE_NOTICES 0x100
+/** Firmware Activation Notices; bit 9 of 'oaes' */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_FW_ACTIVATION_NOTICES 0x200
+/** Asymmetric Namespace Access Change Notices; bit 11 of 'oaes' */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_ANA_NOTICES 0x800
+/** Predictable Latency Event Aggregate Log Change Notices; bit 12 of 'oaes' */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_PLEAL_NOTICES 0x1000
+/** LBA Status Information Alert Notices; bit 13 of 'oaes' */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_LBA_SIA_NOTICES 0x2000
+/** Endurance Group Event Aggregate Log Change Notices; bit 14 of 'oaes' */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_EGEA_NOTICES 0x4000
+/** Normal NVM Subsystem Shutdown event; bit 15 of 'oaes' */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_NORMAL_NVM_SS 0x8000
+/** Zone Descriptor Changed Notices, and the Changed Zone List log page; bit 27 of 'oaes' */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_ZONE_CHANGES 0x8000000
+/** Discovery Log Page Change Notices; bit 31 of 'oaes' */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_DISCOVERY_LOG_NOTICES 0x80000000
+/** 128-bit host identifier; bit 0 of 'ctratt' */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_HOST_ID_EXHID_SUPPORTED 0x1
+/** Non-operational power state permissive mode; bit 1 of 'ctratt' */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_NON_OPERATIONAL_POWER_STATE_PERMISSIVE_MODE 0x2
+/** NVM sets; bit 2 of 'ctratt' */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_NVM_SETS 0x4
+/** Read recovery levels; bit 3 of 'ctratt' */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_READ_RECOVERY_LEVELS 0x8
+/** Endurance groups; bit 4 of 'ctratt' */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_ENDURANCE_GROUPS 0x10
+/** Predictable latency mode; bit 5 of 'ctratt' */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_PREDICTABLE_LATENCY_MODE 0x20
+/** Traffic based keep alive; bit 6 of 'ctratt' */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_TBKAS 0x40
+/** Namespace granularity; bit 7 of 'ctratt' */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_NAMESPACE_GRANULARITY 0x80
+/** SQ associations; bit 8 of 'ctratt' */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_SQ_ASSOCIATIONS 0x100
+/** UUID list; bit 9 of 'ctratt' */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_UUID_LIST 0x200
+/** Multi-domain subsystem; bit 10 of 'ctratt' */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_MULTI_DOMAIN_SUBSYSTEM 0x400
+/** Fixed capacity management; bit 11 of 'ctratt' */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_FIXED_CAPACITY_MANAGEMENT 0x800
+/** Variable capacity management; bit 12 of 'ctratt' */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_VARIABLE_CAPACITY_MANAGEMENT 0x1000
+/** Delete endurance group; bit 13 of 'ctratt' */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_DELETE_ENDURANCE_GROUP 0x2000
+/** Delete NVM set; bit 14 of 'ctratt' */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_DELETE_NVM_SET 0x4000
+/** Extended LBA formats; bit 15 of 'ctratt' */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_EXTENDED_LBA_FORMATS 0x8000
+/** Flexible data placement; bit 19 of 'ctratt' */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_FLEXIBLE_DATA_PLACEMENT 0x80000
+/** NVMe storage device; bit 0 of 'nvmsr' */
+#define XNVME_SPEC_IDFY_CTRLR_NVMSR_NVMESD 0x1
+/** NVMe enclosure; bit 1 of 'nvmsr' */
+#define XNVME_SPEC_IDFY_CTRLR_NVMSR_NVMEE 0x2
+/** VPD write cycles remaining; bits 6:0 of 'vwci' */
+#define XNVME_SPEC_IDFY_CTRLR_VWCI_VWCR 0x7f
+/** The VPD write cycles remaining are valid; bit 7 of 'vwci' */
+#define XNVME_SPEC_IDFY_CTRLR_VWCI_VWCRV 0x80
+/** SMBus/I2C port management endpoint; bit 0 of 'mec' */
+#define XNVME_SPEC_IDFY_CTRLR_MEC_SMBUSME 0x1
+/** PCIe port management endpoint; bit 1 of 'mec' */
+#define XNVME_SPEC_IDFY_CTRLR_MEC_PCIEME 0x2
+/** Security send and receive; bit 0 of 'oacs' */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_SECURITY 0x1
+/** Format NVM; bit 1 of 'oacs' */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_FORMAT 0x2
+/** Firmware commit and image download; bit 2 of 'oacs' */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_FIRMWARE 0x4
+/** Namespace management and attachment; bit 3 of 'oacs' */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_NS_MANAGE 0x8
+/** Device self-test; bit 4 of 'oacs' */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_DEVICE_SELF_TEST 0x10
+/** Directives; bit 5 of 'oacs' */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_DIRECTIVES 0x20
+/** NVMe-MI send and receive; bit 6 of 'oacs' */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_NVME_MI 0x40
+/** Virtualization management; bit 7 of 'oacs' */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_VIRTUALIZATION_MANAGEMENT 0x80
+/** Doorbell buffer config; bit 8 of 'oacs' */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_DOORBELL_BUFFER_CONFIG 0x100
+/** Get LBA status; bit 9 of 'oacs' */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_LBA_STATUS 0x200
+/** Command and feature lockdown; bit 10 of 'oacs' */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_CMD_FEATURE_LOCKDOWN 0x400
+/** The first firmware slot is read-only; bit 0 of 'frmw' */
+#define XNVME_SPEC_IDFY_CTRLR_FRMW_SLOT1_RO 0x1
+/** The number of firmware slots; bits 3:1 of 'frmw' */
+#define XNVME_SPEC_IDFY_CTRLR_FRMW_NUM_SLOTS 0xe
+/** Activation without reset; bit 4 of 'frmw' */
+#define XNVME_SPEC_IDFY_CTRLR_FRMW_ACTIVATION_WITHOUT_RESET 0x10
+/** Multiple update detection; bit 5 of 'frmw' */
+#define XNVME_SPEC_IDFY_CTRLR_FRMW_MUL_UPDATE_DETECTION 0x20
+/** Per namespace SMART / health log page; bit 0 of 'lpa' */
+#define XNVME_SPEC_IDFY_CTRLR_LPA_NS_SMART 0x1
+/** Commands supported and effects log page; bit 1 of 'lpa' */
+#define XNVME_SPEC_IDFY_CTRLR_LPA_CELP 0x2
+/** Extended data for get log page; bit 2 of 'lpa' */
+#define XNVME_SPEC_IDFY_CTRLR_LPA_EDLP 0x4
+/** Telemetry log pages and notices; bit 3 of 'lpa' */
+#define XNVME_SPEC_IDFY_CTRLR_LPA_TELEMETRY 0x8
+/** Persistent event log; bit 4 of 'lpa' */
+#define XNVME_SPEC_IDFY_CTRLR_LPA_PEL 0x10
+/** Miscellaneous log; bit 5 of 'lpa' */
+#define XNVME_SPEC_IDFY_CTRLR_LPA_MEL 0x20
+/** Telemetry data area 4; bit 6 of 'lpa' */
+#define XNVME_SPEC_IDFY_CTRLR_LPA_TEL_DA4 0x40
+/** Admin vendor specific commands use the format of the specification; bit 0 of 'avscc' */
+#define XNVME_SPEC_IDFY_CTRLR_AVSCC_SPEC_FORMAT 0x1
+/** Autonomous power state transitions are supported; bit 0 of 'apsta' */
+#define XNVME_SPEC_IDFY_CTRLR_APSTA_SUPPORTED 0x1
+/** Number of RPMB units; bits 2:0 of 'rpmbs' */
+#define XNVME_SPEC_IDFY_CTRLR_RPMBS_NUM_RPMB_UNITS 0x7
+/** Authentication method; bits 5:3 of 'rpmbs' */
+#define XNVME_SPEC_IDFY_CTRLR_RPMBS_AUTH_METHOD 0x38
+/** Total size; bits 23:16 of 'rpmbs' */
+#define XNVME_SPEC_IDFY_CTRLR_RPMBS_TOTAL_SIZE 0xff0000
+/** Access size; bits 31:24 of 'rpmbs' */
+#define XNVME_SPEC_IDFY_CTRLR_RPMBS_ACCESS_SIZE 0xff000000
+/** Only one device self-test operation at a time; bit 0 of 'dsto' */
+#define XNVME_SPEC_IDFY_CTRLR_DSTO_ONE_ONLY 0x1
+/** Host controlled thermal management is supported; bit 0 of 'hctma' */
+#define XNVME_SPEC_IDFY_CTRLR_HCTMA_SUPPORTED 0x1
+/** Crypto erase; bit 0 of 'sanicap' */
+#define XNVME_SPEC_IDFY_CTRLR_SANICAP_CRYPTO_ERASE 0x1
+/** Block erase; bit 1 of 'sanicap' */
+#define XNVME_SPEC_IDFY_CTRLR_SANICAP_BLOCK_ERASE 0x2
+/** Overwrite; bit 2 of 'sanicap' */
+#define XNVME_SPEC_IDFY_CTRLR_SANICAP_OVERWRITE 0x4
+/** No-deallocate inhibited; bit 29 of 'sanicap' */
+#define XNVME_SPEC_IDFY_CTRLR_SANICAP_NDI 0x20000000
+/** No-deallocate modifies media after sanitize; bits 31:30 of 'sanicap' */
+#define XNVME_SPEC_IDFY_CTRLR_SANICAP_NODMMAS 0xc0000000
+/** ANA optimized state; bit 0 of 'anacap' */
+#define XNVME_SPEC_IDFY_CTRLR_ANACAP_OPTIMIZE 0x1
+/** ANA non-optimized state; bit 1 of 'anacap' */
+#define XNVME_SPEC_IDFY_CTRLR_ANACAP_NON_OPTIMIZE 0x2
+/** ANA inaccessible state; bit 2 of 'anacap' */
+#define XNVME_SPEC_IDFY_CTRLR_ANACAP_INACCESSIBLE 0x4
+/** ANA persistent loss state; bit 3 of 'anacap' */
+#define XNVME_SPEC_IDFY_CTRLR_ANACAP_PERSIST_LOSS 0x8
+/** ANA change state; bit 4 of 'anacap' */
+#define XNVME_SPEC_IDFY_CTRLR_ANACAP_CHANGE 0x10
+/** The ANAGRPID does not change while the namespace is attached; bit 6 of 'anacap' */
+#define XNVME_SPEC_IDFY_CTRLR_ANACAP_NS_ANAGRPID 0x40
+/** A non-zero ANAGRPID is supported by namespace management; bit 7 of 'anacap' */
+#define XNVME_SPEC_IDFY_CTRLR_ANACAP_MGT_ANAGRPID 0x80
+/** The minimum submission queue entry size, as a power of two; bits 3:0 of 'sqes' */
+#define XNVME_SPEC_IDFY_CTRLR_SQES_MIN 0xf
+/** The maximum submission queue entry size, as a power of two; bits 7:4 of 'sqes' */
+#define XNVME_SPEC_IDFY_CTRLR_SQES_MAX 0xf0
+/** The minimum completion queue entry size, as a power of two; bits 3:0 of 'cqes' */
+#define XNVME_SPEC_IDFY_CTRLR_CQES_MIN 0xf
+/** The maximum completion queue entry size, as a power of two; bits 7:4 of 'cqes' */
+#define XNVME_SPEC_IDFY_CTRLR_CQES_MAX 0xf0
+/** Compare; bit 0 of 'oncs' */
+#define XNVME_SPEC_IDFY_CTRLR_ONCS_COMPARE 0x1
+/** Write uncorrectable; bit 1 of 'oncs' */
+#define XNVME_SPEC_IDFY_CTRLR_ONCS_WRITE_UNC 0x2
+/** Dataset management; bit 2 of 'oncs' */
+#define XNVME_SPEC_IDFY_CTRLR_ONCS_DSM 0x4
+/** Write zeroes; bit 3 of 'oncs' */
+#define XNVME_SPEC_IDFY_CTRLR_ONCS_WRITE_ZEROES 0x8
+/** The save field of set features; bit 4 of 'oncs' */
+#define XNVME_SPEC_IDFY_CTRLR_ONCS_SET_FEATURES_SAVE 0x10
+/** Reservations; bit 5 of 'oncs' */
+#define XNVME_SPEC_IDFY_CTRLR_ONCS_RESERVATIONS 0x20
+/** Timestamp; bit 6 of 'oncs' */
+#define XNVME_SPEC_IDFY_CTRLR_ONCS_TIMESTAMP 0x40
+/** Verify; bit 7 of 'oncs' */
+#define XNVME_SPEC_IDFY_CTRLR_ONCS_VERIFY 0x80
+/** Copy; bit 8 of 'oncs' */
+#define XNVME_SPEC_IDFY_CTRLR_ONCS_COPY 0x100
+/** A format applies to all namespaces; bit 0 of 'fna' */
+#define XNVME_SPEC_IDFY_CTRLR_FNA_FORMAT_ALL_NS 0x1
+/** A secure erase applies to all namespaces; bit 1 of 'fna' */
+#define XNVME_SPEC_IDFY_CTRLR_FNA_ERASE_ALL_NS 0x2
+/** Cryptographic erase is supported; bit 2 of 'fna' */
+#define XNVME_SPEC_IDFY_CTRLR_FNA_CRYPTO_ERASE_SUPPORTED 0x4
+/** A format of NSID FFFFFFFFh is supported; bit 3 of 'fna' */
+#define XNVME_SPEC_IDFY_CTRLR_FNA_NSID_FFFFFFFF 0x8
+/** A volatile write cache is present; bit 0 of 'vwc' */
+#define XNVME_SPEC_IDFY_CTRLR_VWC_PRESENT 0x1
+/** Flush with NSID FFFFFFFFh; bits 2:1 of 'vwc' */
+#define XNVME_SPEC_IDFY_CTRLR_VWC_FLUSH_BROADCAST 0x6
+/** Copy descriptor format 0; bit 0 of 'cdfs' */
+#define XNVME_SPEC_IDFY_CTRLR_CDFS_FORMAT0 0x1
+/** Copy descriptor format 1; bit 1 of 'cdfs' */
+#define XNVME_SPEC_IDFY_CTRLR_CDFS_FORMAT1 0x2
+/** SGLs are supported, and their alignment; bits 1:0 of 'sgls' */
+#define XNVME_SPEC_IDFY_CTRLR_SGLS_SUPPORTED 0x3
+/** Keyed SGL data block descriptor; bit 2 of 'sgls' */
+#define XNVME_SPEC_IDFY_CTRLR_SGLS_KEYED_SGL 0x4
+/** SGL descriptor threshold; bits 15:8 of 'sgls' */
+#define XNVME_SPEC_IDFY_CTRLR_SGLS_SGL_DESC_THRESHOLD 0xff00
+/** SGL bit bucket descriptor; bit 16 of 'sgls' */
+#define XNVME_SPEC_IDFY_CTRLR_SGLS_BIT_BUCKET_DESCRIPTOR 0x10000
+/** Byte aligned contiguous metadata pointer; bit 17 of 'sgls' */
+#define XNVME_SPEC_IDFY_CTRLR_SGLS_METADATA_POINTER 0x20000
+/** SGL data longer than the data; bit 18 of 'sgls' */
+#define XNVME_SPEC_IDFY_CTRLR_SGLS_OVERSIZED_SGL 0x40000
+/** MPTR as an address of an SGL segment; bit 19 of 'sgls' */
+#define XNVME_SPEC_IDFY_CTRLR_SGLS_METADATA_ADDRESS 0x80000
+/** Address as an offset; bit 20 of 'sgls' */
+#define XNVME_SPEC_IDFY_CTRLR_SGLS_SGL_OFFSET 0x100000
+/** Transport SGL data block descriptor; bit 21 of 'sgls' */
+#define XNVME_SPEC_IDFY_CTRLR_SGLS_TRANSPORT_SGL 0x200000
+
 /**
  * Representation of I/O Command Set Vector
  *
@@ -1489,17 +1276,16 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_ctrlr) == 4096, "Incorrect siz
  * @struct xnvme_spec_cs_vector
  */
 struct xnvme_spec_cs_vector {
-	union {
-		struct {
-			uint64_t nvm  : 1;
-			uint64_t kv   : 1;
-			uint64_t zns  : 1;
-			uint64_t rsvd : 61;
-		};
-		uint64_t val;
-	};
+	uint64_t val; ///< The command sets of the combination, see XNVME_SPEC_CS_VECTOR_*
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cs_vector) == 8, "Incorrect size")
+
+/** The NVM command set; bit 0 of 'val' */
+#define XNVME_SPEC_CS_VECTOR_NVM 0x1
+/** The Key Value command set; bit 1 of 'val' */
+#define XNVME_SPEC_CS_VECTOR_KV 0x2
+/** The Zoned Namespace command set; bit 2 of 'val' */
+#define XNVME_SPEC_CS_VECTOR_ZNS 0x4
 
 #define XNVME_SPEC_IDFY_CS_IOCSC_LEN 512
 
@@ -1511,8 +1297,8 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cs_vector) == 8, "Incorrect size")
  * @struct xnvme_spec_idfy_cs
  */
 struct xnvme_spec_idfy_cs {
-	// I/O Command Set Combinations
-	struct xnvme_spec_cs_vector iocsc[XNVME_SPEC_IDFY_CS_IOCSC_LEN];
+	struct xnvme_spec_cs_vector
+		iocsc[XNVME_SPEC_IDFY_CS_IOCSC_LEN]; ///< I/O Command Set Combinations
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_cs) == 4096, "Incorrect size")
 

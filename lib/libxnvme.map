@@ -244,7 +244,7 @@
 		xnvme_spec_nvm_ns_pif;
 		xnvme_spec_elbaf;
 		xnvme_spec_power_state;
-		xnvme_spec_vs_register;
+		xnvme_spec_idfy_ctrlr_nvmf;
 		xnvme_spec_idfy_ctrlr;
 		xnvme_spec_cs_vector;
 		xnvme_spec_idfy_cs;

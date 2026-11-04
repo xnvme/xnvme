@@ -98,6 +98,30 @@ C: API
     instrumentation of not just the logic of the tool but also the library
     backend
 
+C: Fields of bits
+-----------------
+
+A field of bits in a structure of the specification, such as ``flbas`` of
+the Identify Namespace data, is an integer of the width the specification
+gives it, not a C bit-field, whose layout is the compiler's choice.
+
+* Each of its fields is named by a mask, a ``#define`` of the bits in their
+  place, read and written with ``xnvme_bits_get()`` and ``xnvme_bits_set()``
+* The mask is named ``XNVME_SPEC_<STRUCT>_<FIELD>_<NAME>``: the structure
+  without its ``xnvme_spec_`` prefix, the integer, and the name the
+  specification gives the bits, such as
+  ``XNVME_SPEC_IDFY_NS_FLBAS_FORMAT`` for bits 3:0 of ``flbas``
+* The masks follow the structure they belong to, in the order of its
+  integers, and of the bits within each
+* Each mask has a doc comment saying what the bits are, then where they
+  are: ``/** <what>; bits <hi>:<lo> of '<field>' */``, or ``bit <n>`` for
+  one bit
+* The integer's own doc comment names them: ``///< <what>, see
+  XNVME_SPEC_<STRUCT>_<FIELD>_*``
+* ``tests/spec.c`` checks, for each integer, that the structure still has it
+  and that its masks fit its width, so a field renamed or narrowed without its
+  masks fails the build; a new field of bits gets a line there
+
 C: Code organisation
 --------------------
 

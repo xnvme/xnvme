@@ -40,11 +40,11 @@ sub_support(struct xnvme_cli *cli)
 	xnvme_spec_idfy_ctrlr_pr(ctrlr, XNVME_PR_DEF);
 	xnvme_spec_idfy_ns_pr(ns, XNVME_PR_DEF);
 
-	if (!ctrlr->oncs.copy) {
+	if (!xnvme_bits_get(ctrlr->oncs, XNVME_SPEC_IDFY_CTRLR_ONCS_COPY)) {
 		err = -ENOSYS;
-		xnvme_cli_perr("!ctrlr->oncs.copy", -err);
+		xnvme_cli_perr("!XNVME_SPEC_IDFY_CTRLR_ONCS_COPY", -err);
 	}
-	if (!ctrlr->cdfs.format0) {
+	if (!xnvme_bits_get(ctrlr->cdfs, XNVME_SPEC_IDFY_CTRLR_CDFS_FORMAT0)) {
 		err = -ENOSYS;
 		xnvme_cli_perr("!ctrlr->ocfs.copy_fmt0", -err);
 	}
