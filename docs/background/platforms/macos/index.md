@@ -32,13 +32,13 @@ interfaces, descriptions are available in the corresponding subsections.
 * Memory Allocators
 
   - `posix`, Use **libc** `malloc()/free()` with `sysconf()` for
-    alignment, add link to the cross-platform section
+    alignment, see {ref}`sec-backends-common`
 
 * Asynchronous Interfaces
 
-  - `emu`, add link to the cross-platform section
-  - `posix`, add link to the cross-platform section
-  - `thrpool`, add link to the cross-platform section
+  - `emu`, see {ref}`sec-backends-common-async-emu`
+  - `posix`, see {ref}`sec-backends-common-async-posix`
+  - `thrpool`, see {ref}`sec-backends-common-async-thrpool`
 
 * Synchronous Interfaces
 

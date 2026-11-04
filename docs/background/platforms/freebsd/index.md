@@ -67,15 +67,15 @@ interfaces, descriptions are available in the corresponding subsections.
 * Memory Allocators
 
   - `posix`, Use **libc** `malloc()/free()` with `sysconf()` for
-    alignment, add link to the cross-platform section
+    alignment, see {ref}`sec-backends-common`
 
 * Asynchronous Interfaces
 
   - `kqueue`, Use kqueue based aio for Asynchronous I/O
-  - `posix`, add link to the cross-platform section
-  - `emu`, add link to the cross-platform section
-  - `thrpool`, add link to the cross-platform section
-  - `nil`, add link to the cross-platform section
+  - `posix`, see {ref}`sec-backends-common-async-posix`
+  - `emu`, see {ref}`sec-backends-common-async-emu`
+  - `thrpool`, see {ref}`sec-backends-common-async-thrpool`
+  - `nil`, see {ref}`sec-backends-common-async-nil`
 
 * Synchronous Interfaces
 

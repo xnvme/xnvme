@@ -38,8 +38,8 @@ interfaces, descriptions are available in the corresponding subsections.
   - `iocp`, Use Windows readfile/writefile with overlapped(iocp) for Asynchronous I/O
   - `iocp_th`, Use Windows readfile/writefile with thread based overlapped(iocp) for Asynchronous I/O
   - `io_ring`, Use Windows io_ring for Asynchronous I/O
-  - `emu`, add link to the cross-platform section
-  - `thrpool`, add link to the cross-platform section
+  - `emu`, see {ref}`sec-backends-common-async-emu`
+  - `thrpool`, see {ref}`sec-backends-common-async-thrpool`
 
 * Synchronous Interfaces
 

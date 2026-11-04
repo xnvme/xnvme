@@ -53,7 +53,7 @@ interfaces, descriptions are available in the corresponding subsection.
 * Memory Allocators
 
   - `posix`, Use **libc** `malloc()/free()` with `sysconf()` for
-    alignment, add link to the cross-platform section
+    alignment, see {ref}`sec-backends-common`
   - `hugepage`, Pre-allocated hugepage heap using uPCIe's `hostmem` library.
     Defaults to `memfd_create(MFD_HUGETLB)` (no filesystem mount required).
     Pages are pinned and physical addresses resolved at initialization.
@@ -73,10 +73,10 @@ interfaces, descriptions are available in the corresponding subsection.
   - `io_uring_cmd`, Use Linux io_uring passthru command for Asynchronous I/O
   - `io_uring_dmabuf`, Use Linux io_uring for Asynchronous I/O on GPU memory
     registered as `dma-buf`. See {ref}`sec-platforms-linux-async-io_uring_dmabuf`.
-  - `emu`, add link to the cross-platform section
-  - `posix`, add link to the cross-platform section
-  - `thrpool`, add link to the cross-platform section
-  - `nil`, add link to the cross-platform section
+  - `emu`, see {ref}`sec-backends-common-async-emu`
+  - `posix`, see {ref}`sec-backends-common-async-posix`
+  - `thrpool`, see {ref}`sec-backends-common-async-thrpool`
+  - `nil`, see {ref}`sec-backends-common-async-nil`
 
 * Synchronous Interfaces
 
