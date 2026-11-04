@@ -53,7 +53,7 @@ xnvme_be_driverkit_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbyt
 		return -EIO;
 	}
 
-	memcpy(&ctx->cpl, cmd_return.cpl, sizeof(struct xnvme_spec_cpl));
+	memcpy(&ctx->cpl, cmd_return.cpl, sizeof(struct xnvme_spec_cqe));
 	return 0;
 }
 

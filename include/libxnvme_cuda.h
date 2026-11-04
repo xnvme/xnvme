@@ -162,12 +162,12 @@ xnvme_cuda_sq_update(struct xnvme_cuda_queue *qp, uint16_t increment)
  * @return 0 on success, -EAGAIN on timeout
  */
 static inline __device__ int
-xnvme_cuda_reap_at_i(struct xnvme_cuda_queue *qp, int timeout_ms, struct xnvme_spec_cpl *cpl,
+xnvme_cuda_reap_at_i(struct xnvme_cuda_queue *qp, int timeout_ms, struct xnvme_spec_cqe *cpl,
 		     uint16_t offset)
 {
-	volatile struct xnvme_spec_cpl *cq = (volatile struct xnvme_spec_cpl *)qp->cq;
+	volatile struct xnvme_spec_cqe *cq = (volatile struct xnvme_spec_cqe *)qp->cq;
 	uint16_t index                     = (qp->head + offset) % qp->depth;
-	volatile struct xnvme_spec_cpl *cqe;
+	volatile struct xnvme_spec_cqe *cqe;
 	// If this thread's entry is past the CQ wrap point, the controller will
 	// have already flipped its phase tag for that entry.
 	uint8_t expected_phase =
@@ -255,7 +255,7 @@ static inline __device__ int
 xnvme_cuda_cmd_io(struct xnvme_cuda_queue *qp, struct xnvme_spec_cmd *cmd, size_t tid,
 		  size_t batch_size)
 {
-	struct xnvme_spec_cpl cpl = {0};
+	struct xnvme_spec_cqe cpl = {0};
 	int err                   = 0;
 
 	if (tid < batch_size) {

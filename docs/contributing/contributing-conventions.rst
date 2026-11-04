@@ -65,7 +65,7 @@ C: API
   - A function replaced for any of these keeps working, as a ``static
     inline`` in ``libxnvme_compat.h`` calling its replacement, and in a
     debug build warning that it is deprecated, until a later release
-    removes it
+    removes it; a renamed type keeps its old name there as a ``#define``
   - Who owns the memory decides the signature. Memory the caller owns is
     filled through an output argument, with 0 or negative ``errno``
     returned, as ``xnvme_dev_get_cmd_ctx(dev, &ctx)`` does. Memory the

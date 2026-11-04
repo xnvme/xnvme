@@ -48,7 +48,7 @@ xnvmeperf_cuda_kernel_run(struct xnvme_cuda_queue **qps, struct xnvme_spec_cmd *
 {
 	struct xnvme_cuda_queue *qp;
 	struct xnvme_spec_cmd cmd;
-	struct xnvme_spec_cpl cpl = {0};
+	struct xnvme_spec_cqe cpl = {0};
 	uint64_t cap, offset, seed, completed = 0, failed = 0;
 	uint32_t nsubmitted = 0;
 	__shared__ int s_stop;

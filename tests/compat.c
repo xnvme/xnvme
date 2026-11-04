@@ -7,6 +7,9 @@
 #include <string.h>
 #include <libxnvme.h>
 
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cpl) == sizeof(struct xnvme_spec_cqe),
+		    "struct xnvme_spec_cpl names struct xnvme_spec_cqe")
+
 static int
 sub_deprecated(struct xnvme_cli *XNVME_UNUSED(cli))
 {

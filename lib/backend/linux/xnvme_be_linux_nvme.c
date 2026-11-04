@@ -80,7 +80,7 @@ struct _kernel_cpl {
 		} res64;
 	};
 };
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cpl) == sizeof(struct _kernel_cpl), "Incorrect size")
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cqe) == sizeof(struct _kernel_cpl), "Incorrect size")
 
 int
 xnvme_be_linux_nvme_map_cpl(struct xnvme_cmd_ctx *ctx, unsigned long ioctl_req, int res)

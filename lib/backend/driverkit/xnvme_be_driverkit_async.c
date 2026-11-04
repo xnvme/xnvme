@@ -109,7 +109,7 @@ xnvme_be_driverkit_queue_poke(struct xnvme_queue *queue, uint32_t XNVME_UNUSED(m
 	}
 	while ((queue_ret = queue_dequeue(q->cq_queue, &nvme_cmd)) == 0) {
 		ctx = (struct xnvme_cmd_ctx *)nvme_cmd.backend_opaque;
-		memcpy(&ctx->cpl, nvme_cmd.cpl, sizeof(struct xnvme_spec_cpl));
+		memcpy(&ctx->cpl, nvme_cmd.cpl, sizeof(struct xnvme_spec_cqe));
 		ctx->async.cb(ctx, ctx->async.cb_arg);
 
 		reaped += 1;

@@ -21,7 +21,7 @@
 #include <xnvme_be_state.h>
 
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd) == sizeof(struct nvme_command), "Incorrect size")
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cpl) == sizeof(struct nvme_completion),
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cqe) == sizeof(struct nvme_completion),
 		    "Incorrect size")
 
 static int
