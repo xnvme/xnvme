@@ -111,6 +111,33 @@
 
 #define XNVME_SIZEOF_MEMBER(type, member) (sizeof(((type *)0)->member))
 
+/**
+ * The bits of 'val' under 'mask', shifted down to bit 0
+ *
+ * @param val The value holding the bits
+ * @param mask The mask of the bits, a non-zero run of ones
+ * @return The bits
+ */
+static inline uint64_t
+xnvme_bits_get(uint64_t val, uint64_t mask)
+{
+	return (val & mask) / (mask & (~mask + 1));
+}
+
+/**
+ * 'val' with the bits under 'mask' set to 'bits'
+ *
+ * @param val The value holding the bits
+ * @param mask The mask of the bits, a non-zero run of ones
+ * @param bits The bits, from bit 0; those not fitting the mask are dropped
+ * @return The value with the bits set
+ */
+static inline uint64_t
+xnvme_bits_set(uint64_t val, uint64_t mask, uint64_t bits)
+{
+	return (val & ~mask) | ((bits * (mask & (~mask + 1))) & mask);
+}
+
 static inline uint64_t
 XNVME_ILOG2(uint64_t x)
 {
