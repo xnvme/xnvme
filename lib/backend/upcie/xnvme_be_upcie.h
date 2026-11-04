@@ -140,10 +140,11 @@ struct xnvme_be_upcie_rte_mem {
  * socket closes.
  */
 struct xnvme_be_upcie_rte_connection {
-	int alive;            ///< Whether this process is a client of a server
-	void *heap_base;      ///< This process's mapping of the server's heap
-	uint64_t heap_nbytes; ///< How much of it
-	int sock;             ///< To the server; 0 when not connected
+	int alive;                             ///< Whether this process is a client of a server
+	void *heap_base;                       ///< This process's mapping of the server's heap
+	uint64_t heap_nbytes;                  ///< How much of it
+	int sock;                              ///< To the server; 0 when not connected
+	struct nvme_cplane_iommu_handle iommu; ///< The server's, where the heap sits at its IOVA
 };
 
 /**
@@ -301,12 +302,13 @@ xnvme_be_upcie_buf_reg_unref(struct dmamem *dmem, uint64_t heap, size_t heap_nby
 /**
  * The IOAS or container that memory of this process maps into, at an IOVA equal to its address
  *
- * @return 1 with iommu filled where the heap sits in it that way, 0 otherwise
+ * @return 1 with iommu filled where the heap sits in it that way, through this process's
+ * IOAS or container or the server's, 0 otherwise
  */
 int
 xnvme_be_upcie_mem_map_iommu(struct nvme_cplane_iommu_handle *iommu);
 
-/** Drop what was registered; the IOAS or the connection holding it is going away */
+/** Unregister what is still registered; the IOAS or the connection holding it is going away */
 void
 xnvme_be_upcie_buf_regs_term(void);
 
