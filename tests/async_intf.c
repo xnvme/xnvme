@@ -51,7 +51,7 @@ test_init_term(struct xnvme_cli *cli)
 
 		feat.val = ctx.cpl.cdw0;
 
-		xnvme_spec_feat_pr(XNVME_SPEC_FEAT_NQUEUES, feat, XNVME_PR_DEF);
+		xnvme_spec_feat_pr(XNVME_SPEC_FEAT_NQUEUES, &feat, XNVME_PR_DEF);
 
 		if (count >= (uint64_t)(feat.nqueues.nsqa + 1)) {
 			xnvme_cli_pinf("skipping -- count: %zu > (nsqa + 1): %u", count,
