@@ -289,6 +289,7 @@ cplane_serve_dispatch(struct xnvme_be_upcie_cplane_serve_conn *conn, struct nvme
 		      int *fds, uint32_t *out_nfds)
 {
 	const struct xnvme_be_upcie_cplane_share *share;
+	struct nvme_cplane_iommu_handle iommu;
 	struct nvme_cplane_msg reply = {0};
 	const int idx = (int)conn->msg.index;
 	uint32_t nfds = 0;
@@ -365,6 +366,11 @@ cplane_serve_dispatch(struct xnvme_be_upcie_cplane_serve_conn *conn, struct nvme
 		reply.u.init_connection.bar0_nbytes = share->bar0_nbytes;
 		fds[nfds++] = share->heap_fd;
 		fds[nfds++] = share->bar0_fd;
+		if (xnvme_be_upcie_mem_map_iommu(&iommu)) {
+			reply.u.init_connection.iommu = iommu.kind;
+			reply.u.init_connection.ioas_id = iommu.ioas_id;
+			fds[nfds++] = iommu.fd;
+		}
 		conn->inited |= UINT64_C(1) << (unsigned)idx;
 		break;
 
