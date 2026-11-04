@@ -174,18 +174,36 @@ include path.
 
 * ``g_xnvme_be_<dir>_<interface>[_<ident>]`` is an implementation of a backend
   interface, in ``lib/backend/<dir>/xnvme_be_<dir>_<interface>[_<ident>].c``,
-  one implementation per file. The ``<ident>`` tells implementations of the
-  same interface apart, comes after the interface, and is left out when there
-  is only one
+  one implementation per file. The ``<ident>`` comes after the interface and
+  says what sets an implementation apart from the directory's own. The
+  directory's own implementation of an interface carries none, such as
+  ``g_xnvme_be_liburing_async``, and neither does an only implementation that
+  is plainly the directory's, as FreeBSD's ``admin`` and ``sync`` are. Another
+  implementation of the same interface carries one, such as
+  ``g_xnvme_be_liburing_async_ucmd`` beside it, and so does an only
+  implementation that is not the plain one, such as ``mem_hugepage`` or
+  ``dev_dmabuf``
 
   - Example: ``g_xnvme_be_liburing_async_ucmd``, in
     ``lib/backend/liburing/xnvme_be_liburing_async_ucmd.c``
   - Example: ``g_xnvme_be_upcie_dev_cuda``, in
     ``lib/backend/upcie/xnvme_be_upcie_dev_cuda.c``
 
-* ``xnvme_be_<dir>_<topic>.c`` holds code that more than one file of the
-  directory uses, such as ``xnvme_be_linux_nvme.c`` for the NVMe-driver ioctl
-  wrapper. A topic file defines no ``struct xnvme_be_<interface>``
+* ``xnvme_be_<dir>_<topic>.c`` holds, and defines no ``struct
+  xnvme_be_<interface>``:
+
+  - code that more than one file of the directory uses, such as
+    ``xnvme_be_linux_nvme.c`` for the NVMe-driver ioctl wrapper
+  - code a file outside the directory uses, so the headers it needs stay in
+    the directory, such as ``xnvme_be_linux_uapi.c`` for ``xnvme_libconf.c``
+  - a part of one implementation of a hundred lines or more, such as
+    ``xnvme_be_upcie_cplane_serve_conn.c`` and ``xnvme_be_upcie_cplane_share.c``
+    of the cplane server
+  - the functions of the public API a backend implements, such as
+    ``xnvme_cuda_queue_create()`` in ``xnvme_be_upcie_cuda_gpu.c``
+
+  Code that only one file uses, and that is shorter than that, is ``static``
+  in that file
 * ``xnvme_be_<dir>.h`` is the directory's header: the ``extern`` declarations
   of its implementations and of its shared functions. A header that configs
   outside the directory include, such as ``xnvme_be_liburing.h``, keeps what
