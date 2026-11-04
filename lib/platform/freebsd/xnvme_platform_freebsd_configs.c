@@ -17,8 +17,8 @@
 
 const struct xnvme_be_config g_xnvme_platform_freebsd_kqueue = {
 	.async = &g_xnvme_be_freebsd_async,
-	.sync = &g_xnvme_be_freebsd_sync_nvme,
-	.admin = &g_xnvme_be_freebsd_admin_nvme,
+	.sync = &g_xnvme_be_freebsd_sync,
+	.admin = &g_xnvme_be_freebsd_admin,
 	.dev = &g_xnvme_be_freebsd_dev,
 	.mem = &g_xnvme_be_posix_mem,
 	.attr =
@@ -59,8 +59,8 @@ const struct xnvme_be_config g_xnvme_platform_freebsd_kqueue_file = {
 
 const struct xnvme_be_config g_xnvme_platform_freebsd_posix = {
 	.async = &g_xnvme_be_posix_async,
-	.sync = &g_xnvme_be_freebsd_sync_nvme,
-	.admin = &g_xnvme_be_freebsd_admin_nvme,
+	.sync = &g_xnvme_be_freebsd_sync,
+	.admin = &g_xnvme_be_freebsd_admin,
 	.dev = &g_xnvme_be_freebsd_dev,
 	.mem = &g_xnvme_be_posix_mem,
 	.attr =
@@ -73,8 +73,8 @@ const struct xnvme_be_config g_xnvme_platform_freebsd_posix = {
 
 const struct xnvme_be_config g_xnvme_platform_freebsd_thrpool = {
 	.async = &g_xnvme_be_thrpool_async,
-	.sync = &g_xnvme_be_freebsd_sync_nvme,
-	.admin = &g_xnvme_be_freebsd_admin_nvme,
+	.sync = &g_xnvme_be_freebsd_sync,
+	.admin = &g_xnvme_be_freebsd_admin,
 	.dev = &g_xnvme_be_freebsd_dev,
 	.mem = &g_xnvme_be_posix_mem,
 	.attr =
@@ -87,8 +87,8 @@ const struct xnvme_be_config g_xnvme_platform_freebsd_thrpool = {
 
 const struct xnvme_be_config g_xnvme_platform_freebsd_emu = {
 	.async = &g_xnvme_be_emu_async,
-	.sync = &g_xnvme_be_freebsd_sync_nvme,
-	.admin = &g_xnvme_be_freebsd_admin_nvme,
+	.sync = &g_xnvme_be_freebsd_sync,
+	.admin = &g_xnvme_be_freebsd_admin,
 	.dev = &g_xnvme_be_freebsd_dev,
 	.mem = &g_xnvme_be_posix_mem,
 	.attr =
@@ -101,8 +101,8 @@ const struct xnvme_be_config g_xnvme_platform_freebsd_emu = {
 
 const struct xnvme_be_config g_xnvme_platform_freebsd_nil = {
 	.async = &g_xnvme_be_nil_async,
-	.sync = &g_xnvme_be_freebsd_sync_nvme,
-	.admin = &g_xnvme_be_freebsd_admin_nvme,
+	.sync = &g_xnvme_be_freebsd_sync,
+	.admin = &g_xnvme_be_freebsd_admin,
 	.dev = &g_xnvme_be_freebsd_dev,
 	.mem = &g_xnvme_be_posix_mem,
 	.attr =
