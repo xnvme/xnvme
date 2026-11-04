@@ -15,12 +15,12 @@ jobs:
   # Build the Debian packages from the source archive without subprojects that
   # the release ships, with the packaging on salsa.debian.org, then lint them.
   # The packaging lives outside this repository and follows the API, so a change
-  # to the API fails it until salsa is updated: it is watched, and fails no run.
+  # to the API breaks it until salsa is updated: a step using it that fails is a
+  # warning, and fails neither the job nor the run.
   #
   deb-dist:
     runs-on: ubuntu-24.04
     if: github.event_name == 'pull_request' || github.event.inputs.job == 'all'
-    continue-on-error: true
     container:
       image: debian:trixie
 
@@ -37,31 +37,62 @@ jobs:
         name: xnvme-src-archive
 
     - name: Retrieve the Debian packaging
+      id: packaging
+      continue-on-error: true
       run: git clone --depth 1 https://salsa.debian.org/safl/xnvme.git /tmp/debpkg
 
     - name: Install the packaging's Build-Depends, and nothing else
+      id: deps
+      if: steps.packaging.outcome == 'success'
+      continue-on-error: true
       run: apt-get build-dep -y -qq /tmp/debpkg
 
     - name: Build the packages
+      id: build
+      if: steps.deps.outcome == 'success'
+      continue-on-error: true
       run: make deb-dist DEB_PKG=/tmp/debpkg SRC_TGZ=${{ steps.source.outputs.src_tgz }}
 
     - name: Lint the packages
+      id: lint
+      if: steps.build.outcome == 'success'
+      continue-on-error: true
       run: lintian --fail-on error --tag-display-limit 0 builddir/debbuild/*.changes
 
     - name: Install the packages
+      id: install
+      if: steps.build.outcome == 'success'
+      continue-on-error: true
       run: apt-get install -y ./builddir/debbuild/*_0*.deb
 
     - name: Run the installed tools
+      id: tools
+      if: steps.install.outcome == 'success'
+      continue-on-error: true
       run: |
         xnvme library-info
         xnvme info 1GB --be ramdisk
 
     - name: Upload the packages
+      if: steps.build.outcome == 'success'
       uses: actions/upload-artifact@v6.0.0
       with:
         name: packages-debian
         path: builddir/debbuild/*.deb
         if-no-files-found: error
+
+    - name: Warn of the steps that failed
+      if: always()
+      env:
+        OUTCOMES: >-
+          packaging=${{ steps.packaging.outcome }} deps=${{ steps.deps.outcome }}
+          build=${{ steps.build.outcome }} lint=${{ steps.lint.outcome }}
+          install=${{ steps.install.outcome }} tools=${{ steps.tools.outcome }}
+      run: |
+        failed=$(tr ' ' '\n' <<< "$OUTCOMES" | { grep '=failure$' || true; } | cut -d= -f1 | tr '\n' ' ')
+        if [ -n "$failed" ]; then
+          echo "::warning::deb-dist: the Debian packaging on salsa failed at: $failed"
+        fi
 
   rpm-dev:
     runs-on: ubuntu-24.04
