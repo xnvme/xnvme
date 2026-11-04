@@ -6,7 +6,7 @@ This tests whether:
 * It is possible to link with the static library
 
 It does so by compiling programs and running them, and additionally, checking
-the size of the result binraries.
+that the statically linked binary is larger than those using the shared library.
 """
 
 from pathlib import Path
@@ -74,7 +74,7 @@ def test_library_consumption(cijoe):
     srcs = prep_sources(cijoe)
     libs = list_libraries(cijoe)
 
-    sizes = []
+    sizes = {}
 
     for ltype, linkorload, pkgconf in usages:
         # Get the compiler-flags from pkg-config
@@ -104,10 +104,15 @@ def test_library_consumption(cijoe):
         # Grab the size in bytes of the built library
         err, state = cijoe.run(f"wc -c {bin}")
         assert not err
-        sizes.append(int(state.output().strip().split(" ")[0]))
+        sizes[(ltype, linkorload)] = int(state.output().strip().split(" ")[0])
 
         # Run it
         err, state = cijoe.run(execbin)
         assert not err
 
-    assert len(list(set(sizes))) == 3, "Binaries have the same size; they should not"
+    # The two shared ones may round to the same size, as macOS pads binaries to pages
+    static = sizes[("static", "linking")]
+    for usage in [("shared", "loading"), ("shared", "linking")]:
+        assert (
+            static > sizes[usage]
+        ), f"static ({static}) is not larger than {usage}: {sizes}"
