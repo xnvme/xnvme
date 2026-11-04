@@ -13,11 +13,14 @@ defaults:
 jobs:
   #
   # Build the Debian packages from the source archive without subprojects that
-  # the release ships, with the packaging on salsa.debian.org, then lint them
+  # the release ships, with the packaging on salsa.debian.org, then lint them.
+  # The packaging lives outside this repository and follows the API, so a change
+  # to the API fails it until salsa is updated: it is watched, and fails no run.
   #
   deb-dist:
     runs-on: ubuntu-24.04
     if: github.event_name == 'pull_request' || github.event.inputs.job == 'all'
+    continue-on-error: true
     container:
       image: debian:trixie
 
