@@ -16,6 +16,9 @@ tests = {
   'be.c': [
     ['caps', ['caps']],
   ],
+  'bits.c': [
+    ['get-set', ['get-set']],
+  ],
   'buf.c': [
     ['alloc', ['buf_alloc_free', '1GB', '--count', '31']],
     ['virt_alloc', ['buf_virt_alloc_free', '1GB', '--count', '31']],
