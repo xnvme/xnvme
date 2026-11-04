@@ -105,6 +105,15 @@ xnvme_cuda_queue_destroy(struct xnvme_dev *dev, struct xnvme_cuda_queue *queue);
 #ifdef __CUDACC__
 
 /**
+ * Read the field of bits that 'mask' selects in 'val', as xnvme_bits_get() does, in device code
+ */
+static inline __device__ uint64_t
+xnvme_cuda_bits_get(uint64_t val, uint64_t mask)
+{
+	return (val & mask) / (mask & (~mask + 1));
+}
+
+/**
  * Enqueue a command into an NVMe submission queue at a certain index
  *
  * That is, writes it into the submission queue memory. It does **not** increment
@@ -178,7 +187,9 @@ xnvme_cuda_reap_at_i(struct xnvme_cuda_queue *qp, int timeout_ms, struct xnvme_s
 	do {
 		cqe = &cq[index];
 
-		if ((cqe->cid < 0xFFFF) && (cqe->status.p == expected_phase)) {
+		if ((cqe->cid < 0xFFFF) &&
+		    (xnvme_cuda_bits_get(cqe->status, XNVME_SPEC_CQE_STATUS_P) ==
+		     expected_phase)) {
 			const volatile uint64_t *src = (const volatile uint64_t *)cqe;
 			uint64_t *dst                = (uint64_t *)cpl;
 
@@ -283,7 +294,7 @@ xnvme_cuda_cmd_io(struct xnvme_cuda_queue *qp, struct xnvme_spec_cmd *cmd, size_
 		return err;
 	}
 
-	return cpl.status.sc;
+	return xnvme_cuda_bits_get(cpl.status, XNVME_SPEC_CQE_STATUS_SC);
 }
 
 #endif /* __CUDACC__ */

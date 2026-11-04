@@ -154,8 +154,10 @@ _thrpool_thread_loop(void *arg)
 								entry->meta_nbytes);
 		///< On submission-error; ctx.cpl is not filled, thus assigned below
 		if (err) {
-			entry->ctx->cpl.status.sc =
-				entry->ctx->cpl.status.sc ? entry->ctx->cpl.status.sc : err;
+			if (!xnvme_bits_get(entry->ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC)) {
+				entry->ctx->cpl.status = xnvme_bits_set(
+					entry->ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, err);
+			}
 			XNVME_DEBUG("FAILED: sync.cmd_io{v}(), err: %d", err);
 		}
 

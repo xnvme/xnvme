@@ -119,8 +119,11 @@ _windows_async_iocp_poke(struct xnvme_queue *q, uint32_t max)
 			cmd_ctx->cpl.result = byte_count;
 		} else {
 			cmd_ctx->cpl.result = 0;
-			cmd_ctx->cpl.status.sc = GetLastError();
-			cmd_ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
+			cmd_ctx->cpl.status = xnvme_bits_set(
+				cmd_ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, GetLastError());
+			cmd_ctx->cpl.status =
+				xnvme_bits_set(cmd_ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+					       XNVME_STATUS_CODE_TYPE_VENDOR);
 		}
 
 		cmd_ctx->async.cb(cmd_ctx, cmd_ctx->async.cb_arg);

@@ -142,7 +142,7 @@ cuse_ctx_from_cmd(struct xnvme_dev *dev, const struct nvme_passthru_cmd64 *cmd)
 static int
 cuse_nvme_status(const struct xnvme_cmd_ctx *ctx)
 {
-	return ctx->cpl.status.val >> 1;
+	return ctx->cpl.status >> 1;
 }
 
 static int

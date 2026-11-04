@@ -33,8 +33,8 @@ def kvs_store(dev, kbuf, kbuf_nbytes, vbuf, vbuf_nbytes, opts=0):
     if err or xnvme_cmd_ctx_cpl_status(pointer(ctx)):
         raise KVException(
             abs(err),
-            ctx.cpl.status.sc,
-            ctx.cpl.status.sct,
+            ctx.cpl.status >> 1 & 0xFF,
+            ctx.cpl.status >> 9 & 0x7,
             os.strerror(abs(err)),
         )
     return ctx
@@ -55,8 +55,8 @@ def kvs_retrieve(dev, kbuf, kbuf_nbytes, vbuf, vbuf_nbytes, opts=0):
     if err or xnvme_cmd_ctx_cpl_status(pointer(ctx)):
         raise KVException(
             abs(err),
-            ctx.cpl.status.sc,
-            ctx.cpl.status.sct,
+            ctx.cpl.status >> 1 & 0xFF,
+            ctx.cpl.status >> 9 & 0x7,
             os.strerror(abs(err)),
         )
     return ctx
@@ -74,8 +74,8 @@ def kvs_exist(dev, kbuf, kbuf_nbytes):
     if err or xnvme_cmd_ctx_cpl_status(pointer(ctx)):
         raise KVException(
             abs(err),
-            ctx.cpl.status.sc,
-            ctx.cpl.status.sct,
+            ctx.cpl.status >> 1 & 0xFF,
+            ctx.cpl.status >> 9 & 0x7,
             os.strerror(abs(err)),
         )
     return ctx
@@ -93,8 +93,8 @@ def kvs_delete(dev, kbuf, kbuf_nbytes):
     if err or xnvme_cmd_ctx_cpl_status(pointer(ctx)):
         raise KVException(
             abs(err),
-            ctx.cpl.status.sc,
-            ctx.cpl.status.sct,
+            ctx.cpl.status >> 1 & 0xFF,
+            ctx.cpl.status >> 9 & 0x7,
             os.strerror(abs(err)),
         )
     return ctx
@@ -114,8 +114,8 @@ def kvs_list(dev, kbuf, kbuf_nbytes, vbuf, vbuf_nbytes, opts=0):
     if err or xnvme_cmd_ctx_cpl_status(pointer(ctx)):
         raise KVException(
             abs(err),
-            ctx.cpl.status.sc,
-            ctx.cpl.status.sct,
+            ctx.cpl.status >> 1 & 0xFF,
+            ctx.cpl.status >> 9 & 0x7,
             os.strerror(abs(err)),
         )
     return ctx

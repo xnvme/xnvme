@@ -137,8 +137,8 @@ idfy(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 	}
 
 	///< TODO: set some appropriate status-code for other idfy-cmds
-	ctx->cpl.status.sc = 0x3;
-	ctx->cpl.status.sct = 0x3;
+	ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, 0x3);
+	ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT, 0x3);
 	return 1;
 }
 

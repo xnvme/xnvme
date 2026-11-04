@@ -138,8 +138,11 @@ xnvme_be_freebsd_kqueue_poke(struct xnvme_queue *q, uint32_t max)
 			ctx->cpl.result = 0;
 			// When aio_error() fails, we use 'err'
 			// When aio_return() fails, we use 'errno'
-			ctx->cpl.status.sc = err ? err : errno;
-			ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
+			ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC,
+							 err ? err : errno);
+			ctx->cpl.status =
+				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+					       XNVME_STATUS_CODE_TYPE_VENDOR);
 		}
 
 		ctx->async.cb(ctx, ctx->async.cb_arg);
@@ -179,7 +182,7 @@ kqueue_flush(struct xnvme_cmd_ctx *ctx, int fd)
 	}
 
 	ctx->cpl.result = 0;
-	ctx->cpl.status.val = 0;
+	ctx->cpl.status = 0;
 
 	///< Nothing on the queue is touched past this point; the callback is free to re-enter
 	ctx->async.cb(ctx, ctx->async.cb_arg);

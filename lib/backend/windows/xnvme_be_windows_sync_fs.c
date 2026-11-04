@@ -107,8 +107,9 @@ xnvme_be_windows_sync_fs_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t db
 	if (res <= 0) {
 		XNVME_DEBUG("FAILED: {ReadFile,WriteFile,FlushFileBuffers}(), err: %d", err);
 		ctx->cpl.result = 0;
-		ctx->cpl.status.sc = err;
-		ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
+		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, err);
+		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+						 XNVME_STATUS_CODE_TYPE_VENDOR);
 	}
 
 	return err;

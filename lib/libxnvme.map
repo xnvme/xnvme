@@ -210,7 +210,6 @@
 		xnvme_spec_ctrlr_bar;
 		xnvme_spec_status_code_type;
 		xnvme_spec_status_code;
-		xnvme_spec_status;
 		xnvme_spec_cqe;
 		xnvme_spec_log_health_entry;
 		xnvme_spec_log_sanitize_entry;

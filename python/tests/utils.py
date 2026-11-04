@@ -12,7 +12,7 @@ from xnvme.ctypes_bindings.api import char_pointer_cast
 def xnvme_cmd_ctx_cpl_status(ctx):
     """This function is a 'static inline' in the C API"""
 
-    return ctx.contents.cpl.status.sc or ctx.contents.cpl.status.sct
+    return ctx.contents.cpl.status >> 1 & 0xFF or ctx.contents.cpl.status >> 9 & 0x7
 
 
 def pointer_equal(ptr1, ptr2):

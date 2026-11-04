@@ -128,8 +128,9 @@ xnvme_be_windows_sync_nvme_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t 
 	if (ret < 0) {
 		XNVME_DEBUG("FAILED: {dev_read,dev_write}(), errno: %d", ret);
 		ctx->cpl.result = 0;
-		ctx->cpl.status.sc = ret;
-		ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
+		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, ret);
+		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+						 XNVME_STATUS_CODE_TYPE_VENDOR);
 		return ret;
 	}
 

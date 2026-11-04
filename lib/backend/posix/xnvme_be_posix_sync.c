@@ -68,8 +68,9 @@ exit:
 		XNVME_DEBUG("FAILED: OPC(%d){pread,pwrite,fsync}(), errno: %d",
 			    ctx->cmd.common.opcode, sc);
 		ctx->cpl.result = 0;
-		ctx->cpl.status.sc = sc;
-		ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
+		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, sc);
+		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+						 XNVME_STATUS_CODE_TYPE_VENDOR);
 		return -sc;
 	}
 
@@ -129,8 +130,9 @@ exit:
 		XNVME_DEBUG("FAILED: OPC(%d){pread,pwrite,fsync}(), errno: %d",
 			    ctx->cmd.common.opcode, sc);
 		ctx->cpl.result = 0;
-		ctx->cpl.status.sc = sc;
-		ctx->cpl.status.sct = XNVME_STATUS_CODE_TYPE_VENDOR;
+		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, sc);
+		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+						 XNVME_STATUS_CODE_TYPE_VENDOR);
 		return -sc;
 	}
 

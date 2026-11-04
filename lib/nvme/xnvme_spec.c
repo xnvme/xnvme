@@ -161,7 +161,7 @@ log_erri_entry_fpr_yaml(FILE *stream, const struct xnvme_spec_log_erri_entry *en
 	wrtn += fprintf(stream, "%*secnt: %" PRIu64 "%s", indent, "", entry->ecnt, sep);
 	wrtn += fprintf(stream, "%*ssqid: %" PRIu16 "%s", indent, "", entry->sqid, sep);
 	wrtn += fprintf(stream, "%*scid: %" PRIu16 "%s", indent, "", entry->cid, sep);
-	wrtn += fprintf(stream, "%*sstatus: %#" PRIx16 "%s", indent, "", entry->status.val, sep);
+	wrtn += fprintf(stream, "%*sstatus: %#" PRIx16 "%s", indent, "", entry->status, sep);
 	wrtn += fprintf(stream, "%*seloc: %#" PRIx16 "%s", indent, "", entry->eloc, sep);
 	wrtn += fprintf(stream, "%*slba: %#" PRIx64 "%s", indent, "", entry->lba, sep);
 	wrtn += fprintf(stream, "%*snsid: %" PRIu32 "%s", indent, "", entry->nsid, sep);

@@ -101,7 +101,7 @@ xnvmeperf_cuda_kernel_run(struct xnvme_cuda_queue **qps, struct xnvme_spec_cmd *
 		if (group == turn) {
 			err = xnvme_cuda_reap_at_i(qp, qp->timeout_ms, &cpl, lane);
 			if (!err) {
-				err = cpl.status.sc;
+				err = xnvme_cuda_bits_get(cpl.status, XNVME_SPEC_CQE_STATUS_SC);
 			}
 			if (err) {
 				failed++;
@@ -137,7 +137,7 @@ xnvmeperf_cuda_kernel_run(struct xnvme_cuda_queue **qps, struct xnvme_spec_cmd *
 		if (group == turn) {
 			err = xnvme_cuda_reap_at_i(qp, qp->timeout_ms, &cpl, lane);
 			if (!err) {
-				err = cpl.status.sc;
+				err = xnvme_cuda_bits_get(cpl.status, XNVME_SPEC_CQE_STATUS_SC);
 			}
 			if (err) {
 				failed++;

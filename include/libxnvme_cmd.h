@@ -88,7 +88,8 @@ xnvme_cmd_ctx_clear(struct xnvme_cmd_ctx *ctx);
 static inline int
 xnvme_cmd_ctx_cpl_status(struct xnvme_cmd_ctx *ctx)
 {
-	return ctx->cpl.status.sc || ctx->cpl.status.sct;
+	return xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC) ||
+	       xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT);
 }
 
 /**

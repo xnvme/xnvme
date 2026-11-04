@@ -116,7 +116,10 @@ C: Fields of bits
 
 A field of bits in a structure of the specification, such as ``flbas`` of
 the Identify Namespace data, is an integer of the width the specification
-gives it, not a C bit-field, whose layout is the compiler's choice.
+gives it, not a C bit-field, whose layout is the compiler's choice. The
+integer is named as the specification names the field, such as ``status``
+of the Completion Queue Entry, not by a placeholder such as ``val``, nor
+wrapped in a structure of its own.
 
 * Each of its fields is named by a mask, a ``#define`` of the bits in their
   place, read and written with ``xnvme_bits_get()`` and ``xnvme_bits_set()``

@@ -67,8 +67,9 @@ xnvme_be_upcie_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf
 	}
 
 	if (xnvme_cmd_ctx_cpl_status(ctx)) {
-		XNVME_DEBUG("FAILED: command; sc(%d); sct(%d)", ctx->cpl.status.sc,
-			    ctx->cpl.status.sct);
+		XNVME_DEBUG("FAILED: command; sc(%d); sct(%d)",
+			    (int)xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC),
+			    (int)xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT));
 		err = -EIO;
 	}
 

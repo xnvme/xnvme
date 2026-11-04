@@ -38,7 +38,7 @@ struct xnvmeperf_job {
 	unsigned int seed;
 	uint64_t io_completed;
 	uint64_t io_failed;
-	struct xnvme_spec_status failed_status;
+	uint16_t failed_status;
 	uint64_t (*peek_slba)(struct xnvmeperf_job *);
 	void (*advance_slba)(struct xnvmeperf_job *);
 	struct xnvmeperf_args *args;
@@ -187,13 +187,16 @@ submit_io(struct xnvmeperf_job *job, struct xnvme_cmd_ctx *ctx)
  * command their sync backend refused with that errno, negated, as the status.
  */
 static bool
-refuses_metadata(struct xnvme_spec_status status)
+refuses_metadata(uint16_t status)
 {
-	if (status.sct == XNVME_STATUS_CODE_TYPE_VENDOR) {
-		return status.sc == ENOTSUP || status.sc == ENOSYS;
+	uint64_t sct = xnvme_bits_get(status, XNVME_SPEC_CQE_STATUS_SCT);
+	uint64_t sc = xnvme_bits_get(status, XNVME_SPEC_CQE_STATUS_SC);
+
+	if (sct == XNVME_STATUS_CODE_TYPE_VENDOR) {
+		return sc == ENOTSUP || sc == ENOSYS;
 	}
 
-	return !status.sct && (status.sc == (uint8_t)-ENOTSUP || status.sc == (uint8_t)-ENOSYS);
+	return !sct && (sc == (uint8_t)-ENOTSUP || sc == (uint8_t)-ENOSYS);
 }
 
 /**
