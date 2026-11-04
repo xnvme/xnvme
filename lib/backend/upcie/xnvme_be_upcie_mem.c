@@ -458,8 +458,12 @@ _heap_at_va(void)
 int
 xnvme_be_upcie_mem_map_iommu(struct nvme_cplane_iommu_handle *iommu)
 {
-	if (!_heap_at_va() || g_upcie_rte.connection.alive) {
+	if (!_heap_at_va()) {
 		return 0;
+	}
+	if (g_upcie_rte.connection.alive) {
+		*iommu = g_upcie_rte.connection.iommu;
+		return iommu->kind != NVME_CPLANE_IOMMU_NONE;
 	}
 
 	switch (g_upcie_rte.mode) {
@@ -487,7 +491,7 @@ xnvme_be_upcie_mem_map_iommu(struct nvme_cplane_iommu_handle *iommu)
  * How memory of this process's own is made reachable, if at all
  *
  * Through an IOMMU it is mapped at an IOVA equal to its address, in this
- * process's IOAS or container. Without one the device takes physical
+ * process's IOAS or container or the server's. Without one the device takes physical
  * addresses, which the heap's registry reads from pagemap.
  */
 enum _map_via {
@@ -556,6 +560,10 @@ xnvme_be_upcie_buf_regs_term(void)
 	struct xnvme_buf_reg *reg;
 
 	while ((reg = xnvme_buf_reg_any(&g_upcie_rte.mem.dmem))) {
+		/* A server's address space outlives this process, so what is left must go */
+		if (g_upcie_rte.connection.alive) {
+			_unmap(reg->vaddr, reg->nbytes);
+		}
 		xnvme_buf_reg_remove(reg);
 	}
 }

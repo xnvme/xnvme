@@ -60,8 +60,22 @@ reserved regions.
     CPU's page and the IOMMU's smallest page, where the heap sits at its
     address (see above), and outside the device-memory window, which fails
     with `ERANGE`. The pages are pinned, and count against the locked-memory
-    limit unless the process has `CAP_IPC_LOCK`. A client of a server
-    registers nothing.
+    limit unless the process has `CAP_IPC_LOCK`. A client of a server registers
+    only when it could map the server's heap at the server's address, and
+    counts what it registers against its own locked-memory limit.
+  - A client of a server maps at an IOVA equal to its address, in an address
+    space shared with every other client, so `xnvme_buf_register()` fails with
+    `EEXIST` where another client holds that range. Allocate the memory
+    elsewhere and register it again. This is rare with a few clients
+    registering a few GiB each, more common with large registrations or many
+    clients, and certain for two copies of one program running with
+    address-space randomisation off. A client unregisters what it still has
+    registered as it closes; only one that dies first leaves mappings behind,
+    which stay until the server stops.
+  - To map at all, a client is given the server's iommufd or vfio container,
+    with which it can also remove the server's heap, or another client's
+    memory, from the device's reach. The clients of a server are one trust
+    domain, as they already are through the heap and BAR0 they share.
   - With `uio_pci_generic`, only memory in hugetlb pages of the heap's hugepage
     size, aligned to it, since only those keep the physical address the device
     was given. Reading that address needs `CAP_SYS_ADMIN`. Memory mapped
