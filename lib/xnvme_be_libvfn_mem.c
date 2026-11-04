@@ -115,6 +115,14 @@ xnvme_be_libvfn_mem_unmap(const struct xnvme_dev *dev, void *buf)
 	return 0;
 }
 
+static int
+xnvme_be_libvfn_mem_map_req(const struct xnvme_dev *XNVME_UNUSED(dev),
+			    struct xnvme_mem_map_req *req)
+{
+	req->align = __VFN_PAGESIZE;
+
+	return 0;
+}
 #endif
 
 struct xnvme_be_mem g_xnvme_be_libvfn_mem = {
@@ -126,6 +134,7 @@ struct xnvme_be_mem g_xnvme_be_libvfn_mem = {
 	.buf_vtophys = xnvme_be_libvfn_buf_vtophys,
 	.mem_map = xnvme_be_libvfn_mem_map,
 	.mem_unmap = xnvme_be_libvfn_mem_unmap,
+	.mem_map_req = xnvme_be_libvfn_mem_map_req,
 #else
 	.buf_alloc = xnvme_be_nosys_buf_alloc,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,

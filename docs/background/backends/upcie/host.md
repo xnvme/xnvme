@@ -26,17 +26,12 @@ DMA buffer space needed by the application.
 
 ### IOVA of the heap
 
-With the controller on `vfio-pci`, the heap is mapped before the controller is
-attached, and has to stay clear of the IOVAs the platform reserves for it, listed
-in `/sys/bus/pci/devices/<bdf>/iommu_group/reserved_regions`. Where it does not,
-opening the controller fails, with `EADDRINUSE` through iommufd and `EINVAL`
-through type1. The heap starts at 4 GiB by default, above the regions commonly
-reserved low, and has to end below the device-memory window (see
-`XNVME_UPCIE_IOVA_BASE`). Override where a controller reserves IOVAs there:
-
-```bash
-XNVME_UPCIE_HOST_IOVA_BASE=0x1000000000  # 64 GiB
-```
+With the controller on `vfio-pci`, through iommufd or type1, the heap is mapped
+at an IOVA equal to its address, as is memory mapped with `xnvme_mem_map()`, so
+both translate alike. User addresses lie far above the IOVAs a platform reserves
+low, listed in `/sys/bus/pci/devices/<bdf>/iommu_group/reserved_regions`, but
+have to fit the IOMMU's aperture, typically 48 bits, and stay clear of the
+device-memory window (see `XNVME_UPCIE_IOVA_BASE`).
 
 `uio_pci_generic` is unaffected, as its DMA addresses are physical.
 
@@ -46,7 +41,24 @@ XNVME_UPCIE_HOST_IOVA_BASE=0x1000000000  # 64 GiB
 
 - **No `buf_realloc`.** Buffer reallocation is not implemented and returns
   `ENOSYS`.
-- **No memory mapping** (`mem_map` / `mem_unmap`). These return `ENOSYS`.
+- **Memory mapping** (`mem_map` / `mem_unmap`):
+  - Through an IOMMU (iommufd or type1), any page-aligned memory. A client of a
+    server maps only when it could map the server's heap at the server's
+    address, and counts what it maps against its own locked-memory limit.
+  - A client of a server maps at an IOVA equal to its address, in an address
+    space shared with every other client, so `xnvme_mem_map()` fails with `EEXIST`
+    where another client holds that range. Allocate the memory elsewhere and
+    map it again. This is rare with a few clients mapping a few GiB each, more
+    common with large mappings or many clients, and certain for two copies of
+    one program running with address-space randomisation off. A client unmaps
+    what it still has mapped as it closes; only one that dies first leaves
+    mappings behind, which stay until the server stops.
+  - With `uio_pci_generic`, only memory in hugetlb pages of the heap's hugepage
+    size, aligned to it, since only those keep the physical address the device
+    was given. Reading that address needs `CAP_SYS_ADMIN`.
+
+  `xnvme_mem_map_get_req()` reports the alignment for the case at hand, and
+  `ENOSYS` where mapping is not possible.
 - **Controller reset** and **subsystem reset** are not supported. These
   operations disable the controller and re-enable it, but do not re-program the
   admin submission/completion queues. Without full re-initialization the

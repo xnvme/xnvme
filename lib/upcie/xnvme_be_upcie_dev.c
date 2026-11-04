@@ -61,76 +61,48 @@ xnvme_be_upcie_iova_range_required(void)
 #define XNVME_BE_UPCIE_IOVA_BASE (256ULL << 30)
 #define XNVME_BE_UPCIE_IOVA_SIZE (64ULL << 30)
 
-#define XNVME_BE_UPCIE_HOST_IOVA_BASE (4ULL << 30)
-
-uint64_t
-xnvme_be_upcie_host_iova_base(void)
-{
-	return _env_u64("XNVME_UPCIE_HOST_IOVA_BASE", XNVME_BE_UPCIE_HOST_IOVA_BASE);
-}
-
 uint64_t
 xnvme_be_upcie_iova_base(void)
 {
 	return _env_u64("XNVME_UPCIE_IOVA_BASE", XNVME_BE_UPCIE_IOVA_BASE);
 }
 
-#ifdef UPCIE_HAVE_IOMMUFD
-static int
-_dmamem_from_memfd_at_host_base(struct dmamem *dmem, struct iommufd *iommufd, size_t heap_size,
-				size_t hugepgsz)
+int
+xnvme_be_upcie_iova_window_clear(uint64_t iova, uint64_t nbytes)
 {
-	struct iommu_ioas_allow_iovas all = {0};
-	struct iommu_iova_range above = {0};
-	int err;
+	const uint64_t window = xnvme_be_upcie_iova_base();
+	const uint64_t window_size = _env_u64("XNVME_UPCIE_IOVA_SIZE", XNVME_BE_UPCIE_IOVA_SIZE);
 
-	above.start = xnvme_be_upcie_host_iova_base();
-	above.last = xnvme_be_upcie_iova_base() - 1;
-	if (above.last < above.start) {
-		XNVME_DEBUG("FAILED: host IOVA base(0x%" PRIx64 ") is not below the "
-			    "device-memory window",
-			    (uint64_t)above.start);
+	if ((iova < window + window_size) && (iova + nbytes > window)) {
+		XNVME_DEBUG("FAILED: 0x%" PRIx64 "+0x%" PRIx64
+			    " overlaps the device-memory window",
+			    iova, nbytes);
 		return -ERANGE;
 	}
 
-	err = iommufd_ioas_allow_iovas(iommufd, &above, 1);
+	return 0;
+}
+
+/* At an IOVA equal to its address, so memory mapped later at its own address translates alike */
+static int
+_dmamem_from_memfd_at_va(struct dmamem *dmem, struct iommufd *iommufd, size_t heap_size,
+			 size_t hugepgsz)
+{
+	int err;
+
+	err = dmamem_from_memfd_at_va(dmem, iommufd, heap_size, hugepgsz);
 	if (err) {
-		XNVME_DEBUG("FAILED: iommufd_ioas_allow_iovas(0x%" PRIx64 "); err(%d)",
-			    (uint64_t)above.start, err);
+		XNVME_DEBUG("FAILED: dmamem_from_memfd_at_va(); err(%d)", err);
 		return err;
 	}
 
-	err = dmamem_from_memfd(dmem, iommufd, heap_size, hugepgsz);
+	err = xnvme_be_upcie_iova_window_clear(dmem->base_iova, dmem->size);
 	if (err) {
-		XNVME_DEBUG("FAILED: dmamem_from_memfd(); err(%d); does the heap fit "
-			    "0x%" PRIx64 "..0x%" PRIx64 "?",
-			    err, (uint64_t)above.start, (uint64_t)above.last);
-	}
-
-	all.size = sizeof(all);
-	all.ioas_id = iommufd->ioas_id;
-	if (ioctl(iommufd->fd, IOMMU_IOAS_ALLOW_IOVAS, &all) == -1) {
-		int cleared = -errno;
-
-		XNVME_DEBUG("FAILED: ioctl(IOMMU_IOAS_ALLOW_IOVAS, none); err(%d)", cleared);
-		if (!err) {
-			dmamem_destroy(dmem);
-			err = cleared;
-		}
+		dmamem_destroy(dmem);
 	}
 
 	return err;
 }
-#else
-static int
-_dmamem_from_memfd_at_host_base(struct dmamem *XNVME_UNUSED(dmem),
-				struct iommufd *XNVME_UNUSED(iommufd),
-				size_t XNVME_UNUSED(heap_size), size_t XNVME_UNUSED(hugepgsz))
-{
-	XNVME_DEBUG("FAILED: not supported, built on system without IOMMUFD");
-	return -ENOTSUP;
-}
-#endif
 
 static struct dmamem_iommu_map_pa g_iova_range_imp;
 static int g_iova_range_refs;
@@ -246,6 +218,8 @@ _rte_term(void)
 		return;
 	}
 
+	xnvme_be_upcie_mem_maps_term();
+
 	if (g_upcie_rte.connection.alive) {
 		/* Nothing below this is ours to release: the memory belongs to
 		 * whoever is serving, and closing the socket is what tells it
@@ -289,9 +263,9 @@ _rte_term(void)
  * Bring up the RTE in VFIO_CDEV mode.
  *
  * /dev/iommu + one IOAS + a hugepage-backed memfd imported via
- * IOMMU_IOAS_MAP_FILE. All controllers opened afterwards attach into
- * this same IOAS so their PRPs translate arithmetically off the shared
- * base_iova.
+ * IOMMU_IOAS_MAP_FILE at an IOVA equal to its address. All controllers
+ * opened afterwards attach into this same IOAS so their PRPs translate
+ * arithmetically, as does memory mapped later with xnvme_mem_map().
  */
 static int
 _rte_init_vfio_cdev(size_t heap_size)
@@ -318,10 +292,10 @@ _rte_init_vfio_cdev(size_t heap_size)
 	}
 	g_upcie_rte.cdev.ioas_alive = 1;
 
-	err = _dmamem_from_memfd_at_host_base(&g_upcie_rte.mem.dmem, &g_upcie_rte.cdev.iommufd,
-					      heap_size, hugepgsz);
+	err = _dmamem_from_memfd_at_va(&g_upcie_rte.mem.dmem, &g_upcie_rte.cdev.iommufd, heap_size,
+				       hugepgsz);
 	if (err) {
-		XNVME_DEBUG("FAILED: _dmamem_from_memfd_at_host_base(); err(%d)", err);
+		XNVME_DEBUG("FAILED: _dmamem_from_memfd_at_va(); err(%d)", err);
 		return err;
 	}
 	g_upcie_rte.mem.dmem_alive = 1;

@@ -163,10 +163,14 @@ struct xnvme_be_upcie_rte_mem {
  * socket closes.
  */
 struct xnvme_be_upcie_rte_connection {
-	int alive;            ///< Whether this process is a client of a server
-	void *heap_base;      ///< This process's mapping of the server's heap
-	uint64_t heap_nbytes; ///< How much of it
-	int sock;             ///< To the server; 0 when not connected
+	int alive;              ///< Whether this process is a client of a server
+	void *heap_base;        ///< This process's mapping of the server's heap
+	uint64_t heap_nbytes;   ///< How much of it
+	int sock;               ///< To the server; 0 when not connected
+	struct iommufd iommufd; ///< The server's, for mapping memory of this process's own
+	int iommufd_alive;      ///< Whether iommufd was given and the heap sits at its IOVA
+	struct vfio_container container; ///< Likewise, where the server uses type1
+	int container_alive;             ///< Whether container was given that way
 };
 
 /**
@@ -219,20 +223,20 @@ int
 xnvme_be_upcie_va_bits(void);
 
 /**
- * IOVA the host heap is mapped at on the vfio-pci paths
- *
- * Read from XNVME_UPCIE_HOST_IOVA_BASE.
- */
-uint64_t
-xnvme_be_upcie_host_iova_base(void);
-
-/**
- * IOVA the device-memory window starts at, which the host heap has to end below
+ * IOVA the device-memory window starts at, which the host heap has to stay clear of
  *
  * Read from XNVME_UPCIE_IOVA_BASE.
  */
 uint64_t
 xnvme_be_upcie_iova_base(void);
+
+/**
+ * Whether host memory at an IOVA equal to its address stays clear of the device-memory window
+ *
+ * @return 0 when it does, -ERANGE when it does not
+ */
+int
+xnvme_be_upcie_iova_window_clear(uint64_t iova, uint64_t nbytes);
 
 int
 xnvme_be_upcie_iova_range_required(void);
@@ -285,6 +289,23 @@ xnvme_be_upcie_served_mem_map(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr *
 int
 xnvme_be_upcie_served_mem_unmap(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr *ctrlr,
 				void *vaddr);
+
+/**
+ * The IOAS that memory of this process maps into, at an IOVA equal to its address
+ *
+ * @return NULL unless the heap sits in it that way, through iommufd in this
+ * process or the server's
+ */
+struct iommufd *
+xnvme_be_upcie_mem_map_ioas(void);
+
+/** As xnvme_be_upcie_mem_map_ioas(), for the type1 container */
+struct vfio_container *
+xnvme_be_upcie_mem_map_container(void);
+
+/** Unmap what is still mapped; the IOAS or the connection holding it is going away */
+void
+xnvme_be_upcie_mem_maps_term(void);
 
 int
 xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int opts);
