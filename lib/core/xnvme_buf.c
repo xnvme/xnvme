@@ -267,24 +267,24 @@ xnvme_buf_diff_pr(const void *expected, const void *actual, size_t nbytes, int X
 }
 
 int
-xnvme_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
+xnvme_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 {
 	int err;
 
 	xnvme_lock();
-	err = dev->be.mem.mem_map(dev, vaddr, nbytes, NULL);
+	err = dev->be.mem.buf_register(dev, vaddr, nbytes);
 	xnvme_unlock();
 
 	return err;
 }
 
 int
-xnvme_mem_unmap(const struct xnvme_dev *dev, void *buf)
+xnvme_buf_unregister(const struct xnvme_dev *dev, void *vaddr)
 {
 	int err;
 
 	xnvme_lock();
-	err = dev->be.mem.mem_unmap(dev, buf);
+	err = dev->be.mem.buf_unregister(dev, vaddr);
 	xnvme_unlock();
 
 	return err;

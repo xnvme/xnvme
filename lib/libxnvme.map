@@ -39,6 +39,8 @@
 		xnvme_buf_phys_free;
 		xnvme_buf_phys_realloc;
 		xnvme_buf_vtophys;
+		xnvme_buf_register;
+		xnvme_buf_unregister;
 		xnvme_buf_virt_alloc;
 		xnvme_buf_virt_free;
 		xnvme_buf_fill;
@@ -139,10 +141,6 @@
 		xnvme_libconf_get;
 		xnvme_libconf_fpr;
 		xnvme_libconf_pr;
-
-		# libxnvme_mem.h
-		xnvme_mem_map;
-		xnvme_mem_unmap;
 
 		# libxnvme_nvm.h
 		xnvme_nvm_read;

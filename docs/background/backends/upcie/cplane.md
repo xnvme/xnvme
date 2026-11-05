@@ -239,8 +239,8 @@ A region registered again, for another controller, is handed the description
 it already has, so the addresses a client resolves through do not change.
 The heap is registered this way when the client opens the controller, and a
 buffer the client allocated itself the same way when it hands it to
-`xnvme_mem_map()`: one registration per buffer and controller, given back on
-`xnvme_mem_unmap()` or with the connection.
+`xnvme_buf_register()`: one registration per buffer and controller, given back
+on `xnvme_buf_unregister()` or with the connection.
 
 A host-driven GPU client can also ask for a queue whose completion queue alone
 lies in a region it registered, which is what `XNVME_QUEUE_P2P_CQ_MIRROR` needs,

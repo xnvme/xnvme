@@ -156,6 +156,43 @@ xnvme_file_get_cmd_ctx(struct xnvme_dev *fh)
 }
 
 /**
+ * @deprecated Use xnvme_buf_register()
+ *
+ * @param dev Device handle obtained with xnvme_dev_open()
+ * @param vaddr The address the caller accesses the memory at
+ * @param nbytes The number of bytes to register, starting at vaddr
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned
+ */
+static inline int
+xnvme_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
+{
+	static int warned;
+
+	xnvme_compat_deprecated(&warned, "xnvme_mem_map", "xnvme_buf_register");
+
+	return xnvme_buf_register(dev, vaddr, nbytes);
+}
+
+/**
+ * @deprecated Use xnvme_buf_unregister()
+ *
+ * @param dev Device handle obtained with xnvme_dev_open()
+ * @param buf The address the memory was registered at
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned
+ */
+static inline int
+xnvme_mem_unmap(const struct xnvme_dev *dev, void *buf)
+{
+	static int warned;
+
+	xnvme_compat_deprecated(&warned, "xnvme_mem_unmap", "xnvme_buf_unregister");
+
+	return xnvme_buf_unregister(dev, buf);
+}
+
+/**
  * @deprecated Use xnvme_znd_report_get_descr()
  *
  * Unlike the functions above, it does not warn that it is deprecated
