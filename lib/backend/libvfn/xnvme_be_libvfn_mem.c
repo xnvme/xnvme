@@ -116,6 +116,14 @@ xnvme_be_libvfn_buf_unregister(const struct xnvme_dev *dev, void *buf)
 	return 0;
 }
 
+static int
+xnvme_be_libvfn_buf_get_alignment(const struct xnvme_dev *XNVME_UNUSED(dev), size_t *align)
+{
+	*align = __VFN_PAGESIZE;
+
+	return 0;
+}
+
 #endif
 
 struct xnvme_be_mem g_xnvme_be_libvfn_mem = {
@@ -127,6 +135,7 @@ struct xnvme_be_mem g_xnvme_be_libvfn_mem = {
 	.buf_vtophys = xnvme_be_libvfn_buf_vtophys,
 	.buf_register = xnvme_be_libvfn_buf_register,
 	.buf_unregister = xnvme_be_libvfn_buf_unregister,
+	.buf_get_alignment = xnvme_be_libvfn_buf_get_alignment,
 #else
 	.buf_alloc = xnvme_be_nosys_buf_alloc,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,

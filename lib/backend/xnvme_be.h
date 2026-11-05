@@ -16,7 +16,7 @@
 #define XNVME_BE_SYNC_NBYTES  24
 #define XNVME_BE_ADMIN_NBYTES 24
 #define XNVME_BE_DEV_NBYTES   40
-#define XNVME_BE_MEM_NBYTES   56
+#define XNVME_BE_MEM_NBYTES   64
 #define XNVME_BE_ATTR_NBYTES  24
 #define XNVME_BE_STATE_NBYTES 128
 
@@ -155,6 +155,11 @@ struct xnvme_be_mem {
 	 * Unregister memory registered with buf_register
 	 */
 	int (*buf_unregister)(const struct xnvme_dev *, void *);
+
+	/**
+	 * The alignment of memory to register; NULL where the interface does not register memory
+	 */
+	int (*buf_get_alignment)(const struct xnvme_dev *, size_t *);
 	const char *id;
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_mem) == XNVME_BE_MEM_NBYTES, "Incorrect size")

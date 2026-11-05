@@ -289,3 +289,26 @@ xnvme_buf_unregister(const struct xnvme_dev *dev, void *vaddr)
 
 	return err;
 }
+
+int
+xnvme_buf_get_alignment(const struct xnvme_dev *dev, size_t *align)
+{
+	size_t got = 0;
+	int err;
+
+	if (!dev || !align) {
+		return -EINVAL;
+	}
+	if (!dev->be.mem.buf_get_alignment) {
+		return -ENOSYS;
+	}
+
+	err = dev->be.mem.buf_get_alignment(dev, &got);
+	if (err) {
+		return err;
+	}
+
+	*align = (got < sizeof(void *)) ? sizeof(void *) : got;
+
+	return 0;
+}

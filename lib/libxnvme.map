@@ -41,6 +41,7 @@
 		xnvme_buf_vtophys;
 		xnvme_buf_register;
 		xnvme_buf_unregister;
+		xnvme_buf_get_alignment;
 		xnvme_buf_virt_alloc;
 		xnvme_buf_virt_free;
 		xnvme_buf_fill;
