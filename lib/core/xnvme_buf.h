@@ -6,6 +6,20 @@
 #define __INTERNAL_XNVME_BUF_H
 
 /**
+ * Export the CUDA or HIP allocation holding vaddr as a dma-buf
+ *
+ * @param vaddr An address of CUDA or HIP device memory
+ * @param base Set to the start of the allocation
+ * @param nbytes Set to the length of the allocation
+ * @param fd Set to the dma-buf of the allocation, which the caller closes
+ *
+ * @return On success, 0 is returned. `-EINVAL` when vaddr is neither CUDA nor HIP device memory,
+ * and another negative `errno` on error.
+ */
+int
+xnvme_buf_export_dmabuf(void *vaddr, void **base, size_t *nbytes, int *fd);
+
+/**
  * Register memory where the OS pins and translates the payload of each command itself
  *
  * Any memory then serves as command payload, so there is nothing to register; the arguments are

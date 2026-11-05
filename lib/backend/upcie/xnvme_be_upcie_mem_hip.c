@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <xnvme_be_upcie_hip.h>
+#include <xnvme_hip_buf.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_state.h>
 
@@ -54,19 +55,15 @@ xnvme_be_upcie_hip_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t
 {
 	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 	int dmabuf_fd = -1;
-	hipError_t herr;
 	int err;
 
 	if (!g_upcie_rte.connection.alive) {
 		return xnvme_be_upcie_dmamem_map(state->dmem, vaddr, nbytes, NULL);
 	}
 
-	herr = hipMemGetHandleForAddressRange(&dmabuf_fd, (hipDeviceptr_t)vaddr, nbytes,
-					      hipMemRangeHandleTypeDmaBufFd, 0);
-	if (herr != hipSuccess) {
-		XNVME_DEBUG("FAILED: hipMemGetHandleForAddressRange(%p, %zu); herr(%d)", vaddr,
-			    nbytes, herr);
-		return -EIO;
+	err = xnvme_hip_buf_export_dmabuf(vaddr, nbytes, &dmabuf_fd);
+	if (err) {
+		return err;
 	}
 
 	err = xnvme_be_upcie_served_mem_map(state->dmem, state->ctrlr, dmabuf_fd, vaddr, nbytes,
