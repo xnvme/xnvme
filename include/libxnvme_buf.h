@@ -135,6 +135,12 @@ xnvme_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys);
  * Registering makes memory the caller allocated itself, rather than with xnvme_buf_alloc(),
  * usable as the payload of commands to the device.
  *
+ * Each registration is given back by one call to xnvme_buf_unregister(). Registering a range
+ * that is registered already, or a range within one, is counted on that registration rather than
+ * registered again; a range that overlaps a registration otherwise is refused with `-EBUSY`.
+ * Memory from xnvme_buf_alloc() is usable already, and registering and unregistering it does
+ * nothing.
+ *
  * @note Unregister the memory with xnvme_buf_unregister()
  * @note vaddr and nbytes must be multiples of the alignment given by xnvme_buf_get_alignment()
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
