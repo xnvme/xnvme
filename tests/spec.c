@@ -17,6 +17,18 @@
 		 ((uint64_t)1 << (4 * XNVME_SIZEOF_MEMBER(type, field))) ==           \
 	 0)
 
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_idfy, cdw14, XNVME_SPEC_CMD_IDFY_CDW14_UUID),
+		    "cdw14 of struct xnvme_spec_cmd_idfy")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_idfy, cns) == 40,
+		    "cns of struct xnvme_spec_cmd_idfy")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_idfy, cntid) == 42,
+		    "cntid of struct xnvme_spec_cmd_idfy")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_idfy, nvmsetid) == 44,
+		    "nvmsetid of struct xnvme_spec_cmd_idfy")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_idfy, csi) == 47,
+		    "csi of struct xnvme_spec_cmd_idfy")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_idfy, cdw14) == 56,
+		    "cdw14 of struct xnvme_spec_cmd_idfy")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_common, flags,
 			 XNVME_SPEC_CMD_COMMON_FLAGS_FUSE | XNVME_SPEC_CMD_COMMON_FLAGS_PSDT),
 		    "flags of struct xnvme_spec_cmd_common")
@@ -383,6 +395,18 @@ sub_sqe_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	    sqe.common.nsid != 0x12345678 || sqe.nvm.slba != 0x200000001ULL) {
 		xnvme_cli_pinf("FAILED: opcode: %#x, nsid: %#x, slba: %#" PRIx64,
 			       sqe.common.opcode, sqe.common.nsid, (uint64_t)sqe.nvm.slba);
+		err = -EINVAL;
+	}
+
+	memset(&sqe, 0, sizeof(sqe));
+	sqe.cdw[10] = 0x00020106; // Identify dword 10: CNS 0x06, CNTID 0x2
+	sqe.cdw[11] = 0x05000003; // Identify dword 11: NVM set 0x3, CSI 0x5
+	sqe.cdw[14] = 0xffffff7f; // Identify dword 14, bits 6:0: UUID index 0x7f
+	if (sqe.idfy.cns != 0x06 || sqe.idfy.cntid != 0x2 || sqe.idfy.nvmsetid != 0x3 ||
+	    sqe.idfy.csi != 0x5 ||
+	    xnvme_bits_get(sqe.idfy.cdw14, XNVME_SPEC_CMD_IDFY_CDW14_UUID) != 0x7f) {
+		xnvme_cli_pinf("FAILED: idfy: cns: %#x, cntid: %#x, nvmsetid: %#x, csi: %#x",
+			       sqe.idfy.cns, sqe.idfy.cntid, sqe.idfy.nvmsetid, sqe.idfy.csi);
 		err = -EINVAL;
 	}
 

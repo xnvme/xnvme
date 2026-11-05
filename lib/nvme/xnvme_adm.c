@@ -76,7 +76,8 @@ xnvme_adm_idfy(struct xnvme_cmd_ctx *ctx, uint8_t cns, uint16_t cntid, uint8_t n
 	ctx->cmd.idfy.cns = cns;
 	ctx->cmd.idfy.cntid = cntid;
 	ctx->cmd.idfy.nvmsetid = nvmsetid;
-	ctx->cmd.idfy.uuid = uuid;
+	ctx->cmd.idfy.cdw14 =
+		xnvme_bits_set(ctx->cmd.idfy.cdw14, XNVME_SPEC_CMD_IDFY_CDW14_UUID, uuid);
 
 	return xnvme_cmd_pass_admin(ctx, dbuf, dbuf_nbytes, NULL, 0x0);
 }
