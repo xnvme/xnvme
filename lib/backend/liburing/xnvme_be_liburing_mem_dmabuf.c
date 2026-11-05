@@ -145,6 +145,23 @@ buf_unregister(const struct xnvme_dev *dev, void *vaddr)
 	return xnvme_be_liburing_dmabuf_unref(dev, vaddr);
 }
 
+static int
+buf_get_alignment(const struct xnvme_dev *XNVME_UNUSED(dev), size_t *align)
+{
+	long pagesize;
+
+	pagesize = sysconf(_SC_PAGESIZE);
+	if (pagesize == -1) {
+		XNVME_DEBUG("FAILED: sysconf(), errno: %d", errno);
+		return -errno;
+	}
+
+	// A dma-buf is exported and registered in whole pages
+	*align = (size_t)pagesize;
+
+	return 0;
+}
+
 struct xnvme_be_mem g_xnvme_be_liburing_mem_dmabuf = {
 	.id = "io_uring_dmabuf",
 	.buf_alloc = xnvme_be_posix_mem_buf_alloc,
@@ -153,5 +170,6 @@ struct xnvme_be_mem g_xnvme_be_liburing_mem_dmabuf = {
 	.buf_vtophys = xnvme_be_posix_mem_buf_vtophys,
 	.buf_register = buf_register,
 	.buf_unregister = buf_unregister,
+	.buf_get_alignment = buf_get_alignment,
 };
 #endif
