@@ -2,13 +2,44 @@ import pytest
 
 from ..conftest import xnvme_parametrize
 
+# The memory interfaces that register host memory of the caller's
+REGISTERS_HOST_MEMORY = (
+    "hugepage",
+    "io_uring_dmabuf",
+    "libvfn",
+    "posix",
+    "spdk",
+    "windows",
+)
+
+
+def skip_unless_registers_host_memory(cijoe, device, be_opts):
+    if be_opts["mem"] not in REGISTERS_HOST_MEMORY:
+        pytest.skip(reason="Backend does not register host memory")
+
+    # Without an IOMMU, SPDK registers a PCIe device only memory in hugetlb
+    # pages, which the tests do not allocate. The driver does not tell, as
+    # vfio-pci in no-IOMMU mode is bound like vfio-pci with one.
+    if be_opts["mem"] == "spdk" and "pcie" in device["labels"]:
+        uri = device["uri"]
+        err, _ = cijoe.run(f"test -e /sys/bus/pci/devices/{uri}/iommu_group")
+        if err:
+            pytest.skip(reason="SPDK without an IOMMU registers hugetlb memory only")
+
 
 @xnvme_parametrize(labels=["dev"], opts=["be"])
 def test_mem_map_unmap(cijoe, device, be_opts, cli_args):
-    if be_opts["admin"] != "libvfn":
-        pytest.skip(reason="Backend does not support memory-mapping")
+    skip_unless_registers_host_memory(cijoe, device, be_opts)
 
     err, _ = cijoe.run(f"xnvme_tests_map mem_map_unmap {cli_args} --count 31")
+    assert not err
+
+
+@xnvme_parametrize(labels=["dev"], opts=["be"])
+def test_register_counted(cijoe, device, be_opts, cli_args):
+    skip_unless_registers_host_memory(cijoe, device, be_opts)
+
+    err, _ = cijoe.run(f"xnvme_tests_map register_counted {cli_args}")
     assert not err
 
 
