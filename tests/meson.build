@@ -153,3 +153,9 @@ if conf_data.get('XNVME_BE_THRPOOL_ENABLED') and conf_data.get('XNVME_BE_RAMDISK
     )
   endforeach
 endif
+
+test(
+  'tests - no sub-header includes libxnvme.h',
+  python3,
+  args: [files('sub_headers.py'), meson.project_source_root() / 'include'],
+)

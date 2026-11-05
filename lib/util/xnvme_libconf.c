@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <libxnvme.h>
-#include <libxnvme_libconf.h>
 #include <xnvme_be_linux.h>
 #include <xnvme_be_windows.h>
 #ifdef XNVME_PLATFORM_LINUX_ENABLED
