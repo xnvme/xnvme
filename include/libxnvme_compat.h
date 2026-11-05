@@ -14,6 +14,7 @@
  * @file libxnvme_compat.h
  */
 #include <errno.h>
+#include <string.h>
 
 /**
  * @deprecated Use XNVME_SPEC_IDFY_NS_DESC
@@ -87,8 +88,9 @@ static inline struct xnvme_opts
 xnvme_opts_default(void)
 {
 	static int warned;
-	struct xnvme_opts opts = {0};
+	struct xnvme_opts opts;
 
+	memset(&opts, 0, sizeof(opts));
 	xnvme_compat_deprecated(&warned, "xnvme_opts_default", "xnvme_opts_set_defaults");
 	xnvme_opts_set_defaults(&opts);
 
@@ -106,8 +108,9 @@ static inline struct xnvme_cmd_ctx
 xnvme_cmd_ctx_from_dev(struct xnvme_dev *dev)
 {
 	static int warned;
-	struct xnvme_cmd_ctx ctx = {0};
+	struct xnvme_cmd_ctx ctx;
 
+	memset(&ctx, 0, sizeof(ctx));
 	xnvme_compat_deprecated(&warned, "xnvme_cmd_ctx_from_dev", "xnvme_dev_get_cmd_ctx");
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
@@ -189,8 +192,9 @@ static inline struct xnvme_cmd_ctx
 xnvme_file_get_cmd_ctx(struct xnvme_dev *fh)
 {
 	static int warned;
-	struct xnvme_cmd_ctx ctx = {0};
+	struct xnvme_cmd_ctx ctx;
 
+	memset(&ctx, 0, sizeof(ctx));
 	xnvme_compat_deprecated(&warned, "xnvme_file_get_cmd_ctx", "xnvme_dev_get_cmd_ctx");
 	xnvme_dev_get_cmd_ctx(fh, &ctx);
 
