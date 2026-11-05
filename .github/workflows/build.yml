@@ -44,14 +44,14 @@ jobs:
     - name: Configure with and build with debug enabled (without spdk)
       if: ${{ contains(matrix.os, 'alpine') }}
       run: |
-        meson setup builddir --buildtype=debug -Dwith-spdk=disabled
+        meson setup builddir --buildtype=debug -Dwerror=true -Dwith-spdk=disabled
         meson compile -C builddir
         make clean # prepare for building without debug
 
     - name: Configure with debug enabled
       if: ${{ ! contains(matrix.os, 'alpine') }}
       run: |
-        meson setup builddir --buildtype=debug
+        meson setup builddir --buildtype=debug -Dwerror=true
         meson compile -C builddir
         make clean # prepare for building without debug
 
@@ -59,7 +59,7 @@ jobs:
       # Nothing else builds the nosys fallbacks
       if: ${{ matrix.os == 'debian' && matrix.ver == 'trixie' }}
       run: |
-        meson setup builddir-none $(for be in emu thrpool nil shim liburing libaio iocp ioring spdk libvfn upcie driverkit ramdisk; do printf -- '-Dwith-%s=disabled ' "$be"; done)
+        meson setup builddir-none -Dwerror=true $(for be in emu thrpool nil shim liburing libaio iocp ioring spdk libvfn upcie driverkit ramdisk; do printf -- '-Dwith-%s=disabled ' "$be"; done)
         meson compile -C builddir-none
         rm -rf builddir-none
 
@@ -68,6 +68,10 @@ jobs:
         BSCRIPT_DEF: toolbox/pkgs/default-build.sh
         BSCRIPT: toolbox/pkgs/${{ matrix.os }}-${{ matrix.ver }}-build.sh
       run: |
+        # The scripts are the ones the docs show, so -Dwerror=true is added here
+        meson() {
+          if [[ "$1" == "setup" ]]; then shift; command meson setup -Dwerror=true "$@"; else command meson "$@"; fi
+        }
         if [[ -f "${BSCRIPT}" ]]; then source ${BSCRIPT}; else source ${BSCRIPT_DEF}; fi
 
     - name: Execute 'ldconfig'
@@ -197,9 +201,10 @@ jobs:
 
     - name: Build and run the Nix package
       run: |
+        # The script is the one the docs show, so --arg werror true is added here
         docker run --rm -v "$GITHUB_WORKSPACE:/src" -w /src \
           ghcr.io/xnvme/xnvme/distro-deps-nixos-latest:main \
-          bash -e toolbox/pkgs/nixos-latest-build.sh
+          bash -e -c 'nix-build() { command nix-build --arg werror true "$@"; }; source toolbox/pkgs/nixos-latest-build.sh'
 
   #
   # Build on macOS
@@ -232,7 +237,7 @@ jobs:
 
     - name: Configure and build with debug enabled
       run: |
-        meson setup builddir --buildtype=debug
+        meson setup builddir --buildtype=debug -Dwerror=true
         meson compile -C builddir
         make clean # prepare for building without debug
 
@@ -241,6 +246,10 @@ jobs:
         BSCRIPT_DEF: toolbox/pkgs/default-build.sh
         BSCRIPT: toolbox/pkgs/${{ matrix.os }}-${{ matrix.ver }}-build.sh
       run: |
+        # The scripts are the ones the docs show, so -Dwerror=true is added here
+        meson() {
+          if [[ "$1" == "setup" ]]; then shift; command meson setup -Dwerror=true "$@"; else command meson "$@"; fi
+        }
         if [[ -f "${BSCRIPT}" ]]; then source ${BSCRIPT}; else source ${BSCRIPT_DEF}; fi
 
     - name: meson-log-dump
@@ -382,14 +391,14 @@ jobs:
     - name: Configure and build with debug enabled
       shell: bash
       run: |
-        meson setup builddir --buildtype=debug
+        meson setup builddir --buildtype=debug -Dwerror=true
         meson compile -C builddir
         make clean # prepare for building without debug
 
     - name: Build!
       shell: powershell
       run: |
-        meson setup builddir --prefix "$env:SystemDrive\tools\msys64\usr" --default-library=static
+        meson setup builddir --prefix "$env:SystemDrive\tools\msys64\usr" --default-library=static -Dwerror=true
         meson compile -C builddir
 
     - name: meson-log-dump
