@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <xnvme_be.h>
+#include <xnvme_buf.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_PLATFORM_LINUX_ENABLED
 #include <xnvme_dev.h>
@@ -149,8 +150,9 @@ struct xnvme_be_mem g_xnvme_be_linux_mem_hugepage = {
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
 	.buf_free = xnvme_be_linux_mem_hugepage_buf_free,
 	.buf_vtophys = xnvme_be_linux_mem_hugepage_buf_vtophys,
-	.buf_register = xnvme_be_nosys_buf_register,
-	.buf_unregister = xnvme_be_nosys_buf_unregister,
+	.buf_register = xnvme_buf_noreg_register,
+	.buf_unregister = xnvme_buf_noreg_unregister,
+	.buf_get_alignment = xnvme_buf_noreg_get_alignment,
 #else
 	.buf_alloc = xnvme_be_nosys_buf_alloc,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,

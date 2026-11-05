@@ -6,6 +6,7 @@
 #define _XOPEN_SOURCE 700
 #endif
 #include <xnvme_be.h>
+#include <xnvme_buf.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_POSIX_ENABLED
 #include <unistd.h>
@@ -56,8 +57,9 @@ struct xnvme_be_mem g_xnvme_be_posix_mem = {
 	.buf_realloc = xnvme_be_posix_mem_buf_realloc,
 	.buf_free = xnvme_be_posix_mem_buf_free,
 	.buf_vtophys = xnvme_be_posix_mem_buf_vtophys,
-	.buf_register = xnvme_be_nosys_buf_register,
-	.buf_unregister = xnvme_be_nosys_buf_unregister,
+	.buf_register = xnvme_buf_noreg_register,
+	.buf_unregister = xnvme_buf_noreg_unregister,
+	.buf_get_alignment = xnvme_buf_noreg_get_alignment,
 #else
 	.buf_alloc = xnvme_be_nosys_buf_alloc,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,

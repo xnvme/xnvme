@@ -12,6 +12,31 @@
 #include <xnvme_cuda_buf.h>
 #include <xnvme_hip_buf.h>
 #include <xnvme_lock.h>
+#include <xnvme_buf.h>
+
+#ifdef WIN32
+#include <windows.h>
+
+static size_t
+_pagesize(void)
+{
+	SYSTEM_INFO si;
+
+	GetSystemInfo(&si);
+
+	return si.dwPageSize;
+}
+#else
+#include <unistd.h>
+
+static size_t
+_pagesize(void)
+{
+	long pagesize = sysconf(_SC_PAGESIZE);
+
+	return (pagesize > 0) ? (size_t)pagesize : 0;
+}
+#endif
 
 void *
 xnvme_buf_virt_alloc(size_t alignment, size_t nbytes)
@@ -309,6 +334,55 @@ xnvme_buf_get_alignment(const struct xnvme_dev *dev, size_t *align)
 	}
 
 	*align = (got < sizeof(void *)) ? sizeof(void *) : got;
+
+	return 0;
+}
+
+int
+xnvme_buf_noreg_register(const struct xnvme_dev *XNVME_UNUSED(dev), void *vaddr, size_t nbytes)
+{
+	if (!vaddr || !nbytes) {
+		XNVME_DEBUG("FAILED: invalid vaddr(%p) or nbytes(%zu)", vaddr, nbytes);
+		return -EINVAL;
+	}
+
+	XNVME_DEBUG("INFO: vaddr(%p) needs no registering", vaddr);
+
+	return 0;
+}
+
+int
+xnvme_buf_noreg_unregister(const struct xnvme_dev *XNVME_UNUSED(dev), void *vaddr)
+{
+	if (!vaddr) {
+		XNVME_DEBUG("FAILED: invalid vaddr(%p)", vaddr);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int
+xnvme_buf_noreg_get_alignment(const struct xnvme_dev *dev, size_t *align)
+{
+	size_t pagesize;
+
+	// The OS copies the payload of buffered IO, so any alignment serves
+	if (!dev->opts.direct) {
+		*align = sizeof(void *);
+		return 0;
+	}
+
+	/*
+	 * The OS refuses a payload of direct IO that is not aligned to what the device or the file
+	 * system needs, which a page satisfies
+	 */
+	pagesize = _pagesize();
+	if (!pagesize) {
+		XNVME_DEBUG("FAILED: retrieving the page size");
+		return -EIO;
+	}
+	*align = pagesize;
 
 	return 0;
 }
