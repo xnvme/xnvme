@@ -12,10 +12,12 @@
     sha256 = "0gnw7gkrh9axnknb67627mf9sbdd7sbgw3148g5lh1d8hiks4l33";
   }) { },
   src ? ../..,
+  werror ? false,
 }:
 
-(pkgs.callPackage ./package.nix { }).overrideAttrs {
+(pkgs.callPackage ./package.nix { }).overrideAttrs (old: {
   version = "git";
+  mesonFlags = old.mesonFlags ++ [ (pkgs.lib.mesonBool "werror" werror) ];
   src = pkgs.lib.cleanSourceWith {
     src = pkgs.lib.cleanSource src;
     filter =
@@ -30,4 +32,4 @@
         "subprojects/spdk"
       ]);
   };
-}
+})
