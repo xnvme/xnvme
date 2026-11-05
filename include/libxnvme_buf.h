@@ -136,6 +136,7 @@ xnvme_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys);
  * usable as the payload of commands to the device.
  *
  * @note Unregister the memory with xnvme_buf_unregister()
+ * @note vaddr and nbytes must be multiples of the alignment given by xnvme_buf_get_alignment()
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
@@ -161,6 +162,23 @@ xnvme_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes);
  */
 int
 xnvme_buf_unregister(const struct xnvme_dev *dev, void *vaddr);
+
+/**
+ * Retrieve the alignment of memory to register with the given device
+ *
+ * The alignment is a power of two, and at least `sizeof(void *)`. It is the larger of what the
+ * device needs to register memory, of any kind it takes, and what its I/O path needs of command
+ * payloads. Retrieve it before allocating memory that is to be registered, to allocate it
+ * suitably.
+ *
+ * @param dev Device handle obtained with xnvme_dev_open()
+ * @param align Set to the alignment on success
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned and `align` is left
+ * untouched; `-ENOSYS` when the device does not register memory.
+ */
+int
+xnvme_buf_get_alignment(const struct xnvme_dev *dev, size_t *align);
 
 /**
  * Allocate a buffer of virtual memory of the given `alignment` and `nbytes`

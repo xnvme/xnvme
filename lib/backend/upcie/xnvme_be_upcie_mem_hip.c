@@ -88,6 +88,14 @@ xnvme_be_upcie_hip_buf_unregister(const struct xnvme_dev *dev, void *vaddr)
 	return xnvme_be_upcie_dmamem_unmap(state->dmem, vaddr);
 }
 
+static int
+xnvme_be_upcie_hip_buf_get_alignment(const struct xnvme_dev *XNVME_UNUSED(dev), size_t *align)
+{
+	*align = g_upcie_hip_rte.hip_config.device_pagesize;
+
+	return 0;
+}
+
 #endif
 
 struct xnvme_be_mem g_xnvme_be_upcie_mem_hip = {
@@ -99,6 +107,7 @@ struct xnvme_be_mem g_xnvme_be_upcie_mem_hip = {
 	.buf_vtophys = xnvme_be_upcie_hip_buf_vtophys,
 	.buf_register = xnvme_be_upcie_hip_buf_register,
 	.buf_unregister = xnvme_be_upcie_hip_buf_unregister,
+	.buf_get_alignment = xnvme_be_upcie_hip_buf_get_alignment,
 #else
 	.buf_alloc = xnvme_be_nosys_buf_alloc,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
