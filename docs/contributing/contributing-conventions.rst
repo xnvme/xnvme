@@ -120,8 +120,17 @@ A field of bits in a structure of the specification, such as ``flbas`` of
 the Identify Namespace data, is an integer of the width the specification
 gives it, not a C bit-field, whose layout is the compiler's choice. The
 integer is named as the specification names the field, such as ``status``
-of the Completion Queue Entry, not by a placeholder such as ``val``, nor
-wrapped in a structure of its own.
+of the Completion Queue Entry, not by a placeholder such as ``val``.
+
+Where the specification names only the fields within an integer, each
+narrower than a byte and reached through a mask, the integer is named
+``bits``, such as ``bits`` of the Extended LBA Format. A structure holding
+more than one such integer names each after the fields it holds, such as
+``mxps_nops`` of the power state descriptor, and a byte with a name in common
+use keeps it, such as ``flags`` of a command, as the Linux NVMe driver names
+it. The integer is not wrapped in a structure of its own, unless it is the
+element of an array, which needs a type for its masks to belong to, as
+``struct xnvme_spec_elbaf`` is.
 
 * Each of its fields is named by a mask, a ``#define`` of the bits in their
   place, read and written with ``xnvme_bits_get()`` and ``xnvme_bits_set()``

@@ -773,14 +773,14 @@ enum xnvme_spec_nvm_ns_pif {
  * @struct xnvme_spec_elbaf
  */
 struct xnvme_spec_elbaf {
-	uint32_t val; ///< Extended LBA format, see XNVME_SPEC_ELBAF_*
+	uint32_t bits; ///< Extended LBA format, see XNVME_SPEC_ELBAF_BITS_*
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_elbaf) == 4, "Incorrect size")
 
-/** Storage tag size; bits 6:0 of 'val' */
-#define XNVME_SPEC_ELBAF_STS 0x7f
-/** Protection information format, see xnvme_spec_nvm_ns_pif; bits 8:7 of 'val' */
-#define XNVME_SPEC_ELBAF_PIF 0x180
+/** Storage tag size; bits 6:0 of 'bits' */
+#define XNVME_SPEC_ELBAF_BITS_STS 0x7f
+/** Protection information format, see xnvme_spec_nvm_ns_pif; bits 8:7 of 'bits' */
+#define XNVME_SPEC_ELBAF_BITS_PIF 0x180
 
 #define XNVME_SPEC_CTRLR_SN_LEN 20
 #define XNVME_SPEC_CTRLR_MN_LEN 40
@@ -1282,16 +1282,16 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_ctrlr) == 4096, "Incorrect siz
  * @struct xnvme_spec_cs_vector
  */
 struct xnvme_spec_cs_vector {
-	uint64_t val; ///< The command sets of the combination, see XNVME_SPEC_CS_VECTOR_*
+	uint64_t bits; ///< The command sets of the combination, see XNVME_SPEC_CS_VECTOR_BITS_*
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cs_vector) == 8, "Incorrect size")
 
-/** The NVM command set; bit 0 of 'val' */
-#define XNVME_SPEC_CS_VECTOR_NVM 0x1
-/** The Key Value command set; bit 1 of 'val' */
-#define XNVME_SPEC_CS_VECTOR_KV 0x2
-/** The Zoned Namespace command set; bit 2 of 'val' */
-#define XNVME_SPEC_CS_VECTOR_ZNS 0x4
+/** The NVM command set; bit 0 of 'bits' */
+#define XNVME_SPEC_CS_VECTOR_BITS_NVM 0x1
+/** The Key Value command set; bit 1 of 'bits' */
+#define XNVME_SPEC_CS_VECTOR_BITS_KV 0x2
+/** The Zoned Namespace command set; bit 2 of 'bits' */
+#define XNVME_SPEC_CS_VECTOR_BITS_ZNS 0x4
 
 #define XNVME_SPEC_IDFY_CS_IOCSC_LEN 512
 
