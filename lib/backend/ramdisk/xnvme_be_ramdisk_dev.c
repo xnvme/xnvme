@@ -37,7 +37,7 @@ size_t
 xnvme_be_ramdisk_dev_get_size(struct xnvme_dev *dev)
 {
 	const struct xnvme_ident *ident = &dev->ident;
-	char *gb_marker;
+	const char *gb_marker;
 
 	gb_marker = strrchr(ident->uri, 'G');
 	if (!gb_marker || (gb_marker && strcmp(gb_marker, "GB"))) {
