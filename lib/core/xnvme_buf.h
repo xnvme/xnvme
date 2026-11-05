@@ -26,4 +26,57 @@ xnvme_buf_noreg_unregister(const struct xnvme_dev *dev, void *vaddr);
 int
 xnvme_buf_noreg_get_alignment(const struct xnvme_dev *dev, size_t *align);
 
+/**
+ * A range of memory a backend registered for an owner, counted
+ *
+ * Registering the range again, or a range within it, takes a reference rather than a
+ * registration. The registrations are touched only with the control-plane lock held.
+ *
+ * @struct xnvme_buf_reg
+ */
+struct xnvme_buf_reg {
+	const void *owner; ///< What the range is registered with, such as an IOMMU context
+	void *vaddr;
+	size_t nbytes;
+	uint64_t priv; ///< For the backend, such as a handle to unregister by
+	uint32_t refs;
+	struct xnvme_buf_reg *next;
+};
+
+/**
+ * Find the registration of an owner holding a range
+ *
+ * @param owner What the range is registered with
+ * @param vaddr Start of the range
+ * @param nbytes Length of the range
+ * @param reg Set to the registration holding the range, on success
+ *
+ * @return On success, 0 is returned. `-EBUSY` when a registration overlaps the range without
+ * holding it, and `-ENOENT` when none does.
+ */
+int
+xnvme_buf_reg_find(const void *owner, const void *vaddr, size_t nbytes,
+		   struct xnvme_buf_reg **reg);
+
+/**
+ * Add a registration of an owner with a reference of one
+ *
+ * @param owner What the range is registered with
+ * @param vaddr Start of the range
+ * @param nbytes Length of the range
+ * @param priv For the backend, such as a handle to unregister by
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ */
+int
+xnvme_buf_reg_add(const void *owner, void *vaddr, size_t nbytes, uint64_t priv);
+
+/**
+ * Remove a registration found with xnvme_buf_reg_find()
+ *
+ * @param reg The registration to remove
+ */
+void
+xnvme_buf_reg_remove(struct xnvme_buf_reg *reg);
+
 #endif /* __INTERNAL_XNVME_BUF_H */
