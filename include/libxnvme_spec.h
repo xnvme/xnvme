@@ -1934,25 +1934,35 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_idfy) == 64, "Incorrect size")
 struct xnvme_spec_cmd_log {
 	uint32_t cdw00_09[10]; ///< Command dword 0 to 9
 
-	uint32_t lid   : 8;  ///< Log Page Identifier
-	uint32_t lsp   : 7;  ///< Log Specific Field
-	uint32_t rae   : 1;  ///< Retain Async. Event
-	uint32_t numdl : 16; ///< Nr. of DWORDS lower-bits
+	uint32_t cdw10; ///< Command dword 10, see XNVME_SPEC_CMD_LOG_CDW10_*
 
-	uint32_t numdu : 16; ///< Nr. of DWORDS upper-bits
-	uint32_t lsi   : 16; ///< Log Specific Identifier
+	uint16_t numdu; ///< NUMDU: Number of Dwords Upper
+	uint16_t lsi;   ///< LSI: Log Specific Identifier
 
-	uint32_t lpol; ///< Log-page offset lower 32bits
-	uint32_t lpou; ///< Log-page offset upper 32bits
+	uint32_t lpol; ///< LPOL: Log Page Offset Lower
+	uint32_t lpou; ///< LPOU: Log Page Offset Upper
 
-	uint32_t uuidx : 7; ///< UUID Index
-	uint32_t rsvd1 : 16;
-	uint32_t ot    : 1; ///< Offset Type
-	uint32_t csi   : 8; ///< Command Specific Identifier
+	uint32_t cdw14; ///< Command dword 14, see XNVME_SPEC_CMD_LOG_CDW14_*
 
 	uint32_t cdw15; ///< Command dword 15
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_log) == 64, "Incorrect size")
+
+/** Log Page Identifier; bits 7:0 of 'cdw10' */
+#define XNVME_SPEC_CMD_LOG_CDW10_LID 0xff
+/** Log Specific Parameter; bits 14:8 of 'cdw10' */
+#define XNVME_SPEC_CMD_LOG_CDW10_LSP 0x7f00
+/** Retain Asynchronous Event; bit 15 of 'cdw10' */
+#define XNVME_SPEC_CMD_LOG_CDW10_RAE 0x8000
+/** Number of Dwords Lower; bits 31:16 of 'cdw10' */
+#define XNVME_SPEC_CMD_LOG_CDW10_NUMDL 0xffff0000
+
+/** UUID Index; bits 6:0 of 'cdw14' */
+#define XNVME_SPEC_CMD_LOG_CDW14_UUIDX 0x7f
+/** Offset Type; bit 23 of 'cdw14' */
+#define XNVME_SPEC_CMD_LOG_CDW14_OT 0x800000
+/** Command Set Identifier; bits 31:24 of 'cdw14' */
+#define XNVME_SPEC_CMD_LOG_CDW14_CSI 0xff000000
 
 /**
  * NVMe Command Accessors for the NVM Command Set

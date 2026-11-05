@@ -645,7 +645,7 @@ sub_log_fdp_events(struct xnvme_cli *cli)
 	xnvme_cli_pinf("Retrieving fdp-events-log ...");
 	xnvme_prep_adm_log(&ctx, XNVME_SPEC_LOG_FDPEVENTS, 0x0, 0, nsid, 0, log_nbytes);
 	ctx.cmd.log.lsi = egi;
-	ctx.cmd.log.lsp = lsp;
+	ctx.cmd.log.cdw10 = xnvme_bits_set(ctx.cmd.log.cdw10, XNVME_SPEC_CMD_LOG_CDW10_LSP, lsp);
 
 	err = xnvme_cmd_pass_admin(&ctx, log, log_nbytes, NULL, 0x0);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {

@@ -45,7 +45,10 @@ xnvme_be_macos_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_ADM_OPC_LOG:
-		err = (*smart)->GetLogPage(smart, dbuf, ctx->cmd.log.lid, dbuf_nbytes / 4 - 1);
+		err = (*smart)->GetLogPage(
+			smart, dbuf,
+			xnvme_bits_get(ctx->cmd.log.cdw10, XNVME_SPEC_CMD_LOG_CDW10_LID),
+			dbuf_nbytes / 4 - 1);
 		if (err != kIOReturnSuccess) {
 			XNVME_DEBUG("Error in GetLogPage: %s", (char *)mach_error_string(err));
 			return 1;
