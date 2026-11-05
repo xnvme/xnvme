@@ -112,14 +112,6 @@ xnvme_queue_poke(struct xnvme_queue *queue, uint32_t max)
 }
 
 int
-xnvme_queue_wait(struct xnvme_queue *queue)
-{
-	printf("ERR: USING DEPRECATED FUNCTION: xnvme_queue_wait(*queue) use "
-	       "xnvme_queue_drain(*queue) instead\n");
-	return xnvme_queue_drain(queue);
-}
-
-int
 xnvme_queue_drain(struct xnvme_queue *queue)
 {
 	int acc = 0;
