@@ -18,6 +18,8 @@ sub_deprecated(struct xnvme_cli *XNVME_UNUSED(cli))
 	xnvme_dev_get_cmd_ctx(dev, &want);
 
 	for (int i = 0; i < 2; ++i) {
+		struct xnvme_cmd_ctx vctx = want;
+		struct iovec mvec[2] = {0};
 		struct xnvme_opts opts = xnvme_opts_default();
 		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
 		struct xnvme_cmd_ctx fctx = xnvme_file_get_cmd_ctx(dev);
@@ -35,6 +37,11 @@ sub_deprecated(struct xnvme_cli *XNVME_UNUSED(cli))
 		if (fctx.dev != want.dev || fctx.opts != want.opts) {
 			xnvme_cli_pinf(
 				"FAILED: xnvme_file_get_cmd_ctx() != xnvme_dev_get_cmd_ctx()");
+			err = -EINVAL;
+		}
+
+		if (xnvme_cmd_passv(&vctx, NULL, 0, 0, mvec, 2, 0) != -EINVAL) {
+			xnvme_cli_pinf("FAILED: xnvme_cmd_passv(mvec_cnt: 2) != -EINVAL");
 			err = -EINVAL;
 		}
 	}

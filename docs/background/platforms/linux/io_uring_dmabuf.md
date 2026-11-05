@@ -43,7 +43,7 @@ mapped buffer is submitted as `IORING_OP_READ_FIXED` / `IORING_OP_WRITE_FIXED`.
 |---|---|
 | Target | A raw NVMe block device opened with `O_DIRECT`, `opts.direct`, which the open checks |
 | Polling | Not supported, `IORING_SETUP_IOPOLL` fails queue initialization |
-| Vectored | Not supported (`xnvme_cmd_passv()`) |
+| Vectored | Not supported (`xnvme_cmd_pass_iov()`) |
 | Size | A `dma-buf` of at most 1 TiB, the kernel's limit for a registered buffer |
 | Count | At most 256 mapped allocations per device |
 | Threads | `xnvme_mem_map()` and `xnvme_mem_unmap()` must not run while IO is in flight on the device |

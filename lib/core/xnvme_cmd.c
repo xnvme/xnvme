@@ -64,26 +64,6 @@ xnvme_cmd_pass(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *
 }
 
 int
-xnvme_cmd_passv(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, size_t dvec_nbytes,
-		struct iovec *mvec, size_t mvec_cnt, size_t mvec_nbytes)
-{
-	void *mbuf = NULL;
-
-	if (mvec_cnt > 1) {
-		XNVME_DEBUG("FAILED: mvec_cnt must be at most 1");
-		return -EINVAL;
-	}
-
-	if (mvec) {
-		mbuf = mvec[0].iov_base;
-	}
-
-	XNVME_DEBUG("NOTE: This function will be deprecated in the future - use "
-		    "xnvme_cmd_pass_iov() instead");
-	return xnvme_cmd_pass_iov(ctx, dvec, dvec_cnt, dvec_nbytes, mbuf, mvec_nbytes);
-}
-
-int
 xnvme_cmd_pass_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
 		   size_t dvec_nbytes, void *mbuf, size_t mbuf_nbytes)
 {
