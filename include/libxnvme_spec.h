@@ -528,12 +528,12 @@ enum xnvme_spec_idfy_cns {
 struct xnvme_spec_lbaf {
 	uint16_t ms; ///< metadata size
 	uint8_t ds;  ///< lba data size
-	uint8_t rp;  ///< relative performance, see XNVME_SPEC_LBAF_RP
+	uint8_t rp;  ///< relative performance, see XNVME_SPEC_LBAF_RP_*
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_lbaf) == 4, "Incorrect size")
 
 /** Relative performance, 00b best to 11b degraded; bits 1:0 of 'rp' */
-#define XNVME_SPEC_LBAF_RP 0x3
+#define XNVME_SPEC_LBAF_RP_RP 0x3
 
 /**
  * Command Set Identifiers
@@ -796,48 +796,48 @@ struct xnvme_spec_power_state {
 
 	uint8_t reserved1;
 
-	uint8_t mxps_nops; ///< bits 31:24, see XNVME_SPEC_POWER_STATE_MXPS and _NOPS
+	uint8_t mxps_nops; ///< bits 31:24, see XNVME_SPEC_POWER_STATE_MXPS_NOPS_*
 
 	uint32_t enlat; ///< entry latency in microseconds, bits 63:32
 	uint32_t exlat; ///< exit latency in microseconds, bits 95:64
 
-	uint8_t rrt; ///< relative read throughput, see XNVME_SPEC_POWER_STATE_RRT
-	uint8_t rrl; ///< relative read latency, see XNVME_SPEC_POWER_STATE_RRL
-	uint8_t rwt; ///< relative write throughput, see XNVME_SPEC_POWER_STATE_RWT
-	uint8_t rwl; ///< relative write latency, see XNVME_SPEC_POWER_STATE_RWL
+	uint8_t rrt; ///< relative read throughput, see XNVME_SPEC_POWER_STATE_RRT_*
+	uint8_t rrl; ///< relative read latency, see XNVME_SPEC_POWER_STATE_RRL_*
+	uint8_t rwt; ///< relative write throughput, see XNVME_SPEC_POWER_STATE_RWT_*
+	uint8_t rwl; ///< relative write latency, see XNVME_SPEC_POWER_STATE_RWL_*
 
 	uint16_t idlp; ///< idle power, bits 143:128
 
-	uint8_t ips; ///< idle power scale, see XNVME_SPEC_POWER_STATE_IPS
+	uint8_t ips; ///< idle power scale, see XNVME_SPEC_POWER_STATE_IPS_*
 
 	uint8_t reserved8;
 
 	uint16_t actp; ///< active power, bits 175:160
 
-	uint8_t apw_aps; ///< bits 183:176, see XNVME_SPEC_POWER_STATE_APW and _APS
+	uint8_t apw_aps; ///< bits 183:176, see XNVME_SPEC_POWER_STATE_APW_APS_*
 
 	uint8_t reserved10[9];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_power_state) == 32, "Incorrect size")
 
 /** Maximum power scale; bit 0 of 'mxps_nops' */
-#define XNVME_SPEC_POWER_STATE_MXPS 0x1
+#define XNVME_SPEC_POWER_STATE_MXPS_NOPS_MXPS 0x1
 /** Non-operational state; bit 1 of 'mxps_nops' */
-#define XNVME_SPEC_POWER_STATE_NOPS 0x2
+#define XNVME_SPEC_POWER_STATE_MXPS_NOPS_NOPS 0x2
 /** Relative read throughput; bits 4:0 of 'rrt' */
-#define XNVME_SPEC_POWER_STATE_RRT 0x1f
+#define XNVME_SPEC_POWER_STATE_RRT_RRT 0x1f
 /** Relative read latency; bits 4:0 of 'rrl' */
-#define XNVME_SPEC_POWER_STATE_RRL 0x1f
+#define XNVME_SPEC_POWER_STATE_RRL_RRL 0x1f
 /** Relative write throughput; bits 4:0 of 'rwt' */
-#define XNVME_SPEC_POWER_STATE_RWT 0x1f
+#define XNVME_SPEC_POWER_STATE_RWT_RWT 0x1f
 /** Relative write latency; bits 4:0 of 'rwl' */
-#define XNVME_SPEC_POWER_STATE_RWL 0x1f
+#define XNVME_SPEC_POWER_STATE_RWL_RWL 0x1f
 /** Idle power scale; bits 7:6 of 'ips' */
-#define XNVME_SPEC_POWER_STATE_IPS 0xc0
+#define XNVME_SPEC_POWER_STATE_IPS_IPS 0xc0
 /** Active power workload; bits 2:0 of 'apw_aps' */
-#define XNVME_SPEC_POWER_STATE_APW 0x7
+#define XNVME_SPEC_POWER_STATE_APW_APS_APW 0x7
 /** Active power scale; bits 7:6 of 'apw_aps' */
-#define XNVME_SPEC_POWER_STATE_APS 0xc0
+#define XNVME_SPEC_POWER_STATE_APW_APS_APS 0xc0
 
 /**
  * NVMe over Fabrics attributes of the Identify Controller data, bytes 1792-2047

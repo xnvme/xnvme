@@ -773,7 +773,7 @@ xnvme_spec_idfy_ns_fpr(FILE *stream, const struct xnvme_spec_idfy_ns *idfy, int 
 		wrtn += fprintf(stream,
 				"    - {ms: %" PRIu16 ", ds: %" PRIu8 ", rp: %" PRIu64 "}\n",
 				idfy->lbaf[i].ms, idfy->lbaf[i].ds,
-				xnvme_bits_get(idfy->lbaf[i].rp, XNVME_SPEC_LBAF_RP));
+				xnvme_bits_get(idfy->lbaf[i].rp, XNVME_SPEC_LBAF_RP_RP));
 	}
 
 	return wrtn;
