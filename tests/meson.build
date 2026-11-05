@@ -98,11 +98,8 @@ tests = {
   'znd_state.c': [],
   'znd_zrwa.c': [],
   'async_limbo.c': [],
+  'map.c': [],
 }
-
-if not is_windows
-  tests += {'map.c': []}
-endif
 
 # Issues the raw NVME_IOCTL_ADMIN64_CMD itself, bypassing xNVMe's own command
 # path, which never selects it; only built where that ioctl ABI exists
