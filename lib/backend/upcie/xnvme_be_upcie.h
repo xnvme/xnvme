@@ -260,6 +260,20 @@ int
 xnvme_be_upcie_served_mem_unmap(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr *ctrlr,
 				void *vaddr);
 
+struct xnvme_buf_reg;
+
+/** Count a registration of `dmem` holding the range, or leave memory in the heap at `heap` be;
+ * -ENOENT when the range is to be registered */
+int
+xnvme_be_upcie_buf_reg_ref(struct dmamem *dmem, uint64_t heap, size_t heap_nbytes, void *vaddr,
+			   size_t nbytes);
+
+/** Give back a reference of the registration holding `vaddr`; `last` is set to the registration
+ * when that was its last, to unregister and remove, and to NULL otherwise */
+int
+xnvme_be_upcie_buf_reg_unref(struct dmamem *dmem, uint64_t heap, size_t heap_nbytes, void *vaddr,
+			     struct xnvme_buf_reg **last);
+
 int
 xnvme_be_upcie_queue_init(struct xnvme_queue *queue, int opts);
 int
