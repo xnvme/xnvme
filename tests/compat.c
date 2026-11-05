@@ -115,6 +115,59 @@ exit:
 	return err;
 }
 
+static int
+sub_deprecated_mem(struct xnvme_cli *cli)
+{
+	struct xnvme_opts opts = {0};
+	struct xnvme_dev *dev;
+	size_t align;
+	void *buf;
+	int err;
+
+	xnvme_opts_set_defaults(&opts);
+	err = xnvme_cli_to_opts(cli, &opts);
+	if (err) {
+		xnvme_cli_perr("xnvme_cli_to_opts()", err);
+		return err;
+	}
+	dev = xnvme_dev_open(cli->args.uri, &opts);
+	if (!dev) {
+		xnvme_cli_perr("xnvme_dev_open()", -errno);
+		return -errno;
+	}
+
+	err = xnvme_buf_get_alignment(dev, &align);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_get_alignment()", err);
+		goto exit;
+	}
+	buf = xnvme_buf_virt_alloc(align, align);
+	if (!buf) {
+		err = -errno;
+		xnvme_cli_perr("xnvme_buf_virt_alloc()", err);
+		goto exit;
+	}
+
+	err = xnvme_mem_map(dev, buf, align);
+	if (err) {
+		xnvme_cli_pinf("FAILED: xnvme_mem_map() != xnvme_buf_register(), err: %d", err);
+	} else {
+		err = xnvme_mem_unmap(dev, buf);
+		if (err) {
+			xnvme_cli_pinf(
+				"FAILED: xnvme_mem_unmap() != xnvme_buf_unregister(), err: %d",
+				err);
+		}
+	}
+
+	xnvme_buf_virt_free(buf);
+
+exit:
+	xnvme_dev_close(dev);
+
+	return err;
+}
+
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"deprecated",
@@ -145,6 +198,19 @@ static struct xnvme_cli_sub g_subs[] = {
 
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
 			XNVME_CLI_ASYNC_OPTS,
+		},
+	},
+	{
+		"deprecated-mem",
+		"Call the deprecated functions registering memory",
+		"Call the deprecated functions registering memory",
+		sub_deprecated_mem,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			XNVME_CLI_ADMIN_OPTS,
 		},
 	},
 };
