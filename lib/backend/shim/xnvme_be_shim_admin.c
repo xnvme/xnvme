@@ -15,6 +15,7 @@
 #include <xnvme_be_shim.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_state.h>
+#include <xnvme_spec.h>
 
 static int
 idfy_ctrlr_iocs_fs(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
@@ -99,7 +100,7 @@ idfy_ns(struct xnvme_dev *dev, void *dbuf)
 }
 
 static int
-idfy(struct xnvme_cmd_ctx *ctx, void *dbuf)
+idfy(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 {
 	switch (ctx->cmd.idfy.cns) {
 	case XNVME_SPEC_IDFY_NS:
@@ -117,6 +118,9 @@ idfy(struct xnvme_cmd_ctx *ctx, void *dbuf)
 			break;
 		}
 		break;
+
+	case XNVME_SPEC_IDFY_NS_DESC:
+		return xnvme_spec_idfy_ns_desc_fill(dbuf, dbuf_nbytes, XNVME_SPEC_CSI_FS);
 
 	case XNVME_SPEC_IDFY_CTRLR_IOCS:
 		switch (ctx->cmd.idfy.csi) {
@@ -159,13 +163,13 @@ gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 }
 
 static int
-shim_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t XNVME_UNUSED(dbuf_nbytes),
-	       void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
+shim_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *XNVME_UNUSED(mbuf),
+	       size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	///< NOTE: opcode-dispatch (admin)
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_ADM_OPC_IDFY:
-		return idfy(ctx, dbuf);
+		return idfy(ctx, dbuf, dbuf_nbytes);
 
 	case XNVME_SPEC_ADM_OPC_GFEAT:
 		return gfeat(ctx, dbuf);

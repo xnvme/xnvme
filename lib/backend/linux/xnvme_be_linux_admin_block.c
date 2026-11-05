@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <xnvme_be_posix.h>
 #include <xnvme_be_linux.h>
+#include <xnvme_spec.h>
 
 #ifdef XNVME_BE_LINUX_BLOCK_ZONED_ENABLED
 #include <linux/blkzoned.h>
@@ -111,7 +112,7 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 }
 
 static int
-_idfy(struct xnvme_cmd_ctx *ctx, void *dbuf)
+_idfy(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 {
 	struct xnvme_spec_znd_idfy_ctrlr *zctrlr = dbuf;
 	const int buf_len = 0x1000;
@@ -132,6 +133,13 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf)
 			goto failed;
 		}
 		return _idfy_ns_iocs(ctx->dev, dbuf);
+
+	case XNVME_SPEC_IDFY_NS_DESC:
+		if (!is_zoned) {
+			XNVME_DEBUG("FAILED: device is not zoned");
+			goto failed;
+		}
+		return xnvme_spec_idfy_ns_desc_fill(dbuf, dbuf_nbytes, XNVME_SPEC_CSI_ZONED);
 
 	case XNVME_SPEC_IDFY_NS:
 		return _idfy_ns(ctx->dev, dbuf);
@@ -185,14 +193,13 @@ _gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 }
 
 static int
-xnvme_be_linux_block_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf,
-			       size_t XNVME_UNUSED(dbuf_nbytes), void *XNVME_UNUSED(mbuf),
-			       size_t XNVME_UNUSED(mbuf_nbytes))
+xnvme_be_linux_block_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
+			       void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	// NOTE: opcode-dispatch (admin)
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_ADM_OPC_IDFY:
-		return _idfy(ctx, dbuf);
+		return _idfy(ctx, dbuf, dbuf_nbytes);
 
 	case XNVME_SPEC_ADM_OPC_GFEAT:
 		return _gfeat(ctx, dbuf);
