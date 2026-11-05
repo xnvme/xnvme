@@ -209,11 +209,42 @@ _controller_geometry(struct xnvme_dev *dev)
 }
 
 /**
+ * Helper function mapping the outcome of an identify command to an errno
+ *
+ * The controller has not answered when the completion carries an NVMe status, or when the
+ * backend returns a positive value or -EIO. -EIO is what the Linux NVMe, SPDK and macOS admin
+ * backends return for an NVMe status; libvfn sets the completion status, which is checked first.
+ * -EIO from a command that never reached the controller, such as an SPDK submission failure or a
+ * macOS DriverKit IOConnect failure, is folded in too.
+ *
+ * @return 0 when the command completed without error. -ENOENT when the controller has not
+ * answered. Any other negative errno from the backend is returned as is.
+ */
+static int
+_dev_idfy_cmd_err(struct xnvme_cmd_ctx *ctx, int err)
+{
+	if (xnvme_cmd_ctx_cpl_status(ctx)) {
+		return -ENOENT;
+	}
+	if ((err < 0) && (err != -EIO)) {
+		return err;
+	}
+
+	return err ? -ENOENT : 0;
+}
+
+/**
  * Helper function retrieving the command set identifier of the namespace from the Namespace
  * Identification Descriptor list (CNS 0x3, NIDT 0x4)
  *
- * @return On success, 0 is returned and 'csi' assigned. On error, negative errno is returned
- * when the identify command failed, and -ENOENT when the list has no CSI descriptor.
+ * A namespace without a descriptor list is classified NVM by the caller. As the list is not
+ * answered when the completion carries an NVMe status, or when the backend returns a positive
+ * value or -EIO, see _dev_idfy_cmd_err(), a namespace whose identify never reached the controller
+ * with -EIO, as an SPDK submission failure or a macOS DriverKit IOConnect failure, is NVM too.
+ *
+ * @return On success, 0 is returned and 'csi' assigned. -ENOENT is returned when the device has
+ * no descriptor list or the list has no CSI descriptor. Any other negative errno, from the
+ * command or a buffer operation, is returned as is.
  */
 static int
 _dev_idfy_ns_desc_csi(struct xnvme_dev *dev, union xnvme_spec_idfy *idfy, uint8_t *csi)
@@ -235,9 +266,10 @@ _dev_idfy_ns_desc_csi(struct xnvme_dev *dev, union xnvme_spec_idfy *idfy, uint8_
 	ctx.cmd.idfy.cns = XNVME_SPEC_IDFY_NS_DESC;
 
 	err = xnvme_cmd_pass_admin(&ctx, idfy, sizeof(*idfy), NULL, 0x0);
-	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+	err = _dev_idfy_cmd_err(&ctx, err);
+	if (err) {
 		XNVME_DEBUG("INFO: !idfy(NS_DESC), err: %d", err);
-		return err ? err : -EIO;
+		return err;
 	}
 
 	// The buffer may be device memory, which the CPU cannot read
@@ -268,233 +300,121 @@ _dev_idfy_ns_desc_csi(struct xnvme_dev *dev, union xnvme_spec_idfy *idfy, uint8_
 }
 
 /**
+ * Helper function reading and validating the command set specific identify data of 'csi'
+ *
+ * @return On success, 0 is returned. -ENOENT is returned when the controller has not answered
+ * one of the identifies, see _dev_idfy_cmd_err(), and -EINVAL when the data is not valid. Any
+ * other negative errno, from the command or a buffer operation, is returned as is.
+ */
+static int
+_dev_idfy_csi_set(struct xnvme_dev *dev, uint8_t csi, union xnvme_spec_idfy *idfy_ns,
+		  union xnvme_spec_idfy *idfy_ctrlr)
+{
+	struct xnvme_spec_znd_idfy_ns *zns = (void *)idfy_ns;
+	struct xnvme_spec_fs_idfy_ctrlr *fs_ctrlr = (void *)idfy_ctrlr;
+	struct xnvme_spec_fs_idfy_ns *fs_ns = (void *)idfy_ns;
+	struct xnvme_cmd_ctx ctx;
+	int err;
+
+	err = xnvme_buf_clear(idfy_ctrlr, sizeof(*idfy_ctrlr));
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_buf_clear(idfy_ctrlr), err: %d", err);
+		return err;
+	}
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
+	err = xnvme_adm_idfy_ctrlr_csi(&ctx, csi, idfy_ctrlr);
+	err = _dev_idfy_cmd_err(&ctx, err);
+	if (err) {
+		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ctrlr_csi(0x%x), err: %d", csi, err);
+		return err;
+	}
+	if ((csi == XNVME_SPEC_CSI_FS) && !(fs_ctrlr->ac == 0xAC && fs_ctrlr->dc == 0xDC)) {
+		XNVME_DEBUG("INFO: invalid values in idfy-ctrlr(CSI_FS)");
+		return -EINVAL;
+	}
+
+	err = xnvme_buf_clear(idfy_ns, sizeof(*idfy_ns));
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_buf_clear(idfy_ns), err: %d", err);
+		return err;
+	}
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
+	err = xnvme_adm_idfy_ns_csi(&ctx, dev->ident.nsid, csi, idfy_ns);
+	err = _dev_idfy_cmd_err(&ctx, err);
+	if (err) {
+		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ns_csi(0x%x), err: %d", csi, err);
+		return err;
+	}
+	if ((csi == XNVME_SPEC_CSI_ZONED) && !zns->lbafe[0].zsze) {
+		XNVME_DEBUG("INFO: invalid values in idfy-ns(CSI_ZONED)");
+		return -EINVAL;
+	}
+	if ((csi == XNVME_SPEC_CSI_FS) &&
+	    !(fs_ns->nsze && fs_ns->ncap && fs_ns->ac == 0xAC && fs_ns->dc == 0xDC)) {
+		XNVME_DEBUG("INFO: invalid values in idfy-ns(CSI_FS)");
+		return -EINVAL;
+	}
+
+	err = xnvme_buf_memcpy(&dev->idcss.ctrlr, idfy_ctrlr, sizeof(*idfy_ctrlr));
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_buf_memcpy(idfy_ctrlr), err: %d", err);
+		return err;
+	}
+
+	err = xnvme_buf_memcpy(&dev->idcss.ns, idfy_ns, sizeof(*idfy_ns));
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_buf_memcpy(idfy_ns), err: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
+/**
  * Helper function for determining command set identifier
+ *
+ * The namespace declares its command set in the identification descriptors; without a CSI
+ * descriptor it is an NVM namespace. The identify data of a declared non-NVM set must be readable
+ * and valid, for NVM it is optional. A CSI other than NVM, zoned, FS and KV is kept as declared
+ * without reading its identify data.
+ *
+ * @return On success, 0 is returned. -EIO is returned when the controller has not answered the
+ * identifies of a declared zoned, FS or KV set, and -EINVAL when their data is not valid. Any
+ * other negative errno, from a command or a buffer operation, is returned as is.
  */
 static int
 _dev_idfy_csi(struct xnvme_dev *dev, union xnvme_spec_idfy *idfy_ns,
 	      union xnvme_spec_idfy *idfy_ctrlr)
 {
-	struct xnvme_cmd_ctx ctx;
-	uint8_t csi = 0;
+	uint8_t csi = XNVME_SPEC_CSI_NVM;
 	int err;
 
-	// Attempt to identify ZONED
-
-	struct xnvme_spec_znd_idfy_ns *zns = (void *)idfy_ns;
-
-	err = xnvme_buf_clear(idfy_ctrlr, sizeof(*idfy_ctrlr));
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_buf_clear(idfy_ctrlr), err: %d", err);
-		return err;
-	}
-
-	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_idfy_ctrlr_csi(&ctx, XNVME_SPEC_CSI_ZONED, idfy_ctrlr);
-	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ctrlr_csi(CSI_ZONED)");
-		goto not_zns;
-	}
-
-	err = xnvme_buf_clear(idfy_ns, sizeof(*idfy_ns));
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_buf_clear(idfy_ns), err: %d", err);
-		return err;
-	}
-
-	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_idfy_ns_csi(&ctx, dev->ident.nsid, XNVME_SPEC_CSI_ZONED, idfy_ns);
-	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ns_csi(CSI_ZONED)");
-		goto not_zns;
-	}
-
-	if (!zns->lbafe[0].zsze) {
-		goto not_zns;
-	}
-
-	err = xnvme_buf_memcpy(&dev->idcss.ctrlr, idfy_ctrlr, sizeof(*idfy_ctrlr));
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_buf_memcpy(idfy_ctrlr), err: %d", err);
-		return err;
-	}
-
-	err = xnvme_buf_memcpy(&dev->idcss.ns, idfy_ns, sizeof(*idfy_ns));
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_buf_memcpy(idfy_ns), err: %d", err);
-		return err;
-	}
-
-	dev->ident.csi = XNVME_SPEC_CSI_ZONED;
-
-	XNVME_DEBUG("INFO: looks like csi(ZNS)");
-	return err;
-
-not_zns:
-	XNVME_DEBUG("INFO: no positive response to idfy(ZNS)");
-
-	// Attempt to identify FS
-
-	struct xnvme_spec_fs_idfy_ctrlr *fs_ctrlr = (void *)idfy_ctrlr;
-	struct xnvme_spec_fs_idfy_ns *fs_ns = (void *)idfy_ns;
-
-	err = xnvme_buf_clear(idfy_ctrlr, sizeof(*idfy_ctrlr));
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_buf_clear(idfy_ctrlr), err: %d", err);
-		return err;
-	}
-
-	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_idfy_ctrlr_csi(&ctx, XNVME_SPEC_CSI_FS, idfy_ctrlr);
-	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ctrlr_csi(CSI_FS)");
-		goto not_fs;
-	}
-	if (!(fs_ctrlr->ac == 0xAC && fs_ctrlr->dc == 0xDC)) {
-		XNVME_DEBUG("INFO: invalid values in idfy-ctrlr(CSI_FS)");
-		goto not_fs;
-	}
-
-	err = xnvme_buf_clear(idfy_ns, sizeof(*idfy_ns));
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_buf_clear(idfy_ns), err: %d", err);
-		return err;
-	}
-
-	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_idfy_ns_csi(&ctx, dev->ident.nsid, XNVME_SPEC_CSI_FS, idfy_ns);
-	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ns_csi(CSI_FS)");
-		goto not_fs;
-	}
-	if (!(fs_ns->nsze && fs_ns->ncap && fs_ns->ac == 0xAC && fs_ns->dc == 0xDC)) {
-		XNVME_DEBUG("INFO: invalid values in idfy-ctrlr(CSI_FS)");
-		goto not_fs;
-	}
-
-	err = xnvme_buf_memcpy(&dev->idcss.ctrlr, idfy_ctrlr, sizeof(*idfy_ctrlr));
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_buf_memcpy(idfy_ctrlr), err: %d", err);
-		return err;
-	}
-
-	err = xnvme_buf_memcpy(&dev->idcss.ns, idfy_ns, sizeof(*idfy_ns));
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_buf_memcpy(idfy_ns), err: %d", err);
-		return err;
-	}
-
-	XNVME_DEBUG("INFO: looks like csi(FS)");
-	dev->ident.csi = XNVME_SPEC_CSI_FS;
-	return err;
-
-not_fs:
-	XNVME_DEBUG("INFO: no positive response to idfy(FS)");
-
-	// Attempt to identify KV
-	//
-	// The KV identify data structures have no field that distinguishes them from a controller
-	// answering the KV identifies for a conventional namespace, so the namespace must declare
-	// the KV command set in its identification descriptors.
-
 	err = _dev_idfy_ns_desc_csi(dev, idfy_ns, &csi);
-	if (err || (csi != XNVME_SPEC_CSI_KV)) {
-		XNVME_DEBUG("INFO: no CSI(KV) in idfy(NS_DESC), err: %d", err);
-		goto not_kv;
-	}
-
-	err = xnvme_buf_clear(idfy_ctrlr, sizeof(*idfy_ctrlr));
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_buf_clear(idfy_ctrlr), err: %d", err);
+	if (err && (err != -ENOENT)) {
 		return err;
 	}
 
-	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_idfy_ctrlr_csi(&ctx, XNVME_SPEC_CSI_KV, idfy_ctrlr);
-	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ctrlr_csi(CSI_KV)");
-		goto not_kv;
+	dev->ident.csi = csi;
+
+	if ((csi != XNVME_SPEC_CSI_NVM) && (csi != XNVME_SPEC_CSI_ZONED) &&
+	    (csi != XNVME_SPEC_CSI_FS) && (csi != XNVME_SPEC_CSI_KV)) {
+		XNVME_DEBUG("INFO: unknown csi: 0x%x", csi);
+		return 0;
 	}
 
-	err = xnvme_buf_clear(idfy_ns, sizeof(*idfy_ns));
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_buf_clear(idfy_ns), err: %d", err);
+	err = _dev_idfy_csi_set(dev, csi, idfy_ns, idfy_ctrlr);
+	if (err && (err != -ENOENT)) {
 		return err;
 	}
-
-	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_idfy_ns_csi(&ctx, dev->ident.nsid, XNVME_SPEC_CSI_KV, idfy_ns);
-	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ns_csi(CSI_KV)");
-		goto not_kv;
+	// For NVM the set specific identify data is optional, so an unanswered identify is ignored
+	if (err && (csi != XNVME_SPEC_CSI_NVM)) {
+		XNVME_DEBUG("FAILED: no idfy for declared csi: 0x%x", csi);
+		return -EIO;
 	}
 
-	err = xnvme_buf_memcpy(&dev->idcss.ctrlr, idfy_ctrlr, sizeof(*idfy_ctrlr));
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_buf_memcpy(idfy_ctrlr), err: %d", err);
-		return err;
-	}
-
-	err = xnvme_buf_memcpy(&dev->idcss.ns, idfy_ns, sizeof(*idfy_ns));
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_buf_memcpy(idfy_ns), err: %d", err);
-		return err;
-	}
-
-	XNVME_DEBUG("INFO: looks like csi(KV)");
-	dev->ident.csi = XNVME_SPEC_CSI_KV;
-	return err;
-
-not_kv:
-	XNVME_DEBUG("INFO: no positive response to idfy(KV)");
-
-	// Attempt to identify NVM
-
-	err = xnvme_buf_clear(idfy_ctrlr, sizeof(*idfy_ctrlr));
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_buf_clear(idfy_ctrlr), err: %d", err);
-		return err;
-	}
-
-	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_idfy_ctrlr_csi(&ctx, XNVME_SPEC_CSI_NVM, idfy_ctrlr);
-	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ctrlr_csi(CSI_NVM)");
-		goto not_nvm;
-	}
-
-	err = xnvme_buf_clear(idfy_ns, sizeof(*idfy_ns));
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_buf_clear(idfy_ns), err: %d", err);
-		return err;
-	}
-
-	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_adm_idfy_ns_csi(&ctx, dev->ident.nsid, XNVME_SPEC_CSI_NVM, idfy_ns);
-	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-		XNVME_DEBUG("INFO: !xnvme_adm_idfy_ns_csi(CSI_NVM)");
-		goto not_nvm;
-	}
-
-	err = xnvme_buf_memcpy(&dev->idcss.ctrlr, idfy_ctrlr, sizeof(*idfy_ctrlr));
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_buf_memcpy(idfy_ctrlr), err: %d", err);
-		return err;
-	}
-
-	err = xnvme_buf_memcpy(&dev->idcss.ns, idfy_ns, sizeof(*idfy_ns));
-	if (err) {
-		XNVME_DEBUG("FAILED: xnvme_buf_memcpy(idfy_ns), err: %d", err);
-		return err;
-	}
-
-	XNVME_DEBUG("INFO: looks like csi(NVM)");
-	dev->ident.csi = XNVME_SPEC_CSI_NVM;
-	return err;
-
-not_nvm:
-	XNVME_DEBUG("INFO: no positive response to idfy(NVM)");
-
-	return err;
+	return 0;
 }
 
 static int
@@ -527,7 +447,7 @@ _dev_idfy(struct xnvme_dev *dev)
 	err = xnvme_buf_clear(idfy_ctrlr, sizeof(*idfy_ctrlr));
 	if (err) {
 		XNVME_DEBUG("FAILED: xnvme_buf_clear(idfy_ctrlr), err: %d", err);
-		return err;
+		goto exit;
 	}
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
@@ -560,7 +480,7 @@ _dev_idfy(struct xnvme_dev *dev)
 	err = xnvme_buf_clear(idfy_ns, sizeof(*idfy_ns));
 	if (err) {
 		XNVME_DEBUG("FAILED: xnvme_buf_clear(idfy_ns), err: %d", err);
-		return err;
+		goto exit;
 	}
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
@@ -580,9 +500,7 @@ _dev_idfy(struct xnvme_dev *dev)
 
 	err = _dev_idfy_csi(dev, idfy_ns, idfy_ctrlr);
 	if (err) {
-		XNVME_DEBUG("INFO: unable to determine CSI - dev->idcss has not been set");
-		// Failing _dev_idfy_csi is okay
-		err = 0;
+		XNVME_DEBUG("FAILED: _dev_idfy_csi(), err: %d", err);
 	}
 
 exit:

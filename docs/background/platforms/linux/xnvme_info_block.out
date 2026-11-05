@@ -9,7 +9,7 @@ xnvme_dev:
     uri: '/dev/nullb0'
     dtype: 0x3
     nsid: 0x1
-    csi: 0x1f
+    csi: 0x0
   xnvme_be:
     admin: {id: 'block'}
     sync: {id: 'block'}
