@@ -6,64 +6,62 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libxnvme.h>
-#include <sys/mman.h>
-#include <unistd.h>
 
 static int
 test_mem_map_unmap(struct xnvme_cli *cli)
 {
 	uint64_t count = cli->args.count;
-	int nerr = 0;
+	size_t align;
+	int nerr = 0, err;
 
 	xnvme_cli_pinf("count: %zu", count);
 
+	err = xnvme_buf_get_alignment(cli->args.dev, &align);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_get_alignment()", err);
+		return err;
+	}
+	xnvme_cli_pinf("alignment: %zu", align);
+
 	for (uint64_t i = 0; i < count; ++i) {
-		size_t buf_nbytes = 1 << i;
+		size_t buf_nbytes = 1ULL << i;
 		void *buf;
-		int err;
-		long page_size;
+
+		// The memory to register starts and ends on the alignment
+		buf_nbytes = (buf_nbytes + align - 1) & ~(align - 1);
 
 		printf("\n");
-		xnvme_cli_pinf("[map/unmap] i: %zu, buf_nbytes: %zu", i + 1, buf_nbytes);
+		xnvme_cli_pinf("[register/unregister] i: %zu, buf_nbytes: %zu", i + 1, buf_nbytes);
 
-		page_size = sysconf(_SC_PAGESIZE);
-		buf_nbytes = (buf_nbytes + page_size - 1) & ~(page_size - 1);
-
-		buf = mmap(NULL, buf_nbytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS,
-			   0, 0);
-		if (buf == MAP_FAILED) {
-			xnvme_cli_perr("mmap()", -errno);
+		buf = xnvme_buf_virt_alloc(align, buf_nbytes);
+		if (!buf) {
+			xnvme_cli_perr("xnvme_buf_virt_alloc()", -errno);
+			nerr += 1;
 			continue;
 		}
 
 		err = xnvme_buf_register(cli->args.dev, buf, buf_nbytes);
 		if (err) {
-			xnvme_cli_perr("xnvme_buf_register()", -errno);
+			xnvme_cli_perr("xnvme_buf_register()", err);
 			nerr += 1;
-			munmap(buf, buf_nbytes);
+			xnvme_buf_virt_free(buf);
 			continue;
 		}
 
 		err = xnvme_buf_unregister(cli->args.dev, buf);
 		if (err) {
-			xnvme_cli_perr("xnvme_buf_unregister()", -errno);
+			xnvme_cli_perr("xnvme_buf_unregister()", err);
 			nerr += 1;
-			munmap(buf, buf_nbytes);
-			continue;
 		}
 
-		if (munmap(buf, buf_nbytes)) {
-			xnvme_cli_perr("munmap()", -errno);
-			nerr += 1;
-			continue;
-		}
+		xnvme_buf_virt_free(buf);
 	}
 
 	if (nerr) {
 		xnvme_cli_pinf("--={[ Got Errors - see details above ]}=--");
 		xnvme_cli_pinf("nerr: %d out of count: %zu", nerr, count);
 	} else {
-		xnvme_cli_pinf("LGTM: xnvme_mem_{map,unmap}");
+		xnvme_cli_pinf("LGTM: xnvme_buf_{register,unregister}");
 	}
 	printf("\n");
 
@@ -170,8 +168,8 @@ test_mptr_registration(struct xnvme_cli *cli)
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"mem_map_unmap",
-		"Map and unmap a buffer 'count' times of size [1, 2^count]",
-		"Map and unmap a buffer 'count' times of size [1, 2^count]",
+		"Register and unregister a buffer 'count' times of size [1, 2^count]",
+		"Register and unregister a buffer 'count' times of size [1, 2^count]",
 		test_mem_map_unmap,
 		{
 			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
@@ -198,8 +196,8 @@ static struct xnvme_cli_sub g_subs[] = {
 };
 
 static struct xnvme_cli g_cli = {
-	.title = "Test xNVMe basic memory map/unmap",
-	.descr_short = "Test xNVMe basic memory map/unmap",
+	.title = "Test xNVMe registering memory",
+	.descr_short = "Test xNVMe registering memory",
 	.subs = g_subs,
 	.nsubs = sizeof g_subs / sizeof(*g_subs),
 };
