@@ -469,7 +469,7 @@ submit:
 		}
 	}
 
-	xnvme_queue_wait(queue);
+	xnvme_queue_drain(queue);
 
 	xnvme_cli_timer_stop(cli);
 	xnvme_cli_timer_bw_pr(cli, "wall-clock", tbytes);
