@@ -1907,22 +1907,24 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_drecv) == 64, "Incorrect size")
 struct xnvme_spec_cmd_idfy {
 	uint32_t cdw00_09[10]; ///< Command dword 0 to 9
 
-	uint32_t cns      : 8; ///< Controller or Namespace Structure
-	uint32_t rsvd1    : 8;
-	uint32_t cntid    : 16; ///< Controller Identifier
+	uint8_t cns; ///< CNS: Controller or Namespace Structure
+	uint8_t rsvd1;
+	uint16_t cntid; ///< CNTID: Controller Identifier
 
-	uint32_t nvmsetid : 16; ///< NVM Set Identifier
-	uint32_t rsvd2    : 8;
-	uint32_t csi      : 8; ///< Command Set Identifier
+	uint16_t nvmsetid; ///< NVM Set Identifier
+	uint8_t rsvd2;
+	uint8_t csi; ///< CSI: Command Set Identifier
 
 	uint32_t cdw12_13[2]; ///< Command dword 12 to 13
 
-	uint32_t uuid  : 7; ///< UUID index
-	uint32_t rsvd3 : 25;
+	uint32_t cdw14; ///< Command dword 14, see XNVME_SPEC_CMD_IDFY_CDW14_*
 
 	uint32_t cdw15; ///< Command dword 15
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_idfy) == 64, "Incorrect size")
+
+/** UUID Index; bits 6:0 of 'cdw14' */
+#define XNVME_SPEC_CMD_IDFY_CDW14_UUID 0x7f
 
 /**
  * NVMe Command Accessor for the get-log-page command

@@ -185,7 +185,8 @@ _sub_idfy(struct xnvme_cli *cli, uint8_t cns, uint16_t cntid, uint8_t nsid, uint
 	ctx.cmd.idfy.cns = cns;
 	ctx.cmd.idfy.cntid = cntid;
 	ctx.cmd.idfy.nvmsetid = nvmsetid;
-	ctx.cmd.idfy.uuid = uuid;
+	ctx.cmd.idfy.cdw14 =
+		xnvme_bits_set(ctx.cmd.idfy.cdw14, XNVME_SPEC_CMD_IDFY_CDW14_UUID, uuid);
 
 	dbuf = xnvme_buf_alloc(dev, dbuf_nbytes);
 	if (!dbuf) {
