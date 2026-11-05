@@ -1676,6 +1676,41 @@ enum xnvme_spec_psdt {
 };
 
 /**
+ * Data Pointer as PRP entries
+ *
+ * @struct xnvme_spec_dptr_prp
+ */
+struct xnvme_spec_dptr_prp {
+	uint64_t prp1; ///< PRP entry 1
+	uint64_t prp2; ///< PRP entry 2
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_dptr_prp) == 16, "Incorrect size")
+
+/**
+ * Data Pointer as the IOCTL of the Linux Kernel NVMe driver uses it
+ *
+ * @struct xnvme_spec_dptr_linux_ioctl
+ */
+struct xnvme_spec_dptr_linux_ioctl {
+	uint64_t data;         ///< Address of the data
+	uint32_t metadata_len; ///< Length of the metadata
+	uint32_t data_len;     ///< Length of the data
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_dptr_linux_ioctl) == 16, "Incorrect size")
+
+/**
+ * Data Pointer, dwords 6 to 9 of a command
+ *
+ * @union xnvme_spec_dptr
+ */
+union xnvme_spec_dptr {
+	struct xnvme_spec_dptr_prp prp;               ///< As PRP entries
+	struct xnvme_spec_sgl_descriptor sgl;         ///< As an SGL descriptor
+	struct xnvme_spec_dptr_linux_ioctl lnx_ioctl; ///< As the Linux Kernel NVMe driver uses it
+};
+XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_dptr) == 16, "Incorrect size")
+
+/**
  * NVMe Command Accessor for common use of the 64byte NVMe command
  *
  * @see Specification section 4.3, figure 2
@@ -1685,11 +1720,9 @@ enum xnvme_spec_psdt {
  */
 struct xnvme_spec_cmd_common {
 	/* cdw 00 */
-	uint16_t opcode : 8; ///< OPC: Command Opcode
-	uint16_t fuse   : 2; ///< FUSE: Fused Operation
-	uint16_t rsvd   : 4;
-	uint16_t psdt   : 2;
-	uint16_t cid; ///< CID: Command Identifier
+	uint8_t opcode; ///< OPC: Command Opcode
+	uint8_t flags;  ///< FUSE and PSDT, see XNVME_SPEC_CMD_COMMON_FLAGS_*
+	uint16_t cid;   ///< CID: Command Identifier
 
 	/* cdw 01 */
 	uint32_t nsid; ///< NSID: Namespace identifier
@@ -1700,24 +1733,8 @@ struct xnvme_spec_cmd_common {
 	/* cdw 04-05 */
 	uint64_t mptr; ///< MPTR -- metadata pointer
 
-	/* cdw 06-09: */ ///< DPTR -- data pointer
-	union {
-		struct {
-			uint64_t prp1; ///< PRP entry 1
-			uint64_t prp2; ///< PRP entry 2
-		} prp;
-
-		struct xnvme_spec_sgl_descriptor sgl; ///< SGL
-
-		/**
-		 * Accessors used by the IOCTL of the Linux Kernel NVMe driver
-		 */
-		struct {
-			uint64_t data;
-			uint32_t metadata_len;
-			uint32_t data_len;
-		} lnx_ioctl;
-	} dptr;
+	/* cdw 06-09: */
+	union xnvme_spec_dptr dptr; ///< DPTR: Data Pointer
 
 	/* cdw 10 */
 	uint32_t ndt; ///< NDT: Number of dwords in Data Transfer
@@ -1731,6 +1748,11 @@ struct xnvme_spec_cmd_common {
 	uint32_t cdw15;
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_common) == 64, "Incorrect size")
+
+/** Fused Operation; bits 1:0 of 'flags', bits 9:8 of dword 0 */
+#define XNVME_SPEC_CMD_COMMON_FLAGS_FUSE 0x3
+/** PRP or SGL for Data Transfer; bits 7:6 of 'flags', bits 15:14 of dword 0 */
+#define XNVME_SPEC_CMD_COMMON_FLAGS_PSDT 0xc0
 
 /**
  * NVMe Command Accessor for the Sanitize command
