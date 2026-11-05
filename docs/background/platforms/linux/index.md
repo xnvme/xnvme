@@ -115,7 +115,7 @@ question, you can experiment by using the `xnvme` cli-tool. Such as:
         uri: '/dev/sda'
         dtype: 0x3
         nsid: 0x1
-        csi: 0x1f
+        csi: 0x0
         subnqn: ''
       xnvme_be:
         dev: {id: 'linux'}
