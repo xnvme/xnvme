@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <xnvme_be_upcie_cuda.h>
+#include <xnvme_cuda_buf.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_state.h>
 
@@ -54,19 +55,15 @@ xnvme_be_upcie_cuda_buf_register(const struct xnvme_dev *dev, void *vaddr, size_
 {
 	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 	int dmabuf_fd = -1;
-	CUresult cr;
 	int err;
 
 	if (!g_upcie_rte.connection.alive) {
 		return xnvme_be_upcie_dmamem_map(state->dmem, vaddr, nbytes, NULL);
 	}
 
-	cr = cuMemGetHandleForAddressRange(&dmabuf_fd, (CUdeviceptr)vaddr, nbytes,
-					   CU_MEM_RANGE_HANDLE_TYPE_DMA_BUF_FD, 0);
-	if (cr != CUDA_SUCCESS) {
-		XNVME_DEBUG("FAILED: cuMemGetHandleForAddressRange(%p, %zu); cr(%d)", vaddr,
-			    nbytes, cr);
-		return -EIO;
+	err = xnvme_cuda_buf_export_dmabuf(vaddr, nbytes, &dmabuf_fd);
+	if (err) {
+		return err;
 	}
 
 	err = xnvme_be_upcie_served_mem_map(
