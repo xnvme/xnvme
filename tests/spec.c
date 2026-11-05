@@ -17,6 +17,13 @@
 		 ((uint64_t)1 << (4 * XNVME_SIZEOF_MEMBER(type, field))) ==           \
 	 0)
 
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_common, flags,
+			 XNVME_SPEC_CMD_COMMON_FLAGS_FUSE | XNVME_SPEC_CMD_COMMON_FLAGS_PSDT),
+		    "flags of struct xnvme_spec_cmd_common")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_common, flags) == 1,
+		    "flags of struct xnvme_spec_cmd_common")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_common, dptr) == 24,
+		    "dptr of struct xnvme_spec_cmd_common")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cqe, status,
 			 XNVME_SPEC_CQE_STATUS_P | XNVME_SPEC_CQE_STATUS_SC |
 				 XNVME_SPEC_CQE_STATUS_SCT | XNVME_SPEC_CQE_STATUS_CRD |
@@ -365,13 +372,15 @@ sub_sqe_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	union xnvme_spec_sqe sqe = {0};
 	int err = 0;
 
-	sqe.cdw[0] = 0x02;       // Dword 0, bits 7:0: opcode
+	sqe.cdw[0] = 0x4102;     // Dword 0: opcode 0x02, FUSE 0x1, PSDT 0x1
 	sqe.cdw[1] = 0x12345678; // Dword 1: namespace identifier
 	sqe.cdw[10] = 0x1;       // Dwords 10 and 11: starting LBA
 	sqe.cdw[11] = 0x2;
 
-	if (sqe.common.opcode != 0x02 || sqe.common.nsid != 0x12345678 ||
-	    sqe.nvm.slba != 0x200000001ULL) {
+	if (sqe.common.opcode != 0x02 ||
+	    xnvme_bits_get(sqe.common.flags, XNVME_SPEC_CMD_COMMON_FLAGS_FUSE) != 0x1 ||
+	    xnvme_bits_get(sqe.common.flags, XNVME_SPEC_CMD_COMMON_FLAGS_PSDT) != 0x1 ||
+	    sqe.common.nsid != 0x12345678 || sqe.nvm.slba != 0x200000001ULL) {
 		xnvme_cli_pinf("FAILED: opcode: %#x, nsid: %#x, slba: %#" PRIx64,
 			       sqe.common.opcode, sqe.common.nsid, (uint64_t)sqe.nvm.slba);
 		err = -EINVAL;

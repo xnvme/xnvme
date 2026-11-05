@@ -887,9 +887,12 @@ xnvme_spec_sqe_fpr(FILE *stream, union xnvme_spec_sqe *cmd, int opts)
 
 	case 0x3:
 		wrtn += fprintf(stream, "  opcode: %#02" PRIx16 "\n", cmd->common.opcode);
-		wrtn += fprintf(stream, "  fuse: %#" PRIx16 "\n", cmd->common.fuse);
-		wrtn += fprintf(stream, "  rsvd: %#" PRIx16 "\n", cmd->common.rsvd);
-		wrtn += fprintf(stream, "  psdt: %#" PRIx16 "\n", cmd->common.psdt);
+		wrtn += fprintf(
+			stream, "  fuse: %#" PRIx64 "\n",
+			xnvme_bits_get(cmd->common.flags, XNVME_SPEC_CMD_COMMON_FLAGS_FUSE));
+		wrtn += fprintf(
+			stream, "  psdt: %#" PRIx64 "\n",
+			xnvme_bits_get(cmd->common.flags, XNVME_SPEC_CMD_COMMON_FLAGS_PSDT));
 		wrtn += fprintf(stream, "  cid: %#04" PRIx16 "\n", cmd->common.cid);
 		wrtn += fprintf(stream, "  nsid: %#04" PRIx32 "\n", cmd->common.nsid);
 		wrtn += fprintf(stream, "  cdw02: %#04" PRIx32 "\n", cdw[2]);
