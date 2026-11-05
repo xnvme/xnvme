@@ -18,6 +18,7 @@ import jinja2
 DECLARATIONS: dict[str, list[str]] = {
     "func": [],
     "struct": [],
+    "union": [],
     "enum": [],
 }
 
@@ -105,7 +106,7 @@ def symbols(tags_path: Path) -> dict[str, dict[str, list[str]]]:
         tags_path: Path to the ctags file.
 
     Returns:
-        Dictionary mapping namespace to declarations (func, struct, enum).
+        Dictionary mapping namespace to declarations (func, struct, union, enum).
     """
     syms: dict[str, dict[str, list[str]]] = {}
 
@@ -129,6 +130,8 @@ def symbols(tags_path: Path) -> dict[str, dict[str, list[str]]]:
                 syms[namespace]["func"].append(symb)
             elif symtype == "s":
                 syms[namespace]["struct"].append(symb)
+            elif symtype == "u":
+                syms[namespace]["union"].append(symb)
             elif symtype == "g":
                 syms[namespace]["enum"].append(symb)
             elif symtype == "d":
@@ -198,6 +201,7 @@ def emit(
             "show_header": (project_root / "include" / f"lib{namespace}.h").exists(),
             "show_enums": api["enum"],
             "show_structs": api["struct"],
+            "show_unions": api["union"],
             "show_funcs": api["func"],
         }
     )

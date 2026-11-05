@@ -31,6 +31,20 @@
 {% endfor %}
 {% endif %}
 
+{% if show_unions %}
+(sec-api-c-{{ ns }}-union)=
+## Unions
+
+{% for symb in api.union %}
+(sec-api-c-{{ ns }}-union-{{ symb }})=
+### {{ symb }}
+
+```{doxygenunion} {{ symb }}
+```
+
+{% endfor %}
+{% endif %}
+
 {% if show_funcs %}
 (sec-api-c-{{ ns }}-func)=
 ## Functions
