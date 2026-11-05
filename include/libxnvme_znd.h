@@ -222,15 +222,10 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_znd_report) == 64, "Incorrect size")
  * @param ext Pointer the extended descriptor will be assigned to
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
- *
- * NOTE: the MACRO is kept for backwards compatibility with the upstream fio io-engine.
  */
 int
 xnvme_znd_report_get_descr(const struct xnvme_znd_report *report, uint32_t index,
 			   struct xnvme_spec_znd_descr **descr, void **ext);
-
-#define XNVME_ZND_REPORT_DESCR(rprt, nth) \
-	((struct xnvme_spec_znd_descr *)&(rprt->storage[nth * rprt->zrent_nbytes]))
 
 /**
  * Prints the given ::xnvme_znd_report to the given stream

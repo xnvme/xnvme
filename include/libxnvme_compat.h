@@ -154,3 +154,11 @@ xnvme_file_get_cmd_ctx(struct xnvme_dev *fh)
 
 	return ctx;
 }
+
+/**
+ * @deprecated Use xnvme_znd_report_get_descr()
+ *
+ * Unlike the functions above, it does not warn that it is deprecated
+ */
+#define XNVME_ZND_REPORT_DESCR(rprt, nth) \
+	((struct xnvme_spec_znd_descr *)&(rprt->storage[nth * rprt->zrent_nbytes]))

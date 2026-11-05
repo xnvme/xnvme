@@ -35,6 +35,7 @@ tests = {
   ],
   'compat.c': [
     ['deprecated', ['deprecated']],
+    ['deprecated-znd', ['deprecated-znd']],
     ['deprecated-queue', ['deprecated-queue', '1GB']],
     ['null-args', ['null-args']],
   ],
