@@ -232,6 +232,7 @@ _xnvme_be_spdk_ident_to_trid(const struct xnvme_ident *ident, struct xnvme_opts 
 	return 0;
 }
 
+#ifdef XNVME_DEBUG_ENABLED
 static int
 _spdk_nvme_transport_id_pr(const struct spdk_nvme_transport_id *trid)
 {
@@ -248,6 +249,7 @@ _spdk_nvme_transport_id_pr(const struct spdk_nvme_transport_id *trid)
 
 	return wrtn;
 }
+#endif
 
 static int
 _spdk_nvme_transport_id_compare_weak(const struct spdk_nvme_transport_id *trid1,
