@@ -13,8 +13,6 @@
 extern "C" {
 #endif
 
-#include <libxnvme.h>
-
 /**
  * Submit a NVMe Read command
  *
