@@ -130,6 +130,39 @@ int
 xnvme_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys);
 
 /**
+ * Register memory of the caller's for use as command payload with the given device
+ *
+ * Registering makes memory the caller allocated itself, rather than with xnvme_buf_alloc(),
+ * usable as the payload of commands to the device.
+ *
+ * @note Unregister the memory with xnvme_buf_unregister()
+ * @note Control plane: serialised with the other control-plane calls, not with I/O on the
+ * same device, queue or buffer; see Thread Safety in the API documentation
+ *
+ * @param dev Device handle obtained with xnvme_dev_open()
+ * @param vaddr The address the caller accesses the memory at
+ * @param nbytes The number of bytes to register, starting at vaddr
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ */
+int
+xnvme_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes);
+
+/**
+ * Unregister memory registered with xnvme_buf_register()
+ *
+ * @note Control plane: serialised with the other control-plane calls, not with I/O on the
+ * same device, queue or buffer; see Thread Safety in the API documentation
+ *
+ * @param dev Device handle obtained with xnvme_dev_open()
+ * @param vaddr The address the memory was registered at
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ */
+int
+xnvme_buf_unregister(const struct xnvme_dev *dev, void *vaddr);
+
+/**
  * Allocate a buffer of virtual memory of the given `alignment` and `nbytes`
  *
  * @note You must use xnvme_buf_virt_free() to de-allocate the buffer

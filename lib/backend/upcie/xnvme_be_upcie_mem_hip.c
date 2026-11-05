@@ -50,7 +50,7 @@ xnvme_be_upcie_hip_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t 
 }
 
 static int
-xnvme_be_upcie_hip_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, uint64_t *phys)
+xnvme_be_upcie_hip_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 {
 	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 	int dmabuf_fd = -1;
@@ -58,7 +58,7 @@ xnvme_be_upcie_hip_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbyt
 	int err;
 
 	if (!g_upcie_rte.connection.alive) {
-		return xnvme_be_upcie_dmamem_map(state->dmem, vaddr, nbytes, phys);
+		return xnvme_be_upcie_dmamem_map(state->dmem, vaddr, nbytes, NULL);
 	}
 
 	herr = hipMemGetHandleForAddressRange(&dmabuf_fd, (hipDeviceptr_t)vaddr, nbytes,
@@ -72,19 +72,12 @@ xnvme_be_upcie_hip_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbyt
 	err = xnvme_be_upcie_served_mem_map(state->dmem, state->ctrlr, dmabuf_fd, vaddr, nbytes,
 					    (uint32_t)g_upcie_hip_rte.hip_config.device_pagesize);
 	close(dmabuf_fd);
-	if (err) {
-		return err;
-	}
 
-	if (phys) {
-		*phys = dmamem_va_to_iova(state->dmem, vaddr);
-	}
-
-	return 0;
+	return err;
 }
 
 static int
-xnvme_be_upcie_hip_mem_unmap(const struct xnvme_dev *dev, void *vaddr)
+xnvme_be_upcie_hip_buf_unregister(const struct xnvme_dev *dev, void *vaddr)
 {
 	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 
@@ -104,14 +97,14 @@ struct xnvme_be_mem g_xnvme_be_upcie_mem_hip = {
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
 	.buf_free = xnvme_be_upcie_hip_buf_free,
 	.buf_vtophys = xnvme_be_upcie_hip_buf_vtophys,
-	.mem_map = xnvme_be_upcie_hip_mem_map,
-	.mem_unmap = xnvme_be_upcie_hip_mem_unmap,
+	.buf_register = xnvme_be_upcie_hip_buf_register,
+	.buf_unregister = xnvme_be_upcie_hip_buf_unregister,
 #else
 	.buf_alloc = xnvme_be_nosys_buf_alloc,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
 	.buf_free = xnvme_be_nosys_buf_free,
 	.buf_vtophys = xnvme_be_nosys_buf_vtophys,
-	.mem_map = xnvme_be_nosys_mem_map,
-	.mem_unmap = xnvme_be_nosys_mem_unmap,
+	.buf_register = xnvme_be_nosys_buf_register,
+	.buf_unregister = xnvme_be_nosys_buf_unregister,
 #endif
 };

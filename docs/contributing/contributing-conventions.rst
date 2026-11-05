@@ -82,8 +82,8 @@ C: API
   - ``xnvme_dev_open()``, ``xnvme_dev_close()``, ``xnvme_enumerate()``,
     ``xnvme_queue_init()``, ``xnvme_queue_term()``, ``xnvme_buf_alloc()``,
     ``xnvme_buf_realloc()``, ``xnvme_buf_free()``, their ``xnvme_buf_phys_*()``
-    variants, ``xnvme_buf_vtophys()``, ``xnvme_mem_map()``,
-    ``xnvme_mem_unmap()``, ``xnvme_cuda_queue_create()`` and
+    variants, ``xnvme_buf_vtophys()``, ``xnvme_buf_register()``,
+    ``xnvme_buf_unregister()``, ``xnvme_cuda_queue_create()`` and
     ``xnvme_cuda_queue_destroy()``; one process-wide lock serialises them
     (``lib/util/xnvme_lock.c``)
   - A queue, and the command contexts drawn from it, belongs to one thread at a

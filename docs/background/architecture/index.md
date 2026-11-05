@@ -437,7 +437,7 @@ determines default priority -- the first matching config wins.
 
 The `mem` on the Linux configs defaults to `posix` with `hugepage` available
 as an override via `opts.mem`. The exception is `io_uring_dmabuf`, whose `mem`
-registers GPU memory with `io_uring` on `xnvme_mem_map()`.
+registers GPU memory with `io_uring` on `xnvme_buf_register()`.
 
 ### URI Format
 

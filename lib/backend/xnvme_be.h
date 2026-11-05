@@ -147,14 +147,14 @@ struct xnvme_be_mem {
 	void (*buf_free)(const struct xnvme_dev *, void *);
 
 	/**
-	 * Map a buffer usable for NVMe commands
+	 * Register memory of the caller's for use as command payload
 	 */
-	int (*mem_map)(const struct xnvme_dev *, void *, size_t, uint64_t *);
+	int (*buf_register)(const struct xnvme_dev *, void *, size_t);
 
 	/**
-	 * Unmap a buffer usable for NVMe commands
+	 * Unregister memory registered with buf_register
 	 */
-	int (*mem_unmap)(const struct xnvme_dev *, void *);
+	int (*buf_unregister)(const struct xnvme_dev *, void *);
 	const char *id;
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_mem) == XNVME_BE_MEM_NBYTES, "Incorrect size")

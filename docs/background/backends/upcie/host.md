@@ -46,7 +46,8 @@ XNVME_UPCIE_HOST_IOVA_BASE=0x1000000000  # 64 GiB
 
 - **No `buf_realloc`.** Buffer reallocation is not implemented and returns
   `ENOSYS`.
-- **No memory mapping** (`mem_map` / `mem_unmap`). These return `ENOSYS`.
+- **No registering of memory** (`xnvme_buf_register()` / `xnvme_buf_unregister()`). These
+  return `ENOSYS`.
 - **Controller reset** and **subsystem reset** are not supported. These
   operations disable the controller and re-enable it, but do not re-program the
   admin submission/completion queues. Without full re-initialization the
