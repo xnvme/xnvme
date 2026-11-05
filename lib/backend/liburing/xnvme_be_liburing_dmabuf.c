@@ -447,7 +447,8 @@ exit:
 }
 
 int
-xnvme_be_liburing_dmabuf_ref(const struct xnvme_dev *dev, const void *vaddr, size_t nbytes)
+xnvme_be_liburing_dmabuf_ref(const struct xnvme_dev *dev, const void *vaddr, size_t nbytes,
+			     bool within)
 {
 	struct xnvme_be_liburing_dmabuf_entry *entry;
 	struct xnvme_be_liburing_dmabuf *registry;
@@ -464,6 +465,11 @@ xnvme_be_liburing_dmabuf_ref(const struct xnvme_dev *dev, const void *vaddr, siz
 	if (err) {
 		// A range running past the registration it starts in overlaps it
 		err = (err == -EINVAL) ? -EBUSY : err;
+		goto exit;
+	}
+	if (offset && !within) {
+		XNVME_DEBUG("FAILED: vaddr(%p) lies inside a registered dma-buf", vaddr);
+		err = -EBUSY;
 		goto exit;
 	}
 
