@@ -326,6 +326,23 @@ _registry_lookup(struct xnvme_be_liburing_dmabuf *registry, const void *buf, siz
 	return -ENOENT;
 }
 
+static bool
+_registry_overlaps(struct xnvme_be_liburing_dmabuf *registry, const void *vaddr, size_t nbytes)
+{
+	const uint8_t *lo = vaddr, *hi = lo + nbytes;
+
+	for (uint32_t i = 0; i < registry->nentries; ++i) {
+		const struct xnvme_be_liburing_dmabuf_entry *ent = &registry->entries[i];
+		const uint8_t *ent_lo = ent->vaddr, *ent_hi = ent_lo + ent->nbytes;
+
+		if ((ent->fd >= 0) && (lo < ent_hi) && (hi > ent_lo)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void
 xnvme_be_liburing_dmabuf_term(const struct xnvme_dev *dev)
 {
@@ -445,6 +462,8 @@ xnvme_be_liburing_dmabuf_ref(const struct xnvme_dev *dev, const void *vaddr, siz
 	}
 	err = _registry_lookup(registry, vaddr, nbytes, &entry, &offset);
 	if (err) {
+		// A range running past the registration it starts in overlaps it
+		err = (err == -EINVAL) ? -EBUSY : err;
 		goto exit;
 	}
 
@@ -480,6 +499,12 @@ xnvme_be_liburing_dmabuf_add(const struct xnvme_dev *dev, void *vaddr, size_t nb
 		goto exit;
 	}
 	if (err != -ENOENT) {
+		err = (err == -EINVAL) ? -EBUSY : err;
+		goto exit;
+	}
+	if (_registry_overlaps(registry, vaddr, nbytes)) {
+		XNVME_DEBUG("FAILED: vaddr(%p, %zu) overlaps a registered dma-buf", vaddr, nbytes);
+		err = -EBUSY;
 		goto exit;
 	}
 
