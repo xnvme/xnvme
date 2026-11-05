@@ -38,6 +38,14 @@ xnvme_buf_register(dev, buf, nbytes);
 the device, and a new queue registers the allocations already registered. IO on
 a registered buffer is submitted as `IORING_OP_READ_FIXED` / `IORING_OP_WRITE_FIXED`.
 
+A `dma-buf` from another exporter, such as `udmabuf` or a DMA heap, is
+registered with `xnvme_buf_register_dmabuf()`, given the address the caller
+accesses its first byte at. Commands then name it by that address.
+
+```c
+xnvme_buf_register_dmabuf(dev, fd, buf);
+```
+
 ## Limitations
 
 | | |
