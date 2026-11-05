@@ -16,10 +16,11 @@ xnvme_prep_adm_log(struct xnvme_cmd_ctx *ctx, uint8_t lid, uint8_t lsp, uint64_t
 	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_LOG;
 	ctx->cmd.common.nsid = nsid;
 
-	ctx->cmd.log.lid = lid;
-	ctx->cmd.log.lsp = lsp;
-	ctx->cmd.log.rae = rae;
-	ctx->cmd.log.numdl = numdw & 0xFFFFu;
+	ctx->cmd.log.cdw10 = xnvme_bits_set(ctx->cmd.log.cdw10, XNVME_SPEC_CMD_LOG_CDW10_LID, lid);
+	ctx->cmd.log.cdw10 = xnvme_bits_set(ctx->cmd.log.cdw10, XNVME_SPEC_CMD_LOG_CDW10_LSP, lsp);
+	ctx->cmd.log.cdw10 = xnvme_bits_set(ctx->cmd.log.cdw10, XNVME_SPEC_CMD_LOG_CDW10_RAE, rae);
+	ctx->cmd.log.cdw10 = xnvme_bits_set(ctx->cmd.log.cdw10, XNVME_SPEC_CMD_LOG_CDW10_NUMDL,
+					    numdw & 0xFFFFu);
 	ctx->cmd.log.numdu = (numdw >> 16) & 0xFFFFu;
 	ctx->cmd.log.lpou = (uint32_t)(lpo_nbytes >> 32);
 	ctx->cmd.log.lpol = (uint32_t)lpo_nbytes & 0xfffffff;
@@ -50,10 +51,11 @@ xnvme_adm_log(struct xnvme_cmd_ctx *ctx, uint8_t lid, uint8_t lsp, uint64_t lpo_
 	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_LOG;
 	ctx->cmd.common.nsid = nsid;
 
-	ctx->cmd.log.lid = lid;
-	ctx->cmd.log.lsp = lsp;
-	ctx->cmd.log.rae = rae;
-	ctx->cmd.log.numdl = numdw & 0xFFFFu;
+	ctx->cmd.log.cdw10 = xnvme_bits_set(ctx->cmd.log.cdw10, XNVME_SPEC_CMD_LOG_CDW10_LID, lid);
+	ctx->cmd.log.cdw10 = xnvme_bits_set(ctx->cmd.log.cdw10, XNVME_SPEC_CMD_LOG_CDW10_LSP, lsp);
+	ctx->cmd.log.cdw10 = xnvme_bits_set(ctx->cmd.log.cdw10, XNVME_SPEC_CMD_LOG_CDW10_RAE, rae);
+	ctx->cmd.log.cdw10 = xnvme_bits_set(ctx->cmd.log.cdw10, XNVME_SPEC_CMD_LOG_CDW10_NUMDL,
+					    numdw & 0xFFFFu);
 	ctx->cmd.log.numdu = (numdw >> 16) & 0xFFFFu;
 	ctx->cmd.log.lpou = (uint32_t)(lpo_nbytes >> 32);
 	ctx->cmd.log.lpol = (uint32_t)lpo_nbytes & 0xfffffff;

@@ -99,7 +99,8 @@ _be_windows_nvme_storage_property(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t 
 		query->PropertyId = StorageDeviceProtocolSpecificProperty;
 		protocol_data->ProtocolType = ProtocolTypeNvme;
 		protocol_data->DataType = NVMeDataTypeLogPage;
-		protocol_data->ProtocolDataRequestValue = ctx->cmd.log.lid;
+		protocol_data->ProtocolDataRequestValue =
+			xnvme_bits_get(ctx->cmd.log.cdw10, XNVME_SPEC_CMD_LOG_CDW10_LID);
 		protocol_data->ProtocolDataRequestSubValue = ctx->cmd.common.nsid;
 		protocol_data->ProtocolDataRequestSubValue2 = 0;
 		protocol_data->ProtocolDataRequestSubValue3 = 0;
