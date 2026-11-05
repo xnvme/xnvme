@@ -76,13 +76,13 @@ xnvme_be_libvfn_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *ph
 }
 
 static int
-xnvme_be_libvfn_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, uint64_t *phys)
+xnvme_be_libvfn_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 {
 	struct xnvme_be_libvfn_state *state = &xnvme_be_state(dev)->libvfn_state;
 	struct iommu_ctx *ctx = state->ctrlr->ctrl->pci.dev.ctx;
 	int err;
 
-	XNVME_DEBUG("xnvme_be_libvfn_mem_map(%p, %p)", dev, vaddr);
+	XNVME_DEBUG("xnvme_be_libvfn_buf_register(%p, %p)", dev, vaddr);
 
 	if (!ALIGNED(((uintptr_t)vaddr | nbytes), __VFN_PAGESIZE)) {
 		XNVME_DEBUG("FAILED: nbytes not page aligned\n");
@@ -91,7 +91,7 @@ xnvme_be_libvfn_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes,
 	}
 
 	XNVME_DEBUG("iommu_map_vaddr(%p, %p, %ld, NULL)", ctx, vaddr, nbytes);
-	err = iommu_map_vaddr(ctx, vaddr, nbytes, phys, 0);
+	err = iommu_map_vaddr(ctx, vaddr, nbytes, NULL, 0);
 	if (err) {
 		XNVME_DEBUG("FAILED: iommu_map_vaddr(): %s\n", strerror(errno));
 		return -errno;
@@ -101,12 +101,12 @@ xnvme_be_libvfn_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes,
 }
 
 static int
-xnvme_be_libvfn_mem_unmap(const struct xnvme_dev *dev, void *buf)
+xnvme_be_libvfn_buf_unregister(const struct xnvme_dev *dev, void *buf)
 {
 	struct xnvme_be_libvfn_state *state = &xnvme_be_state(dev)->libvfn_state;
 	struct iommu_ctx *ctx = state->ctrlr->ctrl->pci.dev.ctx;
 
-	XNVME_DEBUG("xnvme_be_libvfn_buf_unmap(%p, %p)", dev, buf);
+	XNVME_DEBUG("xnvme_be_libvfn_buf_unregister(%p, %p)", dev, buf);
 
 	if (iommu_unmap_vaddr(ctx, buf, NULL)) {
 		XNVME_DEBUG("FAILED: iommu_unmap_vaddr(-, %p): %s\n", buf, strerror(errno));
@@ -125,14 +125,14 @@ struct xnvme_be_mem g_xnvme_be_libvfn_mem = {
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
 	.buf_free = xnvme_be_libvfn_buf_free,
 	.buf_vtophys = xnvme_be_libvfn_buf_vtophys,
-	.mem_map = xnvme_be_libvfn_mem_map,
-	.mem_unmap = xnvme_be_libvfn_mem_unmap,
+	.buf_register = xnvme_be_libvfn_buf_register,
+	.buf_unregister = xnvme_be_libvfn_buf_unregister,
 #else
 	.buf_alloc = xnvme_be_nosys_buf_alloc,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
 	.buf_free = xnvme_be_nosys_buf_free,
 	.buf_vtophys = xnvme_be_nosys_buf_vtophys,
-	.mem_map = xnvme_be_nosys_mem_map,
-	.mem_unmap = xnvme_be_nosys_mem_unmap,
+	.buf_register = xnvme_be_nosys_buf_register,
+	.buf_unregister = xnvme_be_nosys_buf_unregister,
 #endif
 };

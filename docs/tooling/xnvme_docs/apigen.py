@@ -28,7 +28,6 @@ NAMESPACES: dict[str, set[str]] = {
         "xnvme_dev",
         "xnvme_geo",
         "xnvme_ident",
-        "xnvme_mem",
         "xnvme_opts",
         "xnvme_queue",
         "xnvme_scan",

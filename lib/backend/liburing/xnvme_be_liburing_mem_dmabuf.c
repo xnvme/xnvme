@@ -109,7 +109,7 @@ _dmabuf_export(void *vaddr, void **base, size_t *nbytes, int *fd)
 }
 
 static int
-mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, uint64_t *XNVME_UNUSED(phys))
+buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 {
 	size_t alloc_nbytes;
 	void *base;
@@ -140,7 +140,7 @@ mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, uint64_t *XNVME
 }
 
 static int
-mem_unmap(const struct xnvme_dev *dev, void *vaddr)
+buf_unregister(const struct xnvme_dev *dev, void *vaddr)
 {
 	return xnvme_be_liburing_dmabuf_unref(dev, vaddr);
 }
@@ -151,7 +151,7 @@ struct xnvme_be_mem g_xnvme_be_liburing_mem_dmabuf = {
 	.buf_realloc = xnvme_be_posix_mem_buf_realloc,
 	.buf_free = xnvme_be_posix_mem_buf_free,
 	.buf_vtophys = xnvme_be_posix_mem_buf_vtophys,
-	.mem_map = mem_map,
-	.mem_unmap = mem_unmap,
+	.buf_register = buf_register,
+	.buf_unregister = buf_unregister,
 };
 #endif

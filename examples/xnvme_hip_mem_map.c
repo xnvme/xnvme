@@ -10,10 +10,10 @@
 #include <libxnvme.h>
 
 /**
- * NVMe I/O into a hipMalloc'd, mem_map'd buffer
+ * NVMe I/O into a hipMalloc'd, registered buffer
  *
  * The HIP counterpart of xnvme_cuda_mem_map.cu: registers an
- * externally-allocated device buffer with xnvme_mem_map() instead of drawing
+ * externally-allocated device buffer with xnvme_buf_register() instead of drawing
  * from the heap that xnvme_buf_alloc() serves, then reads into it. Submission
  * is host-side, since there is no HIP equivalent of the GPU-resident queue.
  *
@@ -68,13 +68,13 @@ main(int argc, char **argv)
 	}
 	xnvme_cli_pinf("hipMalloc(%zu) -> %p", buf_nbytes, buf);
 
-	err = xnvme_mem_map(dev, buf, buf_nbytes);
+	err = xnvme_buf_register(dev, buf, buf_nbytes);
 	if (err) {
-		xnvme_cli_perr("xnvme_mem_map()", err);
+		xnvme_cli_perr("xnvme_buf_register()", err);
 		goto exit;
 	}
 	mapped = 1;
-	xnvme_cli_pinf("xnvme_mem_map(%p, %zu): registered", buf, buf_nbytes);
+	xnvme_cli_pinf("xnvme_buf_register(%p, %zu): registered", buf, buf_nbytes);
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 	err = xnvme_nvm_read(&ctx, xnvme_dev_get_nsid(dev), 0x0, nlb - 1, buf, NULL);
@@ -84,11 +84,11 @@ main(int argc, char **argv)
 		goto exit;
 	}
 
-	xnvme_cli_pinf("OK: read %zu LBAs into a mem_map'd hipMalloc buffer", nlb);
+	xnvme_cli_pinf("OK: read %zu LBAs into a registered hipMalloc buffer", nlb);
 
 exit:
 	if (mapped) {
-		xnvme_mem_unmap(dev, buf);
+		xnvme_buf_unregister(dev, buf);
 	}
 	if (buf) {
 		hipFree(buf);
