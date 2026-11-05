@@ -353,10 +353,13 @@ cplane_serve_dispatch(struct xnvme_be_upcie_cplane_serve_conn *conn, struct nvme
 		return XNVME_BE_UPCIE_CPLANE_SERVE_REPLY_NONE;
 
 	case NVME_CPLANE_OP_INIT_CONNECTION:
-		reply.u.init_connection.ctrlr = share->base;
 		/* The identifier clients name it by; the controller's own bdf can be empty */
-		snprintf(reply.u.init_connection.bdf, sizeof(reply.u.init_connection.bdf), "%s",
-			 share->uri);
+		if (snprintf(reply.u.init_connection.bdf, sizeof(reply.u.init_connection.bdf),
+			     "%s", share->uri) >= (int)sizeof(reply.u.init_connection.bdf)) {
+			reply.result = -ENAMETOOLONG;
+			break;
+		}
+		reply.u.init_connection.ctrlr = share->base;
 		reply.u.init_connection.desc_offset = share->desc_offset;
 		reply.u.init_connection.heap_nbytes = share->heap_nbytes;
 		reply.u.init_connection.bar0_nbytes = share->bar0_nbytes;
@@ -413,7 +416,11 @@ cplane_serve_dispatch(struct xnvme_be_upcie_cplane_serve_conn *conn, struct nvme
 		reply.u.status.nqueues = (uint32_t)xnvme_be_upcie_cplane_serve_conn_nqueues(idx);
 		reply.u.status.nsq_total = g_upcie_cplane_serve.nsq_total[idx];
 		reply.u.status.ncq_total = g_upcie_cplane_serve.ncq_total[idx];
-		snprintf(reply.u.status.bdf, sizeof(reply.u.status.bdf), "%s", share->uri);
+		if (snprintf(reply.u.status.bdf, sizeof(reply.u.status.bdf), "%s", share->uri) >=
+		    (int)sizeof(reply.u.status.bdf)) {
+			reply.result = -ENAMETOOLONG;
+			break;
+		}
 		break;
 
 	default:
