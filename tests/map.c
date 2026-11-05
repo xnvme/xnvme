@@ -69,6 +69,118 @@ test_mem_map_unmap(struct xnvme_cli *cli)
 }
 
 /**
+ * Read the first LBA into the given buffer, to tell that it is still usable as payload
+ */
+static int
+read_into(struct xnvme_dev *dev, void *buf)
+{
+	struct xnvme_cmd_ctx ctx = {0};
+	int err;
+
+	xnvme_dev_get_cmd_ctx(dev, &ctx);
+
+	err = xnvme_nvm_read(&ctx, xnvme_dev_get_nsid(dev), 0x0, 0, buf, NULL);
+	if (!err && xnvme_cmd_ctx_cpl_status(&ctx)) {
+		err = -EIO;
+	}
+
+	return err;
+}
+
+static int
+register_unregister(struct xnvme_dev *dev, void *buf, size_t nbytes, const char *what)
+{
+	int err;
+
+	err = xnvme_buf_register(dev, buf, nbytes);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_register()", err);
+		xnvme_cli_pinf("FAILED: registering %s", what);
+		return err;
+	}
+
+	err = xnvme_buf_unregister(dev, buf);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_unregister()", err);
+		xnvme_cli_pinf("FAILED: unregistering %s", what);
+	}
+
+	return err;
+}
+
+/**
+ * Registrations are counted: registering memory from xnvme_buf_alloc() leaves it be, and a range
+ * within a registered one is counted on it, so unregistering either leaves the memory usable
+ */
+static int
+test_register_counted(struct xnvme_cli *cli)
+{
+	struct xnvme_dev *dev = cli->args.dev;
+	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
+	size_t align, nbytes;
+	uint8_t *buf;
+	int err;
+
+	err = xnvme_buf_get_alignment(dev, &align);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_get_alignment()", err);
+		return err;
+	}
+	nbytes = (geo->lba_nbytes + align - 1) & ~(align - 1);
+	xnvme_cli_pinf("alignment: %zu, nbytes: %zu", align, nbytes);
+
+	buf = xnvme_buf_alloc(dev, nbytes);
+	if (!buf) {
+		xnvme_cli_perr("xnvme_buf_alloc()", -errno);
+		return -errno;
+	}
+	err = register_unregister(dev, buf, nbytes, "memory from xnvme_buf_alloc()");
+	if (!err) {
+		err = read_into(dev, buf);
+		if (err) {
+			xnvme_cli_pinf(
+				"FAILED: reading into memory from xnvme_buf_alloc(), err: %d",
+				err);
+		}
+	}
+	xnvme_buf_free(dev, buf);
+	if (err) {
+		return err;
+	}
+
+	buf = xnvme_buf_virt_alloc(align, 2 * nbytes);
+	if (!buf) {
+		xnvme_cli_perr("xnvme_buf_virt_alloc()", -errno);
+		return -errno;
+	}
+	err = xnvme_buf_register(dev, buf, 2 * nbytes);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_register()", err);
+		goto exit;
+	}
+	err = register_unregister(dev, buf + nbytes, nbytes, "a range within a registered one");
+	if (!err) {
+		err = read_into(dev, buf);
+		if (err) {
+			xnvme_cli_pinf("FAILED: reading into the registered range, err: %d", err);
+		}
+	}
+	if (xnvme_buf_unregister(dev, buf)) {
+		xnvme_cli_pinf("FAILED: unregistering the registered range");
+		err = err ? err : -EIO;
+	}
+
+exit:
+	xnvme_buf_virt_free(buf);
+
+	if (!err) {
+		xnvme_cli_pinf("LGTM: registrations are counted");
+	}
+
+	return err;
+}
+
+/**
  * Write one LBA carrying the given metadata buffer
  *
  * @return 0 where the controller accepted it, negative errno where the write
@@ -179,6 +291,18 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_COUNT, XNVME_CLI_LREQ},
 
 			XNVME_CLI_ADMIN_OPTS,
+		},
+	},
+	{
+		"register_counted",
+		"Register memory from xnvme_buf_alloc() and a range within a registered one",
+		"Register memory from xnvme_buf_alloc() and a range within a registered one",
+		test_register_counted,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+
+			XNVME_CLI_SYNC_OPTS,
 		},
 	},
 	{
