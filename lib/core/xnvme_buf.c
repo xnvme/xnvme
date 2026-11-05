@@ -293,6 +293,25 @@ xnvme_buf_diff_pr(const void *expected, const void *actual, size_t nbytes, int X
 }
 
 int
+xnvme_buf_export_dmabuf(void *vaddr, void **base, size_t *nbytes, int *fd)
+{
+	int err;
+
+	if (xnvme_buf_is_cuda(vaddr)) {
+		err = xnvme_cuda_buf_get_range(vaddr, base, nbytes);
+		return err ? err : xnvme_cuda_buf_export_dmabuf(*base, *nbytes, fd);
+	}
+	if (xnvme_buf_is_hip(vaddr)) {
+		err = xnvme_hip_buf_get_range(vaddr, base, nbytes);
+		return err ? err : xnvme_hip_buf_export_dmabuf(*base, *nbytes, fd);
+	}
+
+	XNVME_DEBUG("FAILED: vaddr(%p) is neither CUDA nor HIP device memory", vaddr);
+
+	return -EINVAL;
+}
+
+int
 xnvme_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 {
 	int err;

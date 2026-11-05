@@ -7,6 +7,7 @@
 #include <libxnvme.h>
 #include <xnvme_host_buf.h>
 #include <errno.h>
+#include <unistd.h>
 
 bool
 xnvme_buf_is_hip(const void *buf)
@@ -134,6 +135,52 @@ exit:
 	free(cbuf);
 	return err;
 }
+
+// A dma-buf is exported in whole pages
+static size_t
+_page_ceil(size_t nbytes)
+{
+	long pagesize = sysconf(_SC_PAGESIZE);
+
+	if (pagesize <= 0) {
+		XNVME_DEBUG("FAILED: sysconf(), errno: %d", errno);
+		return 0;
+	}
+
+	return (nbytes + (size_t)pagesize - 1) & ~((size_t)pagesize - 1);
+}
+
+int
+xnvme_hip_buf_get_range(void *vaddr, void **base, size_t *nbytes)
+{
+	if (hipMemGetAddressRange((hipDeviceptr_t *)base, nbytes, (hipDeviceptr_t)vaddr) !=
+	    hipSuccess) {
+		XNVME_DEBUG("FAILED: hipMemGetAddressRange(%p)", vaddr);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int
+xnvme_hip_buf_export_dmabuf(void *base, size_t nbytes, int *fd)
+{
+	size_t export_nbytes;
+
+	export_nbytes = _page_ceil(nbytes);
+	if (!export_nbytes) {
+		return -EINVAL;
+	}
+
+	if (hipMemGetHandleForAddressRange(fd, (hipDeviceptr_t)base, export_nbytes,
+					   hipMemRangeHandleTypeDmaBufFd, 0) != hipSuccess) {
+		XNVME_DEBUG("FAILED: hipMemGetHandleForAddressRange(%p, %zu)", base,
+			    export_nbytes);
+		return -EIO;
+	}
+
+	return 0;
+}
 #else
 
 #include <libxnvme.h>
@@ -172,6 +219,22 @@ xnvme_hip_buf_diff(const void *XNVME_UNUSED(expected), const void *XNVME_UNUSED(
 int
 xnvme_hip_buf_fill(void *XNVME_UNUSED(buf), size_t XNVME_UNUSED(nbytes),
 		   const char *XNVME_UNUSED(content))
+{
+	XNVME_DEBUG("FAILED: xNVMe was compiled without HIP");
+	return -ENOTSUP;
+}
+
+int
+xnvme_hip_buf_get_range(void *XNVME_UNUSED(vaddr), void **XNVME_UNUSED(base),
+			size_t *XNVME_UNUSED(nbytes))
+{
+	XNVME_DEBUG("FAILED: xNVMe was compiled without HIP");
+	return -ENOTSUP;
+}
+
+int
+xnvme_hip_buf_export_dmabuf(void *XNVME_UNUSED(base), size_t XNVME_UNUSED(nbytes),
+			    int *XNVME_UNUSED(fd))
 {
 	XNVME_DEBUG("FAILED: xNVMe was compiled without HIP");
 	return -ENOTSUP;
