@@ -69,12 +69,20 @@ sub_null_args(struct xnvme_cli *XNVME_UNUSED(cli))
 	return err;
 }
 
+static void
+cb_put_ctx(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(cb_arg))
+{
+	xnvme_queue_put_cmd_ctx(ctx->async.queue, ctx);
+}
+
 static int
 sub_deprecated_queue(struct xnvme_cli *cli)
 {
 	struct xnvme_opts opts = {0};
 	struct xnvme_queue *queue = NULL;
+	struct xnvme_cmd_ctx *ctx;
 	struct xnvme_dev *dev;
+	void *buf = NULL;
 	int err;
 
 	xnvme_opts_set_defaults(&opts);
@@ -95,8 +103,7 @@ sub_deprecated_queue(struct xnvme_cli *cli)
 	}
 
 	for (int i = 0; i < 2; ++i) {
-		struct xnvme_cmd_ctx *ctx = xnvme_cmd_ctx_from_queue(queue);
-
+		ctx = xnvme_cmd_ctx_from_queue(queue);
 		if (!ctx || ctx->dev != dev) {
 			xnvme_cli_pinf(
 				"FAILED: xnvme_cmd_ctx_from_queue() != xnvme_queue_get_cmd_ctx()");
@@ -106,9 +113,41 @@ sub_deprecated_queue(struct xnvme_cli *cli)
 		xnvme_queue_put_cmd_ctx(queue, ctx);
 	}
 
+	if (err) {
+		goto exit;
+	}
+
+	buf = xnvme_buf_alloc(dev, xnvme_dev_get_geo(dev)->lba_nbytes);
+	if (!buf) {
+		err = -errno;
+		xnvme_cli_perr("xnvme_buf_alloc()", err);
+		goto exit;
+	}
+	xnvme_queue_set_cb(queue, cb_put_ctx, NULL);
+
+	ctx = xnvme_queue_get_cmd_ctx(queue);
+	err = xnvme_nvm_read(ctx, xnvme_dev_get_nsid(dev), 0, 0, buf, NULL);
+	if (err) {
+		xnvme_cli_perr("xnvme_nvm_read()", err);
+		xnvme_queue_put_cmd_ctx(queue, ctx);
+		goto exit;
+	}
+
+	err = xnvme_queue_wait(queue);
+	if (err != 1 || xnvme_queue_get_outstanding(queue)) {
+		xnvme_cli_pinf("FAILED: xnvme_queue_wait(): %d, outstanding: %u", err,
+			       xnvme_queue_get_outstanding(queue));
+		err = -EIO;
+		goto exit;
+	}
+	err = 0;
+
 exit:
 	if (queue) {
 		xnvme_queue_term(queue);
+	}
+	if (buf) {
+		xnvme_buf_free(dev, buf);
 	}
 	xnvme_dev_close(dev);
 

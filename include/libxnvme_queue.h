@@ -108,17 +108,6 @@ int
 xnvme_queue_drain(struct xnvme_queue *queue);
 
 /**
- * DEPRECATED: expect that this function will be removed in an upcoming release
- *
- * @param queue Pointer to the ::xnvme_queue to wait/process commands on
- *
- * @return On success, number of commands processed, may be 0. On error, negative `errno` is
- * returned.
- */
-int
-xnvme_queue_wait(struct xnvme_queue *queue);
-
-/**
  * Retrieve a command-context from the given queue for async. command execution with the queue
  *
  * @note The command-context is managed by the queue, thus, return it to the queue via

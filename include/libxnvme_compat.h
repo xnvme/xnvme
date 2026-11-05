@@ -89,6 +89,24 @@ xnvme_cmd_ctx_from_queue(struct xnvme_queue *queue)
 }
 
 /**
+ * @deprecated Use xnvme_queue_drain()
+ *
+ * @param queue Pointer to the ::xnvme_queue to process commands on
+ *
+ * @return On success, number of commands processed, may be 0. On error, negative `errno` is
+ * returned.
+ */
+static inline int
+xnvme_queue_wait(struct xnvme_queue *queue)
+{
+	static int warned;
+
+	xnvme_compat_deprecated(&warned, "xnvme_queue_wait", "xnvme_queue_drain");
+
+	return xnvme_queue_drain(queue);
+}
+
+/**
  * @deprecated Use xnvme_dev_get_cmd_ctx()
  *
  * @param fh File handle (::xnvme_dev) obtained with xnvme_file_open()
