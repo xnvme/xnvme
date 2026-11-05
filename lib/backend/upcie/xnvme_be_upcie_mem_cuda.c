@@ -102,6 +102,41 @@ _add(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 }
 
 static int
+xnvme_be_upcie_cuda_buf_register_dmabuf(const struct xnvme_dev *dev, int fd, void *vaddr)
+{
+	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
+	size_t nbytes;
+	off_t size;
+	int err;
+
+	if (!g_upcie_rte.connection.alive) {
+		XNVME_DEBUG("FAILED: registering a dma-buf takes a server");
+		return -ENOSYS;
+	}
+
+	size = lseek(fd, 0, SEEK_END);
+	if (size <= 0) {
+		XNVME_DEBUG("FAILED: lseek(dma-buf), errno: %d", errno);
+		return size ? -errno : -EINVAL;
+	}
+	nbytes = (size_t)size;
+
+	err = xnvme_be_upcie_buf_reg_ref(state->dmem, vaddr, nbytes);
+	if (err != -ENOENT) {
+		return err;
+	}
+
+	err = xnvme_be_upcie_served_mem_map(
+		state->dmem, state->ctrlr, fd, vaddr, nbytes,
+		(uint32_t)g_upcie_cuda_rte.cuda_config.device_pagesize);
+	if (err) {
+		return err;
+	}
+
+	return _add(dev, vaddr, nbytes);
+}
+
+static int
 xnvme_be_upcie_cuda_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 {
 	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
@@ -159,6 +194,7 @@ struct xnvme_be_mem g_xnvme_be_upcie_mem_cuda = {
 	.buf_free = xnvme_be_upcie_cuda_buf_free,
 	.buf_vtophys = xnvme_be_upcie_cuda_buf_vtophys,
 	.buf_register = xnvme_be_upcie_cuda_buf_register,
+	.buf_register_dmabuf = xnvme_be_upcie_cuda_buf_register_dmabuf,
 	.buf_unregister = xnvme_be_upcie_cuda_buf_unregister,
 	.buf_get_alignment = xnvme_be_upcie_cuda_buf_get_alignment,
 #else
