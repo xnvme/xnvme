@@ -41,6 +41,23 @@ Structs
 {% endfor %}
 {% endif %}
 
+{% if show_unions %}
+.. _sec-api-c-{{ ns }}-union:
+
+Unions
+======
+
+{% for symb in api.union %}
+.. _sec-api-c-{{ ns }}-union-{{ symb }}:
+
+{{ symb }}
+{% for _ in range(symb|length) %}-{% endfor %}
+
+.. doxygenunion:: {{ symb }}
+
+{% endfor %}
+{% endif %}
+
 {% if show_funcs %}
 .. _sec-api-c-{{ ns }}-func:
 

@@ -962,7 +962,7 @@ endef
 .PHONY: tags-xnvme-public
 tags-xnvme-public:
 	@echo "## xNVMe: make tags-xnvme-public"
-	$(CTAGS) --c-kinds=dfpgs -R include/lib*.h || true
+	$(CTAGS) --c-kinds=dfpgsu -R include/lib*.h || true
 	@echo "## xNVMe: make tags-xnvme-public [DONE]"
 
 define _require_builddir-help
