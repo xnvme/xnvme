@@ -36,7 +36,7 @@ xnvme_cuda_io_kernel(struct xnvme_cuda_queue *qp, struct xnvme_spec_cmd *cmds, s
 int
 main(int argc, char **argv)
 {
-	struct xnvme_opts opts = {0};
+	struct xnvme_opts opts = {};
 	struct xnvme_dev *dev = NULL;
 	struct xnvme_spec_cmd *h_cmds = NULL, *d_cmds = NULL;
 	struct xnvme_cuda_queue *gpu_queue = NULL;
