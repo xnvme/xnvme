@@ -66,7 +66,7 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_log_erri_entry, status,
 		    "status of struct xnvme_spec_log_erri_entry")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_log_erri_entry, status) == 12,
 		    "status of struct xnvme_spec_log_erri_entry")
-XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_lbaf, rp, XNVME_SPEC_LBAF_RP),
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_lbaf, rp, XNVME_SPEC_LBAF_RP_RP),
 		    "rp of struct xnvme_spec_lbaf")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ns, nsfeat,
 			 XNVME_SPEC_IDFY_NS_NSFEAT_THIN_PROV |
@@ -115,20 +115,21 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_elbaf, val,
 			 XNVME_SPEC_ELBAF_STS | XNVME_SPEC_ELBAF_PIF),
 		    "val of struct xnvme_spec_elbaf")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_power_state, mxps_nops,
-			 XNVME_SPEC_POWER_STATE_MXPS | XNVME_SPEC_POWER_STATE_NOPS),
+			 XNVME_SPEC_POWER_STATE_MXPS_NOPS_MXPS |
+				 XNVME_SPEC_POWER_STATE_MXPS_NOPS_NOPS),
 		    "mxps_nops of struct xnvme_spec_power_state")
-XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_power_state, rrt, XNVME_SPEC_POWER_STATE_RRT),
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_power_state, rrt, XNVME_SPEC_POWER_STATE_RRT_RRT),
 		    "rrt of struct xnvme_spec_power_state")
-XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_power_state, rrl, XNVME_SPEC_POWER_STATE_RRL),
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_power_state, rrl, XNVME_SPEC_POWER_STATE_RRL_RRL),
 		    "rrl of struct xnvme_spec_power_state")
-XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_power_state, rwt, XNVME_SPEC_POWER_STATE_RWT),
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_power_state, rwt, XNVME_SPEC_POWER_STATE_RWT_RWT),
 		    "rwt of struct xnvme_spec_power_state")
-XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_power_state, rwl, XNVME_SPEC_POWER_STATE_RWL),
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_power_state, rwl, XNVME_SPEC_POWER_STATE_RWL_RWL),
 		    "rwl of struct xnvme_spec_power_state")
-XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_power_state, ips, XNVME_SPEC_POWER_STATE_IPS),
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_power_state, ips, XNVME_SPEC_POWER_STATE_IPS_IPS),
 		    "ips of struct xnvme_spec_power_state")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_power_state, apw_aps,
-			 XNVME_SPEC_POWER_STATE_APW | XNVME_SPEC_POWER_STATE_APS),
+			 XNVME_SPEC_POWER_STATE_APW_APS_APW | XNVME_SPEC_POWER_STATE_APW_APS_APS),
 		    "apw_aps of struct xnvme_spec_power_state")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ctrlr_nvmf, ctrattr,
 			 XNVME_SPEC_IDFY_CTRLR_NVMF_CTRATTR_CTRLR_MODEL),
