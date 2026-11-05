@@ -144,7 +144,6 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
 
 			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
-			XNVME_CLI_SYNC_OPTS,
 			XNVME_CLI_ASYNC_OPTS,
 		},
 	},
