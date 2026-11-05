@@ -20,6 +20,16 @@ int
 xnvme_buf_export_dmabuf(void *vaddr, void **base, size_t *nbytes, int *fd);
 
 /**
+ * Whether the memory at vaddr is host memory: memory of neither the CUDA nor the HIP runtime
+ *
+ * Host memory is told by what it is not, as there is no telling it apart by itself; the address
+ * range of device memory is mapped in the process too. In a build without CUDA and HIP, all
+ * memory is host memory.
+ */
+bool
+xnvme_buf_is_host(const void *vaddr);
+
+/**
  * Register memory where the OS pins and translates the payload of each command itself
  *
  * Any memory then serves as command payload, so there is nothing to register; the arguments are

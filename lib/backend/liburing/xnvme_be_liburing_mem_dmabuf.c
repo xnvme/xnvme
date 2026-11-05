@@ -22,6 +22,10 @@ buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 		return -EINVAL;
 	}
 
+	if (xnvme_buf_is_host(vaddr)) {
+		return xnvme_buf_noreg_register(dev, vaddr, nbytes);
+	}
+
 	err = xnvme_be_liburing_dmabuf_ref(dev, vaddr, nbytes);
 	if (err != -ENOENT) {
 		return err;
@@ -45,6 +49,10 @@ buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 static int
 buf_unregister(const struct xnvme_dev *dev, void *vaddr)
 {
+	if (xnvme_buf_is_host(vaddr)) {
+		return xnvme_buf_noreg_unregister(dev, vaddr);
+	}
+
 	return xnvme_be_liburing_dmabuf_unref(dev, vaddr);
 }
 
