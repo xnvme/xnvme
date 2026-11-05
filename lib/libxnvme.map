@@ -40,6 +40,7 @@
 		xnvme_buf_phys_realloc;
 		xnvme_buf_vtophys;
 		xnvme_buf_register;
+		xnvme_buf_register_dmabuf;
 		xnvme_buf_unregister;
 		xnvme_buf_get_alignment;
 		xnvme_buf_virt_alloc;

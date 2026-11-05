@@ -16,7 +16,7 @@
 #define XNVME_BE_SYNC_NBYTES  24
 #define XNVME_BE_ADMIN_NBYTES 24
 #define XNVME_BE_DEV_NBYTES   40
-#define XNVME_BE_MEM_NBYTES   64
+#define XNVME_BE_MEM_NBYTES   72
 #define XNVME_BE_ATTR_NBYTES  24
 #define XNVME_BE_STATE_NBYTES 128
 
@@ -152,7 +152,12 @@ struct xnvme_be_mem {
 	int (*buf_register)(const struct xnvme_dev *, void *, size_t);
 
 	/**
-	 * Unregister memory registered with buf_register
+	 * Register a dma-buf for use as command payload; NULL where the interface does not
+	 */
+	int (*buf_register_dmabuf)(const struct xnvme_dev *, int, void *);
+
+	/**
+	 * Unregister memory registered with buf_register or buf_register_dmabuf
 	 */
 	int (*buf_unregister)(const struct xnvme_dev *, void *);
 

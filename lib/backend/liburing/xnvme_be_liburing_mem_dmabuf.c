@@ -6,6 +6,7 @@
 
 #ifdef XNVME_BE_LIBURING_DMABUF_ENABLED
 #include <errno.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <xnvme_buf.h>
 #include <xnvme_be_posix.h>
@@ -22,13 +23,13 @@ buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 		return -EINVAL;
 	}
 
-	if (xnvme_buf_is_host(vaddr)) {
-		return xnvme_buf_noreg_register(dev, vaddr, nbytes);
-	}
-
+	// Counted on a registered dma-buf it lies in, host memory too, as from udmabuf
 	err = xnvme_be_liburing_dmabuf_ref(dev, vaddr, nbytes);
 	if (err != -ENOENT) {
 		return err;
+	}
+	if (xnvme_buf_is_host(vaddr)) {
+		return xnvme_buf_noreg_register(dev, vaddr, nbytes);
 	}
 
 	err = xnvme_buf_export_dmabuf(vaddr, &base, &alloc_nbytes, &fd);
@@ -47,13 +48,50 @@ buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 }
 
 static int
+buf_register_dmabuf(const struct xnvme_dev *dev, int fd, void *vaddr)
+{
+	off_t size;
+	size_t nbytes;
+	int own, err;
+
+	size = lseek(fd, 0, SEEK_END);
+	if (size <= 0) {
+		XNVME_DEBUG("FAILED: lseek(dma-buf), errno: %d", errno);
+		return size ? -errno : -EINVAL;
+	}
+	nbytes = (size_t)size;
+
+	err = xnvme_be_liburing_dmabuf_ref(dev, vaddr, nbytes);
+	if (err != -ENOENT) {
+		return err;
+	}
+
+	own = fcntl(fd, F_DUPFD_CLOEXEC, 0);
+	if (own < 0) {
+		return -errno;
+	}
+
+	err = xnvme_be_liburing_dmabuf_add(dev, vaddr, nbytes, own);
+	if (err) {
+		close(own);
+		// Added by another thread meanwhile, which also took the reference
+		return (err == -EEXIST) ? 0 : err;
+	}
+
+	return 0;
+}
+
+static int
 buf_unregister(const struct xnvme_dev *dev, void *vaddr)
 {
-	if (xnvme_buf_is_host(vaddr)) {
+	int err;
+
+	err = xnvme_be_liburing_dmabuf_unref(dev, vaddr);
+	if ((err == -ENOENT) && xnvme_buf_is_host(vaddr)) {
 		return xnvme_buf_noreg_unregister(dev, vaddr);
 	}
 
-	return xnvme_be_liburing_dmabuf_unref(dev, vaddr);
+	return err;
 }
 
 static int
@@ -80,6 +118,7 @@ struct xnvme_be_mem g_xnvme_be_liburing_mem_dmabuf = {
 	.buf_free = xnvme_be_posix_mem_buf_free,
 	.buf_vtophys = xnvme_be_posix_mem_buf_vtophys,
 	.buf_register = buf_register,
+	.buf_register_dmabuf = buf_register_dmabuf,
 	.buf_unregister = buf_unregister,
 	.buf_get_alignment = buf_get_alignment,
 };

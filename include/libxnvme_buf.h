@@ -156,7 +156,31 @@ int
 xnvme_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes);
 
 /**
- * Unregister memory registered with xnvme_buf_register()
+ * Register a dma-buf for use as command payload with the given device
+ *
+ * Commands and xnvme_buf_unregister() name the dma-buf by the address the caller accesses its
+ * first byte at, vaddr; its size is that of the dma-buf. The library keeps a duplicate of fd while
+ * the dma-buf is registered, so the caller may close fd once this returns. It is counted as
+ * xnvme_buf_register() counts memory.
+ *
+ * @note Unregister the dma-buf with xnvme_buf_unregister()
+ * @note vaddr and the size of the dma-buf must be multiples of the alignment given by
+ * xnvme_buf_get_alignment()
+ * @note Control plane: serialised with the other control-plane calls, not with I/O on the
+ * same device, queue or buffer; see Thread Safety in the API documentation
+ *
+ * @param dev Device handle obtained with xnvme_dev_open()
+ * @param fd File descriptor of the dma-buf
+ * @param vaddr The address the caller accesses the first byte of the dma-buf at
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned; `-ENOSYS` when the
+ * device does not register dma-bufs.
+ */
+int
+xnvme_buf_register_dmabuf(const struct xnvme_dev *dev, int fd, void *vaddr);
+
+/**
+ * Unregister memory registered with xnvme_buf_register() or xnvme_buf_register_dmabuf()
  *
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation

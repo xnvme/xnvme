@@ -330,6 +330,25 @@ xnvme_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 }
 
 int
+xnvme_buf_register_dmabuf(const struct xnvme_dev *dev, int fd, void *vaddr)
+{
+	int err;
+
+	if (!dev || (fd < 0) || !vaddr) {
+		return -EINVAL;
+	}
+	if (!dev->be.mem.buf_register_dmabuf) {
+		return -ENOSYS;
+	}
+
+	xnvme_lock();
+	err = dev->be.mem.buf_register_dmabuf(dev, fd, vaddr);
+	xnvme_unlock();
+
+	return err;
+}
+
+int
 xnvme_buf_unregister(const struct xnvme_dev *dev, void *vaddr)
 {
 	int err;
