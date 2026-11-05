@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <xnvme_be.h>
+#include <xnvme_buf.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_UPCIE_ENABLED
 #include <errno.h>
@@ -315,6 +316,68 @@ xnvme_be_upcie_served_mem_unmap(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr
 	}
 
 	return err;
+}
+
+static int
+_in_heap(uint64_t heap, size_t heap_nbytes, void *vaddr, size_t nbytes)
+{
+	uint64_t va = (uint64_t)(uintptr_t)vaddr;
+
+	return vaddr && (va >= heap) && (nbytes <= heap_nbytes) &&
+	       ((va - heap) <= (heap_nbytes - nbytes));
+}
+
+int
+xnvme_be_upcie_buf_reg_ref(struct dmamem *dmem, uint64_t heap, size_t heap_nbytes, void *vaddr,
+			   size_t nbytes)
+{
+	struct xnvme_buf_reg *reg;
+	int err;
+
+	err = xnvme_buf_reg_find(dmem, vaddr, nbytes, &reg);
+	if (!err) {
+		reg->refs += 1;
+		return 0;
+	}
+	if (err != -ENOENT) {
+		return err;
+	}
+
+	if (_in_heap(heap, heap_nbytes, vaddr, nbytes)) {
+		XNVME_DEBUG("INFO: vaddr(%p) is in the heap, as from xnvme_buf_alloc()", vaddr);
+		return 0;
+	}
+
+	return -ENOENT;
+}
+
+int
+xnvme_be_upcie_buf_reg_unref(struct dmamem *dmem, uint64_t heap, size_t heap_nbytes, void *vaddr,
+			     struct xnvme_buf_reg **last)
+{
+	struct xnvme_buf_reg *reg;
+	int err;
+
+	*last = NULL;
+
+	err = xnvme_buf_reg_find(dmem, vaddr, 1, &reg);
+	if ((err == -ENOENT) && _in_heap(heap, heap_nbytes, vaddr, 1)) {
+		XNVME_DEBUG("INFO: vaddr(%p) was not registered, as from xnvme_buf_alloc()",
+			    vaddr);
+		return 0;
+	}
+	if (err) {
+		XNVME_DEBUG("FAILED: vaddr(%p) is not registered", vaddr);
+		return -EINVAL;
+	}
+
+	if (reg->refs > 1) {
+		reg->refs -= 1;
+		return 0;
+	}
+	*last = reg;
+
+	return 0;
 }
 
 #endif

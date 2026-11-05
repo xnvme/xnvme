@@ -11,6 +11,7 @@
 #include <xnvme_hip_buf.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_state.h>
+#include <xnvme_buf.h>
 
 static void *
 xnvme_be_upcie_hip_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
@@ -51,7 +52,7 @@ xnvme_be_upcie_hip_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t 
 }
 
 static int
-xnvme_be_upcie_hip_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
+_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 {
 	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 	int dmabuf_fd = -1;
@@ -74,7 +75,7 @@ xnvme_be_upcie_hip_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t
 }
 
 static int
-xnvme_be_upcie_hip_buf_unregister(const struct xnvme_dev *dev, void *vaddr)
+_unmap(const struct xnvme_dev *dev, void *vaddr)
 {
 	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 
@@ -83,6 +84,62 @@ xnvme_be_upcie_hip_buf_unregister(const struct xnvme_dev *dev, void *vaddr)
 	}
 
 	return xnvme_be_upcie_dmamem_unmap(state->dmem, vaddr);
+}
+
+static int
+_add(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
+{
+	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
+	int err;
+
+	err = xnvme_buf_reg_add(state->dmem, vaddr, nbytes, 0);
+	if (err) {
+		_unmap(dev, vaddr);
+	}
+
+	return err;
+}
+
+static int
+xnvme_be_upcie_hip_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
+{
+	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
+	int err;
+
+	err = xnvme_be_upcie_buf_reg_ref(state->dmem, g_upcie_hip_rte.hip_heap.vaddr,
+					 g_upcie_hip_rte.hip_heap.size, vaddr, nbytes);
+	if (err != -ENOENT) {
+		return err;
+	}
+
+	err = _map(dev, vaddr, nbytes);
+	if (err) {
+		return err;
+	}
+
+	return _add(dev, vaddr, nbytes);
+}
+
+static int
+xnvme_be_upcie_hip_buf_unregister(const struct xnvme_dev *dev, void *vaddr)
+{
+	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
+	struct xnvme_buf_reg *last;
+	int err;
+
+	err = xnvme_be_upcie_buf_reg_unref(state->dmem, g_upcie_hip_rte.hip_heap.vaddr,
+					   g_upcie_hip_rte.hip_heap.size, vaddr, &last);
+	if (err || !last) {
+		return err;
+	}
+
+	err = _unmap(dev, last->vaddr);
+	if (err) {
+		return err;
+	}
+	xnvme_buf_reg_remove(last);
+
+	return 0;
 }
 
 static int
