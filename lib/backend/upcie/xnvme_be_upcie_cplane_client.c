@@ -320,10 +320,6 @@ cplane_client_index_of(int sock, const char *bdf)
 {
 	struct nvme_cplane_msg msg = {0};
 	uint32_t ndevs;
-	char wanted[16] = {0};
-
-	/* Truncated as the server truncates what it publishes */
-	snprintf(wanted, sizeof(wanted), "%s", bdf);
 
 	if (xnvme_be_upcie_cplane_ask_status(sock, 0, &msg)) {
 		return -ENOTCONN;
@@ -334,7 +330,7 @@ cplane_client_index_of(int sock, const char *bdf)
 		if (i && xnvme_be_upcie_cplane_ask_status(sock, i, &msg)) {
 			return -ENOTCONN;
 		}
-		if (!strcmp(msg.u.status.bdf, wanted)) {
+		if (!strcmp(msg.u.status.bdf, bdf)) {
 			return (int)i;
 		}
 	}
@@ -613,7 +609,13 @@ xnvme_be_upcie_cplane_ctrlr_from_base(struct xnvme_be_upcie_ctrlr *ctrlr)
 	ctrl->func.bars[0].region = ctrlr->bar0;
 	ctrl->func.bars[0].size = ctrlr->bar0_nbytes;
 	ctrl->func.bars[0].fd = -1; /* The server holds it */
-	snprintf(ctrl->func.bdf, sizeof(ctrl->func.bdf), "%s", ctrlr->bdf);
+	/* The server refuses such a name when it is shared; this guards against one of another
+	 * build */
+	if (snprintf(ctrl->func.bdf, sizeof(ctrl->func.bdf), "%s", ctrlr->bdf) >=
+	    (int)sizeof(ctrl->func.bdf)) {
+		XNVME_DEBUG("FAILED: bdf(%s) does not fit", ctrlr->bdf);
+		return -ENAMETOOLONG;
+	}
 
 	/* The admin queue is the server's, so it stays empty here */
 

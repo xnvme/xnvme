@@ -25,7 +25,7 @@ _xnvme_be_upcie_cplane_share_get(struct xnvme_dev *dev, struct xnvme_be_upcie_cp
 	struct xnvme_be_upcie_state *state;
 	struct hostmem_shared_desc *desc;
 	struct nvme_controller *ctrl;
-	size_t desc_offset, desc_nbytes;
+	size_t desc_offset, desc_nbytes, uri_len;
 	char *heap_base;
 	int err;
 
@@ -36,6 +36,23 @@ _xnvme_be_upcie_cplane_share_get(struct xnvme_dev *dev, struct xnvme_be_upcie_cp
 	state = &xnvme_be_state(dev)->upcie_state;
 	ctrl = state->ctrlr->ctrl;
 	heap_base = g_upcie_rte.mem.dmem.base_va;
+
+	/* Clients rebuild the controller from this name, so it must fit theirs,
+	 * and it passes through the control-plane replies on the way */
+	XNVME_STATIC_ASSERT(sizeof(ctrl->func.bdf) <=
+				    sizeof(((struct nvme_cplane_msg *)0)->u.init_connection.bdf),
+			    "the shared name must fit the INIT_CONNECTION reply");
+	XNVME_STATIC_ASSERT(sizeof(ctrl->func.bdf) <=
+				    sizeof(((struct nvme_cplane_msg *)0)->u.status.bdf),
+			    "the shared name must fit the STATUS reply");
+	XNVME_STATIC_ASSERT(sizeof(ctrl->func.bdf) <=
+				    sizeof(((struct xnvme_be_upcie_ctrlr *)0)->bdf),
+			    "the shared name must fit the client's controller");
+	uri_len = strlen(dev->ident.uri);
+	if (uri_len >= sizeof(ctrl->func.bdf)) {
+		XNVME_DEBUG("FAILED: uri(%s) does not fit a bdf", dev->ident.uri);
+		return -ENAMETOOLONG;
+	}
 
 	if (!g_upcie_rte.mem.heap_alive || !heap_base) {
 		XNVME_DEBUG("FAILED: no heap to describe");
@@ -75,7 +92,7 @@ _xnvme_be_upcie_cplane_share_get(struct xnvme_dev *dev, struct xnvme_be_upcie_cp
 	out->heap_nbytes = g_upcie_rte.mem.dmem.size;
 	out->base = ctrl->base;
 	out->desc_offset = desc_offset;
-	snprintf(out->uri, sizeof(out->uri), "%s", dev->ident.uri);
+	memcpy(out->uri, dev->ident.uri, uri_len + 1);
 	out->live = 1;
 
 	return 0;

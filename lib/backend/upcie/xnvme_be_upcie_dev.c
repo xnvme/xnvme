@@ -515,7 +515,11 @@ _pci_enable_bus_master(const char *bdf)
 	int fd;
 	ssize_t ret;
 
-	snprintf(path, sizeof(path), "/sys/bus/pci/devices/%s/config", bdf);
+	if (snprintf(path, sizeof(path), "/sys/bus/pci/devices/%s/config", bdf) >=
+	    (int)sizeof(path)) {
+		XNVME_DEBUG("FAILED: bdf(%s) does not fit", bdf);
+		return -ENAMETOOLONG;
+	}
 
 	fd = open(path, O_RDWR);
 	if (fd < 0) {
@@ -733,6 +737,10 @@ xnvme_be_upcie_ctrlr_init(struct xnvme_dev *dev)
 
 failed:
 	if (ctrlr) {
+		/* Only the served path maps BAR0 into ctrlr; a direct open maps it in ctrl */
+		if (ctrlr->bar0) {
+			munmap(ctrlr->bar0, ctrlr->bar0_nbytes);
+		}
 		free(ctrlr->ctrl);
 		free(ctrlr);
 	}
@@ -750,9 +758,8 @@ xnvme_be_upcie_ctrlr_term(void *handle)
 	struct xnvme_be_upcie_ctrlr *ctrlr = handle;
 	if (g_upcie_rte.connection.alive) {
 		/* Hand the I/O queue back, if one was ever asked for, and let go
-		 * of the description. The controller itself is the server's and
-		 * is not closed here; the BAR mapping goes with the runtime,
-		 * not with this. */
+		 * of the description and of the BAR0 mapping made for it. The
+		 * controller itself is the server's and is not closed here. */
 		xnvme_be_upcie_ctrlr_admin_prp_release(ctrlr);
 		xnvme_be_upcie_cplane_free_qpair(ctrlr, &ctrlr->sync);
 		if (ctrlr->bar0) {
