@@ -617,7 +617,7 @@ xnvmeperf_cuda_launch(struct xnvme_cuda_queue **h_qps, union xnvme_spec_sqe *h_c
 		uint64_t runtime_ns = (uint64_t)runtime_secs * 1000000000ULL;
 		uint64_t deadline = report_freq_ns;
 		uint64_t prev_completed = 0, prev_elapsed = 0;
-		struct xnvme_timer timer = {0};
+		struct xnvme_timer timer = {};
 
 		xnvme_timer_start(&timer);
 		print_intermediate_header();
