@@ -1,0 +1,34 @@
+--- a/engines/xnvme.c
++++ b/engines/xnvme.c
+@@ -10,6 +10,13 @@
+ #include <stdlib.h>
+ #include <assert.h>
+ #include <libxnvme.h>
++
++/* The status of a completion is an integer behind masks where xNVMe defines them */
++#ifdef XNVME_SPEC_CQE_STATUS_SC
++#define FIO_XNVME_CPL_SC(cpl) ((int)xnvme_bits_get((cpl).status, XNVME_SPEC_CQE_STATUS_SC))
++#else
++#define FIO_XNVME_CPL_SC(cpl) ((cpl).status.sc)
++#endif
+ #include "fio.h"
+ #include "verify.h"
+ #include "zbd_types.h"
+@@ -1229,7 +1236,7 @@
+ 					  XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET, 0x0, NULL);
+ 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+ 			err = err ? err : -EIO;
+-			log_err("ioeng->reset_wp(): err(%d), sc(%d)", err, ctx.cpl.status.sc);
++			log_err("ioeng->reset_wp(): err(%d), sc(%d)", err, FIO_XNVME_CPL_SC(ctx.cpl));
+ 			goto exit;
+ 		}
+ 	}
+@@ -1292,7 +1299,7 @@
+ 
+ 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+ 		err = err ? err : -EIO;
+-		log_err("ioeng->fdp_ruhs(): err(%d), sc(%d)", err, ctx.cpl.status.sc);
++		log_err("ioeng->fdp_ruhs(): err(%d), sc(%d)", err, FIO_XNVME_CPL_SC(ctx.cpl));
+ 		goto free_buffer;
+ 	}
+ 

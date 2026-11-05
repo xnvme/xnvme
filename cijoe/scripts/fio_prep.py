@@ -4,12 +4,33 @@ clone, configure, build and install fio
 =======================================
 
 Clone fio from fio.repository.remote into fio.repository.path, checkout
-fio.repository.tag, configure using fio.build.prefix when available, build and
+fio.repository.tag, apply the patches xNVMe carries for fio in
+toolbox/fio/patches, configure using fio.build.prefix when available, build and
 install it.
 
 Retargetable: True
 ------------------
 """
+
+from pathlib import Path
+
+PATCHES = Path(__file__).resolve().parents[2] / "toolbox" / "fio" / "patches"
+
+
+def apply_patches(cijoe, repos):
+    """Send each patch into the fio checkout and apply it, skipping one already applied"""
+
+    for patch in sorted(PATCHES.glob("fio-0*.patch")):
+        if not cijoe.put(str(patch), f"{repos['path']}/{patch.name}"):
+            return 1
+        err, _ = cijoe.run(
+            f"git apply -R --check {patch.name} 2>/dev/null || git apply {patch.name}",
+            cwd=repos["path"],
+        )
+        if err:
+            return err
+
+    return 0
 
 
 def main(args, cijoe):
@@ -27,7 +48,10 @@ def main(args, cijoe):
         commands = fio_commands(cijoe, repos)
 
     for cmd, cwd in commands:
-        err, _ = cijoe.run(cmd, cwd=cwd)
+        if cmd is None:
+            err = apply_patches(cijoe, repos)
+        else:
+            err, _ = cijoe.run(cmd, cwd=cwd)
         if err:
             return err
 
@@ -44,6 +68,7 @@ def fio_commands(cijoe, repos):
         (f"git clone {repos['remote']} {repos['path']} || true", "/tmp"),
         (f"git checkout {repos['tag']} || true", repos["path"]),
         ("git rev-parse --short HEAD || true", repos["path"]),
+        (None, None),
         (f"{make} clean", repos["path"]),
     ]
 
@@ -71,6 +96,7 @@ def fio_commands_windows(repos):
         ("git clean -fdX", repos["path"]),
         (f"git checkout {repos['tag']} || true", repos["path"]),
         ("git rev-parse --short HEAD || true", repos["path"]),
+        (None, None),
         ("make CFLAGS='-O0'", repos["path"]),
     ]
 

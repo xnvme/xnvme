@@ -296,10 +296,12 @@ jobs:
     #
     - name: Install fio
       run: |
+        patches="$PWD/toolbox/fio/patches"
         git clone https://github.com/axboe/fio.git /tmp/fio
         cd /tmp/fio
         git checkout fio-3.38
         git rev-parse --short HEAD
+        for p in "$patches"/fio-0*.patch; do git apply -R --check "$p" 2>/dev/null || git apply "$p"; done
         gmake
 
     - name: CIJOE, run test-ramdisk.yaml
@@ -453,10 +455,12 @@ jobs:
       shell: bash
       run: |
         rm -rf C:/tmp/fio
+        patches="$PWD/toolbox/fio/patches"
         git clone https://github.com/axboe/fio.git C:/tmp/fio
         cd C:/tmp/fio
         git checkout fio-3.41
         git rev-parse --short HEAD
+        for p in "$patches"/fio-0*.patch; do git apply -R --check "$p" 2>/dev/null || git apply "$p"; done
         make clean
         make CFLAGS="-O0"
 
