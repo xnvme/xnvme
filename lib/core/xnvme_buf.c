@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include <errno.h>
+#include <stdlib.h>
 #include <libxnvme.h>
 #include <xnvme_dev.h>
 #include <xnvme_be.h>
@@ -385,4 +386,63 @@ xnvme_buf_noreg_get_alignment(const struct xnvme_dev *dev, size_t *align)
 	*align = pagesize;
 
 	return 0;
+}
+
+static struct xnvme_buf_reg *g_regs;
+
+int
+xnvme_buf_reg_find(const void *owner, const void *vaddr, size_t nbytes, struct xnvme_buf_reg **reg)
+{
+	uintptr_t lo = (uintptr_t)vaddr, hi = lo + nbytes;
+
+	for (struct xnvme_buf_reg *cur = g_regs; cur; cur = cur->next) {
+		uintptr_t cur_lo = (uintptr_t)cur->vaddr, cur_hi = cur_lo + cur->nbytes;
+
+		if ((cur->owner != owner) || (hi <= cur_lo) || (lo >= cur_hi)) {
+			continue;
+		}
+		if ((lo >= cur_lo) && (hi <= cur_hi)) {
+			*reg = cur;
+			return 0;
+		}
+
+		XNVME_DEBUG("FAILED: vaddr(%p, %zu) overlaps registered(%p, %zu)", vaddr, nbytes,
+			    cur->vaddr, cur->nbytes);
+		return -EBUSY;
+	}
+
+	return -ENOENT;
+}
+
+int
+xnvme_buf_reg_add(const void *owner, void *vaddr, size_t nbytes, uint64_t priv)
+{
+	struct xnvme_buf_reg *reg;
+
+	reg = calloc(1, sizeof(*reg));
+	if (!reg) {
+		return -ENOMEM;
+	}
+
+	reg->owner = owner;
+	reg->vaddr = vaddr;
+	reg->nbytes = nbytes;
+	reg->priv = priv;
+	reg->refs = 1;
+	reg->next = g_regs;
+	g_regs = reg;
+
+	return 0;
+}
+
+void
+xnvme_buf_reg_remove(struct xnvme_buf_reg *reg)
+{
+	for (struct xnvme_buf_reg **link = &g_regs; *link; link = &(*link)->next) {
+		if (*link == reg) {
+			*link = reg->next;
+			free(reg);
+			return;
+		}
+	}
 }
