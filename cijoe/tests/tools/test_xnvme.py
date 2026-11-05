@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 from ..conftest import (
@@ -201,6 +203,27 @@ def test_idfy_ctrlr(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="[mem=upcie-cuda] This test does not support CUDA memory")
     err, _ = cijoe.run(f"xnvme idfy-ctrlr {cli_args}")
     assert not err
+
+
+@xnvme_parametrize(labels=["file"], opts=["be", "admin"])
+def test_idfy_ns_desc_file(cijoe, device, be_opts, cli_args):
+    out = "/tmp/idfy_ns_desc.bin"
+    err, state = cijoe.run(
+        f"xnvme idfy {cli_args} --cns 0x3 --nsid {device['nsid']} --data-output {out}"
+    )
+    assert not err
+
+    artifacts = state.output_dpath / "artifacts"
+    os.makedirs(artifacts, exist_ok=True)
+    local = artifacts / "idfy_ns_desc.bin"
+    assert cijoe.get(out, str(local))
+
+    data = local.read_bytes()
+
+    # One CSI descriptor (NIDT 0x4, NIDL 1, NID 0x1f FS), then zeroes to the end of the list
+    assert len(data) == 4096
+    assert data[:5] == bytes([0x04, 0x01, 0x00, 0x00, 0x1F])
+    assert not any(data[5:])
 
 
 @xnvme_parametrize(labels=["dev", "idfy_cs"], opts=["be", "admin"])
