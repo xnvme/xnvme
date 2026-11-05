@@ -11,7 +11,7 @@ and **Write** to `io_uring` opcodes:
 
 * `IORING_OP_READV` / `IORING_OP_WRITEV`
 
-  - Mapped when using `xnvme_cmd_passv(...)` with payload as iovec
+  - Mapped when using `xnvme_cmd_pass_iov(...)` with payload as iovec
 
 * `IORING_OP_READ_FIXED` / `IORING_OP_WRITE_FIXED`
 

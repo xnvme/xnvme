@@ -13,6 +13,7 @@
  *
  * @file libxnvme_compat.h
  */
+#include <errno.h>
 
 /**
  * @deprecated Use XNVME_SPEC_IDFY_NS_DESC
@@ -86,6 +87,35 @@ xnvme_cmd_ctx_from_queue(struct xnvme_queue *queue)
 	xnvme_compat_deprecated(&warned, "xnvme_cmd_ctx_from_queue", "xnvme_queue_get_cmd_ctx");
 
 	return xnvme_queue_get_cmd_ctx(queue);
+}
+
+/**
+ * @deprecated Use xnvme_cmd_pass_iov(), which takes the meta-payload as a single buffer
+ *
+ * @param ctx Pointer to command context (::xnvme_cmd_ctx)
+ * @param dvec array of data iovecs
+ * @param dvec_cnt number of elements in dvec
+ * @param dvec_nbytes size of the data-payload in bytes
+ * @param mvec array of metadata iovecs, of at most one element
+ * @param mvec_cnt number of elements in mvec
+ * @param mvec_nbytes size of the meta-payload in bytes
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned: -EINVAL when
+ * `mvec_cnt` is larger than one.
+ */
+static inline int
+xnvme_cmd_passv(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, size_t dvec_nbytes,
+		struct iovec *mvec, size_t mvec_cnt, size_t mvec_nbytes)
+{
+	static int warned;
+
+	xnvme_compat_deprecated(&warned, "xnvme_cmd_passv", "xnvme_cmd_pass_iov");
+	if (mvec_cnt > 1) {
+		return -EINVAL;
+	}
+
+	return xnvme_cmd_pass_iov(ctx, dvec, dvec_cnt, dvec_nbytes, mvec ? mvec[0].iov_base : NULL,
+				  mvec_nbytes);
 }
 
 /**

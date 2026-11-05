@@ -114,26 +114,6 @@ xnvme_cmd_pass(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *
 
 /**
  * Pass a vectored NVMe IO Command through to the device via the given
-::xnvme_cmd_ctx
- *
- * NOTE: This function will be deprecated in the future - use xnvme_cmd_pass_iov() instead
- *
- * @param ctx Pointer to command context (::xnvme_cmd_ctx)
- * @param dvec array of data iovecs
- * @param dvec_cnt number of elements in dvec
- * @param dvec_nbytes size of the meta-payload in bytes
- * @param mvec array of metadata iovecs
- * @param mvec_cnt number of elements in mvec
- * @param mvec_nbytes size of the meta-payload in bytes
- *
- * @return On success, 0 is returned. On error, negative `errno` is returned.
- */
-int
-xnvme_cmd_passv(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, size_t dvec_nbytes,
-		struct iovec *mvec, size_t mvec_cnt, size_t mvec_nbytes);
-
-/**
- * Pass a vectored NVMe IO Command through to the device via the given
  * ::xnvme_cmd_ctx
  *
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
