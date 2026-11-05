@@ -150,7 +150,7 @@ _conventional_geometry(struct xnvme_dev *dev)
 
 	if (xnvme_bits_get(ctrlr->ctratt, XNVME_SPEC_IDFY_CTRLR_CTRATT_EXTENDED_LBA_FORMATS) &&
 	    geo->pi_type) {
-		geo->pi_format = xnvme_bits_get(elbaf->val, XNVME_SPEC_ELBAF_PIF);
+		geo->pi_format = xnvme_bits_get(elbaf->bits, XNVME_SPEC_ELBAF_BITS_PIF);
 	}
 
 	return 0;

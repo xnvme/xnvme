@@ -111,9 +111,9 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ns, dlfeat,
 				 XNVME_SPEC_IDFY_NS_DLFEAT_WRITE_ZERO_DEALLOCATE |
 				 XNVME_SPEC_IDFY_NS_DLFEAT_GUARD_VALUE),
 		    "dlfeat of struct xnvme_spec_idfy_ns")
-XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_elbaf, val,
-			 XNVME_SPEC_ELBAF_STS | XNVME_SPEC_ELBAF_PIF),
-		    "val of struct xnvme_spec_elbaf")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_elbaf, bits,
+			 XNVME_SPEC_ELBAF_BITS_STS | XNVME_SPEC_ELBAF_BITS_PIF),
+		    "bits of struct xnvme_spec_elbaf")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_power_state, mxps_nops,
 			 XNVME_SPEC_POWER_STATE_MXPS_NOPS_MXPS |
 				 XNVME_SPEC_POWER_STATE_MXPS_NOPS_NOPS),
@@ -284,10 +284,10 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ctrlr, sgls,
 				 XNVME_SPEC_IDFY_CTRLR_SGLS_SGL_OFFSET |
 				 XNVME_SPEC_IDFY_CTRLR_SGLS_TRANSPORT_SGL),
 		    "sgls of struct xnvme_spec_idfy_ctrlr")
-XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cs_vector, val,
-			 XNVME_SPEC_CS_VECTOR_NVM | XNVME_SPEC_CS_VECTOR_KV |
-				 XNVME_SPEC_CS_VECTOR_ZNS),
-		    "val of struct xnvme_spec_cs_vector")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cs_vector, bits,
+			 XNVME_SPEC_CS_VECTOR_BITS_NVM | XNVME_SPEC_CS_VECTOR_BITS_KV |
+				 XNVME_SPEC_CS_VECTOR_BITS_ZNS),
+		    "bits of struct xnvme_spec_cs_vector")
 
 struct offset_case {
 	const char *name;
