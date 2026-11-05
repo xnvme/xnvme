@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 #include <libxnvme.h>
 
@@ -45,6 +46,43 @@ sub_deprecated(struct xnvme_cli *XNVME_UNUSED(cli))
 			err = -EINVAL;
 		}
 	}
+
+	return err;
+}
+
+static int
+sub_deprecated_znd(struct xnvme_cli *XNVME_UNUSED(cli))
+{
+	const uint32_t nentries = 2;
+	struct xnvme_spec_znd_descr *descr;
+	struct xnvme_znd_report *report;
+	int err = 0;
+
+	report = calloc(1, sizeof(*report) + nentries * sizeof(*descr));
+	if (!report) {
+		err = -errno;
+		xnvme_cli_perr("calloc()", err);
+		return err;
+	}
+	report->nentries = nentries;
+	report->zd_nbytes = sizeof(*descr);
+	report->zrent_nbytes = sizeof(*descr);
+
+	for (uint32_t nth = 0; nth < nentries; ++nth) {
+		err = xnvme_znd_report_get_descr(report, nth, &descr, NULL);
+		if (err) {
+			xnvme_cli_perr("xnvme_znd_report_get_descr()", err);
+			break;
+		}
+		if (XNVME_ZND_REPORT_DESCR(report, nth) != descr) {
+			xnvme_cli_pinf("FAILED: XNVME_ZND_REPORT_DESCR() != "
+				       "xnvme_znd_report_get_descr()");
+			err = -EINVAL;
+			break;
+		}
+	}
+
+	free(report);
 
 	return err;
 }
@@ -167,6 +205,15 @@ static struct xnvme_cli_sub g_subs[] = {
 		"Call the deprecated functions",
 		"Call the deprecated functions",
 		sub_deprecated,
+		{
+			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
+		},
+	},
+	{
+		"deprecated-znd",
+		"Use the deprecated macro reading a zone report",
+		"Use the deprecated macro reading a zone report",
+		sub_deprecated_znd,
 		{
 			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
 		},
