@@ -612,7 +612,11 @@ xnvme_be_upcie_cplane_ctrlr_from_base(struct xnvme_be_upcie_ctrlr *ctrlr)
 	ctrl->func.bars[0].region = ctrlr->bar0;
 	ctrl->func.bars[0].size = ctrlr->bar0_nbytes;
 	ctrl->func.bars[0].fd = -1; /* The server holds it */
-	snprintf(ctrl->func.bdf, sizeof(ctrl->func.bdf), "%s", ctrlr->bdf);
+	if (snprintf(ctrl->func.bdf, sizeof(ctrl->func.bdf), "%s", ctrlr->bdf) >=
+	    (int)sizeof(ctrl->func.bdf)) {
+		XNVME_DEBUG("FAILED: bdf(%s) does not fit", ctrlr->bdf);
+		return -ENAMETOOLONG;
+	}
 
 	/* The admin queue is the server's, so it stays empty here */
 

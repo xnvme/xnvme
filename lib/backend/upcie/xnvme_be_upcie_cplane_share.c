@@ -75,7 +75,11 @@ _xnvme_be_upcie_cplane_share_get(struct xnvme_dev *dev, struct xnvme_be_upcie_cp
 	out->heap_nbytes = g_upcie_rte.mem.dmem.size;
 	out->base = ctrl->base;
 	out->desc_offset = desc_offset;
-	snprintf(out->uri, sizeof(out->uri), "%s", dev->ident.uri);
+	if (snprintf(out->uri, sizeof(out->uri), "%s", dev->ident.uri) >= (int)sizeof(out->uri)) {
+		XNVME_DEBUG("FAILED: uri(%s) does not fit", dev->ident.uri);
+		err = -ENAMETOOLONG;
+		goto failed;
+	}
 	out->live = 1;
 
 	return 0;

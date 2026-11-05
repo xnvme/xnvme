@@ -515,7 +515,11 @@ _pci_enable_bus_master(const char *bdf)
 	int fd;
 	ssize_t ret;
 
-	snprintf(path, sizeof(path), "/sys/bus/pci/devices/%s/config", bdf);
+	if (snprintf(path, sizeof(path), "/sys/bus/pci/devices/%s/config", bdf) >=
+	    (int)sizeof(path)) {
+		XNVME_DEBUG("FAILED: bdf(%s) does not fit", bdf);
+		return -ENAMETOOLONG;
+	}
 
 	fd = open(path, O_RDWR);
 	if (fd < 0) {
