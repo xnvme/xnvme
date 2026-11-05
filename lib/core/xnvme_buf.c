@@ -292,6 +292,12 @@ xnvme_buf_diff_pr(const void *expected, const void *actual, size_t nbytes, int X
 	return xnvme_host_buf_diff(expected, actual, nbytes, &diff, true);
 }
 
+bool
+xnvme_buf_is_host(const void *vaddr)
+{
+	return !xnvme_buf_is_cuda(vaddr) && !xnvme_buf_is_hip(vaddr);
+}
+
 int
 xnvme_buf_export_dmabuf(void *vaddr, void **base, size_t *nbytes, int *fd)
 {
