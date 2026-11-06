@@ -107,6 +107,10 @@ queue at the client's address. What comes back names a completion queue in the
 server's heap that the controller never writes, and the resident kernel keeps
 that one a copy of the queue it placed, so the submitting side is unchanged.
 
+(sec-backends-upcie-cuda-memory-register)=
+
+## Registering memory
+
 A caller can hand over device memory it allocated itself with
 `xnvme_buf_register()`, which registers the range through the same registry the
 heap uses, so such a buffer is usable exactly as one from
@@ -117,6 +121,14 @@ comes back is adopted into the same table; that is a socket round trip per
 call, so a client registers its buffers before it submits, not per command.
 Either way the range is whole device pages, 64 KiB on CUDA, since that is the
 granule the export works in.
+
+Memory from `xnvme_buf_alloc()` lies in the heap and is left as it is. Where
+the heap is mapped through iommufd, under `vfio-pci` with the cdev interface,
+the device translates by offset into the heap only, and registering is refused
+with `-EOPNOTSUPP`. Behind an enforcing IOMMU, a registration holds for the
+controller it was made through, see {ref}`sec-backends-upcie-cuda-iommu-register`.
+Host memory is not taken. See {ref}`sec-background-memory` for what registering
+does on the other backends.
 
 (sec-backends-upcie-cuda-opts)=
 
@@ -215,6 +227,8 @@ the window with `XNVME_UPCIE_IOVA_BASE`.
 
 `uio_pci_generic` is unaffected. Physical addresses read the same from every
 controller, so one table serves them all.
+
+(sec-backends-upcie-cuda-iommu-register)=
 
 ### Registering buffers
 

@@ -134,6 +134,8 @@ xnvme_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys);
  *
  * Registering makes memory the caller allocated itself, rather than with xnvme_buf_alloc(),
  * usable as the payload of commands to the device.
+ * What it takes differs per backend, from programming an IOMMU on the caller's behalf, to a
+ * dma-buf export, to nothing at all. With SPDK, a registration is the process's, for every device.
  *
  * Each registration is given back by one call to xnvme_buf_unregister(). Registering a range
  * that is registered already, or a range within one, is counted on that registration rather than
