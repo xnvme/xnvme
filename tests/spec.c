@@ -367,6 +367,11 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_fdp_conf_desc, fdpa,
 		    "fdpa of struct xnvme_spec_fdp_conf_desc")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_fdp_conf_desc, fdpa) == 2,
 		    "fdpa of struct xnvme_spec_fdp_conf_desc")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_fdp_event_media_reallocated, sef,
+			 XNVME_SPEC_FDP_EVENT_MEDIA_REALLOCATED_SEF_LBAV),
+		    "sef of struct xnvme_spec_fdp_event_media_reallocated")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_fdp_event_media_reallocated, sef) == 0,
+		    "sef of struct xnvme_spec_fdp_event_media_reallocated")
 
 struct offset_case {
 	const char *name;
@@ -662,6 +667,18 @@ sub_data_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 		    !xnvme_bits_get(desc.fdpa, XNVME_SPEC_FDP_CONF_DESC_FDPA_FDPVWC) ||
 		    !xnvme_bits_get(desc.fdpa, XNVME_SPEC_FDP_CONF_DESC_FDPA_FDPCV)) {
 			xnvme_cli_pinf("FAILED: fdpa: %#" PRIx8, desc.fdpa);
+			err = -EINVAL;
+		}
+	}
+
+	{
+		struct xnvme_spec_fdp_event_media_reallocated mr;
+
+		memset(raw, 0, sizeof(raw));
+		raw[0] = 0x01; // Media reallocated SEF: LBAV
+		memcpy(&mr, raw, sizeof(mr));
+		if (!xnvme_bits_get(mr.sef, XNVME_SPEC_FDP_EVENT_MEDIA_REALLOCATED_SEF_LBAV)) {
+			xnvme_cli_pinf("FAILED: sef: %#" PRIx8, mr.sef);
 			err = -EINVAL;
 		}
 	}
