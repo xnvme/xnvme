@@ -875,6 +875,19 @@ sub_data_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 		}
 	}
 
+	{
+		union xnvme_spec_znd_idfy idfy;
+
+		memset(&idfy, 0, sizeof(idfy));
+		idfy.base.raw[0] = 0x07; // Zoned Identify Controller ZASL, Identify Namespace ZOC
+		if (idfy.zctrlr.zasl != 0x07 ||
+		    !xnvme_bits_get(idfy.zns.zoc, XNVME_SPEC_ZND_IDFY_NS_ZOC_ZAE)) {
+			xnvme_cli_pinf("FAILED: znd_idfy: zasl: %#" PRIx8 ", zoc: %#" PRIx16,
+				       idfy.zctrlr.zasl, idfy.zns.zoc);
+			err = -EINVAL;
+		}
+	}
+
 	return err;
 }
 
