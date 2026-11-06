@@ -144,11 +144,17 @@ typedef void (*xnvme_queue_cb)(struct xnvme_cmd_ctx *ctx, void *opaque);
 /**
  * Assign a callback-function and argument to be used with the ::xnvme_cmd_ctx of the queue
  *
+ * The callback is kept in every command context of the queue, and invoked from
+ * xnvme_queue_poke() and xnvme_queue_drain() for each command completed, until the queue is
+ * terminated or the callback is assigned again.
+ *
  * @param queue The ::xnvme_queue to assign default callback function for
  * @param cb The callback function to use
  * @param cb_arg The callback argument to use
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @lifetime cb handle
  */
 int
 xnvme_queue_set_cb(struct xnvme_queue *queue, xnvme_queue_cb cb, void *cb_arg);
