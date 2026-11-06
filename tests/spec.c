@@ -103,6 +103,10 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_nvm, cdw13,
 		    "cdw13 of struct xnvme_spec_cmd_nvm")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_nvm, cdw13) == 52,
 		    "cdw13 of struct xnvme_spec_cmd_nvm")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_nvm, ilbrt) == 56,
+		    "ilbrt of struct xnvme_spec_cmd_nvm")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_nvm, lbatm) == 62,
+		    "lbatm of struct xnvme_spec_cmd_nvm")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 			 XNVME_SPEC_CMD_LOG_CDW10_LID | XNVME_SPEC_CMD_LOG_CDW10_LSP |
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
@@ -1019,6 +1023,14 @@ sub_io_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	    xnvme_bits_get(sqe.nvm.cdw13, XNVME_SPEC_CMD_NVM_CDW13_INCOM) ||
 	    xnvme_bits_get(sqe.nvm.cdw13, XNVME_SPEC_CMD_NVM_CDW13_DSPEC) != 0x1234) {
 		xnvme_cli_pinf("FAILED: nvm: cdw13: %#x", sqe.nvm.cdw13);
+		err = -EINVAL;
+	}
+
+	sqe.cdw[14] = 0x89abcdef; // NVM dword 14: ILBRT
+	sqe.cdw[15] = 0xff001234; // NVM dword 15: LBAT 0x1234, LBATM 0xff00
+	if (sqe.nvm.ilbrt != 0x89abcdef || sqe.nvm.lbat != 0x1234 || sqe.nvm.lbatm != 0xff00) {
+		xnvme_cli_pinf("FAILED: nvm: ilbrt: %#x, lbat: %#x, lbatm: %#x", sqe.nvm.ilbrt,
+			       sqe.nvm.lbat, sqe.nvm.lbatm);
 		err = -EINVAL;
 	}
 
