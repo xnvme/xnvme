@@ -471,3 +471,23 @@ xnvme_buf_reg_remove(struct xnvme_buf_reg *reg)
 		}
 	}
 }
+
+void
+xnvme_buf_reg_remove_owner(const void *owner)
+{
+	struct xnvme_buf_reg **link = &g_regs;
+
+	while (*link) {
+		struct xnvme_buf_reg *reg = *link;
+
+		if (reg->owner != owner) {
+			link = &reg->next;
+			continue;
+		}
+
+		XNVME_DEBUG("INFO: dropping vaddr(%p, %zu) with refs(%u)", reg->vaddr, reg->nbytes,
+			    reg->refs);
+		*link = reg->next;
+		free(reg);
+	}
+}
