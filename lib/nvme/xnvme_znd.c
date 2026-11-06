@@ -243,7 +243,9 @@ xnvme_znd_report_find_arbitrary(const struct xnvme_znd_report *report, uint32_t 
 			return err;
 		}
 
-		if ((zdescr->zs == state) && (zdescr->zt == XNVME_SPEC_ZND_TYPE_SEQWR) &&
+		if ((xnvme_bits_get(zdescr->zs, XNVME_SPEC_ZND_DESCR_ZS_ZS) == state) &&
+		    (xnvme_bits_get(zdescr->zt, XNVME_SPEC_ZND_DESCR_ZT_ZT) ==
+		     XNVME_SPEC_ZND_TYPE_SEQWR) &&
 		    (zdescr->zcap)) {
 			*zlba = zdescr->zslba;
 			return 0;

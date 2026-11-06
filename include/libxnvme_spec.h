@@ -2736,28 +2736,9 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_log_changes) == 4096, "Incorrec
  * @struct xnvme_spec_znd_descr
  */
 struct xnvme_spec_znd_descr {
-	uint8_t zt    : 4; ///< Zone Type
-	uint8_t rsvd0 : 4;
-
-	uint8_t rsvd1 : 4;
-	uint8_t zs    : 4; ///< Zone State
-
-	/**
-	 * Zone Attributes
-	 */
-	union {
-		struct {
-			uint8_t zfc   : 1; ///< Zone Finished by controller
-			uint8_t zfr   : 1; ///< Zone Finish Recommended
-			uint8_t rzr   : 1; ///< Reset Zone Recommended
-			uint8_t zrwav : 1; ///< Zone has a ZRWA associated
-
-			uint8_t rsvd3 : 3;
-
-			uint8_t zdev  : 1; ///< Zone Descriptor Valid
-		};
-		uint8_t val;
-	} za;
+	uint8_t zt; ///< Zone Type, see XNVME_SPEC_ZND_DESCR_ZT_*
+	uint8_t zs; ///< Zone State, see XNVME_SPEC_ZND_DESCR_ZS_*
+	uint8_t za; ///< Zone Attributes, see XNVME_SPEC_ZND_DESCR_ZA_*
 
 	uint8_t rsvd7[5];
 
@@ -2767,6 +2748,21 @@ struct xnvme_spec_znd_descr {
 	uint8_t rsvd63[32];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_descr) == 64, "Incorrect size")
+
+/** Zone Type, see xnvme_spec_znd_type; bits 3:0 of 'zt' */
+#define XNVME_SPEC_ZND_DESCR_ZT_ZT 0xf
+/** Zone State, see xnvme_spec_znd_state; bits 7:4 of 'zs' */
+#define XNVME_SPEC_ZND_DESCR_ZS_ZS 0xf0
+/** Zone Finished by Controller; bit 0 of 'za' */
+#define XNVME_SPEC_ZND_DESCR_ZA_ZFC 0x1
+/** Finish Zone Recommended; bit 1 of 'za' */
+#define XNVME_SPEC_ZND_DESCR_ZA_ZFR 0x2
+/** Reset Zone Recommended; bit 2 of 'za' */
+#define XNVME_SPEC_ZND_DESCR_ZA_RZR 0x4
+/** Zone Random Write Area Valid; bit 3 of 'za' */
+#define XNVME_SPEC_ZND_DESCR_ZA_ZRWAV 0x8
+/** Zone Descriptor Extension Valid; bit 7 of 'za' */
+#define XNVME_SPEC_ZND_DESCR_ZA_ZDEV 0x80
 
 /**
  * Report Zones Data Structure header
