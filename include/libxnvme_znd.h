@@ -85,7 +85,7 @@ xnvme_znd_descr_from_dev(struct xnvme_dev *dev, uint64_t slba,
  * Fills 'zdescr' with the first Zone on the given 'dev' in the given 'state'
  *
  * @param dev The device to receive descriptors from
- * @param state The state the Zone should be in
+ * @param state The state the Zone should be in, a value of ::xnvme_spec_znd_state
  * @param zdescr Pointer to the descriptor the function should fill
  *
  * @return On succes, 0 is returned and 'zdescr' filled with matching Zone
@@ -93,7 +93,7 @@ xnvme_znd_descr_from_dev(struct xnvme_dev *dev, uint64_t slba,
  * and the content of given 'zdescr' is undefined.
  */
 int
-xnvme_znd_descr_from_dev_in_state(struct xnvme_dev *dev, enum xnvme_spec_znd_state state,
+xnvme_znd_descr_from_dev_in_state(struct xnvme_dev *dev, uint32_t state,
 				  struct xnvme_spec_znd_descr *zdescr);
 
 /**
