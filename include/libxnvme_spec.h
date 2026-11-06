@@ -2700,19 +2700,16 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_idfy_ns) == 4096, "Incorrect si
 #define XNVME_SPEC_ZND_IDFY_NS_ZRWACAP_EXPFLUSHSUP 0x1
 
 /**
- * Representation of the NVMe Identify Namespace command completion result
+ * The data returned by an Identify command for the Zoned command set, as the structure of each CNS
  *
- * @todo merge this into the libxnvme_spec.h providing a one-stop shop for idfy-representation
- * @struct xnvme_spec_znd_idfy
+ * @union xnvme_spec_znd_idfy
  */
-struct xnvme_spec_znd_idfy {
-	union {
-		union xnvme_spec_idfy base;
-		struct xnvme_spec_znd_idfy_ctrlr zctrlr;
-		struct xnvme_spec_znd_idfy_ns zns;
-	};
+union xnvme_spec_znd_idfy {
+	union xnvme_spec_idfy base;              ///< As the common Identify data
+	struct xnvme_spec_znd_idfy_ctrlr zctrlr; ///< Of XNVME_SPEC_IDFY_CTRLR_IOCS
+	struct xnvme_spec_znd_idfy_ns zns;       ///< Of XNVME_SPEC_IDFY_NS_IOCS
 };
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_idfy) == 4096, "Incorrect size")
+XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_znd_idfy) == 4096, "Incorrect size")
 
 /** Number of Zone Identifiers the Changed Zone List log page holds */
 #define ZND_CHANGES_LEN 511
