@@ -102,6 +102,9 @@ idfy_ns(struct xnvme_dev *dev, void *dbuf)
 static int
 idfy(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 {
+	// A device delivers the whole page, so what is not emulated reads as zero
+	memset(dbuf, 0, dbuf_nbytes);
+
 	switch (ctx->cmd.idfy.cns) {
 	case XNVME_SPEC_IDFY_NS:
 		return idfy_ns(ctx->dev, dbuf);
