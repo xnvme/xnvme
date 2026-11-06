@@ -341,7 +341,9 @@ qublk_zoned_dispatch(struct qublk_queue *q, struct qublk_io *io, struct xnvme_cm
 
 			nlb = (uint16_t)((bytes >> lba_shift) - 1);
 			if (iod->op_flags & UBLK_IO_F_FUA) {
-				ctx->cmd.znd.append.fua = 1;
+				ctx->cmd.znd.append.cdw12 =
+					xnvme_bits_set(ctx->cmd.znd.append.cdw12,
+						       XNVME_SPEC_ZND_CMD_APPEND_CDW12_FUA, 1);
 			}
 
 			rc = qublk_io_user_copy_in(q, io, (size_t)bytes);
