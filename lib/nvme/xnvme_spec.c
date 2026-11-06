@@ -285,10 +285,16 @@ xnvme_spec_log_fdp_conf_fpr(FILE *stream, const struct xnvme_spec_log_fdp_conf *
 		wrtn += fprintf(stream, "  config_desc: %d\n", i);
 		wrtn += fprintf(stream, "  ds: %" PRIu16 "\n", log->conf_desc[i].ds);
 		wrtn += fprintf(stream, "  fdp attributes: {");
-		wrtn += fprintf(stream, "    rgif: %" PRIu8, log->conf_desc[i].fdpa.rgif);
-		wrtn += fprintf(stream, "    fdpvwc: %" PRIu8, log->conf_desc[i].fdpa.fdpvwc);
-		wrtn += fprintf(stream, "    fdpcv: %" PRIu8, log->conf_desc[i].fdpa.fdpcv);
-		wrtn += fprintf(stream, "    val: %#" PRIx8, log->conf_desc[i].fdpa.val);
+		wrtn += fprintf(stream, "    rgif: %" PRIu64,
+				xnvme_bits_get(log->conf_desc[i].fdpa,
+					       XNVME_SPEC_FDP_CONF_DESC_FDPA_RGIF));
+		wrtn += fprintf(stream, "    fdpvwc: %" PRIu64,
+				xnvme_bits_get(log->conf_desc[i].fdpa,
+					       XNVME_SPEC_FDP_CONF_DESC_FDPA_FDPVWC));
+		wrtn += fprintf(stream, "    fdpcv: %" PRIu64,
+				xnvme_bits_get(log->conf_desc[i].fdpa,
+					       XNVME_SPEC_FDP_CONF_DESC_FDPA_FDPCV));
+		wrtn += fprintf(stream, "    val: %#" PRIx8, log->conf_desc[i].fdpa);
 		wrtn += fprintf(stream, "  }\n");
 		wrtn += fprintf(stream, "  vss: %" PRIu8 "\n", log->conf_desc[i].vss);
 		wrtn += fprintf(stream, "  nrg: %" PRIu32 "\n", log->conf_desc[i].nrg);
