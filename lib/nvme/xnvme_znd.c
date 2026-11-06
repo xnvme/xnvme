@@ -301,7 +301,7 @@ exit:
 }
 
 int
-xnvme_znd_descr_from_dev_in_state(struct xnvme_dev *dev, enum xnvme_spec_znd_state state,
+xnvme_znd_descr_from_dev_in_state(struct xnvme_dev *dev, uint32_t state,
 				  struct xnvme_spec_znd_descr *zdescr)
 {
 	const uint32_t nsid = xnvme_dev_get_nsid(dev);
