@@ -1,6 +1,6 @@
 import pytest
 
-from ..conftest import xnvme_parametrize
+from ..conftest import get_homi_id, xnvme_parametrize
 
 # The memory interfaces that register host memory of the caller's
 REGISTERS_HOST_MEMORY = (
@@ -13,18 +13,26 @@ REGISTERS_HOST_MEMORY = (
 )
 
 
+def has_iommu_group(cijoe, device):
+    # The driver does not tell, as vfio-pci in no-IOMMU mode is bound like
+    # vfio-pci with one
+    uri = device["uri"]
+    err, _ = cijoe.run(f"test -e /sys/bus/pci/devices/{uri}/iommu_group")
+    return not err
+
+
 def skip_unless_registers_host_memory(cijoe, device, be_opts):
     if be_opts["mem"] not in REGISTERS_HOST_MEMORY:
         pytest.skip(reason="Backend does not register host memory")
 
-    # Without an IOMMU, SPDK registers a PCIe device only memory in hugetlb
-    # pages, which the tests do not allocate. The driver does not tell, as
-    # vfio-pci in no-IOMMU mode is bound like vfio-pci with one.
+    # Unless an IOMMU addresses it by virtual address, SPDK registers a PCIe
+    # device only memory in hugetlb pages, which the tests do not allocate
     if be_opts["mem"] == "spdk" and "pcie" in device["labels"]:
-        uri = device["uri"]
-        err, _ = cijoe.run(f"test -e /sys/bus/pci/devices/{uri}/iommu_group")
-        if err:
+        if not has_iommu_group(cijoe, device):
             pytest.skip(reason="SPDK without an IOMMU registers hugetlb memory only")
+        err, _ = cijoe.run('test "$XNVME_SPDK_IOVA_MODE" = pa')
+        if not err:
+            pytest.skip(reason="SPDK with iova_mode=pa registers hugetlb memory only")
 
 
 @xnvme_parametrize(labels=["dev"], opts=["be"])
@@ -41,6 +49,25 @@ def test_register_counted(cijoe, device, be_opts, cli_args):
 
     err, _ = cijoe.run(f"xnvme_tests_map register_counted {cli_args}")
     assert not err
+
+
+@xnvme_parametrize(labels=["pcie"], opts=["be"])
+def test_mem_map_iova_pa(cijoe, device, be_opts, cli_args):
+    """SPDK behind an IOMMU in iova_mode=pa refuses memory not in hugetlb pages"""
+
+    if be_opts["mem"] != "spdk":
+        pytest.skip(reason="Only SPDK has an iova_mode")
+    if not has_iommu_group(cijoe, device):
+        pytest.skip(reason="Without an IOMMU, SPDK refuses this in either mode")
+    # A served client takes the iova_mode of the server
+    if get_homi_id():
+        pytest.skip(reason="The server's iova_mode applies, not the client's")
+
+    err, state = cijoe.run(
+        f"XNVME_SPDK_IOVA_MODE=pa xnvme_tests_map mem_map_unmap {cli_args} --count 1"
+    )
+    assert err
+    assert "errno: 95" in state.output()  # ENOTSUP on Linux, where SPDK runs
 
 
 @xnvme_parametrize(labels=["pcie"], opts=["be"])
