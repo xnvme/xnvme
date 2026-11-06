@@ -44,11 +44,11 @@ struct xnvme_pi_ctx {
 /**
  * Return the protection information size
  *
- * @param pi_format Protection Information Format
+ * @param pi_format Protection Information Format, a value of ::xnvme_spec_nvm_ns_pif
  * @return On success, the size for protection information format.
  */
 size_t
-xnvme_pi_size(enum xnvme_spec_nvm_ns_pif pi_format);
+xnvme_pi_size(uint32_t pi_format);
 
 /**
  * Initialize the Protection Information context
