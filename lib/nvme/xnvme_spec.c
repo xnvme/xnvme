@@ -1231,21 +1231,37 @@ xnvme_spec_drecv_idfy_fpr(FILE *stream, struct xnvme_spec_idfy_dir_rp *idfy, int
 
 	wrtn += fprintf(stream, "\n");
 	wrtn += fprintf(stream, "  directives_supported:\n");
-	wrtn += fprintf(stream, "    identify: %" PRIu8 "\n", idfy->directives_supported.identify);
-	wrtn += fprintf(stream, "    streams: %" PRIu8 "\n", idfy->directives_supported.streams);
-	wrtn += fprintf(stream, "    data placement: %" PRIu8 "\n",
-			idfy->directives_supported.data_placement);
+	wrtn += fprintf(stream, "    identify: %" PRIu64 "\n",
+			xnvme_bits_get(idfy->directives_supported,
+				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_IDENTIFY));
+	wrtn += fprintf(stream, "    streams: %" PRIu64 "\n",
+			xnvme_bits_get(idfy->directives_supported,
+				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_STREAMS));
+	wrtn += fprintf(
+		stream, "    data placement: %" PRIu64 "\n",
+		xnvme_bits_get(idfy->directives_supported,
+			       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_DATA_PLACEMENT));
 	wrtn += fprintf(stream, "  directives_enabled:\n");
-	wrtn += fprintf(stream, "    identify: %" PRIu8 "\n", idfy->directives_enabled.identify);
-	wrtn += fprintf(stream, "    streams: %" PRIu8 "\n", idfy->directives_enabled.streams);
-	wrtn += fprintf(stream, "    data_placement: %" PRIu8 "\n",
-			idfy->directives_enabled.data_placement);
+	wrtn += fprintf(stream, "    identify: %" PRIu64 "\n",
+			xnvme_bits_get(idfy->directives_enabled,
+				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_IDENTIFY));
+	wrtn += fprintf(stream, "    streams: %" PRIu64 "\n",
+			xnvme_bits_get(idfy->directives_enabled,
+				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_STREAMS));
+	wrtn += fprintf(stream, "    data_placement: %" PRIu64 "\n",
+			xnvme_bits_get(idfy->directives_enabled,
+				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_DATA_PLACEMENT));
 	wrtn += fprintf(stream, "  directives_persistence:\n");
-	wrtn += fprintf(stream, "    identify: %" PRIu8 "\n",
-			idfy->directives_persistence.identify);
-	wrtn += fprintf(stream, "    streams: %" PRIu8 "\n", idfy->directives_persistence.streams);
-	wrtn += fprintf(stream, "    data_placement: %" PRIu8 "\n",
-			idfy->directives_persistence.data_placement);
+	wrtn += fprintf(stream, "    identify: %" PRIu64 "\n",
+			xnvme_bits_get(idfy->directives_persistence,
+				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_IDENTIFY));
+	wrtn += fprintf(stream, "    streams: %" PRIu64 "\n",
+			xnvme_bits_get(idfy->directives_persistence,
+				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_STREAMS));
+	wrtn += fprintf(
+		stream, "    data_placement: %" PRIu64 "\n",
+		xnvme_bits_get(idfy->directives_persistence,
+			       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_DATA_PLACEMENT));
 
 	return wrtn;
 }
