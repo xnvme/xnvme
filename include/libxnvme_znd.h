@@ -134,17 +134,17 @@ xnvme_znd_log_changes_from_dev(struct xnvme_dev *dev);
  * @param nsid Namespace Identifier
  * @param zslba Start LBA of the Zone to manage
  * @param select_all Ignore zslba, command affects all LBAs
- * @param zsa Zone Send Action, the ::xnvme_spec_znd_cmd_mgmt_send_action to perform with zone at
- * zslba or all LBAs when select_all is true
- * @param zsa_so the ::xnvme_spec_znd_mgmt_send_action_so option
+ * @param zsa Zone Send Action to perform with the zone at zslba, or with all zones when
+ * select_all is true, a value of ::xnvme_spec_znd_cmd_mgmt_send_action
+ * @param zsa_so Zone Send Action Specific Option, a value of
+ * ::xnvme_spec_znd_mgmt_send_action_so
  * @param dbuf For action=ZND_SEND_DESCRIPTOR provide buffer
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
 xnvme_znd_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, bool select_all,
-		    enum xnvme_spec_znd_cmd_mgmt_send_action zsa,
-		    enum xnvme_spec_znd_mgmt_send_action_so zsa_so, void *dbuf);
+		    uint32_t zsa, uint32_t zsa_so, void *dbuf);
 
 /**
  * Submit, and optionally wait for completion of, a Zone Append

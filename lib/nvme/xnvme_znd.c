@@ -441,8 +441,7 @@ xnvme_znd_log_changes_from_dev(struct xnvme_dev *dev)
 
 int
 xnvme_znd_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, bool select_all,
-		    enum xnvme_spec_znd_cmd_mgmt_send_action zsa,
-		    enum xnvme_spec_znd_mgmt_send_action_so zsaso, void *dbuf)
+		    uint32_t zsa, uint32_t zsaso, void *dbuf)
 {
 	uint32_t dbuf_nbytes = 0;
 
