@@ -31,7 +31,7 @@ def skip_unless_registers_host_memory(cijoe, device, be_opts):
 def test_mem_map_unmap(cijoe, device, be_opts, cli_args):
     skip_unless_registers_host_memory(cijoe, device, be_opts)
 
-    err, _ = cijoe.run(f"xnvme_tests_map mem_map_unmap {cli_args} --count 31")
+    err, _ = cijoe.run(f"xnvme test map mem_map_unmap {cli_args} --count 31")
     assert not err
 
 
@@ -39,7 +39,7 @@ def test_mem_map_unmap(cijoe, device, be_opts, cli_args):
 def test_register_counted(cijoe, device, be_opts, cli_args):
     skip_unless_registers_host_memory(cijoe, device, be_opts)
 
-    err, _ = cijoe.run(f"xnvme_tests_map register_counted {cli_args}")
+    err, _ = cijoe.run(f"xnvme test map register_counted {cli_args}")
     assert not err
 
 
@@ -68,7 +68,7 @@ def test_mptr_registration(cijoe, device, be_opts, cli_args):
                 reason="uPCIe needs uio_pci_generic; with vfio the IOMMU translates"
             )
 
-    err, state = cijoe.run(f"xnvme_tests_map mptr_registration {cli_args}")
+    err, state = cijoe.run(f"xnvme test map mptr_registration {cli_args}")
     if "INCONCLUSIVE" in state.output():
         pytest.skip(
             reason="namespace has no out-of-band space; mptr is refused regardless"

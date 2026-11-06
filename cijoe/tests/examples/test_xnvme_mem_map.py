@@ -10,7 +10,7 @@ def test_cuda_mem_map(cijoe, device, be_opts, cli_args):
 
     homi_id = get_homi_id()
     err, _ = cijoe.run(
-        f"xnvme_cuda_mem_map {device['uri']} {homi_id if homi_id else ''}"
+        f"xnvme example cuda-mem-map {device['uri']} {homi_id if homi_id else ''}"
     )
     assert not err
 
@@ -22,6 +22,6 @@ def test_hip_mem_map(cijoe, device, be_opts, cli_args):
 
     homi_id = get_homi_id()
     err, _ = cijoe.run(
-        f"xnvme_hip_mem_map {device['uri']} {homi_id if homi_id else ''}"
+        f"xnvme example hip-mem-map {device['uri']} {homi_id if homi_id else ''}"
     )
     assert not err

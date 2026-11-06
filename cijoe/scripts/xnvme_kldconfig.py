@@ -2,7 +2,7 @@
 Add the SPDK kmod directory to FreeBSD kernel module search path
 ================================================================
 
-This is needed by the ``xnvme-driver`` script.
+This is needed to load ``nic_uio`` and ``contigmem`` built with SPDK.
 
 Retargetable: True
 ------------------

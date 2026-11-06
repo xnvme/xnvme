@@ -1,0 +1,10 @@
+Usage: xnvme driver [--be <backend>] [<bdf>... | --all] [--force] [--dry-run]
+
+Without --be, print 'xnvme list' and 'xnvme env': each function with its
+driver, and the host setup the drivers depend on.
+
+With --be, put each named function, or with --all every function not in use,
+on the driver the backend needs: the kernel nvme driver for the kernel
+backends, a userspace driver for spdk, libvfn and upcie. A function whose
+namespaces are in use is refused; --force overrides only the refusal of a
+namespace carrying a filesystem or partition table. --dry-run changes nothing.

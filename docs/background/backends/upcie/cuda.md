@@ -294,7 +294,7 @@ the domain type, set as described below. Host-issued I/O, including
 {ref}`sec-backends-upcie-cuda-p2p-cq-mirror`, needs none of this.
 ```
 
-Needed only for GPU-resident queues, meaning `xnvmeperf cuda-run`, `cuda-verify`
+Needed only for GPU-resident queues, meaning `xnvme perf cuda-run`, `cuda-verify`
 and anything else built on {ref}`sec-api-c-gpu`. Host-driven I/O needs nothing
 here.
 
@@ -384,7 +384,7 @@ survive a reboot.
 
 ```bash
 cat /sys/kernel/iommu_groups/16/type      # identity
-sudo xnvmeperf cuda-verify --be upcie-cuda --iosize 4096 --qdepth 32 \
+sudo xnvme perf cuda-verify --be upcie-cuda --iosize 4096 --qdepth 32 \
     --nqueues 2 0000:01:00.0
 sudo dmesg | grep -iE 'AMD-Vi|DMAR'
 ```
@@ -428,7 +428,7 @@ latency at a depth of one. What it costs is the entries themselves on the
 GPU's transmit side, four 16-byte writes per command, which is idle traffic
 for reads but competes with the controller's payload reads on writes; and
 the placement depends on host memory the GPU can map. The `--sq-hostmem` flag of
-`xnvmeperf cuda-run` and `cuda-verify` selects it.
+`xnvme perf cuda-run` and `cuda-verify` selects it.
 
 A kernel writes an entry as four 16-byte stores cached at L2 only, so the
 L2 combines them into whole sectors before they leave the GPU. With

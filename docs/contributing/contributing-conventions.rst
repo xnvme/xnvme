@@ -285,7 +285,7 @@ include path.
 * A platform's files are ``xnvme_platform_<os>.c`` and
   ``xnvme_platform_<os>_configs.c``
 * A mechanism directory has one build option, ``with-<dir>``, and one macro,
-  ``XNVME_BE_<DIR>_ENABLED``, which ``xnvme library-info`` lists. An OS
+  ``XNVME_BE_<DIR>_ENABLED``, which ``xnvme env library`` lists. An OS
   directory is built with its platform, ``XNVME_PLATFORM_<OS>_ENABLED``. A
   feature within a directory is ``XNVME_BE_<DIR>_<FEATURE>_ENABLED``, such as
   ``XNVME_BE_LINUX_BLOCK_ENABLED``; one outside the backend is
@@ -337,8 +337,8 @@ Where new code goes
    its header, its state header, one file per implementation, a
    ``meson.build`` adding its sources and include directory, its option
    ``with-<name>`` and macro ``XNVME_BE_<NAME>_ENABLED``, its entry in
-   ``g_libconf_parts`` in ``lib/util/xnvme_libconf.c``, which ``xnvme
-   library-info`` prints, and its configs if they need nothing from other
+   ``g_libconf_parts`` in ``lib/util/xnvme_libconf.c``, which ``xnvme env
+   library`` prints, and its configs if they need nothing from other
    directories
 3. Something an OS provides itself: that OS's directory,
    ``lib/backend/<os>/``

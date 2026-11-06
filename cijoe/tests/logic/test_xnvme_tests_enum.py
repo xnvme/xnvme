@@ -19,12 +19,12 @@ def test_open(cijoe, device, be_opts, cli_args):
         pytest.skip(reason=f"[be={be_opts['be']}] does not support enumeration")
     if "fabrics" in device["labels"]:
         err, _ = cijoe.run(
-            f"xnvme_tests_enum open --uri {device['uri']} --count 4"
+            f"xnvme test enum open --uri {device['uri']} --count 4"
             f" --be {be_opts['be']} {homi_arg}"
         )
     else:
         err, _ = cijoe.run(
-            f"xnvme_tests_enum open --count 4 --be {be_opts['be']} {homi_arg}"
+            f"xnvme test enum open --count 4 --be {be_opts['be']} {homi_arg}"
         )
     assert not err
 
@@ -39,13 +39,11 @@ def test_keep_open(cijoe, device, be_opts, cli_args):
 
     if "fabrics" in device["labels"]:
         err, _ = cijoe.run(
-            f"xnvme_tests_enum keep_open --uri {device['uri']}"
+            f"xnvme test enum keep_open --uri {device['uri']}"
             f" --be {be_opts['be']} {homi_arg}"
         )
     else:
-        err, _ = cijoe.run(
-            f"xnvme_tests_enum keep_open --be {be_opts['be']} {homi_arg}"
-        )
+        err, _ = cijoe.run(f"xnvme test enum keep_open --be {be_opts['be']} {homi_arg}")
     assert not err
 
 
@@ -59,12 +57,12 @@ def test_multi(cijoe, device, be_opts, cli_args):
 
     if "fabrics" in device["labels"]:
         err, _ = cijoe.run(
-            f"xnvme_tests_enum multi --uri {device['uri']} --count 4"
+            f"xnvme test enum multi --uri {device['uri']} --count 4"
             f" --be {be_opts['be']} {homi_arg}"
         )
     else:
         err, _ = cijoe.run(
-            f"xnvme_tests_enum multi --count 4 --be {be_opts['be']} {homi_arg}"
+            f"xnvme test enum multi --count 4 --be {be_opts['be']} {homi_arg}"
         )
     assert not err
 
@@ -73,7 +71,7 @@ def test_multi(cijoe, device, be_opts, cli_args):
 def test_fabrics(cijoe, device, be_opts, cli_args):
     """Enumerate a fabrics target and verify at least one namespace is found"""
     err, _ = cijoe.run(
-        f"xnvme_tests_enum open --uri {device['uri']} --count 1 --be {be_opts['be']}"
+        f"xnvme test enum open --uri {device['uri']} --count 1 --be {be_opts['be']}"
     )
     assert not err
 
@@ -106,5 +104,5 @@ def test_backend(cijoe, device, be_opts, cli_args):
     if get_homi_id():
         HomiServer.stop(cijoe)
 
-    err, _ = cijoe.run("xnvme_tests_enum backend")
+    err, _ = cijoe.run("xnvme test enum backend")
     assert not err
