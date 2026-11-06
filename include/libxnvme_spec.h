@@ -1861,14 +1861,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_gfeat) == 64, "Incorrect size")
 struct xnvme_spec_cmd_sfeat {
 	uint32_t cdw00_09[10]; ///< Command dword 0 to 9
 
-	union {
-		struct {
-			uint32_t fid    : 8; ///< Feature Identifier
-			uint32_t rsvd10 : 23;
-			uint32_t save   : 1; ///< Save
-		};
-		uint32_t val;
-	} cdw10;
+	uint32_t cdw10; ///< Command dword 10, see XNVME_SPEC_CMD_SFEAT_CDW10_*
 
 	struct xnvme_spec_feat feat; ///< Feature
 
@@ -1876,6 +1869,11 @@ struct xnvme_spec_cmd_sfeat {
 	uint32_t cdw13_15[3]; ///< Command dword 13 to 15
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_sfeat) == 64, "Incorrect size")
+
+/** Feature Identifier, see xnvme_spec_feat_id; bits 7:0 of 'cdw10' */
+#define XNVME_SPEC_CMD_SFEAT_CDW10_FID 0xff
+/** Save; bit 31 of 'cdw10' */
+#define XNVME_SPEC_CMD_SFEAT_CDW10_SV 0x80000000
 
 /**
  * NVMe Command Accessor for the directive send command
