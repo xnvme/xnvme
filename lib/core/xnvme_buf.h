@@ -96,7 +96,17 @@ int
 xnvme_buf_reg_add(const void *owner, void *vaddr, size_t nbytes, uint64_t priv);
 
 /**
- * Remove a registration found with xnvme_buf_reg_find()
+ * Find any registration of an owner
+ *
+ * @param owner What the registrations are registered with
+ *
+ * @return The registration, or NULL when the owner has none
+ */
+struct xnvme_buf_reg *
+xnvme_buf_reg_any(const void *owner);
+
+/**
+ * Remove a registration found with xnvme_buf_reg_find() or xnvme_buf_reg_any()
  *
  * @param reg The registration to remove
  */

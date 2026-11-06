@@ -460,6 +460,18 @@ xnvme_buf_reg_add(const void *owner, void *vaddr, size_t nbytes, uint64_t priv)
 	return 0;
 }
 
+struct xnvme_buf_reg *
+xnvme_buf_reg_any(const void *owner)
+{
+	for (struct xnvme_buf_reg *cur = g_regs; cur; cur = cur->next) {
+		if (cur->owner == owner) {
+			return cur;
+		}
+	}
+
+	return NULL;
+}
+
 void
 xnvme_buf_reg_remove(struct xnvme_buf_reg *reg)
 {
