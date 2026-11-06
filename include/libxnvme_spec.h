@@ -2831,15 +2831,13 @@ struct xnvme_spec_kvs_idfy_ns {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_kvs_idfy_ns) == 4096, "Incorrect size")
 
 /**
- * Identify data of the Key Value command set, viewed as ::xnvme_spec_idfy, 'base', or as its
- * Identify Namespace data structure, 'ns'
+ * The data returned by an Identify command for the Key Value command set, as the structure of each
+ * CNS
  *
- * @struct xnvme_spec_kvs_idfy
+ * @union xnvme_spec_kvs_idfy
  */
-struct xnvme_spec_kvs_idfy {
-	union {
-		union xnvme_spec_idfy base;
-		struct xnvme_spec_kvs_idfy_ns ns;
-	};
+union xnvme_spec_kvs_idfy {
+	union xnvme_spec_idfy base;       ///< As the common Identify data
+	struct xnvme_spec_kvs_idfy_ns ns; ///< Of XNVME_SPEC_IDFY_NS_IOCS
 };
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_kvs_idfy) == 4096, "Incorrect size")
+XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_kvs_idfy) == 4096, "Incorrect size")
