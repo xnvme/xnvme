@@ -625,7 +625,8 @@ sub_gfeat(struct xnvme_cli *cli)
 	}
 
 	{
-		union xnvme_spec_feat feat = {.val = ctx.cpl.cdw0};
+		union xnvme_spec_feat feat = {.val = (uint32_t)xnvme_bits_get(
+						      ctx.cpl.result, XNVME_SPEC_CQE_RESULT_CDW0)};
 		xnvme_spec_feat_pr(fid, &feat, XNVME_PR_DEF);
 
 		if (fid == XNVME_SPEC_FEAT_FDP_EVENTS) {

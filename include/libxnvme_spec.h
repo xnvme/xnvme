@@ -92,17 +92,8 @@ enum xnvme_spec_status_code {
  * @struct xnvme_spec_cqe
  */
 struct xnvme_spec_cqe {
-	union {
-		struct {
-			/* dword 0 */
-			uint32_t cdw0; ///< command-specific
-
-			/* dword 1 */
-			uint32_t rsvd1;
-		};
-
-		uint64_t result; /* Combined result of cdw 0 and cdw 1 */
-	};
+	/* dword 0-1 */
+	uint64_t result; ///< Command Specific, dwords 0 and 1, see XNVME_SPEC_CQE_RESULT_*
 
 	/* dword 2 */
 	uint16_t sqhd; ///< submission queue head pointer
@@ -113,6 +104,11 @@ struct xnvme_spec_cqe {
 	uint16_t status; ///< Status Field and Phase Tag, see XNVME_SPEC_CQE_STATUS_*
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cqe) == 16, "Incorrect size")
+
+/** Command Specific, dword 0; bits 31:0 of 'result' */
+#define XNVME_SPEC_CQE_RESULT_CDW0 0xffffffff
+/** Command Specific, dword 1; bits 63:32 of 'result' */
+#define XNVME_SPEC_CQE_RESULT_CDW1 0xffffffff00000000
 
 /** Phase Tag; bit 0 of 'status' */
 #define XNVME_SPEC_CQE_STATUS_P 0x1

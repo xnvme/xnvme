@@ -49,7 +49,7 @@ test_init_term(struct xnvme_cli *cli)
 			return err;
 		}
 
-		feat.val = ctx.cpl.cdw0;
+		feat.val = xnvme_bits_get(ctx.cpl.result, XNVME_SPEC_CQE_RESULT_CDW0);
 
 		xnvme_spec_feat_pr(XNVME_SPEC_FEAT_NQUEUES, &feat, XNVME_PR_DEF);
 

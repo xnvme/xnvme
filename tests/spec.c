@@ -249,6 +249,10 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_common, flags) == 1,
 		    "flags of struct xnvme_spec_cmd_common")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_common, dptr) == 24,
 		    "dptr of struct xnvme_spec_cmd_common")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cqe, result,
+			 XNVME_SPEC_CQE_RESULT_CDW0 | XNVME_SPEC_CQE_RESULT_CDW1),
+		    "result of struct xnvme_spec_cqe")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cqe, sqhd) == 8, "sqhd of struct xnvme_spec_cqe")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cqe, status,
 			 XNVME_SPEC_CQE_STATUS_P | XNVME_SPEC_CQE_STATUS_SC |
 				 XNVME_SPEC_CQE_STATUS_SCT | XNVME_SPEC_CQE_STATUS_CRD |
@@ -1243,6 +1247,23 @@ sub_io_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	return err;
 }
 
+static int
+sub_cqe_result(struct xnvme_cli *XNVME_UNUSED(cli))
+{
+	uint32_t dwords[4] = {0x11223344, 0x55667788, 0x0,
+			      0x0}; // Dwords 0 and 1: command specific
+	struct xnvme_spec_cqe cqe;
+
+	memcpy(&cqe, dwords, sizeof(cqe));
+	if (xnvme_bits_get(cqe.result, XNVME_SPEC_CQE_RESULT_CDW0) != 0x11223344 ||
+	    xnvme_bits_get(cqe.result, XNVME_SPEC_CQE_RESULT_CDW1) != 0x55667788) {
+		xnvme_cli_pinf("FAILED: cqe: result: %#" PRIx64, cqe.result);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"idfy-offsets",
@@ -1276,6 +1297,15 @@ static struct xnvme_cli_sub g_subs[] = {
 		"Read the I/O commands through their dwords and their masks",
 		"Read the I/O commands through their dwords and their masks",
 		sub_io_dwords,
+		{
+			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
+		},
+	},
+	{
+		"cqe-result",
+		"Read the command specific dwords of the completion through their masks",
+		"Read the command specific dwords of the completion through their masks",
+		sub_cqe_result,
 		{
 			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
 		},

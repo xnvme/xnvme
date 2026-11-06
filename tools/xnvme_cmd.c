@@ -412,7 +412,8 @@ cli_cmd(enum cli_cmd_kind kind, int argc, char **argv)
 	}
 	if (!raw) {
 		printf("%s Command is Success and result: 0x%08x\n",
-		       kind == CLI_CMD_ADMIN ? "Admin" : "IO", ctx.cpl.cdw0);
+		       kind == CLI_CMD_ADMIN ? "Admin" : "IO",
+		       (unsigned int)xnvme_bits_get(ctx.cpl.result, XNVME_SPEC_CQE_RESULT_CDW0));
 	}
 	if (latency) {
 		printf("latency: %" PRIu64 " us\n", (uint64_t)xnvme_timer_elapsed_usecs(&timer));
