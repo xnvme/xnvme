@@ -378,6 +378,11 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_fdp_event, fdpef,
 		    "fdpef of struct xnvme_spec_fdp_event")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_fdp_event, fdpef) == 1,
 		    "fdpef of struct xnvme_spec_fdp_event")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_fdp_event_desc, fdpeta,
+			 XNVME_SPEC_FDP_EVENT_DESC_FDPETA_EE),
+		    "fdpeta of struct xnvme_spec_fdp_event_desc")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_fdp_event_desc, fdpeta) == 1,
+		    "fdpeta of struct xnvme_spec_fdp_event_desc")
 
 struct offset_case {
 	const char *name;
@@ -699,6 +704,18 @@ sub_data_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 		    xnvme_bits_get(event.fdpef, XNVME_SPEC_FDP_EVENT_FDPEF_NSIDV) ||
 		    !xnvme_bits_get(event.fdpef, XNVME_SPEC_FDP_EVENT_FDPEF_LV)) {
 			xnvme_cli_pinf("FAILED: fdpef: %#" PRIx8, event.fdpef);
+			err = -EINVAL;
+		}
+	}
+
+	{
+		struct xnvme_spec_fdp_event_desc desc;
+
+		memset(raw, 0, sizeof(raw));
+		raw[1] = 0x01; // FDP event descriptor FDPETA: event enabled
+		memcpy(&desc, raw, sizeof(desc));
+		if (!xnvme_bits_get(desc.fdpeta, XNVME_SPEC_FDP_EVENT_DESC_FDPETA_EE)) {
+			xnvme_cli_pinf("FAILED: fdpeta: %#" PRIx8, desc.fdpeta);
 			err = -EINVAL;
 		}
 	}

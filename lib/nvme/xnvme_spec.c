@@ -1009,8 +1009,9 @@ xnvme_spec_feat_fdp_events_fpr(FILE *stream, void *buf, const union xnvme_spec_f
 	for (uint32_t i = 0; i < feat->val; i++) {
 		struct xnvme_spec_fdp_event_desc *desc =
 			&((struct xnvme_spec_fdp_event_desc *)buf)[i];
-		wrtn += fprintf(stream, "{ type: %#" PRIx8 ", event enabled: %" PRIu8 " }\n",
-				desc->type, desc->fdpeta.ee);
+		wrtn += fprintf(stream, "{ type: %#" PRIx8 ", event enabled: %" PRIu64 " }\n",
+				desc->type,
+				xnvme_bits_get(desc->fdpeta, XNVME_SPEC_FDP_EVENT_DESC_FDPETA_EE));
 		desc += sizeof(struct xnvme_spec_fdp_event_desc);
 	}
 
