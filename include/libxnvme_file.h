@@ -44,7 +44,7 @@ xnvme_file_close(struct xnvme_dev *fh);
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
-xnvme_file_pread(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, off_t offset);
+xnvme_file_pread(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, uint64_t offset);
 
 /**
  * Perform a stateless write to the file or device encapsulated by 'ctx'
@@ -63,7 +63,7 @@ xnvme_file_pread(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, off_t offse
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
-xnvme_file_pwrite(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, off_t offset);
+xnvme_file_pwrite(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, uint64_t offset);
 
 /**
  * Force a sync of the file or device encapsulated by 'fh'
