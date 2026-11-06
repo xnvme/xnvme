@@ -415,6 +415,12 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_streams_dir_rp, nssc,
 		    "nssc of struct xnvme_spec_streams_dir_rp")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_streams_dir_rp, nssc) == 6,
 		    "nssc of struct xnvme_spec_streams_dir_rp")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_nvm_idfy_ns, pic,
+			 XNVME_SPEC_NVM_IDFY_NS_PIC_GPISTS | XNVME_SPEC_NVM_IDFY_NS_PIC_GPISTM |
+				 XNVME_SPEC_NVM_IDFY_NS_PIC_STCRS),
+		    "pic of struct xnvme_spec_nvm_idfy_ns")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_idfy_ns, pic) == 8,
+		    "pic of struct xnvme_spec_nvm_idfy_ns")
 
 struct offset_case {
 	const char *name;
@@ -804,6 +810,20 @@ sub_data_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 		memcpy(&rp, raw, sizeof(rp));
 		if (!xnvme_bits_get(rp.nssc, XNVME_SPEC_STREAMS_DIR_RP_NSSC_MULTI_HOST)) {
 			xnvme_cli_pinf("FAILED: nssc: %#" PRIx8, rp.nssc);
+			err = -EINVAL;
+		}
+	}
+
+	{
+		struct xnvme_spec_nvm_idfy_ns ns;
+
+		memset(raw, 0, sizeof(raw));
+		raw[8] = 0x05; // NVM Identify Namespace PIC: 16BPISTS, STCRS
+		memcpy(&ns, raw, sizeof(ns));
+		if (!xnvme_bits_get(ns.pic, XNVME_SPEC_NVM_IDFY_NS_PIC_GPISTS) ||
+		    xnvme_bits_get(ns.pic, XNVME_SPEC_NVM_IDFY_NS_PIC_GPISTM) ||
+		    !xnvme_bits_get(ns.pic, XNVME_SPEC_NVM_IDFY_NS_PIC_STCRS)) {
+			xnvme_cli_pinf("FAILED: pic: %#" PRIx8, ns.pic);
 			err = -EINVAL;
 		}
 	}
