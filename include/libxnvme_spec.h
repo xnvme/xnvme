@@ -2093,6 +2093,8 @@ enum xnvme_spec_nvm_cmd_cpl_sc {
 };
 
 /**
+ * Source Range Entry of the Copy command, in Copy Descriptor Format 0h
+ *
  * @struct xnvme_spec_nvm_scopy_fmt_zero
  */
 struct xnvme_spec_nvm_scopy_fmt_zero {
@@ -2100,9 +2102,9 @@ struct xnvme_spec_nvm_scopy_fmt_zero {
 
 	uint64_t slba; ///< Start LBA
 
-	uint32_t nlb    : 16; ///< Number of logical blocks, zero-based
+	uint16_t nlb; ///< Number of logical blocks, zero-based
 
-	uint32_t rsvd20 : 16;
+	uint16_t rsvd20;
 
 	uint32_t eilbrt; ///< Expected Initial Logical Block Ref. Tag
 	uint32_t elbatm; ///< Expected Logical Block App. Tag Mask

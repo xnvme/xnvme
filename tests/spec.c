@@ -141,6 +141,10 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_dsm, nr) == 40,
 		    "nr of struct xnvme_spec_cmd_dsm")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_dsm, cdw11) == 44,
 		    "cdw11 of struct xnvme_spec_cmd_dsm")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_scopy_fmt_zero, nlb) == 16,
+		    "nlb of struct xnvme_spec_nvm_scopy_fmt_zero")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_scopy_fmt_zero, eilbrt) == 20,
+		    "eilbrt of struct xnvme_spec_nvm_scopy_fmt_zero")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 			 XNVME_SPEC_CMD_LOG_CDW10_LID | XNVME_SPEC_CMD_LOG_CDW10_LSP |
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
