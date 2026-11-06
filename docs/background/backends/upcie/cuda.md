@@ -107,6 +107,10 @@ queue at the client's address. What comes back names a completion queue in the
 server's heap that the controller never writes, and the resident kernel keeps
 that one a copy of the queue it placed, so the submitting side is unchanged.
 
+(sec-backends-upcie-cuda-memory-register)=
+
+## Registering memory
+
 A caller can hand over device memory it allocated itself with
 `xnvme_buf_register()`, which registers the range through the same registry the
 heap uses, so such a buffer is usable exactly as one from
@@ -117,6 +121,22 @@ comes back is adopted into the same table; that is a socket round trip per
 call, so a client registers its buffers before it submits, not per command.
 Either way the range is whole device pages, 64 KiB on CUDA, since that is the
 granule the export works in.
+
+A registration does not outlive the devices: closing the last device drops
+every registration. Served, closing a controller drops the registrations made
+only through it, whatever their count, so a later `xnvme_buf_unregister()` of
+such a buffer returns `-EINVAL`; a buffer also registered through a controller
+that stays open keeps its registration.
+
+Memory from `xnvme_buf_alloc()` lies in the heap and is left as it is. Host
+memory is not taken. Were the heap mapped through iommufd, the device would
+translate by offset into the heap only and registering would be refused with
+`-EOPNOTSUPP`, but current kernels do not map it that way, see
+{ref}`sec-backends-upcie-cuda-iommu`. Behind an enforcing IOMMU, which
+controllers reach a registration differs between a process that drives them
+itself and a served client, see {ref}`sec-backends-upcie-cuda-iommu-register`.
+See {ref}`sec-background-memory` for what registering does on the other
+backends.
 
 (sec-backends-upcie-cuda-opts)=
 
@@ -174,9 +194,10 @@ registry hands it those. Under `vfio-pci` an IOMMU translates, so every address
 it sees is an IOVA. Device memory cannot get one the way host memory does,
 since `IOMMU_IOAS_MAP_FILE` rejects the dma-bufs the CUDA driver exports.
 
-Where the controller is on `vfio-cdev`, `iommufd` is asked first: it maps the
-heap once for the whole process and needs no out-of-tree module. It cannot
-always, and what follows is what happens when it cannot.
+Where the controller is on `vfio-cdev`, `iommufd` is asked first, since it would
+map the heap once for the whole process and need no out-of-tree module. Current
+kernels refuse the dma-buf in `IOMMU_IOAS_MAP_FILE`, so
+`dmamem_from_cuda_iommufd()` fails, and what follows is what happens instead.
 
 The `iommu_map_pa` module inserts the VRAM into the controller's domain
 directly, and the registry's table holds the resulting IOVAs. It ships in the
@@ -216,19 +237,34 @@ the window with `XNVME_UPCIE_IOVA_BASE`.
 `uio_pci_generic` is unaffected. Physical addresses read the same from every
 controller, so one table serves them all.
 
+(sec-backends-upcie-cuda-iommu-register)=
+
 ### Registering buffers
 
 A buffer from `xnvme_buf_alloc()` comes off the heap, which every controller
 maps, so it works on any of them.
 
-A buffer handed to `xnvme_buf_register()` is registered against the device
-passed to the call, so behind an IOMMU it resolves for that controller only.
-Register it with each device it is used from, and unregister it against each:
+A process that drives the controllers itself installs a buffer handed to
+`xnvme_buf_register()` in the domain of every controller of the window, and
+back-fills it into each controller attached later, so one registration serves
+them all. Registering it again through another device only counts it.
+
+A served client has the server install the buffer in the domain of the
+controller it was registered through. Register it with each device it is used
+from: the first registration through a device asks the server for that
+controller, at the IOVA the buffer already has, and the last unregister, through
+any of them, gives back all of them.
 
 ```c
 xnvme_buf_register(dev_a, buf, nbytes);
 xnvme_buf_register(dev_b, buf, nbytes);
+/* ... commands on buf through dev_a and dev_b ... */
+xnvme_buf_unregister(dev_a, buf);
+xnvme_buf_unregister(dev_b, buf);
 ```
+
+Driving the controllers itself, this costs a count, so code that registers with
+each device works either way.
 
 Under `uio_pci_generic` one table serves every controller, so a single
 registration covers them all.
@@ -469,7 +505,7 @@ cd cijoe && cijoe tasks/test-gpu.yaml --config configs/<your-config>.toml
   {ref}`sec-backends-upcie-cuda-iommu`.
 - **`vfio-pci` may need the mapping installed by hand.** Describing the GPU heap
   by mapping its `dma-buf` is what `IOMMU_IOAS_MAP_FILE` would do, and it
-  refuses one a GPU runtime exported. Where `iommufd` cannot map it, the mapping
+  refuses one a GPU runtime exported. As `iommufd` cannot map it, the mapping
   goes in from the physical addresses behind it instead. That happens either
   way: a server does it for a client, and a process holding the controller does
   it for itself. See {ref}`sec-backends-upcie-cuda-upstream`.
