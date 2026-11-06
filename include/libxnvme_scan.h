@@ -23,6 +23,8 @@ typedef int (*xnvme_scan_cb)(const struct xnvme_ident *ident, void *cb_args);
  * @param cb_args Arguments passed to the callback function
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @lifetime cb_func call
  */
 int
 xnvme_scan(const char *sys_uri, struct xnvme_opts *opts, xnvme_scan_cb cb_func, void *cb_args);
