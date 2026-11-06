@@ -434,6 +434,19 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_znd_idfy_ns, ozcs) == 2,
 		    "ozcs of struct xnvme_spec_znd_idfy_ns")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_znd_idfy_ns, zrwacap) == 52,
 		    "zrwacap of struct xnvme_spec_znd_idfy_ns")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_descr, zt, XNVME_SPEC_ZND_DESCR_ZT_ZT),
+		    "zt of struct xnvme_spec_znd_descr")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_descr, zs, XNVME_SPEC_ZND_DESCR_ZS_ZS),
+		    "zs of struct xnvme_spec_znd_descr")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_descr, za,
+			 XNVME_SPEC_ZND_DESCR_ZA_ZFC | XNVME_SPEC_ZND_DESCR_ZA_ZFR |
+				 XNVME_SPEC_ZND_DESCR_ZA_RZR | XNVME_SPEC_ZND_DESCR_ZA_ZRWAV |
+				 XNVME_SPEC_ZND_DESCR_ZA_ZDEV),
+		    "za of struct xnvme_spec_znd_descr")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_znd_descr, zs) == 1,
+		    "zs of struct xnvme_spec_znd_descr")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_znd_descr, za) == 2,
+		    "za of struct xnvme_spec_znd_descr")
 
 struct offset_case {
 	const char *name;
@@ -884,6 +897,27 @@ sub_data_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 		    !xnvme_bits_get(idfy.zns.zoc, XNVME_SPEC_ZND_IDFY_NS_ZOC_ZAE)) {
 			xnvme_cli_pinf("FAILED: znd_idfy: zasl: %#" PRIx8 ", zoc: %#" PRIx16,
 				       idfy.zctrlr.zasl, idfy.zns.zoc);
+			err = -EINVAL;
+		}
+	}
+
+	{
+		struct xnvme_spec_znd_descr descr;
+
+		memset(raw, 0, sizeof(raw));
+		raw[0] = 0x02; // Zone descriptor ZT: sequential write required
+		raw[1] = 0xe0; // ZS: full
+		raw[2] = 0x88; // ZA: ZRWAV, ZDEV
+		memcpy(&descr, raw, sizeof(descr));
+		if (xnvme_bits_get(descr.zt, XNVME_SPEC_ZND_DESCR_ZT_ZT) !=
+			    XNVME_SPEC_ZND_TYPE_SEQWR ||
+		    xnvme_bits_get(descr.zs, XNVME_SPEC_ZND_DESCR_ZS_ZS) !=
+			    XNVME_SPEC_ZND_STATE_FULL ||
+		    xnvme_bits_get(descr.za, XNVME_SPEC_ZND_DESCR_ZA_ZFC) ||
+		    !xnvme_bits_get(descr.za, XNVME_SPEC_ZND_DESCR_ZA_ZRWAV) ||
+		    !xnvme_bits_get(descr.za, XNVME_SPEC_ZND_DESCR_ZA_ZDEV)) {
+			xnvme_cli_pinf("FAILED: zt: %#" PRIx8 ", zs: %#" PRIx8 ", za: %#" PRIx8,
+				       descr.zt, descr.zs, descr.za);
 			err = -EINVAL;
 		}
 	}

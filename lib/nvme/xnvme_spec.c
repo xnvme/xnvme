@@ -1392,13 +1392,16 @@ xnvme_spec_znd_descr_fpr_yaml(FILE *stream, const struct xnvme_spec_znd_descr *d
 
 	wrtn += fprintf(stream, "%*szcap: %" PRIu64 "%s", indent, "", descr->zcap, sep);
 
-	wrtn += fprintf(stream, "%*szt: %#" PRIx8 "%s", indent, "", descr->zt, sep);
+	wrtn += fprintf(stream, "%*szt: %#" PRIx64 "%s", indent, "",
+			xnvme_bits_get(descr->zt, XNVME_SPEC_ZND_DESCR_ZT_ZT), sep);
 
-	wrtn += fprintf(stream, "%*szs: %*s%s", indent, "", 17,
-			xnvme_spec_znd_state_str(descr->zs), sep);
+	wrtn += fprintf(
+		stream, "%*szs: %*s%s", indent, "", 17,
+		xnvme_spec_znd_state_str(xnvme_bits_get(descr->zs, XNVME_SPEC_ZND_DESCR_ZS_ZS)),
+		sep);
 
 	wrtn += fprintf(stream, "%*sza: '0b" XNVME_I8_FMT "'", indent, "",
-			XNVME_I8_TO_STR(descr->za.val));
+			XNVME_I8_TO_STR(descr->za));
 
 	return wrtn;
 }

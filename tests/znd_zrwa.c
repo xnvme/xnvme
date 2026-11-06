@@ -115,13 +115,15 @@ _eopen_with_zrwa(struct xnvme_cli *cli, bool zrwaa)
 
 	xnvme_cli_pinf("Zone after EOPEN:");
 	xnvme_spec_znd_descr_pr(&after, XNVME_PR_DEF);
-	if (after.za.zrwav != zrwaa) {
+	if (xnvme_bits_get(after.za, XNVME_SPEC_ZND_DESCR_ZA_ZRWAV) != zrwaa) {
 		err = -EIO;
-		xnvme_cli_pinf("INVALID: after->za.zrwav: %d != zrwav: %d", after.za.zrwav, zrwaa);
+		xnvme_cli_pinf("INVALID: ZRWAV of after->za: %" PRIu64 " != zrwav: %d",
+			       xnvme_bits_get(after.za, XNVME_SPEC_ZND_DESCR_ZA_ZRWAV), zrwaa);
 	}
-	if (after.zs != XNVME_SPEC_ZND_STATE_EOPEN) {
+	if (xnvme_bits_get(after.zs, XNVME_SPEC_ZND_DESCR_ZS_ZS) != XNVME_SPEC_ZND_STATE_EOPEN) {
 		err = -EIO;
-		xnvme_cli_pinf("INVALID: after->zs: %d", after.zs);
+		xnvme_cli_pinf("INVALID: after->zs: %" PRIu64,
+			       xnvme_bits_get(after.zs, XNVME_SPEC_ZND_DESCR_ZS_ZS));
 	}
 
 	if (!err) {
