@@ -6,6 +6,7 @@
  * @file libxnvme_util.h
  */
 
+/** Shift of a 512-byte sector, the unit the Linux block layer counts in */
 #define XNVME_UNIVERSAL_SECT_SH 9
 
 /**
@@ -27,6 +28,7 @@
 #define XNVME_UNUSED(x) UNUSED_##x
 #endif
 
+/** printf() format printing a 64-bit integer in binary, the arguments XNVME_I64_TO_STR() gives */
 #define XNVME_I64_FMT                      \
 	"%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c" \
 	"%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c" \
@@ -67,6 +69,7 @@
 		(val & (1ULL << 3) ? '1' : '0'), (val & (1ULL << 2) ? '1' : '0'),   \
 		(val & (1ULL << 1) ? '1' : '0'), (val & (1ULL << 0) ? '1' : '0')
 
+/** printf() format printing a 32-bit integer in binary, the arguments XNVME_I32_TO_STR() gives */
 #define XNVME_I32_FMT                      \
 	"%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c" \
 	"%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c"
@@ -89,6 +92,7 @@
 		(val & (1ULL << 3) ? '1' : '0'), (val & (1ULL << 2) ? '1' : '0'),   \
 		(val & (1ULL << 1) ? '1' : '0'), (val & (1ULL << 0) ? '1' : '0')
 
+/** printf() format printing a 16-bit integer in binary, the arguments XNVME_I16_TO_STR() gives */
 #define XNVME_I16_FMT "%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c"
 
 #define XNVME_I16_TO_STR(val)                                                       \
@@ -101,6 +105,7 @@
 		(val & (1ULL << 3) ? '1' : '0'), (val & (1ULL << 2) ? '1' : '0'),   \
 		(val & (1ULL << 1) ? '1' : '0'), (val & (1ULL << 0) ? '1' : '0')
 
+/** printf() format printing an 8-bit integer in binary, the arguments XNVME_I8_TO_STR() gives */
 #define XNVME_I8_FMT "%c%c%c%c%c%c%c%c"
 
 #define XNVME_I8_TO_STR(val)                                                      \
