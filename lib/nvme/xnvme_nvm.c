@@ -152,7 +152,8 @@ xnvme_nvm_scopy(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t sdlba,
 	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_SCOPY;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.scopy.sdlba = sdlba;
-	ctx->cmd.scopy.nr = nr;
+	ctx->cmd.scopy.cdw12 =
+		xnvme_bits_set(ctx->cmd.scopy.cdw12, XNVME_SPEC_NVM_CMD_SCOPY_CDW12_NR, nr);
 
 	// TODO: consider the remaining command-fields
 

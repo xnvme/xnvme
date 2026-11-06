@@ -2146,29 +2146,35 @@ struct xnvme_spec_nvm_cmd_scopy {
 	/* cdw 10-11 */
 	uint64_t sdlba; ///< Start Destination LBA
 
-	/* cdw 12 */
-	uint32_t nr      : 8; ///< Number of Ranges
-	uint32_t df      : 4; ///< Descriptor Format
-	uint32_t prinfor : 4; ///< Protection Info. Field Read
-	uint32_t rsvd1   : 4;
-	uint32_t dtype   : 4; ///< Directive Type
-	uint32_t rsvd2   : 2;
-	uint32_t prinfow : 4; ///< Protection Info. Field Write
-	uint32_t fua     : 1; ///< Force Unit Access
-	uint32_t lr      : 1; ///< Limited Retry
+	uint32_t cdw12; ///< Command dword 12, see XNVME_SPEC_NVM_CMD_SCOPY_CDW12_*
 
 	/* cdw 13 */
-	uint32_t rsvd3   : 16;
-	uint32_t dspec   : 16; ///< Directive Specific
+	uint16_t rsvd3;
+	uint16_t dspec; ///< Directive Specific
 
 	/* cdw 14 */
 	uint32_t ilbrt; ///< Initial Logical Block Ref. Tag
 
 	/* cdw 15 */
-	uint32_t lbat  : 16; ///< Logical Block App. Tag
-	uint32_t lbatm : 16; ///< Logical Block App. Tag Mask
+	uint16_t lbat;  ///< Logical Block App. Tag
+	uint16_t lbatm; ///< Logical Block App. Tag Mask
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_cmd_scopy) == 64, "Incorrect size")
+
+/** Number of Ranges, zero-based; bits 7:0 of 'cdw12' */
+#define XNVME_SPEC_NVM_CMD_SCOPY_CDW12_NR 0xff
+/** Descriptor Format; bits 11:8 of 'cdw12' */
+#define XNVME_SPEC_NVM_CMD_SCOPY_CDW12_DF 0xf00
+/** Protection Information Field Read; bits 15:12 of 'cdw12' */
+#define XNVME_SPEC_NVM_CMD_SCOPY_CDW12_PRINFOR 0xf000
+/** Directive Type; bits 23:20 of 'cdw12' */
+#define XNVME_SPEC_NVM_CMD_SCOPY_CDW12_DTYPE 0xf00000
+/** Protection Information Field Write; bits 29:26 of 'cdw12' */
+#define XNVME_SPEC_NVM_CMD_SCOPY_CDW12_PRINFOW 0x3c000000
+/** Force Unit Access; bit 30 of 'cdw12' */
+#define XNVME_SPEC_NVM_CMD_SCOPY_CDW12_FUA 0x40000000
+/** Limited Retry; bit 31 of 'cdw12' */
+#define XNVME_SPEC_NVM_CMD_SCOPY_CDW12_LR 0x80000000
 
 /**
  * Kernel format structure for scopy
