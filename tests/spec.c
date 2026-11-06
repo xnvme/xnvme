@@ -204,6 +204,13 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_kvs_cmd, cdw11) == 44,
 		    "cdw11 of struct xnvme_spec_kvs_cmd")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_kvs_cmd, cdw11.ro) == 45,
 		    "cdw11.ro of struct xnvme_spec_kvs_cmd")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_sgl_descriptor, id,
+			 XNVME_SPEC_SGL_DESCRIPTOR_ID_SUBTYPE | XNVME_SPEC_SGL_DESCRIPTOR_ID_TYPE),
+		    "id of struct xnvme_spec_sgl_descriptor")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_sgl_descriptor, len) == 8,
+		    "len of struct xnvme_spec_sgl_descriptor")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_sgl_descriptor, id) == 15,
+		    "id of struct xnvme_spec_sgl_descriptor")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 			 XNVME_SPEC_CMD_LOG_CDW10_LID | XNVME_SPEC_CMD_LOG_CDW10_LSP |
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
@@ -1212,6 +1219,19 @@ sub_io_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 		    0x3 ||
 	    !xnvme_bits_get(sqe.znd.mgmt_recv.cdw13, XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_PARTIAL)) {
 		xnvme_cli_pinf("FAILED: znd.mgmt_recv: cdw13: %#x", sqe.znd.mgmt_recv.cdw13);
+		err = -EINVAL;
+	}
+
+	memset(&sqe, 0, sizeof(sqe));
+	sqe.cdw[8] = 0x1000;     // SGL descriptor bytes 11:8: length
+	sqe.cdw[9] = 0x31000000; // SGL descriptor byte 15: Last Segment, Offset
+	if (sqe.common.dptr.sgl.len != 0x1000 ||
+	    xnvme_bits_get(sqe.common.dptr.sgl.id, XNVME_SPEC_SGL_DESCRIPTOR_ID_TYPE) !=
+		    XNVME_SPEC_SGL_DESCR_TYPE_LAST_SEGMENT ||
+	    xnvme_bits_get(sqe.common.dptr.sgl.id, XNVME_SPEC_SGL_DESCRIPTOR_ID_SUBTYPE) !=
+		    XNVME_SPEC_SGL_DESCR_SUBTYPE_OFFSET) {
+		xnvme_cli_pinf("FAILED: sgl: len: %#x, id: %#x", sqe.common.dptr.sgl.len,
+			       sqe.common.dptr.sgl.id);
 		err = -EINVAL;
 	}
 

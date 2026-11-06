@@ -1656,23 +1656,16 @@ enum xnvme_spec_sgl_descriptor_subtype {
  */
 struct xnvme_spec_sgl_descriptor {
 	uint64_t addr; ///< common field
-
-	union {
-		struct {
-			uint64_t rsvd    : 56;
-			uint64_t subtype : 4; ///< SGL subtype
-			uint64_t type    : 4; ///< SGL type
-		} generic;
-
-		struct {
-			uint64_t len     : 32; ///< Length of entry
-			uint64_t rsvd    : 24;
-			uint64_t subtype : 4; ///< SGL subtype
-			uint64_t type    : 4; ///< SGL type
-		} unkeyed;
-	};
+	uint32_t len;  ///< Length of entry, of a descriptor that is not keyed
+	uint8_t rsvd[3];
+	uint8_t id; ///< SGL Identifier, see XNVME_SPEC_SGL_DESCRIPTOR_ID_*
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_sgl_descriptor) == 16, "Incorrect size")
+
+/** SGL Descriptor Sub Type, see enum xnvme_spec_sgl_descriptor_subtype; bits 3:0 of 'id' */
+#define XNVME_SPEC_SGL_DESCRIPTOR_ID_SUBTYPE 0xf
+/** SGL Descriptor Type, see enum xnvme_nvme_sgl_descriptor_type; bits 7:4 of 'id' */
+#define XNVME_SPEC_SGL_DESCRIPTOR_ID_TYPE 0xf0
 
 /**
  * PRP or SGL for Data Transfer field
