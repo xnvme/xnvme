@@ -365,7 +365,7 @@ log_fdp_event_fpr_yaml(FILE *stream, const struct xnvme_spec_fdp_event *event, i
 	int wrtn = 0;
 
 	wrtn += fprintf(stream, "%*stype: %" PRIu8 "%s", indent, "", event->type, sep);
-	wrtn += fprintf(stream, "%*sfdpef: %#" PRIx8 "%s", indent, "", event->fdpef.val, sep);
+	wrtn += fprintf(stream, "%*sfdpef: %#" PRIx8 "%s", indent, "", event->fdpef, sep);
 	wrtn += fprintf(stream, "%*spid: %" PRIu16 "%s", indent, "", event->pid, sep);
 	wrtn += fprintf(stream, "%*stimestamp: %" PRIu64 "%s", indent, "", event->timestamp, sep);
 	wrtn += fprintf(stream, "%*snsid: %" PRIu32 "%s", indent, "", event->nsid, sep);
