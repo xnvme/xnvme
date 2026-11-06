@@ -1,6 +1,6 @@
 --- a/engines/xnvme.c
 +++ b/engines/xnvme.c
-@@ -17,6 +17,21 @@
+@@ -17,6 +17,30 @@
  #else
  #define FIO_XNVME_CPL_SC(cpl) ((cpl).status.sc)
  #endif
@@ -19,10 +19,19 @@
 +#define FIO_XNVME_SET_DTYPE(cmd, val) ((cmd)->nvm.dtype = (val))
 +#define FIO_XNVME_SET_PRINFO(cmd, val) ((cmd)->nvm.prinfo = (val))
 +#endif
++
++/* So is dword 13 */
++#ifdef XNVME_SPEC_CMD_NVM_CDW13_DSPEC
++#define FIO_XNVME_SET_DSPEC(cmd, val) \
++	((cmd)->nvm.cdw13 = \
++		 (uint32_t)xnvme_bits_set((cmd)->nvm.cdw13, XNVME_SPEC_CMD_NVM_CDW13_DSPEC, (val)))
++#else
++#define FIO_XNVME_SET_DSPEC(cmd, val) ((cmd)->nvm.cdw13.dspec = (val))
++#endif
  #include "fio.h"
  #include "verify.h"
  #include "zbd_types.h"
-@@ -759,9 +774,9 @@
+@@ -759,10 +783,10 @@
  
  	ctx->cmd.common.nsid = nsid;
  	ctx->cmd.nvm.slba = slba;
@@ -30,11 +39,13 @@
 +	FIO_XNVME_SET_NLB(&ctx->cmd, nlb);
  	if (dir) {
 -		ctx->cmd.nvm.dtype = io_u->dtype;
+-		ctx->cmd.nvm.cdw13.dspec = io_u->dspec;
 +		FIO_XNVME_SET_DTYPE(&ctx->cmd, io_u->dtype);
- 		ctx->cmd.nvm.cdw13.dspec = io_u->dspec;
++		FIO_XNVME_SET_DSPEC(&ctx->cmd, io_u->dspec);
  	}
  
-@@ -804,7 +819,7 @@
+ 	switch (io_u->ddir) {
+@@ -804,7 +828,7 @@
  	}
  
  	if (fwrap->geo->pi_type)

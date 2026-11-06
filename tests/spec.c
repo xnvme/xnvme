@@ -96,6 +96,13 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_nvm, cdw12,
 		    "cdw12 of struct xnvme_spec_cmd_nvm")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_nvm, cdw12) == 48,
 		    "cdw12 of struct xnvme_spec_cmd_nvm")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_nvm, cdw13,
+			 XNVME_SPEC_CMD_NVM_CDW13_AF | XNVME_SPEC_CMD_NVM_CDW13_AL |
+				 XNVME_SPEC_CMD_NVM_CDW13_SR | XNVME_SPEC_CMD_NVM_CDW13_INCOM |
+				 XNVME_SPEC_CMD_NVM_CDW13_DSPEC),
+		    "cdw13 of struct xnvme_spec_cmd_nvm")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_nvm, cdw13) == 52,
+		    "cdw13 of struct xnvme_spec_cmd_nvm")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 			 XNVME_SPEC_CMD_LOG_CDW10_LID | XNVME_SPEC_CMD_LOG_CDW10_LSP |
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
@@ -1002,6 +1009,16 @@ sub_io_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	    !xnvme_bits_get(sqe.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_FUA) ||
 	    !xnvme_bits_get(sqe.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_LR)) {
 		xnvme_cli_pinf("FAILED: nvm: cdw12: %#x", sqe.nvm.cdw12);
+		err = -EINVAL;
+	}
+
+	sqe.cdw[13] = 0x1234005b; // NVM dword 13: AF 0xb, AL 0x1, SR, DSPEC 0x1234
+	if (xnvme_bits_get(sqe.nvm.cdw13, XNVME_SPEC_CMD_NVM_CDW13_AF) != 0xb ||
+	    xnvme_bits_get(sqe.nvm.cdw13, XNVME_SPEC_CMD_NVM_CDW13_AL) != 0x1 ||
+	    !xnvme_bits_get(sqe.nvm.cdw13, XNVME_SPEC_CMD_NVM_CDW13_SR) ||
+	    xnvme_bits_get(sqe.nvm.cdw13, XNVME_SPEC_CMD_NVM_CDW13_INCOM) ||
+	    xnvme_bits_get(sqe.nvm.cdw13, XNVME_SPEC_CMD_NVM_CDW13_DSPEC) != 0x1234) {
+		xnvme_cli_pinf("FAILED: nvm: cdw13: %#x", sqe.nvm.cdw13);
 		err = -EINVAL;
 	}
 

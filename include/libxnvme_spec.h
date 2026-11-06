@@ -1984,18 +1984,7 @@ struct xnvme_spec_cmd_nvm {
 
 	uint32_t cdw12; ///< Command dword 12, see XNVME_SPEC_CMD_NVM_CDW12_*
 
-	/* cdw 13 */
-	union {
-		struct {
-			uint32_t af    : 4; ///< Access Frequency
-			uint32_t al    : 2; ///< Access Latency
-			uint32_t sr    : 1; ///< Sequential Request
-			uint32_t incom : 1; ///< Incompressible
-			uint32_t rsvd3 : 8;
-			uint32_t dspec : 16; ///< Directive Specific
-		};
-		uint32_t val;
-	} cdw13;
+	uint32_t cdw13; ///< Command dword 13, see XNVME_SPEC_CMD_NVM_CDW13_*
 
 	/* cdw 14 */
 	uint32_t ilbrt : 32; ///< Initial Logical Block Reference Tag
@@ -2016,6 +2005,17 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_nvm) == 64, "Incorrect size")
 #define XNVME_SPEC_CMD_NVM_CDW12_FUA 0x40000000
 /** Limited Retry; bit 31 of 'cdw12' */
 #define XNVME_SPEC_CMD_NVM_CDW12_LR 0x80000000
+
+/** Access Frequency; bits 3:0 of 'cdw13' */
+#define XNVME_SPEC_CMD_NVM_CDW13_AF 0xf
+/** Access Latency; bits 5:4 of 'cdw13' */
+#define XNVME_SPEC_CMD_NVM_CDW13_AL 0x30
+/** Sequential Request; bit 6 of 'cdw13' */
+#define XNVME_SPEC_CMD_NVM_CDW13_SR 0x40
+/** Incompressible; bit 7 of 'cdw13' */
+#define XNVME_SPEC_CMD_NVM_CDW13_INCOM 0x80
+/** Directive Specific; bits 31:16 of 'cdw13' */
+#define XNVME_SPEC_CMD_NVM_CDW13_DSPEC 0xffff0000
 
 /**
  * The Dataset Management command is used by the host to indicate attributes for ranges of logical
