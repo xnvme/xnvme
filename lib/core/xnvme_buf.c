@@ -203,7 +203,7 @@ fdio_func(void *buf, size_t nbytes, const char *path, struct xnvme_opts *opts)
 			err = xnvme_file_pread(&ctx, buf + transferred, nbytes_call, transferred);
 		}
 		if (err) {
-			XNVME_DEBUG("FAILED: opts->wronly: %d, cpl.result: %ld, errno: %d",
+			XNVME_DEBUG("FAILED: opts->wronly: %d, cpl.result: %" PRIu64 ", errno: %d",
 				    opts->wronly, ctx.cpl.result, errno);
 			xnvme_file_close(fh);
 			return -errno;

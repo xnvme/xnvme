@@ -74,7 +74,7 @@ xnvme_be_windows_get_device_type(HANDLE dev_handle)
 			      &result, sizeof(result), &ret_len, NULL);
 
 	if (!ret) {
-		XNVME_DEBUG("Error retriving Storage Query property. Error: %d\n", GetLastError());
+		XNVME_DEBUG("Error retriving Storage Query property. Error: %lu", GetLastError());
 	}
 
 	return result.BusType;
