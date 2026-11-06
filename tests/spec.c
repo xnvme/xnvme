@@ -196,6 +196,10 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_io_mgmt_send_cmd, mo) == 40,
 		    "mo of struct xnvme_spec_io_mgmt_send_cmd")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_io_mgmt_send_cmd, mos) == 42,
 		    "mos of struct xnvme_spec_io_mgmt_send_cmd")
+XNVME_STATIC_ASSERT(offsetof(union xnvme_spec_io_mgmt_cmd, mgmt_recv.numd) == 44,
+		    "mgmt_recv of union xnvme_spec_io_mgmt_cmd")
+XNVME_STATIC_ASSERT(offsetof(union xnvme_spec_io_mgmt_cmd, mgmt_send.mos) == 42,
+		    "mgmt_send of union xnvme_spec_io_mgmt_cmd")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 			 XNVME_SPEC_CMD_LOG_CDW10_LID | XNVME_SPEC_CMD_LOG_CDW10_LSP |
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
