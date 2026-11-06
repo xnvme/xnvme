@@ -399,16 +399,12 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_log_fdp_events) == 64, "Incorrect s
 struct xnvme_spec_fdp_event_desc {
 	uint8_t type; ///< Event type
 
-	/** FDP event type attributes */
-	union {
-		struct {
-			uint8_t ee   : 1; ///< FDP event enabled
-			uint8_t rsvd : 7;
-		};
-		uint8_t val;
-	} fdpeta;
+	uint8_t fdpeta; ///< FDP Event Type Attributes, see XNVME_SPEC_FDP_EVENT_DESC_FDPETA_*
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_fdp_event_desc) == 2, "Incorrect size")
+
+/** Event Enabled; bit 0 of 'fdpeta' */
+#define XNVME_SPEC_FDP_EVENT_DESC_FDPETA_EE 0x1
 
 /**
  * Identifiers (lpi) for NVMe get-log-page
