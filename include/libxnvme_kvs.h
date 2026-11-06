@@ -7,19 +7,26 @@
  */
 
 /**
+ * Options of the KV Retrieve command, the bits of the 'opt' of xnvme_kvs_retrieve()
+ *
  * @enum xnvme_retrieve_opts
  */
 enum xnvme_retrieve_opts {
-	XNVME_KVS_RETRIEVE_OPT_RETRIEVE_RAW = 1 << 0,
+	XNVME_KVS_RETRIEVE_OPT_RETRIEVE_RAW = 1 << 0, ///< Retrieve the value as stored, raw
 };
 
 /**
+ * Options of the KV Store command, the bits of the 'opt' of xnvme_kvs_store()
+ *
  * @enum xnvme_store_opts
  */
 enum xnvme_store_opts {
+	/** Store only when the key exists, overwriting its value */
 	XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_NOT_EXISTS = 1 << 0,
-	XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_EXISTS     = 1 << 1,
-	XNVME_KVS_STORE_OPT_COMPRESS                     = 1 << 2,
+	/** Store only when the key does not exist */
+	XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_EXISTS = 1 << 1,
+	/** Compress the value */
+	XNVME_KVS_STORE_OPT_COMPRESS = 1 << 2,
 };
 
 /**
