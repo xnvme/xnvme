@@ -225,8 +225,8 @@ xnvme_znd_report_get_descr(const struct xnvme_znd_report *report, uint32_t index
 }
 
 int
-xnvme_znd_report_find_arbitrary(const struct xnvme_znd_report *report,
-				enum xnvme_spec_znd_state state, uint64_t *zlba, int opts)
+xnvme_znd_report_find_arbitrary(const struct xnvme_znd_report *report, uint32_t state,
+				uint64_t *zlba, int opts)
 {
 	uint64_t arb;
 
