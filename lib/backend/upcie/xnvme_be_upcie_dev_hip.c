@@ -39,6 +39,7 @@ _hip_rte_term(void)
 	}
 
 	xnvme_be_upcie_hip_cqmirror_term();
+	xnvme_be_upcie_served_mem_unmap_all(&g_upcie_hip_rte.dmem);
 	xnvme_buf_reg_remove_owner(&g_upcie_hip_rte.dmem);
 	dmamem_destroy(&g_upcie_hip_rte.dmem);
 	for (int i = 0; i < XNVME_BE_CREF_MAX_ENTRIES; ++i) {

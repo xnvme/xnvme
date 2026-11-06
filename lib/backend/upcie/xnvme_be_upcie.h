@@ -260,6 +260,10 @@ int
 xnvme_be_upcie_served_mem_unmap(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr *ctrlr,
 				void *vaddr);
 
+/** Give back every registration of `dmem` with the server, as when `dmem` is torn down */
+void
+xnvme_be_upcie_served_mem_unmap_all(struct dmamem *dmem);
+
 struct xnvme_buf_reg;
 
 /** Count a registration of `dmem` holding the range, or leave memory in the heap at `heap` be;
