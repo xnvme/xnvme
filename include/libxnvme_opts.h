@@ -72,14 +72,3 @@ struct xnvme_opts {
  */
 int
 xnvme_opts_set_defaults(struct xnvme_opts *opts);
-
-/**
- * Prints a humanly readable representation of the given ::xnvme_opts
- *
- * @param opts Pointer to the #xnvme_opts to print
- * @param pr_opts printer options, see ::xnvme_pr
- *
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_opts_pr(const struct xnvme_opts *opts, int pr_opts);

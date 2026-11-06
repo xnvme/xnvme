@@ -21,29 +21,6 @@ enum xnvme_enumerate_action {
 struct xnvme_dev;
 
 /**
- * Prints the given ::xnvme_dev to the given output stream
- *
- * @param stream output stream used for printing
- * @param dev pointer to structure to print
- * @param opts printer options, see ::xnvme_pr
- *
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_dev_fpr(FILE *stream, const struct xnvme_dev *dev, int opts);
-
-/**
- * Prints the given ::xnvme_dev to stdout
- *
- * @param dev pointer to structure to print
- * @param opts printer options, see ::xnvme_pr
- *
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_dev_pr(const struct xnvme_dev *dev, int opts);
-
-/**
  * Signature of callback function used with 'xnvme_enumerate', invoked for each discovered device
  *
  * The callback function signals whether the device-handle it receives should be closed, that is,

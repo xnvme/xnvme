@@ -159,3 +159,9 @@ test(
   python3,
   args: [files('sub_headers.py'), meson.project_source_root() / 'include'],
 )
+
+test(
+  'tests - printers are declared in libxnvme_pp.h only',
+  python3,
+  args: [files('pp_header.py'), meson.project_source_root() / 'include'],
+)
