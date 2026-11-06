@@ -226,7 +226,7 @@ xnvme_adm_dir_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t doper, uint
 	ctx->cmd.dsend.doper = doper;
 	ctx->cmd.dsend.dtype = dtype;
 	ctx->cmd.dsend.dspec = dspec;
-	ctx->cmd.dsend.cdw12.val = val;
+	ctx->cmd.dsend.cdw12 = val;
 
 	return xnvme_cmd_pass_admin(ctx, NULL, 0x0, NULL, 0x0);
 }
