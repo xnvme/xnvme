@@ -100,15 +100,14 @@ xnvme_znd_descr_from_dev_in_state(struct xnvme_dev *dev, uint32_t state,
  * Ask the given device for how many zones in the given state via receive-action
  *
  * @param dev The device to stat
- * @param sfield Receive stats of the given ::xnvme_spec_znd_cmd_mgmt_recv_action_sf
+ * @param sfield Which zones to count, a value of ::xnvme_spec_znd_cmd_mgmt_recv_action_sf
  * @param nzones Pointer to store result in
  *
  * @return On Success, 0 is returned and 'nzones' filled with stat. On error,
  * negative ``errno`` is returned to indicate the error.
  */
 int
-xnvme_znd_stat(struct xnvme_dev *dev, enum xnvme_spec_znd_cmd_mgmt_recv_action_sf sfield,
-	       uint64_t *nzones);
+xnvme_znd_stat(struct xnvme_dev *dev, uint32_t sfield, uint64_t *nzones);
 
 /**
  * Returns a list of changes since the last report was retrieved
