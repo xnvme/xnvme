@@ -19,6 +19,7 @@
 #include <xnvme_be_upcie_cuda_cqmirror.h>
 #include <upcie/experimental/iommu_map_pa.h>
 #include <xnvme_be_state.h>
+#include <xnvme_buf.h>
 
 static _Atomic int g_cuda_ctrlr_count;
 
@@ -74,6 +75,8 @@ _cuda_ctx_term(void)
 static void
 _cuda_rte_term(void)
 {
+	struct xnvme_buf_reg *reg;
+
 	if (!g_upcie_cuda_rte.is_initialized) {
 		return;
 	}
@@ -83,6 +86,9 @@ _cuda_rte_term(void)
 		_cuda_ctrlr_term(&g_upcie_cuda_rte.ctrlrs[i]);
 	}
 
+	while ((reg = xnvme_buf_reg_any(&g_upcie_cuda_rte.dmem))) {
+		xnvme_buf_reg_remove(reg);
+	}
 	dmamem_destroy(&g_upcie_cuda_rte.dmem);
 	cudamem_heap_term(&g_upcie_cuda_rte.cuda_heap);
 	_cuda_ctx_term();
@@ -515,6 +521,7 @@ static void
 _cuda_dev_dmem_term(struct xnvme_dev *dev)
 {
 	struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
+	struct xnvme_buf_reg *reg;
 
 	state->dmem = NULL;
 
@@ -524,6 +531,9 @@ _cuda_dev_dmem_term(struct xnvme_dev *dev)
 
 	/* The mappings go with the range, so the table goes with the last hold */
 	if (atomic_load(&g_cuda_ctrlr_count) == 1) {
+		while ((reg = xnvme_buf_reg_any(&g_upcie_cuda_rte.dmem))) {
+			xnvme_buf_reg_remove(reg);
+		}
 		dmamem_destroy(&g_upcie_cuda_rte.dmem);
 		g_upcie_cuda_rte.dmem_is_shared = 0;
 		g_upcie_cuda_rte.dmem_in_range = 0;

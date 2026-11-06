@@ -13,6 +13,7 @@
 #include <xnvme_be_upcie_hip.h>
 #include <xnvme_be_upcie_hip_cqmirror.h>
 #include <xnvme_be_state.h>
+#include <xnvme_buf.h>
 
 static _Atomic int g_hip_ctrlr_count;
 
@@ -33,11 +34,16 @@ _hip_ctrlr_term(struct xnvme_be_upcie_hip_ctrlr *slot)
 static void
 _hip_rte_term(void)
 {
+	struct xnvme_buf_reg *reg;
+
 	if (!g_upcie_hip_rte.is_initialized) {
 		return;
 	}
 
 	xnvme_be_upcie_hip_cqmirror_term();
+	while ((reg = xnvme_buf_reg_any(&g_upcie_hip_rte.dmem))) {
+		xnvme_buf_reg_remove(reg);
+	}
 	dmamem_destroy(&g_upcie_hip_rte.dmem);
 	for (int i = 0; i < XNVME_BE_CREF_MAX_ENTRIES; ++i) {
 		_hip_ctrlr_term(&g_upcie_hip_rte.ctrlrs[i]);
@@ -233,6 +239,7 @@ static void
 _hip_dev_dmem_term(struct xnvme_dev *dev)
 {
 	struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
+	struct xnvme_buf_reg *reg;
 
 	state->dmem = NULL;
 
@@ -242,6 +249,9 @@ _hip_dev_dmem_term(struct xnvme_dev *dev)
 
 	/* The mappings go with the range, so the table goes with the last hold */
 	if (atomic_load(&g_hip_ctrlr_count) == 1) {
+		while ((reg = xnvme_buf_reg_any(&g_upcie_hip_rte.dmem))) {
+			xnvme_buf_reg_remove(reg);
+		}
 		dmamem_destroy(&g_upcie_hip_rte.dmem);
 		g_upcie_hip_rte.dmem_is_shared = 0;
 		g_upcie_hip_rte.dmem_in_range = 0;
