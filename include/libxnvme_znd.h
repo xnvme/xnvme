@@ -53,8 +53,9 @@ xnvme_znd_dev_get_lbafe(struct xnvme_dev *dev);
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  * @param nsid Namespace Identifier
  * @param slba Start LBA of the Zone to receive for
- * @param zra Zone Receive Action, the ::xnvme_spec_znd_cmd_mgmt_recv_action
- * @param zrasf the ::xnvme_spec_znd_cmd_mgmt_recv_action_sf
+ * @param zra Zone Receive Action, a value of ::xnvme_spec_znd_cmd_mgmt_recv_action
+ * @param zrasf Zone Receive Action Specific Field, a value of
+ * ::xnvme_spec_znd_cmd_mgmt_recv_action_sf
  * @param partial partial request
  * @param dbuf pointer to data payload
  * @param dbuf_nbytes pointer to meta payload
@@ -62,10 +63,8 @@ xnvme_znd_dev_get_lbafe(struct xnvme_dev *dev);
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
-xnvme_znd_mgmt_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba,
-		    enum xnvme_spec_znd_cmd_mgmt_recv_action zra,
-		    enum xnvme_spec_znd_cmd_mgmt_recv_action_sf zrasf, uint8_t partial, void *dbuf,
-		    uint32_t dbuf_nbytes);
+xnvme_znd_mgmt_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint32_t zra,
+		    uint32_t zrasf, uint8_t partial, void *dbuf, uint32_t dbuf_nbytes);
 
 /**
  * Fills 'zdescr' with the Zone on the given 'dev' that starts at 'slba'
