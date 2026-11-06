@@ -10,6 +10,25 @@
 #define __LIBXNVME_SPEC_FS_H
 
 /**
+ * Limits of the file-system, part of struct xnvme_spec_fs_idfy_ctrlr
+ */
+struct xnvme_spec_fs_idfy_ctrlr_limits {
+	uint64_t file_data_size;  ///< Maximum size of file content, in bytes
+	uint64_t file_name_len;   ///< Maximum length of file-names, in bytes
+	uint64_t path_name_len;   ///< Maximum length of file-paths, in bytes
+	uint64_t number_of_files; ///< Maximum number of files
+};
+
+/**
+ * I/O sizes of the file-system, in bytes, part of struct xnvme_spec_fs_idfy_ctrlr
+ */
+struct xnvme_spec_fs_idfy_ctrlr_iosizes {
+	uint32_t min; ///< Minimum
+	uint32_t max; ///< Maximum
+	uint32_t opt; ///< Optimal
+};
+
+/**
  * Encapsulate file-system properties as Identify Controller
  */
 struct xnvme_spec_fs_idfy_ctrlr {
@@ -17,20 +36,11 @@ struct xnvme_spec_fs_idfy_ctrlr {
 
 	uint64_t caps; ///< File System Capabilities, see XNVME_SPEC_FS_IDFY_CTRLR_CAPS_*
 
-	struct {
-		uint64_t file_data_size;  ///< Maximum size of file content, in bytes
-		uint64_t file_name_len;   ///< Maximum length of file-names, in bytes
-		uint64_t path_name_len;   ///< Maximum length of file-paths, in bytes
-		uint64_t number_of_files; ///< Maximum number of files
-	} limits;
+	struct xnvme_spec_fs_idfy_ctrlr_limits limits; ///< Limits of the file-system
 
 	uint64_t properties; ///< File System Properties, see XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_*
 
-	struct {
-		uint32_t min;
-		uint32_t max;
-		uint32_t opt;
-	} iosizes;
+	struct xnvme_spec_fs_idfy_ctrlr_iosizes iosizes; ///< I/O sizes of the file-system
 
 	uint8_t rsvd[3509];
 
