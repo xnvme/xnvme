@@ -156,7 +156,7 @@ test_ctrlr_gfeat_nqueues(struct xnvme_cli *cli)
 {
 	struct xnvme_dev *dev = ctrlr_open(cli);
 	uint32_t nsq = 0, ncq = 0;
-	struct xnvme_spec_feat feat = {.val = 0};
+	union xnvme_spec_feat feat = {.val = 0};
 	struct xnvme_cmd_ctx ctx;
 	int err;
 

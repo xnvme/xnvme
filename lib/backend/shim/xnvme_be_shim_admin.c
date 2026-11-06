@@ -148,7 +148,7 @@ idfy(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 static int
 gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 {
-	struct xnvme_spec_feat feat = {0};
+	union xnvme_spec_feat feat = {0};
 
 	switch (xnvme_bits_get(ctx->cmd.gfeat.cdw10, XNVME_SPEC_CMD_GFEAT_CDW10_FID)) {
 	case XNVME_SPEC_FEAT_NQUEUES:
