@@ -28,36 +28,6 @@ struct xnvme_ident {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_ident) == 704, "Incorrect size")
 
 /**
- * Writes a YAML-representation of the given 'ident' to stream
- */
-int
-xnvme_ident_yaml(FILE *stream, const struct xnvme_ident *ident, int indent, const char *sep,
-		 int head);
-
-/**
- * Prints the given ::xnvme_ident to the given output stream
- *
- * @param stream output stream used for printing
- * @param ident pointer to structure to print
- * @param opts printer options, see ::xnvme_pr
- *
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_ident_fpr(FILE *stream, const struct xnvme_ident *ident, int opts);
-
-/**
- * Prints the given ::xnvme_ident to stdout
- *
- * @param ident pointer to structure to print
- * @param opts printer options, see ::xnvme_pr
- *
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_ident_pr(const struct xnvme_ident *ident, int opts);
-
-/**
  * Parse the given 'uri' into ::xnvme_ident
  *
  * @param uri

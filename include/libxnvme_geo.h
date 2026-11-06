@@ -53,26 +53,3 @@ struct xnvme_geo {
 	uint8_t _rsvd[4];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_geo) == 64, "Incorrect size")
-
-/**
- * Prints the given ::xnvme_geo to the given output stream
- *
- * @param stream output stream used for printing
- * @param geo pointer to the the ::xnvme_geo to print
- * @param opts printer options, see ::xnvme_pr
- *
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_geo_fpr(FILE *stream, const struct xnvme_geo *geo, int opts);
-
-/**
- * Prints the given ::xnvme_geo to stdout
- *
- * @param geo pointer to the the ::xnvme_geo to print
- * @param opts printer options, see ::xnvme_pr
- *
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_geo_pr(const struct xnvme_geo *geo, int opts);

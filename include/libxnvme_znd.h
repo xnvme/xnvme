@@ -228,29 +228,6 @@ xnvme_znd_report_get_descr(const struct xnvme_znd_report *report, uint32_t index
 			   struct xnvme_spec_znd_descr **descr, void **ext);
 
 /**
- * Prints the given ::xnvme_znd_report to the given stream
- *
- * @param stream output stream used for printing
- * @param report pointer to the the ::xnvme_znd_report to print
- * @param flags printer options, see ::xnvme_pr
- *
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_znd_report_fpr(FILE *stream, const struct xnvme_znd_report *report, int flags);
-
-/**
- * Prints the given ::xnvme_znd_report to stdout
- *
- * @param report
- * @param flags
- *
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_znd_report_pr(const struct xnvme_znd_report *report, int flags);
-
-/**
  * Retrieves a Zone Report from the namespace associated with the given `dev`,
  * reporting starting at the given `slba`, and limited to `limit` entries
  *

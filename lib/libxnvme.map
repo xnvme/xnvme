@@ -27,8 +27,6 @@
 
 		# libxnvme_be.h
 		xnvme_be_attr;
-		xnvme_be_attr_list_fpr;
-		xnvme_be_attr_list_pr;
 		xnvme_be_attr_get;
 
 		# libxnvme_buf.h
@@ -48,7 +46,6 @@
 		xnvme_buf_clear;
 		xnvme_buf_memcpy;
 		xnvme_buf_diff;
-		xnvme_buf_diff_pr;
 		xnvme_buf_to_file;
 		xnvme_buf_from_file;
 
@@ -140,8 +137,6 @@
 
 		# libxnvme_libconf.h
 		xnvme_libconf_get;
-		xnvme_libconf_fpr;
-		xnvme_libconf_pr;
 
 		# libxnvme_nvm.h
 		xnvme_nvm_read;
@@ -171,17 +166,96 @@
 
 		# libxnvme_pp.h
 		xnvme_pr;
+		xnvme_opts_pr;
+		xnvme_dev_fpr;
+		xnvme_dev_pr;
 		xnvme_be_attr_fpr;
 		xnvme_be_attr_pr;
+		xnvme_be_attr_list_fpr;
+		xnvme_be_attr_list_pr;
+		xnvme_buf_diff_pr;
+		xnvme_geo_fpr;
+		xnvme_geo_pr;
 		xnvme_ident_yaml;
 		xnvme_ident_fpr;
 		xnvme_ident_pr;
-		xnvme_dev_fpr;
-		xnvme_dev_pr;
-		xnvme_geo_fpr;
-		xnvme_geo_pr;
+		xnvme_spec_log_health_fpr;
+		xnvme_spec_log_health_pr;
+		xnvme_spec_log_sanitize_fpr;
+		xnvme_spec_log_sanitize_pr;
+		xnvme_spec_log_erri_fpr;
+		xnvme_spec_log_erri_pr;
+		xnvme_spec_log_fdp_conf_pr;
+		xnvme_spec_log_fdp_stats_pr;
+		xnvme_spec_log_fdp_events_pr;
+		xnvme_spec_log_ruhu_pr;
+		xnvme_spec_ruhs_pr;
+		xnvme_spec_idfy_ns_fpr;
+		xnvme_spec_idfy_ns_pr;
+		xnvme_spec_idfy_ctrlr_fpr;
+		xnvme_spec_idfy_ctrlr_pr;
+		xnvme_spec_idfy_cs_fpr;
+		xnvme_spec_idfy_cs_pr;
+		xnvme_spec_feat_fpr;
+		xnvme_spec_feat_pr;
+		xnvme_spec_feat_fdp_events_pr;
+		xnvme_spec_sqe_fpr;
+		xnvme_spec_sqe_pr;
+		xnvme_spec_drecv_idfy_pr;
+		xnvme_spec_drecv_srp_pr;
+		xnvme_spec_drecv_sgs_pr;
+		xnvme_spec_drecv_sar_pr;
+		xnvme_spec_nvm_scopy_fmt_zero_fpr;
+		xnvme_spec_nvm_scopy_fmt_zero_pr;
+		xnvme_spec_nvm_scopy_source_range_fpr;
+		xnvme_spec_nvm_scopy_source_range_pr;
+		xnvme_spec_nvm_idfy_ctrlr_fpr;
+		xnvme_spec_nvm_idfy_ctrlr_pr;
+		xnvme_spec_nvm_idfy_ns_fpr;
+		xnvme_spec_nvm_idfy_ns_pr;
+		xnvme_spec_znd_idfy_ctrlr_fpr;
+		xnvme_spec_znd_idfy_ctrlr_pr;
+		xnvme_spec_znd_idfy_lbafe_fpr;
+		xnvme_spec_znd_idfy_ns_fpr;
+		xnvme_spec_znd_idfy_ns_pr;
+		xnvme_spec_znd_log_changes_fpr;
+		xnvme_spec_znd_log_changes_pr;
+		xnvme_spec_znd_descr_fpr;
+		xnvme_spec_znd_descr_pr;
+		xnvme_spec_znd_report_hdr_fpr;
+		xnvme_spec_znd_report_hdr_pr;
+		xnvme_spec_znd_descr_fpr_yaml;
+		xnvme_spec_kvs_idfy_ns_fpr;
+		xnvme_spec_kvs_idfy_ns_pr;
+		xnvme_spec_adm_opc_str;
+		xnvme_spec_csi_str;
+		xnvme_spec_feat_id_str;
+		xnvme_spec_feat_sel_str;
+		xnvme_spec_flag_str;
+		xnvme_spec_idfy_cns_str;
+		xnvme_spec_log_lpi_str;
+		xnvme_spec_znd_log_lid_str;
+		xnvme_spec_nvm_cmd_cpl_sc_str;
+		xnvme_spec_nvm_opc_str;
+		xnvme_spec_psdt_str;
+		xnvme_spec_sgl_descriptor_subtype_str;
+		xnvme_spec_znd_cmd_mgmt_recv_action_str;
+		xnvme_spec_znd_cmd_mgmt_recv_action_sf_str;
+		xnvme_spec_znd_cmd_mgmt_send_action_str;
+		xnvme_spec_znd_opc_str;
+		xnvme_spec_znd_mgmt_send_action_so_str;
+		xnvme_spec_znd_status_code_str;
+		xnvme_spec_znd_state_str;
+		xnvme_spec_znd_type_str;
+		xnvme_spec_ctrlr_bar_fpr;
+		xnvme_spec_ctrlr_bar_pp;
 		xnvme_cmd_ctx_pr;
-		xnvme_opts_pr;
+		xnvme_ver_fpr;
+		xnvme_ver_pr;
+		xnvme_znd_report_fpr;
+		xnvme_znd_report_pr;
+		xnvme_libconf_fpr;
+		xnvme_libconf_pr;
 
 		# libxnvme_queue.h
 		xnvme_queue;
@@ -315,83 +389,11 @@
 		xnvme_spec_kvs_idfy_ns_format;
 		xnvme_spec_kvs_idfy_ns;
 		xnvme_spec_kvs_idfy;
-		xnvme_spec_log_health_fpr;
-		xnvme_spec_log_health_pr;
-		xnvme_spec_log_sanitize_fpr;
-		xnvme_spec_log_sanitize_pr;
-		xnvme_spec_log_erri_fpr;
-		xnvme_spec_log_erri_pr;
-		xnvme_spec_log_fdp_conf_pr;
-		xnvme_spec_log_fdp_stats_pr;
-		xnvme_spec_log_fdp_events_pr;
-		xnvme_spec_log_ruhu_pr;
-		xnvme_spec_ruhs_pr;
-		xnvme_spec_idfy_ns_fpr;
-		xnvme_spec_idfy_ns_pr;
-		xnvme_spec_idfy_ctrlr_fpr;
-		xnvme_spec_idfy_ctrlr_pr;
-		xnvme_spec_idfy_cs_fpr;
-		xnvme_spec_idfy_cs_pr;
-		xnvme_spec_feat_fpr;
-		xnvme_spec_feat_pr;
-		xnvme_spec_feat_fdp_events_pr;
-		xnvme_spec_sqe_fpr;
-		xnvme_spec_sqe_pr;
-		xnvme_spec_drecv_idfy_pr;
-		xnvme_spec_drecv_srp_pr;
-		xnvme_spec_drecv_sgs_pr;
-		xnvme_spec_drecv_sar_pr;
-		xnvme_spec_nvm_scopy_fmt_zero_fpr;
-		xnvme_spec_nvm_scopy_fmt_zero_pr;
-		xnvme_spec_nvm_scopy_source_range_fpr;
-		xnvme_spec_nvm_scopy_source_range_pr;
-		xnvme_spec_nvm_idfy_ctrlr_fpr;
-		xnvme_spec_nvm_idfy_ctrlr_pr;
-		xnvme_spec_nvm_idfy_ns_fpr;
-		xnvme_spec_nvm_idfy_ns_pr;
-		xnvme_spec_znd_idfy_ctrlr_fpr;
-		xnvme_spec_znd_idfy_ctrlr_pr;
-		xnvme_spec_znd_idfy_lbafe_fpr;
-		xnvme_spec_znd_idfy_ns_fpr;
-		xnvme_spec_znd_idfy_ns_pr;
-		xnvme_spec_znd_log_changes_fpr;
-		xnvme_spec_znd_log_changes_pr;
-		xnvme_spec_znd_descr_fpr;
-		xnvme_spec_znd_descr_pr;
-		xnvme_spec_znd_report_hdr_fpr;
-		xnvme_spec_znd_report_hdr_pr;
-		xnvme_spec_znd_descr_fpr_yaml;
-		xnvme_spec_kvs_idfy_ns_fpr;
-		xnvme_spec_kvs_idfy_ns_pr;
 
 		# libxnvme_spec_fs.h
 		xnvme_spec_fs_idfy_ctrlr;
 		xnvme_spec_fs_idfy_ns;
 		xnvme_spec_fs_opcs;
-
-		# libxnvme_spec_pp.h
-		xnvme_spec_adm_opc_str;
-		xnvme_spec_csi_str;
-		xnvme_spec_feat_id_str;
-		xnvme_spec_feat_sel_str;
-		xnvme_spec_flag_str;
-		xnvme_spec_idfy_cns_str;
-		xnvme_spec_log_lpi_str;
-		xnvme_spec_znd_log_lid_str;
-		xnvme_spec_nvm_cmd_cpl_sc_str;
-		xnvme_spec_nvm_opc_str;
-		xnvme_spec_psdt_str;
-		xnvme_spec_sgl_descriptor_subtype_str;
-		xnvme_spec_znd_cmd_mgmt_recv_action_str;
-		xnvme_spec_znd_cmd_mgmt_recv_action_sf_str;
-		xnvme_spec_znd_cmd_mgmt_send_action_str;
-		xnvme_spec_znd_opc_str;
-		xnvme_spec_znd_mgmt_send_action_so_str;
-		xnvme_spec_znd_status_code_str;
-		xnvme_spec_znd_state_str;
-		xnvme_spec_znd_type_str;
-		xnvme_spec_ctrlr_bar_fpr;
-		xnvme_spec_ctrlr_bar_pp;
 
 		# libxnvme_topology.h
 		xnvme_subsystem;
@@ -419,8 +421,6 @@
 		xnvme_ver_minor;
 		xnvme_ver_patch;
 		xnvme_ver_vcs;
-		xnvme_ver_fpr;
-		xnvme_ver_pr;
 
 		# libxnvme_znd.h
 		xnvme_znd_append;
@@ -434,10 +434,8 @@
 		xnvme_znd_mgmt_send;
 		xnvme_znd_report;
 		xnvme_znd_report_find_arbitrary;
-		xnvme_znd_report_fpr;
 		xnvme_znd_report_from_dev;
 		xnvme_znd_report_get_descr;
-		xnvme_znd_report_pr;
 		xnvme_znd_stat;
 		xnvme_znd_zrwa_flush;
 
