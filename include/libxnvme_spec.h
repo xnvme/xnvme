@@ -1554,51 +1554,53 @@ struct xnvme_spec_alloc_resource {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_alloc_resource) == 4, "Incorrect size")
 
 /**
- * Encapsulation of NVMe/NVM features
+ * Number of Queues, as allocated, in completion dword 0 of Get or Set Features
  *
- * This structure is an accessor for Command Dword 11 of an Get Features Cmd.
- * and encapsulation of values provided to the `xnvme_cmd_gfeat`.
- *
- * @struct xnvme_spec_feat
+ * @struct xnvme_spec_feat_nqueues
  */
-struct xnvme_spec_feat {
-	union {
-
-		struct {
-			uint32_t tmpth  : 16; ///< Temperature threshold
-			uint32_t tmpsel : 4;  ///< Threshold Temp. Select
-			uint32_t thsel  : 3;  ///< Threshold Type Select
-			uint32_t rsvd   : 9;
-		} temp_threshold;
-
-		struct {
-			uint32_t tler  : 16;
-			uint32_t dulbe : 1;
-			uint32_t rsvd  : 15;
-		} error_recovery; // Error recovery attributes
-
-		struct {
-			uint32_t nsqa : 16;
-			uint32_t ncqa : 16;
-		} nqueues;
-
-		struct {
-			uint32_t fdpe  : 1; ///< Flexible data placement enable
-			uint32_t rsvd1 : 7;
-			uint32_t fdpci : 8; ///< Flexible data placement configuration index
-			uint32_t rsvd2 : 16;
-		} fdp_mode;
-
-		uint32_t val; ///< For constructing feature without accessors
-	};
+struct xnvme_spec_feat_nqueues {
+	uint16_t nsqa; ///< NSQA: Number of I/O Submission Queues Allocated, zero-based
+	uint16_t ncqa; ///< NCQA: Number of I/O Completion Queues Allocated, zero-based
 };
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_feat) == 4, "Incorrect size")
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_feat_nqueues) == 4, "Incorrect size")
 
-#define XNVME_SPEC_FEAT_ERROR_RECOVERY_DULBE(feat) (feat & (1 << 16))
-#define XNVME_SPEC_FEAT_ERROR_RECOVERY_TLER(feat)  (feat & 0xffff)
+/**
+ * The attributes of a feature, as dword 11 of Set Features and completion dword 0
+ * of Get Features carry them, viewed by the feature they are of
+ *
+ * @union xnvme_spec_feat
+ */
+union xnvme_spec_feat {
+	uint32_t temp_threshold; ///< Temperature Threshold, see XNVME_SPEC_FEAT_TEMP_THRESHOLD_*
+	uint32_t error_recovery; ///< Error Recovery, see XNVME_SPEC_FEAT_ERROR_RECOVERY_*
+	struct xnvme_spec_feat_nqueues nqueues; ///< Number of Queues
+	uint32_t fdp_mode;       ///< Flexible Data Placement, see XNVME_SPEC_FEAT_FDP_MODE_*
+	uint32_t media_feedback; ///< Media Feedback, see XNVME_SPEC_FEAT_MEDIA_FEEDBACK_*
+	uint32_t val;            ///< The dword whole, for a feature without a view
+};
+XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_feat) == 4, "Incorrect size")
 
-#define XNVME_SPEC_FEAT_MEDIA_FEEDBACK_HECC(feat)  (feat & 0x1)
-#define XNVME_SPEC_FEAT_MEDIA_FEEDBACK_VHECC(feat) (feat & 0x2)
+/** Temperature Threshold, in Kelvin; bits 15:0 of 'temp_threshold' */
+#define XNVME_SPEC_FEAT_TEMP_THRESHOLD_TMPTH 0xffff
+/** Threshold Temperature Select; bits 19:16 of 'temp_threshold' */
+#define XNVME_SPEC_FEAT_TEMP_THRESHOLD_TMPSEL 0xf0000
+/** Threshold Type Select; bits 21:20 of 'temp_threshold' */
+#define XNVME_SPEC_FEAT_TEMP_THRESHOLD_THSEL 0x300000
+
+/** Time Limited Error Recovery, in 100 ms units; bits 15:0 of 'error_recovery' */
+#define XNVME_SPEC_FEAT_ERROR_RECOVERY_TLER 0xffff
+/** Deallocated or Unwritten Logical Block Error Enable; bit 16 of 'error_recovery' */
+#define XNVME_SPEC_FEAT_ERROR_RECOVERY_DULBE 0x10000
+
+/** Flexible Data Placement Enable; bit 0 of 'fdp_mode' */
+#define XNVME_SPEC_FEAT_FDP_MODE_FDPE 0x1
+/** Flexible Data Placement Configuration Index; bits 15:8 of 'fdp_mode' */
+#define XNVME_SPEC_FEAT_FDP_MODE_FDPCI 0xff00
+
+/** High ECC status; bit 0 of 'media_feedback' */
+#define XNVME_SPEC_FEAT_MEDIA_FEEDBACK_HECC 0x1
+/** Very High ECC status; bit 1 of 'media_feedback' */
+#define XNVME_SPEC_FEAT_MEDIA_FEEDBACK_VHECC 0x2
 
 /**
  * Representation of DSM ranges as defined in NVM Express 1.3 Figure 207 Dataset
@@ -1859,7 +1861,7 @@ struct xnvme_spec_cmd_sfeat {
 
 	uint32_t cdw10; ///< Command dword 10, see XNVME_SPEC_CMD_SFEAT_CDW10_*
 
-	struct xnvme_spec_feat feat; ///< Feature
+	union xnvme_spec_feat feat; ///< Feature attributes, dword 11
 
 	uint32_t cdw12;       ///< Command dword 12
 	uint32_t cdw13_15[3]; ///< Command dword 13 to 15

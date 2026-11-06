@@ -177,7 +177,7 @@ xnvme_adm_gfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint8_t s
 int
 xnvme_adm_gfeat_nqueues(struct xnvme_cmd_ctx *ctx, uint32_t *nsq, uint32_t *ncq)
 {
-	struct xnvme_spec_feat feat;
+	union xnvme_spec_feat feat;
 	int err;
 
 	if (!ctx || !nsq || !ncq) {

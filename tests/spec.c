@@ -71,6 +71,24 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_drecv, cdw12) == 48,
 		    "cdw12 of struct xnvme_spec_cmd_drecv")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_alloc_resource, nsa) == 0,
 		    "nsa of struct xnvme_spec_alloc_resource")
+XNVME_STATIC_ASSERT(FITS(union xnvme_spec_feat, temp_threshold,
+			 XNVME_SPEC_FEAT_TEMP_THRESHOLD_TMPTH |
+				 XNVME_SPEC_FEAT_TEMP_THRESHOLD_TMPSEL |
+				 XNVME_SPEC_FEAT_TEMP_THRESHOLD_THSEL),
+		    "temp_threshold of union xnvme_spec_feat")
+XNVME_STATIC_ASSERT(FITS(union xnvme_spec_feat, error_recovery,
+			 XNVME_SPEC_FEAT_ERROR_RECOVERY_TLER |
+				 XNVME_SPEC_FEAT_ERROR_RECOVERY_DULBE),
+		    "error_recovery of union xnvme_spec_feat")
+XNVME_STATIC_ASSERT(FITS(union xnvme_spec_feat, fdp_mode,
+			 XNVME_SPEC_FEAT_FDP_MODE_FDPE | XNVME_SPEC_FEAT_FDP_MODE_FDPCI),
+		    "fdp_mode of union xnvme_spec_feat")
+XNVME_STATIC_ASSERT(FITS(union xnvme_spec_feat, media_feedback,
+			 XNVME_SPEC_FEAT_MEDIA_FEEDBACK_HECC |
+				 XNVME_SPEC_FEAT_MEDIA_FEEDBACK_VHECC),
+		    "media_feedback of union xnvme_spec_feat")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_feat_nqueues, ncqa) == 2,
+		    "ncqa of struct xnvme_spec_feat_nqueues")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 			 XNVME_SPEC_CMD_LOG_CDW10_LID | XNVME_SPEC_CMD_LOG_CDW10_LSP |
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
@@ -570,6 +588,50 @@ sub_cdw0_views(struct xnvme_cli *XNVME_UNUSED(cli))
 		memcpy(&ar, &cdw0, sizeof(ar));
 		if (ar.nsa != 0x42) {
 			xnvme_cli_pinf("FAILED: alloc_resource: nsa: %#x", ar.nsa);
+			err = -EINVAL;
+		}
+	}
+
+	{
+		union xnvme_spec_feat feat;
+
+		feat.val = 0x0075012c; // TMPTH 300, TMPSEL 0x5, THSEL 0x3, reserved bit 22 set
+		if (xnvme_bits_get(feat.temp_threshold, XNVME_SPEC_FEAT_TEMP_THRESHOLD_TMPTH) !=
+			    300 ||
+		    xnvme_bits_get(feat.temp_threshold, XNVME_SPEC_FEAT_TEMP_THRESHOLD_TMPSEL) !=
+			    0x5 ||
+		    xnvme_bits_get(feat.temp_threshold, XNVME_SPEC_FEAT_TEMP_THRESHOLD_THSEL) !=
+			    0x3) {
+			xnvme_cli_pinf("FAILED: feat: temp_threshold: %#x", feat.temp_threshold);
+			err = -EINVAL;
+		}
+
+		feat.val = 0x00010064; // Error Recovery: TLER 100, DULBE
+		if (xnvme_bits_get(feat.error_recovery, XNVME_SPEC_FEAT_ERROR_RECOVERY_TLER) !=
+			    100 ||
+		    !xnvme_bits_get(feat.error_recovery, XNVME_SPEC_FEAT_ERROR_RECOVERY_DULBE)) {
+			xnvme_cli_pinf("FAILED: feat: error_recovery: %#x", feat.error_recovery);
+			err = -EINVAL;
+		}
+
+		feat.val = 0x0003003f; // Number of Queues: NSQA 63, NCQA 3
+		if (feat.nqueues.nsqa != 63 || feat.nqueues.ncqa != 3) {
+			xnvme_cli_pinf("FAILED: feat: nqueues: nsqa: %u, ncqa: %u",
+				       feat.nqueues.nsqa, feat.nqueues.ncqa);
+			err = -EINVAL;
+		}
+
+		feat.val = 0x00000201; // Flexible Data Placement: FDPE, FDPCI 0x2
+		if (!xnvme_bits_get(feat.fdp_mode, XNVME_SPEC_FEAT_FDP_MODE_FDPE) ||
+		    xnvme_bits_get(feat.fdp_mode, XNVME_SPEC_FEAT_FDP_MODE_FDPCI) != 0x2) {
+			xnvme_cli_pinf("FAILED: feat: fdp_mode: %#x", feat.fdp_mode);
+			err = -EINVAL;
+		}
+
+		feat.val = 0x00000002; // Media Feedback: VHECC
+		if (xnvme_bits_get(feat.media_feedback, XNVME_SPEC_FEAT_MEDIA_FEEDBACK_HECC) ||
+		    !xnvme_bits_get(feat.media_feedback, XNVME_SPEC_FEAT_MEDIA_FEEDBACK_VHECC)) {
+			xnvme_cli_pinf("FAILED: feat: media_feedback: %#x", feat.media_feedback);
 			err = -EINVAL;
 		}
 	}

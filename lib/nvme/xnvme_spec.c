@@ -919,7 +919,7 @@ xnvme_spec_sqe_pr(union xnvme_spec_sqe *cmd, int opts)
 }
 
 int
-xnvme_spec_feat_fpr(FILE *stream, uint8_t fid, const struct xnvme_spec_feat *feat, int opts)
+xnvme_spec_feat_fpr(FILE *stream, uint8_t fid, const union xnvme_spec_feat *feat, int opts)
 {
 	int wrtn = 0;
 
@@ -935,27 +935,33 @@ xnvme_spec_feat_fpr(FILE *stream, uint8_t fid, const struct xnvme_spec_feat *fea
 
 	switch (fid) {
 	case XNVME_SPEC_FEAT_ERROR_RECOVERY:
-		wrtn += fprintf(stream, "feat: {dulbe: %" PRIx32 ", tler: %" PRIx32 ")\n",
-				feat->error_recovery.dulbe, feat->error_recovery.tler);
+		wrtn += fprintf(
+			stream, "feat: {dulbe: %" PRIx64 ", tler: %" PRIx64 ")\n",
+			xnvme_bits_get(feat->error_recovery, XNVME_SPEC_FEAT_ERROR_RECOVERY_DULBE),
+			xnvme_bits_get(feat->error_recovery, XNVME_SPEC_FEAT_ERROR_RECOVERY_TLER));
 		return wrtn;
 
 	case XNVME_SPEC_FEAT_TEMP_THRESHOLD:
-		wrtn += fprintf(stream,
-				"feat: {"
-				"tmpth: %" PRIu32 ", tmpsel: 0x%" PRIx32 ", thsel: 0x%" PRIx32
-				"}\n",
-				feat->temp_threshold.tmpth, feat->temp_threshold.tmpsel,
-				feat->temp_threshold.thsel);
+		wrtn += fprintf(
+			stream,
+			"feat: {"
+			"tmpth: %" PRIu64 ", tmpsel: 0x%" PRIx64 ", thsel: 0x%" PRIx64 "}\n",
+			xnvme_bits_get(feat->temp_threshold, XNVME_SPEC_FEAT_TEMP_THRESHOLD_TMPTH),
+			xnvme_bits_get(feat->temp_threshold,
+				       XNVME_SPEC_FEAT_TEMP_THRESHOLD_TMPSEL),
+			xnvme_bits_get(feat->temp_threshold,
+				       XNVME_SPEC_FEAT_TEMP_THRESHOLD_THSEL));
 		return wrtn;
 
 	case XNVME_SPEC_FEAT_NQUEUES:
-		wrtn += fprintf(stream, "feat: { nsqa: %" PRIu32 ", ncqa: %" PRIu32 " }\n",
+		wrtn += fprintf(stream, "feat: { nsqa: %" PRIu16 ", ncqa: %" PRIu16 " }\n",
 				feat->nqueues.nsqa, feat->nqueues.ncqa);
 		return wrtn;
 
 	case XNVME_SPEC_FEAT_FDP_MODE:
-		wrtn += fprintf(stream, "feat: { fdpe: %" PRIu32 ", fdpci: %" PRIu32 " }\n",
-				feat->fdp_mode.fdpe, feat->fdp_mode.fdpci);
+		wrtn += fprintf(stream, "feat: { fdpe: %" PRIu64 ", fdpci: %" PRIu64 " }\n",
+				xnvme_bits_get(feat->fdp_mode, XNVME_SPEC_FEAT_FDP_MODE_FDPE),
+				xnvme_bits_get(feat->fdp_mode, XNVME_SPEC_FEAT_FDP_MODE_FDPCI));
 		return wrtn;
 
 	case XNVME_SPEC_FEAT_FDP_EVENTS:
@@ -973,13 +979,13 @@ xnvme_spec_feat_fpr(FILE *stream, uint8_t fid, const struct xnvme_spec_feat *fea
 }
 
 int
-xnvme_spec_feat_pr(uint8_t fid, const struct xnvme_spec_feat *feat, int opts)
+xnvme_spec_feat_pr(uint8_t fid, const union xnvme_spec_feat *feat, int opts)
 {
 	return xnvme_spec_feat_fpr(stdout, fid, feat, opts);
 }
 
 int
-xnvme_spec_feat_fdp_events_fpr(FILE *stream, void *buf, const struct xnvme_spec_feat *feat,
+xnvme_spec_feat_fdp_events_fpr(FILE *stream, void *buf, const union xnvme_spec_feat *feat,
 			       int opts)
 {
 	int wrtn = 0;
@@ -1006,7 +1012,7 @@ xnvme_spec_feat_fdp_events_fpr(FILE *stream, void *buf, const struct xnvme_spec_
 }
 
 int
-xnvme_spec_feat_fdp_events_pr(void *buf, const struct xnvme_spec_feat *feat, int opts)
+xnvme_spec_feat_fdp_events_pr(void *buf, const union xnvme_spec_feat *feat, int opts)
 {
 	return xnvme_spec_feat_fdp_events_fpr(stdout, buf, feat, opts);
 }

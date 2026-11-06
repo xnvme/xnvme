@@ -174,7 +174,7 @@ test_queues(struct xnvme_cli *cli, void *(*fn)(void *))
 
 	{
 		struct xnvme_cmd_ctx ctx = {0};
-		struct xnvme_spec_feat feat = {.val = 0};
+		union xnvme_spec_feat feat = {.val = 0};
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
