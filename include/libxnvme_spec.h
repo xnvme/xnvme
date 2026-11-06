@@ -2027,18 +2027,21 @@ struct xnvme_spec_cmd_dsm {
 	uint32_t cdw00_09[10]; ///< Command dword 0 to 9
 
 	// dword 10
-	uint32_t nr    : 8; ///< NR: Number of Ranges
-	uint32_t rsvd1 : 24;
+	uint8_t nr; ///< NR: Number of Ranges, zero-based
+	uint8_t rsvd1[3];
 
-	// dword 11
-	uint32_t idr   : 1; ///< IDR: Integral Dataset for Read
-	uint32_t idw   : 1; ///< IDW: Integral Dataset for Write
-	uint32_t ad    : 1; ///< AD: Deallocate
-	uint32_t rsvd2 : 29;
+	uint32_t cdw11; ///< Command dword 11, see XNVME_SPEC_CMD_DSM_CDW11_*
 
 	uint32_t cdw12_15[4]; ///< Command dword 12 to 15
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_dsm) == 64, "Incorrect size")
+
+/** Integral Dataset for Read; bit 0 of 'cdw11' */
+#define XNVME_SPEC_CMD_DSM_CDW11_IDR 0x1
+/** Integral Dataset for Write; bit 1 of 'cdw11' */
+#define XNVME_SPEC_CMD_DSM_CDW11_IDW 0x2
+/** Deallocate; bit 2 of 'cdw11' */
+#define XNVME_SPEC_CMD_DSM_CDW11_AD 0x4
 
 /**
  * NVMe Command Accessor for the Write Zeroes command

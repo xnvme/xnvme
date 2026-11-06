@@ -133,6 +133,14 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_compare, ilbrt) == 56,
 		    "ilbrt of struct xnvme_spec_nvm_compare")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_compare, lbatm) == 62,
 		    "lbatm of struct xnvme_spec_nvm_compare")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_dsm, cdw11,
+			 XNVME_SPEC_CMD_DSM_CDW11_IDR | XNVME_SPEC_CMD_DSM_CDW11_IDW |
+				 XNVME_SPEC_CMD_DSM_CDW11_AD),
+		    "cdw11 of struct xnvme_spec_cmd_dsm")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_dsm, nr) == 40,
+		    "nr of struct xnvme_spec_cmd_dsm")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_dsm, cdw11) == 44,
+		    "cdw11 of struct xnvme_spec_cmd_dsm")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 			 XNVME_SPEC_CMD_LOG_CDW10_LID | XNVME_SPEC_CMD_LOG_CDW10_LSP |
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
@@ -1081,6 +1089,16 @@ sub_io_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	    !xnvme_bits_get(sqe.compare.cdw12, XNVME_SPEC_NVM_COMPARE_CDW12_FUA) ||
 	    xnvme_bits_get(sqe.compare.cdw12, XNVME_SPEC_NVM_COMPARE_CDW12_LR)) {
 		xnvme_cli_pinf("FAILED: compare: cdw12: %#x", sqe.compare.cdw12);
+		err = -EINVAL;
+	}
+
+	memset(&sqe, 0, sizeof(sqe));
+	sqe.cdw[10] = 0xff; // Dataset Management dword 10: NR 0xff
+	sqe.cdw[11] = 0x5;  // Dataset Management dword 11: IDR, AD
+	if (sqe.dsm.nr != 0xff || !xnvme_bits_get(sqe.dsm.cdw11, XNVME_SPEC_CMD_DSM_CDW11_IDR) ||
+	    xnvme_bits_get(sqe.dsm.cdw11, XNVME_SPEC_CMD_DSM_CDW11_IDW) ||
+	    !xnvme_bits_get(sqe.dsm.cdw11, XNVME_SPEC_CMD_DSM_CDW11_AD)) {
+		xnvme_cli_pinf("FAILED: dsm: nr: %#x, cdw11: %#x", sqe.dsm.nr, sqe.dsm.cdw11);
 		err = -EINVAL;
 	}
 
