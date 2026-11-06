@@ -197,9 +197,9 @@ xnvme_pi_reftag_ignore(struct xnvme_pif *pif, enum xnvme_spec_nvm_ns_pif pi_form
 
 int
 xnvme_pi_ctx_init(struct xnvme_pi_ctx *ctx, uint32_t block_size, uint32_t md_size,
-		  bool md_interleave, bool pi_loc, enum xnvme_pi_type pi_type, uint32_t pi_flags,
+		  bool md_interleave, bool pi_loc, uint32_t pi_type, uint32_t pi_flags,
 		  uint32_t init_ref_tag, uint16_t apptag_mask, uint16_t app_tag,
-		  enum xnvme_spec_nvm_ns_pif pi_format)
+		  uint32_t pi_format)
 {
 	if (pi_format != XNVME_SPEC_NVM_NS_16B_GUARD && pi_format != XNVME_SPEC_NVM_NS_64B_GUARD) {
 		XNVME_DEBUG("No valid PI format provided.\n");
