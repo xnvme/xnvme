@@ -473,7 +473,7 @@ sub_dir_receive(struct xnvme_cli *cli)
 						XNVME_PR_DEF);
 			break;
 		case XNVME_SPEC_DRECV_STREAMS_ALLRS: {
-			struct xnvme_spec_alloc_resource ar = {.val = ctx.cpl.cdw0};
+			struct xnvme_spec_alloc_resource ar = {.nsa = (uint16_t)ctx.cpl.cdw0};
 			xnvme_spec_drecv_sar_pr(&ar, XNVME_PR_DEF);
 		} break;
 		default:

@@ -69,6 +69,8 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_drecv, dspec) == 46,
 		    "dspec of struct xnvme_spec_cmd_drecv")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_drecv, cdw12) == 48,
 		    "cdw12 of struct xnvme_spec_cmd_drecv")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_alloc_resource, nsa) == 0,
+		    "nsa of struct xnvme_spec_alloc_resource")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 			 XNVME_SPEC_CMD_LOG_CDW10_LID | XNVME_SPEC_CMD_LOG_CDW10_LSP |
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
@@ -555,6 +557,26 @@ sub_sqe_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	return err;
 }
 
+static int
+sub_cdw0_views(struct xnvme_cli *XNVME_UNUSED(cli))
+{
+	uint32_t cdw0;
+	int err = 0;
+
+	{
+		struct xnvme_spec_alloc_resource ar;
+
+		cdw0 = 0xffff0042; // Allocate Resources completion dword 0: NSA 0x42
+		memcpy(&ar, &cdw0, sizeof(ar));
+		if (ar.nsa != 0x42) {
+			xnvme_cli_pinf("FAILED: alloc_resource: nsa: %#x", ar.nsa);
+			err = -EINVAL;
+		}
+	}
+
+	return err;
+}
+
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"idfy-offsets",
@@ -588,6 +610,15 @@ static struct xnvme_cli_sub g_subs[] = {
 		"Read the completion status through its masks",
 		"Read the completion status through its masks",
 		sub_status_masks,
+		{
+			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
+		},
+	},
+	{
+		"cdw0-views",
+		"Read completion dword 0 through the views of features and resources",
+		"Read completion dword 0 through the views of features and resources",
+		sub_cdw0_views,
 		{
 			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
 		},

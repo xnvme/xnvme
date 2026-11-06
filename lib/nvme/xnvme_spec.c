@@ -1336,7 +1336,7 @@ xnvme_spec_drecv_sar_fpr(FILE *stream, const struct xnvme_spec_alloc_resource *s
 
 	wrtn += fprintf(stream, "xnvme_spec_alloc_resource:");
 	wrtn += fprintf(stream, "\n");
-	wrtn += fprintf(stream, "  nsa: %" PRIu32 "\n", sar->bits.nsa);
+	wrtn += fprintf(stream, "  nsa: %" PRIu16 "\n", sar->nsa);
 
 	return wrtn;
 }
