@@ -129,9 +129,9 @@ xnvme_nvm_dsm(struct xnvme_cmd_ctx *ctx, uint32_t nsid, struct xnvme_spec_dsm_ra
 	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_DATASET_MANAGEMENT;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.dsm.nr = nr;
-	ctx->cmd.dsm.ad = ad;
-	ctx->cmd.dsm.idw = idw;
-	ctx->cmd.dsm.idr = idr;
+	ctx->cmd.dsm.cdw11 = xnvme_bits_set(ctx->cmd.dsm.cdw11, XNVME_SPEC_CMD_DSM_CDW11_AD, ad);
+	ctx->cmd.dsm.cdw11 = xnvme_bits_set(ctx->cmd.dsm.cdw11, XNVME_SPEC_CMD_DSM_CDW11_IDW, idw);
+	ctx->cmd.dsm.cdw11 = xnvme_bits_set(ctx->cmd.dsm.cdw11, XNVME_SPEC_CMD_DSM_CDW11_IDR, idr);
 
 	return xnvme_cmd_pass(ctx, (void *)dsm_range, sizeof(*dsm_range) * (nr + 1), NULL, 0);
 }
