@@ -774,8 +774,11 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_elbaf) == 4, "Incorrect size")
 /** Protection information format, see xnvme_spec_nvm_ns_pif; bits 8:7 of 'bits' */
 #define XNVME_SPEC_ELBAF_BITS_PIF 0x180
 
+/** Size, in bytes, of the Serial Number (SN) of the Identify Controller data structure */
 #define XNVME_SPEC_CTRLR_SN_LEN 20
+/** Size, in bytes, of the Model Number (MN) of the Identify Controller data structure */
 #define XNVME_SPEC_CTRLR_MN_LEN 40
+/** Size, in bytes, of the Firmware Revision (FR) of the Identify Controller data structure */
 #define XNVME_SPEC_CTRLR_FR_LEN 8
 
 /**
@@ -1285,6 +1288,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cs_vector) == 8, "Incorrect size")
 /** The Zoned Namespace command set; bit 2 of 'bits' */
 #define XNVME_SPEC_CS_VECTOR_BITS_ZNS 0x4
 
+/** Number of I/O Command Set Combinations in the I/O Command Set data structure */
 #define XNVME_SPEC_IDFY_CS_IOCSC_LEN 512
 
 /**
@@ -2087,6 +2091,7 @@ enum xnvme_nvm_scopy_fmt {
 		0x1 << 8, ///< user provides entries formatted as ::XNVME_NVM_SCOPY_FMT_SRCLEN
 };
 
+/** Number of Source Range entries in ::xnvme_spec_nvm_scopy_source_range, a 4096-byte buffer */
 #define XNVME_SPEC_NVM_SCOPY_NENTRY_MAX 128
 
 /**
@@ -2720,6 +2725,7 @@ struct xnvme_spec_znd_idfy {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_idfy) == 4096, "Incorrect size")
 
+/** Number of Zone Identifiers the Changed Zone List log page holds */
 #define ZND_CHANGES_LEN 511
 
 /**
