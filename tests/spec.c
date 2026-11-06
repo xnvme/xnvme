@@ -447,6 +447,30 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_znd_descr, zs) == 1,
 		    "zs of struct xnvme_spec_znd_descr")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_znd_descr, za) == 2,
 		    "za of struct xnvme_spec_znd_descr")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_fs_idfy_ctrlr, caps,
+			 XNVME_SPEC_FS_IDFY_CTRLR_CAPS_DIRECT),
+		    "caps of struct xnvme_spec_fs_idfy_ctrlr")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_fs_idfy_ctrlr, properties,
+			 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_PERMISSIONS_POSIX |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_PERMISSIONS_ACL |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_STAMP_CREATION |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_STAMP_ACCESS |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_STAMP_CHANGE |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_STAMP_ARCHIVE |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_HARDLINKS |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_SYMLINKS |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_CASE_SENSITIVE |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_CASE_PRESERVING |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_JOURNALING_BLOCK |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_JOURNALING_META |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_SNAPSHOTTING |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_COMPRESSED |
+				 XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_ENCRYPTED),
+		    "properties of struct xnvme_spec_fs_idfy_ctrlr")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_fs_idfy_ctrlr, caps) == 520,
+		    "caps of struct xnvme_spec_fs_idfy_ctrlr")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_fs_idfy_ctrlr, properties) == 560,
+		    "properties of struct xnvme_spec_fs_idfy_ctrlr")
 
 struct offset_case {
 	const char *name;
@@ -929,6 +953,24 @@ sub_data_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 		idfy.base.raw[25] = 0x03; // Key Value Identify Namespace NKVF
 		if (idfy.ns.nkvf != 0x03) {
 			xnvme_cli_pinf("FAILED: kvs_idfy: nkvf: %#" PRIx8, idfy.ns.nkvf);
+			err = -EINVAL;
+		}
+	}
+
+	{
+		struct xnvme_spec_fs_idfy_ctrlr ctrlr;
+
+		memset(raw, 0, sizeof(raw));
+		raw[520] = 0x01; // File-system Identify Controller caps: direct
+		raw[561] = 0x40; // properties bit 14: encrypted
+		memcpy(&ctrlr, raw, sizeof(ctrlr));
+		if (!xnvme_bits_get(ctrlr.caps, XNVME_SPEC_FS_IDFY_CTRLR_CAPS_DIRECT) ||
+		    xnvme_bits_get(ctrlr.properties,
+				   XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_PERMISSIONS_POSIX) ||
+		    !xnvme_bits_get(ctrlr.properties,
+				    XNVME_SPEC_FS_IDFY_CTRLR_PROPERTIES_ENCRYPTED)) {
+			xnvme_cli_pinf("FAILED: caps: %#" PRIx64 ", properties: %#" PRIx64,
+				       ctrlr.caps, ctrlr.properties);
 			err = -EINVAL;
 		}
 	}
