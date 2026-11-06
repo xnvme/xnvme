@@ -127,8 +127,7 @@ xnvme_nvm_dsm(struct xnvme_cmd_ctx *ctx, uint32_t nsid, struct xnvme_spec_dsm_ra
 
 int
 xnvme_nvm_scopy(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t sdlba,
-		struct xnvme_spec_nvm_scopy_fmt_zero *ranges, uint8_t nr,
-		enum xnvme_nvm_scopy_fmt copy_fmt)
+		struct xnvme_spec_nvm_scopy_fmt_zero *ranges, uint8_t nr, uint32_t copy_fmt)
 {
 	size_t ranges_nbytes = 0;
 

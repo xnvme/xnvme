@@ -117,15 +117,14 @@ xnvme_prep_nvm(struct xnvme_cmd_ctx *ctx, uint8_t opcode, uint32_t nsid, uint64_
  * @param sdlba The Starting Destination LBA to start copying to
  * @param ranges Pointer to ranges-buffer, see ::xnvme_spec_nvm_scopy_fmt_zero
  * @param nr Number of ranges in the given ranges-buffer, zero-based value
- * @param copy_fmt For of ranges
+ * @param copy_fmt Format of the ranges, a value of ::xnvme_nvm_scopy_fmt
  *
  * @return On success, 0 is returned. On error, -1 is returned, `errno` set to
  * indicate and `ctx.cpl` filled with lower-level status codes
  */
 int
 xnvme_nvm_scopy(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t sdlba,
-		struct xnvme_spec_nvm_scopy_fmt_zero *ranges, uint8_t nr,
-		enum xnvme_nvm_scopy_fmt copy_fmt);
+		struct xnvme_spec_nvm_scopy_fmt_zero *ranges, uint8_t nr, uint32_t copy_fmt);
 
 /**
  * Submit a NVMe Dataset Management command
