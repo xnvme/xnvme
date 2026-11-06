@@ -1447,39 +1447,49 @@ enum xnvme_spec_drecv_streams_doper {
  * @struct xnvme_spec_idfy_dir_rp
  */
 struct xnvme_spec_idfy_dir_rp {
-	/* Directives Supported */
-	struct {
-		uint8_t identify       : 1; ///< Identify
-		uint8_t streams        : 1; ///< Streams
-		uint8_t data_placement : 1; ///< Data placement
-		uint8_t rsvd1          : 5;
+	/**
+	 * Directives Supported, byte 0 of bytes 31:0, see
+	 * XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_*
+	 */
+	uint8_t directives_supported;
+	uint8_t rsvd1[31];
 
-		uint8_t rsvd2[31];
-	} directives_supported;
+	/**
+	 * Directives Enabled, byte 32 of bytes 63:32, see
+	 * XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_*
+	 */
+	uint8_t directives_enabled;
+	uint8_t rsvd2[31];
 
-	/* Directives Enabled */
-	struct {
-		uint8_t identify       : 1; ///< Identify
-		uint8_t streams        : 1; ///< Streams
-		uint8_t data_placement : 1; ///< Data placement
-		uint8_t rsvd1          : 5;
-
-		uint8_t rsvd2[31];
-	} directives_enabled;
-
-	/* Directives Persistence */
-	struct {
-		uint8_t identify       : 1; ///< Identify
-		uint8_t streams        : 1; ///< Streams
-		uint8_t data_placement : 1; ///< Data placement
-		uint8_t rsvd1          : 5;
-
-		uint8_t rsvd2[31];
-	} directives_persistence;
+	/**
+	 * Directives Persistent Across Controller Level Resets, byte 64 of bytes 95:64, see
+	 * XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_*
+	 */
+	uint8_t directives_persistence;
+	uint8_t rsvd3[31];
 
 	uint8_t rsvd4[4000];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_dir_rp) == 4096, "Incorrect size")
+
+/** Identify Directive supported; bit 0 of 'directives_supported' */
+#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_IDENTIFY 0x1
+/** Streams Directive supported; bit 1 of 'directives_supported' */
+#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_STREAMS 0x2
+/** Data Placement Directive supported; bit 2 of 'directives_supported' */
+#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_DATA_PLACEMENT 0x4
+/** Identify Directive enabled; bit 0 of 'directives_enabled' */
+#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_IDENTIFY 0x1
+/** Streams Directive enabled; bit 1 of 'directives_enabled' */
+#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_STREAMS 0x2
+/** Data Placement Directive enabled; bit 2 of 'directives_enabled' */
+#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_DATA_PLACEMENT 0x4
+/** Identify Directive persistent; bit 0 of 'directives_persistence' */
+#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_IDENTIFY 0x1
+/** Streams Directive persistent; bit 1 of 'directives_persistence' */
+#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_STREAMS 0x2
+/** Data Placement Directive persistent; bit 2 of 'directives_persistence' */
+#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_DATA_PLACEMENT 0x4
 
 /**
  * This structure holds the return parameters data structure for streams directive
