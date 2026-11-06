@@ -443,6 +443,8 @@ enum xnvme_spec_log_lpi {
 };
 
 /**
+ * Management Operation (MO) of the I/O Management Receive command
+ *
  * @enum xnvme_spec_io_mgmt_recv_mo
  */
 enum xnvme_spec_io_mgmt_recv_mo {
@@ -477,6 +479,8 @@ struct xnvme_spec_ruhs {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_ruhs) == 16, "Incorrect size")
 
 /**
+ * Management Operation (MO) of the I/O Management Send command
+ *
  * @enum xnvme_spec_io_mgmt_send_mo
  */
 enum xnvme_spec_io_mgmt_send_mo {
@@ -485,6 +489,8 @@ enum xnvme_spec_io_mgmt_send_mo {
 };
 
 /**
+ * Controller or Namespace Structure (CNS) of the Identify command, the data it returns
+ *
  * @enum xnvme_spec_idfy_cns
  */
 enum xnvme_spec_idfy_cns {
@@ -748,6 +754,8 @@ XNVME_STATIC_ASSERT(XNVME_SIZEOF_MEMBER(struct xnvme_pif, g16) == 8, "Incorrect 
 XNVME_STATIC_ASSERT(XNVME_SIZEOF_MEMBER(struct xnvme_pif, g64) == 16, "Incorrect size");
 
 /**
+ * Protection Information Format (PIF) of an Extended LBA Format, the size of the Guard
+ *
  * @enum xnvme_spec_nvm_ns_pif
  */
 enum xnvme_spec_nvm_ns_pif {
@@ -1380,6 +1388,8 @@ enum xnvme_spec_feat_id {
 };
 
 /**
+ * Select (SEL) of the Get Features command, which value of the feature to return
+ *
  * @enum xnvme_spec_feat_sel
  */
 enum xnvme_spec_feat_sel {
@@ -1390,6 +1400,8 @@ enum xnvme_spec_feat_sel {
 };
 
 /**
+ * Directive Type (DTYPE) of the Directive Send and Directive Receive commands
+ *
  * @enum xnvme_spec_dir_types
  */
 enum xnvme_spec_dir_types {
@@ -1398,6 +1410,8 @@ enum xnvme_spec_dir_types {
 };
 
 /**
+ * Directive Operation (DOPER) of the Directive Send command for the Identify directive
+ *
  * @enum xnvme_spec_dsend_idfy_doper
  */
 enum xnvme_spec_dsend_idfy_doper {
@@ -1406,6 +1420,8 @@ enum xnvme_spec_dsend_idfy_doper {
 };
 
 /**
+ * Directive Operation (DOPER) of the Directive Send command for the Streams directive
+ *
  * @enum xnvme_spec_dsend_streams_doper
  */
 enum xnvme_spec_dsend_streams_doper {
@@ -1416,6 +1432,8 @@ enum xnvme_spec_dsend_streams_doper {
 };
 
 /**
+ * Directive Operation (DOPER) of the Directive Receive command for the Identify directive
+ *
  * @enum xnvme_spec_drecv_idfy_doper
  */
 enum xnvme_spec_drecv_idfy_doper {
@@ -1424,6 +1442,8 @@ enum xnvme_spec_drecv_idfy_doper {
 };
 
 /**
+ * Directive Operation (DOPER) of the Directive Receive command for the Streams directive
+ *
  * @enum xnvme_spec_drecv_streams_doper
  */
 enum xnvme_spec_drecv_streams_doper {
@@ -1614,6 +1634,8 @@ enum xnvme_spec_flag {
 };
 
 /**
+ * SGL Descriptor Type, bits 7:4 of the SGL Identifier
+ *
  * @enum xnvme_nvme_sgl_descriptor_type
  */
 enum xnvme_nvme_sgl_descriptor_type {
@@ -1628,6 +1650,8 @@ enum xnvme_nvme_sgl_descriptor_type {
 };
 
 /**
+ * SGL Descriptor Sub Type, bits 3:0 of the SGL Identifier
+ *
  * @enum xnvme_spec_sgl_descriptor_subtype
  */
 enum xnvme_spec_sgl_descriptor_subtype {
