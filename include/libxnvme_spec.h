@@ -2459,6 +2459,20 @@ enum xnvme_spec_kv_status_code {
 };
 
 /**
+ * Command dword 11 of the commands of the KV Command Set
+ *
+ * @see Key Value Command Set Specification Revision 1.0c, Section 3
+ *
+ * @struct xnvme_spec_kvs_cmd_cdw11
+ */
+struct xnvme_spec_kvs_cmd_cdw11 {
+	uint8_t kl; ///< KL: Key Length
+	uint8_t ro; ///< Options of the command, e.g. XNVME_KVS_STORE_OPT_*
+	uint16_t rsvd;
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_kvs_cmd_cdw11) == 4, "Incorrect size")
+
+/**
  * NVMe Command Accessors for the KV Command Set
  *
  * @see Key Value Command Set Specification Revision 1.0c, Section 3
@@ -2478,12 +2492,7 @@ struct xnvme_spec_kvs_cmd {
 	uint32_t cdw09;
 	uint32_t cdw10; ///< Host Buffer Size or Value Size
 
-	/* cdw 11 */
-	struct {
-		uint8_t kl;
-		uint8_t ro;
-		uint16_t rsvd;
-	} cdw11;
+	struct xnvme_spec_kvs_cmd_cdw11 cdw11; ///< Command dword 11
 	uint32_t cdw12;
 	uint32_t cdw13;
 	/* cdw 14-15 */
