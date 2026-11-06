@@ -17,6 +17,14 @@
 		 ((uint64_t)1 << (4 * XNVME_SIZEOF_MEMBER(type, field))) ==           \
 	 0)
 
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_format, cdw10,
+			 XNVME_SPEC_CMD_FORMAT_CDW10_LBAFL | XNVME_SPEC_CMD_FORMAT_CDW10_MSET |
+				 XNVME_SPEC_CMD_FORMAT_CDW10_PI | XNVME_SPEC_CMD_FORMAT_CDW10_PIL |
+				 XNVME_SPEC_CMD_FORMAT_CDW10_SES |
+				 XNVME_SPEC_CMD_FORMAT_CDW10_LBAFU),
+		    "cdw10 of struct xnvme_spec_cmd_format")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_format, cdw10) == 40,
+		    "cdw10 of struct xnvme_spec_cmd_format")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 			 XNVME_SPEC_CMD_LOG_CDW10_LID | XNVME_SPEC_CMD_LOG_CDW10_LSP |
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
@@ -437,6 +445,18 @@ sub_sqe_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	    xnvme_bits_get(sqe.log.cdw14, XNVME_SPEC_CMD_LOG_CDW14_CSI) != 0x02) {
 		xnvme_cli_pinf("FAILED: log: cdw10: %#x, cdw14: %#x", sqe.log.cdw10,
 			       sqe.log.cdw14);
+		err = -EINVAL;
+	}
+
+	memset(&sqe, 0, sizeof(sqe));
+	sqe.cdw[10] = 0x00002b35; // Format dword 10: LBAFL 5, MSET, PI 1, PIL, SES 5, LBAFU 2
+	if (xnvme_bits_get(sqe.format.cdw10, XNVME_SPEC_CMD_FORMAT_CDW10_LBAFL) != 0x5 ||
+	    !xnvme_bits_get(sqe.format.cdw10, XNVME_SPEC_CMD_FORMAT_CDW10_MSET) ||
+	    xnvme_bits_get(sqe.format.cdw10, XNVME_SPEC_CMD_FORMAT_CDW10_PI) != 0x1 ||
+	    !xnvme_bits_get(sqe.format.cdw10, XNVME_SPEC_CMD_FORMAT_CDW10_PIL) ||
+	    xnvme_bits_get(sqe.format.cdw10, XNVME_SPEC_CMD_FORMAT_CDW10_SES) != 0x5 ||
+	    xnvme_bits_get(sqe.format.cdw10, XNVME_SPEC_CMD_FORMAT_CDW10_LBAFU) != 0x2) {
+		xnvme_cli_pinf("FAILED: format: cdw10: %#x", sqe.format.cdw10);
 		err = -EINVAL;
 	}
 

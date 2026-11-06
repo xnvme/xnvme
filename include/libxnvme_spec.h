@@ -1809,17 +1809,24 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_sanitize) == 64, "Incorrect siz
 struct xnvme_spec_cmd_format {
 	uint32_t cdw00_09[10]; ///< Command dword 0 to 9
 
-	uint32_t lbafl : 4; ///< Least significant 4 bits of LBA Format Index
-	uint32_t mset  : 1; ///< Meta-data settings
-	uint32_t pi    : 3; ///< Protection Information
-	uint32_t pil   : 1; ///< Protection Information Loc.
-	uint32_t ses   : 3; ///< Secure Erase Settings
-	uint32_t lbafu : 2; ///< Most significant 2 bits of LBA Format Index
-	uint32_t rsvd  : 18;
+	uint32_t cdw10; ///< Command dword 10, see XNVME_SPEC_CMD_FORMAT_CDW10_*
 
 	uint32_t cdw11_15[5]; ///< Command dword 11 to 15
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_format) == 64, "Incorrect size")
+
+/** LBA Format Lower, the 4 least significant bits of the index; bits 3:0 of 'cdw10' */
+#define XNVME_SPEC_CMD_FORMAT_CDW10_LBAFL 0xf
+/** Metadata Settings; bit 4 of 'cdw10' */
+#define XNVME_SPEC_CMD_FORMAT_CDW10_MSET 0x10
+/** Protection Information; bits 7:5 of 'cdw10' */
+#define XNVME_SPEC_CMD_FORMAT_CDW10_PI 0xe0
+/** Protection Information Location; bit 8 of 'cdw10' */
+#define XNVME_SPEC_CMD_FORMAT_CDW10_PIL 0x100
+/** Secure Erase Settings; bits 11:9 of 'cdw10' */
+#define XNVME_SPEC_CMD_FORMAT_CDW10_SES 0xe00
+/** LBA Format Upper, the 2 most significant bits of the index; bits 13:12 of 'cdw10' */
+#define XNVME_SPEC_CMD_FORMAT_CDW10_LBAFU 0x3000
 
 /**
  * NVMe Command Accessor for the get-features command
