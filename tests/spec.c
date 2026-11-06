@@ -383,6 +383,14 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_fdp_event_desc, fdpeta,
 		    "fdpeta of struct xnvme_spec_fdp_event_desc")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_fdp_event_desc, fdpeta) == 1,
 		    "fdpeta of struct xnvme_spec_fdp_event_desc")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_log_sanitize_entry, sstat,
+			 XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_SOS |
+				 XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_OPC |
+				 XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_GDE |
+				 XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_MVCNCLD),
+		    "sstat of struct xnvme_spec_log_sanitize_entry")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_log_sanitize_entry, sstat) == 2,
+		    "sstat of struct xnvme_spec_log_sanitize_entry")
 
 struct offset_case {
 	const char *name;
@@ -665,7 +673,7 @@ sub_cdw0_views(struct xnvme_cli *XNVME_UNUSED(cli))
 static int
 sub_data_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 {
-	uint8_t raw[64] = {0};
+	uint8_t raw[4096] = {0};
 	int err = 0;
 
 	{
@@ -716,6 +724,22 @@ sub_data_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 		memcpy(&desc, raw, sizeof(desc));
 		if (!xnvme_bits_get(desc.fdpeta, XNVME_SPEC_FDP_EVENT_DESC_FDPETA_EE)) {
 			xnvme_cli_pinf("FAILED: fdpeta: %#" PRIx8, desc.fdpeta);
+			err = -EINVAL;
+		}
+	}
+
+	{
+		struct xnvme_spec_log_sanitize_entry log;
+
+		memset(raw, 0, sizeof(raw));
+		raw[2] = 0x1a; // Sanitize status SSTAT: SOS 010b, OPC 0x3
+		raw[3] = 0x02; // MVCNCLD
+		memcpy(&log, raw, sizeof(log));
+		if (xnvme_bits_get(log.sstat, XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_SOS) != 0x2 ||
+		    xnvme_bits_get(log.sstat, XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_OPC) != 0x3 ||
+		    xnvme_bits_get(log.sstat, XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_GDE) ||
+		    !xnvme_bits_get(log.sstat, XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_MVCNCLD)) {
+			xnvme_cli_pinf("FAILED: sstat: %#" PRIx16, log.sstat);
 			err = -EINVAL;
 		}
 	}

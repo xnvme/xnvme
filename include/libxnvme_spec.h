@@ -177,21 +177,8 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_log_health_entry) == 512, "Incorrec
  */
 
 struct __attribute__((packed)) xnvme_spec_log_sanitize_entry {
-	uint16_t sprog; ///< Sanitize Progress
-	union {
-		struct {
-			uint8_t sos     : 3; ///< Sanitize Operation Status
-					     ///< 000b - Sanitize Never Started, 001b - Sanitized,
-					     ///< 010b - Sanitizing, 011b - Sanitize Failed,
-					     ///< 100b - Sanitized Unexpected Deallocate
-			uint8_t opc     : 5; ///< Overwrite Passes Completed
-			uint8_t gde     : 1; ///< Global Data Erased
-			uint8_t mvcncld : 1; ///< Media Verification Canceled
-			uint8_t rsvd    : 6;
-		};
-		uint16_t val;
-
-	} sstat;          ///< Sanitize Status
+	uint16_t sprog;   ///< Sanitize Progress
+	uint16_t sstat;   ///< Sanitize Status, see XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_*
 	uint32_t scdw10;  ///< Sanitize Command Dword 10 Information
 	uint32_t eto;     ///< Est. Time for Overwrite
 	uint32_t etbe;    ///< Est. Time for Block Erase
@@ -204,6 +191,18 @@ struct __attribute__((packed)) xnvme_spec_log_sanitize_entry {
 	uint8_t rsvd[475];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_log_sanitize_entry) == 512, "Incorrect size")
+
+/**
+ * Sanitize Operation Status, 000b never started, 001b sanitized, 010b sanitizing, 011b failed,
+ * 100b sanitized with unexpected deallocate; bits 2:0 of 'sstat'
+ */
+#define XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_SOS 0x7
+/** Overwrite Passes Completed; bits 7:3 of 'sstat' */
+#define XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_OPC 0xf8
+/** Global Data Erased; bit 8 of 'sstat' */
+#define XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_GDE 0x100
+/** Media Verification Canceled; bit 9 of 'sstat' */
+#define XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_MVCNCLD 0x200
 
 /**
  * NVMe get-log-page entry for error information

@@ -125,7 +125,7 @@ xnvme_spec_log_sanitize_fpr(FILE *stream, const struct xnvme_spec_log_sanitize_e
 
 	wrtn += fprintf(stream, "\n");
 	wrtn += fprintf(stream, "  sanitize progress: %" PRIu16 "\n", log->sprog);
-	wrtn += fprintf(stream, "  sanitize status: %" PRIu16 "\n", log->sstat.val);
+	wrtn += fprintf(stream, "  sanitize status: %" PRIu16 "\n", log->sstat);
 	wrtn += fprintf(stream, "  sanitize command dw10: %" PRIu32 "\n", log->scdw10);
 	wrtn += fprintf(stream, "  est. time for overwrite: %" PRIu32 "\n", log->eto);
 	wrtn += fprintf(stream, "  est. time for block erase: %" PRIu32 "\n", log->etbe);
