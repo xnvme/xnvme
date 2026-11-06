@@ -44,6 +44,8 @@ typedef int (*xnvme_enumerate_cb)(struct xnvme_dev *dev, void *cb_args);
  * @param cb_args Arguments passed to the callback function
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @lifetime cb_func call
  */
 int
 xnvme_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
