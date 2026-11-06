@@ -139,8 +139,10 @@ xnvme_prep_adm_gfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint
 {
 	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_GFEAT;
 	ctx->cmd.common.nsid = nsid;
-	ctx->cmd.gfeat.cdw10.fid = fid;
-	ctx->cmd.gfeat.cdw10.sel = sel;
+	ctx->cmd.gfeat.cdw10 =
+		xnvme_bits_set(ctx->cmd.gfeat.cdw10, XNVME_SPEC_CMD_GFEAT_CDW10_FID, fid);
+	ctx->cmd.gfeat.cdw10 =
+		xnvme_bits_set(ctx->cmd.gfeat.cdw10, XNVME_SPEC_CMD_GFEAT_CDW10_SEL, sel);
 }
 
 void
@@ -160,8 +162,10 @@ xnvme_adm_gfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint8_t s
 {
 	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_GFEAT;
 	ctx->cmd.common.nsid = nsid;
-	ctx->cmd.gfeat.cdw10.fid = fid;
-	ctx->cmd.gfeat.cdw10.sel = sel;
+	ctx->cmd.gfeat.cdw10 =
+		xnvme_bits_set(ctx->cmd.gfeat.cdw10, XNVME_SPEC_CMD_GFEAT_CDW10_FID, fid);
+	ctx->cmd.gfeat.cdw10 =
+		xnvme_bits_set(ctx->cmd.gfeat.cdw10, XNVME_SPEC_CMD_GFEAT_CDW10_SEL, sel);
 
 	// TODO: cdw14/uuid?
 
