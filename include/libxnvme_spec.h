@@ -1399,10 +1399,10 @@ enum xnvme_spec_feat_id {
  * @enum xnvme_spec_feat_sel
  */
 enum xnvme_spec_feat_sel {
-	XNVME_SPEC_FEAT_SEL_CURRENT   = 0x0, ///< XNVME_SPEC_FEAT_SEL_CURRENT
-	XNVME_SPEC_FEAT_SEL_DEFAULT   = 0x1, ///< XNVME_SPEC_FEAT_SEL_DEFAULT
-	XNVME_SPEC_FEAT_SEL_SAVED     = 0x2, ///< XNVME_SPEC_FEAT_SEL_SAVED
-	XNVME_SPEC_FEAT_SEL_SUPPORTED = 0x3  ///< XNVME_SPEC_FEAT_SEL_SUPPORTED
+	XNVME_SPEC_FEAT_SEL_CURRENT   = 0x0, ///< Current
+	XNVME_SPEC_FEAT_SEL_DEFAULT   = 0x1, ///< Default
+	XNVME_SPEC_FEAT_SEL_SAVED     = 0x2, ///< Saved
+	XNVME_SPEC_FEAT_SEL_SUPPORTED = 0x3  ///< Supported Capabilities
 };
 
 /**
@@ -1411,8 +1411,8 @@ enum xnvme_spec_feat_sel {
  * @enum xnvme_spec_dir_types
  */
 enum xnvme_spec_dir_types {
-	XNVME_SPEC_DIR_IDENTIFY = 0x0, ///< XNVME_SPEC_DIR_IDENTIFY
-	XNVME_SPEC_DIR_STREAMS  = 0x1, ///< XNVME_SPEC_DIR_STREAMS
+	XNVME_SPEC_DIR_IDENTIFY = 0x0, ///< Identify
+	XNVME_SPEC_DIR_STREAMS  = 0x1, ///< Streams
 };
 
 /**
@@ -1421,8 +1421,7 @@ enum xnvme_spec_dir_types {
  * @enum xnvme_spec_dsend_idfy_doper
  */
 enum xnvme_spec_dsend_idfy_doper {
-	// Identify directive send enable directive
-	XNVME_SPEC_DSEND_IDFY_ENDIR = 0x1,
+	XNVME_SPEC_DSEND_IDFY_ENDIR = 0x1, ///< Enable Directive
 };
 
 /**
@@ -1431,10 +1430,8 @@ enum xnvme_spec_dsend_idfy_doper {
  * @enum xnvme_spec_dsend_streams_doper
  */
 enum xnvme_spec_dsend_streams_doper {
-	// Streams directive send, release identifier
-	XNVME_SPEC_DSEND_STREAMS_RELID = 0x1,
-	// Streams directive send, release resources
-	XNVME_SPEC_DSEND_STREAMS_RELRS = 0x2,
+	XNVME_SPEC_DSEND_STREAMS_RELID = 0x1, ///< Release Identifier
+	XNVME_SPEC_DSEND_STREAMS_RELRS = 0x2, ///< Release Resources
 };
 
 /**
@@ -1443,8 +1440,7 @@ enum xnvme_spec_dsend_streams_doper {
  * @enum xnvme_spec_drecv_idfy_doper
  */
 enum xnvme_spec_drecv_idfy_doper {
-	// Identify directive receive return parameters
-	XNVME_SPEC_DRECV_IDFY_RETPR = 0x1,
+	XNVME_SPEC_DRECV_IDFY_RETPR = 0x1, ///< Return Parameters
 };
 
 /**
@@ -1453,12 +1449,9 @@ enum xnvme_spec_drecv_idfy_doper {
  * @enum xnvme_spec_drecv_streams_doper
  */
 enum xnvme_spec_drecv_streams_doper {
-	// Streams directive receive, return parameters
-	XNVME_SPEC_DRECV_STREAMS_RETPR = 0x1,
-	// Streams directive receive, get status
-	XNVME_SPEC_DRECV_STREAMS_GETST = 0x2,
-	// Streams directive receive, allocate resource
-	XNVME_SPEC_DRECV_STREAMS_ALLRS = 0x3,
+	XNVME_SPEC_DRECV_STREAMS_RETPR = 0x1, ///< Return Parameters
+	XNVME_SPEC_DRECV_STREAMS_GETST = 0x2, ///< Get Status
+	XNVME_SPEC_DRECV_STREAMS_ALLRS = 0x3, ///< Allocate Resources
 };
 
 /**
