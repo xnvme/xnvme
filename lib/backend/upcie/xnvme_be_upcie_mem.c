@@ -204,6 +204,7 @@ xnvme_be_upcie_dmem_from_desc(struct dmamem *dmem, void *base,
 
 static struct {
 	struct {
+		struct dmamem *dmem;
 		void *vaddr;
 		struct xnvme_be_upcie_ctrlr *ctrlr;
 		uint64_t offset;
@@ -213,7 +214,8 @@ static struct {
 } g_served_regs;
 
 static int
-_served_regs_add(void *vaddr, struct xnvme_be_upcie_ctrlr *ctrlr, uint64_t offset)
+_served_regs_add(struct dmamem *dmem, void *vaddr, struct xnvme_be_upcie_ctrlr *ctrlr,
+		 uint64_t offset)
 {
 	if (g_served_regs.count == g_served_regs.capacity) {
 		int capacity = g_served_regs.capacity ? 2 * g_served_regs.capacity : 16;
@@ -227,6 +229,7 @@ _served_regs_add(void *vaddr, struct xnvme_be_upcie_ctrlr *ctrlr, uint64_t offse
 		g_served_regs.capacity = capacity;
 	}
 
+	g_served_regs.entries[g_served_regs.count].dmem = dmem;
 	g_served_regs.entries[g_served_regs.count].vaddr = vaddr;
 	g_served_regs.entries[g_served_regs.count].ctrlr = ctrlr;
 	g_served_regs.entries[g_served_regs.count].offset = offset;
@@ -277,7 +280,7 @@ xnvme_be_upcie_served_mem_map(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr *
 
 	err = _adopt_desc(dmem, vaddr, desc, page_size);
 	if (!err) {
-		err = _served_regs_add(vaddr, ctrlr, offset);
+		err = _served_regs_add(dmem, vaddr, ctrlr, offset);
 		if (err) {
 			dmamem_registry_remove(&dmem->registry, vaddr);
 		}
@@ -316,6 +319,25 @@ xnvme_be_upcie_served_mem_unmap(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr
 	}
 
 	return err;
+}
+
+void
+xnvme_be_upcie_served_mem_unmap_all(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr *ctrlr)
+{
+	for (int at = g_served_regs.count - 1; at >= 0; --at) {
+		void *vaddr = g_served_regs.entries[at].vaddr;
+		struct xnvme_buf_reg *reg;
+
+		if ((g_served_regs.entries[at].dmem != dmem) ||
+		    (ctrlr && (g_served_regs.entries[at].ctrlr != ctrlr))) {
+			continue;
+		}
+
+		xnvme_be_upcie_served_mem_unmap(dmem, g_served_regs.entries[at].ctrlr, vaddr);
+		if (!xnvme_buf_reg_find(dmem, vaddr, 1, &reg)) {
+			xnvme_buf_reg_remove(reg);
+		}
+	}
 }
 
 static int
