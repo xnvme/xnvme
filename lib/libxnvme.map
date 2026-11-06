@@ -398,6 +398,8 @@
 		xnvme_spec_kvs_idfy;
 
 		# libxnvme_spec_fs.h
+		xnvme_spec_fs_idfy_ctrlr_limits;
+		xnvme_spec_fs_idfy_ctrlr_iosizes;
 		xnvme_spec_fs_idfy_ctrlr;
 		xnvme_spec_fs_idfy_ns;
 		xnvme_spec_fs_opcs;

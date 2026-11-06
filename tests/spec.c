@@ -471,6 +471,10 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_fs_idfy_ctrlr, caps) == 520,
 		    "caps of struct xnvme_spec_fs_idfy_ctrlr")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_fs_idfy_ctrlr, properties) == 560,
 		    "properties of struct xnvme_spec_fs_idfy_ctrlr")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_fs_idfy_ctrlr, limits) == 528,
+		    "limits of struct xnvme_spec_fs_idfy_ctrlr")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_fs_idfy_ctrlr, iosizes) == 568,
+		    "iosizes of struct xnvme_spec_fs_idfy_ctrlr")
 
 struct offset_case {
 	const char *name;
