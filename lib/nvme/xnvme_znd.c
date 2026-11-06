@@ -377,8 +377,7 @@ exit:
 }
 
 int
-xnvme_znd_stat(struct xnvme_dev *dev, enum xnvme_spec_znd_cmd_mgmt_recv_action_sf sfield,
-	       uint64_t *nzones)
+xnvme_znd_stat(struct xnvme_dev *dev, uint32_t sfield, uint64_t *nzones)
 {
 	const uint32_t nsid = xnvme_dev_get_nsid(dev);
 	struct xnvme_cmd_ctx ctx = {0};
