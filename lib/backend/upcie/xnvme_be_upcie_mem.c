@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <xnvme_be.h>
+#include <xnvme_buf.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_UPCIE_ENABLED
 #include <errno.h>
@@ -317,6 +318,58 @@ xnvme_be_upcie_served_mem_unmap(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr
 	return err;
 }
 
+int
+xnvme_be_upcie_buf_reg_ref(struct dmamem *dmem, void *vaddr, size_t nbytes)
+{
+	struct xnvme_buf_reg *reg;
+	int err;
+
+	err = xnvme_buf_reg_find(dmem, vaddr, nbytes, &reg);
+	if (!err) {
+		reg->refs += 1;
+		return 0;
+	}
+	if (err != -ENOENT) {
+		return err;
+	}
+
+	if (dmamem_va_to_iova(dmem, vaddr)) {
+		XNVME_DEBUG("INFO: vaddr(%p) is translated already, as from xnvme_buf_alloc()",
+			    vaddr);
+		return 0;
+	}
+
+	return -ENOENT;
+}
+
+int
+xnvme_be_upcie_buf_reg_unref(struct dmamem *dmem, void *vaddr, struct xnvme_buf_reg **last)
+{
+	struct xnvme_buf_reg *reg;
+	int err;
+
+	*last = NULL;
+
+	err = xnvme_buf_reg_find(dmem, vaddr, 1, &reg);
+	if ((err == -ENOENT) && vaddr && dmamem_va_to_iova(dmem, vaddr)) {
+		XNVME_DEBUG("INFO: vaddr(%p) was not registered, as from xnvme_buf_alloc()",
+			    vaddr);
+		return 0;
+	}
+	if (err) {
+		XNVME_DEBUG("FAILED: vaddr(%p) is not registered", vaddr);
+		return -EINVAL;
+	}
+
+	if (reg->refs > 1) {
+		reg->refs -= 1;
+		return 0;
+	}
+	*last = reg;
+
+	return 0;
+}
+
 #endif
 
 struct xnvme_be_mem g_xnvme_be_upcie_mem = {
@@ -326,14 +379,14 @@ struct xnvme_be_mem g_xnvme_be_upcie_mem = {
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
 	.buf_free = xnvme_be_upcie_buf_free,
 	.buf_vtophys = xnvme_be_upcie_buf_vtophys,
-	.mem_map = xnvme_be_nosys_mem_map,
-	.mem_unmap = xnvme_be_nosys_mem_unmap,
+	.buf_register = xnvme_be_nosys_buf_register,
+	.buf_unregister = xnvme_be_nosys_buf_unregister,
 #else
 	.buf_alloc = xnvme_be_nosys_buf_alloc,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
 	.buf_free = xnvme_be_nosys_buf_free,
 	.buf_vtophys = xnvme_be_nosys_buf_vtophys,
-	.mem_map = xnvme_be_nosys_mem_map,
-	.mem_unmap = xnvme_be_nosys_mem_unmap,
+	.buf_register = xnvme_be_nosys_buf_register,
+	.buf_unregister = xnvme_be_nosys_buf_unregister,
 #endif
 };

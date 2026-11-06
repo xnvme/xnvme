@@ -17,3 +17,9 @@ xnvme_cuda_buf_diff(const void *expected, const void *actual, size_t nbytes, siz
 
 int
 xnvme_cuda_buf_fill(void *buf, size_t nbytes, const char *content);
+
+int
+xnvme_cuda_buf_get_range(void *vaddr, void **base, size_t *nbytes);
+
+int
+xnvme_cuda_buf_export_dmabuf(void *base, size_t nbytes, int *fd);

@@ -8,8 +8,10 @@
 #include <errno.h>
 #include <unistd.h>
 #include <xnvme_be_upcie_hip.h>
+#include <xnvme_hip_buf.h>
 #include <xnvme_dev.h>
 #include <xnvme_be_state.h>
+#include <xnvme_buf.h>
 
 static void *
 xnvme_be_upcie_hip_buf_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
@@ -50,41 +52,30 @@ xnvme_be_upcie_hip_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t 
 }
 
 static int
-xnvme_be_upcie_hip_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes, uint64_t *phys)
+_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 {
 	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 	int dmabuf_fd = -1;
-	hipError_t herr;
 	int err;
 
 	if (!g_upcie_rte.connection.alive) {
-		return xnvme_be_upcie_dmamem_map(state->dmem, vaddr, nbytes, phys);
+		return xnvme_be_upcie_dmamem_map(state->dmem, vaddr, nbytes, NULL);
 	}
 
-	herr = hipMemGetHandleForAddressRange(&dmabuf_fd, (hipDeviceptr_t)vaddr, nbytes,
-					      hipMemRangeHandleTypeDmaBufFd, 0);
-	if (herr != hipSuccess) {
-		XNVME_DEBUG("FAILED: hipMemGetHandleForAddressRange(%p, %zu); herr(%d)", vaddr,
-			    nbytes, herr);
-		return -EIO;
+	err = xnvme_hip_buf_export_dmabuf(vaddr, nbytes, &dmabuf_fd);
+	if (err) {
+		return err;
 	}
 
 	err = xnvme_be_upcie_served_mem_map(state->dmem, state->ctrlr, dmabuf_fd, vaddr, nbytes,
 					    (uint32_t)g_upcie_hip_rte.hip_config.device_pagesize);
 	close(dmabuf_fd);
-	if (err) {
-		return err;
-	}
 
-	if (phys) {
-		*phys = dmamem_va_to_iova(state->dmem, vaddr);
-	}
-
-	return 0;
+	return err;
 }
 
 static int
-xnvme_be_upcie_hip_mem_unmap(const struct xnvme_dev *dev, void *vaddr)
+_unmap(const struct xnvme_dev *dev, void *vaddr)
 {
 	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 
@@ -93,6 +84,102 @@ xnvme_be_upcie_hip_mem_unmap(const struct xnvme_dev *dev, void *vaddr)
 	}
 
 	return xnvme_be_upcie_dmamem_unmap(state->dmem, vaddr);
+}
+
+static int
+_add(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
+{
+	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
+	int err;
+
+	err = xnvme_buf_reg_add(state->dmem, vaddr, nbytes, 0);
+	if (err) {
+		_unmap(dev, vaddr);
+	}
+
+	return err;
+}
+
+static int
+xnvme_be_upcie_hip_buf_register_dmabuf(const struct xnvme_dev *dev, int fd, void *vaddr)
+{
+	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
+	size_t nbytes;
+	off_t size;
+	int err;
+
+	if (!g_upcie_rte.connection.alive) {
+		XNVME_DEBUG("FAILED: registering a dma-buf takes a server");
+		return -ENOSYS;
+	}
+
+	size = lseek(fd, 0, SEEK_END);
+	if (size <= 0) {
+		XNVME_DEBUG("FAILED: lseek(dma-buf), errno: %d", errno);
+		return size ? -errno : -EINVAL;
+	}
+	nbytes = (size_t)size;
+
+	err = xnvme_be_upcie_buf_reg_ref(state->dmem, vaddr, nbytes);
+	if (err != -ENOENT) {
+		return err;
+	}
+
+	err = xnvme_be_upcie_served_mem_map(state->dmem, state->ctrlr, fd, vaddr, nbytes,
+					    (uint32_t)g_upcie_hip_rte.hip_config.device_pagesize);
+	if (err) {
+		return err;
+	}
+
+	return _add(dev, vaddr, nbytes);
+}
+
+static int
+xnvme_be_upcie_hip_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
+{
+	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
+	int err;
+
+	err = xnvme_be_upcie_buf_reg_ref(state->dmem, vaddr, nbytes);
+	if (err != -ENOENT) {
+		return err;
+	}
+
+	err = _map(dev, vaddr, nbytes);
+	if (err) {
+		return err;
+	}
+
+	return _add(dev, vaddr, nbytes);
+}
+
+static int
+xnvme_be_upcie_hip_buf_unregister(const struct xnvme_dev *dev, void *vaddr)
+{
+	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
+	struct xnvme_buf_reg *last;
+	int err;
+
+	err = xnvme_be_upcie_buf_reg_unref(state->dmem, vaddr, &last);
+	if (err || !last) {
+		return err;
+	}
+
+	err = _unmap(dev, last->vaddr);
+	if (err) {
+		return err;
+	}
+	xnvme_buf_reg_remove(last);
+
+	return 0;
+}
+
+static int
+xnvme_be_upcie_hip_buf_get_alignment(const struct xnvme_dev *XNVME_UNUSED(dev), size_t *align)
+{
+	*align = g_upcie_hip_rte.hip_config.device_pagesize;
+
+	return 0;
 }
 
 #endif
@@ -104,14 +191,16 @@ struct xnvme_be_mem g_xnvme_be_upcie_mem_hip = {
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
 	.buf_free = xnvme_be_upcie_hip_buf_free,
 	.buf_vtophys = xnvme_be_upcie_hip_buf_vtophys,
-	.mem_map = xnvme_be_upcie_hip_mem_map,
-	.mem_unmap = xnvme_be_upcie_hip_mem_unmap,
+	.buf_register = xnvme_be_upcie_hip_buf_register,
+	.buf_register_dmabuf = xnvme_be_upcie_hip_buf_register_dmabuf,
+	.buf_unregister = xnvme_be_upcie_hip_buf_unregister,
+	.buf_get_alignment = xnvme_be_upcie_hip_buf_get_alignment,
 #else
 	.buf_alloc = xnvme_be_nosys_buf_alloc,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
 	.buf_free = xnvme_be_nosys_buf_free,
 	.buf_vtophys = xnvme_be_nosys_buf_vtophys,
-	.mem_map = xnvme_be_nosys_mem_map,
-	.mem_unmap = xnvme_be_nosys_mem_unmap,
+	.buf_register = xnvme_be_nosys_buf_register,
+	.buf_unregister = xnvme_be_nosys_buf_unregister,
 #endif
 };

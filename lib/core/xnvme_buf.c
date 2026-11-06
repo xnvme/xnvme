@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include <errno.h>
+#include <stdlib.h>
 #include <libxnvme.h>
 #include <xnvme_dev.h>
 #include <xnvme_be.h>
@@ -12,6 +13,31 @@
 #include <xnvme_cuda_buf.h>
 #include <xnvme_hip_buf.h>
 #include <xnvme_lock.h>
+#include <xnvme_buf.h>
+
+#ifdef WIN32
+#include <windows.h>
+
+static size_t
+_pagesize(void)
+{
+	SYSTEM_INFO si;
+
+	GetSystemInfo(&si);
+
+	return si.dwPageSize;
+}
+#else
+#include <unistd.h>
+
+static size_t
+_pagesize(void)
+{
+	long pagesize = sysconf(_SC_PAGESIZE);
+
+	return (pagesize > 0) ? (size_t)pagesize : 0;
+}
+#endif
 
 void *
 xnvme_buf_virt_alloc(size_t alignment, size_t nbytes)
@@ -266,26 +292,201 @@ xnvme_buf_diff_pr(const void *expected, const void *actual, size_t nbytes, int X
 	return xnvme_host_buf_diff(expected, actual, nbytes, &diff, true);
 }
 
+bool
+xnvme_buf_is_host(const void *vaddr)
+{
+	return !xnvme_buf_is_cuda(vaddr) && !xnvme_buf_is_hip(vaddr);
+}
+
 int
-xnvme_mem_map(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
+xnvme_buf_export_dmabuf(void *vaddr, void **base, size_t *nbytes, int *fd)
+{
+	int err;
+
+	if (xnvme_buf_is_cuda(vaddr)) {
+		err = xnvme_cuda_buf_get_range(vaddr, base, nbytes);
+		return err ? err : xnvme_cuda_buf_export_dmabuf(*base, *nbytes, fd);
+	}
+	if (xnvme_buf_is_hip(vaddr)) {
+		err = xnvme_hip_buf_get_range(vaddr, base, nbytes);
+		return err ? err : xnvme_hip_buf_export_dmabuf(*base, *nbytes, fd);
+	}
+
+	XNVME_DEBUG("FAILED: vaddr(%p) is neither CUDA nor HIP device memory", vaddr);
+
+	return -EINVAL;
+}
+
+int
+xnvme_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
 {
 	int err;
 
 	xnvme_lock();
-	err = dev->be.mem.mem_map(dev, vaddr, nbytes, NULL);
+	err = dev->be.mem.buf_register(dev, vaddr, nbytes);
 	xnvme_unlock();
 
 	return err;
 }
 
 int
-xnvme_mem_unmap(const struct xnvme_dev *dev, void *buf)
+xnvme_buf_register_dmabuf(const struct xnvme_dev *dev, int fd, void *vaddr)
+{
+	int err;
+
+	if (!dev || (fd < 0) || !vaddr) {
+		return -EINVAL;
+	}
+	if (!dev->be.mem.buf_register_dmabuf) {
+		return -ENOSYS;
+	}
+
+	xnvme_lock();
+	err = dev->be.mem.buf_register_dmabuf(dev, fd, vaddr);
+	xnvme_unlock();
+
+	return err;
+}
+
+int
+xnvme_buf_unregister(const struct xnvme_dev *dev, void *vaddr)
 {
 	int err;
 
 	xnvme_lock();
-	err = dev->be.mem.mem_unmap(dev, buf);
+	err = dev->be.mem.buf_unregister(dev, vaddr);
 	xnvme_unlock();
 
 	return err;
+}
+
+int
+xnvme_buf_get_alignment(const struct xnvme_dev *dev, size_t *align)
+{
+	size_t got = 0;
+	int err;
+
+	if (!dev || !align) {
+		return -EINVAL;
+	}
+	if (!dev->be.mem.buf_get_alignment) {
+		return -ENOSYS;
+	}
+
+	err = dev->be.mem.buf_get_alignment(dev, &got);
+	if (err) {
+		return err;
+	}
+
+	*align = (got < sizeof(void *)) ? sizeof(void *) : got;
+
+	return 0;
+}
+
+int
+xnvme_buf_noreg_register(const struct xnvme_dev *XNVME_UNUSED(dev), void *vaddr, size_t nbytes)
+{
+	if (!vaddr || !nbytes) {
+		XNVME_DEBUG("FAILED: invalid vaddr(%p) or nbytes(%zu)", vaddr, nbytes);
+		return -EINVAL;
+	}
+
+	XNVME_DEBUG("INFO: vaddr(%p) needs no registering", vaddr);
+
+	return 0;
+}
+
+int
+xnvme_buf_noreg_unregister(const struct xnvme_dev *XNVME_UNUSED(dev), void *vaddr)
+{
+	if (!vaddr) {
+		XNVME_DEBUG("FAILED: invalid vaddr(%p)", vaddr);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int
+xnvme_buf_noreg_get_alignment(const struct xnvme_dev *dev, size_t *align)
+{
+	size_t pagesize;
+
+	// The OS copies the payload of buffered IO, so any alignment serves
+	if (!dev->opts.direct) {
+		*align = sizeof(void *);
+		return 0;
+	}
+
+	/*
+	 * The OS refuses a payload of direct IO that is not aligned to what the device or the file
+	 * system needs, which a page satisfies
+	 */
+	pagesize = _pagesize();
+	if (!pagesize) {
+		XNVME_DEBUG("FAILED: retrieving the page size");
+		return -EIO;
+	}
+	*align = pagesize;
+
+	return 0;
+}
+
+static struct xnvme_buf_reg *g_regs;
+
+int
+xnvme_buf_reg_find(const void *owner, const void *vaddr, size_t nbytes, struct xnvme_buf_reg **reg)
+{
+	uintptr_t lo = (uintptr_t)vaddr, hi = lo + nbytes;
+
+	for (struct xnvme_buf_reg *cur = g_regs; cur; cur = cur->next) {
+		uintptr_t cur_lo = (uintptr_t)cur->vaddr, cur_hi = cur_lo + cur->nbytes;
+
+		if ((cur->owner != owner) || (hi <= cur_lo) || (lo >= cur_hi)) {
+			continue;
+		}
+		if ((lo >= cur_lo) && (hi <= cur_hi)) {
+			*reg = cur;
+			return 0;
+		}
+
+		XNVME_DEBUG("FAILED: vaddr(%p, %zu) overlaps registered(%p, %zu)", vaddr, nbytes,
+			    cur->vaddr, cur->nbytes);
+		return -EBUSY;
+	}
+
+	return -ENOENT;
+}
+
+int
+xnvme_buf_reg_add(const void *owner, void *vaddr, size_t nbytes, uint64_t priv)
+{
+	struct xnvme_buf_reg *reg;
+
+	reg = calloc(1, sizeof(*reg));
+	if (!reg) {
+		return -ENOMEM;
+	}
+
+	reg->owner = owner;
+	reg->vaddr = vaddr;
+	reg->nbytes = nbytes;
+	reg->priv = priv;
+	reg->refs = 1;
+	reg->next = g_regs;
+	g_regs = reg;
+
+	return 0;
+}
+
+void
+xnvme_buf_reg_remove(struct xnvme_buf_reg *reg)
+{
+	for (struct xnvme_buf_reg **link = &g_regs; *link; link = &(*link)->next) {
+		if (*link == reg) {
+			*link = reg->next;
+			free(reg);
+			return;
+		}
+	}
 }

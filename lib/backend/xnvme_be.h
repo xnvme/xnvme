@@ -16,7 +16,7 @@
 #define XNVME_BE_SYNC_NBYTES  24
 #define XNVME_BE_ADMIN_NBYTES 24
 #define XNVME_BE_DEV_NBYTES   40
-#define XNVME_BE_MEM_NBYTES   56
+#define XNVME_BE_MEM_NBYTES   72
 #define XNVME_BE_ATTR_NBYTES  24
 #define XNVME_BE_STATE_NBYTES 128
 
@@ -147,14 +147,24 @@ struct xnvme_be_mem {
 	void (*buf_free)(const struct xnvme_dev *, void *);
 
 	/**
-	 * Map a buffer usable for NVMe commands
+	 * Register memory of the caller's for use as command payload
 	 */
-	int (*mem_map)(const struct xnvme_dev *, void *, size_t, uint64_t *);
+	int (*buf_register)(const struct xnvme_dev *, void *, size_t);
 
 	/**
-	 * Unmap a buffer usable for NVMe commands
+	 * Register a dma-buf for use as command payload; NULL where the interface does not
 	 */
-	int (*mem_unmap)(const struct xnvme_dev *, void *);
+	int (*buf_register_dmabuf)(const struct xnvme_dev *, int, void *);
+
+	/**
+	 * Unregister memory registered with buf_register or buf_register_dmabuf
+	 */
+	int (*buf_unregister)(const struct xnvme_dev *, void *);
+
+	/**
+	 * The alignment of memory to register; NULL where the interface does not register memory
+	 */
+	int (*buf_get_alignment)(const struct xnvme_dev *, size_t *);
 	const char *id;
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_be_mem) == XNVME_BE_MEM_NBYTES, "Incorrect size")

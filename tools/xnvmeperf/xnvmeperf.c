@@ -344,9 +344,9 @@ io_buf_alloc(struct xnvme_dev *dev, const struct xnvmeperf_args *args)
 		return NULL;
 	}
 
-	err = xnvme_mem_map(dev, buf, args->iosize);
+	err = xnvme_buf_register(dev, buf, args->iosize);
 	if (err) {
-		xnvme_cli_perr("Failed: xnvme_mem_map()", err);
+		xnvme_cli_perr("Failed: xnvme_buf_register()", err);
 		xnvmeperf_gpu_buf_free(buf);
 		errno = -err;
 		return NULL;
@@ -359,7 +359,7 @@ static void
 io_buf_free(struct xnvme_dev *dev, const struct xnvmeperf_args *args, void *buf)
 {
 	if (args->gpu_buf) {
-		xnvme_mem_unmap(dev, buf);
+		xnvme_buf_unregister(dev, buf);
 		xnvmeperf_gpu_buf_free(buf);
 		return;
 	}

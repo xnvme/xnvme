@@ -17,3 +17,9 @@ xnvme_hip_buf_diff(const void *expected, const void *actual, size_t nbytes, size
 
 int
 xnvme_hip_buf_fill(void *buf, size_t nbytes, const char *content);
+
+int
+xnvme_hip_buf_get_range(void *vaddr, void **base, size_t *nbytes);
+
+int
+xnvme_hip_buf_export_dmabuf(void *base, size_t nbytes, int *fd);

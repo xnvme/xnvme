@@ -77,7 +77,7 @@ backend. They carry the note *Control plane*:
 * ``xnvme_queue_init()`` and ``xnvme_queue_term()``
 * ``xnvme_buf_alloc()``, ``xnvme_buf_realloc()``, ``xnvme_buf_free()``, their
   ``xnvme_buf_phys_*()`` variants and ``xnvme_buf_vtophys()``
-* ``xnvme_mem_map()`` and ``xnvme_mem_unmap()``
+* ``xnvme_buf_register()`` and ``xnvme_buf_unregister()``
 * ``xnvme_cuda_queue_create()`` and ``xnvme_cuda_queue_destroy()``
 
 They are not serialised against data-plane use of the same object, which does

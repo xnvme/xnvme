@@ -24,18 +24,27 @@ xnvmeperf run /dev/nvme0n1 --be io_uring_dmabuf --direct \
     --iopattern randread --iosize 4096 --qdepth 32 --runtime 10 --cpumask 0x1
 ```
 
-Map GPU memory with `xnvme_mem_map()` and release it with `xnvme_mem_unmap()`.
+Register GPU memory with `xnvme_buf_register()` and release it with
+`xnvme_buf_unregister()`.
 Buffers from `xnvme_buf_alloc()` are in host memory, IO on them is regular
 `io_uring` IO.
 
 ```c
 cudaMalloc(&buf, nbytes);
-xnvme_mem_map(dev, buf, nbytes);
+xnvme_buf_register(dev, buf, nbytes);
 ```
 
-`xnvme_mem_map()` registers the allocation with the ring of every queue of the
-device, and a new queue registers the allocations already mapped. IO on a
-mapped buffer is submitted as `IORING_OP_READ_FIXED` / `IORING_OP_WRITE_FIXED`.
+`xnvme_buf_register()` registers the allocation with the ring of every queue of
+the device, and a new queue registers the allocations already registered. IO on
+a registered buffer is submitted as `IORING_OP_READ_FIXED` / `IORING_OP_WRITE_FIXED`.
+
+A `dma-buf` from another exporter, such as `udmabuf` or a DMA heap, is
+registered with `xnvme_buf_register_dmabuf()`, given the address the caller
+accesses its first byte at. Commands then name it by that address.
+
+```c
+xnvme_buf_register_dmabuf(dev, fd, buf);
+```
 
 ## Limitations
 
@@ -46,7 +55,7 @@ mapped buffer is submitted as `IORING_OP_READ_FIXED` / `IORING_OP_WRITE_FIXED`.
 | Vectored | Not supported (`xnvme_cmd_passv()`) |
 | Size | A `dma-buf` of at most 1 TiB, the kernel's limit for a registered buffer |
 | Count | At most 256 mapped allocations per device |
-| Threads | `xnvme_mem_map()` and `xnvme_mem_unmap()` must not run while IO is in flight on the device |
+| Threads | `xnvme_buf_register()` and `xnvme_buf_unregister()` must not run while IO is in flight on the device |
 
 (sec-platforms-linux-async-io_uring_dmabuf-kernel)=
 
@@ -69,16 +78,16 @@ the series, and the CI runs the backend there, on an emulated AMD GPU.
 ## IOMMU
 
 The `dma-buf` exported by CUDA and HIP holds physical addresses. When an IOMMU
-translates for the NVMe device, `xnvme_mem_map()` maps those addresses into the
-IOMMU domain of the device at IOVA == physical address.
+translates for the NVMe device, `xnvme_buf_register()` maps those addresses into
+the IOMMU domain of the device at IOVA == physical address.
 
 This needs the `dmabuf-import` and `iommu-map-pa` kernel modules, see
 {ref}`sec-backends-upcie-cuda-kernel` and {ref}`sec-backends-upcie-cuda-iommu`.
-Without them `xnvme_mem_map()` fails. Alternatively, boot with `iommu=pt`,
+Without them `xnvme_buf_register()` fails. Alternatively, boot with `iommu=pt`,
 `amd_iommu=off` or `intel_iommu=off`. The IOMMU group is read from the
 controller of the namespace; where it cannot be found, as for the head of a
-native-multipath namespace, while IOMMU groups exist, `xnvme_mem_map()` fails
-with `-ENODEV` rather than map without the IOMMU.
+native-multipath namespace, while IOMMU groups exist, `xnvme_buf_register()`
+fails with `-ENODEV` rather than map without the IOMMU.
 
 ```{note}
 The `dma-buf` must be physically contiguous. See
