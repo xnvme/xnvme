@@ -2193,14 +2193,12 @@ struct xnvme_spec_nvm_cmd_scopy_fmt_srclen {
 /**
  * NVMe Command Accessors for the NVM Command Set
  *
- * @struct xnvme_spec_nvm_cmd
+ * @union xnvme_spec_nvm_cmd
  */
-struct xnvme_spec_nvm_cmd {
-	union {
-		struct xnvme_spec_nvm_cmd_scopy scopy;
-	};
+union xnvme_spec_nvm_cmd {
+	struct xnvme_spec_nvm_cmd_scopy scopy; ///< As the Copy command
 };
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_cmd) == 64, "Incorrect size")
+XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_nvm_cmd) == 64, "Incorrect size")
 
 /**
  * Representation of NVMe completion result for NVM command set I/O command set
