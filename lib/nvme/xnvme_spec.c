@@ -1601,13 +1601,16 @@ xnvme_spec_znd_idfy_ns_fpr(FILE *stream, struct xnvme_spec_znd_idfy_ns *zns, int
 	}
 
 	wrtn += fprintf(stream, "\n");
-	wrtn += fprintf(stream, "  zoc: { vzcap: %" PRIu16 ", zae: %" PRIu16 " }\n",
-			zns->zoc.bits.vzcap, zns->zoc.bits.zae);
+	wrtn += fprintf(stream, "  zoc: { vzcap: %" PRIu64 ", zae: %" PRIu64 " }\n",
+			xnvme_bits_get(zns->zoc, XNVME_SPEC_ZND_IDFY_NS_ZOC_VZCAP),
+			xnvme_bits_get(zns->zoc, XNVME_SPEC_ZND_IDFY_NS_ZOC_ZAE));
 
 	wrtn += fprintf(stream, "  ozcs:\n");
-	wrtn += fprintf(stream, "    val: 0x%" PRIx16 "\n", zns->ozcs.val);
-	wrtn += fprintf(stream, "    razb: %" PRIu16 "\n", zns->ozcs.bits.razb);
-	wrtn += fprintf(stream, "    zrwasup: %" PRIu16 "\n", zns->ozcs.bits.zrwasup);
+	wrtn += fprintf(stream, "    val: 0x%" PRIx16 "\n", zns->ozcs);
+	wrtn += fprintf(stream, "    razb: %" PRIu64 "\n",
+			xnvme_bits_get(zns->ozcs, XNVME_SPEC_ZND_IDFY_NS_OZCS_RAZB));
+	wrtn += fprintf(stream, "    zrwasup: %" PRIu64 "\n",
+			xnvme_bits_get(zns->ozcs, XNVME_SPEC_ZND_IDFY_NS_OZCS_ZRWASUP));
 
 	wrtn += fprintf(stream, "  mar: %" PRIu32 "\n", zns->mar);
 	wrtn += fprintf(stream, "  mor: %" PRIu32 "\n", zns->mor);
@@ -1627,8 +1630,9 @@ xnvme_spec_znd_idfy_ns_fpr(FILE *stream, struct xnvme_spec_znd_idfy_ns *zns, int
 	wrtn += fprintf(stream, "  zrwafg: %" PRIu16 "\n", zns->zrwafg);
 
 	wrtn += fprintf(stream, "  zrwacap:\n");
-	wrtn += fprintf(stream, "    val: 0x%" PRIx8 "\n", zns->zrwacap.val);
-	wrtn += fprintf(stream, "    expflushsup: %" PRIu8 "\n", zns->zrwacap.bits.expflushsup);
+	wrtn += fprintf(stream, "    val: 0x%" PRIx8 "\n", zns->zrwacap);
+	wrtn += fprintf(stream, "    expflushsup: %" PRIu64 "\n",
+			xnvme_bits_get(zns->zrwacap, XNVME_SPEC_ZND_IDFY_NS_ZRWACAP_EXPFLUSHSUP));
 
 	return wrtn;
 }

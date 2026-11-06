@@ -2661,25 +2661,8 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_idfy_lbafe) == 16, "Incorrect s
  * @struct xnvme_spec_znd_idfy_ns
  */
 struct xnvme_spec_znd_idfy_ns {
-	union {
-		struct {
-			uint16_t vzcap : 1; ///< Variable Zone Capacity
-			uint16_t zae   : 1; ///< Zone Active Excursions
-
-			uint16_t rsvd  : 14;
-		} bits;
-		uint16_t val;
-	} zoc; ///< Zone Operation Characteristics
-
-	union {
-		struct {
-			uint16_t razb    : 1; ///< Read Across zone boundaries
-			uint16_t zrwasup : 1; ///< Namespace supports Zone-Random-Write-Area (ZRWA)
-
-			uint16_t rsvd    : 14;
-		} bits; ///< Optional Zoned Command Support
-		uint16_t val;
-	} ozcs;
+	uint16_t zoc;  ///< Zone Operation Characteristics, see XNVME_SPEC_ZND_IDFY_NS_ZOC_*
+	uint16_t ozcs; ///< Optional Zoned Command Support, see XNVME_SPEC_ZND_IDFY_NS_OZCS_*
 
 	uint32_t mar; ///< Maximum Active Resources
 	uint32_t mor; ///< Maximum Open Resources
@@ -2693,14 +2676,7 @@ struct xnvme_spec_znd_idfy_ns {
 	uint16_t zrwafg;  ///< ZRWA Flush Granularity; in unit of LBAs
 	uint16_t zrwas;   ///< ZRWA Size; in unit of LBAs
 
-	union {
-		struct {
-			uint8_t expflushsup : 1; ///< Explicit Flush Supported
-
-			uint8_t rsvd0       : 7;
-		} bits;
-		uint8_t val;
-	} zrwacap;
+	uint8_t zrwacap; ///< ZRWA Capability, see XNVME_SPEC_ZND_IDFY_NS_ZRWACAP_*
 
 	uint8_t rsvd53[2763];
 
@@ -2711,6 +2687,17 @@ struct xnvme_spec_znd_idfy_ns {
 	uint8_t vs[256]; ///< Vendor Specific
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_idfy_ns) == 4096, "Incorrect size")
+
+/** Variable Zone Capacity; bit 0 of 'zoc' */
+#define XNVME_SPEC_ZND_IDFY_NS_ZOC_VZCAP 0x1
+/** Zone Active Excursions; bit 1 of 'zoc' */
+#define XNVME_SPEC_ZND_IDFY_NS_ZOC_ZAE 0x2
+/** Read Across Zone Boundaries; bit 0 of 'ozcs' */
+#define XNVME_SPEC_ZND_IDFY_NS_OZCS_RAZB 0x1
+/** Zone Random Write Area Supported; bit 1 of 'ozcs' */
+#define XNVME_SPEC_ZND_IDFY_NS_OZCS_ZRWASUP 0x2
+/** Explicit ZRWA Flush Supported; bit 0 of 'zrwacap' */
+#define XNVME_SPEC_ZND_IDFY_NS_ZRWACAP_EXPFLUSHSUP 0x1
 
 /**
  * Representation of the NVMe Identify Namespace command completion result

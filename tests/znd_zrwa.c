@@ -28,9 +28,9 @@ test_support(struct xnvme_cli *cli)
 	xnvme_spec_znd_idfy_ctrlr_pr(ctrlr, XNVME_PR_DEF);
 	xnvme_spec_znd_idfy_ns_pr(ns, XNVME_PR_DEF);
 
-	if (!ns->ozcs.bits.zrwasup) {
+	if (!xnvme_bits_get(ns->ozcs, XNVME_SPEC_ZND_IDFY_NS_OZCS_ZRWASUP)) {
 		err = -ENOSYS;
-		xnvme_cli_perr("!ns->oczs.bits.zrwasup", -err);
+		xnvme_cli_perr("!ZRWASUP of ns->ozcs", -err);
 	}
 
 	xnvme_cli_pinf(err ? "ZRWA: is NOT supported" : "ZRWA: LGTM");

@@ -421,6 +421,19 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_nvm_idfy_ns, pic,
 		    "pic of struct xnvme_spec_nvm_idfy_ns")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_idfy_ns, pic) == 8,
 		    "pic of struct xnvme_spec_nvm_idfy_ns")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_idfy_ns, zoc,
+			 XNVME_SPEC_ZND_IDFY_NS_ZOC_VZCAP | XNVME_SPEC_ZND_IDFY_NS_ZOC_ZAE),
+		    "zoc of struct xnvme_spec_znd_idfy_ns")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_idfy_ns, ozcs,
+			 XNVME_SPEC_ZND_IDFY_NS_OZCS_RAZB | XNVME_SPEC_ZND_IDFY_NS_OZCS_ZRWASUP),
+		    "ozcs of struct xnvme_spec_znd_idfy_ns")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_idfy_ns, zrwacap,
+			 XNVME_SPEC_ZND_IDFY_NS_ZRWACAP_EXPFLUSHSUP),
+		    "zrwacap of struct xnvme_spec_znd_idfy_ns")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_znd_idfy_ns, ozcs) == 2,
+		    "ozcs of struct xnvme_spec_znd_idfy_ns")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_znd_idfy_ns, zrwacap) == 52,
+		    "zrwacap of struct xnvme_spec_znd_idfy_ns")
 
 struct offset_case {
 	const char *name;
@@ -838,6 +851,26 @@ sub_data_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 		    idfy.ctrlr.vsl != 0x07) {
 			xnvme_cli_pinf("FAILED: nvm_idfy: pic: %#" PRIx8 ", vsl: %#" PRIx8,
 				       idfy.ns.pic, idfy.ctrlr.vsl);
+			err = -EINVAL;
+		}
+	}
+
+	{
+		struct xnvme_spec_znd_idfy_ns ns;
+
+		memset(raw, 0, sizeof(raw));
+		raw[0] = 0x02;  // Zoned Identify Namespace ZOC: ZAE
+		raw[2] = 0x02;  // OZCS: ZRWASUP
+		raw[52] = 0x01; // ZRWACAP: EXPFLUSHSUP
+		memcpy(&ns, raw, sizeof(ns));
+		if (xnvme_bits_get(ns.zoc, XNVME_SPEC_ZND_IDFY_NS_ZOC_VZCAP) ||
+		    !xnvme_bits_get(ns.zoc, XNVME_SPEC_ZND_IDFY_NS_ZOC_ZAE) ||
+		    xnvme_bits_get(ns.ozcs, XNVME_SPEC_ZND_IDFY_NS_OZCS_RAZB) ||
+		    !xnvme_bits_get(ns.ozcs, XNVME_SPEC_ZND_IDFY_NS_OZCS_ZRWASUP) ||
+		    !xnvme_bits_get(ns.zrwacap, XNVME_SPEC_ZND_IDFY_NS_ZRWACAP_EXPFLUSHSUP)) {
+			xnvme_cli_pinf("FAILED: zoc: %#" PRIx16 ", ozcs: %#" PRIx16
+				       ", zrwacap: %#" PRIx8,
+				       ns.zoc, ns.ozcs, ns.zrwacap);
 			err = -EINVAL;
 		}
 	}
