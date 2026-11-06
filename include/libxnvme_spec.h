@@ -2370,16 +2370,14 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_cmd_append) == 64, "Incorrect s
 /**
  * NVMe Command Accessors for the Zoned Command Set
  *
- * @struct xnvme_spec_znd_cmd
+ * @union xnvme_spec_znd_cmd
  */
-struct xnvme_spec_znd_cmd {
-	union {
-		struct xnvme_spec_znd_cmd_mgmt_send mgmt_send;
-		struct xnvme_spec_znd_cmd_mgmt_recv mgmt_recv;
-		struct xnvme_spec_znd_cmd_append append;
-	};
+union xnvme_spec_znd_cmd {
+	struct xnvme_spec_znd_cmd_mgmt_send mgmt_send; ///< As the Zone Management Send command
+	struct xnvme_spec_znd_cmd_mgmt_recv mgmt_recv; ///< As the Zone Management Receive command
+	struct xnvme_spec_znd_cmd_append append;       ///< As the Zone Append command
 };
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_cmd) == 64, "Incorrect size")
+XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_znd_cmd) == 64, "Incorrect size")
 
 /**
  * NVMe Command Accessor for io management receive command
@@ -2554,7 +2552,7 @@ union xnvme_spec_sqe {
 	struct xnvme_spec_cmd_dsm dsm;
 	struct xnvme_spec_nvm_cmd_scopy scopy;
 	struct xnvme_spec_nvm_write_zeroes write_zeroes;
-	struct xnvme_spec_znd_cmd znd;
+	union xnvme_spec_znd_cmd znd;
 	struct xnvme_spec_io_mgmt_cmd mgmt;
 	struct xnvme_spec_kvs_cmd kvs;
 	struct xnvme_spec_nvm_compare compare;
