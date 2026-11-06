@@ -922,6 +922,17 @@ sub_data_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 		}
 	}
 
+	{
+		union xnvme_spec_kvs_idfy idfy;
+
+		memset(&idfy, 0, sizeof(idfy));
+		idfy.base.raw[25] = 0x03; // Key Value Identify Namespace NKVF
+		if (idfy.ns.nkvf != 0x03) {
+			xnvme_cli_pinf("FAILED: kvs_idfy: nkvf: %#" PRIx8, idfy.ns.nkvf);
+			err = -EINVAL;
+		}
+	}
+
 	return err;
 }
 

@@ -65,7 +65,7 @@ cmd_idfy_ns(struct xnvme_cli *cli)
 	struct xnvme_cmd_ctx ctx = {0};
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
 	enum xnvme_spec_csi csi = XNVME_SPEC_CSI_KV;
-	struct xnvme_spec_kvs_idfy *idfy = NULL;
+	union xnvme_spec_kvs_idfy *idfy = NULL;
 	int err;
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
