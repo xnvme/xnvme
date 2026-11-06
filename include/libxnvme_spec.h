@@ -723,28 +723,40 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_ns) == 4096, "Incorrect size")
 #define XNVME_SPEC_IDFY_NS_DLFEAT_GUARD_VALUE 0x10
 
 /**
- * Protection information of a logical block, in the layout of the 16b Guard format, 'g16', or
- * of the 64b Guard format, 'g64'
+ * Protection Information in the 16b Guard Protection Information format
  *
- * @struct xnvme_pif
+ * @struct xnvme_pif_g16
  */
-struct xnvme_pif {
-	union {
-		struct {
-			uint16_t guard;
-			uint16_t app_tag;
-			uint32_t stor_ref_space;
-		} g16;
-		struct {
-			uint64_t guard;
-			uint16_t app_tag;
-			uint16_t stor_ref_space_p1;
-			uint32_t stor_ref_space_p2;
-		} g64;
-	};
+struct xnvme_pif_g16 {
+	uint16_t guard;          ///< Guard
+	uint16_t app_tag;        ///< Application Tag
+	uint32_t stor_ref_space; ///< Storage and Reference Space
 };
-XNVME_STATIC_ASSERT(XNVME_SIZEOF_MEMBER(struct xnvme_pif, g16) == 8, "Incorrect size");
-XNVME_STATIC_ASSERT(XNVME_SIZEOF_MEMBER(struct xnvme_pif, g64) == 16, "Incorrect size");
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_pif_g16) == 8, "Incorrect size")
+
+/**
+ * Protection Information in the 64b Guard Protection Information format
+ *
+ * @struct xnvme_pif_g64
+ */
+struct xnvme_pif_g64 {
+	uint64_t guard;             ///< Guard
+	uint16_t app_tag;           ///< Application Tag
+	uint16_t stor_ref_space_p1; ///< Storage and Reference Space, bits 47:32
+	uint32_t stor_ref_space_p2; ///< Storage and Reference Space, bits 31:0
+};
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_pif_g64) == 16, "Incorrect size")
+
+/**
+ * Protection Information, in the format of the namespace, see enum xnvme_spec_nvm_ns_pif
+ *
+ * @union xnvme_pif
+ */
+union xnvme_pif {
+	struct xnvme_pif_g16 g16; ///< As 16b Guard Protection Information
+	struct xnvme_pif_g64 g64; ///< As 64b Guard Protection Information
+};
+XNVME_STATIC_ASSERT(sizeof(union xnvme_pif) == 16, "Incorrect size")
 
 /**
  * Protection Information Format (PIF) of an Extended LBA Format, the size of the Guard

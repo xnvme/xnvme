@@ -211,6 +211,11 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_sgl_descriptor, len) == 8,
 		    "len of struct xnvme_spec_sgl_descriptor")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_sgl_descriptor, id) == 15,
 		    "id of struct xnvme_spec_sgl_descriptor")
+XNVME_STATIC_ASSERT(offsetof(union xnvme_pif, g16.stor_ref_space) == 4, "g16 of union xnvme_pif")
+XNVME_STATIC_ASSERT(offsetof(union xnvme_pif, g64.stor_ref_space_p1) == 10,
+		    "g64 of union xnvme_pif")
+XNVME_STATIC_ASSERT(offsetof(union xnvme_pif, g64.stor_ref_space_p2) == 12,
+		    "g64 of union xnvme_pif")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 			 XNVME_SPEC_CMD_LOG_CDW10_LID | XNVME_SPEC_CMD_LOG_CDW10_LSP |
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
