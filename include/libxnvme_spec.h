@@ -2476,32 +2476,41 @@ struct xnvme_spec_kvs_cmd {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_kvs_cmd) == 64, "Incorrect size")
 
+/**
+ * NVMe Command Accessor for the Compare command
+ *
+ * @struct xnvme_spec_nvm_compare
+ */
 struct xnvme_spec_nvm_compare {
 	uint32_t cdw00_09[10]; ///< Command dword 0 to 9
 
 	/* cdw 10-11 */
 	uint64_t slba; ///< Start LBA
 
-	/* cdw 12 */
-	uint32_t nlb    : 16; ///< Number of logical blocks, zero-based
-	uint32_t rsvd1  : 8;
-	uint32_t stc    : 1; ///< Storage Tag Check
-	uint32_t rsvd2  : 1;
-	uint32_t prinfo : 4; ///< Protection Information
-	uint32_t fua    : 1; ///< Force Unit Access
-	uint32_t lr     : 1; ///< Limited Retry
+	uint32_t cdw12; ///< Command dword 12, see XNVME_SPEC_NVM_COMPARE_CDW12_*
 
 	/* cdw 13 */
 	uint32_t cdw_13; ///< Command dword 13
 
 	/* cdw 14 */
-	uint32_t ilbrt : 32; ///< Initial Logical Block Reference Tag
+	uint32_t ilbrt; ///< Initial Logical Block Reference Tag
 
 	/* cdw 15 */
-	uint32_t lbat  : 16; ///< Logical Block Application Tag
-	uint32_t lbatm : 16; ///< logical Block Application Tag Mask
+	uint16_t lbat;  ///< Logical Block Application Tag
+	uint16_t lbatm; ///< logical Block Application Tag Mask
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_compare) == 64, "Incorrect size")
+
+/** Number of Logical Blocks, zero-based; bits 15:0 of 'cdw12' */
+#define XNVME_SPEC_NVM_COMPARE_CDW12_NLB 0xffff
+/** Storage Tag Check; bit 24 of 'cdw12' */
+#define XNVME_SPEC_NVM_COMPARE_CDW12_STC 0x1000000
+/** Protection Information Field; bits 29:26 of 'cdw12' */
+#define XNVME_SPEC_NVM_COMPARE_CDW12_PRINFO 0x3c000000
+/** Force Unit Access; bit 30 of 'cdw12' */
+#define XNVME_SPEC_NVM_COMPARE_CDW12_FUA 0x40000000
+/** Limited Retry; bit 31 of 'cdw12' */
+#define XNVME_SPEC_NVM_COMPARE_CDW12_LR 0x80000000
 
 /**
  * Submission Queue Entry
