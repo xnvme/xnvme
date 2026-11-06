@@ -7,7 +7,7 @@
 #include <xnvme_be_linux.h>
 
 int
-xnvme_file_pread(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, off_t offset)
+xnvme_file_pread(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, uint64_t offset)
 {
 	ctx->cmd.common.opcode = XNVME_SPEC_FS_OPC_READ;
 	ctx->cmd.common.nsid = xnvme_dev_get_nsid(ctx->dev);
@@ -17,7 +17,7 @@ xnvme_file_pread(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, off_t offse
 }
 
 int
-xnvme_file_pwrite(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, off_t offset)
+xnvme_file_pwrite(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, uint64_t offset)
 {
 	ctx->cmd.common.opcode = XNVME_SPEC_FS_OPC_WRITE;
 	ctx->cmd.common.nsid = xnvme_dev_get_nsid(ctx->dev);
