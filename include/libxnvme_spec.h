@@ -1883,27 +1883,22 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_sfeat) == 64, "Incorrect size")
 struct xnvme_spec_cmd_dsend {
 	uint32_t cdw00_09[10]; ///< Command dword 0 to 9
 
-	uint32_t numd; ///< Command dowrd 10
+	uint32_t numd; ///< NUMD: Number of Dwords
 
-	/* Command dword 11 */
-	uint32_t doper : 8;  ///< Directive operation
-	uint32_t dtype : 8;  ///< Directive type
-	uint32_t dspec : 16; ///< Directive specific
+	uint8_t doper;  ///< DOPER: Directive Operation
+	uint8_t dtype;  ///< DTYPE: Directive Type, see xnvme_spec_dir_types
+	uint16_t dspec; ///< DSPEC: Directive Specific
 
-	/* Command dword 12 */
-	union {
-		struct {
-			uint32_t endir  : 1; ///< Enable directive
-			uint32_t rsvd1  : 7;
-			uint32_t tdtype : 8; ///< Target directive to enable / disable
-			uint32_t rsvd2  : 16;
-		};
-		uint32_t val;
-	} cdw12;
+	uint32_t cdw12; ///< Command dword 12, see XNVME_SPEC_CMD_DSEND_CDW12_*
 
 	uint32_t cdw13_15[3]; ///< Command dword 13 to 15
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_dsend) == 64, "Incorrect size")
+
+/** Enable Directive, of the Identify directive's Enable Directive; bit 0 of 'cdw12' */
+#define XNVME_SPEC_CMD_DSEND_CDW12_ENDIR 0x1
+/** Target Directive Type, of the Identify directive's Enable Directive; bits 15:8 of 'cdw12' */
+#define XNVME_SPEC_CMD_DSEND_CDW12_TDTYPE 0xff00
 
 /**
  * NVMe Command Accessor for the directive receive command

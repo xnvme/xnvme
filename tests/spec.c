@@ -48,6 +48,17 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_sfeat, cdw10) == 40,
 		    "cdw10 of struct xnvme_spec_cmd_sfeat")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_sfeat, feat) == 44,
 		    "feat of struct xnvme_spec_cmd_sfeat")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_dsend, cdw12,
+			 XNVME_SPEC_CMD_DSEND_CDW12_ENDIR | XNVME_SPEC_CMD_DSEND_CDW12_TDTYPE),
+		    "cdw12 of struct xnvme_spec_cmd_dsend")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_dsend, doper) == 44,
+		    "doper of struct xnvme_spec_cmd_dsend")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_dsend, dtype) == 45,
+		    "dtype of struct xnvme_spec_cmd_dsend")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_dsend, dspec) == 46,
+		    "dspec of struct xnvme_spec_cmd_dsend")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_dsend, cdw12) == 48,
+		    "cdw12 of struct xnvme_spec_cmd_dsend")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 			 XNVME_SPEC_CMD_LOG_CDW10_LID | XNVME_SPEC_CMD_LOG_CDW10_LSP |
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
@@ -507,6 +518,17 @@ sub_sqe_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	if (xnvme_bits_get(sqe.sfeat.cdw10, XNVME_SPEC_CMD_SFEAT_CDW10_FID) != 0x1d ||
 	    !xnvme_bits_get(sqe.sfeat.cdw10, XNVME_SPEC_CMD_SFEAT_CDW10_SV)) {
 		xnvme_cli_pinf("FAILED: sfeat: cdw10: %#x", sqe.sfeat.cdw10);
+		err = -EINVAL;
+	}
+
+	memset(&sqe, 0, sizeof(sqe));
+	sqe.cdw[11] = 0xbeef0001; // Directive Send dword 11: DOPER 0x01, DTYPE 0x00, DSPEC 0xbeef
+	sqe.cdw[12] = 0x00000101; // Directive Send dword 12: ENDIR, TDTYPE 0x01
+	if (sqe.dsend.doper != 0x01 || sqe.dsend.dtype != 0x00 || sqe.dsend.dspec != 0xbeef ||
+	    !xnvme_bits_get(sqe.dsend.cdw12, XNVME_SPEC_CMD_DSEND_CDW12_ENDIR) ||
+	    xnvme_bits_get(sqe.dsend.cdw12, XNVME_SPEC_CMD_DSEND_CDW12_TDTYPE) != 0x01) {
+		xnvme_cli_pinf("FAILED: dsend: doper: %#x, dtype: %#x, dspec: %#x, cdw12: %#x",
+			       sqe.dsend.doper, sqe.dsend.dtype, sqe.dsend.dspec, sqe.dsend.cdw12);
 		err = -EINVAL;
 	}
 
