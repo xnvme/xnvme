@@ -828,6 +828,20 @@ sub_data_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 		}
 	}
 
+	{
+		union xnvme_spec_nvm_idfy idfy;
+
+		memset(&idfy, 0, sizeof(idfy));
+		idfy.base.raw[8] = 0x04; // NVM Identify Namespace PIC: STCRS
+		idfy.base.raw[0] = 0x07; // NVM Identify Controller VSL
+		if (!xnvme_bits_get(idfy.ns.pic, XNVME_SPEC_NVM_IDFY_NS_PIC_STCRS) ||
+		    idfy.ctrlr.vsl != 0x07) {
+			xnvme_cli_pinf("FAILED: nvm_idfy: pic: %#" PRIx8 ", vsl: %#" PRIx8,
+				       idfy.ns.pic, idfy.ctrlr.vsl);
+			err = -EINVAL;
+		}
+	}
+
 	return err;
 }
 
