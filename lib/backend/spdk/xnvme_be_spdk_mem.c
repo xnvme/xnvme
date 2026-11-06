@@ -7,6 +7,7 @@
 #ifdef XNVME_BE_SPDK_ENABLED
 #include <errno.h>
 #include <stdbool.h>
+#include <rte_eal.h>
 #include <spdk/env.h>
 #include <spdk/memory.h>
 #include <spdk/nvme.h>
@@ -70,6 +71,7 @@ _needs_registering(const struct xnvme_dev *dev)
 	return spdk_nvme_ctrlr_get_transport_id(state->ctrlr)->trtype != SPDK_NVME_TRANSPORT_TCP;
 }
 
+// Only an IOMMU addressed by virtual address takes memory that is not physically contiguous
 static bool
 _needs_hugetlb(const struct xnvme_dev *dev)
 {
@@ -77,7 +79,7 @@ _needs_hugetlb(const struct xnvme_dev *dev)
 
 	return (spdk_nvme_ctrlr_get_transport_id(state->ctrlr)->trtype ==
 		SPDK_NVME_TRANSPORT_PCIE) &&
-	       !spdk_iommu_is_enabled();
+	       !(spdk_iommu_is_enabled() && (rte_eal_iova_mode() == RTE_IOVA_VA));
 }
 
 // Whether SPDK translates the range already, as it does memory from xnvme_buf_alloc()
@@ -125,7 +127,8 @@ xnvme_be_spdk_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbyt
 	}
 
 	if (_needs_hugetlb(dev) && !xnvme_buf_is_hugetlb(vaddr, nbytes)) {
-		XNVME_DEBUG("FAILED: no IOMMU and vaddr(%p) is not in hugetlb pages", vaddr);
+		XNVME_DEBUG("FAILED: no IOMMU with iova_mode=va and vaddr(%p) is not hugetlb",
+			    vaddr);
 		return -ENOTSUP;
 	}
 
