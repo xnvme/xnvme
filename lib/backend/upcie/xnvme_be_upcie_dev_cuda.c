@@ -80,6 +80,7 @@ _cuda_rte_term(void)
 	}
 
 	xnvme_be_upcie_cuda_cqmirror_term();
+	xnvme_be_upcie_served_mem_unmap_all(&g_upcie_cuda_rte.dmem, NULL);
 	for (int i = 0; i < XNVME_BE_CREF_MAX_ENTRIES; ++i) {
 		_cuda_ctrlr_term(&g_upcie_cuda_rte.ctrlrs[i]);
 	}
@@ -594,6 +595,7 @@ xnvme_be_upcie_cuda_ctrlr_term(void *handle)
 {
 	struct xnvme_be_upcie_cuda_ctrlr *slot = _cuda_ctrlr_slot_of(handle);
 
+	xnvme_be_upcie_served_mem_unmap_all(&g_upcie_cuda_rte.dmem, handle);
 	if (slot) {
 		_cuda_ctrlr_term(slot);
 	}
