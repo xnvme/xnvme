@@ -449,9 +449,13 @@ xnvme_znd_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, bo
 	ctx->cmd.common.opcode = XNVME_SPEC_ZND_OPC_MGMT_SEND;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.znd.mgmt_send.slba = zslba;
-	ctx->cmd.znd.mgmt_send.select_all = select_all;
-	ctx->cmd.znd.mgmt_send.zsa = zsa;
-	ctx->cmd.znd.mgmt_send.zsaso = zsaso;
+	ctx->cmd.znd.mgmt_send.cdw13 =
+		xnvme_bits_set(ctx->cmd.znd.mgmt_send.cdw13,
+			       XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_SELECT_ALL, select_all);
+	ctx->cmd.znd.mgmt_send.cdw13 = xnvme_bits_set(ctx->cmd.znd.mgmt_send.cdw13,
+						      XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZSA, zsa);
+	ctx->cmd.znd.mgmt_send.cdw13 = xnvme_bits_set(
+		ctx->cmd.znd.mgmt_send.cdw13, XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZSASO, zsaso);
 
 	if (dbuf) {
 		struct xnvme_spec_idfy_ns *nvm = (void *)xnvme_dev_get_ns(ctx->dev);
@@ -509,7 +513,9 @@ xnvme_znd_zrwa_flush(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t lba)
 	ctx->cmd.common.opcode = XNVME_SPEC_ZND_OPC_MGMT_SEND;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.znd.mgmt_send.slba = lba;
-	ctx->cmd.znd.mgmt_send.zsa = XNVME_SPEC_ZND_CMD_MGMT_SEND_FLUSH;
+	ctx->cmd.znd.mgmt_send.cdw13 = xnvme_bits_set(ctx->cmd.znd.mgmt_send.cdw13,
+						      XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZSA,
+						      XNVME_SPEC_ZND_CMD_MGMT_SEND_FLUSH);
 
 	return xnvme_cmd_pass(ctx, NULL, 0x0, NULL, 0x0);
 }
