@@ -240,7 +240,7 @@ xnvme_adm_dir_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t doper, uint
 	ctx->cmd.drecv.numd = (dbuf_nbytes) ? (dbuf_nbytes / sizeof(uint32_t) - 1u) : 0;
 	ctx->cmd.drecv.doper = doper;
 	ctx->cmd.drecv.dtype = dtype;
-	ctx->cmd.drecv.cdw12.val = val;
+	ctx->cmd.drecv.cdw12 = val;
 
 	return xnvme_cmd_pass_admin(ctx, dbuf, dbuf_nbytes, NULL, 0x0);
 }

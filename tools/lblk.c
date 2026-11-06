@@ -424,7 +424,7 @@ sub_dir_receive(struct xnvme_cli *cli)
 			dbuf_nbytes = 128 * 1024;
 			break;
 		case XNVME_SPEC_DRECV_STREAMS_ALLRS:
-			cdw12 = nsr & 0xFFFF;
+			cdw12 = xnvme_bits_set(cdw12, XNVME_SPEC_CMD_DRECV_CDW12_NSR, nsr);
 			break;
 		default:
 			xnvme_cli_perr("invalid directive operation for streams directive", err);

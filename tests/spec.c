@@ -59,6 +59,16 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_dsend, dspec) == 46,
 		    "dspec of struct xnvme_spec_cmd_dsend")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_dsend, cdw12) == 48,
 		    "cdw12 of struct xnvme_spec_cmd_dsend")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_drecv, cdw12, XNVME_SPEC_CMD_DRECV_CDW12_NSR),
+		    "cdw12 of struct xnvme_spec_cmd_drecv")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_drecv, doper) == 44,
+		    "doper of struct xnvme_spec_cmd_drecv")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_drecv, dtype) == 45,
+		    "dtype of struct xnvme_spec_cmd_drecv")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_drecv, dspec) == 46,
+		    "dspec of struct xnvme_spec_cmd_drecv")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_drecv, cdw12) == 48,
+		    "cdw12 of struct xnvme_spec_cmd_drecv")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 			 XNVME_SPEC_CMD_LOG_CDW10_LID | XNVME_SPEC_CMD_LOG_CDW10_LSP |
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
@@ -529,6 +539,16 @@ sub_sqe_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	    xnvme_bits_get(sqe.dsend.cdw12, XNVME_SPEC_CMD_DSEND_CDW12_TDTYPE) != 0x01) {
 		xnvme_cli_pinf("FAILED: dsend: doper: %#x, dtype: %#x, dspec: %#x, cdw12: %#x",
 			       sqe.dsend.doper, sqe.dsend.dtype, sqe.dsend.dspec, sqe.dsend.cdw12);
+		err = -EINVAL;
+	}
+
+	memset(&sqe, 0, sizeof(sqe));
+	sqe.cdw[11] = 0xcafe0103; // Directive Receive dword 11: DOPER 3, DTYPE 1, DSPEC 0xcafe
+	sqe.cdw[12] = 0xffff0042; // Directive Receive dword 12, bits 15:0: NSR 0x42
+	if (sqe.drecv.doper != 0x03 || sqe.drecv.dtype != 0x01 || sqe.drecv.dspec != 0xcafe ||
+	    xnvme_bits_get(sqe.drecv.cdw12, XNVME_SPEC_CMD_DRECV_CDW12_NSR) != 0x42) {
+		xnvme_cli_pinf("FAILED: drecv: doper: %#x, dtype: %#x, dspec: %#x, cdw12: %#x",
+			       sqe.drecv.doper, sqe.drecv.dtype, sqe.drecv.dspec, sqe.drecv.cdw12);
 		err = -EINVAL;
 	}
 
