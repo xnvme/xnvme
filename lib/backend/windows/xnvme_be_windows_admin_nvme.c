@@ -129,13 +129,14 @@ _be_windows_nvme_storage_property(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t 
 
 		query->PropertyId = StorageDeviceProtocolSpecificProperty;
 		query->SetType = PropertyStandardSet;
-		if (ctx->cmd.sfeat.cdw10.fid == XNVME_SPEC_FEAT_VWCACHE) {
+		if (xnvme_bits_get(ctx->cmd.sfeat.cdw10, XNVME_SPEC_CMD_SFEAT_CDW10_FID) ==
+		    XNVME_SPEC_FEAT_VWCACHE) {
 			query->PropertyId = StorageAdapterProtocolSpecificProperty;
 		}
 
 		protocol_data->ProtocolType = ProtocolTypeNvme;
 		protocol_data->DataType = NVMeDataTypeFeature;
-		protocol_data->ProtocolDataValue = ctx->cmd.sfeat.cdw10.val;
+		protocol_data->ProtocolDataValue = ctx->cmd.sfeat.cdw10;
 		protocol_data->ProtocolDataSubValue = cdw11;
 		protocol_data->ProtocolDataOffset = 0;
 		protocol_data->ProtocolDataLength = 0;

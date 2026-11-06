@@ -151,8 +151,10 @@ xnvme_prep_adm_sfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint
 {
 	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_SFEAT;
 	ctx->cmd.common.nsid = nsid;
-	ctx->cmd.sfeat.cdw10.fid = fid;
-	ctx->cmd.sfeat.cdw10.save = save;
+	ctx->cmd.sfeat.cdw10 =
+		xnvme_bits_set(ctx->cmd.sfeat.cdw10, XNVME_SPEC_CMD_SFEAT_CDW10_FID, fid);
+	ctx->cmd.sfeat.cdw10 =
+		xnvme_bits_set(ctx->cmd.sfeat.cdw10, XNVME_SPEC_CMD_SFEAT_CDW10_SV, save);
 	ctx->cmd.sfeat.feat.val = feat;
 }
 
@@ -206,8 +208,10 @@ xnvme_adm_sfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint32_t 
 {
 	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_SFEAT;
 	ctx->cmd.common.nsid = nsid;
-	ctx->cmd.sfeat.cdw10.fid = fid;
-	ctx->cmd.sfeat.cdw10.save = save;
+	ctx->cmd.sfeat.cdw10 =
+		xnvme_bits_set(ctx->cmd.sfeat.cdw10, XNVME_SPEC_CMD_SFEAT_CDW10_FID, fid);
+	ctx->cmd.sfeat.cdw10 =
+		xnvme_bits_set(ctx->cmd.sfeat.cdw10, XNVME_SPEC_CMD_SFEAT_CDW10_SV, save);
 	ctx->cmd.sfeat.feat.val = feat;
 
 	return xnvme_cmd_pass_admin(ctx, (void *)dbuf, dbuf_nbytes, NULL, 0x0);
