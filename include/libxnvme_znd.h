@@ -250,7 +250,7 @@ xnvme_znd_report_from_dev(struct xnvme_dev *dev, uint64_t slba, size_t limit, ui
  * Scan the 'report' for a zone in the given 'state' and store it in 'zlba'
  *
  * @param report The report to scan
- * @param state The zone-state to scan for
+ * @param state The zone-state to scan for, a value of ::xnvme_spec_znd_state
  * @param zlba Pointer to store zlba to
  * @param opts Optional seed random-number generator, when 0 then time(NULL) is
  * used
@@ -258,8 +258,8 @@ xnvme_znd_report_from_dev(struct xnvme_dev *dev, uint64_t slba, size_t limit, ui
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
 int
-xnvme_znd_report_find_arbitrary(const struct xnvme_znd_report *report,
-				enum xnvme_spec_znd_state state, uint64_t *zlba, int opts);
+xnvme_znd_report_find_arbitrary(const struct xnvme_znd_report *report, uint32_t state,
+				uint64_t *zlba, int opts);
 
 #ifdef __cplusplus
 }
