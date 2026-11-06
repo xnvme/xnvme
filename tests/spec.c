@@ -161,6 +161,15 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_cmd_scopy, lbatm) == 62,
 		    "lbatm of struct xnvme_spec_nvm_cmd_scopy")
 XNVME_STATIC_ASSERT(offsetof(union xnvme_spec_nvm_cmd, scopy.cdw12) == 48,
 		    "scopy of union xnvme_spec_nvm_cmd")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_cmd_append, cdw12,
+			 XNVME_SPEC_ZND_CMD_APPEND_CDW12_NLB |
+				 XNVME_SPEC_ZND_CMD_APPEND_CDW12_DTYPE |
+				 XNVME_SPEC_ZND_CMD_APPEND_CDW12_PRINFO |
+				 XNVME_SPEC_ZND_CMD_APPEND_CDW12_FUA |
+				 XNVME_SPEC_ZND_CMD_APPEND_CDW12_LR),
+		    "cdw12 of struct xnvme_spec_znd_cmd_append")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_znd_cmd_append, cdw12) == 48,
+		    "cdw12 of struct xnvme_spec_znd_cmd_append")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 			 XNVME_SPEC_CMD_LOG_CDW10_LID | XNVME_SPEC_CMD_LOG_CDW10_LSP |
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
@@ -1136,6 +1145,17 @@ sub_io_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	    sqe.scopy.dspec != 0xbeef) {
 		xnvme_cli_pinf("FAILED: scopy: cdw12: %#x, dspec: %#x", sqe.scopy.cdw12,
 			       sqe.scopy.dspec);
+		err = -EINVAL;
+	}
+
+	memset(&sqe, 0, sizeof(sqe));
+	sqe.cdw[12] = 0x5c30001f; // Zone Append dword 12: NLB 0x1f, DTYPE 0x3, PRINFO 0x7, FUA
+	if (xnvme_bits_get(sqe.znd.append.cdw12, XNVME_SPEC_ZND_CMD_APPEND_CDW12_NLB) != 0x1f ||
+	    xnvme_bits_get(sqe.znd.append.cdw12, XNVME_SPEC_ZND_CMD_APPEND_CDW12_DTYPE) != 0x3 ||
+	    xnvme_bits_get(sqe.znd.append.cdw12, XNVME_SPEC_ZND_CMD_APPEND_CDW12_PRINFO) != 0x7 ||
+	    !xnvme_bits_get(sqe.znd.append.cdw12, XNVME_SPEC_ZND_CMD_APPEND_CDW12_FUA) ||
+	    xnvme_bits_get(sqe.znd.append.cdw12, XNVME_SPEC_ZND_CMD_APPEND_CDW12_LR)) {
+		xnvme_cli_pinf("FAILED: znd.append: cdw12: %#x", sqe.znd.append.cdw12);
 		err = -EINVAL;
 	}
 

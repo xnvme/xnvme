@@ -498,7 +498,8 @@ xnvme_znd_append(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, uint1
 	ctx->cmd.common.opcode = XNVME_SPEC_ZND_OPC_APPEND;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.znd.append.zslba = zslba;
-	ctx->cmd.znd.append.nlb = nlb;
+	ctx->cmd.znd.append.cdw12 = xnvme_bits_set(ctx->cmd.znd.append.cdw12,
+						   XNVME_SPEC_ZND_CMD_APPEND_CDW12_NLB, nlb);
 
 	return xnvme_cmd_pass(ctx, cdbuf, dbuf_nbytes, cmbuf, mbuf_nbytes);
 }
