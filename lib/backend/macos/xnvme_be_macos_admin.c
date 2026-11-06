@@ -23,7 +23,8 @@ _gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 	case XNVME_SPEC_FEAT_NQUEUES:
 		feat.nqueues.nsqa = 63;
 		feat.nqueues.ncqa = 63;
-		ctx->cpl.cdw0 = feat.val;
+		ctx->cpl.result =
+			xnvme_bits_set(ctx->cpl.result, XNVME_SPEC_CQE_RESULT_CDW0, feat.val);
 		break;
 
 	default:

@@ -181,7 +181,7 @@ test_queues(struct xnvme_cli *cli, void *(*fn)(void *))
 		err = xnvme_adm_gfeat(&ctx, 0x0, XNVME_SPEC_FEAT_NQUEUES,
 				      XNVME_SPEC_FEAT_SEL_CURRENT, NULL, 0);
 		if (!err && !xnvme_cmd_ctx_cpl_status(&ctx)) {
-			feat.val = ctx.cpl.cdw0;
+			feat.val = xnvme_bits_get(ctx.cpl.result, XNVME_SPEC_CQE_RESULT_CDW0);
 			nthreads = XNVME_MIN(THREADS, (int)feat.nqueues.nsqa);
 		}
 	}

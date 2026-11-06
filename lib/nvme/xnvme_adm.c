@@ -195,7 +195,7 @@ xnvme_adm_gfeat_nqueues(struct xnvme_cmd_ctx *ctx, uint32_t *nsq, uint32_t *ncq)
 		return -EIO;
 	}
 
-	feat.val = ctx->cpl.cdw0;
+	feat.val = xnvme_bits_get(ctx->cpl.result, XNVME_SPEC_CQE_RESULT_CDW0);
 	*nsq = feat.nqueues.nsqa + 1;
 	*ncq = feat.nqueues.ncqa + 1;
 

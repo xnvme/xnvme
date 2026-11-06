@@ -197,7 +197,7 @@ test_ctrlr_gfeat_nqueues(struct xnvme_cli *cli)
 		err = err ? err : -EIO;
 		goto exit;
 	}
-	feat.val = ctx.cpl.cdw0;
+	feat.val = xnvme_bits_get(ctx.cpl.result, XNVME_SPEC_CQE_RESULT_CDW0);
 
 	if ((nsq != (uint32_t)feat.nqueues.nsqa + 1) || (ncq != (uint32_t)feat.nqueues.ncqa + 1)) {
 		xnvme_cli_pinf("FAILED: nsq(%u) ncq(%u) vs nsqa(%u) ncqa(%u)", nsq, ncq,
