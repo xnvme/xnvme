@@ -2326,17 +2326,19 @@ struct xnvme_spec_znd_cmd_mgmt_recv {
 	/* cdw 12 */
 	uint32_t ndwords; ///< Number of dwords in data-payload
 
-	/* cdw 13 */
-	uint32_t zra     : 8; ///< Zone Receive Action
-	uint32_t zrasf   : 8; ///< Zone Receive Action Specific Field
-	uint32_t partial : 1; ///< Partial
-
-	uint32_t rsvd    : 15;
+	uint32_t cdw13; ///< Command dword 13, see XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_*
 
 	/* cdw 14-15 */
 	uint64_t addrs_dst; ///< destination addresses
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_cmd_mgmt_recv) == 64, "Incorrect size")
+
+/** Zone Receive Action; bits 7:0 of 'cdw13' */
+#define XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRA 0xff
+/** Zone Receive Action Specific Field; bits 15:8 of 'cdw13' */
+#define XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRASF 0xff00
+/** Partial Report; bit 16 of 'cdw13' */
+#define XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_PARTIAL 0x10000
 
 /**
  * NVMe Command Accessor for a command with opcode ZND_CMD_OPC_APPEND
