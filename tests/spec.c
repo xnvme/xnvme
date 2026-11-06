@@ -145,6 +145,20 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_scopy_fmt_zero, nlb) == 16,
 		    "nlb of struct xnvme_spec_nvm_scopy_fmt_zero")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_scopy_fmt_zero, eilbrt) == 20,
 		    "eilbrt of struct xnvme_spec_nvm_scopy_fmt_zero")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_nvm_cmd_scopy, cdw12,
+			 XNVME_SPEC_NVM_CMD_SCOPY_CDW12_NR | XNVME_SPEC_NVM_CMD_SCOPY_CDW12_DF |
+				 XNVME_SPEC_NVM_CMD_SCOPY_CDW12_PRINFOR |
+				 XNVME_SPEC_NVM_CMD_SCOPY_CDW12_DTYPE |
+				 XNVME_SPEC_NVM_CMD_SCOPY_CDW12_PRINFOW |
+				 XNVME_SPEC_NVM_CMD_SCOPY_CDW12_FUA |
+				 XNVME_SPEC_NVM_CMD_SCOPY_CDW12_LR),
+		    "cdw12 of struct xnvme_spec_nvm_cmd_scopy")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_cmd_scopy, cdw12) == 48,
+		    "cdw12 of struct xnvme_spec_nvm_cmd_scopy")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_cmd_scopy, dspec) == 54,
+		    "dspec of struct xnvme_spec_nvm_cmd_scopy")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_cmd_scopy, lbatm) == 62,
+		    "lbatm of struct xnvme_spec_nvm_cmd_scopy")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 			 XNVME_SPEC_CMD_LOG_CDW10_LID | XNVME_SPEC_CMD_LOG_CDW10_LSP |
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
@@ -1103,6 +1117,23 @@ sub_io_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	    xnvme_bits_get(sqe.dsm.cdw11, XNVME_SPEC_CMD_DSM_CDW11_IDW) ||
 	    !xnvme_bits_get(sqe.dsm.cdw11, XNVME_SPEC_CMD_DSM_CDW11_AD)) {
 		xnvme_cli_pinf("FAILED: dsm: nr: %#x, cdw11: %#x", sqe.dsm.nr, sqe.dsm.cdw11);
+		err = -EINVAL;
+	}
+
+	memset(&sqe, 0, sizeof(sqe));
+	// Copy dword 12: NR 0x3, DF 0x1, PRINFOR 0xc, DTYPE 0xb, PRINFOW 0x2, LR
+	sqe.cdw[12] = 0x88b0c103;
+	sqe.cdw[13] = 0xbeef0000; // Copy dword 13: DSPEC 0xbeef
+	if (xnvme_bits_get(sqe.scopy.cdw12, XNVME_SPEC_NVM_CMD_SCOPY_CDW12_NR) != 0x3 ||
+	    xnvme_bits_get(sqe.scopy.cdw12, XNVME_SPEC_NVM_CMD_SCOPY_CDW12_DF) != 0x1 ||
+	    xnvme_bits_get(sqe.scopy.cdw12, XNVME_SPEC_NVM_CMD_SCOPY_CDW12_PRINFOR) != 0xc ||
+	    xnvme_bits_get(sqe.scopy.cdw12, XNVME_SPEC_NVM_CMD_SCOPY_CDW12_DTYPE) != 0xb ||
+	    xnvme_bits_get(sqe.scopy.cdw12, XNVME_SPEC_NVM_CMD_SCOPY_CDW12_PRINFOW) != 0x2 ||
+	    xnvme_bits_get(sqe.scopy.cdw12, XNVME_SPEC_NVM_CMD_SCOPY_CDW12_FUA) ||
+	    !xnvme_bits_get(sqe.scopy.cdw12, XNVME_SPEC_NVM_CMD_SCOPY_CDW12_LR) ||
+	    sqe.scopy.dspec != 0xbeef) {
+		xnvme_cli_pinf("FAILED: scopy: cdw12: %#x, dspec: %#x", sqe.scopy.cdw12,
+			       sqe.scopy.dspec);
 		err = -EINVAL;
 	}
 
