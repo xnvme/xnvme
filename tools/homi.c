@@ -299,7 +299,12 @@ sub_serve(struct xnvme_cli *cli)
 				continue; // No BDF for this controller; nothing to expose
 			}
 
-			snprintf(name, sizeof(name), "xnvme/%s", ident->uri);
+			if (snprintf(name, sizeof(name), "xnvme/%s", ident->uri) >=
+			    (int)sizeof(name)) {
+				xnvme_cli_perr("Failed: name does not fit; skipped",
+					       -ENAMETOOLONG);
+				continue;
+			}
 
 			err = xnvme_cuse_start(&cuse_sessions[i], devs[i], name);
 			if (err && err != -ENOSYS && err != -ENOTSUP) {

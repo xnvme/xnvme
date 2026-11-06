@@ -75,7 +75,7 @@ xnvme_be_ioring_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 
 	if (!handle) {
 		err = GetLastError();
-		XNVME_DEBUG("Failed creating IO ring handle: %" PRId32, err);
+		XNVME_DEBUG("Failed creating IO ring handle: %ld", err);
 		return err;
 	}
 
@@ -90,7 +90,7 @@ xnvme_be_ioring_init(struct xnvme_queue *q, int XNVME_UNUSED(opts))
 	err = (create_ioring_procadd)(IORING_VERSION_3, flags, MAX_IORING_SQ, MAX_IORING_CQ,
 				      &queue->ring_handle);
 	if (err < 0) {
-		XNVME_DEBUG("Failed creating IO ring handle: %" PRId32, err);
+		XNVME_DEBUG("Failed creating IO ring handle: %ld", err);
 		return err;
 	}
 
@@ -142,8 +142,8 @@ xnvme_be_ioring_poke(struct xnvme_queue *q, uint32_t max)
 			if (!ctx) {
 				XNVME_DEBUG("-{[THIS SHOULD NOT HAPPEN]}-");
 				XNVME_DEBUG("cqe->user_data is NULL! => NO REQ!");
-				XNVME_DEBUG("cqe->res: %d", cqe.ResultCode);
-				XNVME_DEBUG("cqe->rbytes: %u", cqe.Information);
+				XNVME_DEBUG("cqe->res: %ld", cqe.ResultCode);
+				XNVME_DEBUG("cqe->rbytes: %" PRIuPTR, (uintptr_t)cqe.Information);
 				return -EIO;
 			}
 
@@ -208,8 +208,7 @@ xnvme_be_ioring_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 						      IOSQE_FLAGS_NONE);
 
 		if (err < 0) {
-			XNVME_DEBUG("Failed building IO ring read file structure: 0x%" PRIx32,
-				    err);
+			XNVME_DEBUG("Failed building IO ring read file structure: 0x%lx", err);
 			return err;
 		}
 		break;
@@ -225,7 +224,7 @@ xnvme_be_ioring_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 						       IOSQE_FLAGS_NONE);
 
 		if (err < 0) {
-			XNVME_DEBUG("Failed building IO ring write file structure: 0x%d\n", err);
+			XNVME_DEBUG("Failed building IO ring write file structure: 0x%lx", err);
 			return err;
 		}
 		break;
@@ -238,7 +237,7 @@ xnvme_be_ioring_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 
 	err = (submit_ioring_procadd)(queue->ring_handle, 0, 0, &submitted_entries);
 	if (err < 0) {
-		XNVME_DEBUG("io_uring_submit(0x%" PRIx16 "), err: %d", ctx->cmd.common.opcode,
+		XNVME_DEBUG("io_uring_submit(0x%" PRIx16 "), err: %ld", ctx->cmd.common.opcode,
 			    err);
 		return err;
 	}

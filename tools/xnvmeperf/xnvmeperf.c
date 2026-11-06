@@ -847,9 +847,9 @@ xnvmeperf_open_devs(struct xnvmeperf_args *args, struct xnvme_dev ***devs)
 static int
 xnvmeperf_run(struct xnvmeperf_args *args)
 {
-	struct xnvmeperf_thread *threads;
+	struct xnvmeperf_thread *threads = NULL;
 	struct xnvme_dev **devs;
-	pthread_t *tids;
+	pthread_t *tids = NULL;
 	int total_jobs, err;
 
 	// Pre-open all devices, as they can only be opened once.

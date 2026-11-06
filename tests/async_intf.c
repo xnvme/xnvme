@@ -20,16 +20,16 @@ test_init_term(struct xnvme_cli *cli)
 	struct xnvme_queue *queue[XNVME_TESTS_NQUEUE_MAX] = {0};
 
 	if (count > XNVME_TESTS_NQUEUE_MAX) {
-		XNVME_DEBUG("FAILED: count(%zu) out-of-bounds for test", count);
+		XNVME_DEBUG("FAILED: count(%" PRIu64 ") out-of-bounds for test", count);
 		return 1;
 	}
 	if (qd > XNVME_TESTS_QDEPTH_MAX) {
-		XNVME_DEBUG("FAILED: qd(%zu) out-of-bounds for test", qd);
+		XNVME_DEBUG("FAILED: qd(%" PRIu64 ") out-of-bounds for test", qd);
 		return 1;
 	}
 
-	xnvme_cli_pinf("count: %zu", count);
-	xnvme_cli_pinf("qdepth: %zu", qd);
+	xnvme_cli_pinf("count: %" PRIu64, count);
+	xnvme_cli_pinf("qdepth: %" PRIu64, qd);
 	xnvme_cli_pinf("clear: %d", cli->args.clear);
 	xnvme_cli_pinf("p2p_cq_mirror: %d", cli->args.p2p_cq_mirror);
 
@@ -54,7 +54,7 @@ test_init_term(struct xnvme_cli *cli)
 		xnvme_spec_feat_pr(XNVME_SPEC_FEAT_NQUEUES, &feat, XNVME_PR_DEF);
 
 		if (count >= (uint64_t)(feat.nqueues.nsqa + 1)) {
-			xnvme_cli_pinf("skipping -- count: %zu > (nsqa + 1): %u", count,
+			xnvme_cli_pinf("skipping -- count: %" PRIu64 " > (nsqa + 1): %u", count,
 				       feat.nqueues.nsqa);
 			return 0;
 		}
@@ -64,7 +64,8 @@ test_init_term(struct xnvme_cli *cli)
 	for (uint64_t qn = 0; qn < count; ++qn) {
 		err = xnvme_queue_init(dev, qd, opts, &queue[qn]);
 		if (err) {
-			XNVME_DEBUG("FAILED: init qn: %zu, qd: %zu, err: %d", qn, qd, err);
+			XNVME_DEBUG("FAILED: init qn: %" PRIu64 ", qd: %" PRIu64 ", err: %d", qn,
+				    qd, err);
 
 			if (!((err == -ENOMEM) && (qn == count - 1))) {
 				goto exit;
@@ -76,7 +77,7 @@ test_init_term(struct xnvme_cli *cli)
 		}
 
 		if (xnvme_queue_get_capacity(queue[qn]) != qd) {
-			XNVME_DEBUG("FAILED: xnvme_queue_get_capacity() != qd(%zu)", qd);
+			XNVME_DEBUG("FAILED: xnvme_queue_get_capacity() != qd(%" PRIu64 ")", qd);
 			err = -EIO;
 			goto exit;
 		}
@@ -85,12 +86,12 @@ test_init_term(struct xnvme_cli *cli)
 exit:
 	// Tear down queues
 	for (uint64_t qn = 0; qn < count; ++qn) {
-		XNVME_DEBUG("INFO: qn: %zu", qn);
+		XNVME_DEBUG("INFO: qn: %" PRIu64, qn);
 		if (!queue[qn]) {
 			continue;
 		}
 		if (xnvme_queue_term(queue[qn])) {
-			XNVME_DEBUG("FAILED: xnvme_queue_term, qn(%zu)", qn);
+			XNVME_DEBUG("FAILED: xnvme_queue_term, qn(%" PRIu64 ")", qn);
 			err = -EIO;
 		}
 	}
@@ -125,12 +126,12 @@ test_init_io_term(struct xnvme_cli *cli)
 	int err = 0;
 
 	if (qd > XNVME_TESTS_QDEPTH_MAX) {
-		XNVME_DEBUG("FAILED: qd(%zu) out-of-bounds for test", qd);
+		XNVME_DEBUG("FAILED: qd(%" PRIu64 ") out-of-bounds for test", qd);
 		return 1;
 	}
 
-	xnvme_cli_pinf("count: %zu", count);
-	xnvme_cli_pinf("qdepth: %zu", qd);
+	xnvme_cli_pinf("count: %" PRIu64, count);
+	xnvme_cli_pinf("qdepth: %" PRIu64, qd);
 	xnvme_cli_pinf("p2p_cq_mirror: %d", cli->args.p2p_cq_mirror);
 
 	buf = xnvme_buf_alloc(dev, buf_nbytes);
@@ -172,12 +173,13 @@ test_init_io_term(struct xnvme_cli *cli)
 			}
 		}
 		if (!err && completed != qd) {
-			XNVME_DEBUG("FAILED: round: %zu, completed: %zu != qd: %zu", round,
-				    completed, qd);
+			XNVME_DEBUG("FAILED: round: %" PRIu64 ", completed: %" PRIu64
+				    " != qd: %" PRIu64,
+				    round, completed, qd);
 			err = -EIO;
 		}
 		if (xnvme_queue_term(queue)) {
-			XNVME_DEBUG("FAILED: xnvme_queue_term, round(%zu)", round);
+			XNVME_DEBUG("FAILED: xnvme_queue_term, round(%" PRIu64 ")", round);
 			err = err ? err : -EIO;
 		}
 		if (err) {

@@ -120,7 +120,9 @@ xnvme_cplane_get_ctrlr_info(const char *uri, struct xnvme_cplane_ctrlr_info *inf
 			continue;
 		}
 
-		snprintf(path, sizeof(path), "/tmp/%s", entry->d_name);
+		if (snprintf(path, sizeof(path), "/tmp/%s", entry->d_name) >= (int)sizeof(path)) {
+			continue;
+		}
 
 		sock = xnvme_be_upcie_cplane_connect(path);
 		if (sock < 0) {
