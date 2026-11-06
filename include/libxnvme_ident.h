@@ -6,6 +6,7 @@
  * @file libxnvme_ident.h
  */
 
+/** Size, in bytes, of the 'uri' of ::xnvme_ident, its terminating NUL included */
 #define XNVME_IDENT_URI_LEN 384
 
 /**
