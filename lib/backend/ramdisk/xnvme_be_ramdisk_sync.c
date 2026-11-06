@@ -42,7 +42,8 @@ xnvme_be_ramdisk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_
 
 	case XNVME_SPEC_NVM_OPC_WRITE_ZEROES:
 		memset(offset + (ctx->cmd.nvm.slba << ssw), 0,
-		       (ctx->cmd.nvm.nlb + 1) * ctx->dev->geo.lba_nbytes);
+		       (xnvme_bits_get(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB) + 1) *
+			       ctx->dev->geo.lba_nbytes);
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:

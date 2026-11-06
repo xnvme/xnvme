@@ -1,0 +1,45 @@
+--- a/engines/xnvme.c
++++ b/engines/xnvme.c
+@@ -17,6 +17,21 @@
+ #else
+ #define FIO_XNVME_CPL_SC(cpl) ((cpl).status.sc)
+ #endif
++
++/* Dword 12 of an NVM command is an integer behind masks where xNVMe defines them */
++#ifdef XNVME_SPEC_CMD_NVM_CDW12_NLB
++#define FIO_XNVME_NVM_CDW12_SET(cmd, mask, val) \
++	((cmd)->nvm.cdw12 = (uint32_t)xnvme_bits_set((cmd)->nvm.cdw12, (mask), (val)))
++#define FIO_XNVME_SET_NLB(cmd, val) FIO_XNVME_NVM_CDW12_SET(cmd, XNVME_SPEC_CMD_NVM_CDW12_NLB, val)
++#define FIO_XNVME_SET_DTYPE(cmd, val) \
++	FIO_XNVME_NVM_CDW12_SET(cmd, XNVME_SPEC_CMD_NVM_CDW12_DTYPE, val)
++#define FIO_XNVME_SET_PRINFO(cmd, val) \
++	FIO_XNVME_NVM_CDW12_SET(cmd, XNVME_SPEC_CMD_NVM_CDW12_PRINFO, val)
++#else
++#define FIO_XNVME_SET_NLB(cmd, val) ((cmd)->nvm.nlb = (val))
++#define FIO_XNVME_SET_DTYPE(cmd, val) ((cmd)->nvm.dtype = (val))
++#define FIO_XNVME_SET_PRINFO(cmd, val) ((cmd)->nvm.prinfo = (val))
++#endif
+ #include "fio.h"
+ #include "verify.h"
+ #include "zbd_types.h"
+@@ -759,9 +774,9 @@
+ 
+ 	ctx->cmd.common.nsid = nsid;
+ 	ctx->cmd.nvm.slba = slba;
+-	ctx->cmd.nvm.nlb = nlb;
++	FIO_XNVME_SET_NLB(&ctx->cmd, nlb);
+ 	if (dir) {
+-		ctx->cmd.nvm.dtype = io_u->dtype;
++		FIO_XNVME_SET_DTYPE(&ctx->cmd, io_u->dtype);
+ 		ctx->cmd.nvm.cdw13.dspec = io_u->dspec;
+ 	}
+ 
+@@ -804,7 +819,7 @@
+ 	}
+ 
+ 	if (fwrap->geo->pi_type)
+-		ctx->cmd.nvm.prinfo = (o->pi_act << 3 | o->prchk);
++		FIO_XNVME_SET_PRINFO(&ctx->cmd, (o->pi_act << 3 | o->prchk));
+ 
+ 	switch (fwrap->geo->pi_type) {
+ 	case XNVME_PI_TYPE1:

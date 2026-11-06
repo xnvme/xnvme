@@ -120,7 +120,8 @@ main(int argc, char **argv)
 		h_cmds[i].nvm.slba = i;
 		h_cmds[i].common.nsid = nsid;
 		h_cmds[i].common.dptr.prp.prp1 = phys;
-		h_cmds[i].nvm.nlb = 0;
+		h_cmds[i].nvm.cdw12 =
+			xnvme_bits_set(h_cmds[i].nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB, 0);
 	}
 
 	cerr = cudaMalloc((void **)&d_cmds, qdepth * sizeof(*d_cmds));

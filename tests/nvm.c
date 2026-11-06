@@ -560,7 +560,8 @@ sub_write_directive(struct xnvme_cli *cli)
 
 	xnvme_cli_pinf("Preparing and sending the command...");
 	xnvme_prep_nvm(&ctx, XNVME_SPEC_NVM_OPC_WRITE, nsid, slba, nlb);
-	ctx.cmd.nvm.dtype = dtype;
+	ctx.cmd.nvm.cdw12 =
+		xnvme_bits_set(ctx.cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_DTYPE, dtype);
 	ctx.cmd.nvm.cdw13.dspec = dspec;
 
 	err = xnvme_cmd_pass(&ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
@@ -676,7 +677,8 @@ sub_write_read_pi(struct xnvme_cli *cli)
 	}
 
 	xnvme_prep_nvm(&ctx, XNVME_SPEC_NVM_OPC_WRITE, nsid, slba, nlb);
-	ctx.cmd.nvm.prinfo = (pract << 3 | prchk);
+	ctx.cmd.nvm.cdw12 = xnvme_bits_set(ctx.cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_PRINFO,
+					   (pract << 3 | prchk));
 
 	switch (geo->pi_type) {
 	case XNVME_PI_TYPE1:

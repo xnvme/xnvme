@@ -1982,13 +1982,7 @@ struct xnvme_spec_cmd_nvm {
 
 	uint64_t slba; ///< SLBA: Start Logical Block Address
 
-	uint32_t nlb    : 16; ///< NLB: Number of logical blocks
-	uint32_t rsvd   : 4;
-	uint32_t dtype  : 4; ///< DT: Directive Type
-	uint32_t rsvd2  : 2;
-	uint32_t prinfo : 4; ///< PI: Protection Information Field
-	uint32_t fua    : 1; ///< FUA: Force unit access
-	uint32_t lr     : 1; ///< LR: Limited retry
+	uint32_t cdw12; ///< Command dword 12, see XNVME_SPEC_CMD_NVM_CDW12_*
 
 	/* cdw 13 */
 	union {
@@ -2011,6 +2005,17 @@ struct xnvme_spec_cmd_nvm {
 	uint32_t lbatm : 16; ///< logical Block Application Tag Mask
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_nvm) == 64, "Incorrect size")
+
+/** Number of Logical Blocks, zero-based; bits 15:0 of 'cdw12' */
+#define XNVME_SPEC_CMD_NVM_CDW12_NLB 0xffff
+/** Directive Type; bits 23:20 of 'cdw12' */
+#define XNVME_SPEC_CMD_NVM_CDW12_DTYPE 0xf00000
+/** Protection Information Field; bits 29:26 of 'cdw12' */
+#define XNVME_SPEC_CMD_NVM_CDW12_PRINFO 0x3c000000
+/** Force Unit Access; bit 30 of 'cdw12' */
+#define XNVME_SPEC_CMD_NVM_CDW12_FUA 0x40000000
+/** Limited Retry; bit 31 of 'cdw12' */
+#define XNVME_SPEC_CMD_NVM_CDW12_LR 0x80000000
 
 /**
  * The Dataset Management command is used by the host to indicate attributes for ranges of logical

@@ -413,7 +413,8 @@ _cmd_io(struct xnvme_cmd_ctx *ctx, uint64_t addr, size_t dbuf_nbytes, void *mbuf
 	// Honour the FUA bit of an NVM write; on a raw block device RWF_DSYNC
 	// makes the kernel issue the write with REQ_FUA. Only for the NVM opcode:
 	// 'fua' is an NVMe command-field, it does not exist for the FS opcodes
-	sqe->rw_flags = (ctx->cmd.common.opcode == XNVME_SPEC_NVM_OPC_WRITE && ctx->cmd.nvm.fua)
+	sqe->rw_flags = (ctx->cmd.common.opcode == XNVME_SPEC_NVM_OPC_WRITE &&
+			 xnvme_bits_get(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_FUA))
 				? RWF_DSYNC
 				: 0;
 	sqe->user_data = (unsigned long)ctx;
@@ -525,7 +526,8 @@ xnvme_be_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t 
 	switch (opcode) {
 	case IORING_OP_WRITEV:
 		io_uring_prep_writev(sqe, fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
-		if (ctx->cmd.common.opcode == XNVME_SPEC_NVM_OPC_WRITE && ctx->cmd.nvm.fua) {
+		if (ctx->cmd.common.opcode == XNVME_SPEC_NVM_OPC_WRITE &&
+		    xnvme_bits_get(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_FUA)) {
 			// Honour the FUA bit of an NVM write; on a raw block device
 			// RWF_DSYNC makes the kernel issue the write with REQ_FUA.
 			// Only for the NVM opcode: 'fua' is an NVMe command-field, it

@@ -26,7 +26,7 @@ xnvme_be_windows_read(HANDLE handle, union xnvme_spec_sqe cmd, void *dbuf, size_
 	ULONG length = 0, returned = 0;
 	LARGE_INTEGER la;
 	la.QuadPart = cmd.nvm.slba;
-	uint32_t nlb = cmd.nvm.nlb + 1;
+	uint32_t nlb = (uint32_t)xnvme_bits_get(cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB) + 1;
 
 	memset(&sptdwb, 0, sizeof(struct scsi_pass_through_direct_with_buffer));
 	sptdwb.sptd.Length = sizeof(SCSI_PASS_THROUGH_DIRECT);
@@ -69,7 +69,7 @@ xnvme_be_windows_write(HANDLE handle, union xnvme_spec_sqe cmd, void *dbuf, size
 	ULONG length = 0, returned = 0;
 	LARGE_INTEGER la;
 	la.QuadPart = cmd.nvm.slba;
-	uint32_t nlb = cmd.nvm.nlb + 1;
+	uint32_t nlb = (uint32_t)xnvme_bits_get(cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB) + 1;
 
 	memset(&sptdwb, 0, sizeof(struct scsi_pass_through_direct_with_buffer));
 	sptdwb.sptd.Length = sizeof(SCSI_PASS_THROUGH_DIRECT);
