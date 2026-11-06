@@ -58,8 +58,11 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 }
 
 static int
-_idfy(struct xnvme_cmd_ctx *ctx, void *dbuf)
+_idfy(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 {
+	// A device delivers the whole page, so what is not emulated reads as zero
+	memset(dbuf, 0, dbuf_nbytes);
+
 	switch (ctx->cmd.idfy.cns) {
 	case XNVME_SPEC_IDFY_NS:
 		return _idfy_ns(ctx->dev, dbuf);
@@ -98,13 +101,12 @@ _ramdisk_gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 }
 
 static int
-_xnvme_be_ramdisk_admin_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf,
-				  size_t XNVME_UNUSED(dbuf_nbytes), void *XNVME_UNUSED(mbuf),
-				  size_t XNVME_UNUSED(mbuf_nbytes))
+_xnvme_be_ramdisk_admin_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
+				  void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	switch (ctx->cmd.common.opcode) {
 	case XNVME_SPEC_ADM_OPC_IDFY:
-		return _idfy(ctx, dbuf);
+		return _idfy(ctx, dbuf, dbuf_nbytes);
 
 	case XNVME_SPEC_ADM_OPC_GFEAT:
 		return _ramdisk_gfeat(ctx, dbuf);
