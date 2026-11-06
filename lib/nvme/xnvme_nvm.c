@@ -194,7 +194,8 @@ xnvme_nvm_compare(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint1
 	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_COMPARE;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.compare.slba = slba;
-	ctx->cmd.compare.nlb = nlb;
+	ctx->cmd.compare.cdw12 =
+		xnvme_bits_set(ctx->cmd.compare.cdw12, XNVME_SPEC_NVM_COMPARE_CDW12_NLB, nlb);
 
 	return xnvme_cmd_pass(ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
 }

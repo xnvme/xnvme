@@ -121,6 +121,18 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_write_zeroes, ilbrt) == 56,
 		    "ilbrt of struct xnvme_spec_nvm_write_zeroes")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_write_zeroes, lbatm) == 62,
 		    "lbatm of struct xnvme_spec_nvm_write_zeroes")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_nvm_compare, cdw12,
+			 XNVME_SPEC_NVM_COMPARE_CDW12_NLB | XNVME_SPEC_NVM_COMPARE_CDW12_STC |
+				 XNVME_SPEC_NVM_COMPARE_CDW12_PRINFO |
+				 XNVME_SPEC_NVM_COMPARE_CDW12_FUA |
+				 XNVME_SPEC_NVM_COMPARE_CDW12_LR),
+		    "cdw12 of struct xnvme_spec_nvm_compare")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_compare, cdw12) == 48,
+		    "cdw12 of struct xnvme_spec_nvm_compare")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_compare, ilbrt) == 56,
+		    "ilbrt of struct xnvme_spec_nvm_compare")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_compare, lbatm) == 62,
+		    "lbatm of struct xnvme_spec_nvm_compare")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 			 XNVME_SPEC_CMD_LOG_CDW10_LID | XNVME_SPEC_CMD_LOG_CDW10_LSP |
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
@@ -1058,6 +1070,17 @@ sub_io_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	    !xnvme_bits_get(sqe.write_zeroes.cdw12, XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_FUA) ||
 	    !xnvme_bits_get(sqe.write_zeroes.cdw12, XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_LR)) {
 		xnvme_cli_pinf("FAILED: write_zeroes: cdw12: %#x", sqe.write_zeroes.cdw12);
+		err = -EINVAL;
+	}
+
+	memset(&sqe, 0, sizeof(sqe));
+	sqe.cdw[12] = 0x49000010; // Compare dword 12: NLB 0x10, STC, PRINFO 0x2, FUA
+	if (xnvme_bits_get(sqe.compare.cdw12, XNVME_SPEC_NVM_COMPARE_CDW12_NLB) != 0x10 ||
+	    !xnvme_bits_get(sqe.compare.cdw12, XNVME_SPEC_NVM_COMPARE_CDW12_STC) ||
+	    xnvme_bits_get(sqe.compare.cdw12, XNVME_SPEC_NVM_COMPARE_CDW12_PRINFO) != 0x2 ||
+	    !xnvme_bits_get(sqe.compare.cdw12, XNVME_SPEC_NVM_COMPARE_CDW12_FUA) ||
+	    xnvme_bits_get(sqe.compare.cdw12, XNVME_SPEC_NVM_COMPARE_CDW12_LR)) {
+		xnvme_cli_pinf("FAILED: compare: cdw12: %#x", sqe.compare.cdw12);
 		err = -EINVAL;
 	}
 
