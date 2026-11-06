@@ -735,6 +735,12 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_ns) == 4096, "Incorrect size")
  */
 #define XNVME_SPEC_IDFY_NS_DLFEAT_GUARD_VALUE 0x10
 
+/**
+ * Protection information of a logical block, in the layout of the 16b Guard format, 'g16', or
+ * of the 64b Guard format, 'g64'
+ *
+ * @struct xnvme_pif
+ */
 struct xnvme_pif {
 	union {
 		struct {
@@ -2872,6 +2878,12 @@ struct xnvme_spec_kvs_idfy_ns {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_kvs_idfy_ns) == 4096, "Incorrect size")
 
+/**
+ * Identify data of the Key Value command set, viewed as ::xnvme_spec_idfy, 'base', or as its
+ * Identify Namespace data structure, 'ns'
+ *
+ * @struct xnvme_spec_kvs_idfy
+ */
 struct xnvme_spec_kvs_idfy {
 	union {
 		union xnvme_spec_idfy base;
