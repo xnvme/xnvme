@@ -2387,9 +2387,9 @@ XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_znd_cmd) == 64, "Incorrect size")
 struct xnvme_spec_io_mgmt_recv_cmd {
 	uint32_t cdw00_09[10]; ///< Command dword 0 to 9
 
-	uint32_t mo   : 8; ///< Management Operation
-	uint32_t rsvd : 8;
-	uint32_t mos  : 16; ///< Management Operation Specific
+	uint8_t mo; ///< Management Operation, see enum xnvme_spec_io_mgmt_recv_mo
+	uint8_t rsvd;
+	uint16_t mos; ///< Management Operation Specific
 
 	uint32_t numd; ///< cdw11
 
