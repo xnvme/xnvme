@@ -23,6 +23,7 @@
 #include <signal.h>
 #include <stdint.h>
 
+/** Most controllers ::xnvme_cplane_info lists in 'ctrlrs' */
 #define XNVME_CPLANE_MAX_CTRLRS 64
 
 /**
