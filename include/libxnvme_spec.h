@@ -1543,19 +1543,15 @@ struct xnvme_spec_streams_dir_gs {
 };
 
 /**
- * This structure is encapsulation for values provided by allocate resource
+ * Completion dword 0 of the Streams directive's Allocate Resources
  *
  * @struct xnvme_spec_alloc_resource
  */
 struct xnvme_spec_alloc_resource {
-	union {
-		struct {
-			uint32_t nsa  : 16; ///< Namespace streams allocated
-			uint32_t rsvd : 16;
-		} bits;
-		uint32_t val;
-	};
+	uint16_t nsa; ///< NSA: Namespace Streams Allocated
+	uint16_t rsvd;
 };
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_alloc_resource) == 4, "Incorrect size")
 
 /**
  * Encapsulation of NVMe/NVM features
