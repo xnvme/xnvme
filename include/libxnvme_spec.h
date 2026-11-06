@@ -1903,30 +1903,25 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_dsend) == 64, "Incorrect size")
 /**
  * NVMe Command Accessor for the directive receive command
  *
- * @struct xnvme_spec_cmd_recv
+ * @struct xnvme_spec_cmd_drecv
  */
 struct xnvme_spec_cmd_drecv {
 	uint32_t cdw00_09[10]; ///< Command dword 0 to 9
 
-	uint32_t numd; ///< Command dowrd 10
+	uint32_t numd; ///< NUMD: Number of Dwords
 
-	/* Command dword 11 */
-	uint32_t doper : 8;  ///< Directive operation
-	uint32_t dtype : 8;  ///< Directive type
-	uint32_t dspec : 16; ///< Directive specific
+	uint8_t doper;  ///< DOPER: Directive Operation
+	uint8_t dtype;  ///< DTYPE: Directive Type, see xnvme_spec_dir_types
+	uint16_t dspec; ///< DSPEC: Directive Specific
 
-	/* Command dword 12 */
-	union {
-		struct {
-			uint32_t nsr  : 16; ///< Namespace streams requested
-			uint32_t rsvd : 16;
-		};
-		uint32_t val;
-	} cdw12;
+	uint32_t cdw12; ///< Command dword 12, see XNVME_SPEC_CMD_DRECV_CDW12_*
 
 	uint32_t cdw13_15[3]; ///< Command dword 13 to 15
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_drecv) == 64, "Incorrect size")
+
+/** Namespace Streams Requested, of Allocate Resources; bits 15:0 of 'cdw12' */
+#define XNVME_SPEC_CMD_DRECV_CDW12_NSR 0xffff
 
 /**
  * NVMe Command Accessor for the identify command
