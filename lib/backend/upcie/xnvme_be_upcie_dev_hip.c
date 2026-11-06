@@ -41,6 +41,7 @@ _hip_rte_term(void)
 	}
 
 	xnvme_be_upcie_hip_cqmirror_term();
+	xnvme_be_upcie_served_mem_unmap_all(&g_upcie_hip_rte.dmem, NULL);
 	while ((reg = xnvme_buf_reg_any(&g_upcie_hip_rte.dmem))) {
 		xnvme_buf_reg_remove(reg);
 	}
@@ -317,6 +318,7 @@ xnvme_be_upcie_hip_dev_open(struct xnvme_dev *dev)
 static int
 xnvme_be_upcie_hip_ctrlr_term(void *handle)
 {
+	xnvme_be_upcie_served_mem_unmap_all(&g_upcie_hip_rte.dmem, handle);
 	for (int i = 0; i < XNVME_BE_CREF_MAX_ENTRIES; ++i) {
 		if (g_upcie_hip_rte.ctrlrs[i].ctrlr == handle) {
 			_hip_ctrlr_term(&g_upcie_hip_rte.ctrlrs[i]);
