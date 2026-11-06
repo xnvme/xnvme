@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <xnvme_be.h>
+#include <xnvme_buf.h>
 #include <xnvme_be_nosys.h>
 #ifdef XNVME_BE_UPCIE_ENABLED
 #include <errno.h>
@@ -203,6 +204,7 @@ xnvme_be_upcie_dmem_from_desc(struct dmamem *dmem, void *base,
 
 static struct {
 	struct {
+		struct dmamem *dmem;
 		void *vaddr;
 		struct xnvme_be_upcie_ctrlr *ctrlr;
 		uint64_t offset;
@@ -212,7 +214,8 @@ static struct {
 } g_served_regs;
 
 static int
-_served_regs_add(void *vaddr, struct xnvme_be_upcie_ctrlr *ctrlr, uint64_t offset)
+_served_regs_add(struct dmamem *dmem, void *vaddr, struct xnvme_be_upcie_ctrlr *ctrlr,
+		 uint64_t offset)
 {
 	if (g_served_regs.count == g_served_regs.capacity) {
 		int capacity = g_served_regs.capacity ? 2 * g_served_regs.capacity : 16;
@@ -226,6 +229,7 @@ _served_regs_add(void *vaddr, struct xnvme_be_upcie_ctrlr *ctrlr, uint64_t offse
 		g_served_regs.capacity = capacity;
 	}
 
+	g_served_regs.entries[g_served_regs.count].dmem = dmem;
 	g_served_regs.entries[g_served_regs.count].vaddr = vaddr;
 	g_served_regs.entries[g_served_regs.count].ctrlr = ctrlr;
 	g_served_regs.entries[g_served_regs.count].offset = offset;
@@ -276,7 +280,7 @@ xnvme_be_upcie_served_mem_map(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr *
 
 	err = _adopt_desc(dmem, vaddr, desc, page_size);
 	if (!err) {
-		err = _served_regs_add(vaddr, ctrlr, offset);
+		err = _served_regs_add(dmem, vaddr, ctrlr, offset);
 		if (err) {
 			dmamem_registry_remove(&dmem->registry, vaddr);
 		}
@@ -317,6 +321,81 @@ xnvme_be_upcie_served_mem_unmap(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr
 	return err;
 }
 
+void
+xnvme_be_upcie_served_mem_unmap_all(struct dmamem *dmem)
+{
+	for (int at = g_served_regs.count - 1; at >= 0; --at) {
+		if (g_served_regs.entries[at].dmem != dmem) {
+			continue;
+		}
+
+		xnvme_be_upcie_served_mem_unmap(dmem, g_served_regs.entries[at].ctrlr,
+						g_served_regs.entries[at].vaddr);
+	}
+}
+
+static int
+_in_heap(uint64_t heap, size_t heap_nbytes, void *vaddr, size_t nbytes)
+{
+	uint64_t va = (uint64_t)(uintptr_t)vaddr;
+
+	return vaddr && (va >= heap) && (nbytes <= heap_nbytes) &&
+	       ((va - heap) <= (heap_nbytes - nbytes));
+}
+
+int
+xnvme_be_upcie_buf_reg_ref(struct dmamem *dmem, uint64_t heap, size_t heap_nbytes, void *vaddr,
+			   size_t nbytes)
+{
+	struct xnvme_buf_reg *reg;
+	int err;
+
+	err = xnvme_buf_reg_find(dmem, vaddr, nbytes, &reg);
+	if (!err) {
+		reg->refs += 1;
+		return 0;
+	}
+	if (err != -ENOENT) {
+		return err;
+	}
+
+	if (_in_heap(heap, heap_nbytes, vaddr, nbytes)) {
+		XNVME_DEBUG("INFO: vaddr(%p) is in the heap, as from xnvme_buf_alloc()", vaddr);
+		return 0;
+	}
+
+	return -ENOENT;
+}
+
+int
+xnvme_be_upcie_buf_reg_unref(struct dmamem *dmem, uint64_t heap, size_t heap_nbytes, void *vaddr,
+			     struct xnvme_buf_reg **last)
+{
+	struct xnvme_buf_reg *reg;
+	int err;
+
+	*last = NULL;
+
+	err = xnvme_buf_reg_find(dmem, vaddr, 1, &reg);
+	if ((err == -ENOENT) && _in_heap(heap, heap_nbytes, vaddr, 1)) {
+		XNVME_DEBUG("INFO: vaddr(%p) was not registered, as from xnvme_buf_alloc()",
+			    vaddr);
+		return 0;
+	}
+	if (err) {
+		XNVME_DEBUG("FAILED: vaddr(%p) is not registered", vaddr);
+		return -EINVAL;
+	}
+
+	if (reg->refs > 1) {
+		reg->refs -= 1;
+		return 0;
+	}
+	*last = reg;
+
+	return 0;
+}
+
 #endif
 
 struct xnvme_be_mem g_xnvme_be_upcie_mem = {
@@ -326,14 +405,14 @@ struct xnvme_be_mem g_xnvme_be_upcie_mem = {
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
 	.buf_free = xnvme_be_upcie_buf_free,
 	.buf_vtophys = xnvme_be_upcie_buf_vtophys,
-	.mem_map = xnvme_be_nosys_mem_map,
-	.mem_unmap = xnvme_be_nosys_mem_unmap,
+	.buf_register = xnvme_be_nosys_buf_register,
+	.buf_unregister = xnvme_be_nosys_buf_unregister,
 #else
 	.buf_alloc = xnvme_be_nosys_buf_alloc,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
 	.buf_free = xnvme_be_nosys_buf_free,
 	.buf_vtophys = xnvme_be_nosys_buf_vtophys,
-	.mem_map = xnvme_be_nosys_mem_map,
-	.mem_unmap = xnvme_be_nosys_mem_unmap,
+	.buf_register = xnvme_be_nosys_buf_register,
+	.buf_unregister = xnvme_be_nosys_buf_unregister,
 #endif
 };

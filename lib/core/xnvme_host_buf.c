@@ -90,3 +90,54 @@ xnvme_host_buf_fill(void *buf, size_t nbytes, const char *content)
 
 	return xnvme_buf_from_file(buf, nbytes, content);
 }
+
+#ifdef __linux__
+#include <errno.h>
+#include <unistd.h>
+
+bool
+xnvme_buf_is_hugetlb(const void *vaddr, size_t nbytes)
+{
+	unsigned long start = 0, end = 0, kps;
+	uintptr_t cursor = (uintptr_t)vaddr, hi = cursor + nbytes;
+	long pagesize = sysconf(_SC_PAGESIZE);
+	char line[4096];
+	FILE *fp;
+
+	if (pagesize <= 0) {
+		return false;
+	}
+
+	fp = fopen("/proc/self/smaps", "r");
+	if (!fp) {
+		XNVME_DEBUG("FAILED: fopen(/proc/self/smaps), errno: %d", errno);
+		return false;
+	}
+
+	while (cursor < hi && fgets(line, sizeof(line), fp)) {
+		if (sscanf(line, "%lx-%lx ", &start, &end) == 2) {
+			continue;
+		}
+		if (sscanf(line, "KernelPageSize: %lu kB", &kps) != 1) {
+			continue;
+		}
+		if (end <= cursor) {
+			continue;
+		}
+		if ((start > cursor) || ((kps << 10) <= (unsigned long)pagesize)) {
+			break;
+		}
+		cursor = end;
+	}
+
+	fclose(fp);
+
+	return cursor >= hi;
+}
+#else
+bool
+xnvme_buf_is_hugetlb(const void *XNVME_UNUSED(vaddr), size_t XNVME_UNUSED(nbytes))
+{
+	return false;
+}
+#endif

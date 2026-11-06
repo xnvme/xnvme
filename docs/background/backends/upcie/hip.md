@@ -25,3 +25,11 @@ size. It is kept for the next queue of the process rather than freed, since
 freeing device memory waits for the device and the resident kernel never
 lets it idle. The slot table the host and the kernel share is the one
 {ref}`sec-backends-upcie-cuda-p2p-cq-mirror` describes.
+
+(sec-backends-upcie-hip-memory-register)=
+
+## Registering memory
+
+`xnvme_buf_register()` works as {ref}`sec-backends-upcie-cuda-memory-register`
+describes for **upcie-cuda**, with HIP device memory, exported through the HIP
+runtime where a server holds the controller.

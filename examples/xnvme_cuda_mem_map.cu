@@ -7,10 +7,10 @@
 #include <libxnvme.h>
 
 /**
- * GPU-resident NVMe IO into a cudaMalloc'd, mem_map'd buffer
+ * GPU-resident NVMe IO into a cudaMalloc'd, registered buffer
  *
  * Variant of xnvme_cuda.cu that registers an externally-allocated CUDA
- * buffer via xnvme_mem_map() instead of using xnvme_buf_alloc()'s
+ * buffer via xnvme_buf_register() instead of using xnvme_buf_alloc()'s
  * pre-built dma-buf heap. The remaining flow (GPU-resident queue,
  * CUDA-kernel submission, completion drain) is identical.
  *
@@ -19,7 +19,7 @@
  */
 
 /*
- * upcie-cuda's cudamem_config.device_pagesize. mem_map requires vaddr and
+ * upcie-cuda's cudamem_config.device_pagesize. Registering requires vaddr and
  * nbytes to be a multiple of this; cudaMalloc does not guarantee that
  * alignment, so we over-allocate and round up.
  */
@@ -73,12 +73,12 @@ main(int argc, char **argv)
 	lba_nbytes = xnvme_dev_get_geo(dev)->lba_nbytes;
 	nsid = xnvme_dev_get_nsid(dev);
 
-	/* mem_map demands a device-pagesize-aligned vaddr and length. */
+	/* Registering demands a device-pagesize-aligned vaddr and length. */
 	buf_nbytes = ((qdepth * lba_nbytes + UPCIE_CUDA_DEVICE_PAGESIZE - 1) /
 		      UPCIE_CUDA_DEVICE_PAGESIZE) *
 		     UPCIE_CUDA_DEVICE_PAGESIZE;
 
-	/* Over-allocate by one page so we can hand mem_map an aligned start. */
+	/* Over-allocate by one page so we can register an aligned start. */
 	cerr = cudaMalloc(&raw, buf_nbytes + UPCIE_CUDA_DEVICE_PAGESIZE);
 	if (cerr) {
 		xnvme_cli_perr("cudaMalloc(buf), cudaError_t: %d", cerr);
@@ -88,9 +88,9 @@ main(int argc, char **argv)
 	buf = (char *)(((uintptr_t)raw + UPCIE_CUDA_DEVICE_PAGESIZE - 1) &
 		       ~((uintptr_t)UPCIE_CUDA_DEVICE_PAGESIZE - 1));
 
-	err = xnvme_mem_map(dev, buf, buf_nbytes);
+	err = xnvme_buf_register(dev, buf, buf_nbytes);
 	if (err) {
-		xnvme_cli_perr("xnvme_mem_map()", err);
+		xnvme_cli_perr("xnvme_buf_register()", err);
 		goto exit;
 	}
 	mapped = 1;
@@ -171,7 +171,7 @@ main(int argc, char **argv)
 		}
 	}
 	if (!err) {
-		printf("OK: %zu GPU-submitted NVMe reads into mem_map'd cudaMalloc buffer\n",
+		printf("OK: %zu GPU-submitted NVMe reads into registered cudaMalloc buffer\n",
 		       qdepth);
 	}
 
@@ -184,7 +184,7 @@ exit:
 	free(h_errors);
 	free(h_cmds);
 	if (mapped) {
-		xnvme_mem_unmap(dev, buf);
+		xnvme_buf_unregister(dev, buf);
 	}
 	if (raw) {
 		cudaFree(raw);

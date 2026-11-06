@@ -107,8 +107,12 @@ queue at the client's address. What comes back names a completion queue in the
 server's heap that the controller never writes, and the resident kernel keeps
 that one a copy of the queue it placed, so the submitting side is unchanged.
 
+(sec-backends-upcie-cuda-memory-register)=
+
+## Registering memory
+
 A caller can hand over device memory it allocated itself with
-`xnvme_mem_map()`, which registers the range through the same registry the
+`xnvme_buf_register()`, which registers the range through the same registry the
 heap uses, so such a buffer is usable exactly as one from
 `xnvme_buf_alloc()`. Registering a range twice is cheap, since what it
 covers is refcounted. On a controller a server holds, the range is exported as
@@ -117,6 +121,14 @@ comes back is adopted into the same table; that is a socket round trip per
 call, so a client registers its buffers before it submits, not per command.
 Either way the range is whole device pages, 64 KiB on CUDA, since that is the
 granule the export works in.
+
+Memory from `xnvme_buf_alloc()` lies in the heap and is left as it is. Where
+the heap is mapped through iommufd, under `vfio-pci` with the cdev interface,
+the device translates by offset into the heap only, and registering is refused
+with `-EOPNOTSUPP`. Behind an enforcing IOMMU, a registration holds for the
+controller it was made through, see {ref}`sec-backends-upcie-cuda-iommu-register`.
+Host memory is not taken. See {ref}`sec-background-memory` for what registering
+does on the other backends.
 
 (sec-backends-upcie-cuda-opts)=
 
@@ -201,8 +213,8 @@ A window outside every usable IOVA range fails `xnvme_dev_open()` with `ERANGE`.
 The window holds one set of addresses for the process. The first controller
 opened claims it and the heap is installed in it; every controller opened after
 that is attached to the same range, so all of them reach the heap, and anything
-registered with `xnvme_mem_map()`, at the same IOVAs through one translation
-table. Two limits follow, on the `vfio-pci` path only:
+registered with `xnvme_buf_register()`, at the same IOVAs through one
+translation table. Two limits follow, on the `vfio-pci` path only:
 
 - The heap and every registered buffer have to fit in the window. A full window
   fails the registration with `ENOSPC`.
@@ -216,18 +228,20 @@ the window with `XNVME_UPCIE_IOVA_BASE`.
 `uio_pci_generic` is unaffected. Physical addresses read the same from every
 controller, so one table serves them all.
 
+(sec-backends-upcie-cuda-iommu-register)=
+
 ### Registering buffers
 
 A buffer from `xnvme_buf_alloc()` comes off the heap, which every controller
 maps, so it works on any of them.
 
-A buffer handed to `xnvme_mem_map()` is registered against the device passed to
-the call, so behind an IOMMU it resolves for that controller only. Register it
-with each device it is used from, and unmap it against each:
+A buffer handed to `xnvme_buf_register()` is registered against the device
+passed to the call, so behind an IOMMU it resolves for that controller only.
+Register it with each device it is used from, and unregister it against each:
 
 ```c
-xnvme_mem_map(dev_a, buf, nbytes);
-xnvme_mem_map(dev_b, buf, nbytes);
+xnvme_buf_register(dev_a, buf, nbytes);
+xnvme_buf_register(dev_b, buf, nbytes);
 ```
 
 Under `uio_pci_generic` one table serves every controller, so a single

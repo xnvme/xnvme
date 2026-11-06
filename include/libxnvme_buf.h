@@ -130,6 +130,65 @@ int
 xnvme_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys);
 
 /**
+ * Register memory of the caller's for use as command payload with the given device
+ *
+ * Registering makes memory the caller allocated itself, rather than with xnvme_buf_alloc(),
+ * usable as the payload of commands to the device.
+ * What it takes differs per backend, from programming an IOMMU on the caller's behalf, to a
+ * dma-buf export, to nothing at all. With SPDK, a registration is the process's, for every device.
+ *
+ * Each registration is given back by one call to xnvme_buf_unregister(). Registering a range
+ * that is registered already, or a range within one, is counted on that registration rather than
+ * registered again; a range that overlaps a registration otherwise is refused with `-EBUSY`.
+ * Memory from xnvme_buf_alloc() is usable already, and registering and unregistering it does
+ * nothing.
+ *
+ * @note Unregister the memory with xnvme_buf_unregister()
+ * @note vaddr and nbytes must be multiples of the alignment given by xnvme_buf_get_alignment()
+ * @note Control plane: serialised with the other control-plane calls, not with I/O on the
+ * same device, queue or buffer; see Thread Safety in the API documentation
+ *
+ * @param dev Device handle obtained with xnvme_dev_open()
+ * @param vaddr The address the caller accesses the memory at
+ * @param nbytes The number of bytes to register, starting at vaddr
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ */
+int
+xnvme_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes);
+
+/**
+ * Unregister memory registered with xnvme_buf_register()
+ *
+ * @note Control plane: serialised with the other control-plane calls, not with I/O on the
+ * same device, queue or buffer; see Thread Safety in the API documentation
+ *
+ * @param dev Device handle obtained with xnvme_dev_open()
+ * @param vaddr The address the memory was registered at
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ */
+int
+xnvme_buf_unregister(const struct xnvme_dev *dev, void *vaddr);
+
+/**
+ * Retrieve the alignment of memory to register with the given device
+ *
+ * The alignment is a power of two, and at least `sizeof(void *)`. It is the larger of what the
+ * device needs to register memory, of any kind it takes, and what its I/O path needs of command
+ * payloads. Retrieve it before allocating memory that is to be registered, to allocate it
+ * suitably.
+ *
+ * @param dev Device handle obtained with xnvme_dev_open()
+ * @param align Set to the alignment on success
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned and `align` is left
+ * untouched; `-ENOSYS` when the device does not register memory.
+ */
+int
+xnvme_buf_get_alignment(const struct xnvme_dev *dev, size_t *align);
+
+/**
  * Allocate a buffer of virtual memory of the given `alignment` and `nbytes`
  *
  * @note You must use xnvme_buf_virt_free() to de-allocate the buffer

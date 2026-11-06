@@ -97,15 +97,15 @@ struct xnvme_be_mem g_xnvme_be_driverkit_mem = {
 	.buf_vtophys = xnvme_be_nosys_buf_vtophys,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
 	.buf_free = xnvme_be_driverkit_buf_free,
-	.mem_map = xnvme_be_nosys_mem_map,
-	.mem_unmap = xnvme_be_nosys_mem_unmap,
+	.buf_register = xnvme_be_nosys_buf_register,
+	.buf_unregister = xnvme_be_nosys_buf_unregister,
 #else
 	.buf_alloc = xnvme_be_nosys_buf_alloc,
 	.buf_vtophys = xnvme_be_nosys_buf_vtophys,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,
 	.buf_free = xnvme_be_nosys_buf_free,
-	.mem_map = xnvme_be_nosys_mem_map,
-	.mem_unmap = xnvme_be_nosys_mem_unmap,
+	.buf_register = xnvme_be_nosys_buf_register,
+	.buf_unregister = xnvme_be_nosys_buf_unregister,
 #endif
 	.id = "driverkit",
 };
