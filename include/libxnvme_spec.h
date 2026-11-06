@@ -2224,18 +2224,16 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_idfy_ns) == 4096, "Incorrect si
 #define XNVME_SPEC_NVM_IDFY_NS_PIC_STCRS 0x4
 
 /**
- * Representation of the NVMe Identify Namespace command completion result
+ * The data returned by an Identify command for the NVM command set, as the structure of each CNS
  *
- * @struct xnvme_spec_znd_idfy
+ * @union xnvme_spec_nvm_idfy
  */
-struct xnvme_spec_nvm_idfy {
-	union {
-		union xnvme_spec_idfy base;
-		struct xnvme_spec_nvm_idfy_ctrlr ctrlr;
-		struct xnvme_spec_nvm_idfy_ns ns;
-	};
+union xnvme_spec_nvm_idfy {
+	union xnvme_spec_idfy base;             ///< As the common Identify data
+	struct xnvme_spec_nvm_idfy_ctrlr ctrlr; ///< Of XNVME_SPEC_IDFY_CTRLR_IOCS
+	struct xnvme_spec_nvm_idfy_ns ns;       ///< Of XNVME_SPEC_IDFY_NS_IOCS
 };
-XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_idfy) == 4096, "Incorrect size")
+XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_nvm_idfy) == 4096, "Incorrect size")
 
 /**
  * Log identifiers for Zoned Namespaces
