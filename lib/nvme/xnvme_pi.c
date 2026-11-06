@@ -37,7 +37,7 @@ xnvme_pi_type_is_valid(enum xnvme_pi_type pi_type, uint32_t pi_flags)
 }
 
 size_t
-xnvme_pi_size(enum xnvme_spec_nvm_ns_pif pi_format)
+xnvme_pi_size(uint32_t pi_format)
 {
 	uint8_t size;
 
