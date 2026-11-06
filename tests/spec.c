@@ -17,6 +17,17 @@
 		 ((uint64_t)1 << (4 * XNVME_SIZEOF_MEMBER(type, field))) ==           \
 	 0)
 
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_sanitize, cdw10,
+			 XNVME_SPEC_CMD_SANITIZE_CDW10_SANACT |
+				 XNVME_SPEC_CMD_SANITIZE_CDW10_AUSE |
+				 XNVME_SPEC_CMD_SANITIZE_CDW10_OWPASS |
+				 XNVME_SPEC_CMD_SANITIZE_CDW10_OIPBP |
+				 XNVME_SPEC_CMD_SANITIZE_CDW10_NDAS),
+		    "cdw10 of struct xnvme_spec_cmd_sanitize")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_sanitize, cdw10) == 40,
+		    "cdw10 of struct xnvme_spec_cmd_sanitize")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_sanitize, ovrpat) == 44,
+		    "ovrpat of struct xnvme_spec_cmd_sanitize")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_format, cdw10,
 			 XNVME_SPEC_CMD_FORMAT_CDW10_LBAFL | XNVME_SPEC_CMD_FORMAT_CDW10_MSET |
 				 XNVME_SPEC_CMD_FORMAT_CDW10_PI | XNVME_SPEC_CMD_FORMAT_CDW10_PIL |
@@ -457,6 +468,17 @@ sub_sqe_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	    xnvme_bits_get(sqe.format.cdw10, XNVME_SPEC_CMD_FORMAT_CDW10_SES) != 0x5 ||
 	    xnvme_bits_get(sqe.format.cdw10, XNVME_SPEC_CMD_FORMAT_CDW10_LBAFU) != 0x2) {
 		xnvme_cli_pinf("FAILED: format: cdw10: %#x", sqe.format.cdw10);
+		err = -EINVAL;
+	}
+
+	memset(&sqe, 0, sizeof(sqe));
+	sqe.cdw[10] = 0x0000035a; // Sanitize dword 10: SANACT 2, AUSE, OWPASS 5, OIPBP, NDAS
+	if (xnvme_bits_get(sqe.sanitize.cdw10, XNVME_SPEC_CMD_SANITIZE_CDW10_SANACT) != 0x2 ||
+	    !xnvme_bits_get(sqe.sanitize.cdw10, XNVME_SPEC_CMD_SANITIZE_CDW10_AUSE) ||
+	    xnvme_bits_get(sqe.sanitize.cdw10, XNVME_SPEC_CMD_SANITIZE_CDW10_OWPASS) != 0x5 ||
+	    !xnvme_bits_get(sqe.sanitize.cdw10, XNVME_SPEC_CMD_SANITIZE_CDW10_OIPBP) ||
+	    !xnvme_bits_get(sqe.sanitize.cdw10, XNVME_SPEC_CMD_SANITIZE_CDW10_NDAS)) {
+		xnvme_cli_pinf("FAILED: sanitize: cdw10: %#x", sqe.sanitize.cdw10);
 		err = -EINVAL;
 	}
 

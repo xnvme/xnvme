@@ -34,12 +34,16 @@ xnvme_nvm_sanitize(struct xnvme_cmd_ctx *ctx, uint8_t sanact, bool ause, uint32_
 		   uint8_t owpass, bool oipbp, bool nodas)
 {
 	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_SANITIZE;
-	ctx->cmd.sanitize.sanact = sanact;
-	ctx->cmd.sanitize.ause = ause;
-	ctx->cmd.sanitize.owpass = owpass;
-	ctx->cmd.sanitize.oipbp = oipbp;
-	ctx->cmd.sanitize.nodas = nodas;
-	ctx->cmd.sanitize.ause = ause;
+	ctx->cmd.sanitize.cdw10 = xnvme_bits_set(ctx->cmd.sanitize.cdw10,
+						 XNVME_SPEC_CMD_SANITIZE_CDW10_SANACT, sanact);
+	ctx->cmd.sanitize.cdw10 =
+		xnvme_bits_set(ctx->cmd.sanitize.cdw10, XNVME_SPEC_CMD_SANITIZE_CDW10_AUSE, ause);
+	ctx->cmd.sanitize.cdw10 = xnvme_bits_set(ctx->cmd.sanitize.cdw10,
+						 XNVME_SPEC_CMD_SANITIZE_CDW10_OWPASS, owpass);
+	ctx->cmd.sanitize.cdw10 = xnvme_bits_set(ctx->cmd.sanitize.cdw10,
+						 XNVME_SPEC_CMD_SANITIZE_CDW10_OIPBP, oipbp);
+	ctx->cmd.sanitize.cdw10 =
+		xnvme_bits_set(ctx->cmd.sanitize.cdw10, XNVME_SPEC_CMD_SANITIZE_CDW10_NDAS, nodas);
 	ctx->cmd.sanitize.ovrpat = ovrpat;
 
 	return xnvme_cmd_pass_admin(ctx, NULL, 0, NULL, 0);
