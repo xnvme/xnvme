@@ -359,16 +359,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_fdp_event_media_reallocated) == 16,
 struct __attribute__((packed)) xnvme_spec_fdp_event {
 	uint8_t type; ///< Event type
 
-	/** FDP event flags */
-	union {
-		struct {
-			uint8_t piv   : 1; ///< Placement identifier valid
-			uint8_t nsidv : 1; ///< NSID valid
-			uint8_t lv    : 1; ///< Location valid
-			uint8_t rsvd1 : 5;
-		};
-		uint8_t val;
-	} fdpef;
+	uint8_t fdpef; ///< FDP Event Flags, see XNVME_SPEC_FDP_EVENT_FDPEF_*
 
 	uint16_t pid;              ///< Placement identifier
 	uint64_t timestamp;        ///< Event timestamp
@@ -380,6 +371,13 @@ struct __attribute__((packed)) xnvme_spec_fdp_event {
 	uint8_t vs[24];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_fdp_event) == 64, "Incorrect size")
+
+/** Placement Identifier Valid; bit 0 of 'fdpef' */
+#define XNVME_SPEC_FDP_EVENT_FDPEF_PIV 0x1
+/** Namespace Identifier Valid; bit 1 of 'fdpef' */
+#define XNVME_SPEC_FDP_EVENT_FDPEF_NSIDV 0x2
+/** Location Valid; bit 2 of 'fdpef' */
+#define XNVME_SPEC_FDP_EVENT_FDPEF_LV 0x4
 
 /**
  * NVMe FDP events log page

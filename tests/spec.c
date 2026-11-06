@@ -372,6 +372,12 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_fdp_event_media_reallocated, sef,
 		    "sef of struct xnvme_spec_fdp_event_media_reallocated")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_fdp_event_media_reallocated, sef) == 0,
 		    "sef of struct xnvme_spec_fdp_event_media_reallocated")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_fdp_event, fdpef,
+			 XNVME_SPEC_FDP_EVENT_FDPEF_PIV | XNVME_SPEC_FDP_EVENT_FDPEF_NSIDV |
+				 XNVME_SPEC_FDP_EVENT_FDPEF_LV),
+		    "fdpef of struct xnvme_spec_fdp_event")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_fdp_event, fdpef) == 1,
+		    "fdpef of struct xnvme_spec_fdp_event")
 
 struct offset_case {
 	const char *name;
@@ -679,6 +685,20 @@ sub_data_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 		memcpy(&mr, raw, sizeof(mr));
 		if (!xnvme_bits_get(mr.sef, XNVME_SPEC_FDP_EVENT_MEDIA_REALLOCATED_SEF_LBAV)) {
 			xnvme_cli_pinf("FAILED: sef: %#" PRIx8, mr.sef);
+			err = -EINVAL;
+		}
+	}
+
+	{
+		struct xnvme_spec_fdp_event event;
+
+		memset(raw, 0, sizeof(raw));
+		raw[1] = 0x05; // FDP event FDPEF: PIV, LV
+		memcpy(&event, raw, sizeof(event));
+		if (!xnvme_bits_get(event.fdpef, XNVME_SPEC_FDP_EVENT_FDPEF_PIV) ||
+		    xnvme_bits_get(event.fdpef, XNVME_SPEC_FDP_EVENT_FDPEF_NSIDV) ||
+		    !xnvme_bits_get(event.fdpef, XNVME_SPEC_FDP_EVENT_FDPEF_LV)) {
+			xnvme_cli_pinf("FAILED: fdpef: %#" PRIx8, event.fdpef);
 			err = -EINVAL;
 		}
 	}
