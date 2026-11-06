@@ -107,6 +107,20 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_nvm, ilbrt) == 56,
 		    "ilbrt of struct xnvme_spec_cmd_nvm")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_nvm, lbatm) == 62,
 		    "lbatm of struct xnvme_spec_cmd_nvm")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_nvm_write_zeroes, cdw12,
+			 XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_NLB |
+				 XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_STC |
+				 XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_DEAC |
+				 XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_PRINFO |
+				 XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_FUA |
+				 XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_LR),
+		    "cdw12 of struct xnvme_spec_nvm_write_zeroes")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_write_zeroes, cdw12) == 48,
+		    "cdw12 of struct xnvme_spec_nvm_write_zeroes")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_write_zeroes, ilbrt) == 56,
+		    "ilbrt of struct xnvme_spec_nvm_write_zeroes")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_write_zeroes, lbatm) == 62,
+		    "lbatm of struct xnvme_spec_nvm_write_zeroes")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 			 XNVME_SPEC_CMD_LOG_CDW10_LID | XNVME_SPEC_CMD_LOG_CDW10_LSP |
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
@@ -1031,6 +1045,19 @@ sub_io_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	if (sqe.nvm.ilbrt != 0x89abcdef || sqe.nvm.lbat != 0x1234 || sqe.nvm.lbatm != 0xff00) {
 		xnvme_cli_pinf("FAILED: nvm: ilbrt: %#x, lbat: %#x, lbatm: %#x", sqe.nvm.ilbrt,
 			       sqe.nvm.lbat, sqe.nvm.lbatm);
+		err = -EINVAL;
+	}
+
+	memset(&sqe, 0, sizeof(sqe));
+	sqe.cdw[12] = 0xf6000007; // Write Zeroes dword 12: NLB 0x7, DEAC, PRINFO 0xd, FUA, LR
+	if (xnvme_bits_get(sqe.write_zeroes.cdw12, XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_NLB) != 0x7 ||
+	    xnvme_bits_get(sqe.write_zeroes.cdw12, XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_STC) ||
+	    !xnvme_bits_get(sqe.write_zeroes.cdw12, XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_DEAC) ||
+	    xnvme_bits_get(sqe.write_zeroes.cdw12, XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_PRINFO) !=
+		    0xd ||
+	    !xnvme_bits_get(sqe.write_zeroes.cdw12, XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_FUA) ||
+	    !xnvme_bits_get(sqe.write_zeroes.cdw12, XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_LR)) {
+		xnvme_cli_pinf("FAILED: write_zeroes: cdw12: %#x", sqe.write_zeroes.cdw12);
 		err = -EINVAL;
 	}
 
