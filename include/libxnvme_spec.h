@@ -339,14 +339,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_log_fdp_stats) == 64, "Incorrect si
  * @struct xnvme_spec_fdp_event_media_reallocated
  */
 struct __attribute__((packed)) xnvme_spec_fdp_event_media_reallocated {
-	/** Specific event flags */
-	union {
-		struct {
-			uint8_t lbav : 1; ///< LLBA valid
-			uint8_t rsvd : 7;
-		};
-		uint8_t val;
-	} sef;
+	uint8_t sef; ///< Specific Event Flags, see XNVME_SPEC_FDP_EVENT_MEDIA_REALLOCATED_SEF_*
 
 	uint8_t rsvd1;
 	uint16_t nlbam; ///< Number of LBAs moved
@@ -354,6 +347,9 @@ struct __attribute__((packed)) xnvme_spec_fdp_event_media_reallocated {
 	uint8_t rsvd2[4];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_fdp_event_media_reallocated) == 16, "Incorrect size")
+
+/** LBA Valid; bit 0 of 'sef' */
+#define XNVME_SPEC_FDP_EVENT_MEDIA_REALLOCATED_SEF_LBAV 0x1
 
 /**
  * NVMe FDP event
