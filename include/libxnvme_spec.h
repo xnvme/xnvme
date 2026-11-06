@@ -1987,11 +1987,11 @@ struct xnvme_spec_cmd_nvm {
 	uint32_t cdw13; ///< Command dword 13, see XNVME_SPEC_CMD_NVM_CDW13_*
 
 	/* cdw 14 */
-	uint32_t ilbrt : 32; ///< Initial Logical Block Reference Tag
+	uint32_t ilbrt; ///< Initial Logical Block Reference Tag
 
 	/* cdw 15 */
-	uint32_t lbat  : 16; ///< Logical Block Application Tag
-	uint32_t lbatm : 16; ///< logical Block Application Tag Mask
+	uint16_t lbat;  ///< Logical Block Application Tag
+	uint16_t lbatm; ///< logical Block Application Tag Mask
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_nvm) == 64, "Incorrect size")
 
