@@ -117,6 +117,37 @@ Or:
 
 Then consult the section {ref}`sec-backends-spdk-vfio`.
 
+(sec-backends-spdk-memory)=
+
+### Registering memory
+
+`xnvme_buf_register()` hands the memory to `spdk_mem_register()`, in multiples
+of 2 MiB. SPDK keeps one memory map for the process, not one per device.
+Memory registered through one device is usable by every SPDK device of the
+process, and the registration count is the process's, whichever device
+registers or unregisters.
+
+Whether SPDK addresses memory through an IOMMU is also decided for the process,
+by how the devices are bound: `vfio-pci` with an IOMMU enables it, while
+`uio_pci_generic` and `vfio-pci` in no-IOMMU mode do not.
+`spdk_iommu_is_enabled()` reports it. This decides which memory is taken over
+PCIe:
+
+| IOMMU | `iova_mode` | Takes |
+|---|---|---|
+| Enabled | `va` | Any host memory |
+| Enabled | `pa` | Memory in hugetlb pages |
+| Disabled | | Memory in hugetlb pages |
+
+Without an IOMMU, or with `iova_mode=pa`, as `XNVME_SPDK_IOVA_MODE=pa` or
+`opts.iova_mode` select, SPDK addresses memory by its physical address, 2 MiB at
+a time, which only hugetlb pages are contiguous in. Other memory is refused with
+`-ENOTSUP`. Over RDMA, any host memory is taken.
+
+Over TCP, the payload of each command is copied through a socket, so nothing is
+registered. See {ref}`sec-background-memory` for what registering does on the
+other backends.
+
 ### Memory Issues
 
 If you see a message similar to the below while unbinding devices:
