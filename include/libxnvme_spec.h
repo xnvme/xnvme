@@ -2298,15 +2298,18 @@ struct xnvme_spec_znd_cmd_mgmt_send {
 	/* cdw 12 */
 	uint32_t nrange; ///< Number of ranges <= 32
 
-	/* cdw 13 */
-	uint32_t zsa        : 8; ///< Zone Send Action
-	uint32_t select_all : 1; ///< Select All, that is, ignore the slba, affects all LBAs
-	uint32_t zsaso      : 1; ///< Zone Send Action Specific Option
-	uint32_t rsvd       : 22;
+	uint32_t cdw13; ///< Command dword 13, see XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_*
 
 	uint32_t cdw14_15[2]; ///< Command dword 14 to 15
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_cmd_mgmt_send) == 64, "Incorrect size")
+
+/** Zone Send Action; bits 7:0 of 'cdw13' */
+#define XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZSA 0xff
+/** Select All, that is, ignore the slba, affects all LBAs; bit 8 of 'cdw13' */
+#define XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_SELECT_ALL 0x100
+/** Zone Send Action Specific Option; bit 9 of 'cdw13' */
+#define XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZSASO 0x200
 
 /**
  * NVMe Command Accessor for a command with opcode XNVME_SPEC_ZND_OPC_MGMT_RECV

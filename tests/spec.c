@@ -170,6 +170,13 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_cmd_append, cdw12,
 		    "cdw12 of struct xnvme_spec_znd_cmd_append")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_znd_cmd_append, cdw12) == 48,
 		    "cdw12 of struct xnvme_spec_znd_cmd_append")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_cmd_mgmt_send, cdw13,
+			 XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZSA |
+				 XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_SELECT_ALL |
+				 XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZSASO),
+		    "cdw13 of struct xnvme_spec_znd_cmd_mgmt_send")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_znd_cmd_mgmt_send, cdw13) == 52,
+		    "cdw13 of struct xnvme_spec_znd_cmd_mgmt_send")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 			 XNVME_SPEC_CMD_LOG_CDW10_LID | XNVME_SPEC_CMD_LOG_CDW10_LSP |
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
@@ -1156,6 +1163,17 @@ sub_io_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	    !xnvme_bits_get(sqe.znd.append.cdw12, XNVME_SPEC_ZND_CMD_APPEND_CDW12_FUA) ||
 	    xnvme_bits_get(sqe.znd.append.cdw12, XNVME_SPEC_ZND_CMD_APPEND_CDW12_LR)) {
 		xnvme_cli_pinf("FAILED: znd.append: cdw12: %#x", sqe.znd.append.cdw12);
+		err = -EINVAL;
+	}
+
+	memset(&sqe, 0, sizeof(sqe));
+	sqe.cdw[13] = 0x104; // Zone Management Send dword 13: ZSA 0x4, Select All
+	if (xnvme_bits_get(sqe.znd.mgmt_send.cdw13, XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZSA) !=
+		    0x4 ||
+	    !xnvme_bits_get(sqe.znd.mgmt_send.cdw13,
+			    XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_SELECT_ALL) ||
+	    xnvme_bits_get(sqe.znd.mgmt_send.cdw13, XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZSASO)) {
+		xnvme_cli_pinf("FAILED: znd.mgmt_send: cdw13: %#x", sqe.znd.mgmt_send.cdw13);
 		err = -EINVAL;
 	}
 

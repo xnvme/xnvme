@@ -56,16 +56,19 @@ _lzbd_zone_mgmt_send(struct xnvme_cmd_ctx *ctx)
 	zr.sector = ctx->cmd.znd.mgmt_send.slba << (ctx->dev->geo.ssw - LINUX_BLOCK_SSW);
 	zr.nr_sectors = zone_nbytes >> LINUX_BLOCK_SSW;
 
-	if (ctx->cmd.znd.mgmt_send.select_all) {
+	if (xnvme_bits_get(ctx->cmd.znd.mgmt_send.cdw13,
+			   XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_SELECT_ALL)) {
 		zr.nr_sectors = zr.nr_sectors * geo->nzone;
 	}
-	if (ctx->cmd.znd.mgmt_send.zsaso) {
+	if (xnvme_bits_get(ctx->cmd.znd.mgmt_send.cdw13,
+			   XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZSASO)) {
 		XNVME_DEBUG("FAILED: block-interface does not support ZRWA");
 		errno = ENOSYS;
 		return -errno;
 	}
 
-	switch (ctx->cmd.znd.mgmt_send.zsa) {
+	switch (xnvme_bits_get(ctx->cmd.znd.mgmt_send.cdw13,
+			       XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZSA)) {
 #ifdef BLKCLOSEZONE
 	case XNVME_SPEC_ZND_CMD_MGMT_SEND_CLOSE:
 		err = ioctl(state->posix.fd, BLKCLOSEZONE, &zr);
@@ -87,7 +90,9 @@ _lzbd_zone_mgmt_send(struct xnvme_cmd_ctx *ctx)
 		break;
 #endif
 	default:
-		XNVME_DEBUG("FAILED: no ioctl for zsa: 0x%x", ctx->cmd.znd.mgmt_send.zsa);
+		XNVME_DEBUG("FAILED: no ioctl for zsa: 0x%" PRIx64,
+			    xnvme_bits_get(ctx->cmd.znd.mgmt_send.cdw13,
+					   XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZSA));
 		errno = ENOSYS;
 		err = -errno;
 		break;
