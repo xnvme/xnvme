@@ -1297,7 +1297,8 @@ xnvme_spec_drecv_srp_fpr(FILE *stream, struct xnvme_spec_streams_dir_rp *srp, in
 	wrtn += fprintf(stream, "  msl: %" PRIu16 "\n", srp->msl);
 	wrtn += fprintf(stream, "  nssa: %" PRIu16 "\n", srp->nssa);
 	wrtn += fprintf(stream, "  nsso: %" PRIu16 "\n", srp->nsso);
-	wrtn += fprintf(stream, "  multi_host: %" PRIu8 "\n", srp->nssc.bits.multi_host);
+	wrtn += fprintf(stream, "  multi_host: %" PRIu64 "\n",
+			xnvme_bits_get(srp->nssc, XNVME_SPEC_STREAMS_DIR_RP_NSSC_MULTI_HOST));
 	wrtn += fprintf(stream, "  sws: %" PRIu32 "\n", srp->sws);
 	wrtn += fprintf(stream, "  sgs: %" PRIu16 "\n", srp->sgs);
 	wrtn += fprintf(stream, "  nsa: %" PRIu16 "\n", srp->nsa);

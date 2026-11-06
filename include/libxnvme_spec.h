@@ -1501,14 +1501,7 @@ struct xnvme_spec_streams_dir_rp {
 	uint16_t nssa; ///< NVM subsystem streams available
 	uint16_t nsso; ///< NVM subsystems streams open
 
-	union {
-		struct {
-			/* Stream id shared by multiple zon-zero host identifier */
-			uint8_t multi_host : 1;
-			uint8_t reserved   : 7;
-		} bits;
-		uint8_t val;
-	} nssc;
+	uint8_t nssc; ///< NVM Subsystem Streams Capability, see XNVME_SPEC_STREAMS_DIR_RP_NSSC_*
 
 	uint8_t reserved1[9];
 
@@ -1521,6 +1514,9 @@ struct xnvme_spec_streams_dir_rp {
 	uint8_t reserved2[6];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_streams_dir_rp) == 32, "Incorrect size")
+
+/** Stream identifiers shared by hosts of different non-zero Host Identifiers; bit 0 of 'nssc' */
+#define XNVME_SPEC_STREAMS_DIR_RP_NSSC_MULTI_HOST 0x1
 
 /**
  * This structure holds the get status data structure for streams directive

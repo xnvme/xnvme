@@ -410,6 +410,11 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_idfy_dir_rp, directives_enabled) 
 		    "directives_enabled of struct xnvme_spec_idfy_dir_rp")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_idfy_dir_rp, directives_persistence) == 64,
 		    "directives_persistence of struct xnvme_spec_idfy_dir_rp")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_streams_dir_rp, nssc,
+			 XNVME_SPEC_STREAMS_DIR_RP_NSSC_MULTI_HOST),
+		    "nssc of struct xnvme_spec_streams_dir_rp")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_streams_dir_rp, nssc) == 6,
+		    "nssc of struct xnvme_spec_streams_dir_rp")
 
 struct offset_case {
 	const char *name;
@@ -787,6 +792,18 @@ sub_data_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 			xnvme_cli_pinf("FAILED: directives: %#" PRIx8 ", %#" PRIx8 ", %#" PRIx8,
 				       rp.directives_supported, rp.directives_enabled,
 				       rp.directives_persistence);
+			err = -EINVAL;
+		}
+	}
+
+	{
+		struct xnvme_spec_streams_dir_rp rp;
+
+		memset(raw, 0, sizeof(raw));
+		raw[6] = 0x01; // Streams return parameters NSSC: multi-host
+		memcpy(&rp, raw, sizeof(rp));
+		if (!xnvme_bits_get(rp.nssc, XNVME_SPEC_STREAMS_DIR_RP_NSSC_MULTI_HOST)) {
+			xnvme_cli_pinf("FAILED: nssc: %#" PRIx8, rp.nssc);
 			err = -EINVAL;
 		}
 	}
