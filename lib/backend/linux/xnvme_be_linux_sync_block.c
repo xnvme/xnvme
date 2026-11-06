@@ -231,8 +231,10 @@ _lzbd_zone_mgmt_recv(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 		return -EINVAL;
 	}
 	// We cannot do extended report via the Linux Zoned Block Device
-	if (ctx->cmd.znd.mgmt_recv.zra != 0) {
-		XNVME_DEBUG("FAILED: nosys zra: 0x%x", ctx->cmd.znd.mgmt_recv.zra);
+	if (xnvme_bits_get(ctx->cmd.znd.mgmt_recv.cdw13, XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRA)) {
+		XNVME_DEBUG("FAILED: nosys zra: 0x%" PRIx64,
+			    xnvme_bits_get(ctx->cmd.znd.mgmt_recv.cdw13,
+					   XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRA));
 		return -ENOSYS;
 	}
 
@@ -246,7 +248,9 @@ _lzbd_zone_mgmt_recv(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 	dbuf_nzones = (dbuf_nbytes - sizeof(*nvme_rprt)) / sizeof(*nvme_descr);
 
 	// Special-case; e.g. asking "how-many-zones" and no room for entries
-	if ((ctx->cmd.znd.mgmt_recv.zrasf == XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL) &&
+	if ((xnvme_bits_get(ctx->cmd.znd.mgmt_recv.cdw13,
+			    XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRASF) ==
+	     XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL) &&
 	    (dbuf_nzones == 0)) {
 		nvme_rprt->nzones = nzones_dev;
 		return 0;
@@ -273,7 +277,9 @@ _lzbd_zone_mgmt_recv(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 		}
 
 		for (uint64_t i = 0; i < lzbd_rprt->nr_zones; ++i) {
-			int zone_state = _zrasf_to_state(ctx->cmd.znd.mgmt_recv.zrasf);
+			int zone_state = _zrasf_to_state(
+				xnvme_bits_get(ctx->cmd.znd.mgmt_recv.cdw13,
+					       XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRASF));
 			uint64_t cur = nvme_rprt->nzones;
 
 			///< Accumulate nzones
@@ -286,7 +292,8 @@ _lzbd_zone_mgmt_recv(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 			///< Populate descriptor
 			if (cur >= dbuf_nzones) {
 				XNVME_DEBUG("INFO: no more room!");
-				if (ctx->cmd.znd.mgmt_recv.partial) {
+				if (xnvme_bits_get(ctx->cmd.znd.mgmt_recv.cdw13,
+						   XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_PARTIAL)) {
 					break;
 				} else {
 					continue;

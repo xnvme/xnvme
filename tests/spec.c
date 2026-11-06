@@ -177,6 +177,13 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_cmd_mgmt_send, cdw13,
 		    "cdw13 of struct xnvme_spec_znd_cmd_mgmt_send")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_znd_cmd_mgmt_send, cdw13) == 52,
 		    "cdw13 of struct xnvme_spec_znd_cmd_mgmt_send")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_cmd_mgmt_recv, cdw13,
+			 XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRA |
+				 XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRASF |
+				 XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_PARTIAL),
+		    "cdw13 of struct xnvme_spec_znd_cmd_mgmt_recv")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_znd_cmd_mgmt_recv, cdw13) == 52,
+		    "cdw13 of struct xnvme_spec_znd_cmd_mgmt_recv")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 			 XNVME_SPEC_CMD_LOG_CDW10_LID | XNVME_SPEC_CMD_LOG_CDW10_LSP |
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
@@ -1174,6 +1181,17 @@ sub_io_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 			    XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_SELECT_ALL) ||
 	    xnvme_bits_get(sqe.znd.mgmt_send.cdw13, XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZSASO)) {
 		xnvme_cli_pinf("FAILED: znd.mgmt_send: cdw13: %#x", sqe.znd.mgmt_send.cdw13);
+		err = -EINVAL;
+	}
+
+	memset(&sqe, 0, sizeof(sqe));
+	sqe.cdw[13] = 0x10301; // Zone Management Receive dword 13: ZRA 0x1, ZRASF 0x3, Partial
+	if (xnvme_bits_get(sqe.znd.mgmt_recv.cdw13, XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRA) !=
+		    0x1 ||
+	    xnvme_bits_get(sqe.znd.mgmt_recv.cdw13, XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRASF) !=
+		    0x3 ||
+	    !xnvme_bits_get(sqe.znd.mgmt_recv.cdw13, XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_PARTIAL)) {
+		xnvme_cli_pinf("FAILED: znd.mgmt_recv: cdw13: %#x", sqe.znd.mgmt_recv.cdw13);
 		err = -EINVAL;
 	}
 
