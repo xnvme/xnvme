@@ -42,24 +42,3 @@ xnvme_ver_patch(void);
  */
 const char *
 xnvme_ver_vcs(void);
-
-/**
- * Prints the library version to the given 'stream'
- *
- * @param stream output stream used for printing
- * @param opts printer options, see ::xnvme_pr
- *
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_ver_fpr(FILE *stream, int opts);
-
-/**
- * Prints the library version to stdout
- *
- * @param opts printer options, see ::xnvme_pr
- *
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_ver_pr(int opts);

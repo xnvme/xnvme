@@ -16,11 +16,11 @@ Sharing a Controller (:ref:`sec-api-c-xnvme_cplane`)
   processes, handing them the descriptors they need to do I/O against the
   same device.
 
-Auxiliary Pretty-Printers (:ref:`sec-api-c-xnvme_pp`)
-  All structures and enums in the **xNVMe** API have pretty-printers. These
-  are usually defined within the namespace/module of the data structure.
-  The pretty-printers provided here are either for the top-level namespace
-  (``xnvme_``) or for those that do not have a specific namespace.
+Pretty-Printers (:ref:`sec-api-c-xnvme_pp`)
+  The pretty-printers of the **xNVMe** API, of its structures, enums and
+  library information, are declared here, apart from those of the
+  command-line library and the inline timer printers, so that a binding can
+  leave them out and print in its own language.
 
 Deprecated Functions (:ref:`sec-api-c-xnvme_compat`)
   Functions kept so code written for earlier releases builds unchanged; in a

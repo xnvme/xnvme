@@ -180,6 +180,12 @@ Layout
   ``platform``, which the public API is built on, then ``core``, ``nvme``,
   ``file`` and ``cli``
 
+* A printer, a function named by what it prints and suffixed ``_fpr``,
+  ``_pr`` or ``_str``, is declared in ``include/libxnvme_pp.h``, not in the
+  header of its type, so that a binding leaves out the printers by leaving out
+  one header. The printers of the command-line library stay in
+  ``libxnvme_cli.h``, and a ``static inline`` printer, which has no symbol for
+  a binding to call, stays with what it prints, such as ``xnvme_timer_pr()``
 * ``lib/cuse/`` is a static library of its own for the tools, not part of
   ``libxnvme``
 * ``lib/platform/`` holds what selects among the backend configs:
