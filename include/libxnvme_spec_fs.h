@@ -83,12 +83,19 @@ struct xnvme_spec_fs_idfy_ns {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_fs_idfy_ns) == 4096, "Incorrect size")
 
+/**
+ * Opcodes of the commands xNVMe passes to a file, or a block device, it opens through the
+ * operating system; the backend carries them out with system calls rather than send them on
+ *
+ * @enum xnvme_spec_fs_opcs
+ */
 enum xnvme_spec_fs_opcs {
-	XNVME_SPEC_FS_OPC_FLUSH = 0xAD,
-	XNVME_SPEC_FS_OPC_WRITE = 0xAC,
-	XNVME_SPEC_FS_OPC_READ  = 0xDC,
+	XNVME_SPEC_FS_OPC_FLUSH = 0xAD, ///< Flush the file, as xnvme_file_sync() does
+	XNVME_SPEC_FS_OPC_WRITE = 0xAC, ///< Write to the file, as xnvme_file_pwrite() does
+	XNVME_SPEC_FS_OPC_READ  = 0xDC, ///< Read from the file, as xnvme_file_pread() does
 };
 
+/** Command Set Identifier xNVMe gives a file, or block device, opened through the system */
 #define XNVME_SPEC_CSI_FS 0x1F
 
 #endif /* __LIBXNVME_SPEC_FS_H */
