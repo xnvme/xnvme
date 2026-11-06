@@ -21,7 +21,7 @@ _idfy_ctrlr_iocs_fs(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 {
 	struct xnvme_spec_fs_idfy_ctrlr *ctrlr = dbuf;
 
-	ctrlr->caps.direct = 1;
+	ctrlr->caps = xnvme_bits_set(ctrlr->caps, XNVME_SPEC_FS_IDFY_CTRLR_CAPS_DIRECT, 1);
 
 	ctrlr->iosizes.min = 1;
 	ctrlr->iosizes.max = 1024 * 1024 * 128;
