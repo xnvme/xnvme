@@ -1842,19 +1842,16 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_format) == 64, "Incorrect size"
 struct xnvme_spec_cmd_gfeat {
 	uint32_t cdw00_09[10]; ///< Command dword 0 to 9
 
-	union {
-		struct {
-			uint32_t fid    : 8; ///< Feature Identifier
-			uint32_t sel    : 3; ///< Select
-			uint32_t rsvd10 : 21;
-		};
-		uint32_t val;
-	} cdw10;
-
+	uint32_t cdw10;       ///< Command dword 10, see XNVME_SPEC_CMD_GFEAT_CDW10_*
 	uint32_t cdw11;       ///< Command dword 11
 	uint32_t cdw12_15[4]; ///< Command dword 12 to 15
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_gfeat) == 64, "Incorrect size")
+
+/** Feature Identifier, see xnvme_spec_feat_id; bits 7:0 of 'cdw10' */
+#define XNVME_SPEC_CMD_GFEAT_CDW10_FID 0xff
+/** Select, see xnvme_spec_feat_sel; bits 10:8 of 'cdw10' */
+#define XNVME_SPEC_CMD_GFEAT_CDW10_SEL 0x700
 
 /**
  * NVMe Command Accessor for the set-features command

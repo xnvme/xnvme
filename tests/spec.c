@@ -36,6 +36,11 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_format, cdw10,
 		    "cdw10 of struct xnvme_spec_cmd_format")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_format, cdw10) == 40,
 		    "cdw10 of struct xnvme_spec_cmd_format")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_gfeat, cdw10,
+			 XNVME_SPEC_CMD_GFEAT_CDW10_FID | XNVME_SPEC_CMD_GFEAT_CDW10_SEL),
+		    "cdw10 of struct xnvme_spec_cmd_gfeat")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_gfeat, cdw10) == 40,
+		    "cdw10 of struct xnvme_spec_cmd_gfeat")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 			 XNVME_SPEC_CMD_LOG_CDW10_LID | XNVME_SPEC_CMD_LOG_CDW10_LSP |
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
@@ -479,6 +484,14 @@ sub_sqe_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	    !xnvme_bits_get(sqe.sanitize.cdw10, XNVME_SPEC_CMD_SANITIZE_CDW10_OIPBP) ||
 	    !xnvme_bits_get(sqe.sanitize.cdw10, XNVME_SPEC_CMD_SANITIZE_CDW10_NDAS)) {
 		xnvme_cli_pinf("FAILED: sanitize: cdw10: %#x", sqe.sanitize.cdw10);
+		err = -EINVAL;
+	}
+
+	memset(&sqe, 0, sizeof(sqe));
+	sqe.cdw[10] = 0x00000307; // Get Features dword 10: FID 0x07, SEL 0x3
+	if (xnvme_bits_get(sqe.gfeat.cdw10, XNVME_SPEC_CMD_GFEAT_CDW10_FID) != 0x07 ||
+	    xnvme_bits_get(sqe.gfeat.cdw10, XNVME_SPEC_CMD_GFEAT_CDW10_SEL) != 0x3) {
+		xnvme_cli_pinf("FAILED: gfeat: cdw10: %#x", sqe.gfeat.cdw10);
 		err = -EINVAL;
 	}
 
