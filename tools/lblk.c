@@ -563,7 +563,8 @@ sub_write_directive(struct xnvme_cli *cli)
 	xnvme_prep_nvm(&ctx, XNVME_SPEC_NVM_OPC_WRITE, nsid, slba, nlb);
 	ctx.cmd.nvm.cdw12 =
 		xnvme_bits_set(ctx.cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_DTYPE, dtype);
-	ctx.cmd.nvm.cdw13.dspec = dspec;
+	ctx.cmd.nvm.cdw13 =
+		xnvme_bits_set(ctx.cmd.nvm.cdw13, XNVME_SPEC_CMD_NVM_CDW13_DSPEC, dspec);
 
 	err = xnvme_cmd_pass(&ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
