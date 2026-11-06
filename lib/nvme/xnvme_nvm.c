@@ -13,12 +13,18 @@ xnvme_adm_format(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t lbafl, uint8_
 {
 	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_FMT;
 	ctx->cmd.common.nsid = nsid;
-	ctx->cmd.format.lbafl = lbafl;
-	ctx->cmd.format.lbafu = lbafu;
-	ctx->cmd.format.mset = mset;
-	ctx->cmd.format.pi = pi;
-	ctx->cmd.format.pil = pil;
-	ctx->cmd.format.ses = ses;
+	ctx->cmd.format.cdw10 =
+		xnvme_bits_set(ctx->cmd.format.cdw10, XNVME_SPEC_CMD_FORMAT_CDW10_LBAFL, lbafl);
+	ctx->cmd.format.cdw10 =
+		xnvme_bits_set(ctx->cmd.format.cdw10, XNVME_SPEC_CMD_FORMAT_CDW10_LBAFU, lbafu);
+	ctx->cmd.format.cdw10 =
+		xnvme_bits_set(ctx->cmd.format.cdw10, XNVME_SPEC_CMD_FORMAT_CDW10_MSET, mset);
+	ctx->cmd.format.cdw10 =
+		xnvme_bits_set(ctx->cmd.format.cdw10, XNVME_SPEC_CMD_FORMAT_CDW10_PI, pi);
+	ctx->cmd.format.cdw10 =
+		xnvme_bits_set(ctx->cmd.format.cdw10, XNVME_SPEC_CMD_FORMAT_CDW10_PIL, pil);
+	ctx->cmd.format.cdw10 =
+		xnvme_bits_set(ctx->cmd.format.cdw10, XNVME_SPEC_CMD_FORMAT_CDW10_SES, ses);
 
 	return xnvme_cmd_pass_admin(ctx, NULL, 0, NULL, 0);
 }
