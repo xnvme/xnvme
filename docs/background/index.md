@@ -9,7 +9,8 @@ admin, sync, async, memory, and device operations. At runtime, **xNVMe** selects
 a config with **caps** matching the target device. If you wish to override the
 backend configuration, you can do so via URI options.
 
-For the design rationale and architectural details, see
+For what registering memory of the application's own does on each backend, see
+{doc}`memory`. For the design rationale and architectural details, see
 {doc}`architecture/index`.
 
 ```{toctree}
@@ -18,5 +19,6 @@ For the design rationale and architectural details, see
 
 platforms/index
 backends/index
+memory
 architecture/index
 ```
