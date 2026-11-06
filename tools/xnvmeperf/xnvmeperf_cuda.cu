@@ -353,7 +353,8 @@ xnvmeperf_cuda_fill_cmds(struct xnvme_dev *dev, uint32_t iosize, uint32_t qdepth
 
 		h_cmds[i].common.opcode = opcode;
 		h_cmds[i].common.nsid = nsid;
-		h_cmds[i].nvm.nlb = nlb;
+		h_cmds[i].nvm.cdw12 =
+			xnvme_bits_set(h_cmds[i].nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB, nlb);
 		h_cmds[i].common.dptr.prp.prp1 = prp1;
 
 		if (npages == 2) {

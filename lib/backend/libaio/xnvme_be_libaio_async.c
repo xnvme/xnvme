@@ -208,7 +208,8 @@ _linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, 
 	// Honour the FUA bit of an NVM write; on a raw block device RWF_DSYNC
 	// makes the kernel issue the write with REQ_FUA. Only for the NVM opcode:
 	// 'fua' is an NVMe command-field, it does not exist for the FS opcodes
-	if (ctx->cmd.nvm.fua && ctx->cmd.common.opcode == XNVME_SPEC_NVM_OPC_WRITE) {
+	if (xnvme_bits_get(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_FUA) &&
+	    ctx->cmd.common.opcode == XNVME_SPEC_NVM_OPC_WRITE) {
 		iocb.aio_rw_flags = RWF_DSYNC;
 	}
 
@@ -283,7 +284,8 @@ _linux_libaio_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec
 	// Honour the FUA bit of an NVM write; on a raw block device RWF_DSYNC
 	// makes the kernel issue the write with REQ_FUA. Only for the NVM opcode:
 	// 'fua' is an NVMe command-field, it does not exist for the FS opcodes
-	if (ctx->cmd.nvm.fua && ctx->cmd.common.opcode == XNVME_SPEC_NVM_OPC_WRITE) {
+	if (xnvme_bits_get(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_FUA) &&
+	    ctx->cmd.common.opcode == XNVME_SPEC_NVM_OPC_WRITE) {
 		iocb.aio_rw_flags = RWF_DSYNC;
 	}
 

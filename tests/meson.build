@@ -86,6 +86,7 @@ tests = {
     ['sqe-dwords', ['sqe-dwords']],
     ['cdw0-views', ['cdw0-views']],
     ['data-masks', ['data-masks']],
+    ['io-dwords', ['io-dwords']],
   ],
   'threads.c': [
     ['reopen', ['reopen', '1GB', '--count', '5']],

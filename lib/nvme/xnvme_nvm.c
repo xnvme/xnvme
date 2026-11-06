@@ -62,7 +62,7 @@ xnvme_nvm_read(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint16_t
 	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.nvm.slba = slba;
-	ctx->cmd.nvm.nlb = nlb;
+	ctx->cmd.nvm.cdw12 = xnvme_bits_set(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB, nlb);
 
 	return xnvme_cmd_pass(ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
 }
@@ -83,7 +83,7 @@ xnvme_nvm_write(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint16_
 	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.nvm.slba = slba;
-	ctx->cmd.nvm.nlb = nlb;
+	ctx->cmd.nvm.cdw12 = xnvme_bits_set(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB, nlb);
 
 	return xnvme_cmd_pass(ctx, cdbuf, dbuf_nbytes, cmbuf, mbuf_nbytes);
 }
@@ -95,7 +95,7 @@ xnvme_nvm_write_uncorrectable(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t
 	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE_UNCORRECTABLE;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.nvm.slba = slba;
-	ctx->cmd.nvm.nlb = nlb;
+	ctx->cmd.nvm.cdw12 = xnvme_bits_set(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB, nlb);
 
 	return xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
 }
@@ -118,7 +118,7 @@ xnvme_prep_nvm(struct xnvme_cmd_ctx *ctx, uint8_t opcode, uint32_t nsid, uint64_
 	ctx->cmd.common.opcode = opcode;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.nvm.slba = slba;
-	ctx->cmd.nvm.nlb = nlb;
+	ctx->cmd.nvm.cdw12 = xnvme_bits_set(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB, nlb);
 }
 
 int

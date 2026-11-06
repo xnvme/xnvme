@@ -167,7 +167,8 @@ submit_io(struct xnvmeperf_job *job, struct xnvme_cmd_ctx *ctx)
 
 	ctx->cmd.common.opcode = job->opcode;
 	ctx->cmd.common.nsid = job->nsid;
-	ctx->cmd.nvm.nlb = job->nlb - 1;
+	ctx->cmd.nvm.cdw12 =
+		xnvme_bits_set(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB, job->nlb - 1);
 	ctx->cmd.nvm.slba = slba;
 
 	err = xnvme_cmd_pass(ctx, buf, (job->nbytes * job->nlb), job->mbuf, job->mbuf_nbytes);

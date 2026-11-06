@@ -89,6 +89,13 @@ XNVME_STATIC_ASSERT(FITS(union xnvme_spec_feat, media_feedback,
 		    "media_feedback of union xnvme_spec_feat")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_feat_nqueues, ncqa) == 2,
 		    "ncqa of struct xnvme_spec_feat_nqueues")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_nvm, cdw12,
+			 XNVME_SPEC_CMD_NVM_CDW12_NLB | XNVME_SPEC_CMD_NVM_CDW12_DTYPE |
+				 XNVME_SPEC_CMD_NVM_CDW12_PRINFO | XNVME_SPEC_CMD_NVM_CDW12_FUA |
+				 XNVME_SPEC_CMD_NVM_CDW12_LR),
+		    "cdw12 of struct xnvme_spec_cmd_nvm")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_nvm, cdw12) == 48,
+		    "cdw12 of struct xnvme_spec_cmd_nvm")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 			 XNVME_SPEC_CMD_LOG_CDW10_LID | XNVME_SPEC_CMD_LOG_CDW10_LSP |
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
@@ -982,6 +989,25 @@ sub_data_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 	return err;
 }
 
+static int
+sub_io_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
+{
+	union xnvme_spec_sqe sqe = {0};
+	int err = 0;
+
+	sqe.cdw[12] = 0xd4a0abcd; // NVM dword 12: NLB 0xabcd, DTYPE 0xa, PRINFO 0x5, LR, FUA
+	if (xnvme_bits_get(sqe.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB) != 0xabcd ||
+	    xnvme_bits_get(sqe.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_DTYPE) != 0xa ||
+	    xnvme_bits_get(sqe.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_PRINFO) != 0x5 ||
+	    !xnvme_bits_get(sqe.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_FUA) ||
+	    !xnvme_bits_get(sqe.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_LR)) {
+		xnvme_cli_pinf("FAILED: nvm: cdw12: %#x", sqe.nvm.cdw12);
+		err = -EINVAL;
+	}
+
+	return err;
+}
+
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"idfy-offsets",
@@ -1006,6 +1032,15 @@ static struct xnvme_cli_sub g_subs[] = {
 		"Read the submission queue entry through its dwords and its views",
 		"Read the submission queue entry through its dwords and its views",
 		sub_sqe_dwords,
+		{
+			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
+		},
+	},
+	{
+		"io-dwords",
+		"Read the I/O commands through their dwords and their masks",
+		"Read the I/O commands through their dwords and their masks",
+		sub_io_dwords,
 		{
 			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
 		},

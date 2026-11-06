@@ -169,7 +169,8 @@ _submit_sync(struct iowork *work)
 
 	ctx.cmd.common.nsid = work->nsid;
 	ctx.cmd.common.opcode = work->opc;
-	ctx.cmd.nvm.nlb = work->io.naddr - 1;
+	ctx.cmd.nvm.cdw12 = xnvme_bits_set(ctx.cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB,
+					   work->io.naddr - 1);
 	ctx.cmd.nvm.slba = work->range.slba;
 
 	if (work->vectored) {
@@ -242,9 +243,11 @@ on_completion(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 	// Recreate context
 	ctx->cmd.common.nsid = work->nsid;
 	ctx->cmd.common.opcode = work->opc;
-	ctx->cmd.nvm.nlb = work->io.naddr - 1;
+	ctx->cmd.nvm.cdw12 = xnvme_bits_set(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB,
+					    work->io.naddr - 1);
 	ctx->cmd.nvm.slba += work->nworkers * work->io.naddr;
-	ctx->cmd.nvm.fua = work->fua && (work->opc == XNVME_SPEC_NVM_OPC_WRITE);
+	ctx->cmd.nvm.cdw12 = xnvme_bits_set(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_FUA,
+					    work->fua && (work->opc == XNVME_SPEC_NVM_OPC_WRITE));
 
 	_submit(work, worker, ctx);
 
@@ -397,9 +400,12 @@ start_workers(struct iowork *work)
 		struct ioworker *worker = &work->workers[i];
 		ctx->cmd.common.nsid = work->nsid;
 		ctx->cmd.common.opcode = work->opc;
-		ctx->cmd.nvm.nlb = work->io.naddr - 1;
+		ctx->cmd.nvm.cdw12 = xnvme_bits_set(
+			ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB, work->io.naddr - 1);
 		ctx->cmd.nvm.slba = work->range.slba + i * work->io.naddr;
-		ctx->cmd.nvm.fua = work->fua && (work->opc == XNVME_SPEC_NVM_OPC_WRITE);
+		ctx->cmd.nvm.cdw12 =
+			xnvme_bits_set(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_FUA,
+				       work->fua && (work->opc == XNVME_SPEC_NVM_OPC_WRITE));
 		ctx->async.cb_arg = worker;
 		err = _submit(work, worker, ctx);
 		if (err) {

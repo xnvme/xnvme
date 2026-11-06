@@ -91,7 +91,9 @@ main(int argc, char **argv)
 		h_cmds[i].nvm.slba = i;
 		h_cmds[i].common.nsid = nsid;
 		h_cmds[i].common.dptr.prp.prp1 = phys;
-		h_cmds[i].nvm.nlb = 0; /* nlb is zero-based; 0 means 1 LBA */
+		/* nlb is zero-based; 0 means 1 LBA */
+		h_cmds[i].nvm.cdw12 =
+			xnvme_bits_set(h_cmds[i].nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB, 0);
 	}
 
 	/* Copy commands to device memory before passing to the kernel */
