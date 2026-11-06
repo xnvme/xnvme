@@ -360,6 +360,13 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cs_vector, bits,
 			 XNVME_SPEC_CS_VECTOR_BITS_NVM | XNVME_SPEC_CS_VECTOR_BITS_KV |
 				 XNVME_SPEC_CS_VECTOR_BITS_ZNS),
 		    "bits of struct xnvme_spec_cs_vector")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_fdp_conf_desc, fdpa,
+			 XNVME_SPEC_FDP_CONF_DESC_FDPA_RGIF |
+				 XNVME_SPEC_FDP_CONF_DESC_FDPA_FDPVWC |
+				 XNVME_SPEC_FDP_CONF_DESC_FDPA_FDPCV),
+		    "fdpa of struct xnvme_spec_fdp_conf_desc")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_fdp_conf_desc, fdpa) == 2,
+		    "fdpa of struct xnvme_spec_fdp_conf_desc")
 
 struct offset_case {
 	const char *name;
@@ -639,6 +646,29 @@ sub_cdw0_views(struct xnvme_cli *XNVME_UNUSED(cli))
 	return err;
 }
 
+static int
+sub_data_masks(struct xnvme_cli *XNVME_UNUSED(cli))
+{
+	uint8_t raw[64] = {0};
+	int err = 0;
+
+	{
+		struct xnvme_spec_fdp_conf_desc desc;
+
+		memset(raw, 0, sizeof(raw));
+		raw[2] = 0x95; // FDP configuration descriptor FDPA: RGIF 0x5, FDPVWC, FDPCV
+		memcpy(&desc, raw, sizeof(desc));
+		if (xnvme_bits_get(desc.fdpa, XNVME_SPEC_FDP_CONF_DESC_FDPA_RGIF) != 0x5 ||
+		    !xnvme_bits_get(desc.fdpa, XNVME_SPEC_FDP_CONF_DESC_FDPA_FDPVWC) ||
+		    !xnvme_bits_get(desc.fdpa, XNVME_SPEC_FDP_CONF_DESC_FDPA_FDPCV)) {
+			xnvme_cli_pinf("FAILED: fdpa: %#" PRIx8, desc.fdpa);
+			err = -EINVAL;
+		}
+	}
+
+	return err;
+}
+
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"idfy-offsets",
@@ -681,6 +711,15 @@ static struct xnvme_cli_sub g_subs[] = {
 		"Read completion dword 0 through the views of features and resources",
 		"Read completion dword 0 through the views of features and resources",
 		sub_cdw0_views,
+		{
+			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
+		},
+	},
+	{
+		"data-masks",
+		"Read the fields of bits of data structures through their masks",
+		"Read the fields of bits of data structures through their masks",
+		sub_data_masks,
 		{
 			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
 		},
