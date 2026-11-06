@@ -2206,22 +2206,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_idfy_ctrlr) == 4096, "Incorrect
 struct xnvme_spec_nvm_idfy_ns {
 	uint64_t lbstm; ///< Logical block storage tag mask
 
-	/** Protection information capabilities */
-	union {
-		struct {
-			/** 16b guard protection information storage tag support */
-			uint8_t gpists    : 1;
-
-			/** 16b guard protection information storage tag mask */
-			uint8_t gpistm    : 1;
-
-			/** storage tag check read support */
-			uint8_t stcrs     : 1;
-
-			uint8_t reserved3 : 5;
-		};
-		uint8_t val;
-	} pic;
+	uint8_t pic; ///< Protection Information Capabilities, see XNVME_SPEC_NVM_IDFY_NS_PIC_*
 
 	uint8_t reserved9[3];
 
@@ -2230,6 +2215,13 @@ struct xnvme_spec_nvm_idfy_ns {
 	uint8_t reserved268[3828];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_idfy_ns) == 4096, "Incorrect size")
+
+/** 16b Guard Protection Information Storage Tag Support; bit 0 of 'pic' */
+#define XNVME_SPEC_NVM_IDFY_NS_PIC_GPISTS 0x1
+/** 16b Guard Protection Information Storage Tag Mask; bit 1 of 'pic' */
+#define XNVME_SPEC_NVM_IDFY_NS_PIC_GPISTM 0x2
+/** Storage Tag Check Read Support; bit 2 of 'pic' */
+#define XNVME_SPEC_NVM_IDFY_NS_PIC_STCRS 0x4
 
 /**
  * Representation of the NVMe Identify Namespace command completion result
