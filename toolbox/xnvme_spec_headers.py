@@ -40,30 +40,22 @@ The identifiers of the features and of the log pages are enums as well, and
 so are the status codes of each document, with one enum for each type of
 status code.
 
-It writes the layouts of bytes of the data model as well, but those of examples and
-buffers of data: the data structures, the log pages, and those of no named
-kind, as the PDUs of the transports. Each is a packed struct, named by its
-document and its name, of its fields at their offsets, the bytes no field has
-reserved, with the masks of the fields' bits. The option 'structures' names
-others, as for 'commands', by their name or that of their document and
-theirs, as "base:identify_controller", or is "none"; 'flexible', if "1", makes
-the entries following a struct a flexible array, which yace reports, rather
-than a line of its doc.
-||||||| parent of 70811a591 (fixup! feat(toolbox): a generator of the spec headers from senfd's data model)
-The registers of each document are a packed struct of them at their offsets,
-as a driver maps them, with the masks of their fields and an enum of the
-values of each field whose values the specification names. The option
-'registers', if "none", leaves them out.
+The registers of each document are one packed struct, with each register at
+its offset, as a driver maps the registers. The generator also writes the
+masks of the fields of each register, and an enum of the values of each field
+whose values the specification names. The option 'registers', set to "none",
+leaves the registers out.
 
-It writes the layouts of bytes of the data model as well, but those of examples and
-buffers of data: the data structures, the log pages, and those of no named
-kind, as the PDUs of the transports. Each is a packed struct, named by its
-document and its name, of its fields at their offsets, the bytes no field has
-reserved, with the masks of the fields' bits. The option 'structures' names
-others, as for 'commands', by their name or that of their document and
-theirs, as "base:identify_controller", or is "none"; 'flexible', if "1", makes
-the entries following a struct a flexible array, which yace reports, rather
-than a line of its doc.
+The generator also writes the byte layouts of the data model: the data
+structures, the log pages, and the layouts without a named kind, such as the
+PDUs of the transports. The generator leaves out the examples and the buffers
+of data. Each layout is a packed struct, named by its document and its name.
+The struct has the fields at their offsets, reserved members for the bytes
+that no field covers, and masks for the bits of the fields. The option
+'structures' selects other layouts, by name or by document and name, such as
+"base:identify_controller", or is "none". The option 'flexible', set to "1",
+writes the entries that follow a struct as a flexible array member, which yace
+reports; by default the doc of the struct names the entries.
 
 Some fields have no bits in the data model, but a description that says that
 another figure defines the field; Command Dword 0 of the Common Command Format
@@ -104,6 +96,7 @@ from senfd.documents.spec import (
     Structure,
 )
 from senfd.documents.spec import alias as senfd_alias
+from senfd.documents.spec import value_names
 
 # The dwords of the data pointer, which the data model describes as one field
 # across the four dwords
@@ -1081,6 +1074,125 @@ class SpecHeaders:
                 enum_lines(f"{stem}_{doc}_{what}", described[(doc, what)], constants)
             )
 
+    def write_registers(
+        self, spec: SpecDocument, stem: str, out: Dict[str, List[str]]
+    ) -> None:
+        """
+        Writes the registers of each document into 'out' by document: one
+        packed struct with each register at its offset, as a driver maps the
+        registers, the masks of the fields of each register, and an enum of the
+        values of each field whose values the specification names
+
+        A register whose offset is not a hexadecimal number, or whose bytes
+        another register also covers, is not a member of the struct; the doc of
+        the struct names it instead.
+        """
+
+        if self.options.get("registers", "") == "none":
+            return
+        by_doc: Dict[str, List[Tuple[int, int, str, Structure]]] = {}
+        unplaced: Dict[str, List[str]] = {}
+        for structure in spec.structures:
+            if structure.kind != "register":
+                continue
+            doc = document_key(structure.source.document)
+            head = re.split(r"\s+-\s+", structure.name, maxsplit=1)[0]
+            name = identifier(re.sub(r"\s*\([^)]*\)", "", head)).lower()
+            ups = [f.upper for f in structure.fields if f.upper is not None]
+            match = re.fullmatch(r"([0-9A-Fa-f]+)h", (structure.offset or "").strip())
+            if not match or not ups or not name:
+                unplaced.setdefault(doc, []).append(
+                    f"{structure.name}: at no offset of a number"
+                )
+                continue
+            size = (max(ups) + 8) // 8
+            by_doc.setdefault(doc, []).append(
+                (int(match[1], 16), size, name, structure)
+            )
+        for doc, registers in by_doc.items():
+            struct = f"{stem}_{doc}_registers"
+            upper = identifier(struct)
+            body: List[str] = []
+            masks: List[Tuple[str, int, str]] = []
+            enums: List[str] = []
+            left = list(unplaced.get(doc, []))
+            offset = 0
+            names: set = set()
+            for at, size, name, register in sorted(registers, key=lambda r: r[0]):
+                if at < offset or name in names:
+                    left.append(f"{register.name}: of bytes another register has")
+                    continue
+                if at > offset:
+                    gap = at - offset
+                    count = "" if gap == 1 else f"[{gap}]"
+                    where = (
+                        f"{offset:X}h" if gap == 1 else f"{offset:X}h to {at - 1:X}h"
+                    )
+                    body.append(
+                        f"\tuint8_t rsvd{offset:x}{count}; ///< Reserved, {where}"
+                    )
+                names.add(name)
+                scalar = size in TYPES
+                cite = senfd.query.cite(register.source)
+                these = (
+                    masks_of(
+                        name,
+                        f"{upper}_{identifier(name)}",
+                        [(register.fields, register.source)],
+                        8 * size,
+                    )
+                    if scalar
+                    else []
+                )
+                see = f", see {upper}_{identifier(name)}_*" if these else ""
+                ctype = TYPES[size] if scalar else "uint8_t"
+                count = "" if scalar else f"[{size}]"
+                body.append(
+                    f"\t{ctype} {name}{count}; ///< {register.name} ({cite}), "
+                    f"at {at:X}h{see}"
+                )
+                masks += these
+                for field in register.fields:
+                    constants = []
+                    for entry in field.values:
+                        value = number_of(entry)
+                        named = entry.name or next(iter(value_names(entry)), None)
+                        if value is None or not named or alias(named) == "reserved":
+                            continue
+                        constants.append(
+                            (
+                                f"{upper}_{identifier(name)}_"
+                                f"{identifier(field.acronym or '')}_{identifier(named)}",
+                                value,
+                                f"{named} ({cite})",
+                            )
+                        )
+                    if field.acronym and constants:
+                        enums += enum_lines(
+                            f"{struct}_{name}_{identifier(field.acronym).lower()}",
+                            f"The values of {field.name or field.acronym} of"
+                            f" {register.name}",
+                            constants,
+                        )
+                offset = at + size
+            lines = out.setdefault(doc, [])
+            lines += [
+                "/**",
+                f" * The registers of the {doc} specification, at their" " offsets",
+            ]
+            if left:
+                lines += [" *", " * Not members:", *[f" * {why}" for why in left]]
+            lines += [
+                " */",
+                f"struct __attribute__((packed)) {struct} {{",
+                *body,
+                "};",
+                "",
+            ]
+            for mask, value, text in masks:
+                lines += [f"/** {text} */", f"#define {mask} 0x{value:x}"]
+            lines += ["", *enums]
+
     def generate(self):
         path = self.options.get("spec")
         spec = senfd.query.load(Path(path) if path else None)
@@ -1098,6 +1210,8 @@ class SpecHeaders:
         self.write_structures(spec, stem, taken, structs)
         if self.options.get("structures", "").strip() != "none":
             self.write_entries(spec, stem, taken, structs)
+        registers: Dict[str, List[str]] = {}
+        self.write_registers(spec, stem, registers)
 
         for set_key, command in self.commands(spec):
             doc = document_key(command.source.document)
@@ -1162,7 +1276,7 @@ class SpecHeaders:
 
         headers: List[Path] = []
         written: List[Path] = []
-        for doc in dict.fromkeys([*enums, *structs, *commands]):
+        for doc in dict.fromkeys([*enums, *structs, *registers, *commands]):
             name = f"{stem}_{doc}"
             guard = f"{identifier(name)}_H"
             text = [
@@ -1183,6 +1297,7 @@ class SpecHeaders:
                 "",
                 *enums.get(doc, []),
                 *structs.get(doc, []),
+                *registers.get(doc, []),
                 *commands.get(doc, []),
                 f"#endif /* {guard} */",
                 "",

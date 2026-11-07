@@ -67,6 +67,22 @@ def structure(
     )
 
 
+def register(name, offset, fields, figure_nr):
+    return spec_model.Structure(
+        name=name,
+        kind="register",
+        unit="bits",
+        offset=offset,
+        fields=fields,
+        source=source(figure_nr=figure_nr),
+    )
+
+
+def value(value_, number, name=None):
+    typed = {"value": spec_model.Typed(kind="number", lower=number, upper=number)}
+    return spec_model.Entry(value=value_, value_column="value", name=name, typed=typed)
+
+
 def status(qualifier, scope, value, name, figure_nr):
     return spec_model.Values(
         kind="status_values",
@@ -208,6 +224,38 @@ def model(tmp_path):
                 figure_nr=13,
                 unit="bits",
             ),
+            register(
+                "FOOCAP - Foo Capabilities",
+                "0h",
+                [
+                    bits("63:32", "Reserved", unit="bits"),
+                    bits("15:00", "Foo Limit", "FL", unit="bits"),
+                ],
+                8,
+            ),
+            register(
+                "FOOCC - Foo Configuration",
+                "10h",
+                [
+                    bits(
+                        "02:00",
+                        "Foo Mode Selected",
+                        "FMS",
+                        unit="bits",
+                    ).model_copy(
+                        update={
+                            "values": [
+                                value("000b", 0, "Foo Fast"),
+                                value("001b", 1),
+                                value("111b", 7, "Reserved"),
+                            ]
+                        }
+                    ),
+                    bits("31:03", "Reserved", unit="bits"),
+                ],
+                9,
+            ),
+            register("FOOX - Foo Elsewhere", "1000h + (4 * y)", [], 10),
             structure(
                 "Bar Request PDU (BREQ)",
                 [bits("07:00", "Bar Tag", "BTAG")],
@@ -411,7 +459,9 @@ def test_io_is_one_word_in_names():
 
 
 def test_only_what_is_asked_for_is_written(model, tmp_path):
-    wrote = generate(model, tmp_path / "out", commands="none", structures="none")
+    wrote = generate(
+        model, tmp_path / "out", commands="none", structures="none", registers="none"
+    )
     text = text_of(wrote, "xnvme_spec_foo.h")
     assert "struct" not in text
     assert wrote.sources == []
@@ -440,3 +490,31 @@ def test_yace_takes_the_headers_in_its_strict_subset(model, tmp_path):
     assert proc.returncode == 0, proc.stderr
     (status,) = (tmp_path / "out").glob("*.status")
     assert status.read_text().endswith("0 diagnostics\n")
+
+
+def test_the_registers_are_a_struct_at_their_offsets_with_masks_and_values(
+    model, tmp_path
+):
+    text = text_of(generate(model, tmp_path / "out"), "xnvme_spec_foo.h")
+
+    assert "struct __attribute__((packed)) xnvme_spec_foo_registers {" in text
+    # A register has the width of its fields and is at its offset; the bytes
+    # between registers are reserved
+    assert "\tuint64_t foocap; ///< FOOCAP - Foo Capabilities (Foo 1.0" in text
+    assert "\tuint8_t rsvd8[8]; ///< Reserved, 8h to Fh" in text
+    assert "\tuint32_t foocc; ///< FOOCC - Foo Configuration" in text
+    assert "#define XNVME_SPEC_FOO_REGISTERS_FOOCC_FMS 0x7" in text
+    # The named values of a field are an enum; reserved and unnamed values are
+    # left out
+    assert "enum xnvme_spec_foo_registers_foocc_fms {" in text
+    assert "\tXNVME_SPEC_FOO_REGISTERS_FOOCC_FMS_FOO_FAST = 0x0," in text
+    assert "_FMS_RESERVED" not in text
+    # A register whose offset is not a number is named in the doc, not placed
+    assert " * FOOX - Foo Elsewhere: at no offset of a number" in text
+
+
+def test_the_registers_are_left_out_when_asked(model, tmp_path):
+    text = text_of(
+        generate(model, tmp_path / "out", registers="none"), "xnvme_spec_foo.h"
+    )
+    assert "_registers" not in text
