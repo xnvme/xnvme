@@ -19,6 +19,10 @@ macOS exposes NVMe devices as files using the following naming schemes:
 `/dev/disk{ctrlr_id}`
 : **NVMe** Controller device node
 
+`/path/to/file`
+: A regular file, opened by the `emu_file` and `thrpool_file` backend configs,
+  and created when the open asks for it
+
 (sec-platforms-macos-instrumentation)=
 
 ## Backend Configs
@@ -43,10 +47,13 @@ interfaces, descriptions are available in the corresponding subsections.
 * Synchronous Interfaces
 
   - `macos`, Use pread()/write() for synchronous I/O
+  - `psync`, Use pread()/write() on a regular file, see
+    {ref}`sec-backends-common-sync-psync`
 
 * Admin Interfaces
 
   - `macos`, Use macOS NVMe SMART Interface admin commands
+  - `file_as_ns`, Answer admin commands for a regular file as a namespace
 
 * Device Interfaces
 
