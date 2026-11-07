@@ -2313,27 +2313,46 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_idfy_ctrlr) == 4096, "Incorrect
  *
  * That is, for opcode XNVME_SPEC_OPC_IDFY(0x06) with XNVME_SPEC_IDFY_NS_IOCS(0x05)
  *
+ * @see NVM Command Set 1.3, Figure 127
  * @struct xnvme_spec_nvm_idfy_ns
  */
 struct xnvme_spec_nvm_idfy_ns {
-	uint64_t lbstm; ///< Logical block storage tag mask
+	uint64_t lbstm; ///< LBSTM: Logical Block Storage Tag Mask
 
-	uint8_t pic; ///< Protection Information Capabilities, see XNVME_SPEC_NVM_IDFY_NS_PIC_*
+	uint8_t pic;  ///< PIC: Protection Information Capabilities, see
+		      ///< XNVME_SPEC_NVM_IDFY_NS_PIC_*
+	uint8_t pifa; ///< PIFA: Protection Information Format Attribute, see ..._NS_PIFA_*
 
-	uint8_t reserved9[3];
+	uint8_t rsvd10[2];
 
-	struct xnvme_spec_elbaf elbaf[64];
+	struct xnvme_spec_elbaf elbaf[64]; ///< ELBAF0 to ELBAF63: Extended LBA Formats
 
-	uint8_t reserved268[3828];
+	uint32_t npdgl;  ///< NPDGL: Namespace Preferred Deallocate Granularity Large
+	uint32_t nprg;   ///< NPRG: Namespace Preferred Read Granularity, zero-based
+	uint32_t npra;   ///< NPRA: Namespace Preferred Read Alignment, zero-based
+	uint32_t nors;   ///< NORS: Namespace Optimal Read Size, zero-based
+	uint32_t npdal;  ///< NPDAL: Namespace Preferred Deallocate Alignment Large
+	uint32_t lbapss; ///< LBAPSS: LBA Format Placement Shard Size
+	uint32_t tlbaag; ///< TLBAAG: Tracked LBA Allocation Granularity
+
+	uint8_t rsvd296[3800];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_idfy_ns) == 4096, "Incorrect size")
 
-/** 16b Guard Protection Information Storage Tag Support; bit 0 of 'pic' */
-#define XNVME_SPEC_NVM_IDFY_NS_PIC_GPISTS 0x1
-/** 16b Guard Protection Information Storage Tag Mask; bit 1 of 'pic' */
-#define XNVME_SPEC_NVM_IDFY_NS_PIC_GPISTM 0x2
-/** Storage Tag Check Read Support; bit 2 of 'pic' */
+/** 16b Guard Protection Information Storage Tag Support; bit 0 of 'pic', PISTS16B (NVM Command
+ * Set 1.3, Figure 127) */
+#define XNVME_SPEC_NVM_IDFY_NS_PIC_PISTS16B 0x1
+/** 16b Guard Protection Information Storage Tag Mask; bit 1 of 'pic', PISTM16B (NVM Command
+ * Set 1.3, Figure 127) */
+#define XNVME_SPEC_NVM_IDFY_NS_PIC_PISTM16B 0x2
+/** Storage Tag Check Read Support; bit 2 of 'pic', STCRS (NVM Command Set 1.3, Figure 127) */
 #define XNVME_SPEC_NVM_IDFY_NS_PIC_STCRS 0x4
+/** Qualified Protection Information Format Support; bit 3 of 'pic', QPIFS (NVM Command Set 1.3,
+ * Figure 127) */
+#define XNVME_SPEC_NVM_IDFY_NS_PIC_QPIFS 0x8
+/** Storage Tag Masking Level Attribute; bits 2:0 of 'pifa', STMLA (NVM Command Set 1.3, Figure
+ * 127) */
+#define XNVME_SPEC_NVM_IDFY_NS_PIFA_STMLA 0x7
 
 /**
  * The data returned by an Identify command for the NVM command set, as the structure of each CNS

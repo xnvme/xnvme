@@ -1192,9 +1192,9 @@ xnvme_spec_nvm_idfy_ns_fpr(FILE *stream, struct xnvme_spec_nvm_idfy_ns *idfy, in
 	wrtn += fprintf(stream, "  lbstm: %" PRIu64 "\n", idfy->lbstm);
 	wrtn += fprintf(stream, "  oncs:\n");
 	wrtn += fprintf(stream, "    gpistm: %" PRIu64 "\n",
-			xnvme_bits_get(idfy->pic, XNVME_SPEC_NVM_IDFY_NS_PIC_GPISTM));
+			xnvme_bits_get(idfy->pic, XNVME_SPEC_NVM_IDFY_NS_PIC_PISTM16B));
 	wrtn += fprintf(stream, "    gpists: %" PRIu64 "\n",
-			xnvme_bits_get(idfy->pic, XNVME_SPEC_NVM_IDFY_NS_PIC_GPISTS));
+			xnvme_bits_get(idfy->pic, XNVME_SPEC_NVM_IDFY_NS_PIC_PISTS16B));
 	wrtn += fprintf(stream, "    stcrs: %" PRIu64 "\n",
 			xnvme_bits_get(idfy->pic, XNVME_SPEC_NVM_IDFY_NS_PIC_STCRS));
 

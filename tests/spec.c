@@ -561,8 +561,10 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_streams_dir_rp, nssc,
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_streams_dir_rp, nssc) == 6,
 		    "nssc of struct xnvme_spec_streams_dir_rp")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_nvm_idfy_ns, pic,
-			 XNVME_SPEC_NVM_IDFY_NS_PIC_GPISTS | XNVME_SPEC_NVM_IDFY_NS_PIC_GPISTM |
-				 XNVME_SPEC_NVM_IDFY_NS_PIC_STCRS),
+			 XNVME_SPEC_NVM_IDFY_NS_PIC_PISTS16B |
+				 XNVME_SPEC_NVM_IDFY_NS_PIC_PISTM16B |
+				 XNVME_SPEC_NVM_IDFY_NS_PIC_STCRS |
+				 XNVME_SPEC_NVM_IDFY_NS_PIC_QPIFS),
 		    "pic of struct xnvme_spec_nvm_idfy_ns")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_idfy_ns, pic) == 8,
 		    "pic of struct xnvme_spec_nvm_idfy_ns")
@@ -758,6 +760,21 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_nvm_idfy_ctrlr, rla,
 XNVME_STATIC_ASSERT(XNVME_SPEC_NVM_IDFY_CTRLR_KPIOCAP_KPIOSC == 0x2 &&
 			    XNVME_SPEC_NVM_IDFY_CTRLR_RLA_SLS == 0x2,
 		    "KPIOSC and SLS are bit 1 of their fields")
+
+/* NVM Command Set 1.3, Figure 127 */
+SPEC_AT(struct xnvme_spec_nvm_idfy_ns, pic, 8, 1)
+SPEC_AT(struct xnvme_spec_nvm_idfy_ns, pifa, 9, 1)
+SPEC_AT(struct xnvme_spec_nvm_idfy_ns, elbaf, 12, 64 * 4)
+SPEC_AT(struct xnvme_spec_nvm_idfy_ns, npdgl, 268, 4)
+SPEC_AT(struct xnvme_spec_nvm_idfy_ns, nprg, 272, 4)
+SPEC_AT(struct xnvme_spec_nvm_idfy_ns, npra, 276, 4)
+SPEC_AT(struct xnvme_spec_nvm_idfy_ns, nors, 280, 4)
+SPEC_AT(struct xnvme_spec_nvm_idfy_ns, npdal, 284, 4)
+SPEC_AT(struct xnvme_spec_nvm_idfy_ns, lbapss, 288, 4)
+SPEC_AT(struct xnvme_spec_nvm_idfy_ns, tlbaag, 292, 4)
+XNVME_STATIC_ASSERT(XNVME_SPEC_NVM_IDFY_NS_PIC_QPIFS == 0x8 &&
+			    XNVME_SPEC_NVM_IDFY_NS_PIFA_STMLA == 0x7,
+		    "QPIFS is bit 3 of PIC and STMLA bits 2:0 of PIFA")
 
 struct offset_case {
 	const char *name;
@@ -1157,8 +1174,8 @@ sub_data_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 		memset(raw, 0, sizeof(raw));
 		raw[8] = 0x05; // NVM Identify Namespace PIC: 16BPISTS, STCRS
 		memcpy(&ns, raw, sizeof(ns));
-		if (!xnvme_bits_get(ns.pic, XNVME_SPEC_NVM_IDFY_NS_PIC_GPISTS) ||
-		    xnvme_bits_get(ns.pic, XNVME_SPEC_NVM_IDFY_NS_PIC_GPISTM) ||
+		if (!xnvme_bits_get(ns.pic, XNVME_SPEC_NVM_IDFY_NS_PIC_PISTS16B) ||
+		    xnvme_bits_get(ns.pic, XNVME_SPEC_NVM_IDFY_NS_PIC_PISTM16B) ||
 		    !xnvme_bits_get(ns.pic, XNVME_SPEC_NVM_IDFY_NS_PIC_STCRS)) {
 			xnvme_cli_pinf("FAILED: pic: %#" PRIx8, ns.pic);
 			err = -EINVAL;
