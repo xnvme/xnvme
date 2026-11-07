@@ -1,6 +1,6 @@
 --- a/engines/xnvme.c
 +++ b/engines/xnvme.c
-@@ -17,6 +17,30 @@
+@@ -17,6 +17,39 @@
  #else
  #define FIO_XNVME_CPL_SC(cpl) ((cpl).status.sc)
  #endif
@@ -28,10 +28,19 @@
 +#else
 +#define FIO_XNVME_SET_DSPEC(cmd, val) ((cmd)->nvm.cdw13.dspec = (val))
 +#endif
++
++/* The zone type and state are bits of a byte behind masks where xNVMe defines them */
++#ifdef XNVME_SPEC_ZND_DESCR_ZTATTR_ZT
++#define FIO_XNVME_ZND_ZT(descr) xnvme_bits_get((descr)->ztattr, XNVME_SPEC_ZND_DESCR_ZTATTR_ZT)
++#define FIO_XNVME_ZND_ZS(descr) xnvme_bits_get((descr)->zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS)
++#else
++#define FIO_XNVME_ZND_ZT(descr) ((descr)->zt)
++#define FIO_XNVME_ZND_ZS(descr) ((descr)->zs)
++#endif
  #include "fio.h"
  #include "verify.h"
  #include "zbd_types.h"
-@@ -759,10 +783,10 @@
+@@ -759,10 +792,10 @@
  
  	ctx->cmd.common.nsid = nsid;
  	ctx->cmd.nvm.slba = slba;
@@ -45,7 +54,7 @@
  	}
  
  	switch (io_u->ddir) {
-@@ -804,7 +828,7 @@
+@@ -804,7 +837,7 @@
  	}
  
  	if (fwrap->geo->pi_type)
@@ -54,3 +63,21 @@
  
  	switch (fwrap->geo->pi_type) {
  	case XNVME_PI_TYPE1:
+@@ -1120,7 +1153,7 @@
+ 		zbdz[idx].capacity = descr->zcap << ssw;
+ 		zbdz[idx].wp = descr->wp << ssw;
+ 
+-		switch (descr->zt) {
++		switch (FIO_XNVME_ZND_ZT(descr)) {
+ 		case XNVME_SPEC_ZND_TYPE_SEQWR:
+ 			zbdz[idx].type = ZBD_ZONE_TYPE_SWR;
+ 			break;
+@@ -1132,7 +1165,7 @@
+ 			goto exit;
+ 		}
+ 
+-		switch (descr->zs) {
++		switch (FIO_XNVME_ZND_ZS(descr)) {
+ 		case XNVME_SPEC_ZND_STATE_EMPTY:
+ 			zbdz[idx].cond = ZBD_ZONE_COND_EMPTY;
+ 			break;

@@ -565,17 +565,20 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_znd_idfy_ns, ozcs) == 2,
 		    "ozcs of struct xnvme_spec_znd_idfy_ns")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_znd_idfy_ns, zrwacap) == 52,
 		    "zrwacap of struct xnvme_spec_znd_idfy_ns")
-XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_descr, zt, XNVME_SPEC_ZND_DESCR_ZT_ZT),
-		    "zt of struct xnvme_spec_znd_descr")
-XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_descr, zs, XNVME_SPEC_ZND_DESCR_ZS_ZS),
-		    "zs of struct xnvme_spec_znd_descr")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_descr, ztattr, XNVME_SPEC_ZND_DESCR_ZTATTR_ZT),
+		    "ztattr of struct xnvme_spec_znd_descr")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_descr, zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS),
+		    "zsattr of struct xnvme_spec_znd_descr")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_descr, za,
-			 XNVME_SPEC_ZND_DESCR_ZA_ZFC | XNVME_SPEC_ZND_DESCR_ZA_ZFR |
+			 XNVME_SPEC_ZND_DESCR_ZA_ZFC | XNVME_SPEC_ZND_DESCR_ZA_FZR |
 				 XNVME_SPEC_ZND_DESCR_ZA_RZR | XNVME_SPEC_ZND_DESCR_ZA_ZRWAV |
 				 XNVME_SPEC_ZND_DESCR_ZA_ZDEV),
 		    "za of struct xnvme_spec_znd_descr")
-XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_znd_descr, zs) == 1,
-		    "zs of struct xnvme_spec_znd_descr")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_descr, zai,
+			 XNVME_SPEC_ZND_DESCR_ZAI_FZRTL | XNVME_SPEC_ZND_DESCR_ZAI_RZRTL),
+		    "zai of struct xnvme_spec_znd_descr")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_znd_descr, zsattr) == 1,
+		    "zsattr of struct xnvme_spec_znd_descr")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_znd_descr, za) == 2,
 		    "za of struct xnvme_spec_znd_descr")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_fs_idfy_ctrlr, caps,
@@ -650,6 +653,17 @@ SPEC_AT(struct xnvme_spec_znd_idfy_lbafe, zdes, 8, 1)
 /* Zoned Namespace Command Set 1.5, Figure 47 */
 SPEC_AT(struct xnvme_spec_znd_log_changes, nzid, 0, 2)
 SPEC_AT(struct xnvme_spec_znd_log_changes, idents, 8, 511 * 8)
+
+/* Zoned Namespace Command Set 1.5, Figure 38 */
+SPEC_AT(struct xnvme_spec_znd_descr, ztattr, 0, 1)
+SPEC_AT(struct xnvme_spec_znd_descr, zsattr, 1, 1)
+SPEC_AT(struct xnvme_spec_znd_descr, za, 2, 1)
+SPEC_AT(struct xnvme_spec_znd_descr, zai, 3, 1)
+SPEC_AT(struct xnvme_spec_znd_descr, zcap, 8, 8)
+SPEC_AT(struct xnvme_spec_znd_descr, zslba, 16, 8)
+SPEC_AT(struct xnvme_spec_znd_descr, wp, 24, 8)
+XNVME_STATIC_ASSERT(XNVME_SPEC_ZND_DESCR_ZAI_FZRTL == 0x3 && XNVME_SPEC_ZND_DESCR_ZAI_RZRTL == 0xc,
+		    "FZRTL is bits 1:0 and RZRTL bits 3:2 of ZAI")
 
 struct offset_case {
 	const char *name;
@@ -1112,15 +1126,15 @@ sub_data_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 		raw[1] = 0xe0; // ZS: full
 		raw[2] = 0x88; // ZA: ZRWAV, ZDEV
 		memcpy(&descr, raw, sizeof(descr));
-		if (xnvme_bits_get(descr.zt, XNVME_SPEC_ZND_DESCR_ZT_ZT) !=
+		if (xnvme_bits_get(descr.ztattr, XNVME_SPEC_ZND_DESCR_ZTATTR_ZT) !=
 			    XNVME_SPEC_ZND_TYPE_SEQWR ||
-		    xnvme_bits_get(descr.zs, XNVME_SPEC_ZND_DESCR_ZS_ZS) !=
+		    xnvme_bits_get(descr.zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS) !=
 			    XNVME_SPEC_ZND_STATE_FULL ||
 		    xnvme_bits_get(descr.za, XNVME_SPEC_ZND_DESCR_ZA_ZFC) ||
 		    !xnvme_bits_get(descr.za, XNVME_SPEC_ZND_DESCR_ZA_ZRWAV) ||
 		    !xnvme_bits_get(descr.za, XNVME_SPEC_ZND_DESCR_ZA_ZDEV)) {
 			xnvme_cli_pinf("FAILED: zt: %#" PRIx8 ", zs: %#" PRIx8 ", za: %#" PRIx8,
-				       descr.zt, descr.zs, descr.za);
+				       descr.ztattr, descr.zsattr, descr.za);
 			err = -EINVAL;
 		}
 	}

@@ -2800,38 +2800,49 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_log_changes) == 4096, "Incorrec
 /**
  * Zone Descriptor as reported by Zone Management Receive command
  *
- * @see Specification Section 6.2.2.3, figure TBDZMRZD
+ * @see Zoned Namespace Command Set 1.5, Figure 38
  *
  * @struct xnvme_spec_znd_descr
  */
 struct xnvme_spec_znd_descr {
-	uint8_t zt; ///< Zone Type, see XNVME_SPEC_ZND_DESCR_ZT_*
-	uint8_t zs; ///< Zone State, see XNVME_SPEC_ZND_DESCR_ZS_*
-	uint8_t za; ///< Zone Attributes, see XNVME_SPEC_ZND_DESCR_ZA_*
+	uint8_t ztattr; ///< ZTATTR: Zone Type Attributes, see XNVME_SPEC_ZND_DESCR_ZTATTR_*
+	uint8_t zsattr; ///< ZSATTR: Zone State Attributes, see XNVME_SPEC_ZND_DESCR_ZSATTR_*
+	uint8_t za;     ///< ZA: Zone Attributes, see XNVME_SPEC_ZND_DESCR_ZA_*
+	uint8_t zai;    ///< ZAI: Zone Attributes Information, see XNVME_SPEC_ZND_DESCR_ZAI_*
 
-	uint8_t rsvd7[5];
+	uint8_t rsvd4[4];
 
-	uint64_t zcap;  ///< Zone Capacity (in number of LBAs)
-	uint64_t zslba; ///< Zone Start LBA
-	uint64_t wp;    ///< Write Pointer
-	uint8_t rsvd63[32];
+	uint64_t zcap;  ///< ZCAP: Zone Capacity, in logical blocks
+	uint64_t zslba; ///< ZSLBA: Zone Start Logical Block Address
+	uint64_t wp;    ///< WP: Write Pointer
+	uint8_t rsvd32[32];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_descr) == 64, "Incorrect size")
 
-/** Zone Type, see xnvme_spec_znd_type; bits 3:0 of 'zt' */
-#define XNVME_SPEC_ZND_DESCR_ZT_ZT 0xf
-/** Zone State, see xnvme_spec_znd_state; bits 7:4 of 'zs' */
-#define XNVME_SPEC_ZND_DESCR_ZS_ZS 0xf0
-/** Zone Finished by Controller; bit 0 of 'za' */
+/** Zone Type, see xnvme_spec_znd_type; bits 3:0 of 'ztattr', ZT (Zoned Namespace Command Set 1.5,
+ * Figure 38) */
+#define XNVME_SPEC_ZND_DESCR_ZTATTR_ZT 0xf
+/** Zone State, see xnvme_spec_znd_state; bits 7:4 of 'zsattr', ZS (Zoned Namespace Command Set
+ * 1.5, Figure 38) */
+#define XNVME_SPEC_ZND_DESCR_ZSATTR_ZS 0xf0
+/** Zone Finished by Controller; bit 0 of 'za', ZFC (Zoned Namespace Command Set 1.5, Figure 38) */
 #define XNVME_SPEC_ZND_DESCR_ZA_ZFC 0x1
-/** Finish Zone Recommended; bit 1 of 'za' */
-#define XNVME_SPEC_ZND_DESCR_ZA_ZFR 0x2
-/** Reset Zone Recommended; bit 2 of 'za' */
+/** Finish Zone Recommended; bit 1 of 'za', FZR (Zoned Namespace Command Set 1.5, Figure 38) */
+#define XNVME_SPEC_ZND_DESCR_ZA_FZR 0x2
+/** Reset Zone Recommended; bit 2 of 'za', RZR (Zoned Namespace Command Set 1.5, Figure 38) */
 #define XNVME_SPEC_ZND_DESCR_ZA_RZR 0x4
-/** Zone Random Write Area Valid; bit 3 of 'za' */
+/** Zone Random Write Area Valid; bit 3 of 'za', ZRWAV (Zoned Namespace Command Set 1.5, Figure 38)
+ */
 #define XNVME_SPEC_ZND_DESCR_ZA_ZRWAV 0x8
-/** Zone Descriptor Extension Valid; bit 7 of 'za' */
+/** Zone Descriptor Extension Valid; bit 7 of 'za', ZDEV (Zoned Namespace Command Set 1.5,
+ * Figure 38) */
 #define XNVME_SPEC_ZND_DESCR_ZA_ZDEV 0x80
+/** Finish Zone Recommended Time Limit; bits 1:0 of 'zai', FZRTL (Zoned Namespace Command Set 1.5,
+ * Figure 38) */
+#define XNVME_SPEC_ZND_DESCR_ZAI_FZRTL 0x3
+/** Reset Zone Recommended Time Limit; bits 3:2 of 'zai', RZRTL (Zoned Namespace Command Set 1.5,
+ * Figure 38) */
+#define XNVME_SPEC_ZND_DESCR_ZAI_RZRTL 0xc
 
 /**
  * Report Zones Data Structure header

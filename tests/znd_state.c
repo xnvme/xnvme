@@ -53,8 +53,9 @@ cmd_transition(struct xnvme_cli *cli)
 			goto exit;
 		}
 
-		if (xnvme_bits_get(zone.zs, XNVME_SPEC_ZND_DESCR_ZS_ZS) != actions[i].state) {
-			xnvme_cli_perr("zone.zs: %u != expected: %u", actions[i].state);
+		if (xnvme_bits_get(zone.zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS) !=
+		    actions[i].state) {
+			xnvme_cli_perr("zone.zsattr: %u != expected: %u", actions[i].state);
 			err = EIO;
 			goto exit;
 		}
