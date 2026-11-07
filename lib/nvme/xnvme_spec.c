@@ -490,8 +490,8 @@ xnvme_spec_ruhs_fpr(FILE *stream, const struct xnvme_spec_ruhs *ruhs, int limit,
 
 	for (int i = 0; i < limit; ++i) {
 		wrtn += fprintf(stream, "  - ruhs_desc[%d] : {", i);
-		wrtn += fprintf(stream, " pi: %" PRIu16, ruhs->desc[i].pi);
-		wrtn += fprintf(stream, " ruhi: %" PRIu16, ruhs->desc[i].ruhi);
+		wrtn += fprintf(stream, " pid: %" PRIu16, ruhs->desc[i].pid);
+		wrtn += fprintf(stream, " ruhid: %" PRIu16, ruhs->desc[i].ruhid);
 		wrtn += fprintf(stream, " earutr: %" PRIu32, ruhs->desc[i].earutr);
 		wrtn += fprintf(stream, " ruamw: %" PRIu64 "", ruhs->desc[i].ruamw);
 		wrtn += fprintf(stream, "}\n");

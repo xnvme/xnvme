@@ -1309,6 +1309,12 @@ SPEC_AT(struct xnvme_spec_fdp_event, vs, 40, 24)
 SPEC_AT(struct xnvme_spec_fdp_event_desc, fdpet, 0, 1)
 SPEC_AT(struct xnvme_spec_fdp_event_desc, fdpeta, 1, 1)
 
+/* NVM Command Set 1.3, Figure 21 */
+SPEC_AT(struct xnvme_spec_ruhs_desc, pid, 0, 2)
+SPEC_AT(struct xnvme_spec_ruhs_desc, ruhid, 2, 2)
+SPEC_AT(struct xnvme_spec_ruhs_desc, earutr, 4, 4)
+SPEC_AT(struct xnvme_spec_ruhs_desc, ruamw, 8, 8)
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it
