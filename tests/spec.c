@@ -155,14 +155,15 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_scopy_fmt_zero, nlb) == 16,
 		    "nlb of struct xnvme_spec_nvm_scopy_fmt_zero")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_scopy_fmt_zero, eilbrt) == 20,
 		    "eilbrt of struct xnvme_spec_nvm_scopy_fmt_zero")
-XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_nvm_cmd_scopy, cdw12,
-			 XNVME_SPEC_NVM_CMD_SCOPY_CDW12_NR | XNVME_SPEC_NVM_CMD_SCOPY_CDW12_DF |
-				 XNVME_SPEC_NVM_CMD_SCOPY_CDW12_PRINFOR |
-				 XNVME_SPEC_NVM_CMD_SCOPY_CDW12_DTYPE |
-				 XNVME_SPEC_NVM_CMD_SCOPY_CDW12_PRINFOW |
-				 XNVME_SPEC_NVM_CMD_SCOPY_CDW12_FUA |
-				 XNVME_SPEC_NVM_CMD_SCOPY_CDW12_LR),
-		    "cdw12 of struct xnvme_spec_nvm_cmd_scopy")
+XNVME_STATIC_ASSERT(
+	FITS(struct xnvme_spec_nvm_cmd_scopy, cdw12,
+	     XNVME_SPEC_NVM_CMD_SCOPY_CDW12_NR | XNVME_SPEC_NVM_CMD_SCOPY_CDW12_DESFMT |
+		     XNVME_SPEC_NVM_CMD_SCOPY_CDW12_CETYPE | XNVME_SPEC_NVM_CMD_SCOPY_CDW12_STCW |
+		     XNVME_SPEC_NVM_CMD_SCOPY_CDW12_STCR | XNVME_SPEC_NVM_CMD_SCOPY_CDW12_PRINFOR |
+		     XNVME_SPEC_NVM_CMD_SCOPY_CDW12_DTYPE |
+		     XNVME_SPEC_NVM_CMD_SCOPY_CDW12_PRINFOW | XNVME_SPEC_NVM_CMD_SCOPY_CDW12_FUA |
+		     XNVME_SPEC_NVM_CMD_SCOPY_CDW12_LR),
+	"cdw12 of struct xnvme_spec_nvm_cmd_scopy")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_cmd_scopy, cdw12) == 48,
 		    "cdw12 of struct xnvme_spec_nvm_cmd_scopy")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_cmd_scopy, dspec) == 54,
@@ -707,6 +708,19 @@ SPEC_AT(struct xnvme_spec_nvm_compare, elbat, 60, 2)
 SPEC_AT(struct xnvme_spec_nvm_compare, elbatm, 62, 2)
 XNVME_STATIC_ASSERT(XNVME_SPEC_NVM_COMPARE_CDW12_CETYPE == 0xf0000,
 		    "CETYPE is bits 19:16 of Compare dword 12")
+
+/* NVM Command Set 1.3, Figures 33 to 38 */
+SPEC_AT(struct xnvme_spec_nvm_cmd_scopy, cdw02_03, 8, 8)
+SPEC_AT(struct xnvme_spec_nvm_cmd_scopy, sdlba, 40, 8)
+SPEC_AT(struct xnvme_spec_nvm_cmd_scopy, cev, 52, 2)
+SPEC_AT(struct xnvme_spec_nvm_cmd_scopy, dspec, 54, 2)
+SPEC_AT(struct xnvme_spec_nvm_cmd_scopy, lbtl, 56, 4)
+SPEC_AT(struct xnvme_spec_nvm_cmd_scopy, lbat, 60, 2)
+SPEC_AT(struct xnvme_spec_nvm_cmd_scopy, lbatm, 62, 2)
+XNVME_STATIC_ASSERT(XNVME_SPEC_NVM_CMD_SCOPY_CDW12_CETYPE == 0xf0000 &&
+			    XNVME_SPEC_NVM_CMD_SCOPY_CDW12_STCW == 0x1000000 &&
+			    XNVME_SPEC_NVM_CMD_SCOPY_CDW12_STCR == 0x2000000,
+		    "CETYPE is bits 19:16, STCW bit 24 and STCR bit 25 of Copy dword 12")
 
 struct offset_case {
 	const char *name;
@@ -1299,11 +1313,11 @@ sub_io_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	}
 
 	memset(&sqe, 0, sizeof(sqe));
-	// Copy dword 12: NR 0x3, DF 0x1, PRINFOR 0xc, DTYPE 0xb, PRINFOW 0x2, LR
+	// Copy dword 12: NR 0x3, DESFMT 0x1, PRINFOR 0xc, DTYPE 0xb, PRINFOW 0x2, LR
 	sqe.cdw[12] = 0x88b0c103;
 	sqe.cdw[13] = 0xbeef0000; // Copy dword 13: DSPEC 0xbeef
 	if (xnvme_bits_get(sqe.scopy.cdw12, XNVME_SPEC_NVM_CMD_SCOPY_CDW12_NR) != 0x3 ||
-	    xnvme_bits_get(sqe.scopy.cdw12, XNVME_SPEC_NVM_CMD_SCOPY_CDW12_DF) != 0x1 ||
+	    xnvme_bits_get(sqe.scopy.cdw12, XNVME_SPEC_NVM_CMD_SCOPY_CDW12_DESFMT) != 0x1 ||
 	    xnvme_bits_get(sqe.scopy.cdw12, XNVME_SPEC_NVM_CMD_SCOPY_CDW12_PRINFOR) != 0xc ||
 	    xnvme_bits_get(sqe.scopy.cdw12, XNVME_SPEC_NVM_CMD_SCOPY_CDW12_DTYPE) != 0xb ||
 	    xnvme_bits_get(sqe.scopy.cdw12, XNVME_SPEC_NVM_CMD_SCOPY_CDW12_PRINFOW) != 0x2 ||
