@@ -964,7 +964,7 @@ xnvme_spec_feat_fpr(FILE *stream, uint8_t fid, const union xnvme_spec_feat *feat
 	case XNVME_SPEC_FEAT_FDP_MODE:
 		wrtn += fprintf(stream, "feat: { fdpe: %" PRIu64 ", fdpci: %" PRIu64 " }\n",
 				xnvme_bits_get(feat->fdp_mode, XNVME_SPEC_FEAT_FDP_MODE_FDPE),
-				xnvme_bits_get(feat->fdp_mode, XNVME_SPEC_FEAT_FDP_MODE_FDPCI));
+				xnvme_bits_get(feat->fdp_mode, XNVME_SPEC_FEAT_FDP_MODE_FDPCIDX));
 		return wrtn;
 
 	case XNVME_SPEC_FEAT_FDP_EVENTS:
