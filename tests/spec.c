@@ -17,13 +17,13 @@
 		 ((uint64_t)1 << (4 * XNVME_SIZEOF_MEMBER(type, field))) ==           \
 	 0)
 
-XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_sanitize, cdw10,
-			 XNVME_SPEC_CMD_SANITIZE_CDW10_SANACT |
-				 XNVME_SPEC_CMD_SANITIZE_CDW10_AUSE |
-				 XNVME_SPEC_CMD_SANITIZE_CDW10_OWPASS |
-				 XNVME_SPEC_CMD_SANITIZE_CDW10_OIPBP |
-				 XNVME_SPEC_CMD_SANITIZE_CDW10_NDAS),
-		    "cdw10 of struct xnvme_spec_cmd_sanitize")
+XNVME_STATIC_ASSERT(
+	FITS(struct xnvme_spec_cmd_sanitize, cdw10,
+	     XNVME_SPEC_CMD_SANITIZE_CDW10_SANACT | XNVME_SPEC_CMD_SANITIZE_CDW10_AUSE |
+		     XNVME_SPEC_CMD_SANITIZE_CDW10_OWPASS | XNVME_SPEC_CMD_SANITIZE_CDW10_OIPBP |
+		     XNVME_SPEC_CMD_SANITIZE_CDW10_NDAS | XNVME_SPEC_CMD_SANITIZE_CDW10_EMVS |
+		     XNVME_SPEC_CMD_SANITIZE_CDW10_PREQ),
+	"cdw10 of struct xnvme_spec_cmd_sanitize")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_sanitize, cdw10) == 40,
 		    "cdw10 of struct xnvme_spec_cmd_sanitize")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_sanitize, ovrpat) == 44,
@@ -1099,6 +1099,11 @@ SPEC_AT(struct xnvme_spec_sgl_descriptor, addr, 0, 8)
 SPEC_AT(struct xnvme_spec_sgl_descriptor, len, 8, 4)
 SPEC_AT(struct xnvme_spec_sgl_descriptor, sglid, 15, 1)
 SPEC_AT(struct xnvme_spec_cmd_common, dptr.sgl1, 24, 16)
+
+/* Base 2.4, Figure 451 */
+XNVME_STATIC_ASSERT(XNVME_SPEC_CMD_SANITIZE_CDW10_EMVS == 0x400 &&
+			    XNVME_SPEC_CMD_SANITIZE_CDW10_PREQ == 0x800,
+		    "EMVS is bit 10 and PREQ bit 11 of Sanitize dword 10")
 
 struct offset_case {
 	const char *name;
