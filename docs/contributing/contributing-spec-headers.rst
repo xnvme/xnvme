@@ -4,12 +4,12 @@ Producing the spec headers
 ==========================
 
 The headers defining what the NVMe specifications define, the commands, data
-structures, log pages, identifiers and status codes, are written by a
-generator rather than by hand. `senfd`_ reads the specification documents into
-a data model of them, and the generator, ``toolbox/xnvme_spec_headers.py``,
-writes the headers from that data model when `yace`_ runs it. yace then parses
-what it wrote as any header, holds it to its C subset, and emits the
-pretty-printers and bindings of it.
+structures, log pages, registers, identifiers and status codes, are written by
+a generator rather than by hand. `senfd`_ reads the specification documents
+into a data model of them, and the generator,
+``toolbox/xnvme_spec_headers.py``, writes the headers from that data model
+when `yace`_ runs it. yace then parses what it wrote as any header, holds it
+to its C subset, and emits the pretty-printers and bindings of it.
 
 None of this is part of the build. A contributor runs it, on a machine with
 the specification documents, and commits what it writes; building **xNVMe**
@@ -32,9 +32,10 @@ Prerequisites
      python3 -m venv ~/venvs/spec
      ~/venvs/spec/bin/pip install senfd yace
 
-  The generator needs a senfd whose data model has the scope of a table of values
-  and the registers of a shared format, and a yace that runs a generator by its
-  file; ``senfd --version`` and ``yace --version`` say what you have.
+  The generator needs a senfd whose data model has the scope of a table of
+  values and the registers of a shared format, and a yace that runs a
+  generator by its file; ``senfd --version`` and ``yace --version`` say what
+  you have.
 
 * A C compiler, which yace uses to check what it parses.
 
@@ -93,6 +94,10 @@ The options of the generator, each given as
 * ``structures``, the structures to write, by their name or their document's
   and theirs, as ``base:identify_controller``, by default every layout of bytes
   but examples, or ``none``.
+* ``registers``, if ``none``, leaves out the registers. Those of a document
+  are otherwise a struct of them at their offsets, as ``struct
+  xnvme_spec_base_registers``, with the masks of their fields and an enum of
+  the values of each field whose values the specification names.
 * ``flexible``, if ``1``, makes the entries following a structure, as the zone
   descriptors following the Report Zones header, a flexible array member. yace
   reports one, as it has no length to bind, so by default the doc of the
