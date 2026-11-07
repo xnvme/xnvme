@@ -15,7 +15,7 @@ test_open_zdptr(struct xnvme_cli *cli)
 	uint32_t nsid = xnvme_dev_get_nsid(dev);
 
 	uint32_t zde_nbytes =
-		zns->lbafe[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT)].zdes * 64;
+		zns->lbafe[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FIDXL)].zdes * 64;
 	uint8_t *zde = NULL;
 
 	uint64_t zslba = cli->args.lba;
@@ -70,8 +70,11 @@ test_open_zdptr(struct xnvme_cli *cli)
 			continue;
 		}
 
-		if ((descr->zs == XNVME_SPEC_ZND_STATE_EMPTY) &&
-		    (descr->zt == XNVME_SPEC_ZND_TYPE_SEQWR) && (descr->zcap)) {
+		if ((xnvme_bits_get(descr->zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS) ==
+		     XNVME_SPEC_ZND_STATE_EMPTY) &&
+		    (xnvme_bits_get(descr->ztattr, XNVME_SPEC_ZND_DESCR_ZTATTR_ZT) ==
+		     XNVME_SPEC_ZND_TYPE_SEQWR) &&
+		    (descr->zcap)) {
 			zslba = descr->zslba;
 			zidx = idx;
 			break;
@@ -155,14 +158,17 @@ test_open_zdptr(struct xnvme_cli *cli)
 			goto exit;
 		}
 
-		if (!descr->za.zdev) {
-			xnvme_cli_pinf("ERR: !descr->za.zdev");
+		if (!xnvme_bits_get(descr->za, XNVME_SPEC_ZND_DESCR_ZA_ZDEV)) {
+			xnvme_cli_pinf("ERR: !ZDEV of descr->za");
 			err = -EIO;
 			goto exit;
 		}
 
-		if (XNVME_SPEC_ZND_STATE_EOPEN != descr->zs) {
-			xnvme_cli_pinf("ERR: invalid zc: 0x%x", descr->zs);
+		if (XNVME_SPEC_ZND_STATE_EOPEN !=
+		    xnvme_bits_get(descr->zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS)) {
+			xnvme_cli_pinf(
+				"ERR: invalid zc: 0x%" PRIx64,
+				xnvme_bits_get(descr->zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS));
 			err = -EIO;
 			goto exit;
 		}

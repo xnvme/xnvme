@@ -356,7 +356,8 @@ sub_dir_send(struct xnvme_cli *cli)
 	switch (dtype) {
 	case XNVME_SPEC_DIR_IDENTIFY:
 		if (doper == XNVME_SPEC_DSEND_IDFY_ENDIR) {
-			cdw12 = (tgtdir << 8) | endir;
+			cdw12 = xnvme_bits_set(cdw12, XNVME_SPEC_CMD_DSEND_CDW12_ENDIR, endir);
+			cdw12 = xnvme_bits_set(cdw12, XNVME_SPEC_CMD_DSEND_CDW12_DTYPE, tgtdir);
 			break;
 		} else {
 			xnvme_cli_perr("invalid directive operation for identify directives", err);
@@ -423,7 +424,7 @@ sub_dir_receive(struct xnvme_cli *cli)
 			dbuf_nbytes = 128 * 1024;
 			break;
 		case XNVME_SPEC_DRECV_STREAMS_ALLRS:
-			cdw12 = nsr & 0xFFFF;
+			cdw12 = xnvme_bits_set(cdw12, XNVME_SPEC_CMD_DRECV_CDW12_NSR, nsr);
 			break;
 		default:
 			xnvme_cli_perr("invalid directive operation for streams directive", err);
@@ -473,7 +474,9 @@ sub_dir_receive(struct xnvme_cli *cli)
 						XNVME_PR_DEF);
 			break;
 		case XNVME_SPEC_DRECV_STREAMS_ALLRS: {
-			struct xnvme_spec_alloc_resource ar = {.val = ctx.cpl.cdw0};
+			struct xnvme_spec_alloc_resource ar = {
+				.nsa = (uint16_t)xnvme_bits_get(ctx.cpl.result,
+								XNVME_SPEC_CQE_RESULT_CDW0)};
 			xnvme_spec_drecv_sar_pr(&ar, XNVME_PR_DEF);
 		} break;
 		default:
@@ -560,8 +563,10 @@ sub_write_directive(struct xnvme_cli *cli)
 
 	xnvme_cli_pinf("Preparing and sending the command...");
 	xnvme_prep_nvm(&ctx, XNVME_SPEC_NVM_OPC_WRITE, nsid, slba, nlb);
-	ctx.cmd.nvm.dtype = dtype;
-	ctx.cmd.nvm.cdw13.dspec = dspec;
+	ctx.cmd.nvm.cdw12 =
+		xnvme_bits_set(ctx.cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_DTYPE, dtype);
+	ctx.cmd.nvm.cdw13 =
+		xnvme_bits_set(ctx.cmd.nvm.cdw13, XNVME_SPEC_CMD_NVM_CDW13_DSPEC, dspec);
 
 	err = xnvme_cmd_pass(&ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
@@ -676,7 +681,8 @@ sub_write_read_pi(struct xnvme_cli *cli)
 	}
 
 	xnvme_prep_nvm(&ctx, XNVME_SPEC_NVM_OPC_WRITE, nsid, slba, nlb);
-	ctx.cmd.nvm.prinfo = (pract << 3 | prchk);
+	ctx.cmd.nvm.cdw12 = xnvme_bits_set(ctx.cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_PRINFO,
+					   (pract << 3 | prchk));
 
 	switch (geo->pi_type) {
 	case XNVME_PI_TYPE1:
@@ -684,13 +690,13 @@ sub_write_read_pi(struct xnvme_cli *cli)
 		switch (geo->pi_format) {
 		case XNVME_SPEC_NVM_NS_16B_GUARD:
 			if (prchk & XNVME_PI_FLAGS_REFTAG_CHECK) {
-				ctx.cmd.nvm.ilbrt = (uint32_t)slba;
+				ctx.cmd.nvm.lbtl = (uint32_t)slba;
 			}
 			break;
 		case XNVME_SPEC_NVM_NS_64B_GUARD:
 			if (prchk & XNVME_PI_FLAGS_REFTAG_CHECK) {
-				ctx.cmd.nvm.ilbrt = (uint32_t)slba;
-				ctx.cmd.common.cdw03 = ((slba >> 32) & 0xffff);
+				ctx.cmd.nvm.lbtl = (uint32_t)slba;
+				ctx.cmd.common.cdw3 = ((slba >> 32) & 0xffff);
 			}
 			break;
 		default:

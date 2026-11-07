@@ -84,6 +84,12 @@ tests = {
     ['idfy-masks', ['idfy-masks']],
     ['status-masks', ['status-masks']],
     ['sqe-dwords', ['sqe-dwords']],
+    ['cdw0-views', ['cdw0-views']],
+    ['data-masks', ['data-masks']],
+    ['io-dwords', ['io-dwords']],
+    ['cqe-result', ['cqe-result']],
+    ['pif-reftag', ['pif-reftag']],
+    ['printers', ['printers']],
   ],
   'threads.c': [
     ['reopen', ['reopen', '1GB', '--count', '5']],
@@ -158,4 +164,10 @@ test(
   'tests - no sub-header includes libxnvme.h',
   python3,
   args: [files('sub_headers.py'), meson.project_source_root() / 'include'],
+)
+
+test(
+  'tests - printers are declared in libxnvme_pp.h only',
+  python3,
+  args: [files('pp_header.py'), meson.project_source_root() / 'include'],
 )

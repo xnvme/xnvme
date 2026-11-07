@@ -138,7 +138,7 @@ dev_init(struct qublk_dev *dev, uint32_t want_max_io)
 
 	ctrlr = xnvme_dev_get_ctrlr(dev->xdev);
 	dev->has_vwc =
-		ctrlr ? (uint8_t)xnvme_bits_get(ctrlr->vwc, XNVME_SPEC_IDFY_CTRLR_VWC_PRESENT) : 1;
+		ctrlr ? (uint8_t)xnvme_bits_get(ctrlr->vwc, XNVME_SPEC_IDFY_CTRLR_VWC_VWCP) : 1;
 	dev->has_fua = backend_honours_fua(dev->xdev);
 
 	cap_max = dev->geo->mdts_nbytes ? dev->geo->mdts_nbytes : QUBLK_DEFAULT_MAX_IO_CAP;

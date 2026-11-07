@@ -17,17 +17,20 @@
 static int
 _gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 {
-	struct xnvme_spec_feat feat = {0};
+	union xnvme_spec_feat feat = {0};
 
-	switch (ctx->cmd.gfeat.cdw10.fid) {
+	switch (xnvme_bits_get(ctx->cmd.gfeat.cdw10, XNVME_SPEC_CMD_GFEAT_CDW10_FID)) {
 	case XNVME_SPEC_FEAT_NQUEUES:
 		feat.nqueues.nsqa = 63;
 		feat.nqueues.ncqa = 63;
-		ctx->cpl.cdw0 = feat.val;
+		ctx->cpl.result =
+			xnvme_bits_set(ctx->cpl.result, XNVME_SPEC_CQE_RESULT_CDW0, feat.val);
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: unsupported fid: %d", ctx->cmd.gfeat.cdw10.fid);
+		XNVME_DEBUG(
+			"FAILED: unsupported fid: %d",
+			(int)xnvme_bits_get(ctx->cmd.gfeat.cdw10, XNVME_SPEC_CMD_GFEAT_CDW10_FID));
 		return -ENOSYS;
 	}
 
@@ -43,7 +46,7 @@ xnvme_be_macos_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 	struct xnvme_be_macos_state *state = &xnvme_be_state(ctx->dev)->macos_state;
 	IONVMeSMARTInterface **smart = state->nvme_smart_interface;
 
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_ADM_OPC_LOG:
 		err = (*smart)->GetLogPage(
 			smart, dbuf,
@@ -86,7 +89,7 @@ xnvme_be_macos_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 	case XNVME_SPEC_ADM_OPC_GFEAT:
 		return _gfeat(ctx, dbuf);
 	default:
-		XNVME_DEBUG("FAILED: ENOSYS opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: ENOSYS opcode: %d", ctx->cmd.common.opc);
 		return -ENOSYS;
 	}
 

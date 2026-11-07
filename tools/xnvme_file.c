@@ -230,7 +230,7 @@ dump_sync_iovec(struct xnvme_cli *cli)
 
 	xnvme_dev_get_cmd_ctx(fh, &ctx);
 	ctx.cmd.common.nsid = xnvme_dev_get_nsid(ctx.dev);
-	ctx.cmd.common.opcode = XNVME_SPEC_FS_OPC_WRITE;
+	ctx.cmd.common.opc = XNVME_SPEC_FS_OPC_WRITE;
 	ctx.cmd.nvm.slba = ofz;
 
 	npayloads = (buf_nbytes + iosize - 1) / iosize;
@@ -438,7 +438,7 @@ dump_async_iovec(struct xnvme_cli *cli)
 		size_t nbytes = 0;
 
 		ctx->cmd.common.nsid = xnvme_dev_get_nsid(ctx->dev);
-		ctx->cmd.common.opcode = XNVME_SPEC_FS_OPC_WRITE;
+		ctx->cmd.common.opc = XNVME_SPEC_FS_OPC_WRITE;
 		ctx->cmd.nvm.slba = ofz;
 
 		for (int k = 0; k < ndvec; k++) {

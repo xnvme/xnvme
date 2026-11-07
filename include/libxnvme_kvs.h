@@ -7,19 +7,32 @@
  */
 
 /**
+ * Options of the KV Retrieve command, the bits of the 'opt' of xnvme_kvs_retrieve()
+ *
+ * Each is the bit of the Retrieve Option (RO), bits 15:08 of Command Dword 11, it sets.
+ *
+ * @see Key Value Command Set 1.4, Figure 20
  * @enum xnvme_retrieve_opts
  */
 enum xnvme_retrieve_opts {
-	XNVME_KVS_RETRIEVE_OPT_RETRIEVE_RAW = 1 << 0,
+	XNVME_KVS_RETRIEVE_OPT_RRD = 1 << 0, ///< Return Raw Data (RRD), the value as stored
 };
 
 /**
+ * Options of the KV Store command, the bits of the 'opt' of xnvme_kvs_store()
+ *
+ * Each is the bit of the Store Option (SO), bits 15:08 of Command Dword 11, it sets.
+ *
+ * @see Key Value Command Set 1.4, Figure 31
  * @enum xnvme_store_opts
  */
 enum xnvme_store_opts {
-	XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_NOT_EXISTS = 1 << 0,
-	XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_EXISTS     = 1 << 1,
-	XNVME_KVS_STORE_OPT_COMPRESS                     = 1 << 2,
+	/** Store If Key Exist (SIKE): store only when the key exists, overwriting its value */
+	XNVME_KVS_STORE_OPT_SIKE = 1 << 0,
+	/** Store If No Key Exists (SINKE): store only when the key does not exist */
+	XNVME_KVS_STORE_OPT_SINKE = 1 << 1,
+	/** No Compression (NOCOMP): the controller shall not compress the value */
+	XNVME_KVS_STORE_OPT_NOCOMP = 1 << 2,
 };
 
 /**

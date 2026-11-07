@@ -11,14 +11,20 @@ int
 xnvme_adm_format(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t lbafl, uint8_t lbafu,
 		 uint8_t mset, uint8_t ses, uint8_t pi, uint8_t pil)
 {
-	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_FMT;
+	ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_FMT;
 	ctx->cmd.common.nsid = nsid;
-	ctx->cmd.format.lbafl = lbafl;
-	ctx->cmd.format.lbafu = lbafu;
-	ctx->cmd.format.mset = mset;
-	ctx->cmd.format.pi = pi;
-	ctx->cmd.format.pil = pil;
-	ctx->cmd.format.ses = ses;
+	ctx->cmd.format.cdw10 =
+		xnvme_bits_set(ctx->cmd.format.cdw10, XNVME_SPEC_CMD_FORMAT_CDW10_LBAFL, lbafl);
+	ctx->cmd.format.cdw10 =
+		xnvme_bits_set(ctx->cmd.format.cdw10, XNVME_SPEC_CMD_FORMAT_CDW10_LBAFU, lbafu);
+	ctx->cmd.format.cdw10 =
+		xnvme_bits_set(ctx->cmd.format.cdw10, XNVME_SPEC_CMD_FORMAT_CDW10_MSET, mset);
+	ctx->cmd.format.cdw10 =
+		xnvme_bits_set(ctx->cmd.format.cdw10, XNVME_SPEC_CMD_FORMAT_CDW10_PI, pi);
+	ctx->cmd.format.cdw10 =
+		xnvme_bits_set(ctx->cmd.format.cdw10, XNVME_SPEC_CMD_FORMAT_CDW10_PIL, pil);
+	ctx->cmd.format.cdw10 =
+		xnvme_bits_set(ctx->cmd.format.cdw10, XNVME_SPEC_CMD_FORMAT_CDW10_SES, ses);
 
 	return xnvme_cmd_pass_admin(ctx, NULL, 0, NULL, 0);
 }
@@ -27,13 +33,17 @@ int
 xnvme_nvm_sanitize(struct xnvme_cmd_ctx *ctx, uint8_t sanact, bool ause, uint32_t ovrpat,
 		   uint8_t owpass, bool oipbp, bool nodas)
 {
-	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_SANITIZE;
-	ctx->cmd.sanitize.sanact = sanact;
-	ctx->cmd.sanitize.ause = ause;
-	ctx->cmd.sanitize.owpass = owpass;
-	ctx->cmd.sanitize.oipbp = oipbp;
-	ctx->cmd.sanitize.nodas = nodas;
-	ctx->cmd.sanitize.ause = ause;
+	ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_SANITIZE;
+	ctx->cmd.sanitize.cdw10 = xnvme_bits_set(ctx->cmd.sanitize.cdw10,
+						 XNVME_SPEC_CMD_SANITIZE_CDW10_SANACT, sanact);
+	ctx->cmd.sanitize.cdw10 =
+		xnvme_bits_set(ctx->cmd.sanitize.cdw10, XNVME_SPEC_CMD_SANITIZE_CDW10_AUSE, ause);
+	ctx->cmd.sanitize.cdw10 = xnvme_bits_set(ctx->cmd.sanitize.cdw10,
+						 XNVME_SPEC_CMD_SANITIZE_CDW10_OWPASS, owpass);
+	ctx->cmd.sanitize.cdw10 = xnvme_bits_set(ctx->cmd.sanitize.cdw10,
+						 XNVME_SPEC_CMD_SANITIZE_CDW10_OIPBP, oipbp);
+	ctx->cmd.sanitize.cdw10 =
+		xnvme_bits_set(ctx->cmd.sanitize.cdw10, XNVME_SPEC_CMD_SANITIZE_CDW10_NDAS, nodas);
 	ctx->cmd.sanitize.ovrpat = ovrpat;
 
 	return xnvme_cmd_pass_admin(ctx, NULL, 0, NULL, 0);
@@ -49,10 +59,10 @@ xnvme_nvm_read(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint16_t
 	// TODO: consider returning -EINVAL when mbuf is provided and namespace
 	// have extended-lba in effect
 
-	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
+	ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_READ;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.nvm.slba = slba;
-	ctx->cmd.nvm.nlb = nlb;
+	ctx->cmd.nvm.cdw12 = xnvme_bits_set(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB, nlb);
 
 	return xnvme_cmd_pass(ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
 }
@@ -70,10 +80,10 @@ xnvme_nvm_write(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint16_
 	// TODO: consider returning -EINVAL when mbuf is provided and namespace
 	// have extended-lba in effect
 
-	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
+	ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_WRITE;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.nvm.slba = slba;
-	ctx->cmd.nvm.nlb = nlb;
+	ctx->cmd.nvm.cdw12 = xnvme_bits_set(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB, nlb);
 
 	return xnvme_cmd_pass(ctx, cdbuf, dbuf_nbytes, cmbuf, mbuf_nbytes);
 }
@@ -82,10 +92,10 @@ int
 xnvme_nvm_write_uncorrectable(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba,
 			      uint16_t nlb)
 {
-	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE_UNCORRECTABLE;
+	ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_WRITE_UNCORRECTABLE;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.nvm.slba = slba;
-	ctx->cmd.nvm.nlb = nlb;
+	ctx->cmd.nvm.cdw12 = xnvme_bits_set(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB, nlb);
 
 	return xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
 }
@@ -93,10 +103,11 @@ xnvme_nvm_write_uncorrectable(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t
 int
 xnvme_nvm_write_zeroes(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint16_t nlb)
 {
-	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE_ZEROES;
+	ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_WRITE_ZEROES;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.write_zeroes.slba = slba;
-	ctx->cmd.write_zeroes.nlb = nlb;
+	ctx->cmd.write_zeroes.cdw12 = xnvme_bits_set(ctx->cmd.write_zeroes.cdw12,
+						     XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_NLB, nlb);
 
 	return xnvme_cmd_pass(ctx, NULL, 0, NULL, 0);
 }
@@ -105,30 +116,29 @@ void
 xnvme_prep_nvm(struct xnvme_cmd_ctx *ctx, uint8_t opcode, uint32_t nsid, uint64_t slba,
 	       uint16_t nlb)
 {
-	ctx->cmd.common.opcode = opcode;
+	ctx->cmd.common.opc = opcode;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.nvm.slba = slba;
-	ctx->cmd.nvm.nlb = nlb;
+	ctx->cmd.nvm.cdw12 = xnvme_bits_set(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB, nlb);
 }
 
 int
 xnvme_nvm_dsm(struct xnvme_cmd_ctx *ctx, uint32_t nsid, struct xnvme_spec_dsm_range *dsm_range,
 	      uint8_t nr, bool ad, bool idw, bool idr)
 {
-	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_DATASET_MANAGEMENT;
+	ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_DATASET_MANAGEMENT;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.dsm.nr = nr;
-	ctx->cmd.dsm.ad = ad;
-	ctx->cmd.dsm.idw = idw;
-	ctx->cmd.dsm.idr = idr;
+	ctx->cmd.dsm.cdw11 = xnvme_bits_set(ctx->cmd.dsm.cdw11, XNVME_SPEC_CMD_DSM_CDW11_AD, ad);
+	ctx->cmd.dsm.cdw11 = xnvme_bits_set(ctx->cmd.dsm.cdw11, XNVME_SPEC_CMD_DSM_CDW11_IDW, idw);
+	ctx->cmd.dsm.cdw11 = xnvme_bits_set(ctx->cmd.dsm.cdw11, XNVME_SPEC_CMD_DSM_CDW11_IDR, idr);
 
 	return xnvme_cmd_pass(ctx, (void *)dsm_range, sizeof(*dsm_range) * (nr + 1), NULL, 0);
 }
 
 int
 xnvme_nvm_scopy(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t sdlba,
-		struct xnvme_spec_nvm_scopy_fmt_zero *ranges, uint8_t nr,
-		enum xnvme_nvm_scopy_fmt copy_fmt)
+		struct xnvme_spec_nvm_scopy_fmt_zero *ranges, uint8_t nr, uint32_t copy_fmt)
 {
 	size_t ranges_nbytes = 0;
 
@@ -139,10 +149,11 @@ xnvme_nvm_scopy(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t sdlba,
 		ranges_nbytes = (nr + 1) * sizeof(struct xnvme_spec_nvm_cmd_scopy_fmt_srclen);
 	}
 
-	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_SCOPY;
+	ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_SCOPY;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.scopy.sdlba = sdlba;
-	ctx->cmd.scopy.nr = nr;
+	ctx->cmd.scopy.cdw12 =
+		xnvme_bits_set(ctx->cmd.scopy.cdw12, XNVME_SPEC_NVM_CMD_SCOPY_CDW12_NR, nr);
 
 	// TODO: consider the remaining command-fields
 
@@ -153,7 +164,7 @@ int
 xnvme_nvm_mgmt_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t mo, uint16_t mos, void *dbuf,
 		    uint32_t dbuf_nbytes)
 {
-	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_IO_MGMT_RECV;
+	ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_IO_MGMT_RECV;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.mgmt.mgmt_recv.mo = mo;
 	ctx->cmd.mgmt.mgmt_recv.mos = mos;
@@ -166,7 +177,7 @@ int
 xnvme_nvm_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t mo, uint16_t mos, void *dbuf,
 		    uint32_t dbuf_nbytes)
 {
-	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_IO_MGMT_SEND;
+	ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_IO_MGMT_SEND;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.mgmt.mgmt_send.mo = mo;
 	ctx->cmd.mgmt.mgmt_send.mos = mos;
@@ -181,10 +192,11 @@ xnvme_nvm_compare(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint1
 	size_t dbuf_nbytes = dbuf ? ctx->dev->geo.lba_nbytes * (nlb + 1) : 0;
 	size_t mbuf_nbytes = mbuf ? ctx->dev->geo.nbytes_oob * (nlb + 1) : 0;
 
-	ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_COMPARE;
+	ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_COMPARE;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.compare.slba = slba;
-	ctx->cmd.compare.nlb = nlb;
+	ctx->cmd.compare.cdw12 =
+		xnvme_bits_set(ctx->cmd.compare.cdw12, XNVME_SPEC_NVM_COMPARE_CDW12_NLB, nlb);
 
 	return xnvme_cmd_pass(ctx, dbuf, dbuf_nbytes, mbuf, mbuf_nbytes);
 }

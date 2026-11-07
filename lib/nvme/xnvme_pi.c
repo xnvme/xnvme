@@ -37,14 +37,14 @@ xnvme_pi_type_is_valid(enum xnvme_pi_type pi_type, uint32_t pi_flags)
 }
 
 size_t
-xnvme_pi_size(enum xnvme_spec_nvm_ns_pif pi_format)
+xnvme_pi_size(uint32_t pi_format)
 {
 	uint8_t size;
 
 	if (pi_format == XNVME_SPEC_NVM_NS_16B_GUARD) {
-		size = XNVME_SIZEOF_MEMBER(struct xnvme_pif, g16);
+		size = XNVME_SIZEOF_MEMBER(union xnvme_pif, g16);
 	} else {
-		size = XNVME_SIZEOF_MEMBER(struct xnvme_pif, g64);
+		size = XNVME_SIZEOF_MEMBER(union xnvme_pif, g64);
 	}
 
 	return size;
@@ -76,7 +76,7 @@ xnvme_get_guard_interval(uint32_t block_size, uint32_t md_size, bool pi_loc, boo
 }
 
 static inline void
-xnvme_pi_set_guard(struct xnvme_pif *pif, uint64_t guard, enum xnvme_spec_nvm_ns_pif pi_format)
+xnvme_pi_set_guard(union xnvme_pif *pif, uint64_t guard, enum xnvme_spec_nvm_ns_pif pi_format)
 {
 	if (pi_format == XNVME_SPEC_NVM_NS_16B_GUARD) {
 		xnvme_to_be16(&(pif->g16.guard), (uint16_t)guard);
@@ -86,7 +86,7 @@ xnvme_pi_set_guard(struct xnvme_pif *pif, uint64_t guard, enum xnvme_spec_nvm_ns
 }
 
 static inline uint64_t
-xnvme_pi_get_guard(struct xnvme_pif *pif, enum xnvme_spec_nvm_ns_pif pi_format)
+xnvme_pi_get_guard(union xnvme_pif *pif, enum xnvme_spec_nvm_ns_pif pi_format)
 {
 	uint64_t guard;
 
@@ -115,7 +115,7 @@ xnvme_pi_generate_guard(uint64_t guard_seed, void *buf, size_t buf_len,
 }
 
 static inline void
-xnvme_pi_set_apptag(struct xnvme_pif *pif, uint16_t app_tag, enum xnvme_spec_nvm_ns_pif pi_format)
+xnvme_pi_set_apptag(union xnvme_pif *pif, uint16_t app_tag, enum xnvme_spec_nvm_ns_pif pi_format)
 {
 	if (pi_format == XNVME_SPEC_NVM_NS_16B_GUARD) {
 		xnvme_to_be16(&(pif->g16.app_tag), app_tag);
@@ -125,7 +125,7 @@ xnvme_pi_set_apptag(struct xnvme_pif *pif, uint16_t app_tag, enum xnvme_spec_nvm
 }
 
 static inline uint16_t
-xnvme_pi_get_apptag(struct xnvme_pif *pif, enum xnvme_spec_nvm_ns_pif pi_format)
+xnvme_pi_get_apptag(union xnvme_pif *pif, enum xnvme_spec_nvm_ns_pif pi_format)
 {
 	uint16_t app_tag;
 
@@ -139,41 +139,42 @@ xnvme_pi_get_apptag(struct xnvme_pif *pif, enum xnvme_spec_nvm_ns_pif pi_format)
 }
 
 static inline bool
-xnvme_pi_apptag_ignore(struct xnvme_pif *pif, enum xnvme_spec_nvm_ns_pif pi_format)
+xnvme_pi_apptag_ignore(union xnvme_pif *pif, enum xnvme_spec_nvm_ns_pif pi_format)
 {
 	return xnvme_pi_get_apptag(pif, pi_format) == XNVME_APPTAG_IGNORE;
 }
 
 static inline void
-xnvme_pi_set_reftag(struct xnvme_pif *pif, uint64_t ref_tag, enum xnvme_spec_nvm_ns_pif pi_format)
+xnvme_pi_set_reftag(union xnvme_pif *pif, uint64_t ref_tag, enum xnvme_spec_nvm_ns_pif pi_format)
 {
 	if (pi_format == XNVME_SPEC_NVM_NS_16B_GUARD) {
 		xnvme_to_be32(&(pif->g16.stor_ref_space), (uint32_t)ref_tag);
 	} else {
-		xnvme_to_be16(&(pif->g64.stor_ref_space_p1), (uint16_t)(ref_tag >> 32));
-		xnvme_to_be32(&(pif->g64.stor_ref_space_p2), (uint32_t)ref_tag);
+		for (int i = 0; i < 6; ++i) {
+			pif->g64.stor_ref_space[i] = (uint8_t)(ref_tag >> (8 * (5 - i)));
+		}
 	}
 }
 
 static inline uint64_t
-xnvme_pi_get_reftag(struct xnvme_pif *pif, enum xnvme_spec_nvm_ns_pif pi_format)
+xnvme_pi_get_reftag(union xnvme_pif *pif, enum xnvme_spec_nvm_ns_pif pi_format)
 {
 	uint64_t ref_tag;
 
 	if (pi_format == XNVME_SPEC_NVM_NS_16B_GUARD) {
 		ref_tag = (uint64_t)xnvme_from_be32(&(pif->g16.stor_ref_space));
 	} else {
-		ref_tag = (uint64_t)xnvme_from_be16(&(pif->g64.stor_ref_space_p1));
-		ref_tag <<= 32;
-		ref_tag |= (uint64_t)xnvme_from_be32(&(pif->g64.stor_ref_space_p2));
+		ref_tag = 0;
+		for (int i = 0; i < 6; ++i) {
+			ref_tag = (ref_tag << 8) | pif->g64.stor_ref_space[i];
+		}
 	}
 
 	return ref_tag;
 }
 
 static inline bool
-xnvme_pi_reftag_match(struct xnvme_pif *pif, uint64_t ref_tag,
-		      enum xnvme_spec_nvm_ns_pif pi_format)
+xnvme_pi_reftag_match(union xnvme_pif *pif, uint64_t ref_tag, enum xnvme_spec_nvm_ns_pif pi_format)
 {
 	uint64_t _ref_tag;
 	bool match;
@@ -190,16 +191,16 @@ xnvme_pi_reftag_match(struct xnvme_pif *pif, uint64_t ref_tag,
 }
 
 static inline bool
-xnvme_pi_reftag_ignore(struct xnvme_pif *pif, enum xnvme_spec_nvm_ns_pif pi_format)
+xnvme_pi_reftag_ignore(union xnvme_pif *pif, enum xnvme_spec_nvm_ns_pif pi_format)
 {
 	return xnvme_pi_reftag_match(pif, XNVME_REFTAG_MASK_32, pi_format);
 }
 
 int
 xnvme_pi_ctx_init(struct xnvme_pi_ctx *ctx, uint32_t block_size, uint32_t md_size,
-		  bool md_interleave, bool pi_loc, enum xnvme_pi_type pi_type, uint32_t pi_flags,
+		  bool md_interleave, bool pi_loc, uint32_t pi_type, uint32_t pi_flags,
 		  uint32_t init_ref_tag, uint16_t apptag_mask, uint16_t app_tag,
-		  enum xnvme_spec_nvm_ns_pif pi_format)
+		  uint32_t pi_format)
 {
 	if (pi_format != XNVME_SPEC_NVM_NS_16B_GUARD && pi_format != XNVME_SPEC_NVM_NS_64B_GUARD) {
 		XNVME_DEBUG("No valid PI format provided.\n");
@@ -256,7 +257,7 @@ void
 xnvme_pi_generate(struct xnvme_pi_ctx *ctx, uint8_t *data_buf, uint8_t *md_buf,
 		  uint32_t num_blocks)
 {
-	struct xnvme_pif *pif;
+	union xnvme_pif *pif;
 	uint32_t offset_blocks = 0;
 	uint64_t guard;
 	uint64_t ref_tag;
@@ -277,9 +278,9 @@ xnvme_pi_generate(struct xnvme_pi_ctx *ctx, uint8_t *data_buf, uint8_t *md_buf,
 		}
 
 		if (ctx->md_interleave) {
-			pif = (struct xnvme_pif *)(data_buf + ctx->guard_interval);
+			pif = (union xnvme_pif *)(data_buf + ctx->guard_interval);
 		} else {
-			pif = (struct xnvme_pif *)(md_buf + ctx->guard_interval);
+			pif = (union xnvme_pif *)(md_buf + ctx->guard_interval);
 		}
 
 		if (ctx->pi_flags & XNVME_PI_FLAGS_GUARD_CHECK) {
@@ -311,7 +312,7 @@ xnvme_pi_generate(struct xnvme_pi_ctx *ctx, uint8_t *data_buf, uint8_t *md_buf,
 int
 xnvme_pi_verify(struct xnvme_pi_ctx *ctx, uint8_t *data_buf, uint8_t *md_buf, uint32_t num_blocks)
 {
-	struct xnvme_pif *pif;
+	union xnvme_pif *pif;
 	uint32_t offset_blocks = 0;
 	uint64_t _guard, guard = 0;
 	uint16_t _app_tag;
@@ -331,9 +332,9 @@ xnvme_pi_verify(struct xnvme_pi_ctx *ctx, uint8_t *data_buf, uint8_t *md_buf, ui
 		}
 
 		if (ctx->md_interleave) {
-			pif = (struct xnvme_pif *)(data_buf + ctx->guard_interval);
+			pif = (union xnvme_pif *)(data_buf + ctx->guard_interval);
 		} else {
-			pif = (struct xnvme_pif *)(md_buf + ctx->guard_interval);
+			pif = (union xnvme_pif *)(md_buf + ctx->guard_interval);
 		}
 
 		switch (ctx->pi_type) {

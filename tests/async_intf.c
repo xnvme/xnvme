@@ -36,7 +36,7 @@ test_init_term(struct xnvme_cli *cli)
 	if (!cli->args.clear) {
 		// Ask how many queues are supported
 		struct xnvme_cmd_ctx ctx = {0};
-		struct xnvme_spec_feat feat = {.val = 0};
+		union xnvme_spec_feat feat = {.val = 0};
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
@@ -49,7 +49,7 @@ test_init_term(struct xnvme_cli *cli)
 			return err;
 		}
 
-		feat.val = ctx.cpl.cdw0;
+		feat.val = xnvme_bits_get(ctx.cpl.result, XNVME_SPEC_CQE_RESULT_CDW0);
 
 		xnvme_spec_feat_pr(XNVME_SPEC_FEAT_NQUEUES, &feat, XNVME_PR_DEF);
 

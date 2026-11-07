@@ -7,9 +7,9 @@
 #include <xnvme_be_linux.h>
 
 int
-xnvme_file_pread(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, off_t offset)
+xnvme_file_pread(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, uint64_t offset)
 {
-	ctx->cmd.common.opcode = XNVME_SPEC_FS_OPC_READ;
+	ctx->cmd.common.opc = XNVME_SPEC_FS_OPC_READ;
 	ctx->cmd.common.nsid = xnvme_dev_get_nsid(ctx->dev);
 	ctx->cmd.nvm.slba = offset;
 
@@ -17,9 +17,9 @@ xnvme_file_pread(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, off_t offse
 }
 
 int
-xnvme_file_pwrite(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, off_t offset)
+xnvme_file_pwrite(struct xnvme_cmd_ctx *ctx, void *buf, size_t count, uint64_t offset)
 {
-	ctx->cmd.common.opcode = XNVME_SPEC_FS_OPC_WRITE;
+	ctx->cmd.common.opc = XNVME_SPEC_FS_OPC_WRITE;
 	ctx->cmd.common.nsid = xnvme_dev_get_nsid(ctx->dev);
 	ctx->cmd.nvm.slba = offset;
 
@@ -42,7 +42,7 @@ xnvme_file_sync(struct xnvme_dev *fh)
 
 	xnvme_dev_get_cmd_ctx(fh, &ctx);
 
-	ctx.cmd.common.opcode = XNVME_SPEC_FS_OPC_FLUSH;
+	ctx.cmd.common.opc = XNVME_SPEC_FS_OPC_FLUSH;
 	ctx.cmd.common.nsid = xnvme_dev_get_nsid(ctx.dev);
 
 	return xnvme_cmd_pass(&ctx, NULL, 0, NULL, 0);

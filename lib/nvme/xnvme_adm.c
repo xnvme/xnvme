@@ -13,7 +13,7 @@ xnvme_prep_adm_log(struct xnvme_cmd_ctx *ctx, uint8_t lid, uint8_t lsp, uint64_t
 
 	numdw = dbuf_nbytes / sizeof(uint32_t) - 1u;
 
-	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_LOG;
+	ctx->cmd.common.opc = XNVME_SPEC_ADM_OPC_LOG;
 	ctx->cmd.common.nsid = nsid;
 
 	ctx->cmd.log.cdw10 = xnvme_bits_set(ctx->cmd.log.cdw10, XNVME_SPEC_CMD_LOG_CDW10_LID, lid);
@@ -48,7 +48,7 @@ xnvme_adm_log(struct xnvme_cmd_ctx *ctx, uint8_t lid, uint8_t lsp, uint64_t lpo_
 
 	numdw = dbuf_nbytes / sizeof(uint32_t) - 1u;
 
-	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_LOG;
+	ctx->cmd.common.opc = XNVME_SPEC_ADM_OPC_LOG;
 	ctx->cmd.common.nsid = nsid;
 
 	ctx->cmd.log.cdw10 = xnvme_bits_set(ctx->cmd.log.cdw10, XNVME_SPEC_CMD_LOG_CDW10_LID, lid);
@@ -60,7 +60,7 @@ xnvme_adm_log(struct xnvme_cmd_ctx *ctx, uint8_t lid, uint8_t lsp, uint64_t lpo_
 	ctx->cmd.log.lpou = (uint32_t)(lpo_nbytes >> 32);
 	ctx->cmd.log.lpol = (uint32_t)lpo_nbytes & 0xfffffff;
 
-	// TODO: should we check XNVME_SPEC_IDFY_CTRLR_LPA_EDLP of ctrlr->lpa for ext. buf and lpo
+	// TODO: should we check XNVME_SPEC_IDFY_CTRLR_LPA_LPEDS of ctrlr->lpa for ext. buf and lpo
 	// support?
 	// TODO: add support for uuid?
 
@@ -69,17 +69,17 @@ xnvme_adm_log(struct xnvme_cmd_ctx *ctx, uint8_t lid, uint8_t lsp, uint64_t lpo_
 
 int
 xnvme_adm_idfy(struct xnvme_cmd_ctx *ctx, uint8_t cns, uint16_t cntid, uint8_t nsid,
-	       uint16_t nvmsetid, uint8_t uuid, union xnvme_spec_idfy *dbuf)
+	       uint16_t cnssid, uint8_t uuid, union xnvme_spec_idfy *dbuf)
 {
 	const size_t dbuf_nbytes = sizeof(*dbuf);
 
-	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_IDFY;
+	ctx->cmd.common.opc = XNVME_SPEC_ADM_OPC_IDFY;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.idfy.cns = cns;
 	ctx->cmd.idfy.cntid = cntid;
-	ctx->cmd.idfy.nvmsetid = nvmsetid;
+	ctx->cmd.idfy.cnssid = cnssid;
 	ctx->cmd.idfy.cdw14 =
-		xnvme_bits_set(ctx->cmd.idfy.cdw14, XNVME_SPEC_CMD_IDFY_CDW14_UUID, uuid);
+		xnvme_bits_set(ctx->cmd.idfy.cdw14, XNVME_SPEC_CMD_IDFY_CDW14_UIDX, uuid);
 
 	return xnvme_cmd_pass_admin(ctx, dbuf, dbuf_nbytes, NULL, 0x0);
 }
@@ -89,7 +89,7 @@ xnvme_adm_idfy_ctrlr(struct xnvme_cmd_ctx *ctx, union xnvme_spec_idfy *dbuf)
 {
 	const size_t dbuf_nbytes = sizeof(*dbuf);
 
-	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_IDFY;
+	ctx->cmd.common.opc = XNVME_SPEC_ADM_OPC_IDFY;
 	ctx->cmd.idfy.cns = XNVME_SPEC_IDFY_CTRLR;
 
 	return xnvme_cmd_pass_admin(ctx, dbuf, dbuf_nbytes, NULL, 0x0);
@@ -100,7 +100,7 @@ xnvme_adm_idfy_ctrlr_csi(struct xnvme_cmd_ctx *ctx, uint8_t csi, union xnvme_spe
 {
 	const size_t dbuf_nbytes = sizeof(*dbuf);
 
-	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_IDFY;
+	ctx->cmd.common.opc = XNVME_SPEC_ADM_OPC_IDFY;
 	ctx->cmd.idfy.cns = XNVME_SPEC_IDFY_CTRLR_IOCS;
 	ctx->cmd.idfy.csi = csi;
 
@@ -112,7 +112,7 @@ xnvme_adm_idfy_ns(struct xnvme_cmd_ctx *ctx, uint32_t nsid, union xnvme_spec_idf
 {
 	const size_t dbuf_nbytes = sizeof(*dbuf);
 
-	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_IDFY;
+	ctx->cmd.common.opc = XNVME_SPEC_ADM_OPC_IDFY;
 	ctx->cmd.common.nsid = (nsid) ? nsid : xnvme_dev_get_nsid(ctx->dev);
 	ctx->cmd.idfy.cns = XNVME_SPEC_IDFY_NS;
 	ctx->cmd.idfy.csi = 0x0;
@@ -126,7 +126,7 @@ xnvme_adm_idfy_ns_csi(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t csi,
 {
 	const size_t dbuf_nbytes = sizeof(*dbuf);
 
-	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_IDFY;
+	ctx->cmd.common.opc = XNVME_SPEC_ADM_OPC_IDFY;
 	ctx->cmd.common.nsid = (nsid) ? nsid : xnvme_dev_get_nsid(ctx->dev);
 	ctx->cmd.idfy.cns = XNVME_SPEC_IDFY_NS_IOCS;
 	ctx->cmd.idfy.csi = csi;
@@ -137,20 +137,24 @@ xnvme_adm_idfy_ns_csi(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t csi,
 void
 xnvme_prep_adm_gfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint8_t sel)
 {
-	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_GFEAT;
+	ctx->cmd.common.opc = XNVME_SPEC_ADM_OPC_GFEAT;
 	ctx->cmd.common.nsid = nsid;
-	ctx->cmd.gfeat.cdw10.fid = fid;
-	ctx->cmd.gfeat.cdw10.sel = sel;
+	ctx->cmd.gfeat.cdw10 =
+		xnvme_bits_set(ctx->cmd.gfeat.cdw10, XNVME_SPEC_CMD_GFEAT_CDW10_FID, fid);
+	ctx->cmd.gfeat.cdw10 =
+		xnvme_bits_set(ctx->cmd.gfeat.cdw10, XNVME_SPEC_CMD_GFEAT_CDW10_SEL, sel);
 }
 
 void
 xnvme_prep_adm_sfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint32_t feat,
 		     uint8_t save)
 {
-	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_SFEAT;
+	ctx->cmd.common.opc = XNVME_SPEC_ADM_OPC_SFEAT;
 	ctx->cmd.common.nsid = nsid;
-	ctx->cmd.sfeat.cdw10.fid = fid;
-	ctx->cmd.sfeat.cdw10.save = save;
+	ctx->cmd.sfeat.cdw10 =
+		xnvme_bits_set(ctx->cmd.sfeat.cdw10, XNVME_SPEC_CMD_SFEAT_CDW10_FID, fid);
+	ctx->cmd.sfeat.cdw10 =
+		xnvme_bits_set(ctx->cmd.sfeat.cdw10, XNVME_SPEC_CMD_SFEAT_CDW10_SV, save);
 	ctx->cmd.sfeat.feat.val = feat;
 }
 
@@ -158,10 +162,12 @@ int
 xnvme_adm_gfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint8_t sel, void *dbuf,
 		size_t dbuf_nbytes)
 {
-	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_GFEAT;
+	ctx->cmd.common.opc = XNVME_SPEC_ADM_OPC_GFEAT;
 	ctx->cmd.common.nsid = nsid;
-	ctx->cmd.gfeat.cdw10.fid = fid;
-	ctx->cmd.gfeat.cdw10.sel = sel;
+	ctx->cmd.gfeat.cdw10 =
+		xnvme_bits_set(ctx->cmd.gfeat.cdw10, XNVME_SPEC_CMD_GFEAT_CDW10_FID, fid);
+	ctx->cmd.gfeat.cdw10 =
+		xnvme_bits_set(ctx->cmd.gfeat.cdw10, XNVME_SPEC_CMD_GFEAT_CDW10_SEL, sel);
 
 	// TODO: cdw14/uuid?
 
@@ -171,7 +177,7 @@ xnvme_adm_gfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint8_t s
 int
 xnvme_adm_gfeat_nqueues(struct xnvme_cmd_ctx *ctx, uint32_t *nsq, uint32_t *ncq)
 {
-	struct xnvme_spec_feat feat;
+	union xnvme_spec_feat feat;
 	int err;
 
 	if (!ctx || !nsq || !ncq) {
@@ -189,7 +195,7 @@ xnvme_adm_gfeat_nqueues(struct xnvme_cmd_ctx *ctx, uint32_t *nsq, uint32_t *ncq)
 		return -EIO;
 	}
 
-	feat.val = ctx->cpl.cdw0;
+	feat.val = xnvme_bits_get(ctx->cpl.result, XNVME_SPEC_CQE_RESULT_CDW0);
 	*nsq = feat.nqueues.nsqa + 1;
 	*ncq = feat.nqueues.ncqa + 1;
 
@@ -200,10 +206,12 @@ int
 xnvme_adm_sfeat(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t fid, uint32_t feat, uint8_t save,
 		const void *dbuf, size_t dbuf_nbytes)
 {
-	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_SFEAT;
+	ctx->cmd.common.opc = XNVME_SPEC_ADM_OPC_SFEAT;
 	ctx->cmd.common.nsid = nsid;
-	ctx->cmd.sfeat.cdw10.fid = fid;
-	ctx->cmd.sfeat.cdw10.save = save;
+	ctx->cmd.sfeat.cdw10 =
+		xnvme_bits_set(ctx->cmd.sfeat.cdw10, XNVME_SPEC_CMD_SFEAT_CDW10_FID, fid);
+	ctx->cmd.sfeat.cdw10 =
+		xnvme_bits_set(ctx->cmd.sfeat.cdw10, XNVME_SPEC_CMD_SFEAT_CDW10_SV, save);
 	ctx->cmd.sfeat.feat.val = feat;
 
 	return xnvme_cmd_pass_admin(ctx, (void *)dbuf, dbuf_nbytes, NULL, 0x0);
@@ -213,12 +221,12 @@ int
 xnvme_adm_dir_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t doper, uint32_t dtype,
 		   uint32_t dspec, uint32_t val)
 {
-	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_DSEND;
+	ctx->cmd.common.opc = XNVME_SPEC_ADM_OPC_DSEND;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.dsend.doper = doper;
 	ctx->cmd.dsend.dtype = dtype;
 	ctx->cmd.dsend.dspec = dspec;
-	ctx->cmd.dsend.cdw12.val = val;
+	ctx->cmd.dsend.cdw12 = val;
 
 	return xnvme_cmd_pass_admin(ctx, NULL, 0x0, NULL, 0x0);
 }
@@ -227,12 +235,12 @@ int
 xnvme_adm_dir_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t doper, uint32_t dtype,
 		   uint32_t val, void *dbuf, size_t dbuf_nbytes)
 {
-	ctx->cmd.common.opcode = XNVME_SPEC_ADM_OPC_DRECV;
+	ctx->cmd.common.opc = XNVME_SPEC_ADM_OPC_DRECV;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.drecv.numd = (dbuf_nbytes) ? (dbuf_nbytes / sizeof(uint32_t) - 1u) : 0;
 	ctx->cmd.drecv.doper = doper;
 	ctx->cmd.drecv.dtype = dtype;
-	ctx->cmd.drecv.cdw12.val = val;
+	ctx->cmd.drecv.cdw12 = val;
 
 	return xnvme_cmd_pass_admin(ctx, dbuf, dbuf_nbytes, NULL, 0x0);
 }

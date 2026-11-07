@@ -28,9 +28,9 @@ test_support(struct xnvme_cli *cli)
 	xnvme_spec_znd_idfy_ctrlr_pr(ctrlr, XNVME_PR_DEF);
 	xnvme_spec_znd_idfy_ns_pr(ns, XNVME_PR_DEF);
 
-	if (!ns->ozcs.bits.zrwasup) {
+	if (!xnvme_bits_get(ns->ozcs, XNVME_SPEC_ZND_IDFY_NS_OZCS_ZRWASUP)) {
 		err = -ENOSYS;
-		xnvme_cli_perr("!ns->oczs.bits.zrwasup", -err);
+		xnvme_cli_perr("!ZRWASUP of ns->ozcs", -err);
 	}
 
 	xnvme_cli_pinf(err ? "ZRWA: is NOT supported" : "ZRWA: LGTM");
@@ -115,13 +115,16 @@ _eopen_with_zrwa(struct xnvme_cli *cli, bool zrwaa)
 
 	xnvme_cli_pinf("Zone after EOPEN:");
 	xnvme_spec_znd_descr_pr(&after, XNVME_PR_DEF);
-	if (after.za.zrwav != zrwaa) {
+	if (xnvme_bits_get(after.za, XNVME_SPEC_ZND_DESCR_ZA_ZRWAV) != zrwaa) {
 		err = -EIO;
-		xnvme_cli_pinf("INVALID: after->za.zrwav: %d != zrwav: %d", after.za.zrwav, zrwaa);
+		xnvme_cli_pinf("INVALID: ZRWAV of after->za: %" PRIu64 " != zrwav: %d",
+			       xnvme_bits_get(after.za, XNVME_SPEC_ZND_DESCR_ZA_ZRWAV), zrwaa);
 	}
-	if (after.zs != XNVME_SPEC_ZND_STATE_EOPEN) {
+	if (xnvme_bits_get(after.zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS) !=
+	    XNVME_SPEC_ZND_STATE_EOPEN) {
 		err = -EIO;
-		xnvme_cli_pinf("INVALID: after->zs: %d", after.zs);
+		xnvme_cli_pinf("INVALID: after->zsattr: %" PRIu64,
+			       xnvme_bits_get(after.zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS));
 	}
 
 	if (!err) {
@@ -276,7 +279,7 @@ test_flush_implicit(struct xnvme_cli *cli)
 	void *dbuf = NULL;
 	size_t dbuf_nbytes = geo->lba_nbytes;
 
-	// uint64_t zrwa_naddr = zns->zrwas;
+	// uint64_t zrwa_naddr = zns->zrwasz;
 	uint64_t zrwa_naddr = zns->zrwafg + 1;
 	int err;
 

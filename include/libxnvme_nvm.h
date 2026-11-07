@@ -32,13 +32,13 @@ xnvme_nvm_read(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint16_t
 /**
  * Submit a NVMe Write command
  *
- * NOTE: fields which are not arguments here, such as 'ctx->cmd.nvm.fua', are
+ * NOTE: fields which are not arguments here, such as FUA in 'ctx->cmd.nvm.cdw12', are
  * left untouched; set them on the context before calling this. Neither this
  * function nor ::xnvme_queue_get_cmd_ctx clears them, so a context which is
  * reused for another command carries them over. Reset it with
  * ::xnvme_cmd_ctx_clear when that is not intended.
  *
- * NOTE: whether 'ctx->cmd.nvm.fua' is honoured is backend-dependent, and it
+ * NOTE: whether FUA is honoured is backend-dependent, and it
  * applies to NVM writes only. Backends passing the command through to an NVMe
  * device (ioctl, io_uring_cmd, spdk, libvfn, upcie) carry the bit in the
  * command itself. The Linux io_uring and libaio backends translate it to
@@ -94,8 +94,8 @@ xnvme_nvm_write_zeroes(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, 
  * the command. Submit it with e.g. ::xnvme_cmd_pass.
  *
  * NOTE: only the fields given as arguments are populated; the remaining ones,
- * such as 'ctx->cmd.nvm.fua', are left as they were. Reset a reused context
- * with ::xnvme_cmd_ctx_clear when carrying them over is not intended.
+ * such as FUA in 'ctx->cmd.nvm.cdw12', are left as they were. Reset a reused
+ * context with ::xnvme_cmd_ctx_clear when carrying them over is not intended.
  *
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  * @param opcode Opcode for the NVMe command
@@ -117,15 +117,14 @@ xnvme_prep_nvm(struct xnvme_cmd_ctx *ctx, uint8_t opcode, uint32_t nsid, uint64_
  * @param sdlba The Starting Destination LBA to start copying to
  * @param ranges Pointer to ranges-buffer, see ::xnvme_spec_nvm_scopy_fmt_zero
  * @param nr Number of ranges in the given ranges-buffer, zero-based value
- * @param copy_fmt For of ranges
+ * @param copy_fmt Format of the ranges, a value of ::xnvme_nvm_scopy_fmt
  *
  * @return On success, 0 is returned. On error, -1 is returned, `errno` set to
  * indicate and `ctx.cpl` filled with lower-level status codes
  */
 int
 xnvme_nvm_scopy(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t sdlba,
-		struct xnvme_spec_nvm_scopy_fmt_zero *ranges, uint8_t nr,
-		enum xnvme_nvm_scopy_fmt copy_fmt);
+		struct xnvme_spec_nvm_scopy_fmt_zero *ranges, uint8_t nr, uint32_t copy_fmt);
 
 /**
  * Submit a NVMe Dataset Management command

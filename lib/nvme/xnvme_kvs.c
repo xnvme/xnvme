@@ -41,7 +41,7 @@ xnvme_kvs_retrieve(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, ui
 	int err;
 	void *cdbuf = (void *)dbuf;
 
-	ctx->cmd.common.opcode = XNVME_SPEC_KV_OPC_RETRIEVE;
+	ctx->cmd.common.opc = XNVME_SPEC_KV_OPC_RETRIEVE;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.kvs.cdw10 = dbuf_nbytes;
 
@@ -51,7 +51,7 @@ xnvme_kvs_retrieve(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, ui
 		return err;
 	}
 
-	if (opt & XNVME_KVS_RETRIEVE_OPT_RETRIEVE_RAW) {
+	if (opt & XNVME_KVS_RETRIEVE_OPT_RRD) {
 		ctx->cmd.kvs.cdw11.ro = opt;
 	}
 
@@ -65,22 +65,22 @@ xnvme_kvs_store(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, uint8
 	int err;
 	void *cdbuf = (void *)dbuf;
 
-	ctx->cmd.common.opcode = XNVME_SPEC_KV_OPC_STORE;
+	ctx->cmd.common.opc = XNVME_SPEC_KV_OPC_STORE;
 	ctx->cmd.common.nsid = nsid;
 
 	// Value Size
 	ctx->cmd.kvs.cdw10 = dbuf_nbytes;
 
-	if (opt & XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_NOT_EXISTS) {
+	if (opt & XNVME_KVS_STORE_OPT_SIKE) {
 		ctx->cmd.kvs.cdw11.ro = opt;
 	}
 
-	if (opt & XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_EXISTS) {
+	if (opt & XNVME_KVS_STORE_OPT_SINKE) {
 		ctx->cmd.kvs.cdw11.ro = opt;
 	}
 
-	if (opt & XNVME_KVS_STORE_OPT_COMPRESS) {
-		ctx->cmd.kvs.cdw11.ro = ctx->cmd.kvs.cdw11.ro | XNVME_KVS_STORE_OPT_COMPRESS;
+	if (opt & XNVME_KVS_STORE_OPT_NOCOMP) {
+		ctx->cmd.kvs.cdw11.ro = ctx->cmd.kvs.cdw11.ro | XNVME_KVS_STORE_OPT_NOCOMP;
 	}
 
 	err = kvs_cmd_set_key(&ctx->cmd, key, key_len);
@@ -96,7 +96,7 @@ int
 xnvme_kvs_delete(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, uint8_t key_len)
 {
 	int err;
-	ctx->cmd.common.opcode = XNVME_SPEC_KV_OPC_DELETE;
+	ctx->cmd.common.opc = XNVME_SPEC_KV_OPC_DELETE;
 	ctx->cmd.common.nsid = nsid;
 
 	err = kvs_cmd_set_key(&ctx->cmd, key, key_len);
@@ -112,7 +112,7 @@ int
 xnvme_kvs_exist(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, uint8_t key_len)
 {
 	int err;
-	ctx->cmd.common.opcode = XNVME_SPEC_KV_OPC_EXIST;
+	ctx->cmd.common.opc = XNVME_SPEC_KV_OPC_EXIST;
 	ctx->cmd.common.nsid = nsid;
 
 	err = kvs_cmd_set_key(&ctx->cmd, key, key_len);
@@ -131,7 +131,7 @@ xnvme_kvs_list(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, uint8_
 	int err;
 	void *cdbuf = (void *)dbuf;
 
-	ctx->cmd.common.opcode = XNVME_SPEC_KV_OPC_LIST;
+	ctx->cmd.common.opc = XNVME_SPEC_KV_OPC_LIST;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.kvs.cdw10 = dbuf_nbytes;
 

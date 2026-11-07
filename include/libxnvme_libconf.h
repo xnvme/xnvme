@@ -30,29 +30,6 @@ struct xnvme_libconf {
 const struct xnvme_libconf *
 xnvme_libconf_get(void);
 
-/**
- * Prints the given array of version-strings to the given output stream
- *
- * @param stream Output stream used for printing
- * @param libconf Pointer to the ::xnvme_libconf to print
- * @param opts Printer options, see ::xnvme_pr
- *
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_libconf_fpr(FILE *stream, const struct xnvme_libconf *libconf, enum xnvme_pr opts);
-
-/**
- * Prints the given array of version-strings to stdout
- *
- * @param libconf Pointer to the ::xnvme_libconf to print
- * @param opts Printer options, see ::xnvme_pr
- *
- * @return On success, the number of characters printed is returned.
- */
-int
-xnvme_libconf_pr(const struct xnvme_libconf *libconf, enum xnvme_pr opts);
-
 #ifdef __cplusplus
 }
 #endif

@@ -40,11 +40,11 @@ sub_support(struct xnvme_cli *cli)
 	xnvme_spec_idfy_ctrlr_pr(ctrlr, XNVME_PR_DEF);
 	xnvme_spec_idfy_ns_pr(ns, XNVME_PR_DEF);
 
-	if (!xnvme_bits_get(ctrlr->oncs, XNVME_SPEC_IDFY_CTRLR_ONCS_COPY)) {
+	if (!xnvme_bits_get(ctrlr->oncs, XNVME_SPEC_IDFY_CTRLR_ONCS_NVMCPYS)) {
 		err = -ENOSYS;
-		xnvme_cli_perr("!XNVME_SPEC_IDFY_CTRLR_ONCS_COPY", -err);
+		xnvme_cli_perr("!XNVME_SPEC_IDFY_CTRLR_ONCS_NVMCPYS", -err);
 	}
-	if (!xnvme_bits_get(ctrlr->cdfs, XNVME_SPEC_IDFY_CTRLR_CDFS_FORMAT0)) {
+	if (!xnvme_bits_get(ctrlr->cdfs, XNVME_SPEC_IDFY_CTRLR_CDFS_CDF0S)) {
 		err = -ENOSYS;
 		xnvme_cli_perr("!ctrlr->ocfs.copy_fmt0", -err);
 	}
@@ -209,10 +209,13 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 	// device, in variations of entries, in variations of entry-lengths.
 	for (uint64_t ridx = 0; ridx < tlbas; ++ridx) {
 		range->entry[ridx].slba = ridx;
-		range->entry[ridx].nlb = 0;
+		range->entry[ridx].rpars = xnvme_bits_set(
+			range->entry[ridx].rpars, XNVME_SPEC_NVM_SCOPY_FMT_ZERO_RPARS_NLB, 0);
 	}
 	nr = tlbas - 1;
-	sdlba = range->entry[nr].slba + range->entry[nr].nlb + 1;
+	sdlba = range->entry[nr].slba +
+		xnvme_bits_get(range->entry[nr].rpars, XNVME_SPEC_NVM_SCOPY_FMT_ZERO_RPARS_NLB) +
+		1;
 
 	// NVMe-struct copy format
 	copy_fmt = XNVME_NVM_SCOPY_FMT_ZERO;
@@ -224,7 +227,9 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 
 		xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-		err = xnvme_nvm_write(&ctx, nsid, range->entry[i].slba, range->entry[i].nlb,
+		err = xnvme_nvm_write(&ctx, nsid, range->entry[i].slba,
+				      xnvme_bits_get(range->entry[i].rpars,
+						     XNVME_SPEC_NVM_SCOPY_FMT_ZERO_RPARS_NLB),
 				      dbuf + ofz, NULL);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 			xnvme_cli_perr("xnvme_nvm_write()", err);

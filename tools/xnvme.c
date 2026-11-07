@@ -180,13 +180,13 @@ _sub_idfy(struct xnvme_cli *cli, uint8_t cns, uint16_t cntid, uint8_t nsid, uint
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	// Setup command
-	ctx.cmd.common.opcode = XNVME_SPEC_ADM_OPC_IDFY;
+	ctx.cmd.common.opc = XNVME_SPEC_ADM_OPC_IDFY;
 	ctx.cmd.common.nsid = nsid;
 	ctx.cmd.idfy.cns = cns;
 	ctx.cmd.idfy.cntid = cntid;
-	ctx.cmd.idfy.nvmsetid = nvmsetid;
+	ctx.cmd.idfy.cnssid = nvmsetid;
 	ctx.cmd.idfy.cdw14 =
-		xnvme_bits_set(ctx.cmd.idfy.cdw14, XNVME_SPEC_CMD_IDFY_CDW14_UUID, uuid);
+		xnvme_bits_set(ctx.cmd.idfy.cdw14, XNVME_SPEC_CMD_IDFY_CDW14_UIDX, uuid);
 
 	dbuf = xnvme_buf_alloc(dev, dbuf_nbytes);
 	if (!dbuf) {
@@ -780,7 +780,8 @@ sub_gfeat(struct xnvme_cli *cli)
 	}
 
 	{
-		struct xnvme_spec_feat feat = {.val = ctx.cpl.cdw0};
+		union xnvme_spec_feat feat = {.val = (uint32_t)xnvme_bits_get(
+						      ctx.cpl.result, XNVME_SPEC_CQE_RESULT_CDW0)};
 		xnvme_spec_feat_pr(fid, &feat, XNVME_PR_DEF);
 
 		if (fid == XNVME_SPEC_FEAT_FDP_EVENTS) {
@@ -1106,7 +1107,7 @@ sub_pass(struct xnvme_cli *cli, int admin)
 		ctx.cmd.common.nsid = cli->args.nsid;
 	}
 	if (cli->given[XNVME_CLI_OPT_OPCODE]) {
-		ctx.cmd.common.opcode = cli->args.opcode;
+		ctx.cmd.common.opc = cli->args.opcode;
 	}
 
 	if (data_nbytes) {

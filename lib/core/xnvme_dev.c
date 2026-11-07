@@ -81,10 +81,10 @@ _zoned_geometry(struct xnvme_dev *dev)
 {
 	struct xnvme_spec_idfy_ns *nvm = (void *)xnvme_dev_get_ns(dev);
 	struct xnvme_spec_lbaf *lbaf =
-		&nvm->lbaf[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT)];
+		&nvm->lbaf[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FIDXL)];
 	struct xnvme_spec_znd_idfy_ns *zns = (void *)xnvme_dev_get_ns_css(dev);
 	struct xnvme_spec_znd_idfy_lbafe *lbafe =
-		&zns->lbafe[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT)];
+		&zns->lbafe[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FIDXL)];
 	struct xnvme_geo *geo = &dev->geo;
 
 	if (!zns->lbafe[0].zsze) {
@@ -99,12 +99,12 @@ _zoned_geometry(struct xnvme_dev *dev)
 	geo->nzone = nvm->nsze / lbafe->zsze;
 	geo->nsect = lbafe->zsze;
 
-	geo->nbytes = 2 << (lbaf->ds - 1);
+	geo->nbytes = 2 << (lbaf->lbads - 1);
 	geo->nbytes_oob = lbaf->ms;
 
 	geo->lba_nbytes = geo->nbytes;
 	geo->lba_extended =
-		xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_EXTENDED) && lbaf->ms;
+		xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_MTELBA) && lbaf->ms;
 	if (geo->lba_extended) {
 		geo->lba_nbytes += geo->nbytes_oob;
 	}
@@ -118,10 +118,10 @@ _conventional_geometry(struct xnvme_dev *dev)
 	const struct xnvme_spec_idfy_ctrlr *ctrlr = (void *)xnvme_dev_get_ctrlr(dev);
 	const struct xnvme_spec_idfy_ns *nvm = (void *)xnvme_dev_get_ns(dev);
 	const struct xnvme_spec_lbaf *lbaf =
-		&nvm->lbaf[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT)];
+		&nvm->lbaf[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FIDXL)];
 	struct xnvme_spec_nvm_idfy_ns *nns = (void *)xnvme_dev_get_ns_css(dev);
 	struct xnvme_spec_elbaf *elbaf =
-		&nns->elbaf[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT)];
+		&nns->elbaf[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FIDXL)];
 	struct xnvme_geo *geo = &dev->geo;
 
 	geo->type = XNVME_GEO_CONVENTIONAL;
@@ -131,12 +131,12 @@ _conventional_geometry(struct xnvme_dev *dev)
 	geo->nzone = 1;
 
 	geo->nsect = dev->id.ns.nsze;
-	geo->nbytes = 2 << (lbaf->ds - 1);
+	geo->nbytes = 2 << (lbaf->lbads - 1);
 	geo->nbytes_oob = lbaf->ms;
 
 	geo->lba_nbytes = geo->nbytes;
 	geo->lba_extended =
-		xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_EXTENDED) && lbaf->ms;
+		xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_MTELBA) && lbaf->ms;
 	if (geo->lba_extended) {
 		geo->lba_nbytes += geo->nbytes_oob;
 	}
@@ -145,11 +145,10 @@ _conventional_geometry(struct xnvme_dev *dev)
 
 	if (geo->pi_type) {
 		geo->pi_format = XNVME_SPEC_NVM_NS_16B_GUARD;
-		geo->pi_loc = xnvme_bits_get(nvm->dps, XNVME_SPEC_IDFY_NS_DPS_MD_START);
+		geo->pi_loc = xnvme_bits_get(nvm->dps, XNVME_SPEC_IDFY_NS_DPS_PIP);
 	}
 
-	if (xnvme_bits_get(ctrlr->ctratt, XNVME_SPEC_IDFY_CTRLR_CTRATT_EXTENDED_LBA_FORMATS) &&
-	    geo->pi_type) {
+	if (xnvme_bits_get(ctrlr->ctratt, XNVME_SPEC_IDFY_CTRLR_CTRATT_ELBAS) && geo->pi_type) {
 		geo->pi_format = xnvme_bits_get(elbaf->bits, XNVME_SPEC_ELBAF_BITS_PIF);
 	}
 
@@ -261,7 +260,7 @@ _dev_idfy_ns_desc_csi(struct xnvme_dev *dev, union xnvme_spec_idfy *idfy, uint8_
 	}
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	ctx.cmd.common.opcode = XNVME_SPEC_ADM_OPC_IDFY;
+	ctx.cmd.common.opc = XNVME_SPEC_ADM_OPC_IDFY;
 	ctx.cmd.common.nsid = dev->ident.nsid;
 	ctx.cmd.idfy.cns = XNVME_SPEC_IDFY_NS_DESC;
 

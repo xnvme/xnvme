@@ -53,8 +53,9 @@ cmd_transition(struct xnvme_cli *cli)
 			goto exit;
 		}
 
-		if (zone.zs != actions[i].state) {
-			xnvme_cli_perr("zone.zs: %u != expected: %u", actions[i].state);
+		if (xnvme_bits_get(zone.zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS) !=
+		    actions[i].state) {
+			xnvme_cli_perr("zone.zsattr: %u != expected: %u", actions[i].state);
 			err = EIO;
 			goto exit;
 		}
@@ -77,7 +78,7 @@ cmd_changes(struct xnvme_cli *cli)
 	struct xnvme_spec_znd_log_changes *changes;
 	int err = 0;
 
-	if (!xnvme_bits_get(idfy_ctrlr->oaes, XNVME_SPEC_IDFY_CTRLR_OAES_ZONE_CHANGES)) {
+	if (!xnvme_bits_get(idfy_ctrlr->oaes, XNVME_SPEC_IDFY_CTRLR_OAES_ZDCN)) {
 		XNVME_DEBUG("INFO: skipping; not supported");
 		xnvme_cli_pinf("LGTM");
 		return 0;

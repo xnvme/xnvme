@@ -253,7 +253,7 @@ report_zones_complete(struct qublk_queue *q, struct qublk_io *io)
 	uint64_t nzones;
 
 	memcpy(&hdr, buf, sizeof(hdr));
-	nzones = XNVME_MIN_U64(hdr.nzones, n);
+	nzones = XNVME_MIN_U64(hdr.nz, n);
 
 	for (uint64_t i = 0; i < nzones; i++) {
 		struct xnvme_spec_znd_descr descr;
@@ -264,10 +264,12 @@ report_zones_complete(struct qublk_queue *q, struct qublk_io *io)
 		zone.start = descr.zslba << shift;
 		zone.len = dev->zone_sectors;
 		zone.capacity = descr.zcap << shift;
-		zone.wp = (descr.zs == XNVME_SPEC_ZND_STATE_FULL) ? zone.start + zone.len
-								  : descr.wp << shift;
-		zone.type = descr.zt;
-		zone.cond = descr.zs;
+		zone.wp = (xnvme_bits_get(descr.zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS) ==
+			   XNVME_SPEC_ZND_STATE_FULL)
+				  ? zone.start + zone.len
+				  : descr.wp << shift;
+		zone.type = xnvme_bits_get(descr.ztattr, XNVME_SPEC_ZND_DESCR_ZTATTR_ZT);
+		zone.cond = xnvme_bits_get(descr.zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS);
 
 		memcpy(buf + i * sizeof(zone), &zone, sizeof(zone));
 	}
@@ -339,7 +341,9 @@ qublk_zoned_dispatch(struct qublk_queue *q, struct qublk_io *io, struct xnvme_cm
 
 			nlb = (uint16_t)((bytes >> lba_shift) - 1);
 			if (iod->op_flags & UBLK_IO_F_FUA) {
-				ctx->cmd.znd.append.fua = 1;
+				ctx->cmd.znd.append.cdw12 =
+					xnvme_bits_set(ctx->cmd.znd.append.cdw12,
+						       XNVME_SPEC_ZND_CMD_APPEND_CDW12_FUA, 1);
 			}
 
 			rc = qublk_io_user_copy_in(q, io, (size_t)bytes);

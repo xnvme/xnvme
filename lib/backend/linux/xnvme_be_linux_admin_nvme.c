@@ -96,7 +96,7 @@ xnvme_be_linux_nvme_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 	int ioctl_req;
 	int err;
 
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_PSEUDO_OPC_SHOW_REGS:
 		if (dbuf_nbytes != sizeof(struct xnvme_spec_ctrlr_bar)) {
 			XNVME_DEBUG(
@@ -118,7 +118,7 @@ xnvme_be_linux_nvme_cmd_pseudo(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbu
 		ioctl_req = NVME_IOCTL_RESCAN;
 		break;
 	default:
-		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opc);
 		return -ENOSYS;
 	}
 

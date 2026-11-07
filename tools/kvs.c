@@ -65,7 +65,7 @@ cmd_idfy_ns(struct xnvme_cli *cli)
 	struct xnvme_cmd_ctx ctx = {0};
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
 	enum xnvme_spec_csi csi = XNVME_SPEC_CSI_KV;
-	struct xnvme_spec_kvs_idfy *idfy = NULL;
+	union xnvme_spec_kvs_idfy *idfy = NULL;
 	int err;
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
@@ -183,9 +183,9 @@ cmd_store(struct xnvme_cli *cli)
 	xnvme_cli_pinf("Alloc/fill dbuf, dbuf_nbytes: %zu", dbuf_nbytes);
 
 	if (cli->args.kv_store_add) {
-		opt = opt | XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_EXISTS;
+		opt = opt | XNVME_KVS_STORE_OPT_SINKE;
 	} else if (cli->args.kv_store_update) {
-		opt = opt | XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_NOT_EXISTS;
+		opt = opt | XNVME_KVS_STORE_OPT_SIKE;
 	}
 
 	dbuf = xnvme_buf_alloc(dev, dbuf_nbytes);

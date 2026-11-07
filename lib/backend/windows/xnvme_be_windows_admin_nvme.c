@@ -80,7 +80,7 @@ _be_windows_nvme_storage_property(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t 
 
 	///< NOTE: opcode-dispatch (admin)
 	// Prepare the specific request based on the admin command
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_ADM_OPC_IDFY:
 		ioctl = IOCTL_STORAGE_QUERY_PROPERTY;
 		query->PropertyId = StorageDeviceProtocolSpecificProperty;
@@ -112,7 +112,7 @@ _be_windows_nvme_storage_property(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t 
 		query->PropertyId = StorageDeviceProtocolSpecificProperty;
 		protocol_data->ProtocolType = ProtocolTypeNvme;
 		protocol_data->DataType = NVMeDataTypeFeature;
-		protocol_data->ProtocolDataRequestValue = ctx->cmd.gfeat.cdw10.val;
+		protocol_data->ProtocolDataRequestValue = ctx->cmd.gfeat.cdw10;
 		protocol_data->ProtocolDataRequestSubValue = cdw11;
 		protocol_data->ProtocolDataOffset = 0;
 		protocol_data->ProtocolDataLength = 0;
@@ -129,13 +129,14 @@ _be_windows_nvme_storage_property(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t 
 
 		query->PropertyId = StorageDeviceProtocolSpecificProperty;
 		query->SetType = PropertyStandardSet;
-		if (ctx->cmd.sfeat.cdw10.fid == XNVME_SPEC_FEAT_VWCACHE) {
+		if (xnvme_bits_get(ctx->cmd.sfeat.cdw10, XNVME_SPEC_CMD_SFEAT_CDW10_FID) ==
+		    XNVME_SPEC_FEAT_VWCACHE) {
 			query->PropertyId = StorageAdapterProtocolSpecificProperty;
 		}
 
 		protocol_data->ProtocolType = ProtocolTypeNvme;
 		protocol_data->DataType = NVMeDataTypeFeature;
-		protocol_data->ProtocolDataValue = ctx->cmd.sfeat.cdw10.val;
+		protocol_data->ProtocolDataValue = ctx->cmd.sfeat.cdw10;
 		protocol_data->ProtocolDataSubValue = cdw11;
 		protocol_data->ProtocolDataOffset = 0;
 		protocol_data->ProtocolDataLength = 0;
@@ -176,7 +177,7 @@ xnvme_be_windows_nvme_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t db
 {
 	int ret = 0;
 
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_ADM_OPC_IDFY:
 	case XNVME_SPEC_ADM_OPC_LOG:
 	case XNVME_SPEC_ADM_OPC_GFEAT:
@@ -189,7 +190,7 @@ xnvme_be_windows_nvme_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t db
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: ENOSYS opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: ENOSYS opcode: %d", ctx->cmd.common.opc);
 		ret = -ENOSYS;
 	}
 

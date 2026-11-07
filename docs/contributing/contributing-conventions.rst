@@ -137,17 +137,28 @@ element of an array, which needs a type for its masks to belong to, as
 * The mask is named ``XNVME_SPEC_<STRUCT>_<FIELD>_<NAME>``: the structure
   without its ``xnvme_spec_`` prefix, the integer, and the name the
   specification gives the bits, such as
-  ``XNVME_SPEC_IDFY_NS_FLBAS_FORMAT`` for bits 3:0 of ``flbas``
+  ``XNVME_SPEC_IDFY_NS_FLBAS_FIDXL`` for bits 3:0 of ``flbas``
 * The masks follow the structure they belong to, in the order of its
   integers, and of the bits within each
-* Each mask has a doc comment saying what the bits are, then where they
-  are: ``/** <what>; bits <hi>:<lo> of '<field>' */``, or ``bit <n>`` for
-  one bit
+* Each mask has a doc comment saying what the bits are, where they are, and
+  where the specification defines them: ``/** <what>; bits <hi>:<lo> of
+  '<field>', <ABBR> (<specification> <revision>, Figure <n>) */``, or
+  ``bit <n>`` for one bit, such as ``(NVM Command Set 1.3, Figure 71)``
 * The integer's own doc comment names them: ``///< <what>, see
   XNVME_SPEC_<STRUCT>_<FIELD>_*``
 * ``tests/spec.c`` checks, for each integer, that the structure still has it
   and that its masks fit its width, so a field renamed or narrowed without its
   masks fails the build; a new field of bits gets a line there
+
+A field follows the ratified specification to the letter: its name is the
+abbreviation the specification prints, lower-cased for a member and as
+printed for the suffix of a mask, and its width and location are the bits or
+bytes of its figure. A field is neither merged with reserved bits nor split
+in two, and a reserved range holds no field the specification defines. Where
+the specification gives a field no abbreviation, the name describes it, and
+where a structure serves two commands that name a field differently, such as
+Read and Write, the doc names both. ``SPEC_AT()`` in ``tests/spec.c`` checks
+the offset and width of a member against the bytes of its figure.
 
 C: Code organisation
 --------------------
@@ -180,6 +191,12 @@ Layout
   ``platform``, which the public API is built on, then ``core``, ``nvme``,
   ``file`` and ``cli``
 
+* A printer, a function named by what it prints and suffixed ``_fpr``,
+  ``_pr`` or ``_str``, is declared in ``include/libxnvme_pp.h``, not in the
+  header of its type, so that a binding leaves out the printers by leaving out
+  one header. The printers of the command-line library stay in
+  ``libxnvme_cli.h``, and a ``static inline`` printer, which has no symbol for
+  a binding to call, stays with what it prints, such as ``xnvme_timer_pr()``
 * ``lib/cuse/`` is a static library of its own for the tools, not part of
   ``libxnvme``
 * ``lib/platform/`` holds what selects among the backend configs:

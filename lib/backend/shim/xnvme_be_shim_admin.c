@@ -22,7 +22,7 @@ idfy_ctrlr_iocs_fs(struct xnvme_dev *XNVME_UNUSED(dev), void *dbuf)
 {
 	struct xnvme_spec_fs_idfy_ctrlr *ctrlr = dbuf;
 
-	ctrlr->caps.direct = 1;
+	ctrlr->caps = xnvme_bits_set(ctrlr->caps, XNVME_SPEC_FS_IDFY_CTRLR_CAPS_DIRECT, 1);
 
 	ctrlr->iosizes.min = 1;
 	ctrlr->iosizes.max = 1024 * 1024 * 128;
@@ -89,11 +89,11 @@ idfy_ns(struct xnvme_dev *dev, void *dbuf)
 	ns->nuse = stat.st_size;
 
 	ns->nlbaf = 0; ///< This means that there is only one
-	ns->flbas = xnvme_bits_set(ns->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT,
+	ns->flbas = xnvme_bits_set(ns->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FIDXL,
 				   0); ///< using the first one
 
 	ns->lbaf[0].ms = 0;
-	ns->lbaf[0].ds = XNVME_ILOG2(512);
+	ns->lbaf[0].lbads = XNVME_ILOG2(512);
 	ns->lbaf[0].rp = 0;
 
 	return 0;
@@ -145,17 +145,20 @@ idfy(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 static int
 gfeat(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf))
 {
-	struct xnvme_spec_feat feat = {0};
+	union xnvme_spec_feat feat = {0};
 
-	switch (ctx->cmd.gfeat.cdw10.fid) {
+	switch (xnvme_bits_get(ctx->cmd.gfeat.cdw10, XNVME_SPEC_CMD_GFEAT_CDW10_FID)) {
 	case XNVME_SPEC_FEAT_NQUEUES:
 		feat.nqueues.nsqa = 63;
 		feat.nqueues.ncqa = 63;
-		ctx->cpl.cdw0 = feat.val;
+		ctx->cpl.result =
+			xnvme_bits_set(ctx->cpl.result, XNVME_SPEC_CQE_RESULT_CDW0, feat.val);
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: unsupported fid: %d", ctx->cmd.gfeat.cdw10.fid);
+		XNVME_DEBUG(
+			"FAILED: unsupported fid: %d",
+			(int)xnvme_bits_get(ctx->cmd.gfeat.cdw10, XNVME_SPEC_CMD_GFEAT_CDW10_FID));
 		return -ENOSYS;
 	}
 
@@ -167,7 +170,7 @@ shim_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *
 	       size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	///< NOTE: opcode-dispatch (admin)
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_ADM_OPC_IDFY:
 		return idfy(ctx, dbuf, dbuf_nbytes);
 
@@ -179,7 +182,7 @@ shim_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *
 		return -ENOSYS;
 
 	default:
-		XNVME_DEBUG("FAILED: ENOSYS opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: ENOSYS opcode: %d", ctx->cmd.common.opc);
 		return -ENOSYS;
 	}
 }

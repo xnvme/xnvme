@@ -291,7 +291,8 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 		slba = iod->start_sector >> (lba_shift - XNVME_UNIVERSAL_SECT_SH);
 		nlb = (uint16_t)(((iod->nr_sectors << XNVME_UNIVERSAL_SECT_SH) >> lba_shift) - 1);
 		if (iod->op_flags & UBLK_IO_F_FUA) {
-			ctx->cmd.nvm.fua = 1;
+			ctx->cmd.nvm.cdw12 = xnvme_bits_set(ctx->cmd.nvm.cdw12,
+							    XNVME_SPEC_CMD_NVM_CDW12_FUA, 1);
 		}
 
 		// The data to write is fetched from the kernel before the command is submitted

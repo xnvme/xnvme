@@ -82,7 +82,7 @@ cmd_idfy_ctrlr(struct xnvme_cli *cli)
 	struct xnvme_cmd_ctx ctx = {0};
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
 	enum xnvme_spec_csi csi = XNVME_SPEC_CSI_ZONED;
-	struct xnvme_spec_znd_idfy *idfy = NULL;
+	union xnvme_spec_znd_idfy *idfy = NULL;
 	int err;
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
@@ -128,7 +128,7 @@ cmd_idfy_ns(struct xnvme_cli *cli)
 	struct xnvme_cmd_ctx ctx = {0};
 	uint32_t nsid = xnvme_dev_get_nsid(cli->args.dev);
 	enum xnvme_spec_csi csi = XNVME_SPEC_CSI_ZONED;
-	struct xnvme_spec_znd_idfy *idfy = NULL;
+	union xnvme_spec_znd_idfy *idfy = NULL;
 	int err;
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
@@ -221,7 +221,7 @@ cmd_changes(struct xnvme_cli *cli)
 
 	xnvme_cli_pinf("Retrieving the Changed Zone List");
 
-	if (!xnvme_bits_get(idfy_ctrlr->oaes, XNVME_SPEC_IDFY_CTRLR_OAES_ZONE_CHANGES)) {
+	if (!xnvme_bits_get(idfy_ctrlr->oaes, XNVME_SPEC_IDFY_CTRLR_OAES_ZDCN)) {
 		xnvme_cli_pinf("Zoned Changes log page is an optional feature");
 		xnvme_cli_pinf("This devices does not support it; expect failure");
 	}
@@ -511,7 +511,8 @@ cmd_append(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	xnvme_cli_pinf("Appended to slba: 0x%016x", ctx.cpl.cdw0);
+	xnvme_cli_pinf("Appended to slba: 0x%016" PRIx64,
+		       xnvme_bits_get(ctx.cpl.result, XNVME_SPEC_CQE_RESULT_CDW0));
 
 exit:
 	xnvme_buf_free(dev, dbuf);

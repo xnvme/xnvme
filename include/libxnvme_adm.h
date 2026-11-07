@@ -13,7 +13,7 @@
  * @param cns the ::xnvme_spec_idfy_cns to retrieve
  * @param cntid Controller Identifier
  * @param nsid Namespace Identifier
- * @param nvmsetid NVM set Identifier
+ * @param cnssid CNS Specific Identifier, such as the NVM Set Identifier of a CNS taking one
  * @param uuid UUID index
  * @param dbuf ponter to data-payload
  *
@@ -21,7 +21,7 @@
  */
 int
 xnvme_adm_idfy(struct xnvme_cmd_ctx *ctx, uint8_t cns, uint16_t cntid, uint8_t nsid,
-	       uint16_t nvmsetid, uint8_t uuid, union xnvme_spec_idfy *dbuf);
+	       uint16_t cnssid, uint8_t uuid, union xnvme_spec_idfy *dbuf);
 
 /**
  * Submit and wait for completion of an NVMe Identify command for the controller associated with
@@ -229,7 +229,7 @@ xnvme_adm_format(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t lbaf, uint8_t
  * @param ctx Pointer to ::xnvme_cmd_ctx
  * @param sanact Sanitize action; 0x1: Exit failure mode, 0x2: Block Erase, 0x3
  * Overwrite, 0x4 Crypto Erase
- * @param ause: Allow Unrestricted Sanitize Exit; 0x0: Restricted Mode, 0x1:
+ * @param ause Allow Unrestricted Sanitize Exit; 0x0: Restricted Mode, 0x1:
  * Unrestricted Mode
  * @param ovrpat Overwrite Pattern; 32-bit pattern used by the Overwrite action
  * @param owpass Overwrite pass Count, how many times the media is to be

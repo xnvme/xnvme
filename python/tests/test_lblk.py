@@ -259,7 +259,7 @@ class TestLBLK:
 
             sranges.append((slba, 0))
             # sranges.entry[count].slba = slba
-            # sranges.entry[count].nlb = 0
+            # sranges.entry[count].rpars = 0  # NLB, bits 15:00
 
             err = xnvme.xnvme_nvm_write(
                 ctx,

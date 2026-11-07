@@ -35,15 +35,6 @@ struct xnvme_cmd_ctx {
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_ctx) == 128, "Incorrect size")
 
 /**
- * Prints a humanly readable representation the given #xnvme_cmd_ctx
- *
- * @param ctx Pointer to the #xnvme_cmd_ctx to print
- * @param UNUSED_opts Printer options
- */
-void
-xnvme_cmd_ctx_pr(const struct xnvme_cmd_ctx *ctx, int opts);
-
-/**
  * Assign a callback-function and argument to be used with the given command-context
  *
  * @param ctx Pointer to the ::xnvme_cmd_ctx to setup callback for
