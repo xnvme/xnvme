@@ -1110,6 +1110,17 @@ XNVME_STATIC_ASSERT(XNVME_SPEC_CMD_SANITIZE_CDW10_EMVS == 0x400 &&
 XNVME_STATIC_ASSERT(XNVME_SPEC_FEAT_TEMP_THRESHOLD_TMPTHH == 0x1c00000,
 		    "TMPTHH is bits 24:22 of Temperature Threshold dword 11")
 
+/* Base 2.4, Figures 199 and 465 */
+SPEC_AT(struct xnvme_spec_cmd_gfeat, cdw14, 56, 4)
+SPEC_AT(struct xnvme_spec_cmd_sfeat, cdw14, 56, 4)
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_gfeat, cdw14, XNVME_SPEC_CMD_GFEAT_CDW14_UIDX),
+		    "cdw14 of struct xnvme_spec_cmd_gfeat")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_sfeat, cdw14, XNVME_SPEC_CMD_SFEAT_CDW14_UIDX),
+		    "cdw14 of struct xnvme_spec_cmd_sfeat")
+XNVME_STATIC_ASSERT(XNVME_SPEC_CMD_GFEAT_CDW14_UIDX == 0x7f &&
+			    XNVME_SPEC_CMD_SFEAT_CDW14_UIDX == 0x7f,
+		    "UIDX is bits 6:0 of dword 14 of Get and Set Features")
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it
