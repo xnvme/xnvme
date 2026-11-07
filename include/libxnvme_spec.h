@@ -1974,48 +1974,70 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_log) == 64, "Incorrect size")
 #define XNVME_SPEC_CMD_LOG_CDW14_CSI 0xff000000
 
 /**
- * NVMe Command Accessors for the NVM Command Set
+ * NVMe Command Accessors for the NVM Command Set, as the Read and the Write command
  *
+ * The members and masks are named as the Write command names them. The Read command names
+ * 'cdw02_03' ELBTU, 'lbtl' ELBTL, 'lbat' ELBAT and 'lbatm' ELBATM, and reserves DTYPE and DSPEC.
+ *
+ * @see NVM Command Set 1.3, Figures 52 to 58 (Read) and Figures 69 to 75 (Write)
  * @struct xnvme_spec_cmd_nvm
  */
 struct xnvme_spec_cmd_nvm {
-	uint32_t cdw00_09[10]; ///< Command dword 0 to 9
+	uint32_t cdw00_01[2]; ///< Command dword 0 and 1
 
-	uint64_t slba; ///< SLBA: Start Logical Block Address
+	uint64_t cdw02_03; ///< Command dword 2 and 3, see XNVME_SPEC_CMD_NVM_CDW02_03_*
+
+	uint32_t cdw04_09[6]; ///< Command dword 4 to 9
+
+	uint64_t slba; ///< SLBA: Starting LBA
 
 	uint32_t cdw12; ///< Command dword 12, see XNVME_SPEC_CMD_NVM_CDW12_*
 
 	uint32_t cdw13; ///< Command dword 13, see XNVME_SPEC_CMD_NVM_CDW13_*
 
-	/* cdw 14 */
-	uint32_t ilbrt; ///< Initial Logical Block Reference Tag
+	uint32_t lbtl; ///< LBTL: Logical Block Tags Lower, with LBTU the LBST and the ILBRT
 
-	/* cdw 15 */
-	uint16_t lbat;  ///< Logical Block Application Tag
-	uint16_t lbatm; ///< logical Block Application Tag Mask
+	uint16_t lbat;  ///< LBAT: Logical Block Application Tag
+	uint16_t lbatm; ///< LBATM: Logical Block Application Tag Mask
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_nvm) == 64, "Incorrect size")
 
-/** Number of Logical Blocks, zero-based; bits 15:0 of 'cdw12' */
+/** Logical Block Tags Upper; bits 47:00 of 'cdw02_03', LBTU (NVM Command Set 1.3, Figure 69) */
+#define XNVME_SPEC_CMD_NVM_CDW02_03_LBTU 0xffffffffffff
+
+/** Number of Logical Blocks, zero-based; bits 15:00 of 'cdw12', NLB (NVM Command Set 1.3,
+ * Figure 71) */
 #define XNVME_SPEC_CMD_NVM_CDW12_NLB 0xffff
-/** Directive Type; bits 23:20 of 'cdw12' */
+/** Command Extension Type; bits 19:16 of 'cdw12', CETYPE (NVM Command Set 1.3, Figure 71) */
+#define XNVME_SPEC_CMD_NVM_CDW12_CETYPE 0xf0000
+/** Directive Type, Write only; bits 23:20 of 'cdw12', DTYPE (NVM Command Set 1.3, Figure 71) */
 #define XNVME_SPEC_CMD_NVM_CDW12_DTYPE 0xf00000
-/** Protection Information Field; bits 29:26 of 'cdw12' */
+/** Storage Tag Check; bit 24 of 'cdw12', STC (NVM Command Set 1.3, Figure 71) */
+#define XNVME_SPEC_CMD_NVM_CDW12_STC 0x1000000
+/** Protection Information; bits 29:26 of 'cdw12', PRINFO (NVM Command Set 1.3, Figure 71) */
 #define XNVME_SPEC_CMD_NVM_CDW12_PRINFO 0x3c000000
-/** Force Unit Access; bit 30 of 'cdw12' */
+/** Force Unit Access; bit 30 of 'cdw12', FUA (NVM Command Set 1.3, Figure 71) */
 #define XNVME_SPEC_CMD_NVM_CDW12_FUA 0x40000000
-/** Limited Retry; bit 31 of 'cdw12' */
+/** Limited Retry; bit 31 of 'cdw12', LR (NVM Command Set 1.3, Figure 71) */
 #define XNVME_SPEC_CMD_NVM_CDW12_LR 0x80000000
 
-/** Access Frequency; bits 3:0 of 'cdw13' */
+/** Dataset Management, if CETYPE is 0h; bits 07:00 of 'cdw13', DSM (NVM Command Set 1.3, Figure
+ * 72)
+ */
+#define XNVME_SPEC_CMD_NVM_CDW13_DSM 0xff
+/** Access Frequency, in DSM; bits 03:00 of 'cdw13', AF (NVM Command Set 1.3, Figure 72) */
 #define XNVME_SPEC_CMD_NVM_CDW13_AF 0xf
-/** Access Latency; bits 5:4 of 'cdw13' */
+/** Access Latency, in DSM; bits 05:04 of 'cdw13', AL (NVM Command Set 1.3, Figure 72) */
 #define XNVME_SPEC_CMD_NVM_CDW13_AL 0x30
-/** Sequential Request; bit 6 of 'cdw13' */
-#define XNVME_SPEC_CMD_NVM_CDW13_SR 0x40
-/** Incompressible; bit 7 of 'cdw13' */
-#define XNVME_SPEC_CMD_NVM_CDW13_INCOM 0x80
-/** Directive Specific; bits 31:16 of 'cdw13' */
+/** Sequential Request, in DSM; bit 06 of 'cdw13', SEQREQ (NVM Command Set 1.3, Figure 72) */
+#define XNVME_SPEC_CMD_NVM_CDW13_SEQREQ 0x40
+/** Incompressible, in DSM; bit 07 of 'cdw13', INCPRS (NVM Command Set 1.3, Figure 72) */
+#define XNVME_SPEC_CMD_NVM_CDW13_INCPRS 0x80
+/** Command Extension Value, if CETYPE is non-zero; bits 15:00 of 'cdw13', CEV (NVM Command Set
+ * 1.3, Figure 73) */
+#define XNVME_SPEC_CMD_NVM_CDW13_CEV 0xffff
+/** Directive Specific, Write only; bits 31:16 of 'cdw13', DSPEC (NVM Command Set 1.3, Figure 72)
+ */
 #define XNVME_SPEC_CMD_NVM_CDW13_DSPEC 0xffff0000
 
 /**
