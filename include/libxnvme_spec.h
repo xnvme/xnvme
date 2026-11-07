@@ -2115,6 +2115,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_format) == 64, "Incorrect size"
 /**
  * NVMe Command Accessor for the get-features command
  *
+ * @see Base 2.4, Figures 198 and 199
  * @struct xnvme_spec_cmd_gfeat
  */
 struct xnvme_spec_cmd_gfeat {
@@ -2122,18 +2123,23 @@ struct xnvme_spec_cmd_gfeat {
 
 	uint32_t cdw10;       ///< Command dword 10, see XNVME_SPEC_CMD_GFEAT_CDW10_*
 	uint32_t cdw11;       ///< Command dword 11
-	uint32_t cdw12_15[4]; ///< Command dword 12 to 15
+	uint32_t cdw12_13[2]; ///< Command dword 12 to 13
+	uint32_t cdw14;       ///< Command dword 14, see XNVME_SPEC_CMD_GFEAT_CDW14_*
+	uint32_t cdw15;       ///< Command dword 15
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_gfeat) == 64, "Incorrect size")
 
-/** Feature Identifier, see xnvme_spec_feat_id; bits 7:0 of 'cdw10' */
+/** Feature Identifier, see xnvme_spec_feat_id; bits 7:0 of 'cdw10', FID (Base 2.4, Figure 198) */
 #define XNVME_SPEC_CMD_GFEAT_CDW10_FID 0xff
-/** Select, see xnvme_spec_feat_sel; bits 10:8 of 'cdw10' */
+/** Select, see xnvme_spec_feat_sel; bits 10:8 of 'cdw10', SEL (Base 2.4, Figure 198) */
 #define XNVME_SPEC_CMD_GFEAT_CDW10_SEL 0x700
+/** UUID Index; bits 6:0 of 'cdw14', UIDX (Base 2.4, Figure 199) */
+#define XNVME_SPEC_CMD_GFEAT_CDW14_UIDX 0x7f
 
 /**
  * NVMe Command Accessor for the set-features command
  *
+ * @see Base 2.4, Figures 464 and 465
  * @struct xnvme_spec_cmd_sfeat
  */
 struct xnvme_spec_cmd_sfeat {
@@ -2143,15 +2149,19 @@ struct xnvme_spec_cmd_sfeat {
 
 	union xnvme_spec_feat feat; ///< Feature attributes, dword 11
 
-	uint32_t cdw12;       ///< Command dword 12
-	uint32_t cdw13_15[3]; ///< Command dword 13 to 15
+	uint32_t cdw12; ///< Command dword 12
+	uint32_t cdw13; ///< Command dword 13
+	uint32_t cdw14; ///< Command dword 14, see XNVME_SPEC_CMD_SFEAT_CDW14_*
+	uint32_t cdw15; ///< Command dword 15
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_sfeat) == 64, "Incorrect size")
 
-/** Feature Identifier, see xnvme_spec_feat_id; bits 7:0 of 'cdw10' */
+/** Feature Identifier, see xnvme_spec_feat_id; bits 7:0 of 'cdw10', FID (Base 2.4, Figure 464) */
 #define XNVME_SPEC_CMD_SFEAT_CDW10_FID 0xff
-/** Save; bit 31 of 'cdw10' */
+/** Save; bit 31 of 'cdw10', SV (Base 2.4, Figure 464) */
 #define XNVME_SPEC_CMD_SFEAT_CDW10_SV 0x80000000
+/** UUID Index; bits 6:0 of 'cdw14', UIDX (Base 2.4, Figure 465) */
+#define XNVME_SPEC_CMD_SFEAT_CDW14_UIDX 0x7f
 
 /**
  * NVMe Command Accessor for the directive send command
