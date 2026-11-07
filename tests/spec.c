@@ -776,6 +776,15 @@ XNVME_STATIC_ASSERT(XNVME_SPEC_NVM_IDFY_NS_PIC_QPIFS == 0x8 &&
 			    XNVME_SPEC_NVM_IDFY_NS_PIFA_STMLA == 0x7,
 		    "QPIFS is bit 3 of PIC and STMLA bits 2:0 of PIFA")
 
+/* NVM Command Set 1.3, Figure 128 */
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_elbaf, bits,
+			 XNVME_SPEC_ELBAF_BITS_STS | XNVME_SPEC_ELBAF_BITS_PIF |
+				 XNVME_SPEC_ELBAF_BITS_QPIF),
+		    "bits of struct xnvme_spec_elbaf")
+XNVME_STATIC_ASSERT(XNVME_SPEC_ELBAF_BITS_STS == 0x7f && XNVME_SPEC_ELBAF_BITS_PIF == 0x180 &&
+			    XNVME_SPEC_ELBAF_BITS_QPIF == 0x1e00,
+		    "STS is bits 6:0, PIF bits 8:7 and QPIF bits 12:9 of ELBAF")
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it
