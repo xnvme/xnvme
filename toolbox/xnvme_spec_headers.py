@@ -264,6 +264,9 @@ ABBREVIATIONS = {
     "pci_express_transport": "pcie",
     "rdma_transport": "rdma",
     "tcp_transport": "tcp",
+    "nvme_over_pcie_transport": "pcie",
+    "nvme_over_rdma_transport": "rdma",
+    "nvme_over_tcp_transport": "tcp",
     "pcie_commands_using_an_out_of_band_mechanism": "pcie_commands",
 }
 

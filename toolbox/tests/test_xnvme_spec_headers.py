@@ -308,6 +308,23 @@ def test_each_document_has_a_header_named_by_its_abbreviation(model, tmp_path):
     assert " * edit: see the contributor docs on producing the spec headers." in text
 
 
+@pytest.mark.parametrize(
+    "title, key",
+    [
+        ("NVM Express Base Specification, Revision 2.4", "base"),
+        ("NVM Express Key Value Command Set Specification, Revision 1.4", "kv"),
+        ("NVM Express PCI Express Transport Specification, Revision 1.1", "pcie"),
+        ("NVM Express NVMe over PCIe Transport Specification, Revision 1.4", "pcie"),
+        ("NVM Express NVMe over RDMA Transport Specification, Revision 1.3", "rdma"),
+        ("NVM Express NVMe over TCP Transport Specification, Revision 1.3", "tcp"),
+    ],
+)
+def test_a_document_is_named_by_its_abbreviation_whatever_its_revision_titles_it(
+    title, key
+):
+    assert headers.document_key(title) == key
+
+
 def test_a_command_is_a_struct_of_its_dwords_its_masks_and_its_opcode(model, tmp_path):
     wrote = generate(model, tmp_path / "out")
     text = text_of(wrote, "xnvme_spec_foo.h")
