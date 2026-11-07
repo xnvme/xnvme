@@ -257,39 +257,44 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_log_sanitize_entry) == 512, "Incorr
 /**
  * NVMe get-log-page entry for error information
  *
- * NVMe 1.4 - Figure ?
- *
+ * @see Base 2.4, Figure 212
  * @struct xnvme_spec_log_erri_entry
  */
 struct xnvme_spec_log_erri_entry {
-	uint64_t ecnt;
-	uint16_t sqid;
-	uint16_t cid;
-	uint16_t status; ///< Status Field and Phase Tag, see XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_*
-	uint16_t eloc;
-	uint64_t lba;
-	uint32_t nsid;
-	uint8_t ven_si;
-	uint8_t trtype;
-	uint8_t reserved30[2];
-	uint64_t cmd_si;
-	uint16_t trtype_si;
-	uint8_t reserved42[22];
+	uint64_t ecnt;   ///< ECNT: Error Count
+	uint16_t sqid;   ///< SQID: Submission Queue ID
+	uint16_t cid;    ///< CID: Command ID
+	uint16_t sts;    ///< STS: Status Info, STATUS and P, see XNVME_SPEC_LOG_ERRI_ENTRY_STS_*
+	uint16_t pel;    ///< PEL: Parameter Error Location, see XNVME_SPEC_LOG_ERRI_ENTRY_PEL_*
+	uint64_t lba;    ///< LBA: Logical Block Address
+	uint32_t nsid;   ///< NSID: Namespace Identifier
+	uint8_t vsia;    ///< VSIA: Vendor Specific Information Available
+	uint8_t trtype;  ///< TRTYPE: Transport Type
+	uint8_t csi;     ///< CSI: Command Set Identifier
+	uint8_t opc;     ///< OPC: Opcode
+	uint64_t csinfo; ///< CSINFO: Command Specific Information
+	uint16_t ttsi;   ///< TTSI: Transport Type Specific Information
+	uint8_t rsvd42[21];
+	uint8_t lpver; ///< LPVER: Log Page Version
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_log_erri_entry) == 64, "Incorrect size")
 
-/** Phase Tag; bit 0 of 'status' */
-#define XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_P 0x1
-/** Status Code; bits 8:1 of 'status' */
-#define XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_SC 0x1fe
-/** Status Code Type; bits 11:9 of 'status' */
-#define XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_SCT 0xe00
-/** Command Retry Delay; bits 13:12 of 'status' */
-#define XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_CRD 0x3000
-/** More; bit 14 of 'status' */
-#define XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_M 0x4000
-/** Do Not Retry; bit 15 of 'status' */
-#define XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_DNR 0x8000
+/** Phase Tag; bit 0 of 'sts', P (Base 2.4, Figure 212) */
+#define XNVME_SPEC_LOG_ERRI_ENTRY_STS_P 0x1
+/** Status Code, of STATUS; bits 8:1 of 'sts', SC (Base 2.4, Figure 101) */
+#define XNVME_SPEC_LOG_ERRI_ENTRY_STS_SC 0x1fe
+/** Status Code Type, of STATUS; bits 11:9 of 'sts', SCT (Base 2.4, Figure 101) */
+#define XNVME_SPEC_LOG_ERRI_ENTRY_STS_SCT 0xe00
+/** Command Retry Delay, of STATUS; bits 13:12 of 'sts', CRD (Base 2.4, Figure 101) */
+#define XNVME_SPEC_LOG_ERRI_ENTRY_STS_CRD 0x3000
+/** More, of STATUS; bit 14 of 'sts', M (Base 2.4, Figure 101) */
+#define XNVME_SPEC_LOG_ERRI_ENTRY_STS_M 0x4000
+/** Do Not Retry, of STATUS; bit 15 of 'sts', DNR (Base 2.4, Figure 101) */
+#define XNVME_SPEC_LOG_ERRI_ENTRY_STS_DNR 0x8000
+/** Byte Location; bits 7:0 of 'pel', BYTLOC (Base 2.4, Figure 212) */
+#define XNVME_SPEC_LOG_ERRI_ENTRY_PEL_BYTLOC 0xff
+/** Bit Location; bits 10:8 of 'pel', BITLOC (Base 2.4, Figure 212) */
+#define XNVME_SPEC_LOG_ERRI_ENTRY_PEL_BITLOC 0x700
 
 /**
  * NVMe Reclaim unit handle descriptor

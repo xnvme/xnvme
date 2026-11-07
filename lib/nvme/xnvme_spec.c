@@ -164,14 +164,17 @@ log_erri_entry_fpr_yaml(FILE *stream, const struct xnvme_spec_log_erri_entry *en
 	wrtn += fprintf(stream, "%*secnt: %" PRIu64 "%s", indent, "", entry->ecnt, sep);
 	wrtn += fprintf(stream, "%*ssqid: %" PRIu16 "%s", indent, "", entry->sqid, sep);
 	wrtn += fprintf(stream, "%*scid: %" PRIu16 "%s", indent, "", entry->cid, sep);
-	wrtn += fprintf(stream, "%*sstatus: %#" PRIx16 "%s", indent, "", entry->status, sep);
-	wrtn += fprintf(stream, "%*seloc: %#" PRIx16 "%s", indent, "", entry->eloc, sep);
+	wrtn += fprintf(stream, "%*ssts: %#" PRIx16 "%s", indent, "", entry->sts, sep);
+	wrtn += fprintf(stream, "%*spel: %#" PRIx16 "%s", indent, "", entry->pel, sep);
 	wrtn += fprintf(stream, "%*slba: %#" PRIx64 "%s", indent, "", entry->lba, sep);
 	wrtn += fprintf(stream, "%*snsid: %" PRIu32 "%s", indent, "", entry->nsid, sep);
-	wrtn += fprintf(stream, "%*sven_si: %#" PRIx8 "%s", indent, "", entry->ven_si, sep);
+	wrtn += fprintf(stream, "%*svsia: %#" PRIx8 "%s", indent, "", entry->vsia, sep);
 	wrtn += fprintf(stream, "%*strtype: %#" PRIx8 "%s", indent, "", entry->trtype, sep);
-	wrtn += fprintf(stream, "%*scmd_si: %#" PRIx64 "%s", indent, "", entry->cmd_si, sep);
-	wrtn += fprintf(stream, "%*strtype_si: %#" PRIx16, indent, "", entry->trtype_si);
+	wrtn += fprintf(stream, "%*scsi: %#" PRIx8 "%s", indent, "", entry->csi, sep);
+	wrtn += fprintf(stream, "%*sopc: %#" PRIx8 "%s", indent, "", entry->opc, sep);
+	wrtn += fprintf(stream, "%*scsinfo: %#" PRIx64 "%s", indent, "", entry->csinfo, sep);
+	wrtn += fprintf(stream, "%*sttsi: %#" PRIx16 "%s", indent, "", entry->ttsi, sep);
+	wrtn += fprintf(stream, "%*slpver: %#" PRIx8, indent, "", entry->lpver);
 
 	return wrtn;
 }
