@@ -121,6 +121,7 @@ tests = {
     ['io-dwords', ['io-dwords']],
     ['cqe-result', ['cqe-result']],
     ['pif-reftag', ['pif-reftag']],
+    ['printers', ['printers']],
   ],
   'threads.c': [
     ['reopen', ['reopen', '1GB', '--count', '5']],

@@ -895,7 +895,7 @@ xnvme_spec_sqe_fpr(FILE *stream, union xnvme_spec_sqe *cmd, int opts)
 		break;
 
 	case 0x3:
-		wrtn += fprintf(stream, "  opcode: %#02" PRIx16 "\n", cmd->common.opc);
+		wrtn += fprintf(stream, "  opc: %#02" PRIx16 "\n", cmd->common.opc);
 		wrtn += fprintf(
 			stream, "  fuse: %#" PRIx64 "\n",
 			xnvme_bits_get(cmd->common.flags, XNVME_SPEC_CMD_COMMON_FLAGS_FUSE));
@@ -904,8 +904,8 @@ xnvme_spec_sqe_fpr(FILE *stream, union xnvme_spec_sqe *cmd, int opts)
 			xnvme_bits_get(cmd->common.flags, XNVME_SPEC_CMD_COMMON_FLAGS_PSDT));
 		wrtn += fprintf(stream, "  cid: %#04" PRIx16 "\n", cmd->common.cid);
 		wrtn += fprintf(stream, "  nsid: %#04" PRIx32 "\n", cmd->common.nsid);
-		wrtn += fprintf(stream, "  cdw02: %#04" PRIx32 "\n", cdw[2]);
-		wrtn += fprintf(stream, "  cdw03: %#04" PRIx32 "\n", cdw[3]);
+		wrtn += fprintf(stream, "  cdw2: %#04" PRIx32 "\n", cdw[2]);
+		wrtn += fprintf(stream, "  cdw3: %#04" PRIx32 "\n", cdw[3]);
 		wrtn += fprintf(stream, "  mptr: %#08" PRIx64 "\n", cmd->common.mptr);
 		wrtn += fprintf(stream, "  prp1: %#08" PRIx64 "\n", cmd->common.dptr.prp.prp1);
 		wrtn += fprintf(stream, "  prp2: %#08" PRIx64 "\n", cmd->common.dptr.prp.prp2);
@@ -968,13 +968,14 @@ xnvme_spec_feat_fpr(FILE *stream, uint8_t fid, const union xnvme_spec_feat *feat
 		return wrtn;
 
 	case XNVME_SPEC_FEAT_FDP_MODE:
-		wrtn += fprintf(stream, "feat: { fdpe: %" PRIu64 ", fdpci: %" PRIu64 " }\n",
+		wrtn += fprintf(stream, "feat: { fdpe: %" PRIu64 ", fdpcidx: %" PRIu64 " }\n",
 				xnvme_bits_get(feat->fdp_mode, XNVME_SPEC_FEAT_FDP_MODE_FDPE),
 				xnvme_bits_get(feat->fdp_mode, XNVME_SPEC_FEAT_FDP_MODE_FDPCIDX));
 		return wrtn;
 
 	case XNVME_SPEC_FEAT_FDP_EVENTS:
-		wrtn += fprintf(stream, "nevents: %" PRIu32 " }\n", feat->val);
+		wrtn += fprintf(stream, "feat: { noet: %" PRIu64 " }\n",
+				xnvme_bits_get(feat->fdp_events, XNVME_SPEC_FEAT_FDP_EVENTS_NOET));
 		return wrtn;
 
 	case XNVME_SPEC_FEAT_ARBITRATION:
