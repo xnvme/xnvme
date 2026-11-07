@@ -478,13 +478,13 @@ xnvme_znd_mgmt_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uin
 	ctx->cmd.common.opc = XNVME_SPEC_ZND_OPC_MGMT_RECV;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.znd.mgmt_recv.slba = slba;
-	ctx->cmd.znd.mgmt_recv.ndwords = (dbuf_nbytes >> 2) - 1;
+	ctx->cmd.znd.mgmt_recv.ndw = (dbuf_nbytes >> 2) - 1;
 	ctx->cmd.znd.mgmt_recv.cdw13 = xnvme_bits_set(ctx->cmd.znd.mgmt_recv.cdw13,
 						      XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRA, zra);
 	ctx->cmd.znd.mgmt_recv.cdw13 = xnvme_bits_set(
-		ctx->cmd.znd.mgmt_recv.cdw13, XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRASF, zrasf);
+		ctx->cmd.znd.mgmt_recv.cdw13, XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRAS, zrasf);
 	ctx->cmd.znd.mgmt_recv.cdw13 = xnvme_bits_set(
-		ctx->cmd.znd.mgmt_recv.cdw13, XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_PARTIAL, partial);
+		ctx->cmd.znd.mgmt_recv.cdw13, XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRASPF, partial);
 
 	return xnvme_cmd_pass(ctx, dbuf, dbuf_nbytes, NULL, 0);
 }
