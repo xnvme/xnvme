@@ -199,7 +199,7 @@ _zrasf_to_state(enum xnvme_spec_znd_cmd_mgmt_recv_action_sf zrasf)
 
 /**
  * The size of the buffer dictates how many entries that are returned. The
- * ndwords field provides this information, however, we will use the
+ * ndw field provides this information, however, we will use the
  * ``dbuf_nbytes``.
  *
  * The value of partial dictates the representation of hdr->nz
@@ -249,7 +249,7 @@ _lzbd_zone_mgmt_recv(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 
 	// Special-case; e.g. asking "how-many-zones" and no room for entries
 	if ((xnvme_bits_get(ctx->cmd.znd.mgmt_recv.cdw13,
-			    XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRASF) ==
+			    XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRAS) ==
 	     XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL) &&
 	    (dbuf_nzones == 0)) {
 		nvme_rprt->nz = nzones_dev;
@@ -279,7 +279,7 @@ _lzbd_zone_mgmt_recv(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 		for (uint64_t i = 0; i < lzbd_rprt->nr_zones; ++i) {
 			int zone_state = _zrasf_to_state(
 				xnvme_bits_get(ctx->cmd.znd.mgmt_recv.cdw13,
-					       XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRASF));
+					       XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRAS));
 			uint64_t cur = nvme_rprt->nz;
 
 			///< Accumulate nzones
@@ -293,7 +293,7 @@ _lzbd_zone_mgmt_recv(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 			if (cur >= dbuf_nzones) {
 				XNVME_DEBUG("INFO: no more room!");
 				if (xnvme_bits_get(ctx->cmd.znd.mgmt_recv.cdw13,
-						   XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_PARTIAL)) {
+						   XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRASPF)) {
 					break;
 				} else {
 					continue;

@@ -2764,30 +2764,30 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_cmd_mgmt_send) == 64, "Incorrec
  * NVMe Command Accessor for a command with opcode XNVME_SPEC_ZND_OPC_MGMT_RECV
  *
  * @see enum xnvme_spec_znd_cmd_mgmt_recv
+ * @see Zoned Namespace Command Set 1.5, Figures 33 to 35
  * @struct xnvme_spec_znd_cmd_mgmt_recv
  */
 struct xnvme_spec_znd_cmd_mgmt_recv {
 	uint32_t cdw00_09[10]; ///< Command dword 0 to 9
 
-	/* cdw 10-11 */
-	uint64_t slba; ///< Start LBA
+	uint64_t slba; ///< SLBA: Starting LBA
 
-	/* cdw 12 */
-	uint32_t ndwords; ///< Number of dwords in data-payload
+	uint32_t ndw; ///< NDW: Number of Dwords, zero-based
 
 	uint32_t cdw13; ///< Command dword 13, see XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_*
 
-	/* cdw 14-15 */
-	uint64_t addrs_dst; ///< destination addresses
+	uint32_t cdw14_15[2]; ///< Command dword 14 to 15, reserved
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_cmd_mgmt_recv) == 64, "Incorrect size")
 
-/** Zone Receive Action; bits 7:0 of 'cdw13' */
+/** Zone Receive Action; bits 7:0 of 'cdw13', ZRA (Zoned Namespace Command Set 1.5, Figure 35) */
 #define XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRA 0xff
-/** Zone Receive Action Specific Field; bits 15:8 of 'cdw13' */
-#define XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRASF 0xff00
-/** Partial Report; bit 16 of 'cdw13' */
-#define XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_PARTIAL 0x10000
+/** Zone Receive Action Specific; bits 15:8 of 'cdw13', ZRAS (Zoned Namespace Command Set 1.5,
+ * Figure 35) */
+#define XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRAS 0xff00
+/** Zone Receive Action Specific Features, Partial Report for the Report Zones actions; bit 16 of
+ * 'cdw13', ZRASPF (Zoned Namespace Command Set 1.5, Figure 35) */
+#define XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRASPF 0x10000
 
 /**
  * NVMe Command Accessor for a command with opcode ZND_CMD_OPC_APPEND
