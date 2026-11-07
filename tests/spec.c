@@ -1200,6 +1200,20 @@ XNVME_STATIC_ASSERT(XNVME_KVS_RETRIEVE_OPT_RRD == 0x1 && XNVME_KVS_STORE_OPT_SIK
 			    XNVME_KVS_STORE_OPT_SINKE == 0x2 && XNVME_KVS_STORE_OPT_NOCOMP == 0x4,
 		    "RRD, SIKE, SINKE and NOCOMP are bits 8, 8, 9 and 10 of KV dword 11")
 
+/* Key Value Command Set 1.4, Figures 8 to 34 */
+SPEC_AT(struct xnvme_spec_kvs_cmd, key, 8, 8)
+SPEC_AT(struct xnvme_spec_kvs_cmd, cdw10, 40, 4)
+SPEC_AT(struct xnvme_spec_kvs_cmd, cdw11, 44, 4)
+SPEC_AT(struct xnvme_spec_kvs_cmd, cdw13, 52, 4)
+SPEC_AT(struct xnvme_spec_kvs_cmd, key_hi, 56, 8)
+SPEC_AT(struct xnvme_spec_kvs_cmd_cdw11, kl, 0, 1)
+SPEC_AT(struct xnvme_spec_kvs_cmd_cdw11, ro, 1, 1)
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_kvs_cmd, cdw13,
+			 XNVME_SPEC_KVS_CMD_CDW13_CEV | XNVME_SPEC_KVS_CMD_CDW13_CETYPE),
+		    "cdw13 of struct xnvme_spec_kvs_cmd")
+XNVME_STATIC_ASSERT(XNVME_SPEC_KVS_CMD_CDW13_CETYPE == 0xf0000,
+		    "CETYPE is bits 19:16 of KV dword 13")
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it
