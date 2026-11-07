@@ -2045,6 +2045,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_common) == 64, "Incorrect size"
 /**
  * NVMe Command Accessor for the Sanitize command
  *
+ * @see Base 2.4, Figures 451 and 452
  * @struct xnvme_spec_cmd_sanitize
  */
 struct xnvme_spec_cmd_sanitize {
@@ -2052,22 +2053,26 @@ struct xnvme_spec_cmd_sanitize {
 
 	uint32_t cdw10; ///< Command dword 10, see XNVME_SPEC_CMD_SANITIZE_CDW10_*
 
-	uint32_t ovrpat; ///< Overwrite Pattern
+	uint32_t ovrpat; ///< OVRPAT: Overwrite Pattern
 
 	uint32_t cdw12_15[4]; ///< Command dword 12 to 15
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_sanitize) == 64, "Incorrect size")
 
-/** Sanitize Action; bits 2:0 of 'cdw10' */
+/** Sanitize Action; bits 2:0 of 'cdw10', SANACT (Base 2.4, Figure 451) */
 #define XNVME_SPEC_CMD_SANITIZE_CDW10_SANACT 0x7
-/** Allow Unrestricted Sanitize Exit; bit 3 of 'cdw10' */
+/** Allow Unrestricted Sanitize Exit; bit 3 of 'cdw10', AUSE (Base 2.4, Figure 451) */
 #define XNVME_SPEC_CMD_SANITIZE_CDW10_AUSE 0x8
-/** Overwrite Pass Count; bits 7:4 of 'cdw10' */
+/** Overwrite Pass Count; bits 7:4 of 'cdw10', OWPASS (Base 2.4, Figure 451) */
 #define XNVME_SPEC_CMD_SANITIZE_CDW10_OWPASS 0xf0
-/** Overwrite Invert Pattern Between Passes; bit 8 of 'cdw10' */
+/** Overwrite Invert Pattern Between Passes; bit 8 of 'cdw10', OIPBP (Base 2.4, Figure 451) */
 #define XNVME_SPEC_CMD_SANITIZE_CDW10_OIPBP 0x100
-/** No-Deallocate After Sanitize; bit 9 of 'cdw10' */
+/** No-Deallocate After Sanitize; bit 9 of 'cdw10', NDAS (Base 2.4, Figure 451) */
 #define XNVME_SPEC_CMD_SANITIZE_CDW10_NDAS 0x200
+/** Enter Media Verification State; bit 10 of 'cdw10', EMVS (Base 2.4, Figure 451) */
+#define XNVME_SPEC_CMD_SANITIZE_CDW10_EMVS 0x400
+/** Purge Required; bit 11 of 'cdw10', PREQ (Base 2.4, Figure 451) */
+#define XNVME_SPEC_CMD_SANITIZE_CDW10_PREQ 0x800
 
 /**
  * NVMe Command Accessor for the NVM-format command
