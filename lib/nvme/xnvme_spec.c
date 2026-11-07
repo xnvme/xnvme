@@ -823,11 +823,11 @@ xnvme_spec_idfy_cs_fpr(FILE *stream, const struct xnvme_spec_idfy_cs *idfy, int 
 		wrtn += fprintf(stream, "iocsci: %d, ", i);
 		wrtn += fprintf(stream, "bits: 0x%" PRIx64 ", ", iocscv->bits);
 		wrtn += fprintf(stream, "nvm: %" PRIu64 ", ",
-				xnvme_bits_get(iocscv->bits, XNVME_SPEC_CS_VECTOR_BITS_NVM));
+				xnvme_bits_get(iocscv->bits, XNVME_SPEC_CS_VECTOR_BITS_NVMCS));
 		wrtn += fprintf(stream, "kv: %" PRIu64 ", ",
-				xnvme_bits_get(iocscv->bits, XNVME_SPEC_CS_VECTOR_BITS_KV));
+				xnvme_bits_get(iocscv->bits, XNVME_SPEC_CS_VECTOR_BITS_KVCS));
 		wrtn += fprintf(stream, "zns: %" PRIu64,
-				xnvme_bits_get(iocscv->bits, XNVME_SPEC_CS_VECTOR_BITS_ZNS));
+				xnvme_bits_get(iocscv->bits, XNVME_SPEC_CS_VECTOR_BITS_ZNSCS));
 		wrtn += fprintf(stream, " }");
 
 		count++;
