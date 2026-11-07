@@ -120,6 +120,7 @@ tests = {
     ['data-masks', ['data-masks']],
     ['io-dwords', ['io-dwords']],
     ['cqe-result', ['cqe-result']],
+    ['pif-reftag', ['pif-reftag']],
   ],
   'threads.c': [
     ['reopen', ['reopen', '1GB', '--count', '5']],
