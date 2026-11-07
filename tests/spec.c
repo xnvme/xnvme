@@ -607,6 +607,27 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_fs_idfy_ctrlr, limits) == 528,
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_fs_idfy_ctrlr, iosizes) == 568,
 		    "iosizes of struct xnvme_spec_fs_idfy_ctrlr")
 
+/**
+ * A member is where the specification places it and as wide: 'offset' and 'size' are the bytes of
+ * its figure
+ */
+#define SPEC_AT(type, field, offset, size)                                      \
+	XNVME_STATIC_ASSERT(offsetof(type, field) == (offset) &&                \
+				    XNVME_SIZEOF_MEMBER(type, field) == (size), \
+			    #field " of " #type)
+
+/* Zoned Namespace Command Set 1.5, Figure 51 */
+SPEC_AT(struct xnvme_spec_znd_idfy_ctrlr, zasl, 0, 1)
+SPEC_AT(struct xnvme_spec_znd_idfy_ctrlr, zctratt, 4, 4)
+SPEC_AT(struct xnvme_spec_znd_idfy_ctrlr, tar, 8, 4)
+SPEC_AT(struct xnvme_spec_znd_idfy_ctrlr, uar, 12, 4)
+SPEC_AT(struct xnvme_spec_znd_idfy_ctrlr, tor, 16, 4)
+SPEC_AT(struct xnvme_spec_znd_idfy_ctrlr, uor, 20, 4)
+SPEC_AT(struct xnvme_spec_znd_idfy_ctrlr, tzrwar, 24, 4)
+SPEC_AT(struct xnvme_spec_znd_idfy_ctrlr, uzrwar, 28, 4)
+SPEC_AT(struct xnvme_spec_znd_idfy_ctrlr, ver, 32, 4)
+XNVME_STATIC_ASSERT(XNVME_SPEC_ZND_IDFY_CTRLR_ZCTRATT_ZNRM == 0x1, "ZNRM is bit 0 of ZCTRATT")
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it
