@@ -1156,6 +1156,16 @@ XNVME_STATIC_ASSERT(XNVME_SPEC_DSM_RANGE_CATTR_AF == 0xf &&
 			    XNVME_SPEC_DSM_RANGE_CATTR_CASZE == 0xff000000,
 		    "the Context Attributes of a Dataset Management range")
 
+/* NVM Command Set 1.3, Figures 11 and 71: the flags are bits 31:16 of dword 12 */
+XNVME_STATIC_ASSERT(
+	(uint32_t)XNVME_SPEC_FLAG_LR << 16 == XNVME_SPEC_CMD_NVM_CDW12_LR &&
+		(uint32_t)XNVME_SPEC_FLAG_FUA << 16 == XNVME_SPEC_CMD_NVM_CDW12_FUA &&
+		(uint32_t)XNVME_SPEC_FLAG_STC << 16 == XNVME_SPEC_CMD_NVM_CDW12_STC &&
+		((uint32_t)(XNVME_SPEC_FLAG_PRINFO_RTCHK | XNVME_SPEC_FLAG_PRINFO_ATCHK |
+			    XNVME_SPEC_FLAG_PRINFO_GRDCHK | XNVME_SPEC_FLAG_PRINFO_PRACT)
+		 << 16) == XNVME_SPEC_CMD_NVM_CDW12_PRINFO,
+	"the flags of xnvme_spec_flag are bits 31:16 of dword 12")
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it

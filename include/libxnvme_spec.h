@@ -1926,23 +1926,21 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_dsm_range) == 16, "Incorrect size")
 /**
  * Enumeration of NVMe flags
  *
- * TODO: document
+ * The bits of Command Dword 12 of the Read and Write commands, bits 31:16, shifted down by 16;
+ * PRINFO is bits 29:26 of the dword (NVM Command Set 1.3, Figures 11, 54 and 71).
+ *
  * @enum xnvme_spec_flag
  */
 enum xnvme_spec_flag {
-	// Limited Retry (LR)
-	XNVME_SPEC_FLAG_LIMITED_RETRY = 0x1 << 15,
+	XNVME_SPEC_FLAG_LR  = 0x1 << 15, ///< Limited Retry (LR), bit 31 of dword 12
+	XNVME_SPEC_FLAG_FUA = 0x1 << 14, ///< Force Unit Access (FUA), bit 30 of dword 12
 
-	// Force Unit Access (FUA)
-	XNVME_SPEC_FLAG_FORCE_UNIT_ACCESS = 0x1 << 14,
+	XNVME_SPEC_FLAG_PRINFO_RTCHK  = 0x1 << 10, ///< Reference Tag Check (RTCHK), PRINFO bit 0
+	XNVME_SPEC_FLAG_PRINFO_ATCHK  = 0x1 << 11, ///< Application Tag Check (ATCHK), PRINFO bit 1
+	XNVME_SPEC_FLAG_PRINFO_GRDCHK = 0x1 << 12, ///< Guard Check (GRDCHK), PRINFO bit 2
+	XNVME_SPEC_FLAG_PRINFO_PRACT = 0x1 << 13, ///< Protection Information Action (PRACT), bit 3
 
-	// Protection Information Check (PRCK)
-	XNVME_SPEC_FLAG_PRINFO_PRCHK_REF   = 0x1 << 10,
-	XNVME_SPEC_FLAG_PRINFO_PRCHK_APP   = 0x1 << 11,
-	XNVME_SPEC_FLAG_PRINFO_PRCHK_GUARD = 0x1 << 12,
-
-	// Protection Information Action (PRACT)
-	XNVME_SPEC_FLAG_PRINFO_PRACT = 0x1 << 13,
+	XNVME_SPEC_FLAG_STC = 0x1 << 8, ///< Storage Tag Check (STC), bit 24 of dword 12
 };
 
 /**
