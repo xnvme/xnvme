@@ -1897,17 +1897,31 @@ XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_feat) == 4, "Incorrect size")
 #define XNVME_SPEC_FEAT_MEDIA_FEEDBACK_VHECC 0x2
 
 /**
- * Representation of DSM ranges as defined in NVM Express 1.3 Figure 207 Dataset
- * Management Range Definition Figure 207
+ * Representation of DSM ranges, one Range of the Dataset Management range definition
  *
+ * @see NVM Command Set 1.3, Figures 47 and 48
  * @struct xnvme_spec_dsm_range
  */
 struct xnvme_spec_dsm_range {
-	uint32_t cattr; ///< Context attributes
-	uint32_t llb;   ///< Length in logical blocks (this is a 1-based value)
-	uint64_t slba;  ///< Starting LBA
+	uint32_t cattr; ///< CATTR: Context Attributes, see XNVME_SPEC_DSM_RANGE_CATTR_*
+	uint32_t llb;   ///< LLB: Length in Logical Blocks, a 1-based value
+	uint64_t slba;  ///< SLBA: Starting LBA
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_dsm_range) == 16, "Incorrect size")
+
+/** Access Frequency; bits 3:0 of 'cattr', AF (NVM Command Set 1.3, Figure 48) */
+#define XNVME_SPEC_DSM_RANGE_CATTR_AF 0xf
+/** Access Latency; bits 5:4 of 'cattr', AL (NVM Command Set 1.3, Figure 48) */
+#define XNVME_SPEC_DSM_RANGE_CATTR_AL 0x30
+/** Sequential Read Range; bit 8 of 'cattr', SRR (NVM Command Set 1.3, Figure 48) */
+#define XNVME_SPEC_DSM_RANGE_CATTR_SRR 0x100
+/** Sequential Write Range; bit 9 of 'cattr', SWR (NVM Command Set 1.3, Figure 48) */
+#define XNVME_SPEC_DSM_RANGE_CATTR_SWR 0x200
+/** Write Prepare; bit 10 of 'cattr', WPREP (NVM Command Set 1.3, Figure 48) */
+#define XNVME_SPEC_DSM_RANGE_CATTR_WPREP 0x400
+/** Command Access Size, in logical blocks; bits 31:24 of 'cattr', CASZE (NVM Command Set 1.3,
+ * Figure 48) */
+#define XNVME_SPEC_DSM_RANGE_CATTR_CASZE 0xff000000
 
 /**
  * Enumeration of NVMe flags

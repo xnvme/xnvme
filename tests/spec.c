@@ -1144,6 +1144,18 @@ XNVME_STATIC_ASSERT(XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_VSDIRS == 0x8000
 			    XNVME_SPEC_STREAMS_DIR_RP_NSSC_SRNZID == 0x2,
 		    "VSDIRS is bit 15 of Directives Supported and SRNZID bit 1 of NSSC")
 
+/* NVM Command Set 1.3, Figures 47 and 48 */
+SPEC_AT(struct xnvme_spec_dsm_range, cattr, 0, 4)
+SPEC_AT(struct xnvme_spec_dsm_range, llb, 4, 4)
+SPEC_AT(struct xnvme_spec_dsm_range, slba, 8, 8)
+XNVME_STATIC_ASSERT(XNVME_SPEC_DSM_RANGE_CATTR_AF == 0xf &&
+			    XNVME_SPEC_DSM_RANGE_CATTR_AL == 0x30 &&
+			    XNVME_SPEC_DSM_RANGE_CATTR_SRR == 0x100 &&
+			    XNVME_SPEC_DSM_RANGE_CATTR_SWR == 0x200 &&
+			    XNVME_SPEC_DSM_RANGE_CATTR_WPREP == 0x400 &&
+			    XNVME_SPEC_DSM_RANGE_CATTR_CASZE == 0xff000000,
+		    "the Context Attributes of a Dataset Management range")
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it
