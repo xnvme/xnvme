@@ -2941,13 +2941,13 @@ enum xnvme_spec_kv_status_code {
 /**
  * Command dword 11 of the commands of the KV Command Set
  *
- * @see Key Value Command Set Specification Revision 1.0c, Section 3
+ * @see Key Value Command Set 1.4, Figures 20 and 31
  *
  * @struct xnvme_spec_kvs_cmd_cdw11
  */
 struct xnvme_spec_kvs_cmd_cdw11 {
 	uint8_t kl; ///< KL: Key Length
-	uint8_t ro; ///< Options of the command, e.g. XNVME_KVS_STORE_OPT_*
+	uint8_t ro; ///< RO: Retrieve Option, of Store the SO: Store Option, see XNVME_KVS_*_OPT_*
 	uint16_t rsvd;
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_kvs_cmd_cdw11) == 4, "Incorrect size")
@@ -2955,30 +2955,33 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_kvs_cmd_cdw11) == 4, "Incorrect siz
 /**
  * NVMe Command Accessors for the KV Command Set
  *
- * @see Key Value Command Set Specification Revision 1.0c, Section 3
+ * @see Key Value Command Set 1.4, Figures 8 to 34
  *
  * @struct xnvme_spec_kvs_cmd
  */
 struct xnvme_spec_kvs_cmd {
 	uint32_t cdw0;
-	uint32_t nsid;
-	/* cdw 02-03 */
-	uint64_t key;    ///< KV key bits 0:63
-	uint64_t mptr;   ///< Reserverd for MPTR
-	/* cdw 06-09: */ ///< DPTR -- data pointer
-	uint32_t cdw06;
+	uint32_t nsid;  ///< NSID: Namespace Identifier
+	uint64_t key;   ///< KV Key[63:00], command dwords 2 and 3
+	uint64_t mptr;  ///< Reserved for MPTR
+	uint32_t cdw06; ///< DPTR: Data Pointer, dwords 6 to 9
 	uint32_t cdw07;
 	uint32_t cdw08;
 	uint32_t cdw09;
-	uint32_t cdw10; ///< Host Buffer Size or Value Size
+	uint32_t cdw10; ///< HBS: Host Buffer Size, of Store the VS: Value Size
 
 	struct xnvme_spec_kvs_cmd_cdw11 cdw11; ///< Command dword 11
 	uint32_t cdw12;
-	uint32_t cdw13;
-	/* cdw 14-15 */
-	uint64_t key_hi; ///< KV key bits 64:127
+	uint32_t cdw13;  ///< Command dword 13, see XNVME_SPEC_KVS_CMD_CDW13_*
+	uint64_t key_hi; ///< KV Key[127:64], command dwords 14 and 15
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_kvs_cmd) == 64, "Incorrect size")
+
+/** Command Extension Value; bits 15:0 of 'cdw13', CEV (Key Value Command Set 1.4, Figure 21) */
+#define XNVME_SPEC_KVS_CMD_CDW13_CEV 0xffff
+/** Command Extension Type; bits 19:16 of 'cdw13', CETYPE (Key Value Command Set 1.4, Figure 21)
+ */
+#define XNVME_SPEC_KVS_CMD_CDW13_CETYPE 0xf0000
 
 /**
  * NVMe Command Accessor for the Compare command
