@@ -124,47 +124,86 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cqe) == 16, "Incorrect size")
 #define XNVME_SPEC_CQE_STATUS_DNR 0x8000
 
 /**
- * NVMe get-log-page entry for error information
+ * NVMe get-log-page entry for SMART / Health Information
  *
- * NVMe 1.4: Figure 194
+ * The 128-bit counters are little-endian byte arrays. The struct is packed since CTEMP, at byte
+ * 1, is not aligned.
  *
- * NOTE: using __attribute__((packed))__ as GCC does not like "uint16_t ct"
- * for some reason. Without the packing it becomes 2 bytes larger
- *
+ * @see Base 2.4, Figure 213
  * @struct xnvme_spec_log_health_entry
  */
 struct __attribute__((packed)) xnvme_spec_log_health_entry {
-	uint8_t crit_warn;          ///< Critical Warning
-	uint16_t comp_temp;         ///< Composite Temperature (Temp.)
-	uint8_t avail_spare;        ///< Available Spare (pct)
-	uint8_t avail_spare_thresh; ///< Available Spare Threshold (pct)
-	uint8_t pct_used;           ///< Percentage used (pct), can exceed 100
-	uint8_t eg_crit_warn_sum;   ///< Endurance Group Critical Warning Summary
-	uint8_t rsvd8[25];
+	uint8_t cw;     ///< CW: Critical Warning, see XNVME_SPEC_LOG_HEALTH_ENTRY_CW_*
+	uint16_t ctemp; ///< CTEMP: Composite Temperature, in Kelvin
+	uint8_t avsp;   ///< AVSP: Available Spare, in percent
+	uint8_t avspt;  ///< AVSPT: Available Spare Threshold, in percent
+	uint8_t pused;  ///< PUSED: Percentage Used, can exceed 100
+	uint8_t egcws;  ///< EGCWS: Endurance Group Critical Warning Summary, see ..._EGCWS_*
+	uint8_t infw;   ///< INFW: Informative Warning, see XNVME_SPEC_LOG_HEALTH_ENTRY_INFW_*
+	uint8_t rsvd8[24];
 
-	uint8_t data_units_read[16];    ///< Data Units Read
-	uint8_t data_units_written[16]; ///< Data Units Written
+	uint8_t dur[16]; ///< DUR: Data Units Read
+	uint8_t duw[16]; ///< DUW: Data Units Written
 
-	uint8_t host_read_cmds[16];  ///< Host Read Commands
-	uint8_t host_write_cmds[16]; ///< Host Write Commands
+	uint8_t hrc[16]; ///< HRC: Host Read Commands
+	uint8_t hwc[16]; ///< HWC: Host Write Commands
 
-	uint8_t ctrlr_busy_time[16];  ///< Controller Busy Time
-	uint8_t pwr_cycles[16];       ///< Power Cycles
-	uint8_t pwr_on_hours[16];     ///< Power On Hours
-	uint8_t unsafe_shutdowns[16]; ///< Unsafe Shutdowns
-	uint8_t mdi_errs[16];         ///< Media and Data Integrity Errors
-	uint8_t nr_err_logs[16];      ///< Nr. of Error Information Log Entries (life)
+	uint8_t cbt[16];   ///< CBT: Controller Busy Time
+	uint8_t pwrc[16];  ///< PWRC: Power Cycles
+	uint8_t poh[16];   ///< POH: Power On Hours
+	uint8_t upl[16];   ///< UPL: Unexpected Power Losses, formerly Unsafe Shutdowns
+	uint8_t mdie[16];  ///< MDIE: Media and Data Integrity Errors
+	uint8_t neile[16]; ///< NEILE: Number of Error Information Log Entries
 
-	uint32_t warn_comp_temp_time; ///< Warning Composite Temp. Time
-	uint32_t crit_comp_temp_time; ///< Critical Composite Temp. Time
-	uint16_t temp_sens[8];        ///< Temp. Sensor Temp. 1-8
-	uint32_t tmt1tc;              ///< Thermal Management Temp. 1 Trans. Count
-	uint32_t tmt2tc;              ///< Thermal Management Temp. 2 Trans. Count
-	uint32_t tttmt1;              ///< Total Time for Thermal Mgmt. Temp. 1
-	uint32_t tttmt2;              ///< Total Time for Thermal Mgmt. Temp. 2
-	uint8_t rsvd[280];
+	uint32_t wctt;   ///< WCTT: Warning Composite Temperature Time
+	uint32_t cctt;   ///< CCTT: Critical Composite Temperature Time
+	uint16_t tsen1;  ///< TSEN1: Temperature Sensor 1, in Kelvin
+	uint16_t tsen2;  ///< TSEN2: Temperature Sensor 2, in Kelvin
+	uint16_t tsen3;  ///< TSEN3: Temperature Sensor 3, in Kelvin
+	uint16_t tsen4;  ///< TSEN4: Temperature Sensor 4, in Kelvin
+	uint16_t tsen5;  ///< TSEN5: Temperature Sensor 5, in Kelvin
+	uint16_t tsen6;  ///< TSEN6: Temperature Sensor 6, in Kelvin
+	uint16_t tsen7;  ///< TSEN7: Temperature Sensor 7, in Kelvin
+	uint16_t tsen8;  ///< TSEN8: Temperature Sensor 8, in Kelvin
+	uint32_t tmt1tc; ///< TMT1TC: Thermal Management Temperature 1 Transition Count
+	uint32_t tmt2tc; ///< TMT2TC: Thermal Management Temperature 2 Transition Count
+	uint32_t tttmt1; ///< TTTMT1: Total Time For Thermal Management Temperature 1
+	uint32_t tttmt2; ///< TTTMT2: Total Time For Thermal Management Temperature 2
+	uint64_t olec;   ///< OLEC: Operational Lifetime Energy Consumed
+	uint32_t ipm; ///< IPM: Interval Power Measurement, see XNVME_SPEC_LOG_HEALTH_ENTRY_IPM_*
+	uint8_t rsvd244[268];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_log_health_entry) == 512, "Incorrect size")
+
+/** Available Spare Capacity Below Threshold; bit 0 of 'cw', ASCBT (Base 2.4, Figure 213) */
+#define XNVME_SPEC_LOG_HEALTH_ENTRY_CW_ASCBT 0x1
+/** Temperature Threshold Condition; bit 1 of 'cw', TTC (Base 2.4, Figure 213) */
+#define XNVME_SPEC_LOG_HEALTH_ENTRY_CW_TTC 0x2
+/** NVM Subsystem Degraded Reliability; bit 2 of 'cw', NDR (Base 2.4, Figure 213) */
+#define XNVME_SPEC_LOG_HEALTH_ENTRY_CW_NDR 0x4
+/** All Media Read-Only; bit 3 of 'cw', AMRO (Base 2.4, Figure 213) */
+#define XNVME_SPEC_LOG_HEALTH_ENTRY_CW_AMRO 0x8
+/** Volatile Memory Backup Failed; bit 4 of 'cw', VMBF (Base 2.4, Figure 213) */
+#define XNVME_SPEC_LOG_HEALTH_ENTRY_CW_VMBF 0x10
+/** Persistent Memory Region Read-Only; bit 5 of 'cw', PMRRO (Base 2.4, Figure 213) */
+#define XNVME_SPEC_LOG_HEALTH_ENTRY_CW_PMRRO 0x20
+/** Indeterminate Personality State; bit 6 of 'cw', IPS (Base 2.4, Figure 213) */
+#define XNVME_SPEC_LOG_HEALTH_ENTRY_CW_IPS 0x40
+/** Endurance Group Available Spare Capacity Below Threshold; bit 0 of 'egcws', EGASCBT (Base 2.4,
+ * Figure 213) */
+#define XNVME_SPEC_LOG_HEALTH_ENTRY_EGCWS_EGASCBT 0x1
+/** Endurance Group Degraded Reliability; bit 2 of 'egcws', EGDR (Base 2.4, Figure 213) */
+#define XNVME_SPEC_LOG_HEALTH_ENTRY_EGCWS_EGDR 0x4
+/** Endurance Group Read-Only; bit 3 of 'egcws', EGRO (Base 2.4, Figure 213) */
+#define XNVME_SPEC_LOG_HEALTH_ENTRY_EGCWS_EGRO 0x8
+/** Voltage Low Threshold Warning; bit 0 of 'infw', VLTHW (Base 2.4, Figure 213) */
+#define XNVME_SPEC_LOG_HEALTH_ENTRY_INFW_VLTHW 0x1
+/** Interval Power Measurement Value; bits 15:0 of 'ipm', IPMV (Base 2.4, Figure 213) */
+#define XNVME_SPEC_LOG_HEALTH_ENTRY_IPM_IPMV 0xffff
+/** Interval Power Measurement Scale; bits 17:16 of 'ipm', IPMS (Base 2.4, Figure 213) */
+#define XNVME_SPEC_LOG_HEALTH_ENTRY_IPM_IPMS 0x30000
+/** Power Measurement Type; bits 23:20 of 'ipm', PMT (Base 2.4, Figure 213) */
+#define XNVME_SPEC_LOG_HEALTH_ENTRY_IPM_PMT 0xf00000
 
 /**
  * NVMe get-log-page entry for sanitize status information

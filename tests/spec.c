@@ -1230,6 +1230,36 @@ XNVME_STATIC_ASSERT(XNVME_SPEC_KVS_IDFY_NS_NSFEAT_UIDR == 0x8 &&
 			    XNVME_SPEC_KVS_IDFY_NS_FORMAT_AFO_RP == 0x3,
 		    "UIDR is bit 3 of NSFEAT, KVFI bits 3:0 of KVFC and RP bits 1:0 of AFO")
 
+/* Base 2.4, Figure 213 */
+SPEC_AT(struct xnvme_spec_log_health_entry, cw, 0, 1)
+SPEC_AT(struct xnvme_spec_log_health_entry, ctemp, 1, 2)
+SPEC_AT(struct xnvme_spec_log_health_entry, egcws, 6, 1)
+SPEC_AT(struct xnvme_spec_log_health_entry, infw, 7, 1)
+SPEC_AT(struct xnvme_spec_log_health_entry, dur, 32, 16)
+SPEC_AT(struct xnvme_spec_log_health_entry, upl, 144, 16)
+SPEC_AT(struct xnvme_spec_log_health_entry, neile, 176, 16)
+SPEC_AT(struct xnvme_spec_log_health_entry, wctt, 192, 4)
+SPEC_AT(struct xnvme_spec_log_health_entry, cctt, 196, 4)
+SPEC_AT(struct xnvme_spec_log_health_entry, tsen1, 200, 2)
+SPEC_AT(struct xnvme_spec_log_health_entry, tsen8, 214, 2)
+SPEC_AT(struct xnvme_spec_log_health_entry, tmt1tc, 216, 4)
+SPEC_AT(struct xnvme_spec_log_health_entry, tttmt2, 228, 4)
+SPEC_AT(struct xnvme_spec_log_health_entry, olec, 232, 8)
+SPEC_AT(struct xnvme_spec_log_health_entry, ipm, 240, 4)
+XNVME_STATIC_ASSERT(
+	FITS(struct xnvme_spec_log_health_entry, cw,
+	     XNVME_SPEC_LOG_HEALTH_ENTRY_CW_ASCBT | XNVME_SPEC_LOG_HEALTH_ENTRY_CW_TTC |
+		     XNVME_SPEC_LOG_HEALTH_ENTRY_CW_NDR | XNVME_SPEC_LOG_HEALTH_ENTRY_CW_AMRO |
+		     XNVME_SPEC_LOG_HEALTH_ENTRY_CW_VMBF | XNVME_SPEC_LOG_HEALTH_ENTRY_CW_PMRRO |
+		     XNVME_SPEC_LOG_HEALTH_ENTRY_CW_IPS),
+	"cw of struct xnvme_spec_log_health_entry")
+XNVME_STATIC_ASSERT(
+	XNVME_SPEC_LOG_HEALTH_ENTRY_CW_IPS == 0x40 &&
+		XNVME_SPEC_LOG_HEALTH_ENTRY_EGCWS_EGRO == 0x8 &&
+		XNVME_SPEC_LOG_HEALTH_ENTRY_IPM_IPMS == 0x30000 &&
+		XNVME_SPEC_LOG_HEALTH_ENTRY_IPM_PMT == 0xf00000,
+	"IPS is bit 6 of CW, EGRO bit 3 of EGCWS, IPMS bits 17:16 and PMT 23:20 of IPM")
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it

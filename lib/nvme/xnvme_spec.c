@@ -60,37 +60,40 @@ xnvme_spec_log_health_fpr(FILE *stream, const struct xnvme_spec_log_health_entry
 	}
 
 	wrtn += fprintf(stream, "\n");
-	wrtn += fprintf(stream, "  crit_warn: %" PRIu8 "\n", log->crit_warn);
-	wrtn += fprintf(stream, "  comp_temp: %d\n", log->comp_temp - 273u);
-	wrtn += fprintf(stream, "  avail_spare: %" PRIu8 "\n", log->avail_spare);
-	wrtn += fprintf(stream, "  avail_spare_thresh: %" PRIu8 "\n", log->avail_spare_thresh);
-	wrtn += fprintf(stream, "  pct_used: %" PRIu8 "\n", log->pct_used);
-	wrtn += fprintf(stream, "  eg_crit_warn_sum: %" PRIu8 "\n", log->eg_crit_warn_sum);
-	wrtn += fprintf(stream, "  data_units_read: %.0Lf\n",
-			bytes2double(log->data_units_read, 16));
-	wrtn += fprintf(stream, "  data_units_written: %.0Lf\n",
-			bytes2double(log->data_units_written, 16));
-	wrtn += fprintf(stream, "  host_read_cmds: %.0Lf\n",
-			bytes2double(log->host_read_cmds, 16));
-	wrtn += fprintf(stream, "  host_write_cmds: %.0Lf\n",
-			bytes2double(log->host_write_cmds, 16));
-	wrtn += fprintf(stream, "  ctrlr_busy_time: %.0Lf\n",
-			bytes2double(log->ctrlr_busy_time, 16));
-	wrtn += fprintf(stream, "  pwr_cycles: %.0Lf\n", bytes2double(log->pwr_cycles, 16));
-	wrtn += fprintf(stream, "  pwr_on_hours: %.0Lf\n", bytes2double(log->pwr_on_hours, 16));
-	wrtn += fprintf(stream, "  unsafe_shutdowns: %.0Lf\n",
-			bytes2double(log->unsafe_shutdowns, 16));
-	wrtn += fprintf(stream, "  nr_err_logs: %.0Lf\n", bytes2double(log->nr_err_logs, 16));
-	wrtn += fprintf(stream, "  warn_comp_temp_time: %" PRIu32 "\n", log->warn_comp_temp_time);
-	wrtn += fprintf(stream, "  crit_comp_temp_time: %" PRIu32 "\n", log->crit_comp_temp_time);
-	for (int i = 0; i < 8; ++i) {
-		wrtn += fprintf(stream, "  temp_sens%u: %d\n", i + 1,
-				log->temp_sens[i] ? log->temp_sens[i] - 273u : 0);
+	wrtn += fprintf(stream, "  cw: %" PRIu8 "\n", log->cw);
+	wrtn += fprintf(stream, "  ctemp: %d\n", log->ctemp - 273u);
+	wrtn += fprintf(stream, "  avsp: %" PRIu8 "\n", log->avsp);
+	wrtn += fprintf(stream, "  avspt: %" PRIu8 "\n", log->avspt);
+	wrtn += fprintf(stream, "  pused: %" PRIu8 "\n", log->pused);
+	wrtn += fprintf(stream, "  egcws: %" PRIu8 "\n", log->egcws);
+	wrtn += fprintf(stream, "  infw: %" PRIu8 "\n", log->infw);
+	wrtn += fprintf(stream, "  dur: %.0Lf\n", bytes2double(log->dur, 16));
+	wrtn += fprintf(stream, "  duw: %.0Lf\n", bytes2double(log->duw, 16));
+	wrtn += fprintf(stream, "  hrc: %.0Lf\n", bytes2double(log->hrc, 16));
+	wrtn += fprintf(stream, "  hwc: %.0Lf\n", bytes2double(log->hwc, 16));
+	wrtn += fprintf(stream, "  cbt: %.0Lf\n", bytes2double(log->cbt, 16));
+	wrtn += fprintf(stream, "  pwrc: %.0Lf\n", bytes2double(log->pwrc, 16));
+	wrtn += fprintf(stream, "  poh: %.0Lf\n", bytes2double(log->poh, 16));
+	wrtn += fprintf(stream, "  upl: %.0Lf\n", bytes2double(log->upl, 16));
+	wrtn += fprintf(stream, "  mdie: %.0Lf\n", bytes2double(log->mdie, 16));
+	wrtn += fprintf(stream, "  neile: %.0Lf\n", bytes2double(log->neile, 16));
+	wrtn += fprintf(stream, "  wctt: %" PRIu32 "\n", log->wctt);
+	wrtn += fprintf(stream, "  cctt: %" PRIu32 "\n", log->cctt);
+	{
+		const uint16_t tsen[] = {log->tsen1, log->tsen2, log->tsen3, log->tsen4,
+					 log->tsen5, log->tsen6, log->tsen7, log->tsen8};
+
+		for (int i = 0; i < 8; ++i) {
+			wrtn += fprintf(stream, "  tsen%d: %d\n", i + 1,
+					tsen[i] ? tsen[i] - 273u : 0);
+		}
 	}
 	wrtn += fprintf(stream, "  tmt1tc: %" PRIu32 "\n", log->tmt1tc);
 	wrtn += fprintf(stream, "  tmt2tc: %" PRIu32 "\n", log->tmt2tc);
 	wrtn += fprintf(stream, "  tttmt1: %" PRIu32 "\n", log->tttmt1);
 	wrtn += fprintf(stream, "  tttmt2: %" PRIu32 "\n", log->tttmt2);
+	wrtn += fprintf(stream, "  olec: %" PRIu64 "\n", log->olec);
+	wrtn += fprintf(stream, "  ipm: %#" PRIx32 "\n", log->ipm);
 
 	return wrtn;
 }
