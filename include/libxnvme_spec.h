@@ -208,36 +208,51 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_log_health_entry) == 512, "Incorrec
 /**
  * NVMe get-log-page entry for sanitize status information
  *
+ * @see Base 2.4, Figure 312
  * @struct xnvme_spec_log_sanitize_entry
  */
 
 struct __attribute__((packed)) xnvme_spec_log_sanitize_entry {
-	uint16_t sprog;   ///< Sanitize Progress
-	uint16_t sstat;   ///< Sanitize Status, see XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_*
-	uint32_t scdw10;  ///< Sanitize Command Dword 10 Information
-	uint32_t eto;     ///< Est. Time for Overwrite
-	uint32_t etbe;    ///< Est. Time for Block Erase
-	uint32_t etce;    ///< Est. Time for Crypto Erase
-	uint32_t etodmm;  ///< Est. Time for Overwrite with No-Deallocate Media Modification
-	uint32_t etbenmm; ///< Est. Time for Block Erase with No-Deallocate Media Modification
-	uint32_t etcenmm; ///< Est. Time for Crypto Erase With No-Deallocate Media Modification
-	uint32_t etpvds;  ///< Est. Time For Post-Verification Deallocation State
-	uint8_t ssi;      ///< Sanitize State Information
-	uint8_t rsvd[475];
+	uint16_t sprog;   ///< SPROG: Sanitize Progress
+	uint16_t sstat;   ///< SSTAT: Sanitize Status, see XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_*
+	uint32_t scdw10;  ///< SCDW10: Sanitize Command Dword 10 Information
+	uint32_t eto;     ///< ETO: Estimated Time For Overwrite
+	uint32_t etbe;    ///< ETBE: Estimated Time For Block Erase
+	uint32_t etce;    ///< ETCE: Estimated Time For Crypto Erase
+	uint32_t etodmm;  ///< ETODMM: Estimated Time For Overwrite With No-Deallocate Media
+			  ///< Modification
+	uint32_t etbenmm; ///< ETBENMM: Estimated Time For Block Erase With No-Deallocate Media
+			  ///< Modification
+	uint32_t etcenmm; ///< ETCENMM: Estimated Time For Crypto Erase With No-Deallocate Media
+			  ///< Modification
+	uint32_t etpvds;  ///< ETPVDS: Estimated Time For Post-Verification Deallocation State
+	uint8_t ssi; ///< SSI: Sanitize State Information, see XNVME_SPEC_LOG_SANITIZE_ENTRY_SSI_*
+	uint8_t rsvd37[3];
+	uint32_t mnsoip; ///< MNSOIP: Maximum Namespace Sanitize Operations In Progress
+	uint32_t stnsid; ///< STNSID: Sanitization Target NSID
+	uint8_t rsvd48[464];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_log_sanitize_entry) == 512, "Incorrect size")
 
 /**
  * Sanitize Operation Status, 000b never started, 001b sanitized, 010b sanitizing, 011b failed,
- * 100b sanitized with unexpected deallocate; bits 2:0 of 'sstat'
+ * 100b sanitized with unexpected deallocate; bits 2:0 of 'sstat', SOS (Base 2.4, Figure 312)
  */
 #define XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_SOS 0x7
-/** Overwrite Passes Completed; bits 7:3 of 'sstat' */
+/** Overwrite Passes Completed; bits 7:3 of 'sstat', OPC (Base 2.4, Figure 312) */
 #define XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_OPC 0xf8
-/** Global Data Erased; bit 8 of 'sstat' */
+/** Global Data Erased; bit 8 of 'sstat', GDE (Base 2.4, Figure 312) */
 #define XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_GDE 0x100
-/** Media Verification Canceled; bit 9 of 'sstat' */
+/** Media Verification Canceled; bit 9 of 'sstat', MVCNCLD (Base 2.4, Figure 312) */
 #define XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_MVCNCLD 0x200
+/** Namespace Data Erased; bit 10 of 'sstat', NDE (Base 2.4, Figure 312) */
+#define XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_NDE 0x400
+/** Purged; bit 11 of 'sstat', PRGD (Base 2.4, Figure 312) */
+#define XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_PRGD 0x800
+/** Sanitize State; bits 3:0 of 'ssi', SANS (Base 2.4, Figure 312) */
+#define XNVME_SPEC_LOG_SANITIZE_ENTRY_SSI_SANS 0xf
+/** Failure State; bits 7:4 of 'ssi', FAILS (Base 2.4, Figure 312) */
+#define XNVME_SPEC_LOG_SANITIZE_ENTRY_SSI_FAILS 0xf0
 
 /**
  * NVMe get-log-page entry for error information

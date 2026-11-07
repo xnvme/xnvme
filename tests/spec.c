@@ -1260,6 +1260,19 @@ XNVME_STATIC_ASSERT(
 		XNVME_SPEC_LOG_HEALTH_ENTRY_IPM_PMT == 0xf00000,
 	"IPS is bit 6 of CW, EGRO bit 3 of EGCWS, IPMS bits 17:16 and PMT 23:20 of IPM")
 
+/* Base 2.4, Figure 312 */
+SPEC_AT(struct xnvme_spec_log_sanitize_entry, etpvds, 32, 4)
+SPEC_AT(struct xnvme_spec_log_sanitize_entry, ssi, 36, 1)
+SPEC_AT(struct xnvme_spec_log_sanitize_entry, mnsoip, 40, 4)
+SPEC_AT(struct xnvme_spec_log_sanitize_entry, stnsid, 44, 4)
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_log_sanitize_entry, ssi,
+			 XNVME_SPEC_LOG_SANITIZE_ENTRY_SSI_SANS |
+				 XNVME_SPEC_LOG_SANITIZE_ENTRY_SSI_FAILS),
+		    "ssi of struct xnvme_spec_log_sanitize_entry")
+XNVME_STATIC_ASSERT(XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_NDE == 0x400 &&
+			    XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_PRGD == 0x800,
+		    "NDE is bit 10 and PRGD bit 11 of SSTAT")
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it
