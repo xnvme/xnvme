@@ -174,9 +174,9 @@ xnvme_znd_report_from_dev(struct xnvme_dev *dev, uint64_t slba, size_t limit, ui
 			errno = err ? -err : EIO;
 			return NULL;
 		}
-		XNVME_DEBUG("INFO: hdr->nzones: %" PRIu64, hdr->nzones);
+		XNVME_DEBUG("INFO: hdr->nz: %" PRIu64, hdr->nz);
 
-		if (nentries > hdr->nzones) {
+		if (nentries > hdr->nz) {
 			XNVME_DEBUG("ERR: invalid nentries");
 			break;
 		}
@@ -285,8 +285,8 @@ xnvme_znd_descr_from_dev(struct xnvme_dev *dev, uint64_t slba, struct xnvme_spec
 	}
 
 	hdr = (void *)dbuf;
-	if (!hdr->nzones) {
-		XNVME_DEBUG("FAILED: hdr->nzones: %" PRIu64, hdr->nzones);
+	if (!hdr->nz) {
+		XNVME_DEBUG("FAILED: hdr->nz: %" PRIu64, hdr->nz);
 		err = -EIO;
 		goto exit;
 	}
@@ -361,8 +361,8 @@ xnvme_znd_descr_from_dev_in_state(struct xnvme_dev *dev, uint32_t state,
 	}
 
 	hdr = (void *)dbuf;
-	if (!hdr->nzones) {
-		XNVME_DEBUG("FAILED: hdr->nzones: %" PRIu64, hdr->nzones);
+	if (!hdr->nz) {
+		XNVME_DEBUG("FAILED: hdr->nz: %" PRIu64, hdr->nz);
 		err = -EIO;
 		goto exit;
 	}
@@ -404,7 +404,7 @@ xnvme_znd_stat(struct xnvme_dev *dev, uint32_t sfield, uint64_t *nzones)
 		goto exit;
 	}
 
-	*nzones = hdr->nzones;
+	*nzones = hdr->nz;
 
 exit:
 	xnvme_buf_free(dev, hdr);

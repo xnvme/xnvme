@@ -2847,18 +2847,17 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_descr) == 64, "Incorrect size")
 /**
  * Report Zones Data Structure header
  *
- * The first 16 bytes of the two Report Zoned data structures
+ * The first 64 bytes of the two Report Zones data structures
  *
- * @see Specification Section 6.2.2.1, figure TBDZMRRZ
- * @see Specification Section 6.2.2.2, figure TBDZMRERZ
+ * @see Zoned Namespace Command Set 1.5, Figure 36 and Figure 37
  * @struct xnvme_spec_znd_report_hdr
  */
 struct xnvme_spec_znd_report_hdr {
 	/**
-	 * Number of zones in namespace when receiving with partial=0
-	 * Number of zones in the data-buffer, when receiving with partial=1
+	 * NZ: Number of Zones; in the namespace when receiving without a partial report, in the
+	 * data buffer when receiving with one
 	 */
-	uint64_t nzones;
+	uint64_t nz;
 	uint8_t rsvd[56];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_report_hdr) == 64, "Incorrect size")

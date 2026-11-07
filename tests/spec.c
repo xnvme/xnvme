@@ -665,6 +665,9 @@ SPEC_AT(struct xnvme_spec_znd_descr, wp, 24, 8)
 XNVME_STATIC_ASSERT(XNVME_SPEC_ZND_DESCR_ZAI_FZRTL == 0x3 && XNVME_SPEC_ZND_DESCR_ZAI_RZRTL == 0xc,
 		    "FZRTL is bits 1:0 and RZRTL bits 3:2 of ZAI")
 
+/* Zoned Namespace Command Set 1.5, Figure 36 */
+SPEC_AT(struct xnvme_spec_znd_report_hdr, nz, 0, 8)
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it

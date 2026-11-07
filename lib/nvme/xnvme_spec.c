@@ -1511,7 +1511,7 @@ xnvme_spec_znd_report_hdr_fpr(FILE *stream, const struct xnvme_spec_znd_report_h
 	}
 
 	wrtn += fprintf(stream, "\n");
-	wrtn += fprintf(stream, "  nzones: %" PRIu64 "\n", hdr->nzones);
+	wrtn += fprintf(stream, "  nz: %" PRIu64 "\n", hdr->nz);
 	wrtn += fprintf(stream, "\n");
 
 	return wrtn;
