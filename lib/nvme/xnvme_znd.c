@@ -446,7 +446,7 @@ xnvme_znd_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, bo
 {
 	uint32_t dbuf_nbytes = 0;
 
-	ctx->cmd.common.opcode = XNVME_SPEC_ZND_OPC_MGMT_SEND;
+	ctx->cmd.common.opc = XNVME_SPEC_ZND_OPC_MGMT_SEND;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.znd.mgmt_send.slba = zslba;
 	ctx->cmd.znd.mgmt_send.cdw13 =
@@ -474,7 +474,7 @@ int
 xnvme_znd_mgmt_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint32_t zra,
 		    uint32_t zrasf, uint8_t partial, void *dbuf, uint32_t dbuf_nbytes)
 {
-	ctx->cmd.common.opcode = XNVME_SPEC_ZND_OPC_MGMT_RECV;
+	ctx->cmd.common.opc = XNVME_SPEC_ZND_OPC_MGMT_RECV;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.znd.mgmt_recv.slba = slba;
 	ctx->cmd.znd.mgmt_recv.ndwords = (dbuf_nbytes >> 2) - 1;
@@ -501,7 +501,7 @@ xnvme_znd_append(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, uint1
 	// TODO: consider returning -EINVAL when mbuf is provided and namespace
 	// have extended-lba in effect
 
-	ctx->cmd.common.opcode = XNVME_SPEC_ZND_OPC_APPEND;
+	ctx->cmd.common.opc = XNVME_SPEC_ZND_OPC_APPEND;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.znd.append.zslba = zslba;
 	ctx->cmd.znd.append.cdw12 = xnvme_bits_set(ctx->cmd.znd.append.cdw12,
@@ -513,7 +513,7 @@ xnvme_znd_append(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, uint1
 int
 xnvme_znd_zrwa_flush(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t lba)
 {
-	ctx->cmd.common.opcode = XNVME_SPEC_ZND_OPC_MGMT_SEND;
+	ctx->cmd.common.opc = XNVME_SPEC_ZND_OPC_MGMT_SEND;
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.znd.mgmt_send.slba = lba;
 	ctx->cmd.znd.mgmt_send.cdw13 = xnvme_bits_set(ctx->cmd.znd.mgmt_send.cdw13,

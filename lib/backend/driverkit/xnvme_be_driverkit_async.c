@@ -176,13 +176,13 @@ xnvme_be_driverkit_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t db
 
 	cmd.queue_id = state->qid_sync;
 
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_NVM_OPC_READ:
 		break;
 
 	case XNVME_SPEC_FS_OPC_READ:
 		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
-		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
+		ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_READ;
 		break;
 
 	case XNVME_SPEC_NVM_OPC_WRITE:
@@ -190,7 +190,7 @@ xnvme_be_driverkit_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t db
 
 	case XNVME_SPEC_FS_OPC_WRITE:
 		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
-		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
+		ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_WRITE;
 		break;
 	}
 

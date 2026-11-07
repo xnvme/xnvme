@@ -250,7 +250,7 @@ xnvme_be_ioring_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 	request_data_file.Handle.Handle = state->async_handle;
 	request_data_buffer.Buffer.Address = dbuf;
 	///< NOTE: opcode-dispatch (io)
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 
 	case XNVME_SPEC_NVM_OPC_READ:
 		ssw = queue->base.dev->geo.ssw;
@@ -285,14 +285,13 @@ xnvme_be_ioring_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes
 
 	default:
 		XNVME_DEBUG("FAILED: unsupported opcode: 0x%" PRIx16 " for async",
-			    ctx->cmd.common.opcode);
+			    ctx->cmd.common.opc);
 		return -ENOSYS;
 	}
 
 	err = (submit_ioring_procadd)(queue->ring_handle, 0, 0, &submitted_entries);
 	if (err < 0) {
-		XNVME_DEBUG("io_uring_submit(0x%" PRIx16 "), err: %ld", ctx->cmd.common.opcode,
-			    err);
+		XNVME_DEBUG("io_uring_submit(0x%" PRIx16 "), err: %ld", ctx->cmd.common.opc, err);
 		return err;
 	}
 

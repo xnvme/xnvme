@@ -260,7 +260,7 @@ _dev_idfy_ns_desc_csi(struct xnvme_dev *dev, union xnvme_spec_idfy *idfy, uint8_
 	}
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	ctx.cmd.common.opcode = XNVME_SPEC_ADM_OPC_IDFY;
+	ctx.cmd.common.opc = XNVME_SPEC_ADM_OPC_IDFY;
 	ctx.cmd.common.nsid = dev->ident.nsid;
 	ctx.cmd.idfy.cns = XNVME_SPEC_IDFY_NS_DESC;
 

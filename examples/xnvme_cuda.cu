@@ -90,7 +90,7 @@ main(int argc, char **argv)
 	for (size_t i = 0; i < qdepth; i++) {
 		xnvme_buf_vtophys(dev, buf + i * lba_nbytes, &phys);
 
-		h_cmds[i].common.opcode = XNVME_SPEC_NVM_OPC_READ;
+		h_cmds[i].common.opc = XNVME_SPEC_NVM_OPC_READ;
 		h_cmds[i].nvm.slba = i;
 		h_cmds[i].common.nsid = nsid;
 		h_cmds[i].common.dptr.prp.prp1 = phys;

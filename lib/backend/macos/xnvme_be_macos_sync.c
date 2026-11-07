@@ -24,7 +24,7 @@ cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf, si
 	struct xnvme_be_posix_state *state = &xnvme_be_state(ctx->dev)->posix_state;
 	ssize_t res;
 
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_NVM_OPC_FLUSH:
 	case XNVME_SPEC_FS_OPC_FLUSH:
 		res = fsync(state->fd);
@@ -65,7 +65,7 @@ cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt, size_t d
 	struct xnvme_be_posix_state *state = &xnvme_be_state(ctx->dev)->posix_state;
 	ssize_t res;
 
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_NVM_OPC_FLUSH:
 	case XNVME_SPEC_FS_OPC_FLUSH:
 		res = fsync(state->fd);

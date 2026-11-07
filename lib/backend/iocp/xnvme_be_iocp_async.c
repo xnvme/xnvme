@@ -208,7 +208,7 @@ _windows_async_iocp_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 
 	req->data = ctx;
 
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_FS_OPC_WRITE:
 		ovl->Offset = ctx->cmd.nvm.slba & 0xFFFFFFFF;
 		ovl->OffsetHigh = (ctx->cmd.nvm.slba >> 32);
@@ -272,7 +272,7 @@ _windows_async_iocp_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opc);
 		return -ENOSYS;
 	}
 

@@ -25,7 +25,7 @@ _sub_idfy(struct xnvme_cli *cli, uint8_t cns, uint16_t cntid, uint8_t nsid, uint
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
 	// Setup command
-	ctx.cmd.common.opcode = XNVME_SPEC_ADM_OPC_IDFY;
+	ctx.cmd.common.opc = XNVME_SPEC_ADM_OPC_IDFY;
 	ctx.cmd.common.nsid = nsid;
 	ctx.cmd.idfy.cns = cns;
 	ctx.cmd.idfy.cntid = cntid;

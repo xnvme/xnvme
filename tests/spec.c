@@ -1075,6 +1075,24 @@ XNVME_STATIC_ASSERT(
 		     XNVME_SPEC_IDFY_CTRLR_SGLS_TSDBDS),
 	"sgls of struct xnvme_spec_idfy_ctrlr")
 
+/* Base 2.4, Figures 92 and 93 */
+SPEC_AT(struct xnvme_spec_cmd_common, opc, 0, 1)
+SPEC_AT(struct xnvme_spec_cmd_common, flags, 1, 1)
+SPEC_AT(struct xnvme_spec_cmd_common, cid, 2, 2)
+SPEC_AT(struct xnvme_spec_cmd_common, nsid, 4, 4)
+SPEC_AT(struct xnvme_spec_cmd_common, cdw2, 8, 4)
+SPEC_AT(struct xnvme_spec_cmd_common, cdw3, 12, 4)
+SPEC_AT(struct xnvme_spec_cmd_common, mptr, 16, 8)
+SPEC_AT(struct xnvme_spec_cmd_common, dptr, 24, 16)
+SPEC_AT(struct xnvme_spec_cmd_common, cdw10, 40, 4)
+SPEC_AT(struct xnvme_spec_cmd_common, cdw11, 44, 4)
+SPEC_AT(struct xnvme_spec_cmd_common, cdw15, 60, 4)
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_common, opc,
+			 XNVME_SPEC_CMD_COMMON_OPC_DTD | XNVME_SPEC_CMD_COMMON_OPC_FN),
+		    "opc of struct xnvme_spec_cmd_common")
+XNVME_STATIC_ASSERT(XNVME_SPEC_CMD_COMMON_OPC_DTD == 0x3 && XNVME_SPEC_CMD_COMMON_OPC_FN == 0xfc,
+		    "DTD is bits 1:0 and FN bits 7:2 of OPC")
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it
@@ -1190,12 +1208,12 @@ sub_sqe_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	sqe.cdw[10] = 0x1;       // Dwords 10 and 11: starting LBA
 	sqe.cdw[11] = 0x2;
 
-	if (sqe.common.opcode != 0x02 ||
+	if (sqe.common.opc != 0x02 ||
 	    xnvme_bits_get(sqe.common.flags, XNVME_SPEC_CMD_COMMON_FLAGS_FUSE) != 0x1 ||
 	    xnvme_bits_get(sqe.common.flags, XNVME_SPEC_CMD_COMMON_FLAGS_PSDT) != 0x1 ||
 	    sqe.common.nsid != 0x12345678 || sqe.nvm.slba != 0x200000001ULL) {
-		xnvme_cli_pinf("FAILED: opcode: %#x, nsid: %#x, slba: %#" PRIx64,
-			       sqe.common.opcode, sqe.common.nsid, (uint64_t)sqe.nvm.slba);
+		xnvme_cli_pinf("FAILED: opcode: %#x, nsid: %#x, slba: %#" PRIx64, sqe.common.opc,
+			       sqe.common.nsid, (uint64_t)sqe.nvm.slba);
 		err = -EINVAL;
 	}
 

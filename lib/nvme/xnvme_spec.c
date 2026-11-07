@@ -889,7 +889,7 @@ xnvme_spec_sqe_fpr(FILE *stream, union xnvme_spec_sqe *cmd, int opts)
 		break;
 
 	case 0x3:
-		wrtn += fprintf(stream, "  opcode: %#02" PRIx16 "\n", cmd->common.opcode);
+		wrtn += fprintf(stream, "  opcode: %#02" PRIx16 "\n", cmd->common.opc);
 		wrtn += fprintf(
 			stream, "  fuse: %#" PRIx64 "\n",
 			xnvme_bits_get(cmd->common.flags, XNVME_SPEC_CMD_COMMON_FLAGS_FUSE));

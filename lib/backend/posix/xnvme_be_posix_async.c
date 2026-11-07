@@ -229,7 +229,7 @@ posix_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mb
 
 	///< Literally convert the NVMe command / sqe memory to an aio-control-block
 	///< NOTE: opcode-dispatch (io)
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
 		aiocb->aio_offset = ctx->cmd.nvm.slba << ssw;
 		err = aio_write(aiocb);
@@ -256,7 +256,7 @@ posix_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mb
 		// err = aio_fsync(_, &aiocb);
 
 	default:
-		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: unsupported opcode: %d", ctx->cmd.common.opc);
 		return -ENOSYS;
 	}
 

@@ -315,7 +315,7 @@ static int
 xnvme_be_linux_block_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			    size_t mbuf_nbytes)
 {
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
 	case XNVME_SPEC_NVM_OPC_READ:
 	case XNVME_SPEC_FS_OPC_WRITE:
@@ -331,7 +331,7 @@ xnvme_be_linux_block_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_n
 		return _lzbd_zone_mgmt_recv(ctx, dbuf, dbuf_nbytes);
 
 	default:
-		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: nosys opcode: %d", ctx->cmd.common.opc);
 		return -ENOSYS;
 	}
 }

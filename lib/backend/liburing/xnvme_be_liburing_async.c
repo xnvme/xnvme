@@ -345,7 +345,7 @@ _cmd_io(struct xnvme_cmd_ctx *ctx, uint64_t addr, size_t dbuf_nbytes, void *mbuf
 	}
 
 	///< NOTE: opcode-dispatch (io)
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
 		ssw = queue->base.dev->geo.ssw;
 	/* fall through */
@@ -374,7 +374,7 @@ _cmd_io(struct xnvme_cmd_ctx *ctx, uint64_t addr, size_t dbuf_nbytes, void *mbuf
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: unsupported opcode: %d for async", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: unsupported opcode: %d for async", ctx->cmd.common.opc);
 		return -ENOSYS;
 	}
 
@@ -413,7 +413,7 @@ _cmd_io(struct xnvme_cmd_ctx *ctx, uint64_t addr, size_t dbuf_nbytes, void *mbuf
 	// Honour the FUA bit of an NVM write; on a raw block device RWF_DSYNC
 	// makes the kernel issue the write with REQ_FUA. Only for the NVM opcode:
 	// 'fua' is an NVMe command-field, it does not exist for the FS opcodes
-	sqe->rw_flags = (ctx->cmd.common.opcode == XNVME_SPEC_NVM_OPC_WRITE &&
+	sqe->rw_flags = (ctx->cmd.common.opc == XNVME_SPEC_NVM_OPC_WRITE &&
 			 xnvme_bits_get(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_FUA))
 				? RWF_DSYNC
 				: 0;
@@ -428,7 +428,7 @@ submit:
 
 	err = io_uring_submit(&queue->ring);
 	if (err < 0) {
-		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opcode, err);
+		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opc, err);
 		return err;
 	}
 
@@ -479,8 +479,8 @@ xnvme_be_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t 
 	// IORING_SETUP_IOPOLL it would be accepted at submission-time and only fail
 	// with -EINVAL at completion-time. Reject it up-front instead, and do so
 	// before acquiring an sqe, such that none is left dangling in the ring
-	if (queue->poll_io && (ctx->cmd.common.opcode == XNVME_SPEC_NVM_OPC_FLUSH ||
-			       ctx->cmd.common.opcode == XNVME_SPEC_FS_OPC_FLUSH)) {
+	if (queue->poll_io && (ctx->cmd.common.opc == XNVME_SPEC_NVM_OPC_FLUSH ||
+			       ctx->cmd.common.opc == XNVME_SPEC_FS_OPC_FLUSH)) {
 		XNVME_DEBUG("FAILED: FLUSH is not supported on an IOPOLL queue");
 		return -ENOSYS;
 	}
@@ -489,7 +489,7 @@ xnvme_be_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t 
 	// an sqe; io_uring_get_sqe() advances the submission-queue tail, so an
 	// sqe acquired and then abandoned would go out, carrying stale content,
 	// with the next io_uring_submit()
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
 		ssw = queue->base.dev->geo.ssw;
 	/* fall through */
@@ -510,7 +510,7 @@ xnvme_be_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t 
 		break;
 
 	default:
-		XNVME_DEBUG("FAILED: unsupported opcode: %d for async", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: unsupported opcode: %d for async", ctx->cmd.common.opc);
 		return -ENOSYS;
 	}
 
@@ -526,7 +526,7 @@ xnvme_be_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t 
 	switch (opcode) {
 	case IORING_OP_WRITEV:
 		io_uring_prep_writev(sqe, fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
-		if (ctx->cmd.common.opcode == XNVME_SPEC_NVM_OPC_WRITE &&
+		if (ctx->cmd.common.opc == XNVME_SPEC_NVM_OPC_WRITE &&
 		    xnvme_bits_get(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_FUA)) {
 			// Honour the FUA bit of an NVM write; on a raw block device
 			// RWF_DSYNC makes the kernel issue the write with REQ_FUA.
@@ -560,7 +560,7 @@ xnvme_be_liburing_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t 
 
 	err = io_uring_submit(&queue->ring);
 	if (err < 0) {
-		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opcode, err);
+		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opc, err);
 		return err;
 	}
 

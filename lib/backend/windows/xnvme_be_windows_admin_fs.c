@@ -177,7 +177,7 @@ xnvme_be_windows_fs_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf
 			      void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
 {
 	///< NOTE: opcode-dispatch (admin)
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_ADM_OPC_IDFY:
 		return _idfy(ctx, dbuf, dbuf_nbytes);
 
@@ -189,7 +189,7 @@ xnvme_be_windows_fs_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf
 		return -ENOSYS;
 
 	default:
-		XNVME_DEBUG("FAILED: ENOSYS opcode: %hu", ctx->cmd.common.opcode);
+		XNVME_DEBUG("FAILED: ENOSYS opcode: %hu", ctx->cmd.common.opc);
 		return -ENOSYS;
 	}
 }

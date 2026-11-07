@@ -166,7 +166,7 @@ submit_io(struct xnvmeperf_job *job, struct xnvme_cmd_ctx *ctx)
 		ctx->async.cb_arg = &job->brefs[slot];
 	}
 
-	ctx->cmd.common.opcode = job->opcode;
+	ctx->cmd.common.opc = job->opcode;
 	ctx->cmd.common.nsid = job->nsid;
 	ctx->cmd.nvm.cdw12 =
 		xnvme_bits_set(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB, job->nlb - 1);
