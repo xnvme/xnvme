@@ -162,12 +162,12 @@ _lzbd_ioctl_zblk_to_descr(struct xnvme_dev *dev, struct blk_zone_report *lzbd_rp
 
 	// When the type is not defined in the NVMe-spec, then treat
 	// them as offline
-	zdescr->zt =
-		xnvme_bits_set(zdescr->zt, XNVME_SPEC_ZND_DESCR_ZT_ZT, XNVME_SPEC_ZND_TYPE_SEQWR);
-	zdescr->zs = xnvme_bits_set(zdescr->zs, XNVME_SPEC_ZND_DESCR_ZS_ZS,
-				    (blkz->type == XNVME_SPEC_ZND_TYPE_SEQWR)
-					    ? blkz->cond
-					    : XNVME_SPEC_ZND_STATE_OFFLINE);
+	zdescr->ztattr = xnvme_bits_set(zdescr->ztattr, XNVME_SPEC_ZND_DESCR_ZTATTR_ZT,
+					XNVME_SPEC_ZND_TYPE_SEQWR);
+	zdescr->zsattr = xnvme_bits_set(zdescr->zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS,
+					(blkz->type == XNVME_SPEC_ZND_TYPE_SEQWR)
+						? blkz->cond
+						: XNVME_SPEC_ZND_STATE_OFFLINE);
 
 	return 0;
 }

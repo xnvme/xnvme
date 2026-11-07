@@ -120,10 +120,11 @@ _eopen_with_zrwa(struct xnvme_cli *cli, bool zrwaa)
 		xnvme_cli_pinf("INVALID: ZRWAV of after->za: %" PRIu64 " != zrwav: %d",
 			       xnvme_bits_get(after.za, XNVME_SPEC_ZND_DESCR_ZA_ZRWAV), zrwaa);
 	}
-	if (xnvme_bits_get(after.zs, XNVME_SPEC_ZND_DESCR_ZS_ZS) != XNVME_SPEC_ZND_STATE_EOPEN) {
+	if (xnvme_bits_get(after.zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS) !=
+	    XNVME_SPEC_ZND_STATE_EOPEN) {
 		err = -EIO;
-		xnvme_cli_pinf("INVALID: after->zs: %" PRIu64,
-			       xnvme_bits_get(after.zs, XNVME_SPEC_ZND_DESCR_ZS_ZS));
+		xnvme_cli_pinf("INVALID: after->zsattr: %" PRIu64,
+			       xnvme_bits_get(after.zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS));
 	}
 
 	if (!err) {

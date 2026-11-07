@@ -70,9 +70,9 @@ test_open_zdptr(struct xnvme_cli *cli)
 			continue;
 		}
 
-		if ((xnvme_bits_get(descr->zs, XNVME_SPEC_ZND_DESCR_ZS_ZS) ==
+		if ((xnvme_bits_get(descr->zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS) ==
 		     XNVME_SPEC_ZND_STATE_EMPTY) &&
-		    (xnvme_bits_get(descr->zt, XNVME_SPEC_ZND_DESCR_ZT_ZT) ==
+		    (xnvme_bits_get(descr->ztattr, XNVME_SPEC_ZND_DESCR_ZTATTR_ZT) ==
 		     XNVME_SPEC_ZND_TYPE_SEQWR) &&
 		    (descr->zcap)) {
 			zslba = descr->zslba;
@@ -165,9 +165,10 @@ test_open_zdptr(struct xnvme_cli *cli)
 		}
 
 		if (XNVME_SPEC_ZND_STATE_EOPEN !=
-		    xnvme_bits_get(descr->zs, XNVME_SPEC_ZND_DESCR_ZS_ZS)) {
-			xnvme_cli_pinf("ERR: invalid zc: 0x%" PRIx64,
-				       xnvme_bits_get(descr->zs, XNVME_SPEC_ZND_DESCR_ZS_ZS));
+		    xnvme_bits_get(descr->zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS)) {
+			xnvme_cli_pinf(
+				"ERR: invalid zc: 0x%" PRIx64,
+				xnvme_bits_get(descr->zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS));
 			err = -EIO;
 			goto exit;
 		}

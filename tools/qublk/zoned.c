@@ -264,12 +264,12 @@ report_zones_complete(struct qublk_queue *q, struct qublk_io *io)
 		zone.start = descr.zslba << shift;
 		zone.len = dev->zone_sectors;
 		zone.capacity = descr.zcap << shift;
-		zone.wp = (xnvme_bits_get(descr.zs, XNVME_SPEC_ZND_DESCR_ZS_ZS) ==
+		zone.wp = (xnvme_bits_get(descr.zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS) ==
 			   XNVME_SPEC_ZND_STATE_FULL)
 				  ? zone.start + zone.len
 				  : descr.wp << shift;
-		zone.type = xnvme_bits_get(descr.zt, XNVME_SPEC_ZND_DESCR_ZT_ZT);
-		zone.cond = xnvme_bits_get(descr.zs, XNVME_SPEC_ZND_DESCR_ZS_ZS);
+		zone.type = xnvme_bits_get(descr.ztattr, XNVME_SPEC_ZND_DESCR_ZTATTR_ZT);
+		zone.cond = xnvme_bits_get(descr.zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS);
 
 		memcpy(buf + i * sizeof(zone), &zone, sizeof(zone));
 	}
