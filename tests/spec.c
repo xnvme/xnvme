@@ -814,6 +814,26 @@ SPEC_AT(struct xnvme_pif_g64, guard, 0, 8)
 SPEC_AT(struct xnvme_pif_g64, app_tag, 8, 2)
 SPEC_AT(struct xnvme_pif_g64, stor_ref_space, 10, 6)
 
+/* Base 2.4, Figure 340 */
+SPEC_AT(struct xnvme_spec_power_state, actp, 20, 2)
+SPEC_AT(struct xnvme_spec_power_state, apw_aps, 22, 1)
+SPEC_AT(struct xnvme_spec_power_state, epfrt, 23, 1)
+SPEC_AT(struct xnvme_spec_power_state, fqvt, 24, 1)
+SPEC_AT(struct xnvme_spec_power_state, epfvt, 25, 1)
+SPEC_AT(struct xnvme_spec_power_state, epfrts_fqvts, 26, 1)
+SPEC_AT(struct xnvme_spec_power_state, epfvts, 27, 1)
+SPEC_AT(struct xnvme_spec_power_state, mbw, 28, 1)
+SPEC_AT(struct xnvme_spec_power_state, mbws, 29, 1)
+SPEC_AT(struct xnvme_spec_power_state, miiell, 30, 2)
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_power_state, epfrts_fqvts,
+			 XNVME_SPEC_POWER_STATE_EPFRTS_FQVTS_EPFRTS |
+				 XNVME_SPEC_POWER_STATE_EPFRTS_FQVTS_FQVTS),
+		    "epfrts_fqvts of struct xnvme_spec_power_state")
+XNVME_STATIC_ASSERT(XNVME_SPEC_POWER_STATE_EPFRTS_FQVTS_FQVTS == 0xf0 &&
+			    XNVME_SPEC_POWER_STATE_EPFVTS_EPFVTS == 0xf &&
+			    XNVME_SPEC_POWER_STATE_MBWS_MBWS == 0x7,
+		    "FQVTS is bits 215:212, EPFVTS bits 219:216 and MBWS bits 234:232")
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it

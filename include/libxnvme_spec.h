@@ -862,55 +862,82 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_elbaf) == 4, "Incorrect size")
 /**
  * Power State Descriptor
  *
+ * @see Base 2.4, Figure 340
  * @struct xnvme_spec_power_state
  */
 struct xnvme_spec_power_state {
-	uint16_t mp; ///< maximum power, bits 15:00
+	uint16_t mp; ///< MP: Maximum Power, bits 15:00
 
-	uint8_t reserved1;
+	uint8_t rsvd2;
 
-	uint8_t mxps_nops; ///< bits 31:24, see XNVME_SPEC_POWER_STATE_MXPS_NOPS_*
+	uint8_t mxps_nops; ///< Bits 31:24, see XNVME_SPEC_POWER_STATE_MXPS_NOPS_*
 
-	uint32_t enlat; ///< entry latency in microseconds, bits 63:32
-	uint32_t exlat; ///< exit latency in microseconds, bits 95:64
+	uint32_t enlat; ///< ENLAT: Entry Latency, in microseconds, bits 63:32
+	uint32_t exlat; ///< EXLAT: Exit Latency, in microseconds, bits 95:64
 
-	uint8_t rrt; ///< relative read throughput, see XNVME_SPEC_POWER_STATE_RRT_*
-	uint8_t rrl; ///< relative read latency, see XNVME_SPEC_POWER_STATE_RRL_*
-	uint8_t rwt; ///< relative write throughput, see XNVME_SPEC_POWER_STATE_RWT_*
-	uint8_t rwl; ///< relative write latency, see XNVME_SPEC_POWER_STATE_RWL_*
+	uint8_t rrt; ///< RRT: Relative Read Throughput, see XNVME_SPEC_POWER_STATE_RRT_*
+	uint8_t rrl; ///< RRL: Relative Read Latency, see XNVME_SPEC_POWER_STATE_RRL_*
+	uint8_t rwt; ///< RWT: Relative Write Throughput, see XNVME_SPEC_POWER_STATE_RWT_*
+	uint8_t rwl; ///< RWL: Relative Write Latency, see XNVME_SPEC_POWER_STATE_RWL_*
 
-	uint16_t idlp; ///< idle power, bits 143:128
+	uint16_t idlp; ///< IDLP: Idle Power, bits 143:128
 
-	uint8_t ips; ///< idle power scale, see XNVME_SPEC_POWER_STATE_IPS_*
+	uint8_t ips; ///< IPS: Idle Power Scale, see XNVME_SPEC_POWER_STATE_IPS_*
 
-	uint8_t reserved8;
+	uint8_t rsvd19;
 
-	uint16_t actp; ///< active power, bits 175:160
+	uint16_t actp; ///< ACTP: Active Power, bits 175:160
 
-	uint8_t apw_aps; ///< bits 183:176, see XNVME_SPEC_POWER_STATE_APW_APS_*
+	uint8_t apw_aps; ///< Bits 183:176, see XNVME_SPEC_POWER_STATE_APW_APS_*
 
-	uint8_t reserved10[9];
+	uint8_t epfrt; ///< EPFRT: Emergency Power Fail Recovery Time, bits 191:184
+	uint8_t fqvt;  ///< FQVT: Forced Quiescence Vault Time, bits 199:192
+	uint8_t epfvt; ///< EPFVT: Emergency Power Fail Vault Time, bits 207:200
+
+	uint8_t epfrts_fqvts; ///< Bits 215:208, see XNVME_SPEC_POWER_STATE_EPFRTS_FQVTS_*
+	uint8_t epfvts;       ///< Bits 223:216, see XNVME_SPEC_POWER_STATE_EPFVTS_*
+
+	uint8_t mbw;  ///< MBW: Max Bandwidth, bits 231:224
+	uint8_t mbws; ///< Bits 239:232, see XNVME_SPEC_POWER_STATE_MBWS_*
+
+	uint16_t miiell; ///< MIIELL: Minimum Idle I/O Exit Latency Limit, bits 255:240
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_power_state) == 32, "Incorrect size")
 
-/** Maximum power scale; bit 0 of 'mxps_nops' */
+/** Max Power Scale; bit 0 of 'mxps_nops', bit 24 of the descriptor, MXPS (Base 2.4, Figure 340) */
 #define XNVME_SPEC_POWER_STATE_MXPS_NOPS_MXPS 0x1
-/** Non-operational state; bit 1 of 'mxps_nops' */
+/** Non-Operational State; bit 1 of 'mxps_nops', bit 25 of the descriptor, NOPS (Base 2.4, Figure
+ * 340) */
 #define XNVME_SPEC_POWER_STATE_MXPS_NOPS_NOPS 0x2
-/** Relative read throughput; bits 4:0 of 'rrt' */
+/** Relative Read Throughput; bits 4:0 of 'rrt', RRT (Base 2.4, Figure 340) */
 #define XNVME_SPEC_POWER_STATE_RRT_RRT 0x1f
-/** Relative read latency; bits 4:0 of 'rrl' */
+/** Relative Read Latency; bits 4:0 of 'rrl', RRL (Base 2.4, Figure 340) */
 #define XNVME_SPEC_POWER_STATE_RRL_RRL 0x1f
-/** Relative write throughput; bits 4:0 of 'rwt' */
+/** Relative Write Throughput; bits 4:0 of 'rwt', RWT (Base 2.4, Figure 340) */
 #define XNVME_SPEC_POWER_STATE_RWT_RWT 0x1f
-/** Relative write latency; bits 4:0 of 'rwl' */
+/** Relative Write Latency; bits 4:0 of 'rwl', RWL (Base 2.4, Figure 340) */
 #define XNVME_SPEC_POWER_STATE_RWL_RWL 0x1f
-/** Idle power scale; bits 7:6 of 'ips' */
+/** Idle Power Scale; bits 7:6 of 'ips', bits 151:150 of the descriptor, IPS (Base 2.4, Figure 340)
+ */
 #define XNVME_SPEC_POWER_STATE_IPS_IPS 0xc0
-/** Active power workload; bits 2:0 of 'apw_aps' */
+/** Active Power Workload; bits 2:0 of 'apw_aps', bits 178:176 of the descriptor, APW (Base 2.4,
+ * Figure 340) */
 #define XNVME_SPEC_POWER_STATE_APW_APS_APW 0x7
-/** Active power scale; bits 7:6 of 'apw_aps' */
+/** Active Power Scale; bits 7:6 of 'apw_aps', bits 183:182 of the descriptor, APS (Base 2.4,
+ * Figure 340) */
 #define XNVME_SPEC_POWER_STATE_APW_APS_APS 0xc0
+/** Emergency Power Fail Recovery Time Scale; bits 3:0 of 'epfrts_fqvts', bits 211:208 of the
+ * descriptor, EPFRTS (Base 2.4, Figure 340) */
+#define XNVME_SPEC_POWER_STATE_EPFRTS_FQVTS_EPFRTS 0xf
+/** Forced Quiescence Vault Time Scale; bits 7:4 of 'epfrts_fqvts', bits 215:212 of the
+ * descriptor, FQVTS (Base 2.4, Figure 340) */
+#define XNVME_SPEC_POWER_STATE_EPFRTS_FQVTS_FQVTS 0xf0
+/** Emergency Power Fail Vault Time Scale; bits 3:0 of 'epfvts', bits 219:216 of the descriptor,
+ * EPFVTS (Base 2.4, Figure 340) */
+#define XNVME_SPEC_POWER_STATE_EPFVTS_EPFVTS 0xf
+/** Max Bandwidth Scale; bits 2:0 of 'mbws', bits 234:232 of the descriptor, MBWS (Base 2.4, Figure
+ * 340) */
+#define XNVME_SPEC_POWER_STATE_MBWS_MBWS 0x7
 
 /**
  * NVMe over Fabrics attributes of the Identify Controller data, bytes 1792-2047
