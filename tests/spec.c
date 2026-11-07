@@ -113,6 +113,9 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_nvm, lbatm) == 62,
 		    "lbatm of struct xnvme_spec_cmd_nvm")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_nvm_write_zeroes, cdw12,
 			 XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_NLB |
+				 XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_CETYPE |
+				 XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_DTYPE |
+				 XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_NSZ |
 				 XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_STC |
 				 XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_DEAC |
 				 XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_PRINFO |
@@ -121,8 +124,12 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_nvm_write_zeroes, cdw12,
 		    "cdw12 of struct xnvme_spec_nvm_write_zeroes")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_write_zeroes, cdw12) == 48,
 		    "cdw12 of struct xnvme_spec_nvm_write_zeroes")
-XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_write_zeroes, ilbrt) == 56,
-		    "ilbrt of struct xnvme_spec_nvm_write_zeroes")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_write_zeroes, lbtl) == 56,
+		    "lbtl of struct xnvme_spec_nvm_write_zeroes")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_nvm_write_zeroes, cdw13,
+			 XNVME_SPEC_NVM_WRITE_ZEROES_CDW13_CEV |
+				 XNVME_SPEC_NVM_WRITE_ZEROES_CDW13_DSPEC),
+		    "cdw13 of struct xnvme_spec_nvm_write_zeroes")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_write_zeroes, lbatm) == 62,
 		    "lbatm of struct xnvme_spec_nvm_write_zeroes")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_nvm_compare, cdw12,
@@ -680,6 +687,17 @@ SPEC_AT(struct xnvme_spec_cmd_nvm, cdw13, 52, 4)
 SPEC_AT(struct xnvme_spec_cmd_nvm, lbtl, 56, 4)
 SPEC_AT(struct xnvme_spec_cmd_nvm, lbat, 60, 2)
 SPEC_AT(struct xnvme_spec_cmd_nvm, lbatm, 62, 2)
+
+/* NVM Command Set 1.3, Figures 81 to 87 */
+SPEC_AT(struct xnvme_spec_nvm_write_zeroes, cdw02_03, 8, 8)
+SPEC_AT(struct xnvme_spec_nvm_write_zeroes, slba, 40, 8)
+SPEC_AT(struct xnvme_spec_nvm_write_zeroes, cdw13, 52, 4)
+SPEC_AT(struct xnvme_spec_nvm_write_zeroes, lbtl, 56, 4)
+SPEC_AT(struct xnvme_spec_nvm_write_zeroes, lbat, 60, 2)
+SPEC_AT(struct xnvme_spec_nvm_write_zeroes, lbatm, 62, 2)
+XNVME_STATIC_ASSERT(XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_DTYPE == 0x700000 &&
+			    XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_NSZ == 0x800000,
+		    "DTYPE is bits 22:20 and NSZ bit 23 of Write Zeroes dword 12")
 
 struct offset_case {
 	const char *name;
