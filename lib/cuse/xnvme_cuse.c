@@ -123,13 +123,12 @@ cuse_ctx_from_cmd(struct xnvme_dev *dev, const struct nvme_passthru_cmd64 *cmd)
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-	ctx.cmd.common.opcode = cmd->opcode;
+	ctx.cmd.common.opc = cmd->opcode;
 	ctx.cmd.common.nsid = cmd->nsid;
-	ctx.cmd.common.cdw02 = cmd->cdw2;
-	ctx.cmd.common.cdw03 = cmd->cdw3;
-	ctx.cmd.common.ndt =
-		cmd->cdw10; // cdw10 and cdw11 are 'ndt' and 'ndm' in the common layout
-	ctx.cmd.common.ndm = cmd->cdw11;
+	ctx.cmd.common.cdw2 = cmd->cdw2;
+	ctx.cmd.common.cdw3 = cmd->cdw3;
+	ctx.cmd.common.cdw10 = cmd->cdw10;
+	ctx.cmd.common.cdw11 = cmd->cdw11;
 	ctx.cmd.common.cdw12 = cmd->cdw12;
 	ctx.cmd.common.cdw13 = cmd->cdw13;
 	ctx.cmd.common.cdw14 = cmd->cdw14;

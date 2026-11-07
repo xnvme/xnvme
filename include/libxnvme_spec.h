@@ -1996,45 +1996,43 @@ XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_dptr) == 16, "Incorrect size")
 /**
  * NVMe Command Accessor for common use of the 64byte NVMe command
  *
- * @see Specification section 4.3, figure 2
- * @see Specification section 4.3, figure 3
+ * Vendor specific commands name dwords 10 and 11 NDT and NDM (Base 2.4, Figure 94).
  *
+ * @see Base 2.4, Figure 92 and Figure 93
  * @struct xnvme_spec_cmd_common
  */
 struct xnvme_spec_cmd_common {
 	/* cdw 00 */
-	uint8_t opcode; ///< OPC: Command Opcode
-	uint8_t flags;  ///< FUSE and PSDT, see XNVME_SPEC_CMD_COMMON_FLAGS_*
-	uint16_t cid;   ///< CID: Command Identifier
+	uint8_t opc;   ///< OPC: Opcode, see XNVME_SPEC_CMD_COMMON_OPC_*
+	uint8_t flags; ///< Bits 15:08 of dword 0, FUSE and PSDT, see XNVME_SPEC_CMD_COMMON_FLAGS_*
+	uint16_t cid;  ///< CID: Command Identifier
 
-	/* cdw 01 */
-	uint32_t nsid; ///< NSID: Namespace identifier
+	uint32_t nsid; ///< NSID: Namespace Identifier
 
-	uint32_t cdw02;
-	uint32_t cdw03;
+	uint32_t cdw2; ///< CDW2: Command Dword 2
+	uint32_t cdw3; ///< CDW3: Command Dword 3
 
-	/* cdw 04-05 */
-	uint64_t mptr; ///< MPTR -- metadata pointer
+	uint64_t mptr; ///< MPTR: Metadata Pointer
 
-	/* cdw 06-09: */
 	union xnvme_spec_dptr dptr; ///< DPTR: Data Pointer
 
-	/* cdw 10 */
-	uint32_t ndt; ///< NDT: Number of dwords in Data Transfer
-
-	/* cdw 11 */
-	uint32_t ndm; ///< NDM: Number of dwords in Meta Transfer
-
-	uint32_t cdw12;
-	uint32_t cdw13;
-	uint32_t cdw14;
-	uint32_t cdw15;
+	uint32_t cdw10; ///< CDW10: Command Dword 10
+	uint32_t cdw11; ///< CDW11: Command Dword 11
+	uint32_t cdw12; ///< CDW12: Command Dword 12
+	uint32_t cdw13; ///< CDW13: Command Dword 13
+	uint32_t cdw14; ///< CDW14: Command Dword 14
+	uint32_t cdw15; ///< CDW15: Command Dword 15
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_common) == 64, "Incorrect size")
 
-/** Fused Operation; bits 1:0 of 'flags', bits 9:8 of dword 0 */
+/** Data Transfer Direction; bits 1:0 of 'opc', DTD (Base 2.4, Figure 92) */
+#define XNVME_SPEC_CMD_COMMON_OPC_DTD 0x3
+/** Function; bits 7:2 of 'opc', FN (Base 2.4, Figure 92) */
+#define XNVME_SPEC_CMD_COMMON_OPC_FN 0xfc
+/** Fused Operation; bits 1:0 of 'flags', bits 09:08 of dword 0, FUSE (Base 2.4, Figure 92) */
 #define XNVME_SPEC_CMD_COMMON_FLAGS_FUSE 0x3
-/** PRP or SGL for Data Transfer; bits 7:6 of 'flags', bits 15:14 of dword 0 */
+/** PRP or SGL for Data Transfer; bits 7:6 of 'flags', bits 15:14 of dword 0, PSDT (Base 2.4,
+ * Figure 92) */
 #define XNVME_SPEC_CMD_COMMON_FLAGS_PSDT 0xc0
 
 /**

@@ -167,7 +167,7 @@ xnvme_be_liburing_ucmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nby
 
 	err = io_uring_submit(&queue->ring);
 	if (err < 0) {
-		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opcode, err);
+		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opc, err);
 		return err;
 	}
 
@@ -223,7 +223,7 @@ xnvme_be_liburing_ucmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t
 
 	err = io_uring_submit(&queue->ring);
 	if (err < 0) {
-		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opcode, err);
+		XNVME_DEBUG("io_uring_submit(%d), err: %d", ctx->cmd.common.opc, err);
 		return err;
 	}
 

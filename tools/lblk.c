@@ -696,7 +696,7 @@ sub_write_read_pi(struct xnvme_cli *cli)
 		case XNVME_SPEC_NVM_NS_64B_GUARD:
 			if (prchk & XNVME_PI_FLAGS_REFTAG_CHECK) {
 				ctx.cmd.nvm.lbtl = (uint32_t)slba;
-				ctx.cmd.common.cdw03 = ((slba >> 32) & 0xffff);
+				ctx.cmd.common.cdw3 = ((slba >> 32) & 0xffff);
 			}
 			break;
 		default:

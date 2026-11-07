@@ -33,7 +33,7 @@ xnvme_be_posix_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nb
 		goto exit;
 	}
 
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
 		res = pwrite(state->fd, dbuf, dbuf_nbytes, ctx->cmd.nvm.slba << ssw);
 		sc = res != (ssize_t)dbuf_nbytes ? errno : 0;
@@ -66,7 +66,7 @@ exit:
 	ctx->cpl.result = res;
 	if (sc) {
 		XNVME_DEBUG("FAILED: OPC(%d){pread,pwrite,fsync}(), errno: %d",
-			    ctx->cmd.common.opcode, sc);
+			    ctx->cmd.common.opc, sc);
 		ctx->cpl.result = 0;
 		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, sc);
 		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
@@ -92,7 +92,7 @@ xnvme_be_posix_sync_cmd_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_
 		goto exit;
 	}
 
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_NVM_OPC_WRITE:
 		res = pwritev(state->fd, dvec, dvec_cnt, ctx->cmd.nvm.slba << ssw);
 		sc = res != (ssize_t)dvec_nbytes ? errno : 0;
@@ -128,7 +128,7 @@ exit:
 	ctx->cpl.result = res;
 	if (sc) {
 		XNVME_DEBUG("FAILED: OPC(%d){pread,pwrite,fsync}(), errno: %d",
-			    ctx->cmd.common.opcode, sc);
+			    ctx->cmd.common.opc, sc);
 		ctx->cpl.result = 0;
 		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, sc);
 		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,

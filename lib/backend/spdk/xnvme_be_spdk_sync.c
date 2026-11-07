@@ -32,14 +32,14 @@ submit_ioc(struct spdk_nvme_ctrlr *ctrlr, struct spdk_nvme_qpair *qpair, struct 
 	xnvme_spec_sqe_pr(cmd, XNVME_PR_DEF);
 #endif
 
-	switch (ctx->cmd.common.opcode) {
+	switch (ctx->cmd.common.opc) {
 	case XNVME_SPEC_FS_OPC_READ:
-		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
+		ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_READ;
 		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
 		break;
 
 	case XNVME_SPEC_FS_OPC_WRITE:
-		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
+		ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_WRITE;
 		ctx->cmd.nvm.slba = ctx->cmd.nvm.slba >> ctx->dev->geo.ssw;
 		break;
 	}

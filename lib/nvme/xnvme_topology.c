@@ -15,7 +15,7 @@ xnvme_subsystem_reset(struct xnvme_dev *dev)
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-	ctx.cmd.common.opcode = XNVME_SPEC_PSEUDO_OPC_SUBSYSTEM_RESET;
+	ctx.cmd.common.opc = XNVME_SPEC_PSEUDO_OPC_SUBSYSTEM_RESET;
 
 	err = xnvme_cmd_pass_pseudo(&ctx, NULL, 0x0, NULL, 0x0);
 	if (err) {
@@ -39,7 +39,7 @@ xnvme_controller_reset(struct xnvme_dev *dev)
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-	ctx.cmd.common.opcode = XNVME_SPEC_PSEUDO_OPC_CONTROLLER_RESET;
+	ctx.cmd.common.opc = XNVME_SPEC_PSEUDO_OPC_CONTROLLER_RESET;
 
 	err = xnvme_cmd_pass_pseudo(&ctx, NULL, 0x0, NULL, 0x0);
 	if (err) {
@@ -63,7 +63,7 @@ xnvme_namespace_rescan(struct xnvme_dev *dev)
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-	ctx.cmd.common.opcode = XNVME_SPEC_PSEUDO_OPC_NAMESPACE_RESCAN;
+	ctx.cmd.common.opc = XNVME_SPEC_PSEUDO_OPC_NAMESPACE_RESCAN;
 
 	err = xnvme_cmd_pass_pseudo(&ctx, NULL, 0x0, NULL, 0x0);
 	if (err) {
@@ -89,7 +89,7 @@ xnvme_controller_get_registers(struct xnvme_dev *dev, struct xnvme_spec_ctrlr_ba
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
 
-	ctx.cmd.common.opcode = XNVME_SPEC_PSEUDO_OPC_SHOW_REGS;
+	ctx.cmd.common.opc = XNVME_SPEC_PSEUDO_OPC_SHOW_REGS;
 
 	err = xnvme_cmd_pass_pseudo(&ctx, bar, sizeof(*bar), NULL, 0x0);
 	if (err) {
