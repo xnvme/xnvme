@@ -1940,6 +1940,7 @@ union xnvme_spec_feat {
 	uint32_t fdp_mode;       ///< Flexible Data Placement, Set Features dword 12, see
 				 ///< XNVME_SPEC_FEAT_FDP_MODE_*
 	uint32_t media_feedback; ///< Media Feedback, see XNVME_SPEC_FEAT_MEDIA_FEEDBACK_*
+	uint32_t fdp_events;     ///< FDP Events, see XNVME_SPEC_FEAT_FDP_EVENTS_*
 	uint32_t val;            ///< The dword whole, for a feature without a view
 };
 XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_feat) == 4, "Incorrect size")
@@ -1967,6 +1968,9 @@ XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_feat) == 4, "Incorrect size")
 /** Flexible Data Placement Configuration Index; bits 15:8 of 'fdp_mode', FDPCIDX (Base 2.4,
  * Figure 500) */
 #define XNVME_SPEC_FEAT_FDP_MODE_FDPCIDX 0xff00
+
+/** Number of FDP Event Types; bits 7:0 of 'fdp_events', NOET (Base 2.4, Figure 501) */
+#define XNVME_SPEC_FEAT_FDP_EVENTS_NOET 0xff
 
 /** High ECC status; bit 0 of 'media_feedback', defined in none of the NVMe specifications cited
  * here */

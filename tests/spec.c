@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 #include <libxnvme.h>
 
@@ -2040,6 +2041,53 @@ sub_pif_reftag(struct xnvme_cli *XNVME_UNUSED(cli))
 	return err;
 }
 
+static int
+printed(const char *what, const char *text, size_t len, const char *expected)
+{
+	if (!text || !strstr(text, expected)) {
+		xnvme_cli_pinf("FAILED: %s: no '%s' in '%.*s'", what, expected, (int)len,
+			       text ? text : "");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int
+sub_printers(struct xnvme_cli *XNVME_UNUSED(cli))
+{
+	union xnvme_spec_feat feat = {.val = 0};
+	union xnvme_spec_sqe sqe = {0};
+	char *text = NULL;
+	size_t len = 0;
+	FILE *stream;
+	int err;
+
+	stream = open_memstream(&text, &len);
+	if (!stream) {
+		return -errno;
+	}
+	feat.fdp_events = xnvme_bits_set(0, XNVME_SPEC_FEAT_FDP_EVENTS_NOET, 3);
+	feat.fdp_events |= 0x1200; // Reserved bits, which NOET does not print
+	xnvme_spec_feat_fpr(stream, XNVME_SPEC_FEAT_FDP_EVENTS, &feat, XNVME_PR_DEF);
+	feat.fdp_mode = xnvme_bits_set(0, XNVME_SPEC_FEAT_FDP_MODE_FDPCIDX, 2);
+	xnvme_spec_feat_fpr(stream, XNVME_SPEC_FEAT_FDP_MODE, &feat, XNVME_PR_DEF);
+	sqe.common.opc = 0x2;
+	sqe.cdw[2] = 0x22;
+	sqe.cdw[3] = 0x33;
+	xnvme_spec_sqe_fpr(stream, &sqe, 0x3);
+	fclose(stream);
+
+	err = printed("fdp events", text, len, "feat: { noet: 3 }\n");
+	err = err ? err : printed("fdp mode", text, len, "feat: { fdpe: 0, fdpcidx: 2 }\n");
+	err = err ? err : printed("sqe", text, len, "  opc: 0x2\n");
+	err = err ? err : printed("sqe", text, len, "  cdw2: 0x22\n");
+	err = err ? err : printed("sqe", text, len, "  cdw3: 0x33\n");
+	free(text);
+
+	return err;
+}
+
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"idfy-offsets",
@@ -2109,6 +2157,15 @@ static struct xnvme_cli_sub g_subs[] = {
 		"Write and read the reference tag of the protection information formats",
 		"Write and read the reference tag of the protection information formats",
 		sub_pif_reftag,
+		{
+			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
+		},
+	},
+	{
+		"printers",
+		"Print fields of commands and features by their spec names",
+		"Print fields of commands and features by their spec names",
+		sub_printers,
 		{
 			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
 		},
