@@ -553,7 +553,7 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_nvm_idfy_ns, pic,
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_idfy_ns, pic) == 8,
 		    "pic of struct xnvme_spec_nvm_idfy_ns")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_idfy_ns, zoc,
-			 XNVME_SPEC_ZND_IDFY_NS_ZOC_VZCAP | XNVME_SPEC_ZND_IDFY_NS_ZOC_ZAE),
+			 XNVME_SPEC_ZND_IDFY_NS_ZOC_VZC | XNVME_SPEC_ZND_IDFY_NS_ZOC_ZAE),
 		    "zoc of struct xnvme_spec_znd_idfy_ns")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_idfy_ns, ozcs,
 			 XNVME_SPEC_ZND_IDFY_NS_OZCS_RAZB | XNVME_SPEC_ZND_IDFY_NS_OZCS_ZRWASUP),
@@ -627,6 +627,25 @@ SPEC_AT(struct xnvme_spec_znd_idfy_ctrlr, tzrwar, 24, 4)
 SPEC_AT(struct xnvme_spec_znd_idfy_ctrlr, uzrwar, 28, 4)
 SPEC_AT(struct xnvme_spec_znd_idfy_ctrlr, ver, 32, 4)
 XNVME_STATIC_ASSERT(XNVME_SPEC_ZND_IDFY_CTRLR_ZCTRATT_ZNRM == 0x1, "ZNRM is bit 0 of ZCTRATT")
+
+/* Zoned Namespace Command Set 1.5, Figure 49 */
+SPEC_AT(struct xnvme_spec_znd_idfy_ns, rrl, 12, 4)
+SPEC_AT(struct xnvme_spec_znd_idfy_ns, frl, 16, 4)
+SPEC_AT(struct xnvme_spec_znd_idfy_ns, rrl1, 20, 4)
+SPEC_AT(struct xnvme_spec_znd_idfy_ns, rrl2, 24, 4)
+SPEC_AT(struct xnvme_spec_znd_idfy_ns, rrl3, 28, 4)
+SPEC_AT(struct xnvme_spec_znd_idfy_ns, frl1, 32, 4)
+SPEC_AT(struct xnvme_spec_znd_idfy_ns, frl2, 36, 4)
+SPEC_AT(struct xnvme_spec_znd_idfy_ns, frl3, 40, 4)
+SPEC_AT(struct xnvme_spec_znd_idfy_ns, numzrwa, 44, 4)
+SPEC_AT(struct xnvme_spec_znd_idfy_ns, zrwafg, 48, 2)
+SPEC_AT(struct xnvme_spec_znd_idfy_ns, zrwasz, 50, 2)
+SPEC_AT(struct xnvme_spec_znd_idfy_ns, zrwacap, 52, 1)
+SPEC_AT(struct xnvme_spec_znd_idfy_ns, lbafe, 2816, 64 * 16)
+SPEC_AT(struct xnvme_spec_znd_idfy_ns, vs, 3840, 256)
+/* Zoned Namespace Command Set 1.5, Figure 50 */
+SPEC_AT(struct xnvme_spec_znd_idfy_lbafe, zsze, 0, 8)
+SPEC_AT(struct xnvme_spec_znd_idfy_lbafe, zdes, 8, 1)
 
 struct offset_case {
 	const char *name;
@@ -1056,7 +1075,7 @@ sub_data_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 		raw[2] = 0x02;  // OZCS: ZRWASUP
 		raw[52] = 0x01; // ZRWACAP: EXPFLUSHSUP
 		memcpy(&ns, raw, sizeof(ns));
-		if (xnvme_bits_get(ns.zoc, XNVME_SPEC_ZND_IDFY_NS_ZOC_VZCAP) ||
+		if (xnvme_bits_get(ns.zoc, XNVME_SPEC_ZND_IDFY_NS_ZOC_VZC) ||
 		    !xnvme_bits_get(ns.zoc, XNVME_SPEC_ZND_IDFY_NS_ZOC_ZAE) ||
 		    xnvme_bits_get(ns.ozcs, XNVME_SPEC_ZND_IDFY_NS_OZCS_RAZB) ||
 		    !xnvme_bits_get(ns.ozcs, XNVME_SPEC_ZND_IDFY_NS_OZCS_ZRWASUP) ||

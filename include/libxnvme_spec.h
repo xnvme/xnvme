@@ -2707,13 +2707,13 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_idfy_ctrlr) == 4096, "Incorrect
 /**
  * LBA Format Extension
  *
- * @see Specification Section 5.1.2, figure LBAFE
+ * @see Zoned Namespace Command Set 1.5, Figure 50
  *
  * @struct xnvme_spec_znd_idfy_lbafe
  */
 struct xnvme_spec_znd_idfy_lbafe {
-	uint64_t zsze; ///< Zone Size in number of logical blocks
-	uint8_t zdes;  ///< Zone Descriptor Extensions Size
+	uint64_t zsze; ///< ZSZE: Zone Size, in logical blocks
+	uint8_t zdes;  ///< ZDES: Zone Descriptor Extension Size, in 64 byte units
 
 	uint8_t rsvd[7];
 };
@@ -2722,46 +2722,50 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_idfy_lbafe) == 16, "Incorrect s
 /**
  * Zoned Command Set specific identify namespace data structure
  *
- * @see TP4053, section 3
+ * @see Zoned Namespace Command Set 1.5, Figure 49
  * @struct xnvme_spec_znd_idfy_ns
  */
 struct xnvme_spec_znd_idfy_ns {
-	uint16_t zoc;  ///< Zone Operation Characteristics, see XNVME_SPEC_ZND_IDFY_NS_ZOC_*
-	uint16_t ozcs; ///< Optional Zoned Command Support, see XNVME_SPEC_ZND_IDFY_NS_OZCS_*
+	uint16_t zoc;  ///< ZOC: Zone Operation Characteristics, see XNVME_SPEC_ZND_IDFY_NS_ZOC_*
+	uint16_t ozcs; ///< OZCS: Optional Zoned Command Support, see XNVME_SPEC_ZND_IDFY_NS_OZCS_*
 
-	uint32_t mar; ///< Maximum Active Resources
-	uint32_t mor; ///< Maximum Open Resources
+	uint32_t mar; ///< MAR: Maximum Active Resources
+	uint32_t mor; ///< MOR: Maximum Open Resources
 
-	uint32_t rrl; ///< Reset Recommended Limit
-	uint32_t frl; ///< Finish Recommended Limit
+	uint32_t rrl;  ///< RRL: Reset Recommended Limit
+	uint32_t frl;  ///< FRL: Finish Recommended Limit
+	uint32_t rrl1; ///< RRL1: Reset Recommended Limit 1
+	uint32_t rrl2; ///< RRL2: Reset Recommended Limit 2
+	uint32_t rrl3; ///< RRL3: Reset Recommended Limit 3
+	uint32_t frl1; ///< FRL1: Finish Recommended Limit 1
+	uint32_t frl2; ///< FRL2: Finish Recommended Limit 2
+	uint32_t frl3; ///< FRL3: Finish Recommended Limit 3
 
-	uint8_t rsvd12[24];
+	uint32_t numzrwa; ///< NUMZRWA: Number of ZRWA Resources
+	uint16_t zrwafg;  ///< ZRWAFG: ZRWA Flush Granularity, in logical blocks
+	uint16_t zrwasz;  ///< ZRWASZ: ZRWA Size, in logical blocks
 
-	uint32_t numzrwa; ///< Number of ZRWA resources available to the namespace
-	uint16_t zrwafg;  ///< ZRWA Flush Granularity; in unit of LBAs
-	uint16_t zrwas;   ///< ZRWA Size; in unit of LBAs
-
-	uint8_t zrwacap; ///< ZRWA Capability, see XNVME_SPEC_ZND_IDFY_NS_ZRWACAP_*
+	uint8_t zrwacap; ///< ZRWACAP: ZRWA Capability, see XNVME_SPEC_ZND_IDFY_NS_ZRWACAP_*
 
 	uint8_t rsvd53[2763];
 
-	struct xnvme_spec_znd_idfy_lbafe lbafe[16];
+	struct xnvme_spec_znd_idfy_lbafe lbafe[64]; ///< LBAFE0 to LBAFE63: LBA Format Extensions
 
-	uint8_t rsvd3072[768];
-
-	uint8_t vs[256]; ///< Vendor Specific
+	uint8_t vs[256]; ///< VS: Vendor Specific
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_idfy_ns) == 4096, "Incorrect size")
 
-/** Variable Zone Capacity; bit 0 of 'zoc' */
-#define XNVME_SPEC_ZND_IDFY_NS_ZOC_VZCAP 0x1
-/** Zone Active Excursions; bit 1 of 'zoc' */
+/** Variable Zone Capacity; bit 0 of 'zoc', VZC (Zoned Namespace Command Set 1.5, Figure 49) */
+#define XNVME_SPEC_ZND_IDFY_NS_ZOC_VZC 0x1
+/** Zone Active Excursions; bit 1 of 'zoc', ZAE (Zoned Namespace Command Set 1.5, Figure 49) */
 #define XNVME_SPEC_ZND_IDFY_NS_ZOC_ZAE 0x2
-/** Read Across Zone Boundaries; bit 0 of 'ozcs' */
+/** Read Across Zone Boundaries; bit 0 of 'ozcs', RAZB (Zoned Namespace Command Set 1.5, Figure 49)
+ */
 #define XNVME_SPEC_ZND_IDFY_NS_OZCS_RAZB 0x1
-/** Zone Random Write Area Supported; bit 1 of 'ozcs' */
+/** ZRWA Supported; bit 1 of 'ozcs', ZRWASUP (Zoned Namespace Command Set 1.5, Figure 49) */
 #define XNVME_SPEC_ZND_IDFY_NS_OZCS_ZRWASUP 0x2
-/** Explicit ZRWA Flush Supported; bit 0 of 'zrwacap' */
+/** Explicit Flush Support; bit 0 of 'zrwacap', EXPFLUSHSUP (Zoned Namespace Command Set 1.5,
+ * Figure 49) */
 #define XNVME_SPEC_ZND_IDFY_NS_ZRWACAP_EXPFLUSHSUP 0x1
 
 /**
