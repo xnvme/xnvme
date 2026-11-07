@@ -1288,6 +1288,14 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_log_erri_entry, pel,
 		    "pel of struct xnvme_spec_log_erri_entry")
 XNVME_STATIC_ASSERT(XNVME_SPEC_LOG_ERRI_ENTRY_PEL_BITLOC == 0x700, "BITLOC is bits 10:8 of PEL")
 
+/* Base 2.4, Figures 293 and 294 */
+SPEC_AT(struct xnvme_spec_log_fdp_conf, numfdpc, 0, 2)
+SPEC_AT(struct xnvme_spec_log_fdp_conf, ver, 2, 1)
+SPEC_AT(struct xnvme_spec_log_fdp_conf, sze, 4, 4)
+SPEC_AT(struct xnvme_spec_fdp_conf_desc, dsze, 0, 2)
+SPEC_AT(struct xnvme_spec_fdp_conf_desc, fdpa, 2, 1)
+SPEC_AT(struct xnvme_spec_fdp_conf_desc, erutl, 24, 4)
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it

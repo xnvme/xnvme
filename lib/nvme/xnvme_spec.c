@@ -283,13 +283,13 @@ xnvme_spec_log_fdp_conf_fpr(FILE *stream, const struct xnvme_spec_log_fdp_conf *
 	}
 
 	wrtn += fprintf(stream, "\n");
-	wrtn += fprintf(stream, "  ncfg: %" PRIu16 "\n", log->ncfg);
-	wrtn += fprintf(stream, "  version: %" PRIu8 "\n", log->version);
-	wrtn += fprintf(stream, "  size: %" PRIu32 "\n", log->size);
+	wrtn += fprintf(stream, "  numfdpc: %" PRIu16 "\n", log->numfdpc);
+	wrtn += fprintf(stream, "  ver: %" PRIu8 "\n", log->ver);
+	wrtn += fprintf(stream, "  sze: %" PRIu32 "\n", log->sze);
 
-	for (int i = 0; i <= log->ncfg; ++i) {
+	for (int i = 0; i <= log->numfdpc; ++i) {
 		wrtn += fprintf(stream, "  config_desc: %d\n", i);
-		wrtn += fprintf(stream, "  ds: %" PRIu16 "\n", log->conf_desc[i].ds);
+		wrtn += fprintf(stream, "  dsze: %" PRIu16 "\n", log->conf_desc[i].dsze);
 		wrtn += fprintf(stream, "  fdp attributes: {");
 		wrtn += fprintf(stream, "    rgif: %" PRIu64,
 				xnvme_bits_get(log->conf_desc[i].fdpa,

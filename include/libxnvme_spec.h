@@ -299,6 +299,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_log_erri_entry) == 64, "Incorrect s
 /**
  * NVMe Reclaim unit handle descriptor
  *
+ * @see Base 2.4, Figure 295
  * @struct xnvme_spec_ruh_desc
  */
 struct xnvme_spec_ruh_desc {
@@ -310,10 +311,11 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_ruh_desc) == 4, "Incorrect size")
 /**
  * NVMe FDP configuration descriptor
  *
+ * @see Base 2.4, Figure 294
  * @struct xnvme_spec_fdp_conf_desc
  */
 struct xnvme_spec_fdp_conf_desc {
-	uint16_t ds; ///< Descriptor Size
+	uint16_t dsze; ///< DSZE: Descriptor Size
 
 	uint8_t fdpa; ///< FDP Attributes, see XNVME_SPEC_FDP_CONF_DESC_FDPA_*
 
@@ -329,24 +331,25 @@ struct xnvme_spec_fdp_conf_desc {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_fdp_conf_desc) == 64, "Incorrect size")
 
-/** Reclaim Group Identifier Format; bits 3:0 of 'fdpa' */
+/** Reclaim Group Identifier Format; bits 3:0 of 'fdpa', RGIF (Base 2.4, Figure 294) */
 #define XNVME_SPEC_FDP_CONF_DESC_FDPA_RGIF 0xf
-/** FDP Volatile Write Cache; bit 4 of 'fdpa' */
+/** FDP Volatile Write Cache; bit 4 of 'fdpa', FDPVWC (Base 2.4, Figure 294) */
 #define XNVME_SPEC_FDP_CONF_DESC_FDPA_FDPVWC 0x10
-/** FDP Configuration Valid; bit 7 of 'fdpa' */
+/** FDP Configuration Valid; bit 7 of 'fdpa', FDPCV (Base 2.4, Figure 294) */
 #define XNVME_SPEC_FDP_CONF_DESC_FDPA_FDPCV 0x80
 
 /**
  * NVMe FDP configurations log page
  *
+ * @see Base 2.4, Figure 293
  * @struct xnvme_spec_log_fdp_conf
  */
 struct xnvme_spec_log_fdp_conf {
-	uint16_t ncfg; ///< Number of FDP configurations
-	uint8_t version;
-	uint8_t rsvd1;
-	uint32_t size;
-	uint8_t rsvd2[8];
+	uint16_t numfdpc; ///< NUMFDPC: Number of FDP Configurations, zero-based
+	uint8_t ver;      ///< VER: Version
+	uint8_t rsvd3;
+	uint32_t sze; ///< SZE: Size, in bytes, of the log page
+	uint8_t rsvd8[8];
 	struct xnvme_spec_fdp_conf_desc conf_desc[];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_log_fdp_conf) == 16, "Incorrect size")
