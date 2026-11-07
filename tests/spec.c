@@ -218,13 +218,14 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_kvs_cmd, cdw11) == 44,
 		    "cdw11 of struct xnvme_spec_kvs_cmd")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_kvs_cmd, cdw11.ro) == 45,
 		    "cdw11.ro of struct xnvme_spec_kvs_cmd")
-XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_sgl_descriptor, id,
-			 XNVME_SPEC_SGL_DESCRIPTOR_ID_SUBTYPE | XNVME_SPEC_SGL_DESCRIPTOR_ID_TYPE),
-		    "id of struct xnvme_spec_sgl_descriptor")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_sgl_descriptor, sglid,
+			 XNVME_SPEC_SGL_DESCRIPTOR_SGLID_SGLDST |
+				 XNVME_SPEC_SGL_DESCRIPTOR_SGLID_SGLDT),
+		    "sglid of struct xnvme_spec_sgl_descriptor")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_sgl_descriptor, len) == 8,
 		    "len of struct xnvme_spec_sgl_descriptor")
-XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_sgl_descriptor, id) == 15,
-		    "id of struct xnvme_spec_sgl_descriptor")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_sgl_descriptor, sglid) == 15,
+		    "sglid of struct xnvme_spec_sgl_descriptor")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 			 XNVME_SPEC_CMD_LOG_CDW10_LID | XNVME_SPEC_CMD_LOG_CDW10_LSP |
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
@@ -1093,6 +1094,12 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_common, opc,
 XNVME_STATIC_ASSERT(XNVME_SPEC_CMD_COMMON_OPC_DTD == 0x3 && XNVME_SPEC_CMD_COMMON_OPC_FN == 0xfc,
 		    "DTD is bits 1:0 and FN bits 7:2 of OPC")
 
+/* Base 2.4, Figures 93 and 119 */
+SPEC_AT(struct xnvme_spec_sgl_descriptor, addr, 0, 8)
+SPEC_AT(struct xnvme_spec_sgl_descriptor, len, 8, 4)
+SPEC_AT(struct xnvme_spec_sgl_descriptor, sglid, 15, 1)
+SPEC_AT(struct xnvme_spec_cmd_common, dptr.sgl1, 24, 16)
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it
@@ -1736,13 +1743,13 @@ sub_io_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	memset(&sqe, 0, sizeof(sqe));
 	sqe.cdw[8] = 0x1000;     // SGL descriptor bytes 11:8: length
 	sqe.cdw[9] = 0x31000000; // SGL descriptor byte 15: Last Segment, Offset
-	if (sqe.common.dptr.sgl.len != 0x1000 ||
-	    xnvme_bits_get(sqe.common.dptr.sgl.id, XNVME_SPEC_SGL_DESCRIPTOR_ID_TYPE) !=
+	if (sqe.common.dptr.sgl1.len != 0x1000 ||
+	    xnvme_bits_get(sqe.common.dptr.sgl1.sglid, XNVME_SPEC_SGL_DESCRIPTOR_SGLID_SGLDT) !=
 		    XNVME_SPEC_SGL_DESCR_TYPE_LAST_SEGMENT ||
-	    xnvme_bits_get(sqe.common.dptr.sgl.id, XNVME_SPEC_SGL_DESCRIPTOR_ID_SUBTYPE) !=
+	    xnvme_bits_get(sqe.common.dptr.sgl1.sglid, XNVME_SPEC_SGL_DESCRIPTOR_SGLID_SGLDST) !=
 		    XNVME_SPEC_SGL_DESCR_SUBTYPE_OFFSET) {
-		xnvme_cli_pinf("FAILED: sgl: len: %#x, id: %#x", sqe.common.dptr.sgl.len,
-			       sqe.common.dptr.sgl.id);
+		xnvme_cli_pinf("FAILED: sgl1: len: %#x, sglid: %#x", sqe.common.dptr.sgl1.len,
+			       sqe.common.dptr.sgl1.sglid);
 		err = -EINVAL;
 	}
 
