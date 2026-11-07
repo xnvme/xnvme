@@ -187,8 +187,9 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_znd_cmd_append, cdw12) == 48,
 		    "cdw12 of struct xnvme_spec_znd_cmd_append")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_cmd_mgmt_send, cdw13,
 			 XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZSA |
-				 XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_SELECT_ALL |
-				 XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZSASO),
+				 XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_SELALL |
+				 XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZSASO |
+				 XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZM),
 		    "cdw13 of struct xnvme_spec_znd_cmd_mgmt_send")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_znd_cmd_mgmt_send, cdw13) == 52,
 		    "cdw13 of struct xnvme_spec_znd_cmd_mgmt_send")
@@ -1166,6 +1167,12 @@ XNVME_STATIC_ASSERT(
 		 << 16) == XNVME_SPEC_CMD_NVM_CDW12_PRINFO,
 	"the flags of xnvme_spec_flag are bits 31:16 of dword 12")
 
+/* Zoned Namespace Command Set 1.5, Figures 39 and 40 */
+SPEC_AT(struct xnvme_spec_znd_cmd_mgmt_send, slba, 40, 8)
+SPEC_AT(struct xnvme_spec_znd_cmd_mgmt_send, cdw13, 52, 4)
+XNVME_STATIC_ASSERT(XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZM == 0xff0000,
+		    "ZM is bits 23:16 of Zone Management Send dword 13")
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it
@@ -1790,8 +1797,7 @@ sub_io_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	sqe.cdw[13] = 0x104; // Zone Management Send dword 13: ZSA 0x4, Select All
 	if (xnvme_bits_get(sqe.znd.mgmt_send.cdw13, XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZSA) !=
 		    0x4 ||
-	    !xnvme_bits_get(sqe.znd.mgmt_send.cdw13,
-			    XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_SELECT_ALL) ||
+	    !xnvme_bits_get(sqe.znd.mgmt_send.cdw13, XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_SELALL) ||
 	    xnvme_bits_get(sqe.znd.mgmt_send.cdw13, XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZSASO)) {
 		xnvme_cli_pinf("FAILED: znd.mgmt_send: cdw13: %#x", sqe.znd.mgmt_send.cdw13);
 		err = -EINVAL;

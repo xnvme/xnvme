@@ -57,7 +57,7 @@ _lzbd_zone_mgmt_send(struct xnvme_cmd_ctx *ctx)
 	zr.nr_sectors = zone_nbytes >> LINUX_BLOCK_SSW;
 
 	if (xnvme_bits_get(ctx->cmd.znd.mgmt_send.cdw13,
-			   XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_SELECT_ALL)) {
+			   XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_SELALL)) {
 		zr.nr_sectors = zr.nr_sectors * geo->nzone;
 	}
 	if (xnvme_bits_get(ctx->cmd.znd.mgmt_send.cdw13,

@@ -452,7 +452,7 @@ xnvme_znd_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, bo
 	ctx->cmd.znd.mgmt_send.slba = zslba;
 	ctx->cmd.znd.mgmt_send.cdw13 =
 		xnvme_bits_set(ctx->cmd.znd.mgmt_send.cdw13,
-			       XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_SELECT_ALL, select_all);
+			       XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_SELALL, select_all);
 	ctx->cmd.znd.mgmt_send.cdw13 = xnvme_bits_set(ctx->cmd.znd.mgmt_send.cdw13,
 						      XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZSA, zsa);
 	ctx->cmd.znd.mgmt_send.cdw13 = xnvme_bits_set(
