@@ -278,7 +278,7 @@ test_flush_implicit(struct xnvme_cli *cli)
 	void *dbuf = NULL;
 	size_t dbuf_nbytes = geo->lba_nbytes;
 
-	// uint64_t zrwa_naddr = zns->zrwas;
+	// uint64_t zrwa_naddr = zns->zrwasz;
 	uint64_t zrwa_naddr = zns->zrwafg + 1;
 	int err;
 
