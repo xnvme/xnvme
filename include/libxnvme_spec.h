@@ -31,36 +31,44 @@
 /**
  * NVMe PCIe BAR0 as-a-struct.
  *
+ * Each member is a property, at the offset in bytes and of the width that the specification
+ * gives it, named by its abbreviation.
+ *
+ * @see Base 2.4, Figure 33
  * @struct xnvme_spec_ctrlr_bar
  */
 struct xnvme_spec_ctrlr_bar {
-	uint64_t cap;
-	uint32_t vs;
-	uint32_t intms;
-	uint32_t intmc;
-	uint32_t cc;
+	uint64_t cap;   ///< CAP: Controller Capabilities, 00h
+	uint32_t vs;    ///< VS: Version, 08h
+	uint32_t intms; ///< INTMS: Interrupt Mask Set, 0Ch
+	uint32_t intmc; ///< INTMC: Interrupt Mask Clear, 10h
+	uint32_t cc;    ///< CC: Controller Configuration, 14h
 	uint32_t rsvd24;
-	uint32_t csts;
-	uint32_t nssr;
-	uint32_t aqa;
-	uint64_t asq;
-	uint64_t acq;
-	uint32_t cmbloc;
-	uint32_t cmbsz;
-	uint32_t bpinfo;
-	uint32_t bprsel;
-	uint64_t bpmbl;
-	uint64_t cmbmsc;
-	uint32_t cmbsts;
-	uint8_t rsvd92[3492];
-	uint32_t pmrcap;
-	uint32_t pmrctl;
-	uint32_t pmrsts;
-	uint32_t pmrebs;
-	uint32_t pmrswtp;
-	uint32_t pmrmscl;
-	uint32_t pmrmscu;
-	uint8_t css[484];
+	uint32_t csts;    ///< CSTS: Controller Status, 1Ch
+	uint32_t nssr;    ///< NSSR: NVM Subsystem Reset, 20h
+	uint32_t aqa;     ///< AQA: Admin Queue Attributes, 24h
+	uint64_t asq;     ///< ASQ: Admin Submission Queue Base Address, 28h
+	uint64_t acq;     ///< ACQ: Admin Completion Queue Base Address, 30h
+	uint32_t cmbloc;  ///< CMBLOC: Controller Memory Buffer Location, 38h
+	uint32_t cmbsz;   ///< CMBSZ: Controller Memory Buffer Size, 3Ch
+	uint32_t bpinfo;  ///< BPINFO: Boot Partition Information, 40h
+	uint32_t bprsel;  ///< BPRSEL: Boot Partition Read Select, 44h
+	uint64_t bpmbl;   ///< BPMBL: Boot Partition Memory Buffer Location, 48h
+	uint64_t cmbmsc;  ///< CMBMSC: Controller Memory Buffer Memory Space Control, 50h
+	uint32_t cmbsts;  ///< CMBSTS: Controller Memory Buffer Status, 58h
+	uint32_t cmbebs;  ///< CMBEBS: Controller Memory Buffer Elasticity Buffer Size, 5Ch
+	uint32_t cmbswtp; ///< CMBSWTP: Controller Memory Buffer Sustained Write Throughput, 60h
+	uint32_t nssd;    ///< NSSD: NVM Subsystem Shutdown, 64h
+	uint32_t crto;    ///< CRTO: Controller Ready Timeouts, 68h
+	uint8_t rsvd108[3476];
+	uint32_t pmrcap;  ///< PMRCAP: Persistent Memory Capabilities, E00h
+	uint32_t pmrctl;  ///< PMRCTL: Persistent Memory Region Control, E04h
+	uint32_t pmrsts;  ///< PMRSTS: Persistent Memory Region Status, E08h
+	uint32_t pmrebs;  ///< PMREBS: Persistent Memory Region Elasticity Buffer Size, E0Ch
+	uint32_t pmrswtp; ///< PMRSWTP: Persistent Memory Region Sustained Write Throughput, E10h
+	uint32_t pmrmscl; ///< PMRMSCL: Persistent Memory Region Memory Space Control Lower, E14h
+	uint32_t pmrmscu; ///< PMRMSCU: Persistent Memory Region Memory Space Control Upper, E18h
+	uint8_t rsvd3612[484];
 } __attribute__((__packed__));
 
 /**

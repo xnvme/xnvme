@@ -1315,6 +1315,16 @@ SPEC_AT(struct xnvme_spec_ruhs_desc, ruhid, 2, 2)
 SPEC_AT(struct xnvme_spec_ruhs_desc, earutr, 4, 4)
 SPEC_AT(struct xnvme_spec_ruhs_desc, ruamw, 8, 8)
 
+/* Base 2.4, Figure 33 */
+SPEC_AT(struct xnvme_spec_ctrlr_bar, cmbsts, 0x58, 4)
+SPEC_AT(struct xnvme_spec_ctrlr_bar, cmbebs, 0x5c, 4)
+SPEC_AT(struct xnvme_spec_ctrlr_bar, cmbswtp, 0x60, 4)
+SPEC_AT(struct xnvme_spec_ctrlr_bar, nssd, 0x64, 4)
+SPEC_AT(struct xnvme_spec_ctrlr_bar, crto, 0x68, 4)
+SPEC_AT(struct xnvme_spec_ctrlr_bar, pmrcap, 0xe00, 4)
+SPEC_AT(struct xnvme_spec_ctrlr_bar, pmrmscu, 0xe18, 4)
+XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_ctrlr_bar) == 0x1000, "the properties end at FFFh")
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it
