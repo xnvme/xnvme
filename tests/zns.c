@@ -220,7 +220,7 @@ cmd_changes(struct xnvme_cli *cli)
 
 	xnvme_cli_pinf("Retrieving the Changed Zone List");
 
-	if (!xnvme_bits_get(idfy_ctrlr->oaes, XNVME_SPEC_IDFY_CTRLR_OAES_ZONE_CHANGES)) {
+	if (!xnvme_bits_get(idfy_ctrlr->oaes, XNVME_SPEC_IDFY_CTRLR_OAES_ZDCN)) {
 		xnvme_cli_pinf("Zoned Changes log page is an optional feature");
 		xnvme_cli_pinf("This devices does not support it; expect failure");
 	}

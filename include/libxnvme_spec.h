@@ -981,6 +981,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_ctrlr_nvmf) == 256, "Incorrect
  * A field of bits is an integer of the width the specification gives it; its documentation
  * names the bits.
  *
+ * @see Base 2.4, Figure 338
  * @struct xnvme_spec_idfy_ctrlr
  */
 struct xnvme_spec_idfy_ctrlr {
@@ -1002,17 +1003,23 @@ struct xnvme_spec_idfy_ctrlr {
 
 	uint32_t ver; ///< Version, see XNVME_SPEC_IDFY_CTRLR_VER_*
 
-	uint32_t rtd3r; ///< RTD3 Resume Latency
-	uint32_t rtd3e; ///< RTD3 Resume Latency
+	uint32_t rtd3r; ///< RTD3R: RTD3 Resume Latency
+	uint32_t rtd3e; ///< RTD3E: RTD3 Entry Latency
 
 	uint32_t
 		oaes; ///< Optional asynchronous events supported, see XNVME_SPEC_IDFY_CTRLR_OAES_*
 
 	uint32_t ctratt; ///< Controller attributes, see XNVME_SPEC_IDFY_CTRLR_CTRATT_*
 
-	uint16_t rrls; ///< Read Recovery Levels Supported
+	uint16_t rrls; ///< RRLS: Read Recovery Levels Supported, see XNVME_SPEC_IDFY_CTRLR_RRLS_*
 
-	uint8_t reserved_102[9];
+	uint8_t bpcap; ///< BPCAP: Boot Partition Capabilities
+	uint8_t chsi;  ///< CHSI: CXL HDM Support Information
+	uint32_t nssl; ///< NSSL: NVM Subsystem Shutdown Latency, in microseconds
+
+	uint8_t rsvd108[2];
+
+	uint8_t plsi; ///< PLSI: Power Loss Signaling Information
 
 	uint8_t cntrltype; ///< Controller Type
 
@@ -1024,7 +1031,11 @@ struct xnvme_spec_idfy_ctrlr {
 
 	uint16_t crdt3; ///< Command Retry Delay Time3
 
-	uint8_t reserved_134[119];
+	uint8_t crcap; ///< CRCAP: Controller Reachability Capabilities
+	uint8_t ciu;   ///< CIU: Controller Instance Uniquifier
+	uint64_t cirn; ///< CIRN: Controller Instance Random Number
+
+	uint8_t rsvd144[109];
 
 	uint8_t nvmsr; ///< NVM Subsystem Report, see XNVME_SPEC_IDFY_CTRLR_NVMSR_*
 
@@ -1100,13 +1111,43 @@ struct xnvme_spec_idfy_ctrlr {
 
 	uint32_t pels; ///< Persistent Event Log Size
 
-	uint16_t domain_identifier; ///< Domain Identifier
+	uint16_t did; ///< DID: Domain Identifier
 
-	uint8_t reserved_358[10];
+	uint8_t kpioc; ///< KPIOC: Key Per I/O Capabilities
+
+	uint8_t rsvd359;
+
+	uint16_t mptfawr; ///< MPTFAWR: Maximum Processing Time for Firmware Activation Without
+			  ///< Reset
+
+	uint8_t rmdca; ///< RMDCA: Restore Manufacturing Configuration Attributes
+
+	uint8_t rsvd363[5];
 
 	uint64_t megcap[2]; ///< Max Endurance Group Capacity
 
-	uint8_t reserved_384[128];
+	uint8_t tmpthha;   ///< TMPTHHA: Temperature Threshold Hysteresis Attributes
+	uint8_t mupa;      ///< MUPA: Maximum Unlimited Power Attributes
+	uint16_t cqt;      ///< CQT: Command Quiesce Time
+	uint16_t cdpa;     ///< CDPA: Configurable Device Personality Attributes
+	uint16_t mup;      ///< MUP: Maximum Unlimited Power
+	uint16_t ipmsr;    ///< IPMSR: Interval Power Measurement Sample Rate
+	uint16_t msmt;     ///< MSMT: Maximum Stop Measurement Time
+	uint16_t mnens;    ///< MNENS: Maximum Number of Exported NVM Subsystems
+	uint16_t mnecpens; ///< MNECPENS: Maximum Number of Exported Controllers per Exported NVM
+			   ///< Subsystem
+	uint32_t mensnn;   ///< MENSNN: Maximum Exported NVM Subsystem Number of Namespaces
+	uint8_t ensa;      ///< ENSA: Exported NVM Subsystem Attributes
+	uint8_t endsfs;    ///< ENDSFS: Exported Namespace Data Structure Formats Supported
+
+	uint8_t vsen1[4]; ///< VSEN1: Voltage Sensor 1, a 32-bit value in the format of Figure 339
+	uint8_t vsen2[4]; ///< VSEN2: Voltage Sensor 2, a 32-bit value in the format of Figure 339
+	uint8_t vsen3[4]; ///< VSEN3: Voltage Sensor 3, a 32-bit value in the format of Figure 339
+	uint8_t vsen4[4]; ///< VSEN4: Voltage Sensor 4, a 32-bit value in the format of Figure 339
+
+	uint16_t msvmt; ///< MSVMT: Maximum Stop Voltage Measurement Time
+
+	uint8_t rsvd424[88];
 
 	/* bytes 512-703: nvm command set attributes */
 
@@ -1120,17 +1161,19 @@ struct xnvme_spec_idfy_ctrlr {
 
 	uint16_t oncs; ///< Optional NVM command support, see XNVME_SPEC_IDFY_CTRLR_ONCS_*
 
-	uint16_t fuses; ///< Fused Operation Support
+	uint16_t fuses; ///< FUSES: Fused Operation Support, see XNVME_SPEC_IDFY_CTRLR_FUSES_*
 
 	uint8_t fna; ///< Format NVM attributes, see XNVME_SPEC_IDFY_CTRLR_FNA_*
 
 	uint8_t vwc; ///< Volatile write cache, see XNVME_SPEC_IDFY_CTRLR_VWC_*
 
-	uint16_t awun;  ///< Atomic Write Unit Normal
-	uint16_t awupf; ///< Atomic Write Unit Power Fail
-	uint8_t nvscc;  ///< NVM vendor specific command configuration
+	uint16_t awun;   ///< Atomic Write Unit Normal
+	uint16_t awupf;  ///< Atomic Write Unit Power Fail
+	uint8_t icsvscc; ///< ICSVSCC: I/O Command Set Vendor Specific Command Configuration, see
+			 ///< XNVME_SPEC_IDFY_CTRLR_ICSVSCC_*
 
-	uint8_t nwpc; ///< Namespace write protection capabilities
+	uint8_t nwpc; ///< NWPC: Namespace Write Protection Capabilities, see
+		      ///< XNVME_SPEC_IDFY_CTRLR_NWPC_*
 
 	uint16_t acwu; ///< atomic compare & write unit
 
@@ -1143,7 +1186,22 @@ struct xnvme_spec_idfy_ctrlr {
 	uint64_t maxdna[2]; ///< Maximum Domain Namespace Attachments
 	uint32_t maxcna;    ///< Maximum I/O Controllers Namespace Attachments
 
-	uint8_t reserved_564[204];
+	uint32_t oaqd;   ///< OAQD: Optimal Aggregated Queue Depth
+	uint8_t rhiri;   ///< RHIRI: Recommended Host-Initiated Refresh Interval
+	uint8_t hirt;    ///< HIRT: Host-Initiated Refresh Time
+	uint16_t cmmrtd; ///< CMMRTD: Controller Maximum Memory Range Tracking Descriptors
+	uint16_t nmmrtd; ///< NMMRTD: NVM Subsystem Maximum Memory Range Tracking Descriptors
+	uint8_t minmrtg; ///< MINMRTG: Minimum Memory Range Tracking Granularity
+	uint8_t maxmrtg; ///< MAXMRTG: Maximum Memory Range Tracking Granularity
+	uint8_t trattr;  ///< TRATTR: Tracking Attributes
+	uint8_t rsvd577;
+	uint16_t mcudmq;  ///< MCUDMQ: Maximum Controller User Data Migration Queues
+	uint16_t mnsudmq; ///< MNSUDMQ: Maximum NVM Subsystem User Data Migration Queues
+	uint16_t mcmr;    ///< MCMR: Maximum CDQ Memory Ranges
+	uint16_t nmcmr;   ///< NMCMR: NVM Subsystem Maximum CDQ Memory Ranges
+	uint16_t mcdqpc;  ///< MCDQPC: Maximum Controller Data Queue PRP Count
+
+	uint8_t rsvd588[180];
 
 	uint8_t subnqn[256]; ///< NVM Subsystems NVMe Qualified Name
 
@@ -1159,228 +1217,334 @@ struct xnvme_spec_idfy_ctrlr {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_ctrlr) == 4096, "Incorrect size")
 
-/** Multiple ports; bit 0 of 'cmic' */
-#define XNVME_SPEC_IDFY_CTRLR_CMIC_MULTI_PORT 0x1
-/** Multiple hosts; bit 1 of 'cmic' */
-#define XNVME_SPEC_IDFY_CTRLR_CMIC_MULTI_HOST 0x2
-/** SR-IOV; bit 2 of 'cmic' */
-#define XNVME_SPEC_IDFY_CTRLR_CMIC_SR_IOV 0x4
-/** Asymmetric namespace access reporting; bit 3 of 'cmic' */
-#define XNVME_SPEC_IDFY_CTRLR_CMIC_ANA_RPRT 0x8
-/** Tertiary version; bits 7:0 of 'ver' */
+/** Multiple Ports; bit 0 of 'cmic', MPORTS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CMIC_MPORTS 0x1
+/** Multiple Controllers; bit 1 of 'cmic', MCTRS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CMIC_MCTRS 0x2
+/** Function Type; bit 2 of 'cmic', FT (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CMIC_FT 0x4
+/** Asymmetric Namespace Access Reporting Support; bit 3 of 'cmic', ANARS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CMIC_ANARS 0x8
+/** Tertiary Version; bits 7:0 of 'ver', TER (Base 2.4, Figure 37) */
 #define XNVME_SPEC_IDFY_CTRLR_VER_TER 0xff
-/** Minor version; bits 15:8 of 'ver' */
+/** Minor Version; bits 15:8 of 'ver', MNR (Base 2.4, Figure 37) */
 #define XNVME_SPEC_IDFY_CTRLR_VER_MNR 0xff00
-/** Major version; bits 31:16 of 'ver' */
+/** Major Version; bits 31:16 of 'ver', MJR (Base 2.4, Figure 37) */
 #define XNVME_SPEC_IDFY_CTRLR_VER_MJR 0xffff0000
-/** Namespace Attribute Notices; bit 8 of 'oaes' */
-#define XNVME_SPEC_IDFY_CTRLR_OAES_NS_ATTRIBUTE_NOTICES 0x100
-/** Firmware Activation Notices; bit 9 of 'oaes' */
-#define XNVME_SPEC_IDFY_CTRLR_OAES_FW_ACTIVATION_NOTICES 0x200
-/** Asymmetric Namespace Access Change Notices; bit 11 of 'oaes' */
-#define XNVME_SPEC_IDFY_CTRLR_OAES_ANA_NOTICES 0x800
-/** Predictable Latency Event Aggregate Log Change Notices; bit 12 of 'oaes' */
-#define XNVME_SPEC_IDFY_CTRLR_OAES_PLEAL_NOTICES 0x1000
-/** LBA Status Information Alert Notices; bit 13 of 'oaes' */
-#define XNVME_SPEC_IDFY_CTRLR_OAES_LBA_SIA_NOTICES 0x2000
-/** Endurance Group Event Aggregate Log Change Notices; bit 14 of 'oaes' */
-#define XNVME_SPEC_IDFY_CTRLR_OAES_EGEA_NOTICES 0x4000
-/** Normal NVM Subsystem Shutdown event; bit 15 of 'oaes' */
-#define XNVME_SPEC_IDFY_CTRLR_OAES_NORMAL_NVM_SS 0x8000
-/** Zone Descriptor Changed Notices, and the Changed Zone List log page; bit 27 of 'oaes' */
-#define XNVME_SPEC_IDFY_CTRLR_OAES_ZONE_CHANGES 0x8000000
-/** Discovery Log Page Change Notices; bit 31 of 'oaes' */
-#define XNVME_SPEC_IDFY_CTRLR_OAES_DISCOVERY_LOG_NOTICES 0x80000000
-/** 128-bit host identifier; bit 0 of 'ctratt' */
-#define XNVME_SPEC_IDFY_CTRLR_CTRATT_HOST_ID_EXHID_SUPPORTED 0x1
-/** Non-operational power state permissive mode; bit 1 of 'ctratt' */
-#define XNVME_SPEC_IDFY_CTRLR_CTRATT_NON_OPERATIONAL_POWER_STATE_PERMISSIVE_MODE 0x2
-/** NVM sets; bit 2 of 'ctratt' */
-#define XNVME_SPEC_IDFY_CTRLR_CTRATT_NVM_SETS 0x4
-/** Read recovery levels; bit 3 of 'ctratt' */
-#define XNVME_SPEC_IDFY_CTRLR_CTRATT_READ_RECOVERY_LEVELS 0x8
-/** Endurance groups; bit 4 of 'ctratt' */
-#define XNVME_SPEC_IDFY_CTRLR_CTRATT_ENDURANCE_GROUPS 0x10
-/** Predictable latency mode; bit 5 of 'ctratt' */
-#define XNVME_SPEC_IDFY_CTRLR_CTRATT_PREDICTABLE_LATENCY_MODE 0x20
-/** Traffic based keep alive; bit 6 of 'ctratt' */
+/** Attached Namespace Attribute Notices; bit 8 of 'oaes', NSAN (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_NSAN 0x100
+/** Firmware Activation Notices; bit 9 of 'oaes', FAN (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_FAN 0x200
+/** Asymmetric Namespace Access Change Notices; bit 11 of 'oaes', ANACN (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_ANACN 0x800
+/** Predictable Latency Event Aggregate Log Change Notices; bit 12 of 'oaes', PLEAN (Base 2.4,
+ * Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_PLEAN 0x1000
+/** LBA Status Information Alert Notices; bit 13 of 'oaes', LSIAN (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_LSIAN 0x2000
+/** Endurance Group Event Aggregate Log Page Change Notices; bit 14 of 'oaes', EGEAN (Base 2.4,
+ * Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_EGEAN 0x4000
+/** Normal NVM Subsystem Shutdown; bit 15 of 'oaes', NNSS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_NNSS 0x8000
+/** Temperature Threshold Hysteresis Recovery; bit 16 of 'oaes', TTHR (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_TTHR 0x10000
+/** Reachability Groups Change Notices Support; bit 17 of 'oaes', RGCNS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_RGCNS 0x20000
+/** Allocated Namespace Attribute Notices; bit 19 of 'oaes', ANSAN (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_ANSAN 0x80000
+/** Cross-Controller Reset Completed Notices; bit 20 of 'oaes', CCRCN (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_CCRCN 0x100000
+/** Lost Host Communication Notices; bit 21 of 'oaes', LHCN (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_LHCN 0x200000
+/** Rate Limiting Configuration Change; bit 22 of 'oaes', RLCC (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_RLCC 0x400000
+/** Zone Descriptor Changed Notices; bit 27 of 'oaes', ZDCN (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_ZDCN 0x8000000
+/** Discovery Log Page Change Notification; bit 31 of 'oaes', DLPCN (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OAES_DLPCN 0x80000000
+/** Host Identifier Support; bit 0 of 'ctratt', HIDS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_HIDS 0x1
+/** Non-Operational Power State Permissive Mode; bit 1 of 'ctratt', NOPSPM (Base 2.4, Figure 338)
+ */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_NOPSPM 0x2
+/** NVM Sets; bit 2 of 'ctratt', NSETS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_NSETS 0x4
+/** Read Recovery Levels; bit 3 of 'ctratt', RRLVLS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_RRLVLS 0x8
+/** Endurance Groups; bit 4 of 'ctratt', EGS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_EGS 0x10
+/** Predictable Latency Mode; bit 5 of 'ctratt', PLM (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_PLM 0x20
+/** Traffic Based Keep Alive Support; bit 6 of 'ctratt', TBKAS (Base 2.4, Figure 338) */
 #define XNVME_SPEC_IDFY_CTRLR_CTRATT_TBKAS 0x40
-/** Namespace granularity; bit 7 of 'ctratt' */
-#define XNVME_SPEC_IDFY_CTRLR_CTRATT_NAMESPACE_GRANULARITY 0x80
-/** SQ associations; bit 8 of 'ctratt' */
-#define XNVME_SPEC_IDFY_CTRLR_CTRATT_SQ_ASSOCIATIONS 0x100
-/** UUID list; bit 9 of 'ctratt' */
-#define XNVME_SPEC_IDFY_CTRLR_CTRATT_UUID_LIST 0x200
-/** Multi-domain subsystem; bit 10 of 'ctratt' */
-#define XNVME_SPEC_IDFY_CTRLR_CTRATT_MULTI_DOMAIN_SUBSYSTEM 0x400
-/** Fixed capacity management; bit 11 of 'ctratt' */
-#define XNVME_SPEC_IDFY_CTRLR_CTRATT_FIXED_CAPACITY_MANAGEMENT 0x800
-/** Variable capacity management; bit 12 of 'ctratt' */
-#define XNVME_SPEC_IDFY_CTRLR_CTRATT_VARIABLE_CAPACITY_MANAGEMENT 0x1000
-/** Delete endurance group; bit 13 of 'ctratt' */
-#define XNVME_SPEC_IDFY_CTRLR_CTRATT_DELETE_ENDURANCE_GROUP 0x2000
-/** Delete NVM set; bit 14 of 'ctratt' */
-#define XNVME_SPEC_IDFY_CTRLR_CTRATT_DELETE_NVM_SET 0x4000
-/** Extended LBA formats; bit 15 of 'ctratt' */
-#define XNVME_SPEC_IDFY_CTRLR_CTRATT_EXTENDED_LBA_FORMATS 0x8000
-/** Flexible data placement; bit 19 of 'ctratt' */
-#define XNVME_SPEC_IDFY_CTRLR_CTRATT_FLEXIBLE_DATA_PLACEMENT 0x80000
-/** NVMe storage device; bit 0 of 'nvmsr' */
+/** Namespace Granularity; bit 7 of 'ctratt', NG (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_NG 0x80
+/** SQ Associations; bit 8 of 'ctratt', SQA (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_SQA 0x100
+/** UUID List; bit 9 of 'ctratt', ULIST (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_ULIST 0x200
+/** Multi-Domain Subsystem; bit 10 of 'ctratt', MDS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_MDS 0x400
+/** Fixed Capacity Management; bit 11 of 'ctratt', FCM (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_FCM 0x800
+/** Variable Capacity Management; bit 12 of 'ctratt', VCM (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_VCM 0x1000
+/** Delete Endurance Group; bit 13 of 'ctratt', DEG (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_DEG 0x2000
+/** Delete NVM Set; bit 14 of 'ctratt', DNVMS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_DNVMS 0x4000
+/** Extended LBA Formats Supported; bit 15 of 'ctratt', ELBAS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_ELBAS 0x8000
+/** MDTS and Size Limits Exclude Metadata; bit 16 of 'ctratt', MEM (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_MEM 0x10000
+/** HMB Restrict Non-Operational Power State Access; bit 17 of 'ctratt', HMBR (Base 2.4, Figure
+ * 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_HMBR 0x20000
+/** Reservations and Host Identifier Interaction; bit 18 of 'ctratt', RHII (Base 2.4, Figure 338)
+ */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_RHII 0x40000
+/** Flexible Data Placement Support; bit 19 of 'ctratt', FDPS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_FDPS 0x80000
+/** Power Limit Support; bit 20 of 'ctratt', PLS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_PLS 0x100000
+/** Power Measurement Support; bit 21 of 'ctratt', PMS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_PMS 0x200000
+/** Voltage Measurement Support; bit 22 of 'ctratt', VMS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_VMS 0x400000
+/** Idle I/O Exit Latency Limit Support and Scope; bits 24:23 of 'ctratt', IIELLSS (Base 2.4,
+ * Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CTRATT_IIELLSS 0x1800000
+/** Read Recovery Level 0; bit 0 of 'rrls', RRL0 (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_RRLS_RRL0 0x1
+/** Read Recovery Level 1; bit 1 of 'rrls', RRL1 (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_RRLS_RRL1 0x2
+/** Read Recovery Level 2; bit 2 of 'rrls', RRL2 (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_RRLS_RRL2 0x4
+/** Read Recovery Level 3; bit 3 of 'rrls', RRL3 (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_RRLS_RRL3 0x8
+/** Read Recovery Level 4; bit 4 of 'rrls', RRL4 (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_RRLS_RRL4 0x10
+/** Read Recovery Level 5; bit 5 of 'rrls', RRL5 (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_RRLS_RRL5 0x20
+/** Read Recovery Level 6; bit 6 of 'rrls', RRL6 (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_RRLS_RRL6 0x40
+/** Read Recovery Level 7; bit 7 of 'rrls', RRL7 (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_RRLS_RRL7 0x80
+/** Read Recovery Level 8; bit 8 of 'rrls', RRL8 (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_RRLS_RRL8 0x100
+/** Read Recovery Level 9; bit 9 of 'rrls', RRL9 (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_RRLS_RRL9 0x200
+/** Read Recovery Level 10; bit 10 of 'rrls', RRL10 (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_RRLS_RRL10 0x400
+/** Read Recovery Level 11; bit 11 of 'rrls', RRL11 (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_RRLS_RRL11 0x800
+/** Read Recovery Level 12; bit 12 of 'rrls', RRL12 (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_RRLS_RRL12 0x1000
+/** Read Recovery Level 13; bit 13 of 'rrls', RRL13 (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_RRLS_RRL13 0x2000
+/** Read Recovery Level 14; bit 14 of 'rrls', RRL14 (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_RRLS_RRL14 0x4000
+/** Read Recovery Level 15; bit 15 of 'rrls', RRL15 (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_RRLS_RRL15 0x8000
+/** NVMe Storage Device; bit 0 of 'nvmsr', NVMESD (Base 2.4, Figure 338) */
 #define XNVME_SPEC_IDFY_CTRLR_NVMSR_NVMESD 0x1
-/** NVMe enclosure; bit 1 of 'nvmsr' */
+/** NVMe Enclosure; bit 1 of 'nvmsr', NVMEE (Base 2.4, Figure 338) */
 #define XNVME_SPEC_IDFY_CTRLR_NVMSR_NVMEE 0x2
-/** VPD write cycles remaining; bits 6:0 of 'vwci' */
+/** VPD Write Cycles Remaining; bits 6:0 of 'vwci', VWCR (Base 2.4, Figure 338) */
 #define XNVME_SPEC_IDFY_CTRLR_VWCI_VWCR 0x7f
-/** The VPD write cycles remaining are valid; bit 7 of 'vwci' */
+/** VPD Write Cycle Remaining Valid; bit 7 of 'vwci', VWCRV (Base 2.4, Figure 338) */
 #define XNVME_SPEC_IDFY_CTRLR_VWCI_VWCRV 0x80
-/** SMBus/I2C port management endpoint; bit 0 of 'mec' */
-#define XNVME_SPEC_IDFY_CTRLR_MEC_SMBUSME 0x1
-/** PCIe port management endpoint; bit 1 of 'mec' */
+/** 2-Wire Port Management Endpoint; bit 0 of 'mec', TWPME (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_MEC_TWPME 0x1
+/** PCIe Port Management Endpoint; bit 1 of 'mec', PCIEME (Base 2.4, Figure 338) */
 #define XNVME_SPEC_IDFY_CTRLR_MEC_PCIEME 0x2
-/** Security send and receive; bit 0 of 'oacs' */
-#define XNVME_SPEC_IDFY_CTRLR_OACS_SECURITY 0x1
-/** Format NVM; bit 1 of 'oacs' */
-#define XNVME_SPEC_IDFY_CTRLR_OACS_FORMAT 0x2
-/** Firmware commit and image download; bit 2 of 'oacs' */
-#define XNVME_SPEC_IDFY_CTRLR_OACS_FIRMWARE 0x4
-/** Namespace management and attachment; bit 3 of 'oacs' */
-#define XNVME_SPEC_IDFY_CTRLR_OACS_NS_MANAGE 0x8
-/** Device self-test; bit 4 of 'oacs' */
-#define XNVME_SPEC_IDFY_CTRLR_OACS_DEVICE_SELF_TEST 0x10
-/** Directives; bit 5 of 'oacs' */
-#define XNVME_SPEC_IDFY_CTRLR_OACS_DIRECTIVES 0x20
-/** NVMe-MI send and receive; bit 6 of 'oacs' */
-#define XNVME_SPEC_IDFY_CTRLR_OACS_NVME_MI 0x40
-/** Virtualization management; bit 7 of 'oacs' */
-#define XNVME_SPEC_IDFY_CTRLR_OACS_VIRTUALIZATION_MANAGEMENT 0x80
-/** Doorbell buffer config; bit 8 of 'oacs' */
-#define XNVME_SPEC_IDFY_CTRLR_OACS_DOORBELL_BUFFER_CONFIG 0x100
-/** Get LBA status; bit 9 of 'oacs' */
-#define XNVME_SPEC_IDFY_CTRLR_OACS_LBA_STATUS 0x200
-/** Command and feature lockdown; bit 10 of 'oacs' */
-#define XNVME_SPEC_IDFY_CTRLR_OACS_CMD_FEATURE_LOCKDOWN 0x400
-/** The first firmware slot is read-only; bit 0 of 'frmw' */
-#define XNVME_SPEC_IDFY_CTRLR_FRMW_SLOT1_RO 0x1
-/** The number of firmware slots; bits 3:1 of 'frmw' */
-#define XNVME_SPEC_IDFY_CTRLR_FRMW_NUM_SLOTS 0xe
-/** Activation without reset; bit 4 of 'frmw' */
-#define XNVME_SPEC_IDFY_CTRLR_FRMW_ACTIVATION_WITHOUT_RESET 0x10
-/** Multiple update detection; bit 5 of 'frmw' */
-#define XNVME_SPEC_IDFY_CTRLR_FRMW_MUL_UPDATE_DETECTION 0x20
-/** Per namespace SMART / health log page; bit 0 of 'lpa' */
-#define XNVME_SPEC_IDFY_CTRLR_LPA_NS_SMART 0x1
-/** Commands supported and effects log page; bit 1 of 'lpa' */
-#define XNVME_SPEC_IDFY_CTRLR_LPA_CELP 0x2
-/** Extended data for get log page; bit 2 of 'lpa' */
-#define XNVME_SPEC_IDFY_CTRLR_LPA_EDLP 0x4
-/** Telemetry log pages and notices; bit 3 of 'lpa' */
-#define XNVME_SPEC_IDFY_CTRLR_LPA_TELEMETRY 0x8
-/** Persistent event log; bit 4 of 'lpa' */
-#define XNVME_SPEC_IDFY_CTRLR_LPA_PEL 0x10
-/** Miscellaneous log; bit 5 of 'lpa' */
-#define XNVME_SPEC_IDFY_CTRLR_LPA_MEL 0x20
-/** Telemetry data area 4; bit 6 of 'lpa' */
-#define XNVME_SPEC_IDFY_CTRLR_LPA_TEL_DA4 0x40
-/** Admin vendor specific commands use the format of the specification; bit 0 of 'avscc' */
-#define XNVME_SPEC_IDFY_CTRLR_AVSCC_SPEC_FORMAT 0x1
-/** Autonomous power state transitions are supported; bit 0 of 'apsta' */
-#define XNVME_SPEC_IDFY_CTRLR_APSTA_SUPPORTED 0x1
-/** Number of RPMB units; bits 2:0 of 'rpmbs' */
-#define XNVME_SPEC_IDFY_CTRLR_RPMBS_NUM_RPMB_UNITS 0x7
-/** Authentication method; bits 5:3 of 'rpmbs' */
-#define XNVME_SPEC_IDFY_CTRLR_RPMBS_AUTH_METHOD 0x38
-/** Total size; bits 23:16 of 'rpmbs' */
-#define XNVME_SPEC_IDFY_CTRLR_RPMBS_TOTAL_SIZE 0xff0000
-/** Access size; bits 31:24 of 'rpmbs' */
-#define XNVME_SPEC_IDFY_CTRLR_RPMBS_ACCESS_SIZE 0xff000000
-/** Only one device self-test operation at a time; bit 0 of 'dsto' */
-#define XNVME_SPEC_IDFY_CTRLR_DSTO_ONE_ONLY 0x1
-/** Host controlled thermal management is supported; bit 0 of 'hctma' */
-#define XNVME_SPEC_IDFY_CTRLR_HCTMA_SUPPORTED 0x1
-/** Crypto erase; bit 0 of 'sanicap' */
-#define XNVME_SPEC_IDFY_CTRLR_SANICAP_CRYPTO_ERASE 0x1
-/** Block erase; bit 1 of 'sanicap' */
-#define XNVME_SPEC_IDFY_CTRLR_SANICAP_BLOCK_ERASE 0x2
-/** Overwrite; bit 2 of 'sanicap' */
-#define XNVME_SPEC_IDFY_CTRLR_SANICAP_OVERWRITE 0x4
-/** No-deallocate inhibited; bit 29 of 'sanicap' */
+/** Security Send Receive Supported; bit 0 of 'oacs', SSRS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_SSRS 0x1
+/** Format NVM Supported; bit 1 of 'oacs', FNVMS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_FNVMS 0x2
+/** Firmware Download Supported; bit 2 of 'oacs', FWDS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_FWDS 0x4
+/** Namespace Management Supported; bit 3 of 'oacs', NMS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_NMS 0x8
+/** Device Self-test Supported; bit 4 of 'oacs', DSTS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_DSTS 0x10
+/** Directives Supported; bit 5 of 'oacs', DIRS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_DIRS 0x20
+/** NVMe-MI Send Receive Supported; bit 6 of 'oacs', NSRS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_NSRS 0x40
+/** Virtualization Management Supported; bit 7 of 'oacs', VMS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_VMS 0x80
+/** Doorbell Buffer Config Supported; bit 8 of 'oacs', DBCS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_DBCS 0x100
+/** Get LBA Status Supported; bit 9 of 'oacs', GLSS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_GLSS 0x200
+/** Command and Feature Lockdown Supported; bit 10 of 'oacs', CFLS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_CFLS 0x400
+/** Host Managed Live Migration Support; bit 11 of 'oacs', HMLMS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_HMLMS 0x800
+/** Exported NVM Subsystem Support; bit 12 of 'oacs', ENSS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_ENSS 0x1000
+/** Controller-scoped Command and Feature Lockdown Supported; bit 13 of 'oacs', CCFLS (Base 2.4,
+ * Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_OACS_CCFLS 0x2000
+/** First Firmware Slot Read Only; bit 0 of 'frmw', FFSRO (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_FRMW_FFSRO 0x1
+/** Number Of Firmware Slots; bits 3:1 of 'frmw', NOFS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_FRMW_NOFS 0xe
+/** Firmware Activation Without Reset; bit 4 of 'frmw', FAWR (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_FRMW_FAWR 0x10
+/** Support Multiple Update Detection; bit 5 of 'frmw', SMUD (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_FRMW_SMUD 0x20
+/** SMART Support; bit 0 of 'lpa', SMARTS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_LPA_SMARTS 0x1
+/** Commands Supported and Effects Support; bit 1 of 'lpa', CSES (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_LPA_CSES 0x2
+/** Log Page Extended Data Support; bit 2 of 'lpa', LPEDS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_LPA_LPEDS 0x4
+/** Telemetry Support; bit 3 of 'lpa', TS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_LPA_TS 0x8
+/** Persistent Event Support; bit 4 of 'lpa', PES (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_LPA_PES 0x10
+/** Miscellaneous Log Page Support; bit 5 of 'lpa', MLPS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_LPA_MLPS 0x20
+/** Data Area 4 Support; bit 6 of 'lpa', DA4S (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_LPA_DA4S 0x40
+/** Vendor Specific Command Format; bit 0 of 'avscc', VSCF (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_AVSCC_VSCF 0x1
+/** Autonomous Power Transition Support; bit 0 of 'apsta', APTS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_APSTA_APTS 0x1
+/** Number of RPMB Units; bits 2:0 of 'rpmbs', NRPMBU (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_RPMBS_NRPMBU 0x7
+/** Authentication Method; bits 5:3 of 'rpmbs', AUTHM (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_RPMBS_AUTHM 0x38
+/** Total Size; bits 23:16 of 'rpmbs', TSZE (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_RPMBS_TSZE 0xff0000
+/** Access Size; bits 31:24 of 'rpmbs', ASZE (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_RPMBS_ASZE 0xff000000
+/** Single Device Self-test Operation; bit 0 of 'dsto', SDSO (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_DSTO_SDSO 0x1
+/** Host-Initiated Refresh Support; bit 1 of 'dsto', HIRS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_DSTO_HIRS 0x2
+/** Host Controlled Thermal Management Support; bit 0 of 'hctma', HCTMS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_HCTMA_HCTMS 0x1
+/** Crypto Erase Support; bit 0 of 'sanicap', CES (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_SANICAP_CES 0x1
+/** Block Erase Support; bit 1 of 'sanicap', BES (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_SANICAP_BES 0x2
+/** Overwrite Support; bit 2 of 'sanicap', OWS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_SANICAP_OWS 0x4
+/** Verification Support; bit 3 of 'sanicap', VERS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_SANICAP_VERS 0x8
+/** Namespace Verification Support; bit 4 of 'sanicap', NVERS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_SANICAP_NVERS 0x10
+/** Sanitize Purge Request and Reporting Supported; bit 5 of 'sanicap', SPRRS (Base 2.4, Figure
+ * 338) */
+#define XNVME_SPEC_IDFY_CTRLR_SANICAP_SPRRS 0x20
+/** No-Deallocate Inhibited; bit 29 of 'sanicap', NDI (Base 2.4, Figure 338) */
 #define XNVME_SPEC_IDFY_CTRLR_SANICAP_NDI 0x20000000
-/** No-deallocate modifies media after sanitize; bits 31:30 of 'sanicap' */
+/** No-Deallocate Modifies Media After Sanitize; bits 31:30 of 'sanicap', NODMMAS (Base 2.4, Figure
+ * 338) */
 #define XNVME_SPEC_IDFY_CTRLR_SANICAP_NODMMAS 0xc0000000
-/** ANA optimized state; bit 0 of 'anacap' */
-#define XNVME_SPEC_IDFY_CTRLR_ANACAP_OPTIMIZE 0x1
-/** ANA non-optimized state; bit 1 of 'anacap' */
-#define XNVME_SPEC_IDFY_CTRLR_ANACAP_NON_OPTIMIZE 0x2
-/** ANA inaccessible state; bit 2 of 'anacap' */
-#define XNVME_SPEC_IDFY_CTRLR_ANACAP_INACCESSIBLE 0x4
-/** ANA persistent loss state; bit 3 of 'anacap' */
-#define XNVME_SPEC_IDFY_CTRLR_ANACAP_PERSIST_LOSS 0x8
-/** ANA change state; bit 4 of 'anacap' */
-#define XNVME_SPEC_IDFY_CTRLR_ANACAP_CHANGE 0x10
-/** The ANAGRPID does not change while the namespace is attached; bit 6 of 'anacap' */
-#define XNVME_SPEC_IDFY_CTRLR_ANACAP_NS_ANAGRPID 0x40
-/** A non-zero ANAGRPID is supported by namespace management; bit 7 of 'anacap' */
-#define XNVME_SPEC_IDFY_CTRLR_ANACAP_MGT_ANAGRPID 0x80
-/** The minimum submission queue entry size, as a power of two; bits 3:0 of 'sqes' */
-#define XNVME_SPEC_IDFY_CTRLR_SQES_MIN 0xf
-/** The maximum submission queue entry size, as a power of two; bits 7:4 of 'sqes' */
-#define XNVME_SPEC_IDFY_CTRLR_SQES_MAX 0xf0
-/** The minimum completion queue entry size, as a power of two; bits 3:0 of 'cqes' */
-#define XNVME_SPEC_IDFY_CTRLR_CQES_MIN 0xf
-/** The maximum completion queue entry size, as a power of two; bits 7:4 of 'cqes' */
-#define XNVME_SPEC_IDFY_CTRLR_CQES_MAX 0xf0
-/** Compare; bit 0 of 'oncs' */
-#define XNVME_SPEC_IDFY_CTRLR_ONCS_COMPARE 0x1
-/** Write uncorrectable; bit 1 of 'oncs' */
-#define XNVME_SPEC_IDFY_CTRLR_ONCS_WRITE_UNC 0x2
-/** Dataset management; bit 2 of 'oncs' */
-#define XNVME_SPEC_IDFY_CTRLR_ONCS_DSM 0x4
-/** Write zeroes; bit 3 of 'oncs' */
-#define XNVME_SPEC_IDFY_CTRLR_ONCS_WRITE_ZEROES 0x8
-/** The save field of set features; bit 4 of 'oncs' */
-#define XNVME_SPEC_IDFY_CTRLR_ONCS_SET_FEATURES_SAVE 0x10
-/** Reservations; bit 5 of 'oncs' */
-#define XNVME_SPEC_IDFY_CTRLR_ONCS_RESERVATIONS 0x20
-/** Timestamp; bit 6 of 'oncs' */
-#define XNVME_SPEC_IDFY_CTRLR_ONCS_TIMESTAMP 0x40
-/** Verify; bit 7 of 'oncs' */
-#define XNVME_SPEC_IDFY_CTRLR_ONCS_VERIFY 0x80
-/** Copy; bit 8 of 'oncs' */
-#define XNVME_SPEC_IDFY_CTRLR_ONCS_COPY 0x100
-/** A format applies to all namespaces; bit 0 of 'fna' */
-#define XNVME_SPEC_IDFY_CTRLR_FNA_FORMAT_ALL_NS 0x1
-/** A secure erase applies to all namespaces; bit 1 of 'fna' */
-#define XNVME_SPEC_IDFY_CTRLR_FNA_ERASE_ALL_NS 0x2
-/** Cryptographic erase is supported; bit 2 of 'fna' */
-#define XNVME_SPEC_IDFY_CTRLR_FNA_CRYPTO_ERASE_SUPPORTED 0x4
-/** A format of NSID FFFFFFFFh is supported; bit 3 of 'fna' */
-#define XNVME_SPEC_IDFY_CTRLR_FNA_NSID_FFFFFFFF 0x8
-/** A volatile write cache is present; bit 0 of 'vwc' */
-#define XNVME_SPEC_IDFY_CTRLR_VWC_PRESENT 0x1
-/** Flush with NSID FFFFFFFFh; bits 2:1 of 'vwc' */
-#define XNVME_SPEC_IDFY_CTRLR_VWC_FLUSH_BROADCAST 0x6
-/** Copy descriptor format 0; bit 0 of 'cdfs' */
-#define XNVME_SPEC_IDFY_CTRLR_CDFS_FORMAT0 0x1
-/** Copy descriptor format 1; bit 1 of 'cdfs' */
-#define XNVME_SPEC_IDFY_CTRLR_CDFS_FORMAT1 0x2
-/** SGLs are supported, and their alignment; bits 1:0 of 'sgls' */
-#define XNVME_SPEC_IDFY_CTRLR_SGLS_SUPPORTED 0x3
-/** Keyed SGL data block descriptor; bit 2 of 'sgls' */
-#define XNVME_SPEC_IDFY_CTRLR_SGLS_KEYED_SGL 0x4
-/** SGL descriptor threshold; bits 15:8 of 'sgls' */
-#define XNVME_SPEC_IDFY_CTRLR_SGLS_SGL_DESC_THRESHOLD 0xff00
-/** SGL bit bucket descriptor; bit 16 of 'sgls' */
-#define XNVME_SPEC_IDFY_CTRLR_SGLS_BIT_BUCKET_DESCRIPTOR 0x10000
-/** Byte aligned contiguous metadata pointer; bit 17 of 'sgls' */
-#define XNVME_SPEC_IDFY_CTRLR_SGLS_METADATA_POINTER 0x20000
-/** SGL data longer than the data; bit 18 of 'sgls' */
-#define XNVME_SPEC_IDFY_CTRLR_SGLS_OVERSIZED_SGL 0x40000
-/** MPTR as an address of an SGL segment; bit 19 of 'sgls' */
-#define XNVME_SPEC_IDFY_CTRLR_SGLS_METADATA_ADDRESS 0x80000
-/** Address as an offset; bit 20 of 'sgls' */
-#define XNVME_SPEC_IDFY_CTRLR_SGLS_SGL_OFFSET 0x100000
-/** Transport SGL data block descriptor; bit 21 of 'sgls' */
-#define XNVME_SPEC_IDFY_CTRLR_SGLS_TRANSPORT_SGL 0x200000
+/** Report ANA Optimized State; bit 0 of 'anacap', RANAOS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_ANACAP_RANAOS 0x1
+/** Report ANA Non-Optimized State; bit 1 of 'anacap', RANANOS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_ANACAP_RANANOS 0x2
+/** Report ANA Inaccessible State; bit 2 of 'anacap', RANAIS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_ANACAP_RANAIS 0x4
+/** Report ANA Persistent Loss State; bit 3 of 'anacap', RANAPLS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_ANACAP_RANAPLS 0x8
+/** Report ANA Change State; bit 4 of 'anacap', RANACS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_ANACAP_RANACS 0x10
+/** ANA Group ID Locked When Attached Support; bit 6 of 'anacap', ANAGIDLWAS (Base 2.4, Figure 338)
+ */
+#define XNVME_SPEC_IDFY_CTRLR_ANACAP_ANAGIDLWAS 0x40
+/** ANA Group ID Support; bit 7 of 'anacap', ANAGIDS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_ANACAP_ANAGIDS 0x80
+/** Minimum I/O Submission Queue Entry Size; bits 3:0 of 'sqes', MINSQES (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_SQES_MINSQES 0xf
+/** Maximum I/O Submission Queue Entry Size; bits 7:4 of 'sqes', MAXSQES (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_SQES_MAXSQES 0xf0
+/** Minimum I/O Completion Queue Entry Size; bits 3:0 of 'cqes', MINCQES (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CQES_MINCQES 0xf
+/** Maximum I/O Completion Queue Entry Size; bits 7:4 of 'cqes', MAXCQES (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CQES_MAXCQES 0xf0
+/** Compare Command Support; bit 0 of 'oncs', NVMCMPS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_ONCS_NVMCMPS 0x1
+/** Write Uncorrectable Support Variants; bit 1 of 'oncs', NVMWUSV (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_ONCS_NVMWUSV 0x2
+/** Dataset Management Support Variants; bit 2 of 'oncs', NVMDSMSV (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_ONCS_NVMDSMSV 0x4
+/** Write Zeroes Support Variants; bit 3 of 'oncs', NVMWZSV (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_ONCS_NVMWZSV 0x8
+/** Save and Select Feature Support; bit 4 of 'oncs', SSFS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_ONCS_SSFS 0x10
+/** Reservations Support; bit 5 of 'oncs', RESERVS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_ONCS_RESERVS 0x20
+/** Timestamp Support; bit 6 of 'oncs', TSS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_ONCS_TSS 0x40
+/** Verify Support; bit 7 of 'oncs', NVMVFYS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_ONCS_NVMVFYS 0x80
+/** Copy Support; bit 8 of 'oncs', NVMCPYS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_ONCS_NVMCPYS 0x100
+/** NVM Copy Single Atomicity; bit 9 of 'oncs', NVMCSA (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_ONCS_NVMCSA 0x200
+/** NVM All Fast Copy; bit 10 of 'oncs', NVMAFC (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_ONCS_NVMAFC 0x400
+/** Maximum Write Zeroes with Deallocate; bit 11 of 'oncs', MAXWZD (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_ONCS_MAXWZD 0x800
+/** Namespace Zeroes Support; bit 12 of 'oncs', NSZS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_ONCS_NSZS 0x1000
+/** Fused Compare and Write Supported; bit 0 of 'fuses', FCWS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_FUSES_FCWS 0x1
+/** Format Namespace Scope; bit 0 of 'fna', FNS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_FNA_FNS 0x1
+/** Secure Erase Namespace Scope; bit 1 of 'fna', SENS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_FNA_SENS 0x2
+/** Cryptographic Erase Supported; bit 2 of 'fna', CRYES (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_FNA_CRYES 0x4
+/** Format NVM Broadcast Support; bit 3 of 'fna', FNVMBS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_FNA_FNVMBS 0x8
+/** Volatile Write Cache Present; bit 0 of 'vwc', VWCP (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_VWC_VWCP 0x1
+/** Flush Behavior; bits 2:1 of 'vwc', FB (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_VWC_FB 0x6
+/** Same NVM Vendor Specific Command Format; bit 0 of 'icsvscc', SNVSCF (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_ICSVSCC_SNVSCF 0x1
+/** No Write Protect and Write Protect Support; bit 0 of 'nwpc', NWPWPS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_NWPC_NWPWPS 0x1
+/** Write Protect Until Power Cycle Support; bit 1 of 'nwpc', WPUPCS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_NWPC_WPUPCS 0x2
+/** Permanent Write Protect Support; bit 2 of 'nwpc', PWPS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_NWPC_PWPS 0x4
+/** Copy Descriptor Format 0 Support; bit 0 of 'cdfs', CDF0S (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CDFS_CDF0S 0x1
+/** Copy Descriptor Format 1 Support; bit 1 of 'cdfs', CDF1S (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CDFS_CDF1S 0x2
+/** Copy Descriptor Format 2 Support; bit 2 of 'cdfs', CDF2S (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CDFS_CDF2S 0x4
+/** Copy Descriptor Format 3 Support; bit 3 of 'cdfs', CDF3S (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CDFS_CDF3S 0x8
+/** Copy Descriptor Format 4 Support; bit 4 of 'cdfs', CDF4S (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_CDFS_CDF4S 0x10
+/** SGL Support; bits 1:0 of 'sgls', SGLS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_SGLS_SGLS 0x3
+/** Keyed SGL Data Block Descriptor Support; bit 2 of 'sgls', KSDBDS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_SGLS_KSDBDS 0x4
+/** SGL Descriptor Threshold; bits 15:8 of 'sgls', SDT (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_SGLS_SDT 0xff00
+/** SGL Bit Bucket Descriptor Supported; bit 16 of 'sgls', SBBDS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_SGLS_SBBDS 0x10000
+/** Metadata Buffer Alignment; bit 17 of 'sgls', MBA (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_SGLS_MBA 0x20000
+/** Length Larger than Data Transfer Support; bit 18 of 'sgls', LLDTS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_SGLS_LLDTS 0x40000
+/** MPTR SGL Descriptor Support; bit 19 of 'sgls', MSDS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_SGLS_MSDS 0x80000
+/** SGL Address Offset Supported; bit 20 of 'sgls', SAOS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_SGLS_SAOS 0x100000
+/** Transport SGL Data Block Descriptor Support; bit 21 of 'sgls', TSDBDS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_SGLS_TSDBDS 0x200000
 
 /**
  * Representation of I/O Command Set Vector
