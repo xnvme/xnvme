@@ -116,7 +116,8 @@ test_copy(struct xnvme_cli *cli)
 		goto exit;
 	}
 	source_range->slba = slba;
-	source_range->nlb = nlb - 1;
+	source_range->rpars = xnvme_bits_set(source_range->rpars,
+					     XNVME_SPEC_NVM_SCOPY_FMT_ZERO_RPARS_NLB, nlb - 1);
 
 	// Write data to the buffer
 	nsid = xnvme_dev_get_nsid(dev);

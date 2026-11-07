@@ -61,7 +61,10 @@ xnvme_be_ramdisk_sync_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_
 		     i++) {
 			char *dest = offset + sdlba_offset + (ctx->cmd.scopy.sdlba << ssw);
 			char *src = offset + (ranges[i].slba << ssw);
-			size_t nbytes = (ranges[i].nlb + 1) * ctx->dev->geo.lba_nbytes;
+			size_t nbytes = (xnvme_bits_get(ranges[i].rpars,
+							XNVME_SPEC_NVM_SCOPY_FMT_ZERO_RPARS_NLB) +
+					 1) *
+					ctx->dev->geo.lba_nbytes;
 			memcpy(dest, src, nbytes);
 			sdlba_offset += nbytes;
 		}

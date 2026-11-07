@@ -2135,22 +2135,36 @@ enum xnvme_spec_nvm_cmd_cpl_sc {
 /**
  * Source Range Entry of the Copy command, in Copy Descriptor Format 0h
  *
+ * Format 2h has the same layout, with SNSID in 'spars' and FCO in 'sopt'.
+ *
+ * @see NVM Command Set 1.3, Figure 40
  * @struct xnvme_spec_nvm_scopy_fmt_zero
  */
 struct xnvme_spec_nvm_scopy_fmt_zero {
-	uint8_t rsvd0[8];
+	uint32_t spars; ///< SPARS: Source Parameters; reserved in Format 0h, SNSID in Format 2h
 
-	uint64_t slba; ///< Start LBA
+	uint8_t rsvd4[4];
 
-	uint16_t nlb; ///< Number of logical blocks, zero-based
+	uint64_t slba; ///< SLBA: Starting LBA
 
-	uint16_t rsvd20;
+	uint32_t rpars; ///< RPARS: Read Parameters, see XNVME_SPEC_NVM_SCOPY_FMT_ZERO_RPARS_*
 
-	uint32_t eilbrt; ///< Expected Initial Logical Block Ref. Tag
-	uint32_t elbatm; ///< Expected Logical Block App. Tag Mask
-	uint32_t elbat;  ///< Expected Logical Block App. Tag
+	uint16_t cev;  ///< CEV: Command Extension Value
+	uint16_t sopt; ///< SOPT: Source Options, see XNVME_SPEC_NVM_SCOPY_FMT_ZERO_SOPT_*
+
+	uint32_t elbt;   ///< ELBT: Expected Logical Block Tags, the ELBST and the EILBRT
+	uint16_t elbat;  ///< ELBAT: Expected Logical Block Application Tag
+	uint16_t elbatm; ///< ELBATM: Expected Logical Block Application Tag Mask
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_scopy_fmt_zero) == 32, "Incorrect size")
+
+/** Number of Logical Blocks, zero-based; bits 15:00 of 'rpars', NLB (NVM Command Set 1.3, Figure
+ * 40) */
+#define XNVME_SPEC_NVM_SCOPY_FMT_ZERO_RPARS_NLB 0xffff
+/** Command Extension Type; bits 19:16 of 'rpars', CETYPE (NVM Command Set 1.3, Figure 40) */
+#define XNVME_SPEC_NVM_SCOPY_FMT_ZERO_RPARS_CETYPE 0xf0000
+/** Fast Copy Only, Format 2h only; bit 15 of 'sopt', FCO (NVM Command Set 1.3, Figure 40) */
+#define XNVME_SPEC_NVM_SCOPY_FMT_ZERO_SOPT_FCO 0x8000
 
 /**
  * Structure conversion for support Kernel format

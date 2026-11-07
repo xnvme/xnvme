@@ -151,10 +151,13 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_dsm, nr) == 40,
 		    "nr of struct xnvme_spec_cmd_dsm")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_dsm, cdw11) == 44,
 		    "cdw11 of struct xnvme_spec_cmd_dsm")
-XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_scopy_fmt_zero, nlb) == 16,
-		    "nlb of struct xnvme_spec_nvm_scopy_fmt_zero")
-XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_scopy_fmt_zero, eilbrt) == 20,
-		    "eilbrt of struct xnvme_spec_nvm_scopy_fmt_zero")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_nvm_scopy_fmt_zero, rpars,
+			 XNVME_SPEC_NVM_SCOPY_FMT_ZERO_RPARS_NLB |
+				 XNVME_SPEC_NVM_SCOPY_FMT_ZERO_RPARS_CETYPE),
+		    "rpars of struct xnvme_spec_nvm_scopy_fmt_zero")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_nvm_scopy_fmt_zero, sopt,
+			 XNVME_SPEC_NVM_SCOPY_FMT_ZERO_SOPT_FCO),
+		    "sopt of struct xnvme_spec_nvm_scopy_fmt_zero")
 XNVME_STATIC_ASSERT(
 	FITS(struct xnvme_spec_nvm_cmd_scopy, cdw12,
 	     XNVME_SPEC_NVM_CMD_SCOPY_CDW12_NR | XNVME_SPEC_NVM_CMD_SCOPY_CDW12_DESFMT |
@@ -721,6 +724,19 @@ XNVME_STATIC_ASSERT(XNVME_SPEC_NVM_CMD_SCOPY_CDW12_CETYPE == 0xf0000 &&
 			    XNVME_SPEC_NVM_CMD_SCOPY_CDW12_STCW == 0x1000000 &&
 			    XNVME_SPEC_NVM_CMD_SCOPY_CDW12_STCR == 0x2000000,
 		    "CETYPE is bits 19:16, STCW bit 24 and STCR bit 25 of Copy dword 12")
+
+/* NVM Command Set 1.3, Figure 40 */
+SPEC_AT(struct xnvme_spec_nvm_scopy_fmt_zero, spars, 0, 4)
+SPEC_AT(struct xnvme_spec_nvm_scopy_fmt_zero, slba, 8, 8)
+SPEC_AT(struct xnvme_spec_nvm_scopy_fmt_zero, rpars, 16, 4)
+SPEC_AT(struct xnvme_spec_nvm_scopy_fmt_zero, cev, 20, 2)
+SPEC_AT(struct xnvme_spec_nvm_scopy_fmt_zero, sopt, 22, 2)
+SPEC_AT(struct xnvme_spec_nvm_scopy_fmt_zero, elbt, 24, 4)
+SPEC_AT(struct xnvme_spec_nvm_scopy_fmt_zero, elbat, 28, 2)
+SPEC_AT(struct xnvme_spec_nvm_scopy_fmt_zero, elbatm, 30, 2)
+XNVME_STATIC_ASSERT(XNVME_SPEC_NVM_SCOPY_FMT_ZERO_RPARS_NLB == 0xffff &&
+			    XNVME_SPEC_NVM_SCOPY_FMT_ZERO_RPARS_CETYPE == 0xf0000,
+		    "NLB is bits 15:00 and CETYPE bits 19:16 of RPARS")
 
 struct offset_case {
 	const char *name;
