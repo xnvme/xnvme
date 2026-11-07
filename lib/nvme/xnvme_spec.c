@@ -1032,13 +1032,15 @@ lblk_scopy_fmt_zero_yaml(FILE *stream, const struct xnvme_spec_nvm_scopy_fmt_zer
 
 	wrtn += fprintf(stream, "%*sslba: 0x%016" PRIx64 "%s", indent, "", entry->slba, sep);
 
-	wrtn += fprintf(stream, "%*snlb: %" PRIu32 "%s", indent, "", entry->nlb, sep);
+	wrtn += fprintf(stream, "%*snlb: %" PRIu64 "%s", indent, "",
+			xnvme_bits_get(entry->rpars, XNVME_SPEC_NVM_SCOPY_FMT_ZERO_RPARS_NLB),
+			sep);
 
-	wrtn += fprintf(stream, "%*seilbrt: 0x%08" PRIx32 "%s", indent, "", entry->eilbrt, sep);
+	wrtn += fprintf(stream, "%*selbt: 0x%08" PRIx32 "%s", indent, "", entry->elbt, sep);
 
-	wrtn += fprintf(stream, "%*selbatm: 0x%08" PRIx32 "%s", indent, "", entry->elbatm, sep);
+	wrtn += fprintf(stream, "%*selbat: 0x%04" PRIx16 "%s", indent, "", entry->elbat, sep);
 
-	wrtn += fprintf(stream, "%*selbat: 0x%08" PRIx32, indent, "", entry->elbat);
+	wrtn += fprintf(stream, "%*selbatm: 0x%04" PRIx16, indent, "", entry->elbatm);
 
 	return wrtn;
 }
