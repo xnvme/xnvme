@@ -2219,17 +2219,18 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_drecv) == 64, "Incorrect size")
 /**
  * NVMe Command Accessor for the identify command
  *
+ * @see Base 2.4, Figures 333 to 335
  * @struct xnvme_spec_cmd_idfy
  */
 struct xnvme_spec_cmd_idfy {
 	uint32_t cdw00_09[10]; ///< Command dword 0 to 9
 
 	uint8_t cns; ///< CNS: Controller or Namespace Structure
-	uint8_t rsvd1;
+	uint8_t rsvd41;
 	uint16_t cntid; ///< CNTID: Controller Identifier
 
-	uint16_t nvmsetid; ///< NVM Set Identifier
-	uint8_t rsvd2;
+	uint16_t cnssid; ///< CNSSID: CNS Specific Identifier
+	uint8_t rsvd46;
 	uint8_t csi; ///< CSI: Command Set Identifier
 
 	uint32_t cdw12_13[2]; ///< Command dword 12 to 13
@@ -2240,8 +2241,8 @@ struct xnvme_spec_cmd_idfy {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_idfy) == 64, "Incorrect size")
 
-/** UUID Index; bits 6:0 of 'cdw14' */
-#define XNVME_SPEC_CMD_IDFY_CDW14_UUID 0x7f
+/** UUID Index; bits 6:0 of 'cdw14', UIDX (Base 2.4, Figure 335) */
+#define XNVME_SPEC_CMD_IDFY_CDW14_UIDX 0x7f
 
 /**
  * NVMe Command Accessor for the get-log-page command
