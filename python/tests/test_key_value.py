@@ -203,7 +203,7 @@ class TestKeyValue:
             len(key),
             vbuf,
             len(value),
-            opts=xnvme.XNVME_KVS_STORE_OPT_COMPRESS,
+            opts=xnvme.XNVME_KVS_STORE_OPT_NOCOMP,
         )
 
         xnvme.xnvme_buf_free(dev, vbuf)
@@ -238,7 +238,7 @@ class TestKeyValue:
                 len(key),
                 vbuf,
                 len(value),
-                opts=xnvme.XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_EXISTS,
+                opts=xnvme.XNVME_KVS_STORE_OPT_SINKE,
             )
         assert assertion.value.status_code_type == xnvme.XNVME_STATUS_CODE_TYPE_CMDSPEC
         assert assertion.value.status_code == xnvme.XNVME_SPEC_KV_SC_KEY_EXISTS
@@ -251,7 +251,7 @@ class TestKeyValue:
             len(key),
             vbuf,
             len(value),
-            opts=xnvme.XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_EXISTS,
+            opts=xnvme.XNVME_KVS_STORE_OPT_SINKE,
         )
 
         xnvme.xnvme_buf_free(dev, vbuf)
@@ -285,7 +285,7 @@ class TestKeyValue:
             len(key),
             vbuf,
             len(value),
-            opts=xnvme.XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_NOT_EXISTS,
+            opts=xnvme.XNVME_KVS_STORE_OPT_SIKE,
         )
 
         # Deleting the key first should now make it fail
@@ -297,7 +297,7 @@ class TestKeyValue:
                 len(key),
                 vbuf,
                 len(value),
-                opts=xnvme.XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_NOT_EXISTS,
+                opts=xnvme.XNVME_KVS_STORE_OPT_SIKE,
             )
         assert assertion.value.status_code_type == xnvme.XNVME_STATUS_CODE_TYPE_CMDSPEC
         assert assertion.value.status_code == xnvme.XNVME_SPEC_KV_SC_KEY_NOT_EXISTS

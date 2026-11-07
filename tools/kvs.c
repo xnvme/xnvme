@@ -183,9 +183,9 @@ cmd_store(struct xnvme_cli *cli)
 	xnvme_cli_pinf("Alloc/fill dbuf, dbuf_nbytes: %zu", dbuf_nbytes);
 
 	if (cli->args.kv_store_add) {
-		opt = opt | XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_EXISTS;
+		opt = opt | XNVME_KVS_STORE_OPT_SINKE;
 	} else if (cli->args.kv_store_update) {
-		opt = opt | XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_NOT_EXISTS;
+		opt = opt | XNVME_KVS_STORE_OPT_SIKE;
 	}
 
 	dbuf = xnvme_buf_alloc(dev, dbuf_nbytes);

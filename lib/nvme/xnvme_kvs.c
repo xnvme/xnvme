@@ -51,7 +51,7 @@ xnvme_kvs_retrieve(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, ui
 		return err;
 	}
 
-	if (opt & XNVME_KVS_RETRIEVE_OPT_RETRIEVE_RAW) {
+	if (opt & XNVME_KVS_RETRIEVE_OPT_RRD) {
 		ctx->cmd.kvs.cdw11.ro = opt;
 	}
 
@@ -71,16 +71,16 @@ xnvme_kvs_store(struct xnvme_cmd_ctx *ctx, uint32_t nsid, const void *key, uint8
 	// Value Size
 	ctx->cmd.kvs.cdw10 = dbuf_nbytes;
 
-	if (opt & XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_NOT_EXISTS) {
+	if (opt & XNVME_KVS_STORE_OPT_SIKE) {
 		ctx->cmd.kvs.cdw11.ro = opt;
 	}
 
-	if (opt & XNVME_KVS_STORE_OPT_DONT_STORE_IF_KEY_EXISTS) {
+	if (opt & XNVME_KVS_STORE_OPT_SINKE) {
 		ctx->cmd.kvs.cdw11.ro = opt;
 	}
 
-	if (opt & XNVME_KVS_STORE_OPT_COMPRESS) {
-		ctx->cmd.kvs.cdw11.ro = ctx->cmd.kvs.cdw11.ro | XNVME_KVS_STORE_OPT_COMPRESS;
+	if (opt & XNVME_KVS_STORE_OPT_NOCOMP) {
+		ctx->cmd.kvs.cdw11.ro = ctx->cmd.kvs.cdw11.ro | XNVME_KVS_STORE_OPT_NOCOMP;
 	}
 
 	err = kvs_cmd_set_key(&ctx->cmd, key, key_len);
