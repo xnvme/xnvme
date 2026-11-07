@@ -356,7 +356,7 @@ sub_dir_send(struct xnvme_cli *cli)
 	case XNVME_SPEC_DIR_IDENTIFY:
 		if (doper == XNVME_SPEC_DSEND_IDFY_ENDIR) {
 			cdw12 = xnvme_bits_set(cdw12, XNVME_SPEC_CMD_DSEND_CDW12_ENDIR, endir);
-			cdw12 = xnvme_bits_set(cdw12, XNVME_SPEC_CMD_DSEND_CDW12_TDTYPE, tgtdir);
+			cdw12 = xnvme_bits_set(cdw12, XNVME_SPEC_CMD_DSEND_CDW12_DTYPE, tgtdir);
 			break;
 		} else {
 			xnvme_cli_perr("invalid directive operation for identify directives", err);
