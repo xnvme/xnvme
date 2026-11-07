@@ -133,17 +133,16 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_nvm_write_zeroes, cdw13,
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_write_zeroes, lbatm) == 62,
 		    "lbatm of struct xnvme_spec_nvm_write_zeroes")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_nvm_compare, cdw12,
-			 XNVME_SPEC_NVM_COMPARE_CDW12_NLB | XNVME_SPEC_NVM_COMPARE_CDW12_STC |
+			 XNVME_SPEC_NVM_COMPARE_CDW12_NLB | XNVME_SPEC_NVM_COMPARE_CDW12_CETYPE |
+				 XNVME_SPEC_NVM_COMPARE_CDW12_STC |
 				 XNVME_SPEC_NVM_COMPARE_CDW12_PRINFO |
 				 XNVME_SPEC_NVM_COMPARE_CDW12_FUA |
 				 XNVME_SPEC_NVM_COMPARE_CDW12_LR),
 		    "cdw12 of struct xnvme_spec_nvm_compare")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_compare, cdw12) == 48,
 		    "cdw12 of struct xnvme_spec_nvm_compare")
-XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_compare, ilbrt) == 56,
-		    "ilbrt of struct xnvme_spec_nvm_compare")
-XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_compare, lbatm) == 62,
-		    "lbatm of struct xnvme_spec_nvm_compare")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_nvm_compare, cdw13, XNVME_SPEC_NVM_COMPARE_CDW13_CEV),
+		    "cdw13 of struct xnvme_spec_nvm_compare")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_dsm, cdw11,
 			 XNVME_SPEC_CMD_DSM_CDW11_IDR | XNVME_SPEC_CMD_DSM_CDW11_IDW |
 				 XNVME_SPEC_CMD_DSM_CDW11_AD),
@@ -698,6 +697,16 @@ SPEC_AT(struct xnvme_spec_nvm_write_zeroes, lbatm, 62, 2)
 XNVME_STATIC_ASSERT(XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_DTYPE == 0x700000 &&
 			    XNVME_SPEC_NVM_WRITE_ZEROES_CDW12_NSZ == 0x800000,
 		    "DTYPE is bits 22:20 and NSZ bit 23 of Write Zeroes dword 12")
+
+/* NVM Command Set 1.3, Figures 25 to 30 */
+SPEC_AT(struct xnvme_spec_nvm_compare, cdw02_03, 8, 8)
+SPEC_AT(struct xnvme_spec_nvm_compare, slba, 40, 8)
+SPEC_AT(struct xnvme_spec_nvm_compare, cdw13, 52, 4)
+SPEC_AT(struct xnvme_spec_nvm_compare, elbtl, 56, 4)
+SPEC_AT(struct xnvme_spec_nvm_compare, elbat, 60, 2)
+SPEC_AT(struct xnvme_spec_nvm_compare, elbatm, 62, 2)
+XNVME_STATIC_ASSERT(XNVME_SPEC_NVM_COMPARE_CDW12_CETYPE == 0xf0000,
+		    "CETYPE is bits 19:16 of Compare dword 12")
 
 struct offset_case {
 	const char *name;
