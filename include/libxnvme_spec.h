@@ -1834,34 +1834,45 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_feat_nqueues) == 4, "Incorrect size
  * The attributes of a feature, as dword 11 of Set Features and completion dword 0
  * of Get Features carry them, viewed by the feature they are of
  *
+ * Flexible Data Placement is the exception: Set Features carries its attributes in dword 12,
+ * and dword 11 is its ENDGID (Base 2.4, Figures 499 and 500).
+ *
  * @union xnvme_spec_feat
  */
 union xnvme_spec_feat {
 	uint32_t temp_threshold; ///< Temperature Threshold, see XNVME_SPEC_FEAT_TEMP_THRESHOLD_*
 	uint32_t error_recovery; ///< Error Recovery, see XNVME_SPEC_FEAT_ERROR_RECOVERY_*
 	struct xnvme_spec_feat_nqueues nqueues; ///< Number of Queues
-	uint32_t fdp_mode;       ///< Flexible Data Placement, see XNVME_SPEC_FEAT_FDP_MODE_*
+	uint32_t fdp_mode;       ///< Flexible Data Placement, Set Features dword 12, see
+				 ///< XNVME_SPEC_FEAT_FDP_MODE_*
 	uint32_t media_feedback; ///< Media Feedback, see XNVME_SPEC_FEAT_MEDIA_FEEDBACK_*
 	uint32_t val;            ///< The dword whole, for a feature without a view
 };
 XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_feat) == 4, "Incorrect size")
 
-/** Temperature Threshold, in Kelvin; bits 15:0 of 'temp_threshold' */
+/** Temperature Threshold, in Kelvin; bits 15:0 of 'temp_threshold', TMPTH (Base 2.4, Figure 470)
+ */
 #define XNVME_SPEC_FEAT_TEMP_THRESHOLD_TMPTH 0xffff
-/** Threshold Temperature Select; bits 19:16 of 'temp_threshold' */
+/** Threshold Temperature Select; bits 19:16 of 'temp_threshold', TMPSEL (Base 2.4, Figure 470) */
 #define XNVME_SPEC_FEAT_TEMP_THRESHOLD_TMPSEL 0xf0000
-/** Threshold Type Select; bits 21:20 of 'temp_threshold' */
+/** Threshold Type Select; bits 21:20 of 'temp_threshold', THSEL (Base 2.4, Figure 470) */
 #define XNVME_SPEC_FEAT_TEMP_THRESHOLD_THSEL 0x300000
+/** Temperature Threshold Hysteresis; bits 24:22 of 'temp_threshold', TMPTHH (Base 2.4,
+ * Figure 470) */
+#define XNVME_SPEC_FEAT_TEMP_THRESHOLD_TMPTHH 0x1c00000
 
-/** Time Limited Error Recovery, in 100 ms units; bits 15:0 of 'error_recovery' */
+/** Time Limited Error Recovery, in 100 ms units; bits 15:0 of 'error_recovery', TLER (NVM Command
+ * Set 1.3, Figure 97) */
 #define XNVME_SPEC_FEAT_ERROR_RECOVERY_TLER 0xffff
-/** Deallocated or Unwritten Logical Block Error Enable; bit 16 of 'error_recovery' */
+/** Deallocated or Unwritten Logical Block Error Enable; bit 16 of 'error_recovery', DULBE (NVM
+ * Command Set 1.3, Figure 97) */
 #define XNVME_SPEC_FEAT_ERROR_RECOVERY_DULBE 0x10000
 
-/** Flexible Data Placement Enable; bit 0 of 'fdp_mode' */
+/** Flexible Data Placement Enable; bit 0 of 'fdp_mode', FDPE (Base 2.4, Figure 500) */
 #define XNVME_SPEC_FEAT_FDP_MODE_FDPE 0x1
-/** Flexible Data Placement Configuration Index; bits 15:8 of 'fdp_mode' */
-#define XNVME_SPEC_FEAT_FDP_MODE_FDPCI 0xff00
+/** Flexible Data Placement Configuration Index; bits 15:8 of 'fdp_mode', FDPCIDX (Base 2.4,
+ * Figure 500) */
+#define XNVME_SPEC_FEAT_FDP_MODE_FDPCIDX 0xff00
 
 /** High ECC status; bit 0 of 'media_feedback' */
 #define XNVME_SPEC_FEAT_MEDIA_FEEDBACK_HECC 0x1

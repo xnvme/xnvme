@@ -74,14 +74,15 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_alloc_resource, nsa) == 0,
 XNVME_STATIC_ASSERT(FITS(union xnvme_spec_feat, temp_threshold,
 			 XNVME_SPEC_FEAT_TEMP_THRESHOLD_TMPTH |
 				 XNVME_SPEC_FEAT_TEMP_THRESHOLD_TMPSEL |
-				 XNVME_SPEC_FEAT_TEMP_THRESHOLD_THSEL),
+				 XNVME_SPEC_FEAT_TEMP_THRESHOLD_THSEL |
+				 XNVME_SPEC_FEAT_TEMP_THRESHOLD_TMPTHH),
 		    "temp_threshold of union xnvme_spec_feat")
 XNVME_STATIC_ASSERT(FITS(union xnvme_spec_feat, error_recovery,
 			 XNVME_SPEC_FEAT_ERROR_RECOVERY_TLER |
 				 XNVME_SPEC_FEAT_ERROR_RECOVERY_DULBE),
 		    "error_recovery of union xnvme_spec_feat")
 XNVME_STATIC_ASSERT(FITS(union xnvme_spec_feat, fdp_mode,
-			 XNVME_SPEC_FEAT_FDP_MODE_FDPE | XNVME_SPEC_FEAT_FDP_MODE_FDPCI),
+			 XNVME_SPEC_FEAT_FDP_MODE_FDPE | XNVME_SPEC_FEAT_FDP_MODE_FDPCIDX),
 		    "fdp_mode of union xnvme_spec_feat")
 XNVME_STATIC_ASSERT(FITS(union xnvme_spec_feat, media_feedback,
 			 XNVME_SPEC_FEAT_MEDIA_FEEDBACK_HECC |
@@ -1105,6 +1106,10 @@ XNVME_STATIC_ASSERT(XNVME_SPEC_CMD_SANITIZE_CDW10_EMVS == 0x400 &&
 			    XNVME_SPEC_CMD_SANITIZE_CDW10_PREQ == 0x800,
 		    "EMVS is bit 10 and PREQ bit 11 of Sanitize dword 10")
 
+/* Base 2.4, Figure 470 */
+XNVME_STATIC_ASSERT(XNVME_SPEC_FEAT_TEMP_THRESHOLD_TMPTHH == 0x1c00000,
+		    "TMPTHH is bits 24:22 of Temperature Threshold dword 11")
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it
@@ -1367,7 +1372,7 @@ sub_cdw0_views(struct xnvme_cli *XNVME_UNUSED(cli))
 
 		feat.val = 0x00000201; // Flexible Data Placement: FDPE, FDPCI 0x2
 		if (!xnvme_bits_get(feat.fdp_mode, XNVME_SPEC_FEAT_FDP_MODE_FDPE) ||
-		    xnvme_bits_get(feat.fdp_mode, XNVME_SPEC_FEAT_FDP_MODE_FDPCI) != 0x2) {
+		    xnvme_bits_get(feat.fdp_mode, XNVME_SPEC_FEAT_FDP_MODE_FDPCIDX) != 0x2) {
 			xnvme_cli_pinf("FAILED: feat: fdp_mode: %#x", feat.fdp_mode);
 			err = -EINVAL;
 		}
