@@ -60,7 +60,7 @@ xnvme_adm_log(struct xnvme_cmd_ctx *ctx, uint8_t lid, uint8_t lsp, uint64_t lpo_
 	ctx->cmd.log.lpou = (uint32_t)(lpo_nbytes >> 32);
 	ctx->cmd.log.lpol = (uint32_t)lpo_nbytes & 0xfffffff;
 
-	// TODO: should we check XNVME_SPEC_IDFY_CTRLR_LPA_EDLP of ctrlr->lpa for ext. buf and lpo
+	// TODO: should we check XNVME_SPEC_IDFY_CTRLR_LPA_LPEDS of ctrlr->lpa for ext. buf and lpo
 	// support?
 	// TODO: add support for uuid?
 
