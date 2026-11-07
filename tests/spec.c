@@ -340,11 +340,12 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_power_state, ips, XNVME_SPEC_POWER_ST
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_power_state, apw_aps,
 			 XNVME_SPEC_POWER_STATE_APW_APS_APW | XNVME_SPEC_POWER_STATE_APW_APS_APS),
 		    "apw_aps of struct xnvme_spec_power_state")
-XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ctrlr_nvmf, ctrattr,
-			 XNVME_SPEC_IDFY_CTRLR_NVMF_CTRATTR_CTRLR_MODEL),
-		    "ctrattr of struct xnvme_spec_idfy_ctrlr_nvmf")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ctrlr_nvmf, fcatt,
+			 XNVME_SPEC_IDFY_CTRLR_NVMF_FCATT_DCMS |
+				 XNVME_SPEC_IDFY_CTRLR_NVMF_FCATT_NZNSETIDS),
+		    "fcatt of struct xnvme_spec_idfy_ctrlr_nvmf")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ctrlr_nvmf, ofcs,
-			 XNVME_SPEC_IDFY_CTRLR_NVMF_OFCS_DISC_DEL),
+			 XNVME_SPEC_IDFY_CTRLR_NVMF_OFCS_DCS),
 		    "ofcs of struct xnvme_spec_idfy_ctrlr_nvmf")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ctrlr, cmic,
 			 XNVME_SPEC_IDFY_CTRLR_CMIC_MULTI_PORT |
@@ -833,6 +834,12 @@ XNVME_STATIC_ASSERT(XNVME_SPEC_POWER_STATE_EPFRTS_FQVTS_FQVTS == 0xf0 &&
 			    XNVME_SPEC_POWER_STATE_EPFVTS_EPFVTS == 0xf &&
 			    XNVME_SPEC_POWER_STATE_MBWS_MBWS == 0x7,
 		    "FQVTS is bits 215:212, EPFVTS bits 219:216 and MBWS bits 234:232")
+
+/* Base 2.4, Figure 338, bytes 2047:1792 */
+SPEC_AT(struct xnvme_spec_idfy_ctrlr_nvmf, fcatt, 1802 - 1792, 1)
+SPEC_AT(struct xnvme_spec_idfy_ctrlr_nvmf, ofcs, 1804 - 1792, 2)
+SPEC_AT(struct xnvme_spec_idfy_ctrlr_nvmf, dctype, 1806 - 1792, 1)
+SPEC_AT(struct xnvme_spec_idfy_ctrlr_nvmf, ccrl, 1807 - 1792, 1)
 
 struct offset_case {
 	const char *name;

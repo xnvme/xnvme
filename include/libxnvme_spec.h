@@ -940,32 +940,40 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_power_state) == 32, "Incorrect size
 #define XNVME_SPEC_POWER_STATE_MBWS_MBWS 0x7
 
 /**
- * NVMe over Fabrics attributes of the Identify Controller data, bytes 1792-2047
+ * NVMe over Fabrics attributes of the Identify Controller data, bytes 2047:1792
  *
+ * @see Base 2.4, Figure 338
  * @struct xnvme_spec_idfy_ctrlr_nvmf
  */
 struct xnvme_spec_idfy_ctrlr_nvmf {
-	uint32_t ioccsz; ///< I/O queue command capsule supported size (16-byte units)
+	uint32_t ioccsz; ///< IOCCSZ: I/O Queue Command Capsule Supported Size, in 16 byte units
 
-	uint32_t iorcsz; ///< I/O queue response capsule supported size (16-byte units)
+	uint32_t iorcsz; ///< IORCSZ: I/O Queue Response Capsule Supported Size, in 16 byte units
 
-	uint16_t icdoff; ///< In-capsule data offset (16-byte units)
+	uint16_t icdoff; ///< ICDOFF: In Capsule Data Offset, in 16 byte units
 
-	uint8_t ctrattr; ///< Controller attributes, see XNVME_SPEC_IDFY_CTRLR_NVMF_CTRATTR_*
+	uint8_t fcatt; ///< FCATT: Fabrics Controller Attributes, see
+		       ///< XNVME_SPEC_IDFY_CTRLR_NVMF_FCATT_*
 
-	uint8_t msdbd; ///< Maximum SGL block descriptors (0 = no limit)
+	uint8_t msdbd; ///< MSDBD: Maximum SGL Data Block Descriptors, 0 is no limit
 
-	uint16_t ofcs; ///< Optional Fabric Commands supported, see
+	uint16_t ofcs; ///< OFCS: Optional Fabrics Commands Support, see
 		       ///< XNVME_SPEC_IDFY_CTRLR_NVMF_OFCS_*
 
-	uint8_t reserved[242];
+	uint8_t dctype; ///< DCTYPE: Discovery Controller Type
+
+	uint8_t ccrl; ///< CCRL: Cross-Controller Reset Limit
+
+	uint8_t rsvd16[240];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_ctrlr_nvmf) == 256, "Incorrect size")
 
-/** The controller model, 1 static, 0 dynamic; bit 0 of 'ctrattr' */
-#define XNVME_SPEC_IDFY_CTRLR_NVMF_CTRATTR_CTRLR_MODEL 0x1
-/** The Disconnect command is supported; bit 0 of 'ofcs' */
-#define XNVME_SPEC_IDFY_CTRLR_NVMF_OFCS_DISC_DEL 0x1
+/** Dynamic Controller Model Support; bit 0 of 'fcatt', DCMS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_NVMF_FCATT_DCMS 0x1
+/** Non-Zero NVM Set ID Support; bit 1 of 'fcatt', NZNSETIDS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_NVMF_FCATT_NZNSETIDS 0x2
+/** Disconnect Command Support; bit 0 of 'ofcs', DCS (Base 2.4, Figure 338) */
+#define XNVME_SPEC_IDFY_CTRLR_NVMF_OFCS_DCS 0x1
 
 /**
  * Representation of NVMe completion result Identify Controller
