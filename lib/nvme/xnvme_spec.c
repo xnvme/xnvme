@@ -1672,9 +1672,9 @@ xnvme_spec_kvs_idfy_ns_fpr(FILE *stream, const struct xnvme_spec_kvs_idfy_ns *id
 
 	wrtn += fprintf(stream, "  kvf:\n");
 	for (int i = 0; i < idfy->nkvf; i++) {
-		wrtn += fprintf(stream, "  - kml: %" PRIu16 "\n", idfy->kvf[i].kml);
-		wrtn += fprintf(stream, "    vml: %" PRIu32 "\n", idfy->kvf[i].vml);
-		wrtn += fprintf(stream, "    mnk: %" PRIu32 "\n", idfy->kvf[i].mnk);
+		wrtn += fprintf(stream, "  - kvkml: %" PRIu16 "\n", idfy->kvf[i].kvkml);
+		wrtn += fprintf(stream, "    kvvml: %" PRIu32 "\n", idfy->kvf[i].kvvml);
+		wrtn += fprintf(stream, "    mnks: %" PRIu32 "\n", idfy->kvf[i].mnks);
 	}
 	wrtn += fprintf(stream, "\n");
 

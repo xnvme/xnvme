@@ -1214,6 +1214,22 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_kvs_cmd, cdw13,
 XNVME_STATIC_ASSERT(XNVME_SPEC_KVS_CMD_CDW13_CETYPE == 0xf0000,
 		    "CETYPE is bits 19:16 of KV dword 13")
 
+/* Key Value Command Set 1.4, Figures 42 and 43 */
+SPEC_AT(struct xnvme_spec_kvs_idfy_ns, nsfeat, 24, 1)
+SPEC_AT(struct xnvme_spec_kvs_idfy_ns, kvfc, 29, 1)
+SPEC_AT(struct xnvme_spec_kvs_idfy_ns, novg, 32, 4)
+SPEC_AT(struct xnvme_spec_kvs_idfy_ns, nsattr, 43, 1)
+SPEC_AT(struct xnvme_spec_kvs_idfy_ns, kvf, 72, 16 * 16)
+SPEC_AT(struct xnvme_spec_kvs_idfy_ns, vs, 3840, 256)
+SPEC_AT(struct xnvme_spec_kvs_idfy_ns_format, kvkml, 0, 2)
+SPEC_AT(struct xnvme_spec_kvs_idfy_ns_format, afo, 3, 1)
+SPEC_AT(struct xnvme_spec_kvs_idfy_ns_format, kvvml, 4, 4)
+SPEC_AT(struct xnvme_spec_kvs_idfy_ns_format, mnks, 8, 4)
+XNVME_STATIC_ASSERT(XNVME_SPEC_KVS_IDFY_NS_NSFEAT_UIDR == 0x8 &&
+			    XNVME_SPEC_KVS_IDFY_NS_KVFC_KVFI == 0xf &&
+			    XNVME_SPEC_KVS_IDFY_NS_FORMAT_AFO_RP == 0x3,
+		    "UIDR is bit 3 of NSFEAT, KVFI bits 3:0 of KVFC and RP bits 1:0 of AFO")
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it
