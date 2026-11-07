@@ -495,8 +495,10 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ctrlr, sgls,
 				 XNVME_SPEC_IDFY_CTRLR_SGLS_TRANSPORT_SGL),
 		    "sgls of struct xnvme_spec_idfy_ctrlr")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cs_vector, bits,
-			 XNVME_SPEC_CS_VECTOR_BITS_NVM | XNVME_SPEC_CS_VECTOR_BITS_KV |
-				 XNVME_SPEC_CS_VECTOR_BITS_ZNS),
+			 XNVME_SPEC_CS_VECTOR_BITS_NVMCS | XNVME_SPEC_CS_VECTOR_BITS_KVCS |
+				 XNVME_SPEC_CS_VECTOR_BITS_ZNSCS |
+				 XNVME_SPEC_CS_VECTOR_BITS_SLMCS |
+				 XNVME_SPEC_CS_VECTOR_BITS_CPNCS),
 		    "bits of struct xnvme_spec_cs_vector")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_fdp_conf_desc, fdpa,
 			 XNVME_SPEC_FDP_CONF_DESC_FDPA_RGIF |
@@ -840,6 +842,11 @@ SPEC_AT(struct xnvme_spec_idfy_ctrlr_nvmf, fcatt, 1802 - 1792, 1)
 SPEC_AT(struct xnvme_spec_idfy_ctrlr_nvmf, ofcs, 1804 - 1792, 2)
 SPEC_AT(struct xnvme_spec_idfy_ctrlr_nvmf, dctype, 1806 - 1792, 1)
 SPEC_AT(struct xnvme_spec_idfy_ctrlr_nvmf, ccrl, 1807 - 1792, 1)
+
+/* Base 2.4, Figure 355 */
+XNVME_STATIC_ASSERT(XNVME_SPEC_CS_VECTOR_BITS_SLMCS == 0x8 &&
+			    XNVME_SPEC_CS_VECTOR_BITS_CPNCS == 0x10,
+		    "SLMCS is bit 3 and CPNCS bit 4 of the I/O Command Set Vector")
 
 struct offset_case {
 	const char *name;

@@ -521,7 +521,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_lbaf) == 4, "Incorrect size")
 /**
  * Command Set Identifiers
  *
- * @see Specification Section 5.15.2.1, figure X1
+ * @see Base 2.4, Figure 337
  *
  * @enum xnvme_spec_csi
  */
@@ -1385,7 +1385,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_ctrlr) == 4096, "Incorrect siz
 /**
  * Representation of I/O Command Set Vector
  *
- * See NVMe spec tbd, section xyz, for details
+ * @see Base 2.4, Figure 355
  *
  * @struct xnvme_spec_cs_vector
  */
@@ -1394,12 +1394,16 @@ struct xnvme_spec_cs_vector {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cs_vector) == 8, "Incorrect size")
 
-/** The NVM command set; bit 0 of 'bits' */
-#define XNVME_SPEC_CS_VECTOR_BITS_NVM 0x1
-/** The Key Value command set; bit 1 of 'bits' */
-#define XNVME_SPEC_CS_VECTOR_BITS_KV 0x2
-/** The Zoned Namespace command set; bit 2 of 'bits' */
-#define XNVME_SPEC_CS_VECTOR_BITS_ZNS 0x4
+/** NVM Command Set; bit 0 of 'bits', NVMCS (Base 2.4, Figure 355) */
+#define XNVME_SPEC_CS_VECTOR_BITS_NVMCS 0x1
+/** Key Value Command Set; bit 1 of 'bits', KVCS (Base 2.4, Figure 355) */
+#define XNVME_SPEC_CS_VECTOR_BITS_KVCS 0x2
+/** Zoned Namespace Command Set; bit 2 of 'bits', ZNSCS (Base 2.4, Figure 355) */
+#define XNVME_SPEC_CS_VECTOR_BITS_ZNSCS 0x4
+/** Subsystem Local Memory Command Set; bit 3 of 'bits', SLMCS (Base 2.4, Figure 355) */
+#define XNVME_SPEC_CS_VECTOR_BITS_SLMCS 0x8
+/** Computational Programs Namespace Command Set; bit 4 of 'bits', CPNCS (Base 2.4, Figure 355) */
+#define XNVME_SPEC_CS_VECTOR_BITS_CPNCS 0x10
 
 /** Number of I/O Command Set Combinations in the I/O Command Set data structure */
 #define XNVME_SPEC_IDFY_CS_IOCSC_LEN 512
@@ -1407,7 +1411,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cs_vector) == 8, "Incorrect size")
 /**
  * Representation of I/O Command Set data structure
  *
- * See NVMe spec tbd, section xyz, for details
+ * @see Base 2.4, Figure 354
  *
  * @struct xnvme_spec_idfy_cs
  */
