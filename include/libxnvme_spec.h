@@ -2271,19 +2271,41 @@ XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_nvm_cmd) == 64, "Incorrect size")
  *
  * That is, for opcode XNVME_SPEC_OPC_IDFY(0x06) with XNVME_SPEC_IDFY_CTLR_IOCS(0x6)
  *
+ * @see NVM Command Set 1.3, Figure 129
  * @struct xnvme_spec_nvm_idfy_ctrlr
  */
 struct xnvme_spec_nvm_idfy_ctrlr {
-	uint8_t vsl;    ///< Verify Size Limit
-	uint8_t wzsl;   ///< Write Zeroes Size Limit
-	uint8_t wusl;   ///< Write Uncorrectable Size Limit
-	uint8_t dmrl;   ///< Dataset Management Ranges Limit
-	uint32_t dmrsl; ///< Dataset Management Range Size Limit
-	uint64_t dmsl;  ///< Dataset Management Size Limit
+	uint8_t vsl;    ///< VSL: Verify Size Limit
+	uint8_t wzsl;   ///< WZSL: Write Zeroes Size Limit
+	uint8_t wusl;   ///< WUSL: Write Uncorrectable Size Limit
+	uint8_t dmrl;   ///< DMRL: Dataset Management Ranges Limit
+	uint32_t dmrsl; ///< DMRSL: Dataset Management Range Size Limit
+	uint64_t dmsl;  ///< DMSL: Dataset Management Size Limit
 
-	uint8_t reserved16[4080];
+	uint8_t kpiocap; ///< KPIOCAP: Key Per I/O Capabilities, see
+			 ///< XNVME_SPEC_NVM_IDFY_CTRLR_KPIOCAP_*
+	uint8_t wzdsl;   ///< WZDSL: Write Zeroes With Deallocate Size Limit
+	uint16_t aocs;   ///< AOCS: Admin Optional Command Support, see
+			 ///< XNVME_SPEC_NVM_IDFY_CTRLR_AOCS_*
+	uint32_t ver;    ///< VER: Version
+	uint8_t lbamqf;  ///< LBAMQF: LBA Migration Queue Format
+	uint8_t rla;     ///< RLA: Rate Limiting Attributes, see XNVME_SPEC_NVM_IDFY_CTRLR_RLA_*
+	uint16_t slmc;   ///< SLMC: Soft Limit Maximum Controllers, zero-based
+
+	uint8_t rsvd28[4068];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_idfy_ctrlr) == 4096, "Incorrect size")
+
+/** Key Per I/O Supported; bit 0 of 'kpiocap', KPIOS (NVM Command Set 1.3, Figure 129) */
+#define XNVME_SPEC_NVM_IDFY_CTRLR_KPIOCAP_KPIOS 0x1
+/** Key Per I/O Scope; bit 1 of 'kpiocap', KPIOSC (NVM Command Set 1.3, Figure 129) */
+#define XNVME_SPEC_NVM_IDFY_CTRLR_KPIOCAP_KPIOSC 0x2
+/** Reporting Allocated LBA Supported; bit 0 of 'aocs', RALBAS (NVM Command Set 1.3, Figure 129) */
+#define XNVME_SPEC_NVM_IDFY_CTRLR_AOCS_RALBAS 0x1
+/** Hard Limit Support; bit 0 of 'rla', HLS (NVM Command Set 1.3, Figure 129) */
+#define XNVME_SPEC_NVM_IDFY_CTRLR_RLA_HLS 0x1
+/** Soft Limit Support; bit 1 of 'rla', SLS (NVM Command Set 1.3, Figure 129) */
+#define XNVME_SPEC_NVM_IDFY_CTRLR_RLA_SLS 0x2
 
 /**
  * Representation of NVMe completion result for NVM command set I/O command set

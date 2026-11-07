@@ -738,6 +738,27 @@ XNVME_STATIC_ASSERT(XNVME_SPEC_NVM_SCOPY_FMT_ZERO_RPARS_NLB == 0xffff &&
 			    XNVME_SPEC_NVM_SCOPY_FMT_ZERO_RPARS_CETYPE == 0xf0000,
 		    "NLB is bits 15:00 and CETYPE bits 19:16 of RPARS")
 
+/* NVM Command Set 1.3, Figure 129 */
+SPEC_AT(struct xnvme_spec_nvm_idfy_ctrlr, dmrsl, 4, 4)
+SPEC_AT(struct xnvme_spec_nvm_idfy_ctrlr, dmsl, 8, 8)
+SPEC_AT(struct xnvme_spec_nvm_idfy_ctrlr, kpiocap, 16, 1)
+SPEC_AT(struct xnvme_spec_nvm_idfy_ctrlr, wzdsl, 17, 1)
+SPEC_AT(struct xnvme_spec_nvm_idfy_ctrlr, aocs, 18, 2)
+SPEC_AT(struct xnvme_spec_nvm_idfy_ctrlr, ver, 20, 4)
+SPEC_AT(struct xnvme_spec_nvm_idfy_ctrlr, lbamqf, 24, 1)
+SPEC_AT(struct xnvme_spec_nvm_idfy_ctrlr, rla, 25, 1)
+SPEC_AT(struct xnvme_spec_nvm_idfy_ctrlr, slmc, 26, 2)
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_nvm_idfy_ctrlr, kpiocap,
+			 XNVME_SPEC_NVM_IDFY_CTRLR_KPIOCAP_KPIOS |
+				 XNVME_SPEC_NVM_IDFY_CTRLR_KPIOCAP_KPIOSC),
+		    "kpiocap of struct xnvme_spec_nvm_idfy_ctrlr")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_nvm_idfy_ctrlr, rla,
+			 XNVME_SPEC_NVM_IDFY_CTRLR_RLA_HLS | XNVME_SPEC_NVM_IDFY_CTRLR_RLA_SLS),
+		    "rla of struct xnvme_spec_nvm_idfy_ctrlr")
+XNVME_STATIC_ASSERT(XNVME_SPEC_NVM_IDFY_CTRLR_KPIOCAP_KPIOSC == 0x2 &&
+			    XNVME_SPEC_NVM_IDFY_CTRLR_RLA_SLS == 0x2,
+		    "KPIOSC and SLS are bit 1 of their fields")
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it
