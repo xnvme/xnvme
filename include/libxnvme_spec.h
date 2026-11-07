@@ -506,13 +506,14 @@ enum xnvme_spec_io_mgmt_recv_mo {
 /**
  * NVMe Reclaim unit handle status descriptor
  *
+ * @see NVM Command Set 1.3, Figure 21
  * @struct xnvme_spec_ruhs_desc
  */
 struct xnvme_spec_ruhs_desc {
-	uint16_t pi;     ///< Placement Identifier
-	uint16_t ruhi;   ///< Reclaim Unit Handle Identifier
-	uint32_t earutr; ///< Estimated Active Reclaim Unit Time Remaining
-	uint64_t ruamw;  ///< Reclaim Unit Available Media Writes
+	uint16_t pid;    ///< PID: Placement Identifier
+	uint16_t ruhid;  ///< RUHID: Reclaim Unit Handle Identifier
+	uint32_t earutr; ///< EARUTR: Estimated Active Reclaim Unit Time Remaining
+	uint64_t ruamw;  ///< RUAMW: Reclaim Unit Available Media Writes
 	uint8_t rsvd[16];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_ruhs_desc) == 32, "Incorrect size")
