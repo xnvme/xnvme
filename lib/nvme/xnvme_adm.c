@@ -69,7 +69,7 @@ xnvme_adm_log(struct xnvme_cmd_ctx *ctx, uint8_t lid, uint8_t lsp, uint64_t lpo_
 
 int
 xnvme_adm_idfy(struct xnvme_cmd_ctx *ctx, uint8_t cns, uint16_t cntid, uint8_t nsid,
-	       uint16_t nvmsetid, uint8_t uuid, union xnvme_spec_idfy *dbuf)
+	       uint16_t cnssid, uint8_t uuid, union xnvme_spec_idfy *dbuf)
 {
 	const size_t dbuf_nbytes = sizeof(*dbuf);
 
@@ -77,9 +77,9 @@ xnvme_adm_idfy(struct xnvme_cmd_ctx *ctx, uint8_t cns, uint16_t cntid, uint8_t n
 	ctx->cmd.common.nsid = nsid;
 	ctx->cmd.idfy.cns = cns;
 	ctx->cmd.idfy.cntid = cntid;
-	ctx->cmd.idfy.nvmsetid = nvmsetid;
+	ctx->cmd.idfy.cnssid = cnssid;
 	ctx->cmd.idfy.cdw14 =
-		xnvme_bits_set(ctx->cmd.idfy.cdw14, XNVME_SPEC_CMD_IDFY_CDW14_UUID, uuid);
+		xnvme_bits_set(ctx->cmd.idfy.cdw14, XNVME_SPEC_CMD_IDFY_CDW14_UIDX, uuid);
 
 	return xnvme_cmd_pass_admin(ctx, dbuf, dbuf_nbytes, NULL, 0x0);
 }

@@ -13,7 +13,7 @@
  * @param cns the ::xnvme_spec_idfy_cns to retrieve
  * @param cntid Controller Identifier
  * @param nsid Namespace Identifier
- * @param nvmsetid NVM set Identifier
+ * @param cnssid CNS Specific Identifier, such as the NVM Set Identifier of a CNS taking one
  * @param uuid UUID index
  * @param dbuf ponter to data-payload
  *
@@ -21,7 +21,7 @@
  */
 int
 xnvme_adm_idfy(struct xnvme_cmd_ctx *ctx, uint8_t cns, uint16_t cntid, uint8_t nsid,
-	       uint16_t nvmsetid, uint8_t uuid, union xnvme_spec_idfy *dbuf);
+	       uint16_t cnssid, uint8_t uuid, union xnvme_spec_idfy *dbuf);
 
 /**
  * Submit and wait for completion of an NVMe Identify command for the controller associated with
