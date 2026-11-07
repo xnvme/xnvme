@@ -253,7 +253,7 @@ report_zones_complete(struct qublk_queue *q, struct qublk_io *io)
 	uint64_t nzones;
 
 	memcpy(&hdr, buf, sizeof(hdr));
-	nzones = XNVME_MIN_U64(hdr.nzones, n);
+	nzones = XNVME_MIN_U64(hdr.nz, n);
 
 	for (uint64_t i = 0; i < nzones; i++) {
 		struct xnvme_spec_znd_descr descr;

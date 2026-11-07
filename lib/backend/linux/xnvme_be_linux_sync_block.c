@@ -202,7 +202,7 @@ _zrasf_to_state(enum xnvme_spec_znd_cmd_mgmt_recv_action_sf zrasf)
  * ndwords field provides this information, however, we will use the
  * ``dbuf_nbytes``.
  *
- * The value of partial dictates the representation of hdr->nzones
+ * The value of partial dictates the representation of hdr->nz
  * partial=0: number of zones from and including slba matching zrasf on device
  * partial=1: number of zones from and including slba matching zrasf in dbuf
  *
@@ -252,7 +252,7 @@ _lzbd_zone_mgmt_recv(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 			    XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRASF) ==
 	     XNVME_SPEC_ZND_CMD_MGMT_RECV_SF_ALL) &&
 	    (dbuf_nzones == 0)) {
-		nvme_rprt->nzones = nzones_dev;
+		nvme_rprt->nz = nzones_dev;
 		return 0;
 	}
 
@@ -264,7 +264,7 @@ _lzbd_zone_mgmt_recv(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 		return -EIO;
 	}
 
-	nvme_rprt->nzones = 0;
+	nvme_rprt->nz = 0;
 	for (uint64_t zidx = 0; zidx < nzones_dev; zidx += nzones_per_cmd) {
 		uint64_t zslba = ctx->cmd.znd.mgmt_recv.slba + zidx * geo->nsect;
 
@@ -280,14 +280,14 @@ _lzbd_zone_mgmt_recv(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 			int zone_state = _zrasf_to_state(
 				xnvme_bits_get(ctx->cmd.znd.mgmt_recv.cdw13,
 					       XNVME_SPEC_ZND_CMD_MGMT_RECV_CDW13_ZRASF));
-			uint64_t cur = nvme_rprt->nzones;
+			uint64_t cur = nvme_rprt->nz;
 
 			///< Accumulate nzones
 			if (!((!zone_state) || (zone_state == lzbd_rprt->zones[i].cond))) {
 				XNVME_DEBUG("INFO: skipping i: %zu", i);
 				continue;
 			}
-			++(nvme_rprt->nzones);
+			++(nvme_rprt->nz);
 
 			///< Populate descriptor
 			if (cur >= dbuf_nzones) {
