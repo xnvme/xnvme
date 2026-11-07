@@ -89,22 +89,26 @@ XNVME_STATIC_ASSERT(FITS(union xnvme_spec_feat, media_feedback,
 		    "media_feedback of union xnvme_spec_feat")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_feat_nqueues, ncqa) == 2,
 		    "ncqa of struct xnvme_spec_feat_nqueues")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_nvm, cdw02_03, XNVME_SPEC_CMD_NVM_CDW02_03_LBTU),
+		    "cdw02_03 of struct xnvme_spec_cmd_nvm")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_nvm, cdw12,
-			 XNVME_SPEC_CMD_NVM_CDW12_NLB | XNVME_SPEC_CMD_NVM_CDW12_DTYPE |
+			 XNVME_SPEC_CMD_NVM_CDW12_NLB | XNVME_SPEC_CMD_NVM_CDW12_CETYPE |
+				 XNVME_SPEC_CMD_NVM_CDW12_STC | XNVME_SPEC_CMD_NVM_CDW12_DTYPE |
 				 XNVME_SPEC_CMD_NVM_CDW12_PRINFO | XNVME_SPEC_CMD_NVM_CDW12_FUA |
 				 XNVME_SPEC_CMD_NVM_CDW12_LR),
 		    "cdw12 of struct xnvme_spec_cmd_nvm")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_nvm, cdw12) == 48,
 		    "cdw12 of struct xnvme_spec_cmd_nvm")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_nvm, cdw13,
-			 XNVME_SPEC_CMD_NVM_CDW13_AF | XNVME_SPEC_CMD_NVM_CDW13_AL |
-				 XNVME_SPEC_CMD_NVM_CDW13_SR | XNVME_SPEC_CMD_NVM_CDW13_INCOM |
+			 XNVME_SPEC_CMD_NVM_CDW13_DSM | XNVME_SPEC_CMD_NVM_CDW13_AF |
+				 XNVME_SPEC_CMD_NVM_CDW13_AL | XNVME_SPEC_CMD_NVM_CDW13_SEQREQ |
+				 XNVME_SPEC_CMD_NVM_CDW13_INCPRS | XNVME_SPEC_CMD_NVM_CDW13_CEV |
 				 XNVME_SPEC_CMD_NVM_CDW13_DSPEC),
 		    "cdw13 of struct xnvme_spec_cmd_nvm")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_nvm, cdw13) == 52,
 		    "cdw13 of struct xnvme_spec_cmd_nvm")
-XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_nvm, ilbrt) == 56,
-		    "ilbrt of struct xnvme_spec_cmd_nvm")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_nvm, lbtl) == 56,
+		    "lbtl of struct xnvme_spec_cmd_nvm")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_nvm, lbatm) == 62,
 		    "lbatm of struct xnvme_spec_cmd_nvm")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_nvm_write_zeroes, cdw12,
@@ -668,6 +672,15 @@ XNVME_STATIC_ASSERT(XNVME_SPEC_ZND_DESCR_ZAI_FZRTL == 0x3 && XNVME_SPEC_ZND_DESC
 /* Zoned Namespace Command Set 1.5, Figure 36 */
 SPEC_AT(struct xnvme_spec_znd_report_hdr, nz, 0, 8)
 
+/* NVM Command Set 1.3, Figures 69 to 75 */
+SPEC_AT(struct xnvme_spec_cmd_nvm, cdw02_03, 8, 8)
+SPEC_AT(struct xnvme_spec_cmd_nvm, slba, 40, 8)
+SPEC_AT(struct xnvme_spec_cmd_nvm, cdw12, 48, 4)
+SPEC_AT(struct xnvme_spec_cmd_nvm, cdw13, 52, 4)
+SPEC_AT(struct xnvme_spec_cmd_nvm, lbtl, 56, 4)
+SPEC_AT(struct xnvme_spec_cmd_nvm, lbat, 60, 2)
+SPEC_AT(struct xnvme_spec_cmd_nvm, lbatm, 62, 2)
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it
@@ -1190,21 +1203,37 @@ sub_io_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 		err = -EINVAL;
 	}
 
-	sqe.cdw[13] = 0x1234005b; // NVM dword 13: AF 0xb, AL 0x1, SR, DSPEC 0x1234
+	sqe.cdw[13] = 0x1234005b; // NVM dword 13: AF 0xb, AL 0x1, SEQREQ, DSPEC 0x1234
 	if (xnvme_bits_get(sqe.nvm.cdw13, XNVME_SPEC_CMD_NVM_CDW13_AF) != 0xb ||
 	    xnvme_bits_get(sqe.nvm.cdw13, XNVME_SPEC_CMD_NVM_CDW13_AL) != 0x1 ||
-	    !xnvme_bits_get(sqe.nvm.cdw13, XNVME_SPEC_CMD_NVM_CDW13_SR) ||
-	    xnvme_bits_get(sqe.nvm.cdw13, XNVME_SPEC_CMD_NVM_CDW13_INCOM) ||
+	    !xnvme_bits_get(sqe.nvm.cdw13, XNVME_SPEC_CMD_NVM_CDW13_SEQREQ) ||
+	    xnvme_bits_get(sqe.nvm.cdw13, XNVME_SPEC_CMD_NVM_CDW13_INCPRS) ||
 	    xnvme_bits_get(sqe.nvm.cdw13, XNVME_SPEC_CMD_NVM_CDW13_DSPEC) != 0x1234) {
 		xnvme_cli_pinf("FAILED: nvm: cdw13: %#x", sqe.nvm.cdw13);
 		err = -EINVAL;
 	}
 
-	sqe.cdw[14] = 0x89abcdef; // NVM dword 14: ILBRT
+	sqe.cdw[14] = 0x89abcdef; // NVM dword 14: LBTL
 	sqe.cdw[15] = 0xff001234; // NVM dword 15: LBAT 0x1234, LBATM 0xff00
-	if (sqe.nvm.ilbrt != 0x89abcdef || sqe.nvm.lbat != 0x1234 || sqe.nvm.lbatm != 0xff00) {
-		xnvme_cli_pinf("FAILED: nvm: ilbrt: %#x, lbat: %#x, lbatm: %#x", sqe.nvm.ilbrt,
+	if (sqe.nvm.lbtl != 0x89abcdef || sqe.nvm.lbat != 0x1234 || sqe.nvm.lbatm != 0xff00) {
+		xnvme_cli_pinf("FAILED: nvm: lbtl: %#x, lbat: %#x, lbatm: %#x", sqe.nvm.lbtl,
 			       sqe.nvm.lbat, sqe.nvm.lbatm);
+		err = -EINVAL;
+	}
+
+	memset(&sqe, 0, sizeof(sqe));
+	sqe.cdw[2] = 0x89abcdef; // NVM dword 2 and 3: LBTU 0x456789abcdef, reserved bits set
+	sqe.cdw[3] = 0xffff4567;
+	sqe.cdw[12] = 0x010a0000; // NVM dword 12: CETYPE 0xa, STC
+	sqe.cdw[13] = 0x0000beef; // NVM dword 13: CEV 0xbeef
+	if (xnvme_bits_get(sqe.nvm.cdw02_03, XNVME_SPEC_CMD_NVM_CDW02_03_LBTU) != 0x456789abcdef ||
+	    xnvme_bits_get(sqe.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_CETYPE) != 0xa ||
+	    !xnvme_bits_get(sqe.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_STC) ||
+	    xnvme_bits_get(sqe.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_DTYPE) ||
+	    xnvme_bits_get(sqe.nvm.cdw13, XNVME_SPEC_CMD_NVM_CDW13_CEV) != 0xbeef ||
+	    xnvme_bits_get(sqe.nvm.cdw13, XNVME_SPEC_CMD_NVM_CDW13_DSM) != 0xef) {
+		xnvme_cli_pinf("FAILED: nvm: cdw02_03: %#" PRIx64 ", cdw12: %#x, cdw13: %#x",
+			       sqe.nvm.cdw02_03, sqe.nvm.cdw12, sqe.nvm.cdw13);
 		err = -EINVAL;
 	}
 

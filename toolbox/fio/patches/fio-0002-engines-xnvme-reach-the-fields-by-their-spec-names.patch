@@ -1,6 +1,6 @@
 --- a/engines/xnvme.c
 +++ b/engines/xnvme.c
-@@ -17,6 +17,39 @@
+@@ -17,6 +17,46 @@
  #else
  #define FIO_XNVME_CPL_SC(cpl) ((cpl).status.sc)
  #endif
@@ -29,6 +29,13 @@
 +#define FIO_XNVME_SET_DSPEC(cmd, val) ((cmd)->nvm.cdw13.dspec = (val))
 +#endif
 +
++/* Dword 14 carries the reference tag as the lower logical block tags where xNVMe names it so */
++#ifdef XNVME_SPEC_CMD_NVM_CDW02_03_LBTU
++#define FIO_XNVME_SET_ILBRT(cmd, val) ((cmd)->nvm.lbtl = (val))
++#else
++#define FIO_XNVME_SET_ILBRT(cmd, val) ((cmd)->nvm.ilbrt = (val))
++#endif
++
 +/* The zone type and state are bits of a byte behind masks where xNVMe defines them */
 +#ifdef XNVME_SPEC_ZND_DESCR_ZTATTR_ZT
 +#define FIO_XNVME_ZND_ZT(descr) xnvme_bits_get((descr)->ztattr, XNVME_SPEC_ZND_DESCR_ZTATTR_ZT)
@@ -40,7 +47,7 @@
  #include "fio.h"
  #include "verify.h"
  #include "zbd_types.h"
-@@ -759,10 +792,10 @@
+@@ -759,10 +799,10 @@
  
  	ctx->cmd.common.nsid = nsid;
  	ctx->cmd.nvm.slba = slba;
@@ -54,7 +61,7 @@
  	}
  
  	switch (io_u->ddir) {
-@@ -804,7 +837,7 @@
+@@ -804,7 +844,7 @@
  	}
  
  	if (fwrap->geo->pi_type)
@@ -63,7 +70,21 @@
  
  	switch (fwrap->geo->pi_type) {
  	case XNVME_PI_TYPE1:
-@@ -1120,7 +1153,7 @@
+@@ -812,11 +852,11 @@
+ 		switch (fwrap->geo->pi_format) {
+ 		case XNVME_SPEC_NVM_NS_16B_GUARD:
+ 			if (o->prchk & XNVME_PI_FLAGS_REFTAG_CHECK)
+-				ctx->cmd.nvm.ilbrt = (uint32_t)slba;
++				FIO_XNVME_SET_ILBRT(&ctx->cmd, (uint32_t)slba);
+ 			break;
+ 		case XNVME_SPEC_NVM_NS_64B_GUARD:
+ 			if (o->prchk & XNVME_PI_FLAGS_REFTAG_CHECK) {
+-				ctx->cmd.nvm.ilbrt = (uint32_t)slba;
++				FIO_XNVME_SET_ILBRT(&ctx->cmd, (uint32_t)slba);
+ 				ctx->cmd.common.cdw03 = ((slba >> 32) & 0xffff);
+ 			}
+ 			break;
+@@ -1120,7 +1160,7 @@
  		zbdz[idx].capacity = descr->zcap << ssw;
  		zbdz[idx].wp = descr->wp << ssw;
  
@@ -72,7 +93,7 @@
  		case XNVME_SPEC_ZND_TYPE_SEQWR:
  			zbdz[idx].type = ZBD_ZONE_TYPE_SWR;
  			break;
-@@ -1132,7 +1165,7 @@
+@@ -1132,7 +1172,7 @@
  			goto exit;
  		}
  
