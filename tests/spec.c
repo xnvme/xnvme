@@ -505,27 +505,31 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_log_sanitize_entry, sstat,
 		    "sstat of struct xnvme_spec_log_sanitize_entry")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_log_sanitize_entry, sstat) == 2,
 		    "sstat of struct xnvme_spec_log_sanitize_entry")
-XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_dir_rp, directives_supported,
-			 XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_IDENTIFY |
-				 XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_STREAMS |
-				 XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_DATA_PLACEMENT),
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_dir_rp, directives_supported[0],
+			 XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_IDIRS |
+				 XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_SDIRS |
+				 XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_DPDIRS |
+				 XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_VSDIRS),
 		    "directives_supported of struct xnvme_spec_idfy_dir_rp")
-XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_dir_rp, directives_enabled,
-			 XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_IDENTIFY |
-				 XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_STREAMS |
-				 XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_DATA_PLACEMENT),
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_dir_rp, directives_enabled[0],
+			 XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_IDIRE |
+				 XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_SDIRE |
+				 XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_DPDIRE |
+				 XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_VSDIRE),
 		    "directives_enabled of struct xnvme_spec_idfy_dir_rp")
-XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_dir_rp, directives_persistence,
-			 XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_IDENTIFY |
-				 XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_STREAMS |
-				 XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_DATA_PLACEMENT),
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_dir_rp, directives_persistence[0],
+			 XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_IDIRCLR |
+				 XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_SDIRCLR |
+				 XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_DPDIRCLR |
+				 XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_VSDIRCLR),
 		    "directives_persistence of struct xnvme_spec_idfy_dir_rp")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_idfy_dir_rp, directives_enabled) == 32,
 		    "directives_enabled of struct xnvme_spec_idfy_dir_rp")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_idfy_dir_rp, directives_persistence) == 64,
 		    "directives_persistence of struct xnvme_spec_idfy_dir_rp")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_streams_dir_rp, nssc,
-			 XNVME_SPEC_STREAMS_DIR_RP_NSSC_MULTI_HOST),
+			 XNVME_SPEC_STREAMS_DIR_RP_NSSC_SSID |
+				 XNVME_SPEC_STREAMS_DIR_RP_NSSC_SRNZID),
 		    "nssc of struct xnvme_spec_streams_dir_rp")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_streams_dir_rp, nssc) == 6,
 		    "nssc of struct xnvme_spec_streams_dir_rp")
@@ -1127,6 +1131,19 @@ SPEC_AT(struct xnvme_spec_cmd_idfy, cntid, 42, 2)
 SPEC_AT(struct xnvme_spec_cmd_idfy, cnssid, 44, 2)
 SPEC_AT(struct xnvme_spec_cmd_idfy, csi, 47, 1)
 
+/* Base 2.4, Figures 705, 712 and 713 */
+SPEC_AT(struct xnvme_spec_idfy_dir_rp, directives_supported, 0, 32)
+SPEC_AT(struct xnvme_spec_idfy_dir_rp, directives_enabled, 32, 32)
+SPEC_AT(struct xnvme_spec_idfy_dir_rp, directives_persistence, 64, 32)
+SPEC_AT(struct xnvme_spec_streams_dir_rp, sws, 16, 4)
+SPEC_AT(struct xnvme_spec_streams_dir_rp, sgs, 20, 2)
+SPEC_AT(struct xnvme_spec_streams_dir_rp, nsa, 22, 2)
+SPEC_AT(struct xnvme_spec_streams_dir_rp, nso, 24, 2)
+SPEC_AT(struct xnvme_spec_streams_dir_gs, osc, 0, 2)
+XNVME_STATIC_ASSERT(XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_VSDIRS == 0x8000 &&
+			    XNVME_SPEC_STREAMS_DIR_RP_NSSC_SRNZID == 0x2,
+		    "VSDIRS is bit 15 of Directives Supported and SRNZID bit 1 of NSSC")
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it
@@ -1484,25 +1501,27 @@ sub_data_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 
 		memset(raw, 0, sizeof(raw));
 		raw[0] = 0x07;  // Directives supported: identify, streams, data placement
+		raw[1] = 0x80;  // and bit 15, vendor specific
 		raw[32] = 0x02; // Directives enabled: streams
 		raw[64] = 0x04; // Directives persistence: data placement
 		memcpy(&rp, raw, sizeof(rp));
-		if (!xnvme_bits_get(rp.directives_supported,
-				    XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_IDENTIFY) ||
-		    !xnvme_bits_get(rp.directives_supported,
-				    XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_DATA_PLACEMENT) ||
-		    xnvme_bits_get(rp.directives_enabled,
-				   XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_IDENTIFY) ||
-		    !xnvme_bits_get(rp.directives_enabled,
-				    XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_STREAMS) ||
-		    xnvme_bits_get(rp.directives_persistence,
-				   XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_STREAMS) ||
-		    !xnvme_bits_get(
-			    rp.directives_persistence,
-			    XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_DATA_PLACEMENT)) {
-			xnvme_cli_pinf("FAILED: directives: %#" PRIx8 ", %#" PRIx8 ", %#" PRIx8,
-				       rp.directives_supported, rp.directives_enabled,
-				       rp.directives_persistence);
+		if (!xnvme_bits_get(rp.directives_supported[0],
+				    XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_IDIRS) ||
+		    !xnvme_bits_get(rp.directives_supported[0],
+				    XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_VSDIRS) ||
+		    !xnvme_bits_get(rp.directives_supported[0],
+				    XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_DPDIRS) ||
+		    xnvme_bits_get(rp.directives_enabled[0],
+				   XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_IDIRE) ||
+		    !xnvme_bits_get(rp.directives_enabled[0],
+				    XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_SDIRE) ||
+		    xnvme_bits_get(rp.directives_persistence[0],
+				   XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_SDIRCLR) ||
+		    !xnvme_bits_get(rp.directives_persistence[0],
+				    XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_DPDIRCLR)) {
+			xnvme_cli_pinf("FAILED: directives: %#" PRIx64 ", %#" PRIx64 ", %#" PRIx64,
+				       rp.directives_supported[0], rp.directives_enabled[0],
+				       rp.directives_persistence[0]);
 			err = -EINVAL;
 		}
 	}
@@ -1511,9 +1530,9 @@ sub_data_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 		struct xnvme_spec_streams_dir_rp rp;
 
 		memset(raw, 0, sizeof(raw));
-		raw[6] = 0x01; // Streams return parameters NSSC: multi-host
+		raw[6] = 0x01; // Streams return parameters NSSC: SSID
 		memcpy(&rp, raw, sizeof(rp));
-		if (!xnvme_bits_get(rp.nssc, XNVME_SPEC_STREAMS_DIR_RP_NSSC_MULTI_HOST)) {
+		if (!xnvme_bits_get(rp.nssc, XNVME_SPEC_STREAMS_DIR_RP_NSSC_SSID)) {
 			xnvme_cli_pinf("FAILED: nssc: %#" PRIx8, rp.nssc);
 			err = -EINVAL;
 		}
