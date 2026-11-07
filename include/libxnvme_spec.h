@@ -2679,15 +2679,30 @@ enum xnvme_spec_znd_state {
 /**
  * Identify controller accessor only for Zoned specific fields
  *
- * @see Specification, section 3.1.2
+ * @see Zoned Namespace Command Set 1.5, Figure 51
  * @struct xnvme_spec_znd_idfy_ctrlr
  */
 struct xnvme_spec_znd_idfy_ctrlr {
-	uint8_t zasl; ///< Zone Append Size Limit
+	uint8_t zasl; ///< ZASL: Zone Append Size Limit
 
-	uint8_t rsvd8[4095];
+	uint8_t rsvd1[3];
+
+	uint32_t zctratt; ///< ZCTRATT: Zoned Controller Attributes, see ..._ZCTRATT_*
+	uint32_t tar;     ///< TAR: Total Active Resources
+	uint32_t uar;     ///< UAR: Unallocated Active Resources
+	uint32_t tor;     ///< TOR: Total Open Resources
+	uint32_t uor;     ///< UOR: Unallocated Open Resources
+	uint32_t tzrwar;  ///< TZRWAR: Total ZRWA Resources
+	uint32_t uzrwar;  ///< UZRWAR: Unallocated ZRWA Resources
+	uint32_t ver;     ///< VER: Version
+
+	uint8_t rsvd36[4060];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_idfy_ctrlr) == 4096, "Incorrect size")
+
+/** Zoned Namespace Resource Management; bit 0 of 'zctratt', ZNRM (Zoned Namespace Command Set 1.5,
+ * Figure 51) */
+#define XNVME_SPEC_ZND_IDFY_CTRLR_ZCTRATT_ZNRM 0x1
 
 /**
  * LBA Format Extension
