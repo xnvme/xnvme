@@ -273,15 +273,15 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cqe, status,
 		    "status of struct xnvme_spec_cqe")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cqe, status) == 14,
 		    "status of struct xnvme_spec_cqe")
-XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_log_erri_entry, status,
-			 XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_P | XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_SC |
-				 XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_SCT |
-				 XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_CRD |
-				 XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_M |
-				 XNVME_SPEC_LOG_ERRI_ENTRY_STATUS_DNR),
-		    "status of struct xnvme_spec_log_erri_entry")
-XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_log_erri_entry, status) == 12,
-		    "status of struct xnvme_spec_log_erri_entry")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_log_erri_entry, sts,
+			 XNVME_SPEC_LOG_ERRI_ENTRY_STS_P | XNVME_SPEC_LOG_ERRI_ENTRY_STS_SC |
+				 XNVME_SPEC_LOG_ERRI_ENTRY_STS_SCT |
+				 XNVME_SPEC_LOG_ERRI_ENTRY_STS_CRD |
+				 XNVME_SPEC_LOG_ERRI_ENTRY_STS_M |
+				 XNVME_SPEC_LOG_ERRI_ENTRY_STS_DNR),
+		    "sts of struct xnvme_spec_log_erri_entry")
+XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_log_erri_entry, sts) == 12,
+		    "sts of struct xnvme_spec_log_erri_entry")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_lbaf, rp, XNVME_SPEC_LBAF_RP_RP),
 		    "rp of struct xnvme_spec_lbaf")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ns, nsfeat,
@@ -1272,6 +1272,21 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_log_sanitize_entry, ssi,
 XNVME_STATIC_ASSERT(XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_NDE == 0x400 &&
 			    XNVME_SPEC_LOG_SANITIZE_ENTRY_SSTAT_PRGD == 0x800,
 		    "NDE is bit 10 and PRGD bit 11 of SSTAT")
+
+/* Base 2.4, Figure 212 */
+SPEC_AT(struct xnvme_spec_log_erri_entry, pel, 14, 2)
+SPEC_AT(struct xnvme_spec_log_erri_entry, vsia, 28, 1)
+SPEC_AT(struct xnvme_spec_log_erri_entry, trtype, 29, 1)
+SPEC_AT(struct xnvme_spec_log_erri_entry, csi, 30, 1)
+SPEC_AT(struct xnvme_spec_log_erri_entry, opc, 31, 1)
+SPEC_AT(struct xnvme_spec_log_erri_entry, csinfo, 32, 8)
+SPEC_AT(struct xnvme_spec_log_erri_entry, ttsi, 40, 2)
+SPEC_AT(struct xnvme_spec_log_erri_entry, lpver, 63, 1)
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_log_erri_entry, pel,
+			 XNVME_SPEC_LOG_ERRI_ENTRY_PEL_BYTLOC |
+				 XNVME_SPEC_LOG_ERRI_ENTRY_PEL_BITLOC),
+		    "pel of struct xnvme_spec_log_erri_entry")
+XNVME_STATIC_ASSERT(XNVME_SPEC_LOG_ERRI_ENTRY_PEL_BITLOC == 0x700, "BITLOC is bits 10:8 of PEL")
 
 struct offset_case {
 	const char *name;
