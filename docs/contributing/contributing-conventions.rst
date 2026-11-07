@@ -137,7 +137,7 @@ element of an array, which needs a type for its masks to belong to, as
 * The mask is named ``XNVME_SPEC_<STRUCT>_<FIELD>_<NAME>``: the structure
   without its ``xnvme_spec_`` prefix, the integer, and the name the
   specification gives the bits, such as
-  ``XNVME_SPEC_IDFY_NS_FLBAS_FORMAT`` for bits 3:0 of ``flbas``
+  ``XNVME_SPEC_IDFY_NS_FLBAS_FIDXL`` for bits 3:0 of ``flbas``
 * The masks follow the structure they belong to, in the order of its
   integers, and of the bits within each
 * Each mask has a doc comment saying what the bits are, then where they

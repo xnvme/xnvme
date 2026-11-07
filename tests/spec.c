@@ -286,47 +286,44 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_log_erri_entry, status) == 12,
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_lbaf, rp, XNVME_SPEC_LBAF_RP_RP),
 		    "rp of struct xnvme_spec_lbaf")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ns, nsfeat,
-			 XNVME_SPEC_IDFY_NS_NSFEAT_THIN_PROV |
-				 XNVME_SPEC_IDFY_NS_NSFEAT_NS_ATOMIC_WRITE_UNIT |
-				 XNVME_SPEC_IDFY_NS_NSFEAT_DEALLOC_OR_UNWRITTEN_ERROR |
-				 XNVME_SPEC_IDFY_NS_NSFEAT_GUID_NEVER_REUSED |
-				 XNVME_SPEC_IDFY_NS_NSFEAT_OPTIMAL_PERFORMANCE),
+			 XNVME_SPEC_IDFY_NS_NSFEAT_THINP | XNVME_SPEC_IDFY_NS_NSFEAT_NSABP |
+				 XNVME_SPEC_IDFY_NS_NSFEAT_DAE |
+				 XNVME_SPEC_IDFY_NS_NSFEAT_UIDREUSE |
+				 XNVME_SPEC_IDFY_NS_NSFEAT_OPTPERF |
+				 XNVME_SPEC_IDFY_NS_NSFEAT_MAM |
+				 XNVME_SPEC_IDFY_NS_NSFEAT_OPTRPERF),
 		    "nsfeat of struct xnvme_spec_idfy_ns")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ns, flbas,
-			 XNVME_SPEC_IDFY_NS_FLBAS_FORMAT | XNVME_SPEC_IDFY_NS_FLBAS_EXTENDED |
-				 XNVME_SPEC_IDFY_NS_FLBAS_FORMAT_MSB),
+			 XNVME_SPEC_IDFY_NS_FLBAS_FIDXL | XNVME_SPEC_IDFY_NS_FLBAS_MTELBA |
+				 XNVME_SPEC_IDFY_NS_FLBAS_FIDXU),
 		    "flbas of struct xnvme_spec_idfy_ns")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ns, mc,
-			 XNVME_SPEC_IDFY_NS_MC_EXTENDED | XNVME_SPEC_IDFY_NS_MC_POINTER),
+			 XNVME_SPEC_IDFY_NS_MC_MTELBAS | XNVME_SPEC_IDFY_NS_MC_MTSBS),
 		    "mc of struct xnvme_spec_idfy_ns")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ns, dpc,
-			 XNVME_SPEC_IDFY_NS_DPC_PIT1 | XNVME_SPEC_IDFY_NS_DPC_PIT2 |
-				 XNVME_SPEC_IDFY_NS_DPC_PIT3 | XNVME_SPEC_IDFY_NS_DPC_MD_START |
-				 XNVME_SPEC_IDFY_NS_DPC_MD_END),
+			 XNVME_SPEC_IDFY_NS_DPC_PIT1S | XNVME_SPEC_IDFY_NS_DPC_PIT2S |
+				 XNVME_SPEC_IDFY_NS_DPC_PIT3S | XNVME_SPEC_IDFY_NS_DPC_PIIFB |
+				 XNVME_SPEC_IDFY_NS_DPC_PIILB),
 		    "dpc of struct xnvme_spec_idfy_ns")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ns, dps,
-			 XNVME_SPEC_IDFY_NS_DPS_PIT | XNVME_SPEC_IDFY_NS_DPS_MD_START),
+			 XNVME_SPEC_IDFY_NS_DPS_PIT | XNVME_SPEC_IDFY_NS_DPS_PIP),
 		    "dps of struct xnvme_spec_idfy_ns")
-XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ns, nmic, XNVME_SPEC_IDFY_NS_NMIC_CAN_SHARE),
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ns, nmic,
+			 XNVME_SPEC_IDFY_NS_NMIC_SHRNS | XNVME_SPEC_IDFY_NS_NMIC_DISNS),
 		    "nmic of struct xnvme_spec_idfy_ns")
-XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ns, nsrescap,
-			 XNVME_SPEC_IDFY_NS_NSRESCAP_PERSIST |
-				 XNVME_SPEC_IDFY_NS_NSRESCAP_WRITE_EXCLUSIVE |
-				 XNVME_SPEC_IDFY_NS_NSRESCAP_EXCLUSIVE_ACCESS |
-				 XNVME_SPEC_IDFY_NS_NSRESCAP_WRITE_EXCLUSIVE_REG_ONLY |
-				 XNVME_SPEC_IDFY_NS_NSRESCAP_EXCLUSIVE_ACCESS_REG_ONLY |
-				 XNVME_SPEC_IDFY_NS_NSRESCAP_WRITE_EXCLUSIVE_ALL_REG |
-				 XNVME_SPEC_IDFY_NS_NSRESCAP_EXCLUSIVE_ACCESS_ALL_REG |
-				 XNVME_SPEC_IDFY_NS_NSRESCAP_IGNORE_EXISTING_KEY),
-		    "nsrescap of struct xnvme_spec_idfy_ns")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ns, rescap,
+			 XNVME_SPEC_IDFY_NS_RESCAP_PTPLS | XNVME_SPEC_IDFY_NS_RESCAP_WES |
+				 XNVME_SPEC_IDFY_NS_RESCAP_EAS | XNVME_SPEC_IDFY_NS_RESCAP_WEROS |
+				 XNVME_SPEC_IDFY_NS_RESCAP_EAROS |
+				 XNVME_SPEC_IDFY_NS_RESCAP_WEARS |
+				 XNVME_SPEC_IDFY_NS_RESCAP_EAARS | XNVME_SPEC_IDFY_NS_RESCAP_IEKS),
+		    "rescap of struct xnvme_spec_idfy_ns")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ns, fpi,
-			 XNVME_SPEC_IDFY_NS_FPI_PERCENTAGE_REMAINING |
-				 XNVME_SPEC_IDFY_NS_FPI_FPI_SUPPORTED),
+			 XNVME_SPEC_IDFY_NS_FPI_RFNVM | XNVME_SPEC_IDFY_NS_FPI_FPIS),
 		    "fpi of struct xnvme_spec_idfy_ns")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ns, dlfeat,
-			 XNVME_SPEC_IDFY_NS_DLFEAT_READ_VALUE |
-				 XNVME_SPEC_IDFY_NS_DLFEAT_WRITE_ZERO_DEALLOCATE |
-				 XNVME_SPEC_IDFY_NS_DLFEAT_GUARD_VALUE),
+			 XNVME_SPEC_IDFY_NS_DLFEAT_DRB | XNVME_SPEC_IDFY_NS_DLFEAT_WZDS |
+				 XNVME_SPEC_IDFY_NS_DLFEAT_GDS),
 		    "dlfeat of struct xnvme_spec_idfy_ns")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_elbaf, bits,
 			 XNVME_SPEC_ELBAF_BITS_STS | XNVME_SPEC_ELBAF_BITS_PIF),
@@ -785,6 +782,32 @@ XNVME_STATIC_ASSERT(XNVME_SPEC_ELBAF_BITS_STS == 0x7f && XNVME_SPEC_ELBAF_BITS_P
 			    XNVME_SPEC_ELBAF_BITS_QPIF == 0x1e00,
 		    "STS is bits 6:0, PIF bits 8:7 and QPIF bits 12:9 of ELBAF")
 
+/* NVM Command Set 1.3, Figures 123 and 125 */
+SPEC_AT(struct xnvme_spec_idfy_ns, rescap, 31, 1)
+SPEC_AT(struct xnvme_spec_idfy_ns, msrc, 80, 1)
+SPEC_AT(struct xnvme_spec_idfy_ns, kpios, 81, 1)
+SPEC_AT(struct xnvme_spec_idfy_ns, nulbaf, 82, 1)
+SPEC_AT(struct xnvme_spec_idfy_ns, kpiodaag, 84, 4)
+SPEC_AT(struct xnvme_spec_idfy_ns, anagrpid, 92, 4)
+SPEC_AT(struct xnvme_spec_idfy_ns, nsattr, 99, 1)
+SPEC_AT(struct xnvme_spec_idfy_ns, nvmsetid, 100, 2)
+SPEC_AT(struct xnvme_spec_idfy_ns, endgid, 102, 2)
+SPEC_AT(struct xnvme_spec_idfy_ns, nguid, 104, 16)
+SPEC_AT(struct xnvme_spec_idfy_ns, eui64, 120, 8)
+SPEC_AT(struct xnvme_spec_idfy_ns, vs, 384, 3712)
+SPEC_AT(struct xnvme_spec_lbaf, ms, 0, 2)
+SPEC_AT(struct xnvme_spec_lbaf, lbads, 2, 1)
+SPEC_AT(struct xnvme_spec_lbaf, rp, 3, 1)
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ns, kpios,
+			 XNVME_SPEC_IDFY_NS_KPIOS_KPIOENS | XNVME_SPEC_IDFY_NS_KPIOS_KPIOSNS),
+		    "kpios of struct xnvme_spec_idfy_ns")
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_idfy_ns, nsattr, XNVME_SPEC_IDFY_NS_NSATTR_CWP),
+		    "nsattr of struct xnvme_spec_idfy_ns")
+XNVME_STATIC_ASSERT(XNVME_SPEC_IDFY_NS_NSFEAT_OPTPERF == 0x30 &&
+			    XNVME_SPEC_IDFY_NS_NSFEAT_MAM == 0x40 &&
+			    XNVME_SPEC_IDFY_NS_NSFEAT_OPTRPERF == 0x80,
+		    "OPTPERF is bits 5:4, MAM bit 6 and OPTRPERF bit 7 of NSFEAT")
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it
@@ -840,9 +863,9 @@ sub_idfy_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 
 	memset(&idfy, 0, sizeof(idfy));
 	idfy.raw[26] = 0x5a; // Identify Namespace FLBAS: format 0xa, extended, format MSB 0x2
-	if (xnvme_bits_get(idfy.ns.flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT) != 0xa ||
-	    !xnvme_bits_get(idfy.ns.flbas, XNVME_SPEC_IDFY_NS_FLBAS_EXTENDED) ||
-	    xnvme_bits_get(idfy.ns.flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT_MSB) != 0x2) {
+	if (xnvme_bits_get(idfy.ns.flbas, XNVME_SPEC_IDFY_NS_FLBAS_FIDXL) != 0xa ||
+	    !xnvme_bits_get(idfy.ns.flbas, XNVME_SPEC_IDFY_NS_FLBAS_MTELBA) ||
+	    xnvme_bits_get(idfy.ns.flbas, XNVME_SPEC_IDFY_NS_FLBAS_FIDXU) != 0x2) {
 		xnvme_cli_pinf("FAILED: flbas: %#" PRIx8, idfy.ns.flbas);
 		err = -EINVAL;
 	}

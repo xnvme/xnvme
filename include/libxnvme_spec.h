@@ -504,16 +504,18 @@ enum xnvme_spec_idfy_cns {
 /**
  * LBA Format
  *
+ * @see NVM Command Set 1.3, Figure 125
  * @struct xnvme_spec_lbaf
  */
 struct xnvme_spec_lbaf {
-	uint16_t ms; ///< metadata size
-	uint8_t ds;  ///< lba data size
-	uint8_t rp;  ///< relative performance, see XNVME_SPEC_LBAF_RP_*
+	uint16_t ms;   ///< MS: Metadata Size, in bytes
+	uint8_t lbads; ///< LBADS: LBA Data Size, as a power of two
+	uint8_t rp;    ///< Bits 31:24, see XNVME_SPEC_LBAF_RP_*
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_lbaf) == 4, "Incorrect size")
 
-/** Relative performance, 00b best to 11b degraded; bits 1:0 of 'rp' */
+/** Relative Performance, 00b best to 11b degraded; bits 25:24 of the LBA format, bits 1:0 of 'rp',
+ * RP (NVM Command Set 1.3, Figure 125) */
 #define XNVME_SPEC_LBAF_RP_RP 0x3
 
 /**
@@ -571,152 +573,194 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_ns_desc) == 20, "Incorrect size")
  * That is, for opcode XNVME_SPEC_OPC_IDFY(0x06) with XNVME_SPEC_IDFY_NS(0x0). A field of bits
  * is an integer of the width the specification gives it; its documentation names the bits.
  *
+ * @see NVM Command Set 1.3, Figure 123
  * @struct xnvme_spec_idfy_ns
  */
 struct xnvme_spec_idfy_ns {
-	uint64_t nsze; ///< namespace size
-	uint64_t ncap; ///< namespace capacity
-	uint64_t nuse; ///< namespace utilization
+	uint64_t nsze; ///< NSZE: Namespace Size
+	uint64_t ncap; ///< NCAP: Namespace Capacity
+	uint64_t nuse; ///< NUSE: Namespace Utilization
 
-	uint8_t nsfeat; ///< Namespace features, see XNVME_SPEC_IDFY_NS_NSFEAT_*
+	uint8_t nsfeat; ///< NSFEAT: Namespace Features, see XNVME_SPEC_IDFY_NS_NSFEAT_*
 
-	uint8_t nlbaf; ///< number of lba formats
+	uint8_t nlbaf; ///< NLBAF: Number of LBA Formats, zero-based
 
-	uint8_t flbas; ///< Formatted LBA size, see XNVME_SPEC_IDFY_NS_FLBAS_*
+	uint8_t flbas; ///< FLBAS: Formatted LBA Size, see XNVME_SPEC_IDFY_NS_FLBAS_*
 
-	uint8_t mc; ///< Metadata capabilities, see XNVME_SPEC_IDFY_NS_MC_*
+	uint8_t mc; ///< MC: Metadata Capabilities, see XNVME_SPEC_IDFY_NS_MC_*
 
-	uint8_t dpc; ///< End-to-end data protection capabilities, see XNVME_SPEC_IDFY_NS_DPC_*
+	uint8_t dpc; ///< DPC: End-to-end Data Protection Capabilities, see
+		     ///< XNVME_SPEC_IDFY_NS_DPC_*
 
-	uint8_t dps; ///< End-to-end data protection type settings, see XNVME_SPEC_IDFY_NS_DPS_*
+	uint8_t dps; ///< DPS: End-to-end Data Protection Type Settings, see
+		     ///< XNVME_SPEC_IDFY_NS_DPS_*
 
-	uint8_t nmic; ///< Namespace multi-path I/O and namespace sharing capabilities, see
+	uint8_t nmic; ///< NMIC: Namespace Multi-path I/O and Namespace Sharing Capabilities, see
 		      ///< XNVME_SPEC_IDFY_NS_NMIC_*
 
-	uint8_t nsrescap; ///< Reservation capabilities, see XNVME_SPEC_IDFY_NS_NSRESCAP_*
+	uint8_t rescap; ///< RESCAP: Reservation Capabilities, see XNVME_SPEC_IDFY_NS_RESCAP_*
 
-	uint8_t fpi; ///< Format progress indicator, see XNVME_SPEC_IDFY_NS_FPI_*
+	uint8_t fpi; ///< FPI: Format Progress Indicator, see XNVME_SPEC_IDFY_NS_FPI_*
 
-	uint8_t dlfeat; ///< Deallocate logical block features, see XNVME_SPEC_IDFY_NS_DLFEAT_*
+	uint8_t dlfeat; ///< DLFEAT: Deallocate Logical Block Features, see
+			///< XNVME_SPEC_IDFY_NS_DLFEAT_*
 
-	uint16_t nawun; ///< namespace atomic write unit normal
+	uint16_t nawun; ///< NAWUN: Namespace Atomic Write Unit Normal
 
-	uint16_t nawupf; ///< namespace atomic write unit power fail
+	uint16_t nawupf; ///< NAWUPF: Namespace Atomic Write Unit Power Fail
 
-	uint16_t nacwu; ///< namespace atomic compare & write unit
+	uint16_t nacwu; ///< NACWU: Namespace Atomic Compare & Write Unit
 
-	uint16_t nabsn; ///< namespace atomic boundary size normal
+	uint16_t nabsn; ///< NABSN: Namespace Atomic Boundary Size Normal
 
-	uint16_t nabo; ///< namespace atomic boundary offset
+	uint16_t nabo; ///< NABO: Namespace Atomic Boundary Offset
 
-	uint16_t nabspf; ///< namespace atomic boundary size power fail
+	uint16_t nabspf; ///< NABSPF: Namespace Atomic Boundary Size Power Fail
 
-	uint16_t noiob; ///< namespace optimal I/O boundary in logical blocks
+	uint16_t noiob; ///< NOIOB: Namespace Optimal I/O Boundary, in logical blocks
 
-	uint64_t nvmcap[2]; ///< NVM Capacity
+	uint64_t nvmcap[2]; ///< NVMCAP: NVM Capacity, a 128-bit integer, low half first
 
-	uint16_t npwg; ///< namespace preferred write granularity
+	uint16_t npwg; ///< NPWG: Namespace Preferred Write Granularity
 
-	uint16_t npwa; ///< namespace preferred write alignment
+	uint16_t npwa; ///< NPWA: Namespace Preferred Write Alignment
 
-	uint16_t npdg; ///< namespace preferred deallocate granularity
+	uint16_t npdg; ///< NPDG: Namespace Preferred Deallocate Granularity
 
-	uint16_t npda; ///< namespace preferred deallocate alignment
+	uint16_t npda; ///< NPDA: Namespace Preferred Deallocate Alignment
 
-	uint16_t nows; ///< namespace optimal write size
+	uint16_t nows; ///< NOWS: Namespace Optimal Write Size
 
-	uint16_t mssrl; ///< maximum single source range length
+	uint16_t mssrl; ///< MSSRL: Maximum Single Source Range Length
 
-	uint32_t mcl; ///< max copy length
+	uint32_t mcl; ///< MCL: Maximum Copy Length
 
-	uint8_t msrc; ///< maximum source range count
+	uint8_t msrc; ///< MSRC: Maximum Source Range Count, zero-based
 
-	uint8_t reserved81[11];
+	uint8_t kpios; ///< KPIOS: Key Per I/O Status, see XNVME_SPEC_IDFY_NS_KPIOS_*
 
-	uint32_t anagrpid; ///< ANA group identifier
+	uint8_t nulbaf; ///< NULBAF: Number of Unique Attribute LBA Formats
 
-	uint8_t reserved96[3];
+	uint8_t rsvd83;
 
-	uint8_t nsattr; ///< namespace attributes
+	uint32_t kpiodaag; ///< KPIODAAG: Key Per I/O Data Access Alignment and Granularity
 
-	uint16_t nvmsetid; ///< NVM set identifier
+	uint8_t rsvd88[4];
 
-	uint16_t endgid; ///< Endurance group identifier
+	uint32_t anagrpid; ///< ANAGRPID: ANA Group Identifier
 
-	uint8_t nguid[16]; ///< namespace globally unique identifier
+	uint8_t rsvd96[3];
 
-	uint64_t eui64; ///< IEEE extended unique identifier
+	uint8_t nsattr; ///< NSATTR: Namespace Attributes, see XNVME_SPEC_IDFY_NS_NSATTR_*
 
-	struct xnvme_spec_lbaf lbaf[64]; ///< LBA format support
+	uint16_t nvmsetid; ///< NVMSETID: NVM Set Identifier
 
-	uint8_t vendor_specific[3712];
+	uint16_t endgid; ///< ENDGID: Endurance Group Identifier
+
+	uint8_t nguid[16]; ///< NGUID: Namespace Globally Unique Identifier
+
+	uint64_t eui64; ///< EUI64: IEEE Extended Unique Identifier
+
+	struct xnvme_spec_lbaf lbaf[64]; ///< LBAF0 to LBAF63: LBA Format Support
+
+	uint8_t vs[3712]; ///< VS: Vendor Specific
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_ns) == 4096, "Incorrect size")
 
-/** Thin provisioning is supported; bit 0 of 'nsfeat' */
-#define XNVME_SPEC_IDFY_NS_NSFEAT_THIN_PROV 0x1
-/** NAWUN, NAWUPF and NACWU are defined; bit 1 of 'nsfeat' */
-#define XNVME_SPEC_IDFY_NS_NSFEAT_NS_ATOMIC_WRITE_UNIT 0x2
-/** Deallocated or unwritten logical block error; bit 2 of 'nsfeat' */
-#define XNVME_SPEC_IDFY_NS_NSFEAT_DEALLOC_OR_UNWRITTEN_ERROR 0x4
-/** Non-zero NGUID and EUI64 are never reused; bit 3 of 'nsfeat' */
-#define XNVME_SPEC_IDFY_NS_NSFEAT_GUID_NEVER_REUSED 0x8
-/** NPWG, NPWA, NPDG, NPDA and NOWS are defined; bit 4 of 'nsfeat' */
-#define XNVME_SPEC_IDFY_NS_NSFEAT_OPTIMAL_PERFORMANCE 0x10
-/** The least significant bits of the index into 'lbaf'; bits 3:0 of 'flbas' */
-#define XNVME_SPEC_IDFY_NS_FLBAS_FORMAT 0xf
-/** The metadata is transferred at the end of the data; bit 4 of 'flbas' */
-#define XNVME_SPEC_IDFY_NS_FLBAS_EXTENDED 0x10
-/** The most significant bits of the index into 'lbaf'; bits 6:5 of 'flbas' */
-#define XNVME_SPEC_IDFY_NS_FLBAS_FORMAT_MSB 0x60
-/** Metadata can be transferred as part of the data; bit 0 of 'mc' */
-#define XNVME_SPEC_IDFY_NS_MC_EXTENDED 0x1
-/** Metadata can be transferred with a separate metadata pointer; bit 1 of 'mc' */
-#define XNVME_SPEC_IDFY_NS_MC_POINTER 0x2
-/** Protection information type 1 is supported; bit 0 of 'dpc' */
-#define XNVME_SPEC_IDFY_NS_DPC_PIT1 0x1
-/** Protection information type 2 is supported; bit 1 of 'dpc' */
-#define XNVME_SPEC_IDFY_NS_DPC_PIT2 0x2
-/** Protection information type 3 is supported; bit 2 of 'dpc' */
-#define XNVME_SPEC_IDFY_NS_DPC_PIT3 0x4
-/** Protection information can be the first eight bytes of the metadata; bit 3 of 'dpc' */
-#define XNVME_SPEC_IDFY_NS_DPC_MD_START 0x8
-/** Protection information can be the last eight bytes of the metadata; bit 4 of 'dpc' */
-#define XNVME_SPEC_IDFY_NS_DPC_MD_END 0x10
-/** The protection information type, 0 when disabled; bits 2:0 of 'dps' */
+/** Thin Provisioning; bit 0 of 'nsfeat', THINP (NVM Command Set 1.3, Figure 123) */
+#define XNVME_SPEC_IDFY_NS_NSFEAT_THINP 0x1
+/** Namespace Supported Atomic Boundary & Power, NAWUN, NAWUPF and NACWU are defined; bit 1 of
+ * 'nsfeat', NSABP (NVM Command Set 1.3, Figure 123) */
+#define XNVME_SPEC_IDFY_NS_NSFEAT_NSABP 0x2
+/** Deallocated Error; bit 2 of 'nsfeat', DAE (NVM Command Set 1.3, Figure 123) */
+#define XNVME_SPEC_IDFY_NS_NSFEAT_DAE 0x4
+/** UID Reuse, non-zero NGUID and EUI64 are never reused when cleared; bit 3 of 'nsfeat', UIDREUSE
+ * (NVM Command Set 1.3, Figure 123) */
+#define XNVME_SPEC_IDFY_NS_NSFEAT_UIDREUSE 0x8
+/** Optional Write Performance, NPWG, NPWA, NPDG, NPDA, NOWS and, by bit 5, NPDGL and NPDAL are
+ * defined; bits 5:4 of 'nsfeat', OPTPERF (NVM Command Set 1.3, Figure 123) */
+#define XNVME_SPEC_IDFY_NS_NSFEAT_OPTPERF 0x30
+/** Multiple Atomicity Mode; bit 6 of 'nsfeat', MAM (NVM Command Set 1.3, Figure 123) */
+#define XNVME_SPEC_IDFY_NS_NSFEAT_MAM 0x40
+/** Optional Read Performance, NPRG, NPRA and NORS are defined; bit 7 of 'nsfeat', OPTRPERF (NVM
+ * Command Set 1.3, Figure 123) */
+#define XNVME_SPEC_IDFY_NS_NSFEAT_OPTRPERF 0x80
+/** Format Index Lower, the least significant bits of the index into 'lbaf'; bits 3:0 of 'flbas',
+ * FIDXL (NVM Command Set 1.3, Figure 123) */
+#define XNVME_SPEC_IDFY_NS_FLBAS_FIDXL 0xf
+/** Metadata Transferred as Extended LBA, at the end of the data; bit 4 of 'flbas', MTELBA (NVM
+ * Command Set 1.3, Figure 123) */
+#define XNVME_SPEC_IDFY_NS_FLBAS_MTELBA 0x10
+/** Format Index Upper, the most significant bits of the index into 'lbaf'; bits 6:5 of 'flbas',
+ * FIDXU (NVM Command Set 1.3, Figure 123) */
+#define XNVME_SPEC_IDFY_NS_FLBAS_FIDXU 0x60
+/** Metadata Transferred as Extended LBA Support; bit 0 of 'mc', MTELBAS (NVM Command Set 1.3,
+ * Figure 123) */
+#define XNVME_SPEC_IDFY_NS_MC_MTELBAS 0x1
+/** Metadata Transferred as Separate Buffer Support; bit 1 of 'mc', MTSBS (NVM Command Set 1.3,
+ * Figure 123) */
+#define XNVME_SPEC_IDFY_NS_MC_MTSBS 0x2
+/** Protection Information Type 1 Supported; bit 0 of 'dpc', PIT1S (NVM Command Set 1.3, Figure
+ * 123) */
+#define XNVME_SPEC_IDFY_NS_DPC_PIT1S 0x1
+/** Protection Information Type 2 Supported; bit 1 of 'dpc', PIT2S (NVM Command Set 1.3, Figure
+ * 123) */
+#define XNVME_SPEC_IDFY_NS_DPC_PIT2S 0x2
+/** Protection Information Type 3 Supported; bit 2 of 'dpc', PIT3S (NVM Command Set 1.3, Figure
+ * 123) */
+#define XNVME_SPEC_IDFY_NS_DPC_PIT3S 0x4
+/** Protection Information In First Bytes of the metadata; bit 3 of 'dpc', PIIFB (NVM Command
+ * Set 1.3, Figure 123) */
+#define XNVME_SPEC_IDFY_NS_DPC_PIIFB 0x8
+/** Protection Information In Last Bytes of the metadata; bit 4 of 'dpc', PIILB (NVM Command
+ * Set 1.3, Figure 123) */
+#define XNVME_SPEC_IDFY_NS_DPC_PIILB 0x10
+/** Protection Information Type, 0 when disabled; bits 2:0 of 'dps', PIT (NVM Command Set 1.3,
+ * Figure 123) */
 #define XNVME_SPEC_IDFY_NS_DPS_PIT 0x7
-/** The protection information is at the start of the metadata, else its end; bit 3 of 'dps' */
-#define XNVME_SPEC_IDFY_NS_DPS_MD_START 0x8
-/** The namespace may be attached to two or more controllers; bit 0 of 'nmic' */
-#define XNVME_SPEC_IDFY_NS_NMIC_CAN_SHARE 0x1
-/** Persist through power loss; bit 0 of 'nsrescap' */
-#define XNVME_SPEC_IDFY_NS_NSRESCAP_PERSIST 0x1
-/** Write exclusive; bit 1 of 'nsrescap' */
-#define XNVME_SPEC_IDFY_NS_NSRESCAP_WRITE_EXCLUSIVE 0x2
-/** Exclusive access; bit 2 of 'nsrescap' */
-#define XNVME_SPEC_IDFY_NS_NSRESCAP_EXCLUSIVE_ACCESS 0x4
-/** Write exclusive, registrants only; bit 3 of 'nsrescap' */
-#define XNVME_SPEC_IDFY_NS_NSRESCAP_WRITE_EXCLUSIVE_REG_ONLY 0x8
-/** Exclusive access, registrants only; bit 4 of 'nsrescap' */
-#define XNVME_SPEC_IDFY_NS_NSRESCAP_EXCLUSIVE_ACCESS_REG_ONLY 0x10
-/** Write exclusive, all registrants; bit 5 of 'nsrescap' */
-#define XNVME_SPEC_IDFY_NS_NSRESCAP_WRITE_EXCLUSIVE_ALL_REG 0x20
-/** Exclusive access, all registrants; bit 6 of 'nsrescap' */
-#define XNVME_SPEC_IDFY_NS_NSRESCAP_EXCLUSIVE_ACCESS_ALL_REG 0x40
-/** Ignore existing key; bit 7 of 'nsrescap' */
-#define XNVME_SPEC_IDFY_NS_NSRESCAP_IGNORE_EXISTING_KEY 0x80
-/** The percentage of the format remaining; bits 6:0 of 'fpi' */
-#define XNVME_SPEC_IDFY_NS_FPI_PERCENTAGE_REMAINING 0x7f
-/** The format progress indicator is supported; bit 7 of 'fpi' */
-#define XNVME_SPEC_IDFY_NS_FPI_FPI_SUPPORTED 0x80
-/** Read from a deallocated block: 000b not reported, 001b all bytes 0x00, 010b all bytes 0xFF;
- * bits 2:0 of 'dlfeat' */
-#define XNVME_SPEC_IDFY_NS_DLFEAT_READ_VALUE 0x7
-/** The Deallocate bit of Write Zeroes is supported; bit 3 of 'dlfeat' */
-#define XNVME_SPEC_IDFY_NS_DLFEAT_WRITE_ZERO_DEALLOCATE 0x8
-/** The guard of a deallocated block is the CRC of the value read, else 0xFFFF; bit 4 of 'dlfeat'
+/** Protection Information Position, the start of the metadata, else its end; bit 3 of 'dps', PIP
+ * (NVM Command Set 1.3, Figure 123) */
+#define XNVME_SPEC_IDFY_NS_DPS_PIP 0x8
+/** Shared Namespace; bit 0 of 'nmic', SHRNS (Base 2.4, Figure 346) */
+#define XNVME_SPEC_IDFY_NS_NMIC_SHRNS 0x1
+/** Dispersed Namespace; bit 1 of 'nmic', DISNS (Base 2.4, Figure 346) */
+#define XNVME_SPEC_IDFY_NS_NMIC_DISNS 0x2
+/** Persist Through Power Loss Support; bit 0 of 'rescap', PTPLS (Base 2.4, Figure 346) */
+#define XNVME_SPEC_IDFY_NS_RESCAP_PTPLS 0x1
+/** Write Exclusive Support; bit 1 of 'rescap', WES (Base 2.4, Figure 346) */
+#define XNVME_SPEC_IDFY_NS_RESCAP_WES 0x2
+/** Exclusive Access Support; bit 2 of 'rescap', EAS (Base 2.4, Figure 346) */
+#define XNVME_SPEC_IDFY_NS_RESCAP_EAS 0x4
+/** Write Exclusive - Registrants Only Support; bit 3 of 'rescap', WEROS (Base 2.4, Figure 346) */
+#define XNVME_SPEC_IDFY_NS_RESCAP_WEROS 0x8
+/** Exclusive Access - Registrants Only Support; bit 4 of 'rescap', EAROS (Base 2.4, Figure 346) */
+#define XNVME_SPEC_IDFY_NS_RESCAP_EAROS 0x10
+/** Write Exclusive - All Registrants Support; bit 5 of 'rescap', WEARS (Base 2.4, Figure 346) */
+#define XNVME_SPEC_IDFY_NS_RESCAP_WEARS 0x20
+/** Exclusive Access - All Registrants Support; bit 6 of 'rescap', EAARS (Base 2.4, Figure 346) */
+#define XNVME_SPEC_IDFY_NS_RESCAP_EAARS 0x40
+/** Ignore Existing Key Support; bit 7 of 'rescap', IEKS (Base 2.4, Figure 346) */
+#define XNVME_SPEC_IDFY_NS_RESCAP_IEKS 0x80
+/** Remaining Format NVM, in percent; bits 6:0 of 'fpi', RFNVM (Base 2.4, Figure 346) */
+#define XNVME_SPEC_IDFY_NS_FPI_RFNVM 0x7f
+/** Format Progress Indicator Support; bit 7 of 'fpi', FPIS (Base 2.4, Figure 346) */
+#define XNVME_SPEC_IDFY_NS_FPI_FPIS 0x80
+/** Deallocation Read Behavior: 000b not reported, 001b all bytes 0x00, 010b all bytes 0xFF;
+ * bits 2:0 of 'dlfeat', DRB (NVM Command Set 1.3, Figure 123) */
+#define XNVME_SPEC_IDFY_NS_DLFEAT_DRB 0x7
+/** Write Zeroes Deallocation Support; bit 3 of 'dlfeat', WZDS (NVM Command Set 1.3, Figure 123) */
+#define XNVME_SPEC_IDFY_NS_DLFEAT_WZDS 0x8
+/** Guard Deallocation Status, the guard of a deallocated block is the CRC of the value read, else
+ * 0xFFFF; bit 4 of 'dlfeat', GDS (NVM Command Set 1.3, Figure 123) */
+#define XNVME_SPEC_IDFY_NS_DLFEAT_GDS 0x10
+/** Key Per I/O Enabled in Namespace; bit 0 of 'kpios', KPIOENS (NVM Command Set 1.3, Figure 123)
  */
-#define XNVME_SPEC_IDFY_NS_DLFEAT_GUARD_VALUE 0x10
+#define XNVME_SPEC_IDFY_NS_KPIOS_KPIOENS 0x1
+/** Key Per I/O Supported in Namespace; bit 1 of 'kpios', KPIOSNS (NVM Command Set 1.3, Figure 123)
+ */
+#define XNVME_SPEC_IDFY_NS_KPIOS_KPIOSNS 0x2
+/** Currently Write Protected; bit 0 of 'nsattr', CWP (Base 2.4, Figure 346) */
+#define XNVME_SPEC_IDFY_NS_NSATTR_CWP 0x1
 
 /**
  * Protection Information in the 16b Guard Protection Information format
