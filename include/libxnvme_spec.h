@@ -2247,6 +2247,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_idfy) == 64, "Incorrect size")
 /**
  * NVMe Command Accessor for the get-log-page command
  *
+ * @see Base 2.4, Figures 204 to 208
  * @struct xnvme_spec_cmd_log
  */
 struct xnvme_spec_cmd_log {
@@ -2266,20 +2267,20 @@ struct xnvme_spec_cmd_log {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_log) == 64, "Incorrect size")
 
-/** Log Page Identifier; bits 7:0 of 'cdw10' */
+/** Log Page Identifier; bits 7:0 of 'cdw10', LID (Base 2.4, Figure 204) */
 #define XNVME_SPEC_CMD_LOG_CDW10_LID 0xff
-/** Log Specific Parameter; bits 14:8 of 'cdw10' */
+/** Log Specific Parameter; bits 14:8 of 'cdw10', LSP (Base 2.4, Figure 204) */
 #define XNVME_SPEC_CMD_LOG_CDW10_LSP 0x7f00
-/** Retain Asynchronous Event; bit 15 of 'cdw10' */
+/** Retain Asynchronous Event; bit 15 of 'cdw10', RAE (Base 2.4, Figure 204) */
 #define XNVME_SPEC_CMD_LOG_CDW10_RAE 0x8000
-/** Number of Dwords Lower; bits 31:16 of 'cdw10' */
+/** Number of Dwords Lower; bits 31:16 of 'cdw10', NUMDL (Base 2.4, Figure 204) */
 #define XNVME_SPEC_CMD_LOG_CDW10_NUMDL 0xffff0000
 
-/** UUID Index; bits 6:0 of 'cdw14' */
-#define XNVME_SPEC_CMD_LOG_CDW14_UUIDX 0x7f
-/** Offset Type; bit 23 of 'cdw14' */
+/** UUID Index; bits 6:0 of 'cdw14', UIDX (Base 2.4, Figure 208) */
+#define XNVME_SPEC_CMD_LOG_CDW14_UIDX 0x7f
+/** Offset Type; bit 23 of 'cdw14', OT (Base 2.4, Figure 208) */
 #define XNVME_SPEC_CMD_LOG_CDW14_OT 0x800000
-/** Command Set Identifier; bits 31:24 of 'cdw14' */
+/** Command Set Identifier; bits 31:24 of 'cdw14', CSI (Base 2.4, Figure 208) */
 #define XNVME_SPEC_CMD_LOG_CDW14_CSI 0xff000000
 
 /**

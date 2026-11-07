@@ -232,7 +232,7 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
 		    "cdw10 of struct xnvme_spec_cmd_log")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw14,
-			 XNVME_SPEC_CMD_LOG_CDW14_UUIDX | XNVME_SPEC_CMD_LOG_CDW14_OT |
+			 XNVME_SPEC_CMD_LOG_CDW14_UIDX | XNVME_SPEC_CMD_LOG_CDW14_OT |
 				 XNVME_SPEC_CMD_LOG_CDW14_CSI),
 		    "cdw14 of struct xnvme_spec_cmd_log")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_cmd_log, cdw10) == 40,
@@ -1270,7 +1270,7 @@ sub_sqe_dwords(struct xnvme_cli *XNVME_UNUSED(cli))
 	    xnvme_bits_get(sqe.log.cdw10, XNVME_SPEC_CMD_LOG_CDW10_LSP) != 0x45 ||
 	    !xnvme_bits_get(sqe.log.cdw10, XNVME_SPEC_CMD_LOG_CDW10_RAE) ||
 	    xnvme_bits_get(sqe.log.cdw10, XNVME_SPEC_CMD_LOG_CDW10_NUMDL) != 0xff ||
-	    xnvme_bits_get(sqe.log.cdw14, XNVME_SPEC_CMD_LOG_CDW14_UUIDX) != 0x3 ||
+	    xnvme_bits_get(sqe.log.cdw14, XNVME_SPEC_CMD_LOG_CDW14_UIDX) != 0x3 ||
 	    !xnvme_bits_get(sqe.log.cdw14, XNVME_SPEC_CMD_LOG_CDW14_OT) ||
 	    xnvme_bits_get(sqe.log.cdw14, XNVME_SPEC_CMD_LOG_CDW14_CSI) != 0x02) {
 		xnvme_cli_pinf("FAILED: log: cdw10: %#x, cdw14: %#x", sqe.log.cdw10,
