@@ -11,6 +11,7 @@
 #include <IOKit/storage/nvme/NVMeSMARTLibExternal.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <libgen.h>
+#include <sys/stat.h>
 
 #include <xnvme_dev.h>
 #include <xnvme_be_posix.h>
@@ -173,6 +174,28 @@ xnvme_be_macos_file_opts(struct xnvme_opts *opts)
 }
 
 static int
+_dev_open_file(struct xnvme_dev *dev, int flags)
+{
+	struct xnvme_be_macos_state *state = &xnvme_be_state(dev)->macos_state;
+
+	state->ioservice_device = 0;
+	state->nvme_smart_interface = NULL;
+	state->plugin_interface = NULL;
+
+	state->posix.fd = open(dev->ident.uri, flags, dev->opts.create_mode);
+	if (state->posix.fd < 0) {
+		XNVME_DEBUG("FAILED: open(uri: '%s'), errno: %d", dev->ident.uri, errno);
+		return -errno;
+	}
+
+	dev->ident.nsid = 1;
+	dev->ident.dtype = XNVME_DEV_TYPE_FS_FILE;
+	dev->ident.csi = XNVME_SPEC_CSI_FS;
+
+	return 0;
+}
+
+static int
 xnvme_be_macos_dev_open(struct xnvme_dev *dev)
 {
 	struct xnvme_be_macos_state *state = &xnvme_be_state(dev)->macos_state;
@@ -181,6 +204,12 @@ xnvme_be_macos_dev_open(struct xnvme_dev *dev)
 	io_object_t ioservice_device;
 	IONVMeSMARTInterface **nvme_smart_interface;
 	IOCFPlugInInterface **plugin_interface;
+	struct stat st;
+
+	// A path which does not exist yet is a file only when asked to create it
+	if (stat(dev->ident.uri, &st) ? opts->create : S_ISREG(st.st_mode)) {
+		return _dev_open_file(dev, flags);
+	}
 
 	ioservice_device = _get_ioservice_device(dev->ident.uri);
 	if (!ioservice_device) {
@@ -210,13 +239,6 @@ xnvme_be_macos_dev_open(struct xnvme_dev *dev)
 	} else {
 		XNVME_DEBUG("non-nvme disks are currently unsupported.");
 		return -ENOTSUP;
-
-		state->posix.fd = open(dev->ident.uri, flags, opts->create_mode);
-		state->ioservice_device = 0;
-		state->nvme_smart_interface = NULL;
-		dev->ident.nsid = 1;
-		dev->ident.dtype = XNVME_DEV_TYPE_FS_FILE;
-		dev->ident.csi = XNVME_SPEC_CSI_FS;
 	}
 
 	return 0;

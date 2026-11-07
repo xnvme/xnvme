@@ -10,6 +10,12 @@ nsid = 1
 labels = [ "dev", "bdev", "nvm", "ramdisk", "scc", "log_health_ns", "idfy_cs" ]
 driver_attachment = "kernel"
 
+[[devices]]
+uri = "/tmp/xnvme-testfile.bin"
+nsid = 1
+labels = [ "file" ]
+driver_attachment = "kernel"
+
 [fio]
 bin = "/tmp/fio/fio"
 

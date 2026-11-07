@@ -50,7 +50,9 @@ xnvme_platform_macos_classify(const char *uri)
 		return XNVME_BE_CAP_NVME_PCIE;
 	}
 
-	return 0;
+	/* A path we could not stat() and which matched nothing else is assumed
+	 * to be a not-yet-created file, e.g. the destination of a copy. */
+	return XNVME_BE_CAP_FILE;
 }
 
 static int
@@ -177,6 +179,8 @@ struct xnvme_platform g_xnvme_platform_macos = {
 			&g_xnvme_platform_macos_emu,
 			&g_xnvme_platform_macos_thrpool,
 			&g_xnvme_platform_macos_posix,
+			&g_xnvme_platform_macos_emu_file,
+			&g_xnvme_platform_macos_thrpool_file,
 #ifdef XNVME_BE_DRIVERKIT_ENABLED
 			&g_xnvme_be_driverkit,
 			&g_xnvme_platform_macos_driverkit_emu,
