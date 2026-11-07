@@ -2732,16 +2732,15 @@ enum xnvme_spec_znd_opc {
 /**
  * NVMe Command Accessor for command with opcode ZND_CMD_OPC_MGMT_SEND
  *
+ * @see Zoned Namespace Command Set 1.5, Figures 39 and 40
  * @struct xnvme_spec_znd_cmd_mgmt_send
  */
 struct xnvme_spec_znd_cmd_mgmt_send {
 	uint32_t cdw00_09[10]; ///< Command dword 0 to 9
 
-	/* cdw 10-11 */
-	uint64_t slba; ///< Start LBA
+	uint64_t slba; ///< SLBA: Starting LBA
 
-	/* cdw 12 */
-	uint32_t nrange; ///< Number of ranges <= 32
+	uint32_t cdw12; ///< Command dword 12, reserved
 
 	uint32_t cdw13; ///< Command dword 13, see XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_*
 
@@ -2749,12 +2748,17 @@ struct xnvme_spec_znd_cmd_mgmt_send {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_cmd_mgmt_send) == 64, "Incorrect size")
 
-/** Zone Send Action; bits 7:0 of 'cdw13' */
+/** Zone Send Action; bits 7:0 of 'cdw13', ZSA (Zoned Namespace Command Set 1.5, Figure 40) */
 #define XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZSA 0xff
-/** Select All, that is, ignore the slba, affects all LBAs; bit 8 of 'cdw13' */
-#define XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_SELECT_ALL 0x100
-/** Zone Send Action Specific Option; bit 9 of 'cdw13' */
+/** Select All, that is, ignore the slba, affects all LBAs; bit 8 of 'cdw13', SELALL (Zoned
+ * Namespace Command Set 1.5, Figure 40) */
+#define XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_SELALL 0x100
+/** Zone Send Action Specific Option, ZRWAA for Open Zone; bit 9 of 'cdw13', ZSASO (Zoned Namespace
+ * Command Set 1.5, Figure 40) */
 #define XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZSASO 0x200
+/** Zone Management, DL in bits 5:0 for Open Zone and Set Zone Descriptor Extension; bits 23:16
+ * of 'cdw13', ZM (Zoned Namespace Command Set 1.5, Figure 40) */
+#define XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZM 0xff0000
 
 /**
  * NVMe Command Accessor for a command with opcode XNVME_SPEC_ZND_OPC_MGMT_RECV
