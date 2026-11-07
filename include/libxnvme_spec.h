@@ -2166,6 +2166,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_sfeat) == 64, "Incorrect size")
 /**
  * NVMe Command Accessor for the directive send command
  *
+ * @see Base 2.4, Figures 185, 186 and 706
  * @struct xnvme_spec_cmd_dsend
  */
 struct xnvme_spec_cmd_dsend {
@@ -2183,14 +2184,17 @@ struct xnvme_spec_cmd_dsend {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_dsend) == 64, "Incorrect size")
 
-/** Enable Directive, of the Identify directive's Enable Directive; bit 0 of 'cdw12' */
+/** Enable Directive, of the Identify directive's Enable Directive; bit 0 of 'cdw12', ENDIR (Base
+ * 2.4, Figure 706) */
 #define XNVME_SPEC_CMD_DSEND_CDW12_ENDIR 0x1
-/** Target Directive Type, of the Identify directive's Enable Directive; bits 15:8 of 'cdw12' */
-#define XNVME_SPEC_CMD_DSEND_CDW12_TDTYPE 0xff00
+/** Directive Type to enable, of the Identify directive's Enable Directive; bits 15:8 of 'cdw12',
+ * DTYPE (Base 2.4, Figure 706) */
+#define XNVME_SPEC_CMD_DSEND_CDW12_DTYPE 0xff00
 
 /**
  * NVMe Command Accessor for the directive receive command
  *
+ * @see Base 2.4, Figures 182, 183 and 714
  * @struct xnvme_spec_cmd_drecv
  */
 struct xnvme_spec_cmd_drecv {
@@ -2208,7 +2212,8 @@ struct xnvme_spec_cmd_drecv {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_drecv) == 64, "Incorrect size")
 
-/** Namespace Streams Requested, of Allocate Resources; bits 15:0 of 'cdw12' */
+/** Namespace Streams Requested, of Allocate Resources; bits 15:0 of 'cdw12', NSR (Base 2.4,
+ * Figure 714) */
 #define XNVME_SPEC_CMD_DRECV_CDW12_NSR 0xffff
 
 /**
