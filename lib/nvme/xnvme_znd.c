@@ -21,7 +21,7 @@ znd_report_init(struct xnvme_dev *dev, uint64_t slba, size_t limit, uint8_t exte
 	const struct xnvme_spec_idfy_ns *nvm = (void *)xnvme_dev_get_ns(dev);
 	const struct xnvme_spec_znd_idfy_ns *zns = (void *)xnvme_dev_get_ns_css(dev);
 	const size_t zdext_nbytes =
-		zns->lbafe[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT)].zdes * 64;
+		zns->lbafe[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FIDXL)].zdes * 64;
 	const struct xnvme_geo *geo = xnvme_dev_get_geo(dev);
 	const size_t zd_nbytes = sizeof(struct xnvme_spec_znd_descr);
 	size_t nentries;
@@ -462,7 +462,7 @@ xnvme_znd_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, bo
 		struct xnvme_spec_znd_idfy_ns *zns = (void *)xnvme_dev_get_ns_css(ctx->dev);
 
 		dbuf_nbytes =
-			zns->lbafe[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT)]
+			zns->lbafe[xnvme_bits_get(nvm->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FIDXL)]
 				.zdes *
 			64;
 	}
@@ -651,7 +651,7 @@ xnvme_znd_dev_get_lbafe(struct xnvme_dev *dev)
 		return NULL;
 	}
 
-	lbafe = &zns->lbafe[xnvme_bits_get(ns->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT)];
+	lbafe = &zns->lbafe[xnvme_bits_get(ns->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FIDXL)];
 
 	return lbafe;
 }

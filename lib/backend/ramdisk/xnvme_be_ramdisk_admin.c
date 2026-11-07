@@ -43,11 +43,11 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 	ns->nuse = ramdisk_size / lba_size;
 
 	ns->nlbaf = 0; ///< This means that there is only one
-	ns->flbas = xnvme_bits_set(ns->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT,
+	ns->flbas = xnvme_bits_set(ns->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FIDXL,
 				   0); ///< using the first one
 
 	ns->lbaf[0].ms = 0;
-	ns->lbaf[0].ds = XNVME_ILOG2(lba_size);
+	ns->lbaf[0].lbads = XNVME_ILOG2(lba_size);
 	ns->lbaf[0].rp = 0;
 
 	ns->mcl = 128;

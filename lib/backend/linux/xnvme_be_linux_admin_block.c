@@ -101,11 +101,11 @@ _idfy_ns(struct xnvme_dev *dev, void *dbuf)
 	ns->nuse = val;
 
 	ns->nlbaf = 0; ///< This means that there is only one
-	ns->flbas = xnvme_bits_set(ns->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FORMAT,
+	ns->flbas = xnvme_bits_set(ns->flbas, XNVME_SPEC_IDFY_NS_FLBAS_FIDXL,
 				   0); ///< using the first one
 
 	ns->lbaf[0].ms = 0;
-	ns->lbaf[0].ds = XNVME_ILOG2(nbytes);
+	ns->lbaf[0].lbads = XNVME_ILOG2(nbytes);
 	ns->lbaf[0].rp = 0;
 
 	return 0;
@@ -127,7 +127,7 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 
 	// TODO: convert sysfs size to idfy.ctrlr.ncap
 	// TODO: convert sysfs queue/max_sectors_kb to idfy.ctrlr.mdts
-	// TODO: convert sysfs queue/minimum_io_size to idfy.ns.lbad.ds
+	// TODO: convert sysfs queue/minimum_io_size to idfy.ns.lbaf[].lbads
 
 	switch (ctx->cmd.idfy.cns) {
 	case XNVME_SPEC_IDFY_NS_IOCS:
