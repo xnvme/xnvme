@@ -1930,22 +1930,28 @@ enum xnvme_spec_sgl_descriptor_subtype {
 };
 
 /**
- * SGL descriptor
+ * SGL descriptor, as the SGL Data Block, Bit Bucket, Segment and Last Segment descriptors are
  *
+ * The Keyed SGL Data Block descriptor (Base 2.4, Figure 123) has a 24-bit LEN in bytes 10:08 and
+ * KEY in bytes 14:11, which this layout does not name.
+ *
+ * @see Base 2.4, Figures 116 and 119 to 122
  * @struct xnvme_spec_sgl_descriptor
  */
 struct xnvme_spec_sgl_descriptor {
-	uint64_t addr; ///< common field
-	uint32_t len;  ///< Length of entry, of a descriptor that is not keyed
-	uint8_t rsvd[3];
-	uint8_t id; ///< SGL Identifier, see XNVME_SPEC_SGL_DESCRIPTOR_ID_*
+	uint64_t addr; ///< ADDR: Address
+	uint32_t len;  ///< LEN: Length
+	uint8_t rsvd12[3];
+	uint8_t sglid; ///< SGLID: SGL Identifier, see XNVME_SPEC_SGL_DESCRIPTOR_SGLID_*
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_sgl_descriptor) == 16, "Incorrect size")
 
-/** SGL Descriptor Sub Type, see enum xnvme_spec_sgl_descriptor_subtype; bits 3:0 of 'id' */
-#define XNVME_SPEC_SGL_DESCRIPTOR_ID_SUBTYPE 0xf
-/** SGL Descriptor Type, see enum xnvme_nvme_sgl_descriptor_type; bits 7:4 of 'id' */
-#define XNVME_SPEC_SGL_DESCRIPTOR_ID_TYPE 0xf0
+/** SGL Descriptor Sub Type, see enum xnvme_spec_sgl_descriptor_subtype; bits 3:0 of 'sglid',
+ * SGLDST (Base 2.4, Figure 116) */
+#define XNVME_SPEC_SGL_DESCRIPTOR_SGLID_SGLDST 0xf
+/** SGL Descriptor Type, see enum xnvme_nvme_sgl_descriptor_type; bits 7:4 of 'sglid', SGLDT
+ * (Base 2.4, Figure 116) */
+#define XNVME_SPEC_SGL_DESCRIPTOR_SGLID_SGLDT 0xf0
 
 /**
  * PRP or SGL for Data Transfer field
@@ -1984,11 +1990,12 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_dptr_linux_ioctl) == 16, "Incorrect
 /**
  * Data Pointer, dwords 6 to 9 of a command
  *
+ * @see Base 2.4, Figure 93
  * @union xnvme_spec_dptr
  */
 union xnvme_spec_dptr {
 	struct xnvme_spec_dptr_prp prp;               ///< As PRP entries
-	struct xnvme_spec_sgl_descriptor sgl;         ///< As an SGL descriptor
+	struct xnvme_spec_sgl_descriptor sgl1;        ///< SGL1: SGL Entry 1
 	struct xnvme_spec_dptr_linux_ioctl lnx_ioctl; ///< As the Linux Kernel NVMe driver uses it
 };
 XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_dptr) == 16, "Incorrect size")
