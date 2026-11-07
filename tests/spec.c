@@ -176,13 +176,14 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_nvm_cmd_scopy, lbatm) == 62,
 		    "lbatm of struct xnvme_spec_nvm_cmd_scopy")
 XNVME_STATIC_ASSERT(offsetof(union xnvme_spec_nvm_cmd, scopy.cdw12) == 48,
 		    "scopy of union xnvme_spec_nvm_cmd")
-XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_cmd_append, cdw12,
-			 XNVME_SPEC_ZND_CMD_APPEND_CDW12_NLB |
-				 XNVME_SPEC_ZND_CMD_APPEND_CDW12_DTYPE |
-				 XNVME_SPEC_ZND_CMD_APPEND_CDW12_PRINFO |
-				 XNVME_SPEC_ZND_CMD_APPEND_CDW12_FUA |
-				 XNVME_SPEC_ZND_CMD_APPEND_CDW12_LR),
-		    "cdw12 of struct xnvme_spec_znd_cmd_append")
+XNVME_STATIC_ASSERT(
+	FITS(struct xnvme_spec_znd_cmd_append, cdw12,
+	     XNVME_SPEC_ZND_CMD_APPEND_CDW12_NLB | XNVME_SPEC_ZND_CMD_APPEND_CDW12_CETYPE |
+		     XNVME_SPEC_ZND_CMD_APPEND_CDW12_DTYPE | XNVME_SPEC_ZND_CMD_APPEND_CDW12_STC |
+		     XNVME_SPEC_ZND_CMD_APPEND_CDW12_PIREMAP |
+		     XNVME_SPEC_ZND_CMD_APPEND_CDW12_PRINFO | XNVME_SPEC_ZND_CMD_APPEND_CDW12_FUA |
+		     XNVME_SPEC_ZND_CMD_APPEND_CDW12_LR),
+	"cdw12 of struct xnvme_spec_znd_cmd_append")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_znd_cmd_append, cdw12) == 48,
 		    "cdw12 of struct xnvme_spec_znd_cmd_append")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_cmd_mgmt_send, cdw13,
@@ -1177,6 +1178,22 @@ XNVME_STATIC_ASSERT(XNVME_SPEC_ZND_CMD_MGMT_SEND_CDW13_ZM == 0xff0000,
 SPEC_AT(struct xnvme_spec_znd_cmd_mgmt_recv, slba, 40, 8)
 SPEC_AT(struct xnvme_spec_znd_cmd_mgmt_recv, ndw, 48, 4)
 SPEC_AT(struct xnvme_spec_znd_cmd_mgmt_recv, cdw13, 52, 4)
+
+/* Zoned Namespace Command Set 1.5, Figures 24 to 30 */
+SPEC_AT(struct xnvme_spec_znd_cmd_append, cdw02_03, 8, 8)
+SPEC_AT(struct xnvme_spec_znd_cmd_append, zslba, 40, 8)
+SPEC_AT(struct xnvme_spec_znd_cmd_append, cdw13, 52, 4)
+SPEC_AT(struct xnvme_spec_znd_cmd_append, lbtl, 56, 4)
+SPEC_AT(struct xnvme_spec_znd_cmd_append, lbat, 60, 2)
+SPEC_AT(struct xnvme_spec_znd_cmd_append, lbatm, 62, 2)
+XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_znd_cmd_append, cdw13,
+			 XNVME_SPEC_ZND_CMD_APPEND_CDW13_CEV |
+				 XNVME_SPEC_ZND_CMD_APPEND_CDW13_DSPEC),
+		    "cdw13 of struct xnvme_spec_znd_cmd_append")
+XNVME_STATIC_ASSERT(XNVME_SPEC_ZND_CMD_APPEND_CDW12_CETYPE == 0xf0000 &&
+			    XNVME_SPEC_ZND_CMD_APPEND_CDW12_STC == 0x1000000 &&
+			    XNVME_SPEC_ZND_CMD_APPEND_CDW12_PIREMAP == 0x2000000,
+		    "CETYPE is bits 19:16, STC bit 24 and PIREMAP bit 25 of Zone Append dword 12")
 
 struct offset_case {
 	const char *name;
