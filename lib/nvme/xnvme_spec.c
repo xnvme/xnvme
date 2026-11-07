@@ -370,10 +370,10 @@ log_fdp_event_fpr_yaml(FILE *stream, const struct xnvme_spec_fdp_event *event, i
 {
 	int wrtn = 0;
 
-	wrtn += fprintf(stream, "%*stype: %" PRIu8 "%s", indent, "", event->type, sep);
+	wrtn += fprintf(stream, "%*setyp: %" PRIu8 "%s", indent, "", event->etyp, sep);
 	wrtn += fprintf(stream, "%*sfdpef: %#" PRIx8 "%s", indent, "", event->fdpef, sep);
 	wrtn += fprintf(stream, "%*spid: %" PRIu16 "%s", indent, "", event->pid, sep);
-	wrtn += fprintf(stream, "%*stimestamp: %" PRIu64 "%s", indent, "", event->timestamp, sep);
+	wrtn += fprintf(stream, "%*setmsp: %" PRIu64 "%s", indent, "", event->etmsp, sep);
 	wrtn += fprintf(stream, "%*snsid: %" PRIu32 "%s", indent, "", event->nsid, sep);
 	// TODO: Event type specific field
 	wrtn += fprintf(stream, "%*srgid: %" PRIu16 "%s", indent, "", event->rgid, sep);
@@ -405,7 +405,7 @@ xnvme_spec_log_fdp_events_fpr(FILE *stream, const struct xnvme_spec_log_fdp_even
 		return wrtn;
 	}
 
-	wrtn += fprintf(stream, "  nevents: %" PRIu32 "\n", log->nevents);
+	wrtn += fprintf(stream, "  numfdpe: %" PRIu32 "\n", log->numfdpe);
 
 	for (int i = 0; i < limit; ++i) {
 		struct xnvme_spec_fdp_event event;
@@ -1012,9 +1012,9 @@ xnvme_spec_feat_fdp_events_fpr(FILE *stream, void *buf, const union xnvme_spec_f
 	for (uint32_t i = 0; i < feat->val; i++) {
 		struct xnvme_spec_fdp_event_desc *desc =
 			&((struct xnvme_spec_fdp_event_desc *)buf)[i];
-		wrtn += fprintf(stream, "{ type: %#" PRIx8 ", event enabled: %" PRIu64 " }\n",
-				desc->type,
-				xnvme_bits_get(desc->fdpeta, XNVME_SPEC_FDP_EVENT_DESC_FDPETA_EE));
+		wrtn += fprintf(
+			stream, "{ fdpet: %#" PRIx8 ", fdpee: %" PRIu64 " }\n", desc->fdpet,
+			xnvme_bits_get(desc->fdpeta, XNVME_SPEC_FDP_EVENT_DESC_FDPETA_FDPEE));
 		desc += sizeof(struct xnvme_spec_fdp_event_desc);
 	}
 

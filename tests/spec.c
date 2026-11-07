@@ -495,7 +495,7 @@ XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_fdp_event, fdpef,
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_fdp_event, fdpef) == 1,
 		    "fdpef of struct xnvme_spec_fdp_event")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_fdp_event_desc, fdpeta,
-			 XNVME_SPEC_FDP_EVENT_DESC_FDPETA_EE),
+			 XNVME_SPEC_FDP_EVENT_DESC_FDPETA_FDPEE),
 		    "fdpeta of struct xnvme_spec_fdp_event_desc")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_fdp_event_desc, fdpeta) == 1,
 		    "fdpeta of struct xnvme_spec_fdp_event_desc")
@@ -1296,6 +1296,19 @@ SPEC_AT(struct xnvme_spec_fdp_conf_desc, dsze, 0, 2)
 SPEC_AT(struct xnvme_spec_fdp_conf_desc, fdpa, 2, 1)
 SPEC_AT(struct xnvme_spec_fdp_conf_desc, erutl, 24, 4)
 
+/* Base 2.4, Figures 302, 303 and 506 */
+SPEC_AT(struct xnvme_spec_log_fdp_events, numfdpe, 0, 4)
+SPEC_AT(struct xnvme_spec_fdp_event, etyp, 0, 1)
+SPEC_AT(struct xnvme_spec_fdp_event, pid, 2, 2)
+SPEC_AT(struct xnvme_spec_fdp_event, etmsp, 4, 8)
+SPEC_AT(struct xnvme_spec_fdp_event, nsid, 12, 4)
+SPEC_AT(struct xnvme_spec_fdp_event, etsp, 16, 16)
+SPEC_AT(struct xnvme_spec_fdp_event, rgid, 32, 2)
+SPEC_AT(struct xnvme_spec_fdp_event, ruhid, 34, 2)
+SPEC_AT(struct xnvme_spec_fdp_event, vs, 40, 24)
+SPEC_AT(struct xnvme_spec_fdp_event_desc, fdpet, 0, 1)
+SPEC_AT(struct xnvme_spec_fdp_event_desc, fdpeta, 1, 1)
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it
@@ -1626,7 +1639,7 @@ sub_data_masks(struct xnvme_cli *XNVME_UNUSED(cli))
 		memset(raw, 0, sizeof(raw));
 		raw[1] = 0x01; // FDP event descriptor FDPETA: event enabled
 		memcpy(&desc, raw, sizeof(desc));
-		if (!xnvme_bits_get(desc.fdpeta, XNVME_SPEC_FDP_EVENT_DESC_FDPETA_EE)) {
+		if (!xnvme_bits_get(desc.fdpeta, XNVME_SPEC_FDP_EVENT_DESC_FDPETA_FDPEE)) {
 			xnvme_cli_pinf("FAILED: fdpeta: %#" PRIx8, desc.fdpeta);
 			err = -EINVAL;
 		}

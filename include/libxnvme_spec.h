@@ -411,21 +411,25 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_fdp_event_media_reallocated) == 16,
 /**
  * NVMe FDP event
  *
+ * Base 2.4 prints the abbreviation of bytes 33:32 RGICD in Figure 303 and RGID elsewhere; the
+ * member follows RGID.
+ *
+ * @see Base 2.4, Figure 303
  * @struct xnvme_spec_fdp_event
  */
 struct __attribute__((packed)) xnvme_spec_fdp_event {
-	uint8_t type; ///< Event type
+	uint8_t etyp; ///< ETYP: Event Type
 
-	uint8_t fdpef; ///< FDP Event Flags, see XNVME_SPEC_FDP_EVENT_FDPEF_*
+	uint8_t fdpef; ///< FDPEF: FDP Event Flags, see XNVME_SPEC_FDP_EVENT_FDPEF_*
 
-	uint16_t pid;              ///< Placement identifier
-	uint64_t timestamp;        ///< Event timestamp
-	uint32_t nsid;             ///< Namespace identifier
-	uint8_t type_specific[16]; ///< Event type specific
-	uint16_t rgid;             ///< Reclaim group identifier
-	uint16_t ruhid;            ///< Reclaim unit handle identifier
-	uint8_t rsvd1[4];
-	uint8_t vs[24];
+	uint16_t pid;     ///< PID: Placement Identifier
+	uint64_t etmsp;   ///< ETMSP: Event Timestamp
+	uint32_t nsid;    ///< NSID: Namespace Identifier
+	uint8_t etsp[16]; ///< ETSP: Event Type Specific
+	uint16_t rgid;    ///< RGID: Reclaim Group Identifier
+	uint16_t ruhid;   ///< RUHID: Reclaim Unit Handle Identifier
+	uint8_t rsvd36[4];
+	uint8_t vs[24]; ///< VS: Vendor Specific
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_fdp_event) == 64, "Incorrect size")
 
@@ -439,10 +443,11 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_fdp_event) == 64, "Incorrect size")
 /**
  * NVMe FDP events log page
  *
+ * @see Base 2.4, Figure 302
  * @struct xnvme_spec_log_fdp_events
  */
 struct xnvme_spec_log_fdp_events {
-	uint32_t nevents; ///< Number of FDP events
+	uint32_t numfdpe; ///< NUMFDPE: Number of FDP Events
 	uint8_t rsvd[60];
 	struct xnvme_spec_fdp_event event[];
 };
@@ -451,17 +456,18 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_log_fdp_events) == 64, "Incorrect s
 /**
  * NVMe FDP event descriptor
  *
+ * @see Base 2.4, Figure 506
  * @struct xnvme_spec_fdp_event_desc
  */
 struct xnvme_spec_fdp_event_desc {
-	uint8_t type; ///< Event type
+	uint8_t fdpet; ///< FDPET: FDP Event Type
 
 	uint8_t fdpeta; ///< FDP Event Type Attributes, see XNVME_SPEC_FDP_EVENT_DESC_FDPETA_*
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_fdp_event_desc) == 2, "Incorrect size")
 
-/** Event Enabled; bit 0 of 'fdpeta' */
-#define XNVME_SPEC_FDP_EVENT_DESC_FDPETA_EE 0x1
+/** FDP Event Enable; bit 0 of 'fdpeta', FDPEE (Base 2.4, Figure 506) */
+#define XNVME_SPEC_FDP_EVENT_DESC_FDPETA_FDPEE 0x1
 
 /**
  * Identifiers (lpi) for NVMe get-log-page
