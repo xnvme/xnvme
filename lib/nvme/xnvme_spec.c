@@ -1234,36 +1234,34 @@ xnvme_spec_drecv_idfy_fpr(FILE *stream, struct xnvme_spec_idfy_dir_rp *idfy, int
 	wrtn += fprintf(stream, "\n");
 	wrtn += fprintf(stream, "  directives_supported:\n");
 	wrtn += fprintf(stream, "    identify: %" PRIu64 "\n",
-			xnvme_bits_get(idfy->directives_supported,
-				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_IDENTIFY));
+			xnvme_bits_get(idfy->directives_supported[0],
+				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_IDIRS));
 	wrtn += fprintf(stream, "    streams: %" PRIu64 "\n",
-			xnvme_bits_get(idfy->directives_supported,
-				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_STREAMS));
-	wrtn += fprintf(
-		stream, "    data placement: %" PRIu64 "\n",
-		xnvme_bits_get(idfy->directives_supported,
-			       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_DATA_PLACEMENT));
+			xnvme_bits_get(idfy->directives_supported[0],
+				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_SDIRS));
+	wrtn += fprintf(stream, "    data placement: %" PRIu64 "\n",
+			xnvme_bits_get(idfy->directives_supported[0],
+				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_DPDIRS));
 	wrtn += fprintf(stream, "  directives_enabled:\n");
 	wrtn += fprintf(stream, "    identify: %" PRIu64 "\n",
-			xnvme_bits_get(idfy->directives_enabled,
-				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_IDENTIFY));
+			xnvme_bits_get(idfy->directives_enabled[0],
+				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_IDIRE));
 	wrtn += fprintf(stream, "    streams: %" PRIu64 "\n",
-			xnvme_bits_get(idfy->directives_enabled,
-				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_STREAMS));
+			xnvme_bits_get(idfy->directives_enabled[0],
+				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_SDIRE));
 	wrtn += fprintf(stream, "    data_placement: %" PRIu64 "\n",
-			xnvme_bits_get(idfy->directives_enabled,
-				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_DATA_PLACEMENT));
+			xnvme_bits_get(idfy->directives_enabled[0],
+				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_DPDIRE));
 	wrtn += fprintf(stream, "  directives_persistence:\n");
 	wrtn += fprintf(stream, "    identify: %" PRIu64 "\n",
-			xnvme_bits_get(idfy->directives_persistence,
-				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_IDENTIFY));
+			xnvme_bits_get(idfy->directives_persistence[0],
+				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_IDIRCLR));
 	wrtn += fprintf(stream, "    streams: %" PRIu64 "\n",
-			xnvme_bits_get(idfy->directives_persistence,
-				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_STREAMS));
-	wrtn += fprintf(
-		stream, "    data_placement: %" PRIu64 "\n",
-		xnvme_bits_get(idfy->directives_persistence,
-			       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_DATA_PLACEMENT));
+			xnvme_bits_get(idfy->directives_persistence[0],
+				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_SDIRCLR));
+	wrtn += fprintf(stream, "    data_placement: %" PRIu64 "\n",
+			xnvme_bits_get(idfy->directives_persistence[0],
+				       XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_DPDIRCLR));
 
 	return wrtn;
 }
@@ -1300,7 +1298,7 @@ xnvme_spec_drecv_srp_fpr(FILE *stream, struct xnvme_spec_streams_dir_rp *srp, in
 	wrtn += fprintf(stream, "  nssa: %" PRIu16 "\n", srp->nssa);
 	wrtn += fprintf(stream, "  nsso: %" PRIu16 "\n", srp->nsso);
 	wrtn += fprintf(stream, "  multi_host: %" PRIu64 "\n",
-			xnvme_bits_get(srp->nssc, XNVME_SPEC_STREAMS_DIR_RP_NSSC_MULTI_HOST));
+			xnvme_bits_get(srp->nssc, XNVME_SPEC_STREAMS_DIR_RP_NSSC_SSID));
 	wrtn += fprintf(stream, "  sws: %" PRIu32 "\n", srp->sws);
 	wrtn += fprintf(stream, "  sgs: %" PRIu16 "\n", srp->sgs);
 	wrtn += fprintf(stream, "  nsa: %" PRIu16 "\n", srp->nsa);
@@ -1337,9 +1335,9 @@ xnvme_spec_drecv_sgs_fpr(FILE *stream, struct xnvme_spec_streams_dir_gs *sgs, in
 	}
 
 	wrtn += fprintf(stream, "\n");
-	wrtn += fprintf(stream, "  open_sc: %" PRIu16 "\n", sgs->open_sc);
-	for (int osc = 0; osc < sgs->open_sc; ++osc) {
-		wrtn += fprintf(stream, "  - sid[%d]: %" PRIu16 "\n", osc, sgs->sid[osc]);
+	wrtn += fprintf(stream, "  osc: %" PRIu16 "\n", sgs->osc);
+	for (int i = 0; i < sgs->osc; ++i) {
+		wrtn += fprintf(stream, "  - sid[%d]: %" PRIu16 "\n", i, sgs->sid[i]);
 	}
 
 	return wrtn;

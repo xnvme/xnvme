@@ -1724,88 +1724,105 @@ enum xnvme_spec_drecv_streams_doper {
 /**
  * This structure holds the return parameters data structure for identify directive
  *
+ * Each field is 256 bits; the spec gives none of them an abbreviation, and the masks apply to
+ * their first 64 bits.
+ *
+ * @see Base 2.4, Figure 705
  * @struct xnvme_spec_idfy_dir_rp
  */
 struct xnvme_spec_idfy_dir_rp {
-	/**
-	 * Directives Supported, byte 0 of bytes 31:0, see
-	 * XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_*
-	 */
-	uint8_t directives_supported;
-	uint8_t rsvd1[31];
+	/** Directives Supported, bytes 31:00, see XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_* */
+	uint64_t directives_supported[4];
+
+	/** Directives Enabled, bytes 63:32, see XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_* */
+	uint64_t directives_enabled[4];
 
 	/**
-	 * Directives Enabled, byte 32 of bytes 63:32, see
-	 * XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_*
-	 */
-	uint8_t directives_enabled;
-	uint8_t rsvd2[31];
-
-	/**
-	 * Directives Persistent Across Controller Level Resets, byte 64 of bytes 95:64, see
+	 * Directive Persistent Across Controller Level Resets, bytes 95:64, see
 	 * XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_*
 	 */
-	uint8_t directives_persistence;
-	uint8_t rsvd3[31];
+	uint64_t directives_persistence[4];
 
-	uint8_t rsvd4[4000];
+	uint8_t rsvd96[4000];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_idfy_dir_rp) == 4096, "Incorrect size")
 
-/** Identify Directive supported; bit 0 of 'directives_supported' */
-#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_IDENTIFY 0x1
-/** Streams Directive supported; bit 1 of 'directives_supported' */
-#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_STREAMS 0x2
-/** Data Placement Directive supported; bit 2 of 'directives_supported' */
-#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_DATA_PLACEMENT 0x4
-/** Identify Directive enabled; bit 0 of 'directives_enabled' */
-#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_IDENTIFY 0x1
-/** Streams Directive enabled; bit 1 of 'directives_enabled' */
-#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_STREAMS 0x2
-/** Data Placement Directive enabled; bit 2 of 'directives_enabled' */
-#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_DATA_PLACEMENT 0x4
-/** Identify Directive persistent; bit 0 of 'directives_persistence' */
-#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_IDENTIFY 0x1
-/** Streams Directive persistent; bit 1 of 'directives_persistence' */
-#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_STREAMS 0x2
-/** Data Placement Directive persistent; bit 2 of 'directives_persistence' */
-#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_DATA_PLACEMENT 0x4
+/** Identify Directive supported; bit 0 of 'directives_supported[0]', IDIRS (Base 2.4, Figure 705)
+ */
+#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_IDIRS 0x1
+/** Streams Directive supported; bit 1 of 'directives_supported[0]', SDIRS (Base 2.4, Figure 705)
+ */
+#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_SDIRS 0x2
+/** Data Placement Directive supported; bit 2 of 'directives_supported[0]', DPDIRS (Base 2.4,
+ * Figure 705) */
+#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_DPDIRS 0x4
+/** Vendor Specific Directive supported; bit 15 of 'directives_supported[0]', VSDIRS (Base 2.4,
+ * Figure 705) */
+#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_SUPPORTED_VSDIRS 0x8000
+/** Identify Directive enabled; bit 0 of 'directives_enabled[0]', IDIRE (Base 2.4, Figure 705) */
+#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_IDIRE 0x1
+/** Streams Directive enabled; bit 1 of 'directives_enabled[0]', SDIRE (Base 2.4, Figure 705) */
+#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_SDIRE 0x2
+/** Data Placement Directive enabled; bit 2 of 'directives_enabled[0]', DPDIRE (Base 2.4, Figure
+ * 705) */
+#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_DPDIRE 0x4
+/** Vendor Specific Directive enabled; bit 15 of 'directives_enabled[0]', VSDIRE (Base 2.4, Figure
+ * 705) */
+#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_ENABLED_VSDIRE 0x8000
+/** Identify Directive persistent across Controller Level Resets; bit 0 of
+ * 'directives_persistence[0]', IDIRCLR (Base 2.4, Figure 705) */
+#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_IDIRCLR 0x1
+/** Streams Directive persistent across Controller Level Resets; bit 1 of
+ * 'directives_persistence[0]', SDIRCLR (Base 2.4, Figure 705) */
+#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_SDIRCLR 0x2
+/** Data Placement Directive persistent across Controller Level Resets; bit 2 of
+ * 'directives_persistence[0]', DPDIRCLR (Base 2.4, Figure 705) */
+#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_DPDIRCLR 0x4
+/** Vendor Specific Directive persistent across Controller Level Resets; bit 15 of
+ * 'directives_persistence[0]', VSDIRCLR (Base 2.4, Figure 705) */
+#define XNVME_SPEC_IDFY_DIR_RP_DIRECTIVES_PERSISTENCE_VSDIRCLR 0x8000
 
 /**
  * This structure holds the return parameters data structure for streams directive
  *
+ * @see Base 2.4, Figure 712
  * @struct xnvme_spec_streams_dir_rp
  */
 struct xnvme_spec_streams_dir_rp {
-	uint16_t msl;  ///< Max streams limit
-	uint16_t nssa; ///< NVM subsystem streams available
-	uint16_t nsso; ///< NVM subsystems streams open
+	uint16_t msl;  ///< MSL: Max Streams Limit
+	uint16_t nssa; ///< NSSA: NVM Subsystem Streams Available
+	uint16_t nsso; ///< NSSO: NVM Subsystem Streams Open
 
-	uint8_t nssc; ///< NVM Subsystem Streams Capability, see XNVME_SPEC_STREAMS_DIR_RP_NSSC_*
+	uint8_t nssc; ///< NSSC: NVM Subsystem Stream Capability, see
+		      ///< XNVME_SPEC_STREAMS_DIR_RP_NSSC_*
 
-	uint8_t reserved1[9];
+	uint8_t rsvd7[9];
 
-	uint32_t sws; ///< Stream write size
-	uint16_t sgs; ///< Stream granularity size
+	uint32_t sws; ///< SWS: Stream Write Size
+	uint16_t sgs; ///< SGS: Stream Granularity Size
 
-	uint16_t nsa; ///< Namespace streams allocated
-	uint16_t nso; ///< Namespace streams open
+	uint16_t nsa; ///< NSA: Namespace Streams Allocated
+	uint16_t nso; ///< NSO: Namespace Streams Open
 
-	uint8_t reserved2[6];
+	uint8_t rsvd26[6];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_streams_dir_rp) == 32, "Incorrect size")
 
-/** Stream identifiers shared by hosts of different non-zero Host Identifiers; bit 0 of 'nssc' */
-#define XNVME_SPEC_STREAMS_DIR_RP_NSSC_MULTI_HOST 0x1
+/** Shared Stream Identifiers, by hosts of different non-zero Host Identifiers; bit 0 of 'nssc',
+ * SSID (Base 2.4, Figure 712) */
+#define XNVME_SPEC_STREAMS_DIR_RP_NSSC_SSID 0x1
+/** Streams Require Non-Zero Host Identifier; bit 1 of 'nssc', SRNZID (Base 2.4, Figure 712) */
+#define XNVME_SPEC_STREAMS_DIR_RP_NSSC_SRNZID 0x2
 
 /**
  * This structure holds the get status data structure for streams directive
  *
+ * @see Base 2.4, Figure 713
  * @struct xnvme_spec_streams_dir_gs
  */
 struct xnvme_spec_streams_dir_gs {
-	uint16_t open_sc; ///< Open stream count
-	uint16_t sid[];   ///< Stream identifier
+	uint16_t osc;   ///< OSC: Open Stream Count
+	uint16_t sid[]; ///< SID1 to SIDn: Stream Identifier
 };
 
 /**
