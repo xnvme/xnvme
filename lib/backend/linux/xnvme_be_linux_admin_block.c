@@ -119,6 +119,9 @@ _idfy(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes)
 	char buf[buf_len];
 	int is_zoned;
 
+	// A device delivers the whole page, so what is not emulated reads as zero
+	memset(dbuf, 0, dbuf_nbytes);
+
 	xnvme_be_linux_sysfs_dev_attr_to_buf(ctx->dev, "queue/zoned", buf, buf_len);
 	is_zoned = strncmp("host-managed", buf, 12) == 0;
 

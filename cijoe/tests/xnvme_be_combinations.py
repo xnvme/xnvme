@@ -374,6 +374,23 @@ def get_backend_configurations():
             "mem": ["posix"],
             "label": ["bdev", "ramdisk"],
         },
+        # Regular file
+        {
+            "be": ["thrpool_file"],
+            "async": ["thrpool"],
+            "sync": ["psync"],
+            "admin": ["file_as_ns"],
+            "mem": ["posix"],
+            "label": ["file"],
+        },
+        {
+            "be": ["emu_file"],
+            "async": ["emu"],
+            "sync": ["psync"],
+            "admin": ["file_as_ns"],
+            "mem": ["posix"],
+            "label": ["file"],
+        },
     ]
 
     return combos

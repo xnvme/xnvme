@@ -84,6 +84,8 @@ extern const struct xnvme_be_config g_xnvme_platform_freebsd_nil;
 extern const struct xnvme_be_config g_xnvme_platform_macos_emu;
 extern const struct xnvme_be_config g_xnvme_platform_macos_thrpool;
 extern const struct xnvme_be_config g_xnvme_platform_macos_posix;
+extern const struct xnvme_be_config g_xnvme_platform_macos_emu_file;
+extern const struct xnvme_be_config g_xnvme_platform_macos_thrpool_file;
 #ifdef XNVME_BE_DRIVERKIT_ENABLED
 extern const struct xnvme_be_config g_xnvme_be_driverkit;
 extern const struct xnvme_be_config g_xnvme_platform_macos_driverkit_emu;

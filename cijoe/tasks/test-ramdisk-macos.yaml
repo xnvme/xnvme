@@ -19,3 +19,12 @@ steps:
   uses: core.testrunner
   with:
     args: '-k "ramdisk and not hugepage and not compare or xnvme_library_info" tests'
+
+- name: test_file_prep
+  run: |
+    dd if=/dev/zero of=/tmp/xnvme-testfile.bin bs=1048576 count=64
+
+- name: test_file
+  uses: core.testrunner
+  with:
+    args: '-k "(emu_file or thrpool_file) and not copy_sync" tests'

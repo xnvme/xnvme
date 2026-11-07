@@ -205,6 +205,30 @@ def test_idfy_ctrlr(cijoe, device, be_opts, cli_args):
     assert not err
 
 
+@xnvme_parametrize(labels=["dev"], opts=["be", "admin"])
+def test_idfy_ctrlr_emulated_is_zeroed(cijoe, device, be_opts, cli_args):
+    if be_opts["admin"] not in ("ramdisk", "block"):
+        pytest.skip(reason=f"[admin={be_opts['admin']}] the device fills the page")
+    osname = get_osname()
+    out = f"{'C:/tmp' if osname == 'windows' else '/tmp'}/idfy_ctrlr.bin"
+    # glibc then fills fresh allocations with 0x5a, so what is left unset is not
+    # zero; only glibc honours it, and Windows runs commands without a POSIX shell
+    perturb = "MALLOC_PERTURB_=165 " if osname == "linux" else ""
+    err, state = cijoe.run(f"{perturb}xnvme idfy-ctrlr {cli_args} --data-output {out}")
+    assert not err
+
+    artifacts = state.output_dpath / "artifacts"
+    os.makedirs(artifacts, exist_ok=True)
+    local = artifacts / "idfy_ctrlr.bin"
+    assert cijoe.get(out, str(local))
+
+    data = local.read_bytes()
+
+    # vid, ssvid, sn, mn and fr: no emulation sets them, so they read as zero
+    assert len(data) == 4096
+    assert not any(data[0:72])
+
+
 @xnvme_parametrize(labels=["file"], opts=["be", "admin"])
 def test_idfy_ns_desc_file(cijoe, device, be_opts, cli_args):
     out = "/tmp/idfy_ns_desc.bin"
