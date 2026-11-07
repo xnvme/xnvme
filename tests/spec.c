@@ -1195,6 +1195,11 @@ XNVME_STATIC_ASSERT(XNVME_SPEC_ZND_CMD_APPEND_CDW12_CETYPE == 0xf0000 &&
 			    XNVME_SPEC_ZND_CMD_APPEND_CDW12_PIREMAP == 0x2000000,
 		    "CETYPE is bits 19:16, STC bit 24 and PIREMAP bit 25 of Zone Append dword 12")
 
+/* Key Value Command Set 1.4, Figures 20 and 31: the options are bits 15:08 of dword 11 */
+XNVME_STATIC_ASSERT(XNVME_KVS_RETRIEVE_OPT_RRD == 0x1 && XNVME_KVS_STORE_OPT_SIKE == 0x1 &&
+			    XNVME_KVS_STORE_OPT_SINKE == 0x2 && XNVME_KVS_STORE_OPT_NOCOMP == 0x4,
+		    "RRD, SIKE, SINKE and NOCOMP are bits 8, 8, 9 and 10 of KV dword 11")
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it
