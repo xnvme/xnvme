@@ -2792,29 +2792,60 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_cmd_mgmt_recv) == 64, "Incorrec
 /**
  * NVMe Command Accessor for a command with opcode ZND_CMD_OPC_APPEND
  *
+ * @see Zoned Namespace Command Set 1.5, Figures 24 to 30
  * @struct xnvme_spec_znd_cmd_append
  */
 struct xnvme_spec_znd_cmd_append {
-	uint32_t cdw00_09[10]; ///< Command dword 0 to 9
+	uint32_t cdw00_01[2]; ///< Command dword 0 and 1
 
-	uint64_t zslba; ///< SLBA: Start Logical Block Address
+	uint64_t cdw02_03; ///< Command dword 2 and 3, see XNVME_SPEC_ZND_CMD_APPEND_CDW02_03_*
+
+	uint32_t cdw04_09[6]; ///< Command dword 4 to 9
+
+	uint64_t zslba; ///< ZSLBA: Zone Start Logical Block Address
 
 	uint32_t cdw12; ///< Command dword 12, see XNVME_SPEC_ZND_CMD_APPEND_CDW12_*
 
-	uint32_t cdw13_15[3]; ///< Command dword 13 to 15
+	uint32_t cdw13; ///< Command dword 13, see XNVME_SPEC_ZND_CMD_APPEND_CDW13_*
+
+	uint32_t lbtl; ///< LBTL: Logical Block Tags Lower, with LBTU the LBST and the ILBRT
+
+	uint16_t lbat;  ///< LBAT: Logical Block Application Tag
+	uint16_t lbatm; ///< LBATM: Logical Block Application Tag Mask
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_cmd_append) == 64, "Incorrect size")
 
-/** Number of Logical Blocks, zero-based; bits 15:0 of 'cdw12' */
+/** Logical Block Tags Upper; bits 47:00 of 'cdw02_03', LBTU (Zoned Namespace Command Set 1.5,
+ * Figure 24) */
+#define XNVME_SPEC_ZND_CMD_APPEND_CDW02_03_LBTU 0xffffffffffff
+
+/** Number of Logical Blocks, zero-based; bits 15:0 of 'cdw12', NLB (Zoned Namespace Command
+ * Set 1.5, Figure 26) */
 #define XNVME_SPEC_ZND_CMD_APPEND_CDW12_NLB 0xffff
-/** Directive Type; bits 23:20 of 'cdw12' */
+/** Command Extension Type; bits 19:16 of 'cdw12', CETYPE (Zoned Namespace Command Set 1.5, Figure
+ * 26) */
+#define XNVME_SPEC_ZND_CMD_APPEND_CDW12_CETYPE 0xf0000
+/** Directive Type; bits 23:20 of 'cdw12', DTYPE (Zoned Namespace Command Set 1.5, Figure 26) */
 #define XNVME_SPEC_ZND_CMD_APPEND_CDW12_DTYPE 0xf00000
-/** Protection Information Field; bits 29:26 of 'cdw12' */
+/** Storage Tag Check; bit 24 of 'cdw12', STC (Zoned Namespace Command Set 1.5, Figure 26) */
+#define XNVME_SPEC_ZND_CMD_APPEND_CDW12_STC 0x1000000
+/** Protection Information Remap; bit 25 of 'cdw12', PIREMAP (Zoned Namespace Command Set 1.5,
+ * Figure 26) */
+#define XNVME_SPEC_ZND_CMD_APPEND_CDW12_PIREMAP 0x2000000
+/** Protection Information; bits 29:26 of 'cdw12', PRINFO (Zoned Namespace Command Set 1.5, Figure
+ * 26) */
 #define XNVME_SPEC_ZND_CMD_APPEND_CDW12_PRINFO 0x3c000000
-/** Force Unit Access; bit 30 of 'cdw12' */
+/** Force Unit Access; bit 30 of 'cdw12', FUA (Zoned Namespace Command Set 1.5, Figure 26) */
 #define XNVME_SPEC_ZND_CMD_APPEND_CDW12_FUA 0x40000000
-/** Limited Retry; bit 31 of 'cdw12' */
+/** Limited Retry; bit 31 of 'cdw12', LR (Zoned Namespace Command Set 1.5, Figure 26) */
 #define XNVME_SPEC_ZND_CMD_APPEND_CDW12_LR 0x80000000
+
+/** Command Extension Value, if CETYPE is non-zero; bits 15:0 of 'cdw13', CEV (Zoned Namespace
+ * Command Set 1.5, Figure 28) */
+#define XNVME_SPEC_ZND_CMD_APPEND_CDW13_CEV 0xffff
+/** Directive Specific; bits 31:16 of 'cdw13', DSPEC (Zoned Namespace Command Set 1.5, Figure 27)
+ */
+#define XNVME_SPEC_ZND_CMD_APPEND_CDW13_DSPEC 0xffff0000
 
 /**
  * NVMe Command Accessors for the Zoned Command Set
