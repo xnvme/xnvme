@@ -1463,20 +1463,20 @@ xnvme_spec_znd_log_changes_fpr(FILE *stream, const struct xnvme_spec_znd_log_cha
 	}
 
 	wrtn += fprintf(stream, "\n");
-	wrtn += fprintf(stream, "  nidents: %" PRIu16 "\n", changes->nidents);
+	wrtn += fprintf(stream, "  nzid: %" PRIu16 "\n", changes->nzid);
 
-	if (changes->nidents) {
+	if (changes->nzid) {
 		return wrtn;
 	}
 
 	wrtn += fprintf(stream, "  idents:");
-	if (!changes->nidents) {
+	if (!changes->nzid) {
 		wrtn += fprintf(stream, " ~\n");
 		return wrtn;
 	}
 
 	wrtn += fprintf(stream, "\n");
-	for (uint16_t idx = 0; idx < changes->nidents; ++idx) {
+	for (uint16_t idx = 0; idx < changes->nzid; ++idx) {
 		wrtn += fprintf(stream, "    - 0x%016" PRIx64 "\n", changes->idents[idx]);
 	}
 

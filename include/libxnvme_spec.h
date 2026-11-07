@@ -2786,14 +2786,14 @@ XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_znd_idfy) == 4096, "Incorrect size")
 /**
  * Zone Identifier List as returned by get-log-page
  *
- * @see Specification Section 5.3.1.1, figure TBDZONELIST
+ * @see Zoned Namespace Command Set 1.5, Figure 47
  *
  * @struct xnvme_spec_znd_log_changes
  */
 struct xnvme_spec_znd_log_changes {
-	uint16_t nidents; ///< Number of Zone Identifiers
+	uint16_t nzid; ///< NZID: Number of Zone Identifiers
 	uint8_t rsvd2[6];
-	uint64_t idents[ZND_CHANGES_LEN]; ///< Zone Identifiers
+	uint64_t idents[ZND_CHANGES_LEN]; ///< Zone Identifier 0 to 510, each a ZSLBA
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_log_changes) == 4096, "Incorrect size")
 

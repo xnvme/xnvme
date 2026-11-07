@@ -647,6 +647,10 @@ SPEC_AT(struct xnvme_spec_znd_idfy_ns, vs, 3840, 256)
 SPEC_AT(struct xnvme_spec_znd_idfy_lbafe, zsze, 0, 8)
 SPEC_AT(struct xnvme_spec_znd_idfy_lbafe, zdes, 8, 1)
 
+/* Zoned Namespace Command Set 1.5, Figure 47 */
+SPEC_AT(struct xnvme_spec_znd_log_changes, nzid, 0, 2)
+SPEC_AT(struct xnvme_spec_znd_log_changes, idents, 8, 511 * 8)
+
 struct offset_case {
 	const char *name;
 	size_t offset; ///< As the structure has it
