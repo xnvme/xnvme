@@ -150,8 +150,9 @@ xnvme_pi_set_reftag(union xnvme_pif *pif, uint64_t ref_tag, enum xnvme_spec_nvm_
 	if (pi_format == XNVME_SPEC_NVM_NS_16B_GUARD) {
 		xnvme_to_be32(&(pif->g16.stor_ref_space), (uint32_t)ref_tag);
 	} else {
-		xnvme_to_be16(&(pif->g64.stor_ref_space_p1), (uint16_t)(ref_tag >> 32));
-		xnvme_to_be32(&(pif->g64.stor_ref_space_p2), (uint32_t)ref_tag);
+		for (int i = 0; i < 6; ++i) {
+			pif->g64.stor_ref_space[i] = (uint8_t)(ref_tag >> (8 * (5 - i)));
+		}
 	}
 }
 
@@ -163,9 +164,10 @@ xnvme_pi_get_reftag(union xnvme_pif *pif, enum xnvme_spec_nvm_ns_pif pi_format)
 	if (pi_format == XNVME_SPEC_NVM_NS_16B_GUARD) {
 		ref_tag = (uint64_t)xnvme_from_be32(&(pif->g16.stor_ref_space));
 	} else {
-		ref_tag = (uint64_t)xnvme_from_be16(&(pif->g64.stor_ref_space_p1));
-		ref_tag <<= 32;
-		ref_tag |= (uint64_t)xnvme_from_be32(&(pif->g64.stor_ref_space_p2));
+		ref_tag = 0;
+		for (int i = 0; i < 6; ++i) {
+			ref_tag = (ref_tag << 8) | pif->g64.stor_ref_space[i];
+		}
 	}
 
 	return ref_tag;

@@ -225,11 +225,6 @@ XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_sgl_descriptor, len) == 8,
 		    "len of struct xnvme_spec_sgl_descriptor")
 XNVME_STATIC_ASSERT(offsetof(struct xnvme_spec_sgl_descriptor, id) == 15,
 		    "id of struct xnvme_spec_sgl_descriptor")
-XNVME_STATIC_ASSERT(offsetof(union xnvme_pif, g16.stor_ref_space) == 4, "g16 of union xnvme_pif")
-XNVME_STATIC_ASSERT(offsetof(union xnvme_pif, g64.stor_ref_space_p1) == 10,
-		    "g64 of union xnvme_pif")
-XNVME_STATIC_ASSERT(offsetof(union xnvme_pif, g64.stor_ref_space_p2) == 12,
-		    "g64 of union xnvme_pif")
 XNVME_STATIC_ASSERT(FITS(struct xnvme_spec_cmd_log, cdw10,
 			 XNVME_SPEC_CMD_LOG_CDW10_LID | XNVME_SPEC_CMD_LOG_CDW10_LSP |
 				 XNVME_SPEC_CMD_LOG_CDW10_RAE | XNVME_SPEC_CMD_LOG_CDW10_NUMDL),
@@ -807,6 +802,17 @@ XNVME_STATIC_ASSERT(XNVME_SPEC_IDFY_NS_NSFEAT_OPTPERF == 0x30 &&
 			    XNVME_SPEC_IDFY_NS_NSFEAT_MAM == 0x40 &&
 			    XNVME_SPEC_IDFY_NS_NSFEAT_OPTRPERF == 0x80,
 		    "OPTPERF is bits 5:4, MAM bit 6 and OPTRPERF bit 7 of NSFEAT")
+
+/* NVM Command Set 1.3, Figures 155, 157 and 159 */
+SPEC_AT(struct xnvme_pif_g16, guard, 0, 2)
+SPEC_AT(struct xnvme_pif_g16, app_tag, 2, 2)
+SPEC_AT(struct xnvme_pif_g16, stor_ref_space, 4, 4)
+SPEC_AT(struct xnvme_pif_g32, guard, 0, 4)
+SPEC_AT(struct xnvme_pif_g32, app_tag, 4, 2)
+SPEC_AT(struct xnvme_pif_g32, stor_ref_space, 6, 10)
+SPEC_AT(struct xnvme_pif_g64, guard, 0, 8)
+SPEC_AT(struct xnvme_pif_g64, app_tag, 8, 2)
+SPEC_AT(struct xnvme_pif_g64, stor_ref_space, 10, 6)
 
 struct offset_case {
 	const char *name;
@@ -1481,6 +1487,47 @@ sub_cqe_result(struct xnvme_cli *XNVME_UNUSED(cli))
 	return 0;
 }
 
+static int
+sub_pif_reftag(struct xnvme_cli *XNVME_UNUSED(cli))
+{
+	static uint8_t data[4096];
+	uint8_t md[16];
+	const uint8_t g64[6] = {0x00, 0x00, 0x89, 0xab, 0xcd, 0xef};
+	const uint8_t g16[4] = {0x89, 0xab, 0xcd, 0xef};
+	struct xnvme_pi_ctx ctx = {0};
+	int err = 0;
+
+	// 64b Guard: the reference tag is the low bits of the 48 bits of bytes 15:10
+	memset(md, 0, sizeof(md));
+	if (xnvme_pi_ctx_init(&ctx, sizeof(data), sizeof(md), false, false, XNVME_PI_TYPE1,
+			      XNVME_PI_FLAGS_REFTAG_CHECK, 0x89abcdef, 0, 0,
+			      XNVME_SPEC_NVM_NS_64B_GUARD)) {
+		xnvme_cli_pinf("FAILED: xnvme_pi_ctx_init(64b)");
+		return -EINVAL;
+	}
+	xnvme_pi_generate(&ctx, data, md, 1);
+	if (memcmp(&md[10], g64, sizeof(g64)) || xnvme_pi_verify(&ctx, data, md, 1)) {
+		xnvme_cli_pinf("FAILED: 64b guard: reference tag in bytes 15:10");
+		err = -EINVAL;
+	}
+
+	// 16b Guard: the reference tag is bytes 7:4
+	memset(md, 0, sizeof(md));
+	if (xnvme_pi_ctx_init(&ctx, sizeof(data), 8, false, false, XNVME_PI_TYPE1,
+			      XNVME_PI_FLAGS_REFTAG_CHECK, 0x89abcdef, 0, 0,
+			      XNVME_SPEC_NVM_NS_16B_GUARD)) {
+		xnvme_cli_pinf("FAILED: xnvme_pi_ctx_init(16b)");
+		return -EINVAL;
+	}
+	xnvme_pi_generate(&ctx, data, md, 1);
+	if (memcmp(&md[4], g16, sizeof(g16)) || xnvme_pi_verify(&ctx, data, md, 1)) {
+		xnvme_cli_pinf("FAILED: 16b guard: reference tag in bytes 7:4");
+		err = -EINVAL;
+	}
+
+	return err;
+}
+
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"idfy-offsets",
@@ -1541,6 +1588,15 @@ static struct xnvme_cli_sub g_subs[] = {
 		"Read completion dword 0 through the views of features and resources",
 		"Read completion dword 0 through the views of features and resources",
 		sub_cdw0_views,
+		{
+			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
+		},
+	},
+	{
+		"pif-reftag",
+		"Write and read the reference tag of the protection information formats",
+		"Write and read the reference tag of the protection information formats",
+		sub_pif_reftag,
 		{
 			{XNVME_CLI_OPT_NONE, XNVME_CLI_LOPT},
 		},
