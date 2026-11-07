@@ -113,22 +113,24 @@ struct xnvme_spec_cqe {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cqe) == 16, "Incorrect size")
 
-/** Command Specific, dword 0; bits 31:0 of 'result' */
+/** Command Specific, dword 0; bits 31:0 of 'result', in the specification Command Specific
+ * without an abbreviation (Base 2.4, Figure 97) */
 #define XNVME_SPEC_CQE_RESULT_CDW0 0xffffffff
-/** Command Specific, dword 1; bits 63:32 of 'result' */
+/** Command Specific, dword 1; bits 63:32 of 'result', in the specification Command Specific
+ * without an abbreviation (Base 2.4, Figure 97) */
 #define XNVME_SPEC_CQE_RESULT_CDW1 0xffffffff00000000
 
-/** Phase Tag; bit 0 of 'status' */
+/** Phase Tag; bit 0 of 'status', P (Base 2.4, Figure 99) */
 #define XNVME_SPEC_CQE_STATUS_P 0x1
-/** Status Code; bits 8:1 of 'status' */
+/** Status Code; bits 8:1 of 'status', SC (Base 2.4, Figure 101) */
 #define XNVME_SPEC_CQE_STATUS_SC 0x1fe
-/** Status Code Type; bits 11:9 of 'status' */
+/** Status Code Type; bits 11:9 of 'status', SCT (Base 2.4, Figure 101) */
 #define XNVME_SPEC_CQE_STATUS_SCT 0xe00
-/** Command Retry Delay; bits 13:12 of 'status' */
+/** Command Retry Delay; bits 13:12 of 'status', CRD (Base 2.4, Figure 101) */
 #define XNVME_SPEC_CQE_STATUS_CRD 0x3000
-/** More; bit 14 of 'status' */
+/** More; bit 14 of 'status', M (Base 2.4, Figure 101) */
 #define XNVME_SPEC_CQE_STATUS_M 0x4000
-/** Do Not Retry; bit 15 of 'status' */
+/** Do Not Retry; bit 15 of 'status', DNR (Base 2.4, Figure 101) */
 #define XNVME_SPEC_CQE_STATUS_DNR 0x8000
 
 /**
@@ -413,7 +415,7 @@ struct __attribute__((packed)) xnvme_spec_fdp_event_media_reallocated {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_fdp_event_media_reallocated) == 16, "Incorrect size")
 
-/** LBA Valid; bit 0 of 'sef' */
+/** LBA Valid; bit 0 of 'sef', LBAV (NVM Command Set 1.3, Figure 116) */
 #define XNVME_SPEC_FDP_EVENT_MEDIA_REALLOCATED_SEF_LBAV 0x1
 
 /**
@@ -441,11 +443,11 @@ struct __attribute__((packed)) xnvme_spec_fdp_event {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_fdp_event) == 64, "Incorrect size")
 
-/** Placement Identifier Valid; bit 0 of 'fdpef' */
+/** Placement Identifier Valid; bit 0 of 'fdpef', PIV (Base 2.4, Figure 303) */
 #define XNVME_SPEC_FDP_EVENT_FDPEF_PIV 0x1
-/** Namespace Identifier Valid; bit 1 of 'fdpef' */
+/** Namespace Identifier Valid; bit 1 of 'fdpef', NSIDV (Base 2.4, Figure 303) */
 #define XNVME_SPEC_FDP_EVENT_FDPEF_NSIDV 0x2
-/** Location Valid; bit 2 of 'fdpef' */
+/** Location Valid; bit 2 of 'fdpef', LV (Base 2.4, Figure 303) */
 #define XNVME_SPEC_FDP_EVENT_FDPEF_LV 0x4
 
 /**
@@ -480,7 +482,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_fdp_event_desc) == 2, "Incorrect si
 /**
  * Identifiers (lpi) for NVMe get-log-page
  *
- * NVMe 1.4 - Figure ?
+ * @see Base 2.4, Figure 209
  *
  * @enum xnvme_spec_log_lpi
  */
@@ -611,8 +613,7 @@ enum xnvme_spec_csi {
 /**
  * Namespace Identifier Type (NIDT) of a Namespace Identification Descriptor
  *
- * @see NVM Express Base Specification 2.3, Section 5.2.13.2.3, Figure 331 (Identify - Namespace
- * Identification Descriptor)
+ * @see Base 2.4, Figure 342
  *
  * @enum xnvme_spec_ns_desc_nidt
  */
@@ -629,10 +630,9 @@ enum xnvme_spec_ns_desc_nidt {
  * That is, one entry in the list returned for opcode XNVME_SPEC_OPC_IDFY(0x06) with
  * XNVME_SPEC_IDFY_NS_DESC(0x3). Only the first 'nidl' bytes of 'nid' are valid, the next
  * descriptor starts at offset 4 + 'nidl', and the list is terminated by a descriptor with
- * 'nidl' equal to zero (NVMe Base 2.3, 5.2.13.2.3).
+ * 'nidl' equal to zero (Base 2.4, Section 5.2.14.2.3).
  *
- * @see NVM Express Base Specification 2.3, Section 5.2.13.2.3, Figure 331 (Identify - Namespace
- * Identification Descriptor)
+ * @see Base 2.4, Figure 342
  *
  * @struct xnvme_spec_ns_desc
  */
@@ -1968,9 +1968,11 @@ XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_feat) == 4, "Incorrect size")
  * Figure 500) */
 #define XNVME_SPEC_FEAT_FDP_MODE_FDPCIDX 0xff00
 
-/** High ECC status; bit 0 of 'media_feedback' */
+/** High ECC status; bit 0 of 'media_feedback', defined in none of the NVMe specifications cited
+ * here */
 #define XNVME_SPEC_FEAT_MEDIA_FEEDBACK_HECC 0x1
-/** Very High ECC status; bit 1 of 'media_feedback' */
+/** Very High ECC status; bit 1 of 'media_feedback', defined in none of the NVMe specifications
+ * cited here */
 #define XNVME_SPEC_FEAT_MEDIA_FEEDBACK_VHECC 0x2
 
 /**
@@ -2205,17 +2207,19 @@ struct xnvme_spec_cmd_format {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_format) == 64, "Incorrect size")
 
-/** LBA Format Lower, the 4 least significant bits of the index; bits 3:0 of 'cdw10' */
+/** LBA Format Lower, the 4 least significant bits of the index; bits 3:0 of 'cdw10', LBAFL
+ * (Base 2.4, Figure 195) */
 #define XNVME_SPEC_CMD_FORMAT_CDW10_LBAFL 0xf
-/** Metadata Settings; bit 4 of 'cdw10' */
+/** Metadata Settings; bit 4 of 'cdw10', MSET (Base 2.4, Figure 195) */
 #define XNVME_SPEC_CMD_FORMAT_CDW10_MSET 0x10
-/** Protection Information; bits 7:5 of 'cdw10' */
+/** Protection Information; bits 7:5 of 'cdw10', PI (Base 2.4, Figure 195) */
 #define XNVME_SPEC_CMD_FORMAT_CDW10_PI 0xe0
-/** Protection Information Location; bit 8 of 'cdw10' */
+/** Protection Information Location; bit 8 of 'cdw10', PIL (Base 2.4, Figure 195) */
 #define XNVME_SPEC_CMD_FORMAT_CDW10_PIL 0x100
-/** Secure Erase Settings; bits 11:9 of 'cdw10' */
+/** Secure Erase Settings; bits 11:9 of 'cdw10', SES (Base 2.4, Figure 195) */
 #define XNVME_SPEC_CMD_FORMAT_CDW10_SES 0xe00
-/** LBA Format Upper, the 2 most significant bits of the index; bits 13:12 of 'cdw10' */
+/** LBA Format Upper, the 2 most significant bits of the index; bits 13:12 of 'cdw10', LBAFU
+ * (Base 2.4, Figure 195) */
 #define XNVME_SPEC_CMD_FORMAT_CDW10_LBAFU 0x3000
 
 /**
@@ -2475,11 +2479,11 @@ struct xnvme_spec_cmd_dsm {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_cmd_dsm) == 64, "Incorrect size")
 
-/** Integral Dataset for Read; bit 0 of 'cdw11' */
+/** Integral Dataset for Read; bit 0 of 'cdw11', IDR (NVM Command Set 1.3, Figure 46) */
 #define XNVME_SPEC_CMD_DSM_CDW11_IDR 0x1
-/** Integral Dataset for Write; bit 1 of 'cdw11' */
+/** Integral Dataset for Write; bit 1 of 'cdw11', IDW (NVM Command Set 1.3, Figure 46) */
 #define XNVME_SPEC_CMD_DSM_CDW11_IDW 0x2
-/** Deallocate; bit 2 of 'cdw11' */
+/** Deallocate; bit 2 of 'cdw11', AD (NVM Command Set 1.3, Figure 46) */
 #define XNVME_SPEC_CMD_DSM_CDW11_AD 0x4
 
 /**
@@ -2540,7 +2544,7 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_write_zeroes) == 64, "Incorrect
 /**
  * Command-set specific status codes related to Logical Block Namespaces
  *
- * @see Specification Section 6.TBD.1, figure 355
+ * @see NVM Command Set 1.3, Figures 19 and 43
  */
 enum xnvme_spec_nvm_cmd_cpl_sc {
 	/// Copy Command Specific Status Values
@@ -2598,7 +2602,7 @@ enum xnvme_nvm_scopy_fmt {
 #define XNVME_SPEC_NVM_SCOPY_NENTRY_MAX 128
 
 /**
- * @see Specification Section 6.TBD.1
+ * @see NVM Command Set 1.3, Figure 40
  */
 struct xnvme_spec_nvm_scopy_source_range {
 	struct xnvme_spec_nvm_scopy_fmt_zero entry[XNVME_SPEC_NVM_SCOPY_NENTRY_MAX];
@@ -2796,7 +2800,7 @@ enum xnvme_spec_znd_log_lid {
 /**
  * Zoned Command Set opcodes
  *
- * @see Specification Section 6, figure ZONEDOPCODES
+ * @see Zoned Namespace Command Set 1.5, Figure 12
  *
  * @struct xnvme_spec_znd_opc
  */
@@ -2984,7 +2988,7 @@ XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_io_mgmt_cmd) == 64, "Incorrect size"
 /**
  * KV Command Set opcodes
  *
- * @see Key Value Command Set Specification Revision 1.0c, Figure 5
+ * @see Key Value Command Set 1.4, Figure 6
  *
  * @struct xnvme_spec_kv_opc
  */
@@ -2999,7 +3003,7 @@ enum xnvme_spec_kv_opc {
 /**
  * Command-set specific status codes related to key-value Namespaces
  *
- * @see Key Value Command Set Specification Revision 1.0c, Figure 4
+ * @see Key Value Command Set 1.4, Figure 5
  *
  * @enum xnvme_spec_kv_status_code
  */
@@ -3142,8 +3146,10 @@ XNVME_STATIC_ASSERT(sizeof(union xnvme_spec_sqe) == 64, "Incorrect size")
 /**
  * Command-set specific status codes related to Zoned Namespaces
  *
- * @see Specification Section 4.1.1.1.1, figures GENERICSTATUSCODES and
- * STATUSCODES
+ * XNVME_SPEC_ZND_SC_INVALID_FORMAT is no value of the Zoned Namespace Command Set; Invalid Format
+ * is the generic status 0Ah (Base 2.4, Figure 103).
+ *
+ * @see Zoned Namespace Command Set 1.5, Figure 11
  *
  * @enum xnvme_spec_znd_status_code
  */
@@ -3165,7 +3171,9 @@ enum xnvme_spec_znd_status_code {
 };
 
 /**
- * This is not defined in any spec... it would just seem sane if it was...
+ * Zone Send Action Specific Option of Open Zone, the bit ZRWA Allocation (ZRWAA)
+ *
+ * @see Zoned Namespace Command Set 1.5, Figure 40
  *
  * @enum xnvme_spec_znd_mgmt_send_action_so
  */
@@ -3176,7 +3184,7 @@ enum xnvme_spec_znd_mgmt_send_action_so {
 /**
  * Actions for the Zone Management Send command
  *
- * @see Specification Section 6.1, figure TBDZMDW13
+ * @see Zoned Namespace Command Set 1.5, Figure 40
  *
  * @enum xnvme_spec_znd_cmd_mgmt_send_action
  */
@@ -3194,7 +3202,7 @@ enum xnvme_spec_znd_cmd_mgmt_send_action {
 /**
  * Zone Receive Action (::xnvme_spec_znd_cmd_mgmt_recv_action) specific field values
  *
- * @see Specification Section 6.2, figure TBDZMRDW13
+ * @see Zoned Namespace Command Set 1.5, Figure 35
  *
  * @enum xnvme_spec_znd_cmd_mgmt_recv_action_sf
  */
@@ -3212,7 +3220,7 @@ enum xnvme_spec_znd_cmd_mgmt_recv_action_sf {
 /**
  * Zoned Receive Action
  *
- * @see Specification Section 6.2, figure TBDZMRDW13
+ * @see Zoned Namespace Command Set 1.5, Figure 35
  * @enum xnvme_spec_znd_cmd_mgmt_recv_action
  */
 enum xnvme_spec_znd_cmd_mgmt_recv_action {
@@ -3225,7 +3233,7 @@ enum xnvme_spec_znd_cmd_mgmt_recv_action {
 /**
  * Zone Type
  *
- * @see Specification Section 6.2.2.3, figure TBDZMRD
+ * @see Zoned Namespace Command Set 1.5, Figure 38
  * @enum xnvme_spec_znd_type
  */
 enum xnvme_spec_znd_type {
@@ -3235,7 +3243,7 @@ enum xnvme_spec_znd_type {
 /**
  * Zone State as reported by Zone Management Receive
  *
- * @see Specification Section 6.2.2.3, figure TBDZMRZD
+ * @see Zoned Namespace Command Set 1.5, Figure 38
  * @enum xnvme_spec_znd_state
  */
 enum xnvme_spec_znd_state {
