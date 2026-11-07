@@ -766,11 +766,14 @@ enum xnvme_spec_nvm_ns_pif {
 	XNVME_SPEC_NVM_NS_32B_GUARD = 0x1,
 	// 64 bit guard protection information
 	XNVME_SPEC_NVM_NS_64B_GUARD = 0x2,
+	// Qualified Type (QTYPE), the format is given by QPIF
+	XNVME_SPEC_NVM_NS_QTYPE = 0x3,
 };
 
 /**
  * Extended LBA Format
  *
+ * @see NVM Command Set 1.3, Figure 128
  * @struct xnvme_spec_elbaf
  */
 struct xnvme_spec_elbaf {
@@ -778,10 +781,14 @@ struct xnvme_spec_elbaf {
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_elbaf) == 4, "Incorrect size")
 
-/** Storage tag size; bits 6:0 of 'bits' */
+/** Storage Tag Size; bits 6:0 of 'bits', STS (NVM Command Set 1.3, Figure 128) */
 #define XNVME_SPEC_ELBAF_BITS_STS 0x7f
-/** Protection information format, see xnvme_spec_nvm_ns_pif; bits 8:7 of 'bits' */
+/** Protection Information Format, see xnvme_spec_nvm_ns_pif; bits 8:7 of 'bits', PIF (NVM Command
+ * Set 1.3, Figure 128) */
 #define XNVME_SPEC_ELBAF_BITS_PIF 0x180
+/** Qualified Protection Information Format, if PIF is QTYPE; bits 12:9 of 'bits', QPIF (NVM
+ * Command Set 1.3, Figure 128) */
+#define XNVME_SPEC_ELBAF_BITS_QPIF 0x1e00
 
 /** Size, in bytes, of the Serial Number (SN) of the Identify Controller data structure */
 #define XNVME_SPEC_CTRLR_SN_LEN 20
