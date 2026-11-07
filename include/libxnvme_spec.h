@@ -3360,49 +3360,59 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_znd_report_hdr) == 64, "Incorrect s
 /**
  * Key Value Command Set KV Format data structure
  *
- * @see Key Value Command Set Specification Revision 1.0c, Figure 40
+ * @see Key Value Command Set 1.4, Figure 43
  *
  * @struct xnvme_spec_kvs_idfy_ns_format
  */
 struct xnvme_spec_kvs_idfy_ns_format {
-	uint16_t kml; ///< KV Key Max Length
+	uint16_t kvkml; ///< KVKML: KV Key Max Length
 	uint8_t rsvd2;
-	uint8_t fopt; ///< Additional format options
-	uint32_t vml; ///< KV Value Max Length
-	uint32_t mnk; ///< Max Num Keys
+	uint8_t afo; ///< AFO: Additional Format Options, see XNVME_SPEC_KVS_IDFY_NS_FORMAT_AFO_*
+	uint32_t kvvml; ///< KVVML: KV Value Max Length
+	uint32_t mnks;  ///< MNKS: Max Num Keys
 	uint8_t rsvd12[4];
 };
+
+/** Relative Performance, 00b best to 11b degraded; bits 1:0 of 'afo', RP (Key Value Command Set
+ * 1.4, Figure 43) */
+#define XNVME_SPEC_KVS_IDFY_NS_FORMAT_AFO_RP 0x3
 
 /**
  * Key Value Command Set identify namespace data structure
  *
- * @see Key Value Command Set Specification Revision 1.0c, Figure 39
+ * @see Key Value Command Set 1.4, Figure 42
  *
  * @struct xnvme_spec_kvs_idfy_ns
  */
 struct xnvme_spec_kvs_idfy_ns {
-	uint64_t nsze; ///< Namespace Size
+	uint64_t nsze; ///< NSZE: Namespace Size, in bytes
 	uint8_t rsvd8[8];
-	uint64_t nuse;  ///< Namespace Utilization
-	uint8_t nsfeat; ///< Namespace Features
-	uint8_t nkvf;   ///< Number of KV Formats
-	uint8_t nmic;   ///< Namespace Multi-path I/O and Namespace Sharing Capabilities
-	uint8_t rescap; ///< Reservation Capabilities
-	uint8_t fpi;    ///< Format Progress Indicator
-	uint8_t rsvd29[3];
-	uint32_t novg;     ///< Namespace Optimal Value Granularity
-	uint32_t anagrpid; ///< ANA Group Identifier
+	uint64_t nuse;  ///< NUSE: Namespace Utilization, in bytes
+	uint8_t nsfeat; ///< NSFEAT: Namespace Features, see XNVME_SPEC_KVS_IDFY_NS_NSFEAT_*
+	uint8_t nkvf;   ///< NKVF: Number of KV Formats
+	uint8_t nmic;   ///< NMIC: Namespace Multi-path I/O and Namespace Sharing Capabilities
+	uint8_t rescap; ///< RESCAP: Reservation Capabilities
+	uint8_t fpi;    ///< FPI: Format Progress Indicator
+	uint8_t kvfc;   ///< KVFC: KV Format Capabilities, see XNVME_SPEC_KVS_IDFY_NS_KVFC_*
+	uint8_t rsvd30[2];
+	uint32_t novg;     ///< NOVG: Namespace Optimal Value Granularity
+	uint32_t anagrpid; ///< ANAGRPID: ANA Group Identifier
 	uint8_t rsvd40[3];
-	uint8_t nsattr;                               ///< Namespace Attributes
-	uint16_t nvmsetid;                            ///< NVM Set Identifier
-	uint16_t endgid;                              ///< Endurance Group Identifier
-	uint64_t nguid[2];                            ///< Namespace Globally Unique Identifier
-	uint64_t eui64;                               ///< IEEE Extended Unique Identifier
-	struct xnvme_spec_kvs_idfy_ns_format kvf[16]; ///< KV Format 0 to 15
+	uint8_t nsattr;    ///< NSATTR: Namespace Attributes
+	uint16_t nvmsetid; ///< NVMSETID: NVM Set Identifier
+	uint16_t endgid;   ///< ENDGID: Endurance Group Identifier
+	uint64_t nguid[2]; ///< NGUID: Namespace Globally Unique Identifier
+	uint64_t eui64;    ///< EUI64: IEEE Extended Unique Identifier
+	struct xnvme_spec_kvs_idfy_ns_format kvf[16]; ///< KVF0 to KVF15: KV Format 0 to 15 Support
 	uint8_t rsvd328[3512];                        // 3839:328
-	uint8_t vs[256];
+	uint8_t vs[256];                              ///< VS: Vendor Specific
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_kvs_idfy_ns) == 4096, "Incorrect size")
+
+/** Unique ID Reuse; bit 3 of 'nsfeat', UIDR (Key Value Command Set 1.4, Figure 42) */
+#define XNVME_SPEC_KVS_IDFY_NS_NSFEAT_UIDR 0x8
+/** KV Format Index; bits 3:0 of 'kvfc', KVFI (Key Value Command Set 1.4, Figure 42) */
+#define XNVME_SPEC_KVS_IDFY_NS_KVFC_KVFI 0xf
 
 /**
  * The data returned by an Identify command for the Key Value command set, as the structure of each
