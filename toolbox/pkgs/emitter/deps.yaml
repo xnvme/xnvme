@@ -404,6 +404,7 @@ platforms:
   mng: dnf
   drop: []
   alt:
+  - [pip, [pipx]]
   - [src, [libisal, libvfn]]
   aux:
   - [sys, [autoconf, diffutils, gcc, gcc-c++, libtool, procps, unzip, wget, zlib-devel]]

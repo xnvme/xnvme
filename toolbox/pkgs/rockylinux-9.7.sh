@@ -36,7 +36,6 @@ dnf install -y \
  numactl-devel \
  openssl-devel \
  patch \
- pipx \
  pkgconfig \
  procps \
  python3-devel \
@@ -51,6 +50,11 @@ dnf install -y \
  unzip \
  wget \
  zlib-devel
+
+# Install packages via the Python package-manager (pip)
+python3 -m pip install --upgrade pip
+python3 -m pip install \
+ pipx
 
 #
 # Clone, build and install libisal
