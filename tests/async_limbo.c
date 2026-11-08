@@ -172,8 +172,8 @@ main(int argc, char **argv)
 }
 #else
 int
-main(int argc, char **argv)
+main(void)
 {
 	return 0;
-};
+}
 #endif
