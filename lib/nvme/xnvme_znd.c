@@ -45,8 +45,7 @@ znd_report_init(struct xnvme_dev *dev, uint64_t slba, size_t limit, uint8_t exte
 	// Determine number of entries
 	nentries = limit ? limit : geo->nzone;
 	if (nentries > geo->nzone) {
-		XNVME_DEBUG("FAILED: nentries: %" PRIu64 " > geo->nzone: %u", nentries,
-			    geo->nzone);
+		XNVME_DEBUG("FAILED: nentries: %zu > geo->nzone: %u", nentries, geo->nzone);
 		errno = EINVAL;
 		return NULL;
 	}
@@ -133,8 +132,8 @@ xnvme_znd_report_from_dev(struct xnvme_dev *dev, uint64_t slba, size_t limit, ui
 		dbuf_nbytes += sizeof(*report);
 	} while ((dbuf_nbytes > geo->mdts_nbytes) && dbuf_nentries_max);
 
-	XNVME_DEBUG("INFO: dbuf_nentries_max: %" PRIu64, dbuf_nentries_max);
-	XNVME_DEBUG("INFO: dbuf_nbytes: %" PRIu64, dbuf_nbytes);
+	XNVME_DEBUG("INFO: dbuf_nentries_max: %zu", dbuf_nentries_max);
+	XNVME_DEBUG("INFO: dbuf_nbytes: %zu", dbuf_nbytes);
 
 	if (!dbuf_nentries_max) {
 		xnvme_buf_virt_free(report);
@@ -158,7 +157,7 @@ xnvme_znd_report_from_dev(struct xnvme_dev *dev, uint64_t slba, size_t limit, ui
 		size_t nentries =
 			XNVME_MIN(dbuf_nentries_max, ((report->zelba - zslba) / geo->nsect) + 1);
 
-		XNVME_DEBUG("INFO: nentries: %" PRIu64, nentries);
+		XNVME_DEBUG("INFO: nentries: %zu", nentries);
 		if ((!nentries) || (nentries > dbuf_nentries_max)) {
 			XNVME_DEBUG("ERR: invalid nentries");
 			break;
@@ -345,7 +344,7 @@ xnvme_znd_descr_from_dev_in_state(struct xnvme_dev *dev, uint32_t state,
 	dbuf_nbytes = sizeof(*hdr) + sizeof(*zdescr);
 	dbuf = xnvme_buf_alloc(dev, dbuf_nbytes);
 	if (!dbuf) {
-		XNVME_DEBUG("FAILED: xnvme_buf_alloc(%" PRIu64 ")", dbuf_nbytes);
+		XNVME_DEBUG("FAILED: xnvme_buf_alloc(%zu)", dbuf_nbytes);
 		return -errno;
 	}
 	memset(dbuf, 0, dbuf_nbytes);

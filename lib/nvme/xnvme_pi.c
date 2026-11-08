@@ -408,7 +408,7 @@ xnvme_pi_verify(struct xnvme_pi_ctx *ctx, uint8_t *data_buf, uint8_t *md_buf, ui
 				 */
 				if (!xnvme_pi_reftag_match(pif, ref_tag, ctx->pi_format)) {
 					XNVME_DEBUG("Failed to compare Ref Tag: LBA=%" PRIu64 ","
-						    " Expected=%lx, Actual=%lx\n",
+						    " Expected=%" PRIx64 ", Actual=%" PRIx64 "\n",
 						    ref_tag, ref_tag,
 						    xnvme_pi_get_reftag(pif, ctx->pi_format));
 					return -1;
