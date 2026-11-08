@@ -40,7 +40,7 @@ xnvme_be_ramdisk_dev_get_size(struct xnvme_dev *dev)
 	const char *gb_marker;
 
 	gb_marker = strrchr(ident->uri, 'G');
-	if (!gb_marker || (gb_marker && strcmp(gb_marker, "GB"))) {
+	if (!gb_marker || strcmp(gb_marker, "GB")) {
 		XNVME_DEBUG("FAILED: Invalid URI. Only postfix of 'GB' allowed: %s", ident->uri);
 		return 0;
 	}
