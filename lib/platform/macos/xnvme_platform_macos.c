@@ -79,13 +79,12 @@ xnvme_platform_macos_scan(const char *sys_uri, struct xnvme_opts *XNVME_UNUSED(o
 			continue;
 		}
 
-		matching_dict = IOBSDNameMatching(kIOMasterPortDefault, 0, disk_id);
+		matching_dict = IOBSDNameMatching(kIOMainPortDefault, 0, disk_id);
 		if (!matching_dict) {
 			continue;
 		}
 
-		ioservice_device =
-			IOServiceGetMatchingService(kIOMasterPortDefault, matching_dict);
+		ioservice_device = IOServiceGetMatchingService(kIOMainPortDefault, matching_dict);
 		if (!ioservice_device) {
 			continue;
 		}
@@ -137,7 +136,7 @@ xnvme_platform_macos_scan(const char *sys_uri, struct xnvme_opts *XNVME_UNUSED(o
 			kern_return_t ret;
 
 			matching_dict = IOServiceMatching(service_classes[i]);
-			ret = IOServiceGetMatchingServices(kIOMasterPortDefault, matching_dict,
+			ret = IOServiceGetMatchingServices(kIOMainPortDefault, matching_dict,
 							   &iterator);
 			if (ret != kIOReturnSuccess || !iterator) {
 				continue;
