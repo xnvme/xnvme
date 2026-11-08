@@ -133,7 +133,7 @@ xnvme_be_driverkit_ctrlr_init(struct xnvme_dev *dev)
 	}
 
 	matching_dict = IOServiceNameMatching(dev->ident.uri);
-	service = IOServiceGetMatchingService(kIOMasterPortDefault, matching_dict);
+	service = IOServiceGetMatchingService(kIOMainPortDefault, matching_dict);
 	if (!service) {
 		XNVME_DEBUG("FAILED: IOServiceGetMatchingService()");
 		free(ctrlr);

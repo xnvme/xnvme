@@ -32,8 +32,8 @@ _get_ioservice_device(char *devname)
 	CFMutableDictionaryRef matching_dictionary;
 	io_object_t ioservice_device;
 
-	matching_dictionary = IOBSDNameMatching(kIOMasterPortDefault, 0, basename(devname));
-	ioservice_device = IOServiceGetMatchingService(kIOMasterPortDefault, matching_dictionary);
+	matching_dictionary = IOBSDNameMatching(kIOMainPortDefault, 0, basename(devname));
+	ioservice_device = IOServiceGetMatchingService(kIOMainPortDefault, matching_dictionary);
 	return ioservice_device;
 }
 
