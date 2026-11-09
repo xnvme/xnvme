@@ -187,7 +187,7 @@ def masks_of(
     names: Dict[str, int] = {}
     for fields, source in figures:
         for field in fields:
-            if not field.acronym or field.lower is None or field.upper is None:
+            if not field.acronym or field.kind != "span":
                 continue
             if field.upper >= width or field.union is not None and field.alternative:
                 continue
@@ -255,7 +255,7 @@ def size_of(structure: Structure) -> Optional[int]:
     fields = [
         f for f in structure.fields if not (f.union is not None and f.alternative)
     ]
-    if not fields or any(f.upper is None for f in fields):
+    if not fields or any(f.kind != "span" for f in fields):
         return None
     return max(f.upper for f in fields if f.upper is not None) + 1
 
@@ -275,15 +275,12 @@ def entry_of(structure: Structure) -> Optional[Tuple[Structure, int, List[int]]]
     def key_of(f: Bits) -> str:
         return identifier(f.acronym).lower() if f.acronym else alias(f.name or "")
 
-    def reserved(f: Bits) -> bool:
-        return (f.name or "").lower().startswith("reserved")
-
     fields = [
         f for f in structure.fields if not (f.union is not None and f.alternative)
     ]
-    if any(f.lower is None or f.upper is None for f in fields):
+    if any(f.kind != "span" for f in fields):
         return None
-    named = [f for f in fields if not reserved(f)]
+    named = [f for f in fields if f.role == "field"]
     if len(named) < 2 or named[0].lower != 0:
         return None
     stride = next((f.lower for f in named[1:] if key_of(f) == key_of(named[0])), None)
@@ -390,7 +387,7 @@ def layout_of(structure: Structure, element_of) -> Tuple[List[Member], List[str]
         # A run is numbered from 0 or from 1, as the Result Data Structures
         first = index_of(f)
         base = base_of(f) if first in (0, 1) else None
-        if f.lower is None or f.upper is None:
+        if f.kind != "span":
             ctype, _ = array(base or "", None) if base else ("uint8_t", None)
             what = base or f.name or "data"
             members.append(Member(named(alias(what), offset), ctype, 0, offset, what))
@@ -441,7 +438,7 @@ def layout_of(structure: Structure, element_of) -> Tuple[List[Member], List[str]
             stripped = re.sub(rf"{first}$", "", f.acronym or "")
             run_name = identifier(stripped).lower() if stripped else alias(base)
             rest = fields[following] if following < len(fields) else None
-            if rest is not None and rest.lower is None:
+            if rest is not None and rest.kind != "span":
                 # Entries alternating with others, as a Zone Descriptor with
                 # its Extension, are of no one struct
                 bases = list(dict.fromkeys(filter(None, map(base_of, fields[index:]))))
@@ -469,8 +466,7 @@ def layout_of(structure: Structure, element_of) -> Tuple[List[Member], List[str]
                 offset += length * size
                 index = following
                 continue
-        reserved = (f.name or "").lower().startswith("reserved") and not f.acronym
-        if reserved:
+        if f.role == "reserved":
             name = f"rsvd{f.lower}"
         elif f.acronym:
             name = identifier(f.acronym).lower()

@@ -141,6 +141,10 @@ def model(tmp_path):
                 kind="other",
             ),
             structure(
+                "Foo Areas",
+                [bits("07:00", "Reserved Area Size"), bits("15:08", "Reserved")],
+            ),
+            structure(
                 "Foo Twice",
                 [
                     bits("03:00", "Foo Code", "FC"),
@@ -313,6 +317,13 @@ def test_a_figure_of_the_entries_of_a_list_is_a_struct_of_one(model, tmp_path):
     assert "\tuint32_t fsrc; ///< Foo Source, bytes 3:0" in text
     assert "\tuint32_t flen; ///< Foo Length, bytes 7:4" in text
     assert "fsrc_8" not in text
+
+
+def test_a_field_is_reserved_by_its_role_not_by_how_its_name_begins(model, tmp_path):
+    text = text_of(generate(model, tmp_path / "out"), "xnvme_spec_foo.h")
+
+    assert "\tuint64_t reserved_area_size; ///< Reserved Area Size, bytes 7:0" in text
+    assert "\tuint64_t rsvd8; ///< Reserved, bytes 15:8" in text
 
 
 def test_a_repeated_name_at_another_place_in_its_period_is_no_list(model, tmp_path):
