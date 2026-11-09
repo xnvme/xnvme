@@ -7,6 +7,8 @@ from pathlib import Path
 import pytest
 
 spec_model = pytest.importorskip("senfd.documents.spec")
+spec_ranges = pytest.importorskip("senfd.ranges")
+spec_fields = pytest.importorskip("senfd.fields")
 
 SCRIPT = Path(__file__).parents[2] / "toolbox" / "xnvme_spec_headers.py"
 module = importlib.util.spec_from_file_location("xnvme_spec_headers", SCRIPT)
@@ -23,20 +25,22 @@ def source(document=FOO, figure_nr=1):
 
 
 def bits(range_, name=None, acronym=None, unit="bytes", fields=(), description=""):
-    """A field of 'range_' as the documents write it, "07:00", or a formula"""
+    """A field of 'range_' as the documents write it, "07:00", or a formula,
+    made as senfd makes one from a row of a figure"""
 
-    upper, _, lower = range_.partition(":")
-    try:
-        upper, lower = int(upper), int(lower or upper)
-    except ValueError:
-        upper = lower = None
+    rng = spec_ranges.parse(unit, range_)
+    made = spec_fields.identity(name, acronym, description)
     return spec_model.Bits(
-        name=name,
-        acronym=acronym,
-        unit=unit,
-        upper=upper,
-        lower=lower,
+        name=made.name,
+        acronym=made.acronym,
+        unit=rng.unit,
+        role=made.role,
+        kind=rng.kind,
+        upper=rng.upper,
+        lower=rng.lower,
         range=range_,
+        formula=rng.formula,
+        width=rng.width,
         description=description,
         fields=list(fields),
     )
@@ -113,9 +117,7 @@ def model(tmp_path):
                         "FATTR",
                         fields=[bits("0", "Foo On", "FON", unit="bits")],
                     ),
-                    bits("31:00", "Foo Slot 0 Descriptor").model_copy(
-                        update={"lower": 16, "upper": 47, "range": "47:16"}
-                    ),
+                    bits("47:16", "Foo Slot 0 Descriptor"),
                     bits("79:48", "Foo Slot 1 Descriptor"),
                     bits("239:208", "Foo Slot 6 Descriptor"),
                     bits("247:240", "Foo Version", "FVER", description="ASCII"),
@@ -134,7 +136,7 @@ def model(tmp_path):
                     bits("11:08", "FSRC"),
                     bits("15:12", "FLEN"),
                     bits("4091:4088", "FSRC"),
-                    bits("4095:4092"),
+                    bits("4095:4092", "FLEN"),
                 ],
                 kind="other",
             ),
