@@ -240,7 +240,7 @@ xnvme_be_liburing_poke(struct xnvme_queue *q, uint32_t max)
 			XNVME_DEBUG("cqe->user_data is NULL! => NO REQ!");
 			XNVME_DEBUG("cqe->res: %d", cqe->res);
 			XNVME_DEBUG("cqe->flags: %u", cqe->flags);
-			return -EIO;
+			return completed ? (int)completed : -EIO;
 		}
 #endif
 

@@ -98,11 +98,6 @@ xnvme_be_upcie_queue_poke(struct xnvme_queue *queue, uint32_t max)
 			struct nvme_request *req;
 
 			req = nvme_request_get(qp->rpool, cqe->cid);
-			if (!req) {
-				XNVME_DEBUG("FAILED: nvme_request_get()");
-				return -EIO;
-			}
-
 			ctx = req->user;
 			memcpy(&ctx->cpl, cqe, sizeof(ctx->cpl));
 			nvme_request_free(qp->rpool, req->cid);

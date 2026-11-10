@@ -41,7 +41,8 @@ struct xnvme_be_async {
 	// Submit a vectored async io command to be processed on the backend's io path
 	int (*cmd_iov)(struct xnvme_cmd_ctx *, struct iovec *, size_t, size_t, void *, size_t);
 
-	// Non-blocking reaping of up to `max` io completions
+	// Non-blocking reaping of up to `max` io completions; returns how many it processed,
+	// and an error only when it processed none
 	int (*poke)(struct xnvme_queue *, uint32_t);
 
 	// Blocking reaping of all outstanding io completions

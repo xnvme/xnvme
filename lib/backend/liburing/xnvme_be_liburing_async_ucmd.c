@@ -96,7 +96,7 @@ xnvme_be_liburing_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 			XNVME_DEBUG("cqe->user_data is NULL! => NO REQ!");
 			XNVME_DEBUG("cqe->res: %d", cqe->res);
 			XNVME_DEBUG("cqe->flags: %u", cqe->flags);
-			return -EIO;
+			return completed ? (int)completed : -EIO;
 		}
 #endif
 
@@ -106,7 +106,7 @@ xnvme_be_liburing_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 		err = xnvme_be_linux_nvme_map_cpl(ctx, NVME_URING_CMD_IO, cqe->res);
 		if (err) {
 			XNVME_DEBUG("FAILED: xnvme_be_linux_nvme_map_cpl(), err: %d", err);
-			return err;
+			return completed ? (int)completed : err;
 		}
 
 		queue->base.outstanding--;
