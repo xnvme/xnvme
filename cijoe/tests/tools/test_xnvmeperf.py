@@ -52,6 +52,21 @@ def test_run_randwrite(cijoe, device, be_opts, cli_args):
 
 
 @xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_run_randread_reap(cijoe, device, be_opts, cli_args):
+    """Completions retrieved with xnvme_queue_reap() instead of called back"""
+
+    homi_id = get_homi_id()
+    homi_arg = f"--homi-id {homi_id}" if homi_id else ""
+
+    err, _ = cijoe.run(
+        f"xnvme perf run --iopattern randread --qdepth 32 --iosize 4096 --runtime 3"
+        f" --cpumask 0x1 --completion reap --be {be_opts['be']} {homi_arg}"
+        f" {device['uri']}"
+    )
+    assert not err
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
 def test_verify(cijoe, device, be_opts, cli_args):
     if be_opts["be"] == "ramdisk":
         pytest.skip(
@@ -63,6 +78,25 @@ def test_verify(cijoe, device, be_opts, cli_args):
 
     err, _ = cijoe.run(
         f"xnvme perf verify --iosize 4096 --count 64"
+        f" --be {be_opts['be']} {homi_arg} {device['uri']}"
+    )
+    assert not err
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_verify_reap(cijoe, device, be_opts, cli_args):
+    """Data written and read back with completions reaped"""
+
+    if be_opts["be"] == "ramdisk":
+        pytest.skip(
+            reason="The ramdisk's async interface, nil, completes IO moving no data"
+        )
+
+    homi_id = get_homi_id()
+    homi_arg = f"--homi-id {homi_id}" if homi_id else ""
+
+    err, _ = cijoe.run(
+        f"xnvme perf verify --iosize 4096 --count 64 --completion reap"
         f" --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert not err
