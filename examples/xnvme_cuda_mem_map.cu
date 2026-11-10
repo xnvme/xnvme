@@ -61,7 +61,7 @@ main(int argc, char **argv)
 		return argc < 2;
 	}
 
-	opts.be = "upcie-cuda";
+	snprintf(opts.be, sizeof(opts.be), "%s", "upcie-cuda");
 	if (argc > 2) {
 		opts.homi_id = (uint32_t)strtoul(argv[2], NULL, 0);
 	}

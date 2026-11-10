@@ -43,9 +43,9 @@ def dev_from_params(device, be_opts):
     opts = xnvme.xnvme_opts()
     xnvme.xnvme_opts_set_defaults(ctypes.byref(opts))
 
-    # Cast Python-strings to char-pointers and assign them to the xnvme_opts
+    # The string options are char arrays of xnvme_opts, which take bytes
     for key, val in ((k, v) for k, v in be_opts.items() if k not in ["label"]):
-        setattr(opts, key, char_pointer_cast(val))
+        setattr(opts, key, val.encode())
 
     # Directly assign the namespace-identifier value
     opts.nsid = device["nsid"]

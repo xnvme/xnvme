@@ -1735,7 +1735,7 @@ parse_run_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 		return err;
 	}
 
-	args->gpu_buf = args->opts.be && (!strcmp(args->opts.be, "io_uring_dmabuf"));
+	args->gpu_buf = !strcmp(args->opts.be, "io_uring_dmabuf");
 
 	if (!cli->args.iopattern) {
 		err = -EINVAL;
@@ -1786,8 +1786,7 @@ parse_run_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 
 	args->buf_host_bounce = cli->args.buf_host_bounce;
 	if (args->buf_host_bounce &&
-	    (args->gpu_buf ||
-	     (args->opts.be && (strstr(args->opts.be, "cuda") || strstr(args->opts.be, "hip"))))) {
+	    (args->gpu_buf || strstr(args->opts.be, "cuda") || strstr(args->opts.be, "hip"))) {
 		err = -EINVAL;
 		fprintf(stderr,
 			"Error: --buf-host-bounce reads into host memory and copies to the GPU;"
@@ -1809,8 +1808,7 @@ parse_run_args(struct xnvme_cli *cli, struct xnvmeperf_args *args)
 static void
 derive_heap_sizes(struct xnvmeperf_args *args)
 {
-	int is_gpu =
-		args->opts.be && (strstr(args->opts.be, "cuda") || strstr(args->opts.be, "hip"));
+	int is_gpu = strstr(args->opts.be, "cuda") || strstr(args->opts.be, "hip");
 	size_t nq = args->nqueues ? args->nqueues : 1;
 	size_t qd = args->qdepth ? args->qdepth : 1;
 	size_t queues = (size_t)args->ndevs * nq;
@@ -1897,8 +1895,8 @@ sub_cuda_run(struct xnvme_cli *cli)
 		return err;
 	}
 
-	if (!args.opts.be) {
-		args.opts.be = "upcie-cuda";
+	if (!args.opts.be[0]) {
+		snprintf(args.opts.be, sizeof(args.opts.be), "%s", "upcie-cuda");
 	} else if (strcmp(args.opts.be, "upcie-cuda") != 0) {
 		err = -EINVAL;
 		fprintf(stderr, "Error: cuda-run requires --be upcie-cuda, got '%s': err(%d)\n",
@@ -1923,8 +1921,8 @@ sub_cuda_verify(struct xnvme_cli *cli)
 		return err;
 	}
 
-	if (!args.opts.be) {
-		args.opts.be = "upcie-cuda";
+	if (!args.opts.be[0]) {
+		snprintf(args.opts.be, sizeof(args.opts.be), "%s", "upcie-cuda");
 	} else if (strcmp(args.opts.be, "upcie-cuda") != 0) {
 		err = -EINVAL;
 		fprintf(stderr, "Error: cuda-verify requires --be upcie-cuda, got '%s': err(%d)\n",
