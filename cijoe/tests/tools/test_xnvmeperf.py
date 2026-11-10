@@ -52,6 +52,38 @@ def test_run_randwrite(cijoe, device, be_opts, cli_args):
 
 
 @xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_run_randread_reap(cijoe, device, be_opts, cli_args):
+    """Completions retrieved with xnvme_queue_reap() instead of called back"""
+
+    homi_id = get_homi_id()
+    homi_arg = f"--homi-id {homi_id}" if homi_id else ""
+
+    err, state = cijoe.run(
+        f"xnvme perf run --iopattern randread --qdepth 32 --iosize 4096 --runtime 3"
+        f" --cpumask 0x1 --completion reap --be {be_opts['be']} {homi_arg}"
+        f" {device['uri']}"
+    )
+    assert not err
+
+    # The exit status is zero also when no reap returned an I/O, so read the result
+    total = [line.split() for line in state.output().splitlines() if "Total:" in line]
+    assert total, state.output()
+    assert float(total[-1][1]) > 0 and int(total[-1][3]) == 0, state.output()
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_run_completion_unknown(cijoe, device, be_opts, cli_args):
+    """--completion takes 'cb' or 'reap', and the run fails for anything else"""
+
+    err, state = cijoe.run(
+        f"xnvme perf run --iopattern randread --qdepth 32 --iosize 4096 --runtime 1"
+        f" --cpumask 0x1 --completion nosuch --be {be_opts['be']} {device['uri']}"
+    )
+    assert err, "an unknown --completion was accepted"
+    assert "unknown completion 'nosuch'" in state.output(), state.output()
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
 def test_verify(cijoe, device, be_opts, cli_args):
     if be_opts["be"] == "ramdisk":
         pytest.skip(
@@ -63,6 +95,25 @@ def test_verify(cijoe, device, be_opts, cli_args):
 
     err, _ = cijoe.run(
         f"xnvme perf verify --iosize 4096 --count 64"
+        f" --be {be_opts['be']} {homi_arg} {device['uri']}"
+    )
+    assert not err
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be"])
+def test_verify_reap(cijoe, device, be_opts, cli_args):
+    """Data written and read back with completions reaped"""
+
+    if be_opts["be"] == "ramdisk":
+        pytest.skip(
+            reason="The ramdisk's async interface, nil, completes IO moving no data"
+        )
+
+    homi_id = get_homi_id()
+    homi_arg = f"--homi-id {homi_id}" if homi_id else ""
+
+    err, _ = cijoe.run(
+        f"xnvme perf verify --iosize 4096 --count 64 --completion reap"
         f" --be {be_opts['be']} {homi_arg} {device['uri']}"
     )
     assert not err
@@ -184,13 +235,15 @@ def test_run_uri_nsid_inactive(cijoe, device, be_opts, cli_args):
     assert err, f"ran against an inactive namespace: {state.output()}"
 
 
+@pytest.mark.parametrize("completion", ["cb", "reap"])
 @xnvme_parametrize(labels=["nvm"], opts=["be"])
-def test_run_polled_stop_continue(cijoe, device, be_opts, cli_args):
+def test_run_polled_stop_continue(cijoe, device, be_opts, cli_args, completion):
     """A polled run that is stopped and continued still ends with its result
 
     With --poll_io, io_uring_peek_cqe() enters the kernel, and a signal makes it
     return -EINTR without a completion. The run is stopped and continued 20
-    times; a poke reading the completion that is not there ends it with SIGSEGV.
+    times; a poke or a reap reading the completion that is not there ends it
+    with SIGSEGV.
     """
 
     if be_opts["be"] not in ("io_uring", "io_uring_bdev", "io_uring_cmd"):
@@ -198,7 +251,8 @@ def test_run_polled_stop_continue(cijoe, device, be_opts, cli_args):
 
     err, state = cijoe.run(
         f"xnvme perf run --iopattern randread --qdepth 32 --iosize 4096 --runtime 3"
-        f" --cpumask 0x1 --poll_io 1 --direct --be {be_opts['be']} {device['uri']}"
+        f" --cpumask 0x1 --poll_io 1 --direct --completion {completion}"
+        f" --be {be_opts['be']} {device['uri']}"
         " > /tmp/xnvme-perf-polled.out 2>&1 & pid=$!;"
         " for i in $(seq 20); do sleep 0.1; kill -STOP $pid; kill -CONT $pid; done;"
         " wait $pid; rc=$?; cat /tmp/xnvme-perf-polled.out; exit $rc"

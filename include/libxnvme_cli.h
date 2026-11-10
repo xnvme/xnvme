@@ -188,6 +188,7 @@ struct xnvme_cli_args {
 	uint32_t runtime;
 	double report_freq;
 	const char *iopattern;
+	const char *completion;
 
 	const char *cpumask;
 
@@ -404,7 +405,9 @@ enum xnvme_cli_opt {
 
 	XNVME_CLI_OPT_USER_COPY = 144, ///< XNVME_CLI_OPT_USER_COPY
 
-	XNVME_CLI_OPT_END = 145, ///< XNVME_CLI_OPT_END
+	XNVME_CLI_OPT_COMPLETION = 145, ///< XNVME_CLI_OPT_COMPLETION
+
+	XNVME_CLI_OPT_END = 146, ///< XNVME_CLI_OPT_END
 };
 
 /**
