@@ -33,6 +33,46 @@ def test_init_io_term(cijoe, device, be_opts, cli_args):
 
 
 @xnvme_parametrize(["dev"], opts=["be", "admin", "async"])
+def test_reap(cijoe, device, be_opts, cli_args):
+    """What xnvme_queue_reap() hands back: each command once, with its data"""
+
+    for qdepth in [8, 64]:
+        err, _ = cijoe.run(f"xnvme test async-intf reap {cli_args} --qdepth {qdepth}")
+        assert not err
+
+
+@xnvme_parametrize(["dev"], opts=["be", "admin", "async"])
+def test_cb(cijoe, device, be_opts, cli_args):
+    """The callback of the queue sees every completion"""
+
+    for qdepth in [8, 64]:
+        err, _ = cijoe.run(f"xnvme test async-intf cb {cli_args} --qdepth {qdepth}")
+        assert not err
+
+
+@xnvme_parametrize(["dev"], opts=["be", "admin", "async"])
+def test_mode(cijoe, device, be_opts, cli_args):
+    """A queue delivers completions only the way it was initialized for"""
+
+    err, _ = cijoe.run(f"xnvme test async-intf mode {cli_args}")
+    assert not err
+
+
+@xnvme_parametrize(["dev"], opts=["be", "admin", "async"])
+def test_term_outstanding(cijoe, device, be_opts, cli_args):
+    """Tear down a queue with reads outstanding"""
+
+    if be_opts["be"] != "spdk":
+        pytest.skip(reason="Only SPDK completes commands while tearing down a queue")
+
+    for qdepth in [8, 64]:
+        err, _ = cijoe.run(
+            f"xnvme test async-intf term_outstanding {cli_args} --qdepth {qdepth}"
+        )
+        assert not err
+
+
+@xnvme_parametrize(["dev"], opts=["be", "admin", "async"])
 def test_init_io_term_p2p_cq_mirror(cijoe, device, be_opts, cli_args):
     """Queues that complete into GPU memory, mirrored by a GPU kernel"""
 
