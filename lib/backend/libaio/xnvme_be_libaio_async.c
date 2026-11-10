@@ -134,9 +134,8 @@ _linux_libaio_poke(struct xnvme_queue *q, uint32_t max)
 			XNVME_DEBUG("event->res: %ld", ev->res);
 			XNVME_DEBUG("unprocessed events might remain");
 
-			queue->base.outstanding -= 1;
-
-			return -EIO;
+			queue->base.outstanding -= event;
+			return event ? event : -EIO;
 		}
 
 		ctx->cpl.result = ev->res;

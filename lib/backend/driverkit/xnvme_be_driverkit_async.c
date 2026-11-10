@@ -118,7 +118,7 @@ xnvme_be_driverkit_queue_poke(struct xnvme_queue *queue, uint32_t XNVME_UNUSED(m
 
 	if (queue_ret == QUEUE_ERROR) {
 		XNVME_DEBUG("FAILED: queue_ret == QUEUE_ERROR");
-		return -EIO;
+		return reaped ? reaped : -EIO;
 	}
 
 	return reaped;

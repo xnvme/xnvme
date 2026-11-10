@@ -144,7 +144,8 @@ xnvme_be_ioring_poke(struct xnvme_queue *q, uint32_t max)
 				XNVME_DEBUG("cqe->user_data is NULL! => NO REQ!");
 				XNVME_DEBUG("cqe->res: %ld", cqe.ResultCode);
 				XNVME_DEBUG("cqe->rbytes: %" PRIuPTR, (uintptr_t)cqe.Information);
-				return -EIO;
+				queue->base.outstanding -= completed;
+				return completed ? (int)completed : -EIO;
 			}
 
 			ctx->cpl.result = cqe.ResultCode;

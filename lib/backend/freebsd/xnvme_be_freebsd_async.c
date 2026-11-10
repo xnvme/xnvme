@@ -124,9 +124,7 @@ xnvme_be_freebsd_kqueue_poke(struct xnvme_queue *q, uint32_t max)
 			XNVME_DEBUG("event->data is NULL! => NO REQ!");
 			XNVME_DEBUG("unprocessed events might remain");
 
-			queue->base.outstanding -= 1;
-
-			return -EIO;
+			return event ? event : -EIO;
 		}
 
 		err = aio_error(&req->aiocb);

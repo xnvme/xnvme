@@ -186,9 +186,7 @@ _windows_async_iocp_th_poke(struct xnvme_queue *q, uint32_t max)
 			XNVME_DEBUG("ctx is NULL! => NO REQ!");
 			XNVME_DEBUG("unprocessed events might remain");
 
-			queue->base.outstanding -= 1;
-
-			return -EIO;
+			return completed ? (int)completed : -EIO;
 		}
 
 		switch (req->state) {

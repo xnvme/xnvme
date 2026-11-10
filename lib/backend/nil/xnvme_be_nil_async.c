@@ -56,9 +56,8 @@ nil_poke(struct xnvme_queue *q, uint32_t max)
 		if (!ctx) {
 			XNVME_DEBUG("-{[THIS SHOULD NOT HAPPEN]}-");
 
-			++completed;
 			queue->base.outstanding -= completed;
-			return -EIO;
+			return completed ? (int)completed : -EIO;
 		}
 
 		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, 0);
