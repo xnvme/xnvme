@@ -117,8 +117,10 @@ xnvme_opts_set_defaults(&cuda_opts);
 host_opts.be = "upcie";
 cuda_opts.be = "upcie-cuda";
 
-struct xnvme_dev *host_dev = xnvme_dev_open("0000:03:00.0", &host_opts);
-struct xnvme_dev *cuda_dev = xnvme_dev_open("0000:03:00.0", &cuda_opts);
+struct xnvme_dev *host_dev, *cuda_dev;
+
+xnvme_dev_open_uri("0000:03:00.0", &host_opts, &host_dev);
+xnvme_dev_open_uri("0000:03:00.0", &cuda_opts, &cuda_dev);
 ```
 
 ```{toctree}

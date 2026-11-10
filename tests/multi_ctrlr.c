@@ -60,10 +60,9 @@ sub_io(struct xnvme_cli *cli)
 			goto exit;
 		}
 
-		dev[ndev] = xnvme_dev_open(uri, &opts);
-		if (!dev[ndev]) {
-			err = -errno;
-			xnvme_cli_perr("xnvme_dev_open(alt_uri)", err);
+		err = xnvme_dev_open_uri(uri, &opts, &dev[ndev]);
+		if (err) {
+			xnvme_cli_perr("xnvme_dev_open_uri(alt_uri)", err);
 			goto exit;
 		}
 		++ndev;

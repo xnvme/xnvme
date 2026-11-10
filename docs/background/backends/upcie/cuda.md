@@ -194,7 +194,7 @@ XNVME_UPCIE_IOVA_BASE=0x2000000000  # 128 GiB
 XNVME_UPCIE_IOVA_SIZE=0x400000000   # 16 GiB
 ```
 
-A window outside every usable IOVA range fails `xnvme_dev_open()` with `ERANGE`.
+A window outside every usable IOVA range fails `xnvme_dev_open_uri()` with `ERANGE`.
 
 ### Several controllers
 

@@ -14,7 +14,7 @@ struct xnvme_opts_css {
 /**
  * xNVMe options
  *
- * @see xnvme_dev_open()
+ * @see xnvme_dev_open_uri()
  *
  * @struct xnvme_opts
  */
