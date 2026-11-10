@@ -65,10 +65,9 @@ main(int argc, char **argv)
 	if (argc > 2) {
 		opts.homi_id = (uint32_t)strtoul(argv[2], NULL, 0);
 	}
-	dev = xnvme_dev_open(argv[1], &opts);
-	if (!dev) {
-		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open()", err);
+	err = xnvme_dev_open_uri(argv[1], &opts, &dev);
+	if (err) {
+		xnvme_cli_perr("xnvme_dev_open_uri()", err);
 		return err;
 	}
 

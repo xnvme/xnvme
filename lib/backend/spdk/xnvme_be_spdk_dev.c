@@ -542,7 +542,7 @@ xnvme_be_spdk_ctrlr_init(struct xnvme_dev *dev)
 				"       Three ways, pick whichever fits the call "
 				"path:\n"
 				"         opts: xnvme_opts.iova_mode = \"pa\" "
-				"before xnvme_dev_open()\n"
+				"before xnvme_dev_open_uri()\n"
 				"         cli:  pass --iova-mode pa on the "
 				"xnvme command line\n"
 				"         env:  export "

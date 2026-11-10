@@ -20,7 +20,7 @@
 /**
  * For issuing the format command in Windows
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  *
  * @return On success, 0 is returned. On error, `GetLastError()` is returned.
  */

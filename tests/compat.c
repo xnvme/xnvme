@@ -129,6 +129,19 @@ sub_null_args(struct xnvme_cli *XNVME_UNUSED(cli))
 		xnvme_cli_pinf("FAILED: xnvme_opts_set_defaults(NULL) != -EINVAL");
 		err = -EINVAL;
 	}
+	if (xnvme_dev_open_uri("2MB", NULL, NULL) != -EINVAL) {
+		xnvme_cli_pinf("FAILED: xnvme_dev_open_uri(uri, opts, NULL) != -EINVAL");
+		err = -EINVAL;
+	}
+	if (xnvme_dev_open_uri(NULL, NULL, &dev) != -EINVAL || dev) {
+		xnvme_cli_pinf("FAILED: xnvme_dev_open_uri(NULL, opts, dev) != -EINVAL");
+		err = -EINVAL;
+	}
+	errno = 0;
+	if (xnvme_dev_open(NULL, NULL) || errno != EINVAL) {
+		xnvme_cli_pinf("FAILED: xnvme_dev_open(NULL, opts) != NULL with errno EINVAL");
+		err = -EINVAL;
+	}
 
 	return err;
 }
@@ -155,10 +168,10 @@ sub_deprecated_queue(struct xnvme_cli *cli)
 		xnvme_cli_perr("xnvme_cli_to_opts()", err);
 		return err;
 	}
-	dev = xnvme_dev_open(cli->args.uri, &opts);
-	if (!dev) {
-		xnvme_cli_perr("xnvme_dev_open()", -errno);
-		return -errno;
+	err = xnvme_dev_open_uri(cli->args.uri, &opts, &dev);
+	if (err) {
+		xnvme_cli_perr("xnvme_dev_open_uri()", err);
+		return err;
 	}
 	err = xnvme_queue_init(dev, 2, 0, &queue);
 	if (err) {
@@ -235,8 +248,9 @@ sub_deprecated_mem(struct xnvme_cli *cli)
 	}
 	dev = xnvme_dev_open(cli->args.uri, &opts);
 	if (!dev) {
-		xnvme_cli_perr("xnvme_dev_open()", -errno);
-		return -errno;
+		err = -errno;
+		xnvme_cli_perr("xnvme_dev_open()", err);
+		return err;
 	}
 
 	err = xnvme_buf_get_alignment(dev, &align);
