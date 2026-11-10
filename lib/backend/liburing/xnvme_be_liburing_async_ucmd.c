@@ -124,12 +124,89 @@ xnvme_be_liburing_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 	return completed;
 }
 
+static int
+xnvme_be_liburing_ucmd_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **completions,
+			    uint32_t max, uint32_t *ncompleted)
+{
+	struct xnvme_queue_liburing *queue = (void *)q;
+	struct io_uring_cqe *cqe;
+	struct xnvme_cmd_ctx *ctx;
+	unsigned completed;
+	int err = 0;
+
+	max = max > queue->base.outstanding ? queue->base.outstanding : max;
+
+	if (queue->batching) {
+		err = io_uring_submit(&queue->ring);
+		if (err < 0) {
+			XNVME_DEBUG("io_uring_submit, err: %d", err);
+			return err;
+		}
+	}
+
+	completed = 0;
+	for (uint32_t i = 0; i < max; i++) {
+		// with IORING_SETUP_IOPOLL the peek enters the kernel, which a signal interrupts
+		err = io_uring_peek_cqe(&queue->ring, &cqe);
+		if (err == -EAGAIN || err == -EINTR) {
+			err = 0;
+			break;
+		}
+		if (err) {
+			XNVME_DEBUG("FAILED: io_uring_peek_cqe(), err: %d", err);
+			break;
+		}
+
+		ctx = io_uring_cqe_get_data(cqe);
+
+#ifdef XNVME_DEBUG_ENABLED
+		if (!ctx) {
+			XNVME_DEBUG("-{[THIS SHOULD NOT HAPPEN]}-");
+			XNVME_DEBUG("cqe->user_data is NULL! => NO REQ!");
+			XNVME_DEBUG("cqe->res: %d", cqe->res);
+			XNVME_DEBUG("cqe->flags: %u", cqe->flags);
+			err = -EIO;
+			break;
+		}
+#endif
+
+		ctx->cpl.result = cqe->big_cqe[0];
+
+		/** IO64-quirky-handling: this is also for NVME_URING_CMD_IO_VEC */
+		err = xnvme_be_linux_nvme_map_cpl(ctx, NVME_URING_CMD_IO, cqe->res);
+		if (err) {
+			XNVME_DEBUG("FAILED: xnvme_be_linux_nvme_map_cpl(), err: %d", err);
+			break;
+		}
+
+		queue->base.outstanding--;
+
+		io_uring_cqe_seen(&queue->ring, cqe);
+
+		*completions++ = ctx;
+
+		completed++;
+	}
+
+	*ncompleted = completed;
+
+	return err;
+}
+
 #else
 static int
 xnvme_be_liburing_ucmd_poke(struct xnvme_queue *q, uint32_t max)
 {
 	XNVME_DEBUG("FAILED: not supported, built on system without NVME_URING_CMD_IO");
 	return xnvme_be_nosys_queue_poke(q, max);
+}
+
+static int
+xnvme_be_liburing_ucmd_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **completions,
+			    uint32_t max, uint32_t *ncompleted)
+{
+	XNVME_DEBUG("FAILED: not supported, built on system without NVME_URING_CMD_IO");
+	return xnvme_be_nosys_queue_reap(q, completions, max, ncompleted);
 }
 #endif
 
@@ -252,7 +329,7 @@ struct xnvme_be_async g_xnvme_be_liburing_async_ucmd = {
 	.cmd_io = xnvme_be_liburing_ucmd_io,
 	.cmd_iov = xnvme_be_liburing_ucmd_iov,
 	.poke = xnvme_be_liburing_ucmd_poke,
-	.reap = xnvme_be_nosys_queue_reap,
+	.reap = xnvme_be_liburing_ucmd_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_liburing_ucmd_init,
 	.term = xnvme_be_liburing_term,
