@@ -72,7 +72,7 @@ backend_passes_nvme(const struct xnvme_dev *xdev)
 		return 1;
 	}
 
-	if (opts->async && (!strcmp(opts->async, "emu") || !strcmp(opts->async, "thrpool"))) {
+	if (!strcmp(opts->async, "emu") || !strcmp(opts->async, "thrpool")) {
 		return (uint8_t)id_in(opts->sync, sync_passthru,
 				      sizeof(sync_passthru) / sizeof(*sync_passthru));
 	}

@@ -53,7 +53,7 @@ main(int argc, char **argv)
 		return argc < 2;
 	}
 
-	opts.be = "upcie-cuda";
+	snprintf(opts.be, sizeof(opts.be), "%s", "upcie-cuda");
 	err = xnvme_dev_open_uri(argv[1], &opts, &dev);
 	if (err) {
 		xnvme_cli_perr("xnvme_dev_open_uri()", err);

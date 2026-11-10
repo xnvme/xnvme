@@ -180,11 +180,7 @@ exit:
 int
 dump_sync_iovec(struct xnvme_cli *cli)
 {
-	struct xnvme_opts opts = {.create = 1,
-				  .wronly = 1,
-				  .direct = cli->args.direct,
-				  .be = cli->args.be,
-				  .sync = cli->args.sync};
+	struct xnvme_opts opts = {.create = 1, .wronly = 1};
 	struct xnvme_dev *fh;
 	struct xnvme_cmd_ctx ctx;
 	const char *fpath;
@@ -198,6 +194,11 @@ dump_sync_iovec(struct xnvme_cli *cli)
 	fpath = cli->args.data_output;
 	iosize = cli->given[XNVME_CLI_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
 
+	err = xnvme_cli_to_opts(cli, &opts);
+	if (err) {
+		xnvme_cli_perr("xnvme_cli_to_opts()", err);
+		return err;
+	}
 	fh = xnvme_file_open(fpath, &opts);
 	if (!fh) {
 		err = -errno;
@@ -371,11 +372,7 @@ exit:
 int
 dump_async_iovec(struct xnvme_cli *cli)
 {
-	struct xnvme_opts opts = {.create = 1,
-				  .wronly = 1,
-				  .direct = cli->args.direct,
-				  .be = cli->args.be,
-				  .async = cli->args.async};
+	struct xnvme_opts opts = {.create = 1, .wronly = 1};
 	struct xnvme_dev *fh;
 	struct xnvme_queue *queue = NULL;
 	struct cb_args cb_args = {0};
@@ -392,6 +389,11 @@ dump_async_iovec(struct xnvme_cli *cli)
 	iosize = cli->given[XNVME_CLI_OPT_IOSIZE] ? cli->args.iosize : IOSIZE_DEF;
 	qdepth = cli->given[XNVME_CLI_OPT_QDEPTH] ? cli->args.qdepth : QDEPTH_DEF;
 
+	err = xnvme_cli_to_opts(cli, &opts);
+	if (err) {
+		xnvme_cli_perr("xnvme_cli_to_opts()", err);
+		return err;
+	}
 	fh = xnvme_file_open(fpath, &opts);
 	if (!fh) {
 		err = -errno;

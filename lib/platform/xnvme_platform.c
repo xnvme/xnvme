@@ -44,7 +44,7 @@ static int
 _dev_open_resolve_mem(struct xnvme_be *be, const struct xnvme_be_config *cfg,
 		      const struct xnvme_opts *opts)
 {
-	if (!opts || !opts->mem || !strcmp(opts->mem, cfg->mem->id)) {
+	if (!opts || !opts->mem[0] || !strcmp(opts->mem, cfg->mem->id)) {
 		return 0;
 	}
 
@@ -171,12 +171,12 @@ _dev_open_try_config(struct xnvme_dev *dev, const struct xnvme_be_config *cfg,
 	}
 
 	XNVME_DEBUG("INFO: obtained device handle");
-	dev->opts.be = dev->be.attr.name;
-	dev->opts.admin = dev->be.admin.id;
-	dev->opts.sync = dev->be.sync.id;
-	dev->opts.async = dev->be.async.id;
-	dev->opts.mem = dev->be.mem.id;
-	dev->opts.dev = g_xnvme_platform->name;
+	snprintf(dev->opts.be, sizeof(dev->opts.be), "%s", dev->be.attr.name);
+	snprintf(dev->opts.admin, sizeof(dev->opts.admin), "%s", dev->be.admin.id);
+	snprintf(dev->opts.sync, sizeof(dev->opts.sync), "%s", dev->be.sync.id);
+	snprintf(dev->opts.async, sizeof(dev->opts.async), "%s", dev->be.async.id);
+	snprintf(dev->opts.mem, sizeof(dev->opts.mem), "%s", dev->be.mem.id);
+	snprintf(dev->opts.dev, sizeof(dev->opts.dev), "%s", g_xnvme_platform->name);
 
 	return 0;
 }
@@ -211,17 +211,17 @@ xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 	for (int i = 0; g_xnvme_platform->backends[i]; ++i) {
 		const struct xnvme_be_config *cfg = g_xnvme_platform->backends[i];
 
-		if (opts && opts->be && strcmp(opts->be, cfg->attr.name) &&
+		if (opts && opts->be[0] && strcmp(opts->be, cfg->attr.name) &&
 		    strcmp(opts->be, g_xnvme_platform->name)) {
 			continue;
 		}
-		if (opts && opts->async && strcmp(opts->async, cfg->async->id)) {
+		if (opts && opts->async[0] && strcmp(opts->async, cfg->async->id)) {
 			continue;
 		}
-		if (opts && opts->sync && strcmp(opts->sync, cfg->sync->id)) {
+		if (opts && opts->sync[0] && strcmp(opts->sync, cfg->sync->id)) {
 			continue;
 		}
-		if (opts && opts->admin && strcmp(opts->admin, cfg->admin->id)) {
+		if (opts && opts->admin[0] && strcmp(opts->admin, cfg->admin->id)) {
 			continue;
 		}
 		if (uri_cap && !(cfg->attr.caps & uri_cap)) {

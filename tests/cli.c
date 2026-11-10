@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <inttypes.h>
+#include <string.h>
 #include <libxnvme.h>
 
 static int
@@ -85,6 +86,60 @@ sub_numeric(struct xnvme_cli *cli)
 	return err;
 }
 
+/**
+ * The device keeps its own copy of the string options it is opened with: xnvme_dev_get_opts()
+ * returns the same strings after the caller's options, and the strings they were filled from,
+ * are overwritten
+ */
+static int
+sub_opts(struct xnvme_cli *cli)
+{
+	const char *given[] = {
+		cli->args.core_mask, cli->args.iova_mode, cli->args.adrfam,
+		cli->args.subnqn,    cli->args.hostnqn,
+	};
+	char want[sizeof(given) / sizeof(*given)][XNVME_OPTS_NQN_LEN];
+	struct xnvme_opts opts = {0};
+	const struct xnvme_opts *got;
+	struct xnvme_dev *dev;
+	int err;
+
+	for (size_t i = 0; i < sizeof(given) / sizeof(*given); ++i) {
+		snprintf(want[i], sizeof(want[i]), "%s", given[i] ? given[i] : "");
+	}
+
+	xnvme_opts_set_defaults(&opts);
+	err = xnvme_cli_to_opts(cli, &opts);
+	if (err) {
+		xnvme_cli_perr("xnvme_cli_to_opts()", err);
+		return err;
+	}
+	err = xnvme_dev_open_uri(cli->args.uri, &opts, &dev);
+	if (err) {
+		xnvme_cli_perr("xnvme_dev_open_uri()", err);
+		return err;
+	}
+
+	memset(&opts, 'x', sizeof(opts));
+	for (size_t i = 0; i < sizeof(given) / sizeof(*given); ++i) {
+		if (given[i]) {
+			memset((char *)given[i], 'x', strlen(given[i]));
+		}
+	}
+
+	got = xnvme_dev_get_opts(dev);
+	if (strcmp(got->core_mask, want[0]) || strcmp(got->iova_mode, want[1]) ||
+	    strcmp(got->adrfam, want[2]) || strcmp(got->subnqn, want[3]) ||
+	    strcmp(got->hostnqn, want[4])) {
+		xnvme_cli_pinf("FAILED: the device's options are not those it was opened with");
+		xnvme_opts_pr(got, XNVME_PR_DEF);
+		err = -EINVAL;
+	}
+	xnvme_dev_close(dev);
+
+	return err;
+}
+
 static struct xnvme_cli_sub g_subs[] = {
 	{
 		"optional",
@@ -114,6 +169,24 @@ static struct xnvme_cli_sub g_subs[] = {
 			{XNVME_CLI_OPT_NQUEUES, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_DEV_ID, XNVME_CLI_LOPT},
 			{XNVME_CLI_OPT_MAX_IO_BYTES, XNVME_CLI_LOPT},
+		},
+	},
+	{
+		"opts",
+		"String options kept by the device",
+		"Open 'uri' with the given string options and check that the device keeps them",
+		sub_opts,
+		{
+			{XNVME_CLI_OPT_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_URI, XNVME_CLI_POSA},
+
+			{XNVME_CLI_OPT_NON_POSA_TITLE, XNVME_CLI_SKIP},
+			{XNVME_CLI_OPT_BE, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_CORE_MASK, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_IOVA_MODE, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_ADRFAM, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_SUBNQN, XNVME_CLI_LOPT},
+			{XNVME_CLI_OPT_HOSTNQN, XNVME_CLI_LOPT},
 		},
 	},
 };

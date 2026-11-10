@@ -43,6 +43,9 @@ tests = {
     ['optional', ['optional']],
     ['numeric', ['numeric', '--nqueues', '4', '--dev-id', '7', '--max-io-bytes', '131072']],
     ['numeric, not given', ['numeric']],
+    ['opts', ['opts', '1GB', '--be', 'ramdisk', '--core_mask', '0x3', '--iova_mode', 'pa',
+              '--adrfam', 'IPv6', '--subnqn', 'nqn.2014-08.org.nvmexpress.discovery',
+              '--hostnqn', 'nqn.2014-08.org.nvmexpress:uuid:00000000-0000-0000-0000-000000000000']],
   ],
   'compare.c': [
     ['no args', ['compare', '1GB']],
@@ -195,6 +198,15 @@ if conf_data.get('XNVME_BE_THRPOOL_ENABLED') and conf_data.get('XNVME_BE_RAMDISK
     )
   endforeach
 endif
+
+# A string option longer than its field of xnvme_opts is refused, not cut short
+test(
+  'tests - cli, opts, --be too long',
+  tests_exe['cli'],
+  args: ['opts', '1GB', '--be', 'ramdisk_ramdisk_ramdisk_ramdisk_'],
+  should_fail: true,
+  suite: 'cli',
+)
 
 test(
   'tests - no sub-header includes libxnvme.h',

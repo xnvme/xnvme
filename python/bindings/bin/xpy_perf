@@ -62,15 +62,15 @@ def record(binding, name):
     return getattr(binding, name, None) or getattr(binding, camel)
 
 
-def set_str(struct, field, value, keep):
-    """Set the 'const char *' 'field' of 'struct', keeping 'value' alive"""
+def set_str(struct, field, value):
+    """Copy 'value', and a NUL, into the char array 'field' of 'struct'"""
 
     ftype = dict((f[0], f[1]) for f in type(struct)._fields_)[field]
-    cstr = ctypes.c_char_p(value.encode())
-    keep.append(cstr)
-    setattr(
-        struct, field, cstr if ftype is ctypes.c_char_p else ctypes.cast(cstr, ftype)
-    )
+    data = value.encode() + b"\0"
+    if len(data) > ctypes.sizeof(ftype):
+        raise SystemExit(f"FAILED: '{value}' does not fit the field '{field}'")
+    offset = getattr(type(struct), field).offset
+    ctypes.memmove(ctypes.addressof(struct) + offset, data, len(data))
 
 
 def run(x, args):
@@ -82,9 +82,9 @@ def run(x, args):
         raise SystemExit("FAILED: xnvme_opts_set_defaults()")
     opts.nsid = args.dev_nsid
     if args.be:
-        set_str(opts, "be", args.be, keep)
+        set_str(opts, "be", args.be)
     if args.async_:
-        set_str(opts, "async", args.async_, keep)
+        set_str(opts, "async", args.async_)
 
     dev = ctypes.POINTER(record(x, "xnvme_dev"))()
     err = x.xnvme_dev_open_uri(args.uri.encode(), ctypes.byref(opts), ctypes.byref(dev))

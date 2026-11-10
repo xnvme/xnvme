@@ -2528,11 +2528,44 @@ xnvme_cli_dev_close_multi(struct xnvme_dev **devs, int count)
 int
 xnvme_cli_to_opts(const struct xnvme_cli *cli, struct xnvme_opts *opts)
 {
-	opts->be = cli->given[XNVME_CLI_OPT_BE] ? cli->args.be : opts->be;
-	opts->mem = cli->given[XNVME_CLI_OPT_MEM] ? cli->args.mem : opts->mem;
-	opts->sync = cli->given[XNVME_CLI_OPT_SYNC] ? cli->args.sync : opts->sync;
-	opts->async = cli->given[XNVME_CLI_OPT_ASYNC] ? cli->args.async : opts->async;
-	opts->admin = cli->given[XNVME_CLI_OPT_ADMIN] ? cli->args.admin : opts->admin;
+	const struct {
+		enum xnvme_cli_opt opt;
+		const char *name;
+		const char *src;
+		char *dst;
+		size_t nbytes;
+	} strs[] = {
+		{XNVME_CLI_OPT_BE, "be", cli->args.be, opts->be, sizeof(opts->be)},
+		{XNVME_CLI_OPT_MEM, "mem", cli->args.mem, opts->mem, sizeof(opts->mem)},
+		{XNVME_CLI_OPT_SYNC, "sync", cli->args.sync, opts->sync, sizeof(opts->sync)},
+		{XNVME_CLI_OPT_ASYNC, "async", cli->args.async, opts->async, sizeof(opts->async)},
+		{XNVME_CLI_OPT_ADMIN, "admin", cli->args.admin, opts->admin, sizeof(opts->admin)},
+		{XNVME_CLI_OPT_CORE_MASK, "core_mask", cli->args.core_mask, opts->core_mask,
+		 sizeof(opts->core_mask)},
+		{XNVME_CLI_OPT_IOVA_MODE, "iova_mode", cli->args.iova_mode, opts->iova_mode,
+		 sizeof(opts->iova_mode)},
+		{XNVME_CLI_OPT_ADRFAM, "adrfam", cli->args.adrfam, opts->adrfam,
+		 sizeof(opts->adrfam)},
+		{XNVME_CLI_OPT_SUBNQN, "subnqn", cli->args.subnqn, opts->subnqn,
+		 sizeof(opts->subnqn)},
+		{XNVME_CLI_OPT_HOSTNQN, "hostnqn", cli->args.hostnqn, opts->hostnqn,
+		 sizeof(opts->hostnqn)},
+	};
+
+	for (size_t i = 0; i < sizeof(strs) / sizeof(*strs); ++i) {
+		int len;
+
+		if (!cli->given[strs[i].opt]) {
+			continue;
+		}
+		len = snprintf(strs[i].dst, strs[i].nbytes, "%s", strs[i].src);
+		if (len < 0 || (size_t)len >= strs[i].nbytes) {
+			fprintf(stderr, "# ERR: --%s is longer than its %zu bytes\n", strs[i].name,
+				strs[i].nbytes - 1);
+			errno = EINVAL;
+			return -EINVAL;
+		}
+	}
 
 	opts->nsid = cli->given[XNVME_CLI_OPT_DEV_NSID] ? cli->args.dev_nsid : opts->nsid;
 
@@ -2592,14 +2625,7 @@ xnvme_cli_to_opts(const struct xnvme_cli *cli, struct xnvme_opts *opts)
 					 : opts->device_heap_size;
 	opts->main_core =
 		cli->given[XNVME_CLI_OPT_MAIN_CORE] ? cli->args.main_core : opts->main_core;
-	opts->core_mask =
-		cli->given[XNVME_CLI_OPT_CORE_MASK] ? cli->args.core_mask : opts->core_mask;
-	opts->iova_mode =
-		cli->given[XNVME_CLI_OPT_IOVA_MODE] ? cli->args.iova_mode : opts->iova_mode;
 	opts->gpu_id = cli->given[XNVME_CLI_OPT_GPU_ID] ? cli->args.gpu_id : opts->gpu_id;
-	opts->adrfam = cli->given[XNVME_CLI_OPT_ADRFAM] ? cli->args.adrfam : opts->adrfam;
-	opts->subnqn = cli->given[XNVME_CLI_OPT_SUBNQN] ? cli->args.subnqn : opts->subnqn;
-	opts->hostnqn = cli->given[XNVME_CLI_OPT_HOSTNQN] ? cli->args.hostnqn : opts->hostnqn;
 
 	return 0;
 }
