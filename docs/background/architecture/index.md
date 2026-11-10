@@ -296,14 +296,14 @@ void scan_cb(const struct xnvme_scan_entry *entry, void *args)
 
 ```c
 struct xnvme_opts {
-	const char *be;       // Backend config name (matches xnvme_be_config.attr.name)
-	const char *async;    // Async interface filter
-	const char *sync;     // Sync interface filter
-	const char *admin;    // Admin interface filter
-	const char *mem;      // Memory allocator override (e.g., "hugepage")
+	char be[32];          // Backend config name (matches xnvme_be_config.attr.name)
+	char async[32];       // Async interface filter
+	char sync[32];        // Sync interface filter
+	char admin[32];       // Admin interface filter
+	char mem[32];         // Memory allocator override (e.g., "hugepage")
 	uint32_t nsid;        // Namespace ID (default: 1)
 	uint32_t shm_id;      // Shared memory ID for IPC (0 = no sharing)
-	const char *hostnqn;  // Optional: host NQN for fabrics access control
+	char hostnqn[224];    // Optional: host NQN for fabrics access control
 	// ... platform-specific fields
 };
 ```
@@ -706,7 +706,7 @@ Limited: no NVMe passthrough via OS path, only SMART data via IOKit.
 
 **Userspace-managed (MacVFN):**
 
-For full NVMe passthrough, use `opts.be = "driverkit"`. This uses MacVFN's
+For full NVMe passthrough, set `opts.be` to `"driverkit"`. This uses MacVFN's
 DriverKit-based userspace driver. The latest version maintains block-device
 functionality while the driver is loaded, allowing concurrent OS and **xNVMe** access.
 
@@ -1055,7 +1055,7 @@ The selection loop in `xnvme_platform_dev_open()` applies filters in order:
 int
 xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 {
-	int be_opts = opts && (opts->async || opts->sync || opts->admin);
+	int be_opts = opts && (opts->async[0] || opts->sync[0] || opts->admin[0]);
 	uint32_t uri_cap = 0;
 
 	// Classify URI only when user hasn't specified explicit backend opts
@@ -1070,12 +1070,12 @@ xnvme_platform_dev_open(struct xnvme_dev *dev, struct xnvme_opts *opts)
 		if (!cfg->attr.enabled) continue;
 
 		// Filter: opts.be matches config name
-		if (opts->be && strcmp(opts->be, cfg->attr.name)) continue;
+		if (opts->be[0] && strcmp(opts->be, cfg->attr.name)) continue;
 
 		// Filter: opts.async/sync/admin match interface ids
-		if (opts->async && strcmp(opts->async, cfg->async->id)) continue;
-		if (opts->sync && strcmp(opts->sync, cfg->sync->id)) continue;
-		if (opts->admin && strcmp(opts->admin, cfg->admin->id)) continue;
+		if (opts->async[0] && strcmp(opts->async, cfg->async->id)) continue;
+		if (opts->sync[0] && strcmp(opts->sync, cfg->sync->id)) continue;
+		if (opts->admin[0] && strcmp(opts->admin, cfg->admin->id)) continue;
 
 		// Filter: caps -- skip configs that can't handle this URI type
 		if (uri_cap && cfg->attr.caps && !(cfg->attr.caps & uri_cap))

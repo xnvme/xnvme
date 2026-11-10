@@ -211,8 +211,8 @@ _xnvme_be_spdk_ident_to_trid(const struct xnvme_ident *ident, struct xnvme_opts 
 		snprintf(trid_str, sizeof(trid_str),
 			 "trtype:%s adrfam:%s traddr:%s trsvcid:%d subnqn:%s",
 			 spdk_nvme_transport_id_trtype_str(trtype),
-			 opts->adrfam ? opts->adrfam : "IPv4", addr, port,
-			 opts->subnqn ? opts->subnqn : SPDK_NVMF_DISCOVERY_NQN);
+			 opts->adrfam[0] ? opts->adrfam : "IPv4", addr, port,
+			 opts->subnqn[0] ? opts->subnqn : SPDK_NVMF_DISCOVERY_NQN);
 		break;
 
 	case SPDK_NVME_TRANSPORT_FC:
@@ -284,8 +284,9 @@ _spdk_setup_controller_opts(struct xnvme_opts *opts, const struct spdk_nvme_tran
 		ctrlr_opts->header_digest = 1;
 		ctrlr_opts->data_digest = 1;
 		ctrlr_opts->keep_alive_timeout_ms = opts->keep_alive_timeout_ms;
-		if (opts->hostnqn) {
-			strncpy(ctrlr_opts->hostnqn, opts->hostnqn, SPDK_NVMF_NQN_MAX_LEN);
+		if (opts->hostnqn[0]) {
+			snprintf(ctrlr_opts->hostnqn, sizeof(ctrlr_opts->hostnqn), "%s",
+				 opts->hostnqn);
 		}
 		break;
 
@@ -499,7 +500,7 @@ xnvme_be_spdk_ctrlr_init(struct xnvme_dev *dev)
 	}
 
 	// SPDK default for core_mask is 0x1, so don't overwrite unless given
-	if (dev->opts.core_mask) {
+	if (dev->opts.core_mask[0]) {
 		env_opts.core_mask = dev->opts.core_mask;
 	}
 
@@ -514,7 +515,7 @@ xnvme_be_spdk_ctrlr_init(struct xnvme_dev *dev)
 	/* xnvme_opts.iova_mode first, fall back to XNVME_SPDK_IOVA_MODE so a */
 	/* deployment can flip the mode without touching every caller. */
 	{
-		const char *iova_mode = dev->opts.iova_mode;
+		const char *iova_mode = dev->opts.iova_mode[0] ? dev->opts.iova_mode : NULL;
 		if (!iova_mode) {
 			iova_mode = getenv("XNVME_SPDK_IOVA_MODE");
 		}
@@ -541,7 +542,7 @@ xnvme_be_spdk_ctrlr_init(struct xnvme_dev *dev)
 				"SPDK output), set iova_mode to 'pa'.\n"
 				"       Three ways, pick whichever fits the call "
 				"path:\n"
-				"         opts: xnvme_opts.iova_mode = \"pa\" "
+				"         opts: xnvme_opts.iova_mode set to \"pa\" "
 				"before xnvme_dev_open_uri()\n"
 				"         cli:  pass --iova-mode pa on the "
 				"xnvme command line\n"

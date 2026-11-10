@@ -259,7 +259,7 @@ test_enum_backend(struct xnvme_cli *cli)
 		if (!attr) {
 			break;
 		}
-		opts.be = attr->name;
+		snprintf(opts.be, sizeof(opts.be), "%s", attr->name);
 		strncpy(cb_args.expected, attr->name, 1023);
 
 		err = xnvme_enumerate(cli->args.sys_uri, &opts, backend_cb, &cb_args);
