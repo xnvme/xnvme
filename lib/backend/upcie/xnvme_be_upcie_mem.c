@@ -159,6 +159,17 @@ _adopt_desc(struct dmamem *dmem, void *vaddr, const struct hostmem_shared_desc *
 	return err;
 }
 
+/** Whether `desc` puts the first byte at the address the range adopted at `vaddr` has */
+static int
+_desc_matches(struct dmamem *dmem, void *vaddr, const struct hostmem_shared_desc *desc,
+	      uint32_t page_size)
+{
+	uint64_t addr;
+
+	return !hostmem_shared_desc_addr(desc, 0, page_size, &addr) &&
+	       (addr == dmamem_va_to_iova(dmem, vaddr));
+}
+
 int
 xnvme_be_upcie_dmem_from_desc(struct dmamem *dmem, void *base,
 			      const struct hostmem_shared_desc *desc, enum dmamem_backing backing,
@@ -297,10 +308,15 @@ xnvme_be_upcie_served_mem_map(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr *
 		return err;
 	}
 
-	/* Through a further controller the server installs the range at the IOVA it gave the
-	 * first, so the table has it already */
+	/* Through a further controller the server installs the same dma-buf at the IOVA it gave
+	 * the first, so the table has it already. Another dma-buf of the same memory can be mapped
+	 * elsewhere, and the table holds one translation per vaddr. */
 	adopted = _served_regs_find_dmem(dmem, vaddr) >= 0;
-	err = adopted ? 0 : _adopt_desc(dmem, vaddr, desc, page_size);
+	if (adopted) {
+		err = _desc_matches(dmem, vaddr, desc, page_size) ? 0 : -EBUSY;
+	} else {
+		err = _adopt_desc(dmem, vaddr, desc, page_size);
+	}
 	if (!err) {
 		err = _served_regs_add(dmem, vaddr, ctrlr, offset);
 		if (err && !adopted) {
