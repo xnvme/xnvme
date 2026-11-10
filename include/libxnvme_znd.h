@@ -61,6 +61,8 @@ xnvme_znd_dev_get_lbafe(struct xnvme_dev *dev);
  * @param dbuf_nbytes pointer to meta payload
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_znd_mgmt_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint32_t zra,
@@ -141,6 +143,8 @@ xnvme_znd_log_changes_from_dev(struct xnvme_dev *dev);
  * @param dbuf For action=ZND_SEND_DESCRIPTOR provide buffer
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_znd_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, bool select_all,
@@ -157,6 +161,8 @@ xnvme_znd_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, bo
  * @param mbuf pointer to meta payload
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_znd_append(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, uint16_t nlb,
@@ -170,6 +176,8 @@ xnvme_znd_append(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t zslba, uint1
  * @param lba Commit from ZRWA to Zone up-to and including the given 'lba'
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_znd_zrwa_flush(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t lba);
@@ -220,6 +228,8 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_znd_report) == 64, "Incorrect size")
  * @param ext Pointer the extended descriptor will be assigned to
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_znd_report_get_descr(const struct xnvme_znd_report *report, uint32_t index,
@@ -256,6 +266,8 @@ xnvme_znd_report_from_dev(struct xnvme_dev *dev, uint64_t slba, size_t limit, ui
  * used
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_znd_report_find_arbitrary(const struct xnvme_znd_report *report, uint32_t state,

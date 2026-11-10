@@ -39,13 +39,15 @@ typedef int (*xnvme_enumerate_cb)(struct xnvme_dev *dev, void *cb_args);
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
  * @param sys_uri URI of the system to enumerate, when NULL, localhost/PCIe
- * @param opts Options for instrumenting the runtime during enumeration
+ * @param opts Options for instrumenting the runtime during enumeration, NULL for the defaults
  * @param cb_func Callback function to invoke for each yielded device
  * @param cb_args Arguments passed to the callback function
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  *
+ * @nullable sys_uri opts
  * @lifetime cb_func call
+ * @errno
  */
 int
 xnvme_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb cb_func,
@@ -62,6 +64,8 @@ xnvme_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb
  * @param dev Device handle obtained with xnvme_dev_open_uri()
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_dev_derive_geo(struct xnvme_dev *dev);
@@ -198,6 +202,9 @@ xnvme_dev_get_ssw(const struct xnvme_dev *dev);
  * @param[out] dev Pointer-pointer to the ::xnvme_dev to open; NULL on error
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @nullable opts
+ * @errno
  */
 int
 xnvme_dev_open_uri(const char *dev_uri, struct xnvme_opts *opts, struct xnvme_dev **dev);
