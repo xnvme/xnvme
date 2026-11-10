@@ -1,407 +1,154 @@
-import ctypes
-import os
+"""
+Logical-block commands through the bindings: writes scattered over a range and
+read back, Simple Copy of an array of source ranges, and Write Zeroes
+"""
 
-import conftest
-import numpy as np
+import ctypes
+
+import numpy
 import pytest
 import xnvme
+from conftest import xnvme_parametrize
+from utils import buf_and_view, dev_from_params, xnvme_cmd_ctx_cpl_status
 
-pytest.skip("Needs to be ported from Cython to Ctypes", allow_module_level=True)
+# Blocks written and read back one by one, and copied
+NBLOCKS = 8
 
-NULL = None
-UINT16_MAX = 0xFFFF
+# The distance, in LBAs, between the blocks; so no two are adjacent
+STRIDE = 4
 
 
-@pytest.fixture
-def boilerplate(dev):
-    geo = xnvme.xnvme_dev_get_geo(dev)
+def cmd_ctx(dev):
+    """A command context for a synchronous command on 'dev'"""
+
+    ctx = xnvme.XnvmeCmdCtx()
+    assert not xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
+    return ctx
+
+
+def check(err, ctx, name):
+    """Assert that the command 'name' on 'ctx' returned 'err' 0 and succeeded"""
+
+    status = xnvme_cmd_ctx_cpl_status(ctypes.pointer(ctx))
+    assert not (err or status), f"{name}(): err({err}), status(0x{status:x})"
+
+
+def write(dev, nsid, slba, nlb, buf):
+    ctx = cmd_ctx(dev)
+    check(xnvme.xnvme_nvm_write(ctx, nsid, slba, nlb, buf, None), ctx, "write")
+
+
+def read(dev, nsid, slba, nlb, buf):
+    ctx = cmd_ctx(dev)
+    check(xnvme.xnvme_nvm_read(ctx, nsid, slba, nlb, buf, None), ctx, "read")
+
+
+@xnvme_parametrize(labels=["nvm"], opts=["be", "sync"])
+def test_scattered_write_read(cijoe, device, be_opts, cli_args):
+    """Write NBLOCKS blocks STRIDE apart, each its own content, and read them back"""
+
+    dev = dev_from_params(device, be_opts)
+    assert dev
+
     nsid = xnvme.xnvme_dev_get_nsid(dev)
+    lba_nbytes = xnvme.xnvme_dev_get_geo(dev).contents.lba_nbytes
+    nbytes = NBLOCKS * lba_nbytes
 
-    rng_slba = 0
-    rng_elba = (1 << 26) // geo.lba_nbytes  # About 64MB
-    # rng_elba = (1 << 28) // geo.lba_nbytes # About 256MB
+    wbuf, wview = buf_and_view(dev, nbytes)
+    rbuf, rview = buf_and_view(dev, nbytes)
+    wview[:] = numpy.arange(nbytes) % 251
 
-    mdts_naddr = min(geo.mdts_nbytes // geo.lba_nbytes, 256)
-    buf_nbytes = mdts_naddr * geo.lba_nbytes
+    for i in range(NBLOCKS):
+        write(dev, nsid, i * STRIDE, 0, wbuf + i * lba_nbytes)
+    for i in range(NBLOCKS):
+        read(dev, nsid, i * STRIDE, 0, rbuf + i * lba_nbytes)
 
-    # Verify range
-    assert rng_elba >= rng_slba, "Invalid range: [rng_slba,rng_elba]"
+    assert numpy.array_equal(rview, wview)
 
-    # TODO: verify that the range is sufficiently large
-
-    wbuf = xnvme.xnvme_buf_alloc(dev, buf_nbytes)
-    rbuf = xnvme.xnvme_buf_alloc(dev, buf_nbytes)
-
-    yield (dev, geo, wbuf, rbuf, buf_nbytes, mdts_naddr, nsid, rng_slba, rng_elba)
-
-    xnvme.xnvme_buf_free(dev, wbuf)
     xnvme.xnvme_buf_free(dev, rbuf)
+    xnvme.xnvme_buf_free(dev, wbuf)
+    xnvme.xnvme_dev_close(dev)
 
 
-def fill_lba_range_and_write_buffer_with_character(
-    wbuf,
-    buf_nbytes,
-    rng_slba,
-    rng_elba,
-    mdts_naddr,
-    dev,
-    geo,
-    nsid,
-    character,
-):
-    ctypes.memset(ctypes.c_void_p(wbuf.void_pointer), ord(character), buf_nbytes)
+@xnvme_parametrize(labels=["scc"], opts=["be", "admin", "sync"])
+def test_scopy(cijoe, device, be_opts, cli_args):
+    """Copy blocks STRIDE apart, given as an array of source ranges in a buffer of
+    the device, to consecutive blocks after them, and read those back"""
 
-    written_bytes = 0
-    for slba in range(rng_slba, rng_elba, mdts_naddr):
-        ctx = xnvme.XnvmeCmdCtx()
-        xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
-        nlb = min(rng_elba - slba, mdts_naddr - 1)
+    if be_opts["admin"] == "block" or be_opts["sync"] in ["block", "psync"]:
+        pytest.skip(reason="Linux Block layer does not support simple-copy")
 
-        written_bytes += (1 + nlb) * geo.lba_nbytes
+    dev = dev_from_params(device, be_opts)
+    assert dev
 
-        err = xnvme.xnvme_nvm_write(ctx, nsid, slba, nlb, wbuf, NULL)
-        assert not (
-            err or xnvme.xnvme_cmd_ctx_cpl_status(ctx)
-        ), f"xnvme_nvm_write(): {{err: 0x{err:x}, slba: 0x{slba:016x}}}"
-    return written_bytes
+    nsid = xnvme.xnvme_dev_get_nsid(dev)
+    lba_nbytes = xnvme.xnvme_dev_get_geo(dev).contents.lba_nbytes
+    ns = xnvme.xnvme_dev_get_ns(dev).contents
+    nranges = min(NBLOCKS, ns.msrc + 1, ns.mcl)
+    if not nranges:
+        pytest.skip(reason="the namespace copies no blocks, MCL is zero")
+    nbytes = nranges * lba_nbytes
 
-
-class TestLBLK:
-    @pytest.mark.skipif(
-        conftest.BACKEND == b"spdk",
-        reason="SPDK cannot handle a dev open/close followed by enumerate",
+    ranges_buf = xnvme.xnvme_buf_alloc(
+        dev, ctypes.sizeof(xnvme.XnvmeSpecNvmScopySourceRange)
     )
-    @pytest.mark.skipif(
-        conftest.BACKEND == b"ramdisk",
-        reason="ramdisk doesn't support enumeration",
+    assert ranges_buf
+    ctypes.memset(ranges_buf, 0, ctypes.sizeof(xnvme.XnvmeSpecNvmScopySourceRange))
+    ranges = ctypes.cast(
+        ranges_buf, ctypes.POINTER(xnvme.XnvmeSpecNvmScopySourceRange)
+    ).contents
+    for i in range(nranges):
+        ranges.entry[i].slba = i * STRIDE
+        ranges.entry[i].rpars = 0  # NLB, zero-based: one block
+    sdlba = nranges * STRIDE
+
+    dbuf, dview = buf_and_view(dev, nbytes)
+    vbuf, vview = buf_and_view(dev, nbytes)
+    dview[:] = numpy.arange(nbytes) % 251
+
+    for i in range(nranges):
+        write(dev, nsid, ranges.entry[i].slba, 0, dbuf + i * lba_nbytes)
+    write(dev, nsid, sdlba, nranges - 1, vbuf)
+
+    ctx = cmd_ctx(dev)
+    err = xnvme.xnvme_nvm_scopy(
+        ctx, nsid, sdlba, ranges.entry, nranges - 1, xnvme.XNVME_NVM_SCOPY_FMT_ZERO
     )
-    def test_enum(self, opts):
-        def callback_func(dev, fd):
-            ident = xnvme.xnvme_dev_get_ident(dev)
-            if ident.csi != xnvme.XNVME_SPEC_CSI_NVM:
-                return xnvme.XNVME_ENUMERATE_DEV_CLOSE
+    check(err, ctx, "scopy")
 
-            xnvme.xnvme_ident_yaml(fd, ident, 0, b", ", 0)
+    read(dev, nsid, sdlba, nranges - 1, vbuf)
+    assert numpy.array_equal(vview, dview)
 
-            return xnvme.XNVME_ENUMERATE_DEV_CLOSE
+    xnvme.xnvme_buf_free(dev, vbuf)
+    xnvme.xnvme_buf_free(dev, dbuf)
+    xnvme.xnvme_buf_free(dev, ranges_buf)
+    xnvme.xnvme_dev_close(dev)
 
-        fd = xnvme.FILE()
-        fd.tmpfile()
-        xnvme.xnvme_enumerate(None, opts, callback_func, fd)
-        data = fd.getvalue()
-        print(data.decode())
-        assert len(data) != 0
 
-    # /**
-    #  * 0) Fill wbuf with '!'
-    #  * 1) Write the entire LBA range [slba, elba] using wbuf
-    #  * 2) Fill wbuf with a repeating sequence of letters A to Z
-    #  * 3) Scatter the content of wbuf within [slba,elba]
-    #  * 4) Read, with exponential stride, within [slba,elba] using rbuf
-    #  * 5) Verify that the content of rbuf is the same as wbuf
-    #  */
-    def test_verify_io(self, boilerplate):
-        (
-            dev,
-            geo,
-            wbuf,
-            rbuf,
-            buf_nbytes,
-            mdts_naddr,
-            nsid,
-            rng_slba,
-            rng_elba,
-        ) = boilerplate
+@xnvme_parametrize(labels=["write_zeroes"], opts=["be", "admin", "sync"])
+def test_write_zeroes(cijoe, device, be_opts, cli_args):
+    """Write NBLOCKS blocks, zero them with one Write Zeroes, and read zeroes back"""
 
-        print("Writing '!' to LBA range [slba,elba]")
-        fill_lba_range_and_write_buffer_with_character(
-            wbuf, buf_nbytes, rng_slba, rng_elba, mdts_naddr, dev, geo, nsid, "!"
-        )
+    if be_opts["sync"] in ["block", "psync"]:
+        pytest.skip(reason=f"Not supported: write_zeroes via {be_opts['sync']}")
 
-        print("Writing payload scattered within LBA range [slba,elba]")
-        wbuf_mem_view = np.ctypeslib.as_array(
-            ctypes.cast(wbuf.void_pointer, ctypes.POINTER(ctypes.c_uint8)),
-            shape=(buf_nbytes,),
-        )
-        wbuf_mem_view[:] = np.arange(len(wbuf_mem_view))
-        # xnvme.xnvmec_buf_fill(wbuf, buf_nbytes, "anum")
+    dev = dev_from_params(device, be_opts)
+    assert dev
 
-        for count in range(mdts_naddr):
-            ctx = xnvme.XnvmeCmdCtx()  # TODO: Reuse from before?
-            xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
-            wbuf_ofz = count * geo.lba_nbytes
-            slba = rng_slba + count * 4
+    nsid = xnvme.xnvme_dev_get_nsid(dev)
+    lba_nbytes = xnvme.xnvme_dev_get_geo(dev).contents.lba_nbytes
+    nbytes = NBLOCKS * lba_nbytes
 
-            err = xnvme.xnvme_nvm_write(
-                ctx,
-                nsid,
-                slba,
-                0,
-                xnvme.xnvme_void_p(wbuf.void_pointer + wbuf_ofz),
-                NULL,
-            )
-            assert not (
-                err or xnvme.xnvme_cmd_ctx_cpl_status(ctx)
-            ), f"xnvme_nvm_write(): {{err: 0x{err:x}, slba: 0x{slba:016x}}}"
-            # xnvme.XnvmeCmdCtx.pr(ctx, XNVME_PR_DEF)
+    buf, view = buf_and_view(dev, nbytes)
+    view[:] = ord("!")
+    write(dev, nsid, 0, NBLOCKS - 1, buf)
 
-        print("Read scattered payload within LBA range [slba,elba]")
+    ctx = cmd_ctx(dev)
+    check(xnvme.xnvme_nvm_write_zeroes(ctx, nsid, 0, NBLOCKS - 1), ctx, "write_zeroes")
 
-        rbuf_mem_view = np.ctypeslib.as_array(
-            ctypes.cast(rbuf.void_pointer, ctypes.POINTER(ctypes.c_uint8)),
-            shape=(buf_nbytes,),
-        )
-        rbuf_mem_view[:] = 0
-        assert not np.all(rbuf_mem_view == wbuf_mem_view)
-        # xnvme.xnvmec_buf_clear(rbuf, buf_nbytes)
-        for count in range(mdts_naddr):
-            ctx = xnvme.XnvmeCmdCtx()
-            xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
-            rbuf_ofz = count * geo.lba_nbytes
-            slba = rng_slba + count * 4
+    view[:] = ord("a")
+    read(dev, nsid, 0, NBLOCKS - 1, buf)
+    assert not view.any(), f"{numpy.count_nonzero(view)} bytes not zeroed"
 
-            err = xnvme.xnvme_nvm_read(
-                ctx,
-                nsid,
-                slba,
-                0,
-                xnvme.xnvme_void_p(rbuf.void_pointer + rbuf_ofz),
-                NULL,
-            )
-            assert not (
-                err or xnvme.xnvme_cmd_ctx_cpl_status(ctx)
-            ), "xnvme_nvm_read(): {{err: 0x{err:x}, slba: 0x{slba:016x}}}"
-
-        assert np.all(rbuf_mem_view == wbuf_mem_view), xnvme.xnvmec_buf_diff_pr(
-            wbuf, rbuf, buf_nbytes, xnvme.XNVME_PR_DEF
-        )
-        # assert not xnvme.xnvmec_buf_diff(wbuf, rbuf, buf_nbytes)
-
-    # /**
-    #  * 0) Fill wbuf with '!'
-    #  *
-    #  * 1) Write the entire LBA range [slba, elba] using wbuf
-    #  *
-    #  * 2) Fill wbuf with a repeating sequence of letters A to Z
-    #  *
-    #  * 3) Scatter the content of wbuf within [slba,elba]
-    #  *
-    #  * 4) Read, with exponential stride, within [slba,elba] using rbuf
-    #  *
-    #  * 5) Verify that the content of rbuf is the same as wbuf
-    #  */
-    @pytest.mark.skipif(True, reason="Unfinished")
-    def test_scopy(self, boilerplate):
-        # struct xnvme_spec_nvm_scopy_source_range *sranges = NULL # For the copy-payload
-        sranges = []
-
-        (
-            dev,
-            geo,
-            wbuf,
-            rbuf,
-            buf_nbytes,
-            xfer_naddr,
-            nsid,
-            rng_slba,
-            rng_elba,
-        ) = boilerplate
-
-        # Force void* casting to xnvme_spec_idfy_ns*
-        # xnvme_spec_idfy_ns *nvm = (void *)xnvme_dev_get_ns(dev)
-        _nvm = xnvme.xnvme_dev_get_ns(dev)
-        _void_p = xnvme.xnvme_void_p(_nvm.void_pointer)
-        nvm = xnvme.XnvmeSpecIdfyNs(__void_p=_void_p)
-        xnvme.XnvmeSpecIdfyNs.pr(nvm, xnvme.XNVME_PR_DEF)
-
-        if nvm.msrc:
-            xfer_naddr = min(min(nvm.msrc + 1, xfer_naddr), nvm.mcl)
-        buf_nbytes = xfer_naddr * geo.nbytes
-
-        # sranges = xnvme_buf_alloc(dev, xnvme_spec_nvm_scopy_source_range().sizeof)
-        # memset(sranges, 0, sizeof(*sranges))
-
-        # Copy to the end of [slba,elba]
-        sdlba = rng_elba - xfer_naddr
-
-        # NVMe-struct copy format
-        copy_fmt = xnvme.XNVME_NVM_SCOPY_FMT_ZERO
-
-        xnvme.XnvmeSpecIdfyCtrlr.pr(
-            xnvme.XnvmeSpecIdfyCtrlr(
-                __void_p=xnvme.xnvme_void_p(xnvme.xnvme_dev_get_ctrlr(dev).void_pointer)
-            ),
-            xnvme.XNVME_PR_DEF,
-        )
-        xnvme.XnvmeSpecIdfyNs.pr(
-            xnvme.XnvmeSpecIdfyNs(
-                __void_p=xnvme.xnvme_void_p(xnvme.xnvme_dev_get_ns(dev).void_pointer)
-            ),
-            xnvme.XNVME_PR_DEF,
-        )
-
-        fill_lba_range_and_write_buffer_with_character(
-            wbuf, buf_nbytes, rng_slba, rng_elba, xfer_naddr, dev, geo, nsid, "!"
-        )
-
-        print("Writing payload scattered within LBA range [slba,elba]")
-        wbuf_mem_view = np.ctypeslib.as_array(
-            ctypes.cast(wbuf.void_pointer, ctypes.POINTER(ctypes.c_uint8)),
-            shape=(buf_nbytes,),
-        )
-        wbuf_mem_view[:] = np.arange(len(wbuf_mem_view))
-        # xnvmec_buf_fill(wbuf, buf_nbytes, "anum")
-        for count in range(xfer_naddr):
-            ctx = xnvme.XnvmeCmdCtx()
-            xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
-            wbuf_ofz = count * geo.lba_nbytes
-            slba = rng_slba + count * 4
-
-            sranges.append((slba, 0))
-            # sranges.entry[count].slba = slba
-            # sranges.entry[count].rpars = 0  # NLB, bits 15:00
-
-            err = xnvme.xnvme_nvm_write(
-                ctx,
-                nsid,
-                slba,
-                0,
-                xnvme.xnvme_void_p(wbuf.void_pointer + wbuf_ofz),
-                NULL,
-            )
-            assert not (
-                err or xnvme.xnvme_cmd_ctx_cpl_status(ctx)
-            ), xnvme.XnvmeCmdCtx.pr(ctx, xnvme.XNVME_PR_DEF)
-
-        ctx = xnvme.XnvmeCmdCtx()
-        xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
-        nr = xfer_naddr - 1
-
-        print("scopy sranges to sdlba: 0x{sdlba:016x}")
-        print(sranges)
-        # xnvme_spec_nvm_scopy_source_range_pr(sranges, nr, XNVME_PR_DEF)
-
-        err = xnvme.xnvme_nvm_scopy(ctx, nsid, sdlba, sranges.entry, nr, copy_fmt)
-        assert not (err or xnvme.xnvme_cmd_ctx_cpl_status(ctx)), xnvme.XnvmeCmdCtx.pr(
-            ctx, xnvme.XNVME_PR_DEF
-        )
-
-        print("read sdlba: 0x{sdlba:016x}")
-        assert False, "Unimplemented"
-        # memset(rbuf, 0, buf_nbytes)
-        # err = xnvme.xnvme_nvm_read(ctx, nsid, sdlba, nr, rbuf, NULL)
-        # assert not (err or xnvme.xnvme_cmd_ctx_cpl_status(ctx)), xnvme.XnvmeCmdCtx.pr(
-        #     ctx, xnvme.XNVME_PR_DEF
-        # )
-
-        # print("Comparing wbuf and rbuf")
-        # assert np.all(rbuf_mem_view == wbuf_mem_view), xnvme.xnvmec_buf_diff_pr(
-        #     wbuf, rbuf, buf_nbytes, xnvme.XNVME_PR_DEF
-        # )
-
-        # xnvme.xnvme_buf_free(dev, sranges)
-
-    def read_and_compare_lba_range(
-        self, rbuf, cbuf, rng_slba, nlb, mdts_naddr, geo, dev, nsid
-    ):
-        compared_bytes = 0
-        print("Reading and comparing in LBA range [%ld,%ld]", rng_slba, rng_slba + nlb)
-
-        read_lbs = 0
-        r_nlb = 0
-        while read_lbs < nlb:
-            ctx = xnvme.XnvmeCmdCtx()
-            xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
-            r_nlb = min(mdts_naddr, nlb - read_lbs)
-
-            err = xnvme.xnvme_nvm_read(
-                ctx, nsid, rng_slba + read_lbs, r_nlb - 1, rbuf, NULL
-            )
-            assert not (
-                err or xnvme.xnvme_cmd_ctx_cpl_status(ctx)
-            ), "xnvme_nvm_read(): {err: 0x{err:0x}, slba: 0x{rng_slba + read_lbs:016x}}"
-            # xnvme_cmd_ctx_pr(ctx, XNVME_PR_DEF)
-
-            read_bytes = r_nlb * geo.lba_nbytes
-
-            cbuf_mem_view = np.ctypeslib.as_array(
-                ctypes.cast(cbuf.void_pointer, ctypes.POINTER(ctypes.c_uint8)),
-                shape=(read_bytes,),
-            )
-            rbuf_mem_view = np.ctypeslib.as_array(
-                ctypes.cast(rbuf.void_pointer, ctypes.POINTER(ctypes.c_uint8)),
-                shape=(read_bytes,),
-            )
-            assert np.all(cbuf_mem_view == rbuf_mem_view), xnvme.xnvmec_buf_diff_pr(
-                cbuf, rbuf, read_bytes, xnvme.XNVME_PR_DEF
-            )
-            compared_bytes += read_bytes
-
-            read_lbs += r_nlb
-        return compared_bytes
-
-    # /**
-    #  * 0) Fill wbuf with '!'
-    #  * 1) Write the entire LBA range [slba, elba] using wbuf
-    #  * 2) Make sure that we wrote '!'
-    #  * 3) Execute the write zeroes command
-    #  * 4) Fill wbuf with 0
-    #  * 5) Read, with exponential stride, within [slba,elba] using rbuf
-    #  * 6) Verify that the content of rbuf is the same as wbuf
-    #  */
-    @pytest.mark.skipif(True, reason="Unfinished. Backend has to support write-zero")
-    def test_write_zeroes(self, boilerplate):
-        (
-            dev,
-            geo,
-            wbuf,
-            rbuf,
-            buf_nbytes,
-            mdts_naddr,
-            nsid,
-            rng_slba,
-            rng_elba,
-        ) = boilerplate
-        nlb = rng_elba - rng_slba
-
-        written_bytes = fill_lba_range_and_write_buffer_with_character(
-            wbuf, buf_nbytes, rng_slba, rng_elba, mdts_naddr, dev, geo, nsid, "!"
-        )
-
-        print(f"Written bytes {written_bytes} with !")
-
-        rbuf_mem_view = np.ctypeslib.as_array(
-            ctypes.cast(rbuf.void_pointer, ctypes.POINTER(ctypes.c_uint8)),
-            shape=(buf_nbytes,),
-        )
-        rbuf_mem_view[:] = 0
-        compared_bytes = self.read_and_compare_lba_range(
-            rbuf, wbuf, rng_slba, nlb, mdts_naddr, geo, dev, nsid
-        )
-
-        print(f"Compared {compared_bytes} bytes to !")
-
-        for slba in range(rng_slba, rng_elba, mdts_naddr):
-            ctx = xnvme.XnvmeCmdCtx()
-            xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
-            nlb = min((rng_elba - slba) * geo.lba_nbytes, UINT16_MAX)
-
-            err = xnvme.xnvme_nvm_write_zeroes(ctx, nsid, slba, nlb)
-            assert not (err or xnvme.xnvme_cmd_ctx_cpl_status(ctx)), os.strerror(
-                abs(err)
-            )
-
-        print("Wrote zeroes to LBA range [{rng_slba},{rng_elba}]")
-
-        # Set the rbuf to != 0 so we know that we read zeroes
-        rbuf_mem_view = np.ctypeslib.as_array(
-            ctypes.cast(rbuf.void_pointer, ctypes.POINTER(ctypes.c_uint8)),
-            shape=(buf_nbytes,),
-        )
-        rbuf_mem_view[:] = b"a"
-
-        xnvme.xnvmec_buf_clear(wbuf, buf_nbytes)
-        compared_bytes = self.read_and_compare_lba_range(
-            rbuf, wbuf, rng_slba, nlb, mdts_naddr, geo, dev, nsid
-        )
-        print(f"Compared {compared_bytes} bytes to zero")
+    xnvme.xnvme_buf_free(dev, buf)
+    xnvme.xnvme_dev_close(dev)
