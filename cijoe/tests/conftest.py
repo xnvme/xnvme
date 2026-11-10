@@ -79,6 +79,19 @@ def require_nvme_cli(cijoe):
         pytest.skip("this case also exercises nvme-cli, which is not installed")
 
 
+# Their cmd_io() returns -ENOSYS for any other NVMe command
+ASYNC_READ_WRITE_FLUSH_ONLY = (
+    "io_uring",
+    "io_uring_dmabuf",
+    "libaio",
+    "posix",
+    "kqueue",
+    "iocp",
+    "iocp_th",
+    "ioring",
+)
+
+
 def xnvme_be_opts(options=None, only_labels=[]):
     """Produce a list of "sensible" backend configurations"""
 

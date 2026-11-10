@@ -93,8 +93,17 @@ sub_idfy(struct xnvme_cli *cli)
 }
 
 static void
-cb_noop(struct xnvme_cmd_ctx *XNVME_UNUSED(ctx), void *XNVME_UNUSED(cb_arg))
+cb_status(struct xnvme_cmd_ctx *ctx, void *cb_arg)
 {
+	int *err = cb_arg;
+
+	if (xnvme_cmd_ctx_cpl_status(ctx)) {
+		xnvme_cli_perr("xnvme_nvm_scopy()", EIO);
+		xnvme_cmd_ctx_pr(ctx, XNVME_PR_DEF);
+		*err = -EIO;
+	}
+
+	xnvme_queue_put_cmd_ctx(ctx->async.queue, ctx);
 }
 
 /**
@@ -270,10 +279,9 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 			goto exit;
 		}
 	} else {
-		struct xnvme_cmd_ctx ctx = {0};
 		struct xnvme_queue *queue = NULL;
-
-		xnvme_dev_get_cmd_ctx(dev, &ctx);
+		struct xnvme_cmd_ctx *ctx;
+		int cpl_err = 0;
 
 		xnvme_cli_pinf("Using XNVME_CMD_ASYNC mode");
 
@@ -282,19 +290,25 @@ _scopy_helper(struct xnvme_cli *cli, uint64_t tlbas)
 			xnvme_cli_perr("xnvme_queue_init()", err);
 			goto exit;
 		}
-		ctx.async.queue = queue;
-		ctx.async.cb = cb_noop;
+		xnvme_queue_set_cb(queue, cb_status, &cpl_err);
+		ctx = xnvme_queue_get_cmd_ctx(queue);
 
-		err = xnvme_nvm_scopy(&ctx, nsid, sdlba, range->entry, nr, copy_fmt);
+		err = xnvme_nvm_scopy(ctx, nsid, sdlba, range->entry, nr, copy_fmt);
 		if (err) {
 			xnvme_cli_perr("xnvme_nvm_scopy()", err);
+			xnvme_queue_put_cmd_ctx(queue, ctx);
 			xnvme_queue_term(queue);
 			goto exit;
 		}
 		err = xnvme_queue_drain(queue);
 		if (err < 0) {
 			xnvme_cli_perr("xnvme_queue_drain()", err);
-			xnvme_queue_term(queue);
+		} else {
+			err = cpl_err;
+		}
+
+		xnvme_queue_term(queue);
+		if (err) {
 			goto exit;
 		}
 	}

@@ -1,6 +1,6 @@
 import pytest
 
-from ..conftest import xnvme_parametrize
+from ..conftest import ASYNC_READ_WRITE_FLUSH_ONLY, xnvme_parametrize
 
 
 @xnvme_parametrize(labels=["scc"], opts=["be", "admin", "sync"])
@@ -27,6 +27,8 @@ def test_scopy(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="Linux Block layer does not support simple-copy")
     if be_opts["sync"] in ["block", "psync"]:
         pytest.skip(reason="Does not support simple-copy")
+    if be_opts["async"] in ASYNC_READ_WRITE_FLUSH_ONLY:
+        pytest.skip(reason=f"[async={be_opts['async']}] carries no simple-copy")
 
     err, _ = cijoe.run(f"xnvme_tests_scc scopy {cli_args}")
     assert not err
@@ -49,6 +51,8 @@ def test_scopy_msrc(cijoe, device, be_opts, cli_args):
         pytest.skip(reason="Linux Block layer does not support simple-copy")
     if be_opts["sync"] in ["block", "psync"]:
         pytest.skip(reason="Does not support simple-copy")
+    if be_opts["async"] in ASYNC_READ_WRITE_FLUSH_ONLY:
+        pytest.skip(reason=f"[async={be_opts['async']}] carries no simple-copy")
 
     err, _ = cijoe.run(f"xnvme_tests_scc scopy-msrc {cli_args}")
     assert not err
