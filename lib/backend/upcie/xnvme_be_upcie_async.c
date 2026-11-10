@@ -119,52 +119,57 @@ xnvme_be_upcie_queue_poke(struct xnvme_queue *queue, uint32_t max)
 					    : 0;
 }
 
+/**
+ * dma_rmb() is a compiler barrier, so the queue state the loop advances is kept in locals and
+ * written back once, rather than read from memory again for every completion
+ */
 int
 xnvme_be_upcie_queue_reap(struct xnvme_queue *queue, struct xnvme_cmd_ctx **completions,
 			  uint32_t max)
 {
 	struct xnvme_queue_upcie *upcie_queue = (struct xnvme_queue_upcie *)queue;
 	struct nvme_qpair *qp = &upcie_queue->qpair;
+	struct nvme_request_pool *rpool = qp->rpool;
 	struct nvme_completion *cq = qp->cq;
+	const uint32_t depth = qp->depth;
+	uint32_t head = qp->head;
+	uint32_t phase = qp->phase;
+	size_t top = rpool->top;
 	unsigned int reaped = 0;
 
 	wmb();
 	nvme_qpair_sqdb_update(qp);
 
 	do {
-		struct nvme_completion *cqe;
+		struct nvme_completion *cqe = &cq[head];
+		struct xnvme_cmd_ctx *ctx;
+		uint16_t cid;
 
-		cqe = &cq[qp->head];
-		if (((*(const volatile uint16_t *)&(cqe->status)) & 0x1) != qp->phase) {
+		if (((*(const volatile uint16_t *)&(cqe->status)) & 0x1) != phase) {
 			break;
 		}
 
 		dma_rmb();
 
-		if (++qp->head == qp->depth) {
-			qp->head = 0;
-			qp->phase ^= 1;
+		if (++head == depth) {
+			head = 0;
+			phase ^= 1;
 		}
 
-		reaped++;
+		cid = cqe->cid;
+		ctx = nvme_request_get(rpool, cid)->user;
+		memcpy(&ctx->cpl, cqe, sizeof(ctx->cpl));
+		rpool->stack[top++] = cid;
 
-		{
-			struct xnvme_cmd_ctx *ctx;
-			struct nvme_request *req;
-
-			req = nvme_request_get(qp->rpool, cqe->cid);
-			ctx = req->user;
-			memcpy(&ctx->cpl, cqe, sizeof(ctx->cpl));
-			nvme_request_free(qp->rpool, req->cid);
-
-			queue->base.outstanding -= 1;
-
-			*completions++ = ctx;
-		}
+		completions[reaped++] = ctx;
 	} while (reaped < max);
 
 	if (reaped) {
-		mmio_write32(qp->cqdb, 0, qp->head);
+		qp->head = head;
+		qp->phase = phase;
+		rpool->top = top;
+		queue->base.outstanding -= reaped;
+		mmio_write32(qp->cqdb, 0, head);
 		upcie_queue->pokes_idle = 0;
 		upcie_queue->served_gone_ns = 0;
 		return reaped;

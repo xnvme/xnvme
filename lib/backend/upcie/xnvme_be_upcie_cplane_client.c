@@ -966,7 +966,7 @@ cplane_client_queue_fail_inflight_reap(struct xnvme_queue_upcie *upcie_queue,
 	return failed;
 }
 
-int
+__attribute__((noinline)) int
 xnvme_be_upcie_cplane_queue_reap_idle(struct xnvme_queue_upcie *upcie_queue,
 				      struct xnvme_cmd_ctx **completions, uint32_t max)
 {
