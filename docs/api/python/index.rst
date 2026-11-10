@@ -81,7 +81,7 @@ the :ref:`sec-python-development` section.
 Usage
 -----
 
-See the files in ``bin/*``. At the time of writing this, there were three
+See the files in ``bin/*``. At the time of writing this, there were four
 examples, two of which require no arguments, these are run like so::
 
   # Enumerate devices on the system
@@ -99,6 +99,8 @@ something like this::
 .. note:: In the above example ``sudo -E`` is used. The ``sudo`` is there to
    ensure permission to ``/dev/nvme0n1``, then ``-E`` is there such that the
    **xNVMe** package installed as ``--user`` is available.
+
+The fourth, ``bin/xpy_perf``, reads at a queue depth and prints the rate.
 
 .. _sec-python-development:
 
