@@ -4,7 +4,7 @@
  API Code Examples
 ===================
 
-This section includes three examples of using the **xNVMe** library. These are
+This section includes four examples of using the **xNVMe** library. These are
 gradually increasing in complexity, and are meant to complement the description
 of the :ref:`sec-api-c-core` API.
 
@@ -72,4 +72,42 @@ The example is intended to be easily extended by adding a for-loop and
 submitting multiple commands.
 
 .. literalinclude:: ../../../../examples/xnvme_single_async.c
+   :language: c
+
+.. _sec-api-c-examples-async-reap:
+
+Asynchronous I/O, reaping completions
+=====================================
+
+Instead of having a callback function called for each completed command, the
+completed commands can be reaped from the command queue. Reaping suits a
+caller for which a callback from the library is costly or not possible, such
+as a language binding. Reaping also keeps the processing of completions in one
+loop. The flow differs from the callback flow in these steps:
+
+- The command queue is initialized with ``XNVME_QUEUE_REAP``, and no callback
+  is set on it
+- Before submitting, data of your own can be attached to the command context
+  with ``xnvme_cmd_ctx_set_data()``; it is read back with
+  ``xnvme_cmd_ctx_get_data()`` once the command is reaped
+- Completed commands are retrieved with ``xnvme_queue_reap()``, which stores
+  their command contexts in an array you provide and how many it stored in
+  ``ncompleted``, which is zero when none have completed. Each carries the
+  completion in ``cpl``, also a command that failed. When done with a command
+  context, return it to the command queue, or submit the next command with it.
+  Submitting the next command with the reaped command context saves the calls
+  to ``xnvme_queue_put_cmd_ctx()`` and ``xnvme_queue_get_cmd_ctx()``.
+- An error of ``xnvme_queue_reap()`` reports the state of the queue. It
+  assigns ``ncompleted`` then as well, and the commands it counts are handled
+  as those of a successful call. After ``-EINTR``, ``-EAGAIN`` and ``-EBUSY``
+  the queue is intact and ``xnvme_queue_reap()`` is called again; after any
+  other error the queue has failed and is torn down with
+  ``xnvme_queue_term()``.
+
+How a command queue delivers its completions is fixed when it is initialized:
+``xnvme_queue_poke()``, ``xnvme_queue_drain()`` and ``xnvme_queue_set_cb()``
+return ``-EINVAL`` for a queue initialized with ``XNVME_QUEUE_REAP``, and
+``xnvme_queue_reap()`` returns ``-EINVAL`` for one that was not.
+
+.. literalinclude:: ../../../../examples/xnvme_single_async_reap.c
    :language: c

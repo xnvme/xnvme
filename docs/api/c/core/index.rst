@@ -54,7 +54,8 @@ Commands
 
   A code example is provided using these primitives
   for :ref:`sec-api-c-examples-sync` and via the :ref:`sec-api-c-xnvme_queue`
-  module for :ref:`sec-api-c-examples-async`.
+  module for :ref:`sec-api-c-examples-async`, with a callback, and for
+  :ref:`sec-api-c-examples-async-reap`.
 
 Buffers
   The :ref:`sec-api-c-xnvme_buf` module provides a ``malloc``-like interface for
