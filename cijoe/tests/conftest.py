@@ -84,6 +84,20 @@ def require_nvme_cli(cijoe):
         pytest.skip("this case also exercises nvme-cli, which is not installed")
 
 
+# The async interfaces whose cmd_io() returns -ENOSYS for any command
+# but read, write and flush
+ASYNC_READ_WRITE_FLUSH_ONLY = (
+    "io_uring",
+    "io_uring_dmabuf",
+    "libaio",
+    "posix",
+    "kqueue",
+    "iocp",
+    "iocp_th",
+    "ioring",
+)
+
+
 def xnvme_be_opts(options=None, only_labels=[]):
     """Produce a list of "sensible" backend configurations"""
 
