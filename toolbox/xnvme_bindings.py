@@ -45,7 +45,7 @@ PRELUDE = [
 LICENSE = {"python": "Apache-2.0", "rust": "BSD-3-Clause"}
 
 # Where yace writes each binding, relative to its output directory
-EMITTED = {"python": Path("python") / "xnvme.py", "rust": Path("rust") / "lib.rs"}
+EMITTED = {"python": Path("python") / "xnvme.py", "rust": Path("rust") / "bindings.rs"}
 
 
 def headers(include=INCLUDE):
@@ -66,6 +66,7 @@ def meta(target):
             "brief: The xNVMe C API",
             f"license: {LICENSE[target]}",
             "pkg: xnvme",
+            "crate: xnvme-sys",
             "",
         ]
     )

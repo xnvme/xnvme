@@ -314,7 +314,7 @@ jobs:
     - name: Install dependencies
       run: |
         apt-get update -qy
-        apt-get install -qy curl libclang-17-dev
+        apt-get install -qy curl
 
     - name: Build xNVMe
       run: make common
@@ -330,11 +330,20 @@ jobs:
 
     - uses: dtolnay/rust-toolchain@stable
 
-    - name: Rust, generate and build bindings
+    # yace checks what it generates by building it with cargo
+    - name: Rust, generate bindings
+      run: |
+        python3 -m venv /tmp/yace
+        /tmp/yace/bin/pip install -r python/bindings/requirements.txt
+        /tmp/yace/bin/python toolbox/xnvme_bindings.py rust rust/xnvme-sys/src/xnvme.rs
+
+    - name: Rust, build bindings
       run: cargo build --release --manifest-path rust/Cargo.toml
 
-    - name: Rust, run example
-      run: cargo run --manifest-path rust/Cargo.toml
+    - name: Rust, run examples
+      run: |
+        cargo run --manifest-path rust/Cargo.toml
+        cargo run --manifest-path rust/Cargo.toml --example xnvme_rust_example01
 
   # Build and test xNVMe
   #

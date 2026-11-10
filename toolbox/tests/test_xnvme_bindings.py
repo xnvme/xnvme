@@ -37,6 +37,10 @@ def test_meta_has_the_license_of_each_package():
     assert "license: BSD-3-Clause" in bindings.meta("rust")
 
 
+def test_meta_names_the_crate():
+    assert "crate: xnvme-sys" in bindings.meta("rust")
+
+
 def test_generates_the_python_module(tmp_path):
     pytest.importorskip("yace")
 
