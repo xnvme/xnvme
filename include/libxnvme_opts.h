@@ -87,6 +87,8 @@ struct xnvme_opts {
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned: -EINVAL when
  * `opts` is NULL.
+ *
+ * @errno
  */
 int
 xnvme_opts_set_defaults(struct xnvme_opts *opts);

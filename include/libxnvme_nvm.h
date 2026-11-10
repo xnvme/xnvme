@@ -24,6 +24,8 @@ extern "C" {
  * @param mbuf Pointer to meta-payload
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_nvm_read(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint16_t nlb, void *dbuf,
@@ -54,6 +56,8 @@ xnvme_nvm_read(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint16_t
  * @param mbuf Pointer to buffer; Payload as indicated by 'ctx->opts'
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_nvm_write(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint16_t nlb,
@@ -81,8 +85,9 @@ xnvme_nvm_write_uncorrectable(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t
  * @param slba The LBA to start the write at
  * @param nlb Number Of Logical Blocks
  *
- * @return On success, 0 is returned. On error, -1 is returned, `errno` set to
- * indicate and param ctx.cpl filled with lower-level status codes
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_nvm_write_zeroes(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint16_t nlb);
@@ -119,8 +124,9 @@ xnvme_prep_nvm(struct xnvme_cmd_ctx *ctx, uint8_t opcode, uint32_t nsid, uint64_
  * @param nr Number of ranges in the given ranges-buffer, zero-based value
  * @param copy_fmt Format of the ranges, a value of ::xnvme_nvm_scopy_fmt
  *
- * @return On success, 0 is returned. On error, -1 is returned, `errno` set to
- * indicate and `ctx.cpl` filled with lower-level status codes
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_nvm_scopy(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t sdlba,
@@ -139,7 +145,9 @@ xnvme_nvm_scopy(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t sdlba,
  * @param idw The dataset should be optimized for write access as an integral unit
  * @param idr The dataset should be optimized for read access as an integral unit
  *
- * @return On success, 0 is returned. On error, -1 is returned.
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_nvm_dsm(struct xnvme_cmd_ctx *ctx, uint32_t nsid, struct xnvme_spec_dsm_range *dsm_range,
@@ -158,6 +166,8 @@ xnvme_nvm_dsm(struct xnvme_cmd_ctx *ctx, uint32_t nsid, struct xnvme_spec_dsm_ra
  * @param dbuf_nbytes size of the data-payload in bytes
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_nvm_mgmt_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t mo, uint16_t mos, void *dbuf,
@@ -176,6 +186,8 @@ xnvme_nvm_mgmt_recv(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t mo, uint16
  * @param dbuf_nbytes size of the data-payload in bytes
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_nvm_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t mo, uint16_t mos, void *dbuf,
@@ -192,6 +204,8 @@ xnvme_nvm_mgmt_send(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint8_t mo, uint16
  * @param mbuf Pointer to buffer; Payload as indicated by 'ctx->opts'
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_nvm_compare(struct xnvme_cmd_ctx *ctx, uint32_t nsid, uint64_t slba, uint16_t nlb,

@@ -51,6 +51,8 @@ enum xnvme_queue_opts {
  * @param[out] queue Pointer-pointer to the ::xnvme_queue to initialize
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_queue_init(struct xnvme_dev *dev, uint16_t capacity, int opts, struct xnvme_queue **queue);
@@ -88,6 +90,8 @@ xnvme_queue_get_outstanding(struct xnvme_queue *queue);
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  *
  * @destroys queue
+ *
+ * @errno
  */
 int
 xnvme_queue_term(struct xnvme_queue *queue);
@@ -171,6 +175,8 @@ xnvme_queue_get_cmd_ctx(struct xnvme_queue *queue);
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_queue_put_cmd_ctx(struct xnvme_queue *queue, struct xnvme_cmd_ctx *ctx);
@@ -194,6 +200,8 @@ typedef void (*xnvme_queue_cb)(struct xnvme_cmd_ctx *ctx, void *opaque);
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  *
  * @lifetime cb handle
+ *
+ * @errno
  */
 int
 xnvme_queue_set_cb(struct xnvme_queue *queue, xnvme_queue_cb cb, void *cb_arg);
