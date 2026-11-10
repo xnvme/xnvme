@@ -143,7 +143,7 @@ advance_slba_noop(struct xnvmeperf_job *job)
  * @param ctx  Command context obtained from the job's queue
  * @return     0 on success, negative errno on error
  */
-static int
+static inline int
 submit_io(struct xnvmeperf_job *job, struct xnvme_cmd_ctx *ctx)
 {
 	uint64_t slba = job->peek_slba(job);
@@ -328,6 +328,53 @@ job_reap(struct xnvmeperf_job *job)
 	job->io_completed += completed;
 
 	if (err && err != -EINTR && err != -EAGAIN && err != -EBUSY) {
+		job->queue_err = err;
+		return err;
+	}
+
+	return (int)n;
+}
+
+/**
+ * Retrieves the IOs completed on the job's queue, accounts for each and submits the next IO on
+ * the ctx of each that succeeded; the rest are returned to the queue
+ *
+ * The ctx is not returned to the free-list of the queue: returning each ctx and taking it back
+ * were two calls per IO, chained through the head of that list.
+ *
+ * The errors of xnvme_queue_reap() are handled as in job_reap(). After an error that failed the
+ * queue, every ctx is returned to the queue and no IO is submitted on it.
+ *
+ * @param job  Job whose queue to reap, not in --buf-host-bounce mode
+ * @return     Number of IOs reaped, negative errno when the queue failed; the IOs reaped before
+ *             it failed are accounted for then as well
+ */
+static inline int
+job_reap_resubmit(struct xnvmeperf_job *job)
+{
+	struct xnvme_cmd_ctx **completions = job->completions;
+	struct xnvme_queue *queue = job->queue;
+	uint64_t completed = 0;
+	bool failed;
+	uint32_t n;
+	int err;
+
+	err = xnvme_queue_reap(queue, completions, job->args->qdepth, &n);
+	failed = err && err != -EINTR && err != -EAGAIN && err != -EBUSY;
+	for (uint32_t i = 0; i < n; i++) {
+		struct xnvme_cmd_ctx *ctx = completions[i];
+
+		if (on_completion(job, ctx)) {
+			completed++;
+			if (!failed && !submit_io(job, ctx)) {
+				continue;
+			}
+		}
+		xnvme_queue_put_cmd_ctx(queue, ctx);
+	}
+	job->io_completed += completed;
+
+	if (failed) {
 		job->queue_err = err;
 		return err;
 	}
@@ -703,12 +750,19 @@ thread_fn(void *arg)
 			for (int i = 0; i < thread->ndevs; i++) {
 				struct xnvmeperf_job *job = &thread->jobs[i];
 				struct xnvme_cmd_ctx *ctx;
+				int n;
 
 				if (job->queue_err) {
 					continue;
 				}
 
-				if (job_complete(job) < 0 && job->queue_err) {
+				if (args->completion == XNVMEPERF_COMPLETION_REAP &&
+				    !args->buf_host_bounce) {
+					n = job_reap_resubmit(job);
+				} else {
+					n = job_complete(job);
+				}
+				if (n < 0 && job->queue_err) {
 					continue;
 				}
 
