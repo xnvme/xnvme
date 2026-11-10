@@ -150,6 +150,8 @@ xnvme_be_upcie_cplane_queue_poke_idle(struct xnvme_queue_upcie *upcie_queue);
  * The xnvme_be_upcie_cplane_queue_poke_idle() of a reap: the commands it completes as aborted
  * are stored in 'completions', at most 'max' of them
  *
+ * Not inlined into xnvme_be_upcie_queue_reap(), so its frame is not paid by every reap
+ *
  * @return How many commands it completed
  */
 int
