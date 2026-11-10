@@ -277,6 +277,76 @@ xnvme_be_liburing_poke(struct xnvme_queue *q, uint32_t max)
 	return completed;
 }
 
+int
+xnvme_be_liburing_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **completions, uint32_t max,
+		       uint32_t *ncompleted)
+{
+	struct xnvme_queue_liburing *queue = (void *)q;
+	struct io_uring_cqe *cqe;
+	struct xnvme_cmd_ctx *ctx;
+	unsigned completed;
+	int err = 0;
+
+	max = max > queue->base.outstanding ? queue->base.outstanding : max;
+
+	if (queue->batching) {
+		err = io_uring_submit(&queue->ring);
+		if (err < 0) {
+			XNVME_DEBUG("io_uring_submit, err: %d", err);
+			return err;
+		}
+	}
+
+	completed = 0;
+	for (uint32_t i = 0; i < max; i++) {
+		// with IORING_SETUP_IOPOLL the peek enters the kernel, which a signal interrupts
+		err = io_uring_peek_cqe(&queue->ring, &cqe);
+		if (err == -EAGAIN || err == -EINTR) {
+			err = 0;
+			break;
+		}
+		if (err) {
+			XNVME_DEBUG("FAILED: io_uring_peek_cqe(), err: %d", err);
+			break;
+		}
+
+		ctx = io_uring_cqe_get_data(cqe);
+
+#ifdef XNVME_DEBUG_ENABLED
+		if (!ctx) {
+			XNVME_DEBUG("-{[THIS SHOULD NOT HAPPEN]}-");
+			XNVME_DEBUG("cqe->user_data is NULL! => NO REQ!");
+			XNVME_DEBUG("cqe->res: %d", cqe->res);
+			XNVME_DEBUG("cqe->flags: %u", cqe->flags);
+			err = -EIO;
+			break;
+		}
+#endif
+
+		ctx->cpl.result = cqe->res;
+		if (cqe->res < 0) {
+			ctx->cpl.result = 0;
+			ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC,
+							 -cqe->res);
+			ctx->cpl.status =
+				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+					       XNVME_STATUS_CODE_TYPE_VENDOR);
+		}
+
+		queue->base.outstanding--;
+
+		io_uring_cqe_seen(&queue->ring, cqe);
+
+		*completions++ = ctx;
+
+		completed++;
+	}
+
+	*ncompleted = completed;
+
+	return err;
+}
+
 static inline int
 _cmd_io(struct xnvme_cmd_ctx *ctx, uint64_t addr, size_t dbuf_nbytes, void *mbuf,
 	size_t mbuf_nbytes, int buf_index)
@@ -561,7 +631,7 @@ struct xnvme_be_async g_xnvme_be_liburing_async = {
 	.cmd_io = xnvme_be_liburing_cmd_io,
 	.cmd_iov = xnvme_be_liburing_cmd_iov,
 	.poke = xnvme_be_liburing_poke,
-	.reap = xnvme_be_nosys_queue_reap,
+	.reap = xnvme_be_liburing_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_liburing_init,
 	.term = xnvme_be_liburing_term,
