@@ -19,6 +19,14 @@ enum iopattern {
 	IOPATTERN_VERIFY    = 5, ///< Used for verify subcommand
 };
 
+/**
+ * How a job's completed IOs are delivered; selected with --completion
+ */
+enum xnvmeperf_completion {
+	XNVMEPERF_COMPLETION_CB   = 0, ///< The callback of the queue, from xnvme_queue_poke()
+	XNVMEPERF_COMPLETION_REAP = 1, ///< Retrieved with xnvme_queue_reap()
+};
+
 struct xnvmeperf_args {
 	int ndevs;
 	const char **dev_uris;
@@ -33,6 +41,7 @@ struct xnvmeperf_args {
 	double report_freq;
 	enum iopattern pattern;
 	int queue_opts;
+	enum xnvmeperf_completion completion;
 	int buf_host_bounce;
 	uint8_t gpu_buf; ///< Allocate IO buffers on the GPU; set by --be 'io_uring_dmabuf'
 	struct xnvme_opts opts;

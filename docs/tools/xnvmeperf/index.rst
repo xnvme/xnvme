@@ -79,6 +79,16 @@ Example::
    xnvmeperf run --iopattern randread --qdepth 64 --iosize 4096 \
        --runtime 10 --be upcie --buf-host-bounce --gpu-id 0 0000:01:00.0
 
+``--completion`` selects how a job takes its completed I/Os from the queue:
+``cb``, the default, has ``xnvme_queue_poke()`` call the callback assigned to
+the queue for each, and ``reap`` retrieves them with ``xnvme_queue_reap()``
+into an array of ``--qdepth`` pointers and accounts for them in a loop. The
+I/O submitted is the same, so the two measure what the two completion paths
+of the library cost. ``verify`` takes the option as well. Example::
+
+   xnvmeperf run --iopattern randread --qdepth 32 --iosize 4096 \
+       --runtime 10 --cpumask 0x1 --completion reap /dev/nvme0n1
+
 ``htod-roofline`` measures what that copy delivers on its own: it keeps
 ``--qdepth`` page-locked copies of ``--iosize`` in flight to the GPU for
 ``--runtime`` seconds and reports the host-to-device GB/s, taking no
