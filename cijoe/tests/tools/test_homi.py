@@ -786,14 +786,21 @@ def test_a_queue_survives_a_release_on_another_controller(
     )
 
 
+@pytest.mark.parametrize("completion", ["cb", "reap"])
 @xnvme_parametrize(labels=["pcie"], opts=["be"])
-def test_a_client_outlives_the_server_shutting_down(cijoe, device, be_opts, cli_args):
+def test_a_client_outlives_the_server_shutting_down(
+    cijoe, device, be_opts, cli_args, completion
+):
     """
-    A client whose server stops mid-run gives up its in-flight I/O and exits zero
+    A client whose server stops mid-run gives up its in-flight I/O and exits
 
     The server deletes its clients' queues as it goes, so a client waiting out
-    those commands would hang and pin the heap. The device fixture starts a
-    fresh server afterwards.
+    those commands would hang and pin the heap. A client completing by callback
+    and a client reaping complete them as aborted in functions of their own.
+    The callbacks are all a client completing by callback is told, and it exits
+    zero. xnvme_queue_reap() returns -ENXIO with the aborted commands, so a
+    client reaping exits non-zero. The device fixture starts a fresh server
+    afterwards.
     """
 
     homi_id = _served(cijoe, be_opts)
@@ -802,7 +809,11 @@ def test_a_client_outlives_the_server_shutting_down(cijoe, device, be_opts, cli_
 
     baseline = _queues_on(cijoe, homi_id, uri)
 
-    _bg(cijoe, "shutdown", _perf([uri], be_opts["be"], homi_id, runtime))
+    _bg(
+        cijoe,
+        "shutdown",
+        _perf([uri], be_opts["be"], homi_id, runtime) + f" --completion {completion}",
+    )
 
     took, _, used = _wait_for(
         cijoe, homi_id, lambda _c, u: u.get(uri, 0) > baseline, 30
@@ -816,7 +827,10 @@ def test_a_client_outlives_the_server_shutting_down(cijoe, device, be_opts, cli_
     if rc is None:
         cijoe.run("pgrep -a -x xnvme-perf")
     assert rc is not None, f"the client of {uri} never terminated after its server did"
-    assert rc == "0", f"the client of {uri} exited {rc} after its server shut down"
+    if completion == "reap":
+        assert rc != "0", f"the client of {uri} exited 0 with its queue failed"
+    else:
+        assert rc == "0", f"the client of {uri} exited {rc} after its server shut down"
 
 
 @xnvme_parametrize(labels=["pcie"], opts=["be"])
