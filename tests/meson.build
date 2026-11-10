@@ -156,6 +156,11 @@ if conf_data.get('XNVME_BE_LIBURING_ENABLED')
   tests += {'liburing.c': []}
 endif
 
+# Takes the exporting device by its vfio cdev and the iommufd UAPI
+if is_linux
+  tests += {'dmabuf_vfio.c': []}
+endif
+
 tests_exe = {}
 tests_bins = []
 foreach test_source, tests_args : tests

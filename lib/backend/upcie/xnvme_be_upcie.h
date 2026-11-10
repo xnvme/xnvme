@@ -264,6 +264,13 @@ struct xnvme_buf_reg;
 
 /** Count a registration of `dmem` holding the range, or leave memory in the heap at `heap` be;
  * -ENOENT when the range is to be registered */
+/**
+ * The dmamem a payload at `buf` translates through: that of the dma-buf registered there with
+ * xnvme_buf_register_dmabuf(), else `dmem`
+ */
+struct dmamem *
+xnvme_be_upcie_dmem_of(struct dmamem *dmem, void *buf);
+
 int
 xnvme_be_upcie_buf_reg_ref(struct dmamem *dmem, uint64_t heap, size_t heap_nbytes, void *vaddr,
 			   size_t nbytes);

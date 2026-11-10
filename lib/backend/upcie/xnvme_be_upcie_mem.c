@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <xnvme_be_upcie.h>
 #include <xnvme_be_upcie_cplane_client.h>
 #include <xnvme_be_state.h>
@@ -79,7 +80,7 @@ xnvme_be_upcie_buf_free(const struct xnvme_dev *dev, void *buf)
 static int
 xnvme_be_upcie_buf_vtophys(const struct xnvme_dev *XNVME_UNUSED(dev), void *buf, uint64_t *phys)
 {
-	*phys = dmamem_va_to_iova(&g_upcie_rte.mem.dmem, buf);
+	*phys = dmamem_va_to_iova(xnvme_be_upcie_dmem_of(&g_upcie_rte.mem.dmem, buf), buf);
 
 	return 0;
 }
@@ -380,6 +381,213 @@ xnvme_be_upcie_buf_reg_unref(struct dmamem *dmem, uint64_t heap, size_t heap_nby
 	return 0;
 }
 
+/**
+ * The dma-bufs registered with xnvme_buf_register_dmabuf() on host memory
+ *
+ * Each has a dmamem of its own, as the heap's translates the heap alone, and a command finds it
+ * by its payload's address (xnvme_be_upcie_dmem_of()); the count makes that lookup free in a
+ * process that registers none. The library's registrations (xnvme_buf_reg) count references, and
+ * each one's priv is its index here.
+ */
+#define DMABUF_REGS_MAX 64
+
+static struct {
+	struct dmamem dmem;
+	struct xnvme_be_upcie_ctrlr *ctrlr; ///< Registered through this client's server, or NULL
+	uint64_t offset;                    ///< Of the registration with the server
+	int alive;
+} g_dmabuf_regs[DMABUF_REGS_MAX];
+static int g_dmabuf_regs_count;
+
+struct dmamem *
+xnvme_be_upcie_dmem_of(struct dmamem *dmem, void *buf)
+{
+	const char *at = buf;
+
+	for (int i = 0; g_dmabuf_regs_count && (i < DMABUF_REGS_MAX); ++i) {
+		const char *base = g_dmabuf_regs[i].dmem.base_va;
+
+		if (g_dmabuf_regs[i].alive && (at >= base) &&
+		    (at < base + g_dmabuf_regs[i].dmem.size)) {
+			return &g_dmabuf_regs[i].dmem;
+		}
+	}
+
+	return dmem;
+}
+
+/**
+ * Map `fd` for the controllers: through the server of a client, else, with the controllers on
+ * vfio-cdev, into their IOAS with IOMMU_IOAS_MAP_FILE, which upstream kernels allow for the
+ * dma-bufs vfio-pci exports
+ */
+static int
+_dmabuf_map(const struct xnvme_dev *dev, int fd, void *vaddr, size_t nbytes, int *at)
+{
+	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
+	struct dmamem *dmem = NULL;
+	uint64_t iova = 0;
+	int err;
+
+	for (int i = 0; i < DMABUF_REGS_MAX; ++i) {
+		if (!g_dmabuf_regs[i].alive) {
+			dmem = &g_dmabuf_regs[i].dmem;
+			*at = i;
+			break;
+		}
+	}
+	if (!dmem) {
+		XNVME_DEBUG("FAILED: %d dma-bufs are registered already", DMABUF_REGS_MAX);
+		return -ENOMEM;
+	}
+
+	if (g_upcie_rte.connection.alive) {
+		const struct hostmem_shared_desc *desc = NULL;
+		uint64_t offset = 0;
+
+		err = xnvme_be_upcie_cplane_register_client_mem(state->ctrlr, fd, nbytes, 4096,
+								&desc, &offset);
+		if (err) {
+			XNVME_DEBUG("FAILED: registering with the server; err(%d)", err);
+			return err;
+		}
+		err = dmamem_from_shared(dmem, vaddr, desc, xnvme_be_upcie_va_bits(),
+					 DMAMEM_BACKING_DMABUF);
+		if (err) {
+			XNVME_DEBUG("FAILED: dmamem_from_shared(); err(%d)", err);
+			xnvme_be_upcie_cplane_unregister_client_mem(state->ctrlr, offset);
+			return err;
+		}
+		g_dmabuf_regs[*at].ctrlr = state->ctrlr;
+		g_dmabuf_regs[*at].offset = offset;
+	} else {
+		if ((XNVME_BE_UPCIE_MODE_VFIO_CDEV != g_upcie_rte.mode) ||
+		    !g_upcie_rte.cdev.ioas_alive) {
+			XNVME_DEBUG("FAILED: without a server, a dma-buf takes vfio-cdev");
+			return -ENOSYS;
+		}
+		err = iommufd_ioas_map_file(&g_upcie_rte.cdev.iommufd, fd, 0, nbytes,
+					    IOMMU_IOAS_MAP_READABLE | IOMMU_IOAS_MAP_WRITEABLE,
+					    &iova);
+		if (err) {
+			XNVME_DEBUG("FAILED: iommufd_ioas_map_file(); err(%d)", err);
+			return err;
+		}
+		memset(dmem, 0, sizeof(*dmem));
+		dmem->fd = -1;
+		dmem->base_va = vaddr;
+		dmem->base_iova = iova;
+		dmem->size = nbytes;
+		dmem->backing = DMAMEM_BACKING_DMABUF;
+		dmem->translator = DMAMEM_XLATE_ARITHMETIC;
+		g_dmabuf_regs[*at].ctrlr = NULL;
+	}
+
+	g_dmabuf_regs[*at].alive = 1;
+	g_dmabuf_regs_count++;
+
+	return 0;
+}
+
+static int
+_dmabuf_unmap(int at)
+{
+	struct dmamem *dmem = &g_dmabuf_regs[at].dmem;
+	int err;
+
+	if (g_dmabuf_regs[at].ctrlr) {
+		err = xnvme_be_upcie_cplane_unregister_client_mem(g_dmabuf_regs[at].ctrlr,
+								  g_dmabuf_regs[at].offset);
+	} else {
+		err = iommufd_ioas_unmap(&g_upcie_rte.cdev.iommufd, dmem->base_iova, dmem->size);
+	}
+	if (err) {
+		XNVME_DEBUG("FAILED: unmapping the dma-buf; err(%d)", err);
+		return err;
+	}
+	if (DMAMEM_XLATE_LUT == dmem->translator) {
+		dmamem_registry_term(&dmem->registry);
+	}
+
+	memset(&g_dmabuf_regs[at], 0, sizeof(g_dmabuf_regs[at]));
+	g_dmabuf_regs_count--;
+
+	return 0;
+}
+
+static int
+xnvme_be_upcie_buf_register_dmabuf(const struct xnvme_dev *dev, int fd, void *vaddr)
+{
+	struct xnvme_buf_reg *reg;
+	size_t nbytes;
+	off_t size;
+	int at = -1, err;
+
+	size = lseek(fd, 0, SEEK_END);
+	if (size <= 0) {
+		XNVME_DEBUG("FAILED: lseek(dma-buf), errno: %d", errno);
+		return size ? -errno : -EINVAL;
+	}
+	nbytes = (size_t)size;
+	if (((uintptr_t)vaddr | nbytes) & 4095) {
+		XNVME_DEBUG("FAILED: vaddr(%p) nbytes(%zu) not aligned to 4096", vaddr, nbytes);
+		return -EINVAL;
+	}
+
+	err = xnvme_buf_reg_find(&g_upcie_rte.mem.dmem, vaddr, nbytes, &reg);
+	if (!err) {
+		reg->refs += 1;
+		return 0;
+	}
+	if (err != -ENOENT) {
+		return err;
+	}
+
+	err = _dmabuf_map(dev, fd, vaddr, nbytes, &at);
+	if (err) {
+		return err;
+	}
+	err = xnvme_buf_reg_add(&g_upcie_rte.mem.dmem, vaddr, nbytes, (uint64_t)at);
+	if (err) {
+		_dmabuf_unmap(at);
+	}
+
+	return err;
+}
+
+static int
+xnvme_be_upcie_buf_unregister(const struct xnvme_dev *XNVME_UNUSED(dev), void *vaddr)
+{
+	struct xnvme_buf_reg *reg;
+	int err;
+
+	err = xnvme_buf_reg_find(&g_upcie_rte.mem.dmem, vaddr, 1, &reg);
+	if (err || (reg->vaddr != vaddr)) {
+		XNVME_DEBUG("FAILED: vaddr(%p) is not a registered dma-buf", vaddr);
+		return -EINVAL;
+	}
+	if (reg->refs > 1) {
+		reg->refs -= 1;
+		return 0;
+	}
+
+	err = _dmabuf_unmap((int)reg->priv);
+	if (err) {
+		return err;
+	}
+	xnvme_buf_reg_remove(reg);
+
+	return 0;
+}
+
+static int
+xnvme_be_upcie_buf_get_alignment(const struct xnvme_dev *XNVME_UNUSED(dev), size_t *align)
+{
+	*align = 4096;
+
+	return 0;
+}
+
 #endif
 
 struct xnvme_be_mem g_xnvme_be_upcie_mem = {
@@ -390,7 +598,9 @@ struct xnvme_be_mem g_xnvme_be_upcie_mem = {
 	.buf_free = xnvme_be_upcie_buf_free,
 	.buf_vtophys = xnvme_be_upcie_buf_vtophys,
 	.buf_register = xnvme_be_nosys_buf_register,
-	.buf_unregister = xnvme_be_nosys_buf_unregister,
+	.buf_register_dmabuf = xnvme_be_upcie_buf_register_dmabuf,
+	.buf_unregister = xnvme_be_upcie_buf_unregister,
+	.buf_get_alignment = xnvme_be_upcie_buf_get_alignment,
 #else
 	.buf_alloc = xnvme_be_nosys_buf_alloc,
 	.buf_realloc = xnvme_be_nosys_buf_realloc,

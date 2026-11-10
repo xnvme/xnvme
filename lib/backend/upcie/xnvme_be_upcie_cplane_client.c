@@ -236,8 +236,8 @@ xnvme_be_upcie_cplane_sync_cmd_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size
 			return err;
 		}
 
-		err = nvme_request_prep_command_prps_contig_dmamem(prp, state->dmem, dbuf,
-								   dbuf_nbytes, cmd);
+		err = nvme_request_prep_command_prps_contig_dmamem(
+			prp, xnvme_be_upcie_dmem_of(state->dmem, dbuf), dbuf, dbuf_nbytes, cmd);
 		if (err) {
 			XNVME_DEBUG("FAILED: prps_contig_dmamem(); err(%d)", err);
 			pthread_mutex_unlock(&cplane_admin_lock);
