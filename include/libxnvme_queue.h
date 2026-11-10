@@ -16,6 +16,8 @@
  */
 struct xnvme_queue;
 
+struct xnvme_cmd_ctx;
+
 /**
  * Command Queue initialization options
  *
@@ -28,19 +30,25 @@ enum xnvme_queue_opts {
 	XNVME_QUEUE_P2P_CQ_MIRROR = 0x1 << 2,
 	/// XNVME_QUEUE_SQ_HOSTMEM: a GPU-issued queue submits from host memory
 	XNVME_QUEUE_SQ_HOSTMEM = 0x1 << 3,
+	/// XNVME_QUEUE_REAP: completions are reaped with xnvme_queue_reap(), no callback is called
+	XNVME_QUEUE_REAP = 0x1 << 4,
 };
 
 /**
  * Allocate a Command Queue for asynchronous command submission and completion
+ *
+ * How the queue delivers completions is fixed here. With ::XNVME_QUEUE_REAP in 'opts', completed
+ * commands are retrieved with xnvme_queue_reap(). Without it, xnvme_queue_poke() calls the
+ * callback assigned with xnvme_queue_set_cb() for each of them.
  *
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
  * @param dev Device handle (::xnvme_dev) obtained with xnvme_dev_open()
  * @param capacity Maximum number of outstanding commands on the initialized queue, note that it
- * must be a power of 2 within the range [1,4096]
- * @param opts Queue options
- * @param queue Pointer-pointer to the ::xnvme_queue to initialize
+ * must be a power of 2 within the range [1,2048]
+ * @param opts Queue options, see ::xnvme_queue_opts
+ * @param[out] queue Pointer-pointer to the ::xnvme_queue to initialize
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
@@ -78,6 +86,8 @@ xnvme_queue_get_outstanding(struct xnvme_queue *queue);
  * @param queue Pointer to the ::xnvme_queue to tear down
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @destroys queue
  */
 int
 xnvme_queue_term(struct xnvme_queue *queue);
@@ -85,7 +95,9 @@ xnvme_queue_term(struct xnvme_queue *queue);
 /**
  * Process completions of commands on the given ::xnvme_queue
  *
- * Set process 'max' to limit number of completions, 0 means no max.
+ * Calls the callback of each completed command, see xnvme_queue_set_cb(). Set 'max' to limit
+ * number of completions, 0 means no max. On a queue initialized with ::XNVME_QUEUE_REAP it
+ * returns -EINVAL.
  *
  * @param queue Pointer to the ::xnvme_queue to poke for completions
  * @param max The max number of completions to complete
@@ -99,6 +111,9 @@ xnvme_queue_poke(struct xnvme_queue *queue, uint32_t max);
 /**
  * Process outstanding commands on the given ::xnvme_queue until it is empty
  *
+ * Calls xnvme_queue_poke() until no command is outstanding. On a queue initialized with
+ * ::XNVME_QUEUE_REAP it returns -EINVAL, as xnvme_queue_poke() does.
+ *
  * @param queue Pointer to the ::xnvme_queue to wait/process commands on
  *
  * @return On success, number of commands processed, may be 0. On error, negative `errno` is
@@ -106,6 +121,51 @@ xnvme_queue_poke(struct xnvme_queue *queue, uint32_t max);
  */
 int
 xnvme_queue_drain(struct xnvme_queue *queue);
+
+/**
+ * Retrieve completed commands of the given ::xnvme_queue
+ *
+ * Stores a pointer to the command-context of each completed command in 'completions', up to
+ * 'max' of them, and the number it stored in 'ncompleted', which is 0 when none have completed.
+ * Each command-context carries the completion in `cpl` and the pointer assigned with
+ * xnvme_cmd_ctx_set_data(), and is returned to the queue with xnvme_queue_put_cmd_ctx() or
+ * submitted again. A command that failed is a completion like any other, with its status in
+ * `cpl`.
+ *
+ * 'ncompleted' is assigned on every return, and the command-contexts it counts are handled as
+ * those of a successful call, also when an error is returned. An error reports the state of the
+ * queue, never the status of a command. Three errors leave the queue intact, and the caller
+ * calls xnvme_queue_reap() again:
+ *
+ * - -EINTR: a signal interrupted the call
+ * - -EAGAIN: the backend lacked the resources to submit or retrieve at the time
+ * - -EBUSY: the device is busy, such as a controller being reset
+ *
+ * Any other error means the queue failed, and the queue is torn down with xnvme_queue_term().
+ * The commands not handed back by then are indeterminate: they may or may not have been carried
+ * out.
+ *
+ * Only a queue initialized with ::XNVME_QUEUE_REAP delivers completions this way, and no
+ * callback is called on such a queue. For any other queue, and for a 'max' of 0,
+ * xnvme_queue_reap() returns -EINVAL with 'ncompleted' 0.
+ *
+ * @param queue Pointer to the ::xnvme_queue to retrieve completed commands of
+ * @param[out] completions Array of at least 'max' pointers, receiving the command-contexts
+ * @param max The most command-contexts to retrieve; must be above zero
+ * @param[out] ncompleted The number of command-contexts stored in 'completions', may be 0;
+ * assigned on every return
+ *
+ * @return On success, 0 is returned. On error, negative `errno` is returned: -EINTR, -EAGAIN
+ * or -EBUSY when the queue is intact and the call is to be repeated, -EINVAL for a queue
+ * without ::XNVME_QUEUE_REAP or a 'max' of 0, and any other when the queue failed.
+ *
+ * @len completions max
+ * @len completions ncompleted
+ * @errno partial
+ */
+int
+xnvme_queue_reap(struct xnvme_queue *queue, struct xnvme_cmd_ctx **completions, uint32_t max,
+		 uint32_t *ncompleted);
 
 /**
  * Retrieve a command-context from the given queue for async. command execution with the queue
@@ -146,7 +206,8 @@ typedef void (*xnvme_queue_cb)(struct xnvme_cmd_ctx *ctx, void *opaque);
  *
  * The callback is kept in every command context of the queue, and invoked from
  * xnvme_queue_poke() and xnvme_queue_drain() for each command completed, until the queue is
- * terminated or the callback is assigned again.
+ * terminated or the callback is assigned again. On a queue initialized with
+ * ::XNVME_QUEUE_REAP it returns -EINVAL, as no callback is called on such a queue.
  *
  * @param queue The ::xnvme_queue to assign default callback function for
  * @param cb The callback function to use

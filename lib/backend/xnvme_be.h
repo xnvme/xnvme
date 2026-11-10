@@ -12,7 +12,7 @@
 
 #define XNVME_BE_QUEUE_STATE_NBYTES 256
 
-#define XNVME_BE_ASYNC_NBYTES 64
+#define XNVME_BE_ASYNC_NBYTES 72
 #define XNVME_BE_SYNC_NBYTES  24
 #define XNVME_BE_ADMIN_NBYTES 24
 #define XNVME_BE_DEV_NBYTES   40
@@ -43,6 +43,14 @@ struct xnvme_be_async {
 
 	// Non-blocking reaping of up to `max` io completions
 	int (*poke)(struct xnvme_queue *, uint32_t);
+
+	// Non-blocking reaping of up to `max` (never 0) io completions into the array, on a queue
+	// initialized with XNVME_QUEUE_REAP. Stores how many it stored in the last argument, which
+	// is 0 when it is called, also when it returns an error. An error is negative errno for
+	// the state of the queue, never the status of a command: -EINTR, -EAGAIN or -EBUSY when
+	// the queue is intact, any other when it failed. What completes outside a reap on such a
+	// queue waits for the next one
+	int (*reap)(struct xnvme_queue *, struct xnvme_cmd_ctx **, uint32_t, uint32_t *);
 
 	// Blocking reaping of all outstanding io completions
 	int (*wait)(struct xnvme_queue *);

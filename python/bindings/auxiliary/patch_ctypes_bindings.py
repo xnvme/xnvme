@@ -88,7 +88,12 @@ def main(args):
     # file we skip writing them. We also need to handle try/except blocks that wrap
     # these functions - if we skip the function, we need to insert 'pass' to avoid
     # empty try blocks.
-    skiplist = ["xnvme_cmd_ctx_set_cb", "xnvme_cmd_ctx_cpl_status"]
+    skiplist = [
+        "xnvme_cmd_ctx_set_cb",
+        "xnvme_cmd_ctx_set_data",
+        "xnvme_cmd_ctx_get_data",
+        "xnvme_cmd_ctx_cpl_status",
+    ]
 
     with open(path, "w") as pfile:
         lines = code.splitlines()

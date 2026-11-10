@@ -63,6 +63,7 @@ xnvme_queue_init(struct xnvme_dev *dev, uint16_t capacity, int opts, struct xnvm
 	}
 	(*queue)->base.capacity = capacity;
 	(*queue)->base.dev = dev;
+	(*queue)->base.opts = opts;
 
 	SLIST_INIT(&(*queue)->base.pool);
 
@@ -93,6 +94,9 @@ xnvme_queue_init(struct xnvme_dev *dev, uint16_t capacity, int opts, struct xnvm
 int
 xnvme_queue_set_cb(struct xnvme_queue *queue, xnvme_queue_cb cb, void *cb_arg)
 {
+	if (queue->base.opts & XNVME_QUEUE_REAP) {
+		return -EINVAL;
+	}
 	for (uint32_t i = 0; i <= queue->base.capacity; ++i) {
 		queue->pool_storage[i].async.cb = cb;
 		queue->pool_storage[i].async.cb_arg = cb_arg;
@@ -104,6 +108,9 @@ xnvme_queue_set_cb(struct xnvme_queue *queue, xnvme_queue_cb cb, void *cb_arg)
 int
 xnvme_queue_poke(struct xnvme_queue *queue, uint32_t max)
 {
+	if (queue->base.opts & XNVME_QUEUE_REAP) {
+		return -EINVAL;
+	}
 	if (!queue->base.outstanding) {
 		return 0;
 	}
@@ -116,6 +123,9 @@ xnvme_queue_drain(struct xnvme_queue *queue)
 {
 	int acc = 0;
 
+	if (queue->base.opts & XNVME_QUEUE_REAP) {
+		return -EINVAL;
+	}
 	while (queue->base.outstanding) {
 		int err;
 
@@ -129,6 +139,25 @@ xnvme_queue_drain(struct xnvme_queue *queue)
 	}
 
 	return acc;
+}
+
+int
+xnvme_queue_reap(struct xnvme_queue *queue, struct xnvme_cmd_ctx **completions, uint32_t max,
+		 uint32_t *ncompleted)
+{
+	*ncompleted = 0;
+
+	if (!(queue->base.opts & XNVME_QUEUE_REAP)) {
+		return -EINVAL;
+	}
+	if (!max) {
+		return -EINVAL;
+	}
+	if (!queue->base.outstanding) {
+		return 0;
+	}
+
+	return queue->base.dev->be.async.reap(queue, completions, max, ncompleted);
 }
 
 uint32_t

@@ -34,7 +34,8 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_cmd_ctx_entry) == 128, "Incorrect size")
 
 struct xnvme_queue_base {
 	struct xnvme_dev *dev; ///< Device on which the queue operates
-	uint32_t capacity;     ///< Maximum number of outstanding commands
+	uint16_t capacity;     ///< Maximum number of outstanding commands
+	uint16_t opts;         ///< The ::xnvme_queue_opts the queue was initialized with
 	uint32_t outstanding;  ///< Number of currently outstanding commands
 	SLIST_HEAD(, xnvme_cmd_ctx_entry) pool;
 };
