@@ -14,7 +14,7 @@ enum xnvme_enumerate_action {
 /**
  * Opaque device handle.
  *
- * @see xnvme_dev_open()
+ * @see xnvme_dev_open_uri()
  *
  * @struct xnvme_dev
  */
@@ -59,7 +59,7 @@ xnvme_enumerate(const char *sys_uri, struct xnvme_opts *opts, xnvme_enumerate_cb
  * fstat() system calls. The system-interface and methods utilized are
  * backend-specific.
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
@@ -69,7 +69,7 @@ xnvme_dev_derive_geo(struct xnvme_dev *dev);
 /**
  * Returns the geometry of the given device
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  *
  * @return The geometry (struct xnvme_geo) of given device handle
  */
@@ -80,7 +80,7 @@ xnvme_dev_get_geo(const struct xnvme_dev *dev);
  * Returns the NVMe identify controller structure associated with the given
  * device
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  *
  * @return On success, pointer to namespace structure. On error, NULL is
  * returned and `errno` is set to indicate the error
@@ -92,7 +92,7 @@ xnvme_dev_get_ctrlr(const struct xnvme_dev *dev);
  * Returns the NVMe identify controller structure specific to the Command Set
  * and Namespace associated with the given device
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  *
  * @return On success, pointer to namespace structure. On error, NULL is
  * returned and `errno` is set to indicate the error
@@ -104,7 +104,7 @@ xnvme_dev_get_ctrlr_css(const struct xnvme_dev *dev);
  * Returns the NVMe identify namespace structure associated with the given
  * device
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  *
  * @return On success, pointer to namespace structure. On error, NULL is
  * returned and `errno` is set to indicate the error
@@ -116,7 +116,7 @@ xnvme_dev_get_ns(const struct xnvme_dev *dev);
  * Returns the NVMe identify namespace structure specific to the Command Set and
  * Namespace associated with the given device
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  *
  * @return On success, pointer to namespace structure. On error, NULL is
  * returned and `errno` is set to indicate the error
@@ -127,7 +127,7 @@ xnvme_dev_get_ns_css(const struct xnvme_dev *dev);
 /**
  * Returns the NVMe namespace identifier associated with the given `dev`
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  *
  * @return On success, NVMe namespace identifier is returned
  */
@@ -137,7 +137,7 @@ xnvme_dev_get_nsid(const struct xnvme_dev *dev);
 /**
  * Returns the NVMe Command Set Identifier associated with the given `dev`
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  *
  * @return On success, NVMe Command Set Identifier is returned
  */
@@ -148,7 +148,7 @@ xnvme_dev_get_csi(const struct xnvme_dev *dev);
  * Returns the representation of device identifier once decoded from
  * text-representation for the given `dev`
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  *
  * @return On success, device identifier is returned
  */
@@ -158,7 +158,7 @@ xnvme_dev_get_ident(const struct xnvme_dev *dev);
 /**
  * Returns the opts struct for the given `dev`
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  *
  * @return On success, device options are returned
  */
@@ -168,7 +168,7 @@ xnvme_dev_get_opts(const struct xnvme_dev *dev);
 /**
  * Returns the internal backend state of the given `dev`
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  *
  * @return On success, the internal backend state is returned.
  */
@@ -194,13 +194,13 @@ xnvme_dev_get_ssw(const struct xnvme_dev *dev);
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
  * @param dev_uri File path "/dev/nvme0n1" or "0000:04.01"
- * @param opts Options for library backend and system-interfaces
+ * @param opts Options for library backend and system-interfaces, NULL for the defaults
+ * @param[out] dev Pointer-pointer to the ::xnvme_dev to open; NULL on error
  *
- * @return On success, a handle to the device. On error, NULL is returned and `errno` set to
- * indicate the error.
+ * @return On success, 0 is returned. On error, negative `errno` is returned.
  */
-struct xnvme_dev *
-xnvme_dev_open(const char *dev_uri, struct xnvme_opts *opts);
+int
+xnvme_dev_open_uri(const char *dev_uri, struct xnvme_opts *opts, struct xnvme_dev **dev);
 
 /**
  * Destroy the given device handle (::xnvme_dev)
@@ -208,7 +208,9 @@ xnvme_dev_open(const char *dev_uri, struct xnvme_opts *opts);
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
+ *
+ * @destroys dev
  */
 void
 xnvme_dev_close(struct xnvme_dev *dev);

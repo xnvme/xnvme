@@ -22,9 +22,9 @@ ctrlr_open(struct xnvme_cli *cli)
 
 	opts.nsid = 0;
 
-	dev = xnvme_dev_open(cli->args.uri, &opts);
-	if (!dev) {
-		xnvme_cli_perr("xnvme_dev_open()", -errno);
+	err = xnvme_dev_open_uri(cli->args.uri, &opts, &dev);
+	if (err) {
+		xnvme_cli_perr("xnvme_dev_open_uri()", err);
 		return NULL;
 	}
 

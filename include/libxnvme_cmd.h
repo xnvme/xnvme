@@ -80,7 +80,7 @@ xnvme_cmd_ctx_get_data(const struct xnvme_cmd_ctx *ctx)
 /**
  * Initialize the given command-context for issuing synchronous commands to the given device
  *
- * @param dev Device handle (::xnvme_dev) obtained with xnvme_dev_open(), or with
+ * @param dev Device handle (::xnvme_dev) obtained with xnvme_dev_open_uri(), or with
  * xnvme_file_open()
  * @param ctx The ::xnvme_cmd_ctx to initialize; all of it is overwritten
  *

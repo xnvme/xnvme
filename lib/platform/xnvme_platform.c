@@ -293,10 +293,10 @@ enumerate_controller(const char *uri, const char *kernel_driver, struct enumerat
 	int err;
 
 	ctrlr_opts.nsid = 0;
-	ctrlr_dev = xnvme_dev_open(uri, &ctrlr_opts);
-	if (!ctrlr_dev) {
-		XNVME_DEBUG("FAILED: xnvme_dev_open(%s) for controller", uri);
-		return -errno;
+	err = xnvme_dev_open_uri(uri, &ctrlr_opts, &ctrlr_dev);
+	if (err) {
+		XNVME_DEBUG("FAILED: xnvme_dev_open_uri(%s) for controller", uri);
+		return err;
 	}
 
 	if (kernel_driver) {
@@ -341,9 +341,8 @@ enumerate_controller(const char *uri, const char *kernel_driver, struct enumerat
 
 		ns_opts.nsid = nslist[i];
 
-		ns_dev = xnvme_dev_open(uri, &ns_opts);
-		if (!ns_dev) {
-			XNVME_DEBUG("FAILED: xnvme_dev_open(%s, nsid=%u)", uri, nslist[i]);
+		if (xnvme_dev_open_uri(uri, &ns_opts, &ns_dev)) {
+			XNVME_DEBUG("FAILED: xnvme_dev_open_uri(%s, nsid=%u)", uri, nslist[i]);
 			continue;
 		}
 
@@ -412,9 +411,8 @@ enumerate_scan_cb(const struct xnvme_ident *ident, void *cb_args)
 			opts.nsid = ident->nsid ? ident->nsid : 1;
 		}
 
-		dev = xnvme_dev_open(ident->uri, &opts);
-		if (!dev) {
-			XNVME_DEBUG("FAILED: xnvme_dev_open(%s)", ident->uri);
+		if (xnvme_dev_open_uri(ident->uri, &opts, &dev)) {
+			XNVME_DEBUG("FAILED: xnvme_dev_open_uri(%s)", ident->uri);
 			return 0;
 		}
 

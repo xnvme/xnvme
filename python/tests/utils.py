@@ -24,6 +24,14 @@ def pointer_equal(ptr1, ptr2):
     )
 
 
+def dev_open(uri, opts):
+    """The device xnvme_dev_open_uri() opens 'uri' with 'opts' as, or NULL"""
+
+    dev = ctypes.POINTER(xnvme.xnvme_dev)()
+    xnvme.xnvme_dev_open_uri(char_pointer_cast(uri), opts, ctypes.byref(dev))
+    return dev
+
+
 def dev_from_params(device, be_opts):
     """
     Returns a device-handle as described by the given dictionary-parameters
@@ -42,7 +50,7 @@ def dev_from_params(device, be_opts):
     # Directly assign the namespace-identifier value
     opts.nsid = device["nsid"]
 
-    return xnvme.xnvme_dev_open(char_pointer_cast(device["uri"]), ctypes.byref(opts))
+    return dev_open(device["uri"], ctypes.byref(opts))
 
 
 def buf_and_view(dev, buffer_size):

@@ -14,7 +14,7 @@ The device handle contract
 
 Device handles are opaque pointers of type :c:struct:`xnvme_dev`.
 Device handles are obtained via the public **xNVMe** API
-call :c:func:`xnvme_dev_open()`, and released via a call
+call :c:func:`xnvme_dev_open_uri()`, and released via a call
 to :c:func:`xnvme_dev_close()`.
 
 The entities involved in the implementation of this and their individual
@@ -24,7 +24,7 @@ here.
 These functions are implemented in the library-private **device module**
 (``xnvme_dev.c``). The **device module** is responsible for allocating
 and initializing the data-structure associated with and encapsulating the
-device handle upon :c:func:`xnvme_dev_open()` and freeing these resources
+device handle upon :c:func:`xnvme_dev_open_uri()` and freeing these resources
 upon :c:func:`xnvme_dev_close()`.
 
 Device handles are system interface specific; file-descriptors on UNIX-like
@@ -73,7 +73,7 @@ info on how it is setup is useful, it is provided below.
   # describing the backend, thus showing which "configuration" it ended up with
   dev.opts 
 
-  # Initialized by xnvme_dev_open() using helper xnvme_ident_from_uri(), then
+  # Initialized by xnvme_dev_open_uri() using helper xnvme_ident_from_uri(), then
   # backends further manipulate the structure
   dev.ident 
 

@@ -23,9 +23,9 @@ open_close_fn(void *arg)
 	struct worker *w = arg;
 
 	for (uint64_t round = 0; round < w->rounds; ++round) {
-		struct xnvme_dev *dev = xnvme_dev_open(w->cli->args.uri, &w->opts);
+		struct xnvme_dev *dev;
 
-		if (!dev) {
+		if (xnvme_dev_open_uri(w->cli->args.uri, &w->opts, &dev)) {
 			w->nerr += 1;
 			continue;
 		}
@@ -165,10 +165,9 @@ test_queues(struct xnvme_cli *cli, void *(*fn)(void *))
 		xnvme_cli_perr("xnvme_cli_to_opts()", err);
 		return err;
 	}
-	dev = xnvme_dev_open(cli->args.uri, &opts);
-	if (!dev) {
-		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open()", err);
+	err = xnvme_dev_open_uri(cli->args.uri, &opts, &dev);
+	if (err) {
+		xnvme_cli_perr("xnvme_dev_open_uri()", err);
 		return err;
 	}
 

@@ -41,9 +41,9 @@ main(int argc, char **argv)
 		return argc < 2;
 	}
 
-	dev = xnvme_dev_open(argv[1], &opts);
-	if (!dev) {
-		xnvme_cli_perr("xnvme_dev_open()", errno);
+	err = xnvme_dev_open_uri(argv[1], &opts, &dev);
+	if (err) {
+		xnvme_cli_perr("xnvme_dev_open_uri()", err);
 		return 1;
 	}
 	nsid = xnvme_dev_get_nsid(dev);

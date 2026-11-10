@@ -98,9 +98,35 @@ xnvme_opts_default(void)
 }
 
 /**
+ * @deprecated Use xnvme_dev_open_uri(), which returns the handle through a parameter
+ *
+ * @param dev_uri File path "/dev/nvme0n1" or "0000:04.01"
+ * @param opts Options for library backend and system-interfaces, NULL for the defaults
+ *
+ * @return On success, a handle to the device. On error, NULL is returned and `errno` set to
+ * indicate the error.
+ */
+static inline struct xnvme_dev *
+xnvme_dev_open(const char *dev_uri, struct xnvme_opts *opts)
+{
+	static int warned;
+	struct xnvme_dev *dev;
+	int err;
+
+	xnvme_compat_deprecated(&warned, "xnvme_dev_open", "xnvme_dev_open_uri");
+	err = xnvme_dev_open_uri(dev_uri, opts, &dev);
+	if (err) {
+		errno = -err;
+		return NULL;
+	}
+
+	return dev;
+}
+
+/**
  * @deprecated Use xnvme_dev_get_cmd_ctx()
  *
- * @param dev Device handle (::xnvme_dev) obtained with xnvme_dev_open()
+ * @param dev Device handle (::xnvme_dev) obtained with xnvme_dev_open_uri()
  *
  * @return A command-context for issuing synchronous commands to the given device
  */

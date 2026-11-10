@@ -44,7 +44,7 @@ enum xnvme_queue_opts {
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
- * @param dev Device handle (::xnvme_dev) obtained with xnvme_dev_open()
+ * @param dev Device handle (::xnvme_dev) obtained with xnvme_dev_open_uri()
  * @param capacity Maximum number of outstanding commands on the initialized queue, note that it
  * must be a power of 2 within the range [1,4096]
  * @param opts Queue options, see ::xnvme_queue_opts

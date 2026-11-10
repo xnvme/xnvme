@@ -335,9 +335,9 @@ cli_cmd(enum cli_cmd_kind kind, int argc, char **argv)
 		return 0;
 	}
 
-	dev = xnvme_dev_open(uri, &opts);
-	if (!dev) {
-		fprintf(stderr, "xnvme %s: opening '%s' failed: %s\n", name, uri, strerror(errno));
+	err = xnvme_dev_open_uri(uri, &opts, &dev);
+	if (err) {
+		fprintf(stderr, "xnvme %s: opening '%s' failed: %s\n", name, uri, strerror(-err));
 		return 1;
 	}
 	if (data_len) {

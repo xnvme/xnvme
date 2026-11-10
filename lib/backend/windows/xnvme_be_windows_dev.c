@@ -116,7 +116,7 @@ xnvme_be_windows_file_opts(struct xnvme_opts *opts)
 /**
  * Creates a device handle (::xnvme_dev) based on the given device-uri in Windows
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  *
  * @return On success, a handle to the device. On error, GetLastError() is returned.
  */
@@ -247,7 +247,7 @@ xnvme_be_windows_dev_open(struct xnvme_dev *dev)
 /**
  * Destroy the given device handle in Windows
  *
- * @param dev Device handle obtained with xnvme_dev_open() / xnvme_dev_openf()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  */
 static void
 xnvme_be_windows_dev_close(struct xnvme_dev *dev)

@@ -81,7 +81,7 @@ C: API
   a call made while another thread uses the same device, queue or buffer for
   I/O is not covered
 
-  - ``xnvme_dev_open()``, ``xnvme_dev_close()``, ``xnvme_enumerate()``,
+  - ``xnvme_dev_open_uri()``, ``xnvme_dev_close()``, ``xnvme_enumerate()``,
     ``xnvme_queue_init()``, ``xnvme_queue_term()``, ``xnvme_buf_alloc()``,
     ``xnvme_buf_realloc()``, ``xnvme_buf_free()``, their ``xnvme_buf_phys_*()``
     variants, ``xnvme_buf_vtophys()``, ``xnvme_buf_register()``,

@@ -17,7 +17,7 @@
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param nbytes The size of the allocated buffer in bytes
  *
  * @return On success, a pointer to the allocated memory is returned. On error, NULL is returned
@@ -37,7 +37,7 @@ xnvme_buf_alloc(const struct xnvme_dev *dev, size_t nbytes);
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param buf The buffer to reallocate
  * @param nbytes The size of the allocated buffer in bytes
  *
@@ -53,7 +53,7 @@ xnvme_buf_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes);
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param buf Pointer to a buffer allocated with xnvme_buf_alloc()
  */
 void
@@ -67,7 +67,7 @@ xnvme_buf_free(const struct xnvme_dev *dev, void *buf);
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param nbytes The size of the allocated buffer in bytes
  * @param phys A pointer to the variable to hold the physical address of the allocated buffer. If
  * NULL, the physical address is not returned.
@@ -84,7 +84,7 @@ xnvme_buf_phys_alloc(const struct xnvme_dev *dev, size_t nbytes, uint64_t *phys)
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param buf Pointer to a buffer allocated with xnvme_buf_phys_alloc()
  */
 void
@@ -98,7 +98,7 @@ xnvme_buf_phys_free(const struct xnvme_dev *dev, void *buf);
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param buf The buffer to reallocate
  * @param nbytes The size of the allocated buffer in bytes
  * @param phys A pointer to the variable to hold the physical address of the allocated buffer. If
@@ -120,7 +120,7 @@ xnvme_buf_phys_realloc(const struct xnvme_dev *dev, void *buf, size_t nbytes, ui
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param buf Pointer to a buffer allocated with xnvme_buf_alloc()
  * @param phys A pointer to the variable to hold the physical address of the given buffer.
  *
@@ -146,7 +146,7 @@ xnvme_buf_vtophys(const struct xnvme_dev *dev, void *buf, uint64_t *phys);
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param vaddr The address the caller accesses the memory at
  * @param nbytes The number of bytes to register, starting at vaddr
  *
@@ -161,7 +161,7 @@ xnvme_buf_register(const struct xnvme_dev *dev, void *vaddr, size_t nbytes);
  * @note Control plane: serialised with the other control-plane calls, not with I/O on the
  * same device, queue or buffer; see Thread Safety in the API documentation
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param vaddr The address the memory was registered at
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
@@ -177,7 +177,7 @@ xnvme_buf_unregister(const struct xnvme_dev *dev, void *vaddr);
  * payloads. Retrieve it before allocating memory that is to be registered, to allocate it
  * suitably.
  *
- * @param dev Device handle obtained with xnvme_dev_open()
+ * @param dev Device handle obtained with xnvme_dev_open_uri()
  * @param align Set to the alignment on success
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned and `align` is left

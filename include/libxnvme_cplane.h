@@ -91,7 +91,7 @@ struct xnvme_cplane_ctrlr_info {
  * The servers are asked in turn until one holds the controller. Neither this
  * nor xnvme_cplane_get_info() becomes a client: the connection only asks.
  *
- * @param uri Device identifier, as passed to xnvme_dev_open()
+ * @param uri Device identifier, as passed to xnvme_dev_open_uri()
  * @param info Filled on success
  *
  * @return On success, 0 is returned. On error, negative errno is returned:

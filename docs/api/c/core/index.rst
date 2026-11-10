@@ -14,7 +14,7 @@ Device Interaction
   the :ref:`sec-api-c-xnvme_dev-func-xnvme_enumerate` function, which
   invokes callback functions for each discovered device, providing the
   opaque handle to the device. Another way to obtain device handles is
-  through direct calls to :ref:`sec-api-c-xnvme_dev-func-xnvme_dev_open`,
+  through direct calls to :ref:`sec-api-c-xnvme_dev-func-xnvme_dev_open_uri`,
   where the essential structure is the option struct
   (:ref:`sec-api-c-xnvme_opts-struct-xnvme_opts`).
 

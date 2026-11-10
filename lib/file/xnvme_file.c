@@ -51,5 +51,14 @@ xnvme_file_sync(struct xnvme_dev *fh)
 struct xnvme_dev *
 xnvme_file_open(const char *pathname, struct xnvme_opts *opts)
 {
-	return xnvme_dev_open(pathname, opts);
+	struct xnvme_dev *dev;
+	int err;
+
+	err = xnvme_dev_open_uri(pathname, opts, &dev);
+	if (err) {
+		errno = -err;
+		return NULL;
+	}
+
+	return dev;
 }

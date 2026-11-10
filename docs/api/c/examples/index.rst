@@ -47,7 +47,7 @@ Asynchronous I/O
 
 The typical flow for doing asynchronous IO can be reduced to the following:
 
-- Open the device with ``xnvme_dev_open()``
+- Open the device with ``xnvme_dev_open_uri()``
 - Initialize the command queue with ``xnvme_queue_init()``
 - Set the queue callback with ``xnvme_queue_set_cb()``
 - Get a command context from the queue with ``xnvme_queue_get_cmd_ctx()``

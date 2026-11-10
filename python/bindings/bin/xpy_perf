@@ -86,9 +86,10 @@ def run(x, args):
     if args.async_:
         set_str(opts, "async", args.async_, keep)
 
-    dev = x.xnvme_dev_open(args.uri.encode(), ctypes.byref(opts))
-    if not dev:
-        raise SystemExit(f"FAILED: xnvme_dev_open({args.uri})")
+    dev = ctypes.POINTER(record(x, "xnvme_dev"))()
+    err = x.xnvme_dev_open_uri(args.uri.encode(), ctypes.byref(opts), ctypes.byref(dev))
+    if err:
+        raise SystemExit(f"FAILED: xnvme_dev_open_uri({args.uri}), err({err})")
 
     lba_nbytes = x.xnvme_dev_get_geo(dev).contents.lba_nbytes
     if args.iosize % lba_nbytes:

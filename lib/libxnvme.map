@@ -108,7 +108,7 @@
 		xnvme_dev_get_opts;
 		xnvme_dev_get_be_state;
 		xnvme_dev_get_ssw;
-		xnvme_dev_open;
+		xnvme_dev_open_uri;
 		xnvme_dev_close;
 
 		# libxnvme_driver.h

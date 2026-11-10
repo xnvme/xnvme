@@ -777,19 +777,21 @@ xnvme_dev_get_be_state(const struct xnvme_dev *dev)
 	return dev->be.state;
 }
 
-struct xnvme_dev *
-xnvme_dev_open(const char *dev_uri, struct xnvme_opts *opts)
+int
+xnvme_dev_open_uri(const char *dev_uri, struct xnvme_opts *opts, struct xnvme_dev **dev)
 {
 	struct xnvme_opts opts_default = {0};
-	struct xnvme_dev *dev = NULL;
 	int err;
 
-	xnvme_opts_set_defaults(&opts_default);
-
-	if (!dev_uri) { ///< Ensure a dev_uri is given
-		errno = EINVAL;
-		return NULL;
+	if (!dev) {
+		return -EINVAL;
 	}
+	*dev = NULL;
+	if (!dev_uri) {
+		return -EINVAL;
+	}
+
+	xnvme_opts_set_defaults(&opts_default);
 
 	if (!opts) { ///< Set defaults when none are given
 		opts = &opts_default;
@@ -801,32 +803,33 @@ xnvme_dev_open(const char *dev_uri, struct xnvme_opts *opts)
 		opts->create_mode = opts_default.create_mode;
 	}
 
-	err = xnvme_dev_alloc(&dev);
+	err = xnvme_dev_alloc(dev);
 	if (err) {
 		XNVME_DEBUG("FAILED: failed xnvme_dev_alloc()");
-		errno = -err;
-		return NULL;
+		return err;
 	}
 
-	err = xnvme_ident_from_uri(dev_uri, &dev->ident);
+	err = xnvme_ident_from_uri(dev_uri, &(*dev)->ident);
 	if (err) {
 		XNVME_DEBUG("FAILED: xnvme_ident_from_uri(), err: %d", err);
-		errno = -err;
-		free(dev);
-		return NULL;
+		goto failed;
 	}
 
 	xnvme_lock();
-	err = g_xnvme_platform->dev_open(dev, opts);
+	err = g_xnvme_platform->dev_open(*dev, opts);
 	xnvme_unlock();
 	if (err) {
 		XNVME_DEBUG("FAILED: failed opening uri: %s", dev_uri);
-		errno = -err;
-		free(dev);
-		return NULL;
+		goto failed;
 	}
 
-	return dev;
+	return 0;
+
+failed:
+	free(*dev);
+	*dev = NULL;
+
+	return err;
 }
 
 void
