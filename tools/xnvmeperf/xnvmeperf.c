@@ -142,7 +142,7 @@ advance_slba_noop(struct xnvmeperf_job *job)
  * @param ctx  Command context obtained from the job's queue
  * @return     0 on success, negative errno on error
  */
-static int
+static inline int
 submit_io(struct xnvmeperf_job *job, struct xnvme_cmd_ctx *ctx)
 {
 	uint64_t slba = job->peek_slba(job);
@@ -318,6 +318,41 @@ job_reap(struct xnvmeperf_job *job)
 			completed += on_completion(job, completions[i]);
 			xnvme_queue_put_cmd_ctx(queue, completions[i]);
 		}
+	}
+	job->io_completed += completed;
+
+	return n;
+}
+
+/**
+ * Retrieves the IOs completed on the job's queue, accounts for each and submits the next IO on
+ * the ctx of each that succeeded; the rest are returned to the queue
+ *
+ * The ctx is not returned to the free-list of the queue: returning each ctx and taking it back
+ * were two calls per IO, chained through the head of that list.
+ *
+ * @param job  Job whose queue to reap, not in --buf-host-bounce mode
+ * @return     Number of IOs reaped, negative errno on error
+ */
+static inline int
+job_reap_resubmit(struct xnvmeperf_job *job)
+{
+	struct xnvme_cmd_ctx **completions = job->completions;
+	struct xnvme_queue *queue = job->queue;
+	uint64_t completed = 0;
+	int n;
+
+	n = xnvme_queue_reap(queue, completions, job->args->qdepth);
+	for (int i = 0; i < n; i++) {
+		struct xnvme_cmd_ctx *ctx = completions[i];
+
+		if (on_completion(job, ctx)) {
+			completed++;
+			if (!submit_io(job, ctx)) {
+				continue;
+			}
+		}
+		xnvme_queue_put_cmd_ctx(queue, ctx);
 	}
 	job->io_completed += completed;
 
@@ -688,7 +723,12 @@ thread_fn(void *arg)
 				struct xnvmeperf_job *job = &thread->jobs[i];
 				struct xnvme_cmd_ctx *ctx;
 
-				job_complete(job);
+				if (args->completion == XNVMEPERF_COMPLETION_REAP &&
+				    !args->buf_host_bounce) {
+					job_reap_resubmit(job);
+				} else {
+					job_complete(job);
+				}
 
 				while ((ctx = xnvme_queue_get_cmd_ctx(job->queue))) {
 					if (submit_io(job, ctx)) {
