@@ -51,6 +51,8 @@ enum xnvme_queue_opts {
  * @param[out] queue Pointer-pointer to the ::xnvme_queue to initialize
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_queue_init(struct xnvme_dev *dev, uint16_t capacity, int opts, struct xnvme_queue **queue);
@@ -88,6 +90,8 @@ xnvme_queue_get_outstanding(struct xnvme_queue *queue);
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  *
  * @destroys queue
+ *
+ * @errno
  */
 int
 xnvme_queue_term(struct xnvme_queue *queue);
@@ -150,7 +154,8 @@ xnvme_queue_drain(struct xnvme_queue *queue);
  * xnvme_queue_reap() returns -EINVAL with 'ncompleted' 0.
  *
  * @param queue Pointer to the ::xnvme_queue to retrieve completed commands of
- * @param[out] completions Array of at least 'max' pointers, receiving the command-contexts
+ * @arrparam[out] completions Array of at least 'max' pointers, receiving the command-contexts
+ * @len_at{max} @nwritten_at{ncompleted}
  * @param max The most command-contexts to retrieve; must be above zero
  * @param[out] ncompleted The number of command-contexts stored in 'completions', may be 0;
  * assigned on every return
@@ -159,8 +164,6 @@ xnvme_queue_drain(struct xnvme_queue *queue);
  * or -EBUSY when the queue is intact and the call is to be repeated, -EINVAL for a queue
  * without ::XNVME_QUEUE_REAP or a 'max' of 0, and any other when the queue failed.
  *
- * @len completions max
- * @len completions ncompleted
  * @errno partial
  */
 int
@@ -192,6 +195,8 @@ xnvme_queue_get_cmd_ctx(struct xnvme_queue *queue);
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_queue_put_cmd_ctx(struct xnvme_queue *queue, struct xnvme_cmd_ctx *ctx);
@@ -216,6 +221,8 @@ typedef void (*xnvme_queue_cb)(struct xnvme_cmd_ctx *ctx, void *opaque);
  * @return On success, 0 is returned. On error, negative `errno` is returned.
  *
  * @lifetime cb handle
+ *
+ * @errno
  */
 int
 xnvme_queue_set_cb(struct xnvme_queue *queue, xnvme_queue_cb cb, void *cb_arg);

@@ -86,6 +86,8 @@ xnvme_cmd_ctx_get_data(const struct xnvme_cmd_ctx *ctx)
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned: -EINVAL when
  * `dev` or `ctx` is NULL.
+ *
+ * @errno
  */
 int
 xnvme_dev_get_cmd_ctx(struct xnvme_dev *dev, struct xnvme_cmd_ctx *ctx);
@@ -120,15 +122,19 @@ xnvme_cmd_ctx_cpl_status(struct xnvme_cmd_ctx *ctx)
  * the command has completed, whereas a context obtained via
  * xnvme_queue_get_cmd_ctx() submits asynchronously and returns once the command
  * has been submitted; its completion is then processed via xnvme_queue_poke(),
- * or the context handed back by xnvme_queue_reap().
+ * or the context handed back by xnvme_queue_reap(). With such a context, 'dbuf'
+ * and 'mbuf' must remain valid until the command has completed.
  *
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
- * @param dbuf pointer to data-payload
+ * @arrparam[in,out] dbuf pointer to data-payload @len_at{dbuf_nbytes}
  * @param dbuf_nbytes size of data-payload in bytes
- * @param mbuf pointer to meta-payload
+ * @arrparam[in,out] mbuf pointer to meta-payload @len_at{mbuf_nbytes}
  * @param mbuf_nbytes size of the meta-payload in bytes
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @nullable dbuf mbuf
+ * @errno
  */
 int
 xnvme_cmd_pass(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
@@ -142,10 +148,13 @@ xnvme_cmd_pass(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *
  * @param dvec array of data iovecs
  * @param dvec_cnt number of elements in dvec
  * @param dvec_nbytes size of the meta-payload in bytes
- * @param mbuf pointer to meta-payload
+ * @arrparam[in,out] mbuf pointer to meta-payload @len_at{mbuf_nbytes}
  * @param mbuf_nbytes size of the meta-payload in bytes
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @nullable mbuf
+ * @errno
  */
 int
 xnvme_cmd_pass_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
@@ -155,12 +164,15 @@ xnvme_cmd_pass_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cn
  * Pass a NVMe Admin Command through to the device with minimal intervention
  *
  * @param ctx Pointer to command context (::xnvme_cmd_ctx)
- * @param dbuf pointer to data-payload
+ * @arrparam[in,out] dbuf pointer to data-payload @len_at{dbuf_nbytes}
  * @param dbuf_nbytes size of data-payload in bytes
- * @param mbuf pointer to meta-payload
+ * @arrparam[in,out] mbuf pointer to meta-payload @len_at{mbuf_nbytes}
  * @param mbuf_nbytes size of the meta-payload in bytes
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @nullable dbuf mbuf
+ * @errno
  */
 int
 xnvme_cmd_pass_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,

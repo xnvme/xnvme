@@ -21,9 +21,12 @@
  */
 #define XNVME_OPTS_NQN_LEN 224
 
+/**
+ * The Command Set Selected (CC.CSS) that the SPDK backend configures a controller with
+ */
 struct xnvme_opts_css {
-	uint32_t value;
-	uint32_t given;
+	uint32_t value; ///< The value of CC.CSS
+	uint32_t given; ///< Nonzero when value is given; else the backend uses its default
 };
 
 /**
@@ -87,6 +90,8 @@ struct xnvme_opts {
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned: -EINVAL when
  * `opts` is NULL.
+ *
+ * @errno
  */
 int
 xnvme_opts_set_defaults(struct xnvme_opts *opts);
