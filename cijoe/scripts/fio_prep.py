@@ -66,7 +66,7 @@ def fio_commands(cijoe, repos):
 
     commands = [
         (f"git clone {repos['remote']} {repos['path']} || true", "/tmp"),
-        (f"git checkout {repos['tag']} || true", repos["path"]),
+        (f"git checkout -f {repos['tag']} || true", repos["path"]),
         ("git rev-parse --short HEAD || true", repos["path"]),
         (None, None),
         (f"{make} clean", repos["path"]),
@@ -94,7 +94,7 @@ def fio_commands_windows(repos):
     commands = [
         (f"git clone {repos['remote']} {repos['path']} || true", "/tmp"),
         ("git clean -fdX", repos["path"]),
-        (f"git checkout {repos['tag']} || true", repos["path"]),
+        (f"git checkout -f {repos['tag']} || true", repos["path"]),
         ("git rev-parse --short HEAD || true", repos["path"]),
         (None, None),
         ("make CFLAGS='-O0'", repos["path"]),
