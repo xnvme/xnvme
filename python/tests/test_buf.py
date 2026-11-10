@@ -1,4 +1,4 @@
-import xnvme.ctypes_bindings.api as xnvme
+import xnvme
 from conftest import xnvme_parametrize
 from utils import dev_from_params
 

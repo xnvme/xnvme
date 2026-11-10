@@ -5,8 +5,7 @@ Utilities used with pytest / xnvme-python-bindings
 import ctypes
 
 import numpy
-import xnvme.ctypes_bindings as xnvme
-from xnvme.ctypes_bindings.api import char_pointer_cast
+import xnvme
 
 
 def xnvme_cmd_ctx_cpl_status(ctx):
@@ -27,8 +26,8 @@ def pointer_equal(ptr1, ptr2):
 def dev_open(uri, opts):
     """The device xnvme_dev_open_uri() opens 'uri' with 'opts' as, or NULL"""
 
-    dev = ctypes.POINTER(xnvme.xnvme_dev)()
-    xnvme.xnvme_dev_open_uri(char_pointer_cast(uri), opts, ctypes.byref(dev))
+    dev = ctypes.POINTER(xnvme.XnvmeDev)()
+    xnvme.xnvme_dev_open_uri(uri, opts, ctypes.byref(dev))
     return dev
 
 
@@ -40,7 +39,7 @@ def dev_from_params(device, be_opts):
     the pytest-fixture named xnvme_parametrize.
     """
 
-    opts = xnvme.xnvme_opts()
+    opts = xnvme.XnvmeOpts()
     xnvme.xnvme_opts_set_defaults(ctypes.byref(opts))
 
     # The string options are char arrays of xnvme_opts, which take bytes

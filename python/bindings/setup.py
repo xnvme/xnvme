@@ -13,7 +13,7 @@ setuptools.setup(
     version="0.7.5",
     author="Simon A. F. Lund",
     author_email="os@safl.dk",
-    description="xNVMe Cython and ctypes language-bindings for Python",
+    description="xNVMe language-bindings for Python, through ctypes",
     long_description=long_description,
     url="https://github.com/xnvme/xnvme",
     project_urls={
@@ -28,11 +28,10 @@ setuptools.setup(
     data_files=[
         ("bin", glob.glob("bin/*")),
     ],
-    packages=setuptools.find_namespace_packages(include=["xnvme.*"]),
-    python_requires=">=3.6",
+    packages=["xnvme", "xnvme.tests"],
+    python_requires=">=3.9",
     install_requires=[
         "pytest",
-        "setuptools>=40.1",  # Introduction of find_namespace_packages
     ],
     zip_safe=False,
 )

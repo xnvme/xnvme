@@ -3,7 +3,7 @@ from ctypes import byref, pointer
 
 import numpy as np
 import pytest
-import xnvme.ctypes_bindings.api as xnvme
+import xnvme
 from conftest import xnvme_parametrize
 from utils import buf_and_view, dev_from_params, xnvme_cmd_ctx_cpl_status
 
@@ -19,7 +19,7 @@ class KVException(Exception):
 
 
 def kvs_store(dev, kbuf, kbuf_nbytes, vbuf, vbuf_nbytes, opts=0):
-    ctx = xnvme.xnvme_cmd_ctx()
+    ctx = xnvme.XnvmeCmdCtx()
     xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
     err = xnvme.xnvme_kvs_store(
         byref(ctx),
@@ -41,7 +41,7 @@ def kvs_store(dev, kbuf, kbuf_nbytes, vbuf, vbuf_nbytes, opts=0):
 
 
 def kvs_retrieve(dev, kbuf, kbuf_nbytes, vbuf, vbuf_nbytes, opts=0):
-    ctx = xnvme.xnvme_cmd_ctx()
+    ctx = xnvme.XnvmeCmdCtx()
     xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
     err = xnvme.xnvme_kvs_retrieve(
         byref(ctx),
@@ -63,7 +63,7 @@ def kvs_retrieve(dev, kbuf, kbuf_nbytes, vbuf, vbuf_nbytes, opts=0):
 
 
 def kvs_exist(dev, kbuf, kbuf_nbytes):
-    ctx = xnvme.xnvme_cmd_ctx()
+    ctx = xnvme.XnvmeCmdCtx()
     xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
     err = xnvme.xnvme_kvs_exist(
         byref(ctx),
@@ -82,7 +82,7 @@ def kvs_exist(dev, kbuf, kbuf_nbytes):
 
 
 def kvs_delete(dev, kbuf, kbuf_nbytes):
-    ctx = xnvme.xnvme_cmd_ctx()
+    ctx = xnvme.XnvmeCmdCtx()
     xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
     err = xnvme.xnvme_kvs_delete(
         byref(ctx),
@@ -101,7 +101,7 @@ def kvs_delete(dev, kbuf, kbuf_nbytes):
 
 
 def kvs_list(dev, kbuf, kbuf_nbytes, vbuf, vbuf_nbytes, opts=0):
-    ctx = xnvme.xnvme_cmd_ctx()
+    ctx = xnvme.XnvmeCmdCtx()
     xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
     err = xnvme.xnvme_kvs_list(
         byref(ctx),

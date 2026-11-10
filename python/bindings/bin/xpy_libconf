@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
+import itertools
 import sys
 
-import xnvme.ctypes_bindings as xnvme
-
-xnvme.guard_unloadable()
+import xnvme
 
 
 def main():
-    """Print xNVMe library information"""
+    """Print xNVMe library information, the NULL-terminated strings of libconf"""
 
-    xnvme.xnvme_libconf_pr(xnvme.xnvme_libconf.get(), xnvme.XNVME_PR_DEF)
+    entries = xnvme.xnvme_libconf_get().contents.entries
+
+    print("xnvme_libconf:")
+    print("  entries:")
+    for i in itertools.count():
+        if not entries[i]:
+            break
+        print(f"  - '{entries[i].decode()}'")
 
     return 0
 

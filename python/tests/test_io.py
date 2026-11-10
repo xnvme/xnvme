@@ -1,7 +1,7 @@
 from ctypes import byref, pointer
 
 import numpy
-import xnvme.ctypes_bindings.api as xnvme
+import xnvme
 from conftest import xnvme_parametrize
 from utils import buf_and_view, dev_from_params, xnvme_cmd_ctx_cpl_status
 
@@ -19,7 +19,7 @@ def test_io_sync(cijoe, device, be_opts, cli_args):
     lba_nbytes = xnvme.xnvme_dev_get_geo(dev).contents.lba_nbytes
     nlb = 0
 
-    ctx = xnvme.xnvme_cmd_ctx()
+    ctx = xnvme.XnvmeCmdCtx()
     xnvme.xnvme_dev_get_cmd_ctx(dev, byref(ctx))
 
     data, data_view = buf_and_view(dev, lba_nbytes)

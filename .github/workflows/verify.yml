@@ -273,10 +273,6 @@ jobs:
       with:
         name: xnvme-src-archive-with-subprojects
 
-    - name: Python sdist-packages, system-package deps.
-      run: |
-        apt-get install -qy libclang-17-dev
-
     - name: Python sdist-packages, build bindings
       run: |
         pushd python/bindings

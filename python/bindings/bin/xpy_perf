@@ -9,8 +9,7 @@ rate as YAML. On the ramdisk, whose async interface 'nil' completes a command
 without doing it, what is measured is the binding and the completion path.
 
 With '--bindings', the module named 'xnvme' in that directory is used instead
-of xnvme.ctypes_bindings, as the Python module yace generates, whose records
-are named in CamelCase.
+of the one installed.
 """
 import argparse
 import ctypes
@@ -41,25 +40,13 @@ def parse_args(argv=None):
 
 
 def load(bindings):
-    """The binding to use, and the name it goes by"""
+    """The binding to use, and where it was loaded from"""
 
     if bindings:
         sys.path.insert(0, bindings)
-        import xnvme as binding
+    import xnvme as binding
 
-        return binding, "xnvme"
-
-    import xnvme.ctypes_bindings as binding
-
-    binding.guard_unloadable()
-    return binding, "xnvme.ctypes_bindings"
-
-
-def record(binding, name):
-    """The record or type 'name' of 'binding', in either way of naming it"""
-
-    camel = "".join(part.capitalize() for part in name.split("_"))
-    return getattr(binding, name, None) or getattr(binding, camel)
+    return binding, binding.__file__
 
 
 def set_str(struct, field, value):
@@ -77,7 +64,7 @@ def run(x, args):
     """Read as 'args' say through the binding 'x', returning the rate"""
 
     keep = []
-    opts = record(x, "xnvme_opts")()
+    opts = x.XnvmeOpts()
     if x.xnvme_opts_set_defaults(ctypes.byref(opts)):
         raise SystemExit("FAILED: xnvme_opts_set_defaults()")
     opts.nsid = args.dev_nsid
@@ -86,7 +73,7 @@ def run(x, args):
     if args.async_:
         set_str(opts, "async", args.async_)
 
-    dev = ctypes.POINTER(record(x, "xnvme_dev"))()
+    dev = ctypes.POINTER(x.XnvmeDev)()
     err = x.xnvme_dev_open_uri(args.uri.encode(), ctypes.byref(opts), ctypes.byref(dev))
     if err:
         raise SystemExit(f"FAILED: xnvme_dev_open_uri({args.uri}), err({err})")
@@ -101,7 +88,7 @@ def run(x, args):
         raise SystemExit("FAILED: xnvme_buf_alloc()")
 
     reaping = args.completion == "reap"
-    queue = ctypes.POINTER(record(x, "xnvme_queue"))()
+    queue = ctypes.POINTER(x.XnvmeQueue)()
     qopts = int(x.XNVME_QUEUE_REAP) if reaping else 0
     err = x.xnvme_queue_init(dev, args.qdepth, qopts, ctypes.byref(queue))
     if err:
@@ -117,7 +104,7 @@ def run(x, args):
 
     if reaping:
         reap = x.xnvme_queue_reap
-        completed = (ctypes.POINTER(record(x, "xnvme_cmd_ctx")) * args.qdepth)()
+        completed = (ctypes.POINTER(x.XnvmeCmdCtx) * args.qdepth)()
 
         def complete():
             n = reap(queue, completed, args.qdepth)
@@ -140,7 +127,7 @@ def run(x, args):
             state["done"] += 1
             state["outstanding"] -= 1
 
-        callback = record(x, "xnvme_queue_cb")(on_completion)
+        callback = x.XnvmeQueueCb(on_completion)
         keep.append(callback)
         err = x.xnvme_queue_set_cb(queue, callback, None)
         if err:

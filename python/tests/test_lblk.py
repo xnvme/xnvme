@@ -4,7 +4,7 @@ import os
 import conftest
 import numpy as np
 import pytest
-import xnvme.ctypes_bindings.api as xnvme
+import xnvme
 
 pytest.skip("Needs to be ported from Cython to Ctypes", allow_module_level=True)
 
@@ -53,7 +53,7 @@ def fill_lba_range_and_write_buffer_with_character(
 
     written_bytes = 0
     for slba in range(rng_slba, rng_elba, mdts_naddr):
-        ctx = xnvme.xnvme_cmd_ctx()
+        ctx = xnvme.XnvmeCmdCtx()
         xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
         nlb = min(rng_elba - slba, mdts_naddr - 1)
 
@@ -127,7 +127,7 @@ class TestLBLK:
         # xnvme.xnvmec_buf_fill(wbuf, buf_nbytes, "anum")
 
         for count in range(mdts_naddr):
-            ctx = xnvme.xnvme_cmd_ctx()  # TODO: Reuse from before?
+            ctx = xnvme.XnvmeCmdCtx()  # TODO: Reuse from before?
             xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
             wbuf_ofz = count * geo.lba_nbytes
             slba = rng_slba + count * 4
@@ -143,7 +143,7 @@ class TestLBLK:
             assert not (
                 err or xnvme.xnvme_cmd_ctx_cpl_status(ctx)
             ), f"xnvme_nvm_write(): {{err: 0x{err:x}, slba: 0x{slba:016x}}}"
-            # xnvme.xnvme_cmd_ctx_pr(ctx, XNVME_PR_DEF)
+            # xnvme.XnvmeCmdCtx.pr(ctx, XNVME_PR_DEF)
 
         print("Read scattered payload within LBA range [slba,elba]")
 
@@ -155,7 +155,7 @@ class TestLBLK:
         assert not np.all(rbuf_mem_view == wbuf_mem_view)
         # xnvme.xnvmec_buf_clear(rbuf, buf_nbytes)
         for count in range(mdts_naddr):
-            ctx = xnvme.xnvme_cmd_ctx()
+            ctx = xnvme.XnvmeCmdCtx()
             xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
             rbuf_ofz = count * geo.lba_nbytes
             slba = rng_slba + count * 4
@@ -211,8 +211,8 @@ class TestLBLK:
         # xnvme_spec_idfy_ns *nvm = (void *)xnvme_dev_get_ns(dev)
         _nvm = xnvme.xnvme_dev_get_ns(dev)
         _void_p = xnvme.xnvme_void_p(_nvm.void_pointer)
-        nvm = xnvme.xnvme_spec_idfy_ns(__void_p=_void_p)
-        xnvme.xnvme_spec_idfy_ns_pr(nvm, xnvme.XNVME_PR_DEF)
+        nvm = xnvme.XnvmeSpecIdfyNs(__void_p=_void_p)
+        xnvme.XnvmeSpecIdfyNs.pr(nvm, xnvme.XNVME_PR_DEF)
 
         if nvm.msrc:
             xfer_naddr = min(min(nvm.msrc + 1, xfer_naddr), nvm.mcl)
@@ -227,14 +227,14 @@ class TestLBLK:
         # NVMe-struct copy format
         copy_fmt = xnvme.XNVME_NVM_SCOPY_FMT_ZERO
 
-        xnvme.xnvme_spec_idfy_ctrlr_pr(
-            xnvme.xnvme_spec_idfy_ctrlr(
+        xnvme.XnvmeSpecIdfyCtrlr.pr(
+            xnvme.XnvmeSpecIdfyCtrlr(
                 __void_p=xnvme.xnvme_void_p(xnvme.xnvme_dev_get_ctrlr(dev).void_pointer)
             ),
             xnvme.XNVME_PR_DEF,
         )
-        xnvme.xnvme_spec_idfy_ns_pr(
-            xnvme.xnvme_spec_idfy_ns(
+        xnvme.XnvmeSpecIdfyNs.pr(
+            xnvme.XnvmeSpecIdfyNs(
                 __void_p=xnvme.xnvme_void_p(xnvme.xnvme_dev_get_ns(dev).void_pointer)
             ),
             xnvme.XNVME_PR_DEF,
@@ -252,7 +252,7 @@ class TestLBLK:
         wbuf_mem_view[:] = np.arange(len(wbuf_mem_view))
         # xnvmec_buf_fill(wbuf, buf_nbytes, "anum")
         for count in range(xfer_naddr):
-            ctx = xnvme.xnvme_cmd_ctx()
+            ctx = xnvme.XnvmeCmdCtx()
             xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
             wbuf_ofz = count * geo.lba_nbytes
             slba = rng_slba + count * 4
@@ -271,9 +271,9 @@ class TestLBLK:
             )
             assert not (
                 err or xnvme.xnvme_cmd_ctx_cpl_status(ctx)
-            ), xnvme.xnvme_cmd_ctx_pr(ctx, xnvme.XNVME_PR_DEF)
+            ), xnvme.XnvmeCmdCtx.pr(ctx, xnvme.XNVME_PR_DEF)
 
-        ctx = xnvme.xnvme_cmd_ctx()
+        ctx = xnvme.XnvmeCmdCtx()
         xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
         nr = xfer_naddr - 1
 
@@ -282,7 +282,7 @@ class TestLBLK:
         # xnvme_spec_nvm_scopy_source_range_pr(sranges, nr, XNVME_PR_DEF)
 
         err = xnvme.xnvme_nvm_scopy(ctx, nsid, sdlba, sranges.entry, nr, copy_fmt)
-        assert not (err or xnvme.xnvme_cmd_ctx_cpl_status(ctx)), xnvme.xnvme_cmd_ctx_pr(
+        assert not (err or xnvme.xnvme_cmd_ctx_cpl_status(ctx)), xnvme.XnvmeCmdCtx.pr(
             ctx, xnvme.XNVME_PR_DEF
         )
 
@@ -290,7 +290,7 @@ class TestLBLK:
         assert False, "Unimplemented"
         # memset(rbuf, 0, buf_nbytes)
         # err = xnvme.xnvme_nvm_read(ctx, nsid, sdlba, nr, rbuf, NULL)
-        # assert not (err or xnvme.xnvme_cmd_ctx_cpl_status(ctx)), xnvme.xnvme_cmd_ctx_pr(
+        # assert not (err or xnvme.xnvme_cmd_ctx_cpl_status(ctx)), xnvme.XnvmeCmdCtx.pr(
         #     ctx, xnvme.XNVME_PR_DEF
         # )
 
@@ -310,7 +310,7 @@ class TestLBLK:
         read_lbs = 0
         r_nlb = 0
         while read_lbs < nlb:
-            ctx = xnvme.xnvme_cmd_ctx()
+            ctx = xnvme.XnvmeCmdCtx()
             xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
             r_nlb = min(mdts_naddr, nlb - read_lbs)
 
@@ -382,7 +382,7 @@ class TestLBLK:
         print(f"Compared {compared_bytes} bytes to !")
 
         for slba in range(rng_slba, rng_elba, mdts_naddr):
-            ctx = xnvme.xnvme_cmd_ctx()
+            ctx = xnvme.XnvmeCmdCtx()
             xnvme.xnvme_dev_get_cmd_ctx(dev, ctypes.byref(ctx))
             nlb = min((rng_elba - slba) * geo.lba_nbytes, UINT16_MAX)
 
