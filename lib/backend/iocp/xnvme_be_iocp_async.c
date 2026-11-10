@@ -241,6 +241,7 @@ struct xnvme_be_async g_xnvme_be_iocp_async = {
 #ifdef XNVME_BE_IOCP_ENABLED
 	.cmd_io = _windows_async_iocp_cmd_io,
 	.poke = _windows_async_iocp_poke,
+	.reap = xnvme_be_nosys_queue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = _windows_async_iocp_init,
 	.term = _windows_async_iocp_term,
@@ -248,6 +249,7 @@ struct xnvme_be_async g_xnvme_be_iocp_async = {
 #else
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.poke = xnvme_be_nosys_queue_poke,
+	.reap = xnvme_be_nosys_queue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_nosys_queue_init,
 	.term = xnvme_be_nosys_queue_term,
