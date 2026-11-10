@@ -157,6 +157,81 @@ _linux_libaio_poke(struct xnvme_queue *q, uint32_t max)
 }
 
 static int
+_linux_libaio_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **completions, uint32_t max)
+{
+	struct xnvme_queue_libaio *queue = (void *)q;
+	struct timespec timeout;
+	int min, completed;
+	max = max ? max : queue->base.outstanding;
+	max = max > queue->base.outstanding ? queue->base.outstanding : max;
+
+	struct xnvme_aio_ring *ring = (struct xnvme_aio_ring *)queue->aio_ctx;
+
+	/* If ring is incompatible use io_getevents */
+	if (ring->magic != XNVME_AIO_RING_MAGIC || ring->incompat_features != 0) {
+		timeout.tv_sec = 0;
+		timeout.tv_nsec = 100000;
+		min = queue->poll_io ? 0 : 1;
+		completed = io_getevents(queue->aio_ctx, min, max, queue->aio_events, &timeout);
+		if (completed < 0) {
+			XNVME_DEBUG("FAILED: completed: %d, errno: %d", completed, errno);
+			return completed;
+		}
+
+		/* Otherwise copy events from memory */
+	} else {
+		uint32_t current = ring->head;
+
+		// Casting max to int is safe here because
+		// max <= queue->base.outstanding < 4096
+		for (completed = 0; completed < (int)max; completed++) {
+			if (current == ring->tail) {
+				break;
+			}
+
+			queue->aio_events[completed] = ring->events[current];
+
+			current = (current + 1) % ring->nr;
+		}
+
+		/* update head */
+		atomic_store_explicit((_Atomic typeof(*(&ring->head)) *)(&ring->head), current,
+				      memory_order_release);
+	}
+
+	for (int event = 0; event < completed; event++) {
+		struct io_event *ev = &queue->aio_events[event];
+		struct xnvme_cmd_ctx *ctx = (struct xnvme_cmd_ctx *)(uintptr_t)ev->data;
+
+		if (!ctx) {
+			XNVME_DEBUG("-{[THIS SHOULD NOT HAPPEN]}-");
+			XNVME_DEBUG("event->data is NULL! => NO REQ!");
+			XNVME_DEBUG("event->res: %ld", ev->res);
+			XNVME_DEBUG("unprocessed events might remain");
+
+			queue->base.outstanding -= event;
+			return event ? event : -EIO;
+		}
+
+		ctx->cpl.result = ev->res;
+		if (((int64_t)ev->res) < 0) {
+			XNVME_DEBUG("FAILED: res: %lu, res2: %lu", ev->res, ev->res2);
+			ctx->cpl.result = 0;
+			ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC,
+							 -ev->res);
+			ctx->cpl.status =
+				xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+					       XNVME_STATUS_CODE_TYPE_VENDOR);
+		}
+
+		*completions++ = ctx;
+	}
+
+	queue->base.outstanding -= completed;
+	return completed;
+}
+
+static int
 _linux_libaio_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 		     size_t mbuf_nbytes)
 {
@@ -332,6 +407,7 @@ struct xnvme_be_async g_xnvme_be_libaio_async = {
 	.cmd_io = _linux_libaio_cmd_io,
 	.cmd_iov = _linux_libaio_cmd_iov,
 	.poke = _linux_libaio_poke,
+	.reap = _linux_libaio_reap,
 	.wait = _linux_libaio_get_completion_fd,
 	.init = _linux_libaio_init,
 	.term = _linux_libaio_term,
@@ -340,6 +416,7 @@ struct xnvme_be_async g_xnvme_be_libaio_async = {
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
 	.poke = xnvme_be_nosys_queue_poke,
+	.reap = xnvme_be_nosys_queue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_nosys_queue_init,
 	.term = xnvme_be_nosys_queue_term,

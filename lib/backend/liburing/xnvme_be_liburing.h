@@ -53,6 +53,10 @@ int
 xnvme_be_liburing_poke(struct xnvme_queue *queue, uint32_t max);
 
 int
+xnvme_be_liburing_reap(struct xnvme_queue *queue, struct xnvme_cmd_ctx **completions,
+		       uint32_t max);
+
+int
 xnvme_be_liburing_init(struct xnvme_queue *queue, int opts);
 
 int

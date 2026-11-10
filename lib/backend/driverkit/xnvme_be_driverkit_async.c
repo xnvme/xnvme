@@ -125,6 +125,44 @@ xnvme_be_driverkit_queue_poke(struct xnvme_queue *queue, uint32_t XNVME_UNUSED(m
 }
 
 static int
+xnvme_be_driverkit_queue_reap(struct xnvme_queue *queue, struct xnvme_cmd_ctx **completions,
+			      uint32_t max)
+{
+	struct xnvme_queue_macos_driverkit *q = (struct xnvme_queue_macos_driverkit *)queue;
+	struct xnvme_be_driverkit_state *state = &xnvme_be_state(queue->base.dev)->driverkit_state;
+	uint64_t qid[2] = {q->id, q->id}; // Submission queue, completion queue
+	int reaped = 0;
+	int queue_ret = 0;
+	NvmeSubmitCmd nvme_cmd;
+	kern_return_t ret;
+	struct xnvme_cmd_ctx *ctx;
+
+	ret = IOConnectCallScalarMethod(state->ctrlr->device_connection, NVME_POKE, qid, 2, NULL,
+					0);
+	if (ret != kIOReturnSuccess) {
+		XNVME_DEBUG("FAILED: IOConnectCallScalarMethod(); ret(0x%x), msg(%s)", ret,
+			    mach_error_string(ret));
+		return -EIO;
+	}
+	while ((uint32_t)reaped < max &&
+	       (queue_ret = queue_dequeue(q->cq_queue, &nvme_cmd)) == 0) {
+		ctx = (struct xnvme_cmd_ctx *)nvme_cmd.backend_opaque;
+		memcpy(&ctx->cpl, nvme_cmd.cpl, sizeof(struct xnvme_spec_cqe));
+		*completions++ = ctx;
+
+		reaped += 1;
+		queue->base.outstanding -= 1;
+	}
+
+	if (queue_ret == QUEUE_ERROR) {
+		XNVME_DEBUG("FAILED: queue_ret == QUEUE_ERROR");
+		return reaped ? reaped : -EIO;
+	}
+
+	return reaped;
+}
+
+static int
 xnvme_be_driverkit_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes,
 				void *mbuf, size_t mbuf_nbytes)
 {
@@ -204,6 +242,7 @@ struct xnvme_be_async g_xnvme_be_driverkit_async = {
 	.cmd_io = xnvme_be_driverkit_async_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
 	.poke = xnvme_be_driverkit_queue_poke,
+	.reap = xnvme_be_driverkit_queue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_driverkit_queue_init,
 	.term = xnvme_be_driverkit_queue_term,
@@ -211,6 +250,7 @@ struct xnvme_be_async g_xnvme_be_driverkit_async = {
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
 	.poke = xnvme_be_nosys_queue_poke,
+	.reap = xnvme_be_nosys_queue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_nosys_queue_init,
 	.term = xnvme_be_nosys_queue_term,

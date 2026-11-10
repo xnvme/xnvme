@@ -158,6 +158,7 @@ struct xnvme_be_async g_xnvme_be_upcie_async_cuda = {
 	.cmd_io = xnvme_be_upcie_async_cmd_io,
 	.cmd_iov = xnvme_be_upcie_async_cmd_iov,
 	.poke = xnvme_be_upcie_queue_poke,
+	.reap = xnvme_be_upcie_queue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_upcie_cuda_queue_init,
 	.term = xnvme_be_upcie_cuda_queue_term,

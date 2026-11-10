@@ -147,6 +147,16 @@ int
 xnvme_be_upcie_cplane_queue_poke_idle(struct xnvme_queue_upcie *upcie_queue);
 
 /**
+ * Reap variant of xnvme_be_upcie_cplane_queue_poke_idle(): stores the commands it completes as
+ * aborted in 'completions', at most 'max' of them
+ *
+ * @return How many commands it completed
+ */
+int
+xnvme_be_upcie_cplane_queue_reap_idle(struct xnvme_queue_upcie *upcie_queue,
+				      struct xnvme_cmd_ctx **completions, uint32_t max);
+
+/**
  * The I/O queue for synchronous commands on `ctrlr`; a client asks for it on first use
  *
  * @return The queue on success, NULL with errno set on error

@@ -169,6 +169,55 @@ xnvme_be_ioring_poke(struct xnvme_queue *q, uint32_t max)
 }
 
 static int
+xnvme_be_ioring_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **completions, uint32_t max)
+{
+	struct xnvme_queue_ioring *queue = (void *)q;
+	unsigned completed = 0;
+	HRESULT err;
+	pop_ioring_completion_ptr pop_ioring_completion_procadd =
+		(pop_ioring_completion_ptr)GetProcAddress(queue->lib_module,
+							  "PopIoRingCompletion");
+
+	max = max ? max : queue->base.outstanding;
+	max = max > queue->base.outstanding ? queue->base.outstanding : max;
+
+	for (unsigned i = 0; i < max; ++i) {
+		struct xnvme_cmd_ctx *ctx;
+		IORING_CQE cqe;
+
+		err = (pop_ioring_completion_procadd)(queue->ring_handle, &cqe);
+		if (err == S_OK) {
+			ctx = (struct xnvme_cmd_ctx *)cqe.UserData;
+			if (!ctx) {
+				XNVME_DEBUG("-{[THIS SHOULD NOT HAPPEN]}-");
+				XNVME_DEBUG("cqe->user_data is NULL! => NO REQ!");
+				XNVME_DEBUG("cqe->res: %ld", cqe.ResultCode);
+				XNVME_DEBUG("cqe->rbytes: %" PRIuPTR, (uintptr_t)cqe.Information);
+				queue->base.outstanding -= completed;
+				return completed ? (int)completed : -EIO;
+			}
+
+			ctx->cpl.result = cqe.ResultCode;
+			if (cqe.ResultCode < 0) {
+				ctx->cpl.result = 0;
+				ctx->cpl.status =
+					xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC,
+						       -cqe.ResultCode);
+				ctx->cpl.status =
+					xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT,
+						       XNVME_STATUS_CODE_TYPE_VENDOR);
+			}
+
+			*completions++ = ctx;
+			completed += 1;
+		}
+	};
+
+	queue->base.outstanding -= completed;
+	return completed;
+}
+
+static int
 xnvme_be_ioring_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 		       size_t mbuf_nbytes)
 {
@@ -259,6 +308,7 @@ struct xnvme_be_async g_xnvme_be_ioring_async = {
 #ifdef XNVME_BE_IORING_ENABLED
 	.cmd_io = xnvme_be_ioring_cmd_io,
 	.poke = xnvme_be_ioring_poke,
+	.reap = xnvme_be_ioring_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_ioring_init,
 	.term = xnvme_be_ioring_term,
@@ -266,6 +316,7 @@ struct xnvme_be_async g_xnvme_be_ioring_async = {
 #else
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.poke = xnvme_be_nosys_queue_poke,
+	.reap = xnvme_be_nosys_queue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_nosys_queue_init,
 	.term = xnvme_be_nosys_queue_term,
