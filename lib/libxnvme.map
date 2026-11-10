@@ -266,6 +266,7 @@
 		xnvme_queue_term;
 		xnvme_queue_poke;
 		xnvme_queue_drain;
+		xnvme_queue_reap;
 		xnvme_queue_get_cmd_ctx;
 		xnvme_queue_put_cmd_ctx;
 		xnvme_queue_cb;

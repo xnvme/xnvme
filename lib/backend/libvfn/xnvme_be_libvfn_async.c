@@ -99,6 +99,50 @@ xnvme_be_libvfn_queue_poke(struct xnvme_queue *queue, uint32_t max)
 }
 
 static int
+xnvme_be_libvfn_queue_reap(struct xnvme_queue *queue, struct xnvme_cmd_ctx **completions,
+			   uint32_t max)
+{
+	struct xnvme_queue_libvfn *q = (void *)queue;
+	unsigned int reaped = 0;
+
+	if (!max) {
+		max = queue->base.outstanding;
+	}
+
+	nvme_sq_update_tail(q->sq);
+
+	do {
+		struct xnvme_cmd_ctx *ctx;
+
+		struct nvme_rq *rq;
+		struct nvme_cqe *cqe;
+
+		cqe = nvme_cq_get_cqe(q->cq);
+		if (!cqe) {
+			break;
+		}
+
+		reaped++;
+
+		rq = __nvme_rq_from_cqe(q->sq, cqe);
+
+		ctx = (struct xnvme_cmd_ctx *)rq->opaque;
+		memcpy(&ctx->cpl, cqe, sizeof(ctx->cpl));
+		*completions++ = ctx;
+
+		nvme_rq_release(rq);
+	} while (reaped < max);
+
+	queue->base.outstanding -= reaped;
+
+	if (reaped) {
+		nvme_cq_update_head(q->cq);
+	}
+
+	return reaped;
+}
+
+static int
 xnvme_be_libvfn_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			     size_t mbuf_nbytes)
 {
@@ -247,6 +291,7 @@ struct xnvme_be_async g_xnvme_be_libvfn_async = {
 	.cmd_io = xnvme_be_libvfn_async_cmd_io,
 	.cmd_iov = xnvme_be_libvfn_async_cmd_iov,
 	.poke = xnvme_be_libvfn_queue_poke,
+	.reap = xnvme_be_libvfn_queue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_libvfn_queue_init,
 	.term = xnvme_be_libvfn_queue_term,
@@ -255,6 +300,7 @@ struct xnvme_be_async g_xnvme_be_libvfn_async = {
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
 	.poke = xnvme_be_nosys_queue_poke,
+	.reap = xnvme_be_nosys_queue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_nosys_queue_init,
 	.term = xnvme_be_nosys_queue_term,

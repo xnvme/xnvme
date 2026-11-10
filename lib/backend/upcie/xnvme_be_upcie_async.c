@@ -120,6 +120,62 @@ xnvme_be_upcie_queue_poke(struct xnvme_queue *queue, uint32_t max)
 }
 
 int
+xnvme_be_upcie_queue_reap(struct xnvme_queue *queue, struct xnvme_cmd_ctx **completions,
+			  uint32_t max)
+{
+	struct xnvme_queue_upcie *upcie_queue = (struct xnvme_queue_upcie *)queue;
+	struct nvme_qpair *qp = &upcie_queue->qpair;
+	struct nvme_completion *cq = qp->cq;
+	unsigned int reaped = 0;
+
+	wmb();
+	nvme_qpair_sqdb_update(qp);
+
+	do {
+		struct nvme_completion *cqe;
+
+		cqe = &cq[qp->head];
+		if (((*(const volatile uint16_t *)&(cqe->status)) & 0x1) != qp->phase) {
+			break;
+		}
+
+		dma_rmb();
+
+		if (++qp->head == qp->depth) {
+			qp->head = 0;
+			qp->phase ^= 1;
+		}
+
+		reaped++;
+
+		{
+			struct xnvme_cmd_ctx *ctx;
+			struct nvme_request *req;
+
+			req = nvme_request_get(qp->rpool, cqe->cid);
+			ctx = req->user;
+			memcpy(&ctx->cpl, cqe, sizeof(ctx->cpl));
+			nvme_request_free(qp->rpool, req->cid);
+
+			queue->base.outstanding -= 1;
+
+			*completions++ = ctx;
+		}
+	} while (reaped < max);
+
+	if (reaped) {
+		mmio_write32(qp->cqdb, 0, qp->head);
+		upcie_queue->pokes_idle = 0;
+		upcie_queue->served_gone_ns = 0;
+		return reaped;
+	}
+
+	return g_upcie_rte.connection.alive
+		       ? xnvme_be_upcie_cplane_queue_reap_idle(upcie_queue, completions, max)
+		       : 0;
+}
+
+int
 xnvme_be_upcie_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			    size_t XNVME_UNUSED(mbuf_nbytes))
 {
@@ -258,6 +314,7 @@ struct xnvme_be_async g_xnvme_be_upcie_async = {
 	.cmd_io = xnvme_be_upcie_async_cmd_io,
 	.cmd_iov = xnvme_be_upcie_async_cmd_iov,
 	.poke = xnvme_be_upcie_queue_poke,
+	.reap = xnvme_be_upcie_queue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_upcie_queue_init,
 	.term = xnvme_be_upcie_queue_term,
@@ -266,6 +323,7 @@ struct xnvme_be_async g_xnvme_be_upcie_async = {
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
 	.poke = xnvme_be_nosys_queue_poke,
+	.reap = xnvme_be_nosys_queue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_nosys_queue_init,
 	.term = xnvme_be_nosys_queue_term,

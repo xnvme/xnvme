@@ -71,6 +71,38 @@ nil_poke(struct xnvme_queue *q, uint32_t max)
 	return completed;
 }
 
+static int
+nil_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **completions, uint32_t max)
+{
+	struct nil_queue *queue = (void *)q;
+	unsigned completed = 0;
+
+	max = max ? max : queue->base.outstanding;
+	max = max > queue->base.outstanding ? queue->base.outstanding : max;
+
+	while (completed < max) {
+		unsigned cur = queue->base.outstanding - completed - 1;
+		struct xnvme_cmd_ctx *ctx;
+
+		ctx = queue->ctx[cur];
+		if (!ctx) {
+			XNVME_DEBUG("-{[THIS SHOULD NOT HAPPEN]}-");
+
+			queue->base.outstanding -= completed;
+			return completed ? (int)completed : -EIO;
+		}
+
+		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC, 0);
+		*completions++ = ctx;
+		queue->ctx[cur] = NULL;
+
+		++completed;
+	};
+
+	queue->base.outstanding -= completed;
+	return completed;
+}
+
 static inline int
 nil_cmd_io(struct xnvme_cmd_ctx *ctx, void *XNVME_UNUSED(dbuf), size_t XNVME_UNUSED(dbuf_nbytes),
 	   void *XNVME_UNUSED(mbuf), size_t XNVME_UNUSED(mbuf_nbytes))
@@ -89,6 +121,7 @@ struct xnvme_be_async g_xnvme_be_nil_async = {
 	.cmd_io = nil_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
 	.poke = nil_poke,
+	.reap = nil_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = nil_init,
 	.term = nil_term,
@@ -97,6 +130,7 @@ struct xnvme_be_async g_xnvme_be_nil_async = {
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
 	.poke = xnvme_be_nosys_queue_poke,
+	.reap = xnvme_be_nosys_queue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_nosys_queue_init,
 	.term = xnvme_be_nosys_queue_term,

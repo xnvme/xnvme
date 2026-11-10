@@ -926,6 +926,80 @@ xnvme_be_upcie_cplane_queue_poke_idle(struct xnvme_queue_upcie *upcie_queue)
 	return cplane_client_queue_fail_inflight(upcie_queue);
 }
 
+/**
+ * The cplane_client_queue_fail_inflight() of a reap: stores at most 'max' of the commands in
+ * flight, the rest wait for the next reap
+ */
+static int
+cplane_client_queue_fail_inflight_reap(struct xnvme_queue_upcie *upcie_queue,
+				       struct xnvme_cmd_ctx **completions, uint32_t max)
+{
+	struct nvme_request_pool *rpool = upcie_queue->qpair.rpool;
+	uint8_t inflight[NVME_REQUEST_POOL_LEN];
+	uint32_t failed = 0;
+
+	memset(inflight, 1, sizeof(inflight));
+	for (size_t i = 0; i < rpool->top; ++i) {
+		inflight[rpool->stack[i]] = 0;
+	}
+
+	for (uint16_t cid = 0; cid < NVME_REQUEST_POOL_LEN && failed < max; ++cid) {
+		struct xnvme_cmd_ctx *ctx;
+
+		if (!inflight[cid]) {
+			continue;
+		}
+
+		ctx = rpool->reqs[cid].user;
+		nvme_request_free(rpool, cid);
+		upcie_queue->base.outstanding -= 1;
+
+		memset(&ctx->cpl, 0, sizeof(ctx->cpl));
+		ctx->cpl.cid = cid;
+		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC,
+						 0x08); /* Command Aborted due to SQ Deletion */
+		ctx->cpl.status = xnvme_bits_set(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_DNR, 1);
+
+		completions[failed++] = ctx;
+	}
+
+	return failed;
+}
+
+int
+xnvme_be_upcie_cplane_queue_reap_idle(struct xnvme_queue_upcie *upcie_queue,
+				      struct xnvme_cmd_ctx **completions, uint32_t max)
+{
+	struct xnvme_be_upcie_state *state = &xnvme_be_state(upcie_queue->base.dev)->upcie_state;
+	struct timespec ts;
+	uint64_t now_ns;
+
+	if (++upcie_queue->pokes_idle < XNVME_BE_UPCIE_POKES_IDLE_MAX) {
+		return 0;
+	}
+	upcie_queue->pokes_idle = 0;
+
+	if (!upcie_queue->served_gone_ns) {
+		if (!cplane_client_server_gone(g_upcie_rte.connection.sock)) {
+			return 0;
+		}
+
+		clock_gettime(CLOCK_MONOTONIC, &ts);
+		upcie_queue->served_gone_ns =
+			(uint64_t)ts.tv_sec * 1000000000ULL + (uint64_t)ts.tv_nsec;
+		return 0;
+	}
+
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	now_ns = (uint64_t)ts.tv_sec * 1000000000ULL + (uint64_t)ts.tv_nsec;
+	if ((now_ns - upcie_queue->served_gone_ns) <
+	    ((uint64_t)state->ctrlr->ctrl->base.timeout_ms * 1000000ULL)) {
+		return 0;
+	}
+
+	return cplane_client_queue_fail_inflight_reap(upcie_queue, completions, max);
+}
+
 void
 xnvme_be_upcie_cplane_disconnect(void)
 {

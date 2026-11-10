@@ -36,6 +36,10 @@ int
 xnvme_be_nosys_queue_poke(struct xnvme_queue *queue, uint32_t max);
 
 int
+xnvme_be_nosys_queue_reap(struct xnvme_queue *queue, struct xnvme_cmd_ctx **completions,
+			  uint32_t max);
+
+int
 xnvme_be_nosys_queue_wait(struct xnvme_queue *queue);
 
 int
@@ -92,6 +96,7 @@ xnvme_be_nosys_dev_close(struct xnvme_dev *dev);
 	{                                                                    \
 		.cmd_io            = xnvme_be_nosys_queue_cmd_io,            \
 		.poke              = xnvme_be_nosys_queue_poke,              \
+		.reap              = xnvme_be_nosys_queue_reap,              \
 		.wait              = xnvme_be_nosys_queue_wait,              \
 		.init              = xnvme_be_nosys_queue_init,              \
 		.term              = xnvme_be_nosys_queue_term,              \

@@ -21,7 +21,12 @@ struct xnvme_queue_spdk {
 
 	struct xnvme_be_spdk_iov_payload *iov_payloads;
 
-	uint8_t rsvd[216];
+	spdk_nvme_cmd_cb cpl_fn;              ///< Passed with every command, chosen by the mode
+	struct xnvme_cmd_ctx **cursor;        ///< Where cmd_reap_cb() stores the next completed
+	struct xnvme_cmd_ctx **end;           ///< One past the last slot; NULL outside a reap
+	struct xnvme_cmd_ctx_entry *overflow; ///< Completed outside a reap, or beyond its 'max'
+
+	uint8_t rsvd[184];
 };
 XNVME_STATIC_ASSERT(sizeof(struct xnvme_queue_spdk) == XNVME_BE_QUEUE_STATE_NBYTES,
 		    "Incorrect size")

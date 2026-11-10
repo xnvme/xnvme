@@ -31,7 +31,8 @@ practical :ref:`sec-api-c-examples`.
   * Construct, submit and process **commands**
   
     - Synchronous/blocking
-    - Asynchronous/non-blocking via a queue and callback primitive
+    - Asynchronous/non-blocking via a queue, with completed commands reaped from it or
+      delivered to a callback
 
   * Memory management primitives for command buffers
 

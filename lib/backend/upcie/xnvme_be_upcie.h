@@ -281,6 +281,9 @@ xnvme_be_upcie_queue_term(struct xnvme_queue *queue);
 int
 xnvme_be_upcie_queue_poke(struct xnvme_queue *queue, uint32_t max);
 int
+xnvme_be_upcie_queue_reap(struct xnvme_queue *queue, struct xnvme_cmd_ctx **completions,
+			  uint32_t max);
+int
 xnvme_be_upcie_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 			    size_t mbuf_nbytes);
 int

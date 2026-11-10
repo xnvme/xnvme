@@ -319,6 +319,53 @@ thrpool_async_poke(struct xnvme_queue *q, uint32_t max)
 	return completed;
 }
 
+static int
+thrpool_async_reap(struct xnvme_queue *q, struct xnvme_cmd_ctx **completions, uint32_t max)
+{
+	struct xnvme_queue_thrpool *queue = (void *)q;
+	struct _thrpool_qp *qp = queue->qp;
+	unsigned completed = 0;
+	int err;
+
+	max = max ? max : queue->base.outstanding;
+	max = max > queue->base.outstanding ? queue->base.outstanding : max;
+
+	struct _thrpool_entry *entries[max];
+
+	err = pthread_mutex_lock(&qp->cq_mutex);
+	if (err) {
+		XNVME_DEBUG("FAILED: pthread_mutex_lock(), err: %d", err);
+		return -err;
+	}
+
+	while (completed < max) {
+		struct _thrpool_entry *entry;
+
+		entry = STAILQ_FIRST(&qp->cq);
+		if (entry == NULL) {
+			break;
+		}
+		STAILQ_REMOVE_HEAD(&qp->cq, link);
+		entries[completed] = entry;
+		completed++;
+	};
+
+	err = pthread_mutex_unlock(&qp->cq_mutex);
+	if (err) {
+		XNVME_DEBUG("FAILED: pthread_mutex_unlock(), err: %d", err);
+	}
+
+	for (unsigned i = 0; i < completed; i++) {
+		struct _thrpool_entry *entry = entries[i];
+		*completions++ = entry->ctx;
+		STAILQ_INSERT_TAIL(&qp->rp, entry, link);
+	}
+
+	queue->base.outstanding -= completed;
+
+	return completed;
+}
+
 static inline int
 thrpool_async_cmd_io(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
 		     size_t mbuf_nbytes)
@@ -423,6 +470,7 @@ struct xnvme_be_async g_xnvme_be_thrpool_async = {
 	.cmd_io = thrpool_async_cmd_io,
 	.cmd_iov = thrpool_async_cmd_iov,
 	.poke = thrpool_async_poke,
+	.reap = thrpool_async_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = thrpool_async_init,
 	.term = thrpool_async_term,
@@ -431,6 +479,7 @@ struct xnvme_be_async g_xnvme_be_thrpool_async = {
 	.cmd_io = xnvme_be_nosys_queue_cmd_io,
 	.cmd_iov = xnvme_be_nosys_queue_cmd_iov,
 	.poke = xnvme_be_nosys_queue_poke,
+	.reap = xnvme_be_nosys_queue_reap,
 	.wait = xnvme_be_nosys_queue_wait,
 	.init = xnvme_be_nosys_queue_init,
 	.term = xnvme_be_nosys_queue_term,
