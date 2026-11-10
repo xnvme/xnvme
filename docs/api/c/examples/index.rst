@@ -4,7 +4,7 @@
  API Code Examples
 ===================
 
-This section includes three examples of using the **xNVMe** library. These are
+This section includes four examples of using the **xNVMe** library. These are
 gradually increasing in complexity, and are meant to complement the description
 of the :ref:`sec-api-c-core` API.
 
@@ -72,4 +72,33 @@ The example is intended to be easily extended by adding a for-loop and
 submitting multiple commands.
 
 .. literalinclude:: ../../../../examples/xnvme_single_async.c
+   :language: c
+
+.. _sec-api-c-examples-async-reap:
+
+Asynchronous I/O, reaping completions
+=====================================
+
+Instead of having a callback function called for each completed command, the
+completed commands can be reaped from the command queue. This is the way to go
+where calling back into the caller is costly or not possible, such as from a
+language binding, and it keeps the processing of completions in one loop. The
+flow differs from the above in these steps:
+
+- The command queue is initialized with ``XNVME_QUEUE_REAP``, and no callback
+  is set on it
+- Before submitting, data of your own can be attached to the command context
+  with ``xnvme_cmd_ctx_set_data()``; it is read back with
+  ``xnvme_cmd_ctx_get_data()`` once the command is reaped
+- Completed commands are retrieved with ``xnvme_queue_reap()``, which stores
+  their command contexts in an array you provide and returns how many it
+  stored, without waiting. Each carries the completion in ``cpl``. When done
+  with a command context, return it to the command queue, or submit the next
+  command with it.
+
+How a command queue delivers its completions is fixed when it is initialized:
+``xnvme_queue_poke()`` and ``xnvme_queue_drain()`` refuse a queue initialized
+with ``XNVME_QUEUE_REAP``, and ``xnvme_queue_reap()`` refuses one that was not.
+
+.. literalinclude:: ../../../../examples/xnvme_single_async_reap.c
    :language: c
