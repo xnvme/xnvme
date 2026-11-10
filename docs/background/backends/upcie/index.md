@@ -114,8 +114,8 @@ struct xnvme_opts cuda_opts = {0};
 
 xnvme_opts_set_defaults(&host_opts);
 xnvme_opts_set_defaults(&cuda_opts);
-host_opts.be = "upcie";
-cuda_opts.be = "upcie-cuda";
+snprintf(host_opts.be, sizeof(host_opts.be), "%s", "upcie");
+snprintf(cuda_opts.be, sizeof(cuda_opts.be), "%s", "upcie-cuda");
 
 struct xnvme_dev *host_dev, *cuda_dev;
 

@@ -1,0 +1,35 @@
+--- a/engines/xnvme.c
++++ b/engines/xnvme.c
+@@ -69,6 +69,13 @@
+ #define FIO_XNVME_ZND_ZT(descr) ((descr)->zt)
+ #define FIO_XNVME_ZND_ZS(descr) ((descr)->zs)
+ #endif
++
++/* The string options are arrays held by xnvme_opts where xNVMe defines their sizes */
++#ifdef XNVME_OPTS_NAME_LEN
++#define FIO_XNVME_OPTS_SET_STR(field, val) snprintf((field), sizeof(field), "%s", (val) ? (val) : "")
++#else
++#define FIO_XNVME_OPTS_SET_STR(field, val) ((field) = (val))
++#endif
+ #include "fio.h"
+ #include "verify.h"
+ #include "zbd_types.h"
+@@ -349,12 +356,12 @@
+ 	struct xnvme_opts opts = xnvme_opts_default();
+ 
+ 	opts.nsid = o->xnvme_dev_nsid;
+-	opts.subnqn = o->xnvme_dev_subnqn;
+-	opts.be = o->xnvme_be;
+-	opts.mem = o->xnvme_mem;
+-	opts.async = o->xnvme_async;
+-	opts.sync = o->xnvme_sync;
+-	opts.admin = o->xnvme_admin;
++	FIO_XNVME_OPTS_SET_STR(opts.subnqn, o->xnvme_dev_subnqn);
++	FIO_XNVME_OPTS_SET_STR(opts.be, o->xnvme_be);
++	FIO_XNVME_OPTS_SET_STR(opts.mem, o->xnvme_mem);
++	FIO_XNVME_OPTS_SET_STR(opts.async, o->xnvme_async);
++	FIO_XNVME_OPTS_SET_STR(opts.sync, o->xnvme_sync);
++	FIO_XNVME_OPTS_SET_STR(opts.admin, o->xnvme_admin);
+ 
+ 	opts.poll_io = o->hipri;
+ 	opts.poll_sq = o->sqpoll_thread;

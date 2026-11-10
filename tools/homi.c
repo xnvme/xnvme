@@ -243,7 +243,9 @@ sub_serve(struct xnvme_cli *cli)
 	 * controllers as their owner and takes the identifier at serve time. */
 	opts.shm_id = (uint32_t)cli->args.homi_id;
 	opts.homi_id = 0;
-	opts.be = cli->args.be;
+	if (cli->args.be) {
+		snprintf(opts.be, sizeof(opts.be), "%s", cli->args.be);
+	}
 	// homi holds whole controllers, not namespaces: nsid=0 gives dtype
 	// XNVME_DEV_TYPE_NVME_CONTROLLER, which lib/cuse/xnvme_cuse.c relies on
 	opts.nsid = 0;
