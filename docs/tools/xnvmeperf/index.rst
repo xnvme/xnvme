@@ -83,11 +83,15 @@ Example::
 ``cb``, the default, has ``xnvme_queue_poke()`` call the callback assigned to
 the queue for each, and ``reap`` retrieves them with ``xnvme_queue_reap()``
 into an array of ``--qdepth`` pointers and accounts for them in a loop. The
-I/O submitted is the same, so the two measure what the two completion paths
-of the library cost. A job reaps again when ``xnvme_queue_reap()`` returns
-``-EINTR``, ``-EAGAIN`` or ``-EBUSY``; for any other error it stops using its
-queue, and the command exits non-zero. ``verify`` takes the option as well.
-Example::
+I/O submitted is the same. The callback returns each command context to the
+queue with ``xnvme_queue_put_cmd_ctx()``, and the submission takes one back
+with ``xnvme_queue_get_cmd_ctx()``. With ``reap``, ``run`` submits the next
+I/O on the command context it has just reaped and makes neither call, except
+with ``--buf-host-bounce``. The two therefore differ by what the completion
+path of the library costs and by those two calls per I/O. A job reaps again
+when ``xnvme_queue_reap()`` returns ``-EINTR``, ``-EAGAIN`` or ``-EBUSY``; for
+any other error it stops using its queue, and the command exits non-zero.
+``verify`` takes the option as well. Example::
 
    xnvme perf run --iopattern randread --qdepth 32 --iosize 4096 \
        --runtime 10 --cpumask 0x1 --completion reap /dev/nvme0n1
