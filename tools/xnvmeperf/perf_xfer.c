@@ -235,11 +235,10 @@ register_dmabuf(struct xnvme_cli *cli, uint32_t count)
 	}
 
 	xnvme_opts_set_defaults(&opts);
-	xnvme_cli_to_opts(cli, &opts);
-	dev = xnvme_dev_open(cli->args.uri, &opts);
-	if (!dev) {
-		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open()", err);
+	err = xnvme_cli_to_opts(cli, &opts);
+	err = err ? err : xnvme_dev_open_uri(cli->args.uri, &opts, &dev);
+	if (err) {
+		xnvme_cli_perr("xnvme_dev_open_uri()", err);
 		goto exit;
 	}
 
@@ -403,11 +402,10 @@ register_host(struct xnvme_cli *cli, uint32_t count)
 	}
 
 	xnvme_opts_set_defaults(&opts);
-	xnvme_cli_to_opts(cli, &opts);
-	dev = xnvme_dev_open(cli->args.uri, &opts);
-	if (!dev) {
-		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open()", err);
+	err = xnvme_cli_to_opts(cli, &opts);
+	err = err ? err : xnvme_dev_open_uri(cli->args.uri, &opts, &dev);
+	if (err) {
+		xnvme_cli_perr("xnvme_dev_open_uri()", err);
 		goto exit;
 	}
 
@@ -501,7 +499,11 @@ sub_heap(struct xnvme_cli *cli)
 	}
 
 	xnvme_opts_set_defaults(&opts);
-	xnvme_cli_to_opts(cli, &opts);
+	err = xnvme_cli_to_opts(cli, &opts);
+	if (err) {
+		xnvme_cli_perr("xnvme_cli_to_opts()", err);
+		goto exit;
+	}
 
 	printf("xnvme_perf_xfer_heap:\n");
 	printf("  uri: '%s'\n", cli->args.uri);
@@ -517,15 +519,14 @@ sub_heap(struct xnvme_cli *cli)
 		for (uint32_t j = 0; j <= count; ++j) {
 			double *open_usecs = j ? &usecs[0][j - 1] : &first[0];
 			double *close_usecs = j ? &usecs[1][j - 1] : &first[1];
-			struct xnvme_dev *dev;
+			struct xnvme_dev *dev = NULL;
 			struct timespec t0;
 
 			clock_gettime(CLOCK_MONOTONIC, &t0);
-			dev = xnvme_dev_open(cli->args.uri, &opts);
+			err = xnvme_dev_open_uri(cli->args.uri, &opts, &dev);
 			*open_usecs = usecs_since(&t0);
-			if (!dev) {
-				err = -errno;
-				xnvme_cli_perr("xnvme_dev_open()", err);
+			if (err) {
+				xnvme_cli_perr("xnvme_dev_open_uri()", err);
 				goto exit;
 			}
 

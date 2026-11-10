@@ -92,17 +92,17 @@ SPDK already supports multi-process sharing. **xNVMe**'s IPC model should align 
 
 ```c
 // Primary (daemon) - initializes controller, creates shared memory
-xnvme_dev_open("0000:03:00.0", &(struct xnvme_opts){
+xnvme_dev_open_uri("0000:03:00.0", &(struct xnvme_opts){
     .be = "spdk",
     .shm_id = 1,  // Explicit shared memory ID
-});
+}, &dev);
 
 // Secondary (client) - connects to existing primary
-xnvme_dev_open("0000:03:00.0", &(struct xnvme_opts){
+xnvme_dev_open_uri("0000:03:00.0", &(struct xnvme_opts){
     .be = "spdk",
     .shm_id = 1,
     .secondary = true,
-});
+}, &dev);
 ```
 
 **Why explicit over automatic:**
@@ -123,11 +123,11 @@ Each process owns its queues exclusively. Queues are not shared between processe
 **Queue lifecycle:**
 ```c
 // Primary (daemon)
-struct xnvme_dev *dev = xnvme_dev_open(...);  // Owns controller
+xnvme_dev_open_uri(..., &dev);  // Owns controller
 struct xnvme_queue *q1 = xnvme_queue_init(dev, 128, 0);  // Daemon's queue
 
 // Secondary (client)
-struct xnvme_dev *dev = xnvme_dev_open(...);  // Connects to controller
+xnvme_dev_open_uri(..., &dev);  // Connects to controller
 struct xnvme_queue *q2 = xnvme_queue_init(dev, 128, 0);  // Client's own queue
 // q2 is independent of q1, allocated from shared memory pool
 ```
@@ -255,21 +255,21 @@ local PCIe device, `kernel_driver: ""` for a fabrics target).
 
 ```c
 // URI-based open - parses URI immediately, then works with structured ident
-struct xnvme_dev *xnvme_dev_open(const char *uri, struct xnvme_opts *opts);
+int xnvme_dev_open_uri(const char *uri, struct xnvme_opts *opts, struct xnvme_dev **dev);
 
 // Ident-based open - skips parsing, for programmatic use and scan results
-struct xnvme_dev *xnvme_dev_open_ident(const struct xnvme_ident *ident,
-                                       struct xnvme_opts *opts);
+int xnvme_dev_open_ident(const struct xnvme_ident *ident, struct xnvme_opts *opts,
+                         struct xnvme_dev **dev);
 ```
 
-Both paths converge immediately: `xnvme_dev_open()` calls
+Both paths converge immediately: `xnvme_dev_open_uri()` calls
 `xnvme_ident_from_uri()` then delegates to `xnvme_dev_open_ident()`.
 
 **Usage scenarios:**
 
 ```c
 // CLI tools: user provides URI string
-struct xnvme_dev *dev = xnvme_dev_open("/dev/ng0n1", NULL);
+xnvme_dev_open_uri("/dev/ng0n1", NULL, &dev);
 
 // Programmatic: construct ident directly
 struct xnvme_ident ident = {
@@ -278,7 +278,7 @@ struct xnvme_ident ident = {
     .nsid = 1,
 };
 strncpy(ident.traddr, "0000:03:00.0", sizeof(ident.traddr));
-struct xnvme_dev *dev = xnvme_dev_open_ident(&ident, NULL);
+xnvme_dev_open_ident(&ident, NULL, &dev);
 
 // Scan results: already structured, no URI round-trip
 void scan_cb(const struct xnvme_scan_entry *entry, void *args)
@@ -288,7 +288,7 @@ void scan_cb(const struct xnvme_scan_entry *entry, void *args)
         .nsid = entry->nsid,
     };
     strncpy(ident.traddr, entry->ctrlr->bdf, sizeof(ident.traddr));
-    struct xnvme_dev *dev = xnvme_dev_open_ident(&ident, NULL);
+    xnvme_dev_open_ident(&ident, NULL, &dev);
 }
 ```
 
@@ -312,19 +312,19 @@ struct xnvme_opts {
 
 ```c
 // Userspace-managed drivers (mem is fixed by config)
-xnvme_dev_open("0000:03:00.0", &(struct xnvme_opts){.be = "spdk"});
-xnvme_dev_open("0000:03:00.0", &(struct xnvme_opts){.be = "vfio"});
+xnvme_dev_open_uri("0000:03:00.0", &(struct xnvme_opts){.be = "spdk"}, &dev);
+xnvme_dev_open_uri("0000:03:00.0", &(struct xnvme_opts){.be = "vfio"}, &dev);
 
 // OS-managed -- select specific config by name
-xnvme_dev_open("/dev/ng0n1", &(struct xnvme_opts){.be = "io_uring_cmd"});
-xnvme_dev_open("/dev/nvme0n1", &(struct xnvme_opts){.be = "io_uring"});
+xnvme_dev_open_uri("/dev/ng0n1", &(struct xnvme_opts){.be = "io_uring_cmd"}, &dev);
+xnvme_dev_open_uri("/dev/nvme0n1", &(struct xnvme_opts){.be = "io_uring"}, &dev);
 
 // OS-managed with hugepage memory
-xnvme_dev_open("/dev/nvme0n1",
-	       &(struct xnvme_opts){.be = "io_uring", .mem = "hugepage"});
+xnvme_dev_open_uri("/dev/nvme0n1",
+	       &(struct xnvme_opts){.be = "io_uring", .mem = "hugepage"}, &dev);
 
 // Default -- auto-select via URI classification and caps matching
-xnvme_dev_open("/dev/nvme0n1", NULL);
+xnvme_dev_open_uri("/dev/nvme0n1", NULL, &dev);
 ```
 
 ### xnvme_be_config
@@ -535,10 +535,10 @@ reusable by every platform like the other cross-platform implementations.
 
 ```c
 // Ramdisk via URI pattern
-xnvme_dev_open("1GB", NULL);
+xnvme_dev_open_uri("1GB", NULL, &dev);
 
 // Or via backend option
-xnvme_dev_open("1GB", &(struct xnvme_opts){.be = "ramdisk"});
+xnvme_dev_open_uri("1GB", &(struct xnvme_opts){.be = "ramdisk"}, &dev);
 ```
 
 - Memory-backed NVMe device emulation
@@ -555,21 +555,21 @@ field of each config's interface:
 
 ```c
 // Preferred: select config by unique name
-xnvme_dev_open("/dev/nvme0n1", &(struct xnvme_opts){
+xnvme_dev_open_uri("/dev/nvme0n1", &(struct xnvme_opts){
     .be = "io_uring",
-});
+}, &dev);
 
 // Legacy: filter by async interface (still works)
-xnvme_dev_open("/dev/nvme0n1", &(struct xnvme_opts){
+xnvme_dev_open_uri("/dev/nvme0n1", &(struct xnvme_opts){
     .async = "io_uring",
-});  // First config with async.id == "io_uring" and matching caps
+}, &dev);  // First config with async.id == "io_uring" and matching caps
 
 // Force specific combination (bypasses caps filter)
-xnvme_dev_open("/dev/nvme0n1", &(struct xnvme_opts){
+xnvme_dev_open_uri("/dev/nvme0n1", &(struct xnvme_opts){
     .async = "io_uring",
     .sync = "nvme",
     .admin = "nvme"
-});
+}, &dev);
 ```
 
 When `opts.async`, `opts.sync`, or `opts.admin` are set, the caps filter is
@@ -799,7 +799,7 @@ for (uint32_t i = 0; i < result.nentries; i++) {
             strncpy(ident.traddr, entry->bdf, sizeof(ident.traddr));
             strncpy(ident.kernel_driver, ctrlr->kernel_driver,
                     sizeof(ident.kernel_driver));
-            // Now open with xnvme_dev_open_ident(&ident, opts)
+            // Now open with xnvme_dev_open_ident(&ident, opts, &dev)
         }
     }
 }

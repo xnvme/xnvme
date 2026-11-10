@@ -326,7 +326,7 @@ test_close(struct xnvme_cli *cli)
 	struct exporter exp = {.iommufd = {.fd = -1}, .cdev = {.fd = -1}};
 	char *pattern = NULL, *check = NULL, *hbuf = NULL, *vaddr = MAP_FAILED;
 	char *uris = NULL, *second = NULL;
-	struct xnvme_opts opts = xnvme_opts_default();
+	struct xnvme_opts opts;
 	uint64_t nbytes = 0;
 	int fd = -1, fd2, registered = 0, err;
 
@@ -358,11 +358,11 @@ test_close(struct xnvme_cli *cli)
 		goto exit;
 	}
 
-	xnvme_cli_to_opts(cli, &opts);
-	dev2 = xnvme_dev_open(second, &opts);
-	if (!dev2) {
-		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open(--alt-uri)", err);
+	xnvme_opts_set_defaults(&opts);
+	err = xnvme_cli_to_opts(cli, &opts);
+	err = err ? err : xnvme_dev_open_uri(second, &opts, &dev2);
+	if (err) {
+		xnvme_cli_perr("xnvme_dev_open_uri(--alt-uri)", err);
 		goto exit;
 	}
 	err = xnvme_buf_register_dmabuf(dev2, fd, vaddr);

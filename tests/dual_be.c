@@ -19,10 +19,9 @@ open_alt(struct xnvme_cli *cli, struct xnvme_dev **alt_dev)
 	opts.be = cli->args.alt_be;
 	opts.nsid = cli->args.dev_nsid;
 
-	*alt_dev = xnvme_dev_open(uri, &opts);
-	if (!(*alt_dev)) {
-		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open(alt_dev)", err);
+	err = xnvme_dev_open_uri(uri, &opts, alt_dev);
+	if (err) {
+		xnvme_cli_perr("xnvme_dev_open_uri(alt_dev)", err);
 		return err;
 	}
 

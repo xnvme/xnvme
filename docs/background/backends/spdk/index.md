@@ -40,7 +40,9 @@ And using the API it would be similar to:
 
 ```
   ...
-  struct xnvme_dev *dev = xnvme_dev_open("0000:03:00.0", opts);
+  struct xnvme_dev *dev;
+
+  err = xnvme_dev_open_uri("0000:03:00.0", opts, &dev);
   ...
 ```
 

@@ -54,10 +54,9 @@ main(int argc, char **argv)
 	}
 
 	opts.be = "upcie-cuda";
-	dev = xnvme_dev_open(argv[1], &opts);
-	if (!dev) {
-		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open()", err);
+	err = xnvme_dev_open_uri(argv[1], &opts, &dev);
+	if (err) {
+		xnvme_cli_perr("xnvme_dev_open_uri()", err);
 		return err;
 	}
 

@@ -58,10 +58,9 @@ reopen_and_read(const char *uri, struct xnvme_opts *opts, struct xnvme_dev **dev
 	xnvme_dev_close(*dev);
 	*mapped = 0;
 
-	*dev = xnvme_dev_open(uri, opts);
-	if (!*dev) {
-		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open()", err);
+	err = xnvme_dev_open_uri(uri, opts, dev);
+	if (err) {
+		xnvme_cli_perr("xnvme_dev_open_uri()", err);
 		return err;
 	}
 
@@ -96,10 +95,9 @@ second_ctrlr_read(const char *uri, struct xnvme_opts *opts, struct xnvme_dev **d
 	struct xnvme_dev *second;
 	int err;
 
-	second = xnvme_dev_open(uri, opts);
-	if (!second) {
-		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open()", err);
+	err = xnvme_dev_open_uri(uri, opts, &second);
+	if (err) {
+		xnvme_cli_perr("xnvme_dev_open_uri()", err);
 		return err;
 	}
 
@@ -194,10 +192,9 @@ main(int argc, char **argv)
 	if (argc > 2) {
 		opts.homi_id = (uint32_t)strtoul(argv[2], NULL, 0);
 	}
-	dev = xnvme_dev_open(argv[1], &opts);
-	if (!dev) {
-		err = -errno;
-		xnvme_cli_perr("xnvme_dev_open()", err);
+	err = xnvme_dev_open_uri(argv[1], &opts, &dev);
+	if (err) {
+		xnvme_cli_perr("xnvme_dev_open_uri()", err);
 		return err;
 	}
 
