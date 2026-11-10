@@ -36,6 +36,8 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_ident) == 704, "Incorrect size")
  * @param ident Pointer to ident to fill with values parsed from 'uri'
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_ident_from_uri(const char *uri, struct xnvme_ident *ident);
