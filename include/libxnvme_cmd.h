@@ -86,6 +86,8 @@ xnvme_cmd_ctx_get_data(const struct xnvme_cmd_ctx *ctx)
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned: -EINVAL when
  * `dev` or `ctx` is NULL.
+ *
+ * @errno
  */
 int
 xnvme_dev_get_cmd_ctx(struct xnvme_dev *dev, struct xnvme_cmd_ctx *ctx);
@@ -129,6 +131,8 @@ xnvme_cmd_ctx_cpl_status(struct xnvme_cmd_ctx *ctx)
  * @param mbuf_nbytes size of the meta-payload in bytes
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_cmd_pass(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
@@ -146,6 +150,8 @@ xnvme_cmd_pass(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *
  * @param mbuf_nbytes size of the meta-payload in bytes
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_cmd_pass_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cnt,
@@ -161,6 +167,8 @@ xnvme_cmd_pass_iov(struct xnvme_cmd_ctx *ctx, struct iovec *dvec, size_t dvec_cn
  * @param mbuf_nbytes size of the meta-payload in bytes
  *
  * @return On success, 0 is returned. On error, negative `errno` is returned.
+ *
+ * @errno
  */
 int
 xnvme_cmd_pass_admin(struct xnvme_cmd_ctx *ctx, void *dbuf, size_t dbuf_nbytes, void *mbuf,
