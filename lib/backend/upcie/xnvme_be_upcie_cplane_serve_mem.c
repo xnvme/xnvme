@@ -383,6 +383,42 @@ _registration_arithmetic(struct xnvme_be_upcie_cplane_registration *reg, int dma
 	return 0;
 }
 
+/**
+ * Map `dmabuf_fd` into the IOAS the served controllers are attached to, with IOMMU_IOAS_MAP_FILE,
+ * and describe it to the client as one arithmetic range; upstream kernels take the dma-bufs
+ * vfio-pci exports, and need no helper module for them
+ */
+static int
+_registration_map_file(struct xnvme_be_upcie_cplane_registration *reg, int dmabuf_fd,
+		       uint64_t nbytes)
+{
+	struct hostmem_shared_desc *desc;
+	uint64_t iova = 0, offset = 0;
+	int err;
+
+	err = iommufd_ioas_map_file(&g_upcie_rte.cdev.iommufd, dmabuf_fd, 0, nbytes,
+				    IOMMU_IOAS_MAP_READABLE | IOMMU_IOAS_MAP_WRITEABLE, &iova);
+	if (err) {
+		return err;
+	}
+
+	err = xnvme_be_upcie_cplane_serve_buf_alloc(sizeof(*desc), &offset);
+	if (err) {
+		XNVME_DEBUG("FAILED: no room for a description; err(%d)", err);
+		iommufd_ioas_unmap(&g_upcie_rte.cdev.iommufd, iova, nbytes);
+		return err;
+	}
+	desc = (void *)((char *)g_upcie_rte.mem.dmem.base_va + offset);
+	hostmem_shared_desc_fill_arithmetic(desc, nbytes, iova);
+
+	reg->desc_offset = offset;
+	reg->file_mapped = 1;
+	reg->file_iova = iova;
+	reg->file_bytes = nbytes;
+
+	return 0;
+}
+
 static int
 _xnvme_be_upcie_cplane_serve_register_mem(int dmabuf_fd, uint64_t nbytes, uint32_t page_size,
 					  const char *bdf,
@@ -416,6 +452,16 @@ _xnvme_be_upcie_cplane_serve_register_mem(int dmabuf_fd, uint64_t nbytes, uint32
 	memset(out, 0, sizeof(*out));
 	out->map_fd = -1;
 	out->region = -1;
+
+	if ((XNVME_BE_UPCIE_MODE_VFIO_CDEV == g_upcie_rte.mode) && g_upcie_rte.cdev.ioas_alive) {
+		err = _registration_map_file(out, dmabuf_fd, nbytes);
+		if (!err) {
+			return 0;
+		}
+		XNVME_DEBUG("INFO: IOMMU_IOAS_MAP_FILE refused the dma-buf; err(%d); trying the "
+			    "dmabuf_import and iommu_map_pa modules",
+			    err);
+	}
 
 	/* Detaching closes the descriptor the import holds, and the caller still owns
 	 * dmabuf_fd; sharing one number lets the detach close whatever reused it.
@@ -487,7 +533,15 @@ _xnvme_be_upcie_cplane_serve_unregister_mem(struct xnvme_be_upcie_cplane_registr
 		return;
 	}
 
-	if (reg->region >= 0) {
+	if (reg->file_mapped) {
+		int err = iommufd_ioas_unmap(&g_upcie_rte.cdev.iommufd, reg->file_iova,
+					     reg->file_bytes);
+
+		if (err) {
+			XNVME_DEBUG("FAILED: iommufd_ioas_unmap(); err(%d)", err);
+		}
+		xnvme_be_upcie_cplane_serve_buf_free(reg->desc_offset);
+	} else if (reg->region >= 0) {
 		struct _cplane_region *region = &g_regions[reg->region];
 
 		if (region->refs && !--region->refs) {
