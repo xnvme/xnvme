@@ -35,8 +35,9 @@ struct xnvme_be_upcie_cplane_registration {
 	int attached;
 	int map_fd; ///< -1 where the mode needs none
 	uint64_t map_handle;
-	int region; ///< -1 when there is none
-	int dev;    ///< The device of the range it was made through
+	int region;   ///< -1 when there is none
+	int dev;      ///< The device of the range it was made through
+	int file_map; ///< -1 when IOMMU_IOAS_MAP_FILE did not map it
 };
 
 int
