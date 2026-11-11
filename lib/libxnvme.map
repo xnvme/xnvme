@@ -95,6 +95,89 @@
 		xnvme_cmd_pass_iov;
 		xnvme_cmd_pass_admin;
 
+		# libxnvme_cmd_prep_adm.h
+		xnvme_cmd_prep_adm_delete_io_submission_queue_sized;
+		xnvme_cmd_prep_adm_create_io_submission_queue_sized;
+		xnvme_cmd_prep_adm_get_log_page_sized;
+		xnvme_cmd_prep_adm_delete_io_completion_queue_sized;
+		xnvme_cmd_prep_adm_create_io_completion_queue_sized;
+		xnvme_cmd_prep_adm_identify_sized;
+		xnvme_cmd_prep_adm_abort_sized;
+		xnvme_cmd_prep_adm_set_features_sized;
+		xnvme_cmd_prep_adm_get_features_sized;
+		xnvme_cmd_prep_adm_asynchronous_event_request_sized;
+		xnvme_cmd_prep_adm_namespace_management_sized;
+		xnvme_cmd_prep_adm_firmware_commit_sized;
+		xnvme_cmd_prep_adm_firmware_image_download_sized;
+		xnvme_cmd_prep_adm_device_self_test_sized;
+		xnvme_cmd_prep_adm_namespace_attachment_sized;
+		xnvme_cmd_prep_adm_keep_alive_sized;
+		xnvme_cmd_prep_adm_directive_send_sized;
+		xnvme_cmd_prep_adm_directive_receive_sized;
+		xnvme_cmd_prep_adm_virtualization_management_sized;
+		xnvme_cmd_prep_adm_nvme_mi_send_sized;
+		xnvme_cmd_prep_adm_nvme_mi_receive_sized;
+		xnvme_cmd_prep_adm_capacity_management_sized;
+		xnvme_cmd_prep_adm_discovery_information_management_sized;
+		xnvme_cmd_prep_adm_fabric_zoning_receive_sized;
+		xnvme_cmd_prep_adm_lockdown_sized;
+		xnvme_cmd_prep_adm_fabric_zoning_lookup_sized;
+		xnvme_cmd_prep_adm_clear_exported_nvm_resource_configuration_sized;
+		xnvme_cmd_prep_adm_fabric_zoning_send_sized;
+		xnvme_cmd_prep_adm_manage_exported_nvm_subsystem_receive_sized;
+		xnvme_cmd_prep_adm_manage_exported_nvm_subsystem_send_sized;
+		xnvme_cmd_prep_adm_manage_exported_namespace_sized;
+		xnvme_cmd_prep_adm_manage_exported_port_sized;
+		xnvme_cmd_prep_adm_cross_controller_reset_sized;
+		xnvme_cmd_prep_adm_send_discovery_log_page_sized;
+		xnvme_cmd_prep_adm_track_send_sized;
+		xnvme_cmd_prep_adm_track_receive_sized;
+		xnvme_cmd_prep_adm_migration_send_sized;
+		xnvme_cmd_prep_adm_migration_receive_sized;
+		xnvme_cmd_prep_adm_controller_data_queue_sized;
+		xnvme_cmd_prep_adm_doorbell_buffer_config_sized;
+		xnvme_cmd_prep_adm_format_nvm_sized;
+		xnvme_cmd_prep_adm_security_send_sized;
+		xnvme_cmd_prep_adm_security_receive_sized;
+		xnvme_cmd_prep_adm_sanitize_sized;
+		xnvme_cmd_prep_adm_load_program_sized;
+		xnvme_cmd_prep_adm_get_lba_status_sized;
+		xnvme_cmd_prep_adm_program_activation_management_sized;
+		xnvme_cmd_prep_adm_memory_range_set_management_sized;
+		xnvme_cmd_prep_adm_sanitize_namespace_sized;
+
+		# libxnvme_cmd_prep_io.h
+		xnvme_cmd_prep_io_flush_sized;
+		xnvme_cmd_prep_io_reservation_register_sized;
+		xnvme_cmd_prep_io_reservation_report_sized;
+		xnvme_cmd_prep_io_reservation_acquire_sized;
+		xnvme_cmd_prep_io_io_management_receive_sized;
+		xnvme_cmd_prep_io_reservation_release_sized;
+		xnvme_cmd_prep_io_cancel_sized;
+		xnvme_cmd_prep_io_io_management_send_sized;
+
+		# libxnvme_cmd_prep_nvm.h
+		xnvme_cmd_prep_nvm_write_sized;
+		xnvme_cmd_prep_nvm_read_sized;
+		xnvme_cmd_prep_nvm_write_uncorrectable_sized;
+		xnvme_cmd_prep_nvm_compare_sized;
+		xnvme_cmd_prep_nvm_write_zeroes_sized;
+		xnvme_cmd_prep_nvm_dataset_management_sized;
+		xnvme_cmd_prep_nvm_verify_sized;
+		xnvme_cmd_prep_nvm_copy_sized;
+
+		# libxnvme_cmd_prep_zns.h
+		xnvme_cmd_prep_zns_zone_management_send_sized;
+		xnvme_cmd_prep_zns_zone_management_receive_sized;
+		xnvme_cmd_prep_zns_zone_append_sized;
+
+		# libxnvme_cmd_prep_kv.h
+		xnvme_cmd_prep_kv_store_sized;
+		xnvme_cmd_prep_kv_retrieve_sized;
+		xnvme_cmd_prep_kv_list_sized;
+		xnvme_cmd_prep_kv_delete_sized;
+		xnvme_cmd_prep_kv_exist_sized;
+
 		# libxnvme_dev.h
 		xnvme_enumerate_action;
 		xnvme_dev;
