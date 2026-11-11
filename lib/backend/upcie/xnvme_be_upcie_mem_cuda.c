@@ -81,10 +81,32 @@ _unmap(const struct xnvme_dev *dev, void *vaddr)
 	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
 
 	if (g_upcie_rte.connection.alive) {
-		return xnvme_be_upcie_served_mem_unmap(state->dmem, state->ctrlr, vaddr);
+		return xnvme_be_upcie_served_mem_unmap(state->dmem, vaddr);
 	}
 
 	return xnvme_be_upcie_dmamem_unmap(state->dmem, vaddr);
+}
+
+/* Served, a range is installed for the controllers it was registered through only */
+static int
+_reach(const struct xnvme_dev *dev, void *vaddr, size_t nbytes)
+{
+	const struct xnvme_be_upcie_state *state = &xnvme_be_state(dev)->upcie_state;
+	struct xnvme_buf_reg *reg;
+	int err;
+
+	if (!g_upcie_rte.connection.alive ||
+	    xnvme_buf_reg_find(state->dmem, vaddr, nbytes, &reg) ||
+	    xnvme_be_upcie_served_mem_reaches(state->ctrlr, reg->vaddr)) {
+		return 0;
+	}
+
+	err = _map(dev, reg->vaddr, reg->nbytes);
+	if (err) {
+		reg->refs -= 1;
+	}
+
+	return err;
 }
 
 static int
@@ -110,7 +132,7 @@ xnvme_be_upcie_cuda_buf_register(const struct xnvme_dev *dev, void *vaddr, size_
 	err = xnvme_be_upcie_buf_reg_ref(state->dmem, g_upcie_cuda_rte.cuda_heap.vaddr,
 					 g_upcie_cuda_rte.cuda_heap.size, vaddr, nbytes);
 	if (err != -ENOENT) {
-		return err;
+		return err ? err : _reach(dev, vaddr, nbytes);
 	}
 
 	err = _map(dev, vaddr, nbytes);
