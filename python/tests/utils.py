@@ -62,6 +62,7 @@ def buf_and_view(dev, buffer_size):
     """
 
     buf = xnvme.xnvme_buf_alloc(dev, buffer_size)
+    assert buf, f"xnvme_buf_alloc() of {buffer_size} bytes failed"
 
     view = numpy.ctypeslib.as_array(
         ctypes.cast(buf, ctypes.POINTER(ctypes.c_uint8)),
