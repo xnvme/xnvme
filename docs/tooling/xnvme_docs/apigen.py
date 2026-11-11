@@ -35,6 +35,11 @@ NAMESPACES: dict[str, set[str]] = {
         "xnvme_scan",
     },
     "nvme": {
+        "xnvme_cmd_prep_adm",
+        "xnvme_cmd_prep_io",
+        "xnvme_cmd_prep_nvm",
+        "xnvme_cmd_prep_zns",
+        "xnvme_cmd_prep_kv",
         "xnvme_adm",
         "xnvme_kvs",
         "xnvme_nvm",
