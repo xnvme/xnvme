@@ -1996,6 +1996,39 @@ xnvme_cli_counts_pr(const struct xnvme_cli_counts *counts)
 /**
  * Parse at most XNVME_CLI_SUB_OPTS_LEN arguments
  */
+/**
+ * Name the positional arguments and the required options of 'sub' that were not given, and
+ * the command showing its usage
+ */
+static void
+cli_pinf_missing(struct xnvme_cli *cli, struct xnvme_cli_sub *sub, int npos_given)
+{
+	int pos = 0;
+
+	printf("# Missing required arguments:");
+	for (int oi = 0; oi < XNVME_CLI_SUB_OPTS_LEN; ++oi) {
+		struct xnvme_cli_sub_opt *opt = &sub->opts[oi];
+		struct xnvme_cli_opt_attr *attr = NULL;
+
+		if ((opt->opt == XNVME_CLI_OPT_END) || (opt->opt == XNVME_CLI_OPT_NONE)) {
+			break;
+		}
+		attr = xnvme_cli_opt_attr_by_opt(opt->opt, xnvme_cli_opts);
+		if (!attr) {
+			break;
+		}
+
+		if ((opt->type == XNVME_CLI_POSA) && (pos++ >= npos_given)) {
+			printf(" <%s>", attr->name);
+		}
+		if ((opt->type == XNVME_CLI_LREQ) && !cli->given[attr->opt]) {
+			printf(" --%s %s", attr->name, xnvme_cli_opt_value_type_str(attr->vtype));
+		}
+	}
+	printf("\n");
+	printf("# See: '%s %s --help'\n", cli->argv[0], sub->name);
+}
+
 int
 xnvme_cli_parse(struct xnvme_cli *cli)
 {
@@ -2206,7 +2239,7 @@ xnvme_cli_parse(struct xnvme_cli *cli)
 		int npos_given = cli->argc - (optind + 1);
 
 		if (npos_given < signature.posa) {
-			xnvme_cli_pinf("Insufficient arguments, see: --help");
+			cli_pinf_missing(cli, sub, npos_given);
 			errno = EINVAL;
 			return -1;
 		}
@@ -2250,7 +2283,7 @@ xnvme_cli_parse(struct xnvme_cli *cli)
 
 	// Didn't ask for help and insufficient arguments provided
 	if ((!args->help) && (parsed.total_req < signature.total_req)) {
-		xnvme_cli_pinf("Insufficient required arguments, see: --help");
+		cli_pinf_missing(cli, sub, signature.posa);
 		errno = EINVAL;
 		return -1;
 	}

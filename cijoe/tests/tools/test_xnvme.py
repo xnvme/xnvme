@@ -402,6 +402,21 @@ def test_frontend_tests_listed_and_run(cijoe):
     assert not err
 
 
+def test_frontend_missing_arguments_named(cijoe):
+    """A program run without its required arguments names them, and its --help"""
+
+    err, state = cijoe.run("xnvme test buf buf_alloc_free; test $? -ne 0")
+    assert not err
+    assert "<uri>" in state.output()
+    assert "--count" in state.output()
+    assert "'xnvme test buf buf_alloc_free --help'" in state.output()
+
+    err, state = cijoe.run("xnvme test buf buf_alloc_free /dev/null; test $? -ne 0")
+    assert not err
+    assert "<uri>" not in state.output()
+    assert "--count" in state.output()
+
+
 def test_frontend_perf_program(cijoe):
     err, state = cijoe.run("xnvme")
     assert not err
