@@ -87,6 +87,8 @@
 		xnvme_dev_get_cmd_ctx;
 		xnvme_cmd_ctx_clear;
 		xnvme_cmd_ctx_cpl_status;
+		xnvme_cmd_ctx_set_data;
+		xnvme_cmd_ctx_get_data;
 		xnvme_cmd_pass;
 		xnvme_cmd_pass_iov;
 		xnvme_cmd_pass_admin;
