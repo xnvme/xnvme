@@ -34,6 +34,12 @@ tests = {
   'bits.c': [
     ['get-set', ['get-set']],
   ],
+  'cmd_prep.c': [
+    ['fields', ['fields']],
+    ['conditions', ['conditions']],
+    ['ranges', ['ranges']],
+    ['sizes', ['sizes']],
+  ],
   'buf.c': [
     ['alloc', ['buf_alloc_free', '1GB', '--count', '31']],
     ['virt_alloc', ['buf_virt_alloc_free', '1GB', '--count', '31']],
