@@ -14,7 +14,8 @@
  * Variant of xnvme_cuda.cu that registers an externally-allocated CUDA
  * buffer via xnvme_buf_register() instead of using xnvme_buf_alloc()'s
  * pre-built dma-buf heap. The remaining flow (GPU-resident queue,
- * CUDA-kernel submission, completion drain) is identical.
+ * CUDA-kernel submission, completion drain) is identical. It then closes the
+ * device without unregistering, reopens it and registers the buffer again.
  *
  * Usage: xnvme_cuda_mem_map <pci-id>
  *   e.g: xnvme_cuda_mem_map 0000:01:00.0
@@ -33,6 +34,49 @@ xnvme_cuda_io_kernel(struct xnvme_cuda_queue *qp, union xnvme_spec_sqe *cmds, si
 {
 	size_t tid = threadIdx.x;
 	errors[tid] = xnvme_cuda_cmd_io(qp, &cmds[tid], tid, batch_size);
+}
+
+/**
+ * Close without unregistering, reopen, and register the buffer again
+ *
+ * Closing the last device takes down what was registered through it, so the
+ * buffer is registered anew after reopening. A read into it tells that it was.
+ */
+static int
+reopen_and_read(const char *uri, struct xnvme_opts *opts, struct xnvme_dev **dev, void *buf,
+		size_t nbytes, int *mapped)
+{
+	struct xnvme_cmd_ctx ctx = {};
+	int err;
+
+	xnvme_dev_close(*dev);
+	*mapped = 0;
+
+	*dev = xnvme_dev_open(uri, opts);
+	if (!*dev) {
+		err = -errno;
+		xnvme_cli_perr("xnvme_dev_open()", err);
+		return err;
+	}
+
+	err = xnvme_buf_register(*dev, buf, nbytes);
+	if (err) {
+		xnvme_cli_perr("xnvme_buf_register()", err);
+		return err;
+	}
+	*mapped = 1;
+
+	xnvme_dev_get_cmd_ctx(*dev, &ctx);
+	err = xnvme_nvm_read(&ctx, xnvme_dev_get_nsid(*dev), 0x0, 0, buf, NULL);
+	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+		err = err ? err : -EIO;
+		xnvme_cli_perr("xnvme_nvm_read()", err);
+		return err;
+	}
+
+	printf("OK: read into the buffer registered again after reopening\n");
+
+	return 0;
 }
 
 int
@@ -177,6 +221,14 @@ main(int argc, char **argv)
 		printf("OK: %zu GPU-submitted NVMe reads into registered cudaMalloc buffer\n",
 		       qdepth);
 	}
+	if (err) {
+		goto exit;
+	}
+
+	xnvme_cuda_queue_destroy(dev, gpu_queue);
+	gpu_queue = NULL;
+
+	err = reopen_and_read(argv[1], &opts, &dev, buf, buf_nbytes, &mapped);
 
 exit:
 	if (gpu_queue) {
