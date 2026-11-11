@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <errno.h>
+#include <stdio.h>
+#include <string.h>
 #include <libxnvme.h>
 
 /**
@@ -44,10 +46,11 @@ main(int argc, char **argv)
 
 	xnvme_opts_set_defaults(&opts);
 
-	if (argc < 2) {
-		err = -EINVAL;
-		xnvme_cli_perr("Usage: %s <pci-id>", err);
-		return err;
+	if (argc < 2 || !strcmp(argv[1], "--help")) {
+		printf("Usage: %s <pci-id>\n\nRead with commands a CUDA kernel submits on a "
+		       "GPU-resident queue\n",
+		       argv[0]);
+		return argc < 2;
 	}
 
 	opts.be = "upcie-cuda";

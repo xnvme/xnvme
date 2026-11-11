@@ -4,6 +4,8 @@
 
 #include <errno.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 #include <libxnvme.h>
 
 /**
@@ -52,10 +54,11 @@ main(int argc, char **argv)
 
 	xnvme_opts_set_defaults(&opts);
 
-	if (argc < 2) {
-		err = -EINVAL;
-		xnvme_cli_perr("Usage: %s <pci-id> [homi-id]", err);
-		return err;
+	if (argc < 2 || !strcmp(argv[1], "--help")) {
+		printf("Usage: %s <pci-id> [<homi-id>]\n\nRead from a CUDA kernel into a "
+		       "cudaMalloc'd, registered buffer\n",
+		       argv[0]);
+		return argc < 2;
 	}
 
 	opts.be = "upcie-cuda";

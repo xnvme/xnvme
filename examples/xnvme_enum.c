@@ -13,6 +13,8 @@
  * # Enumerate remote system
  * example_enum 192.168.1.1:4472
  */
+#include <stdio.h>
+#include <string.h>
 #include <libxnvme.h>
 
 int
@@ -27,6 +29,13 @@ int
 main(int argc, char *argv[])
 {
 	struct xnvme_opts opts = {0};
+
+	if (argc > 1 && !strcmp(argv[1], "--help")) {
+		printf("Usage: %s [<sys-uri>]\n\nEnumerate the devices of this system, or of the "
+		       "one at <sys-uri>\n",
+		       argv[0]);
+		return 0;
+	}
 
 	xnvme_opts_set_defaults(&opts);
 

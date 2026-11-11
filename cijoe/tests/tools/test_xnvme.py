@@ -417,6 +417,25 @@ def test_frontend_missing_arguments_named(cijoe):
     assert "--count" in state.output()
 
 
+def test_frontend_examples_help(cijoe):
+    """Each example program prints its usage for --help, as the group listing says"""
+
+    err, state = cijoe.run("xnvme example")
+    assert not err
+    assert "xnvme example <name> --help" in state.output()
+
+    err, state = cijoe.run("xnvme --list-cmds=example")
+    assert not err
+    names = state.output().split()
+    assert names, "no example programs on the exec path"
+    for name in names:
+        err, state = cijoe.run(f"xnvme example {name} --help")
+        assert not err, f"'xnvme example {name} --help' failed"
+        assert (
+            "Usage:" in state.output()
+        ), f"'xnvme example {name} --help' gave no usage"
+
+
 def test_frontend_perf_program(cijoe):
     err, state = cijoe.run("xnvme")
     assert not err

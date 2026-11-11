@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <hip/hip_runtime_api.h>
+#include <string.h>
 #include <libxnvme.h>
 
 /**
@@ -35,9 +36,11 @@ main(int argc, char **argv)
 
 	xnvme_opts_set_defaults(&opts);
 
-	if (argc < 2) {
-		fprintf(stderr, "Usage: %s <pci-id> [homi-id]\n", argv[0]);
-		return -EINVAL;
+	if (argc < 2 || !strcmp(argv[1], "--help")) {
+		printf("Usage: %s <pci-id> [<homi-id>]\n\nRead into a hipMalloc'd buffer "
+		       "registered with xnvme_buf_register()\n",
+		       argv[0]);
+		return argc < 2;
 	}
 
 	opts.be = "upcie-hip";

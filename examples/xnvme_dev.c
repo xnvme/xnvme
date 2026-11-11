@@ -22,6 +22,8 @@
  * # NVMe-over-Fabrics
  * example_dev 192.168.1.1:4472 1
  */
+#include <stdio.h>
+#include <string.h>
 #include <libxnvme.h>
 
 int
@@ -31,6 +33,13 @@ main(int argc, char *argv[])
 	struct xnvme_dev *dev;
 
 	xnvme_opts_set_defaults(&opts);
+
+	if (argc < 2 || !strcmp(argv[1], "--help")) {
+		printf("Usage: %s <uri> [<nsid>]\n\nOpen namespace <nsid>, or 1, of the device at "
+		       "<uri> and print it\n",
+		       argv[0]);
+		return argc < 2;
+	}
 
 	switch (argc) {
 	case 3:
