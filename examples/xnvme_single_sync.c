@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <errno.h>
+#include <stdio.h>
+#include <string.h>
 #include <libxnvme.h>
 
 /**
@@ -25,9 +27,11 @@ main(int argc, char **argv)
 
 	xnvme_opts_set_defaults(&opts);
 
-	if (argc < 2) {
-		xnvme_cli_perr("Usage: %s <ident>", EINVAL);
-		return 1;
+	if (argc < 2 || !strcmp(argv[1], "--help")) {
+		printf("Usage: %s <uri>\n\nRead the first block of the device at <uri> with one "
+		       "synchronous command\n",
+		       argv[0]);
+		return argc < 2;
 	}
 
 	dev = xnvme_dev_open(argv[1], &opts);
