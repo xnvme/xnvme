@@ -58,11 +58,8 @@ xnvme_cmd_ctx_set_cb(struct xnvme_cmd_ctx *ctx, xnvme_queue_cb cb, void *cb_arg)
  * @param ctx Pointer to the ::xnvme_cmd_ctx
  * @param data The pointer to assign
  */
-static inline void
-xnvme_cmd_ctx_set_data(struct xnvme_cmd_ctx *ctx, void *data)
-{
-	ctx->async.cb_arg = data;
-}
+void
+xnvme_cmd_ctx_set_data(struct xnvme_cmd_ctx *ctx, void *data);
 
 /**
  * Retrieve the pointer assigned to the given ::xnvme_cmd_ctx with xnvme_cmd_ctx_set_data()
@@ -71,11 +68,8 @@ xnvme_cmd_ctx_set_data(struct xnvme_cmd_ctx *ctx, void *data)
  *
  * @return The pointer assigned with xnvme_cmd_ctx_set_data()
  */
-static inline void *
-xnvme_cmd_ctx_get_data(const struct xnvme_cmd_ctx *ctx)
-{
-	return ctx->async.cb_arg;
-}
+void *
+xnvme_cmd_ctx_get_data(const struct xnvme_cmd_ctx *ctx);
 
 /**
  * Initialize the given command-context for issuing synchronous commands to the given device
@@ -101,18 +95,15 @@ void
 xnvme_cmd_ctx_clear(struct xnvme_cmd_ctx *ctx);
 
 /**
- * Encapsulate completion-error checking here for now.
+ * Check the status of the completion in the given ::xnvme_cmd_ctx
  *
  * @param ctx Pointer to the ::xnvme_cmd_ctx to check status on
  *
- * @return On success, 0 is return. On error, a non-zero value is returned.
+ * @return 0 when the Status Code and the Status Code Type of the completion are both zero,
+ * otherwise 1.
  */
-static inline int
-xnvme_cmd_ctx_cpl_status(struct xnvme_cmd_ctx *ctx)
-{
-	return xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC) ||
-	       xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT);
-}
+int
+xnvme_cmd_ctx_cpl_status(const struct xnvme_cmd_ctx *ctx);
 
 /**
  * Pass an NVMe IO Command through to the device via the given ::xnvme_cmd_ctx

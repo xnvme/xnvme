@@ -31,6 +31,25 @@ xnvme_cmd_ctx_clear(struct xnvme_cmd_ctx *ctx)
 	memset(ctx, 0x0, sizeof(*ctx));
 }
 
+void
+xnvme_cmd_ctx_set_data(struct xnvme_cmd_ctx *ctx, void *data)
+{
+	ctx->async.cb_arg = data;
+}
+
+void *
+xnvme_cmd_ctx_get_data(const struct xnvme_cmd_ctx *ctx)
+{
+	return ctx->async.cb_arg;
+}
+
+int
+xnvme_cmd_ctx_cpl_status(const struct xnvme_cmd_ctx *ctx)
+{
+	return xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SC) ||
+	       xnvme_bits_get(ctx->cpl.status, XNVME_SPEC_CQE_STATUS_SCT);
+}
+
 int
 xnvme_dev_get_cmd_ctx(struct xnvme_dev *dev, struct xnvme_cmd_ctx *ctx)
 {

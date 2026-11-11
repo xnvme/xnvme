@@ -9,7 +9,7 @@ import numpy
 import pytest
 import xnvme
 from conftest import xnvme_parametrize
-from utils import buf_and_view, dev_from_params, xnvme_cmd_ctx_cpl_status
+from utils import buf_and_view, dev_from_params
 
 # Blocks written and read back one by one, and copied
 NBLOCKS = 8
@@ -29,7 +29,7 @@ def cmd_ctx(dev):
 def check(err, ctx, name):
     """Assert that the command 'name' on 'ctx' returned 'err' 0 and succeeded"""
 
-    status = xnvme_cmd_ctx_cpl_status(ctypes.pointer(ctx))
+    status = xnvme.xnvme_cmd_ctx_cpl_status(ctypes.pointer(ctx))
     assert not (err or status), f"{name}(): err({err}), status(0x{status:x})"
 
 
