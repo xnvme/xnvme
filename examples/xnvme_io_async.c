@@ -72,7 +72,7 @@ sub_async_read(struct xnvme_cli *cli)
 	}
 	slba = cli->args.slba;
 	naddrs = cli->args.elba - cli->args.slba + 1;
-	nbytes = naddrs * geo->nbytes;
+	nbytes = naddrs * geo->lba_nbytes;
 
 	xnvme_cli_pinf("Allocating and filling buf of nbytes: %zu", nbytes);
 	buf = xnvme_buf_alloc(dev, nbytes);
@@ -106,8 +106,21 @@ sub_async_read(struct xnvme_cli *cli)
 	for (uint64_t curs = 0; (curs < naddrs) && !cb_args.ecount;) {
 		struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(queue);
 
+		struct xnvme_cmd_prep_nvm_read_args args = {
+			.args_nbytes = sizeof(args),
+			.nsid = nsid,
+			.slba = slba + curs,
+		};
+
+		err = xnvme_cmd_prep_nvm_read(&ctx->cmd, &args);
+		if (err) {
+			xnvme_cli_perr("xnvme_cmd_prep_nvm_read()", err);
+			xnvme_queue_put_cmd_ctx(queue, ctx);
+			goto exit;
+		}
+
 submit:
-		err = xnvme_nvm_read(ctx, nsid, slba + curs, 0, payload, NULL);
+		err = xnvme_cmd_pass(ctx, payload, geo->lba_nbytes, NULL, 0);
 		switch (err) {
 		case 0:
 			cb_args.submitted += 1;
@@ -126,7 +139,7 @@ submit:
 
 next:
 		++curs;
-		payload += geo->nbytes;
+		payload += geo->lba_nbytes;
 	}
 
 	err = xnvme_queue_drain(queue);
@@ -143,7 +156,7 @@ next:
 		goto exit;
 	}
 
-	xnvme_cli_timer_bw_pr(cli, "wall-clock", naddrs * geo->nbytes);
+	xnvme_cli_timer_bw_pr(cli, "wall-clock", naddrs * geo->lba_nbytes);
 
 	if (cli->args.data_output) {
 		xnvme_cli_pinf("Dumping nbytes: %zu, to: '%s'", nbytes, cli->args.data_output);
@@ -209,7 +222,7 @@ sub_async_write(struct xnvme_cli *cli)
 	}
 	slba = cli->args.slba;
 	naddrs = cli->args.elba - cli->args.slba + 1;
-	nbytes = naddrs * geo->nbytes;
+	nbytes = naddrs * geo->lba_nbytes;
 
 	xnvme_cli_pinf("Allocating and filling buf of nbytes: %zu", nbytes);
 	buf = xnvme_buf_alloc(dev, nbytes);
@@ -243,8 +256,21 @@ sub_async_write(struct xnvme_cli *cli)
 	for (uint64_t sect = 0; (sect < naddrs) && !cb_args.ecount;) {
 		struct xnvme_cmd_ctx *ctx = xnvme_queue_get_cmd_ctx(queue);
 
+		struct xnvme_cmd_prep_nvm_write_args args = {
+			.args_nbytes = sizeof(args),
+			.nsid = nsid,
+			.slba = slba + sect,
+		};
+
+		err = xnvme_cmd_prep_nvm_write(&ctx->cmd, &args);
+		if (err) {
+			xnvme_cli_perr("xnvme_cmd_prep_nvm_write()", err);
+			xnvme_queue_put_cmd_ctx(queue, ctx);
+			goto exit;
+		}
+
 submit:
-		err = xnvme_nvm_write(ctx, nsid, slba + sect, 0, payload, NULL);
+		err = xnvme_cmd_pass(ctx, payload, geo->lba_nbytes, NULL, 0);
 		switch (err) {
 		case 0:
 			cb_args.submitted += 1;
@@ -263,7 +289,7 @@ submit:
 
 next:
 		++sect;
-		payload += geo->nbytes;
+		payload += geo->lba_nbytes;
 	}
 
 	err = xnvme_queue_drain(queue);
