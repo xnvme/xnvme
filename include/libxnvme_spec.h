@@ -7,13 +7,10 @@
  * with accessors, possibly bit-fields, and enums for values such as command
  * opcodes.
  *
- * Auxilary header files are provided for the different IO command-sets, e.g.
- * ``libxnvme_nvm.h``, providing utility functions such as ``xnvme_nvm_read``,
- * ``xnvme_nvm_write``, and similarly ``libxnvme_znd.h`` with utilities such as
- * ``xnvme_znd_append``, ``xnvme_znd_mgmt_send``.  These can also contain enums
- * and structs, however, these are not based on definitions in the NVMe
- * specification, rather, these build on the spec. definition in order to
- * provide something sligthly more convenient to the user.
+ * The commands are prepared from these definitions by the functions of
+ * ``libxnvme_cmd_prep_<set>.h``, such as xnvme_cmd_prep_nvm_read(), and
+ * auxiliary headers such as ``libxnvme_znd.h`` build on them with helpers
+ * that are not themselves defined by the specification.
  *
  * The pretty-printers of these definitions are declared in ``libxnvme_pp.h``.
  * They are named by the type, suffixed by ``_fpr`` to print to a given stream
@@ -2567,18 +2564,6 @@ XNVME_STATIC_ASSERT(sizeof(struct xnvme_spec_nvm_scopy_fmt_zero) == 32, "Incorre
 #define XNVME_SPEC_NVM_SCOPY_FMT_ZERO_RPARS_CETYPE 0xf0000
 /** Fast Copy Only, Format 2h only; bit 15 of 'sopt', FCO (NVM Command Set 1.3, Figure 40) */
 #define XNVME_SPEC_NVM_SCOPY_FMT_ZERO_SOPT_FCO 0x8000
-
-/**
- * Structure conversion for support Kernel format
- *
- * @enum xnvme_nvm_scopy_fmt
- */
-enum xnvme_nvm_scopy_fmt {
-	XNVME_NVM_SCOPY_FMT_ZERO =
-		0x1, ///< user provides entries formatted as ::XNVME_NVM_SCOPY_FMT_ZERO
-	XNVME_NVM_SCOPY_FMT_SRCLEN =
-		0x1 << 8, ///< user provides entries formatted as ::XNVME_NVM_SCOPY_FMT_SRCLEN
-};
 
 /** Number of Source Range entries in ::xnvme_spec_nvm_scopy_source_range, a 4096-byte buffer */
 #define XNVME_SPEC_NVM_SCOPY_NENTRY_MAX 128

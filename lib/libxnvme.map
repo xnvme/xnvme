@@ -7,24 +7,6 @@
 		xnvme_cplane_server_alive;
 		xnvme_cplane_serve;
 
-		# libxnvme_adm.h
-		xnvme_adm_idfy;
-		xnvme_adm_idfy_ctrlr;
-		xnvme_adm_idfy_ctrlr_csi;
-		xnvme_adm_idfy_ns;
-		xnvme_adm_idfy_ns_csi;
-		xnvme_prep_adm_log;
-		xnvme_adm_log;
-		xnvme_prep_adm_gfeat;
-		xnvme_prep_adm_sfeat;
-		xnvme_adm_gfeat;
-		xnvme_adm_gfeat_nqueues;
-		xnvme_adm_sfeat;
-		xnvme_adm_format;
-		xnvme_nvm_sanitize;
-		xnvme_adm_dir_send;
-		xnvme_adm_dir_recv;
-
 		# libxnvme_be.h
 		xnvme_be_attr;
 		xnvme_be_attr_get;
@@ -293,26 +275,9 @@
 		# libxnvme_kvs.h
 		xnvme_retreive_opts;
 		xnvme_store_opts;
-		xnvme_kvs_retrieve;
-		xnvme_kvs_store;
-		xnvme_kvs_delete;
-		xnvme_kvs_exist;
-		xnvme_kvs_list;
 
 		# libxnvme_libconf.h
 		xnvme_libconf_get;
-
-		# libxnvme_nvm.h
-		xnvme_nvm_read;
-		xnvme_nvm_write;
-		xnvme_nvm_write_uncorrectable;
-		xnvme_nvm_write_zeroes;
-		xnvme_prep_nvm;
-		xnvme_nvm_scopy;
-		xnvme_nvm_dsm;
-		xnvme_nvm_mgmt_recv;
-		xnvme_nvm_mgmt_send;
-		xnvme_nvm_compare;
 
 		# libxnvme_opts.h
 		xnvme_opts_css;
@@ -515,7 +480,6 @@
 		xnvme_spec_nvm_write_zeroes;
 		xnvme_spec_nvm_cmd_cpl_sc;
 		xnvme_spec_nvm_scopy_fmt_zero;
-		xnvme_nvm_scopy_fmt;
 		xnvme_spec_nvm_scopy_source_range;
 		xnvme_spec_nvm_cmd_scopy;
 		xnvme_spec_nvm_cmd_scopy_fmt_srclen;
@@ -590,21 +554,17 @@
 		xnvme_ver_vcs;
 
 		# libxnvme_znd.h
-		xnvme_znd_append;
 		xnvme_znd_descr_from_dev;
 		xnvme_znd_descr_from_dev_in_state;
 		xnvme_znd_dev_get_ctrlr;
 		xnvme_znd_dev_get_lbafe;
 		xnvme_znd_dev_get_ns;
 		xnvme_znd_log_changes_from_dev;
-		xnvme_znd_mgmt_recv;
-		xnvme_znd_mgmt_send;
 		xnvme_znd_report;
 		xnvme_znd_report_find_arbitrary;
 		xnvme_znd_report_from_dev;
 		xnvme_znd_report_get_descr;
 		xnvme_znd_stat;
-		xnvme_znd_zrwa_flush;
 
 
 	local:
