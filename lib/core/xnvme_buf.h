@@ -103,4 +103,12 @@ xnvme_buf_reg_add(const void *owner, void *vaddr, size_t nbytes, uint64_t priv);
 void
 xnvme_buf_reg_remove(struct xnvme_buf_reg *reg);
 
+/**
+ * Remove every registration of an owner, as when what they are registered with is torn down
+ *
+ * @param owner What the ranges are registered with
+ */
+void
+xnvme_buf_reg_remove_owner(const void *owner);
+
 #endif /* __INTERNAL_XNVME_BUF_H */

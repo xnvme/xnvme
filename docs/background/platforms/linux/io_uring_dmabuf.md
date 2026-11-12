@@ -37,6 +37,12 @@ xnvme_buf_register(dev, buf, nbytes);
 `xnvme_buf_register()` registers the allocation with the ring of every queue of
 the device, and a new queue registers the allocations already registered. IO on
 a registered buffer is submitted as `IORING_OP_READ_FIXED` / `IORING_OP_WRITE_FIXED`.
+The allocation is exported whole, as the CUDA or HIP allocation holding the
+range, and registered in whole pages, with the form of
+`IORING_REGISTER_BUFFERS_UPDATE` that takes a dma-buf, which the series under
+{ref}`sec-platforms-linux-async-io_uring_dmabuf-kernel` adds. Registering host
+memory does nothing. See {ref}`sec-background-memory` for what registering does
+on the other backends.
 
 ## Limitations
 

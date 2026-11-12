@@ -19,6 +19,7 @@
 #include <xnvme_be_upcie_cuda_cqmirror.h>
 #include <upcie/experimental/iommu_map_pa.h>
 #include <xnvme_be_state.h>
+#include <xnvme_buf.h>
 
 static _Atomic int g_cuda_ctrlr_count;
 
@@ -79,10 +80,12 @@ _cuda_rte_term(void)
 	}
 
 	xnvme_be_upcie_cuda_cqmirror_term();
+	xnvme_be_upcie_served_mem_unmap_all(&g_upcie_cuda_rte.dmem, NULL);
 	for (int i = 0; i < XNVME_BE_CREF_MAX_ENTRIES; ++i) {
 		_cuda_ctrlr_term(&g_upcie_cuda_rte.ctrlrs[i]);
 	}
 
+	xnvme_buf_reg_remove_owner(&g_upcie_cuda_rte.dmem);
 	dmamem_destroy(&g_upcie_cuda_rte.dmem);
 	cudamem_heap_term(&g_upcie_cuda_rte.cuda_heap);
 	_cuda_ctx_term();
@@ -524,6 +527,7 @@ _cuda_dev_dmem_term(struct xnvme_dev *dev)
 
 	/* The mappings go with the range, so the table goes with the last hold */
 	if (atomic_load(&g_cuda_ctrlr_count) == 1) {
+		xnvme_buf_reg_remove_owner(&g_upcie_cuda_rte.dmem);
 		dmamem_destroy(&g_upcie_cuda_rte.dmem);
 		g_upcie_cuda_rte.dmem_is_shared = 0;
 		g_upcie_cuda_rte.dmem_in_range = 0;
@@ -591,6 +595,7 @@ xnvme_be_upcie_cuda_ctrlr_term(void *handle)
 {
 	struct xnvme_be_upcie_cuda_ctrlr *slot = _cuda_ctrlr_slot_of(handle);
 
+	xnvme_be_upcie_served_mem_unmap_all(&g_upcie_cuda_rte.dmem, handle);
 	if (slot) {
 		_cuda_ctrlr_term(slot);
 	}

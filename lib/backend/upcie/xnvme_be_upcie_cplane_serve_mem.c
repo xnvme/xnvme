@@ -237,11 +237,40 @@ static struct _cplane_region {
 	uint32_t page_size;
 
 	uint64_t desc_offset;
-	uint64_t map_handle;
+	uint64_t handles[DMAMEM_IOMMU_MAP_PA_DEVS_MAX]; ///< By device of the range; 0 when shared
+	uint32_t devs; ///< A bit per device of the range it is installed for
 	uint64_t iova_base;
 	int map_fd;
 	int refs;
 } g_regions[XNVME_BE_UPCIE_CPLANE_REGIONS_MAX];
+
+static int
+_imp_dev(const char *bdf)
+{
+	const struct dmamem_iommu_map_pa *imp = g_iova_range.imp;
+
+	for (uint32_t d = 0; imp && (d < imp->nbdfs); ++d) {
+		if (!strcmp(imp->bdfs[d], bdf)) {
+			return (int)d;
+		}
+	}
+
+	return -ENODEV;
+}
+
+static void
+_region_term(struct _cplane_region *region)
+{
+	for (int d = 0; d < DMAMEM_IOMMU_MAP_PA_DEVS_MAX; ++d) {
+		if ((region->devs & (1U << d)) && region->handles[d]) {
+			iommu_map_pa_del(region->map_fd, region->handles[d]);
+		}
+	}
+	if (region->desc_offset) {
+		xnvme_be_upcie_cplane_serve_buf_free(region->desc_offset);
+	}
+	memset(region, 0, sizeof(*region));
+}
 
 /* Not the handle's own allocator: the regions are installed with iommu_map_pa_add()
  * directly, so it would hand every client the same IOVA */
@@ -317,13 +346,20 @@ _registration_arithmetic(struct xnvme_be_upcie_cplane_registration *reg, int dma
 {
 	struct hostmem_shared_desc *desc;
 	uint64_t iova_base, offset = 0;
-	int err;
+	int dev, err;
 
 	struct _cplane_region *region;
 
 	err = _imp_get(bdf);
 	if (err) {
 		return err;
+	}
+
+	dev = _imp_dev(bdf);
+	if (dev < 0) {
+		XNVME_DEBUG("FAILED: %s is not a device of the range", bdf);
+		_imp_put();
+		return dev;
 	}
 
 	region = _region_slot(phys[0], nbytes, page_size);
@@ -333,51 +369,56 @@ _registration_arithmetic(struct xnvme_be_upcie_cplane_registration *reg, int dma
 		_imp_put();
 		return -ENOSPC;
 	}
-	if (region->refs) {
-		++region->refs;
-		reg->desc_offset = region->desc_offset;
-		reg->region = (int)(region - g_regions);
+	if (!region->refs) {
+		iova_base = _region_iova_alloc(nbytes, page_size);
+		if (!iova_base) {
+			XNVME_DEBUG("FAILED: no room in the range for %" PRIu64 " bytes", nbytes);
+			_imp_put();
+			return -ENOSPC;
+		}
 
-		return 0;
+		err = xnvme_be_upcie_cplane_serve_buf_alloc(sizeof(*desc), &offset);
+		if (err) {
+			XNVME_DEBUG("FAILED: no room for a description; err(%d)", err);
+			_imp_put();
+			return err;
+		}
+
+		desc = (void *)((char *)g_upcie_rte.mem.dmem.base_va + offset);
+		hostmem_shared_desc_fill_arithmetic(desc, nbytes, iova_base);
+
+		region->phys0 = phys[0];
+		region->nbytes = nbytes;
+		region->page_size = page_size;
+		region->iova_base = iova_base;
+		region->desc_offset = offset;
+		region->map_fd = g_iova_range.imp->fd;
 	}
 
-	iova_base = _region_iova_alloc(nbytes, page_size);
-	if (!iova_base) {
-		XNVME_DEBUG("FAILED: no room in the range for %" PRIu64 " bytes", nbytes);
-		_imp_put();
-		return -ENOSPC;
+	/* Each controller translates through a domain of its own, so the region goes into the
+	 * domain of every controller it is registered through, at the one IOVA */
+	if (!(region->devs & (1U << dev))) {
+		err = iommu_map_pa_add(
+			region->map_fd, bdf, dmabuf_fd, region->iova_base, page_size, nphys, phys,
+			IOMMU_MAP_PA_PROT_READ | IOMMU_MAP_PA_PROT_WRITE, &region->handles[dev]);
+		if (err == -EADDRINUSE) {
+			/* A domain shared with a device it is installed for already */
+			region->handles[dev] = 0;
+			err = 0;
+		}
+		if (err) {
+			XNVME_DEBUG("FAILED: iommu_map_pa_add(%s); err(%d)", bdf, err);
+			if (!region->refs) {
+				_region_term(region);
+			}
+			_imp_put();
+			return err;
+		}
+		region->devs |= 1U << dev;
 	}
 
-	err = iommu_map_pa_add(g_iova_range.imp->fd, bdf, dmabuf_fd, iova_base, page_size, nphys,
-			       phys, IOMMU_MAP_PA_PROT_READ | IOMMU_MAP_PA_PROT_WRITE,
-			       &region->map_handle);
-	if (err) {
-		XNVME_DEBUG("FAILED: iommu_map_pa_add(%s); err(%d)", bdf, err);
-		_imp_put();
-		return err;
-	}
-	region->map_fd = g_iova_range.imp->fd;
-
-	err = xnvme_be_upcie_cplane_serve_buf_alloc(sizeof(*desc), &offset);
-	if (err) {
-		XNVME_DEBUG("FAILED: no room for a description; err(%d)", err);
-		iommu_map_pa_del(region->map_fd, region->map_handle);
-		memset(region, 0, sizeof(*region));
-		_imp_put();
-		return err;
-	}
-
-	desc = (void *)((char *)g_upcie_rte.mem.dmem.base_va + offset);
-	hostmem_shared_desc_fill_arithmetic(desc, nbytes, iova_base);
-
-	region->phys0 = phys[0];
-	region->nbytes = nbytes;
-	region->page_size = page_size;
-	region->iova_base = iova_base;
-	region->desc_offset = offset;
-	region->refs = 1;
-
-	reg->desc_offset = offset;
+	++region->refs;
+	reg->desc_offset = region->desc_offset;
 	reg->region = (int)(region - g_regions);
 
 	return 0;
@@ -491,9 +532,7 @@ _xnvme_be_upcie_cplane_serve_unregister_mem(struct xnvme_be_upcie_cplane_registr
 		struct _cplane_region *region = &g_regions[reg->region];
 
 		if (region->refs && !--region->refs) {
-			iommu_map_pa_del(region->map_fd, region->map_handle);
-			xnvme_be_upcie_cplane_serve_buf_free(region->desc_offset);
-			memset(region, 0, sizeof(*region));
+			_region_term(region);
 		}
 		_imp_put();
 	} else if (reg->desc_offset) {

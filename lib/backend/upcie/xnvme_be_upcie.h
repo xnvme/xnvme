@@ -256,9 +256,17 @@ int
 xnvme_be_upcie_served_mem_map(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr *ctrlr,
 			      int dmabuf_fd, void *vaddr, size_t nbytes, uint32_t page_size);
 
+/** Give back the registrations of `vaddr` with the server, through every controller */
 int
-xnvme_be_upcie_served_mem_unmap(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr *ctrlr,
-				void *vaddr);
+xnvme_be_upcie_served_mem_unmap(struct dmamem *dmem, void *vaddr);
+
+/** Whether `vaddr` is registered with the server through `ctrlr` */
+int
+xnvme_be_upcie_served_mem_reaches(struct xnvme_be_upcie_ctrlr *ctrlr, void *vaddr);
+
+/** Give back the registrations of `dmem` with the server, those made through `ctrlr` or all */
+void
+xnvme_be_upcie_served_mem_unmap_all(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr *ctrlr);
 
 struct xnvme_buf_reg;
 

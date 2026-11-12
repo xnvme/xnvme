@@ -204,6 +204,7 @@ xnvme_be_upcie_dmem_from_desc(struct dmamem *dmem, void *base,
 
 static struct {
 	struct {
+		struct dmamem *dmem;
 		void *vaddr;
 		struct xnvme_be_upcie_ctrlr *ctrlr;
 		uint64_t offset;
@@ -213,7 +214,8 @@ static struct {
 } g_served_regs;
 
 static int
-_served_regs_add(void *vaddr, struct xnvme_be_upcie_ctrlr *ctrlr, uint64_t offset)
+_served_regs_add(struct dmamem *dmem, void *vaddr, struct xnvme_be_upcie_ctrlr *ctrlr,
+		 uint64_t offset)
 {
 	if (g_served_regs.count == g_served_regs.capacity) {
 		int capacity = g_served_regs.capacity ? 2 * g_served_regs.capacity : 16;
@@ -227,6 +229,7 @@ _served_regs_add(void *vaddr, struct xnvme_be_upcie_ctrlr *ctrlr, uint64_t offse
 		g_served_regs.capacity = capacity;
 	}
 
+	g_served_regs.entries[g_served_regs.count].dmem = dmem;
 	g_served_regs.entries[g_served_regs.count].vaddr = vaddr;
 	g_served_regs.entries[g_served_regs.count].ctrlr = ctrlr;
 	g_served_regs.entries[g_served_regs.count].offset = offset;
@@ -248,13 +251,32 @@ _served_regs_find(void *vaddr, struct xnvme_be_upcie_ctrlr *ctrlr)
 	return -1;
 }
 
+static int
+_served_regs_find_dmem(const struct dmamem *dmem, const void *vaddr)
+{
+	for (int i = 0; i < g_served_regs.count; ++i) {
+		if ((g_served_regs.entries[i].dmem == dmem) &&
+		    (g_served_regs.entries[i].vaddr == vaddr)) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+int
+xnvme_be_upcie_served_mem_reaches(struct xnvme_be_upcie_ctrlr *ctrlr, void *vaddr)
+{
+	return _served_regs_find(vaddr, ctrlr) >= 0;
+}
+
 int
 xnvme_be_upcie_served_mem_map(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr *ctrlr,
 			      int dmabuf_fd, void *vaddr, size_t nbytes, uint32_t page_size)
 {
 	const struct hostmem_shared_desc *desc = NULL;
 	uint64_t offset = 0;
-	int err;
+	int adopted, err;
 
 	if (!dmem || !ctrlr || (dmabuf_fd < 0) || !vaddr || !nbytes || !page_size) {
 		return -EINVAL;
@@ -275,10 +297,13 @@ xnvme_be_upcie_served_mem_map(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr *
 		return err;
 	}
 
-	err = _adopt_desc(dmem, vaddr, desc, page_size);
+	/* Through a further controller the server installs the range at the IOVA it gave the
+	 * first, so the table has it already */
+	adopted = _served_regs_find_dmem(dmem, vaddr) >= 0;
+	err = adopted ? 0 : _adopt_desc(dmem, vaddr, desc, page_size);
 	if (!err) {
-		err = _served_regs_add(vaddr, ctrlr, offset);
-		if (err) {
+		err = _served_regs_add(dmem, vaddr, ctrlr, offset);
+		if (err && !adopted) {
 			dmamem_registry_remove(&dmem->registry, vaddr);
 		}
 	}
@@ -291,24 +316,18 @@ xnvme_be_upcie_served_mem_map(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr *
 	return err;
 }
 
-int
-xnvme_be_upcie_served_mem_unmap(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr *ctrlr,
-				void *vaddr)
+static int
+_served_regs_unmap_at(struct dmamem *dmem, int at)
 {
-	uint64_t offset;
-	int at, err;
+	struct xnvme_be_upcie_ctrlr *ctrlr = g_served_regs.entries[at].ctrlr;
+	void *vaddr = g_served_regs.entries[at].vaddr;
+	uint64_t offset = g_served_regs.entries[at].offset;
+	int err;
 
-	if (!dmem || !ctrlr || !vaddr) {
-		return -EINVAL;
-	}
-
-	at = _served_regs_find(vaddr, ctrlr);
-	if (at < 0) {
-		return -EINVAL;
-	}
-	offset = g_served_regs.entries[at].offset;
 	g_served_regs.entries[at] = g_served_regs.entries[--g_served_regs.count];
-	dmamem_registry_remove(&dmem->registry, vaddr);
+	if (_served_regs_find_dmem(dmem, vaddr) < 0) {
+		dmamem_registry_remove(&dmem->registry, vaddr);
+	}
 
 	err = xnvme_be_upcie_cplane_unregister_client_mem(ctrlr, offset);
 	if (err) {
@@ -316,6 +335,51 @@ xnvme_be_upcie_served_mem_unmap(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr
 	}
 
 	return err;
+}
+
+int
+xnvme_be_upcie_served_mem_unmap(struct dmamem *dmem, void *vaddr)
+{
+	int found = 0, err = 0;
+
+	if (!dmem || !vaddr) {
+		return -EINVAL;
+	}
+
+	for (int at = g_served_regs.count - 1; at >= 0; --at) {
+		int ret;
+
+		if ((g_served_regs.entries[at].dmem != dmem) ||
+		    (g_served_regs.entries[at].vaddr != vaddr)) {
+			continue;
+		}
+
+		found = 1;
+		ret = _served_regs_unmap_at(dmem, at);
+		err = err ? err : ret;
+	}
+
+	return found ? err : -EINVAL;
+}
+
+void
+xnvme_be_upcie_served_mem_unmap_all(struct dmamem *dmem, struct xnvme_be_upcie_ctrlr *ctrlr)
+{
+	for (int at = g_served_regs.count - 1; at >= 0; --at) {
+		void *vaddr = g_served_regs.entries[at].vaddr;
+		struct xnvme_buf_reg *reg;
+
+		if ((g_served_regs.entries[at].dmem != dmem) ||
+		    (ctrlr && (g_served_regs.entries[at].ctrlr != ctrlr))) {
+			continue;
+		}
+
+		_served_regs_unmap_at(dmem, at);
+		if ((_served_regs_find_dmem(dmem, vaddr) < 0) &&
+		    !xnvme_buf_reg_find(dmem, vaddr, 1, &reg)) {
+			xnvme_buf_reg_remove(reg);
+		}
+	}
 }
 
 static int
