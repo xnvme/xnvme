@@ -32,7 +32,9 @@ same application code runs unmodified across them:
 
 On top of `libxnvme`:
 
-- Command sets: `libxnvme_nvm` (NVM), `libxnvme_znd` (Zoned), `libxnvme_kvs` (KV)
+- Command construction: `xnvme_cmd_prep_<set>_<command>()` for the Admin, I/O,
+  NVM, Zoned Namespace and Key Value command sets, and zone helpers in
+  `libxnvme_znd`
 - `xnvme`, the command line; run it without arguments to see where to start
 - `xnvme perf`, synthetic workload generation with minimal overhead, to
   benchmark I/O processing at unprecedented efficiency across all of
