@@ -1,0 +1,293 @@
+--- a/engines/xnvme.c
++++ b/engines/xnvme.c
+@@ -10,12 +10,27 @@
+ #include <stdlib.h>
+ #include <assert.h>
+ #include <libxnvme.h>
++
+ #include "fio.h"
+ #include "verify.h"
+ #include "zbd_types.h"
+ #include "dataplacement.h"
+ #include "optgroup.h"
+ 
++static struct xnvme_dev *xnvme_fioe_dev_open(const char *uri, struct xnvme_opts *opts)
++{
++	struct xnvme_dev *dev;
++	int err;
++
++	err = xnvme_dev_open_uri(uri, opts, &dev);
++	if (err) {
++		errno = -err;
++		return NULL;
++	}
++
++	return dev;
++}
++
+ static pthread_mutex_t g_serialize = PTHREAD_MUTEX_INITIALIZER;
+ 
+ struct xnvme_fioe_fwrap {
+@@ -287,15 +302,17 @@ static void cb_pool(struct xnvme_cmd_ctx *ctx, void *cb_arg)
+ static struct xnvme_opts xnvme_opts_from_fioe(struct thread_data *td)
+ {
+ 	struct xnvme_fioe_options *o = td->eo;
+-	struct xnvme_opts opts = xnvme_opts_default();
++	struct xnvme_opts opts = {0};
++
++	xnvme_opts_set_defaults(&opts);
+ 
+ 	opts.nsid = o->xnvme_dev_nsid;
+-	opts.subnqn = o->xnvme_dev_subnqn;
+-	opts.be = o->xnvme_be;
+-	opts.mem = o->xnvme_mem;
+-	opts.async = o->xnvme_async;
+-	opts.sync = o->xnvme_sync;
+-	opts.admin = o->xnvme_admin;
++	snprintf(opts.subnqn, sizeof(opts.subnqn), "%s", o->xnvme_dev_subnqn ? o->xnvme_dev_subnqn : "");
++	snprintf(opts.be, sizeof(opts.be), "%s", o->xnvme_be ? o->xnvme_be : "");
++	snprintf(opts.mem, sizeof(opts.mem), "%s", o->xnvme_mem ? o->xnvme_mem : "");
++	snprintf(opts.async, sizeof(opts.async), "%s", o->xnvme_async ? o->xnvme_async : "");
++	snprintf(opts.sync, sizeof(opts.sync), "%s", o->xnvme_sync ? o->xnvme_sync : "");
++	snprintf(opts.admin, sizeof(opts.admin), "%s", o->xnvme_admin ? o->xnvme_admin : "");
+ 
+ 	opts.poll_io = o->hipri;
+ 	opts.poll_sq = o->sqpoll_thread;
+@@ -419,7 +436,7 @@ static int _dev_open(struct thread_data *td, struct fio_file *f)
+ 		return -err;
+ 	}
+ 
+-	fwrap->dev = xnvme_dev_open(f->file_name, &opts);
++	fwrap->dev = xnvme_fioe_dev_open(f->file_name, &opts);
+ 	if (!fwrap->dev) {
+ 		log_err("ioeng->_dev_open(%s): xnvme_dev_open(), err(%d)\n", f->file_name, errno);
+ 		goto failure;
+@@ -752,19 +769,21 @@ static enum fio_q_status xnvme_fioe_queue(struct thread_data *td, struct io_u *i
+ 
+ 	ctx->cmd.common.nsid = nsid;
+ 	ctx->cmd.nvm.slba = slba;
+-	ctx->cmd.nvm.nlb = nlb;
++	ctx->cmd.nvm.cdw12 = xnvme_bits_set(ctx->cmd.nvm.cdw12, XNVME_SPEC_CMD_NVM_CDW12_NLB, nlb);
+ 	if (dir) {
+-		ctx->cmd.nvm.dtype = io_u->dtype;
+-		ctx->cmd.nvm.cdw13.dspec = io_u->dspec;
++		ctx->cmd.nvm.cdw12 = xnvme_bits_set(ctx->cmd.nvm.cdw12,
++						    XNVME_SPEC_CMD_NVM_CDW12_DTYPE, io_u->dtype);
++		ctx->cmd.nvm.cdw13 = xnvme_bits_set(ctx->cmd.nvm.cdw13,
++						    XNVME_SPEC_CMD_NVM_CDW13_DSPEC, io_u->dspec);
+ 	}
+ 
+ 	switch (io_u->ddir) {
+ 	case DDIR_READ:
+-		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_READ;
++		ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_READ;
+ 		break;
+ 
+ 	case DDIR_WRITE:
+-		ctx->cmd.common.opcode = XNVME_SPEC_NVM_OPC_WRITE;
++		ctx->cmd.common.opc = XNVME_SPEC_NVM_OPC_WRITE;
+ 		break;
+ 
+ 	default:
+@@ -797,7 +816,9 @@ static enum fio_q_status xnvme_fioe_queue(struct thread_data *td, struct io_u *i
+ 	}
+ 
+ 	if (fwrap->geo->pi_type)
+-		ctx->cmd.nvm.prinfo = (o->pi_act << 3 | o->prchk);
++		ctx->cmd.nvm.cdw12 = xnvme_bits_set(ctx->cmd.nvm.cdw12,
++						    XNVME_SPEC_CMD_NVM_CDW12_PRINFO,
++						    o->pi_act << 3 | o->prchk);
+ 
+ 	switch (fwrap->geo->pi_type) {
+ 	case XNVME_PI_TYPE1:
+@@ -805,12 +826,12 @@ static enum fio_q_status xnvme_fioe_queue(struct thread_data *td, struct io_u *i
+ 		switch (fwrap->geo->pi_format) {
+ 		case XNVME_SPEC_NVM_NS_16B_GUARD:
+ 			if (o->prchk & XNVME_PI_FLAGS_REFTAG_CHECK)
+-				ctx->cmd.nvm.ilbrt = (uint32_t)slba;
++				ctx->cmd.nvm.lbtl = (uint32_t)slba;
+ 			break;
+ 		case XNVME_SPEC_NVM_NS_64B_GUARD:
+ 			if (o->prchk & XNVME_PI_FLAGS_REFTAG_CHECK) {
+-				ctx->cmd.nvm.ilbrt = (uint32_t)slba;
+-				ctx->cmd.common.cdw03 = ((slba >> 32) & 0xffff);
++				ctx->cmd.nvm.lbtl = (uint32_t)slba;
++				ctx->cmd.common.cdw3 = ((slba >> 32) & 0xffff);
+ 			}
+ 			break;
+ 		default:
+@@ -837,12 +858,12 @@ static enum fio_q_status xnvme_fioe_queue(struct thread_data *td, struct io_u *i
+ 		if (fwrap->md_nbytes && fwrap->lba_pow2) {
+ 			xd->md_iovec[io_u->index].iov_base = fio_req->md_buf;
+ 			xd->md_iovec[io_u->index].iov_len = fwrap->md_nbytes * (nlb + 1);
+-			err = xnvme_cmd_passv(ctx, &xd->iovec[io_u->index], 1, io_u->xfer_buflen,
+-					      &xd->md_iovec[io_u->index], 1,
+-					      fwrap->md_nbytes * (nlb + 1));
++			err = xnvme_cmd_pass_iov(ctx, &xd->iovec[io_u->index], 1,
++						 io_u->xfer_buflen, fio_req->md_buf,
++						 fwrap->md_nbytes * (nlb + 1));
+ 		} else {
+-			err = xnvme_cmd_passv(ctx, &xd->iovec[io_u->index], 1, io_u->xfer_buflen,
+-					      NULL, 0, 0);
++			err = xnvme_cmd_pass_iov(ctx, &xd->iovec[io_u->index], 1,
++						 io_u->xfer_buflen, NULL, 0);
+ 		}
+ 	} else {
+ 		if (fwrap->md_nbytes && fwrap->lba_pow2)
+@@ -927,7 +948,7 @@ static int xnvme_fioe_get_max_open_zones(struct thread_data *td, struct fio_file
+ 		return -err_lock;
+ 	}
+ 
+-	dev = xnvme_dev_open(f->file_name, &opts);
++	dev = xnvme_fioe_dev_open(f->file_name, &opts);
+ 	if (!dev) {
+ 		log_err("ioeng->get_max_open_zones(): xnvme_dev_open(), err(%d)\n", err_lock);
+ 		err = -errno;
+@@ -991,7 +1012,7 @@ static int xnvme_fioe_get_zoned_model(struct thread_data *td, struct fio_file *f
+ 		return -err;
+ 	}
+ 
+-	dev = xnvme_dev_open(f->file_name, &opts);
++	dev = xnvme_fioe_dev_open(f->file_name, &opts);
+ 	if (!dev) {
+ 		log_err("ioeng->get_zoned_model(): xnvme_dev_open(%s) failed, errno: %d\n",
+ 			f->file_name, errno);
+@@ -1070,7 +1091,7 @@ static int xnvme_fioe_report_zones(struct thread_data *td, struct fio_file *f, u
+ 		return -err;
+ 	}
+ 
+-	dev = xnvme_dev_open(f->file_name, &opts);
++	dev = xnvme_fioe_dev_open(f->file_name, &opts);
+ 	if (!dev) {
+ 		log_err("ioeng->report_zones(%s): xnvme_dev_open(), err(%d)\n", f->file_name,
+ 			errno);
+@@ -1106,14 +1127,16 @@ static int xnvme_fioe_report_zones(struct thread_data *td, struct fio_file *f, u
+ 
+ 	/* Transform the zone-report */
+ 	for (uint32_t idx = 0; idx < rprt->nentries; ++idx) {
+-		struct xnvme_spec_znd_descr *descr = XNVME_ZND_REPORT_DESCR(rprt, idx);
++		struct xnvme_spec_znd_descr *descr;
++
++		xnvme_znd_report_get_descr(rprt, idx, &descr, NULL);
+ 
+ 		zbdz[idx].start = descr->zslba << ssw;
+ 		zbdz[idx].len = lbafe->zsze << ssw;
+ 		zbdz[idx].capacity = descr->zcap << ssw;
+ 		zbdz[idx].wp = descr->wp << ssw;
+ 
+-		switch (descr->zt) {
++		switch (xnvme_bits_get(descr->ztattr, XNVME_SPEC_ZND_DESCR_ZTATTR_ZT)) {
+ 		case XNVME_SPEC_ZND_TYPE_SEQWR:
+ 			zbdz[idx].type = ZBD_ZONE_TYPE_SWR;
+ 			break;
+@@ -1125,7 +1148,7 @@ static int xnvme_fioe_report_zones(struct thread_data *td, struct fio_file *f, u
+ 			goto exit;
+ 		}
+ 
+-		switch (descr->zs) {
++		switch (xnvme_bits_get(descr->zsattr, XNVME_SPEC_ZND_DESCR_ZSATTR_ZS)) {
+ 		case XNVME_SPEC_ZND_STATE_EMPTY:
+ 			zbdz[idx].cond = ZBD_ZONE_COND_EMPTY;
+ 			break;
+@@ -1200,7 +1223,7 @@ static int xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint6
+ 			return -err;
+ 		}
+ 
+-		dev = xnvme_dev_open(f->file_name, &opts);
++		dev = xnvme_fioe_dev_open(f->file_name, &opts);
+ 		if (!dev) {
+ 			log_err("ioeng->reset_wp(): xnvme_dev_open(%s) failed, errno(%d)\n",
+ 				f->file_name, errno);
+@@ -1217,7 +1240,15 @@ static int xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint6
+ 	dprint(FD_ZBD, "first: 0x%lx, last: 0x%lx\n", first, last);
+ 
+ 	for (uint64_t zslba = first; zslba < last; zslba += geo->nsect) {
+-		struct xnvme_cmd_ctx ctx = xnvme_cmd_ctx_from_dev(dev);
++		struct xnvme_cmd_ctx ctx;
++		struct xnvme_cmd_prep_zns_zone_management_send_args args = {
++			.args_nbytes = sizeof(args),
++			.nsid = nsid,
++			.slba = zslba,
++			.zsa = XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET,
++		};
++
++		xnvme_dev_get_cmd_ctx(dev, &ctx);
+ 
+ 		if (zslba >= (geo->nsect * geo->nzone)) {
+ 			log_err("ioeng->reset_wp(): out-of-bounds\n");
+@@ -1225,11 +1256,13 @@ static int xnvme_fioe_reset_wp(struct thread_data *td, struct fio_file *f, uint6
+ 			break;
+ 		}
+ 
+-		err = xnvme_znd_mgmt_send(&ctx, nsid, zslba, false,
+-					  XNVME_SPEC_ZND_CMD_MGMT_SEND_RESET, 0x0, NULL);
++		err = xnvme_cmd_prep_zns_zone_management_send(&ctx.cmd, &args);
++		if (!err)
++			err = xnvme_cmd_pass(&ctx, NULL, 0, NULL, 0);
+ 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+ 			err = err ? err : -EIO;
+-			log_err("ioeng->reset_wp(): err(%d), sc(%d)", err, ctx.cpl.status.sc);
++			log_err("ioeng->reset_wp(): err(%d), sc(%d)", err,
++				(int)xnvme_bits_get(ctx.cpl.status, XNVME_SPEC_CQE_STATUS_SC));
+ 			goto exit;
+ 		}
+ 	}
+@@ -1253,6 +1286,10 @@ static int xnvme_fioe_fetch_ruhs(struct thread_data *td, struct fio_file *f,
+ 	struct xnvme_dev *dev;
+ 	struct xnvme_spec_ruhs *ruhs;
+ 	struct xnvme_cmd_ctx ctx;
++	struct xnvme_cmd_prep_io_io_management_receive_args args = {
++		.args_nbytes = sizeof(args),
++		.mo = XNVME_SPEC_IO_MGMT_RECV_RUHS,
++	};
+ 	uint32_t ruhs_nbytes, nr_ruhs;
+ 	uint32_t nsid;
+ 	int err = 0, err_lock;
+@@ -1268,7 +1305,7 @@ static int xnvme_fioe_fetch_ruhs(struct thread_data *td, struct fio_file *f,
+ 		return -err;
+ 	}
+ 
+-	dev = xnvme_dev_open(f->file_name, &opts);
++	dev = xnvme_fioe_dev_open(f->file_name, &opts);
+ 	if (!dev) {
+ 		log_err("ioeng->fdp_ruhs(): xnvme_dev_open(%s) failed, errno: %d\n",
+ 			f->file_name, errno);
+@@ -1285,20 +1322,25 @@ static int xnvme_fioe_fetch_ruhs(struct thread_data *td, struct fio_file *f,
+ 	}
+ 	memset(ruhs, 0, ruhs_nbytes);
+ 
+-	ctx = xnvme_cmd_ctx_from_dev(dev);
++	xnvme_dev_get_cmd_ctx(dev, &ctx);
+ 	nsid = xnvme_dev_get_nsid(dev);
+ 
+-	err = xnvme_nvm_mgmt_recv(&ctx, nsid, XNVME_SPEC_IO_MGMT_RECV_RUHS, 0, ruhs, ruhs_nbytes);
++	args.nsid = nsid;
++	args.numd = ruhs_nbytes / sizeof(uint32_t) - 1;
++	err = xnvme_cmd_prep_io_io_management_receive(&ctx.cmd, &args);
++	if (!err)
++		err = xnvme_cmd_pass(&ctx, ruhs, ruhs_nbytes, NULL, 0);
+ 
+ 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
+ 		err = err ? err : -EIO;
+-		log_err("ioeng->fdp_ruhs(): err(%d), sc(%d)", err, ctx.cpl.status.sc);
++		log_err("ioeng->fdp_ruhs(): err(%d), sc(%d)", err,
++			(int)xnvme_bits_get(ctx.cpl.status, XNVME_SPEC_CQE_STATUS_SC));
+ 		goto free_buffer;
+ 	}
+ 
+ 	fruhs_info->nr_ruhs = ruhs->nruhsd;
+ 	for (uint32_t idx = 0; idx < nr_ruhs; ++idx) {
+-		fruhs_info->plis[idx] = le16_to_cpu(ruhs->desc[idx].pi);
++		fruhs_info->plis[idx] = le16_to_cpu(ruhs->desc[idx].pid);
+ 	}
+ 
+ free_buffer:
+@@ -1328,7 +1370,7 @@ static int xnvme_fioe_get_file_size(struct thread_data *td, struct fio_file *f)
+ 		return -ret;
+ 	}
+ 
+-	dev = xnvme_dev_open(f->file_name, &opts);
++	dev = xnvme_fioe_dev_open(f->file_name, &opts);
+ 	if (!dev) {
+ 		log_err("%s: failed retrieving device handle, errno: %d\n", f->file_name, errno);
+ 		ret = -errno;
