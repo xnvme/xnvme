@@ -4,14 +4,15 @@ qublk
 #####
 
 **qublk** is a ublk server backed by **xNVMe**. It creates a ``/dev/ublkbN``
-block device, receives ``READ`` / ``WRITE`` / ``FLUSH`` requests from the Linux
-``ublk_drv`` over ``io_uring``, and services them through the **xNVMe**
-asynchronous command interface. Thus, any **xNVMe** backend, such as
+block device, receives ``READ`` / ``WRITE`` / ``FLUSH`` requests, and on a
+backend passing NVMe commands through also ``DISCARD`` / ``WRITE_ZEROES``, from
+the Linux ``ublk_drv`` over ``io_uring``, and services them through the
+**xNVMe** asynchronous command interface. Thus, any **xNVMe** backend, such as
 :ref:`sec-backends-upcie` or **io_uring**, becomes usable as an ordinary block
 device.
 
 ``REQ_FUA`` and ``REQ_PREFLUSH`` are supported, as are multiple ublk hardware
-queues via ``--nqueues``.
+queues via ``--nqueues``. Discard and write zeroes are described below.
 
 .. literalinclude:: qublk_usage.out
    :language: bash
@@ -97,6 +98,34 @@ both the fetch and the scatter-back list, and the kernel's own
 ``FUSE_IOCTL_MAX_IOV`` (256) bounds their combined count, well below the
 real driver's ``UIO_MAXIOV``.
 
+Discard and write zeroes
+========================
+
+``DISCARD`` is served as one Dataset Management deallocate command with a
+single range, and ``WRITE_ZEROES`` as one Write Zeroes command. Each is
+advertised in ``/sys/block/ublkb<N>/queue/discard_max_bytes`` and
+``write_zeroes_max_bytes`` only when all of these hold; otherwise the value is
+``0`` and the kernel keeps the op away from **qublk**:
+
+* the backend passes NVMe commands through: ``io_uring_cmd``, ``spdk``,
+  ``libvfn``, ``upcie``, or ``emu`` / ``thrpool`` over the ``nvme``, ``spdk``,
+  ``libvfn`` or ``upcie`` sync path.
+* the controller lists the command in ``ONCS``.
+* the namespace is not zoned.
+
+The limits follow the kernel NVMe driver. Discard uses ``DMRSL`` when it fits
+the 32-bit sector count, else ``UINT32_MAX`` sectors rounded down to whole
+blocks. Write zeroes uses the transfer cap **xNVMe** derives from ``MDTS``, or
+``WZSL`` when reported, and at most 65536 blocks. ``WZSL`` is counted in 4KiB
+pages, since **xNVMe** does not expose ``CAP.MPSMIN``. ``--max-io-bytes`` does
+not affect either limit. The startup line prints both limits in sectors.
+
+A command refused with Invalid Command Opcode or Invalid Field in Command
+completes as ``EOPNOTSUPP``, as with the kernel driver; any other error is
+``EIO``. Write Zeroes sets the deallocate bit when ``DLFEAT`` reports that
+deallocated blocks read as zeroes and that Write Zeroes may deallocate, unless
+the request carries ``UBLK_IO_F_NOUNMAP``.
+
 Zoned namespaces
 ================
 
@@ -114,7 +143,8 @@ mapped to the matching NVMe commands. It needs:
 
 The open and active limits are ``MOR + 1`` and ``MAR + 1``, and the append limit
 is ``ZASL`` capped by the per-IO buffer and the zone size. The kernel may
-publish other values in ``/sys/block/ublkb<N>/queue``.
+publish other values in ``/sys/block/ublkb<N>/queue``. Discard and write zeroes
+are not advertised: a deallocate is not reconciled with the write pointers.
 
 A zone report must fit one request, or ``ublk_drv`` (6.6 to 6.18) returns it
 scrambled. The per-IO buffer holds 64 bytes per zone, so ``--max-io-bytes``
