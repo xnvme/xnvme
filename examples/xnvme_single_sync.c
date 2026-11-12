@@ -41,7 +41,7 @@ main(int argc, char **argv)
 	}
 	nsid = xnvme_dev_get_nsid(dev);
 
-	buf_nbytes = xnvme_dev_get_geo(dev)->nbytes;
+	buf_nbytes = xnvme_dev_get_geo(dev)->lba_nbytes;
 
 	xnvme_cli_pinf("Allocate a payload-buffer of nbytes: %zu", buf_nbytes);
 	buf = xnvme_buf_alloc(dev, buf_nbytes);
@@ -60,12 +60,25 @@ main(int argc, char **argv)
 	{
 		struct xnvme_cmd_ctx ctx = {0};
 
-		xnvme_dev_get_cmd_ctx(dev, &ctx);
+		// Prepare a read of one logical block; NLB is zero-based
+		struct xnvme_cmd_prep_nvm_read_args args = {
+			.args_nbytes = sizeof(args),
+			.nsid = nsid,
+			.slba = 0x0,
+			.nlb = 0,
+		};
 
-		// Submit and wait for the completion of a read command
-		err = xnvme_nvm_read(&ctx, nsid, 0x0, 0, buf, NULL);
+		xnvme_dev_get_cmd_ctx(dev, &ctx);
+		err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &args);
+		if (err) {
+			xnvme_cli_perr("xnvme_cmd_prep_nvm_read()", err);
+			goto exit;
+		}
+
+		// Submit it and wait for its completion
+		err = xnvme_cmd_pass(&ctx, buf, buf_nbytes, NULL, 0);
 		if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
-			xnvme_cli_perr("xnvme_nvm_read()", err);
+			xnvme_cli_perr("xnvme_cmd_pass()", err);
 			xnvme_cmd_ctx_pr(&ctx, XNVME_PR_DEF);
 			err = err ? err : -EIO;
 			goto exit;
