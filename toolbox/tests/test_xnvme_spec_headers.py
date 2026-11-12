@@ -295,14 +295,13 @@ def text_of(wrote, stem):
 def test_each_document_has_a_header_named_by_its_abbreviation(model, tmp_path):
     wrote = generate(model, tmp_path / "out")
     assert sorted(p.name for p in wrote.headers) == [
-        "xnvme_spec_bar_transport.h",
-        "xnvme_spec_foo.h",
+        "libxnvme_spec_bar_transport.h",
+        "libxnvme_spec_foo.h",
     ]
-    # Only a document with commands has a source file, which holds the functions
-    # that make the commands
-    assert [p.name for p in wrote.sources] == ["xnvme_spec_foo.c"]
-    text = text_of(wrote, "xnvme_spec_foo.h")
-    assert "#ifndef XNVME_SPEC_FOO_H" in text
+    # The command preps make the commands, so there are no sources
+    assert wrote.sources == []
+    text = text_of(wrote, "libxnvme_spec_foo.h")
+    assert "#ifndef LIBXNVME_SPEC_FOO_H" in text
     # The header says what wrote it, and that it is not to be edited
     assert " * Written from the data model of senfd " in text
     assert " * edit: see the contributor docs on producing the spec headers." in text
@@ -325,25 +324,22 @@ def test_a_document_is_named_by_its_abbreviation_whatever_its_revision_titles_it
     assert headers.document_key(title) == key
 
 
-def test_a_command_is_a_struct_of_its_dwords_its_masks_and_its_opcode(model, tmp_path):
+def test_a_command_is_its_masks_and_its_opcode_without_a_struct(model, tmp_path):
     wrote = generate(model, tmp_path / "out")
-    text = text_of(wrote, "xnvme_spec_foo.h")
+    text = text_of(wrote, "libxnvme_spec_foo.h")
 
     assert "enum xnvme_spec_foo_opcode {" in text
     assert "\tXNVME_SPEC_FOO_DING_OPCODE = 0x1, ///< Ding (Foo 1.0" in text
-    assert "struct xnvme_spec_foo_ding {" in text
-    assert (
-        "\tuint32_t cdw10; ///< Command Dword 10, see XNVME_SPEC_FOO_DING_CDW10_*"
-        in (text)
-    )
+    # union xnvme_cmd_sqe holds the dwords of every command
+    assert "struct xnvme_spec_foo_ding" not in text
+    assert " * The fields of Ding, by the dwords of the command" in text
     assert "#define XNVME_SPEC_FOO_DING_CDW10_FCNT 0xffff" in text
-    assert "\tcmd->cdw0 = XNVME_SPEC_FOO_DING_OPCODE;" in text_of(
-        wrote, "xnvme_spec_foo.c"
-    )
+    assert "of Command Dword 10 */" in text
+    assert "_init(" not in text
 
 
 def test_a_structure_is_a_packed_struct_at_the_offsets_of_its_fields(model, tmp_path):
-    text = text_of(generate(model, tmp_path / "out"), "xnvme_spec_foo.h")
+    text = text_of(generate(model, tmp_path / "out"), "libxnvme_spec_foo.h")
 
     assert "struct __attribute__((packed)) xnvme_spec_foo_foo_statistics {" in text
     assert "\tuint64_t fcnt; ///< Foo Count, bytes 7:0" in text
@@ -359,7 +355,7 @@ def test_a_structure_is_a_packed_struct_at_the_offsets_of_its_fields(model, tmp_
 
 
 def test_entries_as_many_as_the_data_says_follow_the_struct(model, tmp_path):
-    text = text_of(generate(model, tmp_path / "out"), "xnvme_spec_foo.h")
+    text = text_of(generate(model, tmp_path / "out"), "libxnvme_spec_foo.h")
 
     assert (
         " * Followed, from byte 16, by as many Foo Entry as the data says, each a"
@@ -369,13 +365,13 @@ def test_entries_as_many_as_the_data_says_follow_the_struct(model, tmp_path):
         "xnvme_spec_foo_foo_list {"
     )
     text = text_of(
-        generate(model, tmp_path / "flexible", flexible="1"), "xnvme_spec_foo.h"
+        generate(model, tmp_path / "flexible", flexible="1"), "libxnvme_spec_foo.h"
     )
     assert "\tstruct xnvme_spec_foo_foo_entry foo_entry[]; ///< Foo Entry" in text
 
 
 def test_a_figure_of_the_entries_of_a_list_is_a_struct_of_one(model, tmp_path):
-    text = text_of(generate(model, tmp_path / "out"), "xnvme_spec_foo.h")
+    text = text_of(generate(model, tmp_path / "out"), "libxnvme_spec_foo.h")
 
     assert " * One entry of 8 bytes; the figure shows them at bytes 0, 8, 4088" in text
     assert "\tuint32_t fsrc; ///< Foo Source, bytes 3:0" in text
@@ -384,7 +380,7 @@ def test_a_figure_of_the_entries_of_a_list_is_a_struct_of_one(model, tmp_path):
 
 
 def test_a_repeated_name_at_another_place_in_its_period_is_no_list(model, tmp_path):
-    text = text_of(generate(model, tmp_path / "out"), "xnvme_spec_foo.h")
+    text = text_of(generate(model, tmp_path / "out"), "libxnvme_spec_foo.h")
 
     assert "\tuint32_t fc_8; ///< Foo Code, bytes 11:8" in text
 
@@ -407,7 +403,7 @@ def test_a_figure_citing_fields_of_other_structures_is_no_struct(tmp_path):
         ).model_dump_json()
     )
 
-    text = text_of(generate(path, tmp_path / "out"), "xnvme_spec_zns.h")
+    text = text_of(generate(path, tmp_path / "out"), "libxnvme_spec_zns.h")
     assert "size_and_capacity_fields" not in text
     assert "xnvme_spec_zns_zone_thing" in text
 
@@ -415,12 +411,12 @@ def test_a_figure_citing_fields_of_other_structures_is_no_struct(tmp_path):
         path, tmp_path / "named", structures="zns:size_and_capacity_fields"
     )
     assert "xnvme_spec_zns_size_and_capacity_fields" in text_of(
-        named, "xnvme_spec_zns.h"
+        named, "libxnvme_spec_zns.h"
     )
 
 
 def test_identifiers_and_status_codes_are_enums_by_document_and_scope(model, tmp_path):
-    text = text_of(generate(model, tmp_path / "out"), "xnvme_spec_foo.h")
+    text = text_of(generate(model, tmp_path / "out"), "libxnvme_spec_foo.h")
 
     assert "\tXNVME_SPEC_FOO_FEATURE_FOO_CONFIG = 0xc0," in text
     assert "\tXNVME_SPEC_FOO_LOG_PAGE_FOO_EVENTS = 0xc1," in text
@@ -432,7 +428,7 @@ def test_identifiers_and_status_codes_are_enums_by_document_and_scope(model, tmp
 
 
 def test_a_layout_of_no_named_kind_is_named_without_its_abbreviation(model, tmp_path):
-    text = text_of(generate(model, tmp_path / "out"), "xnvme_spec_bar_transport.h")
+    text = text_of(generate(model, tmp_path / "out"), "libxnvme_spec_bar_transport.h")
     assert (
         "struct __attribute__((packed)) xnvme_spec_bar_transport_bar_request_pdu {"
         in (text)
@@ -440,7 +436,7 @@ def test_a_layout_of_no_named_kind_is_named_without_its_abbreviation(model, tmp_
 
 
 def test_a_field_takes_the_masks_of_the_layout_it_is_defined_in(model, tmp_path):
-    text = text_of(generate(model, tmp_path / "out"), "xnvme_spec_foo.h")
+    text = text_of(generate(model, tmp_path / "out"), "libxnvme_spec_foo.h")
 
     assert "#define XNVME_SPEC_FOO_FOO_FORMAT_FDW0_FTAG 0xffff0000" in text
     assert "#define XNVME_SPEC_FOO_FOO_FORMAT_FDW0_FOPC 0xff" in text
@@ -450,7 +446,7 @@ def test_a_field_takes_the_masks_of_the_layout_it_is_defined_in(model, tmp_path)
 
 
 def test_an_entry_of_layouts_of_its_dwords_is_a_struct_of_their_halves(model, tmp_path):
-    text = text_of(generate(model, tmp_path / "out"), "xnvme_spec_foo.h")
+    text = text_of(generate(model, tmp_path / "out"), "libxnvme_spec_foo.h")
 
     assert "struct __attribute__((packed)) xnvme_spec_foo_foo_reply {" in text
     assert "\tuint32_t dw0; ///< Dword 0, of no layout in the data model" in text
@@ -479,7 +475,7 @@ def test_only_what_is_asked_for_is_written(model, tmp_path):
     wrote = generate(
         model, tmp_path / "out", commands="none", structures="none", registers="none"
     )
-    text = text_of(wrote, "xnvme_spec_foo.h")
+    text = text_of(wrote, "libxnvme_spec_foo.h")
     assert "struct" not in text
     assert wrote.sources == []
 
@@ -512,7 +508,7 @@ def test_yace_takes_the_headers_in_its_strict_subset(model, tmp_path):
 def test_the_registers_are_a_struct_at_their_offsets_with_masks_and_values(
     model, tmp_path
 ):
-    text = text_of(generate(model, tmp_path / "out"), "xnvme_spec_foo.h")
+    text = text_of(generate(model, tmp_path / "out"), "libxnvme_spec_foo.h")
 
     assert "struct __attribute__((packed)) xnvme_spec_foo_registers {" in text
     # A register has the width of its fields and is at its offset; the bytes
@@ -532,6 +528,6 @@ def test_the_registers_are_a_struct_at_their_offsets_with_masks_and_values(
 
 def test_the_registers_are_left_out_when_asked(model, tmp_path):
     text = text_of(
-        generate(model, tmp_path / "out", registers="none"), "xnvme_spec_foo.h"
+        generate(model, tmp_path / "out", registers="none"), "libxnvme_spec_foo.h"
     )
     assert "_registers" not in text

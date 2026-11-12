@@ -14,20 +14,20 @@ The build does not run the generator. A contributor runs the generator on a
 machine with the specification documents and commits the files that the
 generator writes.
 
-The generator writes a header for each document of the data model, and a
-source file with the functions that the header declares. Each header is named
-by the abbreviation of its document, such as xnvme_spec_base.h,
-xnvme_spec_nvm.h, xnvme_spec_kv.h, xnvme_spec_zns.h and xnvme_spec_tcp.h. No
-header refers to another header.
+The generator writes a header for each document of the data model. Each header
+is named by the abbreviation of its document, such as libxnvme_spec_base.h,
+libxnvme_spec_nvm.h, libxnvme_spec_kv.h, libxnvme_spec_zns.h and
+libxnvme_spec_tcp.h. No header refers to another header.
 
-For each command, the generator writes a struct of the 16 dwords of the
-submission queue entry. Each dword is a 32-bit integer; a pair of dwords that
-the data model describes with fields across both is one 64-bit integer. The
-generator also writes the masks of the fields, named by the acronyms of the
-specification and documented with their figure, in the form by which yace
-links a mask to its field. The opcode of the command is in the enum of the
-opcodes of its command set. The generator also writes a function that makes
-the command.
+For each command, the generator writes the masks of the fields of its
+dwords, named by the command, the dword and the acronym of the field, and
+documented with their figure. A pair of dwords that the data model describes
+with fields across both, such as CDW10 and CDW11 of Read, is one 64-bit value,
+and its masks are named by both dwords. The generator writes no struct for a
+command: union xnvme_cmd_sqe of libxnvme_cmd.h holds the dwords of every
+command. The opcode of the command is in the enum of the
+opcodes of its command set. The command preps of toolbox/xnvme_cmd_prep.py
+make the commands, so the generator writes no function.
 
 The generator has these options for the commands. 'spec' is the merged
 specification document that senfd writes; the default is the one in senfd's
@@ -248,7 +248,8 @@ def masks_of(
                 else f"bits {field.upper}:{field.lower}"
             )
             what = field.name or field.acronym
-            doc = f"{what} ({senfd.query.cite(source)}); {where} of '{member}'"
+            of = member if member.startswith("Command Dword") else f"'{member}'"
+            doc = f"{what} ({senfd.query.cite(source)}); {where} of {of}"
             masks.append((name, value, doc))
     return masks
 
@@ -1204,7 +1205,6 @@ class SpecHeaders:
         enums: Dict[str, List[str]] = {}
         structs: Dict[str, List[str]] = {}
         commands: Dict[str, List[str]] = {}
-        sources: Dict[str, List[str]] = {}
         taken = {
             f"{stem}_{set_key}_{alias(command.name)}"
             for set_key, command in self.commands(spec)
@@ -1220,68 +1220,42 @@ class SpecHeaders:
             doc = document_key(command.source.document)
             struct = f"{stem}_{set_key}_{alias(command.name)}"
             upper = identifier(struct)
-            fields: List[str] = []
+            notes: List[str] = []
             masks: List[Tuple[str, int, str]] = []
             for member, lower, last, ctype in members_of(command):
                 width = 32 * (last - lower + 1)
                 figures, others = described(command, lower, last)
                 if (lower, last + 2) in POINTERS or (lower - 2, last) in POINTERS:
                     figures, others = [], []
-                these = masks_of(
-                    member,
+                what = (
+                    f"Command Dword {lower}"
+                    if lower == last
+                    else f"Command Dwords {lower} and {last}, as one 64-bit value"
+                )
+                masks += masks_of(
+                    what,
                     f"{upper}_{identifier(member)}",
                     [(f.fields, f.source) for f in figures],
                     width,
                 )
-                what = (
-                    f"Command Dword {lower}"
-                    if lower == last
-                    else f"Command Dwords {lower} and {last}"
-                )
                 if others:
-                    what += "; described otherwise if " + ", or if ".join(others)
-                see = f", see {upper}_{identifier(member)}_*" if these else ""
-                fields.append(f"\t{ctype} {member}; ///< {what}{see}")
-                masks += these
+                    notes.append(
+                        f" * {what} is described otherwise if "
+                        + ", or if ".join(others)
+                    )
             lines = commands.setdefault(doc, [])
-            lines += [
-                f"/** The submission queue entry of {command.name} */",
-                f"struct {struct} {{",
-                *fields,
-                "};",
-                "",
-            ]
+            lines += ["/*", f" * The fields of {command.name}, by the dwords of the command"]
+            if notes:
+                lines += [" *", *notes]
+            lines += [" */"]
             for name, value, text in masks:
                 lines += [f"/** {text} */", f"#define {name} 0x{value:x}"]
-            lines += [
-                "",
-                "/**",
-                f" * Make 'cmd' the command {command.name}: its opcode in Command",
-                " * Dword 0, every other bit cleared",
-                " *",
-                " * @param cmd The command to make",
-                " */",
-                "void",
-                f"{struct}_init(struct {struct} *cmd);",
-                "",
-            ]
-            sources.setdefault(doc, []).extend(
-                [
-                    "void",
-                    f"{struct}_init(struct {struct} *cmd)",
-                    "{",
-                    "\tmemset(cmd, 0, sizeof(*cmd));",
-                    f"\tcmd->cdw0 = {upper}_OPCODE;",
-                    "}",
-                    "",
-                ]
-            )
+            lines.append("")
 
         headers: List[Path] = []
-        written: List[Path] = []
         for doc in dict.fromkeys([*enums, *structs, *registers, *commands]):
             name = f"{stem}_{doc}"
-            guard = f"{identifier(name)}_H"
+            guard = f"LIB{identifier(name)}_H"
             text = [
                 "/**",
                 f" * What the {doc} specification defines, by {stem}",
@@ -1291,7 +1265,7 @@ class SpecHeaders:
                 " * each name and mask is as the figure it cites gives it. Do not",
                 " * edit: see the contributor docs on producing the spec headers.",
                 " *",
-                f" * @file {name}.h",
+                f" * @file lib{name}.h",
                 " */",
                 f"#ifndef {guard}",
                 f"#define {guard}",
@@ -1305,12 +1279,7 @@ class SpecHeaders:
                 f"#endif /* {guard} */",
                 "",
             ]
-            path = self.output / f"{name}.h"
+            path = self.output / f"lib{name}.h"
             path.write_text("\n".join(text), encoding="utf-8")
             headers.append(path)
-            if doc in sources:
-                path = self.output / f"{name}.c"
-                source = [f'#include "{name}.h"', "", "#include <string.h>", ""]
-                path.write_text("\n".join(source + sources[doc]), encoding="utf-8")
-                written.append(path)
-        return generated(headers, written)
+        return generated(headers, [])

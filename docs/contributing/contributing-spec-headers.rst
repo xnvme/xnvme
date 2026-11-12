@@ -74,15 +74,15 @@ parses the headers that the generator writes:
        --strict \
        --emit capi
 
-The headers and sources are in ``/tmp/spec/xnvme_spec``, one of each for every
-document, named by its abbreviation: ``xnvme_spec_base.h``,
-``xnvme_spec_nvm.h``, ``xnvme_spec_kv.h``, ``xnvme_spec_zns.h``,
-``xnvme_spec_tcp.h`` and so on. The pretty-printers of them are in
+The headers are in ``/tmp/spec/xnvme_spec``, one for every document, named by
+its abbreviation: ``libxnvme_spec_base.h``, ``libxnvme_spec_nvm.h``,
+``libxnvme_spec_kv.h``, ``libxnvme_spec_zns.h``, ``libxnvme_spec_tcp.h`` and so
+on. The pretty-printers of them are in
 ``/tmp/spec/capi``.
 
 ``--strict`` makes any diagnostic an error: what the generator writes must be
 in yace's C subset, as a header written by hand is. The status of the run is
-in ``/tmp/spec/xnvme_spec_base.status`` and ends in ``0 diagnostics``.
+in ``/tmp/spec/libxnvme_spec_base.status`` and ends in ``0 diagnostics``.
 
 The options of the generator, each given as
 ``--generator-option xnvme_spec.<key>=<value>``, are:
@@ -91,6 +91,9 @@ The options of the generator, each given as
 * ``prefix`` of every name, by default ``xnvme_spec``.
 * ``commands`` selects the command sets or commands to write, such as ``nvm``
   or ``nvm:write``. The default is all commands. ``none`` writes no commands.
+  For a command, the generator writes its opcode and the masks of the fields
+  of its dwords, and no struct: ``union xnvme_cmd_sqe`` of ``libxnvme_cmd.h``
+  holds the dwords of every command, and the command preps make them.
 * ``structures`` selects the structures to write. Name a structure by its
   name, or by the abbreviation of its document and its name, such as
   ``base:identify_controller``. The default is every byte layout except the
@@ -130,9 +133,9 @@ so the next run does not undo the fix.
 Commit the headers
 ------------------
 
-Copy the headers into ``include/`` and the sources into ``lib/``, and add any
-new one to the lists of its ``meson.build``, where the build takes them as any
-other file. Each header says the version of senfd that produced its data
+Copy the headers into ``include/``, and add any new one to the list of
+``include/meson.build`` and to ``libxnvme.h``, where the build takes them as
+any other header. Each header says the version of senfd that produced its data
 model, and each citation the revision of its document, so the commit needs no
 record of them.
 yace is not run by the build; run it again, as above, when a document is
