@@ -206,7 +206,9 @@ on_xnvme_complete(struct xnvme_cmd_ctx *ctx, void *opaque)
 	int result;
 
 	if (xnvme_cmd_ctx_cpl_status(ctx)) {
-		result = op == UBLK_IO_OP_DISCARD ? range_op_error(ctx) : -EIO;
+		result = op == UBLK_IO_OP_DISCARD || op == UBLK_IO_OP_WRITE_ZEROES
+				 ? range_op_error(ctx)
+				 : -EIO;
 	} else {
 		if (op == UBLK_IO_OP_READ || op == UBLK_IO_OP_WRITE) {
 			size_t bytes = (size_t)io->iod->nr_sectors << XNVME_UNIVERSAL_SECT_SH;
@@ -218,7 +220,7 @@ on_xnvme_complete(struct xnvme_cmd_ctx *ctx, void *opaque)
 			} else {
 				result = (int)bytes;
 			}
-		} else if (op == UBLK_IO_OP_DISCARD) {
+		} else if (op == UBLK_IO_OP_DISCARD || op == UBLK_IO_OP_WRITE_ZEROES) {
 			// No data moves, so the driver only looks at the sign
 			result = 0;
 		} else {
@@ -258,7 +260,7 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 	is_append = qublk_zoned_op_is_append(op);
 
 	// Only data transfers are bounded by the buffer; the kernel splits a
-	// DISCARD at the advertised limit
+	// DISCARD or a WRITE_ZEROES at the advertised limit
 	if (op == UBLK_IO_OP_READ || op == UBLK_IO_OP_WRITE || is_append) {
 		if (bytes > dev->max_io_buf) {
 			XNVME_DEBUG("FAILED: dev%d q%d tag %u: I/O %lu B exceeds max_io_buf %u",
@@ -269,7 +271,7 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 	}
 
 	if (op == UBLK_IO_OP_READ || op == UBLK_IO_OP_WRITE || is_append ||
-	    op == UBLK_IO_OP_DISCARD) {
+	    op == UBLK_IO_OP_DISCARD || op == UBLK_IO_OP_WRITE_ZEROES) {
 		// Reject a zero or partial-LBA length; 'nlb' below is zero-based
 		if (!bytes || (bytes & ((1u << lba_shift) - 1))) {
 			XNVME_DEBUG("FAILED: dev%d q%d tag %u: %lu B is not LBA-aligned",
@@ -346,6 +348,24 @@ dispatch(struct qublk_queue *q, struct qublk_io *io)
 		rc = xnvme_nvm_dsm(ctx, nsid, range, 0, true, false, false);
 		break;
 	}
+	case UBLK_IO_OP_WRITE_ZEROES:
+		// Reached only if the kernel split past what was advertised
+		if ((bytes >> lba_shift) > QUBLK_WRITE_ZEROES_MAX_LBAS) {
+			XNVME_DEBUG("FAILED: dev%d q%d tag %u: %lu B exceeds one Write Zeroes",
+				    dev->dev_id, q->q_id, io->tag, (unsigned long)bytes);
+			rc = -EINVAL;
+			break;
+		}
+
+		slba = iod->start_sector >> (lba_shift - XNVME_UNIVERSAL_SECT_SH);
+		nlb = (uint16_t)((bytes >> lba_shift) - 1);
+		// As nvme_setup_write_zeroes(): deallocate unless NOUNMAP is set
+		if (dev->wz_deac && !(iod->op_flags & UBLK_IO_F_NOUNMAP)) {
+			ctx->cmd.write_zeroes.deac = 1;
+		}
+
+		rc = xnvme_nvm_write_zeroes(ctx, nsid, slba, nlb);
+		break;
 	default:
 		rc = qublk_zoned_dispatch(q, io, ctx);
 		break;

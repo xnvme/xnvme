@@ -143,6 +143,44 @@ dev_init_discard(struct qublk_dev *dev, const struct xnvme_spec_idfy_ctrlr *ctrl
 	dev->max_discard_sectors = (uint32_t)(max_lbas << sect_shift);
 }
 
+/*
+ * WRITE_ZEROES is gated as DISCARD. The limit follows the kernel's
+ * nvme_init_non_mdts_limits(): the MDTS transfer cap, or WZSL when reported,
+ * and at most the 16-bit block count. WZSL is counted in 4 KiB pages, since
+ * xNVMe does not expose CAP.MPSMIN; a larger page only allows more.
+ */
+static void
+dev_init_write_zeroes(struct qublk_dev *dev, const struct xnvme_spec_idfy_ctrlr *ctrlr,
+		      uint8_t passes_nvme, uint32_t cap_max)
+{
+	const struct xnvme_spec_nvm_idfy_ctrlr *nvm =
+		(const struct xnvme_spec_nvm_idfy_ctrlr *)xnvme_dev_get_ctrlr_css(dev->xdev);
+	const struct xnvme_spec_idfy_ns *ns = xnvme_dev_get_ns(dev->xdev);
+	uint8_t sect_shift = dev->lba_shift - XNVME_UNIVERSAL_SECT_SH;
+	uint64_t max_lbas = cap_max >> dev->lba_shift;
+
+	dev->has_write_zeroes =
+		passes_nvme && ctrlr && dev->geo->type != XNVME_GEO_ZONED &&
+		xnvme_bits_get(ctrlr->oncs, XNVME_SPEC_IDFY_CTRLR_ONCS_WRITE_ZEROES);
+	if (!dev->has_write_zeroes) {
+		return;
+	}
+
+	// 4 KiB << 20 already exceeds the 16-bit block count at any LBA size
+	if (nvm->wzsl >= 20) {
+		max_lbas = QUBLK_WRITE_ZEROES_MAX_LBAS;
+	} else if (nvm->wzsl) {
+		max_lbas = (4096ull << nvm->wzsl) >> dev->lba_shift;
+	}
+	max_lbas = XNVME_MIN_U64(max_lbas, QUBLK_WRITE_ZEROES_MAX_LBAS);
+	dev->max_write_zeroes_sectors = (uint32_t)(max_lbas << sect_shift);
+
+	// The kernel's NVME_NS_DEAC: deallocated blocks read as zeroes, and
+	// Write Zeroes may deallocate
+	dev->wz_deac = (ns->dlfeat & XNVME_SPEC_IDFY_NS_DLFEAT_READ_VALUE) == 1 &&
+		       (ns->dlfeat & XNVME_SPEC_IDFY_NS_DLFEAT_WRITE_ZERO_DEALLOCATE);
+}
+
 static int
 dev_init(struct qublk_dev *dev, uint32_t want_max_io)
 {
@@ -174,6 +212,7 @@ dev_init(struct qublk_dev *dev, uint32_t want_max_io)
 	dev_init_discard(dev, ctrlr, passes_nvme);
 
 	cap_max = dev->geo->mdts_nbytes ? dev->geo->mdts_nbytes : QUBLK_DEFAULT_MAX_IO_CAP;
+	dev_init_write_zeroes(dev, ctrlr, passes_nvme, cap_max);
 	dev->max_io_buf = (uint32_t)XNVME_MIN_U64(
 		want_max_io ? want_max_io : QUBLK_DEFAULT_MAX_IO_CAP, cap_max);
 	dev->max_io_buf &= ~(uint32_t)(sysconf(_SC_PAGESIZE) - 1);
@@ -227,9 +266,9 @@ dev_add(struct qublk_dev *dev, const char *be)
 	dev->added = 1;
 	fprintf(stderr,
 		"qublk: added ublk dev id=%d nqueues=%u qdepth=%u max_io=%u discard=%u "
-		"backend=%s uri=%s\n",
+		"write_zeroes=%u backend=%s uri=%s\n",
 		dev->dev_id, dev->nqueues, dev->qdepth, dev->max_io_buf, dev->max_discard_sectors,
-		be ? be : "(auto)", dev->uri);
+		dev->max_write_zeroes_sectors, be ? be : "(auto)", dev->uri);
 	qublk_zoned_print_info(dev);
 
 	rc = qublk_ctrl_set_params(dev);
