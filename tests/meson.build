@@ -165,3 +165,12 @@ test(
   python3,
   args: [files('pp_header.py'), meson.project_source_root() / 'include'],
 )
+
+nm = find_program('nm', required: false)
+if nm.found()
+  test(
+    'tests - the parts of libxnvme depend on each other one way',
+    python3,
+    args: [files('lib_parts.py'), nm.full_path(), xnvme_core_part, xnvme_cli_part, xnvme_pp_part],
+  )
+endif
