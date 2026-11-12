@@ -29,14 +29,20 @@
 static int
 read_lba0(struct xnvme_dev *dev, void *buf)
 {
+	struct xnvme_cmd_prep_nvm_read_args args = {
+		.nsid = xnvme_dev_get_nsid(dev),
+	};
 	struct xnvme_cmd_ctx ctx = {0};
 	int err;
 
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_nvm_read(&ctx, xnvme_dev_get_nsid(dev), 0x0, 0, buf, NULL);
+	err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, buf, xnvme_dev_get_geo(dev)->lba_nbytes, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		err = err ? err : -EIO;
-		xnvme_cli_perr("xnvme_nvm_read()", err);
+		xnvme_cli_perr("read", err);
 		return err;
 	}
 
@@ -230,11 +236,21 @@ main(int argc, char **argv)
 	xnvme_cli_pinf(
 		"OK: the buffer helpers filled, cleared and compared the registered buffer");
 
+	struct xnvme_cmd_prep_nvm_read_args args = {
+		.nsid = xnvme_dev_get_nsid(dev),
+		.slba = 0x0,
+		.nlb = (uint16_t)(nlb - 1),
+	};
+
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_nvm_read(&ctx, xnvme_dev_get_nsid(dev), 0x0, nlb - 1, buf, NULL);
+	err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &args);
+	if (!err) {
+		// The buffer is rounded up to 2 MiB; transfer the blocks read
+		err = xnvme_cmd_pass(&ctx, buf, nlb * lba_nbytes, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		err = err ? err : -EIO;
-		xnvme_cli_perr("xnvme_nvm_read()", err);
+		xnvme_cli_perr("read", err);
 		goto exit;
 	}
 

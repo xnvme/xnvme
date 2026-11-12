@@ -41,14 +41,20 @@ xnvme_cuda_io_kernel(struct xnvme_cuda_queue *qp, union xnvme_spec_sqe *cmds, si
 static int
 read_lba0(struct xnvme_dev *dev, void *buf)
 {
+	struct xnvme_cmd_prep_nvm_read_args args = {};
 	struct xnvme_cmd_ctx ctx = {};
 	int err;
 
+	args.nsid = xnvme_dev_get_nsid(dev);
+
 	xnvme_dev_get_cmd_ctx(dev, &ctx);
-	err = xnvme_nvm_read(&ctx, xnvme_dev_get_nsid(dev), 0x0, 0, buf, NULL);
+	err = xnvme_cmd_prep_nvm_read(&ctx.cmd, &args);
+	if (!err) {
+		err = xnvme_cmd_pass(&ctx, buf, xnvme_dev_get_geo(dev)->lba_nbytes, NULL, 0);
+	}
 	if (err || xnvme_cmd_ctx_cpl_status(&ctx)) {
 		err = err ? err : -EIO;
-		xnvme_cli_perr("xnvme_nvm_read()", err);
+		xnvme_cli_perr("read", err);
 		return err;
 	}
 
