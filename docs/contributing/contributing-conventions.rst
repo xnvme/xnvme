@@ -62,12 +62,11 @@ C: API
     output argument rather than returning one, as
     ``xnvme_opts_set_defaults(&opts)`` does: a structure by value is
     simple in C, but not over FFI
-  - A function replaced for any of these keeps working, as a ``static
-    inline`` in ``libxnvme_compat.h`` calling its replacement, and in a
-    debug build warning that it is deprecated, until a later release
-    removes it; a renamed type keeps its old name there as a ``#define``,
-    unless the rename turns a ``struct`` into a ``union``, which no alias
-    can bridge
+  - A function or type replaced for any of these is removed in the same
+    change. xNVMe keeps no compatibility layer: its one purpose would be to
+    spare projects such as fio's xNVMe engine and SPDK's ``bdev_xnvme`` from
+    changes, and a header cannot do that once the types they use change, so
+    those projects get a port instead
   - Who owns the memory decides the signature. Memory the caller owns is
     filled through an output argument, with 0 or negative ``errno``
     returned, as ``xnvme_dev_get_cmd_ctx(dev, &ctx)`` does. Memory the
